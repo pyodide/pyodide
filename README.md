@@ -1,4 +1,9 @@
-# Calling Python from Javascript with value conversion
+# Pyodide
+
+This provides an integration layer when running an empscripten-compiled CPython
+inside a web browser. It provides transparent conversion of objects between
+Javascript and Python and a sharing of global namespaces. When inside a browser,
+this means Python has full access to the Web APIs.
 
 # Building
 
