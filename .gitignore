@@ -1,4 +1,4 @@
 root/
 
-python.asm.*
+pyodide.asm.*
 *.bc
