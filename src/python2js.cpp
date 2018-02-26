@@ -10,20 +10,20 @@ val pythonExcToJs() {
   PyObject *type;
   PyObject *value;
   PyObject *traceback;
-  PyObject *str;
+  PyObject *pystr;
 
   PyErr_Fetch(&type, &value, &traceback);
 
-  str = PyObject_Str(value);
-  // TODO: Return a JS Error object rather than a string here...?
-  val result = pythonToJs(str);
+  pystr = PyObject_Str(value);
+  val Error = val::global("Error");
+  val exc = Error.new_(pythonToJs(pystr));
 
-  Py_DECREF(str);
+  Py_DECREF(pystr);
   Py_DECREF(type);
   Py_DECREF(value);
   Py_DECREF(traceback);
 
-  return result;
+  return exc;
 }
 
 val pythonToJs(PyObject *x) {
