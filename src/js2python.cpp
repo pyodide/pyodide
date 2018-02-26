@@ -4,7 +4,7 @@
 
 using emscripten::val;
 
-PyObject *jsToPython(val x, val *parent, const char *name) {
+PyObject *jsToPython(val x) {
   val xType = x.typeOf();
 
   if (xType.equals(val("string"))) {
@@ -17,6 +17,6 @@ PyObject *jsToPython(val x, val *parent, const char *name) {
     Py_INCREF(Py_None);
     return Py_None;
   } else {
-    return JsProxy_cnew(x, parent, name);
+    return JsProxy_cnew(x);
   }
 }

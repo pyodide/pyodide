@@ -8,6 +8,8 @@ using emscripten::val;
 // TODO: Bound methods should probably have their own class, rather than using
 // JsProxy for everything
 
+static PyObject *JsBoundMethod_cnew(val v, val this_, const char *name);
+
 ////////////////////////////////////////////////////////////
 // JsProxy
 //
@@ -16,18 +18,10 @@ using emscripten::val;
 typedef struct {
   PyObject_HEAD
   val *js;
-  val *parent;
-  char *name;
 } JsProxy;
 
 static void JsProxy_dealloc(JsProxy *self) {
   delete self->js;
-  if (self->parent) {
-    delete self->parent;
-  }
-  if (self->name) {
-    free(self->name);
-  }
   Py_TYPE(self)->tp_free((PyObject *)self);
 }
 
@@ -43,7 +37,11 @@ static PyObject *JsProxy_GetAttr(PyObject *o, PyObject *attr_name) {
   val v = (*self->js)[s];
   Py_DECREF(str);
 
-  return jsToPython(v, self->js, s.c_str());
+  if (v.typeof().equals(val("function"))) {
+    return JsBoundMethod_cnew(v, *self->js, s.c_str());
+  }
+
+  return jsToPython(v);
 }
 
 static int JsProxy_SetAttr(PyObject *o, PyObject *attr_name, PyObject *value) {
@@ -70,58 +68,36 @@ static PyObject* JsProxy_Call(PyObject *o, PyObject *args, PyObject *kwargs) {
   // TODO: There's probably some way to not have to explicitly expand arguments
   // here.
 
-  if (self->parent) {
-    switch (nargs) {
-    case 0:
-      return jsToPython((*self->parent).call<val>(self->name));
-    case 1:
-      return jsToPython((*self->parent).call<val>(
-                            self->name,
-                            pythonToJs(PyTuple_GET_ITEM(args, 0))));
-    case 2:
-      return jsToPython((*self->parent).call<val>(
-                            self->name,
-                            pythonToJs(PyTuple_GET_ITEM(args, 0)),
-                            pythonToJs(PyTuple_GET_ITEM(args, 1))));
-    case 3:
-      return jsToPython((*self->parent).call<val>(
-                            self->name,
-                            pythonToJs(PyTuple_GET_ITEM(args, 0)),
-                            pythonToJs(PyTuple_GET_ITEM(args, 1)),
-                            pythonToJs(PyTuple_GET_ITEM(args, 2))));
-    case 4:
-      return jsToPython((*self->parent).call<val>(
-                            self->name,
-                            pythonToJs(PyTuple_GET_ITEM(args, 0)),
-                            pythonToJs(PyTuple_GET_ITEM(args, 1)),
-                            pythonToJs(PyTuple_GET_ITEM(args, 2)),
-                            pythonToJs(PyTuple_GET_ITEM(args, 3))));
-    }
-  } else {
-    switch (nargs) {
-    case 0:
-      return jsToPython((*self->js)());
-    case 1:
-      return jsToPython((*self->js)(
-                            pythonToJs(PyTuple_GET_ITEM(args, 0))));
-    case 2:
-      return jsToPython((*self->js)(
-                          pythonToJs(PyTuple_GET_ITEM(args, 0)),
-                          pythonToJs(PyTuple_GET_ITEM(args, 1))));
-    case 3:
-      return jsToPython((*self->js)(
-                            pythonToJs(PyTuple_GET_ITEM(args, 0)),
-                            pythonToJs(PyTuple_GET_ITEM(args, 1)),
-                            pythonToJs(PyTuple_GET_ITEM(args, 2))));
-    case 4:
-      return jsToPython((*self->js)(
-                            pythonToJs(PyTuple_GET_ITEM(args, 0)),
-                            pythonToJs(PyTuple_GET_ITEM(args, 1)),
-                            pythonToJs(PyTuple_GET_ITEM(args, 2)),
-                            pythonToJs(PyTuple_GET_ITEM(args, 3))));
-    }
+  switch (nargs) {
+  case 0:
+    return jsToPython((*self->js)());
+  case 1:
+    return jsToPython((*self->js)
+                      (pythonToJs(PyTuple_GET_ITEM(args, 0))));
+  case 2:
+    return jsToPython((*self->js)
+                      (pythonToJs(PyTuple_GET_ITEM(args, 0)),
+                       pythonToJs(PyTuple_GET_ITEM(args, 1))));
+  case 3:
+    return jsToPython((*self->js)
+                      (pythonToJs(PyTuple_GET_ITEM(args, 0)),
+                       pythonToJs(PyTuple_GET_ITEM(args, 1)),
+                       pythonToJs(PyTuple_GET_ITEM(args, 2))));
+  case 4:
+    return jsToPython((*self->js)
+                      (pythonToJs(PyTuple_GET_ITEM(args, 0)),
+                       pythonToJs(PyTuple_GET_ITEM(args, 1)),
+                       pythonToJs(PyTuple_GET_ITEM(args, 2)),
+                       pythonToJs(PyTuple_GET_ITEM(args, 3))));
+  case 5:
+    return jsToPython((*self->js)
+                      (pythonToJs(PyTuple_GET_ITEM(args, 0)),
+                       pythonToJs(PyTuple_GET_ITEM(args, 1)),
+                       pythonToJs(PyTuple_GET_ITEM(args, 2)),
+                       pythonToJs(PyTuple_GET_ITEM(args, 3)),
+                       pythonToJs(PyTuple_GET_ITEM(args, 4))));
   }
-  // TODO: Handle exception here
+  PyErr_SetString(PyExc_TypeError, "Too many arguments to function");
   return NULL;
 }
 
@@ -136,24 +112,106 @@ static PyTypeObject JsProxyType = {
   .tp_doc = "A proxy to make a Javascript object behave like a Python object"
 };
 
-PyObject *JsProxy_cnew(val v, val *parent, const char *name) {
+PyObject *JsProxy_cnew(val v) {
   JsProxy *self;
   self = (JsProxy *)JsProxyType.tp_alloc(&JsProxyType, 0);
   self->js = new val(v);
-  if (parent) {
-    self->parent = new val(*parent);
-    size_t n = strnlen(name, 256);
-    char *copy = (char *)malloc(n + 1);
-    strncpy(copy, name, n + 1);
-    self->name = copy;
-  } else {
-    self->parent = NULL;
-  }
   return (PyObject *)self;
 }
 
+
+////////////////////////////////////////////////////////////
+// JsBoundMethod
+//
+// A special class for bound methods
+
+typedef struct {
+  JsProxy head;
+  val *this_;
+  char *name;
+} JsBoundMethod;
+
+static void JsBoundMethod_dealloc(JsBoundMethod *self) {
+  delete self->head.js;
+  delete self->this_;
+  free(self->name);
+  Py_TYPE(self)->tp_free((PyObject *)self);
+}
+
+static PyObject* JsBoundMethod_Call(PyObject *o, PyObject *args, PyObject *kwargs) {
+  JsBoundMethod *self = (JsBoundMethod *)o;
+
+  Py_ssize_t nargs = PyTuple_Size(args);
+
+  // TODO: There's probably some way to not have to explicitly expand arguments
+  // here.
+
+  switch (nargs) {
+  case 0:
+    return jsToPython((*self->this_).call<val>(self->name));
+  case 1:
+    return jsToPython((*self->this_).call<val>
+                      (self->name,
+                       pythonToJs(PyTuple_GET_ITEM(args, 0))));
+  case 2:
+    return jsToPython((*self->this_).call<val>
+                      (self->name,
+                       pythonToJs(PyTuple_GET_ITEM(args, 0)),
+                       pythonToJs(PyTuple_GET_ITEM(args, 1))));
+  case 3:
+    return jsToPython((*self->this_).call<val>
+                      (self->name,
+                       pythonToJs(PyTuple_GET_ITEM(args, 0)),
+                       pythonToJs(PyTuple_GET_ITEM(args, 1)),
+                       pythonToJs(PyTuple_GET_ITEM(args, 2))));
+  case 4:
+    return jsToPython((*self->this_).call<val>
+                      (self->name,
+                       pythonToJs(PyTuple_GET_ITEM(args, 0)),
+                       pythonToJs(PyTuple_GET_ITEM(args, 1)),
+                       pythonToJs(PyTuple_GET_ITEM(args, 2)),
+                       pythonToJs(PyTuple_GET_ITEM(args, 3))));
+  case 5:
+    return jsToPython((*self->this_).call<val>
+                      (self->name,
+                       pythonToJs(PyTuple_GET_ITEM(args, 0)),
+                       pythonToJs(PyTuple_GET_ITEM(args, 1)),
+                       pythonToJs(PyTuple_GET_ITEM(args, 2)),
+                       pythonToJs(PyTuple_GET_ITEM(args, 3)),
+                       pythonToJs(PyTuple_GET_ITEM(args, 4))));
+  }
+
+  PyErr_SetString(PyExc_TypeError, "Too many arguments to function");
+  return NULL;
+}
+
+static PyTypeObject JsBoundMethodType = {
+  .tp_name = "JsBoundMethod",
+  .tp_basicsize = sizeof(JsBoundMethod),
+  .tp_dealloc = (destructor)JsBoundMethod_dealloc,
+  .tp_call = JsBoundMethod_Call,
+  .tp_flags = Py_TPFLAGS_DEFAULT,
+  .tp_doc = "A proxy to make it possible to call Javascript bound methods from Python."
+};
+
+static PyObject *JsBoundMethod_cnew(val v, val this_, const char *name) {
+  JsBoundMethod *self;
+  self = (JsBoundMethod *)JsBoundMethodType.tp_alloc(&JsBoundMethodType, 0);
+  self->head.js = new val(v);
+  self->this_ = new val(this_);
+  size_t n = strnlen(name, 256);
+  char *copy = (char *)malloc(n + 1);
+  strncpy(copy, name, n + 1);
+  self->name = copy;
+  return (PyObject *)self;
+}
+
+////////////////////////////////////////////////////////////
+// Public functions
+
 int JsProxy_Check(PyObject *x) {
-  return PyObject_TypeCheck(x, &JsProxyType);
+  return (PyObject_TypeCheck(x, &JsProxyType) ||
+          PyObject_TypeCheck(x, &JsBoundMethodType));
 }
 
 val JsProxy_AsVal(PyObject *x) {
@@ -162,5 +220,6 @@ val JsProxy_AsVal(PyObject *x) {
 }
 
 int JsProxy_Ready() {
-  return PyType_Ready(&JsProxyType);
+  return (PyType_Ready(&JsProxyType) ||
+          PyType_Ready(&JsBoundMethodType));
 }

@@ -6,8 +6,6 @@
 #include <emscripten/val.h>
 #include <Python.h>
 
-PyObject *jsToPython(emscripten::val x,
-                     emscripten::val *parent = NULL,
-                     const char *name = NULL);
+PyObject *jsToPython(emscripten::val x);
 
 #endif /* JS2PYTHON_H */
