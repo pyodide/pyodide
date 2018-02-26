@@ -1,11 +1,12 @@
 #include "python2js.hpp"
 #include "jsproxy.hpp"
+#include "pyproxy.hpp"
 
 using emscripten::val;
 
 static val *undefined;
 
-val pythonExcToJS() {
+val pythonExcToJs() {
   PyObject *type;
   PyObject *value;
   PyObject *traceback;
@@ -36,13 +37,13 @@ val pythonToJs(PyObject *x) {
   } else if (PyLong_Check(x)) {
     long x_long = PyLong_AsLongLong(x);
     if (x_long == -1 && PyErr_Occurred()) {
-      return pythonExcToJS();
+      return pythonExcToJs();
     }
     return val(x_long);
   } else if (PyFloat_Check(x)) {
     double x_double = PyFloat_AsDouble(x);
     if (x_double == -1.0 && PyErr_Occurred()) {
-      return pythonExcToJS();
+      return pythonExcToJs();
     }
     return val(x_double);
   } else if (PyUnicode_Check(x)) {
@@ -51,7 +52,7 @@ val pythonToJs(PyObject *x) {
     Py_ssize_t length;
     wchar_t *chars = PyUnicode_AsWideCharString(x, &length);
     if (chars == NULL) {
-      return pythonExcToJS();
+      return pythonExcToJs();
     }
     std::wstring x_str(chars, length);
     PyMem_Free(chars);
@@ -72,7 +73,7 @@ val pythonToJs(PyObject *x) {
     for (size_t i = 0; i < length; ++i) {
       PyObject *item = PySequence_GetItem(x, i);
       if (item == NULL) {
-        return pythonExcToJS();
+        return pythonExcToJs();
       }
       x_array.call<int>("push", pythonToJs(item));
       Py_DECREF(item);
@@ -88,7 +89,7 @@ val pythonToJs(PyObject *x) {
     }
     return x_object;
   } else {
-    return val(x);
+    return val(Py(x));
   }
 }
 

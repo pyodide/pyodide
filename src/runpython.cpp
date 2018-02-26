@@ -59,7 +59,7 @@ val runPython(std::wstring code) {
     }
     ret = PyRun_StringFlags(&*code_utf8.begin(), Py_file_input, globals, locals, &cf);
     if (ret == NULL) {
-      return pythonExcToJS();
+      return pythonExcToJs();
     }
     Py_DECREF(ret);
   }
@@ -78,7 +78,7 @@ val runPython(std::wstring code) {
   }
 
   if (ret == NULL) {
-    return pythonExcToJS();
+    return pythonExcToJs();
   }
 
   // Now copy all the variables over to the Javascript side

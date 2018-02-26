@@ -7,6 +7,7 @@
 #include "jsproxy.hpp"
 #include "js2python.hpp"
 #include "pylocals.hpp"
+#include "pyproxy.hpp"
 #include "python2js.hpp"
 #include "runpython.hpp"
 
@@ -21,7 +22,12 @@ using emscripten::val;
 
 EMSCRIPTEN_BINDINGS(python) {
   emscripten::function("runPython", &runPython);
-  emscripten::class_<PyObject>("PyObject");
+  emscripten::class_<Py>("Py")
+    .function<val>("call", &Py::call)
+    .function<val>("getattr", &Py::getattr)
+    .function<void>("setattr", &Py::setattr)
+    .function<val>("getitem", &Py::getitem)
+    .function<void>("setitem", &Py::setitem);
 }
 
 extern "C" {
@@ -31,6 +37,7 @@ extern "C" {
     Py_InitializeEx(0);
 
     if (JsProxy_Ready() ||
+        jsToPython_Ready() ||
         pythonToJs_Ready() ||
         PyLocals_Ready()) {
       return 1;
