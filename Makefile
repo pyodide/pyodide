@@ -15,18 +15,23 @@ LDFLAGS=$(OPTFLAGS) $(CPYTHON_EMSCRIPTEN_ROOT)/installs/python-$(PYVERSION)/lib/
   --memory-init-file 0
 
 
-all: pyodide.asm.html
+all: build/pyodide.asm.html build/pyodide.js
 
 
-pyodide.asm.html: main.bc root
+build/pyodide.asm.html: src/main.bc src/jsproxy.bc src/js2python.bc src/pylocals.bc \
+                        src/python2js.bc src/runpython.bc root
 	$(CC) -s WASM=1 -s EXPORT_NAME="'pyodide'" --bind -o $@ $(filter %.bc,$^) $(LDFLAGS) \
 		$(foreach d,$(wildcard root/*),--preload-file $d@/$(notdir $d))
 
 
+build/pyodide.js: src/pyodide.js
+	cp $< $@
+
+
 clean:
 	-rm -fr root
-	-rm pyodide.asm.*
-	-rm *.bc
+	-rm build/*
+	-rm src/*.bc
 
 
 %.bc: %.cpp $(CPYTHON_EMSCRIPTEN_ROOT)/installs/python-$(PYVERSION)/lib/python$(PYMINOR)

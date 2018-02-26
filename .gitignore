@@ -1,4 +1,4 @@
 root/
-
-pyodide.asm.*
+build/pyodide.js
+build/pyodide.asm.*
 *.bc
