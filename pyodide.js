@@ -1,4 +1,4 @@
-var Module = {}
+var pyodide = {}
 
 {
     let wasmURL = 'pyodide.asm.wasm';
@@ -7,22 +7,22 @@ var Module = {}
     wasmXHR.responseType = 'arraybuffer';
     wasmXHR.onload = function() {
         if (wasmXHR.status === 200 || wasmXHR.status === 0) {
-            Module.wasmBinary = wasmXHR.response;
+            pyodide.wasmBinary = wasmXHR.response;
         } else {
             var wasmURLBytes = tryParseAsDataURI(wasmURL);
             if (wasmURLBytes) {
-                Module.wasmBinary = wasmURLBytes.buffer;
+                pyodide.wasmBinary = wasmURLBytes.buffer;
             }
         }
 
         var memoryInitializer = 'pyodide.asm.html.mem';
-        if (typeof Module['locateFile'] === 'function') {
-            memoryInitializer = Module['locateFile'](memoryInitializer);
-        } else if (Module['memoryInitializerPrefixURL']) {
-            memoryInitializer = Module['memoryInitializerPrefixURL'] + memoryInitializer;
+        if (typeof pyodide['locateFile'] === 'function') {
+            memoryInitializer = pyodide['locateFile'](memoryInitializer);
+        } else if (pyodide['memoryInitializerPrefixURL']) {
+            memoryInitializer = pyodide['memoryInitializerPrefixURL'] + memoryInitializer;
         }
-        Module['memoryInitializerRequestURL'] = memoryInitializer;
-        var meminitXHR = Module['memoryInitializerRequest'] = new XMLHttpRequest();
+        pyodide['memoryInitializerRequestURL'] = memoryInitializer;
+        var meminitXHR = pyodide['memoryInitializerRequest'] = new XMLHttpRequest();
         meminitXHR.open('GET', memoryInitializer, true);
         meminitXHR.responseType = 'arraybuffer';
         meminitXHR.send(null);

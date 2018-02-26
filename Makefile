@@ -19,7 +19,7 @@ all: pyodide.asm.html
 
 
 pyodide.asm.html: main.bc root
-	$(CC) -s WASM=1 --bind -o $@ $(filter %.bc,$^) $(LDFLAGS) \
+	$(CC) -s WASM=1 -s EXPORT_NAME="'pyodide'" --bind -o $@ $(filter %.bc,$^) $(LDFLAGS) \
 		$(foreach d,$(wildcard root/*),--preload-file $d@/$(notdir $d))
 
 
