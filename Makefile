@@ -1,4 +1,4 @@
-PYVERSION=3.5.2
+PYVERSION=3.6.4
 PYMINOR=$(basename $(PYVERSION))
 CPYTHON_EMSCRIPTEN_ROOT=../cpython-emscripten
 
