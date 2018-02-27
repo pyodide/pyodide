@@ -1,0 +1,24 @@
+*** a/Python/fileutils.c	2016-10-25 02:01:16.270148214 +0100
+--- b/Python/fileutils.c	2016-10-25 02:01:27.086148626 +0100
+***************
+*** 785,790 ****
+--- 785,793 ----
+  static int
+  set_inheritable(int fd, int inheritable, int raise, int *atomic_flag_works)
+  {
++ #ifdef EMSCRIPTEN
++     return 0;
++ #else
+  #ifdef MS_WINDOWS
+      HANDLE handle;
+      DWORD flags;
+***************
+*** 897,902 ****
+--- 900,906 ----
+      }
+      return 0;
+  #endif
++ #endif
+  }
+  
+  /* Make the file descriptor non-inheritable.

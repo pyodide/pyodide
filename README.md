@@ -14,20 +14,7 @@ These instructions were tested on Linux. OSX should be substantively the same.
 
 2. Enable the emscripten environment (`source emsdk_env.sh`)
 
-3. Build [cpython-emscripten](https://github.com/dgym/cpython-emscripten)
-
-   In order to get Python 3.6.4 support, you need to use the py3.6 branch on
-   mdboom's fork.
-
-   ```
-   git clone https://github.com/mdboom/cpython-emscripten.git
-   cd cpython-emscripten
-   git checkout py3.6
-   cd 3.6.4
-   make
-   ```
-
-4. Build this project.
+3. Build this project.
 
    [It assumes that `cpython-emscripten` was checked out and built in a
    directory alongside this project. TODO: Provide a way to specify the

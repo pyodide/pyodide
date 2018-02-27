@@ -1,0 +1,79 @@
+diff --git a/configure b/configure
+index 8cf777e..263719f 100755
+--- a/configure
++++ b/configure
+@@ -3202,6 +3202,9 @@ then
+ 	*-*-cygwin*)
+ 		ac_sys_system=Cygwin
+ 		;;
++	asmjs-*-*)
++		ac_sys_system=Emscripten
++		;;
+ 	*)
+ 		# for now, limit cross builds to known configurations
+ 		MACHDEP="unknown"
+@@ -3248,6 +3251,9 @@ if test "$cross_compiling" = yes; then
+ 	*-*-cygwin*)
+ 		_host_cpu=
+ 		;;
++	asmjs-*-*)
++		_host_cpu=
++		;;
+ 	*)
+ 		# for now, limit cross builds to known configurations
+ 		MACHDEP="unknown"
+diff --git a/configure.ac b/configure.ac
+index 78fe3c7..d7665b4 100644
+--- a/configure.ac
++++ b/configure.ac
+@@ -322,6 +322,9 @@ then
+ 	*-*-cygwin*)
+ 		ac_sys_system=Cygwin
+ 		;;
++	asmjs-*-*)
++		ac_sys_system=Emscripten
++		;;
+ 	*)
+ 		# for now, limit cross builds to known configurations
+ 		MACHDEP="unknown"
+@@ -368,6 +371,9 @@ if test "$cross_compiling" = yes; then
+ 	*-*-cygwin*)
+ 		_host_cpu=
+ 		;;
++	asmjs-*-*)
++		_host_cpu=
++		;;
+ 	*)
+ 		# for now, limit cross builds to known configurations
+ 		MACHDEP="unknown"
+diff --git a/config.sub b/config.sub
+index d654d03..0d8236f 100755
+--- a/config.sub
++++ b/config.sub
+@@ -119,7 +119,8 @@ case $maybe_os in
+   linux-musl* | linux-uclibc* | uclinux-uclibc* | uclinux-gnu* | kfreebsd*-gnu* | \
+   knetbsd*-gnu* | netbsd*-gnu* | \
+   kopensolaris*-gnu* | cloudabi*-eabi* | \
+-  storm-chaos* | os2-emx* | rtmk-nova*)
++  storm-chaos* | os2-emx* | rtmk-nova* | \
++  emscripten)
+     os=-$maybe_os
+     basic_machine=`echo $1 | sed 's/^\(.*\)-\([^-]*-[^-]*\)$/\1/'`
+     ;;
+@@ -254,6 +255,7 @@ case $basic_machine in
+ 	| am33_2.0 \
+ 	| arc | arceb \
+ 	| arm | arm[bl]e | arme[lb] | armv[2-8] | armv[3-8][lb] | armv7[arm] \
++	| asmjs \
+ 	| avr | avr32 \
+ 	| be32 | be64 \
+ 	| bfin \
+@@ -1510,6 +1512,8 @@ case $os in
+ 	-dicos*)
+ 		os=-dicos
+ 		;;
++	-emscripten)
++		;;
+ 	-nacl*)
+ 		;;
+ 	-none)

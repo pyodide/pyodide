@@ -1,12 +1,15 @@
 PYVERSION=3.6.4
 PYMINOR=$(basename $(PYVERSION))
-CPYTHON_EMSCRIPTEN_ROOT=../cpython-emscripten
+CPYTHONROOT=cpython
+CPYTHONLIB=$(CPYTHONROOT)/installs/python-$(PYVERSION)/lib/python$(PYMINOR)
+CPYTHONINC=$(CPYTHONROOT)/installs/python-$(PYVERSION)/include/python$(PYMINOR)
 
 CC=emcc
 CXX=em++
 OPTFLAGS=-O2
-CXXFLAGS=-std=c++14 $(OPTFLAGS) -g -I $(CPYTHON_EMSCRIPTEN_ROOT)/installs/python-$(PYVERSION)/include/python$(PYMINOR)/ -Wno-warn-absolute-paths
-LDFLAGS=$(OPTFLAGS) $(CPYTHON_EMSCRIPTEN_ROOT)/installs/python-$(PYVERSION)/lib/libpython$(PYMINOR).a \
+CXXFLAGS=-std=c++14 $(OPTFLAGS) -g -I $(CPYTHONINC) -Wno-warn-absolute-paths
+LDFLAGS=$(OPTFLAGS) \
+  $(CPYTHONROOT)/installs/python-$(PYVERSION)/lib/libpython$(PYMINOR).a \
   -s "BINARYEN_METHOD='native-wasm,interpret-binary,interpret-asm2wasm'" \
   -s TOTAL_MEMORY=268435456 \
   -s ASSERTIONS=2 \
@@ -34,18 +37,17 @@ clean:
 	-rm src/*.bc
 
 
-%.bc: %.cpp $(CPYTHON_EMSCRIPTEN_ROOT)/installs/python-$(PYVERSION)/lib/python$(PYMINOR)
+%.bc: %.cpp $(CPYTHONLIB)
 	$(CXX) --bind -o $@ $< $(CXXFLAGS)
 
 
-root: $(CPYTHON_EMSCRIPTEN_ROOT)/installs/python-$(PYVERSION)/lib/python$(PYMINOR)
+root: $(CPYTHONLIB)
 	mkdir -p root/lib
-	cp -a $(CPYTHON_EMSCRIPTEN_ROOT)/installs/python-$(PYVERSION)/lib/python$(PYMINOR)/ root/lib
+	cp -a $(CPYTHONLIB)/ root/lib
 	( \
 		cd root/lib/python$(PYMINOR); \
 		rm -fr test distutils ensurepip idlelib __pycache__ tkinter; \
 	)
 
-
-$(CPYTHON_EMSCRIPTEN_ROOT)/installs/python-$(PYVERSION)/lib/python$(PYMINOR):
-	make -C $(CPYTHON_EMSCRIPTEN_ROOT)/$(PYVERSION)
+$(CPYTHONLIB):
+	make -C $(CPYTHONROOT)
