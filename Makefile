@@ -22,7 +22,7 @@ LDFLAGS=$(OPTFLAGS) \
 all: build/pyodide.asm.html build/pyodide.js
 
 
-build/pyodide.asm.html: src/main.bc src/jsproxy.bc src/js2python.bc src/pylocals.bc \
+build/pyodide.asm.html: src/main.bc src/jsimport.bc src/jsproxy.bc src/js2python.bc \
                         src/pyproxy.bc src/python2js.bc src/runpython.bc root
 	$(CC) -s EXPORT_NAME="'pyodide'" --bind -o $@ $(filter %.bc,$^) $(LDFLAGS) \
 		$(foreach d,$(wildcard root/*),--preload-file $d@/$(notdir $d))

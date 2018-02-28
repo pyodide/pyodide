@@ -4,9 +4,9 @@
 #include <Python.h>
 #include <node.h>  // from CPython
 
+#include "jsimport.hpp"
 #include "jsproxy.hpp"
 #include "js2python.hpp"
-#include "pylocals.hpp"
 #include "pyproxy.hpp"
 #include "python2js.hpp"
 #include "runpython.hpp"
@@ -39,7 +39,7 @@ extern "C" {
     if (JsProxy_Ready() ||
         jsToPython_Ready() ||
         pythonToJs_Ready() ||
-        PyLocals_Ready()) {
+        JsImport_Ready()) {
       return 1;
     }
 

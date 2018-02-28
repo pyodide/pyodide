@@ -6,7 +6,7 @@
 #include <Python.h>
 #include <node.h> // from Python
 
-#include "pylocals.hpp"
+#include "jsimport.hpp"
 #include "python2js.hpp"
 
 using emscripten::val;
@@ -57,7 +57,7 @@ val runPython(std::wstring code) {
       *last_line = 0;
       last_line++;
     }
-    ret = PyRun_StringFlags(&*code_utf8.begin(), Py_file_input, globals, locals, &cf);
+    ret = PyRun_StringFlags(&*code_utf8.begin(), Py_file_input, globals, globals, &cf);
     if (ret == NULL) {
       return pythonExcToJs();
     }
@@ -70,28 +70,15 @@ val runPython(std::wstring code) {
     ret = Py_None;
     break;
   case 1:
-    ret = PyRun_StringFlags(&*last_line, Py_eval_input, globals, locals, &cf);
+    ret = PyRun_StringFlags(&*last_line, Py_eval_input, globals, globals, &cf);
     break;
   case 2:
-    ret = PyRun_StringFlags(&*last_line, Py_file_input, globals, locals, &cf);
+    ret = PyRun_StringFlags(&*last_line, Py_file_input, globals, globals, &cf);
     break;
   }
 
   if (ret == NULL) {
     return pythonExcToJs();
-  }
-
-  // Now copy all the variables over to the Javascript side
-  {
-    val js_globals = val::global("window");
-    PyObject *k, *v;
-    Py_ssize_t pos = 0;
-
-    while (PyDict_Next(globals, &pos, &k, &v)) {
-      if (!PyDict_Contains(original_globals, k)) {
-        js_globals.set(pythonToJs(k), pythonToJs(v));
-      }
-    }
   }
 
   val result = pythonToJs(ret);
