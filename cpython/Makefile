@@ -31,7 +31,7 @@ install: $(BUILD)/$(LIB)
 clean:
 	-rm -fr $(HOSTINSTALL)
 	-rm -fr $(BUILD)
-
+	-rm -fr $(INSTALL)
 
 $(TARBALL):
 	[ -d $(ROOT)/downloads ] || mkdir $(ROOT)/downloads
