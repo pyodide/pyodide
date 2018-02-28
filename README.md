@@ -9,15 +9,10 @@ this means Python has full access to the Web APIs.
 
 These instructions were tested on Linux. OSX should be substantively the same.
 
-1. Build emscripten according to [these
-   instructions](https://developer.mozilla.org/en-US/docs/WebAssembly/C_to_wasm).
+1. Build/install emscripten according to its instructions.
 
 2. Enable the emscripten environment (`source emsdk_env.sh`)
 
 3. Build this project.
-
-   [It assumes that `cpython-emscripten` was checked out and built in a
-   directory alongside this project. TODO: Provide a way to specify the
-   cpython-emscripten location]
 
    Type `make`.
