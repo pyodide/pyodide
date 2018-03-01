@@ -20,26 +20,52 @@ static PyObject *JsImport_Call(PyObject *self, PyObject *args, PyObject *kwargs)
     Py_ssize_t n = PySequence_Size(fromlist);
     PyObject *jsmod = PyModule_New("js");
     PyObject *d = PyModule_GetDict(jsmod);
-    for (Py_ssize_t i = 0; i < n; ++i) {
-      PyObject *key = PySequence_GetItem(fromlist, i);
-      if (key == NULL) {
-        return NULL;
-      }
-      char *c = PyUnicode_AsUTF8(key);
-      if (c == NULL) {
-        Py_DECREF(key);
-        return NULL;
-      }
 
-      val jsval = val::global(c);
-      PyObject *pyval = jsToPython(jsval);
-      if (PyDict_SetItem(d, key, pyval)) {
+    bool is_star = false;
+    if (n == 1) {
+      PyObject *firstfromlist = PySequence_GetItem(fromlist, 0);
+      if (PyUnicode_CompareWithASCIIString(firstfromlist, "*") == 0) {
+        is_star = true;
+      }
+      Py_DECREF(firstfromlist);
+    }
+
+    if (is_star) {
+      val window = val::global("window");
+      val keys = val::global("Object")["keys"](window);
+      int gn = keys["length"].as<int>();
+      for (Py_ssize_t i = 0; i < gn; ++i) {
+        PyObject *key = jsToPython(keys[i]);
+        PyObject *pyval = jsToPython(window[keys[i]]);
+        if (PyDict_SetItem(d, key, pyval)) {
+          Py_DECREF(key);
+          Py_DECREF(pyval);
+          return NULL;
+        }
         Py_DECREF(key);
         Py_DECREF(pyval);
-        return NULL;
       }
-      Py_DECREF(key);
-      Py_DECREF(pyval);
+    } else {
+      for (Py_ssize_t i = 0; i < n; ++i) {
+        PyObject *key = PySequence_GetItem(fromlist, i);
+        if (key == NULL) {
+          return NULL;
+        }
+        char *c = PyUnicode_AsUTF8(key);
+        if (c == NULL) {
+          Py_DECREF(key);
+          return NULL;
+        }
+        val jsval = val::global(c);
+        PyObject *pyval = jsToPython(jsval);
+        if (PyDict_SetItem(d, key, pyval)) {
+          Py_DECREF(key);
+          Py_DECREF(pyval);
+          return NULL;
+        }
+        Py_DECREF(key);
+        Py_DECREF(pyval);
+      }
     }
 
     return jsmod;
