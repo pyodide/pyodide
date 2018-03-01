@@ -5,6 +5,5 @@
 
 int JsImport_Ready();
 extern PyObject *globals;
-extern PyObject *original_globals;
 
 #endif /* JSIMPORT_H */

@@ -2,6 +2,11 @@
 
 #include "js2python.hpp"
 
+////////////////////////////////////////////////////////////
+// JsImport
+//
+// Makes 'from js import foo' work in Python.
+
 using emscripten::val;
 
 static PyObject *original__import__;
@@ -97,10 +102,12 @@ int JsImport_Ready() {
   if (m == NULL) {
     return 1;
   }
+
   PyObject *d = PyModule_GetDict(m);
   if (d == NULL) {
     return 1;
   }
+
   original__import__ = PyDict_GetItemString(d, "__import__");
   if (original__import__ == NULL) {
     return 1;
@@ -117,14 +124,18 @@ int JsImport_Ready() {
   }
 
   m = PyImport_AddModule("__main__");
-  if (m == NULL)
+  if (m == NULL) {
     return 1;
+  }
+
   globals = PyModule_GetDict(m);
+  if (globals == NULL) {
+    return 1;
+  }
 
-  m = PyImport_AddModule("builtins");
-  PyDict_Update(globals, PyModule_GetDict(m));
-
-  original_globals = PyDict_Copy(globals);
+  if (PyDict_Update(globals, d)) {
+    return 1;
+  }
 
   return 0;
 }

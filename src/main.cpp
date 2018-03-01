@@ -7,6 +7,7 @@
 #include "jsimport.hpp"
 #include "jsproxy.hpp"
 #include "js2python.hpp"
+#include "pyimport.hpp"
 #include "pyproxy.hpp"
 #include "python2js.hpp"
 #include "runpython.hpp"
@@ -22,6 +23,7 @@ using emscripten::val;
 
 EMSCRIPTEN_BINDINGS(python) {
   emscripten::function("runPython", &runPython);
+  emscripten::function("pyimport", &pyimport);
   emscripten::class_<Py>("Py")
     .function<val>("call", &Py::call)
     .function<val>("getattr", &Py::getattr)
