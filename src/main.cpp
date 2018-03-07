@@ -21,9 +21,24 @@ using emscripten::val;
 // Conversions
 
 
+val repr(val v) {
+  PyObject *pyv = jsToPython(v);
+  PyObject *r = PyObject_Repr(pyv);
+  if (r == NULL) {
+    return pythonExcToJs();
+  }
+  PyObject_Print(r, 0, 0);
+  val result = pythonToJs(r);
+  Py_DECREF(r);
+  Py_DECREF(pyv);
+  return result;
+}
+
+
 EMSCRIPTEN_BINDINGS(python) {
   emscripten::function("runPython", &runPython);
   emscripten::function("pyimport", &pyimport);
+  emscripten::function("repr", &repr);
   emscripten::class_<Py>("Py")
     .function<val>("call", &Py::call)
     .function<val>("getattr", &Py::getattr)

@@ -1,6 +1,7 @@
 #include "js2python.hpp"
 
 #include "jsproxy.hpp"
+#include "pyproxy.hpp"
 
 using emscripten::val;
 
@@ -20,7 +21,14 @@ PyObject *jsToPython(val x) {
     Py_INCREF(Py_None);
     return Py_None;
   } else {
-    return JsProxy_cnew(x);
+    try {
+      Py py_x = x.as<Py>();
+      PyObject *pypy_x = py_x.x;
+      Py_INCREF(pypy_x);
+      return pypy_x;
+    } catch (...) {
+      return JsProxy_cnew(x);
+    }
   }
 }
 

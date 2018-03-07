@@ -10,9 +10,9 @@
 #include "python2js.hpp"
 
 class Py {
+public:
   PyObject *x;
 
-public:
   Py(PyObject *obj);
   Py(const Py& o);
   ~Py();
