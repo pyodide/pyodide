@@ -10,7 +10,8 @@ val pythonExcToJs() {
   PyObject *type;
   PyObject *value;
   PyObject *traceback;
-
+  bool no_traceback = false;
+  
   PyErr_Fetch(&type, &value, &traceback);
   PyErr_NormalizeException(&type, &value, &traceback);
 
@@ -20,15 +21,27 @@ val pythonExcToJs() {
   if (tbmod == NULL) {
     excval = val("Couldn't get traceback module");
   } else {
-    PyObject *format_exception = PyObject_GetAttrString(tbmod, "format_exception");
+    PyObject *format_exception;
+    if (traceback == NULL || traceback == Py_None) {
+      no_traceback = true;
+      format_exception = PyObject_GetAttrString(tbmod, "format_exception_only");
+    } else {
+      format_exception = PyObject_GetAttrString(tbmod, "format_exception");
+    }
     if (format_exception == NULL) {
       excval = val("Couldn't get format_exception function");
     } else {
-      PyObject *pylines = PyObject_CallFunctionObjArgs
-        (format_exception, type, value, traceback, NULL);
-      PyErr_Print();
+      PyObject *pylines;
+      if (no_traceback) {
+        pylines = PyObject_CallFunctionObjArgs
+          (format_exception, type, value, NULL);
+      } else {
+        pylines = PyObject_CallFunctionObjArgs
+          (format_exception, type, value, traceback, NULL);
+      }
       if (pylines == NULL) {
         excval = val("Error calling traceback.format_exception");
+        PyErr_Print();
       } else {
         PyObject *newline = PyUnicode_FromString("\n");
         PyObject *pystr = PyUnicode_Join(newline, pylines);
@@ -42,12 +55,13 @@ val pythonExcToJs() {
     Py_DECREF(tbmod);
   }
 
-  val Error = val::global("Error");
-  val exc = Error.new_(excval);
+  val exc = val::global("Error").new_(excval);
 
   Py_DECREF(type);
   Py_DECREF(value);
-  Py_DECREF(traceback);
+  Py_XDECREF(traceback);
+
+  PyErr_Clear();
 
   return exc;
 }
