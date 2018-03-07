@@ -17,18 +17,23 @@ PyObject *jsToPython(val x) {
   } else if (xType.equals(val("number"))) {
     double x_double = x.as<double>();
     return PyFloat_FromDouble(x_double);
-  } else if (xType.equals(val("undefined"))) {
+  } else if (x.isUndefined()) {
     Py_INCREF(Py_None);
     return Py_None;
+  } else if (x.isTrue()) {
+    Py_INCREF(Py_True);
+    return Py_True;
+  } else if (x.isFalse()) {
+    Py_INCREF(Py_False);
+    return Py_False;
+  } else if (!x["$$"].isUndefined() &&
+             x["$$"]["ptrType"]["name"].equals(val("Py*"))) { 
+    Py py_x = x.as<Py>();
+    PyObject *pypy_x = py_x.x;
+    Py_INCREF(pypy_x);
+    return pypy_x;
   } else {
-    try {
-      Py py_x = x.as<Py>();
-      PyObject *pypy_x = py_x.x;
-      Py_INCREF(pypy_x);
-      return pypy_x;
-    } catch (...) {
-      return JsProxy_cnew(x);
-    }
+    return JsProxy_cnew(x);
   }
 }
 
