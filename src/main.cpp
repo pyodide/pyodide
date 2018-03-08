@@ -27,7 +27,6 @@ val repr(val v) {
   if (r == NULL) {
     return pythonExcToJs();
   }
-  PyObject_Print(r, 0, 0);
   val result = pythonToJs(r);
   Py_DECREF(r);
   Py_DECREF(pyv);
