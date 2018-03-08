@@ -33,4 +33,25 @@ var pyodide = {}
 
     };
     wasmXHR.send(null);
+
+    if (window.iodide !== undefined) {
+        iodide.addLanguage({
+            name: 'py',
+            displayName: 'Python',
+            keybinding: 'p',
+            evaluate: code => pyodide.runPython(code),
+        });
+
+        iodide.addOutputHandler({
+            shouldHandle: value => (
+                value.$$ !== undefined &&
+                    value.$$.ptrType.name === 'Py*'
+            ),
+
+            render: value => (
+                '<span><span role="img" aria-label="py">🐍</span>' +
+                    pyodide.repr(value).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;') +
+                    '</span>'),
+        });
+    }
 }
