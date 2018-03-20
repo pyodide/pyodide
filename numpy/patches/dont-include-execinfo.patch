@@ -1,0 +1,15 @@
+diff --git a/numpy/core/src/multiarray/temp_elide.c b/numpy/core/src/multiarray/temp_elide.c
+index e5175f162..13850b18b 100644
+--- a/numpy/core/src/multiarray/temp_elide.c
++++ b/numpy/core/src/multiarray/temp_elide.c
+@@ -82,9 +82,9 @@
+  * during in-place operations
+  */
+ #define NPY_MIN_ELIDE_BYTES (32)
++#include <execinfo.h>
+ #endif
+ #include <dlfcn.h>
+-#include <execinfo.h>
+ 
+ /*
+  * linear search pointer in table

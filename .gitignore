@@ -3,6 +3,12 @@ build/pyodide.js
 build/pyodide.asm.*
 *.bc
 *.a
+
 cpython/build
 cpython/downloads
 cpython/installs
+
+numpy/build
+numpy/host
+numpy/downloads
+numpy/.patched

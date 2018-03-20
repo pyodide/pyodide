@@ -1,0 +1,39 @@
+diff --git a/numpy/core/src/multiarray/alloc.c b/numpy/core/src/multiarray/alloc.c
+index f8305d115..369a14012 100644
+--- a/numpy/core/src/multiarray/alloc.c
++++ b/numpy/core/src/multiarray/alloc.c
+@@ -277,3 +277,9 @@ PyDataMem_RENEW(void *ptr, size_t size)
+     }
+     return result;
+ }
++
++NPY_NO_EXPORT void npy_init_cache() {
++  memset(datacache, 0, sizeof(cache_bucket) * NBUCKETS);
++  memset(dimcache, 0, sizeof(cache_bucket) * NBUCKETS_DIM);
++  _PyDataMem_eventhook = NULL;
++}
+diff --git a/numpy/core/src/multiarray/alloc.h b/numpy/core/src/multiarray/alloc.h
+index 2b69efc35..10069503d 100644
+--- a/numpy/core/src/multiarray/alloc.h
++++ b/numpy/core/src/multiarray/alloc.h
+@@ -33,4 +33,7 @@ npy_free_cache_dim_array(PyArrayObject * arr)
+     npy_free_cache_dim(PyArray_DIMS(arr), PyArray_NDIM(arr));
+ }
+ 
++NPY_NO_EXPORT void
++npy_init_cache(void);
++
+ #endif
+diff --git a/numpy/core/src/multiarray/multiarraymodule.c b/numpy/core/src/multiarray/multiarraymodule.c
+index 8e7352e4f..a713679e8 100644
+--- a/numpy/core/src/multiarray/multiarraymodule.c
++++ b/numpy/core/src/multiarray/multiarraymodule.c
+@@ -4747,6 +4747,8 @@ PyMODINIT_FUNC initmultiarray(void) {
+         goto err;
+     }
+ 
++    npy_init_cache();
++
+ #if defined(MS_WIN64) && defined(__GNUC__)
+   PyErr_WarnEx(PyExc_Warning,
+         "Numpy built with MINGW-W64 on Windows 64 bits is experimental, " \
