@@ -27,7 +27,7 @@ PyObject *jsToPython(val x) {
     Py_INCREF(Py_False);
     return Py_False;
   } else if (!x["$$"].isUndefined() &&
-             x["$$"]["ptrType"]["name"].equals(val("Py*"))) { 
+             x["$$"]["ptrType"]["name"].equals(val("Py*"))) {
     Py py_x = x.as<Py>();
     PyObject *pypy_x = py_x.x;
     Py_INCREF(pypy_x);
@@ -70,6 +70,7 @@ PyObject *jsToPythonKwargs(val kwargs) {
     PyObject *k = jsToPython(keys[i]);
     PyObject *v = jsToPython(kwargs[keys[i]]);
     if (PyDict_SetItem(pykwargs, k, v)) {
+      Py_DECREF(pykwargs);
       return NULL;
     }
     Py_DECREF(k);
