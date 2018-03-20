@@ -11,7 +11,7 @@ val pythonExcToJs() {
   PyObject *value;
   PyObject *traceback;
   bool no_traceback = false;
-  
+
   PyErr_Fetch(&type, &value, &traceback);
   PyErr_NormalizeException(&type, &value, &traceback);
 
@@ -19,7 +19,7 @@ val pythonExcToJs() {
 
   PyObject *tbmod = PyImport_ImportModule("traceback");
   if (tbmod == NULL) {
-    excval = val("Couldn't get traceback module");
+    excval = pythonToJs(PyObject_Repr(value));
   } else {
     PyObject *format_exception;
     if (traceback == NULL || traceback == Py_None) {
