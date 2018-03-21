@@ -59,6 +59,8 @@ extern "C" {
       return 1;
     }
 
+    printf("Python initialization complete\n");
+
     emscripten_exit_with_live_runtime();
     return 0;
   }
