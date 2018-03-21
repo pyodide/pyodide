@@ -28,6 +28,7 @@ NUMPY_LIBS=\
   $(NUMPY_ROOT)/fft/fftpack_lite.so \
 	$(NUMPY_ROOT)/random/mtrand.so
 
+SITEPACKAGES=root/lib/python$(PYMINOR)/site-packages
 
 all: build/pyodide.asm.html build/pyodide.js
 
@@ -58,15 +59,23 @@ clean:
 	$(CXX) --bind -o $@ $< $(CXXFLAGS)
 
 
-root/.built: $(CPYTHONLIB) $(NUMPY_LIBS)
+root/.built: \
+		$(CPYTHONLIB) \
+		$(NUMPY_LIBS) \
+		src/lazy_import.py \
+		src/sitecustomize.py
+	[ -d root ] && rm -rf root
 	mkdir -p root/lib
 	cp -a $(CPYTHONLIB)/ root/lib
-	cp -a numpy/build/numpy root/lib/python$(PYMINOR)/site-packages
-	rm -fr root/lib/python$(PYMINOR)/site-packages/numpy/distutils
 	( \
 		cd root/lib/python$(PYMINOR); \
 		rm -fr test distutils ensurepip idlelib __pycache__ tkinter; \
 	)
+	cp -a numpy/build/numpy $(SITEPACKAGES)
+	rm -fr $(SITEPACKAGES)/numpy/distutils
+	mkdir $(SITEPACKAGES)/lazy_import
+	cp src/lazy_import.py $(SITEPACKAGES)
+	cp src/sitecustomize.py $(SITEPACKAGES)
 	touch root/.built
 
 
