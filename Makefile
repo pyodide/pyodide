@@ -63,19 +63,22 @@ root/.built: \
 		$(CPYTHONLIB) \
 		$(NUMPY_LIBS) \
 		src/lazy_import.py \
-		src/sitecustomize.py
+		src/sitecustomize.py \
+		remove_modules.txt
 	[ -d root ] && rm -rf root
 	mkdir -p root/lib
 	cp -a $(CPYTHONLIB)/ root/lib
-	( \
-		cd root/lib/python$(PYMINOR); \
-		rm -fr test distutils ensurepip idlelib __pycache__ tkinter; \
-	)
 	cp -a numpy/build/numpy $(SITEPACKAGES)
 	rm -fr $(SITEPACKAGES)/numpy/distutils
-	mkdir $(SITEPACKAGES)/lazy_import
 	cp src/lazy_import.py $(SITEPACKAGES)
 	cp src/sitecustomize.py $(SITEPACKAGES)
+	( \
+		cd root/lib/python$(PYMINOR); \
+		rm -fr `cat ../../../remove_modules.txt`; \
+		rm encodings/cp*.py; \
+		rm encodings/mac_*.py; \
+		find -type d -name __pycache__ -prune -exec rm -rf {} \; \
+	)
 	touch root/.built
 
 
