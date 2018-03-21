@@ -45,6 +45,7 @@ LDFLAGS=-Werror \
 
 
 all: \
+	$(BUILD)/numpy/__init__.py \
 	$(BUILDCORE)/multiarray.so \
 	$(BUILDCORE)/umath.so \
 	$(BUILDLINALG)/lapack_lite.so \
@@ -70,18 +71,18 @@ $(HOSTDIR)/setup.py: $(ZIPFILE)
 	touch $(HOSTDIR)/setup.py
 
 
-$(GENSRC)/multiarray/arraytypes.c: $(ROOT)/.patched
+$(HOSTBUILD)/lib.$(PLATFORMSLUG)/numpy/__init__.py: $(ROOT)/.patched
 	( \
 	  cd $(HOSTDIR); \
     $(HOSTPYTHON) setup.py build \
 	)
 
 
-$(BUILD)/numpy/__init__.py: $(GENSRC)/multiarray/arraytypes.c
+$(BUILD)/numpy/__init__.py: $(HOSTBUILD)/lib.$(PLATFORMSLUG)/numpy/__init__.py
 	[ -d $(BUILD) ] || mkdir $(BUILD)
 	cp -r $(HOSTBUILD)/lib.$(PLATFORMSLUG)/numpy $(BUILD) && \
 	cd $(BUILD); find . -name "*.so" -type f -delete
-
+	touch $(BUILD)/numpy/__init__.py
 
 $(ROOT)/.patched: $(HOSTDIR)/setup.py
 	cat patches/*.patch | (cd $(HOSTDIR) ; patch -p1)

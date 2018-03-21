@@ -33,13 +33,10 @@ SITEPACKAGES=root/lib/python$(PYMINOR)/site-packages
 all: build/pyodide.asm.html build/pyodide.js
 
 
-build:
-	[ -d build ] || mkdir build
-
-
 build/pyodide.asm.html: src/main.bc src/jsimport.bc src/jsproxy.bc src/js2python.bc \
                         src/pyimport.bc src/pyproxy.bc src/python2js.bc \
-												src/runpython.bc root/.built build
+												src/runpython.bc root/.built
+	[ -d build ] || mkdir build
 	$(CC) -s EXPORT_NAME="'pyodide'" --bind -o $@ $(filter %.bc,$^) $(LDFLAGS) \
 		$(foreach d,$(wildcard root/*),--preload-file $d@/$(notdir $d))
 
@@ -52,7 +49,7 @@ clean:
 	rm -fr root
 	rm build/*
 	rm src/*.bc
-	echo "CPython and Numpy builds were not cleaned"
+	echo "CPython and Numpy builds are not cleaned. cd into those directories to do so."
 
 
 %.bc: %.cpp $(CPYTHONLIB)
@@ -65,7 +62,7 @@ root/.built: \
 		src/lazy_import.py \
 		src/sitecustomize.py \
 		remove_modules.txt
-	[ -d root ] && rm -rf root
+	rm -rf root
 	mkdir -p root/lib
 	cp -a $(CPYTHONLIB)/ root/lib
 	cp -a numpy/build/numpy $(SITEPACKAGES)
