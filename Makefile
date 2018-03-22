@@ -41,7 +41,7 @@ build/pyodide.asm.html: src/main.bc src/jsimport.bc src/jsproxy.bc src/js2python
 		$(foreach d,$(wildcard root/*),--preload-file $d@/$(notdir $d))
 
 
-build/pyodide.js: src/pyodide.js build
+build/pyodide.js: src/pyodide.js
 	cp $< $@
 
 
@@ -61,6 +61,7 @@ root/.built: \
 		$(NUMPY_LIBS) \
 		src/lazy_import.py \
 		src/sitecustomize.py \
+		src/webbrowser.py \
 		remove_modules.txt
 	rm -rf root
 	mkdir -p root/lib
@@ -69,6 +70,7 @@ root/.built: \
 	rm -fr $(SITEPACKAGES)/numpy/distutils
 	cp src/lazy_import.py $(SITEPACKAGES)
 	cp src/sitecustomize.py $(SITEPACKAGES)
+	cp src/webbrowser.py root/lib/python$(PYMINOR)
 	( \
 		cd root/lib/python$(PYMINOR); \
 		rm -fr `cat ../../../remove_modules.txt`; \
