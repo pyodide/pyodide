@@ -12,7 +12,6 @@ socket.py
 sqlite3
 subprocess.py
 test
-threading.py
 tkinter
 turtle.py
 turtledemo
