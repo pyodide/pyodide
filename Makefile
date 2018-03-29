@@ -8,15 +8,15 @@ CC=emcc
 CXX=em++
 OPTFLAGS=-O3
 CXXFLAGS=-std=c++14 $(OPTFLAGS) -g -I$(CPYTHONINC) -Wno-warn-absolute-paths
-LDFLAGS=$(OPTFLAGS) \
+LDFLAGS=\
 	$(CPYTHONROOT)/installs/python-$(PYVERSION)/lib/libpython$(PYMINOR).a \
   -s "BINARYEN_METHOD='native-wasm'" \
   -s TOTAL_MEMORY=268435456 \
 	-s MAIN_MODULE=1 \
-  -s ASSERTIONS=2 \
 	-s EMULATED_FUNCTION_POINTERS=1 \
   -s EMULATE_FUNCTION_POINTER_CASTS=1 \
   -s EXPORTED_FUNCTIONS='["_main"]' \
+  -s WASM=1 \
   --memory-init-file 0
 
 NUMPY_ROOT=numpy/build/numpy
@@ -25,7 +25,6 @@ NUMPY_LIBS=\
 	$(NUMPY_ROOT)/core/umath.so \
 	$(NUMPY_ROOT)/linalg/lapack_lite.so \
 	$(NUMPY_ROOT)/linalg/_umath_linalg.so \
-  $(NUMPY_ROOT)/fft/fftpack_lite.so \
 	$(NUMPY_ROOT)/random/mtrand.so
 
 SITEPACKAGES=root/lib/python$(PYMINOR)/site-packages
@@ -85,5 +84,5 @@ $(CPYTHONLIB):
 	make -C $(CPYTHONROOT)
 
 
-$(NUMPY_LIBS):
+$(NUMPY_LIBS): $(CPYTHONLIB)
 	make -C numpy

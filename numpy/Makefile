@@ -36,11 +36,12 @@ RANDOM_SRC=$(HOSTDIR)/numpy/random
 CC=emcc
 AR=emar
 CFLAGS=-O3 -Werror -std=c99 -DNPY_INTERNAL_BUILD=1 -DHAVE_NPY_CONFIG_H=1 -D_FILE_OFFSET_BITS=64 -D_LARGEFILE_SOURCE=1 -D_LARGEFILE64_SOURCE=1 -I$(ROOT)/config -I$(INCLUDE) -I$(GENINCLUDE)/numpy -I$(INCLUDE)/private -I$(SRC) -I$(SRC)/.. -I$(SRC)/private -I$(SRC)/npymath -I$(SRC)/multiarray -I$(SRC)/umath -I$(SRC)/npysort -I$(PYTHONINCLUDE) -I$(GENSRC)/private -I$(GENSRC)/npymath -I$(GENSRC)/umath
-LDFLAGS=-Werror \
+LDFLAGS=\
+	-Werror \
   -s EMULATED_FUNCTION_POINTERS=1 \
   -s EMULATE_FUNCTION_POINTER_CASTS=1 \
-  -s ASSERTIONS=2 \
   -s SIDE_MODULE=1 \
+	-s WASM=1 \
   --memory-init-file 0
 
 
@@ -50,7 +51,6 @@ all: \
 	$(BUILDCORE)/umath.so \
 	$(BUILDLINALG)/lapack_lite.so \
 	$(BUILDLINALG)/_umath_linalg.so \
-	$(BUILDFFT)/fftpack_lite.so \
 	$(BUILDRANDOM)/mtrand.so
 
 
@@ -82,7 +82,7 @@ $(BUILD)/numpy/__init__.py: $(HOSTBUILD)/lib.$(PLATFORMSLUG)/numpy/__init__.py
 	[ -d $(BUILD) ] || mkdir $(BUILD)
 	cp -r $(HOSTBUILD)/lib.$(PLATFORMSLUG)/numpy $(BUILD) && \
 	cd $(BUILD); find . -name "*.so" -type f -delete
-	touch $(BUILD)/numpy/__init__.py
+
 
 $(ROOT)/.patched: $(HOSTDIR)/setup.py
 	cat patches/*.patch | (cd $(HOSTDIR) ; patch -p1)
@@ -171,16 +171,20 @@ UMATH_SRC=\
 	$(SRC)/umath/umathmodule.bc \
 
 
-LAPACK_LITE_SRC=\
-	$(LINALG_SRC)/lapack_litemodule.bc \
+LAPACK_BLAS_SRC=\
 	$(LINALG_SRC)/lapack_lite/python_xerbla.bc \
 	$(LINALG_SRC)/lapack_lite/f2c_z_lapack.bc \
 	$(LINALG_SRC)/lapack_lite/f2c_d_lapack.bc \
 	$(LINALG_SRC)/lapack_lite/f2c_s_lapack.bc \
+	$(LINALG_SRC)/lapack_lite/f2c_c_lapack.bc \
 	$(LINALG_SRC)/lapack_lite/f2c_lapack.bc \
 	$(LINALG_SRC)/lapack_lite/f2c_blas.bc \
 	$(LINALG_SRC)/lapack_lite/f2c_config.bc \
 	$(LINALG_SRC)/lapack_lite/f2c.bc
+
+
+LAPACK_LITE_SRC=\
+	$(LINALG_SRC)/lapack_litemodule.bc
 
 
 UMATH_LINALG_SRC=\
@@ -200,33 +204,33 @@ MTRAND_SRC=\
 
 
 $(BUILDCORE)/multiarray.so: $(MULTIARRAY_SRC) $(NPYMATH_SRC) $(NPYSORT_SRC)
-	$(CC) $(LDFLAGS) $^ -o $(BUILDCORE)/multiarray.js
-	mv $(BUILDCORE)/multiarray.js $(BUILDCORE)/multiarray.so
+	$(CC) $(LDFLAGS) $^ -o $(BUILDCORE)/multiarray.wasm
+	mv $(BUILDCORE)/multiarray.wasm $(BUILDCORE)/multiarray.so
 
 
 $(BUILDCORE)/umath.so: $(UMATH_SRC) $(NPYMATH_SRC)
-	$(CC) $(LDFLAGS) $^ -o $(BUILDCORE)/umath.js
-	mv $(BUILDCORE)/umath.js $(BUILDCORE)/umath.so
+	$(CC) $(LDFLAGS) $^ -o $(BUILDCORE)/umath.wasm
+	mv $(BUILDCORE)/umath.wasm $(BUILDCORE)/umath.so
 
 
-$(BUILDLINALG)/lapack_lite.so: $(LAPACK_LITE_SRC)
-	$(CC) $(LDFLAGS) $^ -o $(BUILDLINALG)/lapack_lite.js
-	mv $(BUILDLINALG)/lapack_lite.js $(BUILDLINALG)/lapack_lite.so
+$(BUILDLINALG)/lapack_lite.so: $(LAPACK_LITE_SRC) $(LAPACK_BLAS_SRC) $(NPYMATH_SRC)
+	$(CC) $(LDFLAGS) $^ -o $(BUILDLINALG)/lapack_lite.wasm
+	mv $(BUILDLINALG)/lapack_lite.wasm $(BUILDLINALG)/lapack_lite.so
 
 
-$(BUILDLINALG)/_umath_linalg.so: $(UMATH_LINALG_SRC)
-	$(CC) $(LDFLAGS) $^ -o $(BUILDLINALG)/_umath_linalg.js
-	mv $(BUILDLINALG)/_umath_linalg.js $(BUILDLINALG)/_umath_linalg.so
+$(BUILDLINALG)/_umath_linalg.so: $(UMATH_LINALG_SRC) $(LAPACK_BLAS_SRC) $(NPYMATH_SRC)
+	$(CC) $(LDFLAGS) $^ -o $(BUILDLINALG)/_umath_linalg.wasm
+	mv $(BUILDLINALG)/_umath_linalg.wasm $(BUILDLINALG)/_umath_linalg.so
 
 
 $(BUILDFFT)/fftpack_lite.so: $(FFTPACK_LITE_SRC)
-	$(CC) $(LDFLAGS) $^ -o $(BUILDFFT)/fftpack_lite.js
-	mv $(BUILDFFT)/fftpack_lite.js $(BUILDFFT)/fftpack_lite.so
+	$(CC) $(LDFLAGS) $^ -o $(BUILDFFT)/fftpack_lite.wasm
+	mv $(BUILDFFT)/fftpack_lite.wasm $(BUILDFFT)/fftpack_lite.so
 
 
 $(BUILDRANDOM)/mtrand.so: $(MTRAND_SRC)
-	$(CC) $(LDFLAGS) $^ -o $(BUILDRANDOM)/mtrand.js
-	mv $(BUILDRANDOM)/mtrand.js $(BUILDRANDOM)/mtrand.so
+	$(CC) $(LDFLAGS) $^ -o $(BUILDRANDOM)/mtrand.wasm
+	mv $(BUILDRANDOM)/mtrand.wasm $(BUILDRANDOM)/mtrand.so
 
 
 %.bc: %.c $(BUILD)/numpy/__init__.py
