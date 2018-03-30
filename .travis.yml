@@ -1,5 +1,5 @@
 language: python
-sudo: false
+sudo: required
 cache:
   pip: true
   ccache: true
@@ -7,6 +7,12 @@ cache:
     - emsdk/emsdk
 addons:
   firefox: latest
+  apt:
+    sources:
+      - ubuntu-toolchain-r-test
+    packages:
+      - gcc-7
+      - g++-7
 python:
   - '3.6'
 before_install:
@@ -17,5 +23,7 @@ before_install:
 install:
   - pip install pytest selenium
 script:
+  - sudo ln -s /usr/bin/gcc-7 /usr/local/bin/gcc
+  - sudo ln -s /usr/bin/g++-7 /usr/local/bin/g++
   - make
   - make test
