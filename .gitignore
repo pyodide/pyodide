@@ -2,6 +2,7 @@
 *.a
 .pytest_cache/
 __pycache__
+geckodriver.log
 
 /root/
 /build/
