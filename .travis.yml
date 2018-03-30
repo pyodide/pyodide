@@ -1,0 +1,21 @@
+language: python
+sudo: false
+cache:
+  pip: true
+  ccache: true
+  directories:
+    - emsdk/emsdk
+addons:
+  firefox: latest
+python:
+  - '3.6'
+before_install:
+  - wget https://github.com/mozilla/geckodriver/releases/download/v0.20.0/geckodriver-v0.20.0-linux64.tar.gz
+  - mkdir geckodriver
+  - tar -xvf geckodriver-v0.20.0-linux64.tar.gz -C geckodriver
+  - export PATH=$PATH:$PWD/geckodriver
+install:
+  - pip install pytest selenium
+script:
+  - make
+  - make test

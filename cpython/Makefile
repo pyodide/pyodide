@@ -1,3 +1,6 @@
+PYODIDE_ROOT=$(abspath ..)
+include ../Makefile.envs
+
 PYVERSION=3.6.4
 PYMINOR=$(basename $(PYVERSION))
 

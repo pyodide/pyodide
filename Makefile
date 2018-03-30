@@ -1,3 +1,6 @@
+PYODIDE_ROOT=$(abspath .)
+include Makefile.envs
+
 PYVERSION=3.6.4
 PYMINOR=$(basename $(PYVERSION))
 CPYTHONROOT=cpython
@@ -29,7 +32,7 @@ NUMPY_LIBS=\
 
 SITEPACKAGES=root/lib/python$(PYMINOR)/site-packages
 
-all: build/pyodide.asm.html build/pyodide.js
+all: emsdk/emsdk build/pyodide.asm.html build/pyodide.js
 
 
 build/pyodide.asm.html: src/main.bc src/jsimport.bc src/jsproxy.bc src/js2python.bc \
@@ -44,7 +47,11 @@ build/pyodide.js: src/pyodide.js
 	cp $< $@
 
 
-test: all
+build/test.html: src/test.html
+	cp $< $@
+
+
+test: all build/test.html
 	py.test test
 
 
@@ -84,9 +91,13 @@ root/.built: \
 	touch root/.built
 
 
-$(CPYTHONLIB):
+$(CPYTHONLIB): emsdk/emsdk
 	make -C $(CPYTHONROOT)
 
 
 $(NUMPY_LIBS): $(CPYTHONLIB)
 	make -C numpy
+
+
+emsdk/emsdk:
+	make -C emsdk

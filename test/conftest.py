@@ -13,7 +13,7 @@ BUILD_PATH = TEST_PATH / '..' / 'build'
 
 class PyodideInited:
     def __call__(self, driver):
-        inited = driver.execute_script("return pyodide.runPython")
+        inited = driver.execute_script("return window.pyodide && window.pyodide.runPython")
         return inited is not None
 
 

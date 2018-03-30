@@ -9,13 +9,13 @@ this means Python has full access to the Web APIs.
 
 These instructions were tested on Linux. OSX should be substantively the same.
 
-1. Build/install emscripten according to its instructions.
+Make sure the prerequisites for emsdk are installed.
 
-2. Enable the emscripten environment (`source emsdk_env.sh`)
+Type `make`.
 
-3. Build this project.
-
-   Type `make`.
+(The build downloads and builds a local, patched version of emsdk, then
+downloads and builds Python and Numpy, and finally builds the pyodide-specific
+code.)
 
 # Testing
 
