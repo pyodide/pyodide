@@ -16,3 +16,14 @@ These instructions were tested on Linux. OSX should be substantively the same.
 3. Build this project.
 
    Type `make`.
+
+# Testing
+
+1. Install the following dependencies into the default Python installation:
+
+   `pip install pytest selenium`
+
+2. Install [geckodriver](https://github.com/mozilla/geckodriver/releases) somewhere
+   on your `PATH`.
+
+3. `make test`

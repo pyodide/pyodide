@@ -44,6 +44,10 @@ build/pyodide.js: src/pyodide.js
 	cp $< $@
 
 
+test: all
+	py.test test
+
+
 clean:
 	rm -fr root
 	rm build/*

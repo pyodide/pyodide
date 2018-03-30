@@ -1,14 +1,16 @@
-root/
-build/pyodide.js
-build/pyodide.asm.*
 *.bc
 *.a
+.pytest_cache/
+__pycache__
 
-cpython/build
-cpython/downloads
-cpython/installs
+/root/
+/build/
 
-numpy/build
-numpy/host
-numpy/downloads
-numpy/.patched
+/cpython/build
+/cpython/downloads
+/cpython/installs
+
+/numpy/build
+/numpy/host
+/numpy/downloads
+/numpy/.patched
