@@ -32,7 +32,7 @@ NUMPY_LIBS=\
 
 SITEPACKAGES=root/lib/python$(PYMINOR)/site-packages
 
-all: emsdk/emsdk build/pyodide.asm.html build/pyodide.js
+all: build/pyodide.asm.html build/pyodide.js
 
 
 build/pyodide.asm.html: src/main.bc src/jsimport.bc src/jsproxy.bc src/js2python.bc \
@@ -91,7 +91,7 @@ root/.built: \
 	touch root/.built
 
 
-$(CPYTHONLIB): emsdk/emsdk
+$(CPYTHONLIB): emsdk/emsdk/emsdk_env.sh
 	make -C $(CPYTHONROOT)
 
 
@@ -99,5 +99,5 @@ $(NUMPY_LIBS): $(CPYTHONLIB)
 	make -C numpy
 
 
-emsdk/emsdk:
+emsdk/emsdk/emsdk_env.sh:
 	make -C emsdk
