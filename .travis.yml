@@ -13,7 +13,7 @@ before_install:
   - mkdir geckodriver
   - tar -xvf geckodriver-v0.20.0-linux64.tar.gz -C geckodriver
   - export PATH=$PATH:$PWD/geckodriver
-  - cd emsdk; wget https://github.com/iodide-project/pyodide-demo/raw/toolchain/pyodide_toolchain.tgz; tar -xvf pyodide_toolchain.tgz
+  - cd $TRAVIS_BUILD_DIR/emsdk; wget https://github.com/iodide-project/pyodide-demo/raw/toolchain/pyodide_toolchain.tgz; tar -xvf pyodide_toolchain.tgz; cd $TRAVIS_BUILD_DIR
 install:
   - pip install pytest selenium
 script:
