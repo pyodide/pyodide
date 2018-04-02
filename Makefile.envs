@@ -1,6 +1,7 @@
 export PATH += $(PYODIDE_ROOT)/emsdk/emsdk:$(PYODIDE_ROOT)/emsdk/emsdk/clang/fastcomp/build_incoming_64/bin:$(PYODIDE_ROOT)/emsdk/emsdk/node/8.9.1_64bit/bin:$(PYODIDE_ROOT)/emsdk/emsdk/emscripten/incoming:$(PYODIDE_ROOT)/emsdk/emsdk/binaryen/master_64bit_binaryen/bin:$PATH
 
-EMSDK = $(PYODIDE_ROOT)/emsdk/emsdk
-EM_CONFIG = $(PYODIDE_ROOT)/emsdk/emsdk/.emscripten
-EMSCRIPTEN = $(PYODIDE_ROOT)/emsdk/emsdk/emscripten/incoming
-BINARYEN_ROOT = $(PYODIDE_ROOT)/emsdk/emsdk/binaryen/master_64bit_binaryen
+export EMSDK = $(PYODIDE_ROOT)/emsdk/emsdk
+export EM_CONFIG = $(PYODIDE_ROOT)/emsdk/emsdk/.emscripten
+export EM_CACHE = $(PYODIDE_ROOT)/emsdk/emsdk/.emscripten_cache
+export EMSCRIPTEN = $(PYODIDE_ROOT)/emsdk/emsdk/emscripten/incoming
+export BINARYEN_ROOT = $(PYODIDE_ROOT)/emsdk/emsdk/binaryen/master_64bit_binaryen
