@@ -10,7 +10,6 @@ def test_webbrowser(selenium):
     selenium.run("import antigravity")
     time.sleep(2)
     assert len(selenium.driver.window_handles) == 2
-    assert any('xkcd.com' in x for x in selenium.urls)
 
 
 def test_print(selenium):
