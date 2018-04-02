@@ -1,20 +1,42 @@
 language: python
+
 addons:
   firefox: latest
+
 cache:
   pip: true
   ccache: true
   directories:
     - emsdk/emsdk
+
 python:
   - '3.6'
+
 before_install:
   - wget https://github.com/mozilla/geckodriver/releases/download/v0.20.0/geckodriver-v0.20.0-linux64.tar.gz
   - mkdir geckodriver
   - tar -xf geckodriver-v0.20.0-linux64.tar.gz -C geckodriver
   - export PATH=$PATH:$PWD/geckodriver
   - if [ ! -f emsdk/emsdk/emsdk ]; then cd $TRAVIS_BUILD_DIR/emsdk; wget https://github.com/iodide-project/pyodide-demo/raw/toolchain/pyodide_toolchain.tgz; tar -xf pyodide_toolchain.tgz; cd $TRAVIS_BUILD_DIR; fi
+
 install:
   - pip install pytest selenium
+
 script:
   - make test
+
+deploy:
+  provider: pages
+  github-token: "$GITHUB_TOKEN"
+  skip-cleanup: true
+  keep-history: false
+  repo: iodide-project/pyodide-demo
+  verbose: false
+  local-dir: build
+  target-branch: master
+  on:
+    branch: master
+
+env:
+  global:
+    secure: "XADGyHfws1zAttuUWHxUuQmF9RCzMbODWoJXO/wn3rWi0+mCkLd65pvlAETm3fKFaIjnTWxhKwTo+z7Y6f5mIMT4NcNGJA1u8ENfgRilW2c5taI36v3j+XWVpaaz05Fghq+bWi1F46vRQckMX9c1vsYcbpT0WxQL3bb8yX3NSZ0QwPZF0sSWBBDZ2LcPmct2zAwxXsBYO4wfFp+vbexiH6TIArABOYMWlDjgD3WlpHSZ3Ch0ud1Y79f2TRt1SibfpZqNJQ1Zs7ZMdMEEby7tKCTvjSSD+1G8Ctx9X/fnh/YT1+Ayq/6se5WI8bHCxB1UTQBgskj8iB1KYEt6WBDnOFqgsS1GAgEvo9Sj6v+gUfVaVBXXK+CsXFV3vEscWAW65EPstDBGyqRqop4BRaARw7q0teZ4IxUBzPdU3bUNqoA4DoZuGBP1Bt1wyY/9y5gYaQVOXfWbPbBdIsBuwOcgzcR1gFVWKyMXfwgcTA31UUDDTpH1uQgc3T4dnD1556tCSVwML2JYJItx9mVa+m8vxYq5zB45JAZDKr8duwQwH/CuQ33pv4whXb4S3m98NLf2Q/icZAaOFbtQx1taLDlbTa2UlpLpqWwdvVX2TOoIfVUDzUnIY+gppZLOuxAG+X3P0ip+8jIWRvraYTRMyVDLK5zuYHgmGl9Lvtfjzu6vpeM="
