@@ -1,18 +1,11 @@
 language: python
-sudo: required
+addons:
+  firefox: latest
 cache:
   pip: true
   ccache: true
   directories:
     - emsdk/emsdk
-addons:
-  firefox: latest
-  apt:
-    sources:
-      - ubuntu-toolchain-r-test
-    packages:
-      - gcc-7
-      - g++-7
 python:
   - '3.6'
 before_install:
@@ -20,10 +13,8 @@ before_install:
   - mkdir geckodriver
   - tar -xvf geckodriver-v0.20.0-linux64.tar.gz -C geckodriver
   - export PATH=$PATH:$PWD/geckodriver
+  - if [ ! -d emsdk/emsdk ]; then cd emsdk; wget https://github.com/iodide-project/pyodide-demo/raw/toolchain/pyodide_toolchain.tgz; tar -xvf pyodide_toolchain.tgz; fi
 install:
   - pip install pytest selenium
 script:
-  - sudo ln -s /usr/bin/gcc-7 /usr/local/bin/gcc
-  - sudo ln -s /usr/bin/g++-7 /usr/local/bin/g++
-  - make
   - make test

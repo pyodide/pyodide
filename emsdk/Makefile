@@ -1,6 +1,6 @@
-all: emsdk/emsdk_env.sh
+all: emsdk/emsdk
 
-emsdk/emsdk_env.sh:
+emsdk/emsdk:
 	git clone https://github.com/juj/emsdk.git
 	( \
 		cd emsdk ; \

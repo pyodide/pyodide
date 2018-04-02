@@ -92,7 +92,7 @@ root/.built: \
 	touch root/.built
 
 
-$(CPYTHONLIB): emsdk/emsdk/emsdk_env.sh
+$(CPYTHONLIB): emsdk/emsdk/emsdk
 	make -C $(CPYTHONROOT)
 
 
@@ -100,5 +100,5 @@ $(NUMPY_LIBS): $(CPYTHONLIB)
 	make -C numpy
 
 
-emsdk/emsdk/emsdk_env.sh:
+emsdk/emsdk/emsdk:
 	make -C emsdk

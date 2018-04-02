@@ -1,0 +1,9 @@
+#!/bin/sh
+find . -name "*.o" -type f -delete
+find . -name "*.a" -type f -delete
+find -type d -name .git -prune -exec rm -rf {} \;
+find -type d -name CMakeFiles -prune -exec rm -rf {} \;
+rm -rf emsdk/emscripten/incoming/tests
+rm -rf emsdk/clang/fastcomp/src
+rm -rf emsdk/zips
+rm -rf emsdk/binaryen/master/test
