@@ -17,3 +17,8 @@ geckodriver.log
 /numpy/host
 /numpy/downloads
 /numpy/.patched
+
+/pandas/build
+/pandas/host
+/pandas/downloads
+/pandas/.patched

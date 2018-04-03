@@ -30,6 +30,10 @@ NUMPY_LIBS=\
 	$(NUMPY_ROOT)/linalg/_umath_linalg.so \
 	$(NUMPY_ROOT)/random/mtrand.so
 
+PANDAS_ROOT=pandas/build/pandas
+PANDAS_LIBS=\
+	$(PANDAS_ROOT)/_libs/lib.so
+
 SITEPACKAGES=root/lib/python$(PYMINOR)/site-packages
 
 all: build/pyodide.asm.html build/pyodide.js
@@ -69,6 +73,7 @@ clean:
 root/.built: \
 		$(CPYTHONLIB) \
 		$(NUMPY_LIBS) \
+		$(PANDAS_LIBS) \
 		src/lazy_import.py \
 		src/sitecustomize.py \
 		src/webbrowser.py \
@@ -77,6 +82,7 @@ root/.built: \
 	mkdir -p root/lib
 	cp -a $(CPYTHONLIB)/ root/lib
 	cp -a numpy/build/numpy $(SITEPACKAGES)
+	cp -a pandas/build/pandas $(SITEPACKAGES)
 	rm -fr $(SITEPACKAGES)/numpy/distutils
 	cp src/lazy_import.py $(SITEPACKAGES)
 	cp src/sitecustomize.py $(SITEPACKAGES)
@@ -99,6 +105,8 @@ $(CPYTHONLIB): emsdk/emsdk/emsdk
 $(NUMPY_LIBS): $(CPYTHONLIB)
 	make -C numpy
 
+$(PANDAS_LIBS): $(NUMPY_LIBS)
+	make -C pandas
 
 emsdk/emsdk/emsdk:
 	make -C emsdk

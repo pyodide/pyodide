@@ -77,7 +77,7 @@ $(HOSTDIR)/setup.py: $(ZIPFILE)
 $(HOSTBUILD)/lib.$(PLATFORMSLUG)/numpy/__init__.py: $(ROOT)/.patched
 	( \
 	  cd $(HOSTDIR); \
-    $(HOSTPYTHON) setup.py build \
+    $(HOSTPYTHON) setup.py install \
 	)
 
 
