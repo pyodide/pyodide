@@ -49,4 +49,6 @@ class SeleniumWrapper:
 
 @pytest.fixture
 def selenium():
-    return SeleniumWrapper()
+    selenium = SeleniumWrapper()
+    yield selenium
+    selenium.driver.quit()
