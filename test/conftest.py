@@ -4,7 +4,10 @@ Various common utilities for testing.
 
 import pathlib
 
-import pytest
+try:
+    import pytest
+except ImportError:
+    pytest = None
 
 
 TEST_PATH = pathlib.Path(__file__).parents[0].resolve()
@@ -47,8 +50,9 @@ class SeleniumWrapper:
             yield self.driver.current_url
 
 
-@pytest.fixture
-def selenium():
-    selenium = SeleniumWrapper()
-    yield selenium
-    selenium.driver.quit()
+if pytest is not None:
+    @pytest.fixture
+    def selenium():
+        selenium = SeleniumWrapper()
+        yield selenium
+        selenium.driver.quit()

@@ -6,6 +6,7 @@ PYMINOR=$(basename $(PYVERSION))
 CPYTHONROOT=cpython
 CPYTHONLIB=$(CPYTHONROOT)/installs/python-$(PYVERSION)/lib/python$(PYMINOR)
 CPYTHONINC=$(CPYTHONROOT)/installs/python-$(PYVERSION)/include/python$(PYMINOR)
+HOSTPYTHON=$(CPYTHONROOT)/build/$(PYVERSION)/host/bin/python3
 
 CC=emcc
 CXX=em++
@@ -62,6 +63,11 @@ test: all build/test.html
 	py.test test
 
 
+benchmark: all build/test.html
+	python benchmark/benchmark.py $(HOSTPYTHON) $(BUILD)/benchmarks.json
+	python benchmark/plot_benchmark.py benchmarks.json $(BUILD)/benchmarks.png
+
+
 clean:
 	rm -fr root
 	rm build/*
@@ -88,6 +94,7 @@ root/.built: \
 	cp src/lazy_import.py $(SITEPACKAGES)
 	cp src/sitecustomize.py $(SITEPACKAGES)
 	cp src/webbrowser.py root/lib/python$(PYMINOR)
+	cp src/pystone.py root/lib/python$(PYMINOR)
 	( \
 		cd root/lib/python$(PYMINOR); \
 		rm -fr `cat ../../../remove_modules.txt`; \
