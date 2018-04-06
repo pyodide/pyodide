@@ -32,7 +32,7 @@ NUMPY_LIBS=\
 
 SITEPACKAGES=root/lib/python$(PYMINOR)/site-packages
 
-all: build/pyodide.asm.html build/pyodide.js
+all: build/pyodide.asm.html build/pyodide.js build/pyodide_dev.js
 
 
 build/pyodide.asm.html: src/main.bc src/jsimport.bc src/jsproxy.bc src/js2python.bc \
@@ -41,10 +41,17 @@ build/pyodide.asm.html: src/main.bc src/jsimport.bc src/jsproxy.bc src/js2python
 	[ -d build ] || mkdir build
 	$(CC) -s EXPORT_NAME="'pyodide'" --bind -o $@ $(filter %.bc,$^) $(LDFLAGS) \
 		$(foreach d,$(wildcard root/*),--preload-file $d@/$(notdir $d))
+	sed -i -e "s#REMOTE_PACKAGE_BASE = 'pyodide.asm.data'#REMOTE_PACKAGE_BASE = pyodide.baseURL + 'pyodide.asm.data'#g" build/pyodide.asm.js
+
+
+build/pyodide_dev.js: src/pyodide.js
+	cp $< $@
+	sed -i -e "s#{{DEPLOY}}##g" $@
 
 
 build/pyodide.js: src/pyodide.js
 	cp $< $@
+	sed -i -e 's#{{DEPLOY}}#https://iodide-project.github.io/pyodide-demo/#g' $@
 
 
 build/test.html: src/test.html
