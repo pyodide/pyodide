@@ -6,7 +6,13 @@
          console.log = function(message) {
              window.logs.push(message);
          }
+         console.warn = function(message) {
+             window.logs.push(message);
+         }
+         console.info = function(message) {
+             window.logs.push(message);
+         }
         </script>
-        <script src="pyodide.js"></script>
+        <script src="pyodide_dev.js"></script>
     </head>
 </html>

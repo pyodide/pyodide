@@ -20,7 +20,7 @@ before_install:
   - if [ ! -f emsdk/emsdk/emsdk ]; then cd $TRAVIS_BUILD_DIR/emsdk; wget https://github.com/iodide-project/pyodide-demo/raw/toolchain/pyodide_toolchain.tgz; tar -xf pyodide_toolchain.tgz; cd $TRAVIS_BUILD_DIR; fi
 
 install:
-  - pip install pytest selenium
+  - pip install pytest-xdist selenium
 
 script:
   - make test

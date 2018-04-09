@@ -45,6 +45,7 @@ val pythonExcToJs() {
       } else {
         PyObject *newline = PyUnicode_FromString("\n");
         PyObject *pystr = PyUnicode_Join(newline, pylines);
+        PyObject_Print(pystr, stderr, 0);
         excval = pythonToJs(pystr);
         Py_DECREF(pystr);
         Py_DECREF(newline);

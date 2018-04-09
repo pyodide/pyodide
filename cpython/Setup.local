@@ -6,6 +6,7 @@
 
 array arraymodule.c	# array objects
 math mathmodule.c _math.c # -lm # math library functions, e.g. sin()
+cmath cmathmodule.c # complex math functions
 _struct _struct.c	# binary structure packing/unpacking
 _random _randommodule.c	# Random number generator
 _bisect _bisectmodule.c	# Bisection algorithms
@@ -13,6 +14,11 @@ _datetime _datetimemodule.c
 _heapq _heapqmodule.c
 _json _json.c
 _csv _csv.c
+unicodedata unicodedata.c
+
+_socket socketmodule.c
+select selectmodule.c
+_posixsubprocess _posixsubprocess.c
 
 binascii binascii.c
 
@@ -23,6 +29,6 @@ _sha256 sha256module.c
 _sha512 sha512module.c
 _sha3 _sha3/sha3module.c
 _md5 md5module.c
-#_blake2 _blake2/blake2module.c _blake2/blake2b_impl.c _blake2/blake2s_impl.c
+_blake2 _blake2/blake2module.c _blake2/blake2b_impl.c _blake2/blake2s_impl.c
 
 #future_builtins future_builtins.c

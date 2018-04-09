@@ -1,5 +1,4 @@
 _osx_support.py
-asyncio
 ctypes
 curses
 dbm
@@ -8,10 +7,7 @@ ensurepip
 idlelib
 lib2to3
 multiprocessing
-socket.py
 sqlite3
-subprocess.py
-test
 tkinter
 turtle.py
 turtledemo

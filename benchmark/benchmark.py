@@ -26,7 +26,11 @@ def run_native(hostpython, code):
 def run_wasm(code):
     s = conftest.SeleniumWrapper()
     s.run(code)
-    runtime = float(s.logs[-1])
+    try:
+        runtime = float(s.logs[-1])
+    except ValueError:
+        print('\n'.join(s.logs))
+        raise
     s.driver.quit()
     return runtime
 

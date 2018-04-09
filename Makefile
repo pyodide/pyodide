@@ -60,12 +60,12 @@ build/test.html: src/test.html
 
 
 test: all build/test.html
-	py.test test
+	py.test test -n 4 -v -x
 
 
 benchmark: all build/test.html
-	python benchmark/benchmark.py $(HOSTPYTHON) $(BUILD)/benchmarks.json
-	python benchmark/plot_benchmark.py benchmarks.json $(BUILD)/benchmarks.png
+	python benchmark/benchmark.py $(HOSTPYTHON) build/benchmarks.json
+	python benchmark/plot_benchmark.py benchmarks.json build/benchmarks.png
 
 
 clean:
@@ -94,6 +94,7 @@ root/.built: \
 	cp src/lazy_import.py $(SITEPACKAGES)
 	cp src/sitecustomize.py $(SITEPACKAGES)
 	cp src/webbrowser.py root/lib/python$(PYMINOR)
+	cp src/_testcapi.py	root/lib/python$(PYMINOR)
 	cp src/pystone.py root/lib/python$(PYMINOR)
 	( \
 		cd root/lib/python$(PYMINOR); \
