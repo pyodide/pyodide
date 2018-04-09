@@ -15,6 +15,8 @@ _heapq _heapqmodule.c
 _json _json.c
 _csv _csv.c
 unicodedata unicodedata.c
+_pickle _pickle.c
+parser parsermodule.c
 
 _socket socketmodule.c
 select selectmodule.c
@@ -23,6 +25,8 @@ _posixsubprocess _posixsubprocess.c
 binascii binascii.c
 
 zlib zlibmodule.c -IModules/zlib zlib/adler32.c zlib/crc32.c zlib/deflate.c zlib/infback.c zlib/inffast.c zlib/inflate.c zlib/inftrees.c zlib/trees.c zlib/zutil.c zlib/compress.c zlib/uncompr.c zlib/gzclose.c zlib/gzlib.c zlib/gzread.c zlib/gzwrite.c
+
+pyexpat expat/xmlparse.c expat/xmlrole.c expat/xmltok.c pyexpat.c -I$(srcdir)/Modules/expat -DHAVE_EXPAT_CONFIG_H -DUSE_PYEXPAT_CAPI -DXML_POOR_ENTROPY
 
 _sha1 sha1module.c
 _sha256 sha256module.c

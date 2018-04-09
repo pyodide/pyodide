@@ -26,7 +26,7 @@ def test_run_core_python_test(python_test, selenium):
         "import sys\n"
         "sys.argv = ['pyodide']\n"
         "exitcode = -1\n"
-        "def exit(n):\n"
+        "def exit(n=0):\n"
         "    global exitcode\n"
         "    exitcode = n\n"
         "    raise SystemExit()\n\n"
