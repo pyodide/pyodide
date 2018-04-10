@@ -2,7 +2,7 @@ var pyodide = {}
 
 {
     let baseURL = "{{DEPLOY}}";
-    let wasmURL = baseURL + 'pyodide.asm.wasm';
+    let wasmURL = baseURL + 'pyodide.asm.wasm?x=' + Date.now();
     let wasmXHR = new XMLHttpRequest();
     wasmXHR.open('GET', wasmURL, true);
     wasmXHR.responseType = 'arraybuffer';
