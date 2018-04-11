@@ -70,11 +70,12 @@ def get_numpy_benchmarks():
             continue
         content = parse_numpy_benchmark(os.path.join(root, filename))
         content += (
+            "import numpy as np\n"
+            "_ = np.empty(())\n"
             "setup = setup + '\\nfrom __main__ import {}'\n"
             "from timeit import Timer\n"
             "t = Timer(run, setup)\n"
             "r = t.repeat(11, 40)\n"
-            "import numpy as np\n"
             "print(np.mean(r))\n".format(name))
         yield name, content
 

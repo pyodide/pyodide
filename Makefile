@@ -65,7 +65,7 @@ test: all build/test.html
 
 benchmark: all build/test.html
 	python benchmark/benchmark.py $(HOSTPYTHON) build/benchmarks.json
-	python benchmark/plot_benchmark.py benchmarks.json build/benchmarks.png
+	python benchmark/plot_benchmark.py build/benchmarks.json build/benchmarks.png
 
 
 clean:
