@@ -29,3 +29,9 @@ code.)
    on your `PATH`.
 
 3. `make test`
+
+# Benchmarking
+
+1. Install the same dependencies as for testing.
+
+2. `make benchmark`
