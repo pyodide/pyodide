@@ -1,4 +1,34 @@
-test___all__  blake2b
+# Test modules with a failure reason after their name are skipped.
+#
+# Reason codes are:
+# - platform-specific: This is testing something about a particular platform
+#   that isn't relevant here
+# - audioop: Requires the audioop module
+# - floating point: Failures caused by floating-point differences
+# - subprocess: Failures caused by no subprocess module. Some of these are
+#   because the underlying functionality depends on subprocess, and others are
+#   just a side-effect of the way the test is written. The latter should
+#   probably be marked as "skip" or rearchitected so we don't have to skip the
+#   whole module.
+# - networking: Fails because it tests low-level networking.
+# - unknown encoding: Most of the larger and more rare encodings are excluded
+#   from the build for size reasons. Python code should just use Unicode, and to
+#   the extent that obscure codecs are needed, they should be available on the
+#   Javascript side. Long term plan is to transparently call over to Javascript
+#   for this stuff.
+# - dbm: Failures due to no dbm module
+# - _lsprof: Failures due to no _lsprof module
+# - strftime: Failures due to differences / shortcomings in WebAssembly's
+#   implementation of date/time formatting in strftime and strptime
+# - permissions: Issues with the test writing to the virtual filesystem
+# - locale: Fails due to include locale implementation.
+# - crash: The Python interpreter just stopped without a traceback. Will require
+#   further investigation. This usually seems to be caused by calling into a
+#   system function that doesn't behave as one would expect.
+# - nonsense: This functionality doesn't make sense in this context. Includes
+#   things like `pip`, `distutils`
+
+test___all__
 test___future__
 test__locale  locale
 test__opcode
@@ -43,7 +73,7 @@ test_bisect
 test_bool
 test_buffer
 test_bufio
-test_builtin
+test_builtin  floating point
 test_bytes
 test_bz2
 test_calendar
@@ -53,51 +83,51 @@ test_cgi
 test_cgitb
 test_charmapcodec
 test_class
-test_cmath  cmath
+test_cmath
 test_cmd
 test_cmd_line
-test_cmd_line_script
+test_cmd_line_script  subprocess
 test_code
 test_code_module
 test_codeccallbacks
-test_codecencodings_cn
-test_codecencodings_hk
-test_codecencodings_iso2022
-test_codecencodings_jp
-test_codecencodings_kr
-test_codecencodings_tw
+test_codecencodings_cn  unknown encoding
+test_codecencodings_hk  unknown encoding
+test_codecencodings_iso2022 unknown encoding
+test_codecencodings_jp      unknown encoding
+test_codecencodings_kr  unknown encoding
+test_codecencodings_tw  unknown encoding
 test_codecmaps_cn
 test_codecmaps_hk
 test_codecmaps_jp
 test_codecmaps_kr
 test_codecmaps_tw
-test_codecs
+test_codecs unknown encoding
 test_codeop
 test_collections
 test_colorsys
 test_compare
 test_compile
-test_compileall
-test_complex
+test_compileall crash
+test_complex    floating point
 test_concurrent_futures
 test_configparser
 test_contains
 test_contextlib
 test_copy
-test_copyreg
+test_copyreg  dbm
 test_coroutines
-test_cprofile
+test_cprofile _lsprof
 test_crashers
 test_crypt
 test_csv
 test_ctypes
 test_curses
-test_datetime
-test_dbm
-test_dbm_dumb
+test_datetime strftime
+test_dbm      permissions
+test_dbm_dumb permissions
 test_dbm_gnu
 test_dbm_ndbm
-test_decimal
+test_decimal  floating point
 test_decorators
 test_defaultdict
 test_deque
@@ -108,37 +138,37 @@ test_dict
 test_dict_version
 test_dictcomps
 test_dictviews
-test_difflib
+test_difflib  floating point
 test_dis
-test_distutils
-test_doctest
+test_distutils crash
+test_doctest   subprocess
 test_doctest2
 test_docxmlrpc
-test_dtrace
+test_dtrace platform
 test_dummy_thread
 test_dummy_threading
 test_dynamic
 test_dynamicclassattribute
-test_eintr
+test_eintr  platform-specific
 test_email.test__encoded_words
 test_email.test__header_value_parser
 test_email.test_asian_codecs
 test_email.test_contentmanager
 test_email.test_defect_handling
-test_email.test_email
+test_email.test_email unknown encoding
 test_email.test_generator
-test_email.test_headerregistry
+test_email.test_headerregistry  unknown encoding
 test_email.test_inversion
 test_email.test_message
 test_email.test_parser
 test_email.test_pickleable
 test_email.test_policy
 test_email.test_utils
-test_ensurepip
+test_ensurepip  nonsense
 test_enum
 test_enumerate
 test_eof
-test_epoll
+test_epoll  crash
 test_errno
 test_exception_hierarchy
 test_exception_variations
@@ -147,19 +177,19 @@ test_extcall
 test_faulthandler
 test_fcntl
 test_file
-test_file_eintr
-test_filecmp
+test_file_eintr subprocess
+test_filecmp    crash
 test_fileinput
 test_fileio
 test_finalization
-test_float
+test_float  floating point
 test_flufl
 test_fnmatch
 test_fork1
-test_format
+test_format floating point
 test_fractions
 test_frame
-test_fstring
+test_fstring  floating point
 test_ftplib
 test_funcattrs
 test_functools
@@ -171,13 +201,13 @@ test_gc
 test_gdb
 test_generator_stop
 test_generators
-test_genericpath
+test_genericpath  permissions
 test_genexps
 test_getargs2
 test_getopt
-test_getpass
-test_gettext
-test_glob
+test_getpass  permissions
+test_gettext  crash
+test_glob     crash
 test_global
 test_grammar
 test_grp
@@ -190,17 +220,17 @@ test_html
 test_htmlparser
 test_http_cookiejar
 test_http_cookies
-test_httplib
+test_httplib  socket
 test_httpservers
 test_idle
 test_imaplib
 test_imghdr
-test_imp
+test_imp  crash
 test_importlib.builtin.test_finder
 test_importlib.builtin.test_loader
 test_importlib.extension.test_case_sensitivity
-test_importlib.extension.test_finder
-test_importlib.extension.test_loader
+test_importlib.extension.test_finder  crash
+test_importlib.extension.test_loader  crash
 test_importlib.extension.test_path_hook
 test_importlib.frozen.test_finder
 test_importlib.frozen.test_loader
@@ -214,23 +244,23 @@ test_importlib.import_.test_packages
 test_importlib.import_.test_path
 test_importlib.import_.test_relative_imports
 test_importlib.source.test_case_sensitivity
-test_importlib.source.test_file_loader
-test_importlib.source.test_finder
+test_importlib.source.test_file_loader  crash
+test_importlib.source.test_finder       crash
 test_importlib.source.test_path_hook
-test_importlib.source.test_source_encoding
+test_importlib.source.test_source_encoding  crash
 test_importlib.test_abc
-test_importlib.test_api
+test_importlib.test_api crash
 test_importlib.test_lazy
 test_importlib.test_locks
-test_importlib.test_namespace_pkgs
+test_importlib.test_namespace_pkgs  unknown encoding
 test_importlib.test_spec
-test_importlib.test_util
-test_importlib.test_windows
+test_importlib.test_util  crash
+test_importlib.test_windows platform-specific
 test_index
-test_inspect
+test_inspect  crash
 test_int
 test_int_literal
-test_io
+test_io crash
 test_ioctl
 test_ipaddress
 test_isinstance
@@ -252,25 +282,25 @@ test_json.test_recursion
 test_json.test_scanstring
 test_json.test_separators
 test_json.test_speedups
-test_json.test_tool
+test_json.test_tool subprocess
 test_json.test_unicode
-test_keyword
+test_keyword  subprocess
 test_keywordonlyarg
 test_kqueue
 test_largefile
-test_lib2to3
+test_lib2to3  crash
 test_linecache
 test_list
 test_listcomps
-test_locale
-test_logging
+test_locale locale
+test_logging networking
 test_long
 test_longexp
 test_lzma
-test_macpath
+test_macpath  platform-specific
 test_macurl2path
-test_mailbox
-test_mailcap
+test_mailbox  crash
+test_mailcap  unknown
 test_marshal
 test_math
 test_memoryio
@@ -280,9 +310,9 @@ test_mimetypes
 test_minidom
 test_mmap
 test_module
-test_modulefinder
+test_modulefinder crash
 test_msilib
-test_multibytecodec
+test_multibytecodec unknown codec
 test_multiprocessing_fork
 test_multiprocessing_forkserver
 test_multiprocessing_main_handling
@@ -291,33 +321,33 @@ test_netrc
 test_nis
 test_nntplib
 test_normalization
-test_ntpath
+test_ntpath platform
 test_numeric_tower
 test_opcodes
-test_openpty
+test_openpty  platform-specific
 test_operator
-test_optparse
+test_optparse floating point
 test_ordered_dict
-test_os
+test_os mmap
 test_ossaudiodev
 test_osx_env
 test_parser
-test_pathlib
-test_pdb
+test_pathlib  crash
+test_pdb      subprocess
 test_peepholer
-test_pickle
-test_pickletools
-test_pipes
+test_pickle dbm
+test_pickletools  dbm
+test_pipes        platform-specific
 test_pkg
-test_pkgimport
-test_pkgutil
-test_platform
+test_pkgimport  crash
+test_pkgutil    crash
+test_platform   subprocess
 test_plistlib
-test_poll
-test_popen
+test_poll subprocess
+test_popen  subprocess
 test_poplib
-test_posix
-test_posixpath
+test_posix  crash
+test_posixpath  crash
 test_pow
 test_pprint
 test_print
@@ -326,82 +356,82 @@ test_property
 test_pstats
 test_pty
 test_pulldom
-test_pwd
-test_py_compile
+test_pwd  crash
+test_py_compile crash
 test_pyclbr
-test_pydoc
+test_pydoc  crash
 test_pyexpat
 test_queue
-test_quopri
+test_quopri subprocess
 test_raise
 test_random
 test_range
-test_re
+test_re unknown codec
 test_readline
-test_regrtest
-test_repl
+test_regrtest subprocess
+test_repl     subprocess
 test_reprlib
 test_resource
 test_richcmp
 test_rlcompleter
 test_robotparser
-test_runpy
+test_runpy  crash
 test_sax
 test_sched
 test_scope
 test_script_helper
 test_secrets
-test_select
-test_selectors
+test_select networking
+test_selectors  networking
 test_set
 test_setcomps
 test_shelve
 test_shlex
-test_shutil
+test_shutil crash
 test_signal
-test_site
+test_site subprocess
 test_slice
 test_smtpd
 test_smtplib
 test_smtpnet
-test_sndhdr
+test_sndhdr audioop
 test_socket
 test_socketserver
 test_sort
-test_source_encoding
+test_source_encoding  subprocess, unknown encoding
 test_spwd
 test_sqlite
 test_ssl
 test_startfile
 test_stat
-test_statistics
-test_strftime
+test_statistics floating point
+test_strftime   strftime
 test_string
-test_string_literals
+test_string_literals  crash
 test_stringprep
-test_strptime
+test_strptime strftime
 test_strtod
 test_struct
 test_structmembers
 test_structseq
 test_subclassinit
 test_subprocess
-test_sunau
-test_sundry
+test_sunau  audioop
+test_sundry nonsense
 test_super
-test_support
+test_support  crash
 test_symbol
 test_symtable
 test_syntax
-test_sys
+test_sys  subprocess
 test_sys_setprofile
 test_sys_settrace
-test_sysconfig
+test_sysconfig  nonsense
 test_syslog
-test_tarfile
+test_tarfile  crash
 test_tcl
 test_telnetlib
-test_tempfile
+test_tempfile crash
 test_textwrap
 test_thread
 test_threaded_import
@@ -425,28 +455,28 @@ test_tools.test_reindent
 test_tools.test_sundry
 test_tools.test_unparse
 test_trace
-test_traceback
+test_traceback  subprocess
 test_tracemalloc
 test_ttk_guionly
 test_ttk_textonly
 test_tuple
 test_turtle
 test_typechecks
-test_types
-test_typing
+test_types  floating point
+test_typing unknown
 test_ucn
 test_unary
-test_unicode
-test_unicode_file
+test_unicode  crash
+test_unicode_file unknown codec
 test_unicode_file_functions
 test_unicode_identifiers
 test_unicodedata
-test_unittest
+test_unittest os.kill
 test_univnewlines
 test_unpack
 test_unpack_ex
-test_urllib
-test_urllib2
+test_urllib crash
+test_urllib2  subprocess
 test_urllib2_localnet
 test_urllib2net
 test_urllib_response
@@ -457,14 +487,14 @@ test_userlist
 test_userstring
 test_utf8source
 test_uu
-test_uuid
-test_venv
+test_uuid subprocess
+test_venv crash
 test_wait3
 test_wait4
-test_wave
+test_wave crash
 test_weakref
 test_weakset
-test_webbrowser
+test_webbrowser replaced
 test_winconsoleio
 test_winreg
 test_winsound
@@ -472,14 +502,14 @@ test_with
 test_wsgiref
 test_xdrlib
 test_xml_dom_minicompat
-test_xml_etree
-test_xml_etree_c
-test_xmlrpc
+test_xml_etree  unknown encoding
+test_xml_etree_c        unknown encoding
+test_xmlrpc networking
 test_xmlrpc_net
 test_yield_from
-test_zipapp
-test_zipfile
+test_zipapp crash
+test_zipfile  crash
 test_zipfile64
-test_zipimport
-test_zipimport_support
+test_zipimport  crash
+test_zipimport_support  crash
 test_zlib

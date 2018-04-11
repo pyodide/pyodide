@@ -1,0 +1,84 @@
+diff --git a/Lib/platform.py b/Lib/platform.py
+index cc2db9870d..ac4e3c538f 100755
+--- a/Lib/platform.py
++++ b/Lib/platform.py
+@@ -748,7 +748,7 @@ def _syscmd_uname(option, default=''):
+ 
+     """ Interface to the system's uname command.
+     """
+-    if sys.platform in ('dos', 'win32', 'win16'):
++    if sys.platform in ('dos', 'win32', 'win16', 'emscripten'):
+         # XXX Others too ?
+         return default
+     try:
+@@ -771,7 +771,7 @@ def _syscmd_file(target, default=''):
+         default in case the command should fail.
+ 
+     """
+-    if sys.platform in ('dos', 'win32', 'win16'):
++    if sys.platform in ('dos', 'win32', 'win16', 'emscripten'):
+         # XXX Others too ?
+         return default
+     target = _follow_symlinks(target)
+diff --git a/Lib/test/support/script_helper.py b/Lib/test/support/script_helper.py
+index ca5f9c20dd..97934039ee 100644
+--- a/Lib/test/support/script_helper.py
++++ b/Lib/test/support/script_helper.py
+@@ -11,6 +11,7 @@ import subprocess
+ import py_compile
+ import contextlib
+ import shutil
++import unittest
+ import zipfile
+ 
+ from importlib.util import source_from_cache
+@@ -37,6 +38,8 @@ def interpreter_requires_environment():
+     situation.  PYTHONPATH or PYTHONUSERSITE are other common environment
+     variables that might impact whether or not the interpreter can start.
+     """
++    raise unittest.SkipTest('no subprocess')
++
+     global __cached_interp_requires_environment
+     if __cached_interp_requires_environment is None:
+         # Try running an interpreter with -E to see if it works or not.
+@@ -165,6 +168,8 @@ def spawn_python(*args, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, **kw):
+     kw is extra keyword args to pass to subprocess.Popen. Returns a Popen
+     object.
+     """
++    raise unittest.SkipTest("no subprocess")
++
+     cmd_line = [sys.executable, '-E']
+     cmd_line.extend(args)
+     # Under Fedora (?), GNU readline can output junk on stderr when initialized,
+diff --git a/Lib/test/test_code.py b/Lib/test/test_code.py
+index 55faf4c427..b2201c09e7 100644
+--- a/Lib/test/test_code.py
++++ b/Lib/test/test_code.py
+@@ -104,7 +104,10 @@ consts: ('None',)
+ 
+ import inspect
+ import sys
+-import threading
++try:
++    import threading
++except ImportError:
++    import dummy_threading as threading
+ import unittest
+ import weakref
+ try:
+diff --git a/Lib/test/test_import/__init__.py b/Lib/test/test_import/__init__.py
+index b73a96f757..0d1c411f9a 100644
+--- a/Lib/test/test_import/__init__.py
++++ b/Lib/test/test_import/__init__.py
+@@ -10,7 +10,10 @@ import py_compile
+ import random
+ import stat
+ import sys
+-import threading
++try:
++    import threading
++except ImportError:
++    import dummy_threading as threading
+ import time
+ import unittest
+ import unittest.mock as mock
