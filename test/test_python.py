@@ -20,17 +20,21 @@ def test_print(selenium):
     assert 'This should be logged' in selenium.logs
 
 
-@pytest.mark.skipif(True, reason="Experimental")
 def test_run_core_python_test(python_test, selenium):
     selenium.run(
         "import sys\n"
-        "sys.argv = ['pyodide']\n"
         "exitcode = -1\n"
         "def exit(n=0):\n"
         "    global exitcode\n"
         "    exitcode = n\n"
         "    raise SystemExit()\n\n"
         "sys.exit = exit\n")
+    # Undo the lazy modules setup -- it interferes with the CPython test
+    # harness
+    selenium.run(
+        "for k in list(sys.modules):\n"
+        "    if k.startswith('numpy'):\n"
+        "        del sys.modules[k]\n")
     selenium.run(
         "from test.libregrtest import main\n"
         "main(['{}'], verbose=True, verbose3=True)".format(python_test))
@@ -40,14 +44,16 @@ def test_run_core_python_test(python_test, selenium):
     assert exitcode == 0
 
 
-@pytest.mark.skipif(True, reason="Experimental")
 def pytest_generate_tests(metafunc):
     if 'python_test' in metafunc.fixturenames:
         test_modules = []
         with open(
                 pathlib.Path(__file__).parents[0] / "python_tests.txt") as fp:
             for line in fp:
-                parts = line.strip().split()
+                line = line.strip()
+                if line.startswith('#'):
+                    continue
+                parts = line.split()
                 if len(parts) == 1:
                     test_modules.append(parts[0])
         metafunc.parametrize("python_test", test_modules)

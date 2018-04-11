@@ -60,7 +60,7 @@ build/test.html: src/test.html
 
 
 test: all build/test.html
-	py.test test -v -x
+	py.test test -v
 
 
 benchmark: all build/test.html
