@@ -1,4 +1,3 @@
-var pyodide = {}
 
 {
     let baseURL = "{{DEPLOY}}";
@@ -7,14 +6,17 @@ var pyodide = {}
     wasmXHR.open('GET', wasmURL, true);
     wasmXHR.responseType = 'arraybuffer';
     wasmXHR.onload = function() {
+        let Module = {};
+
         if (wasmXHR.status === 200 || wasmXHR.status === 0) {
-            pyodide.wasmBinary = wasmXHR.response;
+            Module.wasmBinary = wasmXHR.response;
         } else {
             alert("Couldn't download the pyodide.asm.wasm binary.  Response was " + wasmXHR.status);
         }
 
-        pyodide.baseURL = baseURL;
+        Module.baseURL = baseURL;
         var script = document.createElement('script');
+        script.onload = function() { window.pyodide = pyodide(Module); };
         script.src = baseURL + "pyodide.asm.js";
         document.body.appendChild(script);
     };
