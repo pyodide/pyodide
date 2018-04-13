@@ -13,6 +13,7 @@ CXX=em++
 OPTFLAGS=-O3
 CXXFLAGS=-std=c++14 $(OPTFLAGS) -g -I$(CPYTHONINC) -Wno-warn-absolute-paths
 LDFLAGS=\
+	-s MODULARIZE=1 \
 	$(CPYTHONROOT)/installs/python-$(PYVERSION)/lib/libpython$(PYMINOR).a \
   -s "BINARYEN_METHOD='native-wasm'" \
   -s TOTAL_MEMORY=268435456 \
