@@ -54,7 +54,8 @@ all: \
 	$(BUILDCORE)/umath.so \
 	$(BUILDLINALG)/lapack_lite.so \
 	$(BUILDLINALG)/_umath_linalg.so \
-	$(BUILDRANDOM)/mtrand.so
+	$(BUILDRANDOM)/mtrand.so \
+	$(BUILDFFT)/fftpack_lite.so
 
 
 clean:

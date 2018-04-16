@@ -30,7 +30,8 @@ NUMPY_LIBS=\
 	$(NUMPY_ROOT)/core/umath.so \
 	$(NUMPY_ROOT)/linalg/lapack_lite.so \
 	$(NUMPY_ROOT)/linalg/_umath_linalg.so \
-	$(NUMPY_ROOT)/random/mtrand.so
+	$(NUMPY_ROOT)/random/mtrand.so \
+	$(NUMPY_ROOT)/fft/fftpack_lite.so
 
 SITEPACKAGES=root/lib/python$(PYMINOR)/site-packages
 
