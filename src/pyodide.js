@@ -10,7 +10,8 @@ var languagePluginLoader = new Promise((resolve, reject) => {
         if (wasmXHR.status === 200 || wasmXHR.status === 0) {
             Module.wasmBinary = wasmXHR.response;
         } else {
-            alert(`Couldn't download the pyodide.asm.wasm binary.  Response was ${wasmXHR.status}`);
+            console.warn(
+                `Couldn't download the pyodide.asm.wasm binary.  Response was ${wasmXHR.status}`);
             reject();
         }
 
