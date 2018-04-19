@@ -11,4 +11,3 @@ rm -rf emsdk/binaryen/master/test
 rm -rf emsdk/.emscripten_cache
 rm emsdk/.emscripten_cache.lock
 rm emsdk/.emscripten_sanity
-rm emsdk/.emscripten
