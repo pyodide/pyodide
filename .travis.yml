@@ -2,7 +2,12 @@ language: python
 
 addons:
   firefox: latest
-
+  apt:
+    sources:
+      - ubuntu-toolchain-r-test
+    packages:
+      - g++-7
+      - libstdc++6
 cache:
   pip: true
   ccache: true
