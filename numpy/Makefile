@@ -40,6 +40,7 @@ CC=emcc
 AR=emar
 CFLAGS=-O3 -Werror -std=c99 -DNPY_INTERNAL_BUILD=1 -DHAVE_NPY_CONFIG_H=1 -D_FILE_OFFSET_BITS=64 -D_LARGEFILE_SOURCE=1 -D_LARGEFILE64_SOURCE=1 -I$(ROOT)/config -I$(INCLUDE) -I$(GENINCLUDE)/numpy -I$(INCLUDE)/private -I$(SRC) -I$(SRC)/.. -I$(SRC)/private -I$(SRC)/npymath -I$(SRC)/multiarray -I$(SRC)/umath -I$(SRC)/npysort -I$(PYTHONINCLUDE) -I$(GENSRC)/private -I$(GENSRC)/npymath -I$(GENSRC)/umath
 LDFLAGS=\
+	-O3 \
 	-Werror \
   -s EMULATED_FUNCTION_POINTERS=1 \
   -s EMULATE_FUNCTION_POINTER_CASTS=1 \
