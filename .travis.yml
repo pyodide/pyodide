@@ -13,11 +13,11 @@ python:
   - '3.6'
 
 before_install:
-  - wget https://github.com/mozilla/geckodriver/releases/download/v0.20.0/geckodriver-v0.20.0-linux64.tar.gz
+  - wget --quiet https://github.com/mozilla/geckodriver/releases/download/v0.20.0/geckodriver-v0.20.0-linux64.tar.gz
   - mkdir geckodriver
   - tar -xf geckodriver-v0.20.0-linux64.tar.gz -C geckodriver
   - export PATH=$PATH:$PWD/geckodriver
-  - if [ ! -f emsdk/emsdk/emsdk ]; then cd $TRAVIS_BUILD_DIR/emsdk; wget https://github.com/iodide-project/pyodide-demo/raw/toolchain/pyodide_toolchain.tgz; tar -xf pyodide_toolchain.tgz; cd $TRAVIS_BUILD_DIR; fi
+  - if [ ! -f emsdk/emsdk/emsdk ]; then cd $TRAVIS_BUILD_DIR/emsdk; wget --quiet https://github.com/iodide-project/pyodide-demo/raw/toolchain/pyodide_toolchain.tgz; tar -xf pyodide_toolchain.tgz; cd $TRAVIS_BUILD_DIR; fi
 
 install:
   - pip install pytest-xdist selenium
