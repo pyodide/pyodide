@@ -23,7 +23,7 @@ install:
   - pip install pytest-xdist selenium
 
 script:
-  - make test; cat cpython/config.log
+  - make test; cat cpython/build/3.6.4/Python-3.6.4/config.log
 
 # deploy:
 #   provider: pages
