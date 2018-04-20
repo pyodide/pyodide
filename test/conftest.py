@@ -54,5 +54,7 @@ if pytest is not None:
     @pytest.fixture
     def selenium():
         selenium = SeleniumWrapper()
-        yield selenium
-        selenium.driver.quit()
+        try:
+            yield selenium
+        finally:
+            selenium.driver.quit()
