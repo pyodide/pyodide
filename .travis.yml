@@ -1,7 +1,7 @@
 language: python
 
 addons:
-  firefox: latest
+  firefox: latest-nightly
   apt:
     sources:
       - ubuntu-toolchain-r-test
@@ -28,7 +28,7 @@ install:
   - pip install pytest-xdist selenium
 
 script:
-  - make test; cat cpython/build/3.6.4/Python-3.6.4/config.log
+  - make test
 
 # deploy:
 #   provider: pages
