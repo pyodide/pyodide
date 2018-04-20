@@ -40,7 +40,7 @@ PANDAS_LIBS=\
 
 SITEPACKAGES=root/lib/python$(PYMINOR)/site-packages
 
-all: build/pyodide.asm.html build/pyodide.js build/pyodide_dev.js
+all: build/pyodide.asm.html build/pyodide.js build/pyodide_dev.js build/python.html
 
 
 build/pyodide.asm.html: src/main.bc src/jsimport.bc src/jsproxy.bc src/js2python.bc \
@@ -60,6 +60,10 @@ build/pyodide_dev.js: src/pyodide.js
 build/pyodide.js: src/pyodide.js
 	cp $< $@
 	sed -i -e 's#{{DEPLOY}}#https://iodide-project.github.io/pyodide-demo/#g' $@
+
+
+build/python.html: src/python.html
+	cp $< $@
 
 
 build/test.html: src/test.html
