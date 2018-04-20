@@ -48,7 +48,7 @@ def pytest_generate_tests(metafunc):
     if 'python_test' in metafunc.fixturenames:
         test_modules = []
         with open(
-                pathlib.Path(__file__).parents[0] / "python_tests.txt") as fp:
+                str(pathlib.Path(__file__).parents[0] / "python_tests.txt")) as fp:
             for line in fp:
                 line = line.strip()
                 if line.startswith('#'):
