@@ -1,5 +1,6 @@
 *.bc
 *.a
+.patched
 .pytest_cache/
 __pycache__
 geckodriver.log
@@ -16,9 +17,16 @@ geckodriver.log
 /numpy/build
 /numpy/host
 /numpy/downloads
-/numpy/.patched
 
 /pandas/build
 /pandas/host
 /pandas/downloads
-/pandas/.patched
+
+/dateutil/downloads
+/dateutil/python-dateutil-2.7.2
+
+/pytz/downloads
+/pytz/pytz-2018.4
+
+/six/downloads
+/six/six-1.11.0

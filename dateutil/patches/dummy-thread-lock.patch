@@ -1,0 +1,44 @@
+diff -ru python-dateutil-2.7.2.orig/dateutil/tz/tz.py python-dateutil-2.7.2/dateutil/tz/tz.py
+--- python-dateutil-2.7.2.orig/dateutil/tz/tz.py	2018-04-24 18:33:38.436301176 -0400
++++ python-dateutil-2.7.2/dateutil/tz/tz.py	2018-04-24 18:34:39.653365591 -0400
+@@ -16,7 +16,6 @@
+
+ import six
+ from six import string_types
+-from six.moves import _thread
+ from ._common import tzname_in_python2, _tzinfo
+ from ._common import tzrangebase, enfold
+ from ._common import _validate_fromutc_inputs
+@@ -33,6 +32,14 @@
+ EPOCHORDINAL = EPOCH.toordinal()
+
+
++class _dummy_lock:
++    def __enter__(self, *args, **kwargs):
++        pass
++
++    def __exit__(self, *args, **kwargs):
++        pass
++
++
+ @six.add_metaclass(_TzSingleton)
+ class tzutc(datetime.tzinfo):
+     """
+@@ -1104,7 +1111,7 @@
+         self._comps = comps
+         self._cachedate = []
+         self._cachecomp = []
+-        self._cache_lock = _thread.allocate_lock()
++        self._cache_lock = _dummy_lock()
+
+     def _find_comp(self, dt):
+         if len(self._comps) == 1:
+@@ -1407,7 +1414,7 @@
+         def __init__(self):
+
+             self.__instances = {}
+-            self._cache_lock = _thread.allocate_lock()
++            self._cache_lock = _dummy_lock()
+
+         def __call__(self, name=None):
+             with self._cache_lock:

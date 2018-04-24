@@ -30,17 +30,17 @@ install:
 script:
   - make test
 
-deploy:
-  provider: pages
-  github-token: "$GITHUB_TOKEN"
-  skip-cleanup: true
-  keep-history: false
-  repo: iodide-project/pyodide-demo
-  verbose: false
-  local-dir: build
-  target-branch: master
-  on:
-    branch: master
+# deploy:
+#   provider: pages
+#   github-token: "$GITHUB_TOKEN"
+#   skip-cleanup: true
+#   keep-history: false
+#   repo: iodide-project/pyodide-demo
+#   verbose: false
+#   local-dir: build
+#   target-branch: master
+#   on:
+#     branch: master
 
 env:
   global:

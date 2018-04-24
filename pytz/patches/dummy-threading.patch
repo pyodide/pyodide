@@ -1,0 +1,13 @@
+diff -ru pytz-2018.4.orig/pytz/lazy.py pytz-2018.4/pytz/lazy.py
+--- pytz-2018.4.orig/pytz/lazy.py	2018-04-24 15:47:46.293980100 -0400
++++ pytz-2018.4/pytz/lazy.py	2018-04-24 15:56:06.281648286 -0400
+@@ -1,4 +1,7 @@
+-from threading import RLock
++try:
++    from threading import RLock
++except (ImportError, ModuleNotFoundError):
++    from dummy_threading import RLock
+ try:
+     from collections.abc import Mapping as DictMixin
+ except ImportError:  # Python < 3.3
+Binary files pytz-2018.4.orig/pytz/__pycache__/lazy.cpython-36.pyc and pytz-2018.4/pytz/__pycache__/lazy.cpython-36.pyc differ

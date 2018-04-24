@@ -1,0 +1,33 @@
+diff -ru pandas-0.22.0.orig/pandas/io/common.py pandas-0.22.0/pandas/io/common.py
+--- pandas-0.22.0.orig/pandas/io/common.py	2018-04-24 17:23:06.833240372 -0400
++++ pandas-0.22.0/pandas/io/common.py	2018-04-24 17:42:33.148934940 -0400
+@@ -3,7 +3,10 @@
+ import os
+ import csv
+ import codecs
+-import mmap
++try:
++    from mmap import mmap
++except ImportError:
++    mmap = None
+ from contextlib import contextmanager, closing
+
+ from pandas.compat import StringIO, BytesIO, string_types, text_type
+@@ -203,7 +206,7 @@
+
+     if isinstance(filepath_or_buffer, (compat.string_types,
+                                        compat.binary_type,
+-                                       mmap.mmap)):
++                                       mmap)):
+         return _expand_user(filepath_or_buffer), None, compression
+
+     if not is_file_like(filepath_or_buffer):
+@@ -432,7 +435,7 @@
+     """
+
+     def __init__(self, f):
+-        self.mmap = mmap.mmap(f.fileno(), 0, access=mmap.ACCESS_READ)
++        self.mmap = mmap(f.fileno(), 0, access=mmap.ACCESS_READ)
+
+     def __getattr__(self, name):
+         return getattr(self.mmap, name)

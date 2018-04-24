@@ -11,13 +11,14 @@ HOSTPYTHON=$(CPYTHONROOT)/build/$(PYVERSION)/host/bin/python3
 CC=emcc
 CXX=em++
 OPTFLAGS=-O3
-CXXFLAGS=-std=c++14 $(OPTFLAGS) -g -I$(CPYTHONINC) -Wno-warn-absolute-paths
+CFLAGS=$(OPTFLAGS) -g -I$(CPYTHONINC) -Wno-warn-absolute-paths
+CXXFLAGS=$(CFLAGS) -std=c++14
 LDFLAGS=\
 	-O3 \
 	-s MODULARIZE=1 \
 	$(CPYTHONROOT)/installs/python-$(PYVERSION)/lib/libpython$(PYMINOR).a \
   -s "BINARYEN_METHOD='native-wasm'" \
-  -s TOTAL_MEMORY=268435456 \
+  -s TOTAL_MEMORY=536870912 \
 	-s MAIN_MODULE=1 \
 	-s EMULATED_FUNCTION_POINTERS=1 \
   -s EMULATE_FUNCTION_POINTER_CASTS=1 \
@@ -38,6 +39,15 @@ PANDAS_ROOT=pandas/build/pandas
 PANDAS_LIBS=\
 	$(PANDAS_ROOT)/_libs/lib.so
 
+DATEUTIL_ROOT=dateutil/python-dateutil-2.7.2/build/lib/dateutil
+DATEUTIL_LIBS=$(DATEUTIL_ROOT)/__init__.py
+
+PYTZ_ROOT=pytz/pytz-2018.4/build/lib/pytz
+PYTZ_LIBS=$(PYTZ_ROOT)/__init__.py
+
+SIX_ROOT=six/six-1.11.0/build/lib
+SIX_LIBS=$(SIX_ROOT)/six.py
+
 SITEPACKAGES=root/lib/python$(PYMINOR)/site-packages
 
 all: build/pyodide.asm.html build/pyodide.js build/pyodide_dev.js build/python.html
@@ -45,7 +55,7 @@ all: build/pyodide.asm.html build/pyodide.js build/pyodide_dev.js build/python.h
 
 build/pyodide.asm.html: src/main.bc src/jsimport.bc src/jsproxy.bc src/js2python.bc \
                         src/pyimport.bc src/pyproxy.bc src/python2js.bc \
-												src/runpython.bc root/.built
+												src/runpython.bc src/dummy_thread.bc root/.built
 	[ -d build ] || mkdir build
 	$(CC) -s EXPORT_NAME="'pyodide'" --bind -o $@ $(filter %.bc,$^) $(LDFLAGS) \
 		$(foreach d,$(wildcard root/*),--preload-file $d@/$(notdir $d))
@@ -90,10 +100,17 @@ clean:
 	$(CXX) --bind -o $@ $< $(CXXFLAGS)
 
 
+%.bc: %.c $(CPYTHONLIB)
+	$(CC) -o $@ $< $(CFLAGS)
+
+
 root/.built: \
 		$(CPYTHONLIB) \
 		$(NUMPY_LIBS) \
 		$(PANDAS_LIBS) \
+		$(DATEUTIL_LIBS) \
+		$(PYTZ_LIBS) \
+		$(SIX_LIBS) \
 		src/lazy_import.py \
 		src/sitecustomize.py \
 		src/webbrowser.py \
@@ -103,6 +120,9 @@ root/.built: \
 	cp -a $(CPYTHONLIB)/ root/lib
 	cp -a numpy/build/numpy $(SITEPACKAGES)
 	cp -a pandas/build/pandas $(SITEPACKAGES)
+	cp -a $(DATEUTIL_ROOT) $(SITEPACKAGES)
+	cp -a $(PYTZ_ROOT) $(SITEPACKAGES)
+	cp $(SIX_LIBS) $(SITEPACKAGES)
 	rm -fr $(SITEPACKAGES)/numpy/distutils
 	cp src/lazy_import.py $(SITEPACKAGES)
 	cp src/sitecustomize.py $(SITEPACKAGES)
@@ -127,8 +147,22 @@ $(CPYTHONLIB): emsdk/emsdk/emsdk
 $(NUMPY_LIBS): $(CPYTHONLIB)
 	make -C numpy
 
+
 $(PANDAS_LIBS): $(NUMPY_LIBS)
 	make -C pandas
+
+
+$(DATEUTIL_LIBS): $(CPYTHONLIB)
+	make -C dateutil
+
+
+$(PYTZ_LIBS): $(CPYTHONLIB)
+	make -C pytz
+
+
+$(SIX_LIBS): $(CPYTHONLIB)
+	make -C six
+
 
 emsdk/emsdk/emsdk:
 	make -C emsdk

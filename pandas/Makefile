@@ -46,12 +46,15 @@ all: \
 	$(BUILD)/_libs/index.so \
 	$(BUILD)/_libs/interval.so \
 	$(BUILD)/_libs/join.so \
+	$(BUILD)/_libs/reshape.so \
 	$(BUILD)/_libs/json.so \
 	$(BUILD)/_libs/lib.so \
 	$(BUILD)/_libs/parsers.so \
 	$(BUILD)/_libs/period.so \
+	$(BUILD)/_libs/tslibs/parsing.so \
 	$(BUILD)/_libs/properties.so \
 	$(BUILD)/_libs/sparse.so \
+	$(BUILD)/_libs/hashing.so \
 	$(BUILD)/_libs/tslib.so \
 	$(BUILD)/_libs/tslibs/fields.so \
 	$(BUILD)/_libs/tslibs/frequencies.so \
@@ -61,6 +64,7 @@ all: \
 	$(BUILD)/_libs/window.so \
 	$(BUILD)/io/msgpack/_packer.so \
 	$(BUILD)/io/msgpack/_unpacker.so \
+	$(BUILD)/_libs/testing.so \
 	$(BUILD)/io/sas/_sas.so \
 	$(BUILD)/util/_move.so
 
@@ -160,6 +164,12 @@ $(BUILD)/_libs/period.so: \
 	mv tmp.wasm $@
 
 
+$(BUILD)/_libs/tslibs/parsing.so: \
+		$(HOSTDIR)/pandas/_libs/tslibs/parsing.bc
+	$(CC) $(LDFLAGS) $^ -o tmp.wasm
+	mv tmp.wasm $@
+
+
 $(BUILD)/_libs/tslibs/frequencies.so: \
 		$(HOSTDIR)/pandas/_libs/tslibs/frequencies.bc
 	$(CC) $(LDFLAGS) $^ -o tmp.wasm
@@ -189,6 +199,12 @@ $(BUILD)/_libs/groupby.so: \
 
 $(BUILD)/_libs/join.so: \
 		$(HOSTDIR)/pandas/_libs/join.bc
+	$(CC) $(LDFLAGS) $^ -o tmp.wasm
+	mv tmp.wasm $@
+
+
+$(BUILD)/_libs/reshape.so: \
+		$(HOSTDIR)/pandas/_libs/reshape.bc
 	$(CC) $(LDFLAGS) $^ -o tmp.wasm
 	mv tmp.wasm $@
 
@@ -227,6 +243,12 @@ $(BUILD)/_libs/hashing.so: \
 
 $(BUILD)/io/sas/_sas.so: \
 		$(HOSTDIR)/pandas/io/sas/sas.bc
+	$(CC) $(LDFLAGS) $^ -o tmp.wasm
+	mv tmp.wasm $@
+
+
+$(BUILD)/_libs/testing.so: \
+		$(HOSTDIR)/pandas/_libs/testing.bc
 	$(CC) $(LDFLAGS) $^ -o tmp.wasm
 	mv tmp.wasm $@
 
