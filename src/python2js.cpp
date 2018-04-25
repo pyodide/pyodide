@@ -114,7 +114,9 @@ val pythonToJs(PyObject *x) {
     for (size_t i = 0; i < length; ++i) {
       PyObject *item = PySequence_GetItem(x, i);
       if (item == NULL) {
-        return pythonExcToJs();
+        // If something goes wrong converting the sequence, fallback to the Python proxy
+        PyErr_Clear();
+        return val(Py(x));
       }
       x_array.call<int>("push", pythonToJs(item));
       Py_DECREF(item);
