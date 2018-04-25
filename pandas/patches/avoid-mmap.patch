@@ -9,7 +9,7 @@ diff -ru pandas-0.22.0.orig/pandas/io/common.py pandas-0.22.0/pandas/io/common.p
 +try:
 +    from mmap import mmap
 +except ImportError:
-+    mmap = None
++    mmap = type(None)
  from contextlib import contextmanager, closing
 
  from pandas.compat import StringIO, BytesIO, string_types, text_type
