@@ -33,7 +33,12 @@ PyObject *jsToPython(val x) {
     Py_INCREF(pypy_x);
     return pypy_x;
   } else {
-    return JsProxy_cnew(x);
+    try {
+      std::string x_str = x.as<std::string>();
+      return PyBytes_FromStringAndSize(x_str.c_str(), x_str.size());
+    } catch (...) {
+      return JsProxy_cnew(x);
+    }
   }
 }
 
