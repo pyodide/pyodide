@@ -27,5 +27,27 @@ var languagePluginLoader = new Promise((resolve, reject) => {
         document.body.appendChild(script);
     };
     wasmXHR.send(null);
+
+    if (window.iodide !== undefined) {
+        const py_output_handler = {
+            shouldHandle: (val) => {
+                return (typeof val === 'object' &&
+                        val['$$'] !== undefined &&
+                        val['$$']['ptrType']['name'] === 'Py*');
+            },
+
+            render: (val) => {
+                if (val.hasattr('to_html')) {
+                    return new DOMParser().parseFromString(
+                        val.getattr('to_html').call([], {}), 'text/html').body.firstChild;
+                } else {
+                    let pre = document.createElement('pre');
+                    pre.textContent = window.pyodide.repr(val);
+                    return pre;
+                }
+            }
+        };
+        window.iodide.addOutputHandler(py_output_handler);
+    }
 });
 languagePluginLoader
