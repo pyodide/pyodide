@@ -63,6 +63,13 @@ void Py::setattr(val idx, val v) {
   }
 }
 
+val Py::hasattr(val idx) {
+  PyObject *pyidx = jsToPython(idx);
+  val result(PyObject_HasAttr(x, pyidx) ? true : false);
+  Py_DECREF(pyidx);
+  return result;
+}
+
 val Py::getitem(val idx) {
   PyObject *pyidx = jsToPython(idx);
   PyObject *item = PyObject_GetItem(x, pyidx);
@@ -86,4 +93,11 @@ void Py::setitem(val idx, val v) {
   if (ret) {
     pythonExcToJs();
   }
+}
+
+val Py::hasitem(val idx) {
+  PyObject *pyidx = jsToPython(idx);
+  val result(PySequence_Contains(x, pyidx) ? true : false);
+  Py_DECREF(pyidx);
+  return result;
 }

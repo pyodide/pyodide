@@ -42,8 +42,10 @@ EMSCRIPTEN_BINDINGS(python) {
     .function<val>("call", &Py::call)
     .function<val>("getattr", &Py::getattr)
     .function<void>("setattr", &Py::setattr)
+    .function<val>("hasattr", &Py::hasattr)
     .function<val>("getitem", &Py::getitem)
-    .function<void>("setitem", &Py::setitem);
+    .function<void>("setitem", &Py::setitem)
+    .function<val>("hasitem", &Py::hasitem);
 }
 
 extern "C" {
