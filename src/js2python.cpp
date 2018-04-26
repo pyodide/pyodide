@@ -32,13 +32,11 @@ PyObject *jsToPython(val x) {
     PyObject *pypy_x = py_x.x;
     Py_INCREF(pypy_x);
     return pypy_x;
+  } else if (!x["byteLength"].isUndefined()) {
+    std::string x_str = x.as<std::string>();
+    return PyBytes_FromStringAndSize(x_str.c_str(), x_str.size());
   } else {
-    try {
-      std::string x_str = x.as<std::string>();
-      return PyBytes_FromStringAndSize(x_str.c_str(), x_str.size());
-    } catch (...) {
-      return JsProxy_cnew(x);
-    }
+    return JsProxy_cnew(x);
   }
 }
 

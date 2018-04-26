@@ -20,6 +20,12 @@ def test_print(selenium):
     assert 'This should be logged' in selenium.logs
 
 
+def test_import_js(selenium):
+    result = selenium.run(
+        "from js import window\nwindow.title = 'Foo'\nwindow.title")
+    assert result == 'Foo'
+
+
 def test_run_core_python_test(python_test, selenium):
     selenium.run(
         "import sys\n"
