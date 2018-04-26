@@ -25,6 +25,12 @@ var languagePluginLoader = new Promise((resolve, reject) => {
             window.pyodide = pyodide(Module);
         };
         document.body.appendChild(script);
+
+        let link = document.createElement('link');
+        link.rel = 'stylesheet';
+        link.type = 'text/css';
+        link.href = `${baseURL}renderedhtml.css`;
+        document.getElementsByTagName('head')[0].appendChild(link);
     };
     wasmXHR.send(null);
 
@@ -37,14 +43,17 @@ var languagePluginLoader = new Promise((resolve, reject) => {
             },
 
             render: (val) => {
-                if (val.hasattr('to_html')) {
-                    return new DOMParser().parseFromString(
-                        val.getattr('to_html').call([], {}), 'text/html').body.firstChild;
+                let div = document.createElement('div');
+                div.className = 'rendered_html';
+                if (val.hasattr('_repr_html_')) {
+                    div.appendChild(new DOMParser().parseFromString(
+                        val.getattr('_repr_html_').call([], {}), 'text/html').body.firstChild);
                 } else {
                     let pre = document.createElement('pre');
                     pre.textContent = window.pyodide.repr(val);
-                    return pre;
+                    div.appendChild(pre);
                 }
+                return div;
             }
         };
         window.iodide.addOutputHandler(py_output_handler);

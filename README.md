@@ -13,6 +13,8 @@ These instructions were tested on Linux. OSX should be substantively the same.
 
 Make sure the prerequisites for emsdk are installed.
 
+Install [lessc](https://lesscss.org/) to compile less to css.
+
 Type `make`.
 
 (The build downloads and builds a local, patched version of emsdk, then

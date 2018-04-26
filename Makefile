@@ -50,7 +50,11 @@ SIX_LIBS=$(SIX_ROOT)/six.py
 
 SITEPACKAGES=root/lib/python$(PYMINOR)/site-packages
 
-all: build/pyodide.asm.html build/pyodide.js build/pyodide_dev.js build/python.html
+all: build/pyodide.asm.html \
+	build/pyodide.js \
+	build/pyodide_dev.js \
+	build/python.html \
+	build/renderedhtml.css
 
 
 build/pyodide.asm.html: src/main.bc src/jsimport.bc src/jsproxy.bc src/js2python.bc \
@@ -78,6 +82,10 @@ build/python.html: src/python.html
 
 build/test.html: src/test.html
 	cp $< $@
+
+
+build/renderedhtml.css: src/renderedhtml.less
+	lessc $< $@
 
 
 test: all build/test.html
