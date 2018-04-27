@@ -24,6 +24,7 @@ LDFLAGS=\
   -s EMULATE_FUNCTION_POINTER_CASTS=1 \
   -s EXPORTED_FUNCTIONS='["_main"]' \
   -s WASM=1 \
+	-s SWAPPABLE_ASM_MODULE=1 \
   --memory-init-file 0
 
 NUMPY_ROOT=numpy/build/numpy
@@ -63,7 +64,6 @@ build/pyodide.asm.html: src/main.bc src/jsimport.bc src/jsproxy.bc src/js2python
 	[ -d build ] || mkdir build
 	$(CC) -s EXPORT_NAME="'pyodide'" --bind -o $@ $(filter %.bc,$^) $(LDFLAGS) \
 		$(foreach d,$(wildcard root/*),--preload-file $d@/$(notdir $d))
-	sed -i -e "s#REMOTE_PACKAGE_BASE = 'pyodide.asm.data'#REMOTE_PACKAGE_BASE = pyodide.baseURL + 'pyodide.asm.data'#g" build/pyodide.asm.js
 
 
 build/pyodide_dev.js: src/pyodide.js

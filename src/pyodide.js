@@ -1,41 +1,37 @@
 var languagePluginLoader = new Promise((resolve, reject) => {
     let baseURL = "{{DEPLOY}}";
-    let wasmURL = `${baseURL}pyodide.asm.wasm?x=${Date.now()}`;
-    let wasmXHR = new XMLHttpRequest();
-    wasmXHR.open('GET', wasmURL, true);
-    wasmXHR.responseType = 'arraybuffer';
-    wasmXHR.onload = function() {
-        let Module = {};
+    let wasmURL = `${baseURL}pyodide.asm.wasm`;
+    let Module = {};
 
-        if (wasmXHR.status === 200 || wasmXHR.status === 0) {
-            Module.wasmBinary = wasmXHR.response;
-        } else {
-            console.warn(
-                `Couldn't download the pyodide.asm.wasm binary.  Response was ${wasmXHR.status}`);
-            reject();
-        }
+    let wasm_promise = WebAssembly.compileStreaming(fetch(wasmURL));
+    Module.instantiateWasm = (info, receiveInstance) => {
+        wasm_promise
+            .then(module => WebAssembly.instantiate(module, info))
+            .then(instance => receiveInstance(instance));
+        return {};
+    };
+    Module.filePackagePrefixURL = baseURL;
+    Module.postRun = () => {
+        resolve();
+    };
 
-        Module.baseURL = baseURL;
-        Module.postRun = () => {
-            resolve();
-        }
-        let script = document.createElement('script');
-        script.src = `${baseURL}pyodide.asm.js`;
-        script.onload = () => {
-            window.pyodide = pyodide(Module);
-        };
-        document.body.appendChild(script);
+    let script = document.createElement('script');
+    script.src = `${baseURL}pyodide.asm.js`;
+    script.onload = () => {
+        window.pyodide = pyodide(Module);
+    };
+    document.body.appendChild(script);
 
+    if (window.iodide !== undefined) {
+        // Load the custom CSS for Pyodide
         let link = document.createElement('link');
         link.rel = 'stylesheet';
         link.type = 'text/css';
         link.href = `${baseURL}renderedhtml.css`;
         document.getElementsByTagName('head')[0].appendChild(link);
-    };
-    wasmXHR.send(null);
 
-    if (window.iodide !== undefined) {
-        const py_output_handler = {
+        // Add a custom output handler for Python objects
+        window.iodide.addOutputHandler({
             shouldHandle: (val) => {
                 return (typeof val === 'object' &&
                         val['$$'] !== undefined &&
@@ -55,8 +51,7 @@ var languagePluginLoader = new Promise((resolve, reject) => {
                 }
                 return div;
             }
-        };
-        window.iodide.addOutputHandler(py_output_handler);
+        });
     }
 });
 languagePluginLoader
