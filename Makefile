@@ -1,6 +1,8 @@
 PYODIDE_ROOT=$(abspath .)
 include Makefile.envs
 
+FILEPACKAGER=emsdk/emsdk/emscripten/incoming/tools/file_packager.py
+
 PYVERSION=3.6.4
 PYMINOR=$(basename $(PYVERSION))
 CPYTHONROOT=cpython
@@ -55,7 +57,11 @@ all: build/pyodide.asm.html \
 	build/pyodide.js \
 	build/pyodide_dev.js \
 	build/python.html \
-	build/renderedhtml.css
+	build/renderedhtml.css \
+	build/numpy.data \
+	build/dateutil.data \
+	build/pytz.data \
+	build/pandas.data
 
 
 build/pyodide.asm.html: src/main.bc src/jsimport.bc src/jsproxy.bc src/js2python.bc \
@@ -64,6 +70,9 @@ build/pyodide.asm.html: src/main.bc src/jsimport.bc src/jsproxy.bc src/js2python
 	[ -d build ] || mkdir build
 	$(CC) -s EXPORT_NAME="'pyodide'" --bind -o $@ $(filter %.bc,$^) $(LDFLAGS) \
 		$(foreach d,$(wildcard root/*),--preload-file $d@/$(notdir $d))
+	rm build/pyodide.asm.asm.js
+	rm build/pyodide.asm.wasm.pre
+	rm build/pyodide.asm.html
 
 
 build/pyodide_dev.js: src/pyodide.js
@@ -112,12 +121,25 @@ clean:
 	$(CC) -o $@ $< $(CFLAGS)
 
 
+# TODO: It would be nice to generalize this
+build/numpy.data: $(NUMPY_LIBS)
+	python2 $(FILEPACKAGER) build/numpy.data --preload $(NUMPY_ROOT)@/lib/python3.6/site-packages/numpy --js-output=build/numpy.js --export-name=pyodide --exclude \*.wasm.pre --exclude __pycache__
+
+
+build/dateutil.data: $(DATEUTIL_LIBS)
+	python2 $(FILEPACKAGER) build/dateutil.data --preload $(DATEUTIL_ROOT)@/lib/python3.6/site-packages/dateutil --js-output=build/dateutil.js --export-name=pyodide --exclude \*.wasm.pre --exclude __pycache__
+
+
+build/pytz.data: $(PYTZ_LIBS)
+	python2 $(FILEPACKAGER) build/pytz.data --preload $(PYTZ_ROOT)@/lib/python3.6/site-packages/pytz --js-output=build/pytz.js --export-name=pyodide --exclude \*.wasm.pre --exclude __pycache__
+
+
+build/pandas.data: $(PANDAS_LIBS)
+	python2 $(FILEPACKAGER) build/pandas.data --preload $(PANDAS_ROOT)@/lib/python3.6/site-packages/pandas --js-output=build/pandas.js --export-name=pyodide --exclude \*.wasm.pre --exclude __pycache__
+
+
 root/.built: \
 		$(CPYTHONLIB) \
-		$(NUMPY_LIBS) \
-		$(PANDAS_LIBS) \
-		$(DATEUTIL_LIBS) \
-		$(PYTZ_LIBS) \
 		$(SIX_LIBS) \
 		src/lazy_import.py \
 		src/sitecustomize.py \
@@ -126,12 +148,7 @@ root/.built: \
 	rm -rf root
 	mkdir -p root/lib
 	cp -a $(CPYTHONLIB)/ root/lib
-	cp -a numpy/build/numpy $(SITEPACKAGES)
-	cp -a pandas/build/pandas $(SITEPACKAGES)
-	cp -a $(DATEUTIL_ROOT) $(SITEPACKAGES)
-	cp -a $(PYTZ_ROOT) $(SITEPACKAGES)
 	cp $(SIX_LIBS) $(SITEPACKAGES)
-	rm -fr $(SITEPACKAGES)/numpy/distutils
 	cp src/lazy_import.py $(SITEPACKAGES)
 	cp src/sitecustomize.py $(SITEPACKAGES)
 	cp src/webbrowser.py root/lib/python$(PYMINOR)

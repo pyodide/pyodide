@@ -1,5 +1,72 @@
 var languagePluginLoader = new Promise((resolve, reject) => {
-    let baseURL = "{{DEPLOY}}";
+    const baseURL = '{{DEPLOY}}';
+
+    const packages = {
+        'dateutil': [],
+        'numpy': [],
+        'pandas': ['numpy', 'dateutil', 'pytz'],
+        'pytz': [],
+    };
+    let loadedPackages = new Set();
+    let loadPackage = (names) => {
+        if (Array.isArray(names)) {
+            names = [names];
+        }
+
+        // DFS to find all dependencies of the requested packages
+        let queue = new Array(names);
+        let toLoad = new Set();
+        while (queue.length) {
+            const package = queue.pop();
+            if (!packages.hasOwnProperty(package)) {
+                throw `Unknown package '${package}'`;
+            }
+            if (!loadedPackages.has(package)) {
+                toLoad.add(package);
+                packages[package].forEach((subpackage) => {
+                    if (!loadedPackages.has(subpackage) &&
+                        !toLoad.has(subpackage)) {
+                        queue.push(subpackage);
+                    }
+                });
+            }
+        }
+
+        let promise = new Promise((resolve, reject) => {
+            var n = toLoad.size;
+
+            if (n === 0) {
+                resolve('No new packages to load');
+            }
+
+            toLoad.forEach((package) => {
+                let script = document.createElement('script');
+                script.src = `${baseURL}${package}.js`;
+                console.log(script.src);
+                script.onload = (e) => {
+                    n--;
+                    loadedPackages.add(package);
+                    if (n <= 0) {
+                        // All of the requested packages are now loaded.
+                        // We have to invalidate Python's import caches, or it won't
+                        // see the new files.
+                        window.pyodide.runPython(
+                            'import importlib as _importlib\n' +
+                            '_importlib.invalidate_caches()\n');
+                        const packageList = Array.from(toLoad.keys()).join(', ');
+                        resolve(`Loaded ${packageList}`);
+                    }
+                };
+                script.onerror = (e) => {
+                    reject(e);
+                };
+                document.body.appendChild(script);
+            });
+        });
+
+        return promise;
+    };
+
     let wasmURL = `${baseURL}pyodide.asm.wasm`;
     let Module = {};
 
@@ -19,6 +86,9 @@ var languagePluginLoader = new Promise((resolve, reject) => {
     script.src = `${baseURL}pyodide.asm.js`;
     script.onload = () => {
         window.pyodide = pyodide(Module);
+        if (window.iodide !== undefined) {
+            window.pyodide.loadPackage = loadPackage;
+        }
     };
     document.body.appendChild(script);
 

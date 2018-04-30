@@ -44,6 +44,8 @@ Pyodide adds support for Python in an Iodide notebook, running inside your brows
 
 (A major shortcoming is that `print` from Python currently prints to the Javascript debugger console, rather than to the notebook cell, so some of these examples are more contrived than they need to be.)
 
+**Also to note: If you have any issues, try disabling any ad or tracking blockers for this site.**
+
 First, let's use a plugin cell to load the Python interpreter and tell Iodide about the new cell type.
 
 %% plugin
@@ -215,7 +217,14 @@ document.getElementById("targetDiv").setAttribute("style", "background-color: re
 
 You bet, [Numpy](http://numpy.org) works.
 
-(Except the `numpy.fft` module -- we're working on that, but you can get a lot done without it in a lot of use cases...)
+To save on download times, isn't loaded by default. We need to manually use
+the `pyodide.loadPackage` function from a Javascript cell.
+
+%% js
+pyodide.loadPackage('numpy')
+
+%% md
+Now that the Numpy package has been loaded (i.e. transferred to your local browser), we can import it:
 
 %% code {"language":"py"}
 import numpy as np
