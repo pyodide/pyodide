@@ -8,6 +8,7 @@ addons:
     packages:
       - g++-7
       - libstdc++6
+      - node-less
 cache:
   pip: true
   ccache: true
