@@ -26,6 +26,28 @@ def test_import_js(selenium):
     assert result == 'Foo'
 
 
+def test_py_proxy(selenium):
+    selenium.run(
+        "class Foo:\n  bar = 42\n  def get_value(self):\n    return 64\nf = Foo()\n")
+    assert selenium.run_js("return pyodide.pyimport('f').get_value()") == 64
+    assert selenium.run_js("return pyodide.pyimport('f').bar") == 42
+    assert selenium.run_js("return ('bar' in pyodide.pyimport('f'))") == True
+    selenium.run_js("f = pyodide.pyimport('f'); f.baz = 32")
+    assert selenium.run("f.baz") == 32
+    assert set(selenium.run_js(
+        "return Object.getOwnPropertyNames(pyodide.pyimport('f'))")) == set(
+            ['$$', '__class__', '__delattr__', '__dict__', '__dir__',
+             '__doc__', '__eq__', '__format__', '__ge__', '__getattribute__',
+             '__gt__', '__hash__', '__init__', '__init_subclass__', '__le__',
+             '__lt__', '__module__', '__ne__', '__new__', '__reduce__',
+             '__reduce_ex__', '__repr__', '__setattr__', '__sizeof__',
+             '__str__', '__subclasshook__', '__weakref__', 'bar', 'baz',
+             'get_value'])
+    assert selenium.run("hasattr(f, 'baz')") == True
+    selenium.run_js("delete pyodide.pyimport('f').baz")
+    assert selenium.run("hasattr(f, 'baz')") == False
+
+
 def test_run_core_python_test(python_test, selenium):
     selenium.run(
         "import sys\n"

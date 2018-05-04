@@ -32,7 +32,7 @@
       "pluginType": "language"
     }
   },
-  "lastExport": "2018-04-06T14:10:51.879Z"
+  "lastExport": "2018-05-04T17:13:00.489Z"
 }
 
 %% md
@@ -124,12 +124,12 @@ def square(x, integer=False):
   return x * x
 
 %% md
-To call a Python callable from Javascript, we use its `call` method, which takes two arguments: the positional arguments as an array, and the keyword arguments as an object.
+Since calling conventions are a bit different in Python than in Javascript, all Python callables take two arguments when called from Javascript: the positional arguments as an array, and the keyword arguments as an object.
 
 %% js
 // javascript
 var square = pyodide.pyimport("square")
-square.call([2.5], {integer: true})
+square([2.5], {integer: true})
 
 %% md
 This is equivalent to the following Python syntax:
@@ -155,12 +155,12 @@ We can get the value of its `val` property as so:
 %% js
 // javascript
 var foo = pyodide.pyimport("foo")
-foo.getattr("val")
+foo.val
 
 %% md
 ### Using Javascript objects from Python
 
-Likewise, you can use Javascript objects from Python, and since the overloading features of Python are a little more dynamic, the syntax for doing so is also a little bit easier.
+Likewise, you can use Javascript objects from Python.
 
 %% js
 // javascript

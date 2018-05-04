@@ -67,6 +67,19 @@ var languagePluginLoader = new Promise((resolve, reject) => {
         return promise;
     };
 
+    let makeCallableProxy = (obj) => {
+        var clone = obj.clone();
+        return (args, kwargs) => {
+            if (args === undefined) {
+                args = [];
+            }
+            if (kwargs === undefined) {
+                kwargs = {};
+            }
+            return clone.call(args, kwargs);
+        };
+    };
+
     let wasmURL = `${baseURL}pyodide.asm.wasm`;
     let Module = {};
 
@@ -86,11 +99,10 @@ var languagePluginLoader = new Promise((resolve, reject) => {
     script.src = `${baseURL}pyodide.asm.js`;
     script.onload = () => {
         window.pyodide = pyodide(Module);
-        if (window.iodide !== undefined) {
-            window.pyodide.loadPackage = loadPackage;
-        }
+        window.pyodide.loadPackage = loadPackage;
+        window.pyodide.makeCallableProxy = makeCallableProxy;
     };
-    document.body.appendChild(script);
+    document.head.appendChild(script);
 
     if (window.iodide !== undefined) {
         // Load the custom CSS for Pyodide
@@ -105,15 +117,15 @@ var languagePluginLoader = new Promise((resolve, reject) => {
             shouldHandle: (val) => {
                 return (typeof val === 'object' &&
                         val['$$'] !== undefined &&
-                        val['$$']['ptrType']['name'] === 'Py*');
+                        val['$$']['ptrType']['name'] === 'PyObject*');
             },
 
             render: (val) => {
                 let div = document.createElement('div');
                 div.className = 'rendered_html';
-                if (val.hasattr('_repr_html_')) {
+                if ('_repr_html_' in val) {
                     div.appendChild(new DOMParser().parseFromString(
-                        val.getattr('_repr_html_').call([], {}), 'text/html').body.firstChild);
+                        val._repr_html_(), 'text/html').body.firstChild);
                 } else {
                     let pre = document.createElement('pre');
                     pre.textContent = window.pyodide.repr(val);

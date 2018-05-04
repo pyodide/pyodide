@@ -38,14 +38,17 @@ EMSCRIPTEN_BINDINGS(python) {
   emscripten::function("runPython", &runPython);
   emscripten::function("pyimport", &pyimport);
   emscripten::function("repr", &repr);
+  emscripten::class_<PyObject>("PyObject");
   emscripten::class_<Py>("Py")
-    .function<val>("call", &Py::call)
-    .function<val>("getattr", &Py::getattr)
-    .function<void>("setattr", &Py::setattr)
-    .function<val>("hasattr", &Py::hasattr)
-    .function<val>("getitem", &Py::getitem)
-    .function<void>("setitem", &Py::setitem)
-    .function<val>("hasitem", &Py::hasitem);
+    .class_function<bool>("isExtensible", &Py::isExtensible)
+    .class_function<bool>("has", &Py::has)
+    .class_function<val>("get", &Py::get)
+    .class_function<val>("set", &Py::set)
+    .class_function<val>("deleteProperty", &Py::deleteProperty)
+    .class_function<val>("ownKeys", &Py::ownKeys)
+    .class_function<val>("enumerate", &Py::enumerate);
+  emscripten::class_<PyCallable>("PyCallable")
+    .function<val>("call", &PyCallable::call);
 }
 
 extern "C" {

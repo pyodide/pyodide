@@ -27,8 +27,13 @@ PyObject *jsToPython(val x) {
     Py_INCREF(Py_False);
     return Py_False;
   } else if (!x["$$"].isUndefined() &&
-             x["$$"]["ptrType"]["name"].equals(val("Py*"))) {
-    Py py_x = x.as<Py>();
+             x["$$"]["ptrType"]["name"].equals(val("PyObject*"))) {
+    PyObject *py_x = x.as<PyObject *>(emscripten::allow_raw_pointers());
+    Py_INCREF(py_x);
+    return py_x;
+  } else if (!x["$$"].isUndefined() &&
+             x["$$"]["ptrType"]["name"].equals(val("PyCallable*"))) {
+    PyCallable py_x = x.as<PyCallable>();
     PyObject *pypy_x = py_x.x;
     Py_INCREF(pypy_x);
     return pypy_x;

@@ -9,21 +9,50 @@
 #include "js2python.hpp"
 #include "python2js.hpp"
 
+// This implements the Javascript Proxy handler interface as defined here:
+//     https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Proxy
+
 class Py {
+public:
+  static emscripten::val makeProxy(PyObject *obj);
+
+  static bool isExtensible(
+      emscripten::val obj, emscripten::val proxy);
+  static bool has(
+      emscripten::val obj, emscripten::val idx);
+  static emscripten::val get(
+      emscripten::val obj, emscripten::val idx, emscripten::val proxy);
+  static emscripten::val set(
+      emscripten::val obj, emscripten::val idx, emscripten::val value,
+      emscripten::val proxy);
+  static emscripten::val deleteProperty(
+      emscripten::val obj, emscripten::val idx);
+  static emscripten::val ownKeys(
+      emscripten::val obj);
+  static emscripten::val enumerate(
+      emscripten::val obj);
+};
+
+class PyCallable {
 public:
   PyObject *x;
 
-  Py(PyObject *obj);
-  Py(const Py& o);
-  ~Py();
+  PyCallable(PyObject *x_) : x(x_) {
+    Py_INCREF(x);
+  }
 
-  emscripten::val call(emscripten::val args, emscripten::val kwargs);
-  emscripten::val getattr(emscripten::val idx);
-  void setattr(emscripten::val idx, emscripten::val v);
-  emscripten::val hasattr(emscripten::val idx);
-  emscripten::val getitem(emscripten::val idx);
-  void setitem(emscripten::val idx, emscripten::val v);
-  emscripten::val hasitem(emscripten::val idx);
+  PyCallable(const PyCallable& o) : x(o.x) {
+    Py_INCREF(x);
+  }
+
+  ~PyCallable() {
+    Py_DECREF(x);
+  }
+
+  emscripten::val call(
+      emscripten::val args, emscripten::val kwargs);
+
+  static emscripten::val makeCallableProxy(PyObject *obj);
 };
 
 #endif /* PYPROXY_H */

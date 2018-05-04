@@ -17,49 +17,62 @@ val pythonExcToJs() {
 
   val excval("");
 
-  PyObject *tbmod = PyImport_ImportModule("traceback");
-  if (tbmod == NULL) {
-    excval = pythonToJs(PyObject_Repr(value));
-  } else {
-    PyObject *format_exception;
-    if (traceback == NULL || traceback == Py_None) {
-      no_traceback = true;
-      format_exception = PyObject_GetAttrString(tbmod, "format_exception_only");
-    } else {
-      format_exception = PyObject_GetAttrString(tbmod, "format_exception");
-    }
-    if (format_exception == NULL) {
-      excval = val("Couldn't get format_exception function");
-    } else {
-      PyObject *pylines;
-      if (no_traceback) {
-        pylines = PyObject_CallFunctionObjArgs
-          (format_exception, type, value, NULL);
-      } else {
-        pylines = PyObject_CallFunctionObjArgs
-          (format_exception, type, value, traceback, NULL);
-      }
-      if (pylines == NULL) {
-        excval = val("Error calling traceback.format_exception");
-        PyErr_Print();
-      } else {
-        PyObject *newline = PyUnicode_FromString("\n");
-        PyObject *pystr = PyUnicode_Join(newline, pylines);
-        PyObject_Print(pystr, stderr, 0);
-        excval = pythonToJs(pystr);
-        Py_DECREF(pystr);
-        Py_DECREF(newline);
-        Py_DECREF(pylines);
-      }
-      Py_DECREF(format_exception);
-    }
-    Py_DECREF(tbmod);
+  if (type == NULL || type == Py_None ||
+      value == NULL || value == Py_None) {
+    excval = val("No exception type or value");
+    PyErr_Print();
+    PyErr_Clear();
+    goto exit;
   }
 
+  {
+    PyObject *tbmod = PyImport_ImportModule("traceback");
+    if (tbmod == NULL) {
+      excval = pythonToJs(PyObject_Repr(value));
+    } else {
+      PyObject *format_exception;
+      if (traceback == NULL || traceback == Py_None) {
+        no_traceback = true;
+        format_exception = PyObject_GetAttrString(tbmod, "format_exception_only");
+      } else {
+        format_exception = PyObject_GetAttrString(tbmod, "format_exception");
+      }
+      if (format_exception == NULL) {
+        excval = val("Couldn't get format_exception function");
+      } else {
+        PyObject *pylines;
+        if (no_traceback) {
+          pylines = PyObject_CallFunctionObjArgs
+            (format_exception, type, value, NULL);
+        } else {
+          pylines = PyObject_CallFunctionObjArgs
+            (format_exception, type, value, traceback, NULL);
+        }
+        if (pylines == NULL) {
+          excval = val("Error calling traceback.format_exception");
+          PyErr_Print();
+          PyErr_Clear();
+          goto exit;
+        } else {
+          PyObject *newline = PyUnicode_FromString("\n");
+          PyObject *pystr = PyUnicode_Join(newline, pylines);
+          PyObject_Print(pystr, stderr, 0);
+          excval = pythonToJs(pystr);
+          Py_DECREF(pystr);
+          Py_DECREF(newline);
+          Py_DECREF(pylines);
+        }
+        Py_DECREF(format_exception);
+      }
+      Py_DECREF(tbmod);
+    }
+  }
+
+ exit:
   val exc = val::global("Error").new_(excval);
 
-  Py_DECREF(type);
-  Py_DECREF(value);
+  Py_XDECREF(type);
+  Py_XDECREF(value);
   Py_XDECREF(traceback);
 
   PyErr_Clear();
@@ -114,9 +127,10 @@ val pythonToJs(PyObject *x) {
     for (size_t i = 0; i < length; ++i) {
       PyObject *item = PySequence_GetItem(x, i);
       if (item == NULL) {
-        // If something goes wrong converting the sequence, fallback to the Python proxy
+        // If something goes wrong converting the sequence (as is the case with
+        // Pandas data frames), fallback to the Python object proxy
         PyErr_Clear();
-        return val(Py(x));
+        return Py::makeProxy(x);
       }
       x_array.call<int>("push", pythonToJs(item));
       Py_DECREF(item);
@@ -131,8 +145,10 @@ val pythonToJs(PyObject *x) {
       x_object.set(pythonToJs(k), pythonToJs(v));
     }
     return x_object;
+  } else if (PyCallable_Check(x)) {
+    return PyCallable::makeCallableProxy(x);
   } else {
-    return val(Py(x));
+    return Py::makeProxy(x);
   }
 }
 
