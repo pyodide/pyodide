@@ -45,8 +45,6 @@ def test_run_core_python_test(python_test, selenium):
         "from test.libregrtest import main\n"
         "main(['{}'], verbose=True, verbose3=True)".format(python_test))
     exitcode = selenium.run("exitcode")
-    if exitcode != 0:
-        print('\n'.join(selenium.logs))
     assert exitcode == 0
 
 

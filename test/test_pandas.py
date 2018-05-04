@@ -1,5 +1,6 @@
 def test_pandas(selenium):
-    selenium.run("import pandas")
+    selenium.load_package("pandas")
+    assert len(selenium.run("import pandas\ndir(pandas)")) == 6
 
 
 def test_extra_import(selenium):
