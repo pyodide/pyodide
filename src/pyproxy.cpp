@@ -58,8 +58,6 @@ val Py::deleteProperty(val obj, val idx) {
   int ret = PyObject_DelAttr(x, pyidx);
   Py_DECREF(pyidx);
 
-  printf("return %d\n", ret);
-
   if (ret) {
     return pythonExcToJs();
   }
