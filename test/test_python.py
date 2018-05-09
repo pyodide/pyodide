@@ -1,7 +1,6 @@
+import os
 import pathlib
 import time
-
-import pytest
 
 
 def test_init(selenium):
@@ -96,6 +95,6 @@ def pytest_generate_tests(metafunc):
                     test_modules.append(parts[0])
                     # XXX: The tests take too long to run, so we're just doing a
                     # sanity check on the first 25
-                    if len(test_modules) > 25:
+                    if 'TRAVIS' in os.environ and len(test_modules) > 25:
                         break
         metafunc.parametrize("python_test", test_modules)
