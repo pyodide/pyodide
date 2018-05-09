@@ -144,6 +144,7 @@ root/.built: \
 		src/lazy_import.py \
 		src/sitecustomize.py \
 		src/webbrowser.py \
+		src/pyodide.py \
 		remove_modules.txt
 	rm -rf root
 	mkdir -p root/lib
@@ -154,6 +155,7 @@ root/.built: \
 	cp src/webbrowser.py root/lib/python$(PYMINOR)
 	cp src/_testcapi.py	root/lib/python$(PYMINOR)
 	cp src/pystone.py root/lib/python$(PYMINOR)
+	cp src/pyodide.py root/lib/python$(PYMINOR)/site-packages
 	( \
 		cd root/lib/python$(PYMINOR); \
 		rm -fr `cat ../../../remove_modules.txt`; \

@@ -48,6 +48,13 @@ def test_py_proxy(selenium):
     assert selenium.run("hasattr(f, 'baz')") == False
 
 
+
+def test_open_url(selenium):
+    assert selenium.run(
+        "import pyodide\n"
+        "pyodide.open_url('../test/data.txt').read()\n") == 'HELLO\n'
+
+
 def test_run_core_python_test(python_test, selenium):
     selenium.run(
         "import sys\n"
