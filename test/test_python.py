@@ -68,12 +68,6 @@ def test_run_core_python_test(python_test, selenium):
         "    exitcode = n\n"
         "    raise SystemExit()\n\n"
         "sys.exit = exit\n")
-    # Undo the lazy modules setup -- it interferes with the CPython test
-    # harness
-    selenium.run(
-        "for k in list(sys.modules):\n"
-        "    if k.startswith('numpy'):\n"
-        "        del sys.modules[k]\n")
     selenium.run(
         "from test.libregrtest import main\n"
         "main(['{}'], verbose=True, verbose3=True)".format(python_test))
