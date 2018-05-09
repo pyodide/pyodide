@@ -28,8 +28,13 @@ def test_import_js(selenium):
 
 def test_py_proxy(selenium):
     selenium.run(
-        "class Foo:\n  bar = 42\n  def get_value(self):\n    return 64\nf = Foo()\n")
-    assert selenium.run_js("return pyodide.pyimport('f').get_value()") == 64
+        "class Foo:\n"
+        "  bar = 42\n"
+        "  def get_value(self, value):\n"
+        "    return value * 64\n"
+        "f = Foo()\n"
+    )
+    assert selenium.run_js("return pyodide.pyimport('f').get_value(2)") == 128
     assert selenium.run_js("return pyodide.pyimport('f').bar") == 42
     assert selenium.run_js("return ('bar' in pyodide.pyimport('f'))") == True
     selenium.run_js("f = pyodide.pyimport('f'); f.baz = 32")
