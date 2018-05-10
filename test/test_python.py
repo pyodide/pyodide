@@ -52,6 +52,16 @@ def test_py_proxy(selenium):
     assert selenium.run("hasattr(f, 'baz')") == False
 
 
+def test_js_proxy(selenium):
+    assert selenium.run(
+        "from js import document\n"
+        "el = document.createElement('div')\n"
+        "document.body.appendChild(el)\n"
+        "document.body.children.length\n"
+        ) == 1
+    assert selenium.run(
+        "document.body.children[0].tagName") == 'DIV'
+
 
 def test_open_url(selenium):
     assert selenium.run(

@@ -69,15 +69,10 @@ var languagePluginLoader = new Promise((resolve, reject) => {
 
     let makeCallableProxy = (obj) => {
         var clone = obj.clone();
-        return (args, kwargs) => {
-            if (args === undefined) {
-                args = [];
-            }
-            if (kwargs === undefined) {
-                kwargs = {};
-            }
-            return clone.call(args, kwargs);
+        function callProxy(args) {
+            return clone.call(Array.from(arguments), {});
         };
+        return callProxy;
     };
 
     let wasmURL = `${baseURL}pyodide.asm.wasm`;
