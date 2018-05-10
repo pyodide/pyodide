@@ -33,35 +33,35 @@ var languagePluginLoader = new Promise((resolve, reject) => {
         }
 
         let promise = new Promise((resolve, reject) => {
-            var n = toLoad.size;
-
-            if (n === 0) {
+            if (toLoad.size === 0) {
                 resolve('No new packages to load');
             }
+
+            pyodide.monitorRunDependencies = (n) => {
+                if (n === 0) {
+                    loadedPackages.add.apply(loadedPackages, toLoad);
+                    delete pyodide.monitorRunDependencies;
+                    const packageList = Array.from(toLoad.keys()).join(', ');
+                    resolve(`Loaded ${packageList}`);
+                }
+            };
 
             toLoad.forEach((package) => {
                 let script = document.createElement('script');
                 script.src = `${baseURL}${package}.js`;
                 console.log(script.src);
-                script.onload = (e) => {
-                    n--;
-                    loadedPackages.add(package);
-                    if (n <= 0) {
-                        // All of the requested packages are now loaded.
-                        // We have to invalidate Python's import caches, or it won't
-                        // see the new files.
-                        window.pyodide.runPython(
-                            'import importlib as _importlib\n' +
-                            '_importlib.invalidate_caches()\n');
-                        const packageList = Array.from(toLoad.keys()).join(', ');
-                        resolve(`Loaded ${packageList}`);
-                    }
-                };
                 script.onerror = (e) => {
                     reject(e);
                 };
                 document.body.appendChild(script);
             });
+
+            // We have to invalidate Python's import caches, or it won't
+            // see the new files. This is done here so it happens in parallel
+            // with the fetching over the network.
+            window.pyodide.runPython(
+                'import importlib as _importlib\n' +
+                    '_importlib.invalidate_caches()\n');
         });
 
         return promise;
