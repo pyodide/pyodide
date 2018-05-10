@@ -80,6 +80,23 @@ val pythonExcToJs() {
   return exc;
 }
 
+static bool isTypeName(PyObject *x, const char *name) {
+  PyObject *x_type = PyObject_Type(x);
+  if (x_type == NULL) {
+    // If we can't get a type, that's probably ok in this case...
+    PyErr_Clear();
+    return false;
+  }
+
+  PyObject *x_type_name = PyObject_Repr(x_type);
+  Py_DECREF(x_type);
+
+  bool result = (PyUnicode_CompareWithASCIIString(x_type_name, name) == 0);
+
+  Py_DECREF(x_type_name);
+  return result;
+}
+
 val pythonToJs(PyObject *x) {
   // TODO: bool, None
   if (x == Py_None) {
@@ -120,7 +137,7 @@ val pythonToJs(PyObject *x) {
     return val(x_str);
   } else if (JsProxy_Check(x)) {
     return JsProxy_AsVal(x);
-  } else if (PySequence_Check(x)) {
+  } else if (PyList_Check(x) || isTypeName(x, "<class 'numpy.ndarray'>")) {
     val array = val::global("Array");
     val x_array = array.new_();
     size_t length = PySequence_Size(x);
