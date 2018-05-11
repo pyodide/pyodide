@@ -108,7 +108,7 @@ test_colorsys
 test_compare
 test_compile
 test_compileall crash
-test_complex    floating point
+test_complex
 test_concurrent_futures
 test_configparser
 test_contains
@@ -138,7 +138,7 @@ test_dict
 test_dict_version
 test_dictcomps
 test_dictviews
-test_difflib  floating point
+test_difflib
 test_dis
 test_distutils crash
 test_doctest   subprocess
@@ -186,10 +186,10 @@ test_float  floating point
 test_flufl
 test_fnmatch
 test_fork1
-test_format floating point
+test_format
 test_fractions
 test_frame
-test_fstring  floating point
+test_fstring
 test_ftplib
 test_funcattrs
 test_functools
@@ -326,7 +326,7 @@ test_numeric_tower
 test_opcodes
 test_openpty  platform-specific
 test_operator
-test_optparse floating point
+test_optparse
 test_ordered_dict
 test_os mmap
 test_ossaudiodev
@@ -404,7 +404,7 @@ test_sqlite
 test_ssl
 test_startfile
 test_stat
-test_statistics floating point
+test_statistics
 test_strftime   strftime
 test_string
 test_string_literals  crash
@@ -462,7 +462,7 @@ test_ttk_textonly
 test_tuple
 test_turtle
 test_typechecks
-test_types  floating point
+test_types
 test_typing unknown
 test_ucn
 test_unary
