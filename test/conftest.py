@@ -76,7 +76,6 @@ if pytest is not None:
         selenium = SeleniumWrapper()
         try:
             yield selenium
-        except:
-            print(selenium.logs)
         finally:
+            print('\n'.join(selenium.logs))
             selenium.driver.quit()
