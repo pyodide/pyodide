@@ -1,9 +1,6 @@
 PYODIDE_ROOT=$(abspath ..)
 include ../Makefile.envs
 
-PYVERSION=3.6.4
-PYMINOR=$(basename $(PYVERSION))
-
 ROOT=$(abspath .)
 
 HOSTINSTALL=$(ROOT)/build/$(PYVERSION)/host
@@ -36,6 +33,7 @@ clean:
 	-rm -fr $(HOSTINSTALL)
 	-rm -fr $(BUILD)
 	-rm -fr $(INSTALL)
+
 
 $(TARBALL):
 	[ -d $(ROOT)/downloads ] || mkdir $(ROOT)/downloads

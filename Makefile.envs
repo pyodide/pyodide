@@ -5,3 +5,19 @@ export EM_CONFIG = $(PYODIDE_ROOT)/emsdk/emsdk/.emscripten
 export EM_CACHE = $(PYODIDE_ROOT)/emsdk/emsdk/.emscripten_cache
 export EMSCRIPTEN = $(PYODIDE_ROOT)/emsdk/emsdk/emscripten/incoming
 export BINARYEN_ROOT = $(PYODIDE_ROOT)/emsdk/emsdk/binaryen/master_64bit_binaryen
+
+export PYVERSION=3.6.4
+export PYMINOR=$(basename $(PYVERSION))
+export HOSTPYTHONINSTALL=$(PYODIDE_ROOT)/cpython/build/$(PYVERSION)/host
+export HOSTPYTHON=$(HOSTPYTHONINSTALL)/bin/python3
+export PYTHONINCLUDE=$(PYODIDE_ROOT)/cpython/installs/python-$(PYVERSION)/include/python$(PYMINOR)
+export PLATFORMSLUG=$(shell $(HOSTPYTHON) -c "import sysconfig; print(sysconfig.get_platform())")-$(PYMINOR)
+
+export SIDE_LDFLAGS=\
+	-O3 \
+	-Werror \
+  -s EMULATED_FUNCTION_POINTERS=1 \
+  -s EMULATE_FUNCTION_POINTER_CASTS=1 \
+  -s SIDE_MODULE=1 \
+	-s WASM=1 \
+  --memory-init-file 0

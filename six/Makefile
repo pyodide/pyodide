@@ -1,15 +1,9 @@
 PYODIDE_ROOT=$(abspath ..)
 include ../Makefile.envs
 
-PYVERSION=3.6.4
-PYMINOR=$(basename $(PYVERSION))
-
 SIXVERSION=1.11.0
 
 ROOT=$(abspath .)
-
-HOSTPYTHONINSTALL=$(ROOT)/../cpython/build/$(PYVERSION)/host
-HOSTPYTHON=$(HOSTPYTHONINSTALL)/bin/python3$(EXE)
 
 SRC=$(ROOT)/six-$(SIXVERSION)
 BUILD=$(SRC)/build/lib/six

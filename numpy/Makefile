@@ -1,16 +1,9 @@
 PYODIDE_ROOT=$(abspath ..)
 include ../Makefile.envs
 
-PYVERSION=3.6.4
-PYMINOR=$(basename $(PYVERSION))
-
 NPYVERSION=1.14.1
 
 ROOT=$(abspath .)
-
-HOSTPYTHONINSTALL=$(ROOT)/../cpython/build/$(PYVERSION)/host
-HOSTPYTHON=$(HOSTPYTHONINSTALL)/bin/python3$(EXE)
-PYTHONINCLUDE=$(ROOT)/../cpython/installs/python-$(PYVERSION)/include/python$(PYMINOR)
 
 HOSTROOT=$(ROOT)/host
 HOSTDIR=$(HOSTROOT)/numpy-$(NPYVERSION)
@@ -25,8 +18,6 @@ BUILDRANDOM=$(BUILD)/numpy/random
 ZIPFILE=$(ROOT)/downloads/numpy-$(NPYVERSION).zip
 URL=https://pypi.python.org/packages/a3/99/74aa456fc740a7e8f733af4e8302d8e61e123367ec660cd89c53a3cd4d70/numpy-1.14.1.zip
 
-PLATFORMSLUG=$(shell $(HOSTPYTHON) -c "import sysconfig; print(sysconfig.get_platform())")-$(PYMINOR)
-
 INCLUDE=$(HOSTDIR)/numpy/core/include
 SRC=$(HOSTDIR)/numpy/core/src
 GENINCLUDE=$(HOSTBUILD)/src.$(PLATFORMSLUG)/numpy/core/include
@@ -39,18 +30,8 @@ RANDOM_SRC=$(HOSTDIR)/numpy/random
 CC=emcc
 AR=emar
 CFLAGS=-O3 -Werror -std=c99 -DNPY_INTERNAL_BUILD=1 -DHAVE_NPY_CONFIG_H=1 -D_FILE_OFFSET_BITS=64 -D_LARGEFILE_SOURCE=1 -D_LARGEFILE64_SOURCE=1 -I$(ROOT)/config -I$(INCLUDE) -I$(GENINCLUDE)/numpy -I$(INCLUDE)/private -I$(SRC) -I$(SRC)/.. -I$(SRC)/private -I$(SRC)/npymath -I$(SRC)/multiarray -I$(SRC)/umath -I$(SRC)/npysort -I$(PYTHONINCLUDE) -I$(GENSRC)/private -I$(GENSRC)/npymath -I$(GENSRC)/umath
-LDFLAGS=\
-	-O3 \
-	-Werror \
-  -s EMULATED_FUNCTION_POINTERS=1 \
-  -s EMULATE_FUNCTION_POINTER_CASTS=1 \
-  -s SIDE_MODULE=1 \
-	-s WASM=1 \
-  --memory-init-file 0
 
-
-all: \
-	$(BUILD)/numpy/__init__.py \
+OBJECTS= \
 	$(BUILDCORE)/multiarray.so \
 	$(BUILDCORE)/umath.so \
 	$(BUILDLINALG)/lapack_lite.so \
@@ -58,6 +39,9 @@ all: \
 	$(BUILDRANDOM)/mtrand.so \
 	$(BUILDFFT)/fftpack_lite.so
 
+all:
+	make $(BUILD)/numpy/__init__.py
+	make $(OBJECTS)
 
 clean:
 	rm -fr $(HOSTROOT)
@@ -210,34 +194,34 @@ MTRAND_SRC=\
 
 
 $(BUILDCORE)/multiarray.so: $(MULTIARRAY_SRC) $(NPYMATH_SRC) $(NPYSORT_SRC)
-	$(CC) $(LDFLAGS) $^ -o $(BUILDCORE)/multiarray.wasm
+	$(CC) $(SIDE_LDFLAGS) $^ -o $(BUILDCORE)/multiarray.wasm
 	mv $(BUILDCORE)/multiarray.wasm $(BUILDCORE)/multiarray.so
 
 
 $(BUILDCORE)/umath.so: $(UMATH_SRC) $(NPYMATH_SRC)
-	$(CC) $(LDFLAGS) $^ -o $(BUILDCORE)/umath.wasm
+	$(CC) $(SIDE_LDFLAGS) $^ -o $(BUILDCORE)/umath.wasm
 	mv $(BUILDCORE)/umath.wasm $(BUILDCORE)/umath.so
 
 
 $(BUILDLINALG)/lapack_lite.so: $(LAPACK_LITE_SRC) $(LAPACK_BLAS_SRC) $(NPYMATH_SRC)
-	$(CC) $(LDFLAGS) $^ -o $(BUILDLINALG)/lapack_lite.wasm
+	$(CC) $(SIDE_LDFLAGS) $^ -o $(BUILDLINALG)/lapack_lite.wasm
 	mv $(BUILDLINALG)/lapack_lite.wasm $(BUILDLINALG)/lapack_lite.so
 
 
 $(BUILDLINALG)/_umath_linalg.so: $(UMATH_LINALG_SRC) $(LAPACK_BLAS_SRC) $(NPYMATH_SRC)
-	$(CC) $(LDFLAGS) $^ -o $(BUILDLINALG)/_umath_linalg.wasm
+	$(CC) $(SIDE_LDFLAGS) $^ -o $(BUILDLINALG)/_umath_linalg.wasm
 	mv $(BUILDLINALG)/_umath_linalg.wasm $(BUILDLINALG)/_umath_linalg.so
 
 
 $(BUILDFFT)/fftpack_lite.so: $(FFTPACK_LITE_SRC)
-	$(CC) $(LDFLAGS) $^ -o $(BUILDFFT)/fftpack_lite.wasm
+	$(CC) $(SIDE_LDFLAGS) $^ -o $(BUILDFFT)/fftpack_lite.wasm
 	mv $(BUILDFFT)/fftpack_lite.wasm $(BUILDFFT)/fftpack_lite.so
 
 
 $(BUILDRANDOM)/mtrand.so: $(MTRAND_SRC)
-	$(CC) $(LDFLAGS) $^ -o $(BUILDRANDOM)/mtrand.wasm
+	$(CC) $(SIDE_LDFLAGS) $^ -o $(BUILDRANDOM)/mtrand.wasm
 	mv $(BUILDRANDOM)/mtrand.wasm $(BUILDRANDOM)/mtrand.so
 
 
-%.bc: %.c $(BUILD)/numpy/__init__.py
+%.bc: %.c
 	$(CC) $(CFLAGS) -include math.h -c $< -o $@

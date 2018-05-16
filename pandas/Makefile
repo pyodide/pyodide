@@ -1,17 +1,10 @@
 PYODIDE_ROOT=$(abspath ..)
 include ../Makefile.envs
 
-PYVERSION=3.6.4
-PYMINOR=$(basename $(PYVERSION))
-
 PDVERSION=0.22.0
 NPYVERSION=1.14.1
 
 ROOT=$(abspath .)
-
-HOSTPYTHONINSTALL=$(ROOT)/../cpython/build/$(PYVERSION)/host
-HOSTPYTHON=$(HOSTPYTHONINSTALL)/bin/python3$(EXE)
-PYTHONINCLUDE=$(ROOT)/../cpython/installs/python-$(PYVERSION)/include/python$(PYMINOR)
 
 HOSTROOT=$(ROOT)/host
 HOSTDIR=$(HOSTROOT)/pandas-$(PDVERSION)
@@ -22,24 +15,12 @@ BUILD=$(ROOT)/build/pandas
 TARBALL=$(ROOT)/downloads/pandas-$(PDVERSION).tar.gz
 URL=https://pypi.python.org/packages/08/01/803834bc8a4e708aedebb133095a88a4dad9f45bbaf5ad777d2bea543c7e/pandas-0.22.0.tar.gz
 
-PLATFORMSLUG=$(shell $(HOSTPYTHON) -c "import sysconfig; print(sysconfig.get_platform())")-$(PYMINOR)
-
 CC=emcc
 CXX=em++
 AR=emar
 CFLAGS=-Wsign-compare -DNDEBUG -g -fwrapv -O3 -Wall -Wstrict-prototypes -fPIC -I$(HOSTDIR)/pandas/_libs/src/klib -I$(HOSTDIR)/pandas/_libs/src -I../numpy/host/numpy-$(NPYVERSION)/numpy/core/include -I../numpy/config -I../numpy/host/numpy-$(NPYVERSION)/build/src.$(PLATFORMSLUG)/numpy/core/include/numpy -I$(PYTHONINCLUDE) -I$(HOSTDIR)/pandas/_libs/src/ujson/lib -I$(HOSTDIR)/pandas/_libs/src/datetime -Wno-unused-function
-LDFLAGS=\
-	-O3 \
-	-Werror \
-  -s EMULATED_FUNCTION_POINTERS=1 \
-  -s EMULATE_FUNCTION_POINTER_CASTS=1 \
-  -s SIDE_MODULE=1 \
-	-s WASM=1 \
-  --memory-init-file 0
 
-
-all: \
-	$(BUILD)/__init__.py \
+OBJECTS = \
 	$(BUILD)/_libs/algos.so \
 	$(BUILD)/_libs/groupby.so \
 	$(BUILD)/_libs/hashtable.so \
@@ -66,7 +47,12 @@ all: \
 	$(BUILD)/io/msgpack/_unpacker.so \
 	$(BUILD)/_libs/testing.so \
 	$(BUILD)/io/sas/_sas.so \
-	$(BUILD)/util/_move.so
+	$(BUILD)/util/_move.so \
+
+
+all:
+	make $(BUILD)/__init__.py
+	make $(OBJECTS)
 
 
 clean:
@@ -105,54 +91,54 @@ $(ROOT)/.patched: $(HOSTDIR)/setup.py
 
 
 $(BUILD)/_libs/lib.so: $(HOSTDIR)/pandas/_libs/lib.bc
-	$(CC) $(LDFLAGS) $^ -o tmp.wasm
-	mv tmp.wasm $@
+	$(CC) $(SIDE_LDFLAGS) $^ -o $@.wasm
+	mv $@.wasm $@
 
 
 $(BUILD)/_libs/properties.so: $(HOSTDIR)/pandas/_libs/properties.bc
-	$(CC) $(LDFLAGS) $^ -o tmp.wasm
-	mv tmp.wasm $@
+	$(CC) $(SIDE_LDFLAGS) $^ -o $@.wasm
+	mv $@.wasm $@
 
 
 $(BUILD)/_libs/hashtable.so: $(HOSTDIR)/pandas/_libs/hashtable.bc
-	$(CC) $(LDFLAGS) $^ -o tmp.wasm
-	mv tmp.wasm $@
+	$(CC) $(SIDE_LDFLAGS) $^ -o $@.wasm
+	mv $@.wasm $@
 
 
 $(BUILD)/_libs/tslibs/strptime.so: \
 		$(HOSTDIR)/pandas/_libs/tslibs/strptime.bc \
 		$(HOSTDIR)/pandas/_libs/src/datetime/np_datetime.bc \
 		$(HOSTDIR)/pandas/_libs/src/datetime/np_datetime_strings.bc
-	$(CC) $(LDFLAGS) $^ -o tmp.wasm
-	mv tmp.wasm $@
+	$(CC) $(SIDE_LDFLAGS) $^ -o $@.wasm
+	mv $@.wasm $@
 
 
 $(BUILD)/_libs/tslib.so: \
 		$(HOSTDIR)/pandas/_libs/tslib.bc \
 		$(HOSTDIR)/pandas/_libs/src/datetime/np_datetime.bc \
 		$(HOSTDIR)/pandas/_libs/src/datetime/np_datetime_strings.bc
-	$(CC) $(LDFLAGS) $^ -o tmp.wasm
-	mv tmp.wasm $@
+	$(CC) $(SIDE_LDFLAGS) $^ -o $@.wasm
+	mv $@.wasm $@
 
 
 $(BUILD)/_libs/tslibs/timedeltas.so: \
 		$(HOSTDIR)/pandas/_libs/tslibs/timedeltas.bc
-	$(CC) $(LDFLAGS) $^ -o tmp.wasm
-	mv tmp.wasm $@
+	$(CC) $(SIDE_LDFLAGS) $^ -o $@.wasm
+	mv $@.wasm $@
 
 
 $(BUILD)/_libs/tslibs/timezones.so: \
 		$(HOSTDIR)/pandas/_libs/tslibs/timezones.bc
-	$(CC) $(LDFLAGS) $^ -o tmp.wasm
-	mv tmp.wasm $@
+	$(CC) $(SIDE_LDFLAGS) $^ -o $@.wasm
+	mv $@.wasm $@
 
 
 $(BUILD)/_libs/tslibs/fields.so: \
 		$(HOSTDIR)/pandas/_libs/tslibs/fields.bc \
 		$(HOSTDIR)/pandas/_libs/src/datetime/np_datetime.bc \
 		$(HOSTDIR)/pandas/_libs/src/datetime/np_datetime_strings.bc
-	$(CC) $(LDFLAGS) $^ -o tmp.wasm
-	mv tmp.wasm $@
+	$(CC) $(SIDE_LDFLAGS) $^ -o $@.wasm
+	mv $@.wasm $@
 
 
 $(BUILD)/_libs/period.so: \
@@ -160,20 +146,20 @@ $(BUILD)/_libs/period.so: \
 		$(HOSTDIR)/pandas/_libs/src/datetime/np_datetime.bc \
 		$(HOSTDIR)/pandas/_libs/src/datetime/np_datetime_strings.bc \
 		$(HOSTDIR)/pandas/_libs/src/period_helper.bc
-	$(CC) $(LDFLAGS) $^ -o tmp.wasm
-	mv tmp.wasm $@
+	$(CC) $(SIDE_LDFLAGS) $^ -o $@.wasm
+	mv $@.wasm $@
 
 
 $(BUILD)/_libs/tslibs/parsing.so: \
 		$(HOSTDIR)/pandas/_libs/tslibs/parsing.bc
-	$(CC) $(LDFLAGS) $^ -o tmp.wasm
-	mv tmp.wasm $@
+	$(CC) $(SIDE_LDFLAGS) $^ -o $@.wasm
+	mv $@.wasm $@
 
 
 $(BUILD)/_libs/tslibs/frequencies.so: \
 		$(HOSTDIR)/pandas/_libs/tslibs/frequencies.bc
-	$(CC) $(LDFLAGS) $^ -o tmp.wasm
-	mv tmp.wasm $@
+	$(CC) $(SIDE_LDFLAGS) $^ -o $@.wasm
+	mv $@.wasm $@
 
 
 $(BUILD)/_libs/index.so: \
@@ -181,88 +167,88 @@ $(BUILD)/_libs/index.so: \
 		$(HOSTDIR)/pandas/_libs/src/datetime/np_datetime.bc \
 		$(HOSTDIR)/pandas/_libs/src/datetime/np_datetime_strings.bc \
 		$(HOSTDIR)/pandas/_libs/src/period_helper.bc
-	$(CC) $(LDFLAGS) $^ -o tmp.wasm
-	mv tmp.wasm $@
+	$(CC) $(SIDE_LDFLAGS) $^ -o $@.wasm
+	mv $@.wasm $@
 
 
 $(BUILD)/_libs/algos.so: \
 		$(HOSTDIR)/pandas/_libs/algos.bc
-	$(CC) $(LDFLAGS) $^ -o tmp.wasm
-	mv tmp.wasm $@
+	$(CC) $(SIDE_LDFLAGS) $^ -o $@.wasm
+	mv $@.wasm $@
 
 
 $(BUILD)/_libs/groupby.so: \
 		$(HOSTDIR)/pandas/_libs/groupby.bc
-	$(CC) $(LDFLAGS) $^ -o tmp.wasm
-	mv tmp.wasm $@
+	$(CC) $(SIDE_LDFLAGS) $^ -o $@.wasm
+	mv $@.wasm $@
 
 
 $(BUILD)/_libs/join.so: \
 		$(HOSTDIR)/pandas/_libs/join.bc
-	$(CC) $(LDFLAGS) $^ -o tmp.wasm
-	mv tmp.wasm $@
+	$(CC) $(SIDE_LDFLAGS) $^ -o $@.wasm
+	mv $@.wasm $@
 
 
 $(BUILD)/_libs/reshape.so: \
 		$(HOSTDIR)/pandas/_libs/reshape.bc
-	$(CC) $(LDFLAGS) $^ -o tmp.wasm
-	mv tmp.wasm $@
+	$(CC) $(SIDE_LDFLAGS) $^ -o $@.wasm
+	mv $@.wasm $@
 
 
 $(BUILD)/_libs/interval.so: \
 		$(HOSTDIR)/pandas/_libs/interval.bc
-	$(CC) $(LDFLAGS) $^ -o tmp.wasm
-	mv tmp.wasm $@
+	$(CC) $(SIDE_LDFLAGS) $^ -o $@.wasm
+	mv $@.wasm $@
 
 
 $(BUILD)/_libs/window.so: \
 		$(HOSTDIR)/pandas/_libs/window.bc
-	$(CC) $(LDFLAGS) $^ -o tmp.wasm
-	mv tmp.wasm $@
+	$(CC) $(SIDE_LDFLAGS) $^ -o $@.wasm
+	mv $@.wasm $@
 
 
 $(BUILD)/_libs/parsers.so: \
 		$(HOSTDIR)/pandas/_libs/parsers.bc \
 		$(HOSTDIR)/pandas/_libs/src/parser/tokenizer.bc \
 		$(HOSTDIR)/pandas/_libs/src/parser/io.bc
-	$(CC) $(LDFLAGS) $^ -o tmp.wasm
-	mv tmp.wasm $@
+	$(CC) $(SIDE_LDFLAGS) $^ -o $@.wasm
+	mv $@.wasm $@
 
 
 $(BUILD)/_libs/sparse.so: \
 		$(HOSTDIR)/pandas/_libs/sparse.bc
-	$(CC) $(LDFLAGS) $^ -o tmp.wasm
-	mv tmp.wasm $@
+	$(CC) $(SIDE_LDFLAGS) $^ -o $@.wasm
+	mv $@.wasm $@
 
 
 $(BUILD)/_libs/hashing.so: \
 		$(HOSTDIR)/pandas/_libs/hashing.bc
-	$(CC) $(LDFLAGS) $^ -o tmp.wasm
-	mv tmp.wasm $@
+	$(CC) $(SIDE_LDFLAGS) $^ -o $@.wasm
+	mv $@.wasm $@
 
 
 $(BUILD)/io/sas/_sas.so: \
 		$(HOSTDIR)/pandas/io/sas/sas.bc
-	$(CC) $(LDFLAGS) $^ -o tmp.wasm
-	mv tmp.wasm $@
+	$(CC) $(SIDE_LDFLAGS) $^ -o $@.wasm
+	mv $@.wasm $@
 
 
 $(BUILD)/_libs/testing.so: \
 		$(HOSTDIR)/pandas/_libs/testing.bc
-	$(CC) $(LDFLAGS) $^ -o tmp.wasm
-	mv tmp.wasm $@
+	$(CC) $(SIDE_LDFLAGS) $^ -o $@.wasm
+	mv $@.wasm $@
 
 
 $(BUILD)/io/msgpack/_packer.so: \
 		$(HOSTDIR)/pandas/io/msgpack/_packer.bc
-	$(CC) $(LDFLAGS) $^ -o tmp.wasm
-	mv tmp.wasm $@
+	$(CC) $(SIDE_LDFLAGS) $^ -o $@.wasm
+	mv $@.wasm $@
 
 
 $(BUILD)/io/msgpack/_unpacker.so: \
 		$(HOSTDIR)/pandas/io/msgpack/_unpacker.bc
-	$(CC) $(LDFLAGS) $^ -o tmp.wasm
-	mv tmp.wasm $@
+	$(CC) $(SIDE_LDFLAGS) $^ -o $@.wasm
+	mv $@.wasm $@
 
 
 $(BUILD)/_libs/json.so: \
@@ -273,19 +259,19 @@ $(BUILD)/_libs/json.so: \
 		$(HOSTDIR)/pandas/_libs/src/ujson/lib/ultrajsondec.bc \
 		$(HOSTDIR)/pandas/_libs/src/datetime/np_datetime.bc \
 		$(HOSTDIR)/pandas/_libs/src/datetime/np_datetime_strings.bc
-	$(CC) $(LDFLAGS) $^ -o tmp.wasm
-	mv tmp.wasm $@
+	$(CC) $(SIDE_LDFLAGS) $^ -o $@.wasm
+	mv $@.wasm $@
 
 
 $(BUILD)/util/_move.so: \
 		$(HOSTDIR)/pandas/util/move.bc
-	$(CC) $(LDFLAGS) $^ -o tmp.wasm
-	mv tmp.wasm $@
+	$(CC) $(SIDE_LDFLAGS) $^ -o $@.wasm
+	mv $@.wasm $@
 
 
-%.bc: %.c $(BUILD)/__init__.py
+%.bc: %.c
 	$(CC) $(CFLAGS) -include src/state.h -c $< -o $@
 
 
-%.bc: %.cpp $(BUILD)/__init__.py
+%.bc: %.cpp
 	$(CXX) $(CFLAGS) -include src/state.h -c $< -o $@

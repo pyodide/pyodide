@@ -3,17 +3,13 @@ include Makefile.envs
 
 FILEPACKAGER=emsdk/emsdk/emscripten/incoming/tools/file_packager.py
 
-PYVERSION=3.6.4
-PYMINOR=$(basename $(PYVERSION))
 CPYTHONROOT=cpython
 CPYTHONLIB=$(CPYTHONROOT)/installs/python-$(PYVERSION)/lib/python$(PYMINOR)
-CPYTHONINC=$(CPYTHONROOT)/installs/python-$(PYVERSION)/include/python$(PYMINOR)
-HOSTPYTHON=$(CPYTHONROOT)/build/$(PYVERSION)/host/bin/python3
 
 CC=emcc
 CXX=em++
 OPTFLAGS=-O3
-CFLAGS=$(OPTFLAGS) -g -I$(CPYTHONINC) -Wno-warn-absolute-paths
+CFLAGS=$(OPTFLAGS) -g -I$(PYTHONINCLUDE) -Wno-warn-absolute-paths
 CXXFLAGS=$(CFLAGS) -std=c++14
 LDFLAGS=\
 	-O3 \
@@ -53,7 +49,7 @@ SIX_LIBS=$(SIX_ROOT)/six.py
 
 SITEPACKAGES=root/lib/python$(PYMINOR)/site-packages
 
-all: build/pyodide.asm.html \
+all: build/pyodide.asm.js \
 	build/pyodide.js \
 	build/pyodide_dev.js \
 	build/python.html \
@@ -64,12 +60,12 @@ all: build/pyodide.asm.html \
 	build/pandas.data
 
 
-build/pyodide.asm.html: src/main.bc src/jsimport.bc src/jsproxy.bc src/js2python.bc \
-                        src/pyimport.bc src/pyproxy.bc src/python2js.bc \
-												src/runpython.bc src/dummy_thread.bc root/.built
+build/pyodide.asm.js: src/main.bc src/jsimport.bc src/jsproxy.bc src/js2python.bc \
+											src/pyimport.bc src/pyproxy.bc src/python2js.bc \
+											src/runpython.bc src/dummy_thread.bc root/.built
 	[ -d build ] || mkdir build
-	$(CC) -s EXPORT_NAME="'pyodide'" --bind -o $@ $(filter %.bc,$^) $(LDFLAGS) \
-		$(foreach d,$(wildcard root/*),--preload-file $d@/$(notdir $d))
+	$(CC) -s EXPORT_NAME="'pyodide'" --bind -o build/pyodide.asm.html $(filter %.bc,$^) \
+	  $(LDFLAGS) $(foreach d,$(wildcard root/*),--preload-file $d@/$(notdir $d))
 	rm build/pyodide.asm.asm.js
 	rm build/pyodide.asm.wasm.pre
 	rm build/pyodide.asm.html

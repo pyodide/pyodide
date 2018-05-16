@@ -1,15 +1,9 @@
 PYODIDE_ROOT=$(abspath ..)
 include ../Makefile.envs
 
-PYVERSION=3.6.4
-PYMINOR=$(basename $(PYVERSION))
-
 PYTZVERSION=2018.4
 
 ROOT=$(abspath .)
-
-HOSTPYTHONINSTALL=$(ROOT)/../cpython/build/$(PYVERSION)/host
-HOSTPYTHON=$(HOSTPYTHONINSTALL)/bin/python3$(EXE)
 
 SRC=$(ROOT)/pytz-$(PYTZVERSION)
 BUILD=$(SRC)/build/lib/pytz

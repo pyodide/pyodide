@@ -1,15 +1,9 @@
 PYODIDE_ROOT=$(abspath ..)
 include ../Makefile.envs
 
-PYVERSION=3.6.4
-PYMINOR=$(basename $(PYVERSION))
-
 DATEUTILVERSION=2.7.2
 
 ROOT=$(abspath .)
-
-HOSTPYTHONINSTALL=$(ROOT)/../cpython/build/$(PYVERSION)/host
-HOSTPYTHON=$(HOSTPYTHONINSTALL)/bin/python3$(EXE)
 
 SRC=$(ROOT)/python-dateutil-$(DATEUTILVERSION)
 BUILD=$(SRC)/build/lib/dateutil
