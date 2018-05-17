@@ -1,0 +1,14 @@
+diff -ur matplotlib-2.2.2/src/_png.cpp host/matplotlib-2.2.2/src/_png.cpp
+--- matplotlib-2.2.2/src/_png.cpp	2018-03-17 14:03:23.000000000 -0400
++++ host/matplotlib-2.2.2/src/_png.cpp	2018-05-16 17:37:38.065033586 -0400
+@@ -774,6 +774,10 @@
+             INITERROR;
+         }
+
++        volatile long x;
++        x = (long)malloc(0);
++        free((void*)x);
++
+         import_array();
+
+         if (PyModule_AddIntConstant(m, "PNG_FILTER_NONE", PNG_FILTER_NONE) ||

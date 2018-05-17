@@ -1,0 +1,23 @@
+diff -ur matplotlib-2.2.2/lib/matplotlib/font_manager.py matplotlib-2.2.2/lib/matplotlib/font_manager.py
+--- a/lib/matplotlib/font_manager.py	2018-03-17 14:03:23.000000000 -0400
++++ b/lib/matplotlib/font_manager.py	2018-05-16 16:56:49.399466649 -0400
+@@ -416,11 +419,17 @@
+     sfnt2 = sfnt.get((1,0,0,2))
+     sfnt4 = sfnt.get((1,0,0,4))
+     if sfnt2:
+-        sfnt2 = sfnt2.decode('mac_roman').lower()
++        try:
++            sfnt2 = sfnt2.decode('mac_roman').lower()
++        except LookupError:
++            sfnt2 = sfnt2.decode('latin1').lower()
+     else:
+         sfnt2 = ''
+     if sfnt4:
+-        sfnt4 = sfnt4.decode('mac_roman').lower()
++        try:
++            sfnt4 = sfnt4.decode('mac_roman').lower()
++        except LoopupError:
++            sfnt4 = sfnt4.decode('latin1').lower()
+     else:
+         sfnt4 = ''
+     if sfnt4.find('oblique') >= 0:

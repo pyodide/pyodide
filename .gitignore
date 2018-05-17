@@ -5,28 +5,18 @@
 __pycache__
 geckodriver.log
 
+build
+downloads
+host
+installs
+
 /root/
 /build/
 
 /emsdk/emsdk
 
-/cpython/build
-/cpython/downloads
-/cpython/installs
-
-/numpy/build
-/numpy/host
-/numpy/downloads
-
-/pandas/build
-/pandas/host
-/pandas/downloads
-
-/dateutil/downloads
 /dateutil/python-dateutil-2.7.2
-
-/pytz/downloads
 /pytz/pytz-2018.4
-
-/six/downloads
 /six/six-1.11.0
+/cycler/cycler-0.10.0
+/pyparsing/pyparsing-2.2.0

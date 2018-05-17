@@ -3,6 +3,7 @@ var languagePluginLoader = new Promise((resolve, reject) => {
 
     const packages = {
         'dateutil': [],
+        'matplotlib': ['numpy', 'dateutil', 'pytz'],
         'numpy': [],
         'pandas': ['numpy', 'dateutil', 'pytz'],
         'pytz': [],
@@ -118,15 +119,23 @@ var languagePluginLoader = new Promise((resolve, reject) => {
             render: (val) => {
                 let div = document.createElement('div');
                 div.className = 'rendered_html';
+                var element;
                 if ('_repr_html_' in val) {
-                    div.appendChild(new DOMParser().parseFromString(
-                        val._repr_html_(), 'text/html').body.firstChild);
+                    let result = val._repr_html_();
+                    if (typeof result === 'string') {
+                        div.appendChild(new DOMParser().parseFromString(
+                            result, 'text/html').body.firstChild);
+                        element = div;
+                    } else {
+                        element = result;
+                    }
                 } else {
                     let pre = document.createElement('pre');
                     pre.textContent = window.pyodide.repr(val);
                     div.appendChild(pre);
+                    element = div;
                 }
-                return div;
+                return element;
             }
         });
     }

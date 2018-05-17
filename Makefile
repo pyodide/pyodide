@@ -23,6 +23,7 @@ LDFLAGS=\
   -s EXPORTED_FUNCTIONS='["_main"]' \
   -s WASM=1 \
 	-s SWAPPABLE_ASM_MODULE=1 \
+	-s USE_FREETYPE=1 \
   --memory-init-file 0
 
 NUMPY_ROOT=numpy/build/numpy
@@ -38,6 +39,10 @@ PANDAS_ROOT=pandas/build/pandas
 PANDAS_LIBS=\
 	$(PANDAS_ROOT)/_libs/lib.so
 
+MATPLOTLIB_ROOT=matplotlib/build/matplotlib
+MATPLOTLIB_LIBS=\
+	$(MATPLOTLIB_ROOT)/_path.so
+
 DATEUTIL_ROOT=dateutil/python-dateutil-2.7.2/build/lib/dateutil
 DATEUTIL_LIBS=$(DATEUTIL_ROOT)/__init__.py
 
@@ -46,6 +51,15 @@ PYTZ_LIBS=$(PYTZ_ROOT)/__init__.py
 
 SIX_ROOT=six/six-1.11.0/build/lib
 SIX_LIBS=$(SIX_ROOT)/six.py
+
+PYPARSING_ROOT=pyparsing/pyparsing-2.2.0/build/lib
+PYPARSING_LIBS=$(PYPARSING_ROOT)/pyparsing.py
+
+CYCLER_ROOT=cycler/cycler-0.10.0/build/lib
+CYCLER_LIBS=$(CYCLER_ROOT)/cycler.py
+
+KIWISOLVER_ROOT=kiwisolver/build
+KIWISOLVER_LIBS=$(KIWISOLVER_ROOT)/kiwisolver.so
 
 SITEPACKAGES=root/lib/python$(PYMINOR)/site-packages
 
@@ -57,7 +71,8 @@ all: build/pyodide.asm.js \
 	build/numpy.data \
 	build/dateutil.data \
 	build/pytz.data \
-	build/pandas.data
+	build/pandas.data \
+	build/matplotlib.data
 
 
 build/pyodide.asm.js: src/main.bc src/jsimport.bc src/jsproxy.bc src/js2python.bc \
@@ -134,9 +149,16 @@ build/pandas.data: $(PANDAS_LIBS)
 	python2 $(FILEPACKAGER) build/pandas.data --preload $(PANDAS_ROOT)@/lib/python3.6/site-packages/pandas --js-output=build/pandas.js --export-name=pyodide --exclude \*.wasm.pre --exclude __pycache__
 
 
+build/matplotlib.data: $(MATPLOTLIB_LIBS)
+	python2 $(FILEPACKAGER) build/matplotlib.data --preload $(MATPLOTLIB_ROOT)@/lib/python3.6/site-packages/matplotlib --js-output=build/matplotlib.js --export-name=pyodide --exclude \*.wasm.pre --exclude __pycache__
+
+
 root/.built: \
 		$(CPYTHONLIB) \
 		$(SIX_LIBS) \
+		$(PYPARSING_LIBS) \
+		$(CYCLER_LIBS) \
+		$(KIWISOLVER_LIBS) \
 		src/lazy_import.py \
 		src/sitecustomize.py \
 		src/webbrowser.py \
@@ -146,6 +168,9 @@ root/.built: \
 	mkdir -p root/lib
 	cp -a $(CPYTHONLIB)/ root/lib
 	cp $(SIX_LIBS) $(SITEPACKAGES)
+	cp $(PYPARSING_LIBS) $(SITEPACKAGES)
+	cp $(CYCLER_LIBS) $(SITEPACKAGES)
+	cp $(KIWISOLVER_LIBS) $(SITEPACKAGES)
 	cp src/lazy_import.py $(SITEPACKAGES)
 	cp src/sitecustomize.py $(SITEPACKAGES)
 	cp src/webbrowser.py root/lib/python$(PYMINOR)
@@ -156,7 +181,6 @@ root/.built: \
 		cd root/lib/python$(PYMINOR); \
 		rm -fr `cat ../../../remove_modules.txt`; \
 		rm encodings/cp*.py; \
-		rm encodings/mac_*.py; \
 		find . -name "*.wasm.pre" -type f -delete ; \
 		find -type d -name __pycache__ -prune -exec rm -rf {} \; \
 	)
@@ -175,6 +199,10 @@ $(PANDAS_LIBS): $(NUMPY_LIBS)
 	make -C pandas
 
 
+$(MATPLOTLIB_LIBS): $(NUMPY_LIBS)
+	make -C matplotlib
+
+
 $(DATEUTIL_LIBS): $(CPYTHONLIB)
 	make -C dateutil
 
@@ -185,6 +213,18 @@ $(PYTZ_LIBS): $(CPYTHONLIB)
 
 $(SIX_LIBS): $(CPYTHONLIB)
 	make -C six
+
+
+$(PYPARSING_LIBS): $(CPYTHONLIB)
+	make -C pyparsing
+
+
+$(CYCLER_LIBS): $(CPYTHONLIB)
+	make -C cycler
+
+
+$(KIWISOLVER_LIBS): $(CPYTHONLIB)
+	make -C kiwisolver
 
 
 emsdk/emsdk/emsdk:
