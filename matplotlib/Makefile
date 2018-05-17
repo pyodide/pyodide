@@ -10,6 +10,7 @@ HOSTROOT=$(ROOT)/host
 HOSTDIR=$(HOSTROOT)/matplotlib-$(MPLVERSION)
 HOSTBUILD=$(HOSTDIR)/build
 HOSTSRC=$(HOSTDIR)/src
+HOSTLIB=$(HOSTDIR)/lib/matplotlib
 AGGINC=$(HOSTDIR)/extern/agg24-svn/include
 AGGSRC=$(HOSTDIR)/extern/agg24-svn/src
 TTCONVSRC=$(HOSTDIR)/extern/ttconv
@@ -23,7 +24,7 @@ URL=https://files.pythonhosted.org/packages/ec/ed/46b835da53b7ed05bd4c6cae293f13
 CC=emcc
 CXX=em++
 AR=emar
-CFLAGS=-Wsign-compare -DNDEBUG -g -fwrapv -O3 -Wall -Wstrict-prototypes -fPIC -I$(HOSTSRC) -I../numpy/host/numpy-$(NPYVERSION)/numpy/core/include -I../numpy/config -I../numpy/host/numpy-$(NPYVERSION)/build/src.$(PLATFORMSLUG)/numpy/core/include/numpy -I$(PYTHONINCLUDE) -Wno-unused-function -s USE_FREETYPE=1 -s USE_LIBPNG=1 -s USE_ZLIB=1 -I$(AGGINC) -I$(HOSTDIR)/extern -I$(HOSTDIR)
+CFLAGS=-Wsign-compare -DNDEBUG -g -fwrapv -O3 -Wall -Wstrict-prototypes -fPIC -I$(HOSTSRC) -I../numpy/host/numpy-$(NPYVERSION)/numpy/core/include -I../numpy/config -I../numpy/host/numpy-$(NPYVERSION)/build/src.$(PLATFORMSLUG)/numpy/core/include/numpy -I$(PYTHONINCLUDE) -Wno-unused-function -s USE_FREETYPE=1 -s USE_LIBPNG=1 -s USE_ZLIB=1 -I$(AGGINC) -I$(HOSTDIR)/extern -I$(HOSTDIR) -DMPL_DEVNULL=/dev/null
 
 
 OBJECTS= \
@@ -33,7 +34,8 @@ OBJECTS= \
 	$(BUILD)/ttconv.so \
 	$(BUILD)/_path.so \
 	$(BUILD)/_contour.so \
-	$(BUILD)/backends/_backend_agg.so
+	$(BUILD)/backends/_backend_agg.so \
+	$(BUILD)/_tri.so
 
 
 AGGOBJECTS = \
@@ -160,8 +162,8 @@ $(BUILD)/_qhull.so: \
 
 
 $(BUILD)/_tri.so: \
-		$(HOSTSRC)/tri/_tri.bc \
-		$(HOSTSRC)/tri/_tri_wrapper.bc \
+		$(HOSTLIB)/tri/_tri.bc \
+		$(HOSTLIB)/tri/_tri_wrapper.bc \
 		$(HOSTSRC)/mplutils.bc
 	$(CC) $(SIDE_LDFLAGS) $^ -o $@.wasm
 	mv $@.wasm $@
