@@ -127,7 +127,7 @@ $(BUILD)/_path.so: \
 		$(HOSTSRC)/py_converters.bc \
 		$(HOSTSRC)/_path_wrapper.bc \
 		$(AGGOBJECTS)
-	$(CC) $(SIDE_LDFLAGS) --profiling $^ -o $@.wasm
+	$(CC) $(SIDE_LDFLAGS) $^ -o $@.wasm
 	mv $@.wasm $@
 
 
