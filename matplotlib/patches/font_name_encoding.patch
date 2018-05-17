@@ -16,7 +16,7 @@ diff -ur matplotlib-2.2.2/lib/matplotlib/font_manager.py matplotlib-2.2.2/lib/ma
 -        sfnt4 = sfnt4.decode('mac_roman').lower()
 +        try:
 +            sfnt4 = sfnt4.decode('mac_roman').lower()
-+        except LoopupError:
++        except LookupError:
 +            sfnt4 = sfnt4.decode('latin1').lower()
      else:
          sfnt4 = ''
