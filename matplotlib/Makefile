@@ -69,6 +69,7 @@ $(TARBALL):
 $(HOSTDIR)/setup.py: $(TARBALL)
 	[ -d $(HOSTROOT) ] || mkdir $(HOSTROOT)
 	tar -xf $(TARBALL) -C $(HOSTROOT)
+	cp $(ROOT)/setup.cfg $(HOSTDIR)
 	touch $(HOSTDIR)/setup.py
 
 

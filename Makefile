@@ -67,6 +67,7 @@ all: build/pyodide.asm.js \
 	build/pyodide.js \
 	build/pyodide_dev.js \
 	build/python.html \
+	build/matplotlib.html \
 	build/renderedhtml.css \
 	build/numpy.data \
 	build/dateutil.data \
@@ -97,6 +98,10 @@ build/pyodide.js: src/pyodide.js
 
 
 build/python.html: src/python.html
+	cp $< $@
+
+
+build/matplotlib.html: src/matplotlib.html
 	cp $< $@
 
 
@@ -163,6 +168,7 @@ root/.built: \
 		src/sitecustomize.py \
 		src/webbrowser.py \
 		src/pyodide.py \
+		src/wasm_backend.py \
 		remove_modules.txt
 	rm -rf root
 	mkdir -p root/lib
@@ -177,6 +183,7 @@ root/.built: \
 	cp src/_testcapi.py	root/lib/python$(PYMINOR)
 	cp src/pystone.py root/lib/python$(PYMINOR)
 	cp src/pyodide.py root/lib/python$(PYMINOR)/site-packages
+	cp src/wasm_backend.py root/lib/python$(PYMINOR)/site-packages
 	( \
 		cd root/lib/python$(PYMINOR); \
 		rm -fr `cat ../../../remove_modules.txt`; \

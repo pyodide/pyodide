@@ -129,12 +129,11 @@ val pythonToJs(PyObject *x) {
     PyMem_Free(chars);
     return val(x_str);
   } else if (PyBytes_Check(x)) {
-    // TODO: This is doing two copies.  Can we reduce?
     char *x_buff;
     Py_ssize_t length;
     PyBytes_AsStringAndSize(x, &x_buff, &length);
-    std::string x_str(x_buff, length);
-    return val(x_str);
+    return val::global("Uint8ClampedArray").new_(
+        val(emscripten::typed_memory_view(length, (unsigned char *)x_buff)));
   } else if (JsProxy_Check(x)) {
     return JsProxy_AsVal(x);
   } else if (PyList_Check(x) || isTypeName(x, "<class 'numpy.ndarray'>")) {

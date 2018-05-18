@@ -17,7 +17,7 @@ PyObject *jsToPython(val x) {
   } else if (xType.equals(val("number"))) {
     double x_double = x.as<double>();
     return PyFloat_FromDouble(x_double);
-  } else if (x.isUndefined()) {
+  } else if (x.isUndefined() || x.isNull()) {
     Py_INCREF(Py_None);
     return Py_None;
   } else if (x.isTrue()) {
