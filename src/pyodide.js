@@ -50,7 +50,6 @@ var languagePluginLoader = new Promise((resolve, reject) => {
             toLoad.forEach((package) => {
                 let script = document.createElement('script');
                 script.src = `${baseURL}${package}.js`;
-                console.log(script.src);
                 script.onerror = (e) => {
                     reject(e);
                 };
@@ -78,6 +77,7 @@ var languagePluginLoader = new Promise((resolve, reject) => {
 
     let wasmURL = `${baseURL}pyodide.asm.wasm`;
     let Module = {};
+    window.Module = Module;
 
     let wasm_promise = WebAssembly.compileStreaming(fetch(wasmURL));
     Module.instantiateWasm = (info, receiveInstance) => {
@@ -88,17 +88,24 @@ var languagePluginLoader = new Promise((resolve, reject) => {
     };
     Module.filePackagePrefixURL = baseURL;
     Module.postRun = () => {
+        delete window.Module;
         resolve();
     };
 
-    let script = document.createElement('script');
-    script.src = `${baseURL}pyodide.asm.js`;
-    script.onload = () => {
-        window.pyodide = pyodide(Module);
-        window.pyodide.loadPackage = loadPackage;
-        window.pyodide.makeCallableProxy = makeCallableProxy;
+    let data_script = document.createElement('script');
+    data_script.src = `${baseURL}pyodide.asm.data.js`;
+    data_script.onload = (event) => {
+        let script = document.createElement('script');
+        script.src = `${baseURL}pyodide.asm.js`;
+        script.onload = () => {
+            window.pyodide = pyodide(Module);
+            window.pyodide.loadPackage = loadPackage;
+            window.pyodide.makeCallableProxy = makeCallableProxy;
+        };
+        document.head.appendChild(script);
     };
-    document.head.appendChild(script);
+
+    document.head.appendChild(data_script);
 
     if (window.iodide !== undefined) {
         // Load the custom CSS for Pyodide

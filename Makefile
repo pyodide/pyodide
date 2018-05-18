@@ -64,6 +64,7 @@ KIWISOLVER_LIBS=$(KIWISOLVER_ROOT)/kiwisolver.so
 SITEPACKAGES=root/lib/python$(PYMINOR)/site-packages
 
 all: build/pyodide.asm.js \
+	build/pyodide.asm.data \
 	build/pyodide.js \
 	build/pyodide_dev.js \
 	build/python.html \
@@ -78,14 +79,17 @@ all: build/pyodide.asm.js \
 
 build/pyodide.asm.js: src/main.bc src/jsimport.bc src/jsproxy.bc src/js2python.bc \
 											src/pyimport.bc src/pyproxy.bc src/python2js.bc \
-											src/runpython.bc src/dummy_thread.bc root/.built
+											src/runpython.bc src/dummy_thread.bc
 	[ -d build ] || mkdir build
 	$(CC) -s EXPORT_NAME="'pyodide'" --bind -o build/pyodide.asm.html $(filter %.bc,$^) \
-	  $(LDFLAGS) $(foreach d,$(wildcard root/*),--preload-file $d@/$(notdir $d))
+	  $(LDFLAGS) -s FORCE_FILESYSTEM=1
 	rm build/pyodide.asm.asm.js
 	rm build/pyodide.asm.wasm.pre
 	rm build/pyodide.asm.html
 
+
+build/pyodide.asm.data: root/.built
+	python2 $(FILEPACKAGER) build/pyodide.asm.data --preload root/lib@lib --js-output=build/pyodide.asm.data.js
 
 build/pyodide_dev.js: src/pyodide.js
 	cp $< $@
