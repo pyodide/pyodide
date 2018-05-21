@@ -1,3 +1,6 @@
+import base64
+import io
+
 from matplotlib.backends import backend_agg
 from matplotlib.backend_bases import _Backend
 from matplotlib import backend_bases, _png
@@ -6,7 +9,6 @@ from js import iodide
 from js import document
 from js import window
 from js import ImageData
-from js import Uint8ClampedArray
 
 
 class FigureCanvasWasm(backend_agg.FigureCanvasAgg):
@@ -167,7 +169,7 @@ _FONTAWESOME_ICONS = {
     'forward': 'fa-arrow-right',
     'zoom_to_rect': 'fa-search-plus',
     'move': 'fa-arrows',
-    'download': 'download',
+    'download': 'fa-download',
     None: None,
 }
 
@@ -178,20 +180,56 @@ class NavigationToolbar2Wasm(backend_bases.NavigationToolbar2):
 
     def get_element(self):
         div = document.createElement('span')
+
+        def add_spacer():
+            span = document.createElement('span')
+            span.style.minWidth = '16px'
+            span.textContent = '\u00a0'
+            div.appendChild(span)
+
         for text, tooltip_text, image_file, name_of_method in self.toolitems:
             if image_file in _FONTAWESOME_ICONS:
                 if image_file is None:
-                    span = document.createElement('span')
-                    span.style.minWidth = 16
-                    span.style.textContent = ' '
-                    div.appendChild(span)
+                    add_spacer()
                 else:
                     button = document.createElement('button')
                     button.classList.add('fa')
                     button.classList.add(_FONTAWESOME_ICONS[image_file])
                     button.addEventListener('click', getattr(self, name_of_method))
                     div.appendChild(button)
+
+        for filetype in ('png', 'svg', 'pdf'):
+            button = document.createElement('button')
+            button.classList.add('fa')
+            button.textContent = filetype
+            button.addEventListener('click', getattr(self, 'download_' + filetype))
+            div.appendChild(button)
+
         return div
+
+    def download_png(self, event):
+        self.download('png', 'image/png')
+
+    def download_svg(self, event):
+        self.download('svg', 'image/svg+xml')
+
+    def download_pdf(self, event):
+        self.download('pdf', 'application/pdf')
+
+    def download(self, format, mimetype):
+        element = document.createElement('a')
+        data = io.BytesIO()
+        try:
+            self.canvas.figure.savefig(data, format=format)
+        except Exception as e:
+            raise
+        element.setAttribute('href', 'data:{};base64,{}'.format(
+            mimetype, base64.b64encode(data.getvalue()).decode('ascii')))
+        element.setAttribute('download', 'plot.{}'.format(format))
+        element.style.display = 'none'
+        document.body.appendChild(element)
+        element.click()
+        document.body.removeChild(element)
 
     def set_message(self, message):
         self.canvas.set_message(message)
