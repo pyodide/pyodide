@@ -150,6 +150,7 @@ class FigureCanvasWasm(backend_agg.FigureCanvasAgg):
             'width: {}px; height: {}px'.format(
                 width / self._ratio, height / self._ratio)
         )
+        rubberband.setAttribute('tabindex', '0')
         rubberband.addEventListener('click', self.onclick)
         rubberband.addEventListener('mousemove', self.onmousemove)
         rubberband.addEventListener('mouseup', self.onmouseup)
@@ -227,9 +228,11 @@ class FigureCanvasWasm(backend_agg.FigureCanvasAgg):
 
     def onmouseenter(self, event):
         window.addEventListener('contextmenu', ignore)
+        self.get_element('rubberband').focus()
         self.enter_notify_event(guiEvent=event)
 
     def onmouseleave(self, event):
+        self.get_element('rubberband').blur()
         self.leave_notify_event(guiEvent=event)
 
     def onscroll(self, event):
@@ -247,11 +250,11 @@ class FigureCanvasWasm(backend_agg.FigureCanvasAgg):
         self.get_element('rubberband').style.cursor = self._cursor_map.get(cursor, 0)
 
     def _convert_key_event(self, event):
-        code = event.which.toString()
+        code = int(event.which)
         value = chr(code)
-        shift = event.shiftKey and event.which != 16
-        ctrl = event.ctrlKey and event.which != 17
-        alt = event.altKey and event.which != 18
+        shift = event.shiftKey and code != 16
+        ctrl = event.ctrlKey and code != 17
+        alt = event.altKey and code != 18
         # letter keys
         if 65 <= code <= 90:
             if not shift:
