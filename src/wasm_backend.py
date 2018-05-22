@@ -1,5 +1,6 @@
 import base64
 import io
+import math
 
 from matplotlib.backends import backend_agg
 from matplotlib.backend_bases import _Backend
@@ -11,6 +12,69 @@ from js import window
 from js import ImageData
 
 
+# http://www.cambiaresearch.com/articles/15/javascript-char-codes-key-codes
+_SHIFT_LUT = {
+    59: ':',
+    61: '+',
+    173: '_',
+    186: ':',
+    187: '+',
+    188: '<',
+    189: '_',
+    190: '>',
+    191: '?',
+    192: '~',
+    219: '{',
+    220: '|',
+    221: '}',
+    222: '"'
+}
+
+_LUT = {
+    8: 'backspace',
+    9: 'tab',
+    13: 'enter',
+    16: 'shift',
+    17: 'control',
+    18: 'alt',
+    19: 'pause',
+    20: 'caps',
+    27: 'escape',
+    32: ' ',
+    33: 'pageup',
+    34: 'pagedown',
+    35: 'end',
+    36: 'home',
+    37: 'left',
+    38: 'up',
+    39: 'right',
+    40: 'down',
+    45: 'insert',
+    46: 'delete',
+    91: 'super',
+    92: 'super',
+    93: 'select',
+    106: '*',
+    107: '+',
+    109: '-',
+    110: '.',
+    111: '/',
+    144: 'num_lock',
+    145: 'scroll_lock',
+    186: ':',
+    187: '=',
+    188: ',',
+    189: '-',
+    190: '.',
+    191: '/',
+    192: '`',
+    219: '[',
+    220: '\\',
+    221: ']',
+    222: "'"
+}
+
+
 class FigureCanvasWasm(backend_agg.FigureCanvasAgg):
     supports_blit = False
 
@@ -19,52 +83,77 @@ class FigureCanvasWasm(backend_agg.FigureCanvasAgg):
 
         self._idle_scheduled = False
         self._id = "matplotlib_" + hex(id(self))[2:]
+        self._title = ''
 
-    def get_element(self):
+    def get_element(self, name):
         # TODO: Should we store a reference here instead of always looking it
         # up? I'm a little concerned about weird Python/JS
         # cross-memory-management issues...
-        return document.getElementById(self._id)
-
-    def get_canvas(self):
-        return document.getElementById(self._id + 'canvas')
-
-    def get_message_display(self):
-        return document.getElementById(self._id + 'message')
+        return document.getElementById(self._id + name)
 
     def show(self):
-        renderer = self.get_renderer()
-        width, height = self.get_width_height()
-        div = iodide.output.element('div')
-        div.id = self._id
-        canvas = document.createElement('canvas')
-        div.appendChild(canvas)
-        canvas.id = self._id + 'canvas'
-        canvas.setAttribute('width', width)
-        canvas.setAttribute('height', height)
-        canvas.addEventListener('click', self.onclick)
-        canvas.addEventListener('mousemove', self.onmousemove)
-        canvas.addEventListener('mouseup', self.onmouseup)
-        canvas.addEventListener('mousedown', self.onmousedown)
-        canvas.addEventListener('mouseenter', self.onmouseenter)
-        canvas.addEventListener('mouseleave', self.onmouseleave)
         def ignore(event):
             event.preventDefault()
             return False
         window.addEventListener('contextmenu', ignore)
+
+        renderer = self.get_renderer()
+        width, height = self.get_width_height()
+        div = iodide.output.element('div')
+        div.setAttribute('style', 'width: {}px'.format(width))
+        div.id = self._id
+
+        top = document.createElement('div')
+        top.id = self._id + 'top'
+        top.setAttribute('style', 'font-weight: bold; text-align: center')
+        top.textContent = self._title
+        div.appendChild(top)
+
+        canvas_div = document.createElement('div')
+        canvas_div.setAttribute('style', 'position: relative')
+
+        canvas = document.createElement('canvas')
+        canvas.id = self._id + 'canvas'
+        canvas.setAttribute('width', width)
+        canvas.setAttribute('height', height)
+        canvas.setAttribute('style', 'left: 0; top: 0; z-index: 0; outline: 0')
+        canvas_div.appendChild(canvas)
+
+        rubberband = document.createElement('canvas')
+        rubberband.id = self._id + 'rubberband'
+        rubberband.setAttribute('width', width)
+        rubberband.setAttribute('height', height)
+        rubberband.setAttribute('style', 'position: absolute; left: 0; top: 0; z-index: 1;')
+        rubberband.addEventListener('click', self.onclick)
+        rubberband.addEventListener('mousemove', self.onmousemove)
+        rubberband.addEventListener('mouseup', self.onmouseup)
+        rubberband.addEventListener('mousedown', self.onmousedown)
+        rubberband.addEventListener('mouseenter', self.onmouseenter)
+        rubberband.addEventListener('mouseleave', self.onmouseleave)
+        rubberband.addEventListener('keyup', self.onkeyup)
+        rubberband.addEventListener('keydown', self.onkeydown)
+        context = rubberband.getContext('2d')
+        context.strokeStyle = '#000000';
+        context.setLineDash([2, 2])
+        canvas_div.appendChild(rubberband)
+
+        div.appendChild(canvas_div)
+
         bottom = document.createElement('div')
         toolbar = self.toolbar.get_element()
         bottom.appendChild(toolbar)
-        message = document.createElement('span')
+        message = document.createElement('div')
         message.id = self._id + 'message'
+        message.setAttribute('style', 'min-height: 1.5em')
         bottom.appendChild(message)
         div.appendChild(bottom)
+
         self.draw()
 
     def draw(self):
         super().draw()
         width, height = self.get_width_height()
-        canvas = self.get_canvas()
+        canvas = self.get_element('canvas')
         image_data = ImageData.new(
             self.buffer_rgba(),
             width, height);
@@ -78,7 +167,7 @@ class FigureCanvasWasm(backend_agg.FigureCanvasAgg):
             window.setTimeout(self.draw, 0)
 
     def set_message(self, message):
-        message_display = self.get_message_display()
+        message_display = self.get_element('message')
         if message_display is not None:
             message_display.textContent = message
 
@@ -129,19 +218,65 @@ class FigureCanvasWasm(backend_agg.FigureCanvasAgg):
     }
 
     def set_cursor(self, cursor):
-        self.get_canvas().style.cursor = self._cursor_map.get(cursor, 0)
+        self.get_element('rubberband').style.cursor = self._cursor_map.get(cursor, 0)
 
-    # def draw_cursor(self, event):
-    #     # TODO
-    #     pass
+    def _convert_key_event(self, event):
+        code = event.which.toString()
+        value = chr(code)
+        shift = event.shiftKey and event.which != 16
+        ctrl = event.ctrlKey and event.which != 17
+        alt = event.altKey and event.which != 18
+        # letter keys
+        if 65 <= code <= 90:
+            if not shift:
+                value = value.lower()
+            else:
+                shift = False
+        # number keys
+        elif 48 <= code <= 57:
+            if shift:
+                value = ')!@#$%^&*('[int(value)]
+                shift = False
+        # function keys
+        elif 112 <= code <= 123:
+            value = 'f%s' % (code - 111)
+        # number pad keys
+        elif 96 <= code <= 105:
+            value = '%s' % (code - 96)
+        # keys with shift alternatives
+        elif code in _SHIFT_LUT and shift:
+            value = _SHIFT_LUT[code]
+            shift = False
+        elif code in _LUT:
+            value = _LUT[code]
 
-    # def get_window_title(self):
-    #     # TODO
-    #     pass
+        key = []
+        if shift:
+            key.append('shift')
+        if ctrl:
+            key.append('ctrl')
+        if alt:
+            key.append('alt')
+        key.append(value)
+        return '+'.join(key)
 
-    # def set_window_title(self):
-    #     # TODO
-    #     pass
+    def onkeydown(self, event):
+        key = self._convert_key_event(event)
+        self.key_press_event(key, guiEvent=event)
+
+    def onkeyup(self, event):
+        key = self._convert_key_event(event)
+        self.key_release_event(key, guiEvent=event)
+
+    def get_window_title(self):
+        top = self.get_element('top')
+        return top.textContent
+
+    def set_window_title(self, title):
+        top = self.get_element('top')
+        self._title = title
+        if top is not None:
+            top.textContent = title
 
     # def resize_event(self):
     #     # TODO
@@ -151,13 +286,28 @@ class FigureCanvasWasm(backend_agg.FigureCanvasAgg):
     #     # TODO
     #     pass
 
-    # def key_press_event(self):
-    #     # TODO
-    #     pass
+    def draw_rubberband(self, x0, y0, x1, y1):
+        rubberband = self.get_element('rubberband')
+        width, height = self.get_width_height()
+        y0 = height - y0
+        y1 = height - y1
+        x0 = math.floor(x0) + 0.5
+        y0 = math.floor(y0) + 0.5
+        x1 = math.floor(x1) + 0.5
+        y1 = math.floor(y1) + 0.5
+        if x1 < x0:
+            x0, x1 = x1, x0
+        if y1 < y0:
+            y0, y1 = y1, y0
+        context = rubberband.getContext('2d')
+        context.clearRect(0, 0, width, height)
+        context.strokeRect(x0, y0, x1 - x0, y1 - y0)
 
-    # def key_release_event(self):
-    #     # TODO
-    #     pass
+    def remove_rubberband(self):
+        rubberband = self.get_element('rubberband')
+        width, height = self.get_width_height()
+        context = rubberband.getContext('2d')
+        context.clearRect(0, 0, width, height)
 
     def new_timer(self, *args, **kwargs):
         return TimerWasm(*args, **kwargs)
@@ -172,6 +322,13 @@ _FONTAWESOME_ICONS = {
     'download': 'fa-download',
     None: None,
 }
+
+
+FILE_TYPES = {
+    'png': 'image/png',
+    'svg': 'image/svg+xml',
+    'pdf': 'application/pdf'
+ }
 
 
 class NavigationToolbar2Wasm(backend_bases.NavigationToolbar2):
@@ -198,23 +355,19 @@ class NavigationToolbar2Wasm(backend_bases.NavigationToolbar2):
                     button.addEventListener('click', getattr(self, name_of_method))
                     div.appendChild(button)
 
-        for filetype in ('png', 'svg', 'pdf'):
+        for format, mimetype in sorted(list(FILE_TYPES.items())):
             button = document.createElement('button')
             button.classList.add('fa')
-            button.textContent = filetype
-            button.addEventListener('click', getattr(self, 'download_' + filetype))
+            button.textContent = format
+            button.addEventListener(
+                'click', self.ondownload)
             div.appendChild(button)
 
         return div
 
-    def download_png(self, event):
-        self.download('png', 'image/png')
-
-    def download_svg(self, event):
-        self.download('svg', 'image/svg+xml')
-
-    def download_pdf(self, event):
-        self.download('pdf', 'application/pdf')
+    def ondownload(self, event):
+        format = event.target.textContent
+        self.download(format, FILE_TYPES[format])
 
     def download(self, format, mimetype):
         element = document.createElement('a')
@@ -238,18 +391,16 @@ class NavigationToolbar2Wasm(backend_bases.NavigationToolbar2):
         self.canvas.set_cursor(cursor)
 
     def draw_rubberband(self, event, x0, y0, x1, y1):
-        pass
+        self.canvas.draw_rubberband(x0, y0, x1, y1)
 
     def remove_rubberband(self):
-        pass
-
-    def save_figure(self, *args):
-        pass
+        self.canvas.remove_rubberband()
 
 
 class FigureManagerWasm(backend_bases.FigureManagerBase):
     def __init__(self, canvas, num):
         backend_bases.FigureManagerBase.__init__(self, canvas, num)
+        self.set_window_title("Figure %d" % num)
         self.toolbar = NavigationToolbar2Wasm(canvas)
 
     def show(self):
@@ -257,6 +408,9 @@ class FigureManagerWasm(backend_bases.FigureManagerBase):
 
     def resize(self, w, h):
         pass
+
+    def set_window_title(self, title):
+        self.canvas.set_window_title(title)
 
 
 class TimerWasm(backend_bases.TimerBase):
