@@ -84,6 +84,7 @@ class FigureCanvasWasm(backend_agg.FigureCanvasAgg):
         self._idle_scheduled = False
         self._id = "matplotlib_" + hex(id(self))[2:]
         self._title = ''
+        self._ratio = 1
 
     def get_element(self, name):
         # TODO: Should we store a reference here instead of always looking it
@@ -91,16 +92,34 @@ class FigureCanvasWasm(backend_agg.FigureCanvasAgg):
         # cross-memory-management issues...
         return document.getElementById(self._id + name)
 
+    def get_dpi_ratio(self, context):
+        backing_store = (
+            context.backingStorePixelRatio or
+            context.webkitBackingStorePixel or
+            context.mozBackingStorePixelRatio or
+            context.msBackingStorePixelRatio or
+            context.oBackingStorePixelRatio or
+            context.backendStorePixelRatio or
+            1
+        )
+        return (window.devicePixelRatio or 1) / backing_store
+
     def show(self):
         def ignore(event):
             event.preventDefault()
             return False
         window.addEventListener('contextmenu', ignore)
 
+        canvas = document.createElement('canvas')
+        context = canvas.getContext('2d')
+        self._ratio = self.get_dpi_ratio(context)
+        if self._ratio != 1:
+            self.figure.dpi *= self._ratio
+
         renderer = self.get_renderer()
         width, height = self.get_width_height()
         div = iodide.output.element('div')
-        div.setAttribute('style', 'width: {}px'.format(width))
+        div.setAttribute('style', 'width: {}px'.format(width / self._ratio))
         div.id = self._id
 
         top = document.createElement('div')
@@ -112,18 +131,25 @@ class FigureCanvasWasm(backend_agg.FigureCanvasAgg):
         canvas_div = document.createElement('div')
         canvas_div.setAttribute('style', 'position: relative')
 
-        canvas = document.createElement('canvas')
         canvas.id = self._id + 'canvas'
         canvas.setAttribute('width', width)
         canvas.setAttribute('height', height)
-        canvas.setAttribute('style', 'left: 0; top: 0; z-index: 0; outline: 0')
+        canvas.setAttribute(
+            'style', 'left: 0; top: 0; z-index: 0; outline: 0;' +
+            'width: {}px; height: {}px'.format(
+                width / self._ratio, height / self._ratio)
+        )
         canvas_div.appendChild(canvas)
 
         rubberband = document.createElement('canvas')
         rubberband.id = self._id + 'rubberband'
         rubberband.setAttribute('width', width)
         rubberband.setAttribute('height', height)
-        rubberband.setAttribute('style', 'position: absolute; left: 0; top: 0; z-index: 1;')
+        rubberband.setAttribute(
+            'style', 'position: absolute; left: 0; top: 0; z-index: 0; outline: 0;' +
+            'width: {}px; height: {}px'.format(
+                width / self._ratio, height / self._ratio)
+        )
         rubberband.addEventListener('click', self.onclick)
         rubberband.addEventListener('mousemove', self.onmousemove)
         rubberband.addEventListener('mouseup', self.onmouseup)
@@ -173,8 +199,8 @@ class FigureCanvasWasm(backend_agg.FigureCanvasAgg):
 
     def _convert_mouse_event(self, event):
         width, height = self.get_width_height()
-        x = event.offsetX
-        y = height - event.offsetY
+        x = (event.offsetX * self._ratio)
+        y = ((height / self._ratio) - event.offsetY) * self._ratio
         button = event.button + 1
         if button == 3:
             event.preventDefault()
