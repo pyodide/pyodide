@@ -52,6 +52,32 @@ EMSCRIPTEN_BINDINGS(python) {
 }
 
 extern "C" {
+  /*
+    TODO: This is a workaround for a weird emscripten compiler bug. The
+    matplotlib/_qhull.so extension makes function pointer calls with these
+    signatures, but since nothing with that signature exists in the MAIN_MODULE,
+    it can't link the SIDE_MODULE. Creating these dummy functions here seems to
+    work around the problem.
+  */
+
+  void __foo(double) {
+
+  }
+
+  void __foo2(double, double) {
+
+  }
+
+  void __foo3(double, double, double) {
+
+  }
+
+  void __foo4(int, double, int, int, int) {
+
+  }
+
+  /* END WORKAROUND */
+
   int main(int argc, char** argv) {
     setenv("PYTHONHOME", "/", 0);
 

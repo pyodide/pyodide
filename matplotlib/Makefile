@@ -24,7 +24,7 @@ URL=https://files.pythonhosted.org/packages/ec/ed/46b835da53b7ed05bd4c6cae293f13
 CC=emcc
 CXX=em++
 AR=emar
-CFLAGS=-Wsign-compare -DNDEBUG -g -fwrapv -O3 -Wall -Wstrict-prototypes -fPIC -I$(HOSTSRC) -I../numpy/host/numpy-$(NPYVERSION)/numpy/core/include -I../numpy/config -I../numpy/host/numpy-$(NPYVERSION)/build/src.$(PLATFORMSLUG)/numpy/core/include/numpy -I$(PYTHONINCLUDE) -Wno-unused-function -s USE_FREETYPE=1 -s USE_LIBPNG=1 -s USE_ZLIB=1 -I$(AGGINC) -I$(HOSTDIR)/extern -I$(HOSTDIR) -DMPL_DEVNULL=/dev/null
+CFLAGS=-Wsign-compare -DNDEBUG -g -fwrapv -O3 -Wall -Wstrict-prototypes -fPIC -I$(HOSTSRC) -I../numpy/host/numpy-$(NPYVERSION)/numpy/core/include -I../numpy/config -I../numpy/host/numpy-$(NPYVERSION)/build/src.$(PLATFORMSLUG)/numpy/core/include/numpy -I$(PYTHONINCLUDE) -Wno-unused-function -s USE_FREETYPE=1 -s USE_LIBPNG=1 -s USE_ZLIB=1 -I$(AGGINC) -I$(HOSTDIR)/extern -I$(HOSTDIR) -DMPL_DEVNULL=/dev/null -D__STDC_FORMAT_MACROS=1 -DNPY_NO_DEPRECATED_API=NPY_1_7_API_VERSION
 
 
 OBJECTS= \
@@ -35,7 +35,8 @@ OBJECTS= \
 	$(BUILD)/_path.so \
 	$(BUILD)/_contour.so \
 	$(BUILD)/backends/_backend_agg.so \
-	$(BUILD)/_tri.so
+	$(BUILD)/_tri.so \
+	$(BUILD)/_qhull.so
 
 
 AGGOBJECTS = \
@@ -165,7 +166,7 @@ $(BUILD)/_qhull.so: \
 		$(QHULLSRC)/usermem.bc \
 		$(QHULLSRC)/userprintf.bc \
 		$(QHULLSRC)/userprintf_rbox.bc
-	$(CC) $(SIDE_LDFLAGS) $^ -o $@.wasm
+	$(CC) $(SIDE_LDFLAGS) -lm $^ -o $@.wasm
 	mv $@.wasm $@
 
 
