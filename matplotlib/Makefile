@@ -83,7 +83,14 @@ $(HOSTBUILD)/lib.$(PLATFORMSLUG)/matplotlib/__init__.py: $(ROOT)/.patched
 $(BUILD)/__init__.py: $(HOSTBUILD)/lib.$(PLATFORMSLUG)/matplotlib/__init__.py
 	[ -d $(ROOT)/build ] || mkdir $(ROOT)/build
 	cp -r $(HOSTBUILD)/lib.$(PLATFORMSLUG)/matplotlib $(ROOT)/build && \
-	cd $(BUILD); find . -name "*.so" -type f -delete
+	( \
+		cd $(BUILD); \
+		find . -name "*.so" -type f -delete; \
+		find backends -type f ! -name "*_agg*" ! -name '__init__.py' -delete; \
+		rm -rf backends/qt_editor; \
+		rm -rf backends/web_backend; \
+		rm -rf sphinxext; \
+  )
 
 
 $(ROOT)/.patched: $(HOSTDIR)/setup.py
