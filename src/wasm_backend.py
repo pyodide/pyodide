@@ -105,6 +105,12 @@ class FigureCanvasWasm(backend_agg.FigureCanvasAgg):
         return (window.devicePixelRatio or 1) / backing_store
 
     def show(self):
+        existing = self.get_element('')
+        if existing is not None:
+            self.draw_idle()
+            existing.scrollIntoView()
+            return
+
         def ignore(event):
             event.preventDefault()
             return False
