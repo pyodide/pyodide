@@ -87,7 +87,6 @@ $(BUILD)/__init__.py: $(HOSTBUILD)/lib.$(PLATFORMSLUG)/matplotlib/__init__.py
 	( \
 		cd $(BUILD); \
 		find . -name "*.so" -type f -delete; \
-		find backends -type f ! -name "*_agg*" ! -name '__init__.py' -delete; \
 		rm -rf backends/qt_editor; \
 		rm -rf backends/web_backend; \
 		rm -rf sphinxext; \
