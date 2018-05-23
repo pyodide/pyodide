@@ -6,15 +6,12 @@
  */
 
 #include <Python.h>
-#include <emscripten.h>
-#include <emscripten/bind.h>
-#include <emscripten/val.h>
 
 /** Make a new JsProxy.
  *  \param v The Javascript object.
  *  \return The Python object wrapping the Javascript object.
  */
-PyObject *JsProxy_cnew(emscripten::val v);
+PyObject *JsProxy_cnew(int v);
 
 /** Check if a Python object is a JsProxy object.
  *  \param x The Python object
@@ -26,7 +23,7 @@ int JsProxy_Check(PyObject *x);
  *  \param x The JsProxy object.  Must confirm that it is a JsProxy object using JsProxy_Check.
  *  \return The Javascript object.
  */
-emscripten::val JsProxy_AsVal(PyObject *x);
+int JsProxy_AsJs(PyObject *x);
 
 /** Initialize global state for the JsProxy functionality. */
 int JsProxy_Ready();

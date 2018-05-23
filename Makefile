@@ -11,6 +11,11 @@ CXX=em++
 OPTFLAGS=-O3
 CFLAGS=$(OPTFLAGS) -g -I$(PYTHONINCLUDE) -Wno-warn-absolute-paths
 CXXFLAGS=$(CFLAGS) -std=c++14
+
+# __ZNKSt3__220__vector_base_commonILb1EE20__throw_length_errorEv is in
+# EXPORTED_FUNCTIONS to keep the C++ standard library in the core, even though
+# there isn't any C++ there, for the sake of loading dynamic modules written in
+# C++, such as those in matplotlib.
 LDFLAGS=\
 	-O3 \
 	-s MODULARIZE=1 \
@@ -20,10 +25,13 @@ LDFLAGS=\
 	-s MAIN_MODULE=1 \
 	-s EMULATED_FUNCTION_POINTERS=1 \
   -s EMULATE_FUNCTION_POINTER_CASTS=1 \
-  -s EXPORTED_FUNCTIONS='["_main"]' \
+  -s EXPORTED_FUNCTIONS='["_main", "_runPython", "__ZNKSt3__220__vector_base_commonILb1EE20__throw_length_errorEv"]' \
+	-s EXTRA_EXPORTED_RUNTIME_METHODS='["ccall", "cwrap"]' \
   -s WASM=1 \
 	-s SWAPPABLE_ASM_MODULE=1 \
 	-s USE_FREETYPE=1 \
+	-std=c++14 \
+  -lstdc++ \
   --memory-init-file 0
 
 NUMPY_ROOT=numpy/build/numpy
@@ -79,9 +87,9 @@ all: build/pyodide.asm.js \
 
 build/pyodide.asm.js: src/main.bc src/jsimport.bc src/jsproxy.bc src/js2python.bc \
 											src/pyimport.bc src/pyproxy.bc src/python2js.bc \
-											src/runpython.bc src/dummy_thread.bc
+											src/runpython.bc src/dummy_thread.bc src/hiwire.bc
 	[ -d build ] || mkdir build
-	$(CC) -s EXPORT_NAME="'pyodide'" --bind -o build/pyodide.asm.html $(filter %.bc,$^) \
+	$(CXX) -s EXPORT_NAME="'pyodide'" -o build/pyodide.asm.html $(filter %.bc,$^) \
 	  $(LDFLAGS) -s FORCE_FILESYSTEM=1
 	rm build/pyodide.asm.asm.js
 	rm build/pyodide.asm.wasm.pre

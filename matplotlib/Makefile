@@ -108,7 +108,7 @@ $(BUILD)/ft2font.so: \
 
 $(BUILD)/_png.so: \
 		$(HOSTSRC)/_png.bc
-	$(CC) /home/mdboom/Work/builds/compiling/pyodide/emsdk/emsdk/.emscripten_cache/asmjs/libpng.bc $^ -o $@.wasm $(SIDE_LDFLAGS)
+	$(CC) ../emsdk/emsdk/.emscripten_cache/asmjs/libpng.bc $^ -o $@.wasm $(SIDE_LDFLAGS)
 	mv $@.wasm $@
 
 

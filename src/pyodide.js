@@ -133,9 +133,8 @@ var languagePluginLoader = new Promise((resolve, reject) => {
         // Add a custom output handler for Python objects
         window.iodide.addOutputHandler({
             shouldHandle: (val) => {
-                return (typeof val === 'object' &&
-                        val['$$'] !== undefined &&
-                        val['$$']['ptrType']['name'] === 'PyObject*');
+                return (typeof val === 'function' &&
+                        val['$$'] !== undefined);
             },
 
             render: (val) => {
@@ -153,7 +152,7 @@ var languagePluginLoader = new Promise((resolve, reject) => {
                     }
                 } else {
                     let pre = document.createElement('pre');
-                    pre.textContent = window.pyodide.repr(val);
+                    pre.textContent = val.toString();
                     div.appendChild(pre);
                     element = div;
                 }

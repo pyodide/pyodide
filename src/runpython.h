@@ -4,14 +4,11 @@
 /** The primary entry point function that runs Python code.
  */
 
-#include <string>
-
-#include <emscripten.h>
-#include <emscripten/bind.h>
-#include <emscripten/val.h>
 
 /** The primary entry point function that runs Python code.
  */
-emscripten::val runPython(std::wstring code);
+int runPython(char *code);
+
+int runPython_Ready();
 
 #endif /* RUNPYTHON_H */

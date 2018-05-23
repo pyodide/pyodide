@@ -4,4 +4,5 @@ def test_pandas(selenium):
 
 
 def test_extra_import(selenium):
+    selenium.load_package("pandas")
     selenium.run("from pandas import Series, DataFrame, Panel")
