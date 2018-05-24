@@ -1,3 +1,17 @@
+"""
+A matplotlib backend that renders to an HTML5 canvas in the same thread.
+
+The Agg backend is used for the actual rendering underneath, and renders the
+buffer to the HTML5 canvas. This happens with only a single copy of the data
+into the Canvas -- passing the data from Python to Javascript requires no
+copies.
+
+See matplotlib.backend_bases for documentation for most of the methods, since
+this primarily is just overriding methods in the base class.
+"""
+
+# TODO: Figure resizing support
+
 import base64
 import io
 import math
@@ -6,73 +20,9 @@ from matplotlib.backends import backend_agg
 from matplotlib.backend_bases import _Backend
 from matplotlib import backend_bases, _png
 
-from js import iodide
 from js import document
 from js import window
 from js import ImageData
-
-
-# http://www.cambiaresearch.com/articles/15/javascript-char-codes-key-codes
-_SHIFT_LUT = {
-    59: ':',
-    61: '+',
-    173: '_',
-    186: ':',
-    187: '+',
-    188: '<',
-    189: '_',
-    190: '>',
-    191: '?',
-    192: '~',
-    219: '{',
-    220: '|',
-    221: '}',
-    222: '"'
-}
-
-_LUT = {
-    8: 'backspace',
-    9: 'tab',
-    13: 'enter',
-    16: 'shift',
-    17: 'control',
-    18: 'alt',
-    19: 'pause',
-    20: 'caps',
-    27: 'escape',
-    32: ' ',
-    33: 'pageup',
-    34: 'pagedown',
-    35: 'end',
-    36: 'home',
-    37: 'left',
-    38: 'up',
-    39: 'right',
-    40: 'down',
-    45: 'insert',
-    46: 'delete',
-    91: 'super',
-    92: 'super',
-    93: 'select',
-    106: '*',
-    107: '+',
-    109: '-',
-    110: '.',
-    111: '/',
-    144: 'num_lock',
-    145: 'scroll_lock',
-    186: ':',
-    187: '=',
-    188: ',',
-    189: '-',
-    190: '.',
-    191: '/',
-    192: '`',
-    219: '[',
-    220: '\\',
-    221: ']',
-    222: "'"
-}
 
 
 class FigureCanvasWasm(backend_agg.FigureCanvasAgg):
@@ -87,12 +37,21 @@ class FigureCanvasWasm(backend_agg.FigureCanvasAgg):
         self._ratio = 1
 
     def get_element(self, name):
+        """
+        Looks up an HTMLElement created for this figure.
+        """
         # TODO: Should we store a reference here instead of always looking it
         # up? I'm a little concerned about weird Python/JS
         # cross-memory-management issues...
         return document.getElementById(self._id + name)
 
     def get_dpi_ratio(self, context):
+        """
+        Gets the ratio of physical pixels to logical pixels for the given HTML
+        Canvas context.
+
+        This is typically 2 on a HiDPI ("Retina") display, and 1 otherwise.
+        """
         backing_store = (
             context.backingStorePixelRatio or
             context.webkitBackingStorePixel or
@@ -104,36 +63,52 @@ class FigureCanvasWasm(backend_agg.FigureCanvasAgg):
         )
         return (window.devicePixelRatio or 1) / backing_store
 
+    def create_root_element(self):
+        # Designed to be overridden by subclasses for use in contexts other
+        # than iodide.
+        from js import iodide
+        return iodide.output.element('div')
+
     def show(self):
+        # If we've already shown this canvas elsewhere, don't create a new one,
+        # just reuse it and scroll to the existing one.
         existing = self.get_element('')
         if existing is not None:
             self.draw_idle()
             existing.scrollIntoView()
             return
 
+        # Disable the right-click context menu.
+        # Doesn't work in all browsers.
         def ignore(event):
             event.preventDefault()
             return False
         window.addEventListener('contextmenu', ignore)
 
+        # Create the main canvas and determine the physical to logical pixel
+        # ratio
         canvas = document.createElement('canvas')
         context = canvas.getContext('2d')
         self._ratio = self.get_dpi_ratio(context)
         if self._ratio != 1:
             self.figure.dpi *= self._ratio
 
-        renderer = self.get_renderer()
         width, height = self.get_width_height()
-        div = iodide.output.element('div')
+        div = self.create_root_element()
         div.setAttribute('style', 'width: {}px'.format(width / self._ratio))
         div.id = self._id
 
+        # The top bar
         top = document.createElement('div')
         top.id = self._id + 'top'
         top.setAttribute('style', 'font-weight: bold; text-align: center')
         top.textContent = self._title
         div.appendChild(top)
 
+        # A div containing two canvases stacked on top of one another:
+        #   - The bottom for rendering matplotlib content
+        #   - The top for rendering interactive elements, such as the zoom
+        #     rubberband
         canvas_div = document.createElement('div')
         canvas_div.setAttribute('style', 'position: relative')
 
@@ -156,7 +131,10 @@ class FigureCanvasWasm(backend_agg.FigureCanvasAgg):
             'width: {}px; height: {}px'.format(
                 width / self._ratio, height / self._ratio)
         )
+        # Canvas must have a "tabindex" attr in order to receive keyboard events
         rubberband.setAttribute('tabindex', '0')
+        # Event handlers are added to the canvas "on top", even though most of the
+        # activity happens in the canvas below.
         rubberband.addEventListener('click', self.onclick)
         rubberband.addEventListener('mousemove', self.onmousemove)
         rubberband.addEventListener('mouseup', self.onmouseup)
@@ -172,6 +150,7 @@ class FigureCanvasWasm(backend_agg.FigureCanvasAgg):
 
         div.appendChild(canvas_div)
 
+        # The bottom bar, with toolbar and message display
         bottom = document.createElement('div')
         toolbar = self.toolbar.get_element()
         bottom.appendChild(toolbar)
@@ -184,7 +163,9 @@ class FigureCanvasWasm(backend_agg.FigureCanvasAgg):
         self.draw()
 
     def draw(self):
+        # Render the figure using Agg
         super().draw()
+        # Copy the image buffer to the canvas
         width, height = self.get_width_height()
         canvas = self.get_element('canvas')
         image_data = ImageData.new(
@@ -209,6 +190,7 @@ class FigureCanvasWasm(backend_agg.FigureCanvasAgg):
         x = (event.offsetX * self._ratio)
         y = ((height / self._ratio) - event.offsetY) * self._ratio
         button = event.button + 1
+        # Disable the right-click context menu in some browsers
         if button == 3:
             event.preventDefault()
             event.stopPropagation()
@@ -234,10 +216,12 @@ class FigureCanvasWasm(backend_agg.FigureCanvasAgg):
 
     def onmouseenter(self, event):
         window.addEventListener('contextmenu', ignore)
+        # When the mouse is over the figure, get keyboard focus
         self.get_element('rubberband').focus()
         self.enter_notify_event(guiEvent=event)
 
     def onmouseleave(self, event):
+        # When the mouse leaves the figure, drop keyboard focus
         self.get_element('rubberband').blur()
         self.leave_notify_event(guiEvent=event)
 
@@ -255,12 +239,75 @@ class FigureCanvasWasm(backend_agg.FigureCanvasAgg):
     def set_cursor(self, cursor):
         self.get_element('rubberband').style.cursor = self._cursor_map.get(cursor, 0)
 
+    # http://www.cambiaresearch.com/articles/15/javascript-char-codes-key-codes
+    _SHIFT_LUT = {
+        59: ':',
+        61: '+',
+        173: '_',
+        186: ':',
+        187: '+',
+        188: '<',
+        189: '_',
+        190: '>',
+        191: '?',
+        192: '~',
+        219: '{',
+        220: '|',
+        221: '}',
+        222: '"'
+    }
+
+    _LUT = {
+        8: 'backspace',
+        9: 'tab',
+        13: 'enter',
+        16: 'shift',
+        17: 'control',
+        18: 'alt',
+        19: 'pause',
+        20: 'caps',
+        27: 'escape',
+        32: ' ',
+        33: 'pageup',
+        34: 'pagedown',
+        35: 'end',
+        36: 'home',
+        37: 'left',
+        38: 'up',
+        39: 'right',
+        40: 'down',
+        45: 'insert',
+        46: 'delete',
+        91: 'super',
+        92: 'super',
+        93: 'select',
+        106: '*',
+        107: '+',
+        109: '-',
+        110: '.',
+        111: '/',
+        144: 'num_lock',
+        145: 'scroll_lock',
+        186: ':',
+        187: '=',
+        188: ',',
+        189: '-',
+        190: '.',
+        191: '/',
+        192: '`',
+        219: '[',
+        220: '\\',
+        221: ']',
+        222: "'"
+    }
+
     def _convert_key_event(self, event):
         code = int(event.which)
         value = chr(code)
         shift = event.shiftKey and code != 16
         ctrl = event.ctrlKey and code != 17
         alt = event.altKey and code != 18
+
         # letter keys
         if 65 <= code <= 90:
             if not shift:
@@ -279,11 +326,11 @@ class FigureCanvasWasm(backend_agg.FigureCanvasAgg):
         elif 96 <= code <= 105:
             value = '%s' % (code - 96)
         # keys with shift alternatives
-        elif code in _SHIFT_LUT and shift:
-            value = _SHIFT_LUT[code]
+        elif code in self._SHIFT_LUT and shift:
+            value = self._SHIFT_LUT[code]
             shift = False
-        elif code in _LUT:
-            value = _LUT[code]
+        elif code in self._LUT:
+            value = self._LUT[code]
 
         key = []
         if shift:
@@ -371,6 +418,7 @@ class NavigationToolbar2Wasm(backend_bases.NavigationToolbar2):
         pass
 
     def get_element(self):
+        # Creat the HTML content for the toolbar
         div = document.createElement('span')
 
         def add_spacer():
@@ -405,6 +453,9 @@ class NavigationToolbar2Wasm(backend_bases.NavigationToolbar2):
         self.download(format, FILE_TYPES[format])
 
     def download(self, format, mimetype):
+        # Creates a temporary `a` element with a URL containing the image
+        # content, and then virtually clicks it. Kind of magical, but it
+        # works...
         element = document.createElement('a')
         data = io.BytesIO()
         try:
