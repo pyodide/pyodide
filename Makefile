@@ -168,7 +168,6 @@ root/.built: \
 		$(PYPARSING_LIBS) \
 		$(CYCLER_LIBS) \
 		$(KIWISOLVER_LIBS) \
-		src/lazy_import.py \
 		src/sitecustomize.py \
 		src/webbrowser.py \
 		src/pyodide.py \
@@ -181,7 +180,6 @@ root/.built: \
 	cp $(PYPARSING_LIBS) $(SITEPACKAGES)
 	cp $(CYCLER_LIBS) $(SITEPACKAGES)
 	cp $(KIWISOLVER_LIBS) $(SITEPACKAGES)
-	cp src/lazy_import.py $(SITEPACKAGES)
 	cp src/sitecustomize.py $(SITEPACKAGES)
 	cp src/webbrowser.py root/lib/python$(PYMINOR)
 	cp src/_testcapi.py	root/lib/python$(PYMINOR)
