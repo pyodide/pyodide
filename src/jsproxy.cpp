@@ -7,11 +7,6 @@ using emscripten::val;
 
 static PyObject *JsBoundMethod_cnew(val this_, const char *name);
 
-////////////////////////////////////////////////////////////
-// JsProxy
-//
-// This is a Python object that provides ideomatic access to a Javascript object.
-
 typedef struct {
   PyObject_HEAD
   val *js;

@@ -1,6 +1,9 @@
 #ifndef PYPROXY_H
 #define PYPROXY_H
 
+/** Makes Python objects usable from Javascript.
+ */
+
 #include <emscripten.h>
 #include <emscripten/bind.h>
 #include <emscripten/val.h>

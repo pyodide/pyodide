@@ -98,8 +98,14 @@ static bool isTypeName(PyObject *x, const char *name) {
 }
 
 val pythonToJs(PyObject *x) {
-  // TODO: bool, None
-  if (x == Py_None) {
+
+  if (PyBytes_Check(x)) {
+    char *x_buff;
+    Py_ssize_t length;
+    PyBytes_AsStringAndSize(x, &x_buff, &length);
+    return val::global("Uint8ClampedArray").new_(
+                                                 val(emscripten::typed_memory_view(length, (unsigned char *)x_buff)));
+  } else if (x == Py_None) {
     return val(*undefined);
   } else if (x == Py_True) {
     return val(true);
@@ -128,12 +134,6 @@ val pythonToJs(PyObject *x) {
     std::wstring x_str(chars, length);
     PyMem_Free(chars);
     return val(x_str);
-  } else if (PyBytes_Check(x)) {
-    char *x_buff;
-    Py_ssize_t length;
-    PyBytes_AsStringAndSize(x, &x_buff, &length);
-    return val::global("Uint8ClampedArray").new_(
-        val(emscripten::typed_memory_view(length, (unsigned char *)x_buff)));
   } else if (JsProxy_Check(x)) {
     return JsProxy_AsVal(x);
   } else if (PyList_Check(x) || isTypeName(x, "<class 'numpy.ndarray'>")) {

@@ -5,11 +5,6 @@
 
 using emscripten::val;
 
-////////////////////////////////////////////////////////////
-// PyImport
-//
-// Makes `var foo = pyimport('foo')` work in Javascript.
-
 val pyimport(val name) {
   PyObject *pyname = jsToPython(name);
   PyObject *pyval = PyDict_GetItem(globals, pyname);

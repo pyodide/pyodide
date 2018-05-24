@@ -1,4 +1,6 @@
-# A library of helper utilities for connecting Python to the browser environment
+"""
+A library of helper utilities for connecting Python to the browser environment.
+"""
 
 from js import XMLHttpRequest
 

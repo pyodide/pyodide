@@ -2,11 +2,6 @@
 
 #include "js2python.hpp"
 
-////////////////////////////////////////////////////////////
-// JsImport
-//
-// Makes 'from js import foo' work in Python.
-
 using emscripten::val;
 
 static PyObject *original__import__;
@@ -36,6 +31,8 @@ static PyObject *JsImport_Call(PyObject *self, PyObject *args, PyObject *kwargs)
     }
 
     if (is_star) {
+      // "from js import *" imports everything from "window".
+      // TODO: Is this even a good idea?
       val window = val::global("window");
       val keys = val::global("Object")["keys"](window);
       int gn = keys["length"].as<int>();
@@ -75,6 +72,7 @@ static PyObject *JsImport_Call(PyObject *self, PyObject *args, PyObject *kwargs)
 
     return jsmod;
   } else {
+    // Fallback to the standard Python import
     return PyObject_Call(original__import__, args, kwargs);
   }
 }

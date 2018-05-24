@@ -1,6 +1,14 @@
+/** The main bootstrap script for loading pyodide.
+ */
+
 var languagePluginLoader = new Promise((resolve, reject) => {
+    // This is filled in by the Makefile to be either a local file or the
+    // deployed location. TODO: This should be done in a less hacky
+    // way.
     const baseURL = '{{DEPLOY}}';
 
+    ////////////////////////////////////////////////////////////
+    // Package loading
     const packages = {
         'dateutil': [],
         'matplotlib': ['numpy', 'dateutil', 'pytz'],
@@ -67,6 +75,8 @@ var languagePluginLoader = new Promise((resolve, reject) => {
         return promise;
     };
 
+    ////////////////////////////////////////////////////////////
+    // Callable Python object shim
     let makeCallableProxy = (obj) => {
         var clone = obj.clone();
         function callProxy(args) {
@@ -75,6 +85,8 @@ var languagePluginLoader = new Promise((resolve, reject) => {
         return callProxy;
     };
 
+    ////////////////////////////////////////////////////////////
+    // Loading Pyodide
     let wasmURL = `${baseURL}pyodide.asm.wasm`;
     let Module = {};
     window.Module = Module;
@@ -107,6 +119,9 @@ var languagePluginLoader = new Promise((resolve, reject) => {
 
     document.head.appendChild(data_script);
 
+    ////////////////////////////////////////////////////////////
+    // Iodide-specific functionality, that doesn't make sense
+    // if not using with Iodide.
     if (window.iodide !== undefined) {
         // Load the custom CSS for Pyodide
         let link = document.createElement('link');
