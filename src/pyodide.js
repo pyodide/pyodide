@@ -48,7 +48,7 @@ var languagePluginLoader = new Promise((resolve, reject) => {
 
             pyodide.monitorRunDependencies = (n) => {
                 if (n === 0) {
-                    loadedPackages.add.apply(loadedPackages, toLoad);
+                    toLoad.forEach((package) => loadedPackages.add(package));
                     delete pyodide.monitorRunDependencies;
                     const packageList = Array.from(toLoad.keys()).join(', ');
                     resolve(`Loaded ${packageList}`);
