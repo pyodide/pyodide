@@ -24,7 +24,6 @@ class PyodideInited:
 
 class PackageLoaded:
     def __call__(self, driver):
-        print("PackageLoaded")
         inited = driver.execute_script(
             "return window.done")
         return bool(inited)
