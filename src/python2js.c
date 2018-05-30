@@ -142,8 +142,8 @@ int pythonToJs(PyObject *x) {
     int jsarray = hiwire_array();
     size_t length = PySequence_Size(x);
     for (size_t i = 0; i < length; ++i) {
-      PyObject *item = PySequence_GetItem(x, i);
-      if (item == NULL) {
+      PyObject *pyitem = PySequence_GetItem(x, i);
+      if (pyitem == NULL) {
         // If something goes wrong converting the sequence (as is the case with
         // Pandas data frames), fallback to the Python object proxy
         hiwire_decref(jsarray);
@@ -151,35 +151,38 @@ int pythonToJs(PyObject *x) {
         Py_INCREF(x);
         return pyproxy_new((int)x);
       }
-      int jsitem = pythonToJs(item);
+      int jsitem = pythonToJs(pyitem);
       if (jsitem == -1) {
-        Py_DECREF(item);
+        Py_DECREF(pyitem);
         hiwire_decref(jsarray);
         return pythonExcToJs();
       }
-      Py_DECREF(item);
+      Py_DECREF(pyitem);
       hiwire_push_array(jsarray, jsitem);
+      hiwire_decref(jsitem);
     }
     return jsarray;
   } else if (PyDict_Check(x)) {
     int jsdict = hiwire_object();
-    PyObject *k, *v;
+    PyObject *pykey, *pyval;
     Py_ssize_t pos = 0;
-    while (PyDict_Next(x, &pos, &k, &v)) {
-      int jsk = pythonToJs(k);
-      if (jsk == -1) {
+    while (PyDict_Next(x, &pos, &pykey, &pyval)) {
+      int jskey = pythonToJs(pykey);
+      if (jskey == -1) {
         hiwire_decref(jsdict);
         // TODO: Return a proxy instead here???
         return pythonExcToJs();
       }
-      int jsv = pythonToJs(v);
-      if (jsv == -1) {
+      int jsval = pythonToJs(pyval);
+      if (jsval == -1) {
         // TODO: Return a proxy instead here???
-        hiwire_decref(jsk);
+        hiwire_decref(jskey);
         hiwire_decref(jsdict);
         return pythonExcToJs();
       }
-      hiwire_push_object_pair(jsdict, jsk, jsv);
+      hiwire_push_object_pair(jsdict, jskey, jsval);
+      hiwire_decref(jskey);
+      hiwire_decref(jsval);
     }
     return jsdict;
   } else {

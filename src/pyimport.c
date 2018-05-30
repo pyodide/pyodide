@@ -16,7 +16,9 @@ int pyimport(char *name) {
   }
 
   Py_DECREF(pyname);
-  return pythonToJs(pyval);
+  int idval = pythonToJs(pyval);
+  Py_DECREF(pyval);
+  return idval;
 }
 
 EM_JS(int, pyimport_Ready, (), {

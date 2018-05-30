@@ -5,49 +5,49 @@
 #include "js2python.h"
 #include "python2js.h"
 
-int pyproxy_has(int obj, int idx) {
-  PyObject *x = (PyObject *)obj;
-  PyObject *pyidx = jsToPython(idx);
-  int result = PyObject_HasAttr(x, pyidx) ? hiwire_true(): hiwire_false();
-  Py_DECREF(pyidx);
+int pyproxy_has(int ptrobj, int idkey) {
+  PyObject *pyobj = (PyObject *)ptrobj;
+  PyObject *pykey = jsToPython(idkey);
+  int result = PyObject_HasAttr(pyobj, pykey) ? hiwire_true(): hiwire_false();
+  Py_DECREF(pykey);
   return result;
 }
 
-int pyproxy_get(int obj, int idx) {
-  PyObject *x = (PyObject *)obj;
-  PyObject *pyidx = jsToPython(idx);
-  PyObject *attr = PyObject_GetAttr(x, pyidx);
-  Py_DECREF(pyidx);
-  if (attr == NULL) {
+int pyproxy_get(int ptrobj, int idkey) {
+  PyObject *pyobj = (PyObject *)ptrobj;
+  PyObject *pykey = jsToPython(idkey);
+  PyObject *pyattr = PyObject_GetAttr(pyobj, pykey);
+  Py_DECREF(pykey);
+  if (pyattr == NULL) {
     PyErr_Clear();
     return hiwire_undefined();
   }
 
-  int ret = pythonToJs(attr);
-  Py_DECREF(attr);
-  return ret;
+  int idattr = pythonToJs(pyattr);
+  Py_DECREF(pyattr);
+  return idattr;
 };
 
-int pyproxy_set(int obj, int idx, int value) {
-  PyObject *x = (PyObject *)obj;
-  PyObject *pyidx = jsToPython(idx);
-  PyObject *pyvalue = jsToPython(value);
-  int ret = PyObject_SetAttr(x, pyidx, pyvalue);
-  Py_DECREF(pyidx);
-  Py_DECREF(pyvalue);
+int pyproxy_set(int ptrobj, int idkey, int idval) {
+  PyObject *pyobj = (PyObject *)ptrobj;
+  PyObject *pykey = jsToPython(idkey);
+  PyObject *pyval = jsToPython(idval);
+  int result = PyObject_SetAttr(pyobj, pykey, pyval);
+  Py_DECREF(pykey);
+  Py_DECREF(pyval);
 
-  if (ret) {
+  if (result) {
     return pythonExcToJs();
   }
-  return value;
+  return idval;
 }
 
-int pyproxy_deleteProperty(int obj, int idx) {
-  PyObject *x = (PyObject *)obj;
-  PyObject *pyidx = jsToPython(idx);
+int pyproxy_deleteProperty(int ptrobj, int idkey) {
+  PyObject *pyobj = (PyObject *)ptrobj;
+  PyObject *pykey = jsToPython(idkey);
 
-  int ret = PyObject_DelAttr(x, pyidx);
-  Py_DECREF(pyidx);
+  int ret = PyObject_DelAttr(pyobj, pykey);
+  Py_DECREF(pykey);
 
   if (ret) {
     return pythonExcToJs();
@@ -56,131 +56,132 @@ int pyproxy_deleteProperty(int obj, int idx) {
   return hiwire_undefined();
 }
 
-int pyproxy_ownKeys(int obj) {
-  PyObject *x = (PyObject *)obj;
-  PyObject *dir = PyObject_Dir(x);
-  if (dir == NULL) {
+int pyproxy_ownKeys(int ptrobj) {
+  PyObject *pyobj = (PyObject *)ptrobj;
+  PyObject *pydir = PyObject_Dir(pyobj);
+
+  if (pydir == NULL) {
     return pythonExcToJs();
   }
 
-  int result = hiwire_array();
-  Py_ssize_t n = PyList_Size(dir);
+  int iddir = hiwire_array();
+  Py_ssize_t n = PyList_Size(pydir);
   for (Py_ssize_t i = 0; i < n; ++i) {
-    PyObject *entry = PyList_GetItem(dir, i);
-    int jsentry = pythonToJs(entry);
-    hiwire_push_array(result, jsentry);
-    hiwire_decref(jsentry);
+    PyObject *pyentry = PyList_GetItem(pydir, i);
+    int identry = pythonToJs(pyentry);
+    hiwire_push_array(iddir, identry);
+    hiwire_decref(identry);
   }
-  Py_DECREF(dir);
+  Py_DECREF(pydir);
 
-  return result;
+  return iddir;
 }
 
-int pyproxy_enumerate(int obj) {
-  return pyproxy_ownKeys(obj);
+int pyproxy_enumerate(int ptrobj) {
+  return pyproxy_ownKeys(ptrobj);
 }
 
-int pyproxy_apply(int obj, int args) {
-  PyObject *x = (PyObject *)obj;
-  Py_ssize_t length = hiwire_length(args);
+int pyproxy_apply(int ptrobj, int idargs) {
+  PyObject *pyobj = (PyObject *)ptrobj;
+  Py_ssize_t length = hiwire_get_length(idargs);
   PyObject *pyargs = PyTuple_New(length);
   for (Py_ssize_t i = 0; i < length; ++i) {
-    int item = hiwire_get_member_int(args, i);
-    PyObject *pyitem = jsToPython(item);
+    int iditem = hiwire_get_member_int(idargs, i);
+    PyObject *pyitem = jsToPython(iditem);
     PyTuple_SET_ITEM(pyargs, i, pyitem);
-    hiwire_decref(item);
+    hiwire_decref(iditem);
   }
-  PyObject *result = PyObject_Call(x, pyargs, NULL);
-  if (result == NULL) {
+  PyObject *pyresult = PyObject_Call(pyobj, pyargs, NULL);
+  if (pyresult == NULL) {
     Py_DECREF(pyargs);
     return pythonExcToJs();
   }
-  int jsresult = pythonToJs(result);
-  Py_DECREF(result);
+  int idresult = pythonToJs(pyresult);
+  Py_DECREF(pyresult);
   Py_DECREF(pyargs);
-  return jsresult;
+  return idresult;
 }
 
-EM_JS(int, pyproxy_new, (int id), {
+EM_JS(int, pyproxy_new, (int ptrobj), {
   var target = function() {};
-  target['$$'] = id;
+  target['$$'] = ptrobj;
   return Module.hiwire_new_value(new Proxy(target, Module.PyProxy));
 });
 
 EM_JS(int, PyProxy_Ready, (), {
   Module.PyProxy = {
     isExtensible: function() { return true },
-    has: function (obj, idx) {
-      obj = obj['$$'];
-      var idxid = Module.hiwire_new_value(idx);
-      var result = _pyproxy_has(obj, idxid) != 0;
-      Module.hiwire_decref(idxid);
+    has: function (jsobj, jskey) {
+      ptrobj = jsobj['$$'];
+      var idkey = Module.hiwire_new_value(jskey);
+      var result = _pyproxy_has(ptrobj, idkey) != 0;
+      Module.hiwire_decref(idkey);
       return result;
     },
-    get: function (obj, idx) {
-      if (idx === 'toString') {
+    get: function (jsobj, jskey) {
+      if (jskey === 'toString') {
         return function() {
           // TODO: Cache repr
           var repr = pyodide.pyimport('repr');
-          return repr(obj);
+          return repr(jsobj);
         }
-      } else if (idx === '$$') {
-        return obj['$$'];
+      } else if (jskey === '$$') {
+        return jsobj['$$'];
       }
-      obj = obj['$$'];
-      var idxid = Module.hiwire_new_value(idx);
-      var resultid = _pyproxy_get(obj, idxid);
-      var result = Module.hiwire_get_value(resultid);
-      Module.hiwire_decref(idxid);
-      Module.hiwire_decref(resultid);
-      return result;
+      ptrobj = jsobj['$$'];
+      var idkey = Module.hiwire_new_value(jskey);
+      var idresult = _pyproxy_get(ptrobj, idkey);
+      var jsresult = Module.hiwire_get_value(idresult);
+      Module.hiwire_decref(idkey);
+      Module.hiwire_decref(idresult);
+      return jsresult;
     },
-    set: function (obj, idx, value) {
-      obj = obj['$$'];
-      var idxid = Module.hiwire_new_value(idx);
-      var valueid = Module.hiwire_new_value(value);
-      var resultid = _pyproxy_set(obj, idxid, valueid);
-      var result = Module.hiwire_get_value(resultid);
-      Module.hiwire_decref(idxid);
-      Module.hiwire_decref(valueid);
-      Module.hiwire_decref(resultid);
-      return result;
+    set: function (jsobj, jskey, jsval) {
+      ptrobj = jsobj['$$'];
+      var idkey = Module.hiwire_new_value(jskey);
+      var idval = Module.hiwire_new_value(jsval);
+      var idresult = _pyproxy_set(ptrobj, idkey, idval);
+      var jsresult = Module.hiwire_get_value(idresult);
+      Module.hiwire_decref(idkey);
+      Module.hiwire_decref(idval);
+      Module.hiwire_decref(idresult);
+      return jsresult;
     },
-    deleteProperty: function (obj, idx) {
-      obj = obj['$$'];
-      var idxid = Module.hiwire_new_value(idx);
-      var resultid = _pyproxy_deleteProperty(obj, idxid);
-      var result = Module.hiwire_get_value(resultid);
-      Module.hiwire_decref(resultid);
-      Module.hiwire_decref(idxid);
-      return result;
+    deleteProperty: function (jsobj, jskey) {
+      ptrobj = jsobj['$$'];
+      var idkey = Module.hiwire_new_value(jskey);
+      var idresult = _pyproxy_deleteProperty(ptrobj, idkey);
+      var jsresult = Module.hiwire_get_value(idresult);
+      Module.hiwire_decref(idresult);
+      Module.hiwire_decref(idkey);
+      return jsresult;
     },
-    ownKeys: function (obj) {
-      obj = obj['$$'];
-      var resultid = _pyproxy_ownKeys(obj);
-      var result = Module.hiwire_get_value(resultid);
-      Module.hiwire_decref(resultid);
-      result.push('toString');
-      result.push('prototype');
-      return result;
+    ownKeys: function (jsobj) {
+      ptrobj = jsobj['$$'];
+      var idresult = _pyproxy_ownKeys(ptrobj);
+      var jsresult = Module.hiwire_get_value(idresult);
+      Module.hiwire_decref(idresult);
+      jsresult.push('toString');
+      jsresult.push('prototype');
+      return jsresult;
     },
-    enumerate: function (obj) {
-      obj = obj['$$'];
-      var resultid = _pyproxy_enumerate(obj);
-      var result = Module.hiwire_get_value(resultid);
-      Module.hiwire_decref(resultid);
-      result.push('toString');
-      result.push('prototype');
-      return result;
+    enumerate: function (jsobj) {
+      ptrobj = jsobj['$$'];
+      var idresult = _pyproxy_enumerate(ptrobj);
+      var jsresult = Module.hiwire_get_value(idresult);
+      Module.hiwire_decref(idresult);
+      jsresult.push('toString');
+      jsresult.push('prototype');
+      return jsresult;
     },
-    apply: function (obj, thisArg, args) {
-      obj = obj['$$'];
-      var argsid = Module.hiwire_new_value(args);
-      var resultid = _pyproxy_apply(obj, argsid);
-      var result = Module.hiwire_get_value(resultid);
-      Module.hiwire_decref(resultid);
-      Module.hiwire_decref(argsid);
-      return result;
+    apply: function (jsobj, jsthis, jsargs) {
+      ptrobj = jsobj['$$'];
+      var idargs = Module.hiwire_new_value(jsargs);
+      var idresult = _pyproxy_apply(ptrobj, idargs);
+      var jsresult = Module.hiwire_get_value(idresult);
+      Module.hiwire_decref(idresult);
+      Module.hiwire_decref(idargs);
+      return jsresult;
     },
   };
 
