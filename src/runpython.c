@@ -87,15 +87,13 @@ int runPython(char *code) {
 }
 
 EM_JS(int, runPython_Ready, (), {
-  // TODO: Remove uses of cwrap
-
-  Module.__runPython = Module.cwrap('runPython', 'number', ['string']);
-
   Module.runPython = function (code) {
-    var jsid = Module.__runPython(code);
-    result = Module.hiwire_get_value(jsid);
-    Module.hiwire_decref(jsid);
-    return result;
+    var pycode = allocate(intArrayFromString(code), 'i8', ALLOC_NORMAL);
+    var idresult = Module._runPython(pycode);
+    jsresult = Module.hiwire_get_value(idresult);
+    Module.hiwire_decref(idresult);
+    _free(pycode);
+    return jsresult;
   };
 
   return 0;

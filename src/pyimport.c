@@ -22,13 +22,13 @@ int pyimport(char *name) {
 }
 
 EM_JS(int, pyimport_Ready, (), {
-  Module.__pyimport = Module.cwrap('pyimport', 'number', ['string']);
-
   Module.pyimport = function(name) {
-    var id = Module.__pyimport(name);
-    result = Module.hiwire_get_value(id);
-    Module.hiwire_decref(id);
-    return result;
+    var pyname = allocate(intArrayFromString(name), 'i8', ALLOC_NORMAL);
+    var idresult = Module._pyimport(pyname);
+    jsresult = Module.hiwire_get_value(idresult);
+    Module.hiwire_decref(idresult);
+    _free(pyname);
+    return jsresult;
   };
 
   return 0;
