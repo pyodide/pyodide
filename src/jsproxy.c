@@ -77,7 +77,7 @@ static PyObject* JsProxy_Call(PyObject *o, PyObject *args, PyObject *kwargs) {
 
   Py_ssize_t nargs = PyTuple_Size(args);
 
-  int jsargs = hiwire_create_array();
+  int jsargs = hiwire_array();
 
   for (Py_ssize_t i; i < nargs; ++i) {
     int jsarg = pythonToJs(PyTuple_GET_ITEM(args, i));
@@ -97,7 +97,7 @@ static PyObject* JsProxy_New(PyObject *o, PyObject *args, PyObject *kwargs) {
 
   Py_ssize_t nargs = PyTuple_Size(args);
 
-  int jsargs = hiwire_create_array();
+  int jsargs = hiwire_array();
 
   for (Py_ssize_t i; i < nargs; ++i) {
     int jsarg = pythonToJs(PyTuple_GET_ITEM(args, i));
@@ -197,7 +197,7 @@ static PyObject* JsBoundMethod_Call(PyObject *o, PyObject *args, PyObject *kwarg
 
   Py_ssize_t nargs = PyTuple_Size(args);
 
-  int jsargs = hiwire_create_array();
+  int jsargs = hiwire_array();
 
   for (Py_ssize_t i = 0; i < nargs; ++i) {
     int jsarg = pythonToJs(PyTuple_GET_ITEM(args, i));

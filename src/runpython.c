@@ -33,7 +33,7 @@ int runPython(char *code) {
   PyEval_MergeCompilerFlags(&cf);
 
   if (length == 0) {
-    return hiwire_create_undefined();
+    return hiwire_undefined();
   }
 
   // Find the last non-whitespace-only line since that will provide the result

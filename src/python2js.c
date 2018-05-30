@@ -20,7 +20,7 @@ int pythonExcToJs() {
 
   if (type == NULL || type == Py_None ||
       value == NULL || value == Py_None) {
-    excval = hiwire_create_string_utf8((int)"No exception type or value");
+    excval = hiwire_string_utf8((int)"No exception type or value");
     PyErr_Print();
     PyErr_Clear();
     goto exit;
@@ -30,7 +30,7 @@ int pythonExcToJs() {
   if (tbmod == NULL) {
     PyObject *repr = PyObject_Repr(value);
     if (repr == NULL) {
-      excval = hiwire_create_string_utf8((int)"Could not get repr for exception");
+      excval = hiwire_string_utf8((int)"Could not get repr for exception");
     } else {
       excval = pythonToJs(repr);
       Py_DECREF(repr);
@@ -44,7 +44,7 @@ int pythonExcToJs() {
       format_exception = PyObject_GetAttrString(tbmod, "format_exception");
     }
     if (format_exception == NULL) {
-      excval = hiwire_create_string_utf8((int)"Could not get format_exception function");
+      excval = hiwire_string_utf8((int)"Could not get format_exception function");
     } else {
       PyObject *pylines;
       if (no_traceback) {
@@ -55,7 +55,7 @@ int pythonExcToJs() {
           (format_exception, type, value, traceback, NULL);
       }
       if (pylines == NULL) {
-        excval = hiwire_create_string_utf8((int)"Error calling traceback.format_exception");
+        excval = hiwire_string_utf8((int)"Error calling traceback.format_exception");
         PyErr_Print();
         PyErr_Clear();
         goto exit;
@@ -105,41 +105,41 @@ static int isTypeName(PyObject *x, const char *name) {
 
 int pythonToJs(PyObject *x) {
   if (x == Py_None) {
-    return hiwire_create_undefined();
+    return hiwire_undefined();
   } else if (x == Py_True) {
-    return hiwire_create_true();
+    return hiwire_true();
   } else if (x == Py_False) {
-    return hiwire_create_false();
+    return hiwire_false();
   } else if (PyLong_Check(x)) {
     long x_long = PyLong_AsLongLong(x);
     if (x_long == -1 && PyErr_Occurred()) {
       return pythonExcToJs();
     }
-    return hiwire_create_int(x_long);
+    return hiwire_int(x_long);
   } else if (PyFloat_Check(x)) {
     double x_double = PyFloat_AsDouble(x);
     if (x_double == -1.0 && PyErr_Occurred()) {
       return pythonExcToJs();
     }
-    return hiwire_create_double(x_double);
+    return hiwire_double(x_double);
   } else if (PyUnicode_Check(x)) {
     Py_ssize_t length;
     char *chars = PyUnicode_AsUTF8AndSize(x, &length);
     if (chars == NULL) {
       return pythonExcToJs();
     }
-    return hiwire_create_string_utf8_length((int)(void *)chars, length);
+    return hiwire_string_utf8_length((int)(void *)chars, length);
   } else if (PyBytes_Check(x)) {
     char *x_buff;
     Py_ssize_t length;
     if (PyBytes_AsStringAndSize(x, &x_buff, &length)) {
       return pythonExcToJs();
     }
-    return hiwire_create_bytes((int)(void *)x_buff, length);
+    return hiwire_bytes((int)(void *)x_buff, length);
   } else if (JsProxy_Check(x)) {
     return JsProxy_AsJs(x);
   } else if (PyList_Check(x) || isTypeName(x, "<class 'numpy.ndarray'>")) {
-    int jsarray = hiwire_create_array();
+    int jsarray = hiwire_array();
     size_t length = PySequence_Size(x);
     for (size_t i = 0; i < length; ++i) {
       PyObject *item = PySequence_GetItem(x, i);
@@ -162,7 +162,7 @@ int pythonToJs(PyObject *x) {
     }
     return jsarray;
   } else if (PyDict_Check(x)) {
-    int jsdict = hiwire_create_object();
+    int jsdict = hiwire_object();
     PyObject *k, *v;
     Py_ssize_t pos = 0;
     while (PyDict_Next(x, &pos, &k, &v)) {

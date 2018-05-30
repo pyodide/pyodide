@@ -8,7 +8,7 @@
 int pyproxy_has(int obj, int idx) {
   PyObject *x = (PyObject *)obj;
   PyObject *pyidx = jsToPython(idx);
-  int result = PyObject_HasAttr(x, pyidx) ? hiwire_create_true(): hiwire_create_false();
+  int result = PyObject_HasAttr(x, pyidx) ? hiwire_true(): hiwire_false();
   Py_DECREF(pyidx);
   return result;
 }
@@ -20,7 +20,7 @@ int pyproxy_get(int obj, int idx) {
   Py_DECREF(pyidx);
   if (attr == NULL) {
     PyErr_Clear();
-    return hiwire_create_undefined();
+    return hiwire_undefined();
   }
 
   int ret = pythonToJs(attr);
@@ -53,7 +53,7 @@ int pyproxy_deleteProperty(int obj, int idx) {
     return pythonExcToJs();
   }
 
-  return hiwire_create_undefined();
+  return hiwire_undefined();
 }
 
 int pyproxy_ownKeys(int obj) {
@@ -63,7 +63,7 @@ int pyproxy_ownKeys(int obj) {
     return pythonExcToJs();
   }
 
-  int result = hiwire_create_array();
+  int result = hiwire_array();
   Py_ssize_t n = PyList_Size(dir);
   for (Py_ssize_t i = 0; i < n; ++i) {
     PyObject *entry = PyList_GetItem(dir, i);
@@ -104,7 +104,7 @@ int pyproxy_apply(int obj, int args) {
 EM_JS(int, pyproxy_new, (int id), {
   var target = function() {};
   target['$$'] = id;
-  return Module.hiwire_create_value(new Proxy(target, Module.PyProxy));
+  return Module.hiwire_new_value(new Proxy(target, Module.PyProxy));
 });
 
 EM_JS(int, PyProxy_Ready, (), {
@@ -112,7 +112,7 @@ EM_JS(int, PyProxy_Ready, (), {
     isExtensible: function() { return true },
     has: function (obj, idx) {
       obj = obj['$$'];
-      var idxid = Module.hiwire_create_value(idx);
+      var idxid = Module.hiwire_new_value(idx);
       var result = _pyproxy_has(obj, idxid) != 0;
       Module.hiwire_decref(idxid);
       return result;
@@ -128,7 +128,7 @@ EM_JS(int, PyProxy_Ready, (), {
         return obj['$$'];
       }
       obj = obj['$$'];
-      var idxid = Module.hiwire_create_value(idx);
+      var idxid = Module.hiwire_new_value(idx);
       var resultid = _pyproxy_get(obj, idxid);
       var result = Module.hiwire_get_value(resultid);
       Module.hiwire_decref(idxid);
@@ -137,8 +137,8 @@ EM_JS(int, PyProxy_Ready, (), {
     },
     set: function (obj, idx, value) {
       obj = obj['$$'];
-      var idxid = Module.hiwire_create_value(idx);
-      var valueid = Module.hiwire_create_value(value);
+      var idxid = Module.hiwire_new_value(idx);
+      var valueid = Module.hiwire_new_value(value);
       var resultid = _pyproxy_set(obj, idxid, valueid);
       var result = Module.hiwire_get_value(resultid);
       Module.hiwire_decref(idxid);
@@ -148,7 +148,7 @@ EM_JS(int, PyProxy_Ready, (), {
     },
     deleteProperty: function (obj, idx) {
       obj = obj['$$'];
-      var idxid = Module.hiwire_create_value(idx);
+      var idxid = Module.hiwire_new_value(idx);
       var resultid = _pyproxy_deleteProperty(obj, idxid);
       var result = Module.hiwire_get_value(resultid);
       Module.hiwire_decref(resultid);
@@ -175,7 +175,7 @@ EM_JS(int, PyProxy_Ready, (), {
     },
     apply: function (obj, thisArg, args) {
       obj = obj['$$'];
-      var argsid = Module.hiwire_create_value(args);
+      var argsid = Module.hiwire_new_value(args);
       var resultid = _pyproxy_apply(obj, argsid);
       var result = Module.hiwire_get_value(resultid);
       Module.hiwire_decref(resultid);
