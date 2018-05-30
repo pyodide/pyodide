@@ -150,19 +150,12 @@ def test_open_url(selenium):
 
 
 def test_run_core_python_test(python_test, selenium):
-    selenium.run(
-        "import sys\n"
-        "exitcode = -1\n"
-        "def exit(n=0):\n"
-        "    global exitcode\n"
-        "    exitcode = n\n"
-        "    raise SystemExit()\n\n"
-        "sys.exit = exit\n")
-    selenium.run(
-        "from test.libregrtest import main\n"
-        "main(['{}'], verbose=True, verbose3=True)".format(python_test))
-    exitcode = selenium.run("exitcode")
-    assert exitcode == 0
+    try:
+        selenium.run(
+            "from test.libregrtest import main\n"
+            "main(['{}'], verbose=True, verbose3=True)".format(python_test))
+    except JavascriptException as e:
+        assert str(e).strip().endswith('SystemExit: 0')
 
 
 def pytest_generate_tests(metafunc):
