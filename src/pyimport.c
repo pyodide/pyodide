@@ -7,24 +7,24 @@
 
 extern PyObject *globals;
 
-int pyimport(char *name) {
+int _pyimport(char *name) {
   PyObject *pyname = PyUnicode_FromString(name);
   PyObject *pyval = PyDict_GetItem(globals, pyname);
   if (pyval == NULL) {
     Py_DECREF(pyname);
-    return pythonExcToJs();
+    return pythonexc2js();
   }
 
   Py_DECREF(pyname);
-  int idval = pythonToJs(pyval);
+  int idval = python2js(pyval);
   Py_DECREF(pyval);
   return idval;
 }
 
-EM_JS(int, pyimport_Ready, (), {
+EM_JS(int, pyimport_init, (), {
   Module.pyimport = function(name) {
     var pyname = allocate(intArrayFromString(name), 'i8', ALLOC_NORMAL);
-    var idresult = Module._pyimport(pyname);
+    var idresult = Module.__pyimport(pyname);
     jsresult = Module.hiwire_get_value(idresult);
     Module.hiwire_decref(idresult);
     _free(pyname);

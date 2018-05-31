@@ -5,10 +5,6 @@
  */
 
 
-/** The primary entry point function that runs Python code.
- */
-int runPython(char *code);
-
-int runPython_Ready();
+int runpython_init();
 
 #endif /* RUNPYTHON_H */

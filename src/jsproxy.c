@@ -24,7 +24,7 @@ static void JsProxy_dealloc(JsProxy *self) {
 static PyObject *JsProxy_Repr(PyObject *o) {
   JsProxy *self = (JsProxy *)o;
   int idrepr = hiwire_to_string(self->js);
-  PyObject *pyrepr = jsToPython(idrepr);
+  PyObject *pyrepr = js2python(idrepr);
   return pyrepr;
 }
 
@@ -51,7 +51,7 @@ static PyObject *JsProxy_GetAttr(PyObject *o, PyObject *attr_name) {
     return JsBoundMethod_cnew(self->js, key);
   }
 
-  PyObject *pyresult = jsToPython(idresult);
+  PyObject *pyresult = js2python(idresult);
   hiwire_decref(idresult);
   return pyresult;
 }
@@ -64,7 +64,7 @@ static int JsProxy_SetAttr(PyObject *o, PyObject *attr_name, PyObject *pyvalue) 
     return -1;
   }
   char *key = PyUnicode_AsUTF8(attr_name_py_str);
-  int idvalue = pythonToJs(pyvalue);
+  int idvalue = python2js(pyvalue);
   hiwire_set_member_string(self->js, (int)key, idvalue);
   hiwire_decref(idvalue);
   Py_DECREF(attr_name_py_str);
@@ -80,14 +80,14 @@ static PyObject* JsProxy_Call(PyObject *o, PyObject *args, PyObject *kwargs) {
   int idargs = hiwire_array();
 
   for (Py_ssize_t i; i < nargs; ++i) {
-    int idarg = pythonToJs(PyTuple_GET_ITEM(args, i));
+    int idarg = python2js(PyTuple_GET_ITEM(args, i));
     hiwire_push_array(idargs, idarg);
     hiwire_decref(idarg);
   }
 
   int idresult = hiwire_call(self->js, idargs);
   hiwire_decref(idargs);
-  PyObject *pyresult = jsToPython(idresult);
+  PyObject *pyresult = js2python(idresult);
   hiwire_decref(idresult);
   return pyresult;
 }
@@ -100,14 +100,14 @@ static PyObject* JsProxy_New(PyObject *o, PyObject *args, PyObject *kwargs) {
   int idargs = hiwire_array();
 
   for (Py_ssize_t i; i < nargs; ++i) {
-    int idarg = pythonToJs(PyTuple_GET_ITEM(args, i));
+    int idarg = python2js(PyTuple_GET_ITEM(args, i));
     hiwire_push_array(idargs, idarg);
     hiwire_decref(idarg);
   }
 
   int idresult = hiwire_new(self->js, idargs);
   hiwire_decref(idargs);
-  PyObject *pyresult = jsToPython(idresult);
+  PyObject *pyresult = js2python(idresult);
   hiwire_decref(idresult);
   return pyresult;
 }
@@ -122,14 +122,14 @@ PyObject* JsProxy_item(PyObject *o, Py_ssize_t idx) {
   JsProxy *self = (JsProxy *)o;
 
   int idresult = hiwire_get_member_int(self->js, idx);
-  PyObject *pyresult = jsToPython(idresult);
+  PyObject *pyresult = js2python(idresult);
   hiwire_decref(idresult);
   return pyresult;
 }
 
 int JsProxy_ass_item(PyObject *o, Py_ssize_t idx, PyObject *value) {
   JsProxy *self = (JsProxy *)o;
-  int idvalue = pythonToJs(value);
+  int idvalue = python2js(value);
   hiwire_set_member_int(self->js, idx, idvalue);
   hiwire_decref(idvalue);
   return 0;
@@ -200,14 +200,14 @@ static PyObject* JsBoundMethod_Call(PyObject *o, PyObject *args, PyObject *kwarg
   int idargs = hiwire_array();
 
   for (Py_ssize_t i = 0; i < nargs; ++i) {
-    int idarg = pythonToJs(PyTuple_GET_ITEM(args, i));
+    int idarg = python2js(PyTuple_GET_ITEM(args, i));
     hiwire_push_array(idargs, idarg);
     hiwire_decref(idarg);
   }
 
   int idresult = hiwire_call_member(self->this_, (int)self->name, idargs);
   hiwire_decref(idargs);
-  PyObject *pyresult = jsToPython(idresult);
+  PyObject *pyresult = js2python(idresult);
   hiwire_decref(idresult);
   return pyresult;
 }
@@ -242,7 +242,7 @@ int JsProxy_AsJs(PyObject *x) {
   return hiwire_incref(js_proxy->js);
 }
 
-int JsProxy_Ready() {
+int JsProxy_init() {
   return (PyType_Ready(&JsProxyType) ||
           PyType_Ready(&JsBoundMethodType));
 }

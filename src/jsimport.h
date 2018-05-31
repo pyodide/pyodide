@@ -6,7 +6,7 @@
 #include <Python.h>
 
 /** Install the import hook to support "from js import …". */
-int JsImport_Ready();
+int JsImport_init();
 
 extern PyObject *globals;
 

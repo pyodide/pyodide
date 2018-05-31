@@ -8,6 +8,6 @@
 //     https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Proxy
 
 int pyproxy_new(int obj);
-int PyProxy_Ready();
+int pyproxy_init();
 
 #endif /* PYPROXY_H */

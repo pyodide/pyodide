@@ -46,7 +46,7 @@ static PyObject *JsImport_Call(PyObject *self, PyObject *args, PyObject *kwargs)
           return NULL;
         }
         int jsval = hiwire_get_global((int)c);
-        PyObject *pyval = jsToPython(jsval);
+        PyObject *pyval = js2python(jsval);
         hiwire_decref(jsval);
         if (PyDict_SetItem(d, key, pyval)) {
           Py_DECREF(key);
@@ -79,7 +79,7 @@ static PyObject *JsImport_New() {
   return (PyObject *)self;
 }
 
-int JsImport_Ready() {
+int JsImport_init() {
   if (PyType_Ready(&JsImportType)) {
     return 1;
   }

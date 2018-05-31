@@ -21,7 +21,7 @@ static int is_whitespace(char x) {
   }
 }
 
-int runPython(char *code) {
+int _runPython(char *code) {
   char *last_line = code;
   while (*last_line != 0) {
     ++last_line;
@@ -59,7 +59,7 @@ int runPython(char *code) {
     }
     ret = PyRun_StringFlags(code, Py_file_input, globals, globals, &cf);
     if (ret == NULL) {
-      return pythonExcToJs();
+      return pythonexc2js();
     }
     Py_DECREF(ret);
   }
@@ -78,18 +78,18 @@ int runPython(char *code) {
   }
 
   if (ret == NULL) {
-    return pythonExcToJs();
+    return pythonexc2js();
   }
 
-  int id = pythonToJs(ret);
+  int id = python2js(ret);
   Py_DECREF(ret);
   return id;
 }
 
-EM_JS(int, runPython_Ready, (), {
+EM_JS(int, runpython_init, (), {
   Module.runPython = function (code) {
     var pycode = allocate(intArrayFromString(code), 'i8', ALLOC_NORMAL);
-    var idresult = Module._runPython(pycode);
+    var idresult = Module.__runPython(pycode);
     jsresult = Module.hiwire_get_value(idresult);
     Module.hiwire_decref(idresult);
     _free(pycode);

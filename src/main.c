@@ -10,16 +10,6 @@
 #include "python2js.h"
 #include "runpython.h"
 
-// TODO: Use static functions where appropriate
-
-
-////////////////////////////////////////////////////////////
-// Forward declarations
-
-////////////////////////////////////////////////////////////
-// Conversions
-
-
 /*
   TODO: This is a workaround for a weird emscripten compiler bug. The
   matplotlib/_qhull.so extension makes function pointer calls with these
@@ -53,15 +43,17 @@ int main(int argc, char** argv) {
 
   Py_InitializeEx(0);
 
-  // cleanup naming of these functions
+  // TODO cleanup naming of these functions
 
-  if (JsProxy_Ready() ||
-      jsToPython_Ready() ||
-      pythonToJs_Ready() ||
-      JsImport_Ready() ||
-      runPython_Ready() ||
-      pyimport_Ready() ||
-      PyProxy_Ready()) {
+  if (
+      js2python_init() ||
+      JsImport_init() ||
+      JsProxy_init() ||
+      pyimport_init() ||
+      pyproxy_init() ||
+      python2js_init() ||
+      runpython_init()
+      ) {
     return 1;
   }
 

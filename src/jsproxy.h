@@ -26,6 +26,6 @@ int JsProxy_Check(PyObject *x);
 int JsProxy_AsJs(PyObject *x);
 
 /** Initialize global state for the JsProxy functionality. */
-int JsProxy_Ready();
+int JsProxy_init();
 
 #endif /* JSPROXY_H */

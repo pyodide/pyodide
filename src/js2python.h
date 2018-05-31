@@ -13,9 +13,9 @@
  *    occurred during the conversion, and the Python exception API should be used
  *    to obtain the exception.
  */
-PyObject *jsToPython(int x);
+PyObject *js2python(int x);
 
 /** Initialize any global variables used by this module. */
-int jsToPython_Ready();
+int js2python_init();
 
 #endif /* JS2PYTHON_H */

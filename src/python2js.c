@@ -6,7 +6,7 @@
 #include "jsproxy.h"
 #include "pyproxy.h"
 
-int pythonExcToJs() {
+int pythonexc2js() {
   PyObject *type;
   PyObject *value;
   PyObject *traceback;
@@ -32,7 +32,7 @@ int pythonExcToJs() {
     if (repr == NULL) {
       excval = hiwire_string_utf8((int)"Could not get repr for exception");
     } else {
-      excval = pythonToJs(repr);
+      excval = python2js(repr);
       Py_DECREF(repr);
     }
   } else {
@@ -64,7 +64,7 @@ int pythonExcToJs() {
         PyObject *pystr = PyUnicode_Join(newline, pylines);
         printf("Python exception:\n");
         printf("%s\n", PyUnicode_AsUTF8(pystr));
-        excval = pythonToJs(pystr);
+        excval = python2js(pystr);
         Py_DECREF(pystr);
         Py_DECREF(newline);
         Py_DECREF(pylines);
@@ -86,7 +86,7 @@ int pythonExcToJs() {
   return -1;
 }
 
-static int isTypeName(PyObject *x, const char *name) {
+static int is_type_name(PyObject *x, const char *name) {
   PyObject *x_type = PyObject_Type(x);
   if (x_type == NULL) {
     // If we can't get a type, that's probably ok in this case...
@@ -103,7 +103,7 @@ static int isTypeName(PyObject *x, const char *name) {
   return result;
 }
 
-int pythonToJs(PyObject *x) {
+int python2js(PyObject *x) {
   if (x == Py_None) {
     return hiwire_undefined();
   } else if (x == Py_True) {
@@ -113,32 +113,32 @@ int pythonToJs(PyObject *x) {
   } else if (PyLong_Check(x)) {
     long x_long = PyLong_AsLongLong(x);
     if (x_long == -1 && PyErr_Occurred()) {
-      return pythonExcToJs();
+      return pythonexc2js();
     }
     return hiwire_int(x_long);
   } else if (PyFloat_Check(x)) {
     double x_double = PyFloat_AsDouble(x);
     if (x_double == -1.0 && PyErr_Occurred()) {
-      return pythonExcToJs();
+      return pythonexc2js();
     }
     return hiwire_double(x_double);
   } else if (PyUnicode_Check(x)) {
     Py_ssize_t length;
     char *chars = PyUnicode_AsUTF8AndSize(x, &length);
     if (chars == NULL) {
-      return pythonExcToJs();
+      return pythonexc2js();
     }
     return hiwire_string_utf8_length((int)(void *)chars, length);
   } else if (PyBytes_Check(x)) {
     char *x_buff;
     Py_ssize_t length;
     if (PyBytes_AsStringAndSize(x, &x_buff, &length)) {
-      return pythonExcToJs();
+      return pythonexc2js();
     }
     return hiwire_bytes((int)(void *)x_buff, length);
   } else if (JsProxy_Check(x)) {
     return JsProxy_AsJs(x);
-  } else if (PyList_Check(x) || isTypeName(x, "<class 'numpy.ndarray'>")) {
+  } else if (PyList_Check(x) || is_type_name(x, "<class 'numpy.ndarray'>")) {
     int jsarray = hiwire_array();
     size_t length = PySequence_Size(x);
     for (size_t i = 0; i < length; ++i) {
@@ -151,11 +151,11 @@ int pythonToJs(PyObject *x) {
         Py_INCREF(x);
         return pyproxy_new((int)x);
       }
-      int jsitem = pythonToJs(pyitem);
+      int jsitem = python2js(pyitem);
       if (jsitem == -1) {
         Py_DECREF(pyitem);
         hiwire_decref(jsarray);
-        return pythonExcToJs();
+        return pythonexc2js();
       }
       Py_DECREF(pyitem);
       hiwire_push_array(jsarray, jsitem);
@@ -167,18 +167,18 @@ int pythonToJs(PyObject *x) {
     PyObject *pykey, *pyval;
     Py_ssize_t pos = 0;
     while (PyDict_Next(x, &pos, &pykey, &pyval)) {
-      int jskey = pythonToJs(pykey);
+      int jskey = python2js(pykey);
       if (jskey == -1) {
         hiwire_decref(jsdict);
         // TODO: Return a proxy instead here???
-        return pythonExcToJs();
+        return pythonexc2js();
       }
-      int jsval = pythonToJs(pyval);
+      int jsval = python2js(pyval);
       if (jsval == -1) {
         // TODO: Return a proxy instead here???
         hiwire_decref(jskey);
         hiwire_decref(jsdict);
-        return pythonExcToJs();
+        return pythonexc2js();
       }
       hiwire_push_object_pair(jsdict, jskey, jsval);
       hiwire_decref(jskey);
@@ -191,6 +191,6 @@ int pythonToJs(PyObject *x) {
   }
 }
 
-int pythonToJs_Ready() {
+int python2js_init() {
   return 0;
 }
