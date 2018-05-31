@@ -134,7 +134,7 @@ var languagePluginLoader = new Promise((resolve, reject) => {
         window.iodide.addOutputHandler({
             shouldHandle: (val) => {
                 return (typeof val === 'function' &&
-                        val['$$'] !== undefined);
+                        pyodide.PyProxy.isPyProxy(val));
             },
 
             render: (val) => {

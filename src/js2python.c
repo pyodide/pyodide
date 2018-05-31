@@ -62,9 +62,8 @@ EM_JS(int, __jsToPython, (int id), {
     return __pythonTrue();
   } else if (value === false) {
     return __pythonFalse();
-    // TODO: Add attribute for type of object and check it here
-  } else if (value['$$'] !== undefined) {
-    return __jsPyProxyToPython(value['$$']);
+  } else if (Module.PyProxy.isPyProxy(value)) {
+    return __jsPyProxyToPython(Module.PyProxy.getPtr(value));
   } else if (value['byteLength'] !== undefined) {
     var bytes = allocate(value, 'i8', ALLOC_NORMAL);
     var result = __jsBytesToPython(bytes, value['byteLength']);
