@@ -127,9 +127,10 @@ EM_JS(int, pyproxy_init, (), {
     get: function (jsobj, jskey) {
       if (jskey === 'toString') {
         return function() {
-          // TODO: Cache repr
-          var repr = pyodide.pyimport('repr');
-          return repr(jsobj);
+          if (window.pyodide.repr === undefined) {
+            window.pyodide.repr = window.pyodide.pyimport('repr');
+          }
+          return window.pyodide.repr(jsobj);
         }
       } else if (jskey === '$$') {
         return jsobj['$$'];

@@ -76,16 +76,6 @@ var languagePluginLoader = new Promise((resolve, reject) => {
     };
 
     ////////////////////////////////////////////////////////////
-    // Callable Python object shim
-    let makeCallableProxy = (obj) => {
-        var clone = obj.clone();
-        function callProxy(args) {
-            return clone.call(Array.from(arguments), {});
-        };
-        return callProxy;
-    };
-
-    ////////////////////////////////////////////////////////////
     // Loading Pyodide
     let wasmURL = `${baseURL}pyodide.asm.wasm`;
     let Module = {};
@@ -112,7 +102,6 @@ var languagePluginLoader = new Promise((resolve, reject) => {
         script.onload = () => {
             window.pyodide = pyodide(Module);
             window.pyodide.loadPackage = loadPackage;
-            window.pyodide.makeCallableProxy = makeCallableProxy;
         };
         document.head.appendChild(script);
     };
