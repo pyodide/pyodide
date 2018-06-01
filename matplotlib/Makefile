@@ -84,6 +84,7 @@ $(HOSTBUILD)/lib.$(PLATFORMSLUG)/matplotlib/__init__.py: $(ROOT)/.patched
 $(BUILD)/__init__.py: $(HOSTBUILD)/lib.$(PLATFORMSLUG)/matplotlib/__init__.py
 	[ -d $(ROOT)/build ] || mkdir $(ROOT)/build
 	cp -r $(HOSTBUILD)/lib.$(PLATFORMSLUG)/matplotlib $(ROOT)/build && \
+	cp $(ROOT)/fontList.json $(BUILD)
 	( \
 		cd $(BUILD); \
 		find . -name "*.so" -type f -delete; \
