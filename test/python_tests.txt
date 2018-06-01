@@ -302,7 +302,7 @@ test_macurl2path
 test_mailbox  crash
 test_mailcap  unknown
 test_marshal
-test_math
+test_math floating-point
 test_memoryio
 test_memoryview
 test_metaclass
