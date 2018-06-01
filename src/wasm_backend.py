@@ -18,11 +18,14 @@ import math
 
 from matplotlib.backends import backend_agg
 from matplotlib.backend_bases import _Backend
-from matplotlib import backend_bases, _png
+from matplotlib import backend_bases, interactive, _png
 
 from js import document
 from js import window
 from js import ImageData
+
+
+interactive(True)
 
 
 class FigureCanvasWasm(backend_agg.FigureCanvasAgg):
@@ -178,7 +181,7 @@ class FigureCanvasWasm(backend_agg.FigureCanvasAgg):
     def draw_idle(self):
         if not self._idle_scheduled:
             self._idle_scheduled = True
-            window.setTimeout(self.draw, 0)
+            window.setTimeout(self.draw, 1)
 
     def set_message(self, message):
         message_display = self.get_element('message')
