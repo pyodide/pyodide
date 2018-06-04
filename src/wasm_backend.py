@@ -93,10 +93,10 @@ class FigureCanvasWasm(backend_agg.FigureCanvasAgg):
         canvas = document.createElement('canvas')
         context = canvas.getContext('2d')
         self._ratio = self.get_dpi_ratio(context)
-        if self._ratio != 1:
-            self.figure.dpi *= self._ratio
 
         width, height = self.get_width_height()
+        width *= self._ratio
+        height *= self._ratio
         div = self.create_root_element()
         div.setAttribute('style', 'width: {}px'.format(width / self._ratio))
         div.id = self._id
@@ -166,16 +166,22 @@ class FigureCanvasWasm(backend_agg.FigureCanvasAgg):
 
     def draw(self):
         # Render the figure using Agg
-        super().draw()
-        # Copy the image buffer to the canvas
-        width, height = self.get_width_height()
-        canvas = self.get_element('canvas')
-        image_data = ImageData.new(
-            self.buffer_rgba(),
-            width, height)
-        ctx = canvas.getContext("2d")
-        ctx.putImageData(image_data, 0, 0)
-        self._idle_scheduled = False
+        orig_dpi = self.figure.dpi
+        if self._ratio != 1:
+            self.figure.dpi *= self._ratio
+        try:
+            super().draw()
+            # Copy the image buffer to the canvas
+            width, height = self.get_width_height()
+            canvas = self.get_element('canvas')
+            image_data = ImageData.new(
+                self.buffer_rgba(),
+                width, height);
+            ctx = canvas.getContext("2d");
+            ctx.putImageData(image_data, 0, 0);
+        finally:
+            self.figure.dpi = orig_dpi
+            self._idle_scheduled = False
 
     def draw_idle(self):
         if not self._idle_scheduled:
@@ -189,8 +195,8 @@ class FigureCanvasWasm(backend_agg.FigureCanvasAgg):
 
     def _convert_mouse_event(self, event):
         width, height = self.get_width_height()
-        x = (event.offsetX * self._ratio)
-        y = ((height / self._ratio) - event.offsetY) * self._ratio
+        x = event.offsetX
+        y = height - event.offsetY
         button = event.button + 1
         # Disable the right-click context menu in some browsers
         if button == 3:
@@ -380,14 +386,19 @@ class FigureCanvasWasm(backend_agg.FigureCanvasAgg):
         if y1 < y0:
             y0, y1 = y1, y0
         context = rubberband.getContext('2d')
-        context.clearRect(0, 0, width, height)
-        context.strokeRect(x0, y0, x1 - x0, y1 - y0)
+        context.clearRect(
+            0, 0, width * self._ratio, height * self._ratio)
+        context.strokeRect(
+            x0 * self._ratio,
+            y0 * self._ratio,
+            (x1 - x0) * self._ratio,
+            (y1 - y0) * self._ratio)
 
     def remove_rubberband(self):
         rubberband = self.get_element('rubberband')
         width, height = self.get_width_height()
         context = rubberband.getContext('2d')
-        context.clearRect(0, 0, width, height)
+        context.clearRect(0, 0, width * self._ratio, height * self._ratio)
 
     def new_timer(self, *args, **kwargs):
         return TimerWasm(*args, **kwargs)
