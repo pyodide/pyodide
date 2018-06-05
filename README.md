@@ -1,6 +1,6 @@
 # Pyodide
 
-[![Build Status](https://travis-ci.org/iodide-project/pyodide.svg?branch=master)](https://travis-ci.org/iodide-project/pyodide)
+[![Build Status](https://circleci.com/gh/iodide-project/pyodide.png)](https://circleci.com/gh/iodide-project/pyodide)
 
 This provides an integration layer when running an empscripten-compiled CPython
 inside a web browser. It provides transparent conversion of objects between
