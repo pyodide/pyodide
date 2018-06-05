@@ -76,5 +76,5 @@ if pytest is not None:
         try:
             yield selenium
         finally:
-            print('\n'.join(selenium.logs))
+            print('\n'.join(str(x) for x in selenium.logs))
             selenium.driver.quit()

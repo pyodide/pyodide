@@ -1,0 +1,60 @@
+version: 2
+jobs:
+  build:
+    docker:
+      - image: circleci/python:3.6.5-stretch-browsers
+
+    working_directory: ~/repo
+
+    steps:
+      - checkout
+
+      - run:
+          name: dependencies
+          command: |
+            sudo apt-get install node-less cmake build-essential
+
+            # We need at least g++-8, but stretch comes with g++-6
+            # Set up the Debian testing repo, and then install g++ from there...
+            sudo bash -c "echo \"deb http://ftp.us.debian.org/debian testing main contrib non-free\" >> /etc/apt/sources.list"
+            sudo apt-get update
+            sudo apt-get install -t testing g++-8
+            sudo update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-6 60 --slave /usr/bin/g++ g++ /usr/bin/g++-6
+            sudo update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-8 80 --slave /usr/bin/g++ g++ /usr/bin/g++-8
+            sudo update-alternatives --set gcc /usr/bin/gcc-8
+
+            sudo pip install pytest-xdist selenium
+
+            # Get recent version of Firefox and geckodriver
+            wget -O firefox.tar.bz2 https://download.mozilla.org/\?product\=firefox-nightly-latest-ssl\&os\=linux64\&lang\=en-US
+            tar jxf firefox.tar.bz2
+
+            wget https://github.com/mozilla/geckodriver/releases/download/v0.20.1/geckodriver-v0.20.1-linux64.tar.gz
+            tar zxf geckodriver-v0.20.1-linux64.tar.gz -C firefox
+
+            # This Debian is so old, it doesn't know about wasm as a mime type, which then
+            # causes Firefox to complain when loading it.  Let's just add the new mime type.
+            sudo bash -c "echo 'application/wasm wasm' >> /etc/mime.types"
+
+      - restore_cache:
+          keys:
+          - v1-emsdk-{{ checksum "emsdk/Makefile" }}
+          # fallback to using the latest cache if no exact match is found
+          - v1-emsdk-
+
+      - run:
+          name: build
+          no_output_timeout: 1200
+          command: |
+            make
+
+      - save_cache:
+          paths:
+            - ./emsdk/emsdk
+          key: v1-emsdk-{{ checksum "emsdk/Makefile" }}
+
+      - run:
+          name: test
+          command: |
+            export PATH=$PWD/firefox:$PATH
+            make test

@@ -118,9 +118,7 @@ For example, say we had the following Python function that we wanted to call fro
 
 %% code {"language":"py"}
 # python
-def square(x, integer=False):
-  if integer:
-    x = int(x)
+def square(x):
   return x * x
 
 %% md
@@ -129,14 +127,14 @@ Since calling conventions are a bit different in Python than in Javascript, all 
 %% js
 // javascript
 var square = pyodide.pyimport("square")
-square([2.5], {integer: true})
+square(2.5)
 
 %% md
 This is equivalent to the following Python syntax:
 
 %% code {"language":"py"}
 # python
-square(2.5, integer=True)
+square(2.5)
 
 %% md
 You can also get the attributes of objects in a similar way.  Say we had an instance of the following Python custom class:

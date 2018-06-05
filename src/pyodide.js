@@ -76,16 +76,6 @@ var languagePluginLoader = new Promise((resolve, reject) => {
     };
 
     ////////////////////////////////////////////////////////////
-    // Callable Python object shim
-    let makeCallableProxy = (obj) => {
-        var clone = obj.clone();
-        function callProxy(args) {
-            return clone.call(Array.from(arguments), {});
-        };
-        return callProxy;
-    };
-
-    ////////////////////////////////////////////////////////////
     // Loading Pyodide
     let wasmURL = `${baseURL}pyodide.asm.wasm`;
     let Module = {};
@@ -112,7 +102,6 @@ var languagePluginLoader = new Promise((resolve, reject) => {
         script.onload = () => {
             window.pyodide = pyodide(Module);
             window.pyodide.loadPackage = loadPackage;
-            window.pyodide.makeCallableProxy = makeCallableProxy;
         };
         document.head.appendChild(script);
     };
@@ -133,16 +122,15 @@ var languagePluginLoader = new Promise((resolve, reject) => {
         // Add a custom output handler for Python objects
         window.iodide.addOutputHandler({
             shouldHandle: (val) => {
-                return (typeof val === 'object' &&
-                        val['$$'] !== undefined &&
-                        val['$$']['ptrType']['name'] === 'PyObject*');
+                return (typeof val === 'function' &&
+                        pyodide.PyProxy.isPyProxy(val));
             },
 
             render: (val) => {
                 let div = document.createElement('div');
                 div.className = 'rendered_html';
                 var element;
-                if ('_repr_html_' in val) {
+                if (val._repr_html_ !== undefined) {
                     let result = val._repr_html_();
                     if (typeof result === 'string') {
                         div.appendChild(new DOMParser().parseFromString(
@@ -153,7 +141,7 @@ var languagePluginLoader = new Promise((resolve, reject) => {
                     }
                 } else {
                     let pre = document.createElement('pre');
-                    pre.textContent = window.pyodide.repr(val);
+                    pre.textContent = val.toString();
                     div.appendChild(pre);
                     element = div;
                 }
