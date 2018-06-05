@@ -31,7 +31,7 @@ def test_python2js(selenium):
         'return pyodide.runPython("\'碘化物\'") === "碘化物"')
     assert selenium.run_js(
         'let x = pyodide.runPython("b\'bytes\'");\n'
-        'return (x instanceof window.Uint8Array) && '
+        'return (x instanceof window.Uint8ClampedArray) && '
         '(x.length === 5) && '
         '(x[0] === 98)')
     assert selenium.run_js(
