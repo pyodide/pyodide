@@ -76,6 +76,7 @@ all: build/pyodide.asm.js \
 	build/pyodide_dev.js \
 	build/python.html \
 	build/matplotlib.html \
+	build/matplotlib-sideload.html \
 	build/renderedhtml.css \
 	build/numpy.data \
 	build/dateutil.data \
@@ -113,6 +114,10 @@ build/python.html: src/python.html
 
 
 build/matplotlib.html: src/matplotlib.html
+	cp $< $@
+
+
+build/matplotlib-sideload.html: src/matplotlib-sideload.html
 	cp $< $@
 
 
