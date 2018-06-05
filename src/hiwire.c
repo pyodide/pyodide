@@ -54,7 +54,7 @@ EM_JS(int, hiwire_string_utf8, (int ptr), {
 });
 
 EM_JS(int, hiwire_bytes, (int ptr, int len), {
-  var bytes = new Uint8Array(Module.HEAPU8.buffer, ptr, len);
+  var bytes = new Uint8ClampedArray(Module.HEAPU8.buffer, ptr, len);
   return Module.hiwire_new_value(bytes);
 });
 
@@ -140,9 +140,13 @@ EM_JS(void, hiwire_call_member, (int idobj, int ptrname, int idargs), {
 });
 
 EM_JS(void, hiwire_new, (int idobj, int idargs), {
+  function newCall(Cls) {
+    return new (Function.prototype.bind.apply(Cls, arguments));
+  }
   var jsobj = Module.hiwire_get_value(idobj);
   var jsargs = Module.hiwire_get_value(idargs);
-  return Module.hiwire_new_value(new (Function.prototype.bind.apply(jsobj, jsargs)));
+  jsargs.unshift(jsobj);
+  return Module.hiwire_new_value(newCall.apply(newCall, jsargs));
 });
 
 EM_JS(void, hiwire_get_length, (int idobj), {

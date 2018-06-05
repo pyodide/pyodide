@@ -79,7 +79,7 @@ static PyObject* JsProxy_Call(PyObject *o, PyObject *args, PyObject *kwargs) {
 
   int idargs = hiwire_array();
 
-  for (Py_ssize_t i; i < nargs; ++i) {
+  for (Py_ssize_t i = 0; i < nargs; ++i) {
     int idarg = python2js(PyTuple_GET_ITEM(args, i));
     hiwire_push_array(idargs, idarg);
     hiwire_decref(idarg);
@@ -99,7 +99,7 @@ static PyObject* JsProxy_New(PyObject *o, PyObject *args, PyObject *kwargs) {
 
   int idargs = hiwire_array();
 
-  for (Py_ssize_t i; i < nargs; ++i) {
+  for (Py_ssize_t i = 0; i < nargs; ++i) {
     int idarg = python2js(PyTuple_GET_ITEM(args, i));
     hiwire_push_array(idargs, idarg);
     hiwire_decref(idarg);

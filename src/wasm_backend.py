@@ -135,7 +135,6 @@ class FigureCanvasWasm(backend_agg.FigureCanvasAgg):
         rubberband.setAttribute('tabindex', '0')
         # Event handlers are added to the canvas "on top", even though most of the
         # activity happens in the canvas below.
-        rubberband.addEventListener('click', self.onclick)
         rubberband.addEventListener('mousemove', self.onmousemove)
         rubberband.addEventListener('mouseup', self.onmouseup)
         rubberband.addEventListener('mousedown', self.onmousedown)
@@ -170,9 +169,9 @@ class FigureCanvasWasm(backend_agg.FigureCanvasAgg):
         canvas = self.get_element('canvas')
         image_data = ImageData.new(
             self.buffer_rgba(),
-            width, height);
-        ctx = canvas.getContext("2d");
-        ctx.putImageData(image_data, 0, 0);
+            width, height)
+        ctx = canvas.getContext("2d")
+        ctx.putImageData(image_data, 0, 0)
         self._idle_scheduled = False
 
     def draw_idle(self):
@@ -198,10 +197,6 @@ class FigureCanvasWasm(backend_agg.FigureCanvasAgg):
             button = 3
         return x, y, button
 
-    def onclick(self, event):
-        x, y, button = self._convert_mouse_event(event)
-        self.button_click_event(x, y, button, guiEvent=event)
-
     def onmousemove(self, event):
         x, y, button = self._convert_mouse_event(event)
         self.motion_notify_event(x, y, guiEvent=event)
@@ -215,7 +210,7 @@ class FigureCanvasWasm(backend_agg.FigureCanvasAgg):
         self.button_press_event(x, y, button, guiEvent=event)
 
     def onmouseenter(self, event):
-        window.addEventListener('contextmenu', ignore)
+        return
         # When the mouse is over the figure, get keyboard focus
         self.get_element('rubberband').focus()
         self.enter_notify_event(guiEvent=event)

@@ -141,6 +141,14 @@ def test_jsproxy(selenium):
         "document.body.children[0].tagName") == 'DIV'
     assert selenium.run(
         "repr(document)") == '[object HTMLDocument]'
+    selenium.run_js(
+        "window.square = function (x) { return x*x; }")
+    assert selenium.run(
+        "from js import square\n"
+        "square(2)") == 4
+    assert selenium.run(
+        "from js import ImageData\n"
+        "ImageData.new(64, 64)")
 
 
 def test_open_url(selenium):

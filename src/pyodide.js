@@ -130,7 +130,7 @@ var languagePluginLoader = new Promise((resolve, reject) => {
                 let div = document.createElement('div');
                 div.className = 'rendered_html';
                 var element;
-                if ('_repr_html_' in val) {
+                if (val._repr_html_ !== undefined) {
                     let result = val._repr_html_();
                     if (typeof result === 'string') {
                         div.appendChild(new DOMParser().parseFromString(
