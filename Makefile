@@ -31,7 +31,8 @@ LDFLAGS=\
 	-s USE_FREETYPE=1 \
 	-std=c++14 \
   -lstdc++ \
-  --memory-init-file 0
+  --memory-init-file 0 \
+  --minify 0
 
 SIX_ROOT=six/six-1.11.0/build/lib
 SIX_LIBS=$(SIX_ROOT)/six.py
@@ -62,7 +63,7 @@ build/pyodide.asm.js: src/main.bc src/jsimport.bc src/jsproxy.bc src/js2python.b
 
 
 build/pyodide.asm.data: root/.built
-	python2 $(FILEPACKAGER) build/pyodide.asm.data --preload root/lib@lib --js-output=build/pyodide.asm.data.js
+	python2 $(FILEPACKAGER) build/pyodide.asm.data --preload root/lib@lib --js-output=build/pyodide.asm.data.js --use-preload-plugins
 	uglifyjs build/pyodide.asm.data.js -o build/pyodide.asm.data.js
 
 
