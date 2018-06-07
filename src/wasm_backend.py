@@ -166,6 +166,7 @@ class FigureCanvasWasm(backend_agg.FigureCanvasAgg):
 
     def draw(self):
         # Render the figure using Agg
+        self._idle_scheduled = True
         orig_dpi = self.figure.dpi
         if self._ratio != 1:
             self.figure.dpi *= self._ratio
@@ -174,6 +175,8 @@ class FigureCanvasWasm(backend_agg.FigureCanvasAgg):
             # Copy the image buffer to the canvas
             width, height = self.get_width_height()
             canvas = self.get_element('canvas')
+            if canvas == None:
+                return
             image_data = ImageData.new(
                 self.buffer_rgba(),
                 width, height);
