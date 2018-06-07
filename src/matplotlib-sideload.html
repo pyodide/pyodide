@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <title>Python - iodide</title>
-<link rel="stylesheet" type="text/css" href="https://iodide-project.github.io/dist/iodide.pyodide-20180605.css">
+<link rel="stylesheet" type="text/css" href="https://iodide.io/dist/iodide.pyodide-20180605.css">
 </head>
 <body>
 <script id="jsmd" type="text/jsmd">
@@ -26,7 +26,7 @@
       "displayName": "python",
       "codeMirrorMode": "python",
       "keybinding": "p",
-      "url": "https://iodide-project.github.io/pyodide-demo/pyodide.js",
+      "url": "https://iodide.io/pyodide-demo/pyodide.js",
       "module": "pyodide",
       "evaluator": "runPython",
       "pluginType": "language"
@@ -54,10 +54,10 @@ Press Shift+Enter on the cell below to display the plot.
      let jsmd = document.getElementById('jsmd');
      jsmd.innerHTML = jsmd.innerHTML + text;
      let script = document.createElement('script');
-     script.src = 'https://iodide-project.github.io/dist/iodide.pyodide-20180605.js';
+     script.src = 'https://iodide.io/dist/iodide.pyodide-20180605.js';
      script.onload = () => {
          let pyodide = document.createElement('script');
-         pyodide.src = 'https://iodide-project.github.io/pyodide-demo/pyodide.js';
+         pyodide.src = 'https://iodide.io/pyodide-demo/pyodide.js';
          pyodide.onload = () => {
              languagePluginLoader.then(() => {
                  window.pyodide.loadPackage('matplotlib').then(() => {

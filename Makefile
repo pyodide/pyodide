@@ -106,7 +106,7 @@ build/pyodide_dev.js: src/pyodide.js
 
 build/pyodide.js: src/pyodide.js
 	cp $< $@
-	sed -i -e 's#{{DEPLOY}}#https://iodide-project.github.io/pyodide-demo/#g' $@
+	sed -i -e 's#{{DEPLOY}}#https://iodide.io/pyodide-demo/#g' $@
 
 
 build/python.html: src/python.html
