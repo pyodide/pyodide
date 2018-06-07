@@ -2,10 +2,11 @@
 
 [![Build Status](https://circleci.com/gh/iodide-project/pyodide.png)](https://circleci.com/gh/iodide-project/pyodide)
 
-This provides an integration layer when running an empscripten-compiled CPython
-inside a web browser. It provides transparent conversion of objects between
-Javascript and Python and a sharing of global namespaces. When inside a browser,
-this means Python has full access to the Web APIs.
+The Python scientific stack, compiled to WebAssembly.
+
+It provides transparent conversion of objects between Javascript and Python and
+a sharing of global namespaces. When inside a browser, this means Python has
+full access to the Web APIs.
 
 See [the demo](https://iodide.io/pyodide-demo/python.html)
 
