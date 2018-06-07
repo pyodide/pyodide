@@ -7,19 +7,20 @@ inside a web browser. It provides transparent conversion of objects between
 Javascript and Python and a sharing of global namespaces. When inside a browser,
 this means Python has full access to the Web APIs.
 
+See [the demo](https://iodide.io/pyodide-demo/python.html)
+
 # Building
 
 These instructions were tested on Linux. OSX should be substantively the same.
 
-Make sure the prerequisites for emsdk are installed.
+Make sure the prerequisites for [emsdk](https://github.com/juj/emsdk) are installed.
 
 Install [lessc](https://lesscss.org/) to compile less to css.
 
 Type `make`.
 
 (The build downloads and builds a local, patched version of emsdk, then
-downloads and builds Python and Numpy, and finally builds the pyodide-specific
-code.)
+downloads and builds Python and third-party packages).
 
 # Testing
 
