@@ -39,6 +39,7 @@ void __foo4(int a, double b, int c, int d, int e) {
 int main(int argc, char** argv) {
   hiwire_setup();
 
+  setenv("PYTHONDONTWRITEBYTECODE", "1", 0);
   setenv("PYTHONHOME", "/", 0);
 
   Py_InitializeEx(0);
