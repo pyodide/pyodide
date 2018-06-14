@@ -7,14 +7,18 @@
    It is compiled into the main module, as if it came from Python itself.
 */
 
-PyThread_type_lock PyThread_allocate_lock(void) {
+PyThread_type_lock
+PyThread_allocate_lock(void)
+{
   return (PyThread_type_lock)0x1;
 }
 
-void PyThread_free_lock(PyThread_type_lock _) {
+void
+PyThread_free_lock(PyThread_type_lock _)
+{}
 
-}
-
-int PyThread_acquire_lock(PyThread_type_lock _, int __) {
+int
+PyThread_acquire_lock(PyThread_type_lock _, int __)
+{
   return PY_LOCK_ACQUIRED;
 }

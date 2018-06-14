@@ -39,3 +39,9 @@ downloads and builds Python and third-party packages).
 1. Install the same dependencies as for testing.
 
 2. `make benchmark`
+
+# Linting
+
+1. Python is linted with `flake8`.  C and Javascript are linted with `clang-format`.
+
+2. `make lint`

@@ -5,26 +5,29 @@
 #include "hiwire.h"
 #include "js2python.h"
 
-static PyObject *original__import__;
-PyObject *globals = NULL;
-PyObject *original_globals = NULL;
+static PyObject* original__import__;
+PyObject* globals = NULL;
+PyObject* original_globals = NULL;
 
-typedef struct {
+typedef struct
+{
   PyObject_HEAD
 } JsImport;
 
-static PyObject *JsImport_Call(PyObject *self, PyObject *args, PyObject *kwargs) {
-  PyObject *name = PyTuple_GET_ITEM(args, 0);
+static PyObject*
+JsImport_Call(PyObject* self, PyObject* args, PyObject* kwargs)
+{
+  PyObject* name = PyTuple_GET_ITEM(args, 0);
   if (PyUnicode_CompareWithASCIIString(name, "js") == 0) {
-    PyObject *locals = PyTuple_GET_ITEM(args, 2);
-    PyObject *fromlist = PyTuple_GET_ITEM(args, 3);
+    PyObject* locals = PyTuple_GET_ITEM(args, 2);
+    PyObject* fromlist = PyTuple_GET_ITEM(args, 3);
     Py_ssize_t n = PySequence_Size(fromlist);
-    PyObject *jsmod = PyModule_New("js");
-    PyObject *d = PyModule_GetDict(jsmod);
+    PyObject* jsmod = PyModule_New("js");
+    PyObject* d = PyModule_GetDict(jsmod);
 
     int is_star = 0;
     if (n == 1) {
-      PyObject *firstfromlist = PySequence_GetItem(fromlist, 0);
+      PyObject* firstfromlist = PySequence_GetItem(fromlist, 0);
       if (PyUnicode_CompareWithASCIIString(firstfromlist, "*") == 0) {
         is_star = 1;
       }
@@ -36,17 +39,17 @@ static PyObject *JsImport_Call(PyObject *self, PyObject *args, PyObject *kwargs)
       return NULL;
     } else {
       for (Py_ssize_t i = 0; i < n; ++i) {
-        PyObject *key = PySequence_GetItem(fromlist, i);
+        PyObject* key = PySequence_GetItem(fromlist, i);
         if (key == NULL) {
           return NULL;
         }
-        char *c = PyUnicode_AsUTF8(key);
+        char* c = PyUnicode_AsUTF8(key);
         if (c == NULL) {
           Py_DECREF(key);
           return NULL;
         }
         int jsval = hiwire_get_global((int)c);
-        PyObject *pyval = js2python(jsval);
+        PyObject* pyval = js2python(jsval);
         hiwire_decref(jsval);
         if (PyDict_SetItem(d, key, pyval)) {
           Py_DECREF(key);
@@ -73,23 +76,27 @@ static PyTypeObject JsImportType = {
   .tp_doc = "An import hook that imports things from Javascript."
 };
 
-static PyObject *JsImport_New() {
-  JsImport *self;
-  self = (JsImport *)JsImportType.tp_alloc(&JsImportType, 0);
-  return (PyObject *)self;
+static PyObject*
+JsImport_New()
+{
+  JsImport* self;
+  self = (JsImport*)JsImportType.tp_alloc(&JsImportType, 0);
+  return (PyObject*)self;
 }
 
-int JsImport_init() {
+int
+JsImport_init()
+{
   if (PyType_Ready(&JsImportType)) {
     return 1;
   }
 
-  PyObject *m = PyImport_AddModule("builtins");
+  PyObject* m = PyImport_AddModule("builtins");
   if (m == NULL) {
     return 1;
   }
 
-  PyObject *d = PyModule_GetDict(m);
+  PyObject* d = PyModule_GetDict(m);
   if (d == NULL) {
     return 1;
   }
@@ -100,7 +107,7 @@ int JsImport_init() {
   }
   Py_INCREF(original__import__);
 
-  PyObject *importer = JsImport_New();
+  PyObject* importer = JsImport_New();
   if (importer == NULL) {
     return 1;
   }

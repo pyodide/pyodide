@@ -5,18 +5,22 @@
 #include "js2python.h"
 #include "python2js.h"
 
-int _pyproxy_has(int ptrobj, int idkey) {
-  PyObject *pyobj = (PyObject *)ptrobj;
-  PyObject *pykey = js2python(idkey);
-  int result = PyObject_HasAttr(pyobj, pykey) ? hiwire_true(): hiwire_false();
+int
+_pyproxy_has(int ptrobj, int idkey)
+{
+  PyObject* pyobj = (PyObject*)ptrobj;
+  PyObject* pykey = js2python(idkey);
+  int result = PyObject_HasAttr(pyobj, pykey) ? hiwire_true() : hiwire_false();
   Py_DECREF(pykey);
   return result;
 }
 
-int _pyproxy_get(int ptrobj, int idkey) {
-  PyObject *pyobj = (PyObject *)ptrobj;
-  PyObject *pykey = js2python(idkey);
-  PyObject *pyattr = PyObject_GetAttr(pyobj, pykey);
+int
+_pyproxy_get(int ptrobj, int idkey)
+{
+  PyObject* pyobj = (PyObject*)ptrobj;
+  PyObject* pykey = js2python(idkey);
+  PyObject* pyattr = PyObject_GetAttr(pyobj, pykey);
   Py_DECREF(pykey);
   if (pyattr == NULL) {
     PyErr_Clear();
@@ -28,10 +32,12 @@ int _pyproxy_get(int ptrobj, int idkey) {
   return idattr;
 };
 
-int _pyproxy_set(int ptrobj, int idkey, int idval) {
-  PyObject *pyobj = (PyObject *)ptrobj;
-  PyObject *pykey = js2python(idkey);
-  PyObject *pyval = js2python(idval);
+int
+_pyproxy_set(int ptrobj, int idkey, int idval)
+{
+  PyObject* pyobj = (PyObject*)ptrobj;
+  PyObject* pykey = js2python(idkey);
+  PyObject* pyval = js2python(idval);
   int result = PyObject_SetAttr(pyobj, pykey, pyval);
   Py_DECREF(pykey);
   Py_DECREF(pyval);
@@ -42,9 +48,11 @@ int _pyproxy_set(int ptrobj, int idkey, int idval) {
   return idval;
 }
 
-int _pyproxy_deleteProperty(int ptrobj, int idkey) {
-  PyObject *pyobj = (PyObject *)ptrobj;
-  PyObject *pykey = js2python(idkey);
+int
+_pyproxy_deleteProperty(int ptrobj, int idkey)
+{
+  PyObject* pyobj = (PyObject*)ptrobj;
+  PyObject* pykey = js2python(idkey);
 
   int ret = PyObject_DelAttr(pyobj, pykey);
   Py_DECREF(pykey);
@@ -56,9 +64,11 @@ int _pyproxy_deleteProperty(int ptrobj, int idkey) {
   return hiwire_undefined();
 }
 
-int _pyproxy_ownKeys(int ptrobj) {
-  PyObject *pyobj = (PyObject *)ptrobj;
-  PyObject *pydir = PyObject_Dir(pyobj);
+int
+_pyproxy_ownKeys(int ptrobj)
+{
+  PyObject* pyobj = (PyObject*)ptrobj;
+  PyObject* pydir = PyObject_Dir(pyobj);
 
   if (pydir == NULL) {
     return pythonexc2js();
@@ -67,7 +77,7 @@ int _pyproxy_ownKeys(int ptrobj) {
   int iddir = hiwire_array();
   Py_ssize_t n = PyList_Size(pydir);
   for (Py_ssize_t i = 0; i < n; ++i) {
-    PyObject *pyentry = PyList_GetItem(pydir, i);
+    PyObject* pyentry = PyList_GetItem(pydir, i);
     int identry = python2js(pyentry);
     hiwire_push_array(iddir, identry);
     hiwire_decref(identry);
@@ -77,21 +87,25 @@ int _pyproxy_ownKeys(int ptrobj) {
   return iddir;
 }
 
-int _pyproxy_enumerate(int ptrobj) {
+int
+_pyproxy_enumerate(int ptrobj)
+{
   return _pyproxy_ownKeys(ptrobj);
 }
 
-int _pyproxy_apply(int ptrobj, int idargs) {
-  PyObject *pyobj = (PyObject *)ptrobj;
+int
+_pyproxy_apply(int ptrobj, int idargs)
+{
+  PyObject* pyobj = (PyObject*)ptrobj;
   Py_ssize_t length = hiwire_get_length(idargs);
-  PyObject *pyargs = PyTuple_New(length);
+  PyObject* pyargs = PyTuple_New(length);
   for (Py_ssize_t i = 0; i < length; ++i) {
     int iditem = hiwire_get_member_int(idargs, i);
-    PyObject *pyitem = js2python(iditem);
+    PyObject* pyitem = js2python(iditem);
     PyTuple_SET_ITEM(pyargs, i, pyitem);
     hiwire_decref(iditem);
   }
-  PyObject *pyresult = PyObject_Call(pyobj, pyargs, NULL);
+  PyObject* pyresult = PyObject_Call(pyobj, pyargs, NULL);
   if (pyresult == NULL) {
     Py_DECREF(pyargs);
     return pythonexc2js();
@@ -109,6 +123,7 @@ EM_JS(int, pyproxy_new, (int ptrobj), {
 });
 
 EM_JS(int, pyproxy_init, (), {
+  // clang-format off
   Module.PyProxy = {
     getPtr: function(jsobj) {
       return jsobj['$$']['ptr'];
@@ -193,4 +208,5 @@ EM_JS(int, pyproxy_init, (), {
   };
 
   return 0;
+  // clang-format on
 });

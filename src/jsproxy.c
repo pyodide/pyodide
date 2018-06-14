@@ -4,39 +4,47 @@
 #include "js2python.h"
 #include "python2js.h"
 
-static PyObject *JsBoundMethod_cnew(int this_, const char *name);
+static PyObject*
+JsBoundMethod_cnew(int this_, const char* name);
 
 ////////////////////////////////////////////////////////////
 // JsProxy
 //
-// This is a Python object that provides ideomatic access to a Javascript object.
+// This is a Python object that provides ideomatic access to a Javascript
+// object.
 
-typedef struct {
-  PyObject_HEAD
-  int js;
+typedef struct
+{
+  PyObject_HEAD int js;
 } JsProxy;
 
-static void JsProxy_dealloc(JsProxy *self) {
+static void
+JsProxy_dealloc(JsProxy* self)
+{
   hiwire_decref(self->js);
-  Py_TYPE(self)->tp_free((PyObject *)self);
+  Py_TYPE(self)->tp_free((PyObject*)self);
 }
 
-static PyObject *JsProxy_Repr(PyObject *o) {
-  JsProxy *self = (JsProxy *)o;
+static PyObject*
+JsProxy_Repr(PyObject* o)
+{
+  JsProxy* self = (JsProxy*)o;
   int idrepr = hiwire_to_string(self->js);
-  PyObject *pyrepr = js2python(idrepr);
+  PyObject* pyrepr = js2python(idrepr);
   return pyrepr;
 }
 
-static PyObject *JsProxy_GetAttr(PyObject *o, PyObject *attr_name) {
-  JsProxy *self = (JsProxy *)o;
+static PyObject*
+JsProxy_GetAttr(PyObject* o, PyObject* attr_name)
+{
+  JsProxy* self = (JsProxy*)o;
 
-  PyObject *str = PyObject_Str(attr_name);
+  PyObject* str = PyObject_Str(attr_name);
   if (str == NULL) {
     return NULL;
   }
 
-  char *key = PyUnicode_AsUTF8(str);
+  char* key = PyUnicode_AsUTF8(str);
 
   if (strncmp(key, "new", 4) == 0) {
     Py_DECREF(str);
@@ -51,19 +59,21 @@ static PyObject *JsProxy_GetAttr(PyObject *o, PyObject *attr_name) {
     return JsBoundMethod_cnew(self->js, key);
   }
 
-  PyObject *pyresult = js2python(idresult);
+  PyObject* pyresult = js2python(idresult);
   hiwire_decref(idresult);
   return pyresult;
 }
 
-static int JsProxy_SetAttr(PyObject *o, PyObject *attr_name, PyObject *pyvalue) {
-  JsProxy *self = (JsProxy *)o;
+static int
+JsProxy_SetAttr(PyObject* o, PyObject* attr_name, PyObject* pyvalue)
+{
+  JsProxy* self = (JsProxy*)o;
 
-  PyObject *attr_name_py_str = PyObject_Str(attr_name);
+  PyObject* attr_name_py_str = PyObject_Str(attr_name);
   if (attr_name_py_str == NULL) {
     return -1;
   }
-  char *key = PyUnicode_AsUTF8(attr_name_py_str);
+  char* key = PyUnicode_AsUTF8(attr_name_py_str);
   int idvalue = python2js(pyvalue);
   hiwire_set_member_string(self->js, (int)key, idvalue);
   hiwire_decref(idvalue);
@@ -72,8 +82,10 @@ static int JsProxy_SetAttr(PyObject *o, PyObject *attr_name, PyObject *pyvalue) 
   return 0;
 }
 
-static PyObject* JsProxy_Call(PyObject *o, PyObject *args, PyObject *kwargs) {
-  JsProxy *self = (JsProxy *)o;
+static PyObject*
+JsProxy_Call(PyObject* o, PyObject* args, PyObject* kwargs)
+{
+  JsProxy* self = (JsProxy*)o;
 
   Py_ssize_t nargs = PyTuple_Size(args);
 
@@ -87,13 +99,15 @@ static PyObject* JsProxy_Call(PyObject *o, PyObject *args, PyObject *kwargs) {
 
   int idresult = hiwire_call(self->js, idargs);
   hiwire_decref(idargs);
-  PyObject *pyresult = js2python(idresult);
+  PyObject* pyresult = js2python(idresult);
   hiwire_decref(idresult);
   return pyresult;
 }
 
-static PyObject* JsProxy_New(PyObject *o, PyObject *args, PyObject *kwargs) {
-  JsProxy *self = (JsProxy *)o;
+static PyObject*
+JsProxy_New(PyObject* o, PyObject* args, PyObject* kwargs)
+{
+  JsProxy* self = (JsProxy*)o;
 
   Py_ssize_t nargs = PyTuple_Size(args);
 
@@ -107,34 +121,41 @@ static PyObject* JsProxy_New(PyObject *o, PyObject *args, PyObject *kwargs) {
 
   int idresult = hiwire_new(self->js, idargs);
   hiwire_decref(idargs);
-  PyObject *pyresult = js2python(idresult);
+  PyObject* pyresult = js2python(idresult);
   hiwire_decref(idresult);
   return pyresult;
 }
 
-Py_ssize_t JsProxy_length(PyObject *o) {
-  JsProxy *self = (JsProxy *)o;
+Py_ssize_t
+JsProxy_length(PyObject* o)
+{
+  JsProxy* self = (JsProxy*)o;
 
   return hiwire_get_length(self->js);
 }
 
-PyObject* JsProxy_item(PyObject *o, Py_ssize_t idx) {
-  JsProxy *self = (JsProxy *)o;
+PyObject*
+JsProxy_item(PyObject* o, Py_ssize_t idx)
+{
+  JsProxy* self = (JsProxy*)o;
 
   int idresult = hiwire_get_member_int(self->js, idx);
-  PyObject *pyresult = js2python(idresult);
+  PyObject* pyresult = js2python(idresult);
   hiwire_decref(idresult);
   return pyresult;
 }
 
-int JsProxy_ass_item(PyObject *o, Py_ssize_t idx, PyObject *value) {
-  JsProxy *self = (JsProxy *)o;
+int
+JsProxy_ass_item(PyObject* o, Py_ssize_t idx, PyObject* value)
+{
+  JsProxy* self = (JsProxy*)o;
   int idvalue = python2js(value);
   hiwire_set_member_int(self->js, idx, idvalue);
   hiwire_decref(idvalue);
   return 0;
 }
 
+// clang-format off
 static PySequenceMethods JsProxy_SequenceMethods = {
   JsProxy_length,
   NULL,
@@ -147,11 +168,13 @@ static PySequenceMethods JsProxy_SequenceMethods = {
   NULL,
   NULL
 };
+// clang-format on
 
-static PyMethodDef JsProxy_Methods[] = {
-  {"new", (PyCFunction)JsProxy_New, METH_VARARGS|METH_KEYWORDS, "Construct a new instance"},
-  { NULL }
-};
+static PyMethodDef JsProxy_Methods[] = { { "new",
+                                           (PyCFunction)JsProxy_New,
+                                           METH_VARARGS | METH_KEYWORDS,
+                                           "Construct a new instance" },
+                                         { NULL } };
 
 static PyTypeObject JsProxyType = {
   .tp_name = "JsProxy",
@@ -167,11 +190,13 @@ static PyTypeObject JsProxyType = {
   .tp_repr = JsProxy_Repr
 };
 
-PyObject *JsProxy_cnew(int idobj) {
-  JsProxy *self;
-  self = (JsProxy *)JsProxyType.tp_alloc(&JsProxyType, 0);
+PyObject*
+JsProxy_cnew(int idobj)
+{
+  JsProxy* self;
+  self = (JsProxy*)JsProxyType.tp_alloc(&JsProxyType, 0);
   self->js = hiwire_incref(idobj);
-  return (PyObject *)self;
+  return (PyObject*)self;
 }
 
 ////////////////////////////////////////////////////////////
@@ -181,19 +206,23 @@ PyObject *JsProxy_cnew(int idobj) {
 
 const size_t BOUND_METHOD_NAME_SIZE = 256;
 
-typedef struct {
-  PyObject_HEAD
-  int this_;
+typedef struct
+{
+  PyObject_HEAD int this_;
   char name[BOUND_METHOD_NAME_SIZE];
 } JsBoundMethod;
 
-static void JsBoundMethod_dealloc(JsBoundMethod *self) {
+static void
+JsBoundMethod_dealloc(JsBoundMethod* self)
+{
   hiwire_decref(self->this_);
-  Py_TYPE(self)->tp_free((PyObject *)self);
+  Py_TYPE(self)->tp_free((PyObject*)self);
 }
 
-static PyObject* JsBoundMethod_Call(PyObject *o, PyObject *args, PyObject *kwargs) {
-  JsBoundMethod *self = (JsBoundMethod *)o;
+static PyObject*
+JsBoundMethod_Call(PyObject* o, PyObject* args, PyObject* kwargs)
+{
+  JsBoundMethod* self = (JsBoundMethod*)o;
 
   Py_ssize_t nargs = PyTuple_Size(args);
 
@@ -207,7 +236,7 @@ static PyObject* JsBoundMethod_Call(PyObject *o, PyObject *args, PyObject *kwarg
 
   int idresult = hiwire_call_member(self->this_, (int)self->name, idargs);
   hiwire_decref(idargs);
-  PyObject *pyresult = js2python(idresult);
+  PyObject* pyresult = js2python(idresult);
   hiwire_decref(idresult);
   return pyresult;
 }
@@ -218,31 +247,39 @@ static PyTypeObject JsBoundMethodType = {
   .tp_dealloc = (destructor)JsBoundMethod_dealloc,
   .tp_call = JsBoundMethod_Call,
   .tp_flags = Py_TPFLAGS_DEFAULT,
-  .tp_doc = "A proxy to make it possible to call Javascript bound methods from Python."
+  .tp_doc = "A proxy to make it possible to call Javascript bound methods from "
+            "Python."
 };
 
-static PyObject *JsBoundMethod_cnew(int this_, const char *name) {
-  JsBoundMethod *self;
-  self = (JsBoundMethod *)JsBoundMethodType.tp_alloc(&JsBoundMethodType, 0);
+static PyObject*
+JsBoundMethod_cnew(int this_, const char* name)
+{
+  JsBoundMethod* self;
+  self = (JsBoundMethod*)JsBoundMethodType.tp_alloc(&JsBoundMethodType, 0);
   self->this_ = hiwire_incref(this_);
   strncpy(self->name, name, BOUND_METHOD_NAME_SIZE);
-  return (PyObject *)self;
+  return (PyObject*)self;
 }
 
 ////////////////////////////////////////////////////////////
 // Public functions
 
-int JsProxy_Check(PyObject *x) {
+int
+JsProxy_Check(PyObject* x)
+{
   return (PyObject_TypeCheck(x, &JsProxyType) ||
           PyObject_TypeCheck(x, &JsBoundMethodType));
 }
 
-int JsProxy_AsJs(PyObject *x) {
-  JsProxy *js_proxy = (JsProxy *)x;
+int
+JsProxy_AsJs(PyObject* x)
+{
+  JsProxy* js_proxy = (JsProxy*)x;
   return hiwire_incref(js_proxy->js);
 }
 
-int JsProxy_init() {
-  return (PyType_Ready(&JsProxyType) ||
-          PyType_Ready(&JsBoundMethodType));
+int
+JsProxy_init()
+{
+  return (PyType_Ready(&JsProxyType) || PyType_Ready(&JsBoundMethodType));
 }

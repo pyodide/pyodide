@@ -6,6 +6,7 @@ from js import XMLHttpRequest
 
 import io
 
+
 def open_url(url):
     """
     Fetches a given *url* and returns a io.StringIO to access its contents.

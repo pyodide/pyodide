@@ -8,45 +8,62 @@
 // Since we're going *to* Python, just let any Python exceptions at conversion
 // bubble out to Python
 
-int _js2python_string(char *val) {
+int
+_js2python_string(char* val)
+{
   return (int)PyUnicode_FromString(val);
 }
 
-int _js2python_number(double val) {
+int
+_js2python_number(double val)
+{
   return (int)PyFloat_FromDouble(val);
 }
 
-int _js2python_none() {
+int
+_js2python_none()
+{
   Py_INCREF(Py_None);
   return (int)Py_None;
 }
 
-int _js2python_true() {
+int
+_js2python_true()
+{
   Py_INCREF(Py_True);
   return (int)Py_True;
 }
 
-int _js2python_false() {
+int
+_js2python_false()
+{
   Py_INCREF(Py_False);
   return (int)Py_False;
 }
 
-int _js2python_pyproxy(PyObject *val) {
+int
+_js2python_pyproxy(PyObject* val)
+{
   Py_INCREF(val);
   return (int)val;
 }
 
-int _js2python_bytes(char *bytes, int length) {
+int
+_js2python_bytes(char* bytes, int length)
+{
   return (int)PyBytes_FromStringAndSize(bytes, length);
 }
 
-int _js2python_jsproxy(int id) {
+int
+_js2python_jsproxy(int id)
+{
   return (int)JsProxy_cnew(id);
 }
 
 // TODO: Add some meaningful order
 
 EM_JS(int, __js2python, (int id), {
+  // clang-format off
   var value = Module.hiwire_get_value(id);
   var type = typeof value;
   if (type === 'string') {
@@ -72,12 +89,17 @@ EM_JS(int, __js2python, (int id), {
   } else {
     return __js2python_jsproxy(id);
   }
+  // clang-format on
 });
 
-PyObject *js2python(int id) {
-  return (PyObject *)__js2python(id);
+PyObject*
+js2python(int id)
+{
+  return (PyObject*)__js2python(id);
 }
 
-int js2python_init() {
+int
+js2python_init()
+{
   return 0;
 }

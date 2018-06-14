@@ -133,6 +133,11 @@ test: all build/test.html
 	py.test test -v
 
 
+lint:
+	flake8 src
+	clang-format -output-replacements-xml src/*.c src/*.h src/*.js | (! grep '<replacement ')
+
+
 benchmark: all build/test.html
 	python benchmark/benchmark.py $(HOSTPYTHON) build/benchmarks.json
 	python benchmark/plot_benchmark.py build/benchmarks.json build/benchmarks.png

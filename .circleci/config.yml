@@ -12,7 +12,7 @@ jobs:
       - run:
           name: dependencies
           command: |
-            sudo apt-get install node-less cmake build-essential
+            sudo apt-get install node-less cmake build-essential clang-format flake8
 
             # We need at least g++-8, but stretch comes with g++-6
             # Set up the Debian testing repo, and then install g++ from there...
@@ -35,6 +35,11 @@ jobs:
             # This Debian is so old, it doesn't know about wasm as a mime type, which then
             # causes Firefox to complain when loading it.  Let's just add the new mime type.
             sudo bash -c "echo 'application/wasm wasm' >> /etc/mime.types"
+
+      - run:
+          name: lint
+          command: |
+            make lint
 
       - restore_cache:
           keys:

@@ -1,12 +1,10 @@
 #include <emscripten.h>
 
 EM_JS(void, hiwire_setup, (), {
-  var hiwire = {
-    objects: {},
-    counter: 1
-  };
+  var hiwire = { objects : {}, counter : 1 };
 
-  Module.hiwire_new_value = function(jsval) {
+  Module.hiwire_new_value = function(jsval)
+  {
     var objects = hiwire.objects;
     while (hiwire.counter in objects) {
       hiwire.counter = (hiwire.counter + 1) % 0x8fffffff;
@@ -17,11 +15,10 @@ EM_JS(void, hiwire_setup, (), {
     return idval;
   };
 
-  Module.hiwire_get_value = function(idval) {
-    return hiwire.objects[idval];
-  };
+  Module.hiwire_get_value = function(idval) { return hiwire.objects[idval]; };
 
-  Module.hiwire_decref = function(idval) {
+  Module.hiwire_decref = function(idval)
+  {
     var objects = hiwire.objects;
     delete objects[idval];
   };
@@ -31,13 +28,9 @@ EM_JS(int, hiwire_incref, (int idval), {
   return Module.hiwire_new_value(Module.hiwire_get_value(idval));
 });
 
-EM_JS(void, hiwire_decref, (int idval), {
-  Module.hiwire_decref(idval);
-});
+EM_JS(void, hiwire_decref, (int idval), { Module.hiwire_decref(idval); });
 
-EM_JS(int, hiwire_int, (int val), {
-  return Module.hiwire_new_value(val);
-});
+EM_JS(int, hiwire_int, (int val), { return Module.hiwire_new_value(val); });
 
 EM_JS(int, hiwire_double, (double val), {
   return Module.hiwire_new_value(val);
@@ -62,17 +55,11 @@ EM_JS(int, hiwire_undefined, (), {
   return Module.hiwire_new_value(undefined);
 });
 
-EM_JS(int, hiwire_null, (), {
-  return Module.hiwire_new_value(null);
-});
+EM_JS(int, hiwire_null, (), { return Module.hiwire_new_value(null); });
 
-EM_JS(int, hiwire_true, (), {
-  return Module.hiwire_new_value(true);
-});
+EM_JS(int, hiwire_true, (), { return Module.hiwire_new_value(true); });
 
-EM_JS(int, hiwire_false, (), {
-  return Module.hiwire_new_value(false);
-});
+EM_JS(int, hiwire_false, (), { return Module.hiwire_new_value(false); });
 
 EM_JS(int, hiwire_throw_error, (int idmsg), {
   var jsmsg = Module.hiwire_get_value(idmsg);
@@ -80,17 +67,13 @@ EM_JS(int, hiwire_throw_error, (int idmsg), {
   throw new Error(jsmsg);
 });
 
-EM_JS(int, hiwire_array, (), {
-  return Module.hiwire_new_value([]);
-});
+EM_JS(int, hiwire_array, (), { return Module.hiwire_new_value([]); });
 
 EM_JS(void, hiwire_push_array, (int idarr, int idval), {
   Module.hiwire_get_value(idarr).push(Module.hiwire_get_value(idval));
 });
 
-EM_JS(int, hiwire_object, (), {
-  return Module.hiwire_new_value({});
-});
+EM_JS(int, hiwire_object, (), { return Module.hiwire_new_value({}); });
 
 EM_JS(void, hiwire_push_object_pair, (int idobj, int idkey, int idval), {
   var jsobj = Module.hiwire_get_value(idobj);
@@ -140,7 +123,8 @@ EM_JS(void, hiwire_call_member, (int idobj, int ptrname, int idargs), {
 });
 
 EM_JS(void, hiwire_new, (int idobj, int idargs), {
-  function newCall(Cls) {
+  function newCall(Cls)
+  {
     return new (Function.prototype.bind.apply(Cls, arguments));
   }
   var jsobj = Module.hiwire_get_value(idobj);
@@ -154,7 +138,9 @@ EM_JS(void, hiwire_get_length, (int idobj), {
 });
 
 EM_JS(void, hiwire_is_function, (int idobj), {
+  // clang-format off
   return typeof Module.hiwire_get_value(idobj) === 'function';
+  // clang-format on
 });
 
 EM_JS(void, hiwire_to_string, (int idobj), {

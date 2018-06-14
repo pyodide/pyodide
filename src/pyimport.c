@@ -5,11 +5,13 @@
 
 #include "python2js.h"
 
-extern PyObject *globals;
+extern PyObject* globals;
 
-int _pyimport(char *name) {
-  PyObject *pyname = PyUnicode_FromString(name);
-  PyObject *pyval = PyDict_GetItem(globals, pyname);
+int
+_pyimport(char* name)
+{
+  PyObject* pyname = PyUnicode_FromString(name);
+  PyObject* pyval = PyDict_GetItem(globals, pyname);
   if (pyval == NULL) {
     Py_DECREF(pyname);
     return pythonexc2js();
@@ -22,7 +24,8 @@ int _pyimport(char *name) {
 }
 
 EM_JS(int, pyimport_init, (), {
-  Module.pyimport = function(name) {
+  Module.pyimport = function(name)
+  {
     var pyname = allocate(intArrayFromString(name), 'i8', ALLOC_NORMAL);
     var idresult = Module.__pyimport(pyname);
     jsresult = Module.hiwire_get_value(idresult);

@@ -4,6 +4,7 @@
 /** Makes `var foo = pyodide.pyimport('foo')` work in Javascript.
  */
 
-int pyimport_init();
+int
+pyimport_init();
 
 #endif /* PYIMPORT_H */

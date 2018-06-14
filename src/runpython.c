@@ -1,28 +1,32 @@
 #include "runpython.h"
 
-#include <emscripten.h>
 #include <Python.h>
+#include <emscripten.h>
 #include <node.h> // from Python
 
-#include "python2js.h"
 #include "hiwire.h"
+#include "python2js.h"
 
-extern PyObject *globals;
+extern PyObject* globals;
 
-static int is_whitespace(char x) {
+static int
+is_whitespace(char x)
+{
   switch (x) {
-  case ' ':
-  case '\n':
-  case '\r':
-  case '\t':
-    return 1;
-  default:
-    return 0;
+    case ' ':
+    case '\n':
+    case '\r':
+    case '\t':
+      return 1;
+    default:
+      return 0;
   }
 }
 
-int _runPython(char *code) {
-  char *last_line = code;
+int
+_runPython(char* code)
+{
+  char* last_line = code;
   while (*last_line != 0) {
     ++last_line;
   }
@@ -39,11 +43,13 @@ int _runPython(char *code) {
   // Find the last non-whitespace-only line since that will provide the result
   // TODO: This way to find the last line will probably break in many ways
   last_line--;
-  for (; last_line != code && is_whitespace(*last_line); last_line--) {}
-  for (; last_line != code && *last_line != '\n'; last_line--) {}
+  for (; last_line != code && is_whitespace(*last_line); last_line--) {
+  }
+  for (; last_line != code && *last_line != '\n'; last_line--) {
+  }
 
   int do_eval_line = 1;
-  struct _node *co;
+  struct _node* co;
   co = PyParser_SimpleParseStringFlags(last_line, Py_eval_input, cf.cf_flags);
   if (co == NULL) {
     do_eval_line = 0;
@@ -51,7 +57,7 @@ int _runPython(char *code) {
   }
   PyNode_Free(co);
 
-  PyObject *ret;
+  PyObject* ret;
   if (do_eval_line == 0 || last_line != code) {
     if (do_eval_line) {
       *last_line = 0;
@@ -65,16 +71,16 @@ int _runPython(char *code) {
   }
 
   switch (do_eval_line) {
-  case 0:
-    Py_INCREF(Py_None);
-    ret = Py_None;
-    break;
-  case 1:
-    ret = PyRun_StringFlags(last_line, Py_eval_input, globals, globals, &cf);
-    break;
-  case 2:
-    ret = PyRun_StringFlags(last_line, Py_file_input, globals, globals, &cf);
-    break;
+    case 0:
+      Py_INCREF(Py_None);
+      ret = Py_None;
+      break;
+    case 1:
+      ret = PyRun_StringFlags(last_line, Py_eval_input, globals, globals, &cf);
+      break;
+    case 2:
+      ret = PyRun_StringFlags(last_line, Py_file_input, globals, globals, &cf);
+      break;
   }
 
   if (ret == NULL) {
@@ -87,7 +93,8 @@ int _runPython(char *code) {
 }
 
 EM_JS(int, runpython_init, (), {
-  Module.runPython = function (code) {
+  Module.runPython = function(code)
+  {
     var pycode = allocate(intArrayFromString(code), 'i8', ALLOC_NORMAL);
     var idresult = Module.__runPython(pycode);
     jsresult = Module.hiwire_get_value(idresult);

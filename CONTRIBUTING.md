@@ -34,7 +34,7 @@ If you’d like to fix a currently-filed issue, please take a look at the commen
 
 We use [py.test](https://pytest.org), driving [Selenium](https://www.seleniumhq.org) as our testing framework. Every PR will automatically run through our tests, and our test framework will alert you on Github if your PR doesn’t pass all of them. If your PR fails a test, try to figure out whether or not you can update your code to make the test pass again, or ask for help. As a policy we will not accept a PR that fails any of our tests, and will likely ask you to add tests if your PR adds new functionality. Writing tests can be scary, but they make open-source contributions easier for everyone to assess. Take a moment and look through how we’ve written our tests, and try to make your tests match. If you are having trouble, we can help you get started on our test-writing journey.
 
-TODO: Code style standards and automation to follow. Just stay sand and consistent for now.
+All code submissions should pass `make lint`.  Python is checked with the default settings of `flake8`.  C and Javascript are checked against the Mozilla style in `clang-format`.
 
 ## Development Workflow
 

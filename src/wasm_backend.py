@@ -18,7 +18,7 @@ import math
 
 from matplotlib.backends import backend_agg
 from matplotlib.backend_bases import _Backend
-from matplotlib import backend_bases, interactive, _png
+from matplotlib import backend_bases, interactive
 
 from js import document
 from js import window
@@ -130,14 +130,15 @@ class FigureCanvasWasm(backend_agg.FigureCanvasAgg):
         rubberband.setAttribute('width', width)
         rubberband.setAttribute('height', height)
         rubberband.setAttribute(
-            'style', 'position: absolute; left: 0; top: 0; z-index: 0; outline: 0;' +
-            'width: {}px; height: {}px'.format(
+            'style', 'position: absolute; left: 0; top: 0; z-index: 0; ' +
+            'outline: 0; width: {}px; height: {}px'.format(
                 width / self._ratio, height / self._ratio)
         )
-        # Canvas must have a "tabindex" attr in order to receive keyboard events
+        # Canvas must have a "tabindex" attr in order to receive keyboard
+        # events
         rubberband.setAttribute('tabindex', '0')
-        # Event handlers are added to the canvas "on top", even though most of the
-        # activity happens in the canvas below.
+        # Event handlers are added to the canvas "on top", even though most of
+        # the activity happens in the canvas below.
         rubberband.addEventListener('mousemove', self.onmousemove)
         rubberband.addEventListener('mouseup', self.onmouseup)
         rubberband.addEventListener('mousedown', self.onmousedown)
@@ -146,7 +147,7 @@ class FigureCanvasWasm(backend_agg.FigureCanvasAgg):
         rubberband.addEventListener('keyup', self.onkeyup)
         rubberband.addEventListener('keydown', self.onkeydown)
         context = rubberband.getContext('2d')
-        context.strokeStyle = '#000000';
+        context.strokeStyle = '#000000'
         context.setLineDash([2, 2])
         canvas_div.appendChild(rubberband)
 
@@ -175,13 +176,13 @@ class FigureCanvasWasm(backend_agg.FigureCanvasAgg):
             # Copy the image buffer to the canvas
             width, height = self.get_width_height()
             canvas = self.get_element('canvas')
-            if canvas == None:
+            if canvas is None:
                 return
             image_data = ImageData.new(
                 self.buffer_rgba(),
-                width, height);
-            ctx = canvas.getContext("2d");
-            ctx.putImageData(image_data, 0, 0);
+                width, height)
+            ctx = canvas.getContext("2d")
+            ctx.putImageData(image_data, 0, 0)
         finally:
             self.figure.dpi = orig_dpi
             self._idle_scheduled = False
@@ -244,7 +245,8 @@ class FigureCanvasWasm(backend_agg.FigureCanvasAgg):
     }
 
     def set_cursor(self, cursor):
-        self.get_element('rubberband').style.cursor = self._cursor_map.get(cursor, 0)
+        self.get_element('rubberband').style.cursor = \
+            self._cursor_map.get(cursor, 0)
 
     # http://www.cambiaresearch.com/articles/15/javascript-char-codes-key-codes
     _SHIFT_LUT = {
@@ -447,7 +449,8 @@ class NavigationToolbar2Wasm(backend_bases.NavigationToolbar2):
                     button = document.createElement('button')
                     button.classList.add('fa')
                     button.classList.add(_FONTAWESOME_ICONS[image_file])
-                    button.addEventListener('click', getattr(self, name_of_method))
+                    button.addEventListener(
+                        'click', getattr(self, name_of_method))
                     div.appendChild(button)
 
         for format, mimetype in sorted(list(FILE_TYPES.items())):
