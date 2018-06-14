@@ -135,7 +135,6 @@ test: all build/test.html
 
 lint:
 	flake8 src
-	clang-format -output-replacements-xml src/*.c src/*.h src/*.js | (! grep '<replacement ')
 
 
 benchmark: all build/test.html
