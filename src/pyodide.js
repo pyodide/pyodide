@@ -11,11 +11,13 @@ var languagePluginLoader = new Promise((resolve, reject) => {
   ////////////////////////////////////////////////////////////
   // Package loading
   const packages = {
+    'cycler' : [],
     'dateutil' : [],
     'kiwisolver' : [],
-    'matplotlib' : [ 'numpy', 'dateutil', 'pytz', 'kiwisolver' ],
+    'matplotlib' : [ 'numpy', 'dateutil', 'pytz', 'kiwisolver', 'cycler', 'pyparsing' ],
     'numpy' : [],
     'pandas' : [ 'numpy', 'dateutil', 'pytz' ],
+    'pyparsing' : [],
     'pytz' : [],
     'test' : []
   };

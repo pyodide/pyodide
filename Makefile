@@ -84,7 +84,9 @@ all: build/pyodide.asm.js \
 	build/pytz.data \
 	build/pandas.data \
 	build/matplotlib.data \
-	build/kiwisolver.data
+	build/kiwisolver.data \
+	build/pyparsing.data \
+	build/cycler.data
 
 
 build/pyodide.asm.js: src/main.bc src/jsimport.bc src/jsproxy.bc src/js2python.bc \
@@ -162,38 +164,44 @@ clean:
 
 # TODO: It would be nice to generalize this
 build/numpy.data: $(NUMPY_LIBS)
-	python2 $(FILEPACKAGER) build/numpy.data --preload $(NUMPY_ROOT)@/lib/python3.6/site-packages/numpy --js-output=build/numpy.js --export-name=pyodide --exclude \*.wasm.pre --exclude __pycache__
+	./packager.sh numpy	$(NUMPY_ROOT)@/lib/python3.6/site-packages/numpy
 
 
 build/dateutil.data: $(DATEUTIL_LIBS)
-	python2 $(FILEPACKAGER) build/dateutil.data --preload $(DATEUTIL_ROOT)@/lib/python3.6/site-packages/dateutil --js-output=build/dateutil.js --export-name=pyodide --exclude \*.wasm.pre --exclude __pycache__
+	./packager.sh dateutil $(DATEUTIL_ROOT)@/lib/python3.6/site-packages/dateutil
 
 
 build/pytz.data: $(PYTZ_LIBS)
-	python2 $(FILEPACKAGER) build/pytz.data --preload $(PYTZ_ROOT)@/lib/python3.6/site-packages/pytz --js-output=build/pytz.js --export-name=pyodide --exclude \*.wasm.pre --exclude __pycache__
+	./packager.sh pytz $(PYTZ_ROOT)@/lib/python3.6/site-packages/pytz
 
 
 build/pandas.data: $(PANDAS_LIBS)
-	python2 $(FILEPACKAGER) build/pandas.data --preload $(PANDAS_ROOT)@/lib/python3.6/site-packages/pandas --js-output=build/pandas.js --export-name=pyodide --exclude \*.wasm.pre --exclude __pycache__
+	./packager.sh pandas $(PANDAS_ROOT)@/lib/python3.6/site-packages/pandas
 
 
 build/matplotlib.data: $(MATPLOTLIB_LIBS)
-	python2 $(FILEPACKAGER) build/matplotlib.data --preload $(MATPLOTLIB_ROOT)@/lib/python3.6/site-packages/matplotlib --js-output=build/matplotlib.js --export-name=pyodide --exclude \*.wasm.pre --exclude __pycache__
+	./packager.sh matplotlib $(MATPLOTLIB_ROOT)@/lib/python3.6/site-packages/matplotlib
 
 
 build/kiwisolver.data: $(KIWISOLVER_LIBS)
-	python2 $(FILEPACKAGER) build/kiwisolver.data --preload kiwisolver/build@/lib/python3.6/site-packages --js-output=build/kiwisolver.js --export-name=pyodide --exclude \*.wasm.pre --exclude __pycache__
+	./packager.sh kiwisolver kiwisolver/build@/lib/python3.6/site-packages
+
+
+build/cycler.data: $(CYCLER_LIBS)
+	./packager.sh cycler $(CYCLER_ROOT)@/lib/python3.6/site-packages
+
+
+build/pyparsing.data: $(CYCLER_LIBS)
+	./packager.sh pyparsing $(PYPARSING_ROOT)@/lib/python3.6/site-packages
 
 
 build/test.data: $(CPYTHONLIB)
-	python2 $(FILEPACKAGER) build/test.data --preload $(CPYTHONLIB)/test@/lib/python3.6/test --js-output=build/test.js --export-name=pyodide --exclude \*.wasm.pre --exclude __pycache__
+	./packager.sh test $(CPYTHONLIB)/test@/lib/python3.6/test
 
 
 root/.built: \
 		$(CPYTHONLIB) \
 		$(SIX_LIBS) \
-		$(PYPARSING_LIBS) \
-		$(CYCLER_LIBS) \
 		src/sitecustomize.py \
 		src/webbrowser.py \
 		src/pyodide.py \
@@ -202,8 +210,6 @@ root/.built: \
 	mkdir -p root/lib
 	cp -a $(CPYTHONLIB)/ root/lib
 	cp $(SIX_LIBS) $(SITEPACKAGES)
-	cp $(PYPARSING_LIBS) $(SITEPACKAGES)
-	cp $(CYCLER_LIBS) $(SITEPACKAGES)
 	cp src/sitecustomize.py $(SITEPACKAGES)
 	cp src/webbrowser.py root/lib/python$(PYMINOR)
 	cp src/_testcapi.py	root/lib/python$(PYMINOR)
