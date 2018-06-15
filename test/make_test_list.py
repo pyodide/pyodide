@@ -7,7 +7,8 @@ import os
 tests = []
 
 TEST_DIR = "../cpython/build/3.6.4/host/lib/python3.6/test"
-for root, dirs, files in os.walk("../cpython/build/3.6.4/host/lib/python3.6/test"):
+for root, dirs, files in os.walk(
+        "../cpython/build/3.6.4/host/lib/python3.6/test"):
     root = os.path.relpath(root, TEST_DIR)
     if root == '.':
         root = ''

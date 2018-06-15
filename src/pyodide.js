@@ -12,12 +12,12 @@ var languagePluginLoader = new Promise((resolve, reject) => {
   // Package loading
   const packages = {
     'dateutil' : [],
-    'kiwisolver': [],
+    'kiwisolver' : [],
     'matplotlib' : [ 'numpy', 'dateutil', 'pytz', 'kiwisolver' ],
     'numpy' : [],
     'pandas' : [ 'numpy', 'dateutil', 'pytz' ],
     'pytz' : [],
-    'test': []
+    'test' : []
   };
   let loadedPackages = new Set();
   let loadPackage = (names) => {

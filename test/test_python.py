@@ -112,7 +112,7 @@ def test_pyproxy(selenium):
     )
     assert selenium.run_js("return pyodide.pyimport('f').get_value(2)") == 128
     assert selenium.run_js("return pyodide.pyimport('f').bar") == 42
-    assert selenium.run_js("return ('bar' in pyodide.pyimport('f'))") == True
+    assert selenium.run_js("return ('bar' in pyodide.pyimport('f'))")
     selenium.run_js("f = pyodide.pyimport('f'); f.baz = 32")
     assert selenium.run("f.baz") == 32
     assert set(selenium.run_js(
@@ -124,10 +124,11 @@ def test_pyproxy(selenium):
              '__reduce_ex__', '__repr__', '__setattr__', '__sizeof__',
              '__str__', '__subclasshook__', '__weakref__', 'bar', 'baz',
              'get_value', 'toString', 'prototype'])
-    assert selenium.run("hasattr(f, 'baz')") == True
+    assert selenium.run("hasattr(f, 'baz')")
     selenium.run_js("delete pyodide.pyimport('f').baz")
-    assert selenium.run("hasattr(f, 'baz')") == False
-    assert selenium.run_js("return pyodide.pyimport('f').toString()").startswith('<Foo')
+    assert not selenium.run("hasattr(f, 'baz')")
+    assert selenium.run_js(
+        "return pyodide.pyimport('f').toString()").startswith('<Foo')
 
 
 def test_jsproxy(selenium):
@@ -171,7 +172,8 @@ def pytest_generate_tests(metafunc):
     if 'python_test' in metafunc.fixturenames:
         test_modules = []
         with open(
-                str(pathlib.Path(__file__).parents[0] / "python_tests.txt")) as fp:
+                str(pathlib.Path(__file__).parents[0] /
+                    "python_tests.txt")) as fp:
             for line in fp:
                 line = line.strip()
                 if line.startswith('#'):
@@ -179,8 +181,8 @@ def pytest_generate_tests(metafunc):
                 parts = line.split()
                 if len(parts) == 1:
                     test_modules.append(parts[0])
-                    # XXX: The tests take too long to run, so we're just doing a
-                    # sanity check on the first 25
+                    # XXX: The tests take too long to run, so we're just doing
+                    # a sanity check on the first 25
                     if 'TRAVIS' in os.environ and len(test_modules) > 25:
                         break
         metafunc.parametrize("python_test", test_modules)

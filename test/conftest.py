@@ -37,7 +37,8 @@ class SeleniumWrapper:
 
         options = Options()
         options.add_argument('-headless')
-        driver = Firefox(executable_path='geckodriver', firefox_options=options)
+        driver = Firefox(
+            executable_path='geckodriver', firefox_options=options)
         wait = WebDriverWait(driver, timeout=20)
         driver.get((BUILD_PATH / "test.html").as_uri())
         wait.until(PyodideInited())
@@ -58,7 +59,8 @@ class SeleniumWrapper:
     def load_package(self, packages):
         self.run_js(
             'window.done = false\n'
-            'pyodide.loadPackage({!r}).then(window.done = true)'.format(packages))
+            'pyodide.loadPackage({!r}).then(window.done = true)'.format(
+                packages))
         time.sleep(2)
         self.wait.until(PackageLoaded())
 

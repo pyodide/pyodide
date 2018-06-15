@@ -12,12 +12,12 @@ jobs:
       - run:
           name: dependencies
           command: |
-            sudo apt-get install node-less cmake build-essential clang-format flake8
 
             # We need at least g++-8, but stretch comes with g++-6
             # Set up the Debian testing repo, and then install g++ from there...
             sudo bash -c "echo \"deb http://ftp.us.debian.org/debian testing main contrib non-free\" >> /etc/apt/sources.list"
             sudo apt-get update
+            sudo apt-get install node-less cmake build-essential clang-format-6.0 flake8
             sudo apt-get install -t testing g++-8
             sudo update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-6 60 --slave /usr/bin/g++ g++ /usr/bin/g++-6
             sudo update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-8 80 --slave /usr/bin/g++ g++ /usr/bin/g++-8

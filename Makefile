@@ -137,7 +137,8 @@ test: all build/test.html
 
 lint:
 	flake8 src
-
+	flake8 test
+	clang-format -output-replacements-xml src/*.c src/*.h src/*.js | (! grep '<replacement ')
 
 benchmark: all build/test.html
 	python benchmark/benchmark.py $(HOSTPYTHON) build/benchmarks.json

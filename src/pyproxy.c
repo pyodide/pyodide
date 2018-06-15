@@ -117,8 +117,8 @@ _pyproxy_apply(int ptrobj, int idargs)
 }
 
 EM_JS(int, pyproxy_new, (int ptrobj), {
-  var target = function() {};
-  target['$$'] = { ptr: ptrobj, type: 'PyProxy' };
+  var target = function(){};
+  target['$$'] = { ptr : ptrobj, type : 'PyProxy' };
   return Module.hiwire_new_value(new Proxy(target, Module.PyProxy));
 });
 
@@ -208,5 +208,5 @@ EM_JS(int, pyproxy_init, (), {
   };
 
   return 0;
-  // clang-format on
+// clang-format on
 });
