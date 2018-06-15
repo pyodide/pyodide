@@ -82,7 +82,8 @@ all: build/pyodide.asm.js \
 	build/dateutil.data \
 	build/pytz.data \
 	build/pandas.data \
-	build/matplotlib.data
+	build/matplotlib.data \
+	build/kiwisolver.data
 
 
 build/pyodide.asm.js: src/main.bc src/jsimport.bc src/jsproxy.bc src/js2python.bc \
@@ -178,12 +179,15 @@ build/matplotlib.data: $(MATPLOTLIB_LIBS)
 	python2 $(FILEPACKAGER) build/matplotlib.data --preload $(MATPLOTLIB_ROOT)@/lib/python3.6/site-packages/matplotlib --js-output=build/matplotlib.js --export-name=pyodide --exclude \*.wasm.pre --exclude __pycache__
 
 
+build/kiwisolver.data: $(KIWISOLVER_LIBS)
+	python2 $(FILEPACKAGER) build/kiwisolver.data --preload kiwisolver/build@/lib/python3.6/site-packages --js-output=build/kiwisolver.js --export-name=pyodide --exclude \*.wasm.pre --exclude __pycache__
+
+
 root/.built: \
 		$(CPYTHONLIB) \
 		$(SIX_LIBS) \
 		$(PYPARSING_LIBS) \
 		$(CYCLER_LIBS) \
-		$(KIWISOLVER_LIBS) \
 		src/sitecustomize.py \
 		src/webbrowser.py \
 		src/pyodide.py \

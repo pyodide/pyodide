@@ -60,6 +60,7 @@ $(BUILD)/kiwisolver.so: \
 	[ -d $(ROOT)/build ] || mkdir $(ROOT)/build
 	$(CC) $(SIDE_LDFLAGS) $^ -o $@.wasm
 	mv $@.wasm $@
+	rm $@.wasm.pre
 
 
 $(ROOT)/.patched: $(HOSTDIR)/setup.py
