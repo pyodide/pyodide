@@ -187,7 +187,6 @@ root/.built: \
 		src/sitecustomize.py \
 		src/webbrowser.py \
 		src/pyodide.py \
-		src/wasm_backend.py \
 		remove_modules.txt
 	rm -rf root
 	mkdir -p root/lib
@@ -201,7 +200,6 @@ root/.built: \
 	cp src/_testcapi.py	root/lib/python$(PYMINOR)
 	cp src/pystone.py root/lib/python$(PYMINOR)
 	cp src/pyodide.py root/lib/python$(PYMINOR)/site-packages
-	cp src/wasm_backend.py root/lib/python$(PYMINOR)/site-packages
 	( \
 		cd root/lib/python$(PYMINOR); \
 		rm -fr `cat ../../../remove_modules.txt`; \

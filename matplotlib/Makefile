@@ -85,6 +85,7 @@ $(BUILD)/__init__.py: $(HOSTBUILD)/lib.$(PLATFORMSLUG)/matplotlib/__init__.py
 	[ -d $(ROOT)/build ] || mkdir $(ROOT)/build
 	cp -r $(HOSTBUILD)/lib.$(PLATFORMSLUG)/matplotlib $(ROOT)/build && \
 	cp $(ROOT)/fontList.json $(BUILD)
+	cp $(ROOT)/src/wasm_backend.py $(BUILD)/backends
 	( \
 		cd $(BUILD); \
 		find . -name "*.so" -type f -delete; \
