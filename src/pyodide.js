@@ -21,10 +21,6 @@ var languagePluginLoader = new Promise((resolve, reject) => {
   };
   let loadedPackages = new Set();
   let loadPackage = (names) => {
-    if (Array.isArray(names)) {
-      names = [ names ];
-    }
-
     // DFS to find all dependencies of the requested packages
     let queue = new Array(names);
     let toLoad = new Set();
