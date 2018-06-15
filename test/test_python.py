@@ -158,6 +158,7 @@ def test_open_url(selenium):
 
 
 def test_run_core_python_test(python_test, selenium):
+    selenium.load_package('test')
     try:
         selenium.run(
             "from test.libregrtest import main\n"

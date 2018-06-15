@@ -78,6 +78,7 @@ all: build/pyodide.asm.js \
 	build/matplotlib.html \
 	build/matplotlib-sideload.html \
 	build/renderedhtml.css \
+  build/test.data \
 	build/numpy.data \
 	build/dateutil.data \
 	build/pytz.data \
@@ -183,6 +184,10 @@ build/kiwisolver.data: $(KIWISOLVER_LIBS)
 	python2 $(FILEPACKAGER) build/kiwisolver.data --preload kiwisolver/build@/lib/python3.6/site-packages --js-output=build/kiwisolver.js --export-name=pyodide --exclude \*.wasm.pre --exclude __pycache__
 
 
+build/test.data: $(CPYTHONLIB)
+	python2 $(FILEPACKAGER) build/test.data --preload $(CPYTHONLIB)/test@/lib/python3.6/test --js-output=build/test.js --export-name=pyodide --exclude \*.wasm.pre --exclude __pycache__
+
+
 root/.built: \
 		$(CPYTHONLIB) \
 		$(SIX_LIBS) \
@@ -208,6 +213,7 @@ root/.built: \
 		cd root/lib/python$(PYMINOR); \
 		rm -fr `cat ../../../remove_modules.txt`; \
 		rm encodings/mac_*.py; \
+		rm -fr test; \
 		find . -name "*.wasm.pre" -type f -delete ; \
 		find -type d -name __pycache__ -prune -exec rm -rf {} \; \
 	)
