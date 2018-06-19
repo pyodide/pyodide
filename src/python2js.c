@@ -108,8 +108,8 @@ is_type_name(PyObject* x, const char* name)
   return result;
 }
 
-int
-python2js(PyObject* x)
+static int
+python2js_int(PyObject* x)
 {
   if (x == Py_None) {
     return hiwire_undefined();
@@ -120,27 +120,27 @@ python2js(PyObject* x)
   } else if (PyLong_Check(x)) {
     long x_long = PyLong_AsLongLong(x);
     if (x_long == -1 && PyErr_Occurred()) {
-      return pythonexc2js();
+      return -1;
     }
     return hiwire_int(x_long);
   } else if (PyFloat_Check(x)) {
     double x_double = PyFloat_AsDouble(x);
     if (x_double == -1.0 && PyErr_Occurred()) {
-      return pythonexc2js();
+      return -1;
     }
     return hiwire_double(x_double);
   } else if (PyUnicode_Check(x)) {
     Py_ssize_t length;
     char* chars = PyUnicode_AsUTF8AndSize(x, &length);
     if (chars == NULL) {
-      return pythonexc2js();
+      return -1;
     }
     return hiwire_string_utf8_length((int)(void*)chars, length);
   } else if (PyBytes_Check(x)) {
     char* x_buff;
     Py_ssize_t length;
     if (PyBytes_AsStringAndSize(x, &x_buff, &length)) {
-      return pythonexc2js();
+      return -1;
     }
     return hiwire_bytes((int)(void*)x_buff, length);
   } else if (JsProxy_Check(x)) {
@@ -158,11 +158,11 @@ python2js(PyObject* x)
         Py_INCREF(x);
         return pyproxy_new((int)x);
       }
-      int jsitem = python2js(pyitem);
+      int jsitem = python2js_int(pyitem);
       if (jsitem == -1) {
         Py_DECREF(pyitem);
         hiwire_decref(jsarray);
-        return pythonexc2js();
+        return -1;
       }
       Py_DECREF(pyitem);
       hiwire_push_array(jsarray, jsitem);
@@ -174,18 +174,16 @@ python2js(PyObject* x)
     PyObject *pykey, *pyval;
     Py_ssize_t pos = 0;
     while (PyDict_Next(x, &pos, &pykey, &pyval)) {
-      int jskey = python2js(pykey);
+      int jskey = python2js_int(pykey);
       if (jskey == -1) {
         hiwire_decref(jsdict);
-        // TODO: Return a proxy instead here???
-        return pythonexc2js();
+        return -1;
       }
-      int jsval = python2js(pyval);
+      int jsval = python2js_int(pyval);
       if (jsval == -1) {
-        // TODO: Return a proxy instead here???
         hiwire_decref(jskey);
         hiwire_decref(jsdict);
-        return pythonexc2js();
+        return -1;
       }
       hiwire_push_object_pair(jsdict, jskey, jsval);
       hiwire_decref(jskey);
@@ -196,6 +194,15 @@ python2js(PyObject* x)
     Py_INCREF(x);
     return pyproxy_new((int)x);
   }
+}
+
+int
+python2js(PyObject* x) {
+  int result = python2js_int(x);
+  if (result == -1) {
+    return pythonexc2js();
+  }
+  return result;
 }
 
 int
