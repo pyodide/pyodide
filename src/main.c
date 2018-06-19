@@ -46,8 +46,6 @@ main(int argc, char** argv)
 
   Py_InitializeEx(0);
 
-  // TODO cleanup naming of these functions
-
   if (js2python_init() || JsImport_init() || JsProxy_init() ||
       pyimport_init() || pyproxy_init() || python2js_init() ||
       runpython_init()) {
