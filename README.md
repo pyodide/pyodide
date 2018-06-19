@@ -16,7 +16,10 @@ These instructions were tested on Linux. OSX should be substantively the same.
 
 Make sure the prerequisites for [emsdk](https://github.com/juj/emsdk) are installed.
 
-Install [lessc](https://lesscss.org/) to compile less to css.
+Additional build prerequisites are:
+
+- [lessc](https://lesscss.org/) to compile less to css.
+- [uglifyjs](https://github.com/mishoo/UglifyJS) to minify Javascript builds.
 
 Type `make`.
 
