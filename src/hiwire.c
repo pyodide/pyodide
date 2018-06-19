@@ -61,7 +61,7 @@ EM_JS(int, hiwire_true, (), { return Module.hiwire_new_value(true); });
 
 EM_JS(int, hiwire_false, (), { return Module.hiwire_new_value(false); });
 
-EM_JS(int, hiwire_throw_error, (int idmsg), {
+EM_JS(void, hiwire_throw_error, (int idmsg), {
   var jsmsg = Module.hiwire_get_value(idmsg);
   Module.hiwire_decref(idmsg);
   throw new Error(jsmsg);
@@ -133,16 +133,16 @@ EM_JS(void, hiwire_new, (int idobj, int idargs), {
   return Module.hiwire_new_value(newCall.apply(newCall, jsargs));
 });
 
-EM_JS(void, hiwire_get_length, (int idobj), {
+EM_JS(int, hiwire_get_length, (int idobj), {
   return Module.hiwire_get_value(idobj).length;
 });
 
-EM_JS(void, hiwire_is_function, (int idobj), {
+EM_JS(int, hiwire_is_function, (int idobj), {
   // clang-format off
   return typeof Module.hiwire_get_value(idobj) === 'function';
   // clang-format on
 });
 
-EM_JS(void, hiwire_to_string, (int idobj), {
+EM_JS(int, hiwire_to_string, (int idobj), {
   return Module.hiwire_new_value(Module.hiwire_get_value(idobj).toString());
 });
