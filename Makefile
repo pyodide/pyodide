@@ -193,7 +193,7 @@ build/cycler.data: $(CYCLER_LIBS)
 	./packager.sh cycler $(CYCLER_ROOT)@/lib/python3.6/site-packages
 
 
-build/pyparsing.data: $(CYCLER_LIBS)
+build/pyparsing.data: $(PYPARSING_LIBS)
 	./packager.sh pyparsing $(PYPARSING_ROOT)@/lib/python3.6/site-packages
 
 
