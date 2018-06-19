@@ -14,7 +14,8 @@ var languagePluginLoader = new Promise((resolve, reject) => {
     'cycler' : [],
     'dateutil' : [],
     'kiwisolver' : [],
-    'matplotlib' : [ 'numpy', 'dateutil', 'pytz', 'kiwisolver', 'cycler', 'pyparsing' ],
+    'matplotlib' :
+        [ 'numpy', 'dateutil', 'pytz', 'kiwisolver', 'cycler', 'pyparsing' ],
     'numpy' : [],
     'pandas' : [ 'numpy', 'dateutil', 'pytz' ],
     'pyparsing' : [],
