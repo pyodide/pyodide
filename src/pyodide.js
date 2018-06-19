@@ -29,16 +29,17 @@ var languagePluginLoader = new Promise((resolve, reject) => {
     let toLoad = new Set();
     while (queue.length) {
       const package = queue.pop();
-      if (!packages.hasOwnProperty(package)) {
-        throw `Unknown package '${package}'`;
-      }
       if (!loadedPackages.has(package)) {
         toLoad.add(package);
-        packages[package].forEach((subpackage) => {
-          if (!loadedPackages.has(subpackage) && !toLoad.has(subpackage)) {
-            queue.push(subpackage);
-          }
-        });
+        if (packages.hasOwnProperty(package)) {
+          packages[package].forEach((subpackage) => {
+            if (!loadedPackages.has(subpackage) && !toLoad.has(subpackage)) {
+              queue.push(subpackage);
+            }
+          });
+        } else {
+          console.log(`Unknown package '${package}'`);
+        }
       }
     }
 
