@@ -63,3 +63,24 @@ jobs:
           command: |
             export PATH=$PWD/firefox:$PATH
             make test
+
+  deploy:
+    machine:
+      enabled: true
+    steps:
+      - run:
+          name: Deploy to Github Pages
+          command: |
+            .circleci/deploy.sh
+
+workflows:
+  version: 2
+  build-and-deploy:
+    jobs:
+      - build
+      - deploy:
+          requires:
+            - build
+          filters:
+            branches:
+              only: master
