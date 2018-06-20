@@ -31,8 +31,7 @@ LDFLAGS=\
 	-s USE_FREETYPE=1 \
 	-std=c++14 \
   -lstdc++ \
-  --memory-init-file 0 \
-  --minify 0
+  --memory-init-file 0
 
 SIX_ROOT=six/six-1.11.0/build/lib
 SIX_LIBS=$(SIX_ROOT)/six.py
