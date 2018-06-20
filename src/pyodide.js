@@ -10,21 +10,12 @@ var languagePluginLoader = new Promise((resolve, reject) => {
 
   ////////////////////////////////////////////////////////////
   // Package loading
-  const packages = {
-    'cycler' : [],
-    'dateutil' : [],
-    'kiwisolver' : [],
-    'matplotlib' :
-        [ 'numpy', 'dateutil', 'pytz', 'kiwisolver', 'cycler', 'pyparsing' ],
-    'numpy' : [],
-    'pandas' : [ 'numpy', 'dateutil', 'pytz' ],
-    'pyparsing' : [],
-    'pytz' : [],
-    'test' : []
-  };
+  var packages = undefined;
   let loadedPackages = new Set();
+
   let loadPackage = (names) => {
     // DFS to find all dependencies of the requested packages
+    let packages = window.pyodide.packages.dependencies;
     let queue = new Array(names);
     let toLoad = new Set();
     while (queue.length) {
@@ -89,7 +80,9 @@ var languagePluginLoader = new Promise((resolve, reject) => {
   Module.filePackagePrefixURL = baseURL;
   Module.postRun = () => {
     delete window.Module;
-    resolve();
+    fetch(`${baseURL}packages.json`)
+      .then((response) => response.json())
+      .then((json) => { window.pyodide.packages = json; resolve(); });
   };
 
   let data_script = document.createElement('script');

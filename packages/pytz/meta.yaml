@@ -1,0 +1,10 @@
+package:
+  name: pytz
+  version: '2018.4'
+
+source:
+  url: https://files.pythonhosted.org/packages/10/76/52efda4ef98e7544321fd8d5d512e11739c1df18b0649551aeccfb1c8376/pytz-2018.4.tar.gz
+  md5: f054437920c895dd14a4509fabafe029
+
+  patches:
+    - patches/dummy-threading.patch

@@ -1,0 +1,71 @@
+#!/usr/bin/env python3
+
+import argparse
+import json
+import os
+import shutil
+import sys
+
+
+ROOTDIR = os.path.abspath(os.path.dirname(__file__))
+sys.path.insert(0, ROOTDIR)
+
+
+import common
+import buildpkg
+
+
+def build_package(pkgname, reqs, dependencies, packagesdir, args):
+    for req in reqs:
+        build_package(req, dependencies[req], dependencies, packagesdir, args)
+    if not os.path.isfile(os.path.join(packagesdir, pkgname, 'build', '.packaged')):
+        print("BUILDING PACKAGE: " + pkgname)
+        buildpkg.build_package(
+            os.path.join(packagesdir, pkgname, 'meta.yaml'), args)
+    shutil.copyfile(
+        os.path.join(packagesdir, pkgname, 'build', pkgname + '.data'),
+        os.path.join(args.output[0], pkgname + '.data'))
+    shutil.copyfile(
+        os.path.join(packagesdir, pkgname, 'build', pkgname + '.js'),
+        os.path.join(args.output[0], pkgname + '.js'))
+
+
+def build_packages(packagesdir, args):
+    # We have to build the packages in order, so first we build a dependency tree
+    dependencies = {}
+    for pkgdir in os.listdir(packagesdir):
+        pkgdir = os.path.join(packagesdir, pkgdir)
+        pkgpath = os.path.join(pkgdir, 'meta.yaml')
+        if os.path.isdir(pkgdir) and os.path.isfile(pkgpath):
+            pkg = common.parse_package(pkgpath)
+            name = pkg['package']['name']
+            reqs = pkg.get('requirements', {}).get('run', [])
+            dependencies[name] = reqs
+
+    for pkgname, reqs in dependencies.items():
+        build_package(pkgname, reqs, dependencies, packagesdir, args)
+
+    # This is done last so the main Makefile can use it as a completion token
+    with open(os.path.join(args.output[0], 'packages.json'), 'w') as fd:
+        json.dump({'dependencies': dependencies}, fd)
+
+
+def parse_args():
+    parser = argparse.ArgumentParser()
+    parser.add_argument('dir', type=str, nargs=1)
+    parser.add_argument('--cflags', type=str, nargs=1, default=[''])
+    parser.add_argument('--ldflags', type=str, nargs=1, default=[common.DEFAULT_LD])
+    parser.add_argument('--host', type=str, nargs=1, default=[common.HOSTPYTHON])
+    parser.add_argument('--target', type=str, nargs=1, default=[common.TARGETPYTHON])
+    parser.add_argument('--output', '-o', type=str, nargs=1)
+    return parser.parse_args()
+
+
+def main(args):
+    packagesdir = os.path.abspath(args.dir[0])
+    build_packages(packagesdir, args)
+
+
+if __name__ == '__main__':
+    args = parse_args()
+    main(args)

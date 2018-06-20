@@ -1,0 +1,10 @@
+package:
+  name: pyparsing
+  version: 2.2.0
+
+source:
+  url: https://files.pythonhosted.org/packages/3c/ec/a94f8cf7274ea60b5413df054f82a8980523efd712ec55a59e7c3357cf7c/pyparsing-2.2.0.tar.gz
+  md5: 0214e42d63af850256962b6744c948d9
+
+  patches:
+    - patches/dummy_threading.patch

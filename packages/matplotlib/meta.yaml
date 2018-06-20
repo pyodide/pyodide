@@ -1,0 +1,41 @@
+package:
+  name: matplotlib
+  version: 2.2.2
+
+source:
+  url: https://files.pythonhosted.org/packages/ec/ed/46b835da53b7ed05bd4c6cae293f13ec26e877d2e490a53a709915a9dcb7/matplotlib-2.2.2.tar.gz
+  md5: dd1e49e041309a7fd4e32be8bf17c3b6
+
+  patches:
+    - patches/disable_bz2.patch
+    - patches/dummy_threading.patch
+    - patches/font_name_encoding.patch
+    - patches/force_malloc_free.patch
+    - patches/hardcoded_font_cache.patch
+    - patches/reduce_cpp_exceptions.patch
+
+  extras:
+    -
+      - src/wasm_backend.py
+      - lib/matplotlib/backends/wasm_backend.py
+    -
+      - src/setup.cfg
+      - ./setup.cfg
+
+build:
+  cflags: -s USE_FREETYPE=1 -s USE_LIBPNG=1 -s USE_ZLIB=1
+  ldflags: ../../../../emsdk/emsdk/.emscripten_cache/asmjs/libpng.bc
+  post: |
+    rm -rf $BUILD/matplotlib/backends/qt_editor
+    rm -rf $BUILD/matplotlib/backends/web_backend
+    rm -rf $BUILD/sphinxext
+    cp $PKGDIR/src/fontList.json $BUILD/matplotlib
+
+requirements:
+  run:
+    - cycler
+    - kiwisolver
+    - numpy
+    - pyparsing
+    - python-dateutil
+    - pytz

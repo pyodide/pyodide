@@ -7,7 +7,10 @@ charset = utf-8
 indent_size = 2
 indent_style = space
 
-[*.py]
+[**.py]
+indent_size = 4
+
+[tools/*]
 indent_size = 4
 
 [Makefile]
