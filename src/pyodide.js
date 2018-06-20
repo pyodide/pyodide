@@ -76,9 +76,8 @@ var languagePluginLoader = new Promise((resolve, reject) => {
 
   let wasm_promise = WebAssembly.compileStreaming(fetch(wasmURL));
   Module.instantiateWasm = (info, receiveInstance) => {
-    wasm_promise
-      .then(module => WebAssembly.instantiate(module, info))
-      .then(instance => receiveInstance(instance));
+    wasm_promise.then(module => WebAssembly.instantiate(module, info))
+        .then(instance => receiveInstance(instance));
     return {};
   };
 
@@ -96,15 +95,16 @@ var languagePluginLoader = new Promise((resolve, reject) => {
   });
 
   var dataLoadPromise = new Promise((resolve, reject) => {
-    Module.monitorRunDependencies = (n) => {
-      if (n === 0) {
-        delete Module.monitorRunDependencies;
-        resolve();
-      }
-    }
+    Module.monitorRunDependencies =
+        (n) => {
+          if (n === 0) {
+            delete Module.monitorRunDependencies;
+            resolve();
+          }
+        }
   });
 
-  Promise.all([postRunPromise, dataLoadPromise]).then(() => resolve());
+  Promise.all([ postRunPromise, dataLoadPromise ]).then(() => resolve());
 
   let data_script = document.createElement('script');
   data_script.src = `${baseURL}pyodide.asm.data.js`;
