@@ -9,6 +9,7 @@ export BINARYEN_ROOT = $(PYODIDE_ROOT)/emsdk/emsdk/binaryen/tag-1.38.4_64bit_bin
 export PYVERSION=3.6.4
 export PYMINOR=$(basename $(PYVERSION))
 export HOSTPYTHONROOT=$(PYODIDE_ROOT)/cpython/build/$(PYVERSION)/host
+export HOSTPYTHON=$(HOSTPYTHONROOT)/bin/python3
 export TARGETPYTHONROOT=$(PYODIDE_ROOT)/cpython/installs/python-$(PYVERSION)
 export PYTHONINCLUDE=$(PYODIDE_ROOT)/cpython/installs/python-$(PYVERSION)/include/python$(PYMINOR)
 
