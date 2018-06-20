@@ -81,8 +81,11 @@ var languagePluginLoader = new Promise((resolve, reject) => {
   Module.postRun = () => {
     delete window.Module;
     fetch(`${baseURL}packages.json`)
-      .then((response) => response.json())
-      .then((json) => { window.pyodide.packages = json; resolve(); });
+        .then((response) => response.json())
+        .then((json) => {
+          window.pyodide.packages = json;
+          resolve();
+        });
   };
 
   let data_script = document.createElement('script');

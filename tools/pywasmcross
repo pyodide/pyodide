@@ -90,7 +90,7 @@ def handle_command(line, args):
             continue
         if arg.startswith('-I'):
             if (os.path.abspath(arg[2:]).startswith(args.host[0]) and
-                'site-packages' not in arg):
+                    'site-packages' not in arg):
                 arg = arg.replace('-I' + args.host[0], '-I' + args.target[0])
             if arg[2:].startswith('/usr'):
                 continue

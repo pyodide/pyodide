@@ -5,14 +5,12 @@ import hashlib
 import os
 import shutil
 import subprocess
-import sys
-
-
-ROOTDIR = os.path.abspath(os.path.dirname(__file__))
-sys.path.insert(0, ROOTDIR)
 
 
 import common
+
+
+ROOTDIR = os.path.abspath(os.path.dirname(__file__))
 
 
 def do_checksum(path, checksum):
@@ -29,9 +27,12 @@ def do_checksum(path, checksum):
 
 
 def download_and_extract(buildpath, packagedir, pkg, args):
-    tarballpath = os.path.join(buildpath, os.path.basename(pkg['source']['url']))
+    tarballpath = os.path.join(
+        buildpath, os.path.basename(pkg['source']['url']))
     if not os.path.isfile(tarballpath):
-        subprocess.run(['wget', '-q', '-O', tarballpath, pkg['source']['url']], check=True)
+        subprocess.run([
+            'wget', '-q', '-O', tarballpath, pkg['source']['url']
+        ], check=True)
         do_checksum(tarballpath, pkg['source']['md5'])
     srcpath = os.path.join(buildpath, packagedir)
     if not os.path.isdir(srcpath):
@@ -49,7 +50,8 @@ def patch(path, srcpath, pkg, args):
     try:
         for patch in pkg['source'].get('patches', []):
             subprocess.run([
-                'patch', '-p1', '--binary', '-i', os.path.join(pkgdir, patch)], check=True)
+                'patch', '-p1', '--binary', '-i', os.path.join(pkgdir, patch)
+            ], check=True)
     finally:
         os.chdir(orig_dir)
 
@@ -64,7 +66,11 @@ def get_libdir(srcpath, args):
     slug = subprocess.check_output([
         os.path.join(args.host[0], 'bin', 'python3'),
         '-c',
-        'import sysconfig, sys; print("{}-{}.{}".format(sysconfig.get_platform(), sys.version_info[0], sys.version_info[1]))']).decode('ascii').strip()
+        'import sysconfig, sys; '
+        'print("{}-{}.{}".format('
+        'sysconfig.get_platform(), '
+        'sys.version_info[0], '
+        'sys.version_info[1]))']).decode('ascii').strip()
     purelib = os.path.join(srcpath, 'build', 'lib')
     if os.path.isdir(purelib):
         libdir = purelib
@@ -82,8 +88,12 @@ def compile(path, srcpath, pkg, args):
     try:
         subprocess.run([
             os.path.join(ROOTDIR, 'pywasmcross'),
-            '--cflags', args.cflags[0] + ' ' + pkg.get('build', {}).get('cflags', ''),
-            '--ldflags', args.ldflags[0] + ' ' + pkg.get('build', {}).get('ldflags', ''),
+            '--cflags',
+            args.cflags[0] + ' ' +
+            pkg.get('build', {}).get('cflags', ''),
+            '--ldflags',
+            args.ldflags[0] + ' ' +
+            pkg.get('build', {}).get('ldflags', ''),
             '--host', args.host[0],
             '--target', args.target[0]], check=True)
     finally:
@@ -151,10 +161,14 @@ def build_package(path, args):
 def parse_args():
     parser = argparse.ArgumentParser()
     parser.add_argument('package', type=str, nargs=1)
-    parser.add_argument('--cflags', type=str, nargs=1, default=[''])
-    parser.add_argument('--ldflags', type=str, nargs=1, default=[common.DEFAULT_LD])
-    parser.add_argument('--host', type=str, nargs=1, default=[common.HOSTPYTHON])
-    parser.add_argument('--target', type=str, nargs=1, default=[common.TARGETPYTHON])
+    parser.add_argument(
+        '--cflags', type=str, nargs=1, default=[''])
+    parser.add_argument(
+        '--ldflags', type=str, nargs=1, default=[common.DEFAULT_LD])
+    parser.add_argument(
+        '--host', type=str, nargs=1, default=[common.HOSTPYTHON])
+    parser.add_argument(
+        '--target', type=str, nargs=1, default=[common.TARGETPYTHON])
     return parser.parse_args()
 
 

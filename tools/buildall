@@ -4,11 +4,6 @@ import argparse
 import json
 import os
 import shutil
-import sys
-
-
-ROOTDIR = os.path.abspath(os.path.dirname(__file__))
-sys.path.insert(0, ROOTDIR)
 
 
 import common
@@ -18,7 +13,8 @@ import buildpkg
 def build_package(pkgname, reqs, dependencies, packagesdir, args):
     for req in reqs:
         build_package(req, dependencies[req], dependencies, packagesdir, args)
-    if not os.path.isfile(os.path.join(packagesdir, pkgname, 'build', '.packaged')):
+    if not os.path.isfile(
+            os.path.join(packagesdir, pkgname, 'build', '.packaged')):
         print("BUILDING PACKAGE: " + pkgname)
         buildpkg.build_package(
             os.path.join(packagesdir, pkgname, 'meta.yaml'), args)
@@ -31,7 +27,8 @@ def build_package(pkgname, reqs, dependencies, packagesdir, args):
 
 
 def build_packages(packagesdir, args):
-    # We have to build the packages in order, so first we build a dependency tree
+    # We have to build the packages in order, so first we build a dependency
+    # tree
     dependencies = {}
     for pkgdir in os.listdir(packagesdir):
         pkgdir = os.path.join(packagesdir, pkgdir)
@@ -54,10 +51,14 @@ def parse_args():
     parser = argparse.ArgumentParser()
     parser.add_argument('dir', type=str, nargs=1)
     parser.add_argument('--cflags', type=str, nargs=1, default=[''])
-    parser.add_argument('--ldflags', type=str, nargs=1, default=[common.DEFAULT_LD])
-    parser.add_argument('--host', type=str, nargs=1, default=[common.HOSTPYTHON])
-    parser.add_argument('--target', type=str, nargs=1, default=[common.TARGETPYTHON])
-    parser.add_argument('--output', '-o', type=str, nargs=1)
+    parser.add_argument(
+        '--ldflags', type=str, nargs=1, default=[common.DEFAULT_LD])
+    parser.add_argument(
+        '--host', type=str, nargs=1, default=[common.HOSTPYTHON])
+    parser.add_argument(
+        '--target', type=str, nargs=1, default=[common.TARGETPYTHON])
+    parser.add_argument(
+        '--output', '-o', type=str, nargs=1)
     return parser.parse_args()
 
 
