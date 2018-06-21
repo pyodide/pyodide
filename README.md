@@ -4,47 +4,48 @@
 
 The Python scientific stack, compiled to WebAssembly.
 
-It provides transparent conversion of objects between Javascript and Python and
-a sharing of global namespaces. When inside a browser, this means Python has
-full access to the Web APIs.
+It provides transparent conversion of objects between Javascript and Python.
+When inside a browser, this means Python has full access to the Web APIs.
 
 See [the demo](https://iodide.io/pyodide-demo/python.html)
 
 # Building
 
-These instructions were tested on Linux. OSX should be substantively the same.
+These instructions were tested on Linux. OSX should be mostly the same.
 
-Make sure the prerequisites for [emsdk](https://github.com/juj/emsdk) are installed.
+Make sure the prerequisites for [emsdk](https://github.com/juj/emsdk) are
+installed. Pyodide will build a custom, patched version of emsdk, so there is no
+need to build it yourself prior.
 
 Additional build prerequisites are:
 
+- A working native compiler toolchain, enough to build CPython.
+- A native Python 3.6 or later to run the build scripts.
+- PyYAML
 - [lessc](https://lesscss.org/) to compile less to css.
 - [uglifyjs](https://github.com/mishoo/UglifyJS) to minify Javascript builds.
 
-Type `make`.
-
-(The build downloads and builds a local, patched version of emsdk, then
-downloads and builds Python and third-party packages).
+`make`
 
 # Testing
 
-1. Install the following dependencies into the default Python installation:
+Install the following dependencies into the default Python installation:
 
    `pip install pytest selenium`
 
-2. Install [geckodriver](https://github.com/mozilla/geckodriver/releases) somewhere
-   on your `PATH`.
+Install [geckodriver](https://github.com/mozilla/geckodriver/releases) somewhere
+on your `PATH`.
 
-3. `make test`
+`make test`
 
 # Benchmarking
 
-1. Install the same dependencies as for testing.
+Install the same dependencies as for testing.
 
-2. `make benchmark`
+`make benchmark`
 
 # Linting
 
-1. Python is linted with `flake8`.  C and Javascript are linted with `clang-format`.
+Python is linted with `flake8`.  C and Javascript are linted with `clang-format`.
 
-2. `make lint`
+`make lint`
