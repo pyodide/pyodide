@@ -3,7 +3,6 @@ Various common utilities for testing.
 """
 
 import pathlib
-import time
 
 try:
     import pytest
@@ -58,10 +57,9 @@ class SeleniumWrapper:
 
     def load_package(self, packages):
         self.run_js(
-            'window.done = false\n'
-            'pyodide.loadPackage({!r}).then(window.done = true)'.format(
-                packages))
-        time.sleep(2)
+            'window.done = false\n' +
+            'pyodide.loadPackage({!r})'.format(packages) +
+            '.then(function() { window.done = true; })')
         self.wait.until(PackageLoaded())
 
     @property
