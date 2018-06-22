@@ -1,5 +1,4 @@
 import os
-import yaml
 
 
 ROOTDIR = os.path.abspath(os.path.dirname(__file__))
@@ -21,6 +20,9 @@ DEFAULTLDFLAGS = ' '.join([
 
 
 def parse_package(package):
+    # Import yaml here because pywasmcross needs to run in the built native
+    # Python, which won't have PyYAML
+    import yaml
     # TODO: Validate against a schema
     with open(package) as fd:
         return yaml.load(fd)

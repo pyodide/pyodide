@@ -89,7 +89,7 @@ def capture_compile(args):
     env['PATH'] = ROOTDIR + ':' + os.environ['PATH']
 
     result = subprocess.run(
-        [os.path.join(args.host[0], 'bin', 'python3'),
+        [os.path.join(args.host, 'bin', 'python3'),
          'setup.py',
          'install'], env=env)
     if result.returncode != 0:
@@ -119,9 +119,9 @@ def handle_command(line, args):
     shared = '-shared' in line
 
     if shared:
-        new_args.extend(args.ldflags[0].split())
+        new_args.extend(args.ldflags.split())
     elif new_args[0] in ('emcc', 'em++'):
-        new_args.extend(args.cflags[0].split())
+        new_args.extend(args.cflags.split())
 
     # Go through and adjust arguments
     for arg in line[1:]:
@@ -129,9 +129,9 @@ def handle_command(line, args):
             # Don't include any system directories
             if arg[2:].startswith('/usr'):
                 continue
-            if (os.path.abspath(arg[2:]).startswith(args.host[0]) and
+            if (os.path.abspath(arg[2:]).startswith(args.host) and
                     'site-packages' not in arg):
-                arg = arg.replace('-I' + args.host[0], '-I' + args.target[0])
+                arg = arg.replace('-I' + args.host, '-I' + args.target)
         # Don't include any system directories
         if arg.startswith('-L/usr'):
             continue
@@ -194,16 +194,16 @@ def parse_args():
         'Cross compile a Python distutils package. '
         'Run from the root directory of the package\'s source')
     parser.add_argument(
-        '--cflags', type=str, nargs='?', default=[common.DEFAULTCFLAGS],
+        '--cflags', type=str, nargs='?', default=common.DEFAULTCFLAGS,
         help='Extra compiling flags')
     parser.add_argument(
-        '--ldflags', type=str, nargs='?', default=[common.DEFAULTLDFLAGS],
+        '--ldflags', type=str, nargs='?', default=common.DEFAULTLDFLAGS,
         help='Extra linking flags')
     parser.add_argument(
-        '--host', type=str, nargs='?', default=[common.HOSTPYTHON],
+        '--host', type=str, nargs='?', default=common.HOSTPYTHON,
         help='The path to the host Python installation')
     parser.add_argument(
-        '--target', type=str, nargs='?', default=[common.TARGETPYTHON],
+        '--target', type=str, nargs='?', default=common.TARGETPYTHON,
         help='The path to the target Python installation')
     args = parser.parse_args()
     return args

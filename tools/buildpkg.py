@@ -179,16 +179,16 @@ def parse_args():
         'package', type=str, nargs=1,
         help="Path to meta.yaml package description")
     parser.add_argument(
-        '--cflags', type=str, nargs='?', default=[common.DEFAULTCFLAGS],
+        '--cflags', type=str, nargs='?', default=common.DEFAULTCFLAGS,
         help='Extra compiling flags')
     parser.add_argument(
-        '--ldflags', type=str, nargs='?', default=[common.DEFAULTLDFLAGS],
+        '--ldflags', type=str, nargs='?', default=common.DEFAULTLDFLAGS,
         help='Extra linking flags')
     parser.add_argument(
-        '--host', type=str, nargs='?', default=[common.HOSTPYTHON],
+        '--host', type=str, nargs='?', default=common.HOSTPYTHON,
         help='The path to the host Python installation')
     parser.add_argument(
-        '--target', type=str, nargs='?', default=[common.TARGETPYTHON],
+        '--target', type=str, nargs='?', default=common.TARGETPYTHON,
         help='The path to the target Python installation')
     return parser.parse_args()
 
