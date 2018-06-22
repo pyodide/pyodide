@@ -7,6 +7,10 @@ The Python scientific stack, compiled to WebAssembly.
 It provides transparent conversion of objects between Javascript and Python.
 When inside a browser, this means Python has full access to the Web APIs.
 
+**While closely related to the [iodide project](https://iodide.io), Pyodide may
+be used standalone in any context where you want to run Python inside a web
+browser.**
+
 See [the demo](https://iodide.io/pyodide-demo/python.html)
 
 # Building

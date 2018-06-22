@@ -29,7 +29,8 @@ automatically.
 ## The meta.yaml file
 
 Packages are defined by writing a `meta.yaml` file. The format of these files is
-based on the `meta.yaml` files used to build [Conda packages](TODO: Add URL),
+based on the `meta.yaml` files used to build [Conda
+packages](https://conda.io/docs/user-guide/tasks/build-packages/define-metadata.html),
 though it is much more limited. The most important limitation is that Pyodide
 assumes there will only be one version of a given library available, whereas
 Conda allows the user to specify the versions of each package that they want to
