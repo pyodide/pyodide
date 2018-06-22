@@ -16,15 +16,15 @@ Javascript to Python conversions occur:
 The following basic types are implicitly converted between Javascript and
 Python. The values are copied and any connection to the original object is lost.
 
-| Python      | Javascript      |
-|-------------|-----------------|
-| int, float  | Number          |
-| str         | String          |
-| True        | true            |
-| False       | false           |
-| None        | undefined, null |
-| list, tuple | Array           |
-| dict        | Object          |
+| Python          | Javascript          |
+|-----------------|---------------------|
+| `int`, `float`  | `Number`            |
+| `str`           | `String`            |
+| `True`          | `true`              |
+| `False`         | `false`             |
+| `None`          | `undefined`, `null` |
+| `list`, `tuple` | `Array`             |
+| `dict`          | `Object`            |
 
 Additionally, Python `bytes` and `buffer` objects are converted to/from Javascript
 `Uint8ClampedArray` typed arrays.  In this case, however, the underlying data is
@@ -43,22 +43,22 @@ that allow methods and some operators to be called on the object from the other
 language.
 
 
-When passing a Javascript object to Python, a custom C extension type is used to
+When passing a Javascript object to Python, an extension type is used to
 delegate Python operations to the Javascript side. The following operations are
 currently supported. (More should be possible in the future -- work in ongoing
 to make this more complete):
 
-| Python       | Javascript   |
-|--------------|--------------|
-| repr(x)      | x.toString() |
-| x.foo        | x.foo        |
-| x.foo = bar  | x.foo = bar  |
-| x(...)       | x(...)       |
-| x.foo(...)   | x.foo(...)   |
-| X.new(...)   | new X(...)   |
-| len(x)       | x.length     |
-| x[foo]       | x[foo]       |
-| x[foo] = bar | x[foo] = bar |
+| Python         | Javascript     |
+|----------------|----------------|
+| `repr(x)`      | `x.toString()` |
+| `x.foo`        | `x.foo`        |
+| `x.foo = bar`  | `x.foo = bar`  |
+| `x(...)`       | `x(...)`       |
+| `x.foo(...)`   | `x.foo(...)`   |
+| `X.new(...)`   | `new X(...)`   |
+| `len(x)`       | `x.length`     |
+| `x[foo]`       | `x[foo]`       |
+| `x[foo] = bar` | `x[foo] = bar` |
 
 When passing a Python object to Javascript, the Javascript [Proxy
 API](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Proxy)
@@ -66,19 +66,19 @@ is used to delegate Javascript operations to the Python side. In general, the
 Proxy API is more limited than what can be done with a Python extension, so
 there are certain operations that are impossible or more cumbersome when using
 Python from Javascript than vice versa. The most notable limitation is that
-Python has distinct ways of accessing attributes and items (`x.foo` and
+while Python has distinct ways of accessing attributes and items (`x.foo` and
 `x[foo]`), Javascript conflates these two concepts. The following operations are
 currently supported:
 
-| Javascript   | Python                 |
-|--------------|------------------------|
-| foo in x     | hasattr(x, 'foo')      |
-| x.foo        | getattr(x, 'foo')      |
-| x.foo = bar  | setattr(x, 'foo', bar) |
-| delete x.foo | delattr(x, 'foo')      |
-| x.ownKeys()  | dir(x)                 |
-| x(...)       | x(...)                 |
-| x.foo(...)   | x.foo(...)             |
+| Javascript     | Python                   |
+|----------------|--------------------------|
+| `foo in x`     | `hasattr(x, 'foo')`      |
+| `x.foo`        | `getattr(x, 'foo')`      |
+| `x.foo = bar`  | `setattr(x, 'foo', bar)` |
+| `delete x.foo` | `delattr(x, 'foo')`      |
+| `x.ownKeys()`  | `dir(x)`                 |
+| `x(...)`       | `x(...)`                 |
+| `x.foo(...)`   | `x.foo(...)`             |
 
 An additional limitation is that when passing a Python object to Javascript,
 there is no way for Javascript to automatically garbage collect that object.
@@ -86,7 +86,7 @@ Therefore, Python objects must be manually free'd when passed to Javascript, or
 they will leak. (TODO: There isn't currently a way to do this, but it will be
 implemented soon).
 
-## Fetching Python objects from Javascript
+## Using Python objects from Javascript
 
 A Python object (in global scope) can be brought over to Javascript using the
 `pyodide.pyimport` function. It takes a string giving the name of the variable,
@@ -97,7 +97,7 @@ conversions](type_conversions.md)).
 var sys = pyodide.pyimport('sys');
 ```
 
-## Fetching Javascript objects from Python
+## Using Javascript objects from Python
 
 Javascript objects can be accessed from Python using the `from js import ...`
 syntax. The object must be in the global (`window`) namespace.
