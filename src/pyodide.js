@@ -73,6 +73,10 @@ var languagePluginLoader = new Promise((resolve, reject) => {
 
   Module.noImageDecoding = true;
   Module.noAudioDecoding = true;
+  let isFirefox = navigator.userAgent.toLowerCase().indexOf('firefox') > -1;
+  if (isFirefox) {
+    Module.noWasmDecoding = true;
+  }
 
   let wasm_promise = WebAssembly.compileStreaming(fetch(wasmURL));
   Module.instantiateWasm = (info, receiveInstance) => {
