@@ -24,7 +24,7 @@ source:
 
 build:
   cflags: -s USE_FREETYPE=1 -s USE_LIBPNG=1 -s USE_ZLIB=1
-  ldflags: ../../../../emsdk/emsdk/.emscripten_cache/asmjs/libpng.bc
+  ldflags: $PYODIDE_ROOT/emsdk/emsdk/.emscripten_cache/asmjs/libpng.bc
   post: |
     rm -rf $BUILD/matplotlib/backends/qt_editor
     rm -rf $BUILD/matplotlib/backends/web_backend
