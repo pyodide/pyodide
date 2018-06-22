@@ -1,5 +1,9 @@
 #!/usr/bin/env python3
 
+"""
+Builds a Pyodide package.
+"""
+
 import argparse
 import hashlib
 import os
@@ -13,7 +17,13 @@ import common
 ROOTDIR = os.path.abspath(os.path.dirname(__file__))
 
 
-def do_checksum(path, checksum):
+def check_checksum(path, pkg):
+    """
+    Checks that a tarball matches the checksum in the package metadata.
+    """
+    if 'md5' not in pkg['source']:
+        return
+    checksum = pkg['source']['md5']
     CHUNK_SIZE = 1 << 16
     h = hashlib.md5()
     with open(path, 'rb') as fd:
@@ -33,7 +43,7 @@ def download_and_extract(buildpath, packagedir, pkg, args):
         subprocess.run([
             'wget', '-q', '-O', tarballpath, pkg['source']['url']
         ], check=True)
-        do_checksum(tarballpath, pkg['source']['md5'])
+        check_checksum(tarballpath, pkg)
     srcpath = os.path.join(buildpath, packagedir)
     if not os.path.isdir(srcpath):
         shutil.unpack_archive(tarballpath, buildpath)
@@ -44,6 +54,7 @@ def patch(path, srcpath, pkg, args):
     if os.path.isfile(os.path.join(srcpath, '.patched')):
         return
 
+    # Apply all of the patches
     orig_dir = os.getcwd()
     pkgdir = os.path.abspath(os.path.dirname(path))
     os.chdir(srcpath)
@@ -55,6 +66,7 @@ def patch(path, srcpath, pkg, args):
     finally:
         os.chdir(orig_dir)
 
+    # Add any extra files
     for src, dst in pkg['source'].get('extras', []):
         shutil.copyfile(os.path.join(pkgdir, src), os.path.join(srcpath, dst))
 
@@ -63,8 +75,10 @@ def patch(path, srcpath, pkg, args):
 
 
 def get_libdir(srcpath, args):
+    # Get the name of the build/lib.XXX directory that distutils wrote its
+    # output to
     slug = subprocess.check_output([
-        os.path.join(args.host[0], 'bin', 'python3'),
+        os.path.join(args.host, 'bin', 'python3'),
         '-c',
         'import sysconfig, sys; '
         'print("{}-{}.{}".format('
@@ -87,15 +101,16 @@ def compile(path, srcpath, pkg, args):
     os.chdir(srcpath)
     try:
         subprocess.run([
+            os.path.join(args.host, 'bin', 'python3'),
             os.path.join(ROOTDIR, 'pywasmcross'),
             '--cflags',
-            args.cflags[0] + ' ' +
+            args.cflags + ' ' +
             pkg.get('build', {}).get('cflags', ''),
             '--ldflags',
-            args.ldflags[0] + ' ' +
+            args.ldflags + ' ' +
             pkg.get('build', {}).get('ldflags', ''),
-            '--host', args.host[0],
-            '--target', args.target[0]], check=True)
+            '--host', args.host,
+            '--target', args.target], check=True)
     finally:
         os.chdir(orig_dir)
 
@@ -159,16 +174,22 @@ def build_package(path, args):
 
 
 def parse_args():
-    parser = argparse.ArgumentParser()
-    parser.add_argument('package', type=str, nargs=1)
+    parser = argparse.ArgumentParser('Build a pyodide package.')
     parser.add_argument(
-        '--cflags', type=str, nargs=1, default=[''])
+        'package', type=str, nargs=1,
+        help="Path to meta.yaml package description")
     parser.add_argument(
-        '--ldflags', type=str, nargs=1, default=[common.DEFAULT_LD])
+        '--cflags', type=str, nargs='?', default=[common.DEFAULTCFLAGS],
+        help='Extra compiling flags')
     parser.add_argument(
-        '--host', type=str, nargs=1, default=[common.HOSTPYTHON])
+        '--ldflags', type=str, nargs='?', default=[common.DEFAULTLDFLAGS],
+        help='Extra linking flags')
     parser.add_argument(
-        '--target', type=str, nargs=1, default=[common.TARGETPYTHON])
+        '--host', type=str, nargs='?', default=[common.HOSTPYTHON],
+        help='The path to the host Python installation')
+    parser.add_argument(
+        '--target', type=str, nargs='?', default=[common.TARGETPYTHON],
+        help='The path to the target Python installation')
     return parser.parse_args()
 
 
