@@ -1,0 +1,22 @@
+package:
+  name: numpy
+  version: 1.14.1
+
+source:
+  url: https://pypi.python.org/packages/a3/99/74aa456fc740a7e8f733af4e8302d8e61e123367ec660cd89c53a3cd4d70/numpy-1.14.1.zip
+  md5: b8324ef90ac9064cd0eac46b8b388674
+
+  patches:
+    - patches/add-emscripten-cpu.patch
+    - patches/disable-maybe-uninitialized.patch
+    - patches/dont-include-execinfo.patch
+    - patches/fix-enums.patch
+    - patches/fix-longdouble.patch
+    - patches/fix-static-init-of-nditer-pywrap.patch
+    - patches/force_malloc.patch
+    - patches/init-alloc-cache.patch
+    - patches/pass-along-errors-from-init.patch
+    - patches/use-dummy-threading.patch
+
+build:
+  cflags: -include math.h -I../../config

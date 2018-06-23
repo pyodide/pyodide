@@ -1,0 +1,218 @@
+#!/usr/bin/env python3
+
+"""Helper for cross-compiling distutils-based Python extensions.
+
+distutils has never had a proper cross-compilation story. This is a hack, which
+miraculously works, to get around that.
+
+The gist is:
+
+- Compile the package natively, replacing calls to the compiler and linker with
+  wrappers that store the arguments in a log, and then delegate along to the
+  real native compiler and linker.
+
+- Remove all of the native build products.
+
+- Play back the log, replacing the native compiler with emscripten and
+  adjusting include paths and flags as necessary for cross-compiling to
+  emscripten. This overwrites the results from the original native compilation.
+
+While this results in more work than strictly necessary (it builds a native
+version of the package, even though we then throw it away), it seems to be the
+only reliable way to automatically build a package that interleaves
+configuration with build.
+"""
+
+
+import argparse
+import importlib.machinery
+import json
+import os
+import re
+import subprocess
+import sys
+
+
+import common
+
+
+ROOTDIR = os.path.abspath(os.path.dirname(__file__))
+symlinks = set(['cc', 'c++', 'ld', 'ar', 'gcc'])
+
+
+def collect_args(basename):
+    """
+    This is called when this script is called through a symlink that looks like
+    a compiler or linker.
+
+    It writes the arguments to the build.log, and then delegates to the real
+    native compiler or linker.
+    """
+    # Remove the symlink compiler from the PATH, so we can delegate to the
+    # native compiler
+    env = dict(os.environ)
+    path = env['PATH']
+    while ROOTDIR + ':' in path:
+        path = path.replace(ROOTDIR + ':', '')
+    env['PATH'] = path
+
+    with open('build.log', 'a') as fd:
+        json.dump([basename] + sys.argv[1:], fd)
+        fd.write('\n')
+
+    sys.exit(
+        subprocess.run(
+            [basename] + sys.argv[1:],
+            env=env).returncode)
+
+
+def make_symlinks(env):
+    """
+    Makes sure all of the symlinks that make this script look like a compiler
+    exist.
+    """
+    exec_path = os.path.abspath(__file__)
+    for symlink in symlinks:
+        symlink_path = os.path.join(ROOTDIR, symlink)
+        if not os.path.exists(symlink_path):
+            os.symlink(exec_path, symlink_path)
+        if symlink == 'c++':
+            var = 'CXX'
+        else:
+            var = symlink.upper()
+        env[var] = symlink
+
+
+def capture_compile(args):
+    env = dict(os.environ)
+    make_symlinks(env)
+    env['PATH'] = ROOTDIR + ':' + os.environ['PATH']
+
+    result = subprocess.run(
+        [os.path.join(args.host, 'bin', 'python3'),
+         'setup.py',
+         'install'], env=env)
+    if result.returncode != 0:
+        if os.path.exists('build.log'):
+            os.remove('build.log')
+        sys.exit(result.returncode)
+
+
+def handle_command(line, args):
+    # This is a special case to skip the compilation tests in numpy that aren't
+    # actually part of the build
+    for arg in line:
+        if r'/file.c' in arg or '_configtest' in arg:
+            return
+        if arg == '-print-multiarch':
+            return
+
+    if line[0] == 'ar':
+        new_args = ['emar']
+    elif line[0] == 'c++':
+        new_args = ['em++']
+    else:
+        new_args = ['emcc']
+        # distutils doesn't use the c++ compiler when compiling c++ <sigh>
+        if any(arg.endswith('.cpp') for arg in line):
+            new_args = ['em++']
+    shared = '-shared' in line
+
+    if shared:
+        new_args.extend(args.ldflags.split())
+    elif new_args[0] in ('emcc', 'em++'):
+        new_args.extend(args.cflags.split())
+
+    # Go through and adjust arguments
+    for arg in line[1:]:
+        if arg.startswith('-I'):
+            # Don't include any system directories
+            if arg[2:].startswith('/usr'):
+                continue
+            if (os.path.abspath(arg[2:]).startswith(args.host) and
+                    'site-packages' not in arg):
+                arg = arg.replace('-I' + args.host, '-I' + args.target)
+        # Don't include any system directories
+        if arg.startswith('-L/usr'):
+            continue
+        # The native build is possibly multithreaded, but the emscripten one
+        # definitely isn't
+        arg = re.sub(r'/python([0-9]\.[0-9]+)m', r'/python\1', arg)
+        if arg.endswith('.o'):
+            arg = arg[:-2] + '.bc'
+        if shared and arg.endswith('.so'):
+            arg = arg[:-3] + '.wasm'
+            output = arg
+        new_args.append(arg)
+
+    print(' '.join(new_args))
+
+    result = subprocess.run(new_args)
+    if result.returncode != 0:
+        sys.exit(result.returncode)
+
+    # Emscripten .so files shouldn't have the native platform slug
+    if shared:
+        renamed = output[:-5] + '.so'
+        for ext in importlib.machinery.EXTENSION_SUFFIXES:
+            if ext == '.so':
+                continue
+            if renamed.endswith(ext):
+                renamed = renamed[:-len(ext)] + '.so'
+                break
+        os.rename(output, renamed)
+
+
+def replay_compile(args):
+    # If pure Python, there will be no build.log file, which is fine -- just do
+    # nothing
+    if os.path.isfile('build.log'):
+        with open('build.log', 'r') as fd:
+            for line in fd:
+                line = json.loads(line)
+                handle_command(line, args)
+
+
+def clean_out_native_artifacts():
+    for root, dirs, files in os.walk('.'):
+        for file in files:
+            path = os.path.join(root, file)
+            basename, ext = os.path.splitext(file)
+            if ext in ('.o', '.so', '.a'):
+                os.remove(path)
+
+
+def build_wrap(args):
+    if not os.path.isfile('build.log'):
+        capture_compile(args)
+    clean_out_native_artifacts()
+    replay_compile(args)
+
+
+def parse_args():
+    parser = argparse.ArgumentParser(
+        'Cross compile a Python distutils package. '
+        'Run from the root directory of the package\'s source')
+    parser.add_argument(
+        '--cflags', type=str, nargs='?', default=common.DEFAULTCFLAGS,
+        help='Extra compiling flags')
+    parser.add_argument(
+        '--ldflags', type=str, nargs='?', default=common.DEFAULTLDFLAGS,
+        help='Extra linking flags')
+    parser.add_argument(
+        '--host', type=str, nargs='?', default=common.HOSTPYTHON,
+        help='The path to the host Python installation')
+    parser.add_argument(
+        '--target', type=str, nargs='?', default=common.TARGETPYTHON,
+        help='The path to the target Python installation')
+    args = parser.parse_args()
+    return args
+
+
+if __name__ == '__main__':
+    basename = os.path.basename(sys.argv[0])
+    if basename in symlinks:
+        collect_args(basename)
+    else:
+        args = parse_args()
+        build_wrap(args)

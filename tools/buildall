@@ -1,0 +1,87 @@
+#!/usr/bin/env python3
+
+"""
+Build all of the packages in a given directory.
+"""
+
+import argparse
+import json
+import os
+import shutil
+
+
+import common
+import buildpkg
+
+
+def build_package(pkgname, dependencies, packagesdir, args):
+    reqs = dependencies[pkgname]
+    # Make sure all of the package's requirements are built first
+    for req in reqs:
+        build_package(req, dependencies, packagesdir, args)
+    if not os.path.isfile(
+            os.path.join(packagesdir, pkgname, 'build', '.packaged')):
+        print("BUILDING PACKAGE: " + pkgname)
+        buildpkg.build_package(
+            os.path.join(packagesdir, pkgname, 'meta.yaml'), args)
+    shutil.copyfile(
+        os.path.join(packagesdir, pkgname, 'build', pkgname + '.data'),
+        os.path.join(args.output[0], pkgname + '.data'))
+    shutil.copyfile(
+        os.path.join(packagesdir, pkgname, 'build', pkgname + '.js'),
+        os.path.join(args.output[0], pkgname + '.js'))
+
+
+def build_packages(packagesdir, args):
+    # We have to build the packages in the correct order (dependencies first),
+    # so first load in all of the package metadata and build a dependency map.
+    dependencies = {}
+    for pkgdir in os.listdir(packagesdir):
+        pkgdir = os.path.join(packagesdir, pkgdir)
+        pkgpath = os.path.join(pkgdir, 'meta.yaml')
+        if os.path.isdir(pkgdir) and os.path.isfile(pkgpath):
+            pkg = common.parse_package(pkgpath)
+            name = pkg['package']['name']
+            reqs = pkg.get('requirements', {}).get('run', [])
+            dependencies[name] = reqs
+
+    for pkgname in dependencies.keys():
+        build_package(pkgname, dependencies, packagesdir, args)
+
+    # This is done last so the main Makefile can use it as a completion token
+    with open(os.path.join(args.output[0], 'packages.json'), 'w') as fd:
+        json.dump({'dependencies': dependencies}, fd)
+
+
+def parse_args():
+    parser = argparse.ArgumentParser(
+        "Build all of the packages in a given directory")
+    parser.add_argument(
+        'dir', type=str, nargs=1,
+        help='Input directory containing a tree of package definitions')
+    parser.add_argument(
+        'output', type=str, nargs=1,
+        help='Output directory in which to put all built packages')
+    parser.add_argument(
+        '--cflags', type=str, nargs='?', default=common.DEFAULTCFLAGS,
+        help='Extra compiling flags')
+    parser.add_argument(
+        '--ldflags', type=str, nargs='?', default=common.DEFAULTLDFLAGS,
+        help='Extra linking flags')
+    parser.add_argument(
+        '--host', type=str, nargs='?', default=common.HOSTPYTHON,
+        help='The path to the host Python installation')
+    parser.add_argument(
+        '--target', type=str, nargs='?', default=common.TARGETPYTHON,
+        help='The path to the target Python installation')
+    return parser.parse_args()
+
+
+def main(args):
+    packagesdir = os.path.abspath(args.dir[0])
+    build_packages(packagesdir, args)
+
+
+if __name__ == '__main__':
+    args = parse_args()
+    main(args)

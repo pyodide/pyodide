@@ -197,7 +197,8 @@ python2js_int(PyObject* x)
 }
 
 int
-python2js(PyObject* x) {
+python2js(PyObject* x)
+{
   int result = python2js_int(x);
   if (result == -1) {
     return pythonexc2js();

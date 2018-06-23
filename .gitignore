@@ -1,6 +1,10 @@
 *.bc
 *.a
+*.o
+*.pyc
 .patched
+.built
+.packaged
 .pytest_cache/
 __pycache__
 geckodriver.log
@@ -15,8 +19,4 @@ installs
 
 /emsdk/emsdk
 
-/dateutil/python-dateutil-2.7.2
-/pytz/pytz-2018.4
 /six/six-1.11.0
-/cycler/cycler-0.10.0
-/pyparsing/pyparsing-2.2.0

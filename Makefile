@@ -33,40 +33,8 @@ LDFLAGS=\
   -lstdc++ \
   --memory-init-file 0
 
-NUMPY_ROOT=numpy/build/numpy
-NUMPY_LIBS=\
-	$(NUMPY_ROOT)/core/multiarray.so \
-	$(NUMPY_ROOT)/core/umath.so \
-	$(NUMPY_ROOT)/linalg/lapack_lite.so \
-	$(NUMPY_ROOT)/linalg/_umath_linalg.so \
-	$(NUMPY_ROOT)/random/mtrand.so \
-	$(NUMPY_ROOT)/fft/fftpack_lite.so
-
-PANDAS_ROOT=pandas/build/pandas
-PANDAS_LIBS=\
-	$(PANDAS_ROOT)/_libs/lib.so
-
-MATPLOTLIB_ROOT=matplotlib/build/matplotlib
-MATPLOTLIB_LIBS=\
-	$(MATPLOTLIB_ROOT)/_path.so
-
-DATEUTIL_ROOT=dateutil/python-dateutil-2.7.2/build/lib/dateutil
-DATEUTIL_LIBS=$(DATEUTIL_ROOT)/__init__.py
-
-PYTZ_ROOT=pytz/pytz-2018.4/build/lib/pytz
-PYTZ_LIBS=$(PYTZ_ROOT)/__init__.py
-
 SIX_ROOT=six/six-1.11.0/build/lib
 SIX_LIBS=$(SIX_ROOT)/six.py
-
-PYPARSING_ROOT=pyparsing/pyparsing-2.2.0/build/lib
-PYPARSING_LIBS=$(PYPARSING_ROOT)/pyparsing.py
-
-CYCLER_ROOT=cycler/cycler-0.10.0/build/lib
-CYCLER_LIBS=$(CYCLER_ROOT)/cycler.py
-
-KIWISOLVER_ROOT=kiwisolver/build
-KIWISOLVER_LIBS=$(KIWISOLVER_ROOT)/kiwisolver.so
 
 SITEPACKAGES=root/lib/python$(PYMINOR)/site-packages
 
@@ -79,14 +47,7 @@ all: build/pyodide.asm.js \
 	build/matplotlib-sideload.html \
 	build/renderedhtml.css \
   build/test.data \
-	build/numpy.data \
-	build/dateutil.data \
-	build/pytz.data \
-	build/pandas.data \
-	build/matplotlib.data \
-	build/kiwisolver.data \
-	build/pyparsing.data \
-	build/cycler.data
+  build/packages.json
 
 
 build/pyodide.asm.js: src/main.bc src/jsimport.bc src/jsproxy.bc src/js2python.bc \
@@ -142,7 +103,9 @@ test: all build/test.html
 lint:
 	flake8 src
 	flake8 test
+	flake8 tools/*
 	clang-format -output-replacements-xml src/*.c src/*.h src/*.js | (! grep '<replacement ')
+
 
 benchmark: all build/test.html
 	python benchmark/benchmark.py $(HOSTPYTHON) build/benchmarks.json
@@ -153,52 +116,18 @@ clean:
 	rm -fr root
 	rm build/*
 	rm src/*.bc
-	echo "CPython and Numpy builds are not cleaned. cd into those directories to do so."
-
-
-%.bc: %.cpp $(CPYTHONLIB)
-	$(CXX) --bind -o $@ $< $(CXXFLAGS)
+	make -C packages clean
+	make -C six clean
+	echo "The Emsdk and CPython are not cleaned. cd into those directories to do so."
 
 
 %.bc: %.c $(CPYTHONLIB)
 	$(CC) -o $@ $< $(CFLAGS)
 
 
-# TODO: It would be nice to generalize this
-build/numpy.data: $(NUMPY_LIBS)
-	./packager.sh numpy	$(NUMPY_ROOT)@/lib/python3.6/site-packages/numpy
-
-
-build/dateutil.data: $(DATEUTIL_LIBS)
-	./packager.sh dateutil $(DATEUTIL_ROOT)@/lib/python3.6/site-packages/dateutil
-
-
-build/pytz.data: $(PYTZ_LIBS)
-	./packager.sh pytz $(PYTZ_ROOT)@/lib/python3.6/site-packages/pytz
-
-
-build/pandas.data: $(PANDAS_LIBS)
-	./packager.sh pandas $(PANDAS_ROOT)@/lib/python3.6/site-packages/pandas
-
-
-build/matplotlib.data: $(MATPLOTLIB_LIBS)
-	./packager.sh matplotlib $(MATPLOTLIB_ROOT)@/lib/python3.6/site-packages/matplotlib
-
-
-build/kiwisolver.data: $(KIWISOLVER_LIBS)
-	./packager.sh kiwisolver kiwisolver/build@/lib/python3.6/site-packages
-
-
-build/cycler.data: $(CYCLER_LIBS)
-	./packager.sh cycler $(CYCLER_ROOT)@/lib/python3.6/site-packages
-
-
-build/pyparsing.data: $(PYPARSING_LIBS)
-	./packager.sh pyparsing $(PYPARSING_ROOT)@/lib/python3.6/site-packages
-
-
 build/test.data: $(CPYTHONLIB)
-	./packager.sh test $(CPYTHONLIB)/test@/lib/python3.6/test
+	python2 $(FILEPACKAGER) build/test.data --preload $(CPYTHONLIB)/test@/lib/python3.6/test --js-output=build/test.js --export-name=pyodide --exclude \*.wasm.pre --exclude __pycache__
+	uglifyjs build/test.js -o build/test.js
 
 
 root/.built: \
@@ -232,40 +161,12 @@ $(CPYTHONLIB): emsdk/emsdk/emsdk
 	make -C $(CPYTHONROOT)
 
 
-$(NUMPY_LIBS): $(CPYTHONLIB)
-	make -C numpy
-
-
-$(PANDAS_LIBS): $(NUMPY_LIBS)
-	make -C pandas
-
-
-$(MATPLOTLIB_LIBS): $(NUMPY_LIBS)
-	make -C matplotlib
-
-
-$(DATEUTIL_LIBS): $(CPYTHONLIB)
-	make -C dateutil
-
-
-$(PYTZ_LIBS): $(CPYTHONLIB)
-	make -C pytz
-
-
 $(SIX_LIBS): $(CPYTHONLIB)
 	make -C six
 
 
-$(PYPARSING_LIBS): $(CPYTHONLIB)
-	make -C pyparsing
-
-
-$(CYCLER_LIBS): $(CPYTHONLIB)
-	make -C cycler
-
-
-$(KIWISOLVER_LIBS): $(CPYTHONLIB)
-	make -C kiwisolver
+build/packages.json: $(CPYTHONLIB)
+	make -C packages
 
 
 emsdk/emsdk/emsdk:

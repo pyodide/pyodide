@@ -1,0 +1,19 @@
+package:
+  name: pandas
+  version: 0.22.0
+
+source:
+  url: https://pypi.python.org/packages/08/01/803834bc8a4e708aedebb133095a88a4dad9f45bbaf5ad777d2bea543c7e/pandas-0.22.0.tar.gz
+  md5: c7a2757b607748255f3270221ac61d59
+
+  patches:
+    - patches/avoid-mmap.patch
+
+build:
+  cflags: -include ../../src/state.h
+
+requirements:
+  run:
+    - numpy
+    - python-dateutil
+    - pytz
