@@ -144,7 +144,8 @@ def package_files(buildpath, srcpath, pkg, args):
         '--js-output={}'.format(os.path.join(buildpath, name + '.js')),
         '--export-name=pyodide',
         '--exclude', '*.wasm.pre',
-        '--exclude', '__pycache__'], check=True)
+        '--exclude', '__pycache__',
+        '--use-preload-plugins'], check=True)
     subprocess.run([
         'uglifyjs',
         os.path.join(buildpath, name + '.js'),
