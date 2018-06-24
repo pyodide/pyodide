@@ -71,22 +71,44 @@ var languagePluginLoader = new Promise((resolve, reject) => {
   let Module = {};
   window.Module = Module;
 
+  Module.noImageDecoding = true;
+  Module.noAudioDecoding = true;
+  let isFirefox = navigator.userAgent.toLowerCase().indexOf('firefox') > -1;
+  if (isFirefox) {
+    Module.noWasmDecoding = true;
+  }
+
   let wasm_promise = WebAssembly.compileStreaming(fetch(wasmURL));
   Module.instantiateWasm = (info, receiveInstance) => {
     wasm_promise.then(module => WebAssembly.instantiate(module, info))
         .then(instance => receiveInstance(instance));
     return {};
   };
+
   Module.filePackagePrefixURL = baseURL;
-  Module.postRun = () => {
-    delete window.Module;
-    fetch(`${baseURL}packages.json`)
+  var postRunPromise = new Promise((resolve, reject) => {
+    Module.postRun = () => {
+      delete window.Module;
+      fetch(`${baseURL}packages.json`)
         .then((response) => response.json())
         .then((json) => {
           window.pyodide.packages = json;
           resolve();
         });
-  };
+    };
+  });
+
+  var dataLoadPromise = new Promise((resolve, reject) => {
+    Module.monitorRunDependencies =
+        (n) => {
+          if (n === 0) {
+            delete Module.monitorRunDependencies;
+            resolve();
+          }
+        }
+  });
+
+  Promise.all([ postRunPromise, dataLoadPromise ]).then(() => resolve());
 
   let data_script = document.createElement('script');
   data_script.src = `${baseURL}pyodide.asm.data.js`;
