@@ -116,6 +116,13 @@ _pyproxy_apply(int ptrobj, int idargs)
   return idresult;
 }
 
+void
+_pyproxy_destroy(int ptrobj)
+{
+  PyObject* pyobj = (PyObject*)ptrobj;
+  Py_DECREF(ptrobj);
+}
+
 EM_JS(int, pyproxy_new, (int ptrobj), {
   var target = function(){};
   target['$$'] = { ptr : ptrobj, type : 'PyProxy' };
@@ -126,7 +133,11 @@ EM_JS(int, pyproxy_init, (), {
   // clang-format off
   Module.PyProxy = {
     getPtr: function(jsobj) {
-      return jsobj['$$']['ptr'];
+      var ptr = jsobj['$$']['ptr'];
+      if (ptr === null) {
+        throw new Error("Object has already been destroyed");
+      }
+      return ptr;
     },
     isPyProxy: function(jsobj) {
       return jsobj['$$'] !== undefined && jsobj['$$']['type'] === 'PyProxy';
@@ -149,6 +160,9 @@ EM_JS(int, pyproxy_init, (), {
         }
       } else if (jskey === '$$') {
         return jsobj['$$'];
+      } else if (jskey === 'destroy') {
+        __pyproxy_destroy(this.getPtr(jsobj));
+        jsobj['$$']['ptr'] = null;
       }
       ptrobj = this.getPtr(jsobj);
       var idkey = Module.hiwire_new_value(jskey);

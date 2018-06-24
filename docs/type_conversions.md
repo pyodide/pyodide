@@ -82,9 +82,16 @@ currently supported:
 
 An additional limitation is that when passing a Python object to Javascript,
 there is no way for Javascript to automatically garbage collect that object.
-Therefore, Python objects must be manually free'd when passed to Javascript, or
-they will leak. (TODO: There isn't currently a way to do this, but it will be
-implemented soon).
+Therefore, custom Python objects must be manually destroyed when passed to Javascript, or
+they will leak. To do this, call `.destroy()` on the object, after which Javascript will no longer have access to the object.
+
+```javascript
+var foo = pyodide.pyimport('foo');
+foo.call_method();
+foo.destroy();
+foo.call_method(); // This will raise an exception, since the object has been
+                   // destroyed
+```
 
 ## Using Python objects from Javascript
 
