@@ -25,14 +25,16 @@ def run_native(hostpython, code):
 
 def run_wasm(code):
     s = conftest.SeleniumWrapper()
-    s.load_package('numpy')
-    s.run(code)
     try:
-        runtime = float(s.logs[-1])
-    except ValueError:
-        print('\n'.join(s.logs))
-        raise
-    s.driver.quit()
+        s.load_package('numpy')
+        s.run(code)
+        try:
+            runtime = float(s.logs[-1])
+        except ValueError:
+            print('\n'.join(s.logs))
+            raise
+    finally:
+        s.driver.quit()
     return runtime
 
 
