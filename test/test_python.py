@@ -148,7 +148,7 @@ def test_pyproxy_destroy(selenium):
             "f.destroy();\n"
             "f.get_value();\n")
     except JavascriptException as e:
-        assert 'f.get_value is not a function' in str(e)
+        assert 'Object has already been destroyed' in str(e)
     else:
         assert False, 'Expected exception'
 
