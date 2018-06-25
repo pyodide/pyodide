@@ -42,23 +42,55 @@ Any of the types not listed above are shared between languages using proxies
 that allow methods and some operators to be called on the object from the other
 language.
 
+### Javascript from Python
 
 When passing a Javascript object to Python, an extension type is used to
 delegate Python operations to the Javascript side. The following operations are
 currently supported. (More should be possible in the future -- work in ongoing
 to make this more complete):
 
-| Python         | Javascript     |
-|----------------|----------------|
-| `repr(x)`      | `x.toString()` |
-| `x.foo`        | `x.foo`        |
-| `x.foo = bar`  | `x.foo = bar`  |
-| `x(...)`       | `x(...)`       |
-| `x.foo(...)`   | `x.foo(...)`   |
-| `X.new(...)`   | `new X(...)`   |
-| `len(x)`       | `x.length`     |
-| `x[foo]`       | `x[foo]`       |
-| `x[foo] = bar` | `x[foo] = bar` |
+| Python         | Javascript      |
+|----------------|-----------------|
+| `repr(x)`      | `x.toString()`  |
+| `x.foo`        | `x.foo`         |
+| `x.foo = bar`  | `x.foo = bar`   |
+| `del x.foo`    | `delete x.foo`  |
+| `x(...)`       | `x(...)`        |
+| `x.foo(...)`   | `x.foo(...)`    |
+| `X.new(...)`   | `new X(...)`    |
+| `len(x)`       | `x.length`      |
+| `x[foo]`       | `x[foo]`        |
+| `x[foo] = bar` | `x[foo] = bar`  |
+| `del x[foo]`   | `delete x[foo]` |
+| `x == y`       | `x == y`        |
+| `x.typeof`     | `typeof x`      |
+
+One important difference between Python objects and Javascript objects is that
+if you access a missing member in Python, an exception is raised. In Javascript,
+it returns `undefined`. Since we can't make any assumptions about whether the
+Javascript member is missing or simply set to `undefined`, Python mirrors the
+Javascript behavior. For example:
+
+```javascript
+// Javascript
+class Point {
+  constructor(x, y) {
+    this.x = x;
+    this.y = y;
+  }
+}
+point = new Point(42, 43))
+```
+
+```python
+# python
+from js import point
+assert point.y == 43
+del point.y
+assert point.y is None
+```
+
+### Python from Javascript
 
 When passing a Python object to Javascript, the Javascript [Proxy
 API](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Proxy)
