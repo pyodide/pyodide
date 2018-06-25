@@ -52,6 +52,8 @@ def test_pythonexc2js(selenium):
         selenium.run_js('return pyodide.runPython("5 / 0")')
     except JavascriptException as e:
         assert('ZeroDivisionError' in str(e))
+    else:
+        assert False, 'Expected exception'
 
 
 def test_js2python(selenium):
@@ -129,6 +131,26 @@ def test_pyproxy(selenium):
     assert not selenium.run("hasattr(f, 'baz')")
     assert selenium.run_js(
         "return pyodide.pyimport('f').toString()").startswith('<Foo')
+
+
+def test_pyproxy_destroy(selenium):
+    selenium.run(
+        "class Foo:\n"
+        "  bar = 42\n"
+        "  def get_value(self, value):\n"
+        "    return value * 64\n"
+        "f = Foo()\n"
+    )
+    try:
+        selenium.run_js(
+            "let f = pyodide.pyimport('f');\n"
+            "console.assert(f.get_value(1) === 64);\n"
+            "f.destroy();\n"
+            "f.get_value();\n")
+    except JavascriptException as e:
+        assert 'Object has already been destroyed' in str(e)
+    else:
+        assert False, 'Expected exception'
 
 
 def test_jsproxy(selenium):
