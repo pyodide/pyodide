@@ -172,6 +172,57 @@ def test_jsproxy(selenium):
     assert selenium.run(
         "from js import ImageData\n"
         "ImageData.new(64, 64)")
+    assert selenium.run(
+        "from js import ImageData\n"
+        "ImageData.typeof") == 'function'
+    selenium.run_js(
+        "class Point {\n"
+        "  constructor(x, y) {\n"
+        "    this.x = x;\n"
+        "    this.y = y;\n"
+        "  }\n"
+        "}\n"
+        "window.TEST = new Point(42, 43);")
+    assert selenium.run(
+        "from js import TEST\n"
+        "del TEST.y\n"
+        "TEST.y\n") is None
+    selenium.run_js(
+        "class Point {\n"
+        "  constructor(x, y) {\n"
+        "    this.x = x;\n"
+        "    this.y = y;\n"
+        "  }\n"
+        "}\n"
+        "window.TEST = new Point(42, 43);")
+    assert selenium.run(
+        "from js import TEST\n"
+        "del TEST['y']\n"
+        "TEST['y']\n") is None
+    assert selenium.run(
+        "from js import TEST\n"
+        "TEST == TEST\n")
+    assert selenium.run(
+        "from js import TEST\n"
+        "TEST != 'foo'\n")
+
+
+def test_jsproxy_iter(selenium):
+    selenium.run_js(
+        "function makeIterator(array) {\n"
+        "  var nextIndex = 0;\n"
+        "  return {\n"
+        "    next: function() {\n"
+        "      return nextIndex < array.length ?\n"
+        "        {value: array[nextIndex++], done: false} :\n"
+        "        {done: true};\n"
+        "    }\n"
+        "  };\n"
+        "}\n"
+        "window.ITER = makeIterator([1, 2, 3]);")
+    assert selenium.run(
+        "from js import ITER\n"
+        "list(ITER)") == [1, 2, 3]
 
 
 def test_open_url(selenium):

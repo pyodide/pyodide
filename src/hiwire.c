@@ -100,6 +100,12 @@ EM_JS(void, hiwire_set_member_string, (int idobj, int ptrkey, int idval), {
   jsobj[jskey] = jsval;
 });
 
+EM_JS(void, hiwire_delete_member_string, (int idobj, int ptrkey), {
+  var jsobj = Module.hiwire_get_value(idobj);
+  var jskey = UTF8ToString(ptrkey);
+  delete jsobj[jskey];
+});
+
 EM_JS(int, hiwire_get_member_int, (int idobj, int idx), {
   var jsobj = Module.hiwire_get_value(idobj);
   return Module.hiwire_new_value(jsobj[idx]);
@@ -107,6 +113,25 @@ EM_JS(int, hiwire_get_member_int, (int idobj, int idx), {
 
 EM_JS(void, hiwire_set_member_int, (int idobj, int idx, int idval), {
   Module.hiwire_get_value(idobj)[idx] = Module.hiwire_get_value(idval);
+});
+
+EM_JS(int, hiwire_get_member_obj, (int idobj, int ididx), {
+  var jsobj = Module.hiwire_get_value(idobj);
+  var jsidx = Module.hiwire_get_value(ididx);
+  return Module.hiwire_new_value(jsobj[jsidx]);
+});
+
+EM_JS(void, hiwire_set_member_obj, (int idobj, int ididx, int idval), {
+  var jsobj = Module.hiwire_get_value(idobj);
+  var jsidx = Module.hiwire_get_value(ididx);
+  var jsval = Module.hiwire_get_value(idval);
+  jsobj[jsidx] = jsval;
+});
+
+EM_JS(void, hiwire_delete_member_obj, (int idobj, int ididx), {
+    var jsobj = Module.hiwire_get_value(idobj);
+    var jsidx = Module.hiwire_get_value(ididx);
+    delete jsobj[jsidx];
 });
 
 EM_JS(void, hiwire_call, (int idfunc, int idargs), {
@@ -145,4 +170,34 @@ EM_JS(int, hiwire_is_function, (int idobj), {
 
 EM_JS(int, hiwire_to_string, (int idobj), {
   return Module.hiwire_new_value(Module.hiwire_get_value(idobj).toString());
+});
+
+EM_JS(int, hiwire_typeof, (int idobj), {
+  return Module.hiwire_new_value(typeof Module.hiwire_get_value(idobj));
+});
+
+#define MAKE_OPERATOR(name, op) \
+  EM_JS(int, hiwire_##name, (int ida, int idb), { \
+    return (Module.hiwire_get_value(ida) op Module.hiwire_get_value(idb)) ? 1 : 0; \
+  });
+
+MAKE_OPERATOR(less_than, <);
+MAKE_OPERATOR(less_than_equal, <=);
+MAKE_OPERATOR(equal, ==);
+MAKE_OPERATOR(not_equal, !=);
+MAKE_OPERATOR(greater_than, >);
+MAKE_OPERATOR(greater_than_equal, >=);
+
+EM_JS(int, hiwire_next, (int idobj), {
+  var jsobj = Module.hiwire_get_value(idobj);
+  if (jsobj.next === undefined) {
+    return -1;
+  }
+
+  return Module.hiwire_new_value(jsobj.next());
+});
+
+EM_JS(int, hiwire_nonzero, (int idobj), {
+  var jsobj = Module.hiwire_get_value(idobj);
+  return (jsobj != 0) ? 1 : 0;
 });

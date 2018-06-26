@@ -180,6 +180,14 @@ void
 hiwire_set_member_string(int idobj, int ptrname, int idval);
 
 /**
+ * Delete an object member by string.
+ *
+ * The string is a char* to null-terminated UTF8.
+ */
+void
+hiwire_delete_member_string(int idobj, int ptrname);
+
+/**
  * Get an object member by integer.
  *
  * The integer is a C integer, not an id reference to a Javascript integer.
@@ -194,10 +202,31 @@ hiwire_get_member_int(int idobj, int idx);
  *
  * The integer is a C integer, not an id reference to a Javascript integer.
  *
- * Returns: New reference
  */
 void
 hiwire_set_member_int(int idobj, int idx, int idval);
+
+/**
+ * Get an object member by object.
+ *
+ * Returns: New reference
+ */
+int
+hiwire_get_member_obj(int idobj, int ididx);
+
+/**
+ * Set an object member by object.
+ *
+ */
+void
+hiwire_set_member_obj(int idobj, int ididx, int idval);
+
+/**
+ * Delete an object member by object.
+ *
+ */
+void
+hiwire_delete_member_obj(int idobj, int ididx);
 
 /**
  * Call a function
@@ -254,5 +283,63 @@ hiwire_is_function(int idobj);
  */
 int
 hiwire_to_string(int idobj);
+
+/**
+ * Gets the "typeof" string for a value.
+ *
+ * Returns: New reference to Javascript string
+ */
+int
+hiwire_typeof(int idobj);
+
+/**
+ * Returns non-zero if a < b.
+ */
+int
+hiwire_less_than(int ida, int idb);
+
+/**
+ * Returns non-zero if a <= b.
+ */
+int
+hiwire_less_than_equal(int ida, int idb);
+
+/**
+ * Returns non-zero if a == b.
+ */
+int
+hiwire_equal(int ida, int idb);
+
+/**
+ * Returns non-zero if a != b.
+ */
+int
+hiwire_not_equal(int idx, int idb);
+
+/**
+ * Returns non-zero if a > b.
+ */
+int
+hiwire_greater_than(int ida, int idb);
+
+/**
+ * Returns non-zero if a >= b.
+ */
+int
+hiwire_greater_than_equal(int ida, int idb);
+
+/**
+ * Calls the `next` function on an iterator.
+ *
+ * Returns: -1 if `next` function is undefined.
+ */
+int
+hiwire_next(int idobj);
+
+/**
+ * Returns 1 if the value is non-zero.
+ *
+ */
+int hiwire_nonzero(int idobj);
 
 #endif /* HIWIRE_H */
