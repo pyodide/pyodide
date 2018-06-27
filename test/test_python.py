@@ -67,6 +67,7 @@ def test_js2python(selenium):
         'window.jsfalse = false;\n'
         'window.jspython = pyodide.pyimport("open");\n'
         'window.jsbytes = new Uint8Array([1, 2, 3]);\n'
+        'window.jsfloats = new Float32Array([1, 2, 3]);\n'
         'window.jsobject = new XMLHttpRequest();\n'
     )
     assert selenium.run(
@@ -93,6 +94,12 @@ def test_js2python(selenium):
     assert selenium.run(
         'from js import jsbytes\n'
         'jsbytes == b"\x01\x02\x03"')
+    assert selenium.run(
+        'from js import jsfloats\n'
+        'print(jsfloats)\n'
+        'import struct\n'
+        'expected = struct.pack("fff", 1, 2, 3)\n'
+        'jsfloats == expected')
     assert selenium.run(
         'from js import jsobject\n'
         'str(jsobject) == "[object XMLHttpRequest]"')

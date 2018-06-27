@@ -49,9 +49,15 @@ _js2python_pyproxy(PyObject* val)
 }
 
 int
-_js2python_bytes(char* bytes, int length)
+_js2python_init_bytes(int length)
 {
-  return (int)PyBytes_FromStringAndSize(bytes, length);
+  return (int)PyBytes_FromStringAndSize(NULL, length);
+}
+
+int
+_js2python_get_bytes_ptr(PyObject* val)
+{
+  return (int)PyBytes_AsString(val);
 }
 
 int
@@ -82,9 +88,9 @@ EM_JS(int, __js2python, (int id), {
   } else if (Module.PyProxy.isPyProxy(value)) {
     return __js2python_pyproxy(Module.PyProxy.getPtr(value));
   } else if (value['byteLength'] !== undefined) {
-    var bytes = allocate(value, 'i8', ALLOC_NORMAL);
-    var result = __js2python_bytes(bytes, value['byteLength']);
-    _free(bytes);
+    var result = __js2python_init_bytes(value['byteLength']);
+    var ptr = __js2python_get_bytes_ptr(result);
+    Module.HEAPU8.set(new Uint8Array(value.buffer), ptr);
     return result;
   } else {
     return __js2python_jsproxy(id);
