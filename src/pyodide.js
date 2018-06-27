@@ -62,6 +62,10 @@ var languagePluginLoader = new Promise((resolve, reject) => {
                                '_importlib.invalidate_caches()\n');
     });
 
+    if (window.iodide !== undefined) {
+      window.iodide.evalQueue.await([promise]);
+    }
+
     return promise;
   };
 
