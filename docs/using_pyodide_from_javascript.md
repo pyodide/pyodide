@@ -15,7 +15,7 @@ promise resolves, pyodide will have installed a namespace in global scope:
 `pyodide`.
 
 ```javascript
-languagePluginLoader().then(() => {
+languagePluginLoader.then(() => {
   // pyodide is now ready to use...
   console.log(pyodide.runPython('import sys\nsys.version'));
 });
