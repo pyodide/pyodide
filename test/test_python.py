@@ -93,16 +93,41 @@ def test_js2python(selenium):
         'jspython is open')
     assert selenium.run(
         'from js import jsbytes\n'
-        'jsbytes == b"\x01\x02\x03"')
+        '(jsbytes.tolist() == [1, 2, 3]) '
+        'and (jsbytes.tobytes() == b"\x01\x02\x03")')
     assert selenium.run(
         'from js import jsfloats\n'
-        'print(jsfloats)\n'
         'import struct\n'
         'expected = struct.pack("fff", 1, 2, 3)\n'
-        'jsfloats == expected')
+        '(jsfloats.tolist() == [1, 2, 3]) '
+        'and (jsfloats.tobytes() == expected)')
     assert selenium.run(
         'from js import jsobject\n'
         'str(jsobject) == "[object XMLHttpRequest]"')
+
+
+def test_typed_arrays(selenium):
+    for (jstype, pytype) in (
+            ('Int8Array', 'b'),
+            ('Uint8Array', 'B'),
+            ('Uint8ClampedArray', 'B'),
+            ('Int16Array', 'h'),
+            ('Uint16Array', 'H'),
+            ('Int32Array', 'i'),
+            ('Uint32Array', 'I'),
+            ('Float32Array', 'f'),
+            ('Float64Array', 'd')):
+        print(jstype, pytype)
+        selenium.run_js(
+            f'window.array = new {jstype}([1, 2, 3, 4]);\n')
+        assert selenium.run(
+            'from js import array\n'
+            'import struct\n'
+            f'expected = struct.pack("{pytype*4}", 1, 2, 3, 4)\n'
+            'print(array.format, array.tolist(), array.tobytes())\n'
+            f'array.format == "{pytype}" '
+            'and array.tolist() == [1, 2, 3, 4] '
+            'and array.tobytes() == expected')
 
 
 def test_import_js(selenium):

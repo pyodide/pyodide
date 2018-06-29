@@ -16,12 +16,14 @@ JsBoundMethod_cnew(int this_, const char* name);
 typedef struct
 {
   PyObject_HEAD int js;
+  PyObject* bytes;
 } JsProxy;
 
 static void
 JsProxy_dealloc(JsProxy* self)
 {
   hiwire_decref(self->js);
+  Py_XDECREF(self->bytes);
   Py_TYPE(self)->tp_free((PyObject*)self);
 }
 
@@ -116,17 +118,18 @@ JsProxy_Call(PyObject* o, PyObject* args, PyObject* kwargs)
 }
 
 static PyObject*
-JsProxy_RichCompare(PyObject *a, PyObject *b, int op) {
+JsProxy_RichCompare(PyObject* a, PyObject* b, int op)
+{
   JsProxy* aproxy = (JsProxy*)a;
 
   if (!JsProxy_Check(b)) {
     switch (op) {
-    case Py_EQ:
-      Py_RETURN_FALSE;
-    case Py_NE:
-      Py_RETURN_TRUE;
-    default:
-      return Py_NotImplemented;
+      case Py_EQ:
+        Py_RETURN_FALSE;
+      case Py_NE:
+        Py_RETURN_TRUE;
+      default:
+        return Py_NotImplemented;
     }
   }
 
@@ -134,24 +137,24 @@ JsProxy_RichCompare(PyObject *a, PyObject *b, int op) {
   int ida = python2js(a);
   int idb = python2js(b);
   switch (op) {
-  case Py_LT:
-    result = hiwire_less_than(ida, idb);
-    break;
-  case Py_LE:
-    result = hiwire_less_than_equal(ida, idb);
-    break;
-  case Py_EQ:
-    result = hiwire_equal(ida, idb);
-    break;
-  case Py_NE:
-    result = hiwire_not_equal(ida, idb);
-    break;
-  case Py_GT:
-    result = hiwire_greater_than(ida, idb);
-    break;
-  case Py_GE:
-    result = hiwire_greater_than_equal(ida, idb);
-    break;
+    case Py_LT:
+      result = hiwire_less_than(ida, idb);
+      break;
+    case Py_LE:
+      result = hiwire_less_than_equal(ida, idb);
+      break;
+    case Py_EQ:
+      result = hiwire_equal(ida, idb);
+      break;
+    case Py_NE:
+      result = hiwire_not_equal(ida, idb);
+      break;
+    case Py_GT:
+      result = hiwire_greater_than(ida, idb);
+      break;
+    case Py_GE:
+      result = hiwire_greater_than_equal(ida, idb);
+      break;
   }
 
   hiwire_decref(ida);
@@ -164,14 +167,14 @@ JsProxy_RichCompare(PyObject *a, PyObject *b, int op) {
 }
 
 static PyObject*
-JsProxy_GetIter(PyObject *o)
+JsProxy_GetIter(PyObject* o)
 {
   Py_INCREF(o);
   return o;
 }
 
 static PyObject*
-JsProxy_IterNext(PyObject *o)
+JsProxy_IterNext(PyObject* o)
 {
   JsProxy* self = (JsProxy*)o;
 
@@ -215,7 +218,7 @@ JsProxy_New(PyObject* o, PyObject* args, PyObject* kwargs)
   return pyresult;
 }
 
-Py_ssize_t
+static Py_ssize_t
 JsProxy_length(PyObject* o)
 {
   JsProxy* self = (JsProxy*)o;
@@ -223,7 +226,7 @@ JsProxy_length(PyObject* o)
   return hiwire_get_length(self->js);
 }
 
-PyObject*
+static PyObject*
 JsProxy_subscript(PyObject* o, PyObject* pyidx)
 {
   JsProxy* self = (JsProxy*)o;
@@ -236,7 +239,7 @@ JsProxy_subscript(PyObject* o, PyObject* pyidx)
   return pyresult;
 }
 
-int
+static int
 JsProxy_ass_subscript(PyObject* o, PyObject* pyidx, PyObject* pyvalue)
 {
   JsProxy* self = (JsProxy*)o;
@@ -252,19 +255,112 @@ JsProxy_ass_subscript(PyObject* o, PyObject* pyidx, PyObject* pyvalue)
   return 0;
 }
 
+static int
+JsProxy_GetBuffer(PyObject* o, Py_buffer* view, int flags)
+{
+  JsProxy* self = (JsProxy*)o;
+
+  if (!hiwire_is_typedarray(self->js)) {
+    PyErr_SetString(PyExc_BufferError, "Can not use as buffer");
+    view->obj = NULL;
+    return -1;
+  }
+
+  Py_ssize_t byteLength = hiwire_get_byteLength(self->js);
+
+  if (self->bytes == NULL) {
+    self->bytes = PyBytes_FromStringAndSize(NULL, byteLength);
+    if (self->bytes == NULL) {
+      return -1;
+    }
+  }
+
+  void* ptr = PyBytes_AsString(self->bytes);
+  hiwire_copy_to_ptr(self->js, (int)ptr);
+
+  int dtype = hiwire_get_dtype(self->js);
+
+  char* format;
+  Py_ssize_t itemsize;
+  switch (dtype) {
+    case INT8_TYPE:
+      format = "b";
+      itemsize = 1;
+      break;
+    case UINT8_TYPE:
+      format = "B";
+      itemsize = 1;
+      break;
+    case UINT8CLAMPED_TYPE:
+      format = "B";
+      itemsize = 1;
+      break;
+    case INT16_TYPE:
+      format = "h";
+      itemsize = 2;
+      break;
+    case UINT16_TYPE:
+      format = "H";
+      itemsize = 2;
+      break;
+    case INT32_TYPE:
+      format = "i";
+      itemsize = 4;
+      break;
+    case UINT32_TYPE:
+      format = "I";
+      itemsize = 4;
+      break;
+    case FLOAT32_TYPE:
+      format = "f";
+      itemsize = 4;
+      break;
+    case FLOAT64_TYPE:
+      format = "d";
+      itemsize = 8;
+      break;
+    default:
+      format = "B";
+      itemsize = 1;
+      break;
+  }
+
+  Py_INCREF(self);
+
+  view->buf = ptr;
+  view->obj = (PyObject*)self;
+  view->len = byteLength;
+  view->readonly = 0;
+  view->itemsize = itemsize;
+  view->format = format;
+  view->ndim = 1;
+  view->shape = NULL;
+  view->strides = NULL;
+  view->suboffsets = NULL;
+
+  return 0;
+}
+
 // clang-format off
 static PyMappingMethods JsProxy_MappingMethods = {
   JsProxy_length,
   JsProxy_subscript,
   JsProxy_ass_subscript,
 };
-// clang-format on
 
-static PyMethodDef JsProxy_Methods[] = { { "new",
-                                           (PyCFunction)JsProxy_New,
-                                           METH_VARARGS | METH_KEYWORDS,
-                                           "Construct a new instance" },
-                                         { NULL } };
+static PyBufferProcs JsProxy_BufferProcs = {
+  JsProxy_GetBuffer,
+  NULL
+};
+
+static PyMethodDef JsProxy_Methods[] = {
+  { "new",
+    (PyCFunction)JsProxy_New,
+    METH_VARARGS | METH_KEYWORDS,
+    "Construct a new instance" },
+  { NULL }
+};
+// clang-format on
 
 static PyTypeObject JsProxyType = {
   .tp_name = "JsProxy",
@@ -280,7 +376,8 @@ static PyTypeObject JsProxyType = {
   .tp_as_mapping = &JsProxy_MappingMethods,
   .tp_iter = JsProxy_GetIter,
   .tp_iternext = JsProxy_IterNext,
-  .tp_repr = JsProxy_Repr
+  .tp_repr = JsProxy_Repr,
+  .tp_as_buffer = &JsProxy_BufferProcs
 };
 
 PyObject*
@@ -289,6 +386,7 @@ JsProxy_cnew(int idobj)
   JsProxy* self;
   self = (JsProxy*)JsProxyType.tp_alloc(&JsProxyType, 0);
   self->js = hiwire_incref(idobj);
+  self->bytes = NULL;
   return (PyObject*)self;
 }
 
