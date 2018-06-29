@@ -207,7 +207,9 @@ EM_JS(int, hiwire_nonzero, (int idobj), {
 
 EM_JS(int, hiwire_is_typedarray, (int idobj), {
   var jsobj = Module.hiwire_get_value(idobj);
-  return (jsobj['byteLength'] != = undefined) ? 1 : 0;
+  // clang-format off
+  return (jsobj['byteLength'] !== undefined) ? 1 : 0;
+  // clang-format on
 });
 
 EM_JS(int, hiwire_get_byteLength, (int idobj), {
