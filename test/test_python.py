@@ -125,7 +125,7 @@ def test_pyproxy(selenium):
              '__lt__', '__module__', '__ne__', '__new__', '__reduce__',
              '__reduce_ex__', '__repr__', '__setattr__', '__sizeof__',
              '__str__', '__subclasshook__', '__weakref__', 'bar', 'baz',
-             'get_value', 'toString', 'prototype'])
+             'get_value', 'toString', 'prototype', 'arguments', 'caller'])
     assert selenium.run("hasattr(f, 'baz')")
     selenium.run_js("delete pyodide.pyimport('f').baz")
     assert not selenium.run("hasattr(f, 'baz')")
