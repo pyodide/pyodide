@@ -26,15 +26,31 @@ Python. The values are copied and any connection to the original object is lost.
 | `list`, `tuple` | `Array`             |
 | `dict`          | `Object`            |
 
-Additionally, Python `bytes` and `buffer` objects are converted to/from Javascript
-`Uint8ClampedArray` typed arrays.  In this case, however, the underlying data is
-not copied, and is shared between the Python and Javascript sides.  This makes
-passing raw memory between the languages (which in practice can be quite large)
-very efficient.
+## Typed arrays
 
-Aside: This is the technology on which matplotlib images are passed to
-Javascript to render in a canvas, and will be the basis of sharing Numpy arrays
-with n-dimensional array data structures in Javascript.
+Javascript typed arrays (Int8Array and friends) are converted to Python
+`memoryviews`. This happens with a single binary memory copy (since Python can't
+access arrays on the Javascript heap), and the data type is preserved. This
+makes it easy to correctly convert it to a Numpy array using `numpy.asarray`:
+
+```javascript
+array = Float32Array([1, 2, 3])
+```
+
+```python
+from js import array
+import numpy as np
+numpy_array = np.asarray(array)
+```
+
+Python `bytes` and `buffer` objects are converted to Javascript as
+`Uint8ClampedArray`s, without any memory copy at all, and is thus very
+efficient, but be aware that any changes to the buffer will be reflected in both
+places.
+
+Numpy arrays are currently converted to Javascript as nested (regular) Arrays. A
+more efficient method will probably emerge as we decide on an ndarray
+implementation for Javascript.
 
 ## Class instances
 

@@ -340,6 +340,48 @@ hiwire_next(int idobj);
  * Returns 1 if the value is non-zero.
  *
  */
-int hiwire_nonzero(int idobj);
+int
+hiwire_nonzero(int idobj);
+
+/**
+ * Returns 1 if the value is a typedarray.
+ */
+int
+hiwire_is_typedarray(int idobj);
+
+/**
+ * Returns the value of obj.byteLength.
+ *
+ * There is no error checking. Caller must ensure that hiwire_is_typedarray is
+ * true.
+ */
+int
+hiwire_get_byteLength(int idobj);
+
+/**
+ * Copies the buffer contents of a given typed array or buffer into the memory
+ * at ptr.
+ */
+int
+hiwire_copy_to_ptr(int idobj, int ptr);
+
+#define INT8_TYPE 1
+#define UINT8_TYPE 2
+#define UINT8CLAMPED_TYPE 3
+#define INT16_TYPE 4
+#define UINT16_TYPE 5
+#define INT32_TYPE 6
+#define UINT32_TYPE 7
+#define FLOAT32_TYPE 8
+#define FLOAT64_TYPE 9
+
+/**
+ * Get a data type identifier for a given typedarray.
+ *
+ * It will be one of INT8_TYPE, UINT8_TYPE, UINT8CLAMPED_TYPE, INT16_TYPE,
+ * UINT16_TYPE, INT32_TYPE, UINT32_TYPE, FLOAT32_TYPE, FLOAT64_TYPE.
+ */
+int
+hiwire_get_dtype(int idobj);
 
 #endif /* HIWIRE_H */

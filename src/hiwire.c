@@ -129,9 +129,9 @@ EM_JS(void, hiwire_set_member_obj, (int idobj, int ididx, int idval), {
 });
 
 EM_JS(void, hiwire_delete_member_obj, (int idobj, int ididx), {
-    var jsobj = Module.hiwire_get_value(idobj);
-    var jsidx = Module.hiwire_get_value(ididx);
-    delete jsobj[jsidx];
+  var jsobj = Module.hiwire_get_value(idobj);
+  var jsidx = Module.hiwire_get_value(ididx);
+  delete jsobj[jsidx];
 });
 
 EM_JS(void, hiwire_call, (int idfunc, int idargs), {
@@ -176,9 +176,10 @@ EM_JS(int, hiwire_typeof, (int idobj), {
   return Module.hiwire_new_value(typeof Module.hiwire_get_value(idobj));
 });
 
-#define MAKE_OPERATOR(name, op) \
-  EM_JS(int, hiwire_##name, (int ida, int idb), { \
-    return (Module.hiwire_get_value(ida) op Module.hiwire_get_value(idb)) ? 1 : 0; \
+#define MAKE_OPERATOR(name, op)                                                \
+  EM_JS(int, hiwire_##name, (int ida, int idb), {                              \
+    return (Module.hiwire_get_value(ida) op Module.hiwire_get_value(idb)) ? 1  \
+                                                                          : 0; \
   });
 
 MAKE_OPERATOR(less_than, <);
@@ -190,7 +191,9 @@ MAKE_OPERATOR(greater_than_equal, >=);
 
 EM_JS(int, hiwire_next, (int idobj), {
   var jsobj = Module.hiwire_get_value(idobj);
+  // clang-format off
   if (jsobj.next === undefined) {
+    // clang-format on
     return -1;
   }
 
@@ -200,4 +203,58 @@ EM_JS(int, hiwire_next, (int idobj), {
 EM_JS(int, hiwire_nonzero, (int idobj), {
   var jsobj = Module.hiwire_get_value(idobj);
   return (jsobj != 0) ? 1 : 0;
+});
+
+EM_JS(int, hiwire_is_typedarray, (int idobj), {
+  var jsobj = Module.hiwire_get_value(idobj);
+  // clang-format off
+  return (jsobj['byteLength'] !== undefined) ? 1 : 0;
+  // clang-format on
+});
+
+EM_JS(int, hiwire_get_byteLength, (int idobj), {
+  var jsobj = Module.hiwire_get_value(idobj);
+  return jsobj['byteLength'];
+});
+
+EM_JS(int, hiwire_copy_to_ptr, (int idobj, int ptr), {
+  var jsobj = Module.hiwire_get_value(idobj);
+  Module.HEAPU8.set(new Uint8Array(jsobj.buffer), ptr);
+});
+
+EM_JS(int, hiwire_get_dtype, (int idobj), {
+  var jsobj = Module.hiwire_get_value(idobj);
+  switch (jsobj.constructor.name) {
+    case 'Int8Array':
+      dtype = 1; // INT8_TYPE;
+      break;
+    case 'Uint8Array':
+      dtype = 2; // UINT8_TYPE;
+      break;
+    case 'Uint8ClampedArray':
+      dtype = 3; // UINT8CLAMPED_TYPE;
+      break;
+    case 'Int16Array':
+      dtype = 4; // INT16_TYPE;
+      break;
+    case 'Uint16Array':
+      dtype = 5; // UINT16_TYPE;
+      break;
+    case 'Int32Array':
+      dtype = 6; // INT32_TYPE;
+      break;
+    case 'Uint32Array':
+      dtype = 7; // UINT32_TYPE;
+      break;
+    case 'Float32Array':
+      dtype = 8; // FLOAT32_TYPE;
+      break;
+    case 'Float64Array':
+      dtype = 9; // FLOAT64_TYPE;
+      break;
+    default:
+      dtype = 3; // UINT8CLAMPED_TYPE;
+      break;
+  }
+  return dtype;
 });
