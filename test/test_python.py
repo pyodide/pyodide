@@ -177,7 +177,7 @@ def test_jsproxy(selenium):
 def test_open_url(selenium):
     assert selenium.run(
         "import pyodide\n"
-        "pyodide.open_url('../test/data.txt').read()\n") == 'HELLO\n'
+        "pyodide.open_url('test_data.txt').read()\n") == 'HELLO\n'
 
 
 def test_run_core_python_test(python_test, selenium):

@@ -96,8 +96,12 @@ build/renderedhtml.css: src/renderedhtml.less
 	lessc $< $@
 
 
-test: all build/test.html
+test: all build/test.html build/test_data.txt
 	py.test test -v
+
+
+build/test_data.txt: test/data.txt
+	cp test/data.txt build/test_data.txt
 
 
 lint:

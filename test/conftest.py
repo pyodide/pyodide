@@ -6,7 +6,8 @@ import atexit
 import multiprocessing
 import os
 import pathlib
-import time
+import queue
+import sys
 
 try:
     import pytest
@@ -38,7 +39,7 @@ class SeleniumWrapper:
 
         driver = self.get_driver()
         wait = WebDriverWait(driver, timeout=20)
-        driver.get('http://127.0.0.1:8000/test.html')
+        driver.get(f'http://127.0.0.1:{PORT}/test.html')
         wait.until(PyodideInited())
         self.wait = wait
         self.driver = driver
@@ -104,27 +105,33 @@ if pytest is not None:
             selenium.driver.quit()
 
 
+PORT = 0
+
+
 def spawn_web_server():
+    global PORT
+
     print("Spawning webserver...")
 
-    p = multiprocessing.Process(target=run_web_server)
+    q = multiprocessing.Queue()
+    p = multiprocessing.Process(target=run_web_server, args=(q,))
 
     def shutdown_webserver():
-        p.terminate()
+        q.put("TERMINATE")
+        p.join()
     atexit.register(shutdown_webserver)
 
     p.start()
-    time.sleep(2)
+    PORT = q.get()
 
 
-def run_web_server():
+def run_web_server(q):
     import http.server
     import socketserver
 
     print("Running webserver...")
 
     os.chdir(BUILD_PATH)
-    PORT = 8000
     Handler = http.server.SimpleHTTPRequestHandler
     Handler.extensions_map['.wasm'] = 'application/wasm'
 
@@ -132,8 +139,20 @@ def run_web_server():
         pass
     Handler.log_message = dummy_log
 
-    with socketserver.TCPServer(("", PORT), Handler) as httpd:
-        print("serving at port", PORT)
+    with socketserver.TCPServer(("", 0), Handler) as httpd:
+        host, port = httpd.server_address
+        print("serving at port", port)
+        q.put(port)
+
+        def service_actions():
+            try:
+                if q.get(False) == "TERMINATE":
+                    sys.exit(0)
+                    httpd.shutdown()
+            except queue.Empty:
+                pass
+
+        httpd.service_actions = service_actions
         httpd.serve_forever()
 
 
