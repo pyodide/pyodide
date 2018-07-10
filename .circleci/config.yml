@@ -48,8 +48,6 @@ jobs:
       - restore_cache:
           keys:
           - v1-emsdk-{{ checksum "emsdk/Makefile" }}-v3
-          # fallback to using the latest cache if no exact match is found
-          - v1-emsdk-
 
       - run:
           name: build
