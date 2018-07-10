@@ -1,11 +1,11 @@
 diff --git a/src/library.js b/src/library.js
 index 5fc87ab16..82ebcfd61 100644
---- a/src/library.js
-+++ b/src/library.js
+--- a/emsdk/emscripten/tag-1.38.4/src/library.js
++++ b/emsdk/emscripten/tag-1.38.4/src/library.js
 @@ -1755,9 +1755,14 @@ LibraryManager.library = {
        return handle;
      }
- 
+
 +    var lib_module;
      if (filename === '__self__') {
        var handle = -1;
@@ -21,7 +21,7 @@ index 5fc87ab16..82ebcfd61 100644
 @@ -1766,7 +1771,6 @@ LibraryManager.library = {
          }
          FS.forceLoadFile(target);
- 
+
 -      var lib_module;
          try {
  #if WASM
@@ -31,7 +31,7 @@ index 5fc87ab16..82ebcfd61 100644
            return 0;
          }
 +      }
- 
+
        // Not all browsers support Object.keys().
        var handle = 1;
 @@ -4792,4 +4797,3 @@ function autoAddDeps(object, name) {
@@ -39,14 +39,14 @@ index 5fc87ab16..82ebcfd61 100644
    }
  }
 -
-diff --git a/src/library_browser.js b/src/library_browser.js
+diff --git emsdk/emscripten/tag-1.38.4/src/library_browser.js emsdk/emscripten/tag-1.38.4/src/library_browser.js
 index 36738391e..e2ac2763e 100644
---- a/src/library_browser.js
-+++ b/src/library_browser.js
+--- a/emsdk/emscripten/tag-1.38.4/src/library_browser.js
++++ b/emsdk/emscripten/tag-1.38.4/src/library_browser.js
 @@ -225,6 +225,35 @@ var LibraryBrowser = {
        };
        Module['preloadPlugins'].push(audioPlugin);
- 
+
 +#if WASM
 +#if MAIN_MODULE
 +      var wasmPlugin = {};
@@ -77,19 +77,19 @@ index 36738391e..e2ac2763e 100644
 +#endif // WASM
 +
        // Canvas event setup
- 
+
        function pointerLockChange() {
 @@ -1488,4 +1517,3 @@ function slowLog(label, text) {
  }
- 
+
  */
 -
-diff --git a/src/preamble.js b/src/preamble.js
+diff --git emsdk/emscripten/tag-1.38.4/src/preamble.js emsdk/emscripten/tag-1.38.4/src/preamble.js
 index a757e8300..c7b1f596f 100644
---- a/src/preamble.js
-+++ b/src/preamble.js
+--- a/emsdk/emscripten/tag-1.38.4/src/preamble.js
++++ b/emsdk/emscripten/tag-1.38.4/src/preamble.js
 @@ -1822,6 +1822,11 @@ function removeRunDependency(id) {
- 
+
  Module["preloadedImages"] = {}; // maps url to image data
  Module["preloadedAudios"] = {}; // maps url to audio data
 +#if WASM
@@ -97,15 +97,15 @@ index a757e8300..c7b1f596f 100644
 +Module["preloadedWasm"] = {}; // maps url to wasm instance exports
 +#endif // MAIN_MODULE
 +#endif // WASM
- 
+
  #if PGO
  var PGOMonitor = {
-diff --git a/src/support.js b/src/support.js
+diff --git emsdk/emscripten/tag-1.38.4/src/support.js emsdk/emscripten/tag-1.38.4/src/support.js
 index f6c9842ff..99367db70 100644
---- a/src/support.js
-+++ b/src/support.js
+--- a/emsdk/emscripten/tag-1.38.4/src/support.js
++++ b/emsdk/emscripten/tag-1.38.4/src/support.js
 @@ -86,7 +86,7 @@ function loadDynamicLibrary(lib) {
- 
+
  #if WASM
  // Loads a side module from binary data
 -function loadWebAssemblyModule(binary) {
@@ -151,15 +151,15 @@ index f6c9842ff..99367db70 100644
 +
  #endif // WASM
  #endif // RELOCATABLE
- 
-diff --git a/tests/test_browser.py b/tests/test_browser.py
+
+diff --git emsdk/emscripten/tag-1.38.4/tests/test_browser.py emsdk/emscripten/tag-1.38.4/tests/test_browser.py
 index d5f49d04e..c85367f72 100644
---- a/tests/test_browser.py
-+++ b/tests/test_browser.py
+--- a/emsdk/emscripten/tag-1.38.4/tests/test_browser.py
++++ b/emsdk/emscripten/tag-1.38.4/tests/test_browser.py
 @@ -2273,6 +2273,43 @@ void *getBindBuffer() {
      Popen([PYTHON, EMCC, path_from_root('tests', 'browser_module.cpp'), '-o', 'module.js', '-O2', '-s', 'SIDE_MODULE=1', '-s', 'DLOPEN_SUPPORT=1', '-s', 'EXPORTED_FUNCTIONS=["_one", "_two"]']).communicate()
      self.btest('browser_main.cpp', args=['-O2', '-s', 'MAIN_MODULE=1', '-s', 'DLOPEN_SUPPORT=1'], expected='8')
- 
+
 +  def test_preload_module(self):
 +    expected = 'hello from main\nhello from library'
 +    open('library.c', 'w').write(r'''
