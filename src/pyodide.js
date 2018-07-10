@@ -75,6 +75,7 @@ var languagePluginLoader = new Promise((resolve, reject) => {
   Module.noAudioDecoding = true;
   let isFirefox = navigator.userAgent.toLowerCase().indexOf('firefox') > -1;
   if (isFirefox) {
+    console.log("Skipping wasm decoding");
     Module.noWasmDecoding = true;
   }
 

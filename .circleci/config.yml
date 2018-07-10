@@ -47,7 +47,7 @@ jobs:
 
       - restore_cache:
           keys:
-          - v1-emsdk-{{ checksum "emsdk/Makefile" }}-v2
+          - v1-emsdk-{{ checksum "emsdk/Makefile" }}-v3
           # fallback to using the latest cache if no exact match is found
           - v1-emsdk-
 
@@ -60,7 +60,7 @@ jobs:
       - save_cache:
           paths:
             - ./emsdk/emsdk
-          key: v1-emsdk-{{ checksum "emsdk/Makefile" }}-v2
+          key: v1-emsdk-{{ checksum "emsdk/Makefile" }}-v3
 
       - run:
           name: test
