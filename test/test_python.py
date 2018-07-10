@@ -2,8 +2,6 @@ import os
 import pathlib
 import time
 
-from selenium.common.exceptions import JavascriptException
-
 
 def test_init(selenium):
     assert 'Python initialization complete' in selenium.logs
@@ -50,7 +48,7 @@ def test_python2js(selenium):
 def test_pythonexc2js(selenium):
     try:
         selenium.run_js('return pyodide.runPython("5 / 0")')
-    except JavascriptException as e:
+    except selenium.JavascriptException as e:
         assert('ZeroDivisionError' in str(e))
     else:
         assert False, 'Expected exception'
@@ -147,7 +145,7 @@ def test_pyproxy_destroy(selenium):
             "console.assert(f.get_value(1) === 64);\n"
             "f.destroy();\n"
             "f.get_value();\n")
-    except JavascriptException as e:
+    except selenium.JavascriptException as e:
         assert 'Object has already been destroyed' in str(e)
     else:
         assert False, 'Expected exception'
@@ -186,7 +184,7 @@ def test_run_core_python_test(python_test, selenium):
         selenium.run(
             "from test.libregrtest import main\n"
             "main(['{}'], verbose=True, verbose3=True)".format(python_test))
-    except JavascriptException as e:
+    except selenium.JavascriptException as e:
         assert str(e).strip().endswith('SystemExit: 0')
 
 

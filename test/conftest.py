@@ -73,9 +73,13 @@ class FirefoxWrapper(SeleniumWrapper):
     def get_driver(self):
         from selenium.webdriver import Firefox
         from selenium.webdriver.firefox.options import Options
+        from selenium.common.exceptions import JavascriptException
 
         options = Options()
         options.add_argument('-headless')
+
+        self.JavascriptException = JavascriptException
+
         return Firefox(
             executable_path='geckodriver', firefox_options=options)
 
@@ -84,9 +88,13 @@ class ChromeWrapper(SeleniumWrapper):
     def get_driver(self):
         from selenium.webdriver import Chrome
         from selenium.webdriver.chrome.options import Options
+        from selenium.common.exceptions import WebDriverException
 
         options = Options()
         options.add_argument('--headless')
+
+        self.JavascriptException = WebDriverException
+
         return Chrome(chrome_options=options)
 
 
