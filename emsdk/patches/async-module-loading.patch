@@ -1,8 +1,8 @@
 diff --git a/src/library.js b/src/library.js
-index 5fc87ab16..b8ead8fc0 100644
+index 5fc87ab16..82ebcfd61 100644
 --- a/src/library.js
 +++ b/src/library.js
-@@ -1755,39 +1755,44 @@ LibraryManager.library = {
+@@ -1755,9 +1755,14 @@ LibraryManager.library = {
        return handle;
      }
  
@@ -11,75 +11,44 @@ index 5fc87ab16..b8ead8fc0 100644
        var handle = -1;
 -      var lib_module = Module;
 +      lib_module = Module;
-     } else {
--      var target = FS.findObject(filename);
--      if (!target || target.isFolder || target.isDevice) {
--        DLFCN.errorMsg = 'Could not find dynamic lib: ' + filename;
--        return 0;
--      }
--      FS.forceLoadFile(target);
++    } else {
 +      if (Module['preloadedWasm'] !== undefined &&
 +          Module['preloadedWasm'][filename] !== undefined) {
 +        lib_module = Module['preloadedWasm'][filename];
-+      } else {
-+        var target = FS.findObject(filename);
-+        if (!target || target.isFolder || target.isDevice) {
-+          DLFCN.errorMsg = 'Could not find dynamic lib: ' + filename;
-+          return 0;
-+        }
-+        FS.forceLoadFile(target);
+       } else {
+         var target = FS.findObject(filename);
+         if (!target || target.isFolder || target.isDevice) {
+@@ -1766,7 +1771,6 @@ LibraryManager.library = {
+         }
+         FS.forceLoadFile(target);
  
 -      var lib_module;
--      try {
-+        try {
+         try {
  #if WASM
--        // the shared library is a shared wasm library (see tools/shared.py WebAssembly.make_shared_library)
--        var lib_data = FS.readFile(filename, { encoding: 'binary' });
--        if (!(lib_data instanceof Uint8Array)) lib_data = new Uint8Array(lib_data);
--        //Module.printErr('libfile ' + filename + ' size: ' + lib_data.length);
--        lib_module = loadWebAssemblyModule(lib_data);
-+          // the shared library is a shared wasm library (see tools/shared.py WebAssembly.make_shared_library)
-+          var lib_data = FS.readFile(filename, { encoding: 'binary' });
-+          if (!(lib_data instanceof Uint8Array)) lib_data = new Uint8Array(lib_data);
-+          //Module.printErr('libfile ' + filename + ' size: ' + lib_data.length);
-+          lib_module = loadWebAssemblyModule(lib_data);
- #else
--        // the shared library is a JS file, which we eval
--        var lib_data = FS.readFile(filename, { encoding: 'utf8' });
--        lib_module = eval(lib_data)(
--          alignFunctionTables(),
--          Module
--        );
-+          // the shared library is a JS file, which we eval
-+          var lib_data = FS.readFile(filename, { encoding: 'utf8' });
-+          lib_module = eval(lib_data)(
-+            alignFunctionTables(),
-+            Module
-+          );
- #endif
--      } catch (e) {
-+        } catch (e) {
- #if ASSERTIONS
--        Module.printErr('Error in loading dynamic library: ' + e);
-+          Module.printErr('Error in loading dynamic library: ' + e);
- #endif
--        DLFCN.errorMsg = 'Could not evaluate dynamic lib: ' + filename + '\n' + e;
--        return 0;
-+          DLFCN.errorMsg = 'Could not evaluate dynamic lib: ' + filename + '\n' + e;
-+          return 0;
-+        }
-       }
+           // the shared library is a shared wasm library (see tools/shared.py WebAssembly.make_shared_library)
+@@ -1789,6 +1793,7 @@ LibraryManager.library = {
+           DLFCN.errorMsg = 'Could not evaluate dynamic lib: ' + filename + '\n' + e;
+           return 0;
+         }
++      }
  
        // Not all browsers support Object.keys().
+       var handle = 1;
+@@ -4792,4 +4797,3 @@ function autoAddDeps(object, name) {
+     }
+   }
+ }
+-
 diff --git a/src/library_browser.js b/src/library_browser.js
-index 36738391e..4258835ea 100644
+index 36738391e..e2ac2763e 100644
 --- a/src/library_browser.js
 +++ b/src/library_browser.js
-@@ -225,6 +225,33 @@ var LibraryBrowser = {
+@@ -225,6 +225,35 @@ var LibraryBrowser = {
        };
        Module['preloadPlugins'].push(audioPlugin);
  
-+#if (WASM != 0) && (MAIN_MODULE != 0)
++#if WASM
++#if MAIN_MODULE
 +      var wasmPlugin = {};
 +      wasmPlugin['asyncWasmLoadPromise'] = new Promise(
 +        function(resolve, reject) { return resolve(); });
@@ -90,12 +59,12 @@ index 36738391e..4258835ea 100644
 +        // loadWebAssemblyModule can not load modules out-of-order, so rather
 +        // than just running the promises in parallel, this makes a chain of
 +        // promises to run in series.
-+        this.asyncWasmLoadPromise = this.asyncWasmLoadPromise.then(
++        this['asyncWasmLoadPromise'] = this['asyncWasmLoadPromise'].then(
 +          function() {
-+            return Module.loadWebAssemblyModule(byteArray, true)
++            return loadWebAssemblyModule(byteArray, true);
 +          }).then(
 +            function(module) {
-+              Module.preloadedWasm[name] = module;
++              Module['preloadedWasm'][name] = module;
 +              onload();
 +            },
 +            function(err) {
@@ -104,22 +73,30 @@ index 36738391e..4258835ea 100644
 +            });
 +      };
 +      Module['preloadPlugins'].push(wasmPlugin);
-+#endif
++#endif // MAIN_MODULE
++#endif // WASM
 +
        // Canvas event setup
  
        function pointerLockChange() {
+@@ -1488,4 +1517,3 @@ function slowLog(label, text) {
+ }
+ 
+ */
+-
 diff --git a/src/preamble.js b/src/preamble.js
-index a757e8300..f529fe148 100644
+index a757e8300..c7b1f596f 100644
 --- a/src/preamble.js
 +++ b/src/preamble.js
-@@ -1822,6 +1822,9 @@ function removeRunDependency(id) {
+@@ -1822,6 +1822,11 @@ function removeRunDependency(id) {
  
  Module["preloadedImages"] = {}; // maps url to image data
  Module["preloadedAudios"] = {}; // maps url to audio data
-+#if (WASM != 0) && (MAIN_MODULE != 0)
++#if WASM
++#if MAIN_MODULE
 +Module["preloadedWasm"] = {}; // maps url to wasm instance exports
-+#endif
++#endif // MAIN_MODULE
++#endif // WASM
  
  #if PGO
  var PGOMonitor = {
@@ -136,7 +113,7 @@ index f6c9842ff..99367db70 100644
    var int32View = new Uint32Array(new Uint8Array(binary.subarray(0, 24)).buffer);
    assert(int32View[0] == 0x6d736100, 'need to see wasm magic number'); // \0wasm
    // we should see the dylink section right after the magic number and wasm version
-@@ -166,59 +166,71 @@ function loadWebAssemblyModule(binary) {
+@@ -166,8 +166,9 @@ function loadWebAssemblyModule(binary) {
      oldTable.push(table.get(i));
    }
  #endif
@@ -146,95 +123,20 @@ index f6c9842ff..99367db70 100644
 +  function postInstantiation(instance) {
 +    var exports = {};
  #if ASSERTIONS
--  // the table should be unchanged
--  assert(table === originalTable);
--  assert(table === Module['wasmTable']);
--  if (instance.exports['table']) {
--    assert(table === instance.exports['table']);
--  }
--  // the old part of the table should be unchanged
--  for (var i = 0; i < oldTableSize; i++) {
--    assert(table.get(i) === oldTable[i], 'old table entries must remain the same');
--  }
--  // verify that the new table region was filled in
--  for (var i = 0; i < tableSize; i++) {
--    assert(table.get(oldTableSize + i) !== undefined, 'table entry was not filled in');
--  }
--#endif
+     // the table should be unchanged
+     assert(table === originalTable);
+@@ -184,7 +185,6 @@ function loadWebAssemblyModule(binary) {
+       assert(table.get(oldTableSize + i) !== undefined, 'table entry was not filled in');
+     }
+ #endif
 -  var exports = {};
--  for (var e in instance.exports) {
--    var value = instance.exports[e];
--    if (typeof value === 'object') {
--      // a breaking change in the wasm spec, globals are now objects
--      // https://github.com/WebAssembly/mutable-global/issues/1
--      value = value.value;
-+    // the table should be unchanged
-+    assert(table === originalTable);
-+    assert(table === Module['wasmTable']);
-+    if (instance.exports['table']) {
-+      assert(table === instance.exports['table']);
-+    }
-+    // the old part of the table should be unchanged
-+    for (var i = 0; i < oldTableSize; i++) {
-+      assert(table.get(i) === oldTable[i], 'old table entries must remain the same');
-+    }
-+    // verify that the new table region was filled in
-+    for (var i = 0; i < tableSize; i++) {
-+      assert(table.get(oldTableSize + i) !== undefined, 'table entry was not filled in');
+     for (var e in instance.exports) {
+       var value = instance.exports[e];
+       if (typeof value === 'object') {
+@@ -219,6 +219,18 @@ function loadWebAssemblyModule(binary) {
      }
--    if (typeof value === 'number') {
--      // relocate it - modules export the absolute value, they can't relocate before they export
-+#endif
-+    for (var e in instance.exports) {
-+      var value = instance.exports[e];
-+      if (typeof value === 'object') {
-+        // a breaking change in the wasm spec, globals are now objects
-+        // https://github.com/WebAssembly/mutable-global/issues/1
-+        value = value.value;
-+      }
-+      if (typeof value === 'number') {
-+        // relocate it - modules export the absolute value, they can't relocate before they export
- #if EMULATED_FUNCTION_POINTERS
--      // it may be a function pointer
--      if (e.substr(0, 3) == 'fp$' && typeof instance.exports[e.substr(3)] === 'function') {
--        value = value + env['tableBase'];
--      } else {
-+        // it may be a function pointer
-+        if (e.substr(0, 3) == 'fp$' && typeof instance.exports[e.substr(3)] === 'function') {
-+          value = value + env['tableBase'];
-+        } else {
- #endif
--        value = value + env['memoryBase'];
-+          value = value + env['memoryBase'];
- #if EMULATED_FUNCTION_POINTERS
--      }
-+        }
- #endif
-+      }
-+      exports[e] = value;
-     }
--    exports[e] = value;
--  }
--  // initialize the module
--  var init = exports['__post_instantiate'];
--  if (init) {
--    if (runtimeInitialized) {
--      init();
--    } else {
--      // we aren't ready to run compiled code yet
--      __ATINIT__.push(init);
-+    // initialize the module
-+    var init = exports['__post_instantiate'];
-+    if (init) {
-+      if (runtimeInitialized) {
-+        init();
-+      } else {
-+        // we aren't ready to run compiled code yet
-+        __ATINIT__.push(init);
-+      }
-     }
-+    return exports;
-+  }
+     return exports;
+   }
 +
 +  if (loadAsync) {
 +    return WebAssembly.instantiate(binary, info).then(function(result) {
@@ -243,11 +145,58 @@ index f6c9842ff..99367db70 100644
 +  } else {
 +    var instance = new WebAssembly.Instance(new WebAssembly.Module(binary), info);
 +    return postInstantiation(instance);
-   }
--  return exports;
- }
++  }
++}
 +Module['loadWebAssemblyModule'] = loadWebAssemblyModule;
 +
  #endif // WASM
  #endif // RELOCATABLE
  
+diff --git a/tests/test_browser.py b/tests/test_browser.py
+index d5f49d04e..c85367f72 100644
+--- a/tests/test_browser.py
++++ b/tests/test_browser.py
+@@ -2273,6 +2273,43 @@ void *getBindBuffer() {
+     Popen([PYTHON, EMCC, path_from_root('tests', 'browser_module.cpp'), '-o', 'module.js', '-O2', '-s', 'SIDE_MODULE=1', '-s', 'DLOPEN_SUPPORT=1', '-s', 'EXPORTED_FUNCTIONS=["_one", "_two"]']).communicate()
+     self.btest('browser_main.cpp', args=['-O2', '-s', 'MAIN_MODULE=1', '-s', 'DLOPEN_SUPPORT=1'], expected='8')
+ 
++  def test_preload_module(self):
++    expected = 'hello from main\nhello from library'
++    open('library.c', 'w').write(r'''
++      #include <stdio.h>
++      int library_func() {
++        return 42;
++      }
++    ''')
++    run_process([PYTHON, EMCC, 'library.c', '-s', 'SIDE_MODULE=1', '-O2', '-o', 'library.wasm', '-s', 'WASM=1'])
++    main = r'''
++      #include <dlfcn.h>
++      #include <stdio.h>
++      #include <emscripten.h>
++      int main() {
++        EM_ASM(
++          console.log(Object.keys(Module['preloadedWasm']));
++          if (Module['preloadedWasm']['/library.wasm'] === undefined) {
++            throw Error("Side module not preloaded");
++          }
++        );
++        void *lib_handle = dlopen("/library.wasm", 0);
++        if (!lib_handle) {
++          return 1;
++        }
++        typedef int (*voidfunc)();
++        voidfunc x = (voidfunc)dlsym(lib_handle, "library_func");
++        if (!x) return 1;
++        if (x() != 42) return 1;
++        REPORT_RESULT(0);
++        return 0;
++      }
++    '''
++    self.btest(
++      main,
++      args=['-s', 'MAIN_MODULE=1', '--preload-file', '.@/', '-O2', '-s', 'WASM=1', '--use-preload-plugins'],
++      expected='0')
++
+   def test_mmap_file(self):
+     open(self.in_dir('data.dat'), 'w').write('data from the file ' + ('.' * 9000))
+     for extra_args in [[], ['--no-heap-copy']]:
