@@ -371,7 +371,6 @@ function getMemory(size) {
 /** @type {function(number, number=)} */
 function Pointer_stringify(ptr, length) {
   if (length === 0 || !ptr) return '';
-  // TODO: use TextDecoder
   // Find the length, and check for UTF while doing so
   var hasUtf = 0;
   var t;
@@ -1522,7 +1521,7 @@ var __ATPRERUN__  = []; // functions called before the runtime is initialized
 var __ATINIT__    = []; // functions called during startup
 var __ATMAIN__    = []; // functions called when main() is to be run
 var __ATEXIT__    = []; // functions called during shutdown
-var __ATPOSTRUN__ = []; // functions called after the runtime has exited
+var __ATPOSTRUN__ = []; // functions called after the main() is called
 
 var runtimeInitialized = false;
 var runtimeExited = false;
@@ -1822,11 +1821,9 @@ function removeRunDependency(id) {
 
 Module["preloadedImages"] = {}; // maps url to image data
 Module["preloadedAudios"] = {}; // maps url to audio data
-#if WASM
-#if MAIN_MODULE
+#if (WASM != 0) && (MAIN_MODULE != 0)
 Module["preloadedWasm"] = {}; // maps url to wasm instance exports
-#endif // MAIN_MODULE
-#endif // WASM
+#endif
 
 #if PGO
 var PGOMonitor = {
@@ -2022,32 +2019,7 @@ function integrateWasmJS() {
   var info = {
     'global': null,
     'env': null,
-    'asm2wasm': { // special asm2wasm imports
-      "f64-rem": function(x, y) {
-        return x % y;
-      },
-      "debugger": function() {
-        debugger;
-      }
-#if NEED_ALL_ASM2WASM_IMPORTS
-      ,
-      "f64-to-int": function(x) {
-        return x | 0;
-      },
-      "i32s-div": function(x, y) {
-        return ((x | 0) / (y | 0)) | 0;
-      },
-      "i32u-div": function(x, y) {
-        return ((x >>> 0) / (y >>> 0)) >>> 0;
-      },
-      "i32s-rem": function(x, y) {
-        return ((x | 0) % (y | 0)) | 0;
-      },
-      "i32u-rem": function(x, y) {
-        return ((x >>> 0) % (y >>> 0)) >>> 0;
-      }
-#endif // NEED_ALL_ASM2WASM_IMPORTS
-    },
+    'asm2wasm': asm2wasmImports,
     'parent': Module // Module inside wasm-js.cpp refers to wasm-js.cpp; this allows access to the outside program.
   };
 
