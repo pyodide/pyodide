@@ -11,9 +11,11 @@ emsdk/emsdk:
 		./emsdk install --build=Release sdk-tag-1.38.4-64bit binaryen-tag-1.38.4-64bit ; \
 		cd .. ; \
 		(cat patches/*.patch | patch -p1) ; \
+    cp files/* emsdk/emscripten/tag-1.38.4/src/ ; \
 		cd emsdk/binaryen/tag-1.38.4_64bit_binaryen/ ; \
     make ; \
 	  cd ../.. ; \
+    cp binaryen/tag-1.38.4/bin/binaryen.js binaryen/tag-1.38.4_64bit_binaryen/bin ; \
 		./emsdk activate --embedded --build=Release sdk-tag-1.38.4-64bit binaryen-tag-1.38.4-64bit \
 	)
 

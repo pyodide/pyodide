@@ -23,8 +23,8 @@ def run_native(hostpython, code):
     return float(output.strip().split()[-1])
 
 
-def run_wasm(code):
-    s = conftest.SeleniumWrapper()
+def run_wasm(code, cls):
+    s = cls()
     try:
         s.load_package('numpy')
         s.run(code)
@@ -38,12 +38,18 @@ def run_wasm(code):
     return runtime
 
 
-def run_both(hostpython, code):
+def run_all(hostpython, code):
     a = run_native(hostpython, code)
-    print(a)
-    b = run_wasm(code)
-    print(b)
-    result = (a, b)
+    print("native:", a)
+    b = run_wasm(code, conftest.FirefoxWrapper)
+    print("firefox:", b)
+    c = run_wasm(code, conftest.ChromeWrapper)
+    print("chrome:", c)
+    result = {
+        'native': a,
+        'firefox': b,
+        'chrome': c
+    }
     return result
 
 
@@ -92,7 +98,7 @@ def main(hostpython):
     results = {}
     for k, v in get_benchmarks():
         print(k)
-        results[k] = run_both(hostpython, v)
+        results[k] = run_all(hostpython, v)
     return results
 
 

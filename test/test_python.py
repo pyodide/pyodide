@@ -2,8 +2,6 @@ import os
 import pathlib
 import time
 
-from selenium.common.exceptions import JavascriptException
-
 
 def test_init(selenium):
     assert 'Python initialization complete' in selenium.logs
@@ -50,7 +48,7 @@ def test_python2js(selenium):
 def test_pythonexc2js(selenium):
     try:
         selenium.run_js('return pyodide.runPython("5 / 0")')
-    except JavascriptException as e:
+    except selenium.JavascriptException as e:
         assert('ZeroDivisionError' in str(e))
     else:
         assert False, 'Expected exception'
@@ -157,7 +155,7 @@ def test_pyproxy(selenium):
              '__lt__', '__module__', '__ne__', '__new__', '__reduce__',
              '__reduce_ex__', '__repr__', '__setattr__', '__sizeof__',
              '__str__', '__subclasshook__', '__weakref__', 'bar', 'baz',
-             'get_value', 'toString', 'prototype'])
+             'get_value', 'toString', 'prototype', 'arguments', 'caller'])
     assert selenium.run("hasattr(f, 'baz')")
     selenium.run_js("delete pyodide.pyimport('f').baz")
     assert not selenium.run("hasattr(f, 'baz')")
@@ -179,7 +177,7 @@ def test_pyproxy_destroy(selenium):
             "console.assert(f.get_value(1) === 64);\n"
             "f.destroy();\n"
             "f.get_value();\n")
-    except JavascriptException as e:
+    except selenium.JavascriptException as e:
         assert 'Object has already been destroyed' in str(e)
     else:
         assert False, 'Expected exception'
@@ -260,7 +258,7 @@ def test_jsproxy_iter(selenium):
 def test_open_url(selenium):
     assert selenium.run(
         "import pyodide\n"
-        "pyodide.open_url('../test/data.txt').read()\n") == 'HELLO\n'
+        "pyodide.open_url('test_data.txt').read()\n") == 'HELLO\n'
 
 
 def test_run_core_python_test(python_test, selenium):
@@ -269,7 +267,7 @@ def test_run_core_python_test(python_test, selenium):
         selenium.run(
             "from test.libregrtest import main\n"
             "main(['{}'], verbose=True, verbose3=True)".format(python_test))
-    except JavascriptException as e:
+    except selenium.JavascriptException as e:
         assert str(e).strip().endswith('SystemExit: 0')
 
 

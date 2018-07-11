@@ -142,6 +142,12 @@ EM_JS(int, pyproxy_init, (), {
     isPyProxy: function(jsobj) {
       return jsobj['$$'] !== undefined && jsobj['$$']['type'] === 'PyProxy';
     },
+    addExtraKeys: function(result) {
+      result.push('toString');
+      result.push('prototype');
+      result.push('arguments');
+      result.push('caller');
+    },
     isExtensible: function() { return true },
     has: function (jsobj, jskey) {
       ptrobj = this.getPtr(jsobj);
@@ -197,8 +203,7 @@ EM_JS(int, pyproxy_init, (), {
       var idresult = __pyproxy_ownKeys(ptrobj);
       var jsresult = Module.hiwire_get_value(idresult);
       Module.hiwire_decref(idresult);
-      jsresult.push('toString');
-      jsresult.push('prototype');
+      this.addExtraKeys(jsresult);
       return jsresult;
     },
     enumerate: function (jsobj) {
@@ -206,8 +211,7 @@ EM_JS(int, pyproxy_init, (), {
       var idresult = __pyproxy_enumerate(ptrobj);
       var jsresult = Module.hiwire_get_value(idresult);
       Module.hiwire_decref(idresult);
-      jsresult.push('toString');
-      jsresult.push('prototype');
+      this.addExtraKeys(jsresult);
       return jsresult;
     },
     apply: function (jsobj, jsthis, jsargs) {
