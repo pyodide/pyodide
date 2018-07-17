@@ -48,7 +48,7 @@ JsProxy_GetAttr(PyObject* o, PyObject* attr_name)
 
   char* key = PyUnicode_AsUTF8(str);
 
-  if (strncmp(key, "new", 4) == 0) {
+  if (strncmp(key, "new", 4) == 0 || strncmp(key, "_has_bytes", 11) == 0) {
     Py_DECREF(str);
     return PyObject_GenericGetAttr(o, attr_name);
   } else if (strncmp(key, "typeof", 7) == 0) {
@@ -268,15 +268,20 @@ JsProxy_GetBuffer(PyObject* o, Py_buffer* view, int flags)
 
   Py_ssize_t byteLength = hiwire_get_byteLength(self->js);
 
-  if (self->bytes == NULL) {
-    self->bytes = PyBytes_FromStringAndSize(NULL, byteLength);
+  void *ptr;
+  if (hiwire_is_on_wasm_heap(self->js)) {
+    ptr = (void *)hiwire_get_byteOffset(self->js);
+  } else {
     if (self->bytes == NULL) {
-      return -1;
+      self->bytes = PyBytes_FromStringAndSize(NULL, byteLength);
+      if (self->bytes == NULL) {
+        return -1;
+      }
     }
-  }
 
-  void* ptr = PyBytes_AsString(self->bytes);
-  hiwire_copy_to_ptr(self->js, (int)ptr);
+    ptr = PyBytes_AsString(self->bytes);
+    hiwire_copy_to_ptr(self->js, (int)ptr);
+  }
 
   int dtype = hiwire_get_dtype(self->js);
 
@@ -341,6 +346,17 @@ JsProxy_GetBuffer(PyObject* o, Py_buffer* view, int flags)
   return 0;
 }
 
+static PyObject*
+JsProxy_HasBytes(PyObject *o) {
+  JsProxy* self = (JsProxy *)o;
+
+  if (self->bytes == NULL) {
+    Py_RETURN_FALSE;
+  } else {
+    Py_RETURN_TRUE;
+  }
+}
+
 // clang-format off
 static PyMappingMethods JsProxy_MappingMethods = {
   JsProxy_length,
@@ -358,6 +374,10 @@ static PyMethodDef JsProxy_Methods[] = {
     (PyCFunction)JsProxy_New,
     METH_VARARGS | METH_KEYWORDS,
     "Construct a new instance" },
+  { "_has_bytes",
+    (PyCFunction)JsProxy_HasBytes,
+    METH_NOARGS,
+    "Returns true if instance has buffer memory. For testing only." },
   { NULL }
 };
 // clang-format on
