@@ -350,6 +350,12 @@ int
 hiwire_is_typedarray(int idobj);
 
 /**
+ * Returns 1 if the value is a typedarray whose buffer is part of the WASM heap.
+ */
+int
+hiwire_is_on_wasm_heap(int idobj);
+
+/**
  * Returns the value of obj.byteLength.
  *
  * There is no error checking. Caller must ensure that hiwire_is_typedarray is
@@ -357,6 +363,15 @@ hiwire_is_typedarray(int idobj);
  */
 int
 hiwire_get_byteLength(int idobj);
+
+/**
+ * Returns the value of obj.byteOffset.
+ *
+ * There is no error checking. Caller must ensure that hiwire_is_typedarray is
+ * true and hiwire_is_on_wasm_heap is true.
+ */
+int
+hiwire_get_byteOffset(int idobj);
 
 /**
  * Copies the buffer contents of a given typed array or buffer into the memory

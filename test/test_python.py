@@ -105,27 +105,38 @@ def test_js2python(selenium):
 
 
 def test_typed_arrays(selenium):
-    for (jstype, pytype) in (
-            ('Int8Array', 'b'),
-            ('Uint8Array', 'B'),
-            ('Uint8ClampedArray', 'B'),
-            ('Int16Array', 'h'),
-            ('Uint16Array', 'H'),
-            ('Int32Array', 'i'),
-            ('Uint32Array', 'I'),
-            ('Float32Array', 'f'),
-            ('Float64Array', 'd')):
-        print(jstype, pytype)
-        selenium.run_js(
-            f'window.array = new {jstype}([1, 2, 3, 4]);\n')
-        assert selenium.run(
-            'from js import array\n'
-            'import struct\n'
-            f'expected = struct.pack("{pytype*4}", 1, 2, 3, 4)\n'
-            'print(array.format, array.tolist(), array.tobytes())\n'
-            f'array.format == "{pytype}" '
-            'and array.tolist() == [1, 2, 3, 4] '
-            'and array.tobytes() == expected')
+    for wasm_heap in (False, True):
+        for (jstype, pytype) in (
+                ('Int8Array', 'b'),
+                ('Uint8Array', 'B'),
+                ('Uint8ClampedArray', 'B'),
+                ('Int16Array', 'h'),
+                ('Uint16Array', 'H'),
+                ('Int32Array', 'i'),
+                ('Uint32Array', 'I'),
+                ('Float32Array', 'f'),
+                ('Float64Array', 'd')):
+            print(wasm_heap, jstype, pytype)
+            if not wasm_heap:
+                selenium.run_js(
+                    f'window.array = new {jstype}([1, 2, 3, 4]);\n')
+            else:
+                selenium.run_js(
+                    f'var buffer = pyodide._malloc(4 * {jstype}.BYTES_PER_ELEMENT);\n'
+                    f'window.array = new {jstype}(pyodide.HEAPU8.buffer, buffer, 4);\n'
+                    'window.array[0] = 1;\n'
+                    'window.array[1] = 2;\n'
+                    'window.array[2] = 3;\n'
+                    'window.array[3] = 4;\n')
+            assert selenium.run(
+                'from js import array\n'
+                'import struct\n'
+                f'expected = struct.pack("{pytype*4}", 1, 2, 3, 4)\n'
+                'print(array.format, array.tolist(), array.tobytes())\n'
+                f'array.format == "{pytype}" '
+                'and array.tolist() == [1, 2, 3, 4] '
+                'and array.tobytes() == expected '
+                f'and array.obj._has_bytes() is {not wasm_heap}')
 
 
 def test_import_js(selenium):

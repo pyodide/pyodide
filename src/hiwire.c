@@ -212,6 +212,18 @@ EM_JS(int, hiwire_is_typedarray, (int idobj), {
   // clang-format on
 });
 
+EM_JS(int, hiwire_is_on_wasm_heap, (int idobj), {
+  var jsobj = Module.hiwire_get_value(idobj);
+  // clang-format off
+  return (jsobj.buffer === Module.HEAPU8.buffer) ? 1 : 0;
+  // clang-format on
+});
+
+EM_JS(int, hiwire_get_byteOffset, (int idobj), {
+  var jsobj = Module.hiwire_get_value(idobj);
+  return jsobj['byteOffset'];
+});
+
 EM_JS(int, hiwire_get_byteLength, (int idobj), {
   var jsobj = Module.hiwire_get_value(idobj);
   return jsobj['byteLength'];
