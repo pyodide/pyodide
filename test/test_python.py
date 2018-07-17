@@ -122,8 +122,10 @@ def test_typed_arrays(selenium):
                     f'window.array = new {jstype}([1, 2, 3, 4]);\n')
             else:
                 selenium.run_js(
-                    f'var buffer = pyodide._malloc(4 * {jstype}.BYTES_PER_ELEMENT);\n'
-                    f'window.array = new {jstype}(pyodide.HEAPU8.buffer, buffer, 4);\n'
+                    'var buffer = pyodide._malloc('
+                    f'4 * {jstype}.BYTES_PER_ELEMENT);\n'
+                    f'window.array = new {jstype}('
+                    'pyodide.HEAPU8.buffer, buffer, 4);\n'
                     'window.array[0] = 1;\n'
                     'window.array[1] = 2;\n'
                     'window.array[2] = 3;\n'
