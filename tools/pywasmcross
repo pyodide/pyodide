@@ -37,7 +37,7 @@ import common
 
 
 ROOTDIR = os.path.abspath(os.path.dirname(__file__))
-symlinks = set(['cc', 'c++', 'ld', 'ar', 'gcc'])
+symlinks = set(['cc', 'c++', 'ld', 'ar', 'gcc', 'gfortran'])
 
 
 def collect_args(basename):
@@ -98,6 +98,24 @@ def capture_compile(args):
         sys.exit(result.returncode)
 
 
+def f2c(args):
+    new_args = []
+    found_source = False
+    for arg in args:
+        if arg.endswith('.f'):
+            filename = os.path.abspath(arg)
+            subprocess.check_call(
+                ['f2c', os.path.basename(filename)],
+                cwd=os.path.dirname(filename))
+            new_args.append(arg[:-2] + '.c')
+            found_source = True
+        else:
+            new_args.append(arg)
+    if not found_source:
+        return None
+    return new_args
+
+
 def handle_command(line, args):
     # This is a special case to skip the compilation tests in numpy that aren't
     # actually part of the build
@@ -106,8 +124,16 @@ def handle_command(line, args):
             return
         if arg == '-print-multiarch':
             return
+        if arg.startswith('/tmp'):
+            return
 
-    if line[0] == 'ar':
+    if line[0] == 'gfortran':
+        result = f2c(line)
+        if result is None:
+            return
+        line = result
+        new_args = ['emcc']
+    elif line[0] == 'ar':
         new_args = ['emar']
     elif line[0] == 'c++':
         new_args = ['em++']
@@ -122,6 +148,8 @@ def handle_command(line, args):
         new_args.extend(args.ldflags.split())
     elif new_args[0] in ('emcc', 'em++'):
         new_args.extend(args.cflags.split())
+    if new_args[0] == 'em++':
+        new_args.append('-std=c++98')
 
     # Go through and adjust arguments
     for arg in line[1:]:
@@ -140,10 +168,15 @@ def handle_command(line, args):
         arg = re.sub(r'/python([0-9]\.[0-9]+)m', r'/python\1', arg)
         if arg.endswith('.o'):
             arg = arg[:-2] + '.bc'
-        if shared and arg.endswith('.so'):
+            output = arg
+        elif shared and arg.endswith('.so'):
             arg = arg[:-3] + '.wasm'
             output = arg
         new_args.append(arg)
+
+    if os.path.isfile(output):
+        print('SKIPPING: ' + ' '.join(new_args))
+        return
 
     print(' '.join(new_args))
 
