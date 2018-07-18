@@ -4,6 +4,7 @@ all: emsdk/emsdk
 # run out of memory
 
 emsdk/emsdk:
+	if [ -d emsdk ]; then rm -rf emsdk; fi
 	git clone https://github.com/juj/emsdk.git
 	sed -i -e "s#CPU_CORES = max(multiprocessing.cpu_count()-1, 1)#CPU_CORES = 3#g" emsdk/emsdk
 	( \
