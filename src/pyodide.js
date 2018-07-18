@@ -63,7 +63,7 @@ var languagePluginLoader = new Promise((resolve, reject) => {
     });
 
     if (window.iodide !== undefined) {
-      window.iodide.evalQueue.await([promise]);
+      window.iodide.evalQueue.await([ promise ]);
     }
 
     return promise;
@@ -95,11 +95,11 @@ var languagePluginLoader = new Promise((resolve, reject) => {
     Module.postRun = () => {
       delete window.Module;
       fetch(`${baseURL}packages.json`)
-        .then((response) => response.json())
-        .then((json) => {
-          window.pyodide.packages = json;
-          resolve();
-        });
+          .then((response) => response.json())
+          .then((json) => {
+            window.pyodide.packages = json;
+            resolve();
+          });
     };
   });
 
