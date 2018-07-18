@@ -47,7 +47,7 @@ jobs:
 
       - restore_cache:
           keys:
-          - v1-emsdk-{{ checksum "emsdk/Makefile" }}-v4
+          - v1-emsdk-{{ checksum "emsdk/Makefile" }}-v5
 
       - run:
           name: build
@@ -58,7 +58,7 @@ jobs:
       - save_cache:
           paths:
             - ./emsdk/emsdk
-          key: v1-emsdk-{{ checksum "emsdk/Makefile" }}-v4
+          key: v1-emsdk-{{ checksum "emsdk/Makefile" }}-v5
 
       - run:
           name: test
