@@ -11,11 +11,6 @@
 #   probably be marked as "skip" or rearchitected so we don't have to skip the
 #   whole module.
 # - networking: Fails because it tests low-level networking.
-# - unknown encoding: Most of the larger and more rare encodings are excluded
-#   from the build for size reasons. Python code should just use Unicode, and to
-#   the extent that obscure codecs are needed, they should be available on the
-#   Javascript side. Long term plan is to transparently call over to Javascript
-#   for this stuff.
 # - dbm: Failures due to no dbm module
 # - _lsprof: Failures due to no _lsprof module
 # - strftime: Failures due to differences / shortcomings in WebAssembly's
@@ -90,18 +85,18 @@ test_cmd_line_script  subprocess
 test_code
 test_code_module
 test_codeccallbacks
-test_codecencodings_cn  unknown encoding
-test_codecencodings_hk  unknown encoding
-test_codecencodings_iso2022 unknown encoding
-test_codecencodings_jp      unknown encoding
-test_codecencodings_kr  unknown encoding
-test_codecencodings_tw  unknown encoding
+test_codecencodings_cn
+test_codecencodings_hk
+test_codecencodings_iso2022
+test_codecencodings_jp
+test_codecencodings_kr
+test_codecencodings_tw
 test_codecmaps_cn
 test_codecmaps_hk
 test_codecmaps_jp
 test_codecmaps_kr
 test_codecmaps_tw
-test_codecs unknown encoding
+test_codecs
 test_codeop
 test_collections
 test_colorsys
@@ -155,9 +150,9 @@ test_email.test__header_value_parser
 test_email.test_asian_codecs
 test_email.test_contentmanager
 test_email.test_defect_handling
-test_email.test_email unknown encoding
+test_email.test_email
 test_email.test_generator
-test_email.test_headerregistry  unknown encoding
+test_email.test_headerregistry
 test_email.test_inversion
 test_email.test_message
 test_email.test_parser
@@ -252,7 +247,7 @@ test_importlib.test_abc
 test_importlib.test_api crash
 test_importlib.test_lazy
 test_importlib.test_locks
-test_importlib.test_namespace_pkgs  unknown encoding
+test_importlib.test_namespace_pkgs
 test_importlib.test_spec
 test_importlib.test_util  crash
 test_importlib.test_windows platform-specific
@@ -300,7 +295,7 @@ test_lzma
 test_macpath  platform-specific
 test_macurl2path
 test_mailbox  crash
-test_mailcap  unknown
+test_mailcap
 test_marshal
 test_math floating-point
 test_memoryio
@@ -312,7 +307,7 @@ test_mmap
 test_module
 test_modulefinder crash
 test_msilib
-test_multibytecodec unknown codec
+test_multibytecodec
 test_multiprocessing_fork
 test_multiprocessing_forkserver
 test_multiprocessing_main_handling
@@ -366,7 +361,7 @@ test_quopri subprocess
 test_raise
 test_random
 test_range
-test_re unknown codec
+test_re locale
 test_readline
 test_regrtest subprocess
 test_repl     subprocess
@@ -398,7 +393,7 @@ test_sndhdr audioop
 test_socket
 test_socketserver
 test_sort
-test_source_encoding  subprocess, unknown encoding
+test_source_encoding  subprocess,
 test_spwd
 test_sqlite
 test_ssl
@@ -467,7 +462,7 @@ test_typing unknown
 test_ucn
 test_unary
 test_unicode  crash
-test_unicode_file unknown codec
+test_unicode_file
 test_unicode_file_functions
 test_unicode_identifiers
 test_unicodedata
@@ -502,8 +497,8 @@ test_with
 test_wsgiref
 test_xdrlib
 test_xml_dom_minicompat
-test_xml_etree  unknown encoding
-test_xml_etree_c        unknown encoding
+test_xml_etree
+test_xml_etree_c
 test_xmlrpc networking
 test_xmlrpc_net
 test_yield_from

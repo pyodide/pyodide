@@ -36,3 +36,12 @@ _md5 md5module.c
 _blake2 _blake2/blake2module.c _blake2/blake2b_impl.c ../../host/Python-3.6.4/Modules/_blake2/blake2s_impl.c
 
 #future_builtins future_builtins.c
+
+_multibytecodec cjkcodecs/multibytecodec.c
+
+_codecs_cn cjkcodecs/_codecs_cn.c
+_codecs_hk cjkcodecs/_codecs_hk.c
+_codecs_iso2022 cjkcodecs/_codecs_iso2022.c
+_codecs_jp cjkcodecs/_codecs_jp.c
+_codecs_kr cjkcodecs/_codecs_kr.c
+_codecs_tw cjkcodecs/_codecs_tw.c

@@ -154,7 +154,6 @@ root/.built: \
 	( \
 		cd root/lib/python$(PYMINOR); \
 		rm -fr `cat ../../../remove_modules.txt`; \
-		rm encodings/mac_*.py; \
 		rm -fr test; \
 		find . -name "*.wasm.pre" -type f -delete ; \
 		find -type d -name __pycache__ -prune -exec rm -rf {} \; \
