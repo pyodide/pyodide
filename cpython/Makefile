@@ -15,6 +15,12 @@ URL=https://www.python.org/ftp/python/$(PYVERSION)/Python-$(PYVERSION).tgz
 LIB=libpython$(PYMINOR).a
 
 
+ZLIBVERSION = 1.2.11
+ZLIBTARBALL=$(ROOT)/downloads/zlib-$(ZLIBVERSION).tar.gz
+ZLIBBUILD=$(ROOT)/build/zlib-$(ZLIBVERSION)
+ZLIBURL=https://zlib.net/zlib-1.2.11.tar.gz
+
+
 all: $(INSTALL)/lib/$(LIB)
 
 
@@ -42,6 +48,11 @@ $(TARBALL):
 	md5sum --quiet --check checksums || (rm $@; false)
 
 
+$(ZLIBTARBALL):
+	[ -d $(ROOT)/downloads ] || mkdir $(ROOT)/downloads
+	wget -q -O $@ $(ZLIBURL)
+
+
 $(HOSTPYTHON) $(HOSTPGEN): $(TARBALL)
 	mkdir -p $(HOSTINSTALL)
 	[ -d $(HOSTBUILD) ] || tar -C $(HOSTINSTALL) -xf $(TARBALL)
@@ -61,7 +72,14 @@ $(BUILD)/.patched: $(TARBALL)
 	touch $@
 
 
-$(BUILD)/Makefile: $(BUILD)/.patched
+$(ZLIBBUILD)/.patched: $(ZLIBTARBALL)
+	[ -d $(ROOT)/build ] || (mkdir $(ROOT)/build)
+	tar -C $(ROOT)/build/ -xf $(ROOT)/downloads/zlib-1.2.11.tar.gz
+	cat patches/zlib/*.patch | (cd $(ZLIBBUILD) ; patch -p1)
+	touch $@
+
+
+$(BUILD)/Makefile: $(BUILD)/.patched $(ZLIBBUILD)/.patched
 	cp config.site $(BUILD)/
 	( \
 		cd $(BUILD); \
@@ -71,10 +89,6 @@ $(BUILD)/Makefile: $(BUILD)/.patched
 
 $(BUILD)/$(LIB): $(BUILD)/Makefile $(HOSTPYTHON) $(HOSTPGEN) Setup.local
 	cp Setup.local $(BUILD)/Modules/
-	( \
-		cd $(BUILD)/Modules/zlib; \
-		emconfigure ./configure --static \
-	)
 	( \
 		cp build/$(PYVERSION)/host/lib/python$(PYMINOR)/`$(HOSTPYTHON) -c "import sysconfig; print(sysconfig._get_sysconfigdata_name())"`.py build/$(PYVERSION)/Python-$(PYVERSION)/Lib/_sysconfigdata__emscripten_.py; \
 		cd $(BUILD); \

@@ -43,7 +43,7 @@ JsImport_Call(PyObject* self, PyObject* args, PyObject* kwargs)
         if (key == NULL) {
           return NULL;
         }
-        char* c = PyUnicode_AsUTF8(key);
+        const char* c = PyUnicode_AsUTF8(key);
         if (c == NULL) {
           Py_DECREF(key);
           return NULL;

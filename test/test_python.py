@@ -297,9 +297,15 @@ def test_run_core_python_test(python_test, selenium, request):
     try:
         selenium.run(
             "from test.libregrtest import main\n"
-            "main(['{}'], verbose=True, verbose3=True)".format(name))
+            "try:\n"
+            "    main(['{}'], verbose=True, verbose3=True)\n"
+            "except SystemExit as e:\n"
+            "    if e.code != 0:\n"
+            "        raise RuntimeError(f'Failed with code: {{e.code}}')\n"
+            .format(name))
     except selenium.JavascriptException as e:
-        assert 'SystemExit: 0' in str(e)
+        print(selenium.logs)
+        raise
 
 
 def pytest_generate_tests(metafunc):
@@ -324,18 +330,6 @@ def pytest_generate_tests(metafunc):
                             test_modules_ids.append(name)
         metafunc.parametrize("python_test", test_modules,
                              ids=test_modules_ids)
-
-
-def test_recursive_repr(selenium):
-    assert not selenium.run(
-        "d = {}\n"
-        "d[42] = d.values()\n"
-        "result = True\n"
-        "try:\n"
-        "   repr(d)\n"
-        "except RecursionError:\n"
-        "   result = False\n"
-        "result")
 
 
 def test_load_package_after_convert_string(selenium):

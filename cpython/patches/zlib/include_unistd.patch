@@ -1,0 +1,12 @@
+diff -u zlib-1.2.11-orig/gzguts.h zlib-1.2.11/gzguts.h
+--- a/gzguts.h
++++ b/gzguts.h
+@@ -3,6 +3,8 @@
+  * For conditions of distribution and use, see copyright notice in zlib.h
+  */
+ 
++#include <unistd.h>
++
+ #ifdef _LARGEFILE64_SOURCE
+ #  ifndef _LARGEFILE_SOURCE
+ #    define _LARGEFILE_SOURCE 1

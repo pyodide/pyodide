@@ -107,8 +107,7 @@ Extra arguments to pass to the linker when building for WebAssembly.
 Shell commands to run after building the library. These are run inside of
 `bash`, and there are two special environment variables defined:
 
-- `$BUILD`: The root of the built package. (`build/lib.XXX/` inside of the
-  source directory). This is what will be installed into Python site-packages.
+- `$SITEPACKAGES`: The `site-packages` directory into which the package has been installed.
 - `$PKGDIR`: The directory in which the `meta.yaml` file resides.
 
 (This key is not in the Conda spec).

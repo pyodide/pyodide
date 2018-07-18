@@ -3,7 +3,7 @@ version: 2
 defaults: &defaults
   working_directory: ~/repo
   docker:
-    - image: circleci/python:3.6.5-stretch-browsers
+    - image: circleci/python:3.7.0-stretch-browsers
 
 jobs:
   build:
@@ -27,11 +27,11 @@ jobs:
             sudo ln -s /usr/bin/clang-format-6.0 /usr/bin/clang-format
 
             sudo pip install virtualenv
-            
+
             virtualenv pyodide-env
 
             source pyodide-env/bin/activate
-            
+
             pip install pytest pytest-xdist pytest-instafail selenium PyYAML
 
             # Get recent version of Firefox and geckodriver

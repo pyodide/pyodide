@@ -46,7 +46,7 @@ JsProxy_GetAttr(PyObject* o, PyObject* attr_name)
     return NULL;
   }
 
-  char* key = PyUnicode_AsUTF8(str);
+  const char* key = PyUnicode_AsUTF8(str);
 
   if (strncmp(key, "new", 4) == 0 || strncmp(key, "_has_bytes", 11) == 0) {
     Py_DECREF(str);
@@ -81,7 +81,7 @@ JsProxy_SetAttr(PyObject* o, PyObject* attr_name, PyObject* pyvalue)
   if (attr_name_py_str == NULL) {
     return -1;
   }
-  char* key = PyUnicode_AsUTF8(attr_name_py_str);
+  const char* key = PyUnicode_AsUTF8(attr_name_py_str);
 
   if (pyvalue == NULL) {
     hiwire_delete_member_string(self->js, (int)key);
