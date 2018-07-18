@@ -211,6 +211,8 @@ def handle_command(line, args, dryrun=False):
             return
         if arg == '-print-multiarch':
             return
+        if arg.startswith('/tmp'):
+            return
 
     if line[0] == 'gfortran':
         result = f2c(line)
