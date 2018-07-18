@@ -148,8 +148,6 @@ def handle_command(line, args):
         new_args.extend(args.ldflags.split())
     elif new_args[0] in ('emcc', 'em++'):
         new_args.extend(args.cflags.split())
-    if new_args[0] == 'em++':
-        new_args.append('-std=c++98')
 
     # Go through and adjust arguments
     for arg in line[1:]:
