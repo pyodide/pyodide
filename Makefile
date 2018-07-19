@@ -161,7 +161,7 @@ root/.built: \
 	touch root/.built
 
 
-$(CPYTHONLIB): emsdk/emsdk/emsdk
+$(CPYTHONLIB): emsdk/emsdk/emsdk/.complete
 	make -C $(CPYTHONROOT)
 
 
@@ -173,5 +173,5 @@ build/packages.json: $(CPYTHONLIB)
 	make -C packages
 
 
-emsdk/emsdk/emsdk:
+emsdk/emsdk/emsdk/.complete:
 	make -C emsdk
