@@ -173,5 +173,5 @@ build/packages.json: $(CPYTHONLIB)
 	make -C packages
 
 
-emsdk/emsdk/emsdk:
+emsdk/emsdk/.complete:
 	make -C emsdk
