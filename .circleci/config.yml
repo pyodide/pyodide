@@ -23,7 +23,7 @@ jobs:
             sudo update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-8 80 --slave /usr/bin/g++ g++ /usr/bin/g++-8
             sudo update-alternatives --set gcc /usr/bin/gcc-8
 
-            sudo pip install pytest-xdist selenium PyYAML
+            sudo pip install pytest-xdist pytest-instafail selenium PyYAML
 
             # Get recent version of Firefox and geckodriver
             wget -O firefox.tar.bz2 https://download.mozilla.org/\?product\=firefox-nightly-latest-ssl\&os\=linux64\&lang\=en-US
