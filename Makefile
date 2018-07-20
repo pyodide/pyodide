@@ -118,8 +118,8 @@ benchmark: all build/test.html
 
 clean:
 	rm -fr root
-	rm build/*
-	rm src/*.bc
+	rm -fr build/*
+	rm -fr src/*.bc
 	make -C packages clean
 	make -C six clean
 	echo "The Emsdk and CPython are not cleaned. cd into those directories to do so."
