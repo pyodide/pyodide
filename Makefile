@@ -29,6 +29,7 @@ LDFLAGS=\
   -s WASM=1 \
 	-s SWAPPABLE_ASM_MODULE=1 \
 	-s USE_FREETYPE=1 \
+	-s USE_LIBPNG=1 \
 	-std=c++14 \
   -lstdc++ \
   --memory-init-file 0
@@ -48,6 +49,11 @@ all: build/pyodide.asm.js \
 	build/renderedhtml.css \
   build/test.data \
   build/packages.json
+	if hash ccache &>/dev/null; then \
+		mkdir -p $(PYODIDE_ROOT)/ccache ; \
+    ln -s `which ccache` $(PYODIDE_ROOT)/ccache/emcc ; \
+    ln -s `which ccache` $(PYODIDE_ROOT)/ccache/em++ ; \
+  fi
 
 
 build/pyodide.asm.js: src/main.bc src/jsimport.bc src/jsproxy.bc src/js2python.bc \
@@ -126,7 +132,7 @@ clean:
 
 
 %.bc: %.c $(CPYTHONLIB)
-	$(CC) -o $@ $< $(CFLAGS)
+	$(CC) -o $@ -c $< $(CFLAGS)
 
 
 build/test.data: $(CPYTHONLIB)

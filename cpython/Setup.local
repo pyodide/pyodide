@@ -24,7 +24,7 @@ _posixsubprocess _posixsubprocess.c
 
 binascii binascii.c
 
-zlib zlibmodule.c -IModules/zlib zlib/adler32.c zlib/crc32.c zlib/deflate.c zlib/infback.c zlib/inffast.c zlib/inflate.c zlib/inftrees.c zlib/trees.c zlib/zutil.c zlib/compress.c zlib/uncompr.c zlib/gzclose.c zlib/gzlib.c zlib/gzread.c zlib/gzwrite.c
+zlib zlibmodule.c -IModules/zlib
 
 pyexpat expat/xmlparse.c expat/xmlrole.c expat/xmltok.c pyexpat.c -I$(srcdir)/Modules/expat -DHAVE_EXPAT_CONFIG_H -DUSE_PYEXPAT_CAPI -DXML_POOR_ENTROPY
 
