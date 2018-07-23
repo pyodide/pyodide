@@ -69,6 +69,32 @@ var languagePluginLoader = new Promise((resolve, reject) => {
     return promise;
   };
 
+  function fixRecursionLimit(pyodide) {
+    // The Javascript/Wasm call stack may be too small to handle the default
+    // Python call stack limit of 1000 frames. This is generally the case on
+    // Chrom(ium), but not on Firefox. Here, we determine the Javascript call
+    // stack depth available, and then divide by 50 (determined heuristically)
+    // to set the maximum Python call stack depth.
+
+    let depth = 0;
+    function recurse() {
+      depth += 1;
+      recurse();
+    }
+    try {
+      recurse();
+    } catch (err) {
+      ;
+    }
+
+    let recursionLimit = depth / 50;
+    if (recursionLimit > 1000) {
+      recursionLimit = 1000;
+    }
+    pyodide.runPython(
+        `import sys; sys.setrecursionlimit(int(${recursionLimit}))`);
+  };
+
   ////////////////////////////////////////////////////////////
   // Loading Pyodide
   let wasmURL = `${baseURL}pyodide.asm.wasm`;
@@ -98,6 +124,7 @@ var languagePluginLoader = new Promise((resolve, reject) => {
           .then((response) => response.json())
           .then((json) => {
             window.pyodide.packages = json;
+            fixRecursionLimit(pyodide);
             resolve();
           });
     };
