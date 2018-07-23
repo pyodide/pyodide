@@ -1,4 +1,3 @@
-import os
 import pathlib
 import time
 
@@ -281,13 +280,13 @@ def test_run_core_python_test(python_test, selenium):
             "from test.libregrtest import main\n"
             "main(['{}'], verbose=True, verbose3=True)".format(python_test))
     except selenium.JavascriptException as e:
-        assert str(e).strip().endswith('SystemExit: 0')
+        assert 'SystemExit: 0' in str(e)
 
 
 def pytest_generate_tests(metafunc):
     if 'python_test' in metafunc.fixturenames:
         test_modules = []
-        if 'CIRCLECI' not in os.environ:
+        if True:
             with open(
                     str(pathlib.Path(__file__).parents[0] /
                         "python_tests.txt")) as fp:
@@ -299,3 +298,15 @@ def pytest_generate_tests(metafunc):
                     if len(parts) == 1:
                         test_modules.append(parts[0])
         metafunc.parametrize("python_test", test_modules)
+
+
+def test_recursive_repr(selenium):
+    assert not selenium.run(
+        "d = {}\n"
+        "d[42] = d.values()\n"
+        "result = True\n"
+        "try:\n"
+        "   repr(d)\n"
+        "except RecursionError:\n"
+        "   result = False\n"
+        "result")

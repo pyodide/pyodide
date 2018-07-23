@@ -53,7 +53,11 @@ class SeleniumWrapper:
             'return pyodide.runPython({!r})'.format(code))
 
     def run_js(self, code):
-        return self.driver.execute_script(code)
+        catch = f"""
+            Error.stackTraceLimit = Infinity;
+            try {{ {code} }}
+            catch (error) {{ console.log(error.stack); throw error; }}"""
+        return self.driver.execute_script(catch)
 
     def load_package(self, packages):
         self.run_js(
