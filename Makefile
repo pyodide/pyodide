@@ -51,8 +51,8 @@ all: build/pyodide.asm.js \
   build/packages.json
 	if hash ccache &>/dev/null; then \
 		mkdir -p $(PYODIDE_ROOT)/ccache ; \
-    ln -s `which ccache` $(PYODIDE_ROOT)/ccache/emcc ; \
-    ln -s `which ccache` $(PYODIDE_ROOT)/ccache/em++ ; \
+    ln -f -s `which ccache` $(PYODIDE_ROOT)/ccache/emcc ; \
+    ln -f -s `which ccache` $(PYODIDE_ROOT)/ccache/em++ ; \
   fi
 
 
