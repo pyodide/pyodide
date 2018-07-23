@@ -9,19 +9,19 @@
 
 extern PyObject* globals;
 
-PyObject *eval_code;
+PyObject* eval_code;
 
 int
 _runPython(char* code)
 {
-  PyObject *py_code;
+  PyObject* py_code;
   py_code = PyUnicode_FromString(code);
   if (py_code == NULL) {
     return pythonexc2js();
   }
 
-  PyObject *ret = PyObject_CallFunctionObjArgs(
-      eval_code, py_code, globals, NULL);
+  PyObject* ret =
+    PyObject_CallFunctionObjArgs(eval_code, py_code, globals, NULL);
 
   if (ret == NULL) {
     return pythonexc2js();
@@ -46,13 +46,15 @@ EM_JS(int, runpython_init_js, (), {
   return 0;
 });
 
-int runpython_init_py() {
-  PyObject *m = PyImport_ImportModule("pyodide");
+int
+runpython_init_py()
+{
+  PyObject* m = PyImport_ImportModule("pyodide");
   if (m == NULL) {
     return 1;
   }
 
-  PyObject *d = PyModule_GetDict(m);
+  PyObject* d = PyModule_GetDict(m);
   if (d == NULL) {
     return 1;
   }

@@ -311,4 +311,3 @@ def test_recursive_repr(selenium):
         "except RecursionError:\n"
         "   result = False\n"
         "result")
-

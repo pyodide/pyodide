@@ -268,9 +268,9 @@ JsProxy_GetBuffer(PyObject* o, Py_buffer* view, int flags)
 
   Py_ssize_t byteLength = hiwire_get_byteLength(self->js);
 
-  void *ptr;
+  void* ptr;
   if (hiwire_is_on_wasm_heap(self->js)) {
-    ptr = (void *)hiwire_get_byteOffset(self->js);
+    ptr = (void*)hiwire_get_byteOffset(self->js);
   } else {
     if (self->bytes == NULL) {
       self->bytes = PyBytes_FromStringAndSize(NULL, byteLength);
@@ -347,8 +347,9 @@ JsProxy_GetBuffer(PyObject* o, Py_buffer* view, int flags)
 }
 
 static PyObject*
-JsProxy_HasBytes(PyObject *o) {
-  JsProxy* self = (JsProxy *)o;
+JsProxy_HasBytes(PyObject* o)
+{
+  JsProxy* self = (JsProxy*)o;
 
   if (self->bytes == NULL) {
     Py_RETURN_FALSE;
