@@ -29,6 +29,7 @@ LDFLAGS=\
   -s WASM=1 \
 	-s SWAPPABLE_ASM_MODULE=1 \
 	-s USE_FREETYPE=1 \
+	-s USE_LIBPNG=1 \
 	-std=c++14 \
   -lstdc++ \
   --memory-init-file 0
@@ -126,7 +127,7 @@ clean:
 
 
 %.bc: %.c $(CPYTHONLIB)
-	$(CC) -o $@ $< $(CFLAGS)
+	$(CC) -o $@ -c $< $(CFLAGS)
 
 
 build/test.data: $(CPYTHONLIB)
@@ -161,7 +162,25 @@ root/.built: \
 	touch root/.built
 
 
-$(CPYTHONLIB): emsdk/emsdk/.complete
+ccache/emcc:
+	if hash ccache &>/dev/null; then \
+		mkdir -p $(PYODIDE_ROOT)/ccache ; \
+    ln -s `which ccache` $(PYODIDE_ROOT)/ccache/emcc ; \
+  else \
+    ln -s emsdk/emsdk/emscripten/tag-1.38.4/emcc $(PYODIDE_ROOT)/ccache/emcc; \
+  fi
+
+
+ccache/em++:
+	if hash ccache &>/dev/null; then \
+		mkdir -p $(PYODIDE_ROOT)/ccache ; \
+    ln -s `which ccache` $(PYODIDE_ROOT)/ccache/em++ ; \
+  else \
+    ln -s emsdk/emsdk/emscripten/tag-1.38.4/em++ $(PYODIDE_ROOT)/ccache/em++; \
+  fi
+
+
+$(CPYTHONLIB): emsdk/emsdk/.complete ccache/emcc ccache/em++
 	make -C $(CPYTHONROOT)
 
 

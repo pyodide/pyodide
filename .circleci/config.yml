@@ -17,7 +17,7 @@ jobs:
             # Set up the Debian testing repo, and then install g++ from there...
             sudo bash -c "echo \"deb http://ftp.us.debian.org/debian testing main contrib non-free\" >> /etc/apt/sources.list"
             sudo apt-get update
-            sudo apt-get install node-less cmake build-essential clang-format-6.0 flake8 uglifyjs python3-yaml chromium
+            sudo apt-get install node-less cmake build-essential clang-format-6.0 flake8 uglifyjs python3-yaml chromium ccache
             sudo apt-get install -t testing g++-8
             sudo update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-6 60 --slave /usr/bin/g++ g++ /usr/bin/g++-6
             sudo update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-8 80 --slave /usr/bin/g++ g++ /usr/bin/g++-8
@@ -47,18 +47,20 @@ jobs:
 
       - restore_cache:
           keys:
-          - v1-emsdk-{{ checksum "emsdk/Makefile" }}-v4
+          - v1-emsdk-{{ checksum "emsdk/Makefile" }}-v6
 
       - run:
           name: build
           no_output_timeout: 1200
           command: |
             make
+            ccache -s
 
       - save_cache:
           paths:
             - ./emsdk/emsdk
-          key: v1-emsdk-{{ checksum "emsdk/Makefile" }}-v4
+            - ~/.ccache
+          key: v1-emsdk-{{ checksum "emsdk/Makefile" }}-v6
 
       - run:
           name: test

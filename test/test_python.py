@@ -1,3 +1,4 @@
+import os
 import pathlib
 import time
 
@@ -286,7 +287,7 @@ def test_run_core_python_test(python_test, selenium):
 def pytest_generate_tests(metafunc):
     if 'python_test' in metafunc.fixturenames:
         test_modules = []
-        if True:
+        if 'CIRCLECI' not in os.environ:
             with open(
                     str(pathlib.Path(__file__).parents[0] /
                         "python_tests.txt")) as fp:
