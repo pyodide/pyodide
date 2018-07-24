@@ -49,11 +49,6 @@ all: build/pyodide.asm.js \
 	build/renderedhtml.css \
   build/test.data \
   build/packages.json
-	if hash ccache &>/dev/null; then \
-		mkdir -p $(PYODIDE_ROOT)/ccache ; \
-    ln -f -s `which ccache` $(PYODIDE_ROOT)/ccache/emcc ; \
-    ln -f -s `which ccache` $(PYODIDE_ROOT)/ccache/em++ ; \
-  fi
 
 
 build/pyodide.asm.js: src/main.bc src/jsimport.bc src/jsproxy.bc src/js2python.bc \
@@ -167,7 +162,25 @@ root/.built: \
 	touch root/.built
 
 
-$(CPYTHONLIB): emsdk/emsdk/.complete
+ccache/emcc:
+	if hash ccache &>/dev/null; then \
+		mkdir -p $(PYODIDE_ROOT)/ccache ; \
+    ln -s `which ccache` $(PYODIDE_ROOT)/ccache/emcc ; \
+  else \
+    ln -s emsdk/emsdk/emscripten/tag-1.38.4/emcc $(PYODIDE_ROOT)/ccache/emcc; \
+  fi
+
+
+ccache/em++:
+	if hash ccache &>/dev/null; then \
+		mkdir -p $(PYODIDE_ROOT)/ccache ; \
+    ln -s `which ccache` $(PYODIDE_ROOT)/ccache/em++ ; \
+  else \
+    ln -s emsdk/emsdk/emscripten/tag-1.38.4/em++ $(PYODIDE_ROOT)/ccache/em++; \
+  fi
+
+
+$(CPYTHONLIB): emsdk/emsdk/.complete ccache/emcc ccache/em++
 	make -C $(CPYTHONROOT)
 
 
