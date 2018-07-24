@@ -28,6 +28,7 @@ Additional build prerequisites are:
 - PyYAML
 - [lessc](https://lesscss.org/) to compile less to css.
 - [uglifyjs](https://github.com/mishoo/UglifyJS) to minify Javascript builds.
+- [ccache](https://ccache.samba.org) (optional) recommended for much faster rebuilds.
 
 `make`
 
