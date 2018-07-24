@@ -1,4 +1,4 @@
-export PATH := $(PYODIDE_ROOT)/ccache:$(PYODIDE_ROOT)/emsdk/emsdk:$(PYODIDE_ROOT)/emsdk/emsdk/clang/tag-e-1.38.4/build_tag-e1.38.10_64/bin:$(PYODIDE_ROOT)/emsdk/emsdk/node/8.9.1_64bit/bin:$(PYODIDE_ROOT)/emsdk/emsdk/emscripten/tag-1.38.10:$(PYODIDE_ROOT)/emsdk/emsdk/binaryen/tag-1.38.10_64bit_binaryen/bin:$(PATH)
+export PATH := $(PYODIDE_ROOT)/ccache:$(PYODIDE_ROOT)/emsdk/emsdk:$(PYODIDE_ROOT)/emsdk/emsdk/clang/tag-e-1.38.10/build_tag-e1.38.10_64/bin:$(PYODIDE_ROOT)/emsdk/emsdk/node/8.9.1_64bit/bin:$(PYODIDE_ROOT)/emsdk/emsdk/emscripten/tag-1.38.10:$(PYODIDE_ROOT)/emsdk/emsdk/binaryen/tag-1.38.10_64bit_binaryen/bin:$(PATH)
 
 export EMSDK = $(PYODIDE_ROOT)/emsdk/emsdk
 export EM_CONFIG = $(PYODIDE_ROOT)/emsdk/emsdk/.emscripten
