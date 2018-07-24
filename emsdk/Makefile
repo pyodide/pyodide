@@ -15,7 +15,6 @@ emsdk/.complete:
 		cd emsdk/binaryen/tag-1.38.10_64bit_binaryen/ ; \
     make ; \
 	  cd ../.. ; \
-    cp binaryen/tag-1.38.10/bin/binaryen.js binaryen/tag-1.38.10_64bit_binaryen/bin ; \
 		./emsdk activate --embedded --build=Release sdk-tag-1.38.10-64bit binaryen-tag-1.38.10-64bit ; \
     touch .complete \
 	)
