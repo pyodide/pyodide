@@ -5,4 +5,4 @@ all:
 	../tools/buildall . ../build --ldflags="$(SIDE_LDFLAGS)" --host=$(HOSTPYTHONROOT) --target=$(TARGETPYTHONROOT)
 
 clean:
-	rm -rf */build
+	rm -rf ./*/build
