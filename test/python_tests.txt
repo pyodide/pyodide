@@ -295,7 +295,7 @@ test_lzma
 test_macpath  platform-specific
 test_macurl2path
 test_mailbox  crash
-test_mailcap
+test_mailcap  nonsense
 test_marshal
 test_math floating-point
 test_memoryio

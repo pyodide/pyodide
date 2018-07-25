@@ -1,0 +1,13 @@
+diff --git a/Lib/test/support/__init__.py b/Lib/test/support/__init__.py
+index ddcd2cc387..f422f2feb6 100644
+--- a/Lib/test/support/__init__.py
++++ b/Lib/test/support/__init__.py
+@@ -880,6 +880,8 @@ if os.name == 'nt':
+                   'Unicode filename tests may not be effective'
+                   % (TESTFN_UNENCODABLE, TESTFN_ENCODING))
+             TESTFN_UNENCODABLE = None
++elif sys.platform == 'emscripten':
++    pass
+ # Mac OS X denies unencodable filenames (invalid utf-8)
+ elif sys.platform != 'darwin':
+     try:
