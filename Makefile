@@ -163,8 +163,8 @@ root/.built: \
 
 
 ccache/emcc:
+	mkdir -p $(PYODIDE_ROOT)/ccache ; \
 	if hash ccache &>/dev/null; then \
-		mkdir -p $(PYODIDE_ROOT)/ccache ; \
     ln -s `which ccache` $(PYODIDE_ROOT)/ccache/emcc ; \
   else \
     ln -s emsdk/emsdk/emscripten/tag-1.38.4/emcc $(PYODIDE_ROOT)/ccache/emcc; \
@@ -172,8 +172,8 @@ ccache/emcc:
 
 
 ccache/em++:
+	mkdir -p $(PYODIDE_ROOT)/ccache ; \
 	if hash ccache &>/dev/null; then \
-		mkdir -p $(PYODIDE_ROOT)/ccache ; \
     ln -s `which ccache` $(PYODIDE_ROOT)/ccache/em++ ; \
   else \
     ln -s emsdk/emsdk/emscripten/tag-1.38.4/em++ $(PYODIDE_ROOT)/ccache/em++; \
