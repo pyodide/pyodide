@@ -98,7 +98,7 @@ build/renderedhtml.css: src/renderedhtml.less
 
 
 test: all build/test.html build/test_data.txt
-	py.test test -v
+	py.test test -v --instafail
 
 
 build/test_data.txt: test/data.txt
@@ -154,7 +154,6 @@ root/.built: \
 	( \
 		cd root/lib/python$(PYMINOR); \
 		rm -fr `cat ../../../remove_modules.txt`; \
-		rm encodings/mac_*.py; \
 		rm -fr test; \
 		find . -name "*.wasm.pre" -type f -delete ; \
 		find -type d -name __pycache__ -prune -exec rm -rf {} \; \

@@ -37,7 +37,7 @@ Additional build prerequisites are:
 
 Install the following dependencies into the default Python installation:
 
-   `pip install pytest selenium`
+   `pip install pytest selenium pytest-instafail`
 
 Install [geckodriver](https://github.com/mozilla/geckodriver/releases) somewhere
 on your `PATH`.
