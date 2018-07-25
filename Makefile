@@ -1,7 +1,7 @@
 PYODIDE_ROOT=$(abspath .)
 include Makefile.envs
 
-FILEPACKAGER=emsdk/emsdk/emscripten/tag-1.38.4/tools/file_packager.py
+FILEPACKAGER=emsdk/emsdk/emscripten/tag-1.38.10/tools/file_packager.py
 
 CPYTHONROOT=cpython
 CPYTHONLIB=$(CPYTHONROOT)/installs/python-$(PYVERSION)/lib/python$(PYMINOR)
@@ -25,7 +25,7 @@ LDFLAGS=\
 	-s MAIN_MODULE=1 \
 	-s EMULATED_FUNCTION_POINTERS=1 \
   -s EMULATE_FUNCTION_POINTER_CASTS=1 \
-  -s EXPORTED_FUNCTIONS='["_main", "__ZNKSt3__220__vector_base_commonILb1EE20__throw_length_errorEv"]' \
+  -s EXPORTED_FUNCTIONS='["_main", "__ZNKSt3__220__vector_base_commonILb1EE20__throw_length_errorEv", "__ZNSt11logic_errorC2EPKc"]' \
   -s WASM=1 \
 	-s SWAPPABLE_ASM_MODULE=1 \
 	-s USE_FREETYPE=1 \

@@ -1,10 +1,10 @@
-export PATH := $(PYODIDE_ROOT)/ccache:$(PYODIDE_ROOT)/emsdk/emsdk:$(PYODIDE_ROOT)/emsdk/emsdk/clang/tag-e-1.38.4/build_tag-e1.38.4_64/bin:$(PYODIDE_ROOT)/emsdk/emsdk/node/8.9.1_64bit/bin:$(PYODIDE_ROOT)/emsdk/emsdk/emscripten/tag-1.38.4:$(PYODIDE_ROOT)/emsdk/emsdk/binaryen/tag-1.38.4_64bit_binaryen/bin:$(PATH)
+export PATH := $(PYODIDE_ROOT)/ccache:$(PYODIDE_ROOT)/emsdk/emsdk:$(PYODIDE_ROOT)/emsdk/emsdk/clang/tag-e-1.38.10/build_tag-e1.38.10_64/bin:$(PYODIDE_ROOT)/emsdk/emsdk/node/8.9.1_64bit/bin:$(PYODIDE_ROOT)/emsdk/emsdk/emscripten/tag-1.38.10:$(PYODIDE_ROOT)/emsdk/emsdk/binaryen/tag-1.38.10_64bit_binaryen/bin:$(PATH)
 
 export EMSDK = $(PYODIDE_ROOT)/emsdk/emsdk
 export EM_CONFIG = $(PYODIDE_ROOT)/emsdk/emsdk/.emscripten
 export EM_CACHE = $(PYODIDE_ROOT)/emsdk/emsdk/.emscripten_cache
-export EMSCRIPTEN = $(PYODIDE_ROOT)/emsdk/emsdk/emscripten/tag-1.38.4
-export BINARYEN_ROOT = $(PYODIDE_ROOT)/emsdk/emsdk/binaryen/tag-1.38.4_64bit_binaryen
+export EMSCRIPTEN = $(PYODIDE_ROOT)/emsdk/emsdk/emscripten/tag-1.38.10
+export BINARYEN_ROOT = $(PYODIDE_ROOT)/emsdk/emsdk/binaryen/tag-1.38.10_64bit_binaryen
 
 export PYVERSION=3.6.4
 export PYMINOR=$(basename $(PYVERSION))
