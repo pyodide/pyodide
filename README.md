@@ -39,7 +39,8 @@ Install the following dependencies into the default Python installation:
 
    `pip install pytest selenium pytest-instafail`
 
-Install [geckodriver](https://github.com/mozilla/geckodriver/releases) somewhere
+Install [geckodriver](https://github.com/mozilla/geckodriver/releases) and
+[chromedriver](https://sites.google.com/a/chromium.org/chromedriver/downloads) somewhere
 on your `PATH`.
 
 `make test`
