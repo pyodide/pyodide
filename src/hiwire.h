@@ -51,13 +51,31 @@ int
 hiwire_double(double val);
 
 /**
- * Create a new Javascript string, given a pointer to a buffer containing UTF8
- * and a length, in bytes.  The string data itself is copied.
+ * Create a new Javascript string, given a pointer to a buffer
+ * containing UCS4 and a length. The string data itself is copied.
  *
  * Returns: New reference
  */
 int
-hiwire_string_utf8_length(int ptr, int len);
+hiwire_string_ucs4(int ptr, int len);
+
+/**
+ * Create a new Javascript string, given a pointer to a buffer
+ * containing UCS2 and a length. The string data itself is copied.
+ *
+ * Returns: New reference
+ */
+int
+hiwire_string_ucs2(int ptr, int len);
+
+/**
+ * Create a new Javascript string, given a pointer to a buffer
+ * containing UCS1 and a length. The string data itself is copied.
+ *
+ * Returns: New reference
+ */
+int
+hiwire_string_ucs1(int ptr, int len);
 
 /**
  * Create a new Javascript string, given a pointer to a null-terminated buffer

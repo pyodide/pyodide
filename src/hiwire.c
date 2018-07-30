@@ -36,10 +36,31 @@ EM_JS(int, hiwire_double, (double val), {
   return Module.hiwire_new_value(val);
 });
 
-EM_JS(int, hiwire_string_utf8_length, (int ptr, int len), {
-  var bytes = new Uint8Array(Module.HEAPU8.buffer, ptr, len);
-  var jsval = new TextDecoder('utf-8').decode(bytes);
-  return Module.hiwire_new_value(jsval);
+EM_JS(int, hiwire_string_ucs4, (int ptr, int len), {
+  var jsstr = "";
+  var idx = ptr / 4;
+  for (var i = 0; i < len; ++i) {
+    jsstr += String.fromCharCode(Module.HEAPU32[idx + i]);
+  }
+  return Module.hiwire_new_value(jsstr);
+});
+
+EM_JS(int, hiwire_string_ucs2, (int ptr, int len), {
+  var jsstr = "";
+  var idx = ptr / 2;
+  for (var i = 0; i < len; ++i) {
+    jsstr += String.fromCharCode(Module.HEAPU16[idx + i]);
+  }
+  return Module.hiwire_new_value(jsstr);
+});
+
+EM_JS(int, hiwire_string_ucs1, (int ptr, int len), {
+  var jsstr = "";
+  var idx = ptr;
+  for (var i = 0; i < len; ++i) {
+    jsstr += String.fromCharCode(Module.HEAPU8[idx + i]);
+  }
+  return Module.hiwire_new_value(jsstr);
 });
 
 EM_JS(int, hiwire_string_utf8, (int ptr), {

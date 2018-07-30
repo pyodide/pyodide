@@ -25,6 +25,12 @@ def test_python2js(selenium):
     assert selenium.run_js('return pyodide.runPython("False") === false')
     assert selenium.run_js('return pyodide.runPython("42") === 42')
     assert selenium.run_js('return pyodide.runPython("3.14") === 3.14')
+    # Need to test all three internal string representations in Python: UCS1,
+    # UCS2 and UCS4
+    assert selenium.run_js(
+        'return pyodide.runPython("\'ascii\'") === "ascii"')
+    assert selenium.run_js(
+        'return pyodide.runPython("\'ιωδιούχο\'") === "ιωδιούχο"')
     assert selenium.run_js(
         'return pyodide.runPython("\'碘化物\'") === "碘化物"')
     assert selenium.run_js(
@@ -311,3 +317,18 @@ def test_recursive_repr(selenium):
         "except RecursionError:\n"
         "   result = False\n"
         "result")
+
+
+def test_load_package_after_convert_string(selenium):
+    """
+    See #93.
+    """
+    selenium.run(
+        "import sys\n"
+        "x = sys.version")
+    selenium.run_js(
+        "var x = pyodide.pyimport('x')\n"
+        "console.log(x)")
+    selenium.load_package('kiwisolver')
+    selenium.run(
+        "import kiwisolver")
