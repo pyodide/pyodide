@@ -134,15 +134,15 @@ python2js_int(PyObject* x)
     int data = (int)PyUnicode_DATA(x);
     int length = (int)PyUnicode_GET_LENGTH(x);
     switch (kind) {
-    case PyUnicode_1BYTE_KIND:
-      return hiwire_string_ucs1(data, length);
-    case PyUnicode_2BYTE_KIND:
-      return hiwire_string_ucs2(data, length);
-    case PyUnicode_4BYTE_KIND:
-      return hiwire_string_ucs4(data, length);
-    default:
-      PyErr_SetString(PyExc_ValueError, "Unknown Unicode KIND");
-      return -1;
+      case PyUnicode_1BYTE_KIND:
+        return hiwire_string_ucs1(data, length);
+      case PyUnicode_2BYTE_KIND:
+        return hiwire_string_ucs2(data, length);
+      case PyUnicode_4BYTE_KIND:
+        return hiwire_string_ucs4(data, length);
+      default:
+        PyErr_SetString(PyExc_ValueError, "Unknown Unicode KIND");
+        return -1;
     }
   } else if (PyBytes_Check(x)) {
     char* x_buff;
