@@ -7,6 +7,7 @@ Builds a Pyodide package.
 import argparse
 import hashlib
 import os
+from pathlib import Path
 import shutil
 import subprocess
 
@@ -14,7 +15,7 @@ import subprocess
 import common
 
 
-ROOTDIR = os.path.abspath(os.path.dirname(__file__))
+ROOTDIR = Path(__file__).parent.resolve()
 
 
 def check_checksum(path, pkg):
@@ -37,40 +38,39 @@ def check_checksum(path, pkg):
 
 
 def download_and_extract(buildpath, packagedir, pkg, args):
-    tarballpath = os.path.join(
-        buildpath, os.path.basename(pkg['source']['url']))
-    if not os.path.isfile(tarballpath):
+    tarballpath = buildpath / Path(pkg['source']['url']).name
+    if not tarballpath.is_file():
         subprocess.run([
-            'wget', '-q', '-O', tarballpath, pkg['source']['url']
+            'wget', '-q', '-O', str(tarballpath), pkg['source']['url']
         ], check=True)
         check_checksum(tarballpath, pkg)
-    srcpath = os.path.join(buildpath, packagedir)
-    if not os.path.isdir(srcpath):
-        shutil.unpack_archive(tarballpath, buildpath)
+    srcpath = buildpath / packagedir
+    if not srcpath.is_dir():
+        shutil.unpack_archive(str(tarballpath), str(buildpath))
     return srcpath
 
 
 def patch(path, srcpath, pkg, args):
-    if os.path.isfile(os.path.join(srcpath, '.patched')):
+    if (srcpath / '.patched').is_file():
         return
 
     # Apply all of the patches
-    orig_dir = os.getcwd()
-    pkgdir = os.path.abspath(os.path.dirname(path))
+    orig_dir = Path.cwd()
+    pkgdir = path.parent.resolve()
     os.chdir(srcpath)
     try:
         for patch in pkg['source'].get('patches', []):
             subprocess.run([
-                'patch', '-p1', '--binary', '-i', os.path.join(pkgdir, patch)
+                'patch', '-p1', '--binary', '-i', pkgdir / patch
             ], check=True)
     finally:
         os.chdir(orig_dir)
 
     # Add any extra files
     for src, dst in pkg['source'].get('extras', []):
-        shutil.copyfile(os.path.join(pkgdir, src), os.path.join(srcpath, dst))
+        shutil.copyfile(pkgdir / src, srcpath / dst)
 
-    with open(os.path.join(srcpath, '.patched'), 'wb') as fd:
+    with open(srcpath / '.patched', 'wb') as fd:
         fd.write(b'\n')
 
 
@@ -78,31 +78,31 @@ def get_libdir(srcpath, args):
     # Get the name of the build/lib.XXX directory that distutils wrote its
     # output to
     slug = subprocess.check_output([
-        os.path.join(args.host, 'bin', 'python3'),
+        str(Path(args.host) / 'bin' / 'python3'),
         '-c',
         'import sysconfig, sys; '
         'print("{}-{}.{}".format('
         'sysconfig.get_platform(), '
         'sys.version_info[0], '
         'sys.version_info[1]))']).decode('ascii').strip()
-    purelib = os.path.join(srcpath, 'build', 'lib')
-    if os.path.isdir(purelib):
+    purelib = srcpath / 'build' / 'lib'
+    if purelib.is_dir():
         libdir = purelib
     else:
-        libdir = os.path.join(srcpath, 'build', 'lib.' + slug)
+        libdir = srcpath / 'build' / ('lib.' + slug)
     return libdir
 
 
 def compile(path, srcpath, pkg, args):
-    if os.path.isfile(os.path.join(srcpath, '.built')):
+    if (srcpath / '.built').is_file():
         return
 
-    orig_dir = os.getcwd()
+    orig_dir = Path.cwd()
     os.chdir(srcpath)
     try:
         subprocess.run([
-            os.path.join(args.host, 'bin', 'python3'),
-            os.path.join(ROOTDIR, 'pywasmcross'),
+            str(Path(args.host) / 'bin' / 'python3'),
+            str(ROOTDIR / 'pywasmcross'),
             '--cflags',
             args.cflags + ' ' +
             pkg.get('build', {}).get('cflags', ''),
@@ -117,7 +117,7 @@ def compile(path, srcpath, pkg, args):
     post = pkg.get('build', {}).get('post')
     if post is not None:
         libdir = get_libdir(srcpath, args)
-        pkgdir = os.path.abspath(os.path.dirname(path))
+        pkgdir = path.parent.resolve()
         env = {
             'BUILD': libdir,
             'PKGDIR': pkgdir
@@ -125,46 +125,46 @@ def compile(path, srcpath, pkg, args):
         subprocess.run([
             'bash', '-c', post], env=env, check=True)
 
-    with open(os.path.join(srcpath, '.built'), 'wb') as fd:
+    with open(srcpath / '.built', 'wb') as fd:
         fd.write(b'\n')
 
 
 def package_files(buildpath, srcpath, pkg, args):
-    if os.path.isfile(os.path.join(buildpath, '.packaged')):
+    if (buildpath / '.pacakaged').is_file():
         return
 
     name = pkg['package']['name']
     libdir = get_libdir(srcpath, args)
     subprocess.run([
         'python2',
-        os.path.join(os.environ['EMSCRIPTEN'], 'tools', 'file_packager.py'),
-        os.path.join(buildpath, name + '.data'),
+        Path(os.environ['EMSCRIPTEN']) / 'tools' / 'file_packager.py',
+        buildpath / (name + '.data'),
         '--preload',
         '{}@/lib/python3.6/site-packages'.format(libdir),
-        '--js-output={}'.format(os.path.join(buildpath, name + '.js')),
+        '--js-output={}'.format(buildpath / (name + '.js')),
         '--export-name=pyodide',
         '--exclude', '*.wasm.pre',
         '--exclude', '__pycache__',
         '--use-preload-plugins'], check=True)
     subprocess.run([
         'uglifyjs',
-        os.path.join(buildpath, name + '.js'),
+        buildpath / (name + '.js'),
         '-o',
-        os.path.join(buildpath, name + '.js')], check=True)
+        buildpath / (name + '.js')], check=True)
 
-    with open(os.path.join(buildpath, '.packaged'), 'wb') as fd:
+    with open(buildpath / '.packaged', 'wb') as fd:
         fd.write(b'\n')
 
 
 def build_package(path, args):
     pkg = common.parse_package(path)
     packagedir = pkg['package']['name'] + '-' + pkg['package']['version']
-    dirpath = os.path.dirname(path)
-    orig_path = os.getcwd()
+    dirpath = path.parent
+    orig_path = Path.cwd()
     os.chdir(dirpath)
     try:
-        buildpath = os.path.join(dirpath, 'build')
-        if not os.path.exists(buildpath):
+        buildpath = dirpath / 'build'
+        if not buildpath.is_dir():
             os.makedirs(buildpath)
         srcpath = download_and_extract(buildpath, packagedir, pkg, args)
         patch(path, srcpath, pkg, args)
@@ -195,7 +195,7 @@ def parse_args():
 
 
 def main(args):
-    path = os.path.abspath(args.package[0])
+    path = Path(args.package[0]).resolve()
     build_package(path, args)
 
 
