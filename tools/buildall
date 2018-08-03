@@ -35,7 +35,6 @@ def build_packages(packagesdir, outputdir):
     # so first load in all of the package metadata and build a dependency map.
     dependencies = {}
     for pkgdir in packagesdir.iterdir():
-        pkgdir = packagesdir / pkgdir
         pkgpath = pkgdir / 'meta.yaml'
         if pkgdir.is_dir() and pkgpath.is_file():
             pkg = common.parse_package(pkgpath)

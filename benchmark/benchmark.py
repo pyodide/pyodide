@@ -1,11 +1,13 @@
 import json
-import os
 from pathlib import Path
 import re
 import subprocess
 import sys
 
-sys.path.insert(0, (Path(__file__).parent.parent / 'test').resolve())
+sys.path.insert(
+    0, str((Path(__file__).resolve().parent.parent / 'test')))
+
+print(sys.path)
 
 import conftest
 
@@ -16,10 +18,10 @@ SKIP = set(['fft', 'hyantes'])
 def run_native(hostpython, code):
     output = subprocess.check_output(
         [hostpython.resolve(), '-c', code],
-        cwd=os.path.dirname(__file__),
+        cwd=Path(__file__).resolve().parent,
         env={
             'PYTHONPATH':
-            str((Path(__file__).parent.parent / 'src').resolve())
+            str(Path(__file__).resolve().parent.parent / 'src')
         }
     )
     return float(output.strip().split()[-1])
@@ -79,7 +81,7 @@ def get_numpy_benchmarks():
         name = filename.name
         if name in SKIP:
             continue
-        content = parse_numpy_benchmark(root / filename)
+        content = parse_numpy_benchmark(filename)
         content += (
             "import numpy as np\n"
             "_ = np.empty(())\n"
@@ -105,6 +107,6 @@ def main(hostpython):
 
 
 if __name__ == '__main__':
-    results = main(sys.argv[-2])
+    results = main(Path(sys.argv[-2]).resolve())
     with open(sys.argv[-1], 'w') as fp:
         json.dump(results, fp)
