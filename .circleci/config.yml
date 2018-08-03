@@ -28,8 +28,8 @@ jobs:
             # Get recent version of Firefox and geckodriver
             wget -O firefox.tar.bz2 https://download.mozilla.org/\?product\=firefox-nightly-latest-ssl\&os\=linux64\&lang\=en-US
             tar jxf firefox.tar.bz2
-            wget https://github.com/mozilla/geckodriver/releases/download/v0.20.1/geckodriver-v0.20.1-linux64.tar.gz
-            tar zxf geckodriver-v0.20.1-linux64.tar.gz -C firefox
+            wget https://github.com/mozilla/geckodriver/releases/download/v0.21.0/geckodriver-v0.21.0-linux64.tar.gz
+            tar zxf geckodriver-v0.21.0-linux64.tar.gz -C firefox
 
             # Get recent version of chromedriver
             wget https://chromedriver.storage.googleapis.com/2.40/chromedriver_linux64.zip
