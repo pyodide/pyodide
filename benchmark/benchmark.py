@@ -5,9 +5,7 @@ import subprocess
 import sys
 
 sys.path.insert(
-    0, str((Path(__file__).resolve().parent.parent / 'test')))
-
-print(sys.path)
+    0, str((Path(__file__).resolve().parents[1] / 'test')))
 
 import conftest
 
@@ -21,7 +19,7 @@ def run_native(hostpython, code):
         cwd=Path(__file__).resolve().parent,
         env={
             'PYTHONPATH':
-            str(Path(__file__).resolve().parent.parent / 'src')
+            str(Path(__file__).resolve().parents[1] / 'src')
         }
     )
     return float(output.strip().split()[-1])

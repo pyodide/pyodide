@@ -14,11 +14,11 @@ import common
 import buildpkg
 
 
-def build_package(pkgname, dependencies, packagesdir, outputdir):
+def build_package(pkgname, dependencies, packagesdir, outputdir, args):
     reqs = dependencies[pkgname]
     # Make sure all of the package's requirements are built first
     for req in reqs:
-        build_package(req, dependencies, packagesdir, outputdir)
+        build_package(req, dependencies, packagesdir, outputdir, args)
     if not (packagesdir / pkgname / 'build' / '.packaged').is_file():
         print("BUILDING PACKAGE: " + pkgname)
         buildpkg.build_package(packagesdir / pkgname / 'meta.yaml', args)
@@ -30,7 +30,7 @@ def build_package(pkgname, dependencies, packagesdir, outputdir):
         outputdir / (pkgname + '.js'))
 
 
-def build_packages(packagesdir, outputdir):
+def build_packages(packagesdir, outputdir, args):
     # We have to build the packages in the correct order (dependencies first),
     # so first load in all of the package metadata and build a dependency map.
     dependencies = {}
@@ -43,7 +43,7 @@ def build_packages(packagesdir, outputdir):
             dependencies[name] = reqs
 
     for pkgname in dependencies.keys():
-        build_package(pkgname, dependencies, packagesdir, outputdir)
+        build_package(pkgname, dependencies, packagesdir, outputdir, args)
 
     # This is done last so the main Makefile can use it as a completion token
     with open(outputdir / 'packages.json', 'w') as fd:
@@ -77,7 +77,7 @@ def parse_args():
 def main(args):
     packagesdir = Path(args.dir[0]).resolve()
     outputdir = Path(args.output[0]).resolve()
-    build_packages(packagesdir, outputdir)
+    build_packages(packagesdir, outputdir, args)
 
 
 if __name__ == '__main__':

@@ -20,7 +20,7 @@ for root, dirs, files in os.walk(
     for filename in files:
         filename = Path(filename)
         if str(filename).startswith("test_") and filename.suffix == ".py":
-            tests.append(root / filename.stem)
+            tests.append(str(root / filename.stem))
 
 tests.sort()
 with open("python_tests.txt", "w") as fp:

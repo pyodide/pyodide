@@ -295,7 +295,7 @@ def pytest_generate_tests(metafunc):
         test_modules = []
         if 'CIRCLECI' not in os.environ or True:
             with open(
-                    Path(__file__).parents[0] / "python_tests.txt") as fp:
+                    Path(__file__).parent / "python_tests.txt") as fp:
                 for line in fp:
                     line = line.strip()
                     if line.startswith('#'):

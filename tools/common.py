@@ -3,7 +3,7 @@ from pathlib import Path
 
 ROOTDIR = Path(__file__).parent.resolve()
 HOSTPYTHON = ROOTDIR / '..' / 'cpython' / 'build' / '3.6.4' / 'host'
-TARGETPYTHON = ROOTDIR / '..' / 'cpython' / 'installs', 'python-3.6.4'
+TARGETPYTHON = ROOTDIR / '..' / 'cpython' / 'installs' / 'python-3.6.4'
 DEFAULTCFLAGS = ''
 DEFAULTLDFLAGS = ' '.join([
     '-O3',
