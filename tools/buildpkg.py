@@ -22,11 +22,16 @@ def check_checksum(path, pkg):
     """
     Checks that a tarball matches the checksum in the package metadata.
     """
-    if 'md5' not in pkg['source']:
+    checksum_keys = {'md5', 'sha256'}.intersection(pkg['source'])
+    if not checksum_keys:
         return
-    checksum = pkg['source']['md5']
+    elif len(checksum_keys) != 1:
+        raise ValueError('Only one checksum should be included in a package '
+                         'setup; found {}.'.format(checksum_keys))
+    checksum_algorithm = checksum_keys.pop()
+    checksum = pkg['source'][checksum_algorithm]
     CHUNK_SIZE = 1 << 16
-    h = hashlib.md5()
+    h = getattr(hashlib, checksum_algorithm)()
     with open(path, 'rb') as fd:
         while True:
             chunk = fd.read(CHUNK_SIZE)
@@ -34,7 +39,7 @@ def check_checksum(path, pkg):
             if len(chunk) < CHUNK_SIZE:
                 break
     if h.hexdigest() != checksum:
-        raise ValueError("Invalid checksum")
+        raise ValueError("Invalid {} checksum".format(checksum_algorithm))
 
 
 def download_and_extract(buildpath, packagedir, pkg, args):
