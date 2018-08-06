@@ -3,6 +3,9 @@ from pathlib import Path
 import time
 
 
+import pytest
+
+
 def test_init(selenium):
     assert 'Python initialization complete' in selenium.logs
     assert len(selenium.driver.window_handles) == 1
