@@ -28,6 +28,7 @@ import argparse
 import importlib.machinery
 import json
 import os
+from pathlib import Path
 import re
 import subprocess
 import sys
@@ -36,7 +37,7 @@ import sys
 import common
 
 
-ROOTDIR = os.path.abspath(os.path.dirname(__file__))
+ROOTDIR = Path(__file__).parent.resolve()
 symlinks = set(['cc', 'c++', 'ld', 'ar', 'gcc'])
 
 
@@ -52,8 +53,8 @@ def collect_args(basename):
     # native compiler
     env = dict(os.environ)
     path = env['PATH']
-    while ROOTDIR + ':' in path:
-        path = path.replace(ROOTDIR + ':', '')
+    while str(ROOTDIR) + ':' in path:
+        path = path.replace(str(ROOTDIR) + ':', '')
     env['PATH'] = path
 
     with open('build.log', 'a') as fd:
@@ -71,11 +72,11 @@ def make_symlinks(env):
     Makes sure all of the symlinks that make this script look like a compiler
     exist.
     """
-    exec_path = os.path.abspath(__file__)
+    exec_path = Path(__file__).resolve()
     for symlink in symlinks:
-        symlink_path = os.path.join(ROOTDIR, symlink)
-        if not os.path.exists(symlink_path):
-            os.symlink(exec_path, symlink_path)
+        symlink_path = ROOTDIR / symlink
+        if not symlink_path.exists():
+            symlink_path.symlink_to(exec_path)
         if symlink == 'c++':
             var = 'CXX'
         else:
@@ -86,15 +87,16 @@ def make_symlinks(env):
 def capture_compile(args):
     env = dict(os.environ)
     make_symlinks(env)
-    env['PATH'] = ROOTDIR + ':' + os.environ['PATH']
+    env['PATH'] = str(ROOTDIR) + ':' + os.environ['PATH']
 
     result = subprocess.run(
-        [os.path.join(args.host, 'bin', 'python3'),
+        [Path(args.host) / 'bin' / 'python3',
          'setup.py',
          'install'], env=env)
     if result.returncode != 0:
-        if os.path.exists('build.log'):
-            os.remove('build.log')
+        build_log_path = Path('build.log')
+        if build_log_path.exists():
+            build_log_path.unlink()
         sys.exit(result.returncode)
 
 
@@ -131,7 +133,7 @@ def handle_command(line, args):
             # Don't include any system directories
             if arg[2:].startswith('/usr'):
                 continue
-            if (os.path.abspath(arg[2:]).startswith(args.host) and
+            if (str(Path(arg[2:]).resolve()).startswith(args.host) and
                     'site-packages' not in arg):
                 arg = arg.replace('-I' + args.host, '-I' + args.target)
         # Don't include any system directories
@@ -168,8 +170,9 @@ def handle_command(line, args):
 def replay_compile(args):
     # If pure Python, there will be no build.log file, which is fine -- just do
     # nothing
-    if os.path.isfile('build.log'):
-        with open('build.log', 'r') as fd:
+    build_log_path = Path('build.log')
+    if build_log_path.is_file():
+        with open(build_log_path, 'r') as fd:
             for line in fd:
                 line = json.loads(line)
                 handle_command(line, args)
@@ -178,14 +181,14 @@ def replay_compile(args):
 def clean_out_native_artifacts():
     for root, dirs, files in os.walk('.'):
         for file in files:
-            path = os.path.join(root, file)
-            basename, ext = os.path.splitext(file)
-            if ext in ('.o', '.so', '.a'):
-                os.remove(path)
+            path = Path(root) / file
+            if path.suffix in ('.o', '.so', '.a'):
+                path.unlink()
 
 
 def build_wrap(args):
-    if not os.path.isfile('build.log'):
+    build_log_path = Path('build.log')
+    if not build_log_path.is_file():
         capture_compile(args)
     clean_out_native_artifacts()
     replay_compile(args)
@@ -212,7 +215,7 @@ def parse_args():
 
 
 if __name__ == '__main__':
-    basename = os.path.basename(sys.argv[0])
+    basename = Path(sys.argv[0]).name
     if basename in symlinks:
         collect_args(basename)
     else:

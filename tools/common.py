@@ -1,11 +1,9 @@
-import os
+from pathlib import Path
 
 
-ROOTDIR = os.path.abspath(os.path.dirname(__file__))
-HOSTPYTHON = os.path.abspath(
-    os.path.join(ROOTDIR, '..', 'cpython', 'build', '3.6.4', 'host'))
-TARGETPYTHON = os.path.abspath(
-    os.path.join(ROOTDIR, '..', 'cpython', 'installs', 'python-3.6.4'))
+ROOTDIR = Path(__file__).parent.resolve()
+HOSTPYTHON = ROOTDIR / '..' / 'cpython' / 'build' / '3.6.4' / 'host'
+TARGETPYTHON = ROOTDIR / '..' / 'cpython' / 'installs' / 'python-3.6.4'
 DEFAULTCFLAGS = ''
 DEFAULTLDFLAGS = ' '.join([
     '-O3',

@@ -3,21 +3,24 @@ Generate a list of test modules in the CPython distribution.
 """
 
 import os
+from pathlib import Path
 
 tests = []
 
-TEST_DIR = "../cpython/build/3.6.4/host/lib/python3.6/test"
+TEST_DIR = Path("../cpython/build/3.6.4/host/lib/python3.6/test")
+
 for root, dirs, files in os.walk(
         "../cpython/build/3.6.4/host/lib/python3.6/test"):
-    root = os.path.relpath(root, TEST_DIR)
+    root = Path(root).relative_to(TEST_DIR)
     if root == '.':
         root = ''
     else:
         root = '.'.join(root.split('/')) + '.'
 
     for filename in files:
-        if filename.startswith("test_") and filename.endswith(".py"):
-            tests.append(root + os.path.splitext(filename)[0])
+        filename = Path(filename)
+        if str(filename).startswith("test_") and filename.suffix == ".py":
+            tests.append(str(root / filename.stem))
 
 tests.sort()
 with open("python_tests.txt", "w") as fp:
