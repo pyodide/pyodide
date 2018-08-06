@@ -280,6 +280,7 @@ def test_open_url(selenium):
         "pyodide.open_url('test_data.txt').read()\n") == 'HELLO\n'
 
 
+@pytest.mark.flaky(reruns=2)
 def test_run_core_python_test(python_test, selenium):
     selenium.load_package('test')
     try:
