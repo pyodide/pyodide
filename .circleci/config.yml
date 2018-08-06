@@ -32,7 +32,7 @@ jobs:
             tar zxf geckodriver-v0.21.0-linux64.tar.gz -C firefox
 
             # Get recent version of chromedriver
-            wget https://chromedriver.storage.googleapis.com/2.40/chromedriver_linux64.zip
+            wget https://chromedriver.storage.googleapis.com/2.41/chromedriver_linux64.zip
             unzip chromedriver_linux64.zip
             mv chromedriver firefox
 
