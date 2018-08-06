@@ -67,7 +67,11 @@ The tarball may be in any of the formats supported by Python's
 
 #### `source/md5`
 
-The MD5 checksum of the tarball.  (TODO: More hash types should be supported in the future).
+The MD5 checksum of the tarball. It is recommended to use SHA256 instead of MD5.
+
+#### `source/sha256`
+
+The SHA256 checksum of the tarball. It is recommended to use SHA256 instead of MD5.
 
 #### `source/patches`
 

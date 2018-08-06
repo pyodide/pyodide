@@ -4,7 +4,7 @@ package:
 
 source:
   url: https://files.pythonhosted.org/packages/10/76/52efda4ef98e7544321fd8d5d512e11739c1df18b0649551aeccfb1c8376/pytz-2018.4.tar.gz
-  md5: f054437920c895dd14a4509fabafe029
+  sha256: c06425302f2cf668f1bba7a0a03f3c1d34d4ebeef2c72003da308b3947c7f749
 
   patches:
     - patches/dummy-threading.patch
