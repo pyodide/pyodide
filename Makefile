@@ -132,6 +132,10 @@ clean:
 
 
 build/test.data: $(CPYTHONLIB)
+	( \
+	  cd $(CPYTHONLIB)/test; \
+	  find -type d -name __pycache__ -prune -exec rm -rf {} \; \
+	)
 	python2 $(FILEPACKAGER) build/test.data --preload $(CPYTHONLIB)/test@/lib/python3.6/test --js-output=build/test.js --export-name=pyodide --exclude \*.wasm.pre --exclude __pycache__
 	uglifyjs build/test.js -o build/test.js
 
