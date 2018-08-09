@@ -117,6 +117,7 @@ var languagePluginLoader = new Promise((resolve, reject) => {
   };
 
   Module.filePackagePrefixURL = baseURL;
+  Module.locateFile = (path) => baseURL + path;
   var postRunPromise = new Promise((resolve, reject) => {
     Module.postRun = () => {
       delete window.Module;
