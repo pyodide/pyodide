@@ -27,12 +27,21 @@ def registered_packages_meta():
             for name in packages}
 
 
+UNSUPPORTED_PACKAGES = {'ChromeWrapper': ['pandas'],
+                        'FirefoxWrapper': []}
+
+
 @pytest.mark.parametrize('name', registered_packages())
-def test_meta(selenium, name):
+def test_import(name, selenium):
     # check that we can parse the meta.yaml
     meta = common.parse_package(PKG_DIR / name / 'meta.yaml')
 
-    # check imports
+    if name in UNSUPPORTED_PACKAGES[selenium.__class__.__name__]:
+        pytest.xfail(
+                '{} fails to load and is not supported on {}.'
+                .format(name,
+                        selenium.__class__.__name__.replace('Wrapper', '')))
+
     for import_name in meta.get('test', {}).get('imports', []):
         selenium.load_package(import_name)
         selenium.run('import %s' % import_name)
