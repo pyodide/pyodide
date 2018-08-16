@@ -141,7 +141,7 @@ def package_files(buildpath, srcpath, pkg, args):
     name = pkg['package']['name']
     libdir = get_libdir(srcpath, args)
     subprocess.run([
-        'python2',
+        'python',
         Path(os.environ['EMSCRIPTEN']) / 'tools' / 'file_packager.py',
         buildpath / (name + '.data'),
         '--preload',
