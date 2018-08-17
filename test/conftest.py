@@ -103,7 +103,7 @@ class ChromeWrapper(SeleniumWrapper):
 
 
 if pytest is not None:
-    @pytest.fixture(params=['firefox', 'chrome'])
+    @pytest.fixture(params=['firefox', 'chrome'], scope='module')
     def selenium(request):
         if request.param == 'firefox':
             cls = FirefoxWrapper
