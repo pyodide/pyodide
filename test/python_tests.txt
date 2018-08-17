@@ -1,6 +1,7 @@
-# Test modules with a failure reason after their name are skipped.
+# Test modules with a failure reason after their name are either skipped
+# or marked as a known failure in pytest.
 #
-# Reason codes are:
+# Following reason codes are skipped:
 # - platform-specific: This is testing something about a particular platform
 #   that isn't relevant here
 # - audioop: Requires the audioop module
@@ -17,11 +18,15 @@
 #   implementation of date/time formatting in strftime and strptime
 # - permissions: Issues with the test writing to the virtual filesystem
 # - locale: Fails due to include locale implementation.
+# - nonsense: This functionality doesn't make sense in this context. Includes
+#   things like `pip`, `distutils`
+#
+# While the below reason codes are marked as a known failure:
 # - crash: The Python interpreter just stopped without a traceback. Will require
 #   further investigation. This usually seems to be caused by calling into a
 #   system function that doesn't behave as one would expect.
-# - nonsense: This functionality doesn't make sense in this context. Includes
-#   things like `pip`, `distutils`
+# - crash_chrome: Same as crash but only affecting Chrome
+# - crash_firefox: Same as crash but only affecting Firefox
 
 test___all__
 test___future__
@@ -101,7 +106,7 @@ test_codeop
 test_collections
 test_colorsys
 test_compare
-test_compile
+test_compile crash-chrome
 test_compileall crash
 test_complex
 test_concurrent_futures
