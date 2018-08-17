@@ -1,11 +1,13 @@
 version: 2
+
+defaults: &defaults
+  working_directory: ~/repo
+  docker:
+    - image: circleci/python:3.6.5-stretch-browsers
+
 jobs:
   build:
-    docker:
-      - image: circleci/python:3.6.5-stretch-browsers
-
-    working_directory: ~/repo
-
+    <<: *defaults
     steps:
       - checkout
 
@@ -23,7 +25,13 @@ jobs:
             sudo update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-8 80 --slave /usr/bin/g++ g++ /usr/bin/g++-8
             sudo update-alternatives --set gcc /usr/bin/gcc-8
 
-            sudo pip install pytest-xdist pytest-instafail selenium PyYAML
+            sudo pip install virtualenv
+            
+            virtualenv pyodide-env
+
+            source pyodide-env/bin/activate
+            
+            pip install pytest pytest-xdist pytest-instafail selenium PyYAML
 
             # Get recent version of Firefox and geckodriver
             wget -O firefox.tar.bz2 https://download.mozilla.org/\?product\=firefox-nightly-latest-ssl\&os\=linux64\&lang\=en-US
@@ -36,13 +44,11 @@ jobs:
             unzip chromedriver_linux64.zip
             mv chromedriver firefox
 
-            # This Debian is so old, it doesn't know about wasm as a mime type, which then
-            # causes Firefox to complain when loading it.  Let's just add the new mime type.
-            sudo bash -c "echo 'application/wasm wasm' >> /etc/mime.types"
 
       - run:
           name: lint
           command: |
+            source pyodide-env/bin/activate
             make lint
 
       - restore_cache:
@@ -53,9 +59,11 @@ jobs:
           name: build
           no_output_timeout: 1200
           command: |
+            source pyodide-env/bin/activate
             ccache -z
             make
             ccache -s
+            make build/test.html build/test_data.txt
 
       - save_cache:
           paths:
@@ -63,15 +71,47 @@ jobs:
             - ~/.ccache
           key: v1-emsdk-{{ checksum "emsdk/Makefile" }}-v6-{{ .BuildNum }}
 
+      - persist_to_workspace:
+          root: .
+          paths:
+            - ./*
+
+  test-firefox:
+    <<: *defaults
+    steps:
+      - attach_workspace:
+          at: .
       - run:
           name: test
           command: |
+            # This Debian is so old, it doesn't know about wasm as a mime type, which then
+            # causes Firefox to complain when loading it.  Let's just add the new mime type.
+            sudo bash -c "echo 'application/wasm wasm' >> /etc/mime.types"
+
+            source pyodide-env/bin/activate
             export PATH=$PWD/firefox:$PATH
-            make test
+            pytest test -v --instafail -k firefox
+
+  test-chrome:
+    <<: *defaults
+    steps:
+      - attach_workspace:
+          at: ~/repo/build
+      - run:
+          name: test
+          command: |
+            # This Debian is so old, it doesn't know about wasm as a mime type, which then
+            # causes Firefox to complain when loading it.  Let's just add the new mime type.
+            sudo bash -c "echo 'application/wasm wasm' >> /etc/mime.types"
+
+            source pyodide-env/bin/activate
+            export PATH=$PWD/firefox:$PATH
+            pytest test -v --instafail -k chrome
 
   deploy:
     machine:
       enabled: true
+
     steps:
       - run:
           name: Deploy to Github Pages
@@ -83,9 +123,16 @@ workflows:
   build-and-deploy:
     jobs:
       - build
-      - deploy:
+      - test-chrome:
           requires:
             - build
+      - test-firefox:
+          requires:
+            - build
+      - deploy:
+          requires:
+            - test-chrome
+            - test-firefox
           filters:
             branches:
               only: master
