@@ -288,7 +288,10 @@ def test_run_core_python_test(python_test, selenium, request):
     selenium.load_package('test')
 
     name, error_flags = python_test
-    if error_flags:
+    driver_name = (selenium.__class__.__name__
+                           .replace('Wrapper', '').lower())
+    if ('crash' in error_flags or
+            'crash_' + driver_name in error_flags):
         request.applymarker(pytest.mark.xfail(
             run=False, reason='known failure with code "{}"'
                               .format(error_flags)))
