@@ -43,5 +43,5 @@ def test_import(name, selenium):
                         selenium.__class__.__name__.replace('Wrapper', '')))
 
     for import_name in meta.get('test', {}).get('imports', []):
-        selenium.load_package(import_name)
+        selenium.load_package(name)
         selenium.run('import %s' % import_name)
