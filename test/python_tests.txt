@@ -25,8 +25,8 @@
 # - crash: The Python interpreter just stopped without a traceback. Will require
 #   further investigation. This usually seems to be caused by calling into a
 #   system function that doesn't behave as one would expect.
-# - crash_chrome: Same as crash but only affecting Chrome
-# - crash_firefox: Same as crash but only affecting Firefox
+# - crash-chrome: Same as crash but only affecting Chrome
+# - crash-firefox: Same as crash but only affecting Firefox
 
 test___all__
 test___future__
