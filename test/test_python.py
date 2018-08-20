@@ -285,11 +285,11 @@ def test_open_url(selenium):
 
 @pytest.mark.flaky(reruns=2)
 def test_run_core_python_test(python_test, selenium, request):
+
     name, error_flags = python_test
-    driver_name = (selenium.__class__.__name__
-                           .replace('Wrapper', '').lower())
+
     if ('crash' in error_flags or
-            'crash-' + driver_name in error_flags):
+            'crash-' + selenium.browser in error_flags):
         request.applymarker(pytest.mark.xfail(
             run=False, reason='known failure with code "{}"'
                               .format(','.join(error_flags))))
