@@ -107,7 +107,7 @@ test_collections
 test_colorsys
 test_compare
 test_compile crash-chrome
-test_compileall crash
+test_compileall
 test_complex
 test_concurrent_futures
 test_configparser
@@ -178,7 +178,7 @@ test_faulthandler
 test_fcntl
 test_file
 test_file_eintr subprocess
-test_filecmp    crash
+test_filecmp
 test_fileinput
 test_fileio
 test_finalization
@@ -206,7 +206,7 @@ test_genexps
 test_getargs2
 test_getopt
 test_getpass  permissions
-test_gettext  crash
+test_gettext
 test_glob     crash
 test_global
 test_grammar
@@ -244,20 +244,20 @@ test_importlib.import_.test_packages
 test_importlib.import_.test_path
 test_importlib.import_.test_relative_imports
 test_importlib.source.test_case_sensitivity
-test_importlib.source.test_file_loader  crash
-test_importlib.source.test_finder       crash
+test_importlib.source.test_file_loader
+test_importlib.source.test_finder
 test_importlib.source.test_path_hook
-test_importlib.source.test_source_encoding  crash
+test_importlib.source.test_source_encoding
 test_importlib.test_abc
-test_importlib.test_api crash
+test_importlib.test_api
 test_importlib.test_lazy
 test_importlib.test_locks
 test_importlib.test_namespace_pkgs
 test_importlib.test_spec
-test_importlib.test_util  crash
+test_importlib.test_util
 test_importlib.test_windows platform-specific
 test_index
-test_inspect  crash
+test_inspect
 test_int
 test_int_literal
 test_io crash
