@@ -2,7 +2,7 @@ import pytest
 
 
 def test_pandas(selenium, request):
-    if 'chrome' in selenium.__class__.__name__.lower():
+    if selenium.browser == 'chrome':
         request.applymarker(pytest.mark.xfail(
             run=False, reason='chrome not supported'))
     selenium.load_package("pandas")
@@ -10,7 +10,7 @@ def test_pandas(selenium, request):
 
 
 def test_extra_import(selenium, request):
-    if 'chrome' in selenium.__class__.__name__.lower():
+    if selenium.brower == 'chrome':
         request.applymarker(pytest.mark.xfail(
             run=False, reason='chrome not supported'))
 

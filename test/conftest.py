@@ -74,6 +74,9 @@ class SeleniumWrapper:
 
 
 class FirefoxWrapper(SeleniumWrapper):
+
+    browser = 'firefox'
+
     def get_driver(self):
         from selenium.webdriver import Firefox
         from selenium.webdriver.firefox.options import Options
@@ -89,6 +92,9 @@ class FirefoxWrapper(SeleniumWrapper):
 
 
 class ChromeWrapper(SeleniumWrapper):
+
+    browser = 'chrome'
+
     def get_driver(self):
         from selenium.webdriver import Chrome
         from selenium.webdriver.chrome.options import Options
