@@ -64,7 +64,7 @@ build/pyodide.asm.js: src/main.bc src/jsimport.bc src/jsproxy.bc src/js2python.b
 
 
 build/pyodide.asm.data: root/.built
-	python2 $(FILEPACKAGER) build/pyodide.asm.data --preload root/lib@lib --js-output=build/pyodide.asm.data.js --use-preload-plugins
+	python $(FILEPACKAGER) build/pyodide.asm.data --preload root/lib@lib --js-output=build/pyodide.asm.data.js --use-preload-plugins
 	uglifyjs build/pyodide.asm.data.js -o build/pyodide.asm.data.js
 
 
@@ -136,7 +136,7 @@ build/test.data: $(CPYTHONLIB)
 	  cd $(CPYTHONLIB)/test; \
 	  find -type d -name __pycache__ -prune -exec rm -rf {} \; \
 	)
-	python2 $(FILEPACKAGER) build/test.data --preload $(CPYTHONLIB)/test@/lib/python3.6/test --js-output=build/test.js --export-name=pyodide --exclude \*.wasm.pre --exclude __pycache__
+	python $(FILEPACKAGER) build/test.data --preload $(CPYTHONLIB)/test@/lib/python3.6/test --js-output=build/test.js --export-name=pyodide --exclude \*.wasm.pre --exclude __pycache__
 	uglifyjs build/test.js -o build/test.js
 
 
@@ -171,7 +171,7 @@ ccache/emcc:
 	if hash ccache &>/dev/null; then \
     ln -s `which ccache` $(PYODIDE_ROOT)/ccache/emcc ; \
   else \
-    ln -s emsdk/emsdk/emscripten/tag-1.38.4/emcc $(PYODIDE_ROOT)/ccache/emcc; \
+    ln -s emsdk/emsdk/emscripten/tag-1.38.10/emcc $(PYODIDE_ROOT)/ccache/emcc; \
   fi
 
 
@@ -180,7 +180,7 @@ ccache/em++:
 	if hash ccache &>/dev/null; then \
     ln -s `which ccache` $(PYODIDE_ROOT)/ccache/em++ ; \
   else \
-    ln -s emsdk/emsdk/emscripten/tag-1.38.4/em++ $(PYODIDE_ROOT)/ccache/em++; \
+    ln -s emsdk/emsdk/emscripten/tag-1.38.10/em++ $(PYODIDE_ROOT)/ccache/em++; \
   fi
 
 
