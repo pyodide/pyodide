@@ -1,12 +1,14 @@
 def test_matplotlib(selenium):
     selenium.load_package("matplotlib")
     selenium.run("from matplotlib import pyplot as plt")
+    selenium.run("plt.figure()")
     selenium.run("x = plt.plot([1,2,3])")
 
 
 def test_svg(selenium):
     selenium.load_package("matplotlib")
     selenium.run("from matplotlib import pyplot as plt")
+    selenium.run("plt.figure()")
     selenium.run("x = plt.plot([1,2,3])")
     selenium.run("import io")
     selenium.run("fd = io.BytesIO()")

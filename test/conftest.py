@@ -104,7 +104,7 @@ class ChromeWrapper(SeleniumWrapper):
 
 if pytest is not None:
     @pytest.fixture(params=['firefox', 'chrome'])
-    def selenium(request):
+    def selenium_standalone(request):
         if request.param == 'firefox':
             cls = FirefoxWrapper
         elif request.param == 'chrome':
@@ -115,6 +115,30 @@ if pytest is not None:
         finally:
             print('\n'.join(str(x) for x in selenium.logs))
             selenium.driver.quit()
+
+    @pytest.fixture(params=['firefox', 'chrome'], scope='module')
+    def _selenium_cached(request):
+        # Cached selenium instance. This is a copy-paste of
+        # selenium_standalone to avoid fixture scope issues
+        if request.param == 'firefox':
+            cls = FirefoxWrapper
+        elif request.param == 'chrome':
+            cls = ChromeWrapper
+        selenium = cls()
+        try:
+            yield selenium
+        finally:
+            selenium.driver.quit()
+
+    @pytest.fixture
+    def selenium(_selenium_cached):
+        # selenium instance cached at the module level
+        try:
+            # clean selenium logs for each test run
+            _selenium_cached.driver.execute_script("window.logs = []")
+            yield _selenium_cached
+        finally:
+            print('\n'.join(str(x) for x in _selenium_cached.logs))
 
 
 PORT = 0
