@@ -310,7 +310,7 @@ test_mimetypes
 test_minidom
 test_mmap
 test_module
-test_modulefinder crash
+test_modulefinder
 test_msilib
 test_multibytecodec
 test_multiprocessing_fork
@@ -339,8 +339,8 @@ test_pickle dbm
 test_pickletools  dbm
 test_pipes        platform-specific
 test_pkg
-test_pkgimport  crash
-test_pkgutil    crash
+test_pkgimport
+test_pkgutil
 test_platform   subprocess
 test_plistlib
 test_poll subprocess
@@ -357,7 +357,7 @@ test_pstats
 test_pty
 test_pulldom
 test_pwd  crash
-test_py_compile crash
+test_py_compile
 test_pyclbr
 test_pydoc  crash
 test_pyexpat
@@ -375,7 +375,7 @@ test_resource
 test_richcmp
 test_rlcompleter  crash
 test_robotparser
-test_runpy  crash
+test_runpy
 test_sax
 test_sched
 test_scope
@@ -407,7 +407,7 @@ test_stat
 test_statistics
 test_strftime   strftime
 test_string
-test_string_literals  crash
+test_string_literals
 test_stringprep
 test_strptime strftime
 test_strtod
@@ -466,7 +466,7 @@ test_types
 test_typing unknown
 test_ucn
 test_unary
-test_unicode  crash
+test_unicode
 test_unicode_file
 test_unicode_file_functions
 test_unicode_identifiers
@@ -507,9 +507,9 @@ test_xml_etree_c
 test_xmlrpc networking
 test_xmlrpc_net
 test_yield_from
-test_zipapp crash
-test_zipfile  crash
+test_zipapp
+test_zipfile
 test_zipfile64
-test_zipimport  crash
-test_zipimport_support  crash
+test_zipimport
+test_zipimport_support
 test_zlib
