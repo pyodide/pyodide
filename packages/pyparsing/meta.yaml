@@ -8,3 +8,7 @@ source:
 
   patches:
     - patches/dummy_threading.patch
+
+test:
+  imports:
+    - pyparsing

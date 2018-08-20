@@ -39,3 +39,7 @@ requirements:
     - pyparsing
     - python-dateutil
     - pytz
+
+test:
+  imports:
+    - matplotlib

@@ -17,3 +17,7 @@ requirements:
     - numpy
     - python-dateutil
     - pytz
+
+test:
+  imports:
+    - pandas

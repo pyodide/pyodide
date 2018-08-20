@@ -8,3 +8,7 @@ source:
 
   patches:
     - patches/dummy-thread-lock.patch
+
+test:
+  imports:
+    - dateutil

@@ -8,3 +8,7 @@ source:
 
   patches:
     - patches/dummy-threading.patch
+
+test:
+  imports:
+    - pytz

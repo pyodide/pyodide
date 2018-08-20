@@ -20,3 +20,8 @@ source:
 
 build:
   cflags: -include math.h -I../../config
+
+
+test:
+  imports:
+    - numpy
