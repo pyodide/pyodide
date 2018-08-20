@@ -118,8 +118,8 @@ if pytest is not None:
 
     @pytest.fixture(params=['firefox', 'chrome'], scope='module')
     def _selenium_cached(request):
-        # intermediary cached selenium instance, this is a copy
-        # of the selenium_standalone to avoid fixture scope issues
+        # Cached selenium instance. This is a copy-paste of
+        # selenium_standalone to avoid fixture scope issues
         if request.param == 'firefox':
             cls = FirefoxWrapper
         elif request.param == 'chrome':
@@ -132,9 +132,9 @@ if pytest is not None:
 
     @pytest.fixture
     def selenium(_selenium_cached):
-        # this is selenium instance cached at the module level
+        # selenium instance cached at the module level
         try:
-            # for each test run, we clean selenium logs
+            # clean selenium logs for each test run
             _selenium_cached.driver.execute_script("window.logs = []")
             yield _selenium_cached
         finally:
