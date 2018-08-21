@@ -17,6 +17,7 @@ source:
     - patches/init-alloc-cache.patch
     - patches/pass-along-errors-from-init.patch
     - patches/use-dummy-threading.patch
+    - patches/use-local-blas-lapack.patch
 
 build:
   cflags: -include math.h -I../../config
