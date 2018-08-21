@@ -1,0 +1,12 @@
+package:
+  name: pluggy
+  version: 0.7.1
+
+source:
+  url: https://pypi.io/packages/source/p/pluggy/pluggy-0.7.1.tar.gz
+  sha256: 95eb8364a4708392bae89035f45341871286a333f749c3141c20573d2b3876e1
+
+
+test:
+  imports:
+    - pluggy

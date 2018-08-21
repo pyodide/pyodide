@@ -5,3 +5,15 @@ package:
 source:
   url: https://files.pythonhosted.org/packages/55/50/399419c03c39bf41faa7cbd5a8976c076037b2d76adf2535610919806d67/pytest-3.6.3.tar.gz
   md5: 8ca6124a3a80f9555c50f5c09056ea02
+
+requirements:
+  run:
+    - atomicwrites
+    - attrs
+    - more-itertools 
+    - pluggy
+    - py
+
+test:
+  imports:
+    - pytest

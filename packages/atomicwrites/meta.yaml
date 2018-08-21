@@ -1,0 +1,12 @@
+package:
+  name: atomicwrites
+  version: 1.1.5
+
+source:
+  url: https://pypi.io/packages/source/a/atomicwrites/atomicwrites-1.1.5.tar.gz
+  sha256: 240831ea22da9ab882b551b31d4225591e5e447a68c5e188db5b89ca1d487585
+
+
+test:
+  imports:
+    - atomicwrites

@@ -1,0 +1,15 @@
+package:
+  name: attrs
+  version: 18.1.0
+
+source:
+  url: https://pypi.io/packages/source/a/attrs/attrs-18.1.0.tar.gz
+  sha256: e0d0eb91441a3b53dab4d9b743eafc1ac44476296a2053b6ca3af0b139faf87b
+
+  patches:
+    - patches/use-dummy-threading.patch
+
+
+test:
+  imports:
+    - attr
