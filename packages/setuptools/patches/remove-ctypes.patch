@@ -1,0 +1,37 @@
+diff --git a/setuptools/glibc.py b/setuptools/glibc.py
+index a134591c..c31fc78a 100644
+--- a/setuptools/glibc.py
++++ b/setuptools/glibc.py
+@@ -2,13 +2,13 @@
+ # https://github.com/pypa/pip/blob/8f4f15a5a95d7d5b511ceaee9ed261176c181970/src/pip/_internal/utils/glibc.py
+ from __future__ import absolute_import
+ 
+-import ctypes
+ import re
+ import warnings
+ 
+ 
+ def glibc_version_string():
+     "Returns glibc version string, or None if not using glibc."
++    import ctypes
+ 
+     # ctypes.CDLL(None) internally calls dlopen(NULL), and as the dlopen
+     # manpage says, "If filename is NULL, then the returned handle is for the
+diff --git a/setuptools/windows_support.py b/setuptools/windows_support.py
+index cb977cff..1ca64fbb 100644
+--- a/setuptools/windows_support.py
++++ b/setuptools/windows_support.py
+@@ -1,5 +1,4 @@
+ import platform
+-import ctypes
+ 
+ 
+ def windows_only(func):
+@@ -17,6 +16,7 @@ def hide_file(path):
+ 
+     `path` must be text.
+     """
++    import ctypes
+     __import__('ctypes.wintypes')
+     SetFileAttributes = ctypes.windll.kernel32.SetFileAttributesW
+     SetFileAttributes.argtypes = ctypes.wintypes.LPWSTR, ctypes.wintypes.DWORD

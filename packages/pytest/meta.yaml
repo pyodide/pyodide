@@ -13,6 +13,7 @@ requirements:
     - more-itertools 
     - pluggy
     - py
+    - setuptools
 
 test:
   imports:
