@@ -20,6 +20,13 @@ var languagePluginLoader = new Promise((resolve, reject) => {
     let toLoad = new Set();
     while (queue.length) {
       const package = queue.pop();
+      var valid_package_name_regexp = new RegExp('^[a-zA-Z0-9_\-]+$');
+      console.log(package + valid_package_name_regexp.test(package));
+      if (!valid_package_name_regexp.test(package)) {
+          console.log(`Invalid package name '${package}'`);
+          break;
+      }
+
       if (!loadedPackages.has(package)) {
         toLoad.add(package);
         if (packages.hasOwnProperty(package)) {

@@ -50,7 +50,8 @@ class SeleniumWrapper:
 
     @property
     def logs(self):
-        return self.driver.execute_script("return window.logs")
+        logs = self.driver.execute_script("return window.logs")
+        return '\n'.join(str(x) for x in logs)
 
     def run(self, code):
         return self.run_js(
@@ -123,7 +124,7 @@ if pytest is not None:
         try:
             yield selenium
         finally:
-            print('\n'.join(str(x) for x in selenium.logs))
+            print(selenium.logs)
             selenium.driver.quit()
 
     @pytest.fixture(params=['firefox', 'chrome'], scope='module')
