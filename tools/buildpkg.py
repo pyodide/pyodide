@@ -143,14 +143,15 @@ def package_files(buildpath, srcpath, pkg, args):
     subprocess.run([
         'python',
         Path(os.environ['EMSCRIPTEN']) / 'tools' / 'file_packager.py',
-        buildpath / (name + '.data'),
+        name + '.data',
         '--preload',
         '{}@/lib/python3.6/site-packages'.format(libdir),
-        '--js-output={}'.format(buildpath / (name + '.js')),
+        '--js-output={}'.format(name + '.js'),
         '--export-name=pyodide',
         '--exclude', '*.wasm.pre',
         '--exclude', '__pycache__',
-        '--use-preload-plugins'], check=True)
+        '--use-preload-plugins'],
+        cwd=buildpath, check=True)
     subprocess.run([
         'uglifyjs',
         buildpath / (name + '.js'),
