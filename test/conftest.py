@@ -53,6 +53,9 @@ class SeleniumWrapper:
         logs = self.driver.execute_script("return window.logs")
         return '\n'.join(str(x) for x in logs)
 
+    def clean_logs(self):
+        self.driver.execute_script("window.logs = []")
+
     def run(self, code):
         return self.run_js(
             'return pyodide.runPython({!r})'.format(code))
@@ -145,11 +148,10 @@ if pytest is not None:
     def selenium(_selenium_cached):
         # selenium instance cached at the module level
         try:
-            # clean selenium logs for each test run
-            _selenium_cached.driver.execute_script("window.logs = []")
+            _selenium_cached.clean_logs()
             yield _selenium_cached
         finally:
-            print('\n'.join(str(x) for x in _selenium_cached.logs))
+            print(_selenium_cached.logs)
 
 
 PORT = 0

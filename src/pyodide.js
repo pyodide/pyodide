@@ -2,6 +2,13 @@
  * The main bootstrap script for loading pyodide.
  */
 
+// Regexp for validating package name and URI
+var package_name_regexp = '[a-zA-Z0-9_\-]+'
+var package_uri_regexp = new RegExp(
+     '^(?:https?|file)://.*?(' + package_name_regexp + ').js$');
+var package_name_regexp = new RegExp('^' + package_name_regexp + '$');
+
+
 var languagePluginLoader = new Promise((resolve, reject) => {
   // This is filled in by the Makefile to be either a local file or the
   // deployed location. TODO: This should be done in a less hacky
@@ -13,19 +20,37 @@ var languagePluginLoader = new Promise((resolve, reject) => {
   var packages = undefined;
   let loadedPackages = new Set();
 
+  let _uri_to_package_name = (package_uri) => {
+    // Generate a unique package name from URI
+
+    if (package_name_regexp.test(package_uri)) {
+      return package_uri;
+    } else if (package_uri_regexp.test(package_uri)) {
+      var match = package_uri_regexp.exec(package_uri);
+      // Get the regexp group corresponding to the package name
+      return match[1];
+    } else {
+      return null;
+    }
+  };
+
+
   let loadPackage = (names) => {
     // DFS to find all dependencies of the requested packages
     let packages = window.pyodide.packages.dependencies;
     let queue = new Array(names);
     let toLoad = new Set();
     while (queue.length) {
-      const package = queue.pop();
-      var valid_package_name_regexp = new RegExp('^[a-zA-Z0-9_\-]+$');
-      console.log(package + valid_package_name_regexp.test(package));
-      if (!valid_package_name_regexp.test(package)) {
-          console.log(`Invalid package name '${package}'`);
+      const package_uri = queue.pop();
+
+      const package = _uri_to_package_name(package_uri);
+
+      if (package == null) {
+          console.log(`Invalid package name or URI '${package_uri}'`);
           break;
       }
+
+      console.log(`Loading ${package} from ${package_uri}`);
 
       if (!loadedPackages.has(package)) {
         toLoad.add(package);
