@@ -290,9 +290,8 @@ def test_run_core_python_test(python_test, selenium, request):
 
     if ('crash' in error_flags or
             'crash-' + selenium.browser in error_flags):
-        request.applymarker(pytest.mark.xfail(
-            run=False, reason='known failure with code "{}"'
-                              .format(','.join(error_flags))))
+        pytest.xfail(reason='known failure with code "{}"'
+                            .format(','.join(error_flags)))
 
     selenium.load_package('test')
     try:

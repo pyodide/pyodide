@@ -466,7 +466,7 @@ test_types
 test_typing unknown
 test_ucn
 test_unary
-test_unicode
+test_unicode  crash
 test_unicode_file
 test_unicode_file_functions
 test_unicode_identifiers
