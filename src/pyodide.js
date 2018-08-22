@@ -18,7 +18,7 @@ var languagePluginLoader = new Promise((resolve, reject) => {
   ////////////////////////////////////////////////////////////
   // Package loading
   var packages = undefined;
-  let loadedPackages = new Set();
+  let loadedPackages = new Array();
 
   let _uri_to_package_name = (package_uri) => {
     // Generate a unique package name from URI
@@ -41,22 +41,30 @@ var languagePluginLoader = new Promise((resolve, reject) => {
     let queue = new Array(names);
     let toLoad = new Set();
     while (queue.length) {
-      const package_uri = queue.pop();
+      var package_uri = queue.pop();
 
       const package = _uri_to_package_name(package_uri);
 
       if (package == null) {
           console.log(`Invalid package name or URI '${package_uri}'`);
           break;
+      }  else if (package == package_uri) {
+          package_uri = 'packages.json';
       }
 
       console.log(`Loading ${package} from ${package_uri}`);
 
-      if (!loadedPackages.has(package)) {
+      if (package in loadedPackages) {
+        if (package_uri != loadedPackages[package]) {
+          console.log(`Error: URI mismatch, attempting to load package ` +
+                      `${package} from ${package_uri} while is already ` +
+                      `loaded from ${loadedPackages[package]}!`);
+        }
+      } else {
         toLoad.add(package);
         if (packages.hasOwnProperty(package)) {
           packages[package].forEach((subpackage) => {
-            if (!loadedPackages.has(subpackage) && !toLoad.has(subpackage)) {
+            if (!(subpackage in loadedPackages) && !toLoad.has(subpackage)) {
               queue.push(subpackage);
             }
           });
@@ -73,7 +81,9 @@ var languagePluginLoader = new Promise((resolve, reject) => {
 
       pyodide.monitorRunDependencies = (n) => {
         if (n === 0) {
-          toLoad.forEach((package) => loadedPackages.add(package));
+          toLoad.forEach((package) => {
+              loadedPackages[package] = package;
+          });
           delete pyodide.monitorRunDependencies;
           const packageList = Array.from(toLoad.keys()).join(', ');
           resolve(`Loaded ${packageList}`);
