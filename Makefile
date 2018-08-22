@@ -99,7 +99,7 @@ build/renderedhtml.css: src/renderedhtml.less
 
 
 test: all build/test.html build/test_data.txt
-	py.test test -v --instafail
+	py.test test -v -r sxX --instafail
 
 
 build/test_data.txt: test/data.txt

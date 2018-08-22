@@ -1,6 +1,7 @@
-# Test modules with a failure reason after their name are skipped.
+# Test modules with a failure reason after their name are either skipped
+# or marked as a known failure in pytest.
 #
-# Reason codes are:
+# Following reason codes are skipped:
 # - platform-specific: This is testing something about a particular platform
 #   that isn't relevant here
 # - audioop: Requires the audioop module
@@ -17,11 +18,15 @@
 #   implementation of date/time formatting in strftime and strptime
 # - permissions: Issues with the test writing to the virtual filesystem
 # - locale: Fails due to include locale implementation.
+# - nonsense: This functionality doesn't make sense in this context. Includes
+#   things like `pip`, `distutils`
+#
+# While the below reason codes are marked as a known failure:
 # - crash: The Python interpreter just stopped without a traceback. Will require
 #   further investigation. This usually seems to be caused by calling into a
 #   system function that doesn't behave as one would expect.
-# - nonsense: This functionality doesn't make sense in this context. Includes
-#   things like `pip`, `distutils`
+# - crash-chrome: Same as crash but only affecting Chrome
+# - crash-firefox: Same as crash but only affecting Firefox
 
 test___all__
 test___future__
@@ -101,8 +106,8 @@ test_codeop
 test_collections
 test_colorsys
 test_compare
-test_compile
-test_compileall crash
+test_compile crash-chrome
+test_compileall
 test_complex
 test_concurrent_futures
 test_configparser
@@ -173,7 +178,7 @@ test_faulthandler
 test_fcntl
 test_file
 test_file_eintr subprocess
-test_filecmp    crash
+test_filecmp
 test_fileinput
 test_fileio
 test_finalization
@@ -201,7 +206,7 @@ test_genexps
 test_getargs2
 test_getopt
 test_getpass  permissions
-test_gettext  crash
+test_gettext
 test_glob     crash
 test_global
 test_grammar
@@ -239,20 +244,20 @@ test_importlib.import_.test_packages
 test_importlib.import_.test_path
 test_importlib.import_.test_relative_imports
 test_importlib.source.test_case_sensitivity
-test_importlib.source.test_file_loader  crash
-test_importlib.source.test_finder       crash
+test_importlib.source.test_file_loader
+test_importlib.source.test_finder
 test_importlib.source.test_path_hook
-test_importlib.source.test_source_encoding  crash
+test_importlib.source.test_source_encoding
 test_importlib.test_abc
-test_importlib.test_api crash
+test_importlib.test_api
 test_importlib.test_lazy
 test_importlib.test_locks
 test_importlib.test_namespace_pkgs
 test_importlib.test_spec
-test_importlib.test_util  crash
+test_importlib.test_util
 test_importlib.test_windows platform-specific
 test_index
-test_inspect  crash
+test_inspect
 test_int
 test_int_literal
 test_io crash
@@ -305,7 +310,7 @@ test_mimetypes
 test_minidom
 test_mmap
 test_module
-test_modulefinder crash
+test_modulefinder
 test_msilib
 test_multibytecodec
 test_multiprocessing_fork
@@ -334,8 +339,8 @@ test_pickle dbm
 test_pickletools  dbm
 test_pipes        platform-specific
 test_pkg
-test_pkgimport  crash
-test_pkgutil    crash
+test_pkgimport
+test_pkgutil
 test_platform   subprocess
 test_plistlib
 test_poll subprocess
@@ -352,7 +357,7 @@ test_pstats
 test_pty
 test_pulldom
 test_pwd  crash
-test_py_compile crash
+test_py_compile
 test_pyclbr
 test_pydoc  crash
 test_pyexpat
@@ -370,7 +375,7 @@ test_resource
 test_richcmp
 test_rlcompleter  crash
 test_robotparser
-test_runpy  crash
+test_runpy
 test_sax
 test_sched
 test_scope
@@ -402,7 +407,7 @@ test_stat
 test_statistics
 test_strftime   strftime
 test_string
-test_string_literals  crash
+test_string_literals
 test_stringprep
 test_strptime strftime
 test_strtod
@@ -502,9 +507,9 @@ test_xml_etree_c
 test_xmlrpc networking
 test_xmlrpc_net
 test_yield_from
-test_zipapp crash
-test_zipfile  crash
+test_zipapp
+test_zipfile
 test_zipfile64
-test_zipimport  crash
-test_zipimport_support  crash
+test_zipimport
+test_zipimport_support
 test_zlib

@@ -283,13 +283,20 @@ def test_open_url(selenium):
         "pyodide.open_url('test_data.txt').read()\n") == 'HELLO\n'
 
 
-@pytest.mark.flaky(reruns=2)
-def test_run_core_python_test(python_test, selenium):
+def test_run_core_python_test(python_test, selenium, request):
+
+    name, error_flags = python_test
+
+    if ('crash' in error_flags or
+            'crash-' + selenium.browser in error_flags):
+        pytest.xfail(reason='known failure with code "{}"'
+                            .format(','.join(error_flags)))
+
     selenium.load_package('test')
     try:
         selenium.run(
             "from test.libregrtest import main\n"
-            "main(['{}'], verbose=True, verbose3=True)".format(python_test))
+            "main(['{}'], verbose=True, verbose3=True)".format(name))
     except selenium.JavascriptException as e:
         assert 'SystemExit: 0' in str(e)
 
@@ -297,17 +304,25 @@ def test_run_core_python_test(python_test, selenium):
 def pytest_generate_tests(metafunc):
     if 'python_test' in metafunc.fixturenames:
         test_modules = []
+        test_modules_ids = []
         if 'CIRCLECI' not in os.environ or True:
             with open(
                     Path(__file__).parent / "python_tests.txt") as fp:
                 for line in fp:
                     line = line.strip()
-                    if line.startswith('#'):
+                    if line.startswith('#') or not line:
                         continue
-                    parts = line.split()
-                    if len(parts) == 1:
-                        test_modules.append(parts[0])
-        metafunc.parametrize("python_test", test_modules)
+                    error_flags = line.split()
+                    name = error_flags.pop(0)
+                    if (not error_flags
+                        or set(error_flags).intersection(
+                                {'crash', 'crash-chrome', 'crash-firefox'})):
+                            test_modules.append((name, error_flags))
+                            # explicitly define test ids to keep
+                            # a human readable test name in pytest
+                            test_modules_ids.append(name)
+        metafunc.parametrize("python_test", test_modules,
+                             ids=test_modules_ids)
 
 
 def test_recursive_repr(selenium):
