@@ -26,7 +26,7 @@ var languagePluginLoader = new Promise((resolve, reject) => {
     if (package_name_regexp.test(package_uri)) {
       return package_uri;
     } else if (package_uri_regexp.test(package_uri)) {
-      var match = package_uri_regexp.exec(package_uri);
+      let match = package_uri_regexp.exec(package_uri);
       // Get the regexp group corresponding to the package name
       return match[1];
     } else {
@@ -39,17 +39,17 @@ var languagePluginLoader = new Promise((resolve, reject) => {
     // DFS to find all dependencies of the requested packages
     let packages = window.pyodide.packages.dependencies;
     let queue = new Array(names);
-    let toLoad = new Set();
+    let toLoad = new Array();
     while (queue.length) {
       var package_uri = queue.pop();
 
       const package = _uri_to_package_name(package_uri);
 
       if (package == null) {
-          console.log(`Invalid package name or URI '${package_uri}'`);
-          break;
-      }  else if (package == package_uri) {
-          package_uri = 'packages.json';
+        console.log(`Invalid package name or URI '${package_uri}'`);
+        break;
+      } else if (package == package_uri) {
+        package_uri = 'packages.json';
       }
 
       console.log(`Loading ${package} from ${package_uri}`);
@@ -61,10 +61,10 @@ var languagePluginLoader = new Promise((resolve, reject) => {
                       `loaded from ${loadedPackages[package]}!`);
         }
       } else {
-        toLoad.add(package);
+        toLoad[package] = package_uri;
         if (packages.hasOwnProperty(package)) {
           packages[package].forEach((subpackage) => {
-            if (!(subpackage in loadedPackages) && !toLoad.has(subpackage)) {
+            if (!(subpackage in loadedPackages) && !(subpackage in toLoad)) {
               queue.push(subpackage);
             }
           });
@@ -75,27 +75,32 @@ var languagePluginLoader = new Promise((resolve, reject) => {
     }
 
     let promise = new Promise((resolve, reject) => {
-      if (toLoad.size === 0) {
+      if (Object.keys(toLoad).length === 0) {
         resolve('No new packages to load');
       }
 
       pyodide.monitorRunDependencies = (n) => {
         if (n === 0) {
-          toLoad.forEach((package) => {
-              loadedPackages[package] = package;
-          });
+          for (let package in toLoad) {
+              loadedPackages[package] = toLoad[package];
+          }
           delete pyodide.monitorRunDependencies;
-          const packageList = Array.from(toLoad.keys()).join(', ');
+          const packageList = Array.from(Object.keys(toLoad)).join(', ');
           resolve(`Loaded ${packageList}`);
         }
       };
 
-      toLoad.forEach((package) => {
+      for (let package in toLoad) {
         let script = document.createElement('script');
-        script.src = `${baseURL}${package}.js`;
+        let package_uri = toLoad[package];
+        if (package_uri == 'packages.json') {
+            script.src = `${baseURL}${package}.js`;
+        } else {
+            script.src = `${package_uri}`;
+        }
         script.onerror = (e) => { reject(e); };
         document.body.appendChild(script);
-      });
+      }
 
       // We have to invalidate Python's import caches, or it won't
       // see the new files. This is done here so it happens in parallel
