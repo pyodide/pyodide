@@ -1,6 +1,5 @@
 import os
 from pathlib import Path
-import time
 
 from http.server import HTTPServer, SimpleHTTPRequestHandler
 import threading
