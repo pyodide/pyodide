@@ -3,10 +3,10 @@
  */
 
 // Regexp for validating package name and URI
-var package_name_regexp = '[a-zA-Z0-9_\-]+'
+var package_name_regexp = '[a-z0-9_\-]+'
 var package_uri_regexp = new RegExp(
-     '^https?://.*?(' + package_name_regexp + ').js$');
-var package_name_regexp = new RegExp('^' + package_name_regexp + '$');
+     '^https?://.*?(' + package_name_regexp + ').js$', 'i');
+var package_name_regexp = new RegExp('^' + package_name_regexp + '$', 'i');
 
 
 var languagePluginLoader = new Promise((resolve, reject) => {
