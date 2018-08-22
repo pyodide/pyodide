@@ -5,7 +5,7 @@
 // Regexp for validating package name and URI
 var package_name_regexp = '[a-zA-Z0-9_\-]+'
 var package_uri_regexp = new RegExp(
-     '^(?:https?|file)://.*?(' + package_name_regexp + ').js$');
+     '^https?://.*?(' + package_name_regexp + ').js$');
 var package_name_regexp = new RegExp('^' + package_name_regexp + '$');
 
 
@@ -41,7 +41,7 @@ var languagePluginLoader = new Promise((resolve, reject) => {
     let queue = new Array(names);
     let toLoad = new Array();
     while (queue.length) {
-      var package_uri = queue.pop();
+      let package_uri = queue.pop();
 
       const package = _uri_to_package_name(package_uri);
 
@@ -57,7 +57,7 @@ var languagePluginLoader = new Promise((resolve, reject) => {
       if (package in loadedPackages) {
         if (package_uri != loadedPackages[package]) {
           console.log(`Error: URI mismatch, attempting to load package ` +
-                      `${package} from ${package_uri} while is already ` +
+                      `${package} from ${package_uri} while it is already ` +
                       `loaded from ${loadedPackages[package]}!`);
         }
       } else {
