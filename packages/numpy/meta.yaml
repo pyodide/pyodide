@@ -18,6 +18,7 @@ source:
     - patches/pass-along-errors-from-init.patch
     - patches/use-dummy-threading.patch
     - patches/use-local-blas-lapack.patch
+    - patches/fix-install-with-skip-build.patch
 
 build:
   cflags: -include math.h -I../../config

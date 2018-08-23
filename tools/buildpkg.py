@@ -135,17 +135,17 @@ def compile(path, srcpath, pkg, args):
 
 
 def package_files(buildpath, srcpath, pkg, args):
-    if (buildpath / '.pacakaged').is_file():
+    if (buildpath / '.packaged').is_file():
         return
 
     name = pkg['package']['name']
-    libdir = get_libdir(srcpath, args)
+    install_prefix = (srcpath / 'install').resolve()
     subprocess.run([
         'python',
         Path(os.environ['EMSCRIPTEN']) / 'tools' / 'file_packager.py',
         name + '.data',
         '--preload',
-        '{}@/lib/python3.6/site-packages'.format(libdir),
+        '{}@/'.format(install_prefix),
         '--js-output={}'.format(name + '.js'),
         '--export-name=pyodide',
         '--exclude', '*.wasm.pre',

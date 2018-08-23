@@ -186,12 +186,23 @@ def clean_out_native_artifacts():
                 path.unlink()
 
 
+def install_for_distribution():
+    subprocess.check_call(
+        [Path(args.host) / 'bin' / 'python3',
+         'setup.py',
+         'install',
+         '--skip-build',
+         '--prefix=install',
+         '--old-and-unmanageable'])
+
+
 def build_wrap(args):
     build_log_path = Path('build.log')
     if not build_log_path.is_file():
         capture_compile(args)
     clean_out_native_artifacts()
     replay_compile(args)
+    install_for_distribution()
 
 
 def parse_args():
