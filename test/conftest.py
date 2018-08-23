@@ -205,5 +205,10 @@ def run_web_server(q):
         httpd.serve_forever()
 
 
+@pytest.fixture
+def web_server():
+    return '127.0.0.1', PORT
+
+
 if multiprocessing.current_process().name == 'MainProcess':
     spawn_web_server()
