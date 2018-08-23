@@ -1,0 +1,14 @@
+diff --git a/numpy/distutils/command/install_clib.py b/numpy/distutils/command/install_clib.py
+index 662aa00bd..6f51e22ca 100644
+--- a/numpy/distutils/command/install_clib.py
++++ b/numpy/distutils/command/install_clib.py
+@@ -20,6 +20,9 @@ class install_clib(Command):
+     def run (self):
+         build_clib_cmd = get_cmd("build_clib")
+         build_dir = build_clib_cmd.build_clib
++        if build_dir is None:
++            build_clib_cmd.finalize_options()
++            build_dir = build_clib_cmd.build_clib
+ 
+         # We need the compiler to get the library name -> filename association
+         if not build_clib_cmd.compiler:
