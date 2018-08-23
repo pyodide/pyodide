@@ -1,0 +1,26 @@
+diff --git a/src/_pytest/capture.py b/src/_pytest/capture.py
+index faa767a8..23298939 100644
+--- a/src/_pytest/capture.py
++++ b/src/_pytest/capture.py
+@@ -10,7 +10,7 @@ import sys
+ import os
+ import io
+ from io import UnsupportedOperation
+-from tempfile import TemporaryFile
++from tempfile import NamedTemporaryFile as TemporaryFile
+ 
+ import six
+ import pytest
+diff --git a/src/_pytest/pastebin.py b/src/_pytest/pastebin.py
+index 6af202d1..9b192918 100644
+--- a/src/_pytest/pastebin.py
++++ b/src/_pytest/pastebin.py
+@@ -29,7 +29,7 @@ def pytest_configure(config):
+         # when using pytest-xdist, for example
+         if tr is not None:
+             # pastebin file will be utf-8 encoded binary file
+-            config._pastebinfile = tempfile.TemporaryFile("w+b")
++            config._pastebinfile = tempfile.NamedTemporaryFile("w+b")
+             oldwrite = tr._tw.write
+ 
+             def tee_write(s, **kwargs):
