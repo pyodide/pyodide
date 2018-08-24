@@ -49,7 +49,7 @@ var languagePluginLoader = new Promise((resolve, reject) => {
         console.log(`Invalid package name or URI '${package_uri}'`);
         break;
       } else if (package == package_uri) {
-        package_uri = 'packages.json';
+        package_uri = 'default channel';
       }
 
       console.log(`Loading ${package} from ${package_uri}`);

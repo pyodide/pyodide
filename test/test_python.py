@@ -7,7 +7,8 @@ import pytest
 
 
 def test_init(selenium_standalone):
-    assert 'Python initialization complete' in selenium_standalone.logs
+    assert ('Python initialization complete'
+            in selenium_standalone.logs.splitlines())
     assert len(selenium_standalone.driver.window_handles) == 1
 
 
@@ -19,7 +20,7 @@ def test_webbrowser(selenium):
 
 def test_print(selenium):
     selenium.run("print('This should be logged')")
-    assert 'This should be logged' in selenium.logs
+    assert 'This should be logged' in selenium.logs.splitlines()
 
 
 def test_python2js(selenium):
