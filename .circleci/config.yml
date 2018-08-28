@@ -63,7 +63,6 @@ jobs:
             ccache -z
             make
             ccache -s
-            make build/test.html build/test_data.txt
 
       - save_cache:
           paths:
@@ -93,7 +92,7 @@ jobs:
 
             source pyodide-env/bin/activate
             export PATH=$PWD/firefox:$PATH
-            pytest test -v --instafail -k firefox
+            pytest test -v -k firefox
 
   test-chrome:
     <<: *defaults
@@ -110,7 +109,7 @@ jobs:
 
             source pyodide-env/bin/activate
             export PATH=$PWD/firefox:$PATH
-            pytest test -v --instafail -k chrome
+            pytest test -v -k chrome
 
   deploy:
     machine:
