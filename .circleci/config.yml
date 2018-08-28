@@ -19,11 +19,12 @@ jobs:
             # Set up the Debian testing repo, and then install g++ from there...
             sudo bash -c "echo \"deb http://ftp.us.debian.org/debian testing main contrib non-free\" >> /etc/apt/sources.list"
             sudo apt-get update
-            sudo apt-get install node-less cmake build-essential flake8 uglifyjs python3-yaml chromium ccache
+            sudo apt-get install node-less cmake build-essential clang-format-6.0 flake8 uglifyjs python3-yaml chromium ccache
             sudo apt-get install -t testing g++-8
             sudo update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-6 60 --slave /usr/bin/g++ g++ /usr/bin/g++-6
             sudo update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-8 80 --slave /usr/bin/g++ g++ /usr/bin/g++-8
             sudo update-alternatives --set gcc /usr/bin/gcc-8
+            sudo ln -s /usr/bin/clang-format-6.0 /usr/bin/clang-format
 
             sudo pip install virtualenv
             
@@ -44,7 +45,6 @@ jobs:
             unzip chromedriver_linux64.zip
             mv chromedriver firefox
 
-
       - run:
           name: lint
           command: |
@@ -63,7 +63,6 @@ jobs:
             ccache -z
             make
             ccache -s
-            make build/test.html build/test_data.txt
 
       - save_cache:
           paths:
@@ -93,7 +92,7 @@ jobs:
 
             source pyodide-env/bin/activate
             export PATH=$PWD/firefox:$PATH
-            pytest test -v --instafail -k firefox
+            pytest test -v -k firefox
 
   test-chrome:
     <<: *defaults
@@ -110,7 +109,7 @@ jobs:
 
             source pyodide-env/bin/activate
             export PATH=$PWD/firefox:$PATH
-            pytest test -v --instafail -k chrome
+            pytest test -v -k chrome
 
   deploy:
     machine:

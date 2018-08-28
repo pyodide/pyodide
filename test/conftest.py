@@ -39,6 +39,10 @@ class SeleniumWrapper:
 
         driver = self.get_driver()
         wait = WebDriverWait(driver, timeout=20)
+        if not (BUILD_PATH / 'test.html').exists():
+            # selenium does not expose HTTP response codes
+            raise ValueError(f"{(BUILD_PATH / 'test.html').resolve()} "
+                             f"does not exist!")
         driver.get(f'http://127.0.0.1:{PORT}/test.html')
         wait.until(PyodideInited())
         self.wait = wait
