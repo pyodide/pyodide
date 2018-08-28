@@ -49,7 +49,9 @@ all: build/pyodide.asm.js \
 	build/matplotlib-sideload.html \
 	build/renderedhtml.css \
   build/test.data \
-  build/packages.json
+  build/packages.json \
+  build/test_data.txt \
+  build/test.html
 
 
 build/pyodide.asm.js: src/main.bc src/jsimport.bc src/jsproxy.bc src/js2python.bc \
@@ -103,6 +105,10 @@ build/renderedhtml.css: src/renderedhtml.less
 
 test: all
 	pytest test/ -v
+
+
+build/test_data.txt: test/data.txt
+	cp test/data.txt build/test_data.txt
 
 
 lint:

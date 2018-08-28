@@ -7,7 +7,6 @@ import multiprocessing
 import os
 import pathlib
 import queue
-import shutil
 import sys
 
 try:
@@ -114,16 +113,8 @@ class ChromeWrapper(SeleniumWrapper):
 
 
 if pytest is not None:
-
-    @pytest.fixture(scope='session')
-    def setup_resources():
-        shutil.copyfile(TEST_PATH / 'data.txt',
-                        BUILD_PATH / 'test_data.txt')
-        shutil.copyfile(TEST_PATH.parent / 'src' / 'test.html',
-                        BUILD_PATH / 'test.html')
-
     @pytest.fixture(params=['firefox', 'chrome'])
-    def selenium_standalone(request, setup_resources):
+    def selenium_standalone(request):
         if request.param == 'firefox':
             cls = FirefoxWrapper
         elif request.param == 'chrome':
@@ -136,7 +127,7 @@ if pytest is not None:
             selenium.driver.quit()
 
     @pytest.fixture(params=['firefox', 'chrome'], scope='module')
-    def _selenium_cached(request, setup_resources):
+    def _selenium_cached(request):
         # Cached selenium instance. This is a copy-paste of
         # selenium_standalone to avoid fixture scope issues
         if request.param == 'firefox':
