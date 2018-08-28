@@ -4,10 +4,9 @@
 
 // Regexp for validating package name and URI
 var package_name_regexp = '[a-z0-9_\-]+'
-var package_uri_regexp = new RegExp(
-     '^https?://.*?(' + package_name_regexp + ').js$', 'i');
+var package_uri_regexp =
+    new RegExp('^https?://.*?(' + package_name_regexp + ').js$', 'i');
 var package_name_regexp = new RegExp('^' + package_name_regexp + '$', 'i');
-
 
 var languagePluginLoader = new Promise((resolve, reject) => {
   // This is filled in by the Makefile to be either a local file or the
@@ -33,7 +32,6 @@ var languagePluginLoader = new Promise((resolve, reject) => {
       return null;
     }
   };
-
 
   let loadPackage = (names) => {
     // DFS to find all dependencies of the requested packages
@@ -82,7 +80,7 @@ var languagePluginLoader = new Promise((resolve, reject) => {
       pyodide.monitorRunDependencies = (n) => {
         if (n === 0) {
           for (let package in toLoad) {
-              loadedPackages[package] = toLoad[package];
+            loadedPackages[package] = toLoad[package];
           }
           delete pyodide.monitorRunDependencies;
           const packageList = Array.from(Object.keys(toLoad)).join(', ');
@@ -93,10 +91,10 @@ var languagePluginLoader = new Promise((resolve, reject) => {
       for (let package in toLoad) {
         let script = document.createElement('script');
         let package_uri = toLoad[package];
-        if (package_uri == 'packages.json') {
-            script.src = `${baseURL}${package}.js`;
+        if (package_uri == 'default channel') {
+          script.src = `${baseURL}${package}.js`;
         } else {
-            script.src = `${package_uri}`;
+          script.src = `${package_uri}`;
         }
         script.onerror = (e) => { reject(e); };
         document.body.appendChild(script);

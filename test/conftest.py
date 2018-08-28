@@ -33,9 +33,20 @@ class PackageLoaded:
         return bool(inited)
 
 
+def _display_driver_logs(browser, driver):
+    if browser == 'chrome':
+        print('# Selenium browser logs')
+        print(driver.get_log("browser"))
+    elif browser == 'firefox':
+        # browser logs are not available in GeckoDriver
+        # https://github.com/mozilla/geckodriver/issues/284
+        print('Cannot access browser logs for Firefox.')
+
+
 class SeleniumWrapper:
     def __init__(self):
         from selenium.webdriver.support.wait import WebDriverWait
+        from selenium.common.exceptions import TimeoutException
 
         driver = self.get_driver()
         wait = WebDriverWait(driver, timeout=20)
@@ -44,7 +55,11 @@ class SeleniumWrapper:
             raise ValueError(f"{(BUILD_PATH / 'test.html').resolve()} "
                              f"does not exist!")
         driver.get(f'http://127.0.0.1:{PORT}/test.html')
-        wait.until(PyodideInited())
+        try:
+            wait.until(PyodideInited())
+        except TimeoutException as exc:
+            _display_driver_logs(self.browser, driver)
+            raise TimeoutException()
         self.wait = wait
         self.driver = driver
 
@@ -68,11 +83,18 @@ class SeleniumWrapper:
         return self.driver.execute_script(catch)
 
     def load_package(self, packages):
+        from selenium.common.exceptions import TimeoutException
+
         self.run_js(
             'window.done = false\n' +
             'pyodide.loadPackage({!r})'.format(packages) +
             '.then(function() { window.done = true; })')
-        self.wait.until(PackageLoaded())
+        try:
+            self.wait.until(PackageLoaded())
+        except TimeoutException as exc:
+            _display_driver_logs(self.browser, self.driver)
+            print(self.logs)
+            raise TimeoutException()
 
     @property
     def urls(self):
