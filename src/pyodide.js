@@ -3,7 +3,7 @@
  */
 
 // Regexp for validating package name and URI
-var package_name_regexp = '[a-z0-9_\-]+'
+var package_name_regexp = '[a-z0-9_][a-z0-9_\-]*'
 var package_uri_regexp =
     new RegExp('^https?://.*?(' + package_name_regexp + ').js$', 'i');
 var package_name_regexp = new RegExp('^' + package_name_regexp + '$', 'i');
@@ -44,8 +44,7 @@ var languagePluginLoader = new Promise((resolve, reject) => {
       const package = _uri_to_package_name(package_uri);
 
       if (package == null) {
-        console.log(`Invalid package name or URI '${package_uri}'`);
-        break;
+        throw new Error(`Invalid package name or URI '${package_uri}'`);
       } else if (package == package_uri) {
         package_uri = 'default channel';
       }
@@ -54,9 +53,10 @@ var languagePluginLoader = new Promise((resolve, reject) => {
 
       if (package in loadedPackages) {
         if (package_uri != loadedPackages[package]) {
-          console.log(`Error: URI mismatch, attempting to load package ` +
-                      `${package} from ${package_uri} while it is already ` +
-                      `loaded from ${loadedPackages[package]}!`);
+          throw new Error(
+              `URI mismatch, attempting to load package ` +
+              `${package} from ${package_uri} while it is already ` +
+              `loaded from ${loadedPackages[package]}!`);
         }
       } else {
         toLoad[package] = package_uri;
@@ -67,7 +67,7 @@ var languagePluginLoader = new Promise((resolve, reject) => {
             }
           });
         } else {
-          console.log(`Unknown package '${package}'`);
+          log.console(`Unknown package '${package}'`);
         }
       }
     }

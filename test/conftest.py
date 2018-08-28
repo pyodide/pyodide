@@ -40,7 +40,8 @@ def _display_driver_logs(browser, driver):
     elif browser == 'firefox':
         # browser logs are not available in GeckoDriver
         # https://github.com/mozilla/geckodriver/issues/284
-        print('Cannot access browser logs for Firefox.')
+        print('Accessing raw browser logs with Selenium is not '
+              'supported by Firefox.')
 
 
 class SeleniumWrapper:

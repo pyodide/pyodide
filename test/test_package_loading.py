@@ -1,3 +1,5 @@
+import pytest
+from selenium.common.exceptions import WebDriverException
 
 
 def test_load_from_url(selenium_standalone, web_server):
@@ -16,15 +18,19 @@ def test_load_from_url(selenium_standalone, web_server):
 
 def test_uri_mismatch(selenium_standalone):
     selenium_standalone.load_package('pyparsing')
-    selenium_standalone.load_package('http://some_url/pyparsing.js')
+    with pytest.raises(WebDriverException,
+                       match="URI mismatch, attempting "
+                             "to load package pyparsing"):
+        selenium_standalone.load_package('http://some_url/pyparsing.js')
     assert "Invalid package name or URI" not in selenium_standalone.logs
-    assert ("URI mismatch, attempting "
-            "to load package pyparsing") in selenium_standalone.logs
 
 
 def test_invalid_package_name(selenium):
-    selenium.load_package('wrong name+$')
-    assert "Invalid package name or URI" in selenium.logs
+    with pytest.raises(WebDriverException,
+                       match="Invalid package name or URI"):
+        selenium.load_package('wrong name+$')
     selenium.clean_logs()
-    selenium.load_package('tcp://some_url')
-    assert "Invalid package name or URI" in selenium.logs
+
+    with pytest.raises(WebDriverException,
+                       match="Invalid package name or URI"):
+        selenium.load_package('tcp://some_url')
