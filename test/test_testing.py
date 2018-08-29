@@ -6,8 +6,6 @@ def test_pytest(selenium):
     selenium.run('import os')
     selenium.run('import numpy')
     selenium.run('base_dir = Path(numpy.__file__).parent / "core" / "tests"')
-    selenium.run('print(base_dir)')
-    selenium.run('print(list(sorted(os.listdir(base_dir))))')
     selenium.run("import pytest;"
                  "pytest.main([base_dir / 'test_api.py'])")
     logs = '\n'.join(selenium.logs)
