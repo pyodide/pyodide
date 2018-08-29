@@ -39,7 +39,15 @@ Pyodide. To use other libraries, you'll need to load their package using
 `pyodide.loadPackage`. This downloads the file data over the network (as a
 `.data` and `.js` index file) and installs the files in the virtual filesystem.
 
-When you request a package, all of that package's dependencies are also loaded.
+Packages can be loaded by name, for those included in the official pyodide
+repository (e.g. `pyodide.loadPackage('numpy')`). It is also possible to load
+packages from custom URLs (e.g.
+`pyodide.loadPackage('https://foo/bar/numpy.js')`), in which case the URL must
+end with `<package-name>.js`.
+
+When you request a package from the official repository, all of that package's
+dependencies are also loaded. Dependency resolution is not yet implemented
+when loading packages from custom URLs.
 
 `pyodide.loadPackage` returns a `Promise`.
 

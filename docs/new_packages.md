@@ -50,7 +50,8 @@ The supported keys in the `meta.yaml` file are described below.
 The name of the package. It must match the name of the package used when
 expanding the tarball, which is sometimes different from the name of the package
 in the Python namespace when installed. It must also match the name of the
-directory in which the `meta.yaml` file is placed.
+directory in which the `meta.yaml` file is placed. It can only contain
+alpha-numeric characters and `-`, `_`.
 
 #### `package/version`
 
