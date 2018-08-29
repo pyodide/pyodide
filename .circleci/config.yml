@@ -111,6 +111,9 @@ jobs:
             export PATH=$PWD/firefox:$PATH
             pytest test -v -k chrome
 
+      - store_artifacts:
+          path: /home/circleci/repo/build/
+
   deploy:
     machine:
       enabled: true

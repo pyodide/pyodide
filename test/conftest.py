@@ -33,9 +33,21 @@ class PackageLoaded:
         return bool(inited)
 
 
+def _display_driver_logs(browser, driver):
+    if browser == 'chrome':
+        print('# Selenium browser logs')
+        print(driver.get_log("browser"))
+    elif browser == 'firefox':
+        # browser logs are not available in GeckoDriver
+        # https://github.com/mozilla/geckodriver/issues/284
+        print('Accessing raw browser logs with Selenium is not '
+              'supported by Firefox.')
+
+
 class SeleniumWrapper:
     def __init__(self):
         from selenium.webdriver.support.wait import WebDriverWait
+        from selenium.common.exceptions import TimeoutException
 
         driver = self.get_driver()
         wait = WebDriverWait(driver, timeout=20)
@@ -44,13 +56,21 @@ class SeleniumWrapper:
             raise ValueError(f"{(BUILD_PATH / 'test.html').resolve()} "
                              f"does not exist!")
         driver.get(f'http://127.0.0.1:{PORT}/test.html')
-        wait.until(PyodideInited())
+        try:
+            wait.until(PyodideInited())
+        except TimeoutException as exc:
+            _display_driver_logs(self.browser, driver)
+            raise TimeoutException()
         self.wait = wait
         self.driver = driver
 
     @property
     def logs(self):
-        return self.driver.execute_script("return window.logs")
+        logs = self.driver.execute_script("return window.logs")
+        return '\n'.join(str(x) for x in logs)
+
+    def clean_logs(self):
+        self.driver.execute_script("window.logs = []")
 
     def run(self, code):
         return self.run_js(
@@ -64,11 +84,18 @@ class SeleniumWrapper:
         return self.driver.execute_script(catch)
 
     def load_package(self, packages):
+        from selenium.common.exceptions import TimeoutException
+
         self.run_js(
             'window.done = false\n' +
             'pyodide.loadPackage({!r})'.format(packages) +
             '.then(function() { window.done = true; })')
-        self.wait.until(PackageLoaded())
+        try:
+            self.wait.until(PackageLoaded())
+        except TimeoutException as exc:
+            _display_driver_logs(self.browser, self.driver)
+            print(self.logs)
+            raise TimeoutException()
 
     @property
     def urls(self):
@@ -123,7 +150,7 @@ if pytest is not None:
         try:
             yield selenium
         finally:
-            print('\n'.join(str(x) for x in selenium.logs))
+            print(selenium.logs)
             selenium.driver.quit()
 
     @pytest.fixture(params=['firefox', 'chrome'], scope='module')
@@ -144,11 +171,10 @@ if pytest is not None:
     def selenium(_selenium_cached):
         # selenium instance cached at the module level
         try:
-            # clean selenium logs for each test run
-            _selenium_cached.driver.execute_script("window.logs = []")
+            _selenium_cached.clean_logs()
             yield _selenium_cached
         finally:
-            print('\n'.join(str(x) for x in _selenium_cached.logs))
+            print(_selenium_cached.logs)
 
 
 PORT = 0
@@ -200,6 +226,11 @@ def run_web_server(q):
 
         httpd.service_actions = service_actions
         httpd.serve_forever()
+
+
+@pytest.fixture
+def web_server():
+    return '127.0.0.1', PORT
 
 
 if multiprocessing.current_process().name == 'MainProcess':

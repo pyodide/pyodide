@@ -2,6 +2,12 @@
  * The main bootstrap script for loading pyodide.
  */
 
+// Regexp for validating package name and URI
+var package_name_regexp = '[a-z0-9_][a-z0-9_\-]*'
+var package_uri_regexp =
+    new RegExp('^https?://.*?(' + package_name_regexp + ').js$', 'i');
+var package_name_regexp = new RegExp('^' + package_name_regexp + '$', 'i');
+
 var languagePluginLoader = new Promise((resolve, reject) => {
   // This is filled in by the Makefile to be either a local file or the
   // deployed location. TODO: This should be done in a less hacky
@@ -11,20 +17,52 @@ var languagePluginLoader = new Promise((resolve, reject) => {
   ////////////////////////////////////////////////////////////
   // Package loading
   var packages = undefined;
-  let loadedPackages = new Set();
+  let loadedPackages = new Array();
+
+  let _uri_to_package_name = (package_uri) => {
+    // Generate a unique package name from URI
+
+    if (package_name_regexp.test(package_uri)) {
+      return package_uri;
+    } else if (package_uri_regexp.test(package_uri)) {
+      let match = package_uri_regexp.exec(package_uri);
+      // Get the regexp group corresponding to the package name
+      return match[1];
+    } else {
+      return null;
+    }
+  };
 
   let loadPackage = (names) => {
     // DFS to find all dependencies of the requested packages
     let packages = window.pyodide.packages.dependencies;
     let queue = new Array(names);
-    let toLoad = new Set();
+    let toLoad = new Array();
     while (queue.length) {
-      const package = queue.pop();
-      if (!loadedPackages.has(package)) {
-        toLoad.add(package);
+      let package_uri = queue.pop();
+
+      const package = _uri_to_package_name(package_uri);
+
+      if (package == null) {
+        throw new Error(`Invalid package name or URI '${package_uri}'`);
+      } else if (package == package_uri) {
+        package_uri = 'default channel';
+      }
+
+      console.log(`Loading ${package} from ${package_uri}`);
+
+      if (package in loadedPackages) {
+        if (package_uri != loadedPackages[package]) {
+          throw new Error(
+              `URI mismatch, attempting to load package ` +
+              `${package} from ${package_uri} while it is already ` +
+              `loaded from ${loadedPackages[package]}!`);
+        }
+      } else {
+        toLoad[package] = package_uri;
         if (packages.hasOwnProperty(package)) {
           packages[package].forEach((subpackage) => {
-            if (!loadedPackages.has(subpackage) && !toLoad.has(subpackage)) {
+            if (!(subpackage in loadedPackages) && !(subpackage in toLoad)) {
               queue.push(subpackage);
             }
           });
@@ -35,25 +73,32 @@ var languagePluginLoader = new Promise((resolve, reject) => {
     }
 
     let promise = new Promise((resolve, reject) => {
-      if (toLoad.size === 0) {
+      if (Object.keys(toLoad).length === 0) {
         resolve('No new packages to load');
       }
 
       pyodide.monitorRunDependencies = (n) => {
         if (n === 0) {
-          toLoad.forEach((package) => loadedPackages.add(package));
+          for (let package in toLoad) {
+            loadedPackages[package] = toLoad[package];
+          }
           delete pyodide.monitorRunDependencies;
-          const packageList = Array.from(toLoad.keys()).join(', ');
+          const packageList = Array.from(Object.keys(toLoad)).join(', ');
           resolve(`Loaded ${packageList}`);
         }
       };
 
-      toLoad.forEach((package) => {
+      for (let package in toLoad) {
         let script = document.createElement('script');
-        script.src = `${baseURL}${package}.js`;
+        let package_uri = toLoad[package];
+        if (package_uri == 'default channel') {
+          script.src = `${baseURL}${package}.js`;
+        } else {
+          script.src = `${package_uri}`;
+        }
         script.onerror = (e) => { reject(e); };
         document.body.appendChild(script);
-      });
+      }
 
       // We have to invalidate Python's import caches, or it won't
       // see the new files. This is done here so it happens in parallel
