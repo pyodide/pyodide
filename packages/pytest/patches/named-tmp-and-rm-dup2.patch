@@ -1,5 +1,5 @@
 diff --git a/src/_pytest/capture.py b/src/_pytest/capture.py
-index faa767a8..551484b0 100644
+index faa767a8..518f5c8b 100644
 --- a/src/_pytest/capture.py
 +++ b/src/_pytest/capture.py
 @@ -10,7 +10,7 @@ import sys
@@ -11,34 +11,38 @@ index faa767a8..551484b0 100644
  
  import six
  import pytest
-@@ -482,7 +482,7 @@ class FDCaptureBinary(object):
+@@ -471,7 +471,6 @@ class FDCaptureBinary(object):
+                 else:
+                     self.syscapture = NoCapture()
+             self.tmpfile = tmpfile
+-            self.tmpfile_fd = tmpfile.fileno()
+ 
+     def __repr__(self):
+         return "<FDCapture %s oldfd=%s>" % (self.targetfd, self.targetfd_save)
+@@ -482,7 +481,6 @@ class FDCaptureBinary(object):
              os.fstat(self.targetfd_save)
          except (AttributeError, OSError):
              raise ValueError("saved filedescriptor not valid anymore")
 -        os.dup2(self.tmpfile_fd, self.targetfd)
-+        self.tmpfile_fd = os.dup(self.targetfd)
          self.syscapture.start()
  
      def snap(self):
-@@ -496,18 +496,18 @@ class FDCaptureBinary(object):
+@@ -496,18 +494,14 @@ class FDCaptureBinary(object):
          """ stop capturing, restore streams, return original capture file,
          seeked to position zero. """
          targetfd_save = self.__dict__.pop("targetfd_save")
 -        os.dup2(targetfd_save, self.targetfd)
-+        targetfd_save = os.dup(self.targetfd)
-         os.close(targetfd_save)
+-        os.close(targetfd_save)
          self.syscapture.done()
          _attempt_to_close_capture_file(self.tmpfile)
  
      def suspend(self):
          self.syscapture.suspend()
 -        os.dup2(self.targetfd_save, self.targetfd)
-+        self.targetfd_save = os.dup(self.targetfd)
  
      def resume(self):
          self.syscapture.resume()
 -        os.dup2(self.tmpfile_fd, self.targetfd)
-+        self.tmpfile_fd = os.dup(self.targetfd)
  
      def writeorg(self, data):
          """ write to original file descriptor. """

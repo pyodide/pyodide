@@ -7,7 +7,7 @@ source:
   md5: 8ca6124a3a80f9555c50f5c09056ea02
 
   patches:
-    - patches/use-named-temporary-file.patch
+    - patches/named-tmp-and-rm-dup2.patch
 
 requirements:
   run:
