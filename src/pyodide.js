@@ -36,7 +36,7 @@ var languagePluginLoader = new Promise((resolve, reject) => {
   let loadPackage = (names) => {
     // DFS to find all dependencies of the requested packages
     let packages = window.pyodide.packages.dependencies;
-    let queue = new Array(names);
+    let queue = [].concat(names || []);
     let toLoad = new Array();
     while (queue.length) {
       let package_uri = queue.pop();

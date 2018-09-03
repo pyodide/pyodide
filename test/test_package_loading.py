@@ -1,5 +1,6 @@
 import pytest
 from selenium.common.exceptions import WebDriverException
+from .conftest import PackageLoaded
 
 
 def test_load_from_url(selenium_standalone, web_server):
@@ -34,3 +35,26 @@ def test_invalid_package_name(selenium):
     with pytest.raises(WebDriverException,
                        match="Invalid package name or URI"):
         selenium.load_package('tcp://some_url')
+
+
+def test_load_packages_multiple(selenium):
+    selenium.load_package(['pyparsing', 'pytz'])
+
+
+@pytest.mark.xfail(reason='Not implemented')
+def test_load_packages_simultaneous(selenium_standalone):
+    selenium = selenium_standalone
+
+    from selenium.common.exceptions import TimeoutException
+
+    selenium.run_js(
+        'window.done = false\n'
+        'pyodide.loadPackage("numpy")\n'
+        'pyodide.loadPackage("matplotlib")'
+        '.then(function() { window.done = true; })')
+    try:
+        selenium.wait.until(PackageLoaded())
+    except TimeoutException as exc:
+        print(selenium.logs)
+        raise TimeoutException()
+    assert selenium.logs.count('Loading numpy') == 1
