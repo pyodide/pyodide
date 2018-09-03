@@ -37,8 +37,12 @@ def test_invalid_package_name(selenium):
         selenium.load_package('tcp://some_url')
 
 
-def test_load_packages_multiple(selenium):
-    selenium.load_package(['pyparsing', 'pytz'])
+def test_load_packages_multiple(selenium_standalone):
+    selenium = selenium_standalone
+    selenium.load_package(['pyparsing', 'matplotlib'])
+    selenium.run('import pyparsing')
+    selenium.run('import matplotlib')
+    assert selenium.logs.count('Loading pyparsing') == 1
 
 
 @pytest.mark.xfail(reason='Not implemented')
