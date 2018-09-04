@@ -162,16 +162,16 @@ Likewise, you can use Javascript objects from Python.
 
 %% js
 // javascript
-function square(x) {
-  return x*x;
+function cube(x) {
+  return x*x*x;
 }
 
 %% md
 To call this function from Python...
 
 %% code {"language":"py"}
-from js import square
-square(4)
+from js import cube
+cube(4)
 
 %% md
 ## Exceptions
