@@ -1,6 +1,5 @@
 import pytest
 from selenium.common.exceptions import WebDriverException
-from .conftest import PackageLoaded
 
 
 def test_load_from_url(selenium_standalone, web_server):
@@ -37,28 +36,16 @@ def test_invalid_package_name(selenium):
         selenium.load_package('tcp://some_url')
 
 
-def test_load_packages_multiple(selenium_standalone):
+@pytest.mark.parametrize('packages', [['pyparsing', 'pytz'],
+                                      ['pyparsing', 'matplotlib']],
+                         ids='-'.join)
+def test_load_packages_multiple(selenium_standalone, packages):
     selenium = selenium_standalone
-    selenium.load_package(['pyparsing', 'matplotlib'])
-    selenium.run('import pyparsing')
-    selenium.run('import matplotlib')
-    assert selenium.logs.count('Loading pyparsing') == 1
-
-
-@pytest.mark.xfail(reason='Not implemented')
-def test_load_packages_simultaneous(selenium_standalone):
-    selenium = selenium_standalone
-
-    from selenium.common.exceptions import TimeoutException
-
-    selenium.run_js(
-        'window.done = false\n'
-        'pyodide.loadPackage("numpy")\n'
-        'pyodide.loadPackage("matplotlib")'
-        '.then(function() { window.done = true; })')
-    try:
-        selenium.wait.until(PackageLoaded())
-    except TimeoutException as exc:
-        print(selenium.logs)
-        raise TimeoutException()
-    assert selenium.logs.count('Loading numpy') == 1
+    selenium.load_package(packages)
+    selenium.run(f'import {packages[0]}')
+    selenium.run(f'import {packages[1]}')
+    # The long must show that each package is loaded exactly once,
+    # including when one package is a dependency of the other
+    # ('pyparsing' and 'matplotlib')
+    assert selenium.logs.count(f'Loading {packages[0]}') == 1
+    assert selenium.logs.count(f'Loading {packages[1]}') == 1
