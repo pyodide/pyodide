@@ -36,7 +36,7 @@ var languagePluginLoader = new Promise((resolve, reject) => {
   let loadPackage = (names) => {
     // DFS to find all dependencies of the requested packages
     let packages = window.pyodide.packages.dependencies;
-    let queue = new Array(names);
+    let queue = [].concat(names || []);
     let toLoad = new Array();
     while (queue.length) {
       let package_uri = queue.pop();
@@ -49,8 +49,6 @@ var languagePluginLoader = new Promise((resolve, reject) => {
         package_uri = 'default channel';
       }
 
-      console.log(`Loading ${package} from ${package_uri}`);
-
       if (package in loadedPackages) {
         if (package_uri != loadedPackages[package]) {
           throw new Error(
@@ -58,7 +56,16 @@ var languagePluginLoader = new Promise((resolve, reject) => {
               `${package} from ${package_uri} while it is already ` +
               `loaded from ${loadedPackages[package]}!`);
         }
+      } else if (package in toLoad) {
+        if (package_uri != toLoad[package]) {
+          throw new Error(
+              `URI mismatch, attempting to load package ` +
+              `${package} from ${package_uri} while it is already ` +
+              `being loaded from ${toLoad[package]}!`);
+        }
       } else {
+        console.log(`Loading ${package} from ${package_uri}`);
+
         toLoad[package] = package_uri;
         if (packages.hasOwnProperty(package)) {
           packages[package].forEach((subpackage) => {

@@ -34,3 +34,18 @@ def test_invalid_package_name(selenium):
     with pytest.raises(WebDriverException,
                        match="Invalid package name or URI"):
         selenium.load_package('tcp://some_url')
+
+
+@pytest.mark.parametrize('packages', [['pyparsing', 'pytz'],
+                                      ['pyparsing', 'matplotlib']],
+                         ids='-'.join)
+def test_load_packages_multiple(selenium_standalone, packages):
+    selenium = selenium_standalone
+    selenium.load_package(packages)
+    selenium.run(f'import {packages[0]}')
+    selenium.run(f'import {packages[1]}')
+    # The long must show that each package is loaded exactly once,
+    # including when one package is a dependency of the other
+    # ('pyparsing' and 'matplotlib')
+    assert selenium.logs.count(f'Loading {packages[0]}') == 1
+    assert selenium.logs.count(f'Loading {packages[1]}') == 1
