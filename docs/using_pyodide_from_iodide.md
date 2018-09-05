@@ -61,6 +61,11 @@ When you request a package from the official repository, all of that package's
 dependencies are also loaded. Dependency resolution is not yet implemented
 when loading packages from custom URLs.
 
+Multiple packages can also be loaded in a single call,
+```js
+pyodide.loadPackage(['cycler', 'pytz'])
+```
+
 `pyodide.loadPackage` returns a `Promise`.
 
 ```javascript
