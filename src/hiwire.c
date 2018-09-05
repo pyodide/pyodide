@@ -68,12 +68,7 @@ EM_JS(int, hiwire_string_utf8, (int ptr), {
 });
 
 EM_JS(int, hiwire_string_ascii, (int ptr), {
-  var jsstr = "";
-  var idx = ptr;
-  for (var idx = ptr; Module.HEAPU8[idx] != 0; ++idx) {
-    jsstr += String.fromCharCode(Module.HEAPU8[idx]);
-  }
-  return Module.hiwire_new_value(jsstr);
+  return Module.hiwire_new_value(AsciiToString(ptr));
 });
 
 EM_JS(int, hiwire_bytes, (int ptr, int len), {
