@@ -109,7 +109,7 @@ is_type_name(PyObject* x, const char* name)
 }
 
 static int
-python2js_int(PyObject* x)
+_python2js(PyObject* x)
 {
   if (x == Py_None) {
     return hiwire_undefined();
@@ -166,7 +166,7 @@ python2js_int(PyObject* x)
         Py_INCREF(x);
         return pyproxy_new((int)x);
       }
-      int jsitem = python2js_int(pyitem);
+      int jsitem = _python2js(pyitem);
       if (jsitem == -1) {
         Py_DECREF(pyitem);
         hiwire_decref(jsarray);
@@ -182,12 +182,12 @@ python2js_int(PyObject* x)
     PyObject *pykey, *pyval;
     Py_ssize_t pos = 0;
     while (PyDict_Next(x, &pos, &pykey, &pyval)) {
-      int jskey = python2js_int(pykey);
+      int jskey = _python2js(pykey);
       if (jskey == -1) {
         hiwire_decref(jsdict);
         return -1;
       }
-      int jsval = python2js_int(pyval);
+      int jsval = _python2js(pyval);
       if (jsval == -1) {
         hiwire_decref(jskey);
         hiwire_decref(jsdict);
@@ -207,7 +207,7 @@ python2js_int(PyObject* x)
 int
 python2js(PyObject* x)
 {
-  int result = python2js_int(x);
+  int result = _python2js(x);
   if (result == -1) {
     return pythonexc2js();
   }
