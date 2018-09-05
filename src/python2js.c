@@ -21,7 +21,7 @@ pythonexc2js()
   int exc;
 
   if (type == NULL || type == Py_None || value == NULL || value == Py_None) {
-    excval = hiwire_string_utf8((int)"No exception type or value");
+    excval = hiwire_string_ascii((int)"No exception type or value");
     PyErr_Print();
     PyErr_Clear();
     goto exit;
@@ -31,7 +31,7 @@ pythonexc2js()
   if (tbmod == NULL) {
     PyObject* repr = PyObject_Repr(value);
     if (repr == NULL) {
-      excval = hiwire_string_utf8((int)"Could not get repr for exception");
+      excval = hiwire_string_ascii((int)"Could not get repr for exception");
     } else {
       excval = python2js(repr);
       Py_DECREF(repr);
@@ -46,7 +46,7 @@ pythonexc2js()
     }
     if (format_exception == NULL) {
       excval =
-        hiwire_string_utf8((int)"Could not get format_exception function");
+        hiwire_string_ascii((int)"Could not get format_exception function");
     } else {
       PyObject* pylines;
       if (no_traceback) {
@@ -58,7 +58,7 @@ pythonexc2js()
       }
       if (pylines == NULL) {
         excval =
-          hiwire_string_utf8((int)"Error calling traceback.format_exception");
+          hiwire_string_ascii((int)"Error calling traceback.format_exception");
         PyErr_Print();
         PyErr_Clear();
         goto exit;

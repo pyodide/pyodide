@@ -67,6 +67,15 @@ EM_JS(int, hiwire_string_utf8, (int ptr), {
   return Module.hiwire_new_value(UTF8ToString(ptr));
 });
 
+EM_JS(int, hiwire_string_ascii, (int ptr), {
+  var jsstr = "";
+  var idx = ptr;
+  for (var idx = ptr; Module.HEAPU8[idx] != 0; ++idx) {
+    jsstr += String.fromCharCode(Module.HEAPU8[idx]);
+  }
+  return Module.hiwire_new_value(jsstr);
+});
+
 EM_JS(int, hiwire_bytes, (int ptr, int len), {
   var bytes = new Uint8ClampedArray(Module.HEAPU8.buffer, ptr, len);
   return Module.hiwire_new_value(bytes);
