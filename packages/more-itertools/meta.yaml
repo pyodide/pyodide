@@ -1,0 +1,12 @@
+package:
+  name: more-itertools
+  version: 4.3.0
+
+source:
+  url: https://pypi.io/packages/source/m/more-itertools/more-itertools-4.3.0.tar.gz
+  sha256: c476b5d3a34e12d40130bc2f935028b5f636df8f372dc2c1c01dc19681b2039e
+
+
+test:
+  imports:
+    - more_itertools

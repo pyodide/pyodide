@@ -1,0 +1,61 @@
+diff --git a/src/_pytest/capture.py b/src/_pytest/capture.py
+index faa767a8..518f5c8b 100644
+--- a/src/_pytest/capture.py
++++ b/src/_pytest/capture.py
+@@ -10,7 +10,7 @@ import sys
+ import os
+ import io
+ from io import UnsupportedOperation
+-from tempfile import TemporaryFile
++from tempfile import NamedTemporaryFile as TemporaryFile
+ 
+ import six
+ import pytest
+@@ -471,7 +471,6 @@ class FDCaptureBinary(object):
+                 else:
+                     self.syscapture = NoCapture()
+             self.tmpfile = tmpfile
+-            self.tmpfile_fd = tmpfile.fileno()
+ 
+     def __repr__(self):
+         return "<FDCapture %s oldfd=%s>" % (self.targetfd, self.targetfd_save)
+@@ -482,7 +481,6 @@ class FDCaptureBinary(object):
+             os.fstat(self.targetfd_save)
+         except (AttributeError, OSError):
+             raise ValueError("saved filedescriptor not valid anymore")
+-        os.dup2(self.tmpfile_fd, self.targetfd)
+         self.syscapture.start()
+ 
+     def snap(self):
+@@ -496,18 +494,14 @@ class FDCaptureBinary(object):
+         """ stop capturing, restore streams, return original capture file,
+         seeked to position zero. """
+         targetfd_save = self.__dict__.pop("targetfd_save")
+-        os.dup2(targetfd_save, self.targetfd)
+-        os.close(targetfd_save)
+         self.syscapture.done()
+         _attempt_to_close_capture_file(self.tmpfile)
+ 
+     def suspend(self):
+         self.syscapture.suspend()
+-        os.dup2(self.targetfd_save, self.targetfd)
+ 
+     def resume(self):
+         self.syscapture.resume()
+-        os.dup2(self.tmpfile_fd, self.targetfd)
+ 
+     def writeorg(self, data):
+         """ write to original file descriptor. """
+diff --git a/src/_pytest/pastebin.py b/src/_pytest/pastebin.py
+index 6af202d1..9b192918 100644
+--- a/src/_pytest/pastebin.py
++++ b/src/_pytest/pastebin.py
+@@ -29,7 +29,7 @@ def pytest_configure(config):
+         # when using pytest-xdist, for example
+         if tr is not None:
+             # pastebin file will be utf-8 encoded binary file
+-            config._pastebinfile = tempfile.TemporaryFile("w+b")
++            config._pastebinfile = tempfile.NamedTemporaryFile("w+b")
+             oldwrite = tr._tw.write
+ 
+             def tee_write(s, **kwargs):
