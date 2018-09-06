@@ -18,10 +18,9 @@ def test_load_from_url(selenium_standalone, web_server):
 
 def test_uri_mismatch(selenium_standalone):
     selenium_standalone.load_package('pyparsing')
-    with pytest.raises(WebDriverException,
-                       match="URI mismatch, attempting "
-                             "to load package pyparsing"):
-        selenium_standalone.load_package('http://some_url/pyparsing.js')
+    selenium_standalone.load_package('http://some_url/pyparsing.js')
+    assert ("URI mismatch, attempting to load package pyparsing" in
+            selenium_standalone.logs)
     assert "Invalid package name or URI" not in selenium_standalone.logs
 
 
@@ -62,7 +61,7 @@ def test_load_packages_sequential(selenium_standalone, packages):
     selenium.run_js(
         'window.done = false\n' +
         'Promise.all([{}])'.format(promises) +
-        '.then(function() { window.done = true; })')
+        '.finally(function() { window.done = true; })')
     selenium.wait_until_packages_loaded()
     selenium.run(f'import {packages[0]}')
     selenium.run(f'import {packages[1]}')

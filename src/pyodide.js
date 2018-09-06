@@ -125,7 +125,9 @@ var languagePluginLoader = new Promise((resolve, reject) => {
   let loadPackage = (names) => {
     /* We want to make sure that only one loadPackage invocation runs at any
      * given time, so this creates a "chain" of promises. */
-    loadPackagePromise = loadPackagePromise.then(() => _loadPackage(names));
+    loadPackagePromise = loadPackagePromise
+      .then(() => _loadPackage(names))
+      .catch((e) => console.log(e.to_string()));
     return loadPackagePromise;
   };
 

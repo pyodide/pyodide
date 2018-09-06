@@ -94,7 +94,7 @@ class SeleniumWrapper:
         self.run_js(
             'window.done = false\n' +
             'pyodide.loadPackage({!r})'.format(packages) +
-            '.then(function() { window.done = true; })')
+            '.finally(function() { window.done = true; })')
         self.wait_until_packages_loaded()
 
     def wait_until_packages_loaded(self):
