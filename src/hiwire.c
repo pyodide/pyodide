@@ -67,6 +67,10 @@ EM_JS(int, hiwire_string_utf8, (int ptr), {
   return Module.hiwire_new_value(UTF8ToString(ptr));
 });
 
+EM_JS(int, hiwire_string_ascii, (int ptr), {
+  return Module.hiwire_new_value(AsciiToString(ptr));
+});
+
 EM_JS(int, hiwire_bytes, (int ptr, int len), {
   var bytes = new Uint8ClampedArray(Module.HEAPU8.buffer, ptr, len);
   return Module.hiwire_new_value(bytes);

@@ -87,6 +87,16 @@ int
 hiwire_string_utf8(int ptr);
 
 /**
+ * Create a new Javascript string, given a pointer to a null-terminated buffer
+ * containing ascii (well, technically latin-1). The string data itself is
+ * copied.
+ *
+ * Returns: New reference
+ */
+int
+hiwire_string_ascii(int ptr);
+
+/**
  * Create a new Javascript Uint8ClampedArray, given a pointer to a buffer and a
  * length, in bytes.
  *
