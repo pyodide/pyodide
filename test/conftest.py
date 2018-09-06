@@ -91,12 +91,15 @@ class SeleniumWrapper:
         return self.driver.execute_script(catch)
 
     def load_package(self, packages):
-        from selenium.common.exceptions import TimeoutException
-
         self.run_js(
             'window.done = false\n' +
             'pyodide.loadPackage({!r})'.format(packages) +
             '.then(function() { window.done = true; })')
+        self.wait_until_packages_loaded()
+
+    def wait_until_packages_loaded(self):
+        from selenium.common.exceptions import TimeoutException
+
         try:
             self.wait.until(PackageLoaded())
         except TimeoutException as exc:

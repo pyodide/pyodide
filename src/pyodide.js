@@ -18,6 +18,7 @@ var languagePluginLoader = new Promise((resolve, reject) => {
   // Package loading
   var packages = undefined;
   let loadedPackages = new Array();
+  var loadPackagePromise = new Promise((resolve) => resolve());
 
   let _uri_to_package_name = (package_uri) => {
     // Generate a unique package name from URI
@@ -33,7 +34,7 @@ var languagePluginLoader = new Promise((resolve, reject) => {
     }
   };
 
-  let loadPackage = (names) => {
+  let _loadPackage = (names) => {
     // DFS to find all dependencies of the requested packages
     let packages = window.pyodide.packages.dependencies;
     let queue = [].concat(names || []);
@@ -119,6 +120,13 @@ var languagePluginLoader = new Promise((resolve, reject) => {
     }
 
     return promise;
+  };
+
+  let loadPackage = (names) => {
+    /* We want to make sure that only one loadPackage invocation runs at any
+     * given time, so this creates a "chain" of promises. */
+    loadPackagePromise = loadPackagePromise.then(() => _loadPackage(names));
+    return loadPackagePromise;
   };
 
   function fixRecursionLimit(pyodide) {

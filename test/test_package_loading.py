@@ -44,7 +44,29 @@ def test_load_packages_multiple(selenium_standalone, packages):
     selenium.load_package(packages)
     selenium.run(f'import {packages[0]}')
     selenium.run(f'import {packages[1]}')
-    # The long must show that each package is loaded exactly once,
+    # The log must show that each package is loaded exactly once,
+    # including when one package is a dependency of the other
+    # ('pyparsing' and 'matplotlib')
+    assert selenium.logs.count(f'Loading {packages[0]}') == 1
+    assert selenium.logs.count(f'Loading {packages[1]}') == 1
+
+
+@pytest.mark.parametrize('packages', [['pyparsing', 'pytz'],
+                                      ['pyparsing', 'matplotlib']],
+                         ids='-'.join)
+def test_load_packages_sequential(selenium_standalone, packages):
+    selenium = selenium_standalone
+    promises = ','.join(
+        'pyodide.loadPackage("{}")'.format(x) for x in packages
+    )
+    selenium.run_js(
+        'window.done = false\n' +
+        'Promise.all([{}])'.format(promises) +
+        '.then(function() { window.done = true; })')
+    selenium.wait_until_packages_loaded()
+    selenium.run(f'import {packages[0]}')
+    selenium.run(f'import {packages[1]}')
+    # The log must show that each package is loaded exactly once,
     # including when one package is a dependency of the other
     # ('pyparsing' and 'matplotlib')
     assert selenium.logs.count(f'Loading {packages[0]}') == 1
