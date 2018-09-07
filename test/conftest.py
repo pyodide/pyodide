@@ -4,6 +4,7 @@ Various common utilities for testing.
 
 import atexit
 import multiprocessing
+import textwrap
 import os
 import pathlib
 import queue
@@ -73,10 +74,16 @@ class SeleniumWrapper:
         self.driver.execute_script("window.logs = []")
 
     def run(self, code):
+        if isinstance(code, str) and code.startswith('\n'):
+            # we have a multiline string, fix indentation
+            code = textwrap.dedent(code)
         return self.run_js(
             'return pyodide.runPython({!r})'.format(code))
 
     def run_js(self, code):
+        if isinstance(code, str) and code.startswith('\n'):
+            # we have a multiline string, fix indentation
+            code = textwrap.dedent(code)
         catch = f"""
             Error.stackTraceLimit = Infinity;
             try {{ {code} }}
