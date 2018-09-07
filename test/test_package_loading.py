@@ -25,14 +25,12 @@ def test_uri_mismatch(selenium_standalone):
 
 
 def test_invalid_package_name(selenium):
-    with pytest.raises(WebDriverException,
-                       match="Invalid package name or URI"):
-        selenium.load_package('wrong name+$')
+    selenium.load_package('wrong name+$')
+    assert "Invalid package name or URI" in selenium.logs
     selenium.clean_logs()
 
-    with pytest.raises(WebDriverException,
-                       match="Invalid package name or URI"):
-        selenium.load_package('tcp://some_url')
+    selenium.load_package('tcp://some_url')
+    assert "Invalid package name or URI" in selenium.logs
 
 
 @pytest.mark.parametrize('packages', [['pyparsing', 'pytz'],

@@ -45,24 +45,27 @@ var languagePluginLoader = new Promise((resolve, reject) => {
       const package = _uri_to_package_name(package_uri);
 
       if (package == null) {
-        throw new Error(`Invalid package name or URI '${package_uri}'`);
+        console.error(`Invalid package name or URI '${package_uri}'`);
+        return;
       } else if (package == package_uri) {
         package_uri = 'default channel';
       }
 
       if (package in loadedPackages) {
         if (package_uri != loadedPackages[package]) {
-          throw new Error(
+          console.error(
               `URI mismatch, attempting to load package ` +
               `${package} from ${package_uri} while it is already ` +
               `loaded from ${loadedPackages[package]}!`);
+          return;
         }
       } else if (package in toLoad) {
         if (package_uri != toLoad[package]) {
-          throw new Error(
+          console.error(
               `URI mismatch, attempting to load package ` +
               `${package} from ${package_uri} while it is already ` +
               `being loaded from ${toLoad[package]}!`);
+          return;
         }
       } else {
         console.log(`Loading ${package} from ${package_uri}`);
@@ -125,8 +128,7 @@ var languagePluginLoader = new Promise((resolve, reject) => {
   let loadPackage = (names) => {
     /* We want to make sure that only one loadPackage invocation runs at any
      * given time, so this creates a "chain" of promises. */
-    loadPackagePromise = loadPackagePromise.then(() => _loadPackage(names))
-                             .catch((e) => console.log(e.to_string()));
+    loadPackagePromise = loadPackagePromise.then(() => _loadPackage(names));
     return loadPackagePromise;
   };
 
