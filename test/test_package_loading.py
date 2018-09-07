@@ -1,5 +1,4 @@
 import pytest
-from selenium.common.exceptions import WebDriverException
 
 
 def test_load_from_url(selenium_standalone, web_server):

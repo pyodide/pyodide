@@ -53,18 +53,16 @@ var languagePluginLoader = new Promise((resolve, reject) => {
 
       if (package in loadedPackages) {
         if (package_uri != loadedPackages[package]) {
-          console.error(
-              `URI mismatch, attempting to load package ` +
-              `${package} from ${package_uri} while it is already ` +
-              `loaded from ${loadedPackages[package]}!`);
+          console.error(`URI mismatch, attempting to load package ` +
+                        `${package} from ${package_uri} while it is already ` +
+                        `loaded from ${loadedPackages[package]}!`);
           return;
         }
       } else if (package in toLoad) {
         if (package_uri != toLoad[package]) {
-          console.error(
-              `URI mismatch, attempting to load package ` +
-              `${package} from ${package_uri} while it is already ` +
-              `being loaded from ${toLoad[package]}!`);
+          console.error(`URI mismatch, attempting to load package ` +
+                        `${package} from ${package_uri} while it is already ` +
+                        `being loaded from ${toLoad[package]}!`);
           return;
         }
       } else {
