@@ -79,25 +79,6 @@ def patch(path, srcpath, pkg, args):
         fd.write(b'\n')
 
 
-def get_libdir(srcpath, args):
-    # Get the name of the build/lib.XXX directory that distutils wrote its
-    # output to
-    slug = subprocess.check_output([
-        str(Path(args.host) / 'bin' / 'python3'),
-        '-c',
-        'import sysconfig, sys; '
-        'print("{}-{}.{}".format('
-        'sysconfig.get_platform(), '
-        'sys.version_info[0], '
-        'sys.version_info[1]))']).decode('ascii').strip()
-    purelib = srcpath / 'build' / 'lib'
-    if purelib.is_dir():
-        libdir = purelib
-    else:
-        libdir = srcpath / 'build' / ('lib.' + slug)
-    return libdir
-
-
 def compile(path, srcpath, pkg, args):
     if (srcpath / '.built').is_file():
         return
@@ -121,10 +102,11 @@ def compile(path, srcpath, pkg, args):
 
     post = pkg.get('build', {}).get('post')
     if post is not None:
-        libdir = get_libdir(srcpath, args)
+        site_packages_dir = (
+            srcpath / 'install' / 'lib' / 'python3.7' / 'site-packages')
         pkgdir = path.parent.resolve()
         env = {
-            'BUILD': libdir,
+            'SITEPACKAGES': site_packages_dir,
             'PKGDIR': pkgdir
         }
         subprocess.run([

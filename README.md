@@ -24,7 +24,7 @@ need to build it yourself prior.
 Additional build prerequisites are:
 
 - A working native compiler toolchain, enough to build CPython.
-- A native Python 3.6 or later to run the build scripts.
+- A native Python 3.7 to run the build scripts.
 - PyYAML
 - [lessc](https://lesscss.org/) to compile less to css.
 - [uglifyjs](https://github.com/mishoo/UglifyJS) to minify Javascript builds.

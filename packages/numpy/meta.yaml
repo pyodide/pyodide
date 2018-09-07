@@ -1,10 +1,10 @@
 package:
   name: numpy
-  version: 1.14.1
+  version: 1.14.5
 
 source:
-  url: https://pypi.python.org/packages/a3/99/74aa456fc740a7e8f733af4e8302d8e61e123367ec660cd89c53a3cd4d70/numpy-1.14.1.zip
-  md5: b8324ef90ac9064cd0eac46b8b388674
+  url: https://files.pythonhosted.org/packages/d5/6e/f00492653d0fdf6497a181a1c1d46bbea5a2383e7faf4c8ca6d6f3d2581d/numpy-1.14.5.zip
+  sha256: a4a433b3a264dbc9aa9c7c241e87c0358a503ea6394f8737df1683c7c9a102ac
 
   patches:
     - patches/add-emscripten-cpu.patch

@@ -1,8 +1,39 @@
+diff --git a/config.sub b/config.sub
+index ba37cf99e2..d772f33065 100755
+--- a/config.sub
++++ b/config.sub
+@@ -118,7 +118,8 @@ case $maybe_os in
+   linux-musl* | linux-uclibc* | uclinux-uclibc* | uclinux-gnu* | kfreebsd*-gnu* | \
+   knetbsd*-gnu* | netbsd*-gnu* | netbsd*-eabi* | \
+   kopensolaris*-gnu* | cloudabi*-eabi* | \
+-  storm-chaos* | os2-emx* | rtmk-nova*)
++  storm-chaos* | os2-emx* | rtmk-nova* | \
++  emscripten)
+     os=-$maybe_os
+     basic_machine=`echo "$1" | sed 's/^\(.*\)-\([^-]*-[^-]*\)$/\1/'`
+     ;;
+@@ -377,6 +378,7 @@ case $basic_machine in
+ 	| alpha64-* | alpha64ev[4-8]-* | alpha64ev56-* | alpha64ev6[78]-* \
+ 	| alphapca5[67]-* | alpha64pca5[67]-* | arc-* | arceb-* \
+ 	| arm-*  | armbe-* | armle-* | armeb-* | armv*-* \
++  | asmjs \
+ 	| avr-* | avr32-* \
+ 	| ba-* \
+ 	| be32-* | be64-* \
+@@ -1522,6 +1524,8 @@ case $os in
+ 			;;
+ 		esac
+ 		;;
++	-emscripten)
++		;;
+ 	-nacl*)
+ 		;;
+ 	-ios)
 diff --git a/configure b/configure
-index 8cf777e..263719f 100755
+index e0389649ae..e6ab1613cf 100755
 --- a/configure
 +++ b/configure
-@@ -3202,6 +3202,9 @@ then
+@@ -3257,6 +3257,9 @@ then
  	*-*-cygwin*)
  		ac_sys_system=Cygwin
  		;;
@@ -12,7 +43,7 @@ index 8cf777e..263719f 100755
  	*)
  		# for now, limit cross builds to known configurations
  		MACHDEP="unknown"
-@@ -3248,6 +3251,9 @@ if test "$cross_compiling" = yes; then
+@@ -3301,6 +3304,9 @@ if test "$cross_compiling" = yes; then
  	*-*-cygwin*)
  		_host_cpu=
  		;;
@@ -23,10 +54,10 @@ index 8cf777e..263719f 100755
  		# for now, limit cross builds to known configurations
  		MACHDEP="unknown"
 diff --git a/configure.ac b/configure.ac
-index 78fe3c7..d7665b4 100644
+index b5beb08574..8051e5a8ed 100644
 --- a/configure.ac
 +++ b/configure.ac
-@@ -322,6 +322,9 @@ then
+@@ -379,6 +379,9 @@ then
  	*-*-cygwin*)
  		ac_sys_system=Cygwin
  		;;
@@ -36,7 +67,7 @@ index 78fe3c7..d7665b4 100644
  	*)
  		# for now, limit cross builds to known configurations
  		MACHDEP="unknown"
-@@ -368,6 +371,9 @@ if test "$cross_compiling" = yes; then
+@@ -423,6 +426,9 @@ if test "$cross_compiling" = yes; then
  	*-*-cygwin*)
  		_host_cpu=
  		;;
@@ -46,34 +77,3 @@ index 78fe3c7..d7665b4 100644
  	*)
  		# for now, limit cross builds to known configurations
  		MACHDEP="unknown"
-diff --git a/config.sub b/config.sub
-index d654d03..0d8236f 100755
---- a/config.sub
-+++ b/config.sub
-@@ -119,7 +119,8 @@ case $maybe_os in
-   linux-musl* | linux-uclibc* | uclinux-uclibc* | uclinux-gnu* | kfreebsd*-gnu* | \
-   knetbsd*-gnu* | netbsd*-gnu* | \
-   kopensolaris*-gnu* | cloudabi*-eabi* | \
--  storm-chaos* | os2-emx* | rtmk-nova*)
-+  storm-chaos* | os2-emx* | rtmk-nova* | \
-+  emscripten)
-     os=-$maybe_os
-     basic_machine=`echo $1 | sed 's/^\(.*\)-\([^-]*-[^-]*\)$/\1/'`
-     ;;
-@@ -254,6 +255,7 @@ case $basic_machine in
- 	| am33_2.0 \
- 	| arc | arceb \
- 	| arm | arm[bl]e | arme[lb] | armv[2-8] | armv[3-8][lb] | armv7[arm] \
-+	| asmjs \
- 	| avr | avr32 \
- 	| be32 | be64 \
- 	| bfin \
-@@ -1510,6 +1512,8 @@ case $os in
- 	-dicos*)
- 		os=-dicos
- 		;;
-+	-emscripten)
-+		;;
- 	-nacl*)
- 		;;
- 	-none)

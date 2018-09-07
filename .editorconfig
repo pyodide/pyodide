@@ -16,3 +16,6 @@ indent_size = 4
 
 [Makefile]
 indent_style = tab
+
+[**.patch]
+trim_trailing_whitespace = false

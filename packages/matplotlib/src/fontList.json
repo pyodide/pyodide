@@ -3,56 +3,56 @@
   "_FontManager__default_weight": "normal",
   "default_size": null,
   "ttffiles": [
-    "/lib/python3.6/site-packages/matplotlib/mpl-data/fonts/ttf/DejaVuSansMono-Oblique.ttf",
-    "/lib/python3.6/site-packages/matplotlib/mpl-data/fonts/ttf/STIXNonUniIta.ttf",
-    "/lib/python3.6/site-packages/matplotlib/mpl-data/fonts/ttf/STIXNonUniBol.ttf",
-    "/lib/python3.6/site-packages/matplotlib/mpl-data/fonts/ttf/cmtt10.ttf",
-    "/lib/python3.6/site-packages/matplotlib/mpl-data/fonts/ttf/cmss10.ttf",
-    "/lib/python3.6/site-packages/matplotlib/mpl-data/fonts/ttf/cmsy10.ttf",
-    "/lib/python3.6/site-packages/matplotlib/mpl-data/fonts/ttf/cmex10.ttf",
-    "/lib/python3.6/site-packages/matplotlib/mpl-data/fonts/ttf/STIXSizFourSymReg.ttf",
-    "/lib/python3.6/site-packages/matplotlib/mpl-data/fonts/ttf/cmmi10.ttf",
-    "/lib/python3.6/site-packages/matplotlib/mpl-data/fonts/ttf/STIXSizFourSymBol.ttf",
-    "/lib/python3.6/site-packages/matplotlib/mpl-data/fonts/ttf/cmb10.ttf",
-    "/lib/python3.6/site-packages/matplotlib/mpl-data/fonts/ttf/cmr10.ttf",
-    "/lib/python3.6/site-packages/matplotlib/mpl-data/fonts/ttf/STIXSizTwoSymReg.ttf",
-    "/lib/python3.6/site-packages/matplotlib/mpl-data/fonts/ttf/DejaVuSans.ttf",
-    "/lib/python3.6/site-packages/matplotlib/mpl-data/fonts/ttf/DejaVuSerifDisplay.ttf",
-    "/lib/python3.6/site-packages/matplotlib/mpl-data/fonts/ttf/STIXSizThreeSymBol.ttf",
-    "/lib/python3.6/site-packages/matplotlib/mpl-data/fonts/ttf/STIXGeneralItalic.ttf",
-    "/lib/python3.6/site-packages/matplotlib/mpl-data/fonts/ttf/DejaVuSansMono-BoldOblique.ttf",
-    "/lib/python3.6/site-packages/matplotlib/mpl-data/fonts/ttf/STIXGeneral.ttf",
-    "/lib/python3.6/site-packages/matplotlib/mpl-data/fonts/ttf/STIXGeneralBol.ttf",
-    "/lib/python3.6/site-packages/matplotlib/mpl-data/fonts/ttf/STIXGeneralBolIta.ttf",
-    "/lib/python3.6/site-packages/matplotlib/mpl-data/fonts/ttf/DejaVuSansMono-Bold.ttf",
-    "/lib/python3.6/site-packages/matplotlib/mpl-data/fonts/ttf/DejaVuSansMono.ttf",
-    "/lib/python3.6/site-packages/matplotlib/mpl-data/fonts/ttf/STIXSizThreeSymReg.ttf",
-    "/lib/python3.6/site-packages/matplotlib/mpl-data/fonts/ttf/STIXNonUniBolIta.ttf",
-    "/lib/python3.6/site-packages/matplotlib/mpl-data/fonts/ttf/STIXSizOneSymReg.ttf",
-    "/lib/python3.6/site-packages/matplotlib/mpl-data/fonts/ttf/STIXSizTwoSymBol.ttf",
-    "/lib/python3.6/site-packages/matplotlib/mpl-data/fonts/ttf/STIXNonUni.ttf",
-    "/lib/python3.6/site-packages/matplotlib/mpl-data/fonts/ttf/STIXSizFiveSymReg.ttf",
-    "/lib/python3.6/site-packages/matplotlib/mpl-data/fonts/ttf/DejaVuSans-Bold.ttf",
-    "/lib/python3.6/site-packages/matplotlib/mpl-data/fonts/ttf/DejaVuSerif-Italic.ttf",
-    "/lib/python3.6/site-packages/matplotlib/mpl-data/fonts/ttf/DejaVuSerif-Bold.ttf",
-    "/lib/python3.6/site-packages/matplotlib/mpl-data/fonts/ttf/DejaVuSerif-BoldItalic.ttf",
-    "/lib/python3.6/site-packages/matplotlib/mpl-data/fonts/ttf/DejaVuSans-BoldOblique.ttf",
-    "/lib/python3.6/site-packages/matplotlib/mpl-data/fonts/ttf/DejaVuSans-Oblique.ttf",
-    "/lib/python3.6/site-packages/matplotlib/mpl-data/fonts/ttf/DejaVuSansDisplay.ttf",
-    "/lib/python3.6/site-packages/matplotlib/mpl-data/fonts/ttf/DejaVuSerif.ttf",
-    "/lib/python3.6/site-packages/matplotlib/mpl-data/fonts/ttf/STIXSizOneSymBol.ttf"
+    "/lib/python3.7/site-packages/matplotlib/mpl-data/fonts/ttf/DejaVuSansMono-Oblique.ttf",
+    "/lib/python3.7/site-packages/matplotlib/mpl-data/fonts/ttf/STIXNonUniIta.ttf",
+    "/lib/python3.7/site-packages/matplotlib/mpl-data/fonts/ttf/STIXNonUniBol.ttf",
+    "/lib/python3.7/site-packages/matplotlib/mpl-data/fonts/ttf/cmtt10.ttf",
+    "/lib/python3.7/site-packages/matplotlib/mpl-data/fonts/ttf/cmss10.ttf",
+    "/lib/python3.7/site-packages/matplotlib/mpl-data/fonts/ttf/cmsy10.ttf",
+    "/lib/python3.7/site-packages/matplotlib/mpl-data/fonts/ttf/cmex10.ttf",
+    "/lib/python3.7/site-packages/matplotlib/mpl-data/fonts/ttf/STIXSizFourSymReg.ttf",
+    "/lib/python3.7/site-packages/matplotlib/mpl-data/fonts/ttf/cmmi10.ttf",
+    "/lib/python3.7/site-packages/matplotlib/mpl-data/fonts/ttf/STIXSizFourSymBol.ttf",
+    "/lib/python3.7/site-packages/matplotlib/mpl-data/fonts/ttf/cmb10.ttf",
+    "/lib/python3.7/site-packages/matplotlib/mpl-data/fonts/ttf/cmr10.ttf",
+    "/lib/python3.7/site-packages/matplotlib/mpl-data/fonts/ttf/STIXSizTwoSymReg.ttf",
+    "/lib/python3.7/site-packages/matplotlib/mpl-data/fonts/ttf/DejaVuSans.ttf",
+    "/lib/python3.7/site-packages/matplotlib/mpl-data/fonts/ttf/DejaVuSerifDisplay.ttf",
+    "/lib/python3.7/site-packages/matplotlib/mpl-data/fonts/ttf/STIXSizThreeSymBol.ttf",
+    "/lib/python3.7/site-packages/matplotlib/mpl-data/fonts/ttf/STIXGeneralItalic.ttf",
+    "/lib/python3.7/site-packages/matplotlib/mpl-data/fonts/ttf/DejaVuSansMono-BoldOblique.ttf",
+    "/lib/python3.7/site-packages/matplotlib/mpl-data/fonts/ttf/STIXGeneral.ttf",
+    "/lib/python3.7/site-packages/matplotlib/mpl-data/fonts/ttf/STIXGeneralBol.ttf",
+    "/lib/python3.7/site-packages/matplotlib/mpl-data/fonts/ttf/STIXGeneralBolIta.ttf",
+    "/lib/python3.7/site-packages/matplotlib/mpl-data/fonts/ttf/DejaVuSansMono-Bold.ttf",
+    "/lib/python3.7/site-packages/matplotlib/mpl-data/fonts/ttf/DejaVuSansMono.ttf",
+    "/lib/python3.7/site-packages/matplotlib/mpl-data/fonts/ttf/STIXSizThreeSymReg.ttf",
+    "/lib/python3.7/site-packages/matplotlib/mpl-data/fonts/ttf/STIXNonUniBolIta.ttf",
+    "/lib/python3.7/site-packages/matplotlib/mpl-data/fonts/ttf/STIXSizOneSymReg.ttf",
+    "/lib/python3.7/site-packages/matplotlib/mpl-data/fonts/ttf/STIXSizTwoSymBol.ttf",
+    "/lib/python3.7/site-packages/matplotlib/mpl-data/fonts/ttf/STIXNonUni.ttf",
+    "/lib/python3.7/site-packages/matplotlib/mpl-data/fonts/ttf/STIXSizFiveSymReg.ttf",
+    "/lib/python3.7/site-packages/matplotlib/mpl-data/fonts/ttf/DejaVuSans-Bold.ttf",
+    "/lib/python3.7/site-packages/matplotlib/mpl-data/fonts/ttf/DejaVuSerif-Italic.ttf",
+    "/lib/python3.7/site-packages/matplotlib/mpl-data/fonts/ttf/DejaVuSerif-Bold.ttf",
+    "/lib/python3.7/site-packages/matplotlib/mpl-data/fonts/ttf/DejaVuSerif-BoldItalic.ttf",
+    "/lib/python3.7/site-packages/matplotlib/mpl-data/fonts/ttf/DejaVuSans-BoldOblique.ttf",
+    "/lib/python3.7/site-packages/matplotlib/mpl-data/fonts/ttf/DejaVuSans-Oblique.ttf",
+    "/lib/python3.7/site-packages/matplotlib/mpl-data/fonts/ttf/DejaVuSansDisplay.ttf",
+    "/lib/python3.7/site-packages/matplotlib/mpl-data/fonts/ttf/DejaVuSerif.ttf",
+    "/lib/python3.7/site-packages/matplotlib/mpl-data/fonts/ttf/STIXSizOneSymBol.ttf"
   ],
   "defaultFamily": {
     "ttf": "DejaVu Sans",
     "afm": "Helvetica"
   },
   "defaultFont": {
-    "ttf": "/lib/python3.6/site-packages/matplotlib/mpl-data/fonts/ttf/DejaVuSansMono-Oblique.ttf",
-    "afm": "/lib/python3.6/site-packages/matplotlib/mpl-data/fonts/pdfcorefonts/Times-Bold.afm"
+    "ttf": "/lib/python3.7/site-packages/matplotlib/mpl-data/fonts/ttf/DejaVuSansMono-Oblique.ttf",
+    "afm": "/lib/python3.7/site-packages/matplotlib/mpl-data/fonts/pdfcorefonts/Times-Bold.afm"
   },
   "ttflist": [
     {
-      "fname": "/lib/python3.6/site-packages/matplotlib/mpl-data/fonts/ttf/DejaVuSansMono-Oblique.ttf",
+      "fname": "/lib/python3.7/site-packages/matplotlib/mpl-data/fonts/ttf/DejaVuSansMono-Oblique.ttf",
       "name": "DejaVu Sans Mono",
       "style": "oblique",
       "variant": "normal",
@@ -62,7 +62,7 @@
       "_class": "FontEntry"
     },
     {
-      "fname": "/lib/python3.6/site-packages/matplotlib/mpl-data/fonts/ttf/STIXNonUniIta.ttf",
+      "fname": "/lib/python3.7/site-packages/matplotlib/mpl-data/fonts/ttf/STIXNonUniIta.ttf",
       "name": "STIXNonUnicode",
       "style": "italic",
       "variant": "normal",
@@ -72,7 +72,7 @@
       "_class": "FontEntry"
     },
     {
-      "fname": "/lib/python3.6/site-packages/matplotlib/mpl-data/fonts/ttf/STIXNonUniBol.ttf",
+      "fname": "/lib/python3.7/site-packages/matplotlib/mpl-data/fonts/ttf/STIXNonUniBol.ttf",
       "name": "STIXNonUnicode",
       "style": "normal",
       "variant": "normal",
@@ -82,7 +82,7 @@
       "_class": "FontEntry"
     },
     {
-      "fname": "/lib/python3.6/site-packages/matplotlib/mpl-data/fonts/ttf/cmtt10.ttf",
+      "fname": "/lib/python3.7/site-packages/matplotlib/mpl-data/fonts/ttf/cmtt10.ttf",
       "name": "cmtt10",
       "style": "normal",
       "variant": "normal",
@@ -92,7 +92,7 @@
       "_class": "FontEntry"
     },
     {
-      "fname": "/lib/python3.6/site-packages/matplotlib/mpl-data/fonts/ttf/cmss10.ttf",
+      "fname": "/lib/python3.7/site-packages/matplotlib/mpl-data/fonts/ttf/cmss10.ttf",
       "name": "cmss10",
       "style": "normal",
       "variant": "normal",
@@ -102,7 +102,7 @@
       "_class": "FontEntry"
     },
     {
-      "fname": "/lib/python3.6/site-packages/matplotlib/mpl-data/fonts/ttf/cmsy10.ttf",
+      "fname": "/lib/python3.7/site-packages/matplotlib/mpl-data/fonts/ttf/cmsy10.ttf",
       "name": "cmsy10",
       "style": "normal",
       "variant": "normal",
@@ -112,7 +112,7 @@
       "_class": "FontEntry"
     },
     {
-      "fname": "/lib/python3.6/site-packages/matplotlib/mpl-data/fonts/ttf/cmex10.ttf",
+      "fname": "/lib/python3.7/site-packages/matplotlib/mpl-data/fonts/ttf/cmex10.ttf",
       "name": "cmex10",
       "style": "normal",
       "variant": "normal",
@@ -122,7 +122,7 @@
       "_class": "FontEntry"
     },
     {
-      "fname": "/lib/python3.6/site-packages/matplotlib/mpl-data/fonts/ttf/STIXSizFourSymReg.ttf",
+      "fname": "/lib/python3.7/site-packages/matplotlib/mpl-data/fonts/ttf/STIXSizFourSymReg.ttf",
       "name": "STIXSizeFourSym",
       "style": "normal",
       "variant": "normal",
@@ -132,7 +132,7 @@
       "_class": "FontEntry"
     },
     {
-      "fname": "/lib/python3.6/site-packages/matplotlib/mpl-data/fonts/ttf/cmmi10.ttf",
+      "fname": "/lib/python3.7/site-packages/matplotlib/mpl-data/fonts/ttf/cmmi10.ttf",
       "name": "cmmi10",
       "style": "normal",
       "variant": "normal",
@@ -142,7 +142,7 @@
       "_class": "FontEntry"
     },
     {
-      "fname": "/lib/python3.6/site-packages/matplotlib/mpl-data/fonts/ttf/STIXSizFourSymBol.ttf",
+      "fname": "/lib/python3.7/site-packages/matplotlib/mpl-data/fonts/ttf/STIXSizFourSymBol.ttf",
       "name": "STIXSizeFourSym",
       "style": "normal",
       "variant": "normal",
@@ -152,7 +152,7 @@
       "_class": "FontEntry"
     },
     {
-      "fname": "/lib/python3.6/site-packages/matplotlib/mpl-data/fonts/ttf/cmb10.ttf",
+      "fname": "/lib/python3.7/site-packages/matplotlib/mpl-data/fonts/ttf/cmb10.ttf",
       "name": "cmb10",
       "style": "normal",
       "variant": "normal",
@@ -162,7 +162,7 @@
       "_class": "FontEntry"
     },
     {
-      "fname": "/lib/python3.6/site-packages/matplotlib/mpl-data/fonts/ttf/cmr10.ttf",
+      "fname": "/lib/python3.7/site-packages/matplotlib/mpl-data/fonts/ttf/cmr10.ttf",
       "name": "cmr10",
       "style": "normal",
       "variant": "normal",
@@ -172,7 +172,7 @@
       "_class": "FontEntry"
     },
     {
-      "fname": "/lib/python3.6/site-packages/matplotlib/mpl-data/fonts/ttf/STIXSizTwoSymReg.ttf",
+      "fname": "/lib/python3.7/site-packages/matplotlib/mpl-data/fonts/ttf/STIXSizTwoSymReg.ttf",
       "name": "STIXSizeTwoSym",
       "style": "normal",
       "variant": "normal",
@@ -182,7 +182,7 @@
       "_class": "FontEntry"
     },
     {
-      "fname": "/lib/python3.6/site-packages/matplotlib/mpl-data/fonts/ttf/DejaVuSans.ttf",
+      "fname": "/lib/python3.7/site-packages/matplotlib/mpl-data/fonts/ttf/DejaVuSans.ttf",
       "name": "DejaVu Sans",
       "style": "normal",
       "variant": "normal",
@@ -192,7 +192,7 @@
       "_class": "FontEntry"
     },
     {
-      "fname": "/lib/python3.6/site-packages/matplotlib/mpl-data/fonts/ttf/DejaVuSerifDisplay.ttf",
+      "fname": "/lib/python3.7/site-packages/matplotlib/mpl-data/fonts/ttf/DejaVuSerifDisplay.ttf",
       "name": "DejaVu Serif Display",
       "style": "normal",
       "variant": "normal",
@@ -202,7 +202,7 @@
       "_class": "FontEntry"
     },
     {
-      "fname": "/lib/python3.6/site-packages/matplotlib/mpl-data/fonts/ttf/STIXSizThreeSymBol.ttf",
+      "fname": "/lib/python3.7/site-packages/matplotlib/mpl-data/fonts/ttf/STIXSizThreeSymBol.ttf",
       "name": "STIXSizeThreeSym",
       "style": "normal",
       "variant": "normal",
@@ -212,7 +212,7 @@
       "_class": "FontEntry"
     },
     {
-      "fname": "/lib/python3.6/site-packages/matplotlib/mpl-data/fonts/ttf/STIXGeneralItalic.ttf",
+      "fname": "/lib/python3.7/site-packages/matplotlib/mpl-data/fonts/ttf/STIXGeneralItalic.ttf",
       "name": "STIXGeneral",
       "style": "italic",
       "variant": "normal",
@@ -222,7 +222,7 @@
       "_class": "FontEntry"
     },
     {
-      "fname": "/lib/python3.6/site-packages/matplotlib/mpl-data/fonts/ttf/DejaVuSansMono-BoldOblique.ttf",
+      "fname": "/lib/python3.7/site-packages/matplotlib/mpl-data/fonts/ttf/DejaVuSansMono-BoldOblique.ttf",
       "name": "DejaVu Sans Mono",
       "style": "oblique",
       "variant": "normal",
@@ -232,7 +232,7 @@
       "_class": "FontEntry"
     },
     {
-      "fname": "/lib/python3.6/site-packages/matplotlib/mpl-data/fonts/ttf/STIXGeneral.ttf",
+      "fname": "/lib/python3.7/site-packages/matplotlib/mpl-data/fonts/ttf/STIXGeneral.ttf",
       "name": "STIXGeneral",
       "style": "normal",
       "variant": "normal",
@@ -242,7 +242,7 @@
       "_class": "FontEntry"
     },
     {
-      "fname": "/lib/python3.6/site-packages/matplotlib/mpl-data/fonts/ttf/STIXGeneralBol.ttf",
+      "fname": "/lib/python3.7/site-packages/matplotlib/mpl-data/fonts/ttf/STIXGeneralBol.ttf",
       "name": "STIXGeneral",
       "style": "normal",
       "variant": "normal",
@@ -252,7 +252,7 @@
       "_class": "FontEntry"
     },
     {
-      "fname": "/lib/python3.6/site-packages/matplotlib/mpl-data/fonts/ttf/STIXGeneralBolIta.ttf",
+      "fname": "/lib/python3.7/site-packages/matplotlib/mpl-data/fonts/ttf/STIXGeneralBolIta.ttf",
       "name": "STIXGeneral",
       "style": "italic",
       "variant": "normal",
@@ -262,7 +262,7 @@
       "_class": "FontEntry"
     },
     {
-      "fname": "/lib/python3.6/site-packages/matplotlib/mpl-data/fonts/ttf/DejaVuSansMono-Bold.ttf",
+      "fname": "/lib/python3.7/site-packages/matplotlib/mpl-data/fonts/ttf/DejaVuSansMono-Bold.ttf",
       "name": "DejaVu Sans Mono",
       "style": "normal",
       "variant": "normal",
@@ -272,7 +272,7 @@
       "_class": "FontEntry"
     },
     {
-      "fname": "/lib/python3.6/site-packages/matplotlib/mpl-data/fonts/ttf/DejaVuSansMono.ttf",
+      "fname": "/lib/python3.7/site-packages/matplotlib/mpl-data/fonts/ttf/DejaVuSansMono.ttf",
       "name": "DejaVu Sans Mono",
       "style": "normal",
       "variant": "normal",
@@ -282,7 +282,7 @@
       "_class": "FontEntry"
     },
     {
-      "fname": "/lib/python3.6/site-packages/matplotlib/mpl-data/fonts/ttf/STIXSizThreeSymReg.ttf",
+      "fname": "/lib/python3.7/site-packages/matplotlib/mpl-data/fonts/ttf/STIXSizThreeSymReg.ttf",
       "name": "STIXSizeThreeSym",
       "style": "normal",
       "variant": "normal",
@@ -292,7 +292,7 @@
       "_class": "FontEntry"
     },
     {
-      "fname": "/lib/python3.6/site-packages/matplotlib/mpl-data/fonts/ttf/STIXNonUniBolIta.ttf",
+      "fname": "/lib/python3.7/site-packages/matplotlib/mpl-data/fonts/ttf/STIXNonUniBolIta.ttf",
       "name": "STIXNonUnicode",
       "style": "italic",
       "variant": "normal",
@@ -302,7 +302,7 @@
       "_class": "FontEntry"
     },
     {
-      "fname": "/lib/python3.6/site-packages/matplotlib/mpl-data/fonts/ttf/STIXSizOneSymReg.ttf",
+      "fname": "/lib/python3.7/site-packages/matplotlib/mpl-data/fonts/ttf/STIXSizOneSymReg.ttf",
       "name": "STIXSizeOneSym",
       "style": "normal",
       "variant": "normal",
@@ -312,7 +312,7 @@
       "_class": "FontEntry"
     },
     {
-      "fname": "/lib/python3.6/site-packages/matplotlib/mpl-data/fonts/ttf/STIXSizTwoSymBol.ttf",
+      "fname": "/lib/python3.7/site-packages/matplotlib/mpl-data/fonts/ttf/STIXSizTwoSymBol.ttf",
       "name": "STIXSizeTwoSym",
       "style": "normal",
       "variant": "normal",
@@ -322,7 +322,7 @@
       "_class": "FontEntry"
     },
     {
-      "fname": "/lib/python3.6/site-packages/matplotlib/mpl-data/fonts/ttf/STIXNonUni.ttf",
+      "fname": "/lib/python3.7/site-packages/matplotlib/mpl-data/fonts/ttf/STIXNonUni.ttf",
       "name": "STIXNonUnicode",
       "style": "normal",
       "variant": "normal",
@@ -332,7 +332,7 @@
       "_class": "FontEntry"
     },
     {
-      "fname": "/lib/python3.6/site-packages/matplotlib/mpl-data/fonts/ttf/STIXSizFiveSymReg.ttf",
+      "fname": "/lib/python3.7/site-packages/matplotlib/mpl-data/fonts/ttf/STIXSizFiveSymReg.ttf",
       "name": "STIXSizeFiveSym",
       "style": "normal",
       "variant": "normal",
@@ -342,7 +342,7 @@
       "_class": "FontEntry"
     },
     {
-      "fname": "/lib/python3.6/site-packages/matplotlib/mpl-data/fonts/ttf/DejaVuSans-Bold.ttf",
+      "fname": "/lib/python3.7/site-packages/matplotlib/mpl-data/fonts/ttf/DejaVuSans-Bold.ttf",
       "name": "DejaVu Sans",
       "style": "normal",
       "variant": "normal",
@@ -352,7 +352,7 @@
       "_class": "FontEntry"
     },
     {
-      "fname": "/lib/python3.6/site-packages/matplotlib/mpl-data/fonts/ttf/DejaVuSerif-Italic.ttf",
+      "fname": "/lib/python3.7/site-packages/matplotlib/mpl-data/fonts/ttf/DejaVuSerif-Italic.ttf",
       "name": "DejaVu Serif",
       "style": "italic",
       "variant": "normal",
@@ -362,7 +362,7 @@
       "_class": "FontEntry"
     },
     {
-      "fname": "/lib/python3.6/site-packages/matplotlib/mpl-data/fonts/ttf/DejaVuSerif-Bold.ttf",
+      "fname": "/lib/python3.7/site-packages/matplotlib/mpl-data/fonts/ttf/DejaVuSerif-Bold.ttf",
       "name": "DejaVu Serif",
       "style": "normal",
       "variant": "normal",
@@ -372,7 +372,7 @@
       "_class": "FontEntry"
     },
     {
-      "fname": "/lib/python3.6/site-packages/matplotlib/mpl-data/fonts/ttf/DejaVuSerif-BoldItalic.ttf",
+      "fname": "/lib/python3.7/site-packages/matplotlib/mpl-data/fonts/ttf/DejaVuSerif-BoldItalic.ttf",
       "name": "DejaVu Serif",
       "style": "italic",
       "variant": "normal",
@@ -382,7 +382,7 @@
       "_class": "FontEntry"
     },
     {
-      "fname": "/lib/python3.6/site-packages/matplotlib/mpl-data/fonts/ttf/DejaVuSans-BoldOblique.ttf",
+      "fname": "/lib/python3.7/site-packages/matplotlib/mpl-data/fonts/ttf/DejaVuSans-BoldOblique.ttf",
       "name": "DejaVu Sans",
       "style": "oblique",
       "variant": "normal",
@@ -392,7 +392,7 @@
       "_class": "FontEntry"
     },
     {
-      "fname": "/lib/python3.6/site-packages/matplotlib/mpl-data/fonts/ttf/DejaVuSans-Oblique.ttf",
+      "fname": "/lib/python3.7/site-packages/matplotlib/mpl-data/fonts/ttf/DejaVuSans-Oblique.ttf",
       "name": "DejaVu Sans",
       "style": "oblique",
       "variant": "normal",
@@ -402,7 +402,7 @@
       "_class": "FontEntry"
     },
     {
-      "fname": "/lib/python3.6/site-packages/matplotlib/mpl-data/fonts/ttf/DejaVuSansDisplay.ttf",
+      "fname": "/lib/python3.7/site-packages/matplotlib/mpl-data/fonts/ttf/DejaVuSansDisplay.ttf",
       "name": "DejaVu Sans Display",
       "style": "normal",
       "variant": "normal",
@@ -412,7 +412,7 @@
       "_class": "FontEntry"
     },
     {
-      "fname": "/lib/python3.6/site-packages/matplotlib/mpl-data/fonts/ttf/DejaVuSerif.ttf",
+      "fname": "/lib/python3.7/site-packages/matplotlib/mpl-data/fonts/ttf/DejaVuSerif.ttf",
       "name": "DejaVu Serif",
       "style": "normal",
       "variant": "normal",
@@ -422,7 +422,7 @@
       "_class": "FontEntry"
     },
     {
-      "fname": "/lib/python3.6/site-packages/matplotlib/mpl-data/fonts/ttf/STIXSizOneSymBol.ttf",
+      "fname": "/lib/python3.7/site-packages/matplotlib/mpl-data/fonts/ttf/STIXSizOneSymBol.ttf",
       "name": "STIXSizeOneSym",
       "style": "normal",
       "variant": "normal",
@@ -433,70 +433,70 @@
     }
   ],
   "afmfiles": [
-    "/lib/python3.6/site-packages/matplotlib/mpl-data/fonts/pdfcorefonts/Times-Bold.afm",
-    "/lib/python3.6/site-packages/matplotlib/mpl-data/fonts/pdfcorefonts/Helvetica-Oblique.afm",
-    "/lib/python3.6/site-packages/matplotlib/mpl-data/fonts/afm/pplbi8a.afm",
-    "/lib/python3.6/site-packages/matplotlib/mpl-data/fonts/afm/pplri8a.afm",
-    "/lib/python3.6/site-packages/matplotlib/mpl-data/fonts/afm/ptmri8a.afm",
-    "/lib/python3.6/site-packages/matplotlib/mpl-data/fonts/afm/ptmbi8a.afm",
-    "/lib/python3.6/site-packages/matplotlib/mpl-data/fonts/afm/pbkli8a.afm",
-    "/lib/python3.6/site-packages/matplotlib/mpl-data/fonts/afm/pzdr.afm",
-    "/lib/python3.6/site-packages/matplotlib/mpl-data/fonts/afm/pagdo8a.afm",
-    "/lib/python3.6/site-packages/matplotlib/mpl-data/fonts/afm/pbkdi8a.afm",
-    "/lib/python3.6/site-packages/matplotlib/mpl-data/fonts/afm/pagko8a.afm",
-    "/lib/python3.6/site-packages/matplotlib/mpl-data/fonts/afm/pcrb8a.afm",
-    "/lib/python3.6/site-packages/matplotlib/mpl-data/fonts/afm/pcrr8a.afm",
-    "/lib/python3.6/site-packages/matplotlib/mpl-data/fonts/afm/phvb8an.afm",
-    "/lib/python3.6/site-packages/matplotlib/mpl-data/fonts/afm/phvr8an.afm",
-    "/lib/python3.6/site-packages/matplotlib/mpl-data/fonts/afm/cmr10.afm",
-    "/lib/python3.6/site-packages/matplotlib/mpl-data/fonts/afm/phvbo8an.afm",
-    "/lib/python3.6/site-packages/matplotlib/mpl-data/fonts/afm/phvro8an.afm",
-    "/lib/python3.6/site-packages/matplotlib/mpl-data/fonts/pdfcorefonts/Symbol.afm",
-    "/lib/python3.6/site-packages/matplotlib/mpl-data/fonts/pdfcorefonts/Helvetica-BoldOblique.afm",
-    "/lib/python3.6/site-packages/matplotlib/mpl-data/fonts/afm/pcrbo8a.afm",
-    "/lib/python3.6/site-packages/matplotlib/mpl-data/fonts/afm/pbkl8a.afm",
-    "/lib/python3.6/site-packages/matplotlib/mpl-data/fonts/afm/pbkd8a.afm",
-    "/lib/python3.6/site-packages/matplotlib/mpl-data/fonts/afm/pcrro8a.afm",
-    "/lib/python3.6/site-packages/matplotlib/mpl-data/fonts/pdfcorefonts/Helvetica.afm",
-    "/lib/python3.6/site-packages/matplotlib/mpl-data/fonts/afm/psyr.afm",
-    "/lib/python3.6/site-packages/matplotlib/mpl-data/fonts/afm/phvbo8a.afm",
-    "/lib/python3.6/site-packages/matplotlib/mpl-data/fonts/afm/pagk8a.afm",
-    "/lib/python3.6/site-packages/matplotlib/mpl-data/fonts/afm/pagd8a.afm",
-    "/lib/python3.6/site-packages/matplotlib/mpl-data/fonts/afm/phvlo8a.afm",
-    "/lib/python3.6/site-packages/matplotlib/mpl-data/fonts/afm/phvro8a.afm",
-    "/lib/python3.6/site-packages/matplotlib/mpl-data/fonts/pdfcorefonts/Courier.afm",
-    "/lib/python3.6/site-packages/matplotlib/mpl-data/fonts/afm/pzcmi8a.afm",
-    "/lib/python3.6/site-packages/matplotlib/mpl-data/fonts/pdfcorefonts/Courier-Oblique.afm",
-    "/lib/python3.6/site-packages/matplotlib/mpl-data/fonts/afm/ptmr8a.afm",
-    "/lib/python3.6/site-packages/matplotlib/mpl-data/fonts/afm/ptmb8a.afm",
-    "/lib/python3.6/site-packages/matplotlib/mpl-data/fonts/pdfcorefonts/Helvetica-Bold.afm",
-    "/lib/python3.6/site-packages/matplotlib/mpl-data/fonts/pdfcorefonts/ZapfDingbats.afm",
-    "/lib/python3.6/site-packages/matplotlib/mpl-data/fonts/afm/pncbi8a.afm",
-    "/lib/python3.6/site-packages/matplotlib/mpl-data/fonts/afm/pncri8a.afm",
-    "/lib/python3.6/site-packages/matplotlib/mpl-data/fonts/afm/cmmi10.afm",
-    "/lib/python3.6/site-packages/matplotlib/mpl-data/fonts/afm/cmsy10.afm",
-    "/lib/python3.6/site-packages/matplotlib/mpl-data/fonts/afm/cmex10.afm",
-    "/lib/python3.6/site-packages/matplotlib/mpl-data/fonts/afm/cmtt10.afm",
-    "/lib/python3.6/site-packages/matplotlib/mpl-data/fonts/pdfcorefonts/Times-Roman.afm",
-    "/lib/python3.6/site-packages/matplotlib/mpl-data/fonts/pdfcorefonts/Times-Italic.afm",
-    "/lib/python3.6/site-packages/matplotlib/mpl-data/fonts/afm/phvl8a.afm",
-    "/lib/python3.6/site-packages/matplotlib/mpl-data/fonts/afm/phvb8a.afm",
-    "/lib/python3.6/site-packages/matplotlib/mpl-data/fonts/afm/phvr8a.afm",
-    "/lib/python3.6/site-packages/matplotlib/mpl-data/fonts/afm/pncr8a.afm",
-    "/lib/python3.6/site-packages/matplotlib/mpl-data/fonts/pdfcorefonts/Courier-Bold.afm",
-    "/lib/python3.6/site-packages/matplotlib/mpl-data/fonts/afm/pplb8a.afm",
-    "/lib/python3.6/site-packages/matplotlib/mpl-data/fonts/afm/pplr8a.afm",
-    "/lib/python3.6/site-packages/matplotlib/mpl-data/fonts/pdfcorefonts/Courier-BoldOblique.afm",
-    "/lib/python3.6/site-packages/matplotlib/mpl-data/fonts/afm/putri8a.afm",
-    "/lib/python3.6/site-packages/matplotlib/mpl-data/fonts/afm/putbi8a.afm",
-    "/lib/python3.6/site-packages/matplotlib/mpl-data/fonts/afm/putb8a.afm",
-    "/lib/python3.6/site-packages/matplotlib/mpl-data/fonts/afm/putr8a.afm",
-    "/lib/python3.6/site-packages/matplotlib/mpl-data/fonts/pdfcorefonts/Times-BoldItalic.afm",
-    "/lib/python3.6/site-packages/matplotlib/mpl-data/fonts/afm/pncb8a.afm"
+    "/lib/python3.7/site-packages/matplotlib/mpl-data/fonts/pdfcorefonts/Times-Bold.afm",
+    "/lib/python3.7/site-packages/matplotlib/mpl-data/fonts/pdfcorefonts/Helvetica-Oblique.afm",
+    "/lib/python3.7/site-packages/matplotlib/mpl-data/fonts/afm/pplbi8a.afm",
+    "/lib/python3.7/site-packages/matplotlib/mpl-data/fonts/afm/pplri8a.afm",
+    "/lib/python3.7/site-packages/matplotlib/mpl-data/fonts/afm/ptmri8a.afm",
+    "/lib/python3.7/site-packages/matplotlib/mpl-data/fonts/afm/ptmbi8a.afm",
+    "/lib/python3.7/site-packages/matplotlib/mpl-data/fonts/afm/pbkli8a.afm",
+    "/lib/python3.7/site-packages/matplotlib/mpl-data/fonts/afm/pzdr.afm",
+    "/lib/python3.7/site-packages/matplotlib/mpl-data/fonts/afm/pagdo8a.afm",
+    "/lib/python3.7/site-packages/matplotlib/mpl-data/fonts/afm/pbkdi8a.afm",
+    "/lib/python3.7/site-packages/matplotlib/mpl-data/fonts/afm/pagko8a.afm",
+    "/lib/python3.7/site-packages/matplotlib/mpl-data/fonts/afm/pcrb8a.afm",
+    "/lib/python3.7/site-packages/matplotlib/mpl-data/fonts/afm/pcrr8a.afm",
+    "/lib/python3.7/site-packages/matplotlib/mpl-data/fonts/afm/phvb8an.afm",
+    "/lib/python3.7/site-packages/matplotlib/mpl-data/fonts/afm/phvr8an.afm",
+    "/lib/python3.7/site-packages/matplotlib/mpl-data/fonts/afm/cmr10.afm",
+    "/lib/python3.7/site-packages/matplotlib/mpl-data/fonts/afm/phvbo8an.afm",
+    "/lib/python3.7/site-packages/matplotlib/mpl-data/fonts/afm/phvro8an.afm",
+    "/lib/python3.7/site-packages/matplotlib/mpl-data/fonts/pdfcorefonts/Symbol.afm",
+    "/lib/python3.7/site-packages/matplotlib/mpl-data/fonts/pdfcorefonts/Helvetica-BoldOblique.afm",
+    "/lib/python3.7/site-packages/matplotlib/mpl-data/fonts/afm/pcrbo8a.afm",
+    "/lib/python3.7/site-packages/matplotlib/mpl-data/fonts/afm/pbkl8a.afm",
+    "/lib/python3.7/site-packages/matplotlib/mpl-data/fonts/afm/pbkd8a.afm",
+    "/lib/python3.7/site-packages/matplotlib/mpl-data/fonts/afm/pcrro8a.afm",
+    "/lib/python3.7/site-packages/matplotlib/mpl-data/fonts/pdfcorefonts/Helvetica.afm",
+    "/lib/python3.7/site-packages/matplotlib/mpl-data/fonts/afm/psyr.afm",
+    "/lib/python3.7/site-packages/matplotlib/mpl-data/fonts/afm/phvbo8a.afm",
+    "/lib/python3.7/site-packages/matplotlib/mpl-data/fonts/afm/pagk8a.afm",
+    "/lib/python3.7/site-packages/matplotlib/mpl-data/fonts/afm/pagd8a.afm",
+    "/lib/python3.7/site-packages/matplotlib/mpl-data/fonts/afm/phvlo8a.afm",
+    "/lib/python3.7/site-packages/matplotlib/mpl-data/fonts/afm/phvro8a.afm",
+    "/lib/python3.7/site-packages/matplotlib/mpl-data/fonts/pdfcorefonts/Courier.afm",
+    "/lib/python3.7/site-packages/matplotlib/mpl-data/fonts/afm/pzcmi8a.afm",
+    "/lib/python3.7/site-packages/matplotlib/mpl-data/fonts/pdfcorefonts/Courier-Oblique.afm",
+    "/lib/python3.7/site-packages/matplotlib/mpl-data/fonts/afm/ptmr8a.afm",
+    "/lib/python3.7/site-packages/matplotlib/mpl-data/fonts/afm/ptmb8a.afm",
+    "/lib/python3.7/site-packages/matplotlib/mpl-data/fonts/pdfcorefonts/Helvetica-Bold.afm",
+    "/lib/python3.7/site-packages/matplotlib/mpl-data/fonts/pdfcorefonts/ZapfDingbats.afm",
+    "/lib/python3.7/site-packages/matplotlib/mpl-data/fonts/afm/pncbi8a.afm",
+    "/lib/python3.7/site-packages/matplotlib/mpl-data/fonts/afm/pncri8a.afm",
+    "/lib/python3.7/site-packages/matplotlib/mpl-data/fonts/afm/cmmi10.afm",
+    "/lib/python3.7/site-packages/matplotlib/mpl-data/fonts/afm/cmsy10.afm",
+    "/lib/python3.7/site-packages/matplotlib/mpl-data/fonts/afm/cmex10.afm",
+    "/lib/python3.7/site-packages/matplotlib/mpl-data/fonts/afm/cmtt10.afm",
+    "/lib/python3.7/site-packages/matplotlib/mpl-data/fonts/pdfcorefonts/Times-Roman.afm",
+    "/lib/python3.7/site-packages/matplotlib/mpl-data/fonts/pdfcorefonts/Times-Italic.afm",
+    "/lib/python3.7/site-packages/matplotlib/mpl-data/fonts/afm/phvl8a.afm",
+    "/lib/python3.7/site-packages/matplotlib/mpl-data/fonts/afm/phvb8a.afm",
+    "/lib/python3.7/site-packages/matplotlib/mpl-data/fonts/afm/phvr8a.afm",
+    "/lib/python3.7/site-packages/matplotlib/mpl-data/fonts/afm/pncr8a.afm",
+    "/lib/python3.7/site-packages/matplotlib/mpl-data/fonts/pdfcorefonts/Courier-Bold.afm",
+    "/lib/python3.7/site-packages/matplotlib/mpl-data/fonts/afm/pplb8a.afm",
+    "/lib/python3.7/site-packages/matplotlib/mpl-data/fonts/afm/pplr8a.afm",
+    "/lib/python3.7/site-packages/matplotlib/mpl-data/fonts/pdfcorefonts/Courier-BoldOblique.afm",
+    "/lib/python3.7/site-packages/matplotlib/mpl-data/fonts/afm/putri8a.afm",
+    "/lib/python3.7/site-packages/matplotlib/mpl-data/fonts/afm/putbi8a.afm",
+    "/lib/python3.7/site-packages/matplotlib/mpl-data/fonts/afm/putb8a.afm",
+    "/lib/python3.7/site-packages/matplotlib/mpl-data/fonts/afm/putr8a.afm",
+    "/lib/python3.7/site-packages/matplotlib/mpl-data/fonts/pdfcorefonts/Times-BoldItalic.afm",
+    "/lib/python3.7/site-packages/matplotlib/mpl-data/fonts/afm/pncb8a.afm"
   ],
   "afmlist": [
     {
-      "fname": "/lib/python3.6/site-packages/matplotlib/mpl-data/fonts/pdfcorefonts/Times-Bold.afm",
+      "fname": "/lib/python3.7/site-packages/matplotlib/mpl-data/fonts/pdfcorefonts/Times-Bold.afm",
       "name": "Times",
       "style": "normal",
       "variant": "normal",
@@ -506,7 +506,7 @@
       "_class": "FontEntry"
     },
     {
-      "fname": "/lib/python3.6/site-packages/matplotlib/mpl-data/fonts/pdfcorefonts/Helvetica-Oblique.afm",
+      "fname": "/lib/python3.7/site-packages/matplotlib/mpl-data/fonts/pdfcorefonts/Helvetica-Oblique.afm",
       "name": "Helvetica",
       "style": "italic",
       "variant": "normal",
@@ -516,7 +516,7 @@
       "_class": "FontEntry"
     },
     {
-      "fname": "/lib/python3.6/site-packages/matplotlib/mpl-data/fonts/afm/pplbi8a.afm",
+      "fname": "/lib/python3.7/site-packages/matplotlib/mpl-data/fonts/afm/pplbi8a.afm",
       "name": "Palatino",
       "style": "italic",
       "variant": "normal",
@@ -526,7 +526,7 @@
       "_class": "FontEntry"
     },
     {
-      "fname": "/lib/python3.6/site-packages/matplotlib/mpl-data/fonts/afm/pplri8a.afm",
+      "fname": "/lib/python3.7/site-packages/matplotlib/mpl-data/fonts/afm/pplri8a.afm",
       "name": "Palatino",
       "style": "italic",
       "variant": "normal",
@@ -536,7 +536,7 @@
       "_class": "FontEntry"
     },
     {
-      "fname": "/lib/python3.6/site-packages/matplotlib/mpl-data/fonts/afm/ptmri8a.afm",
+      "fname": "/lib/python3.7/site-packages/matplotlib/mpl-data/fonts/afm/ptmri8a.afm",
       "name": "Times",
       "style": "italic",
       "variant": "normal",
@@ -546,7 +546,7 @@
       "_class": "FontEntry"
     },
     {
-      "fname": "/lib/python3.6/site-packages/matplotlib/mpl-data/fonts/afm/ptmbi8a.afm",
+      "fname": "/lib/python3.7/site-packages/matplotlib/mpl-data/fonts/afm/ptmbi8a.afm",
       "name": "Times",
       "style": "italic",
       "variant": "normal",
@@ -556,7 +556,7 @@
       "_class": "FontEntry"
     },
     {
-      "fname": "/lib/python3.6/site-packages/matplotlib/mpl-data/fonts/afm/pbkli8a.afm",
+      "fname": "/lib/python3.7/site-packages/matplotlib/mpl-data/fonts/afm/pbkli8a.afm",
       "name": "ITC Bookman",
       "style": "italic",
       "variant": "normal",
@@ -566,7 +566,7 @@
       "_class": "FontEntry"
     },
     {
-      "fname": "/lib/python3.6/site-packages/matplotlib/mpl-data/fonts/afm/pzdr.afm",
+      "fname": "/lib/python3.7/site-packages/matplotlib/mpl-data/fonts/afm/pzdr.afm",
       "name": "ITC Zapf Dingbats",
       "style": "normal",
       "variant": "normal",
@@ -576,7 +576,7 @@
       "_class": "FontEntry"
     },
     {
-      "fname": "/lib/python3.6/site-packages/matplotlib/mpl-data/fonts/afm/pagdo8a.afm",
+      "fname": "/lib/python3.7/site-packages/matplotlib/mpl-data/fonts/afm/pagdo8a.afm",
       "name": "ITC Avant Garde Gothic",
       "style": "italic",
       "variant": "normal",
@@ -586,7 +586,7 @@
       "_class": "FontEntry"
     },
     {
-      "fname": "/lib/python3.6/site-packages/matplotlib/mpl-data/fonts/afm/pbkdi8a.afm",
+      "fname": "/lib/python3.7/site-packages/matplotlib/mpl-data/fonts/afm/pbkdi8a.afm",
       "name": "ITC Bookman",
       "style": "italic",
       "variant": "normal",
@@ -596,7 +596,7 @@
       "_class": "FontEntry"
     },
     {
-      "fname": "/lib/python3.6/site-packages/matplotlib/mpl-data/fonts/afm/pagko8a.afm",
+      "fname": "/lib/python3.7/site-packages/matplotlib/mpl-data/fonts/afm/pagko8a.afm",
       "name": "ITC Avant Garde Gothic",
       "style": "italic",
       "variant": "normal",
@@ -606,7 +606,7 @@
       "_class": "FontEntry"
     },
     {
-      "fname": "/lib/python3.6/site-packages/matplotlib/mpl-data/fonts/afm/pcrb8a.afm",
+      "fname": "/lib/python3.7/site-packages/matplotlib/mpl-data/fonts/afm/pcrb8a.afm",
       "name": "Courier",
       "style": "normal",
       "variant": "normal",
@@ -616,7 +616,7 @@
       "_class": "FontEntry"
     },
     {
-      "fname": "/lib/python3.6/site-packages/matplotlib/mpl-data/fonts/afm/pcrr8a.afm",
+      "fname": "/lib/python3.7/site-packages/matplotlib/mpl-data/fonts/afm/pcrr8a.afm",
       "name": "Courier",
       "style": "normal",
       "variant": "normal",
@@ -626,7 +626,7 @@
       "_class": "FontEntry"
     },
     {
-      "fname": "/lib/python3.6/site-packages/matplotlib/mpl-data/fonts/afm/phvb8an.afm",
+      "fname": "/lib/python3.7/site-packages/matplotlib/mpl-data/fonts/afm/phvb8an.afm",
       "name": "Helvetica",
       "style": "normal",
       "variant": "normal",
@@ -636,7 +636,7 @@
       "_class": "FontEntry"
     },
     {
-      "fname": "/lib/python3.6/site-packages/matplotlib/mpl-data/fonts/afm/phvr8an.afm",
+      "fname": "/lib/python3.7/site-packages/matplotlib/mpl-data/fonts/afm/phvr8an.afm",
       "name": "Helvetica",
       "style": "normal",
       "variant": "normal",
@@ -646,7 +646,7 @@
       "_class": "FontEntry"
     },
     {
-      "fname": "/lib/python3.6/site-packages/matplotlib/mpl-data/fonts/afm/cmr10.afm",
+      "fname": "/lib/python3.7/site-packages/matplotlib/mpl-data/fonts/afm/cmr10.afm",
       "name": "Computer Modern",
       "style": "normal",
       "variant": "normal",
@@ -656,7 +656,7 @@
       "_class": "FontEntry"
     },
     {
-      "fname": "/lib/python3.6/site-packages/matplotlib/mpl-data/fonts/afm/phvbo8an.afm",
+      "fname": "/lib/python3.7/site-packages/matplotlib/mpl-data/fonts/afm/phvbo8an.afm",
       "name": "Helvetica",
       "style": "italic",
       "variant": "normal",
@@ -666,7 +666,7 @@
       "_class": "FontEntry"
     },
     {
-      "fname": "/lib/python3.6/site-packages/matplotlib/mpl-data/fonts/afm/phvro8an.afm",
+      "fname": "/lib/python3.7/site-packages/matplotlib/mpl-data/fonts/afm/phvro8an.afm",
       "name": "Helvetica",
       "style": "italic",
       "variant": "normal",
@@ -676,7 +676,7 @@
       "_class": "FontEntry"
     },
     {
-      "fname": "/lib/python3.6/site-packages/matplotlib/mpl-data/fonts/pdfcorefonts/Symbol.afm",
+      "fname": "/lib/python3.7/site-packages/matplotlib/mpl-data/fonts/pdfcorefonts/Symbol.afm",
       "name": "Symbol",
       "style": "normal",
       "variant": "normal",
@@ -686,7 +686,7 @@
       "_class": "FontEntry"
     },
     {
-      "fname": "/lib/python3.6/site-packages/matplotlib/mpl-data/fonts/pdfcorefonts/Helvetica-BoldOblique.afm",
+      "fname": "/lib/python3.7/site-packages/matplotlib/mpl-data/fonts/pdfcorefonts/Helvetica-BoldOblique.afm",
       "name": "Helvetica",
       "style": "italic",
       "variant": "normal",
@@ -696,7 +696,7 @@
       "_class": "FontEntry"
     },
     {
-      "fname": "/lib/python3.6/site-packages/matplotlib/mpl-data/fonts/afm/pcrbo8a.afm",
+      "fname": "/lib/python3.7/site-packages/matplotlib/mpl-data/fonts/afm/pcrbo8a.afm",
       "name": "Courier",
       "style": "italic",
       "variant": "normal",
@@ -706,7 +706,7 @@
       "_class": "FontEntry"
     },
     {
-      "fname": "/lib/python3.6/site-packages/matplotlib/mpl-data/fonts/afm/pbkl8a.afm",
+      "fname": "/lib/python3.7/site-packages/matplotlib/mpl-data/fonts/afm/pbkl8a.afm",
       "name": "ITC Bookman",
       "style": "normal",
       "variant": "normal",
@@ -716,7 +716,7 @@
       "_class": "FontEntry"
     },
     {
-      "fname": "/lib/python3.6/site-packages/matplotlib/mpl-data/fonts/afm/pbkd8a.afm",
+      "fname": "/lib/python3.7/site-packages/matplotlib/mpl-data/fonts/afm/pbkd8a.afm",
       "name": "ITC Bookman",
       "style": "normal",
       "variant": "normal",
@@ -726,7 +726,7 @@
       "_class": "FontEntry"
     },
     {
-      "fname": "/lib/python3.6/site-packages/matplotlib/mpl-data/fonts/afm/pcrro8a.afm",
+      "fname": "/lib/python3.7/site-packages/matplotlib/mpl-data/fonts/afm/pcrro8a.afm",
       "name": "Courier",
       "style": "italic",
       "variant": "normal",
@@ -736,7 +736,7 @@
       "_class": "FontEntry"
     },
     {
-      "fname": "/lib/python3.6/site-packages/matplotlib/mpl-data/fonts/pdfcorefonts/Helvetica.afm",
+      "fname": "/lib/python3.7/site-packages/matplotlib/mpl-data/fonts/pdfcorefonts/Helvetica.afm",
       "name": "Helvetica",
       "style": "normal",
       "variant": "normal",
@@ -746,7 +746,7 @@
       "_class": "FontEntry"
     },
     {
-      "fname": "/lib/python3.6/site-packages/matplotlib/mpl-data/fonts/afm/psyr.afm",
+      "fname": "/lib/python3.7/site-packages/matplotlib/mpl-data/fonts/afm/psyr.afm",
       "name": "Symbol",
       "style": "normal",
       "variant": "normal",
@@ -756,7 +756,7 @@
       "_class": "FontEntry"
     },
     {
-      "fname": "/lib/python3.6/site-packages/matplotlib/mpl-data/fonts/afm/phvbo8a.afm",
+      "fname": "/lib/python3.7/site-packages/matplotlib/mpl-data/fonts/afm/phvbo8a.afm",
       "name": "Helvetica",
       "style": "italic",
       "variant": "normal",
@@ -766,7 +766,7 @@
       "_class": "FontEntry"
     },
     {
-      "fname": "/lib/python3.6/site-packages/matplotlib/mpl-data/fonts/afm/pagk8a.afm",
+      "fname": "/lib/python3.7/site-packages/matplotlib/mpl-data/fonts/afm/pagk8a.afm",
       "name": "ITC Avant Garde Gothic",
       "style": "normal",
       "variant": "normal",
@@ -776,7 +776,7 @@
       "_class": "FontEntry"
     },
     {
-      "fname": "/lib/python3.6/site-packages/matplotlib/mpl-data/fonts/afm/pagd8a.afm",
+      "fname": "/lib/python3.7/site-packages/matplotlib/mpl-data/fonts/afm/pagd8a.afm",
       "name": "ITC Avant Garde Gothic",
       "style": "normal",
       "variant": "normal",
@@ -786,7 +786,7 @@
       "_class": "FontEntry"
     },
     {
-      "fname": "/lib/python3.6/site-packages/matplotlib/mpl-data/fonts/afm/phvlo8a.afm",
+      "fname": "/lib/python3.7/site-packages/matplotlib/mpl-data/fonts/afm/phvlo8a.afm",
       "name": "Helvetica",
       "style": "italic",
       "variant": "normal",
@@ -796,7 +796,7 @@
       "_class": "FontEntry"
     },
     {
-      "fname": "/lib/python3.6/site-packages/matplotlib/mpl-data/fonts/afm/phvro8a.afm",
+      "fname": "/lib/python3.7/site-packages/matplotlib/mpl-data/fonts/afm/phvro8a.afm",
       "name": "Helvetica",
       "style": "italic",
       "variant": "normal",
@@ -806,7 +806,7 @@
       "_class": "FontEntry"
     },
     {
-      "fname": "/lib/python3.6/site-packages/matplotlib/mpl-data/fonts/pdfcorefonts/Courier.afm",
+      "fname": "/lib/python3.7/site-packages/matplotlib/mpl-data/fonts/pdfcorefonts/Courier.afm",
       "name": "Courier",
       "style": "normal",
       "variant": "normal",
@@ -816,7 +816,7 @@
       "_class": "FontEntry"
     },
     {
-      "fname": "/lib/python3.6/site-packages/matplotlib/mpl-data/fonts/afm/pzcmi8a.afm",
+      "fname": "/lib/python3.7/site-packages/matplotlib/mpl-data/fonts/afm/pzcmi8a.afm",
       "name": "ITC Zapf Chancery",
       "style": "italic",
       "variant": "normal",
@@ -826,7 +826,7 @@
       "_class": "FontEntry"
     },
     {
-      "fname": "/lib/python3.6/site-packages/matplotlib/mpl-data/fonts/pdfcorefonts/Courier-Oblique.afm",
+      "fname": "/lib/python3.7/site-packages/matplotlib/mpl-data/fonts/pdfcorefonts/Courier-Oblique.afm",
       "name": "Courier",
       "style": "italic",
       "variant": "normal",
@@ -836,7 +836,7 @@
       "_class": "FontEntry"
     },
     {
-      "fname": "/lib/python3.6/site-packages/matplotlib/mpl-data/fonts/afm/ptmr8a.afm",
+      "fname": "/lib/python3.7/site-packages/matplotlib/mpl-data/fonts/afm/ptmr8a.afm",
       "name": "Times",
       "style": "normal",
       "variant": "normal",
@@ -846,7 +846,7 @@
       "_class": "FontEntry"
     },
     {
-      "fname": "/lib/python3.6/site-packages/matplotlib/mpl-data/fonts/afm/ptmb8a.afm",
+      "fname": "/lib/python3.7/site-packages/matplotlib/mpl-data/fonts/afm/ptmb8a.afm",
       "name": "Times",
       "style": "normal",
       "variant": "normal",
@@ -856,7 +856,7 @@
       "_class": "FontEntry"
     },
     {
-      "fname": "/lib/python3.6/site-packages/matplotlib/mpl-data/fonts/pdfcorefonts/Helvetica-Bold.afm",
+      "fname": "/lib/python3.7/site-packages/matplotlib/mpl-data/fonts/pdfcorefonts/Helvetica-Bold.afm",
       "name": "Helvetica",
       "style": "normal",
       "variant": "normal",
@@ -866,7 +866,7 @@
       "_class": "FontEntry"
     },
     {
-      "fname": "/lib/python3.6/site-packages/matplotlib/mpl-data/fonts/pdfcorefonts/ZapfDingbats.afm",
+      "fname": "/lib/python3.7/site-packages/matplotlib/mpl-data/fonts/pdfcorefonts/ZapfDingbats.afm",
       "name": "ZapfDingbats",
       "style": "normal",
       "variant": "normal",
@@ -876,7 +876,7 @@
       "_class": "FontEntry"
     },
     {
-      "fname": "/lib/python3.6/site-packages/matplotlib/mpl-data/fonts/afm/pncbi8a.afm",
+      "fname": "/lib/python3.7/site-packages/matplotlib/mpl-data/fonts/afm/pncbi8a.afm",
       "name": "New Century Schoolbook",
       "style": "italic",
       "variant": "normal",
@@ -886,7 +886,7 @@
       "_class": "FontEntry"
     },
     {
-      "fname": "/lib/python3.6/site-packages/matplotlib/mpl-data/fonts/afm/pncri8a.afm",
+      "fname": "/lib/python3.7/site-packages/matplotlib/mpl-data/fonts/afm/pncri8a.afm",
       "name": "New Century Schoolbook",
       "style": "italic",
       "variant": "normal",
@@ -896,7 +896,7 @@
       "_class": "FontEntry"
     },
     {
-      "fname": "/lib/python3.6/site-packages/matplotlib/mpl-data/fonts/afm/cmmi10.afm",
+      "fname": "/lib/python3.7/site-packages/matplotlib/mpl-data/fonts/afm/cmmi10.afm",
       "name": "Computer Modern",
       "style": "italic",
       "variant": "normal",
@@ -906,7 +906,7 @@
       "_class": "FontEntry"
     },
     {
-      "fname": "/lib/python3.6/site-packages/matplotlib/mpl-data/fonts/afm/cmsy10.afm",
+      "fname": "/lib/python3.7/site-packages/matplotlib/mpl-data/fonts/afm/cmsy10.afm",
       "name": "Computer Modern",
       "style": "italic",
       "variant": "normal",
@@ -916,7 +916,7 @@
       "_class": "FontEntry"
     },
     {
-      "fname": "/lib/python3.6/site-packages/matplotlib/mpl-data/fonts/afm/cmex10.afm",
+      "fname": "/lib/python3.7/site-packages/matplotlib/mpl-data/fonts/afm/cmex10.afm",
       "name": "Computer Modern",
       "style": "normal",
       "variant": "normal",
@@ -926,7 +926,7 @@
       "_class": "FontEntry"
     },
     {
-      "fname": "/lib/python3.6/site-packages/matplotlib/mpl-data/fonts/afm/cmtt10.afm",
+      "fname": "/lib/python3.7/site-packages/matplotlib/mpl-data/fonts/afm/cmtt10.afm",
       "name": "Computer Modern",
       "style": "normal",
       "variant": "normal",
@@ -936,7 +936,7 @@
       "_class": "FontEntry"
     },
     {
-      "fname": "/lib/python3.6/site-packages/matplotlib/mpl-data/fonts/pdfcorefonts/Times-Roman.afm",
+      "fname": "/lib/python3.7/site-packages/matplotlib/mpl-data/fonts/pdfcorefonts/Times-Roman.afm",
       "name": "Times",
       "style": "normal",
       "variant": "normal",
@@ -946,7 +946,7 @@
       "_class": "FontEntry"
     },
     {
-      "fname": "/lib/python3.6/site-packages/matplotlib/mpl-data/fonts/pdfcorefonts/Times-Italic.afm",
+      "fname": "/lib/python3.7/site-packages/matplotlib/mpl-data/fonts/pdfcorefonts/Times-Italic.afm",
       "name": "Times",
       "style": "italic",
       "variant": "normal",
@@ -956,7 +956,7 @@
       "_class": "FontEntry"
     },
     {
-      "fname": "/lib/python3.6/site-packages/matplotlib/mpl-data/fonts/afm/phvl8a.afm",
+      "fname": "/lib/python3.7/site-packages/matplotlib/mpl-data/fonts/afm/phvl8a.afm",
       "name": "Helvetica",
       "style": "normal",
       "variant": "normal",
@@ -966,7 +966,7 @@
       "_class": "FontEntry"
     },
     {
-      "fname": "/lib/python3.6/site-packages/matplotlib/mpl-data/fonts/afm/phvb8a.afm",
+      "fname": "/lib/python3.7/site-packages/matplotlib/mpl-data/fonts/afm/phvb8a.afm",
       "name": "Helvetica",
       "style": "normal",
       "variant": "normal",
@@ -976,7 +976,7 @@
       "_class": "FontEntry"
     },
     {
-      "fname": "/lib/python3.6/site-packages/matplotlib/mpl-data/fonts/afm/phvr8a.afm",
+      "fname": "/lib/python3.7/site-packages/matplotlib/mpl-data/fonts/afm/phvr8a.afm",
       "name": "Helvetica",
       "style": "normal",
       "variant": "normal",
@@ -986,7 +986,7 @@
       "_class": "FontEntry"
     },
     {
-      "fname": "/lib/python3.6/site-packages/matplotlib/mpl-data/fonts/afm/pncr8a.afm",
+      "fname": "/lib/python3.7/site-packages/matplotlib/mpl-data/fonts/afm/pncr8a.afm",
       "name": "New Century Schoolbook",
       "style": "normal",
       "variant": "normal",
@@ -996,7 +996,7 @@
       "_class": "FontEntry"
     },
     {
-      "fname": "/lib/python3.6/site-packages/matplotlib/mpl-data/fonts/pdfcorefonts/Courier-Bold.afm",
+      "fname": "/lib/python3.7/site-packages/matplotlib/mpl-data/fonts/pdfcorefonts/Courier-Bold.afm",
       "name": "Courier",
       "style": "normal",
       "variant": "normal",
@@ -1006,7 +1006,7 @@
       "_class": "FontEntry"
     },
     {
-      "fname": "/lib/python3.6/site-packages/matplotlib/mpl-data/fonts/afm/pplb8a.afm",
+      "fname": "/lib/python3.7/site-packages/matplotlib/mpl-data/fonts/afm/pplb8a.afm",
       "name": "Palatino",
       "style": "normal",
       "variant": "normal",
@@ -1016,7 +1016,7 @@
       "_class": "FontEntry"
     },
     {
-      "fname": "/lib/python3.6/site-packages/matplotlib/mpl-data/fonts/afm/pplr8a.afm",
+      "fname": "/lib/python3.7/site-packages/matplotlib/mpl-data/fonts/afm/pplr8a.afm",
       "name": "Palatino",
       "style": "normal",
       "variant": "normal",
@@ -1026,7 +1026,7 @@
       "_class": "FontEntry"
     },
     {
-      "fname": "/lib/python3.6/site-packages/matplotlib/mpl-data/fonts/pdfcorefonts/Courier-BoldOblique.afm",
+      "fname": "/lib/python3.7/site-packages/matplotlib/mpl-data/fonts/pdfcorefonts/Courier-BoldOblique.afm",
       "name": "Courier",
       "style": "italic",
       "variant": "normal",
@@ -1036,7 +1036,7 @@
       "_class": "FontEntry"
     },
     {
-      "fname": "/lib/python3.6/site-packages/matplotlib/mpl-data/fonts/afm/putri8a.afm",
+      "fname": "/lib/python3.7/site-packages/matplotlib/mpl-data/fonts/afm/putri8a.afm",
       "name": "Utopia",
       "style": "italic",
       "variant": "normal",
@@ -1046,7 +1046,7 @@
       "_class": "FontEntry"
     },
     {
-      "fname": "/lib/python3.6/site-packages/matplotlib/mpl-data/fonts/afm/putbi8a.afm",
+      "fname": "/lib/python3.7/site-packages/matplotlib/mpl-data/fonts/afm/putbi8a.afm",
       "name": "Utopia",
       "style": "italic",
       "variant": "normal",
@@ -1056,7 +1056,7 @@
       "_class": "FontEntry"
     },
     {
-      "fname": "/lib/python3.6/site-packages/matplotlib/mpl-data/fonts/afm/putb8a.afm",
+      "fname": "/lib/python3.7/site-packages/matplotlib/mpl-data/fonts/afm/putb8a.afm",
       "name": "Utopia",
       "style": "normal",
       "variant": "normal",
@@ -1066,7 +1066,7 @@
       "_class": "FontEntry"
     },
     {
-      "fname": "/lib/python3.6/site-packages/matplotlib/mpl-data/fonts/afm/putr8a.afm",
+      "fname": "/lib/python3.7/site-packages/matplotlib/mpl-data/fonts/afm/putr8a.afm",
       "name": "Utopia",
       "style": "normal",
       "variant": "normal",
@@ -1076,7 +1076,7 @@
       "_class": "FontEntry"
     },
     {
-      "fname": "/lib/python3.6/site-packages/matplotlib/mpl-data/fonts/pdfcorefonts/Times-BoldItalic.afm",
+      "fname": "/lib/python3.7/site-packages/matplotlib/mpl-data/fonts/pdfcorefonts/Times-BoldItalic.afm",
       "name": "Times",
       "style": "italic",
       "variant": "normal",
@@ -1086,7 +1086,7 @@
       "_class": "FontEntry"
     },
     {
-      "fname": "/lib/python3.6/site-packages/matplotlib/mpl-data/fonts/afm/pncb8a.afm",
+      "fname": "/lib/python3.7/site-packages/matplotlib/mpl-data/fonts/afm/pncb8a.afm",
       "name": "New Century Schoolbook",
       "style": "normal",
       "variant": "normal",

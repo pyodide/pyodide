@@ -4,8 +4,10 @@
 # Following reason codes are skipped:
 # - platform-specific: This is testing something about a particular platform
 #   that isn't relevant here
+# - async: relies on async
 # - audioop: Requires the audioop module
 # - floating point: Failures caused by floating-point differences
+# - threading: Failures due to lack of a threading implementation
 # - subprocess: Failures caused by no subprocess module. Some of these are
 #   because the underlying functionality depends on subprocess, and others are
 #   just a side-effect of the way the test is written. The latter should
@@ -17,7 +19,8 @@
 # - strftime: Failures due to differences / shortcomings in WebAssembly's
 #   implementation of date/time formatting in strftime and strptime
 # - permissions: Issues with the test writing to the virtual filesystem
-# - locale: Fails due to include locale implementation.
+# - locale: Fails due to limitations in the included locale implementation.
+# - multiprocessing: Fails due to no multiprocessing implementation.
 # - nonsense: This functionality doesn't make sense in this context. Includes
 #   things like `pip`, `distutils`
 #
@@ -28,7 +31,7 @@
 # - crash-chrome: Same as crash but only affecting Chrome
 # - crash-firefox: Same as crash but only affecting Firefox
 
-test___all__
+test___all__       multiprocessing
 test___future__
 test__locale  locale
 test__opcode
@@ -40,30 +43,31 @@ test_argparse
 test_array
 test_asdl_parser
 test_ast
-test_asyncgen
-test_asynchat
-test_asyncio.test_base_events
-test_asyncio.test_events
-test_asyncio.test_futures
-test_asyncio.test_locks
-test_asyncio.test_pep492
-test_asyncio.test_proactor_events
-test_asyncio.test_queues
-test_asyncio.test_selector_events
-test_asyncio.test_sslproto
-test_asyncio.test_streams
-test_asyncio.test_subprocess
-test_asyncio.test_tasks
-test_asyncio.test_transports
-test_asyncio.test_unix_events
-test_asyncio.test_windows_events
-test_asyncio.test_windows_utils
-test_asyncore bad ioctl syscall
+test_asyncgen async
+test_asynchat async
+test_asyncio.test_base_events async
+test_asyncio.test_events      async
+test_asyncio.test_futures     async
+test_asyncio.test_locks       async
+test_asyncio.test_pep492      async
+test_asyncio.test_proactor_events async
+test_asyncio.test_queues          async
+test_asyncio.test_selector_events async
+test_asyncio.test_sslproto        async
+test_asyncio.test_streams         async
+test_asyncio.test_subprocess      async
+test_asyncio.test_tasks           async
+test_asyncio.test_transports      async
+test_asyncio.test_unix_events     async
+test_asyncio.test_windows_events  async
+test_asyncio.test_windows_utils   async
+test_asyncore bad ioctl syscall   async
 test_atexit
 test_audioop  audioop
 test_augassign
 test_base64
 test_baseexception
+test_bdb
 test_bigaddrspace
 test_bigmem
 test_binascii
@@ -76,6 +80,7 @@ test_bufio
 test_builtin  floating point
 test_bytes
 test_bz2
+test_c_locale_coercion
 test_calendar
 test_call
 test_capi
@@ -112,16 +117,19 @@ test_complex
 test_concurrent_futures
 test_configparser
 test_contains
+test_context
 test_contextlib
+test_contextlib_async async
 test_copy
 test_copyreg  dbm
-test_coroutines
+test_coroutines async
 test_cprofile _lsprof
 test_crashers
 test_crypt
 test_csv
 test_ctypes
 test_curses
+test_dataclasses
 test_datetime strftime
 test_dbm      permissions
 test_dbm_dumb permissions
@@ -143,7 +151,7 @@ test_dis
 test_distutils crash
 test_doctest   subprocess
 test_doctest2
-test_docxmlrpc
+test_docxmlrpc  socket
 test_dtrace platform
 test_dummy_thread
 test_dummy_threading
@@ -155,7 +163,7 @@ test_email.test__header_value_parser
 test_email.test_asian_codecs
 test_email.test_contentmanager
 test_email.test_defect_handling
-test_email.test_email
+test_email.test_email threading
 test_email.test_generator
 test_email.test_headerregistry
 test_email.test_inversion
@@ -164,8 +172,9 @@ test_email.test_parser
 test_email.test_pickleable
 test_email.test_policy
 test_email.test_utils
+test_embed
 test_ensurepip  nonsense
-test_enum
+test_enum       threading
 test_enumerate
 test_eof
 test_epoll  crash
@@ -185,14 +194,15 @@ test_finalization
 test_float  floating point
 test_flufl
 test_fnmatch
-test_fork1
+test_fork1  threading
 test_format
 test_fractions
 test_frame
+test_frozen
 test_fstring
-test_ftplib
+test_ftplib syscall 21537
 test_funcattrs
-test_functools
+test_functools  threading
 test_future
 test_future3
 test_future4
@@ -201,6 +211,7 @@ test_gc
 test_gdb
 test_generator_stop
 test_generators
+test_genericclass
 test_genericpath  permissions
 test_genexps
 test_getargs2
@@ -213,7 +224,7 @@ test_grammar
 test_grp
 test_gzip
 test_hash
-test_hashlib
+test_hashlib  threading
 test_heapq
 test_hmac
 test_html
@@ -221,9 +232,9 @@ test_htmlparser
 test_http_cookiejar
 test_http_cookies
 test_httplib  socket
-test_httpservers
+test_httpservers  threading
 test_idle
-test_imaplib
+test_imaplib  socket
 test_imghdr
 test_imp  crash
 test_importlib.builtin.test_finder
@@ -244,15 +255,19 @@ test_importlib.import_.test_packages
 test_importlib.import_.test_path
 test_importlib.import_.test_relative_imports
 test_importlib.source.test_case_sensitivity
-test_importlib.source.test_file_loader
+test_importlib.source.test_file_loader  unittest has no attribute mock
 test_importlib.source.test_finder
 test_importlib.source.test_path_hook
 test_importlib.source.test_source_encoding
 test_importlib.test_abc
 test_importlib.test_api
 test_importlib.test_lazy
-test_importlib.test_locks
+test_importlib.test_locks threading
 test_importlib.test_namespace_pkgs
+test_importlib.test_open
+test_importlib.test_path
+test_importlib.test_read
+test_importlib.test_resource
 test_importlib.test_spec
 test_importlib.test_util
 test_importlib.test_windows platform-specific
@@ -298,7 +313,6 @@ test_long
 test_longexp
 test_lzma
 test_macpath  platform-specific
-test_macurl2path
 test_mailbox  crash
 test_mailcap  nonsense
 test_marshal
@@ -338,14 +352,14 @@ test_peepholer
 test_pickle dbm
 test_pickletools  dbm
 test_pipes        platform-specific
-test_pkg
+test_pkg          unknown
 test_pkgimport
 test_pkgutil
 test_platform   subprocess
 test_plistlib
 test_poll subprocess
 test_popen  subprocess
-test_poplib
+test_poplib bad ioctl syscall 21537
 test_posix  crash
 test_posixpath  crash
 test_pow
@@ -361,10 +375,10 @@ test_py_compile
 test_pyclbr
 test_pydoc  crash
 test_pyexpat
-test_queue
+test_queue  threading
 test_quopri subprocess
 test_raise
-test_random
+test_random subprocess
 test_range
 test_re locale
 test_readline
@@ -374,10 +388,10 @@ test_reprlib
 test_resource
 test_richcmp
 test_rlcompleter  crash
-test_robotparser
+test_robotparser  socket
 test_runpy
 test_sax
-test_sched
+test_sched  threading
 test_scope
 test_script_helper
 test_secrets
@@ -392,7 +406,7 @@ test_signal
 test_site subprocess
 test_slice
 test_smtpd
-test_smtplib
+test_smtplib  baad ioctl syscall 21537
 test_smtpnet
 test_sndhdr audioop
 test_socket
@@ -425,20 +439,20 @@ test_symtable
 test_syntax
 test_sys  subprocess
 test_sys_setprofile
-test_sys_settrace
+test_sys_settrace async
 test_sysconfig  nonsense
 test_syslog
 test_tarfile  crash
 test_tcl
-test_telnetlib
+test_telnetlib  bad ioctl syscall 21537
 test_tempfile crash
 test_textwrap
-test_thread
-test_threaded_import
-test_threadedtempfile
-test_threading
-test_threading_local
-test_threadsignals
+test_thread threading
+test_threaded_import  floating point
+test_threadedtempfile threading
+test_threading        threading
+test_threading_local  threading
+test_threadsignals    threading
 test_time
 test_timeit
 test_timeout
@@ -477,7 +491,7 @@ test_unpack
 test_unpack_ex
 test_urllib crash
 test_urllib2  subprocess
-test_urllib2_localnet
+test_urllib2_localnet socket
 test_urllib2net
 test_urllib_response
 test_urllibnet
@@ -485,14 +499,15 @@ test_urlparse
 test_userdict
 test_userlist
 test_userstring
+test_utf8_mode
 test_utf8source
 test_uu
 test_uuid subprocess
 test_venv crash
-test_wait3
-test_wait4
+test_wait3  threading
+test_wait4  threading
 test_wave crash
-test_weakref
+test_weakref  threading
 test_weakset
 test_webbrowser replaced
 test_winconsoleio
@@ -506,6 +521,7 @@ test_xml_etree
 test_xml_etree_c
 test_xmlrpc networking
 test_xmlrpc_net
+test_xxtestfuzz
 test_yield_from
 test_zipapp
 test_zipfile

@@ -43,4 +43,7 @@ def test_import(name, selenium_standalone):
 
     for import_name in meta.get('test', {}).get('imports', []):
         selenium_standalone.load_package(name)
-        selenium_standalone.run('import %s' % import_name)
+        try:
+            selenium_standalone.run('import %s' % import_name)
+        except Exception as e:
+            print(selenium_standalone.logs)

@@ -7,6 +7,7 @@
 array arraymodule.c	# array objects
 math mathmodule.c _math.c # -lm # math library functions, e.g. sin()
 cmath cmathmodule.c # complex math functions
+_contextvars _contextvarsmodule.c
 _struct _struct.c	# binary structure packing/unpacking
 _random _randommodule.c	# Random number generator
 _bisect _bisectmodule.c	# Bisection algorithms
@@ -21,10 +22,9 @@ parser parsermodule.c
 _socket socketmodule.c
 select selectmodule.c
 _posixsubprocess _posixsubprocess.c
-
 binascii binascii.c
 
-zlib zlibmodule.c -IModules/zlib
+zlib zlibmodule.c -I../../zlib-1.2.11
 
 pyexpat expat/xmlparse.c expat/xmlrole.c expat/xmltok.c pyexpat.c -I$(srcdir)/Modules/expat -DHAVE_EXPAT_CONFIG_H -DUSE_PYEXPAT_CAPI -DXML_POOR_ENTROPY
 
@@ -33,7 +33,9 @@ _sha256 sha256module.c
 _sha512 sha512module.c
 _sha3 _sha3/sha3module.c
 _md5 md5module.c
-_blake2 _blake2/blake2module.c _blake2/blake2b_impl.c ../../host/Python-3.6.4/Modules/_blake2/blake2s_impl.c
+_blake2 _blake2/blake2module.c _blake2/blake2b_impl.c ../../host/Python-3.7.0/Modules/_blake2/blake2s_impl.c
+
+_queue _queuemodule.c
 
 #future_builtins future_builtins.c
 
