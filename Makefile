@@ -1,7 +1,7 @@
 PYODIDE_ROOT=$(abspath .)
 include Makefile.envs
 
-FILEPACKAGER=$(PYODIDE_ROOT)/emsdk/emsdk/emscripten/tag-1.38.10/tools/file_packager.py
+FILEPACKAGER=$(PYODIDE_ROOT)/file_packager.py
 
 CPYTHONROOT=cpython
 CPYTHONLIB=$(CPYTHONROOT)/installs/python-$(PYVERSION)/lib/python$(PYMINOR)
@@ -33,7 +33,8 @@ LDFLAGS=\
 	-std=c++14 \
   -lstdc++ \
   --memory-init-file 0 \
-  -s TEXTDECODER=0
+  -s TEXTDECODER=0 \
+  -s LZ4=1
 
 SIX_ROOT=six/six-1.11.0/build/lib
 SIX_LIBS=$(SIX_ROOT)/six.py
@@ -68,7 +69,7 @@ build/pyodide.asm.js: src/main.bc src/jsimport.bc src/jsproxy.bc src/js2python.b
 build/pyodide.asm.data: root/.built
 	( \
 		cd build; \
-		python $(FILEPACKAGER) pyodide.asm.data --preload ../root/lib@lib --js-output=pyodide.asm.data.js --use-preload-plugins \
+		python $(FILEPACKAGER) pyodide.asm.data --lz4 --preload ../root/lib@lib --js-output=pyodide.asm.data.js --use-preload-plugins \
   )
 	uglifyjs build/pyodide.asm.data.js -o build/pyodide.asm.data.js
 
