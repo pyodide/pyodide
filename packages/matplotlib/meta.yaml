@@ -1,14 +1,12 @@
 package:
   name: matplotlib
-  version: 2.2.2
+  version: 2.2.3
 
 source:
-  url: https://files.pythonhosted.org/packages/ec/ed/46b835da53b7ed05bd4c6cae293f13ec26e877d2e490a53a709915a9dcb7/matplotlib-2.2.2.tar.gz
-  md5: dd1e49e041309a7fd4e32be8bf17c3b6
+  url: https://files.pythonhosted.org/packages/eb/a0/31b6ba00bc4dcbc06f0b80d1ad6119a9cc3081ecb04a00117f6c1ca3a084/matplotlib-2.2.3.tar.gz
+  sha256: 7355bf757ecacd5f0ac9dd9523c8e1a1103faadf8d33c22664178e17533f8ce5
 
   patches:
-    - patches/disable_bz2.patch
-    - patches/dummy_threading.patch
     - patches/font_name_encoding.patch
     - patches/force_malloc_free.patch
     - patches/hardcoded_font_cache.patch
