@@ -1,18 +1,17 @@
 diff --git a/numpy/core/src/npymath/npy_math_complex.c.src b/numpy/core/src/npymath/npy_math_complex.c.src
-index fb31e8e6a..36e7fa095 100644
+index cf427dad8..6c9f1c37e 100644
 --- a/numpy/core/src/npymath/npy_math_complex.c.src
 +++ b/numpy/core/src/npymath/npy_math_complex.c.src
-@@ -1515,11 +1515,9 @@ _sum_squares@c@(@type@ x, @type@ y)
- {
+@@ -1522,10 +1522,9 @@ _sum_squares@c@(@type@ x, @type@ y)
  #if @precision@ == 1
  const npy_float SQRT_MIN = 1.0842022e-19f;
--#endif
+ #endif
 -#if @precision@ == 2
-+#elif @precision@ == 2 || NPY_SIZEOF_LONGDOUBLE < 16
++#if @precision@ == 2 || NPY_SIZEOF_LONGDOUBLE < 16
  const npy_double SQRT_MIN = 1.4916681462400413e-154; /* sqrt(DBL_MIN) */
 -#endif
 -#if @precision@ == 3
 +#elif @precision@ == 3
- /* this is correct for 80 bit long doubles */
- const npy_longdouble SQRT_MIN = 1.8336038675548471656e-2466l;
- #endif
+ #if NPY_SIZEOF_LONGDOUBLE == NPY_SIZEOF_DOUBLE
+ const npy_longdouble SQRT_MIN = 1.4916681462400413e-154; /* sqrt(DBL_MIN) */
+ #else
