@@ -125,7 +125,7 @@ jobs:
       - run:
           name: Deploy to Github Pages
           command: |
-            echo foo
+            .circleci/deploy.sh
 
 workflows:
   version: 2
