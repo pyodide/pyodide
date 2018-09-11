@@ -58,7 +58,17 @@ Notes:
 from __future__ import print_function
 import os, sys, shutil, random, uuid, ctypes
 
-sys.path.insert(1, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+sys.path.insert(
+  1,
+  os.path.join(
+    os.path.dirname(
+      os.path.dirname(
+        os.path.abspath(__file__)
+      )
+    ),
+    'emsdk', 'emsdk', 'emscripten', 'tag-1.38.10'
+  )
+)
 
 from tools.toolchain_profiler import ToolchainProfiler
 if __name__ == '__main__':
