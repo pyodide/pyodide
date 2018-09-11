@@ -129,7 +129,7 @@ class FirefoxWrapper(SeleniumWrapper):
         self.JavascriptException = JavascriptException
 
         return Firefox(
-            executable_path='geckodriver', firefox_options=options)
+            executable_path='geckodriver', options=options)
 
 
 class ChromeWrapper(SeleniumWrapper):
@@ -146,7 +146,7 @@ class ChromeWrapper(SeleniumWrapper):
 
         self.JavascriptException = WebDriverException
 
-        return Chrome(chrome_options=options)
+        return Chrome(options=options)
 
 
 if pytest is not None:
