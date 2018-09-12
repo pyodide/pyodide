@@ -124,7 +124,7 @@ def package_files(buildpath, srcpath, pkg, args):
     install_prefix = (srcpath / 'install').resolve()
     subprocess.run([
         'python',
-        Path(os.environ['EMSCRIPTEN']) / 'tools' / 'file_packager.py',
+        Path(ROOTDIR) / 'file_packager.py',
         name + '.data',
         '--preload',
         '{}@/'.format(install_prefix),
