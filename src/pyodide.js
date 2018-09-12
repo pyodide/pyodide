@@ -177,7 +177,6 @@ var languagePluginLoader = new Promise((resolve, reject) => {
     return {};
   };
 
-  Module.filePackagePrefixURL = baseURL;
   Module.locateFile = (path) => baseURL + path;
   var postRunPromise = new Promise((resolve, reject) => {
     Module.postRun = () => {
