@@ -406,3 +406,23 @@ def test_version_info(selenium):
     version_js_str = selenium.run_js("return pyodide.version()")
     version_js = LooseVersion(version_js_str)
     assert version_py == version_js
+
+
+def test_recursive_list(selenium):
+    selenium.run(
+        """
+        x = []
+        x.append(x)
+        """
+    )
+    selenium.run_js("x = pyodide.pyimport('x')")
+
+
+def test_recursive_dict(selenium):
+    selenium.run(
+        """
+        x = {}
+        x[0] = x
+        """
+    )
+    selenium.run_js("x = pyodide.pyimport('x')")

@@ -108,8 +108,11 @@ is_type_name(PyObject* x, const char* name)
   return result;
 }
 
+int
+_python2js_cache(PyObject* x, PyObject* map, PyObject* pyparent, int jsparent);
+
 static int
-_python2js(PyObject* x)
+_python2js(PyObject* x, PyObject* map)
 {
   if (x == Py_None) {
     return hiwire_undefined();
@@ -166,7 +169,7 @@ _python2js(PyObject* x)
         Py_INCREF(x);
         return pyproxy_new((int)x);
       }
-      int jsitem = _python2js(pyitem);
+      int jsitem = _python2js_cache(pyitem, map, x, jsarray);
       if (jsitem == -1) {
         Py_DECREF(pyitem);
         hiwire_decref(jsarray);
@@ -182,12 +185,12 @@ _python2js(PyObject* x)
     PyObject *pykey, *pyval;
     Py_ssize_t pos = 0;
     while (PyDict_Next(x, &pos, &pykey, &pyval)) {
-      int jskey = _python2js(pykey);
+      int jskey = _python2js_cache(pykey, map, x, jsdict);
       if (jskey == -1) {
         hiwire_decref(jsdict);
         return -1;
       }
-      int jsval = _python2js(pyval);
+      int jsval = _python2js_cache(pyval, map, NULL, 0);
       if (jsval == -1) {
         hiwire_decref(jskey);
         hiwire_decref(jsdict);
@@ -205,9 +208,42 @@ _python2js(PyObject* x)
 }
 
 int
+_python2js_cache(PyObject* x, PyObject* map, PyObject* pyparent, int jsparent)
+{
+  if (pyparent) {
+    PyObject* pyparentid = PyLong_FromSize_t((size_t)pyparent);
+    PyObject* jsparentid = PyLong_FromLong(jsparent);
+    if (PyDict_SetItem(map, pyparentid, jsparentid)) {
+      Py_DECREF(pyparentid);
+      Py_DECREF(jsparentid);
+      return -1;
+    }
+    Py_DECREF(pyparentid);
+    Py_DECREF(jsparentid);
+  }
+
+  PyObject* id = PyLong_FromSize_t((size_t)x);
+  PyObject* val = PyDict_GetItem(map, id);
+  int result;
+  if (val) {
+    result = PyLong_AsLong(val);
+    hiwire_incref(result);
+    Py_DECREF(val);
+    /* No need to check for result == -1, because that's the same */
+    /* value we use here to indicate error */
+  } else {
+    result = _python2js(x, map);
+  }
+  Py_DECREF(id);
+  return result;
+}
+
+int
 python2js(PyObject* x)
 {
-  int result = _python2js(x);
+  PyObject* map = PyDict_New();
+  int result = _python2js_cache(x, map, NULL, 0);
+  Py_DECREF(map);
   if (result == -1) {
     return pythonexc2js();
   }
