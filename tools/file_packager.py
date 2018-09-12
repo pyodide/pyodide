@@ -1,4 +1,7 @@
 # flake8: noqa
+
+# This is forked from emscripten 1.38.10
+
 '''
 A tool that generates FS API calls to generate a filesystem, and packages the files
 to work with that.
@@ -463,8 +466,8 @@ if has_preloaded:
     use_data = '''
           var compressedData = %s;
           compressedData.data = byteArray;
-          assert(typeof Module.LZ4 === 'object', 'LZ4 not present - was your app build with  -s LZ4=1  ?');
-          Module.LZ4.loadPackage({ 'metadata': metadata, 'compressedData': compressedData });
+          assert(typeof LZ4 === 'object', 'LZ4 not present - was your app build with  -s LZ4=1  ?');
+          LZ4.loadPackage({ 'metadata': metadata, 'compressedData': compressedData });
           Module['removeRunDependency']('datafile_%s');
     ''' % (meta, shared.JS.escape_for_js_string(data_target))
 
