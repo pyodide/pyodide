@@ -1,7 +1,7 @@
 PYODIDE_ROOT=$(abspath .)
 include Makefile.envs
 
-FILEPACKAGER=$(PYODIDE_ROOT)/emsdk/emsdk/emscripten/tag-1.38.10/tools/file_packager.py
+FILEPACKAGER=$(PYODIDE_ROOT)/tools/file_packager.py
 
 CPYTHONROOT=cpython
 CPYTHONLIB=$(CPYTHONROOT)/installs/python-$(PYVERSION)/lib/python$(PYMINOR)
