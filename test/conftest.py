@@ -3,6 +3,7 @@ Various common utilities for testing.
 """
 
 import atexit
+from contextlib import contextmanager
 import multiprocessing
 import textwrap
 import os
@@ -12,6 +13,14 @@ import sys
 
 try:
     import pytest
+
+    def pytest_addoption(parser):
+        group = parser.getgroup("general")
+        group.addoption(
+            '--memory-usage', action="store_true",
+            help="Measure memory usage by selenium instances."
+                 "This requires have memory_profiler and "
+                 "psutils installed.")
 except ImportError:
     pytest = None
 
@@ -43,6 +52,43 @@ def _display_driver_logs(browser, driver):
         # https://github.com/mozilla/geckodriver/issues/284
         print('Accessing raw browser logs with Selenium is not '
               'supported by Firefox.')
+
+
+@contextmanager
+def _measure_peak_memory(pid, measure=False):
+    """Measure peak memory of the selenium instance
+
+    Parameters
+    ----------
+    pid : int
+       pid of the selenium driver process
+    measure : bool, default: False
+       if True measure the peak memory usage and print it to
+       stdout. If False, don't do anything.
+    """
+    if measure:
+        import memory_profiler
+
+        def memit(pid, queue):
+            memory_usage = memory_profiler.memory_usage(
+                    pid, interval=0.01, include_children=True,
+                    multiprocess=True, max_usage=True)
+            queue.put(memory_usage)
+
+        memit_queue = multiprocessing.Queue()
+        memit_process = multiprocessing.Process(
+                target=memit, args=(pid, memit_queue,))
+        memit_process.start()
+        try:
+            yield
+        finally:
+            memit_process.join()
+            memory_usage = memit_queue.get(False)
+            print(f'Peak memory usage of the selenium instance:'
+                  f' {memory_usage:.1f} MB.')
+    else:
+        # don't do anything
+        yield
 
 
 class SeleniumWrapper:
@@ -157,11 +203,13 @@ if pytest is not None:
         elif request.param == 'chrome':
             cls = ChromeWrapper
         selenium = cls()
-        try:
-            yield selenium
-        finally:
-            print(selenium.logs)
-            selenium.driver.quit()
+        pid = selenium.driver.service.process.pid
+        with _measure_peak_memory(pid, request.config.option.memory_usage):
+            try:
+                yield selenium
+            finally:
+                print(selenium.logs)
+                selenium.driver.quit()
 
     @pytest.fixture(params=['firefox', 'chrome'], scope='module')
     def _selenium_cached(request):
@@ -172,10 +220,12 @@ if pytest is not None:
         elif request.param == 'chrome':
             cls = ChromeWrapper
         selenium = cls()
-        try:
-            yield selenium
-        finally:
-            selenium.driver.quit()
+        pid = selenium.driver.service.process.pid
+        with _measure_peak_memory(pid, request.config.option.memory_usage):
+            try:
+                yield selenium
+            finally:
+                selenium.driver.quit()
 
     @pytest.fixture
     def selenium(_selenium_cached):
