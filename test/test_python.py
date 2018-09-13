@@ -317,7 +317,15 @@ def test_open_url(selenium):
     assert selenium.run(
         """
         import pyodide
-        pyodide.open_url('test_data.txt').read()
+        pyodide.open_url('test/data.txt').read()
+        """) == 'HELLO\n'
+
+
+def test_open_url_cgi(selenium):
+    assert selenium.run(
+        """
+        import pyodide
+        pyodide.open_url('test/data.cgi').read()
         """) == 'HELLO\n'
 
 

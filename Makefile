@@ -21,7 +21,8 @@ LDFLAGS=\
 	-s MODULARIZE=1 \
 	$(CPYTHONROOT)/installs/python-$(PYVERSION)/lib/libpython$(PYMINOR).a \
   -s "BINARYEN_METHOD='native-wasm'" \
-  -s TOTAL_MEMORY=536870912 \
+  -s TOTAL_MEMORY=1073741824 \
+  -s ALLOW_MEMORY_GROWTH=1 \
 	-s MAIN_MODULE=1 \
 	-s EMULATED_FUNCTION_POINTERS=1 \
   -s EMULATE_FUNCTION_POINTER_CASTS=1 \
@@ -50,7 +51,6 @@ all: build/pyodide.asm.js \
 	build/renderedhtml.css \
   build/test.data \
   build/packages.json \
-  build/test_data.txt \
   build/test.html
 
 
@@ -105,10 +105,6 @@ build/renderedhtml.css: src/renderedhtml.less
 
 test: all
 	pytest test/ -v
-
-
-build/test_data.txt: test/data.txt
-	cp test/data.txt build/test_data.txt
 
 
 lint:
