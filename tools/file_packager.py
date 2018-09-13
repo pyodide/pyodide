@@ -200,7 +200,7 @@ ret = ''
 # emcc.py will add this to the output itself, so it is only needed for standalone calls
 if not from_emcc:
   ret = '''
-var Module = typeof %(EXPORT_NAME)s !== 'undefined' ? %(EXPORT_NAME)s : {};
+var Module = typeof %(EXPORT_NAME)s !== 'undefined' ? %(EXPORT_NAME)s : typeof process[%(EXPORT_NAME)s] !== 'undefined' ? process[%(EXPORT_NAME)s] : {};
 ''' % {"EXPORT_NAME": export_name}
 
 ret += '''
@@ -479,12 +479,16 @@ if has_preloaded:
   ret += r'''
     var PACKAGE_PATH;
     if (typeof window === 'object') {
+      // browser
       PACKAGE_PATH = window['encodeURIComponent'](window.location.pathname.toString().substring(0, window.location.pathname.toString().lastIndexOf('/')) + '/');
     } else if (typeof location !== 'undefined') {
       // worker
       PACKAGE_PATH = encodeURIComponent(location.pathname.toString().substring(0, location.pathname.toString().lastIndexOf('/')) + '/');
+    } else if (typeof process === "object" && typeof require === "function") {
+      // node
+      PACKAGE_PATH = encodeURIComponent(require('path').join(__dirname, '/'));
     } else {
-      throw 'using preloaded data can only be done on a web page or in a web worker';
+      throw 'using preloaded data can only be done on a web page, web worker or in nodejs';
     }
     var PACKAGE_NAME = '%s';
     var REMOTE_PACKAGE_BASE = '%s';
@@ -595,51 +599,93 @@ if has_preloaded:
 
   ret += r'''
     function fetchRemotePackage(packageName, packageSize, callback, errback) {
-      var xhr = new XMLHttpRequest();
-      xhr.open('GET', packageName, true);
-      xhr.responseType = 'arraybuffer';
-      xhr.onprogress = function(event) {
-        var url = packageName;
-        var size = packageSize;
-        if (event.total) size = event.total;
-        if (event.loaded) {
-          if (!xhr.addedTotal) {
-            xhr.addedTotal = true;
-            if (!Module.dataFileDownloads) Module.dataFileDownloads = {};
-            Module.dataFileDownloads[url] = {
-              loaded: event.loaded,
-              total: size
-            };
+      if (typeof XMLHttpRequest !== 'undefined') { // BROWSER
+        var xhr = new XMLHttpRequest();
+        xhr.open('GET', packageName, true);
+        xhr.responseType = 'arraybuffer';
+        xhr.onprogress = function(event) {
+          var url = packageName;
+          var size = packageSize;
+          if (event.total) size = event.total;
+          if (event.loaded) {
+            if (!xhr.addedTotal) {
+              xhr.addedTotal = true;
+              if (!Module.dataFileDownloads) Module.dataFileDownloads = {};
+              Module.dataFileDownloads[url] = {
+                loaded: event.loaded,
+                total: size
+              };
+            } else {
+              Module.dataFileDownloads[url].loaded = event.loaded;
+            }
+            var total = 0;
+            var loaded = 0;
+            var num = 0;
+            for (var download in Module.dataFileDownloads) {
+            var data = Module.dataFileDownloads[download];
+              total += data.total;
+              loaded += data.loaded;
+              num++;
+            }
+            total = Math.ceil(total * Module.expectedDataFileDownloads/num);
+            if (Module['setStatus']) Module['setStatus']('Downloading data... (' + loaded + '/' + total + ')');
+          } else if (!Module.dataFileDownloads) {
+            if (Module['setStatus']) Module['setStatus']('Downloading data...');
+          }
+        };
+        xhr.onerror = function(event) {
+          throw new Error("NetworkError for: " + packageName);
+        }
+        xhr.onload = function(event) {
+          if (xhr.status == 200 || xhr.status == 304 || xhr.status == 206 || (xhr.status == 0 && xhr.response)) { // file URLs can return 0
+            var packageData = xhr.response;
+            callback(packageData);
           } else {
-            Module.dataFileDownloads[url].loaded = event.loaded;
+            throw new Error(xhr.statusText + " : " + xhr.responseURL);
           }
-          var total = 0;
-          var loaded = 0;
-          var num = 0;
-          for (var download in Module.dataFileDownloads) {
-          var data = Module.dataFileDownloads[download];
-            total += data.total;
-            loaded += data.loaded;
-            num++;
-          }
-          total = Math.ceil(total * Module.expectedDataFileDownloads/num);
-          if (Module['setStatus']) Module['setStatus']('Downloading data... (' + loaded + '/' + total + ')');
-        } else if (!Module.dataFileDownloads) {
-          if (Module['setStatus']) Module['setStatus']('Downloading data...');
+        };
+        xhr.send(null);
+      } else {
+        function fetch_node(file) {
+            var fs = require('fs');
+            var fetch = require('isomorphic-fetch');
+            return new Promise((resolve, reject) => {
+                if(file.indexOf('http') == -1) {
+                    fs.readFile(file, (err, data) => err ? reject(err) : resolve({ buffer: () => data })); // local
+                } else {
+                    fetch(file).then((buff) => resolve({ buffer: () => buff.buffer()})); // remote
+                }
+            });
         }
-      };
-      xhr.onerror = function(event) {
-        throw new Error("NetworkError for: " + packageName);
-      }
-      xhr.onload = function(event) {
-        if (xhr.status == 200 || xhr.status == 304 || xhr.status == 206 || (xhr.status == 0 && xhr.response)) { // file URLs can return 0
-          var packageData = xhr.response;
+        fetch_node(packageName).then((buffer) => buffer.buffer()).then((packageData) => {
+          if (!Module.dataFileDownloads) {
+            if (Module['setStatus']) Module['setStatus']('Downloading data...');
+          } else {
+            Module.dataFileDownloads[packageName] = {
+                loaded: packageSize,
+                total: packageSize
+            }
+            var total = 0;
+            var loaded = 0;
+            var num = 0;
+            for (var download in Module.dataFileDownloads) {
+                var data = Module.dataFileDownloads[download];
+                total += data.total;
+                loaded += data.loaded;
+                num++
+            }
+            total = Math.ceil(total * Module.expectedDataFileDownloads / num);
+            if (Module['setStatus']) {
+              Module['setStatus']('Downloading data... (' + loaded + '/' + total + ')');
+              console.log(`Downloaded ${packageName} data... (${loaded}/${total})`);
+            }
+          }
           callback(packageData);
-        } else {
-          throw new Error(xhr.statusText + " : " + xhr.responseURL);
-        }
-      };
-      xhr.send(null);
+        }).catch((err) => {
+            console.error(`Something wrong happened ${err}`);
+            throw new Error(`Something wrong happened ${err}`);
+        });
+      }
     };
 
     function handleError(error) {
@@ -651,8 +697,8 @@ if has_preloaded:
     function processPackageData(arrayBuffer) {
       Module.finishedDataFileDownloads++;
       assert(arrayBuffer, 'Loading data file failed.');
-      assert(arrayBuffer instanceof ArrayBuffer, 'bad input to processPackageData');
-      var byteArray = new Uint8Array(arrayBuffer);
+      assert((arrayBuffer instanceof ArrayBuffer || arrayBuffer.buffer instanceof ArrayBuffer), 'bad input to processPackageData');
+      var byteArray = new Uint8Array(arrayBuffer instanceof ArrayBuffer ? arrayBuffer : arrayBuffer.buffer);
       var curr;
       %s
     };
@@ -748,15 +794,22 @@ ret += '''%s
  function runMetaWithFS() {
   Module['addRunDependency']('%(metadata_file)s');
   var REMOTE_METADATA_NAME = Module['locateFile'] ? Module['locateFile']('%(metadata_file)s', '') : '%(metadata_file)s';
-  var xhr = new XMLHttpRequest();
-  xhr.onreadystatechange = function() {
-   if (xhr.readyState === 4 && xhr.status === 200) {
-     loadPackage(JSON.parse(xhr.responseText));
-   }
+  if (typeof XMLHttpRequest !== 'undefined') { // browser
+    var xhr = new XMLHttpRequest();
+    xhr.onreadystatechange = function() {
+    if (xhr.readyState === 4 && xhr.status === 200) {
+      loadPackage(JSON.parse(xhr.responseText));
+    }
+    }
+    xhr.open('GET', REMOTE_METADATA_NAME, true);
+    xhr.overrideMimeType('application/json');
+    xhr.send(null);
+  } else { // node
+    var fetch = require('isomorphic-fetch');
+    fetch(REMOTE_METADATA_NAME).then((buffer) => buffer.buffer()).then((packageData) => {
+      loadPackage(JSON.parse(packageData));
+    });
   }
-  xhr.open('GET', REMOTE_METADATA_NAME, true);
-  xhr.overrideMimeType('application/json');
-  xhr.send(null);
  }
 
  if (Module['calledRun']) {
