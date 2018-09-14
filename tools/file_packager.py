@@ -721,8 +721,8 @@ if has_preloaded:
       Module.finishedDataFileDownloads++;
       arrayBuffer = arrayBuffer instanceof ArrayBuffer ? arrayBuffer : arrayBuffer.buffer;
       assert(arrayBuffer, 'Loading data file failed.');
-      assert((arrayBuffer instanceof ArrayBuffer || arrayBuffer.buffer instanceof ArrayBuffer), 'bad input to processPackageData');
-      var byteArray = new Uint8Array(arrayBuffer instanceof ArrayBuffer ? arrayBuffer : arrayBuffer.buffer);
+      assert(arrayBuffer instanceof ArrayBuffer, 'bad input to processPackageData');
+      var byteArray = new Uint8Array(arrayBuffer);
       var curr;
       %s
     };
