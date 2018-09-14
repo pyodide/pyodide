@@ -7,7 +7,11 @@ git checkout --orphan tmp
 git add *
 git config --global user.email "deploybot@nowhere.com"
 git config --global user.name "Deploybot"
-git commit -m "Deployed from Circle-CI $CIRCLE_BUILD_NUM"
+git commit -m << END
+Deployed from Circle-CI $CIRCLE_BUILD_NUM
+
+Version $(git describe --tags --always)
+END
 git checkout master
 git reset --hard tmp
 git push origin -f master

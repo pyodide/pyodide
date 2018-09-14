@@ -68,3 +68,12 @@ runpython_init_py()
   Py_DECREF(d);
   return 0;
 }
+
+EM_JS(int, runpython_finalize_js, (), {
+  Module.version = function()
+  {
+    Module.runPython("import pyodide");
+    return Module.runPython("pyodide.__version__");
+  };
+  return 0;
+});

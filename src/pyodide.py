@@ -7,6 +7,8 @@ from js import XMLHttpRequest
 import ast
 import io
 
+__version__ = '0.1.0'
+
 
 def open_url(url):
     """
