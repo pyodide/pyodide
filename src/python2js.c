@@ -109,7 +109,13 @@ is_type_name(PyObject* x, const char* name)
 }
 
 int
-_python2js_cache(PyObject* x, PyObject* map, PyObject* pyparent, int jsparent);
+_python2js_add_to_cache(PyObject* map, PyObject* pyparent, int jsparent);
+
+int
+_python2js_remove_from_cache(PyObject* map, PyObject* pyparent);
+
+int
+_python2js_cache(PyObject* x, PyObject* map);
 
 static int
 _python2js(PyObject* x, PyObject* map)
@@ -158,19 +164,25 @@ _python2js(PyObject* x, PyObject* map)
     return JsProxy_AsJs(x);
   } else if (PyList_Check(x) || is_type_name(x, "<class 'numpy.ndarray'>")) {
     int jsarray = hiwire_array();
+    if (_python2js_add_to_cache(map, x, jsarray)) {
+      hiwire_decref(jsarray);
+      return -1;
+    }
     size_t length = PySequence_Size(x);
     for (size_t i = 0; i < length; ++i) {
       PyObject* pyitem = PySequence_GetItem(x, i);
       if (pyitem == NULL) {
         // If something goes wrong converting the sequence (as is the case with
         // Pandas data frames), fallback to the Python object proxy
+        _python2js_remove_from_cache(map, x);
         hiwire_decref(jsarray);
         PyErr_Clear();
         Py_INCREF(x);
         return pyproxy_new((int)x);
       }
-      int jsitem = _python2js_cache(pyitem, map, x, jsarray);
+      int jsitem = _python2js_cache(pyitem, map);
       if (jsitem == -1) {
+        _python2js_remove_from_cache(map, x);
         Py_DECREF(pyitem);
         hiwire_decref(jsarray);
         return -1;
@@ -179,19 +191,29 @@ _python2js(PyObject* x, PyObject* map)
       hiwire_push_array(jsarray, jsitem);
       hiwire_decref(jsitem);
     }
+    if (_python2js_remove_from_cache(map, x)) {
+      hiwire_decref(jsarray);
+      return -1;
+    }
     return jsarray;
   } else if (PyDict_Check(x)) {
     int jsdict = hiwire_object();
+    if (_python2js_add_to_cache(map, x, jsdict)) {
+      hiwire_decref(jsdict);
+      return -1;
+    }
     PyObject *pykey, *pyval;
     Py_ssize_t pos = 0;
     while (PyDict_Next(x, &pos, &pykey, &pyval)) {
-      int jskey = _python2js_cache(pykey, map, x, jsdict);
+      int jskey = _python2js_cache(pykey, map);
       if (jskey == -1) {
+        _python2js_remove_from_cache(map, x);
         hiwire_decref(jsdict);
         return -1;
       }
-      int jsval = _python2js_cache(pyval, map, NULL, 0);
+      int jsval = _python2js_cache(pyval, map);
       if (jsval == -1) {
+        _python2js_remove_from_cache(map, x);
         hiwire_decref(jskey);
         hiwire_decref(jsdict);
         return -1;
@@ -200,6 +222,10 @@ _python2js(PyObject* x, PyObject* map)
       hiwire_decref(jskey);
       hiwire_decref(jsval);
     }
+    if (_python2js_remove_from_cache(map, x)) {
+      hiwire_decref(jsdict);
+      return -1;
+    }
     return jsdict;
   } else {
     Py_INCREF(x);
@@ -207,27 +233,53 @@ _python2js(PyObject* x, PyObject* map)
   }
 }
 
+/* During conversion of collection types (lists and dicts) from Python to
+ * Javascript, we need to make sure that those collections don't include
+ * themselves, otherwise infinite recursion occurs.
+ *
+ * The solution is to maintain a cache mapping from the PyObject* to the
+ * Javascript object id for all collection objects. (One could do this for
+ * scalars as well, but that would imply a larger cache, and identical scalars
+ * are probably interned for deduplication on the Javascript side anyway).
+ *
+ * This cache only lives for each invocation of python2js.
+ */
+
 int
-_python2js_cache(PyObject* x, PyObject* map, PyObject* pyparent, int jsparent)
+_python2js_add_to_cache(PyObject* map, PyObject* pyparent, int jsparent)
 {
-  if (pyparent) {
-    PyObject* pyparentid = PyLong_FromSize_t((size_t)pyparent);
-    PyObject* jsparentid = PyLong_FromLong(jsparent);
-    if (PyDict_SetItem(map, pyparentid, jsparentid)) {
-      Py_DECREF(pyparentid);
-      Py_DECREF(jsparentid);
-      return -1;
-    }
+  /* Use the pointer converted to an int so cache is by identity, not hash */
+  PyObject* pyparentid = PyLong_FromSize_t((size_t)pyparent);
+  PyObject* jsparentid = PyLong_FromLong(jsparent);
+  if (PyDict_SetItem(map, pyparentid, jsparentid)) {
     Py_DECREF(pyparentid);
     Py_DECREF(jsparentid);
+    return -1;
   }
+  Py_DECREF(pyparentid);
+  Py_DECREF(jsparentid);
+  return 0;
+}
 
+int
+_python2js_remove_from_cache(PyObject* map, PyObject* pyparent)
+{
+  PyObject* pyparentid = PyLong_FromSize_t((size_t)pyparent);
+  if (PyDict_DelItem(map, pyparentid)) {
+    return -1;
+  }
+  Py_DECREF(pyparentid);
+  return 0;
+}
+
+int
+_python2js_cache(PyObject* x, PyObject* map)
+{
   PyObject* id = PyLong_FromSize_t((size_t)x);
   PyObject* val = PyDict_GetItem(map, id);
   int result;
   if (val) {
-    result = PyLong_AsLong(val);
-    hiwire_incref(result);
+    result = hiwire_incref(PyLong_AsLong(val));
     Py_DECREF(val);
     /* No need to check for result == -1, because that's the same */
     /* value we use here to indicate error */
@@ -242,11 +294,13 @@ int
 python2js(PyObject* x)
 {
   PyObject* map = PyDict_New();
-  int result = _python2js_cache(x, map, NULL, 0);
+  int result = _python2js_cache(x, map);
   Py_DECREF(map);
+
   if (result == -1) {
     return pythonexc2js();
   }
+
   return result;
 }
 
