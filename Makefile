@@ -162,7 +162,8 @@ root/.built: \
 	cp src/pyodide.py root/lib/python$(PYMINOR)/site-packages
 	if command -v git > /dev/null 2>&1 \
 			&& git describe --tags > /dev/null 2>&1; then \
-	sed -i "s/__version__ =.*/__version__ = '$(shell git describe --tags)'/g" root/lib/python$(PYMINOR)/site-packages/pyodide.py; \
+	sed -i "s/__version__ =.*/__version__ = '$(shell git describe --tags)'/g" \
+		root/lib/python$(PYMINOR)/site-packages/pyodide.py; \
 	fi
 	( \
 		cd root/lib/python$(PYMINOR); \
