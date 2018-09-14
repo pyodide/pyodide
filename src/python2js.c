@@ -279,10 +279,11 @@ _python2js_cache(PyObject* x, PyObject* map)
   PyObject* val = PyDict_GetItem(map, id);
   int result;
   if (val) {
-    result = hiwire_incref(PyLong_AsLong(val));
+    result = PyLong_AsLong(val);
+    if (result != -1) {
+      result = hiwire_incref(result);
+    }
     Py_DECREF(val);
-    /* No need to check for result == -1, because that's the same */
-    /* value we use here to indicate error */
   } else {
     result = _python2js(x, map);
   }
