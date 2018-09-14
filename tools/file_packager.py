@@ -200,7 +200,14 @@ ret = ''
 # emcc.py will add this to the output itself, so it is only needed for standalone calls
 if not from_emcc:
   ret = '''
-var Module = typeof %(EXPORT_NAME)s !== 'undefined' ? %(EXPORT_NAME)s : typeof process[%(EXPORT_NAME)s] !== 'undefined' ? process[%(EXPORT_NAME)s] : {};
+var Module;
+if (typeof %(EXPORT_NAME)s !== 'undefined') {
+  Module = %(EXPORT_NAME)s; /* browser */
+} else if (typeof process['%(EXPORT_NAME)s'] !== 'undefined') {
+  Module = process['%(EXPORT_NAME)s']; /* node */
+} else { 
+  Module = {};
+}
 ''' % {"EXPORT_NAME": export_name}
 
 ret += '''
@@ -599,7 +606,7 @@ if has_preloaded:
 
   ret += r'''
     function fetchRemotePackage(packageName, packageSize, callback, errback) {
-      if (typeof XMLHttpRequest !== 'undefined') { // BROWSER
+      if (typeof XMLHttpRequest !== 'undefined') { /* browser */
         var xhr = new XMLHttpRequest();
         xhr.open('GET', packageName, true);
         xhr.responseType = 'arraybuffer';
@@ -645,19 +652,35 @@ if has_preloaded:
           }
         };
         xhr.send(null);
-      } else {
+      } else { /* node */
         function fetch_node(file) {
             var fs = require('fs');
             var fetch = require('isomorphic-fetch');
-            return new Promise((resolve, reject) => {
-                if(file.indexOf('http') == -1) {
-                    fs.readFile(file, (err, data) => err ? reject(err) : resolve({ buffer: () => data })); // local
-                } else {
-                    fetch(file).then((buff) => resolve({ buffer: () => buff.buffer()})); // remote
-                }
-            });
+            return new Promise(function(resolve, reject) {
+              if(file.indexOf('http') == -1) { // local
+                  fs.readFile(file, function (err, data) { 
+                    if (err) {
+                      reject(err);
+                    } else {
+                      resolve({ 
+                        buffer: function() { 
+                          return data;
+                        }
+                      });
+                    }
+                  });
+              } else { // remote
+                fetch(file).then(function(buff) {
+                  resolve({ 
+                    buffer: function() { 
+                      return buff.buffer()
+                    }
+                  })
+                });
+              }
+          });
         }
-        fetch_node(packageName).then((buffer) => buffer.buffer()).then((packageData) => {
+        fetch_node(packageName).then(function(buffer) { return buffer.buffer() }).then(function (packageData) {
           if (!Module.dataFileDownloads) {
             if (Module['setStatus']) Module['setStatus']('Downloading data...');
           } else {
@@ -681,7 +704,7 @@ if has_preloaded:
             }
           }
           callback(packageData);
-        }).catch((err) => {
+        }).catch(function(err) {
             console.error(`Something wrong happened ${err}`);
             throw new Error(`Something wrong happened ${err}`);
         });
@@ -696,9 +719,10 @@ if has_preloaded:
   code += r'''
     function processPackageData(arrayBuffer) {
       Module.finishedDataFileDownloads++;
+      arrayBuffer = arrayBuffer instanceof ArrayBuffer ? arrayBuffer : arrayBuffer.buffer;
       assert(arrayBuffer, 'Loading data file failed.');
-      assert((arrayBuffer instanceof ArrayBuffer || arrayBuffer.buffer instanceof ArrayBuffer), 'bad input to processPackageData');
-      var byteArray = new Uint8Array(arrayBuffer instanceof ArrayBuffer ? arrayBuffer : arrayBuffer.buffer);
+      assert(arrayBuffer instanceof ArrayBuffer, 'bad input to processPackageData');
+      var byteArray = new Uint8Array(arrayBuffer);
       var curr;
       %s
     };
@@ -794,7 +818,7 @@ ret += '''%s
  function runMetaWithFS() {
   Module['addRunDependency']('%(metadata_file)s');
   var REMOTE_METADATA_NAME = Module['locateFile'] ? Module['locateFile']('%(metadata_file)s', '') : '%(metadata_file)s';
-  if (typeof XMLHttpRequest !== 'undefined') { // browser
+  if (typeof XMLHttpRequest !== 'undefined') { /* browser */
     var xhr = new XMLHttpRequest();
     xhr.onreadystatechange = function() {
     if (xhr.readyState === 4 && xhr.status === 200) {
@@ -804,10 +828,10 @@ ret += '''%s
     xhr.open('GET', REMOTE_METADATA_NAME, true);
     xhr.overrideMimeType('application/json');
     xhr.send(null);
-  } else { // node
+  } else { /* node */
     var fetch = require('isomorphic-fetch');
-    fetch(REMOTE_METADATA_NAME).then((buffer) => buffer.buffer()).then((packageData) => {
-      loadPackage(JSON.parse(packageData));
+    fetch(REMOTE_METADATA_NAME).then(function(buffer) { return buffer.json(); }).then(function(packageData) {
+      loadPackage(packageData);
     });
   }
  }
