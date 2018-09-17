@@ -408,21 +408,21 @@ def test_version_info(selenium):
     assert version_py == version_js
 
 
-def test_recursive_list(selenium):
-    selenium.run(
+def test_recursive_list(selenium_standalone):
+    selenium_standalone.run(
         """
         x = []
         x.append(x)
         """
     )
-    selenium.run_js("x = pyodide.pyimport('x')")
+    selenium_standalone.run_js("x = pyodide.pyimport('x')")
 
 
-def test_recursive_dict(selenium):
-    selenium.run(
+def test_recursive_dict(selenium_standalone):
+    selenium_standalone.run(
         """
         x = {}
         x[0] = x
         """
     )
-    selenium.run_js("x = pyodide.pyimport('x')")
+    selenium_standalone.run_js("x = pyodide.pyimport('x')")
