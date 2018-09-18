@@ -38,9 +38,7 @@ LDFLAGS=\
   -lstdc++ \
   --memory-init-file 0 \
   -s TEXTDECODER=0 \
-  -s LZ4=1 \
-  --minify 0 \
-  --profiling
+  -s LZ4=1
 
 SIX_ROOT=six/six-1.11.0/build/lib
 SIX_LIBS=$(SIX_ROOT)/six.py
