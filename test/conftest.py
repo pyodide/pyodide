@@ -214,16 +214,29 @@ def run_web_server(q):
     print("Running webserver...")
 
     os.chdir(BUILD_PATH)
-    Handler = http.server.SimpleHTTPRequestHandler
-    Handler.extensions_map['.wasm'] = 'application/wasm'
 
-    def dummy_log(*args, **kwargs):
-        pass
-    Handler.log_message = dummy_log
+    class Handler(http.server.CGIHTTPRequestHandler):
+        def translate_path(self, path):
+            if path.startswith('/test/'):
+                return TEST_PATH / path[6:]
+            return super(Handler, self).translate_path(path)
+
+        def is_cgi(self):
+            if self.path.startswith('/test/') and self.path.endswith('.cgi'):
+                self.cgi_info = '/test', self.path[6:]
+                return True
+            return False
+
+        def log_message(self, *args, **kwargs):
+            pass
+
+    Handler.extensions_map['.wasm'] = 'application/wasm'
 
     with socketserver.TCPServer(("", 0), Handler) as httpd:
         host, port = httpd.server_address
         print("serving at port", port)
+        httpd.server_name = 'test-server'
+        httpd.server_port = port
         q.put(port)
 
         def service_actions():

@@ -21,7 +21,8 @@ LDFLAGS=\
 	-s MODULARIZE=1 \
 	$(CPYTHONROOT)/installs/python-$(PYVERSION)/lib/libpython$(PYMINOR).a \
   -s "BINARYEN_METHOD='native-wasm'" \
-  -s TOTAL_MEMORY=536870912 \
+  -s TOTAL_MEMORY=1073741824 \
+  -s ALLOW_MEMORY_GROWTH=1 \
 	-s MAIN_MODULE=1 \
 	-s EMULATED_FUNCTION_POINTERS=1 \
   -s EMULATE_FUNCTION_POINTER_CASTS=1 \
@@ -50,7 +51,6 @@ all: build/pyodide.asm.js \
 	build/renderedhtml.css \
   build/test.data \
   build/packages.json \
-  build/test_data.txt \
   build/test.html
 
 
@@ -107,10 +107,6 @@ test: all
 	pytest test/ -v
 
 
-build/test_data.txt: test/data.txt
-	cp test/data.txt build/test_data.txt
-
-
 lint:
 	flake8 src
 	flake8 test
@@ -164,6 +160,11 @@ root/.built: \
 	cp src/_testcapi.py	root/lib/python$(PYMINOR)
 	cp src/pystone.py root/lib/python$(PYMINOR)
 	cp src/pyodide.py root/lib/python$(PYMINOR)/site-packages
+	if command -v git > /dev/null 2>&1 \
+			&& git describe --tags > /dev/null 2>&1; then \
+	sed -i "s/__version__ =.*/__version__ = '$(shell git describe --tags | sed -r 's/^v//')'/g" \
+		root/lib/python$(PYMINOR)/site-packages/pyodide.py; \
+	fi
 	( \
 		cd root/lib/python$(PYMINOR); \
 		rm -fr `cat ../../../remove_modules.txt`; \

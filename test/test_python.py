@@ -2,7 +2,6 @@ import os
 from pathlib import Path
 import time
 
-
 import pytest
 
 
@@ -317,7 +316,15 @@ def test_open_url(selenium):
     assert selenium.run(
         """
         import pyodide
-        pyodide.open_url('test_data.txt').read()
+        pyodide.open_url('test/data.txt').read()
+        """) == 'HELLO\n'
+
+
+def test_open_url_cgi(selenium):
+    assert selenium.run(
+        """
+        import pyodide
+        pyodide.open_url('test/data.cgi').read()
         """) == 'HELLO\n'
 
 
@@ -383,3 +390,19 @@ def test_load_package_after_convert_string(selenium):
     selenium.load_package('kiwisolver')
     selenium.run(
         "import kiwisolver")
+
+
+def test_version_info(selenium):
+    from distutils.version import LooseVersion
+
+    version_py_str = selenium.run("""
+            import pyodide
+
+            pyodide.__version__
+            """)
+    version_py = LooseVersion(version_py_str)
+    assert version_py > LooseVersion('0.0.1')
+
+    version_js_str = selenium.run_js("return pyodide.version()")
+    version_js = LooseVersion(version_js_str)
+    assert version_py == version_js
