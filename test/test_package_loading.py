@@ -1,9 +1,10 @@
 import pytest
 
 
-def test_load_from_url(selenium_standalone, web_server):
+def test_load_from_url(selenium_standalone):
 
-    url, port = web_server
+    url = selenium_standalone.server_hostname
+    port = selenium_standalone.server_port
 
     selenium_standalone.load_package(f"http://{url}:{port}/pyparsing.js")
     assert "Invalid package name or URI" not in selenium_standalone.logs
