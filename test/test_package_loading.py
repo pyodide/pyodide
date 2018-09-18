@@ -1,13 +1,29 @@
 import pytest
 
 
-def test_load_from_url(selenium_standalone):
+def test_load_from_url(selenium_standalone, web_server_secondary):
 
-    url = selenium_standalone.server_hostname
-    port = selenium_standalone.server_port
+    url, port, log_secondary = web_server_secondary
 
-    selenium_standalone.load_package(f"http://{url}:{port}/pyparsing.js")
-    assert "Invalid package name or URI" not in selenium_standalone.logs
+    log_main = selenium_standalone.server_log
+
+    with log_secondary.open('r') as fh_secondary, \
+            log_main.open('r') as fh_main:
+
+        # skip existing log lines
+        fh_main.read()
+        fh_secondary.read()
+
+        selenium_standalone.load_package(f"http://{url}:{port}/pyparsing.js")
+        assert "Invalid package name or URI" not in selenium_standalone.logs
+
+        # check that all ressources were loaded from the secondary server
+        txt = fh_secondary.read()
+        assert '"GET /pyparsing.js HTTP/1.1" 200' in txt
+        assert '"GET /pyparsing.data HTTP/1.1" 200' in txt
+
+        # no additional ressources were loaded from the main server
+        assert len(fh_main.read()) == 0
 
     selenium_standalone.run("from pyparsing import Word, alphas")
     selenium_standalone.run("Word(alphas).parseString('hello')")
