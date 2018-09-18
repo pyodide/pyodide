@@ -40,10 +40,10 @@ index 4c3f583b7..9540a64fb 100644
          var contents = stream.node.contents;
          var compressedData = contents.compressedData;
 +        if (compressedData.buf === null) {
-+          compressedData.buf = Module['_malloc'](LZ4.CHUNK_SIZE * 2);
++          compressedData.buf = Module['_malloc'](LZ4.CHUNK_SIZE);
 +          for (var i = 0; i < compressedData.cachedIndexes.length; i++) {
 +            compressedData.cachedIndexes[i] = -1;
-+            compressedData.cachedChunks[i] = Module['_malloc'](LZ4.CHUNK_SIZE * 2);
++            compressedData.cachedChunks[i] = Module['_malloc'](LZ4.CHUNK_SIZE);
 +            assert(compressedData.cachedChunks[i] !== null)
 +          }
 +        }
