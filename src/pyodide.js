@@ -228,6 +228,9 @@ var languagePluginLoader = new Promise((resolve, reject) => {
     let script = document.createElement('script');
     script.src = `${baseURL}pyodide.asm.js`;
     script.onload = () => {
+      // The emscripten module needs to be at this location for the core
+      // filesystem to install itself. Once that's complete, it will be replaced
+      // by the call to `makePublicAPI` with a more limited public API.
       window.pyodide = pyodide(Module);
       window.pyodide.loadPackage = loadPackage;
     };
