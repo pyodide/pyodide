@@ -11,8 +11,8 @@ def test_load_from_url(selenium_standalone, web_server_secondary):
             log_main.open('r') as fh_main:
 
         # skip existing log lines
-        fh_main.read()
-        fh_secondary.read()
+        fh_main.seek(0, 2)
+        fh_secondary.seek(0, 2)
 
         selenium_standalone.load_package(f"http://{url}:{port}/pyparsing.js")
         assert "Invalid package name or URI" not in selenium_standalone.logs
@@ -30,6 +30,16 @@ def test_load_from_url(selenium_standalone, web_server_secondary):
 
     selenium_standalone.load_package(f"http://{url}:{port}/numpy.js")
     selenium_standalone.run("import numpy as np")
+
+
+def test_list_loaded_urls(selenium_standalone):
+    selenium = selenium_standalone
+
+    selenium.load_package('pyparsing')
+    assert selenium.run_js(
+            'return Object.keys(pyodide.loadedPackages)') == ['pyparsing']
+    assert selenium.run_js(
+            "return pyodide.loadedPackages['pyparsing']") == "default channel"
 
 
 def test_uri_mismatch(selenium_standalone):

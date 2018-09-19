@@ -272,6 +272,11 @@ def run_web_server(q, log_filepath):
                      *self.client_address,
                      format_ % args))
 
+        def end_headers(self):
+            # Enable Cross-Origin Resource Sharing (CORS)
+            self.send_header('Access-Control-Allow-Origin', '*')
+            super().end_headers()
+
     Handler.extensions_map['.wasm'] = 'application/wasm'
 
     with socketserver.TCPServer(("", 0), Handler) as httpd:

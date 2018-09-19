@@ -35,8 +35,10 @@ var languagePluginLoader = new Promise((resolve, reject) => {
   let _loadPackage = (names) => {
     // DFS to find all dependencies of the requested packages
     let packages = window.pyodide._module.packages.dependencies;
+    let loadedPackages = window.pyodide.loadedPackages;
     let queue = [].concat(names || []);
     let toLoad = new Array();
+    window.pyodide._toLoadPackages = toLoad;
     while (queue.length) {
       let package_uri = queue.pop();
 
@@ -87,7 +89,7 @@ var languagePluginLoader = new Promise((resolve, reject) => {
       window.pyodide._module.monitorRunDependencies = (n) => {
         if (n === 0) {
           for (let package in toLoad) {
-            loadedPackages[package] = toLoad[package];
+            window.pyodide.loadedPackages[package] = toLoad[package];
           }
           delete window.pyodide._module.monitorRunDependencies;
           const packageList = Array.from(Object.keys(toLoad)).join(', ');
@@ -195,7 +197,20 @@ var languagePluginLoader = new Promise((resolve, reject) => {
     return {};
   };
 
-  Module.locateFile = (path) => baseURL + path;
+  Module.locateFile = (path) => {
+    if ((window.hasOwnProperty('pyodide')) &&
+        (window.pyodide.hasOwnProperty('_toLoadPackages'))) {
+      // handle packages loaded from custom URLs
+      let package = path.replace(/\.data$/, "");
+      if (package in window.pyodide._toLoadPackages) {
+        let package_uri = window.pyodide._toLoadPackages[package];
+        if (package_uri != 'default channel') {
+          return package_uri.replace(/\.js$/, ".data");
+        };
+      };
+    };
+    return baseURL + path;
+  };
   var postRunPromise = new Promise((resolve, reject) => {
     Module.postRun = () => {
       delete window.Module;
@@ -232,6 +247,7 @@ var languagePluginLoader = new Promise((resolve, reject) => {
       // filesystem to install itself. Once that's complete, it will be replaced
       // by the call to `makePublicAPI` with a more limited public API.
       window.pyodide = pyodide(Module);
+      window.pyodide.loadedPackages = new Array();
       window.pyodide.loadPackage = loadPackage;
     };
     document.head.appendChild(script);
