@@ -139,7 +139,7 @@ build/test.data: $(CPYTHONLIB)
 	)
 	( \
 		cd build; \
-		python $(FILEPACKAGER) test.data --preload ../$(CPYTHONLIB)/test@/lib/python3.7/test --js-output=test.js --export-name=pyodide --exclude \*.wasm.pre --exclude __pycache__ \
+		python $(FILEPACKAGER) test.data --preload ../$(CPYTHONLIB)/test@/lib/python3.7/test --js-output=test.js --export-name=pyodide._module --exclude \*.wasm.pre --exclude __pycache__ \
   )
 	uglifyjs build/test.js -o build/test.js
 
