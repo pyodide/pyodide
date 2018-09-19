@@ -32,6 +32,46 @@ var languagePluginLoader = new Promise((resolve, reject) => {
     }
   };
 
+  let preloadWasm = () => {
+    // On Chrome, we have to instantiate wasm asynchronously. Since that can't
+    // be done synchronously within the call to dlopen, we instantiate every .so
+    // that comes our way up front, caching it in the `preloadedWasm`
+    // dictionary.
+
+    let promise = new Promise((resolve) => resolve());
+    let FS = pyodide._module.FS;
+
+    function recurseDir(rootpath) {
+      let dirs;
+      try {
+        dirs = FS.readdir(rootpath);
+      } catch {
+        return;
+      }
+      for (entry of dirs) {
+        if (entry.startsWith('.')) {
+          continue;
+        }
+        const path = rootpath + entry;
+        if (entry.endsWith('.so')) {
+          if (Module['preloadedWasm'][path] === undefined) {
+            promise = promise.then(
+              () => Module['loadWebAssemblyModule'](FS.readFile(path), true)
+            ).then(
+              (module) => { Module['preloadedWasm'][path] = module; }
+            );
+          }
+        } else if (FS.isDir(FS.lookupPath(path).node.mode)) {
+          recurseDir(path + '/');
+        }
+      }
+    }
+
+    recurseDir('/');
+
+    return promise;
+  }
+
   let _loadPackage = (names) => {
     // DFS to find all dependencies of the requested packages
     let packages = window.pyodide._module.packages.dependencies;
@@ -91,7 +131,12 @@ var languagePluginLoader = new Promise((resolve, reject) => {
           }
           delete window.pyodide._module.monitorRunDependencies;
           const packageList = Array.from(Object.keys(toLoad)).join(', ');
-          resolve(`Loaded ${packageList}`);
+          if (!isFirefox) {
+            preloadWasm().then(() => {
+              resolve(`Loaded ${packageList}`) });
+          } else {
+            resolve(`Loaded ${packageList}`);
+          }
         }
       };
 
@@ -182,11 +227,9 @@ var languagePluginLoader = new Promise((resolve, reject) => {
 
   Module.noImageDecoding = true;
   Module.noAudioDecoding = true;
+  Module.noWasmDecoding = true;
+  Module.preloadedWasm = {};
   let isFirefox = navigator.userAgent.toLowerCase().indexOf('firefox') > -1;
-  if (isFirefox) {
-    console.log("Skipping wasm decoding");
-    Module.noWasmDecoding = true;
-  }
 
   let wasm_promise = WebAssembly.compileStreaming(fetch(wasmURL));
   Module.instantiateWasm = (info, receiveInstance) => {
