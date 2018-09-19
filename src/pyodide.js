@@ -32,11 +32,12 @@ var languagePluginLoader = new Promise((resolve, reject) => {
     }
   };
 
+  // clang-format off
   let preloadWasm = () => {
-    // On Chrome, we have to instantiate wasm asynchronously. Since that can't
-    // be done synchronously within the call to dlopen, we instantiate every .so
-    // that comes our way up front, caching it in the `preloadedWasm`
-    // dictionary.
+    // On Chrome, we have to instantiate wasm asynchronously. Since that
+    // can't be done synchronously within the call to dlopen, we instantiate
+    // every .so that comes our way up front, caching it in the
+    // `preloadedWasm` dictionary.
 
     let promise = new Promise((resolve) => resolve());
     let FS = pyodide._module.FS;
@@ -55,11 +56,12 @@ var languagePluginLoader = new Promise((resolve, reject) => {
         const path = rootpath + entry;
         if (entry.endsWith('.so')) {
           if (Module['preloadedWasm'][path] === undefined) {
-            promise = promise.then(
-              () => Module['loadWebAssemblyModule'](FS.readFile(path), true)
-            ).then(
-              (module) => { Module['preloadedWasm'][path] = module; }
-            );
+            promise = promise
+              .then(() => Module['loadWebAssemblyModule'](
+                FS.readFile(path), true))
+              .then((module) => {
+                Module['preloadedWasm'][path] = module;
+              });
           }
         } else if (FS.isDir(FS.lookupPath(path).node.mode)) {
           recurseDir(path + '/');
@@ -71,6 +73,7 @@ var languagePluginLoader = new Promise((resolve, reject) => {
 
     return promise;
   }
+  // clang-format on
 
   let _loadPackage = (names) => {
     // DFS to find all dependencies of the requested packages
@@ -132,8 +135,7 @@ var languagePluginLoader = new Promise((resolve, reject) => {
           delete window.pyodide._module.monitorRunDependencies;
           const packageList = Array.from(Object.keys(toLoad)).join(', ');
           if (!isFirefox) {
-            preloadWasm().then(() => {
-              resolve(`Loaded ${packageList}`) });
+            preloadWasm().then(() => {resolve(`Loaded ${packageList}`)});
           } else {
             resolve(`Loaded ${packageList}`);
           }
