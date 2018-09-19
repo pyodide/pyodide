@@ -2,12 +2,6 @@
  * The main bootstrap script for loading pyodide.
  */
 
-// Regexp for validating package name and URI
-var package_name_regexp = '[a-z0-9_][a-z0-9_\-]*'
-var package_uri_regexp =
-    new RegExp('^https?://.*?(' + package_name_regexp + ').js$', 'i');
-var package_name_regexp = new RegExp('^' + package_name_regexp + '$', 'i');
-
 var languagePluginLoader = new Promise((resolve, reject) => {
   // This is filled in by the Makefile to be either a local file or the
   // deployed location. TODO: This should be done in a less hacky
@@ -16,9 +10,13 @@ var languagePluginLoader = new Promise((resolve, reject) => {
 
   ////////////////////////////////////////////////////////////
   // Package loading
-  var packages = undefined;
   let loadedPackages = new Array();
   var loadPackagePromise = new Promise((resolve) => resolve());
+  // Regexp for validating package name and URI
+  var package_name_regexp = '[a-z0-9_][a-z0-9_\-]*'
+  var package_uri_regexp =
+      new RegExp('^https?://.*?(' + package_name_regexp + ').js$', 'i');
+  var package_name_regexp = new RegExp('^' + package_name_regexp + '$', 'i');
 
   let _uri_to_package_name = (package_uri) => {
     // Generate a unique package name from URI
@@ -36,7 +34,7 @@ var languagePluginLoader = new Promise((resolve, reject) => {
 
   let _loadPackage = (names) => {
     // DFS to find all dependencies of the requested packages
-    let packages = window.pyodide.packages.dependencies;
+    let packages = window.pyodide._module.packages.dependencies;
     let queue = [].concat(names || []);
     let toLoad = new Array();
     while (queue.length) {
@@ -86,12 +84,12 @@ var languagePluginLoader = new Promise((resolve, reject) => {
         resolve('No new packages to load');
       }
 
-      pyodide.monitorRunDependencies = (n) => {
+      window.pyodide._module.monitorRunDependencies = (n) => {
         if (n === 0) {
           for (let package in toLoad) {
             loadedPackages[package] = toLoad[package];
           }
-          delete pyodide.monitorRunDependencies;
+          delete window.pyodide._module.monitorRunDependencies;
           const packageList = Array.from(Object.keys(toLoad)).join(', ');
           resolve(`Loaded ${packageList}`);
         }
@@ -130,6 +128,8 @@ var languagePluginLoader = new Promise((resolve, reject) => {
     return loadPackagePromise;
   };
 
+  ////////////////////////////////////////////////////////////
+  // Fix Python recursion limit
   function fixRecursionLimit(pyodide) {
     // The Javascript/Wasm call stack may be too small to handle the default
     // Python call stack limit of 1000 frames. This is generally the case on
@@ -155,6 +155,24 @@ var languagePluginLoader = new Promise((resolve, reject) => {
     pyodide.runPython(
         `import sys; sys.setrecursionlimit(int(${recursionLimit}))`);
   };
+
+  ////////////////////////////////////////////////////////////
+  // Rearrange namespace for public API
+  let PUBLIC_API = [
+    'loadPackage',
+    'pyimport',
+    'repr',
+    'runPython',
+    'version',
+  ];
+
+  function makePublicAPI(module, public_api) {
+    var namespace = {_module : module};
+    for (let name of public_api) {
+      namespace[name] = module[name];
+    }
+    return namespace;
+  }
 
   ////////////////////////////////////////////////////////////
   // Loading Pyodide
@@ -184,8 +202,9 @@ var languagePluginLoader = new Promise((resolve, reject) => {
       fetch(`${baseURL}packages.json`)
           .then((response) => response.json())
           .then((json) => {
-            window.pyodide.packages = json;
-            fixRecursionLimit(pyodide);
+            fixRecursionLimit(window.pyodide);
+            window.pyodide = makePublicAPI(window.pyodide, PUBLIC_API);
+            window.pyodide._module.packages = json;
             resolve();
           });
     };
@@ -231,7 +250,8 @@ var languagePluginLoader = new Promise((resolve, reject) => {
     // Add a custom output handler for Python objects
     window.iodide.addOutputHandler({
       shouldHandle : (val) => {
-        return (typeof val === 'function' && pyodide.PyProxy.isPyProxy(val));
+        return (typeof val === 'function' &&
+                pyodide._module.PyProxy.isPyProxy(val));
       },
 
       render : (val) => {
