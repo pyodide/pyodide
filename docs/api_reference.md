@@ -21,11 +21,14 @@ Fetches a given *url* and returns a `io.StringIO` to access its contents.
 
 *Returns*
 
-A `io.StringIO` object with the URL contents
+A `io.StringIO` object with the URL contents./
 
 ### pyodide.eval_code(code, ns)
 
-Runs a string of code, the last part of which may be an expression.
+Runs a string of code. The last part of the string may be an expression, in which case, its value is returned.
+
+This function may be overridden to change how `pyodide.runPython` interprets code, for example to perform
+some preprocessing on the Python code first.
 
 *Parameters*
 
@@ -37,15 +40,17 @@ Runs a string of code, the last part of which may be an expression.
 
 *Returns*
 
-Either the resulting object or `None`
+Either the resulting object or `None`.
 
 
 ## Javascript API
 
 ### pyodide.loadPackage(names)
 
-Load a package or a list of packages
+Load a package or a list of packages over the network.
 
+This makes the files for the package available in the virtual filesystem.  
+The package needs to be imported from Python before it can be used.
 
 *Parameters*
 
@@ -56,7 +61,7 @@ Load a package or a list of packages
 
 *Returns*
 
-An evaluated promise.
+Loading is asynchronous, therefore, this returns a promise.
 
 
 ### pyodide.loadedPackage
@@ -69,58 +74,67 @@ install location for a particular `package_name`.
 
 ### pyodide.pyimport(name)
 
-Import a Python package from Javascript.
+Access a Python object from Javascript.  The object must be in the global Python namespace.
 
-Makes `var foo = pyodide.pyimport('foo')` work in Javascript.
+For example, to access the `foo` Python object from Javascript:
+
+   `var foo = pyodide.pyimport('foo')`
 
 *Parameters*
 
-| name    | type  | description         |
-|---------|-------|---------------------|
-| *names* | str   | Python package name |
+| name    | type   | description          |
+|---------|--------|----------------------|
+| *names* | String | Python variable name |
 
 
 *Returns*
 
 | name      | type    | description                           |
 |-----------|---------|---------------------------------------|
-| *package* | Object  | proxy for the imported Python package |
+| *object*  | *any*   | If one of the basic types (string,    |
+|           |         | number, boolean, array, object), the  |
+|           |         | Python object is converted to         |
+|           |         | Javascript and returned.  For other   |
+|           |         | types, a Proxy object to the Python   |
+|           |         | object is returned.                   |
 
 
 ### pyodide.repr(obj)
 
-Gets the string representation of an object
+Gets the Python's string representation of an object.
+
+This is equivalent to calling `repr(obj)` in Python.
 
 *Parameters*
 
 | name    | type   | description         |
 |---------|--------|---------------------|
-| *obj*   | Object | Input object        |
+| *obj*   | *any*  | Input object        |
 
 
 *Returns*
 
 | name       | type    | description                               |
 |------------|---------|-------------------------------------------|
-| *str_repr* | str     | String representation of the input object |
+| *str_repr* | String  | String representation of the input object |
 
 
 ### pyodide.runPython(code)
 
-Gets the string representation of an object
+Runs a string of code. The last part of the string may be an expression, in which case, its value is returned.
 
 *Parameters*
 
 | name    | type   | description                    |
 |---------|--------|--------------------------------|
-| *code*  | str    | Python code to evaluate        |
+| *code*  | String | Python code to evaluate        |
 
 
 *Returns*
 
-| name       | type    | description                    |
-|------------|---------|--------------------------------|
-| *jsresult* | Object  | Results, passed to Javascript  |
+| name       | type    | description                     |
+|------------|---------|---------------------------------|
+| *jsresult* | *any*   | Result, converted to Javascript |
 
 
 ### pyodide.version()
@@ -137,7 +151,7 @@ None
 
 *Returns*
 
-| name      | type | description            |
-|-----------|------|------------------------|
-| *version* | str  | Pyodide version string |
+| name      | type   | description            |
+|-----------|--------|------------------------|
+| *version* | String | Pyodide version string |
 
