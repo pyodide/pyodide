@@ -54,9 +54,9 @@ The package needs to be imported from Python before it can be used.
 
 *Parameters*
 
-| name    | type         | description                           |
-|---------|--------------|---------------------------------------|
-| *names* | {str, Array} | package name, or URL. Can be either a single element, or an array.          |
+| name    | type            | description                           |
+|---------|-----------------|---------------------------------------|
+| *names* | {String, Array} | package name, or URL. Can be either a single element, or an array.          |
 
 
 *Returns*
