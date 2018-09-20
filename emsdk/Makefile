@@ -1,7 +1,7 @@
 all: emsdk/.complete
 
 # We hack the CPU_CORES, because if you use all of the cores on Circle-CI, you
-# run out of memory
+# run out of memory.
 
 emsdk/.complete:
 	if [ -d emsdk ]; then rm -rf emsdk; fi

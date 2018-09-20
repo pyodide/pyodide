@@ -6,6 +6,8 @@ FILEPACKAGER=$(PYODIDE_ROOT)/tools/file_packager.py
 CPYTHONROOT=cpython
 CPYTHONLIB=$(CPYTHONROOT)/installs/python-$(PYVERSION)/lib/python$(PYMINOR)
 
+LZ4LIB=lz4/lz4-1.8.3/lib/liblz4.a
+
 CC=emcc
 CXX=em++
 OPTFLAGS=-O3
@@ -20,6 +22,7 @@ LDFLAGS=\
 	-O3 \
 	-s MODULARIZE=1 \
 	$(CPYTHONROOT)/installs/python-$(PYVERSION)/lib/libpython$(PYMINOR).a \
+  lz4/lz4-1.8.3/lib/liblz4.a \
   -s "BINARYEN_METHOD='native-wasm'" \
   -s TOTAL_MEMORY=1073741824 \
   -s ALLOW_MEMORY_GROWTH=1 \
@@ -34,7 +37,8 @@ LDFLAGS=\
 	-std=c++14 \
   -lstdc++ \
   --memory-init-file 0 \
-  -s TEXTDECODER=0
+  -s TEXTDECODER=0 \
+  -s LZ4=1
 
 SIX_ROOT=six/six-1.11.0/build/lib
 SIX_LIBS=$(SIX_ROOT)/six.py
@@ -69,7 +73,7 @@ build/pyodide.asm.js: src/main.bc src/jsimport.bc src/jsproxy.bc src/js2python.b
 build/pyodide.asm.data: root/.built
 	( \
 		cd build; \
-		python $(FILEPACKAGER) pyodide.asm.data --preload ../root/lib@lib --js-output=pyodide.asm.data.js --use-preload-plugins \
+		python $(FILEPACKAGER) pyodide.asm.data --lz4 --preload ../root/lib@lib --js-output=pyodide.asm.data.js --use-preload-plugins \
   )
 	uglifyjs build/pyodide.asm.data.js -o build/pyodide.asm.data.js
 
@@ -133,7 +137,7 @@ clean:
 	echo "The Emsdk and CPython are not cleaned. cd into those directories to do so."
 
 
-%.bc: %.c $(CPYTHONLIB)
+%.bc: %.c $(CPYTHONLIB) $(LZ4LIB)
 	$(CC) -o $@ -c $< $(CFLAGS)
 
 
@@ -144,7 +148,7 @@ build/test.data: $(CPYTHONLIB)
 	)
 	( \
 		cd build; \
-		python $(FILEPACKAGER) test.data --preload ../$(CPYTHONLIB)/test@/lib/python3.7/test --js-output=test.js --export-name=pyodide._module --exclude \*.wasm.pre --exclude __pycache__ \
+		python $(FILEPACKAGER) test.data --lz4 --preload ../$(CPYTHONLIB)/test@/lib/python3.7/test --js-output=test.js --export-name=pyodide._module --exclude \*.wasm.pre --exclude __pycache__ \
   )
 	uglifyjs build/test.js -o build/test.js
 
@@ -200,6 +204,10 @@ ccache/em++:
 
 $(CPYTHONLIB): emsdk/emsdk/.complete ccache/emcc ccache/em++
 	make -C $(CPYTHONROOT)
+
+
+$(LZ4LIB):
+	make -C lz4
 
 
 $(SIX_LIBS): $(CPYTHONLIB)

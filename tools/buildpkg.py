@@ -126,6 +126,7 @@ def package_files(buildpath, srcpath, pkg, args):
         'python',
         Path(ROOTDIR) / 'file_packager.py',
         name + '.data',
+        '--lz4',
         '--preload',
         '{}@/'.format(install_prefix),
         '--js-output={}'.format(name + '.js'),
