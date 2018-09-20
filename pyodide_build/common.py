@@ -1,9 +1,10 @@
 from pathlib import Path
 
 
-ROOTDIR = Path(__file__).parent.resolve()
-HOSTPYTHON = ROOTDIR / '..' / 'cpython' / 'build' / '3.7.0' / 'host'
-TARGETPYTHON = ROOTDIR / '..' / 'cpython' / 'installs' / 'python-3.7.0'
+ROOTDIR = Path(__file__).parents[1].resolve()
+TOOLSDIR = ROOTDIR / 'tools'
+HOSTPYTHON = ROOTDIR / 'cpython' / 'build' / '3.7.0' / 'host'
+TARGETPYTHON = ROOTDIR / 'cpython' / 'installs' / 'python-3.7.0'
 DEFAULTCFLAGS = ''
 DEFAULTLDFLAGS = ' '.join([
     '-O3',

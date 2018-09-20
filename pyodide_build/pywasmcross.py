@@ -34,10 +34,12 @@ import subprocess
 import sys
 
 
-import common
+# absolute import is necessary as this file will be symlinked
+# under tools
+from pyodide_build import common
 
 
-ROOTDIR = Path(__file__).parent.resolve()
+TOOLSDIR = common.TOOLSDIR
 symlinks = set(['cc', 'c++', 'ld', 'ar', 'gcc'])
 
 
@@ -53,8 +55,8 @@ def collect_args(basename):
     # native compiler
     env = dict(os.environ)
     path = env['PATH']
-    while str(ROOTDIR) + ':' in path:
-        path = path.replace(str(ROOTDIR) + ':', '')
+    while str(TOOLSDIR) + ':' in path:
+        path = path.replace(str(TOOLSDIR) + ':', '')
     env['PATH'] = path
 
     with open('build.log', 'a') as fd:
@@ -74,7 +76,7 @@ def make_symlinks(env):
     """
     exec_path = Path(__file__).resolve()
     for symlink in symlinks:
-        symlink_path = ROOTDIR / symlink
+        symlink_path = TOOLSDIR / symlink
         if not symlink_path.exists():
             symlink_path.symlink_to(exec_path)
         if symlink == 'c++':
@@ -87,7 +89,7 @@ def make_symlinks(env):
 def capture_compile(args):
     env = dict(os.environ)
     make_symlinks(env)
-    env['PATH'] = str(ROOTDIR) + ':' + os.environ['PATH']
+    env['PATH'] = str(TOOLSDIR) + ':' + os.environ['PATH']
 
     result = subprocess.run(
         [Path(args.host) / 'bin' / 'python3',
@@ -186,7 +188,7 @@ def clean_out_native_artifacts():
                 path.unlink()
 
 
-def install_for_distribution():
+def install_for_distribution(args):
     subprocess.check_call(
         [Path(args.host) / 'bin' / 'python3',
          'setup.py',
@@ -202,11 +204,11 @@ def build_wrap(args):
         capture_compile(args)
     clean_out_native_artifacts()
     replay_compile(args)
-    install_for_distribution()
+    install_for_distribution(args)
 
 
-def parse_args():
-    parser = argparse.ArgumentParser(
+def make_parser(parser):
+    parser.description = (
         'Cross compile a Python distutils package. '
         'Run from the root directory of the package\'s source')
     parser.add_argument(
@@ -221,14 +223,19 @@ def parse_args():
     parser.add_argument(
         '--target', type=str, nargs='?', default=common.TARGETPYTHON,
         help='The path to the target Python installation')
-    args = parser.parse_args()
-    return args
+    parser.add_argument('basename', type=str, nargs='?')
+    return parser
 
 
-if __name__ == '__main__':
+def main(args, unknown=None):
     basename = Path(sys.argv[0]).name
     if basename in symlinks:
         collect_args(basename)
     else:
-        args = parse_args()
         build_wrap(args)
+
+
+if __name__ == '__main__':
+    parser = make_parser(argparse.ArgumentParser())
+    args, unknown = parser.parse_known_args()
+    main(args, unknown)

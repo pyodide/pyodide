@@ -10,8 +10,8 @@ from pathlib import Path
 import shutil
 
 
-import common
-import buildpkg
+from . import common
+from . import buildpkg
 
 
 def build_package(pkgname, dependencies, packagesdir, outputdir, args):
@@ -54,9 +54,8 @@ def build_packages(packagesdir, outputdir, args):
         json.dump({'dependencies': dependencies}, fd)
 
 
-def parse_args():
-    parser = argparse.ArgumentParser(
-        "Build all of the packages in a given directory")
+def make_parser(parser):
+    parser.description = "Build all of the packages in a given directory"
     parser.add_argument(
         'dir', type=str, nargs=1,
         help='Input directory containing a tree of package definitions')
@@ -75,7 +74,7 @@ def parse_args():
     parser.add_argument(
         '--target', type=str, nargs='?', default=common.TARGETPYTHON,
         help='The path to the target Python installation')
-    return parser.parse_args()
+    return parser
 
 
 def main(args):
@@ -85,5 +84,6 @@ def main(args):
 
 
 if __name__ == '__main__':
-    args = parse_args()
+    parser = make_parser(argparse.ArgumentParser())
+    args = parser.parse_args()
     main(args)
