@@ -700,13 +700,13 @@ if has_preloaded:
             total = Math.ceil(total * Module.expectedDataFileDownloads / num);
             if (Module['setStatus']) {
               Module['setStatus']('Downloading data... (' + loaded + '/' + total + ')');
-              console.log(`Downloaded ${packageName} data... (${loaded}/${total})`);
+              console.log('Downloaded ' + packageName + ' data... (' + loaded + '/' + total + ')');
             }
           }
           callback(packageData);
         }).catch(function(err) {
-            console.error(`Something wrong happened ${err}`);
-            throw new Error(`Something wrong happened ${err}`);
+            console.error('Something wrong happened ' + err);
+            throw new Error('Something wrong happened ' + err);
         });
       }
     };
