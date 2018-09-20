@@ -5,6 +5,7 @@
 - [Using Pyodide directly from Javascript](using_pyodide_from_javascript.md)
 - [Using Pyodide from Iodide](using_pyodide_from_iodide.md)
 - [Type conversions](type_conversions.md): describes how data types are shared between Python and Javascript
+- [API Reference](api_reference.md)
 
 ## Developing Pyodide
 
