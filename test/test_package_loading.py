@@ -1,29 +1,38 @@
 import pytest
 
 
-def test_load_from_url(selenium_standalone, web_server_secondary):
+@pytest.mark.parametrize('active_server', ['main', 'secondary'])
+def test_load_from_url(selenium_standalone, web_server_secondary,
+                       active_server):
 
-    url, port, log_secondary = web_server_secondary
+    if active_server == 'secondary':
+        url, port, log_main = web_server_secondary
+        log_backup = selenium_standalone.server_log
+    elif active_server == 'main':
+        _, _, log_backup = web_server_secondary
+        log_main = selenium_standalone.server_log
+        url = selenium_standalone.server_hostname
+        port = selenium_standalone.server_port
+    else:
+        raise AssertionError()
 
-    log_main = selenium_standalone.server_log
-
-    with log_secondary.open('r') as fh_secondary, \
+    with log_backup.open('r') as fh_backup, \
             log_main.open('r') as fh_main:
 
         # skip existing log lines
         fh_main.seek(0, 2)
-        fh_secondary.seek(0, 2)
+        fh_backup.seek(0, 2)
 
         selenium_standalone.load_package(f"http://{url}:{port}/pyparsing.js")
         assert "Invalid package name or URI" not in selenium_standalone.logs
 
-        # check that all ressources were loaded from the secondary server
-        txt = fh_secondary.read()
+        # check that all ressources were loaded from the active server
+        txt = fh_main.read()
         assert '"GET /pyparsing.js HTTP/1.1" 200' in txt
         assert '"GET /pyparsing.data HTTP/1.1" 200' in txt
 
-        # no additional ressources were loaded from the main server
-        assert len(fh_main.read()) == 0
+        # no additional ressources were loaded from the other server
+        assert len(fh_backup.read()) == 0
 
     selenium_standalone.run("from pyparsing import Word, alphas")
     selenium_standalone.run("Word(alphas).parseString('hello')")

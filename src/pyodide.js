@@ -80,8 +80,6 @@ var languagePluginLoader = new Promise((resolve, reject) => {
       }
     }
 
-    console.log(`Trying to load ${Object.keys(toLoad)}`);
-
     window.pyodide._module.locateFile = (path) => {
       // handle packages loaded from custom URLs
       let package = path.replace(/\.data$/, "");
