@@ -38,7 +38,6 @@ var languagePluginLoader = new Promise((resolve, reject) => {
     let loadedPackages = window.pyodide.loadedPackages;
     let queue = [].concat(names || []);
     let toLoad = new Array();
-    window.pyodide._toLoadPackages = toLoad;
     while (queue.length) {
       let package_uri = queue.pop();
 
@@ -80,6 +79,20 @@ var languagePluginLoader = new Promise((resolve, reject) => {
         }
       }
     }
+
+    console.log(`Trying to load ${Object.keys(toLoad)}`);
+
+    window.pyodide._module.locateFile = (path) => {
+      // handle packages loaded from custom URLs
+      let package = path.replace(/\.data$/, "");
+      if (package in toLoad) {
+        let package_uri = toLoad[package];
+        if (package_uri != 'default channel') {
+          return package_uri.replace(/\.js$/, ".data");
+        };
+      };
+      return baseURL + path;
+    };
 
     let promise = new Promise((resolve, reject) => {
       if (Object.keys(toLoad).length === 0) {
@@ -162,6 +175,7 @@ var languagePluginLoader = new Promise((resolve, reject) => {
   // Rearrange namespace for public API
   let PUBLIC_API = [
     'loadPackage',
+    'loadedPackages',
     'pyimport',
     'repr',
     'runPython',
@@ -197,20 +211,7 @@ var languagePluginLoader = new Promise((resolve, reject) => {
     return {};
   };
 
-  Module.locateFile = (path) => {
-    if ((window.hasOwnProperty('pyodide')) &&
-        (window.pyodide.hasOwnProperty('_toLoadPackages'))) {
-      // handle packages loaded from custom URLs
-      let package = path.replace(/\.data$/, "");
-      if (package in window.pyodide._toLoadPackages) {
-        let package_uri = window.pyodide._toLoadPackages[package];
-        if (package_uri != 'default channel') {
-          return package_uri.replace(/\.js$/, ".data");
-        };
-      };
-    };
-    return baseURL + path;
-  };
+  Module.locateFile = (path) => baseURL + path;
   var postRunPromise = new Promise((resolve, reject) => {
     Module.postRun = () => {
       delete window.Module;

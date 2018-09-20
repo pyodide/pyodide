@@ -112,7 +112,7 @@ class SeleniumWrapper:
         except TimeoutException as exc:
             _display_driver_logs(self.browser, self.driver)
             print(self.logs)
-            raise TimeoutException()
+            raise TimeoutException('wait_until_packages_loaded timed out')
 
     @property
     def urls(self):
