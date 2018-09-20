@@ -63,6 +63,9 @@ jobs:
             ccache -z
             make
             ccache -s
+            # install all relevant pyodide_build files to
+            # the virtualenv that will be persisted
+            pip install .
 
       - save_cache:
           paths:

@@ -223,7 +223,6 @@ def make_parser(parser):
     parser.add_argument(
         '--target', type=str, nargs='?', default=common.TARGETPYTHON,
         help='The path to the target Python installation')
-    parser.add_argument('basename', type=str, nargs='?')
     return parser
 
 
