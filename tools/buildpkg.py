@@ -129,7 +129,7 @@ def package_files(buildpath, srcpath, pkg, args):
         '--preload',
         '{}@/'.format(install_prefix),
         '--js-output={}'.format(name + '.js'),
-        '--export-name=pyodide',
+        '--export-name=pyodide._module',
         '--exclude', '*.wasm.pre',
         '--exclude', '__pycache__',
         '--use-preload-plugins'],

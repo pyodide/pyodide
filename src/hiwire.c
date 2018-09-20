@@ -7,11 +7,11 @@ EM_JS(void, hiwire_setup, (), {
   {
     var objects = hiwire.objects;
     while (hiwire.counter in objects) {
-      hiwire.counter = (hiwire.counter + 1) % 0x8fffffff;
+      hiwire.counter = (hiwire.counter + 1) & 0x7fffffff;
     }
     var idval = hiwire.counter;
     objects[idval] = jsval;
-    hiwire.counter = (hiwire.counter + 1) % 0x8fffffff;
+    hiwire.counter = (hiwire.counter + 1) & 0x7fffffff;
     return idval;
   };
 

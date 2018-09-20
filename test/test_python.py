@@ -143,10 +143,10 @@ def test_typed_arrays(selenium, wasm_heap, jstype, pytype):
     else:
         selenium.run_js(
             f"""
-             var buffer = pyodide._malloc(
+             var buffer = pyodide._module._malloc(
                    4 * {jstype}.BYTES_PER_ELEMENT);
              window.array = new {jstype}(
-                   pyodide.HEAPU8.buffer, buffer, 4);
+                   pyodide._module.HEAPU8.buffer, buffer, 4);
              window.array[0] = 1;
              window.array[1] = 2;
              window.array[2] = 3;
@@ -406,3 +406,23 @@ def test_version_info(selenium):
     version_js_str = selenium.run_js("return pyodide.version()")
     version_js = LooseVersion(version_js_str)
     assert version_py == version_js
+
+
+def test_recursive_list(selenium_standalone):
+    selenium_standalone.run(
+        """
+        x = []
+        x.append(x)
+        """
+    )
+    selenium_standalone.run_js("x = pyodide.pyimport('x')")
+
+
+def test_recursive_dict(selenium_standalone):
+    selenium_standalone.run(
+        """
+        x = {}
+        x[0] = x
+        """
+    )
+    selenium_standalone.run_js("x = pyodide.pyimport('x')")

@@ -2,13 +2,16 @@
 Various common utilities for testing.
 """
 
-import atexit
+import contextlib
 import multiprocessing
 import textwrap
+import tempfile
+import time
 import os
 import pathlib
 import queue
 import sys
+import shutil
 
 try:
     import pytest
@@ -46,7 +49,8 @@ def _display_driver_logs(browser, driver):
 
 
 class SeleniumWrapper:
-    def __init__(self):
+    def __init__(self, server_port, server_hostname='127.0.0.1',
+                 server_log=None):
         from selenium.webdriver.support.wait import WebDriverWait
         from selenium.common.exceptions import TimeoutException
 
@@ -56,7 +60,7 @@ class SeleniumWrapper:
             # selenium does not expose HTTP response codes
             raise ValueError(f"{(BUILD_PATH / 'test.html').resolve()} "
                              f"does not exist!")
-        driver.get(f'http://127.0.0.1:{PORT}/test.html')
+        driver.get(f'http://{server_hostname}:{server_port}/test.html')
         try:
             wait.until(PyodideInited())
         except TimeoutException as exc:
@@ -64,6 +68,9 @@ class SeleniumWrapper:
             raise TimeoutException()
         self.wait = wait
         self.driver = driver
+        self.server_port = server_port
+        self.server_hostname = server_hostname
+        self.server_log = server_log
 
     @property
     def logs(self):
@@ -151,12 +158,15 @@ class ChromeWrapper(SeleniumWrapper):
 
 if pytest is not None:
     @pytest.fixture(params=['firefox', 'chrome'])
-    def selenium_standalone(request):
+    def selenium_standalone(request, web_server_main):
+        server_hostname, server_port, server_log = web_server_main
         if request.param == 'firefox':
             cls = FirefoxWrapper
         elif request.param == 'chrome':
             cls = ChromeWrapper
-        selenium = cls()
+        selenium = cls(server_port=server_port,
+                       server_hostname=server_hostname,
+                       server_log=server_log)
         try:
             yield selenium
         finally:
@@ -164,14 +174,17 @@ if pytest is not None:
             selenium.driver.quit()
 
     @pytest.fixture(params=['firefox', 'chrome'], scope='module')
-    def _selenium_cached(request):
+    def _selenium_cached(request, web_server_main):
         # Cached selenium instance. This is a copy-paste of
         # selenium_standalone to avoid fixture scope issues
+        server_hostname, server_port, server_log = web_server_main
         if request.param == 'firefox':
             cls = FirefoxWrapper
         elif request.param == 'chrome':
             cls = ChromeWrapper
-        selenium = cls()
+        selenium = cls(server_port=server_port,
+                       server_hostname=server_hostname,
+                       server_log=server_log)
         try:
             yield selenium
         finally:
@@ -187,35 +200,61 @@ if pytest is not None:
             print(_selenium_cached.logs)
 
 
-PORT = 0
+@pytest.fixture(scope='session')
+def web_server_main():
+    with spawn_web_server() as output:
+        yield output
 
 
+@pytest.fixture(scope='session')
+def web_server_secondary():
+    with spawn_web_server() as output:
+        yield output
+
+
+@contextlib.contextmanager
 def spawn_web_server():
-    global PORT
 
-    print("Spawning webserver...")
-
+    tmp_dir = tempfile.mkdtemp()
+    log_path = pathlib.Path(tmp_dir) / 'http-server.log'
     q = multiprocessing.Queue()
-    p = multiprocessing.Process(target=run_web_server, args=(q,))
+    p = multiprocessing.Process(target=run_web_server, args=(q, log_path))
 
-    def shutdown_webserver():
+    try:
+        p.start()
+        port = q.get()
+        hostname = '127.0.0.1'
+
+        print(f"Spawning webserver at http://{hostname}:{port} "
+              f"(see logs in {log_path})")
+        yield hostname, port, log_path
+    finally:
         q.put("TERMINATE")
         p.join()
-    atexit.register(shutdown_webserver)
-
-    p.start()
-    PORT = q.get()
+        shutil.rmtree(tmp_dir)
 
 
-def run_web_server(q):
+def run_web_server(q, log_filepath):
+    """Start the HTTP web server
+
+    Parameters
+    ----------
+    q : Queue
+      communication queue
+    log_path : pathlib.Path
+      path to the file where to store the logs
+    """
     import http.server
     import socketserver
 
-    print("Running webserver...")
-
     os.chdir(BUILD_PATH)
 
+    log_fh = log_filepath.open('w', buffering=1)
+    sys.stdout = log_fh
+    sys.stderr = log_fh
+
     class Handler(http.server.CGIHTTPRequestHandler):
+
         def translate_path(self, path):
             if path.startswith('/test/'):
                 return TEST_PATH / path[6:]
@@ -227,14 +266,17 @@ def run_web_server(q):
                 return True
             return False
 
-        def log_message(self, *args, **kwargs):
-            pass
+        def log_message(self, format_, *args):
+            print("[%s] source: %s:%s - %s"
+                  % (self.log_date_time_string(),
+                     *self.client_address,
+                     format_ % args))
 
     Handler.extensions_map['.wasm'] = 'application/wasm'
 
     with socketserver.TCPServer(("", 0), Handler) as httpd:
         host, port = httpd.server_address
-        print("serving at port", port)
+        print(f"Starting webserver at http://{host}:{port}")
         httpd.server_name = 'test-server'
         httpd.server_port = port
         q.put(port)
@@ -242,8 +284,8 @@ def run_web_server(q):
         def service_actions():
             try:
                 if q.get(False) == "TERMINATE":
+                    print('Stopping server...')
                     sys.exit(0)
-                    httpd.shutdown()
             except queue.Empty:
                 pass
 
@@ -251,10 +293,10 @@ def run_web_server(q):
         httpd.serve_forever()
 
 
-@pytest.fixture
-def web_server():
-    return '127.0.0.1', PORT
-
-
-if multiprocessing.current_process().name == 'MainProcess':
-    spawn_web_server()
+if (__name__ == '__main__'
+        and multiprocessing.current_process().name == 'MainProcess'
+        and not hasattr(sys, "_pytest_session")):
+    with spawn_web_server():
+        # run forever
+        while True:
+            time.sleep(1)
