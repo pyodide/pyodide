@@ -15,6 +15,9 @@ jobs:
           name: dependencies
           command: |
 
+            # Tell the system about the wasm MIME type
+            sudo echo "application/wasm   wasm" >> /etc/mime.types
+
             # We need at least g++-8, but stretch comes with g++-6
             # Set up the Debian testing repo, and then install g++ from there...
             sudo bash -c "echo \"deb http://ftp.us.debian.org/debian testing main contrib non-free\" >> /etc/apt/sources.list"
