@@ -35,7 +35,7 @@ jobs:
             pip install pytest pytest-xdist pytest-instafail selenium PyYAML
 
             # Get recent version of Firefox and geckodriver
-            wget -O firefox.tar.bz2 https://download.mozilla.org/\?product\=firefox-nightly-latest-ssl\&os\=linux64\&lang\=en-US
+            wget -O firefox.tar.bz2 https://download.mozilla.org/\?product\=firefox-latest-ssl\&os\=linux64\&lang\=en-US
             tar jxf firefox.tar.bz2
             wget https://github.com/mozilla/geckodriver/releases/download/v0.21.0/geckodriver-v0.21.0-linux64.tar.gz
             tar zxf geckodriver-v0.21.0-linux64.tar.gz -C firefox
