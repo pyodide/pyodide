@@ -102,17 +102,19 @@ class SeleniumWrapper:
             'window.done = false\n' +
             'pyodide.loadPackage({!r})'.format(packages) +
             '.finally(function() { window.done = true; })')
+        __tracebackhide__ = True
         self.wait_until_packages_loaded()
 
     def wait_until_packages_loaded(self):
         from selenium.common.exceptions import TimeoutException
 
+        __tracebackhide__ = True
         try:
             self.wait.until(PackageLoaded())
         except TimeoutException as exc:
             _display_driver_logs(self.browser, self.driver)
             print(self.logs)
-            raise TimeoutException()
+            raise TimeoutException('wait_until_packages_loaded timed out')
 
     @property
     def urls(self):
