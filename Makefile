@@ -46,6 +46,7 @@ all: build/pyodide.asm.js \
 	build/pyodide.js \
 	build/pyodide_dev.js \
 	build/python.html \
+	build/python_dev.html \
 	build/matplotlib.html \
 	build/matplotlib-sideload.html \
 	build/renderedhtml.css \
@@ -84,6 +85,10 @@ build/pyodide.js: src/pyodide.js
 
 
 build/python.html: src/python.html
+	cp $< $@
+
+
+build/python_dev.html: src/python_dev.html
 	cp $< $@
 
 
