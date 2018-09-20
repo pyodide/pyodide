@@ -74,7 +74,7 @@ build/pyodide.asm.data: root/.built
 		cd build; \
 		python $(FILEPACKAGER) pyodide.asm.data --lz4 --preload ../root/lib@lib --js-output=pyodide.asm.data.js --use-preload-plugins \
   )
-	# uglifyjs build/pyodide.asm.data.js -o build/pyodide.asm.data.js
+	uglifyjs build/pyodide.asm.data.js -o build/pyodide.asm.data.js
 
 
 build/pyodide_dev.js: src/pyodide.js
