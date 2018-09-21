@@ -204,8 +204,6 @@ ccache/em++:
 
 $(CPYTHONLIB): emsdk/emsdk/.complete ccache/emcc ccache/em++
 	make -C $(CPYTHONROOT)
-	python -m pip install -e .
-	"$(HOSTPYTHONROOT)/bin/python3" -m pip install -e .
 
 
 $(LZ4LIB):
