@@ -39,7 +39,7 @@ import sys
 from pyodide_build import common
 
 
-TOOLSDIR = common.TOOLSDIR
+ROOTDIR = common.ROOTDIR
 symlinks = set(['cc', 'c++', 'ld', 'ar', 'gcc'])
 
 
@@ -55,8 +55,8 @@ def collect_args(basename):
     # native compiler
     env = dict(os.environ)
     path = env['PATH']
-    while str(TOOLSDIR) + ':' in path:
-        path = path.replace(str(TOOLSDIR) + ':', '')
+    while str(ROOTDIR) + ':' in path:
+        path = path.replace(str(ROOTDIR) + ':', '')
     env['PATH'] = path
 
     with open('build.log', 'a') as fd:
@@ -76,7 +76,7 @@ def make_symlinks(env):
     """
     exec_path = Path(__file__).resolve()
     for symlink in symlinks:
-        symlink_path = TOOLSDIR / symlink
+        symlink_path = ROOTDIR / symlink
         if not symlink_path.exists():
             symlink_path.symlink_to(exec_path)
         if symlink == 'c++':
@@ -89,7 +89,7 @@ def make_symlinks(env):
 def capture_compile(args):
     env = dict(os.environ)
     make_symlinks(env)
-    env['PATH'] = str(TOOLSDIR) + ':' + os.environ['PATH']
+    env['PATH'] = str(ROOTDIR) + ':' + os.environ['PATH']
 
     result = subprocess.run(
         [Path(args.host) / 'bin' / 'python3',

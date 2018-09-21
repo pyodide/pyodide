@@ -3,8 +3,8 @@ import sys
 from pyodide_build import __version__
 
 if 'install' in sys.argv or 'bdist_wheel' in sys.argv:
-    print("Error: pyodode_build is currently for fully standalone, "
-          "and can only be installed in develop mode. Use:\n"
+    print("Error: pyodode_build is currently not fully standalone, "
+          "and can only be installed in development mode. Use:\n"
           "        pip install -e . \n"
           "to install it.")
     sys.exit(1)

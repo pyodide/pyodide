@@ -122,7 +122,7 @@ def package_files(buildpath, srcpath, pkg, args):
     install_prefix = (srcpath / 'install').resolve()
     subprocess.run([
         'python',
-        common.TOOLSDIR / 'file_packager.py',
+        common.ROOTDIR / 'file_packager.py',
         name + '.data',
         '--lz4',
         '--preload',
