@@ -1,8 +1,18 @@
-from setuptools import setup, find_packages
+from setuptools import setup
+import sys
 from pyodide_build import __version__
+
+if 'install' in sys.argv or 'bdist_wheel' in sys.argv:
+    print("Error: pyodode_build is currently for fully standalone, "
+          "and can only be installed in develop mode. Use:\n"
+          "        pip install -e . \n"
+          "to install it.")
+    sys.exit(1)
+
 
 with open('README.md', 'rt') as fh:
     LONG_DESCRIPTION = fh.read()
+
 
 setup(name='pyodide_build',
       version=__version__,
@@ -13,4 +23,4 @@ setup(name='pyodide_build',
         ]},
       url="https://github.com/iodide-project/pyodide",
       license='MPL',
-      packages=find_packages())
+      packages=['pyodide_build'])
