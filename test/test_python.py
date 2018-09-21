@@ -1,4 +1,3 @@
-import os
 from pathlib import Path
 import time
 
@@ -357,22 +356,21 @@ def pytest_generate_tests(metafunc):
     if 'python_test' in metafunc.fixturenames:
         test_modules = []
         test_modules_ids = []
-        if 'CIRCLECI' not in os.environ or True:
-            with open(
-                    Path(__file__).parent / "python_tests.txt") as fp:
-                for line in fp:
-                    line = line.strip()
-                    if line.startswith('#') or not line:
-                        continue
-                    error_flags = line.split()
-                    name = error_flags.pop(0)
-                    if (not error_flags
-                        or set(error_flags).intersection(
-                                {'crash', 'crash-chrome', 'crash-firefox'})):
-                            test_modules.append((name, error_flags))
-                            # explicitly define test ids to keep
-                            # a human readable test name in pytest
-                            test_modules_ids.append(name)
+        with open(
+                Path(__file__).parent / "python_tests.txt") as fp:
+            for line in fp:
+                line = line.strip()
+                if line.startswith('#') or not line:
+                    continue
+                error_flags = line.split()
+                name = error_flags.pop(0)
+                if (not error_flags
+                    or set(error_flags).intersection(
+                            {'crash', 'crash-chrome', 'crash-firefox'})):
+                        test_modules.append((name, error_flags))
+                        # explicitly define test ids to keep
+                        # a human readable test name in pytest
+                        test_modules_ids.append(name)
         metafunc.parametrize("python_test", test_modules,
                              ids=test_modules_ids)
 
