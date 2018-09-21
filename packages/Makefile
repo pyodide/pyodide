@@ -2,7 +2,7 @@ PYODIDE_ROOT=$(abspath ..)
 include ../Makefile.envs
 
 all:
-	python -m pyodide_build buildall . ../build \
+	../bin/pyodide buildall . ../build \
 		--ldflags="$(SIDE_LDFLAGS)" --host=$(HOSTPYTHONROOT) --target=$(TARGETPYTHONROOT)
 
 clean:

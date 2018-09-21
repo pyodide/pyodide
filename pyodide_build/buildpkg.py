@@ -85,8 +85,7 @@ def compile(path, srcpath, pkg, args):
     try:
         subprocess.run([
             str(Path(args.host) / 'bin' / 'python3'),
-            '-m', 'pyodide_build',
-            'pywasmcross',
+            '-m', 'pyodide_build', 'pywasmcross',
             '--cflags',
             args.cflags + ' ' +
             pkg.get('build', {}).get('cflags', ''),

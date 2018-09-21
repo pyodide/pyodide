@@ -7,7 +7,7 @@ from . import pywasmcross
 
 
 def main():
-    main_parser = argparse.ArgumentParser()
+    main_parser = argparse.ArgumentParser(prog='pyodide')
     subparsers = main_parser.add_subparsers(help='action')
 
     for command_name, module in (("buildpkg", buildpkg),

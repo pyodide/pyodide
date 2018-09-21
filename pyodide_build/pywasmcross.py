@@ -208,25 +208,30 @@ def build_wrap(args):
 
 
 def make_parser(parser):
-    parser.description = (
-        'Cross compile a Python distutils package. '
-        'Run from the root directory of the package\'s source')
-    parser.add_argument(
-        '--cflags', type=str, nargs='?', default=common.DEFAULTCFLAGS,
-        help='Extra compiling flags')
-    parser.add_argument(
-        '--ldflags', type=str, nargs='?', default=common.DEFAULTLDFLAGS,
-        help='Extra linking flags')
-    parser.add_argument(
-        '--host', type=str, nargs='?', default=common.HOSTPYTHON,
-        help='The path to the host Python installation')
-    parser.add_argument(
-        '--target', type=str, nargs='?', default=common.TARGETPYTHON,
-        help='The path to the target Python installation')
+    basename = Path(sys.argv[0]).name
+    if basename in symlinks:
+        # skip parsing of all arguments
+        parser._actions = []
+    else:
+        parser.description = (
+            'Cross compile a Python distutils package. '
+            'Run from the root directory of the package\'s source')
+        parser.add_argument(
+            '--cflags', type=str, nargs='?', default=common.DEFAULTCFLAGS,
+            help='Extra compiling flags')
+        parser.add_argument(
+            '--ldflags', type=str, nargs='?', default=common.DEFAULTLDFLAGS,
+            help='Extra linking flags')
+        parser.add_argument(
+            '--host', type=str, nargs='?', default=common.HOSTPYTHON,
+            help='The path to the host Python installation')
+        parser.add_argument(
+            '--target', type=str, nargs='?', default=common.TARGETPYTHON,
+            help='The path to the target Python installation')
     return parser
 
 
-def main(args, unknown=None):
+def main(args):
     basename = Path(sys.argv[0]).name
     if basename in symlinks:
         collect_args(basename)
@@ -235,6 +240,10 @@ def main(args, unknown=None):
 
 
 if __name__ == '__main__':
-    parser = make_parser(argparse.ArgumentParser())
-    args, unknown = parser.parse_known_args()
-    main(args, unknown)
+    basename = Path(sys.argv[0]).name
+    if basename in symlinks:
+        main(None)
+    else:
+        parser = make_parser(argparse.ArgumentParser())
+        args = parser.parse_args()
+        main(args)
