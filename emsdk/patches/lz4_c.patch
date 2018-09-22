@@ -52,7 +52,7 @@ index 4c3f583b7..5291002a4 100644
          var contents = stream.node.contents;
          var compressedData = contents.compressedData;
          var written = 0;
-@@ -122,6 +117,8 @@ mergeInto(LibraryManager.library, {
+@@ -122,11 +117,14 @@ mergeInto(LibraryManager.library, {
            var chunkIndex = Math.floor(start / LZ4.CHUNK_SIZE);
            var compressedStart = compressedData.offsets[chunkIndex];
            var compressedSize = compressedData.sizes[chunkIndex];
@@ -61,7 +61,13 @@ index 4c3f583b7..5291002a4 100644
            var currChunk;
            if (compressedData.successes[chunkIndex]) {
              var found = compressedData.cachedIndexes.indexOf(chunkIndex);
-@@ -138,18 +135,19 @@ mergeInto(LibraryManager.library, {
+             if (found >= 0) {
+               currChunk = compressedData.cachedChunks[found];
++              buffer.set(Module.HEAPU8.subarray(currChunk + startInChunk, currChunk + endInChunk), offset + written);
+             } else {
+               // decompress the chunk
+               compressedData.cachedIndexes.pop();
+@@ -138,18 +136,19 @@ mergeInto(LibraryManager.library, {
                  Module['decompressedChunks'] = (Module['decompressedChunks'] || 0) + 1;
                }
                var compressed = compressedData.data.subarray(compressedStart, compressedStart + compressedSize);
@@ -89,7 +95,7 @@ index 4c3f583b7..5291002a4 100644
            var currWritten = endInChunk - startInChunk;
            written += currWritten;
          }
-@@ -181,4 +179,3 @@ if (LibraryManager.library['$FS__deps']) {
+@@ -181,4 +180,3 @@ if (LibraryManager.library['$FS__deps']) {
    warn('FS does not seem to be in use (no preloaded files etc.), LZ4 will not do anything');
  }
  #endif
