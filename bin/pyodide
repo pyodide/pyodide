@@ -1,4 +1,7 @@
 #!/bin/sh
+set -x
+
+ls -l /bin/sh
 
 # get the absolute path to the root directory
 ROOTDIR="$(cd ${BASH_SOURCE%/*}/../; pwd)";
