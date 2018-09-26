@@ -21,6 +21,7 @@
 # - permissions: Issues with the test writing to the virtual filesystem
 # - locale: Fails due to limitations in the included locale implementation.
 # - multiprocessing: Fails due to no multiprocessing implementation.
+# - fs: Fails due to virtual filesystem issues.
 # - nonsense: This functionality doesn't make sense in this context. Includes
 #   things like `pip`, `distutils`
 #
@@ -148,7 +149,7 @@ test_dictcomps
 test_dictviews
 test_difflib
 test_dis
-test_distutils crash
+test_distutils nonsense
 test_doctest   subprocess
 test_doctest2
 test_docxmlrpc  socket
@@ -177,7 +178,7 @@ test_ensurepip  nonsense
 test_enum       threading
 test_enumerate
 test_eof
-test_epoll  crash
+test_epoll
 test_errno
 test_exception_hierarchy
 test_exception_variations
@@ -218,7 +219,7 @@ test_getargs2
 test_getopt
 test_getpass  permissions
 test_gettext
-test_glob     crash
+test_glob     fs
 test_global
 test_grammar
 test_grp
@@ -236,12 +237,12 @@ test_httpservers  threading
 test_idle
 test_imaplib  socket
 test_imghdr
-test_imp  crash
+test_imp  fs
 test_importlib.builtin.test_finder
 test_importlib.builtin.test_loader
 test_importlib.extension.test_case_sensitivity
-test_importlib.extension.test_finder  crash
-test_importlib.extension.test_loader  crash
+test_importlib.extension.test_finder  fs
+test_importlib.extension.test_loader  fs
 test_importlib.extension.test_path_hook
 test_importlib.frozen.test_finder
 test_importlib.frozen.test_loader
@@ -275,7 +276,7 @@ test_index
 test_inspect
 test_int
 test_int_literal
-test_io crash
+test_io  crash
 test_ioctl
 test_ipaddress
 test_isinstance
@@ -303,7 +304,7 @@ test_keyword  subprocess
 test_keywordonlyarg
 test_kqueue
 test_largefile
-test_lib2to3  crash
+test_lib2to3  nonsense
 test_linecache
 test_list
 test_listcomps
@@ -313,10 +314,10 @@ test_long
 test_longexp
 test_lzma
 test_macpath  platform-specific
-test_mailbox  crash
+test_mailbox  fs
 test_mailcap  nonsense
 test_marshal
-test_math floating-point
+test_math floating point
 test_memoryio
 test_memoryview
 test_metaclass
@@ -346,7 +347,7 @@ test_os mmap
 test_ossaudiodev
 test_osx_env
 test_parser
-test_pathlib  crash
+test_pathlib  fs
 test_pdb      subprocess
 test_peepholer
 test_pickle dbm
@@ -373,7 +374,7 @@ test_pulldom
 test_pwd  crash
 test_py_compile
 test_pyclbr
-test_pydoc  crash
+test_pydoc  threading
 test_pyexpat
 test_queue  threading
 test_quopri subprocess
@@ -406,7 +407,7 @@ test_signal
 test_site subprocess
 test_slice
 test_smtpd
-test_smtplib  baad ioctl syscall 21537
+test_smtplib  bad ioctl syscall 21537
 test_smtpnet
 test_sndhdr audioop
 test_socket
@@ -433,7 +434,7 @@ test_subprocess
 test_sunau  audioop
 test_sundry nonsense
 test_super
-test_support  crash
+test_support  multiprocessing
 test_symbol
 test_symtable
 test_syntax
@@ -445,7 +446,7 @@ test_syslog
 test_tarfile  crash
 test_tcl
 test_telnetlib  bad ioctl syscall 21537
-test_tempfile crash
+test_tempfile   fs
 test_textwrap
 test_thread threading
 test_threaded_import  floating point
@@ -480,7 +481,7 @@ test_types
 test_typing unknown
 test_ucn
 test_unary
-test_unicode  crash
+test_unicode  floating point
 test_unicode_file
 test_unicode_file_functions
 test_unicode_identifiers
@@ -503,10 +504,10 @@ test_utf8_mode
 test_utf8source
 test_uu
 test_uuid subprocess
-test_venv crash
+test_venv nonsense
 test_wait3  threading
 test_wait4  threading
-test_wave crash
+test_wave   audioop
 test_weakref  threading
 test_weakset
 test_webbrowser replaced
