@@ -253,7 +253,7 @@ var languagePluginLoader = new Promise((resolve, reject) => {
         .then(instance => receiveInstance(instance));
     return {};
   };
-
+  Module.global = window;
   Module.locateFile = (path) => baseURL + path;
   var postRunPromise = new Promise((resolve, reject) => {
     Module.postRun = () => {
