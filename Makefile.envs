@@ -21,4 +21,5 @@ export SIDE_LDFLAGS=\
   -s EMULATE_FUNCTION_POINTER_CASTS=1 \
   -s SIDE_MODULE=1 \
 	-s WASM=1 \
+  -s "BINARYEN_TRAP_MODE='clamp'" \
   --memory-init-file 0

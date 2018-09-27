@@ -64,6 +64,10 @@ jobs:
             make
             ccache -s
 
+      - run:
+          name: check-size
+          command: ls -lh build/
+
       - save_cache:
           paths:
             - ./emsdk/emsdk
