@@ -34,10 +34,12 @@ import subprocess
 import sys
 
 
-import common
+# absolute import is necessary as this file will be symlinked
+# under tools
+from pyodide_build import common
 
 
-ROOTDIR = Path(__file__).parent.resolve()
+ROOTDIR = common.ROOTDIR
 symlinks = set(['cc', 'c++', 'ld', 'ar', 'gcc'])
 
 
@@ -186,7 +188,7 @@ def clean_out_native_artifacts():
                 path.unlink()
 
 
-def install_for_distribution():
+def install_for_distribution(args):
     subprocess.check_call(
         [Path(args.host) / 'bin' / 'python3',
          'setup.py',
@@ -202,33 +204,46 @@ def build_wrap(args):
         capture_compile(args)
     clean_out_native_artifacts()
     replay_compile(args)
-    install_for_distribution()
+    install_for_distribution(args)
 
 
-def parse_args():
-    parser = argparse.ArgumentParser(
-        'Cross compile a Python distutils package. '
-        'Run from the root directory of the package\'s source')
-    parser.add_argument(
-        '--cflags', type=str, nargs='?', default=common.DEFAULTCFLAGS,
-        help='Extra compiling flags')
-    parser.add_argument(
-        '--ldflags', type=str, nargs='?', default=common.DEFAULTLDFLAGS,
-        help='Extra linking flags')
-    parser.add_argument(
-        '--host', type=str, nargs='?', default=common.HOSTPYTHON,
-        help='The path to the host Python installation')
-    parser.add_argument(
-        '--target', type=str, nargs='?', default=common.TARGETPYTHON,
-        help='The path to the target Python installation')
-    args = parser.parse_args()
-    return args
+def make_parser(parser):
+    basename = Path(sys.argv[0]).name
+    if basename in symlinks:
+        # skip parsing of all arguments
+        parser._actions = []
+    else:
+        parser.description = (
+            'Cross compile a Python distutils package. '
+            'Run from the root directory of the package\'s source')
+        parser.add_argument(
+            '--cflags', type=str, nargs='?', default=common.DEFAULTCFLAGS,
+            help='Extra compiling flags')
+        parser.add_argument(
+            '--ldflags', type=str, nargs='?', default=common.DEFAULTLDFLAGS,
+            help='Extra linking flags')
+        parser.add_argument(
+            '--host', type=str, nargs='?', default=common.HOSTPYTHON,
+            help='The path to the host Python installation')
+        parser.add_argument(
+            '--target', type=str, nargs='?', default=common.TARGETPYTHON,
+            help='The path to the target Python installation')
+    return parser
+
+
+def main(args):
+    basename = Path(sys.argv[0]).name
+    if basename in symlinks:
+        collect_args(basename)
+    else:
+        build_wrap(args)
 
 
 if __name__ == '__main__':
     basename = Path(sys.argv[0]).name
     if basename in symlinks:
-        collect_args(basename)
+        main(None)
     else:
-        args = parse_args()
-        build_wrap(args)
+        parser = make_parser(argparse.ArgumentParser())
+        args = parser.parse_args()
+        main(args)

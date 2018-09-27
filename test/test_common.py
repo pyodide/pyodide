@@ -1,14 +1,10 @@
 import pytest
 import os
 from pathlib import Path
-import sys
+from pyodide_build.common import parse_package
 
 BASE_DIR = Path(__file__).parent.parent
 PKG_DIR = BASE_DIR / 'packages'
-
-# TODO: remove once we have a proper Python package for common functions
-sys.path.append(str(BASE_DIR / 'tools'))
-import common  # noqa
 
 
 def registered_packages():
@@ -23,7 +19,7 @@ def registered_packages_meta():
     for each registed package
     """
     packages = registered_packages
-    return {name: common.parse_package(PKG_DIR / name / 'meta.yaml')
+    return {name: parse_package(PKG_DIR / name / 'meta.yaml')
             for name in packages}
 
 
@@ -34,7 +30,7 @@ UNSUPPORTED_PACKAGES = {'chrome': ['pandas'],
 @pytest.mark.parametrize('name', registered_packages())
 def test_import(name, selenium_standalone):
     # check that we can parse the meta.yaml
-    meta = common.parse_package(PKG_DIR / name / 'meta.yaml')
+    meta = parse_package(PKG_DIR / name / 'meta.yaml')
 
     if name in UNSUPPORTED_PACKAGES[selenium_standalone.browser]:
         pytest.xfail(

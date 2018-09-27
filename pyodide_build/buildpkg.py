@@ -12,10 +12,7 @@ import shutil
 import subprocess
 
 
-import common
-
-
-ROOTDIR = Path(__file__).parent.resolve()
+from . import common
 
 
 def check_checksum(path, pkg):
@@ -88,7 +85,7 @@ def compile(path, srcpath, pkg, args):
     try:
         subprocess.run([
             str(Path(args.host) / 'bin' / 'python3'),
-            str(ROOTDIR / 'pywasmcross'),
+            '-m', 'pyodide_build', 'pywasmcross',
             '--cflags',
             args.cflags + ' ' +
             pkg.get('build', {}).get('cflags', ''),
@@ -124,7 +121,7 @@ def package_files(buildpath, srcpath, pkg, args):
     install_prefix = (srcpath / 'install').resolve()
     subprocess.run([
         'python',
-        Path(ROOTDIR) / 'file_packager.py',
+        common.ROOTDIR / 'file_packager.py',
         name + '.data',
         '--lz4',
         '--preload',
@@ -163,8 +160,8 @@ def build_package(path, args):
         os.chdir(orig_path)
 
 
-def parse_args():
-    parser = argparse.ArgumentParser('Build a pyodide package.')
+def make_parser(parser):
+    parser.description = 'Build a pyodide package.'
     parser.add_argument(
         'package', type=str, nargs=1,
         help="Path to meta.yaml package description")
@@ -180,7 +177,7 @@ def parse_args():
     parser.add_argument(
         '--target', type=str, nargs='?', default=common.TARGETPYTHON,
         help='The path to the target Python installation')
-    return parser.parse_args()
+    return parser
 
 
 def main(args):
@@ -189,5 +186,6 @@ def main(args):
 
 
 if __name__ == '__main__':
-    args = parse_args()
+    parser = make_parser(argparse.ArgumentParser())
+    args = parser.parse_args()
     main(args)

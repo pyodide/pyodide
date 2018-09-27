@@ -34,16 +34,6 @@ jobs:
 
             pip install pytest pytest-xdist pytest-instafail selenium PyYAML
 
-            # Get recent version of Firefox and geckodriver
-            wget -O firefox.tar.bz2 https://download.mozilla.org/\?product\=firefox-latest-ssl\&os\=linux64\&lang\=en-US
-            tar jxf firefox.tar.bz2
-            wget https://github.com/mozilla/geckodriver/releases/download/v0.21.0/geckodriver-v0.21.0-linux64.tar.gz
-            tar zxf geckodriver-v0.21.0-linux64.tar.gz -C firefox
-
-            # Get recent version of chromedriver
-            wget https://chromedriver.storage.googleapis.com/2.41/chromedriver_linux64.zip
-            unzip chromedriver_linux64.zip
-            mv chromedriver firefox
 
       - run:
           name: lint
@@ -79,7 +69,6 @@ jobs:
           paths:
             - ./build
             - ./pyodide-env
-            - ./firefox
 
       - store_artifacts:
           path: /home/circleci/repo/build/
@@ -96,6 +85,12 @@ jobs:
             # This Debian is so old, it doesn't know about wasm as a mime type, which then
             # causes Firefox to complain when loading it.  Let's just add the new mime type.
             sudo bash -c "echo 'application/wasm wasm' >> /etc/mime.types"
+
+            # Get recent version of Firefox and geckodriver
+            wget -O firefox.tar.bz2 https://download.mozilla.org/\?product\=firefox-latest-ssl\&os\=linux64\&lang\=en-US
+            tar jxf firefox.tar.bz2
+            wget https://github.com/mozilla/geckodriver/releases/download/v0.21.0/geckodriver-v0.21.0-linux64.tar.gz
+            tar zxf geckodriver-v0.21.0-linux64.tar.gz -C firefox
 
             source pyodide-env/bin/activate
             export PATH=$PWD/firefox:$PATH
@@ -114,8 +109,12 @@ jobs:
             # causes Firefox to complain when loading it.  Let's just add the new mime type.
             sudo bash -c "echo 'application/wasm wasm' >> /etc/mime.types"
 
+            # Get recent version of chromedriver
+            wget https://chromedriver.storage.googleapis.com/2.41/chromedriver_linux64.zip
+            unzip chromedriver_linux64.zip
+            mv chromedriver pyodide-env/bin/
+
             source pyodide-env/bin/activate
-            export PATH=$PWD/firefox:$PATH
             pytest test -v -k chrome
 
   deploy:
