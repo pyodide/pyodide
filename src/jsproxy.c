@@ -416,12 +416,10 @@ JsProxy_cnew(int idobj)
 //
 // A special class for bound methods
 
-const size_t BOUND_METHOD_NAME_SIZE = 256;
-
 typedef struct
 {
   PyObject_HEAD int this_;
-  char name[BOUND_METHOD_NAME_SIZE];
+  const char* name;
 } JsBoundMethod;
 
 static void
@@ -469,7 +467,7 @@ JsBoundMethod_cnew(int this_, const char* name)
   JsBoundMethod* self;
   self = (JsBoundMethod*)JsBoundMethodType.tp_alloc(&JsBoundMethodType, 0);
   self->this_ = hiwire_incref(this_);
-  strncpy(self->name, name, BOUND_METHOD_NAME_SIZE);
+  self->name = name;
   return (PyObject*)self;
 }
 
