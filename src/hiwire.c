@@ -1,7 +1,21 @@
 #include <emscripten.h>
 
+#include "hiwire.h"
+
+// Define special ids for singleton constants. These must be less than -1 to
+// avoid being reused for other values.
+#define HW_UNDEFINED -2
+#define HW_TRUE -3
+#define HW_FALSE -4
+#define HW_NULL -5
+
 EM_JS(void, hiwire_setup, (), {
+  // These ids must match the constants above, but we can't use them from JS
   var hiwire = { objects : {}, counter : 1 };
+  hiwire.objects[-2] = undefined;
+  hiwire.objects[-3] = true;
+  hiwire.objects[-4] = false;
+  hiwire.objects[-5] = null;
 
   Module.hiwire_new_value = function(jsval)
   {
@@ -19,12 +33,18 @@ EM_JS(void, hiwire_setup, (), {
 
   Module.hiwire_decref = function(idval)
   {
+    if (idval < 0) {
+      return;
+    }
     var objects = hiwire.objects;
     delete objects[idval];
   };
 });
 
 EM_JS(int, hiwire_incref, (int idval), {
+  if (idval < 0) {
+    return;
+  }
   return Module.hiwire_new_value(Module.hiwire_get_value(idval));
 });
 
@@ -76,15 +96,29 @@ EM_JS(int, hiwire_bytes, (int ptr, int len), {
   return Module.hiwire_new_value(bytes);
 });
 
-EM_JS(int, hiwire_undefined, (), {
-  return Module.hiwire_new_value(undefined);
-});
+int
+hiwire_undefined()
+{
+  return HW_UNDEFINED;
+}
 
-EM_JS(int, hiwire_null, (), { return Module.hiwire_new_value(null); });
+int
+hiwire_null()
+{
+  return HW_NULL;
+}
 
-EM_JS(int, hiwire_true, (), { return Module.hiwire_new_value(true); });
+int
+hiwire_true()
+{
+  return HW_TRUE;
+}
 
-EM_JS(int, hiwire_false, (), { return Module.hiwire_new_value(false); });
+int
+hiwire_false()
+{
+  return HW_FALSE;
+}
 
 EM_JS(void, hiwire_throw_error, (int idmsg), {
   var jsmsg = Module.hiwire_get_value(idmsg);
@@ -159,20 +193,20 @@ EM_JS(void, hiwire_delete_member_obj, (int idobj, int ididx), {
   delete jsobj[jsidx];
 });
 
-EM_JS(void, hiwire_call, (int idfunc, int idargs), {
+EM_JS(int, hiwire_call, (int idfunc, int idargs), {
   var jsfunc = Module.hiwire_get_value(idfunc);
   var jsargs = Module.hiwire_get_value(idargs);
   return Module.hiwire_new_value(jsfunc.apply(jsfunc, jsargs));
 });
 
-EM_JS(void, hiwire_call_member, (int idobj, int ptrname, int idargs), {
+EM_JS(int, hiwire_call_member, (int idobj, int ptrname, int idargs), {
   var jsobj = Module.hiwire_get_value(idobj);
   var jsname = UTF8ToString(ptrname);
   var jsargs = Module.hiwire_get_value(idargs);
   return Module.hiwire_new_value(jsobj[jsname].apply(jsobj, jsargs));
 });
 
-EM_JS(void, hiwire_new, (int idobj, int idargs), {
+EM_JS(int, hiwire_new, (int idobj, int idargs), {
   function newCall(Cls)
   {
     return new (Function.prototype.bind.apply(Cls, arguments));
@@ -219,7 +253,7 @@ EM_JS(int, hiwire_next, (int idobj), {
   // clang-format off
   if (jsobj.next === undefined) {
     // clang-format on
-    return -1;
+    return HW_ERROR;
   }
 
   return Module.hiwire_new_value(jsobj.next());

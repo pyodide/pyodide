@@ -14,6 +14,8 @@
  * object. There may be one or more keys pointing to the same object.
  */
 
+#define HW_ERROR -1
+
 /**
  * Initialize the variables and functions required for hiwire.
  */
@@ -359,7 +361,7 @@ hiwire_greater_than_equal(int ida, int idb);
 /**
  * Calls the `next` function on an iterator.
  *
- * Returns: -1 if `next` function is undefined.
+ * Returns: HW_ERROR if `next` function is undefined.
  */
 int
 hiwire_next(int idobj);
