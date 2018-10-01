@@ -9,13 +9,13 @@ emsdk/.complete:
 	sed -i -e "s#CPU_CORES = max(multiprocessing.cpu_count()-1, 1)#CPU_CORES = 3#g" emsdk/emsdk
 	( \
 		cd emsdk ; \
-		./emsdk install --build=Release sdk-tag-1.38.10-64bit binaryen-tag-1.38.10-64bit ; \
+		./emsdk install --build=Release sdk-tag-1.38.12-64bit binaryen-tag-1.38.12-64bit ; \
 		cd .. ; \
 		(cat patches/*.patch | patch -p1) ; \
-		cd emsdk/binaryen/tag-1.38.10_64bit_binaryen/ ; \
+		cd emsdk/binaryen/tag-1.38.12_64bit_binaryen/ ; \
     make ; \
 	  cd ../.. ; \
-		./emsdk activate --embedded --build=Release sdk-tag-1.38.10-64bit binaryen-tag-1.38.10-64bit ; \
+		./emsdk activate --embedded --build=Release sdk-tag-1.38.12-64bit binaryen-tag-1.38.12-64bit ; \
     touch .complete \
 	)
 

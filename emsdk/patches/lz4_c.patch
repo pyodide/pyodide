@@ -1,4 +1,4 @@
-diff --git a/emsdk/emscripten/tag-1.38.10/src/library_lz4.js b/emsdk/emscripten/tag-1.38.10/src/library_lz4.js
+diff --git a/emsdk/emscripten/tag-1.38.12/src/library_lz4.js b/emsdk/emscripten/tag-1.38.12/src/library_lz4.js
 index 4c3f583b7..5291002a4 100644
 --- a/src/library_lz4.js
 +++ b/src/library_lz4.js

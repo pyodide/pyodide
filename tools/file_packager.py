@@ -69,7 +69,7 @@ sys.path.insert(
         os.path.abspath(__file__)
       )
     ),
-    'emsdk', 'emsdk', 'emscripten', 'tag-1.38.10'
+    'emsdk', 'emsdk', 'emscripten', 'tag-1.38.12'
   )
 )
 
