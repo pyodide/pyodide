@@ -24,7 +24,6 @@
 
 /* Syscalls that resulted in a segfault */
 #undef HAVE_UTIMENSAT
-#undef HAVE_SYS_IOCTL_H
 #undef HAVE_SYS_SOCKET_H
 
 /* Unsupported functionality */

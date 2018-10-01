@@ -53,18 +53,18 @@ test_asyncio.test_base_events async
 test_asyncio.test_events      async
 test_asyncio.test_futures     async
 test_asyncio.test_locks       async
-test_asyncio.test_pep492      async
-test_asyncio.test_proactor_events async
-test_asyncio.test_queues          async
+test_asyncio.test_pep492
+test_asyncio.test_proactor_events
+test_asyncio.test_queues
 test_asyncio.test_selector_events async segfault-socketcall
-test_asyncio.test_sslproto        async
+test_asyncio.test_sslproto
 test_asyncio.test_streams         async
 test_asyncio.test_subprocess      async
 test_asyncio.test_tasks           async
-test_asyncio.test_transports      async
+test_asyncio.test_transports
 test_asyncio.test_unix_events     async
-test_asyncio.test_windows_events  async
-test_asyncio.test_windows_utils   async
+test_asyncio.test_windows_events
+test_asyncio.test_windows_utils
 test_asyncore bad ioctl syscall   async
 test_atexit
 test_audioop  audioop
@@ -134,8 +134,8 @@ test_csv
 test_ctypes
 test_curses
 test_dataclasses
-test_datetime strftime
-test_dbm      permissions
+test_datetime
+test_dbm
 test_dbm_dumb permissions
 test_dbm_gnu
 test_dbm_ndbm
@@ -161,7 +161,7 @@ test_dummy_thread
 test_dummy_threading
 test_dynamic
 test_dynamicclassattribute
-test_eintr  platform-specific
+test_eintr
 test_email.test__encoded_words
 test_email.test__header_value_parser
 test_email.test_asian_codecs
@@ -259,7 +259,7 @@ test_importlib.import_.test_packages
 test_importlib.import_.test_path
 test_importlib.import_.test_relative_imports
 test_importlib.source.test_case_sensitivity
-test_importlib.source.test_file_loader  unittest has no attribute mock
+test_importlib.source.test_file_loader
 test_importlib.source.test_finder
 test_importlib.source.test_path_hook
 test_importlib.source.test_source_encoding
@@ -274,7 +274,7 @@ test_importlib.test_read
 test_importlib.test_resource
 test_importlib.test_spec
 test_importlib.test_util
-test_importlib.test_windows platform-specific
+test_importlib.test_windows
 test_index
 test_inspect
 test_int
@@ -356,7 +356,7 @@ test_peepholer
 test_pickle dbm
 test_pickletools  dbm
 test_pipes        platform-specific
-test_pkg          unknown
+test_pkg
 test_pkgimport
 test_pkgutil
 test_platform   subprocess
@@ -435,7 +435,7 @@ test_structseq
 test_subclassinit
 test_subprocess
 test_sunau  audioop
-test_sundry nonsense
+test_sundry
 test_super
 test_support  multiprocessing
 test_symbol
@@ -481,10 +481,10 @@ test_tuple
 test_turtle
 test_typechecks
 test_types
-test_typing unknown
+test_typing
 test_ucn
 test_unary
-test_unicode  floating point
+test_unicode
 test_unicode_file
 test_unicode_file_functions
 test_unicode_identifiers
