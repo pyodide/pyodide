@@ -118,9 +118,7 @@ test: all
 
 
 lint:
-	flake8 src
-	flake8 test
-	flake8 tools/*
+	flake8 src test tools benchmark/benchmark.py benchmark/plot_benchmark.py
 	clang-format -output-replacements-xml src/*.c src/*.h src/*.js | (! grep '<replacement ')
 
 
