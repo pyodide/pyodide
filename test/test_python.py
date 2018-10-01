@@ -336,14 +336,25 @@ def test_open_url_cgi(selenium):
         """) == 'HELLO\n'
 
 
-def test_run_core_python_test(python_test, selenium, request):
+def test_cpython_core(python_test, selenium, request):
 
     name, error_flags = python_test
 
-    if ('crash' in error_flags or
-            'crash-' + selenium.browser in error_flags):
-        pytest.xfail(reason='known failure with code "{}"'
-                            .format(','.join(error_flags)))
+    # keep only flags related to the current browser
+    flags_to_remove = ['firefox', 'chrome']
+    flags_to_remove.remove(selenium.browser)
+    for flag in flags_to_remove:
+        if 'crash-' + flag in error_flags:
+            error_flags.remove('crash-' + flag)
+
+    if any(flag.startswith('segfault') for flag in error_flags):
+        pytest.skip('known segfault with code: "{}"'
+                    .format(','.join(error_flags)))
+
+    if error_flags:
+        request.applymarker(pytest.mark.xfail(
+            run=False, reason='known failure with code "{}"'
+                              .format(','.join(error_flags))))
 
     selenium.load_package('test')
     try:
@@ -373,13 +384,10 @@ def pytest_generate_tests(metafunc):
                     continue
                 error_flags = line.split()
                 name = error_flags.pop(0)
-                if (not error_flags
-                    or set(error_flags).intersection(
-                            {'crash', 'crash-chrome', 'crash-firefox'})):
-                        test_modules.append((name, error_flags))
-                        # explicitly define test ids to keep
-                        # a human readable test name in pytest
-                        test_modules_ids.append(name)
+                test_modules.append((name, error_flags))
+                # explicitly define test ids to keep
+                # a human readable test name in pytest
+                test_modules_ids.append(name)
         metafunc.parametrize("python_test", test_modules,
                              ids=test_modules_ids)
 

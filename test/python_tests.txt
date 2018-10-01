@@ -1,7 +1,12 @@
 # Test modules with a failure reason after their name are either skipped
 # or marked as a known failure in pytest.
 #
-# Following reason codes are skipped:
+# Following reason codes are skipped, whithout running them, as they lead to
+# segfaults:
+# - segfault-<syscall>: segfault in the corresponding system call.
+#
+# While the below reason codes are marked as a known failure, and are still
+# executed:
 # - platform-specific: This is testing something about a particular platform
 #   that isn't relevant here
 # - async: relies on async
@@ -24,8 +29,6 @@
 # - fs: Fails due to virtual filesystem issues.
 # - nonsense: This functionality doesn't make sense in this context. Includes
 #   things like `pip`, `distutils`
-#
-# While the below reason codes are marked as a known failure:
 # - crash: The Python interpreter just stopped without a traceback. Will require
 #   further investigation. This usually seems to be caused by calling into a
 #   system function that doesn't behave as one would expect.
@@ -53,7 +56,7 @@ test_asyncio.test_locks       async
 test_asyncio.test_pep492      async
 test_asyncio.test_proactor_events async
 test_asyncio.test_queues          async
-test_asyncio.test_selector_events async
+test_asyncio.test_selector_events async segfault-socketcall
 test_asyncio.test_sslproto        async
 test_asyncio.test_streams         async
 test_asyncio.test_subprocess      async
@@ -201,7 +204,7 @@ test_fractions
 test_frame
 test_frozen
 test_fstring
-test_ftplib syscall 21537
+test_ftplib socket
 test_funcattrs
 test_functools  threading
 test_future
@@ -232,7 +235,7 @@ test_html
 test_htmlparser
 test_http_cookiejar
 test_http_cookies
-test_httplib  socket
+test_httplib  socket segfault-socketcall
 test_httpservers  threading
 test_idle
 test_imaplib  socket
@@ -360,8 +363,8 @@ test_platform   subprocess
 test_plistlib
 test_poll subprocess
 test_popen  subprocess
-test_poplib bad ioctl syscall 21537
-test_posix  crash
+test_poplib bad ioctl socket
+test_posix  segfault-fstatfs64
 test_posixpath  crash
 test_pow
 test_pprint
@@ -396,8 +399,8 @@ test_sched  threading
 test_scope
 test_script_helper
 test_secrets
-test_select networking
-test_selectors  networking
+test_select networking  segfault-newselect
+test_selectors  networking segfault-newselect
 test_set
 test_setcomps
 test_shelve
@@ -490,7 +493,7 @@ test_unittest os.kill
 test_univnewlines
 test_unpack
 test_unpack_ex
-test_urllib crash
+test_urllib segfault-socketcall
 test_urllib2  subprocess
 test_urllib2_localnet socket
 test_urllib2net
