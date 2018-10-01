@@ -117,6 +117,21 @@ jobs:
             source pyodide-env/bin/activate
             pytest test -v -k chrome
 
+  benchmark:
+    <<: *defaults
+    steps:
+      - checkout
+      - attach_workspace:
+          at: .
+      - run:
+          name: benchmark
+          command: |
+            sudo bash -c "echo 'application/wasm wasm' >> /etc/mime.types"
+
+            source pyodide-env/bin/activate
+            export PATH=$PWD/firefox:$PATH
+            make benchmark
+
   deploy:
     machine:
       enabled: true
@@ -139,6 +154,9 @@ workflows:
           requires:
             - build
       - test-firefox:
+          requires:
+            - build
+      - benchmark:
           requires:
             - build
       - deploy:
