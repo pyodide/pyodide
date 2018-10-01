@@ -64,8 +64,8 @@ test_asyncio.test_tasks           async
 test_asyncio.test_transports
 test_asyncio.test_unix_events     async
 test_asyncio.test_windows_events
-test_asyncio.test_windows_utils
-test_asyncore bad ioctl syscall   async
+test_asyncio.test_windows_utils   
+test_asyncore bad ioctl syscall async  segfault
 test_atexit
 test_audioop  audioop
 test_augassign
@@ -204,7 +204,7 @@ test_fractions
 test_frame
 test_frozen
 test_fstring
-test_ftplib socket
+test_ftplib socket  segfault-ioctl
 test_funcattrs
 test_functools  threading
 test_future
