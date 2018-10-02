@@ -139,7 +139,6 @@ jobs:
             source pyodide-env/bin/activate
             export PATH=$PWD/firefox:$PATH
             python benchmark/benchmark.py cpython/build/3.7.0/host/bin/python3 build/benchmarks.json
-            python benchmark/plot_benchmark.py build/benchmarks.json build/benchmarks.png
       - store_artifacts:
           path: /home/circleci/repo/build
 
