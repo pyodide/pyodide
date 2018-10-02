@@ -13,14 +13,20 @@ import queue
 import sys
 import shutil
 
-try:
-    import pytest
-except ImportError:
-    pytest = None
-
-
 TEST_PATH = pathlib.Path(__file__).parents[0].resolve()
 BUILD_PATH = TEST_PATH / '..' / 'build'
+
+try:
+    import pytest
+
+    def pytest_addoption(parser):
+        group = parser.getgroup("general")
+        group.addoption(
+            '--build-dir', action="store", default=BUILD_PATH,
+            help="Path to the build directory")
+
+except ImportError:
+    pytest = None
 
 
 class PyodideInited:
@@ -49,16 +55,16 @@ def _display_driver_logs(browser, driver):
 
 
 class SeleniumWrapper:
-    def __init__(self, server_port, server_hostname='127.0.0.1',
+    def __init__(self, build_dir, server_port, server_hostname='127.0.0.1',
                  server_log=None):
         from selenium.webdriver.support.wait import WebDriverWait
         from selenium.common.exceptions import TimeoutException
 
         driver = self.get_driver()
         wait = WebDriverWait(driver, timeout=20)
-        if not (BUILD_PATH / 'test.html').exists():
+        if not (pathlib.Path(build_dir) / 'test.html').exists():
             # selenium does not expose HTTP response codes
-            raise ValueError(f"{(BUILD_PATH / 'test.html').resolve()} "
+            raise ValueError(f"{(build_dir / 'test.html').resolve()} "
                              f"does not exist!")
         driver.get(f'http://{server_hostname}:{server_port}/test.html')
         try:
@@ -166,7 +172,8 @@ if pytest is not None:
             cls = FirefoxWrapper
         elif request.param == 'chrome':
             cls = ChromeWrapper
-        selenium = cls(server_port=server_port,
+        selenium = cls(build_dir=request.config.option.build_dir,
+                       server_port=server_port,
                        server_hostname=server_hostname,
                        server_log=server_log)
         try:
@@ -184,7 +191,8 @@ if pytest is not None:
             cls = FirefoxWrapper
         elif request.param == 'chrome':
             cls = ChromeWrapper
-        selenium = cls(server_port=server_port,
+        selenium = cls(build_dir=request.config.option.build_dir,
+                       server_port=server_port,
                        server_hostname=server_hostname,
                        server_log=server_log)
         try:
@@ -203,24 +211,25 @@ if pytest is not None:
 
 
 @pytest.fixture(scope='session')
-def web_server_main():
-    with spawn_web_server() as output:
+def web_server_main(request):
+    with spawn_web_server(request.config.option.build_dir) as output:
         yield output
 
 
 @pytest.fixture(scope='session')
-def web_server_secondary():
-    with spawn_web_server() as output:
+def web_server_secondary(request):
+    with spawn_web_server(request.config.option.build_dir) as output:
         yield output
 
 
 @contextlib.contextmanager
-def spawn_web_server():
+def spawn_web_server(build_dir):
 
     tmp_dir = tempfile.mkdtemp()
     log_path = pathlib.Path(tmp_dir) / 'http-server.log'
     q = multiprocessing.Queue()
-    p = multiprocessing.Process(target=run_web_server, args=(q, log_path))
+    p = multiprocessing.Process(target=run_web_server,
+                                args=(q, log_path, build_dir))
 
     try:
         p.start()
@@ -236,7 +245,7 @@ def spawn_web_server():
         shutil.rmtree(tmp_dir)
 
 
-def run_web_server(q, log_filepath):
+def run_web_server(q, log_filepath, build_dir):
     """Start the HTTP web server
 
     Parameters
@@ -249,7 +258,7 @@ def run_web_server(q, log_filepath):
     import http.server
     import socketserver
 
-    os.chdir(BUILD_PATH)
+    os.chdir(build_dir)
 
     log_fh = log_filepath.open('w', buffering=1)
     sys.stdout = log_fh
@@ -303,7 +312,7 @@ def run_web_server(q, log_filepath):
 if (__name__ == '__main__'
         and multiprocessing.current_process().name == 'MainProcess'
         and not hasattr(sys, "_pytest_session")):
-    with spawn_web_server():
+    with spawn_web_server(BUILD_PATH):
         # run forever
         while True:
             time.sleep(1)
