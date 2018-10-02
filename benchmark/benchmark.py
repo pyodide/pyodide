@@ -10,7 +10,7 @@ sys.path.insert(
 import conftest
 
 
-SKIP = set(['fft', 'hyantes'])
+SKIP = set(['fft', 'hyantes', 'README'])
 
 
 def run_native(hostpython, code):
