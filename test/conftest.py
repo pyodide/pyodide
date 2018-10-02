@@ -191,7 +191,8 @@ if pytest is not None:
             cls = FirefoxWrapper
         elif request.param == 'chrome':
             cls = ChromeWrapper
-        selenium = cls(server_port=server_port,
+        selenium = cls(build_dir=request.config.option.build_dir,
+                       server_port=server_port,
                        server_hostname=server_hostname,
                        server_log=server_log)
         try:
