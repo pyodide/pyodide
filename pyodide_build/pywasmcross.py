@@ -108,7 +108,7 @@ def handle_command(line, args):
     for arg in line:
         if r'/file.c' in arg or '_configtest' in arg:
             return
-        if re.match('/tmp/.*/source\.[bco]+', arg):
+        if re.match(r'/tmp/.*/source\.[bco]+', arg):
             return
         if arg == '-print-multiarch':
             return
