@@ -26,6 +26,12 @@ jobs:
             sudo update-alternatives --set gcc /usr/bin/gcc-8
             sudo ln -s /usr/bin/clang-format-6.0 /usr/bin/clang-format
 
+            # Install Python dependencies
+            sudo pip install virtualenv
+            virtualenv pyodide-env
+            source pyodide-env/bin/activate
+            pip install pytest pytest-xdist pytest-instafail selenium PyYAML flake8
+
             # Get recent version of Firefox and geckodriver
             wget -O firefox.tar.bz2 https://download.mozilla.org/\?product\=firefox-latest-ssl\&os\=linux64\&lang\=en-US
             tar jxf firefox.tar.bz2
@@ -36,12 +42,6 @@ jobs:
             wget https://chromedriver.storage.googleapis.com/2.41/chromedriver_linux64.zip
             unzip chromedriver_linux64.zip
             mv chromedriver pyodide-env/bin/
-
-            # Install Python dependencies
-            sudo pip install virtualenv
-            virtualenv pyodide-env
-            source pyodide-env/bin/activate
-            pip install pytest pytest-xdist pytest-instafail selenium PyYAML flake8
 
       - run:
           name: lint
