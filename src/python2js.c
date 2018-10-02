@@ -135,7 +135,7 @@ _python2js(PyObject* x, PyObject* map)
     // when the Python int gets too large.  This will lose precision,
     // but is less problematic than truncation.
     if ((unsigned long)x_long > 0x7fffffff) {
-      PyObject *py_float = PyNumber_Float(x);
+      PyObject* py_float = PyNumber_Float(x);
       if (py_float == NULL) {
         return HW_ERROR;
       }
