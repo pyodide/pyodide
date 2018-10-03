@@ -118,7 +118,8 @@ test: all
 
 
 lint:
-	flake8 src test tools pyodide_build benchmark/benchmark.py benchmark/plot_benchmark.py
+	flake8 src test tools pyodide_build benchmark/benchmark.py benchmark/plot_benchmark.py \
+		benchmark/benchmarks/
 	clang-format -output-replacements-xml src/*.c src/*.h src/*.js | (! grep '<replacement ')
 
 

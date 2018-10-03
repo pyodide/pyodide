@@ -1,7 +1,7 @@
-#from http://stackoverflow.com/questions/77999777799977/numpy-vs-cython-speed
-#pythran export multiple_sum(float[][])
-#setup: import numpy as np ; r = np.random.rand(100,100)
-#run: multiple_sum(r)
+# from http://stackoverflow.com/questions/77999777799977/numpy-vs-cython-speed
+# pythran export multiple_sum(float[][])
+# setup: import numpy as np ; r = np.random.rand(100,100)
+# run: multiple_sum(r)
 import numpy as np
 
 

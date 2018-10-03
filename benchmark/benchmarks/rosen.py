@@ -1,8 +1,8 @@
-#setup: import numpy as np; r = np.arange(1000000, dtype=float)
-#run: rosen(r)
+# setup: import numpy as np; r = np.arange(1000000, dtype=float)
+# run: rosen(r)
 import numpy as np
 
-#pythran export rosen(float[])
+# pythran export rosen(float[])
 
 
 def rosen(x):

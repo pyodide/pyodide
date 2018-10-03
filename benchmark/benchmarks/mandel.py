@@ -1,7 +1,7 @@
-#setup: import numpy as np; image = np.zeros((64, 32), dtype = np.uint8)
-#run: mandel(-2.0, 1.0, -1.0, 1.0, image, 20)
+# setup: import numpy as np; image = np.zeros((64, 32), dtype = np.uint8)
+# run: mandel(-2.0, 1.0, -1.0, 1.0, image, 20)
 
-#pythran export mandel(float, float, float, float, uint8[][], int)
+# pythran export mandel(float, float, float, float, uint8[][], int)
 
 
 def kernel(x, y, max_iters):
@@ -13,8 +13,8 @@ def kernel(x, y, max_iters):
     c = complex(x, y)
     z = 0.0j
     for i in range(max_iters):
-        z = z*z + c
-        if (z.real*z.real + z.imag*z.imag) >= 4:
+        z = z * z + c
+        if (z.real * z.real + z.imag * z.imag) >= 4:
             return i
 
     return max_iters
