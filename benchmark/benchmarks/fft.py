@@ -5,4 +5,5 @@
 
 import numpy as np
 
-fft = np.fft
+def fft(x):
+    return np.fft(x)
