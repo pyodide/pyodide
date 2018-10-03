@@ -122,7 +122,7 @@ lint:
 	clang-format -output-replacements-xml src/*.c src/*.h src/*.js | (! grep '<replacement ')
 
 
-benchmark: all build/test.html
+benchmark: all
 	python benchmark/benchmark.py $(HOSTPYTHON) build/benchmarks.json
 	python benchmark/plot_benchmark.py build/benchmarks.json build/benchmarks.png
 

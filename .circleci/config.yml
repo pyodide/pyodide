@@ -19,21 +19,29 @@ jobs:
             # Set up the Debian testing repo, and then install g++ from there...
             sudo bash -c "echo \"deb http://ftp.us.debian.org/debian testing main contrib non-free\" >> /etc/apt/sources.list"
             sudo apt-get update
-            sudo apt-get install node-less cmake build-essential clang-format-6.0 flake8 uglifyjs python3-yaml chromium ccache
+            sudo apt-get install node-less cmake build-essential clang-format-6.0 uglifyjs chromium ccache
             sudo apt-get install -t testing g++-8
             sudo update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-6 60 --slave /usr/bin/g++ g++ /usr/bin/g++-6
             sudo update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-8 80 --slave /usr/bin/g++ g++ /usr/bin/g++-8
             sudo update-alternatives --set gcc /usr/bin/gcc-8
             sudo ln -s /usr/bin/clang-format-6.0 /usr/bin/clang-format
 
+            # Install Python dependencies
             sudo pip install virtualenv
-
             virtualenv pyodide-env
-
             source pyodide-env/bin/activate
+            pip install pytest pytest-xdist pytest-instafail selenium PyYAML flake8
 
-            pip install pytest pytest-xdist pytest-instafail selenium PyYAML
+            # Get recent version of Firefox and geckodriver
+            wget -O firefox.tar.bz2 https://download.mozilla.org/\?product\=firefox-latest-ssl\&os\=linux64\&lang\=en-US
+            tar jxf firefox.tar.bz2
+            wget https://github.com/mozilla/geckodriver/releases/download/v0.21.0/geckodriver-v0.21.0-linux64.tar.gz
+            tar zxf geckodriver-v0.21.0-linux64.tar.gz -C firefox
 
+            # Get recent version of chromedriver
+            wget https://chromedriver.storage.googleapis.com/2.41/chromedriver_linux64.zip
+            unzip chromedriver_linux64.zip
+            mv chromedriver pyodide-env/bin/
 
       - run:
           name: lint
@@ -69,6 +77,8 @@ jobs:
           paths:
             - ./build
             - ./pyodide-env
+            - ./cpython/build/3.7.0/host
+            - ./firefox
 
       - store_artifacts:
           path: /home/circleci/repo/build/
@@ -85,12 +95,6 @@ jobs:
             # This Debian is so old, it doesn't know about wasm as a mime type, which then
             # causes Firefox to complain when loading it.  Let's just add the new mime type.
             sudo bash -c "echo 'application/wasm wasm' >> /etc/mime.types"
-
-            # Get recent version of Firefox and geckodriver
-            wget -O firefox.tar.bz2 https://download.mozilla.org/\?product\=firefox-latest-ssl\&os\=linux64\&lang\=en-US
-            tar jxf firefox.tar.bz2
-            wget https://github.com/mozilla/geckodriver/releases/download/v0.21.0/geckodriver-v0.21.0-linux64.tar.gz
-            tar zxf geckodriver-v0.21.0-linux64.tar.gz -C firefox
 
             source pyodide-env/bin/activate
             export PATH=$PWD/firefox:$PATH
@@ -109,13 +113,34 @@ jobs:
             # causes Firefox to complain when loading it.  Let's just add the new mime type.
             sudo bash -c "echo 'application/wasm wasm' >> /etc/mime.types"
 
-            # Get recent version of chromedriver
-            wget https://chromedriver.storage.googleapis.com/2.41/chromedriver_linux64.zip
-            unzip chromedriver_linux64.zip
-            mv chromedriver pyodide-env/bin/
-
             source pyodide-env/bin/activate
             pytest test -v -k chrome
+
+  benchmark:
+    <<: *defaults
+    steps:
+      - checkout
+      - attach_workspace:
+          at: .
+      - run:
+          name: dependencies
+          command: |
+            sudo bash -c "echo \"deb http://ftp.us.debian.org/debian testing main contrib non-free\" >> /etc/apt/sources.list"
+            sudo apt-get update
+            sudo apt-get install -t testing g++-8
+            sudo update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-6 60 --slave /usr/bin/g++ g++ /usr/bin/g++-6
+            sudo update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-8 80 --slave /usr/bin/g++ g++ /usr/bin/g++-8
+            sudo update-alternatives --set gcc /usr/bin/gcc-8
+      - run:
+          name: benchmark
+          command: |
+            sudo bash -c "echo 'application/wasm wasm' >> /etc/mime.types"
+
+            source pyodide-env/bin/activate
+            export PATH=$PWD/firefox:$PATH
+            python benchmark/benchmark.py cpython/build/3.7.0/host/bin/python3 build/benchmarks.json
+      - store_artifacts:
+          path: /home/circleci/repo/build
 
   deploy:
     machine:
@@ -139,6 +164,9 @@ workflows:
           requires:
             - build
       - test-firefox:
+          requires:
+            - build
+      - benchmark:
           requires:
             - build
       - deploy:

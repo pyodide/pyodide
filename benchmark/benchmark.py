@@ -10,7 +10,7 @@ sys.path.insert(
 import conftest  # noqa
 
 
-SKIP = set(['fft', 'hyantes'])
+SKIP = set(['fft', 'hyantes', 'README'])
 
 
 def run_native(hostpython, code):
@@ -25,27 +25,27 @@ def run_native(hostpython, code):
     return float(output.strip().split()[-1])
 
 
-def run_wasm(code, cls):
-    s = cls()
+def run_wasm(code, cls, port):
+    s = cls(port)
     try:
         s.load_package('numpy')
         s.run(code)
         try:
-            runtime = float(s.logs[-1])
+            runtime = float(s.logs.split('\n')[-1])
         except ValueError:
-            print('\n'.join(s.logs))
+            print(s.logs)
             raise
     finally:
         s.driver.quit()
     return runtime
 
 
-def run_all(hostpython, code):
+def run_all(hostpython, port, code):
     a = run_native(hostpython, code)
     print("native:", a)
-    b = run_wasm(code, conftest.FirefoxWrapper)
+    b = run_wasm(code, conftest.FirefoxWrapper, port)
     print("firefox:", b)
-    c = run_wasm(code, conftest.ChromeWrapper)
+    c = run_wasm(code, conftest.ChromeWrapper, port)
     print("chrome:", c)
     result = {
         'native': a,
@@ -74,9 +74,9 @@ def parse_numpy_benchmark(filename):
 
 
 def get_numpy_benchmarks():
-    root = Path('../numpy-benchmarks/benchmarks')
+    root = Path(__file__).resolve().parent / 'benchmarks'
     for filename in root.iterdir():
-        name = filename.name
+        name = filename.stem
         if name in SKIP:
             continue
         content = parse_numpy_benchmark(filename)
@@ -87,6 +87,8 @@ def get_numpy_benchmarks():
             "from timeit import Timer\n"
             "t = Timer(run, setup)\n"
             "r = t.repeat(11, 40)\n"
+            "r.remove(min(r))\n"
+            "r.remove(max(r))\n"
             "print(np.mean(r))\n".format(name))
         yield name, content
 
@@ -97,10 +99,11 @@ def get_benchmarks():
 
 
 def main(hostpython):
-    results = {}
-    for k, v in get_benchmarks():
-        print(k)
-        results[k] = run_all(hostpython, v)
+    with conftest.spawn_web_server() as (hostname, port, log_path):
+        results = {}
+        for k, v in get_benchmarks():
+            print(k)
+            results[k] = run_all(hostpython, port, v)
     return results
 
 

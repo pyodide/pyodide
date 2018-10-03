@@ -28,7 +28,7 @@ ax.invert_yaxis()
 ax.set_xlabel('Slowdown factor (WebAssembly:Native)')
 ax.set_title('Python benchmarks')
 ax.axvline(1.0, color='red')
-ax.grid()
+ax.grid(axis='x')
 ax.legend(loc='lower right')
 
 plt.savefig(sys.argv[-1])
