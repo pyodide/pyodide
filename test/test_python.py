@@ -58,6 +58,15 @@ def test_python2js(selenium):
         """)
 
 
+def test_python2js_long_ints(selenium):
+    assert selenium.run('2**30') == 2**30
+    assert selenium.run('2**31') == 2**31
+    assert selenium.run('2**30 - 1 + 2**30') == (2**30 - 1 + 2**30)
+    assert selenium.run('2**32 / 2**4') == (2**32 / 2**4)
+    assert selenium.run('-2**30') == -2**30
+    assert selenium.run('-2**31') == -2**31
+
+
 def test_pythonexc2js(selenium):
     try:
         selenium.run_js('return pyodide.runPython("5 / 0")')
