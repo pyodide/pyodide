@@ -127,24 +127,23 @@ _python2js(PyObject* x, PyObject* map)
   } else if (x == Py_False) {
     return hiwire_false();
   } else if (PyLong_Check(x)) {
-    long x_long = PyLong_AsLongLong(x);
-    if (x_long == -1 && PyErr_Occurred()) {
-      return HW_ERROR;
-    }
-    // Since Javascript doesn't support > 32-bit ints, use floats
-    // when the Python int gets too large.  This will lose precision,
-    // but is less problematic than truncation.
-    if (labs(x_long) > 0x7fffffff) {
-      PyObject* py_float = PyNumber_Float(x);
-      if (py_float == NULL) {
+    int overflow;
+    long x_long = PyLong_AsLongAndOverflow(x, &overflow);
+    if (x_long == -1) {
+      if (overflow) {
+        PyObject* py_float = PyNumber_Float(x);
+        if (py_float == NULL) {
+          return HW_ERROR;
+        }
+        double x_double = PyFloat_AsDouble(py_float);
+        Py_DECREF(py_float);
+        if (x_double == -1.0 && PyErr_Occurred()) {
+          return HW_ERROR;
+        }
+        return hiwire_double(x_double);
+      } else if (PyErr_Occurred()) {
         return HW_ERROR;
       }
-      double x_double = PyFloat_AsDouble(py_float);
-      Py_DECREF(py_float);
-      if (x_double == -1.0 && PyErr_Occurred()) {
-        return HW_ERROR;
-      }
-      return hiwire_double(x_double);
     }
     return hiwire_int(x_long);
   } else if (PyFloat_Check(x)) {
