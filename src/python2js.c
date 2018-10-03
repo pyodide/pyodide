@@ -134,7 +134,7 @@ _python2js(PyObject* x, PyObject* map)
     // Since Javascript doesn't support > 32-bit ints, use floats
     // when the Python int gets too large.  This will lose precision,
     // but is less problematic than truncation.
-    if ((unsigned long)x_long > 0x7fffffff) {
+    if (labs(x_long) > 0x7fffffff) {
       PyObject* py_float = PyNumber_Float(x);
       if (py_float == NULL) {
         return HW_ERROR;
