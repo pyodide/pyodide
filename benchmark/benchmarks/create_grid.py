@@ -3,6 +3,8 @@
 #setup: import numpy as np ; N = 800 ; x = np.arange(0,1,1./N)
 #run: create_grid(x)
 import numpy as np
+
+
 def create_grid(x):
     N = x.shape[0]
     z = np.zeros((N, N, 3))

@@ -4,6 +4,8 @@
 
 #pythran export slowparts(int, int, float [][][], float [][][], float [][], float [][], float [][][], float [][][], int)
 from numpy import zeros, power, tanh
+
+
 def slowparts(d, re, preDz, preWz, SRW, RSW, yxV, xyU, resid):
     """ computes the linear algebra intensive part of the gradients of the grae
     """
@@ -13,5 +15,5 @@ def slowparts(d, re, preDz, preWz, SRW, RSW, yxV, xyU, resid):
     for k in range(2*d):
         for i in range(d):
             partialDU[:,:,k,i] = fprime(preDz[k]) * fprime(preWz[i]) * (SRW[i,k] + RSW[i,k]) * yxV[:,:,i]
-    
+
     return partialDU

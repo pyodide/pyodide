@@ -3,6 +3,8 @@
 #setup: import numpy as np ; r = np.random.rand(100,100)
 #run: multiple_sum(r)
 import numpy as np
+
+
 def multiple_sum(array):
 
     rows = array.shape[0]

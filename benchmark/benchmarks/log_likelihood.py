@@ -4,6 +4,7 @@
 import numpy
 
 #pythran export log_likelihood(float64[], float64, float64)
+
 def log_likelihood(data, mean, sigma):
     s = (data - mean) ** 2 / (2 * (sigma ** 2))
     pdfs = numpy.exp(- s)

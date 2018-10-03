@@ -4,5 +4,7 @@
 
 #pythran export l2norm(float64[][])
 import numpy as np
+
+
 def l2norm(x):
-    return np.sqrt(np.sum(np.abs(x)**2, 1))
+    return np.sqrt(np.einsum('ij,ij->i', x, x))

@@ -4,5 +4,11 @@
 #pythran export allpairs_distances(float64[][], float64[][])
 import numpy as np
 
-def allpairs_distances(X,Y):
-  return np.array([[np.sum( (x-y) ** 2) for x in X] for y in Y])
+
+def allpairs_distances(A, B):
+    """ This returns the euclidean distances squared
+    dist2(x, y) = dot(x, x) - 2 * dot(x, y) + dot(y, y)
+    """
+    A2 = np.einsum('ij,ij->i', A, A)
+    B2 = np.einsum('ij,ij->i', B, B)
+    return A2[:, None] + B2[None, :] - 2*np.dot(A, B.T)

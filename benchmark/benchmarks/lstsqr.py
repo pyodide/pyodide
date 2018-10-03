@@ -4,6 +4,8 @@
 
 #pythran export lstsqr(float[], float[])
 import numpy as np
+
+
 def lstsqr(x, y):
     """ Computes the least-squares solution to a linear matrix equation. """
     x_avg = np.average(x)

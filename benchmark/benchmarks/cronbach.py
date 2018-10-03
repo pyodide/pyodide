@@ -2,6 +2,8 @@
 #pythran export cronbach(float [][])
 #setup: import numpy as np ; N = 600 ; items = np.random.rand(N,N)
 #run: cronbach(items)
+
+
 def cronbach(itemscores):
     itemvars = itemscores.var(axis=1, ddof=1)
     tscores = itemscores.sum(axis=0)

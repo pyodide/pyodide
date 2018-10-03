@@ -3,5 +3,6 @@
 #setup: import numpy as np ; r = np.random.rand(1000000)
 #run: reverse_cumsum(r)
 import numpy as np
+
 def reverse_cumsum(x):
     return np.cumsum(x[::-1])[::-1]

@@ -1,4 +1,4 @@
-#setup: N=50
+#setup: N=10
 #run: julia(1., 1., N, 1.5, 10., 1e4)
 
 #pythran export julia(float, float, int, float, float, float)

@@ -4,5 +4,7 @@
 
 #pythran export vibr_energy(float64[], float64[], float64[])
 import numpy
+
+
 def vibr_energy(harmonic, anharmonic, i):
     return numpy.exp(-harmonic * i - anharmonic * (i ** 2))
