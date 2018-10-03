@@ -24,6 +24,9 @@ try:
         group.addoption(
             '--build-dir', action="store", default=BUILD_PATH,
             help="Path to the build directory")
+        group.addoption(
+            '--run-xfail', action="store_true",
+            help="If provided, tests marked as xfail will be run")
 
 except ImportError:
     pytest = None

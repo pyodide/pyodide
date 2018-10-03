@@ -352,9 +352,13 @@ def test_cpython_core(python_test, selenium, request):
                     .format(','.join(error_flags)))
 
     if error_flags:
-        request.applymarker(pytest.mark.xfail(
-            run=False, reason='known failure with code "{}"'
-                              .format(','.join(error_flags))))
+        if request.config.option.run_xfail:
+            request.applymarker(pytest.mark.xfail(
+                run=False, reason='known failure with code "{}"'
+                                  .format(','.join(error_flags))))
+        else:
+            pytest.xfail('known failure with code "{}"'
+                         .format(','.join(error_flags)))
 
     selenium.load_package('test')
     try:

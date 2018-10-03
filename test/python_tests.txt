@@ -1,12 +1,11 @@
 # Test modules with a failure reason after their name are either skipped
 # or marked as a known failure in pytest.
 #
-# Following reason codes are skipped, whithout running them, as they lead to
-# segfaults:
+# Following reason codes are skipped, as they lead to segfaults:
 # - segfault-<syscall>: segfault in the corresponding system call.
 #
-# While the below reason codes are marked as a known failure, and are still
-# executed:
+# While the below reason codes are marked as a known failure. By default, they
+# are also skipped. To run them, provide --run-xfail argument to pytest,
 # - platform-specific: This is testing something about a particular platform
 #   that isn't relevant here
 # - async: relies on async
