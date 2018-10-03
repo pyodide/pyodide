@@ -98,7 +98,7 @@ jobs:
 
             source pyodide-env/bin/activate
             export PATH=$PWD/firefox:$PATH
-            pytest test -vs -k firefox
+            pytest test -v -k firefox
 
   test-chrome:
     <<: *defaults
@@ -114,7 +114,7 @@ jobs:
             sudo bash -c "echo 'application/wasm wasm' >> /etc/mime.types"
 
             source pyodide-env/bin/activate
-            pytest test -vs -k chrome
+            pytest test -v -k chrome
 
   benchmark:
     <<: *defaults
