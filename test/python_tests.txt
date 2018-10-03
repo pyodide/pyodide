@@ -391,7 +391,7 @@ test_repl     subprocess
 test_reprlib
 test_resource
 test_richcmp
-test_rlcompleter
+test_rlcompleter  crash
 test_robotparser  socket
 test_runpy
 test_sax
