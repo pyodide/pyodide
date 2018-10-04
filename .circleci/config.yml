@@ -140,7 +140,7 @@ jobs:
             export PATH=$PWD/firefox:$PATH
             python benchmark/benchmark.py cpython/build/3.7.0/host/bin/python3 build/benchmarks.json
       - store_artifacts:
-          path: /home/circleci/repo/build
+          path: /home/circleci/repo/build/benchmarks.json
 
   deploy:
     machine:
