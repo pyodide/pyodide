@@ -7,7 +7,7 @@ import sys
 sys.path.insert(
     0, str((Path(__file__).resolve().parents[1] / 'test')))
 
-import conftest  # noqa
+import conftest  # noqa: E402
 
 
 SKIP = set(['fft', 'hyantes', 'README'])
