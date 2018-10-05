@@ -16,6 +16,12 @@ jobs:
           command: |
             make lint
 
+      - run:
+           name: dependencies
+           command: |
+	     # Download BLAS/LAPACK 
+             git clone https://github.com/adrianbg/CLAPACK-WA.git packages/scipy/CLAPACK-WA
+
       - restore_cache:
           keys:
           - v1-emsdk-{{ checksum "emsdk/Makefile" }}-v11-

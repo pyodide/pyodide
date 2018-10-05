@@ -208,6 +208,8 @@ $(LZ4LIB):
 $(SIX_LIBS): $(CPYTHONLIB)
 	make -C six
 
+$(LAPACK): $(CPYTHONLIB)
+	emmake make -C packages/scipy/CLAPACK-WA
 
 $(CLAPACK): $(CPYTHONLIB)
 	make -C CLAPACK
