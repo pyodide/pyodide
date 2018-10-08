@@ -249,15 +249,31 @@ MAKE_OPERATOR(greater_than, >);
 MAKE_OPERATOR(greater_than_equal, >=);
 
 EM_JS(int, hiwire_next, (int idobj), {
-  var jsobj = Module.hiwire_get_value(idobj);
   // clang-format off
-  if (jsobj.next === undefined) {
+  if (idobj === -2) {
     // clang-format on
-    return HW_ERROR;
+    return -1;
   }
 
+  var jsobj = Module.hiwire_get_value(idobj);
   return Module.hiwire_new_value(jsobj.next());
 });
+
+EM_JS(int, hiwire_get_iterator, (int idobj), {
+  // clang-format off
+  if (idobj === -2) {
+    return -1;
+  }
+
+  var jsobj = Module.hiwire_get_value(idobj);
+  if (typeof jsobj.next ===  'function') {
+    return Module.hiwire_new_value(jsobj);
+  } else if (typeof jsobj[Symbol.iterator] === 'function') {
+    return Module.hiwire_new_value(jsobj[Symbol.iterator]())
+  }
+  return -1;
+  // clang-format on
+})
 
 EM_JS(int, hiwire_nonzero, (int idobj), {
   var jsobj = Module.hiwire_get_value(idobj);

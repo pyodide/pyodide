@@ -367,6 +367,12 @@ int
 hiwire_next(int idobj);
 
 /**
+ * Returns the iterator associated with the given object, if any.
+ */
+int
+hiwire_get_iterator(int idobj);
+
+/**
  * Returns 1 if the value is non-zero.
  *
  */

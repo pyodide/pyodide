@@ -169,8 +169,16 @@ JsProxy_RichCompare(PyObject* a, PyObject* b, int op)
 static PyObject*
 JsProxy_GetIter(PyObject* o)
 {
-  Py_INCREF(o);
-  return o;
+  JsProxy* self = (JsProxy*)o;
+
+  int iditer = hiwire_get_iterator(self->js);
+
+  if (iditer == HW_ERROR) {
+    PyErr_SetString(PyExc_TypeError, "Object is not iterable");
+    return NULL;
+  }
+
+  return js2python(iditer);
 }
 
 static PyObject*
@@ -375,6 +383,10 @@ static PyMethodDef JsProxy_Methods[] = {
     (PyCFunction)JsProxy_New,
     METH_VARARGS | METH_KEYWORDS,
     "Construct a new instance" },
+  { "__iter__",
+    (PyCFunction)JsProxy_GetIter,
+    METH_NOARGS,
+    "Get an iterator over the object" },
   { "_has_bytes",
     (PyCFunction)JsProxy_HasBytes,
     METH_NOARGS,

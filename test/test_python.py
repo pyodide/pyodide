@@ -325,8 +325,14 @@ def test_jsproxy_implicit_iter(selenium):
         """
         window.ITER = [1, 2, 3];""")
     assert selenium.run(
-        "from js import ITER\n"
+        "from js import ITER, Object\n"
+        "list(ITER)") == [1, 2, 3]
+    assert selenium.run(
+        "from js import ITER, Object\n"
         "list(ITER.values())") == [1, 2, 3]
+    assert selenium.run(
+        "from js import ITER, Object\n"
+        "list(Object.values(ITER))") == [1, 2, 3]
 
 
 def test_open_url(selenium):
