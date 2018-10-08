@@ -64,10 +64,13 @@ def _display_driver_logs(browser, driver):
 
 
 class SeleniumWrapper:
-    def __init__(self, build_dir, server_port, server_hostname='127.0.0.1',
-                 server_log=None):
+    def __init__(self, server_port, server_hostname='127.0.0.1',
+                 server_log=None, build_dir=None):
         from selenium.webdriver.support.wait import WebDriverWait
         from selenium.common.exceptions import TimeoutException
+
+        if build_dir is None:
+            build_dir = BUILD_PATH
 
         driver = self.get_driver()
         wait = WebDriverWait(driver, timeout=20)
@@ -232,7 +235,10 @@ def web_server_secondary(request):
 
 
 @contextlib.contextmanager
-def spawn_web_server(build_dir):
+def spawn_web_server(build_dir=None):
+
+    if build_dir is None:
+        build_dir = BUILD_PATH
 
     tmp_dir = tempfile.mkdtemp()
     log_path = pathlib.Path(tmp_dir) / 'http-server.log'
@@ -321,7 +327,7 @@ def run_web_server(q, log_filepath, build_dir):
 if (__name__ == '__main__'
         and multiprocessing.current_process().name == 'MainProcess'
         and not hasattr(sys, "_pytest_session")):
-    with spawn_web_server(BUILD_PATH):
+    with spawn_web_server():
         # run forever
         while True:
             time.sleep(1)
