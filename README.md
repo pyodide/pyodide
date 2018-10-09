@@ -15,7 +15,8 @@ See [the demo](https://iodide.io/pyodide-demo/python.html)
 
 # Building
 
-These instructions were tested on Linux. OSX should be mostly the same.
+Building is easiest on Linux. For other platforms, we recommend using
+the Docker image (described below) to build Pyodide.
 
 Make sure the prerequisites for [emsdk](https://github.com/juj/emsdk) are
 installed. Pyodide will build a custom, patched version of emsdk, so there is no
@@ -32,6 +33,22 @@ Additional build prerequisites are:
 
 
 `make`
+
+## Using Docker
+
+We provide a Debian-based Docker image on Docker Hub with the dependencies
+already installed to make it easier to build Pyodide.
+
+1. Install Docker
+
+2. From a git checkout of Pyodide, run `./run_docker`
+
+3. cd `/src`
+
+4. Run `make` to build.
+
+You can edit the files in your source checkout on your host machine, and then
+repeatedly run `make` inside the Docker environment to test your changes.
 
 # Testing
 
