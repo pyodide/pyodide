@@ -34,7 +34,7 @@ _runPython(char* code)
 }
 
 int
-_findImports(char *code)
+_findImports(char* code)
 {
   PyObject* py_code;
   py_code = PyUnicode_FromString(code);
@@ -42,8 +42,7 @@ _findImports(char *code)
     return pythonexc2js();
   }
 
-  PyObject* ret =
-    PyObject_CallFunctionObjArgs(find_imports, py_code, NULL);
+  PyObject* ret = PyObject_CallFunctionObjArgs(find_imports, py_code, NULL);
 
   if (ret == NULL) {
     return pythonexc2js();
@@ -55,7 +54,8 @@ _findImports(char *code)
 }
 
 EM_JS(int, runpython_init_js, (), {
-  Module._runPythonInternal = function(pycode) {
+  Module._runPythonInternal = function(pycode)
+  {
     var idresult = Module.__runPython(pycode);
     var jsresult = Module.hiwire_get_value(idresult);
     Module.hiwire_decref(idresult);
@@ -77,21 +77,18 @@ EM_JS(int, runpython_init_js, (), {
     var jsimports = Module.hiwire_get_value(idimports);
     Module.hiwire_decref(idimports);
 
-    var internal = function() {
-      return Module._runPythonInternal(pycode);
-    };
+    var internal = function() { return Module._runPythonInternal(pycode); };
 
     if (jsimports.length) {
       var packages = window.pyodide._module.packages.dependencies;
-      var packageFilter = function(name) {
+      var packageFilter = function(name)
+      {
         return Object.prototype.hasOwnProperty(packages, name);
       };
       jsimports = jsimports.filter(packageFilter);
       return Module.loadPackage(jsimports, messageCallback).then(internal);
     } else {
-      var resolve = function(resolve) {
-        return resolve();
-      };
+      var resolve = function(resolve) { return resolve(); };
       return new Promise(resolve).then(internal);
     }
   };
