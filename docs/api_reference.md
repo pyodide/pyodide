@@ -49,19 +49,19 @@ Either the resulting object or `None`.
 
 Load a package or a list of packages over the network.
 
-This makes the files for the package available in the virtual filesystem.  
+This makes the files for the package available in the virtual filesystem.
 The package needs to be imported from Python before it can be used.
 
 *Parameters*
 
-| name    | type            | description                           |
-|---------|-----------------|---------------------------------------|
-| *names* | {String, Array} | package name, or URL. Can be either a single element, or an array.          |
-
+| name              | type            | description                           |
+|-------------------|-----------------|---------------------------------------|
+| *names*           | {String, Array} | package name, or URL. Can be either a single element, or an array.          |
+| *messageCallback* | function        | A callback, called with progress messages. (optional) |
 
 *Returns*
 
-Loading is asynchronous, therefore, this returns a promise.
+Loading is asynchronous, therefore, this returns a `Promise`.
 
 
 ### pyodide.loadedPackage
@@ -135,6 +135,43 @@ Runs a string of code. The last part of the string may be an expression, in whic
 | name       | type    | description                     |
 |------------|---------|---------------------------------|
 | *jsresult* | *any*   | Result, converted to Javascript |
+
+
+### pyodide.runPythonAsync(code, messageCallback)
+
+Runs Python code, possibly asynchronously loading any known packages that the code
+chunk imports.
+
+For example, given the following code chunk
+
+```python
+import numpy as np
+x = np.array([1, 2, 3])
+```
+
+pyodide will first call `pyodide.loadPackage(['numpy'])`, and then run the code
+chunk, returning the result. Since package fetching must happen asyncronously,
+this function returns a `Promise` which resolves to the output. For example, to
+use:
+
+```javascript
+pyodide.runPythonAsync(code, messageCallback)
+  .then((output) => handleOutput(output))
+```
+
+*Parameters*
+
+| name              | type     | description                    |
+|-------------------|----------|--------------------------------|
+| *code*            | String   | Python code to evaluate        |
+| *messageCallback* | function | Callback given status messages |
+|                   |          | (optional)                     |
+
+*Returns*
+
+| name       | type    | description                              |
+|------------|---------|------------------------------------------|
+| *result*   | Promise | Resolves to the result of the code chunk |
 
 
 ### pyodide.version()
