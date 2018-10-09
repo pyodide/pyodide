@@ -1,2 +1,2 @@
 #!/bin/sh
-docker run -v $PWD:/src --user root -e NB_UID=$UID -e NB_GID+$GID -it registry.hub.docker.com/mdboom/pyodide:0.1.1 /bin/bash
+docker run --rm -v $PWD:/src --user root -e NB_UID=$UID -e NB_GID+$GID -it iodide/pyodide:0.2.0 /bin/bash
