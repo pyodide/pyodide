@@ -13,7 +13,9 @@ source:
 
   patches:
     - patches/disable_modules_with_blas.patch
+    - patches/disable_modules_global_cpp_namespace_issue.patch
     - patches/fix-build-gcc5-a80460.patch
+    - patches/force_malloc.patch
 
 build:
   cflags: -I../../CLAPACK-WA/F2CLIBS/libf2c/ -Wno-implicit-function-declaration

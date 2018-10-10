@@ -1,0 +1,15 @@
+diff --git a/scipy/optimize/zeros.c b/scipy/optimize/zeros.c
+index e557f37cb..d450b3ed4 100644
+--- a/scipy/optimize/zeros.c
++++ b/scipy/optimize/zeros.c
+@@ -193,6 +193,10 @@ PyObject *PyInit__zeros(void)
+ {
+     PyObject *m;
+ 
++    volatile long x;
++    x = (long)malloc(0);
++    free((void*)x);
++
+     m = PyModule_Create(&moduledef);
+ 
+     return m;
