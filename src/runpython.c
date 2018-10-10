@@ -77,7 +77,8 @@ EM_JS(int, runpython_init_js, (), {
     var jsimports = Module.hiwire_get_value(idimports);
     Module.hiwire_decref(idimports);
 
-    var internal = function(resolve, reject) {
+    var internal = function(resolve, reject)
+    {
       try {
         resolve(Module._runPythonInternal(pycode));
       } catch (e) {
@@ -86,19 +87,21 @@ EM_JS(int, runpython_init_js, (), {
     };
 
     if (jsimports.length) {
-      var packageNames = window.pyodide._module.packages.import_name_to_package_name;
+      var packageNames =
+        window.pyodide._module.packages.import_name_to_package_name;
       var packages = {};
       for (var i = 0; i < jsimports.length; ++i) {
         var name = jsimports[i];
+        // clang-format off
         if (packageNames[name] !== undefined) {
+          // clang-format on
           packages[packageNames[name]] = undefined;
         }
       }
       if (Object.keys(packages).length) {
-        var runInternal = function() {
-          return new Promise(internal);
-        };
-        return Module.loadPackage(Object.keys(packages), messageCallback).then(runInternal);
+        var runInternal = function() { return new Promise(internal); };
+        return Module.loadPackage(Object.keys(packages), messageCallback)
+          .then(runInternal);
       }
     }
     return new Promise(internal);
