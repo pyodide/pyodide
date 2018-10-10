@@ -34,6 +34,7 @@ def build_packages(packagesdir, outputdir, args):
     # We have to build the packages in the correct order (dependencies first),
     # so first load in all of the package metadata and build a dependency map.
     dependencies = {}
+    import_name_to_package_name = {}
     for pkgdir in packagesdir.iterdir():
         pkgpath = pkgdir / 'meta.yaml'
         if pkgdir.is_dir() and pkgpath.is_file():
@@ -41,6 +42,9 @@ def build_packages(packagesdir, outputdir, args):
             name = pkg['package']['name']
             reqs = pkg.get('requirements', {}).get('run', [])
             dependencies[name] = reqs
+            imports = pkg.get('test', {}).get('imports', [name])
+            for imp in imports:
+                import_name_to_package_name[imp] = name
 
     for pkgname in dependencies.keys():
         build_package(pkgname, dependencies, packagesdir, outputdir, args)
@@ -51,7 +55,10 @@ def build_packages(packagesdir, outputdir, args):
 
     # This is done last so the Makefile can use it as a completion token.
     with open(outputdir / 'packages.json', 'w') as fd:
-        json.dump({'dependencies': dependencies}, fd)
+        json.dump({
+            'dependencies': dependencies,
+            'import_name_to_package_name': import_name_to_package_name,
+        }, fd)
 
 
 def make_parser(parser):
