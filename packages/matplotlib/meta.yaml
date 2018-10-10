@@ -41,3 +41,4 @@ requirements:
 test:
   imports:
     - matplotlib
+    - mpl_toolkits
