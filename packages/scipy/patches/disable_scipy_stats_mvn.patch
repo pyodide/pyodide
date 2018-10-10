@@ -1,0 +1,23 @@
+commit fcf3b0c9e36e81ed52a7ad4eab7497b2e8322759
+Author: Roman Yurchak <rth.yurchak@pm.me>
+Date:   Wed Oct 10 14:47:12 2018 +0200
+
+    Disable scipy.stats.mvn
+
+diff --git a/scipy/stats/setup.py b/scipy/stats/setup.py
+index f1a02df4e..7366ec12d 100755
+--- a/scipy/stats/setup.py
++++ b/scipy/stats/setup.py
+@@ -32,9 +32,9 @@ def configuration(parent_package='',top_path=None):
+     )
+ 
+     # add mvn module
+-    config.add_extension('mvn',
+-        sources=['mvn.pyf','mvndst.f'],
+-    )
++    #config.add_extension('mvn',
++    #    sources=['mvn.pyf','mvndst.f'],
++    #)
+ 
+     return config
+ 

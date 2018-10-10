@@ -12,13 +12,18 @@ source:
   sha256: bf22383d9e2526ffdc53a6c7d3d66dab45a86291ed35d8e281bd1a5d2c34187b
 
   patches:
+    # these patches can be found as commits in
+    #    https://github.com/rth/scipy/tree/0.17.1-pyodide
+    # on top of the v0.17.1 tag
     - patches/disable_modules_with_blas.patch
     - patches/disable_modules_global_cpp_namespace_issue.patch
     - patches/fix-build-gcc5-a80460.patch
     - patches/force_malloc.patch
+    - patches/disable_scipy_stats_mvn.patch
+    - patches/skip-scipy-special-_ufuncs.patch
 
 build:
-  cflags: -I../../CLAPACK-WA/F2CLIBS/libf2c/ -Wno-implicit-function-declaration
+  cflags: -I/home/rth/src/pyodide/packages/scipy/CLAPACK-WA/INCLUDE -Wno-implicit-function-declaration
   cxxflags:
 
 requirements:
