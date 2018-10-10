@@ -77,20 +77,31 @@ EM_JS(int, runpython_init_js, (), {
     var jsimports = Module.hiwire_get_value(idimports);
     Module.hiwire_decref(idimports);
 
-    var internal = function() { return Module._runPythonInternal(pycode); };
+    var internal = function(resolve, reject) {
+      try {
+        resolve(Module._runPythonInternal(pycode));
+      } catch (e) {
+        reject(e);
+      }
+    };
 
     if (jsimports.length) {
-      var packages = window.pyodide._module.packages.dependencies;
-      var packageFilter = function(name)
-      {
-        return Object.prototype.hasOwnProperty(packages, name);
-      };
-      jsimports = jsimports.filter(packageFilter);
-      return Module.loadPackage(jsimports, messageCallback).then(internal);
-    } else {
-      var resolve = function(resolve) { return resolve(); };
-      return new Promise(resolve).then(internal);
+      var packageNames = window.pyodide._module.packages.import_name_to_package_name;
+      var packages = {};
+      for (var i = 0; i < jsimports.length; ++i) {
+        var name = jsimports[i];
+        if (packageNames[name] !== undefined) {
+          packages[packageNames[name]] = undefined;
+        }
+      }
+      if (Object.keys(packages).length) {
+        var runInternal = function() {
+          return new Promise(internal);
+        };
+        return Module.loadPackage(Object.keys(packages), messageCallback).then(runInternal);
+      }
     }
+    return new Promise(internal);
   };
 });
 

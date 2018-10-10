@@ -442,3 +442,73 @@ def test_recursive_dict(selenium_standalone):
         """
     )
     selenium_standalone.run_js("x = pyodide.pyimport('x')")
+
+
+def test_runpythonasync(selenium_standalone):
+    output = selenium_standalone.run_async(
+        """
+        import numpy as np
+        np.zeros(5)
+        """
+    )
+    assert list(output) == [0, 0, 0, 0, 0]
+
+
+def test_runpythonasync_different_package_name(selenium_standalone):
+    output = selenium_standalone.run_async(
+        """
+        import dateutil
+        dateutil.__version__
+        """
+    )
+    assert isinstance(output, str)
+
+
+def test_runpythonasync_no_imports(selenium_standalone):
+    output = selenium_standalone.run_async(
+        """
+        42
+        """
+    )
+    assert output == 42
+
+
+def test_runpythonasync_missing_import(selenium_standalone):
+    try:
+        selenium_standalone.run_async(
+            """
+            import foo
+            """
+        )
+    except selenium_standalone.JavascriptException as e:
+        assert "ModuleNotFoundError" in str(e)
+    else:
+        assert False
+
+
+def test_runpythonasync_exception(selenium_standalone):
+    try:
+        selenium_standalone.run_async(
+            """
+            42 / 0
+            """
+        )
+    except selenium_standalone.JavascriptException as e:
+        assert "ZeroDivisionError" in str(e)
+    else:
+        assert False
+
+
+def test_runpythonasync_exception_after_import(selenium_standalone):
+    try:
+        selenium_standalone.run_async(
+            """
+            import numpy as np
+            x = np.empty(5)
+            42 / 0
+            """
+        )
+    except selenium_standalone.JavascriptException as e:
+        assert "ZeroDivisionError" in str(e)
+    else:
+        assert False
