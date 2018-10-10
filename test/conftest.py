@@ -114,8 +114,10 @@ class SeleniumWrapper:
             """
             window.done = false;
             pyodide.runPythonAsync({!r})
-              .then(function(output) {{ window.output = output; window.error = false; }},
-                    function(output) {{ window.output = output; window.error = true; }})
+              .then(function(output)
+                      {{ window.output = output; window.error = false; }},
+                    function(output)
+                      {{ window.output = output; window.error = true; }})
               .finally(() => window.done = true);
             """.format(code)
         )
