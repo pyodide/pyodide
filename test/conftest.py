@@ -105,6 +105,37 @@ class SeleniumWrapper:
         return self.run_js(
             'return pyodide.runPython({!r})'.format(code))
 
+    def run_async(self, code):
+        from selenium.common.exceptions import TimeoutException
+        if isinstance(code, str) and code.startswith('\n'):
+            # we have a multiline string, fix indentation
+            code = textwrap.dedent(code)
+        self.run_js(
+            """
+            window.done = false;
+            pyodide.runPythonAsync({!r})
+              .then(function(output)
+                      {{ window.output = output; window.error = false; }},
+                    function(output)
+                      {{ window.output = output; window.error = true; }})
+              .finally(() => window.done = true);
+            """.format(code)
+        )
+        try:
+            self.wait.until(PackageLoaded())
+        except TimeoutException as exc:
+            _display_driver_logs(self.browser, self.driver)
+            print(self.logs)
+            raise TimeoutException('runPythonAsync timed out')
+        return self.run_js(
+            """
+            if (window.error) {
+              throw window.output;
+            }
+            return window.output;
+            """
+        )
+
     def run_js(self, code):
         if isinstance(code, str) and code.startswith('\n'):
             # we have a multiline string, fix indentation

@@ -2,8 +2,6 @@
 A library of helper utilities for connecting Python to the browser environment.
 """
 
-from js import XMLHttpRequest
-
 import ast
 import io
 
@@ -14,6 +12,8 @@ def open_url(url):
     """
     Fetches a given *url* and returns a io.StringIO to access its contents.
     """
+    from js import XMLHttpRequest
+
     req = XMLHttpRequest.new()
     req.open('GET', url, False)
     req.send(None)
@@ -39,4 +39,22 @@ def eval_code(code, ns):
         return None
 
 
-__all__ = ['open_url', 'eval_code']
+def find_imports(code):
+    """
+    Finds the imports in a string of code and returns a list of their package
+    names.
+    """
+    mod = ast.parse(code)
+    imports = set()
+    for node in ast.walk(mod):
+        if isinstance(node, ast.Import):
+            for name in node.names:
+                name = name.name
+                imports.add(name.split('.')[0])
+        elif isinstance(node, ast.ImportFrom):
+            name = node.module
+            imports.add(name.split('.')[0])
+    return list(imports)
+
+
+__all__ = ['open_url', 'eval_code', 'find_imports']

@@ -75,7 +75,7 @@ var languagePluginLoader = new Promise((resolve, reject) => {
   }
   // clang-format on
 
-  let _loadPackage = (names) => {
+  let _loadPackage = (names, messageCallback) => {
     // DFS to find all dependencies of the requested packages
     let packages = window.pyodide._module.packages.dependencies;
     let loadedPackages = window.pyodide.loadedPackages;
@@ -140,13 +140,17 @@ var languagePluginLoader = new Promise((resolve, reject) => {
         resolve('No new packages to load');
       }
 
+      const packageList = Array.from(Object.keys(toLoad)).join(', ');
+      if (messageCallback !== undefined) {
+        messageCallback(`Loading ${packageList}`);
+      }
+
       window.pyodide._module.monitorRunDependencies = (n) => {
         if (n === 0) {
           for (let package in toLoad) {
             window.pyodide.loadedPackages[package] = toLoad[package];
           }
           delete window.pyodide._module.monitorRunDependencies;
-          const packageList = Array.from(Object.keys(toLoad)).join(', ');
           if (!isFirefox) {
             preloadWasm().then(() => {resolve(`Loaded ${packageList}`)});
           } else {
@@ -181,10 +185,11 @@ var languagePluginLoader = new Promise((resolve, reject) => {
     return promise;
   };
 
-  let loadPackage = (names) => {
+  let loadPackage = (names, messageCallback) => {
     /* We want to make sure that only one loadPackage invocation runs at any
      * given time, so this creates a "chain" of promises. */
-    loadPackagePromise = loadPackagePromise.then(() => _loadPackage(names));
+    loadPackagePromise =
+        loadPackagePromise.then(() => _loadPackage(names, messageCallback));
     return loadPackagePromise;
   };
 
@@ -224,6 +229,7 @@ var languagePluginLoader = new Promise((resolve, reject) => {
     'pyimport',
     'repr',
     'runPython',
+    'runPythonAsync',
     'version',
   ];
 
