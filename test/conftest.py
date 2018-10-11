@@ -16,7 +16,8 @@ import shutil
 TEST_PATH = pathlib.Path(__file__).parents[0].resolve()
 BUILD_PATH = TEST_PATH / '..' / 'build'
 
-sys.path.append(TEST_PATH / '..')
+sys.path.append(str(TEST_PATH / '..'))
+print(sys.path)
 
 from pyodide_build._fixes import _selenium_is_connectable  # noqa: E402
 import selenium.webdriver.common.utils  # noqa: E402

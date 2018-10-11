@@ -19,6 +19,8 @@ jobs:
       - run:
            name: dependencies
            command: |
+             sudo apt-get install gfortran f2c
+
              # Download BLAS/LAPACK
              git clone https://github.com/adrianbg/CLAPACK-WA.git packages/scipy/CLAPACK-WA
 

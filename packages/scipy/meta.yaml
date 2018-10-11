@@ -20,10 +20,11 @@ source:
     - patches/fix-build-gcc5-a80460.patch
     - patches/force_malloc.patch
     - patches/disable_scipy_stats_mvn.patch
-    - patches/skip-scipy-special-_ufuncs.patch
+    - patches/skip-fortran-fails-to-link.patch
+    - patches/disable_FuncCastEmulation_num_params.patch
 
 build:
-  cflags: -I/home/rth/src/pyodide/packages/scipy/CLAPACK-WA/INCLUDE -Wno-implicit-function-declaration
+  cflags: -I../../CLAPACK-WA/INCLUDE -Wno-implicit-function-declaration
   cxxflags:
 
 requirements:

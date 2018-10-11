@@ -1,0 +1,77 @@
+commit dbfb06104aa7f3f36737f394b66a76a29018d5e7
+Author: Roman Yurchak <rth.yurchak@pm.me>
+Date:   Fri Oct 12 10:36:48 2018 +0200
+
+    Disable F2C function that need larger FuncCastEmulation::NUM_PARAMS
+    
+    scipy/interpolate/_fitpack seems to require NUM_PARAMS
+    43 then 45 then 47 (each requiring to rebuild emsdk), so disabling this
+    for now.
+    scipy/ord/_odrpack requires NUM_PARAMS 57
+
+diff --git a/scipy/interpolate/setup.py b/scipy/interpolate/setup.py
+index 2c8279403..9934376e8 100755
+--- a/scipy/interpolate/setup.py
++++ b/scipy/interpolate/setup.py
+@@ -22,18 +22,18 @@ def configuration(parent_package='',top_path=None):
+                          sources=['_ppoly.c'],
+                          **lapack_opt)
+ 
+-    config.add_extension('_fitpack',
+-                         sources=['src/_fitpackmodule.c'],
+-                         libraries=['fitpack'],
+-                         depends=(['src/__fitpack.h','src/multipack.h']
+-                                  + fitpack_src)
+-                         )
+-
+-    config.add_extension('dfitpack',
+-                         sources=['src/fitpack.pyf'],
+-                         libraries=['fitpack'],
+-                         depends=fitpack_src,
+-                         )
++    #config.add_extension('_fitpack',
++    #                     sources=['src/_fitpackmodule.c'],
++    #                     libraries=['fitpack'],
++    #                     depends=(['src/__fitpack.h','src/multipack.h']
++    #                              + fitpack_src)
++    #                     )
++
++    #config.add_extension('dfitpack',
++    #                     sources=['src/fitpack.pyf'],
++    #                     libraries=['fitpack'],
++    #                     depends=fitpack_src,
++    #                     )
+ 
+     #config.add_extension('_interpolate',
+     #                     sources=['src/_interpolate.cpp'],
+diff --git a/scipy/odr/setup.py b/scipy/odr/setup.py
+index 9974dfac6..d7560896f 100644
+--- a/scipy/odr/setup.py
++++ b/scipy/odr/setup.py
+@@ -22,18 +22,18 @@ def configuration(parent_package='', top_path=None):
+         libodr_files.append('d_lpkbls.f')
+ 
+     odrpack_src = [join('odrpack', x) for x in libodr_files]
+-    config.add_library('odrpack', sources=odrpack_src)
++    #config.add_library('odrpack', sources=odrpack_src)
+ 
+     sources = ['__odrpack.c']
+     libraries = ['odrpack'] + blas_info.pop('libraries', [])
+     include_dirs = ['.'] + blas_info.pop('include_dirs', [])
+-    config.add_extension('__odrpack',
+-        sources=sources,
+-        libraries=libraries,
+-        include_dirs=include_dirs,
+-        depends=(['odrpack.h'] + odrpack_src),
+-        **blas_info
+-    )
++    #config.add_extension('__odrpack',
++    #    sources=sources,
++    #    libraries=libraries,
++    #    include_dirs=include_dirs,
++    #    depends=(['odrpack.h'] + odrpack_src),
++    #    **blas_info
++    #)
+ 
+     config.add_data_dir('tests')
+     return config
