@@ -21,7 +21,6 @@ source:
     - patches/force_malloc.patch
     - patches/disable_scipy_stats_mvn.patch
     - patches/skip-fortran-fails-to-link.patch
-    - patches/disable_FuncCastEmulation_num_params.patch
 
 build:
   cflags: -I../../CLAPACK-WA/INCLUDE -Wno-implicit-function-declaration
