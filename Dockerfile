@@ -4,7 +4,7 @@ FROM circleci/python:3.7.0-stretch-browsers
 # Set up the Debian testing repo, and then install g++ from there...
 RUN sudo bash -c "echo \"deb http://ftp.us.debian.org/debian testing main contrib non-free\" >> /etc/apt/sources.list" \
   && sudo apt-get update \
-  && sudo apt-get install node-less cmake build-essential clang-format-6.0 uglifyjs chromium ccache \
+  && sudo apt-get install node-less cmake build-essential clang-format-6.0 uglifyjs chromium ccache libncurses6 \
   && sudo apt-get install -t testing g++-8 \
   && sudo update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-6 60 --slave /usr/bin/g++ g++ /usr/bin/g++-6 \
   && sudo update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-8 80 --slave /usr/bin/g++ g++ /usr/bin/g++-8 \

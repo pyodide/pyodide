@@ -77,6 +77,9 @@ def make_symlinks(env):
     exec_path = Path(__file__).resolve()
     for symlink in symlinks:
         symlink_path = ROOTDIR / symlink
+        if os.path.lexists(symlink_path) and not symlink_path.exists():
+            # remove broken symlink so it can be re-created
+            symlink_path.unlink()
         if not symlink_path.exists():
             symlink_path.symlink_to(exec_path)
         if symlink == 'c++':
