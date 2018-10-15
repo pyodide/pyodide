@@ -73,8 +73,6 @@ jobs:
     <<: *defaults
     steps:
       - checkout
-      - attach_workspace:
-          at: .
       - run:
           name: test
           command: |
