@@ -69,6 +69,17 @@ jobs:
           command: |
             pytest test -v -k chrome
 
+  test-python:
+    <<: *defaults
+    steps:
+      - checkout
+      - attach_workspace:
+          at: .
+      - run:
+          name: test
+          command: |
+            pytest test -v -k 'not (chrome or firefox)'
+
   benchmark:
     <<: *defaults
     steps:
@@ -106,6 +117,7 @@ workflows:
       - test-firefox:
           requires:
             - build
+      - test-python
       - benchmark:
           requires:
             - build
@@ -113,6 +125,7 @@ workflows:
           requires:
             - test-chrome
             - test-firefox
+            - test-python
           filters:
             branches:
               only: master
