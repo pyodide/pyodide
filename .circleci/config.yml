@@ -3,7 +3,7 @@ version: 2
 defaults: &defaults
   working_directory: ~/repo
   docker:
-    - image: iodide/pyodide-env:0.2.0
+    - image: iodide/pyodide-env:0.3.0
 
 jobs:
   build:
