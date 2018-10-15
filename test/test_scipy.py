@@ -19,7 +19,7 @@ def test_scipy_import(selenium_standalone):
         """)
 
     # supported modules
-    for module in ['constants', 'fftpack']:
+    for module in ['constants', 'fftpack', 'odr']:
         selenium.run(f"import scipy.{module}")
 
     # not yet built modules
@@ -30,7 +30,6 @@ def test_scipy_import(selenium_standalone):
                    'interpolate',  # needs linalg
                    'linalg',
                    'misc',   # needs special
-                   'odrpack',
                    'signal',  # needs special
                    'ndimage',  # needs special
                    'stats',  # need special

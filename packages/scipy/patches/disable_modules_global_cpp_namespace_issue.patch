@@ -1,28 +1,9 @@
-commit 15e9f01458eec8cf9fc43de6646ee75cfa361859
+commit 0da8a50bd566ee7810ed1888112cc9c9a1b27d9e
 Author: Roman Yurchak <rth.yurchak@pm.me>
 Date:   Wed Oct 10 14:12:22 2018 +0200
 
     Remove modules with global C++ namespace issue
 
-diff --git a/scipy/interpolate/setup.py b/scipy/interpolate/setup.py
-index b42d3345c..2c8279403 100755
---- a/scipy/interpolate/setup.py
-+++ b/scipy/interpolate/setup.py
-@@ -35,10 +35,10 @@ def configuration(parent_package='',top_path=None):
-                          depends=fitpack_src,
-                          )
- 
--    config.add_extension('_interpolate',
--                         sources=['src/_interpolate.cpp'],
--                         include_dirs=['src'],
--                         depends=['src/interpolate.h'])
-+    #config.add_extension('_interpolate',
-+    #                     sources=['src/_interpolate.cpp'],
-+    #                     include_dirs=['src'],
-+    #                     depends=['src/interpolate.h'])
- 
-     config.add_data_dir('tests')
- 
 diff --git a/scipy/sparse/setup.py b/scipy/sparse/setup.py
 index ecf8ae5c6..27fd128c3 100755
 --- a/scipy/sparse/setup.py
