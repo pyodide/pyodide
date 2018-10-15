@@ -10,22 +10,25 @@ sys.path.append(str(Path(__file__).parents[1]))
 from pyodide_build.common import HOSTPYTHON   # noqa: E402
 
 
-def test_scipy_import(selenium_standalone):
+def test_scipy_import(selenium_standalone, request):
     from selenium.common.exceptions import JavascriptException
     selenium = selenium_standalone
+
+    if selenium.browser == 'chrome':
+        request.applymarker(pytest.mark.xfail(
+            run=False, reason='chrome not supported'))
     selenium.load_package("scipy")
     selenium.run("""
         import scipy
         """)
 
     # supported modules
-    for module in ['constants', 'fftpack', 'odr']:
+    for module in ['constants', 'fftpack', 'odr', 'sparse']:
         selenium.run(f"import scipy.{module}")
 
     # not yet built modules
     for module in ['cluster',  # needs sparse
                    'spatial',  # needs sparse
-                   'sparse',
                    'integrate',  # needs special
                    'interpolate',  # needs linalg
                    'linalg',

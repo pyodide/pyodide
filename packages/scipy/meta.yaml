@@ -16,11 +16,12 @@ source:
     #    https://github.com/rth/scipy/tree/0.17.1-pyodide
     # on top of the v0.17.1 tag
     - patches/disable_modules_with_blas.patch
-    - patches/disable_modules_global_cpp_namespace_issue.patch
     - patches/fix-build-gcc5-a80460.patch
     - patches/force_malloc.patch
     - patches/disable_scipy_stats_mvn.patch
     - patches/skip-fortran-fails-to-link.patch
+    - patches/dummy_threading.patch
+    - patches/skip-blas-imports.patch
 
 build:
   cflags: -I../../CLAPACK-WA/INCLUDE -Wno-implicit-function-declaration
