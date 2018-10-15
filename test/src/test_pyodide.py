@@ -13,5 +13,6 @@ def test_find_imports():
            import six
            import numpy as np
            from scipy import sparse
+           import matplotlib.pyplot as plt
            """))
-    assert set(res) == {'numpy', 'scipy', 'six'}
+    assert set(res) == {'numpy', 'scipy', 'six', 'matplotlib'}
