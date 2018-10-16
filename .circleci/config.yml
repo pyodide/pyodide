@@ -74,9 +74,13 @@ jobs:
     steps:
       - checkout
       - run:
+          name: deps
+          command: |
+            sudo pip install pytest-cov
+      - run:
           name: test
           command: |
-            pytest test -v -k 'not (chrome or firefox)'
+            pytest test -v -k 'not (chrome or firefox)' --cov=pyodide_build --cov=pyodide
 
   benchmark:
     <<: *defaults

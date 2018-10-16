@@ -105,7 +105,7 @@ def capture_compile(args):
         sys.exit(result.returncode)
 
 
-def handle_command(line, args):
+def handle_command(line, args, pretend=False):
     # This is a special case to skip the compilation tests in numpy that aren't
     # actually part of the build
     for arg in line:
@@ -156,9 +156,10 @@ def handle_command(line, args):
 
     print(' '.join(new_args))
 
-    result = subprocess.run(new_args)
-    if result.returncode != 0:
-        sys.exit(result.returncode)
+    if not pretend:
+        result = subprocess.run(new_args)
+        if result.returncode != 0:
+            sys.exit(result.returncode)
 
     # Emscripten .so files shouldn't have the native platform slug
     if shared:
@@ -169,7 +170,9 @@ def handle_command(line, args):
             if renamed.endswith(ext):
                 renamed = renamed[:-len(ext)] + '.so'
                 break
-        os.rename(output, renamed)
+        if not pretend:
+            os.rename(output, renamed)
+    return new_args
 
 
 def replay_compile(args):
