@@ -23,17 +23,15 @@ def test_scipy_import(selenium_standalone, request):
         """)
 
     # supported modules
-    for module in ['constants', 'fftpack', 'odr', 'sparse',
-                   'linalg',  # heavily patched
-                   'misc', 'ndimage', 'special'
+    for module in ['cluster', 'constants', 'fftpack', 'odr', 'sparse',
+                   'interpolate',
+                   'linalg',
+                   'misc', 'ndimage', 'spatial', 'special'
                    ]:
         selenium.run(f"import scipy.{module}")
 
     # not yet built modules
-    for module in ['cluster',  # needs sparse
-                   'spatial',  # needs sparse
-                   'integrate',  # needs special
-                   'interpolate',  # needs linalg
+    for module in ['integrate',  # needs special
                    'signal',  # needs special
                    'stats',  # need special
                    'optimize',  # needs _odepack

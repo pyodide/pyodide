@@ -1,0 +1,27 @@
+commit 6d4c53df9fecd236cb569b5f1997908af1daea6b
+Author: Roman Yurchak <rth.yurchak@pm.me>
+Date:   Thu Oct 25 15:28:05 2018 +0200
+
+    Fix mmap imports
+
+diff --git a/scipy/io/netcdf.py b/scipy/io/netcdf.py
+index 841e97830..f06759015 100644
+--- a/scipy/io/netcdf.py
++++ b/scipy/io/netcdf.py
+@@ -39,7 +39,6 @@ __all__ = ['netcdf_file']
+ import warnings
+ import weakref
+ from operator import mul
+-import mmap as mm
+ 
+ import numpy as np
+ from numpy.compat import asbytes, asstr
+@@ -219,6 +218,8 @@ class netcdf_file(object):
+     def __init__(self, filename, mode='r', mmap=None, version=1,
+                  maskandscale=False):
+         """Initialize netcdf_file from fileobj (str or file-like)."""
++        import mmap as mm
++
+         if mode not in 'rwa':
+             raise ValueError("Mode must be either 'r', 'w' or 'a'.")
+ 

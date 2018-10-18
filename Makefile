@@ -15,6 +15,7 @@ OPTFLAGS=-O3
 CFLAGS=$(OPTFLAGS) -g -I$(PYTHONINCLUDE) -Wno-warn-absolute-paths
 CXXFLAGS=$(CFLAGS) -std=c++14
 
+
 # __ZNKSt3__220__vector_base_commonILb1EE20__throw_length_errorEv is in
 # EXPORTED_FUNCTIONS to keep the C++ standard library in the core, even though
 # there isn't any C++ there, for the sake of loading dynamic modules written in
@@ -134,6 +135,7 @@ clean:
 	rm -fr src/*.bc
 	make -C packages clean
 	make -C six clean
+	make -C packages/scipy/CLAPACK-WA cleanall
 	echo "The Emsdk and CPython are not cleaned. cd into those directories to do so."
 
 
@@ -208,8 +210,14 @@ $(LZ4LIB):
 $(SIX_LIBS): $(CPYTHONLIB)
 	make -C six
 
-$(LAPACK): $(CPYTHONLIB)
-	emmake make -C packages/scipy/CLAPACK-WA
+clapack: $(CPYTHONLIB)
+	# We build BLAS/LAPACK only for target.
+	# On host we include -LCLAPACK-WA path which has no effect on host.
+	# On target it gets rewritten by pywasmcross to the full patch of
+	# blas_WA.bc, lapack_WA.bc which are linked statically in scipy
+	# in each module that needs them.
+	make -C $(LAPACK_DIR)F2CLIBS/libf2c/ arith.h
+	emmake make -C $(LAPACK_DIR)
 
 $(CLAPACK): $(CPYTHONLIB)
 	make -C CLAPACK
@@ -217,7 +225,6 @@ $(CLAPACK): $(CPYTHONLIB)
 
 build/packages.json: $(CPYTHONLIB) $(CLAPACK)
 	make -C packages
-
 
 emsdk/emsdk/.complete:
 	make -C emsdk
