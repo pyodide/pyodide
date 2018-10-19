@@ -1,4 +1,10 @@
-def test_joblib_numpy_pickle(selenium):
+import pytest
+
+
+def test_joblib_numpy_pickle(selenium, request):
+    if selenium.browser == 'chrome':
+        request.applymarker(pytest.mark.xfail(
+            run=False, reason='chrome not supported'))
     selenium.load_package(['numpy', 'joblib'])
     selenium.run("""
        import joblib
