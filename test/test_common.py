@@ -43,3 +43,4 @@ def test_import(name, selenium_standalone):
             selenium_standalone.run('import %s' % import_name)
         except Exception as e:
             print(selenium_standalone.logs)
+            raise
