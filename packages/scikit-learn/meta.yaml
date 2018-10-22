@@ -1,0 +1,28 @@
+package:
+  name: scikit-learn
+  version: 0.20.0
+
+source:
+  url: https://pypi.io/packages/source/s/scikit-learn/scikit-learn-0.20.0.tar.gz
+  sha256: 97d1d971f8ec257011e64b7d655df68081dd3097322690afa1a71a1d755f8c18
+
+  patches:
+   #- patches/unvendor-joblib.patch
+   - patches/use-site-joblib.patch
+
+build:
+  cflags: -Wno-implicit-function-declaration
+
+requirements:
+  run:
+    - numpy   # TODO: add scipy, joblib once the corresponding PRs are merged
+
+test:
+  imports:
+    - sklearn
+    - sklearn.cluster
+    - sklearn.compose
+    - sklearn.covariance
+    - sklearn.cross_decomposition
+    - sklearn.datasets
+    - sklearn.decomposition

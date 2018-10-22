@@ -23,7 +23,7 @@ def registered_packages_meta():
             for name in packages}
 
 
-UNSUPPORTED_PACKAGES = {'chrome': ['pandas', 'scipy'],
+UNSUPPORTED_PACKAGES = {'chrome': ['pandas', 'scipy', 'scikit-learn'],
                         'firefox': []}
 
 

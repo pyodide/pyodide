@@ -24,6 +24,12 @@ jobs:
           name: build
           no_output_timeout: 1200
           command: |
+
+            # download scipy package from https://github.com/iodide-project/pyodide/pull/211
+            mkdir -p build
+            wget -q -O build/scipy.js https://1463-122663163-gh.circle-artifacts.com/0/home/circleci/repo/build/scipy.js
+            wget -q -O build/scipy.data https://1463-122663163-gh.circle-artifacts.com/0/home/circleci/repo/build/scipy.data
+
             ccache -z
             make
             ccache -s

@@ -1,0 +1,104 @@
+commit 16cf9dc5f79533a121a421b095b6e7ef9ee76e9c
+Author: Roman Yurchak <rth.yurchak@pm.me>
+Date:   Thu Oct 25 16:56:54 2018 +0200
+
+    Use site joblib
+
+diff --git a/sklearn/datasets/species_distributions.py b/sklearn/datasets/species_distributions.py
+index 6d8acddcc..8191048d7 100644
+--- a/sklearn/datasets/species_distributions.py
++++ b/sklearn/datasets/species_distributions.py
+@@ -51,7 +51,7 @@ from .base import _fetch_remote
+ from .base import RemoteFileMetadata
+ from ..utils import Bunch
+ from sklearn.datasets.base import _pkl_filepath
+-from sklearn.externals import joblib
++import joblib
+ 
+ PY3_OR_LATER = sys.version_info[0] >= 3
+ 
+diff --git a/sklearn/ensemble/tests/test_forest.py b/sklearn/ensemble/tests/test_forest.py
+index d7586c286..d1168cdcf 100644
+--- a/sklearn/ensemble/tests/test_forest.py
++++ b/sklearn/ensemble/tests/test_forest.py
+@@ -23,7 +23,11 @@ import pytest
+ 
+ from sklearn.utils import parallel_backend
+ from sklearn.utils import register_parallel_backend
+-from sklearn.externals.joblib.parallel import LokyBackend
++try:
++    from sklearn.externals.joblib.parallel import LokyBackend
++except ImportError:
++    LokyBackend = object
++
+ 
+ from sklearn.utils.testing import assert_almost_equal
+ from sklearn.utils.testing import assert_array_almost_equal
+diff --git a/sklearn/metrics/tests/test_score_objects.py b/sklearn/metrics/tests/test_score_objects.py
+index da04b4215..fc3f6a6b1 100644
+--- a/sklearn/metrics/tests/test_score_objects.py
++++ b/sklearn/metrics/tests/test_score_objects.py
+@@ -40,7 +40,7 @@ from sklearn.datasets import load_diabetes
+ from sklearn.model_selection import train_test_split, cross_val_score
+ from sklearn.model_selection import GridSearchCV
+ from sklearn.multiclass import OneVsRestClassifier
+-from sklearn.externals import joblib
++import joblib
+ 
+ 
+ REGRESSION_SCORERS = ['explained_variance', 'r2',
+diff --git a/sklearn/neighbors/tests/test_kde.py b/sklearn/neighbors/tests/test_kde.py
+index 990942c9e..e9a6c31bd 100644
+--- a/sklearn/neighbors/tests/test_kde.py
++++ b/sklearn/neighbors/tests/test_kde.py
+@@ -10,7 +10,7 @@ from sklearn.pipeline import make_pipeline
+ from sklearn.datasets import make_blobs
+ from sklearn.model_selection import GridSearchCV
+ from sklearn.preprocessing import StandardScaler
+-from sklearn.externals import joblib
++import joblib
+ 
+ 
+ def compute_kernel_slow(Y, X, kernel, h):
+diff --git a/sklearn/tests/test_site_joblib.py b/sklearn/tests/test_site_joblib.py
+index bffd43cc1..df4c96893 100644
+--- a/sklearn/tests/test_site_joblib.py
++++ b/sklearn/tests/test_site_joblib.py
+@@ -1,7 +1,10 @@
+ import os
+ import pytest
+ from sklearn import externals
+-from sklearn.externals import joblib as joblib_vendored
++try:
++    from sklearn.externals import joblib as joblib_vendored
++except ImportError:
++    joblib_vendored = None
+ from sklearn.utils import Parallel, delayed, Memory, parallel_backend
+ 
+ if os.environ.get('SKLEARN_SITE_JOBLIB', False):
+diff --git a/sklearn/utils/testing.py b/sklearn/utils/testing.py
+index 75b378961..b81b9ab58 100644
+--- a/sklearn/utils/testing.py
++++ b/sklearn/utils/testing.py
+@@ -44,7 +44,7 @@ except NameError:
+ 
+ import sklearn
+ from sklearn.base import BaseEstimator
+-from sklearn.externals import joblib
++import joblib
+ from sklearn.utils.fixes import signature
+ from sklearn.utils import deprecated, IS_PYPY, _IS_32BIT
+ 
+diff --git a/sklearn/utils/tests/test_estimator_checks.py b/sklearn/utils/tests/test_estimator_checks.py
+index bf8412b3e..2eebb36b0 100644
+--- a/sklearn/utils/tests/test_estimator_checks.py
++++ b/sklearn/utils/tests/test_estimator_checks.py
+@@ -5,7 +5,7 @@ import numpy as np
+ import scipy.sparse as sp
+ 
+ from sklearn.externals.six.moves import cStringIO as StringIO
+-from sklearn.externals import joblib
++import joblib
+ 
+ from sklearn.base import BaseEstimator, ClassifierMixin
+ from sklearn.utils import deprecated
