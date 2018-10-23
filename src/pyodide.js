@@ -138,6 +138,7 @@ var languagePluginLoader = new Promise((resolve, reject) => {
     let promise = new Promise((resolve, reject) => {
       if (Object.keys(toLoad).length === 0) {
         resolve('No new packages to load');
+        return;
       }
 
       const packageList = Array.from(Object.keys(toLoad)).join(', ');
