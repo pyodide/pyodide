@@ -11,11 +11,11 @@ def _args_wrapper(func):
     """Convert function to take as input / return a string instead of a
     list of arguments
 
-    Also sets pretend=True
+    Also sets dryrun=True
     """
     def _inner(line, *pargs):
         args = line.split()
-        res = func(args, *pargs, pretend=True)
+        res = func(args, *pargs, dryrun=True)
         if hasattr(res, '__len__'):
             return ' '.join(res)
         else:
