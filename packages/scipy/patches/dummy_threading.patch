@@ -1,4 +1,4 @@
-commit 055d7fcf48996f9619ddd68f4ac0ccb611e8706d
+commit cfd6c4b18c5f338842d2ee509bfb2d3a3c6f6439
 Author: Roman Yurchak <rth.yurchak@pm.me>
 Date:   Mon Oct 15 15:40:48 2018 +0200
 
@@ -102,14 +102,14 @@ index ba33fadbe..644a57eaf 100644
  cimport numpy as np
  cimport cython
 diff --git a/scipy/special/_ellip_harm.py b/scipy/special/_ellip_harm.py
-index 6972c2ad1..76a828201 100644
+index 62e50655e..61e9949cc 100644
 --- a/scipy/special/_ellip_harm.py
 +++ b/scipy/special/_ellip_harm.py
 @@ -1,6 +1,6 @@
  from __future__ import division, print_function, absolute_import
  
 -import threading
-+import dummy_threadng as threading
++import dummy_threading as threading
  import numpy as np
  
  from ._ufuncs import _ellip_harm

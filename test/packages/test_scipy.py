@@ -5,7 +5,7 @@ from textwrap import dedent
 
 import pytest
 
-sys.path.append(str(Path(__file__).parents[1]))
+sys.path.append(str(Path(__file__).parents[2]))
 
 from pyodide_build.common import HOSTPYTHON   # noqa: E402
 
@@ -23,7 +23,10 @@ def test_scipy_import(selenium_standalone, request):
         """)
 
     # supported modules
-    for module in ['constants', 'fftpack', 'odr', 'sparse']:
+    for module in ['constants', 'fftpack', 'odr', 'sparse',
+                   'linalg',  # heavily patched
+                   'misc', 'ndimage', 'special'
+                   ]:
         selenium.run(f"import scipy.{module}")
 
     # not yet built modules
@@ -31,13 +34,10 @@ def test_scipy_import(selenium_standalone, request):
                    'spatial',  # needs sparse
                    'integrate',  # needs special
                    'interpolate',  # needs linalg
-                   'linalg',
-                   'misc',   # needs special
                    'signal',  # needs special
-                   'ndimage',  # needs special
                    'stats',  # need special
-                   'optimize',  # needs minpack2
-                   'special']:
+                   'optimize',  # needs _odepack
+                   ]:
         print(module)
         with pytest.raises(JavascriptException) as err:
             selenium.run(f"import scipy.{module}")

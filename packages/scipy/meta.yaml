@@ -22,6 +22,7 @@ source:
     - patches/skip-fortran-fails-to-link.patch
     - patches/dummy_threading.patch
     - patches/skip-blas-imports.patch
+    - patches/skip_ellip_harm_2_pyx_ctypes.patch
 
 build:
   cflags: -I../../CLAPACK-WA/INCLUDE -Wno-implicit-function-declaration

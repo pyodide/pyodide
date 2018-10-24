@@ -19,6 +19,7 @@ jobs:
       - run:
            name: dependencies
            command: |
+             sudo apt-get update
              sudo apt-get install gfortran f2c
 
              # Download BLAS/LAPACK

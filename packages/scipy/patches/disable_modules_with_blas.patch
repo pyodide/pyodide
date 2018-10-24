@@ -1,37 +1,9 @@
-commit 5c2a77219d5bd92c48d8d5d5e71ba28228c282a1
+commit 771537885db80fb664d5671af5048e445b6fa821
 Author: Roman Yurchak <rth.yurchak@pm.me>
 Date:   Mon Oct 8 10:53:11 2018 +0200
 
     Removes files that require LAPACK
 
-diff --git a/scipy/linalg/__init__.py b/scipy/linalg/__init__.py
-index fd02851bf..faa6723d2 100644
---- a/scipy/linalg/__init__.py
-+++ b/scipy/linalg/__init__.py
-@@ -181,13 +181,16 @@ from ._decomp_qz import *
- from .decomp_svd import *
- from .decomp_schur import *
- from ._decomp_polar import *
--from .matfuncs import *
--from .blas import *
--from .lapack import *
--from .special_matrices import *
--from ._solvers import *
--from ._procrustes import *
--from ._decomp_update import *
-+try:
-+    from .matfuncs import *
-+    from .blas import *
-+    from .lapack import *
-+    from .special_matrices import *
-+    from ._solvers import *
-+    from ._procrustes import *
-+    from ._decomp_update import *
-+except ImportError:
-+    pass
- 
- __all__ = [s for s in dir() if not s.startswith('_')]
- 
 diff --git a/scipy/linalg/setup.py b/scipy/linalg/setup.py
 index 2c9b9ba22..035b4bb80 100755
 --- a/scipy/linalg/setup.py
