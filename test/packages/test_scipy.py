@@ -24,18 +24,14 @@ def test_scipy_import(selenium_standalone, request):
 
     # supported modules
     for module in ['cluster', 'constants', 'fftpack', 'odr', 'sparse',
-                   'interpolate',
+                   'interpolate', 'integrate',
                    'linalg',
                    'misc', 'ndimage', 'spatial', 'special'
                    ]:
         selenium.run(f"import scipy.{module}")
 
     # not yet built modules
-    for module in ['integrate',  # needs special
-                   'signal',  # needs special
-                   'stats',  # need special
-                   'optimize',  # needs _odepack
-                   ]:
+    for module in []:
         print(module)
         with pytest.raises(JavascriptException) as err:
             selenium.run(f"import scipy.{module}")

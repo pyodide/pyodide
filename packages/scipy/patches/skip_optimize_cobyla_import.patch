@@ -1,0 +1,20 @@
+commit ca74a1078c3955b06d1ab236bdd13256cb7c2551
+Author: Roman Yurchak <rth.yurchak@pm.me>
+Date:   Thu Oct 25 12:43:50 2018 +0200
+
+    Skip scipy.optimize._cobyla import
+
+diff --git a/scipy/optimize/_minimize.py b/scipy/optimize/_minimize.py
+index 259546035..8b0b6960b 100644
+--- a/scipy/optimize/_minimize.py
++++ b/scipy/optimize/_minimize.py
+@@ -29,7 +29,8 @@ from ._trustregion_ncg import _minimize_trust_ncg
+ # constrained minimization
+ from .lbfgsb import _minimize_lbfgsb
+ from .tnc import _minimize_tnc
+-from .cobyla import _minimize_cobyla
++#from .cobyla import _minimize_cobyla
++_minimize_cobyla = None
+ from .slsqp import _minimize_slsqp
+ 
+ 
