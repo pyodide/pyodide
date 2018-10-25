@@ -1,13 +1,6 @@
-from pathlib import Path
-import subprocess
-import sys
 from textwrap import dedent
 
 import pytest
-
-sys.path.append(str(Path(__file__).parents[2]))
-
-from pyodide_build.common import HOSTPYTHON   # noqa: E402
 
 
 def test_scipy_import(selenium_standalone, request):
@@ -41,6 +34,32 @@ def test_scipy_import(selenium_standalone, request):
     print(selenium.logs)
 
 
+def test_scipy_linalg(selenium_standalone):
+    selenium = selenium_standalone
+    selenium.load_package("scipy")
+    cmd = dedent(r"""
+        import numpy as np
+        import scipy as sp
+        import scipy.linalg
+        from numpy.testing import assert_allclose
+
+        N = 10
+        X = np.random.RandomState(42).rand(N, N)
+
+        X_inv = scipy.linalg.inv(X)
+
+        res = X.dot(X_inv)
+
+        assert_allclose(res, np.identity(N),
+                        rtol=1e-07, atol=1e-9)
+        """)
+
+    selenium.run(cmd)
+
+    print(selenium.logs)
+
+
+@pytest.mark.skip
 def test_built_so(selenium_standalone):
     selenium = selenium_standalone
     selenium.load_package("scipy")
@@ -61,19 +80,11 @@ def test_built_so(selenium_standalone):
         out
         """)
 
-    out = subprocess.check_output(
-            [HOSTPYTHON / 'bin' / 'python3', '-c', cmd])
-    modules_host = out.decode('utf-8').split('\n')
-
     def _get_modules_name(modules):
         return set([path.split('.')[0] for path in modules if path])
-
-    modules_host = _get_modules_name(modules_host)
 
     modules_target = selenium.run(cmd)
     modules_target = _get_modules_name(modules_target)
 
     print(f'Included modules: {len(modules_target)}')
     print(f'    {modules_target} ')
-    print(f'\nMissing modules: {len(modules_host.difference(modules_target))}')
-    print(f'     {modules_host.difference(modules_target)}')

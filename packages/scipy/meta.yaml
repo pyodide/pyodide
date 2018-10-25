@@ -23,6 +23,7 @@ source:
     - patches/dummy_threading.patch
     - patches/skip_ellip_harm_2_pyx_ctypes.patch
     - patches/skip_optimize_cobyla_import.patch
+    - patches/fix_mmap.patch
 
 build:
   cflags: -I../../CLAPACK-WA/INCLUDE -Wno-implicit-function-declaration

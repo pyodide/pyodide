@@ -1,4 +1,4 @@
-commit 0822e53ae255433469257625e8f292abd13ae562
+commit e85d4402a802160b13e49d34728f4358e5337848
 Author: Roman Yurchak <rth.yurchak@pm.me>
 Date:   Thu Oct 11 17:10:36 2018 +0200
 
@@ -6,8 +6,22 @@ Date:   Thu Oct 11 17:10:36 2018 +0200
     
        scipy.integrate.odepack
 
+diff --git a/scipy/integrate/odepack.py b/scipy/integrate/odepack.py
+index eee2b04a3..17224f54e 100644
+--- a/scipy/integrate/odepack.py
++++ b/scipy/integrate/odepack.py
+@@ -3,7 +3,8 @@ from __future__ import division, print_function, absolute_import
+ 
+ __all__ = ['odeint']
+ 
+-from . import _odepack
++# from . import _odepack
++_odepack = None
+ from copy import copy
+ import warnings
+ 
 diff --git a/scipy/integrate/setup.py b/scipy/integrate/setup.py
-index 9d607af8d..2be454c70 100755
+index 4725eb1c0..0545dc759 100755
 --- a/scipy/integrate/setup.py
 +++ b/scipy/integrate/setup.py
 @@ -27,7 +27,7 @@ def configuration(parent_package='',top_path=None):
@@ -63,7 +77,7 @@ index 9d607af8d..2be454c70 100755
 +    #                     **lapack_opt)
  
      # dop
-     config.add_extension('_dop',
+     #config.add_extension('_dop',
 @@ -76,11 +76,11 @@ def configuration(parent_package='',top_path=None):
                           sources=quadpack_test_src)
  
