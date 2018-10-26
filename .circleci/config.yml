@@ -23,7 +23,7 @@ jobs:
              sudo apt-get install gfortran f2c
 
              # Download BLAS/LAPACK
-             git clone https://github.com/rth/CLAPACK-WA.git packages/scipy/CLAPACK-WA
+             git clone https://github.com/rth/CLAPACK-WA.git CLAPACK-WA
 
       - restore_cache:
           keys:

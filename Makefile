@@ -64,7 +64,11 @@ all: build/pyodide.asm.js \
 
 build/pyodide.asm.js: src/main.bc src/jsimport.bc src/jsproxy.bc src/js2python.bc \
 		src/pyimport.bc src/pyproxy.bc src/python2js.bc \
+<<<<<<< HEAD
 		src/runpython.bc src/hiwire.bc
+=======
+		src/runpython.bc src/hiwire.bc $(CLAPACK)
+>>>>>>> Move CLAPACK_WA to the root folder
 	[ -d build ] || mkdir build
 	$(CXX) -s EXPORT_NAME="'pyodide'" -o build/pyodide.asm.html $(filter %.bc,$^) \
 	  $(LDFLAGS) -s FORCE_FILESYSTEM=1
@@ -207,17 +211,21 @@ $(LZ4LIB):
 	make -C lz4
 
 
+something:
+	cd packages/scipy/build/scipy-0.17.1 && emcc -O3 -s BINARYEN_METHOD=native-wasm -Werror -s EMULATED_FUNCTION_POINTERS=1 -s EMULATE_FUNCTION_POINTER_CASTS=1 -s SIDE_MODULE=1 -s WASM=1 -s BINARYEN_TRAP_MODE=clamp --memory-init-file 0 -Wall -g -Wall -g -shared build/temp.linux-x86_64-3.7/build/src.linux-x86_64-3.7/build/src.linux-x86_64-3.7/scipy/linalg/_fblasmodule.bc build/temp.linux-x86_64-3.7/build/src.linux-x86_64-3.7/build/src.linux-x86_64-3.7/build/src.linux-x86_64-3.7/scipy/linalg/fortranobject.bc build/temp.linux-x86_64-3.7/src/packages/scipy/build/scipy-0.17.1/scipy/_build_utils/src/wrap_dummy_g77_abi.bc build/temp.linux-x86_64-3.7/src/packages/scipy/build/scipy-0.17.1/scipy/_build_utils/src/wrap_dummy_accelerate.bc build/temp.linux-x86_64-3.7/build/src.linux-x86_64-3.7/build/src.linux-x86_64-3.7/scipy/linalg/_fblas-f2pywrappers.bc ../../../../CLAPACK-WA/F2CLIBS/libf2c.bc -lblas_WA -llapack_WA -disable-verify -Lbuild/temp.linux-x86_64-3.7 -lgfortran -o build/lib.linux-x86_64-3.7/scipy/linalg/_fblas.cpython-37m-x86_64-linux-gnu.wasm
+
+
 $(SIX_LIBS): $(CPYTHONLIB)
 	make -C six
 
-clapack: $(CPYTHONLIB)
+$(CLAPACK): $(CPYTHONLIB)
 	# We build BLAS/LAPACK only for target.
 	# On host we include -LCLAPACK-WA path which has no effect on host.
 	# On target it gets rewritten by pywasmcross to the full patch of
 	# blas_WA.bc, lapack_WA.bc which are linked statically in scipy
 	# in each module that needs them.
-	make -C $(LAPACK_DIR)F2CLIBS/libf2c/ arith.h
-	emmake make -C $(LAPACK_DIR)
+	make -C CLAPACK-WA/F2CLIBS/libf2c arith.h
+	emmake make -C CLAPACK-WA/
 
 $(CLAPACK): $(CPYTHONLIB)
 	make -C CLAPACK

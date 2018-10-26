@@ -263,7 +263,8 @@ def handle_command(line, args, dryrun=False):
         if arg.startswith('-L') and 'CLAPACK-WA' in arg:
             lapack_dir = arg.replace('-L', '')
             for lib_name in ['F2CLIBS/libf2c.bc',
-                             'blas_WA.bc', 'lapack_WA.bc']:
+                             'blas_WA.bc',
+                             'lapack_WA.bc']:
                 arg = os.path.join(lapack_dir, f"{lib_name}")
                 new_args.append(arg)
             continue
