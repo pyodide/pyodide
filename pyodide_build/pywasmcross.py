@@ -106,20 +106,48 @@ def capture_compile(args):
         sys.exit(result.returncode)
 
 
-def f2c(args):
+def f2c(args, dryrun=False):
+    """Apply f2c to compilation arguments
+
+    Parameters
+    ----------
+    args : iterable
+       input compiler arguments
+    dryrun : bool, default=True
+       if False run f2c on detected fortran files
+
+    Returns
+    -------
+    new_args : list
+       output compiler arguments
+
+
+    Examples
+    --------
+
+    >>> f2c(['gfortran', 'test.f'], dryrun=True)
+    ['gfortran', 'test.c']
+    """
     new_args = []
     found_source = False
     for arg in args:
         if arg.endswith('.f'):
             filename = os.path.abspath(arg)
-            subprocess.check_call(
-                ['f2c', os.path.basename(filename)],
-                cwd=os.path.dirname(filename))
+            if not dryrun:
+                subprocess.check_call(
+                    ['f2c', os.path.basename(filename)],
+                    cwd=os.path.dirname(filename))
             new_args.append(arg[:-2] + '.c')
             found_source = True
         else:
             new_args.append(arg)
+
+    new_args_str = ' '.join(args)
+    if ".so" in new_args_str and "libgfortran.so" not in new_args_str:
+        found_source = True
+
     if not found_source:
+        print(f'f2c: source not found, skipping: {new_args_str}')
         return None
     return new_args
 
@@ -147,6 +175,7 @@ def handle_command(line, args, dryrun=False):
     emcc test.c
     ['emcc', 'test.c']
     """
+
     # This is a special case to skip the compilation tests in numpy that aren't
     # actually part of the build
     for arg in line:
@@ -180,8 +209,8 @@ def handle_command(line, args, dryrun=False):
         new_args.extend(args.ldflags.split())
     elif new_args[0] in ('emcc', 'em++'):
         new_args.extend(args.cflags.split())
-    if new_args[0] == 'em++':
-        new_args.append('-std=c++98')
+
+    lapack_dir = None
 
     # Go through and adjust arguments
     for arg in line[1:]:
@@ -204,11 +233,23 @@ def handle_command(line, args, dryrun=False):
         elif shared and arg.endswith('.so'):
             arg = arg[:-3] + '.wasm'
             output = arg
+        # Fix for scipy to link to the correct BLAS/LAPACK files
+        if arg.startswith('-L') and 'CLAPACK-WA' in arg:
+            lapack_dir = arg.replace('-L', '')
+            for lib_name in ['F2CLIBS/libf2c.bc',
+                             'blas_WA.bc',
+                             'lapack_WA.bc']:
+                arg = os.path.join(lapack_dir, f"{lib_name}")
+                new_args.append(arg)
+            continue
+
         new_args.append(arg)
 
-    if os.path.isfile(output):
-        print('SKIPPING: ' + ' '.join(new_args))
-        return
+    # This can only be used for incremental rebuilds -- it generates
+    # an error during clean build of numpy
+    # if os.path.isfile(output):
+    #     print('SKIPPING: ' + ' '.join(new_args))
+    #     return
 
     print(' '.join(new_args))
 
@@ -251,13 +292,21 @@ def clean_out_native_artifacts():
 
 
 def install_for_distribution(args):
-    subprocess.check_call(
-        [Path(args.host) / 'bin' / 'python3',
+    commands = [
+         Path(args.host) / 'bin' / 'python3',
          'setup.py',
          'install',
          '--skip-build',
          '--prefix=install',
-         '--old-and-unmanageable'])
+         '--old-and-unmanageable'
+         ]
+    try:
+        subprocess.check_call(commands)
+    except Exception:
+        # XXX: temporary hack to remove --old-and-unmanageable with distutils
+        #      see https://github.com/iodide-project/pyodide/issues/220
+        #      for a better solution.
+        subprocess.check_call(commands[:-1])
 
 
 def build_wrap(args):
