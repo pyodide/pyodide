@@ -60,7 +60,7 @@ def collect_args(basename):
     env['PATH'] = path
 
     # determine the package name from the current directory
-    re_res = re.match('.*packages/(?P<name>[\w\-]+)/build.*',
+    re_res = re.match(r'.*packages/(?P<name>[\w\-]+)/build.*',
                       env['PWD'])
     if re_res:
         package_name = re_res.group('name')
@@ -87,9 +87,9 @@ def collect_args(basename):
             with open(sys.argv[out_idx], 'wb') as fh:
                 fh.write(b'')
             skip = True
+
     with open('build.log', 'a') as fd:
-        if skip:
-            fd.write('SKIP\n')
+        # TODO: store skip status in the build.log
         json.dump([basename] + sys.argv[1:], fd)
         fd.write('\n')
 
