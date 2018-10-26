@@ -290,7 +290,7 @@ def install_for_distribution(args):
         subprocess.check_call(commands)
     except Exception:
         print(f'Warning: {" ".join(commands)} failed with distutils, possibly '
-              f'due to the use if distutils that does not support the '
+              f'due to the use of distutils that does not support the '
               f'--old-and-unmanageable argument. Re-trying the install '
               f'without this argument.')
         subprocess.check_call(commands[:-1])
