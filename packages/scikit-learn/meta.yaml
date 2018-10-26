@@ -15,7 +15,8 @@ build:
 
 requirements:
   run:
-    - numpy   # TODO: add scipy, joblib once the corresponding PRs are merged
+    - numpy   # TODO: add scipy once the corresponding PR is merged
+    - joblib
 
 test:
   imports:
