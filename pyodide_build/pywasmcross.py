@@ -105,7 +105,29 @@ def capture_compile(args):
         sys.exit(result.returncode)
 
 
-def handle_command(line, args):
+def handle_command(line, args, dryrun=False):
+    """Handle a compilation command
+
+    Parameters
+    ----------
+    line : iterable
+       an iterable with the compilation arguments
+    args : {object, namedtuple}
+       an container with additional compilation options,
+       in particular containing ``args.cflags`` and ``args.ldflags``
+    dryrun : bool, default=False
+       if True do not run the resulting command, only return it
+
+    Examples
+    --------
+
+    >>> from collections import namedtuple
+    >>> Args = namedtuple('args', ['cflags', 'ldflags'])
+    >>> args = Args(cflags='', ldflags='')
+    >>> handle_command(['gcc', 'test.c'], args, dryrun=True)
+    emcc test.c
+    ['emcc', 'test.c']
+    """
     # This is a special case to skip the compilation tests in numpy that aren't
     # actually part of the build
     for arg in line:
@@ -156,9 +178,10 @@ def handle_command(line, args):
 
     print(' '.join(new_args))
 
-    result = subprocess.run(new_args)
-    if result.returncode != 0:
-        sys.exit(result.returncode)
+    if not dryrun:
+        result = subprocess.run(new_args)
+        if result.returncode != 0:
+            sys.exit(result.returncode)
 
     # Emscripten .so files shouldn't have the native platform slug
     if shared:
@@ -169,7 +192,9 @@ def handle_command(line, args):
             if renamed.endswith(ext):
                 renamed = renamed[:-len(ext)] + '.so'
                 break
-        os.rename(output, renamed)
+        if not dryrun:
+            os.rename(output, renamed)
+    return new_args
 
 
 def replay_compile(args):

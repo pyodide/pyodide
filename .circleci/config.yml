@@ -56,7 +56,7 @@ jobs:
       - run:
           name: test
           command: |
-            pytest test -v -k firefox
+            pytest test pyodide_build -v -k firefox
 
   test-chrome:
     <<: *defaults
@@ -67,16 +67,20 @@ jobs:
       - run:
           name: test
           command: |
-            pytest test -v -k chrome
+            pytest test pyodide_build -v -k chrome
 
   test-python:
     <<: *defaults
     steps:
       - checkout
       - run:
+          name: deps
+          command: |
+            sudo pip install pytest-cov
+      - run:
           name: test
           command: |
-            pytest test -v -k 'not (chrome or firefox)'
+            pytest test pyodide_build -v -k 'not (chrome or firefox)' --cov=pyodide_build --cov=pyodide
 
   benchmark:
     <<: *defaults
