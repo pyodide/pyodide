@@ -211,10 +211,6 @@ $(LZ4LIB):
 	make -C lz4
 
 
-something:
-	cd packages/scipy/build/scipy-0.17.1 && emcc -O3 -s BINARYEN_METHOD=native-wasm -Werror -s EMULATED_FUNCTION_POINTERS=1 -s EMULATE_FUNCTION_POINTER_CASTS=1 -s SIDE_MODULE=1 -s WASM=1 -s BINARYEN_TRAP_MODE=clamp --memory-init-file 0 -Wall -g -Wall -g -shared build/temp.linux-x86_64-3.7/build/src.linux-x86_64-3.7/build/src.linux-x86_64-3.7/scipy/linalg/_fblasmodule.bc build/temp.linux-x86_64-3.7/build/src.linux-x86_64-3.7/build/src.linux-x86_64-3.7/build/src.linux-x86_64-3.7/scipy/linalg/fortranobject.bc build/temp.linux-x86_64-3.7/src/packages/scipy/build/scipy-0.17.1/scipy/_build_utils/src/wrap_dummy_g77_abi.bc build/temp.linux-x86_64-3.7/src/packages/scipy/build/scipy-0.17.1/scipy/_build_utils/src/wrap_dummy_accelerate.bc build/temp.linux-x86_64-3.7/build/src.linux-x86_64-3.7/build/src.linux-x86_64-3.7/scipy/linalg/_fblas-f2pywrappers.bc ../../../../CLAPACK-WA/F2CLIBS/libf2c.bc -lblas_WA -llapack_WA -disable-verify -Lbuild/temp.linux-x86_64-3.7 -lgfortran -o build/lib.linux-x86_64-3.7/scipy/linalg/_fblas.cpython-37m-x86_64-linux-gnu.wasm
-
-
 $(SIX_LIBS): $(CPYTHONLIB)
 	make -C six
 
