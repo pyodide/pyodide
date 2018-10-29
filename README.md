@@ -11,7 +11,8 @@ When inside a browser, this means Python has full access to the Web APIs.
 be used standalone in any context where you want to run Python inside a web
 browser.**
 
-See [the demo](https://iodide.io/pyodide-demo/python.html)
+For more information, see [the demo](https://iodide.io/pyodide-demo/python.html) and the
+[documentation](https://github.com/iodide-project/pyodide/tree/master/docs).
 
 # Building
 
