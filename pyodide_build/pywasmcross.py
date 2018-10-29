@@ -41,6 +41,7 @@ from pyodide_build import common
 
 ROOTDIR = common.ROOTDIR
 symlinks = set(['cc', 'c++', 'ld', 'ar', 'gcc'])
+symlinks = set(['cc', 'c++', 'ld', 'ar', 'gcc', 'gfortran'])
 
 
 def collect_args(basename):
@@ -105,6 +106,52 @@ def capture_compile(args):
         sys.exit(result.returncode)
 
 
+def f2c(args, dryrun=False):
+    """Apply f2c to compilation arguments
+
+    Parameters
+    ----------
+    args : iterable
+       input compiler arguments
+    dryrun : bool, default=True
+       if False run f2c on detected fortran files
+
+    Returns
+    -------
+    new_args : list
+       output compiler arguments
+
+
+    Examples
+    --------
+
+    >>> f2c(['gfortran', 'test.f'], dryrun=True)
+    ['gfortran', 'test.c']
+    """
+    new_args = []
+    found_source = False
+    for arg in args:
+        if arg.endswith('.f'):
+            filename = os.path.abspath(arg)
+            if not dryrun:
+                subprocess.check_call(
+                    ['f2c', os.path.basename(filename)],
+                    cwd=os.path.dirname(filename))
+            new_args.append(arg[:-2] + '.c')
+            found_source = True
+        else:
+            new_args.append(arg)
+
+    new_args_str = ' '.join(args)
+    if ".so" in new_args_str and "libgfortran.so" not in new_args_str:
+        found_source = True
+
+    if not found_source:
+        print(f'f2c: source not found, skipping: {new_args_str}')
+        return None
+    return new_args
+
+
 def handle_command(line, args, dryrun=False):
     """Handle a compilation command
 
@@ -138,7 +185,13 @@ def handle_command(line, args, dryrun=False):
         if arg == '-print-multiarch':
             return
 
-    if line[0] == 'ar':
+    if line[0] == 'gfortran':
+        result = f2c(line)
+        if result is None:
+            return
+        line = result
+        new_args = ['emcc']
+    elif line[0] == 'ar':
         new_args = ['emar']
     elif line[0] == 'c++':
         new_args = ['em++']
@@ -171,10 +224,18 @@ def handle_command(line, args, dryrun=False):
         arg = re.sub(r'/python([0-9]\.[0-9]+)m', r'/python\1', arg)
         if arg.endswith('.o'):
             arg = arg[:-2] + '.bc'
-        if shared and arg.endswith('.so'):
+            output = arg
+        elif shared and arg.endswith('.so'):
             arg = arg[:-3] + '.wasm'
             output = arg
+
         new_args.append(arg)
+
+    # This can only be used for incremental rebuilds -- it generates
+    # an error during clean build of numpy
+    # if os.path.isfile(output):
+    #     print('SKIPPING: ' + ' '.join(new_args))
+    #     return
 
     print(' '.join(new_args))
 
@@ -217,13 +278,22 @@ def clean_out_native_artifacts():
 
 
 def install_for_distribution(args):
-    subprocess.check_call(
-        [Path(args.host) / 'bin' / 'python3',
+    commands = [
+         Path(args.host) / 'bin' / 'python3',
          'setup.py',
          'install',
          '--skip-build',
          '--prefix=install',
-         '--old-and-unmanageable'])
+         '--old-and-unmanageable'
+         ]
+    try:
+        subprocess.check_call(commands)
+    except Exception:
+        print(f'Warning: {" ".join(commands)} failed with distutils, possibly '
+              f'due to the use of distutils that does not support the '
+              f'--old-and-unmanageable argument. Re-trying the install '
+              f'without this argument.')
+        subprocess.check_call(commands[:-1])
 
 
 def build_wrap(args):

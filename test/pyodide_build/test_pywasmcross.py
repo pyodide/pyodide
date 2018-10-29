@@ -5,6 +5,7 @@ import sys
 sys.path.append(str(Path(__file__).parents[2]))
 
 from pyodide_build.pywasmcross import handle_command  # noqa: E402
+from pyodide_build.pywasmcross import f2c  # noqa: E402
 
 
 def _args_wrapper(func):
@@ -24,7 +25,7 @@ def _args_wrapper(func):
 
 
 handle_command_wrap = _args_wrapper(handle_command)
-# TODO: add f2c here
+f2c_wrap = _args_wrapper(f2c)
 
 
 def test_handle_command():
@@ -42,3 +43,11 @@ def test_handle_command():
 
     # compilation checks in numpy
     assert handle_command_wrap('gcc /usr/file.c', args) is None
+
+
+def test_f2c():
+    assert f2c_wrap('gfortran test.f') == 'gfortran test.c'
+    assert f2c_wrap('gcc test.c') is None
+    assert f2c_wrap('gfortran --version') is None
+    assert f2c_wrap('gfortran --shared -c test.o -o test.so') == \
+        'gfortran --shared -c test.o -o test.so'
