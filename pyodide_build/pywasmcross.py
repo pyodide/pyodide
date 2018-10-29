@@ -59,7 +59,7 @@ def collect_args(basename):
         path = path.replace(str(ROOTDIR) + ':', '')
     env['PATH'] = path
 
-    skip_host = os.environ.get('SKIP_HOST', 'True').lower() == 'true'
+    skip_host = 'SKIP_HOST' in os.environ
 
     # Skip compilations of C/Fortran extensions for the target environement.
     # We still need to generate the output files for distutils to continue

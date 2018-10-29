@@ -83,7 +83,8 @@ def compile(path, srcpath, pkg, args):
     orig_dir = Path.cwd()
     os.chdir(srcpath)
     env = dict(os.environ)
-    env['SKIP_HOST'] = str(pkg.get('build', {}).get('skip_host', True))
+    if pkg.get('build', {}).get('skip_host', True):
+        env['SKIP_HOST'] = ''
 
     try:
         subprocess.run([
