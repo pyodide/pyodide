@@ -59,13 +59,7 @@ def collect_args(basename):
         path = path.replace(str(ROOTDIR) + ':', '')
     env['PATH'] = path
 
-    # determine the package name from the current directory
-    re_res = re.match(r'.*packages/(?P<name>[\w\-]+)/build.*',
-                      env['PWD'])
-    if re_res:
-        package_name = re_res.group('name')
-    else:
-        package_name = None
+    skip_host = os.environ.get('SKIP_HOST', 'True').lower() == 'true'
 
     # Skip compilations of C/Fortran extensions for the target environement.
     # We still need to generate the output files for distutils to continue
@@ -79,7 +73,7 @@ def collect_args(basename):
             and '-o' in sys.argv[1:]
             # do not skip numpy as it is needed as build time
             # dependency by other packages (e.g. matplotlib)
-            and package_name != 'numpy'):
+            and skip_host):
         out_idx = sys.argv.index('-o')
         if (out_idx + 1) < len(sys.argv):
             # get the index of the output file path

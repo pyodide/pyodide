@@ -28,6 +28,18 @@ UNSUPPORTED_PACKAGES = {'chrome': ['pandas'],
 
 
 @pytest.mark.parametrize('name', registered_packages())
+def test_parse_package(name):
+    # check that we can parse the meta.yaml
+    meta = parse_package(PKG_DIR / name / 'meta.yaml')
+
+    skip_host = meta.get('build', {}).get('skip_host', True)
+    if name == 'numpy':
+        assert skip_host is False
+    elif name == 'pandas':
+        assert skip_host is True
+
+
+@pytest.mark.parametrize('name', registered_packages())
 def test_import(name, selenium_standalone):
     # check that we can parse the meta.yaml
     meta = parse_package(PKG_DIR / name / 'meta.yaml')
