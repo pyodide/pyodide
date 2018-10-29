@@ -82,6 +82,10 @@ def compile(path, srcpath, pkg, args):
 
     orig_dir = Path.cwd()
     os.chdir(srcpath)
+    env = dict(os.environ)
+    if pkg.get('build', {}).get('skip_host', True):
+        env['SKIP_HOST'] = ''
+
     try:
         subprocess.run([
             str(Path(args.host) / 'bin' / 'python3'),
@@ -93,7 +97,7 @@ def compile(path, srcpath, pkg, args):
             args.ldflags + ' ' +
             pkg.get('build', {}).get('ldflags', ''),
             '--host', args.host,
-            '--target', args.target], check=True)
+            '--target', args.target], env=env, check=True)
     finally:
         os.chdir(orig_dir)
 

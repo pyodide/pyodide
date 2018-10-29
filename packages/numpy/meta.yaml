@@ -18,6 +18,7 @@ source:
     - patches/fix-install-with-skip-build.patch
 
 build:
+  skip_host: False
   cflags: -include math.h -I../../config
 
 
