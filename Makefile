@@ -139,7 +139,7 @@ clean:
 	rm -fr src/*.bc
 	make -C packages clean
 	make -C six clean
-	make -C packages/scipy/CLAPACK-WA cleanall
+	make -C CLAPACK-WA cleanall
 	echo "The Emsdk and CPython are not cleaned. cd into those directories to do so."
 
 

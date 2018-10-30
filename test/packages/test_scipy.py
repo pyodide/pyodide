@@ -62,6 +62,7 @@ def test_scipy_linalg(selenium_standalone):
 @pytest.mark.skip
 def test_built_so(selenium_standalone):
     selenium = selenium_standalone
+    selenium.load_package("numpy")
     selenium.load_package("scipy")
 
     cmd = dedent(r"""

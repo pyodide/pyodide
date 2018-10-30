@@ -32,3 +32,10 @@ build:
 requirements:
   run:
     - numpy
+
+test:
+  imports:
+    - scipy
+    - scipy.linalg
+    - scipy.special
+    - scipy.sparse

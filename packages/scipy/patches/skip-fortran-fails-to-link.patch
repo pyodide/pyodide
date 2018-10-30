@@ -1,4 +1,4 @@
-commit e85d4402a802160b13e49d34728f4358e5337848
+commit c3affe05b5cb8d992cb7a955ff8b4c79452f3cc9
 Author: Roman Yurchak <rth.yurchak@pm.me>
 Date:   Thu Oct 11 17:10:36 2018 +0200
 
@@ -6,6 +6,34 @@ Date:   Thu Oct 11 17:10:36 2018 +0200
     
        scipy.integrate.odepack
 
+diff --git a/scipy/integrate/_ode.py b/scipy/integrate/_ode.py
+index de1064048..52bf3875a 100644
+--- a/scipy/integrate/_ode.py
++++ b/scipy/integrate/_ode.py
+@@ -89,10 +89,19 @@ import re
+ import warnings
+ 
+ from numpy import asarray, array, zeros, int32, isscalar, real, imag, vstack
+-
+-from . import vode as _vode
+-from . import _dop
+-from . import lsoda as _lsoda
++try:
++    from . import vode as _vode
++except ImportError:
++    _vode = None
++try:
++    from . import _dop
++except ImportError:
++    _dop = None
++
++try:
++    from . import lsoda as _lsoda
++except ImportError:
++    _lsoda = None
+ 
+ 
+ #------------------------------------------------------------------------------
 diff --git a/scipy/integrate/odepack.py b/scipy/integrate/odepack.py
 index eee2b04a3..17224f54e 100644
 --- a/scipy/integrate/odepack.py
