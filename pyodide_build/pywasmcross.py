@@ -287,6 +287,8 @@ def handle_command(line, args, dryrun=False):
             for lib_name in link_libs:
                 arg = os.path.join(lapack_dir, f"{lib_name}")
                 new_args.append(arg)
+
+            new_args.extend(['-s', 'INLINING_LIMIT=5'])
             continue
 
         new_args.append(arg)
