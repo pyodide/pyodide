@@ -26,7 +26,7 @@ source:
     - patches/fix_mmap.patch
 
 build:
-  cflags: -I../../../../CLAPACK-WA/INCLUDE -Wno-implicit-function-declaration
+  cflags: -I../../../../CLAPACK/CLAPACK-WA/INCLUDE -Wno-implicit-function-declaration
   cxxflags:
 
 requirements:
@@ -36,6 +36,15 @@ requirements:
 test:
   imports:
     - scipy
-    - scipy.linalg
-    - scipy.special
+    - scipy.cluster
+    - scipy.constants
+    - scipy.fftpack
+    - scipy.odr
     - scipy.sparse
+    - scipy.interpolate
+    - scipy.integrate
+    - scipy.linalg
+    - scipy.misc
+    - scipy.ndimage
+    - scipy.spatial
+    - scipy.special

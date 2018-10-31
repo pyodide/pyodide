@@ -23,7 +23,7 @@ def registered_packages_meta():
             for name in packages}
 
 
-UNSUPPORTED_PACKAGES = {'chrome': ['pandas'],
+UNSUPPORTED_PACKAGES = {'chrome': ['pandas', 'scipy'],
                         'firefox': []}
 
 
@@ -72,10 +72,15 @@ def test_import(name, selenium_standalone):
         """
     ) == baseline_pyc
 
+    loaded_packages = []
     for import_name in meta.get('test', {}).get('imports', []):
+
+        if name not in loaded_packages:
+            selenium_standalone.load_package(name)
+            loaded_packages.append(name)
         try:
             selenium_standalone.run('import %s' % import_name)
-        except Exception as e:
+        except Exception:
             print(selenium_standalone.logs)
             raise
 
