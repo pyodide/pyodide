@@ -288,7 +288,12 @@ def handle_command(line, args, dryrun=False):
                 arg = os.path.join(lapack_dir, f"{lib_name}")
                 new_args.append(arg)
 
-            new_args.extend(['-s', 'INLINING_LIMIT=5'])
+            new_args.extend(['-s', 'INLINING_LIMIT=5', '--llvm-lto', '1'])
+            continue
+
+        if (arg.startswith('-O') and 'CLAPACK' in ' '.join(line)
+                and '-L' in ' '.join(line)):
+            new_args.append('-Os')
             continue
 
         new_args.append(arg)
