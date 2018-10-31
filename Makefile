@@ -64,11 +64,7 @@ all: build/pyodide.asm.js \
 
 build/pyodide.asm.js: src/main.bc src/jsimport.bc src/jsproxy.bc src/js2python.bc \
 		src/pyimport.bc src/pyproxy.bc src/python2js.bc \
-<<<<<<< HEAD
 		src/runpython.bc src/hiwire.bc
-=======
-		src/runpython.bc src/hiwire.bc $(CLAPACK)
->>>>>>> Move CLAPACK_WA to the root folder
 	[ -d build ] || mkdir build
 	$(CXX) -s EXPORT_NAME="'pyodide'" -o build/pyodide.asm.html $(filter %.bc,$^) \
 	  $(LDFLAGS) -s FORCE_FILESYSTEM=1
@@ -214,14 +210,10 @@ $(LZ4LIB):
 $(SIX_LIBS): $(CPYTHONLIB)
 	make -C six
 
+
 $(CLAPACK): $(CPYTHONLIB)
-	# We build BLAS/LAPACK only for target.
-	# On host we include -LCLAPACK-WA path which has no effect on host.
-	# On target it gets rewritten by pywasmcross to the full patch of
-	# blas_WA.bc, lapack_WA.bc which are linked statically in scipy
-	# in each module that needs them.
-	make -C CLAPACK-WA/F2CLIBS/libf2c arith.h
-	emmake make -C CLAPACK-WA/
+	make -C CLAPACK
+
 
 $(CLAPACK): $(CPYTHONLIB)
 	make -C CLAPACK
