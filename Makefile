@@ -215,10 +215,6 @@ $(CLAPACK): $(CPYTHONLIB)
 	make -C CLAPACK
 
 
-$(CLAPACK): $(CPYTHONLIB)
-	make -C CLAPACK
-
-
 build/packages.json: $(CPYTHONLIB) $(CLAPACK)
 	make -C packages
 

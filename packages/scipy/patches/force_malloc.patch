@@ -1,8 +1,8 @@
-commit d755dab2147732e9213af29f55ab38c38b7ba8d2
+commit 7a5b003922134abd01ae33b0a3e84d006673e9c6
 Author: Roman Yurchak <rth.yurchak@pm.me>
 Date:   Mon Oct 8 12:13:55 2018 +0200
 
-    Force malloc
+    Workaround for malloc issues
     
     This aims to avoid the "invalid call target: $_malloc" issues
     
@@ -42,6 +42,20 @@ index 17ba78371..5deca7498 100644
  from .nonlin import *
  from .slsqp import fmin_slsqp
  from .nnls import nnls
+diff --git a/scipy/optimize/_minimize.py b/scipy/optimize/_minimize.py
+index 259546035..8b0b6960b 100644
+--- a/scipy/optimize/_minimize.py
++++ b/scipy/optimize/_minimize.py
+@@ -29,7 +29,8 @@ from ._trustregion_ncg import _minimize_trust_ncg
+ # constrained minimization
+ from .lbfgsb import _minimize_lbfgsb
+ from .tnc import _minimize_tnc
+-from .cobyla import _minimize_cobyla
++#from .cobyla import _minimize_cobyla
++_minimize_cobyla = None
+ from .slsqp import _minimize_slsqp
+ 
+ 
 diff --git a/scipy/optimize/setup.py b/scipy/optimize/setup.py
 index 7d2b987cb..1861e7563 100755
 --- a/scipy/optimize/setup.py

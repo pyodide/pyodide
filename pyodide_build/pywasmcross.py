@@ -238,7 +238,6 @@ def handle_command(line, args, dryrun=False):
 
     lapack_dir = None
 
-    # rebuild = False
     # Go through and adjust arguments
     for arg in line[1:]:
         if arg.startswith('-I'):
@@ -263,18 +262,10 @@ def handle_command(line, args, dryrun=False):
 
         # Fix for scipy to link to the correct BLAS/LAPACK files
         if arg.startswith('-L') and 'CLAPACK-WA' in arg:
-            # rebuild = True
             out_idx = line.index('-o')
             out_idx += 1
             module_name = line[out_idx]
             module_name = Path(module_name).name.split('.')[0]
-
-            if module_name not in ['_fblas', '_flapack', '_flinalg',
-                                   '_calc_lwork', 'cython_blas',
-                                   'cython_lapack', '_iterative',
-                                   '_arpack']:
-                raise ValueError(f"Unsupported module requiring BLAS/LAPACK "
-                                 f"{module_name} in {' '.join(line)}")
 
             lapack_dir = arg.replace('-L', '')
             # For convinience we determine needed scipy link libraries
@@ -288,9 +279,10 @@ def handle_command(line, args, dryrun=False):
                 arg = os.path.join(lapack_dir, f"{lib_name}")
                 new_args.append(arg)
 
-            new_args.extend(['-s', 'INLINING_LIMIT=5', '--llvm-lto', '1'])
+            new_args.extend(['-s', 'INLINING_LIMIT=5'])
             continue
 
+        # Use -Os for files that are statically linked to CLAPACK
         if (arg.startswith('-O') and 'CLAPACK' in ' '.join(line)
                 and '-L' in ' '.join(line)):
             new_args.append('-Os')
@@ -300,7 +292,7 @@ def handle_command(line, args, dryrun=False):
 
     # This can only be used for incremental rebuilds -- it generates
     # an error during clean build of numpy
-    # if os.path.isfile(output) and not rebuild:
+    # if os.path.isfile(output):
     #     print('SKIPPING: ' + ' '.join(new_args))
     #     return
 

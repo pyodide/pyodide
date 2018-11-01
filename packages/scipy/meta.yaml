@@ -22,7 +22,6 @@ source:
     - patches/skip-fortran-fails-to-link.patch
     - patches/dummy_threading.patch
     - patches/skip_ellip_harm_2_pyx_ctypes.patch
-    - patches/skip_optimize_cobyla_import.patch
     - patches/fix_mmap.patch
 
 build:

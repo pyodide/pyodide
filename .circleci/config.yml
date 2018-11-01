@@ -19,6 +19,7 @@ jobs:
       - run:
            name: dependencies
            command: |
+             # TODO: update pyodide-env image with the below
              sudo apt-get update
              sudo apt-get install gfortran f2c
 
