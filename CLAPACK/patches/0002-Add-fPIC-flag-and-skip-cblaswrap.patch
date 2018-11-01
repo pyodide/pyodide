@@ -1,0 +1,78 @@
+From e88b053d3aa3a609990560a4a7c27b0a55d74730 Mon Sep 17 00:00:00 2001
+From: Roman Yurchak <rth.yurchak@pm.me>
+Date: Wed, 17 Oct 2018 18:23:00 +0200
+Subject: [PATCH 2/3] Add -fPIC flag and skip cblaswrap
+
+---
+ BLAS/SRC/Makefile      | 2 +-
+ Makefile               | 4 ++--
+ SRC/Makefile           | 2 +-
+ make.inc               | 3 +--
+ 5 files changed, 5 insertions(+), 5 deletions(-)
+
+diff --git a/BLAS/SRC/Makefile b/BLAS/SRC/Makefile
+index 4a37c41..e52e4ed 100644
+--- a/BLAS/SRC/Makefile
++++ b/BLAS/SRC/Makefile
+@@ -139,7 +139,7 @@ ALLOBJ=$(SBLAS1) $(SBLAS2) $(SBLAS3) $(DBLAS1) $(DBLAS2) $(DBLAS3)	\
+ 	$(ZBLAS2) $(ZBLAS3) $(ALLBLAS)
+ 
+ $(BLASLIB): $(ALLOBJ)
+-	$(LD) -o $@ $(ALLOBJ)
++	$(LD) $(CFLAGS) -o $@ $(ALLOBJ)
+ 
+ single: $(SBLAS1) $(ALLBLAS) $(SBLAS2) $(SBLAS3)
+ 	$(ARCH) $(ARCHFLAGS) $(BLASLIB) $(SBLAS1) $(ALLBLAS) \
+diff --git a/Makefile b/Makefile
+index f3598b7..b3467a6 100644
+--- a/Makefile
++++ b/Makefile
+@@ -6,7 +6,7 @@
+ 
+ include make.inc
+ 
+-all: f2clib cblaswrap lib
++all: f2clib lib
+ #all: f2clib lapack_install lib lapack_testing blas_testing variants_testing
+ 
+ #lib: lapacklib tmglib
+@@ -95,4 +95,4 @@ cleantesting:
+ 	( cd TESTING; rm -f xlin* xeig* )
+ 
+ cleanall: cleanlib cleanblas_testing cleantesting 
+-	rm -f *.a TESTING/*.out INSTALL/test*  BLAS/*.out
++	rm -f *.bc TESTING/*.out INSTALL/test*  BLAS/*.out
+diff --git a/SRC/Makefile b/SRC/Makefile
+index 9df3e92..7491963 100644
+--- a/SRC/Makefile
++++ b/SRC/Makefile
+@@ -369,7 +369,7 @@ ALLOBJ=$(SLASRC) $(DLASRC) $(CLASRC) $(ZLASRC) $(SCLAUX) $(DZLAUX)	\
+ 	$(ALLAUX)
+ 
+ ../$(LAPACKLIB): $(ALLOBJ) $(ALLXOBJ)
+-	$(CC) -o $@ $(ALLOBJ) $(ALLXOBJ)
++	$(CC) $(CFLAGS) -o $@ $(ALLOBJ) $(ALLXOBJ)
+ 
+ single: $(SLASRC) $(ALLAUX) $(SCLAUX) 
+ 	$(ARCH) $(ARCHFLAGS) ../$(LAPACKLIB) $(SLASRC) $(ALLAUX) \
+diff --git a/make.inc b/make.inc
+index 7ba8d43..567c737 100644
+--- a/make.inc
++++ b/make.inc
+@@ -25,7 +25,7 @@ PLAT = _WA
+ #CC        = gcc  # inherit $CC from emmake
+ # if no wrapping of the blas library is needed, uncomment next line
+ #CC        = gcc -DNO_BLAS_WRAP
+-CFLAGS    = -O3 -I$(TOPDIR)/INCLUDE
++CFLAGS    = -O3 -I$(TOPDIR)/INCLUDE -fPIC -DNO_BLAS_WRAP
+ LDFLAGS	  = -O3
+ LOADER    = $(CC)
+ LOADOPTS  =
+@@ -78,4 +78,3 @@ F2CLIB       = ../../F2CLIBS/libf2c.bc
+ TMGLIB       = tmglib$(PLAT).bc
+ EIGSRCLIB    = eigsrc$(PLAT).bc
+ LINSRCLIB    = linsrc$(PLAT).bc
+-F2CLIB		 = ../../F2CLIBS/libf2c.bc
+-- 
+2.19.0
+

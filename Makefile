@@ -7,6 +7,7 @@ CPYTHONROOT=cpython
 CPYTHONLIB=$(CPYTHONROOT)/installs/python-$(PYVERSION)/lib/python$(PYMINOR)
 
 LZ4LIB=lz4/lz4-1.8.3/lib/liblz4.a
+CLAPACK=CLAPACK/CLAPACK-WA/lapack_WA.bc
 
 CC=emcc
 CXX=em++
@@ -61,8 +62,8 @@ all: build/pyodide.asm.js \
 
 
 build/pyodide.asm.js: src/main.bc src/jsimport.bc src/jsproxy.bc src/js2python.bc \
-											src/pyimport.bc src/pyproxy.bc src/python2js.bc \
-											src/runpython.bc src/hiwire.bc
+		src/pyimport.bc src/pyproxy.bc src/python2js.bc \
+		src/runpython.bc src/hiwire.bc
 	[ -d build ] || mkdir build
 	$(CXX) -s EXPORT_NAME="'pyodide'" -o build/pyodide.asm.html $(filter %.bc,$^) \
 	  $(LDFLAGS) -s FORCE_FILESYSTEM=1
@@ -213,7 +214,11 @@ $(SIX_LIBS): $(CPYTHONLIB)
 	make -C six
 
 
-build/packages.json: $(CPYTHONLIB)
+$(CLAPACK): $(CPYTHONLIB)
+	make -C CLAPACK
+
+
+build/packages.json: $(CPYTHONLIB) $(CLAPACK)
 	make -C packages
 
 
