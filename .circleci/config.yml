@@ -96,17 +96,20 @@ jobs:
           path: /home/circleci/repo/build/benchmarks.json
 
   deploy:
+    docker:
+      - image: cibuilds/github:0.10
+
     machine:
       enabled: true
 
     steps:
       - checkout
       - attach_workspace:
-          at: .
+          at: ./build
       - run:
-          name: Deploy to Github Pages
+          name: Deploy Github Releases
           command: |
-            .circleci/deploy.sh
+            ghr -t ${GITHUB_TOKEN} -u ${CIRCLE_PROJECT_USERNAME} -r ${CIRCLE_PROJECT_REPONAME} -c ${CIRCLE_SHA1} -delete ${CIRCLE_TAG} ./build/
 
 workflows:
   version: 2
@@ -130,4 +133,6 @@ workflows:
             - test-python
           filters:
             branches:
-              only: master
+              ignore: /.*/
+            tags:
+              only: /^v\d+\.\d+\.\d+$/
