@@ -99,13 +99,10 @@ jobs:
     docker:
       - image: cibuilds/github:0.10
 
-    machine:
-      enabled: true
-
     steps:
       - checkout
       - attach_workspace:
-          at: ./build
+          at: .
       - run:
           name: Deploy Github Releases
           command: |
