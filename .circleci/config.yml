@@ -125,7 +125,6 @@ workflows:
             - build
       - deploy:
           requires:
-            - test-chrome
             - test-firefox
             - test-python
           filters:
