@@ -84,7 +84,7 @@ class SeleniumWrapper:
         driver.get(f'http://{server_hostname}:{server_port}/test.html')
         try:
             wait.until(PyodideInited())
-        except TimeoutException as exc:
+        except TimeoutException:
             _display_driver_logs(self.browser, driver)
             raise TimeoutException()
         self.wait = wait
@@ -126,7 +126,7 @@ class SeleniumWrapper:
         )
         try:
             self.wait.until(PackageLoaded())
-        except TimeoutException as exc:
+        except TimeoutException:
             _display_driver_logs(self.browser, self.driver)
             print(self.logs)
             raise TimeoutException('runPythonAsync timed out')
@@ -163,7 +163,7 @@ class SeleniumWrapper:
         __tracebackhide__ = True
         try:
             self.wait.until(PackageLoaded())
-        except TimeoutException as exc:
+        except TimeoutException:
             _display_driver_logs(self.browser, self.driver)
             print(self.logs)
             raise TimeoutException('wait_until_packages_loaded timed out')

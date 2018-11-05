@@ -71,7 +71,7 @@ def test_pythonexc2js(selenium):
     try:
         selenium.run_js('return pyodide.runPython("5 / 0")')
     except selenium.JavascriptException as e:
-        assert('ZeroDivisionError' in str(e))
+        assert 'ZeroDivisionError' in str(e)
     else:
         assert False, 'Expected exception'
 
@@ -393,7 +393,7 @@ def test_cpython_core(python_test, selenium, request):
                 if e.code != 0:
                     raise RuntimeError(f'Failed with code: {{e.code}}')
             """.format(name))
-    except selenium.JavascriptException as e:
+    except selenium.JavascriptException:
         print(selenium.logs)
         raise
 

@@ -68,7 +68,7 @@ def parse_numpy_benchmark(filename):
     lines = []
     with open(filename) as fp:
         for line in fp:
-            m = re.match('^#\s*(setup|run): (.*)$', line)
+            m = re.match(r'^#\s*(setup|run): (.*)$', line)
             if m:
                 line = '{} = {!r}\n'.format(m.group(1), m.group(2))
             lines.append(line)
