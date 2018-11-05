@@ -1,9 +1,75 @@
-commit 16cf9dc5f79533a121a421b095b6e7ef9ee76e9c
+commit 8778fe57c37a275fc36959e9bade234bd9bbe88f
 Author: Roman Yurchak <rth.yurchak@pm.me>
 Date:   Thu Oct 25 16:56:54 2018 +0200
 
     Use site joblib
 
+diff --git a/sklearn/datasets/california_housing.py b/sklearn/datasets/california_housing.py
+index 76cb27dad..98cb34f6e 100644
+--- a/sklearn/datasets/california_housing.py
++++ b/sklearn/datasets/california_housing.py
+@@ -33,7 +33,7 @@ from .base import _fetch_remote
+ from .base import _pkl_filepath
+ from .base import RemoteFileMetadata
+ from ..utils import Bunch
+-from ..externals import joblib
++from ..utils import _joblib as _joblib
+ 
+ # The original data can be found at:
+ # http://www.dcc.fc.up.pt/~ltorgo/Regression/cal_housing.tgz
+diff --git a/sklearn/datasets/covtype.py b/sklearn/datasets/covtype.py
+index a08f61f02..4ac93f93f 100644
+--- a/sklearn/datasets/covtype.py
++++ b/sklearn/datasets/covtype.py
+@@ -27,7 +27,7 @@ from .base import RemoteFileMetadata
+ from ..utils import Bunch
+ from .base import _pkl_filepath
+ from ..utils.fixes import makedirs
+-from ..externals import joblib
++from ..utils import _joblib as joblib
+ from ..utils import check_random_state
+ 
+ # The original data can be found in:
+diff --git a/sklearn/datasets/kddcup99.py b/sklearn/datasets/kddcup99.py
+index c8ed0e308..3aa6ebb35 100644
+--- a/sklearn/datasets/kddcup99.py
++++ b/sklearn/datasets/kddcup99.py
+@@ -22,7 +22,8 @@ from .base import _fetch_remote
+ from .base import get_data_home
+ from .base import RemoteFileMetadata
+ from ..utils import Bunch
+-from ..externals import joblib, six
++from ..externals import six
++from ..utils import _joblib as joblib
+ from ..utils import check_random_state
+ from ..utils import shuffle as shuffle_method
+ 
+diff --git a/sklearn/datasets/olivetti_faces.py b/sklearn/datasets/olivetti_faces.py
+index 74915c6c6..ba5bfecfb 100644
+--- a/sklearn/datasets/olivetti_faces.py
++++ b/sklearn/datasets/olivetti_faces.py
+@@ -24,7 +24,7 @@ from .base import _fetch_remote
+ from .base import RemoteFileMetadata
+ from .base import _pkl_filepath
+ from ..utils import check_random_state, Bunch
+-from ..externals import joblib
++from ..utils import _joblib as joblib
+ 
+ # The original data can be found at:
+ # http://cs.nyu.edu/~roweis/data/olivettifaces.mat
+diff --git a/sklearn/datasets/rcv1.py b/sklearn/datasets/rcv1.py
+index 7890d7e18..ea22fb076 100644
+--- a/sklearn/datasets/rcv1.py
++++ b/sklearn/datasets/rcv1.py
+@@ -22,7 +22,7 @@ from .base import _pkl_filepath
+ from .base import _fetch_remote
+ from .base import RemoteFileMetadata
+ from ..utils.fixes import makedirs
+-from ..externals import joblib
++from ..utils import _joblib as joblib
+ from .svmlight_format import load_svmlight_files
+ from ..utils import shuffle as shuffle_
+ from ..utils import Bunch
 diff --git a/sklearn/datasets/species_distributions.py b/sklearn/datasets/species_distributions.py
 index 6d8acddcc..8191048d7 100644
 --- a/sklearn/datasets/species_distributions.py
@@ -17,17 +83,48 @@ index 6d8acddcc..8191048d7 100644
  
  PY3_OR_LATER = sys.version_info[0] >= 3
  
+diff --git a/sklearn/datasets/twenty_newsgroups.py b/sklearn/datasets/twenty_newsgroups.py
+index 8df908a2e..a2440222a 100644
+--- a/sklearn/datasets/twenty_newsgroups.py
++++ b/sklearn/datasets/twenty_newsgroups.py
+@@ -45,7 +45,7 @@ from ..utils import check_random_state, Bunch
+ from ..utils import deprecated
+ from ..feature_extraction.text import CountVectorizer
+ from ..preprocessing import normalize
+-from ..externals import joblib
++from ..utils import _joblib as joblib
+ 
+ logger = logging.getLogger(__name__)
+ 
+diff --git a/sklearn/ensemble/base.py b/sklearn/ensemble/base.py
+index 321031892..2a516619b 100644
+--- a/sklearn/ensemble/base.py
++++ b/sklearn/ensemble/base.py
+@@ -13,9 +13,11 @@ from ..base import BaseEstimator
+ from ..base import MetaEstimatorMixin
+ from ..utils import check_random_state
+ from ..externals import six
+-from ..externals.joblib import effective_n_jobs
++from ..utils import _joblib
+ from abc import ABCMeta, abstractmethod
+ 
++effective_n_jobs = _joblib.effective_n_jobs
++
+ MAX_RAND_SEED = np.iinfo(np.int32).max
+ 
+ 
 diff --git a/sklearn/ensemble/tests/test_forest.py b/sklearn/ensemble/tests/test_forest.py
-index d7586c286..d1168cdcf 100644
+index d7586c286..f12f6f886 100644
 --- a/sklearn/ensemble/tests/test_forest.py
 +++ b/sklearn/ensemble/tests/test_forest.py
-@@ -23,7 +23,11 @@ import pytest
+@@ -23,7 +23,12 @@ import pytest
  
  from sklearn.utils import parallel_backend
  from sklearn.utils import register_parallel_backend
 -from sklearn.externals.joblib.parallel import LokyBackend
 +try:
-+    from sklearn.externals.joblib.parallel import LokyBackend
++    from sklearn.utils import _joblib
++    LokyBackend = _joblib.parallel.LokyBackend
 +except ImportError:
 +    LokyBackend = object
 +
@@ -76,6 +173,19 @@ index bffd43cc1..df4c96893 100644
  from sklearn.utils import Parallel, delayed, Memory, parallel_backend
  
  if os.environ.get('SKLEARN_SITE_JOBLIB', False):
+diff --git a/sklearn/utils/_joblib.py b/sklearn/utils/_joblib.py
+index e1c39a401..9c4e815f7 100644
+--- a/sklearn/utils/_joblib.py
++++ b/sklearn/utils/_joblib.py
+@@ -5,7 +5,7 @@ import os as _os
+ import warnings as _warnings
+ 
+ # An environment variable to use the site joblib
+-if _os.environ.get('SKLEARN_SITE_JOBLIB', False):
++if True:
+     with _warnings.catch_warnings():
+         _warnings.simplefilter("ignore")
+         # joblib imports may raise DeprecationWarning on certain Python
 diff --git a/sklearn/utils/testing.py b/sklearn/utils/testing.py
 index 75b378961..b81b9ab58 100644
 --- a/sklearn/utils/testing.py

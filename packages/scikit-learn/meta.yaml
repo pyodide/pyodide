@@ -7,8 +7,8 @@ source:
   sha256: 97d1d971f8ec257011e64b7d655df68081dd3097322690afa1a71a1d755f8c18
 
   patches:
-   #- patches/unvendor-joblib.patch
    - patches/use-site-joblib.patch
+   - patches/support-joblib-011.patch
 
 build:
   cflags: -Wno-implicit-function-declaration
@@ -21,9 +21,39 @@ requirements:
 test:
   imports:
     - sklearn
+    - sklearn.calibration
     - sklearn.cluster
     - sklearn.compose
     - sklearn.covariance
     - sklearn.cross_decomposition
     - sklearn.datasets
     - sklearn.decomposition
+    - sklearn.discriminant_analysis
+    - sklearn.dummy
+    - sklearn.ensemble
+    - sklearn.exceptions
+    - sklearn.externals
+    - sklearn.feature_extraction
+    - sklearn.feature_selection
+    - sklearn.gaussian_process
+    - sklearn.impute
+    - sklearn.isotonic
+    - sklearn.kernel_approximation
+    - sklearn.kernel_ridge
+    - sklearn.linear_model
+    - sklearn.manifold
+    - sklearn.metrics
+    - sklearn.mixture
+    - sklearn.model_selection
+    - sklearn.multiclass
+    - sklearn.multioutput
+    - sklearn.naive_bayes
+    - sklearn.neighbors
+    - sklearn.neural_network
+    - sklearn.pipeline
+    - sklearn.preprocessing
+    - sklearn.random_projection
+    - sklearn.semi_supervised
+    - sklearn.svm
+    - sklearn.tree
+    - sklearn.utils

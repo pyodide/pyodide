@@ -1,0 +1,360 @@
+commit 09954a12bdcef544e940a9b4f661dd7210e2357d
+Author: Joel Nothman <joel.nothman@gmail.com>
+Date:   Wed Nov 7 08:10:23 2018 +1100
+
+    BLD we should ensure continued support for joblib 0.11 (#12350)
+
+diff --git a/sklearn/ensemble/forest.py b/sklearn/ensemble/forest.py
+index 542f7ca80..e54f131a4 100644
+--- a/sklearn/ensemble/forest.py
++++ b/sklearn/ensemble/forest.py
+@@ -50,7 +50,6 @@ import numpy as np
+ from scipy.sparse import issparse
+ from scipy.sparse import hstack as sparse_hstack
+ 
+-
+ from ..base import ClassifierMixin, RegressorMixin
+ from ..utils import Parallel, delayed
+ from ..externals import six
+@@ -62,7 +61,7 @@ from ..tree._tree import DTYPE, DOUBLE
+ from ..utils import check_random_state, check_array, compute_sample_weight
+ from ..exceptions import DataConversionWarning, NotFittedError
+ from .base import BaseEnsemble, _partition_estimators
+-from ..utils.fixes import parallel_helper
++from ..utils.fixes import parallel_helper, _joblib_parallel_args
+ from ..utils.multiclass import check_classification_targets
+ from ..utils.validation import check_is_fitted
+ 
+@@ -175,7 +174,7 @@ class BaseForest(six.with_metaclass(ABCMeta, BaseEnsemble)):
+         """
+         X = self._validate_X_predict(X)
+         results = Parallel(n_jobs=self.n_jobs, verbose=self.verbose,
+-                           prefer="threads")(
++                           **_joblib_parallel_args(prefer="threads"))(
+             delayed(parallel_helper)(tree, 'apply', X, check_input=False)
+             for tree in self.estimators_)
+ 
+@@ -206,7 +205,7 @@ class BaseForest(six.with_metaclass(ABCMeta, BaseEnsemble)):
+         """
+         X = self._validate_X_predict(X)
+         indicators = Parallel(n_jobs=self.n_jobs, verbose=self.verbose,
+-                              prefer="threads")(
++                              **_joblib_parallel_args(prefer='threads'))(
+             delayed(parallel_helper)(tree, 'decision_path', X,
+                                      check_input=False)
+             for tree in self.estimators_)
+@@ -324,11 +323,11 @@ class BaseForest(six.with_metaclass(ABCMeta, BaseEnsemble)):
+             # Parallel loop: we prefer the threading backend as the Cython code
+             # for fitting the trees is internally releasing the Python GIL
+             # making threading more efficient than multiprocessing in
+-            # that case. However, we respect any parallel_backend contexts set
+-            # at a higher level, since correctness does not rely on using
+-            # threads.
++            # that case. However, for joblib 0.12+ we respect any
++            # parallel_backend contexts set at a higher level,
++            # since correctness does not rely on using threads.
+             trees = Parallel(n_jobs=self.n_jobs, verbose=self.verbose,
+-                             prefer="threads")(
++                             **_joblib_parallel_args(prefer='threads'))(
+                 delayed(_parallel_build_trees)(
+                     t, self, X, y, sample_weight, i, len(trees),
+                     verbose=self.verbose, class_weight=self.class_weight)
+@@ -375,7 +374,7 @@ class BaseForest(six.with_metaclass(ABCMeta, BaseEnsemble)):
+         check_is_fitted(self, 'estimators_')
+ 
+         all_importances = Parallel(n_jobs=self.n_jobs,
+-                                   prefer="threads")(
++                                   **_joblib_parallel_args(prefer='threads'))(
+             delayed(getattr)(tree, 'feature_importances_')
+             for tree in self.estimators_)
+ 
+@@ -591,7 +590,8 @@ class ForestClassifier(six.with_metaclass(ABCMeta, BaseForest,
+         all_proba = [np.zeros((X.shape[0], j), dtype=np.float64)
+                      for j in np.atleast_1d(self.n_classes_)]
+         lock = threading.Lock()
+-        Parallel(n_jobs=n_jobs, verbose=self.verbose, require="sharedmem")(
++        Parallel(n_jobs=n_jobs, verbose=self.verbose,
++                 **_joblib_parallel_args(require="sharedmem"))(
+             delayed(_accumulate_prediction)(e.predict_proba, X, all_proba,
+                                             lock)
+             for e in self.estimators_)
+@@ -699,7 +699,8 @@ class ForestRegressor(six.with_metaclass(ABCMeta, BaseForest, RegressorMixin)):
+ 
+         # Parallel loop
+         lock = threading.Lock()
+-        Parallel(n_jobs=n_jobs, verbose=self.verbose, require="sharedmem")(
++        Parallel(n_jobs=n_jobs, verbose=self.verbose,
++                 **_joblib_parallel_args(require="sharedmem"))(
+             delayed(_accumulate_prediction)(e.predict, X, [y_hat], lock)
+             for e in self.estimators_)
+ 
+diff --git a/sklearn/ensemble/tests/test_forest.py b/sklearn/ensemble/tests/test_forest.py
+index f12f6f886..c08e5cc32 100644
+--- a/sklearn/ensemble/tests/test_forest.py
++++ b/sklearn/ensemble/tests/test_forest.py
+@@ -10,6 +10,7 @@ Testing for the forest module (sklearn.ensemble.forest).
+ 
+ import pickle
+ from collections import defaultdict
++from distutils.version import LooseVersion
+ import itertools
+ from itertools import combinations
+ from itertools import product
+@@ -21,6 +22,7 @@ from scipy.sparse import coo_matrix
+ 
+ import pytest
+ 
++from sklearn.utils import _joblib
+ from sklearn.utils import parallel_backend
+ from sklearn.utils import register_parallel_backend
+ try:
+@@ -1287,6 +1289,8 @@ class MyBackend(LokyBackend):
+ register_parallel_backend('testing', MyBackend)
+ 
+ 
++@pytest.mark.skipif(_joblib.__version__ < LooseVersion('0.12'),
++                    reason='tests not yet supported in joblib <0.12')
+ def test_backend_respected():
+     clf = RandomForestClassifier(n_estimators=10, n_jobs=2)
+ 
+diff --git a/sklearn/linear_model/coordinate_descent.py b/sklearn/linear_model/coordinate_descent.py
+index 2d0723944..4d0ded532 100644
+--- a/sklearn/linear_model/coordinate_descent.py
++++ b/sklearn/linear_model/coordinate_descent.py
+@@ -22,6 +22,7 @@ from ..utils import Parallel, delayed, effective_n_jobs
+ from ..externals import six
+ from ..externals.six.moves import xrange
+ from ..utils.extmath import safe_sparse_dot
++from ..utils.fixes import _joblib_parallel_args
+ from ..utils.validation import check_is_fitted
+ from ..utils.validation import column_or_1d
+ from ..exceptions import ConvergenceWarning
+@@ -1203,7 +1204,7 @@ class LinearModelCV(six.with_metaclass(ABCMeta, LinearModel)):
+                 for this_l1_ratio, this_alphas in zip(l1_ratios, alphas)
+                 for train, test in folds)
+         mse_paths = Parallel(n_jobs=self.n_jobs, verbose=self.verbose,
+-                             prefer="threads")(jobs)
++                             **_joblib_parallel_args(prefer="threads"))(jobs)
+         mse_paths = np.reshape(mse_paths, (n_l1_ratio, len(folds), -1))
+         mean_mse = np.mean(mse_paths, axis=1)
+         self.mse_path_ = np.squeeze(np.rollaxis(mse_paths, 2, 1))
+diff --git a/sklearn/linear_model/logistic.py b/sklearn/linear_model/logistic.py
+index 01a4f78ab..091c13c1f 100644
+--- a/sklearn/linear_model/logistic.py
++++ b/sklearn/linear_model/logistic.py
+@@ -33,6 +33,7 @@ from ..exceptions import (NotFittedError, ConvergenceWarning,
+                           ChangedBehaviorWarning)
+ from ..utils.multiclass import check_classification_targets
+ from ..utils import Parallel, delayed, effective_n_jobs
++from ..utils.fixes import _joblib_parallel_args
+ from ..model_selection import check_cv
+ from ..externals import six
+ from ..metrics import get_scorer
+@@ -1346,7 +1347,7 @@ class LogisticRegression(BaseEstimator, LinearClassifierMixin,
+         else:
+             prefer = 'processes'
+         fold_coefs_ = Parallel(n_jobs=self.n_jobs, verbose=self.verbose,
+-                               prefer=prefer)(
++                               **_joblib_parallel_args(prefer=prefer))(
+             path_func(X, y, pos_class=class_, Cs=[self.C],
+                       fit_intercept=self.fit_intercept, tol=self.tol,
+                       verbose=self.verbose, solver=solver,
+@@ -1775,7 +1776,7 @@ class LogisticRegressionCV(LogisticRegression, BaseEstimator,
+         else:
+             prefer = 'processes'
+         fold_coefs_ = Parallel(n_jobs=self.n_jobs, verbose=self.verbose,
+-                               prefer=prefer)(
++                               **_joblib_parallel_args(prefer=prefer))(
+             path_func(X, y, train, test, pos_class=label, Cs=self.Cs,
+                       fit_intercept=self.fit_intercept, penalty=self.penalty,
+                       dual=self.dual, solver=solver, tol=self.tol,
+diff --git a/sklearn/linear_model/stochastic_gradient.py b/sklearn/linear_model/stochastic_gradient.py
+index 5e253003a..236bc10a9 100644
+--- a/sklearn/linear_model/stochastic_gradient.py
++++ b/sklearn/linear_model/stochastic_gradient.py
+@@ -33,6 +33,7 @@ from .sgd_fast import SquaredLoss
+ from .sgd_fast import Huber
+ from .sgd_fast import EpsilonInsensitive
+ from .sgd_fast import SquaredEpsilonInsensitive
++from ..utils.fixes import _joblib_parallel_args
+ 
+ LEARNING_RATE_TYPES = {"constant": 1, "optimal": 2, "invscaling": 3,
+                        "adaptive": 4, "pa1": 5, "pa2": 6}
+@@ -613,8 +614,8 @@ class BaseSGDClassifier(six.with_metaclass(ABCMeta, BaseSGD,
+         strategy is called OVA: One Versus All.
+         """
+         # Use joblib to fit OvA in parallel.
+-        result = Parallel(n_jobs=self.n_jobs, prefer="threads",
+-                          verbose=self.verbose)(
++        result = Parallel(n_jobs=self.n_jobs, verbose=self.verbose,
++                          **_joblib_parallel_args(require="sharedmem"))(
+             delayed(fit_binary)(self, i, X, y, alpha, C, learning_rate,
+                                 max_iter, self._expanded_class_weight[i],
+                                 1., sample_weight)
+diff --git a/sklearn/linear_model/tests/test_sgd.py b/sklearn/linear_model/tests/test_sgd.py
+index 15e29ce4d..7ad29e2c0 100644
+--- a/sklearn/linear_model/tests/test_sgd.py
++++ b/sklearn/linear_model/tests/test_sgd.py
+@@ -1,4 +1,5 @@
+ 
++from distutils.version import LooseVersion
+ import pickle
+ import unittest
+ import pytest
+@@ -28,6 +29,13 @@ from sklearn.preprocessing import StandardScaler
+ from sklearn.exceptions import ConvergenceWarning
+ from sklearn.model_selection import train_test_split
+ from sklearn.linear_model import sgd_fast
++from sklearn.model_selection import RandomizedSearchCV
++from sklearn.utils import _joblib
++
++
++# 0.23. warning about tol not having its correct default value.
++pytestmark = pytest.mark.filterwarnings(
++    "ignore:max_iter and tol parameters have been")
+ 
+ 
+ class SparseSGDClassifier(SGDClassifier):
+@@ -1471,3 +1479,31 @@ def test_gradient_squared_epsilon_insensitive():
+         (2.0, 2.2, -0.2), (-2.0, 1.0, -5.8)
+     ]
+     _test_gradient_common(loss, cases)
++
++
++def test_multi_thread_multi_class_and_early_stopping():
++    # This is a non-regression test for a bad interaction between
++    # early stopping internal attribute and thread-based parallelism.
++    clf = SGDClassifier(alpha=1e-3, tol=1e-3, max_iter=1000,
++                        early_stopping=True, n_iter_no_change=100,
++                        random_state=0, n_jobs=2)
++    clf.fit(iris.data, iris.target)
++    assert clf.n_iter_ > clf.n_iter_no_change
++    assert clf.n_iter_ < clf.n_iter_no_change + 20
++    assert clf.score(iris.data, iris.target) > 0.8
++
++
++def test_multi_core_gridsearch_and_early_stopping():
++    # This is a non-regression test for a bad interaction between
++    # early stopping internal attribute and process-based multi-core
++    # parallelism.
++    param_grid = {
++        'alpha': np.logspace(-4, 4, 9),
++        'n_iter_no_change': [5, 10, 50],
++    }
++    clf = SGDClassifier(tol=1e-3, max_iter=1000, early_stopping=True,
++                        random_state=0)
++    search = RandomizedSearchCV(clf, param_grid, n_iter=10, cv=5, n_jobs=2,
++                                random_state=0)
++    search.fit(iris.data, iris.target)
++    assert search.best_score_ > 0.8
+diff --git a/sklearn/utils/fixes.py b/sklearn/utils/fixes.py
+index 070afbdbb..24554fe68 100644
+--- a/sklearn/utils/fixes.py
++++ b/sklearn/utils/fixes.py
+@@ -14,6 +14,8 @@ import os
+ import errno
+ import sys
+ 
++from distutils.version import LooseVersion
++
+ import numpy as np
+ import scipy.sparse as sp
+ import scipy
+@@ -332,3 +334,51 @@ except ImportError:  # python <3.3
+     from collections import Iterable as _Iterable  # noqa
+     from collections import Mapping as _Mapping  # noqa
+     from collections import Sized as _Sized  # noqa
++
++
++def _joblib_parallel_args(**kwargs):
++    """Set joblib.Parallel arguments in a compatible way for 0.11 and 0.12+
++
++    For joblib 0.11 this maps both ``prefer`` and ``require`` parameters to
++    a specific ``backend``.
++
++    Parameters
++    ----------
++
++    prefer : str in {'processes', 'threads'} or None
++        Soft hint to choose the default backend if no specific backend
++        was selected with the parallel_backend context manager.
++
++    require : 'sharedmem' or None
++        Hard condstraint to select the backend. If set to 'sharedmem',
++        the selected backend will be single-host and thread-based even
++        if the user asked for a non-thread based backend with
++        parallel_backend.
++
++    See joblib.Parallel documentation for more details
++    """
++    from . import _joblib
++
++    if _joblib.__version__ >= LooseVersion('0.12'):
++        return kwargs
++
++    extra_args = set(kwargs.keys()).difference({'prefer', 'require'})
++    if extra_args:
++        raise NotImplementedError('unhandled arguments %s with joblib %s'
++                                  % (list(extra_args), _joblib.__version__))
++    args = {}
++    if 'prefer' in kwargs:
++        prefer = kwargs['prefer']
++        if prefer not in ['threads', 'processes', None]:
++            raise ValueError('prefer=%s is not supported' % prefer)
++        args['backend'] = {'threads': 'threading',
++                           'processes': 'multiprocessing',
++                           None: None}[prefer]
++
++    if 'require' in kwargs:
++        require = kwargs['require']
++        if require not in [None, 'sharedmem']:
++            raise ValueError('require=%s is not supported' % require)
++        if require == 'sharedmem':
++            args['backend'] = 'threading'
++    return args
+diff --git a/sklearn/utils/tests/test_fixes.py b/sklearn/utils/tests/test_fixes.py
+index 92f954439..5b7b960fa 100644
+--- a/sklearn/utils/tests/test_fixes.py
++++ b/sklearn/utils/tests/test_fixes.py
+@@ -16,6 +16,7 @@ from sklearn.utils.fixes import divide
+ from sklearn.utils.fixes import MaskedArray
+ from sklearn.utils.fixes import nanmedian
+ from sklearn.utils.fixes import nanpercentile
++from sklearn.utils.fixes import _joblib_parallel_args
+ 
+ 
+ def test_divide():
+@@ -57,3 +58,33 @@ def test_nanmedian(axis, expected_median):
+ def test_nanpercentile(a, q, expected_percentile):
+     percentile = nanpercentile(a, q)
+     assert_allclose(percentile, expected_percentile)
++
++
++@pytest.mark.parametrize('joblib_version', ('0.11', '0.12.0'))
++def test_joblib_parallel_args(monkeypatch, joblib_version):
++    import sklearn.utils._joblib
++    monkeypatch.setattr(sklearn.utils._joblib, '__version__', joblib_version)
++
++    if joblib_version == '0.12.0':
++        # arguments are simply passed through
++        assert _joblib_parallel_args(prefer='threads') == {'prefer': 'threads'}
++        assert _joblib_parallel_args(prefer='processes', require=None) == {
++                    'prefer': 'processes', 'require': None}
++        assert _joblib_parallel_args(non_existing=1) == {'non_existing': 1}
++    elif joblib_version == '0.11':
++        # arguments are mapped to the corresponding backend
++        assert _joblib_parallel_args(prefer='threads') == {
++                    'backend': 'threading'}
++        assert _joblib_parallel_args(prefer='processes') == {
++                    'backend': 'multiprocessing'}
++        with pytest.raises(ValueError):
++            _joblib_parallel_args(prefer='invalid')
++        assert _joblib_parallel_args(
++                prefer='processes', require='sharedmem') == {
++                    'backend': 'threading'}
++        with pytest.raises(ValueError):
++            _joblib_parallel_args(require='invalid')
++        with pytest.raises(NotImplementedError):
++            _joblib_parallel_args(verbose=True)
++    else:
++        raise ValueError
