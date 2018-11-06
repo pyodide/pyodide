@@ -112,20 +112,14 @@ workflows:
   version: 2
   build-and-deploy:
     jobs:
-      - build:
-          tags:
-            only: /^v\d+\.\d+\.\d+$/
+      - build
       - test-chrome:
           requires:
             - build
       - test-firefox:
           requires:
             - build
-          tags:
-            only: /^v\d+\.\d+\.\d+$/
-      - test-python:
-          tags:
-            only: /^v\d+\.\d+\.\d+$/
+      - test-python
       - benchmark:
           requires:
             - build
@@ -134,7 +128,5 @@ workflows:
             - test-firefox
             - test-python
           filters:
-            branches:
-              ignore: /.*/
             tags:
               only: /^v\d+\.\d+\.\d+$/
