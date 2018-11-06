@@ -122,6 +122,9 @@ workflows:
       - test-firefox:
           requires:
             - build
+          filters:
+            tags:
+              only: /.*/
       - test-python:
           filters:
             tags:
