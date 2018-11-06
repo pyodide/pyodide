@@ -128,5 +128,7 @@ workflows:
             - test-firefox
             - test-python
           filters:
+            branches:
+              ignore: /.*/
             tags:
               only: /^v\d+\.\d+\.\d+$/
