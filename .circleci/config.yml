@@ -112,14 +112,20 @@ workflows:
   version: 2
   build-and-deploy:
     jobs:
-      - build
+      - build:
+          filters:
+            tags:
+              only: /.*/
       - test-chrome:
           requires:
             - build
       - test-firefox:
           requires:
             - build
-      - test-python
+      - test-python:
+          filters:
+            tags:
+              only: /.*/
       - benchmark:
           requires:
             - build
