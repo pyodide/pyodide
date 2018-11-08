@@ -54,7 +54,6 @@ main(int argc, char** argv)
     return 1;
   }
   if (PyObject_SetAttrString(sys, "dont_write_bytecode", Py_True)) {
-    Py_DECREF(sys);
     return 1;
   }
 
@@ -62,13 +61,10 @@ main(int argc, char** argv)
   // importing modules, which saves on filesystem I/O time
   PyObject *implementation = PyObject_GetAttrString(sys, "implementation");
   if (implementation == NULL) {
-    Py_DECREF(sys);
     return 1;
   }
 
   if (PyObject_SetAttrString(implementation, "cache_tag", Py_None)) {
-    Py_DECREF(implementation);
-    Py_DECREF(sys);
     return 1;
   }
 
