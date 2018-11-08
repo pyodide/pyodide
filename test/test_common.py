@@ -79,7 +79,8 @@ def test_import(name, selenium_standalone):
             print(selenium_standalone.logs)
             raise
 
-        # Make sure that even after importing, there are no additional .pyc files
+        # Make sure that even after importing, there are no additional .pyc
+        # files
         assert selenium_standalone.run(
             """
             len(list(glob.glob(
