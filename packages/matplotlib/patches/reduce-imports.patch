@@ -96,7 +96,7 @@ index f6fdfd61c..c06431910 100644
              self._mins = args[0]._mins
              self._maxs = args[0]._maxs
          else:
-+            import matplotlib._contour as contour
++            import matplotlib._contour as _contour
 +
              self._corner_mask = kwargs.pop('corner_mask', None)
              if self._corner_mask is None:
