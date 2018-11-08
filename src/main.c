@@ -45,8 +45,9 @@ main(int argc, char** argv)
 
   Py_InitializeEx(0);
 
-  // This doesn't seem to work anymore, but I'm keeping it for good measure anyway
-  // The effective way to turn this off is below: setting sys.done_write_bytecode = True
+  // This doesn't seem to work anymore, but I'm keeping it for good measure
+  // anyway The effective way to turn this off is below: setting
+  // sys.done_write_bytecode = True
   setenv("PYTHONDONTWRITEBYTECODE", "1", 0);
 
   PyObject* sys = PyImport_ImportModule("sys");
@@ -57,9 +58,9 @@ main(int argc, char** argv)
     return 1;
   }
 
-  // By disabling the cache_tag, Python won't look for cached bytecode files when
-  // importing modules, which saves on filesystem I/O time
-  PyObject *implementation = PyObject_GetAttrString(sys, "implementation");
+  // By disabling the cache_tag, Python won't look for cached bytecode files
+  // when importing modules, which saves on filesystem I/O time
+  PyObject* implementation = PyObject_GetAttrString(sys, "implementation");
   if (implementation == NULL) {
     return 1;
   }
