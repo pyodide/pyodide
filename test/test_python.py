@@ -530,12 +530,3 @@ def test_runpythonasync_exception_after_import(selenium_standalone):
         assert "ZeroDivisionError" in str(e)
     else:
         assert False
-
-
-def test_cprofile(selenium_standalone):
-    selenium_standalone.run(
-        """
-        import cProfile
-        cProfile.run("import colorsys")
-        """
-    )
