@@ -19,7 +19,6 @@
 #   whole module.
 # - networking: Fails because it tests low-level networking.
 # - dbm: Failures due to no dbm module
-# - _lsprof: Failures due to no _lsprof module
 # - strftime: Failures due to differences / shortcomings in WebAssembly's
 #   implementation of date/time formatting in strftime and strptime
 # - permissions: Issues with the test writing to the virtual filesystem
@@ -63,7 +62,7 @@ test_asyncio.test_tasks           async
 test_asyncio.test_transports
 test_asyncio.test_unix_events     async
 test_asyncio.test_windows_events
-test_asyncio.test_windows_utils   
+test_asyncio.test_windows_utils
 test_asyncore bad ioctl syscall async
 test_atexit
 test_audioop  audioop
@@ -126,7 +125,7 @@ test_contextlib_async async
 test_copy
 test_copyreg  dbm
 test_coroutines async
-test_cprofile _lsprof
+test_cprofile
 test_crashers
 test_crypt
 test_csv
