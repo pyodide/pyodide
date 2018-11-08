@@ -133,7 +133,7 @@ def package_files(buildpath, srcpath, pkg, args):
         '--js-output={}'.format(name + '.js'),
         '--export-name=pyodide._module',
         '--exclude', '*.wasm.pre',
-        '--exclude', '__pycache__',
+        '--exclude', '*__pycache__*',
         '--use-preload-plugins'],
         cwd=buildpath, check=True)
     subprocess.run([

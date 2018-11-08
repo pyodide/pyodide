@@ -41,10 +41,39 @@ main(int argc, char** argv)
 {
   hiwire_setup();
 
-  setenv("PYTHONDONTWRITEBYTECODE", "1", 0);
   setenv("PYTHONHOME", "/", 0);
 
   Py_InitializeEx(0);
+
+  // This doesn't seem to work anymore, but I'm keeping it for good measure anyway
+  // The effective way to turn this off is below: setting sys.done_write_bytecode = True
+  setenv("PYTHONDONTWRITEBYTECODE", "1", 0);
+
+  PyObject* sys = PyImport_ImportModule("sys");
+  if (sys == NULL) {
+    return 1;
+  }
+  if (PyObject_SetAttrString(sys, "dont_write_bytecode", Py_True)) {
+    Py_DECREF(sys);
+    return 1;
+  }
+
+  // By disabling the cache_tag, Python won't look for cached bytecode files when
+  // importing modules, which saves on filesystem I/O time
+  PyObject *implementation = PyObject_GetAttrString(sys, "implementation");
+  if (implementation == NULL) {
+    Py_DECREF(sys);
+    return 1;
+  }
+
+  if (PyObject_SetAttrString(implementation, "cache_tag", Py_None)) {
+    Py_DECREF(implementation);
+    Py_DECREF(sys);
+    return 1;
+  }
+
+  Py_DECREF(implementation);
+  Py_DECREF(sys);
 
   if (js2python_init() || JsImport_init() || JsProxy_init() ||
       pyimport_init() || pyproxy_init() || python2js_init() ||

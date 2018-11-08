@@ -1,0 +1,12 @@
+diff -ur pytest-3.6.3-bak/src/_pytest/assertion/rewrite.py pytest-3.6.3/src/_pytest/assertion/rewrite.py
+--- pytest-3.6.3-bak/src/_pytest/assertion/rewrite.py	2018-11-08 14:58:43.984236991 -0500
++++ pytest-3.6.3/src/_pytest/assertion/rewrite.py	2018-11-08 14:59:59.881455735 -0500
+@@ -19,7 +19,7 @@
+ 
+ 
+ # pytest caches rewritten pycs in __pycache__.
+-if hasattr(imp, "get_tag"):
++if hasattr(imp, "get_tag") and imp.get_tag() is not None:
+     PYTEST_TAG = imp.get_tag() + "-PYTEST"
+ else:
+     if hasattr(sys, "pypy_version_info"):

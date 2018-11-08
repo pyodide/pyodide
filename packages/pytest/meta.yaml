@@ -8,12 +8,13 @@ source:
 
   patches:
     - patches/named-tmp-and-rm-dup2.patch
+    - patches/workaround_get_tag.patch
 
 requirements:
   run:
     - atomicwrites
     - attrs
-    - more-itertools 
+    - more-itertools
     - pluggy
     - py
     - setuptools

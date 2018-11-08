@@ -49,10 +49,42 @@ def test_import(name, selenium_standalone):
                 '{} fails to load and is not supported on {}.'
                 .format(name, selenium_standalone.browser))
 
+    selenium_standalone.run("import glob, os")
+
+    baseline_pyc = selenium_standalone.run(
+        """
+        len(list(glob.glob(
+            '/lib/python3.7/site-packages/**/*.pyc',
+            recursive=True)
+        ))
+        """
+    )
+
+    selenium_standalone.load_package(name)
+
+    # Make sure there are no additional .pyc file
+    assert selenium_standalone.run(
+        """
+        len(list(glob.glob(
+            '/lib/python3.7/site-packages/**/*.pyc',
+            recursive=True)
+        ))
+        """
+    ) == baseline_pyc
+
     for import_name in meta.get('test', {}).get('imports', []):
-        selenium_standalone.load_package(name)
         try:
             selenium_standalone.run('import %s' % import_name)
         except Exception as e:
             print(selenium_standalone.logs)
             raise
+
+        # Make sure that even after importing, there are no additional .pyc files
+        assert selenium_standalone.run(
+            """
+            len(list(glob.glob(
+                '/lib/python3.7/site-packages/**/*.pyc',
+                recursive=True)
+            ))
+            """
+        ) == baseline_pyc
