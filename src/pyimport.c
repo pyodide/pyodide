@@ -19,7 +19,6 @@ _pyimport(char* name)
 
   Py_DECREF(pyname);
   int idval = python2js(pyval);
-  Py_DECREF(pyval);
   return idval;
 }
 
