@@ -57,19 +57,6 @@ main(int argc, char** argv)
   if (PyObject_SetAttrString(sys, "dont_write_bytecode", Py_True)) {
     return 1;
   }
-
-  // By disabling the cache_tag, Python won't look for cached bytecode files
-  // when importing modules, which saves on filesystem I/O time
-  PyObject* implementation = PyObject_GetAttrString(sys, "implementation");
-  if (implementation == NULL) {
-    return 1;
-  }
-
-  if (PyObject_SetAttrString(implementation, "cache_tag", Py_None)) {
-    return 1;
-  }
-
-  Py_DECREF(implementation);
   Py_DECREF(sys);
 
   if (js2python_init() || JsImport_init() || JsProxy_init() ||

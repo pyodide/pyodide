@@ -8,7 +8,6 @@ source:
 
   patches:
     - patches/named-tmp-and-rm-dup2.patch
-    - patches/workaround_get_tag.patch
 
 requirements:
   run:
