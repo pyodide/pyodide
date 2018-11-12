@@ -183,6 +183,13 @@ def test_import_js(selenium):
     assert result == 'Foo'
 
 
+def test_pyimport_multiple(selenium):
+    """See #1151"""
+    selenium.run("v = 0.123")
+    selenium.run_js("pyodide.pyimport('v')")
+    selenium.run_js("pyodide.pyimport('v')")
+
+
 def test_pyproxy(selenium):
     selenium.run(
         """

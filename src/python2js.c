@@ -297,7 +297,6 @@ _python2js_cache(PyObject* x, PyObject* map)
     if (result != HW_ERROR) {
       result = hiwire_incref(result);
     }
-    Py_DECREF(val);
   } else {
     result = _python2js(x, map);
   }
