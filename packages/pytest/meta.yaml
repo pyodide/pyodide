@@ -13,7 +13,7 @@ requirements:
   run:
     - atomicwrites
     - attrs
-    - more-itertools 
+    - more-itertools
     - pluggy
     - py
     - setuptools
