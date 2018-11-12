@@ -6,6 +6,11 @@
 #include "jsproxy.h"
 #include "pyproxy.h"
 
+static PyObject* tbmod = NULL;
+
+static int
+_python2js_unicode(PyObject* x);
+
 int
 pythonexc2js()
 {
@@ -27,65 +32,61 @@ pythonexc2js()
     goto exit;
   }
 
-  PyObject* tbmod = PyImport_ImportModule("traceback");
   if (tbmod == NULL) {
-    PyObject* repr = PyObject_Repr(value);
-    if (repr == NULL) {
-      excval = hiwire_string_ascii((int)"Could not get repr for exception");
-    } else {
-      excval = python2js(repr);
-      Py_DECREF(repr);
+    tbmod = PyImport_ImportModule("traceback");
+    if (tbmod == NULL) {
+      PyObject* repr = PyObject_Repr(value);
+      if (repr == NULL) {
+        excval = hiwire_string_ascii((int)"Could not get repr for exception");
+      } else {
+        excval = _python2js_unicode(repr);
+        Py_DECREF(repr);
+      }
+      goto exit;
     }
+  }
+
+  PyObject* format_exception;
+  if (traceback == NULL || traceback == Py_None) {
+    no_traceback = 1;
+    format_exception = PyObject_GetAttrString(tbmod, "format_exception_only");
   } else {
-    PyObject* format_exception;
-    if (traceback == NULL || traceback == Py_None) {
-      no_traceback = 1;
-      format_exception = PyObject_GetAttrString(tbmod, "format_exception_only");
+    format_exception = PyObject_GetAttrString(tbmod, "format_exception");
+  }
+  if (format_exception == NULL) {
+    excval =
+      hiwire_string_ascii((int)"Could not get format_exception function");
+  } else {
+    PyObject* pylines;
+    if (no_traceback) {
+      pylines =
+        PyObject_CallFunctionObjArgs(format_exception, type, value, NULL);
     } else {
-      format_exception = PyObject_GetAttrString(tbmod, "format_exception");
+      pylines = PyObject_CallFunctionObjArgs(
+        format_exception, type, value, traceback, NULL);
     }
-    if (format_exception == NULL) {
+    if (pylines == NULL) {
       excval =
-        hiwire_string_ascii((int)"Could not get format_exception function");
+        hiwire_string_ascii((int)"Error calling traceback.format_exception");
+      PyErr_Print();
+      PyErr_Clear();
+      goto exit;
     } else {
-      PyObject* pylines;
-      if (no_traceback) {
-        pylines =
-          PyObject_CallFunctionObjArgs(format_exception, type, value, NULL);
-      } else {
-        pylines = PyObject_CallFunctionObjArgs(
-          format_exception, type, value, traceback, NULL);
-      }
-      if (pylines == NULL) {
-        excval =
-          hiwire_string_ascii((int)"Error calling traceback.format_exception");
-        PyErr_Print();
-        PyErr_Clear();
-        goto exit;
-      } else {
-        PyObject* newline = PyUnicode_FromString("");
-        PyObject* pystr = PyUnicode_Join(newline, pylines);
-        printf("Python exception:\n");
-        printf("%s\n", PyUnicode_AsUTF8(pystr));
-        excval = python2js(pystr);
-        Py_DECREF(pystr);
-        Py_DECREF(newline);
-        Py_DECREF(pylines);
-      }
-      Py_DECREF(format_exception);
+      PyObject* empty = PyUnicode_FromString("");
+      PyObject* pystr = PyUnicode_Join(empty, pylines);
+      printf("Python exception:\n");
+      printf("%s\n", PyUnicode_AsUTF8(pystr));
+      excval = _python2js_unicode(pystr);
+      Py_DECREF(pystr);
+      Py_DECREF(empty);
+      Py_DECREF(pylines);
     }
-    Py_DECREF(tbmod);
+    Py_DECREF(format_exception);
   }
 
 exit:
-  Py_XDECREF(type);
-  Py_XDECREF(value);
-  Py_XDECREF(traceback);
-
   PyErr_Clear();
-
   hiwire_throw_error(excval);
-
   return HW_ERROR;
 }
 
