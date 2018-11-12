@@ -8,14 +8,14 @@ Iodide](using_pyodide_from_iodide.md).
 
 Include `pyodide.js` in your project.
 
-This has a single function which bootstraps the Python environment:
-`languagePluginLoader`. Since this must happen asynchronously, it returns a
+This has a single `Promise` object which bootstraps the Python environment:
+`languagePluginLoader`. Since this must happen asynchronously, it is a
 `Promise`, which you must call `then` on to complete initialization. When the
 promise resolves, pyodide will have installed a namespace in global scope:
 `pyodide`.
 
 ```javascript
-languagePluginLoader().then(() => {
+languagePluginLoader.then(() => {
   // pyodide is now ready to use...
   console.log(pyodide.runPython('import sys\nsys.version'));
 });
