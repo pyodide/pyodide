@@ -5,7 +5,7 @@ A library of helper utilities for connecting Python to the browser environment.
 import ast
 import io
 
-__version__ = '0.1.11'
+__version__ = '0.1.12'
 
 
 def open_url(url):
