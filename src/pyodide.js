@@ -6,7 +6,8 @@ var languagePluginLoader = new Promise((resolve, reject) => {
   // This is filled in by the Makefile to be either a local file or the
   // deployed location. TODO: This should be done in a less hacky
   // way.
-  const baseURL = '{{DEPLOY}}';
+  var baseURL = window.languagePluginUrl || '{{DEPLOY}}';
+  baseURL = baseURL.substr(0, baseURL.lastIndexOf('/')) + '/';
 
   ////////////////////////////////////////////////////////////
   // Package loading
