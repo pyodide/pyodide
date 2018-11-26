@@ -204,6 +204,7 @@ class ChromeWrapper(SeleniumWrapper):
 
         options = Options()
         options.add_argument('--headless')
+        options.add_argument('--no-sandbox')
 
         self.JavascriptException = WebDriverException
 
