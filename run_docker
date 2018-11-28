@@ -1,2 +1,2 @@
 #!/bin/sh
-docker run --rm -v $PWD:/src --user root -e NB_UID=$UID -e NB_GID=$GID -it iodide/pyodide-env:0.3.1 /bin/bash
+docker run -p 8000:8000 --rm -v $PWD:/src --user root -e NB_UID=$UID -e NB_GID=$GID -it iodide/pyodide-env:0.3.1 /bin/bash
