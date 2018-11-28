@@ -342,6 +342,22 @@ def test_jsproxy_implicit_iter(selenium):
         "list(Object.values(ITER))") == [1, 2, 3]
 
 
+def test_jsproxy_kwargs(selenium):
+    selenium.run_js(
+        """
+        window.kwarg_function = ({ a = 1, b = 1 }) => {
+            return a / b;
+        };
+        """
+    )
+    assert selenium.run(
+        """
+        from js import kwarg_function
+        kwarg_function(b = 2, a = 10)
+        """
+    ) == 5
+
+
 def test_open_url(selenium):
     assert selenium.run(
         """
