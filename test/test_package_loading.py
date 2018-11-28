@@ -103,3 +103,15 @@ def test_load_packages_sequential(selenium_standalone, packages):
     # ('pyparsing' and 'matplotlib')
     assert selenium.logs.count(f'Loading {packages[0]}') == 1
     assert selenium.logs.count(f'Loading {packages[1]}') == 1
+
+
+def test_load_handle_failure(selenium_standalone):
+    selenium = selenium_standalone
+    selenium.load_package('pytz')
+    selenium.run('import pytz')
+    selenium.load_package('pytz2')
+    selenium.load_package('pyparsing')
+    assert 'Loading pytz' in selenium.logs
+    assert 'Loading pytz2' in selenium.logs
+    assert "Unknown package 'pytz2'" in selenium.logs
+    assert 'Loading pyparsing' in selenium.logs  # <- this fails
