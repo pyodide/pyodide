@@ -119,7 +119,8 @@ var languagePluginLoader = new Promise((resolve, reject) => {
             }
           });
         } else {
-          console.log(`Unknown package '${package}'`);
+          console.error(`Unknown package '${package}'`);
+          return;
         }
       }
     }
