@@ -1,21 +1,21 @@
 package:
   name: scikit-learn
-  version: 0.20.0
+  version: 0.20.1
 
 source:
-  url: https://pypi.io/packages/source/s/scikit-learn/scikit-learn-0.20.0.tar.gz
-  sha256: 97d1d971f8ec257011e64b7d655df68081dd3097322690afa1a71a1d755f8c18
+  url: https://github.com/scikit-learn/scikit-learn/archive/0.20.1.tar.gz
+  sha256: 618feea121c59a52ea459d6af7bc179344ca345775b04bd60e96740e9df75960
 
   patches:
    - patches/use-site-joblib.patch
-   - patches/support-joblib-011.patch
 
 build:
   cflags: -Wno-implicit-function-declaration
 
 requirements:
   run:
-    - numpy   # TODO: add scipy once the corresponding PR is merged
+    - numpy
+    - scipy
     - joblib
 
 test:
