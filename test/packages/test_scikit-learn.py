@@ -6,9 +6,6 @@ def test_scikit_learn(selenium_standalone, request):
     if selenium.browser == 'chrome':
         request.applymarker(pytest.mark.xfail(
             run=False, reason='chrome not supported'))
-    # no automatic depedency resolution for now
-    selenium.load_package(["numpy", "joblib"])
-    selenium.load_package("scipy")
     selenium.load_package("scikit-learn")
     assert selenium.run("""
         import numpy as np
