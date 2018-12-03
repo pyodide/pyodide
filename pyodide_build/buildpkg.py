@@ -154,7 +154,7 @@ def build_package(path, args):
     os.chdir(dirpath)
     try:
         buildpath = dirpath / 'build'
-        if not buildpath.is_dir():
+        if not buildpath.resolve().is_dir():
             os.makedirs(buildpath)
         srcpath = download_and_extract(buildpath, packagedir, pkg, args)
         patch(path, srcpath, pkg, args)

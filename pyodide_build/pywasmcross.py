@@ -211,6 +211,8 @@ def handle_command(line, args, dryrun=False):
             return
         if arg == '-print-multiarch':
             return
+        if arg.startswith('/tmp'):
+            return
 
     if line[0] == 'gfortran':
         result = f2c(line)
@@ -234,6 +236,8 @@ def handle_command(line, args, dryrun=False):
     elif new_args[0] in ('emcc', 'em++'):
         new_args.extend(args.cflags.split())
 
+    lapack_dir = None
+
     # Go through and adjust arguments
     for arg in line[1:]:
         if arg.startswith('-I'):
@@ -255,6 +259,34 @@ def handle_command(line, args, dryrun=False):
         elif shared and arg.endswith('.so'):
             arg = arg[:-3] + '.wasm'
             output = arg
+
+        # Fix for scipy to link to the correct BLAS/LAPACK files
+        if arg.startswith('-L') and 'CLAPACK-WA' in arg:
+            out_idx = line.index('-o')
+            out_idx += 1
+            module_name = line[out_idx]
+            module_name = Path(module_name).name.split('.')[0]
+
+            lapack_dir = arg.replace('-L', '')
+            # For convinience we determine needed scipy link libraries
+            # here, instead of in patch files
+            link_libs = ['F2CLIBS/libf2c.bc', 'blas_WA.bc']
+            if module_name in ['_flapack', '_flinalg', '_calc_lwork',
+                               'cython_lapack', '_iterative', '_arpack']:
+                link_libs.append('lapack_WA.bc')
+
+            for lib_name in link_libs:
+                arg = os.path.join(lapack_dir, f"{lib_name}")
+                new_args.append(arg)
+
+            new_args.extend(['-s', 'INLINING_LIMIT=5'])
+            continue
+
+        # Use -Os for files that are statically linked to CLAPACK
+        if (arg.startswith('-O') and 'CLAPACK' in ' '.join(line)
+                and '-L' in ' '.join(line)):
+            new_args.append('-Os')
+            continue
 
         new_args.append(arg)
 
@@ -316,10 +348,10 @@ def install_for_distribution(args):
     try:
         subprocess.check_call(commands)
     except Exception:
-        print(f'Warning: {" ".join(commands)} failed with distutils, possibly '
-              f'due to the use of distutils that does not support the '
-              f'--old-and-unmanageable argument. Re-trying the install '
-              f'without this argument.')
+        print(f'Warning: {" ".join(str(arg) for arg in commands)} failed '
+              f'with distutils, possibly due to the use of distutils '
+              f'that does not support the --old-and-unmanageable '
+              'argument. Re-trying the install without this argument.')
         subprocess.check_call(commands[:-1])
 
 

@@ -1,0 +1,49 @@
+package:
+  name: scipy
+  version: 0.17.1
+
+source:
+  # We can't use the version from PyPi as it includes Cythonized files
+  # generated with an older Cython that does not support Python 3.7
+  # This requires,
+  #    pip install Cython Tempita
+  # on the host for the build
+  url: https://github.com/scipy/scipy/archive/v0.17.1.tar.gz
+  sha256: bf22383d9e2526ffdc53a6c7d3d66dab45a86291ed35d8e281bd1a5d2c34187b
+
+  patches:
+    # these patches can be found as commits in
+    #    https://github.com/rth/scipy/tree/0.17.1-pyodide
+    # on top of the v0.17.1 tag
+    - patches/fix-blas.patch
+    - patches/fix-build-gcc5-a80460.patch
+    - patches/force_malloc.patch
+    - patches/disable_scipy_stats_mvn.patch
+    - patches/skip-fortran-fails-to-link.patch
+    - patches/dummy_threading.patch
+    - patches/skip_ellip_harm_2_pyx_ctypes.patch
+    - patches/fix_mmap.patch
+
+build:
+  cflags: -I../../../../CLAPACK/CLAPACK-WA/INCLUDE -Wno-implicit-function-declaration
+  cxxflags:
+
+requirements:
+  run:
+    - numpy
+
+test:
+  imports:
+    - scipy
+    - scipy.cluster
+    - scipy.constants
+    - scipy.fftpack
+    - scipy.odr
+    - scipy.sparse
+    - scipy.interpolate
+    - scipy.integrate
+    - scipy.linalg
+    - scipy.misc
+    - scipy.ndimage
+    - scipy.spatial
+    - scipy.special

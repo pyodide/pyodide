@@ -15,6 +15,7 @@ OPTFLAGS=-O3
 CFLAGS=$(OPTFLAGS) -g -I$(PYTHONINCLUDE) -Wno-warn-absolute-paths
 CXXFLAGS=$(CFLAGS) -std=c++14
 
+
 # __ZNKSt3__220__vector_base_commonILb1EE20__throw_length_errorEv is in
 # EXPORTED_FUNCTIONS to keep the C++ standard library in the core, even though
 # there isn't any C++ there, for the sake of loading dynamic modules written in
@@ -134,7 +135,7 @@ clean:
 	rm -fr src/*.bc
 	make -C packages clean
 	make -C six clean
-	echo "The Emsdk and CPython are not cleaned. cd into those directories to do so."
+	echo "The Emsdk, CPython and CLAPACK are not cleaned. cd into those directories to do so."
 
 
 %.bc: %.c $(CPYTHONLIB) $(LZ4LIB)
@@ -215,7 +216,6 @@ $(CLAPACK): $(CPYTHONLIB)
 
 build/packages.json: $(CPYTHONLIB) $(CLAPACK)
 	make -C packages
-
 
 emsdk/emsdk/.complete:
 	make -C emsdk

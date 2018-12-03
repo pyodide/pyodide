@@ -25,7 +25,6 @@ $(SRC)/lapack_WA.bc:  $(SRC)/Makefile
 $(SRC)/Makefile:
 	wget -q -O clapack.tgz http://www.netlib.org/clapack/clapack.tgz
 	md5sum --quiet --check checksums || (rm -f clapack.tgz; false)
-
 	tar xzf clapack.tgz
 	rm -rf $(SRC)
 	mv CLAPACK-$(CLAPACK_VERSION) $(SRC)

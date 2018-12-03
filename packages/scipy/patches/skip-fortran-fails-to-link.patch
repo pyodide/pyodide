@@ -1,0 +1,125 @@
+commit c3affe05b5cb8d992cb7a955ff8b4c79452f3cc9
+Author: Roman Yurchak <rth.yurchak@pm.me>
+Date:   Thu Oct 11 17:10:36 2018 +0200
+
+    Skip fortran code that fails to link
+    
+       scipy.integrate.odepack
+
+diff --git a/scipy/integrate/_ode.py b/scipy/integrate/_ode.py
+index de1064048..52bf3875a 100644
+--- a/scipy/integrate/_ode.py
++++ b/scipy/integrate/_ode.py
+@@ -89,10 +89,19 @@ import re
+ import warnings
+ 
+ from numpy import asarray, array, zeros, int32, isscalar, real, imag, vstack
+-
+-from . import vode as _vode
+-from . import _dop
+-from . import lsoda as _lsoda
++try:
++    from . import vode as _vode
++except ImportError:
++    _vode = None
++try:
++    from . import _dop
++except ImportError:
++    _dop = None
++
++try:
++    from . import lsoda as _lsoda
++except ImportError:
++    _lsoda = None
+ 
+ 
+ #------------------------------------------------------------------------------
+diff --git a/scipy/integrate/odepack.py b/scipy/integrate/odepack.py
+index eee2b04a3..17224f54e 100644
+--- a/scipy/integrate/odepack.py
++++ b/scipy/integrate/odepack.py
+@@ -3,7 +3,8 @@ from __future__ import division, print_function, absolute_import
+ 
+ __all__ = ['odeint']
+ 
+-from . import _odepack
++# from . import _odepack
++_odepack = None
+ from copy import copy
+ import warnings
+ 
+diff --git a/scipy/integrate/setup.py b/scipy/integrate/setup.py
+index 4725eb1c0..0545dc759 100755
+--- a/scipy/integrate/setup.py
++++ b/scipy/integrate/setup.py
+@@ -27,7 +27,7 @@ def configuration(parent_package='',top_path=None):
+     config.add_library('mach', sources=mach_src,
+                        config_fc={'noopt':(__file__,1)})
+     config.add_library('quadpack', sources=quadpack_src)
+-    config.add_library('odepack', sources=odepack_src)
++    #config.add_library('odepack', sources=odepack_src)
+     config.add_library('dop', sources=dop_src)
+ 
+     # Extensions
+@@ -44,27 +44,27 @@ def configuration(parent_package='',top_path=None):
+ 
+     odepack_opts = lapack_opt.copy()
+     odepack_opts.update(numpy_nodepr_api)
+-    config.add_extension('_odepack',
+-                         sources=['_odepackmodule.c'],
+-                         libraries=odepack_libs,
+-                         depends=(odepack_src + mach_src),
+-                         **odepack_opts)
++    #config.add_extension('_odepack',
++    #                     sources=['_odepackmodule.c'],
++    #                     libraries=odepack_libs,
++    #                     depends=(odepack_src + mach_src),
++    #                     **odepack_opts)
+ 
+     # vode
+-    config.add_extension('vode',
+-                         sources=['vode.pyf'],
+-                         libraries=odepack_libs,
+-                         depends=(odepack_src
+-                                  + mach_src),
+-                         **lapack_opt)
++    #config.add_extension('vode',
++    #                     sources=['vode.pyf'],
++    #                     libraries=odepack_libs,
++    #                     depends=(odepack_src
++    #                              + mach_src),
++    #                     **lapack_opt)
+ 
+     # lsoda
+-    config.add_extension('lsoda',
+-                         sources=['lsoda.pyf'],
+-                         libraries=odepack_libs,
+-                         depends=(odepack_src
+-                                  + mach_src),
+-                         **lapack_opt)
++    #config.add_extension('lsoda',
++    #                     sources=['lsoda.pyf'],
++    #                     libraries=odepack_libs,
++    #                     depends=(odepack_src
++    #                              + mach_src),
++    #                     **lapack_opt)
+ 
+     # dop
+     #config.add_extension('_dop',
+@@ -76,11 +76,11 @@ def configuration(parent_package='',top_path=None):
+                          sources=quadpack_test_src)
+ 
+     # Fortran+f2py extension module for testing odeint.
+-    config.add_extension('_test_odeint_banded',
+-                         sources=odeint_banded_test_src,
+-                         libraries=odepack_libs,
+-                         depends=(odepack_src + mach_src),
+-                         **lapack_opt)
++    #config.add_extension('_test_odeint_banded',
++    #                     sources=odeint_banded_test_src,
++    #                     libraries=odepack_libs,
++    #                     depends=(odepack_src + mach_src),
++    #                     **lapack_opt)
+ 
+     config.add_data_dir('tests')
+     return config
