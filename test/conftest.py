@@ -107,6 +107,9 @@ class SeleniumWrapper:
 
     def run_async(self, code):
         from selenium.common.exceptions import TimeoutException
+        if isinstance(code, str) and code.startswith('\n'):
+            # we have a multiline string, fix indentation
+            code = textwrap.dedent(code)
         self.run_js(
             """
             window.done = false;
