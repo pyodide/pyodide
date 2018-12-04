@@ -110,6 +110,12 @@ JsProxy_Call(PyObject* o, PyObject* args, PyObject* kwargs)
     hiwire_decref(idarg);
   }
 
+  if (PyDict_Size(kwargs)) {
+    int idkwargs = python2js(kwargs);
+    hiwire_push_array(idargs, idkwargs);
+    hiwire_decref(idkwargs);
+  }
+
   int idresult = hiwire_call(self->js, idargs);
   hiwire_decref(idargs);
   PyObject* pyresult = js2python(idresult);
