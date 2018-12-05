@@ -324,6 +324,18 @@ function embedPyodideScripts(baseURL, Module) {
 }
 
 /**
+ * A utility to externalize promise resolution
+ */
+function usePromise() {
+  let resolver, rejecter
+  const promise = new Promise((resolve, reject) => {
+    resolver = resolve;
+    rejecter = reject;
+  })
+  return [promise, resolver, rejecter]
+}
+
+/**
  * The main bootstrap script for loading pyodide.
  * 
  * @param {string} baseURL the base URL for pyodide scripts
@@ -336,9 +348,8 @@ async function languagePluginLoader(baseURL = '{{DEPLOY}}') {
   const wasmURL = `${baseURL}pyodide.asm.wasm`;
   const wasmPromise = WebAssembly.compileStreaming(fetch(wasmURL));
 
-  let resolvePostRun, resolveDataLoad
-  const postRunPromise = new Promise(resolve => resolvePostRun = resolve)
-  const dataLoadPromise = new Promise(resolve => resolveDataLoad = resolve)
+  const [ postRunPromise, resolvePostRun ] = usePromise()
+  const [ dataLoadPromise, resolveDataLoad ] = usePromise()
 
   let pyodideInstance
 
