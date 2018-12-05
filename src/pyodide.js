@@ -344,13 +344,10 @@ async function languagePluginLoader(baseURL = '{{DEPLOY}}') {
   // TODO: this string mangling should probably be done outside
   // of the loader function
   baseURL = baseURL.substr(0, baseURL.lastIndexOf('/')) + '/';
-
   const wasmURL = `${baseURL}pyodide.asm.wasm`;
   const wasmPromise = WebAssembly.compileStreaming(fetch(wasmURL));
-
   const [ postRunPromise, resolvePostRun ] = usePromise()
   const [ dataLoadPromise, resolveDataLoad ] = usePromise()
-
   let pyodideInstance
 
   const Module = {
@@ -387,12 +384,10 @@ async function languagePluginLoader(baseURL = '{{DEPLOY}}') {
   window.Module = Module;
 
   embedPyodideScripts(baseURL, Module);
-
   // TODO: Move to iodide package
   initializeIodide()
 
   await Promise.all([postRunPromise, dataLoadPromise])
-
   // TODO: don't use a window global?
   window.pyodide = pyodideInstance
   return pyodideInstance
