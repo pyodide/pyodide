@@ -59,7 +59,7 @@ Press Shift+Enter on the cell below to display the plot.
          let pyodide = document.createElement('script');
          pyodide.src = 'https://iodide.io/pyodide-demo/pyodide.js';
          pyodide.onload = () => {
-             languagePluginLoader.then(() => {
+             languagePluginLoader().then(() => {
                  window.pyodide.loadPackage('matplotlib').then(() => {
                      window.pyodide.runPython('__name__ = "__main__"');
                      blackout.parentNode.removeChild(blackout);
