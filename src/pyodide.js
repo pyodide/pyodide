@@ -148,6 +148,9 @@ var languagePluginLoader = new Promise((resolve, reject) => {
         messageCallback(`Loading ${packageList}`);
       }
 
+      // monitorRunDependencies is called at the beginning and the end of each
+      // package being loaded. We know we are done when it has been called
+      // exactly "toLoad * 2" times.
       var packageCounter = Object.keys(toLoad).length * 2;
 
       window.pyodide._module.monitorRunDependencies = (n) => {
