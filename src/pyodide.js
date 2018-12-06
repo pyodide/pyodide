@@ -148,8 +148,11 @@ var languagePluginLoader = new Promise((resolve, reject) => {
         messageCallback(`Loading ${packageList}`);
       }
 
+      var packageCounter = Object.keys(toLoad).length * 2;
+
       window.pyodide._module.monitorRunDependencies = (n) => {
-        if (n === 0) {
+        packageCounter--;
+        if (packageCounter === 0) {
           for (let package in toLoad) {
             window.pyodide.loadedPackages[package] = toLoad[package];
           }
