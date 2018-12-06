@@ -48,6 +48,9 @@ def find_imports(code):
     Finds the imports in a string of code and returns a list of their package
     names.
     """
+    # handle mis-indented input from multi-line strings
+    code = dedent(code)
+
     mod = ast.parse(code)
     imports = set()
     for node in ast.walk(mod):
