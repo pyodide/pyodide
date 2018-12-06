@@ -14,3 +14,30 @@ requirements:
 test:
   imports:
     - networkx
+    - networkx.algorithms
+    - networkx.algorithms.approximation
+    - networkx.algorithms.assortativity
+    - networkx.algorithms.bipartite
+    - networkx.algorithms.centrality
+    - networkx.algorithms.chordal
+    - networkx.algorithms.coloring
+    - networkx.algorithms.community
+    - networkx.algorithms.components
+    - networkx.algorithms.connectivity
+    - networkx.algorithms.flow
+    - networkx.algorithms.isomorphism
+    - networkx.algorithms.link_analysis
+    - networkx.algorithms.node_classification
+    - networkx.algorithms.operators
+    - networkx.algorithms.shortest_paths
+    - networkx.algorithms.traversal
+    - networkx.algorithms.tree
+    - networkx.classes
+    - networkx.drawing
+    - networkx.generators
+    - networkx.linalg
+    - networkx.readwrite
+    - networkx.readwrite.json_graph
+    - networkx.testing
+    - networkx.tests
+    - networkx.utils
