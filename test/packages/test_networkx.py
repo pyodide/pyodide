@@ -1,5 +1,3 @@
-import pytest
-
 def test_networkx_basicgraph(selenium_standalone, request):
     selenium = selenium_standalone
     selenium.load_package(['networkx'])
