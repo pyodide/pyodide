@@ -153,7 +153,7 @@ var languagePluginLoader = new Promise((resolve, reject) => {
       // exactly "toLoad * 2" times.
       var packageCounter = Object.keys(toLoad).length * 2;
 
-      window.pyodide._module.monitorRunDependencies = (n) => {
+      window.pyodide._module.monitorRunDependencies = () => {
         packageCounter--;
         if (packageCounter === 0) {
           for (let package in toLoad) {
