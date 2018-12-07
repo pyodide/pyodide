@@ -11,6 +11,7 @@ source:
     - patches/force_malloc_free.patch
     - patches/hardcoded_font_cache.patch
     - patches/reduce_cpp_exceptions.patch
+    - patches/reduce-imports.patch
 
   extras:
     -
