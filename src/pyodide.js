@@ -216,7 +216,7 @@ var languagePluginLoader = new Promise((resolve, reject) => {
       ;
     }
 
-    let recursionLimit = depth / 50;
+    let recursionLimit = depth / 100;
     if (recursionLimit > 1000) {
       recursionLimit = 1000;
     }
