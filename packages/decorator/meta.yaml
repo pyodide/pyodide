@@ -1,0 +1,11 @@
+package:
+  name: decorator
+  version: 4.3.0
+
+source:
+  url: https://files.pythonhosted.org/packages/6f/24/15a229626c775aae5806312f6bf1e2a73785be3402c0acdec5dbddd8c11e/decorator-4.3.0.tar.gz
+  sha256: c39efa13fbdeb4506c476c9b3babf6a718da943dab7811c206005a4a956c080c
+
+test:
+  imports:
+    - decorator
