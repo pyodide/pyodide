@@ -102,17 +102,11 @@ class SeleniumWrapper:
         self.driver.execute_script("window.logs = []")
 
     def run(self, code):
-        if isinstance(code, str) and code.startswith('\n'):
-            # we have a multiline string, fix indentation
-            code = textwrap.dedent(code)
         return self.run_js(
             'return pyodide.runPython({!r})'.format(code))
 
     def run_async(self, code):
         from selenium.common.exceptions import TimeoutException
-        if isinstance(code, str) and code.startswith('\n'):
-            # we have a multiline string, fix indentation
-            code = textwrap.dedent(code)
         self.run_js(
             """
             window.done = false;

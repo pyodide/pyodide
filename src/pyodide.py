@@ -4,6 +4,7 @@ A library of helper utilities for connecting Python to the browser environment.
 
 import ast
 import io
+from textwrap import dedent
 
 __version__ = '0.3.0'
 
@@ -24,6 +25,9 @@ def eval_code(code, ns):
     """
     Runs a string of code, the last part of which may be an expression.
     """
+    # handle mis-indented input from multi-line strings
+    code = dedent(code)
+
     mod = ast.parse(code)
     if isinstance(mod.body[-1], ast.Expr):
         expr = ast.Expression(mod.body[-1].value)
@@ -44,6 +48,9 @@ def find_imports(code):
     Finds the imports in a string of code and returns a list of their package
     names.
     """
+    # handle mis-indented input from multi-line strings
+    code = dedent(code)
+
     mod = ast.parse(code)
     imports = set()
     for node in ast.walk(mod):
