@@ -2,17 +2,16 @@
  * The main bootstrap script for loading pyodide.
  */
 
-var languagePluginLoader = new Promise((resolve, reject) => {
+const languagePluginLoader = (baseURL) => new Promise((resolve, reject) => {
   // This is filled in by the Makefile to be either a local file or the
   // deployed location. TODO: This should be done in a less hacky
   // way.
-  var baseURL = window.languagePluginUrl || '{{DEPLOY}}';
+  baseURL = baseURL || window.languagePluginUrl || '{{DEPLOY}}'
   baseURL = baseURL.substr(0, baseURL.lastIndexOf('/')) + '/';
 
   ////////////////////////////////////////////////////////////
   // Package loading
-  let loadedPackages = new Array();
-  var loadPackagePromise = new Promise((resolve) => resolve());
+  var loadPackagePromise = Promise.resolve();
   // Regexp for validating package name and URI
   var package_name_regexp = '[a-z0-9_][a-z0-9_\-]*'
   var package_uri_regexp =
@@ -40,7 +39,7 @@ var languagePluginLoader = new Promise((resolve, reject) => {
     // every .so that comes our way up front, caching it in the
     // `preloadedWasm` dictionary.
 
-    let promise = new Promise((resolve) => resolve());
+    let promise = Promise.resolve();
     let FS = pyodide._module.FS;
 
     function recurseDir(rootpath) {
@@ -357,4 +356,4 @@ var languagePluginLoader = new Promise((resolve, reject) => {
     });
   }
 });
-languagePluginLoader
+window.languagePluginLoader = languagePluginLoader
