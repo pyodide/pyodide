@@ -66,19 +66,23 @@ on your `PATH`.
 
 # Manual Testing
 
-The port 8000 of the docker environment and the system are automatically binded when ``./run_docker`` is run.
+The port 8000 of the docker environment and the host system are automatically 
+binded when ``./run_docker`` is run.
 
-This can be used to test the ``pyodide`` builds running within the docker environment using external browser
-programs of the system.
+This can be used to test the ``pyodide`` builds running within the docker 
+environment using external browser programs on the host system.
 
 To do this, simply run ``./bin/pyodide serve``
 
 This serves the ``build`` directory of the ``pyodide`` project on port 8000.
 
-* To serve a different directory, use the ``--build_dir`` argument followed the path of the directory
-* To serve on a different port, use the ``--port`` argument followed by the desired port number
+* To serve a different directory, use the ``--build_dir`` argument followed by 
+the path of the directory
+* To serve on a different port, use the ``--port`` argument followed by the 
+desired port number
 
-Make sure that the port passed in ``--port`` argument is same as the one defined as ``DOCKER_PORT`` in the ``run_docker`` script.
+Make sure that the port passed in ``--port`` argument is same as the one 
+defined as ``DOCKER_PORT`` in the ``run_docker`` script.
 
 # Benchmarking
 
