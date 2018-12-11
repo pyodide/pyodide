@@ -37,9 +37,9 @@ def main(args):
     build_dir = args.build_dir
     port = args.port
     httpd = server(port)
+    os.chdir(build_dir)
+    print("serving from {0} at localhost:".format(build_dir) + str(port))
     try:
-        os.chdir(build_dir)
-        print("serving from {0} at localhost:".format(build_dir) + str(port))
         httpd.serve_forever()
     except KeyboardInterrupt:
         print("\n...shutting down http server")
