@@ -1,0 +1,12 @@
+package:
+  name: vyper
+  version: 0.1.0-beta.5
+
+source:
+  url: https://github.com/ethereum/vyper/archive/v0.1.0-beta.5.zip
+  sha256: d503bc78e6566eb7576e95f6d4a3b97f9c8cf89135c0fdc884519d6f8d3f6a8a
+
+
+test:
+  imports:
+    - vyper

@@ -1,0 +1,12 @@
+package:
+  name: pycryptodome
+  version: 3.7.2
+
+source:
+  url: https://files.pythonhosted.org/packages/a5/f5/ea666524f67b6e2b29112d33ad8d948281980b2a86015c264de8424400c2/pycryptodome-3.7.2.tar.gz
+  sha256: f5fc7e3b2d29552f0383063408ce2bd295e9d3c7ef13377599aa300a3d2baef7
+
+
+test:
+  imports:
+    - Crypto
