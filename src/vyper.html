@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <script>
+        window.languagePluginUrl = window.location.origin + "/";
+        document.addEventListener("DOMContentLoaded", function(event) {
+            languagePluginLoader.then(() => {
+                // pyodide is now ready to use...
+
+                pyodide.loadPackage(["vyper"]).then(() => {
+                    console.log(pyodide.runPython('import vyper; vyper.__version__; from vyper.compiler import compile_code'));
+                    console.log(pyodide.runPython('compile_code("a: public(uint256)", ["abi", "bytecode"])'));
+                })
+                // pyodide.loadPackage(["setuptools", "pycryptodome", "vyper"]).then(() => {
+                //     console.log(pyodide.runPython('import pkg_resources; import vyper; vyper.__version__'));
+                // })
+                // pyodide.loadPackage("vyper").then(() => {
+                //     console.log(pyodide.runPython("from vyper.compiler import compile_code"));
+                // });
+            });
+        });
+    </script>
+    <script src='pyodide.js'></script>
+</head>
+
+<html>
+</html>
