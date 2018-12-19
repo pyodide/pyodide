@@ -67,6 +67,52 @@ def test_python2js_long_ints(selenium):
     assert selenium.run('-2**31') == -2**31
 
 
+def test_python2js_numpy_dtype(selenium_standalone):
+    selenium = selenium_standalone
+
+    selenium.load_package('numpy')
+    selenium.run("import numpy as np")
+
+    expected_result = [[[0, 1], [2, 3]],
+                       [[4, 5], [6, 7]]]
+
+    for order in ('C', 'F'):
+        for dtype in (
+                'int8',
+                'uint8',
+                'int16',
+                'uint16',
+                'int32',
+                'uint32',
+                'int64',
+                'uint64',
+                'float32',
+                'float64'
+        ):
+            assert selenium.run(
+                f"""
+                x = np.arange(8, dtype=np.{dtype})
+                x = x.reshape((2, 2, 2))
+                x = x.copy({order!r})
+                x
+                """
+            ) == expected_result
+            assert selenium.run(
+                """
+                x.byteswap().newbyteorder()
+                """
+            ) == expected_result
+
+    assert selenium.run("np.array([True, False])") == [True, False]
+
+    selenium.run(
+        "x = np.array([['string1', 'string2'], ['string3', 'string4']])"
+    )
+    assert selenium.run_js("return pyodide.pyimport('x').length") == 2
+    assert selenium.run_js("return pyodide.pyimport('x')[0][0]") == 'string1'
+    assert selenium.run_js("return pyodide.pyimport('x')[1][1]") == 'string4'
+
+
 def test_pythonexc2js(selenium):
     try:
         selenium.run_js('return pyodide.runPython("5 / 0")')
