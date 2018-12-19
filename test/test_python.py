@@ -609,4 +609,4 @@ def test_py(selenium_standalone):
         """
     )
 
-    assert selenium_standalone.run_js('return pyodide.py.func()') == 42
+    assert selenium_standalone.run_js('return pyodide.globals.func()') == 42
