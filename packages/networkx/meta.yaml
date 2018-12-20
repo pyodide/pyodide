@@ -10,6 +10,10 @@ requirements:
   run:
     - decorator
     - setuptools
+    # Upstream NetworkX has these as "soft" dependencies, but it's more
+    # convenient to have them come in automatically.
+    - matplotlib
+    - numpy
 
 test:
   imports:
