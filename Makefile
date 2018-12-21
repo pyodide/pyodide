@@ -210,11 +210,11 @@ $(SIX_LIBS): $(CPYTHONLIB)
 	make -C six
 
 
-$(CLAPACK): $(CPYTHONLIB)
-	make -C CLAPACK
+# $(CLAPACK): $(CPYTHONLIB)
+# 	make -C CLAPACK
 
 
-build/packages.json: $(CPYTHONLIB) $(CLAPACK)
+build/packages.json: $(CPYTHONLIB)
 	make -C packages
 
 emsdk/emsdk/.complete:
