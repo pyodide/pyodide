@@ -144,6 +144,10 @@ for arg in sys.argv[2:]:
     leading = 'preload'
   elif arg == '--embed':
     leading = 'embed'
+  elif arg.startswith('--abi'):
+    if '=' in arg:
+      package_abi = arg.split('=', 1)[1]
+    leading = ''
   elif arg == '--exclude':
     leading = 'exclude'
   elif arg == '--no-force':
@@ -226,6 +230,10 @@ if not from_emcc:
   ret = '''
 var Module = typeof %(EXPORT_NAME)s !== 'undefined' ? %(EXPORT_NAME)s : {};
 ''' % {"EXPORT_NAME": export_name}
+
+ret += '''
+Module.checkABI({0});
+'''.format(package_abi)
 
 ret += '''
 if (!Module.expectedDataFileDownloads) {

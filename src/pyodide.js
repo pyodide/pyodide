@@ -179,7 +179,7 @@ var languagePluginLoader = new Promise((resolve, reject) => {
           // If the package_uri fails to load, call monitorRunDependencies twice
           // (so packageCounter will still hit 0 and finish loading), and remove
           // the package from toLoad so we don't mark it as loaded.
-          console.log(`Couldn't load package from URL ${script.src}`)
+          console.error(`Couldn't load package from URL ${script.src}`)
           let index = toLoad.indexOf(package);
           if (index !== -1) {
             toLoad.splice(index, 1);
@@ -247,6 +247,7 @@ var languagePluginLoader = new Promise((resolve, reject) => {
     'repr',
     'runPython',
     'runPythonAsync',
+    'checkABI',
     'version',
   ];
 
@@ -275,6 +276,14 @@ var languagePluginLoader = new Promise((resolve, reject) => {
     wasm_promise.then(module => WebAssembly.instantiate(module, info))
         .then(instance => receiveInstance(instance));
     return {};
+  };
+
+  Module.checkABI = function(ABI_number) {
+    if (ABI_number !== parseInt('{{ABI}}')) {
+      console.error(`ABI numbers differ. Expected {{ABI}}, got ${ABI_number}`);
+      return false;
+    }
+    return true;
   };
 
   Module.locateFile = (path) => baseURL + path;

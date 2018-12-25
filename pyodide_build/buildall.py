@@ -70,6 +70,9 @@ def make_parser(parser):
         'output', type=str, nargs=1,
         help='Output directory in which to put all built packages')
     parser.add_argument(
+        '--package_abi', type=int, required=True,
+        help='The ABI number for the packages to be built')
+    parser.add_argument(
         '--cflags', type=str, nargs='?', default=common.DEFAULTCFLAGS,
         help='Extra compiling flags')
     parser.add_argument(

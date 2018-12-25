@@ -1,7 +1,7 @@
 import pytest
-
-from pathlib import Path
 import shutil
+import re
+from pathlib import Path
 
 
 @pytest.mark.parametrize('active_server', ['main', 'secondary'])
@@ -106,6 +106,31 @@ def test_load_packages_sequential(selenium_standalone, packages):
     # ('pyparsing' and 'matplotlib')
     assert selenium.logs.count(f'Loading {packages[0]}') == 1
     assert selenium.logs.count(f'Loading {packages[1]}') == 1
+
+
+def test_different_ABI(selenium_standalone):
+    url = selenium_standalone.server_hostname
+    port = selenium_standalone.server_port
+
+    build_dir = Path(__file__).parent.parent / 'build'
+
+    original_file = open('build/numpy.js', 'r+')
+    original_contents = original_file.read()
+    original_file.close()
+
+    modified_contents = re.sub(r'checkABI\(\d+\)', 'checkABI(-1)',
+                               original_contents)
+    modified_file = open('build/numpy-broken.js', 'w+')
+    modified_file.write(modified_contents)
+    modified_file.close()
+
+    try:
+        selenium_standalone.load_package(
+            f'http://{url}:{port}/numpy-broken.js'
+        )
+        assert 'ABI numbers differ.' in selenium_standalone.logs
+    finally:
+        (build_dir / 'numpy-broken.js').unlink()
 
 
 def test_load_handle_failure(selenium_standalone):
