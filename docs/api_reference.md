@@ -98,6 +98,14 @@ For example, to access the `foo` Python object from Javascript:
 |           |         | types, a Proxy object to the Python   |
 |           |         | object is returned.                   |
 
+### pyodide.globals
+
+An object whose attributes are members of the Python global namespace. This is a
+more convenient alternative to `pyodide.pyimport`.
+
+For example, to access the `foo` Python object from Javascript:
+
+   `pyodide.globals.foo`
 
 ### pyodide.repr(obj)
 
@@ -178,7 +186,7 @@ pyodide.runPythonAsync(code, messageCallback)
 
 Returns the pyodide version.
 
-It can be either the exact release version (e.g. `0.1.0`), or 
+It can be either the exact release version (e.g. `0.1.0`), or
 the latest release version followed by the number of commits since, and
 the git hash of the current commit (e.g. `0.1.0-1-bd84646`).
 
@@ -191,4 +199,3 @@ None
 | name      | type   | description            |
 |-----------|--------|------------------------|
 | *version* | String | Pyodide version string |
-

@@ -599,3 +599,14 @@ def test_runpythonasync_exception_after_import(selenium_standalone):
         assert "ZeroDivisionError" in str(e)
     else:
         assert False
+
+
+def test_py(selenium_standalone):
+    selenium_standalone.run(
+        """
+        def func():
+            return 42
+        """
+    )
+
+    assert selenium_standalone.run_js('return pyodide.globals.func()') == 42
