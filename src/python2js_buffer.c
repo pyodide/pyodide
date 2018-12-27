@@ -324,7 +324,7 @@ _python2js_buffer_to_typed_array(Py_buffer* buff)
       case '>':
       case '!':
         // This path can't handle byte-swapping
-        return -1;
+        return HW_ERROR;
       case '=':
       case '<':
       case '@':
@@ -342,7 +342,7 @@ _python2js_buffer_to_typed_array(Py_buffer* buff)
     case 'B':
       return hiwire_uint8array((int)buff->buf, buff->len);
     case '?':
-      return -1;
+      return HW_ERROR;
     case 'h':
       return hiwire_int16array((int)buff->buf, buff->len);
     case 'H':
@@ -357,13 +357,13 @@ _python2js_buffer_to_typed_array(Py_buffer* buff)
       return hiwire_uint32array((int)buff->buf, buff->len);
     case 'q':
     case 'Q':
-      return -1;
+      return HW_ERROR;
     case 'f':
       return hiwire_float32array((int)buff->buf, buff->len);
     case 'd':
       return hiwire_float64array((int)buff->buf, buff->len);
     default:
-      return -1;
+      return HW_ERROR;
   }
 }
 
@@ -467,11 +467,11 @@ _python2js_buffer(PyObject* x)
 
   if (shareable != NOT_SHAREABLE) {
     int idarr = _python2js_buffer_to_typed_array(buff);
-    if (idarr == -1) {
+    if (idarr == HW_ERROR) {
       PyErr_SetString(
         PyExc_TypeError,
         "Internal error: Invalid type to convert to array buffer.");
-      return -1;
+      return HW_ERROR;
     }
 
     result =
