@@ -1,11 +1,16 @@
 def test_numpy(selenium):
     selenium.load_package("numpy")
     selenium.run("import numpy")
-    x = selenium.run("numpy.zeros((32, 64))")
-    assert len(x) == 32
-    assert all(len(y) == 64 for y in x)
-    for y in x:
-        assert all(z == 0 for z in y)
+    selenium.run("x = numpy.zeros((32, 64))")
+    assert selenium.run_js("return pyodide.pyimport('x').length == 32")
+    for i in range(32):
+        assert selenium.run_js(
+            f"return pyodide.pyimport('x')[{i}].length == 64"
+        )
+        for j in range(64):
+            assert selenium.run_js(
+                f"return pyodide.pyimport('x')[{i}][{j}] == 0"
+            )
 
 
 def test_typed_arrays(selenium):
