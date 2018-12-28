@@ -428,9 +428,9 @@ static enum shareable_enum
 _python2js_buffer_is_shareable(Py_buffer* buff)
 {
   char* invalid_codes = ">!qQ?";
-  for (int i = 0; i < 2; ++i) {
+  for (char* i = buff->format; *i != 0; ++i) {
     for (char* j = invalid_codes; *j != 0; ++j) {
-      if (buff->format[i] == *j) {
+      if (*i == *j) {
         return NOT_SHAREABLE;
       }
     }
