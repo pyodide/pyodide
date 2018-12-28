@@ -111,6 +111,8 @@ def test_python2js_numpy_dtype(selenium_standalone):
                 "return pyodide.pyimport('x')[0][0].constructor.name"
             )
             if order == 'C' and dtype not in ('uint64', 'int64'):
+                # Here we expect a TypedArray subclass, such as Uint8Array, but
+                # not a plain-old Array
                 assert classname.endswith('Array')
                 assert classname != 'Array'
             else:
@@ -125,6 +127,9 @@ def test_python2js_numpy_dtype(selenium_standalone):
                 "return pyodide.pyimport('x')[0][0].constructor.name"
             )
             if order == 'C' and dtype in ('int8', 'uint8'):
+                # Here we expect a TypedArray subclass, such as Uint8Array, but
+                # not a plain-old Array -- but only for single byte types where
+                # endianness doesn't matter
                 assert classname.endswith('Array')
                 assert classname != 'Array'
             else:
