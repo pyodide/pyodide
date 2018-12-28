@@ -1,7 +1,7 @@
 def test_numpy(selenium):
     selenium.load_package("numpy")
     selenium.run("import numpy")
-    selenium.run("x = numpy.zeros((32, 64))")
+    selenium.run("x = numpy.ones((32, 64))")
     assert selenium.run_js("return pyodide.pyimport('x').length == 32")
     for i in range(32):
         assert selenium.run_js(
@@ -9,7 +9,7 @@ def test_numpy(selenium):
         )
         for j in range(64):
             assert selenium.run_js(
-                f"return pyodide.pyimport('x')[{i}][{j}] == 0"
+                f"return pyodide.pyimport('x')[{i}][{j}] == 1"
             )
 
 
