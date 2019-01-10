@@ -1,7 +1,7 @@
-diff --git a/emsdk/emscripten/tag-1.38.12/src/library.js b/emsdk/emscripten/tag-1.38.12/src/library.js
+diff --git a/emsdk/emscripten/tag-1.38.22/src/library.js b/emsdk/emscripten/tag-1.38.22/src/library.js
 index 82537bb3e..8e2e43128 100644
---- a/emsdk/emscripten/tag-1.38.12/src/library.js
-+++ b/emsdk/emscripten/tag-1.38.12/src/library.js
+--- a/emsdk/emscripten/tag-1.38.22/src/library.js
++++ b/emsdk/emscripten/tag-1.38.22/src/library.js
 @@ -1781,6 +1781,12 @@ LibraryManager.library = {
          }
        }
@@ -15,10 +15,10 @@ index 82537bb3e..8e2e43128 100644
        // Not all browsers support Object.keys().
        var handle = 1;
        for (var key in DLFCN.loadedLibs) {
-diff --git a/emsdk/emscripten/tag-1.38.12/src/support.js b/emsdk/emscripten/tag-1.38.12/src/support.js
+diff --git a/emsdk/emscripten/tag-1.38.22/src/support.js b/emsdk/emscripten/tag-1.38.22/src/support.js
 index cff68fbe2..3a4e51dca 100644
---- a/emsdk/emscripten/tag-1.38.12/src/support.js
-+++ b/emsdk/emscripten/tag-1.38.12/src/support.js
+--- a/emsdk/emscripten/tag-1.38.22/src/support.js
++++ b/emsdk/emscripten/tag-1.38.22/src/support.js
 @@ -211,9 +211,21 @@ function loadWebAssemblyModule(binary, loadAsync) {
        if (prop.startsWith('invoke_')) {
          // A missing invoke, i.e., an invoke for a function type
