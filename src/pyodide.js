@@ -120,7 +120,6 @@ var languagePluginLoader = new Promise((resolve, reject) => {
           });
         } else {
           console.error(`Unknown package '${package}'`);
-          return;
         }
       }
     }
@@ -176,7 +175,19 @@ var languagePluginLoader = new Promise((resolve, reject) => {
         } else {
           script.src = `${package_uri}`;
         }
-        script.onerror = (e) => { reject(e); };
+        script.onerror = (e) => {
+          // If the package_uri fails to load, call monitorRunDependencies twice
+          // (so packageCounter will still hit 0 and finish loading), and remove
+          // the package from toLoad so we don't mark it as loaded.
+          console.log(`Couldn't load package from URL ${script.src}`)
+          let index = toLoad.indexOf(package);
+          if (index !== -1) {
+            toLoad.splice(index, 1);
+          }
+          for (let i = 0; i < 2; i++) {
+            window.pyodide._module.monitorRunDependencies();
+          }
+        };
         document.body.appendChild(script);
       }
 
