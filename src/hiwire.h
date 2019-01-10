@@ -110,6 +110,94 @@ int
 hiwire_bytes(int ptr, int len);
 
 /**
+ * Create a new Javascript Int8Array, given a pointer to a buffer and a
+ * length, in bytes.
+ *
+ * The array's data is not copied.
+ *
+ * Returns: New reference
+ */
+int
+hiwire_int8array(int ptr, int len);
+
+/**
+ * Create a new Javascript Uint8Array, given a pointer to a buffer and a
+ * length, in bytes.
+ *
+ * The array's data is not copied.
+ *
+ * Returns: New reference
+ */
+int
+hiwire_uint8array(int ptr, int len);
+
+/**
+ * Create a new Javascript Int16Array, given a pointer to a buffer and a
+ * length, in bytes.
+ *
+ * The array's data is not copied.
+ *
+ * Returns: New reference
+ */
+int
+hiwire_int16array(int ptr, int len);
+
+/**
+ * Create a new Javascript Uint16Array, given a pointer to a buffer and a
+ * length, in bytes.
+ *
+ * The array's data is not copied.
+ *
+ * Returns: New reference
+ */
+int
+hiwire_uint16array(int ptr, int len);
+
+/**
+ * Create a new Javascript Int32Array, given a pointer to a buffer and a
+ * length, in bytes.
+ *
+ * The array's data is not copied.
+ *
+ * Returns: New reference
+ */
+int
+hiwire_int32array(int ptr, int len);
+
+/**
+ * Create a new Javascript Uint32Array, given a pointer to a buffer and a
+ * length, in bytes.
+ *
+ * The array's data is not copied.
+ *
+ * Returns: New reference
+ */
+int
+hiwire_uint32array(int ptr, int len);
+
+/**
+ * Create a new Javascript Float32Array, given a pointer to a buffer and a
+ * length, in bytes.
+ *
+ * The array's data is not copied.
+ *
+ * Returns: New reference
+ */
+int
+hiwire_float32array(int ptr, int len);
+
+/**
+ * Create a new Javascript Float64Array, given a pointer to a buffer and a
+ * length, in bytes.
+ *
+ * The array's data is not copied.
+ *
+ * Returns: New reference
+ */
+int
+hiwire_float64array(int ptr, int len);
+
+/**
  * Create a new Javascript undefined value.
  *
  * Returns: New reference
@@ -434,5 +522,11 @@ hiwire_copy_to_ptr(int idobj, int ptr);
  */
 int
 hiwire_get_dtype(int idobj);
+
+/**
+ * Get a subarray from a TypedArray
+ */
+int
+hiwire_subarray(int idarr, int start, int end);
 
 #endif /* HIWIRE_H */

@@ -76,6 +76,16 @@ def test_python2js_numpy_dtype(selenium_standalone):
     expected_result = [[[0, 1], [2, 3]],
                        [[4, 5], [6, 7]]]
 
+    def assert_equal():
+        # We have to do this an element at a time, since the Selenium driver
+        # for Firefox does not convert TypedArrays to Python correctly
+        for i in range(2):
+            for j in range(2):
+                for k in range(2):
+                    assert selenium.run_js(
+                        f"return pyodide.pyimport('x')[{i}][{j}][{k}]"
+                    ) == expected_result[i][j][k]
+
     for order in ('C', 'F'):
         for dtype in (
                 'int8',
@@ -89,19 +99,41 @@ def test_python2js_numpy_dtype(selenium_standalone):
                 'float32',
                 'float64'
         ):
-            assert selenium.run(
+            selenium.run(
                 f"""
                 x = np.arange(8, dtype=np.{dtype})
                 x = x.reshape((2, 2, 2))
                 x = x.copy({order!r})
-                x
                 """
-            ) == expected_result
-            assert selenium.run(
+            )
+            assert_equal()
+            classname = selenium.run_js(
+                "return pyodide.pyimport('x')[0][0].constructor.name"
+            )
+            if order == 'C' and dtype not in ('uint64', 'int64'):
+                # Here we expect a TypedArray subclass, such as Uint8Array, but
+                # not a plain-old Array
+                assert classname.endswith('Array')
+                assert classname != 'Array'
+            else:
+                assert classname == 'Array'
+            selenium.run(
                 """
-                x.byteswap().newbyteorder()
+                x = x.byteswap().newbyteorder()
                 """
-            ) == expected_result
+            )
+            assert_equal()
+            classname = selenium.run_js(
+                "return pyodide.pyimport('x')[0][0].constructor.name"
+            )
+            if order == 'C' and dtype in ('int8', 'uint8'):
+                # Here we expect a TypedArray subclass, such as Uint8Array, but
+                # not a plain-old Array -- but only for single byte types where
+                # endianness doesn't matter
+                assert classname.endswith('Array')
+                assert classname != 'Array'
+            else:
+                assert classname == 'Array'
 
     assert selenium.run("np.array([True, False])") == [True, False]
 
@@ -532,13 +564,16 @@ def test_recursive_dict(selenium_standalone):
 
 
 def test_runpythonasync(selenium_standalone):
-    output = selenium_standalone.run_async(
+    selenium_standalone.run_async(
         """
         import numpy as np
-        np.zeros(5)
+        x = np.zeros(5)
         """
     )
-    assert list(output) == [0, 0, 0, 0, 0]
+    for i in range(5):
+        assert selenium_standalone.run_js(
+            f"return pyodide.pyimport('x')[{i}] == 0"
+        )
 
 
 def test_runpythonasync_different_package_name(selenium_standalone):
