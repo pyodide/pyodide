@@ -68,8 +68,6 @@ build/pyodide.asm.js: src/main.bc src/jsimport.bc src/jsproxy.bc src/js2python.b
 	[ -d build ] || mkdir build
 	$(CXX) -s EXPORT_NAME="'pyodide'" -o build/pyodide.asm.html $(filter %.bc,$^) \
 	  $(LDFLAGS) -s FORCE_FILESYSTEM=1
-	rm build/pyodide.asm.asm.js
-	rm build/pyodide.asm.wasm.pre
 	rm build/pyodide.asm.html
 
 
@@ -149,7 +147,7 @@ build/test.data: $(CPYTHONLIB)
 	)
 	( \
 		cd build; \
-		python $(FILEPACKAGER) test.data --lz4 --preload ../$(CPYTHONLIB)/test@/lib/python3.7/test --js-output=test.js --export-name=pyodide._module --exclude \*.wasm.pre --exclude __pycache__ \
+		python $(FILEPACKAGER) test.data --lz4 --preload ../$(CPYTHONLIB)/test@/lib/python3.7/test --js-output=test.js --export-name=pyodide._module --exclude __pycache__ \
   )
 	uglifyjs build/test.js -o build/test.js
 
@@ -174,7 +172,6 @@ root/.built: \
 		cd root/lib/python$(PYMINOR); \
 		rm -fr `cat ../../../remove_modules.txt`; \
 		rm -fr test; \
-		find . -name "*.wasm.pre" -type f -delete ; \
 		find -type d -name __pycache__ -prune -exec rm -rf {} \; \
 	)
 	touch root/.built
@@ -185,7 +182,7 @@ ccache/emcc:
 	if hash ccache &>/dev/null; then \
     ln -s `which ccache` $(PYODIDE_ROOT)/ccache/emcc ; \
   else \
-    ln -s emsdk/emsdk/emscripten/tag-1.38.12/emcc $(PYODIDE_ROOT)/ccache/emcc; \
+    ln -s emsdk/emsdk/emscripten/tag-$(EMSCRIPTEN_VERSION)/emcc $(PYODIDE_ROOT)/ccache/emcc; \
   fi
 
 
@@ -194,7 +191,7 @@ ccache/em++:
 	if hash ccache &>/dev/null; then \
     ln -s `which ccache` $(PYODIDE_ROOT)/ccache/em++ ; \
   else \
-    ln -s emsdk/emsdk/emscripten/tag-1.38.12/em++ $(PYODIDE_ROOT)/ccache/em++; \
+    ln -s emsdk/emsdk/emscripten/tag-$(EMSCRIPTEN_VERSION)/em++ $(PYODIDE_ROOT)/ccache/em++; \
   fi
 
 
