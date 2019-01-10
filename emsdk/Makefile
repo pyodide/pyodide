@@ -14,7 +14,7 @@ emsdk/.complete:
 		cd emsdk && \
 		./emsdk install --build=Release sdk-tag-$(EMSCRIPTEN_VERSION)-64bit binaryen-tag-$(EMSCRIPTEN_VERSION)-64bit && \
 		cd .. && \
-		(cat patches/*.patch | patch -p1) && \
+		(cat patches/*.patch | patch -p1) ; \
 		cd emsdk/binaryen/tag-$(EMSCRIPTEN_VERSION)_64bit_binaryen/ && \
     make && \
 	  cd ../.. && \
