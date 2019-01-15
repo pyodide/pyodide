@@ -19,8 +19,11 @@ def main():
         parser.set_defaults(func=module.main)
 
     args = main_parser.parse_args()
-    # run the selected action
-    args.func(args)
+    if hasattr(args, 'func'):
+        # run the selected action
+        args.func(args)
+    else:
+        main_parser.print_help()
 
 
 if __name__ == '__main__':
