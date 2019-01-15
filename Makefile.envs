@@ -24,4 +24,6 @@ export SIDE_LDFLAGS=\
   -s SIDE_MODULE=1 \
 	-s WASM=1 \
   -s "BINARYEN_TRAP_MODE='clamp'" \
-  --memory-init-file 0
+  --memory-init-file 0 \
+  -s LINKABLE=1 \
+  -s EXPORT_ALL=1
