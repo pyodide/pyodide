@@ -42,8 +42,7 @@ LDFLAGS=\
   --memory-init-file 0 \
   -s "BINARYEN_TRAP_MODE='clamp'" \
   -s TEXTDECODER=0 \
-  -s LZ4=1 \
-  --profiling
+  -s LZ4=1
 
 SIX_ROOT=six/six-1.11.0/build/lib
 SIX_LIBS=$(SIX_ROOT)/six.py
