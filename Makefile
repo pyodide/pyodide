@@ -16,10 +16,6 @@ CFLAGS=$(OPTFLAGS) -g -I$(PYTHONINCLUDE) -Wno-warn-absolute-paths
 CXXFLAGS=$(CFLAGS) -std=c++14
 
 
-# __ZNKSt3__220__vector_base_commonILb1EE20__throw_length_errorEv is in
-# EXPORTED_FUNCTIONS to keep the C++ standard library in the core, even though
-# there isn't any C++ there, for the sake of loading dynamic modules written in
-# C++, such as those in matplotlib.
 LDFLAGS=\
 	-O3 \
 	-s MODULARIZE=1 \
@@ -33,6 +29,7 @@ LDFLAGS=\
   -s EMULATE_FUNCTION_POINTER_CASTS=1 \
   -s LINKABLE=1 \
   -s EXPORT_ALL=1 \
+	-s EXPORTED_FUNCTIONS='["___cxa_guard_acquire"]' \
   -s WASM=1 \
 	-s SWAPPABLE_ASM_MODULE=1 \
 	-s USE_FREETYPE=1 \
