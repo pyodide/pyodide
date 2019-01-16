@@ -1,46 +1,36 @@
-diff --git a/emsdk/emscripten/tag-1.38.22/src/library.js b/emsdk/emscripten/tag-1.38.22/src/library.js
-index 82537bb3e..8e2e43128 100644
---- a/emsdk/emscripten/tag-1.38.22/src/library.js
-+++ b/emsdk/emscripten/tag-1.38.22/src/library.js
-@@ -1781,6 +1781,12 @@ LibraryManager.library = {
-         }
-       }
- 
-+      for (var sym in lib_module) {
-+        if (sym.startsWith('dynCall_') && !Module.hasOwnProperty(sym)) {
-+          Module[sym] = lib_module[sym];
-+        }
-+      }
-+
-       // Not all browsers support Object.keys().
-       var handle = 1;
-       for (var key in DLFCN.loadedLibs) {
-diff --git a/emsdk/emscripten/tag-1.38.22/src/support.js b/emsdk/emscripten/tag-1.38.22/src/support.js
-index cff68fbe2..3a4e51dca 100644
+diff --git a/emsdk/emscripten/tag-1.38.22/src/support.js b//emsdk/emscripten/tag-1.38.22/src/support.js
+index 8e1df8e82..4d07d6bef 100644
 --- a/emsdk/emscripten/tag-1.38.22/src/support.js
 +++ b/emsdk/emscripten/tag-1.38.22/src/support.js
-@@ -211,9 +211,21 @@ function loadWebAssemblyModule(binary, loadAsync) {
-       if (prop.startsWith('invoke_')) {
-         // A missing invoke, i.e., an invoke for a function type
-         // present in the dynamic library but not in the main JS,
--        // and the dynamic library cannot provide JS for it. Use
--        // the generic "X" invoke for it.
--        return env[prop] = invoke_X;
-+        // and the dynamic library cannot provide JS for it. Generate
-+        // a closure for it.
-+        var dynCallName = 'dynCall_' + prop.slice(7);
-+        env[prop] = function() {
-+          var sp = stackSave();
-+          try {
-+            var args = Array.prototype.slice.call(arguments);
-+            return Module[dynCallName].apply(null, args);
-+          } catch(e) {
-+            stackRestore(sp);
-+            if (typeof e !== 'number' && e !== 'longjmp') throw e;
-+            Module["setThrew"](1, 0);
+@@ -437,7 +437,18 @@ function loadWebAssemblyModule(binary, flags) {
+           // present in the dynamic library but not in the main JS,
+           // and the dynamic library cannot provide JS for it. Use
+           // the generic "X" invoke for it.
+-          return env[prop] = invoke_X;
++          var dynCallName = 'dynCall_' + prop.slice(7);
++          return env[prop] = function() {
++            var sp = stackSave();
++            try {
++              var args = Array.prototype.slice.call(arguments);
++              return Module[dynCallName].apply(null, args);
++            } catch(e) {
++              stackRestore(sp);
++              if (typeof e !== 'number' && e !== 'longjmp') throw e;
++              Module["setThrew"](1, 0);
++            }
++          }
+         }
+         // if not a global, then a function - call it indirectly
+         return env[prop] = function() {
+@@ -502,6 +513,11 @@ function loadWebAssemblyModule(binary, flags) {
+           }
+ #endif
+         }
++        if (e.startsWith("dynCall_")) {
++          if (!Module.hasOwnProperty(e)) {
++            Module[e] = value;
 +          }
 +        }
-+        return env[prop];
+         exports[e] = value;
        }
-       // if not a global, then a function - call it indirectly
-       return env[prop] = function() {
+       // initialize the module
