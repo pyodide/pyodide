@@ -1,7 +1,7 @@
 diff --git a/emsdk/binaryen/master/src/passes/FuncCastEmulation.cpp b/emsdk/binaryen/master/src/passes/FuncCastEmulation.cpp
 index 013e9403..d95fc282 100644
---- a/emsdk/binaryen/tag-1.38.12/src/passes/FuncCastEmulation.cpp
-+++ b/emsdk/binaryen/tag-1.38.12/src/passes/FuncCastEmulation.cpp
+--- a/emsdk/binaryen/tag-1.38.22/src/passes/FuncCastEmulation.cpp
++++ b/emsdk/binaryen/tag-1.38.22/src/passes/FuncCastEmulation.cpp
 @@ -39,7 +39,7 @@ namespace wasm {
  // This should be enough for everybody. (As described above, we need this
  // to match when dynamically linking, and also dynamic linking is why we
