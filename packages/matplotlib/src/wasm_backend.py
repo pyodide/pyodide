@@ -147,7 +147,11 @@ class FigureCanvasWasm(backend_agg.FigureCanvasAgg):
         #   - The top for rendering interactive elements, such as the zoom
         #     rubberband
         canvas_div = document.createElement('div')
-        canvas_div.setAttribute('style', 'position: relative')
+        canvas_div.setAttribute('style', 'position: relative;' +
+            'resize: both; overflow: auto; border: 1px #ccc solid;')
+        canvas_div.id = self._id + 'wrapper'
+        canvas_div.addEventListener('mouseup', self.wrapper_onmouseup)
+        canvas_div.addEventListener('mousedown', self.wrapper_onmousedown)
 
         canvas.id = self._id + 'canvas'
         canvas.setAttribute('width', width)
@@ -243,6 +247,29 @@ class FigureCanvasWasm(backend_agg.FigureCanvasAgg):
         if button == 2:
             button = 3
         return x, y, button
+    
+    def wrapper_onmousedown(self, event):
+        # Attaching this in case we want to show some graphics during the mousedown event
+        # Showing such a graphics takes significant resources so skipping it now
+        pass
+
+    def subtractpixels(self, orig_px, num_px):
+        """
+        Parses the string orig_px to get original pixel value
+        Then subtracts num_px from the above value and returns string corresponding to it
+        e.g. subtractpixels("300px", 15) returns "285px"
+        """
+        return str(int(orig_px.replace('px', '')) - num_px) + 'px'
+
+    def wrapper_onmouseup(self, event):
+        wrapper = self.get_element('wrapper')
+        canvas = self.get_element('canvas')
+        rubberband = self.get_element('rubberband')
+        self.get_element('top').style.width = self.get_element('wrapper').style.width
+        canvas.style.width, canvas.style.height = \
+            rubberband.style.width, rubberband.style.height = \
+            self.subtractpixels(wrapper.style.width, 15), self.subtractpixels(wrapper.style.height, 15)
+        self.draw()
 
     def onmousemove(self, event):
         x, y, button = self._convert_mouse_event(event)
