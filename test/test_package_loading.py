@@ -1,5 +1,8 @@
 import pytest
 
+from pathlib import Path
+import shutil
+
 
 @pytest.mark.parametrize('active_server', ['main', 'secondary'])
 def test_load_from_url(selenium_standalone, web_server_secondary,
@@ -114,4 +117,33 @@ def test_load_handle_failure(selenium_standalone):
     assert 'Loading pytz' in selenium.logs
     assert 'Loading pytz2' in selenium.logs
     assert "Unknown package 'pytz2'" in selenium.logs
+    assert "Couldn't load package from URL" in selenium.logs
     assert 'Loading pyparsing' in selenium.logs  # <- this fails
+
+
+def test_load_package_unknown(selenium_standalone):
+    url = selenium_standalone.server_hostname
+    port = selenium_standalone.server_port
+
+    build_dir = Path(__file__).parent.parent / 'build'
+    shutil.copyfile(
+        build_dir / 'pyparsing.js',
+        build_dir / 'pyparsing-custom.js'
+    )
+    shutil.copyfile(
+        build_dir / 'pyparsing.data',
+        build_dir / 'pyparsing-custom.data'
+    )
+
+    try:
+        selenium_standalone.load_package(
+            f'http://{url}:{port}/pyparsing-custom.js'
+        )
+    finally:
+        (build_dir / 'pyparsing-custom.js').unlink()
+        (build_dir / 'pyparsing-custom.data').unlink()
+
+    assert selenium_standalone.run_js(
+        "return window.pyodide.loadedPackages."
+        "hasOwnProperty('pyparsing-custom')"
+    )

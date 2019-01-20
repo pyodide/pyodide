@@ -96,6 +96,46 @@ EM_JS(int, hiwire_bytes, (int ptr, int len), {
   return Module.hiwire_new_value(bytes);
 });
 
+EM_JS(int, hiwire_int8array, (int ptr, int len), {
+  var array = new Int8Array(Module.HEAPU8.buffer, ptr, len);
+  return Module.hiwire_new_value(array);
+})
+
+EM_JS(int, hiwire_uint8array, (int ptr, int len), {
+  var array = new Uint8Array(Module.HEAPU8.buffer, ptr, len);
+  return Module.hiwire_new_value(array);
+})
+
+EM_JS(int, hiwire_int16array, (int ptr, int len), {
+  var array = new Int16Array(Module.HEAPU8.buffer, ptr, len);
+  return Module.hiwire_new_value(array);
+})
+
+EM_JS(int, hiwire_uint16array, (int ptr, int len), {
+  var array = new Uint16Array(Module.HEAPU8.buffer, ptr, len);
+  return Module.hiwire_new_value(array);
+})
+
+EM_JS(int, hiwire_int32array, (int ptr, int len), {
+  var array = new Int32Array(Module.HEAPU8.buffer, ptr, len);
+  return Module.hiwire_new_value(array);
+})
+
+EM_JS(int, hiwire_uint32array, (int ptr, int len), {
+  var array = new Uint32Array(Module.HEAPU8.buffer, ptr, len);
+  return Module.hiwire_new_value(array);
+})
+
+EM_JS(int, hiwire_float32array, (int ptr, int len), {
+  var array = new Float32Array(Module.HEAPU8.buffer, ptr, len);
+  return Module.hiwire_new_value(array);
+})
+
+EM_JS(int, hiwire_float64array, (int ptr, int len), {
+  var array = new Float64Array(Module.HEAPU8.buffer, ptr, len);
+  return Module.hiwire_new_value(array);
+})
+
 int
 hiwire_undefined()
 {
@@ -344,4 +384,10 @@ EM_JS(int, hiwire_get_dtype, (int idobj), {
       break;
   }
   return dtype;
+});
+
+EM_JS(int, hiwire_subarray, (int idarr, int start, int end), {
+  var jsarr = Module.hiwire_get_value(idarr);
+  var jssub = jsarr.subarray(start, end);
+  return Module.hiwire_new_value(jssub);
 });

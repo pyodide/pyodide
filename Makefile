@@ -16,22 +16,20 @@ CFLAGS=$(OPTFLAGS) -g -I$(PYTHONINCLUDE) -Wno-warn-absolute-paths
 CXXFLAGS=$(CFLAGS) -std=c++14
 
 
-# __ZNKSt3__220__vector_base_commonILb1EE20__throw_length_errorEv is in
-# EXPORTED_FUNCTIONS to keep the C++ standard library in the core, even though
-# there isn't any C++ there, for the sake of loading dynamic modules written in
-# C++, such as those in matplotlib.
 LDFLAGS=\
 	-O3 \
 	-s MODULARIZE=1 \
 	$(CPYTHONROOT)/installs/python-$(PYVERSION)/lib/libpython$(PYMINOR).a \
-  lz4/lz4-1.8.3/lib/liblz4.a \
+  $(LZ4LIB) \
   -s "BINARYEN_METHOD='native-wasm'" \
   -s TOTAL_MEMORY=1073741824 \
   -s ALLOW_MEMORY_GROWTH=1 \
 	-s MAIN_MODULE=1 \
 	-s EMULATED_FUNCTION_POINTERS=1 \
   -s EMULATE_FUNCTION_POINTER_CASTS=1 \
-  -s EXPORTED_FUNCTIONS='["_main", "__ZNKSt3__220__vector_base_commonILb1EE20__throw_length_errorEv", "__ZNSt11logic_errorC2EPKc"]' \
+  -s LINKABLE=1 \
+  -s EXPORT_ALL=1 \
+	-s EXPORTED_FUNCTIONS='["___cxa_guard_acquire"]' \
   -s WASM=1 \
 	-s SWAPPABLE_ASM_MODULE=1 \
 	-s USE_FREETYPE=1 \
@@ -63,13 +61,11 @@ all: build/pyodide.asm.js \
 
 
 build/pyodide.asm.js: src/main.bc src/jsimport.bc src/jsproxy.bc src/js2python.bc \
-		src/pyimport.bc src/pyproxy.bc src/python2js.bc \
+		src/pyimport.bc src/pyproxy.bc src/python2js.bc src/python2js_buffer.bc \
 		src/runpython.bc src/hiwire.bc
 	[ -d build ] || mkdir build
 	$(CXX) -s EXPORT_NAME="'pyodide'" -o build/pyodide.asm.html $(filter %.bc,$^) \
 	  $(LDFLAGS) -s FORCE_FILESYSTEM=1
-	rm build/pyodide.asm.asm.js
-	rm build/pyodide.asm.wasm.pre
 	rm build/pyodide.asm.html
 
 
@@ -149,7 +145,7 @@ build/test.data: $(CPYTHONLIB)
 	)
 	( \
 		cd build; \
-		python $(FILEPACKAGER) test.data --lz4 --preload ../$(CPYTHONLIB)/test@/lib/python3.7/test --js-output=test.js --export-name=pyodide._module --exclude \*.wasm.pre --exclude __pycache__ \
+		python $(FILEPACKAGER) test.data --lz4 --preload ../$(CPYTHONLIB)/test@/lib/python3.7/test --js-output=test.js --export-name=pyodide._module --exclude __pycache__ \
   )
 	uglifyjs build/test.js -o build/test.js
 
@@ -174,7 +170,6 @@ root/.built: \
 		cd root/lib/python$(PYMINOR); \
 		rm -fr `cat ../../../remove_modules.txt`; \
 		rm -fr test; \
-		find . -name "*.wasm.pre" -type f -delete ; \
 		find -type d -name __pycache__ -prune -exec rm -rf {} \; \
 	)
 	touch root/.built
@@ -185,7 +180,7 @@ ccache/emcc:
 	if hash ccache &>/dev/null; then \
     ln -s `which ccache` $(PYODIDE_ROOT)/ccache/emcc ; \
   else \
-    ln -s emsdk/emsdk/emscripten/tag-1.38.12/emcc $(PYODIDE_ROOT)/ccache/emcc; \
+    ln -s emsdk/emsdk/emscripten/tag-$(EMSCRIPTEN_VERSION)/emcc $(PYODIDE_ROOT)/ccache/emcc; \
   fi
 
 
@@ -194,7 +189,7 @@ ccache/em++:
 	if hash ccache &>/dev/null; then \
     ln -s `which ccache` $(PYODIDE_ROOT)/ccache/em++ ; \
   else \
-    ln -s emsdk/emsdk/emscripten/tag-1.38.12/em++ $(PYODIDE_ROOT)/ccache/em++; \
+    ln -s emsdk/emsdk/emscripten/tag-$(EMSCRIPTEN_VERSION)/em++ $(PYODIDE_ROOT)/ccache/em++; \
   fi
 
 
