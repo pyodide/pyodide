@@ -292,7 +292,10 @@ var languagePluginLoader = new Promise((resolve, reject) => {
 
   Module.checkABI = function(ABI_number) {
     if (ABI_number !== parseInt('{{ABI}}')) {
-      throw `ABI numbers differ. Expected {{ABI}}, got ${ABI_number}`;
+      var ABI_mismatch_exception =
+          `ABI numbers differ. Expected {{ABI}}, got ${ABI_number}`;
+      console.error(ABI_mismatch_exception);
+      throw ABI_mismatch_exception;
     }
     return true;
   };
