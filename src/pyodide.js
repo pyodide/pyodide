@@ -159,6 +159,7 @@ var languagePluginLoader = new Promise((resolve, reject) => {
             window.pyodide.loadedPackages[package] = toLoad[package];
           }
           delete window.pyodide._module.monitorRunDependencies;
+          window.removeEventListener('error', windowErrorHandler);
           if (!isFirefox) {
             preloadWasm().then(() => {resolve(`Loaded ${packageList}`)});
           } else {
@@ -166,6 +167,17 @@ var languagePluginLoader = new Promise((resolve, reject) => {
           }
         }
       };
+
+      // Add a handler for any exceptions that are thrown in the process of
+      // loading a package
+      var windowErrorHandler = (err) => {
+        delete window.pyodide._module.monitorRunDependencies;
+        window.removeEventListener('error', windowErrorHandler);
+        // Set up a new Promise chain, since this one failed
+        loadPackagePromise = new Promise((resolve) => resolve());
+        reject(err.message);
+      };
+      window.addEventListener('error', windowErrorHandler);
 
       for (let package in toLoad) {
         let script = document.createElement('script');
@@ -179,7 +191,7 @@ var languagePluginLoader = new Promise((resolve, reject) => {
           // If the package_uri fails to load, call monitorRunDependencies twice
           // (so packageCounter will still hit 0 and finish loading), and remove
           // the package from toLoad so we don't mark it as loaded.
-          console.log(`Couldn't load package from URL ${script.src}`)
+          console.error(`Couldn't load package from URL ${script.src}`)
           let index = toLoad.indexOf(package);
           if (index !== -1) {
             toLoad.splice(index, 1);
@@ -247,6 +259,7 @@ var languagePluginLoader = new Promise((resolve, reject) => {
     'repr',
     'runPython',
     'runPythonAsync',
+    'checkABI',
     'version',
   ];
 
@@ -275,6 +288,16 @@ var languagePluginLoader = new Promise((resolve, reject) => {
     wasm_promise.then(module => WebAssembly.instantiate(module, info))
         .then(instance => receiveInstance(instance));
     return {};
+  };
+
+  Module.checkABI = function(ABI_number) {
+    if (ABI_number !== parseInt('{{ABI}}')) {
+      var ABI_mismatch_exception =
+          `ABI numbers differ. Expected {{ABI}}, got ${ABI_number}`;
+      console.error(ABI_mismatch_exception);
+      throw ABI_mismatch_exception;
+    }
+    return true;
   };
 
   Module.locateFile = (path) => baseURL + path;

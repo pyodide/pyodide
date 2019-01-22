@@ -15,6 +15,8 @@ export HOSTPYTHON=$(HOSTPYTHONROOT)/bin/python3
 export TARGETPYTHONROOT=$(PYODIDE_ROOT)/cpython/installs/python-$(PYVERSION)
 export PYTHONINCLUDE=$(PYODIDE_ROOT)/cpython/installs/python-$(PYVERSION)/include/python$(PYMINOR)
 
+export PYODIDE_PACKAGE_ABI=1
+
 export SIDE_LDFLAGS=\
 	-O3 \
   -s "BINARYEN_METHOD='native-wasm'" \

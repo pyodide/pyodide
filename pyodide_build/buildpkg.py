@@ -127,6 +127,7 @@ def package_files(buildpath, srcpath, pkg, args):
         'python',
         common.ROOTDIR / 'file_packager.py',
         name + '.data',
+        '--abi={0}'.format(args.package_abi),
         '--lz4',
         '--preload',
         '{}@/'.format(install_prefix),
@@ -169,6 +170,9 @@ def make_parser(parser):
     parser.add_argument(
         'package', type=str, nargs=1,
         help="Path to meta.yaml package description")
+    parser.add_argument(
+        '--package_abi', type=int, required=True,
+        help='The ABI number for the package to be built')
     parser.add_argument(
         '--cflags', type=str, nargs='?', default=common.DEFAULTCFLAGS,
         help='Extra compiling flags')
