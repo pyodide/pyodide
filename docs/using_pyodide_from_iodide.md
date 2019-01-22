@@ -4,41 +4,22 @@ This document describes using Pyodide inside Iodide. For information
 about using Pyodide directly from Javascript, see [Using Pyodide from
 Javascript](using_pyodide_from_javascript.md).
 
-**NOTE:** The details of how this works on the Iodide side is likely to change
-in the near future.
-
-## Startup
-
-The first step is to tell Iodide you want to import support for a new programming language.
-
-Create a "language plugin cell" by selecting "plugin" from the cell type dropdown and insert the following JSON:
-
-```json
-{
-  "languageId": "py",
-  "displayName": "python",
-  "codeMirrorMode": "python",
-  "keybinding": "p",
-  "url": "https://iodide.io/pyodide-demo/pyodide.js",
-  "module": "pyodide",
-  "evaluator": "runPython",
-  "pluginType": "language"
-}
-```
-
-Evaluate the cell (Shift+Enter) to load Pyodide and set up the Python environment.
-
 ## Running basic Python
 
-Create a Python cell, by choosing Python from the cell type dropdown.
+Create a Python chunk, by inserting a line like this:
 
-Insert some Python into the cell, and press Shift+Enter to evaluate it. If the
-last clause in the cell is an expression, that expression is evaluated,
-converted to Javascript and displayed in the output cell like all other output
+```
+%% py
+```
+
+Type some Python code into the chunk, and press Shift+Enter to evaluate it. If
+the last clause in the cell is an expression, that expression is evaluated,
+converted to Javascript and displayed in the console like all other output
 in Javascript. See [type conversions](type_conversions.md) for more information
 about how data types are converted between Python and Javascript.
 
 ```python
+%% py
 import sys
 sys.version
 ```
@@ -46,28 +27,29 @@ sys.version
 ## Loading packages
 
 Only the Python standard library and `six` are available after importing
-Pyodide. To use other libraries, you'll need to load their package using
-`pyodide.loadPackage`. This is a Javascript API, so importantly, it must be run
-from a Javascript cell. This downloads the file data over the network (as a
-`.data` and `.js` index file) and installs the files in the virtual filesystem.
+Pyodide. Other available libraries, such as `numpy` and `matplotlib` are loaded
+on demand.
 
-Packages can be loaded by name, for those included in the official pyodide
-repository (e.g. `pyodide.loadPackage('numpy')`). It is also possible to load
-packages from custom URLs (e.g.
-`pyodide.loadPackage('https://foo/bar/numpy.js')`), in which case the URL must
-end with `<package-name>.js`.
+If you just want to use the versions of those libraries included with Pyodide,
+all you need to do is import and start using them:
 
-When you request a package from the official repository, all of that package's
-dependencies are also loaded. Dependency resolution is not yet implemented
-when loading packages from custom URLs.
-
-Multiple packages can also be loaded in a single call,
-```js
-pyodide.loadPackage(['cycler', 'pytz'])
+```
+%% py
+import numpy as np
+np.arange(10)
 ```
 
-`pyodide.loadPackage` returns a `Promise`.
+For most uses, that is all you need to know.
 
-```javascript
-pyodide.loadPackage('matplotlib')
+However, if you want to use your own custom package or load a package from
+another provider, you'll need to use the `pyodide.loadPackage` function from a
+Javascript chunk. For example, to load a special distribution of Numpy from
+`custom.com`:
+
 ```
+%% js
+pyodide.loadPackage('https://custom.com/numpy.js')
+```
+
+After doing that, the numpy you import from a Python chunk will be this special
+version of Numpy.
