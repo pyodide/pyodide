@@ -132,6 +132,14 @@ def test_different_ABI(selenium_standalone):
     finally:
         (build_dir / 'numpy-broken.js').unlink()
 
+    selenium_standalone.load_package('kiwisolver')
+    selenium_standalone.run('import kiwisolver')
+    assert (
+        selenium_standalone.run('repr(kiwisolver)') ==
+        "<module 'kiwisolver' from "
+        "'/lib/python3.7/site-packages/kiwisolver.so'>"
+    )
+
 
 def test_load_handle_failure(selenium_standalone):
     selenium = selenium_standalone
