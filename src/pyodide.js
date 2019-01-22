@@ -59,7 +59,7 @@ var languagePluginLoader = new Promise((resolve, reject) => {
           if (Module['preloadedWasm'][path] === undefined) {
             promise = promise
               .then(() => Module['loadWebAssemblyModule'](
-                FS.readFile(path), true))
+                FS.readFile(path), {loadAsync: true}))
               .then((module) => {
                 Module['preloadedWasm'][path] = module;
               });
