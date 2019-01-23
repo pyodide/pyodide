@@ -29,6 +29,9 @@ def eval_code(code, ns):
     code = dedent(code)
 
     mod = ast.parse(code)
+    if len(mod.body) == 0:
+        return None
+
     if isinstance(mod.body[-1], ast.Expr):
         expr = ast.Expression(mod.body[-1].value)
         del mod.body[-1]
