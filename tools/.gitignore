@@ -4,3 +4,4 @@ cc
 cxx
 gcc
 ld
+gfortran
