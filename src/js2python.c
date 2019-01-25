@@ -9,9 +9,15 @@
 // bubble out to Python
 
 int
-_js2python_string(char* val)
+_js2python_allocate_string(int size, int max_code_point)
 {
-  return (int)PyUnicode_FromString(val);
+  return (int)PyUnicode_New(size, max_code_point);
+}
+
+int
+_js2python_get_ptr(int obj)
+{
+  return (int)PyUnicode_DATA((PyObject*)obj);
 }
 
 int
@@ -68,9 +74,46 @@ EM_JS(int, __js2python, (int id), {
   var value = Module.hiwire_get_value(id);
   var type = typeof value;
   if (type === 'string') {
-    var charptr = allocate(intArrayFromString(value), 'i8', ALLOC_NORMAL);
-    var result = __js2python_string(charptr);
-    _free(charptr);
+    // The general idea here is to allocate a Python string and then
+    // have Javascript write directly into its buffer.  We first need
+    // to determine if is needs to be a 1-, 2- or 4-byte string, since
+    // Python handles all 3.
+    var max_code_point = 0;
+    for (var i = 0; i < value.length; i++) {
+      code_point = value.codePointAt(i);
+      max_code_point = Math.max(max_code_point, code_point);
+      if (max_code_point > 0xffff) {
+        // If we're dealing with UTF-16 surrogate pairs, convert the string
+        // to an array of each of its characters, so we correctly count the
+        // number of characters.
+        value = Array.from(value[Symbol.iterator]());
+        // We can short circuit here -- we already know we need a 4-byte output.
+        break;
+      }
+    }
+
+    var result = __js2python_allocate_string(value.length, max_code_point);
+    if (result == 0) {
+      return 0;
+    }
+
+    var ptr = __js2python_get_ptr(result);
+    if (max_code_point > 0xffff) {
+      ptr = ptr / 4;
+      for (var i = 0; i < value.length; i++) {
+        Module.HEAPU32[ptr + i] = value[i].codePointAt(0);
+      }
+    } else if (max_code_point > 0xff) {
+      ptr = ptr / 2;
+      for (var i = 0; i < value.length; i++) {
+        Module.HEAPU16[ptr + i] = value.codePointAt(i);
+      }
+    } else {
+      for (var i = 0; i < value.length; i++) {
+        Module.HEAPU8[ptr + i] = value.codePointAt(i);
+      }
+    }
+
     return result;
   } else if (type === 'number') {
     return __js2python_number(value);
