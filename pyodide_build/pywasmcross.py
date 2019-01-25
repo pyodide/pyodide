@@ -40,7 +40,6 @@ from pyodide_build import common
 
 
 ROOTDIR = common.ROOTDIR
-symlinks = set(['cc', 'c++', 'ld', 'ar', 'gcc'])
 symlinks = set(['cc', 'c++', 'ld', 'ar', 'gcc', 'gfortran'])
 
 
