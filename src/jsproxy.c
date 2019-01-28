@@ -200,13 +200,15 @@ JsProxy_IterNext(PyObject* o)
   int iddone = hiwire_get_member_string(idresult, (int)"done");
   int done = hiwire_nonzero(iddone);
   hiwire_decref(iddone);
-  if (done) {
-    return NULL;
+
+  PyObject* pyvalue = NULL;
+  if (!done) {
+    int idvalue = hiwire_get_member_string(idresult, (int)"value");
+    pyvalue = js2python(idvalue);
+    hiwire_decref(idvalue);
   }
 
-  int idvalue = hiwire_get_member_string(idresult, (int)"value");
-  PyObject* pyvalue = js2python(idvalue);
-  hiwire_decref(idvalue);
+  hiwire_decref(idresult);
   return pyvalue;
 }
 
