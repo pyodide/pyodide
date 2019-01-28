@@ -25,6 +25,6 @@ def test_pdf(selenium):
     selenium.run("x = plt.plot([1,2,3])")
     selenium.run("import io")
     selenium.run("fd = io.BytesIO()")
-    selenium.run("plt.savefig(fd, format='svg')")
+    selenium.run("plt.savefig(fd, format='pdf')")
     content = selenium.run("fd.getvalue()")
     assert len(content) == 15752
