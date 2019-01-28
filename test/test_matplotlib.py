@@ -27,4 +27,4 @@ def test_pdf(selenium):
     selenium.run("fd = io.BytesIO()")
     selenium.run("plt.savefig(fd, format='pdf')")
     content = selenium.run("fd.getvalue()")
-    assert len(content) == 15752
+    assert len(content) == 5559
