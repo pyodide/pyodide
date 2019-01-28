@@ -79,20 +79,20 @@ EM_JS(int, __js2python, (int id), {
     // to determine if is needs to be a 1-, 2- or 4-byte string, since
     // Python handles all 3.
     var max_code_point = 0;
+    var length = value.length;
     for (var i = 0; i < value.length; i++) {
       code_point = value.codePointAt(i);
       max_code_point = Math.max(max_code_point, code_point);
-      if (max_code_point > 0xffff) {
-        // If we're dealing with UTF-16 surrogate pairs, convert the string
-        // to an array of each of its characters, so we correctly count the
-        // number of characters.
-        value = Array.from(value[Symbol.iterator]());
-        // We can short circuit here -- we already know we need a 4-byte output.
-        break;
+      if (code_point > 0xffff) {
+        // If we have a code point requiring UTF-16 surrogate pairs, the
+        // number of characters (codePoints) is less than value.length,
+        // so skip the next charCode and subtract 1 from the length.
+        i++;
+        length--;
       }
     }
 
-    var result = __js2python_allocate_string(value.length, max_code_point);
+    var result = __js2python_allocate_string(length, max_code_point);
     if (result == 0) {
       return 0;
     }
@@ -100,16 +100,20 @@ EM_JS(int, __js2python, (int id), {
     var ptr = __js2python_get_ptr(result);
     if (max_code_point > 0xffff) {
       ptr = ptr / 4;
-      for (var i = 0; i < value.length; i++) {
-        Module.HEAPU32[ptr + i] = value[i].codePointAt(0);
+      for (var i = 0, j = 0; j < length; i++, j++) {
+        var code_point = value.codePointAt(i);
+        Module.HEAPU32[ptr + j] = code_point;
+        if (code_point > 0xffff) {
+          i++;
+        }
       }
     } else if (max_code_point > 0xff) {
       ptr = ptr / 2;
-      for (var i = 0; i < value.length; i++) {
+      for (var i = 0; i < length; i++) {
         Module.HEAPU16[ptr + i] = value.codePointAt(i);
       }
     } else {
-      for (var i = 0; i < value.length; i++) {
+      for (var i = 0; i < length; i++) {
         Module.HEAPU8[ptr + i] = value.codePointAt(i);
       }
     }
