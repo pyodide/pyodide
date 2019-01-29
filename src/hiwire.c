@@ -60,7 +60,7 @@ EM_JS(int, hiwire_string_ucs4, (int ptr, int len), {
   var jsstr = "";
   var idx = ptr / 4;
   for (var i = 0; i < len; ++i) {
-    jsstr += String.fromCharCode(Module.HEAPU32[idx + i]);
+    jsstr += String.fromCodePoint(Module.HEAPU32[idx + i]);
   }
   return Module.hiwire_new_value(jsstr);
 });

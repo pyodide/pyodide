@@ -35,6 +35,8 @@ def test_python2js(selenium):
     assert selenium.run_js(
         'return pyodide.runPython("\'碘化物\'") === "碘化物"')
     assert selenium.run_js(
+        'return pyodide.runPython("\'🐍\'") === "🐍"')
+    assert selenium.run_js(
         'let x = pyodide.runPython("b\'bytes\'");\n'
         'return (x instanceof window.Uint8ClampedArray) && '
         '(x.length === 5) && '
@@ -156,7 +158,9 @@ def test_pythonexc2js(selenium):
 def test_js2python(selenium):
     selenium.run_js(
         """
-        window.jsstring = "碘化物";
+        window.jsstring_ucs1 = "pyodidé";
+        window.jsstring_ucs2 = "碘化物";
+        window.jsstring_ucs4 = "🐍";
         window.jsnumber0 = 42;
         window.jsnumber1 = 42.5;
         window.jsundefined = undefined;
@@ -170,8 +174,14 @@ def test_js2python(selenium):
         """
     )
     assert selenium.run(
-        'from js import jsstring\n'
-        'jsstring == "碘化物"')
+        'from js import jsstring_ucs1\n'
+        'jsstring_ucs1 == "pyodidé"')
+    assert selenium.run(
+        'from js import jsstring_ucs2\n'
+        'jsstring_ucs2 == "碘化物"')
+    assert selenium.run(
+        'from js import jsstring_ucs4\n'
+        'jsstring_ucs4 == "🐍"')
     assert selenium.run(
         'from js import jsnumber0\n'
         'jsnumber0 == 42')
