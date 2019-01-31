@@ -1,3 +1,4 @@
+self.languagePluginUrl = 'http://localhost:8000/'
 importScripts('./pyodide.js')
 
 var onmessage = function(e) { // eslint-disable-line no-unused-vars

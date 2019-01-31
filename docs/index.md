@@ -3,6 +3,7 @@
 ## Using Pyodide
 
 - [Using Pyodide directly from Javascript](using_pyodide_from_javascript.md)
+- [Using Pyodide from a web worker](using_pyodide_from_webworker.md)
 - [Using Pyodide from Iodide](using_pyodide_from_iodide.md)
 
 ## Developing Pyodide
