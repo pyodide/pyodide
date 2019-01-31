@@ -57,7 +57,8 @@ all: build/pyodide.asm.js \
 	build/renderedhtml.css \
   build/test.data \
   build/packages.json \
-  build/test.html
+  build/test.html \
+  build/webworker.js
 
 
 build/pyodide.asm.js: src/main.bc src/jsimport.bc src/jsproxy.bc src/js2python.bc \
@@ -112,6 +113,8 @@ build/test.html: src/test.html
 build/renderedhtml.css: src/renderedhtml.less
 	lessc $< $@
 
+build/webworker.js: src/webworker.js
+	cp $< $@
 
 test: all
 	pytest test/ -v
