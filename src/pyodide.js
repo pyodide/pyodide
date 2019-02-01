@@ -80,12 +80,8 @@ var languagePluginLoader = new Promise((resolve, reject) => {
     if (self.document) { // browser
       const script = self.document.createElement('script');
       script.src = url;
-      script.onload = (e) => {
-        onload();
-      };
-      script.onerror = (e) => {
-        onerror();
-      };
+      script.onload = (e) => { onload(); };
+      script.onerror = (e) => { onerror(); };
       self.document.body.appendChild(script);
     } else if (self.importScripts) { // webworker
       try {
@@ -227,7 +223,7 @@ var languagePluginLoader = new Promise((resolve, reject) => {
       // see the new files. This is done here so it happens in parallel
       // with the fetching over the network.
       self.pyodide.runPython('import importlib as _importlib\n' +
-                               '_importlib.invalidate_caches()\n');
+                             '_importlib.invalidate_caches()\n');
     });
 
     return promise;

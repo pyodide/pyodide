@@ -12,13 +12,13 @@ var onmessage = function(e) { // eslint-disable-line no-unused-vars
         self[key] = data[key];
       }
     }
-    self.pyodide.runPythonAsync(data.python, () => {}).then((results) => {
-      self.postMessage({results});
-    }).catch((err) => {
-      // if you prefer messages with the error
-      self.postMessage({error: err.message});
-      // if you prefer onerror events
-      // setTimeout(() => { throw err; });
-    });
+    self.pyodide.runPythonAsync(data.python, () => {})
+        .then((results) => { self.postMessage({results}); })
+        .catch((err) => {
+          // if you prefer messages with the error
+          self.postMessage({error : err.message});
+          // if you prefer onerror events
+          // setTimeout(() => { throw err; });
+        });
   });
 }
