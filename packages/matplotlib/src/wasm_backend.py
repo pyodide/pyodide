@@ -132,7 +132,10 @@ class FigureCanvasWasm(backend_agg.FigureCanvasAgg):
         width *= self._ratio
         height *= self._ratio
         div = self.create_root_element()
-        div.setAttribute('style', 'width: {}px'.format(width / self._ratio))
+        div.setAttribute(
+            'style', 'margin: 0 auto; text-align: center;' +
+            'width: {}px'.format(width / self._ratio)
+        )
         div.id = self._id
 
         # The top bar
