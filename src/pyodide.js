@@ -82,7 +82,7 @@ var languagePluginLoader = new Promise((resolve, reject) => {
       script.src = url;
       script.onload = (e) => { onload(); };
       script.onerror = (e) => { onerror(); };
-      self.document.body.appendChild(script);
+      self.document.head.appendChild(script);
     } else if (self.importScripts) { // webworker
       try {
         self.importScripts(url);
