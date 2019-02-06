@@ -144,7 +144,9 @@ class SeleniumWrapper:
         return self.driver.execute_script(catch)
 
     def initWebWorker(self):
-        url = f'http://{self.server_hostname}:{self.server_port}/webworker_dev.js'
+        hostname = self.server_hostname
+        port = self.server_port
+        url = f'http://{hostname}:{port}/webworker_dev.js'
         self.run_js(
             f"""
             window.done = false;
