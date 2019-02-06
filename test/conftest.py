@@ -143,6 +143,66 @@ class SeleniumWrapper:
             catch (error) {{ console.log(error.stack); throw error; }}"""
         return self.driver.execute_script(catch)
 
+    def initWebWorker(self):
+        url = f'http://{self.server_hostname}:{self.server_port}/webworker_dev.js'
+        self.run_js(
+            f"""
+            window.done = false;
+            window.pyodideWorker = new Worker( '{url}' );
+
+            window.pyodideWorker.onerror = function(e) {{
+                window.output = e;
+                window.error = true;
+                window.done = true;
+            }};
+
+            window.pyodideWorker.onmessage = function(e) {{
+              if (e.data.results) {{
+                window.output = e.data.results;
+                window.error = false;
+              }} else {{
+                window.output = e.data.error;
+                window.error = true;
+              }}
+              window.done = true;
+            }};
+            """
+        )
+
+    def run_webworker(self, code):
+        from selenium.common.exceptions import TimeoutException
+        self.initWebWorker()
+        if isinstance(code, str) and code.startswith('\n'):
+            # we have a multiline string, fix indentation
+            code = textwrap.dedent(code)
+        self.run_js(
+            """
+            var data = {{
+              python: {!r}
+            }};
+
+            window.pyodideWorker.postMessage(data);
+            """.format(code)
+        )
+        try:
+            self.wait.until(PackageLoaded())
+        except TimeoutException:
+            _display_driver_logs(self.browser, self.driver)
+            print(self.logs)
+            raise TimeoutException('run_webworker timed out')
+        return self.run_js(
+            """
+            if (window.error) {
+                if (window.output instanceof Error) {
+                    throw window.output;
+                } else {
+                    throw new Error(String(window.output))
+                }
+            }
+            return window.output;
+            """
+        )
+
     def load_package(self, packages):
         self.run_js(
             'window.done = false\n' +
