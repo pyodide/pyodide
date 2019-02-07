@@ -99,7 +99,7 @@ var onmessage = function(e) { // eslint-disable-line no-unused-vars
 
 ## Caveats
 
-Using a web worker is advantageous because the python code is run a separate
+Using a web worker is advantageous because the python code is run in a separate
 thread from your main UI, and hence does not impact your application's
 responsiveness. There are some limitations, however. Because web workers are
 each in their own virtual machine, there is no way to share the python
