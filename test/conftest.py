@@ -143,7 +143,7 @@ class SeleniumWrapper:
             catch (error) {{ console.log(error.stack); throw error; }}"""
         return self.driver.execute_script(catch)
 
-    def initWebWorker(self):
+    def setup_webworker(self):
         hostname = self.server_hostname
         port = self.server_port
         url = f'http://{hostname}:{port}/webworker_dev.js'
@@ -173,7 +173,7 @@ class SeleniumWrapper:
 
     def run_webworker(self, code):
         from selenium.common.exceptions import TimeoutException
-        self.initWebWorker()
+        self.setup_webworker()
         if isinstance(code, str) and code.startswith('\n'):
             # we have a multiline string, fix indentation
             code = textwrap.dedent(code)
