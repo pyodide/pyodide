@@ -101,10 +101,12 @@ var onmessage = function(e) { // eslint-disable-line no-unused-vars
 
 Using a web worker is advantageous because the python code is run in a separate
 thread from your main UI, and hence does not impact your application's
-responsiveness. There are some limitations, however. Because web workers are
-each in their own virtual machine, there is no way to share the python
-interpreter or the downloaded packages between multiple web workers or with
-your main thread. Similarly, because of the separate VMs, you cannot share
-globals between a web worker and your main thread. Finally, although the web
-worker is separate from your main thread, the web worker is itself single
-threaded, so only one python script will execute at a time.
+responsiveness.
+There are some limitations, however.
+At present, Pyodide does not support sharing the Python interpreter and
+packages between multiple web workers or with your main thread.
+Since web workers are each in their own virtual machine, you also cannot share
+globals between a web worker and your main thread.
+Finally, although the web worker is separate from your main thread,
+the web worker is itself single threaded, so only one python script will
+execute at a time.
