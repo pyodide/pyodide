@@ -10,7 +10,7 @@ Setup your project to serve `webworker.js`. You should also serve
 files as well, though this is not strictly required if `pyodide.js` is pointing
 to a site serving current versions of these files.
 
-Update `webworker.js` so that it has as valid URL for `pyodide.js`, and sets
+Update the `webworker.js` sample so that it has as valid URL for `pyodide.js`, and sets
 `self.languagePluginUrl` to the location of the supporting files.
 
 In your application code create a web worker, and add listeners for `onerror`
