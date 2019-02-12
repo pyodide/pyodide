@@ -88,7 +88,7 @@ EM_JS(int, runpython_init_js, (), {
 
     if (jsimports.length) {
       var packageNames =
-        window.pyodide._module.packages.import_name_to_package_name;
+        self.pyodide._module.packages.import_name_to_package_name;
       var packages = {};
       for (var i = 0; i < jsimports.length; ++i) {
         var name = jsimports[i];
