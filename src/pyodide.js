@@ -370,13 +370,8 @@ var languagePluginLoader = new Promise((resolve, reject) => {
     document.getElementsByTagName('head')[0].appendChild(link);
 
     // Add a custom output handler for Python objects
-<<<<<<< HEAD
-    self.iodide.addOutputHandler({
-      shouldHandle : (val) => {
-=======
-    window.iodide.addOutputRenderer({
+    self.iodide.addOutputRenderer({
       shouldRender : (val) => {
->>>>>>> Update for new Iodide renderer API
         return (typeof val === 'function' &&
                 pyodide._module.PyProxy.isPyProxy(val));
       },
