@@ -6,7 +6,7 @@ import ast
 import io
 from textwrap import dedent
 
-__version__ = '0.7.1'
+__version__ = '0.7.2'
 
 
 def open_url(url):
