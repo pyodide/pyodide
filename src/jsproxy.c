@@ -62,6 +62,11 @@ JsProxy_GetAttr(PyObject* o, PyObject* attr_name)
   int idresult = hiwire_get_member_string(self->js, (int)key);
   Py_DECREF(str);
 
+  if (idresult == -1) {
+    PyErr_SetString(PyExc_AttributeError, key);
+    return NULL;
+  }
+
   if (hiwire_is_function(idresult)) {
     hiwire_decref(idresult);
     return JsBoundMethod_cnew(self->js, key);
@@ -250,6 +255,10 @@ JsProxy_subscript(PyObject* o, PyObject* pyidx)
   int ididx = python2js(pyidx);
   int idresult = hiwire_get_member_obj(self->js, ididx);
   hiwire_decref(ididx);
+  if (idresult == -1) {
+    PyErr_SetObject(PyExc_KeyError, pyidx);
+    return NULL;
+  }
   PyObject* pyresult = js2python(idresult);
   hiwire_decref(idresult);
   return pyresult;

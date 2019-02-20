@@ -189,7 +189,11 @@ EM_JS(int, hiwire_get_global, (int idname), {
 EM_JS(int, hiwire_get_member_string, (int idobj, int idkey), {
   var jsobj = Module.hiwire_get_value(idobj);
   var jskey = UTF8ToString(idkey);
-  return Module.hiwire_new_value(jsobj[jskey]);
+  if (jskey in jsobj) {
+    return Module.hiwire_new_value(jsobj[jskey]);
+  } else {
+    return -1;
+  }
 });
 
 EM_JS(void, hiwire_set_member_string, (int idobj, int ptrkey, int idval), {
@@ -217,7 +221,11 @@ EM_JS(void, hiwire_set_member_int, (int idobj, int idx, int idval), {
 EM_JS(int, hiwire_get_member_obj, (int idobj, int ididx), {
   var jsobj = Module.hiwire_get_value(idobj);
   var jsidx = Module.hiwire_get_value(ididx);
-  return Module.hiwire_new_value(jsobj[jsidx]);
+  if (jsidx in jsobj) {
+    return Module.hiwire_new_value(jsobj[jsidx]);
+  } else {
+    return -1;
+  }
 });
 
 EM_JS(void, hiwire_set_member_obj, (int idobj, int ididx, int idval), {
@@ -306,10 +314,14 @@ EM_JS(int, hiwire_get_iterator, (int idobj), {
   }
 
   var jsobj = Module.hiwire_get_value(idobj);
-  if (typeof jsobj.next ===  'function') {
+  if (typeof jsobj.next === 'function') {
     return Module.hiwire_new_value(jsobj);
   } else if (typeof jsobj[Symbol.iterator] === 'function') {
-    return Module.hiwire_new_value(jsobj[Symbol.iterator]())
+    return Module.hiwire_new_value(jsobj[Symbol.iterator]());
+  } else {
+    return Module.hiwire_new_value(
+      Object.entries(jsobj)[Symbol.iterator]()
+    );
   }
   return -1;
   // clang-format on

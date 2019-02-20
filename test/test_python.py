@@ -368,7 +368,7 @@ def test_jsproxy(selenium):
         """
         from js import TEST
         del TEST.y
-        TEST.y""") is None
+        hasattr(TEST, 'y')""") is False
     selenium.run_js(
         """
         class Point {
@@ -382,7 +382,7 @@ def test_jsproxy(selenium):
         """
         from js import TEST
         del TEST['y']
-        TEST['y']""") is None
+        'y' in TEST""") is False
     assert selenium.run(
         """
         from js import TEST
@@ -393,6 +393,16 @@ def test_jsproxy(selenium):
         from js import TEST
         TEST != 'foo'
         """)
+    selenium.run_js(
+        """
+        window.TEST = {foo: 'bar', baz: 'bap'}
+        """)
+    assert selenium.run(
+        """
+        from js import TEST
+        dict(TEST) == {'foo': 'bar', 'baz': 'bap'}
+        """
+    ) is True
 
 
 def test_jsproxy_iter(selenium):
