@@ -146,6 +146,46 @@ def test_python2js_numpy_dtype(selenium_standalone):
     assert selenium.run_js("return pyodide.pyimport('x')[1][1]") == 'string4'
 
 
+def test_python2js_numpy_scalar(selenium_standalone):
+    selenium = selenium_standalone
+
+    selenium.load_package('numpy')
+    selenium.run("import numpy as np")
+
+    for dtype in (
+            'int8',
+            'uint8',
+            'int16',
+            'uint16',
+            'int32',
+            'uint32',
+            'int64',
+            'uint64',
+            'float32',
+            'float64'
+    ):
+        selenium.run(
+            f"""
+            x = np.{dtype}(1)
+            """
+        )
+        assert selenium.run_js(
+            """
+            return pyodide.pyimport('x') == 1
+            """
+        ) is True
+        selenium.run(
+            """
+            x = x.byteswap().newbyteorder()
+            """
+        )
+        assert selenium.run_js(
+            """
+            return pyodide.pyimport('x') == 1
+            """
+        ) is True
+
+
 def test_pythonexc2js(selenium):
     try:
         selenium.run_js('return pyodide.runPython("5 / 0")')
