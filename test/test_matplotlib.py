@@ -3,6 +3,7 @@ def test_matplotlib(selenium):
     selenium.run("from matplotlib import pyplot as plt")
     selenium.run("plt.figure()")
     selenium.run("x = plt.plot([1,2,3])")
+    selenium.run("plt.show()")
 
 
 def test_svg(selenium):
