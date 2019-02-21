@@ -104,7 +104,10 @@ class FigureCanvasWasm(backend_agg.FigureCanvasAgg):
         # Designed to be overridden by subclasses for use in contexts other
         # than iodide.
         from js import iodide
-        return iodide.output.element('div')
+        if iodide is not None:
+            return iodide.output.element('div')
+        else:
+            return document.createElement('div')
 
     def show(self):
         # If we've already shown this canvas elsewhere, don't create a new one,
