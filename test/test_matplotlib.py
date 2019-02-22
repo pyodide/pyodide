@@ -1,8 +1,10 @@
-def test_matplotlib(selenium):
+def test_matplotlib(selenium_standalone):
+    selenium = selenium_standalone
     selenium.load_package("matplotlib")
     selenium.run("from matplotlib import pyplot as plt")
     selenium.run("plt.figure()")
-    selenium.run("x = plt.plot([1,2,3])")
+    selenium.run("plt.plot([1,2,3])")
+    selenium.run("plt.show()")
 
 
 def test_svg(selenium):
@@ -26,5 +28,3 @@ def test_pdf(selenium):
     selenium.run("import io")
     selenium.run("fd = io.BytesIO()")
     selenium.run("plt.savefig(fd, format='pdf')")
-    content = selenium.run("fd.getvalue()")
-    assert len(content) == 5559
