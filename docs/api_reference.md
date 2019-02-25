@@ -42,6 +42,21 @@ some preprocessing on the Python code first.
 
 Either the resulting object or `None`.
 
+### pyodide.as_nested_list(obj)
+
+Converts Javascript nested arrays to Python nested lists. This conversion can not
+be performed automatically, because Javascript Arrays and Objects can be combined
+in ways that are ambiguous.
+
+*Parameters*
+
+| name   | type  | description           |
+|--------|-------|-----------------------|
+| *obj*  | JS Object | The object to convert |
+
+*Returns*
+
+The object as nested Python lists.
 
 ## Javascript API
 
