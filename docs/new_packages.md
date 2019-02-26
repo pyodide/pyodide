@@ -72,7 +72,7 @@ Alternatively to `source/url`, a relative or absolute path can be specified
 as package source. This is useful for local testing or building packages which
 are not available online in the required format.
 
-If a path is specified, any provided checksums are being ignored.
+If a path is specified, any provided checksums are ignored.
 
 #### `source/md5`
 
