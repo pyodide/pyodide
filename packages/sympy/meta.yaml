@@ -1,0 +1,15 @@
+package:
+  name: sympy
+  version: '1.3'
+
+source:
+  sha256: e1319b556207a3758a0efebae14e5e52c648fc1db8975953b05fff12b6871b54
+  url: 'https://files.pythonhosted.org/packages/dd/f6/ed485ff22efdd7b371d0dbbf6d77ad61c3b3b7e0815a83c89cbb38ce35de/sympy-1.3.tar.gz'
+
+requirements:
+  run:
+    - mpmath
+
+test:
+  imports:
+    - sympy

@@ -1,0 +1,11 @@
+package:
+  name: mpmath
+  version: 1.1.0
+
+source:
+  sha256: fc17abe05fbab3382b61a123c398508183406fa132e0223874578e20946499f6
+  url: 'https://files.pythonhosted.org/packages/ca/63/3384ebb3b51af9610086b23ea976e6d27d6d97bf140a76a365bd77a3eb32/mpmath-1.1.0.tar.gz'
+
+test:
+  imports:
+    - mpmath
