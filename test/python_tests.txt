@@ -114,7 +114,7 @@ test_collections
 test_colorsys
 test_compare
 test_compile crash-chrome
-test_compileall
+test_compileall multiprocessing
 test_complex
 test_concurrent_futures
 test_configparser
@@ -159,7 +159,7 @@ test_dummy_thread
 test_dummy_threading
 test_dynamic
 test_dynamicclassattribute
-test_eintr
+test_eintr subprocess
 test_email.test__encoded_words
 test_email.test__header_value_parser
 test_email.test_asian_codecs
@@ -224,7 +224,7 @@ test_glob     fs
 test_global
 test_grammar
 test_grp
-test_gzip
+test_gzip subprocess
 test_hash
 test_hashlib  threading
 test_heapq
