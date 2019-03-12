@@ -41,6 +41,13 @@ expect Conda packages to "just work" with Pyodide. (In the longer term, Pyodide
 may use conda as its packaging system, and this should hopefully ease that
 transition.)
 
+There is a helper tool that will generate a `meta.yaml` for packages on PyPI
+that will work for many pure Python packages. This tool will populate the latest
+version, download link and sha256 hash by querying PyPI. It doesn't currently
+handle package dependencies. To run it, do:
+
+`bin/pyodide mkpkg $PACKAGE_NAME`
+
 The supported keys in the `meta.yaml` file are described below.
 
 ### `package`
