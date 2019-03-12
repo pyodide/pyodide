@@ -168,8 +168,10 @@ EM_JS(int, pyproxy_init, (), {
       } else if (jskey === '$$') {
         return jsobj['$$'];
       } else if (jskey === 'destroy') {
-        __pyproxy_destroy(this.getPtr(jsobj));
-        jsobj['$$']['ptr'] = null;
+        return function() {
+          __pyproxy_destroy(this.getPtr(jsobj));
+          jsobj['$$']['ptr'] = null;
+        }
       } else if (jskey == 'apply') {
         return function(jsthis, jsargs) {
           var idargs = Module.hiwire_new_value(jsargs);
