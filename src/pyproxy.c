@@ -157,6 +157,7 @@ EM_JS(int, pyproxy_init, (), {
       return result;
     },
     get: function (jsobj, jskey) {
+      ptrobj = this.getPtr(jsobj);
       if (jskey === 'toString') {
         return function() {
           if (self.pyodide.repr === undefined) {
@@ -167,10 +168,20 @@ EM_JS(int, pyproxy_init, (), {
       } else if (jskey === '$$') {
         return jsobj['$$'];
       } else if (jskey === 'destroy') {
-        __pyproxy_destroy(this.getPtr(jsobj));
-        jsobj['$$']['ptr'] = null;
+        return function() {
+          __pyproxy_destroy(ptrobj);
+          jsobj['$$']['ptr'] = null;
+        }
+      } else if (jskey == 'apply') {
+        return function(jsthis, jsargs) {
+          var idargs = Module.hiwire_new_value(jsargs);
+          var idresult = __pyproxy_apply(ptrobj, idargs);
+          var jsresult = Module.hiwire_get_value(idresult);
+          Module.hiwire_decref(idresult);
+          Module.hiwire_decref(idargs);
+          return jsresult;
+        };
       }
-      ptrobj = this.getPtr(jsobj);
       var idkey = Module.hiwire_new_value(jskey);
       var idresult = __pyproxy_get(ptrobj, idkey);
       var jsresult = Module.hiwire_get_value(idresult);
