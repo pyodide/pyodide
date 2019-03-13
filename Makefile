@@ -11,13 +11,13 @@ CLAPACK=CLAPACK/CLAPACK-WA/lapack_WA.bc
 
 CC=emcc
 CXX=em++
-OPTFLAGS=-O3
+OPTFLAGS=-O2
 CFLAGS=$(OPTFLAGS) -g -I$(PYTHONINCLUDE) -Wno-warn-absolute-paths
 CXXFLAGS=$(CFLAGS) -std=c++14
 
 
 LDFLAGS=\
-	-O3 \
+	-O2 \
 	-s MODULARIZE=1 \
 	$(CPYTHONROOT)/installs/python-$(PYVERSION)/lib/libpython$(PYMINOR).a \
   $(LZ4LIB) \

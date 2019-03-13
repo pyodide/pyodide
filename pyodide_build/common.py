@@ -6,7 +6,7 @@ HOSTPYTHON = ROOTDIR / '..' / 'cpython' / 'build' / '3.7.0' / 'host'
 TARGETPYTHON = ROOTDIR / '..' / 'cpython' / 'installs' / 'python-3.7.0'
 DEFAULTCFLAGS = ''
 DEFAULTLDFLAGS = ' '.join([
-    '-O3',
+    '-O2',
     '-s', "BINARYEN_METHOD='native-wasm'",
     '-Werror',
     '-s', 'EMULATED_FUNCTION_POINTERS=1',
