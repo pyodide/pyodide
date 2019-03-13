@@ -42,10 +42,14 @@ def check_checksum(path, pkg):
 def download_and_extract(buildpath, packagedir, pkg, args):
     tarballpath = buildpath / Path(pkg['source']['url']).name
     if not tarballpath.is_file():
-        subprocess.run([
-            'wget', '-q', '-O', str(tarballpath), pkg['source']['url']
-        ], check=True)
-        check_checksum(tarballpath, pkg)
+        try:
+            subprocess.run([
+                'wget', '-q', '-O', str(tarballpath), pkg['source']['url']
+            ], check=True)
+            check_checksum(tarballpath, pkg)
+        except Exception:
+            tarballpath.unlink()
+            raise
     srcpath = buildpath / packagedir
     if not srcpath.is_dir():
         shutil.unpack_archive(str(tarballpath), str(buildpath))
