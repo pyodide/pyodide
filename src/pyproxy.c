@@ -169,7 +169,7 @@ EM_JS(int, pyproxy_init, (), {
         return jsobj['$$'];
       } else if (jskey === 'destroy') {
         return function() {
-          __pyproxy_destroy(this.getPtr(jsobj));
+          __pyproxy_destroy(ptrobj);
           jsobj['$$']['ptr'] = null;
         }
       } else if (jskey == 'apply') {
