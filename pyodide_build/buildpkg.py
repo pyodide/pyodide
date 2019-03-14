@@ -50,7 +50,7 @@ def download_and_extract(buildpath, packagedir, pkg, args):
                     'wget', '-q', '-O', str(tarballpath), pkg['source']['url']
                 ], check=True)
                 check_checksum(tarballpath, pkg)
-            except Exceptin:
+            except Exception:
                 tarballpath.unlink()
                 raise
 
