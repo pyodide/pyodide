@@ -221,7 +221,7 @@ $(CLAPACK): $(CPYTHONLIB)
 	make -C CLAPACK
 
 
-build/packages.json: FORCE
+build/packages.json: $(CLAPACK) FORCE
 	make -C packages
 
 emsdk/emsdk/.complete:
