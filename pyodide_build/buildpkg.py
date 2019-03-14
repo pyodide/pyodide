@@ -45,10 +45,14 @@ def download_and_extract(buildpath, packagedir, pkg, args):
     if 'url' in pkg['source']:
         tarballpath = buildpath / Path(pkg['source']['url']).name
         if not tarballpath.is_file():
-            subprocess.run([
-                'wget', '-q', '-O', str(tarballpath), pkg['source']['url']
-            ], check=True)
-            check_checksum(tarballpath, pkg)
+            try:
+                subprocess.run([
+                    'wget', '-q', '-O', str(tarballpath), pkg['source']['url']
+                ], check=True)
+                check_checksum(tarballpath, pkg)
+            except Exceptin:
+                tarballpath.unlink()
+                raise
 
         if not srcpath.is_dir():
             shutil.unpack_archive(str(tarballpath), str(buildpath))

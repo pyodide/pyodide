@@ -67,4 +67,16 @@ def find_imports(code):
     return list(imports)
 
 
-__all__ = ['open_url', 'eval_code', 'find_imports']
+def as_nested_list(obj):
+    """
+    Assumes a Javascript object is made of (possibly nested) arrays and
+    converts them to nested Python lists.
+    """
+    try:
+        it = iter(obj)
+        return [as_nested_list(x) for x in it]
+    except TypeError:
+        return obj
+
+
+__all__ = ['open_url', 'eval_code', 'find_imports', 'as_nested_list']
