@@ -1,0 +1,49 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="UTF-8">
+    <script src="https://code.jquery.com/jquery-latest.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/jquery.terminal/js/jquery.terminal.min.js"></script>
+    <link href="https://cdn.jsdelivr.net/npm/jquery.terminal/css/jquery.terminal.min.css" rel="stylesheet"/>
+    <script src="./pyodide_dev.js"></script>
+  </head>
+  <body>
+    <script>
+      languagePluginLoader.then(() => {
+        pyodide.runPython('import io, code, sys');
+        pyodide.runPython('_c = code.InteractiveConsole(locals=globals())')
+        var c = pyodide.pyimport('_c')
+        function handleResult(result) {
+          if (result) {
+            term.set_prompt('[[;gray;]... ]')
+          } else {
+            term.set_prompt('[[;red;]>>> ]')
+          }
+          var stderr = pyodide.runPython("sys.stderr.getvalue()").trim()
+          if (stderr) {
+            term.echo(`[[;red;]${stderr}]`)
+          } else {
+            var stdout = pyodide.runPython("sys.stdout.getvalue()")
+            term.echo(stdout.trim())
+          }
+        }
+        function pushCode(line) {
+          pyodide.runPython('sys.stdout = io.StringIO()')
+          pyodide.runPython('sys.stderr = io.StringIO()')
+          if (line.startsWith('import ')) {
+            pyodide.runPythonAsync(line).then(handleResult)
+          } else {
+            handleResult(c.push(line))
+          }
+        }
+        var term = $('body').terminal(
+          pushCode,
+          {
+            greetings: "Welcome to the Pyodide terminal emulator 🐍",
+            prompt: "[[;red;]>>> ]"
+          }
+        );
+      });
+    </script>
+  </body>
+</html>
