@@ -1,0 +1,9 @@
+package:
+  name: soupsieve
+  version: '1.8'
+source:
+  sha256: eaed742b48b1f3e2d45ba6f79401b2ed5dc33b2123dfe216adb90d4bfa0ade26
+  url: https://files.pythonhosted.org/packages/0c/52/e9088bb9b96e2d39fc3b33fcda5b4fde9d71473536ac660a1ca9a0958a2f/soupsieve-1.8.tar.gz
+test:
+  imports:
+  - soupsieve
