@@ -5,14 +5,38 @@
     <script src="https://code.jquery.com/jquery-latest.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/jquery.terminal/js/jquery.terminal.min.js"></script>
     <link href="https://cdn.jsdelivr.net/npm/jquery.terminal/css/jquery.terminal.min.css" rel="stylesheet"/>
+    <link href="renderedhtml.css" rel="stylesheet"/>
     <script src="./pyodide_dev.js"></script>
   </head>
   <body>
     <script>
       languagePluginLoader.then(() => {
-        pyodide.runPython('import io, code, sys');
-        pyodide.runPython('_c = code.InteractiveConsole(locals=globals())')
+        function pushCode(line) {
+          handleResult(c.push(line))
+        }
+
+        var term = $('body').terminal(
+          pushCode,
+          {
+            greetings: "Welcome to the Pyodide terminal emulator 🐍",
+            prompt: "[[;red;]>>> ]"
+          }
+        );
+
+        window.term = term;
+        pyodide.runPython(
+          'import io, code, sys\n' +
+          'sys.stdout = io.StringIO()\n' +
+          'sys.stderr = io.StringIO()\n' +
+          'from js import term, pyodide\n' +
+          'class Console(code.InteractiveConsole):\n' +
+          '    def runcode(self, code):\n' +
+          '        term.runPython("\\n".join(self.buffer))\n' +
+          '_c = Console(locals=globals())'
+        )
+
         var c = pyodide.pyimport('_c')
+
         function handleResult(result) {
           if (result) {
             term.set_prompt('[[;gray;]... ]')
@@ -24,25 +48,31 @@
             term.echo(`[[;red;]${stderr}]`)
           } else {
             var stdout = pyodide.runPython("sys.stdout.getvalue()")
-            term.echo(stdout.trim())
+            if (stdout) {
+              term.echo(stdout.trim())
+            }
           }
         }
-        function pushCode(line) {
-          pyodide.runPython('sys.stdout = io.StringIO()')
-          pyodide.runPython('sys.stderr = io.StringIO()')
-          if (line.startsWith('import ')) {
-            pyodide.runPythonAsync(line).then(handleResult)
+
+        term.runPython = function(code) {
+          pyodide.runPythonAsync(code).then(
+            term.handlePythonResult, term.handlePythonError
+          )
+        }
+
+        term.handlePythonResult = function(result) {
+          if (result === undefined) {
+            return
+          } else if (result['_repr_html_'] !== undefined) {
+            term.echo(result['_repr_html_'], {raw: true})
           } else {
-            handleResult(c.push(line))
+            term.echo(result.toString())
           }
         }
-        var term = $('body').terminal(
-          pushCode,
-          {
-            greetings: "Welcome to the Pyodide terminal emulator 🐍",
-            prompt: "[[;red;]>>> ]"
-          }
-        );
+
+        term.handlePythonError = function(result) {
+          term.error(result.toString())
+        }
       });
     </script>
   </body>
