@@ -26,11 +26,11 @@
         window.term = term;
         pyodide.runPython(
           'import io, code, sys\n' +
-          'sys.stdout = io.StringIO()\n' +
-          'sys.stderr = io.StringIO()\n' +
           'from js import term, pyodide\n' +
           'class Console(code.InteractiveConsole):\n' +
           '    def runcode(self, code):\n' +
+          '        sys.stdout = io.StringIO()\n' +
+          '        sys.stderr = io.StringIO()\n' +
           '        term.runPython("\\n".join(self.buffer))\n' +
           '_c = Console(locals=globals())'
         )
