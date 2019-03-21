@@ -20,9 +20,9 @@ ZLIBTARBALL=$(ROOT)/downloads/zlib-$(ZLIBVERSION).tar.gz
 ZLIBBUILD=$(ROOT)/build/zlib-$(ZLIBVERSION)
 ZLIBURL=https://zlib.net/zlib-1.2.11.tar.gz
 
-SQLITETARBALL=$(ROOT)/downloads/sqlite-snapshot-201903021525.tar.gz
-SQLITEBUILD=$(ROOT)/build/sqlite-snapshot-201903021525
-SQLITEURL=https://www.sqlite.org/snapshot/sqlite-snapshot-201903021525.tar.gz
+SQLITETARBALL=$(ROOT)/downloads/sqlite-autoconf-3270200.tar.gz
+SQLITEBUILD=$(ROOT)/build/sqlite-autoconf-3270200
+SQLITEURL=https://www.sqlite.org/2019/sqlite-autoconf-3270200.tar.gz
 
 
 all: $(INSTALL)/lib/$(LIB)
