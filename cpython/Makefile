@@ -88,7 +88,7 @@ $(ZLIBBUILD)/.patched: $(ZLIBTARBALL)
 	touch $@
 
 
-$(SQLITEBUILD): $(SQLITETARBALL)
+$(SQLITEBUILD)/libsqlite3.la: $(SQLITETARBALL)
 	[ -d $(ROOT)/build ] || (mkdir $(ROOT)/build)
 	tar -C $(ROOT)/build/ -xf $(SQLITETARBALL)
 	( \
@@ -98,7 +98,7 @@ $(SQLITEBUILD): $(SQLITETARBALL)
 	)
 
 
-$(BUILD)/Makefile: $(BUILD)/.patched $(ZLIBBUILD)/.patched $(SQLITEBUILD)
+$(BUILD)/Makefile: $(BUILD)/.patched $(ZLIBBUILD)/.patched $(SQLITEBUILD/libsqlite3.la)
 	cp config.site $(BUILD)/
 	( \
 		cd $(BUILD); \
