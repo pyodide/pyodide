@@ -20,6 +20,10 @@ ZLIBTARBALL=$(ROOT)/downloads/zlib-$(ZLIBVERSION).tar.gz
 ZLIBBUILD=$(ROOT)/build/zlib-$(ZLIBVERSION)
 ZLIBURL=https://zlib.net/zlib-1.2.11.tar.gz
 
+SQLITETARBALL=$(ROOT)/downloads/sqlite-snapshot-201903021525.tar.gz
+SQLITEBUILD=$(ROOT)/build/sqlite-snapshot-201903021525
+SQLITEURL=https://www.sqlite.org/snapshot/sqlite-snapshot-201903021525.tar.gz
+
 
 all: $(INSTALL)/lib/$(LIB)
 
@@ -53,6 +57,11 @@ $(ZLIBTARBALL):
 	wget -q -O $@ $(ZLIBURL)
 
 
+$(SQLITETARBALL):
+	[ -d $(ROOT)/downloads ] || mkdir $(ROOT)/downloads
+	wget -q -O $@ $(SQLITEURL)
+
+
 $(HOSTPYTHON) $(HOSTPGEN): $(TARBALL)
 	mkdir -p $(HOSTINSTALL)
 	[ -d $(HOSTBUILD) ] || tar -C $(HOSTINSTALL) -xf $(TARBALL)
@@ -79,11 +88,23 @@ $(ZLIBBUILD)/.patched: $(ZLIBTARBALL)
 	touch $@
 
 
-$(BUILD)/Makefile: $(BUILD)/.patched $(ZLIBBUILD)/.patched
+$(SQLITEBUILD): $(SQLITETARBALL)
+	[ -d $(ROOT)/build ] || (mkdir $(ROOT)/build)
+	tar -C $(ROOT)/build/ -xf $(SQLITETARBALL)
+	( \
+		cd $(SQLITEBUILD); \
+		emconfigure ./configure; \
+		emmake make; \
+	)
+
+
+$(BUILD)/Makefile: $(BUILD)/.patched $(ZLIBBUILD)/.patched $(SQLITEBUILD)
 	cp config.site $(BUILD)/
 	( \
 		cd $(BUILD); \
-		CONFIG_SITE=./config.site READELF=true emconfigure ./configure --without-pymalloc --disable-shared --disable-ipv6 --without-gcc --host=asmjs-unknown-emscripten --build=$(shell $(BUILD)/config.guess) --prefix=$(INSTALL) ; \
+		export CPPFLAGS="-I$(SQLITEBUILD)"; \
+		export LDFLAGS="-L$(SQLITEBUILD)"; \
+		CONFIG_SITE=./config.site READELF=true LD_RUN_PATH=$(SQLITEBUILD) emconfigure ./configure CPPFLAGS="-I$(SQLITEBUILD)" LDFLAGS="-L$(SQLITEBUILD)" --without-pymalloc --disable-shared --disable-ipv6 --without-gcc --host=asmjs-unknown-emscripten --build=$(shell $(BUILD)/config.guess) --prefix=$(INSTALL) ; \
 	)
 
 
