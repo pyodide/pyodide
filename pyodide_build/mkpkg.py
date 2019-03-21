@@ -3,11 +3,37 @@
 import argparse
 import json
 import os
-from pathlib import Path
+import shutil
 import urllib.request
-
+from pathlib import Path
 
 PACKAGES_ROOT = Path(__file__).parent.parent / 'packages'
+
+SDIST_EXTENSIONS = []
+
+
+def get_sdist_extensions():
+    if SDIST_EXTENSIONS:
+        return SDIST_EXTENSIONS
+
+    for format in shutil.get_unpack_formats():
+        for ext in format[1]:
+            SDIST_EXTENSIONS.append(ext)
+
+    return SDIST_EXTENSIONS
+
+
+def get_sdist_url_entry(json_content):
+    sdist_extensions_tuple = tuple(get_sdist_extensions())
+
+    for entry in json_content['urls']:
+        if entry['filename'].endswith(sdist_extensions_tuple):
+            return entry
+
+    raise Exception('No sdist URL found for package %s (%s)' % (
+        json_content['info'].get('name'),
+        json_content['info'].get('package_url'),
+    ))
 
 
 def make_package(package):
@@ -18,7 +44,7 @@ def make_package(package):
     with urllib.request.urlopen(url) as fd:
         json_content = json.load(fd)
 
-    entry = json_content['urls'][0]
+    entry = get_sdist_url_entry(json_content)
     download_url = entry['url']
     sha256 = entry['digests']['sha256']
     version = json_content['info']['version']
