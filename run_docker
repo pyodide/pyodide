@@ -1,47 +1,54 @@
 #!/bin/sh
 DOCKER_PORT=8000
-SYSTEM_PORT=8084
+SYSTEM_PORT=8000
 
 docker run -p $SYSTEM_PORT:$DOCKER_PORT --rm -v $PWD:/src --user root -e NB_UID=$UID -e NB_GID=$GID -it iodide/pyodide-env:0.3.1 /bin/bash
 
-#JUST IN CASE YOU DO NOT KNOW WHAT ALL OF THOSE DOCKER COMMANDS DO, HERE IS
-#DOCKERMENTATION
+#Just in case you do not know what all of these commadnds do,
+#Here is the dockermentation. 
+
+#Run a Docker command. 
+    #docker run
+
+#This maps the docker port to your server's
+#publicly visible prots. 
+    #-p $SYSTEM_PORT:$DOCKER_PORT
+
+#This removes the docker container after it is done processing.
+#Since we use the volume command, the results will persist in the
+#currnet-directory/src
+    #--rm
+
+#This maps the  /src directory in the container to the
+#current-directory/src in your computer.
+#Thus the results are saved in the current-directory/src.
+   #-v $PWD:/src
+
+#This says to treat the user as root.
+#If you are publishing this container on a publically visible port
+#then this may be a security hole. 
+   #--user root
 
 
-#RUN A DOCKER COMMAND
-#docker
-#run
+#Set two environment variables.
+#Specifically the current user's uid and
+#the current users groupid.
+#thus the new current-directory/src will have correct permissions. 
+   #-e NB_UID=$UID
+   #-e NB_GID=$GID
 
-#THIS MAPS THE DOCKER PORT TO YOUR COMPUTERS PUBLICALLY VISIBLE PORT
-#-p $SYSTEM_PORT:$DOCKER_PORT
 
-#THIS REMOVES THE DOCKER CONTAINER AFTER IT IS DONE
-#SINCE WE USED THE VOLUME COMMAND, THE RESULTS WILL PERSIST IN THE
-#CURRENT-DIRECTORY/src
-#--rm
+#Tells the Docker container to stay connected to the terminal
+#and take its input from and send the output to the terminal. 
+   #-it
 
-#THIS MAPS THE CURRENT DIRECTORY IN YOUR COMPUTER TO THE
-# SRC DIRECTORY IN THE CONTAINER
-#-v $PWD:/src
+#This is the name of the Docker container to invoke
+#Along witht the tag fo the current versi0n. 
+    #iodide/pyodide-env:0.3.1
 
-#THIS SAYS TREAT THE USER AS ROOT
-#IF YOU ARE PUBLISHING THIS CONTAINER ON A PULICALLY VISILE
-#PORT THEN THIS MAY BE A BIG SECURITY HOLE
-#--user root
+#And inside of the container invoke the bash command. 
+    #/bin/bash
 
-#SET TWO ENVIRONMENT VARIABLES
-#SPECIFICALLY THE CURRENT USER'S UID AND
-#THE CURRENT USER'S GROUPID
-#-e NB_UID=$UID
-#-e NB_GID=$GID
+#And then once the contain is invoked tell it to make the softwre
+    #$ make
 
-#TELLS THE DOCKER CONTAINER TO STAY CONNECTED
-# TO THE TERMINAL AND TAKE ITS INPUT AND OUTPUT FROM THERE. 
-#-it
-
-#THIS IS THE NAME OF THE DOCKER CONTAINER TO INVOKE
-#ALONG WITH THE TAG OF THE CURRENT VERSION
-#iodide/pyodide-env:0.3.1
-
-#AND INSIDE OF THAT CONTAINER INVOKE THE BASH COMMAND
-#/bin/bash
