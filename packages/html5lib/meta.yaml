@@ -1,0 +1,15 @@
+package:
+  name: html5lib
+  version: 1.0.1
+
+source:
+  sha256: 66cb0dcfdbbc4f9c3ba1a63fdb511ffdbd4f513b2b6d81b80cd26ce6b3fb3736
+  url: https://files.pythonhosted.org/packages/85/3e/cf449cf1b5004e87510b9368e7a5f1acd8831c2d6691edd3c62a0823f98f/html5lib-1.0.1.tar.gz 
+
+requirements:
+  run:
+  - webencodings
+
+test:
+  imports:
+  - html5lib
