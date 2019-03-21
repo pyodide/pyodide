@@ -35,7 +35,6 @@ LDFLAGS=\
 	-s USE_FREETYPE=1 \
 	-s USE_LIBPNG=1 \
 	-std=c++14 \
-  -L/usr/local/lib -lsqlite3 \
   -lstdc++ \
   --memory-init-file 0 \
   -s "BINARYEN_TRAP_MODE='clamp'" \
