@@ -50,10 +50,7 @@ all: build/pyodide.asm.js \
 	build/pyodide.asm.data \
 	build/pyodide.js \
 	build/pyodide_dev.js \
-	build/python.html \
-	build/python_dev.html \
-	build/matplotlib.html \
-	build/matplotlib-sideload.html \
+	build/console.html \
 	build/renderedhtml.css \
   build/test.data \
   build/packages.json \
@@ -91,23 +88,11 @@ build/pyodide.js: src/pyodide.js
 	sed -i -e "s#{{ABI}}#$(PYODIDE_PACKAGE_ABI)#g" $@
 
 
-build/python.html: src/python.html
-	cp $< $@
-
-
-build/python_dev.html: src/python_dev.html
-	cp $< $@
-
-
-build/matplotlib.html: src/matplotlib.html
-	cp $< $@
-
-
-build/matplotlib-sideload.html: src/matplotlib-sideload.html
-	cp $< $@
-
-
 build/test.html: src/test.html
+	cp $< $@
+
+
+build/console.html: src/console.html
 	cp $< $@
 
 
