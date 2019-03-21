@@ -4,6 +4,11 @@ SYSTEM_PORT=8000
 
 docker run -p $SYSTEM_PORT:$DOCKER_PORT --rm -v $PWD:/src --user root -e NB_UID=$UID -e NB_GID=$GID -it iodide/pyodide-env:0.3.1 /bin/bash
 
+
+#----------------------------------------------------------------
+# BELOW THIS LINE THERE IS ONLY DOCUMENTATION, NO COMMANDS
+#----------------------------------------------------------------
+
 #Just in case you do not know what all of these commadnds do,
 #Here is the dockermentation. 
 
