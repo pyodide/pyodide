@@ -2,7 +2,7 @@
 
 **User improvements:**
 
-- New packages: `html5lib`, `pygments`, `beautifulsoup4`, `soupseive`,
+- New packages: `html5lib`, `pygments`, `beautifulsoup4`, `soupsieve`,
   `docutils`, `bleach`
 
 **Developer improvements:**
