@@ -4,10 +4,15 @@ def test_sqlite3(selenium):
 
         with sqlite3.connect(':memory:') as conn:
             c = conn.cursor()
-            c.execute("CREATE TABLE people (first_name VARCHAR, last_name VARCHAR)")
-            c.execute("INSERT INTO people (first_name, last_name) VALUES ('John', 'Doe')")
-            c.execute("INSERT INTO people (first_name, last_name) VALUES ('Jane', 'Smith')")
-            c.execute("INSERT INTO people (first_name, last_name) VALUES ('Michael', 'Jordan')")
+            c.execute('''
+                CREATE TABLE people (
+                    first_name VARCHAR,
+                    last_name VARCHAR
+                )
+            ''')
+            c.execute("INSERT INTO people VALUES ('John', 'Doe')")
+            c.execute("INSERT INTO people VALUES ('Jane', 'Smith')")
+            c.execute("INSERT INTO people VALUES ('Michael', 'Jordan')")
             c.execute("SELECT * FROM people")
     """)
     content = selenium.run("c.fetchall()")
