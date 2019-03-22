@@ -98,7 +98,7 @@ $(SQLITEBUILD)/libsqlite3.la: $(SQLITETARBALL)
 	)
 
 
-$(BUILD)/Makefile: $(BUILD)/.patched $(ZLIBBUILD)/.patched $(SQLITEBUILD/libsqlite3.la)
+$(BUILD)/Makefile: $(BUILD)/.patched $(ZLIBBUILD)/.patched $(SQLITEBUILD)/libsqlite3.la
 	cp config.site $(BUILD)/
 	( \
 		cd $(BUILD); \
