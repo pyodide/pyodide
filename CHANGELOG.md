@@ -4,6 +4,8 @@
 
 - The built-in `sqlite3` module of Python is now enabled.
 
+- New packages: `jinja2`, `MarkupSafe`
+
 ## Version 0.10.0
 
 **User improvements:**
