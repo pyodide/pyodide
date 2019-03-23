@@ -1,0 +1,15 @@
+package:
+  name: nibabel
+  version: 2.3.3
+
+source:
+  sha256: b6366634c65b04464e62f3a9a8df1faa172f780ed7f1af1c6818b3dc2f1202c3
+  url: https://files.pythonhosted.org/packages/c9/88/d0debeefcac2136d811e08ba99cb26dbef69152bc36c8c45b07373344574/nibabel-2.3.3.tar.gz
+
+requirements:
+  run:
+    - numpy
+
+test:
+  imports:
+    - nibabel
