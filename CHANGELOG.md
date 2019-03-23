@@ -1,5 +1,9 @@
 ## Unreleased
 
+- The built-in `sqlite3** module of Python is now enabled.
+
+- New package: `nltk`
+
 ## Version 0.13.0
 
 - Tagged versions of Pyodide are now deployed to Netlify.
