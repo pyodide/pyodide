@@ -39,6 +39,7 @@ LDFLAGS=\
 	-s USE_LIBPNG=1 \
 	-std=c++14 \
   -L$(wildcard $(CPYTHONROOT)/build/sqlite*/.libs) -lsqlite3 \
+  $(wildcard $(CPYTHONROOT)/build/bzip2*/libbz2.a) \
   -lstdc++ \
   --memory-init-file 0 \
   -s "BINARYEN_TRAP_MODE='clamp'" \
