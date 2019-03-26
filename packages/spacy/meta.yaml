@@ -1,0 +1,9 @@
+package:
+  name: spacy
+  version: 2.1.3
+source:
+  sha256: b1b86ddf6142fa2782b2e0269d040430ae5696eb0224f3e99408897cac7bb506
+  url: https://files.pythonhosted.org/packages/77/f3/eb5aece989ecca541c4b5a439cb8a86fe5254b1521925b547609fb3aaf64/spacy-2.1.3.tar.gz
+test:
+  imports:
+  - spacy
