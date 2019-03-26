@@ -2,12 +2,14 @@
 
 **User improvements:**
 
-- The built-in `sqlite3** module of Python is now enabled.
+- Support for built-in modules:
+  - `crypt`
 
 **Developer improvements:**
 
 - The `mkpkg` command will now select an appropriate archive to use, rather than
   just using the first.
+
 
 ## Version 0.10.0
 
