@@ -23,6 +23,9 @@ _socket socketmodule.c
 select selectmodule.c
 _posixsubprocess _posixsubprocess.c
 binascii binascii.c
+fcntl fcntlmodule.c
+_asyncio _asynciomodule.c
+_crypt _cryptmodule.c
 
 zlib zlibmodule.c -I../../zlib-1.2.11
 
