@@ -416,7 +416,7 @@ test_socketserver
 test_sort
 test_source_encoding  subprocess,
 test_spwd
-test_sqlite
+test_sqlite threading
 test_ssl
 test_startfile
 test_stat

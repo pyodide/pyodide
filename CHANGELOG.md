@@ -1,3 +1,9 @@
+## Unreleased
+
+**User improvements:**
+
+- The built-in `sqlite3` module of Python is now enabled.
+
 ## Version 0.10.0
 
 **User improvements:**
