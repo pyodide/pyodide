@@ -58,7 +58,7 @@ pyodide.loadPackage(['cycler', 'pytz'])
 
 ```javascript
 pyodide.loadPackage('matplotlib').then(() => {
-  // matplotlib is not available
+  // matplotlib is now available
 });
 ```
 
