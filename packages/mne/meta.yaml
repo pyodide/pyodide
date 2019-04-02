@@ -1,0 +1,16 @@
+package:
+  name: mne
+  version: 0.17.1
+
+source:
+  sha256: 2b933aead5b3c9cbbcf08574c06385d3304cd76365bf65d1173fe02579941dfe
+  url: https://files.pythonhosted.org/packages/a1/e5/f60f23e3ef10f5b1efa1aabb407f0b2fc64ed12ac166a6e1c16dd7db6e77/mne-0.17.1.tar.gz
+
+requirements:
+  run:
+    - numpy
+    - scipy
+
+test:
+  imports:
+    - mne
