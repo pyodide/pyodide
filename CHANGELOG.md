@@ -3,13 +3,17 @@
 **User improvements:**
 
 - Support for built-in modules:
-  - `crypt`
+  - `sqlite`, `crypt`
+
+- New packages: `mne`
 
 **Developer improvements:**
 
 - The `mkpkg` command will now select an appropriate archive to use, rather than
   just using the first.
 
+- The included version of emscripten has been upgraded to 1.38.30 (plus a
+  bugfix).
 
 ## Version 0.10.0
 
