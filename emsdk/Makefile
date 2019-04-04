@@ -14,11 +14,13 @@ emsdk/.complete:
 		cd emsdk && \
 		./emsdk install --build=Release sdk-tag-$(EMSCRIPTEN_VERSION)-64bit binaryen-tag-$(EMSCRIPTEN_VERSION)-64bit && \
 		cd .. && \
-		(cat patches/*.patch | patch -p1) ; \
+		(cat patches/*.patch | patch -p1) && \
 		cd emsdk/binaryen/tag-$(EMSCRIPTEN_VERSION)_64bit_binaryen/ && \
     make && \
-	  cd ../.. && \
-    cp binaryen/tag-$(EMSCRIPTEN_VERSION)/bin/wasm.js binaryen/tag-$(EMSCRIPTEN_VERSION)_64bit_binaryen/bin && \
+	  cd ../../.. && \
+		cd emsdk/clang/tag-e$(EMSCRIPTEN_VERSION)/build_tag-e$(EMSCRIPTEN_VERSION)_64/ && \
+    make && \
+    cd ../../.. && \
 		./emsdk activate --embedded --build=Release sdk-tag-$(EMSCRIPTEN_VERSION)-64bit binaryen-tag-$(EMSCRIPTEN_VERSION)-64bit && \
     touch .complete \
 	)
