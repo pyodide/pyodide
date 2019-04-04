@@ -15,6 +15,8 @@
 - The included version of emscripten has been upgraded to 1.38.30 (plus a
   bugfix).
 
+- New packages: `jinja2`, `MarkupSafe`
+
 ## Version 0.10.0
 
 **User improvements:**
