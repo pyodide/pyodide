@@ -2,7 +2,8 @@
 
 **User improvements:**
 
-- The built-in `sqlite3** module of Python is now enabled.
+- Support for built-in modules:
+  - `sqlite`, `crypt`
 
 - New packages: `mne`
 
