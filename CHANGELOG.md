@@ -22,7 +22,7 @@
 **User improvements:**
 
 - New packages: `html5lib`, `pygments`, `beautifulsoup4`, `soupsieve`,
-  `docutils`, `bleach`
+  `docutils`, `bleach`, `mne`
 
 **Developer improvements:**
 
