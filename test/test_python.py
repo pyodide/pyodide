@@ -443,6 +443,13 @@ def test_jsproxy(selenium):
         dict(TEST) == {'foo': 'bar', 'baz': 'bap'}
         """
     ) is True
+    assert selenium.run(
+        """
+        from js import document
+        el = document.createElement('div')
+        len(dir(el)) >= 200 and 'appendChild' in dir(el)
+        """
+    ) is True
 
 
 def test_jsproxy_iter(selenium):

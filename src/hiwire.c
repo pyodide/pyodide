@@ -241,6 +241,15 @@ EM_JS(void, hiwire_delete_member_obj, (int idobj, int ididx), {
   delete jsobj[jsidx];
 });
 
+EM_JS(int, hiwire_dir, (int idobj), {
+  var jsobj = Module.hiwire_get_value(idobj);
+  var result = [];
+  do {
+    result.push.apply(result, Object.getOwnPropertyNames(jsobj));
+  } while ((jsobj = Object.getPrototypeOf(jsobj)));
+  return Module.hiwire_new_value(result);
+});
+
 EM_JS(int, hiwire_call, (int idfunc, int idargs), {
   var jsfunc = Module.hiwire_get_value(idfunc);
   var jsargs = Module.hiwire_get_value(idargs);
