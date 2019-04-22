@@ -347,6 +347,13 @@ void
 hiwire_delete_member_obj(int idobj, int ididx);
 
 /**
+ * Get the methods on an object, both on itself and what it inherits.
+ *
+ */
+int
+hiwire_dir(int idobj);
+
+/**
  * Call a function
  *
  * idargs is a hiwire Array containing the arguments.
