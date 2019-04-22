@@ -1,5 +1,12 @@
 ## Unreleased
 
+**User improvements:**
+
+- Passing a Python object to Javascript always creates the same object in
+  Javascript. This makes APIs like `removeEventListener` usable.
+
+- Calling `dir()` in Python on a JavaScript proxy now works.
+
 ## Version 0.11.0
 
 **User improvements:**
