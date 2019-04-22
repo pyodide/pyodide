@@ -1,5 +1,7 @@
 ## Unreleased
 
+## Version 0.11.0
+
 **User improvements:**
 
 - Support for built-in modules:
