@@ -2,6 +2,7 @@ try:
     from js import Promise, window, XMLHttpRequest
 except ImportError:
     window = None
+from js import pyodide as js_pyodide
 
 import hashlib
 import importlib
@@ -99,6 +100,10 @@ class _PackageManager:
     version_scheme = version.get_scheme('normalized')
 
     def __init__(self):
+        self.builtin_packages = {}
+        self.builtin_packages.update(
+            js_pyodide._module.packages.dependencies
+        )
         self.installed_packages = {}
 
     def install(
@@ -124,6 +129,7 @@ class _PackageManager:
 
             transaction = {
                 'wheels': [],
+                'pyodide_packages': set(),
                 'locked': dict(self.installed_packages)
             }
             for requirement in requirements:
@@ -132,17 +138,37 @@ class _PackageManager:
             reject(str(e))
 
         resolve_count = [len(transaction['wheels'])]
-        def do_resolve():
+
+        def do_resolve(*args):
             resolve_count[0] -= 1
             if resolve_count[0] == 0:
-                resolve(f'Installed {", ".join(self.installed_packages.keys())}')
+                resolve(
+                    f'Installed {", ".join(self.installed_packages.keys())}'
+                )
 
+        # Install built-in packages
+        pyodide_packages = transaction['pyodide_packages']
+        if len(pyodide_packages):
+            resolve_count[0] += 1
+            self.installed_packages.update(
+                dict((k, None) for k in pyodide_packages)
+            )
+            js_pyodide.loadPackage(
+                list(pyodide_packages)
+            ).then(do_resolve)
+
+        # Now install PyPI packages
         for name, wheel, ver in transaction['wheels']:
             wheel_installer(name, wheel, do_resolve, reject)
             self.installed_packages[name] = ver
 
     def add_requirement(self, requirement, ctx, transaction):
         req = util.parse_requirement(requirement)
+
+        # If it's a Pyodide package, use that instead of the one on PyPI
+        if req.name in self.builtin_packages:
+            transaction['pyodide_packages'].add(req.name)
+            return
 
         if req.marker:
             if not markers.evaluator.evaluate(
