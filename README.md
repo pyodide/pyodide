@@ -45,9 +45,7 @@ already installed to make it easier to build Pyodide.
 
 2. From a git checkout of Pyodide, run `./run_docker`
 
-3. cd `/src`
-
-4. Run `make` to build.
+3. Run `make` to build.
 
 You can edit the files in your source checkout on your host machine, and then
 repeatedly run `make` inside the Docker environment to test your changes.
