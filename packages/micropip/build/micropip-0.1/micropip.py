@@ -203,6 +203,15 @@ def install(requirements):
 
     Returns a Promise that resolves when all packages have downloaded and
     installed.
+
+    **IMPORTANT:** Since the packages hosted at `files.pythonhosted.org` don't
+    support CORS requests, we use a CORS proxy at `cors-anywhere.herokuapp.com`
+    to get package contents. This makes a man-in-the-middle attack on the
+    package contents possible. However, this threat is minimized by the fact
+    that the integrity of each package is checked using a hash obtained
+    directly from `pypi.org`. We hope to have this improved in the future, but
+    for now, understand the risks and don't use any sensitive data with the
+    packages installed using this method.
     """
     def do_install(resolve, reject):
         PACKAGE_MANAGER.install(
