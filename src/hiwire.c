@@ -371,10 +371,10 @@ EM_JS(int, hiwire_get_byteLength, (int idobj), {
 
 EM_JS(int, hiwire_copy_to_ptr, (int idobj, int ptr), {
   var jsobj = Module.hiwire_get_value(idobj);
-  if ('buffer' in jsobj) {
-    jsobj = jsobj.buffer;
-  }
-  Module.HEAPU8.set(new Uint8Array(jsobj), ptr);
+  // clang-format off
+  var buffer = (jsobj['buffer'] !== undefined) ? jsobj.buffer : jsobj;
+  // clang-format on
+  Module.HEAPU8.set(new Uint8Array(buffer), ptr);
 });
 
 EM_JS(int, hiwire_get_dtype, (int idobj), {
@@ -406,6 +406,9 @@ EM_JS(int, hiwire_get_dtype, (int idobj), {
       break;
     case 'Float64Array':
       dtype = 9; // FLOAT64_TYPE;
+      break;
+    case 'ArrayBuffer':
+      dtype = 3;
       break;
     default:
       dtype = 3; // UINT8CLAMPED_TYPE;
