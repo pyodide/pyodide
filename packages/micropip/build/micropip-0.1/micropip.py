@@ -23,7 +23,10 @@ if window is not None:
     import pyodide
 
     def _get_url(url):
-        return pyodide.open_url(url)
+        req = XMLHttpRequest.new()
+        req.open('GET', url, False)
+        req.send(None)
+        return io.StringIO(req.response)
 
     def _get_url_async(url, cb):
         req = XMLHttpRequest.new()
@@ -55,7 +58,7 @@ else:
 
 
 def _get_pypi_json(pkgname):
-    url = f'https://cors-anywhere.herokuapp.com/https://pypi.org/pypi/{pkgname}/json'
+    url = f'https://pypi.org/pypi/{pkgname}/json'
     fd = _get_url(url)
     return json.load(fd)
 
