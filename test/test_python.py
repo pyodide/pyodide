@@ -303,11 +303,18 @@ def test_typed_arrays(selenium, wasm_heap, jstype, pytype):
 def test_import_js(selenium):
     result = selenium.run(
         """
-        from js import window
-        window.title = 'Foo'
-        window.title
+        import js
+        js.window.title = 'Foo'
+        js.window.title
         """)
     assert result == 'Foo'
+    result = selenium.run(
+        """
+        dir(js)
+        """)
+    assert len(result) > 100
+    assert 'document' in result
+    assert 'window' in result
 
 
 def test_pyimport_multiple(selenium):
