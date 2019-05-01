@@ -5,6 +5,8 @@
 #include "hiwire.h"
 #include "js2python.h"
 
+static PyObject* js_module = NULL;
+
 static PyObject*
 JsImport_GetAttr(PyObject* self, PyObject* attr)
 {
@@ -13,6 +15,10 @@ JsImport_GetAttr(PyObject* self, PyObject* attr)
     return NULL;
   }
   int idval = hiwire_get_global((int)c);
+  if (idval == -1) {
+    PyErr_Format(PyExc_AttributeError, "Unknown attribute '%s'", attr);
+    return NULL;
+  }
   PyObject* result = js2python(idval);
   hiwire_decref(idval);
   return result;
@@ -21,7 +27,7 @@ JsImport_GetAttr(PyObject* self, PyObject* attr)
 static PyObject*
 JsImport_Dir()
 {
-  int idwindow = hiwire_get_global("self");
+  int idwindow = hiwire_get_global((int)"self");
   int iddir = hiwire_dir(idwindow);
   hiwire_decref(idwindow);
   PyObject* pydir = js2python(iddir);
@@ -52,32 +58,20 @@ static struct PyModuleDef JsModule = {
 int
 JsImport_init()
 {
-  PyObject* sys = PyImport_AddModule("sys");
-  if (sys == NULL) {
+  PyObject* module_dict = PyImport_GetModuleDict();
+  if (module_dict == NULL) {
     return 1;
   }
 
-  PyObject* sysd = PyModule_GetDict(sys);
-  if (sysd == NULL) {
+  js_module = PyModule_Create(&JsModule);
+  if (js_module == NULL) {
     return 1;
   }
 
-  PyObject* modules = PyDict_GetItemString(sysd, "modules");
-  if (modules == NULL) {
+  if (PyDict_SetItemString(module_dict, "js", js_module)) {
+    Py_DECREF(js_module);
     return 1;
   }
-
-  PyObject* module = PyModule_Create(&JsModule);
-  if (module == NULL) {
-    return 1;
-  }
-
-  if (PyDict_SetItemString(modules, "js", module)) {
-    Py_DECREF(module);
-    return 1;
-  }
-
-  Py_DECREF(module);
 
   return 0;
 }
