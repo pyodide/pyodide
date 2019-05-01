@@ -2,6 +2,9 @@
 
 **User improvements:**
 
+- Thanks to PEP 562, you can now `import js` from Python and use it to access
+  anything in the global Javascript namespace.
+
 - Passing a Python object to Javascript always creates the same object in
   Javascript. This makes APIs like `removeEventListener` usable.
 
