@@ -300,6 +300,16 @@ def test_typed_arrays(selenium, wasm_heap, jstype, pytype):
          """)
 
 
+def test_array_buffer(selenium):
+    selenium.run_js(
+        'window.array = new ArrayBuffer(100);\n')
+    assert selenium.run(
+        """
+        from js import array
+        len(array.tobytes())
+        """) == 100
+
+
 def test_import_js(selenium):
     result = selenium.run(
         """

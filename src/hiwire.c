@@ -367,7 +367,10 @@ EM_JS(int, hiwire_get_byteLength, (int idobj), {
 
 EM_JS(int, hiwire_copy_to_ptr, (int idobj, int ptr), {
   var jsobj = Module.hiwire_get_value(idobj);
-  Module.HEAPU8.set(new Uint8Array(jsobj.buffer), ptr);
+  if ('buffer' in jsobj) {
+    jsobj = jsobj.buffer;
+  }
+  Module.HEAPU8.set(new Uint8Array(jsobj), ptr);
 });
 
 EM_JS(int, hiwire_get_dtype, (int idobj), {
