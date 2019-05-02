@@ -98,7 +98,7 @@ Create and save a test `index.html` page (in the pyodide_local directory) with t
 </body>
 ```
 
-Unfortunately, because browsers require WebAssembly files to have mimetype of application/wasm we're unable to serve our files with Python's raw SimpleHTTPServer module.
+Unfortunately, because browsers require WebAssembly files to have mimetype of application/wasm we're unable to serve our files using Python's built-in SimpleHTTPServer module.
 
 Let's wrap Python's Simple HTTP Server and provide the appropiate mimetype for WebAssembly files into a `pyodide_server.py` file (in the pyodide_local directory):
 ```python
@@ -118,5 +118,4 @@ In your favourite shell, let's start our WebAssembly aware web server:
 python pyodide_server.py
 ```
 
-Point your WebAssembly aware browser to http://localhost:8000/index.html
-Open your browser console to see the output from python via pyodide!
+Point your WebAssembly aware browser to http://localhost:8000/index.html and open your browser console to see the output from python via pyodide!
