@@ -10,6 +10,9 @@
 
 - Calling `dir()` in Python on a JavaScript proxy now works.
 
+- Passing an `ArrayBuffer` from Javascript to Python now correctly creates
+  a `memoryview` object.
+
 ## Version 0.11.0
 
 **User improvements:**
