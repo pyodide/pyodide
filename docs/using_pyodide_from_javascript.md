@@ -64,4 +64,59 @@ pyodide.loadPackage('matplotlib').then(() => {
 
 ## Complete example
 
-TODO
+Grab the main pyodide.js and supporting files referenced in the demo project (https://alpha.iodide.io/notebooks/300/)
+
+```bash
+mkdir pyodide_local ; cd pyodide_local
+curl -O https://alpha.iodide.app/pyodide-0.10.0/pyodide.js
+curl -O https://alpha.iodide.app/pyodide-0.10.0/packages.json
+curl -O https://alpha.iodide.app/pyodide-0.10.0/pyodide.asm.js
+curl -O https://alpha.iodide.app/pyodide-0.10.0/pyodide.asm.wasm
+curl -O https://alpha.iodide.app/pyodide-0.10.0/pyodide.asm.data
+curl -O https://alpha.iodide.app/pyodide-0.10.0/pyodide.asm.data.js
+```
+
+Create and save a test index.html page (in the pyodide_local directory) with the following contents:
+```html
+<!DOCTYPE html>
+<html>
+<head>
+    <script type="text/javascript">
+        window.languagePluginUrl = 'http://localhost:8000/'; // set the pyodide support files (packages.json, pyodide.asm.data etc) url
+    </script>
+    <script src="pyodide.js"></script>
+</head>
+<body>
+  Pyodide test page <br>
+  Open your browser console to see pyodide output
+  <script type="text/javascript">
+        languagePluginLoader.then(function () {
+            console.log(pyodide.runPython('import sys\nsys.version'));
+            console.log(pyodide.runPython('help("modules")'));
+        });
+  </script>
+</body>
+```
+
+Unfortunately, because browsers require WebAssembly files to have mimetype of application/wasm we're unable to serve our files with Python's raw SimpleHTTPServer module.
+
+Let's wrap Python's Simple HTTP Server and provide the appropiate mimetype for WebAssembly files into a pyodide_server.py file (in the pyodide_local directory):
+```python
+import BaseHTTPServer, SimpleHTTPServer
+
+SimpleHTTPServer.SimpleHTTPRequestHandler.extensions_map['.wasm'] = 'application/wasm'
+port = 8000
+
+httpd = BaseHTTPServer.HTTPServer(('localhost', 8000), SimpleHTTPServer.SimpleHTTPRequestHandler)
+
+httpd.serve_forever()
+```
+
+Let's test it out.
+In your favourite shell, let's start our WebAssembly aware web server:
+```bash
+python pyodide_server.py
+```
+
+Point your WebAssembly aware browser to http://localhost:8000/index.html
+Open your browser console to see the output from python!
