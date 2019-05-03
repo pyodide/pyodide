@@ -298,13 +298,12 @@ var languagePluginLoader = new Promise((resolve, reject) => {
   Module.noWasmDecoding = true;
   Module.preloadedWasm = {};
   let isFirefox = navigator.userAgent.toLowerCase().indexOf('firefox') > -1;
+
   let wasm_promise;
   if (typeof WebAssembly.compileStreaming === "undefined") {
-    wasm_promise = fetch(wasmURL).then(response =>
-        response.arrayBuffer()
-      ).then(bytes =>
-        WebAssembly.compile(bytes)
-      );
+    wasm_promise = fetch(wasmURL)
+                       .then(response => response.arrayBuffer())
+                       .then(bytes => WebAssembly.compile(bytes));
   } else {
     wasm_promise = WebAssembly.compileStreaming(fetch(wasmURL));
   }
