@@ -64,7 +64,7 @@ pyodide.loadPackage('matplotlib').then(() => {
 
 ## Complete example
 
-Grab the main pyodide.js and supporting files referenced in the demo project (https://alpha.iodide.io/notebooks/300/)
+Grab the main `pyodide.js` and supporting files referenced in the [demo project](https://alpha.iodide.io/notebooks/300/).
 
 ```bash
 mkdir pyodide_local ; cd pyodide_local
