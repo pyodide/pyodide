@@ -118,4 +118,4 @@ In your favourite shell, let's start our WebAssembly aware web server:
 python pyodide_server.py
 ```
 
-Point your WebAssembly aware browser to http://localhost:8000/index.html and open your browser console to see the output from python via pyodide!
+Point your WebAssembly aware browser to [http://localhost:8000/index.html](http://localhost:8000/index.html) and open your browser console to see the output from python via pyodide!
