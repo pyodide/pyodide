@@ -64,17 +64,7 @@ pyodide.loadPackage('matplotlib').then(() => {
 
 ## Complete example
 
-Grab the main `pyodide.js` and supporting files referenced in the [demo project](https://alpha.iodide.io/notebooks/300/).
-
-```bash
-mkdir pyodide_local ; cd pyodide_local
-curl -O https://alpha.iodide.app/pyodide-0.10.0/pyodide.js
-curl -O https://alpha.iodide.app/pyodide-0.10.0/packages.json
-curl -O https://alpha.iodide.app/pyodide-0.10.0/pyodide.asm.js
-curl -O https://alpha.iodide.app/pyodide-0.10.0/pyodide.asm.wasm
-curl -O https://alpha.iodide.app/pyodide-0.10.0/pyodide.asm.data
-curl -O https://alpha.iodide.app/pyodide-0.10.0/pyodide.asm.data.js
-```
+Grab the latest release tarball from the [releases page](https://github.com/iodide-project/pyodide/releases/) and expand its contents into a `pyodide_local` directory.
 
 Create and save a test `index.html` page (in the pyodide_local directory) with the following contents:
 ```html
@@ -105,10 +95,8 @@ Let's wrap Python's Simple HTTP Server and provide the appropiate mimetype for W
 import BaseHTTPServer, SimpleHTTPServer
 
 SimpleHTTPServer.SimpleHTTPRequestHandler.extensions_map['.wasm'] = 'application/wasm'
-port = 8000
 
 httpd = BaseHTTPServer.HTTPServer(('localhost', 8000), SimpleHTTPServer.SimpleHTTPRequestHandler)
-
 httpd.serve_forever()
 ```
 
