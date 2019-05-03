@@ -1,6 +1,11 @@
 ## Unreleased
 
+## Version 0.12.0
+
 **User improvements:**
+
+- Packages with pure Python wheels can now be loaded directly from PyPI. See
+  `docs/pypi.md` for more information.
 
 - Thanks to PEP 562, you can now `import js` from Python and use it to access
   anything in the global Javascript namespace.
@@ -12,6 +17,8 @@
 
 - Passing an `ArrayBuffer` from Javascript to Python now correctly creates
   a `memoryview` object.
+
+- Pyodide now works on Safari.
 
 ## Version 0.11.0
 
