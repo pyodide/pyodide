@@ -1,0 +1,9 @@
+package:
+  name: distlib
+  version: 0.2.8
+source:
+  sha256: 57977cd7d9ea27986ec62f425630e4ddb42efe651ff80bc58ed8dbc3c7c21f19
+  url: https://files.pythonhosted.org/packages/d4/81/ae64653802eceb93f5c33d882f4ea1290bb77ba165ac78d1dfa39e860ea9/distlib-0.2.8.zip
+test:
+  imports:
+  - distlib
