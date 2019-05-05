@@ -33,10 +33,39 @@ finished loading:
 
 ```
 def do_work(*args):
-  import snowballstemmer
-  snowballstemmer.stemmer('english')
-  stemmer.stemWords('go goes going gone'.split())
+    import snowballstemmer
+    stemmer = snowballstemmer.stemmer('english')
+    print(stemmer.stemWords('go goes going gone'.split()))
 
 import micropip
 micropip.install('snowballstemmer').then(do_work)
+```
+
+## A Minimal working example
+
+```html
+<html>
+<head>
+  <script type="text/javascript" src="https://pyodide.pymedphys.com/pyodide.js"></script>
+  <script type="text/javascript">
+    pythonCode = `
+def do_work(*args):
+    import snowballstemmer
+    stemmer = snowballstemmer.stemmer('english')
+    print(stemmer.stemWords('go goes going gone'.split()))
+
+import micropip
+micropip.install('snowballstemmer').then(do_work)
+`
+
+    languagePluginLoader.then(() => {
+      return pyodide.loadPackage(['micropip'])
+    }).then(() => {
+      console.log(pyodide.runPython(pythonCode));
+    })
+  </script>
+
+</head>
+<body></body>
+</html>
 ```
