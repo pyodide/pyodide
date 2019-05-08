@@ -300,14 +300,31 @@ def test_typed_arrays(selenium, wasm_heap, jstype, pytype):
          """)
 
 
+def test_array_buffer(selenium):
+    selenium.run_js(
+        'window.array = new ArrayBuffer(100);\n')
+    assert selenium.run(
+        """
+        from js import array
+        len(array.tobytes())
+        """) == 100
+
+
 def test_import_js(selenium):
     result = selenium.run(
         """
-        from js import window
-        window.title = 'Foo'
-        window.title
+        import js
+        js.window.title = 'Foo'
+        js.window.title
         """)
     assert result == 'Foo'
+    result = selenium.run(
+        """
+        dir(js)
+        """)
+    assert len(result) > 100
+    assert 'document' in result
+    assert 'window' in result
 
 
 def test_pyimport_multiple(selenium):
@@ -315,6 +332,14 @@ def test_pyimport_multiple(selenium):
     selenium.run("v = 0.123")
     selenium.run_js("pyodide.pyimport('v')")
     selenium.run_js("pyodide.pyimport('v')")
+
+
+def test_pyimport_same(selenium):
+    """See #382"""
+    selenium.run("def func(): return 42")
+    assert selenium.run_js(
+        "return pyodide.pyimport('func') == pyodide.pyimport('func')"
+    )
 
 
 def test_pyproxy(selenium):
@@ -441,6 +466,13 @@ def test_jsproxy(selenium):
         """
         from js import TEST
         dict(TEST) == {'foo': 'bar', 'baz': 'bap'}
+        """
+    ) is True
+    assert selenium.run(
+        """
+        from js import document
+        el = document.createElement('div')
+        len(dir(el)) >= 200 and 'appendChild' in dir(el)
         """
     ) is True
 

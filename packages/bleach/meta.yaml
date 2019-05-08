@@ -1,0 +1,13 @@
+package:
+  name: bleach
+  version: 3.1.0
+source:
+  sha256: 3fdf7f77adcf649c9911387df51254b813185e32b2c6619f690b593a617e19fa
+  url: https://files.pythonhosted.org/packages/78/5a/0df03e8735cd9c75167528299c738702437589b9c71a849489d00ffa82e8/bleach-3.1.0.tar.gz
+requirements:
+  run:
+  - setuptools
+  - webencodings
+test:
+  imports:
+  - bleach

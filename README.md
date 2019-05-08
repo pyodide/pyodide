@@ -45,9 +45,7 @@ already installed to make it easier to build Pyodide.
 
 2. From a git checkout of Pyodide, run `./run_docker`
 
-3. cd `/src`
-
-4. Run `make` to build.
+3. Run `make` to build.
 
 You can edit the files in your source checkout on your host machine, and then
 repeatedly run `make` inside the Docker environment to test your changes.
@@ -66,23 +64,26 @@ on your `PATH`.
 
 # Manual Testing
 
-The port 8000 of the docker environment and the host system are automatically 
+The port 8000 of the docker environment and the host system are automatically
 binded when ``./run_docker`` is run.
 
-This can be used to test the ``pyodide`` builds running within the docker 
+This can be used to test the ``pyodide`` builds running within the docker
 environment using external browser programs on the host system.
 
 To do this, simply run ``./bin/pyodide serve``
 
 This serves the ``build`` directory of the ``pyodide`` project on port 8000.
 
-* To serve a different directory, use the ``--build_dir`` argument followed by 
+* To serve a different directory, use the ``--build_dir`` argument followed by
 the path of the directory
-* To serve on a different port, use the ``--port`` argument followed by the 
+* To serve on a different port, use the ``--port`` argument followed by the
 desired port number
 
-Make sure that the port passed in ``--port`` argument is same as the one 
+Make sure that the port passed in ``--port`` argument is same as the one
 defined as ``DOCKER_PORT`` in the ``run_docker`` script.
+
+Once the webserver is running, for simple interactive testing, visit the URL
+[http://localhost:8000/console.html](http://localhost:8000/console.html)
 
 # Benchmarking
 

@@ -18,7 +18,7 @@ jobs:
 
       - restore_cache:
           keys:
-          - v1-emsdk-{{ checksum "emsdk/Makefile" }}-v13-
+          - v1-emsdk-{{ checksum "emsdk/Makefile" }}-v14-
 
       - run:
           name: build
@@ -36,7 +36,7 @@ jobs:
           paths:
             - ./emsdk/emsdk
             - ~/.ccache
-          key: v1-emsdk-{{ checksum "emsdk/Makefile" }}-v13-{{ .BuildNum }}
+          key: v1-emsdk-{{ checksum "emsdk/Makefile" }}-v14-{{ .BuildNum }}
 
       - persist_to_workspace:
           root: .

@@ -9,6 +9,7 @@
 __pycache__
 geckodriver.log
 firefox/
+.vscode
 
 build
 downloads

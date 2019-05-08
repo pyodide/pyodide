@@ -173,7 +173,7 @@ x = np.array([1, 2, 3])
 ```
 
 pyodide will first call `pyodide.loadPackage(['numpy'])`, and then run the code
-chunk, returning the result. Since package fetching must happen asyncronously,
+chunk, returning the result. Since package fetching must happen asynchronously,
 this function returns a `Promise` which resolves to the output. For example, to
 use:
 

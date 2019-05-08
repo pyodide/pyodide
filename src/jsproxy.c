@@ -383,6 +383,17 @@ JsProxy_HasBytes(PyObject* o)
   }
 }
 
+static PyObject*
+JsProxy_Dir(PyObject* o)
+{
+  JsProxy* self = (JsProxy*)o;
+
+  int iddir = hiwire_dir(self->js);
+  PyObject* pydir = js2python(iddir);
+  hiwire_decref(iddir);
+  return pydir;
+}
+
 // clang-format off
 static PyMappingMethods JsProxy_MappingMethods = {
   JsProxy_length,
@@ -408,6 +419,10 @@ static PyMethodDef JsProxy_Methods[] = {
     (PyCFunction)JsProxy_HasBytes,
     METH_NOARGS,
     "Returns true if instance has buffer memory. For testing only." },
+  { "__dir__",
+    (PyCFunction)JsProxy_Dir,
+    METH_NOARGS,
+    "Returns a list of the members and methods on the object." },
   { NULL }
 };
 // clang-format on

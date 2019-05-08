@@ -103,10 +103,10 @@ class FigureCanvasWasm(backend_agg.FigureCanvasAgg):
     def create_root_element(self):
         # Designed to be overridden by subclasses for use in contexts other
         # than iodide.
-        from js import iodide
-        if iodide is not None:
+        try:
+            from js import iodide
             return iodide.output.element('div')
-        else:
+        except ImportError:
             return document.createElement('div')
 
     def show(self):

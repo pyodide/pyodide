@@ -1,0 +1,80 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="UTF-8">
+    <script src="https://code.jquery.com/jquery-latest.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/jquery.terminal/js/jquery.terminal.min.js"></script>
+    <link href="https://cdn.jsdelivr.net/npm/jquery.terminal/css/jquery.terminal.min.css" rel="stylesheet"/>
+    <link href="renderedhtml.css" rel="stylesheet"/>
+    <script src="./pyodide_dev.js"></script>
+  </head>
+  <body>
+    <script>
+      languagePluginLoader.then(() => {
+        function pushCode(line) {
+          handleResult(c.push(line))
+        }
+
+        var term = $('body').terminal(
+          pushCode,
+          {
+            greetings: "Welcome to the Pyodide terminal emulator 🐍",
+            prompt: "[[;red;]>>> ]"
+          }
+        );
+
+        window.term = term;
+        pyodide.runPython(`
+          import io, code, sys
+          from js import term, pyodide
+
+          class Console(code.InteractiveConsole):
+              def runcode(self, code):
+                  sys.stdout = io.StringIO()
+                  sys.stderr = io.StringIO()
+                  term.runPython("\\n".join(self.buffer))
+          _c = Console(locals=globals())
+        `)
+
+        var c = pyodide.pyimport('_c')
+
+        function handleResult(result) {
+          if (result) {
+            term.set_prompt('[[;gray;]... ]')
+          } else {
+            term.set_prompt('[[;red;]>>> ]')
+            var stderr = pyodide.runPython("sys.stderr.getvalue()").trim()
+            if (stderr) {
+              term.echo(`[[;red;]${stderr}]`)
+            } else {
+              var stdout = pyodide.runPython("sys.stdout.getvalue()")
+              if (stdout) {
+                term.echo(stdout.trim())
+              }
+            }
+          }
+        }
+
+        term.runPython = function(code) {
+          pyodide.runPythonAsync(code).then(
+            term.handlePythonResult, term.handlePythonError
+          )
+        }
+
+        term.handlePythonResult = function(result) {
+          if (result === undefined) {
+            return
+          } else if (result['_repr_html_'] !== undefined) {
+            term.echo(result['_repr_html_'], {raw: true})
+          } else {
+            term.echo(result.toString())
+          }
+        }
+
+        term.handlePythonError = function(result) {
+          term.error(result.toString())
+        }
+      });
+    </script>
+  </body>
+</html>

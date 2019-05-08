@@ -154,10 +154,42 @@ var sys = pyodide.pyimport('sys');
 
 ## Using Javascript objects from Python
 
-Javascript objects can be accessed from Python using the `from js import ...`
-syntax. The object must be in the global (`window`) namespace.
+Javascript objects can be accessed from Python using the special `js` module.
+This module looks up attributes of the global (`window`) namespace on the
+Javascript side.
 
 ```python
-from js import document
-document.title = 'New window title'
+import js
+js.document.title = 'New window title'
+```
+
+### Performance considerations
+
+Looking up and converting attributes of the `js` module happens dynamically. In
+most cases, where the value is small or results in a proxy, this is not an
+issue. However, if the value takes a long time to convert from Javascript to
+Python, you may want to store it in a Python variable or use the `from js import
+...` syntax.
+
+For example, given this large Javascript variable:
+
+```javascript
+var x = new Array(1000).fill(0)
+```
+
+Use it from Python as follows:
+
+```python
+import js
+x = js.x  # conversion happens once here
+for i in range(len(x)):
+    item = x[i]  # we don't pay the conversion price each time here
+```
+
+Or alternatively:
+
+```python
+from js import x  # conversion happens once here
+for i in range(len(x)):
+    item = x[i]  # we don't pay the conversion price each time here
 ```

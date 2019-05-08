@@ -42,6 +42,9 @@ def check_checksum(path, pkg):
 def download_and_extract(buildpath, packagedir, pkg, args):
     srcpath = buildpath / packagedir
 
+    if 'source' not in pkg:
+        return srcpath
+
     if 'url' in pkg['source']:
         tarballpath = buildpath / Path(pkg['source']['url']).name
         if not tarballpath.is_file():
@@ -80,7 +83,7 @@ def patch(path, srcpath, pkg, args):
     pkgdir = path.parent.resolve()
     os.chdir(srcpath)
     try:
-        for patch in pkg['source'].get('patches', []):
+        for patch in pkg.get('source', {}).get('patches', []):
             subprocess.run([
                 'patch', '-p1', '--binary', '-i', pkgdir / patch
             ], check=True)
@@ -88,7 +91,7 @@ def patch(path, srcpath, pkg, args):
         os.chdir(orig_dir)
 
     # Add any extra files
-    for src, dst in pkg['source'].get('extras', []):
+    for src, dst in pkg.get('source', {}).get('extras', []):
         shutil.copyfile(pkgdir / src, srcpath / dst)
 
     with open(srcpath / '.patched', 'wb') as fd:
@@ -166,15 +169,41 @@ def package_files(buildpath, srcpath, pkg, args):
         fd.write(b'\n')
 
 
+def needs_rebuild(pkg, path, buildpath):
+    """
+    Determines if a package needs a rebuild because its meta.yaml, patches, or
+    sources are newer than the `.packaged` thunk.
+    """
+    packaged_token = buildpath / '.packaged'
+    if not packaged_token.is_file():
+        return True
+
+    package_time = packaged_token.stat().st_mtime
+
+    def source_files():
+        yield path
+        yield from pkg.get('source', {}).get('patches', [])
+        yield from (x[0] for x in pkg.get('source', {}).get('extras', []))
+
+    for source_file in source_files():
+        source_file = Path(source_file)
+        if source_file.stat().st_mtime > package_time:
+            return True
+
+
 def build_package(path, args):
     pkg = common.parse_package(path)
     packagedir = pkg['package']['name'] + '-' + pkg['package']['version']
     dirpath = path.parent
     orig_path = Path.cwd()
     os.chdir(dirpath)
+    buildpath = dirpath / 'build'
     try:
-        buildpath = dirpath / 'build'
-        if not buildpath.resolve().is_dir():
+        if not needs_rebuild(pkg, path, buildpath):
+            return
+        if 'source' in pkg:
+            if buildpath.resolve().is_dir():
+                shutil.rmtree(buildpath)
             os.makedirs(buildpath)
         srcpath = download_and_extract(buildpath, packagedir, pkg, args)
         patch(path, srcpath, pkg, args)
