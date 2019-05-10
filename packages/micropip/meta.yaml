@@ -4,6 +4,8 @@ package:
 requirements:
   run:
     - distlib
+source:
+  path: micropip
 test:
   imports:
   - micropip
