@@ -79,12 +79,12 @@ The package needs to be imported from Python before it can be used.
 Loading is asynchronous, therefore, this returns a `Promise`.
 
 
-### pyodide.loadedPackage
+### pyodide.loadedPackages
 
 `Array` with loaded packages.
 
-Use `Object.keys(pyodide.loadedPackage)` to access the names of the
-loaded packages, and `pyodide.loadedPackage[package_name]` to access
+Use `Object.keys(pyodide.loadedPackages)` to access the names of the
+loaded packages, and `pyodide.loadedPackages[package_name]` to access
 install location for a particular `package_name`.
 
 ### pyodide.pyimport(name)
