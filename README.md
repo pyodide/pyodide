@@ -47,6 +47,12 @@ already installed to make it easier to build Pyodide.
 
 3. Run `make` to build.
 
+If running ``make`` deterministically stops at one point in each subsequent try, increasing
+the maximum RAM usage available to the docker container might help [This is different 
+from the physical RAM capacity inside the system]. Ideally, at least 3 GB of RAM 
+should be available to the docker container to build `pyodide` smoothly. These settings can 
+be changed via Docker Preferences [See [here](https://stackoverflow.com/questions/44533319/how-to-assign-more-memory-to-docker-container)].
+
 You can edit the files in your source checkout on your host machine, and then
 repeatedly run `make` inside the Docker environment to test your changes.
 
