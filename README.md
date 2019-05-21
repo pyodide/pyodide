@@ -13,7 +13,9 @@ be used standalone in any context where you want to run Python inside a web
 browser.**
 
 For more information, see [the demo](https://extremely-alpha.iodide.io/notebooks/222/) and the
-[documentation](https://github.com/iodide-project/pyodide/tree/master/docs).
+[documentation](https://github.com/iodide-project/pyodide/tree/master/docs).   Here is a 
+[collection of Pyodide Links](https://pythonlinks.info/pyodide).
+
 
 # Building
 
