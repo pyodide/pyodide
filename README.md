@@ -3,10 +3,19 @@
 
 [![Build Status](https://circleci.com/gh/iodide-project/pyodide.png)](https://circleci.com/gh/iodide-project/pyodide)
 
-The Python scientific stack, compiled to WebAssembly.
+Pyodide is cPython compiled to WebAssembly and running in the browser.  It can run any pure Python package, and 
+includes over 37 of Python's [best Data Science libraries](./packages) compiled to WebAssembly.
 
-It provides transparent conversion of objects between Javascript and Python.
-When inside a browser, this means Python has full access to the Web APIs.
+Pyodide works great with Javascript. Proxy objects make it easy for Python and Javascript to interoperate. 
+Pyodide provides transparent conversion of objects between Javascript and Python.
+When inside a browser, this means Python has full access to the Window and Document objects.
+
+If you are using an existing Python library, and want to run it in the browser, then Pyodide is the choice for you.  There are 4 commun use cases. 
+
+1. You have limited Python compute server capacity. 
+2. It takes longer to updoad the data, then to download the application. 
+3. You want the user interface to a Python application to be very responsive.
+4; Medical privacy rules prevent your users from uploading data. 
 
 **While closely related to the [iodide project](https://iodide.io), Pyodide may
 be used standalone in any context where you want to run Python inside a web
