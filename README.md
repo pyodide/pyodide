@@ -15,7 +15,7 @@ If you are using an existing Python library, and want to run it in the browser, 
 1. You have limited Python compute server capacity. 
 2. It takes longer to updoad the data, then to download the application. 
 3. You want the user interface to a Python application to be very responsive.
-4; Medical privacy rules prevent your users from uploading data. 
+4. Medical privacy rules prevent your users from uploading data. 
 
 **While closely related to the [iodide project](https://iodide.io), Pyodide may
 be used standalone in any context where you want to run Python inside a web
