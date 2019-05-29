@@ -14,8 +14,8 @@ source:
 
   extras:
     -
-      - src/wasm_backend.py
-      - lib/matplotlib/backends/wasm_backend.py
+      - src/html5_canvas_backend.py
+      - lib/matplotlib/backends/html5_canvas_backend.py
     -
       - src/setup.cfg
       - ./setup.cfg
