@@ -1,4 +1,5 @@
-from matplotlib.backends.browser_backend import FigureCanvasWasm, NavigationToolbar2Wasm
+from matplotlib.backends.browser_backend import \
+    FigureCanvasWasm, NavigationToolbar2Wasm
 
 from matplotlib.backends import backend_agg
 from matplotlib.backend_bases import _Backend, FigureManagerBase
@@ -11,6 +12,7 @@ import base64
 import io
 
 interactive(True)
+
 
 class FigureCanvasAggWasm(backend_agg.FigureCanvasAgg, FigureCanvasWasm):
 
@@ -40,6 +42,7 @@ class FigureCanvasAggWasm(backend_agg.FigureCanvasAgg, FigureCanvasWasm):
             self.figure.dpi = orig_dpi
             self._idle_scheduled = False
 
+
 class NavigationToolbar2AggWasm(NavigationToolbar2Wasm):
 
     def download(self, format, mimetype):
@@ -50,7 +53,7 @@ class NavigationToolbar2AggWasm(NavigationToolbar2Wasm):
         data = io.BytesIO()
         try:
             self.canvas.figure.savefig(data, format=format)
-        except Exception as e:
+        except Exception:
             raise
         element.setAttribute('href', 'data:{};base64,{}'.format(
             mimetype, base64.b64encode(data.getvalue()).decode('ascii')))
@@ -60,8 +63,9 @@ class NavigationToolbar2AggWasm(NavigationToolbar2Wasm):
         element.click()
         document.body.removeChild(element)
 
+
 class FigureManagerAggWasm(FigureManagerBase):
-    
+
     def __init__(self, canvas, num):
         super().__init__(canvas, num)
         self.set_window_title("Figure %d" % num)
@@ -74,7 +78,7 @@ class FigureManagerAggWasm(FigureManagerBase):
         pass
 
     def set_window_title(self, title):
-        self.canvas.set_window_title(title)        
+        self.canvas.set_window_title(title)
 
 
 @_Backend.export

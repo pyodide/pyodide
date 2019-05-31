@@ -114,7 +114,7 @@ test: all
 
 
 lint:
-	flake8 src test tools pyodide_build benchmark
+	flake8 src test tools pyodide_build benchmark packages/matplotlib/src/
 	clang-format -output-replacements-xml src/*.c src/*.h src/*.js | (! grep '<replacement ')
 
 

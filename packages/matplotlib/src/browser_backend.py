@@ -1,12 +1,14 @@
 from matplotlib.backend_bases import (
-    FigureCanvasBase, 
-    NavigationToolbar2, 
-    TimerBase)
+    FigureCanvasBase,
+    NavigationToolbar2,
+    TimerBase
+)
 
 from js import document
 from js import window
 
 import math
+
 
 class FigureCanvasWasm(FigureCanvasBase):
     supports_blit = False
@@ -36,10 +38,10 @@ class FigureCanvasWasm(FigureCanvasBase):
             }
 
             button.matplotlib-toolbar-button#text {
-                font-family: -apple-system, BlinkMacSystemFont, 
-                "Segoe UI", Roboto, Oxygen, Ubuntu, Cantarell, 
-                "Fira Sans", "Droid Sans", "Helvetica Neue", Arial, 
-                sans-serif, "Apple Color Emoji", "Segoe UI Emoji", 
+                font-family: -apple-system, BlinkMacSystemFont,
+                "Segoe UI", Roboto, Oxygen, Ubuntu, Cantarell,
+                "Fira Sans", "Droid Sans", "Helvetica Neue", Arial,
+                sans-serif, "Apple Color Emoji", "Segoe UI Emoji",
                 "Segoe UI Symbol";
             }
 
@@ -50,7 +52,8 @@ class FigureCanvasWasm(FigureCanvasBase):
         """
         toolbar_buttons_style_element = document.createElement('style')
         toolbar_buttons_style_element.id = 'matplotlib-figure-styles'
-        toolbar_buttons_css = document.createTextNode(toolbar_buttons_css_content)
+        toolbar_buttons_css = \
+            document.createTextNode(toolbar_buttons_css_content)
         toolbar_buttons_style_element.appendChild(toolbar_buttons_css)
         return toolbar_buttons_style_element
 
@@ -428,8 +431,9 @@ FILE_TYPES = {
     'pdf': 'application/pdf'
 }
 
+
 class NavigationToolbar2Wasm(NavigationToolbar2):
-    
+
     def _init_toolbar(self):
         pass
 
@@ -487,8 +491,9 @@ class NavigationToolbar2Wasm(NavigationToolbar2):
     def remove_rubberband(self):
         self.canvas.remove_rubberband()
 
+
 class TimerWasm(TimerBase):
-    
+
     def _timer_start(self):
         self._timer_stop()
         if self._single:
