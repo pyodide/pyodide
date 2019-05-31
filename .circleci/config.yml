@@ -122,7 +122,7 @@ jobs:
       - run:
           name: Install netlify-cli
           command: |
-            npm install netlify-cli -g
+            sudo npm install netlify-cli -g
       - run:
           name: Deploy to netlify
           command: |
