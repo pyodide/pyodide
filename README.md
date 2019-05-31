@@ -12,8 +12,13 @@ When inside a browser, this means Python has full access to the Web APIs.
 be used standalone in any context where you want to run Python inside a web
 browser.**
 
-For more information, see [the demo](https://extremely-alpha.iodide.io/notebooks/222/) and the
+For more information, see [the demo](https://alpha.iodide.io/notebooks/300/) and the
 [documentation](https://github.com/iodide-project/pyodide/tree/master/docs).
+
+# Downloading pre-built versions
+
+Pre-built versions of Pyodide are available
+[here](https://github.com/iodide-project/pyodide/releases/).
 
 # Building
 
@@ -48,9 +53,9 @@ already installed to make it easier to build Pyodide.
 3. Run `make` to build.
 
 If running ``make`` deterministically stops at one point in each subsequent try, increasing
-the maximum RAM usage available to the docker container might help [This is different 
-from the physical RAM capacity inside the system]. Ideally, at least 3 GB of RAM 
-should be available to the docker container to build `pyodide` smoothly. These settings can 
+the maximum RAM usage available to the docker container might help [This is different
+from the physical RAM capacity inside the system]. Ideally, at least 3 GB of RAM
+should be available to the docker container to build `pyodide` smoothly. These settings can
 be changed via Docker Preferences [See [here](https://stackoverflow.com/questions/44533319/how-to-assign-more-memory-to-docker-container)].
 
 You can edit the files in your source checkout on your host machine, and then

@@ -85,7 +85,8 @@ build/pyodide_dev.js: src/pyodide.js
 
 build/pyodide.js: src/pyodide.js
 	cp $< $@
-	sed -i -e 's#{{DEPLOY}}#https://iodide.io/pyodide-demo/#g' $@
+	sed -i -e 's#{{DEPLOY}}#https://pyodide.netlify.com/#g' $@
+
 	sed -i -e "s#{{ABI}}#$(PYODIDE_PACKAGE_ABI)#g" $@
 
 
@@ -102,7 +103,7 @@ build/renderedhtml.css: src/renderedhtml.less
 
 build/webworker.js: src/webworker.js
 	cp $< $@
-	sed -i -e 's#{{DEPLOY}}#https://iodide.io/pyodide-demo/#g' $@
+	sed -i -e 's#{{DEPLOY}}#https://pyodide.netlify.com/#g' $@
 
 build/webworker_dev.js: src/webworker.js
 	cp $< $@
