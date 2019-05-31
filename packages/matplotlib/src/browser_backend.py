@@ -187,7 +187,7 @@ class FigureCanvasWasm(FigureCanvasBase):
         self.draw()
 
     def draw(self):
-        raise NotImplementedError
+        pass
 
     def draw_idle(self):
         if not self._idle_scheduled:
@@ -469,7 +469,7 @@ class NavigationToolbar2Wasm(NavigationToolbar2):
         return div
 
     def download(self, format, mimetype):
-        raise NotImplementedError
+        pass
 
     def ondownload(self, event):
         format = event.target.textContent
