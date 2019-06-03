@@ -68,7 +68,7 @@ Set that environment variable in your shell:
 export USE_LOCAL_PYODIDE=1
 ```
 
-The follow the building and running instructions for Iodide as usual.
+Then follow the building and running instructions for Iodide as usual.
 
 Then, build Pyodide using the regular instructions in `../README.md`. Copy the
 contents of Pyodide's build directory to your Iodide checkout's `build/pyodide`
