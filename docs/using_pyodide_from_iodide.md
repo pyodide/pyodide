@@ -53,3 +53,28 @@ pyodide.loadPackage('https://custom.com/numpy.js')
 
 After doing that, the numpy you import from a Python chunk will be this special
 version of Numpy.
+
+## Using a local build of Pyodide with Iodide
+
+You may want to build a local copy of Pyodide with some changes and test it
+inside of Iodide.
+
+By default, Iodide will use a copy of Pyodide deployed to Netlify. However, it
+will use locally-installed copy of Pyodide if `USE_LOCAL_PYODIDE` is set.
+
+Set that environment variable in your shell:
+
+```
+export USE_LOCAL_PYODIDE=1
+```
+
+The follow the building and running instructions for Iodide as usual.
+
+Then, build Pyodide using the regular instructions in `../README.md`. Copy the
+contents of Pyodide's build directory to your Iodide checkout's `build/pyodide`
+directory:
+
+```
+mkdir $IODIDE_CHECKOUT/build/pyodide
+cp $PYODIDE_CHECKOUT/build/* $IODIDE_CHECKOUT/build/pyodide
+```

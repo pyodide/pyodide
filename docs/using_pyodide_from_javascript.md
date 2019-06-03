@@ -14,9 +14,10 @@ contents in your distribution, and import the `pyodide.js` file there from a
 `<script>` tag.
 
 For prototyping purposes, you may also use the following CDN URL, though doing
-so is not recommended, since it isn't versioned:
+so is not recommended, since it isn't versioned and could change or be unstable
+at any time:
 
-  https://pyodide.netlify.com/pyodide.js
+  https://pyodide.iodide.io/pyodide.js
 
 This file has a single `Promise` object which bootstraps the Python environment:
 `languagePluginLoader`. Since this must happen asynchronously, it is a
