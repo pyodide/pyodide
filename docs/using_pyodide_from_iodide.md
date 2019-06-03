@@ -70,7 +70,7 @@ export USE_LOCAL_PYODIDE=1
 
 Then follow the building and running instructions for Iodide as usual.
 
-Then, build Pyodide using the regular instructions in `../README.md`. Copy the
+Next, build Pyodide using the regular instructions in `../README.md`. Copy the
 contents of Pyodide's build directory to your Iodide checkout's `build/pyodide`
 directory:
 
