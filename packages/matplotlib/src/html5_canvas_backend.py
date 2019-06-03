@@ -38,7 +38,8 @@ class FigureCanvasHTMLCanvas(FigureCanvasWasm):
             if canvas is None:
                 return
             ctx = canvas.getContext("2d")
-            renderer = RendererHTMLCanvas(ctx, width, height, dpi=72)
+            renderer = RendererHTMLCanvas(ctx, width, height,
+                                          dpi=self.figure.dpi)
             self.figure.draw(renderer)
         finally:
             self.figure.dpi = orig_dpi
