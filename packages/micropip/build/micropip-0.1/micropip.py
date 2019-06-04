@@ -193,9 +193,9 @@ class _PackageManager:
             wheel, ver = self.find_wheel(metadata, req)
             transaction['locked'][req.name] = ver
 
-            reqs = metadata.get('info', {}).get('requires_dist') or []
-            for req in reqs:
-                self.add_requirement(req, ctx, transaction)
+            recurs_reqs = metadata.get('info', {}).get('requires_dist') or []
+            for recurs_req in recurs_reqs:
+                self.add_requirement(recurs_req, ctx, transaction)
 
             transaction['wheels'].append((req.name, wheel, ver))
 
