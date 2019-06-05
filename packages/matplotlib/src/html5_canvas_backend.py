@@ -13,9 +13,6 @@ from matplotlib import interactive
 
 from js import document
 
-import base64
-import io
-
 _capstyle_d = {'projecting': 'square', 'butt': 'butt', 'round': 'round'}
 
 interactive(True)
@@ -55,14 +52,15 @@ class NavigationToolbar2HTMLCanvas(NavigationToolbar2Wasm):
         # content, and then virtually clicks it. Kind of magical, but it
         # works...
         element = document.createElement('a')
-        data = io.BytesIO()
-        try:
-            self.canvas.figure.savefig(data, format=format)
-        except Exception:
-            raise
-        element.setAttribute('href', 'data:{};base64,{}'.format(
-            mimetype, base64.b64encode(data.getvalue()).decode('ascii')))
+
+        canvas = self.canvas.get_element('canvas')
+        imgURL = canvas.toDataURL('image/png')
+        element.setAttribute('href', imgURL)
         element.setAttribute('download', 'plot.{}'.format(format))
+        element.dataset.downloadurl = """image/png:{0}:
+                                         {1}""".format(element.download,
+                                                       element.href)
+
         element.style.display = 'none'
         document.body.appendChild(element)
         element.click()
