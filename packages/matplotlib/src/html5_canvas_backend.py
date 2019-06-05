@@ -13,6 +13,9 @@ from matplotlib import interactive
 
 from js import document
 
+import base64
+import io
+
 _capstyle_d = {'projecting': 'square', 'butt': 'butt', 'round': 'round'}
 
 interactive(True)
@@ -44,24 +47,35 @@ class FigureCanvasHTMLCanvas(FigureCanvasWasm):
 
 
 class NavigationToolbar2HTMLCanvas(NavigationToolbar2Wasm):
-    """
-    Is a copy of what Agg backend uses, needs to change!
-    """
+
     def download(self, format, mimetype):
         # Creates a temporary `a` element with a URL containing the image
         # content, and then virtually clicks it. Kind of magical, but it
         # works...
         element = document.createElement('a')
 
-        canvas = self.canvas.get_element('canvas')
-        imgURL = canvas.toDataURL('image/png')
-        element.setAttribute('href', imgURL)
-        element.setAttribute('download', 'plot.{}'.format(format))
-        element.dataset.downloadurl = """image/png:{0}:
-                                         {1}""".format(element.download,
-                                                       element.href)
+        if format == 'png':
+            canvas = self.canvas.get_element('canvas')
+            imgURL = canvas.toDataURL('image/png')
+            element.setAttribute('href', imgURL)
+            element.setAttribute('download', 'plot.{}'.format(format))
+            element.dataset.downloadurl = """image/png:{0}:
+                                            {1}""".format(element.download,
+                                                          element.href)
 
-        element.style.display = 'none'
+            element.style.display = 'none'
+
+        else:
+            data = io.BytesIO()
+            try:
+                self.canvas.figure.savefig(data, format=format)
+            except Exception:
+                raise
+            element.setAttribute('href', 'data:{};base64,{}'.format(
+                mimetype, base64.b64encode(data.getvalue()).decode('ascii')))
+            element.setAttribute('download', 'plot.{}'.format(format))
+            element.style.display = 'none'
+
         document.body.appendChild(element)
         element.click()
         document.body.removeChild(element)
