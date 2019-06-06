@@ -6,6 +6,7 @@ from matplotlib.backend_bases import (
     FigureManagerBase, _Backend
 )
 
+from matplotlib import cbook, __version__
 from matplotlib.colors import colorConverter, rgb2hex
 from matplotlib.transforms import Affine2D
 from matplotlib.path import Path
@@ -45,6 +46,31 @@ class FigureCanvasHTMLCanvas(FigureCanvasWasm):
             self.figure.dpi = orig_dpi
             self._idle_scheduled = False
 
+    def print_png(self, filename_or_obj, *args,
+                  metadata=None, pil_kwargs=None,
+                  **kwargs):
+
+        from matplotlib import _png
+
+        if metadata is None:
+            metadata = {}
+        metadata = {
+            "Software":
+                f"matplotlib version{__version__}, http://matplotlib.org/",
+            **metadata,
+        }
+
+        canvas = self.get_element('canvas')
+        ctx = canvas.getContext("2d")
+        canvas_data = ctx.getImageData(0, 0, int(ctx.width),
+                                       int(ctx.height)).data
+        data = np.reshape(np.uint8(np.asarray(canvas_data)),
+                                  (int(ctx.height), int(ctx.width), -1))
+        with cbook.open_file_cm(filename_or_obj, "wb") as fh:
+            _png.write_png(data, fh, self.figure.dpi, metadata=metadata)
+
+        return data
+
 
 class NavigationToolbar2HTMLCanvas(NavigationToolbar2Wasm):
 
@@ -53,28 +79,19 @@ class NavigationToolbar2HTMLCanvas(NavigationToolbar2Wasm):
         # content, and then virtually clicks it. Kind of magical, but it
         # works...
         element = document.createElement('a')
+        data = io.BytesIO()
 
         if format == 'png':
-            canvas = self.canvas.get_element('canvas')
-            imgURL = canvas.toDataURL('image/png')
-            element.setAttribute('href', imgURL)
-            element.setAttribute('download', 'plot.{}'.format(format))
-            element.dataset.downloadurl = """image/png:{0}:
-                                            {1}""".format(element.download,
-                                                          element.href)
-
-            element.style.display = 'none'
-
+            FigureCanvasHTMLCanvas.print_png(self.canvas, data)
         else:
-            data = io.BytesIO()
             try:
                 self.canvas.figure.savefig(data, format=format)
             except Exception:
                 raise
-            element.setAttribute('href', 'data:{};base64,{}'.format(
-                mimetype, base64.b64encode(data.getvalue()).decode('ascii')))
-            element.setAttribute('download', 'plot.{}'.format(format))
-            element.style.display = 'none'
+        element.setAttribute('href', 'data:{};base64,{}'.format(
+            mimetype, base64.b64encode(data.getvalue()).decode('ascii')))
+        element.setAttribute('download', 'plot.{}'.format(format))
+        element.style.display = 'none'
 
         document.body.appendChild(element)
         element.click()
