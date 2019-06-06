@@ -46,9 +46,18 @@ class FigureCanvasHTMLCanvas(FigureCanvasWasm):
             self.figure.dpi = orig_dpi
             self._idle_scheduled = False
 
+    def get_pixel_data(self):
+        canvas = self.get_element('canvas')
+        ctx = canvas.getContext("2d")
+        canvas_data = ctx.getImageData(0, 0, int(ctx.width),
+                                       int(ctx.height)).data
+        canvas_data = np.asarray(canvas_data, dtype=np.uint8)
+        pixel_data = np.reshape(canvas_data, (int(ctx.height),
+                                int(ctx.width), 4))
+        return pixel_data
+
     def print_png(self, filename_or_obj, *args,
-                  metadata=None, pil_kwargs=None,
-                  **kwargs):
+                  metadata=None, **kwargs):
 
         from matplotlib import _png
 
@@ -60,16 +69,9 @@ class FigureCanvasHTMLCanvas(FigureCanvasWasm):
             **metadata,
         }
 
-        canvas = self.get_element('canvas')
-        ctx = canvas.getContext("2d")
-        canvas_data = ctx.getImageData(0, 0, int(ctx.width),
-                                       int(ctx.height)).data
-        data = np.reshape(np.uint8(np.asarray(canvas_data)),
-                                  (int(ctx.height), int(ctx.width), -1))
+        data = self.get_pixel_data()
         with cbook.open_file_cm(filename_or_obj, "wb") as fh:
             _png.write_png(data, fh, self.figure.dpi, metadata=metadata)
-
-        return data
 
 
 class NavigationToolbar2HTMLCanvas(NavigationToolbar2Wasm):
@@ -88,6 +90,7 @@ class NavigationToolbar2HTMLCanvas(NavigationToolbar2Wasm):
                 self.canvas.figure.savefig(data, format=format)
             except Exception:
                 raise
+
         element.setAttribute('href', 'data:{};base64,{}'.format(
             mimetype, base64.b64encode(data.getvalue()).decode('ascii')))
         element.setAttribute('download', 'plot.{}'.format(format))
