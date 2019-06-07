@@ -28,3 +28,17 @@ def test_pdf(selenium):
     selenium.run("import io")
     selenium.run("fd = io.BytesIO()")
     selenium.run("plt.savefig(fd, format='pdf')")
+
+def test_rendering(selenium):
+    selenium.load_package("matplotlib")
+    selenium.run("from matplotlib import pyplot as plt")
+    selenium.run("import numpy as np")
+    selenium.run("t = np.arange(0.0, 2.0, 0.01)")
+    selenium.run("s = 1 + np.sin(2 * np.pi * t)")
+    selenium.run("plt.plot(t, s, linewidth=1.0, marker=11)")
+    selenium.run("plt.plot(t, t)")
+    selenium.run("plt.grid(True)")
+    selenium.run("plt.show()")
+    canvas_data = selenium.run("plt.gcf().canvas.get_pixel_data()")
+    assert canvas == '1'
+
