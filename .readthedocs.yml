@@ -15,5 +15,3 @@ python:
   version: 3.7
   install:
     - requirements: docs/requirements-doc.txt
-    - method: pip
-      path: .
