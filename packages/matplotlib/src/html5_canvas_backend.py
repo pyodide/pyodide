@@ -33,7 +33,7 @@ class FigureCanvasHTMLCanvas(FigureCanvasWasm):
             root_element = iodide.output.element('div')
         except ImportError:
             root_element = document.createElement('div')
-        document.body.appendChild(root_element)
+            document.body.appendChild(root_element)
         return root_element
 
     def draw(self):
