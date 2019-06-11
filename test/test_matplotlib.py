@@ -33,7 +33,7 @@ def test_pdf(selenium):
 def test_rendering(selenium):
     selenium.load_package("matplotlib")
     selenium.run("""
-    from js import XMLHttpRequest
+    from js import Request, window
     from matplotlib import pyplot as plt
     import numpy as np
     import pyodide, io
@@ -46,17 +46,11 @@ def test_rendering(selenium):
     canvas_data = plt.gcf().canvas.get_pixel_data()
     """)
     selenium.run("""
-    def _get_url_async(url):
-        req = XMLHttpRequest.new()
-        req.open('GET', url, True)
-        req.responseType = 'blob'
-        req.send(None)
-        if req.readyState == 4:
-            return req.response
-        else:
-            return 'nay'
-
-    ref_data = _get_url_async('test/canvas.png')
+    def func(response):
+        return response.blob()
     """)
-    x = selenium.run("ref_data")
-    assert x == 1
+    selenium.run("""
+    req = Request.new('test/canvas.png')
+    resp = window.fetch(req).then(func)
+    ref_data = io.BytesIO(resp)
+    """)
