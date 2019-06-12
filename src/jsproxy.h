@@ -32,4 +32,11 @@ JsProxy_AsJs(PyObject* x);
 int
 JsProxy_init();
 
+/** Make a bound method.
+ *  \param this The `this` object
+ *  \param name The name of the method
+ */
+PyObject*
+JsBoundMethod_cnew(int this, const char* name);
+
 #endif /* JSPROXY_H */

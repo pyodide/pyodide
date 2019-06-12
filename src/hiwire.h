@@ -272,6 +272,14 @@ void
 hiwire_throw_error(int idmsg);
 
 /**
+ * Get the Javascript self object.
+ *
+ * Returns: New reference
+ */
+int
+hiwire_get_self();
+
+/**
  * Get a Javascript object from the global namespace, i.e. window.
  *
  * Returns: New reference
@@ -535,5 +543,11 @@ hiwire_get_dtype(int idobj);
  */
 int
 hiwire_subarray(int idarr, int start, int end);
+
+/**
+ * Returns whether the object is a member function of another object.
+ */
+int
+hiwire_is_member_function(int idobj);
 
 #endif /* HIWIRE_H */

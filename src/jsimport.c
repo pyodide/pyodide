@@ -4,6 +4,7 @@
 
 #include "hiwire.h"
 #include "js2python.h"
+#include "jsproxy.h"
 
 static PyObject* js_module = NULL;
 
@@ -19,9 +20,17 @@ JsImport_GetAttr(PyObject* self, PyObject* attr)
     PyErr_Format(PyExc_AttributeError, "Unknown attribute '%s'", c);
     return NULL;
   }
-  PyObject* result = js2python(idval);
-  hiwire_decref(idval);
-  return result;
+
+  if (hiwire_is_member_function(idval)) {
+    int idself = hiwire_get_self();
+    PyObject* result = JsBoundMethod_cnew(idself, c);
+    hiwire_decref(idval);
+    return result;
+  } else {
+    PyObject* result = js2python(idval);
+    hiwire_decref(idval);
+    return result;
+  }
 }
 
 static PyObject*

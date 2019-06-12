@@ -190,6 +190,8 @@ EM_JS(int, hiwire_get_global, (int idname), {
   }
 });
 
+EM_JS(int, hiwire_get_self, (), { return Module.hiwire_new_value(self); });
+
 EM_JS(int, hiwire_get_member_string, (int idobj, int idkey), {
   var jsobj = Module.hiwire_get_value(idobj);
   var jskey = UTF8ToString(idkey);
@@ -421,4 +423,15 @@ EM_JS(int, hiwire_subarray, (int idarr, int start, int end), {
   var jsarr = Module.hiwire_get_value(idarr);
   var jssub = jsarr.subarray(start, end);
   return Module.hiwire_new_value(jssub);
+});
+
+EM_JS(int, hiwire_is_member_function, (int idobj), {
+  var jsobj = Module.hiwire_get_value(idobj);
+  // clang-format off
+  return (
+      typeof jsobj === "function" &&
+      jsobj.prototype === undefined &&
+      jsobj.constructor !== undefined
+  );
+  // clang-format on
 });

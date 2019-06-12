@@ -693,3 +693,13 @@ def test_unknown_attribute(selenium):
             assert "asdf" in str(e)
         """
     )
+
+
+def test_global_function(selenium):
+    assert "Promise" in selenium.run(
+        """
+        from js import fetch, Request
+        req = Request.new('pyodide.js')
+        fetch(req).toString()
+        """
+    )

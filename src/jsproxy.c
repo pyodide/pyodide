@@ -4,8 +4,27 @@
 #include "js2python.h"
 #include "python2js.h"
 
-static PyObject*
-JsBoundMethod_cnew(int this_, const char* name);
+static int
+parse_args(PyObject* args, PyObject* kwargs)
+{
+  Py_ssize_t nargs = PyTuple_Size(args);
+
+  int idargs = hiwire_array();
+
+  for (Py_ssize_t i = 0; i < nargs; ++i) {
+    int idarg = python2js(PyTuple_GET_ITEM(args, i));
+    hiwire_push_array(idargs, idarg);
+    hiwire_decref(idarg);
+  }
+
+  if (PyDict_Size(kwargs)) {
+    int idkwargs = python2js(kwargs);
+    hiwire_push_array(idargs, idkwargs);
+    hiwire_decref(idkwargs);
+  }
+
+  return idargs;
+}
 
 ////////////////////////////////////////////////////////////
 // JsProxy
@@ -105,22 +124,7 @@ JsProxy_Call(PyObject* o, PyObject* args, PyObject* kwargs)
 {
   JsProxy* self = (JsProxy*)o;
 
-  Py_ssize_t nargs = PyTuple_Size(args);
-
-  int idargs = hiwire_array();
-
-  for (Py_ssize_t i = 0; i < nargs; ++i) {
-    int idarg = python2js(PyTuple_GET_ITEM(args, i));
-    hiwire_push_array(idargs, idarg);
-    hiwire_decref(idarg);
-  }
-
-  if (PyDict_Size(kwargs)) {
-    int idkwargs = python2js(kwargs);
-    hiwire_push_array(idargs, idkwargs);
-    hiwire_decref(idkwargs);
-  }
-
+  int idargs = parse_args(args, kwargs);
   int idresult = hiwire_call(self->js, idargs);
   hiwire_decref(idargs);
   PyObject* pyresult = js2python(idresult);
@@ -478,16 +482,7 @@ JsBoundMethod_Call(PyObject* o, PyObject* args, PyObject* kwargs)
 {
   JsBoundMethod* self = (JsBoundMethod*)o;
 
-  Py_ssize_t nargs = PyTuple_Size(args);
-
-  int idargs = hiwire_array();
-
-  for (Py_ssize_t i = 0; i < nargs; ++i) {
-    int idarg = python2js(PyTuple_GET_ITEM(args, i));
-    hiwire_push_array(idargs, idarg);
-    hiwire_decref(idarg);
-  }
-
+  int idargs = parse_args(args, kwargs);
   int idresult = hiwire_call_member(self->this_, (int)self->name, idargs);
   hiwire_decref(idargs);
   PyObject* pyresult = js2python(idresult);
@@ -505,7 +500,7 @@ static PyTypeObject JsBoundMethodType = {
             "Python."
 };
 
-static PyObject*
+PyObject*
 JsBoundMethod_cnew(int this_, const char* name)
 {
   JsBoundMethod* self;
