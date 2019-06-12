@@ -1,3 +1,6 @@
+from selenium.webdriver.support.wait import WebDriverWait
+
+
 def test_matplotlib(selenium_standalone):
     selenium = selenium_standalone
     selenium.load_package("matplotlib")
@@ -55,11 +58,19 @@ def test_rendering(selenium):
         def callback(e):
             if req.readyState == 4:
                 ref_data = cb(io.BytesIO(req.response))
-                window.result = np.all(canvas_data == ref_data)
+                window.result = np.mean(np.abs(canvas_data - ref_data))
 
         req.onreadystatechange = callback
         req.send(None)
     """)
     selenium.run("_get_url_async('test/canvas.png', _png.read_png_int)")
-    res = selenium.run("canvas_data.shape")
+    wait = WebDriverWait(selenium.driver, timeout=50)
+    wait.until(ResultLoaded())
+    res = selenium.run("window.result")
     assert res is True
+
+
+class ResultLoaded:
+    def __call__(self, driver):
+        inited = driver.execute_script("return window.result")
+        return inited is not None

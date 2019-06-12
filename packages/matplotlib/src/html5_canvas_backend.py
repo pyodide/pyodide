@@ -36,6 +36,9 @@ class FigureCanvasHTMLCanvas(FigureCanvasWasm):
             document.body.appendChild(root_element)
         return root_element
 
+    def get_dpi_ratio(self, context):
+        return 1.0
+
     def draw(self):
         # Render the figure using custom renderer
         self._idle_scheduled = True
