@@ -13,7 +13,7 @@ from matplotlib.path import Path
 from matplotlib import interactive
 from matplotlib import _png
 
-from js import document, window, XMLHttpRequest
+from js import document, window, XMLHttpRequest, ImageData
 
 import base64
 import io
@@ -263,6 +263,15 @@ class RendererHTMLCanvas(RendererBase):
                      trans, rgbFace=None):
         super().draw_markers(gc, marker_path, marker_trans, path,
                              trans, rgbFace)
+
+    def draw_image(self, gc, x, y, im, transform=None):
+        im = np.flipud(im)
+        h, w, d = im.shape
+        im = np.ravel(np.uint8(np.reshape(im, (h * w * d, -1)))).tobytes()
+        img_data = ImageData.new(im, w, h)
+        self.ctx.save()
+        self.ctx.putImageData(img_data, x, y)
+        self.ctx.restore()
 
 
 class FigureManagerHTMLCanvas(FigureManagerBase):
