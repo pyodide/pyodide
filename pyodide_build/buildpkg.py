@@ -58,21 +58,25 @@ def download_and_extract(buildpath, packagedir, pkg, args):
     return srcpath
 
 
-def patch(path, srcpath, pkg, args):
+def patch(path, srcpath, pkg, args, only_extras=False):
     if (srcpath / '.patched').is_file():
-        return
+        if not only_extras:
+            return
+        else:
+            os.remove(srcpath / '.patched')
 
-    # Apply all of the patches
     orig_dir = Path.cwd()
     pkgdir = path.parent.resolve()
     os.chdir(srcpath)
-    try:
-        for patch in pkg.get('source', {}).get('patches', []):
-            subprocess.run([
-                'patch', '-p1', '--binary', '-i', pkgdir / patch
-            ], check=True)
-    finally:
-        os.chdir(orig_dir)
+    # Apply all of the patches
+    if not only_extras:
+        try:
+            for patch in pkg.get('source', {}).get('patches', []):
+                subprocess.run([
+                    'patch', '-p1', '--binary', '-i', pkgdir / patch
+                ], check=True)
+        finally:
+            os.chdir(orig_dir)
 
     # Add any extra files
     for src, dst in pkg.get('source', {}).get('extras', []):
@@ -123,9 +127,12 @@ def compile(path, srcpath, pkg, args):
         fd.write(b'\n')
 
 
-def package_files(buildpath, srcpath, pkg, args):
+def package_files(buildpath, srcpath, pkg, args, forced=False):
     if (buildpath / '.packaged').is_file():
-        return
+        if not forced:
+                return
+        else:
+            os.remove(buildpath / '.packaged')
 
     name = pkg['package']['name']
     install_prefix = (srcpath / 'install').resolve()
@@ -175,6 +182,26 @@ def needs_rebuild(pkg, path, buildpath):
             return True
 
 
+def needs_partial_rebuild(pkg, path, buildpath):
+    """
+    Determines if a package needs a rebuild because its `extras` are
+    newer than the `.packaged` thunk.
+    """
+    packaged_token = buildpath / '.packaged'
+    if not packaged_token.is_file():
+        return True
+
+    package_time = packaged_token.stat().st_mtime
+
+    def source_files():
+        yield from (x[0] for x in pkg.get('source', {}).get('extras', []))
+
+    for source_file in source_files():
+        source_file = Path(source_file)
+        if source_file.stat().st_mtime > package_time:
+            return True
+
+
 def build_package(path, args):
     pkg = common.parse_package(path)
     packagedir = pkg['package']['name'] + '-' + pkg['package']['version']
@@ -183,16 +210,24 @@ def build_package(path, args):
     os.chdir(dirpath)
     buildpath = dirpath / 'build'
     try:
-        if not needs_rebuild(pkg, path, buildpath):
+        if needs_rebuild(pkg, path, buildpath):
+            if not needs_partial_rebuild(pkg, path, buildpath):
+                if 'source' in pkg:
+                    if buildpath.resolve().is_dir():
+                        shutil.rmtree(buildpath)
+                    os.makedirs(buildpath)
+                srcpath = download_and_extract(buildpath,
+                                               packagedir, pkg, args)
+                patch(path, srcpath, pkg, args)
+                compile(path, srcpath, pkg, args)
+                package_files(buildpath, srcpath, pkg, args)
+            else:
+                if 'source' in pkg:
+                    srcpath = buildpath / packagedir
+                    patch(path, srcpath, pkg, args, only_extras=True)
+                    package_files(buildpath, srcpath, pkg, args, forced=True)
+        else:
             return
-        if 'source' in pkg:
-            if buildpath.resolve().is_dir():
-                shutil.rmtree(buildpath)
-            os.makedirs(buildpath)
-        srcpath = download_and_extract(buildpath, packagedir, pkg, args)
-        patch(path, srcpath, pkg, args)
-        compile(path, srcpath, pkg, args)
-        package_files(buildpath, srcpath, pkg, args)
     finally:
         os.chdir(orig_path)
 
