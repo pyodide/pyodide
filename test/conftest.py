@@ -230,6 +230,16 @@ class SeleniumWrapper:
             self.driver.switch_to.window(handle)
             yield self.driver.current_url
 
+    def get_canvas_data(self):
+        import base64
+        canvas_tag_property = "//canvas[starts-with(@id, 'matplotlib')]"
+        canvas_element = self.driver.find_element_by_xpath(canvas_tag_property)
+        img_script = "return arguments[0].toDataURL('image/png').substring(21)"
+        canvas_base64 = self.driver.execute_script(img_script, canvas_element)
+        canvas_png = base64.b64decode(canvas_base64)
+        with open(r"canvas-test-server-{0}.png".format(self.browser), 'wb') as f:
+            f.write(canvas_png)
+
 
 class FirefoxWrapper(SeleniumWrapper):
 
