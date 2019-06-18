@@ -56,7 +56,7 @@ jobs:
       - run:
           name: test
           command: |
-            pytest test pyodide_build -v -k firefox
+            pytest test packages pyodide_build -v -k firefox
 
   test-chrome:
     <<: *defaults
@@ -67,7 +67,7 @@ jobs:
       - run:
           name: test
           command: |
-            pytest test pyodide_build -v -k chrome
+            pytest test packages pyodide_build -v -k chrome
 
   test-python:
     <<: *defaults
