@@ -237,7 +237,7 @@ class SeleniumWrapper:
         img_script = "return arguments[0].toDataURL('image/png').substring(21)"
         canvas_base64 = self.driver.execute_script(img_script, canvas_element)
         canvas_png = base64.b64decode(canvas_base64)
-        with open(r"canvas-test-server-{0}.png".format(self.browser), 'wb') as f:
+        with open(r"canvas-server-{0}.png".format(self.browser), 'wb') as f:
             f.write(canvas_png)
 
 
