@@ -37,6 +37,7 @@ def test_rendering(selenium):
     selenium.load_package("matplotlib")
     selenium.run("""
     from js import XMLHttpRequest, window
+    window.testing = True
     from matplotlib import pyplot as plt
     from matplotlib import _png
     import numpy as np
@@ -63,10 +64,11 @@ def test_rendering(selenium):
         req.onreadystatechange = callback
         req.send(None)
     """)
-    selenium.run("_get_url_async('test/canvas.png', _png.read_png_int)")
-    wait = WebDriverWait(selenium.driver, timeout=50)
+    selenium.run("_get_url_async('test/plot.png', _png.read_png_int)")
+    wait = WebDriverWait(selenium.driver, timeout=70)
     wait.until(ResultLoaded())
     res = selenium.run("window.result")
+    selenium.get_canvas_data()
     assert res is True
 
 
