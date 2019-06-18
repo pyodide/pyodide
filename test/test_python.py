@@ -681,3 +681,15 @@ def test_py(selenium_standalone):
 def test_eval_nothing(selenium):
     assert selenium.run('# comment') is None
     assert selenium.run('') is None
+
+
+def test_unknown_attribute(selenium):
+    selenium.run(
+        """
+        import js
+        try:
+            js.asdf
+        except AttributeError as e:
+            assert "asdf" in str(e)
+        """
+    )
