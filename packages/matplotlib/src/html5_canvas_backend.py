@@ -12,7 +12,7 @@ from matplotlib.transforms import Affine2D
 from matplotlib.path import Path
 from matplotlib import interactive
 
-from js import document
+from js import document, window
 
 import base64
 import io
@@ -37,7 +37,11 @@ class FigureCanvasHTMLCanvas(FigureCanvasWasm):
         return root_element
 
     def get_dpi_ratio(self, context):
-        return 1.0
+        try:
+            if window.testing:
+                return 2.0
+        except Exception:
+            return super().get_dpi_ratio(context)
 
     def draw(self):
         # Render the figure using custom renderer
