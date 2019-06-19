@@ -21,13 +21,13 @@ sys.path.insert(0, os.path.abspath(".."))
 # -- Project information -----------------------------------------------------
 
 project = "Pyodide"
-copyright = "2019, ??"
-author = ""
+copyright = "2019, Mozilla"
+author = "Mozilla"
 
-# The short X.Y version
-version = ""
-# The full version, including alpha/beta/rc tags
-release = ""
+from src import pyodide
+
+# The full version, including alpha/beta/rc tags.
+release = version = pyodide.__version__
 
 
 # -- General configuration ---------------------------------------------------
@@ -50,7 +50,7 @@ templates_path = ["_templates"]
 # source_suffix = ['.rst', '.md']
 source_suffix = [".rst", ".md"]
 
-rst_prolog = ''
+rst_prolog = ""
 
 # The master toctree document.
 master_doc = "index"
@@ -83,12 +83,12 @@ html_theme = "sphinx_rtd_theme"
 # documentation.
 #
 html_theme_options = {
-    'display_version': True,
-    'prev_next_buttons_location': 'bottom',
+    "display_version": True,
+    "prev_next_buttons_location": "bottom",
     # Toc options
-    'collapse_navigation': True,
-    'sticky_navigation': True,
-    'navigation_depth': 2
+    "collapse_navigation": True,
+    "sticky_navigation": True,
+    "navigation_depth": 2,
 }
 
 # Add any paths that contain custom static files (such as style sheets) here,
@@ -109,7 +109,10 @@ html_static_path = ["_static"]
 
 rst_prolog += """
 .. important::
-    This documentation is an unofficial proof of concept.
+    From your browser, you can
+    `try Pyodide in an Iodide notebook <https://alpha.iodide.io/>`_.
+    The `Iodide documentation site <https://iodide-project.github.io/docs/>`_
+    provides additional user and developer documentation.
 """
 
 # -- Options for HTMLHelp output ---------------------------------------------
