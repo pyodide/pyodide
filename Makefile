@@ -7,7 +7,7 @@ CPYTHONROOT=cpython
 CPYTHONLIB=$(CPYTHONROOT)/installs/python-$(PYVERSION)/lib/python$(PYMINOR)
 
 LZ4LIB=lz4/lz4-1.8.3/lib/liblz4.a
-CLAPACK=CLAPACK/CLAPACK-WA/lapack_WA.bc
+CLAPACK=CLAPACK/CLAPACK-WA/lapack_WA.wasm
 
 CC=emcc
 CXX=em++

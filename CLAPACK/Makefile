@@ -8,10 +8,14 @@ ROOT=$(abspath .)
 SRC=$(ROOT)/CLAPACK-WA
 
 
-all: $(SRC)/lapack_WA.bc
+all: $(SRC)/lapack_WA.wasm
 
 clean:
 	rm -rf CLAPACK-WA
+
+$(SRC)/lapack_WA.wasm:  $(SRC)/lapack_WA.bc
+	emcc $(SIDE_LDFLAGS) CLAPACK-WA/F2CLIBS/libf2c.bc CLAPACK-WA/blas_WA.bc -o CLAPACK-WA/libblas_WA.wasm
+	emcc $(SIDE_LDFLAGS) CLAPACK-WA/F2CLIBS/libf2c.bc CLAPACK-WA/lapack_WA.bc -o CLAPACK-WA/liblapack_WA.wasm
 
 $(SRC)/lapack_WA.bc:  $(SRC)/Makefile
 	# We build BLAS/LAPACK only for target.

@@ -269,22 +269,15 @@ def handle_command(line, args, dryrun=False):
             lapack_dir = arg.replace('-L', '')
             # For convinience we determine needed scipy link libraries
             # here, instead of in patch files
-            link_libs = ['F2CLIBS/libf2c.bc', 'blas_WA.bc']
+            link_libs = ['libblas_WA.wasm']
             if module_name in ['_flapack', '_flinalg', '_calc_lwork',
                                'cython_lapack', '_iterative', '_arpack']:
-                link_libs.append('lapack_WA.bc')
+                link_libs.append('liblapack_WA.wasm')
 
-            for lib_name in link_libs:
-                arg = os.path.join(lapack_dir, f"{lib_name}")
-                new_args.append(arg)
+            link_libs = [os.path.join(lapack_dir, f"{lib_name}")
+                         for lib_name in link_libs]
 
-            new_args.extend(['-s', 'INLINING_LIMIT=5'])
-            continue
-
-        # Use -Os for files that are statically linked to CLAPACK
-        if (arg.startswith('-O') and 'CLAPACK' in ' '.join(line)
-                and '-L' in ' '.join(line)):
-            new_args.append('-Os')
+            new_args.extend(['-s', f'RUNTIME_LINKED_LIBS="{str(link_libs)}"'])
             continue
 
         new_args.append(arg)
