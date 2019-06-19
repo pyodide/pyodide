@@ -71,7 +71,7 @@ Install [geckodriver](https://github.com/mozilla/geckodriver/releases) and
 [chromedriver](https://sites.google.com/a/chromium.org/chromedriver/downloads) somewhere
 on your `PATH`.
 
-`pytest test/`
+`pytest test/ packages/`
 
 # Manual Testing
 

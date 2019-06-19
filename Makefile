@@ -111,7 +111,7 @@ build/webworker_dev.js: src/webworker.js
 	sed -i -e "s#pyodide.js#pyodide_dev.js#g" $@
 
 test: all
-	pytest test/ -v
+	pytest test packages pyodide_build -v
 
 
 lint:
