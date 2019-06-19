@@ -16,7 +16,7 @@ JsImport_GetAttr(PyObject* self, PyObject* attr)
   }
   int idval = hiwire_get_global((int)c);
   if (idval == -1) {
-    PyErr_Format(PyExc_AttributeError, "Unknown attribute '%s'", attr);
+    PyErr_Format(PyExc_AttributeError, "Unknown attribute '%s'", c);
     return NULL;
   }
   PyObject* result = js2python(idval);
