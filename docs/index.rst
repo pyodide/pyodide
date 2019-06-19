@@ -46,7 +46,7 @@ to be used with Pyodide.
 Developing Pyodide
 ==================
 
-The Developmment section help Pyodide contributors to find information about the
+The Development section help Pyodide contributors to find information about the
 development process including making packages to support third party libraries
 and understanding type conversions between Python and JavaScript.
 
