@@ -10,12 +10,15 @@ The Python scientific stack, compiled to WebAssembly.
 
 .. note::
 
-   Pyodide bundles support for the following packages: numpy, scipy, ...
+   Pyodide bundles support for the following packages: numpy, scipy, and
+   many other libraries in the Python scientific stack.
 
-   If you would like to use additional packages, try the experimental feature,
-   *Installing packages from PyPI* to `pip install` a package.
-   To create a Pyodide package to support and share libraries new applications,
-   try *Creating a Pyodide package*.
+   To use additional packages from PyPI, try the experimental feature,
+   `Installing packages from PyPI <pypi.html>`_ and try to `pip install` the
+   package.
+
+   To create a Pyodide package to support and share libraries for new
+   applications, try `Creating a Pyodide package <new_packages.html>`_.
 
 Using Pyodide
 =============
@@ -38,8 +41,9 @@ Using Pyodide
 Developing Pyodide
 ==================
 
-This section help Pyodide contributors to find information about the development process including making packages to
-support third party libraries and understanding type conversions between Python and JavaScript.
+This section help Pyodide contributors to find information about the
+development process including making packages to support third party libraries
+and understanding type conversions between Python and JavaScript.
 
 
 .. toctree::
