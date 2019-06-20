@@ -2,8 +2,7 @@
 **[Try Pyodide](#try-pyodide-no-installation-needed)** |
 **[Getting Started](#getting-started)** |
 **[Contributing](#contributing)** |
-**[License](#license)** |
-**[Help and Resources](#help-and-resources)**
+**[License](#license)**
 
 # [Pyodide](https://github.com/iodide-project/pyodide)
 
