@@ -1,5 +1,5 @@
 **[What is Pyodide?](#what-is-pyodide)** |
-**[Try Pyodide](#try-pyodide)** |
+**[Try Pyodide](#try-pyodide-no-installation-needed)** |
 **[Getting Started](#getting-started)** |
 **[Contributing](#contributing)** |
 **[License](#license)** |
@@ -37,7 +37,7 @@ These include:
 
 - [Download a pre-built version](#download-a-pre-built-version) (the quickest way to get started)
 - [Build Pyodide from source](#building-from-source) (this method requires installing prerequistes and using `make`. Primarily for Linux users who want to experiment or contribute back to the project.)
-- [Use a Docker image](#using-docker) (recommended for Windows and macOS users and for Linux users who prefer Debian-based Docker image on Docker Hub with the dependencies
+- [Use a Docker image](#using-docker) (recommended for Windows and macOS users and for Linux users who prefer a Debian-based Docker image on Docker Hub with the dependencies
 already installed)
 
 
@@ -174,7 +174,7 @@ Pyodide uses the Mozilla Public License Version 2.0. See the
 ---
 
 **[What is Pyodide?](#what-is-pyodide)** |
-**[Try Pyodide](#try-pyodide)** |
+**[Try Pyodide](try-pyodide-no-installation-needed)** |
 **[Getting Started](#getting-started)** |
 **[Contributing](#contributing)** |
 **[License](#license)** |
