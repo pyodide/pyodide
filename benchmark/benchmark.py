@@ -106,8 +106,9 @@ def main(hostpython):
         selenium_backends = {}
 
         b = {'native': float('NaN')}
-        for name, cls in [('firefox', conftest.FirefoxWrapper),
-                          ('chrome', conftest.ChromeWrapper)]:
+        browser_cls = [('firefox', conftest.FirefoxWrapper),
+                       ('chrome', conftest.ChromeWrapper)]
+        for name, cls in browser_cls:
             t0 = time()
             selenium_backends[name] = cls(port)
             b[name] = time() - t0
@@ -115,12 +116,16 @@ def main(hostpython):
         print_entry("selenium init", b)
 
         # load packages
-        for package_name in ["numpy"]:
+        for package_name in ["numpy", "scipy"]:
             b = {'native': float('NaN')}
-            for browser_name, selenium in selenium_backends.items():
-                t0 = time()
-                selenium.load_package(package_name)
-                b[browser_name] = time() - t0
+            for browser_name, cls in browser_cls.items():
+                selenium = cls(port)
+                try:
+                    t0 = time()
+                    selenium.load_package(package_name)
+                    b[browser_name] = time() - t0
+                finally:
+                    selenium.driver.quit()
             results['load ' + package_name] = b
             print_entry('load ' + package_name, b)
 
