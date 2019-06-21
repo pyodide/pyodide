@@ -118,7 +118,7 @@ def main(hostpython):
         # load packages
         for package_name in ["numpy", "scipy"]:
             b = {'native': float('NaN')}
-            for browser_name, cls in browser_cls.items():
+            for browser_name, cls in browser_cls:
                 selenium = cls(port)
                 try:
                     t0 = time()
