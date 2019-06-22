@@ -27,7 +27,7 @@ browser**.
 ## Try Pyodide (no installation needed)
 
 For more information, try [the demo](https://alpha.iodide.io/notebooks/300/) and look through the
-[documentation](https://github.com/iodide-project/pyodide/tree/master/docs).
+[documentation](https://pyodide.readthedocs.io/).
 
 ## Getting Started
 
