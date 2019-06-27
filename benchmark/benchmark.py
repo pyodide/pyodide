@@ -112,6 +112,8 @@ def main(hostpython):
             t0 = time()
             selenium_backends[name] = cls(port)
             b[name] = time() - t0
+            # pre-load numpy for the selenium instance used in benchmarks
+            selenium_backends[name].load_package("numpy")
         results['selenium init'] = b
         print_entry("selenium init", b)
 
