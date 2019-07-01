@@ -3,6 +3,7 @@ from pathlib import Path
 import re
 import subprocess
 import sys
+from time import time
 
 sys.path.insert(
     0, str((Path(__file__).resolve().parents[1] / 'test')))
@@ -13,6 +14,14 @@ import conftest  # noqa: E402
 
 
 SKIP = set(['fft', 'hyantes', 'README'])
+
+
+def print_entry(name, res):
+    print(" - ", name)
+    print(' '*4, end='')
+    for name, dt in res.items():
+        print("{}: {:.6f}  ".format(name, dt), end="")
+    print('')
 
 
 def run_native(hostpython, code):
@@ -27,33 +36,24 @@ def run_native(hostpython, code):
     return float(output.strip().split()[-1])
 
 
-def run_wasm(code, cls, port):
-    s = cls(port)
+def run_wasm(code, selenium):
+    selenium.run(code)
     try:
-        s.load_package('numpy')
-        s.run(code)
-        try:
-            runtime = float(s.logs.split('\n')[-1])
-        except ValueError:
-            print(s.logs)
-            raise
-    finally:
-        s.driver.quit()
+        runtime = float(selenium.logs.split('\n')[-1])
+    except ValueError:
+        print(selenium.logs)
+        raise
     return runtime
 
 
-def run_all(hostpython, port, code):
+def run_all(hostpython, selenium_backends, code):
     a = run_native(hostpython, code)
-    print("native:", a)
-    b = run_wasm(code, conftest.FirefoxWrapper, port)
-    print("firefox:", b)
-    c = run_wasm(code, conftest.ChromeWrapper, port)
-    print("chrome:", c)
     result = {
-        'native': a,
-        'firefox': b,
-        'chrome': c
+        'native': a
     }
+    for browser_name, selenium in selenium_backends.items():
+        dt = run_wasm(code, selenium)
+        result[browser_name] = dt
     return result
 
 
@@ -103,9 +103,39 @@ def get_benchmarks():
 def main(hostpython):
     with conftest.spawn_web_server() as (hostname, port, log_path):
         results = {}
-        for k, v in get_benchmarks():
-            print(k)
-            results[k] = run_all(hostpython, port, v)
+        selenium_backends = {}
+
+        b = {'native': float('NaN')}
+        browser_cls = [('firefox', conftest.FirefoxWrapper),
+                       ('chrome', conftest.ChromeWrapper)]
+        for name, cls in browser_cls:
+            t0 = time()
+            selenium_backends[name] = cls(port)
+            b[name] = time() - t0
+            # pre-load numpy for the selenium instance used in benchmarks
+            selenium_backends[name].load_package("numpy")
+        results['selenium init'] = b
+        print_entry("selenium init", b)
+
+        # load packages
+        for package_name in ["numpy", "scipy"]:
+            b = {'native': float('NaN')}
+            for browser_name, cls in browser_cls:
+                selenium = cls(port)
+                try:
+                    t0 = time()
+                    selenium.load_package(package_name)
+                    b[browser_name] = time() - t0
+                finally:
+                    selenium.driver.quit()
+            results['load ' + package_name] = b
+            print_entry('load ' + package_name, b)
+
+        for name, content in get_benchmarks():
+            results[name] = run_all(hostpython, selenium_backends, content)
+            print_entry(name, results[name])
+        for selenium in selenium_backends.values():
+            selenium.driver.quit()
     return results
 
 
