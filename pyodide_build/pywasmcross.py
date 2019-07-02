@@ -355,12 +355,15 @@ def install_for_distribution(args):
 
 
 def build_wrap(args):
-    build_log_path = Path('build.log')
-    if not build_log_path.is_file():
-        capture_compile(args)
-    clean_out_native_artifacts()
-    replay_compile(args)
-    install_for_distribution(args)
+    if args.only_extras:
+        install_for_distribution(args)
+    else:
+        build_log_path = Path('build.log')
+        if not build_log_path.is_file():
+            capture_compile(args)
+        clean_out_native_artifacts()
+        replay_compile(args)
+        install_for_distribution(args)
 
 
 def make_parser(parser):
@@ -384,6 +387,9 @@ def make_parser(parser):
         parser.add_argument(
             '--target', type=str, nargs='?', default=common.TARGETPYTHON,
             help='The path to the target Python installation')
+        parser.add_argument(
+            '--only_extras', action='store', type=bool, default=False,
+            help='Installs the modified extras skipping the compilation step')
     return parser
 
 

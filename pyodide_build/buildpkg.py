@@ -86,9 +86,12 @@ def patch(path, srcpath, pkg, args, only_extras=False):
         fd.write(b'\n')
 
 
-def compile(path, srcpath, pkg, args):
+def compile(path, srcpath, pkg, args, only_extras=False):
     if (srcpath / '.built').is_file():
-        return
+        if not only_extras:
+            return
+        else:
+            os.remove(srcpath / '.built')
 
     orig_dir = Path.cwd()
     os.chdir(srcpath)
@@ -100,6 +103,7 @@ def compile(path, srcpath, pkg, args):
         subprocess.run([
             str(Path(args.host) / 'bin' / 'python3'),
             '-m', 'pyodide_build', 'pywasmcross',
+            '--only_extras', str(only_extras),
             '--cflags',
             args.cflags + ' ' +
             pkg.get('build', {}).get('cflags', ''),
@@ -127,10 +131,10 @@ def compile(path, srcpath, pkg, args):
         fd.write(b'\n')
 
 
-def package_files(buildpath, srcpath, pkg, args, forced=False):
+def package_files(buildpath, srcpath, pkg, args, only_extras=False):
     if (buildpath / '.packaged').is_file():
-        if not forced:
-                return
+        if not only_extras:
+            return
         else:
             os.remove(buildpath / '.packaged')
 
@@ -225,7 +229,9 @@ def build_package(path, args):
                 if 'source' in pkg:
                     srcpath = buildpath / packagedir
                     patch(path, srcpath, pkg, args, only_extras=True)
-                    package_files(buildpath, srcpath, pkg, args, forced=True)
+                    compile(path, srcpath, pkg, args, only_extras=True)
+                    package_files(buildpath, srcpath, pkg, args,
+                                  only_extras=True)
         else:
             return
     finally:
