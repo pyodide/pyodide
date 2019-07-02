@@ -49,20 +49,18 @@ def test_rendering(selenium):
     plt.show()
     """)
 
-    selenium.get_canvas_data()
+    if not os.path.isfile('test/canvas-{0}.png'.format(selenium.browser)):
+        selenium.get_canvas_data()
 
     selenium.run("""
     url = 'test/canvas-{0}.png'
-    threshold = 0.1
+    threshold = 0
     plt.gcf().canvas.compare_reference_image(url, threshold)
     """.format(selenium.browser))
 
     wait = WebDriverWait(selenium.driver, timeout=70)
     wait.until(ResultLoaded())
-    try:
-        assert selenium.run("window.result") is True
-    finally:
-        os.remove("test/canvas-{0}.png".format(selenium.browser))
+    assert selenium.run("window.result") is True
 
 
 class ResultLoaded:

@@ -11,6 +11,7 @@ from matplotlib.colors import colorConverter, rgb2hex
 from matplotlib.transforms import Affine2D
 from matplotlib.path import Path
 from matplotlib import interactive
+from matplotlib import _png
 
 from js import document, window, XMLHttpRequest
 
@@ -63,17 +64,11 @@ class FigureCanvasHTMLCanvas(FigureCanvasWasm):
 
     def get_pixel_data(self):
         canvas = self.get_element('canvas')
-        ctx = canvas.getContext("2d")
-        canvas_data = ctx.getImageData(0, 0, int(ctx.width),
-                                       int(ctx.height)).data
-        canvas_data = np.asarray(canvas_data, dtype=np.uint8)
-        pixel_data = np.reshape(canvas_data, (int(ctx.height),
-                                int(ctx.width), 4))
-        return pixel_data
+        img_URL = canvas.toDataURL('image/png')[21:]
+        canvas_base64 = base64.b64decode(img_URL)
+        return _png.read_png_int(io.BytesIO(canvas_base64))
 
     def compare_reference_image(self, url, threshold):
-
-        from matplotlib import _png
         canvas_data = self.get_pixel_data()
 
         def _get_url_async(url, threshold):
@@ -85,7 +80,7 @@ class FigureCanvasHTMLCanvas(FigureCanvasWasm):
                 if req.readyState == 4:
                     ref_data = _png.read_png_int(io.BytesIO(req.response))
                     mean_deviation = np.mean(np.abs(canvas_data - ref_data))
-                    window.result = mean_deviation < threshold
+                    window.result = mean_deviation <= threshold
 
             req.onreadystatechange = callback
             req.send(None)
@@ -94,8 +89,6 @@ class FigureCanvasHTMLCanvas(FigureCanvasWasm):
 
     def print_png(self, filename_or_obj, *args,
                   metadata=None, **kwargs):
-
-        from matplotlib import _png
 
         if metadata is None:
             metadata = {}
