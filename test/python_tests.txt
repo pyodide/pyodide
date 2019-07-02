@@ -324,7 +324,7 @@ test_memoryview
 test_metaclass
 test_mimetypes
 test_minidom
-test_mmap
+test_mmap  crash
 test_module
 test_modulefinder
 test_msilib

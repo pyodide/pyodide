@@ -1,5 +1,9 @@
 ## Unreleased
 
+## Version 0.13.0
+
+- Tagged versions of Pyodide are now deployed to Netlify.
+
 ## Version 0.12.0
 
 **User improvements:**

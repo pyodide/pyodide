@@ -56,7 +56,7 @@ jobs:
       - run:
           name: test
           command: |
-            pytest test pyodide_build -v -k firefox
+            pytest test packages pyodide_build -v -k firefox
 
   test-chrome:
     <<: *defaults
@@ -67,7 +67,7 @@ jobs:
       - run:
           name: test
           command: |
-            pytest test pyodide_build -v -k chrome
+            pytest test packages pyodide_build -v -k chrome
 
   test-python:
     <<: *defaults
@@ -95,7 +95,7 @@ jobs:
       - store_artifacts:
           path: /home/circleci/repo/build/benchmarks.json
 
-  deploy:
+  deploy-release:
     docker:
       - image: cibuilds/github:0.10
 
@@ -110,6 +110,24 @@ jobs:
             tar cjf ../pyodide-build-${CIRCLE_TAG}.tar.bz2 *
             popd
             ghr -t "${GITHUB_TOKEN}" -u "${CIRCLE_PROJECT_USERNAME}" -r "${CIRCLE_PROJECT_REPONAME}" -c "${CIRCLE_SHA1}" -delete  "${CIRCLE_TAG}" ./pyodide-build-${CIRCLE_TAG}.tar.bz2
+
+  deploy-netlify:
+    docker:
+      - image: circleci/node:latest
+
+    steps:
+      - checkout
+      - attach_workspace:
+          at: .
+      - run:
+          name: Install netlify-cli
+          command: |
+            sudo npm install netlify-cli -g
+      - run:
+          name: Deploy to netlify
+          command: |
+            cp src/_headers build
+            netlify deploy --prod --dir=build -m "Deployed from CircleCI"
 
 workflows:
   version: 2
@@ -135,7 +153,16 @@ workflows:
       - benchmark:
           requires:
             - build
-      - deploy:
+      - deploy-release:
+          requires:
+            - test-firefox
+            - test-python
+          filters:
+            branches:
+              ignore: /.*/
+            tags:
+              only: /^\d+\.\d+\.\d+$/
+      - deploy-netlify:
           requires:
             - test-firefox
             - test-python
