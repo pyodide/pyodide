@@ -12,7 +12,7 @@ from matplotlib.transforms import Affine2D
 from matplotlib.path import Path
 from matplotlib import interactive
 
-from js import document, window
+from js import document, window, XMLHttpRequest
 
 import base64
 import io
@@ -37,10 +37,9 @@ class FigureCanvasHTMLCanvas(FigureCanvasWasm):
         return root_element
 
     def get_dpi_ratio(self, context):
-        try:
-            if window.testing:
-                return 2.0
-        except Exception:
+        if hasattr(window, 'testing'):
+            return 2.0
+        else:
             return super().get_dpi_ratio(context)
 
     def draw(self):
@@ -71,6 +70,27 @@ class FigureCanvasHTMLCanvas(FigureCanvasWasm):
         pixel_data = np.reshape(canvas_data, (int(ctx.height),
                                 int(ctx.width), 4))
         return pixel_data
+
+    def compare_reference_image(self, url, threshold):
+
+        from matplotlib import _png
+        canvas_data = self.get_pixel_data()
+
+        def _get_url_async(url, threshold):
+            req = XMLHttpRequest.new()
+            req.open('GET', url, True)
+            req.responseType = 'arraybuffer'
+
+            def callback(e):
+                if req.readyState == 4:
+                    ref_data = _png.read_png_int(io.BytesIO(req.response))
+                    mean_deviation = np.mean(np.abs(canvas_data - ref_data))
+                    window.result = mean_deviation < threshold
+
+            req.onreadystatechange = callback
+            req.send(None)
+
+        _get_url_async(url, threshold)
 
     def print_png(self, filename_or_obj, *args,
                   metadata=None, **kwargs):

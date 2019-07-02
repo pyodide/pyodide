@@ -37,43 +37,32 @@ def test_pdf(selenium):
 def test_rendering(selenium):
     selenium.load_package("matplotlib")
     selenium.run("""
-    from js import XMLHttpRequest, window
+    from js import window
     window.testing = True
     from matplotlib import pyplot as plt
-    from matplotlib import _png
     import numpy as np
-    import io
     t = np.arange(0.0, 2.0, 0.01)
     s = 1 + np.sin(2 * np.pi * t)
     plt.plot(t, s, linewidth=1.0, marker=11)
     plt.plot(t, t)
     plt.grid(True)
     plt.show()
-    canvas_data = plt.gcf().canvas.get_pixel_data()
     """)
+
     selenium.get_canvas_data()
+
     selenium.run("""
-    def _get_url_async(url, cb):
-        req = XMLHttpRequest.new()
-        req.open('GET', url, True)
-        req.responseType = 'arraybuffer'
+    url = 'test/canvas-{0}.png'
+    threshold = 0.1
+    plt.gcf().canvas.compare_reference_image(url, threshold)
+    """.format(selenium.browser))
 
-        def callback(e):
-            if req.readyState == 4:
-                ref_data = cb(io.BytesIO(req.response))
-                window.result = np.mean(np.abs(canvas_data - ref_data)) < 0.1
-
-        req.onreadystatechange = callback
-        req.send(None)
-    """)
-
-    selenium.run("_get_url_async('test/canvas-{0}.png',"
-                 "_png.read_png_int)".format(selenium.browser))
     wait = WebDriverWait(selenium.driver, timeout=70)
     wait.until(ResultLoaded())
-    res = selenium.run("window.result")
-    assert res is True
-    os.remove("test/canvas-{0}.png".format(selenium.browser))
+    try:
+        assert selenium.run("window.result") is True
+    finally:
+        os.remove("test/canvas-{0}.png".format(selenium.browser))
 
 
 class ResultLoaded:
