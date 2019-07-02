@@ -1,4 +1,5 @@
 import numpy as np
+import math
 from matplotlib.backends.browser_backend import \
     FigureCanvasWasm, NavigationToolbar2Wasm
 from matplotlib.backend_bases import (
@@ -269,8 +270,19 @@ class RendererHTMLCanvas(RendererBase):
         h, w, d = im.shape
         im = np.ravel(np.uint8(np.reshape(im, (h * w * d, -1)))).tobytes()
         img_data = ImageData.new(im, w, h)
+        x += 0.5
+        y += 0.5
         self.ctx.save()
-        self.ctx.putImageData(img_data, x, y)
+        if transform is not None:
+            in_memory_canvas = document.createElement('canvas')
+            in_memory_canvas.width = self.ctx.width
+            in_memory_canvas.height = self.ctx.height
+            in_memory_canvas.putImageData(img_data, x, y)
+            a, b, c, d, e, f = transform.frozen().to_values()
+            self.ctx.setTransform(a, b, c, d, e, f)
+            self.ctx.drawImage(in_memory_canvas, x - e, y - f)
+        else:
+            self.ctx.putImageData(img_data, x, y)
         self.ctx.restore()
 
 
