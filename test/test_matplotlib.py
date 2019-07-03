@@ -60,6 +60,7 @@ def test_rendering(selenium):
 
     wait = WebDriverWait(selenium.driver, timeout=70)
     wait.until(ResultLoaded())
+    assert selenium.run("window.deviation") == 0
     assert selenium.run("window.result") is True
 
 

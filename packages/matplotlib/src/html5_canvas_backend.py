@@ -80,6 +80,7 @@ class FigureCanvasHTMLCanvas(FigureCanvasWasm):
                 if req.readyState == 4:
                     ref_data = _png.read_png_int(io.BytesIO(req.response))
                     mean_deviation = np.mean(np.abs(canvas_data - ref_data))
+                    window.deviation = mean_deviation
                     window.result = mean_deviation <= threshold
 
             req.onreadystatechange = callback
