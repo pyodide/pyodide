@@ -13,10 +13,16 @@ from matplotlib.path import Path
 from matplotlib import interactive
 from matplotlib import _png
 
+from matplotlib.cbook import maxdict
+from matplotlib.font_manager import findfont
+from matplotlib.ft2font import FT2Font, LOAD_NO_HINTING
+from matplotlib.mathtext import MathTextParser
+
 from js import document, window, XMLHttpRequest, ImageData
 
 import base64
 import io
+import math
 
 _capstyle_d = {'projecting': 'square', 'butt': 'butt', 'round': 'round'}
 
@@ -188,6 +194,8 @@ class RendererHTMLCanvas(RendererBase):
         self.ctx.width = self.width
         self.ctx.height = self.height
         self.dpi = dpi
+        self.fontd = maxdict(50)
+        self.mathtext_parser = MathTextParser('bitmap')
 
     def new_gc(self):
         return GraphicsContextHTMLCanvas(renderer=self)
@@ -278,6 +286,65 @@ class RendererHTMLCanvas(RendererBase):
         in_memory_canvas_context.putImageData(img_data, 0, 0)
         self.ctx.drawImage(in_memory_canvas, x, y, w, h)
         self.ctx.restore()
+
+    def _get_font(self, prop):
+        key = hash(prop)
+        font = self.fontd.get(key)
+        if font is None:
+            fname = findfont(prop)
+            font = self.fontd.get(fname)
+            if font is None:
+                font = FT2Font(str(fname))
+                self.fontd[fname] = font
+            self.fontd[key] = font
+        font.clear()
+        font.set_size(prop.get_size_in_points(), self.dpi)
+        return font
+
+    def get_text_width_height_descent(self, s, prop, ismath):
+        if ismath:
+            image, d = self.mathtext_parser.parse(s, self.dpi, prop)
+            w, h = image.get_width(), image.get_height()
+        else:
+            font = self._get_font(prop)
+            font.set_text(s, 0.0, flags=LOAD_NO_HINTING)
+            w, h = font.get_width_height()
+            w /= 64.0
+            h /= 64.0
+            d = font.get_descent() / 64.0
+        return w, h, d
+
+    def draw_text(self, gc, x, y, s, prop, angle, ismath=False, mtext=None):
+        if ismath:
+            # Not Implemented
+            return
+        angle = math.radians(angle)
+        width, height, descent = \
+            self.get_text_width_height_descent(s, prop, ismath)
+        x -= math.sin(angle) * descent
+        y -= math.cos(angle) * descent - self.ctx.height
+        font_size = \
+            self.points_to_pixels(prop.get_size_in_points())
+        font_property_string = '{0} {1} {2:.3g}px {3}, {4}'.format(
+                                prop.get_style(),
+                                prop.get_weight(),
+                                font_size, prop.get_name(),
+                                prop.get_family()[0]
+                            )
+        if angle != 0:
+            self.ctx.save()
+            self.ctx.translate(x, y)
+            self.ctx.rotate(-angle)
+            self.ctx.translate(-x, -y)
+        self.ctx.font = font_property_string
+        self.ctx.fillStyle = self._matplotlib_color_to_CSS(
+                                gc.get_rgb(),
+                                gc.get_alpha()
+                            )
+        self.ctx.fillText(s, x, y)
+        self.ctx.fillStyle = '#000000'
+        if angle != 0:
+            self.ctx.restore()
 
 
 class FigureManagerHTMLCanvas(FigureManagerBase):
