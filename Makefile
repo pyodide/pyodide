@@ -9,6 +9,9 @@ CPYTHONLIB=$(CPYTHONROOT)/installs/python-$(PYVERSION)/lib/python$(PYMINOR)
 LZ4LIB=lz4/lz4-1.8.3/lib/liblz4.a
 CLAPACK=CLAPACK/CLAPACK-WA/lapack_WA.bc
 
+PYODIDE_EMCC=$(PYODIDE_ROOT)/ccache/emcc
+PYODIDE_CXX=$(PYODIDE_ROOT)/ccache/em++
+
 CC=emcc
 CXX=em++
 OPTFLAGS=-O3
@@ -174,25 +177,29 @@ root/.built: \
 	touch root/.built
 
 
-ccache/emcc:
+$(PYODIDE_EMCC):
 	mkdir -p $(PYODIDE_ROOT)/ccache ; \
-	if hash ccache &>/dev/null; then \
-    ln -s `which ccache` $(PYODIDE_ROOT)/ccache/emcc ; \
-  else \
-    ln -s emsdk/emsdk/emscripten/tag-$(EMSCRIPTEN_VERSION)/emcc $(PYODIDE_ROOT)/ccache/emcc; \
-  fi
+	if test ! -h $@; then \
+		if hash ccache &>/dev/null; then \
+    		ln -s `which ccache` $@ ; \
+		else \
+    		ln -s emsdk/emsdk/emscripten/tag-$(EMSCRIPTEN_VERSION)/emcc $@; \
+		fi; \
+	fi
 
 
-ccache/em++:
+$(PYODIDE_CXX):
 	mkdir -p $(PYODIDE_ROOT)/ccache ; \
-	if hash ccache &>/dev/null; then \
-    ln -s `which ccache` $(PYODIDE_ROOT)/ccache/em++ ; \
-  else \
-    ln -s emsdk/emsdk/emscripten/tag-$(EMSCRIPTEN_VERSION)/em++ $(PYODIDE_ROOT)/ccache/em++; \
-  fi
+	if test ! -h $@; then \
+		if hash ccache &>/dev/null; then \
+		    ln -s `which ccache` $@ ; \
+		else \
+    		ln -s emsdk/emsdk/emscripten/tag-$(EMSCRIPTEN_VERSION)/em++ $@; \
+		fi; \
+  	fi
 
 
-$(CPYTHONLIB): emsdk/emsdk/.complete ccache/emcc ccache/em++
+$(CPYTHONLIB): emsdk/emsdk/.complete $(PYODIDE_EMCC) $(PYODIDE_CXX)
 	make -C $(CPYTHONROOT)
 
 
