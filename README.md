@@ -171,7 +171,7 @@ Pyodide uses the Mozilla Public License Version 2.0. See the
 ---
 
 **[What is Pyodide?](#what-is-pyodide)** |
-**[Try Pyodide](try-pyodide-no-installation-needed)** |
+**[Try Pyodide](#try-pyodide-no-installation-needed)** |
 **[Getting Started](#getting-started)** |
 **[Contributing](#contributing)** |
 **[License](#license)** |
