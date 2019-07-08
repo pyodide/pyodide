@@ -73,6 +73,14 @@ The url of the source tarball.
 The tarball may be in any of the formats supported by Python's
 `shutil.unpack_archive`: `tar`, `gztar`, `bztar`, `xztar`, and `zip`.
 
+#### `source/path`
+
+Alternatively to `source/url`, a relative or absolute path can be specified
+as package source. This is useful for local testing or building packages which
+are not available online in the required format.
+
+If a path is specified, any provided checksums are ignored.
+
 #### `source/md5`
 
 The MD5 checksum of the tarball. It is recommended to use SHA256 instead of MD5.
