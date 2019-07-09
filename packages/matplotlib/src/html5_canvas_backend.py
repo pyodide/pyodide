@@ -11,8 +11,9 @@ from matplotlib.colors import colorConverter, rgb2hex
 from matplotlib.transforms import Affine2D
 from matplotlib.path import Path
 from matplotlib import interactive
+from matplotlib import _png
 
-from js import document
+from js import document, window, XMLHttpRequest
 
 import base64
 import io
@@ -26,6 +27,21 @@ class FigureCanvasHTMLCanvas(FigureCanvasWasm):
 
     def __init__(self, *args, **kwargs):
         FigureCanvasWasm.__init__(self, *args, **kwargs)
+
+    def create_root_element(self):
+        try:
+            from js import iodide
+            root_element = iodide.output.element('div')
+        except ImportError:
+            root_element = document.createElement('div')
+            document.body.appendChild(root_element)
+        return root_element
+
+    def get_dpi_ratio(self, context):
+        if hasattr(window, 'testing'):
+            return 2.0
+        else:
+            return super().get_dpi_ratio(context)
 
     def draw(self):
         # Render the figure using custom renderer
@@ -47,19 +63,41 @@ class FigureCanvasHTMLCanvas(FigureCanvasWasm):
             self._idle_scheduled = False
 
     def get_pixel_data(self):
+        """
+        Directly getting the underlying pixel data (using `getImageData()`)
+        results in a different (but similar) image than the reference image.
+        The method below takes a longer route
+        (pixels --> encode PNG --> decode PNG --> pixels)
+        but gives us the exact pixel data that the reference image has allowing
+        us to do a fair comparison test.
+        """
         canvas = self.get_element('canvas')
-        ctx = canvas.getContext("2d")
-        canvas_data = ctx.getImageData(0, 0, int(ctx.width),
-                                       int(ctx.height)).data
-        canvas_data = np.asarray(canvas_data, dtype=np.uint8)
-        pixel_data = np.reshape(canvas_data, (int(ctx.height),
-                                int(ctx.width), 4))
-        return pixel_data
+        img_URL = canvas.toDataURL('image/png')[21:]
+        canvas_base64 = base64.b64decode(img_URL)
+        return _png.read_png_int(io.BytesIO(canvas_base64))
+
+    def compare_reference_image(self, url, threshold):
+        canvas_data = self.get_pixel_data()
+
+        def _get_url_async(url, threshold):
+            req = XMLHttpRequest.new()
+            req.open('GET', url, True)
+            req.responseType = 'arraybuffer'
+
+            def callback(e):
+                if req.readyState == 4:
+                    ref_data = _png.read_png_int(io.BytesIO(req.response))
+                    mean_deviation = np.mean(np.abs(canvas_data - ref_data))
+                    window.deviation = mean_deviation
+                    window.result = mean_deviation <= threshold
+
+            req.onreadystatechange = callback
+            req.send(None)
+
+        _get_url_async(url, threshold)
 
     def print_png(self, filename_or_obj, *args,
                   metadata=None, **kwargs):
-
-        from matplotlib import _png
 
         if metadata is None:
             metadata = {}
