@@ -1,5 +1,20 @@
 import os
+import pathlib
 from selenium.webdriver.support.wait import WebDriverWait
+
+TEST_PATH = pathlib.Path(__file__).parents[0].resolve()
+
+
+def get_canvas_data(selenium):
+    import base64
+    canvas_tag_property = "//canvas[starts-with(@id, 'matplotlib')]"
+    canvas_element = selenium.driver.find_element_by_xpath(canvas_tag_property)
+    img_script = "return arguments[0].toDataURL('image/png').substring(21)"
+    canvas_base64 = selenium.driver.execute_script(img_script, canvas_element)
+    canvas_png = base64.b64decode(canvas_base64)
+    with open(TEST_PATH /
+              r"canvas-{0}.png".format(selenium.browser), 'wb') as f:
+        f.write(canvas_png)
 
 
 def test_matplotlib(selenium_standalone):
@@ -50,8 +65,9 @@ def test_rendering(selenium):
     plt.show()
     """)
 
+    # If we don't have a reference image, write one to disk
     if not os.path.isfile('test/canvas-{0}.png'.format(selenium.browser)):
-        selenium.get_canvas_data()
+        get_canvas_data(selenium)
 
     selenium.run("""
     url = 'test/canvas-{0}.png'

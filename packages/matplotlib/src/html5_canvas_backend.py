@@ -63,6 +63,14 @@ class FigureCanvasHTMLCanvas(FigureCanvasWasm):
             self._idle_scheduled = False
 
     def get_pixel_data(self):
+        """
+        Directly getting the underlying pixel data (using `getImageData()`)
+        results in a different (but similar) image than the reference image.
+        The method below takes a longer route
+        (pixels --> encode PNG --> decode PNG --> pixels)
+        but gives us the exact pixel data that the reference image has allowing
+        us to do a fair comparison test.
+        """
         canvas = self.get_element('canvas')
         img_URL = canvas.toDataURL('image/png')[21:]
         canvas_base64 = base64.b64decode(img_URL)
