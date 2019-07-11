@@ -54,7 +54,7 @@ class FigureCanvasHTMLCanvas(FigureCanvasWasm):
             canvas = self.get_element('canvas')
             if canvas is None:
                 return
-            ctx = canvas.getContext("2d")
+            ctx = canvas.getContext('2d')
             renderer = RendererHTMLCanvas(ctx, width, height,
                                           dpi=self.figure.dpi)
             self.figure.draw(renderer)
@@ -270,7 +270,13 @@ class RendererHTMLCanvas(RendererBase):
         im = np.ravel(np.uint8(np.reshape(im, (h * w * d, -1)))).tobytes()
         img_data = ImageData.new(im, w, h)
         self.ctx.save()
-        self.ctx.putImageData(img_data, x, self.ctx.height - y - h)
+        in_memory_canvas = document.createElement('canvas')
+        in_memory_canvas.width = self.ctx.width
+        in_memory_canvas.height = self.ctx.height
+        in_memory_canvas_context = in_memory_canvas.getContext('2d')
+        in_memory_canvas_context.putImageData(img_data, x,
+                                              self.ctx.height - y - h)
+        self.ctx.drawImage(in_memory_canvas, 0, 0)
         self.ctx.restore()
 
 
