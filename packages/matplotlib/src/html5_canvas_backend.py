@@ -1,5 +1,4 @@
 import numpy as np
-import math
 from matplotlib.backends.browser_backend import \
     FigureCanvasWasm, NavigationToolbar2Wasm
 from matplotlib.backend_bases import (
