@@ -267,6 +267,7 @@ class RendererHTMLCanvas(RendererBase):
     def draw_image(self, gc, x, y, im, transform=None):
         im = np.flipud(im)
         h, w, d = im.shape
+        y = self.ctx.height - y - h
         im = np.ravel(np.uint8(np.reshape(im, (h * w * d, -1)))).tobytes()
         img_data = ImageData.new(im, w, h)
         self.ctx.save()
@@ -274,9 +275,9 @@ class RendererHTMLCanvas(RendererBase):
         in_memory_canvas.width = self.ctx.width
         in_memory_canvas.height = self.ctx.height
         in_memory_canvas_context = in_memory_canvas.getContext('2d')
-        in_memory_canvas_context.putImageData(img_data, x,
-                                              self.ctx.height - y - h)
-        self.ctx.drawImage(in_memory_canvas, 0, 0)
+        in_memory_canvas_context.putImageData(img_data, x, y)
+        self.ctx.drawImage(in_memory_canvas, x, y,
+                           w, h, x, y, w, h)
         self.ctx.restore()
 
 
