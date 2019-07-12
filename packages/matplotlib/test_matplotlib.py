@@ -6,7 +6,7 @@ from selenium.webdriver.support.wait import WebDriverWait
 TEST_PATH = pathlib.Path(__file__).parents[0].resolve()
 
 
-def get_canvas_data(selenium):
+def get_canvas_data(selenium, prefix):
     import base64
     canvas_tag_property = "//canvas[starts-with(@id, 'matplotlib')]"
     canvas_element = selenium.driver.find_element_by_xpath(canvas_tag_property)
@@ -14,8 +14,25 @@ def get_canvas_data(selenium):
     canvas_base64 = selenium.driver.execute_script(img_script, canvas_element)
     canvas_png = base64.b64decode(canvas_base64)
     with open(TEST_PATH /
-              r"canvas-{0}.png".format(selenium.browser), 'wb') as f:
+              r"{0}-{1}.png".format(prefix, selenium.browser), 'wb') as f:
         f.write(canvas_png)
+
+
+def check_comparison(selenium, prefix):
+    # If we don't have a reference image, write one to disk
+    if not os.path.isfile('test/{0}-{1}.png'.format(prefix, selenium.browser)):
+        get_canvas_data(selenium, prefix)
+
+    selenium.run("""
+    url = 'test/{0}-{1}.png'
+    threshold = 0
+    plt.gcf().canvas.compare_reference_image(url, threshold)
+    """.format(prefix, selenium.browser))
+
+    wait = WebDriverWait(selenium.driver, timeout=70)
+    wait.until(ResultLoaded())
+    assert selenium.run("window.deviation") == 0
+    assert selenium.run("window.result") is True
 
 
 @pytest.mark.skip_refcount_check
@@ -104,20 +121,91 @@ def test_rendering(selenium):
     plt.show()
     """)
 
-    # If we don't have a reference image, write one to disk
-    if not os.path.isfile('test/canvas-{0}.png'.format(selenium.browser)):
-        get_canvas_data(selenium)
+    check_comparison(selenium, 'canvas')
 
+
+def test_draw_image(selenium):
+    selenium.load_package("matplotlib")
     selenium.run("""
-    url = 'test/canvas-{0}.png'
-    threshold = 0
-    plt.gcf().canvas.compare_reference_image(url, threshold)
-    """.format(selenium.browser))
+    from js import window
+    window.testing = True
+    import numpy as np
+    import matplotlib.cm as cm
+    import matplotlib.pyplot as plt
+    import matplotlib.cbook as cbook
+    from matplotlib.path import Path
+    from matplotlib.patches import PathPatch
+    delta = 0.025
+    x = y = np.arange(-3.0, 3.0, delta)
+    X, Y = np.meshgrid(x, y)
+    Z1 = np.exp(-X**2 - Y**2)
+    Z2 = np.exp(-(X - 1)**2 - (Y - 1)**2)
+    Z = (Z1 - Z2) * 2
+    plt.figure()
+    plt.imshow(Z, interpolation='bilinear', cmap=cm.RdYlGn,
+               origin='lower', extent=[-3, 3, -3, 3],
+               vmax=abs(Z).max(), vmin=-abs(Z).max())
+    plt.show()
+    """)
 
-    wait = WebDriverWait(selenium.driver, timeout=70)
-    wait.until(ResultLoaded())
-    assert selenium.run("window.deviation") == 0
-    assert selenium.run("window.result") is True
+    check_comparison(selenium, 'canvas-image')
+
+
+def test_draw_image_affine_transform(selenium):
+    selenium.load_package("matplotlib")
+    selenium.run("""
+    from js import window
+    window.testing = True
+
+    import numpy as np
+    import matplotlib.pyplot as plt
+    import matplotlib.transforms as mtransforms
+
+    def get_image():
+        delta = 0.25
+        x = y = np.arange(-3.0, 3.0, delta)
+        X, Y = np.meshgrid(x, y)
+        Z1 = np.exp(-X**2 - Y**2)
+        Z2 = np.exp(-(X - 1)**2 - (Y - 1)**2)
+        Z = (Z1 - Z2)
+        return Z
+
+    def do_plot(ax, Z, transform):
+        im = ax.imshow(Z, interpolation='none',
+                    origin='lower',
+                    extent=[-2, 4, -3, 2], clip_on=True)
+
+        trans_data = transform + ax.transData
+        im.set_transform(trans_data)
+
+        # display intended extent of the image
+        x1, x2, y1, y2 = im.get_extent()
+        ax.plot([x1, x2, x2, x1, x1], [y1, y1, y2, y2, y1], "y--",
+                transform=trans_data)
+        ax.set_xlim(-5, 5)
+        ax.set_ylim(-4, 4)
+
+    # prepare image and figure
+    fig, ((ax1, ax2), (ax3, ax4)) = plt.subplots(2, 2)
+    Z = get_image()
+
+    # image rotation
+    do_plot(ax1, Z, mtransforms.Affine2D().rotate_deg(30))
+
+    # image skew
+    do_plot(ax2, Z, mtransforms.Affine2D().skew_deg(30, 15))
+
+    # scale and reflection
+    do_plot(ax3, Z, mtransforms.Affine2D().scale(-1, .5))
+
+    # everything and a translation
+    do_plot(ax4, Z, mtransforms.Affine2D().
+            rotate_deg(30).skew_deg(30, 15).scale(-1, .5).translate(.5, -1))
+
+    plt.show()
+    """)
+
+    check_comparison(selenium, 'canvas-image-affine')
 
 
 class ResultLoaded:
