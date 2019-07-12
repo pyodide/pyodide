@@ -13,7 +13,7 @@ from matplotlib.path import Path
 from matplotlib import interactive
 from matplotlib import _png
 
-from js import document, window, XMLHttpRequest
+from js import document, window, XMLHttpRequest, ImageData
 
 import base64
 import io
@@ -54,7 +54,7 @@ class FigureCanvasHTMLCanvas(FigureCanvasWasm):
             canvas = self.get_element('canvas')
             if canvas is None:
                 return
-            ctx = canvas.getContext("2d")
+            ctx = canvas.getContext('2d')
             renderer = RendererHTMLCanvas(ctx, width, height,
                                           dpi=self.figure.dpi)
             self.figure.draw(renderer)
@@ -263,6 +263,21 @@ class RendererHTMLCanvas(RendererBase):
                      trans, rgbFace=None):
         super().draw_markers(gc, marker_path, marker_trans, path,
                              trans, rgbFace)
+
+    def draw_image(self, gc, x, y, im, transform=None):
+        im = np.flipud(im)
+        h, w, d = im.shape
+        y = self.ctx.height - y - h
+        im = np.ravel(np.uint8(np.reshape(im, (h * w * d, -1)))).tobytes()
+        img_data = ImageData.new(im, w, h)
+        self.ctx.save()
+        in_memory_canvas = document.createElement('canvas')
+        in_memory_canvas.width = w
+        in_memory_canvas.height = h
+        in_memory_canvas_context = in_memory_canvas.getContext('2d')
+        in_memory_canvas_context.putImageData(img_data, 0, 0)
+        self.ctx.drawImage(in_memory_canvas, x, y, w, h)
+        self.ctx.restore()
 
 
 class FigureManagerHTMLCanvas(FigureManagerBase):
