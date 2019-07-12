@@ -272,12 +272,11 @@ class RendererHTMLCanvas(RendererBase):
         img_data = ImageData.new(im, w, h)
         self.ctx.save()
         in_memory_canvas = document.createElement('canvas')
-        in_memory_canvas.width = self.ctx.width
-        in_memory_canvas.height = self.ctx.height
+        in_memory_canvas.width = w
+        in_memory_canvas.height = h
         in_memory_canvas_context = in_memory_canvas.getContext('2d')
-        in_memory_canvas_context.putImageData(img_data, x, y)
-        self.ctx.drawImage(in_memory_canvas, x, y,
-                           w, h, x, y, w, h)
+        in_memory_canvas_context.putImageData(img_data, 0, 0)
+        self.ctx.drawImage(in_memory_canvas, x, y, w, h)
         self.ctx.restore()
 
 
