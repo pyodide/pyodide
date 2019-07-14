@@ -314,9 +314,23 @@ class RendererHTMLCanvas(RendererBase):
             d = font.get_descent() / 64.0
         return w, h, d
 
+    def _draw_math_text(self, gc, x, y, s, prop, angle):
+        rgba, descent = self.mathtext_parser.to_rgba(s, gc.get_rgb(), self.dpi,
+                                                     prop.get_size_in_points())
+        height, width, _ = rgba.shape
+        angle = math.radians(angle)
+        if angle != 0:
+            self.ctx.save()
+            self.ctx.translate(x, y)
+            self.ctx.rotate(-angle)
+            self.ctx.translate(-x, -y)
+        self.draw_image(gc, x, -y, np.flipud(rgba))
+        if angle != 0:
+            self.ctx.restore()
+
     def draw_text(self, gc, x, y, s, prop, angle, ismath=False, mtext=None):
         if ismath:
-            # Not Implemented
+            self._draw_math_text(gc, x, y, s, prop, angle)
             return
         angle = math.radians(angle)
         width, height, descent = \
