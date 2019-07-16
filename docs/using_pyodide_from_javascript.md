@@ -40,7 +40,7 @@ of the expression, converted to Javascript objects (See [type
 conversions](type_conversions.md)).
 
 ```javascript
-pyodide.runPython('import sys\nsys.version'));
+pyodide.runPython('import sys\nsys.version');
 ```
 
 ## Loading packages
