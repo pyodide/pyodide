@@ -17,6 +17,7 @@ _runPython(char* code)
 {
   PyObject* py_code;
   py_code = PyUnicode_FromString(code);
+
   if (py_code == NULL) {
     return pythonexc2js();
   }
@@ -30,6 +31,7 @@ _runPython(char* code)
 
   int id = python2js(ret);
   Py_DECREF(ret);
+
   return id;
 }
 
@@ -69,15 +71,24 @@ EM_JS(int, runpython_init_js, (), {
     return Module._runPythonInternal(pycode);
   };
 
-  Module.runPythonAsync = function(code, messageCallback)
+  Module.parsePythonImports = function(code)
   {
-    var pycode = allocate(intArrayFromString(code), 'i8', ALLOC_NORMAL);
+    if( typeof code === "string" )
+      code = allocate(intArrayFromString(code), 'i8', ALLOC_NORMAL);
 
-    var idimports = Module.__findImports(pycode);
+    var idimports = Module.__findImports(code);
     var jsimports = Module.hiwire_get_value(idimports);
     Module.hiwire_decref(idimports);
 
-    var internal = function(resolve, reject)
+    return jsimports;
+  };
+
+  Module.runPythonAsync = function(code, messageCallback)
+  {
+    var pycode = allocate(intArrayFromString(code), 'i8', ALLOC_NORMAL);
+    let jsimports = Module.parsePythonImports(pycode);
+
+    let internal = function(resolve, reject)
     {
       try {
         resolve(Module._runPythonInternal(pycode));
@@ -87,25 +98,13 @@ EM_JS(int, runpython_init_js, (), {
     };
 
     if (jsimports.length) {
-      var packageNames =
-        self.pyodide._module.packages.import_name_to_package_name;
-      var packages = {};
-      for (var i = 0; i < jsimports.length; ++i) {
-        var name = jsimports[i];
-        // clang-format off
-        if (packageNames[name] !== undefined) {
-          // clang-format on
-          packages[packageNames[name]] = undefined;
-        }
-      }
-      if (Object.keys(packages).length) {
-        var runInternal = function() { return new Promise(internal); };
-        return Module.loadPackage(Object.keys(packages), messageCallback)
-          .then(runInternal);
-      }
+      return Module.loadPackage(jsimports, messageCallback)
+        .then(() => new Promise(internal) );
     }
+
     return new Promise(internal);
   };
+
 });
 
 int

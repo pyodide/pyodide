@@ -14,23 +14,29 @@ var languagePluginLoader = new Promise((resolve, reject) => {
   let loadedPackages = new Array();
   var loadPackagePromise = new Promise((resolve) => resolve());
   // Regexp for validating package name and URI
-  var package_name_regexp = '[a-z0-9_][a-z0-9_\-]*'
+  var package_ident_regexp = '[a-z0-9_][a-z0-9_\-]*';
   var package_uri_regexp =
       new RegExp('^https?://.*?(' + package_name_regexp + ').js$', 'i');
-  var package_name_regexp = new RegExp('^' + package_name_regexp + '$', 'i');
+  var package_name_regexp = new RegExp('^' + package_ident_regexp + '$', 'i');
+  var package_local_regexp = new RegExp('^\./(' + package_ident_regexp + ')\.py$');
+  var packagesToLoad = {};
 
   let _uri_to_package_name = (package_uri) => {
     // Generate a unique package name from URI
-
     if (package_name_regexp.test(package_uri)) {
       return package_uri;
     } else if (package_uri_regexp.test(package_uri)) {
       let match = package_uri_regexp.exec(package_uri);
       // Get the regexp group corresponding to the package name
       return match[1];
-    } else {
-      return null;
+    } else if (package_local_regexp.test(package_uri)) {
+      let match = package_local_regexp.exec(package_uri);
+      // Get the regexp group corresponding to the package name
+      //return match[1].replace(".", "/");
+      return match[1];
     }
+
+    return null;
   };
 
   // clang-format off
@@ -93,138 +99,197 @@ var languagePluginLoader = new Promise((resolve, reject) => {
     }
   }
 
-  let _loadPackage = (names, messageCallback) => {
-    // DFS to find all dependencies of the requested packages
-    let packages = self.pyodide._module.packages.dependencies;
-    let loadedPackages = self.pyodide.loadedPackages;
-    let queue = [].concat(names || []);
-    let toLoad = new Array();
-    while (queue.length) {
-      let package_uri = queue.pop();
+  let _resolveImports = (imports) => {
+    var promises = [];
+    var packageNames = self.pyodide._module.packages.import_name_to_package_name;
 
-      const pkg = _uri_to_package_name(package_uri);
+    for( let i = 0; i < imports.length; i++ )
+    {
+      let name = imports[i];
+      let pkg = _uri_to_package_name(name);
 
-      if (pkg == null) {
-        console.error(`Invalid package name or URI '${package_uri}'`);
-        return;
-      } else if (pkg == package_uri) {
-        package_uri = 'default channel';
+      if (packageNames[name] !== undefined)
+      {
+        packagesToLoad[packageNames[name]] = undefined;
       }
+      else
+      {
+        let filename = pkg + ".py";
+        let url = baseURL + filename;
 
-      if (pkg in loadedPackages) {
-        if (package_uri != loadedPackages[pkg]) {
-          console.error(`URI mismatch, attempting to load package ` +
-                        `${pkg} from ${package_uri} while it is already ` +
-                        `loaded from ${loadedPackages[pkg]}!`);
-          return;
-        }
-      } else if (pkg in toLoad) {
-        if (package_uri != toLoad[pkg]) {
-          console.error(`URI mismatch, attempting to load package ` +
-                        `${pkg} from ${package_uri} while it is already ` +
-                        `being loaded from ${toLoad[pkg]}!`);
-          return;
-        }
-      } else {
-        console.log(`Loading ${pkg} from ${package_uri}`);
+        promises.push(
+          new Promise((resolve, reject) => {
+            fetch(url)
+              .then((response) => response.text())
+              .then((code) => {
+                console.log(`fetched ${name} from ${url} successfully`);
+                self.pyodide._module.FS.writeFile(filename, code);
+                //package_queue[name] = undefined; fixme??
 
-        toLoad[pkg] = package_uri;
-        if (packages.hasOwnProperty(pkg)) {
-          packages[pkg].forEach((subpackage) => {
-            if (!(subpackage in loadedPackages) && !(subpackage in toLoad)) {
-              queue.push(subpackage);
-            }
-          });
-        } else {
-          console.error(`Unknown package '${pkg}'`);
-        }
+                let imports = self.pyodide.parsePythonImports(code);
+
+                if (imports.length)
+                  _resolveImports(imports)
+                    .then(() => resolve()
+                  );
+                else
+                  resolve();
+              });
+            })
+        );
       }
     }
 
-    self.pyodide._module.locateFile = (path) => {
-      // handle packages loaded from custom URLs
-      let pkg = path.replace(/\.data$/, "");
-      if (pkg in toLoad) {
-        let package_uri = toLoad[pkg];
-        if (package_uri != 'default channel') {
-          return package_uri.replace(/\.js$/, ".data");
-        };
-      };
-      return baseURL + path;
-    };
+    return Promise.all(promises);
+  };
 
-    let promise = new Promise((resolve, reject) => {
-      if (Object.keys(toLoad).length === 0) {
-        resolve('No new packages to load');
-        return;
-      }
+  let _loadPackage = (names, messageCallback) => {
+    let promise = _resolveImports(names).then(() => {
+      // DFS to find all dependencies of the requested packages
+      let packages = self.pyodide._module.packages.dependencies;
+      let loadedPackages = self.pyodide.loadedPackages;
+      let queue = [].concat(Object.keys(packagesToLoad) || []);
+      let toLoad = [];
 
-      const packageList = Array.from(Object.keys(toLoad)).join(', ');
-      if (messageCallback !== undefined) {
-        messageCallback(`Loading ${packageList}`);
-      }
+      self.pyodide.packagesToLoad = {}
 
-      // monitorRunDependencies is called at the beginning and the end of each
-      // package being loaded. We know we are done when it has been called
-      // exactly "toLoad * 2" times.
-      var packageCounter = Object.keys(toLoad).length * 2;
+      while (queue.length) {
+        let package_uri = queue.pop();
 
-      self.pyodide._module.monitorRunDependencies = () => {
-        packageCounter--;
-        if (packageCounter === 0) {
-          for (let pkg in toLoad) {
-            self.pyodide.loadedPackages[pkg] = toLoad[pkg];
+        const pkg = _uri_to_package_name(package_uri);
+
+        if (pkg == null) {
+          console.error(`Invalid package name or URI '${package_uri}'`);
+          return;
+        } else if (pkg == package_uri) {
+          package_uri = 'default channel';
+        }
+
+        if (pkg in loadedPackages) {
+          if (package_uri != loadedPackages[pkg]) {
+            console.error(`URI mismatch, attempting to load package ` +
+              `${pkg} from ${package_uri} while it is already ` +
+              `loaded from ${loadedPackages[pkg]}!`);
+            return;
           }
+        } else if (pkg in toLoad) {
+          if (package_uri != toLoad[pkg]) {
+            console.error(`URI mismatch, attempting to load package ` +
+              `${pkg} from ${package_uri} while it is already ` +
+              `being loaded from ${toLoad[pkg]}!`);
+            return;
+          }
+        } else {
+          console.log(`Loading ${pkg} from ${package_uri}`);
+
+          toLoad[pkg] = package_uri;
+
+          if (packages.hasOwnProperty(pkg)) {
+            packages[pkg].forEach((subpackage) => {
+              if (!(subpackage in loadedPackages) && !(subpackage in toLoad)) {
+                queue.push(subpackage);
+              }
+            });
+          } else {
+            console.error(`Unknown package '${pkg}'`);
+          }
+        }
+      }
+
+      self.pyodide._module.locateFile = (path) => {
+        // handle packages loaded from custom URLs
+        let pkg = path.replace(/\.data$/, "");
+        if (pkg in toLoad) {
+          let package_uri = toLoad[pkg];
+          if (package_uri !== 'default channel') {
+            return package_uri.replace(/\.js$/, ".data");
+          };
+        };
+        return baseURL + path;
+      };
+
+      let promise = new Promise((resolve, reject) => {
+        if (Object.keys(toLoad).length === 0) {
+          resolve('No new packages to load');
+          return;
+        }
+
+        const packageList = Array.from(Object.keys(toLoad)).join(', ');
+        if (messageCallback !== undefined) {
+          messageCallback(`Loading ${packageList}`);
+        }
+
+        // monitorRunDependencies is called at the beginning and the end of each
+        // package being loaded. We know we are done when it has been called
+        // exactly "toLoad * 2" times.
+        var packageCounter = Object.keys(toLoad).length * 2;
+
+        self.pyodide._module.monitorRunDependencies = () => {
+          packageCounter--;
+          if (packageCounter === 0) {
+            for (let pkg in toLoad) {
+              self.pyodide.loadedPackages[pkg] = toLoad[pkg];
+            }
+            delete self.pyodide._module.monitorRunDependencies;
+            self.removeEventListener('error', windowErrorHandler);
+            if (!isFirefox) {
+              preloadWasm().then(() => {resolve(`Loaded ${packageList}`)});
+            } else {
+              resolve(`Loaded ${packageList}`);
+            }
+          }
+        };
+
+        // Add a handler for any exceptions that are thrown in the process of
+        // loading a package
+        var windowErrorHandler = (err) => {
           delete self.pyodide._module.monitorRunDependencies;
           self.removeEventListener('error', windowErrorHandler);
-          if (!isFirefox) {
-            preloadWasm().then(() => {resolve(`Loaded ${packageList}`)});
+          // Set up a new Promise chain, since this one failed
+          loadPackagePromise = new Promise((resolve) => resolve());
+          reject(err.message);
+        };
+        self.addEventListener('error', windowErrorHandler);
+
+        for (let pkg in toLoad) {
+          let scriptSrc;
+          let package_uri = toLoad[pkg];
+          if (package_uri === 'default channel') {
+            scriptSrc = `${baseURL}${pkg}.js`;
           } else {
-            resolve(`Loaded ${packageList}`);
+            scriptSrc = `${package_uri}`;
+          }
+
+          if( scriptSrc.endsWith(".py") ) {
+            self.pyodide.fetchPython(pkg + ".py", scriptSrc);
+          } else {
+            loadScript(scriptSrc, () => {}, () => {
+              // If the package_uri fails to load, call monitorRunDependencies twice
+              // (so packageCounter will still hit 0 and finish loading), and remove
+              // the package from toLoad so we don't mark it as loaded.
+              console.error(`Couldn't load package from URL ${scriptSrc}`)
+              let index = toLoad.indexOf(pkg);
+              if (index !== -1) {
+                toLoad.splice(index, 1);
+              }
+              for (let i = 0; i < 2; i++) {
+                self.pyodide._module.monitorRunDependencies();
+              }
+            });
           }
         }
-      };
+      });
 
-      // Add a handler for any exceptions that are thrown in the process of
-      // loading a package
-      var windowErrorHandler = (err) => {
-        delete self.pyodide._module.monitorRunDependencies;
-        self.removeEventListener('error', windowErrorHandler);
-        // Set up a new Promise chain, since this one failed
-        loadPackagePromise = new Promise((resolve) => resolve());
-        reject(err.message);
-      };
-      self.addEventListener('error', windowErrorHandler);
-
-      for (let pkg in toLoad) {
-        let scriptSrc;
-        let package_uri = toLoad[pkg];
-        if (package_uri == 'default channel') {
-          scriptSrc = `${baseURL}${pkg}.js`;
-        } else {
-          scriptSrc = `${package_uri}`;
-        }
-        loadScript(scriptSrc, () => {}, () => {
-          // If the package_uri fails to load, call monitorRunDependencies twice
-          // (so packageCounter will still hit 0 and finish loading), and remove
-          // the package from toLoad so we don't mark it as loaded.
-          console.error(`Couldn't load package from URL ${scriptSrc}`)
-          let index = toLoad.indexOf(pkg);
-          if (index !== -1) {
-            toLoad.splice(index, 1);
-          }
-          for (let i = 0; i < 2; i++) {
-            self.pyodide._module.monitorRunDependencies();
-          }
-        });
-      }
-
-      // We have to invalidate Python's import caches, or it won't
-      // see the new files. This is done here so it happens in parallel
-      // with the fetching over the network.
-      self.pyodide.runPython('import importlib as _importlib\n' +
-                             '_importlib.invalidate_caches()\n');
+      return promise;
     });
+
+    // We have to invalidate Python's import caches, or it won't
+    // see the new files. This is done here so it happens in parallel
+    // with the fetching over the network.
+    self.pyodide.runPython(
+      'import importlib as _importlib\n' +
+      '_importlib.invalidate_caches()\n'
+    );
 
     return promise;
   };
@@ -274,6 +339,7 @@ var languagePluginLoader = new Promise((resolve, reject) => {
     'pyimport',
     'repr',
     'runPython',
+    'parsePythonImports',
     'runPythonAsync',
     'checkABI',
     'version',
