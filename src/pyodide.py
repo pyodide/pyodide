@@ -46,11 +46,14 @@ def eval_code(code, ns):
         return None
 
 
-def find_imports(code):
+def find_imports(code, prefix = ""):
     """
     Finds the imports in a string of code and returns a list of their package
     names.
     """
+    # simulate prefix
+    prefix = prefix.replace("/", ".")
+
     # handle mis-indented input from multi-line strings
     code = dedent(code)
 
@@ -63,7 +66,13 @@ def find_imports(code):
                 imports.add(name.split('.')[0])
         elif isinstance(node, ast.ImportFrom):
             name = node.module
-            imports.add(name.split('.')[0])
+
+            if not prefix or not name.startswith(prefix):
+                imports.add(name.split('.')[0])
+            else:
+                for name in reversed(node.names):
+                    imports.add(name.name)
+
     return list(imports)
 
 

@@ -36,15 +36,20 @@ _runPython(char* code)
 }
 
 int
-_findImports(char* code)
+_findImports(char* code, char* prefix)
 {
   PyObject* py_code;
-  py_code = PyUnicode_FromString(code);
-  if (py_code == NULL) {
+  PyObject* py_prefix = NULL;
+
+  if ( !(py_code = PyUnicode_FromString(code)) ) {
     return pythonexc2js();
   }
 
-  PyObject* ret = PyObject_CallFunctionObjArgs(find_imports, py_code, NULL);
+  if( prefix && !(py_prefix = PyUnicode_FromString(prefix)) ) {
+    return pythonexc2js();
+  }
+
+  PyObject* ret = PyObject_CallFunctionObjArgs(find_imports, py_code, py_prefix, NULL);
 
   if (ret == NULL) {
     return pythonexc2js();
@@ -71,12 +76,17 @@ EM_JS(int, runpython_init_js, (), {
     return Module._runPythonInternal(pycode);
   };
 
-  Module.parsePythonImports = function(code)
+  Module.parsePythonImports = function(code, prefix)
   {
     if( typeof code === "string" )
       code = allocate(intArrayFromString(code), 'i8', ALLOC_NORMAL);
 
-    var idimports = Module.__findImports(code);
+    if( typeof prefix === "string" )
+      prefix = allocate(intArrayFromString(prefix), 'i8', ALLOC_NORMAL);
+    else
+      prefix = null;
+
+    var idimports = Module.__findImports(code, prefix);
     var jsimports = Module.hiwire_get_value(idimports);
     Module.hiwire_decref(idimports);
 

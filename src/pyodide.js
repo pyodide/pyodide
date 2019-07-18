@@ -99,9 +99,12 @@ var languagePluginLoader = new Promise((resolve, reject) => {
     }
   }
 
-  let _resolveImports = (imports) => {
+  let _resolveImports = (imports, prefix) => {
     var promises = [];
     var packageNames = self.pyodide._module.packages.import_name_to_package_name;
+
+    if( typeof prefix === "undefined" )
+      prefix = "";
 
     for( let i = 0; i < imports.length; i++ )
     {
@@ -115,25 +118,61 @@ var languagePluginLoader = new Promise((resolve, reject) => {
       else
       {
         let filename = pkg + ".py";
-        let url = baseURL + filename;
+        let url = baseURL + prefix + filename;
 
         promises.push(
           new Promise((resolve, reject) => {
             fetch(url)
-              .then((response) => response.text())
-              .then((code) => {
-                console.log(`fetched ${name} from ${url} successfully`);
-                self.pyodide._module.FS.writeFile(filename, code);
-                //package_queue[name] = undefined; fixme??
+              .then((response) => {
+                if( response.status == 200 )
+                  return response.text()
+                    .then((code) => {
+                      console.log(`fetched ${name} from ${url} successfully`);
+                      self.pyodide._module.FS.writeFile(prefix + filename, code);
 
-                let imports = self.pyodide.parsePythonImports(code);
+                      let imports = self.pyodide.parsePythonImports(code, prefix);
 
-                if (imports.length)
-                  _resolveImports(imports)
-                    .then(() => resolve()
-                  );
-                else
-                  resolve();
+                      if (imports.length)
+                        _resolveImports(imports, prefix)
+                          .then(() => resolve()
+                          );
+                      else
+                        resolve();
+                    });
+
+                let sfilename = "__init__.py";
+                prefix = prefix + pkg + "/";
+                var surl = baseURL + prefix + sfilename;
+
+                console.debug(`${url} not found, checking for ${surl}`);
+
+                return fetch(surl)
+                  .then((response) => {
+                    if (response.status == 200)
+                      return response.text()
+                        .then((code) => {
+                          console.log(`fetched ${sfilename} from ${surl} successfully`);
+
+                          let notrailPrefix = prefix.substr(0, prefix.length - 1);
+
+                          self.pyodide._module.FS.mkdir(
+                            //a trailing "/" does not work here...
+                            notrailPrefix
+                          );
+                          self.pyodide._module.FS.writeFile(prefix + sfilename, code);
+
+                          let imports = self.pyodide.parsePythonImports(code, notrailPrefix);
+
+                          if (imports.length)
+                            _resolveImports(imports, prefix)
+                              .then(() => resolve()
+                              );
+                          else
+                            resolve();
+                        });
+
+                    reject(`Unable to locate package ${pkg}`)
+                  });
               });
             })
         );
