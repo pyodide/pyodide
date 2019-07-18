@@ -324,7 +324,7 @@ class RendererHTMLCanvas(RendererBase):
             self.ctx.translate(x, y)
             self.ctx.rotate(-angle)
             self.ctx.translate(-x, -y)
-        self.draw_image(gc, x, -y, np.flipud(rgba))
+        self.draw_image(gc, x, -y-descent, np.flipud(rgba))
         if angle != 0:
             self.ctx.restore()
 
