@@ -324,7 +324,6 @@ class RendererHTMLCanvas(RendererBase):
     def draw_text(self, gc, x, y, s, prop, angle, ismath=False, mtext=None):
         def _load_font_into_web(loaded_face):
             document.fonts.add(loaded_face)
-            print("Font Loaded")
 
         if ismath:
             self._draw_math_text(gc, x, y, s, prop, angle)
@@ -338,16 +337,15 @@ class RendererHTMLCanvas(RendererBase):
             self.points_to_pixels(prop.get_size_in_points())
 
         _, font_file_name = self._get_font(prop)
-        font_name = font_file_name[:font_file_name.rfind('.')]
 
-        f = FontFace.new(font_name,
+        f = FontFace.new(prop.get_name(),
                          'url({0})'.format(_base_fonts_url+font_file_name))
         f.load().then(_load_font_into_web)
 
         font_property_string = '{0} {1} {2:.3g}px {3}, {4}'.format(
                                 prop.get_style(),
                                 prop.get_weight(),
-                                font_size, font_name,
+                                font_size, prop.get_name(),
                                 prop.get_family()[0]
                             )
         if angle != 0:
