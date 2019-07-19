@@ -62,7 +62,7 @@ class FigureCanvasHTMLCanvas(FigureCanvasWasm):
                 return
             ctx = canvas.getContext('2d')
             renderer = RendererHTMLCanvas(ctx, width, height,
-                                          dpi=self.figure.dpi)
+                                          self.figure.dpi, self)
             self.figure.draw(renderer)
         finally:
             self.figure.dpi = orig_dpi
@@ -186,8 +186,9 @@ class GraphicsContextHTMLCanvas(GraphicsContextBase):
 
 class RendererHTMLCanvas(RendererBase):
 
-    def __init__(self, ctx, width, height, dpi):
+    def __init__(self, ctx, width, height, dpi, fig):
         super().__init__()
+        self.fig = fig
         self.ctx = ctx
         self.width = width
         self.height = height
@@ -324,6 +325,7 @@ class RendererHTMLCanvas(RendererBase):
     def draw_text(self, gc, x, y, s, prop, angle, ismath=False, mtext=None):
         def _load_font_into_web(loaded_face):
             document.fonts.add(loaded_face)
+            self.fig.draw_idle()
 
         if ismath:
             self._draw_math_text(gc, x, y, s, prop, angle)
