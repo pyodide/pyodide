@@ -288,24 +288,24 @@ class RendererHTMLCanvas(RendererBase):
 
     def _get_font(self, prop):
         fname = findfont(prop)
-        font_name = fname[fname.rfind('/')+1:]
+        font_file_name = fname[fname.rfind('/')+1:]
         font = FT2Font(str(fname))
         font.clear()
         font.set_size(prop.get_size_in_points(), self.dpi)
-        return font, font_name
+        return font, font_file_name
 
     def get_text_width_height_descent(self, s, prop, ismath):
         if ismath:
             image, d = self.mathtext_parser.parse(s, self.dpi, prop)
             w, h = image.get_width(), image.get_height()
         else:
-            font, font_name = self._get_font(prop)
+            font, _ = self._get_font(prop)
             font.set_text(s, 0.0, flags=LOAD_NO_HINTING)
             w, h = font.get_width_height()
             w /= 64.0
             h /= 64.0
             d = font.get_descent() / 64.0
-        return w, h, d, font_name
+        return w, h, d
 
     def _draw_math_text(self, gc, x, y, s, prop, angle):
         rgba, descent = self.mathtext_parser.to_rgba(s, gc.get_rgb(), self.dpi,
@@ -324,29 +324,30 @@ class RendererHTMLCanvas(RendererBase):
     def draw_text(self, gc, x, y, s, prop, angle, ismath=False, mtext=None):
         def _load_font_into_web(loaded_face):
             document.fonts.add(loaded_face)
+            print("Font Loaded")
 
         if ismath:
             self._draw_math_text(gc, x, y, s, prop, angle)
             return
         angle = math.radians(angle)
-        width, height, descent, font_name = \
+        width, height, descent = \
             self.get_text_width_height_descent(s, prop, ismath)
         x -= math.sin(angle) * descent
         y -= math.cos(angle) * descent - self.ctx.height
         font_size = \
             self.points_to_pixels(prop.get_size_in_points())
 
-        print(font_name[:font_name.rfind('.')])
-        print('url({0})'.format(_base_fonts_url+font_name))
-        print('hahahahahahahaha')
-        print(prop.get_name(), prop.get_family()[0], font_name[:font_name.rfind('.')])
-        f = FontFace.new(font_name[:font_name.rfind('.')], 'url({0})'.format(_base_fonts_url+font_name))
+        _, font_file_name = self._get_font(prop)
+        font_name = font_file_name[:font_file_name.rfind('.')]
+
+        f = FontFace.new(font_name,
+                         'url({0})'.format(_base_fonts_url+font_file_name))
         f.load().then(_load_font_into_web)
 
         font_property_string = '{0} {1} {2:.3g}px {3}, {4}'.format(
                                 prop.get_style(),
                                 prop.get_weight(),
-                                font_size, prop.get_name(),
+                                font_size, font_name,
                                 prop.get_family()[0]
                             )
         if angle != 0:
