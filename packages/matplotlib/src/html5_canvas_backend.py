@@ -13,18 +13,18 @@ from matplotlib.path import Path
 from matplotlib import interactive
 from matplotlib import _png
 
-from matplotlib.cbook import maxdict
 from matplotlib.font_manager import findfont
 from matplotlib.ft2font import FT2Font, LOAD_NO_HINTING
 from matplotlib.mathtext import MathTextParser
 
-from js import document, window, XMLHttpRequest, ImageData
+from js import document, window, XMLHttpRequest, ImageData, FontFace
 
 import base64
 import io
 import math
 
 _capstyle_d = {'projecting': 'square', 'butt': 'butt', 'round': 'round'}
+_base_fonts_url = '/pyodide/fonts/'
 
 interactive(True)
 
@@ -194,7 +194,6 @@ class RendererHTMLCanvas(RendererBase):
         self.ctx.width = self.width
         self.ctx.height = self.height
         self.dpi = dpi
-        self.fontd = maxdict(50)
         self.mathtext_parser = MathTextParser('bitmap')
 
     def new_gc(self):
@@ -288,31 +287,25 @@ class RendererHTMLCanvas(RendererBase):
         self.ctx.restore()
 
     def _get_font(self, prop):
-        key = hash(prop)
-        font = self.fontd.get(key)
-        if font is None:
-            fname = findfont(prop)
-            font = self.fontd.get(fname)
-            if font is None:
-                font = FT2Font(str(fname))
-                self.fontd[fname] = font
-            self.fontd[key] = font
+        fname = findfont(prop)
+        font_name = fname[fname.rfind('/')+1:]
+        font = FT2Font(str(fname))
         font.clear()
         font.set_size(prop.get_size_in_points(), self.dpi)
-        return font
+        return font, font_name
 
     def get_text_width_height_descent(self, s, prop, ismath):
         if ismath:
             image, d = self.mathtext_parser.parse(s, self.dpi, prop)
             w, h = image.get_width(), image.get_height()
         else:
-            font = self._get_font(prop)
+            font, font_name = self._get_font(prop)
             font.set_text(s, 0.0, flags=LOAD_NO_HINTING)
             w, h = font.get_width_height()
             w /= 64.0
             h /= 64.0
             d = font.get_descent() / 64.0
-        return w, h, d
+        return w, h, d, font_name
 
     def _draw_math_text(self, gc, x, y, s, prop, angle):
         rgba, descent = self.mathtext_parser.to_rgba(s, gc.get_rgb(), self.dpi,
@@ -329,16 +322,27 @@ class RendererHTMLCanvas(RendererBase):
             self.ctx.restore()
 
     def draw_text(self, gc, x, y, s, prop, angle, ismath=False, mtext=None):
+        def _load_font_into_web(loaded_face):
+            document.fonts.add(loaded_face)
+
         if ismath:
             self._draw_math_text(gc, x, y, s, prop, angle)
             return
         angle = math.radians(angle)
-        width, height, descent = \
+        width, height, descent, font_name = \
             self.get_text_width_height_descent(s, prop, ismath)
         x -= math.sin(angle) * descent
         y -= math.cos(angle) * descent - self.ctx.height
         font_size = \
             self.points_to_pixels(prop.get_size_in_points())
+
+        print(font_name[:font_name.rfind('.')])
+        print('url({0})'.format(_base_fonts_url+font_name))
+        print('hahahahahahahaha')
+        print(prop.get_name(), prop.get_family()[0], font_name[:font_name.rfind('.')])
+        f = FontFace.new(font_name[:font_name.rfind('.')], 'url({0})'.format(_base_fonts_url+font_name))
+        f.load().then(_load_font_into_web)
+
         font_property_string = '{0} {1} {2:.3g}px {3}, {4}'.format(
                                 prop.get_style(),
                                 prop.get_weight(),
