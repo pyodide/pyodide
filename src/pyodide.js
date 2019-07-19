@@ -18,7 +18,8 @@ var languagePluginLoader = new Promise((resolve, reject) => {
   var package_uri_regexp =
       new RegExp('^https?://.*?(' + package_name_regexp + ').js$', 'i');
   var package_name_regexp = new RegExp('^' + package_ident_regexp + '$', 'i');
-  var package_local_regexp = new RegExp('^\./(' + package_ident_regexp + ')\.py$');
+  var package_local_regexp =
+      new RegExp('^\./(' + package_ident_regexp + ')\.py$');
   var packagesToLoad = {};
 
   let _uri_to_package_name = (package_uri) => {
@@ -32,7 +33,6 @@ var languagePluginLoader = new Promise((resolve, reject) => {
     } else if (package_local_regexp.test(package_uri)) {
       let match = package_local_regexp.exec(package_uri);
       // Get the regexp group corresponding to the package name
-      //return match[1].replace(".", "/");
       return match[1];
     }
 
@@ -99,83 +99,71 @@ var languagePluginLoader = new Promise((resolve, reject) => {
     }
   }
 
+  // Recursively resolve imports for Python modules being fetched
   let _resolveImports = (imports, prefix) => {
     var promises = [];
-    var packageNames = self.pyodide._module.packages.import_name_to_package_name;
+    var packageNames =
+        self.pyodide._module.packages.import_name_to_package_name;
 
-    if( typeof prefix === "undefined" )
+    if (typeof prefix === "undefined")
       prefix = "";
 
-    for( let i = 0; i < imports.length; i++ )
-    {
+    for (let i = 0; i < imports.length; i++) {
       let name = imports[i];
       let pkg = _uri_to_package_name(name);
 
-      if (packageNames[name] !== undefined)
-      {
+      if (packageNames[name] !== undefined) {
         packagesToLoad[packageNames[name]] = undefined;
-      }
-      else
-      {
+      } else {
         let filename = pkg + ".py";
         let url = baseURL + prefix + filename;
 
-        promises.push(
-          new Promise((resolve, reject) => {
-            fetch(url)
-              .then((response) => {
-                if( response.status == 200 )
-                  return response.text()
-                    .then((code) => {
-                      console.log(`fetched ${name} from ${url} successfully`);
-                      self.pyodide._module.FS.writeFile(prefix + filename, code);
+        promises.push(new Promise((resolve, reject) => {
+          fetch(url).then((response) => {
+            if (response.status == 200)
+              return response.text().then((code) => {
+                console.log(`fetched ${name} from ${url} successfully`);
+                self.pyodide._module.FS.writeFile(prefix + filename, code);
 
-                      let imports = self.pyodide.parsePythonImports(code, prefix);
+                let imports = self.pyodide.parsePythonImports(code, prefix);
 
-                      if (imports.length)
-                        _resolveImports(imports, prefix)
-                          .then(() => resolve()
-                          );
-                      else
-                        resolve();
-                    });
-
-                let sfilename = "__init__.py";
-                prefix = prefix + pkg + "/";
-                var surl = baseURL + prefix + sfilename;
-
-                console.debug(`${url} not found, checking for ${surl}`);
-
-                return fetch(surl)
-                  .then((response) => {
-                    if (response.status == 200)
-                      return response.text()
-                        .then((code) => {
-                          console.log(`fetched ${sfilename} from ${surl} successfully`);
-
-                          let notrailPrefix = prefix.substr(0, prefix.length - 1);
-
-                          self.pyodide._module.FS.mkdir(
-                            //a trailing "/" does not work here...
-                            notrailPrefix
-                          );
-                          self.pyodide._module.FS.writeFile(prefix + sfilename, code);
-
-                          let imports = self.pyodide.parsePythonImports(code, notrailPrefix);
-
-                          if (imports.length)
-                            _resolveImports(imports, prefix)
-                              .then(() => resolve()
-                              );
-                          else
-                            resolve();
-                        });
-
-                    reject(`Unable to locate package ${pkg}`)
-                  });
+                if (imports.length)
+                  _resolveImports(imports, prefix).then(() => resolve());
+                else
+                  resolve();
               });
-            })
-        );
+
+            let sfilename = "__init__.py";
+            prefix = prefix + pkg + "/";
+            var surl = baseURL + prefix + sfilename;
+
+            console.debug(`${url} not found, checking for ${surl}`);
+
+            return fetch(surl).then((response) => {
+              if (response.status == 200)
+                return response.text().then((code) => {
+                  console.log(`fetched ${sfilename} from ${surl} successfully`);
+
+                  let notrailPrefix = prefix.substr(0, prefix.length - 1);
+
+                  self.pyodide._module.FS.mkdir(
+                      // a trailing "/" does not work here...
+                      notrailPrefix);
+                  self.pyodide._module.FS.writeFile(prefix + sfilename, code);
+
+                  let imports =
+                      self.pyodide.parsePythonImports(code, notrailPrefix);
+
+                  if (imports.length)
+                    _resolveImports(imports, prefix).then(() => resolve());
+                  else
+                    resolve();
+                });
+
+              reject(`Unable to locate package ${pkg}`)
+            });
+          });
+        }));
       }
     }
 
@@ -207,15 +195,15 @@ var languagePluginLoader = new Promise((resolve, reject) => {
         if (pkg in loadedPackages) {
           if (package_uri != loadedPackages[pkg]) {
             console.error(`URI mismatch, attempting to load package ` +
-              `${pkg} from ${package_uri} while it is already ` +
-              `loaded from ${loadedPackages[pkg]}!`);
+                          `${pkg} from ${package_uri} while it is already ` +
+                          `loaded from ${loadedPackages[pkg]}!`);
             return;
           }
         } else if (pkg in toLoad) {
           if (package_uri != toLoad[pkg]) {
             console.error(`URI mismatch, attempting to load package ` +
-              `${pkg} from ${package_uri} while it is already ` +
-              `being loaded from ${toLoad[pkg]}!`);
+                          `${pkg} from ${package_uri} while it is already ` +
+                          `being loaded from ${toLoad[pkg]}!`);
             return;
           }
         } else {
@@ -299,13 +287,14 @@ var languagePluginLoader = new Promise((resolve, reject) => {
             scriptSrc = `${package_uri}`;
           }
 
-          if( scriptSrc.endsWith(".py") ) {
+          if (scriptSrc.endsWith(".py")) {
             self.pyodide.fetchPython(pkg + ".py", scriptSrc);
           } else {
             loadScript(scriptSrc, () => {}, () => {
-              // If the package_uri fails to load, call monitorRunDependencies twice
-              // (so packageCounter will still hit 0 and finish loading), and remove
-              // the package from toLoad so we don't mark it as loaded.
+              // If the package_uri fails to load, call monitorRunDependencies
+              // twice (so packageCounter will still hit 0 and finish loading),
+              // and remove the package from toLoad so we don't mark it as
+              // loaded.
               console.error(`Couldn't load package from URL ${scriptSrc}`)
               let index = toLoad.indexOf(pkg);
               if (index !== -1) {
@@ -325,10 +314,8 @@ var languagePluginLoader = new Promise((resolve, reject) => {
     // We have to invalidate Python's import caches, or it won't
     // see the new files. This is done here so it happens in parallel
     // with the fetching over the network.
-    self.pyodide.runPython(
-      'import importlib as _importlib\n' +
-      '_importlib.invalidate_caches()\n'
-    );
+    self.pyodide.runPython('import importlib as _importlib\n' +
+                           '_importlib.invalidate_caches()\n');
 
     return promise;
   };

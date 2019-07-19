@@ -46,7 +46,7 @@ def eval_code(code, ns):
         return None
 
 
-def find_imports(code, prefix = ""):
+def find_imports(code, prefix=""):
     """
     Finds the imports in a string of code and returns a list of their package
     names.

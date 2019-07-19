@@ -41,15 +41,16 @@ _findImports(char* code, char* prefix)
   PyObject* py_code;
   PyObject* py_prefix = NULL;
 
-  if ( !(py_code = PyUnicode_FromString(code)) ) {
+  if (!(py_code = PyUnicode_FromString(code))) {
     return pythonexc2js();
   }
 
-  if( prefix && !(py_prefix = PyUnicode_FromString(prefix)) ) {
+  if (prefix && !(py_prefix = PyUnicode_FromString(prefix))) {
     return pythonexc2js();
   }
 
-  PyObject* ret = PyObject_CallFunctionObjArgs(find_imports, py_code, py_prefix, NULL);
+  PyObject* ret =
+    PyObject_CallFunctionObjArgs(find_imports, py_code, py_prefix, NULL);
 
   if (ret == NULL) {
     return pythonexc2js();
@@ -78,10 +79,10 @@ EM_JS(int, runpython_init_js, (), {
 
   Module.parsePythonImports = function(code, prefix)
   {
-    if( typeof code === "string" )
+    if (typeof code == "string")
       code = allocate(intArrayFromString(code), 'i8', ALLOC_NORMAL);
 
-    if( typeof prefix === "string" )
+    if (typeof prefix == "string")
       prefix = allocate(intArrayFromString(prefix), 'i8', ALLOC_NORMAL);
     else
       prefix = null;
@@ -108,13 +109,12 @@ EM_JS(int, runpython_init_js, (), {
     };
 
     if (jsimports.length) {
-      return Module.loadPackage(jsimports, messageCallback)
-        .then(() => new Promise(internal) );
+      var runInternal = function() { return new Promise(internal); };
+      return Module.loadPackage(jsimports, messageCallback).then(runInternal);
     }
 
     return new Promise(internal);
   };
-
 });
 
 int
