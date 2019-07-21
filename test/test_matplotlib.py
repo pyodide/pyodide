@@ -169,6 +169,42 @@ def test_draw_image_affine_transform(selenium):
     check_comparison(selenium, 'canvas-image-affine')
 
 
+def test_draw_text_rotated(selenium):
+    selenium.load_package("matplotlib")
+    selenium.run("""
+    from js import window
+    window.testing = True
+    import matplotlib.pyplot as plt
+    from matplotlib.dates import YEARLY, DateFormatter, rrulewrapper, RRuleLocator, drange
+    import numpy as np
+    import datetime
+
+    # tick every 5th easter
+    np.random.seed(42)
+    rule = rrulewrapper(YEARLY, byeaster=1, interval=5)
+    loc = RRuleLocator(rule)
+    formatter = DateFormatter('%m/%d/%y')
+    date1 = datetime.date(1952, 1, 1)
+    date2 = datetime.date(2004, 4, 12)
+    delta = datetime.timedelta(days=100)
+
+    dates = drange(date1, date2, delta)
+    s = np.random.rand(len(dates))  # make up some random y values
+
+
+    fig, ax = plt.subplots()
+    plt.plot_date(dates, s)
+    ax.xaxis.set_major_locator(loc)
+    ax.xaxis.set_major_formatter(formatter)
+    labels = ax.get_xticklabels()
+    plt.setp(labels, rotation=30, fontsize=10)
+
+    plt.show()
+    """)
+
+    check_comparison(selenium, 'canvas-text-rotated')
+
+
 class ResultLoaded:
     def __call__(self, driver):
         inited = driver.execute_script("return window.result")
