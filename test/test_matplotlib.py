@@ -175,7 +175,10 @@ def test_draw_text_rotated(selenium):
     from js import window
     window.testing = True
     import matplotlib.pyplot as plt
-    from matplotlib.dates import YEARLY, DateFormatter, rrulewrapper, RRuleLocator, drange
+    from matplotlib.dates import (
+        YEARLY, DateFormatter,
+        rrulewrapper, RRuleLocator,
+        drange)
     import numpy as np
     import datetime
 
