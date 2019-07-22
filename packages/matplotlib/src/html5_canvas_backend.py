@@ -24,7 +24,11 @@ import io
 import math
 
 _capstyle_d = {'projecting': 'square', 'butt': 'butt', 'round': 'round'}
-_base_fonts_url = '/pyodide/fonts/'
+
+if hasattr(window, 'testing'):
+    _base_fonts_url = '/fonts/'
+else:
+    _base_fonts_url = '/pyodide/fonts/'
 
 interactive(True)
 
@@ -326,6 +330,7 @@ class RendererHTMLCanvas(RendererBase):
         def _load_font_into_web(loaded_face):
             document.fonts.add(loaded_face)
             self.fig.draw_idle()
+            window.redraw = True
 
         if ismath:
             self._draw_math_text(gc, x, y, s, prop, angle)

@@ -17,8 +17,12 @@ def get_canvas_data(selenium, prefix):
         f.write(canvas_png)
 
 
-def check_comparison(selenium, prefix):
+def check_comparison(selenium, prefix, load_font=False):
     # If we don't have a reference image, write one to disk
+    if load_font:
+        font_wait = WebDriverWait(selenium.driver, timeout=70)
+        font_wait.until(FontLoaded())
+
     if not os.path.isfile('test/{0}-{1}.png'.format(prefix, selenium.browser)):
         get_canvas_data(selenium, prefix)
 
@@ -27,7 +31,6 @@ def check_comparison(selenium, prefix):
     threshold = 0
     plt.gcf().canvas.compare_reference_image(url, threshold)
     """.format(prefix, selenium.browser))
-
     wait = WebDriverWait(selenium.driver, timeout=70)
     wait.until(ResultLoaded())
     assert selenium.run("window.deviation") == 0
@@ -315,7 +318,36 @@ def test_draw_math_text(selenium):
     check_comparison(selenium, 'canvas-math-text')
 
 
+def test_custom_font_text(selenium):
+    selenium.load_package("matplotlib")
+    selenium.run("""
+    from js import window
+    window.testing = True
+    import matplotlib.pyplot as plt
+    import numpy as np
+
+    f = {'fontname': 'cmsy10'}
+
+    t = np.arange(0.0, 2.0, 0.01)
+    s = 1 + np.sin(2 * np.pi * t)
+    plt.figure()
+    plt.title('A simple Sine Curve', **f)
+    plt.plot(t, s, linewidth=1.0, marker=11)
+    plt.plot(t, t)
+    plt.grid(True)
+    plt.show()
+    """)
+
+    check_comparison(selenium, 'canvas-custom-font-text', load_font=True)
+
+
 class ResultLoaded:
     def __call__(self, driver):
         inited = driver.execute_script("return window.result")
         return inited is not None
+
+
+class FontLoaded:
+    def __call__(self, driver):
+        font_inited = driver.execute_script("return window.redraw")
+        return font_inited is not None
