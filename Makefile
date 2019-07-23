@@ -57,7 +57,8 @@ all: build/pyodide.asm.js \
   build/packages.json \
   build/test.html \
   build/webworker.js \
-  build/webworker_dev.js
+  build/webworker_dev.js \
+  download-fonts
 
 
 build/pyodide.asm.js: src/main.bc src/jsimport.bc src/jsproxy.bc src/js2python.bc \
@@ -112,6 +113,10 @@ build/webworker_dev.js: src/webworker.js
 test: all
 	pytest test/ -v
 
+
+download-fonts:
+	svn export https://github.com/matplotlib/matplotlib/trunk/lib/matplotlib/mpl-data/fonts/ttf
+	mv ttf build/fonts
 
 lint:
 	flake8 src test tools pyodide_build benchmark packages/matplotlib/src/
