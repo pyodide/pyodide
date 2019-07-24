@@ -18,11 +18,14 @@ def get_canvas_data(selenium, prefix):
 
 
 def check_comparison(selenium, prefix, load_font=False):
-    # If we don't have a reference image, write one to disk
     if load_font:
         font_wait = WebDriverWait(selenium.driver, timeout=70)
         font_wait.until(FontLoaded())
 
+        plot_wait = WebDriverWait(selenium.driver, timeout=70)
+        plot_wait.until(PlotUpdated())
+
+    # If we don't have a reference image, write one to disk
     if not os.path.isfile('test/{0}-{1}.png'.format(prefix, selenium.browser)):
         get_canvas_data(selenium, prefix)
 
@@ -349,5 +352,11 @@ class ResultLoaded:
 
 class FontLoaded:
     def __call__(self, driver):
-        font_inited = driver.execute_script("return window.redraw")
+        font_inited = driver.execute_script("return window.font_loaded")
         return font_inited is not None
+
+
+class PlotUpdated:
+    def __call__(self, driver):
+        plot_inited = driver.execute_script("return window.plot_updated")
+        return plot_inited is not None

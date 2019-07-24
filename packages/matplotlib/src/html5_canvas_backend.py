@@ -37,6 +37,7 @@ class FigureCanvasHTMLCanvas(FigureCanvasWasm):
 
     def __init__(self, *args, **kwargs):
         FigureCanvasWasm.__init__(self, *args, **kwargs)
+        self.draw_counter = 0
 
     def create_root_element(self):
         try:
@@ -68,6 +69,9 @@ class FigureCanvasHTMLCanvas(FigureCanvasWasm):
             renderer = RendererHTMLCanvas(ctx, width, height,
                                           self.figure.dpi, self)
             self.figure.draw(renderer)
+            self.draw_counter += 1
+            if self.draw_counter == 3:
+                window.plot_updated = True
         finally:
             self.figure.dpi = orig_dpi
             self._idle_scheduled = False
@@ -329,8 +333,8 @@ class RendererHTMLCanvas(RendererBase):
     def draw_text(self, gc, x, y, s, prop, angle, ismath=False, mtext=None):
         def _load_font_into_web(loaded_face):
             document.fonts.add(loaded_face)
+            window.font_loaded = True
             self.fig.draw_idle()
-            window.redraw = True
 
         if ismath:
             self._draw_math_text(gc, x, y, s, prop, angle)

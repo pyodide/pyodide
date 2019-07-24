@@ -116,7 +116,7 @@ test: all
 
 download-fonts:
 	mkdir -p build/fonts
-	cp packages/matplotlib/build/matplotlib-2.2.3/lib/matplotlib/mpl-data/fonts/ttf/* build/fonts/
+	cp -n packages/matplotlib/build/matplotlib-2.2.3/lib/matplotlib/mpl-data/fonts/ttf/* build/fonts/
 
 lint:
 	flake8 src test tools pyodide_build benchmark packages/matplotlib/src/
