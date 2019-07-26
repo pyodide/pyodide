@@ -19,9 +19,6 @@ def get_canvas_data(selenium, prefix):
 
 def check_comparison(selenium, prefix, load_font=False):
     if load_font:
-        font_wait = WebDriverWait(selenium.driver, timeout=70)
-        font_wait.until(FontLoaded())
-
         plot_wait = WebDriverWait(selenium.driver, timeout=70)
         plot_wait.until(PlotUpdated())
 
@@ -350,13 +347,7 @@ class ResultLoaded:
         return inited is not None
 
 
-class FontLoaded:
-    def __call__(self, driver):
-        font_inited = driver.execute_script("return window.font_loaded")
-        return font_inited is not None
-
-
 class PlotUpdated:
     def __call__(self, driver):
-        plot_inited = driver.execute_script("return window.plot_updated")
-        return plot_inited is not None
+        plot_inited = driver.execute_script("return window.draw_counter")
+        return plot_inited is not None and plot_inited == 3

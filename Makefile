@@ -58,7 +58,7 @@ all: build/pyodide.asm.js \
   build/test.html \
   build/webworker.js \
   build/webworker_dev.js \
-  download-fonts
+  copy-fonts
 
 
 build/pyodide.asm.js: src/main.bc src/jsimport.bc src/jsproxy.bc src/js2python.bc \
@@ -114,7 +114,7 @@ test: all
 	pytest test/ -v
 
 
-download-fonts:
+copy-fonts:
 	mkdir -p build/fonts
 	cp -n packages/matplotlib/build/matplotlib-2.2.3/lib/matplotlib/mpl-data/fonts/ttf/* build/fonts/
 

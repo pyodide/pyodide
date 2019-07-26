@@ -25,6 +25,8 @@ import io
 import math
 
 _capstyle_d = {'projecting': 'square', 'butt': 'butt', 'round': 'round'}
+
+# The URLs of fonts that have already been loaded into the browser
 _font_set = set()
 
 if hasattr(window, 'testing'):
@@ -39,7 +41,7 @@ class FigureCanvasHTMLCanvas(FigureCanvasWasm):
 
     def __init__(self, *args, **kwargs):
         FigureCanvasWasm.__init__(self, *args, **kwargs)
-        self.draw_counter = 0
+        window.draw_counter = 0
 
     def create_root_element(self):
         try:
@@ -71,9 +73,7 @@ class FigureCanvasHTMLCanvas(FigureCanvasWasm):
             renderer = RendererHTMLCanvas(ctx, width, height,
                                           self.figure.dpi, self)
             self.figure.draw(renderer)
-            self.draw_counter += 1
-            if self.draw_counter == 3:
-                window.plot_updated = True
+            window.draw_counter += 1
         finally:
             self.figure.dpi = orig_dpi
             self._idle_scheduled = False
@@ -345,7 +345,6 @@ class RendererHTMLCanvas(RendererBase):
     def draw_text(self, gc, x, y, s, prop, angle, ismath=False, mtext=None):
         def _load_font_into_web(loaded_face):
             document.fonts.add(loaded_face)
-            window.font_loaded = True
             _font_set.add(font_face_arguments)
             self.fig.draw_idle()
 
@@ -365,6 +364,11 @@ class RendererHTMLCanvas(RendererBase):
         font_face_arguments = (prop.get_name(), 'url({0})'.format(
                                _base_fonts_url+font_file_name))
 
+        # The following snippet loads a font into the browser's
+        # environment if it wasn't loaded before. This check is necessary
+        # to help us avoid loading the same font multiple times. Further,
+        # it helps us to avoid the infinite loop of
+        # load font --> redraw --> load font --> redraw --> ....
         if font_face_arguments not in _font_set:
             f = FontFace.new(*font_face_arguments)
             f.load().then(_load_font_into_web)
