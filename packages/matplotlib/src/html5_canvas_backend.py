@@ -13,6 +13,7 @@ from matplotlib.path import Path
 from matplotlib import interactive
 from matplotlib import _png
 
+from matplotlib.cbook import maxdict
 from matplotlib.font_manager import findfont
 from matplotlib.ft2font import FT2Font, LOAD_NO_HINTING
 from matplotlib.mathtext import MathTextParser
@@ -70,11 +71,13 @@ class FigureCanvasHTMLCanvas(FigureCanvasWasm):
                                           self.figure.dpi, self)
             self.figure.draw(renderer)
             self.draw_counter += 1
-            if self.draw_counter == 3:
+            print(self.draw_counter, self._idle_scheduled)
+            if self.draw_counter == 5:
                 window.plot_updated = True
         finally:
             self.figure.dpi = orig_dpi
             self._idle_scheduled = False
+            print('finally ', self.draw_counter, self._idle_scheduled)
 
     def get_pixel_data(self):
         """
@@ -203,6 +206,7 @@ class RendererHTMLCanvas(RendererBase):
         self.ctx.width = self.width
         self.ctx.height = self.height
         self.dpi = dpi
+        self.fontd = maxdict(50)
         self.mathtext_parser = MathTextParser('bitmap')
 
     def new_gc(self):
@@ -296,9 +300,18 @@ class RendererHTMLCanvas(RendererBase):
         self.ctx.restore()
 
     def _get_font(self, prop):
-        fname = findfont(prop)
-        font_file_name = fname[fname.rfind('/')+1:]
-        font = FT2Font(str(fname))
+        key = hash(prop)
+        font_value = self.fontd.get(key)
+        if font_value is None:
+            fname = findfont(prop)
+            font_value = self.fontd.get(fname)
+            if font_value is None:
+                font = FT2Font(str(fname))
+                font_file_name = fname[fname.rfind('/')+1:]
+                font_value = font, font_file_name
+                self.fontd[fname] = font_value
+            self.fontd[key] = font_value
+        font, font_file_name = font_value
         font.clear()
         font.set_size(prop.get_size_in_points(), self.dpi)
         return font, font_file_name
@@ -354,11 +367,11 @@ class RendererHTMLCanvas(RendererBase):
         f.load().then(_load_font_into_web)
 
         font_property_string = '{0} {1} {2:.3g}px {3}, {4}'.format(
-                                prop.get_style(),
-                                prop.get_weight(),
-                                font_size, prop.get_name(),
-                                prop.get_family()[0]
-                            )
+            prop.get_style(),
+            prop.get_weight(),
+            font_size, prop.get_name(),
+            prop.get_family()[0]
+        )
         if angle != 0:
             self.ctx.save()
             self.ctx.translate(x, y)
@@ -366,9 +379,9 @@ class RendererHTMLCanvas(RendererBase):
             self.ctx.translate(-x, -y)
         self.ctx.font = font_property_string
         self.ctx.fillStyle = self._matplotlib_color_to_CSS(
-                                gc.get_rgb(),
-                                gc.get_alpha()
-                            )
+            gc.get_rgb(),
+            gc.get_alpha()
+        )
         self.ctx.fillText(s, x, y)
         self.ctx.fillStyle = '#000000'
         if angle != 0:

@@ -193,7 +193,9 @@ class FigureCanvasWasm(FigureCanvasBase):
         pass
 
     def draw_idle(self):
+        print('is this called?')
         if not self._idle_scheduled:
+            print('WOW', self._idle_scheduled)
             self._idle_scheduled = True
             window.setTimeout(self.draw, 1)
 
