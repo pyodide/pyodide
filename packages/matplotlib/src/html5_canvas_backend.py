@@ -25,6 +25,7 @@ import io
 import math
 
 _capstyle_d = {'projecting': 'square', 'butt': 'butt', 'round': 'round'}
+_font_set = set()
 
 if hasattr(window, 'testing'):
     _base_fonts_url = '/fonts/'
@@ -71,13 +72,11 @@ class FigureCanvasHTMLCanvas(FigureCanvasWasm):
                                           self.figure.dpi, self)
             self.figure.draw(renderer)
             self.draw_counter += 1
-            print(self.draw_counter, self._idle_scheduled)
-            if self.draw_counter == 5:
+            if self.draw_counter == 3:
                 window.plot_updated = True
         finally:
             self.figure.dpi = orig_dpi
             self._idle_scheduled = False
-            print('finally ', self.draw_counter, self._idle_scheduled)
 
     def get_pixel_data(self):
         """
@@ -347,6 +346,7 @@ class RendererHTMLCanvas(RendererBase):
         def _load_font_into_web(loaded_face):
             document.fonts.add(loaded_face)
             window.font_loaded = True
+            _font_set.add(font_face_arguments)
             self.fig.draw_idle()
 
         if ismath:
@@ -362,9 +362,12 @@ class RendererHTMLCanvas(RendererBase):
 
         _, font_file_name = self._get_font(prop)
 
-        f = FontFace.new(prop.get_name(),
-                         'url({0})'.format(_base_fonts_url+font_file_name))
-        f.load().then(_load_font_into_web)
+        font_face_arguments = (prop.get_name(), 'url({0})'.format(
+                               _base_fonts_url+font_file_name))
+
+        if font_face_arguments not in _font_set:
+            f = FontFace.new(*font_face_arguments)
+            f.load().then(_load_font_into_web)
 
         font_property_string = '{0} {1} {2:.3g}px {3}, {4}'.format(
             prop.get_style(),
