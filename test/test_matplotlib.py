@@ -350,4 +350,4 @@ class ResultLoaded:
 class PlotUpdated:
     def __call__(self, driver):
         plot_inited = driver.execute_script("return window.draw_counter")
-        return plot_inited is not None and plot_inited == 3
+        return plot_inited is not None and plot_inited > 2
