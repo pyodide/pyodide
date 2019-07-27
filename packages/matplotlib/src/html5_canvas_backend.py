@@ -131,9 +131,11 @@ class FigureCanvasHTMLCanvas(FigureCanvasWasm):
 class NavigationToolbar2HTMLCanvas(NavigationToolbar2Wasm):
 
     def download(self, format, mimetype):
-        # Creates a temporary `a` element with a URL containing the image
-        # content, and then virtually clicks it. Kind of magical, but it
-        # works...
+        """
+        Creates a temporary `a` element with a URL containing the image
+        content, and then virtually clicks it. Kind of magical, but it
+        works...
+        """
         element = document.createElement('a')
         data = io.BytesIO()
 
@@ -364,11 +366,13 @@ class RendererHTMLCanvas(RendererBase):
         font_face_arguments = (prop.get_name(), 'url({0})'.format(
                                _base_fonts_url+font_file_name))
 
-        # The following snippet loads a font into the browser's
-        # environment if it wasn't loaded before. This check is necessary
-        # to help us avoid loading the same font multiple times. Further,
-        # it helps us to avoid the infinite loop of
-        # load font --> redraw --> load font --> redraw --> ....
+        """
+        The following snippet loads a font into the browser's
+        environment if it wasn't loaded before. This check is necessary
+        to help us avoid loading the same font multiple times. Further,
+        it helps us to avoid the infinite loop of
+        load font --> redraw --> load font --> redraw --> ....
+        """
         if font_face_arguments not in _font_set:
             f = FontFace.new(*font_face_arguments)
             f.load().then(_load_font_into_web)
