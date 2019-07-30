@@ -322,7 +322,8 @@ def test_draw_math_text(selenium):
     check_comparison(selenium, 'canvas-math-text')
 
 
-def test_custom_font_text(selenium):
+def test_custom_font_text(selenium_standalone):
+    selenium = selenium_standalone
     selenium.load_package("matplotlib")
     selenium.run("""
     from js import window
