@@ -19,12 +19,8 @@ def get_canvas_data(selenium, prefix):
 
 def check_comparison(selenium, prefix, load_font=False):
     if load_font:
-        if selenium.browser == 'firefox':
-            font_wait = WebDriverWait(selenium.driver, timeout=70)
-            font_wait.until(FontsLoadedFirefox())
-        elif selenium.browser == 'chrome':
-            font_wait = WebDriverWait(selenium.driver, timeout=70)
-            font_wait.until(FontsLoadedChrome())
+        font_wait = WebDriverWait(selenium.driver, timeout=70)
+        font_wait.until(FontsLoaded())
 
     # If we don't have a reference image, write one to disk
     if not os.path.isfile('test/{0}-{1}.png'.format(prefix, selenium.browser)):
@@ -352,13 +348,7 @@ class ResultLoaded:
         return inited is not None
 
 
-class FontsLoadedFirefox:
+class FontsLoaded:
     def __call__(self, driver):
         font_inited = driver.execute_script("return window.font_counter")
-        return font_inited is not None and font_inited == 38
-
-
-class FontsLoadedChrome:
-    def __call__(self, driver):
-        font_inited = driver.execute_script("return window.font_counter")
-        return font_inited is not None and font_inited == 56
+        return font_inited is not None and font_inited == 2

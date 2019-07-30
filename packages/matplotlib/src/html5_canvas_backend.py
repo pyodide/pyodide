@@ -41,6 +41,8 @@ class FigureCanvasHTMLCanvas(FigureCanvasWasm):
 
     def __init__(self, *args, **kwargs):
         FigureCanvasWasm.__init__(self, *args, **kwargs)
+
+        # A count of the fonts loaded. To support testing
         window.font_counter = 0
 
     def create_root_element(self):
@@ -346,7 +348,6 @@ class RendererHTMLCanvas(RendererBase):
     def draw_text(self, gc, x, y, s, prop, angle, ismath=False, mtext=None):
         def _load_font_into_web(loaded_face):
             document.fonts.add(loaded_face)
-            _font_set.add(font_face_arguments)
             window.font_counter += 1
             self.fig.draw_idle()
 
@@ -366,14 +367,14 @@ class RendererHTMLCanvas(RendererBase):
         font_face_arguments = (prop.get_name(), 'url({0})'.format(
                                _base_fonts_url+font_file_name))
 
-        """
-        The following snippet loads a font into the browser's
-        environment if it wasn't loaded before. This check is necessary
-        to help us avoid loading the same font multiple times. Further,
-        it helps us to avoid the infinite loop of
-        load font --> redraw --> load font --> redraw --> ....
-        """
+        # The following snippet loads a font into the browser's
+        # environment if it wasn't loaded before. This check is necessary
+        # to help us avoid loading the same font multiple times. Further,
+        # it helps us to avoid the infinite loop of
+        # load font --> redraw --> load font --> redraw --> ....
+
         if font_face_arguments not in _font_set:
+            _font_set.add(font_face_arguments)
             f = FontFace.new(*font_face_arguments)
             f.load().then(_load_font_into_web)
 
