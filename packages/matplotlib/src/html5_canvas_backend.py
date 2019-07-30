@@ -13,12 +13,26 @@ from matplotlib.path import Path
 from matplotlib import interactive
 from matplotlib import _png
 
-from js import document, window, XMLHttpRequest, ImageData
+from matplotlib.cbook import maxdict
+from matplotlib.font_manager import findfont
+from matplotlib.ft2font import FT2Font, LOAD_NO_HINTING
+from matplotlib.mathtext import MathTextParser
+
+from js import document, window, XMLHttpRequest, ImageData, FontFace
 
 import base64
 import io
+import math
 
 _capstyle_d = {'projecting': 'square', 'butt': 'butt', 'round': 'round'}
+
+# The URLs of fonts that have already been loaded into the browser
+_font_set = set()
+
+if hasattr(window, 'testing'):
+    _base_fonts_url = '/fonts/'
+else:
+    _base_fonts_url = '/pyodide/fonts/'
 
 interactive(True)
 
@@ -27,6 +41,9 @@ class FigureCanvasHTMLCanvas(FigureCanvasWasm):
 
     def __init__(self, *args, **kwargs):
         FigureCanvasWasm.__init__(self, *args, **kwargs)
+
+        # A count of the fonts loaded. To support testing
+        window.font_counter = 0
 
     def create_root_element(self):
         try:
@@ -56,7 +73,7 @@ class FigureCanvasHTMLCanvas(FigureCanvasWasm):
                 return
             ctx = canvas.getContext('2d')
             renderer = RendererHTMLCanvas(ctx, width, height,
-                                          dpi=self.figure.dpi)
+                                          self.figure.dpi, self)
             self.figure.draw(renderer)
         finally:
             self.figure.dpi = orig_dpi
@@ -115,9 +132,11 @@ class FigureCanvasHTMLCanvas(FigureCanvasWasm):
 class NavigationToolbar2HTMLCanvas(NavigationToolbar2Wasm):
 
     def download(self, format, mimetype):
-        # Creates a temporary `a` element with a URL containing the image
-        # content, and then virtually clicks it. Kind of magical, but it
-        # works...
+        """
+        Creates a temporary `a` element with a URL containing the image
+        content, and then virtually clicks it. Kind of magical, but it
+        works...
+        """
         element = document.createElement('a')
         data = io.BytesIO()
 
@@ -180,14 +199,17 @@ class GraphicsContextHTMLCanvas(GraphicsContextBase):
 
 class RendererHTMLCanvas(RendererBase):
 
-    def __init__(self, ctx, width, height, dpi):
+    def __init__(self, ctx, width, height, dpi, fig):
         super().__init__()
+        self.fig = fig
         self.ctx = ctx
         self.width = width
         self.height = height
         self.ctx.width = self.width
         self.ctx.height = self.height
         self.dpi = dpi
+        self.fontd = maxdict(50)
+        self.mathtext_parser = MathTextParser('bitmap')
 
     def new_gc(self):
         return GraphicsContextHTMLCanvas(renderer=self)
@@ -278,6 +300,104 @@ class RendererHTMLCanvas(RendererBase):
         in_memory_canvas_context.putImageData(img_data, 0, 0)
         self.ctx.drawImage(in_memory_canvas, x, y, w, h)
         self.ctx.restore()
+
+    def _get_font(self, prop):
+        key = hash(prop)
+        font_value = self.fontd.get(key)
+        if font_value is None:
+            fname = findfont(prop)
+            font_value = self.fontd.get(fname)
+            if font_value is None:
+                font = FT2Font(str(fname))
+                font_file_name = fname[fname.rfind('/')+1:]
+                font_value = font, font_file_name
+                self.fontd[fname] = font_value
+            self.fontd[key] = font_value
+        font, font_file_name = font_value
+        font.clear()
+        font.set_size(prop.get_size_in_points(), self.dpi)
+        return font, font_file_name
+
+    def get_text_width_height_descent(self, s, prop, ismath):
+        if ismath:
+            image, d = self.mathtext_parser.parse(s, self.dpi, prop)
+            w, h = image.get_width(), image.get_height()
+        else:
+            font, _ = self._get_font(prop)
+            font.set_text(s, 0.0, flags=LOAD_NO_HINTING)
+            w, h = font.get_width_height()
+            w /= 64.0
+            h /= 64.0
+            d = font.get_descent() / 64.0
+        return w, h, d
+
+    def _draw_math_text(self, gc, x, y, s, prop, angle):
+        rgba, descent = self.mathtext_parser.to_rgba(s, gc.get_rgb(), self.dpi,
+                                                     prop.get_size_in_points())
+        height, width, _ = rgba.shape
+        angle = math.radians(angle)
+        if angle != 0:
+            self.ctx.save()
+            self.ctx.translate(x, y)
+            self.ctx.rotate(-angle)
+            self.ctx.translate(-x, -y)
+        self.draw_image(gc, x, -y-descent, np.flipud(rgba))
+        if angle != 0:
+            self.ctx.restore()
+
+    def draw_text(self, gc, x, y, s, prop, angle, ismath=False, mtext=None):
+        def _load_font_into_web(loaded_face):
+            document.fonts.add(loaded_face)
+            window.font_counter += 1
+            self.fig.draw_idle()
+
+        if ismath:
+            self._draw_math_text(gc, x, y, s, prop, angle)
+            return
+        angle = math.radians(angle)
+        width, height, descent = \
+            self.get_text_width_height_descent(s, prop, ismath)
+        x -= math.sin(angle) * descent
+        y -= math.cos(angle) * descent - self.ctx.height
+        font_size = \
+            self.points_to_pixels(prop.get_size_in_points())
+
+        _, font_file_name = self._get_font(prop)
+
+        font_face_arguments = (prop.get_name(), 'url({0})'.format(
+                               _base_fonts_url+font_file_name))
+
+        # The following snippet loads a font into the browser's
+        # environment if it wasn't loaded before. This check is necessary
+        # to help us avoid loading the same font multiple times. Further,
+        # it helps us to avoid the infinite loop of
+        # load font --> redraw --> load font --> redraw --> ....
+
+        if font_face_arguments not in _font_set:
+            _font_set.add(font_face_arguments)
+            f = FontFace.new(*font_face_arguments)
+            f.load().then(_load_font_into_web)
+
+        font_property_string = '{0} {1} {2:.3g}px {3}, {4}'.format(
+            prop.get_style(),
+            prop.get_weight(),
+            font_size, prop.get_name(),
+            prop.get_family()[0]
+        )
+        if angle != 0:
+            self.ctx.save()
+            self.ctx.translate(x, y)
+            self.ctx.rotate(-angle)
+            self.ctx.translate(-x, -y)
+        self.ctx.font = font_property_string
+        self.ctx.fillStyle = self._matplotlib_color_to_CSS(
+            gc.get_rgb(),
+            gc.get_alpha()
+        )
+        self.ctx.fillText(s, x, y)
+        self.ctx.fillStyle = '#000000'
+        if angle != 0:
+            self.ctx.restore()
 
 
 class FigureManagerHTMLCanvas(FigureManagerBase):

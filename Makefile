@@ -23,7 +23,8 @@ all: check \
 	build/packages.json \
 	build/test.html \
 	build/webworker.js \
-	build/webworker_dev.js
+	build/webworker_dev.js \
+	copy-fonts
 	echo -e "\nSUCCESS!"
 
 
@@ -117,6 +118,10 @@ update_base_url: \
 
 test: all
 	pytest src emsdk/tests packages/*/test* pyodide-build -v
+
+copy-fonts:
+	mkdir -p build/fonts
+	cp -n packages/matplotlib/build/matplotlib-3.3.3/lib/matplotlib/mpl-data/fonts/ttf/* build/fonts/
 
 lint:
 	# check for unused imports, the rest is done by black
