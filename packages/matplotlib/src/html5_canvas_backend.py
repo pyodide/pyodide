@@ -174,6 +174,27 @@ class GraphicsContextHTMLCanvas(GraphicsContextBase):
         else:
             raise ValueError('Unrecognized cap style. Found {0}'.format(cs))
 
+    def set_clip_rectangle(self, rectangle):
+        self.renderer.ctx.save()
+        if not rectangle:
+            self.renderer.ctx.restore()
+            return
+        x, y, w, h = np.round(rectangle.bounds)
+        self.renderer.ctx.beginPath()
+        self.renderer.ctx.rect(x, self.renderer.height - y - h, w, h)
+        self.renderer.ctx.clip()
+
+    def set_clip_path(self, path):
+        self.renderer.ctx.save()
+        if not path:
+            self.renderer.ctx.restore()
+            return
+        tpath, affine = path.get_transformed_path_and_affine()
+        affine = (affine +
+                  Affine2D().scale(1, -1).translate(0, self.renderer.height))
+        self.renderer._path_helper(self.renderer.ctx, tpath, affine)
+        self.renderer.ctx.clip()
+
     def set_dashes(self, dash_offset, dash_list):
         self._dashes = dash_offset, dash_list
         if dash_offset is not None:
@@ -275,11 +296,12 @@ class RendererHTMLCanvas(RendererBase):
 
         transform += Affine2D().scale(1, -1).translate(0, self.height)
         self._path_helper(self.ctx, path, transform, figure_clip)
-        self.ctx.stroke()
 
         if rgbFace is not None:
             self.ctx.fill()
             self.ctx.fillStyle = '#000000'
+        else:
+            self.ctx.stroke()
 
     def draw_markers(self, gc, marker_path, marker_trans, path,
                      trans, rgbFace=None):

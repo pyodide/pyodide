@@ -18,10 +18,9 @@ def get_canvas_data(selenium, prefix):
         f.write(canvas_png)
 
 
-def check_comparison(selenium, prefix, load_font=False):
-    if load_font:
-        font_wait = WebDriverWait(selenium.driver, timeout=70)
-        font_wait.until(FontsLoaded())
+def check_comparison(selenium, prefix, num_fonts):
+    font_wait = WebDriverWait(selenium.driver, timeout=70)
+    font_wait.until(FontsLoaded(num_fonts))
 
     # If we don't have a reference image, write one to disk
     if not os.path.isfile('test/{0}-{1}.png'.format(prefix, selenium.browser)):
@@ -108,7 +107,8 @@ def test_font_manager(selenium):
     assert selenium.run("fontlist_built == fontlist_vendor")
 
 
-def test_rendering(selenium):
+def test_rendering(selenium_standalone):
+    selenium = selenium_standalone
     selenium.load_package("matplotlib")
     selenium.run("""
     from js import window
@@ -124,10 +124,11 @@ def test_rendering(selenium):
     plt.show()
     """)
 
-    check_comparison(selenium, 'canvas')
+    check_comparison(selenium, 'canvas', 1)
 
 
-def test_draw_image(selenium):
+def test_draw_image(selenium_standalone):
+    selenium = selenium_standalone
     selenium.load_package("matplotlib")
     selenium.run("""
     from js import window
@@ -151,10 +152,11 @@ def test_draw_image(selenium):
     plt.show()
     """)
 
-    check_comparison(selenium, 'canvas-image')
+    check_comparison(selenium, 'canvas-image', 1)
 
 
-def test_draw_image_affine_transform(selenium):
+def test_draw_image_affine_transform(selenium_standalone):
+    selenium = selenium_standalone
     selenium.load_package("matplotlib")
     selenium.run("""
     from js import window
@@ -208,10 +210,11 @@ def test_draw_image_affine_transform(selenium):
     plt.show()
     """)
 
-    check_comparison(selenium, 'canvas-image-affine')
+    check_comparison(selenium, 'canvas-image-affine', 1)
 
 
-def test_draw_text_rotated(selenium):
+def test_draw_text_rotated(selenium_standalone):
+    selenium = selenium_standalone
     selenium.load_package("matplotlib")
     selenium.run("""
     from js import window
@@ -247,10 +250,11 @@ def test_draw_text_rotated(selenium):
     plt.show()
     """)
 
-    check_comparison(selenium, 'canvas-text-rotated')
+    check_comparison(selenium, 'canvas-text-rotated', 1)
 
 
-def test_draw_math_text(selenium):
+def test_draw_math_text(selenium_standalone):
+    selenium = selenium_standalone
     selenium.load_package("matplotlib")
     selenium.run(r"""
     from js import window
@@ -354,7 +358,7 @@ def test_draw_math_text(selenium):
     doall()
     """)
 
-    check_comparison(selenium, 'canvas-math-text')
+    check_comparison(selenium, 'canvas-math-text', 1)
 
 
 def test_custom_font_text(selenium_standalone):
@@ -378,7 +382,39 @@ def test_custom_font_text(selenium_standalone):
     plt.show()
     """)
 
-    check_comparison(selenium, 'canvas-custom-font-text', load_font=True)
+    check_comparison(selenium, 'canvas-custom-font-text', 2)
+
+
+def test_zoom_on_polar_plot(selenium_standalone):
+    selenium = selenium_standalone
+    selenium.load_package("matplotlib")
+    selenium.run("""
+    from js import window
+    window.testing = True
+
+    import numpy as np
+    import matplotlib.pyplot as plt
+    np.random.seed(42)
+
+    # Compute pie slices
+    N = 20
+    theta = np.linspace(0.0, 2 * np.pi, N, endpoint=False)
+    radii = 10 * np.random.rand(N)
+    width = np.pi / 4 * np.random.rand(N)
+
+    ax = plt.subplot(111, projection='polar')
+    bars = ax.bar(theta, radii, width=width, bottom=0.0)
+
+    # Use custom colors and opacity
+    for r, bar in zip(radii, bars):
+        bar.set_facecolor(plt.cm.viridis(r / 10.))
+        bar.set_alpha(0.5)
+
+    ax.set_rlim([0,5])
+    plt.show()
+    """)
+
+    check_comparison(selenium, 'canvas-polar-zoom', 1)
 
 
 class ResultLoaded:
@@ -388,6 +424,9 @@ class ResultLoaded:
 
 
 class FontsLoaded:
+    def __init__(self, num_fonts):
+        self.num_fonts = num_fonts
+
     def __call__(self, driver):
         font_inited = driver.execute_script("return window.font_counter")
-        return font_inited is not None and font_inited == 2
+        return font_inited is not None and font_inited == self.num_fonts
