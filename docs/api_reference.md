@@ -141,6 +141,26 @@ This is equivalent to calling `repr(obj)` in Python.
 |------------|---------|-------------------------------------------|
 | *str_repr* | String  | String representation of the input object |
 
+### pyodide.remotePath
+
+Using `pyodide.remotePath`, Python source files can be directly imported as modules fetched from remote locations.
+
+This includes single files as well as Python modules put into directories holding an `__init__.py`. The fetching is done when [pyodide.runPythonAsync](#pyodiderunpythonasynccode-messagecallback) is called with code that imports modules that are not in the global package namespace. Fetched modules are locally stored into browser-based, emulated file system.
+
+`pyodide.remotePath` defaults to an empty array, disabling this feature. Setting it to an array of remote URLs iterates this list in order until a corresponding module is found.
+
+```javascript
+pyodide.remotePath = [];  // Disable remote path fetching feature
+pyodide.remotePath = ["/"];  // Allow fetching python modules from pyodide baseURL
+pyodide.remotePath = ["https://alpha.iodide.io/pyodide", "/"];  // Allow fetching python modules from https://alpha.iodide.io/pyodide or, if this fails, from baseURL.
+
+// Fetch a module, run some code...
+pyodide.runPythonAsync("import test\ntest.doSomething()");
+```
+
+In above example, pyodide first fetches `test.py` from `https://alpha.iodide.io/pyodide` or (when not present there) from the current baseURL, and saves it to the locally emulated file system. If `test.py` imports more modules, they are fetched as well. When all modules where fetched, the code is executed.
+
+Using this method, pure Python packages can be imported and run within pyodide from any resource without building a package using `pyodide_build` first. 
 
 ### pyodide.runPython(code)
 
