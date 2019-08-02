@@ -17,10 +17,9 @@ def get_canvas_data(selenium, prefix):
         f.write(canvas_png)
 
 
-def check_comparison(selenium, prefix, load_font=False):
-    if load_font:
-        font_wait = WebDriverWait(selenium.driver, timeout=70)
-        font_wait.until(FontsLoaded())
+def check_comparison(selenium, prefix, num_fonts):
+    font_wait = WebDriverWait(selenium.driver, timeout=70)
+    font_wait.until(FontsLoaded(num_fonts))
 
     # If we don't have a reference image, write one to disk
     if not os.path.isfile('test/{0}-{1}.png'.format(prefix, selenium.browser)):
@@ -85,7 +84,7 @@ def test_rendering(selenium):
     plt.show()
     """)
 
-    check_comparison(selenium, 'canvas')
+    check_comparison(selenium, 'canvas', 1)
 
 
 def test_draw_image(selenium):
@@ -112,7 +111,7 @@ def test_draw_image(selenium):
     plt.show()
     """)
 
-    check_comparison(selenium, 'canvas-image')
+    check_comparison(selenium, 'canvas-image', 1)
 
 
 def test_draw_image_affine_transform(selenium):
@@ -169,7 +168,7 @@ def test_draw_image_affine_transform(selenium):
     plt.show()
     """)
 
-    check_comparison(selenium, 'canvas-image-affine')
+    check_comparison(selenium, 'canvas-image-affine', 1)
 
 
 def test_draw_text_rotated(selenium):
@@ -208,7 +207,7 @@ def test_draw_text_rotated(selenium):
     plt.show()
     """)
 
-    check_comparison(selenium, 'canvas-text-rotated')
+    check_comparison(selenium, 'canvas-text-rotated', 1)
 
 
 def test_draw_math_text(selenium):
@@ -315,7 +314,7 @@ def test_draw_math_text(selenium):
     doall()
     """)
 
-    check_comparison(selenium, 'canvas-math-text')
+    check_comparison(selenium, 'canvas-math-text', 1)
 
 
 def test_custom_font_text(selenium_standalone):
@@ -339,7 +338,7 @@ def test_custom_font_text(selenium_standalone):
     plt.show()
     """)
 
-    check_comparison(selenium, 'canvas-custom-font-text', load_font=True)
+    check_comparison(selenium, 'canvas-custom-font-text', 2)
 
 
 def test_zoom_on_polar_plot(selenium):
@@ -370,7 +369,7 @@ def test_zoom_on_polar_plot(selenium):
     plt.show()
     """)
 
-    check_comparison(selenium, 'canvas-polar-zoom')
+    check_comparison(selenium, 'canvas-polar-zoom', 1)
 
 
 class ResultLoaded:
@@ -380,6 +379,9 @@ class ResultLoaded:
 
 
 class FontsLoaded:
+    def __init__(self, num_fonts):
+        self.num_fonts = num_fonts
+
     def __call__(self, driver):
         font_inited = driver.execute_script("return window.font_counter")
-        return font_inited is not None and font_inited == 2
+        return font_inited is not None and font_inited == self.num_fonts
