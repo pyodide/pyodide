@@ -68,7 +68,8 @@ def test_pdf(selenium):
     selenium.run("plt.savefig(fd, format='pdf')")
 
 
-def test_rendering(selenium):
+def test_rendering(selenium_standalone):
+    selenium = selenium_standalone
     selenium.load_package("matplotlib")
     selenium.run("""
     from js import window
@@ -87,7 +88,8 @@ def test_rendering(selenium):
     check_comparison(selenium, 'canvas', 1)
 
 
-def test_draw_image(selenium):
+def test_draw_image(selenium_standalone):
+    selenium = selenium_standalone
     selenium.load_package("matplotlib")
     selenium.run("""
     from js import window
@@ -114,7 +116,8 @@ def test_draw_image(selenium):
     check_comparison(selenium, 'canvas-image', 1)
 
 
-def test_draw_image_affine_transform(selenium):
+def test_draw_image_affine_transform(selenium_standalone):
+    selenium = selenium_standalone
     selenium.load_package("matplotlib")
     selenium.run("""
     from js import window
@@ -171,7 +174,8 @@ def test_draw_image_affine_transform(selenium):
     check_comparison(selenium, 'canvas-image-affine', 1)
 
 
-def test_draw_text_rotated(selenium):
+def test_draw_text_rotated(selenium_standalone):
+    selenium = selenium_standalone
     selenium.load_package("matplotlib")
     selenium.run("""
     from js import window
@@ -210,7 +214,8 @@ def test_draw_text_rotated(selenium):
     check_comparison(selenium, 'canvas-text-rotated', 1)
 
 
-def test_draw_math_text(selenium):
+def test_draw_math_text(selenium_standalone):
+    selenium = selenium_standalone
     selenium.load_package("matplotlib")
     selenium.run(r"""
     from js import window
@@ -341,7 +346,8 @@ def test_custom_font_text(selenium_standalone):
     check_comparison(selenium, 'canvas-custom-font-text', 2)
 
 
-def test_zoom_on_polar_plot(selenium):
+def test_zoom_on_polar_plot(selenium_standalone):
+    selenium = selenium_standalone
     selenium.load_package("matplotlib")
     selenium.run("""
     from js import window
