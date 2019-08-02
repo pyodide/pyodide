@@ -342,6 +342,37 @@ def test_custom_font_text(selenium_standalone):
     check_comparison(selenium, 'canvas-custom-font-text', load_font=True)
 
 
+def test_zoom_on_polar_plot(selenium):
+    selenium.load_package("matplotlib")
+    selenium.run("""
+    from js import window
+    window.testing = True
+
+    import numpy as np
+    import matplotlib.pyplot as plt
+    np.random.seed(42)
+
+    # Compute pie slices
+    N = 20
+    theta = np.linspace(0.0, 2 * np.pi, N, endpoint=False)
+    radii = 10 * np.random.rand(N)
+    width = np.pi / 4 * np.random.rand(N)
+
+    ax = plt.subplot(111, projection='polar')
+    bars = ax.bar(theta, radii, width=width, bottom=0.0)
+
+    # Use custom colors and opacity
+    for r, bar in zip(radii, bars):
+        bar.set_facecolor(plt.cm.viridis(r / 10.))
+        bar.set_alpha(0.5)
+
+    ax.set_rlim([0,5])
+    plt.show()
+    """)
+
+    check_comparison(selenium, 'canvas-polar-zoom')
+
+
 class ResultLoaded:
     def __call__(self, driver):
         inited = driver.execute_script("return window.result")
