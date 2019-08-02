@@ -59,15 +59,18 @@ def find_imports(code, prefix=""):
 
     mod = ast.parse(code)
     imports = set()
+
     for node in ast.walk(mod):
+
         if isinstance(node, ast.Import):
             for name in node.names:
                 name = name.name
                 imports.add(name.split('.')[0])
+
         elif isinstance(node, ast.ImportFrom):
             name = node.module
 
-            if not prefix or not name.startswith(prefix):
+            if not prefix or (name and not name.startswith(prefix)):
                 imports.add(name.split('.')[0])
             else:
                 for name in reversed(node.names):
