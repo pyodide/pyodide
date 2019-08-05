@@ -8,6 +8,8 @@ RUN sudo bash -c "echo \"deb http://ftp.us.debian.org/debian testing main contri
   && sudo apt-get install bzip2 libgconf-2-4 node-less cmake build-essential clang-format-6.0 \
                   uglifyjs chromium ccache libncurses6 gfortran f2c \
   && sudo apt-get install -t testing g++-8 \
+  # required for pillow/PIL
+  && sudo apt-get install libtiff5-dev libjpeg-dev zlib1g-dev libfreetype6-dev liblcms2-dev libwebp-dev libharfbuzz-dev libfribidi-dev \
   && sudo update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-6 60 --slave /usr/bin/g++ g++ /usr/bin/g++-6 \
   && sudo update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-8 80 --slave /usr/bin/g++ g++ /usr/bin/g++-8 \
   && sudo update-alternatives --set gcc /usr/bin/gcc-8 \

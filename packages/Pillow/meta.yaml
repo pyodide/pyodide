@@ -1,0 +1,11 @@
+package:
+  name: Pillow
+  version: 6.1.0
+
+source:
+  url: https://files.pythonhosted.org/packages/51/fe/18125dc680720e4c3086dd3f5f95d80057c41ab98326877fc7d3ff6d0ee5/Pillow-6.1.0.tar.gz
+  sha256: 0804f77cb1e9b6dbd37601cee11283bba39a8d44b9ddb053400c58e0c0d7d9de
+
+test:
+  imports:
+    - PIL
