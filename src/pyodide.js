@@ -100,6 +100,8 @@ var languagePluginLoader = new Promise((resolve, reject) => {
   }
 
   // Recursively resolve imports for Python modules being fetched
+  let _remoteModules = [];
+
   let _resolveImports = (imports, prefix) => {
     var promises = [];
     var packageNames =
@@ -116,15 +118,28 @@ var languagePluginLoader = new Promise((resolve, reject) => {
       if (packageNames[name] !== undefined) {
         packagesToLoad[packageNames[name]] = undefined;
       } else if (self.pyodide.remotePath.length) {
+
+        // Check if this module with the same prefix is in _remoteModules,
+        // to avoid multiple fetching of the same module from different sub-modules.
+        if (_remoteModules.indexOf(prefix + pkg) >= 0 ) {
+          continue;
+        }
+
+        _remoteModules.push(prefix + pkg);
+
+        //Fetch modules per entry configured in remotePath
         let remotePath = self.pyodide.remotePath.slice();
 
         function fetchModule() {
           let remoteURL = remotePath.shift();
+
+          // The entry "/" points to pyodide's baseURL
           if (remoteURL === "/")
             remoteURL = baseURL;
 
           remoteURL = remoteURL.substr(0, remoteURL.lastIndexOf('/')) + '/';
 
+          // Try to fetch a single .py-file first
           let filename = pkg + ".py";
           let url = remoteURL + prefix + filename;
 
@@ -143,9 +158,11 @@ var languagePluginLoader = new Promise((resolve, reject) => {
                     resolve();
                 });
 
+              // Try to fetch directory with pkg/__init__.py afterwards
+
               let sfilename = "__init__.py";
               let sprefix = prefix + pkg + "/";
-              var surl = remoteURL + sprefix + sfilename;
+              let surl = remoteURL + sprefix + sfilename;
 
               // console.debug(`${url} not found, checking for ${surl}`);
 
@@ -179,6 +196,7 @@ var languagePluginLoader = new Promise((resolve, reject) => {
                 } else {
                   resolve(); // Mark this promise as resolved, although no file
                              // was fetched. Python will do the rest.
+
                   // reject(`Unable to locate package ${pkg}`)
                 }
               });
