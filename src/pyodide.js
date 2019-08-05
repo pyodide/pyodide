@@ -120,14 +120,15 @@ var languagePluginLoader = new Promise((resolve, reject) => {
       } else if (self.pyodide.remotePath.length) {
 
         // Check if this module with the same prefix is in _remoteModules,
-        // to avoid multiple fetching of the same module from different sub-modules.
-        if (_remoteModules.indexOf(prefix + pkg) >= 0 ) {
+        // to avoid multiple fetching of the same module from different
+        // sub-modules.
+        if (_remoteModules.indexOf(prefix + pkg) >= 0) {
           continue;
         }
 
         _remoteModules.push(prefix + pkg);
 
-        //Fetch modules per entry configured in remotePath
+        // Fetch modules per entry configured in remotePath
         let remotePath = self.pyodide.remotePath.slice();
 
         function fetchModule() {
