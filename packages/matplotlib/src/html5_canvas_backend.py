@@ -238,7 +238,8 @@ class RendererHTMLCanvas(RendererBase):
     def points_to_pixels(self, points):
         return (points / 72.0) * self.dpi
 
-    def _matplotlib_color_to_CSS(self, color, alpha=None, is_RGB=True):
+    def _matplotlib_color_to_CSS(self, color, alpha,
+                                 alpha_overrides, is_RGB=True):
         if not is_RGB:
             R, G, B, alpha = colorConverter.to_rgba(color)
             color = (R, G, B)
@@ -253,21 +254,32 @@ class RendererHTMLCanvas(RendererBase):
             R = int(color[0] * 255)
             G = int(color[1] * 255)
             B = int(color[2] * 255)
-            CSS_color = """rgba({0:d}, {1:d},
-                                {2:d}, {3:.3g})""".format(R, G, B, alpha)
+            if len(color) == 3 or alpha_overrides:
+                CSS_color = """rgba({0:d}, {1:d}, {2:d}, {3:.3g})""".format(
+                    R, G, B, alpha
+                )
+            else:
+                CSS_color = """rgba({0:d}, {1:d}, {2:d}, {3:.3g})""".format(
+                    R, G, B, color[3]
+                )
 
         return CSS_color
 
     def _set_style(self, gc, rgbFace=None):
         if rgbFace is not None:
-            self.ctx.fillStyle = self._matplotlib_color_to_CSS(rgbFace,
-                                                               gc.get_alpha())
+            self.ctx.fillStyle = \
+                self._matplotlib_color_to_CSS(rgbFace,
+                                              gc.get_alpha(),
+                                              gc.get_forced_alpha())
 
         if gc.get_capstyle():
             self.ctx.lineCap = _capstyle_d[gc.get_capstyle()]
 
-        self.ctx.strokeStyle = self._matplotlib_color_to_CSS(gc.get_rgb(),
-                                                             gc.get_alpha())
+        self.ctx.strokeStyle = \
+            self._matplotlib_color_to_CSS(gc.get_rgb(),
+                                          gc.get_alpha(),
+                                          gc.get_forced_alpha())
+
         self.ctx.lineWidth = self.points_to_pixels(gc.get_linewidth())
 
     def _path_helper(self, ctx, path, transform, clip=None):
@@ -414,7 +426,8 @@ class RendererHTMLCanvas(RendererBase):
         self.ctx.font = font_property_string
         self.ctx.fillStyle = self._matplotlib_color_to_CSS(
             gc.get_rgb(),
-            gc.get_alpha()
+            gc.get_alpha(),
+            gc.get_forced_alpha()
         )
         self.ctx.fillText(s, x, y)
         self.ctx.fillStyle = '#000000'

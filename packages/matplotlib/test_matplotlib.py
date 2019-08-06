@@ -417,6 +417,34 @@ def test_zoom_on_polar_plot(selenium_standalone):
     check_comparison(selenium, 'canvas-polar-zoom', 1)
 
 
+def test_transparency(selenium_standalone):
+    selenium = selenium_standalone
+    selenium.load_package("matplotlib")
+    selenium.run("""
+    from js import window
+    window.testing = True
+
+    import numpy as np
+    np.random.seed(19680801)
+    import matplotlib.pyplot as plt
+
+    fig, ax = plt.subplots()
+    for color in ['tab:blue', 'tab:orange', 'tab:green']:
+        n = 750
+        x, y = np.random.rand(2, n)
+        scale = 200.0 * np.random.rand(n)
+        ax.scatter(x, y, c=color, s=scale, label=color,
+                alpha=0.3, edgecolors='none')
+
+    ax.legend()
+    ax.grid(True)
+
+    plt.show()
+    """)
+
+    check_comparison(selenium, 'canvas-transparency', 1)
+
+
 class ResultLoaded:
     def __call__(self, driver):
         inited = driver.execute_script("return window.result")
