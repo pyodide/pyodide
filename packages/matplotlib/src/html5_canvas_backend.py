@@ -255,12 +255,13 @@ class RendererHTMLCanvas(RendererBase):
             G = int(color[1] * 255)
             B = int(color[2] * 255)
             if len(color) == 3 or alpha_overrides:
-                CSS_color = """rgba({0:d}, {1:d},
-                                    {2:d}, {3:.3g})""".format(R, G, B, alpha)
+                CSS_color = """rgba({0:d}, {1:d}, {2:d}, {3:.3g})""".format(
+                    R, G, B, alpha
+                )
             else:
-                CSS_color = """rgba({0:d}, {1:d},
-                                    {2:d}, {3:.3g})""".format(R, G, B,
-                                                              color[3])
+                CSS_color = """rgba({0:d}, {1:d}, {2:d}, {3:.3g})""".format(
+                    R, G, B, color[3]
+                )
 
         return CSS_color
 
