@@ -18,7 +18,7 @@ def get_canvas_data(selenium, prefix):
 
 
 def check_comparison(selenium, prefix, num_fonts):
-    font_wait = WebDriverWait(selenium.driver, timeout=80)
+    font_wait = WebDriverWait(selenium.driver, timeout=70)
     font_wait.until(FontsLoaded(num_fonts))
 
     # If we don't have a reference image, write one to disk
@@ -30,7 +30,7 @@ def check_comparison(selenium, prefix, num_fonts):
     threshold = 0
     plt.gcf().canvas.compare_reference_image(url, threshold)
     """.format(prefix, selenium.browser))
-    wait = WebDriverWait(selenium.driver, timeout=80)
+    wait = WebDriverWait(selenium.driver, timeout=70)
     wait.until(ResultLoaded())
     assert selenium.run("window.deviation") == 0
     assert selenium.run("window.result") is True
