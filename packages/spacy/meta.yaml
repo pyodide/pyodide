@@ -1,9 +1,13 @@
 package:
   name: spacy
   version: 2.1.8
+
 source:
   sha256: 9c510459a66703739d6ba6c958fcff2627399dd813829a020d5644b532034ab6
   url: https://files.pythonhosted.org/packages/58/f2/5a23bb7251988da474eec844b692760cb0a317912291afc77b516f399cff/spacy-2.1.8.tar.gz
+  patches:
+    - patches/add-emscripten-cpu.patch
+
 test:
   imports:
   - spacy
