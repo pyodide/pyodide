@@ -145,7 +145,7 @@ This is equivalent to calling `repr(obj)` in Python.
 
 Using `pyodide.remotePath`, Python source files can be directly imported as modules fetched from remote locations.
 
-This includes single files as well as Python modules put into directories holding an `__init__.py`. The fetching is done when [pyodide.runPythonAsync](#pyodiderunpythonasynccode-messagecallback) is called with code that imports modules that are not in the global package namespace. Fetched modules are locally stored into browser-based, emulated file system.
+This includes single file modules, as well as packages (Python modules inside directories holding an `__init__.py`. The fetching is done when [pyodide.runPythonAsync](#pyodiderunpythonasynccode-messagecallback) is called with code that imports modules that are not in the global package namespace. Fetched modules are locally stored into the browser-based, emulated file system.
 
 `pyodide.remotePath` defaults to an empty array, disabling this feature. Setting it to an array of remote URLs iterates this list in order until a corresponding module is found.
 
