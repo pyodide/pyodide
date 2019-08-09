@@ -158,7 +158,7 @@ pyodide.remotePath = ["https://alpha.iodide.io/pyodide", "/"];  // Allow fetchin
 pyodide.runPythonAsync("import test\ntest.doSomething()");
 ```
 
-In above example, pyodide first fetches `test.py` from `https://alpha.iodide.io/pyodide` or (when not present there) from the current baseURL, and saves it to the locally emulated file system. If `test.py` imports more modules, they are fetched as well. When all modules where fetched, the code is executed.
+In the above example, pyodide first fetches `test.py` from `https://alpha.iodide.io/pyodide` or (when not present there) from the current `baseURL`, and saves it to the locally emulated file system. If `test.py` imports more modules, they are fetched as well. When all modules where fetched, the code is executed.
 
 Using this method, pure Python packages can be imported and run within pyodide from any resource without building a package using `pyodide_build` first. 
 
