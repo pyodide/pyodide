@@ -101,6 +101,7 @@ var languagePluginLoader = new Promise((resolve, reject) => {
 
   // Recursively resolve imports for Python modules being fetched
   let _remoteModules = [];
+  let _pythonPath = "";
 
   let _resolveImports = (imports, prefix) => {
     var promises = [];
@@ -109,8 +110,6 @@ var languagePluginLoader = new Promise((resolve, reject) => {
 
     if (typeof prefix === "undefined")
       prefix = "";
-
-    // console.debug(prefix || "(null)", imports);
 
     for (let name of imports) {
       let pkg = _uri_to_package_name(name);
@@ -142,14 +141,18 @@ var languagePluginLoader = new Promise((resolve, reject) => {
 
           // Try to fetch a single .py-file first
           let filename = pkg + ".py";
-          let url = remoteURL + prefix + filename;
+          let url = remoteURL + (prefix ? prefix + "/" : "") + filename;
+          let path = self.pyodide._pythonPath + (prefix ? prefix + "/" : "") +
+                     filename;
 
           return new Promise((resolve, reject) => {
             fetch(url, {}).then((response) => {
-              if (response.status == 200)
+              if (response.status === 200)
                 return response.text().then((code) => {
-                  console.log(`fetched ${name} from ${url} successfully`);
-                  self.pyodide._module.FS.writeFile(prefix + filename, code);
+                  console.log(`fetched ${name} from ${url} successfully, ` +
+                              `saving to ${path}`);
+
+                  self.pyodide._module.FS.writeFile(path, code);
 
                   let imports = self.pyodide.parsePythonImports(code, prefix);
 
@@ -161,31 +164,29 @@ var languagePluginLoader = new Promise((resolve, reject) => {
 
               // Try to fetch directory with pkg/__init__.py afterwards
 
-              let sfilename = "__init__.py";
-              let sprefix = prefix + pkg + "/";
-              let surl = remoteURL + sprefix + sfilename;
+              let fFilename = "__init__.py";
+              let fPrefix = (prefix ? prefix + "/" : "") + pkg;
+              let fUrl = remoteURL + fPrefix + "/" + fFilename;
+              let fPath = self.pyodide._pythonPath + fPrefix + "/" + fFilename;
 
-              // console.debug(`${url} not found, checking for ${surl}`);
-
-              return fetch(surl, {}).then((response) => {
-                if (response.status == 200)
+              return fetch(fUrl, {}).then((response) => {
+                if (response.status === 200)
                   return response.text().then((code) => {
                     console.log(
-                        `fetched ${sfilename} from ${surl} successfully`);
+                        `fetched ${fFilename} from ${fUrl} successfully, ` +
+                        `saving to ${fPath}`);
 
-                    let notrailPrefix = sprefix.substr(0, sprefix.length - 1);
+                    console.debug(`${self.pyodide._pythonPath + fPrefix}`);
 
-                    self.pyodide._module.FS.mkdir(
-                        // a trailing "/" does not work here...
-                        notrailPrefix);
-                    self.pyodide._module.FS.writeFile(sprefix + sfilename,
-                                                      code);
+                    self.pyodide._module.FS.mkdir(self.pyodide._pythonPath +
+                                                  fPrefix);
+                    self.pyodide._module.FS.writeFile(fPath, code);
 
                     let imports =
-                        self.pyodide.parsePythonImports(code, notrailPrefix);
+                        self.pyodide.parsePythonImports(code, fPrefix);
 
                     if (imports.length) {
-                      _resolveImports(imports, sprefix).then(() => resolve());
+                      _resolveImports(imports, fPrefix).then(() => resolve());
                     } else {
                       resolve();
                     }
@@ -474,6 +475,23 @@ var languagePluginLoader = new Promise((resolve, reject) => {
                 self.pyodide.runPython('import sys\nsys.modules["__main__"]');
             self.pyodide = makePublicAPI(self.pyodide, PUBLIC_API);
             self.pyodide._module.packages = json;
+
+            // Obtain PYTHONPATH for remotePath feature
+            self.pyodide._pythonPath = pyodide.runPython(`
+                import os
+                
+                def setupPythonPath():
+                    pythonpath = os.environ.get("PYTHONPATH", "").split(":")[-1]
+                    
+                    if pythonpath:
+                        os.makedirs(pythonpath)
+                        if not pythonpath.endswith("/"):
+                          pythonpath += "/"
+                    
+                    return pythonpath
+                    
+                setupPythonPath()`);
+
             resolve();
           });
     };

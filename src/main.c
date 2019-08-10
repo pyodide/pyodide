@@ -16,7 +16,7 @@ main(int argc, char** argv)
   hiwire_setup();
 
   setenv("PYTHONHOME", "/", 0);
-  setenv("PYTHONPATH", "/", 0);
+  setenv("PYTHONPATH", "/usr/lib/python3.7/remote-packages", 0);
 
   Py_InitializeEx(0);
 
