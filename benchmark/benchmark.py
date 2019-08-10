@@ -12,10 +12,12 @@ sys.path.insert(
 import conftest  # noqa: E402
 
 
-SKIP = set(['fft', 'hyantes', 'README'])
+SKIP = set(['fft', 'hyantes', 'README', '.DS_Store'])
 
 
 def run_native(hostpython, code):
+    if '# non-native' in code:
+        return 0
     output = subprocess.check_output(
         [hostpython.resolve(), '-c', code],
         cwd=Path(__file__).resolve().parent,
@@ -31,6 +33,8 @@ def run_wasm(code, cls, port):
     s = cls(port)
     try:
         s.load_package('numpy')
+        if 'matplotlib' in code:
+            s.load_package('matplotlib')
         s.run(code)
         try:
             runtime = float(s.logs.split('\n')[-1])
