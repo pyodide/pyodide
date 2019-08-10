@@ -1,0 +1,13 @@
+package:
+  name: thinc
+  version: 7.0.8
+
+source:
+  sha256: 5cdb72e8efec0e7b6efae09a09245d744f144114048f63f1ed4b63b8656d2aa4
+  url: https://files.pythonhosted.org/packages/92/39/ea2a3d5b87fd52fc865fd1ceb7b91dca1f85e227d53e7a086d260f6bcb93/thinc-7.0.8.tar.gz
+  patches:
+    - patches/add-emscripten-cpu.patch
+
+test:
+  imports:
+  - thinc

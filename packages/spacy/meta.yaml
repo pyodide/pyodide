@@ -8,6 +8,10 @@ source:
   patches:
     - patches/add-emscripten-cpu.patch
 
+requirements:
+  run:
+    - thinc
+
 test:
   imports:
   - spacy
