@@ -218,10 +218,9 @@ var languagePluginLoader = new Promise((resolve, reject) => {
       // DFS to find all dependencies of the requested packages
       let packages = self.pyodide._module.packages.dependencies;
       let loadedPackages = self.pyodide.loadedPackages;
+
       let queue = [].concat(Object.keys(packagesToLoad) || []);
       let toLoad = [];
-
-      self.pyodide.packagesToLoad = {}
 
       while (queue.length) {
         let package_uri = queue.pop();
@@ -330,35 +329,30 @@ var languagePluginLoader = new Promise((resolve, reject) => {
             scriptSrc = `${package_uri}`;
           }
 
-          if (scriptSrc.endsWith(".py")) {
-            self.pyodide.fetchPython(pkg + ".py", scriptSrc);
-          } else {
-            loadScript(scriptSrc, () => {}, () => {
-              // If the package_uri fails to load, call monitorRunDependencies
-              // twice (so packageCounter will still hit 0 and finish loading),
-              // and remove the package from toLoad so we don't mark it as
-              // loaded.
-              console.error(`Couldn't load package from URL ${scriptSrc}`)
-              let index = toLoad.indexOf(pkg);
-              if (index !== -1) {
-                toLoad.splice(index, 1);
-              }
-              for (let i = 0; i < 2; i++) {
-                self.pyodide._module.monitorRunDependencies();
-              }
-            });
-          }
+          loadScript(scriptSrc, () => {}, () => {
+            // If the package_uri fails to load, call monitorRunDependencies
+            // twice (so packageCounter will still hit 0 and finish loading),
+            // and remove the package from toLoad so we don't mark it as loaded.
+            console.error(`Couldn't load package from URL ${scriptSrc}`)
+            let index = toLoad.indexOf(pkg);
+            if (index !== -1) {
+              toLoad.splice(index, 1);
+            }
+            for (let i = 0; i < 2; i++) {
+              self.pyodide._module.monitorRunDependencies();
+            }
+          });
         }
+
+        // We have to invalidate Python's import caches, or it won't
+        // see the new files. This is done here so it happens in parallel
+        // with the fetching over the network.
+        self.pyodide.runPython('import importlib as _importlib\n' +
+                               '_importlib.invalidate_caches()\n');
       });
 
       return promise;
     });
-
-    // We have to invalidate Python's import caches, or it won't
-    // see the new files. This is done here so it happens in parallel
-    // with the fetching over the network.
-    self.pyodide.runPython('import importlib as _importlib\n' +
-                           '_importlib.invalidate_caches()\n');
 
     return promise;
   };
