@@ -4,6 +4,8 @@
 **[Contributing](#contributing)** |
 **[License](#license)**
 
+(Testing to see whether all tests pass on master)
+
 # [Pyodide](https://github.com/iodide-project/pyodide)
 
 
