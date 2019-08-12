@@ -32,9 +32,9 @@ def run_native(hostpython, code):
 def run_wasm(code, cls, port):
     s = cls(port)
     try:
-        s.load_package('numpy')
         if 'matplotlib' in code:
             s.load_package('matplotlib')
+        s.load_package('numpy')
         s.run(code)
         try:
             runtime = float(s.logs.split('\n')[-1])
