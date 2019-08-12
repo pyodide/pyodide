@@ -1,14 +1,12 @@
 # non-native
-# setup: from matplotlib import pyplot as plt ; import numpy as np ; import matplotlib.cm as cm ; import matplotlib.cbook as cbook ; from matplotlib.path import Path ; from matplotlib.patches import PathPatch # noqa
+# setup: from matplotlib import pyplot as plt ; import numpy as np ; import matplotlib.cm as cm # noqa
 # run: canvas_image()
 
 # pythran export canvas_image()
 from matplotlib import pyplot as plt
 import numpy as np
 import matplotlib.cm as cm
-import matplotlib.cbook as cbook
-from matplotlib.path import Path
-from matplotlib.patches import PathPatch
+
 
 def canvas_image():
     delta = 0.025

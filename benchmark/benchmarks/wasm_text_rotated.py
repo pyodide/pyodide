@@ -23,16 +23,15 @@ def wasm_text_rotated():
     date1 = datetime.date(1952, 1, 1)
     date2 = datetime.date(2004, 4, 12)
     delta = datetime.timedelta(days=100)
-    
+
     dates = drange(date1, date2, delta)
     s = np.random.rand(len(dates))  # make up some random y values
-    
-    
+
     fig, ax = plt.subplots()
     plt.plot_date(dates, s)
     ax.xaxis.set_major_locator(loc)
     ax.xaxis.set_major_formatter(formatter)
     labels = ax.get_xticklabels()
     plt.setp(labels, rotation=30, fontsize=10)
-    
+
     plt.show()

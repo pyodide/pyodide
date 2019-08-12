@@ -18,15 +18,14 @@ def canvas_image_affine():
         Z = (Z1 - Z2)
         return Z
 
-
     def do_plot(ax, Z, transform):
         im = ax.imshow(Z, interpolation='none',
-                    origin='lower',
-                    extent=[-2, 4, -3, 2], clip_on=True)
-        
+                       origin='lower',
+                       extent=[-2, 4, -3, 2], clip_on=True)
+
         trans_data = transform + ax.transData
         im.set_transform(trans_data)
-                   
+
         # display intended extent of the image
         x1, x2, y1, y2 = im.get_extent()
         ax.plot([x1, x2, x2, x1, x1], [y1, y1, y2, y2, y1], "y--",
@@ -40,13 +39,13 @@ def canvas_image_affine():
 
     # image rotation
     do_plot(ax1, Z, mtransforms.Affine2D().rotate_deg(30))
-    
+
     # image skew
     do_plot(ax2, Z, mtransforms.Affine2D().skew_deg(30, 15))
-    
+
     # scale and reflection
     do_plot(ax3, Z, mtransforms.Affine2D().scale(-1, .5))
-    
+
     # everything and a translation
     do_plot(ax4, Z, mtransforms.Affine2D().
             rotate_deg(30).skew_deg(30, 15).scale(-1, .5).translate(.5, -1))

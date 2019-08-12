@@ -9,7 +9,6 @@ import numpy as np
 
 def canvas_custom_font():
     f = {'fontname': 'cmsy10'}
-    
     t = np.arange(0.0, 2.0, 0.01)
     s = 1 + np.sin(2 * np.pi * t)
     plt.figure()

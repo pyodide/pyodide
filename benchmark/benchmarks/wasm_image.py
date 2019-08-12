@@ -1,5 +1,5 @@
 # non-native
-# setup: import matplotlib ; import numpy as np ;  matplotlib.use('module://matplotlib.backends.wasm_backend') ; from matplotlib import pyplot as plt ; import matplotlib.cm as cm ; import matplotlib.cbook as cbook ; from matplotlib.path import Path ; from matplotlib.patches import PathPatch # noqa
+# setup: import matplotlib ; import numpy as np ;  matplotlib.use('module://matplotlib.backends.wasm_backend') ; from matplotlib import pyplot as plt ; import matplotlib.cm as cm # noqa
 # run: wasm_image()
 
 # pythran export wasm_image()
@@ -8,9 +8,6 @@ import numpy as np
 matplotlib.use('module://matplotlib.backends.wasm_backend')
 from matplotlib import pyplot as plt  # noqa: E402
 import matplotlib.cm as cm  # noqa: E402
-import matplotlib.cbook as cbook  # noqa: E402
-from matplotlib.path import Path  # noqa: E402
-from matplotlib.patches import PathPatch  # noqa: E402
 
 
 def wasm_image():
