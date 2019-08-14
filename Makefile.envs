@@ -1,4 +1,4 @@
-export EMSCRIPTEN_VERSION = 1.38.30
+export EMSCRIPTEN_VERSION = 1.38.22
 
 export PATH := $(PYODIDE_ROOT)/ccache:$(PYODIDE_ROOT)/emsdk/emsdk:$(PYODIDE_ROOT)/emsdk/emsdk/clang/tag-e$(EMSCRIPTEN_VERSION)/build_tag-e$(EMSCRIPTEN_VERSION)_64/bin:$(PYODIDE_ROOT)/emsdk/emsdk/node/8.9.1_64bit/bin:$(PYODIDE_ROOT)/emsdk/emsdk/emscripten/tag-$(EMSCRIPTEN_VERSION):$(PYODIDE_ROOT)/emsdk/emsdk/binaryen/tag-$(EMSCRIPTEN_VERSION)_64bit_binaryen/bin:$(PATH)
 
