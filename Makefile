@@ -72,6 +72,10 @@ build/pyodide.asm.js: src/main.bc src/jsimport.bc src/jsproxy.bc src/js2python.b
 	rm build/pyodide.asm.html
 
 
+env:
+	env
+
+
 build/pyodide.asm.data: root/.built
 	( \
 		cd build; \
