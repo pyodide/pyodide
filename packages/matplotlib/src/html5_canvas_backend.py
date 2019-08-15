@@ -215,8 +215,7 @@ class GraphicsContextHTMLCanvas(GraphicsContextBase):
             raise ValueError('Unrecognized join style. Found {0}'.format(js))
 
     def set_linewidth(self, w):
-        if w == 0:
-            self.stroke = False
+        self.stroke = (w != 0)
         self._linewidth = float(w)
         self.renderer.ctx.lineWidth = self.renderer.points_to_pixels(float(w))
 
@@ -311,12 +310,13 @@ class RendererHTMLCanvas(RendererBase):
 
         transform += Affine2D().scale(1, -1).translate(0, self.height)
         self._path_helper(self.ctx, path, transform, figure_clip)
-        if gc.stroke:
-            self.ctx.stroke()
 
         if rgbFace is not None:
             self.ctx.fill()
             self.ctx.fillStyle = '#000000'
+
+        if gc.stroke:
+            self.ctx.stroke()
 
     def draw_markers(self, gc, marker_path, marker_trans, path,
                      trans, rgbFace=None):
