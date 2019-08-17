@@ -19,6 +19,7 @@ from matplotlib.ft2font import FT2Font, LOAD_NO_HINTING
 from matplotlib.mathtext import MathTextParser
 
 from js import document, window, XMLHttpRequest, ImageData, FontFace
+from js import Function
 
 import base64
 import io
@@ -285,6 +286,8 @@ class RendererHTMLCanvas(RendererBase):
         self.ctx.lineWidth = self.points_to_pixels(gc.get_linewidth())
 
     def _path_helper(self, ctx, path, transform, clip=None):
+        f = Function.new('x', 'y', 'return x+y')
+        print(f(3,4))
         ctx.beginPath()
         for points, code in path.iter_segments(transform,
                                                remove_nans=True, clip=clip):
