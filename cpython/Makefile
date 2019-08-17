@@ -112,7 +112,7 @@ $(BZIP2BUILD)/libbz2.a: $(BZIP2TARBALL)
 	tar -C $(ROOT)/build/ -xf $(BZIP2TARBALL)
 	( \
 		cd $(BZIP2BUILD); \
-		emmake make CC=emcc CFLAGS="-Wall -Winline -O2 -fomit-frame-pointer -D_FILE_OFFSET_BITS=64" AR=emar RANLIB=emranlib libbz2.a; \
+		emmake make CC=emcc AR=emar RANLIB=emranlib libbz2.a; \
 	)
 
 
