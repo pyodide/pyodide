@@ -276,6 +276,11 @@ var languagePluginLoader = new Promise((resolve, reject) => {
 
       let promise = new Promise((resolve, reject) => {
         if (Object.keys(toLoad).length === 0) {
+          // Invalidate Python's import caches also here, in case remotePath
+          // feature imported something...
+          self.pyodide.runPython('import importlib as _importlib\n' +
+                                 '_importlib.invalidate_caches()\n');
+
           resolve('No new packages to load');
           return;
         }
