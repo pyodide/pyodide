@@ -127,8 +127,13 @@ var languagePluginLoader = new Promise((resolve, reject) => {
 
         _remoteModules.push(prefix + pkg);
 
+        var remotePath;
+
         // Fetch modules per entry configured in remotePath
-        let remotePath = self.pyodide.remotePath.slice();
+        if (!Array.isArray(self.pyodide.remotePath))
+          remotePath = [ self.pyodide.remotePath ]; // Convert into an array
+        else
+          remotePath = self.pyodide.remotePath.slice();
 
         function fetchModule() {
           let remoteURL = remotePath.shift();
