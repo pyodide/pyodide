@@ -109,12 +109,14 @@ var languagePluginLoader = new Promise((resolve, reject) => {
     for (let name of imports) {
       let pkg = _uri_to_package_name(name);
 
+      console.log(`name = ${name}, pkg = ${pkg}`);
+
       if (self.pyodide._module.packages.import_name_to_package_name[name] !==
-          undefined) {
-        packagesToLoad[self.pyodide._module.packages
-                           .import_name_to_package_name[name]] = undefined;
-      } else if (self.pyodide._module.packages.dependencies[name] !==
-                 undefined) {
+              undefined ||
+          self.pyodide._module.packages.dependencies[name] !== undefined ||
+          package_uri_regexp.test(name)) {
+
+        console.log(`Adding ${name} to packagesToLoad`);
         packagesToLoad[name] = undefined;
       } else if (self.pyodide.remotePath.length) {
 
@@ -229,6 +231,8 @@ var languagePluginLoader = new Promise((resolve, reject) => {
 
       // Clear packagesToLoad for later imports
       packagesToLoad = {};
+
+      console.log(`queue = ${queue}`);
 
       while (queue.length) {
         let package_uri = queue.pop();
