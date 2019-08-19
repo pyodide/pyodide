@@ -99,17 +99,23 @@ var languagePluginLoader = new Promise((resolve, reject) => {
 
   let _resolveImports = (imports, prefix) => {
     var promises = [];
-    var packageNames =
-        self.pyodide._module.packages.import_name_to_package_name;
 
     if (typeof prefix === "undefined")
       prefix = "";
 
+    if (!Array.isArray(imports))
+      imports = [ imports ];
+
     for (let name of imports) {
       let pkg = _uri_to_package_name(name);
 
-      if (packageNames[name] !== undefined) {
-        packagesToLoad[packageNames[name]] = undefined;
+      if (self.pyodide._module.packages.import_name_to_package_name[name] !==
+          undefined) {
+        packagesToLoad[self.pyodide._module.packages
+                           .import_name_to_package_name[name]] = undefined;
+      } else if (self.pyodide._module.packages.dependencies[name] !==
+                 undefined) {
+        packagesToLoad[name] = undefined;
       } else if (self.pyodide.remotePath.length) {
 
         // Check if this module with the same prefix is in _remoteModules,
