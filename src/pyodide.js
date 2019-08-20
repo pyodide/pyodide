@@ -12,13 +12,14 @@ var languagePluginLoader = new Promise((resolve, reject) => {
   ////////////////////////////////////////////////////////////
   // Package loading
   let loadedPackages = new Array();
+  var packagesToLoad = {};
   var loadPackagePromise = new Promise((resolve) => resolve());
+
   // Regexp for validating package name and URI
   var package_ident_regexp = '[a-z0-9_][a-z0-9_\-]*';
   var package_uri_regexp =
-      new RegExp('^https?://.*?(' + package_name_regexp + ').js$', 'i');
+      new RegExp('^https?://.*?(' + package_ident_regexp + ').js$', 'i');
   var package_name_regexp = new RegExp('^' + package_ident_regexp + '$', 'i');
-  var packagesToLoad = {};
 
   let _uri_to_package_name = (package_uri) => {
     // Generate a unique package name from URI
