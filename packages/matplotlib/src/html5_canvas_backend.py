@@ -162,6 +162,7 @@ class GraphicsContextHTMLCanvas(GraphicsContextBase):
 
     def __init__(self, renderer):
         super().__init__()
+        self.stroke = True
         self.renderer = renderer
 
     def restore(self):
@@ -214,6 +215,7 @@ class GraphicsContextHTMLCanvas(GraphicsContextBase):
             raise ValueError('Unrecognized join style. Found {0}'.format(js))
 
     def set_linewidth(self, w):
+        self.stroke = (w != 0)
         self._linewidth = float(w)
         self.renderer.ctx.lineWidth = self.renderer.points_to_pixels(float(w))
 
@@ -312,7 +314,8 @@ class RendererHTMLCanvas(RendererBase):
         if rgbFace is not None:
             self.ctx.fill()
             self.ctx.fillStyle = '#000000'
-        else:
+
+        if gc.stroke:
             self.ctx.stroke()
 
     def draw_markers(self, gc, marker_path, marker_trans, path,
