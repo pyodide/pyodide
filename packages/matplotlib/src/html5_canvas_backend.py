@@ -194,7 +194,7 @@ class GraphicsContextHTMLCanvas(GraphicsContextBase):
         tpath, affine = path.get_transformed_path_and_affine()
         affine = (affine +
                   Affine2D().scale(1, -1).translate(0, self.renderer.height))
-        self.renderer._path_helper(self.renderer.ctx, tpath, affine)
+        self.renderer._path_helper(self.renderer.ctx, tpath, affine, None)
         self.renderer.ctx.clip()
 
     def set_dashes(self, dash_offset, dash_list):
@@ -285,23 +285,45 @@ class RendererHTMLCanvas(RendererBase):
 
         self.ctx.lineWidth = self.points_to_pixels(gc.get_linewidth())
 
-    def _path_helper(self, ctx, path, transform, clip=None):
-        f = Function.new('x', 'y', 'return x+y')
-        print(f(3,4))
-        ctx.beginPath()
-        for points, code in path.iter_segments(transform,
-                                               remove_nans=True, clip=clip):
-            points += 0.5
-            if code == Path.MOVETO:
-                ctx.moveTo(points[0], points[1])
-            elif code == Path.LINETO:
-                ctx.lineTo(points[0], points[1])
-            elif code == Path.CURVE3:
-                ctx.quadraticCurveTo(*points)
-            elif code == Path.CURVE4:
-                ctx.bezierCurveTo(*points)
-            elif code == Path.CLOSEPOLY:
-                ctx.closePath()
+    _path_helper = Function.new('ctx', 'path', 'transform', 'clip', 
+                                     """
+                                     next = pyodide.pyimport('next')
+                                     ctx.beginPath()
+                                     gen = path.iter_segments(transform, remove_nans=true, clip=clip)
+                                     try
+                                     {
+                                         while(true)
+                                         {
+                                             item = next(gen)
+                                             points = item[0]
+                                             code = item[1]
+                                             if (code === 1)
+                                             {
+                                                ctx.moveTo(points[0], points[1])
+                                             }
+                                             else if (code === 2)
+                                             {
+                                                ctx.lineTo(points[0], points[1])
+                                             }
+                                             else if (code === 3)
+                                             {
+                                                 ctx.quadraticCurveTo(...points)
+                                             }
+                                             else if (code === 4)
+                                             {
+                                                 ctx.bezierCurveTo(...points)
+                                             }
+                                             else if (code === 79)
+                                             {
+                                                 ctx.closePath()
+                                             }
+                                         }
+                                     }
+                                     catch(err)
+                                     {
+                                         console.log('hi')
+                                     }
+                                     """)
 
     def draw_path(self, gc, path, transform, rgbFace=None):
         self._set_style(gc, rgbFace)
