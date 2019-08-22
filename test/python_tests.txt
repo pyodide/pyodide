@@ -81,7 +81,7 @@ test_buffer
 test_bufio
 test_builtin  floating point
 test_bytes
-test_bz2
+test_bz2 threading
 test_c_locale_coercion
 test_calendar
 test_call

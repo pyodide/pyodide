@@ -37,6 +37,7 @@ _blake2 _blake2/blake2module.c _blake2/blake2b_impl.c ../../host/Python-3.7.0/Mo
 
 _sqlite3 _sqlite/cache.c _sqlite/connection.c _sqlite/cursor.c _sqlite/microprotocols.c _sqlite/module.c _sqlite/prepare_protocol.c _sqlite/row.c _sqlite/statement.c _sqlite/util.c -I$(SQLITEBUILD) -L$(SQLITEBUILD) -lsqlite3
 _crypt _cryptmodule.c
+_bz2 _bz2module.c -I$(BZIP2BUILD) -L$(BZIP2BUILD) -lbz2
 
 _queue _queuemodule.c
 

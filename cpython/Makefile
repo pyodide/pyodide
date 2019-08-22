@@ -24,6 +24,10 @@ SQLITETARBALL=$(ROOT)/downloads/sqlite-autoconf-3270200.tar.gz
 SQLITEBUILD=$(ROOT)/build/sqlite-autoconf-3270200
 SQLITEURL=https://www.sqlite.org/2019/sqlite-autoconf-3270200.tar.gz
 
+BZIP2TARBALL=$(ROOT)/downloads/bzip2-1.0.2.tar.gz
+BZIP2BUILD=$(ROOT)/build/bzip2-1.0.2
+BZIP2URL=ftp://sources.redhat.com/pub/bzip2/v102/bzip2-1.0.2.tar.gz
+
 
 all: $(INSTALL)/lib/$(LIB)
 
@@ -62,6 +66,11 @@ $(SQLITETARBALL):
 	wget -q -O $@ $(SQLITEURL)
 
 
+$(BZIP2TARBALL):
+	[ -d $(ROOT)/downloads ] || mkdir $(ROOT)/downloads
+	wget -q -O $@ $(BZIP2URL)
+
+
 $(HOSTPYTHON) $(HOSTPGEN): $(TARBALL)
 	mkdir -p $(HOSTINSTALL)
 	[ -d $(HOSTBUILD) ] || tar -C $(HOSTINSTALL) -xf $(TARBALL)
@@ -98,21 +107,30 @@ $(SQLITEBUILD)/libsqlite3.la: $(SQLITETARBALL)
 	)
 
 
-$(BUILD)/Makefile: $(BUILD)/.patched $(ZLIBBUILD)/.patched $(SQLITEBUILD)/libsqlite3.la
+$(BZIP2BUILD)/libbz2.a: $(BZIP2TARBALL)
+	[ -d $(ROOT)/build ] || (mkdir $(ROOT)/build)
+	tar -C $(ROOT)/build/ -xf $(BZIP2TARBALL)
+	( \
+		cd $(BZIP2BUILD); \
+		emmake make CC=emcc CFLAGS="-Wall -Winline -O2 -fomit-frame-pointer -D_FILE_OFFSET_BITS=64" AR=emar RANLIB=emranlib libbz2.a; \
+	)
+
+
+$(BUILD)/Makefile: $(BUILD)/.patched $(ZLIBBUILD)/.patched $(SQLITEBUILD)/libsqlite3.la $(BZIP2BUILD)/libbz2.a
 	cp config.site $(BUILD)/
 	( \
 		cd $(BUILD); \
-		CONFIG_SITE=./config.site READELF=true LD_RUN_PATH=$(SQLITEBUILD) emconfigure \
+		CONFIG_SITE=./config.site READELF=true LD_RUN_PATH="$(SQLITEBUILD):$(BZIP2BUILD)" emconfigure \
 		  ./configure \
-			  CPPFLAGS="-I$(SQLITEBUILD)" \
-				LDFLAGS="-L$(SQLITEBUILD)" \
-				--without-pymalloc \
-				--disable-shared \
-				--disable-ipv6 \
-				--without-gcc \
-				--host=asmjs-unknown-emscripten \
-				--build=$(shell $(BUILD)/config.guess) \
-				--prefix=$(INSTALL) ; \
+			  CPPFLAGS="-I$(SQLITEBUILD) -I$(BZIP2BUILD)" \
+			  LDFLAGS="-L$(SQLITEBUILD) -L$(BZIP2BUILD)" \
+			  --without-pymalloc \
+			  --disable-shared \
+			  --disable-ipv6 \
+			  --without-gcc \
+			  --host=asmjs-unknown-emscripten \
+			  --build=$(shell $(BUILD)/config.guess) \
+			  --prefix=$(INSTALL) ; \
 	)
 
 
