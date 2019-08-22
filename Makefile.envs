@@ -1,12 +1,11 @@
-export EMSCRIPTEN_VERSION = 1.38.30
+export EMSCRIPTEN_VERSION = 1.38.42
 
-export PATH := $(PYODIDE_ROOT)/ccache:$(PYODIDE_ROOT)/emsdk/emsdk:$(PYODIDE_ROOT)/emsdk/emsdk/clang/tag-e$(EMSCRIPTEN_VERSION)/build_tag-e$(EMSCRIPTEN_VERSION)_64/bin:$(PYODIDE_ROOT)/emsdk/emsdk/node/8.9.1_64bit/bin:$(PYODIDE_ROOT)/emsdk/emsdk/emscripten/tag-$(EMSCRIPTEN_VERSION):$(PYODIDE_ROOT)/emsdk/emsdk/binaryen/tag-$(EMSCRIPTEN_VERSION)_64bit_binaryen/bin:$(PATH)
+export PATH := $(PYODIDE_ROOT)/ccache:$(PYODIDE_ROOT)/emsdk/emsdk:$(PYODIDE_ROOT)/emsdk/emsdk/upstream/emscripten/:$(PYODIDE_ROOT)/emsdk/emsdk/node/8.9.1_64bit/bin:$(PATH)
 
 export EMSDK = $(PYODIDE_ROOT)/emsdk/emsdk
 export EM_CONFIG = $(PYODIDE_ROOT)/emsdk/emsdk/.emscripten
 export EM_CACHE = $(PYODIDE_ROOT)/emsdk/emsdk/.emscripten_cache
-export EMSCRIPTEN = $(PYODIDE_ROOT)/emsdk/emsdk/emscripten/tag-$(EMSCRIPTEN_VERSION)
-export BINARYEN_ROOT = $(PYODIDE_ROOT)/emsdk/emsdk/binaryen/tag-$(EMSCRIPTEN_VERSION)_64bit_binaryen
+export EMSDK_NODE = $(PYODIDE_ROOT)/emsdk/emsdk/node/8.9.1_64bit/bin/node
 
 export PYVERSION=3.7.0
 export PYMINOR=$(basename $(PYVERSION))
@@ -19,13 +18,10 @@ export PYODIDE_PACKAGE_ABI=1
 
 export SIDE_LDFLAGS=\
 	-O3 \
-  -s "BINARYEN_METHOD='native-wasm'" \
 	-Werror \
-  -s EMULATED_FUNCTION_POINTERS=1 \
   -s EMULATE_FUNCTION_POINTER_CASTS=1 \
   -s SIDE_MODULE=1 \
 	-s WASM=1 \
-  -s "BINARYEN_TRAP_MODE='clamp'" \
   --memory-init-file 0 \
   -s LINKABLE=1 \
   -s EXPORT_ALL=1

@@ -32,5 +32,5 @@ $(SRC)/Makefile: $(TARBALL)
 $(SRC)/lib/liblz4.a: $(SRC)/Makefile
 	( \
 		cd $(SRC) ; \
-		emmake make ; \
+		CPPFLAGS=-fPIC emmake make ; \
 	)

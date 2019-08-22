@@ -2,6 +2,9 @@
 
 # This is forked from emscripten 1.38.22, with the original copyright notice
 # below.
+#
+# # Change log
+#   - checked that it is up to date with emscripten 1.38.36
 
 # Copyright 2012 The Emscripten Authors.  All rights reserved.
 # Emscripten is available under two separate licenses, the MIT license and the
@@ -74,10 +77,9 @@ import ctypes
 
 emscripten_dir = os.path.join(
   os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
-  'emsdk', 'emsdk', 'emscripten'
+  'emsdk', 'emsdk', 'upstream', 'emscripten'
 )
-tag_dir = sorted(os.listdir(emscripten_dir), key=lambda x: len(x))[0]
-sys.path.insert(1, os.path.join(emscripten_dir, tag_dir))
+sys.path.insert(1, emscripten_dir)
 
 from tools.toolchain_profiler import ToolchainProfiler
 if __name__ == '__main__':

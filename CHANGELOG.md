@@ -1,5 +1,7 @@
 ## Unreleased
 
+- The included version of emscripten has been upgraded to 1.38.42
+
 ## Version 0.13.0
 
 - Tagged versions of Pyodide are now deployed to Netlify.

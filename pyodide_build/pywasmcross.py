@@ -249,6 +249,9 @@ def handle_command(line, args, dryrun=False):
         # Don't include any system directories
         if arg.startswith('-L/usr'):
             continue
+        # threading is disabled for now
+        if arg == '-pthread':
+            continue
         # The native build is possibly multithreaded, but the emscripten one
         # definitely isn't
         arg = re.sub(r'/python([0-9]\.[0-9]+)m', r'/python\1', arg)

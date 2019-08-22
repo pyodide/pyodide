@@ -41,7 +41,7 @@ index 7491963..0cc1cda 100644
 +ALLAUX = maxloc.o ilaenv.o ieeeck.o lsamen.o iparmq.o	\
      ilaprec.o ilatrans.o ilauplo.o iladiag.o chla_transtype.o \
 -    ../INSTALL/ilaver.o ../INSTALL/lsame.o
-+    ../INSTALL/ilaver.o
++    
  
  ALLXAUX =
  

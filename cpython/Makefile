@@ -41,9 +41,9 @@ $(INSTALL)/lib/$(LIB): $(BUILD)/$(LIB)
 
 
 clean:
-	-rm -fr $(HOSTINSTALL)
-	-rm -fr $(BUILD)
-	-rm -fr $(INSTALL)
+	rm -rf downloads
+	rm -rf installs
+	rm -rf build
 
 
 $(TARBALL):
@@ -93,7 +93,7 @@ $(SQLITEBUILD)/libsqlite3.la: $(SQLITETARBALL)
 	tar -C $(ROOT)/build/ -xf $(SQLITETARBALL)
 	( \
 		cd $(SQLITEBUILD); \
-		emconfigure ./configure; \
+		CFLAGS=-fPIC emconfigure ./configure --with-pic --host=wasm32; \
 		emmake make; \
 	)
 
@@ -104,6 +104,7 @@ $(BUILD)/Makefile: $(BUILD)/.patched $(ZLIBBUILD)/.patched $(SQLITEBUILD)/libsql
 		cd $(BUILD); \
 		CONFIG_SITE=./config.site READELF=true LD_RUN_PATH=$(SQLITEBUILD) emconfigure \
 		  ./configure \
+        CFLAGS="-fPIC" \
 			  CPPFLAGS="-I$(SQLITEBUILD)" \
 				LDFLAGS="-L$(SQLITEBUILD)" \
 				--without-pymalloc \
@@ -116,7 +117,7 @@ $(BUILD)/Makefile: $(BUILD)/.patched $(ZLIBBUILD)/.patched $(SQLITEBUILD)/libsql
 	)
 
 
-$(BUILD)/$(LIB): $(BUILD)/Makefile $(HOSTPYTHON) $(HOSTPGEN) Setup.local
+$(BUILD)/$(LIB): $(BUILD)/Makefile $(HOSTPYTHON) $(HOSTPGEN) Setup.local pyconfig.undefs.h
 	cp Setup.local $(BUILD)/Modules/
 	cat pyconfig.undefs.h >> $(BUILD)/pyconfig.h
 	( \

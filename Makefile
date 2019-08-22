@@ -15,7 +15,7 @@ PYODIDE_CXX=$(PYODIDE_ROOT)/ccache/em++
 CC=emcc
 CXX=em++
 OPTFLAGS=-O3
-CFLAGS=$(OPTFLAGS) -g -I$(PYTHONINCLUDE) -Wno-warn-absolute-paths
+CFLAGS=$(OPTFLAGS) -g -I$(PYTHONINCLUDE) -Wno-warn-absolute-paths -fPIC
 CXXFLAGS=$(CFLAGS) -std=c++14
 
 
@@ -24,11 +24,9 @@ LDFLAGS=\
 	-s MODULARIZE=1 \
 	$(CPYTHONROOT)/installs/python-$(PYVERSION)/lib/libpython$(PYMINOR).a \
   $(LZ4LIB) \
-  -s "BINARYEN_METHOD='native-wasm'" \
   -s TOTAL_MEMORY=1073741824 \
   -s ALLOW_MEMORY_GROWTH=1 \
 	-s MAIN_MODULE=1 \
-	-s EMULATED_FUNCTION_POINTERS=1 \
   -s EMULATE_FUNCTION_POINTER_CASTS=1 \
   -s LINKABLE=1 \
   -s EXPORT_ALL=1 \
@@ -41,7 +39,6 @@ LDFLAGS=\
   -L$(wildcard $(CPYTHONROOT)/build/sqlite*/.libs) -lsqlite3 \
   -lstdc++ \
   --memory-init-file 0 \
-  -s "BINARYEN_TRAP_MODE='clamp'" \
   -s TEXTDECODER=0 \
   -s LZ4=1
 
@@ -181,9 +178,9 @@ $(PYODIDE_EMCC):
 	mkdir -p $(PYODIDE_ROOT)/ccache ; \
 	if test ! -h $@; then \
 		if hash ccache &>/dev/null; then \
-    		ln -s `which ccache` $@ ; \
+		ln -s `which ccache` $@ ; \
 		else \
-    		ln -s emsdk/emsdk/emscripten/tag-$(EMSCRIPTEN_VERSION)/emcc $@; \
+		ln -s emsdk/emsdk/emscripten/tag-$(EMSCRIPTEN_VERSION)/emcc $@; \
 		fi; \
 	fi
 
@@ -194,9 +191,9 @@ $(PYODIDE_CXX):
 		if hash ccache &>/dev/null; then \
 		    ln -s `which ccache` $@ ; \
 		else \
-    		ln -s emsdk/emsdk/emscripten/tag-$(EMSCRIPTEN_VERSION)/em++ $@; \
+				ln -s emsdk/emsdk/emscripten/tag-$(EMSCRIPTEN_VERSION)/em++ $@; \
 		fi; \
-  	fi
+	fi
 
 
 $(CPYTHONLIB): emsdk/emsdk/.complete $(PYODIDE_EMCC) $(PYODIDE_CXX)
