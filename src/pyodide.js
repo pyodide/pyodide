@@ -323,129 +323,130 @@ var languagePluginLoader = new Promise((resolve, reject) => {
     for (let name of imports) {
       let pkg = _uri_to_package_name(name);
 
-      // Check if this is a known package
-      if (
-          // Allow for both import names...
-          self.pyodide._module.packages.import_name_to_package_name[name] !==
-              undefined ||
+      // Check for known packages via their alias mapping
+      if (self.pyodide._module.packages.import_name_to_package_name[name] !==
+          undefined) {
+        packagesToLoad[self.pyodide._module.packages
+                           .import_name_to_package_name[name]] = undefined;
+        continue;
+      }
 
-          // ...as well as direct package names...
-          self.pyodide._module.packages.dependencies[name] !== undefined
-
-          // ...and package URIs
-          || package_uri_regexp.test(name)) {
+      // Check for directly known packages or packages via URI regexp
+      if (self.pyodide._module.packages.dependencies[name] !== undefined ||
+          package_uri_regexp.test(name)) {
         packagesToLoad[name] = undefined;
-      } else if (
-          // Invalid pkg or disabled remotePath feature
-          !self.pyodide.remotePath.length || pkg == null) {
+        continue;
+      }
+
+      // Check for invalid pkg or disabled remotePath feature
+      if (!self.pyodide.remotePath.length || pkg == null) {
 
         // Only add to packageList if this is not a stdlib module
         if (stdlibModules.indexOf(name) < 0)
           packagesToLoad[name] = undefined;
 
-        // Else, perform remotePath module resolving first
-      } else if (self.pyodide.remotePath.length) {
+        continue;
+      }
 
-        // Check if this module with the same prefix is in loadedModules,
-        // to avoid multiple fetching of the same module from different
-        // sub-modules.
-        if (loadedModules.indexOf(prefix + pkg) >= 0) {
-          continue;
-        }
+      // Check if this module with the same prefix is in loadedModules,
+      // to avoid multiple fetching of the same module from different
+      // sub-modules.
+      if (loadedModules.indexOf(prefix + pkg) >= 0) {
+        continue;
+      }
 
-        loadedModules.push(prefix + pkg);
+      loadedModules.push(prefix + pkg);
 
-        var remotePath;
+      var remotePath;
 
-        // Fetch modules per entry configured in remotePath
-        if (!Array.isArray(self.pyodide.remotePath))
-          remotePath = [ self.pyodide.remotePath ]; // Convert into an array
-        else
-          remotePath = self.pyodide.remotePath.slice();
+      // Fetch modules per entry configured in remotePath
+      if (!Array.isArray(self.pyodide.remotePath))
+        remotePath = [ self.pyodide.remotePath ]; // Convert into an array
+      else
+        remotePath = self.pyodide.remotePath.slice();
 
-        function fetchModule() {
-          let remoteURL = remotePath.shift();
+      function fetchModule() {
+        let remoteURL = remotePath.shift();
 
-          // The entry "/" points to pyodide's baseURL
-          if (remoteURL === "/")
-            remoteURL = baseURL;
+        // The entry "/" points to pyodide's baseURL
+        if (remoteURL === "/")
+          remoteURL = baseURL;
 
-          remoteURL = remoteURL.substr(0, remoteURL.lastIndexOf('/')) + '/';
+        if (remoteURL.slice(-1) !== '/')
+          remoteURL = remoteURL += '/';
 
-          // Try to fetch a single .py-file first
-          let filename = pkg + ".py";
-          let url = remoteURL + (prefix ? prefix + "/" : "") + filename;
-          let path = self.pyodide._pythonPath + (prefix ? prefix + "/" : "") +
-                     filename;
+        // Try to fetch a single .py-file first
+        let filename = pkg + ".py";
+        let url = remoteURL + (prefix ? prefix + "/" : "") + filename;
+        let path =
+            self.pyodide._pythonPath + (prefix ? prefix + "/" : "") + filename;
 
-          return new Promise((resolve, reject) => {
-            fetch(url, {}).then((response) => {
+        return new Promise((resolve, reject) => {
+          fetch(url, {}).then((response) => {
+            if (response.status === 200)
+              return response.text().then((code) => {
+                console.debug(`fetched ${name} from ${url} successfully, ` +
+                              `saving to ${path}`);
+
+                self.pyodide._module.FS.writeFile(path, code);
+
+                let imports = self.pyodide.parsePythonImports(code, prefix);
+
+                if (imports.length)
+                  _resolveImports(imports, prefix).then(() => resolve());
+                else
+                  resolve();
+              });
+
+            // Try to fetch directory with pkg/__init__.py afterwards
+
+            let fFilename = "__init__.py";
+            let fPrefix = (prefix ? prefix + "/" : "") + pkg;
+            let fUrl = remoteURL + fPrefix + "/" + fFilename;
+            let fPath = self.pyodide._pythonPath + fPrefix + "/" + fFilename;
+
+            return fetch(fUrl, {}).then((response) => {
               if (response.status === 200)
                 return response.text().then((code) => {
-                  console.debug(`fetched ${name} from ${url} successfully, ` +
-                                `saving to ${path}`);
+                  console.debug(
+                      `fetched ${fFilename} from ${fUrl} successfully, ` +
+                      `saving to ${fPath}`);
 
-                  self.pyodide._module.FS.writeFile(path, code);
+                  self.pyodide._module.FS.mkdir(self.pyodide._pythonPath +
+                                                fPrefix);
+                  self.pyodide._module.FS.writeFile(fPath, code);
 
-                  let imports = self.pyodide.parsePythonImports(code, prefix);
+                  let imports = self.pyodide.parsePythonImports(code, fPrefix);
 
-                  if (imports.length)
-                    _resolveImports(imports, prefix).then(() => resolve());
-                  else
+                  if (imports.length) {
+                    _resolveImports(imports, fPrefix).then(() => resolve());
+                  } else {
                     resolve();
+                  }
                 });
 
-              // Try to fetch directory with pkg/__init__.py afterwards
-
-              let fFilename = "__init__.py";
-              let fPrefix = (prefix ? prefix + "/" : "") + pkg;
-              let fUrl = remoteURL + fPrefix + "/" + fFilename;
-              let fPath = self.pyodide._pythonPath + fPrefix + "/" + fFilename;
-
-              return fetch(fUrl, {}).then((response) => {
-                if (response.status === 200)
-                  return response.text().then((code) => {
-                    console.debug(
-                        `fetched ${fFilename} from ${fUrl} successfully, ` +
-                        `saving to ${fPath}`);
-
-                    self.pyodide._module.FS.mkdir(self.pyodide._pythonPath +
-                                                  fPrefix);
-                    self.pyodide._module.FS.writeFile(fPath, code);
-
-                    let imports =
-                        self.pyodide.parsePythonImports(code, fPrefix);
-
-                    if (imports.length) {
-                      _resolveImports(imports, fPrefix).then(() => resolve());
-                    } else {
-                      resolve();
-                    }
-                  });
-
-                // Try another remote path?
-                if (remotePath.length) {
-                  fetchModule().then(() => resolve());
-                } else {
-                  // In case this is a standard module, silently ignore this
-                  // import.
-                  if (stdlibModules.indexOf(name) < 0) {
-                    packagesToLoad[name] = undefined;
-                  }
-
-                  // Mark this promise as resolved, although no file was
-                  // fetched. Python will do the rest.
-                  resolve();
-
-                  // reject(`Unable to locate package ${pkg}`)
+              // Try another remote path?
+              if (remotePath.length) {
+                fetchModule().then(() => resolve());
+              } else {
+                // In case this is a standard module, silently ignore this
+                // import.
+                if (stdlibModules.indexOf(name) < 0) {
+                  packagesToLoad[name] = undefined;
                 }
-              });
+
+                // Mark this promise as resolved, although no file was
+                // fetched. Python will do the rest.
+                resolve();
+
+                // reject(`Unable to locate package ${pkg}`)
+              }
             });
           });
-        }
-
-        promises.push(fetchModule());
+        });
       }
+
+      promises.push(fetchModule());
     }
 
     return Promise.all(promises);
