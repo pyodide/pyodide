@@ -325,21 +325,25 @@ var languagePluginLoader = new Promise((resolve, reject) => {
 
       // Check if this is a known package
       if (
-          // Invalid pkg or disabled remotePath feature
-          !self.pyodide.remotePath.length || pkg == null ||
-
           // Allow for both import names...
           self.pyodide._module.packages.import_name_to_package_name[name] !==
               undefined ||
 
-          // ...as well as direct package names
-          self.pyodide._module.packages.dependencies[name] !== undefined ||
+          // ...as well as direct package names...
+          self.pyodide._module.packages.dependencies[name] !== undefined
 
-          // and package URIs
-          package_uri_regexp.test(name)) {
-
+          // ...and package URIs
+          || package_uri_regexp.test(name)) {
         packagesToLoad[name] = undefined;
+      } else if (
+          // Invalid pkg or disabled remotePath feature
+          !self.pyodide.remotePath.length || pkg == null) {
 
+        // Only add to packageList if this is not a stdlib module
+        if (stdlibModules.indexOf(name) < 0)
+          packagesToLoad[name] = undefined;
+
+        // Else, perform remotePath module resolving first
       } else if (self.pyodide.remotePath.length) {
 
         // Check if this module with the same prefix is in loadedModules,
