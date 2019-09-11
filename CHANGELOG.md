@@ -1,6 +1,6 @@
 ## Unreleased
 
-- The built-in `sqlite3** module of Python is now enabled.
+- The built-in `sqlite` and `bz2` modules of Python are now enabled.
 
 - New package: `nltk`
 
