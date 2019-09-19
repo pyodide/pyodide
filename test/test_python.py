@@ -224,10 +224,10 @@ def test_js2python(selenium):
         'jsstring_ucs4 == "🐍"')
     assert selenium.run(
         'from js import jsnumber0\n'
-        'jsnumber0 == 42 and str(jsnumber0) == "42"')
+        'jsnumber0 == 42 and isinstance(jsnumber0, int)')
     assert selenium.run(
         'from js import jsnumber1\n'
-        'jsnumber1 == 42.5 and str(jsnumber1) == "42.5"')
+        'jsnumber1 == 42.5 and isinstance(jsnumber1, float)')
     assert selenium.run(
         'from js import jsundefined\n'
         'jsundefined is None')
