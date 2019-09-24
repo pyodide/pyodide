@@ -52,7 +52,7 @@ def find_imports(code, prefix=""):
     names.
     """
     # simulate prefix
-    prefix = prefix.replace("/", ".")
+    prefix = prefix.replace('/', '.')
 
     # handle mis-indented input from multi-line strings
     code = dedent(code)
@@ -64,14 +64,31 @@ def find_imports(code, prefix=""):
 
         if isinstance(node, ast.Import):
             for name in node.names:
-                name = name.name
-                imports.add(name.split('.')[0])
+                name = name.name.split('.')[0]
+
+                # This starting with the current prefix can be ignored.
+                if prefix and (prefix.startswith(name + '.')
+                               or prefix == name):
+                    continue
+
+                imports.add(name)
 
         elif isinstance(node, ast.ImportFrom):
             name = node.module
 
-            if not prefix or (name and not name.startswith(prefix)):
+            if prefix and name:
+                # When prefix is provided, check either for full prefix
+                # or for the prefix' first element.
+                if name.startswith(prefix):
+                    name = name[len(prefix) + 1:].split('.')[0]
+                else:
+                    name = name.split('.')[0]
+                    if prefix.startswith(name + '.') or prefix == name:
+                        continue
+
+            if name:
                 imports.add(name.split('.')[0])
+
             else:
                 for name in reversed(node.names):
                     imports.add(name.name)

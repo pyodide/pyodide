@@ -14,6 +14,8 @@ var languagePluginLoader = new Promise((resolve, reject) => {
   let loadedPackages = [];
   let loadedModules = [];
   let stdlibModules = [
+    "js", // 'js' is a pyodide-only build-in module
+
     "__future__",
     "__main__",
     "_dummy_thread",
@@ -351,11 +353,12 @@ var languagePluginLoader = new Promise((resolve, reject) => {
       // Check if this module with the same prefix is in loadedModules,
       // to avoid multiple fetching of the same module from different
       // sub-modules.
-      if (loadedModules.indexOf(prefix + pkg) >= 0) {
+      let prefixedPkg = (prefix ? prefix + "/" : "") + pkg;
+      if (loadedModules.indexOf(prefixedPkg) >= 0) {
         continue;
       }
 
-      loadedModules.push(prefix + pkg);
+      loadedModules.push(prefixedPkg);
 
       var remotePath;
 
@@ -372,8 +375,8 @@ var languagePluginLoader = new Promise((resolve, reject) => {
         if (remoteURL === "/")
           remoteURL = baseURL;
 
-        if (remoteURL.slice(-1) !== '/')
-          remoteURL = remoteURL += '/';
+        if (remoteURL.slice(-1) !== "/")
+          remoteURL = remoteURL += "/";
 
         // Try to fetch a single .py-file first
         let filename = pkg + ".py";
