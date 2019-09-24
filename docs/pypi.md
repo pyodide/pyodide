@@ -23,7 +23,7 @@ micropip.install('snowballstemmer')
 
 %% py
 import snowballstemmer
-snowballstemmer.stemmer('english')
+stemmer = snowballstemmer.stemmer('english')
 stemmer.stemWords('go goes going gone'.split())
 ```
 
@@ -34,7 +34,7 @@ finished loading:
 ```
 def do_work(*args):
   import snowballstemmer
-  snowballstemmer.stemmer('english')
+  stemmer = snowballstemmer.stemmer('english')
   stemmer.stemWords('go goes going gone'.split())
 
 import micropip
