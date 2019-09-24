@@ -279,6 +279,12 @@ EM_JS(int, hiwire_new, (int idobj, int idargs), {
 });
 
 EM_JS(int, hiwire_get_length, (int idobj), {
+  // clang-format off
+  // In case there is no length on the object, return a length of 1
+  if (Module.hiwire_get_value(idobj).length === undefined)
+    return 1;
+  // clang-format on
+
   return Module.hiwire_get_value(idobj).length;
 });
 
