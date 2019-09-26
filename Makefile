@@ -6,6 +6,7 @@ FILEPACKAGER=$(PYODIDE_ROOT)/tools/file_packager.py
 CPYTHONROOT=cpython
 CPYTHONLIB=$(CPYTHONROOT)/installs/python-$(PYVERSION)/lib/python$(PYMINOR)
 
+LIBXML=libxml/libxml-2.9.9/lib/libxml.a
 LZ4LIB=lz4/lz4-1.8.3/lib/liblz4.a
 CLAPACK=CLAPACK/CLAPACK-WA/lapack_WA.bc
 
@@ -136,7 +137,7 @@ clean:
 	echo "The Emsdk, CPython and CLAPACK are not cleaned. cd into those directories to do so."
 
 
-%.bc: %.c $(CPYTHONLIB) $(LZ4LIB)
+%.bc: %.c $(CPYTHONLIB) $(LZ4LIB) $(LIBXML)
 	$(CC) -o $@ -c $< $(CFLAGS)
 
 
@@ -205,6 +206,10 @@ $(CPYTHONLIB): emsdk/emsdk/.complete $(PYODIDE_EMCC) $(PYODIDE_CXX)
 
 $(LZ4LIB):
 	make -C lz4
+
+
+$(LIBXML):
+	make -C libxml
 
 
 $(SIX_LIBS): $(CPYTHONLIB)
