@@ -6,7 +6,7 @@ FILEPACKAGER=$(PYODIDE_ROOT)/tools/file_packager.py
 CPYTHONROOT=cpython
 CPYTHONLIB=$(CPYTHONROOT)/installs/python-$(PYVERSION)/lib/python$(PYMINOR)
 
-LIBXML=libxml/libxml2-2.9.9/python/libs/libxml2mod.a
+LIBXML=libxml/libxml2-2.9.9/.libs/libxml2.a
 LZ4LIB=lz4/lz4-1.8.3/lib/liblz4.a
 CLAPACK=CLAPACK/CLAPACK-WA/lapack_WA.bc
 
