@@ -10,7 +10,7 @@ TARBALL=$(ROOT)/downloads/libxml-$(LIBXMLVERSION).tgz
 URL=ftp://xmlsoft.org/libxml2/libxml2-$(LIBXMLVERSION).tar.gz
 
 
-all: $(SRC)/lib/libxml.a
+all: $(SRC)/python/.libs/libxml2mod.a
 
 
 clean:
@@ -29,9 +29,9 @@ $(SRC)/Makefile: $(TARBALL)
 	# touch $(SRC)/Makefile
 
 
-$(SRC)/lib/libxml.a: $(SRC)/Makefile
+$(SRC)/python/.libs/libxml2mod.a: $(SRC)/Makefile
 	( \
 		cd $(SRC) ; \
-		emconfigure ./configure --without-python; \
-		emmake make ; \
+		# emconfigure ./configure --with-python=$(HOSTPYTHON); \
+		# emmake make ; \
 	)
