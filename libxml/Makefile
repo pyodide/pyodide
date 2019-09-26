@@ -32,6 +32,6 @@ $(SRC)/Makefile: $(TARBALL)
 $(SRC)/python/.libs/libxml2mod.a: $(SRC)/Makefile
 	( \
 		cd $(SRC) ; \
-		# emconfigure ./configure --with-python=$(HOSTPYTHON); \
-		# emmake make ; \
+		emconfigure ./configure --with-python=$(HOSTPYTHON) ; \
+		emmake make ; \
 	)
