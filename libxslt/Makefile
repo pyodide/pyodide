@@ -10,7 +10,7 @@ TARBALL=$(ROOT)/downloads/libxslt-$(LIBXSLTVERSION).tgz
 URL=ftp://xmlsoft.org/libxml2/libxslt-$(LIBXSLTVERSION).tar.gz
 
 
-all: $(SRC)/.libs/libxslt.a
+all: $(SRC)/libxslt/.libs/libxslt.a
 
 
 clean:
@@ -36,7 +36,7 @@ $(SRC)/Makefile: $(TARBALL)
 	)
 
 
-$(SRC)/.libs/libxslt.a: $(SRC)/Makefile
+$(SRC)/libxslt/.libs/libxslt.a: $(SRC)/Makefile
 	( \
 		cd $(SRC) ; \
 		emmake make ; \
