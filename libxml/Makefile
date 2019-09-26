@@ -26,12 +26,12 @@ $(TARBALL):
 
 $(SRC)/Makefile: $(TARBALL)
 	tar -C . -xf $(TARBALL)
-	# touch $(SRC)/Makefile
+	touch $(SRC)/Makefile
 
 
 $(SRC)/python/.libs/libxml2mod.a: $(SRC)/Makefile
 	( \
 		cd $(SRC) ; \
-		emconfigure ./configure --with-python=$(HOSTPYTHON) ; \
+		emconfigure ./configure --with-python=/src/cpython/build/3.7.0/host/include/python3.7m/ ; \
 		emmake make ; \
 	)
