@@ -29,3 +29,4 @@ CLAPACK/clapack.tgz
 *.egg-info/
 
 libxml/libxml*
+libxslt/libxslt*
