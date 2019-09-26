@@ -7,7 +7,7 @@ CPYTHONROOT=cpython
 CPYTHONLIB=$(CPYTHONROOT)/installs/python-$(PYVERSION)/lib/python$(PYMINOR)
 
 LIBXML=libxml/libxml2-2.9.9/.libs/libxml2.a
-LIBXSLT=libxml/libxslt-1.1.33/libxslt/.libs/libxslt.a
+LIBXSLT=libxslt/libxslt-1.1.33/libxslt/.libs/libxslt.a
 LZ4LIB=lz4/lz4-1.8.3/lib/liblz4.a
 CLAPACK=CLAPACK/CLAPACK-WA/lapack_WA.bc
 
