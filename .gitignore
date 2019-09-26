@@ -27,3 +27,5 @@ ccache
 CLAPACK/CLAPACK-WA
 CLAPACK/clapack.tgz
 *.egg-info/
+
+libxml/libxml*
