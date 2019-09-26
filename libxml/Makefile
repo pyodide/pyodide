@@ -5,7 +5,7 @@ LIBXMLVERSION=2.9.9
 
 ROOT=$(abspath .)
 
-SRC=$(ROOT)/libxml-$(LIBXMLVERSION)
+SRC=$(ROOT)/libxml2-$(LIBXMLVERSION)
 TARBALL=$(ROOT)/downloads/libxml-$(LIBXMLVERSION).tgz
 URL=ftp://xmlsoft.org/libxml2/libxml2-$(LIBXMLVERSION).tar.gz
 
@@ -26,7 +26,7 @@ $(TARBALL):
 
 $(SRC)/Makefile: $(TARBALL)
 	tar -C . -xf $(TARBALL)
-# 	touch $(SRC)/Makefile
+	# touch $(SRC)/Makefile
 
 
 $(SRC)/lib/libxml.a: $(SRC)/Makefile
