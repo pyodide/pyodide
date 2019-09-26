@@ -27,11 +27,14 @@ $(TARBALL):
 $(SRC)/Makefile: $(TARBALL)
 	tar -C . -xf $(TARBALL)
 	touch $(SRC)/Makefile
+	( \
+		cd $(SRC) ; \
+		emconfigure ./configure --with-python=/src/cpython/build/3.7.0/host/include/python3.7m/ ; \
+	)
 
 
 $(SRC)/.libs/libxslt.a: $(SRC)/Makefile
 	( \
 		cd $(SRC) ; \
-		emconfigure ./configure --with-python=/src/cpython/build/3.7.0/host/include/python3.7m/ ; \
 		emmake make ; \
 	)
