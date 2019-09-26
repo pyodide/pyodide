@@ -208,7 +208,7 @@ $(LZ4LIB):
 	make -C lz4
 
 
-$(LIBXML):
+$(LIBXML): $(CPYTHONLIB)
 	make -C libxml
 
 

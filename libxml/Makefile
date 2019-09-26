@@ -32,6 +32,6 @@ $(SRC)/Makefile: $(TARBALL)
 $(SRC)/lib/libxml.a: $(SRC)/Makefile
 	( \
 		cd $(SRC) ; \
-		emconfigure ./configure ; \
+		emconfigure ./configure --without-python; \
 		emmake make ; \
 	)
