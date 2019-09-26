@@ -29,7 +29,7 @@ $(SRC)/Makefile: $(TARBALL)
 	touch $(SRC)/Makefile
 	( \
 		cd $(SRC) ; \
-		emconfigure ./configure --with-python=/src/cpython/build/3.7.0/host/include/python3.7m/ ; \
+		LIBXML_LIBS=${PYODIDE_ROOT}/libxml/libxml2-2.9.9/.libs/ emconfigure ./configure --with-python=/src/cpython/build/3.7.0/host/include/python3.7m/ ; \
 	)
 
 
