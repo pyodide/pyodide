@@ -97,7 +97,7 @@ $(ZLIBBUILD)/.patched: $(ZLIBTARBALL)
 	touch $@
 
 
-$(SQLITEBUILD)/libsqlite3.la: $(SQLITETARBALL)
+$(SQLITEBUILD)/libsqlite3.la: $(SQLITETARBALL) $(BUILD)/.patched
 	[ -d $(ROOT)/build ] || (mkdir $(ROOT)/build)
 	tar -C $(ROOT)/build/ -xf $(SQLITETARBALL)
 	( \
