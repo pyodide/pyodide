@@ -6,6 +6,8 @@ def test_install_simple(selenium_standalone):
     selenium_standalone.load_package("micropip")
     selenium_standalone.run("import micropip")
     selenium_standalone.run("micropip.install('pyodide-micropip-test')")
+    # Package 'pyodide-micropip-test' has dependency on 'snowballstemmer'
+    # It is used to test markers support
 
     for i in range(10):
         if selenium_standalone.run(
