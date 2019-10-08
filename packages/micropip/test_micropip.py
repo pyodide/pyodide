@@ -5,7 +5,7 @@ def test_install_simple(selenium_standalone):
     selenium_standalone.run("import os")
     selenium_standalone.load_package("micropip")
     selenium_standalone.run("import micropip")
-    selenium_standalone.run("micropip.install('snowballstemmer')")
+    selenium_standalone.run("micropip.install('pyodide-micropip-test')")
 
     for i in range(10):
         if selenium_standalone.run(
