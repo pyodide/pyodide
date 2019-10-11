@@ -133,7 +133,7 @@ class _PackageManager:
                 'locked': dict(self.installed_packages)
             }
             for requirement in requirements:
-                self.add_requirement(requirement, ctx, transaction)
+                self.add_requirement(requirement, complete_ctx, transaction)
         except Exception as e:
             reject(str(e))
 
