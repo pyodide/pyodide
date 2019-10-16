@@ -10,4 +10,4 @@ requirements:
   - toolz
 test:
   imports:
-  - toolz
+  - cytoolz
