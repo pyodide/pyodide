@@ -12,6 +12,7 @@ CLAPACK=CLAPACK/CLAPACK-WA/lapack_WA.bc
 PYODIDE_EMCC=$(PYODIDE_ROOT)/ccache/emcc
 PYODIDE_CXX=$(PYODIDE_ROOT)/ccache/em++
 
+SHELL := /bin/bash
 CC=emcc
 CXX=em++
 OPTFLAGS=-O3
