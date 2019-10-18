@@ -157,7 +157,7 @@ clean:
 build/test.data: $(CPYTHONLIB)
 	( \
 	  cd $(CPYTHONLIB)/test; \
-	  find -type d -name __pycache__ -prune -exec rm -rf {} \; \
+	  find . -type d -name __pycache__ -prune -exec rm -rf {} \; \
 	)
 	( \
 		cd build; \
@@ -177,7 +177,8 @@ root/.built: \
 		remove_modules.txt
 	rm -rf root
 	mkdir -p root/lib
-	cp -a $(CPYTHONLIB)/ root/lib
+	cp -r $(CPYTHONLIB) root/lib
+	mkdir -p $(SITEPACKAGES)
 	cp $(SIX_LIBS) $(SITEPACKAGES)
 	cp -r $(JEDI_ROOT) $(SITEPACKAGES)
 	cp -r $(PARSO_ROOT) $(SITEPACKAGES)
@@ -190,7 +191,7 @@ root/.built: \
 		cd root/lib/python$(PYMINOR); \
 		rm -fr `cat ../../../remove_modules.txt`; \
 		rm -fr test; \
-		find -type d -name __pycache__ -prune -exec rm -rf {} \; \
+		find . -type d -name __pycache__ -prune -exec rm -rf {} \; \
 	)
 	touch root/.built
 
