@@ -6,6 +6,8 @@ ROOT=$(abspath .)
 HOSTINSTALL=$(ROOT)/build/$(PYVERSION)/host
 HOSTBUILD=$(HOSTINSTALL)/Python-$(PYVERSION)
 HOSTPYTHON=$(HOSTINSTALL)/bin/python3$(EXE)
+HOSTPYTHON_CPPFLAGS="-I/usr/local/opt/openssl/include"
+HOSTPYTHON_LDFLAGS="-L/usr/local/opt/openssl/lib"
 HOSTPGEN=$(HOSTINSTALL)/bin/pgen$(EXE)
 
 BUILD=$(ROOT)/build/$(PYVERSION)/Python-$(PYVERSION)
@@ -76,7 +78,7 @@ $(HOSTPYTHON) $(HOSTPGEN): $(TARBALL)
 	[ -d $(HOSTBUILD) ] || tar -C $(HOSTINSTALL) -xf $(TARBALL)
 	( \
 		cd $(HOSTBUILD); \
-		./configure --prefix=$(HOSTINSTALL) || cat config.log && \
+		PKG_CONFIG_PATH="/usr/local/opt/openssl/lib/pkgconfig" ./configure --prefix=$(HOSTINSTALL) || cat config.log && \
 	  make regen-grammar && \
 		make install && \
 		cp Parser/pgen$(EXE) $(HOSTINSTALL)/bin/ && \
