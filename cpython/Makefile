@@ -144,4 +144,5 @@ $(BUILD)/$(LIB): $(BUILD)/Makefile $(HOSTPYTHON) $(HOSTPGEN) Setup.local
 		cd $(BUILD); \
 		emmake make HOSTPYTHON=$(HOSTPYTHON) HOSTPGEN=$(HOSTPGEN) CROSS_COMPILE=yes $(LIB) \
 	)
+	sed -i -e 's/\-undefined dynamic_lookup//' build/$(PYVERSION)/Python-$(PYVERSION)/Lib/_sysconfigdata__emscripten_.py
 	touch $(BUILD)/$(LIB)
