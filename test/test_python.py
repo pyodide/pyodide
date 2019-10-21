@@ -224,10 +224,10 @@ def test_js2python(selenium):
         'jsstring_ucs4 == "🐍"')
     assert selenium.run(
         'from js import jsnumber0\n'
-        'jsnumber0 == 42')
+        'jsnumber0 == 42 and isinstance(jsnumber0, int)')
     assert selenium.run(
         'from js import jsnumber1\n'
-        'jsnumber1 == 42.5')
+        'jsnumber1 == 42.5 and isinstance(jsnumber1, float)')
     assert selenium.run(
         'from js import jsundefined\n'
         'jsundefined is None')
@@ -693,3 +693,13 @@ def test_unknown_attribute(selenium):
             assert "asdf" in str(e)
         """
     )
+
+
+def test_completions(selenium):
+    result = selenium.run(
+        """
+        import pyodide
+        pyodide.get_completions('import sys\\nsys.v')
+        """
+    )
+    assert result['matches'] == ['sys.version', 'sys.version_info']

@@ -6,7 +6,7 @@ import ast
 import io
 from textwrap import dedent
 
-__version__ = '0.13.0'
+__version__ = '0.14.0'
 
 
 def open_url(url):
@@ -79,4 +79,46 @@ def as_nested_list(obj):
         return obj
 
 
-__all__ = ['open_url', 'eval_code', 'find_imports', 'as_nested_list']
+def get_completions(code, cursor=None):
+    """
+    Get code autocompletion candidates.
+
+    Follows the completion API in Jupyter outlined here:
+
+    https://jupyter-client.readthedocs.io/en/stable/messaging.html#completion
+    """
+    import jedi
+
+    if cursor is None:
+        cursor = len(code)
+    code = code[:cursor]
+    interp = jedi.Interpreter(source=code, namespaces=[globals()])
+    completions = interp.completions()
+
+    if len(completions) == 0:
+        return {
+            'matches': [],
+            'cursor_start': cursor,
+            'cursor_end': cursor,
+            'metadata': {},
+            'status': 'ok'
+        }
+
+    c = completions[0]
+    delta = len(c.name_with_symbols) - len(c.complete)
+    return {
+        'matches': [x.full_name for x in completions],
+        'cursor_start': cursor - delta,
+        'cursor_end': cursor,
+        'metadata': {},
+        'status': 'ok'
+    }
+
+
+__all__ = [
+    'open_url',
+    'eval_code',
+    'find_imports',
+    'as_nested_list',
+    'get_completions'
+]

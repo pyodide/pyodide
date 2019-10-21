@@ -1,0 +1,9 @@
+package:
+  name: nltk
+  version: '3.4'
+source:
+  sha256: 286f6797204ffdb52525a1d21ec0a221ec68b8e3fa4f2d25f412ac8e63c70e8d
+  url: https://files.pythonhosted.org/packages/6f/ed/9c755d357d33bc1931e157f537721efb5b88d2c583fe593cc09603076cc3/nltk-3.4.zip
+test:
+  imports:
+  - nltk

@@ -1,0 +1,9 @@
+package:
+  name: regex
+  version: 2019.08.19
+source:
+  sha256: 587b62d48ca359d2d4f02d486f1f0aa9a20fbaf23a9d4198c4bed72ab2f6c849
+  url: https://files.pythonhosted.org/packages/6f/a6/99eeb5904ab763db87af4bd71d9b1dfdd9792681240657a4c0a599c10a81/regex-2019.08.19.tar.gz
+test:
+  imports:
+  - regex
