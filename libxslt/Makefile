@@ -29,10 +29,10 @@ $(SRC)/Makefile: $(TARBALL)
 	touch $(SRC)/Makefile
 	( \
 		cd $(SRC) ; \
-		LIBXML_LIBS=${PYODIDE_ROOT}/libxml/libxml2-2.9.9/.libs/ \
 		emconfigure ./configure	\
 			--with-python=/src/cpython/build/3.7.0/host/include/python3.7m/ \
-			--with-libxml-include-prefix=${PYODIDE_ROOT}/libxml/libxml2-2.9.9/include/ ; \
+			--with-libxml-include-prefix=${PYODIDE_ROOT}/libxml/libxml2-2.9.9/include/ \
+			--with-libxml-libs-prefix=${PYODIDE_ROOT}/libxml/libxml2-2.9.9/.libs/ ; \
 	)
 
 
