@@ -9,3 +9,4 @@ build:
 test:
   imports:
   - lxml
+  - lxml.etree
