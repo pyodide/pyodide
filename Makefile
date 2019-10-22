@@ -151,7 +151,7 @@ clean:
 	echo "The Emsdk, CPython and CLAPACK are not cleaned. cd into those directories to do so."
 
 
-%.bc: %.c $(CPYTHONLIB) $(LZ4LIB) $(LIBXML) $(LIBXSLT)
+%.bc: %.c $(CPYTHONLIB) $(LZ4LIB)
 	$(CC) -o $@ -c $< $(CFLAGS)
 
 
