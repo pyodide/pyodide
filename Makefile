@@ -148,6 +148,8 @@ clean:
 	make -C six clean
 	make -C jedi clean
 	make -C parso clean
+	make -C libxslt clean
+	make -C libxml clean
 	echo "The Emsdk, CPython and CLAPACK are not cleaned. cd into those directories to do so."
 
 
