@@ -1,10 +1,10 @@
 package:
   name: mne
-  version: 0.17.2
+  version: 0.18.2
 
 source:
-  sha256: 2f40d52a8e3899359c4ecc156642cf772a8aacea206187d139bb0ab864c4b363
-  url: https://files.pythonhosted.org/packages/68/97/fc6be75f8cc9b3f79b7c2558a45b61c6c7d02da20182f0db01ac239858be/mne-0.17.2.tar.gz
+  sha256: aa2e72ad3225efdad39b05e67cd5c88dbd5c3fabf5e1705e459347131f114bc6
+  url: https://files.pythonhosted.org/packages/42/ec/08afc26ea6204473031f786d0f3034119a5a138d40062b37fbf578c81c01/mne-0.18.2.tar.gz
 
 requirements:
   run:
