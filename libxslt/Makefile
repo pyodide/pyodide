@@ -21,7 +21,7 @@ clean:
 $(TARBALL):
 	[ -d $(ROOT)/downloads ] || mkdir $(ROOT)/downloads
 	wget -q -O $@ $(URL)
-#	md5sum --quiet --check checksums || (rm $@; false)
+	sha256sum --quiet --check ../checksums || (rm $@; false)
 
 
 $(SRC)/Makefile: $(TARBALL)
