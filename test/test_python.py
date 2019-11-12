@@ -207,6 +207,8 @@ def test_js2python(selenium):
         window.jsnull = null;
         window.jstrue = true;
         window.jsfalse = false;
+        window.jsarray0 = [];
+        window.jsarray1 = [1, 2, 3];
         window.jspython = pyodide.pyimport("open");
         window.jsbytes = new Uint8Array([1, 2, 3]);
         window.jsfloats = new Float32Array([1, 2, 3]);
@@ -256,6 +258,21 @@ def test_js2python(selenium):
     assert selenium.run(
         'from js import jsobject\n'
         'str(jsobject) == "[object XMLHttpRequest]"')
+    assert selenium.run(
+        """
+        from js import jsobject
+        bool(jsobject) == True
+        """)
+    assert selenium.run(
+        """
+        from js import jsarray0
+        bool(jsarray0) == False
+        """)
+    assert selenium.run(
+        """
+        from js import jsarray1
+        bool(jsarray1) == True
+        """)
 
 
 @pytest.mark.parametrize('wasm_heap', (False, True))
