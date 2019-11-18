@@ -69,6 +69,7 @@ all: build/pyodide.asm.js \
 	build/test.html \
 	build/webworker.js \
 	build/webworker_dev.js
+	echo -e "\nSUCCESS!"
 
 
 build/pyodide.asm.js: src/main.bc src/jsimport.bc src/jsproxy.bc src/js2python.bc \
