@@ -32,7 +32,7 @@ with the `mkpkg` tool. If your package is on PyPI, just run:
 `bin/pyodide mkpkg $PACKAGE_NAME`
 
 This will generate a `meta.yaml` (see below) that should work out of the box
-for manypure Python packages. This tool will populate the latest version, download
+for many pure Python packages. This tool will populate the latest version, download
 link and sha256 hash by querying PyPI. It doesn't currently handle package
 dependencies, so you will need to specify those yourself.
 
