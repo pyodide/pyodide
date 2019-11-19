@@ -34,7 +34,7 @@ check_js_dependencies() {
 
 check_pyyaml() {
   local pyyaml_import_check
-  pyyaml_import_check="$(python -c 'import yaml')"
+  pyyaml_import_check="$(python3 -c 'import yaml')"
   if [ "${pyyaml_import_check}" ]; then
     failure_exit "PyYAML"
   fi
