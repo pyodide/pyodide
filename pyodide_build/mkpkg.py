@@ -108,6 +108,7 @@ def update_package(package):
                        "patches (if needed) to avoid build failing.")
 
     yaml_content['source']['url'] = sdist_metadata['url']
+    yaml_content['source'].pop('md5', None)
     yaml_content['source']['sha256'] = sdist_metadata['digests']['sha256']
     yaml_content['package']['version'] = pypi_metadata['info']['version']
     with open(PACKAGES_ROOT / package / 'meta.yaml', 'w') as fd:
