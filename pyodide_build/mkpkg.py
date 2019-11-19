@@ -5,14 +5,16 @@ import json
 import os
 import shutil
 import urllib.request
+import sys
 from pathlib import Path
+
 
 PACKAGES_ROOT = Path(__file__).parent.parent / 'packages'
 
 SDIST_EXTENSIONS = []
 
 
-def get_sdist_extensions():
+def _get_sdist_extensions():
     if SDIST_EXTENSIONS:
         return SDIST_EXTENSIONS
 
@@ -23,31 +25,42 @@ def get_sdist_extensions():
     return SDIST_EXTENSIONS
 
 
-def get_sdist_url_entry(json_content):
-    sdist_extensions_tuple = tuple(get_sdist_extensions())
+def _extract_sdist(pypi_metadata):
+    sdist_extensions = tuple(_get_sdist_extensions())
 
-    for entry in json_content['urls']:
-        if entry['filename'].endswith(sdist_extensions_tuple):
+    # The first one we can use. Usually a .tar.gz
+    for entry in pypi_metadata['urls']:
+        if entry['filename'].endswith(sdist_extensions):
             return entry
 
     raise Exception('No sdist URL found for package %s (%s)' % (
-        json_content['info'].get('name'),
-        json_content['info'].get('package_url'),
+        pypi_metadata['info'].get('name'),
+        pypi_metadata['info'].get('package_url'),
     ))
 
 
-def make_package(package):
-    import yaml
-
+def _get_metadata(package):
     url = f'https://pypi.org/pypi/{package}/json'
 
     with urllib.request.urlopen(url) as fd:
-        json_content = json.load(fd)
+        pypi_metadata = json.load(fd)
 
-    entry = get_sdist_url_entry(json_content)
-    download_url = entry['url']
-    sha256 = entry['digests']['sha256']
-    version = json_content['info']['version']
+    sdist_metadata = _extract_sdist(pypi_metadata)
+
+    return sdist_metadata, pypi_metadata
+
+
+def make_package(package):
+    """
+    Creates a template that will work for most pure Python packages,
+    but will have to be edited for more complex things.
+    """
+    import yaml
+
+    sdist_metadata, pypi_metadata = _get_metadata(package)
+    url = sdist_metadata['url']
+    sha256 = sdist_metadata['digests']['sha256']
+    version = pypi_metadata['info']['version']
 
     yaml_content = {
         'package': {
@@ -55,7 +68,7 @@ def make_package(package):
             'version': version
         },
         'source': {
-            'url': download_url,
+            'url': url,
             'sha256': sha256
         },
         'test': {
@@ -71,20 +84,50 @@ def make_package(package):
         yaml.dump(yaml_content, fd, default_flow_style=False)
 
 
+def update_package(package):
+    import yaml
+
+    with open(PACKAGES_ROOT / package / 'meta.yaml', 'r') as fd:
+        yaml_content = yaml.load(fd, Loader=yaml.FullLoader)
+
+    if set(yaml_content.keys()) != set(('package', 'source', 'test')):
+        raise ValueError(
+            'Only pure-python packages can be updated automatically.')
+
+    sdist_metadata, pypi_metadata = _get_metadata(package)
+    pypi_ver = pypi_metadata['info']['version']
+    local_ver = yaml_content['package']['version']
+    if pypi_ver <= local_ver:
+        print(f'Already up to date. Local: {local_ver} Pypi: {pypi_ver}')
+        sys.exit(0)
+    print(f'Updating {package} from {local_ver} to {pypi_ver}')
+
+    if 'patches' in yaml_content['source']:
+        import warnings
+        warnings.warn(f"Pyodide applies patches to {package}. Update the "
+                       "patches (if needed) to avoid build failing.")
+
+    yaml_content['source']['url'] = sdist_metadata['url']
+    yaml_content['source']['sha256'] = sdist_metadata['digests']['sha256']
+    yaml_content['package']['version'] = pypi_metadata['info']['version']
+    with open(PACKAGES_ROOT / package / 'meta.yaml', 'w') as fd:
+        yaml.dump(yaml_content, fd, default_flow_style=False)
+
+
 def make_parser(parser):
-    parser.description = '''
-Make a new pyodide package. Creates a simple template that will work
-for most pure Python packages, but will have to be edited for more wv
-complex things.'''.strip()
+    parser.description = '''Add or update a python package in pyodide.'''
     parser.add_argument(
-        'package', type=str, nargs=1,
-        help="The package name on PyPI")
+        'package', type=str, nargs=1, help="The package name on PyPI")
+    parser.add_argument(
+        '--update', action='store_true', help='update existing package')
     return parser
 
 
 def main(args):
     package = args.package[0]
-    make_package(package)
+    if args.update:
+        return update_package(package)
+    return make_package(package)
 
 
 if __name__ == '__main__':
