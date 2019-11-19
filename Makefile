@@ -1,5 +1,6 @@
 PYODIDE_ROOT=$(abspath .)
 include Makefile.envs
+.PHONY=check
 
 FILEPACKAGER=$(PYODIDE_ROOT)/tools/file_packager.py
 
@@ -58,7 +59,8 @@ PARSO_LIBS=$(PARSO_ROOT)/__init__.py
 
 SITEPACKAGES=root/lib/python$(PYMINOR)/site-packages
 
-all: build/pyodide.asm.js \
+all: check \
+	build/pyodide.asm.js \
 	build/pyodide.asm.data \
 	build/pyodide.js \
 	build/pyodide_dev.js \
@@ -250,3 +252,6 @@ emsdk/emsdk/.complete:
 	make -C emsdk
 
 FORCE:
+
+check:
+	./tools/dependency-check.sh
