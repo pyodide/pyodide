@@ -97,8 +97,9 @@ def update_package(package):
 
     if 'patches' in yaml_content['source']:
         import warnings
-        warnings.warn(f"Pyodide applies patches to {package}. Update the "
-                       "patches (if needed) to avoid build failing.")
+        warnings.warn(
+            f"Pyodide applies patches to {package}. Update the "
+            "patches (if needed) to avoid build failing.")
 
     yaml_content['source']['url'] = sdist_metadata['url']
     yaml_content['source'].pop('md5', None)
