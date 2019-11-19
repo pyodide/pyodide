@@ -11,22 +11,13 @@ from pathlib import Path
 
 PACKAGES_ROOT = Path(__file__).parent.parent / 'packages'
 
-SDIST_EXTENSIONS = []
-
-
-def _get_sdist_extensions():
-    if SDIST_EXTENSIONS:
-        return SDIST_EXTENSIONS
-
-    for format in shutil.get_unpack_formats():
-        for ext in format[1]:
-            SDIST_EXTENSIONS.append(ext)
-
-    return SDIST_EXTENSIONS
-
 
 def _extract_sdist(pypi_metadata):
-    sdist_extensions = tuple(_get_sdist_extensions())
+    sdist_extensions = tuple(
+        extension
+        for (name, extensions, description) in shutil.get_unpack_formats()
+        for extension in extensions
+    )
 
     # The first one we can use. Usually a .tar.gz
     for entry in pypi_metadata['urls']:
@@ -91,8 +82,10 @@ def update_package(package):
         yaml_content = yaml.load(fd, Loader=yaml.FullLoader)
 
     if set(yaml_content.keys()) != set(('package', 'source', 'test')):
-        raise ValueError(
-            'Only pure-python packages can be updated automatically.')
+        print(
+            'Only pure-python packages can be updated using this script. '
+            'Aborting.')
+        sys.exit(1)
 
     sdist_metadata, pypi_metadata = _get_metadata(package)
     pypi_ver = pypi_metadata['info']['version']
