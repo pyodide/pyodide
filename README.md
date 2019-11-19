@@ -64,7 +64,9 @@ Additional build prerequisites are:
 - PyYAML
 - [lessc](http://lesscss.org/) to compile less to css.
 - [uglifyjs](https://github.com/mishoo/UglifyJS) to minify Javascript builds.
-- [ccache](https://ccache.samba.org) (optional) recommended for much faster rebuilds.
+- gfortran (GNU Fortran 95 compiler)
+- [f2c](http://www.netlib.org/f2c/)
+- [ccache](https://ccache.samba.org) (optional) *highly* recommended for much faster rebuilds.
 
 On Mac, you will also need:
 
