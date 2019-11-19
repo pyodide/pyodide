@@ -1,13 +1,10 @@
 package:
   name: py
-  version: 1.5.4
-
+  version: 1.8.0
 source:
-  url: https://pypi.io/packages/source/p/py/py-1.5.4.tar.gz
-  sha256: 3fd59af7435864e1a243790d322d763925431213b6b8529c6ca71081ace3bbf7
-
-
+  sha256: dc639b046a6e2cff5bbe40194ad65936d6ba360b52b3c3fe1d08a82dd50b5e53
+  url: https://files.pythonhosted.org/packages/f1/5a/87ca5909f400a2de1561f1648883af74345fe96349f34f737cdfc94eba8c/py-1.8.0.tar.gz
 test:
   imports:
-    - py
-    - py.code
+  - py
+  - py.code

@@ -1,15 +1,11 @@
 package:
   name: joblib
-  version: "0.11"
-
+  version: 0.14.0
 source:
-  url: https://pypi.io/packages/source/j/joblib/joblib-0.11.tar.gz
-  sha256: 7b8fd56df36d9731a83729395ccb85a3b401f62a96255deb1a77220c00ed4085
-
   patches:
-    - patches/use-setuptools.patch
-    - patches/ctypes-import.patch
-
+  - patches/ctypes-import.patch
+  sha256: 6fcc57aacb4e89451fd449e9412687c51817c3f48662c3d8f38ba3f8a0a193ff
+  url: https://files.pythonhosted.org/packages/0a/ae/89d32b92903241468d9e993d05c49e8e7d58bdc3db51ed276b01786760ac/joblib-0.14.0.tar.gz
 test:
   imports:
-    - joblib
+  - joblib
