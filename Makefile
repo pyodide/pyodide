@@ -1,6 +1,6 @@
 PYODIDE_ROOT=$(abspath .)
 include Makefile.envs
-PHONEY=check
+.PHONY=check
 
 FILEPACKAGER=$(PYODIDE_ROOT)/tools/file_packager.py
 
