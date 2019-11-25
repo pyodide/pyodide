@@ -3,7 +3,7 @@ index fc44611..f60016e 100644
 --- a/src/attr/_make.py
 +++ b/src/attr/_make.py
 @@ -3,7 +3,10 @@ from __future__ import absolute_import, division, print_function
- import hashlib
+ import copy
  import linecache
  import sys
 -import threading
@@ -11,6 +11,6 @@ index fc44611..f60016e 100644
 +    import threading
 +except ImportError:
 +    import dummy_threading as threading
+ import uuid
  import warnings
- 
- from operator import itemgetter
+

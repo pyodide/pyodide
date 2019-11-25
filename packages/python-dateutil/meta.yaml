@@ -1,14 +1,11 @@
 package:
   name: python-dateutil
-  version: 2.7.2
-
+  version: 2.8.1
 source:
-  url: https://files.pythonhosted.org/packages/c5/39/4da7c2dbc4f023fba5fb2325febcadf0d0ce0efdc8bd12083a0f65d20653/python-dateutil-2.7.2.tar.gz
-  md5: 03a08c8bcf0a2b29f1cd21b9de4d12fb
-
   patches:
-    - patches/dummy-thread-lock.patch
-
+  - patches/dummy-thread-lock.patch
+  sha256: 73ebfe9dbf22e832286dafa60473e4cd239f8592f699aa5adaf10050e6e1823c
+  url: https://files.pythonhosted.org/packages/be/ed/5bbc91f03fa4c839c4c7360375da77f9659af5f7086b7a7bdda65771c8e0/python-dateutil-2.8.1.tar.gz
 test:
   imports:
-    - dateutil
+  - dateutil
