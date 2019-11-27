@@ -394,11 +394,22 @@ JsProxy_Dir(PyObject* o)
   return pydir;
 }
 
+static int
+JsProxy_Bool(PyObject* o)
+{
+  JsProxy* self = (JsProxy*)o;
+  return (self->js && hiwire_get_bool(self->js)) ? 1 : 0;
+}
+
 // clang-format off
 static PyMappingMethods JsProxy_MappingMethods = {
   JsProxy_length,
   JsProxy_subscript,
   JsProxy_ass_subscript,
+};
+
+static PyNumberMethods JsProxy_NumberMethods = {
+  .nb_bool = JsProxy_Bool
 };
 
 static PyBufferProcs JsProxy_BufferProcs = {
@@ -439,6 +450,7 @@ static PyTypeObject JsProxyType = {
   .tp_doc = "A proxy to make a Javascript object behave like a Python object",
   .tp_methods = JsProxy_Methods,
   .tp_as_mapping = &JsProxy_MappingMethods,
+  .tp_as_number = &JsProxy_NumberMethods,
   .tp_iter = JsProxy_GetIter,
   .tp_iternext = JsProxy_IterNext,
   .tp_repr = JsProxy_Repr,

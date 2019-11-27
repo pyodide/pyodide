@@ -8,6 +8,7 @@
 
 
 [![Build Status](https://circleci.com/gh/iodide-project/pyodide.png)](https://circleci.com/gh/iodide-project/pyodide)
+[![Documentation Status](https://readthedocs.org/projects/pyodide/badge/?version=latest)](https://pyodide.readthedocs.io/?badge=latest)
 
 The Python scientific stack, compiled to WebAssembly.
 
@@ -48,8 +49,9 @@ this repository's [releases page](https://github.com/iodide-project/pyodide/rele
 
 ### Building from source
 
-Building is easiest on Linux. For other platforms, we recommend using
-the Docker image (described below) to build Pyodide.
+Building is easiest on Linux and relatively straightforward on Mac. For
+Windows, we currently recommend using the Docker image (described below) to
+build Pyodide.
 
 Make sure the prerequisites for [emsdk](https://github.com/emscripten-core/emsdk) are
 installed. Pyodide will build a custom, patched version of emsdk, so there is no
@@ -62,7 +64,18 @@ Additional build prerequisites are:
 - PyYAML
 - [lessc](http://lesscss.org/) to compile less to css.
 - [uglifyjs](https://github.com/mishoo/UglifyJS) to minify Javascript builds.
-- [ccache](https://ccache.samba.org) (optional) recommended for much faster rebuilds.
+- gfortran (GNU Fortran 95 compiler)
+- [f2c](http://www.netlib.org/f2c/)
+- [ccache](https://ccache.samba.org) (optional) *highly* recommended for much faster rebuilds.
+
+On Mac, you will also need:
+
+- [Homebrew](https://brew.sh/) for installing dependencies
+- System libraries in the root directory (`sudo installer -pkg /Library/Developer/CommandLineTools/Packages/macOS_SDK_headers_for_macOS_10.14.pkg -target /` should do it, see https://github.com/pyenv/pyenv/issues/1219#issuecomment-428305417)
+- coreutils for md5sum and other essential Unix utilities (`brew install coreutils`)
+- openssl (`brew install openssl`)
+- gfortran (`brew cask install gfortran`)
+- f2c: Install wget (`brew install wget`), and then run the buildf2c script from the root directory (`sudo ./tools/buildf2c`)
 
 #### Build using `make`
 
@@ -75,7 +88,9 @@ make
 ### Using Docker
 
 We provide a Debian-based Docker image on Docker Hub with the dependencies
-already installed to make it easier to build Pyodide.
+already installed to make it easier to build Pyodide. Note that building from
+the Docker image is *very* slow on Mac, building on the host machine is
+preferred if at all possible.
 
 1. Install Docker
 

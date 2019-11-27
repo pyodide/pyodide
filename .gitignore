@@ -10,6 +10,7 @@ __pycache__
 geckodriver.log
 firefox/
 .vscode
+.idea
 
 build
 downloads
@@ -26,6 +27,8 @@ ccache
 /lz4/lz4-1.8.3
 CLAPACK/CLAPACK-WA
 CLAPACK/clapack.tgz
+jedi/jedi-0.15.1
+parso/parso-0.5.1
 *.egg-info/
 
 libxml/libxml*
