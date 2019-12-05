@@ -6,6 +6,7 @@ import ast
 import io
 from textwrap import dedent
 
+
 __version__ = '0.14.0'
 
 
@@ -79,7 +80,7 @@ def as_nested_list(obj):
         return obj
 
 
-def get_completions(code, cursor=None):
+def get_completions(code, cursor=None, namespaces=None):
     """
     Get code autocompletion candidates.
 
@@ -88,11 +89,15 @@ def get_completions(code, cursor=None):
     https://jupyter-client.readthedocs.io/en/stable/messaging.html#completion
     """
     import jedi
+    import __main__
+
+    if namespaces is None:
+        namespaces = [__main__.__dict__]
 
     if cursor is None:
         cursor = len(code)
     code = code[:cursor]
-    interp = jedi.Interpreter(source=code, namespaces=[globals()])
+    interp = jedi.Interpreter(source=code, namespaces=namespaces)
     completions = interp.completions()
 
     if len(completions) == 0:
