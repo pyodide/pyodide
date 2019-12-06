@@ -29,11 +29,17 @@ def build_package(pkgname, dependencies, packagesdir, outputdir, args):
 
 
 def build_packages(packagesdir, outputdir, args):
+    # Store list of packages we want to build
+    packages = args.packages.split()
+
     # We have to build the packages in the correct order (dependencies first),
     # so first load in all of the package metadata and build a dependency map.
     dependencies = {}
     import_name_to_package_name = {}
     for pkgdir in packagesdir.iterdir():
+        if pkgdir not in packages:
+            continue
+
         pkgpath = pkgdir / 'meta.yaml'
         if pkgdir.is_dir() and pkgpath.is_file():
             pkg = common.parse_package(pkgpath)
