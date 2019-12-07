@@ -3,7 +3,7 @@ include ../Makefile.envs
 
 all: deps
 	../bin/pyodide buildall . ../build \
-		--packages=$(PACKAGES) --package_abi=$(PYODIDE_PACKAGE_ABI) --ldflags="$(SIDE_LDFLAGS)" --host=$(HOSTPYTHONROOT) --target=$(TARGETPYTHONROOT)
+		--packages="$(PACKAGES)" --package_abi=$(PYODIDE_PACKAGE_ABI) --ldflags="$(SIDE_LDFLAGS)" --host=$(HOSTPYTHONROOT) --target=$(TARGETPYTHONROOT)
 deps:
 	# Install build dependencies
 	$(HOSTPYTHON) -m pip install Cython Tempita

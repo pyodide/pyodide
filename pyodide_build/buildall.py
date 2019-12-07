@@ -37,7 +37,7 @@ def build_packages(packagesdir, outputdir, args):
     dependencies = {}
     import_name_to_package_name = {}
     for pkgdir in packagesdir.iterdir():
-        if pkgdir not in packages:
+        if packages != '*' and pkgdir not in packages:
             continue
 
         pkgpath = pkgdir / 'meta.yaml'
