@@ -30,7 +30,7 @@ def build_package(pkgname, dependencies, packagesdir, outputdir, args):
 
 def build_packages(packagesdir, outputdir, args):
     # Store list of packages we want to build
-    packages = args.packages.split()
+    packages = args.packages.split(',')
 
     # We have to build the packages in the correct order (dependencies first),
     # so first load in all of the package metadata and build a dependency map.
@@ -73,6 +73,9 @@ def make_parser(parser):
     parser.add_argument(
         'output', type=str, nargs=1,
         help='Output directory in which to put all built packages')
+    parser.add_argument(
+        '--packages', type=str, nargs='?', default='*',
+        help='The comma-separated list of packages to build')
     parser.add_argument(
         '--package_abi', type=int, required=True,
         help='The ABI number for the packages to be built')
