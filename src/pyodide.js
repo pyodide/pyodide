@@ -277,6 +277,7 @@ var languagePluginLoader = new Promise((resolve, reject) => {
     'runPythonAsync',
     'checkABI',
     'version',
+    'autocomplete',
   ];
 
   function makePublicAPI(module, public_api) {
@@ -324,7 +325,13 @@ var languagePluginLoader = new Promise((resolve, reject) => {
     return true;
   };
 
-  Module.locateFile = (path) => baseURL + path;
+  Module.autocomplete =
+      function(path) {
+    var pyodide_module = Module.pyimport("pyodide");
+    return pyodide_module.get_completions(path);
+  }
+
+      Module.locateFile = (path) => baseURL + path;
   var postRunPromise = new Promise((resolve, reject) => {
     Module.postRun = () => {
       delete self.Module;
@@ -336,6 +343,12 @@ var languagePluginLoader = new Promise((resolve, reject) => {
                 self.pyodide.runPython('import sys\nsys.modules["__main__"]');
             self.pyodide = makePublicAPI(self.pyodide, PUBLIC_API);
             self.pyodide._module.packages = json;
+            if (self.iodide !== undefined) {
+              // Perform some completions immediately so there isn't a delay on
+              // the first call to autocomplete
+              self.pyodide.runPython('import pyodide');
+              self.pyodide.runPython('pyodide.get_completions("")');
+            }
             resolve();
           });
     };

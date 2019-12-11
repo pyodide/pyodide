@@ -719,4 +719,4 @@ def test_completions(selenium):
         pyodide.get_completions('import sys\\nsys.v')
         """
     )
-    assert result['matches'] == ['sys.version', 'sys.version_info']
+    assert result == ['version', 'version_info']
