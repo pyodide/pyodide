@@ -3,13 +3,9 @@ include ../Makefile.envs
 
 all: emsdk/.complete
 
-# We hack the CPU_CORES, because if you use all of the cores on Circle-CI, you
-# run out of memory.
-
 emsdk/.complete:
 	if [ -d emsdk ]; then rm -rf emsdk; fi
 	git clone https://github.com/juj/emsdk.git
-	sed -i -e "s#CPU_CORES = max(multiprocessing.cpu_count()-1, 1)#CPU_CORES = 3#g" emsdk/emsdk
 	( \
 		cd emsdk && \
 		./emsdk install --build=Release sdk-fastcomp-tag-$(EMSCRIPTEN_VERSION)-64bit binaryen-tag-$(EMSCRIPTEN_VERSION)-64bit && \
