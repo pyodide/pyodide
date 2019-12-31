@@ -4,6 +4,9 @@ defaults: &defaults
   working_directory: ~/repo
   docker:
     - image: iodide/pyodide-env:0.3.1
+  environment:
+    - EMSDK_NUM_CORES: 4
+      EMCC_CORES: 4
 
 jobs:
   build:
