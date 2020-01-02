@@ -73,6 +73,8 @@ On Mac, you will also need:
 - [Homebrew](https://brew.sh/) for installing dependencies
 - System libraries in the root directory (`sudo installer -pkg /Library/Developer/CommandLineTools/Packages/macOS_SDK_headers_for_macOS_10.14.pkg -target /` should do it, see https://github.com/pyenv/pyenv/issues/1219#issuecomment-428305417)
 - coreutils for md5sum and other essential Unix utilities (`brew install coreutils`)
+- cmake (`brew install cmake`)
+- pkg-config (`brew install pkg-config`)
 - openssl (`brew install openssl`)
 - gfortran (`brew cask install gfortran`)
 - f2c: Install wget (`brew install wget`), and then run the buildf2c script from the root directory (`sudo ./tools/buildf2c`)
