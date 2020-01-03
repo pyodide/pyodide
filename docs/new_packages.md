@@ -148,3 +148,9 @@ Shell commands to run after building the library. These are run inside of
 A list of required packages.
 
 (Unlike conda, this only supports package names, not versions).
+
+## Building specific packages
+
+Instead of building all packages in `packages` folder, you can also specify a list of packages
+to build. To do this, you can specify a comma-separated list of packages to `bin/pyodide buildall`
+command as `packages` argument or as `PACKAGES` environment variables.
