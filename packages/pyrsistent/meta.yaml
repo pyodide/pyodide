@@ -1,0 +1,9 @@
+package:
+  name: pyrsistent
+  version: 0.15.6
+source:
+  sha256: f3b280d030afb652f79d67c5586157c5c1355c9a58dfc7940566e28d28f3df1b
+  url: https://files.pythonhosted.org/packages/6c/6f/c1a2e8da80a0029f6b618d7e20e1a6f2a61dd04e2e54225309c2cc4268f7/pyrsistent-0.15.6.tar.gz
+test:
+  imports:
+  - pyrsistent

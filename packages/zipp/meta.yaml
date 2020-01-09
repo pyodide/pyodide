@@ -1,0 +1,12 @@
+package:
+  name: zipp
+  version: 0.6.0
+source:
+  sha256: 3718b1cbcd963c7d4c5511a8240812904164b7f381b647143a89d3b98f9bcd8e
+  url: https://files.pythonhosted.org/packages/57/dd/585d728479d97d25aeeb9aa470d36a4ad8d0ba5610f84e14770128ce6ff7/zipp-0.6.0.tar.gz
+  requirements:
+    run:
+      - more-itertools
+  test:
+  imports:
+    - zipp

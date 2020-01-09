@@ -1,0 +1,14 @@
+package:
+  name: jsonschema
+  version: 3.2.0
+source:
+  sha256: c8a85b28d377cc7737e46e2d9f2b4f44ee3c0e1deac6bf46ddefc7187d30797a
+  url: https://files.pythonhosted.org/packages/69/11/a69e2a3c01b324a77d3a7c0570faa372e8448b666300c4117a516f8b1212/jsonschema-3.2.0.tar.gz
+requirements:
+    run:
+      - attrs
+      - importlib_metadata
+      - pyrsistent
+test:
+  imports:
+  - jsonschema

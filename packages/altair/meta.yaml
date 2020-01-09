@@ -1,0 +1,16 @@
+package:
+  name: altair
+  version: 4.0.0
+source:
+  sha256: 92dcd7b84c715f8e02bbdf37e36193a4af8138b5b064c05f237e6ed41573880a
+  url: https://files.pythonhosted.org/packages/00/db/8bb228681b548eea1dbcabb7be42c69ecf32f5e05afdfb8763fa3a66ed7e/altair-4.0.0.tar.gz
+requirements:
+  run:
+    - Jinja2
+    - entrypoints
+    - jsonschema
+    - pandas
+    - toolz
+test:
+  imports:
+  - altair

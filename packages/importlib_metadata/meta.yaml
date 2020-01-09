@@ -1,0 +1,12 @@
+package:
+  name: importlib_metadata
+  version: 1.3.0
+source:
+  sha256: 073a852570f92da5f744a3472af1b61e28e9f78ccf0c9117658dc32b15de7b45
+  url: https://files.pythonhosted.org/packages/cb/bb/7a935a48bf751af244090a7bd558769942cf13a7eba874b8b25538f3db01/importlib_metadata-1.3.0.tar.gz
+requirements:
+  run:
+  - zipp
+test:
+  imports:
+  - importlib_metadata
