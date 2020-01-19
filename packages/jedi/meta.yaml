@@ -1,0 +1,9 @@
+package:
+  name: jedi
+  version: 0.15.2
+source:
+  sha256: e909527104a903606dd63bea6e8e888833f0ef087057829b89a18364a856f807
+  url: https://files.pythonhosted.org/packages/74/4d/e8e8eeb65ad9e5e2c9ad253b52e4a6edceedf9b337bd841e580def92d0be/jedi-0.15.2.tar.gz
+test:
+  imports:
+  - jedi

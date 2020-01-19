@@ -1,0 +1,43 @@
+diff --git a/pyls/_utils.py b/pyls/_utils.py
+index 919bf1c50640..49e81ef74498 100644
+--- a/pyls/_utils.py
++++ b/pyls/_utils.py
+@@ -5,7 +5,11 @@ import inspect
+ import logging
+ import os
+ import sys
+-import threading
++
++try:
++    import threading
++except (ImportError, ModuleNotFoundError):
++    import dummy_threading as threading
+
+ import jedi
+
+diff --git a/pyls/python_ls.py b/pyls/python_ls.py
+index 8a1b1851adad..8f87973b81b5 100644
+--- a/pyls/python_ls.py
++++ b/pyls/python_ls.py
+@@ -3,7 +3,12 @@ from functools import partial
+ import logging
+ import os
+ import socketserver
+-import threading
++
++try:
++    import threading
++except (ImportError, ModuleNotFoundError):
++    import dummy_threading as threading
++
+
+ from pyls_jsonrpc.dispatchers import MethodDispatcher
+ from pyls_jsonrpc.endpoint import Endpoint
+@@ -263,7 +268,6 @@ class PythonLanguageServer(MethodDispatcher):
+     def hover(self, doc_uri, position):
+         return self._hook('pyls_hover', doc_uri, position=position) or {'contents': ''}
+
+-    @_utils.debounce(LINT_DEBOUNCE_S, keyed_by='doc_uri')
+     def lint(self, doc_uri, is_saved):
+         # Since we're debounced, the document may no longer be open
+         workspace = self._match_uri_to_workspace(doc_uri)

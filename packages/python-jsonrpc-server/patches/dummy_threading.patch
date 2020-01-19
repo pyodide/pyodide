@@ -1,0 +1,16 @@
+diff --git a/pyls_jsonrpc/streams.py b/pyls_jsonrpc/streams.py
+index 3277437fcb7f..963466a09465 100644
+--- a/pyls_jsonrpc/streams.py
++++ b/pyls_jsonrpc/streams.py
+@@ -1,6 +1,10 @@
+ # Copyright 2018 Palantir Technologies, Inc.
+ import logging
+-import threading
++
++try:
++    import threading
++except (ImportError, ModuleNotFoundError):
++    import dummy_threading as threading
+ 
+ try:
+     import ujson as json

@@ -1,0 +1,11 @@
+package:
+  name: python-jsonrpc-server
+  version: 0.3.4
+source:
+  patches:
+    - patches/dummy_threading.patch
+  sha256: c73bf5495c9dd4d2f902755bedeb6da5afe778e0beee82f0e195c4655352fe37
+  url: https://files.pythonhosted.org/packages/0b/ed/ce08d4ba6048a54935797f1fcc63ce30135475cfc858778c286a0be21433/python-jsonrpc-server-0.3.4.tar.gz
+test:
+  imports:
+  - python-jsonrpc-server
