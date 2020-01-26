@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <title>Pyodide load local example</title>
+    <link rel="stylesheet" href="font-awesome-4.7.0/css/font-awesome.min.css">
+    <script src="loadlocal.js"></script>
+    <script>
+        window.languagePluginUrl = "./pyodide/";
+    </script>
+    <script src="pyodide/pyodide.js"></script>
+    <script type="text/javascript">
+      (async () => {
+        await languagePluginLoader;
+        await pyodide.loadPackage(['numpy', 'matplotlib']);
+        pyodide.runPython(`
+          import numpy as np
+          import matplotlib
+          from matplotlib import pyplot as plt
+          from js import document
+
+          x = np.linspace(0, 2*np.pi, 100)
+          y = np.sin(x)
+
+          f = plt.figure()
+          plt.plot(x,y)
+
+          def create_root_element(self):
+              return document.getElementById('figure1')
+
+          f.canvas.create_root_element = create_root_element.__get__(create_root_element, f.canvas.__class__)
+          f.canvas.show()`);
+      })();
+    </script>
+    <style>
+      .bouncing{
+        animation: bounce 3s infinite;
+      }
+
+      @keyframes bounce {
+          0%   { transform: translateY(6px); }
+          5%   { transform: translateY(8px); }
+          10%  { transform: translateY(12px); }
+          15%  { transform: translateY(20px); }
+          20%  { transform: translateY(38px); }
+          25%  { transform: translateY(72px); }
+          30%  { transform: translateY(100px); }
+          35%  { transform: translateY(152px); }
+          40%  { transform: translateY(154px) scale(1.1, .9); }
+          50%  { transform: translateY(176px) scale(1.4, .6); }
+          55%  { transform: translateY(162px) scale(1.2, .8); }
+          60%  { transform: translateY(138px) scale(1.05, .95); }
+          65%  { transform: translateY(110px); }
+          70%  { transform: translateY(72px) scale(.95, 1.05);}
+          75%  { transform: translateY(38px) scale(.98, 1.02); }
+          80%  { transform: translateY(20px); }
+          85%  { transform: translateY(12px) scale(1.01, .99); }
+          90%  { transform: translateY(8px) scale(1.005, .995); }
+          95%  { transform: translateY(5px); }
+          100% { transform: translateY(5px); }
+      }
+    </style>
+  </head>
+  <body>
+    <div id="figure1" class="bouncing">
+    </div>
+  </body>
+</html>
