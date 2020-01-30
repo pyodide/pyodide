@@ -32,6 +32,11 @@ languagePluginLoader.then(() => {
 });
 ```
 
+Pyodide will allocate memory on initialization for itself, and will dynamically
+allocate more memory as necessary. If you wish to increase the amount of initial
+memory, set `self.TOTAL_MEMORY` appropriately. `self.TOTAL_MEMORY` must be a
+multiple of 64KB.
+
 ## Running Python code
 
 Python code is run using the `pyodide.runPython` function. It takes as input a

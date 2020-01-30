@@ -298,6 +298,9 @@ var languagePluginLoader = new Promise((resolve, reject) => {
   Module.noAudioDecoding = true;
   Module.noWasmDecoding = true;
   Module.preloadedWasm = {};
+  if (self.TOTAL_MEMORY !== undefined) {
+    Module.TOTAL_MEMORY = self.TOTAL_MEMORY;
+  }
   let isFirefox = navigator.userAgent.toLowerCase().indexOf('firefox') > -1;
 
   let wasm_promise;
