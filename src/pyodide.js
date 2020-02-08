@@ -203,8 +203,12 @@ var languagePluginLoader = new Promise((resolve, reject) => {
           }
           
           if (!isFirefox) {
-            preloadWasm().then(() => {resolve(resolveMsg)});
+            preloadWasm().then(() => {
+              console.log(resolveMsg);
+              resolve(resolveMsg);
+            });
           } else {
+            console.log(resolveMsg);
             resolve(resolveMsg);
           }
         }
