@@ -154,6 +154,21 @@ def test_load_handle_failure(selenium_standalone):
     assert 'Loading pyparsing' in selenium.logs  # <- this fails
 
 
+def test_load_failure_retry(selenium_standalone):
+    """ Check that a package can be loaded after failing to load previously. """
+    selenium = selenium_standalone
+    selenium.load_package('http://invalidurl/pytz.js')
+    assert selenium.logs.count('Loading pytz from') == 1
+    assert selenium.logs.count("Couldn't load package from URL") == 1
+    assert selenium.run_js('return Object.keys(pyodide.loadedPackages)') == []
+
+    selenium.load_package('pytz')
+    selenium.run('import pytz')
+    assert selenium.logs.count('Loading pytz from') == 2
+    assert selenium.run_js(
+        'return Object.keys(pyodide.loadedPackages)') == ['pytz']
+
+
 def test_load_package_unknown(selenium_standalone):
     url = selenium_standalone.server_hostname
     port = selenium_standalone.server_port
