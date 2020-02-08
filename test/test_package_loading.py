@@ -82,8 +82,8 @@ def test_load_packages_multiple(selenium_standalone, packages):
     # The log must show that each package is loaded exactly once,
     # including when one package is a dependency of the other
     # ('pyparsing' and 'matplotlib')
-    assert selenium.logs.count(f'Loading {packages[0]}') == 1
-    assert selenium.logs.count(f'Loading {packages[1]}') == 1
+    assert selenium.logs.count(f'Loading {packages[0]} from') == 1
+    assert selenium.logs.count(f'Loading {packages[1]} from') == 1
 
 
 @pytest.mark.parametrize('packages', [['pyparsing', 'pytz'],
@@ -104,8 +104,8 @@ def test_load_packages_sequential(selenium_standalone, packages):
     # The log must show that each package is loaded exactly once,
     # including when one package is a dependency of the other
     # ('pyparsing' and 'matplotlib')
-    assert selenium.logs.count(f'Loading {packages[0]}') == 1
-    assert selenium.logs.count(f'Loading {packages[1]}') == 1
+    assert selenium.logs.count(f'Loading {packages[0]} from') == 1
+    assert selenium.logs.count(f'Loading {packages[1]} from') == 1
 
 
 def test_different_ABI(selenium_standalone):

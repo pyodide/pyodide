@@ -145,7 +145,7 @@ var languagePluginLoader = new Promise((resolve, reject) => {
           return;
         }
       } else {
-        console.log(`Loading ${pkg} from ${package_uri}`);  // debug level info.
+        console.log(`${pkg} to be loaded from ${package_uri}`);  // debug level info.
 
         toLoad[pkg] = package_uri;
         if (packages.hasOwnProperty(pkg)) {
