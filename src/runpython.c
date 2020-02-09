@@ -100,7 +100,8 @@ EM_JS(int, runpython_init_js, (), {
       }
       if (Object.keys(packages).length) {
         var runInternal = function() { return new Promise(internal); };
-        return Module.loadPackage(Object.keys(packages), messageCallback, errorCallback)
+        return Module
+          .loadPackage(Object.keys(packages), messageCallback, errorCallback)
           .then(runInternal);
       }
     }

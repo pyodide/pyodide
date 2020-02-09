@@ -94,21 +94,20 @@ var languagePluginLoader = new Promise((resolve, reject) => {
   }
 
   let _loadPackage = (names, messageCallback, errorCallback) => {
-
     if (messageCallback == undefined) {
-      messageCallback = () => {}
+      messageCallback = () => {};
     }
     if (errorCallback == undefined) {
-      errorCallback = () => {}
+      errorCallback = () => {};
     }
     let _messageCallback = (msg) => {
       console.log(msg);
-      messageCallback(msg)
-    }
+      messageCallback(msg);
+    };
     let _errorCallback = (errMsg) => {
       console.error(errMsg);
-      errorCallback(errMsg)
-    }
+      errorCallback(errMsg);
+    };
 
     // DFS to find all dependencies of the requested packages
     let packages = self.pyodide._module.packages.dependencies;
@@ -133,8 +132,7 @@ var languagePluginLoader = new Promise((resolve, reject) => {
                          `${pkg} from ${package_uri} while it is already ` +
                          `loaded from ${loadedPackages[pkg]}!`);
           return;
-        }
-        else {
+        } else {
           _messageCallback(`${pkg} already loaded from ${loadedPackages[pkg]}`)
         }
       } else if (pkg in toLoad) {
@@ -145,7 +143,8 @@ var languagePluginLoader = new Promise((resolve, reject) => {
           return;
         }
       } else {
-        console.log(`${pkg} to be loaded from ${package_uri}`);  // debug level info.
+        console.log(
+            `${pkg} to be loaded from ${package_uri}`); // debug level info.
 
         toLoad[pkg] = package_uri;
         if (packages.hasOwnProperty(pkg)) {
@@ -194,14 +193,14 @@ var languagePluginLoader = new Promise((resolve, reject) => {
           }
           delete self.pyodide._module.monitorRunDependencies;
           self.removeEventListener('error', windowErrorHandler);
-          
+
           let resolveMsg = `Loaded `;
           if (packageList.length > 0) {
             resolveMsg += packageList.join(', ');
           } else {
             resolveMsg += 'no packages'
           }
-          
+
           if (!isFirefox) {
             preloadWasm().then(() => {
               console.log(resolveMsg);
@@ -239,7 +238,7 @@ var languagePluginLoader = new Promise((resolve, reject) => {
           // (so packageCounter will still hit 0 and finish loading), and remove
           // the package from toLoad so we don't mark it as loaded, and remove
           // the package from packageList so we don't say that it was loaded.
-          _errorCallback(`Couldn't load package from URL ${scriptSrc}`)
+          _errorCallback(`Couldn't load package from URL ${scriptSrc}`);
           delete toLoad[pkg];
           let packageListIndex = packageList.indexOf(pkg);
           if (packageListIndex !== -1) {
@@ -264,8 +263,8 @@ var languagePluginLoader = new Promise((resolve, reject) => {
   let loadPackage = (names, messageCallback, errorCallback) => {
     /* We want to make sure that only one loadPackage invocation runs at any
      * given time, so this creates a "chain" of promises. */
-    loadPackagePromise =
-        loadPackagePromise.then(() => _loadPackage(names, messageCallback, errorCallback));
+    loadPackagePromise = loadPackagePromise.then(
+        () => _loadPackage(names, messageCallback, errorCallback));
     return loadPackagePromise;
   };
 

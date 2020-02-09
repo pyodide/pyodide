@@ -155,7 +155,7 @@ def test_load_handle_failure(selenium_standalone):
 
 
 def test_load_failure_retry(selenium_standalone):
-    """ Check that a package can be loaded after failing to load previously. """
+    """Check that a package can be loaded after failing to load previously"""
     selenium = selenium_standalone
     selenium.load_package('http://invalidurl/pytz.js')
     assert selenium.logs.count('Loading pytz from') == 1
