@@ -1,0 +1,11 @@
+package:
+  name: llvmlite
+  version: 0.31.0
+
+source:
+  url: https://files.pythonhosted.org/packages/17/fc/da81203725cb22d53e4f819374043bbfe3327831f3cb4388a3c020d7a497/llvmlite-0.31.0.tar.gz
+  sha256: 22ab2b9d7ec79fab66ac8b3d2133347de86addc2e2df1b3793e523ac84baa3c8
+
+test:
+  imports:
+    - llvmlite
