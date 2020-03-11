@@ -42,10 +42,25 @@ some preprocessing on the Python code first.
 
 Either the resulting object or `None`.
 
+### pyodide.as_nested_list(obj)
+
+Converts Javascript nested arrays to Python nested lists. This conversion can not
+be performed automatically, because Javascript Arrays and Objects can be combined
+in ways that are ambiguous.
+
+*Parameters*
+
+| name   | type  | description           |
+|--------|-------|-----------------------|
+| *obj*  | JS Object | The object to convert |
+
+*Returns*
+
+The object as nested Python lists.
 
 ## Javascript API
 
-### pyodide.loadPackage(names)
+### pyodide.loadPackage(names, messageCallback, errorCallback)
 
 Load a package or a list of packages over the network.
 
@@ -58,18 +73,19 @@ The package needs to be imported from Python before it can be used.
 |-------------------|-----------------|---------------------------------------|
 | *names*           | {String, Array} | package name, or URL. Can be either a single element, or an array.          |
 | *messageCallback* | function        | A callback, called with progress messages. (optional) |
+| *errorCallback*   | function        | A callback, called with error/warning messages. (optional) |
 
 *Returns*
 
 Loading is asynchronous, therefore, this returns a `Promise`.
 
 
-### pyodide.loadedPackage
+### pyodide.loadedPackages
 
-`Array` with loaded packages.
+`Object` with loaded packages.
 
-Use `Object.keys(pyodide.loadedPackage)` to access the names of the
-loaded packages, and `pyodide.loadedPackage[package_name]` to access
+Use `Object.keys(pyodide.loadedPackages)` to access the names of the
+loaded packages, and `pyodide.loadedPackages[package_name]` to access
 install location for a particular `package_name`.
 
 ### pyodide.pyimport(name)
@@ -145,7 +161,7 @@ Runs a string of code. The last part of the string may be an expression, in whic
 | *jsresult* | *any*   | Result, converted to Javascript |
 
 
-### pyodide.runPythonAsync(code, messageCallback)
+### pyodide.runPythonAsync(code, messageCallback, errorCallback)
 
 Runs Python code, possibly asynchronously loading any known packages that the code
 chunk imports.
@@ -158,7 +174,7 @@ x = np.array([1, 2, 3])
 ```
 
 pyodide will first call `pyodide.loadPackage(['numpy'])`, and then run the code
-chunk, returning the result. Since package fetching must happen asyncronously,
+chunk, returning the result. Since package fetching must happen asynchronously,
 this function returns a `Promise` which resolves to the output. For example, to
 use:
 
@@ -172,8 +188,8 @@ pyodide.runPythonAsync(code, messageCallback)
 | name              | type     | description                    |
 |-------------------|----------|--------------------------------|
 | *code*            | String   | Python code to evaluate        |
-| *messageCallback* | function | Callback given status messages |
-|                   |          | (optional)                     |
+| *messageCallback* | function        | A callback, called with progress messages. (optional) |
+| *errorCallback*   | function        | A callback, called with error/warning messages. (optional) |
 
 *Returns*
 

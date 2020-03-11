@@ -1,5 +1,6 @@
 PYODIDE_ROOT=$(abspath .)
 include Makefile.envs
+.PHONY=check
 
 FILEPACKAGER=$(PYODIDE_ROOT)/tools/file_packager.py
 
@@ -9,6 +10,10 @@ CPYTHONLIB=$(CPYTHONROOT)/installs/python-$(PYVERSION)/lib/python$(PYMINOR)
 LZ4LIB=lz4/lz4-1.8.3/lib/liblz4.a
 CLAPACK=CLAPACK/CLAPACK-WA/lapack_WA.bc
 
+PYODIDE_EMCC=$(PYODIDE_ROOT)/ccache/emcc
+PYODIDE_CXX=$(PYODIDE_ROOT)/ccache/em++
+
+SHELL := /bin/bash
 CC=emcc
 CXX=em++
 OPTFLAGS=-O3
@@ -20,46 +25,53 @@ LDFLAGS=\
 	-O3 \
 	-s MODULARIZE=1 \
 	$(CPYTHONROOT)/installs/python-$(PYVERSION)/lib/libpython$(PYMINOR).a \
-  $(LZ4LIB) \
-  -s "BINARYEN_METHOD='native-wasm'" \
-  -s TOTAL_MEMORY=1073741824 \
-  -s ALLOW_MEMORY_GROWTH=1 \
+	$(LZ4LIB) \
+	-s "BINARYEN_METHOD='native-wasm'" \
+	-s TOTAL_MEMORY=5242880 \
+	-s ALLOW_MEMORY_GROWTH=1 \
 	-s MAIN_MODULE=1 \
 	-s EMULATED_FUNCTION_POINTERS=1 \
-  -s EMULATE_FUNCTION_POINTER_CASTS=1 \
-  -s LINKABLE=1 \
-  -s EXPORT_ALL=1 \
+	-s EMULATE_FUNCTION_POINTER_CASTS=1 \
+	-s LINKABLE=1 \
+	-s EXPORT_ALL=1 \
 	-s EXPORTED_FUNCTIONS='["___cxa_guard_acquire", "__ZNSt3__28ios_base4initEPv"]' \
-  -s WASM=1 \
+	-s WASM=1 \
 	-s SWAPPABLE_ASM_MODULE=1 \
 	-s USE_FREETYPE=1 \
 	-s USE_LIBPNG=1 \
 	-std=c++14 \
-  -lstdc++ \
-  --memory-init-file 0 \
-  -s "BINARYEN_TRAP_MODE='clamp'" \
-  -s TEXTDECODER=0 \
-  -s LZ4=1
+	-L$(wildcard $(CPYTHONROOT)/build/sqlite*/.libs) -lsqlite3 \
+	$(wildcard $(CPYTHONROOT)/build/bzip2*/libbz2.a) \
+	-lstdc++ \
+	--memory-init-file 0 \
+	-s "BINARYEN_TRAP_MODE='clamp'" \
+	-s TEXTDECODER=0 \
+	-s LZ4=1
 
 SIX_ROOT=six/six-1.11.0/build/lib
 SIX_LIBS=$(SIX_ROOT)/six.py
 
+JEDI_ROOT=jedi/jedi-0.15.1/jedi
+JEDI_LIBS=$(JEDI_ROOT)/__init__.py
+
+PARSO_ROOT=parso/parso-0.5.1/parso
+PARSO_LIBS=$(PARSO_ROOT)/__init__.py
+
 SITEPACKAGES=root/lib/python$(PYMINOR)/site-packages
 
-all: build/pyodide.asm.js \
+all: check \
+	build/pyodide.asm.js \
 	build/pyodide.asm.data \
 	build/pyodide.js \
 	build/pyodide_dev.js \
-	build/python.html \
-	build/python_dev.html \
-	build/matplotlib.html \
-	build/matplotlib-sideload.html \
+	build/console.html \
 	build/renderedhtml.css \
-  build/test.data \
-  build/packages.json \
-  build/test.html \
-  build/webworker.js \
-  build/webworker_dev.js
+	build/test.data \
+	build/packages.json \
+	build/test.html \
+	build/webworker.js \
+	build/webworker_dev.js
+	echo -e "\nSUCCESS!"
 
 
 build/pyodide.asm.js: src/main.bc src/jsimport.bc src/jsproxy.bc src/js2python.bc \
@@ -67,15 +79,19 @@ build/pyodide.asm.js: src/main.bc src/jsimport.bc src/jsproxy.bc src/js2python.b
 		src/runpython.bc src/hiwire.bc
 	[ -d build ] || mkdir build
 	$(CXX) -s EXPORT_NAME="'pyodide'" -o build/pyodide.asm.html $(filter %.bc,$^) \
-	  $(LDFLAGS) -s FORCE_FILESYSTEM=1
+		$(LDFLAGS) -s FORCE_FILESYSTEM=1
 	rm build/pyodide.asm.html
+
+
+env:
+	env
 
 
 build/pyodide.asm.data: root/.built
 	( \
 		cd build; \
 		python $(FILEPACKAGER) pyodide.asm.data --abi=$(PYODIDE_PACKAGE_ABI) --lz4 --preload ../root/lib@lib --js-output=pyodide.asm.data.js --use-preload-plugins \
-  )
+	)
 	uglifyjs build/pyodide.asm.data.js -o build/pyodide.asm.data.js
 
 
@@ -87,27 +103,16 @@ build/pyodide_dev.js: src/pyodide.js
 
 build/pyodide.js: src/pyodide.js
 	cp $< $@
-	sed -i -e 's#{{DEPLOY}}#https://iodide.io/pyodide-demo/#g' $@
+	sed -i -e 's#{{DEPLOY}}#https://pyodide.cdn.iodide.io/#g' $@
+
 	sed -i -e "s#{{ABI}}#$(PYODIDE_PACKAGE_ABI)#g" $@
 
 
-build/python.html: src/python.html
-	cp $< $@
-
-
-build/python_dev.html: src/python_dev.html
-	cp $< $@
-
-
-build/matplotlib.html: src/matplotlib.html
-	cp $< $@
-
-
-build/matplotlib-sideload.html: src/matplotlib-sideload.html
-	cp $< $@
-
-
 build/test.html: src/test.html
+	cp $< $@
+
+
+build/console.html: src/console.html
 	cp $< $@
 
 
@@ -116,7 +121,7 @@ build/renderedhtml.css: src/renderedhtml.less
 
 build/webworker.js: src/webworker.js
 	cp $< $@
-	sed -i -e 's#{{DEPLOY}}#https://iodide.io/pyodide-demo/#g' $@
+	sed -i -e 's#{{DEPLOY}}#https://pyodide.cdn.iodide.io/#g' $@
 
 build/webworker_dev.js: src/webworker.js
 	cp $< $@
@@ -124,7 +129,7 @@ build/webworker_dev.js: src/webworker.js
 	sed -i -e "s#pyodide.js#pyodide_dev.js#g" $@
 
 test: all
-	pytest test/ -v
+	pytest test packages pyodide_build -v
 
 
 lint:
@@ -143,6 +148,8 @@ clean:
 	rm -fr src/*.bc
 	make -C packages clean
 	make -C six clean
+	make -C jedi clean
+	make -C parso clean
 	echo "The Emsdk, CPython and CLAPACK are not cleaned. cd into those directories to do so."
 
 
@@ -152,27 +159,32 @@ clean:
 
 build/test.data: $(CPYTHONLIB)
 	( \
-	  cd $(CPYTHONLIB)/test; \
-	  find -type d -name __pycache__ -prune -exec rm -rf {} \; \
+		cd $(CPYTHONLIB)/test; \
+		find . -type d -name __pycache__ -prune -exec rm -rf {} \; \
 	)
 	( \
 		cd build; \
 		python $(FILEPACKAGER) test.data --abi=$(PYODIDE_PACKAGE_ABI) --lz4 --preload ../$(CPYTHONLIB)/test@/lib/python3.7/test --js-output=test.js --export-name=pyodide._module --exclude __pycache__ \
-  )
+	)
 	uglifyjs build/test.js -o build/test.js
 
 
 root/.built: \
 		$(CPYTHONLIB) \
 		$(SIX_LIBS) \
+		$(JEDI_LIBS) \
+		$(PARSO_LIBS) \
 		src/sitecustomize.py \
 		src/webbrowser.py \
 		src/pyodide.py \
 		remove_modules.txt
 	rm -rf root
 	mkdir -p root/lib
-	cp -a $(CPYTHONLIB)/ root/lib
+	cp -r $(CPYTHONLIB) root/lib
+	mkdir -p $(SITEPACKAGES)
 	cp $(SIX_LIBS) $(SITEPACKAGES)
+	cp -r $(JEDI_ROOT) $(SITEPACKAGES)
+	cp -r $(PARSO_ROOT) $(SITEPACKAGES)
 	cp src/sitecustomize.py $(SITEPACKAGES)
 	cp src/webbrowser.py root/lib/python$(PYMINOR)
 	cp src/_testcapi.py	root/lib/python$(PYMINOR)
@@ -182,30 +194,34 @@ root/.built: \
 		cd root/lib/python$(PYMINOR); \
 		rm -fr `cat ../../../remove_modules.txt`; \
 		rm -fr test; \
-		find -type d -name __pycache__ -prune -exec rm -rf {} \; \
+		find . -type d -name __pycache__ -prune -exec rm -rf {} \; \
 	)
 	touch root/.built
 
 
-ccache/emcc:
+$(PYODIDE_EMCC):
 	mkdir -p $(PYODIDE_ROOT)/ccache ; \
-	if hash ccache &>/dev/null; then \
-    ln -s `which ccache` $(PYODIDE_ROOT)/ccache/emcc ; \
-  else \
-    ln -s emsdk/emsdk/emscripten/tag-$(EMSCRIPTEN_VERSION)/emcc $(PYODIDE_ROOT)/ccache/emcc; \
-  fi
+	if test ! -h $@; then \
+		if hash ccache &>/dev/null; then \
+			ln -s `which ccache` $@ ; \
+		else \
+	 		ln -s emsdk/emsdk/emscripten/tag-$(EMSCRIPTEN_VERSION)/emcc $@; \
+		fi; \
+	fi
 
 
-ccache/em++:
+$(PYODIDE_CXX):
 	mkdir -p $(PYODIDE_ROOT)/ccache ; \
-	if hash ccache &>/dev/null; then \
-    ln -s `which ccache` $(PYODIDE_ROOT)/ccache/em++ ; \
-  else \
-    ln -s emsdk/emsdk/emscripten/tag-$(EMSCRIPTEN_VERSION)/em++ $(PYODIDE_ROOT)/ccache/em++; \
-  fi
+	if test ! -h $@; then \
+		if hash ccache &>/dev/null; then \
+			ln -s `which ccache` $@ ; \
+		else \
+			ln -s emsdk/emsdk/emscripten/tag-$(EMSCRIPTEN_VERSION)/em++ $@; \
+		fi; \
+	fi
 
 
-$(CPYTHONLIB): emsdk/emsdk/.complete ccache/emcc ccache/em++
+$(CPYTHONLIB): emsdk/emsdk/.complete $(PYODIDE_EMCC) $(PYODIDE_CXX)
 	make -C $(CPYTHONROOT)
 
 
@@ -217,12 +233,25 @@ $(SIX_LIBS): $(CPYTHONLIB)
 	make -C six
 
 
+$(JEDI_LIBS): $(CPYTHONLIB)
+	make -C jedi
+
+
+$(PARSO_LIBS): $(CPYTHONLIB)
+	make -C parso
+
+
 $(CLAPACK): $(CPYTHONLIB)
 	make -C CLAPACK
 
 
-build/packages.json: $(CPYTHONLIB) $(CLAPACK)
+build/packages.json: $(CLAPACK) FORCE
 	make -C packages
 
 emsdk/emsdk/.complete:
 	make -C emsdk
+
+FORCE:
+
+check:
+	./tools/dependency-check.sh

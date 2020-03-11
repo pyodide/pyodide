@@ -146,6 +146,46 @@ def test_python2js_numpy_dtype(selenium_standalone):
     assert selenium.run_js("return pyodide.pyimport('x')[1][1]") == 'string4'
 
 
+def test_python2js_numpy_scalar(selenium_standalone):
+    selenium = selenium_standalone
+
+    selenium.load_package('numpy')
+    selenium.run("import numpy as np")
+
+    for dtype in (
+            'int8',
+            'uint8',
+            'int16',
+            'uint16',
+            'int32',
+            'uint32',
+            'int64',
+            'uint64',
+            'float32',
+            'float64'
+    ):
+        selenium.run(
+            f"""
+            x = np.{dtype}(1)
+            """
+        )
+        assert selenium.run_js(
+            """
+            return pyodide.pyimport('x') == 1
+            """
+        ) is True
+        selenium.run(
+            """
+            x = x.byteswap().newbyteorder()
+            """
+        )
+        assert selenium.run_js(
+            """
+            return pyodide.pyimport('x') == 1
+            """
+        ) is True
+
+
 def test_pythonexc2js(selenium):
     try:
         selenium.run_js('return pyodide.runPython("5 / 0")')
@@ -167,6 +207,8 @@ def test_js2python(selenium):
         window.jsnull = null;
         window.jstrue = true;
         window.jsfalse = false;
+        window.jsarray0 = [];
+        window.jsarray1 = [1, 2, 3];
         window.jspython = pyodide.pyimport("open");
         window.jsbytes = new Uint8Array([1, 2, 3]);
         window.jsfloats = new Float32Array([1, 2, 3]);
@@ -184,10 +226,10 @@ def test_js2python(selenium):
         'jsstring_ucs4 == "🐍"')
     assert selenium.run(
         'from js import jsnumber0\n'
-        'jsnumber0 == 42')
+        'jsnumber0 == 42 and isinstance(jsnumber0, int)')
     assert selenium.run(
         'from js import jsnumber1\n'
-        'jsnumber1 == 42.5')
+        'jsnumber1 == 42.5 and isinstance(jsnumber1, float)')
     assert selenium.run(
         'from js import jsundefined\n'
         'jsundefined is None')
@@ -216,6 +258,21 @@ def test_js2python(selenium):
     assert selenium.run(
         'from js import jsobject\n'
         'str(jsobject) == "[object XMLHttpRequest]"')
+    assert selenium.run(
+        """
+        from js import jsobject
+        bool(jsobject) == True
+        """)
+    assert selenium.run(
+        """
+        from js import jsarray0
+        bool(jsarray0) == False
+        """)
+    assert selenium.run(
+        """
+        from js import jsarray1
+        bool(jsarray1) == True
+        """)
 
 
 @pytest.mark.parametrize('wasm_heap', (False, True))
@@ -260,14 +317,31 @@ def test_typed_arrays(selenium, wasm_heap, jstype, pytype):
          """)
 
 
+def test_array_buffer(selenium):
+    selenium.run_js(
+        'window.array = new ArrayBuffer(100);\n')
+    assert selenium.run(
+        """
+        from js import array
+        len(array.tobytes())
+        """) == 100
+
+
 def test_import_js(selenium):
     result = selenium.run(
         """
-        from js import window
-        window.title = 'Foo'
-        window.title
+        import js
+        js.window.title = 'Foo'
+        js.window.title
         """)
     assert result == 'Foo'
+    result = selenium.run(
+        """
+        dir(js)
+        """)
+    assert len(result) > 100
+    assert 'document' in result
+    assert 'window' in result
 
 
 def test_pyimport_multiple(selenium):
@@ -275,6 +349,14 @@ def test_pyimport_multiple(selenium):
     selenium.run("v = 0.123")
     selenium.run_js("pyodide.pyimport('v')")
     selenium.run_js("pyodide.pyimport('v')")
+
+
+def test_pyimport_same(selenium):
+    """See #382"""
+    selenium.run("def func(): return 42")
+    assert selenium.run_js(
+        "return pyodide.pyimport('func') == pyodide.pyimport('func')"
+    )
 
 
 def test_pyproxy(selenium):
@@ -401,6 +483,13 @@ def test_jsproxy(selenium):
         """
         from js import TEST
         dict(TEST) == {'foo': 'bar', 'baz': 'bap'}
+        """
+    ) is True
+    assert selenium.run(
+        """
+        from js import document
+        el = document.createElement('div')
+        len(dir(el)) >= 200 and 'appendChild' in dir(el)
         """
     ) is True
 
@@ -609,3 +698,25 @@ def test_py(selenium_standalone):
 def test_eval_nothing(selenium):
     assert selenium.run('# comment') is None
     assert selenium.run('') is None
+
+
+def test_unknown_attribute(selenium):
+    selenium.run(
+        """
+        import js
+        try:
+            js.asdf
+        except AttributeError as e:
+            assert "asdf" in str(e)
+        """
+    )
+
+
+def test_completions(selenium):
+    result = selenium.run(
+        """
+        import pyodide
+        pyodide.get_completions('import sys\\nsys.v')
+        """
+    )
+    assert result == ['version', 'version_info']

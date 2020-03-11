@@ -9,6 +9,4 @@
 int
 JsImport_init();
 
-extern PyObject* globals;
-
 #endif /* JSIMPORT_H */

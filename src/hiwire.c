@@ -183,7 +183,11 @@ EM_JS(void, hiwire_push_object_pair, (int idobj, int idkey, int idval), {
 
 EM_JS(int, hiwire_get_global, (int idname), {
   var jsname = UTF8ToString(idname);
-  return Module.hiwire_new_value(self[jsname]);
+  if (jsname in self) {
+    return Module.hiwire_new_value(self[jsname]);
+  } else {
+    return -1;
+  }
 });
 
 EM_JS(int, hiwire_get_member_string, (int idobj, int idkey), {
@@ -241,6 +245,15 @@ EM_JS(void, hiwire_delete_member_obj, (int idobj, int ididx), {
   delete jsobj[jsidx];
 });
 
+EM_JS(int, hiwire_dir, (int idobj), {
+  var jsobj = Module.hiwire_get_value(idobj);
+  var result = [];
+  do {
+    result.push.apply(result, Object.getOwnPropertyNames(jsobj));
+  } while ((jsobj = Object.getPrototypeOf(jsobj)));
+  return Module.hiwire_new_value(result);
+});
+
 EM_JS(int, hiwire_call, (int idfunc, int idargs), {
   var jsfunc = Module.hiwire_get_value(idfunc);
   var jsargs = Module.hiwire_get_value(idargs);
@@ -267,6 +280,13 @@ EM_JS(int, hiwire_new, (int idobj, int idargs), {
 
 EM_JS(int, hiwire_get_length, (int idobj), {
   return Module.hiwire_get_value(idobj).length;
+});
+
+EM_JS(int, hiwire_get_bool, (int idobj), {
+  var val = Module.hiwire_get_value(idobj);
+  // clang-format off
+  return (val && (val.length === undefined || val.length)) ? 1 : 0;
+  // clang-format on
 });
 
 EM_JS(int, hiwire_is_function, (int idobj), {
@@ -358,7 +378,10 @@ EM_JS(int, hiwire_get_byteLength, (int idobj), {
 
 EM_JS(int, hiwire_copy_to_ptr, (int idobj, int ptr), {
   var jsobj = Module.hiwire_get_value(idobj);
-  Module.HEAPU8.set(new Uint8Array(jsobj.buffer), ptr);
+  // clang-format off
+  var buffer = (jsobj['buffer'] !== undefined) ? jsobj.buffer : jsobj;
+  // clang-format on
+  Module.HEAPU8.set(new Uint8Array(buffer), ptr);
 });
 
 EM_JS(int, hiwire_get_dtype, (int idobj), {
@@ -390,6 +413,9 @@ EM_JS(int, hiwire_get_dtype, (int idobj), {
       break;
     case 'Float64Array':
       dtype = 9; // FLOAT64_TYPE;
+      break;
+    case 'ArrayBuffer':
+      dtype = 3;
       break;
     default:
       dtype = 3; // UINT8CLAMPED_TYPE;

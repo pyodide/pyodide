@@ -1,0 +1,9 @@
+package:
+  name: biopython
+  version: '1.75'
+source:
+  sha256: 5060e4ef29c2bc214749733634051be5b8d11686c6590fa155c3443dcaa89906
+  url: https://files.pythonhosted.org/packages/33/55/becf2b99556588d22b542f3412990bfc79b674e198d9bc58f7bbc333439e/biopython-1.75.tar.gz
+test:
+  imports:
+  - Bio

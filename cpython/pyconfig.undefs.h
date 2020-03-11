@@ -29,3 +29,6 @@
 
 /* Unsupported functionality */
 #undef HAVE_PTHREAD_H
+
+#define CONFIG_32
+#define ANSI

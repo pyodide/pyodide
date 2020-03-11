@@ -6,6 +6,8 @@ ROOT=$(abspath .)
 HOSTINSTALL=$(ROOT)/build/$(PYVERSION)/host
 HOSTBUILD=$(HOSTINSTALL)/Python-$(PYVERSION)
 HOSTPYTHON=$(HOSTINSTALL)/bin/python3$(EXE)
+HOSTPYTHON_CPPFLAGS="-I/usr/local/opt/openssl/include"
+HOSTPYTHON_LDFLAGS="-L/usr/local/opt/openssl/lib"
 HOSTPGEN=$(HOSTINSTALL)/bin/pgen$(EXE)
 
 BUILD=$(ROOT)/build/$(PYVERSION)/Python-$(PYVERSION)
@@ -19,6 +21,14 @@ ZLIBVERSION = 1.2.11
 ZLIBTARBALL=$(ROOT)/downloads/zlib-$(ZLIBVERSION).tar.gz
 ZLIBBUILD=$(ROOT)/build/zlib-$(ZLIBVERSION)
 ZLIBURL=https://zlib.net/zlib-1.2.11.tar.gz
+
+SQLITETARBALL=$(ROOT)/downloads/sqlite-autoconf-3270200.tar.gz
+SQLITEBUILD=$(ROOT)/build/sqlite-autoconf-3270200
+SQLITEURL=https://www.sqlite.org/2019/sqlite-autoconf-3270200.tar.gz
+
+BZIP2TARBALL=$(ROOT)/downloads/bzip2-1.0.2.tar.gz
+BZIP2BUILD=$(ROOT)/build/bzip2-1.0.2
+BZIP2URL=ftp://sources.redhat.com/pub/bzip2/v102/bzip2-1.0.2.tar.gz
 
 
 all: $(INSTALL)/lib/$(LIB)
@@ -53,12 +63,22 @@ $(ZLIBTARBALL):
 	wget -q -O $@ $(ZLIBURL)
 
 
+$(SQLITETARBALL):
+	[ -d $(ROOT)/downloads ] || mkdir $(ROOT)/downloads
+	wget -q -O $@ $(SQLITEURL)
+
+
+$(BZIP2TARBALL):
+	[ -d $(ROOT)/downloads ] || mkdir $(ROOT)/downloads
+	wget -q -O $@ $(BZIP2URL)
+
+
 $(HOSTPYTHON) $(HOSTPGEN): $(TARBALL)
 	mkdir -p $(HOSTINSTALL)
 	[ -d $(HOSTBUILD) ] || tar -C $(HOSTINSTALL) -xf $(TARBALL)
 	( \
 		cd $(HOSTBUILD); \
-		./configure --prefix=$(HOSTINSTALL) || cat config.log && \
+		PKG_CONFIG_PATH="/usr/local/opt/openssl/lib/pkgconfig" ./configure --prefix=$(HOSTINSTALL) || cat config.log && \
 	  make regen-grammar && \
 		make install && \
 		cp Parser/pgen$(EXE) $(HOSTINSTALL)/bin/ && \
@@ -79,11 +99,40 @@ $(ZLIBBUILD)/.patched: $(ZLIBTARBALL)
 	touch $@
 
 
-$(BUILD)/Makefile: $(BUILD)/.patched $(ZLIBBUILD)/.patched
+$(SQLITEBUILD)/libsqlite3.la: $(SQLITETARBALL)
+	[ -d $(ROOT)/build ] || (mkdir $(ROOT)/build)
+	tar -C $(ROOT)/build/ -xf $(SQLITETARBALL)
+	( \
+		cd $(SQLITEBUILD); \
+		emconfigure ./configure; \
+		emmake make; \
+	)
+
+
+$(BZIP2BUILD)/libbz2.a: $(BZIP2TARBALL)
+	[ -d $(ROOT)/build ] || (mkdir $(ROOT)/build)
+	tar -C $(ROOT)/build/ -xf $(BZIP2TARBALL)
+	( \
+		cd $(BZIP2BUILD); \
+		emmake make CC=emcc CFLAGS="-Wall -Winline -O2 -fomit-frame-pointer -D_FILE_OFFSET_BITS=64" AR=emar RANLIB=emranlib libbz2.a; \
+	)
+
+
+$(BUILD)/Makefile: $(BUILD)/.patched $(ZLIBBUILD)/.patched $(SQLITEBUILD)/libsqlite3.la $(BZIP2BUILD)/libbz2.a
 	cp config.site $(BUILD)/
 	( \
 		cd $(BUILD); \
-		CONFIG_SITE=./config.site READELF=true emconfigure ./configure --without-pymalloc --disable-shared --disable-ipv6 --without-gcc --host=asmjs-unknown-emscripten --build=$(shell $(BUILD)/config.guess) --prefix=$(INSTALL) ; \
+		CONFIG_SITE=./config.site READELF=true LD_RUN_PATH="$(SQLITEBUILD):$(BZIP2BUILD)" emconfigure \
+		  ./configure \
+			  CPPFLAGS="-I$(SQLITEBUILD) -I$(BZIP2BUILD)" \
+			  LDFLAGS="-L$(SQLITEBUILD) -L$(BZIP2BUILD)" \
+			  --without-pymalloc \
+			  --disable-shared \
+			  --disable-ipv6 \
+			  --without-gcc \
+			  --host=asmjs-unknown-emscripten \
+			  --build=$(shell $(BUILD)/config.guess) \
+			  --prefix=$(INSTALL) ; \
 	)
 
 
@@ -95,4 +144,5 @@ $(BUILD)/$(LIB): $(BUILD)/Makefile $(HOSTPYTHON) $(HOSTPGEN) Setup.local
 		cd $(BUILD); \
 		emmake make HOSTPYTHON=$(HOSTPYTHON) HOSTPGEN=$(HOSTPGEN) CROSS_COMPILE=yes $(LIB) \
 	)
+	sed -i -e 's/\-undefined dynamic_lookup//' build/$(PYVERSION)/Python-$(PYVERSION)/Lib/_sysconfigdata__emscripten_.py
 	touch $(BUILD)/$(LIB)

@@ -1,0 +1,9 @@
+package:
+  name: docutils
+  version: 0.15.2
+source:
+  sha256: a2aeea129088da402665e92e0b25b04b073c04b2dce4ab65caaa38b7ce2e1a99
+  url: https://files.pythonhosted.org/packages/93/22/953e071b589b0b1fee420ab06a0d15e5aa0c7470eb9966d60393ce58ad61/docutils-0.15.2.tar.gz
+test:
+  imports:
+  - docutils

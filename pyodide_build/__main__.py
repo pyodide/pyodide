@@ -5,6 +5,7 @@ from . import buildall
 from . import buildpkg
 from . import pywasmcross
 from . import serve
+from . import mkpkg
 
 
 def main():
@@ -14,7 +15,8 @@ def main():
     for command_name, module in (("buildpkg", buildpkg),
                                  ("buildall", buildall),
                                  ("pywasmcross", pywasmcross),
-                                 ("serve", serve)):
+                                 ("serve", serve),
+                                 ("mkpkg", mkpkg)):
         parser = module.make_parser(subparsers.add_parser(command_name))
         parser.set_defaults(func=module.main)
 

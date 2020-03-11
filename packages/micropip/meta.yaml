@@ -1,0 +1,11 @@
+package:
+  name: micropip
+  version: "0.1"
+requirements:
+  run:
+    - distlib
+source:
+  path: micropip
+test:
+  imports:
+  - micropip

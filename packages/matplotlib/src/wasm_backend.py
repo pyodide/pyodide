@@ -90,21 +90,24 @@ class FigureCanvasWasm(backend_agg.FigureCanvasAgg):
         This is typically 2 on a HiDPI ("Retina") display, and 1 otherwise.
         """
         backing_store = (
-            context.backingStorePixelRatio or
-            context.webkitBackingStorePixel or
-            context.mozBackingStorePixelRatio or
-            context.msBackingStorePixelRatio or
-            context.oBackingStorePixelRatio or
-            context.backendStorePixelRatio or
+            getattr(context, 'backingStorePixelRatio', 0) or
+            getattr(context, 'webkitBackingStorePixel', 0) or
+            getattr(context, 'mozBackingStorePixelRatio', 0) or
+            getattr(context, 'msBackingStorePixelRatio', 0) or
+            getattr(context, 'oBackingStorePixelRatio', 0) or
+            getattr(context, 'backendStorePixelRatio', 0) or
             1
         )
-        return (window.devicePixelRatio or 1) / backing_store
+        return (getattr(window, 'devicePixelRatio', 0) or 1) / backing_store
 
     def create_root_element(self):
         # Designed to be overridden by subclasses for use in contexts other
         # than iodide.
-        from js import iodide
-        return iodide.output.element('div')
+        try:
+            from js import iodide
+            return iodide.output.element('div')
+        except ImportError:
+            return document.createElement('div')
 
     def show(self):
         # If we've already shown this canvas elsewhere, don't create a new one,

@@ -19,9 +19,7 @@ def build_package(pkgname, dependencies, packagesdir, outputdir, args):
     # Make sure all of the package's requirements are built first
     for req in reqs:
         build_package(req, dependencies, packagesdir, outputdir, args)
-    if not (packagesdir / pkgname / 'build' / '.packaged').is_file():
-        print("BUILDING PACKAGE: " + pkgname)
-        buildpkg.build_package(packagesdir / pkgname / 'meta.yaml', args)
+    buildpkg.build_package(packagesdir / pkgname / 'meta.yaml', args)
     shutil.copyfile(
         packagesdir / pkgname / 'build' / (pkgname + '.data'),
         outputdir / (pkgname + '.data'))

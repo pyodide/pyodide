@@ -427,6 +427,10 @@ _python2js_shareable_buffer_recursive(Py_buffer* buff,
 static enum shareable_enum
 _python2js_buffer_is_shareable(Py_buffer* buff)
 {
+  if (buff->ndim == 0) {
+    return NOT_SHAREABLE;
+  }
+
   char* invalid_codes = ">!qQ?";
   for (char* i = buff->format; *i != 0; ++i) {
     for (char* j = invalid_codes; *j != 0; ++j) {

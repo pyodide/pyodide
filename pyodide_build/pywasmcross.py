@@ -228,9 +228,9 @@ def handle_command(line, args, dryrun=False):
         # distutils doesn't use the c++ compiler when compiling c++ <sigh>
         if any(arg.endswith('.cpp') for arg in line):
             new_args = ['em++']
-    shared = '-shared' in line
+    library_output = line[-1].endswith('.so')
 
-    if shared:
+    if library_output:
         new_args.extend(args.ldflags.split())
     elif new_args[0] in ('emcc', 'em++'):
         new_args.extend(args.cflags.split())
@@ -249,13 +249,16 @@ def handle_command(line, args, dryrun=False):
         # Don't include any system directories
         if arg.startswith('-L/usr'):
             continue
+        # On Mac, we need to omit some darwin-specific arguments
+        if arg in ['-bundle', '-undefined', 'dynamic_lookup']:
+            continue
         # The native build is possibly multithreaded, but the emscripten one
         # definitely isn't
         arg = re.sub(r'/python([0-9]\.[0-9]+)m', r'/python\1', arg)
         if arg.endswith('.o'):
             arg = arg[:-2] + '.bc'
             output = arg
-        elif shared and arg.endswith('.so'):
+        elif arg.endswith('.so'):
             arg = arg[:-3] + '.wasm'
             output = arg
 
@@ -303,7 +306,7 @@ def handle_command(line, args, dryrun=False):
             sys.exit(result.returncode)
 
     # Emscripten .so files shouldn't have the native platform slug
-    if shared:
+    if library_output:
         renamed = output[:-5] + '.so'
         for ext in importlib.machinery.EXTENSION_SUFFIXES:
             if ext == '.so':

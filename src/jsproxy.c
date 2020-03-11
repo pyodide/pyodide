@@ -383,11 +383,33 @@ JsProxy_HasBytes(PyObject* o)
   }
 }
 
+static PyObject*
+JsProxy_Dir(PyObject* o)
+{
+  JsProxy* self = (JsProxy*)o;
+
+  int iddir = hiwire_dir(self->js);
+  PyObject* pydir = js2python(iddir);
+  hiwire_decref(iddir);
+  return pydir;
+}
+
+static int
+JsProxy_Bool(PyObject* o)
+{
+  JsProxy* self = (JsProxy*)o;
+  return (self->js && hiwire_get_bool(self->js)) ? 1 : 0;
+}
+
 // clang-format off
 static PyMappingMethods JsProxy_MappingMethods = {
   JsProxy_length,
   JsProxy_subscript,
   JsProxy_ass_subscript,
+};
+
+static PyNumberMethods JsProxy_NumberMethods = {
+  .nb_bool = JsProxy_Bool
 };
 
 static PyBufferProcs JsProxy_BufferProcs = {
@@ -408,6 +430,10 @@ static PyMethodDef JsProxy_Methods[] = {
     (PyCFunction)JsProxy_HasBytes,
     METH_NOARGS,
     "Returns true if instance has buffer memory. For testing only." },
+  { "__dir__",
+    (PyCFunction)JsProxy_Dir,
+    METH_NOARGS,
+    "Returns a list of the members and methods on the object." },
   { NULL }
 };
 // clang-format on
@@ -424,6 +450,7 @@ static PyTypeObject JsProxyType = {
   .tp_doc = "A proxy to make a Javascript object behave like a Python object",
   .tp_methods = JsProxy_Methods,
   .tp_as_mapping = &JsProxy_MappingMethods,
+  .tp_as_number = &JsProxy_NumberMethods,
   .tp_iter = JsProxy_GetIter,
   .tp_iternext = JsProxy_IterNext,
   .tp_repr = JsProxy_Repr,

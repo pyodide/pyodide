@@ -347,6 +347,13 @@ void
 hiwire_delete_member_obj(int idobj, int ididx);
 
 /**
+ * Get the methods on an object, both on itself and what it inherits.
+ *
+ */
+int
+hiwire_dir(int idobj);
+
+/**
  * Call a function
  *
  * idargs is a hiwire Array containing the arguments.
@@ -385,6 +392,14 @@ hiwire_new(int idobj, int idargs);
  */
 int
 hiwire_get_length(int idobj);
+
+/**
+ * Returns the boolean value of a Javascript object.
+ *
+ * Returns: C int
+ */
+int
+hiwire_get_bool(int idobj);
 
 /**
  * Returns 1 if the object is a function.

@@ -1,0 +1,9 @@
+package:
+  name: soupsieve
+  version: 1.9.5
+source:
+  sha256: e2c1c5dee4a1c36bcb790e0fabd5492d874b8ebd4617622c4f6a731701060dda
+  url: https://files.pythonhosted.org/packages/92/cf/57dfed8a00f4ba33af3a6615d693bb65a19a11e26ab13293f62359216417/soupsieve-1.9.5.tar.gz
+test:
+  imports:
+  - soupsieve
