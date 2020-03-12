@@ -3,10 +3,12 @@ FROM circleci/python:3.7.7-stretch
 # We need at least g++-8, but stretch comes with g++-6
 # Set up the Debian testing repo, and then install g++ from there...
 RUN sudo bash -c "echo \"deb http://ftp.us.debian.org/debian testing main contrib non-free\" >> /etc/apt/sources.list" \
+  && wget -q -O - https://dl-ssl.google.com/linux/linux_signing_key.pub | sudo apt-key add - \
+  && sudo sh -c 'echo "deb [arch=amd64] http://dl.google.com/linux/chrome/deb/ stable main" >> /etc/apt/sources.list.d/google.list' \
   && sudo apt-get update \
   # bzip2 and libgconf-2-4 are necessary for extracting firefox and running chrome, respectively
   && sudo apt-get install bzip2 libgconf-2-4 node-less cmake build-essential clang-format-6.0 \
-                  uglifyjs chromium ccache libncurses6 gfortran f2c \
+                  uglifyjs node-commander google-chrome-stable ccache libncurses6 gfortran f2c \
   && sudo apt-get install -t testing g++-8 \
   && sudo update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-6 60 --slave /usr/bin/g++ g++ /usr/bin/g++-6 \
   && sudo update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-8 80 --slave /usr/bin/g++ g++ /usr/bin/g++-8 \
