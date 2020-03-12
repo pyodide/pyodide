@@ -1,4 +1,4 @@
-FROM circleci/python:3.7.0-stretch
+FROM circleci/python:3.7.7-stretch
 
 # We need at least g++-8, but stretch comes with g++-6
 # Set up the Debian testing repo, and then install g++ from there...
@@ -24,12 +24,12 @@ RUN sudo wget --quiet -O firefox.tar.bz2 https://download.mozilla.org/\?product\
   && sudo tar jxf firefox.tar.bz2 \
   && sudo rm -f /usr/local/bin/firefox \
   && sudo ln -s $PWD/firefox/firefox /usr/local/bin/firefox \
-  && sudo wget --quiet https://github.com/mozilla/geckodriver/releases/download/v0.21.0/geckodriver-v0.21.0-linux64.tar.gz \
-  && sudo tar zxf geckodriver-v0.21.0-linux64.tar.gz -C /usr/local/bin \
-  && sudo rm -f firefox.tar.bz2 geckodriver-v0.21.0-linux64.tar.gz
+  && sudo wget --quiet https://github.com/mozilla/geckodriver/releases/download/v0.26.0/geckodriver-v0.26.0-linux64.tar.gz \
+  && sudo tar zxf geckodriver-v0.26.0-linux64.tar.gz -C /usr/local/bin \
+  && sudo rm -f firefox.tar.bz2 geckodriver-v0.26.0-linux64.tar.gz
 
 # Get recent version of chromedriver
-RUN sudo wget --quiet https://chromedriver.storage.googleapis.com/2.41/chromedriver_linux64.zip \
+RUN sudo wget --quiet https://chromedriver.storage.googleapis.com/81.0.4044.20/chromedriver_linux64.zip \
   && sudo unzip chromedriver_linux64.zip \
   && sudo mv $PWD/chromedriver /usr/local/bin \
   && sudo rm -f chromedriver_linux64.zip
