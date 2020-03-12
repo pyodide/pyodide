@@ -228,7 +228,7 @@ test_glob     fs
 test_global
 test_grammar
 test_grp
-test_gzip subprocess
+test_gzip
 test_hash
 test_hashlib  threading
 test_heapq

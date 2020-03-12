@@ -45,7 +45,7 @@ jobs:
           root: .
           paths:
             - ./build
-            - ./cpython/build/3.7.1/host
+            - ./cpython/build/3.7.2/host
 
       - store_artifacts:
           path: /home/circleci/repo/build/
