@@ -1,0 +1,9 @@
+package:
+  name: skyfield-data 
+  version: '0.1.0'
+source:
+  sha256: bae8e2d29936cae1c919ae4190aa523659043c43789631bd81de8c3b9b3815f7 
+  url: https://files.pythonhosted.org/packages/6a/aa/cf044270d1cfce25cf62ffd9e2ef50db6274fbf078799bebefae4b7383ab/skyfield-data-0.1.0.tar.gz 
+requirements:
+  run:
+  - skyfield

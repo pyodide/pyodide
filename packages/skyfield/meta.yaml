@@ -1,0 +1,14 @@
+package:
+  name: skyfield 
+  version: '1.17'
+source:
+  sha256: b035c5e8bf778711a74e64a9d313563310d0b609b35f69c0e2395af96dd5c319 
+  url: https://files.pythonhosted.org/packages/f2/b5/3ba63f4c67e4d38ac41a6c981d4627ab326fc9d76f12b85f4a144c472456/skyfield-1.17.tar.gz
+requirements:
+  run:
+  - numpy
+  - jplephem
+  - sgp4
+#test:
+#  imports:
+#  - bs4
