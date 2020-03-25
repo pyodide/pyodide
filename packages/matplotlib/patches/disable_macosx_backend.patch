@@ -1,0 +1,15 @@
+diff -u matplotlib-2.2.3.bak/setupext.py matplotlib-2.2.3/setupext.py
+--- a/setupext.py	2019-10-15 10:09:56.000000000 -0400
++++ b/setupext.py	2019-10-15 11:24:53.000000000 -0400
+@@ -1798,6 +1798,7 @@
+     name = 'macosx'
+ 
+     def check_requirements(self):
++        raise CheckFailed("MacOSX backend disabled")
+         if sys.platform != 'darwin':
+             raise CheckFailed("Mac OS-X only")
+ 
+Common subdirectories: matplotlib-2.2.3.bak/src and matplotlib-2.2.3/src
+Common subdirectories: matplotlib-2.2.3.bak/tools and matplotlib-2.2.3/tools
+Common subdirectories: matplotlib-2.2.3.bak/tutorials and matplotlib-2.2.3/tutorials
+Common subdirectories: matplotlib-2.2.3.bak/unit and matplotlib-2.2.3/unit

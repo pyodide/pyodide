@@ -7,7 +7,7 @@
 #include "hiwire.h"
 #include "python2js.h"
 
-extern PyObject* globals;
+PyObject* globals;
 
 PyObject* eval_code;
 PyObject* find_imports;
@@ -69,7 +69,7 @@ EM_JS(int, runpython_init_js, (), {
     return Module._runPythonInternal(pycode);
   };
 
-  Module.runPythonAsync = function(code, messageCallback)
+  Module.runPythonAsync = function(code, messageCallback, errorCallback)
   {
     var pycode = allocate(intArrayFromString(code), 'i8', ALLOC_NORMAL);
 
@@ -100,7 +100,8 @@ EM_JS(int, runpython_init_js, (), {
       }
       if (Object.keys(packages).length) {
         var runInternal = function() { return new Promise(internal); };
-        return Module.loadPackage(Object.keys(packages), messageCallback)
+        return Module
+          .loadPackage(Object.keys(packages), messageCallback, errorCallback)
           .then(runInternal);
       }
     }
@@ -111,6 +112,30 @@ EM_JS(int, runpython_init_js, (), {
 int
 runpython_init_py()
 {
+  PyObject* builtins = PyImport_AddModule("builtins");
+  if (builtins == NULL) {
+    return 1;
+  }
+
+  PyObject* builtins_dict = PyModule_GetDict(builtins);
+  if (builtins_dict == NULL) {
+    return 1;
+  }
+
+  PyObject* __main__ = PyImport_AddModule("__main__");
+  if (__main__ == NULL) {
+    return 1;
+  }
+
+  globals = PyModule_GetDict(__main__);
+  if (globals == NULL) {
+    return 1;
+  }
+
+  if (PyDict_Update(globals, builtins_dict)) {
+    return 1;
+  }
+
   PyObject* m = PyImport_ImportModule("pyodide");
   if (m == NULL) {
     return 1;
@@ -131,8 +156,6 @@ runpython_init_py()
     return 1;
   }
 
-  Py_DECREF(m);
-  Py_DECREF(d);
   return 0;
 }
 

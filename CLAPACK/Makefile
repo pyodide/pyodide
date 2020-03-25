@@ -32,3 +32,4 @@ $(SRC)/Makefile:
 		cd $(SRC); \
 		(cat ../patches/*.patch | patch -p1) \
 	)
+	touch $(SRC)/F2CLIBS/libf2c/arith.h

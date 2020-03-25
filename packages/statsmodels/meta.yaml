@@ -1,0 +1,20 @@
+package:
+  name: statsmodels
+  version: 0.9.0
+
+source:
+  url: https://files.pythonhosted.org/packages/67/68/eb3ec6ab61f97216c257edddb853cc174cd76ea44b365cf4adaedcd44482/statsmodels-0.9.0.tar.gz
+  sha256: 6461f93a842c649922c2c9a9bc9d9c4834110b89de8c4af196a791ab8f42ba3b
+
+
+requirements:
+  run:
+    - numpy
+    - scipy
+    - pandas
+    - patsy
+
+test:
+  imports:
+    - statsmodels
+

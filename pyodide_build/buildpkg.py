@@ -40,19 +40,37 @@ def check_checksum(path, pkg):
 
 
 def download_and_extract(buildpath, packagedir, pkg, args):
-    tarballpath = buildpath / Path(pkg['source']['url']).name
-    if not tarballpath.is_file():
-        try:
-            subprocess.run([
-                'wget', '-q', '-O', str(tarballpath), pkg['source']['url']
-            ], check=True)
-            check_checksum(tarballpath, pkg)
-        except Exception:
-            tarballpath.unlink()
-            raise
     srcpath = buildpath / packagedir
-    if not srcpath.is_dir():
-        shutil.unpack_archive(str(tarballpath), str(buildpath))
+
+    if 'source' not in pkg:
+        return srcpath
+
+    if 'url' in pkg['source']:
+        tarballpath = buildpath / Path(pkg['source']['url']).name
+        if not tarballpath.is_file():
+            try:
+                subprocess.run([
+                    'wget', '-q', '-O', str(tarballpath), pkg['source']['url']
+                ], check=True)
+                check_checksum(tarballpath, pkg)
+            except Exception:
+                tarballpath.unlink()
+                raise
+
+        if not srcpath.is_dir():
+            shutil.unpack_archive(str(tarballpath), str(buildpath))
+
+    elif 'path' in pkg['source']:
+        srcdir = Path(pkg['source']['path'])
+
+        if not srcdir.is_dir():
+            raise ValueError("'path' must point to a path")
+
+        if not srcpath.is_dir():
+            shutil.copytree(srcdir, srcpath)
+    else:
+        raise ValueError('Incorrect source provided')
+
     return srcpath
 
 
@@ -65,7 +83,7 @@ def patch(path, srcpath, pkg, args):
     pkgdir = path.parent.resolve()
     os.chdir(srcpath)
     try:
-        for patch in pkg['source'].get('patches', []):
+        for patch in pkg.get('source', {}).get('patches', []):
             subprocess.run([
                 'patch', '-p1', '--binary', '-i', pkgdir / patch
             ], check=True)
@@ -73,7 +91,7 @@ def patch(path, srcpath, pkg, args):
         os.chdir(orig_dir)
 
     # Add any extra files
-    for src, dst in pkg['source'].get('extras', []):
+    for src, dst in pkg.get('source', {}).get('extras', []):
         shutil.copyfile(pkgdir / src, srcpath / dst)
 
     with open(srcpath / '.patched', 'wb') as fd:
@@ -183,9 +201,10 @@ def build_package(path, args):
     try:
         if not needs_rebuild(pkg, path, buildpath):
             return
-        if buildpath.resolve().is_dir():
-            shutil.rmtree(buildpath)
-        os.makedirs(buildpath)
+        if 'source' in pkg:
+            if buildpath.resolve().is_dir():
+                shutil.rmtree(buildpath)
+            os.makedirs(buildpath)
         srcpath = download_and_extract(buildpath, packagedir, pkg, args)
         patch(path, srcpath, pkg, args)
         compile(path, srcpath, pkg, args)

@@ -6,7 +6,8 @@ import ast
 import io
 from textwrap import dedent
 
-__version__ = '0.11.0'
+
+__version__ = '0.14.3'
 
 
 def open_url(url):
@@ -79,4 +80,29 @@ def as_nested_list(obj):
         return obj
 
 
-__all__ = ['open_url', 'eval_code', 'find_imports', 'as_nested_list']
+def get_completions(code, cursor=None, namespaces=None):
+    """
+    Get code autocompletion candidates.
+    """
+    import jedi
+    import __main__
+
+    if namespaces is None:
+        namespaces = [__main__.__dict__]
+
+    if cursor is None:
+        cursor = len(code)
+    code = code[:cursor]
+    interp = jedi.Interpreter(source=code, namespaces=namespaces)
+    completions = interp.completions()
+
+    return [x.name for x in completions]
+
+
+__all__ = [
+    'open_url',
+    'eval_code',
+    'find_imports',
+    'as_nested_list',
+    'get_completions'
+]

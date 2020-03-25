@@ -1,7 +1,7 @@
 diff -ru python-dateutil-2.7.2.orig/dateutil/tz/tz.py python-dateutil-2.7.2/dateutil/tz/tz.py
---- python-dateutil-2.7.2.orig/dateutil/tz/tz.py	2018-04-24 18:33:38.436301176 -0400
-+++ python-dateutil-2.7.2/dateutil/tz/tz.py	2018-04-24 18:34:39.653365591 -0400
-@@ -16,7 +16,6 @@
+--- python-dateutil-2.8.1/dateutil/tz/tz.py.orig 2019-11-24 17:23:10.395546087 -0500
++++ python-dateutil-2.8.1/dateutil/tz/tz.py  2019-11-24 17:24:06.125760830 -0500
+@@ -18,7 +18,6 @@
 
  import six
  from six import string_types
@@ -9,7 +9,7 @@ diff -ru python-dateutil-2.7.2.orig/dateutil/tz/tz.py python-dateutil-2.7.2/date
  from ._common import tzname_in_python2, _tzinfo
  from ._common import tzrangebase, enfold
  from ._common import _validate_fromutc_inputs
-@@ -33,6 +32,14 @@
+@@ -38,6 +37,14 @@
  EPOCHORDINAL = EPOCH.toordinal()
 
 
@@ -24,7 +24,7 @@ diff -ru python-dateutil-2.7.2.orig/dateutil/tz/tz.py python-dateutil-2.7.2/date
  @six.add_metaclass(_TzSingleton)
  class tzutc(datetime.tzinfo):
      """
-@@ -1104,7 +1111,7 @@
+@@ -1172,7 +1179,7 @@
          self._comps = comps
          self._cachedate = []
          self._cachecomp = []
@@ -33,15 +33,16 @@ diff -ru python-dateutil-2.7.2.orig/dateutil/tz/tz.py python-dateutil-2.7.2/date
 
      def _find_comp(self, dt):
          if len(self._comps) == 1:
-@@ -1407,7 +1414,7 @@
-         def __init__(self):
-
-             self.__instances = {}
+@@ -1547,7 +1554,7 @@
+             self.__instances = weakref.WeakValueDictionary()
+             self.__strong_cache_size = 8
+             self.__strong_cache = OrderedDict()
 -            self._cache_lock = _thread.allocate_lock()
 +            self._cache_lock = _dummy_lock()
 
          def __call__(self, name=None):
              with self._cache_lock:
+
 diff -ur python-dateutil-2.7.2/dateutil/rrule.py python-dateutil-2.7.2.bak/dateutil/rrule.py
 --- python-dateutil-2.7.2/dateutil/rrule.py	2018-03-24 11:53:31.000000000 -0400
 +++ python-dateutil-2.7.2.bak/dateutil/rrule.py	2018-05-17 09:36:33.295290743 -0400

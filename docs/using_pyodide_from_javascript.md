@@ -8,7 +8,18 @@ Iodide](using_pyodide_from_iodide.md).
 
 Include `pyodide.js` in your project.
 
-This has a single `Promise` object which bootstraps the Python environment:
+The recommended way to include Pyodide in your project is to download a release
+from [here](https://github.com/iodide-project/pyodide/releases) and include the
+contents in your distribution, and import the `pyodide.js` file there from a
+`<script>` tag.
+
+For prototyping purposes, you may also use the following CDN URL, though doing
+so is not recommended, since it isn't versioned and could change or be unstable
+at any time:
+
+  https://pyodide.cdn.iodide.io/pyodide.js
+
+This file has a single `Promise` object which bootstraps the Python environment:
 `languagePluginLoader`. Since this must happen asynchronously, it is a
 `Promise`, which you must call `then` on to complete initialization. When the
 promise resolves, pyodide will have installed a namespace in global scope:
@@ -29,7 +40,7 @@ of the expression, converted to Javascript objects (See [type
 conversions](type_conversions.md)).
 
 ```javascript
-pyodide.runPython('import sys\nsys.version'));
+pyodide.runPython('import sys\nsys.version');
 ```
 
 ## Loading packages
