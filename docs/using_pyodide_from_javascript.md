@@ -77,7 +77,7 @@ pyodide.loadPackage('matplotlib').then(() => {
 
 Grab the latest release tarball from the [releases page](https://github.com/iodide-project/pyodide/releases/) and expand its contents into a `pyodide_local` directory.
 
-Create and save a test `index.html` page (in the pyodide_local directory) with the following contents:
+Create and save a test `index.html` page (in the `pyodide_local` directory) with the following contents:
 ```html
 <!DOCTYPE html>
 <html>
@@ -93,22 +93,39 @@ Create and save a test `index.html` page (in the pyodide_local directory) with t
   <script type="text/javascript">
         languagePluginLoader.then(function () {
             console.log(pyodide.runPython('import sys\nsys.version'));
-            console.log(pyodide.runPython('help("modules")'));
+            console.log(pyodide.runPython('print(1 + 2)'));
         });
   </script>
 </body>
 ```
 
-Unfortunately, because browsers require WebAssembly files to have mimetype of `application/wasm` we're unable to serve our files using Python's built-in `SimpleHTTPServer` module.
+Because browsers require WebAssembly files to have mimetype of `application/wasm` we're unable to serve our files using Python's built-in `SimpleHTTPServer` module.
 
 Let's wrap Python's Simple HTTP Server and provide the appropiate mimetype for WebAssembly files into a `pyodide_server.py` file (in the pyodide_local directory):
 ```python
-import BaseHTTPServer, SimpleHTTPServer
+import sys
+import socketserver
+from http.server import SimpleHTTPRequestHandler
 
-SimpleHTTPServer.SimpleHTTPRequestHandler.extensions_map['.wasm'] = 'application/wasm'
 
-httpd = BaseHTTPServer.HTTPServer(('localhost', 8000), SimpleHTTPServer.SimpleHTTPRequestHandler)
-httpd.serve_forever()
+class Handler(SimpleHTTPRequestHandler):
+
+    def end_headers(self):
+        # Enable Cross-Origin Resource Sharing (CORS)
+        self.send_header('Access-Control-Allow-Origin', '*')
+        super().end_headers()
+
+
+if sys.version_info < (3, 7, 5):
+    # Fix for WASM MIME type for older Python versions
+    Handler.extensions_map['.wasm'] = 'application/wasm'
+
+
+if __name__ == '__main__':
+    port = 8000
+    with socketserver.TCPServer(("", port), Handler) as httpd:
+        print("Serving at: http://127.0.0.1:{}".format(port))
+        httpd.serve_forever()
 ```
 
 Let's test it out.
