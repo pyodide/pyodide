@@ -75,4 +75,73 @@ pyodide.loadPackage('matplotlib').then(() => {
 
 ## Complete example
 
-TODO
+Grab the latest release tarball from the [releases
+page](https://github.com/iodide-project/pyodide/releases/) and expand its
+contents into a `pyodide_local` directory.
+
+Create and save a test `index.html` page (in the `pyodide_local` directory)
+with the following contents:
+```html
+<!DOCTYPE html>
+<html>
+<head>
+    <script type="text/javascript">
+        // set the pyodide files URL (packages.json, pyodide.asm.data etc)
+        window.languagePluginUrl = 'http://localhost:8000/';
+    </script>
+    <script src="pyodide.js"></script>
+</head>
+<body>
+  Pyodide test page <br>
+  Open your browser console to see pyodide output
+  <script type="text/javascript">
+        languagePluginLoader.then(function () {
+            console.log(pyodide.runPython('import sys\nsys.version'));
+            console.log(pyodide.runPython('print(1 + 2)'));
+        });
+  </script>
+</body>
+```
+
+Because browsers require WebAssembly files to have mimetype of
+`application/wasm` we're unable to serve our files using Python's built-in
+`SimpleHTTPServer` module.
+
+Let's wrap Python's Simple HTTP Server and provide the appropiate mimetype for
+WebAssembly files into a `pyodide_server.py` file (in the `pyodide_local`
+directory):
+```python
+import sys
+import socketserver
+from http.server import SimpleHTTPRequestHandler
+
+
+class Handler(SimpleHTTPRequestHandler):
+
+    def end_headers(self):
+        # Enable Cross-Origin Resource Sharing (CORS)
+        self.send_header('Access-Control-Allow-Origin', '*')
+        super().end_headers()
+
+
+if sys.version_info < (3, 7, 5):
+    # Fix for WASM MIME type for older Python versions
+    Handler.extensions_map['.wasm'] = 'application/wasm'
+
+
+if __name__ == '__main__':
+    port = 8000
+    with socketserver.TCPServer(("", port), Handler) as httpd:
+        print("Serving at: http://127.0.0.1:{}".format(port))
+        httpd.serve_forever()
+```
+
+Let's test it out.
+In your favourite shell, let's start our WebAssembly aware web server:
+```bash
+python pyodide_server.py
+```
+
+Point your WebAssembly aware browser to
+[http://localhost:8000/index.html](http://localhost:8000/index.html) and open
+your browser console to see the output from python via pyodide!
