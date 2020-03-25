@@ -331,13 +331,22 @@ var languagePluginLoader = new Promise((resolve, reject) => {
   Module.preloadedWasm = {};
   let isFirefox = navigator.userAgent.toLowerCase().indexOf('firefox') > -1;
 
-  let wasm_promise;
+  let wasm_promise, wasm_fetch = fetch(wasmURL);
+  const compileBuffer = () =>
+      wasm_fetch.then(response => response.arrayBuffer())
+          .then(bytes => WebAssembly.compile(bytes));
   if (WebAssembly.compileStreaming === undefined) {
-    wasm_promise = fetch(wasmURL)
-                       .then(response => response.arrayBuffer())
-                       .then(bytes => WebAssembly.compile(bytes));
+    wasm_promise = compileBuffer();
   } else {
-    wasm_promise = WebAssembly.compileStreaming(fetch(wasmURL));
+    wasm_promise = WebAssembly.compileStreaming(wasm_fetch);
+    wasm_promise = wasm_promise.catch(e => {
+      if (e instanceof TypeError) {
+        console.error("pyodide streaming compilation failed:", e,
+                      "- falling back to buffered compilation");
+        return compileBuffer()
+      }
+      throw e;
+    });
   }
 
   Module.instantiateWasm = (info, receiveInstance) => {
