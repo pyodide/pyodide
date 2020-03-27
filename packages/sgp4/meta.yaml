@@ -1,7 +1,10 @@
 package:
-  name: sgp4 
+  name: sgp4
   version: '2.5'
 source:
   sha256: f37528c1a712a550ce886996b895f685441068792fd5bee4e5ad1f54af173dfb
   url: https://files.pythonhosted.org/packages/91/1f/20a5e69138d62dea93d5f4096761a93e21bc2ab4739c2d771dfba762b861/sgp4-2.5.tar.gz
   # Contains an optimized CPP implementation for python 3. No steps taken to make that work
+test:
+  imports:
+  - sgp4

@@ -1,14 +1,12 @@
 package:
   name: jplephem
-  version: '2.13'
+  version: '2.14'
 source:
-  sha256: 17685ac008cfc35e1fdde33477eca730dad75c8cd3e1505aedf49ac3e322cecc 
-  url: https://files.pythonhosted.org/packages/9a/2c/f50972e9e579a988a64bde55014eb6d8d13f1c5358189b9f7c93c24ca1f8/jplephem-2.13.tar.gz 
-  patches:
-    - patches/no-mmap.patch
+  sha256: 316aa8ebb6d13fd2158c06b2709bcde382d04bf63bb1e48d0bce89937088c6e3
+  url: https://files.pythonhosted.org/packages/6c/5b/f3228acdd1b7bba4573d2ea816a8da3193c03b16fe1b4955892cf663abc2/jplephem-2.14.tar.gz
 requirements:
   run:
   - numpy
-#test:
-#  imports:
-#  - bs4
+test:
+  imports:
+  - jplephem
