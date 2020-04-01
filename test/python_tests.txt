@@ -48,13 +48,17 @@ test_ast
 test_asyncgen async
 test_asynchat async
 test_asyncio.test_base_events async
-test_asyncio.test_events      async
-test_asyncio.test_futures     async
-test_asyncio.test_locks       async
+test_asyncio.test_buffered_proto  async
+test_asyncio.test_context         async
+test_asyncio.test_events          async
+test_asyncio.test_futures         async
+test_asyncio.test_locks           async
 test_asyncio.test_pep492
 test_asyncio.test_proactor_events
 test_asyncio.test_queues
+test_asyncio.test_runners
 test_asyncio.test_selector_events async segfault-socketcall
+test_asyncio.test_server          async
 test_asyncio.test_sslproto
 test_asyncio.test_streams         async
 test_asyncio.test_subprocess      async
@@ -114,7 +118,7 @@ test_collections
 test_colorsys
 test_compare
 test_compile crash-chrome
-test_compileall
+test_compileall multiprocessing
 test_complex
 test_concurrent_futures
 test_configparser
@@ -159,7 +163,7 @@ test_dummy_thread
 test_dummy_threading
 test_dynamic
 test_dynamicclassattribute
-test_eintr
+test_eintr subprocess
 test_email.test__encoded_words
 test_email.test__header_value_parser
 test_email.test_asian_codecs

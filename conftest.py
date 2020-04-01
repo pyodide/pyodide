@@ -77,7 +77,7 @@ class SeleniumWrapper:
             build_dir = BUILD_PATH
 
         driver = self.get_driver()
-        wait = WebDriverWait(driver, timeout=20)
+        wait = WebDriverWait(driver, timeout=40)
         if not (pathlib.Path(build_dir) / 'test.html').exists():
             # selenium does not expose HTTP response codes
             raise ValueError(f"{(build_dir / 'test.html').resolve()} "

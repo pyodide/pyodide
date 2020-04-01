@@ -4,6 +4,9 @@ defaults: &defaults
   working_directory: ~/repo
   docker:
     - image: iodide/pyodide-env:0.3.1
+  environment:
+    - EMSDK_NUM_CORES: 4
+      EMCC_CORES: 4
 
 jobs:
   build:
@@ -42,7 +45,7 @@ jobs:
           root: .
           paths:
             - ./build
-            - ./cpython/build/3.7.0/host
+            - ./cpython/build/3.7.4/host
 
       - store_artifacts:
           path: /home/circleci/repo/build/
@@ -91,7 +94,7 @@ jobs:
       - run:
           name: benchmark
           command: |
-            python benchmark/benchmark.py cpython/build/3.7.0/host/bin/python3 build/benchmarks.json
+            python benchmark/benchmark.py cpython/build/3.7.4/host/bin/python3 build/benchmarks.json
       - store_artifacts:
           path: /home/circleci/repo/build/benchmarks.json
 

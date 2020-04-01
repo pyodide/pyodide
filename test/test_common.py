@@ -8,7 +8,7 @@ PKG_DIR = BASE_DIR / 'packages'
 
 
 def registered_packages():
-    """Returns a list of registred package names"""
+    """Returns a list of registered package names"""
     packages = [name for name in os.listdir(PKG_DIR)
                 if (PKG_DIR / name).is_dir()]
     return packages
@@ -16,7 +16,7 @@ def registered_packages():
 
 def registered_packages_meta():
     """Returns a dictionary with the contents of `meta.yaml`
-    for each registed package
+    for each registered package
     """
     packages = registered_packages
     return {name: parse_package(PKG_DIR / name / 'meta.yaml')
