@@ -39,6 +39,8 @@ jobs:
           paths:
             - ./emsdk/emsdk
             - ~/.ccache
+            - ./cpython
+            - ./CLAPACK
           key: v1-emsdk-{{ checksum "emsdk/Makefile" }}-v14-{{ .BuildNum }}
 
       - persist_to_workspace:
