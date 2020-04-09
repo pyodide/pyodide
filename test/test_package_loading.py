@@ -82,8 +82,8 @@ def test_load_packages_multiple(selenium_standalone, packages):
     # The log must show that each package is loaded exactly once,
     # including when one package is a dependency of the other
     # ('pyparsing' and 'matplotlib')
-    assert selenium.logs.count(f'Loading {packages[0]}') == 1
-    assert selenium.logs.count(f'Loading {packages[1]}') == 1
+    assert selenium.logs.count(f'Loading {packages[0]} from') == 1
+    assert selenium.logs.count(f'Loading {packages[1]} from') == 1
 
 
 @pytest.mark.parametrize('packages', [['pyparsing', 'pytz'],
@@ -104,8 +104,8 @@ def test_load_packages_sequential(selenium_standalone, packages):
     # The log must show that each package is loaded exactly once,
     # including when one package is a dependency of the other
     # ('pyparsing' and 'matplotlib')
-    assert selenium.logs.count(f'Loading {packages[0]}') == 1
-    assert selenium.logs.count(f'Loading {packages[1]}') == 1
+    assert selenium.logs.count(f'Loading {packages[0]} from') == 1
+    assert selenium.logs.count(f'Loading {packages[1]} from') == 1
 
 
 def test_different_ABI(selenium_standalone):
@@ -152,6 +152,21 @@ def test_load_handle_failure(selenium_standalone):
     assert "Unknown package 'pytz2'" in selenium.logs
     assert "Couldn't load package from URL" in selenium.logs
     assert 'Loading pyparsing' in selenium.logs  # <- this fails
+
+
+def test_load_failure_retry(selenium_standalone):
+    """Check that a package can be loaded after failing to load previously"""
+    selenium = selenium_standalone
+    selenium.load_package('http://invalidurl/pytz.js')
+    assert selenium.logs.count('Loading pytz from') == 1
+    assert selenium.logs.count("Couldn't load package from URL") == 1
+    assert selenium.run_js('return Object.keys(pyodide.loadedPackages)') == []
+
+    selenium.load_package('pytz')
+    selenium.run('import pytz')
+    assert selenium.logs.count('Loading pytz from') == 2
+    assert selenium.run_js(
+        'return Object.keys(pyodide.loadedPackages)') == ['pytz']
 
 
 def test_load_package_unknown(selenium_standalone):

@@ -82,3 +82,30 @@ index 1fc4de11e1..e6c91707ae 100644
  import time
  import unittest
  import unittest.mock as mock
+diff --git a/Lib/test/test_gzip.py b/Lib/test/test_gzip.py
+--- a/Lib/test/test_gzip.py
++++ b/Lib/test/test_gzip.py
+@@ -13,6 +13,7 @@
+ from test import support
+ from test.support import _4G, bigmemtest
+ from test.support.script_helper import assert_python_ok
++import unittest
+ 
+ gzip = support.import_module('gzip')
+ 
+@@ -691,6 +692,7 @@
+     data = b'This is a simple test with gzip'
+ 
+     def test_decompress_stdin_stdout(self):
++        raise unittest.SkipTest('no subprocess')
+         with io.BytesIO() as bytes_io:
+             with gzip.GzipFile(fileobj=bytes_io, mode='wb') as gzip_file:
+                 gzip_file.write(self.data)
+@@ -727,6 +729,7 @@
+ 
+     @create_and_remove_directory(TEMPDIR)
+     def test_compress_stdin_outfile(self):
++        raise unittest.SkipTest('no subprocess')
+         args = sys.executable, '-m', 'gzip'
+         with Popen(args, stdin=PIPE, stdout=PIPE, stderr=PIPE) as proc:
+             out, err = proc.communicate(self.data)

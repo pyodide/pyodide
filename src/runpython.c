@@ -69,7 +69,7 @@ EM_JS(int, runpython_init_js, (), {
     return Module._runPythonInternal(pycode);
   };
 
-  Module.runPythonAsync = function(code, messageCallback)
+  Module.runPythonAsync = function(code, messageCallback, errorCallback)
   {
     var pycode = allocate(intArrayFromString(code), 'i8', ALLOC_NORMAL);
 
@@ -100,7 +100,8 @@ EM_JS(int, runpython_init_js, (), {
       }
       if (Object.keys(packages).length) {
         var runInternal = function() { return new Promise(internal); };
-        return Module.loadPackage(Object.keys(packages), messageCallback)
+        return Module
+          .loadPackage(Object.keys(packages), messageCallback, errorCallback)
           .then(runInternal);
       }
     }
