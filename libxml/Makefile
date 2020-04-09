@@ -32,6 +32,6 @@ $(SRC)/Makefile: $(TARBALL)
 $(SRC)/.libs/libxml2.a: $(SRC)/Makefile
 	( \
 		cd $(SRC) ; \
-		emconfigure ./configure --with-python=${PYODIDE_ROOT}/cpython/build/3.7.0/host/include/python3.7m/ ; \
+		emconfigure ./configure --with-python=${PYODIDE_ROOT}/cpython/build/${PYVERSION}/host/include/python3.7m/ ; \
 		emmake make ; \
 	)
