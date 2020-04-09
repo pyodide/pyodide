@@ -9,6 +9,7 @@ from pathlib import Path
 TEST_DIR = (Path(__file__).parent
             / "cpython/build/3.7.6/host/lib/python3.7/test")
 
+
 def collect_tests(base_dir):
     """Collect CPython unit tests"""
     # Note: this functionality is somewhat equivalent to pytest test
