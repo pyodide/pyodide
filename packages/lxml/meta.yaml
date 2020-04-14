@@ -6,11 +6,14 @@ source:
   url: https://files.pythonhosted.org/packages/c4/43/3f1e7d742e2a7925be180b6af5e0f67d38de2f37560365ac1a0b9a04c015/lxml-4.4.1.tar.gz
 build:
   cflags: -I../../../../libxml/libxml2-2.9.9/include -I../../../../libxslt/libxslt-1.1.33/ -Wno-implicit-function-declaration
-  ldflags: -L../../../../libxml/libxml2-2.9.9/.libs/ -L../../../../libxslt/libxslt-1.1.33/libxslt/.libs/
+  ldflags: -L../../../../libxml/libxml2-2.9.9/.libs/ -L../../../../libxslt/libxslt-1.1.33/libxslt/.libs/ -L../../../../libxslt/libxslt-1.1.33/libexslt/.libs/
+requirements:
+  run:
+    - beautifulsoup4
+    - cssselect
+    - html5lib
 test:
   imports:
   - lxml
-# TODO: The following tests fail because of a bug in emscripten. They can be uncommmented when it is updated.
-# See https://github.com/iodide-project/pyodide/issues/476 for more detail.
-#  - lxml.etree 
-#  - lxml.objectify
+  - lxml.etree
+  - lxml.objectify
