@@ -1,7 +1,7 @@
 try:
-    from js import Promise, window, XMLHttpRequest
+    from js import Promise, XMLHttpRequest
 except ImportError:
-    window = None
+    XMLHttpRequest = None
 from js import pyodide as js_pyodide
 
 import hashlib
@@ -20,7 +20,7 @@ def _nullop(*args):
 
 # Provide implementations of HTTP fetching for in-browser and out-of-browser to
 # make testing easier
-if window is not None:
+if XMLHttpRequest is not None:
     import pyodide
 
     def _get_url(url):

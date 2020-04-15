@@ -4,6 +4,8 @@
 
 - New package: `nltk`
 
+- `micropip` can now be used from web workers.
+
 ## Version 0.13.0
 
 - Tagged versions of Pyodide are now deployed to Netlify.
