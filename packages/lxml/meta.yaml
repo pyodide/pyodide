@@ -9,12 +9,14 @@ build:
     -I../../../../libxml/libxml2-2.9.9/include
     -I../../../../libxslt/libxslt-1.1.33/
     -I../../../../emsdk/emsdk/.emscripten_cache/asmjs/ports-builds/zlib/
+    -I../../../../libiconv/libiconv-1.16/include
     -Wno-implicit-function-declaration
   ldflags: |
     -L../../../../libxml/libxml2-2.9.9/.libs/
     -L../../../../libxslt/libxslt-1.1.33/libxslt/.libs/
     -L../../../../libxslt/libxslt-1.1.33/libexslt/.libs/
     -L../../../../emsdk/emsdk/.emscripten_cache/asmjs/
+    -L../../../../libiconv/libiconv-1.16/lib/.libs/
 requirements:
   run:
     - beautifulsoup4
