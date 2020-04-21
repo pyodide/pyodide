@@ -1,0 +1,71 @@
+From b5df7ea6690a231b2743541e1ff19b34cf273dd5 Mon Sep 17 00:00:00 2001
+From: Julius Michaelis <gitter@liftm.de>
+Date: Tue, 21 Apr 2020 10:44:56 +0900
+Subject: [PATCH] Do not build libmecab through pyodide's replay feature
+
+---
+ scripts/build-bundled-libmecab.py | 16 +++++++++-------
+ setup.py                          |  4 ++--
+ 2 files changed, 11 insertions(+), 9 deletions(-)
+
+diff --git a/scripts/build-bundled-libmecab.py b/scripts/build-bundled-libmecab.py
+index fe83760..a146438 100755
+--- a/scripts/build-bundled-libmecab.py
++++ b/scripts/build-bundled-libmecab.py
+@@ -83,9 +83,8 @@ def checkout_and_build_libmecab(basedir):
+ 
+     CC, CXX, CFLAGS, CXXFLAGS, MDT = compile_flags_for_platform()
+ 
+-    stderr.write("+ compile_flags_for_platform\n"
+-                 "Building MeCab with:\n       {}\n      {}\n   {}\n {}\n"
+-                 .format(CC, CXX, CFLAGS, CXXFLAGS))
++    environ.pop('SKIP_HOSTP', None)
++    environ['PYWASMCROSS_SKIP_REPLAY'] = 'x'
+ 
+     if MDT is not None:
+         stderr.write(" MACOSX_DEPLOYMENT_TARGET={}\n".format(MDT))
+@@ -102,19 +101,22 @@ def checkout_and_build_libmecab(basedir):
+ 
+         # We build with the default charset set to UTF-8, but we don't
+         # disable support for EUC-JP or Shift-JIS.
+-        run("./configure", "--enable-static", "--disable-shared",
+-            "--with-charset=utf8", CC, CXX)
++        from pathlib import Path
++        run("emconfigure", "./configure", "--enable-static", "--disable-shared",
++            "--with-charset=utf8", "--prefix={}".format(Path("../../../../libmecab-bin").absolute()))
+ 
+     # Only build the actual library, not the utilities.
+     chdir("src")
+ 
+-    run("make", "-j{}".format(get_parallel_jobs()), "libmecab.la",
+-        CC, CXX, CFLAGS, CXXFLAGS)
++    run("emmake", "make", "-j{}".format(get_parallel_jobs()), "libmecab.la", "all")
+ 
+     # Bypass libtool.
+     if not isfile("libmecab.a"):
+         symlink(".libs/libmecab.a", "libmecab.a")
+ 
++    chdir("..")
++    run("emmake", "make", "install")
++
+ 
+ def main():
+     from argparse import ArgumentParser
+diff --git a/setup.py b/setup.py
+index 2ba0333..433b620 100644
+--- a/setup.py
++++ b/setup.py
+@@ -64,8 +64,8 @@ def maybe_build_libmecab_and_adjust_flags(ext):
+             os.path.join(SRCDIR, "scripts/build-bundled-libmecab.py"),
+             SRCDIR
+         ])
+-        inc_dir  = [os.path.join(SRCDIR, "build/libmecab/mecab/src")]
+-        lib_dirs = [os.path.join(SRCDIR, "build/libmecab/mecab/src")]
++        inc_dir  = [os.path.join(SRCDIR, "../libmecab-bin/include")]
++        lib_dirs = [os.path.join(SRCDIR, "../libmecab-bin/lib")]
+ 
+         # mecab-config --libs-only-l will produce the list of
+         # libraries needed to link with a hypothetical *shared*
+-- 
+2.26.0
+

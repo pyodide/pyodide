@@ -5,8 +5,8 @@ source:
   sha256: e7f09caf136903ce908b8b001ffc178d6caa129c1550d47d8f7f733a213749a8
   url: https://files.pythonhosted.org/packages/55/84/37349dc897456c25600b498f88c8988a7d6754ebe96c189897c54bd24684/mecab-python3-0.996.5.tar.gz
   patches:
-    - patches/em-replay-library-path.patch # the build process copies the library to a different folder, that won't happen during the emcc replay
     - patches/git-clone-mecab.patch
+    - patches/emconfigure-libmecab.patch
   extras:
     -
       - src/build-dict
@@ -14,10 +14,9 @@ source:
 build:
   post: |
     ./src/build-dict
-  skip_host: false
+  skip_host: true # otherwise, the link of the emconfigured libmecab will fail for the "native" build
   cflags: -Wno-exceptions -Wno-string-plus-int -s EXCEPTION_DEBUG=1
   env:
-    ac_cv_func_mmap_fixed_mapped: no # Hack mmap of
     BUNDLE_LIBMECAB: true # Make it build and embed the C library
 test:
   imports:
