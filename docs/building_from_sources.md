@@ -6,7 +6,7 @@ To install Pyodide from sources follow the steps in the
 
 ## Partial builds
 
-To build a subset of available packages in pyodide, set the environement
+To build a subset of available packages in pyodide, set the environment
 variable `PYODIDE_PACKAGES` to a comma separated list of packages. For
 instance,
 
@@ -14,6 +14,10 @@ instance,
 PYODIDE_PACKAGES="toolz,attrs" make
 ```
 
-Note that this environement variables must contain both the packages and their
+Note that this environment variables must contain both the packages and their
 dependencies. The package names must much the folder names in `packages/`
 exactly; in particular they are case sensitive.
+
+To build a minimal version of pyodide, set `PYODIDE_PACKAGES="micropip"`. The
+micropip package is generally always included for any non empty value of
+`PYODIDE_PACKAGES`.

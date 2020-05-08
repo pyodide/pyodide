@@ -30,7 +30,7 @@ def parse_package(package):
 def _parse_package_subset(query: str) -> Optional[List[str]]:
     """Parse the list of packages specified with PYODIDE_PACKAGES env var.
 
-    Also add the list of mandatory packages: ['micropip']
+    Also add the list of mandatory packages: ['micropip', 'distlib']
 
     Returns:
       a list of package names to build, or None if all packages should be
@@ -41,5 +41,5 @@ def _parse_package_subset(query: str) -> Optional[List[str]]:
         return None
     packages = query.split(',')
     packages = [el.strip() for el in packages]
-    return ['micropip'] + packages
+    return ['micropip', 'distlib'] + packages
 

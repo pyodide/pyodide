@@ -1,7 +1,7 @@
 import pytest
 import os
 from pathlib import Path
-from pyodide_build.common import parse_package
+from pyodide_build.common import parse_package, _parse_package_subset
 
 BASE_DIR = Path(__file__).parent.parent
 PKG_DIR = BASE_DIR / 'packages'
@@ -48,6 +48,11 @@ def test_import(name, selenium_standalone):
         pytest.xfail(
                 '{} fails to load and is not supported on {}.'
                 .format(name, selenium_standalone.browser))
+
+    built_packages = os.environ.get('PYODIDE_PACKAGES', "")
+    # only a subset of packages were built
+    if built_packages is not None and name not in built_packages:
+        pytest.skip(f'{name} was skipped due to PYODIDE_PACKAGES')
 
     selenium_standalone.run("import glob, os")
 
