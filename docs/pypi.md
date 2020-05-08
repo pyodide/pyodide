@@ -41,9 +41,10 @@ import micropip
 micropip.install('snowballstemmer').then(do_work)
 ```
 
-## A Minimal working example
+## Complete example
 
-Adapting 
+Adapting the setup from the section on ["using pyodide from
+javascript"](./using_pyodide_from_javascript.html) a complete example would be,
 
 ```html
 <html>
