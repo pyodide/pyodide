@@ -33,10 +33,11 @@ _sha256 sha256module.c
 _sha512 sha512module.c
 _sha3 _sha3/sha3module.c
 _md5 md5module.c
-_blake2 _blake2/blake2module.c _blake2/blake2b_impl.c ../../host/Python-3.7.0/Modules/_blake2/blake2s_impl.c
+_blake2 _blake2/blake2module.c _blake2/blake2b_impl.c ../../host/Python-3.7.4/Modules/_blake2/blake2s_impl.c
 
 _sqlite3 _sqlite/cache.c _sqlite/connection.c _sqlite/cursor.c _sqlite/microprotocols.c _sqlite/module.c _sqlite/prepare_protocol.c _sqlite/row.c _sqlite/statement.c _sqlite/util.c -I$(SQLITEBUILD) -L$(SQLITEBUILD) -lsqlite3
 _crypt _cryptmodule.c
+_bz2 _bz2module.c -I$(BZIP2BUILD) -L$(BZIP2BUILD) -lbz2
 
 _queue _queuemodule.c
 
@@ -54,3 +55,4 @@ _codecs_tw cjkcodecs/_codecs_tw.c
 _lsprof _lsprof.c rotatingtree.c
 
 _decimal _decimal/_decimal.c _decimal/libmpdec/basearith.c _decimal/libmpdec/constants.c _decimal/libmpdec/context.c _decimal/libmpdec/convolute.c _decimal/libmpdec/crt.c _decimal/libmpdec/difradix2.c _decimal/libmpdec/fnt.c _decimal/libmpdec/fourstep.c _decimal/libmpdec/io.c _decimal/libmpdec/memory.c _decimal/libmpdec/mpdecimal.c _decimal/libmpdec/numbertheory.c _decimal/libmpdec/sixstep.c _decimal/libmpdec/transpose.c -I$(srcdir)/Modules/_decimal/libmpdec
+mmap mmapmodule.c

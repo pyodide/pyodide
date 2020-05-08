@@ -282,6 +282,13 @@ EM_JS(int, hiwire_get_length, (int idobj), {
   return Module.hiwire_get_value(idobj).length;
 });
 
+EM_JS(int, hiwire_get_bool, (int idobj), {
+  var val = Module.hiwire_get_value(idobj);
+  // clang-format off
+  return (val && (val.length === undefined || val.length)) ? 1 : 0;
+  // clang-format on
+});
+
 EM_JS(int, hiwire_is_function, (int idobj), {
   // clang-format off
   return typeof Module.hiwire_get_value(idobj) === 'function';

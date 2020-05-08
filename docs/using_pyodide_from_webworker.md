@@ -24,7 +24,7 @@ or if an error was encountered, it is returned in the `error` key.
 
 For example:
 
-```
+```js
 var pyodideWorker = new Worker('./webworker.js')
 
 pyodideWorker.onerror = (e) => {
@@ -68,7 +68,8 @@ to load some specific packages as described in
 
 For example, to always load packages `numpy` and `pytz`, you would insert the
 line `self.pyodide.loadPackage(['numpy', 'pytz']).then(() => {` as shown below:
-```
+
+```js
 self.languagePluginUrl = 'http://localhost:8000/'
 importScripts('./pyodide.js')
 

@@ -1,0 +1,9 @@
+package:
+  name: regex
+  version: 2019.11.1
+source:
+  sha256: 720e34a539a76a1fedcebe4397290604cc2bdf6f81eca44adb9fb2ea071c0c69
+  url: https://files.pythonhosted.org/packages/fc/1d/13cc7d174cd2d05808abac3f5fb37433e30c4cd93b152d2a9c09c926d7e8/regex-2019.11.1.tar.gz
+test:
+  imports:
+  - regex

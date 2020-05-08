@@ -207,6 +207,8 @@ def test_js2python(selenium):
         window.jsnull = null;
         window.jstrue = true;
         window.jsfalse = false;
+        window.jsarray0 = [];
+        window.jsarray1 = [1, 2, 3];
         window.jspython = pyodide.pyimport("open");
         window.jsbytes = new Uint8Array([1, 2, 3]);
         window.jsfloats = new Float32Array([1, 2, 3]);
@@ -224,10 +226,10 @@ def test_js2python(selenium):
         'jsstring_ucs4 == "🐍"')
     assert selenium.run(
         'from js import jsnumber0\n'
-        'jsnumber0 == 42')
+        'jsnumber0 == 42 and isinstance(jsnumber0, int)')
     assert selenium.run(
         'from js import jsnumber1\n'
-        'jsnumber1 == 42.5')
+        'jsnumber1 == 42.5 and isinstance(jsnumber1, float)')
     assert selenium.run(
         'from js import jsundefined\n'
         'jsundefined is None')
@@ -256,6 +258,21 @@ def test_js2python(selenium):
     assert selenium.run(
         'from js import jsobject\n'
         'str(jsobject) == "[object XMLHttpRequest]"')
+    assert selenium.run(
+        """
+        from js import jsobject
+        bool(jsobject) == True
+        """)
+    assert selenium.run(
+        """
+        from js import jsarray0
+        bool(jsarray0) == False
+        """)
+    assert selenium.run(
+        """
+        from js import jsarray1
+        bool(jsarray1) == True
+        """)
 
 
 @pytest.mark.parametrize('wasm_heap', (False, True))
@@ -681,3 +698,25 @@ def test_py(selenium_standalone):
 def test_eval_nothing(selenium):
     assert selenium.run('# comment') is None
     assert selenium.run('') is None
+
+
+def test_unknown_attribute(selenium):
+    selenium.run(
+        """
+        import js
+        try:
+            js.asdf
+        except AttributeError as e:
+            assert "asdf" in str(e)
+        """
+    )
+
+
+def test_completions(selenium):
+    result = selenium.run(
+        """
+        import pyodide
+        pyodide.get_completions('import sys\\nsys.v')
+        """
+    )
+    assert result == ['version', 'version_info']

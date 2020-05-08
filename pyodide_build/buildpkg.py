@@ -41,20 +41,36 @@ def check_checksum(path, pkg):
 
 def download_and_extract(buildpath, packagedir, pkg, args):
     srcpath = buildpath / packagedir
+
     if 'source' not in pkg:
         return srcpath
-    tarballpath = buildpath / Path(pkg['source']['url']).name
-    if not tarballpath.is_file():
-        try:
-            subprocess.run([
-                'wget', '-q', '-O', str(tarballpath), pkg['source']['url']
-            ], check=True)
-            check_checksum(tarballpath, pkg)
-        except Exception:
-            tarballpath.unlink()
-            raise
-    if not srcpath.is_dir():
-        shutil.unpack_archive(str(tarballpath), str(buildpath))
+
+    if 'url' in pkg['source']:
+        tarballpath = buildpath / Path(pkg['source']['url']).name
+        if not tarballpath.is_file():
+            try:
+                subprocess.run([
+                    'wget', '-q', '-O', str(tarballpath), pkg['source']['url']
+                ], check=True)
+                check_checksum(tarballpath, pkg)
+            except Exception:
+                tarballpath.unlink()
+                raise
+
+        if not srcpath.is_dir():
+            shutil.unpack_archive(str(tarballpath), str(buildpath))
+
+    elif 'path' in pkg['source']:
+        srcdir = Path(pkg['source']['path'])
+
+        if not srcdir.is_dir():
+            raise ValueError("'path' must point to a path")
+
+        if not srcpath.is_dir():
+            shutil.copytree(srcdir, srcpath)
+    else:
+        raise ValueError('Incorrect source provided')
+
     return srcpath
 
 

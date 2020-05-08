@@ -1,7 +1,7 @@
 try:
-    from js import Promise, window, XMLHttpRequest
+    from js import Promise, XMLHttpRequest
 except ImportError:
-    window = None
+    XMLHttpRequest = None
 from js import pyodide as js_pyodide
 
 import hashlib
@@ -20,7 +20,7 @@ def _nullop(*args):
 
 # Provide implementations of HTTP fetching for in-browser and out-of-browser to
 # make testing easier
-if window is not None:
+if XMLHttpRequest is not None:
     import pyodide
 
     def _get_url(url):
@@ -133,7 +133,7 @@ class _PackageManager:
                 'locked': dict(self.installed_packages)
             }
             for requirement in requirements:
-                self.add_requirement(requirement, ctx, transaction)
+                self.add_requirement(requirement, complete_ctx, transaction)
         except Exception as e:
             reject(str(e))
 
@@ -193,9 +193,9 @@ class _PackageManager:
             wheel, ver = self.find_wheel(metadata, req)
             transaction['locked'][req.name] = ver
 
-            reqs = metadata.get('info', {}).get('requires_dist') or []
-            for req in reqs:
-                self.add_requirement(req, ctx, transaction)
+            recurs_reqs = metadata.get('info', {}).get('requires_dist') or []
+            for recurs_req in recurs_reqs:
+                self.add_requirement(recurs_req, ctx, transaction)
 
             transaction['wheels'].append((req.name, wheel, ver))
 

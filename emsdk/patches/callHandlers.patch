@@ -1,8 +1,8 @@
 From https://github.com/emscripten-core/emscripten-fastcomp/pull/25 6
-diff --git a/emsdk/clang/tag-e1.38.30/src/lib/Target/JSBackend/CallHandlers.h b/emsdk/clang/tag-e1.38.30/src/lib/Target/JSBackend/CallHandlers.h
+diff --git a/emsdk/fastcomp-clang/tag-e1.38.30/src/lib/Target/JSBackend/CallHandlers.h b/emsdk/fastcomp-clang/tag-e1.38.30/src/lib/Target/JSBackend/CallHandlers.h
 index e414c0444a7..9c3ae3bf288 100644
---- a/emsdk/clang/tag-e1.38.80/src/lib/Target/JSBackend/CallHandlers.h
-+++ b/emsdk/clang/tag-e1.38.30/src/lib/Target/JSBackend/CallHandlers.h
+--- a/emsdk/fastcomp-clang/tag-e1.38.80/src/lib/Target/JSBackend/CallHandlers.h
++++ b/emsdk/fastcomp-clang/tag-e1.38.30/src/lib/Target/JSBackend/CallHandlers.h
 @@ -843,17 +843,21 @@ DEF_CALL_HANDLER(emscripten_asm_const_async_on_main_thread, {
  
  DEF_CALL_HANDLER(emscripten_atomic_exchange_u8, {

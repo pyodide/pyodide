@@ -23,6 +23,11 @@ _js2python_get_ptr(int obj)
 int
 _js2python_number(double val)
 {
+  double i;
+
+  if (modf(val, &i) == 0.0)
+    return (int)PyLong_FromDouble(i);
+
   return (int)PyFloat_FromDouble(val);
 }
 

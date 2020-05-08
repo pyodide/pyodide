@@ -394,6 +394,14 @@ int
 hiwire_get_length(int idobj);
 
 /**
+ * Returns the boolean value of a Javascript object.
+ *
+ * Returns: C int
+ */
+int
+hiwire_get_bool(int idobj);
+
+/**
  * Returns 1 if the object is a function.
  *
  * Returns: C int

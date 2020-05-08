@@ -1,0 +1,9 @@
+package:
+  name: toolz
+  version: 0.10.0
+source:
+  sha256: 08fdd5ef7c96480ad11c12d472de21acd32359996f69a5259299b540feba4560
+  url: https://files.pythonhosted.org/packages/22/8e/037b9ba5c6a5739ef0dcde60578c64d49f45f64c5e5e886531bfbc39157f/toolz-0.10.0.tar.gz
+test:
+  imports:
+  - toolz
