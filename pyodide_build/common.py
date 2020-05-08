@@ -1,4 +1,5 @@
 from pathlib import Path
+from typing import Optional, List
 
 
 ROOTDIR = Path(__file__).parents[1].resolve() / 'tools'
@@ -24,3 +25,21 @@ def parse_package(package):
     # TODO: Validate against a schema
     with open(package) as fd:
         return yaml.load(fd)
+
+
+def _parse_package_subset(query: str) -> Optional[List[str]]:
+    """Parse the list of packages specified with PYODIDE_PACKAGES env var.
+
+    Also add the list of mandatory packages: ['micropip']
+
+    Returns:
+      a list of package names to build, or None if all packages should be
+      built.
+    """
+    if not query:
+        # build all packages
+        return None
+    packages = query.split(',')
+    packages = [el.strip() for el in packages]
+    return ['micropip'] + packages
+

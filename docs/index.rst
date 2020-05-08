@@ -57,6 +57,7 @@ information about the project's organization.
    :maxdepth: 1
    :caption: Development
 
+   building_from_sources.md
    new_packages.md
    type_conversions.md
 
