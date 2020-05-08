@@ -67,3 +67,17 @@ def test_runwebworker_exception_after_import(selenium_standalone):
         assert "ZeroDivisionError" in str(e)
     else:
         assert False
+
+
+def test_runwebworker_micropip(selenium_standalone):
+    output = selenium_standalone.run_webworker(
+        """
+        def stem(*args):
+            import snowballstemmer
+            stemmer = snowballstemmer.stemmer('english')
+            return stemmer.stemWords('go goes going gone'.split())[0]
+        import micropip
+        micropip.install('snowballstemmer').then(stem)
+        """
+    )
+    assert output == 'go'
