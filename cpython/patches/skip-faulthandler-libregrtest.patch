@@ -1,0 +1,14 @@
+diff --git a/Lib/test/libregrtest/main.py b/Lib/test/libregrtest/main.py
+index 05878a8af4..ef663c7d15 100644
+--- a/Lib/test/libregrtest/main.py
++++ b/Lib/test/libregrtest/main.py
+@@ -630,7 +630,8 @@ class Regrtest:
+         except SystemExit as exc:
+             # bpo-38203: Python can hang at exit in Py_Finalize(), especially
+             # on threading._shutdown() call: put a timeout
+-            faulthandler.dump_traceback_later(EXIT_TIMEOUT, exit=True)
++            # However Pyodide currently doesn't support threading
++            # faulthandler.dump_traceback_later(EXIT_TIMEOUT, exit=True)
+ 
+             sys.exit(exc.code)
+ 
