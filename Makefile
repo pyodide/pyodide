@@ -150,6 +150,7 @@ clean:
 	make -C six clean
 	make -C jedi clean
 	make -C parso clean
+	make -C lz4 clean
 	echo "The Emsdk, CPython and CLAPACK are not cleaned. cd into those directories to do so."
 
 
