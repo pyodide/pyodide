@@ -27,17 +27,16 @@ def parse_package(package):
         return yaml.load(fd)
 
 
-def _parse_package_subset(query: str) -> Optional[List[str]]:
+def _parse_package_subset(query: Optional[str]) -> Optional[List[str]]:
     """Parse the list of packages specified with PYODIDE_PACKAGES env var.
 
     Also add the list of mandatory packages: ['micropip', 'distlib']
 
     Returns:
-      a list of package names to build, or None if all packages should be
-      built.
+      a list of package names to build or None. The list may contain duplicate
+      values.
     """
-    if not query:
-        # build all packages
+    if query is None:
         return None
     packages = query.split(',')
     packages = [el.strip() for el in packages]
