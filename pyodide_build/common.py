@@ -42,4 +42,3 @@ def _parse_package_subset(query: str) -> Optional[List[str]]:
     packages = query.split(',')
     packages = [el.strip() for el in packages]
     return ['micropip', 'distlib'] + packages
-

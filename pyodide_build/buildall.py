@@ -27,7 +27,6 @@ def build_package(pkgname, dependencies, packagesdir, outputdir, args):
         outputdir / (pkgname + '.js'))
 
 
-
 def build_packages(packagesdir, outputdir, args):
     # We have to build the packages in the correct order (dependencies first),
     # so first load in all of the package metadata and build a dependency map.
@@ -45,7 +44,7 @@ def build_packages(packagesdir, outputdir, args):
 
     for pkgdir in packagesdir.iterdir():
         if (
-            included_packages is not None 
+            included_packages is not None
             and pkgdir.name not in included_packages
         ):
             print(
