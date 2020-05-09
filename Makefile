@@ -242,7 +242,14 @@ $(PARSO_LIBS): $(CPYTHONLIB)
 
 
 $(CLAPACK): $(CPYTHONLIB)
-	make -C CLAPACK
+	ifdef PYODIDE_PACKAGES
+		echo "Skipping BLAS/LAPACK build due to PYODIDE_PACKAGES being defined."
+		echo "Build it manually with make -C CLAPACK if needed."
+		touch $(CLAPACK)
+	else
+		make -C CLAPACK
+	endif
+
 
 
 build/packages.json: $(CLAPACK) FORCE
