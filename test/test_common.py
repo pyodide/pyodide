@@ -49,9 +49,7 @@ def test_import(name, selenium_standalone):
                 '{} fails to load and is not supported on {}.'
                 .format(name, selenium_standalone.browser))
 
-    built_packages = _parse_package_subset(
-        os.environ.get('PYODIDE_PACKAGES', "")
-    )
+    built_packages = _parse_package_subset(os.environ.get('PYODIDE_PACKAGES'))
     # only a subset of packages were built
     if built_packages is not None and name not in built_packages:
         pytest.skip(f'{name} was skipped due to PYODIDE_PACKAGES')
