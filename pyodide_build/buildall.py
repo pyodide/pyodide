@@ -105,7 +105,7 @@ def make_parser(parser):
         '--target', type=str, nargs='?', default=common.TARGETPYTHON,
         help='The path to the target Python installation')
     parser.add_argument(
-        '--only', type=str, default="",
+        '--only', type=str, nargs='?', default="",
         help='Only build the specified packages')
     return parser
 

@@ -14,10 +14,10 @@ instance,
 PYODIDE_PACKAGES="toolz,attrs" make
 ```
 
-Note that this environment variables must contain both the packages and their
+Note that this environment variable must contain both the packages and their
 dependencies. The package names must match the folder names in `packages/`
 exactly; in particular they are case sensitive.
 
 To build a minimal version of pyodide, set `PYODIDE_PACKAGES="micropip"`. The
-micropip package is generally always included for any non empty value of
+micropip and package is generally always included for any non empty value of
 `PYODIDE_PACKAGES`.
