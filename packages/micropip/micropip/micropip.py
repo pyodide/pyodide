@@ -2,7 +2,17 @@ try:
     from js import Promise, XMLHttpRequest
 except ImportError:
     XMLHttpRequest = None
-from js import pyodide as js_pyodide
+
+try:
+    from js import pyodide as js_pyodide
+except ImportError:
+
+    class js_pyodide:  # type: ignore
+        """A mock object to allow import of this package outside pyodide"""
+        class _module:
+            class packages:
+                dependencies = []  # type: ignore
+
 
 import hashlib
 import importlib
@@ -10,6 +20,7 @@ import io
 import json
 from pathlib import Path
 import zipfile
+from typing import Dict, Any, Union, List, Tuple
 
 from distlib import markers, util, version
 
@@ -64,12 +75,43 @@ def _get_pypi_json(pkgname):
     return json.load(fd)
 
 
+def _parse_wheel_url(url: str) -> Tuple[str, Dict[str, Any], str]:
+    """Parse wheels url and extract available metadata
+
+    See https://www.python.org/dev/peps/pep-0427/#file-name-convention
+    """
+    file_name = Path(url).name
+    # also strip '.whl' extension.
+    wheel_name = Path(url).stem
+    tokens = wheel_name.split('-')
+    # TODO: support optional build tags in the filename (cf PEP 427)
+    if len(tokens) < 5:
+        raise ValueError(f'{file_name} is not a valid wheel file name.')
+    version, python_tag, abi_tag, platform = tokens[-4:]
+    name = '-'.join(tokens[:-4])
+    wheel = {
+        'digests': None,  # checksums not available
+        'filename': file_name,
+        'packagetype': 'bdist_wheel',
+        'python_version': python_tag,
+        'abi_tag': abi_tag,
+        'platform': platform,
+        'url': url,
+    }
+
+    return name, wheel, version
+
+
 class _WheelInstaller:
     def extract_wheel(self, fd):
         with zipfile.ZipFile(fd) as zf:
             zf.extractall(WHEEL_BASE)
 
     def validate_wheel(self, data, fileinfo):
+        if fileinfo.get('digests') is None:
+            # No checksums available, e.g. because installing
+            # from a different location than PyPi.
+            return
         sha256 = fileinfo['digests']['sha256']
         m = hashlib.sha256()
         m.update(data.getvalue())
@@ -108,7 +150,7 @@ class _PackageManager:
 
     def install(
             self,
-            requirements,
+            requirements: Union[str, List[str]],
             ctx=None,
             wheel_installer=None,
             resolve=_nullop,
@@ -127,7 +169,7 @@ class _PackageManager:
             if isinstance(requirements, str):
                 requirements = [requirements]
 
-            transaction = {
+            transaction: Dict[str, Any] = {
                 'wheels': [],
                 'pyodide_packages': set(),
                 'locked': dict(self.installed_packages)
@@ -162,7 +204,13 @@ class _PackageManager:
             wheel_installer(name, wheel, do_resolve, reject)
             self.installed_packages[name] = ver
 
-    def add_requirement(self, requirement, ctx, transaction):
+    def add_requirement(self, requirement: str, ctx, transaction):
+        if requirement.startswith(('http://', 'https://')):
+            # custom download location
+            name, wheel, version = _parse_wheel_url(requirement)
+            transaction['wheels'].append((name, wheel, version))
+            return
+
         req = util.parse_requirement(requirement)
 
         # If it's a Pyodide package, use that instead of the one on PyPI
@@ -223,7 +271,7 @@ PACKAGE_MANAGER = _PackageManager()
 del _PackageManager
 
 
-def install(requirements):
+def install(requirements: Union[str, List[str]]):
     """
     Install the given package and all of its dependencies.
 

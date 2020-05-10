@@ -1,4 +1,10 @@
 import time
+import sys
+from pathlib import Path
+
+import pytest
+
+sys.path.append(str(Path(__file__).resolve().parent / 'micropip'))
 
 
 def test_install_simple(selenium_standalone):
@@ -24,3 +30,41 @@ def test_install_simple(selenium_standalone):
         "stemmer.stemWords('go going goes gone'.split())") == [
             'go', 'go', 'goe', 'gone'
         ]
+    print(selenium_standalone.logs)
+
+
+def test_parse_wheel_url():
+    import micropip
+
+    url = "https://a/snowballstemmer-2.0.0-py2.py3-none-any.whl"
+    name, wheel, version = micropip._parse_wheel_url(url)
+    assert name == 'snowballstemmer'
+    assert version == '2.0.0'
+    assert wheel == {
+        'digests': None,
+        'filename': 'snowballstemmer-2.0.0-py2.py3-none-any.whl',
+        'packagetype': 'bdist_wheel',
+        'python_version': 'py2.py3',
+        'abi_tag': 'none',
+        'platform': 'any',
+        'url': url
+    }
+
+    msg = "not a valid wheel file name"
+    with pytest.raises(ValueError, match=msg):
+        url = "https://a/snowballstemmer-2.0.0-py2.whl"
+        name, params, version = micropip._parse_wheel_url(url)
+
+    url = "http://scikit_learn-0.22.2.post1-cp35-cp35m-macosx_10_9_intel.whl"
+    name, wheel, version = micropip._parse_wheel_url(url)
+    assert name == 'scikit_learn'
+    assert wheel['platform'] == 'macosx_10_9_intel'
+
+
+def test_install_custom_url(selenium_standalone, web_server_secondary):
+    server_hostname, server_port, server_log = web_server_secondary
+    selenium_standalone.load_package("micropip")
+    selenium_standalone.run("import micropip")
+    base_url = f'http://{server_hostname}:{server_port}/test/'
+    url = base_url + 'snowballstemmer-2.0.0-py2.py3-none-any.whl'
+    selenium_standalone.run(f"micropip.install('{url}')")
