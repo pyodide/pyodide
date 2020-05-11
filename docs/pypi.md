@@ -50,6 +50,9 @@ convention](https://www.python.org/dev/peps/pep-0427/#file-format), which will
 be the case if the wheels is made using standard python tools (`pip wheel`,
 `setup.py bdist_wheel`).
 
+All required dependencies need also to be previously installed with `micropip`
+or `pyodide.loadPackage`.
+
 The remote server must set Cross-Origin Resource Sharing (CORS) headers to
 allow access. Otherwise, you can prepend a CORS proxy to the URL. Note however
 that using third-party CORS proxies has security implications, particularly
