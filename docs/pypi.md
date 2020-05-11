@@ -47,7 +47,7 @@ micropip.install(
 
 The wheel name in the URL must follow [PEP 427 naming
 convention](https://www.python.org/dev/peps/pep-0427/#file-format), which will
-be the case if the wheels is made using standard python tools (`wheel`,
+be the case if the wheels is made using standard python tools (`pip wheel`,
 `setup.py bdist_wheel`).
 
 The remote server must set Cross-Origin Resource Sharing (CORS) headers to
