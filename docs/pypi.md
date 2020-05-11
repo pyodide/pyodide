@@ -32,8 +32,8 @@ import micropip
 micropip.install('snowballstemmer').then(do_work)
 ```
 
-File integrity validation is implementing by checking the hash of the downloaded
-wheel against pre-recorded hash digests from the PyPi JSON API.
+Micropip implements file integrity validation by checking the hash of the
+downloaded wheel against pre-recorded hash digests from the PyPi JSON API.
 
 ## Installing wheels from arbitrary URLs
 
