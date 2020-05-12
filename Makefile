@@ -21,7 +21,7 @@ CFLAGS=$(OPTFLAGS) -g -I$(PYTHONINCLUDE) -Wno-warn-absolute-paths
 CXXFLAGS=$(CFLAGS) -std=c++14
 
 
-LDFLAGS=\
+LDFLAGS_BASE=\
 	-O3 \
 	-s MODULARIZE=1 \
 	$(CPYTHONROOT)/installs/python-$(PYVERSION)/lib/libpython$(PYMINOR).a \
@@ -37,8 +37,6 @@ LDFLAGS=\
 	-s EXPORTED_FUNCTIONS='["___cxa_guard_acquire", "__ZNSt3__28ios_base4initEPv"]' \
 	-s WASM=1 \
 	-s SWAPPABLE_ASM_MODULE=1 \
-	-s USE_FREETYPE=1 \
-	-s USE_LIBPNG=1 \
 	-std=c++14 \
 	-L$(wildcard $(CPYTHONROOT)/build/sqlite*/.libs) -lsqlite3 \
 	$(wildcard $(CPYTHONROOT)/build/bzip2*/libbz2.a) \
@@ -47,6 +45,12 @@ LDFLAGS=\
 	-s "BINARYEN_TRAP_MODE='clamp'" \
 	-s TEXTDECODER=0 \
 	-s LZ4=1
+
+ifdef PYODIDE_MINIMAL
+LDFLAGS=$(LDFLAGS_BASE)
+else
+LDFLAGS=$(LDFLAGS_BASE) -s USE_FREETYPE=1 -s USE_LIBPNG=1
+endif
 
 SIX_ROOT=six/six-1.11.0/build/lib
 SIX_LIBS=$(SIX_ROOT)/six.py
@@ -184,8 +188,10 @@ root/.built: \
 	cp -r $(CPYTHONLIB) root/lib
 	mkdir -p $(SITEPACKAGES)
 	cp $(SIX_LIBS) $(SITEPACKAGES)
+ifndef PYODIDE_MINIMAL
 	cp -r $(JEDI_ROOT) $(SITEPACKAGES)
 	cp -r $(PARSO_ROOT) $(SITEPACKAGES)
+endif
 	cp src/sitecustomize.py $(SITEPACKAGES)
 	cp src/webbrowser.py root/lib/python$(PYMINOR)
 	cp src/_testcapi.py	root/lib/python$(PYMINOR)
@@ -235,11 +241,15 @@ $(SIX_LIBS): $(CPYTHONLIB)
 
 
 $(JEDI_LIBS): $(CPYTHONLIB)
+ifndef PYODIDE_MINIMAL
 	make -C jedi
+endif
 
 
 $(PARSO_LIBS): $(CPYTHONLIB)
+ifndef PYODIDE_MINIMAL
 	make -C parso
+endif
 
 
 $(CLAPACK): $(CPYTHONLIB)

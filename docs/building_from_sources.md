@@ -24,3 +24,17 @@ micropip and package is generally always included for any non empty value of
 
 If scipy is included in `PYODIDE_PACKAGES`, BLAS/LAPACK must be manually built
 first with `make -c CLAPACK`.
+
+## Minimal build
+
+Minimal pyodide build can be enabled by setting the `PYODIDE_MINIMAL`
+environment variable.  For instance,
+```
+PYODIDE_MINIMAL=true PYODIDE_PACKAGES="micropip" make
+```
+
+This will,
+ - not include freetype and libpng libraries, meaning that matplotlib cannot be built
+ - not include the jedi library, disabling auto-completion in iodide
+
+As as a result the size will of the core pyodide binaries will be ~15% smaller.
