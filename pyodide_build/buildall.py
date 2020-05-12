@@ -106,7 +106,8 @@ def make_parser(parser):
         help='The path to the target Python installation')
     parser.add_argument(
         '--only', type=str, nargs='?', default=None,
-        help='Only build the specified packages')
+        help=('Only build the specified packages, provided as a comma '
+              'separated list'))
     return parser
 
 

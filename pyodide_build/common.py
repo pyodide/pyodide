@@ -1,5 +1,5 @@
 from pathlib import Path
-from typing import Optional, List
+from typing import Optional, Set
 
 
 ROOTDIR = Path(__file__).parents[1].resolve() / 'tools'
@@ -27,17 +27,17 @@ def parse_package(package):
         return yaml.load(fd)
 
 
-def _parse_package_subset(query: Optional[str]) -> Optional[List[str]]:
+def _parse_package_subset(query: Optional[str]) -> Optional[Set[str]]:
     """Parse the list of packages specified with PYODIDE_PACKAGES env var.
 
     Also add the list of mandatory packages: ['micropip', 'distlib']
 
     Returns:
-      a list of package names to build or None. The list may contain duplicate
-      values.
+      a set of package names to build or None.
     """
     if query is None:
         return None
     packages = query.split(',')
     packages = [el.strip() for el in packages]
-    return ['micropip', 'distlib'] + packages
+    packages = ['micropip', 'distlib'] + packages
+    return set(packages)
