@@ -70,7 +70,7 @@ jobs:
           no_output_timeout: 1200
           command: |
             ccache -z
-            PYODIDE_PACKAGES='micropip' make
+            PYODIDE_MINIMAL=true PYODIDE_PACKAGES='micropip' make
             ccache -s
 
       - run:
