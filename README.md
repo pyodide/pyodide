@@ -27,8 +27,9 @@ browser**.
 
 ## Try Pyodide (no installation needed)
 
-For more information, try [the demo](https://alpha.iodide.io/notebooks/300/) and look through the
-[documentation](https://pyodide.readthedocs.io/).
+Try the [iodide demo notebook](https://alpha.iodide.io/notebooks/300/) or fire up a [Python REPL](https://pyodide.cdn.iodide.io/console.html) directly in your browser.
+
+For further information, look through the [documentation](https://pyodide.readthedocs.io/).
 
 ## Getting Started
 
