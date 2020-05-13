@@ -1,0 +1,13 @@
+#!/bin/bash
+# Script for docker: The uglifyjs installed by debian uses nodejs from $PATH,
+# which may be a nodejs that comes with emsdk, which doesn't have the necessary
+# modules to run uglifyjs. So strip emsdk from path before running uglifyjs.
+
+set -euo pipefail
+self="$(realpath "$0")"
+export PATH="$(echo -n "$PATH" | tr : \\0 | grep -vz emsdk | grep -vz "$(dirname "$self")" | tr \\0 :)"
+if test "$(which uglifyjs)" == "$self"; then
+	echo "$self: Failed to invoke real uglifyjs" 1>&2;
+	exit -1
+fi
+exec uglifyjs "$@"
