@@ -3,7 +3,7 @@ version: 2
 defaults: &defaults
   working_directory: ~/repo
   docker:
-    - image: rthz/pyodide-env:0.15.rc1
+    - image: rthz/pyodide-env:0.15.rc2
   environment:
     - EMSDK_NUM_CORES: 4
       EMCC_CORES: 4
