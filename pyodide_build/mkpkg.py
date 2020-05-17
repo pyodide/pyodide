@@ -36,10 +36,11 @@ def get_sdist_url_entry(json_content):
     ))
 
 
-def make_package(package):
+def make_package(package, version=None):
     import yaml
 
-    url = f'https://pypi.org/pypi/{package}/json'
+    version = ('/' + version) if version else ''
+    url = f"https://pypi.org/pypi/{package}{version}/json"
 
     with urllib.request.urlopen(url) as fd:
         json_content = json.load(fd)
@@ -79,12 +80,17 @@ complex things.'''.strip()
     parser.add_argument(
         'package', type=str, nargs=1,
         help="The package name on PyPI")
+    parser.add_argument(
+        '--version', type=str, nargs=1, default=None,
+        help="Package version string, "
+             "e.g. v1.2.1 (defaults to latest stable release)")
     return parser
 
 
 def main(args):
     package = args.package[0]
-    make_package(package)
+    version = args.version[0] if args.version else None
+    make_package(package, version)
 
 
 if __name__ == '__main__':
