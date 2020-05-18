@@ -148,18 +148,18 @@ jobs:
           command: |
             apk add --no-cache --update python3
             python3 -m pip install awscli
-      - run:
-          name: Deploy Github Releases
-          command: |
-            pushd build
-            tar cjf ../pyodide-build-${CIRCLE_TAG}.tar.bz2 *
-            popd
-            ghr -t "${GITHUB_TOKEN}" -u "${CIRCLE_PROJECT_USERNAME}" -r "${CIRCLE_PROJECT_REPONAME}" -c "${CIRCLE_SHA1}" -delete  "${CIRCLE_TAG}" ./pyodide-build-${CIRCLE_TAG}.tar.bz2
+      #- run:
+      #    name: Deploy Github Releases
+      #    command: |
+      #      pushd build
+      #      tar cjf ../pyodide-build-${CIRCLE_TAG}.tar.bz2 *
+      #      popd
+      #      ghr -t "${GITHUB_TOKEN}" -u "${CIRCLE_PROJECT_USERNAME}" -r "${CIRCLE_PROJECT_REPONAME}" -c "${CIRCLE_SHA1}" -delete  "${CIRCLE_TAG}" ./pyodide-build-${CIRCLE_TAG}.tar.bz2
 
       - run:
           name: Deploy to pyodide-cdn2.iodide.io
           command: |
-            aws s3 sync --delete build/ "s3://pyodide-cdn2.iodide.io/v${CIRCLE_TAG}/full/" --cache-control max-age=30758400  # 1 year
+            aws s3 sync --delete build/ "s3://pyodide-cdn2.iodide.io/v0.14.3/full/" --cache-control max-age=30758400  # 1 year
             # update 301 redirect for the /latest/* route.
             aws s3api put-bucket-website --cli-input-json file://.circleci/s3-website-config.json
 
@@ -180,11 +180,11 @@ jobs:
       - run:
           name: Deploy to pyodide-cdn2.iodide.io
             aws s3 sync --delete build/ "s3://pyodide-cdn2.iodide.io/dev/full/" --cache-control max-age=3600  # 1 hour
-      - run:
-          name: Deploy to netlify
-          command: |
-            cp src/_headers build
-            netlify deploy --prod --dir=build -m "Deployed from CircleCI"
+      #- run:
+      #    name: Deploy to netlify
+      #    command: |
+      #      cp src/_headers build
+      #      netlify deploy --prod --dir=build -m "Deployed from CircleCI"
 
 workflows:
   version: 2
@@ -215,17 +215,17 @@ workflows:
           requires:
             - test-firefox
             - test-python
-          filters:
-            branches:
-              ignore: /.*/
-            tags:
-              only: /^\d+\.\d+\.\d+$/
+          #filters:
+          #  branches:
+          #    ignore: /.*/
+          #  tags:
+          #    only: /^\d+\.\d+\.\d+$/
       - deploy-netlify:
           requires:
             - test-firefox
             - test-python
-          filters:
-            branches:
-              ignore: /.*/
-            tags:
-              only: /^\d+\.\d+\.\d+$/
+          #filters:
+          #  branches:
+          #    ignore: /.*/
+          #  tags:
+          #    only: /^\d+\.\d+\.\d+$/
