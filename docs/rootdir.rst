@@ -6,6 +6,6 @@ About the Project
 
 .. mdinclude:: ../README.md
 
-.. mdinclude:: ../CONTRIBUTING.md
+.. mdinclude:: ./contributing.md
 
 .. mdinclude:: ../CODE-OF-CONDUCT.md
