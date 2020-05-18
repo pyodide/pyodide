@@ -172,19 +172,30 @@ jobs:
       - attach_workspace:
           at: .
       - run:
-          name: Install requirements
+          name: Install netlify-cli
           command: |
             sudo npm install netlify-cli -g
-            sudo apt install -y python3-pip
+      - run:
+          name: Deploy to netlify
+          command: |
+            cp src/_headers build
+            netlify deploy --prod --dir=build -m "Deployed from CircleCI"
+
+  deploy-s3:
+    docker:
+      - image: circleci/python:3.3.7
+
+    steps:
+      - checkout
+      - attach_workspace:
+          at: .
+      - run:
+          name: Install requirements
+          command: |
             python3 -m pip install awscli
       - run:
           name: Deploy to pyodide-cdn2.iodide.io
             aws s3 sync --delete build/ "s3://pyodide-cdn2.iodide.io/dev/full/" --cache-control max-age=3600  # 1 hour
-      #- run:
-      #    name: Deploy to netlify
-      #    command: |
-      #      cp src/_headers build
-      #      netlify deploy --prod --dir=build -m "Deployed from CircleCI"
 
 workflows:
   version: 2
@@ -224,8 +235,15 @@ workflows:
           requires:
             - test-firefox
             - test-python
+          filters:
+            branches:
+              ignore: /.*/
+            tags:
+              only: /^\d+\.\d+\.\d+$/
+      - deploy-s3:
+          requires:
+            - test-firefox
+            - test-python
           #filters:
           #  branches:
-          #    ignore: /.*/
-          #  tags:
-          #    only: /^\d+\.\d+\.\d+$/
+          #    only: master
