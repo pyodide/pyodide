@@ -68,7 +68,7 @@ information about the project's organization.
    :caption: Project
 
    about.md
-   code-of-contents
+   code-of-conduct
    changelog.md
 
 Indices and tables
