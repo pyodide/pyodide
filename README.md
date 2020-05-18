@@ -1,9 +1,3 @@
-**[What is Pyodide?](#what-is-pyodide)** |
-**[Try Pyodide](#try-pyodide-no-installation-needed)** |
-**[Getting Started](#getting-started)** |
-**[Contributing](#contributing)** |
-**[License](#license)**
-
 # [Pyodide](https://github.com/iodide-project/pyodide)
 
 
@@ -11,8 +5,6 @@
 [![Documentation Status](https://readthedocs.org/projects/pyodide/badge/?version=latest)](https://pyodide.readthedocs.io/?badge=latest)
 
 The Python scientific stack, compiled to WebAssembly.
-
-[**Try Pyodide and Iodide in your browser**](https://alpha.iodide.io/notebooks/300/)
 
 ## What is Pyodide?
 
@@ -27,7 +19,9 @@ browser**.
 
 ## Try Pyodide (no installation needed)
 
-Try the [iodide demo notebook](https://alpha.iodide.io/notebooks/300/) or fire up a [Python REPL](https://pyodide.cdn.iodide.io/console.html) directly in your browser.
+Try the [iodide demo notebook](https://alpha.iodide.io/notebooks/300/) or fire
+up a [Python REPL](https://pyodide.cdn.iodide.io/console.html) directly in your
+browser.
 
 For further information, look through the [documentation](https://pyodide.readthedocs.io/).
 
@@ -36,161 +30,28 @@ For further information, look through the [documentation](https://pyodide.readth
 Pyodide offers three different ways to get started depending on your needs and technical resources.
 These include:
 
-- [Download a pre-built version](#download-a-pre-built-version) (the quickest way to get started)
-- [Build Pyodide from source](#building-from-source) (this method requires installing prerequistes and using `make`. Primarily for Linux users who want to experiment or contribute back to the project.)
-- [Use a Docker image](#using-docker) (recommended for Windows and macOS users and for Linux users who prefer a Debian-based Docker image on Docker Hub with the dependencies
-already installed)
-
-
-### Download a pre-built version
-
-Pre-built versions of Pyodide may be downloaded from
-this repository's [releases page](https://github.com/iodide-project/pyodide/releases/).
-
-
-### Building from source
-
-Building is easiest on Linux and relatively straightforward on Mac. For
-Windows, we currently recommend using the Docker image (described below) to
-build Pyodide.
-
-Make sure the prerequisites for [emsdk](https://github.com/emscripten-core/emsdk) are
-installed. Pyodide will build a custom, patched version of emsdk, so there is no
-need to build it yourself prior.
-
-Additional build prerequisites are:
-
-- A working native compiler toolchain, enough to build CPython.
-- A native Python 3.7 to run the build scripts.
-- PyYAML
-- [lessc](http://lesscss.org/) to compile less to css.
-- [uglifyjs](https://github.com/mishoo/UglifyJS) to minify Javascript builds.
-- gfortran (GNU Fortran 95 compiler)
-- [f2c](http://www.netlib.org/f2c/)
-- [ccache](https://ccache.samba.org) (optional) *highly* recommended for much faster rebuilds.
-
-On Mac, you will also need:
-
-- [Homebrew](https://brew.sh/) for installing dependencies
-- System libraries in the root directory (`sudo installer -pkg /Library/Developer/CommandLineTools/Packages/macOS_SDK_headers_for_macOS_10.14.pkg -target /` should do it, see https://github.com/pyenv/pyenv/issues/1219#issuecomment-428305417)
-- coreutils for md5sum and other essential Unix utilities (`brew install coreutils`)
-- cmake (`brew install cmake`)
-- pkg-config (`brew install pkg-config`)
-- openssl (`brew install openssl`)
-- gfortran (`brew cask install gfortran`)
-- f2c: Install wget (`brew install wget`), and then run the buildf2c script from the root directory (`sudo ./tools/buildf2c`)
-
-#### Build using `make`
-
-After installing the build prerequisites, run from the command line:
-
-```bash
-make
-```
-
-### Using Docker
-
-We provide a Debian-based Docker image on Docker Hub with the dependencies
-already installed to make it easier to build Pyodide. Note that building from
-the Docker image is *very* slow on Mac, building on the host machine is
-preferred if at all possible.
-
-1. Install Docker
-
-2. From a git checkout of Pyodide, run `./run_docker`
-
-3. Run `make` to build.
-
-If running ``make`` deterministically stops at one point in each subsequent try, increasing
-the maximum RAM usage available to the docker container might help [This is different
-from the physical RAM capacity inside the system]. Ideally, at least 3 GB of RAM
-should be available to the docker container to build `pyodide` smoothly. These settings can
-be changed via Docker Preferences [See [here](https://stackoverflow.com/questions/44533319/how-to-assign-more-memory-to-docker-container)].
-
-You can edit the files in your source checkout on your host machine, and then
-repeatedly run `make` inside the Docker environment to test your changes.
+- Use hosted distribution of pyodide: see [using pyodide from
+  Javascript](https://pyodide.readthedocs.io/en/latest/using_pyodide_from_javascript.html)
+  documentation.
+- Download a pre-built version from this
+  repository's [releases
+  page](https://github.com/iodide-project/pyodide/releases/) and serve its contents with
+  a web server.
+- [Build Pyodide from source](https://pyodide.readthedocs.io/en/latest/building_from_sources.html) (
+  - Build natively with `make`: primarily for Linux users who want to
+    experiment or contribute back to the project.
+  - [Use a Docker image](https://pyodide.readthedocs.io/en/latest/building_from_sources.html#using-docker):
+    recommended for Windows and macOS users and for Linux users who prefer a
+    Debian-based Docker image with the dependencies already installed.
 
 ## Contributing
 
-Please view the [CONTRIBUTING](CONTRIBUTING.md) document for tips on filing
-issues, making changes, and submitting pull requests. The following sections
-describe how to run tests, run Pyodide benchmarks, and lint the source code.
-
-
-### Testing
-
-Install the following dependencies into the default Python installation:
-
-```bash
-pip install pytest selenium pytest-instafail
-```
-
-Install [geckodriver](https://github.com/mozilla/geckodriver/releases) and
-[chromedriver](https://sites.google.com/a/chromium.org/chromedriver/downloads)
-and check that they are in your `PATH`.
-
-### Automated testing
-
-To run the pytest suite of tests, type on the command line:
-
-```bash
-pytest test/ packages/
-```
-
-### Manual interactive testing
-
-To run manual interactive tests, a docker environment and a webserver will be
-used.
-
-1. Bind port 8000 for testing. To automatically bind port 8000 of the docker
-environment and the host system, run: `./run_docker`
-
-2. Now, this can be used to test the `pyodide` builds running within the
-docker environment using external browser programs on the host system. To do
-this, run: `./bin/pyodide serve`
-
-3. This serves the ``build`` directory of the ``pyodide`` project on port 8000.
-    * To serve a different directory, use the ``--build_dir`` argument followed
-      by the path of the directory.
-    * To serve on a different port, use the ``--port`` argument followed by the
-      desired port number. Make sure that the port passed in ``--port`` argument
-      is same as the one defined as ``DOCKER_PORT`` in the ``run_docker`` script.
-
-
-4. Once the webserver is running, simple interactive testing can be run by
-   visiting this URL:
-   [http://localhost:8000/console.html](http://localhost:8000/console.html)
-
-### Benchmarking
-
-To run common benchmarks to understand Pyodide's performance, begin by
-installing the same prerequisites as for testing. Then run:
-
-```bash
-make benchmark
-```
-
-### Linting
-
-Python is linted with `flake8`.  C and Javascript are linted with
-`clang-format`.
-
-To lint the code, run:
-
-```bash
-make lint
-```
+Please view the
+[CONTRIBUTING](https://pyodide.readthedocs.io/en/latest/rootdir.html#how-to-contribute)
+document for tips on filing issues, making changes, and submitting pull
+requests.
 
 ## License
 
 Pyodide uses the Mozilla Public License Version 2.0. See the
 [LICENSE file](LICENSE) for more details.
-
----
-
-**[What is Pyodide?](#what-is-pyodide)** |
-**[Try Pyodide](#try-pyodide-no-installation-needed)** |
-**[Getting Started](#getting-started)** |
-**[Contributing](#contributing)** |
-**[License](#license)** |
-**[Back to top](#pyodide)**
