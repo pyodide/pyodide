@@ -183,7 +183,7 @@ jobs:
 
   deploy-s3:
     docker:
-      - image: circleci/python:3.3.7
+      - image: circleci/python:3.7.7
 
     steps:
       - checkout
@@ -192,6 +192,7 @@ jobs:
       - run:
           name: Install requirements
           command: |
+            sudo apt-get install -y groff
             python3 -m pip install awscli
       - run:
           name: Deploy to pyodide-cdn2.iodide.io
