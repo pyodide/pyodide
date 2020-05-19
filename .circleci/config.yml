@@ -163,24 +163,6 @@ jobs:
             # update 301 redirect for the /latest/* route.
             aws s3api put-bucket-website --cli-input-json file://.circleci/s3-website-config.json
 
-  deploy-netlify:
-    docker:
-      - image: circleci/node:latest
-
-    steps:
-      - checkout
-      - attach_workspace:
-          at: .
-      - run:
-          name: Install netlify-cli
-          command: |
-            sudo npm install netlify-cli -g
-      - run:
-          name: Deploy to netlify
-          command: |
-            cp src/_headers build
-            netlify deploy --prod --dir=build -m "Deployed from CircleCI"
-
   deploy-s3:
     docker:
       - image: circleci/python:3.7.7
@@ -225,15 +207,6 @@ workflows:
           requires:
             - build
       - deploy-release:
-          requires:
-            - test-firefox
-            - test-python
-          filters:
-            branches:
-              ignore: /.*/
-            tags:
-              only: /^\d+\.\d+\.\d+$/
-      - deploy-netlify:
           requires:
             - test-firefox
             - test-python
