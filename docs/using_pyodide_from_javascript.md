@@ -6,23 +6,20 @@ Iodide](using_pyodide_from_iodide.md).
 
 ## Startup
 
-Include `pyodide.js` in your project.
+To include Pyodide in your project you can use the following CDN URL,
 
-The recommended way to include Pyodide in your project is to download a release
-from [here](https://github.com/iodide-project/pyodide/releases) and include the
-contents in your distribution, and import the `pyodide.js` file there from a
-`<script>` tag.
+  https://pyodide-cdn2.iodide.io/v0.14.3/full/pyodide.js
 
-For prototyping purposes, you may also use the following CDN URL, though doing
-so is not recommended, since it isn't versioned and could change or be unstable
-at any time:
+You can also download a release from
+[Github releases](https://github.com/iodide-project/pyodide/releases)
+(or build it yourself), include its contents in your distribution, and import
+the `pyodide.js` file there from a `<script>` tag. See the following section on
+[serving pyodide files](./#serving-pyodide-files) for more details.
 
-  https://pyodide.cdn.iodide.io/pyodide.js
-
-This file has a single `Promise` object which bootstraps the Python environment:
-`languagePluginLoader`. Since this must happen asynchronously, it is a
-`Promise`, which you must call `then` on to complete initialization. When the
-promise resolves, pyodide will have installed a namespace in global scope:
+The `pyodide.js` file has a single `Promise` object which bootstraps the Python
+environment: `languagePluginLoader`. Since this must happen asynchronously, it
+is a `Promise`, which you must call `then` on to complete initialization. When
+the promise resolves, pyodide will have installed a namespace in global scope:
 `pyodide`.
 
 ```javascript
@@ -41,6 +38,31 @@ conversions](type_conversions.md)).
 
 ```javascript
 pyodide.runPython('import sys\nsys.version');
+```
+
+## Complete example
+
+Create and save a test `index.html` page with the following contents:
+```html
+<!DOCTYPE html>
+<html>
+<head>
+    <script type="text/javascript">
+        // set the pyodide files URL (packages.json, pyodide.asm.data etc)
+        window.languagePluginUrl = 'https://pyodide-cdn2.iodide.io/v0.14.3/full/';
+    </script>
+    <script src="https://pyodide-cdn2.iodide.io/v0.14.3/full/pyodide.js"></script>
+</head>
+<body>
+  Pyodide test page <br>
+  Open your browser console to see pyodide output
+  <script type="text/javascript">
+        languagePluginLoader.then(function () {
+            console.log(pyodide.runPython('import sys\nsys.version'));
+            console.log(pyodide.runPython('print(1 + 2)'));
+        });
+  </script>
+</body>
 ```
 
 ## Loading packages
@@ -73,35 +95,10 @@ pyodide.loadPackage('matplotlib').then(() => {
 });
 ```
 
-## Complete example
+## Serving pyodide files
 
-Grab the latest release tarball from the [releases
-page](https://github.com/iodide-project/pyodide/releases/) and expand its
-contents into a `pyodide_local` directory.
-
-Create and save a test `index.html` page (in the `pyodide_local` directory)
-with the following contents:
-```html
-<!DOCTYPE html>
-<html>
-<head>
-    <script type="text/javascript">
-        // set the pyodide files URL (packages.json, pyodide.asm.data etc)
-        window.languagePluginUrl = 'http://localhost:8000/';
-    </script>
-    <script src="pyodide.js"></script>
-</head>
-<body>
-  Pyodide test page <br>
-  Open your browser console to see pyodide output
-  <script type="text/javascript">
-        languagePluginLoader.then(function () {
-            console.log(pyodide.runPython('import sys\nsys.version'));
-            console.log(pyodide.runPython('print(1 + 2)'));
-        });
-  </script>
-</body>
-```
+If you built your pyodide distribution or downloaded the release tarball
+you need to serve pyodide files with a appropriate headers.
 
 Because browsers require WebAssembly files to have mimetype of
 `application/wasm` we're unable to serve our files using Python's built-in
