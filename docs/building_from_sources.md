@@ -4,6 +4,8 @@ Building is easiest on Linux and relatively straightforward on Mac. For
 Windows, we currently recommend using the Docker image (described below) to
 build Pyodide.
 
+## Build using `make`
+
 Make sure the prerequisites for [emsdk](https://github.com/emscripten-core/emsdk) are
 installed. Pyodide will build a custom, patched version of emsdk, so there is no
 need to build it yourself prior.
@@ -30,7 +32,6 @@ On Mac, you will also need:
 - gfortran (`brew cask install gfortran`)
 - f2c: Install wget (`brew install wget`), and then run the buildf2c script from the root directory (`sudo ./tools/buildf2c`)
 
-#### Build using `make`
 
 After installing the build prerequisites, run from the command line:
 
@@ -38,7 +39,7 @@ After installing the build prerequisites, run from the command line:
 make
 ```
 
-### Using Docker
+## Using Docker
 
 We provide a Debian-based Docker image on Docker Hub with the dependencies
 already installed to make it easier to build Pyodide. Note that building from
