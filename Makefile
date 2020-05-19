@@ -97,7 +97,7 @@ build/pyodide.asm.data: root/.built
 
 build/pyodide_dev.js: src/pyodide.js
 	cp $< $@
-	sed -i -e "s#{{DEPLOY}}##g" $@
+	sed -i -e "s#{{DEPLOY}}#./#g" $@
 	sed -i -e "s#{{ABI}}#$(PYODIDE_PACKAGE_ABI)#g" $@
 
 
@@ -125,7 +125,7 @@ build/webworker.js: src/webworker.js
 
 build/webworker_dev.js: src/webworker.js
 	cp $< $@
-	sed -i -e "s#{{DEPLOY}}##g" $@
+	sed -i -e "s#{{DEPLOY}}#./#g" $@
 	sed -i -e "s#pyodide.js#pyodide_dev.js#g" $@
 
 test: all
