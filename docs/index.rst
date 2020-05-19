@@ -60,12 +60,16 @@ information about the project's organization.
    building_from_sources.md
    new_packages.md
    type_conversions.md
+   contributing.md
+   testing.md
 
 .. toctree::
    :titlesonly:
    :caption: Project
 
-   rootdir.rst
+   about.md
+   code-of-conduct
+   changelog.md
 
 Indices and tables
 ==================

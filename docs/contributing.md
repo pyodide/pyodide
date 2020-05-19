@@ -2,9 +2,13 @@
 
 Thank you for your interest in contributing to PYODIDE! There are many ways to contribute, and we appreciate all of them. Here are some guidelines & pointers for diving into it.
 
+## Development Workflow
+
+See [building from sources](./building_from_sources.html) and [testing](./testing.html) documentation.
+
 ## Code of Conduct
 
-PYODIDE has adopted a [Code of Conduct](CODE-OF-CONDUCT.md) that we expect all contributors and core members to adhere to.
+PYODIDE has adopted a [Code of Conduct](code-of-conduct.html) that we expect all contributors and core members to adhere to.
 
 ## Development
 
@@ -14,7 +18,7 @@ We’ll do our best to keep `master` in a non-breaking state, ideally with tests
 
 PYODIDE follows semantic versioning (http://semver.org/) - major versions for breaking changes (x.0.0), minor versions for new features (0.x.0), and patches for bug fixes (0.0.x).
 
-We keep a file, [CHANGELOG.md](CHANGELOG.md), outlining changes to PYODIDE in each release. We like to think of the audience for changelogs as non-developers who primarily run the latest stable. So the change log will primarily outline user-visible changes such as new features and deprecations, and will exclude things that might otherwise be inconsequential to the end user experience, such as infrastructure or refactoring.
+We keep a file, [doc/changelog.md](./changelog.html), outlining changes to PYODIDE in each release. We like to think of the audience for changelogs as non-developers who primarily run the latest stable. So the change log will primarily outline user-visible changes such as new features and deprecations, and will exclude things that might otherwise be inconsequential to the end user experience, such as infrastructure or refactoring.
 
 ## Bugs & Issues
 
@@ -36,9 +40,6 @@ We use [py.test](https://pytest.org), driving [Selenium](https://www.seleniumhq.
 
 All code submissions should pass `make lint`.  Python is checked with the default settings of `flake8`.  C and Javascript are checked against the Mozilla style in `clang-format`.
 
-## Development Workflow
-
-See `README.md`.
 
 ## License
 
