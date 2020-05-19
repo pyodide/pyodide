@@ -196,6 +196,7 @@ jobs:
             python3 -m pip install awscli
       - run:
           name: Deploy to pyodide-cdn2.iodide.io
+          command: |
             aws s3 sync --delete build/ "s3://pyodide-cdn2.iodide.io/dev/full/" --cache-control max-age=3600  # 1 hour
 
 workflows:
