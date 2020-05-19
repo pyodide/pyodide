@@ -20,7 +20,7 @@ browser**.
 ## Try Pyodide (no installation needed)
 
 Try the [iodide demo notebook](https://alpha.iodide.io/notebooks/300/) or fire
-up a [Python REPL](https://pyodide.cdn.iodide.io/console.html) directly in your
+up a [Python REPL](https://pyodide-cdn2.iodide.io/latest/full/console.html) directly in your
 browser.
 
 For further information, look through the [documentation](https://pyodide.readthedocs.io/).
