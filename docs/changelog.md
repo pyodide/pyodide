@@ -3,7 +3,7 @@
 ## Version 0.15.0
 *May 19, 2020*
 
-- Upgrades pyodide to use CPython 3.7.4.
+- Upgrades pyodide to CPython 3.7.4.
 - micropip no longer uses a CORS proxy to install pure Python packages from
   PyPi. Packages are now installed from PyPi directly.
 - micropip can now be used from web workers.
