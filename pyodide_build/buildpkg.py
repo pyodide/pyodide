@@ -107,6 +107,8 @@ def compile(path, srcpath, pkg, args):
     env = dict(os.environ)
     if pkg.get('build', {}).get('skip_host', True):
         env['SKIP_HOST'] = ''
+    for k, v in pkg.get('build', {}).get('env', {}).items():
+        env[k] = str(v).lower() if type(v) is bool else str(v)
 
     try:
         subprocess.run([

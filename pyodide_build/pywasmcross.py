@@ -82,9 +82,14 @@ def collect_args(basename):
                 fh.write(b'')
             skip = True
 
-    with open('build.log', 'a') as fd:
+    build_log_path = env['PYWASMCROSS_BUILD_LOG']
+    with open(build_log_path, 'a') as fd:
         # TODO: store skip status in the build.log
-        json.dump([basename] + sys.argv[1:], fd)
+        json.dump({
+            "cmd": [basename] + sys.argv[1:],
+            "cwd": str(Path.cwd().absolute()),
+            "env": env,
+        }, fd)
         fd.write('\n')
 
     if skip:
@@ -120,13 +125,14 @@ def capture_compile(args):
     env = dict(os.environ)
     make_symlinks(env)
     env['PATH'] = str(ROOTDIR) + ':' + os.environ['PATH']
+    build_log_path = Path('build.log')
+    env['PYWASMCROSS_BUILD_LOG'] = str(build_log_path.absolute())
 
     result = subprocess.run(
         [Path(args.host) / 'bin' / 'python3',
          'setup.py',
          'install'], env=env)
     if result.returncode != 0:
-        build_log_path = Path('build.log')
         if build_log_path.exists():
             build_log_path.unlink()
         sys.exit(result.returncode)
@@ -201,7 +207,15 @@ def handle_command(line, args, dryrun=False):
     emcc test.c
     ['emcc', 'test.c']
     """
-    # This is a special case to skip the compilation tests in numpy that aren't
+
+    if type(line) is dict:
+        wd = Path(line['cwd'])
+        env = line['env']
+        line = line['cmd']
+    else:
+        wd = Path().cwd()
+        env = {}
+    # This is a special case to skip the compilation tests that aren't
     # actually part of the build
     for arg in line:
         if r'/file.c' in arg or '_configtest' in arg:
@@ -211,6 +225,20 @@ def handle_command(line, args, dryrun=False):
         if arg == '-print-multiarch':
             return
         if arg.startswith('/tmp'):
+            return
+        # automake generated configure scripts:
+        if 'DUALCASE' in env and 'as_nl' in env:
+            # It would be really nice if there was a clear sign
+            # in the environment, but there isn't
+            if arg in ["-qversion", "--version", "--help", "-v", "-V"]:
+                return
+            if arg.startswith("-print-"):
+                return
+            if arg in ["conftest.cpp", "conftest.c", "@conftest.lst"]:
+                if not (wd / arg).exists():
+                    return
+        # for manual skips from patched build scripts
+        if 'PYWASMCROSS_SKIP_REPLAY' in env:
             return
 
     if line[0] == 'gfortran':
@@ -298,10 +326,14 @@ def handle_command(line, args, dryrun=False):
     #     print('SKIPPING: ' + ' '.join(new_args))
     #     return
 
-    print(' '.join(new_args))
+    if wd == Path.cwd():
+        printpath = ''
+    else:
+        printpath = "cd {} && ".format(wd.relative_to(Path.cwd()))
+    print(printpath + ' '.join(new_args))
 
     if not dryrun:
-        result = subprocess.run(new_args)
+        result = subprocess.run(new_args, cwd=wd)
         if result.returncode != 0:
             sys.exit(result.returncode)
 
@@ -315,7 +347,7 @@ def handle_command(line, args, dryrun=False):
                 renamed = renamed[:-len(ext)] + '.so'
                 break
         if not dryrun:
-            os.rename(output, renamed)
+            os.rename(wd / output, wd / renamed)
     return new_args
 
 

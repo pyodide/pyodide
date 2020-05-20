@@ -6,7 +6,7 @@ RUN sudo bash -c "echo \"deb http://ftp.us.debian.org/debian testing main contri
   && sudo apt-get update \
   # bzip2 and libgconf-2-4 are necessary for extracting firefox and running chrome, respectively
   && sudo apt-get install bzip2 libgconf-2-4 node-less cmake build-essential clang-format-6.0 \
-                  uglifyjs chromium ccache libncurses6 gfortran f2c \
+                  uglifyjs chromium ccache libncurses6 gfortran f2c swig \
   && sudo apt-get install -t testing g++-8 \
   && sudo update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-6 60 --slave /usr/bin/g++ g++ /usr/bin/g++-6 \
   && sudo update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-8 80 --slave /usr/bin/g++ g++ /usr/bin/g++-8 \
@@ -14,7 +14,8 @@ RUN sudo bash -c "echo \"deb http://ftp.us.debian.org/debian testing main contri
   && sudo apt-get clean \
   && sudo apt-get autoremove \
   && sudo ln -s /usr/bin/clang-format-6.0 /usr/bin/clang-format \
-  && sudo bash -c "echo 'application/wasm wasm' >> /etc/mime.types"
+  && sudo bash -c "echo 'application/wasm wasm' >> /etc/mime.types" \
+  && sudo sed -ri "1 s|^#\!.*|#\!$(which node)|" "$(realpath "$(which uglifyjs)")"
 
 RUN sudo pip install pytest pytest-xdist pytest-instafail selenium PyYAML flake8 \
     && sudo rm -rf /root/.cache/pip

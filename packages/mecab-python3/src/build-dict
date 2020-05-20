@@ -1,0 +1,28 @@
+#!/usr/bin/env bash
+# The original wheel build script steals these files from debian. That's not a route I'd like to go.
+
+set -x
+set -euo pipefail
+
+. /etc/profile # somehow, we come up with an empty env
+env
+
+cd "$(find build/ -maxdepth 1 -name mecab-python3-* -type d)"/build
+
+rm -rf mecab-native
+git clone libmecab mecab-native
+cd mecab-native
+
+(
+	cd mecab
+	./configure --prefix=$(realpath ../install) --with-charset=utf8
+	make -j$(nproc)
+	make install
+)
+(
+	cd mecab-ipadic
+	./configure --with-mecab-config=../install/bin/mecab-config --with-charset=utf8
+	make install
+)
+
+cp -r install/lib/mecab/dic/ipadic "$SITEPACKAGES"/MeCab/dic

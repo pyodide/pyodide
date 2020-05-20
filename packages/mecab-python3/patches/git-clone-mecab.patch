@@ -1,0 +1,41 @@
+From 8bb2fe8ed0ee374a2cb4e22c94957fcf9aea785e Mon Sep 17 00:00:00 2001
+From: Julius Michaelis <gitter@liftm.de>
+Date: Mon, 20 Apr 2020 15:35:34 +0900
+Subject: [PATCH] Dumber git clone
+
+---
+ scripts/build-bundled-libmecab.py | 10 +++-------
+ 1 file changed, 3 insertions(+), 7 deletions(-)
+
+diff --git a/scripts/build-bundled-libmecab.py b/scripts/build-bundled-libmecab.py
+index 7dba618..fe83760 100755
+--- a/scripts/build-bundled-libmecab.py
++++ b/scripts/build-bundled-libmecab.py
+@@ -14,7 +14,7 @@ setup.py can then link the Python module with it.
+ # libmecab hasn't had an actual release in many years and there are no
+ # tags on its repository.  Le sigh.
+ # This rev is the most recent commit as of 2019-03-25.
+-LIBMECAB_REPO = "https://github.com/taku910/mecab/"
++LIBMECAB_REPO = "https://github.com/taku910/mecab.git"
+ LIBMECAB_REV = "3a07c4eefaffb4e7a0690a7f4e5e0263d3ddb8a3"
+ 
+ LIBMECAB_DIR = "build/libmecab"
+@@ -76,13 +76,9 @@ def checkout_and_build_libmecab(basedir):
+         chdir(p_join(LIBMECAB_DIR, "mecab"))
+ 
+     else:
++        run("git", "clone", LIBMECAB_REPO, LIBMECAB_DIR)
+         chdir(LIBMECAB_DIR)
+-        # You would think git clone would have an option to clone an
+-        # arbitrary <treeish>, but you would be wrong.
+-        run("git", "init")
+-        run("git", "remote", "add", "origin", LIBMECAB_REPO)
+-        run("git", "fetch", "origin", "--depth", "1", LIBMECAB_REV)
+-        run("git", "reset", "--hard", "FETCH_HEAD")
++        run("git", "reset", "--hard", LIBMECAB_REV)
+         chdir("mecab")
+ 
+     CC, CXX, CFLAGS, CXXFLAGS, MDT = compile_flags_for_platform()
+-- 
+2.26.0
+
