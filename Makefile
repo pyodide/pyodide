@@ -97,13 +97,13 @@ build/pyodide.asm.data: root/.built
 
 build/pyodide_dev.js: src/pyodide.js
 	cp $< $@
-	sed -i -e "s#{{DEPLOY}}##g" $@
+	sed -i -e "s#{{DEPLOY}}#./#g" $@
 	sed -i -e "s#{{ABI}}#$(PYODIDE_PACKAGE_ABI)#g" $@
 
 
 build/pyodide.js: src/pyodide.js
 	cp $< $@
-	sed -i -e 's#{{DEPLOY}}#https://pyodide.cdn.iodide.io/#g' $@
+	sed -i -e 's#{{DEPLOY}}#https://pyodide-cdn2.iodide.io/v0.14.3/full/#g' $@
 
 	sed -i -e "s#{{ABI}}#$(PYODIDE_PACKAGE_ABI)#g" $@
 
@@ -121,11 +121,11 @@ build/renderedhtml.css: src/renderedhtml.less
 
 build/webworker.js: src/webworker.js
 	cp $< $@
-	sed -i -e 's#{{DEPLOY}}#https://pyodide.cdn.iodide.io/#g' $@
+	sed -i -e 's#{{DEPLOY}}#https://pyodide-cdn2.iodide.io/v0.14.3/full/#g' $@
 
 build/webworker_dev.js: src/webworker.js
 	cp $< $@
-	sed -i -e "s#{{DEPLOY}}##g" $@
+	sed -i -e "s#{{DEPLOY}}#./#g" $@
 	sed -i -e "s#pyodide.js#pyodide_dev.js#g" $@
 
 test: all
