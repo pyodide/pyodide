@@ -5,20 +5,15 @@ all: emsdk/.complete
 
 emsdk/.complete:
 	if [ -d emsdk ]; then rm -rf emsdk; fi
-	git clone https://github.com/juj/emsdk.git
+	git clone https://github.com/emscripten-core/emsdk.git
 	( \
 		cd emsdk && \
-		./emsdk install --build=Release sdk-fastcomp-tag-$(EMSCRIPTEN_VERSION)-64bit binaryen-tag-$(EMSCRIPTEN_VERSION)-64bit && \
+		./emsdk install --build=Release $(EMSCRIPTEN_VERSION)-fastcomp && \
 		cd .. && \
 		(cat patches/*.patch | patch -p1) && \
-		cd emsdk/binaryen/tag-$(EMSCRIPTEN_VERSION)_64bit_binaryen/ && \
-    make && \
-	  cd ../../.. && \
-		cd emsdk/fastcomp-clang/tag-e$(EMSCRIPTEN_VERSION)/build_tag-e$(EMSCRIPTEN_VERSION)_64/ && \
-    make && \
-    cd ../../.. && \
-		./emsdk activate --embedded --build=Release sdk-fastcomp-tag-$(EMSCRIPTEN_VERSION)-64bit binaryen-tag-$(EMSCRIPTEN_VERSION)-64bit && \
-    touch .complete \
+		cd emsdk && \
+		./emsdk activate --embedded --build=Release $(EMSCRIPTEN_VERSION)-fastcomp && \
+	        touch .complete \
 	)
 
 clean:

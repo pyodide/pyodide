@@ -27,7 +27,7 @@ LDFLAGS=\
 	$(CPYTHONROOT)/installs/python-$(PYVERSION)/lib/libpython$(PYMINOR).a \
 	$(LZ4LIB) \
 	-s "BINARYEN_METHOD='native-wasm'" \
-	-s TOTAL_MEMORY=5242880 \
+	-s TOTAL_MEMORY=10485760\
 	-s ALLOW_MEMORY_GROWTH=1 \
 	-s MAIN_MODULE=1 \
 	-s EMULATED_FUNCTION_POINTERS=1 \
@@ -206,7 +206,7 @@ $(PYODIDE_EMCC):
 		if hash ccache &>/dev/null; then \
 			ln -s `which ccache` $@ ; \
 		else \
-	 		ln -s emsdk/emsdk/emscripten/tag-$(EMSCRIPTEN_VERSION)/emcc $@; \
+			ln -s emsdk/emsdk/fastcomp/emscripten/emcc $@; \
 		fi; \
 	fi
 
@@ -217,7 +217,7 @@ $(PYODIDE_CXX):
 		if hash ccache &>/dev/null; then \
 			ln -s `which ccache` $@ ; \
 		else \
-			ln -s emsdk/emsdk/emscripten/tag-$(EMSCRIPTEN_VERSION)/em++ $@; \
+			ln -s emsdk/emsdk/fastcomp/emscripten/em++ $@; \
 		fi; \
 	fi
 
