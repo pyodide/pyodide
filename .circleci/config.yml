@@ -159,7 +159,8 @@ jobs:
       - run:
           name: Deploy to pyodide-cdn2.iodide.io
           command: |
-            aws s3 sync --delete build/ "s3://pyodide-cdn2.iodide.io/v${CIRCLE_TAG}/full/" --cache-control max-age=30758400  # 1 year
+            aws s3 sync build/ "s3://pyodide-cdn2.iodide.io/v${CIRCLE_TAG}/full/" --exclude '*.data' --cache-control 'max-age=30758400, immutable, public'  # 1 year
+            aws s3 sync build/ "s3://pyodide-cdn2.iodide.io/v${CIRCLE_TAG}/full/" --exclude '*' --include '*.data' --cache-control 'max-age=30758400, immutable, public'  --content-type 'application/wasm' # 1 year
             # update 301 redirect for the /latest/* route.
             aws s3api put-bucket-website --cli-input-json file://.circleci/s3-website-config.json
 
@@ -179,7 +180,9 @@ jobs:
       - run:
           name: Deploy to pyodide-cdn2.iodide.io
           command: |
-            aws s3 sync --delete build/ "s3://pyodide-cdn2.iodide.io/dev/full/" --cache-control max-age=3600  # 1 hour
+            aws s3 rm --recursive "s3://pyodide-cdn2.iodide.io/dev/full/"
+            aws s3 sync build/ "s3://pyodide-cdn2.iodide.io/dev/full/" --exclude '*.data' --cache-control 'max-age=3600, public'  # 1 hour
+            aws s3 sync build/ "s3://pyodide-cdn2.iodide.io/dev/full/" --exclude '*' --include '*.data' --cache-control 'max-age=3600, public'  --content-type 'application/wasm' # 1 hour
 
 workflows:
   version: 2
