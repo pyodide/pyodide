@@ -17,6 +17,7 @@ emsdk/.complete:
 	        cd binaryen && \
 		cmake . && make -j5 && \
 		cd ../.. && \
+		sed -i "s/BINARYEN_ROOT.*/BINARYEN_ROOT = emsdk_path \+ '\/binaryen'/g" emsdk/.emscripten && \
 	        touch .complete \
 	)
 
