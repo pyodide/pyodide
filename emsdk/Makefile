@@ -14,10 +14,9 @@ emsdk/.complete:
 		(cat patches/*.patch | patch -p1) && \
 		cd emsdk && \
 		./emsdk activate --embedded --build=Release $(EMSCRIPTEN_VERSION)-fastcomp && \
-		cd .. && \
 	        cd binaryen && \
-		cmake . && make && \
-		cd .. && \
+		cmake . && make -j5 && \
+		cd ../.. && \
 	        touch .complete \
 	)
 
