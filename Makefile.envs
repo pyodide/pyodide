@@ -1,4 +1,4 @@
-export EMSCRIPTEN_VERSION = 1.38.35
+export EMSCRIPTEN_VERSION = 1.38.33
 
 export PATH := $(PYODIDE_ROOT)/ccache:$(PYODIDE_ROOT)/emsdk/emsdk:$(PYODIDE_ROOT)/emsdk/emsdk/node/12.9.1_64bit/bin:$(PYODIDE_ROOT)/emsdk/emsdk/fastcomp/emscripten/:$(PATH)
 
@@ -28,4 +28,5 @@ export SIDE_LDFLAGS=\
   -s "BINARYEN_TRAP_MODE='clamp'" \
   --memory-init-file 0 \
   -s LINKABLE=1 \
-  -s EXPORT_ALL=1
+  -s EXPORT_ALL=1 \
+  -s ERROR_ON_MISSING_LIBRARIES=0
