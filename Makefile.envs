@@ -1,4 +1,4 @@
-export EMSCRIPTEN_VERSION = 1.38.33
+export EMSCRIPTEN_VERSION = 1.38.34
 
 export PATH := $(PYODIDE_ROOT)/ccache:$(PYODIDE_ROOT)/emsdk/emsdk:$(PYODIDE_ROOT)/emsdk/emsdk/node/12.9.1_64bit/bin:$(PYODIDE_ROOT)/emsdk/emsdk/binaryen/bin/:$(PYODIDE_ROOT)/emsdk/emsdk/fastcomp/emscripten/:$(PATH)
 
@@ -17,7 +17,7 @@ export PYTHONINCLUDE=$(PYODIDE_ROOT)/cpython/installs/python-$(PYVERSION)/includ
 export PYODIDE_PACKAGE_ABI=1
 
 export SIDE_LDFLAGS=\
-	-O3 \
+	-O2 \
   -s "BINARYEN_METHOD='native-wasm'" \
 	-Werror \
   -s EMULATED_FUNCTION_POINTERS=1 \
@@ -28,4 +28,5 @@ export SIDE_LDFLAGS=\
   --memory-init-file 0 \
   -s LINKABLE=1 \
   -s EXPORT_ALL=1 \
-  -s ERROR_ON_MISSING_LIBRARIES=0
+  -s ERROR_ON_MISSING_LIBRARIES=0 \
+  -s ASSERTIONS=1

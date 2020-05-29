@@ -22,7 +22,7 @@ CXXFLAGS=$(CFLAGS) -std=c++14
 
 
 LDFLAGS=\
-	-O3 \
+	-O2 \
 	-s MODULARIZE=1 \
 	$(CPYTHONROOT)/installs/python-$(PYVERSION)/lib/libpython$(PYMINOR).a \
 	$(LZ4LIB) \
