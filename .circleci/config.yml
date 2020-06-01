@@ -3,7 +3,7 @@ version: 2
 defaults: &defaults
   working_directory: ~/repo
   docker:
-    - image: liftm/pyodide-env:swig-4
+    - image: iodide/pyodide-env:0.15.0
   environment:
     - EMSDK_NUM_CORES: 4
       EMCC_CORES: 4
