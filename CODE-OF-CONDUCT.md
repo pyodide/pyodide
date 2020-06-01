@@ -1,6 +1,6 @@
-# IODIDE CODE of CONDUCT
+# Iodide Code of Conduct
 
-## CONDUCT
+## Conduct
 
 We are committed to providing a friendly, safe and welcoming environment for all, regardless of level of experience, gender identity and expression, sexual orientation, disability, personal appearance, body size, race, ethnicity, age, religion, nationality, or other similar characteristic.
 
@@ -13,7 +13,7 @@ We are committed to providing a friendly, safe and welcoming environment for all
 - Private harassment is also unacceptable. No matter who you are, if you feel you have been or are being harassed or made uncomfortable by a community member, please contact one of the channel ops or any of the IODIDE core team members immediately. Whether you’re a regular contributor or a newcomer, we care about making this community a safe place for you and we’ve got your back.
 - Likewise any spamming, trolling, flaming, baiting or other attention-stealing behavior is not welcome.
 
-## MODERATION
+## Moderation
 
 These are the policies for upholding our community’s standards of conduct. If you feel that a thread needs moderation, please contact the IODIDE core team.
 
@@ -29,4 +29,4 @@ These are the policies for upholding our community’s standards of conduct. If 
 10. And if someone takes issue with something you said or did, resist the urge to be defensive. Just stop doing what it was they complained about and apologize. Even if you feel you were misinterpreted or unfairly accused, chances are good there was something you could’ve communicated better — remember that it’s your responsibility to make your fellow IODIDE community members comfortable. Everyone wants to get along and we are all here first and foremost because we want to talk about science and cool technology. You will find that people will be eager to assume good intent and forgive as long as you earn their trust.
 11. The enforcement policies listed above apply to all official IODIDE venues.  If you wish to use this code of conduct for your own project, consider explicitly mentioning your moderation policy or making a copy with your own moderation policy so as to avoid confusion.
 
-_Adapted from the the [Rust Code of Conduct](https://www.rust-lang.org/en-US/conduct.html), with further reference from [Digital Ocean Code of Conduct](https://github.com/digitalocean/engineering-code-of-conduct#giving-and-receiving-feedback), the [Recurse Center](https://www.recurse.com/code-of-conduct), the [Citizen Code of Conduct](http://citizencodeofconduct.org/), and the [Contributor Covenant](https://www.contributor-covenant.org/version/1/4/code-of-conduct.html)._
+Adapted from the the [Rust Code of Conduct](https://www.rust-lang.org/en-US/conduct.html), with further reference from [Digital Ocean Code of Conduct](https://github.com/digitalocean/engineering-code-of-conduct#giving-and-receiving-feedback), the [Recurse Center](https://www.recurse.com/code-of-conduct), the [Citizen Code of Conduct](http://citizencodeofconduct.org/), and the [Contributor Covenant](https://www.contributor-covenant.org/version/1/4/code-of-conduct.html)._
