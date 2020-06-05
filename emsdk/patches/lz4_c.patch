@@ -1,7 +1,7 @@
-diff --git a/emsdk/emscripten/tag-1.38.30/src/library_lz4.js b/emsdk/emscripten/tag-1.38.30/src/library_lz4.js
+diff --git a/emsdk/emscripten/tag-1.38.31/src/library_lz4.js b/emsdk/emscripten/tag-1.38.31/src/library_lz4.js
 index 4c3f583b7..5291002a4 100644
---- a/emsdk/emscripten/tag-1.38.30/src/library_lz4.js
-+++ b/emsdk/emscripten/tag-1.38.30/src/library_lz4.js
+--- a/emsdk/emscripten/tag-1.38.31/src/library_lz4.js
++++ b/emsdk/emscripten/tag-1.38.31/src/library_lz4.js
 @@ -5,26 +5,14 @@ mergeInto(LibraryManager.library, {
      DIR_MODE: {{{ cDefine('S_IFDIR') }}} | 511 /* 0777 */,
      FILE_MODE: {{{ cDefine('S_IFREG') }}} | 511 /* 0777 */,

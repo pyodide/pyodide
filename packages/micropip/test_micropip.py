@@ -33,6 +33,7 @@ def test_install_simple(selenium_standalone):
 
 
 def test_parse_wheel_url():
+    pytest.importorskip('distlib')
     import micropip
 
     url = "https://a/snowballstemmer-2.0.0-py2.py3-none-any.whl"
