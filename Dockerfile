@@ -3,16 +3,19 @@ FROM circleci/python:3.7.7-buster
 RUN sudo apt-get update \
   # bzip2 and libgconf-2-4 are necessary for extracting firefox and running chrome, respectively
   && sudo apt-get install bzip2 libgconf-2-4 node-less cmake build-essential clang-format-6.0 \
-                  uglifyjs chromium ccache libncurses6 gfortran f2c g++-8 \
+                  uglifyjs chromium ccache libncurses6 gfortran f2c swig g++-8 \
   && sudo apt-get clean \
   && sudo apt-get autoremove \
-  && sudo ln -s /usr/bin/clang-format-6.0 /usr/bin/clang-format
+  && test "Comment: Hardcode nodejs path for uglifyjs, so it doesn't conflict with emcc's nodejs" \
+  && test $(which node) = /usr/bin/node && test $(which uglifyjs) = /usr/bin/uglifyjs \
+  && echo '#!/bin/sh -e\nexec /usr/bin/node /usr/bin/uglifyjs "$@"' >/tmp/uglifyjs \
+  && chmod a+x /tmp/uglifyjs && sudo mv -t /usr/local/bin /tmp/uglifyjs
 
-RUN sudo pip install pytest pytest-xdist pytest-instafail selenium PyYAML flake8 \
+RUN sudo pip install pytest pytest-xdist pytest-instafail pytest-rerunfailures selenium PyYAML flake8 \
     && sudo rm -rf /root/.cache/pip
 
 # Get recent version of Firefox and geckodriver
-RUN sudo wget --quiet -O firefox.tar.bz2 https://download.mozilla.org/\?product\=firefox-latest-ssl\&os\=linux64\&lang\=en-US \
+RUN sudo wget --quiet -O firefox.tar.bz2 https://ftp.mozilla.org/pub/firefox/releases/66.0.5/linux-x86_64/en-US/firefox-66.0.5.tar.bz2 \
   && sudo tar jxf firefox.tar.bz2 \
   && sudo rm -f /usr/local/bin/firefox \
   && sudo ln -s $PWD/firefox/firefox /usr/local/bin/firefox \
@@ -32,8 +35,6 @@ ENV DISPLAY :99
 RUN printf '#!/bin/sh\nXvfb :99 -screen 0 1280x1024x24 &\nexec "$@"\n' > /tmp/entrypoint \
   && chmod +x /tmp/entrypoint \
         && sudo mv /tmp/entrypoint /docker-entrypoint.sh
-
-COPY tools/uglifyjs-pathfix /usr/local/bin/uglifyjs
 
 # ensure that the build agent doesn't override the entrypoint
 LABEL com.circleci.preserve-entrypoint=true

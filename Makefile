@@ -27,7 +27,7 @@ LDFLAGS=\
 	$(CPYTHONROOT)/installs/python-$(PYVERSION)/lib/libpython$(PYMINOR).a \
 	$(LZ4LIB) \
 	-s "BINARYEN_METHOD='native-wasm'" \
-	-s TOTAL_MEMORY=5242880 \
+	-s TOTAL_MEMORY=10485760 \
 	-s ALLOW_MEMORY_GROWTH=1 \
 	-s MAIN_MODULE=1 \
 	-s EMULATED_FUNCTION_POINTERS=1 \
@@ -97,13 +97,13 @@ build/pyodide.asm.data: root/.built
 
 build/pyodide_dev.js: src/pyodide.js
 	cp $< $@
-	sed -i -e "s#{{DEPLOY}}##g" $@
+	sed -i -e "s#{{DEPLOY}}#./#g" $@
 	sed -i -e "s#{{ABI}}#$(PYODIDE_PACKAGE_ABI)#g" $@
 
 
 build/pyodide.js: src/pyodide.js
 	cp $< $@
-	sed -i -e 's#{{DEPLOY}}#https://pyodide.cdn.iodide.io/#g' $@
+	sed -i -e 's#{{DEPLOY}}#https://pyodide-cdn2.iodide.io/v0.15.0/full/#g' $@
 
 	sed -i -e "s#{{ABI}}#$(PYODIDE_PACKAGE_ABI)#g" $@
 
@@ -121,11 +121,11 @@ build/renderedhtml.css: src/renderedhtml.less
 
 build/webworker.js: src/webworker.js
 	cp $< $@
-	sed -i -e 's#{{DEPLOY}}#https://pyodide.cdn.iodide.io/#g' $@
+	sed -i -e 's#{{DEPLOY}}#https://pyodide-cdn2.iodide.io/v0.15.0/full/#g' $@
 
 build/webworker_dev.js: src/webworker.js
 	cp $< $@
-	sed -i -e "s#{{DEPLOY}}##g" $@
+	sed -i -e "s#{{DEPLOY}}#./#g" $@
 	sed -i -e "s#pyodide.js#pyodide_dev.js#g" $@
 
 test: all

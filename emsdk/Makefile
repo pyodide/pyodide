@@ -13,10 +13,7 @@ emsdk/.complete:
 		(cat patches/*.patch | patch -p1) && \
 		cd emsdk/binaryen/tag-$(EMSCRIPTEN_VERSION)_64bit_binaryen/ && \
     make && \
-	  cd ../../.. && \
-		cd emsdk/fastcomp-clang/tag-e$(EMSCRIPTEN_VERSION)/build_tag-e$(EMSCRIPTEN_VERSION)_64/ && \
-    make && \
-    cd ../../.. && \
+	  cd ../.. && \
 		./emsdk activate --embedded --build=Release sdk-fastcomp-tag-$(EMSCRIPTEN_VERSION)-64bit binaryen-tag-$(EMSCRIPTEN_VERSION)-64bit && \
     touch .complete \
 	)
