@@ -1,20 +1,11 @@
-FROM circleci/python:3.7.0-stretch
+FROM circleci/python:3.7.7-buster
 
-# We need at least g++-8, but stretch comes with g++-6
-# Set up the Debian testing repo, and then install g++ from there...
-RUN sudo bash -c "echo \"deb http://ftp.us.debian.org/debian testing main contrib non-free\" >> /etc/apt/sources.list" \
-  && sudo apt-get update \
+RUN sudo apt-get update \
   # bzip2 and libgconf-2-4 are necessary for extracting firefox and running chrome, respectively
   && sudo apt-get install bzip2 libgconf-2-4 node-less cmake build-essential clang-format-6.0 \
-                  uglifyjs chromium ccache libncurses6 gfortran f2c swig \
-  && sudo apt-get install -t testing g++-8 \
-  && sudo update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-6 60 --slave /usr/bin/g++ g++ /usr/bin/g++-6 \
-  && sudo update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-8 80 --slave /usr/bin/g++ g++ /usr/bin/g++-8 \
-  && sudo update-alternatives --set gcc /usr/bin/gcc-8 \
+                  uglifyjs chromium ccache libncurses6 gfortran f2c swig g++-8 \
   && sudo apt-get clean \
   && sudo apt-get autoremove \
-  && sudo ln -s /usr/bin/clang-format-6.0 /usr/bin/clang-format \
-  && sudo bash -c "echo 'application/wasm wasm' >> /etc/mime.types" \
   && test "Comment: Hardcode nodejs path for uglifyjs, so it doesn't conflict with emcc's nodejs" \
   && test $(which node) = /usr/bin/node && test $(which uglifyjs) = /usr/bin/uglifyjs \
   && echo '#!/bin/sh -e\nexec /usr/bin/node /usr/bin/uglifyjs "$@"' >/tmp/uglifyjs \
