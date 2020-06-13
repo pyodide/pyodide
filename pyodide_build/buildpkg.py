@@ -46,7 +46,8 @@ def download_and_extract(buildpath, packagedir, pkg, args):
         return srcpath
 
     if 'url' in pkg['source']:
-        tarballpath = buildpath / Path(pkg['source']['url']).name
+        tarballname = Path(pkg['source']['url']).name
+        tarballpath = buildpath / tarballname
         if not tarballpath.is_file():
             try:
                 subprocess.run([
@@ -60,6 +61,12 @@ def download_and_extract(buildpath, packagedir, pkg, args):
         if not srcpath.is_dir():
             shutil.unpack_archive(str(tarballpath), str(buildpath))
 
+        for extension in ['.tar.gz', '.tgz', '.tar', '.tar.bz2', '.tbz2', '.tar.xz', '.txz', '.zip']:
+            if tarballname.endswith(extension):
+                tarballname = tarballname[:-len(extension)]
+                break
+
+        return buildpath / tarballname
     elif 'path' in pkg['source']:
         srcdir = Path(pkg['source']['path'])
 
@@ -68,10 +75,10 @@ def download_and_extract(buildpath, packagedir, pkg, args):
 
         if not srcpath.is_dir():
             shutil.copytree(srcdir, srcpath)
+
+        return srcpath
     else:
         raise ValueError('Incorrect source provided')
-
-    return srcpath
 
 
 def patch(path, srcpath, pkg, args):
