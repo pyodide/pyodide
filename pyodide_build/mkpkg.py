@@ -75,7 +75,7 @@ def make_package(package, version=None):
 def make_parser(parser):
     parser.description = '''
 Make a new pyodide package. Creates a simple template that will work
-for most pure Python packages, but will have to be edited for more wv
+for most pure Python packages, but will have to be edited for more
 complex things.'''.strip()
     parser.add_argument(
         'package', type=str, nargs=1,
