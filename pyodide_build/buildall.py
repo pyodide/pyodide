@@ -9,7 +9,6 @@ import json
 from pathlib import Path
 import shutil
 
-
 from . import common
 from . import buildpkg
 
@@ -33,7 +32,27 @@ def build_packages(packagesdir, outputdir, args):
     # so first load in all of the package metadata and build a dependency map.
     dependencies = {}
     import_name_to_package_name = {}
+    included_packages = common._parse_package_subset(args.only)
+    if included_packages is not None:
+        # check that the specified packages exist
+        for name in included_packages:
+            if not (packagesdir / name).exists():
+                raise ValueError(
+                    f'package name {name} does not exist. '
+                    f'The value of PYODIDE_PACKAGES is likely incorrect.'
+                )
+
     for pkgdir in packagesdir.iterdir():
+        if (
+            included_packages is not None
+            and pkgdir.name not in included_packages
+        ):
+            print(
+                f"Warning: skiping build of {pkgdir.name} due "
+                f"to specified PYODIDE_PACKAGES"
+            )
+            continue
+
         pkgpath = pkgdir / 'meta.yaml'
         if pkgdir.is_dir() and pkgpath.is_file():
             pkg = common.parse_package(pkgpath)
@@ -60,7 +79,10 @@ def build_packages(packagesdir, outputdir, args):
 
 
 def make_parser(parser):
-    parser.description = "Build all of the packages in a given directory"
+    parser.description = (
+        "Build all of the packages in a given directory\n\n"
+        "Unless the --only option is provided"
+    )
     parser.add_argument(
         'dir', type=str, nargs=1,
         help='Input directory containing a tree of package definitions')
@@ -82,6 +104,10 @@ def make_parser(parser):
     parser.add_argument(
         '--target', type=str, nargs='?', default=common.TARGETPYTHON,
         help='The path to the target Python installation')
+    parser.add_argument(
+        '--only', type=str, nargs='?', default=None,
+        help=('Only build the specified packages, provided as a comma '
+              'separated list'))
     return parser
 
 

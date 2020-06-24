@@ -36,10 +36,11 @@ def get_sdist_url_entry(json_content):
     ))
 
 
-def make_package(package):
+def make_package(package, version=None):
     import yaml
 
-    url = f'https://pypi.org/pypi/{package}/json'
+    version = ('/' + version) if version is not None else ''
+    url = f"https://pypi.org/pypi/{package}{version}/json"
 
     with urllib.request.urlopen(url) as fd:
         json_content = json.load(fd)
@@ -74,17 +75,21 @@ def make_package(package):
 def make_parser(parser):
     parser.description = '''
 Make a new pyodide package. Creates a simple template that will work
-for most pure Python packages, but will have to be edited for more wv
+for most pure Python packages, but will have to be edited for more
 complex things.'''.strip()
     parser.add_argument(
         'package', type=str, nargs=1,
         help="The package name on PyPI")
+    parser.add_argument(
+        '--version', type=str, default=None,
+        help="Package version string, "
+             "e.g. v1.2.1 (defaults to latest stable release)")
     return parser
 
 
 def main(args):
     package = args.package[0]
-    make_package(package)
+    make_package(package, args.version)
 
 
 if __name__ == '__main__':

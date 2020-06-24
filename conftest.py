@@ -26,6 +26,8 @@ import selenium.webdriver.common.utils  # noqa: E402
 
 selenium.webdriver.common.utils.is_connectable = _selenium_is_connectable
 
+collect_ignore_glob = ['packages/*/*/*']
+
 try:
     import pytest
 
@@ -97,7 +99,10 @@ class SeleniumWrapper:
     @property
     def logs(self):
         logs = self.driver.execute_script("return window.logs")
-        return '\n'.join(str(x) for x in logs)
+        if logs is not None:
+            return '\n'.join(str(x) for x in logs)
+        else:
+            return ""
 
     def clean_logs(self):
         self.driver.execute_script("window.logs = []")
