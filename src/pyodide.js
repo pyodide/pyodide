@@ -462,4 +462,24 @@ var languagePluginLoader = new Promise((resolve, reject) => {
     });
   }
 });
+function _getAllPythonScripts() {
+    var scripts = document.getElementsByTagName('script');
+    var pythonScripts = [];
+    for(var i = 0; i < scripts.length; i++) {
+        var script = scripts[i]
+        if(script.type === "text/python" || script.type === "text/python3") {
+            pythonScripts.push(script);
+        }
+    }
+    return pythonScripts;
+}
+function pyodide_main() {
+    var pythonScripts = _getAllPythonScripts();
+    languagePluginLoader.then(() => {
+      // pyodide is now ready to use...
+      for (var pyScript of pythonScripts) {
+        pyodide.runPython(pyScript.text)
+      }
+    });
+}
 languagePluginLoader
