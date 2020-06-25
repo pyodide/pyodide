@@ -467,7 +467,7 @@ function _getAllPythonScripts() {
   var pythonScripts = [];
   for(var i = 0; i < scripts.length; i++) {
     var script = scripts[i]
-    if(script.type === "text/python" || script.type === "text/python3") {
+    if (script.type === "text/python") {
       pythonScripts.push(script);
     }
   }
