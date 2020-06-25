@@ -465,7 +465,7 @@ var languagePluginLoader = new Promise((resolve, reject) => {
 function _getAllPythonScripts() {
   var scripts = document.getElementsByTagName('script');
   var pythonScripts = [];
-  for(var i = 0; i < scripts.length; i++) {
+  for (var i = 0; i < scripts.length; i++) {
     var script = scripts[i]
     if (script.type === "text/python") {
       pythonScripts.push(script);
