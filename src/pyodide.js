@@ -463,23 +463,39 @@ var languagePluginLoader = new Promise((resolve, reject) => {
   }
 });
 function _getAllPythonScripts() {
-    var scripts = document.getElementsByTagName('script');
-    var pythonScripts = [];
-    for(var i = 0; i < scripts.length; i++) {
-        var script = scripts[i]
-        if(script.type === "text/python" || script.type === "text/python3") {
-            pythonScripts.push(script);
-        }
+  var scripts = document.getElementsByTagName('script');
+  var pythonScripts = [];
+  for(var i = 0; i < scripts.length; i++) {
+    var script = scripts[i]
+    if(script.type === "text/python" || script.type === "text/python3") {
+      pythonScripts.push(script);
     }
-    return pythonScripts;
+  }
+  return pythonScripts;
+}
+function _downloadPythonScript(url, callback) {
+  var request = new XMLHttpRequest();
+  request.open('GET', url);
+  request.responseType = 'text';
+  request.onload = function() {
+    callback(request.response);
+  };
+  request.send();
 }
 function pyodide_main() {
-    var pythonScripts = _getAllPythonScripts();
-    languagePluginLoader.then(() => {
-      // pyodide is now ready to use...
-      for (var pyScript of pythonScripts) {
+  var pythonScripts = _getAllPythonScripts();
+  languagePluginLoader.then(() => {
+    // pyodide is now ready to use...
+    for (var pyScript of pythonScripts) {
+      if (pyScript.src !== undefined && pyScript.src !== "") {
+        // Load script and run
+        _downloadPythonScript(pyScript.src, function (text) {
+            pyodide.runPython(text);
+        });
+      } else {
         pyodide.runPython(pyScript.text)
       }
-    });
+    }
+  });
 }
 languagePluginLoader
