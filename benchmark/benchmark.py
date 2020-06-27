@@ -118,7 +118,7 @@ def main(hostpython):
         print_entry("selenium init", b)
 
         # load packages
-        for package_name in ["numpy", "scipy"]:
+        for package_name in ["numpy"]:
             b = {'native': float('NaN')}
             for browser_name, cls in browser_cls:
                 selenium = cls(port)
