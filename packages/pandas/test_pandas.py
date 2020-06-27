@@ -6,7 +6,7 @@ def test_pandas(selenium, request):
         request.applymarker(pytest.mark.xfail(
             run=False, reason='chrome not supported'))
     selenium.load_package("pandas")
-    assert len(selenium.run("import pandas\ndir(pandas)")) == 140
+    assert len(selenium.run("import pandas\ndir(pandas)")) == 142
 
 
 def test_extra_import(selenium, request):
