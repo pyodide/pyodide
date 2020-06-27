@@ -6,7 +6,7 @@ Thank you for your interest in contributing to PYODIDE! There are many ways to c
 
 See [building from sources](./building_from_sources.html) and [testing](./testing.html) documentation.
 
-For code-style the use of pre-commit is also recommended,
+For code-style the use of [pre-commit](https://pre-commit.com/) is also recommended,
 ```
 pip install pre-commit
 pre-commit install
