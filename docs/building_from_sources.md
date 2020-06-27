@@ -56,7 +56,7 @@ If running ``make`` deterministically stops at one point in each subsequent try,
 the maximum RAM usage available to the docker container might help [This is different
 from the physical RAM capacity inside the system]. Ideally, at least 3 GB of RAM
 should be available to the docker container to build `pyodide` smoothly. These settings can
-be changed via Docker Preferences [See [here](https://stackoverflow.com/questions/44533319/how-to-assign-more-memory-to-docker-container)].
+be changed via Docker Preferences (See [here](https://stackoverflow.com/questions/44533319/how-to-assign-more-memory-to-docker-container)).
 
 You can edit the files in your source checkout on your host machine, and then
 repeatedly run `make` inside the Docker environment to test your changes.
@@ -81,3 +81,8 @@ micropip and package is generally always included for any non empty value of
 
 If scipy is included in `PYODIDE_PACKAGES`, BLAS/LAPACK must be manually built
 first with `make -c CLAPACK`.
+
+## Environement variables
+
+Following environment variables additionally impact the build,
+ - `PYODIDE_JOBS`: the `-j` option passed to the `emmake make` command when applicable for parallel compilation. Default: 3.
