@@ -61,7 +61,16 @@ def download_and_extract(buildpath, packagedir, pkg, args):
         if not srcpath.is_dir():
             shutil.unpack_archive(str(tarballpath), str(buildpath))
 
-        for extension in ['.tar.gz', '.tgz', '.tar', '.tar.bz2', '.tbz2', '.tar.xz', '.txz', '.zip']:
+        for extension in [
+            '.tar.gz',
+            '.tgz',
+            '.tar',
+            '.tar.bz2',
+            '.tbz2',
+            '.tar.xz',
+            '.txz',
+            '.zip'
+        ]:
             if tarballname.endswith(extension):
                 tarballname = tarballname[:-len(extension)]
                 break

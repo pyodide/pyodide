@@ -7,9 +7,12 @@ from pyodide_build import buildpkg, common
 
 
 def test_download_and_extract(monkeypatch):
-    monkeypatch.setattr(subprocess, 'run', lambda *args, **kwargs: True)
-    monkeypatch.setattr(buildpkg, 'check_checksum', lambda *args, **kwargs: True)
-    monkeypatch.setattr(shutil, 'unpack_archive', lambda *args, **kwargs: True)
+    monkeypatch.setattr(subprocess, 'run',
+                        lambda *args, **kwargs: True)
+    monkeypatch.setattr(buildpkg, 'check_checksum',
+                        lambda *args, **kwargs: True)
+    monkeypatch.setattr(shutil, 'unpack_archive',
+                        lambda *args, **kwargs: True)
 
     test_pkgs = []
 
@@ -26,7 +29,11 @@ def test_download_and_extract(monkeypatch):
     for pkg in test_pkgs:
         packagedir = pkg['package']['name'] + '-' + pkg['package']['version']
         buildpath = Path(pkg['package']['name']) / 'build'
-        srcpath = buildpkg.download_and_extract(buildpath, packagedir, pkg, args=None)
+        srcpath = buildpkg.download_and_extract(
+            buildpath,
+            packagedir,
+            pkg,
+            args=None
+        )
 
         assert srcpath.name in pkg['source']['url']
-
