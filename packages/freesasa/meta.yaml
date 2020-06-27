@@ -1,0 +1,9 @@
+package:
+  name: freesasa
+  version: 2.0.5.post2
+source:
+  sha256: 742ab294028ca3892bb3d6c36d59f7c4f3874357571d4cd3cb0705d2f98a201f
+  url: https://files.pythonhosted.org/packages/2b/99/a3e11d5cfe3e8f54ff721acfa75fa62a97ffc572a2b4ba6bfb022cc02526/freesasa-2.0.5.post2.tar.gz
+test:
+  imports:
+  - freesasa
