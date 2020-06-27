@@ -7,7 +7,7 @@
 - micropip no longer uses a CORS proxy to install pure Python packages from
   PyPi. Packages are now installed from PyPi directly.
 - micropip can now be used from web workers.
-- Adds support for installing pure Python wheels from arbitrary URLs with micropip. 
+- Adds support for installing pure Python wheels from arbitrary URLs with micropip.
 - The CDN URL for pyodide changed to
   https://pyodide-cdn2.iodide.io/v0.15.0/full/pyodide.js
   It now supports versioning and should provide faster downloads. The latest release
