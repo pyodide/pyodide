@@ -6,6 +6,13 @@ Thank you for your interest in contributing to PYODIDE! There are many ways to c
 
 See [building from sources](./building_from_sources.html) and [testing](./testing.html) documentation.
 
+For code-style the use of pre-commit is also recommended,
+```
+pip install pre-commit
+pre-commit install
+```
+This will run a set of linters at each commit. Currently it runs yaml syntax validation and is removing trailing whitespaces.
+
 ## Code of Conduct
 
 PYODIDE has adopted a [Code of Conduct](code-of-conduct.html) that we expect all contributors and core members to adhere to.
