@@ -68,4 +68,6 @@ def test_install_custom_url(selenium_standalone, web_server_secondary):
     base_url = f'http://{server_hostname}:{server_port}/test/data/'
     url = base_url + 'snowballstemmer-2.0.0-py2.py3-none-any.whl'
     selenium_standalone.run(f"micropip.install('{url}')")
+    # wait untill micropip is loaded
+    time.sleep(1)
     selenium_standalone.run("import snowballstemmer")
