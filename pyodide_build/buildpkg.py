@@ -10,6 +10,7 @@ import os
 from pathlib import Path
 import shutil
 import subprocess
+from datetime import datetime
 
 
 from . import common
@@ -193,7 +194,12 @@ def needs_rebuild(pkg, path, buildpath):
 
 def build_package(path, args):
     pkg = common.parse_package(path)
-    packagedir = pkg['package']['name'] + '-' + pkg['package']['version']
+    name = pkg['package']['name']
+    t0 = datetime.now()
+    print("[{}] Building package {}...".format(
+        t0.strftime('%Y-%m-%d %H:%M:%S'), name)
+    )
+    packagedir = name + '-' + pkg['package']['version']
     dirpath = path.parent
     orig_path = Path.cwd()
     os.chdir(dirpath)
@@ -211,6 +217,10 @@ def build_package(path, args):
         package_files(buildpath, srcpath, pkg, args)
     finally:
         os.chdir(orig_path)
+        t1 = datetime.now()
+        print("[{}] done building package {} in {:.1f} s.".format(
+            t1.strftime('%Y-%m-%d %H:%M:%S'), name, (t1 - t0).total_seconds()
+        ))
 
 
 def make_parser(parser):
