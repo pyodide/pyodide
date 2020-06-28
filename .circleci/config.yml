@@ -19,7 +19,7 @@ jobs:
           command: |
             pip install black
             make lint
-            black --check .
+            black --check --exclude tools/file_packager.py .
   build:
     <<: *defaults
     steps:
