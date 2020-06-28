@@ -195,8 +195,9 @@ def needs_rebuild(pkg, path, buildpath):
 def build_package(path, args):
     pkg = common.parse_package(path)
     name = pkg['package']['name']
+    t0 = datetime.now()
     print("[{}] Building package {}...".format(
-        datetime.now().strftime('%Y-%m-%d %H:%M:%S'), name)
+        t0.strftime('%Y-%m-%d %H:%M:%S'), name)
     )
     packagedir = name + '-' + pkg['package']['version']
     dirpath = path.parent
@@ -216,8 +217,9 @@ def build_package(path, args):
         package_files(buildpath, srcpath, pkg, args)
     finally:
         os.chdir(orig_path)
-        print("[{}] done building package {}.".format(
-            datetime.now().strftime('%Y-%m-%d %H:%M:%S'), name
+        t1 = datetime.now()
+        print("[{}] done building package {} in {:.1} s.".format(
+            t1.strftime('%Y-%m-%d %H:%M:%S'), name, (t1 - t0).total_seconds()
         ))
 
 
