@@ -77,10 +77,12 @@ all: check \
 build/pyodide.asm.js: src/main.bc src/jsimport.bc src/jsproxy.bc src/js2python.bc \
 		src/pyimport.bc src/pyproxy.bc src/python2js.bc src/python2js_buffer.bc \
 		src/runpython.bc src/hiwire.bc
+	date +"[%F %T] Building pyodide.asm.js..."
 	[ -d build ] || mkdir build
 	$(CXX) -s EXPORT_NAME="'pyodide'" -o build/pyodide.asm.html $(filter %.bc,$^) \
 		$(LDFLAGS) -s FORCE_FILESYSTEM=1
 	rm build/pyodide.asm.html
+	date +"[%F %T] done building pyodide.asm.js."
 
 
 env:
@@ -247,9 +249,9 @@ $(JEDI_LIBS): $(CPYTHONLIB)
 
 
 $(PARSO_LIBS): $(CPYTHONLIB)
-	date +"[%F %T] Building libxml..."
+	date +"[%F %T] Building parso..."
 	make -C parso
-	date +"[%F %T] done building libxml."
+	date +"[%F %T] done building parso."
 
 
 $(CLAPACK): $(CPYTHONLIB)
