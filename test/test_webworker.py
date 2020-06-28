@@ -6,7 +6,7 @@ def test_runwebworker(selenium_standalone):
         str(x)
         """
     )
-    assert output == '[0. 0. 0. 0. 0.]'
+    assert output == "[0. 0. 0. 0. 0.]"
 
 
 def test_runwebworker_different_package_name(selenium_standalone):
@@ -80,4 +80,4 @@ def test_runwebworker_micropip(selenium_standalone):
         micropip.install('snowballstemmer').then(stem)
         """
     )
-    assert output == 'go'
+    assert output == "go"

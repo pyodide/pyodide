@@ -6,9 +6,9 @@ import numpy as np
 
 
 def kernel(zr, zi, cr, ci, lim, cutoff):
-    ''' Computes the number of iterations `n` such that
+    """ Computes the number of iterations `n` such that
         |z_n| > `lim`, where `z_n = z_{n-1}**2 + c`.
-    '''
+    """
     count = 0
     while ((zr * zr + zi * zi) < (lim * lim)) and count < cutoff:
         zr, zi = zr * zr - zi * zi + cr, 2 * zr * zi + ci
@@ -16,10 +16,10 @@ def kernel(zr, zi, cr, ci, lim, cutoff):
     return count
 
 
-def julia(cr, ci, N, bound=1.5, lim=1000., cutoff=1e6):
-    ''' Pure Python calculation of the Julia set for a given `c`.  No NumPy
+def julia(cr, ci, N, bound=1.5, lim=1000.0, cutoff=1e6):
+    """ Pure Python calculation of the Julia set for a given `c`.  No NumPy
         array operations are used.
-    '''
+    """
     julia = np.empty((N, N), np.uint32)
     grid_x = np.linspace(-bound, bound, N)
     for i, x in enumerate(grid_x):

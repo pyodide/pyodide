@@ -7,8 +7,8 @@
 
 def harris(X):
     m, n = X.shape
-    dx = (X[1:, :] - X[:m - 1, :])[:, 1:]
-    dy = (X[:, 1:] - X[:, :n - 1])[1:, :]
+    dx = (X[1:, :] - X[: m - 1, :])[:, 1:]
+    dy = (X[:, 1:] - X[:, : n - 1])[1:, :]
 
     #
     #   At each point we build a matrix
