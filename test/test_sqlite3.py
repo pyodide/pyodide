@@ -1,5 +1,6 @@
 def test_sqlite3(selenium):
-    content = selenium.run("""
+    content = selenium.run(
+        """
         import sqlite3
 
         with sqlite3.connect(':memory:') as conn:
@@ -14,9 +15,10 @@ def test_sqlite3(selenium):
             c.execute("INSERT INTO people VALUES ('Jane', 'Smith')")
             c.execute("INSERT INTO people VALUES ('Michael', 'Jordan')")
             c.execute("SELECT * FROM people")
-    """)
+    """
+    )
     content = selenium.run("c.fetchall()")
     assert len(content) == 3
-    assert content[0][0] == 'John'
-    assert content[1][0] == 'Jane'
-    assert content[2][0] == 'Michael'
+    assert content[0][0] == "John"
+    assert content[1][0] == "Jane"
+    assert content[2][0] == "Michael"

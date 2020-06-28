@@ -135,7 +135,8 @@ test: all
 
 
 lint:
-	flake8 src test tools pyodide_build benchmark
+	# check for unused imports, the rest is done by black
+	flake8 --select=F401 src test tools pyodide_build benchmark
 	clang-format -output-replacements-xml src/*.c src/*.h src/*.js | (! grep '<replacement ')
 
 
