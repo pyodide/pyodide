@@ -218,7 +218,7 @@ def build_package(path, args):
     finally:
         os.chdir(orig_path)
         t1 = datetime.now()
-        print("[{}] done building package {} in {:.1} s.".format(
+        print("[{}] done building package {} in {:.1f} s.".format(
             t1.strftime('%Y-%m-%d %H:%M:%S'), name, (t1 - t0).total_seconds()
         ))
 
