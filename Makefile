@@ -223,23 +223,33 @@ $(PYODIDE_CXX):
 
 
 $(CPYTHONLIB): emsdk/emsdk/.complete $(PYODIDE_EMCC) $(PYODIDE_CXX)
+	date +"[%F %T] Building cpython..."
 	make -C $(CPYTHONROOT)
+	date +"[%F %T] done building cpython..."
 
 
 $(LZ4LIB):
+	date +"[%F %T] Building lz4..."
 	make -C lz4
+	date +"[%F %T] done building lz4."
 
 
 $(SIX_LIBS): $(CPYTHONLIB)
+	date +"[%F %T] Building six..."
 	make -C six
+	date +"[%F %T] done building six."
 
 
 $(JEDI_LIBS): $(CPYTHONLIB)
+	date +"[%F %T] Building jedi..."
 	make -C jedi
+	date +"[%F %T] done building jedi."
 
 
 $(PARSO_LIBS): $(CPYTHONLIB)
+	date +"[%F %T] Building libxml..."
 	make -C parso
+	date +"[%F %T] done building libxml."
 
 
 $(CLAPACK): $(CPYTHONLIB)
@@ -249,16 +259,22 @@ ifdef PYODIDE_PACKAGES
 	mkdir -p CLAPACK/CLAPACK-WA/
 	touch $(CLAPACK)
 else
+	date +"[%F %T] Building CLAPACK..."
 	make -C CLAPACK
+	date +"[%F %T] done building CLAPACK."
 endif
 
 
 
 build/packages.json: $(CLAPACK) FORCE
+	date +"[%F %T] Building packages..."
 	make -C packages
+	date +"[%F %T] done building packages..."
 
 emsdk/emsdk/.complete:
+	date +"[%F %T] Building emsdk..."
 	make -C emsdk
+	date +"[%F %T] done building emsdk."
 
 FORCE:
 
