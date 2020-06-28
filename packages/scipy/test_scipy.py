@@ -6,12 +6,12 @@ import pytest
 def test_scipy_linalg(selenium_standalone, request):
     selenium = selenium_standalone
 
-    if selenium.browser == 'chrome':
-        request.applymarker(pytest.mark.xfail(
-            run=False, reason='chrome not supported'))
+    if selenium.browser == "chrome":
+        request.applymarker(pytest.mark.xfail(run=False, reason="chrome not supported"))
 
     selenium.load_package("scipy")
-    cmd = dedent(r"""
+    cmd = dedent(
+        r"""
         import numpy as np
         import scipy as sp
         import scipy.linalg
@@ -26,7 +26,8 @@ def test_scipy_linalg(selenium_standalone, request):
 
         assert_allclose(res, np.identity(N),
                         rtol=1e-07, atol=1e-9)
-        """)
+        """
+    )
 
     selenium.run(cmd)
 

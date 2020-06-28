@@ -9,14 +9,14 @@ def physics(masspoints, dt, plunk, which):
     cpos = masspoints[0]
     N = cpos.shape[0]
     # apply hooke's law
-    HOOKE_K = 2100000.
+    HOOKE_K = 2100000.0
     DAMPING = 0.0001
-    MASS = .01
+    MASS = 0.01
 
     force = np.zeros((N, 2))
     for i in range(1, N):
         dx, dy = cpos[i] - cpos[i - 1]
-        dist = np.sqrt(dx**2 + dy**2)
+        dist = np.sqrt(dx ** 2 + dy ** 2)
         assert dist != 0
         fmag = -HOOKE_K * dist
         cosine = dx / dist
@@ -30,10 +30,11 @@ def physics(masspoints, dt, plunk, which):
     accel = force / MASS
 
     # verlet integration
-    npos = (2 - DAMPING) * cpos - (1 - DAMPING) * ppos + accel * (dt**2)
+    npos = (2 - DAMPING) * cpos - (1 - DAMPING) * ppos + accel * (dt ** 2)
 
     masspoints[1] = cpos
     masspoints[0] = npos
+
 
 # pythran export wave(int)
 
@@ -52,5 +53,5 @@ def wave(PARTICLE_COUNT):
     masspoints[:, :, 1] = height / 2
     f = 15
     plunk_pos = count // 2
-    physics(masspoints, 1. / (SUBDIVISION * FRAMERATE), f, plunk_pos)
+    physics(masspoints, 1.0 / (SUBDIVISION * FRAMERATE), f, plunk_pos)
     return masspoints[0, count // 2]
