@@ -11,7 +11,13 @@
 
 EM_JS(void, hiwire_setup, (), {
   // These ids must match the constants above, but we can't use them from JS
-  var hiwire = { objects : {}, counter : 1 };
+  var hiwire = {
+    objects : {},
+    recycle : [],
+    counter : 1
+  };
+
+  // Negative objects are never removed!
   hiwire.objects[-2] = undefined;
   hiwire.objects[-3] = true;
   hiwire.objects[-4] = false;
@@ -20,12 +26,22 @@ EM_JS(void, hiwire_setup, (), {
   Module.hiwire_new_value = function(jsval)
   {
     var objects = hiwire.objects;
-    while (hiwire.counter in objects) {
+    var idval;
+
+    // Check if recycled id is available
+    if (hiwire.recycle.length > 0) {
+      idval = hiwire.recycle.shift();
+      objects[idval] = jsval;
+    }
+    else {
+      while (hiwire.counter in objects) {
+        hiwire.counter = (hiwire.counter + 1) & 0x7fffffff;
+      }
+      idval = hiwire.counter;
+      objects[idval] = jsval;
       hiwire.counter = (hiwire.counter + 1) & 0x7fffffff;
     }
-    var idval = hiwire.counter;
-    objects[idval] = jsval;
-    hiwire.counter = (hiwire.counter + 1) & 0x7fffffff;
+
     return idval;
   };
 
@@ -38,6 +54,7 @@ EM_JS(void, hiwire_setup, (), {
     }
     var objects = hiwire.objects;
     delete objects[idval];
+    hiwire.recycle.push(idval);
   };
 });
 
