@@ -8,6 +8,8 @@ ROOT=$(abspath .)
 SRC=$(ROOT)/libxml2-$(LIBXMLVERSION)
 TARBALL=$(ROOT)/downloads/libxml-$(LIBXMLVERSION).tgz
 URL=ftp://xmlsoft.org/libxml2/libxml2-$(LIBXMLVERSION).tar.gz
+LIBICONV_DIR=$(ROOT)/../libiconv/libiconv-1.16/lib/.libs
+LIBZ_DIR=$(ROOT)/../zlib/zlib-1.2.11
 
 
 all: $(SRC)/.libs/libxml2.a
@@ -28,10 +30,15 @@ $(SRC)/Makefile: $(TARBALL)
 	tar -C . -xf $(TARBALL)
 	touch $(SRC)/Makefile
 
-
+# Configure as https://github.com/lxml/lxml/blob/lxml-4.4/buildlibxml.py
 $(SRC)/.libs/libxml2.a: $(SRC)/Makefile
 	( \
 		cd $(SRC) ; \
-		emconfigure ./configure --with-python=${PYODIDE_ROOT}/cpython/build/${PYVERSION}/host/include/python3.7m/ ; \
+		emconfigure ./configure \
+			--disable-dependency-tracking \
+			--disable-shared \
+			--without-python \
+			--with-iconv=$(LIBICONV_DIR) \
+			--with-zlib=$(LIBZ_DIR) ; \
 		emmake make -j $${PYODIDE_JOBS:-3} ; \
 	)

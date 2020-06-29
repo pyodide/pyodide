@@ -29,9 +29,12 @@ $(SRC)/Makefile: $(TARBALL)
 	touch $(SRC)/Makefile
 
 
+# Configure as https://github.com/lxml/lxml/blob/lxml-4.4/buildlibxml.py
 $(SRC)/libiconv.a: $(SRC)/Makefile
 	( \
 		cd $(SRC) ; \
-		emconfigure ./configure ; \
+		emconfigure ./configure \
+			--disable-dependency-tracking \
+			--disable-shared ; \
 		emmake make -j $${PYODIDE_JOBS:-3} ; \
 	)

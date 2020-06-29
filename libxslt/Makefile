@@ -24,15 +24,18 @@ $(TARBALL):
 	sha256sum --quiet --check checksums || (rm $@; false)
 
 
+# Configure as https://github.com/lxml/lxml/blob/lxml-4.4/buildlibxml.py
 $(SRC)/Makefile: $(TARBALL)
 	tar -C . -xf $(TARBALL)
 	touch $(SRC)/Makefile
 	( \
 		cd $(SRC) ; \
-		emconfigure ./configure	\
-			--with-python=${PYODIDE_ROOT}/cpython/build/${PYVERSION}/host/include/python3.7m/ \
-			--with-libxml-include-prefix=${PYODIDE_ROOT}/libxml/libxml2-2.9.9/include/ \
-			--with-libxml-libs-prefix=${PYODIDE_ROOT}/libxml/libxml2-2.9.9/.libs/ ; \
+		emconfigure ./configure \
+			--disable-dependency-tracking \
+			--disable-shared \
+			--without-python \
+			--with-libxml-src=${PYODIDE_ROOT}/libxml/libxml2-2.9.9 \
+			--without-crypto ; \
 	)
 
 
