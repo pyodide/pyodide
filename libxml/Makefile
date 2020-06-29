@@ -33,5 +33,5 @@ $(SRC)/.libs/libxml2.a: $(SRC)/Makefile
 	( \
 		cd $(SRC) ; \
 		emconfigure ./configure --with-python=${PYODIDE_ROOT}/cpython/build/${PYVERSION}/host/include/python3.7m/ ; \
-		emmake make ; \
+		emmake make -j $${PYODIDE_JOBS:-3} ; \
 	)

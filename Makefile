@@ -243,14 +243,20 @@ $(LZ4LIB):
 
 
 $(LIBXML): $(CPYTHONLIB)
+	date +"[%F %T] Building libxml..."
 	make -C libxml
+	date +"[%F %T] done building libxml..."
 
 
 $(LIBXSLT): $(CPYTHONLIB) $(LIBXML)
+	date +"[%F %T] Building libxslt..."
 	make -C libxslt
+	date +"[%F %T] done building libxslt..."
 
 $(LIBICONV):
+	date +"[%F %T] Building libiconv..."
 	make -C libiconv
+	date +"[%F %T] done building libiconv..."
 
 
 $(SIX_LIBS): $(CPYTHONLIB)

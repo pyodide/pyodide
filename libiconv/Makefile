@@ -33,5 +33,5 @@ $(SRC)/libiconv.a: $(SRC)/Makefile
 	( \
 		cd $(SRC) ; \
 		emconfigure ./configure ; \
-		emmake make ; \
+		emmake make -j $${PYODIDE_JOBS:-3} ; \
 	)

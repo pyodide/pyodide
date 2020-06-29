@@ -39,5 +39,5 @@ $(SRC)/Makefile: $(TARBALL)
 $(SRC)/libxslt/.libs/libxslt.a: $(SRC)/Makefile
 	( \
 		cd $(SRC) ; \
-		emmake make ; \
+		emmake make -j $${PYODIDE_JOBS:-3} ; \
 	)
