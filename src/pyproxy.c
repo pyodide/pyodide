@@ -124,7 +124,7 @@ _pyproxy_destroy(int ptrobj)
   EM_ASM(delete Module.PyProxies[ptrobj];);
 }
 
-EM_JS(int, pyproxy_new, (int ptrobj), {
+EM_JS(int, pyproxy_use, (int ptrobj), {
   // Proxies we've already created are just returned again, so that the
   // same object on the Python side is always the same object on the
   // Javascript side.
@@ -138,6 +138,10 @@ EM_JS(int, pyproxy_new, (int ptrobj), {
     return Module.hiwire_new_value(Module.PyProxies[ptrobj]);
   }
 
+  return -2; /* this means HW_UNDEFINED */
+})
+
+EM_JS(int, pyproxy_new, (int ptrobj), {
   var target = function(){};
   target['$$'] = { ptr : ptrobj, type : 'PyProxy' };
   var proxy = new Proxy(target, Module.PyProxy);
