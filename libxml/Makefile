@@ -1,7 +1,7 @@
 PYODIDE_ROOT=$(abspath ..)
 include ../Makefile.envs
 
-LIBXMLVERSION=2.9.9
+LIBXMLVERSION=2.9.10
 
 ROOT=$(abspath .)
 

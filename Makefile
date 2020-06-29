@@ -7,7 +7,7 @@ FILEPACKAGER=$(PYODIDE_ROOT)/tools/file_packager.py
 CPYTHONROOT=cpython
 CPYTHONLIB=$(CPYTHONROOT)/installs/python-$(PYVERSION)/lib/python$(PYMINOR)
 
-LIBXML=libxml/libxml2-2.9.9/.libs/libxml2.a
+LIBXML=libxml/libxml2-2.9.10/.libs/libxml2.a
 LIBXSLT=libxslt/libxslt-1.1.33/libxslt/.libs/libxslt.a
 LIBICONV=libiconv/libiconv-1.16/lib/.libs/libiconv.a
 ZLIB=zlib/zlib-1.2.11/lib/libz.a

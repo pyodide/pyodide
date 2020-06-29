@@ -34,7 +34,7 @@ $(SRC)/Makefile: $(TARBALL)
 			--disable-dependency-tracking \
 			--disable-shared \
 			--without-python \
-			--with-libxml-src=${PYODIDE_ROOT}/libxml/libxml2-2.9.9 \
+			--with-libxml-src=${PYODIDE_ROOT}/libxml/libxml2-2.9.10 \
 			--without-crypto ; \
 	)
 
