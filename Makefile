@@ -10,6 +10,7 @@ CPYTHONLIB=$(CPYTHONROOT)/installs/python-$(PYVERSION)/lib/python$(PYMINOR)
 LIBXML=libxml/libxml2-2.9.9/.libs/libxml2.a
 LIBXSLT=libxslt/libxslt-1.1.33/libxslt/.libs/libxslt.a
 LIBICONV=libiconv/libiconv-1.16/lib/.libs/libiconv.so
+ZLIB=zlib/zlib-1.2.11/lib/libz.a
 LZ4LIB=lz4/lz4-1.8.3/lib/liblz4.a
 CLAPACK=CLAPACK/CLAPACK-WA/lapack_WA.bc
 
@@ -159,6 +160,8 @@ clean:
 	make -C lz4 clean
 	make -C libxslt clean
 	make -C libxml clean
+	make -C libiconv clean
+	make -C zlib clean
 	echo "The Emsdk, CPython and CLAPACK are not cleaned. cd into those directories to do so."
 
 
@@ -242,7 +245,7 @@ $(LZ4LIB):
 	date +"[%F %T] done building lz4."
 
 
-$(LIBXML): $(CPYTHONLIB)
+$(LIBXML): $(CPYTHONLIB) $(ZLIB)
 	date +"[%F %T] Building libxml..."
 	make -C libxml
 	date +"[%F %T] done building libxml..."
@@ -257,6 +260,11 @@ $(LIBICONV):
 	date +"[%F %T] Building libiconv..."
 	make -C libiconv
 	date +"[%F %T] done building libiconv..."
+
+$(ZLIB):
+	date +"[%F %T] Building zlib..."
+	make -C zlib
+	date +"[%F %T] done building zlib..."
 
 
 $(SIX_LIBS): $(CPYTHONLIB)
