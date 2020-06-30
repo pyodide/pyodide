@@ -11,11 +11,7 @@
 
 EM_JS(void, hiwire_setup, (), {
   // These ids must match the constants above, but we can't use them from JS
-  var hiwire = {
-    objects : {},
-    recycle : [],
-    counter : 1
-  };
+  var hiwire = { objects : {}, recycle : [], counter : 1 };
 
   // Negative objects are never removed!
   hiwire.objects[-2] = undefined;
@@ -32,8 +28,7 @@ EM_JS(void, hiwire_setup, (), {
     if (hiwire.recycle.length > 0) {
       idval = hiwire.recycle.shift();
       objects[idval] = jsval;
-    }
-    else {
+    } else {
       while (hiwire.counter in objects) {
         hiwire.counter = (hiwire.counter + 1) & 0x7fffffff;
       }
