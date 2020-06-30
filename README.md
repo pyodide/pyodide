@@ -47,7 +47,7 @@ These include:
 ## Contributing
 
 Please view the
-[contributing guide](https://pyodide.readthedocs.io/en/latest/rootdir.html#how-to-contribute)
+[contributing guide](https://pyodide.readthedocs.io/en/latest/contributing.html)
 for tips on filing issues, making changes, and submitting pull requests.
 
 ## License
