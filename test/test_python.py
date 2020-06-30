@@ -422,6 +422,22 @@ def test_pyproxy(selenium):
     assert selenium.run_js("return pyodide.pyimport('f').toString()").startswith("<Foo")
 
 
+def test_pyproxy_refcount(selenium):
+    selenium.run(
+        """
+        import sys
+        from js import document
+
+        def pytest(*args, **kwargs):
+            print(*args, **kwargs)
+
+        document.addEventListener("click", pytest)
+        document.removeEventListener("click", pytest)
+        """
+    )
+    assert selenium.run("sys.getrefcount(pytest)") == 3
+
+
 def test_pyproxy_destroy(selenium):
     selenium.run(
         """
