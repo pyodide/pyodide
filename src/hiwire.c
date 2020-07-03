@@ -2,13 +2,6 @@
 
 #include "hiwire.h"
 
-// Define special ids for singleton constants. These must be less than -1 to
-// avoid being reused for other values.
-#define HW_UNDEFINED -2
-#define HW_TRUE -3
-#define HW_FALSE -4
-#define HW_NULL -5
-
 EM_JS(void, hiwire_setup, (), {
   // These ids must match the constants above, but we can't use them from JS
   var hiwire = { objects : {}, counter : 1 };
