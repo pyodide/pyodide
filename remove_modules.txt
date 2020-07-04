@@ -10,3 +10,4 @@ tkinter
 turtle.py
 turtledemo
 venv
+distutils/command/wininst-*.exe

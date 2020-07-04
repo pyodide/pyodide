@@ -33,11 +33,14 @@ def growcut(image, state, state_next, window_radius):
             winning_colony = state[i, j, 0]
             defense_strength = state[i, j, 1]
 
-            for jj in range(window_floor(j, window_radius),
-                            window_ceil(j + 1, width, window_radius)):
-                for ii in range(window_floor(i, window_radius),
-                                window_ceil(i + 1, height, window_radius)):
-                    if (ii != i and jj != j):
+            for jj in range(
+                window_floor(j, window_radius), window_ceil(j + 1, width, window_radius)
+            ):
+                for ii in range(
+                    window_floor(i, window_radius),
+                    window_ceil(i + 1, height, window_radius),
+                ):
+                    if ii != i and jj != j:
                         d = image[i, j, 0] - image[ii, jj, 0]
                         s = d * d
                         for k in range(1, 3):

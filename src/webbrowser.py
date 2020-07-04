@@ -8,6 +8,7 @@ Since we're already running a webbrowser, it's really simple...
 
 def open(url, new=0, autoraise=True):
     from js import window
+
     window.open(url, "_blank")
 
 

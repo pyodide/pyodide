@@ -257,13 +257,23 @@ _python2js(PyObject* x, PyObject* map)
   } else if (PyDict_Check(x)) {
     return _python2js_dict(x, map);
   } else {
-    int jsbuff = _python2js_buffer(x);
-    if (jsbuff != HW_ERROR) {
-      return jsbuff;
+    int ret = _python2js_buffer(x);
+
+    if (ret != HW_ERROR) {
+      return ret;
     }
     if (PySequence_Check(x)) {
       return _python2js_sequence(x, map);
     }
+
+    // Proxies we've already created are just returned again, so that the
+    // same object on the Python side is always the same object on the
+    // Javascript side.
+    if ((ret = pyproxy_use((int)x)) != HW_UNDEFINED) {
+      return ret;
+    }
+
+    // Reference counter is increased only once when a PyProxy is created.
     Py_INCREF(x);
     return pyproxy_new((int)x);
   }

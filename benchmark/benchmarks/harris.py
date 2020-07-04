@@ -1,14 +1,14 @@
 # from: parakeet testbed
-# setup: import numpy as np ; M, N = 512, 512 ; I = np.random.randn(M,N)
-# run: harris(I)
+# setup: import numpy as np ; M, N = 512, 512 ; X = np.random.randn(M,N)
+# run: harris(X)
 
 # pythran export harris(float64[][])
 
 
-def harris(I):
-    m, n = I.shape
-    dx = (I[1:, :] - I[:m - 1, :])[:, 1:]
-    dy = (I[:, 1:] - I[:, :n - 1])[1:, :]
+def harris(X):
+    m, n = X.shape
+    dx = (X[1:, :] - X[: m - 1, :])[:, 1:]
+    dy = (X[:, 1:] - X[:, : n - 1])[1:, :]
 
     #
     #   At each point we build a matrix

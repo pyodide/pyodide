@@ -124,19 +124,22 @@ _pyproxy_destroy(int ptrobj)
   EM_ASM(delete Module.PyProxies[ptrobj];);
 }
 
-EM_JS(int, pyproxy_new, (int ptrobj), {
-  // Proxies we've already created are just returned again, so that the
-  // same object on the Python side is always the same object on the
-  // Javascript side.
+EM_JS(int, pyproxy_use, (int ptrobj), {
+  // Checks if there is already an existing proxy on ptrobj
 
+  if (Module.PyProxies.hasOwnProperty(ptrobj)) {
+    return Module.hiwire_new_value(Module.PyProxies[ptrobj]);
+  }
+
+  return -2; /* this means HW_UNDEFINED */
+})
+
+EM_JS(int, pyproxy_new, (int ptrobj), {
   // Technically, this leaks memory, since we're holding on to a reference
   // to the proxy forever.  But we have that problem anyway since we don't
   // have a destructor in Javascript to free the Python object.
   // _pyproxy_destroy, which is a way for users to manually delete the proxy,
   // also deletes the proxy from this set.
-  if (Module.PyProxies.hasOwnProperty(ptrobj)) {
-    return Module.hiwire_new_value(Module.PyProxies[ptrobj]);
-  }
 
   var target = function(){};
   target['$$'] = { ptr : ptrobj, type : 'PyProxy' };
