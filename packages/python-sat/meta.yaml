@@ -1,0 +1,14 @@
+package:
+  name: python-sat
+  version: 0.1.5.dev17
+source:
+  sha256: 6655cefac9a9404fb01efa4ae64e41ad22ae4d37024627a6743a97114f206ef9
+  url: https://files.pythonhosted.org/packages/84/7e/f23f112413137a7fda0b1894796f094030be840dba7ace5b3e8f44f8248f/python-sat-0.1.5.dev17.tar.gz
+
+  patches:
+    - patches/force_malloc.patch
+    - patches/proper_build.patch
+
+test:
+  imports:
+    - pysat
