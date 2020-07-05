@@ -17,7 +17,7 @@ def test_install_simple(selenium_standalone):
 
     for i in range(10):
         if selenium_standalone.run(
-            "os.path.exists" "('/lib/python3.7/site-packages/snowballstemmer')"
+            "os.path.exists" "('/lib/python3.8/site-packages/snowballstemmer')"
         ):
             break
         else:

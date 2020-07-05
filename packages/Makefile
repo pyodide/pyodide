@@ -6,7 +6,7 @@ all: deps
 		--package_abi=$(PYODIDE_PACKAGE_ABI) --ldflags="$(SIDE_LDFLAGS)" --host=$(HOSTPYTHONROOT) --target=$(TARGETPYTHONROOT) --only $(PYODIDE_PACKAGES)
 deps:
 	# Install build dependencies
-	$(HOSTPYTHON) -m pip install Cython Tempita
+	$(HOSTPYTHON) -m pip install Cython<0.30.0 Tempita
 
 clean:
 	rm -rf ./*/build

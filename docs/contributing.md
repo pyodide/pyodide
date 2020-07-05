@@ -53,14 +53,14 @@ It often happens that patches need to be migrated between different versions of 
 
 If patches fail to apply automatically, one solution can be to
 1. Checkout the initial version of the upstream package in a separate repo, and create a branch from it.
-2. Add exisint patches with `git apply <path.path>`
+2. Add existing patches with `git apply <path.path>`
 3. Checkout the new version of the upstream package and create a branch from it.
 4. Cherry-pick patches to the new version,
    ```
    git cherry-pick <commit-hash>
    ```
-   and resolve conflicts
-5. Re-export last N commits as patches e.g.
+   and resolve conflicts.
+5. Re-export last `N` commits as patches e.g.
    ```
    git format-patch -<N> -N --no-stat HEAD -o <out_dir>
    ```

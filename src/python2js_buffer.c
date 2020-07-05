@@ -183,7 +183,7 @@ static scalar_converter*
 _python2js_buffer_get_converter(Py_buffer* buff)
 {
   // Uses Python's struct typecodes as defined here:
-  // https://docs.python.org/3.7/library/array.html
+  // https://docs.python.org/3.8/library/array.html
 
   char format;
   char swap;
@@ -314,7 +314,7 @@ static int
 _python2js_buffer_to_typed_array(Py_buffer* buff)
 {
   // Uses Python's struct typecodes as defined here:
-  // https://docs.python.org/3.7/library/array.html
+  // https://docs.python.org/3.8/library/array.html
 
   char format;
   if (buff->format == NULL) {

@@ -134,7 +134,7 @@ def test_different_ABI(selenium_standalone):
     selenium_standalone.run("import kiwisolver")
     assert (
         selenium_standalone.run("repr(kiwisolver)") == "<module 'kiwisolver' from "
-        "'/lib/python3.7/site-packages/kiwisolver.so'>"
+        "'/lib/python3.8/site-packages/kiwisolver.so'>"
     )
 
 
