@@ -5,11 +5,13 @@ Builds a Pyodide package.
 """
 
 import argparse
+import cgi
 import hashlib
 import os
 from pathlib import Path
 import shutil
 import subprocess
+from urllib import request
 from datetime import datetime
 
 
@@ -49,7 +51,15 @@ def download_and_extract(buildpath, packagedir, pkg, args):
         return srcpath
 
     if "url" in pkg["source"]:
-        tarballname = Path(pkg["source"]["url"]).name
+        response = request.urlopen(pkg["source"]["url"])
+        _, parameters = cgi.parse_header(
+            response.headers.get("Content-Disposition", "")
+        )
+        if "filename" in parameters:
+            tarballname = parameters["filename"]
+        else:
+            tarballname = Path(response.geturl()).name
+
         tarballpath = buildpath / tarballname
         if not tarballpath.is_file():
             try:
