@@ -1,4 +1,4 @@
-From 5b5bdbc65ad510eb860ae54e3a48bad641c1caa7 Mon Sep 17 00:00:00 2001
+From c1b59989f88ba4911134539573e90d56da922e75 Mon Sep 17 00:00:00 2001
 From: Michael Droettboom <mdboom@gmail.com>
 Date: Sun, 5 Jul 2020 19:55:57 +0200
 Subject: [PATCH] sqlite-MODULE_NAME

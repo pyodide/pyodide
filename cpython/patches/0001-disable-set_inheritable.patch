@@ -1,4 +1,4 @@
-From 66a452fab7512734e7ba5ffc878ee737b08752f5 Mon Sep 17 00:00:00 2001
+From f78bb95d3c95a4fb20745eb70ad876495de26e94 Mon Sep 17 00:00:00 2001
 From: Michael Droettboom <mdboom@gmail.com>
 Date: Sun, 5 Jul 2020 17:37:43 +0200
 Subject: [PATCH] disable-set_inheritable

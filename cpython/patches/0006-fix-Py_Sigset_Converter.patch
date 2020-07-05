@@ -1,4 +1,4 @@
-From ec9b3beb5c52d7e9ba1243a5953177d32bd17e67 Mon Sep 17 00:00:00 2001
+From 63fd6ee84261ff357d3d3b56a35b756c4d13ce69 Mon Sep 17 00:00:00 2001
 From: Roman Yurchak <rth.yurchak@gmail.com>
 Date: Sun, 5 Jul 2020 21:17:10 +0200
 Subject: [PATCH] fix Py_Sigset_Converter

@@ -1,4 +1,4 @@
-From ce434c7785fd12d09066f561aa4dbe10f1086a3c Mon Sep 17 00:00:00 2001
+From a6cf085d48b4783c997544f68636d0c4beb96401 Mon Sep 17 00:00:00 2001
 From: Michael Droettboom <mdboom@gmail.com>
 Date: Sun, 5 Jul 2020 17:36:12 +0200
 Subject: [PATCH] add-emscripten-host

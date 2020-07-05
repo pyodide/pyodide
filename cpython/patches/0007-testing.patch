@@ -1,4 +1,4 @@
-From 6daa76c73596e9034bb3b56fc09162e79b0514c8 Mon Sep 17 00:00:00 2001
+From 619f9c7d4751a3b3c0e8dac9f1dedb0646493de8 Mon Sep 17 00:00:00 2001
 From: Michael Droettboom <mdboom@gmail.com>
 Date: Sun, 5 Jul 2020 19:56:47 +0200
 Subject: [PATCH] testing
@@ -25,6 +25,21 @@ index 6fbb7b08c5..d46425659d 100755
 +    if sys.platform in ('dos', 'win32', 'win16', 'emscripten'):
          # XXX Others too ?
          return default
+ 
+diff --git a/Lib/test/libregrtest/main.py b/Lib/test/libregrtest/main.py
+index 76ad3359f2..b135966032 100644
+--- a/Lib/test/libregrtest/main.py
++++ b/Lib/test/libregrtest/main.py
+@@ -635,7 +635,9 @@ class Regrtest:
+         except SystemExit as exc:
+             # bpo-38203: Python can hang at exit in Py_Finalize(), especially
+             # on threading._shutdown() call: put a timeout
+-            faulthandler.dump_traceback_later(EXIT_TIMEOUT, exit=True)
++
++            # Skipping, pyodide doesn't support threading.
++            # faulthandler.dump_traceback_later(EXIT_TIMEOUT, exit=True)
+ 
+             sys.exit(exc.code)
  
 diff --git a/Lib/test/support/script_helper.py b/Lib/test/support/script_helper.py
 index 83519988e3..1410fe5c61 100644
