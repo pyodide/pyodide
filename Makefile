@@ -20,7 +20,7 @@ PYODIDE_CXX=$(PYODIDE_ROOT)/ccache/em++
 SHELL := /bin/bash
 CC=emcc
 CXX=em++
-OPTFLAGS=-O3
+OPTFLAGS=-O2
 CFLAGS=$(OPTFLAGS) -g -I$(PYTHONINCLUDE) -Wno-warn-absolute-paths
 CXXFLAGS=$(CFLAGS) -std=c++14
 
