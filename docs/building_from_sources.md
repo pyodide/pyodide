@@ -50,6 +50,11 @@ preferred if at all possible.
 
 2. From a git checkout of Pyodide, run `./run_docker`
 
+   Install libtinfo5 in the docker contaner,
+   ```
+   sudo apt install -y libtinfo5
+   ```
+
 3. Run `make` to build.
 
 If running ``make`` deterministically stops at one point in each subsequent try, increasing

@@ -31,7 +31,8 @@ jobs:
 
       - run:
           name: dependencies
-          command: apt install -y libtinfo5
+          command: sudo apt install -y libtinfo5
+
       - run:
           name: build
           no_output_timeout: 1200
@@ -68,6 +69,10 @@ jobs:
       - restore_cache:
           keys:
           - v1-emsdk-{{ checksum "emsdk/Makefile" }}-v20200705-
+
+      - run:
+          name: dependencies
+          command: sudo apt install -y libtinfo5
 
       - run:
           name: build
