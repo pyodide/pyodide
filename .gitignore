@@ -30,3 +30,8 @@ CLAPACK/clapack.tgz
 jedi/jedi-0.15.1
 parso/parso-0.5.1
 *.egg-info/
+
+libxml/libxml*
+libxslt/libxslt*
+libiconv/libiconv*
+zlib/zlib*

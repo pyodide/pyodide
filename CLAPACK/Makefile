@@ -19,7 +19,7 @@ $(SRC)/lapack_WA.bc:  $(SRC)/Makefile
 	# On target it gets rewritten by pywasmcross to the full patch of
 	# blas_WA.bc, lapack_WA.bc which are linked statically in scipy
 	# in each module that needs them.
-	emmake make -C CLAPACK-WA/
+	emmake make -C CLAPACK-WA/ -j $${PYODIDE_JOBS:-3}
 
 
 $(SRC)/Makefile:

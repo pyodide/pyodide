@@ -1,5 +1,5 @@
 #define HAVE_ENDIAN_H 1
-#define SIZEOF_PY_INTPTR_T 4 
+#define SIZEOF_PY_INTPTR_T 4
 #define SIZEOF_OFF_T 4
 #define SIZEOF_PY_LONG_LONG 8
 #define MATHLIB m

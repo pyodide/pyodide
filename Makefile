@@ -7,6 +7,10 @@ FILEPACKAGER=$(PYODIDE_ROOT)/tools/file_packager.py
 CPYTHONROOT=cpython
 CPYTHONLIB=$(CPYTHONROOT)/installs/python-$(PYVERSION)/lib/python$(PYMINOR)
 
+LIBXML=libxml/libxml2-2.9.10/.libs/libxml2.a
+LIBXSLT=libxslt/libxslt-1.1.33/libxslt/.libs/libxslt.a
+LIBICONV=libiconv/libiconv-1.16/lib/.libs/libiconv.a
+ZLIB=zlib/zlib-1.2.11/lib/libz.a
 LZ4LIB=lz4/lz4-1.8.3/lib/liblz4.a
 CLAPACK=CLAPACK/CLAPACK-WA/lapack_WA.bc
 
@@ -77,10 +81,12 @@ all: check \
 build/pyodide.asm.js: src/main.bc src/jsimport.bc src/jsproxy.bc src/js2python.bc \
 		src/pyimport.bc src/pyproxy.bc src/python2js.bc src/python2js_buffer.bc \
 		src/runpython.bc src/hiwire.bc
+	date +"[%F %T] Building pyodide.asm.js..."
 	[ -d build ] || mkdir build
 	$(CXX) -s EXPORT_NAME="'pyodide'" -o build/pyodide.asm.html $(filter %.bc,$^) \
 		$(LDFLAGS) -s FORCE_FILESYSTEM=1
 	rm build/pyodide.asm.html
+	date +"[%F %T] done building pyodide.asm.js."
 
 
 env:
@@ -133,7 +139,8 @@ test: all
 
 
 lint:
-	flake8 src test tools pyodide_build benchmark
+	# check for unused imports, the rest is done by black
+	flake8 --select=F401 src test tools pyodide_build benchmark
 	clang-format -output-replacements-xml src/*.c src/*.h src/*.js | (! grep '<replacement ')
 
 
@@ -151,6 +158,10 @@ clean:
 	make -C jedi clean
 	make -C parso clean
 	make -C lz4 clean
+	make -C libxslt clean
+	make -C libxml clean
+	make -C libiconv clean
+	make -C zlib clean
 	echo "The Emsdk, CPython and CLAPACK are not cleaned. cd into those directories to do so."
 
 
@@ -223,23 +234,55 @@ $(PYODIDE_CXX):
 
 
 $(CPYTHONLIB): emsdk/emsdk/.complete $(PYODIDE_EMCC) $(PYODIDE_CXX)
+	date +"[%F %T] Building cpython..."
 	make -C $(CPYTHONROOT)
+	date +"[%F %T] done building cpython..."
 
 
 $(LZ4LIB):
+	date +"[%F %T] Building lz4..."
 	make -C lz4
+	date +"[%F %T] done building lz4."
+
+
+$(LIBXML): $(CPYTHONLIB) $(ZLIB)
+	date +"[%F %T] Building libxml..."
+	make -C libxml
+	date +"[%F %T] done building libxml..."
+
+
+$(LIBXSLT): $(CPYTHONLIB) $(LIBXML)
+	date +"[%F %T] Building libxslt..."
+	make -C libxslt
+	date +"[%F %T] done building libxslt..."
+
+$(LIBICONV):
+	date +"[%F %T] Building libiconv..."
+	make -C libiconv
+	date +"[%F %T] done building libiconv..."
+
+$(ZLIB):
+	date +"[%F %T] Building zlib..."
+	make -C zlib
+	date +"[%F %T] done building zlib..."
 
 
 $(SIX_LIBS): $(CPYTHONLIB)
+	date +"[%F %T] Building six..."
 	make -C six
+	date +"[%F %T] done building six."
 
 
 $(JEDI_LIBS): $(CPYTHONLIB)
+	date +"[%F %T] Building jedi..."
 	make -C jedi
+	date +"[%F %T] done building jedi."
 
 
 $(PARSO_LIBS): $(CPYTHONLIB)
+	date +"[%F %T] Building parso..."
 	make -C parso
+	date +"[%F %T] done building parso."
 
 
 $(CLAPACK): $(CPYTHONLIB)
@@ -249,16 +292,22 @@ ifdef PYODIDE_PACKAGES
 	mkdir -p CLAPACK/CLAPACK-WA/
 	touch $(CLAPACK)
 else
+	date +"[%F %T] Building CLAPACK..."
 	make -C CLAPACK
+	date +"[%F %T] done building CLAPACK."
 endif
 
 
 
-build/packages.json: $(CLAPACK) FORCE
+build/packages.json: $(CLAPACK) $(LIBXML) $(LIBXSLT) FORCE
+	date +"[%F %T] Building packages..."
 	make -C packages
+	date +"[%F %T] done building packages..."
 
 emsdk/emsdk/.complete:
+	date +"[%F %T] Building emsdk..."
 	make -C emsdk
+	date +"[%F %T] done building emsdk."
 
 FORCE:
 

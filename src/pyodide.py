@@ -7,7 +7,7 @@ import io
 from textwrap import dedent
 
 
-__version__ = '0.15.0'
+__version__ = "0.15.0"
 
 
 def open_url(url):
@@ -17,7 +17,7 @@ def open_url(url):
     from js import XMLHttpRequest
 
     req = XMLHttpRequest.new()
-    req.open('GET', url, False)
+    req.open("GET", url, False)
     req.send(None)
     return io.StringIO(req.response)
 
@@ -40,9 +40,9 @@ def eval_code(code, ns):
         expr = None
 
     if len(mod.body):
-        exec(compile(mod, '<exec>', mode='exec'), ns, ns)
+        exec(compile(mod, "<exec>", mode="exec"), ns, ns)
     if expr is not None:
-        return eval(compile(expr, '<eval>', mode='eval'), ns, ns)
+        return eval(compile(expr, "<eval>", mode="eval"), ns, ns)
     else:
         return None
 
@@ -61,10 +61,10 @@ def find_imports(code):
         if isinstance(node, ast.Import):
             for name in node.names:
                 name = name.name
-                imports.add(name.split('.')[0])
+                imports.add(name.split(".")[0])
         elif isinstance(node, ast.ImportFrom):
             name = node.module
-            imports.add(name.split('.')[0])
+            imports.add(name.split(".")[0])
     return list(imports)
 
 
@@ -99,10 +99,4 @@ def get_completions(code, cursor=None, namespaces=None):
     return [x.name for x in completions]
 
 
-__all__ = [
-    'open_url',
-    'eval_code',
-    'find_imports',
-    'as_nested_list',
-    'get_completions'
-]
+__all__ = ["open_url", "eval_code", "find_imports", "as_nested_list", "get_completions"]

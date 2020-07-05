@@ -7,4 +7,4 @@ import numpy as np
 
 
 def l2norm(x):
-    return np.sqrt(np.einsum('ij,ij->i', x, x))
+    return np.sqrt(np.einsum("ij,ij->i", x, x))
