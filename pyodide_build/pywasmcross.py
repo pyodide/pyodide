@@ -250,7 +250,7 @@ def handle_command(line, args, dryrun=False):
         if arg.startswith("-L/usr"):
             continue
         # threading is disabled for now
-        if arg == '-pthread':
+        if arg == "-pthread":
             continue
         # On Mac, we need to omit some darwin-specific arguments
         if arg in ["-bundle", "-undefined", "dynamic_lookup"]:
