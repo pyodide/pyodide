@@ -164,6 +164,10 @@ clean:
 	make -C zlib clean
 	echo "The Emsdk, CPython and CLAPACK are not cleaned. cd into those directories to do so."
 
+clean-all: clean
+	make -C emsdk clean
+	make -C cpython clean
+	rm -fr cpython/build
 
 %.bc: %.c $(CPYTHONLIB) $(LZ4LIB)
 	$(CC) -o $@ -c $< $(CFLAGS)
