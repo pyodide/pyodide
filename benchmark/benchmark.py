@@ -5,33 +5,28 @@ import subprocess
 import sys
 from time import time
 
-sys.path.insert(
-    0, str((Path(__file__).resolve().parents[1] / 'test')))
-sys.path.insert(
-    0, str((Path(__file__).resolve().parents[1])))
+sys.path.insert(0, str((Path(__file__).resolve().parents[1] / "test")))
+sys.path.insert(0, str((Path(__file__).resolve().parents[1])))
 
 import conftest  # noqa: E402
 
 
-SKIP = set(['fft', 'hyantes', 'README'])
+SKIP = set(["fft", "hyantes", "README"])
 
 
 def print_entry(name, res):
     print(" - ", name)
-    print(' '*4, end='')
+    print(" " * 4, end="")
     for name, dt in res.items():
         print("{}: {:.6f}  ".format(name, dt), end="")
-    print('')
+    print("")
 
 
 def run_native(hostpython, code):
     output = subprocess.check_output(
-        [hostpython.resolve(), '-c', code],
+        [hostpython.resolve(), "-c", code],
         cwd=Path(__file__).resolve().parent,
-        env={
-            'PYTHONPATH':
-            str(Path(__file__).resolve().parents[1] / 'src')
-        }
+        env={"PYTHONPATH": str(Path(__file__).resolve().parents[1] / "src")},
     )
     return float(output.strip().split()[-1])
 
@@ -39,7 +34,7 @@ def run_native(hostpython, code):
 def run_wasm(code, selenium):
     selenium.run(code)
     try:
-        runtime = float(selenium.logs.split('\n')[-1])
+        runtime = float(selenium.logs.split("\n")[-1])
     except ValueError:
         print(selenium.logs)
         raise
@@ -48,9 +43,7 @@ def run_wasm(code, selenium):
 
 def run_all(hostpython, selenium_backends, code):
     a = run_native(hostpython, code)
-    result = {
-        'native': a
-    }
+    result = {"native": a}
     for browser_name, selenium in selenium_backends.items():
         dt = run_wasm(code, selenium)
         result[browser_name] = dt
@@ -58,25 +51,22 @@ def run_all(hostpython, selenium_backends, code):
 
 
 def get_pystone_benchmarks():
-    yield 'pystone', (
-        "import pystone\n"
-        "pystone.main(pystone.LOOPS)\n"
-    )
+    yield "pystone", ("import pystone\n" "pystone.main(pystone.LOOPS)\n")
 
 
 def parse_numpy_benchmark(filename):
     lines = []
     with open(filename) as fp:
         for line in fp:
-            m = re.match(r'^#\s*(setup|run): (.*)$', line)
+            m = re.match(r"^#\s*(setup|run): (.*)$", line)
             if m:
-                line = '{} = {!r}\n'.format(m.group(1), m.group(2))
+                line = "{} = {!r}\n".format(m.group(1), m.group(2))
             lines.append(line)
-    return ''.join(lines)
+    return "".join(lines)
 
 
 def get_numpy_benchmarks():
-    root = Path(__file__).resolve().parent / 'benchmarks'
+    root = Path(__file__).resolve().parent / "benchmarks"
     for filename in root.iterdir():
         name = filename.stem
         if name in SKIP:
@@ -91,7 +81,8 @@ def get_numpy_benchmarks():
             "r = t.repeat(11, 40)\n"
             "r.remove(min(r))\n"
             "r.remove(max(r))\n"
-            "print(np.mean(r))\n".format(name))
+            "print(np.mean(r))\n".format(name)
+        )
         yield name, content
 
 
@@ -105,21 +96,23 @@ def main(hostpython):
         results = {}
         selenium_backends = {}
 
-        b = {'native': float('NaN')}
-        browser_cls = [('firefox', conftest.FirefoxWrapper),
-                       ('chrome', conftest.ChromeWrapper)]
+        b = {"native": float("NaN")}
+        browser_cls = [
+            ("firefox", conftest.FirefoxWrapper),
+            ("chrome", conftest.ChromeWrapper),
+        ]
         for name, cls in browser_cls:
             t0 = time()
             selenium_backends[name] = cls(port)
             b[name] = time() - t0
             # pre-load numpy for the selenium instance used in benchmarks
             selenium_backends[name].load_package("numpy")
-        results['selenium init'] = b
+        results["selenium init"] = b
         print_entry("selenium init", b)
 
         # load packages
-        for package_name in ["numpy", "scipy"]:
-            b = {'native': float('NaN')}
+        for package_name in ["numpy"]:
+            b = {"native": float("NaN")}
             for browser_name, cls in browser_cls:
                 selenium = cls(port)
                 try:
@@ -128,8 +121,8 @@ def main(hostpython):
                     b[browser_name] = time() - t0
                 finally:
                     selenium.driver.quit()
-            results['load ' + package_name] = b
-            print_entry('load ' + package_name, b)
+            results["load " + package_name] = b
+            print_entry("load " + package_name, b)
 
         for name, content in get_benchmarks():
             results[name] = run_all(hostpython, selenium_backends, content)
@@ -139,7 +132,7 @@ def main(hostpython):
     return results
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     results = main(Path(sys.argv[-2]).resolve())
-    with open(sys.argv[-1], 'w') as fp:
+    with open(sys.argv[-1], "w") as fp:
         json.dump(results, fp)

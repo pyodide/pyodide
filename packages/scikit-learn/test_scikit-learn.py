@@ -3,11 +3,12 @@ import pytest
 
 def test_scikit_learn(selenium_standalone, request):
     selenium = selenium_standalone
-    if selenium.browser == 'chrome':
-        request.applymarker(pytest.mark.xfail(
-            run=False, reason='chrome not supported'))
+    if selenium.browser == "chrome":
+        request.applymarker(pytest.mark.xfail(run=False, reason="chrome not supported"))
     selenium.load_package("scikit-learn")
-    assert selenium.run("""
+    assert (
+        selenium.run(
+            """
         import numpy as np
         import sklearn
         from sklearn.linear_model import LogisticRegression
@@ -20,4 +21,7 @@ def test_scikit_learn(selenium_standalone, request):
         estimator.fit(X, y)
         print(estimator.predict(X))
         estimator.score(X, y)
-        """) > 0
+        """
+        )
+        > 0
+    )

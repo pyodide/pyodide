@@ -14,7 +14,13 @@
  * object. There may be one or more keys pointing to the same object.
  */
 
+// Define special ids for singleton constants. These must be less than -1 to
+// avoid being reused for other values.
 #define HW_ERROR -1
+#define HW_UNDEFINED -2
+#define HW_TRUE -3
+#define HW_FALSE -4
+#define HW_NULL -5
 
 /**
  * Initialize the variables and functions required for hiwire.
