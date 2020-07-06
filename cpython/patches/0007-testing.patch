@@ -1,4 +1,4 @@
-From 619f9c7d4751a3b3c0e8dac9f1dedb0646493de8 Mon Sep 17 00:00:00 2001
+From 65989f64654f86401421c037b6cfeae8cb2211f0 Mon Sep 17 00:00:00 2001
 From: Michael Droettboom <mdboom@gmail.com>
 Date: Sun, 5 Jul 2020 19:56:47 +0200
 Subject: [PATCH] testing
@@ -87,6 +87,34 @@ index 0d80af44d9..a30a0c34fe 100644
  import unittest
  import weakref
  import opcode
+diff --git a/Lib/test/test_fcntl.py b/Lib/test/test_fcntl.py
+index c394f6945a..2ec020bd08 100644
+--- a/Lib/test/test_fcntl.py
++++ b/Lib/test/test_fcntl.py
+@@ -5,7 +5,6 @@ import os
+ import struct
+ import sys
+ import unittest
+-from multiprocessing import Process
+ from test.support import (verbose, TESTFN, unlink, run_unittest, import_module,
+                           cpython_only)
+ 
+@@ -155,6 +154,7 @@ class TestFcntl(unittest.TestCase):
+ 
+     @unittest.skipIf(platform.system() == "AIX", "AIX returns PermissionError")
+     def test_lockf_exclusive(self):
++        raise unittest.SkipTest('threading not supported')
+         self.f = open(TESTFN, 'wb+')
+         cmd = fcntl.LOCK_EX | fcntl.LOCK_NB
+         fcntl.lockf(self.f, cmd)
+@@ -166,6 +166,7 @@ class TestFcntl(unittest.TestCase):
+ 
+     @unittest.skipIf(platform.system() == "AIX", "AIX returns PermissionError")
+     def test_lockf_share(self):
++        raise unittest.SkipTest('threading not supported')
+         self.f = open(TESTFN, 'wb+')
+         cmd = fcntl.LOCK_SH | fcntl.LOCK_NB
+         fcntl.lockf(self.f, cmd)
 diff --git a/Lib/test/test_gzip.py b/Lib/test/test_gzip.py
 index 646828621a..b9663082b9 100644
 --- a/Lib/test/test_gzip.py
@@ -123,6 +151,27 @@ index f037821dda..cc358641de 100644
  import time
  import unittest
  import unittest.mock as mock
+diff --git a/Lib/test/test_itertools.py b/Lib/test/test_itertools.py
+index eaa6197bec..95ff99d15c 100644
+--- a/Lib/test/test_itertools.py
++++ b/Lib/test/test_itertools.py
+@@ -11,7 +11,7 @@ import pickle
+ from functools import reduce
+ import sys
+ import struct
+-import threading
++import dummy_threading as threading
+ maxsize = support.MAX_Py_ssize_t
+ minsize = -maxsize-1
+ 
+@@ -1511,6 +1511,7 @@ class TestBasicOps(unittest.TestCase):
+             next(a)
+ 
+     def test_tee_concurrent(self):
++        raise unittest.SkipTest('threading not supported')
+         start = threading.Event()
+         finish = threading.Event()
+         class I:
 -- 
 2.25.1
 

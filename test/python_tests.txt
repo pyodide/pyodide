@@ -38,6 +38,7 @@ test___future__
 test__locale  locale
 test__opcode
 test__osx_support   platform-specific
+test__xxsubinterpreters
 test_abc
 test_abstract_numbers
 test_aifc   audioop
@@ -55,10 +56,13 @@ test_asyncio.test_futures         async
 test_asyncio.test_locks           async
 test_asyncio.test_pep492
 test_asyncio.test_proactor_events
+test_asyncio.test_protocols
 test_asyncio.test_queues
 test_asyncio.test_runners
 test_asyncio.test_selector_events async segfault-socketcall
 test_asyncio.test_server          async
+test_asyncio.test_server
+test_asyncio.test_sock_lowlevel
 test_asyncio.test_sslproto
 test_asyncio.test_streams         async
 test_asyncio.test_subprocess      async
@@ -70,6 +74,7 @@ test_asyncio.test_windows_utils
 test_asyncore bad ioctl syscall async
 test_atexit
 test_audioop  audioop
+test_audit
 test_augassign
 test_base64
 test_baseexception
@@ -94,6 +99,7 @@ test_cgi
 test_cgitb
 test_charmapcodec
 test_class
+test_clinic
 test_cmath
 test_cmd
 test_cmd_line
@@ -269,6 +275,8 @@ test_importlib.test_abc
 test_importlib.test_api
 test_importlib.test_lazy
 test_importlib.test_locks threading
+test_importlib.test_main
+test_importlib.test_metadata_api
 test_importlib.test_namespace_pkgs
 test_importlib.test_open
 test_importlib.test_path
@@ -277,6 +285,7 @@ test_importlib.test_resource
 test_importlib.test_spec
 test_importlib.test_util
 test_importlib.test_windows
+test_importlib.test_zip
 test_index
 test_inspect
 test_int
@@ -315,12 +324,12 @@ test_list
 test_listcomps
 test_locale locale
 test_logging networking
+test_logging
 test_long
 test_longexp
 test_lzma
 test_macpath  platform-specific
 test_mailbox  fs
-test_mailcap  nonsense
 test_marshal
 test_math floating point
 test_memoryio
@@ -337,6 +346,7 @@ test_multiprocessing_fork
 test_multiprocessing_forkserver
 test_multiprocessing_main_handling
 test_multiprocessing_spawn
+test_named_expressions
 test_netrc
 test_nis
 test_nntplib
@@ -358,6 +368,7 @@ test_peepholer
 test_pickle dbm
 test_pickletools  dbm
 test_pipes        platform-specific
+test_pipes
 test_pkg
 test_pkgimport
 test_pkgutil
@@ -368,6 +379,7 @@ test_popen  subprocess
 test_poplib bad ioctl socket
 test_posix  segfault-fstatfs64
 test_posixpath  crash
+test_posixpath
 test_pow
 test_pprint
 test_print
@@ -448,6 +460,7 @@ test_sys_setprofile
 test_sys_settrace async
 test_sysconfig  nonsense
 test_syslog
+test_tabnanny
 test_tarfile  crash
 test_tcl
 test_telnetlib  bad ioctl syscall 21537
@@ -468,7 +481,9 @@ test_tokenize
 test_tools.test_fixcid
 test_tools.test_gprof2html
 test_tools.test_i18n
+test_tools.test_lll
 test_tools.test_md5sum
+test_tools.test_pathfix
 test_tools.test_pdeps
 test_tools.test_pindent
 test_tools.test_reindent
@@ -481,6 +496,7 @@ test_ttk_guionly
 test_ttk_textonly
 test_tuple
 test_turtle
+test_type_comments
 test_typechecks
 test_types
 test_typing
