@@ -60,6 +60,7 @@ test_asyncio.test_protocols
 test_asyncio.test_queues          async
 test_asyncio.test_runners
 test_asyncio.test_selector_events async segfault-socketcall
+test_asyncio.test_sendfile        async
 test_asyncio.test_server          async
 test_asyncio.test_sock_lowlevel   async
 test_asyncio.test_sslproto
@@ -73,7 +74,7 @@ test_asyncio.test_windows_utils
 test_asyncore bad ioctl syscall async
 test_atexit
 test_audioop  audioop
-test_audit
+test_audit   subprocess
 test_augassign
 test_base64
 test_baseexception
@@ -321,9 +322,9 @@ test_lib2to3  nonsense
 test_linecache
 test_list
 test_listcomps
+test_lltrace
 test_locale locale
 test_logging networking
-test_logging
 test_long
 test_longexp
 test_lzma
@@ -365,6 +366,7 @@ test_pathlib  fs
 test_pdb      subprocess
 test_peepholer
 test_pickle dbm
+test_picklebuffer
 test_pickletools  dbm
 test_pipes        platform-specific
 test_pkg
@@ -375,6 +377,7 @@ test_plistlib
 test_poll subprocess
 test_popen  subprocess
 test_poplib bad ioctl socket
+test_positional_only_arg
 test_posix  segfault-fstatfs64
 test_posixpath  crash
 test_pow

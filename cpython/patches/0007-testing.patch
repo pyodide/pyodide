@@ -1,4 +1,4 @@
-From 65989f64654f86401421c037b6cfeae8cb2211f0 Mon Sep 17 00:00:00 2001
+From 0eb0ea9aeb5a5cfdceb35547dd1a97d73914338b Mon Sep 17 00:00:00 2001
 From: Michael Droettboom <mdboom@gmail.com>
 Date: Sun, 5 Jul 2020 19:56:47 +0200
 Subject: [PATCH] testing
@@ -71,6 +71,18 @@ index 83519988e3..1410fe5c61 100644
      cmd_line = [sys.executable]
      if not interpreter_requires_environment():
          cmd_line.append('-E')
+diff --git a/Lib/test/test_cgi.py b/Lib/test/test_cgi.py
+index ab8677199f..8eefd57776 100644
+--- a/Lib/test/test_cgi.py
++++ b/Lib/test/test_cgi.py
+@@ -188,6 +188,7 @@ Content-Length: 3
+                         self.assertEqual(fs.getvalue(key), expect_val[0])
+ 
+     def test_log(self):
++        raise unittest.SkipTest('known pyodide failure')
+         cgi.log("Testing")
+ 
+         cgi.logfp = StringIO()
 diff --git a/Lib/test/test_code.py b/Lib/test/test_code.py
 index 0d80af44d9..a30a0c34fe 100644
 --- a/Lib/test/test_code.py
