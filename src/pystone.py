@@ -16,6 +16,8 @@ Author:         Reinhold P. Weicker,  CACM Vol 27, No 10, 10/84 pg. 1013.
                 Translated from C to Python by Guido van Rossum.
 
 Version History:
+                Fix Python 3.8 compatibility by replacing time.clock
+                with time.perf_counter
 
                 Inofficial version 1.1.1 by Chris Arndt:
 
@@ -46,7 +48,7 @@ from __future__ import print_function
 
 LOOPS = 50000
 
-from time import clock
+from time import perf_counter
 
 __version__ = "1.1.1"
 
@@ -100,10 +102,10 @@ def Proc0(loops=LOOPS):
     global PtrGlb
     global PtrGlbNext
 
-    starttime = clock()
+    starttime = perf_counter()
     for i in range(loops):
         pass
-    nulltime = clock() - starttime
+    nulltime = perf_counter() - starttime
 
     PtrGlbNext = Record()
     PtrGlb = Record()
@@ -115,7 +117,7 @@ def Proc0(loops=LOOPS):
     String1Loc = "DHRYSTONE PROGRAM, 1'ST STRING"
     Array2Glob[8][7] = 10
 
-    starttime = clock()
+    starttime = perf_counter()
 
     for i in range(loops):
         Proc5()
@@ -141,7 +143,7 @@ def Proc0(loops=LOOPS):
         IntLoc2 = 7 * (IntLoc3 - IntLoc2) - IntLoc1
         IntLoc1 = Proc2(IntLoc1)
 
-    benchtime = clock() - starttime - nulltime
+    benchtime = perf_counter() - starttime - nulltime
     if benchtime == 0.0:
         loopsPerBenchtime = 0.0
     else:
