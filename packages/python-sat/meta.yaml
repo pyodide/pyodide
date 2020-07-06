@@ -7,6 +7,7 @@ source:
   url: https://files.pythonhosted.org/packages/a8/1b/5301cc4b96f22d97511c2ee50df3af696314dee3d9020ecc704cfe52d314/python-sat-0.1.6.dev1.tar.gz
 
   patches:
+    - patches/dummy_threading.patch
     - patches/force_malloc.patch
     - patches/proper_build.patch
 
