@@ -54,15 +54,14 @@ test_asyncio.test_context         async
 test_asyncio.test_events          async
 test_asyncio.test_futures         async
 test_asyncio.test_locks           async
-test_asyncio.test_pep492
-test_asyncio.test_proactor_events
+test_asyncio.test_pep492          async
+test_asyncio.test_proactor_events async
 test_asyncio.test_protocols
-test_asyncio.test_queues
+test_asyncio.test_queues          async
 test_asyncio.test_runners
 test_asyncio.test_selector_events async segfault-socketcall
 test_asyncio.test_server          async
-test_asyncio.test_server
-test_asyncio.test_sock_lowlevel
+test_asyncio.test_sock_lowlevel   async
 test_asyncio.test_sslproto
 test_asyncio.test_streams         async
 test_asyncio.test_subprocess      async
@@ -368,7 +367,6 @@ test_peepholer
 test_pickle dbm
 test_pickletools  dbm
 test_pipes        platform-specific
-test_pipes
 test_pkg
 test_pkgimport
 test_pkgutil
@@ -379,7 +377,6 @@ test_popen  subprocess
 test_poplib bad ioctl socket
 test_posix  segfault-fstatfs64
 test_posixpath  crash
-test_posixpath
 test_pow
 test_pprint
 test_print
