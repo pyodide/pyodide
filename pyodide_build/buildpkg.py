@@ -63,10 +63,8 @@ def download_and_extract(buildpath, packagedir, pkg, args):
         tarballpath = buildpath / tarballname
         if not tarballpath.is_file():
             try:
-                subprocess.run(
-                    ["wget", "-q", "-O", str(tarballpath), pkg["source"]["url"]],
-                    check=True,
-                )
+                with open(str(tarballpath), "wb") as f:
+                    f.write(response.read())
                 check_checksum(tarballpath, pkg)
             except Exception:
                 tarballpath.unlink()
