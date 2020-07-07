@@ -1,0 +1,120 @@
+diff --git a/setup.py b/setup.py
+index 4e810df..d191d6d 100644
+--- a/setup.py
++++ b/setup.py
+@@ -68,8 +68,8 @@ Details can be found at `https://pysathq.github.io <https://pysathq.github.io>`_
+ 
+ # solvers to install
+ #==============================================================================
+-to_install = ['cadical', 'glucose30', 'glucose41', 'lingeling', 'maplechrono',
+-        'maplecm', 'maplesat', 'minicard', 'minisat22', 'minisatgh']
++to_install = ['cadical', 'glucose30', 'glucose41', 'maplechrono', 'maplecm',
++        'maplesat', 'minicard', 'minisat22', 'minisatgh']
+ 
+ 
+ # example scripts to install as standalone executables
+@@ -77,47 +77,9 @@ to_install = ['cadical', 'glucose30', 'glucose41', 'lingeling', 'maplechrono',
+ scripts = ['fm', 'genhard', 'lbx', 'lsu', 'mcsls', 'models', 'musx', 'rc2']
+ 
+ 
+-# we need to redefine the build command to
+-# be able to download and compile solvers
+-#==============================================================================
+-class build(distutils.command.build.build):
+-    """
+-        Our custom builder class.
+-    """
+-
+-    def run(self):
+-        """
+-            Download, patch and compile SAT solvers before building.
+-        """
+-        # download and compile solvers
+-        if platform.system() != 'Windows':
+-            prepare.do(to_install)
+-
+-        # now, do standard build
+-        distutils.command.build.build.run(self)
+-
+-# same with build_ext
+-#==============================================================================
+-class build_ext(distutils.command.build_ext.build_ext):
+-    """
+-        Our custom builder class.
+-    """
+-
+-    def run(self):
+-        """
+-            Download, patch and compile SAT solvers before building.
+-        """
+-        # download and compile solvers
+-        if platform.system() != 'Windows':
+-            prepare.do(to_install)
+-
+-        # now, do standard build
+-        distutils.command.build_ext.build_ext.run(self)
+-
+-
+ # compilation flags for C extensions
+ #==============================================================================
+-compile_flags, cpplib = ['-std=c++11', '-Wall', '-Wno-deprecated'],  ['stdc++']
++compile_flags, cpplib = ['-std=c++11', '-O3', '-Wall', '-Wno-deprecated', '-DQUIET'],  ['stdc++']
+ if platform.system() == 'Darwin':
+     compile_flags += ['--stdlib=libc++']
+     cpplib = ['c++']
+@@ -140,23 +102,19 @@ pycard_ext = Extension('pycard',
+ 
+ pysolvers_sources = ['solvers/pysolvers.cc']
+ 
+-if platform.system() == 'Windows':
+-    prepare.do(to_install)
+-    with chdir('solvers'):
+-        for solver in to_install:
+-            with chdir(solver):
+-                for filename in glob.glob('*.c*'):
+-                    pysolvers_sources += ['solvers/%s/%s' % (solver, filename)]
+-                for filename in glob.glob('*/*.c*'):
+-                    pysolvers_sources += ['solvers/%s/%s' % (solver, filename)]
+-    libraries = []
+-    library_dirs = []
+-else:
+-    libraries = to_install + cpplib
+-    library_dirs = list(map(lambda x: os.path.join('solvers', x), to_install))
++prepare.do(to_install)
++with chdir('solvers'):
++    for solver in to_install:
++        with chdir(solver):
++            for filename in glob.glob('*.c*'):
++                pysolvers_sources += ['solvers/%s/%s' % (solver, filename)]
++            for filename in glob.glob('*/*.c*'):
++                pysolvers_sources += ['solvers/%s/%s' % (solver, filename)]
++libraries = []
++library_dirs = []
+ 
+ pysolvers_ext = Extension('pysolvers',
+-    sources=pysolvers_sources,
++    sources=sorted(pysolvers_sources),
+     extra_compile_args=compile_flags + \
+         list(map(lambda x: '-DWITH_{0}'.format(x.upper()), to_install)),
+     include_dirs=['solvers'],
+@@ -181,7 +139,6 @@ setup(name='python-sat',
+     url='https://github.com/pysathq/pysat',
+     ext_modules=[pycard_ext, pysolvers_ext],
+     scripts=['examples/{0}.py'.format(s) for s in scripts],
+-    cmdclass={'build': build, 'build_ext': build_ext},
+     install_requires=['six'],
+     extras_require = {
+         'aiger': ['py-aiger-cnf>=2.0.0'],
+diff --git a/solvers/prepare.py b/solvers/prepare.py
+index f947be1..97ccaa5 100644
+--- a/solvers/prepare.py
++++ b/solvers/prepare.py
+@@ -421,8 +421,6 @@ def do(to_install):
+         adapt_files(solver)
+         patch_solver(solver)
+ 
+-        if platform.system() != 'Windows':
+-            compile_solver(solver)
+ 
+ #
+ #==============================================================================
