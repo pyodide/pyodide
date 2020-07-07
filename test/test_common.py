@@ -58,7 +58,7 @@ def test_import(name, selenium_standalone):
     baseline_pyc = selenium_standalone.run(
         """
         len(list(glob.glob(
-            '/lib/python3.7/site-packages/**/*.pyc',
+            '/lib/python3.8/site-packages/**/*.pyc',
             recursive=True)
         ))
         """
@@ -71,7 +71,7 @@ def test_import(name, selenium_standalone):
         selenium_standalone.run(
             """
         len(list(glob.glob(
-            '/lib/python3.7/site-packages/**/*.pyc',
+            '/lib/python3.8/site-packages/**/*.pyc',
             recursive=True)
         ))
         """
@@ -97,7 +97,7 @@ def test_import(name, selenium_standalone):
             selenium_standalone.run(
                 """
             len(list(glob.glob(
-                '/lib/python3.7/site-packages/**/*.pyc',
+                '/lib/python3.8/site-packages/**/*.pyc',
                 recursive=True)
             ))
             """

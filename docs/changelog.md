@@ -1,5 +1,10 @@
 # Release notes
 
+## Version 0.16.0
+*Unreleased*
+
+- pyodide now includes CPython 3.8.2.
+
 ## Version 0.15.0
 *May 19, 2020*
 

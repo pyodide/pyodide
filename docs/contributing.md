@@ -47,6 +47,23 @@ We use [py.test](https://pytest.org), driving [Selenium](https://www.seleniumhq.
 
 All code submissions should pass `make lint`.  Python is checked with the default settings of `flake8`.  C and Javascript are checked against the Mozilla style in `clang-format`.
 
+## Migrating patches
+
+It often happens that patches need to be migrated between different versions of upstream packages.
+
+If patches fail to apply automatically, one solution can be to
+1. Checkout the initial version of the upstream package in a separate repo, and create a branch from it.
+2. Add existing patches with `git apply <path.path>`
+3. Checkout the new version of the upstream package and create a branch from it.
+4. Cherry-pick patches to the new version,
+   ```
+   git cherry-pick <commit-hash>
+   ```
+   and resolve conflicts.
+5. Re-export last `N` commits as patches e.g.
+   ```
+   git format-patch -<N> -N --no-stat HEAD -o <out_dir>
+   ```
 
 ## License
 

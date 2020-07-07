@@ -6,7 +6,7 @@ import os
 from pathlib import Path
 
 
-TEST_DIR = Path(__file__).parent / "cpython/build/3.7.4/host/lib/python3.7/test"
+TEST_DIR = Path(__file__).parents[1] / "cpython/build/3.8.2/host/lib/python3.8/test"
 
 
 def collect_tests(base_dir):

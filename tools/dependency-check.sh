@@ -7,10 +7,10 @@ failure_exit() {
 
 check_python_headers() {
   local python_headers_present
-  python_headers_present="$(pkg-config --libs python-3.7)"
+  python_headers_present="$(pkg-config --libs python-3.8)"
 
   if [ ! "${python_headers_present}" ]; then
-    failure_exit "Python 3.7 headers"
+    failure_exit "Python 3.8 headers"
   fi
 }
 
@@ -45,7 +45,7 @@ check_pyyaml() {
 }
 
 check_pkgconfig
-check_python_headers
+#check_python_headers
 check_fortran_dependencies
 check_js_dependencies
 check_pyyaml
