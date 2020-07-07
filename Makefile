@@ -193,7 +193,7 @@ root/.built: \
 		src/sitecustomize.py \
 		src/webbrowser.py \
 		src/pyodide.py \
-		remove_modules.txt
+		cpython/remove_modules.txt
 	rm -rf root
 	mkdir -p root/lib
 	cp -r $(CPYTHONLIB) root/lib
@@ -208,7 +208,7 @@ root/.built: \
 	cp src/pyodide.py root/lib/python$(PYMINOR)/site-packages
 	( \
 		cd root/lib/python$(PYMINOR); \
-		rm -fr `cat ../../../remove_modules.txt`; \
+		rm -fr `cat ../../../cpython/remove_modules.txt`; \
 		rm -fr test; \
 		find . -type d -name __pycache__ -prune -exec rm -rf {} \; \
 	)
