@@ -52,7 +52,7 @@ LDFLAGS=\
 	-s TEXTDECODER=0 \
 	-s LZ4=1
 
-SIX_ROOT=six/six-1.11.0/build/lib
+SIX_ROOT=packages/six/six-1.11.0/build/lib
 SIX_LIBS=$(SIX_ROOT)/six.py
 
 JEDI_ROOT=jedi/jedi-0.15.1/jedi
@@ -154,7 +154,7 @@ clean:
 	rm -fr build/*
 	rm -fr src/*.bc
 	make -C packages clean
-	make -C six clean
+	make -C packages/six clean
 	make -C jedi clean
 	make -C parso clean
 	make -C lz4 clean
@@ -273,7 +273,7 @@ $(ZLIB):
 
 $(SIX_LIBS): $(CPYTHONLIB)
 	date +"[%F %T] Building six..."
-	make -C six
+	make -C packages/six
 	date +"[%F %T] done building six."
 
 
