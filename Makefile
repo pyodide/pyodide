@@ -12,7 +12,7 @@ LIBXSLT=libxslt/libxslt-1.1.33/libxslt/.libs/libxslt.a
 LIBICONV=libiconv/libiconv-1.16/lib/.libs/libiconv.a
 ZLIB=zlib/zlib-1.2.11/lib/libz.a
 LZ4LIB=packages/lz4/lz4-1.8.3/lib/liblz4.a
-CLAPACK=CLAPACK/CLAPACK-WA/lapack_WA.bc
+CLAPACK=packages/CLAPACK/CLAPACK-WA/lapack_WA.bc
 
 PYODIDE_EMCC=$(PYODIDE_ROOT)/ccache/emcc
 PYODIDE_CXX=$(PYODIDE_ROOT)/ccache/em++
@@ -292,12 +292,12 @@ $(PARSO_LIBS): $(CPYTHONLIB)
 $(CLAPACK): $(CPYTHONLIB)
 ifdef PYODIDE_PACKAGES
 	echo "Skipping BLAS/LAPACK build due to PYODIDE_PACKAGES being defined."
-	echo "Build it manually with make -C CLAPACK if needed."
-	mkdir -p CLAPACK/CLAPACK-WA/
+	echo "Build it manually with make -C packages/CLAPACK if needed."
+	mkdir -p packages/CLAPACK/CLAPACK-WA/
 	touch $(CLAPACK)
 else
 	date +"[%F %T] Building CLAPACK..."
-	make -C CLAPACK
+	make -C packages/CLAPACK
 	date +"[%F %T] done building CLAPACK."
 endif
 
