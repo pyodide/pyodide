@@ -1,4 +1,4 @@
-FROM circleci/python:3.7.7-buster
+FROM circleci/python:3.8.2-buster
 
 RUN sudo apt-get update \
   # bzip2 and libgconf-2-4 are necessary for extracting firefox and running chrome, respectively

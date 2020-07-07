@@ -398,8 +398,8 @@ def run_web_server(q, log_filepath, build_dir):
 
     class Handler(http.server.CGIHTTPRequestHandler):
         def translate_path(self, path):
-            if path.startswith("/test/"):
-                return TEST_PATH / path[6:]
+            if str(path).startswith("/test/"):
+                return str(TEST_PATH / path[6:])
             return super(Handler, self).translate_path(path)
 
         def is_cgi(self):

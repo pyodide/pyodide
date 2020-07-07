@@ -81,7 +81,6 @@ $(HOSTPYTHON) $(HOSTPGEN): $(TARBALL)
 		PKG_CONFIG_PATH="/usr/local/opt/openssl/lib/pkgconfig" ./configure --prefix=$(HOSTINSTALL) || cat config.log && \
 	  	make regen-grammar -j $${PYODIDE_JOBS:-3} && \
 		make install -j $${PYODIDE_JOBS:-3} && \
-		cp Parser/pgen$(EXE) $(HOSTINSTALL)/bin/ && \
 		make distclean \
 	)
 
