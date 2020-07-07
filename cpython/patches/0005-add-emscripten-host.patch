@@ -1,5 +1,11 @@
+From a6cf085d48b4783c997544f68636d0c4beb96401 Mon Sep 17 00:00:00 2001
+From: Michael Droettboom <mdboom@gmail.com>
+Date: Sun, 5 Jul 2020 17:36:12 +0200
+Subject: [PATCH] add-emscripten-host
+
+
 diff --git a/config.sub b/config.sub
-index ba37cf99e2..d772f33065 100755
+index ba37cf99e2..c99e28a272 100755
 --- a/config.sub
 +++ b/config.sub
 @@ -118,7 +118,8 @@ case $maybe_os in
@@ -16,7 +22,7 @@ index ba37cf99e2..d772f33065 100755
  	| alpha64-* | alpha64ev[4-8]-* | alpha64ev56-* | alpha64ev6[78]-* \
  	| alphapca5[67]-* | alpha64pca5[67]-* | arc-* | arceb-* \
  	| arm-*  | armbe-* | armle-* | armeb-* | armv*-* \
-+  | asmjs \
++	| asmjs \
  	| avr-* | avr32-* \
  	| ba-* \
  	| be32-* | be64-* \
@@ -30,22 +36,22 @@ index ba37cf99e2..d772f33065 100755
  		;;
  	-ios)
 diff --git a/configure b/configure
-index e0389649ae..e6ab1613cf 100755
+index a979363acf..c4e0b866c3 100755
 --- a/configure
 +++ b/configure
-@@ -3257,6 +3257,9 @@ then
- 	*-*-cygwin*)
- 		ac_sys_system=Cygwin
- 		;;
+@@ -3274,6 +3274,9 @@ then
+ 	*-*-vxworks*)
+ 	    ac_sys_system=VxWorks
+ 	    ;;
 +	asmjs-*-*)
 +		ac_sys_system=Emscripten
 +		;;
  	*)
  		# for now, limit cross builds to known configurations
  		MACHDEP="unknown"
-@@ -3301,6 +3304,9 @@ if test "$cross_compiling" = yes; then
- 	*-*-cygwin*)
- 		_host_cpu=
+@@ -3324,6 +3327,9 @@ if test "$cross_compiling" = yes; then
+ 	*-*-vxworks*)
+ 		_host_cpu=$host_cpu
  		;;
 +	asmjs-*-*)
 +		_host_cpu=
@@ -54,26 +60,28 @@ index e0389649ae..e6ab1613cf 100755
  		# for now, limit cross builds to known configurations
  		MACHDEP="unknown"
 diff --git a/configure.ac b/configure.ac
-index b5beb08574..8051e5a8ed 100644
+index e57ef7c38b..c1977f3a6f 100644
 --- a/configure.ac
 +++ b/configure.ac
-@@ -379,6 +379,9 @@ then
- 	*-*-cygwin*)
- 		ac_sys_system=Cygwin
- 		;;
+@@ -382,6 +382,9 @@ then
+ 	*-*-vxworks*)
+ 	    ac_sys_system=VxWorks
+ 	    ;;
 +	asmjs-*-*)
 +		ac_sys_system=Emscripten
 +		;;
  	*)
  		# for now, limit cross builds to known configurations
  		MACHDEP="unknown"
-@@ -423,6 +426,9 @@ if test "$cross_compiling" = yes; then
- 	*-*-cygwin*)
- 		_host_cpu=
+@@ -430,6 +433,8 @@ if test "$cross_compiling" = yes; then
  		;;
+ 	*-*-vxworks*)
+ 		_host_cpu=$host_cpu
 +	asmjs-*-*)
 +		_host_cpu=
-+		;;
+ 		;;
  	*)
  		# for now, limit cross builds to known configurations
- 		MACHDEP="unknown"
+-- 
+2.25.1
+

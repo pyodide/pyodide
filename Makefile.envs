@@ -7,7 +7,7 @@ export EM_CONFIG = $(PYODIDE_ROOT)/emsdk/emsdk/.emscripten
 export EM_CACHE = $(PYODIDE_ROOT)/emsdk/emsdk/.emscripten_cache
 export BINARYEN_ROOT = $(PYODIDE_ROOT)/emsdk/emsdk/binaryen
 
-export PYVERSION=3.7.4
+export PYVERSION=3.8.2
 export PYMINOR=$(basename $(PYVERSION))
 export HOSTPYTHONROOT=$(PYODIDE_ROOT)/cpython/build/$(PYVERSION)/host
 export HOSTPYTHON=$(HOSTPYTHONROOT)/bin/python3
