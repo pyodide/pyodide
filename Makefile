@@ -55,10 +55,10 @@ LDFLAGS=\
 SIX_ROOT=packages/six/six-1.11.0/build/lib
 SIX_LIBS=$(SIX_ROOT)/six.py
 
-JEDI_ROOT=jedi/jedi-0.15.1/jedi
+JEDI_ROOT=packages/jedi/jedi-0.15.1/jedi
 JEDI_LIBS=$(JEDI_ROOT)/__init__.py
 
-PARSO_ROOT=parso/parso-0.5.1/parso
+PARSO_ROOT=packages/parso/parso-0.5.1/parso
 PARSO_LIBS=$(PARSO_ROOT)/__init__.py
 
 SITEPACKAGES=root/lib/python$(PYMINOR)/site-packages
@@ -155,8 +155,8 @@ clean:
 	rm -fr src/*.bc
 	make -C packages clean
 	make -C packages/six clean
-	make -C jedi clean
-	make -C parso clean
+	make -C packages/jedi clean
+	make -C packages/parso clean
 	make -C lz4 clean
 	make -C libxslt clean
 	make -C libxml clean
@@ -279,13 +279,13 @@ $(SIX_LIBS): $(CPYTHONLIB)
 
 $(JEDI_LIBS): $(CPYTHONLIB)
 	date +"[%F %T] Building jedi..."
-	make -C jedi
+	make -C packages/jedi
 	date +"[%F %T] done building jedi."
 
 
 $(PARSO_LIBS): $(CPYTHONLIB)
 	date +"[%F %T] Building parso..."
-	make -C parso
+	make -C packages/parso
 	date +"[%F %T] done building parso."
 
 

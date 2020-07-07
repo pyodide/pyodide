@@ -24,11 +24,11 @@ ccache
 /emsdk/emsdk
 
 packages/six/six-1.11.0
-/lz4/lz4-1.8.3
+packages/lz4/lz4-1.8.3
 CLAPACK/CLAPACK-WA
 CLAPACK/clapack.tgz
-jedi/jedi-0.15.1
-parso/parso-0.5.1
+packages/jedi/jedi-0.15.1
+packages/parso/parso-0.5.1
 *.egg-info/
 
 libxml/libxml*
