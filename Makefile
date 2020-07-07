@@ -11,7 +11,7 @@ LIBXML=libxml/libxml2-2.9.10/.libs/libxml2.a
 LIBXSLT=libxslt/libxslt-1.1.33/libxslt/.libs/libxslt.a
 LIBICONV=libiconv/libiconv-1.16/lib/.libs/libiconv.a
 ZLIB=zlib/zlib-1.2.11/lib/libz.a
-LZ4LIB=lz4/lz4-1.8.3/lib/liblz4.a
+LZ4LIB=packages/lz4/lz4-1.8.3/lib/liblz4.a
 CLAPACK=CLAPACK/CLAPACK-WA/lapack_WA.bc
 
 PYODIDE_EMCC=$(PYODIDE_ROOT)/ccache/emcc
@@ -157,7 +157,7 @@ clean:
 	make -C packages/six clean
 	make -C packages/jedi clean
 	make -C packages/parso clean
-	make -C lz4 clean
+	make -C packages/lz4 clean
 	make -C libxslt clean
 	make -C libxml clean
 	make -C libiconv clean
@@ -245,7 +245,7 @@ $(CPYTHONLIB): emsdk/emsdk/.complete $(PYODIDE_EMCC) $(PYODIDE_CXX)
 
 $(LZ4LIB):
 	date +"[%F %T] Building lz4..."
-	make -C lz4
+	make -C packages/lz4
 	date +"[%F %T] done building lz4."
 
 
