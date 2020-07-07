@@ -69,6 +69,7 @@ def download_and_extract(buildpath, packagedir, pkg, args):
                 check_checksum(tarballpath, pkg)
             except Exception:
                 tarballpath.unlink()
+                raise
 
         if not srcpath.is_dir():
             shutil.unpack_archive(str(tarballpath), str(buildpath))
