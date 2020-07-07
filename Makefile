@@ -7,9 +7,9 @@ FILEPACKAGER=$(PYODIDE_ROOT)/tools/file_packager.py
 CPYTHONROOT=cpython
 CPYTHONLIB=$(CPYTHONROOT)/installs/python-$(PYVERSION)/lib/python$(PYMINOR)
 
-LIBXML=libxml/libxml2-2.9.10/.libs/libxml2.a
+LIBXML=packages/libxml/libxml2-2.9.10/.libs/libxml2.a
 LIBXSLT=packages/libxslt/libxslt-1.1.33/libxslt/.libs/libxslt.a
-LIBICONV=libiconv/libiconv-1.16/lib/.libs/libiconv.a
+LIBICONV=packages/libiconv/libiconv-1.16/lib/.libs/libiconv.a
 ZLIB=packages/zlib/zlib-1.2.11/lib/libz.a
 LZ4LIB=packages/lz4/lz4-1.8.3/lib/liblz4.a
 CLAPACK=packages/CLAPACK/CLAPACK-WA/lapack_WA.bc
@@ -159,8 +159,8 @@ clean:
 	make -C packages/parso clean
 	make -C packages/lz4 clean
 	make -C packages/libxslt clean
-	make -C libxml clean
-	make -C libiconv clean
+	make -C packages/libxml clean
+	make -C packages/libiconv clean
 	make -C packages/zlib clean
 	echo "The Emsdk, CPython and CLAPACK are not cleaned. cd into those directories to do so."
 
@@ -251,7 +251,7 @@ $(LZ4LIB):
 
 $(LIBXML): $(CPYTHONLIB) $(ZLIB)
 	date +"[%F %T] Building libxml..."
-	make -C libxml
+	make -C packages/libxml
 	date +"[%F %T] done building libxml..."
 
 
@@ -262,7 +262,7 @@ $(LIBXSLT): $(CPYTHONLIB) $(LIBXML)
 
 $(LIBICONV):
 	date +"[%F %T] Building libiconv..."
-	make -C libiconv
+	make -C packages/libiconv
 	date +"[%F %T] done building libiconv..."
 
 $(ZLIB):
