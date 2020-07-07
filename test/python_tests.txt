@@ -1,3 +1,6 @@
+# This list is generated with test/make_test_list.py script, which needs
+# to be re-run after each CPython update.
+#
 # Test modules with a failure reason after their name are either skipped
 # or marked as a known failure in pytest.
 #
