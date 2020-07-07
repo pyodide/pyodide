@@ -63,12 +63,12 @@ def download_and_extract(buildpath, packagedir, pkg, args):
         tarballpath = buildpath / tarballname
         if not tarballpath.is_file():
             try:
-                with open(str(tarballpath), "wb") as f:
+                os.makedirs(os.path.dirname(tarballpath), exist_ok=True)
+                with open(tarballpath, "wb") as f:
                     f.write(response.read())
                 check_checksum(tarballpath, pkg)
             except Exception:
                 tarballpath.unlink()
-                raise
 
         if not srcpath.is_dir():
             shutil.unpack_archive(str(tarballpath), str(buildpath))
