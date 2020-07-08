@@ -1,5 +1,5 @@
-PYODIDE_ROOT=$(abspath ..)
-include ../Makefile.envs
+PYODIDE_ROOT=$(abspath ../..)
+include ../../Makefile.envs
 
 SIXVERSION=1.11.0
 

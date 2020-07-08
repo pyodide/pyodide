@@ -1,0 +1,49 @@
+From 63fd6ee84261ff357d3d3b56a35b756c4d13ce69 Mon Sep 17 00:00:00 2001
+From: Roman Yurchak <rth.yurchak@gmail.com>
+Date: Sun, 5 Jul 2020 21:17:10 +0200
+Subject: [PATCH] fix Py_Sigset_Converter
+
+
+diff --git a/Modules/posixmodule.c b/Modules/posixmodule.c
+index 2f791d1df9..c775d7711d 100644
+--- a/Modules/posixmodule.c
++++ b/Modules/posixmodule.c
+@@ -1337,6 +1337,13 @@ error:
+     Py_DECREF(iterator);
+     return 0;
+ }
++#else
++int
++_Py_Sigset_Converter(PyObject *obj, void *addr)
++{
++    PyErr_SetFromErrno(PyExc_OSError);
++    return 0;
++}
+ #endif /* HAVE_SIGSET_T */
+ 
+ #ifdef MS_WINDOWS
+@@ -5413,6 +5420,7 @@ parse_posix_spawn_flags(const char *func_name, PyObject *setpgroup,
+         all_flags |= POSIX_SPAWN_SETSIGDEF;
+     }
+ 
++
+     if (scheduler) {
+ #ifdef POSIX_SPAWN_SETSCHEDULER
+         PyObject *py_schedpolicy;
+diff --git a/Modules/posixmodule.h b/Modules/posixmodule.h
+index 1e00562abc..229704a831 100644
+--- a/Modules/posixmodule.h
++++ b/Modules/posixmodule.h
+@@ -23,9 +23,7 @@ PyAPI_FUNC(int) _Py_Gid_Converter(PyObject *, void *);
+ # define HAVE_SIGSET_T
+ #endif
+ 
+-#ifdef HAVE_SIGSET_T
+ PyAPI_FUNC(int) _Py_Sigset_Converter(PyObject *, void *);
+-#endif /* HAVE_SIGSET_T */
+ #endif /* Py_LIMITED_API */
+ 
+ #ifdef __cplusplus
+-- 
+2.25.1
+
