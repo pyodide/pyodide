@@ -5,11 +5,13 @@ Builds a Pyodide package.
 """
 
 import argparse
+import cgi
 import hashlib
 import os
 from pathlib import Path
 import shutil
 import subprocess
+from urllib import request
 from datetime import datetime
 
 
@@ -49,13 +51,21 @@ def download_and_extract(buildpath, packagedir, pkg, args):
         return srcpath
 
     if "url" in pkg["source"]:
-        tarballpath = buildpath / Path(pkg["source"]["url"]).name
+        response = request.urlopen(pkg["source"]["url"])
+        _, parameters = cgi.parse_header(
+            response.headers.get("Content-Disposition", "")
+        )
+        if "filename" in parameters:
+            tarballname = parameters["filename"]
+        else:
+            tarballname = Path(response.geturl()).name
+
+        tarballpath = buildpath / tarballname
         if not tarballpath.is_file():
             try:
-                subprocess.run(
-                    ["wget", "-q", "-O", str(tarballpath), pkg["source"]["url"]],
-                    check=True,
-                )
+                os.makedirs(os.path.dirname(tarballpath), exist_ok=True)
+                with open(tarballpath, "wb") as f:
+                    f.write(response.read())
                 check_checksum(tarballpath, pkg)
             except Exception:
                 tarballpath.unlink()
@@ -64,6 +74,21 @@ def download_and_extract(buildpath, packagedir, pkg, args):
         if not srcpath.is_dir():
             shutil.unpack_archive(str(tarballpath), str(buildpath))
 
+        for extension in [
+            ".tar.gz",
+            ".tgz",
+            ".tar",
+            ".tar.bz2",
+            ".tbz2",
+            ".tar.xz",
+            ".txz",
+            ".zip",
+        ]:
+            if tarballname.endswith(extension):
+                tarballname = tarballname[: -len(extension)]
+                break
+
+        return buildpath / tarballname
     elif "path" in pkg["source"]:
         srcdir = Path(pkg["source"]["path"])
 
@@ -72,10 +97,10 @@ def download_and_extract(buildpath, packagedir, pkg, args):
 
         if not srcpath.is_dir():
             shutil.copytree(srcdir, srcpath)
+
+        return srcpath
     else:
         raise ValueError("Incorrect source provided")
-
-    return srcpath
 
 
 def patch(path, srcpath, pkg, args):
