@@ -1,5 +1,5 @@
-PYODIDE_ROOT=$(abspath ..)
-include ../Makefile.envs
+PYODIDE_ROOT=$(abspath ../..)
+include ../../Makefile.envs
 
 LIBICONVVERSION=1.16
 
