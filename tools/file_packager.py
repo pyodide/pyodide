@@ -74,7 +74,7 @@ import ctypes
 
 emscripten_dir = os.path.join(
   os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
-  'emsdk', 'emsdk', 'fastcomp', 'emscripten'
+  'emsdk', 'emsdk', 'upstream', 'emscripten'
 )
 tag_dir = sorted(os.listdir(emscripten_dir), key=lambda x: len(x))[0]
 sys.path.insert(1, emscripten_dir)

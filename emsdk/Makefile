@@ -8,12 +8,12 @@ emsdk/.complete:
 	git clone https://github.com/emscripten-core/emsdk.git
 	( \
 		cd emsdk && \
-		./emsdk install --build=Release $(EMSCRIPTEN_VERSION)-fastcomp && \
+		./emsdk install --build=Release $(EMSCRIPTEN_VERSION)-upstream && \
 		git clone --branch 1.38.32 --depth 1 https://github.com/WebAssembly/binaryen.git  && \
 		cd .. && \
 		(cat patches/*.patch | patch -p1) && \
 		cd emsdk && \
-		./emsdk activate --embedded --build=Release $(EMSCRIPTEN_VERSION)-fastcomp && \
+		./emsdk activate --embedded --build=Release $(EMSCRIPTEN_VERSION)-upstream && \
 	        cd binaryen && \
 		cmake . && make -j5 && \
 		cd ../.. && \
