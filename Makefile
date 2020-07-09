@@ -7,12 +7,12 @@ FILEPACKAGER=$(PYODIDE_ROOT)/tools/file_packager.py
 CPYTHONROOT=cpython
 CPYTHONLIB=$(CPYTHONROOT)/installs/python-$(PYVERSION)/lib/python$(PYMINOR)
 
-LIBXML=libxml/libxml2-2.9.10/.libs/libxml2.a
-LIBXSLT=libxslt/libxslt-1.1.33/libxslt/.libs/libxslt.a
-LIBICONV=libiconv/libiconv-1.16/lib/.libs/libiconv.a
-ZLIB=zlib/zlib-1.2.11/lib/libz.a
-LZ4LIB=lz4/lz4-1.8.3/lib/liblz4.a
-CLAPACK=CLAPACK/CLAPACK-WA/lapack_WA.bc
+LIBXML=packages/libxml/libxml2-2.9.10/.libs/libxml2.a
+LIBXSLT=packages/libxslt/libxslt-1.1.33/libxslt/.libs/libxslt.a
+LIBICONV=packages/libiconv/libiconv-1.16/lib/.libs/libiconv.a
+ZLIB=packages/zlib/zlib-1.2.11/lib/libz.a
+LZ4LIB=packages/lz4/lz4-1.8.3/lib/liblz4.a
+CLAPACK=packages/CLAPACK/CLAPACK-WA/lapack_WA.bc
 
 PYODIDE_EMCC=$(PYODIDE_ROOT)/ccache/emcc
 PYODIDE_CXX=$(PYODIDE_ROOT)/ccache/em++
@@ -52,13 +52,13 @@ LDFLAGS=\
 	-s TEXTDECODER=0 \
 	-s LZ4=1
 
-SIX_ROOT=six/six-1.11.0/build/lib
+SIX_ROOT=packages/six/six-1.11.0/build/lib
 SIX_LIBS=$(SIX_ROOT)/six.py
 
-JEDI_ROOT=jedi/jedi-0.15.1/jedi
+JEDI_ROOT=packages/jedi/jedi-0.15.1/jedi
 JEDI_LIBS=$(JEDI_ROOT)/__init__.py
 
-PARSO_ROOT=parso/parso-0.5.1/parso
+PARSO_ROOT=packages/parso/parso-0.5.1/parso
 PARSO_LIBS=$(PARSO_ROOT)/__init__.py
 
 SITEPACKAGES=root/lib/python$(PYMINOR)/site-packages
@@ -154,14 +154,14 @@ clean:
 	rm -fr build/*
 	rm -fr src/*.bc
 	make -C packages clean
-	make -C six clean
-	make -C jedi clean
-	make -C parso clean
-	make -C lz4 clean
-	make -C libxslt clean
-	make -C libxml clean
-	make -C libiconv clean
-	make -C zlib clean
+	make -C packages/six clean
+	make -C packages/jedi clean
+	make -C packages/parso clean
+	make -C packages/lz4 clean
+	make -C packages/libxslt clean
+	make -C packages/libxml clean
+	make -C packages/libiconv clean
+	make -C packages/zlib clean
 	echo "The Emsdk, CPython and CLAPACK are not cleaned. cd into those directories to do so."
 
 clean-all: clean
@@ -193,7 +193,7 @@ root/.built: \
 		src/sitecustomize.py \
 		src/webbrowser.py \
 		src/pyodide.py \
-		remove_modules.txt
+		cpython/remove_modules.txt
 	rm -rf root
 	mkdir -p root/lib
 	cp -r $(CPYTHONLIB) root/lib
@@ -208,7 +208,7 @@ root/.built: \
 	cp src/pyodide.py root/lib/python$(PYMINOR)/site-packages
 	( \
 		cd root/lib/python$(PYMINOR); \
-		rm -fr `cat ../../../remove_modules.txt`; \
+		rm -fr `cat ../../../cpython/remove_modules.txt`; \
 		rm -fr test; \
 		find . -type d -name __pycache__ -prune -exec rm -rf {} \; \
 	)
@@ -245,59 +245,59 @@ $(CPYTHONLIB): emsdk/emsdk/.complete $(PYODIDE_EMCC) $(PYODIDE_CXX)
 
 $(LZ4LIB):
 	date +"[%F %T] Building lz4..."
-	make -C lz4
+	make -C packages/lz4
 	date +"[%F %T] done building lz4."
 
 
 $(LIBXML): $(CPYTHONLIB) $(ZLIB)
 	date +"[%F %T] Building libxml..."
-	make -C libxml
+	make -C packages/libxml
 	date +"[%F %T] done building libxml..."
 
 
 $(LIBXSLT): $(CPYTHONLIB) $(LIBXML)
 	date +"[%F %T] Building libxslt..."
-	make -C libxslt
+	make -C packages/libxslt
 	date +"[%F %T] done building libxslt..."
 
 $(LIBICONV):
 	date +"[%F %T] Building libiconv..."
-	make -C libiconv
+	make -C packages/libiconv
 	date +"[%F %T] done building libiconv..."
 
 $(ZLIB):
 	date +"[%F %T] Building zlib..."
-	make -C zlib
+	make -C packages/zlib
 	date +"[%F %T] done building zlib..."
 
 
 $(SIX_LIBS): $(CPYTHONLIB)
 	date +"[%F %T] Building six..."
-	make -C six
+	make -C packages/six
 	date +"[%F %T] done building six."
 
 
 $(JEDI_LIBS): $(CPYTHONLIB)
 	date +"[%F %T] Building jedi..."
-	make -C jedi
+	make -C packages/jedi
 	date +"[%F %T] done building jedi."
 
 
 $(PARSO_LIBS): $(CPYTHONLIB)
 	date +"[%F %T] Building parso..."
-	make -C parso
+	make -C packages/parso
 	date +"[%F %T] done building parso."
 
 
 $(CLAPACK): $(CPYTHONLIB)
 ifdef PYODIDE_PACKAGES
 	echo "Skipping BLAS/LAPACK build due to PYODIDE_PACKAGES being defined."
-	echo "Build it manually with make -C CLAPACK if needed."
-	mkdir -p CLAPACK/CLAPACK-WA/
+	echo "Build it manually with make -C packages/CLAPACK if needed."
+	mkdir -p packages/CLAPACK/CLAPACK-WA/
 	touch $(CLAPACK)
 else
 	date +"[%F %T] Building CLAPACK..."
-	make -C CLAPACK
+	make -C packages/CLAPACK
 	date +"[%F %T] done building CLAPACK."
 endif
 
