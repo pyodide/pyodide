@@ -9,11 +9,7 @@ DEFAULTCFLAGS = ""
 DEFAULTLDFLAGS = " ".join(
     [
         "-O2",
-        "-s",
-        "BINARYEN_METHOD='native-wasm'",
         "-Werror",
-        "-s",
-        "EMULATED_FUNCTION_POINTERS=1",
         "-s",
         "EMULATE_FUNCTION_POINTER_CASTS=1",
         "-s",
@@ -22,6 +18,10 @@ DEFAULTLDFLAGS = " ".join(
         "WASM=1",
         "--memory-init-file",
         "0",
+        "-s",
+        "LINKABLE=1",
+        "-s",
+        "EXPORT_ALL=1",
     ]
 )
 

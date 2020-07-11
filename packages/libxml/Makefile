@@ -40,5 +40,5 @@ $(SRC)/.libs/libxml2.a: $(SRC)/Makefile
 			--without-python \
 			--with-iconv=$(LIBICONV_DIR) \
 			--with-zlib=$(LIBZ_DIR) ; \
-		emmake make -j $${PYODIDE_JOBS:-3} ; \
+		CPPFLAGS="-fPIC" emmake make -j $${PYODIDE_JOBS:-3} ; \
 	)

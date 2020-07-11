@@ -18,13 +18,10 @@ export PYODIDE_PACKAGE_ABI=1
 
 export SIDE_LDFLAGS=\
 	-O2 \
-  -s "BINARYEN_METHOD='native-wasm'" \
 	-Werror \
-  -s EMULATED_FUNCTION_POINTERS=1 \
   -s EMULATE_FUNCTION_POINTER_CASTS=1 \
   -s SIDE_MODULE=1 \
 	-s WASM=1 \
-  -s "BINARYEN_TRAP_MODE='clamp'" \
   --memory-init-file 0 \
   -s LINKABLE=1 \
   -s EXPORT_ALL=1 \

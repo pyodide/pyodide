@@ -32,5 +32,5 @@ $(SRC)/Makefile: $(TARBALL)
 $(SRC)/lib/liblz4.a: $(SRC)/Makefile
 	( \
 		cd $(SRC) ; \
-		emmake make -j $${PYODIDE_JOBS:-3} ; \
+		CPPFLAGS="-fPIC" emmake make -j $${PYODIDE_JOBS:-3} ; \
 	)

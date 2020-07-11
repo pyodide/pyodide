@@ -1,3 +1,6 @@
+#define HAVE_COPYSIGN 1
+#define HAVE_HYPOT 1
+
 #undef HAVE_EPOLL
 #undef HAVE_EPOLL_CREATE1
 #undef HAVE_LINUX_VM_SOCKETS_H

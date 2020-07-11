@@ -103,8 +103,8 @@ $(SQLITEBUILD)/libsqlite3.la: $(SQLITETARBALL)
 	tar -C $(ROOT)/build/ -xf $(SQLITETARBALL)
 	( \
 		cd $(SQLITEBUILD); \
-		emconfigure ./configure; \
-		emmake make -j $${PYODIDE_JOBS:-3}; \
+		CFLAGS="-fPIC" emconfigure ./configure --with-pic --host=wasm32; \
+		CFLAGS="-fPIC" emmake make -j $${PYODIDE_JOBS:-3}; \
 	)
 
 
@@ -113,7 +113,7 @@ $(BZIP2BUILD)/libbz2.a: $(BZIP2TARBALL)
 	tar -C $(ROOT)/build/ -xf $(BZIP2TARBALL)
 	( \
 		cd $(BZIP2BUILD); \
-		emmake make -j $${PYODIDE_JOBS:-3} CC=emcc CFLAGS="-Wall -Winline -O2 -fomit-frame-pointer -D_FILE_OFFSET_BITS=64" AR=emar RANLIB=emranlib libbz2.a; \
+		emmake make -j $${PYODIDE_JOBS:-3} CC=emcc CFLAGS="-Wall -Winline -O2 -fomit-frame-pointer -D_FILE_OFFSET_BITS=64 -fPIC" AR=emar RANLIB=emranlib libbz2.a; \
 	)
 
 
@@ -123,6 +123,7 @@ $(BUILD)/Makefile: $(BUILD)/.patched $(ZLIBBUILD)/.patched $(SQLITEBUILD)/libsql
 		cd $(BUILD); \
 		CONFIG_SITE=./config.site READELF=true LD_RUN_PATH="$(SQLITEBUILD):$(BZIP2BUILD)" emconfigure \
 		  ./configure \
+		  	  CFLAGS="-fPIC" \
 			  CPPFLAGS="-I$(SQLITEBUILD) -I$(BZIP2BUILD)" \
 			  LDFLAGS="-L$(SQLITEBUILD) -L$(BZIP2BUILD)" \
 			  --without-pymalloc \
@@ -135,7 +136,7 @@ $(BUILD)/Makefile: $(BUILD)/.patched $(ZLIBBUILD)/.patched $(SQLITEBUILD)/libsql
 	)
 
 
-$(BUILD)/$(LIB): $(BUILD)/Makefile $(HOSTPYTHON) $(HOSTPGEN) Setup.local
+$(BUILD)/$(LIB): $(BUILD)/Makefile $(HOSTPYTHON) $(HOSTPGEN) Setup.local pyconfig.undefs.h
 	cp Setup.local $(BUILD)/Modules/
 	cat pyconfig.undefs.h >> $(BUILD)/pyconfig.h
 	( \
