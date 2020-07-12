@@ -17,4 +17,3 @@ requirements:
 test:
   imports:
     - statsmodels
-

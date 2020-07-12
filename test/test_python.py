@@ -4,8 +4,7 @@ import pytest
 
 
 def test_init(selenium_standalone):
-    assert ('Python initialization complete'
-            in selenium_standalone.logs.splitlines())
+    assert "Python initialization complete" in selenium_standalone.logs.splitlines()
     assert len(selenium_standalone.driver.window_handles) == 1
 
 
@@ -17,7 +16,7 @@ def test_webbrowser(selenium):
 
 def test_print(selenium):
     selenium.run("print('This should be logged')")
-    assert 'This should be logged' in selenium.logs.splitlines()
+    assert "This should be logged" in selenium.logs.splitlines()
 
 
 def test_python2js(selenium):
@@ -28,54 +27,53 @@ def test_python2js(selenium):
     assert selenium.run_js('return pyodide.runPython("3.14") === 3.14')
     # Need to test all three internal string representations in Python: UCS1,
     # UCS2 and UCS4
+    assert selenium.run_js('return pyodide.runPython("\'ascii\'") === "ascii"')
+    assert selenium.run_js('return pyodide.runPython("\'ιωδιούχο\'") === "ιωδιούχο"')
+    assert selenium.run_js('return pyodide.runPython("\'碘化物\'") === "碘化物"')
+    assert selenium.run_js('return pyodide.runPython("\'🐍\'") === "🐍"')
     assert selenium.run_js(
-        'return pyodide.runPython("\'ascii\'") === "ascii"')
-    assert selenium.run_js(
-        'return pyodide.runPython("\'ιωδιούχο\'") === "ιωδιούχο"')
-    assert selenium.run_js(
-        'return pyodide.runPython("\'碘化物\'") === "碘化物"')
-    assert selenium.run_js(
-        'return pyodide.runPython("\'🐍\'") === "🐍"')
-    assert selenium.run_js(
-        'let x = pyodide.runPython("b\'bytes\'");\n'
-        'return (x instanceof window.Uint8ClampedArray) && '
-        '(x.length === 5) && '
-        '(x[0] === 98)')
+        "let x = pyodide.runPython(\"b'bytes'\");\n"
+        "return (x instanceof window.Uint8ClampedArray) && "
+        "(x.length === 5) && "
+        "(x[0] === 98)"
+    )
     assert selenium.run_js(
         """
         let x = pyodide.runPython("[1, 2, 3]");
         return ((x instanceof window.Array) && (x.length === 3) &&
                 (x[0] == 1) && (x[1] == 2) && (x[2] == 3))
-        """)
+        """
+    )
     assert selenium.run_js(
         """
         let x = pyodide.runPython("{42: 64}");
         return (typeof x === "object") && (x[42] === 64)
-        """)
+        """
+    )
     assert selenium.run_js(
         """
         let x = pyodide.runPython("open('/foo.txt', 'wb')")
         return (x.tell() === 0)
-        """)
+        """
+    )
 
 
 def test_python2js_long_ints(selenium):
-    assert selenium.run('2**30') == 2**30
-    assert selenium.run('2**31') == 2**31
-    assert selenium.run('2**30 - 1 + 2**30') == (2**30 - 1 + 2**30)
-    assert selenium.run('2**32 / 2**4') == (2**32 / 2**4)
-    assert selenium.run('-2**30') == -2**30
-    assert selenium.run('-2**31') == -2**31
+    assert selenium.run("2**30") == 2 ** 30
+    assert selenium.run("2**31") == 2 ** 31
+    assert selenium.run("2**30 - 1 + 2**30") == (2 ** 30 - 1 + 2 ** 30)
+    assert selenium.run("2**32 / 2**4") == (2 ** 32 / 2 ** 4)
+    assert selenium.run("-2**30") == -(2 ** 30)
+    assert selenium.run("-2**31") == -(2 ** 31)
 
 
 def test_python2js_numpy_dtype(selenium_standalone):
     selenium = selenium_standalone
 
-    selenium.load_package('numpy')
+    selenium.load_package("numpy")
     selenium.run("import numpy as np")
 
-    expected_result = [[[0, 1], [2, 3]],
-                       [[4, 5], [6, 7]]]
+    expected_result = [[[0, 1], [2, 3]], [[4, 5], [6, 7]]]
 
     def assert_equal():
         # We have to do this an element at a time, since the Selenium driver
@@ -83,22 +81,23 @@ def test_python2js_numpy_dtype(selenium_standalone):
         for i in range(2):
             for j in range(2):
                 for k in range(2):
-                    assert selenium.run_js(
-                        f"return pyodide.pyimport('x')[{i}][{j}][{k}]"
-                    ) == expected_result[i][j][k]
+                    assert (
+                        selenium.run_js(f"return pyodide.pyimport('x')[{i}][{j}][{k}]")
+                        == expected_result[i][j][k]
+                    )
 
-    for order in ('C', 'F'):
+    for order in ("C", "F"):
         for dtype in (
-                'int8',
-                'uint8',
-                'int16',
-                'uint16',
-                'int32',
-                'uint32',
-                'int64',
-                'uint64',
-                'float32',
-                'float64'
+            "int8",
+            "uint8",
+            "int16",
+            "uint16",
+            "int32",
+            "uint32",
+            "int64",
+            "uint64",
+            "float32",
+            "float64",
         ):
             selenium.run(
                 f"""
@@ -111,13 +110,13 @@ def test_python2js_numpy_dtype(selenium_standalone):
             classname = selenium.run_js(
                 "return pyodide.pyimport('x')[0][0].constructor.name"
             )
-            if order == 'C' and dtype not in ('uint64', 'int64'):
+            if order == "C" and dtype not in ("uint64", "int64"):
                 # Here we expect a TypedArray subclass, such as Uint8Array, but
                 # not a plain-old Array
-                assert classname.endswith('Array')
-                assert classname != 'Array'
+                assert classname.endswith("Array")
+                assert classname != "Array"
             else:
-                assert classname == 'Array'
+                assert classname == "Array"
             selenium.run(
                 """
                 x = x.byteswap().newbyteorder()
@@ -127,72 +126,76 @@ def test_python2js_numpy_dtype(selenium_standalone):
             classname = selenium.run_js(
                 "return pyodide.pyimport('x')[0][0].constructor.name"
             )
-            if order == 'C' and dtype in ('int8', 'uint8'):
+            if order == "C" and dtype in ("int8", "uint8"):
                 # Here we expect a TypedArray subclass, such as Uint8Array, but
                 # not a plain-old Array -- but only for single byte types where
                 # endianness doesn't matter
-                assert classname.endswith('Array')
-                assert classname != 'Array'
+                assert classname.endswith("Array")
+                assert classname != "Array"
             else:
-                assert classname == 'Array'
+                assert classname == "Array"
 
     assert selenium.run("np.array([True, False])") == [True, False]
 
-    selenium.run(
-        "x = np.array([['string1', 'string2'], ['string3', 'string4']])"
-    )
+    selenium.run("x = np.array([['string1', 'string2'], ['string3', 'string4']])")
     assert selenium.run_js("return pyodide.pyimport('x').length") == 2
-    assert selenium.run_js("return pyodide.pyimport('x')[0][0]") == 'string1'
-    assert selenium.run_js("return pyodide.pyimport('x')[1][1]") == 'string4'
+    assert selenium.run_js("return pyodide.pyimport('x')[0][0]") == "string1"
+    assert selenium.run_js("return pyodide.pyimport('x')[1][1]") == "string4"
 
 
 def test_python2js_numpy_scalar(selenium_standalone):
     selenium = selenium_standalone
 
-    selenium.load_package('numpy')
+    selenium.load_package("numpy")
     selenium.run("import numpy as np")
 
     for dtype in (
-            'int8',
-            'uint8',
-            'int16',
-            'uint16',
-            'int32',
-            'uint32',
-            'int64',
-            'uint64',
-            'float32',
-            'float64'
+        "int8",
+        "uint8",
+        "int16",
+        "uint16",
+        "int32",
+        "uint32",
+        "int64",
+        "uint64",
+        "float32",
+        "float64",
     ):
         selenium.run(
             f"""
             x = np.{dtype}(1)
             """
         )
-        assert selenium.run_js(
-            """
+        assert (
+            selenium.run_js(
+                """
             return pyodide.pyimport('x') == 1
             """
-        ) is True
+            )
+            is True
+        )
         selenium.run(
             """
             x = x.byteswap().newbyteorder()
             """
         )
-        assert selenium.run_js(
-            """
+        assert (
+            selenium.run_js(
+                """
             return pyodide.pyimport('x') == 1
             """
-        ) is True
+            )
+            is True
+        )
 
 
 def test_pythonexc2js(selenium):
     try:
         selenium.run_js('return pyodide.runPython("5 / 0")')
     except selenium.JavascriptException as e:
-        assert 'ZeroDivisionError' in str(e)
+        assert "ZeroDivisionError" in str(e)
     else:
-        assert False, 'Expected exception'
+        assert False, "Expected exception"
 
 
 def test_js2python(selenium):
@@ -215,83 +218,76 @@ def test_js2python(selenium):
         window.jsobject = new XMLHttpRequest();
         """
     )
+    assert selenium.run("from js import jsstring_ucs1\n" 'jsstring_ucs1 == "pyodidé"')
+    assert selenium.run("from js import jsstring_ucs2\n" 'jsstring_ucs2 == "碘化物"')
+    assert selenium.run("from js import jsstring_ucs4\n" 'jsstring_ucs4 == "🐍"')
     assert selenium.run(
-        'from js import jsstring_ucs1\n'
-        'jsstring_ucs1 == "pyodidé"')
+        "from js import jsnumber0\n" "jsnumber0 == 42 and isinstance(jsnumber0, int)"
+    )
     assert selenium.run(
-        'from js import jsstring_ucs2\n'
-        'jsstring_ucs2 == "碘化物"')
-    assert selenium.run(
-        'from js import jsstring_ucs4\n'
-        'jsstring_ucs4 == "🐍"')
-    assert selenium.run(
-        'from js import jsnumber0\n'
-        'jsnumber0 == 42 and isinstance(jsnumber0, int)')
-    assert selenium.run(
-        'from js import jsnumber1\n'
-        'jsnumber1 == 42.5 and isinstance(jsnumber1, float)')
-    assert selenium.run(
-        'from js import jsundefined\n'
-        'jsundefined is None')
-    assert selenium.run(
-        'from js import jstrue\n'
-        'jstrue is True')
-    assert selenium.run(
-        'from js import jsfalse\n'
-        'jsfalse is False')
-    assert selenium.run(
-        'from js import jspython\n'
-        'jspython is open')
+        "from js import jsnumber1\n"
+        "jsnumber1 == 42.5 and isinstance(jsnumber1, float)"
+    )
+    assert selenium.run("from js import jsundefined\n" "jsundefined is None")
+    assert selenium.run("from js import jstrue\n" "jstrue is True")
+    assert selenium.run("from js import jsfalse\n" "jsfalse is False")
+    assert selenium.run("from js import jspython\n" "jspython is open")
     assert selenium.run(
         """
         from js import jsbytes
         ((jsbytes.tolist() == [1, 2, 3])
          and (jsbytes.tobytes() == b"\x01\x02\x03"))
-        """)
+        """
+    )
     assert selenium.run(
         """
         from js import jsfloats
         import struct
         expected = struct.pack("fff", 1, 2, 3)
         (jsfloats.tolist() == [1, 2, 3]) and (jsfloats.tobytes() == expected)
-        """)
+        """
+    )
     assert selenium.run(
-        'from js import jsobject\n'
-        'str(jsobject) == "[object XMLHttpRequest]"')
+        "from js import jsobject\n" 'str(jsobject) == "[object XMLHttpRequest]"'
+    )
     assert selenium.run(
         """
         from js import jsobject
         bool(jsobject) == True
-        """)
+        """
+    )
     assert selenium.run(
         """
         from js import jsarray0
         bool(jsarray0) == False
-        """)
+        """
+    )
     assert selenium.run(
         """
         from js import jsarray1
         bool(jsarray1) == True
-        """)
+        """
+    )
 
 
-@pytest.mark.parametrize('wasm_heap', (False, True))
+@pytest.mark.parametrize("wasm_heap", (False, True))
 @pytest.mark.parametrize(
-        'jstype, pytype',
-        (
-         ('Int8Array', 'b'),
-         ('Uint8Array', 'B'),
-         ('Uint8ClampedArray', 'B'),
-         ('Int16Array', 'h'),
-         ('Uint16Array', 'H'),
-         ('Int32Array', 'i'),
-         ('Uint32Array', 'I'),
-         ('Float32Array', 'f'),
-         ('Float64Array', 'd')))
+    "jstype, pytype",
+    (
+        ("Int8Array", "b"),
+        ("Uint8Array", "B"),
+        ("Uint8ClampedArray", "B"),
+        ("Int16Array", "h"),
+        ("Uint16Array", "H"),
+        ("Int32Array", "i"),
+        ("Uint32Array", "I"),
+        ("Float32Array", "f"),
+        ("Float64Array", "d"),
+    ),
+)
 def test_typed_arrays(selenium, wasm_heap, jstype, pytype):
     if not wasm_heap:
-        selenium.run_js(
-            f'window.array = new {jstype}([1, 2, 3, 4]);\n')
+        selenium.run_js(f"window.array = new {jstype}([1, 2, 3, 4]);\n")
     else:
         selenium.run_js(
             f"""
@@ -303,7 +299,8 @@ def test_typed_arrays(selenium, wasm_heap, jstype, pytype):
              window.array[1] = 2;
              window.array[2] = 3;
              window.array[3] = 4;
-             """)
+             """
+        )
     assert selenium.run(
         f"""
          from js import array
@@ -314,17 +311,21 @@ def test_typed_arrays(selenium, wasm_heap, jstype, pytype):
           and array.tolist() == [1, 2, 3, 4]
           and array.tobytes() == expected
           and array.obj._has_bytes() is {not wasm_heap})
-         """)
+         """
+    )
 
 
 def test_array_buffer(selenium):
-    selenium.run_js(
-        'window.array = new ArrayBuffer(100);\n')
-    assert selenium.run(
-        """
+    selenium.run_js("window.array = new ArrayBuffer(100);\n")
+    assert (
+        selenium.run(
+            """
         from js import array
         len(array.tobytes())
-        """) == 100
+        """
+        )
+        == 100
+    )
 
 
 def test_import_js(selenium):
@@ -333,15 +334,17 @@ def test_import_js(selenium):
         import js
         js.window.title = 'Foo'
         js.window.title
-        """)
-    assert result == 'Foo'
+        """
+    )
+    assert result == "Foo"
     result = selenium.run(
         """
         dir(js)
-        """)
+        """
+    )
     assert len(result) > 100
-    assert 'document' in result
-    assert 'window' in result
+    assert "document" in result
+    assert "window" in result
 
 
 def test_pyimport_multiple(selenium):
@@ -374,20 +377,98 @@ def test_pyproxy(selenium):
     assert selenium.run_js("return ('bar' in pyodide.pyimport('f'))")
     selenium.run_js("f = pyodide.pyimport('f'); f.baz = 32")
     assert selenium.run("f.baz") == 32
-    assert set(selenium.run_js(
-        "return Object.getOwnPropertyNames(pyodide.pyimport('f'))")) == set(
-            ['__class__', '__delattr__', '__dict__', '__dir__',
-             '__doc__', '__eq__', '__format__', '__ge__', '__getattribute__',
-             '__gt__', '__hash__', '__init__', '__init_subclass__', '__le__',
-             '__lt__', '__module__', '__ne__', '__new__', '__reduce__',
-             '__reduce_ex__', '__repr__', '__setattr__', '__sizeof__',
-             '__str__', '__subclasshook__', '__weakref__', 'bar', 'baz',
-             'get_value', 'toString', 'prototype', 'arguments', 'caller'])
+    assert set(
+        selenium.run_js("return Object.getOwnPropertyNames(pyodide.pyimport('f'))")
+    ) == set(
+        [
+            "__class__",
+            "__delattr__",
+            "__dict__",
+            "__dir__",
+            "__doc__",
+            "__eq__",
+            "__format__",
+            "__ge__",
+            "__getattribute__",
+            "__gt__",
+            "__hash__",
+            "__init__",
+            "__init_subclass__",
+            "__le__",
+            "__lt__",
+            "__module__",
+            "__ne__",
+            "__new__",
+            "__reduce__",
+            "__reduce_ex__",
+            "__repr__",
+            "__setattr__",
+            "__sizeof__",
+            "__str__",
+            "__subclasshook__",
+            "__weakref__",
+            "bar",
+            "baz",
+            "get_value",
+            "toString",
+            "prototype",
+            "arguments",
+            "caller",
+        ]
+    )
     assert selenium.run("hasattr(f, 'baz')")
     selenium.run_js("delete pyodide.pyimport('f').baz")
     assert not selenium.run("hasattr(f, 'baz')")
-    assert selenium.run_js(
-        "return pyodide.pyimport('f').toString()").startswith('<Foo')
+    assert selenium.run_js("return pyodide.pyimport('f').toString()").startswith("<Foo")
+
+
+def test_pyproxy_refcount(selenium):
+    selenium.run_js("window.jsfunc = function (f) { f(); }")
+    selenium.run(
+        """
+        import sys
+        from js import window
+
+        def pyfunc(*args, **kwargs):
+            print(*args, **kwargs)
+        """
+    )
+
+    # the refcount should be 2 because:
+    #
+    # 1. pyfunc exists
+    # 2. pyfunc is referenced from the sys.getrefcount()-test below
+    #
+    assert selenium.run("sys.getrefcount(pyfunc)") == 2
+
+    selenium.run(
+        """
+        window.jsfunc(pyfunc) # creates new PyProxy
+        """
+    )
+
+    # the refcount should be 3 because:
+    #
+    # 1. pyfunc exists
+    # 2. one reference from PyProxy to pyfunc is alive
+    # 3. pyfunc is referenced from the sys.getrefcount()-test below
+    #
+    assert selenium.run("sys.getrefcount(pyfunc)") == 3
+
+    selenium.run(
+        """
+        window.jsfunc(pyfunc) # re-used existing PyProxy
+        window.jsfunc(pyfunc) # re-used existing PyProxy
+        """
+    )
+
+    # the refcount should still be 3 because:
+    #
+    # 1. pyfunc exists
+    # 2. one reference from PyProxy to pyfunc is still alive
+    # 3. pyfunc is referenced from the sys.getrefcount()-test below
+    #
+    assert selenium.run("sys.getrefcount(pyfunc)") == 3
 
 
 def test_pyproxy_destroy(selenium):
@@ -407,36 +488,31 @@ def test_pyproxy_destroy(selenium):
             console.assert(f.get_value(1) === 64);
             f.destroy();
             f.get_value();
-            """)
+            """
+        )
     except selenium.JavascriptException as e:
-        assert 'Object has already been destroyed' in str(e)
+        assert "Object has already been destroyed" in str(e)
     else:
-        assert False, 'Expected exception'
+        assert False, "Expected exception"
 
 
 def test_jsproxy(selenium):
-    assert selenium.run(
-        """
+    assert (
+        selenium.run(
+            """
         from js import document
         el = document.createElement('div')
         document.body.appendChild(el)
         document.body.children.length"""
-        ) == 1
-    assert selenium.run(
-        "document.body.children[0].tagName") == 'DIV'
-    assert selenium.run(
-        "repr(document)") == '[object HTMLDocument]'
-    selenium.run_js(
-        "window.square = function (x) { return x*x; }")
-    assert selenium.run(
-        "from js import square\n"
-        "square(2)") == 4
-    assert selenium.run(
-        "from js import ImageData\n"
-        "ImageData.new(64, 64)")
-    assert selenium.run(
-        "from js import ImageData\n"
-        "ImageData.typeof") == 'function'
+        )
+        == 1
+    )
+    assert selenium.run("document.body.children[0].tagName") == "DIV"
+    assert selenium.run("repr(document)") == "[object HTMLDocument]"
+    selenium.run_js("window.square = function (x) { return x*x; }")
+    assert selenium.run("from js import square\n" "square(2)") == 4
+    assert selenium.run("from js import ImageData\n" "ImageData.new(64, 64)")
+    assert selenium.run("from js import ImageData\n" "ImageData.typeof") == "function"
     selenium.run_js(
         """
         class Point {
@@ -445,12 +521,17 @@ def test_jsproxy(selenium):
             this.y = y;
           }
         }
-        window.TEST = new Point(42, 43);""")
-    assert selenium.run(
-        """
+        window.TEST = new Point(42, 43);"""
+    )
+    assert (
+        selenium.run(
+            """
         from js import TEST
         del TEST.y
-        hasattr(TEST, 'y')""") is False
+        hasattr(TEST, 'y')"""
+        )
+        is False
+    )
     selenium.run_js(
         """
         class Point {
@@ -459,39 +540,53 @@ def test_jsproxy(selenium):
             this.y = y;
           }
         }
-        window.TEST = new Point(42, 43);""")
-    assert selenium.run(
-        """
+        window.TEST = new Point(42, 43);"""
+    )
+    assert (
+        selenium.run(
+            """
         from js import TEST
         del TEST['y']
-        'y' in TEST""") is False
+        'y' in TEST"""
+        )
+        is False
+    )
     assert selenium.run(
         """
         from js import TEST
         TEST == TEST
-        """)
+        """
+    )
     assert selenium.run(
         """
         from js import TEST
         TEST != 'foo'
-        """)
+        """
+    )
     selenium.run_js(
         """
         window.TEST = {foo: 'bar', baz: 'bap'}
-        """)
-    assert selenium.run(
         """
+    )
+    assert (
+        selenium.run(
+            """
         from js import TEST
         dict(TEST) == {'foo': 'bar', 'baz': 'bap'}
         """
-    ) is True
-    assert selenium.run(
-        """
+        )
+        is True
+    )
+    assert (
+        selenium.run(
+            """
         from js import document
         el = document.createElement('div')
         len(dir(el)) >= 200 and 'appendChild' in dir(el)
         """
-    ) is True
+        )
+        is True
+    )
 
 
 def test_jsproxy_iter(selenium):
@@ -507,25 +602,25 @@ def test_jsproxy_iter(selenium):
             }
           };
         }
-        window.ITER = makeIterator([1, 2, 3]);""")
-    assert selenium.run(
-        "from js import ITER\n"
-        "list(ITER)") == [1, 2, 3]
+        window.ITER = makeIterator([1, 2, 3]);"""
+    )
+    assert selenium.run("from js import ITER\n" "list(ITER)") == [1, 2, 3]
 
 
 def test_jsproxy_implicit_iter(selenium):
     selenium.run_js(
         """
-        window.ITER = [1, 2, 3];""")
+        window.ITER = [1, 2, 3];"""
+    )
+    assert selenium.run("from js import ITER, Object\n" "list(ITER)") == [1, 2, 3]
+    assert selenium.run("from js import ITER, Object\n" "list(ITER.values())") == [
+        1,
+        2,
+        3,
+    ]
     assert selenium.run(
-        "from js import ITER, Object\n"
-        "list(ITER)") == [1, 2, 3]
-    assert selenium.run(
-        "from js import ITER, Object\n"
-        "list(ITER.values())") == [1, 2, 3]
-    assert selenium.run(
-        "from js import ITER, Object\n"
-        "list(Object.values(ITER))") == [1, 2, 3]
+        "from js import ITER, Object\n" "list(Object.values(ITER))"
+    ) == [1, 2, 3]
 
 
 def test_jsproxy_kwargs(selenium):
@@ -536,55 +631,63 @@ def test_jsproxy_kwargs(selenium):
         };
         """
     )
-    assert selenium.run(
-        """
+    assert (
+        selenium.run(
+            """
         from js import kwarg_function
         kwarg_function(b = 2, a = 10)
         """
-    ) == 5
+        )
+        == 5
+    )
 
 
 def test_open_url(selenium):
-    assert selenium.run(
-        """
+    assert (
+        selenium.run(
+            """
         import pyodide
         pyodide.open_url('test/data.txt').read()
-        """) == 'HELLO\n'
+        """
+        )
+        == "HELLO\n"
+    )
 
 
 def test_open_url_cgi(selenium):
-    assert selenium.run(
-        """
+    assert (
+        selenium.run(
+            """
         import pyodide
         pyodide.open_url('test/data.cgi').read()
-        """) == 'HELLO\n'
+        """
+        )
+        == "HELLO\n"
+    )
 
 
 def test_load_package_after_convert_string(selenium):
     """
     See #93.
     """
-    selenium.run(
-        "import sys\n"
-        "x = sys.version")
-    selenium.run_js(
-        "var x = pyodide.pyimport('x')\n"
-        "console.log(x)")
-    selenium.load_package('kiwisolver')
-    selenium.run(
-        "import kiwisolver")
+    selenium.run("import sys\n" "x = sys.version")
+    selenium.run_js("var x = pyodide.pyimport('x')\n" "console.log(x)")
+    selenium.load_package("kiwisolver")
+    selenium.run("import kiwisolver")
 
 
 def test_version_info(selenium):
     from distutils.version import LooseVersion
 
-    version_py_str = selenium.run("""
+    version_py_str = selenium.run(
+        """
             import pyodide
 
             pyodide.__version__
-            """)
+            """
+    )
     version_py = LooseVersion(version_py_str)
-    assert version_py > LooseVersion('0.0.1')
+    assert version_py > LooseVersion("0.0.1")
 
     version_js_str = selenium.run_js("return pyodide.version()")
     version_js = LooseVersion(version_js_str)
@@ -619,9 +722,7 @@ def test_runpythonasync(selenium_standalone):
         """
     )
     for i in range(5):
-        assert selenium_standalone.run_js(
-            f"return pyodide.pyimport('x')[{i}] == 0"
-        )
+        assert selenium_standalone.run_js(f"return pyodide.pyimport('x')[{i}] == 0")
 
 
 def test_runpythonasync_different_package_name(selenium_standalone):
@@ -692,12 +793,12 @@ def test_py(selenium_standalone):
         """
     )
 
-    assert selenium_standalone.run_js('return pyodide.globals.func()') == 42
+    assert selenium_standalone.run_js("return pyodide.globals.func()") == 42
 
 
 def test_eval_nothing(selenium):
-    assert selenium.run('# comment') is None
-    assert selenium.run('') is None
+    assert selenium.run("# comment") is None
+    assert selenium.run("") is None
 
 
 def test_unknown_attribute(selenium):
@@ -719,4 +820,4 @@ def test_completions(selenium):
         pyodide.get_completions('import sys\\nsys.v')
         """
     )
-    assert result['matches'] == ['sys.version', 'sys.version_info']
+    assert result == ["version", "version_info"]

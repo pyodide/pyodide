@@ -9,8 +9,13 @@ import numpy as np
 
 
 def laplacian(grid):
-    return (np.roll(grid, +1, 0) + np.roll(grid, -1, 0)
-            + np.roll(grid, +1, 1) + np.roll(grid, -1, 1) - 4 * grid)
+    return (
+        np.roll(grid, +1, 0)
+        + np.roll(grid, -1, 0)
+        + np.roll(grid, +1, 1)
+        + np.roll(grid, -1, 1)
+        - 4 * grid
+    )
 
 
 def evolve(grid, dt, D=1):

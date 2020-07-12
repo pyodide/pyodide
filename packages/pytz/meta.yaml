@@ -1,14 +1,11 @@
 package:
   name: pytz
-  version: '2018.4'
-
+  version: '2019.3'
 source:
-  url: https://files.pythonhosted.org/packages/10/76/52efda4ef98e7544321fd8d5d512e11739c1df18b0649551aeccfb1c8376/pytz-2018.4.tar.gz
-  sha256: c06425302f2cf668f1bba7a0a03f3c1d34d4ebeef2c72003da308b3947c7f749
-
   patches:
-    - patches/dummy-threading.patch
-
+  - patches/dummy-threading.patch
+  sha256: b02c06db6cf09c12dd25137e563b31700d3b80fcc4ad23abb7a315f2789819be
+  url: https://files.pythonhosted.org/packages/82/c3/534ddba230bd4fbbd3b7a3d35f3341d014cca213f369a9940925e7e5f691/pytz-2019.3.tar.gz
 test:
   imports:
-    - pytz
+  - pytz

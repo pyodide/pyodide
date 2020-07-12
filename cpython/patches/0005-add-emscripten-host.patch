@@ -1,0 +1,87 @@
+From a6cf085d48b4783c997544f68636d0c4beb96401 Mon Sep 17 00:00:00 2001
+From: Michael Droettboom <mdboom@gmail.com>
+Date: Sun, 5 Jul 2020 17:36:12 +0200
+Subject: [PATCH] add-emscripten-host
+
+
+diff --git a/config.sub b/config.sub
+index ba37cf99e2..c99e28a272 100755
+--- a/config.sub
++++ b/config.sub
+@@ -118,7 +118,8 @@ case $maybe_os in
+   linux-musl* | linux-uclibc* | uclinux-uclibc* | uclinux-gnu* | kfreebsd*-gnu* | \
+   knetbsd*-gnu* | netbsd*-gnu* | netbsd*-eabi* | \
+   kopensolaris*-gnu* | cloudabi*-eabi* | \
+-  storm-chaos* | os2-emx* | rtmk-nova*)
++  storm-chaos* | os2-emx* | rtmk-nova* | \
++  emscripten)
+     os=-$maybe_os
+     basic_machine=`echo "$1" | sed 's/^\(.*\)-\([^-]*-[^-]*\)$/\1/'`
+     ;;
+@@ -377,6 +378,7 @@ case $basic_machine in
+ 	| alpha64-* | alpha64ev[4-8]-* | alpha64ev56-* | alpha64ev6[78]-* \
+ 	| alphapca5[67]-* | alpha64pca5[67]-* | arc-* | arceb-* \
+ 	| arm-*  | armbe-* | armle-* | armeb-* | armv*-* \
++	| asmjs \
+ 	| avr-* | avr32-* \
+ 	| ba-* \
+ 	| be32-* | be64-* \
+@@ -1522,6 +1524,8 @@ case $os in
+ 			;;
+ 		esac
+ 		;;
++	-emscripten)
++		;;
+ 	-nacl*)
+ 		;;
+ 	-ios)
+diff --git a/configure b/configure
+index a979363acf..c4e0b866c3 100755
+--- a/configure
++++ b/configure
+@@ -3274,6 +3274,9 @@ then
+ 	*-*-vxworks*)
+ 	    ac_sys_system=VxWorks
+ 	    ;;
++	asmjs-*-*)
++		ac_sys_system=Emscripten
++		;;
+ 	*)
+ 		# for now, limit cross builds to known configurations
+ 		MACHDEP="unknown"
+@@ -3324,6 +3327,9 @@ if test "$cross_compiling" = yes; then
+ 	*-*-vxworks*)
+ 		_host_cpu=$host_cpu
+ 		;;
++	asmjs-*-*)
++		_host_cpu=
++		;;
+ 	*)
+ 		# for now, limit cross builds to known configurations
+ 		MACHDEP="unknown"
+diff --git a/configure.ac b/configure.ac
+index e57ef7c38b..c1977f3a6f 100644
+--- a/configure.ac
++++ b/configure.ac
+@@ -382,6 +382,9 @@ then
+ 	*-*-vxworks*)
+ 	    ac_sys_system=VxWorks
+ 	    ;;
++	asmjs-*-*)
++		ac_sys_system=Emscripten
++		;;
+ 	*)
+ 		# for now, limit cross builds to known configurations
+ 		MACHDEP="unknown"
+@@ -430,6 +433,8 @@ if test "$cross_compiling" = yes; then
+ 		;;
+ 	*-*-vxworks*)
+ 		_host_cpu=$host_cpu
++	asmjs-*-*)
++		_host_cpu=
+ 		;;
+ 	*)
+ 		# for now, limit cross builds to known configurations
+-- 
+2.25.1
+

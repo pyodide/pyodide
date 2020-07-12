@@ -6,30 +6,35 @@ import socketserver
 import pathlib
 
 TEST_PATH = pathlib.Path(__file__).parents[0].resolve()
-BUILD_PATH = TEST_PATH / '..' / 'build'
+BUILD_PATH = TEST_PATH / ".." / "build"
 
 
 class Handler(http.server.SimpleHTTPRequestHandler):
     def end_headers(self):
-        self.send_header('Access-Control-Allow-Origin', '*')
+        self.send_header("Access-Control-Allow-Origin", "*")
         super().end_headers()
 
 
-Handler.extensions_map['.wasm'] = 'application/wasm'
+Handler.extensions_map[".wasm"] = "application/wasm"
 
 
 def make_parser(parser):
-    parser.description = ('Start a server with the supplied '
-                          'build_dir and port.')
-    parser.add_argument('--build_dir', action='store', type=str,
-                        default=BUILD_PATH, help='set the build directory')
-    parser.add_argument('--port', action='store', type=int,
-                        default=8000, help='set the PORT number')
+    parser.description = "Start a server with the supplied " "build_dir and port."
+    parser.add_argument(
+        "--build_dir",
+        action="store",
+        type=str,
+        default=BUILD_PATH,
+        help="set the build directory",
+    )
+    parser.add_argument(
+        "--port", action="store", type=int, default=8000, help="set the PORT number"
+    )
     return parser
 
 
 def server(port):
-    httpd = socketserver.TCPServer(('', port), Handler)
+    httpd = socketserver.TCPServer(("", port), Handler)
     return httpd
 
 

@@ -1,7 +1,6 @@
-diff -u pyparsing-2.2.0.bak/pyparsing.py pyparsing-2.2.0/pyparsing.py
---- pyparsing-2.2.0.bak/pyparsing.py	2019-10-11 11:27:35.000000000 -0400
-+++ pyparsing-2.2.0/pyparsing.py	2019-10-11 11:28:12.000000000 -0400
-@@ -80,7 +80,10 @@
+--- pyparsing-2.2.0/pyparsing.py
++++ pyparsing-2.2.0/pyparsing.py
+@@ -124,7 +124,10 @@
  try:
      from _thread import RLock
  except ImportError:
@@ -10,6 +9,6 @@ diff -u pyparsing-2.2.0.bak/pyparsing.py pyparsing-2.2.0/pyparsing.py
 +        from threading import RLock
 +    except ImportError:
 +        from dummy_threading import RLock
- 
+
  try:
-     from collections import OrderedDict as _OrderedDict
+     # Python 3

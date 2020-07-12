@@ -8,11 +8,16 @@ def diffusion(u, tempU, iterNum):
     """
     Apply Numpy matrix for the Forward-Euler Approximation
     """
-    mu = .1
+    mu = 0.1
 
     for n in range(iterNum):
         tempU[1:-1, 1:-1] = u[1:-1, 1:-1] + mu * (
-            u[2:, 1:-1] - 2 * u[1:-1, 1:-1] + u[0:-2, 1:-1] +
-            u[1:-1, 2:] - 2 * u[1:-1, 1:-1] + u[1:-1, 0:-2])
+            u[2:, 1:-1]
+            - 2 * u[1:-1, 1:-1]
+            + u[0:-2, 1:-1]
+            + u[1:-1, 2:]
+            - 2 * u[1:-1, 1:-1]
+            + u[1:-1, 0:-2]
+        )
         u[:, :] = tempU[:, :]
         tempU[:, :] = 0.0

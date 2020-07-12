@@ -33,7 +33,7 @@ _sha256 sha256module.c
 _sha512 sha512module.c
 _sha3 _sha3/sha3module.c
 _md5 md5module.c
-_blake2 _blake2/blake2module.c _blake2/blake2b_impl.c ../../host/Python-3.7.0/Modules/_blake2/blake2s_impl.c
+_blake2 _blake2/blake2module.c _blake2/blake2b_impl.c ../../host/Python-3.8.2/Modules/_blake2/blake2s_impl.c
 
 _sqlite3 _sqlite/cache.c _sqlite/connection.c _sqlite/cursor.c _sqlite/microprotocols.c _sqlite/module.c _sqlite/prepare_protocol.c _sqlite/row.c _sqlite/statement.c _sqlite/util.c -I$(SQLITEBUILD) -L$(SQLITEBUILD) -lsqlite3
 _crypt _cryptmodule.c

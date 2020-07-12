@@ -1,0 +1,22 @@
+From 9597e7b2ec30968fe9aec0c5a3bc1187e45bc870 Mon Sep 17 00:00:00 2001
+From: Michael Droettboom <mdboom@gmail.com>
+Date: Sun, 5 Jul 2020 17:39:02 +0200
+Subject: [PATCH] no_af_vsock
+
+
+diff --git a/Modules/socketmodule.h b/Modules/socketmodule.h
+index dff1f8f4e9..6014853ac8 100644
+--- a/Modules/socketmodule.h
++++ b/Modules/socketmodule.h
+@@ -154,6 +154,8 @@ typedef int socklen_t;
+ extern "C" {
+ #endif
+ 
++#undef AF_VSOCK
++
+ /* Python module and C API name */
+ #define PySocket_MODULE_NAME    "_socket"
+ #define PySocket_CAPI_NAME      "CAPI"
+-- 
+2.25.1
+

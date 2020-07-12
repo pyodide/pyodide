@@ -1,0 +1,9 @@
+package:
+  name: future
+  version: 0.18.2
+source:
+  sha256: b1bead90b70cf6ec3f0710ae53a525360fa360d306a86583adc6bf83a4db537d
+  url: https://files.pythonhosted.org/packages/45/0b/38b06fd9b92dc2b68d58b75f900e97884c45bedd2ff83203d933cf5851c9/future-0.18.2.tar.gz
+test:
+  imports:
+  - future

@@ -1,0 +1,22 @@
+From ba3bbdfc19c8d1d778c36af0424c56e193460170 Mon Sep 17 00:00:00 2001
+From: Michael Droettboom <mdboom@gmail.com>
+Date: Sun, 5 Jul 2020 17:38:21 +0200
+Subject: [PATCH] dont-test-undecodable-filenames
+
+
+diff --git a/Lib/test/support/__init__.py b/Lib/test/support/__init__.py
+index d6a7819cb0..17a13cf49d 100644
+--- a/Lib/test/support/__init__.py
++++ b/Lib/test/support/__init__.py
+@@ -952,6 +952,8 @@ if os.name == 'nt':
+                   'Unicode filename tests may not be effective'
+                   % (TESTFN_UNENCODABLE, TESTFN_ENCODING))
+             TESTFN_UNENCODABLE = None
++elif sys.platform == 'emscripten':
++    pass
+ # Mac OS X denies unencodable filenames (invalid utf-8)
+ elif sys.platform != 'darwin':
+     try:
+-- 
+2.25.1
+

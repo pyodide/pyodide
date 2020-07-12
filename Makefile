@@ -1,13 +1,18 @@
 PYODIDE_ROOT=$(abspath .)
 include Makefile.envs
+.PHONY=check
 
 FILEPACKAGER=$(PYODIDE_ROOT)/tools/file_packager.py
 
 CPYTHONROOT=cpython
 CPYTHONLIB=$(CPYTHONROOT)/installs/python-$(PYVERSION)/lib/python$(PYMINOR)
 
-LZ4LIB=lz4/lz4-1.8.3/lib/liblz4.a
-CLAPACK=CLAPACK/CLAPACK-WA/lapack_WA.bc
+LIBXML=packages/libxml/libxml2-2.9.10/.libs/libxml2.a
+LIBXSLT=packages/libxslt/libxslt-1.1.33/libxslt/.libs/libxslt.a
+LIBICONV=packages/libiconv/libiconv-1.16/lib/.libs/libiconv.a
+ZLIB=packages/zlib/zlib-1.2.11/lib/libz.a
+LZ4LIB=packages/lz4/lz4-1.8.3/lib/liblz4.a
+CLAPACK=packages/CLAPACK/CLAPACK-WA/lapack_WA.bc
 
 PYODIDE_EMCC=$(PYODIDE_ROOT)/ccache/emcc
 PYODIDE_CXX=$(PYODIDE_ROOT)/ccache/em++
@@ -26,7 +31,7 @@ LDFLAGS=\
 	$(CPYTHONROOT)/installs/python-$(PYVERSION)/lib/libpython$(PYMINOR).a \
 	$(LZ4LIB) \
 	-s "BINARYEN_METHOD='native-wasm'" \
-	-s TOTAL_MEMORY=1073741824 \
+	-s TOTAL_MEMORY=10485760 \
 	-s ALLOW_MEMORY_GROWTH=1 \
 	-s MAIN_MODULE=1 \
 	-s EMULATED_FUNCTION_POINTERS=1 \
@@ -47,18 +52,19 @@ LDFLAGS=\
 	-s TEXTDECODER=0 \
 	-s LZ4=1
 
-SIX_ROOT=six/six-1.11.0/build/lib
+SIX_ROOT=packages/six/six-1.11.0/build/lib
 SIX_LIBS=$(SIX_ROOT)/six.py
 
-JEDI_ROOT=jedi/jedi-0.15.1/jedi
+JEDI_ROOT=packages/jedi/jedi-0.15.1/jedi
 JEDI_LIBS=$(JEDI_ROOT)/__init__.py
 
-PARSO_ROOT=parso/parso-0.5.1/parso
+PARSO_ROOT=packages/parso/parso-0.5.1/parso
 PARSO_LIBS=$(PARSO_ROOT)/__init__.py
 
 SITEPACKAGES=root/lib/python$(PYMINOR)/site-packages
 
-all: build/pyodide.asm.js \
+all: check \
+	build/pyodide.asm.js \
 	build/pyodide.asm.data \
 	build/pyodide.js \
 	build/pyodide_dev.js \
@@ -75,10 +81,12 @@ all: build/pyodide.asm.js \
 build/pyodide.asm.js: src/main.bc src/jsimport.bc src/jsproxy.bc src/js2python.bc \
 		src/pyimport.bc src/pyproxy.bc src/python2js.bc src/python2js_buffer.bc \
 		src/runpython.bc src/hiwire.bc
+	date +"[%F %T] Building pyodide.asm.js..."
 	[ -d build ] || mkdir build
 	$(CXX) -s EXPORT_NAME="'pyodide'" -o build/pyodide.asm.html $(filter %.bc,$^) \
 		$(LDFLAGS) -s FORCE_FILESYSTEM=1
 	rm build/pyodide.asm.html
+	date +"[%F %T] done building pyodide.asm.js."
 
 
 env:
@@ -95,13 +103,13 @@ build/pyodide.asm.data: root/.built
 
 build/pyodide_dev.js: src/pyodide.js
 	cp $< $@
-	sed -i -e "s#{{DEPLOY}}##g" $@
+	sed -i -e "s#{{DEPLOY}}#./#g" $@
 	sed -i -e "s#{{ABI}}#$(PYODIDE_PACKAGE_ABI)#g" $@
 
 
 build/pyodide.js: src/pyodide.js
 	cp $< $@
-	sed -i -e 's#{{DEPLOY}}#https://pyodide.cdn.iodide.io/#g' $@
+	sed -i -e 's#{{DEPLOY}}#https://pyodide-cdn2.iodide.io/v0.15.0/full/#g' $@
 
 	sed -i -e "s#{{ABI}}#$(PYODIDE_PACKAGE_ABI)#g" $@
 
@@ -119,11 +127,11 @@ build/renderedhtml.css: src/renderedhtml.less
 
 build/webworker.js: src/webworker.js
 	cp $< $@
-	sed -i -e 's#{{DEPLOY}}#https://pyodide.cdn.iodide.io/#g' $@
+	sed -i -e 's#{{DEPLOY}}#https://pyodide-cdn2.iodide.io/v0.15.0/full/#g' $@
 
 build/webworker_dev.js: src/webworker.js
 	cp $< $@
-	sed -i -e "s#{{DEPLOY}}##g" $@
+	sed -i -e "s#{{DEPLOY}}#./#g" $@
 	sed -i -e "s#pyodide.js#pyodide_dev.js#g" $@
 
 test: all
@@ -131,7 +139,8 @@ test: all
 
 
 lint:
-	flake8 src test tools pyodide_build benchmark
+	# check for unused imports, the rest is done by black
+	flake8 --select=F401 src test tools pyodide_build benchmark
 	clang-format -output-replacements-xml src/*.c src/*.h src/*.js | (! grep '<replacement ')
 
 
@@ -145,11 +154,20 @@ clean:
 	rm -fr build/*
 	rm -fr src/*.bc
 	make -C packages clean
-	make -C six clean
-	make -C jedi clean
-	make -C parso clean
+	make -C packages/six clean
+	make -C packages/jedi clean
+	make -C packages/parso clean
+	make -C packages/lz4 clean
+	make -C packages/libxslt clean
+	make -C packages/libxml clean
+	make -C packages/libiconv clean
+	make -C packages/zlib clean
 	echo "The Emsdk, CPython and CLAPACK are not cleaned. cd into those directories to do so."
 
+clean-all: clean
+	make -C emsdk clean
+	make -C cpython clean
+	rm -fr cpython/build
 
 %.bc: %.c $(CPYTHONLIB) $(LZ4LIB)
 	$(CC) -o $@ -c $< $(CFLAGS)
@@ -162,7 +180,7 @@ build/test.data: $(CPYTHONLIB)
 	)
 	( \
 		cd build; \
-		python $(FILEPACKAGER) test.data --abi=$(PYODIDE_PACKAGE_ABI) --lz4 --preload ../$(CPYTHONLIB)/test@/lib/python3.7/test --js-output=test.js --export-name=pyodide._module --exclude __pycache__ \
+		python $(FILEPACKAGER) test.data --abi=$(PYODIDE_PACKAGE_ABI) --lz4 --preload ../$(CPYTHONLIB)/test@/lib/python3.8/test --js-output=test.js --export-name=pyodide._module --exclude __pycache__ \
 	)
 	uglifyjs build/test.js -o build/test.js
 
@@ -175,7 +193,7 @@ root/.built: \
 		src/sitecustomize.py \
 		src/webbrowser.py \
 		src/pyodide.py \
-		remove_modules.txt
+		cpython/remove_modules.txt
 	rm -rf root
 	mkdir -p root/lib
 	cp -r $(CPYTHONLIB) root/lib
@@ -190,7 +208,7 @@ root/.built: \
 	cp src/pyodide.py root/lib/python$(PYMINOR)/site-packages
 	( \
 		cd root/lib/python$(PYMINOR); \
-		rm -fr `cat ../../../remove_modules.txt`; \
+		rm -fr `cat ../../../cpython/remove_modules.txt`; \
 		rm -fr test; \
 		find . -type d -name __pycache__ -prune -exec rm -rf {} \; \
 	)
@@ -220,33 +238,82 @@ $(PYODIDE_CXX):
 
 
 $(CPYTHONLIB): emsdk/emsdk/.complete $(PYODIDE_EMCC) $(PYODIDE_CXX)
+	date +"[%F %T] Building cpython..."
 	make -C $(CPYTHONROOT)
+	date +"[%F %T] done building cpython..."
 
 
 $(LZ4LIB):
-	make -C lz4
+	date +"[%F %T] Building lz4..."
+	make -C packages/lz4
+	date +"[%F %T] done building lz4."
+
+
+$(LIBXML): $(CPYTHONLIB) $(ZLIB)
+	date +"[%F %T] Building libxml..."
+	make -C packages/libxml
+	date +"[%F %T] done building libxml..."
+
+
+$(LIBXSLT): $(CPYTHONLIB) $(LIBXML)
+	date +"[%F %T] Building libxslt..."
+	make -C packages/libxslt
+	date +"[%F %T] done building libxslt..."
+
+$(LIBICONV):
+	date +"[%F %T] Building libiconv..."
+	make -C packages/libiconv
+	date +"[%F %T] done building libiconv..."
+
+$(ZLIB):
+	date +"[%F %T] Building zlib..."
+	make -C packages/zlib
+	date +"[%F %T] done building zlib..."
 
 
 $(SIX_LIBS): $(CPYTHONLIB)
-	make -C six
+	date +"[%F %T] Building six..."
+	make -C packages/six
+	date +"[%F %T] done building six."
 
 
 $(JEDI_LIBS): $(CPYTHONLIB)
-	make -C jedi
+	date +"[%F %T] Building jedi..."
+	make -C packages/jedi
+	date +"[%F %T] done building jedi."
 
 
 $(PARSO_LIBS): $(CPYTHONLIB)
-	make -C parso
+	date +"[%F %T] Building parso..."
+	make -C packages/parso
+	date +"[%F %T] done building parso."
 
 
 $(CLAPACK): $(CPYTHONLIB)
-	make -C CLAPACK
+ifdef PYODIDE_PACKAGES
+	echo "Skipping BLAS/LAPACK build due to PYODIDE_PACKAGES being defined."
+	echo "Build it manually with make -C packages/CLAPACK if needed."
+	mkdir -p packages/CLAPACK/CLAPACK-WA/
+	touch $(CLAPACK)
+else
+	date +"[%F %T] Building CLAPACK..."
+	make -C packages/CLAPACK
+	date +"[%F %T] done building CLAPACK."
+endif
 
 
-build/packages.json: $(CLAPACK) FORCE
+
+build/packages.json: $(CLAPACK) $(LIBXML) $(LIBXSLT) FORCE
+	date +"[%F %T] Building packages..."
 	make -C packages
+	date +"[%F %T] done building packages..."
 
 emsdk/emsdk/.complete:
+	date +"[%F %T] Building emsdk..."
 	make -C emsdk
+	date +"[%F %T] done building emsdk."
 
 FORCE:
+
+check:
+	./tools/dependency-check.sh

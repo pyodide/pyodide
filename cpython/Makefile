@@ -39,7 +39,7 @@ $(INSTALL)/lib/$(LIB): $(BUILD)/$(LIB)
 		cd $(BUILD); \
 		sed -i -e 's/libinstall:.*/libinstall:/' Makefile; \
 		touch $(BUILD)/$(LIB) ; \
-		emmake make HOSTPYTHON=$(HOSTPYTHON) PYTHON_FOR_BUILD=$(HOSTPYTHON) CROSS_COMPILE=yes inclinstall libinstall $(LIB) && \
+		emmake make HOSTPYTHON=$(HOSTPYTHON) PYTHON_FOR_BUILD=$(HOSTPYTHON) CROSS_COMPILE=yes inclinstall libinstall $(LIB) -j $${PYODIDE_JOBS:-3} && \
 		cp $(LIB) $(INSTALL)/lib/ && \
 		cp $(HOSTINSTALL)/lib/python$(PYMINOR)/`$(HOSTPYTHON) -c "import sysconfig; print(sysconfig._get_sysconfigdata_name())"`.py $(INSTALL)/lib/python$(PYMINOR)/_sysconfigdata__emscripten_.py; \
 		sed -i -e 's#'"$(PYODIDE_ROOT)"'##g' $(INSTALL)/lib/python$(PYMINOR)/_sysconfigdata__emscripten_.py; \
@@ -79,9 +79,8 @@ $(HOSTPYTHON) $(HOSTPGEN): $(TARBALL)
 	( \
 		cd $(HOSTBUILD); \
 		PKG_CONFIG_PATH="/usr/local/opt/openssl/lib/pkgconfig" ./configure --prefix=$(HOSTINSTALL) || cat config.log && \
-	  make regen-grammar && \
-		make install && \
-		cp Parser/pgen$(EXE) $(HOSTINSTALL)/bin/ && \
+	  	make regen-grammar -j $${PYODIDE_JOBS:-3} && \
+		make install -j $${PYODIDE_JOBS:-3} && \
 		make distclean \
 	)
 
@@ -105,7 +104,7 @@ $(SQLITEBUILD)/libsqlite3.la: $(SQLITETARBALL)
 	( \
 		cd $(SQLITEBUILD); \
 		emconfigure ./configure; \
-		emmake make; \
+		emmake make -j $${PYODIDE_JOBS:-3}; \
 	)
 
 
@@ -114,7 +113,7 @@ $(BZIP2BUILD)/libbz2.a: $(BZIP2TARBALL)
 	tar -C $(ROOT)/build/ -xf $(BZIP2TARBALL)
 	( \
 		cd $(BZIP2BUILD); \
-		emmake make CC=emcc CFLAGS="-Wall -Winline -O2 -fomit-frame-pointer -D_FILE_OFFSET_BITS=64" AR=emar RANLIB=emranlib libbz2.a; \
+		emmake make -j $${PYODIDE_JOBS:-3} CC=emcc CFLAGS="-Wall -Winline -O2 -fomit-frame-pointer -D_FILE_OFFSET_BITS=64" AR=emar RANLIB=emranlib libbz2.a; \
 	)
 
 
@@ -142,7 +141,7 @@ $(BUILD)/$(LIB): $(BUILD)/Makefile $(HOSTPYTHON) $(HOSTPGEN) Setup.local
 	( \
 		cp build/$(PYVERSION)/host/lib/python$(PYMINOR)/`$(HOSTPYTHON) -c "import sysconfig; print(sysconfig._get_sysconfigdata_name())"`.py build/$(PYVERSION)/Python-$(PYVERSION)/Lib/_sysconfigdata__emscripten_.py; \
 		cd $(BUILD); \
-		emmake make HOSTPYTHON=$(HOSTPYTHON) HOSTPGEN=$(HOSTPGEN) CROSS_COMPILE=yes $(LIB) \
+		emmake make HOSTPYTHON=$(HOSTPYTHON) HOSTPGEN=$(HOSTPGEN) CROSS_COMPILE=yes $(LIB) -j $${PYODIDE_JOBS:-3} \
 	)
 	sed -i -e 's/\-undefined dynamic_lookup//' build/$(PYVERSION)/Python-$(PYVERSION)/Lib/_sysconfigdata__emscripten_.py
 	touch $(BUILD)/$(LIB)

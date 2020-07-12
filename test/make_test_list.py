@@ -6,8 +6,7 @@ import os
 from pathlib import Path
 
 
-TEST_DIR = (Path(__file__).parent
-            / "cpython/build/3.7.0/host/lib/python3.7/test")
+TEST_DIR = Path(__file__).parents[1] / "cpython/build/3.8.2/host/lib/python3.8/test"
 
 
 def collect_tests(base_dir):
@@ -19,10 +18,10 @@ def collect_tests(base_dir):
     for root, dirs, files in os.walk(base_dir):
         root = Path(root).relative_to(base_dir)
 
-        if str(root) == '.':
-            root = ''
+        if str(root) == ".":
+            root = ""
         else:
-            root = '.'.join(str(root).split('/')) + '.'
+            root = ".".join(str(root).split("/")) + "."
 
         for filename in files:
             filename = Path(filename)
@@ -33,8 +32,8 @@ def collect_tests(base_dir):
     return tests
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     tests = collect_tests(TEST_DIR)
     with open("python_tests.txt", "w") as fp:
         for test in tests:
-            fp.write(test + '\n')
+            fp.write(test + "\n")
