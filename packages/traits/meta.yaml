@@ -1,0 +1,9 @@
+package:
+  name: traits
+  version: 6.1.0
+source:
+  sha256: 97fca523374ae85e3d8fd78af9a9f488aee5e88e8b842e1cfd6d637a6f310fac
+  url: https://files.pythonhosted.org/packages/95/b4/a780c097a91c9407e5c86ca24a77d0f3d8fc2110a7df9f6d0be65d409fd8/traits-6.1.0.tar.gz
+test:
+  imports:
+  - traits
