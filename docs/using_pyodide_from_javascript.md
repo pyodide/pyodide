@@ -37,7 +37,10 @@ of the expression, converted to Javascript objects (See [type
 conversions](type_conversions.md)).
 
 ```javascript
-pyodide.runPython('import sys\nsys.version');
+pyodide.runPython(`
+import sys
+sys.version
+`);
 ```
 
 ## Complete example
@@ -58,7 +61,10 @@ Create and save a test `index.html` page with the following contents:
     Open your browser console to see pyodide output
     <script type="text/javascript">
           languagePluginLoader.then(function () {
-              console.log(pyodide.runPython('import sys\nsys.version'));
+              console.log(pyodide.runPython(`
+                  import sys
+                  sys.version
+              `));
               console.log(pyodide.runPython('print(1 + 2)'));
           });
     </script>
