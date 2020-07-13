@@ -32,7 +32,7 @@ def get_sdist_url_entry(json_content):
 
     raise Exception(
         "No sdist URL found for package %s (%s)"
-        % (json_content["info"].get("name"), json_content["info"].get("package_url"))
+        % (json_content["info"].get("name"), json_content["info"].get("package_url"),)
     )
 
 
