@@ -84,9 +84,15 @@ def update_package(package: str):
     with open(meta_path, "r") as fd:
         yaml_content = yaml.safe_load(fd)
 
-    if set(yaml_content.keys()) != set(("package", "source", "test")):
+    if "url" not in yaml_content["source"]:
+        print(f"Skipping: {package} is a local package!")
+        sys.exit(0)
+
+    if set(yaml_content.keys()).difference(
+        ("package", "source", "test", "requirements")
+    ):
         print(
-            f"{package}: Only pure-python packages can be updated using this script."
+            f"{package}: Only pure-python packages can be updated using this script. "
             f"Aborting."
         )
         sys.exit(1)
@@ -121,7 +127,7 @@ Make a new pyodide package. Creates a simple template that will work
 for most pure Python packages, but will have to be edited for more
 complex things.""".strip()
     parser.add_argument("package", type=str, nargs=1, help="The package name on PyPI")
-    parser.add_argument("--update", action="store_true", help="update existing package")
+    parser.add_argument("--update", action="store_true", help="Update existing package")
     parser.add_argument(
         "--version",
         type=str,
