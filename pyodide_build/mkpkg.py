@@ -76,12 +76,18 @@ def make_package(package: str, version: Optional[str] = None):
 def update_package(package: str):
     import yaml
 
-    with open(PACKAGES_ROOT / package / "meta.yaml", "r") as fd:
-        yaml_content = yaml.load(fd, Loader=yaml.FullLoader)
+    meta_path = PACKAGES_ROOT / package / "meta.yaml"
+    if not meta_path.exists():
+        print(f"Skipping: {meta_path} does not exist!")
+        sys.exit(1)
+
+    with open(meta_path, "r") as fd:
+        yaml_content = yaml.safe_load(fd)
 
     if set(yaml_content.keys()) != set(("package", "source", "test")):
         print(
-            "Only pure-python packages can be updated using this script. " "Aborting."
+            f"{package}: Only pure-python packages can be updated using this script."
+            f"Aborting."
         )
         sys.exit(1)
 
@@ -89,9 +95,9 @@ def update_package(package: str):
     pypi_ver = pypi_metadata["info"]["version"]
     local_ver = yaml_content["package"]["version"]
     if pypi_ver <= local_ver:
-        print(f"Already up to date. Local: {local_ver} Pypi: {pypi_ver}")
+        print(f"{package} already up to date. Local: {local_ver} PyPi: {pypi_ver}")
         sys.exit(0)
-    print(f"Updating {package} from {local_ver} to {pypi_ver}")
+    print(f"Updating {package} from {local_ver} to {pypi_ver}.")
 
     if "patches" in yaml_content["source"]:
         import warnings
