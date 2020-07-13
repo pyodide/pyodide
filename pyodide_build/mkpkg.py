@@ -7,11 +7,13 @@ import shutil
 import urllib.request
 import sys
 from pathlib import Path
+from typing import Dict, Tuple, Any, Optional
 
 PACKAGES_ROOT = Path(__file__).parent.parent / "packages"
 
 
-def _extract_sdist(pypi_metadata):
+def _extract_sdist(pypi_metadata: Dict[str, Any]) -> Dict:
+    """Get sdist file path from the meta-data"""
     sdist_extensions = tuple(
         extension
         for (name, extensions, description) in shutil.get_unpack_formats()
@@ -29,23 +31,19 @@ def _extract_sdist(pypi_metadata):
     )
 
 
-def _get_metadata(package):
+def _get_metadata(package: str) -> Tuple[Dict, Dict]:
+    """Download metadata for a package from PyPi"""
     url = f"https://pypi.org/pypi/{package}/json"
 
     with urllib.request.urlopen(url) as fd:
         pypi_metadata = json.load(fd)
 
-    for entry in json_content["urls"]:
-        if entry["filename"].endswith(sdist_extensions_tuple):
-            return entry
+    sdist_metadata = _extract_sdist(pypi_metadata)
 
-    raise Exception(
-        "No sdist URL found for package %s (%s)"
-        % (json_content["info"].get("name"), json_content["info"].get("package_url"),)
-    )
+    return sdist_metadata, pypi_metadata
 
 
-def make_package(package, version=None):
+def make_package(package: str, version: Optional[str] = None):
     """
     Creates a template that will work for most pure Python packages,
     but will have to be edited for more complex things.
@@ -58,14 +56,14 @@ def make_package(package, version=None):
     with urllib.request.urlopen(url) as fd:
         json_content = json.load(fd)
 
-    entry = get_sdist_url_entry(json_content)
-    download_url = entry["url"]
-    sha256 = entry["digests"]["sha256"]
-    version = json_content["info"]["version"]
+    sdist_metadata, pypi_metadata = _get_metadata(package)
+    url = sdist_metadata["url"]
+    sha256 = sdist_metadata["digests"]["sha256"]
+    version = pypi_metadata["info"]["version"]
 
     yaml_content = {
         "package": {"name": package, "version": version},
-        "source": {"url": download_url, "sha256": sha256},
+        "source": {"url": url, "sha256": sha256},
         "test": {"imports": [package]},
     }
 
@@ -75,7 +73,7 @@ def make_package(package, version=None):
         yaml.dump(yaml_content, fd, default_flow_style=False)
 
 
-def update_package(package):
+def update_package(package: str):
     import yaml
 
     with open(PACKAGES_ROOT / package / "meta.yaml", "r") as fd:
