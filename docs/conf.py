@@ -193,5 +193,5 @@ epub_exclude_files = ["search.html"]
 
 extensions = [
     # other
-    'recommonmark',
+    "recommonmark"
 ]
