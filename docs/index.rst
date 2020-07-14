@@ -42,6 +42,7 @@ to be used with Pyodide.
 
    pypi.md
    api_reference.md
+   faq.md
 
 Developing Pyodide
 ==================
