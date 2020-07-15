@@ -6,6 +6,9 @@ source:
   url: https://pypi.io/packages/source/a/astropy/astropy-3.1.2.tar.gz
   sha256: 4a78a8ec9666d0a51a37f03494aaa5012e241ba37053e6c913c039cddee89ede
 
+requirements:
+  run:
+    - numpy
 
 test:
   imports:
