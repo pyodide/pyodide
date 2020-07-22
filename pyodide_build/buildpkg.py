@@ -13,12 +13,13 @@ import shutil
 import subprocess
 from urllib import request
 from datetime import datetime
+from typing import Any, Dict, List
 
 
 from . import common
 
 
-def check_checksum(path, pkg):
+def check_checksum(path: Path, pkg: Dict[str, Any]):
     """
     Checks that a tarball matches the checksum in the package metadata.
     """
@@ -44,7 +45,7 @@ def check_checksum(path, pkg):
         raise ValueError("Invalid {} checksum".format(checksum_algorithm))
 
 
-def download_and_extract(buildpath, packagedir, pkg, args):
+def download_and_extract(buildpath: Path, packagedir: Path, pkg: Dict[str, Any], args: List(Any)) -> Path:
     srcpath = buildpath / packagedir
 
     if "source" not in pkg:
@@ -103,7 +104,7 @@ def download_and_extract(buildpath, packagedir, pkg, args):
         raise ValueError("Incorrect source provided")
 
 
-def patch(path, srcpath, pkg, args):
+def patch(path: Path, srcpath: Path, pkg: Dict[str, Any], args: List(Any)):
     if (srcpath / ".patched").is_file():
         return
 
@@ -127,7 +128,7 @@ def patch(path, srcpath, pkg, args):
         fd.write(b"\n")
 
 
-def compile(path, srcpath, pkg, args):
+def compile(path: Path, srcpath: Path, pkg: Dict[str, Any], args: List(Any)):
     if (srcpath / ".built").is_file():
         return
 
@@ -170,7 +171,7 @@ def compile(path, srcpath, pkg, args):
         fd.write(b"\n")
 
 
-def package_files(buildpath, srcpath, pkg, args):
+def package_files(buildpath: Path, srcpath: Path, pkg: Dict[str, Any], args: List(Any)):
     if (buildpath / ".packaged").is_file():
         return
 
@@ -205,7 +206,7 @@ def package_files(buildpath, srcpath, pkg, args):
         fd.write(b"\n")
 
 
-def needs_rebuild(pkg, path, buildpath):
+def needs_rebuild(pkg: Dict[str, Any], path: Path, buildpath: Path) -> bool:
     """
     Determines if a package needs a rebuild because its meta.yaml, patches, or
     sources are newer than the `.packaged` thunk.
@@ -227,7 +228,7 @@ def needs_rebuild(pkg, path, buildpath):
             return True
 
 
-def build_package(path, args):
+def build_package(path: Path, args: List(Any)):
     pkg = common.parse_package(path)
     name = pkg["package"]["name"]
     t0 = datetime.now()
@@ -258,7 +259,7 @@ def build_package(path, args):
         )
 
 
-def make_parser(parser):
+def make_parser(parser: argparse.ArgumentParser):
     parser.description = "Build a pyodide package."
     parser.add_argument(
         "package", type=str, nargs=1, help="Path to meta.yaml package description"
@@ -300,7 +301,7 @@ def make_parser(parser):
     return parser
 
 
-def main(args):
+def main(args: List(Any)):
     path = Path(args.package[0]).resolve()
     build_package(path, args)
 
