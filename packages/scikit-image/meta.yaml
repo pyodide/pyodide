@@ -2,6 +2,8 @@ package:
   name: scikit-image
   version: 0.17.2
 source:
+  patches:
+  - patches/no-openmp.patch
   sha256: bd954c0588f0f7e81d9763dc95e06950e68247d540476e06cb77bcbcd8c2d8b3
   url: https://files.pythonhosted.org/packages/54/fd/c1b0bb8f6f12ef9b4ee8d7674dac82cd482886f8b5cd165631efa533e237/scikit-image-0.17.2.tar.gz
 test:
