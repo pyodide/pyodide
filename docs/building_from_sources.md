@@ -12,9 +12,11 @@ need to build it yourself prior.
 
 Additional build prerequisites are:
 
-- A working native compiler toolchain, enough to build CPython.
+- A working native compiler toolchain, enough to build [CPython](https://devguide.python.org/setup/#linux).
 - A native Python 3.8 to run the build scripts.
+- CMake
 - PyYAML
+- FreeType 2 development libraries to compile Matplotlib.
 - [lessc](http://lesscss.org/) to compile less to css.
 - [uglifyjs](https://github.com/mishoo/UglifyJS) to minify Javascript builds.
 - gfortran (GNU Fortran 95 compiler)
@@ -82,7 +84,7 @@ micropip and package is generally always included for any non empty value of
 If scipy is included in `PYODIDE_PACKAGES`, BLAS/LAPACK must be manually built
 first with `make -c packages/CLAPACK`.
 
-## Environement variables
+## Environment variables
 
 Following environment variables additionally impact the build,
  - `PYODIDE_JOBS`: the `-j` option passed to the `emmake make` command when applicable for parallel compilation. Default: 3.
