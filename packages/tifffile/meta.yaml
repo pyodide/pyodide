@@ -1,0 +1,9 @@
+package:
+  name: tifffile
+  version: 2020.7.4
+source:
+  sha256: d7e56b9983e2e14716feaee560022baa8f92e97f36df7eee8b10e672383f694c
+  url: https://files.pythonhosted.org/packages/d1/da/86bd460aa596ead2af3d3722434ead6711a9a2955b1e70ad3aa37b291930/tifffile-2020.7.4.tar.gz
+test:
+  imports:
+  - tifffile

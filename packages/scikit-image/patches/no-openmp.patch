@@ -1,0 +1,18 @@
+commit 986ee79feb5f5324aa6cf07b1920db6d30a2fed7 (HEAD)
+Author: Chigozie Nri <chigozie@gmail.com>
+Date:   Mon Jul 13 20:59:34 2020 +0100
+
+    Don't build openmp
+
+diff --git a/setup.py b/setup.py
+index 19331e4d0..06fb24830 100755
+--- a/setup.py
++++ b/setup.py
+@@ -66,6 +66,7 @@ def openmp_build_ext():
+     class ConditionalOpenMP(build_ext):
+ 
+         def can_compile_link(self):
++            return False
+ 
+             cc = self.compiler
+             fname = 'test.c'
