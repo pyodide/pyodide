@@ -45,7 +45,7 @@ def check_checksum(path: Path, pkg: Dict[str, Any]):
         raise ValueError("Invalid {} checksum".format(checksum_algorithm))
 
 
-def download_and_extract(buildpath: Path, packagedir: Path, pkg: Dict[str, Any], args: List(Any)) -> Path:
+def download_and_extract(buildpath: Path, packagedir: Path, pkg: Dict[str, Any], args) -> Path:
     srcpath = buildpath / packagedir
 
     if "source" not in pkg:
@@ -104,7 +104,7 @@ def download_and_extract(buildpath: Path, packagedir: Path, pkg: Dict[str, Any],
         raise ValueError("Incorrect source provided")
 
 
-def patch(path: Path, srcpath: Path, pkg: Dict[str, Any], args: List(Any)):
+def patch(path: Path, srcpath: Path, pkg: Dict[str, Any], args):
     if (srcpath / ".patched").is_file():
         return
 
@@ -128,7 +128,7 @@ def patch(path: Path, srcpath: Path, pkg: Dict[str, Any], args: List(Any)):
         fd.write(b"\n")
 
 
-def compile(path: Path, srcpath: Path, pkg: Dict[str, Any], args: List(Any)):
+def compile(path: Path, srcpath: Path, pkg: Dict[str, Any], args):
     if (srcpath / ".built").is_file():
         return
 
@@ -171,7 +171,7 @@ def compile(path: Path, srcpath: Path, pkg: Dict[str, Any], args: List(Any)):
         fd.write(b"\n")
 
 
-def package_files(buildpath: Path, srcpath: Path, pkg: Dict[str, Any], args: List(Any)):
+def package_files(buildpath: Path, srcpath: Path, pkg: Dict[str, Any], args):
     if (buildpath / ".packaged").is_file():
         return
 
@@ -228,7 +228,7 @@ def needs_rebuild(pkg: Dict[str, Any], path: Path, buildpath: Path) -> bool:
             return True
 
 
-def build_package(path: Path, args: List(Any)):
+def build_package(path: Path, args):
     pkg = common.parse_package(path)
     name = pkg["package"]["name"]
     t0 = datetime.now()
@@ -301,7 +301,7 @@ def make_parser(parser: argparse.ArgumentParser):
     return parser
 
 
-def main(args: List(Any)):
+def main(args):
     path = Path(args.package[0]).resolve()
     build_package(path, args)
 
