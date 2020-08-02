@@ -1,0 +1,27 @@
+diff --git a/include/numpy/npy_cpu.h b/include/numpy/npy_cpu.h
+index 9707a7adf..0b2881228 100644
+--- a/include/numpy/npy_cpu.h
++++ b/include/numpy/npy_cpu.h
+@@ -68,6 +68,8 @@
+     #define NPY_CPU_MIPSEB
+ #elif defined(__aarch64__)
+     #define NPY_CPU_AARCH64
++#elif defined(__EMSCRIPTEN__)
++    #define NPY_CPU_EMSCRIPTEN
+ #else
+     #error Unknown CPU, please report this to numpy maintainers with \
+     information about your platform (OS, CPU and compiler)
+diff --git a/include/numpy/npy_endian.h b/include/numpy/npy_endian.h
+index 4e3349ffe..ae7134c82 100644
+--- a/include/numpy/npy_endian.h
++++ b/include/numpy/npy_endian.h
+@@ -27,7 +27,8 @@
+             || defined(NPY_CPU_ARMEL)   \
+             || defined(NPY_CPU_AARCH64) \
+             || defined(NPY_CPU_SH_LE)   \
+-            || defined(NPY_CPU_MIPSEL)
++            || defined(NPY_CPU_MIPSEL)  \
++            || defined(NPY_CPU_EMSCRIPTEN)
+         #define NPY_BYTE_ORDER NPY_LITTLE_ENDIAN
+     #elif defined(NPY_CPU_PPC)          \
+             || defined(NPY_CPU_SPARC)   \
