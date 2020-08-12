@@ -1,5 +1,5 @@
-PYODIDE_ROOT=$(abspath ..)
-include ../Makefile.envs
+PYODIDE_ROOT=$(abspath ../..)
+include ../../Makefile.envs
 
 LZ4VERSION=1.8.3
 

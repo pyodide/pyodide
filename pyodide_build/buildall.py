@@ -47,7 +47,7 @@ def build_packages(packagesdir, outputdir, args):
     for pkgdir in packagesdir.iterdir():
         if included_packages is not None and pkgdir.name not in included_packages:
             print(
-                f"Warning: skiping build of {pkgdir.name} due "
+                f"Warning: skipping build of {pkgdir.name} due "
                 f"to specified PYODIDE_PACKAGES"
             )
             continue

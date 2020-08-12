@@ -15,13 +15,13 @@ RUN sudo pip install pytest pytest-xdist pytest-instafail pytest-rerunfailures s
     && sudo rm -rf /root/.cache/pip
 
 # Get recent version of Firefox and geckodriver
-RUN sudo wget --quiet -O firefox.tar.bz2 https://ftp.mozilla.org/pub/firefox/releases/63.0.1/linux-x86_64/en-US/firefox-63.0.1.tar.bz2 \
+RUN sudo wget --quiet -O firefox.tar.bz2 https://ftp.mozilla.org/pub/firefox/releases/70.0.1/linux-x86_64/en-US/firefox-70.0.1.tar.bz2 \
   && sudo tar jxf firefox.tar.bz2 \
   && sudo rm -f /usr/local/bin/firefox \
   && sudo ln -s $PWD/firefox/firefox /usr/local/bin/firefox \
-  && sudo wget --quiet https://github.com/mozilla/geckodriver/releases/download/v0.21.0/geckodriver-v0.21.0-linux64.tar.gz \
-  && sudo tar zxf geckodriver-v0.21.0-linux64.tar.gz -C /usr/local/bin \
-  && sudo rm -f firefox.tar.bz2 geckodriver-v0.21.0-linux64.tar.gz
+  && sudo wget --quiet https://github.com/mozilla/geckodriver/releases/download/v0.26.0/geckodriver-v0.26.0-linux64.tar.gz \
+  && sudo tar zxf geckodriver-v0.26.0-linux64.tar.gz -C /usr/local/bin \
+  && sudo rm -f firefox.tar.bz2 geckodriver-v0.26.0-linux64.tar.gz
 
 # Get recent version of chromedriver
 RUN sudo wget --quiet https://chromedriver.storage.googleapis.com/2.41/chromedriver_linux64.zip \

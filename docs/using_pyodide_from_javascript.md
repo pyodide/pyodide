@@ -37,7 +37,10 @@ of the expression, converted to Javascript objects (See [type
 conversions](type_conversions.md)).
 
 ```javascript
-pyodide.runPython('import sys\nsys.version');
+pyodide.runPython(`
+import sys
+sys.version
+`);
 ```
 
 ## Complete example
@@ -46,23 +49,27 @@ Create and save a test `index.html` page with the following contents:
 ```html
 <!DOCTYPE html>
 <html>
-<head>
+  <head>
+      <script type="text/javascript">
+          // set the pyodide files URL (packages.json, pyodide.asm.data etc)
+          window.languagePluginUrl = 'https://pyodide-cdn2.iodide.io/v0.15.0/full/';
+      </script>
+      <script src="https://pyodide-cdn2.iodide.io/v0.15.0/full/pyodide.js"></script>
+  </head>
+  <body>
+    Pyodide test page <br>
+    Open your browser console to see pyodide output
     <script type="text/javascript">
-        // set the pyodide files URL (packages.json, pyodide.asm.data etc)
-        window.languagePluginUrl = 'https://pyodide-cdn2.iodide.io/v0.15.0/full/';
+          languagePluginLoader.then(function () {
+              console.log(pyodide.runPython(`
+                  import sys
+                  sys.version
+              `));
+              console.log(pyodide.runPython('print(1 + 2)'));
+          });
     </script>
-    <script src="https://pyodide-cdn2.iodide.io/v0.15.0/full/pyodide.js"></script>
-</head>
-<body>
-  Pyodide test page <br>
-  Open your browser console to see pyodide output
-  <script type="text/javascript">
-        languagePluginLoader.then(function () {
-            console.log(pyodide.runPython('import sys\nsys.version'));
-            console.log(pyodide.runPython('print(1 + 2)'));
-        });
-  </script>
-</body>
+  </body>
+</html>
 ```
 
 ## Loading packages

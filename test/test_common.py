@@ -9,7 +9,10 @@ PKG_DIR = BASE_DIR / "packages"
 
 def registered_packages():
     """Returns a list of registered package names"""
-    packages = [name for name in os.listdir(PKG_DIR) if (PKG_DIR / name).is_dir()]
+    packages = []
+    for name in os.listdir(PKG_DIR):
+        if (PKG_DIR / name).is_dir() and (PKG_DIR / name / "meta.yaml").exists():
+            packages.append(name)
     return packages
 
 

@@ -11,6 +11,7 @@ geckodriver.log
 firefox/
 .vscode
 .idea
+.mypy_cache/
 
 build
 downloads
@@ -23,15 +24,14 @@ ccache
 
 /emsdk/emsdk
 
-/six/six-1.11.0
-/lz4/lz4-1.8.3
-CLAPACK/CLAPACK-WA
-CLAPACK/clapack.tgz
-jedi/jedi-0.15.1
-parso/parso-0.5.1
 *.egg-info/
-
-libxml/libxml*
-libxslt/libxslt*
-libiconv/libiconv*
-zlib/zlib*
+packages/six/six-1.11.0
+packages/lz4/lz4-1.8.3
+packages/CLAPACK/CLAPACK-WA
+packages/CLAPACK/clapack.tgz
+packages/jedi/jedi-0.15.1
+packages/parso/parso-0.5.1
+packages/libxml/libxml*
+packages/libxslt/libxslt*
+packages/libiconv/libiconv*
+packages/zlib/zlib*
