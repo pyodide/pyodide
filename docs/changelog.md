@@ -3,7 +3,18 @@
 ## Version 0.16.0
 *Unreleased*
 
-- pyodide now includes CPython 3.8.2.
+- Pyodide now includes CPython 3.8.2
+  [#712](https://github.com/iodide-project/pyodide/pull/712)
+- FIX Only call `Py_INCREF()` once when proxied by PyProxy
+  [#708](https://github.com/iodide-project/pyodide/pull/708)
+- Updated docker image to Debian buster
+- FIX Infer package tarball directory from source url
+  [#687](https://github.com/iodide-project/pyodide/pull/687)
+- Updated to emscripten 1.38.31
+  [#674](https://github.com/iodide-project/pyodide/pull/674)
+- New packages: freesasa, lxml, python-sat, traits, astropy
+- Updated packages: numpy 1.15.4, pandas 1.0.5 among others.
+
 
 ## Version 0.15.0
 *May 19, 2020*
