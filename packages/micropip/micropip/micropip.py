@@ -33,7 +33,7 @@ def _nullop(*args):
 # Provide implementations of HTTP fetching for in-browser and out-of-browser to
 # make testing easier
 if XMLHttpRequest is not None:
-    import pyodide
+    import pyodide  # noqa
 
     def _get_url(url):
         req = XMLHttpRequest.new()
