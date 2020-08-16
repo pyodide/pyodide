@@ -13,7 +13,7 @@ import shutil
 import subprocess
 from urllib import request
 from datetime import datetime
-from typing import Any, Dict, List
+from typing import Any, Dict
 
 
 from . import common
@@ -45,7 +45,9 @@ def check_checksum(path: Path, pkg: Dict[str, Any]):
         raise ValueError("Invalid {} checksum".format(checksum_algorithm))
 
 
-def download_and_extract(buildpath: Path, packagedir: Path, pkg: Dict[str, Any], args) -> Path:
+def download_and_extract(
+    buildpath: Path, packagedir: Path, pkg: Dict[str, Any], args
+) -> Path:
     srcpath = buildpath / packagedir
 
     if "source" not in pkg:
@@ -164,7 +166,7 @@ def compile(path: Path, srcpath: Path, pkg: Dict[str, Any], args):
     if post is not None:
         site_packages_dir = srcpath / "install" / "lib" / "python3.8" / "site-packages"
         pkgdir = path.parent.resolve()
-        env = {"SITEPACKAGES": site_packages_dir, "PKGDIR": pkgdir}
+        env = {"SITEPACKAGES": str(site_packages_dir), "PKGDIR": str(pkgdir)}
         subprocess.run(["bash", "-c", post], env=env, check=True)
 
     with open(srcpath / ".built", "wb") as fd:
@@ -226,6 +228,7 @@ def needs_rebuild(pkg: Dict[str, Any], path: Path, buildpath: Path) -> bool:
         source_file = Path(source_file)
         if source_file.stat().st_mtime > package_time:
             return True
+    return False
 
 
 def build_package(path: Path, args):
