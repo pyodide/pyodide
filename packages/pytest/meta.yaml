@@ -1,23 +1,19 @@
 package:
   name: pytest
-  version: 3.6.3
-
-source:
-  url: https://files.pythonhosted.org/packages/55/50/399419c03c39bf41faa7cbd5a8976c076037b2d76adf2535610919806d67/pytest-3.6.3.tar.gz
-  md5: 8ca6124a3a80f9555c50f5c09056ea02
-
-  patches:
-    - patches/named-tmp-and-rm-dup2.patch
-
+  version: 6.0.1
 requirements:
   run:
-    - atomicwrites
-    - attrs
-    - more-itertools
-    - pluggy
-    - py
-    - setuptools
-
+  - atomicwrites
+  - attrs
+  - more-itertools
+  - pluggy
+  - py
+  - setuptools
+source:
+  patches:
+  - patches/named-tmp-and-rm-dup2.patch
+  sha256: 85228d75db9f45e06e57ef9bf4429267f81ac7c0d742cc9ed63d09886a9fe6f4
+  url: https://files.pythonhosted.org/packages/20/4c/d7b19b8661be78461fff0392e33943784340424921578fe1bf300ef59831/pytest-6.0.1.tar.gz
 test:
   imports:
-    - pytest
+  - pytest
