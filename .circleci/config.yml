@@ -20,7 +20,7 @@ jobs:
             pip install black mypy
             make lint
             black --check --exclude tools/file_packager.py .
-            mypy --ignore-missing-imports pyodide_build/
+            mypy --ignore-missing-imports pyodide_build/ src/ test/ packages/micropip/
   build:
     <<: *defaults
     steps:
