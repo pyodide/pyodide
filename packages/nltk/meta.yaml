@@ -4,6 +4,9 @@ package:
 source:
   sha256: 845365449cd8c5f9731f7cb9f8bd6fd0767553b9d53af9eb1b3abf7700936b35
   url: https://files.pythonhosted.org/packages/92/75/ce35194d8e3022203cca0d2f896dbb88689f9b3fce8e9f9cff942913519d/nltk-3.5.zip
+requirements:
+  run:
+    - regex
 test:
   imports:
   - nltk
