@@ -1,0 +1,9 @@
+package:
+  name: w3lib
+  version: 1.22.0
+source:
+  sha256: 0ad6d0203157d61149fd45aaed2e24f53902989c32fc1dccc2e2bfba371560df
+  url: https://files.pythonhosted.org/packages/5e/2f/76558d2712d93e9267a3160190f1bb005f97ef4aba35592728f63747da8b/w3lib-1.22.0.tar.gz
+test:
+  imports:
+  - w3lib

@@ -1,0 +1,9 @@
+package:
+  name: shublang
+  version: 0.2.1
+source:
+  sha256: 0bfd90c640992078f9f79b413e15a3a3e9f7f5923ecef9c84d423d81e7b84950
+  url: https://files.pythonhosted.org/packages/5f/ff/2cf81e8571b55bc70b00172531537376f3235e5e0afdd7c380ebbe9dd86f/shublang-0.2.1.tar.gz
+test:
+  imports:
+  - shublang

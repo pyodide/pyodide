@@ -1,0 +1,9 @@
+package:
+  name: pipe
+  version: 1.6.0
+source:
+  sha256: 9bec3a88f8829f5074507795bc633603d61c025c88069f4d865018c721c6aa31
+  url: https://files.pythonhosted.org/packages/70/70/3ee82de58ebd57c88764037bff419b8f3f7963e329bbe8a9f5f7611463a9/pipe-1.6.0.tar.gz
+test:
+  imports:
+  - pipe

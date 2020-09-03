@@ -1,0 +1,9 @@
+package:
+  name: price-parser
+  version: 0.3.3
+source:
+  sha256: 0c35ee9fbcf0fae2c065ee34d4671428431858239434e68bfcf2eb7034bc13be
+  url: https://files.pythonhosted.org/packages/2a/79/5118e2d554c3aba132d006c4946c4ad4715ce4043cf893cbaff751526854/price-parser-0.3.3.tar.gz
+test:
+  imports:
+  - price-parser

@@ -1,0 +1,9 @@
+package:
+  name: dateparser
+  version: 0.7.6
+source:
+  sha256: e875efd8c57c85c2d02b238239878db59ff1971f5a823457fcc69e493bf6ebfa
+  url: https://files.pythonhosted.org/packages/86/6e/9a47cf3841bcfd1dd07a20b2aca42d4e02822ea7121aeb022869855b8d2f/dateparser-0.7.6.tar.gz
+test:
+  imports:
+  - dateparser

@@ -1,0 +1,9 @@
+package:
+  name: jmespath
+  version: 0.10.0
+source:
+  sha256: b85d0567b8666149a93172712e68920734333c0ce7e89b78b3e987f71e5ed4f9
+  url: https://files.pythonhosted.org/packages/3c/56/3f325b1eef9791759784aa5046a8f6a1aff8f7c898a2e34506771d3b99d8/jmespath-0.10.0.tar.gz
+test:
+  imports:
+  - jmespath
