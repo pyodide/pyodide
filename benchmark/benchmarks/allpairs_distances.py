@@ -6,7 +6,7 @@ import numpy as np
 
 
 def allpairs_distances(A, B):
-    """ This returns the euclidean distances squared
+    """This returns the euclidean distances squared
     dist2(x, y) = dot(x, x) - 2 * dot(x, y) + dot(y, y)
     """
     A2 = np.einsum("ij,ij->i", A, A)
