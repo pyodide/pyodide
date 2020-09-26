@@ -27,7 +27,10 @@ def _extract_sdist(pypi_metadata: Dict[str, Any]) -> Dict:
 
     raise Exception(
         "No sdist URL found for package %s (%s)"
-        % (pypi_metadata["info"].get("name"), pypi_metadata["info"].get("package_url"),)
+        % (
+            pypi_metadata["info"].get("name"),
+            pypi_metadata["info"].get("package_url"),
+        )
     )
 
 
