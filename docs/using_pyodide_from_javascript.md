@@ -151,7 +151,7 @@ Note: although the function is called Async, it still blocks the main thread. To
 
 </html>
 ```
-
+The live demo can be found [here](http://karay.me/truepyxel/pyodide.html)
 ## Accessing Python scope from JavaScript
 
 You can also access from JavaScript all functions and variables defined in Python using the [pyodide.globals](api_reference.md#pyodideglobals) object.
