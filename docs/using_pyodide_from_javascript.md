@@ -103,7 +103,7 @@ pyodide.loadPackage('matplotlib').then(() => {
 
 ## Alternative way to load packages and run Python code
 
-Alternatively you can run Python code without manually pre-loading packages. You can do this with [pyodide.runPythonAsync](api_reference.md#pyodide-runpythonasync-code-messagecallback-errorcallback) function, which will automatically download all packages that the code snippet imports.
+Alternatively you can run Python code without manually pre-loading packages. You can do this with [pyodide.runPythonAsync](api_reference.md#pyodideloadpackagenames-messagecallback-errorcallback) function, which will automatically download all packages that the code snippet imports.
 
 Note: although the function is called Async, it still blocks the main thread. To run Python code asynchronously see [WebWorker](using_pyodide_from_webworker.md)
 
@@ -154,7 +154,7 @@ Note: although the function is called Async, it still blocks the main thread. To
 
 ## Accessing Python scope from JavaScript
 
-You can also access from JavaScript all functions and variables defined in Python using the [pyodide.globals](api_reference.html#pyodide-globals) object.
+You can also access from JavaScript all functions and variables defined in Python using the [pyodide.globals](api_reference.md#pyodideglobals) object.
 
 For example, if you initialize the variable `x = numpy.ones([3,3])` in Python, you can access it from JavaScript in your browser's developer console as follows: `pyodide.globals.x`. he same goes for functions and imports.
 
