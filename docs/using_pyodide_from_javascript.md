@@ -1,7 +1,6 @@
 # Using Pyodide from Javascript
 
-This document describes using Pyodide directly from Javascript. For information
-about using Pyodide from Iodide, see [Using Pyodide from
+This document describes using Pyodide directly from Javascript. For information about using Pyodide from Iodide, see [Using Pyodide from
 Iodide](using_pyodide_from_iodide.md).
 
 ## Startup
@@ -100,6 +99,73 @@ pyodide.loadPackage(['cycler', 'pytz'])
 pyodide.loadPackage('matplotlib').then(() => {
   // matplotlib is now available
 });
+```
+
+## Alternative way to load packages and run Python code
+
+Alternatively you can run Python code without manually pre-loading packages. You can do this with [pyodide.runPythonAsync](api_reference.md#pyodide-runpythonasync-code-messagecallback-errorcallback) function, which will automatically download all packages that the code snippet imports.
+
+Note: although the function is called Async, it still blocks the main thread. To run Python code asynchronously see [WebWorker](using_pyodide_from_webworker.md)
+
+## Alternative Example
+
+```html
+<!DOCTYPE html>
+<head>
+    <script type="text/javascript">
+        window.languagePluginUrl = 'https://pyodide-cdn2.iodide.io/v0.15.0/full/';
+    </script>
+    <script src="https://pyodide-cdn2.iodide.io/v0.15.0/full/pyodide.js"></script>
+</head>
+
+<body>
+  <p>You can execute any Python code. Just enter something in the box below and click the button.</p>
+  <input id='code' value='sum([1,2,3,4,5])'>
+  <button onclick='evaluatePython()'>Run</button>
+  <br>
+  <br>
+  <div>
+    Output:
+  </div>
+  <textarea id='output' style='width: 100%;' rows='6' disabled></textarea>
+
+  <script>
+    const output = document.getElementById("output")
+    const code = document.getElementById("code")
+
+    function addToOutput(s) {
+      output.value+= `>>>${code.value}\n${s}\n`
+    }
+
+    output.value = 'Initializing...\n'
+    // init pyodide
+    languagePluginLoader.then(() => { output.value+='Ready!\n' })
+
+    function evaluatePython() {
+      pyodide.runPythonAsync(code.value)
+        .then(output => addToOutput(output))
+        .catch((err) => { addToOutput(err) })
+    }
+  </script>
+</body>
+
+</html>
+```
+
+## Accessing Python scope from JavaScript
+
+You can also access from JavaScript all functions and variables defined in Python using the [pyodide.globals](api_reference.html#pyodide-globals) object.
+
+For example, if you initialize the variable `x = numpy.ones([3,3])` in Python, you can access it from JavaScript in your browser's developer console as follows: `pyodide.globals.x`. he same goes for functions and imports.
+
+You can try it yourself in the browser console:
+```js
+pyodide.globals.x
+// >>> [Float64Array(3), Float64Array(3), Float64Array(3)]
+
+// create the same 3x3 ndarray from js
+let x = pyodide.globals.numpy.ones(new Int32Array([3, 3]))
+// x >>> [Float64Array(3), Float64Array(3), Float64Array(3)]
 ```
 
 ## Serving pyodide files
