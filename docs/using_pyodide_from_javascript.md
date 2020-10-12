@@ -151,12 +151,12 @@ Note: although the function is called Async, it still blocks the main thread. To
 
 </html>
 ```
-The live demo can be found [here](http://karay.me/truepyxel/pyodide.html)
+
 ## Accessing Python scope from JavaScript
 
 You can also access from JavaScript all functions and variables defined in Python using the [pyodide.globals](api_reference.md#pyodideglobals) object.
 
-For example, if you initialize the variable `x = numpy.ones([3,3])` in Python, you can access it from JavaScript in your browser's developer console as follows: `pyodide.globals.x`. he same goes for functions and imports.
+For example, if you initialize the variable `x = numpy.ones([3,3])` in Python, you can access it from JavaScript in your browser's developer console as follows: `pyodide.globals.x`. The same goes for functions and imports. See [type conversions](type_conversions.md) for more details.
 
 You can try it yourself in the browser console:
 ```js
@@ -166,6 +166,34 @@ pyodide.globals.x
 // create the same 3x3 ndarray from js
 let x = pyodide.globals.numpy.ones(new Int32Array([3, 3]))
 // x >>> [Float64Array(3), Float64Array(3), Float64Array(3)]
+```
+
+Since you have full scope access, you can also re-assign new values or even JavaScript functions to variables, and create new ones from JavaScript:
+
+```js
+// re-assign a new value to an existing variable
+pyodide.globals.x = 'x will be now string'
+
+// create a new js function that will be available from Python
+// this will show a browser alert if the function is called from Python
+pyodide.globals.alert = msg => alert(msg)
+
+// this new function will also be available in Python and will return the squared value.
+pyodide.globals.squer = x => x*x
+```
+
+Feel free to play around with the code using the browser console and the above example.
+
+## Accessing JavaScript scope from Python
+
+The JavaScript scope can be accessed from Python using the `js` module (see [Using JavaScript objects from Python](type_conversions.md#using-javascript-objects-from-python)). This module represents the gloabal object `window` that allows us to directly manipulate the DOM and access global variables and functions from Python.
+
+```python
+import js
+
+div = js.document.createElement("div")
+div.innerHTML = "<h1>This element was created from Python</h1>"
+js.document.body.prepend(div)
 ```
 
 ## Serving pyodide files
