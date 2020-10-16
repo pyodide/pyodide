@@ -17,9 +17,12 @@ jobs:
       - run:
           name: lint
           command: |
-            pip install black
+            pip install black mypy
+            # TODO: investigate why clang-format without version is not available
+            sudo ln -s /usr/bin/clang-format-6.0 /usr/bin/clang-format
             make lint
             black --check --exclude tools/file_packager.py .
+            mypy --ignore-missing-imports pyodide_build/ src/ test/ packages/micropip/
   build:
     <<: *defaults
     steps:
@@ -152,9 +155,9 @@ jobs:
       - run:
           name: Deploy Github Releases
           command: |
-            pushd build
-            tar cjf ../pyodide-build-${CIRCLE_TAG}.tar.bz2 *
-            popd
+            cp -r build /tmp/pyodide
+            cd /tmp/
+            tar cjf pyodide-build-${CIRCLE_TAG}.tar.bz2  pyodide/
             ghr -t "${GITHUB_TOKEN}" -u "${CIRCLE_PROJECT_USERNAME}" -r "${CIRCLE_PROJECT_REPONAME}" -c "${CIRCLE_SHA1}" -delete  "${CIRCLE_TAG}" ./pyodide-build-${CIRCLE_TAG}.tar.bz2
 
       - run:
