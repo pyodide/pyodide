@@ -1,9 +1,0 @@
-package:
-  name: parsel
-  version: 1.6.0
-source:
-  sha256: 70efef0b651a996cceebc69e55a85eb2233be0890959203ba7c3a03c72725c79
-  url: https://files.pythonhosted.org/packages/57/20/8e7aef69de46de1c991d7880ffb6c046e0cb94ad41e20dcd6a74d02c1c1a/parsel-1.6.0.tar.gz
-test:
-  imports:
-  - parsel
