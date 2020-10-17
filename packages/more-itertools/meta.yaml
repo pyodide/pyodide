@@ -1,9 +1,9 @@
 package:
   name: more-itertools
-  version: 8.4.0
+  version: 8.5.0
 source:
-  sha256: 68c70cc7167bdf5c7c9d8f6954a7837089c6a36bf565383919bb595efb8a17e5
-  url: https://files.pythonhosted.org/packages/67/4a/16cb3acf64709eb0164e49ba463a42dc45366995848c4f0cf770f57b8120/more-itertools-8.4.0.tar.gz
+  sha256: 6f83822ae94818eae2612063a5101a7311e68ae8002005b5e05f03fd74a86a20
+  url: https://files.pythonhosted.org/packages/d6/03/37d7c431c4c1c17507fb7b89240ddb7be70f2027277960d525f1679363c1/more-itertools-8.5.0.tar.gz
 test:
   imports:
   - more_itertools
