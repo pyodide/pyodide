@@ -1,45 +1,42 @@
 package:
   name: networkx
-  version: '2.2'
-
-source:
-  url: https://files.pythonhosted.org/packages/f3/f4/7e20ef40b118478191cec0b58c3192f822cace858c19505c7670961b76b2/networkx-2.2.zip
-  sha256: 45e56f7ab6fe81652fb4bc9f44faddb0e9025f469f602df14e3b2551c2ea5c8b
-
+  version: '2.4'
 requirements:
   run:
-    - decorator
-    - setuptools
-    # Upstream NetworkX has these as "soft" dependencies, but it's more
-    # convenient to have them come in automatically.
-    - matplotlib
-    - numpy
-
+  - decorator
+  - setuptools
+  # Upstream NetworkX has these as "soft" dependencies, but it's more
+  # convenient to have them come in automatically.
+  - matplotlib
+  - numpy
+source:
+  sha256: f8f4ff0b6f96e4f9b16af6b84622597b5334bf9cae8cf9b2e42e7985d5c95c64
+  url: https://files.pythonhosted.org/packages/bf/63/7b579dd3b1c49ce6b7fd8f6f864038f255201410905dd183cf7f4a3845cf/networkx-2.4.tar.gz
 test:
   imports:
-    - networkx
-    - networkx.algorithms
-    - networkx.algorithms.approximation
-    - networkx.algorithms.assortativity
-    - networkx.algorithms.bipartite
-    - networkx.algorithms.centrality
-    - networkx.algorithms.chordal
-    - networkx.algorithms.coloring
-    - networkx.algorithms.community
-    - networkx.algorithms.components
-    - networkx.algorithms.connectivity
-    - networkx.algorithms.flow
-    - networkx.algorithms.isomorphism
-    - networkx.algorithms.link_analysis
-    - networkx.algorithms.node_classification
-    - networkx.algorithms.operators
-    - networkx.algorithms.shortest_paths
-    - networkx.algorithms.traversal
-    - networkx.algorithms.tree
-    - networkx.classes
-    - networkx.drawing
-    - networkx.generators
-    - networkx.linalg
-    - networkx.readwrite
-    - networkx.readwrite.json_graph
-    - networkx.utils
+  - networkx
+  - networkx.algorithms
+  - networkx.algorithms.approximation
+  - networkx.algorithms.assortativity
+  - networkx.algorithms.bipartite
+  - networkx.algorithms.centrality
+  - networkx.algorithms.chordal
+  - networkx.algorithms.coloring
+  - networkx.algorithms.community
+  - networkx.algorithms.components
+  - networkx.algorithms.connectivity
+  - networkx.algorithms.flow
+  - networkx.algorithms.isomorphism
+  - networkx.algorithms.link_analysis
+  - networkx.algorithms.node_classification
+  - networkx.algorithms.operators
+  - networkx.algorithms.shortest_paths
+  - networkx.algorithms.traversal
+  - networkx.algorithms.tree
+  - networkx.classes
+  - networkx.drawing
+  - networkx.generators
+  - networkx.linalg
+  - networkx.readwrite
+  - networkx.readwrite.json_graph
+  - networkx.utils

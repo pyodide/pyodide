@@ -4,6 +4,9 @@ package:
 source:
   sha256: 63548a94899f2a51eeb89b640f6ac311f481a8016b37dce157186e44619bc968
   url: https://files.pythonhosted.org/packages/72/16/a5bdfdb39f83bf38a7750a4446977fc5aba9027da7abb922c93a372e1d0e/uncertainties-3.1.4.tar.gz
+requirements:
+  run:
+    - future
 test:
   imports:
   - uncertainties
