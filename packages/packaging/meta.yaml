@@ -1,0 +1,14 @@
+package:
+  name: packaging
+  version: '20.4'
+source:
+  sha256: 4357f74f47b9c12db93624a82154e9b120fa8293699949152b22065d556079f8
+  url: https://files.pythonhosted.org/packages/55/fd/fc1aca9cf51ed2f2c11748fa797370027babd82f87829c7a8e6dbe720145/packaging-20.4.tar.gz
+
+requirements:
+  run:
+    - pyparsing
+
+test:
+  imports:
+  - packaging
