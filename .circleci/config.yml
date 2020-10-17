@@ -150,7 +150,7 @@ jobs:
       - run:
           name: Install requirements
           command: |
-            apk add --no-cache --update python3
+            apk add --no-cache --update python3 brotli
             python3 -m pip install awscli
       - run:
           name: Deploy Github Releases
@@ -163,8 +163,9 @@ jobs:
       - run:
           name: Deploy to pyodide-cdn2.iodide.io
           command: |
-            aws s3 sync build/ "s3://pyodide-cdn2.iodide.io/v${CIRCLE_TAG}/full/" --exclude '*.data' --cache-control 'max-age=30758400, immutable, public'  # 1 year
-            aws s3 sync build/ "s3://pyodide-cdn2.iodide.io/v${CIRCLE_TAG}/full/" --exclude '*' --include '*.data' --cache-control 'max-age=30758400, immutable, public'  --content-type 'application/wasm' # 1 year
+            find build/ -type f | brotli --suffix='' --suffix=''
+            aws s3 sync build/ "s3://pyodide-cdn2.iodide.io/v${CIRCLE_TAG}/full/" --exclude '*.data' --cache-control 'max-age=30758400, immutable, public' --content-encoding 'br'    # 1 year cache
+            aws s3 sync build/ "s3://pyodide-cdn2.iodide.io/v${CIRCLE_TAG}/full/" --exclude '*' --include '*.data' --cache-control 'max-age=30758400, immutable, public'  --content-type 'application/wasm' --content-encoding 'br'  # 1 year
             # update 301 redirect for the /latest/* route.
             aws s3api put-bucket-website --cli-input-json file://.circleci/s3-website-config.json
 
@@ -179,14 +180,15 @@ jobs:
       - run:
           name: Install requirements
           command: |
-            sudo apt-get install -y groff
+            sudo apt-get install -y groff brotli parallel
             python3 -m pip install awscli
       - run:
           name: Deploy to pyodide-cdn2.iodide.io
           command: |
+            find build/ -type f | parallel brotli --suffix=''
             aws s3 rm --recursive "s3://pyodide-cdn2.iodide.io/dev/full/"
-            aws s3 sync build/ "s3://pyodide-cdn2.iodide.io/dev/full/" --exclude '*.data' --cache-control 'max-age=3600, public'  # 1 hour
-            aws s3 sync build/ "s3://pyodide-cdn2.iodide.io/dev/full/" --exclude '*' --include '*.data' --cache-control 'max-age=3600, public'  --content-type 'application/wasm' # 1 hour
+            aws s3 sync build/ "s3://pyodide-cdn2.iodide.io/dev2/full/" --exclude '*.data' --cache-control 'max-age=3600, public' --content-encoding 'br'  # 1 hour cache
+            aws s3 sync build/ "s3://pyodide-cdn2.iodide.io/dev2/full/" --exclude '*' --include '*.data' --cache-control 'max-age=3600, public'  --content-type 'application/wasm' --content-encoding 'br'  # 1 hour cache
 
 workflows:
   version: 2
@@ -231,6 +233,3 @@ workflows:
           requires:
             - test-firefox
             - test-python
-          filters:
-            branches:
-              only: master
