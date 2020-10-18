@@ -163,7 +163,7 @@ jobs:
       - run:
           name: Deploy to pyodide-cdn2.iodide.io
           command: |
-            find build/ -type f | brotli --suffix='' --suffix=''
+            find build/ -type f -exec sh -c "echo \"Compressing {}\"; brotli --rm {}; mv {}.br {};" \;
             aws s3 sync build/ "s3://pyodide-cdn2.iodide.io/v${CIRCLE_TAG}/full/" --exclude '*.data' --cache-control 'max-age=30758400, immutable, public' --content-encoding 'br'    # 1 year cache
             aws s3 sync build/ "s3://pyodide-cdn2.iodide.io/v${CIRCLE_TAG}/full/" --exclude '*' --include '*.data' --cache-control 'max-age=30758400, immutable, public'  --content-type 'application/wasm' --content-encoding 'br'  # 1 year
             # update 301 redirect for the /latest/* route.
@@ -181,12 +181,12 @@ jobs:
           name: Install requirements
           command: |
             sudo apt-get update
-            sudo apt-get install -y groff brotli parallel
+            sudo apt-get install -y groff brotli
             python3 -m pip install awscli
       - run:
           name: Deploy to pyodide-cdn2.iodide.io
           command: |
-            find build/ -type f | parallel brotli --suffix=''
+            find build/ -type f -exec sh -c "echo \"Compressing {}\"; brotli --rm {}; mv {}.br {};" \;
             aws s3 rm --recursive "s3://pyodide-cdn2.iodide.io/dev/full/"
             aws s3 sync build/ "s3://pyodide-cdn2.iodide.io/dev2/full/" --exclude '*.data' --cache-control 'max-age=3600, public' --content-encoding 'br'  # 1 hour cache
             aws s3 sync build/ "s3://pyodide-cdn2.iodide.io/dev2/full/" --exclude '*' --include '*.data' --cache-control 'max-age=3600, public'  --content-type 'application/wasm' --content-encoding 'br'  # 1 hour cache
