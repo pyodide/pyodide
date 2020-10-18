@@ -188,8 +188,8 @@ jobs:
           command: |
             find build/ -type f -exec sh -c "echo \"Compressing {}\"; brotli --rm {}; mv {}.br {};" \;
             aws s3 rm --recursive "s3://pyodide-cdn2.iodide.io/dev/full/"
-            aws s3 sync build/ "s3://pyodide-cdn2.iodide.io/dev2/full/" --exclude '*.data' --cache-control 'max-age=3600, public' --content-encoding 'br'  # 1 hour cache
-            aws s3 sync build/ "s3://pyodide-cdn2.iodide.io/dev2/full/" --exclude '*' --include '*.data' --cache-control 'max-age=3600, public'  --content-type 'application/wasm' --content-encoding 'br'  # 1 hour cache
+            aws s3 sync build/ "s3://pyodide-cdn2.iodide.io/dev/full/" --exclude '*.data' --cache-control 'max-age=3600, public' --content-encoding 'br'  # 1 hour cache
+            aws s3 sync build/ "s3://pyodide-cdn2.iodide.io/dev/full/" --exclude '*' --include '*.data' --cache-control 'max-age=3600, public'  --content-type 'application/wasm' --content-encoding 'br'  # 1 hour cache
 
 workflows:
   version: 2
