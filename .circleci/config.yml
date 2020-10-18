@@ -234,3 +234,6 @@ workflows:
           requires:
             - test-firefox
             - test-python
+          filters:
+            branches:
+              only: master
