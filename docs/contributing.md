@@ -33,6 +33,8 @@ We use [Github Issues](https://github.com/iodide-project/pyodide/issues) for ann
 
 Core contributors are monitoring new issues & comments all the time, and will label & organize issues to align with development priorities.
 
+
+
 ## How to Contribute
 
 Pull requests are the primary mechanism we use to change PYODIDE. GitHub itself has some [great documentation](https://help.github.com/articles/about-pull-requests/) on using the Pull Request feature. We use the "fork and pull" model [described here](https://help.github.com/articles/about-pull-requests/), where contributors push changes to their personal fork and create pull requests to bring those changes into the source repository.
@@ -46,6 +48,19 @@ If you’d like to fix a currently-filed issue, please take a look at the commen
 We use [pytest](https://pytest.org), driving [Selenium](https://www.seleniumhq.org) as our testing framework. Every PR will automatically run through our tests, and our test framework will alert you on Github if your PR doesn’t pass all of them. If your PR fails a test, try to figure out whether or not you can update your code to make the test pass again, or ask for help. As a policy we will not accept a PR that fails any of our tests, and will likely ask you to add tests if your PR adds new functionality. Writing tests can be scary, but they make open-source contributions easier for everyone to assess. Take a moment and look through how we’ve written our tests, and try to make your tests match. If you are having trouble, we can help you get started on our test-writing journey.
 
 All code submissions should pass `make lint`.  Python is checked with the default settings of `flake8`.  C and Javascript are checked against the Mozilla style in `clang-format`.
+
+## Documentation
+
+Documentation is a critical part of any open source project and we are very
+welcome to any documentation improvements.
+pyodide has a documentation written in Markdown in the `docs/` folder. We
+use the [MyST](
+https://myst-parser.readthedocs.io/en/latest/using/syntax.html#targets-and-cross-referencing)
+for parsing Markdown in sphinx.  You may want to have a look at the [MyST
+syntax
+guide](https://myst-parser.readthedocs.io/en/latest/using/syntax.html#the-myst-syntax-guide)
+when contributing, in particular regarding [cross-referencing
+sections](https://myst-parser.readthedocs.io/en/latest/using/syntax.html#targets-and-cross-referencing).
 
 ## Migrating patches
 
