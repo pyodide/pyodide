@@ -1,5 +1,9 @@
 # [Pyodide](https://github.com/iodide-project/pyodide)
 
+<div align="center">
+  <img src="./docs/images/pyodide-logo.png", alt="Pyodide">
+</div>
+
 
 [![Build Status](https://circleci.com/gh/iodide-project/pyodide.png)](https://circleci.com/gh/iodide-project/pyodide)
 [![Documentation Status](https://readthedocs.org/projects/pyodide/badge/?version=latest)](https://pyodide.readthedocs.io/?badge=latest)
