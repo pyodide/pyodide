@@ -1,7 +1,7 @@
-# [Pyodide](https://github.com/iodide-project/pyodide)
-
 <div align="center">
-  <img src="./docs/images/pyodide-logo.png", alt="Pyodide">
+  <a href="https://github.com/iodide-project/pyodide">
+  <img src="./docs/images/pyodide-logo.png" alt="Pyodide">
+  </a>
 </div>
 
 
