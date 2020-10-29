@@ -1,4 +1,4 @@
-# Iodide Code of Conduct
+# Code of Conduct
 
 ## Conduct
 

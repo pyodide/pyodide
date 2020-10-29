@@ -1,3 +1,4 @@
+(using_from_webworker)=
 # Using Pyodide from a web worker
 
 This document describes how to use pyodide to execute python scripts
@@ -63,8 +64,7 @@ itself.
 
 If you would like to pre-load some packages, or the automatic package loading
 does not work for you for some reason, you may modify the `webworker.js` source
-to load some specific packages as described in
-[Using Pyodide directly from Javascript](using_pyodide_from_javascript.md).
+to load some specific packages as described in {ref}`using_from_javascript`.
 
 For example, to always load packages `numpy` and `pytz`, you would insert the
 line `self.pyodide.loadPackage(['numpy', 'pytz']).then(() => {` as shown below:

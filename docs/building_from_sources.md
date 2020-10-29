@@ -1,3 +1,4 @@
+(building_from_sources)=
 # Building from sources
 
 Building is easiest on Linux and relatively straightforward on Mac. For
@@ -63,6 +64,7 @@ be changed via Docker Preferences (See [here](https://stackoverflow.com/question
 You can edit the files in your source checkout on your host machine, and then
 repeatedly run `make` inside the Docker environment to test your changes.
 
+(partial-builds)=
 ## Partial builds
 
 To build a subset of available packages in pyodide, set the environment
