@@ -3,8 +3,13 @@
 ## Version 0.16.0
 *Unreleased*
 
-- Pyodide now includes CPython 3.8.2
+- Pyodide includes CPython 3.8.2
   [#712](https://github.com/iodide-project/pyodide/pull/712)
+- Pyodide files are distributed by [JsDelivr CDN](https://www.jsdelivr.com/),
+  `https://cdn.jsdelivr.net/pyodide/v0.16.0/full/pyodide.js`
+  The previous CDN `pyodide-cdn2.iodide.io` still works and there
+  are no plans for deprecating it. However please use
+  JsDelivr CDN as a more sustainable solution.
 - FIX Only call `Py_INCREF()` once when proxied by PyProxy
   [#708](https://github.com/iodide-project/pyodide/pull/708)
 - Updated docker image to Debian buster
