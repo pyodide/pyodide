@@ -1,3 +1,4 @@
+(pypi)=
 # Installing packages from PyPI
 
 Pyodide has experimental support for installing pure Python wheels from PyPI.
@@ -35,6 +36,7 @@ micropip.install('snowballstemmer').then(do_work)
 Micropip implements file integrity validation by checking the hash of the
 downloaded wheel against pre-recorded hash digests from the PyPi JSON API.
 
+(micropip-installing-from-arbitrary-urls)=
 ## Installing wheels from arbitrary URLs
 
 Pure python wheels can also be installed from any URL with micropip,
@@ -62,8 +64,8 @@ PyPi.
 
 ## Complete example
 
-Adapting the setup from the section on ["using pyodide from
-javascript"](./using_pyodide_from_javascript.html) a complete example would be,
+Adapting the setup from the section on {ref}`using_from_javascript`
+a complete example would be,
 
 ```html
 <html>

@@ -35,11 +35,8 @@ to be used with Pyodide.
    using_pyodide_from_iodide.md
    using_pyodide_from_javascript.md
    using_pyodide_from_webworker.md
-
-.. toctree::
-   :maxdepth: 1
-   :caption: Extending
-
+   serving_pyodide_packages.md
+   type_conversions.md
    pypi.md
    api_reference.md
    faq.md
@@ -60,7 +57,6 @@ information about the project's organization.
 
    building_from_sources.md
    new_packages.md
-   type_conversions.md
    contributing.md
    testing.md
 

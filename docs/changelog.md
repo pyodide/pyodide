@@ -1,3 +1,4 @@
+(changelog)=
 # Release notes
 
 ## Version 0.16.0
@@ -33,8 +34,7 @@
   memory will be allocated as needed.
 - When building from source, only a subset of packages can be built by setting
   the `PYODIDE_PACKAGES` environment variable. See
-  [partial builds documentation](https://pyodide.readthedocs.io/en/latest/building_from_sources.html#partial-builds)
-  for more details.
+  {ref}`partial builds documentation <partial-builds>` for more details.
 - New packages: future, autograd
 
 ## Version 0.14.3
@@ -63,7 +63,7 @@
 **User improvements:**
 
 - Packages with pure Python wheels can now be loaded directly from PyPI. See
-  `docs/pypi.md` for more information.
+  {ref}`pypi` for more information.
 
 - Thanks to PEP 562, you can now `import js` from Python and use it to access
   anything in the global Javascript namespace.

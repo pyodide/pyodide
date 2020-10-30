@@ -1,3 +1,4 @@
+(type_conversions)=
 # Type conversions
 
 Python to Javascript conversions occur:
@@ -57,6 +58,7 @@ implementation for Javascript.
 Any of the types not listed above are shared between languages using proxies
 that allow methods and some operators to be called on the object from the other
 language.
+
 
 ### Javascript from Python
 
@@ -145,13 +147,12 @@ foo.call_method(); // This will raise an exception, since the object has been
 
 A Python object (in global scope) can be brought over to Javascript using the
 `pyodide.pyimport` function. It takes a string giving the name of the variable,
-and returns the object, converted to Javascript (See [type
-conversions](type_conversions.md)).
+and returns the object, converted to Javascript.
 
 ```javascript
 var sys = pyodide.pyimport('sys');
 ```
-
+(type_conversions_using_js_obj_from_py)=
 ## Using Javascript objects from Python
 
 Javascript objects can be accessed from Python using the special `js` module.

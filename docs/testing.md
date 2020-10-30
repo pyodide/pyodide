@@ -1,3 +1,4 @@
+(testing)=
 # Testing and benchmarking
 
 ## Testing

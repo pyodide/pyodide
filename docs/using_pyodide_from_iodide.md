@@ -1,8 +1,10 @@
+(using_from_iodide)=
+
 # Using Pyodide from Iodide
 
 This document describes using Pyodide inside Iodide. For information
-about using Pyodide directly from Javascript, see [Using Pyodide from
-Javascript](using_pyodide_from_javascript.md).
+about using Pyodide directly from Javascript, see
+{ref}`using_from_javascript`.
 
 ## Running basic Python
 
@@ -15,7 +17,7 @@ Create a Python chunk, by inserting a line like this:
 Type some Python code into the chunk, and press Shift+Enter to evaluate it. If
 the last clause in the cell is an expression, that expression is evaluated,
 converted to Javascript and displayed in the console like all other output
-in Javascript. See [type conversions](type_conversions.md) for more information
+in Javascript. See {ref}`type_conversions` for more information
 about how data types are converted between Python and Javascript.
 
 ```python

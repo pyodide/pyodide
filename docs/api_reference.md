@@ -60,6 +60,7 @@ The object as nested Python lists.
 
 ## Javascript API
 
+(api_pyodide_loadpackage)=
 ### pyodide.loadPackage(names, messageCallback, errorCallback)
 
 Load a package or a list of packages over the network.
@@ -107,13 +108,9 @@ For example, to access the `foo` Python object from Javascript:
 
 | name      | type    | description                           |
 |-----------|---------|---------------------------------------|
-| *object*  | *any*   | If one of the basic types (string,    |
-|           |         | number, boolean, array, object), the  |
-|           |         | Python object is converted to         |
-|           |         | Javascript and returned.  For other   |
-|           |         | types, a Proxy object to the Python   |
-|           |         | object is returned.                   |
+| *object*  | *any*   | If one of the basic types (string, number,<br>boolean, array, object), the Python<br> object is converted to        Javascript and <br>returned.  For other types, a Proxy<br> object to the Python object is returned. |
 
+(api_pyodide_globals)=
 ### pyodide.globals
 
 An object whose attributes are members of the Python global namespace. This is a
@@ -161,6 +158,8 @@ Runs a string of code. The last part of the string may be an expression, in whic
 | *jsresult* | *any*   | Result, converted to Javascript |
 
 
+
+(api_pyodide_runPythonAsync)=
 ### pyodide.runPythonAsync(code, messageCallback, errorCallback)
 
 Runs Python code, possibly asynchronously loading any known packages that the code

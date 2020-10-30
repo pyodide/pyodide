@@ -1,7 +1,8 @@
+(using_from_javascript)=
+
 # Using Pyodide from Javascript
 
-This document describes using Pyodide directly from Javascript. For information about using Pyodide from Iodide, see [Using Pyodide from
-Iodide](using_pyodide_from_iodide.md).
+This document describes using Pyodide directly from Javascript. For information about using Pyodide from Iodide, see {ref}`using_from_iodide`.
 
 ## Startup
 
@@ -32,8 +33,7 @@ languagePluginLoader.then(() => {
 
 Python code is run using the `pyodide.runPython` function. It takes as input a
 string of Python code. If the code ends in an expression, it returns the result
-of the expression, converted to Javascript objects (See [type
-conversions](type_conversions.md)).
+of the expression, converted to Javascript objects (see {ref}`type_conversions`).
 
 ```javascript
 pyodide.runPython(`
@@ -103,14 +103,15 @@ pyodide.loadPackage('matplotlib').then(() => {
 
 ## Alternative way to load packages and run Python code
 
-Alternatively you can run Python code without manually pre-loading packages. You can do this with [pyodide.runPythonAsync](api_reference.md#pyodideloadpackagenames-messagecallback-errorcallback) function, which will automatically download all packages that the code snippet imports.
+Alternatively you can run Python code without manually pre-loading packages. You can do this with {ref}`pyodide.runPythonAsync <api_pyodide_runPythonAsync>`) function, which will automatically download all packages that the code snippet imports.
 
-Note: although the function is called Async, it still blocks the main thread. To run Python code asynchronously see [WebWorker](using_pyodide_from_webworker.md)
+Note: although the function is called Async, it still blocks the main thread. To run Python code asynchronously see {ref}`using_from_webworker`.
 
 ## Alternative Example
 
 ```html
 <!DOCTYPE html>
+<html>
 <head>
     <script type="text/javascript">
         window.languagePluginUrl = 'https://pyodide-cdn2.iodide.io/v0.15.0/full/';
@@ -120,7 +121,7 @@ Note: although the function is called Async, it still blocks the main thread. To
 
 <body>
   <p>You can execute any Python code. Just enter something in the box below and click the button.</p>
-  <input id='code' value='sum([1,2,3,4,5])'>
+  <input id='code' value='sum([1, 2, 3, 4, 5])'>
   <button onclick='evaluatePython()'>Run</button>
   <br>
   <br>
@@ -130,21 +131,21 @@ Note: although the function is called Async, it still blocks the main thread. To
   <textarea id='output' style='width: 100%;' rows='6' disabled></textarea>
 
   <script>
-    const output = document.getElementById("output")
-    const code = document.getElementById("code")
+    const output = document.getElementById("output");
+    const code = document.getElementById("code");
 
     function addToOutput(s) {
-      output.value+= `>>>${code.value}\n${s}\n`
+      output.value += '>>>' + code.value + '\n' + s + '\n';
     }
 
-    output.value = 'Initializing...\n'
+    output.value = 'Initializing...\n';
     // init pyodide
-    languagePluginLoader.then(() => { output.value+='Ready!\n' })
+    languagePluginLoader.then(() => { output.value += 'Ready!\n'; });
 
     function evaluatePython() {
       pyodide.runPythonAsync(code.value)
         .then(output => addToOutput(output))
-        .catch((err) => { addToOutput(err) })
+        .catch((err) => { addToOutput(err) });
     }
   </script>
 </body>
@@ -154,9 +155,9 @@ Note: although the function is called Async, it still blocks the main thread. To
 
 ## Accessing Python scope from JavaScript
 
-You can also access from JavaScript all functions and variables defined in Python using the [pyodide.globals](api_reference.md#pyodideglobals) object.
+You can also access from JavaScript all functions and variables defined in Python using the {ref}`pyodide.globals <api_pyodide_globals>`) object.
 
-For example, if you initialize the variable `x = numpy.ones([3,3])` in Python, you can access it from JavaScript in your browser's developer console as follows: `pyodide.globals.x`. The same goes for functions and imports. See [type conversions](type_conversions.md) for more details.
+For example, if you initialize the variable `x = numpy.ones([3,3])` in Python, you can access it from JavaScript in your browser's developer console as follows: `pyodide.globals.x`. The same goes for functions and imports. See {ref}`type_conversions` for more details.
 
 You can try it yourself in the browser console:
 ```js
@@ -186,7 +187,7 @@ Feel free to play around with the code using the browser console and the above e
 
 ## Accessing JavaScript scope from Python
 
-The JavaScript scope can be accessed from Python using the `js` module (see [Using JavaScript objects from Python](type_conversions.md#using-javascript-objects-from-python)). This module represents the gloabal object `window` that allows us to directly manipulate the DOM and access global variables and functions from Python.
+The JavaScript scope can be accessed from Python using the `js` module (see {ref}`type_conversions_using_js_obj_from_py`). This module represents the gloabal object `window` that allows us to directly manipulate the DOM and access global variables and functions from Python.
 
 ```python
 import js
@@ -196,50 +197,4 @@ div.innerHTML = "<h1>This element was created from Python</h1>"
 js.document.body.prepend(div)
 ```
 
-## Serving pyodide files
-
-If you built your pyodide distribution or downloaded the release tarball
-you need to serve pyodide files with a appropriate headers.
-
-Because browsers require WebAssembly files to have mimetype of
-`application/wasm` we're unable to serve our files using Python's built-in
-`SimpleHTTPServer` module.
-
-Let's wrap Python's Simple HTTP Server and provide the appropiate mimetype for
-WebAssembly files into a `pyodide_server.py` file (in the `pyodide_local`
-directory):
-```python
-import sys
-import socketserver
-from http.server import SimpleHTTPRequestHandler
-
-
-class Handler(SimpleHTTPRequestHandler):
-
-    def end_headers(self):
-        # Enable Cross-Origin Resource Sharing (CORS)
-        self.send_header('Access-Control-Allow-Origin', '*')
-        super().end_headers()
-
-
-if sys.version_info < (3, 7, 5):
-    # Fix for WASM MIME type for older Python versions
-    Handler.extensions_map['.wasm'] = 'application/wasm'
-
-
-if __name__ == '__main__':
-    port = 8000
-    with socketserver.TCPServer(("", port), Handler) as httpd:
-        print("Serving at: http://127.0.0.1:{}".format(port))
-        httpd.serve_forever()
-```
-
-Let's test it out.
-In your favourite shell, let's start our WebAssembly aware web server:
-```bash
-python pyodide_server.py
-```
-
-Point your WebAssembly aware browser to
-[http://localhost:8000/index.html](http://localhost:8000/index.html) and open
-your browser console to see the output from python via pyodide!
+See {ref}`serving_pyodide_packages` to distribute pyodide files locally.
