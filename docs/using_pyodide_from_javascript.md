@@ -8,7 +8,7 @@ This document describes using Pyodide directly from Javascript. For information 
 
 To include Pyodide in your project you can use the following CDN URL,
 
-  https://pyodide-cdn2.iodide.io/v0.15.0/full/pyodide.js
+  https://cdn.jsdelivr.net/pyodide/v0.15.0/full/pyodide.js
 
 You can also download a release from
 [Github releases](https://github.com/iodide-project/pyodide/releases)
@@ -51,9 +51,9 @@ Create and save a test `index.html` page with the following contents:
   <head>
       <script type="text/javascript">
           // set the pyodide files URL (packages.json, pyodide.asm.data etc)
-          window.languagePluginUrl = 'https://pyodide-cdn2.iodide.io/v0.15.0/full/';
+          window.languagePluginUrl = 'https://cdn.jsdelivr.net/pyodide/v0.15.0/full/';
       </script>
-      <script src="https://pyodide-cdn2.iodide.io/v0.15.0/full/pyodide.js"></script>
+      <script src="https://cdn.jsdelivr.net/pyodide/v0.15.0/full/pyodide.js"></script>
   </head>
   <body>
     Pyodide test page <br>
@@ -114,9 +114,9 @@ Note: although the function is called Async, it still blocks the main thread. To
 <html>
 <head>
     <script type="text/javascript">
-        window.languagePluginUrl = 'https://pyodide-cdn2.iodide.io/v0.15.0/full/';
+        window.languagePluginUrl = 'https://cdn.jsdelivr.net/pyodide/v0.15.0/full/';
     </script>
-    <script src="https://pyodide-cdn2.iodide.io/v0.15.0/full/pyodide.js"></script>
+    <script src="https://cdn.jsdelivr.net/pyodide/v0.15.0/full/pyodide.js"></script>
 </head>
 
 <body>
