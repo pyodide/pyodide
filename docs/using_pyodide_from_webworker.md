@@ -53,18 +53,7 @@ pyodideWorker.postMessage(data)
 
 ```
 
-## Loading packages
-
-Packages referenced from your python script will be automatically downloaded
-the first time they are encountered. Please note that some of the larger
-packages such as `numpy` or `pandas` may take several seconds to load.
-Subsequent uses of these packages will not incur the download overhead of the
-first run, but there is still some time required for the `import` in python
-itself.
-
-If you would like to pre-load some packages, or the automatic package loading
-does not work for you for some reason, you may modify the `webworker.js` source
-to load some specific packages as described in {ref}`using_from_javascript`.
+See {ref}`loading_packages` for instructions on how to load packages.
 
 For example, to always load packages `numpy` and `pytz`, you would insert the
 line `self.pyodide.loadPackage(['numpy', 'pytz']).then(() => {` as shown below:
