@@ -33,8 +33,9 @@ def open_url(url: str) -> StringIO:
 
 
 def eval_code(code: str, ns: Dict[str, Any]) -> None:
-    """
-    Runs a string of code, the last part of which may be an expression.
+    """Runs a code string
+
+    The last part of the provided code may be an expression.
 
     Parameters
     ----------
@@ -108,7 +109,8 @@ def find_imports(code: str) -> List[str]:
 
 
 def as_nested_list(obj) -> List:
-    """
+    """Convert a nested JS array to nested Python list.
+
     Assumes a Javascript object is made of (possibly nested) arrays and
     converts them to nested Python lists.
 
