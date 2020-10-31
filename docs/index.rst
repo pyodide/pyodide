@@ -36,8 +36,8 @@ to be used with Pyodide.
    using_pyodide_from_javascript.md
    using_pyodide_from_webworker.md
    serving_pyodide_packages.md
+   loading_packages.md
    type_conversions.md
-   pypi.md
    api_reference.md
    faq.md
 

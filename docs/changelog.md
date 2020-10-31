@@ -6,11 +6,11 @@
 
 - Pyodide includes CPython 3.8.2
   [#712](https://github.com/iodide-project/pyodide/pull/712)
-- Pyodide files are distributed by [JsDelivr CDN](https://www.jsdelivr.com/),
+- Pyodide files are distributed by [JsDelivr](https://www.jsdelivr.com/),
   `https://cdn.jsdelivr.net/pyodide/v0.16.0/full/pyodide.js`
   The previous CDN `pyodide-cdn2.iodide.io` still works and there
   are no plans for deprecating it. However please use
-  JsDelivr CDN as a more sustainable solution.
+  JsDelivr as a more sustainable solution.
 - FIX Only call `Py_INCREF()` once when proxied by PyProxy
   [#708](https://github.com/iodide-project/pyodide/pull/708)
 - Updated docker image to Debian buster
@@ -68,7 +68,7 @@
 **User improvements:**
 
 - Packages with pure Python wheels can now be loaded directly from PyPI. See
-  {ref}`pypi` for more information.
+  {ref}`micropip` for more information.
 
 - Thanks to PEP 562, you can now `import js` from Python and use it to access
   anything in the global Javascript namespace.

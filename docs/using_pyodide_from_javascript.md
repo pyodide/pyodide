@@ -42,6 +42,9 @@ sys.version
 `);
 ```
 
+After importing pyodide, only packages from the standard library are available.
+See {ref}`loading_packages` documentation to load additional packages.
+
 ## Complete example
 
 Create and save a test `index.html` page with the following contents:
@@ -71,41 +74,6 @@ Create and save a test `index.html` page with the following contents:
 </html>
 ```
 
-## Loading packages
-
-Only the Python standard library and `six` are available after importing
-Pyodide. To use other libraries, you'll need to load their package using
-`pyodide.loadPackage`. This downloads the file data over the network (as a
-`.data` and `.js` index file) and installs the files in the virtual filesystem.
-
-Packages can be loaded by name, for those included in the official pyodide
-repository (e.g. `pyodide.loadPackage('numpy')`). It is also possible to load
-packages from custom URLs (e.g.
-`pyodide.loadPackage('https://foo/bar/numpy.js')`), in which case the URL must
-end with `<package-name>.js`.
-
-When you request a package from the official repository, all of that package's
-dependencies are also loaded. Dependency resolution is not yet implemented
-when loading packages from custom URLs.
-
-Multiple packages can also be loaded in a single call,
-```js
-pyodide.loadPackage(['cycler', 'pytz'])
-```
-
-`pyodide.loadPackage` returns a `Promise`.
-
-```javascript
-pyodide.loadPackage('matplotlib').then(() => {
-  // matplotlib is now available
-});
-```
-
-## Alternative way to load packages and run Python code
-
-Alternatively you can run Python code without manually pre-loading packages. You can do this with {ref}`pyodide.runPythonAsync <api_pyodide_runPythonAsync>`) function, which will automatically download all packages that the code snippet imports.
-
-Note: although the function is called Async, it still blocks the main thread. To run Python code asynchronously see {ref}`using_from_webworker`.
 
 ## Alternative Example
 
