@@ -6,7 +6,7 @@ Python to Javascript conversions occur:
 - when returning the final expression from a
   {ref}`pyodide.runPython <js_api_pyodide_runPython>` call
   (evaluating a Python cell in Iodide)
-- using `pyodide.pyimport`
+- using {ref}`pyodide.pyimport <js_api_pyodide_pyimport>`
 - passing arguments to a Javascript function from Python
 
 Javascript to Python conversions occur:

@@ -1,5 +1,5 @@
 (loading_packages)=
-# Loading Python packages
+# Loading packages
 
 Only the Python standard library and six are available after importing Pyodide.
 To use other libraries, you’ll need to load their package using either,

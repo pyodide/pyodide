@@ -5,7 +5,7 @@ A library of helper utilities for connecting Python to the browser environment.
 import ast
 from io import StringIO
 from textwrap import dedent
-from typing import List, Optional, Any
+from typing import Dict, List, Optional, Any
 
 
 __version__ = "0.15.0"
@@ -13,7 +13,16 @@ __version__ = "0.15.0"
 
 def open_url(url: str) -> StringIO:
     """
-    Fetches a given *url* and returns a io.StringIO to access its contents.
+    Fetches a given URL
+
+    Parameters
+    ----------
+    url
+       URL to fetch
+
+    Returns
+    -------
+    a io.StringIO object with the contents of the URL.
     """
     from js import XMLHttpRequest
 
@@ -23,9 +32,20 @@ def open_url(url: str) -> StringIO:
     return StringIO(req.response)
 
 
-def eval_code(code: str, ns):
+def eval_code(code: str, ns: Dict[str, Any]) -> None:
     """
     Runs a string of code, the last part of which may be an expression.
+
+    Parameters
+    ----------
+    code
+       the Python code to run.
+    ns
+       `locals()` or `globals()` context where to execute code.
+
+    Returns
+    -------
+    None
     """
     # handle mis-indented input from multi-line strings
     code = dedent(code)
@@ -51,8 +71,23 @@ def eval_code(code: str, ns):
 
 def find_imports(code: str) -> List[str]:
     """
-    Finds the imports in a string of code and returns a list of their package
-    names.
+    Finds the imports in a string of code
+
+    Parameters
+    ----------
+    code
+       the Python code to run.
+
+    Returns
+    -------
+    A list of module names that are imported in the code.
+
+    Examples
+    --------
+    >>> from pyodide import find_imports
+    >>> code = "import numpy as np; import scipy.stats"
+    >>> find_imports(code)
+    ['numpy', 'scipy']
     """
     # handle mis-indented input from multi-line strings
     code = dedent(code)
@@ -72,10 +107,19 @@ def find_imports(code: str) -> List[str]:
     return list(imports)
 
 
-def as_nested_list(obj):
+def as_nested_list(obj) -> List:
     """
     Assumes a Javascript object is made of (possibly nested) arrays and
     converts them to nested Python lists.
+
+    Parameters
+    ----------
+    obj
+       a Javscript object made of nested arrays.
+
+    Returns
+    -------
+    Python list, or a nested Python list
     """
     try:
         it = iter(obj)
@@ -85,10 +129,25 @@ def as_nested_list(obj):
 
 
 def get_completions(
-    code: str, cursor: Optional[int] = None, namespaces=None
+    code: str, cursor: Optional[int] = None, namespaces: Optional[List] = None
 ) -> List[str]:
     """
-    Get code autocompletion candidates.
+    Get code autocompletion candidates
+
+    Note that this function requires to have the jedi module loaded.
+
+    Parameters
+    ----------
+    code
+       the Python code to complete.
+    cursor
+       optional position in the code at which to autocomplete
+    namespaces
+       a list of namespaces
+
+    Returns
+    -------
+    a list of autocompleted modules
     """
     import jedi
     import __main__
