@@ -44,8 +44,8 @@ np.arange(10)
 For most uses, that is all you need to know.
 
 However, if you want to use your own custom package or load a package from
-another provider, you'll need to use the `pyodide.loadPackage` function from a
-Javascript chunk. For example, to load a special distribution of Numpy from
+another provider, you'll need to use the {ref}`pyodide.loadPackage <js_api_pyodide_loadPackage>`
+function from a Javascript chunk. For example, to load a special distribution of Numpy from
 `custom.com`:
 
 ```js

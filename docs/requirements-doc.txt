@@ -1,3 +1,5 @@
+# Temporarly commented as a workaround for pypa/pip#9031
 # sphinx
 sphinx_rtd_theme
 myst-parser
+sphinxcontrib-napoleon
