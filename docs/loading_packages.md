@@ -1,15 +1,24 @@
 (loading_packages)=
 # Loading Python packages
 
-Only the Python standard library and six are available after importing Pyodide. To use other libraries, you’ll need to load their package using either,
- - `pyodide.loadPackage` for packages built with pyodide.
- - `micropip.install` for pure Python packages with wheels available on PyPi or on other URLs.
+Only the Python standard library and six are available after importing Pyodide.
+To use other libraries, you’ll need to load their package using either,
+ - {ref}`pyodide.loadPackage <js_api_pyodide_loadPackage>` for packages built
+   with pyodide.
+ - `micropip.install` for pure Python packages with wheels available on PyPi or
+   on other URLs.
 
 ```{note}
-Note that `micropip` can also be used to load packages built in pyodide (in which case it relies on `pyodide.loadPackage`).
+Note that `micropip` can also be used to load packages built in pyodide (in
+which case it relies on {ref}`pyodide.loadPackage
+<js_api_pyodide_loadPackage>`).
 ```
 
-Alternatively you can run Python code without manually pre-loading packages. You can do this with {ref}`pyodide.runPythonAsync <api_pyodide_runPythonAsync>`) function, which will automatically download all packages that the code snippet imports. It only supports packages included in Pyodide (not on PyPi) at present.
+Alternatively you can run Python code without manually pre-loading packages.
+You can do this with {ref}`pyodide.runPythonAsync
+<api_pyodide_runPythonAsync>`) function, which will automatically download all
+packages that the code snippet imports. It only supports packages included in
+Pyodide (not on PyPi) at present.
 
 ## Loading packages with pyodide.loadPackage
 
@@ -65,7 +74,7 @@ stemmer.stemWords('go goes going gone'.split())
 ```
 
 For use outside of Iodide (just Python), you can use the `then` method on the
-`Promise` that `micropip.install` returns to do work once the packages have
+`Promise` that {func}`micropip.install` returns to do work once the packages have
 finished loading:
 
 ```py
