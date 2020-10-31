@@ -3,3 +3,4 @@
 sphinx_rtd_theme
 myst-parser
 sphinxcontrib-napoleon
+distlib   # required by micropip
