@@ -35,3 +35,7 @@ packages/libxml/libxml*
 packages/libxslt/libxslt*
 packages/libiconv/libiconv*
 packages/zlib/zlib*
+
+docs/python-api/
+docs/micropip-api/
+docs/_build/

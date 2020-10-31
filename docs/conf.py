@@ -15,8 +15,12 @@
 import os
 import sys
 
-sys.path.insert(0, os.path.abspath("."))
-sys.path.insert(0, os.path.abspath(".."))
+for base_path in [".", ".."]:
+    sys.path.insert(0, os.path.abspath(base_path))
+    sys.path.insert(1, os.path.abspath(os.path.join(base_path, "src")))
+    sys.path.insert(
+        2, os.path.abspath(os.path.join(base_path, "packages", "micropip", "micropip"))
+    )
 
 # -- Project information -----------------------------------------------------
 
@@ -24,7 +28,8 @@ project = "Pyodide"
 copyright = "2019, Mozilla"
 author = "Mozilla"
 
-from src import pyodide
+import pyodide
+import micropip  # noqa
 
 # The full version, including alpha/beta/rc tags.
 release = version = pyodide.__version__
@@ -39,7 +44,15 @@ release = version = pyodide.__version__
 # Add any Sphinx extension module names here, as strings. They can be
 # extensions coming with Sphinx (named 'sphinx.ext.*') or your custom
 # ones.
-extensions = ["sphinx.ext.autodoc", "myst_parser"]
+extensions = [
+    "sphinx.ext.autodoc",
+    "sphinx.ext.autosummary",
+    "sphinxcontrib.napoleon",
+    "myst_parser",
+]
+
+autosummary_generate = True
+autodoc_default_flags = ["members", "inherited-members"]
 
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ["_templates"]

@@ -29,7 +29,7 @@ Although still experimental, additional packages may be installed from PyPI
 to be used with Pyodide.
 
 .. toctree::
-   :maxdepth: 1
+   :maxdepth: 2
    :caption: Usage
 
    using_pyodide_from_iodide.md

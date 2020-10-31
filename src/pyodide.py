@@ -3,14 +3,15 @@ A library of helper utilities for connecting Python to the browser environment.
 """
 
 import ast
-import io
+from io import StringIO
 from textwrap import dedent
+from typing import List, Optional, Any
 
 
 __version__ = "0.15.0"
 
 
-def open_url(url):
+def open_url(url: str) -> StringIO:
     """
     Fetches a given *url* and returns a io.StringIO to access its contents.
     """
@@ -19,10 +20,10 @@ def open_url(url):
     req = XMLHttpRequest.new()
     req.open("GET", url, False)
     req.send(None)
-    return io.StringIO(req.response)
+    return StringIO(req.response)
 
 
-def eval_code(code, ns):
+def eval_code(code: str, ns):
     """
     Runs a string of code, the last part of which may be an expression.
     """
@@ -33,6 +34,7 @@ def eval_code(code, ns):
     if len(mod.body) == 0:
         return None
 
+    expr: Any
     if isinstance(mod.body[-1], ast.Expr):
         expr = ast.Expression(mod.body[-1].value)
         del mod.body[-1]
@@ -47,7 +49,7 @@ def eval_code(code, ns):
         return None
 
 
-def find_imports(code):
+def find_imports(code: str) -> List[str]:
     """
     Finds the imports in a string of code and returns a list of their package
     names.
@@ -60,11 +62,13 @@ def find_imports(code):
     for node in ast.walk(mod):
         if isinstance(node, ast.Import):
             for name in node.names:
-                name = name.name
-                imports.add(name.split(".")[0])
+                node_name = name.name
+                imports.add(node_name.split(".")[0])
         elif isinstance(node, ast.ImportFrom):
-            name = node.module
-            imports.add(name.split(".")[0])
+            module_name = node.module
+            if module_name is None:
+                continue
+            imports.add(module_name.split(".")[0])
     return list(imports)
 
 
@@ -80,7 +84,9 @@ def as_nested_list(obj):
         return obj
 
 
-def get_completions(code, cursor=None, namespaces=None):
+def get_completions(
+    code: str, cursor: Optional[int] = None, namespaces=None
+) -> List[str]:
     """
     Get code autocompletion candidates.
     """
