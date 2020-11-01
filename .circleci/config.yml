@@ -141,7 +141,7 @@ jobs:
 
   deploy-release:
     docker:
-      - image: cibuilds/github:0.10
+      - image: cibuilds/github:0.13
 
     steps:
       - checkout
