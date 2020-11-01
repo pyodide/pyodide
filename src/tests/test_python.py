@@ -647,7 +647,7 @@ def test_open_url(selenium):
         selenium.run(
             """
         import pyodide
-        pyodide.open_url('test/data.txt').read()
+        pyodide.open_url('src/tests/data.txt').read()
         """
         )
         == "HELLO\n"
@@ -659,7 +659,7 @@ def test_open_url_cgi(selenium):
         selenium.run(
             """
         import pyodide
-        pyodide.open_url('test/data.cgi').read()
+        pyodide.open_url('src/tests/data.cgi').read()
         """
         )
         == "HELLO\n"

@@ -22,7 +22,7 @@ jobs:
             sudo ln -s /usr/bin/clang-format-6.0 /usr/bin/clang-format
             make lint
             black --check --exclude tools/file_packager.py .
-            mypy --ignore-missing-imports pyodide_build/ src/ test/ packages/micropip/
+            mypy --ignore-missing-imports pyodide_build/ src/ packages/micropip/
   build:
     <<: *defaults
     steps:
@@ -100,7 +100,7 @@ jobs:
       - run:
           name: test
           command: |
-            pytest test packages pyodide_build -v -k firefox
+            pytest src packages/*/test* packages/micropip/micropip/ pyodide_build -v -k firefox
 
   test-chrome:
     <<: *defaults
@@ -111,7 +111,7 @@ jobs:
       - run:
           name: test
           command: |
-            pytest test packages pyodide_build -v -k chrome
+            pytest src packages/*/test* packages/micropip/micropip/ pyodide_build -v -k chrome
 
   test-python:
     <<: *defaults

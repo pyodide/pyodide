@@ -26,7 +26,7 @@ import selenium.webdriver.common.utils  # noqa: E402
 
 selenium.webdriver.common.utils.is_connectable = _selenium_is_connectable
 
-collect_ignore_glob = ["packages/*/*/*"]
+collect_ignore_glob = ["packages/*/build/*", "src/_testcapi.py"]
 
 try:
     import pytest
@@ -398,13 +398,13 @@ def run_web_server(q, log_filepath, build_dir):
 
     class Handler(http.server.CGIHTTPRequestHandler):
         def translate_path(self, path):
-            if str(path).startswith("/test/"):
-                return str(TEST_PATH / path[6:])
+            if str(path).startswith("/src/test/"):
+                return str(TEST_PATH / path[10:])
             return super(Handler, self).translate_path(path)
 
         def is_cgi(self):
-            if self.path.startswith("/test/") and self.path.endswith(".cgi"):
-                self.cgi_info = "/test", self.path[6:]
+            if self.path.startswith("/src/test/") and self.path.endswith(".cgi"):
+                self.cgi_info = "/src/test", self.path[10:]
                 return True
             return False
 
