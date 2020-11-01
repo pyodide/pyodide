@@ -105,7 +105,7 @@ def find_imports(code: str) -> List[str]:
             if module_name is None:
                 continue
             imports.add(module_name.split(".")[0])
-    return list(imports)
+    return list(sorted(imports))
 
 
 def as_nested_list(obj) -> List:

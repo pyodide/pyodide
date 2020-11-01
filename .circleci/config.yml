@@ -22,7 +22,7 @@ jobs:
             sudo ln -s /usr/bin/clang-format-6.0 /usr/bin/clang-format
             make lint
             black --check --exclude tools/file_packager.py .
-            mypy --ignore-missing-imports pyodide_build/ src/ packages/micropip/ packages/*/test*
+            mypy --ignore-missing-imports pyodide_build/ src/ packages/micropip/micropip/ packages/*/test*
   build:
     <<: *defaults
     steps:
