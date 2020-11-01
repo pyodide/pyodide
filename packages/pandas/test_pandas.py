@@ -31,6 +31,6 @@ def test_load_largish_file(selenium_standalone, request):
         import matplotlib.pyplot as plt
         import pandas as pd
 
-        pd.read_json(pyodide.open_url('test/largish.json.cgi'))
+        pd.read_json(pyodide.open_url('tests/data/largish.json.cgi'))
     """
     )

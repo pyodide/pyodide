@@ -26,8 +26,6 @@ import selenium.webdriver.common.utils  # noqa: E402
 
 selenium.webdriver.common.utils.is_connectable = _selenium_is_connectable
 
-collect_ignore_glob = ["packages/*/build/*", "src/_testcapi.py"]
-
 try:
     import pytest
 
