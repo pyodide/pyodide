@@ -1,11 +1,48 @@
-commit cfd6c4b18c5f338842d2ee509bfb2d3a3c6f6439
-Author: Roman Yurchak <rth.yurchak@pm.me>
-Date:   Mon Oct 15 15:40:48 2018 +0200
+commit 9d115bf92961d7b882e2be5d16e00025d01a1384
+Author: Roman Yurchak <rth.yurchak@gmail.com>
+Date:   Sat Oct 31 22:49:53 2020 +0100
 
     Use dummy_threading
 
+diff --git a/scipy/_lib/_threadsafety.py b/scipy/_lib/_threadsafety.py
+index 504f1d183..f0ef9deed 100644
+--- a/scipy/_lib/_threadsafety.py
++++ b/scipy/_lib/_threadsafety.py
+@@ -1,6 +1,6 @@
+ from __future__ import division, print_function, absolute_import
+ 
+-import threading
++import dummy_threading as threading
+ 
+ import scipy._lib.decorator
+ 
+diff --git a/scipy/_lib/tests/test__threadsafety.py b/scipy/_lib/tests/test__threadsafety.py
+index 8b0c66232..884a07a41 100644
+--- a/scipy/_lib/tests/test__threadsafety.py
++++ b/scipy/_lib/tests/test__threadsafety.py
+@@ -1,6 +1,6 @@
+ from __future__ import division, print_function, absolute_import
+ 
+-import threading
++import dummy_threading as threading
+ import time
+ import traceback
+ 
+diff --git a/scipy/_lib/tests/test_ccallback.py b/scipy/_lib/tests/test_ccallback.py
+index 77f1f060c..fc7e8d04b 100644
+--- a/scipy/_lib/tests/test_ccallback.py
++++ b/scipy/_lib/tests/test_ccallback.py
+@@ -6,7 +6,7 @@ from pytest import raises as assert_raises
+ import time
+ import pytest
+ import ctypes
+-import threading
++import dummy_threading as threading
+ from scipy._lib import _ccallback_c as _test_ccallback_cython
+ from scipy._lib import _test_ccallback
+ from scipy._lib._ccallback import LowLevelCallable
 diff --git a/scipy/interpolate/tests/test_gil.py b/scipy/interpolate/tests/test_gil.py
-index df3ab3bc4..974b68ada 100644
+index c4674d6cc..55f393cf9 100644
 --- a/scipy/interpolate/tests/test_gil.py
 +++ b/scipy/interpolate/tests/test_gil.py
 @@ -1,7 +1,7 @@
@@ -17,34 +54,46 @@ index df3ab3bc4..974b68ada 100644
  import time
  
  import numpy as np
-diff --git a/scipy/ndimage/tests/test_filters.py b/scipy/ndimage/tests/test_filters.py
-index 8c56393a6..8ff85547c 100644
---- a/scipy/ndimage/tests/test_filters.py
-+++ b/scipy/ndimage/tests/test_filters.py
-@@ -129,7 +129,7 @@ def test_gaussian_truncate():
- 
- class TestThreading(TestCase):
-     def check_func_thread(self, n, fun, args, out):
--        from threading import Thread
-+        from dummy_threading import Thread
-         thrds = [Thread(target=fun, args=args, kwargs={'output': out[x]}) for x in range(n)]
-         [t.start() for t in thrds]
-         [t.join() for t in thrds]
 diff --git a/scipy/signal/signaltools.py b/scipy/signal/signaltools.py
-index df7107684..2b9a18422 100644
+index 370df6c37..40be685ed 100644
 --- a/scipy/signal/signaltools.py
 +++ b/scipy/signal/signaltools.py
 @@ -4,7 +4,7 @@
  from __future__ import division, print_function, absolute_import
  
- import warnings
+ import operator
+-import threading
++import dummy_threading as threading
+ import sys
+ import timeit
+ 
+diff --git a/scipy/sparse/linalg/dsolve/tests/test_linsolve.py b/scipy/sparse/linalg/dsolve/tests/test_linsolve.py
+index da2f96401..6f78e7b59 100644
+--- a/scipy/sparse/linalg/dsolve/tests/test_linsolve.py
++++ b/scipy/sparse/linalg/dsolve/tests/test_linsolve.py
+@@ -1,6 +1,6 @@
+ from __future__ import division, print_function, absolute_import
+ 
 -import threading
 +import dummy_threading as threading
  
- from . import sigtools
- from scipy._lib.six import callable
+ import numpy as np
+ from numpy import array, finfo, arange, eye, all, unique, ones, dot, matrix
+diff --git a/scipy/sparse/linalg/eigen/arpack/tests/test_arpack.py b/scipy/sparse/linalg/eigen/arpack/tests/test_arpack.py
+index 0e8c18840..b7d8785cf 100644
+--- a/scipy/sparse/linalg/eigen/arpack/tests/test_arpack.py
++++ b/scipy/sparse/linalg/eigen/arpack/tests/test_arpack.py
+@@ -6,7 +6,7 @@ To run tests locally:
+ 
+ """
+ 
+-import threading
++import dummy_threading as threading
+ 
+ import numpy as np
+ 
 diff --git a/scipy/sparse/tests/test_sparsetools.py b/scipy/sparse/tests/test_sparsetools.py
-index 7a3c903cc..cc495d500 100644
+index 0279bfd41..2cc7f156a 100644
 --- a/scipy/sparse/tests/test_sparsetools.py
 +++ b/scipy/sparse/tests/test_sparsetools.py
 @@ -4,7 +4,7 @@ import sys
@@ -54,47 +103,39 @@ index 7a3c903cc..cc495d500 100644
 -import threading
 +import dummy_threading as threading
  
- from nose import SkipTest
  import numpy as np
+ from numpy.testing import assert_equal, assert_, assert_allclose
 diff --git a/scipy/spatial/ckdtree.pyx b/scipy/spatial/ckdtree.pyx
-index 2f98613a7..c9f657cf3 100644
+index de5bd83e9..bd8b45864 100644
 --- a/scipy/spatial/ckdtree.pyx
 +++ b/scipy/spatial/ckdtree.pyx
-@@ -17,8 +17,7 @@ from libc.string cimport memset, memcpy
+@@ -19,8 +19,8 @@ from libc.string cimport memset, memcpy
  
  cimport cython
  
 -from multiprocessing import cpu_count
 -import threading
++#from multiprocessing import cpu_count
 +import dummy_threading as threading
  
  cdef extern from "limits.h":
      long LONG_MAX
-@@ -26,7 +25,7 @@ cdef extern from "limits.h":
+@@ -28,7 +28,7 @@ cdef extern from "limits.h":
  cdef extern from "ckdtree_methods.h":
      int number_of_processors
      
 -number_of_processors = cpu_count()
-+number_of_processors = 1
++number_of_processors = 1  # cpu_count()
  
  from libcpp.vector cimport vector
  from libc cimport string
-@@ -91,7 +90,7 @@ cdef extern from "cpp_utils.h":
- # coo_entry wrapper
- # =================
- 
--cdef class coo_entries:
-+cdef class coo_entries(object):
- 
-     cdef: 
-         readonly object __array_interface__
 diff --git a/scipy/spatial/qhull.pyx b/scipy/spatial/qhull.pyx
-index ba33fadbe..644a57eaf 100644
+index d3079af6d..9b1d7a103 100644
 --- a/scipy/spatial/qhull.pyx
 +++ b/scipy/spatial/qhull.pyx
-@@ -10,7 +10,7 @@ Wrappers for Qhull triangulation, plus some additional N-D geometry utilities
- # Distributed under the same BSD license as Scipy.
- #
+@@ -12,7 +12,7 @@ Wrappers for Qhull triangulation, plus some additional N-D geometry utilities
+ 
+ from __future__ import absolute_import
  
 -import threading
 +import dummy_threading as threading
@@ -102,7 +143,7 @@ index ba33fadbe..644a57eaf 100644
  cimport numpy as np
  cimport cython
 diff --git a/scipy/special/_ellip_harm.py b/scipy/special/_ellip_harm.py
-index 62e50655e..61e9949cc 100644
+index a94e56489..e4277c79e 100644
 --- a/scipy/special/_ellip_harm.py
 +++ b/scipy/special/_ellip_harm.py
 @@ -1,6 +1,6 @@
