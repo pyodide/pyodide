@@ -86,7 +86,7 @@ jobs:
           command: |
             export PYODIDE_PACKAGES='micropip'
             # only check common tests, all other are checked in the main test jobs
-            pytest test/test_common.py -v -k firefox
+            pytest src/tests/test_common.py -v -k firefox
 
       - store_artifacts:
           path: /home/circleci/repo/build/
@@ -124,7 +124,7 @@ jobs:
       - run:
           name: test
           command: |
-            pytest test pyodide_build -v -k 'not (chrome or firefox)' --cov=pyodide_build --cov=pyodide
+            pytest src pyodide_build packages/micropip/test_micropip.py -v -k 'not (chrome or firefox)' --cov=pyodide_build --cov=pyodide
 
   benchmark:
     <<: *defaults
