@@ -173,7 +173,7 @@ clean-all: clean
 	rm -fr cpython/build
 
 %.bc: %.c $(CPYTHONLIB) $(LZ4LIB)
-	$(CC) -o $@ -c $< $(CFLAGS)
+	$(CC) -o $@ -c $< $(CFLAGS) -Isrc/type_conversion/
 
 
 build/test.data: $(CPYTHONLIB)
