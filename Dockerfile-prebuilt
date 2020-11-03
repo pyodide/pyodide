@@ -1,0 +1,7 @@
+FROM iodide/pyodide-env:0.16.1
+
+USER root
+
+COPY . pyodide
+
+RUN cd pyodide && make
