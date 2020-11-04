@@ -7,3 +7,8 @@ USER root
 COPY . pyodide
 
 RUN cd pyodide && make
+
+# this deletes the build results such that the resulting image can still be used for building pyodide
+# from source (including partial and customized builds). Due to the previous run of make, builds
+# executed with this image will be much faster than the ones executed with pyodide-env
+RUN rm -r build
