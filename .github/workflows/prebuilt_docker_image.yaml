@@ -1,9 +1,16 @@
 on:
-  workflow_dispatch
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version of the docker image to build.
+          The same version of the pyodide-env image must already exist'
+        required: true
 
 jobs:
   build_image:
     runs-on: ubuntu-latest
+#   This is the recommended use of github's docker build-push action
+#   See https://github.com/marketplace/actions/build-and-push-docker-images#git-context
     steps:
       -
         name: Set up QEMU
@@ -24,7 +31,9 @@ jobs:
         with:
           file: ./Dockerfile-prebuilt
           push: true
-          tags: "iodide/pyodide:0.16.1,iodide/pyodide:latest"
+          build-args: |
+            VERSION=${{ github.event.inputs.version }}
+          tags: "iodide/pyodide:${{ github.event.inputs.version }}"
       -
         name: Image digest
         run: echo ${{ steps.docker_build.outputs.digest }}

@@ -1,4 +1,6 @@
-FROM iodide/pyodide-env:0.16.1
+ARG VERSION
+
+FROM iodide/pyodide-env:${VERSION}
 
 USER root
 
