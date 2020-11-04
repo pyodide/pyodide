@@ -45,13 +45,14 @@ make
 ## Using Docker
 
 We provide a Debian-based Docker image on Docker Hub with the dependencies
-already installed to make it easier to build Pyodide. Note that building from
-the Docker image is *very* slow on Mac, building on the host machine is
-preferred if at all possible.
+already installed to make it easier to build Pyodide. On top of that we provide a
+pre-built image which can be used for fast custom and partial builds of pyodide.
+Note that building from the non pre-built the Docker image is *very* slow on Mac,
+building on the host machine is preferred if at all possible.
 
 1. Install Docker
 
-2. From a git checkout of Pyodide, run `./run_docker`
+2. From a git checkout of Pyodide, run `./run_docker` or `./run_docker --pre-built`
 
 3. Run `make` to build.
 
