@@ -1,0 +1,13 @@
+diff --git a/setupext.py b/setupext.py
+index 92c456bab..ce2c5fbad 100644
+--- a/setupext.py
++++ b/setupext.py
+@@ -58,6 +58,8 @@ def check_for_openmp():
+     Robitaille and Curtis McCully.
+     """
+ 
++    return False
++
+     # See https://bugs.python.org/issue25150
+     if sys.version_info[:3] == (3, 5, 0):
+         return False

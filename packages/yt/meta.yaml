@@ -1,0 +1,21 @@
+package:
+  name: yt
+  version: 3.5.1
+
+source:
+  url: https://pypi.io/packages/source/y/yt/yt-3.5.1.tar.gz
+  sha256: c8ef8eceb934dc189d63dc336109fad3002140a9a32b19f38d1812d5d5a30d71
+
+  patches:
+    - patches/skip-openmp.patch
+
+requirements:
+  run:
+    - numpy
+    - matplotlib
+    - sympy
+    - setuptools
+
+test:
+  imports:
+    - yt
