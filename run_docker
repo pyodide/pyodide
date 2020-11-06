@@ -4,7 +4,7 @@ set -eo pipefail
 
 
 function usage() {
-  cat > /dev/stderr <<EOF
+  cat > /dev/stdout <<EOF
 Usage:
   run_docker [OPTIONS]
 
@@ -18,6 +18,10 @@ Usage:
   Prerequisites:
     Docker has to be set up on your system
 EOF
+}
+
+function error() {
+  usage
   exit 255
 }
 
@@ -32,6 +36,7 @@ do
   case $key in
       -h|--help)
         usage
+        exit 0
       ;;
       --pre-built)
         if [[ -n ${PYODIDE_DOCKER_IMAGE} ]]; then
@@ -43,8 +48,8 @@ do
       ;;
       -p|--port)
         if [ "$#" -lt 2 ]; then
-          echo "port cannot be empty"
-          usage
+          >&2 echo "port cannot be empty"
+          error
         fi
         if [[ -n ${PYODIDE_SYSTEM_PORT} ]]; then
           echo "WARNING: will use the env var PYODIDE_SYSTEM_PORT=${PYODIDE_SYSTEM_PORT} instead of the provided port"
@@ -53,8 +58,8 @@ do
         shift 2
       ;;
       *)
-        echo "Unknown option $1"
-        usage
+        >&2 echo "Unknown option $1"
+        error
       ;;
   esac
 done
