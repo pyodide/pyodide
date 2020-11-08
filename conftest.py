@@ -14,7 +14,7 @@ import sys
 import shutil
 
 ROOT_PATH = pathlib.Path(__file__).parents[0].resolve()
-TEST_PATH = ROOT_PATH / "test"
+TEST_PATH = ROOT_PATH / "src" / "tests"
 BUILD_PATH = ROOT_PATH / "build"
 
 sys.path.append(str(ROOT_PATH))
@@ -394,15 +394,17 @@ def run_web_server(q, log_filepath, build_dir):
     sys.stdout = log_fh
     sys.stderr = log_fh
 
+    test_prefix = "/src/tests/"
+
     class Handler(http.server.CGIHTTPRequestHandler):
         def translate_path(self, path):
-            if str(path).startswith("/src/test/"):
-                return str(TEST_PATH / path[10:])
+            if str(path).startswith(test_prefix):
+                return str(TEST_PATH / path[len(test_prefix) :])
             return super(Handler, self).translate_path(path)
 
         def is_cgi(self):
-            if self.path.startswith("/src/test/") and self.path.endswith(".cgi"):
-                self.cgi_info = "/src/test", self.path[10:]
+            if self.path.startswith(test_prefix) and self.path.endswith(".cgi"):
+                self.cgi_info = test_prefix.rstrip("/"), self.path[len(test_prefix) :]
                 return True
             return False
 
