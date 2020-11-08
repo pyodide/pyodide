@@ -4,6 +4,8 @@ FROM iodide/pyodide-env:${VERSION}
 
 USER root
 
+ENV EMSDK_NUM_CORES=4 EMCC_CORES=4 PYODIDE_JOBS=4
+
 COPY . pyodide
 
 RUN cd pyodide && make

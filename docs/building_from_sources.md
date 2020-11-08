@@ -56,6 +56,10 @@ building on the host machine is preferred if at all possible.
 
 3. Run `make` to build.
 
+Note: You can control the resources allocated to the build by setting the env vars
+`EMSDK_NUM_CORE`, `EMCC_CORES` and `PYODIDE_JOBS` (the default for each is 4).
+
+
 If running ``make`` deterministically stops at one point in each subsequent try, increasing
 the maximum RAM usage available to the docker container might help [This is different
 from the physical RAM capacity inside the system]. Ideally, at least 3 GB of RAM
