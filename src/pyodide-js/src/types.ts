@@ -52,7 +52,7 @@ export type Pyodide = {
     loadPackage(names: string[], messageCallback?: (msg: any) => void, errorCallback?: (err: any) => void): Promise<any>;
     loadedPackages: {[name: string]: string};
     globals: any;
-    pyimport: () => any;
+    pyimport: (name: string) => any;
     version: () => string;
     autocomplete: any;
     checkABI: (number: number) => void;
