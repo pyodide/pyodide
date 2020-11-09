@@ -1,0 +1,20 @@
+{
+    "compilerOptions": {
+      "target": "es2020",
+      "module": "es2015",
+      "moduleResolution": "node",
+      "lib": ["es2020", "dom"],
+      "declaration": true,
+      "sourceMap": true, 
+      "forceConsistentCasingInFileNames": true,
+      "strict": true,
+      "outDir": "./dist/lib",
+      "esModuleInterop": true,
+    },
+  "include": [
+      "src"
+  ],
+  "exclude": [
+      "node_modules"
+  ]
+}

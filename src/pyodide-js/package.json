@@ -1,0 +1,31 @@
+{
+  "name": "pyodide-js",
+  "version": "0.15.0",
+  "description": "Pyodide loader library",
+  "main": "dist/browser.js",
+  "module": "dist/index.mjs",
+  "typings": "dist/index.d.ts",
+  "scripts": {
+    "prepublishOnly": "npm install && npm run build",
+    "build": "rimraf dist && rollup -c rollup.config.ts && tsc"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/project-iodide/pyodide.git"
+  },
+  "keywords": [
+    "pyodide",
+    "python"
+  ],
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/project-iodide/pyodide/issues"
+  },
+  "homepage": "https://pyodide.readthedocs.io/",
+  "devDependencies": {
+    "@rollup/plugin-replace": "^2.3.4",
+    "rimraf": "^3.0.2",
+    "rollup-plugin-typescript2": "^0.29.0",
+    "typescript": "^4.0.5"
+  }
+}
