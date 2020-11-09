@@ -1,27 +1,9 @@
 /**
  * The main bootstrap script for loading pyodide.
- * Adapted from the pyodide repository by gzuidhof. The main changes:
- * * wrapped in a class
- * * moved helper functions to util script
- * * removed console.log for pyodide messages
- * * moved baseURL function to separate function
- * * Asyncified preloadWasm
- * * Made casing consistent
- * * Prefer `pyodideArtifactsUrl` over `languagePluginUrl` global
- * * Removed everything iodide specific
  */
 
 import { Pyodide, PyodideModule } from "./types";
 import {loadScript, uriToPackageName, fixRecursionLimit, makePublicAPI, preloadWasm, getBaseUrl} from "./util";
-
-declare global {
-    interface Window {
-        pyodideArtifactsUrl?: string;
-        languagePluginUrl?: string;
-        Module?: PyodideModule;
-        pyodide: Pyodide,
-    }
-}
 
 const IS_FIREFOX = navigator.userAgent.toLowerCase().indexOf('firefox') > -1;
 

@@ -1,3 +1,12 @@
+declare global {
+  interface Window {
+      pyodideArtifactsUrl?: string;
+      languagePluginUrl?: string;
+      Module?: PyodideModule;
+      pyodide: Pyodide,
+  }
+}
+
 export interface PyodidePackages {
   dependencies: {
     [name: string]: string[]
