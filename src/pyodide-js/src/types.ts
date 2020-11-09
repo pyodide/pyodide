@@ -36,6 +36,10 @@ export type PyodideModule = {
     noWasmDecoding: boolean,
 
     packages: PyodidePackages;
+
+    PyProxy: {
+      isPyProxy(v: any): boolean
+    }
     
 };
 
