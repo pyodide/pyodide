@@ -107,11 +107,14 @@ build/pyodide_dev.js: src/pyodide.js
 	sed -i -e "s#{{ABI}}#$(PYODIDE_PACKAGE_ABI)#g" $@
 
 
-build/pyodide.js: src/pyodide.js
+build/pyodide.js: src/pyodide-js/dist/browser.js
 	cp $< $@
-	sed -i -e 's#{{DEPLOY}}#https://cdn.jsdelivr.net/pyodide/v0.15.0/full/#g' $@
-
+	npm install
+	npm run build
 	sed -i -e "s#{{ABI}}#$(PYODIDE_PACKAGE_ABI)#g" $@
+
+build/webworker.js: src/pyodide-js/dist/webworker.js
+	cp $< $@
 
 
 build/test.html: src/test.html
@@ -124,10 +127,6 @@ build/console.html: src/console.html
 
 build/renderedhtml.css: src/renderedhtml.less
 	lessc $< $@
-
-build/webworker.js: src/webworker.js
-	cp $< $@
-	sed -i -e 's#{{DEPLOY}}#https://cdn.jsdelivr.net/pyodide/v0.15.0/full/#g' $@
 
 build/webworker_dev.js: src/webworker.js
 	cp $< $@

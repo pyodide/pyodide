@@ -59,7 +59,7 @@ export class PyodideLoader {
                             `loaded from ${loadedPackages[pkg]}!`);
               return;
             } else {
-              _messageCallback(`${pkg} already loaded from ${loadedPackages[pkg]}`)
+              // _messageCallback(`${pkg} already loaded from ${loadedPackages[pkg]}`)
             }
           } else if (pkg in toLoad) {
             if (packageUri != toLoad[pkg]) {

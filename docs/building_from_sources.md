@@ -23,6 +23,7 @@ Additional build prerequisites are:
 - gfortran (GNU Fortran 95 compiler)
 - [f2c](http://www.netlib.org/f2c/)
 - [ccache](https://ccache.samba.org) (optional) *highly* recommended for much faster rebuilds.
+- [Node](https://nodejs.org/) and NPM to build the pyodide-js scripts.
 
 On Mac, you will also need:
 
@@ -95,3 +96,13 @@ first with `make -c packages/CLAPACK`.
 
 Following environment variables additionally impact the build,
  - `PYODIDE_JOBS`: the `-j` option passed to the `emmake make` command when applicable for parallel compilation. Default: 3.
+
+## Building the Pyodide Javascript library independently from make
+The pyodide repository contains a library called `pyodide-js` that contains helpers for loading Pyodide in different Javascript contexts (Browser, Node, Deno, Webworkers). You can find it in `src/pyodide-js`. You can develop this library without having the full `make` set up above, on any platform (Windows, Linux, MacOS).
+
+To generate the bundles you will need to have [Node](https://nodejs.org/) (and NPM) installed, you can then run:
+```
+npm install
+npm run build
+```
+The built files can be found in `src/pyodide-js/dist`.

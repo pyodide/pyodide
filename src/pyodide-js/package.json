@@ -2,7 +2,7 @@
   "name": "pyodide-js",
   "version": "0.15.0",
   "description": "Pyodide loader library",
-  "main": "dist/browser.js",
+  "main": "dist/browser.cjs",
   "module": "dist/index.mjs",
   "typings": "dist/index.d.ts",
   "scripts": {
@@ -17,7 +17,7 @@
     "pyodide",
     "python"
   ],
-  "license": "MIT",
+  "license": "MPL-2.0",
   "bugs": {
     "url": "https://github.com/project-iodide/pyodide/issues"
   },
