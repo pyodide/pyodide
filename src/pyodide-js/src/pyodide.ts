@@ -2,7 +2,7 @@
  * The main bootstrap script for loading pyodide.
  */
 
-import { Pyodide, PyodideModule } from "./types";
+import { PyodideModule } from "./types";
 import {loadScript, uriToPackageName, fixRecursionLimit, makePublicAPI, preloadWasm, getBaseUrl} from "./util";
 
 const IS_FIREFOX = navigator.userAgent.toLowerCase().indexOf('firefox') > -1;
