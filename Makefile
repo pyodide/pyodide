@@ -106,12 +106,14 @@ build/pyodide_dev.js: src/pyodide.js
 	sed -i -e "s#{{DEPLOY}}#./#g" $@
 	sed -i -e "s#{{ABI}}#$(PYODIDE_PACKAGE_ABI)#g" $@
 
+build/pyodide-js/dist: src/pyodide-js/src
+	npm install
+	PYODIDE_ABI_NUMBER=$(PYODIDE_PACKAGE_ABI) \
+	PYODIDE_CDN_URL='https://cdn.jsdelivr.net/pyodide/v0.15.0/full/' \
+	npm run build
 
 build/pyodide.js: src/pyodide-js/dist/browser.js
 	cp $< $@
-	npm install
-	npm run build
-	sed -i -e "s#{{ABI}}#$(PYODIDE_PACKAGE_ABI)#g" $@
 
 build/webworker.js: src/pyodide-js/dist/webworker.js
 	cp $< $@
@@ -152,6 +154,7 @@ clean:
 	rm -fr root
 	rm -fr build/*
 	rm -fr src/*.bc
+	rm -fr src/pyodide-js/dist
 	make -C packages clean
 	make -C packages/six clean
 	make -C packages/jedi clean
@@ -316,3 +319,4 @@ FORCE:
 
 check:
 	./tools/dependency-check.sh
+

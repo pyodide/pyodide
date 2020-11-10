@@ -1,13 +1,17 @@
 import typescript from 'rollup-plugin-typescript2';
 import replace from '@rollup/plugin-replace';
 
-// @ts-ignore
 const pkg = require("./package.json");
 
-const pyodideCdnUrl = `https://cdn.jsdelivr.net/pyodide/${pkg.version}/full/`;
+const pyodideCdnUrl = process.env["PYODIDE_CDN_URL"] || `https://cdn.jsdelivr.net/pyodide/${pkg.version}/full/`;
+const pyodideAbiNumber = process.env["PYODIDE_ABI_NUMBER"] === undefined ? `1` : process.env["PYODIDE_CDN_URL"];
+
 const plugins = [
     typescript(),
-    replace({"__PYODIDE_CDN_URL__": pyodideCdnUrl})
+    replace({
+        "__PYODIDE_CDN_URL__": pyodideCdnUrl,
+        "__PYODIDE_ABI_NUMBER__": pyodideAbiNumber
+    })
 ]
 
 

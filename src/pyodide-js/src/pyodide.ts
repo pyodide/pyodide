@@ -204,7 +204,7 @@ export class PyodideLoader {
       }
 
       module.checkABI = (AbiNumber: number) => {
-        if (AbiNumber !== parseInt('1')) {
+        if (AbiNumber !== parseInt('__PYODIDE_ABI_NUMBER__')) {
         const AbiMismatchException =
             `ABI numbers differ. Expected 1, got ${AbiNumber}`;
         console.error(AbiMismatchException);
