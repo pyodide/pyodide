@@ -107,10 +107,13 @@ build/pyodide_dev.js: src/pyodide.js
 	sed -i -e "s#{{ABI}}#$(PYODIDE_PACKAGE_ABI)#g" $@
 
 src/pyodide-js/dist/%:
-	npm install
-	PYODIDE_ABI_NUMBER=$(PYODIDE_PACKAGE_ABI) \
-	PYODIDE_CDN_URL='https://cdn.jsdelivr.net/pyodide/v0.15.0/full/' \
-	npm run build
+	( \
+		cd src/pyodide-js
+		npm install
+		PYODIDE_ABI_NUMBER=$(PYODIDE_PACKAGE_ABI) \
+			PYODIDE_CDN_URL='https://cdn.jsdelivr.net/pyodide/v0.15.0/full/' \
+			npm run build
+	)
 
 build/pyodide.js: src/pyodide-js/dist/browser.js
 	cp $< $@
