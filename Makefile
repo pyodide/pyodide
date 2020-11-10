@@ -106,7 +106,7 @@ build/pyodide_dev.js: src/pyodide.js
 	sed -i -e "s#{{DEPLOY}}#./#g" $@
 	sed -i -e "s#{{ABI}}#$(PYODIDE_PACKAGE_ABI)#g" $@
 
-build/pyodide-js/dist: src/pyodide-js/src
+src/pyodide-js/dist: src/pyodide-js/src
 	npm install
 	PYODIDE_ABI_NUMBER=$(PYODIDE_PACKAGE_ABI) \
 	PYODIDE_CDN_URL='https://cdn.jsdelivr.net/pyodide/v0.15.0/full/' \
