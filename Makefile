@@ -102,11 +102,11 @@ build/pyodide.asm.data: root/.built
 	uglifyjs build/pyodide.asm.data.js -o build/pyodide.asm.data.js
 
 
-build/pyodide.js: src/pyodide-js/dist/browser.js
-	cp $< $@
+build/pyodide.js:
+	cp src/pyodide-js/dist/browser.js $@
 
-build/webworker.js: src/pyodide-js/dist/webworker.js
-	cp $< $@
+build/webworker.js:
+	cp src/pyodide-js/dist/webworker.js $@
 
 
 build/test.html: src/templates/test.html
@@ -139,7 +139,6 @@ clean:
 	rm -fr root
 	rm -fr build/*
 	rm -fr src/*.bc
-	rm -fr src/pyodide-js/dist
 	make -C packages clean
 	make -C packages/six clean
 	make -C packages/jedi clean
@@ -154,6 +153,7 @@ clean:
 clean-all: clean
 	make -C emsdk clean
 	make -C cpython clean
+	rm -fr src/pyodide-js/dist
 	rm -fr cpython/build
 
 %.bc: %.c $(CPYTHONLIB) $(LZ4LIB)
