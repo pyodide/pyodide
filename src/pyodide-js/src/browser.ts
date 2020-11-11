@@ -1,3 +1,3 @@
 import { loadPyodide } from "./index";
 
-(self as any).languageLoaderPlugin = loadPyodide();
+(self as any).languagePluginLoader = loadPyodide();
