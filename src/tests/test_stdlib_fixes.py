@@ -27,6 +27,13 @@ def test_threading_import(selenium):
         """
     )
 
+    selenium.run(
+        """
+        import threading
+        threading.local()
+        """
+    )
+
     # Starting a thread doesn't work
     msg = "can't start new thread"
     with pytest.raises(selenium.JavascriptException, match=msg):
@@ -40,11 +47,3 @@ def test_threading_import(selenium):
             th.start()
             """
         )
-
-
-def test_ctypes_import(selenium):
-    selenium.run(
-        """
-        import ctypes
-        """
-    )
