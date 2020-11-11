@@ -67,14 +67,12 @@ all: check \
 	build/pyodide.asm.js \
 	build/pyodide.asm.data \
 	build/pyodide.js \
-	build/pyodide_dev.js \
 	build/console.html \
 	build/renderedhtml.css \
 	build/test.data \
 	build/packages.json \
 	build/test.html \
 	build/webworker.js \
-	build/webworker_dev.js
 	echo -e "\nSUCCESS!"
 
 
@@ -101,20 +99,6 @@ build/pyodide.asm.data: root/.built
 	uglifyjs build/pyodide.asm.data.js -o build/pyodide.asm.data.js
 
 
-build/pyodide_dev.js: src/pyodide.js
-	cp $< $@
-	sed -i -e "s#{{DEPLOY}}#./#g" $@
-	sed -i -e "s#{{ABI}}#$(PYODIDE_PACKAGE_ABI)#g" $@
-
-src/pyodide-js/dist/%:
-	( \
-		cd src/pyodide-js; \
-		npm install; \
-		PYODIDE_ABI_NUMBER=$(PYODIDE_PACKAGE_ABI) \
-			PYODIDE_CDN_URL='https://cdn.jsdelivr.net/pyodide/v0.15.0/full/' \
-			npm run build \
-	)
-
 build/pyodide.js: src/pyodide-js/dist/browser.js
 	cp $< $@
 
@@ -132,11 +116,6 @@ build/console.html: src/console.html
 
 build/renderedhtml.css: src/renderedhtml.less
 	lessc $< $@
-
-build/webworker_dev.js: src/webworker.js
-	cp $< $@
-	sed -i -e "s#{{DEPLOY}}#./#g" $@
-	sed -i -e "s#pyodide.js#pyodide_dev.js#g" $@
 
 test: all
 	pytest test packages pyodide_build -v
@@ -322,4 +301,3 @@ FORCE:
 
 check:
 	./tools/dependency-check.sh
-

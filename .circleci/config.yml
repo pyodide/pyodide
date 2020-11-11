@@ -33,6 +33,13 @@ jobs:
           - v1-emsdk-{{ checksum "emsdk/Makefile" }}-v20200708-
 
       - run:
+          name: build pyodide-js
+          command: |
+            cd src/pyodide-js
+            npm install
+            PYODIDE_ABI_NUMBER=1 PYODIDE_CDN_URL='https://cdn.jsdelivr.net/pyodide/dev/full/' npm run build
+
+      - run:
           name: build
           no_output_timeout: 1200
           command: |
