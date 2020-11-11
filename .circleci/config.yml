@@ -22,7 +22,7 @@ jobs:
             sudo ln -s /usr/bin/clang-format-6.0 /usr/bin/clang-format
             make lint
             black --check --exclude tools/file_packager.py .
-            mypy --ignore-missing-imports pyodide_build/ src/ test/ packages/micropip/
+            mypy --ignore-missing-imports pyodide_build/ src/ packages/micropip/micropip/ packages/*/test*
   build:
     <<: *defaults
     steps:
@@ -93,7 +93,7 @@ jobs:
           command: |
             export PYODIDE_PACKAGES='micropip'
             # only check common tests, all other are checked in the main test jobs
-            pytest test/test_common.py -v -k firefox
+            pytest src/tests/test_common.py -v -k firefox
 
       - store_artifacts:
           path: /home/circleci/repo/build/
@@ -107,7 +107,7 @@ jobs:
       - run:
           name: test
           command: |
-            pytest test packages pyodide_build -v -k firefox
+            pytest src packages/*/test* packages/micropip/micropip/ pyodide_build -v -k firefox
 
   test-chrome:
     <<: *defaults
@@ -118,7 +118,7 @@ jobs:
       - run:
           name: test
           command: |
-            pytest test packages pyodide_build -v -k chrome
+            pytest src packages/*/test* packages/micropip/micropip/ pyodide_build -v -k chrome
 
   test-python:
     <<: *defaults
@@ -131,7 +131,7 @@ jobs:
       - run:
           name: test
           command: |
-            pytest test pyodide_build -v -k 'not (chrome or firefox)' --cov=pyodide_build --cov=pyodide
+            pytest src pyodide_build packages/micropip/test_micropip.py -v -k 'not (chrome or firefox)' --cov=pyodide_build --cov=pyodide
 
   benchmark:
     <<: *defaults
