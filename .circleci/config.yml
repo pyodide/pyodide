@@ -33,6 +33,12 @@ jobs:
           - v1-emsdk-{{ checksum "emsdk/Makefile" }}-v20200708-
 
       - run:
+          name: nodejs dependencies
+          command: |
+            apt update
+            apt install -y npm
+
+      - run:
           name: build pyodide-js
           command: |
             cd src/pyodide-js
