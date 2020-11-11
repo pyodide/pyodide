@@ -47,3 +47,29 @@ def test_threading_import(selenium):
             th.start()
             """
         )
+
+
+def test_multiprocessing(selenium):
+    selenium.run("import multiprocessing")
+
+    res = selenium.run(
+        """
+        from multiprocessing import cpu_count
+        cpu_count()
+        """
+    )
+    assert isinstance(res, int)
+    assert res > 0
+
+    msg = "Resource temporarily unavailable"
+    with pytest.raises(selenium.JavascriptException, match=msg):
+        selenium.run(
+            """
+            from multiprocessing import Process
+
+            def func():
+                return
+            process = Process(target=func)
+            process.start()
+            """
+        )
