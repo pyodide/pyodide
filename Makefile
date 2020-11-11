@@ -72,7 +72,7 @@ all: check \
 	build/test.data \
 	build/packages.json \
 	build/test.html \
-	build/webworker.js \
+	build/webworker.js
 	echo -e "\nSUCCESS!"
 
 
