@@ -43,7 +43,7 @@ jobs:
           command: |
             cd src/pyodide-js
             npm install
-            PYODIDE_ABI_NUMBER=1 PYODIDE_CDN_URL='https://cdn.jsdelivr.net/pyodide/dev/full/' npm run build
+            PYODIDE_PACKAGE_ABI=1 PYODIDE_CDN_URL='https://cdn.jsdelivr.net/pyodide/dev/full/' npm run build
 
       - run:
           name: build
@@ -93,7 +93,7 @@ jobs:
           command: |
             cd src/pyodide-js
             npm install
-            PYODIDE_ABI_NUMBER=1 PYODIDE_CDN_URL='https://cdn.jsdelivr.net/pyodide/dev/full/' npm run build
+            PYODIDE_PACKAGE_ABI=1 PYODIDE_CDN_URL='https://cdn.jsdelivr.net/pyodide/dev/full/' npm run build
 
       - run:
           name: build

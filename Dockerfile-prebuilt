@@ -10,7 +10,7 @@ COPY . pyodide
 
 RUN cd pyodide/src/pyodide-js && \
     npm install
-    PYODIDE_ABI_NUMBER=1 PYODIDE_CDN_URL='https://cdn.jsdelivr.net/pyodide/v0.16.0/full/' npm run build
+    PYODIDE_PACKAGE_ABI=1 PYODIDE_CDN_URL='https://cdn.jsdelivr.net/pyodide/v0.16.0/full/' npm run build
 
 # the rm at the end deletes the build results such that the resulting image can still be used for building pyodide
 # from source (including partial and customized builds). Due to the previous run of make, builds

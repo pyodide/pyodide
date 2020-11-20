@@ -159,7 +159,7 @@ export class PyodideLoader {
               } else {
                 scriptSrc = `${packageUri}`;
               }
-              // _messageCallback(`Loading ${pkg} from ${scriptSrc}`)
+              _messageCallback(`Loading ${pkg} from ${scriptSrc}`)
               loadScript(scriptSrc, () => {}, () => {
                 // If the packageUri fails to load, call monitorRunDependencies twice
                 // (so packageCounter will still hit 0 and finish loading), and remove
@@ -204,7 +204,7 @@ export class PyodideLoader {
       }
 
       module.checkABI = (AbiNumber: number) => {
-        if (AbiNumber !== parseInt('__PYODIDE_ABI_NUMBER__')) {
+        if (AbiNumber !== parseInt('__PYODIDE_PACKAGE_ABI__')) {
         const AbiMismatchException =
             `ABI numbers differ. Expected 1, got ${AbiNumber}`;
         console.error(AbiMismatchException);
