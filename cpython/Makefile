@@ -30,6 +30,12 @@ BZIP2TARBALL=$(ROOT)/downloads/bzip2-1.0.2.tar.gz
 BZIP2BUILD=$(ROOT)/build/bzip2-1.0.2
 BZIP2URL=ftp://sources.redhat.com/pub/bzip2/v102/bzip2-1.0.2.tar.gz
 
+# Add Mac system libraries (such as zlib) to the include path.
+# Required sometimes on OS X 10.14, always on OS X 10.15+.
+ifeq ($(shell uname),Darwin)
+	MAC_SDK_PATH := $(shell xcrun --show-sdk-path)
+	MAC_BUILD_VARS := CFLAGS=-I$(MAC_SDK_PATH)/usr/include CXXFLAGS=-I$(MAC_SDK_PATH)/usr/include
+endif
 
 all: $(INSTALL)/lib/$(LIB)
 
@@ -78,8 +84,8 @@ $(HOSTPYTHON) $(HOSTPGEN): $(TARBALL)
 	[ -d $(HOSTBUILD) ] || tar -C $(HOSTINSTALL) -xf $(TARBALL)
 	( \
 		cd $(HOSTBUILD); \
-		PKG_CONFIG_PATH="/usr/local/opt/openssl/lib/pkgconfig" ./configure --prefix=$(HOSTINSTALL) || cat config.log && \
-	  	make regen-grammar -j $${PYODIDE_JOBS:-3} && \
+		PKG_CONFIG_PATH="/usr/local/opt/openssl/lib/pkgconfig" ./configure $(MAC_BUILD_VARS) --prefix=$(HOSTINSTALL) || cat config.log && \
+		make regen-grammar -j $${PYODIDE_JOBS:-3} && \
 		make install -j $${PYODIDE_JOBS:-3} && \
 		make distclean \
 	)

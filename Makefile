@@ -18,8 +18,18 @@ PYODIDE_EMCC=$(PYODIDE_ROOT)/ccache/emcc
 PYODIDE_CXX=$(PYODIDE_ROOT)/ccache/em++
 
 SHELL := /bin/bash
-CC=emcc
-CXX=em++
+
+# 'make', as a performance optimization, may try to parse and run simple shell
+# commands directly rather than launching a subshell for each command.
+# The default Mac make implementation appears to have a bug where it
+# disregards modifications to PATH when performing this optimization.
+# As a result, even though emcc and em++ are added to PATH, Mac make sometimes
+# doesn't find them.
+# To avoid this problem, explicitly find and use the absolute path to
+# emcc and em++.
+CC := $(shell which emcc)
+CXX := $(shell which em++)
+
 OPTFLAGS=-O3
 CFLAGS=$(OPTFLAGS) -g -I$(PYTHONINCLUDE) -Wno-warn-absolute-paths
 CXXFLAGS=$(CFLAGS) -std=c++14
