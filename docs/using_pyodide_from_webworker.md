@@ -11,7 +11,7 @@ Setup your project to serve `webworker.js`. You should also serve
 files as well, though this is not strictly required if `pyodide.js` is pointing
 to a site serving current versions of these files.
 The simplest way to serve the required files is to use a CDN, 
-such as [pyodide-cdn2.iodide.io][cdn pyodide]. This is the solution 
+such as `https://cdn.jsdelivr.net/pyodide`. This is the solution 
 presented here.
 
 Update the `webworker.js` sample so that it has as valid URL for `pyodide.js`, and sets
@@ -24,7 +24,6 @@ methods (listeners).
 Communication from the worker to the main thread is done via the `Worker.postMessage()`
 method (and vice versa).
 
-[cdn pyodide]: https://pyodide-cdn2.iodide.io/v0.15.0/full/
 [worker onmessage]: https://developer.mozilla.org/en-US/docs/Web/API/Web_Workers_API/Using_web_workers#Sending_messages_to_and_from_a_dedicated_worker
 [worker onerror]: https://developer.mozilla.org/en-US/docs/Web/API/Web_Workers_API/Using_web_workers#Handling_errors
 
@@ -106,8 +105,8 @@ lines `pythonLoading = self.pyodide.loadPackage(['numpy', 'pytz'])` and
 // Setup your project to serve `py-worker.js`. You should also serve
 // `pyodide.js`, and all its associated `.asm.js`, `.data`, `.json`, 
 // and `.wasm` files as well:
-self.languagePluginUrl = 'https://pyodide-cdn2.iodide.io/v0.15.0/full/';
-importScripts('https://pyodide-cdn2.iodide.io/v0.15.0/full/pyodide.js');
+self.languagePluginUrl = 'https://cdn.jsdelivr.net/pyodide/v0.15.0/full/';
+importScripts('https://cdn.jsdelivr.net/pyodide/v0.15.0/full/pyodide.js');
 
 let pythonLoading;
 async function loadPythonPackages(){
