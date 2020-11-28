@@ -1,14 +1,14 @@
 PYODIDE_ROOT=$(abspath ../..)
 include ../../Makefile.envs
 
-JEDIVERSION=0.15.1
+JEDIVERSION=0.17.2
 
 ROOT=$(abspath .)
 
 SRC=$(ROOT)/jedi-$(JEDIVERSION)
 BUILD=$(SRC)/build/lib/jedi
 TARBALL=$(ROOT)/downloads/jedi-$(JEDIVERSION).tar.gz
-URL=https://files.pythonhosted.org/packages/85/03/cd5a6e44a5753b4d539288d9d1f9645caac889c17dd2950292a8818f86b2/jedi-$(JEDIVERSION).tar.gz
+URL=https://files.pythonhosted.org/packages/39/67/50d1653038dafe06ca2cc55c4598c5f8318d519c12a7a288d7826280ee22/jedi-$(JEDIVERSION).tar.gz
 
 
 all: $(SRC)/setup.py
