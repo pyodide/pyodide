@@ -1,5 +1,5 @@
---- emsdk/emsdk/emscripten/tag-1.38.31/emcc.py	2019-04-24 16:21:45.000000000 +0200
-+++ emsdk/emsdk/emscripten/tag-1.38.31/emcc.py	2019-04-24 16:21:45.000000000 +0200
+--- emsdk/emsdk/fastcomp/emscripten/emcc.py	2019-04-24 16:21:45.000000000 +0200
++++ emsdk/emsdk/fastcomp/emscripten/emcc.py	2019-04-24 16:21:45.000000000 +0200
 @@ -816,7 +816,7 @@
            newargs[i] = newargs[i + 1] = ''
            if key == 'WASM_BACKEND=1':
