@@ -29,19 +29,17 @@ Although still experimental, additional packages may be installed from PyPI
 to be used with Pyodide.
 
 .. toctree::
-   :maxdepth: 1
+   :maxdepth: 2
    :caption: Usage
 
    using_pyodide_from_iodide.md
    using_pyodide_from_javascript.md
    using_pyodide_from_webworker.md
-
-.. toctree::
-   :maxdepth: 1
-   :caption: Extending
-
-   pypi.md
+   serving_pyodide_packages.md
+   loading_packages.md
+   type_conversions.md
    api_reference.md
+   faq.md
 
 Developing Pyodide
 ==================
@@ -59,7 +57,6 @@ information about the project's organization.
 
    building_from_sources.md
    new_packages.md
-   type_conversions.md
    contributing.md
    testing.md
 

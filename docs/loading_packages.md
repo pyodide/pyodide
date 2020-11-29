@@ -1,6 +1,61 @@
-# Installing packages from PyPI
+(loading_packages)=
+# Loading packages
 
-Pyodide has experimental support for installing pure Python wheels from PyPI.
+Only the Python standard library and six are available after importing Pyodide.
+To use other libraries, you’ll need to load their package using either,
+ - {ref}`pyodide.loadPackage <js_api_pyodide_loadPackage>` for packages built
+   with pyodide.
+ - `micropip.install` for pure Python packages with wheels available on PyPi or
+   on other URLs.
+
+```{note}
+Note that `micropip` can also be used to load packages built in pyodide (in
+which case it relies on {ref}`pyodide.loadPackage
+<js_api_pyodide_loadPackage>`).
+```
+
+Alternatively you can run Python code without manually pre-loading packages.
+You can do this with {ref}`pyodide.runPythonAsync
+<api_pyodide_runPythonAsync>`) function, which will automatically download all
+packages that the code snippet imports. It only supports packages included in
+Pyodide (not on PyPi) at present.
+
+## Loading packages with pyodide.loadPackage
+
+Packages can be loaded by name, for those included in the official pyodide
+repository using,
+```js
+pyodide.loadPackage('numpy')
+```
+It is also possible to load packages from custom URLs,
+```js
+pyodide.loadPackage('https://foo/bar/numpy.js')
+```
+in which case the URL must end with `<package-name>.js`.
+
+When you request a package from the official repository, all of that package's
+dependencies are also loaded. Dependency resolution is not yet implemented
+when loading packages from custom URLs.
+
+Multiple packages can also be loaded in a single call,
+```js
+pyodide.loadPackage(['cycler', 'pytz'])
+```
+
+`pyodide.loadPackage` returns a `Promise`.
+
+```javascript
+pyodide.loadPackage('matplotlib').then(() => {
+  // matplotlib is now available
+});
+```
+
+(micropip)=
+## Micropip
+
+### Installing packages from PyPI
+
+Pyodide supports installing pure Python wheels from PyPI.
 
 For use in Iodide:
 
@@ -19,7 +74,7 @@ stemmer.stemWords('go goes going gone'.split())
 ```
 
 For use outside of Iodide (just Python), you can use the `then` method on the
-`Promise` that `micropip.install` returns to do work once the packages have
+`Promise` that {func}`micropip.install` returns to do work once the packages have
 finished loading:
 
 ```py
@@ -35,7 +90,9 @@ micropip.install('snowballstemmer').then(do_work)
 Micropip implements file integrity validation by checking the hash of the
 downloaded wheel against pre-recorded hash digests from the PyPi JSON API.
 
-## Installing wheels from arbitrary URLs
+(micropip-installing-from-arbitrary-urls)=
+
+### Installing wheels from arbitrary URLs
 
 Pure python wheels can also be installed from any URL with micropip,
 ```py
@@ -60,10 +117,10 @@ since we are not able to check the file integrity, unlike with installs from
 PyPi.
 
 
-## Complete example
+## Example
 
-Adapting the setup from the section on ["using pyodide from
-javascript"](./using_pyodide_from_javascript.html) a complete example would be,
+Adapting the setup from the section on {ref}`using_from_javascript`
+a complete example would be,
 
 ```html
 <html>
@@ -73,9 +130,9 @@ javascript"](./using_pyodide_from_javascript.html) a complete example would be,
 <body>
   <script type="text/javascript">
       // set the pyodide files URL (packages.json, pyodide.asm.data etc)
-      window.languagePluginUrl = 'https://pyodide-cdn2.iodide.io/v0.15.0/full/';
+      window.languagePluginUrl = 'https://cdn.jsdelivr.net/pyodide/v0.15.0/full/';
   </script>
-  <script type="text/javascript" src="https://pyodide-cdn2.iodide.io/v0.15.0/full/pyodide.js"></script>
+  <script type="text/javascript" src="https://cdn.jsdelivr.net/pyodide/v0.15.0/full/pyodide.js"></script>
   <script type="text/javascript">
     pythonCode = `
       def do_work(*args):

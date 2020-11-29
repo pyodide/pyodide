@@ -33,7 +33,7 @@ def parse_package(package):
 
     # TODO: Validate against a schema
     with open(package) as fd:
-        return yaml.load(fd)
+        return yaml.safe_load(fd)
 
 
 def _parse_package_subset(query: Optional[str]) -> Optional[Set[str]]:

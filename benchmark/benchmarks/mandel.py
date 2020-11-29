@@ -6,9 +6,9 @@
 
 def kernel(x, y, max_iters):
     """
-      Given the real and imaginary parts of a complex number,
-      determine if it is a candidate for membership in the Mandelbrot
-      set given a fixed number of iterations.
+    Given the real and imaginary parts of a complex number,
+    determine if it is a candidate for membership in the Mandelbrot
+    set given a fixed number of iterations.
     """
     c = complex(x, y)
     z = 0.0j

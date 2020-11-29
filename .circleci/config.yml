@@ -17,9 +17,12 @@ jobs:
       - run:
           name: lint
           command: |
-            pip install black
+            pip install black mypy
+            # TODO: investigate why clang-format without version is not available
+            sudo ln -s /usr/bin/clang-format-6.0 /usr/bin/clang-format
             make lint
             black --check --exclude tools/file_packager.py .
+            mypy --ignore-missing-imports pyodide_build/ src/ packages/micropip/micropip/ packages/*/test*
   build:
     <<: *defaults
     steps:
@@ -91,7 +94,7 @@ jobs:
           command: |
             export PYODIDE_PACKAGES='micropip'
             # only check common tests, all other are checked in the main test jobs
-            pytest test/test_common.py -v -k firefox
+            pytest src/tests/test_common.py -v -k firefox
 
       - store_artifacts:
           path: /home/circleci/repo/build/
@@ -105,7 +108,7 @@ jobs:
       - run:
           name: test
           command: |
-            pytest test packages pyodide_build -v -k firefox
+            pytest src packages/*/test* packages/micropip/micropip/ pyodide_build -v -k firefox
 
   test-chrome:
     <<: *defaults
@@ -116,7 +119,7 @@ jobs:
       - run:
           name: test
           command: |
-            pytest test packages pyodide_build -v -k chrome
+            pytest src packages/*/test* packages/micropip/micropip/ pyodide_build -v -k chrome
 
   test-python:
     <<: *defaults
@@ -129,7 +132,7 @@ jobs:
       - run:
           name: test
           command: |
-            pytest test pyodide_build -v -k 'not (chrome or firefox)' --cov=pyodide_build --cov=pyodide
+            pytest src pyodide_build packages/micropip/test_micropip.py -v -k 'not (chrome or firefox)' --cov=pyodide_build --cov=pyodide
 
   benchmark:
     <<: *defaults
@@ -146,7 +149,7 @@ jobs:
 
   deploy-release:
     docker:
-      - image: cibuilds/github:0.10
+      - image: cibuilds/github:0.13
 
     steps:
       - checkout
@@ -160,16 +163,17 @@ jobs:
       - run:
           name: Deploy Github Releases
           command: |
-            pushd build
-            tar cjf ../pyodide-build-${CIRCLE_TAG}.tar.bz2 *
-            popd
+            cp -r build /tmp/pyodide
+            cd /tmp/
+            tar cjf pyodide-build-${CIRCLE_TAG}.tar.bz2  pyodide/
             ghr -t "${GITHUB_TOKEN}" -u "${CIRCLE_PROJECT_USERNAME}" -r "${CIRCLE_PROJECT_REPONAME}" -c "${CIRCLE_SHA1}" -delete  "${CIRCLE_TAG}" ./pyodide-build-${CIRCLE_TAG}.tar.bz2
 
       - run:
           name: Deploy to pyodide-cdn2.iodide.io
           command: |
-            aws s3 sync build/ "s3://pyodide-cdn2.iodide.io/v${CIRCLE_TAG}/full/" --exclude '*.data' --cache-control 'max-age=30758400, immutable, public'  # 1 year
-            aws s3 sync build/ "s3://pyodide-cdn2.iodide.io/v${CIRCLE_TAG}/full/" --exclude '*' --include '*.data' --cache-control 'max-age=30758400, immutable, public'  --content-type 'application/wasm' # 1 year
+            find build/ -type f -exec sh -c "echo \"Compressing {}\"; gzip {}; mv {}.gz {};" \;
+            aws s3 sync build/ "s3://pyodide-cdn2.iodide.io/v${CIRCLE_TAG}/full/" --exclude '*.data' --cache-control 'max-age=30758400, immutable, public' --content-encoding 'gzip'    # 1 year cache
+            aws s3 sync build/ "s3://pyodide-cdn2.iodide.io/v${CIRCLE_TAG}/full/" --exclude '*' --include '*.data' --cache-control 'max-age=30758400, immutable, public'  --content-type 'application/wasm' --content-encoding 'gzip'  # 1 year
             # update 301 redirect for the /latest/* route.
             aws s3api put-bucket-website --cli-input-json file://.circleci/s3-website-config.json
 
@@ -184,14 +188,16 @@ jobs:
       - run:
           name: Install requirements
           command: |
+            sudo apt-get update
             sudo apt-get install -y groff
             python3 -m pip install awscli
       - run:
           name: Deploy to pyodide-cdn2.iodide.io
           command: |
+            find build/ -type f -exec sh -c "echo \"Compressing {}\"; gzip {}; mv {}.gz {};" \;
             aws s3 rm --recursive "s3://pyodide-cdn2.iodide.io/dev/full/"
-            aws s3 sync build/ "s3://pyodide-cdn2.iodide.io/dev/full/" --exclude '*.data' --cache-control 'max-age=3600, public'  # 1 hour
-            aws s3 sync build/ "s3://pyodide-cdn2.iodide.io/dev/full/" --exclude '*' --include '*.data' --cache-control 'max-age=3600, public'  --content-type 'application/wasm' # 1 hour
+            aws s3 sync build/ "s3://pyodide-cdn2.iodide.io/dev/full/" --exclude '*.data' --cache-control 'max-age=3600, public' --content-encoding 'gzip'  # 1 hour cache
+            aws s3 sync build/ "s3://pyodide-cdn2.iodide.io/dev/full/" --exclude '*' --include '*.data' --cache-control 'max-age=3600, public'  --content-type 'application/wasm' --content-encoding 'gzip'  # 1 hour cache
 
 workflows:
   version: 2

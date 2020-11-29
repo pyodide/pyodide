@@ -3,7 +3,7 @@ import os
 from pathlib import Path
 from pyodide_build.common import parse_package, _parse_package_subset
 
-BASE_DIR = Path(__file__).parent.parent
+BASE_DIR = Path(__file__).parents[2]
 PKG_DIR = BASE_DIR / "packages"
 
 
