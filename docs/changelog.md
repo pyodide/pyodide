@@ -11,6 +11,17 @@
   The previous CDN `pyodide-cdn2.iodide.io` still works and there
   are no plans for deprecating it. However please use
   JsDelivr as a more sustainable solution.
+- ENH Patches for the threading module were removed in all packages.
+  Importing the module a subset of functionalty (e.g. locks) works,
+  while starting a new thread will produce an exception, as expected.
+  [#796](https://github.com/iodide-project/pyodide/pull/796). See
+  [#237](https://github.com/iodide-project/pyodide/pull/237) for the current
+  status of the threading support.
+- ENH The multiprocessing module is now included, and will not fail at import,
+  thus avoiding the necessity to patch included packages. Starting a new process
+  will produce an exception due to the limitation of the WebAssembly VM  with
+  the following message: `Resource temporarily unavailable`
+  [#796](https://github.com/iodide-project/pyodide/pull/796).
 - FIX Only call `Py_INCREF()` once when proxied by PyProxy
   [#708](https://github.com/iodide-project/pyodide/pull/708)
 - Updated docker image to Debian buster
