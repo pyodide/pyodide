@@ -5,17 +5,20 @@ all: emsdk/.complete
 
 emsdk/.complete:
 	if [ -d emsdk ]; then rm -rf emsdk; fi
-	git clone https://github.com/juj/emsdk.git
+	git clone https://github.com/emscripten-core/emsdk.git
 	( \
 		cd emsdk && \
-		./emsdk install --build=Release sdk-fastcomp-tag-$(EMSCRIPTEN_VERSION)-64bit binaryen-tag-$(EMSCRIPTEN_VERSION)-64bit && \
+		./emsdk install --build=Release $(EMSCRIPTEN_VERSION)-fastcomp && \
+		git clone --branch 1.38.32 --depth 1 https://github.com/WebAssembly/binaryen.git  && \
 		cd .. && \
 		(cat patches/*.patch | patch -p1) && \
-		cd emsdk/binaryen/tag-$(EMSCRIPTEN_VERSION)_64bit_binaryen/ && \
-    make && \
-	  cd ../.. && \
-		./emsdk activate --embedded --build=Release sdk-fastcomp-tag-$(EMSCRIPTEN_VERSION)-64bit binaryen-tag-$(EMSCRIPTEN_VERSION)-64bit && \
-    touch .complete \
+		cd emsdk && \
+		./emsdk activate --embedded --build=Release $(EMSCRIPTEN_VERSION)-fastcomp && \
+	        cd binaryen && \
+		cmake . && make -j5 && \
+		cd ../.. && \
+		sed -i "s/BINARYEN_ROOT.*/BINARYEN_ROOT = emsdk_path \+ '\/binaryen'/g" emsdk/.emscripten && \
+		touch emsdk/.complete \
 	)
 
 clean:

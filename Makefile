@@ -20,13 +20,13 @@ PYODIDE_CXX=$(PYODIDE_ROOT)/ccache/em++
 SHELL := /bin/bash
 CC=emcc
 CXX=em++
-OPTFLAGS=-O3
+OPTFLAGS=-O2
 CFLAGS=$(OPTFLAGS) -g -I$(PYTHONINCLUDE) -Wno-warn-absolute-paths
 CXXFLAGS=$(CFLAGS) -std=c++14
 
 
 LDFLAGS=\
-	-O3 \
+	-O2 \
 	-s MODULARIZE=1 \
 	$(CPYTHONROOT)/installs/python-$(PYVERSION)/lib/libpython$(PYMINOR).a \
 	$(LZ4LIB) \
@@ -224,7 +224,7 @@ $(PYODIDE_EMCC):
 		if hash ccache &>/dev/null; then \
 			ln -s `which ccache` $@ ; \
 		else \
-	 		ln -s emsdk/emsdk/emscripten/tag-$(EMSCRIPTEN_VERSION)/emcc $@; \
+			ln -s emsdk/emsdk/fastcomp/emscripten/emcc $@; \
 		fi; \
 	fi
 
@@ -235,7 +235,7 @@ $(PYODIDE_CXX):
 		if hash ccache &>/dev/null; then \
 			ln -s `which ccache` $@ ; \
 		else \
-			ln -s emsdk/emsdk/emscripten/tag-$(EMSCRIPTEN_VERSION)/em++ $@; \
+			ln -s emsdk/emsdk/fastcomp/emscripten/em++ $@; \
 		fi; \
 	fi
 

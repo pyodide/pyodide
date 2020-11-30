@@ -8,7 +8,7 @@ TARGETPYTHON = ROOTDIR / ".." / "cpython" / "installs" / "python-3.8.2"
 DEFAULTCFLAGS = ""
 DEFAULTLDFLAGS = " ".join(
     [
-        "-O3",
+        "-O2",
         "-s",
         "BINARYEN_METHOD='native-wasm'",
         "-Werror",

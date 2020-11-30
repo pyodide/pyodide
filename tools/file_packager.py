@@ -74,10 +74,10 @@ import ctypes
 
 emscripten_dir = os.path.join(
   os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
-  'emsdk', 'emsdk', 'emscripten'
+  'emsdk', 'emsdk', 'fastcomp', 'emscripten'
 )
 tag_dir = sorted(os.listdir(emscripten_dir), key=lambda x: len(x))[0]
-sys.path.insert(1, os.path.join(emscripten_dir, tag_dir))
+sys.path.insert(1, emscripten_dir)
 
 from tools.toolchain_profiler import ToolchainProfiler
 if __name__ == '__main__':
