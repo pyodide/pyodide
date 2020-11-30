@@ -9,7 +9,7 @@ emsdk/.complete:
 	( \
 		cd emsdk && \
 		./emsdk install --build=Release $(EMSCRIPTEN_VERSION)-fastcomp && \
-		git clone --branch version_84 --depth 1 https://github.com/WebAssembly/binaryen.git  && \
+		git clone --branch 1.38.32 --depth 1 https://github.com/WebAssembly/binaryen.git  && \
 		cd .. && \
 		(cat patches/*.patch | patch -p1) && \
 		cd emsdk && \
