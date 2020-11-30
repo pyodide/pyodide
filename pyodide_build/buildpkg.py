@@ -13,12 +13,13 @@ import shutil
 import subprocess
 from urllib import request
 from datetime import datetime
+from typing import Any, Dict
 
 
 from . import common
 
 
-def check_checksum(path, pkg):
+def check_checksum(path: Path, pkg: Dict[str, Any]):
     """
     Checks that a tarball matches the checksum in the package metadata.
     """
@@ -44,7 +45,9 @@ def check_checksum(path, pkg):
         raise ValueError("Invalid {} checksum".format(checksum_algorithm))
 
 
-def download_and_extract(buildpath, packagedir, pkg, args):
+def download_and_extract(
+    buildpath: Path, packagedir: Path, pkg: Dict[str, Any], args
+) -> Path:
     srcpath = buildpath / packagedir
 
     if "source" not in pkg:
@@ -103,7 +106,7 @@ def download_and_extract(buildpath, packagedir, pkg, args):
         raise ValueError("Incorrect source provided")
 
 
-def patch(path, srcpath, pkg, args):
+def patch(path: Path, srcpath: Path, pkg: Dict[str, Any], args):
     if (srcpath / ".patched").is_file():
         return
 
@@ -127,7 +130,7 @@ def patch(path, srcpath, pkg, args):
         fd.write(b"\n")
 
 
-def compile(path, srcpath, pkg, args):
+def compile(path: Path, srcpath: Path, pkg: Dict[str, Any], args):
     if (srcpath / ".built").is_file():
         return
 
@@ -163,14 +166,14 @@ def compile(path, srcpath, pkg, args):
     if post is not None:
         site_packages_dir = srcpath / "install" / "lib" / "python3.8" / "site-packages"
         pkgdir = path.parent.resolve()
-        env = {"SITEPACKAGES": site_packages_dir, "PKGDIR": pkgdir}
+        env = {"SITEPACKAGES": str(site_packages_dir), "PKGDIR": str(pkgdir)}
         subprocess.run(["bash", "-c", post], env=env, check=True)
 
     with open(srcpath / ".built", "wb") as fd:
         fd.write(b"\n")
 
 
-def package_files(buildpath, srcpath, pkg, args):
+def package_files(buildpath: Path, srcpath: Path, pkg: Dict[str, Any], args):
     if (buildpath / ".packaged").is_file():
         return
 
@@ -205,7 +208,7 @@ def package_files(buildpath, srcpath, pkg, args):
         fd.write(b"\n")
 
 
-def needs_rebuild(pkg, path, buildpath):
+def needs_rebuild(pkg: Dict[str, Any], path: Path, buildpath: Path) -> bool:
     """
     Determines if a package needs a rebuild because its meta.yaml, patches, or
     sources are newer than the `.packaged` thunk.
@@ -225,9 +228,10 @@ def needs_rebuild(pkg, path, buildpath):
         source_file = Path(source_file)
         if source_file.stat().st_mtime > package_time:
             return True
+    return False
 
 
-def build_package(path, args):
+def build_package(path: Path, args):
     pkg = common.parse_package(path)
     name = pkg["package"]["name"]
     t0 = datetime.now()
@@ -258,7 +262,7 @@ def build_package(path, args):
         )
 
 
-def make_parser(parser):
+def make_parser(parser: argparse.ArgumentParser):
     parser.description = "Build a pyodide package."
     parser.add_argument(
         "package", type=str, nargs=1, help="Path to meta.yaml package description"

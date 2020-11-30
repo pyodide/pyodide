@@ -1,13 +1,12 @@
 package:
   name: python-sat
-  version: 0.1.6.dev3
+  version: 0.1.6.dev6
 
 source:
-  sha256: 9041712e9cbc33dad6034182bf500e5832b97dd8157d2c36628a15f86cef3234
-  url: https://github.com/pysathq/pysat/releases/download/0.1.6.dev3/python-sat-0.1.6.dev3.tar.gz
+  sha256: eeff083f424add78e67f8bae63f676e5a448354d790361f484d18523c1393abd
+  url: https://github.com/pysathq/pysat/releases/download/0.1.6.dev6/python-sat-0.1.6.dev6.tar.gz
 
   patches:
-    - patches/dummy_threading.patch
     - patches/force_malloc.patch
     - patches/proper_build.patch
 

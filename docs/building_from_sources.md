@@ -1,3 +1,4 @@
+(building_from_sources)=
 # Building from sources
 
 Building is easiest on Linux and relatively straightforward on Mac. For
@@ -12,9 +13,11 @@ need to build it yourself prior.
 
 Additional build prerequisites are:
 
-- A working native compiler toolchain, enough to build CPython.
+- A working native compiler toolchain, enough to build [CPython](https://devguide.python.org/setup/#linux).
 - A native Python 3.8 to run the build scripts.
+- CMake
 - PyYAML
+- FreeType 2 development libraries to compile Matplotlib.
 - [lessc](http://lesscss.org/) to compile less to css.
 - [uglifyjs](https://github.com/mishoo/UglifyJS) to minify Javascript builds.
 - gfortran (GNU Fortran 95 compiler)
@@ -42,13 +45,14 @@ make
 ## Using Docker
 
 We provide a Debian-based Docker image on Docker Hub with the dependencies
-already installed to make it easier to build Pyodide. Note that building from
-the Docker image is *very* slow on Mac, building on the host machine is
-preferred if at all possible.
+already installed to make it easier to build Pyodide. On top of that we provide a
+pre-built image which can be used for fast custom and partial builds of pyodide.
+Note that building from the non pre-built the Docker image is *very* slow on Mac,
+building on the host machine is preferred if at all possible.
 
 1. Install Docker
 
-2. From a git checkout of Pyodide, run `./run_docker`
+2. From a git checkout of Pyodide, run `./run_docker` or `./run_docker --pre-built`
 
    Install libtinfo5 in the docker contaner,
    ```
@@ -56,6 +60,10 @@ preferred if at all possible.
    ```
 
 3. Run `make` to build.
+
+Note: You can control the resources allocated to the build by setting the env vars
+`EMSDK_NUM_CORE`, `EMCC_CORES` and `PYODIDE_JOBS` (the default for each is 4).
+
 
 If running ``make`` deterministically stops at one point in each subsequent try, increasing
 the maximum RAM usage available to the docker container might help [This is different
@@ -66,6 +74,7 @@ be changed via Docker Preferences (See [here](https://stackoverflow.com/question
 You can edit the files in your source checkout on your host machine, and then
 repeatedly run `make` inside the Docker environment to test your changes.
 
+(partial-builds)=
 ## Partial builds
 
 To build a subset of available packages in pyodide, set the environment
@@ -87,7 +96,7 @@ micropip and package is generally always included for any non empty value of
 If scipy is included in `PYODIDE_PACKAGES`, BLAS/LAPACK must be manually built
 first with `make -c packages/CLAPACK`.
 
-## Environement variables
+## Environment variables
 
 Following environment variables additionally impact the build,
  - `PYODIDE_JOBS`: the `-j` option passed to the `emmake make` command when applicable for parallel compilation. Default: 3.

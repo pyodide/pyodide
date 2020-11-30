@@ -113,9 +113,9 @@ def test_different_ABI(selenium_standalone):
     url = selenium_standalone.server_hostname
     port = selenium_standalone.server_port
 
-    build_dir = Path(__file__).parent.parent / "build"
+    build_dir = Path(__file__).parents[2] / "build"
 
-    original_file = open("build/numpy.js", "r+")
+    original_file = open("build/numpy.js", "r")
     original_contents = original_file.read()
     original_file.close()
 
@@ -169,7 +169,7 @@ def test_load_package_unknown(selenium_standalone):
     url = selenium_standalone.server_hostname
     port = selenium_standalone.server_port
 
-    build_dir = Path(__file__).parent.parent / "build"
+    build_dir = Path(__file__).parents[2] / "build"
     shutil.copyfile(build_dir / "pyparsing.js", build_dir / "pyparsing-custom.js")
     shutil.copyfile(build_dir / "pyparsing.data", build_dir / "pyparsing-custom.data")
 

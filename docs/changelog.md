@@ -1,9 +1,26 @@
+(changelog)=
 # Release notes
 
 ## Version 0.16.0
 *Unreleased*
 
-- pyodide now includes CPython 3.8.2.
+- Pyodide includes CPython 3.8.2
+  [#712](https://github.com/iodide-project/pyodide/pull/712)
+- Pyodide files are distributed by [JsDelivr](https://www.jsdelivr.com/),
+  `https://cdn.jsdelivr.net/pyodide/v0.16.0/full/pyodide.js`
+  The previous CDN `pyodide-cdn2.iodide.io` still works and there
+  are no plans for deprecating it. However please use
+  JsDelivr as a more sustainable solution.
+- FIX Only call `Py_INCREF()` once when proxied by PyProxy
+  [#708](https://github.com/iodide-project/pyodide/pull/708)
+- Updated docker image to Debian buster
+- FIX Infer package tarball directory from source url
+  [#687](https://github.com/iodide-project/pyodide/pull/687)
+- Updated to emscripten 1.38.31
+  [#674](https://github.com/iodide-project/pyodide/pull/674)
+- New packages: freesasa, lxml, python-sat, traits, astropy
+- Updated packages: numpy 1.15.4, pandas 1.0.5 among others.
+
 
 ## Version 0.15.0
 *May 19, 2020*
@@ -17,13 +34,13 @@
   https://pyodide-cdn2.iodide.io/v0.15.0/full/pyodide.js
   It now supports versioning and should provide faster downloads. The latest release
   can be accessed via `https://pyodide-cdn2.iodide.io/latest/full/`
-- Adds `messageCallback` and `errorCallback` to `pyodide.loadPackage`.
+- Adds `messageCallback` and `errorCallback` to
+  {ref}`pyodide.loadPackage <js_api_pyodide_loadPackage>`.
 - Reduces the initial memory footprint (`TOTAL_MEMORY`) from 1 GiB to 5 MiB. More
   memory will be allocated as needed.
 - When building from source, only a subset of packages can be built by setting
   the `PYODIDE_PACKAGES` environment variable. See
-  [partial builds documentation](https://pyodide.readthedocs.io/en/latest/building_from_sources.html#partial-builds)
-  for more details.
+  {ref}`partial builds documentation <partial-builds>` for more details.
 - New packages: future, autograd
 
 ## Version 0.14.3
@@ -52,7 +69,7 @@
 **User improvements:**
 
 - Packages with pure Python wheels can now be loaded directly from PyPI. See
-  `docs/pypi.md` for more information.
+  {ref}`micropip` for more information.
 
 - Thanks to PEP 562, you can now `import js` from Python and use it to access
   anything in the global Javascript namespace.

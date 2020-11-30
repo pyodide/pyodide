@@ -1,3 +1,6 @@
-sphinx
+# Temporarly commented as a workaround for pypa/pip#9031
+# sphinx
 sphinx_rtd_theme
-m2r
+myst-parser
+sphinxcontrib-napoleon
+distlib   # required by micropip

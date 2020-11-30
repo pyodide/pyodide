@@ -33,7 +33,7 @@ def _nullop(*args):
 # Provide implementations of HTTP fetching for in-browser and out-of-browser to
 # make testing easier
 if XMLHttpRequest is not None:
-    import pyodide
+    import pyodide  # noqa
 
     def _get_url(url):
         req = XMLHttpRequest.new()
@@ -262,11 +262,25 @@ del _PackageManager
 
 
 def install(requirements: Union[str, List[str]]):
-    """
-    Install the given package and all of its dependencies.
+    """Install the given package and all of its dependencies.
 
-    Returns a Promise that resolves when all packages have downloaded and
-    installed.
+    This only works for pure Python wheels or for packages built
+    in pyodide. If a package is not found in the pyodide repository
+    it will be loaded from PyPi.
+
+    Parameters
+    ----------
+    requirements
+       a requirements or a list of requirements to install.
+       Can be composed either of
+
+         - package names, as defined in pyodide repository or on PyPi
+         - URLs pointing to pure Python wheels. The file name of such wheels
+           end with ``none-any.whl``.
+
+    Returns
+    -------
+    a Promise that resolves when all packages have downloaded and installed.
     """
 
     def do_install(resolve, reject):

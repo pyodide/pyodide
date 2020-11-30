@@ -61,7 +61,7 @@ def collect_args(basename):
 
     skip_host = "SKIP_HOST" in os.environ
 
-    # Skip compilations of C/Fortran extensions for the target environement.
+    # Skip compilations of C/Fortran extensions for the target environment.
     # We still need to generate the output files for distutils to continue
     # the build.
     # TODO: This may need slight tuning for new projects. In particular,

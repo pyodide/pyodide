@@ -190,12 +190,9 @@ def test_python2js_numpy_scalar(selenium_standalone):
 
 
 def test_pythonexc2js(selenium):
-    try:
+    msg = "ZeroDivisionError"
+    with pytest.raises(selenium.JavascriptException, match=msg):
         selenium.run_js('return pyodide.runPython("5 / 0")')
-    except selenium.JavascriptException as e:
-        assert "ZeroDivisionError" in str(e)
-    else:
-        assert False, "Expected exception"
 
 
 def test_js2python(selenium):
@@ -481,7 +478,8 @@ def test_pyproxy_destroy(selenium):
         f = Foo()
         """
     )
-    try:
+    msg = "Object has already been destroyed"
+    with pytest.raises(selenium.JavascriptException, match=msg):
         selenium.run_js(
             """
             let f = pyodide.pyimport('f');
@@ -490,10 +488,6 @@ def test_pyproxy_destroy(selenium):
             f.get_value();
             """
         )
-    except selenium.JavascriptException as e:
-        assert "Object has already been destroyed" in str(e)
-    else:
-        assert False, "Expected exception"
 
 
 def test_jsproxy(selenium):
@@ -647,7 +641,7 @@ def test_open_url(selenium):
         selenium.run(
             """
         import pyodide
-        pyodide.open_url('test/data.txt').read()
+        pyodide.open_url('src/tests/data/data.txt').read()
         """
         )
         == "HELLO\n"
@@ -659,7 +653,7 @@ def test_open_url_cgi(selenium):
         selenium.run(
             """
         import pyodide
-        pyodide.open_url('test/data.cgi').read()
+        pyodide.open_url('src/tests/data/data.cgi').read()
         """
         )
         == "HELLO\n"
@@ -745,33 +739,28 @@ def test_runpythonasync_no_imports(selenium_standalone):
 
 
 def test_runpythonasync_missing_import(selenium_standalone):
-    try:
+    msg = "ModuleNotFoundError"
+    with pytest.raises(selenium_standalone.JavascriptException, match=msg):
         selenium_standalone.run_async(
             """
             import foo
             """
         )
-    except selenium_standalone.JavascriptException as e:
-        assert "ModuleNotFoundError" in str(e)
-    else:
-        assert False
 
 
 def test_runpythonasync_exception(selenium_standalone):
-    try:
+    msg = "ZeroDivisionError"
+    with pytest.raises(selenium_standalone.JavascriptException, match=msg):
         selenium_standalone.run_async(
             """
             42 / 0
             """
         )
-    except selenium_standalone.JavascriptException as e:
-        assert "ZeroDivisionError" in str(e)
-    else:
-        assert False
 
 
 def test_runpythonasync_exception_after_import(selenium_standalone):
-    try:
+    msg = "ZeroDivisionError"
+    with pytest.raises(selenium_standalone.JavascriptException, match=msg):
         selenium_standalone.run_async(
             """
             import numpy as np
@@ -779,10 +768,6 @@ def test_runpythonasync_exception_after_import(selenium_standalone):
             42 / 0
             """
         )
-    except selenium_standalone.JavascriptException as e:
-        assert "ZeroDivisionError" in str(e)
-    else:
-        assert False
 
 
 def test_py(selenium_standalone):

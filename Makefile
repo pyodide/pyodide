@@ -78,9 +78,12 @@ all: check \
 	echo -e "\nSUCCESS!"
 
 
-build/pyodide.asm.js: src/main.bc src/jsimport.bc src/jsproxy.bc src/js2python.bc \
-		src/pyimport.bc src/pyproxy.bc src/python2js.bc src/python2js_buffer.bc \
-		src/runpython.bc src/hiwire.bc
+build/pyodide.asm.js: src/main.bc src/type_conversion/jsimport.bc \
+	        src/type_conversion/jsproxy.bc src/type_conversion/js2python.bc \
+		src/type_conversion/pyimport.bc src/type_conversion/pyproxy.bc \
+		src/type_conversion/python2js.bc \
+		src/type_conversion/python2js_buffer.bc \
+		src/type_conversion/runpython.bc src/type_conversion/hiwire.bc
 	date +"[%F %T] Building pyodide.asm.js..."
 	[ -d build ] || mkdir build
 	$(CXX) -s EXPORT_NAME="'pyodide'" -o build/pyodide.asm.html $(filter %.bc,$^) \
@@ -109,25 +112,25 @@ build/pyodide_dev.js: src/pyodide.js
 
 build/pyodide.js: src/pyodide.js
 	cp $< $@
-	sed -i -e 's#{{DEPLOY}}#https://pyodide-cdn2.iodide.io/v0.15.0/full/#g' $@
+	sed -i -e 's#{{DEPLOY}}#https://cdn.jsdelivr.net/pyodide/v0.15.0/full/#g' $@
 
 	sed -i -e "s#{{ABI}}#$(PYODIDE_PACKAGE_ABI)#g" $@
 
 
-build/test.html: src/test.html
+build/test.html: src/templates/test.html
 	cp $< $@
 
 
-build/console.html: src/console.html
+build/console.html: src/templates/console.html
 	cp $< $@
 
 
-build/renderedhtml.css: src/renderedhtml.less
+build/renderedhtml.css: src/css/renderedhtml.less
 	lessc $< $@
 
 build/webworker.js: src/webworker.js
 	cp $< $@
-	sed -i -e 's#{{DEPLOY}}#https://pyodide-cdn2.iodide.io/v0.15.0/full/#g' $@
+	sed -i -e 's#{{DEPLOY}}#https://cdn.jsdelivr.net/pyodide/v0.15.0/full/#g' $@
 
 build/webworker_dev.js: src/webworker.js
 	cp $< $@
@@ -135,13 +138,13 @@ build/webworker_dev.js: src/webworker.js
 	sed -i -e "s#pyodide.js#pyodide_dev.js#g" $@
 
 test: all
-	pytest test packages pyodide_build -v
+	pytest src packages/*/test* pyodide_build -v
 
 
 lint:
 	# check for unused imports, the rest is done by black
-	flake8 --select=F401 src test tools pyodide_build benchmark
-	clang-format -output-replacements-xml src/*.c src/*.h src/*.js | (! grep '<replacement ')
+	flake8 --select=F401 src tools pyodide_build benchmark
+	clang-format -output-replacements-xml src/*.c src/*.h src/*.js src/*/*.c src/*/*.h src/*/*.js | (! grep '<replacement ')
 
 
 benchmark: all
@@ -170,7 +173,7 @@ clean-all: clean
 	rm -fr cpython/build
 
 %.bc: %.c $(CPYTHONLIB) $(LZ4LIB)
-	$(CC) -o $@ -c $< $(CFLAGS)
+	$(CC) -o $@ -c $< $(CFLAGS) -Isrc/type_conversion/
 
 
 build/test.data: $(CPYTHONLIB)

@@ -3,7 +3,7 @@ FROM circleci/python:3.8.2-buster
 RUN sudo apt-get update \
   # bzip2 and libgconf-2-4 are necessary for extracting firefox and running chrome, respectively
   && sudo apt-get install bzip2 libgconf-2-4 node-less cmake build-essential clang-format-6.0 \
-                  uglifyjs chromium ccache libncurses6 gfortran f2c swig g++-8 \
+                  uglifyjs chromium ccache libncurses6 gfortran f2c swig g++-8 libtinfo5 \
   && sudo apt-get clean \
   && sudo apt-get autoremove \
   && test "Comment: Hardcode nodejs path for uglifyjs, so it doesn't conflict with emcc's nodejs" \
