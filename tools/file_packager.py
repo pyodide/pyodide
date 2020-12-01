@@ -534,7 +534,6 @@ if has_preloaded:
       os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
       'emsdk', 'emsdk', 'fastcomp', 'emscripten'
     )
-    tag_dir = sorted(os.listdir(emscripten_dir), key=lambda x: len(x))[0]
     sys.path.insert(1, emscripten_dir)
 
     from tools import shared
