@@ -1,9 +1,9 @@
-version: 2
+version: 2.1
 
 defaults: &defaults
   working_directory: ~/repo
   docker:
-    - image: iodide/pyodide-env:0.16.1
+    - image: dalcde/pyodide-test:latest
   environment:
     - EMSDK_NUM_CORES: 4
       EMCC_CORES: 4
@@ -31,10 +31,6 @@ jobs:
       - restore_cache:
           keys:
           - v1-emsdk-{{ checksum "emsdk/Makefile" }}-v20201203-
-
-      - run:
-          name: dependencies
-          command: sudo apt install -y libtinfo5
 
       - run:
           name: build
@@ -74,10 +70,6 @@ jobs:
           - v1-emsdk-{{ checksum "emsdk/Makefile" }}-v20201203-
 
       - run:
-          name: dependencies
-          command: sudo apt install -y libtinfo5
-
-      - run:
           name: build
           no_output_timeout: 1200
           command: |
@@ -89,12 +81,14 @@ jobs:
           name: check-size
           command: ls -lh build/
 
+      - xvfb
+
       - run:
           name: test
           command: |
             export PYODIDE_PACKAGES='micropip'
             # only check common tests, all other are checked in the main test jobs
-            pytest src/tests/test_common.py -v -k firefox
+            DISPLAY=:99 pytest src/tests/test_common.py -v -k firefox
 
       - store_artifacts:
           path: /home/circleci/repo/build/
@@ -105,10 +99,11 @@ jobs:
       - checkout
       - attach_workspace:
           at: .
+      - xvfb
       - run:
           name: test
           command: |
-            pytest src packages/*/test* packages/micropip/micropip/ pyodide_build -v -k firefox
+            DISPLAY=:99 pytest src packages/*/test* packages/micropip/micropip/ pyodide_build -v -k firefox
 
   test-chrome:
     <<: *defaults
@@ -116,10 +111,11 @@ jobs:
       - checkout
       - attach_workspace:
           at: .
+      - xvfb
       - run:
           name: test
           command: |
-            pytest src packages/*/test* packages/micropip/micropip/ pyodide_build -v -k chrome
+            DISPLAY=:99 pytest src packages/*/test* packages/micropip/micropip/ pyodide_build -v -k chrome
 
   test-python:
     <<: *defaults
@@ -129,6 +125,7 @@ jobs:
           name: deps
           command: |
             sudo pip install pytest-cov
+      - xvfb
       - run:
           name: test
           command: |
@@ -140,10 +137,11 @@ jobs:
       - checkout
       - attach_workspace:
           at: .
+      - xvfb
       - run:
           name: benchmark
           command: |
-            python benchmark/benchmark.py cpython/build/3.8.2/host/bin/python3 build/benchmarks.json
+            DISPLAY=:99 python benchmark/benchmark.py cpython/build/3.8.2/host/bin/python3 build/benchmarks.json
       - store_artifacts:
           path: /home/circleci/repo/build/benchmarks.json
 
@@ -198,6 +196,19 @@ jobs:
             aws s3 rm --recursive "s3://pyodide-cdn2.iodide.io/dev/full/"
             aws s3 sync build/ "s3://pyodide-cdn2.iodide.io/dev/full/" --exclude '*.data' --cache-control 'max-age=3600, public' --content-encoding 'gzip'  # 1 hour cache
             aws s3 sync build/ "s3://pyodide-cdn2.iodide.io/dev/full/" --exclude '*' --include '*.data' --cache-control 'max-age=3600, public'  --content-type 'application/wasm' --content-encoding 'gzip'  # 1 hour cache
+
+commands:
+  xvfb:
+    description: "Set up xvfb for testing"
+    steps:
+      - run:
+          name: "Install xvfb"
+          command: apt-get update && apt-get install xvfb
+
+      - run:
+          name: "Run xvfb"
+          background: true
+          command: Xvfb :99 -screen 0 1280x1024x24
 
 workflows:
   version: 2
