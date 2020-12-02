@@ -19,7 +19,7 @@ jobs:
           command: |
             pip install black mypy
             # TODO: investigate why clang-format without version is not available
-            sudo ln -s /usr/bin/clang-format-6.0 /usr/bin/clang-format
+            ln -s /usr/bin/clang-format-6.0 /usr/bin/clang-format
             make lint
             black --check --exclude tools/file_packager.py .
             mypy --ignore-missing-imports pyodide_build/ src/ packages/micropip/micropip/ packages/*/test*
@@ -124,7 +124,7 @@ jobs:
       - run:
           name: deps
           command: |
-            sudo pip install pytest-cov
+            pip install pytest-cov
       - xvfb
       - run:
           name: test
