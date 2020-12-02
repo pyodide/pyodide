@@ -103,7 +103,7 @@ jobs:
       - run:
           name: test
           command: |
-            DISPLAY=:99 pytest src packages/*/test* packages/micropip/micropip/ pyodide_build -v -k firefox
+            DISPLAY=:99 pytest src packages/*/test* pyodide_build -v -k firefox
 
   test-chrome:
     <<: *defaults
@@ -115,7 +115,7 @@ jobs:
       - run:
           name: test
           command: |
-            DISPLAY=:99 pytest src packages/*/test* packages/micropip/micropip/ pyodide_build -v -k chrome
+            DISPLAY=:99 pytest src packages/*/test* pyodide_build -v -k chrome
 
   test-python:
     <<: *defaults
