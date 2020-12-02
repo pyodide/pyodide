@@ -4,8 +4,8 @@ RUN apt-get update \
   && apt-get install -y --no-install-recommends \
                   # building packages
                   bzip2 ccache clang-format-6.0 cmake f2c g++ gfortran libtinfo5 node-less swig uglifyjs \
-                  # testing packages: libgconf-2-4 is necessary for running chrome
-                  libgconf-2-4 chromium firefox-esr \
+                  # testing packages: libgconf-2-4 is necessary for running chromium
+                  libgconf-2-4 chromium \
   && rm -rf /var/lib/apt/lists/* \
   && test "Comment: Hardcode nodejs path for uglifyjs, so it doesn't conflict with emcc's nodejs" \
   && test $(which node) = /usr/bin/node && test $(which uglifyjs) = /usr/bin/uglifyjs \
@@ -14,8 +14,10 @@ RUN apt-get update \
 
 RUN pip3 --no-cache-dir install pytest pytest-xdist pytest-instafail pytest-rerunfailures selenium PyYAML flake8
 
-# Get recent version of geckodriver
-RUN wget -qO- https://github.com/mozilla/geckodriver/releases/download/v0.26.0/geckodriver-v0.26.0-linux64.tar.gz | tar zxC /usr/local/bin/
+# Get firefox 70.0.1 and geckodriver
+RUN wget -qO- https://ftp.mozilla.org/pub/firefox/releases/70.0.1/linux-x86_64/en-US/firefox-70.0.1.tar.bz2 | tar jx \
+  && ln -s $PWD/firefox/firefox /usr/local/bin/firefox \
+  && wget -qO- https://github.com/mozilla/geckodriver/releases/download/v0.26.0/geckodriver-v0.26.0-linux64.tar.gz | tar zxC /usr/local/bin/
 
 # Get recent version of chromedriver
 RUN wget --quiet https://chromedriver.storage.googleapis.com/2.41/chromedriver_linux64.zip \
