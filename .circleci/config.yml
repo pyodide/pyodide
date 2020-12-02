@@ -203,7 +203,7 @@ commands:
     steps:
       - run:
           name: "Install xvfb"
-          command: apt-get update && apt-get install xvfb
+          command: apt-get update && apt-get install -y --no-install-recommends xvfb
 
       - run:
           name: "Run xvfb"
