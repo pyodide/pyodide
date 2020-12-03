@@ -20,6 +20,8 @@
   [#480](https://github.com/iodide-project/pyodide/pull/480)
 - New packages: freesasa, lxml, python-sat, traits, astropy
 - Updated packages: numpy 1.15.4, pandas 1.0.5 among others.
+- Updated default `--ldflags` argument to `pyodide_build` scripts to equal what
+  pyodide actually uses.
 
 
 ## Version 0.15.0
