@@ -121,7 +121,7 @@ def capture_compile(args):
     env["PATH"] = str(ROOTDIR) + ":" + os.environ["PATH"]
 
     result = subprocess.run(
-        [Path(args.host) / "bin" / "python3", "setup.py", "install"], env=env
+        [Path(args.host) / "bin" / "python3", "setup.py", "build"], env=env
     )
     if result.returncode != 0:
         build_log_path = Path("build.log")
@@ -238,14 +238,14 @@ def handle_command(line, args, dryrun=False):
     # Go through and adjust arguments
     for arg in line[1:]:
         if arg.startswith("-I"):
-            # Don't include any system directories
-            if arg[2:].startswith("/usr"):
-                continue
             if (
                 str(Path(arg[2:]).resolve()).startswith(args.host)
                 and "site-packages" not in arg
             ):
                 arg = arg.replace("-I" + args.host, "-I" + args.target)
+            # Don't include any system directories
+            elif arg[2:].startswith("/usr"):
+                continue
         # Don't include any system directories
         if arg.startswith("-L/usr"):
             continue
