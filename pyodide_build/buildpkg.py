@@ -155,6 +155,8 @@ def compile(path: Path, srcpath: Path, pkg: Dict[str, Any], args):
                 args.host,
                 "--target",
                 args.target,
+                "--install-dir",
+                args.install_dir,
             ],
             env=env,
             check=True,
@@ -300,6 +302,17 @@ def make_parser(parser: argparse.ArgumentParser):
         nargs="?",
         default=common.TARGETPYTHON,
         help="The path to the target Python installation",
+    )
+    parser.add_argument(
+        "--install-dir",
+        type=str,
+        nargs="?",
+        default="",
+        help=(
+            "Directory for installing built host packages. Defaults to setup.py "
+            "default. Set to 'skip' to skip installation. Installation is "
+            "needed if you want to build other packages that depend on this one."
+        ),
     )
     return parser
 

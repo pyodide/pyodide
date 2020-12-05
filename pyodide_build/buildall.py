@@ -132,6 +132,17 @@ def make_parser(parser):
         help="The path to the target Python installation",
     )
     parser.add_argument(
+        "--install-dir",
+        type=str,
+        nargs="?",
+        default="",
+        help=(
+            "Directory for installing built host packages. Defaults to setup.py "
+            "default. Set to 'skip' to skip installation. Installation is "
+            "needed if you want to build other packages that depend on this one."
+        ),
+    )
+    parser.add_argument(
         "--only",
         type=str,
         nargs="?",

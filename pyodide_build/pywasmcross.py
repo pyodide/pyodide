@@ -120,9 +120,13 @@ def capture_compile(args):
     make_symlinks(env)
     env["PATH"] = str(ROOTDIR) + ":" + os.environ["PATH"]
 
-    result = subprocess.run(
-        [Path(args.host) / "bin" / "python3", "setup.py", "install"], env=env
-    )
+    cmd = [Path(args.host) / "bin" / "python3", "setup.py", "install"]
+    if args.install_dir == "skip":
+        cmd[-1] = "build"
+    elif args.install_dir != "":
+        cmd.extend(["--home", args.install_dir])
+
+    result = subprocess.run(cmd, env=env)
     if result.returncode != 0:
         build_log_path = Path("build.log")
         if build_log_path.exists():
@@ -238,14 +242,14 @@ def handle_command(line, args, dryrun=False):
     # Go through and adjust arguments
     for arg in line[1:]:
         if arg.startswith("-I"):
-            # Don't include any system directories
-            if arg[2:].startswith("/usr"):
-                continue
             if (
                 str(Path(arg[2:]).resolve()).startswith(args.host)
                 and "site-packages" not in arg
             ):
                 arg = arg.replace("-I" + args.host, "-I" + args.target)
+            # Don't include any system directories
+            elif arg[2:].startswith("/usr"):
+                continue
         # Don't include any system directories
         if arg.startswith("-L/usr"):
             continue
@@ -417,6 +421,17 @@ def make_parser(parser):
             nargs="?",
             default=common.TARGETPYTHON,
             help="The path to the target Python installation",
+        )
+        parser.add_argument(
+            "--install-dir",
+            type=str,
+            nargs="?",
+            default="",
+            help=(
+                "Directory for installing built host packages. Defaults to setup.py "
+                "default. Set to 'skip' to skip installation. Installation is "
+                "needed if you want to build other packages that depend on this one."
+            ),
         )
     return parser
 
