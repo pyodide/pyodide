@@ -21,7 +21,6 @@ DEFAULTLDFLAGS = " ".join(
         "-s", "LINKABLE=1",
         "-s", "EXPORT_ALL=1",
         "-s", "ERROR_ON_MISSING_LIBRARIES=0",
-        "-s", "ASSERTIONS=1",
     ]
 )
 # fmt: on
