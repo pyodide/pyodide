@@ -427,9 +427,11 @@ def make_parser(parser):
             type=str,
             nargs="?",
             default="",
-            help="Directory for installing built host packages. Defaults to setup.py\
-default. Set to 'skip' to skip installation. Installation is needed if you want\
-to build other packages that depend on this one.",
+            help=(
+                "Directory for installing built host packages. Defaults to setup.py "
+                "default. Set to 'skip' to skip installation. Installation is "
+                "needed if you want to build other packages that depend on this one."
+            ),
         )
     return parser
 
