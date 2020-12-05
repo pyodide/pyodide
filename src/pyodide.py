@@ -160,7 +160,7 @@ def get_completions(
     if cursor is None:
         cursor = len(code)
     code = code[:cursor]
-    interp = jedi.Interpreter(source=code, namespaces=namespaces)
+    interp = jedi.Interpreter(code, namespaces)
     completions = interp.completions()
 
     return [x.name for x in completions]

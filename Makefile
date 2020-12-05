@@ -55,10 +55,10 @@ LDFLAGS=\
 SIX_ROOT=packages/six/six-1.11.0/build/lib
 SIX_LIBS=$(SIX_ROOT)/six.py
 
-JEDI_ROOT=packages/jedi/jedi-0.15.1/jedi
+JEDI_ROOT=packages/jedi/jedi-0.17.2/jedi
 JEDI_LIBS=$(JEDI_ROOT)/__init__.py
 
-PARSO_ROOT=packages/parso/parso-0.5.1/parso
+PARSO_ROOT=packages/parso/parso-0.7.1/parso
 PARSO_LIBS=$(PARSO_ROOT)/__init__.py
 
 SITEPACKAGES=root/lib/python$(PYMINOR)/site-packages
