@@ -648,15 +648,20 @@ def test_open_url(selenium):
     )
 
 
-def test_open_url_cgi(selenium):
+def test_open_url_dynamic(selenium, httpserver):
+    httpserver.expect_request("/data").respond_with_data(
+        b"HELLO", content_type="text/text", headers={"Access-Control-Allow-Origin": "*"}
+    )
+    request_url = httpserver.url_for("/data")
+
     assert (
         selenium.run(
-            """
+            f"""
         import pyodide
-        pyodide.open_url('src/tests/data/data.cgi').read()
+        pyodide.open_url('{request_url}').read()
         """
         )
-        == "HELLO\n"
+        == "HELLO"
     )
 
 
