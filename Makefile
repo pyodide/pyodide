@@ -58,7 +58,7 @@ SIX_LIBS=$(SIX_ROOT)/six.py
 JEDI_ROOT=packages/jedi/jedi-0.17.2/jedi
 JEDI_LIBS=$(JEDI_ROOT)/__init__.py
 
-PARSO_ROOT=packages/parso/parso-0.8.0/parso
+PARSO_ROOT=packages/parso/parso-0.7.1/parso
 PARSO_LIBS=$(PARSO_ROOT)/__init__.py
 
 SITEPACKAGES=root/lib/python$(PYMINOR)/site-packages
