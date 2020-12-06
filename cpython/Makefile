@@ -3,13 +3,6 @@ include ../Makefile.envs
 
 ROOT=$(abspath .)
 
-HOSTINSTALL=$(ROOT)/build/$(PYVERSION)/host
-HOSTBUILD=$(HOSTINSTALL)/Python-$(PYVERSION)
-HOSTPYTHON=$(HOSTINSTALL)/bin/python3$(EXE)
-HOSTPYTHON_CPPFLAGS="-I/usr/local/opt/openssl/include"
-HOSTPYTHON_LDFLAGS="-L/usr/local/opt/openssl/lib"
-HOSTPGEN=$(HOSTINSTALL)/bin/pgen$(EXE)
-
 BUILD=$(ROOT)/build/$(PYVERSION)/Python-$(PYVERSION)
 INSTALL=$(ROOT)/installs/python-$(PYVERSION)
 TARBALL=$(ROOT)/downloads/Python-$(PYVERSION).tgz
@@ -41,13 +34,12 @@ $(INSTALL)/lib/$(LIB): $(BUILD)/$(LIB)
 		touch $(BUILD)/$(LIB) ; \
 		emmake make HOSTPYTHON=$(HOSTPYTHON) PYTHON_FOR_BUILD=$(HOSTPYTHON) CROSS_COMPILE=yes inclinstall libinstall $(LIB) -j $${PYODIDE_JOBS:-3} && \
 		cp $(LIB) $(INSTALL)/lib/ && \
-		cp $(HOSTINSTALL)/lib/python$(PYMINOR)/`$(HOSTPYTHON) -c "import sysconfig; print(sysconfig._get_sysconfigdata_name())"`.py $(INSTALL)/lib/python$(PYMINOR)/_sysconfigdata__emscripten_.py; \
+		cp $(HOSTPYTHONROOT)/lib/python$(PYMINOR)/`$(HOSTPYTHON) -c "import sysconfig; print(sysconfig._get_sysconfigdata_name())"`.py $(INSTALL)/lib/python$(PYMINOR)/_sysconfigdata__emscripten_.py; \
 		sed -i -e 's#'"$(PYODIDE_ROOT)"'##g' $(INSTALL)/lib/python$(PYMINOR)/_sysconfigdata__emscripten_.py; \
 	)
 
 
 clean:
-	-rm -fr $(HOSTINSTALL)
 	-rm -fr $(BUILD)
 	-rm -fr $(INSTALL)
 
@@ -72,17 +64,6 @@ $(BZIP2TARBALL):
 	[ -d $(ROOT)/downloads ] || mkdir $(ROOT)/downloads
 	wget -q -O $@ $(BZIP2URL)
 
-
-$(HOSTPYTHON) $(HOSTPGEN): $(TARBALL)
-	mkdir -p $(HOSTINSTALL)
-	[ -d $(HOSTBUILD) ] || tar -C $(HOSTINSTALL) -xf $(TARBALL)
-	( \
-		cd $(HOSTBUILD); \
-		PKG_CONFIG_PATH="/usr/local/opt/openssl/lib/pkgconfig" ./configure --prefix=$(HOSTINSTALL) || cat config.log && \
-	  	make regen-grammar -j $${PYODIDE_JOBS:-3} && \
-		make install -j $${PYODIDE_JOBS:-3} && \
-		make distclean \
-	)
 
 
 $(BUILD)/.patched: $(TARBALL)
@@ -135,13 +116,13 @@ $(BUILD)/Makefile: $(BUILD)/.patched $(ZLIBBUILD)/.patched $(SQLITEBUILD)/libsql
 	)
 
 
-$(BUILD)/$(LIB): $(BUILD)/Makefile $(HOSTPYTHON) $(HOSTPGEN) Setup.local
+$(BUILD)/$(LIB): $(BUILD)/Makefile Setup.local
 	cp Setup.local $(BUILD)/Modules/
 	cat pyconfig.undefs.h >> $(BUILD)/pyconfig.h
 	( \
-		cp build/$(PYVERSION)/host/lib/python$(PYMINOR)/`$(HOSTPYTHON) -c "import sysconfig; print(sysconfig._get_sysconfigdata_name())"`.py build/$(PYVERSION)/Python-$(PYVERSION)/Lib/_sysconfigdata__emscripten_.py; \
+		cp $(HOSTPYTHONROOT)/lib/python$(PYMINOR)/`$(HOSTPYTHON) -c "import sysconfig; print(sysconfig._get_sysconfigdata_name())"`.py build/$(PYVERSION)/Python-$(PYVERSION)/Lib/_sysconfigdata__emscripten_.py; \
 		cd $(BUILD); \
-		emmake make HOSTPYTHON=$(HOSTPYTHON) HOSTPGEN=$(HOSTPGEN) CROSS_COMPILE=yes $(LIB) -j $${PYODIDE_JOBS:-3} \
+		emmake make HOSTPYTHON=$(HOSTPYTHON) CROSS_COMPILE=yes $(LIB) -j $${PYODIDE_JOBS:-3} \
 	)
 	sed -i -e 's/\-undefined dynamic_lookup//' build/$(PYVERSION)/Python-$(PYVERSION)/Lib/_sysconfigdata__emscripten_.py
 	touch $(BUILD)/$(LIB)

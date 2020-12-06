@@ -31,8 +31,8 @@ f2c_wrap = _args_wrapper(f2c)
 
 
 def test_handle_command():
-    Args = namedtuple("args", ["cflags", "ldflags"])
-    args = Args(cflags="", ldflags="")
+    Args = namedtuple("args", ["cflags", "ldflags", "host"])
+    args = Args(cflags="", ldflags="", host="")
     assert handle_command_wrap("gcc -print-multiarch", args) is None
     assert handle_command_wrap("gcc test.c", args) == "emcc test.c"
     assert (
@@ -41,7 +41,7 @@ def test_handle_command():
     )
 
     # check ldflags injection
-    args = Args(cflags="", ldflags="-lm")
+    args = Args(cflags="", ldflags="-lm", host="")
     assert (
         handle_command_wrap("gcc -shared -c test.o -o test.so", args)
         == "emcc -lm -shared -c test.bc -o test.wasm"

@@ -1,9 +1,9 @@
 from pathlib import Path
 from typing import Optional, Set
-
+import sysconfig
 
 ROOTDIR = Path(__file__).parents[1].resolve() / "tools"
-HOSTPYTHON = ROOTDIR / ".." / "cpython" / "build" / "3.8.2" / "host"
+HOSTPYTHON = Path(sysconfig._BASE_EXEC_PREFIX)  # type: ignore
 TARGETPYTHON = ROOTDIR / ".." / "cpython" / "installs" / "python-3.8.2"
 DEFAULTCFLAGS = ""
 # fmt: off
