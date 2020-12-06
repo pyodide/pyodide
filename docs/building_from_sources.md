@@ -54,11 +54,6 @@ building on the host machine is preferred if at all possible.
 
 2. From a git checkout of Pyodide, run `./run_docker` or `./run_docker --pre-built`
 
-   Install libtinfo5 in the docker contaner,
-   ```
-   sudo apt install -y libtinfo5
-   ```
-
 3. Run `make` to build.
 
 Note: You can control the resources allocated to the build by setting the env vars
