@@ -108,6 +108,7 @@ jobs:
       - run:
           name: test
           command: |
+            pip install pytest-httpserver
             pytest src packages/*/test* packages/micropip/micropip/ pyodide_build -v -k firefox
 
   test-chrome:
@@ -119,6 +120,7 @@ jobs:
       - run:
           name: test
           command: |
+            pip install pytest-httpserver
             pytest src packages/*/test* packages/micropip/micropip/ pyodide_build -v -k chrome
 
   test-python:

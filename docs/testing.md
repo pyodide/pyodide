@@ -8,7 +8,7 @@
 Install the following dependencies into the default Python installation:
 
 ```bash
-pip install pytest selenium pytest-instafail
+pip install pytest selenium pytest-instafail pytest-httpserver
 ```
 
 Install [geckodriver](https://github.com/mozilla/geckodriver/releases) and
