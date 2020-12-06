@@ -345,6 +345,13 @@ def web_server_main(request):
 
 @pytest.fixture(scope="session")
 def web_server_secondary(request):
+    """Secondary web server that serves files build/ directory"""
+    with spawn_web_server(request.config.option.build_dir) as output:
+        yield output
+
+
+@pytest.fixture(scope="session")
+def web_server_tst_data(request):
     """Web server that serves files in the src/tests/data/ directory"""
     with spawn_web_server(TEST_PATH / "data") as output:
         yield output

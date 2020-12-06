@@ -59,8 +59,8 @@ def test_parse_wheel_url():
     assert wheel["platform"] == "macosx_10_9_intel"
 
 
-def test_install_custom_url(selenium_standalone, web_server_secondary):
-    server_hostname, server_port, server_log = web_server_secondary
+def test_install_custom_url(selenium_standalone, web_server_tst_data):
+    server_hostname, server_port, server_log = web_server_tst_data
     selenium_standalone.load_package("micropip")
     selenium_standalone.run("import micropip")
     base_url = f"http://{server_hostname}:{server_port}/"
