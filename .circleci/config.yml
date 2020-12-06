@@ -34,7 +34,7 @@ jobs:
           - v1-emsdk-{{ checksum "emsdk/Makefile" }}-v20201203-
 
       - run:
-          name: dependencies
+          name: system dependencies
           command: sudo apt install -y libtinfo5
 
       - run:
@@ -68,7 +68,6 @@ jobs:
 
       - save_cache:
           paths:
-            - ./emsdk/emsdk
             - ~/.ccache
           key: v1-emsdk-{{ checksum "emsdk/Makefile" }}-v20201203-{{ .BuildNum }}
 
@@ -80,6 +79,8 @@ jobs:
   build-packages:
     <<: *defaults
     steps:
+      - checkout
+
       - attach_workspace:
           at: .
 
@@ -146,7 +147,7 @@ jobs:
       - run:
           name: test
           command: |
-            pytest packages/*/test* -v -k firefox
+            pytest packages/test* packages/*/test* -v -k firefox
 
   test-packages-chrome:
     <<: *defaults
@@ -156,7 +157,7 @@ jobs:
       - run:
           name: test
           command: |
-            pytest packages/*/test* -v -k chrome
+            pytest packages/test* packages/*/test* -v -k chrome
 
   test-python:
     <<: *defaults
@@ -278,6 +279,7 @@ workflows:
             - build-packages
       - deploy-release:
           requires:
+            - test-core-firefox
             - test-packages-firefox
           filters:
             branches:
@@ -286,6 +288,7 @@ workflows:
               only: /^\d+\.\d+\.\d+$/
       - deploy-s3:
           requires:
+            - test-core-firefox
             - test-packages-firefox
           filters:
             branches:
