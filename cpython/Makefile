@@ -141,7 +141,7 @@ $(BUILD)/$(LIB): $(BUILD)/Makefile $(HOSTPYTHON) $(HOSTPGEN) Setup.local
 	( \
 		cp build/$(PYVERSION)/host/lib/python$(PYMINOR)/`$(HOSTPYTHON) -c "import sysconfig; print(sysconfig._get_sysconfigdata_name())"`.py build/$(PYVERSION)/Python-$(PYVERSION)/Lib/_sysconfigdata__emscripten_.py; \
 		cd $(BUILD); \
-		emmake make HOSTPYTHON=$(HOSTPYTHON) HOSTPGEN=$(HOSTPGEN) CROSS_COMPILE=yes $(LIB) -j $${PYODIDE_JOBS:-3} \
+		emmake make HOSTPGEN=$(HOSTPGEN) CROSS_COMPILE=yes $(LIB) -j $${PYODIDE_JOBS:-3} \
 	)
 	sed -i -e 's/\-undefined dynamic_lookup//' build/$(PYVERSION)/Python-$(PYVERSION)/Lib/_sysconfigdata__emscripten_.py
 	touch $(BUILD)/$(LIB)
