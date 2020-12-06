@@ -58,8 +58,8 @@ jobs:
           no_output_timeout: 1200
           command: |
             ccache -z
-            # the following packages are currently used in the main pyodide test suite
-            PYODIDE_PACKAGES="micropip,pyparsing,pytz,packaging,kiwisolver" make
+            # The following packages are currently used in the main pyodide test suite
+            PYODIDE_PACKAGES="micropip,pyparsing,pytz,packaging,kiwisolver,numpy" make
             ccache -s
 
       - run:
@@ -90,7 +90,7 @@ jobs:
 
       - run:
           name: dependencies
-          command: sudo apt install -y libtinfo5
+          command: sudo apt install -y libtinfo5 f2c
 
       - run:
           name: build packages
