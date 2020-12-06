@@ -277,7 +277,8 @@ workflows:
             - build-packages
       - deploy-release:
           requires:
-            - test-firefox
+            - test-core-firefox
+            - test-packages-firefox
             - test-python
           filters:
             branches:
