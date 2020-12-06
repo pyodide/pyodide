@@ -244,6 +244,7 @@ workflows:
       - build-core:
           requires:
             - lint
+            - test-python
           filters:
             tags:
               only: /.*/
@@ -277,9 +278,7 @@ workflows:
             - build-packages
       - deploy-release:
           requires:
-            - test-core-firefox
             - test-packages-firefox
-            - test-python
           filters:
             branches:
               ignore: /.*/
@@ -287,9 +286,7 @@ workflows:
               only: /^\d+\.\d+\.\d+$/
       - deploy-s3:
           requires:
-            - test-core-firefox
             - test-packages-firefox
-            - test-python
           filters:
             branches:
               only: master
