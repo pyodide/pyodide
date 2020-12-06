@@ -338,13 +338,22 @@ if pytest is not None:
 
 @pytest.fixture(scope="session")
 def web_server_main(request):
+    """Web server that serves files in the build/ directory"""
     with spawn_web_server(request.config.option.build_dir) as output:
         yield output
 
 
 @pytest.fixture(scope="session")
 def web_server_secondary(request):
+    """Secondary web server that serves files build/ directory"""
     with spawn_web_server(request.config.option.build_dir) as output:
+        yield output
+
+
+@pytest.fixture(scope="session")
+def web_server_tst_data(request):
+    """Web server that serves files in the src/tests/data/ directory"""
+    with spawn_web_server(TEST_PATH / "data") as output:
         yield output
 
 
@@ -396,18 +405,7 @@ def run_web_server(q, log_filepath, build_dir):
 
     test_prefix = "/src/tests/"
 
-    class Handler(http.server.CGIHTTPRequestHandler):
-        def translate_path(self, path):
-            if str(path).startswith(test_prefix):
-                return str(TEST_PATH / path[len(test_prefix) :])
-            return super(Handler, self).translate_path(path)
-
-        def is_cgi(self):
-            if self.path.startswith(test_prefix) and self.path.endswith(".cgi"):
-                self.cgi_info = test_prefix.rstrip("/"), self.path[len(test_prefix) :]
-                return True
-            return False
-
+    class Handler(http.server.SimpleHTTPRequestHandler):
         def log_message(self, format_, *args):
             print(
                 "[%s] source: %s:%s - %s"
@@ -418,8 +416,6 @@ def run_web_server(q, log_filepath, build_dir):
             # Enable Cross-Origin Resource Sharing (CORS)
             self.send_header("Access-Control-Allow-Origin", "*")
             super().end_headers()
-
-    Handler.extensions_map[".wasm"] = "application/wasm"
 
     with socketserver.TCPServer(("", 0), Handler) as httpd:
         host, port = httpd.server_address

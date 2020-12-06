@@ -127,6 +127,7 @@ jobs:
       - run:
           name: test
           command: |
+            pip install pytest-httpserver
             pytest src packages/micropip/ -v -k firefox
 
   test-core-chrome:
@@ -137,6 +138,7 @@ jobs:
       - run:
           name: test
           command: |
+            pip install pytest-httpserver
             pytest src packages/micropip/ -v -k chrome
 
   test-packages-firefox:
@@ -147,6 +149,7 @@ jobs:
       - run:
           name: test
           command: |
+            pip install pytest-httpserver
             pytest packages/test* packages/*/test* -v -k firefox
 
   test-packages-chrome:
@@ -157,6 +160,7 @@ jobs:
       - run:
           name: test
           command: |
+            pip install pytest-httpserver
             pytest packages/test* packages/*/test* -v -k chrome
 
   test-python:
