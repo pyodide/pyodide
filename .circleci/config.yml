@@ -134,7 +134,7 @@ jobs:
       - run:
           name: benchmark
           command: |
-            python benchmark/benchmark.py cpython/build/3.8.2/host/bin/python3 build/benchmarks.json
+            python benchmark/benchmark.py /usr/local/bin/python3 build/benchmarks.json
       - store_artifacts:
           path: /home/circleci/repo/build/benchmarks.json
 
