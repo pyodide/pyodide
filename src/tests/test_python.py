@@ -636,19 +636,7 @@ def test_jsproxy_kwargs(selenium):
     )
 
 
-def test_open_url(selenium):
-    assert (
-        selenium.run(
-            """
-        import pyodide
-        pyodide.open_url('src/tests/data/data.txt').read()
-        """
-        )
-        == "HELLO\n"
-    )
-
-
-def test_open_url_dynamic(selenium, httpserver):
+def test_open_url(selenium, httpserver):
     httpserver.expect_request("/data").respond_with_data(
         b"HELLO", content_type="text/text", headers={"Access-Control-Allow-Origin": "*"}
     )

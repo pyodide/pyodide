@@ -338,13 +338,15 @@ if pytest is not None:
 
 @pytest.fixture(scope="session")
 def web_server_main(request):
+    """Web server that serves files in the build/ directory"""
     with spawn_web_server(request.config.option.build_dir) as output:
         yield output
 
 
 @pytest.fixture(scope="session")
 def web_server_secondary(request):
-    with spawn_web_server(request.config.option.build_dir) as output:
+    """Web server that serves files in the src/tests/data/ directory"""
+    with spawn_web_server(TEST_PATH / "data") as output:
         yield output
 
 
