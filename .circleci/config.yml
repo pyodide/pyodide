@@ -249,7 +249,7 @@ workflows:
               only: /.*/
       - build-packages:
           requires:
-            - buld-core
+            - build-core
       - test-core-chrome:
           requires:
             - build-core
@@ -274,7 +274,7 @@ workflows:
               only: /.*/
       - benchmark:
           requires:
-            - build
+            - build-packages
       - deploy-release:
           requires:
             - test-firefox
