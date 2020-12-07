@@ -197,8 +197,8 @@ def handle_command(line, args, dryrun=False):
     --------
 
     >>> from collections import namedtuple
-    >>> Args = namedtuple('args', ['cflags', 'ldflags'])
-    >>> args = Args(cflags='', ldflags='')
+    >>> Args = namedtuple('args', ['cflags', 'ldflags', 'host'])
+    >>> args = Args(cflags='', ldflags='', host='')
     >>> handle_command(['gcc', 'test.c'], args, dryrun=True)
     emcc test.c
     ['emcc', 'test.c']
@@ -239,11 +239,12 @@ def handle_command(line, args, dryrun=False):
 
     lapack_dir = None
 
+    host_dir = str(Path(args.host).resolve())
     # Go through and adjust arguments
     for arg in line[1:]:
         if arg.startswith("-I"):
             if (
-                str(Path(arg[2:]).resolve()).startswith(args.host)
+                str(Path(arg[2:]).resolve()).startswith(host_dir + "/include/python")
                 and "site-packages" not in arg
             ):
                 arg = arg.replace("-I" + args.host, "-I" + args.target)
