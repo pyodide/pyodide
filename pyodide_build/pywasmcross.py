@@ -306,6 +306,12 @@ def handle_command(line, args, dryrun=False):
             new_args.append("-Os")
             continue
 
+        if new_args[-1].startswith("-B") and "compiler_compat" in arg:
+            # conda uses custom compiler search paths with the compiler_compat folder.
+            # Ignore it.
+            del new_args[-1]
+            continue
+
         new_args.append(arg)
 
     # This can only be used for incremental rebuilds -- it generates

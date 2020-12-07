@@ -59,3 +59,11 @@ def test_f2c():
         f2c_wrap("gfortran --shared -c test.o -o test.so")
         == "gfortran --shared -c test.o -o test.so"
     )
+
+
+def test_conda_compiler_compat():
+    Args = namedtuple("args", ["cflags", "ldflags", "host"])
+    args = Args(cflags="", ldflags="", host="")
+    assert handle_command_wrap(
+        "gcc -shared -c test.o -B /compiler_compat -o test.so", args
+    ) == ("emcc -shared -c test.bc -o test.wasm")
