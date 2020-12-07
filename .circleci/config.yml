@@ -54,6 +54,7 @@ jobs:
           root: .
           paths:
             - ./build
+            - ./packages/.artifacts
 
       - store_artifacts:
           path: /home/circleci/repo/build/
@@ -134,7 +135,7 @@ jobs:
       - run:
           name: benchmark
           command: |
-            python benchmark/benchmark.py /usr/local/bin/python3 build/benchmarks.json
+            PYTHONPATH=packages/.artifacts/lib/python python benchmark/benchmark.py /usr/local/bin/python3 build/benchmarks.json
       - store_artifacts:
           path: /home/circleci/repo/build/benchmarks.json
 

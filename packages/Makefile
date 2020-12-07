@@ -1,5 +1,5 @@
 PYODIDE_ROOT=$(abspath ..)
-PYODIDE_LIBRARIES="/tmp/pyodide-libraries"
+PYODIDE_LIBRARIES=$(abspath ./.artifacts)
 include ../Makefile.envs
 
 all: deps
@@ -18,3 +18,4 @@ deps:
 
 clean:
 	rm -rf ./*/build
+	rm -rf ./.artifacts
