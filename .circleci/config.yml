@@ -100,7 +100,7 @@ jobs:
       - run:
           name: test
           command: |
-            pytest src packages/*/test* pyodide_build -v -k firefox -n auto
+            pytest src packages/*/test* pyodide_build -v -k firefox -n 4
 
   test-chrome:
     <<: *defaults
@@ -111,7 +111,7 @@ jobs:
       - run:
           name: test
           command: |
-            pytest src packages/*/test* pyodide_build -v -k chrome -n auto
+            pytest src packages/*/test* pyodide_build -v -k chrome -n 4
 
   test-python:
     <<: *defaults
