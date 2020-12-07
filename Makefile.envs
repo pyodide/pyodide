@@ -10,7 +10,7 @@ export BINARYEN_ROOT = $(PYODIDE_ROOT)/emsdk/emsdk/binaryen
 
 export PYVERSION=3.8.2
 export PYMINOR=$(basename $(PYVERSION))
-export HOSTPYTHONROOT=$(shell python -c "import sys; print(sys.exec_prefix)")
+export HOSTPYTHONROOT=$(shell python -c "import sys; print(sys.prefix)")
 export HOSTPYTHON=$(HOSTPYTHONROOT)/bin/python3
 export TARGETPYTHONROOT=$(PYODIDE_ROOT)/cpython/installs/python-$(PYVERSION)
 export PYTHONINCLUDE=$(PYODIDE_ROOT)/cpython/installs/python-$(PYVERSION)/include/python$(PYMINOR)
