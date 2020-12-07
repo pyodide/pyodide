@@ -100,7 +100,8 @@ jobs:
       - run:
           name: test
           command: |
-            pytest src packages/*/test* pyodide_build -v -k firefox
+            pip3 install pytest-xdist
+            pytest src packages/*/test* pyodide_build -v -k firefox -n auto
 
   test-chrome:
     <<: *defaults
@@ -111,7 +112,8 @@ jobs:
       - run:
           name: test
           command: |
-            pytest src packages/*/test* pyodide_build -v -k chrome
+            pip3 install pytest-xdist
+            pytest src packages/*/test* pyodide_build -v -k chrome -n auto
 
   test-python:
     <<: *defaults
