@@ -24,7 +24,7 @@ select selectmodule.c
 _posixsubprocess _posixsubprocess.c
 binascii binascii.c
 
-zlib zlibmodule.c -I../../zlib-1.2.11
+zlib zlibmodule.c -I../zlib-1.2.11
 
 pyexpat expat/xmlparse.c expat/xmlrole.c expat/xmltok.c pyexpat.c -I$(srcdir)/Modules/expat -DHAVE_EXPAT_CONFIG_H -DUSE_PYEXPAT_CAPI -DXML_POOR_ENTROPY
 

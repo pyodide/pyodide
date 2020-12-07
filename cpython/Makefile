@@ -3,7 +3,7 @@ include ../Makefile.envs
 
 ROOT=$(abspath .)
 
-BUILD=$(ROOT)/build/$(PYVERSION)/Python-$(PYVERSION)
+BUILD=$(ROOT)/build/Python-$(PYVERSION)
 INSTALL=$(ROOT)/installs/python-$(PYVERSION)
 TARBALL=$(ROOT)/downloads/Python-$(PYVERSION).tgz
 URL=https://www.python.org/ftp/python/$(PYVERSION)/Python-$(PYVERSION).tgz
@@ -120,9 +120,9 @@ $(BUILD)/$(LIB): $(BUILD)/Makefile Setup.local
 	cp Setup.local $(BUILD)/Modules/
 	cat pyconfig.undefs.h >> $(BUILD)/pyconfig.h
 	( \
-		cp $(HOSTPYTHONROOT)/lib/python$(PYMINOR)/`$(HOSTPYTHON) -c "import sysconfig; print(sysconfig._get_sysconfigdata_name())"`.py build/$(PYVERSION)/Python-$(PYVERSION)/Lib/_sysconfigdata__emscripten_.py; \
+		cp $(HOSTPYTHONROOT)/lib/python$(PYMINOR)/`$(HOSTPYTHON) -c "import sysconfig; print(sysconfig._get_sysconfigdata_name())"`.py $(BUILD)/Lib/_sysconfigdata__emscripten_.py; \
 		cd $(BUILD); \
 		emmake make HOSTPYTHON=$(HOSTPYTHON) CROSS_COMPILE=yes $(LIB) -j $${PYODIDE_JOBS:-3} \
 	)
-	sed -i -e 's/\-undefined dynamic_lookup//' build/$(PYVERSION)/Python-$(PYVERSION)/Lib/_sysconfigdata__emscripten_.py
+	sed -i -e 's/\-undefined dynamic_lookup//' $(BUILD)/Lib/_sysconfigdata__emscripten_.py
 	touch $(BUILD)/$(LIB)
