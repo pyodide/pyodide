@@ -118,13 +118,6 @@ def make_parser(parser):
         help="Extra linking flags",
     )
     parser.add_argument(
-        "--host",
-        type=str,
-        nargs="?",
-        default=common.HOSTPYTHON,
-        help="The path to the host Python installation",
-    )
-    parser.add_argument(
         "--target",
         type=str,
         nargs="?",

@@ -120,7 +120,7 @@ def capture_compile(args):
     make_symlinks(env)
     env["PATH"] = str(ROOTDIR) + ":" + os.environ["PATH"]
 
-    cmd = [Path(args.host) / "bin" / "python3", "setup.py", "install"]
+    cmd = [sys.executable, "setup.py", "install"]
     if args.install_dir == "skip":
         cmd[-1] = "build"
     elif args.install_dir != "":
@@ -239,15 +239,14 @@ def handle_command(line, args, dryrun=False):
 
     lapack_dir = None
 
-    host_dir = str(Path(args.host).resolve())
     # Go through and adjust arguments
     for arg in line[1:]:
         if arg.startswith("-I"):
             if (
-                str(Path(arg[2:]).resolve()).startswith(host_dir + "/include/python")
+                str(Path(arg[2:]).resolve()).startswith(sys.prefix + "/include/python")
                 and "site-packages" not in arg
             ):
-                arg = arg.replace("-I" + args.host, "-I" + args.target)
+                arg = arg.replace("-I" + sys.prefix, "-I" + args.target)
             # Don't include any system directories
             elif arg[2:].startswith("/usr"):
                 continue
@@ -357,7 +356,7 @@ def clean_out_native_artifacts():
 
 def install_for_distribution(args):
     commands = [
-        Path(args.host) / "bin" / "python3",
+        sys.exectuable,
         "setup.py",
         "install",
         "--skip-build",
@@ -408,13 +407,6 @@ def make_parser(parser):
             nargs="?",
             default=common.DEFAULTLDFLAGS,
             help="Extra linking flags",
-        )
-        parser.add_argument(
-            "--host",
-            type=str,
-            nargs="?",
-            default=common.HOSTPYTHON,
-            help="The path to the host Python installation",
         )
         parser.add_argument(
             "--target",
