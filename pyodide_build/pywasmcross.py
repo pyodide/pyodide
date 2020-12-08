@@ -356,7 +356,7 @@ def clean_out_native_artifacts():
 
 def install_for_distribution(args):
     commands = [
-        sys.exectuable,
+        sys.executable,
         "setup.py",
         "install",
         "--skip-build",
