@@ -1,6 +1,5 @@
 from pathlib import Path
 from typing import Optional, Set
-import sys
 
 ROOTDIR = Path(__file__).parents[1].resolve() / "tools"
 TARGETPYTHON = ROOTDIR / ".." / "cpython" / "installs" / "python-3.8.2"
