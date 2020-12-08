@@ -11,6 +11,7 @@ import os
 from pathlib import Path
 import shutil
 import subprocess
+import sys
 from urllib import request
 from datetime import datetime
 from typing import Any, Dict
@@ -143,7 +144,7 @@ def compile(path: Path, srcpath: Path, pkg: Dict[str, Any], args):
     try:
         subprocess.run(
             [
-                str(Path(args.host) / "bin" / "python3"),
+                sys.executable,
                 "-m",
                 "pyodide_build",
                 "pywasmcross",
@@ -151,8 +152,6 @@ def compile(path: Path, srcpath: Path, pkg: Dict[str, Any], args):
                 args.cflags + " " + pkg.get("build", {}).get("cflags", ""),
                 "--ldflags",
                 args.ldflags + " " + pkg.get("build", {}).get("ldflags", ""),
-                "--host",
-                args.host,
                 "--target",
                 args.target,
                 "--install-dir",
@@ -288,13 +287,6 @@ def make_parser(parser: argparse.ArgumentParser):
         nargs="?",
         default=common.DEFAULTLDFLAGS,
         help="Extra linking flags",
-    )
-    parser.add_argument(
-        "--host",
-        type=str,
-        nargs="?",
-        default=common.HOSTPYTHON,
-        help="The path to the host Python installation",
     )
     parser.add_argument(
         "--target",
