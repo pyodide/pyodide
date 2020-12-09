@@ -147,11 +147,11 @@ def build_packages(packagesdir, outputdir, args):
             pkg.build(outputdir, args)
             print(f"Thread {n} built {pkg.name}")
             built_queue.put(pkg)
+            # Release the GIL so new packages get queued
             sleep(0.01)
 
-    threads = [
-        Thread(target=builder, daemon=True, args=(n,)).start() for n in range(0, 4)
-    ]
+    for n in range(0, arg.num_threads):
+        Thread(target=builder, args=(n + 1,), daemon=True).start()
 
     num_built = 0
     while num_built < len(pkg_map):
@@ -162,9 +162,6 @@ def build_packages(packagesdir, outputdir, args):
             dependent = pkg_map[dependent]
             dependent.unbuilt_dependencies.remove(pkg.name)
             if len(dependent.unbuilt_dependencies) == 0:
-                # Due to to GIL, all packages will be added before a package
-                # gets picked up by a thread, so it correctly compiles the most
-                # prioritized one.
                 build_queue.put(dependent)
 
     assert len(pkg_map) == num_built
@@ -252,7 +249,7 @@ def make_parser(parser):
         ),
     )
     parser.add_argument(
-        "--num-threads", type=str, nargs="?", default=4, help="Number of threads to use"
+        "--num-threads", type=int, nargs="?", default=4, help="Number of threads to use"
     )
     return parser
 
