@@ -17,7 +17,6 @@ from time import sleep
 from typing import Dict, Set, Optional, List
 
 from . import common
-from . import buildpkg
 
 
 @total_ordering
@@ -78,10 +77,10 @@ class Package:
 
     # We use this in the priority queue, which pops off the smallest element.
     # So we want the smallest element to have the largest number of dependents
-    def __lt__ (self, other):
+    def __lt__(self, other):
         return len(self.dependents) > len(other.dependents)
 
-    def __eq__ (self, other):
+    def __eq__(self, other):
         return len(self.dependents) == len(other.dependents)
 
 
@@ -150,7 +149,9 @@ def build_packages(packagesdir, outputdir, args):
             built_queue.put(pkg)
             sleep(0.01)
 
-    threads = [Thread(target=builder, daemon=True, args=(n,)).start() for n in range(0, 4)]
+    threads = [
+        Thread(target=builder, daemon=True, args=(n,)).start() for n in range(0, 4)
+    ]
 
     num_built = 0
     while num_built < len(pkg_map):
@@ -251,11 +252,7 @@ def make_parser(parser):
         ),
     )
     parser.add_argument(
-        "--num-threads",
-        type=str,
-        nargs="?",
-        default=4,
-        help="Number of threads to use"
+        "--num-threads", type=str, nargs="?", default=4, help="Number of threads to use"
     )
     return parser
 
