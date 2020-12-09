@@ -8,76 +8,125 @@ import argparse
 import json
 from pathlib import Path
 import shutil
+from typing import Dict, Set, Optional, List
 
 from . import common
 from . import buildpkg
 
 
-def build_package(pkgname, dependencies, packagesdir, outputdir, args):
-    reqs = dependencies[pkgname]
-    # Make sure all of the package's requirements are built first
-    for req in reqs:
-        build_package(req, dependencies, packagesdir, outputdir, args)
-    buildpkg.build_package(packagesdir / pkgname / "meta.yaml", args)
-    shutil.copyfile(
-        packagesdir / pkgname / "build" / (pkgname + ".data"),
-        outputdir / (pkgname + ".data"),
-    )
-    shutil.copyfile(
-        packagesdir / pkgname / "build" / (pkgname + ".js"),
-        outputdir / (pkgname + ".js"),
-    )
-
-
-def build_packages(packagesdir, outputdir, args):
-    # We have to build the packages in the correct order (dependencies first),
-    # so first load in all of the package metadata and build a dependency map.
-    dependencies = {}
-    import_name_to_package_name = {}
-    included_packages = common._parse_package_subset(args.only)
-    if included_packages is not None:
-        # check that the specified packages exist
-        for name in included_packages:
-            if not (packagesdir / name).exists():
-                raise ValueError(
-                    f"package name {name} does not exist. "
-                    f"The value of PYODIDE_PACKAGES is likely incorrect."
-                )
-
-    for pkgdir in packagesdir.iterdir():
-        if included_packages is not None and pkgdir.name not in included_packages:
-            print(
-                f"Warning: skipping build of {pkgdir.name} due "
-                f"to specified PYODIDE_PACKAGES"
-            )
-            continue
+class Package:
+    def __init__(self, pkgdir: Path):
+        self.pkgdir = pkgdir
 
         pkgpath = pkgdir / "meta.yaml"
-        if pkgdir.is_dir() and pkgpath.is_file():
-            pkg = common.parse_package(pkgpath)
-            name = pkg["package"]["name"]
-            reqs = pkg.get("requirements", {}).get("run", [])
-            dependencies[name] = reqs
-            imports = pkg.get("test", {}).get("imports", [name])
-            for imp in imports:
-                import_name_to_package_name[imp] = name
+        if not pkgpath.is_file():
+            raise ValueError(f"Directory {pkgdir} does not contain meta.yaml")
 
-    for pkgname in dependencies.keys():
-        build_package(pkgname, dependencies, packagesdir, outputdir, args)
+        self.meta: dict = common.parse_package(pkgpath)
+        self.name: str = self.meta["package"]["name"]
 
-    # The "test" package is built in a different way, so we hardcode its
-    # existence here.
-    dependencies["test"] = []
+        assert self.name == pkgdir.stem
 
-    # This is done last so the Makefile can use it as a completion token.
-    with open(outputdir / "packages.json", "w") as fd:
-        json.dump(
-            {
-                "dependencies": dependencies,
-                "import_name_to_package_name": import_name_to_package_name,
-            },
-            fd,
+        # List of unbuilt dependencies
+        self.dependencies: List[str] = self.meta.get("requirements", {}).get("run", [])
+        self.unbuilt_dependencies: Set[str] = set(self.dependencies)
+        self.dependents: Set[str] = set()
+
+    def build(self, outputdir: Path, args):
+        buildpkg.build_package(self.pkgdir / "meta.yaml", args)
+        shutil.copyfile(
+            self.pkgdir / "build" / (self.name + ".data"),
+            outputdir / (self.name + ".data"),
         )
+        shutil.copyfile(
+            self.pkgdir / "build" / (self.name + ".js"),
+            outputdir / (self.name + ".js"),
+        )
+
+
+# The strategy for building packages is as follows --- we have a set of
+# packages that we eventually want to build, each represented by a Package
+# object defined above. Each package remembers the list of all packages that
+# depend on it (pkg.dependents) and all its dependencies that are not yet
+# built (pkg.dependencies).
+#
+# We keep a list of packages we are ready to build (to_build). Iteratively, we
+#
+#  - pop a package off the list
+#  - build it
+#  - for each dependent, remove the current package from the list of unbuilt
+#    dependencies. If all dependencies of the dependent have been built, add
+#    the dependent to to_build
+#
+# We keep iterating until to_build is empty. When it is empty, if there are no
+# circular dependencies, then all packages should have been built, which we
+# check with an assert just to be sure.
+def build_packages(packagesdir, outputdir, args):
+    pkg_map: Dict[str, Package] = {}
+
+    # Packages that we are ready to build
+    to_build: Set[Package] = set()
+
+    packages: Optional[Set[str]] = common._parse_package_subset(args.only)
+    if packages is None:
+        packages = set(
+            str(x) for x in packagesdir.iterdir() if (x / "meta.yaml").is_file()
+        )
+
+    # Generate Package objects for all specified packages and recursive
+    # dependencies.
+    while packages:
+        pkgname = packages.pop()
+        if pkg_map.get(pkgname) is not None:
+            continue
+
+        pkg = Package(packagesdir / pkgname)
+        pkg_map[pkg.name] = pkg
+
+        # If a package has no dependencies, we are able to build it.
+        if len(pkg.dependencies) == 0:
+            to_build.add(pkg)
+
+        for dep in pkg.dependencies:
+            # This won't catch all duplicates but let's try our best
+            if pkg_map.get(dep) is None:
+                packages.add(dep)
+
+    # Build set of dependents
+    for pkg in pkg_map.values():
+        for dep in pkg.dependencies:
+            pkg_map[dep].dependents.add(pkg.name)
+
+    num_built = 0
+    while to_build:
+        pkg = to_build.pop()
+        pkg.build(outputdir, args)
+        for dependent in pkg.dependents:
+            dependent = pkg_map[dependent]
+            dependent.unbuilt_dependencies.remove(pkg.name)
+            if len(dependent.unbuilt_dependencies) == 0:
+                to_build.add(dependent)
+
+        num_built += 1
+
+    assert len(pkg_map) == num_built
+
+    # Build package.json data. The "test" package is built in a different way,
+    # so we hardcode its existence here.
+    #
+    # This is done last so the Makefile can use it as a completion token.
+    package_data = {
+        "dependencies": {"test": []},
+        "import_name_to_package_name": {},
+    }
+
+    for name, pkg in pkg_map.items():
+        package_data["dependencies"][name] = pkg.dependencies
+        for imp in pkg.meta.get("test", {}).get("imports", [name]):
+            package_data["import_name_to_package_name"][imp] = name
+
+    with open(outputdir / "packages.json", "w") as fd:
+        json.dump(package_data, fd)
 
 
 def make_parser(parser):
