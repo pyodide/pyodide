@@ -39,7 +39,7 @@ class Package:
 
     def build(self, outputdir: Path, args):
         with open(self.pkgdir / "build.log", "w") as f:
-            subprocess.run(
+            p = subprocess.run(
                 [
                     sys.executable,
                     "-m",
@@ -57,14 +57,15 @@ class Package:
                     "--install-dir",
                     args.install_dir,
                 ],
-                check=True,
+                check=False,
                 stdout=f,
                 stderr=subprocess.STDOUT,
             )
 
         with open(self.pkgdir / "build.log", "r") as f:
-            for line in f:
-                print(line, end="")
+            shutil.copyfileobj(f, sys.stdout)
+
+        p.check_returncode()
 
         shutil.copyfile(
             self.pkgdir / "build" / (self.name + ".data"),
@@ -84,24 +85,27 @@ class Package:
         return len(self.dependents) == len(other.dependents)
 
 
-# The strategy for building packages is as follows --- we have a set of
-# packages that we eventually want to build, each represented by a Package
-# object defined above. Each package remembers the list of all packages that
-# depend on it (pkg.dependents) and all its dependencies that are not yet
-# built (pkg.dependencies).
-#
-# We keep a list of packages we are ready to build (to_build). Iteratively, we
-#
-#  - pop a package off the list
-#  - build it
-#  - for each dependent, remove the current package from the list of unbuilt
-#    dependencies. If all dependencies of the dependent have been built, add
-#    the dependent to to_build
-#
-# We keep iterating until to_build is empty. When it is empty, if there are no
-# circular dependencies, then all packages should have been built, which we
-# check with an assert just to be sure.
-def build_packages(packagesdir, outputdir, args):
+def build_packages(packagesdir: Path, outputdir: Path, args):
+    """
+    The strategy for building packages is as follows --- we have a set of
+    packages that we eventually want to build, each represented by a Package
+    object defined above. Each package remembers the list of all packages that
+    depend on it (pkg.dependents) and all its dependencies that are not yet
+    built (pkg.dependencies).
+
+    We keep a list of packages we are ready to build (to_build). Iteratively, we
+
+     - pop a package off the list
+     - build it
+     - for each dependent, remove the current package from the list of unbuilt
+       dependencies. If all dependencies of the dependent have been built, add
+       the dependent to to_build
+
+    We keep iterating until to_build is empty. When it is empty, if there are
+    no circular dependencies, then all packages should have been built, which
+    we check with an assert just to be sure.
+    """
+
     pkg_map: Dict[str, Package] = {}
 
     packages: Optional[Set[str]] = common._parse_package_subset(args.only)
@@ -114,14 +118,11 @@ def build_packages(packagesdir, outputdir, args):
     # dependencies.
     while packages:
         pkgname = packages.pop()
-        if pkg_map.get(pkgname) is not None:
-            continue
 
         pkg = Package(packagesdir / pkgname)
         pkg_map[pkg.name] = pkg
 
         for dep in pkg.dependencies:
-            # This won't catch all duplicates but let's try our best
             if pkg_map.get(dep) is None:
                 packages.add(dep)
 
@@ -150,7 +151,7 @@ def build_packages(packagesdir, outputdir, args):
             # Release the GIL so new packages get queued
             sleep(0.01)
 
-    for n in range(0, args.num_threads):
+    for n in range(0, args.n_jobs):
         Thread(target=builder, args=(n + 1,), daemon=True).start()
 
     num_built = 0
@@ -249,7 +250,7 @@ def make_parser(parser):
         ),
     )
     parser.add_argument(
-        "--num-threads", type=int, nargs="?", default=4, help="Number of threads to use"
+        "--n-jobs", type=int, nargs="?", default=4, help="Number of threads to use"
     )
     return parser
 
