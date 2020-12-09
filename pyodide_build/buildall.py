@@ -27,7 +27,6 @@ class Package:
 
         assert self.name == pkgdir.stem
 
-        # List of unbuilt dependencies
         self.dependencies: List[str] = self.meta.get("requirements", {}).get("run", [])
         self.unbuilt_dependencies: Set[str] = set(self.dependencies)
         self.dependents: Set[str] = set()
