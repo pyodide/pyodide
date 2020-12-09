@@ -64,7 +64,7 @@ class Package:
 
         with open(self.pkgdir / "build.log", "r") as f:
             for line in f:
-                print(line)
+                print(line, end="")
 
         shutil.copyfile(
             self.pkgdir / "build" / (self.name + ".data"),
