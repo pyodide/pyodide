@@ -5,15 +5,22 @@ Build all of the packages in a given directory.
 """
 
 import argparse
+from functools import total_ordering
 import json
 from pathlib import Path
+from queue import Queue, PriorityQueue
 import shutil
+import subprocess
+import sys
+from threading import Thread
+from time import sleep
 from typing import Dict, Set, Optional, List
 
 from . import common
 from . import buildpkg
 
 
+@total_ordering
 class Package:
     def __init__(self, pkgdir: Path):
         self.pkgdir = pkgdir
@@ -32,7 +39,34 @@ class Package:
         self.dependents: Set[str] = set()
 
     def build(self, outputdir: Path, args):
-        buildpkg.build_package(self.pkgdir / "meta.yaml", args)
+        with open(self.pkgdir / "build.log", "w") as f:
+            subprocess.run(
+                [
+                    sys.executable,
+                    "-m",
+                    "pyodide_build",
+                    "buildpkg",
+                    str(self.pkgdir / "meta.yaml"),
+                    "--package_abi",
+                    str(args.package_abi),
+                    "--cflags",
+                    args.cflags,
+                    "--ldflags",
+                    args.ldflags,
+                    "--target",
+                    args.target,
+                    "--install-dir",
+                    args.install_dir,
+                ],
+                check=True,
+                stdout=f,
+                stderr=subprocess.STDOUT,
+            )
+
+        with open(self.pkgdir / "build.log", "r") as f:
+            for line in f:
+                print(line)
+
         shutil.copyfile(
             self.pkgdir / "build" / (self.name + ".data"),
             outputdir / (self.name + ".data"),
@@ -41,6 +75,14 @@ class Package:
             self.pkgdir / "build" / (self.name + ".js"),
             outputdir / (self.name + ".js"),
         )
+
+    # We use this in the priority queue, which pops off the smallest element.
+    # So we want the smallest element to have the largest number of dependents
+    def __lt__ (self, other):
+        return len(self.dependents) > len(other.dependents)
+
+    def __eq__ (self, other):
+        return len(self.dependents) == len(other.dependents)
 
 
 # The strategy for building packages is as follows --- we have a set of
@@ -63,9 +105,6 @@ class Package:
 def build_packages(packagesdir, outputdir, args):
     pkg_map: Dict[str, Package] = {}
 
-    # Packages that we are ready to build
-    to_build: Set[Package] = set()
-
     packages: Optional[Set[str]] = common._parse_package_subset(args.only)
     if packages is None:
         packages = set(
@@ -82,10 +121,6 @@ def build_packages(packagesdir, outputdir, args):
         pkg = Package(packagesdir / pkgname)
         pkg_map[pkg.name] = pkg
 
-        # If a package has no dependencies, we are able to build it.
-        if len(pkg.dependencies) == 0:
-            to_build.add(pkg)
-
         for dep in pkg.dependencies:
             # This won't catch all duplicates but let's try our best
             if pkg_map.get(dep) is None:
@@ -96,17 +131,40 @@ def build_packages(packagesdir, outputdir, args):
         for dep in pkg.dependencies:
             pkg_map[dep].dependents.add(pkg.name)
 
+    # Insert packages into build_queue. We *must* do this after counting
+    # dependents, because the ordering ought not to change after insertion.
+    build_queue: PriorirtyQueue = PriorityQueue()
+    for pkg in pkg_map.values():
+        if len(pkg.dependencies) == 0:
+            build_queue.put(pkg)
+
+    built_queue = Queue()
+
+    def builder(n):
+        print(f"Starting thread {n}")
+        while True:
+            pkg = build_queue.get()
+            print(f"Thread {n} building {pkg.name}")
+            pkg.build(outputdir, args)
+            print(f"Thread {n} built {pkg.name}")
+            built_queue.put(pkg)
+            sleep(0.01)
+
+    threads = [Thread(target=builder, daemon=True, args=(n,)).start() for n in range(0, 4)]
+
     num_built = 0
-    while to_build:
-        pkg = to_build.pop()
-        pkg.build(outputdir, args)
+    while num_built < len(pkg_map):
+        pkg = built_queue.get()
+        num_built += 1
+
         for dependent in pkg.dependents:
             dependent = pkg_map[dependent]
             dependent.unbuilt_dependencies.remove(pkg.name)
             if len(dependent.unbuilt_dependencies) == 0:
-                to_build.add(dependent)
-
-        num_built += 1
+                # Due to to GIL, all packages will be added before a package
+                # gets picked up by a thread, so it correctly compiles the most
+                # prioritized one.
+                build_queue.put(dependent)
 
     assert len(pkg_map) == num_built
 
@@ -191,6 +249,13 @@ def make_parser(parser):
         help=(
             "Only build the specified packages, provided as a comma " "separated list"
         ),
+    )
+    parser.add_argument(
+        "--num-threads",
+        type=str,
+        nargs="?",
+        default=4,
+        help="Number of threads to use"
     )
     return parser
 

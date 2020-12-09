@@ -17,5 +17,5 @@ deps:
 	$(HOSTPYTHON) -m pip install "Cython<0.30.0" Tempita
 
 clean:
-	rm -rf ./*/build
+	rm -rf ./*/build ./*/build.log
 	rm -rf ./.artifacts
