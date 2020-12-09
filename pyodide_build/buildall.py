@@ -150,7 +150,7 @@ def build_packages(packagesdir, outputdir, args):
             # Release the GIL so new packages get queued
             sleep(0.01)
 
-    for n in range(0, arg.num_threads):
+    for n in range(0, args.num_threads):
         Thread(target=builder, args=(n + 1,), daemon=True).start()
 
     num_built = 0
