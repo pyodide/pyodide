@@ -84,7 +84,10 @@ class Package:
     def __eq__(self, other) -> bool:
         return len(self.dependents) == len(other.dependents)
 
-def generate_dependency_graph(packages_dir: Path, package_list: Optional[str]) -> Dict[str, Package]:
+
+def generate_dependency_graph(
+    packages_dir: Path, package_list: Optional[str]
+) -> Dict[str, Package]:
     """
     This generates a dependency graph for the packages listed in package_list.
     A node in the graph is a Package object defined above, which maintains a
@@ -129,6 +132,7 @@ def generate_dependency_graph(packages_dir: Path, package_list: Optional[str]) -
             pkg_map[dep].dependents.add(pkg.name)
 
     return pkg_map
+
 
 def build_from_graph(pkg_map: Dict[str, Package], outputdir: Path, args) -> None:
     """
@@ -181,6 +185,7 @@ def build_from_graph(pkg_map: Dict[str, Package], outputdir: Path, args) -> None
             dependent.unbuilt_dependencies.remove(pkg.name)
             if len(dependent.unbuilt_dependencies) == 0:
                 build_queue.put(dependent)
+
 
 def build_packages(packages_dir: Path, outputdir: Path, args) -> None:
     pkg_map = generate_dependency_graph(packages_dir, args.only)
