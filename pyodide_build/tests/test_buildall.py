@@ -1,8 +1,10 @@
 from collections import namedtuple
+from time import sleep
 
 from pathlib import Path
 
 from pyodide_build import buildall
+import pytest
 
 PACKAGES_DIR = (Path(__file__) / ".." / ".." / ".." / "packages").resolve()
 
@@ -40,3 +42,24 @@ def test_build_dependencies():
     assert set(build_list) == packages
     assert build_list.index("distlib") < build_list.index("micropip")
     assert build_list.index("soupsieve") < build_list.index("beautifulsoup4")
+
+
+@pytest.mark.parametrize("n_jobs", [1, 4])
+def test_build_all_dependencies(n_jobs, monkeypatch):
+    """Try building all the dependency graph, without the actual build operations"""
+
+    class MockPackage(buildall.Package):
+        n_builds = 0
+
+        def build(self, outputdir: Path, args) -> None:
+            sleep(0.005)
+            self.n_builds += 1
+            # check that each build is only run once
+            assert self.n_builds == 1
+
+    monkeypatch.setattr(buildall, "Package", MockPackage)
+
+    pkg_map = buildall.generate_dependency_graph(PACKAGES_DIR, package_list=None)
+
+    Args = namedtuple("args", ["n_jobs"])
+    buildall.build_from_graph(pkg_map, Path("."), Args(n_jobs=n_jobs))
