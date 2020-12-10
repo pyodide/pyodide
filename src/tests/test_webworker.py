@@ -46,7 +46,6 @@ def test_runwebworker_exception_after_import(selenium_standalone):
         selenium_standalone.run_webworker(
             """
             import pyparsing
-            x = np.empty(5)
             42 / 0
             """
         )
