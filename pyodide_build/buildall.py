@@ -37,7 +37,7 @@ class Package:
         self.unbuilt_dependencies: Set[str] = set(self.dependencies)
         self.dependents: Set[str] = set()
 
-    def build(self, outputdir: Path, args):
+    def build(self, outputdir: Path, args) -> None:
         with open(self.pkgdir / "build.log", "w") as f:
             p = subprocess.run(
                 [
@@ -78,14 +78,14 @@ class Package:
 
     # We use this in the priority queue, which pops off the smallest element.
     # So we want the smallest element to have the largest number of dependents
-    def __lt__(self, other):
+    def __lt__(self, other) -> bool:
         return len(self.dependents) > len(other.dependents)
 
-    def __eq__(self, other):
+    def __eq__(self, other) -> bool:
         return len(self.dependents) == len(other.dependents)
 
 
-def build_packages(packagesdir: Path, outputdir: Path, args):
+def build_packages(packagesdir: Path, outputdir: Path, args) -> None:
     """
     The strategy for building packages is as follows --- we have a set of
     packages that we eventually want to build, each represented by a Package
@@ -133,12 +133,12 @@ def build_packages(packagesdir: Path, outputdir: Path, args):
 
     # Insert packages into build_queue. We *must* do this after counting
     # dependents, because the ordering ought not to change after insertion.
-    build_queue: PriorirtyQueue = PriorityQueue()
+    build_queue: PriorityQueue = PriorityQueue()
     for pkg in pkg_map.values():
         if len(pkg.dependencies) == 0:
             build_queue.put(pkg)
 
-    built_queue = Queue()
+    built_queue: Queue = Queue()
 
     def builder(n):
         print(f"Starting thread {n}")
@@ -159,8 +159,8 @@ def build_packages(packagesdir: Path, outputdir: Path, args):
         pkg = built_queue.get()
         num_built += 1
 
-        for dependent in pkg.dependents:
-            dependent = pkg_map[dependent]
+        for _dependent in pkg.dependents:
+            dependent = pkg_map[_dependent]
             dependent.unbuilt_dependencies.remove(pkg.name)
             if len(dependent.unbuilt_dependencies) == 0:
                 build_queue.put(dependent)
@@ -171,7 +171,7 @@ def build_packages(packagesdir: Path, outputdir: Path, args):
     # so we hardcode its existence here.
     #
     # This is done last so the Makefile can use it as a completion token.
-    package_data = {
+    package_data: dict = {
         "dependencies": {"test": []},
         "import_name_to_package_name": {},
     }
