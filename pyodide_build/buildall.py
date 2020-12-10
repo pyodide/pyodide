@@ -84,38 +84,35 @@ class Package:
     def __eq__(self, other) -> bool:
         return len(self.dependents) == len(other.dependents)
 
-
-def build_packages(packagesdir: Path, outputdir: Path, args) -> None:
+def generate_dependency_graph(packagesdir: Path, package_list: Optional[str]) -> Dict[str, Package]:
     """
-    The strategy for building packages is as follows --- we have a set of
-    packages that we eventually want to build, each represented by a Package
-    object defined above. Each package remembers the list of all packages that
-    depend on it (pkg.dependents) and all its dependencies that are not yet
-    built (pkg.dependencies).
+    This generates a dependency graph for the packages listed in package_list.
+    A node in the graph is a Package object defined above, which maintains a
+    list of dependencies and also dependents. That is, each node stores both
+    incoming and outgoing edges.
 
-    We keep a list of packages we are ready to build (to_build). Iteratively, we
+    The dependencies and dependents are stored via their name, and we have a
+    lookup table pkg_map: Dict[str, Package] to look up the corresponding
+    Package object. The function returns pkg_map, which contains all packages
+    in the graph as its values.
 
-     - pop a package off the list
-     - build it
-     - for each dependent, remove the current package from the list of unbuilt
-       dependencies. If all dependencies of the dependent have been built, add
-       the dependent to to_build
+    Parameters:
+     - packagesdir: directory that contains packages
+     - package_list: set of packages to build. If None, then all packages in
+       packagesdir are compiled.
 
-    We keep iterating until to_build is empty. When it is empty, if there are
-    no circular dependencies, then all packages should have been built, which
-    we check with an assert just to be sure.
+    Returns:
+     - pkg_map: dictionary mapping package names to Package objects
     """
 
     pkg_map: Dict[str, Package] = {}
 
-    packages: Optional[Set[str]] = common._parse_package_subset(args.only)
+    packages: Optional[Set[str]] = common._parse_package_subset(package_list)
     if packages is None:
         packages = set(
             str(x) for x in packagesdir.iterdir() if (x / "meta.yaml").is_file()
         )
 
-    # Generate Package objects for all specified packages and recursive
-    # dependencies.
     while packages:
         pkgname = packages.pop()
 
@@ -126,10 +123,30 @@ def build_packages(packagesdir: Path, outputdir: Path, args) -> None:
             if pkg_map.get(dep) is None:
                 packages.add(dep)
 
-    # Build set of dependents
+    # Compute dependents
     for pkg in pkg_map.values():
         for dep in pkg.dependencies:
             pkg_map[dep].dependents.add(pkg.name)
+
+    return pkg_map
+
+def build_from_graph(pkg_map: Dict[str, Package], outputdir: Path, args) -> None:
+    """
+    This builds packages in pkg_map in parallel, building at most args.n_jobs
+    packages at once.
+
+    We have a priority queue of packages we are ready to build (build_queue),
+    where a package is ready to build if all its dependencies are built. The
+    priority is based on the number of dependents --- we prefer to build
+    packages with more dependents first.
+
+    To build packages in parallel, we use a thread pool of args.n_jobs many
+    threads listening to build_queue. When the thread is free, it takes an
+    item off build_queue and builds it. Once the package is built, it sends the
+    package to the built_queue. The main thread listens to the built_queue and
+    checks if any of the dependents are ready to be built. If so, it add the
+    package to the build queue.
+    """
 
     # Insert packages into build_queue. We *must* do this after counting
     # dependents, because the ordering ought not to change after insertion.
@@ -165,7 +182,10 @@ def build_packages(packagesdir: Path, outputdir: Path, args) -> None:
             if len(dependent.unbuilt_dependencies) == 0:
                 build_queue.put(dependent)
 
-    assert len(pkg_map) == num_built
+def build_packages(packagesdir: Path, outputdir: Path, args) -> None:
+    pkg_map = generate_dependency_graph(packagesdir, args.only)
+
+    build_from_graph(pkg_map, outputdir, args)
 
     # Build package.json data. The "test" package is built in a different way,
     # so we hardcode its existence here.
