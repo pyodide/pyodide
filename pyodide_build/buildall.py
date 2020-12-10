@@ -275,7 +275,11 @@ def make_parser(parser):
         ),
     )
     parser.add_argument(
-        "--n-jobs", type=int, nargs="?", default=4, help="Number of threads to use"
+        "--n-jobs",
+        type=int,
+        nargs="?",
+        default=4,
+        help="Number of packages to build in parallel",
     )
     return parser
 
