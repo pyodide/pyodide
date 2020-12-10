@@ -84,7 +84,7 @@ class Package:
     def __eq__(self, other) -> bool:
         return len(self.dependents) == len(other.dependents)
 
-def generate_dependency_graph(packagesdir: Path, package_list: Optional[str]) -> Dict[str, Package]:
+def generate_dependency_graph(packages_dir: Path, package_list: Optional[str]) -> Dict[str, Package]:
     """
     This generates a dependency graph for the packages listed in package_list.
     A node in the graph is a Package object defined above, which maintains a
@@ -97,9 +97,9 @@ def generate_dependency_graph(packagesdir: Path, package_list: Optional[str]) ->
     in the graph as its values.
 
     Parameters:
-     - packagesdir: directory that contains packages
+     - packages_dir: directory that contains packages
      - package_list: set of packages to build. If None, then all packages in
-       packagesdir are compiled.
+       packages_dir are compiled.
 
     Returns:
      - pkg_map: dictionary mapping package names to Package objects
@@ -110,13 +110,13 @@ def generate_dependency_graph(packagesdir: Path, package_list: Optional[str]) ->
     packages: Optional[Set[str]] = common._parse_package_subset(package_list)
     if packages is None:
         packages = set(
-            str(x) for x in packagesdir.iterdir() if (x / "meta.yaml").is_file()
+            str(x) for x in packages_dir.iterdir() if (x / "meta.yaml").is_file()
         )
 
     while packages:
         pkgname = packages.pop()
 
-        pkg = Package(packagesdir / pkgname)
+        pkg = Package(packages_dir / pkgname)
         pkg_map[pkg.name] = pkg
 
         for dep in pkg.dependencies:
@@ -182,8 +182,8 @@ def build_from_graph(pkg_map: Dict[str, Package], outputdir: Path, args) -> None
             if len(dependent.unbuilt_dependencies) == 0:
                 build_queue.put(dependent)
 
-def build_packages(packagesdir: Path, outputdir: Path, args) -> None:
-    pkg_map = generate_dependency_graph(packagesdir, args.only)
+def build_packages(packages_dir: Path, outputdir: Path, args) -> None:
+    pkg_map = generate_dependency_graph(packages_dir, args.only)
 
     build_from_graph(pkg_map, outputdir, args)
 
@@ -276,9 +276,9 @@ def make_parser(parser):
 
 
 def main(args):
-    packagesdir = Path(args.dir[0]).resolve()
+    packages_dir = Path(args.dir[0]).resolve()
     outputdir = Path(args.output[0]).resolve()
-    build_packages(packagesdir, outputdir, args)
+    build_packages(packages_dir, outputdir, args)
 
 
 if __name__ == "__main__":
