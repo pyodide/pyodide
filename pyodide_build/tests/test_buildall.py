@@ -21,27 +21,35 @@ def test_generate_dependency_graph():
     assert pkg_map["beautifulsoup4"].dependents == set()
 
 
-def test_build_dependencies():
+@pytest.mark.parametrize("n_jobs", [1, 4])
+def test_build_dependencies(n_jobs, monkeypatch):
     build_list = []
 
     class MockPackage(buildall.Package):
         def build(self, outputdir: Path, args) -> None:
             build_list.append(self.name)
 
-    packages = {"micropip", "distlib", "soupsieve", "beautifulsoup4"}
-    pkg_map = {}
-    for pkg in packages:
-        pkg_map[pkg] = MockPackage(PACKAGES_DIR / pkg)
+    monkeypatch.setattr(buildall, "Package", MockPackage)
+    package_list = "lxml"
 
-    pkg_map["distlib"].dependents.add("micropip")
-    pkg_map["soupsieve"].dependents.add("beautifulsoup4")
+    pkg_map = buildall.generate_dependency_graph(PACKAGES_DIR, package_list)
 
     Args = namedtuple("args", ["n_jobs"])
-    buildall.build_from_graph(pkg_map, Path("."), Args(n_jobs=1))
+    buildall.build_from_graph(pkg_map, Path("."), Args(n_jobs=n_jobs))
 
-    assert set(build_list) == packages
+    assert set(build_list) == {
+        "distlib",
+        "soupsieve",
+        "beautifulsoup4",
+        "micropip",
+        "webencodings",
+        "html5lib",
+        "cssselect",
+        "lxml",
+    }
     assert build_list.index("distlib") < build_list.index("micropip")
     assert build_list.index("soupsieve") < build_list.index("beautifulsoup4")
+    assert build_list.index("webencodings") < build_list.index("beautifulsoup4")
 
 
 @pytest.mark.parametrize("n_jobs", [1, 4])
