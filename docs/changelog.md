@@ -16,6 +16,8 @@
 - Updated docker image to Debian buster
 - FIX Infer package tarball directory from source url
   [#687](https://github.com/iodide-project/pyodide/pull/687)
+- FIX Get last version from PyPi when installing a module via micropip
+  [#846](https://github.com/iodide-project/pyodide/pull/846)
 - Updated to emscripten 1.38.34
   [#480](https://github.com/iodide-project/pyodide/pull/480)
 - New packages: freesasa, lxml, python-sat, traits, astropy
