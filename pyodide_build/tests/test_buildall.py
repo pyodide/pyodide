@@ -10,9 +10,7 @@ PACKAGES_DIR = (Path(__file__) / ".." / ".." / ".." / "packages").resolve()
 
 
 def test_generate_dependency_graph():
-    package_list = "beautifulsoup4"
-
-    pkg_map = buildall.generate_dependency_graph(PACKAGES_DIR, package_list)
+    pkg_map = buildall.generate_dependency_graph(PACKAGES_DIR, "beautifulsoup4")
 
     assert set(pkg_map.keys()) == {"distlib", "soupsieve", "beautifulsoup4", "micropip"}
     assert pkg_map["soupsieve"].dependencies == []
@@ -30,9 +28,8 @@ def test_build_dependencies(n_jobs, monkeypatch):
             build_list.append(self.name)
 
     monkeypatch.setattr(buildall, "Package", MockPackage)
-    package_list = "lxml"
 
-    pkg_map = buildall.generate_dependency_graph(PACKAGES_DIR, package_list)
+    pkg_map = buildall.generate_dependency_graph(PACKAGES_DIR, "lxml")
 
     Args = namedtuple("args", ["n_jobs"])
     buildall.build_from_graph(pkg_map, Path("."), Args(n_jobs=n_jobs))
@@ -71,3 +68,20 @@ def test_build_all_dependencies(n_jobs, monkeypatch):
 
     Args = namedtuple("args", ["n_jobs"])
     buildall.build_from_graph(pkg_map, Path("."), Args(n_jobs=n_jobs))
+
+
+@pytest.mark.parametrize("n_jobs", [1, 4])
+def test_build_error(n_jobs, monkeypatch):
+    """Try building all the dependency graph, without the actual build operations"""
+
+    class MockPackage(buildall.Package):
+        def build(self, outputdir: Path, args) -> None:
+            raise ValueError("Failed build")
+
+    monkeypatch.setattr(buildall, "Package", MockPackage)
+
+    pkg_map = buildall.generate_dependency_graph(PACKAGES_DIR, "lxml")
+
+    with pytest.raises(ValueError, match="Failed build"):
+        Args = namedtuple("args", ["n_jobs"])
+        buildall.build_from_graph(pkg_map, Path("."), Args(n_jobs=n_jobs))

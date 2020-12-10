@@ -166,7 +166,12 @@ def build_from_graph(pkg_map: Dict[str, Package], outputdir: Path, args) -> None
         while True:
             pkg = build_queue.get()
             print(f"Thread {n} building {pkg.name}")
-            pkg.build(outputdir, args)
+            try:
+                pkg.build(outputdir, args)
+            except Exception as e:
+                built_queue.put(e)
+                return
+
             print(f"Thread {n} built {pkg.name}")
             built_queue.put(pkg)
             # Release the GIL so new packages get queued
@@ -178,6 +183,9 @@ def build_from_graph(pkg_map: Dict[str, Package], outputdir: Path, args) -> None
     num_built = 0
     while num_built < len(pkg_map):
         pkg = built_queue.get()
+        if isinstance(pkg, Exception):
+            raise pkg
+
         num_built += 1
 
         for _dependent in pkg.dependents:
