@@ -22,7 +22,7 @@
 - Updated packages: numpy 1.15.4, pandas 1.0.5 among others.
 - Updated default `--ldflags` argument to `pyodide_build` scripts to equal what
   pyodide actually uses.
-
+- Drop support for serving .wasm files with incorrect mime type.
 
 ## Version 0.15.0
 *May 19, 2020*
