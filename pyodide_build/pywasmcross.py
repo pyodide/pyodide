@@ -120,7 +120,7 @@ def capture_compile(args):
     make_symlinks(env)
     env["PATH"] = str(ROOTDIR) + ":" + os.environ["PATH"]
 
-    cmd = [Path(args.host) / "bin" / "python3", "setup.py", "install"]
+    cmd = [sys.executable, "setup.py", "install"]
     if args.install_dir == "skip":
         cmd[-1] = "build"
     elif args.install_dir != "":
@@ -197,8 +197,8 @@ def handle_command(line, args, dryrun=False):
     --------
 
     >>> from collections import namedtuple
-    >>> Args = namedtuple('args', ['cflags', 'ldflags'])
-    >>> args = Args(cflags='', ldflags='')
+    >>> Args = namedtuple('args', ['cflags', 'ldflags', 'host'])
+    >>> args = Args(cflags='', ldflags='', host='')
     >>> handle_command(['gcc', 'test.c'], args, dryrun=True)
     emcc test.c
     ['emcc', 'test.c']
@@ -243,10 +243,10 @@ def handle_command(line, args, dryrun=False):
     for arg in line[1:]:
         if arg.startswith("-I"):
             if (
-                str(Path(arg[2:]).resolve()).startswith(args.host)
+                str(Path(arg[2:]).resolve()).startswith(sys.prefix + "/include/python")
                 and "site-packages" not in arg
             ):
-                arg = arg.replace("-I" + args.host, "-I" + args.target)
+                arg = arg.replace("-I" + sys.prefix, "-I" + args.target)
             # Don't include any system directories
             elif arg[2:].startswith("/usr"):
                 continue
@@ -306,6 +306,12 @@ def handle_command(line, args, dryrun=False):
             new_args.append("-Os")
             continue
 
+        if new_args[-1].startswith("-B") and "compiler_compat" in arg:
+            # conda uses custom compiler search paths with the compiler_compat folder.
+            # Ignore it.
+            del new_args[-1]
+            continue
+
         new_args.append(arg)
 
     # This can only be used for incremental rebuilds -- it generates
@@ -356,7 +362,7 @@ def clean_out_native_artifacts():
 
 def install_for_distribution(args):
     commands = [
-        Path(args.host) / "bin" / "python3",
+        sys.executable,
         "setup.py",
         "install",
         "--skip-build",
@@ -407,13 +413,6 @@ def make_parser(parser):
             nargs="?",
             default=common.DEFAULTLDFLAGS,
             help="Extra linking flags",
-        )
-        parser.add_argument(
-            "--host",
-            type=str,
-            nargs="?",
-            default=common.HOSTPYTHON,
-            help="The path to the host Python installation",
         )
         parser.add_argument(
             "--target",

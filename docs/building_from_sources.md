@@ -54,11 +54,6 @@ building on the host machine is preferred if at all possible.
 
 2. From a git checkout of Pyodide, run `./run_docker` or `./run_docker --pre-built`
 
-   Install libtinfo5 in the docker contaner,
-   ```
-   sudo apt install -y libtinfo5
-   ```
-
 3. Run `make` to build.
 
 Note: You can control the resources allocated to the build by setting the env vars
@@ -85,16 +80,16 @@ instance,
 PYODIDE_PACKAGES="toolz,attrs" make
 ```
 
-Note that this environment variable must contain both the packages and their
-dependencies. The package names must match the folder names in `packages/`
-exactly; in particular they are case sensitive.
+Dependencies of the listed packages will be built automatically as well.
+The package names must match the folder names in `packages/` exactly; in
+particular they are case sensitive.
 
 To build a minimal version of pyodide, set `PYODIDE_PACKAGES="micropip"`. The
-micropip and package is generally always included for any non empty value of
-`PYODIDE_PACKAGES`.
+packages micropip and distutils are always automatically included (but an empty
+`PYODIDE_PACKAGES` is interpreted as unset).
 
 If scipy is included in `PYODIDE_PACKAGES`, BLAS/LAPACK must be manually built
-first with `make -c packages/CLAPACK`.
+first with `make -C packages/CLAPACK`.
 
 ## Environment variables
 

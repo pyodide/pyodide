@@ -3,7 +3,7 @@ version: 2
 defaults: &defaults
   working_directory: ~/repo
   docker:
-    - image: iodide/pyodide-env:0.16.1
+    - image: iodide/pyodide-env:8
   environment:
     - EMSDK_NUM_CORES: 4
       EMCC_CORES: 4
@@ -18,8 +18,6 @@ jobs:
           name: lint
           command: |
             pip install black mypy
-            # TODO: investigate why clang-format without version is not available
-            sudo ln -s /usr/bin/clang-format-6.0 /usr/bin/clang-format
             make lint
             black --check --exclude tools/file_packager.py .
             mypy --ignore-missing-imports pyodide_build/ src/ packages/micropip/micropip/ packages/*/test*
@@ -31,11 +29,7 @@ jobs:
 
       - restore_cache:
           keys:
-          - v1-emsdk-{{ checksum "emsdk/Makefile" }}-v20201203-
-
-      - run:
-          name: system dependencies
-          command: sudo apt install -y libtinfo5
+          - v1-emsdk-{{ checksum "emsdk/Makefile" }}-v20201205-
 
       - run:
           name: build emsdk
@@ -59,7 +53,7 @@ jobs:
           command: |
             ccache -z
             # The following packages are currently used in the main pyodide test suite
-            PYODIDE_PACKAGES="micropip,pyparsing,pytz,packaging,kiwisolver,numpy" make
+            PYODIDE_PACKAGES="micropip,pyparsing,pytz,packaging,kiwisolver" make
             ccache -s
 
       - run:
@@ -69,7 +63,7 @@ jobs:
       - save_cache:
           paths:
             - ~/.ccache
-          key: v1-emsdk-{{ checksum "emsdk/Makefile" }}-v20201203-{{ .BuildNum }}
+          key: v1-emsdk-{{ checksum "emsdk/Makefile" }}-v20201205-{{ .BuildNum }}
 
       - persist_to_workspace:
           root: .
@@ -86,11 +80,7 @@ jobs:
 
       - restore_cache:
           keys:
-          - v1-emsdk-{{ checksum "emsdk/Makefile" }}-v20201203-
-
-      - run:
-          name: dependencies
-          command: sudo apt install -y libtinfo5 f2c
+          - v1-emsdk-{{ checksum "emsdk/Makefile" }}-v20201205-
 
       - run:
           name: build packages
@@ -149,7 +139,6 @@ jobs:
       - run:
           name: test
           command: |
-            pip install pytest-httpserver
             pytest packages/test* packages/*/test* -v -k firefox
 
   test-packages-chrome:
@@ -160,7 +149,6 @@ jobs:
       - run:
           name: test
           command: |
-            pip install pytest-httpserver
             pytest packages/test* packages/*/test* -v -k chrome
 
   test-python:
@@ -170,7 +158,7 @@ jobs:
       - run:
           name: deps
           command: |
-            sudo pip install pytest-cov
+            pip install pytest-cov
       - run:
           name: test
           command: |
@@ -185,7 +173,7 @@ jobs:
       - run:
           name: benchmark
           command: |
-            python benchmark/benchmark.py cpython/build/3.8.2/host/bin/python3 build/benchmarks.json
+            python benchmark/benchmark.py /usr/local/bin/python3 build/benchmarks.json
       - store_artifacts:
           path: /home/circleci/repo/build/benchmarks.json
 
