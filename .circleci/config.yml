@@ -67,7 +67,10 @@ jobs:
       - persist_to_workspace:
           root: .
           paths:
-            - .
+            - ./packages/
+            - ./build/
+            - ./emsdk/
+            - ./cpython/installs/python-*/include/
 
   build-packages:
     <<: *defaults
@@ -90,7 +93,7 @@ jobs:
             # when running make with PYODIDE_PACKAGES
             # TODO: this should be resolved with #713
             make -C packages/CLAPACK clean
-            make
+            make -C packages
             ccache -s
 
       - run:
