@@ -163,7 +163,7 @@ jobs:
       - run:
           name: deps
           command: |
-            pip install pytest-cov
+            pip install pytest-cov distlib
       - run:
           name: test
           command: |
