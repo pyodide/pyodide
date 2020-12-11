@@ -3,7 +3,7 @@ version: 2
 defaults: &defaults
   working_directory: ~/repo
   docker:
-    - image: iodide/pyodide-env:8
+    - image: iodide/pyodide-env:9
   environment:
     - EMSDK_NUM_CORES: 4
       EMCC_CORES: 4
@@ -17,7 +17,6 @@ jobs:
       - run:
           name: lint
           command: |
-            pip install black mypy
             make lint
             black --check --exclude tools/file_packager.py .
             mypy --ignore-missing-imports pyodide_build/ src/ packages/micropip/micropip/ packages/*/test*
@@ -29,7 +28,7 @@ jobs:
 
       - restore_cache:
           keys:
-          - v1-emsdk-{{ checksum "emsdk/Makefile" }}-v20201205-
+          - v1-emsdk-{{ checksum "emsdk/Makefile.envs" }}-v20201205-
 
       - run:
           name: build emsdk
@@ -63,7 +62,7 @@ jobs:
       - save_cache:
           paths:
             - ~/.ccache
-          key: v1-emsdk-{{ checksum "emsdk/Makefile" }}-v20201205-{{ .BuildNum }}
+          key: v1-emsdk-{{ checksum "emsdk/Makefile.envs" }}-v20201205-{{ .BuildNum }}
 
       - persist_to_workspace:
           root: .
@@ -80,7 +79,7 @@ jobs:
 
       - restore_cache:
           keys:
-          - v1-emsdk-{{ checksum "emsdk/Makefile" }}-v20201205-
+          - v1-emsdk-{{ checksum "emsdk/Makefile.envs" }}-v20201205-
 
       - run:
           name: build packages
@@ -101,7 +100,7 @@ jobs:
       - save_cache:
           paths:
             - ~/.ccache
-          key: v1-emsdk-{{ checksum "emsdk/Makefile" }}-v20201205-{{ .BuildNum }}
+          key: v1-emsdk-{{ checksum "emsdk/Makefile.envs" }}-v20201205-{{ .BuildNum }}
 
       - persist_to_workspace:
           root: .
@@ -120,8 +119,6 @@ jobs:
       - run:
           name: test
           command: |
-            # distlib is required by micropip
-            pip install distlib
             pytest src packages/micropip/ -v -k firefox -n 3
 
   test-core-chrome:
@@ -132,8 +129,6 @@ jobs:
       - run:
           name: test
           command: |
-            # distlib is required by micropip
-            pip install distlib
             pytest src packages/micropip/ -v -k chrome -n 3
 
   test-packages-firefox:
@@ -160,10 +155,6 @@ jobs:
     <<: *defaults
     steps:
       - checkout
-      - run:
-          name: deps
-          command: |
-            pip install pytest-cov distlib
       - run:
           name: test
           command: |
