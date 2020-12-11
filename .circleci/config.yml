@@ -122,7 +122,7 @@ jobs:
           command: |
             # distlib is required by micropip
             pip install distlib
-            pytest src packages/micropip/ -v -k firefox
+            pytest src packages/micropip/ -v -k firefox -n 3
 
   test-core-chrome:
     <<: *defaults
@@ -134,7 +134,7 @@ jobs:
           command: |
             # distlib is required by micropip
             pip install distlib
-            pytest src packages/micropip/ -v -k chrome
+            pytest src packages/micropip/ -v -k chrome -n 3
 
   test-packages-firefox:
     <<: *defaults
@@ -144,7 +144,7 @@ jobs:
       - run:
           name: test
           command: |
-            pytest packages/test* packages/*/test* -v -k firefox
+            pytest packages/test* packages/*/test* -v -k firefox -n 2
 
   test-packages-chrome:
     <<: *defaults
@@ -154,7 +154,7 @@ jobs:
       - run:
           name: test
           command: |
-            pytest packages/test* packages/*/test* -v -k chrome
+            pytest packages/test* packages/*/test* -v -k chrome -n 2
 
   test-python:
     <<: *defaults
@@ -167,7 +167,7 @@ jobs:
       - run:
           name: test
           command: |
-            pytest src pyodide_build packages/micropip/test_micropip.py -v -k 'not (chrome or firefox)' --cov=pyodide_build --cov=pyodide
+            pytest src pyodide_build packages/micropip/ -v -k 'not (chrome or firefox)' --cov=pyodide_build --cov=pyodide
 
   benchmark:
     <<: *defaults
