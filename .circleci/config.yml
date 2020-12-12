@@ -100,7 +100,7 @@ jobs:
       - save_cache:
           paths:
             - ~/.ccache
-          key: v1-emsdk-{{ checksum "emsdk/Makefile.envs" }}-v20201205-{{ .BuildNum }}
+          key: -{{ checksum "Makefile.envs" }}-v20201205-{{ .BuildNum }}
 
       - persist_to_workspace:
           root: .
