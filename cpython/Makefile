@@ -72,10 +72,10 @@ $(BUILD)/.patched: $(TARBALL)
 	touch $@
 
 
-$(ZLIBBUILD)/.patched: $(ZLIBTARBALL)
+$(ZLIBBUILD)/.configured: $(ZLIBTARBALL)
 	[ -d $(ROOT)/build ] || (mkdir $(ROOT)/build)
 	tar -C $(ROOT)/build/ -xf $(ROOT)/downloads/zlib-1.2.11.tar.gz
-	cat patches/zlib/*.patch | (cd $(ZLIBBUILD) ; patch -p1)
+	cd $(ZLIBBUILD); emconfigure ./configure
 	touch $@
 
 
@@ -98,7 +98,7 @@ $(BZIP2BUILD)/libbz2.a: $(BZIP2TARBALL)
 	)
 
 
-$(BUILD)/Makefile: $(BUILD)/.patched $(ZLIBBUILD)/.patched $(SQLITEBUILD)/libsqlite3.la $(BZIP2BUILD)/libbz2.a
+$(BUILD)/Makefile: $(BUILD)/.patched $(ZLIBBUILD)/.configured $(SQLITEBUILD)/libsqlite3.la $(BZIP2BUILD)/libbz2.a
 	cp config.site $(BUILD)/
 	( \
 		cd $(BUILD); \
