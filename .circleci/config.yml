@@ -92,7 +92,7 @@ jobs:
             # Mark CLAPACK as not built as it's currently incorrectly marked as built
             # when running make with PYODIDE_PACKAGES
             # TODO: this should be resolved with #713
-            make -C packages/CLAPACK clean
+            make -C packages/CLAPACK
             make -C packages
             ccache -s
 
