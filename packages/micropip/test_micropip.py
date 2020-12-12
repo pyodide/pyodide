@@ -69,3 +69,38 @@ def test_install_custom_url(selenium_standalone, web_server_tst_data):
     # wait untill micropip is loaded
     time.sleep(1)
     selenium_standalone.run("import snowballstemmer")
+
+
+def test_last_version_from_pypi():
+    pytest.importorskip("distlib")
+    import micropip
+
+    class Namespace:
+        def __init__(self, **entries):
+            self.__dict__.update(entries)
+
+    # requirement as returned by distlib.util.parse_requirement
+    requirement = Namespace(
+        constraints=None,
+        extras=None,
+        marker=None,
+        name="dummy_module",
+        requirement="dummy_module",
+        url=None,
+    )
+
+    # available versions
+    versions = ["0.0.1", "0.15.5", "0.9.1"]
+
+    # building metadata as returned from
+    # https://pypi.org/pypi/{pkgname}/json
+    metadata = {
+        "releases": {
+            v: [{"filename": f"dummy_module-{v}-py3-none-any.whl"}] for v in versions
+        }
+    }
+
+    # get version number from find_wheel
+    wheel, ver = micropip.PACKAGE_MANAGER.find_wheel(metadata, requirement)
+
+    assert ver == "0.15.5"
