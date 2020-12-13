@@ -25,6 +25,8 @@
 - Updated default `--ldflags` argument to `pyodide_build` scripts to equal what
   pyodide actually uses.
 - Drop support for serving .wasm files with incorrect mime type.
+- Replace C lz4 implementation with (upstream) javascript implementation.
+  [#851](https://github.com/iodide-project/pyodide/pull/851)
 
 ## Version 0.15.0
 *May 19, 2020*
