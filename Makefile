@@ -11,7 +11,6 @@ LIBXML=packages/libxml/libxml2-2.9.10/.libs/libxml2.a
 LIBXSLT=packages/libxslt/libxslt-1.1.33/libxslt/.libs/libxslt.a
 LIBICONV=packages/libiconv/libiconv-1.16/lib/.libs/libiconv.a
 ZLIB=packages/zlib/zlib-1.2.11/lib/libz.a
-LZ4LIB=packages/lz4/lz4-1.8.3/lib/liblz4.a
 CLAPACK=packages/CLAPACK/CLAPACK-WA/lapack_WA.bc
 
 PYODIDE_EMCC=$(PYODIDE_ROOT)/ccache/emcc
@@ -29,7 +28,6 @@ LDFLAGS=\
 	-O2 \
 	-s MODULARIZE=1 \
 	$(CPYTHONROOT)/installs/python-$(PYVERSION)/lib/libpython$(PYMINOR).a \
-	$(LZ4LIB) \
 	-s "BINARYEN_METHOD='native-wasm'" \
 	-s TOTAL_MEMORY=10485760 \
 	-s ALLOW_MEMORY_GROWTH=1 \
@@ -160,7 +158,6 @@ clean:
 	make -C packages/six clean
 	make -C packages/jedi clean
 	make -C packages/parso clean
-	make -C packages/lz4 clean
 	make -C packages/libxslt clean
 	make -C packages/libxml clean
 	make -C packages/libiconv clean
@@ -172,7 +169,7 @@ clean-all: clean
 	make -C cpython clean
 	rm -fr cpython/build
 
-%.bc: %.c $(CPYTHONLIB) $(LZ4LIB)
+%.bc: %.c $(CPYTHONLIB)
 	$(CC) -o $@ -c $< $(CFLAGS) -Isrc/type_conversion/
 
 
@@ -244,12 +241,6 @@ $(CPYTHONLIB): emsdk/emsdk/.complete $(PYODIDE_EMCC) $(PYODIDE_CXX)
 	date +"[%F %T] Building cpython..."
 	make -C $(CPYTHONROOT)
 	date +"[%F %T] done building cpython..."
-
-
-$(LZ4LIB):
-	date +"[%F %T] Building lz4..."
-	make -C packages/lz4
-	date +"[%F %T] done building lz4."
 
 
 $(LIBXML): $(CPYTHONLIB) $(ZLIB)
