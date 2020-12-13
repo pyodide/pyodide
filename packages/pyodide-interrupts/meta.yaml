@@ -1,10 +1,10 @@
 package:
   name: pyodide-interrupts
-  version: 0.1.0
+  version: 0.1.1
 
 source:
-  url: https://github.com/SpectralSequences/pyodide_interrupts/archive/00b9baa1f029c40069cd104aeafe8043397e9a25.zip
-  sha256: 5303e143cabf98ef3b212c737a93a06e6d3ed68ac32cf6d9e1adaf2d1ffb85e0
+  url: https://files.pythonhosted.org/packages/b1/c2/918c52e47bf91570d9883a1c761c4d78a59cf4d1d8f8c67c25a4e164ff87/pyodide-interrupts-0.1.1.tar.gz
+  sha256: b85bc38b92cd5c35dd1a5192a71495abe4cd57eadccfacbc0421fb44fb6c9e74
 
 test:
   imports:
