@@ -3,10 +3,10 @@
  */
 
 var languagePluginLoader = new Promise((resolve, reject) => {
-  // This is filled in by the Makefile to be either a local file or the
-  // deployed location. TODO: This should be done in a less hacky
-  // way.
-  var baseURL = self.languagePluginUrl || '{{DEPLOY}}';
+  // Note: PYODIDE_BASE_URL is an environement variable replaced in
+  // in this template in the Makefile. It's recommended to always set
+  // languagePluginUrl in any case.
+  var baseURL = self.languagePluginUrl || '{{ PYODIDE_BASE_URL }}';
   baseURL = baseURL.substr(0, baseURL.lastIndexOf('/')) + '/';
 
   ////////////////////////////////////////////////////////////
@@ -331,9 +331,9 @@ var languagePluginLoader = new Promise((resolve, reject) => {
   let isFirefox = navigator.userAgent.toLowerCase().indexOf('firefox') > -1;
 
   Module.checkABI = function(ABI_number) {
-    if (ABI_number !== parseInt('{{ABI}}')) {
+    if (ABI_number !== parseInt('{{ PYODIDE_PACKAGE_ABI }}')) {
       var ABI_mismatch_exception =
-          `ABI numbers differ. Expected {{ABI}}, got ${ABI_number}`;
+          `ABI numbers differ. Expected {{ PYODIDE_PACKAGE_ABI }}, got ${ABI_number}`;
       console.error(ABI_mismatch_exception);
       throw ABI_mismatch_exception;
     }

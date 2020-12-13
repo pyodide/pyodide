@@ -16,8 +16,12 @@
          console.error = function(message) {
              window.logs.push(message);
          }
+        <script type="text/javascript">
+            // set the pyodide files URL (packages.json, pyodide.asm.data etc)
+            window.languagePluginUrl = './';
         </script>
-        <script src="pyodide_dev.js"></script>
+        </script>
+        <script src="./pyodide.js"></script>
     </head>
     <body></body>
 </html>
