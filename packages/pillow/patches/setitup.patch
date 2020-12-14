@@ -1,0 +1,18 @@
+--- Pillow-8.0.1-bak/setup.py	2020-12-14 01:04:48.151227278 +0000
++++ Pillow-8.0.1/setup.py	2020-12-14 01:04:53.654510617 +0000
+@@ -207,6 +207,7 @@
+ 
+ 
+ def _find_include_file(self, include):
++    return 1
+     for directory in self.compiler.include_dirs:
+         _dbg("Checking for include file %s in %s", (include, directory))
+         if os.path.isfile(os.path.join(directory, include)):
+@@ -216,6 +217,7 @@
+ 
+ 
+ def _find_library_file(self, library):
++    return 1
+     ret = self.compiler.find_library_file(self.compiler.library_dirs, library)
+     if ret:
+         _dbg("Found library %s at %s", (library, ret))
