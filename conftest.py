@@ -161,7 +161,7 @@ class SeleniumWrapper:
     def setup_webworker(self):
         hostname = self.server_hostname
         port = self.server_port
-        url = f"http://{hostname}:{port}/webworker_dev.js"
+        url = f"http://{hostname}:{port}/webworker.js"
         self.run_js(
             f"""
             window.done = false;
