@@ -25,6 +25,6 @@ if __name__ == "__main__":
         if num_failed < 10:
             print("Rerunnning failed tests sequentially")
             clean_args(args)
-            subprocess.run(["pytest"] + args, check=True)
+            subprocess.run(["pytest", "--lf"] + args, check=True)
         else:
             print("More than 9 tests failed. Not rerunning")
