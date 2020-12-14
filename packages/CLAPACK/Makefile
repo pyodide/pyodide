@@ -32,3 +32,4 @@ $(SRC)/Makefile:
 		cd $(SRC); \
 		(cat ../patches/*.patch | patch -p1) \
 	)
+	cp make.inc $(SRC)
