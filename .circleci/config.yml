@@ -118,10 +118,8 @@ jobs:
           at: .
       - run:
           name: test
-          environment:
-            PYTEST_ARGS: src packages/micropip/ -k firefox
           command: |
-            pytest $PYTEST_ARGS -v -n 3 || pytest $PYTEST_ARGS -v --last-failed
+            tools/test.py src packages/micropip/ -v -k firefox -n 3
 
   test-core-chrome:
     <<: *defaults
@@ -130,10 +128,8 @@ jobs:
           at: .
       - run:
           name: test
-          environment:
-            PYTEST_ARGS: src packages/micropip/ -k chrome
           command: |
-            pytest $PYTEST_ARGS -v -n 3 || pytest $PYTEST_ARGS -v --last-failed
+            tools/test.py src packages/micropip/ -v -k chrome -n 3
 
   test-packages-firefox:
     <<: *defaults
@@ -142,10 +138,8 @@ jobs:
           at: .
       - run:
           name: test
-          environment:
-            PYTEST_ARGS: packages/test* packages/*/test* -k firefox
           command: |
-            pytest $PYTEST_ARGS -v -n 2 || pytest $PYTEST_ARGS -v --last-failed
+            tools/test.py packages/test* packages/*/test* -v -k firefox -n 2
 
   test-packages-chrome:
     <<: *defaults
@@ -154,10 +148,8 @@ jobs:
           at: .
       - run:
           name: test
-          environment:
-            PYTEST_ARGS: packages/test* packages/*/test* -k chrome
           command: |
-            pytest $PYTEST_ARGS -v -n 2 || pytest $PYTEST_ARGS -v --last-failed
+            tools/test.py packages/test* packages/*/test* -v -k chrome -n 2
 
   test-python:
     <<: *defaults
