@@ -120,6 +120,9 @@ index 57eff0d..d9a42da 100644
  
  backspac.o:	fio.h
  close.o:	fio.h
+diff --git a/F2CLIBS/libf2c/arith.h b/F2CLIBS/libf2c/arith.h
+new file mode 100644
+index 0000000..e69de29
 diff --git a/Makefile b/Makefile
 index 2875fbc..cf3cb64 100644
 --- a/Makefile
