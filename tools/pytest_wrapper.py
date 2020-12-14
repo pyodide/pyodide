@@ -6,8 +6,8 @@ import sys
 
 args = sys.argv[1:]
 
-# Remove -n <n> from argument list
 def clean_args(args: List[str]) -> None:
+    '''Remove -n <n> from argument list'''
     for i in range(0, len(args)):
         if args[i] == "-n":
             del args[i : i + 2]
@@ -28,3 +28,4 @@ if __name__ == "__main__":
             subprocess.run(["pytest", "--lf"] + args, check=True)
         else:
             print("More than 9 tests failed. Not rerunning")
+            raise

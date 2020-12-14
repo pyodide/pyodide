@@ -119,7 +119,7 @@ jobs:
       - run:
           name: test
           command: |
-            tools/test.py src packages/micropip/ -v -k firefox -n 3
+            tools/pytest_wrapper.py src packages/micropip/ -v -k firefox -n 3
 
   test-core-chrome:
     <<: *defaults
@@ -129,7 +129,7 @@ jobs:
       - run:
           name: test
           command: |
-            tools/test.py src packages/micropip/ -v -k chrome -n 3
+            tools/pytest_wrapper.py src packages/micropip/ -v -k chrome -n 3
 
   test-packages-firefox:
     <<: *defaults
@@ -139,7 +139,7 @@ jobs:
       - run:
           name: test
           command: |
-            tools/test.py packages/test* packages/*/test* -v -k firefox -n 2
+            tools/pytest_wrapper.py packages/test* packages/*/test* -v -k firefox -n 2
 
   test-packages-chrome:
     <<: *defaults
@@ -149,7 +149,7 @@ jobs:
       - run:
           name: test
           command: |
-            tools/test.py packages/test* packages/*/test* -v -k chrome -n 2
+            tools/pytest_wrapper.py packages/test* packages/*/test* -v -k chrome -n 2
 
   test-python:
     <<: *defaults

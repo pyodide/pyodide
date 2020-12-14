@@ -3,7 +3,7 @@ from pathlib import Path
 
 sys.path.append(str(Path(__file__).parents[2] / "tools"))
 
-from test import clean_args
+from pytest_wrapper import clean_args
 
 
 def test_find_imports():
