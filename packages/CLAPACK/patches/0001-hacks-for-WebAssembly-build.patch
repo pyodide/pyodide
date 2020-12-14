@@ -1,4 +1,4 @@
-commit 0356f10d78fb589a74050252b944f4c235eb7caf
+commit 59d50b7beb0f004f3ce690bac9ccbe7b558ee296
 Author: Adrian Bauer <agbauer@gmail.com>
 Date:   Tue Sep 19 13:30:49 2017 -0700
 
@@ -7,7 +7,7 @@ Date:   Tue Sep 19 13:30:49 2017 -0700
     Co-authored-by: Roman Yurchak <rth.yurchak@gmail.com>
 
 diff --git a/BLAS/SRC/Makefile b/BLAS/SRC/Makefile
-index 4835fd2..e52e4ed 100644
+index 4835fd2..a062032 100644
 --- a/BLAS/SRC/Makefile
 +++ b/BLAS/SRC/Makefile
 @@ -139,8 +139,7 @@ ALLOBJ=$(SBLAS1) $(SBLAS2) $(SBLAS3) $(DBLAS1) $(DBLAS2) $(DBLAS3)	\
@@ -16,7 +16,7 @@ index 4835fd2..e52e4ed 100644
  $(BLASLIB): $(ALLOBJ)
 -	$(ARCH) $(ARCHFLAGS) $@ $(ALLOBJ)
 -	$(RANLIB) $@
-+	$(LD) $(CFLAGS) -o $@ $(ALLOBJ)
++	$(LD) $(LDFLAGS) -o $@ $(ALLOBJ)
  
  single: $(SBLAS1) $(ALLBLAS) $(SBLAS2) $(SBLAS3)
  	$(ARCH) $(ARCHFLAGS) $(BLASLIB) $(SBLAS1) $(ALLBLAS) \
