@@ -32,9 +32,6 @@ LOADOPTS  =
 NOOPT     = -O0 -I$(TOPDIR)/INCLUDE
 DRVCFLAGS = $(CFLAGS)
 F2CCFLAGS = $(CFLAGS)
-
-CFLAGS_OPT=-Os -s INLINING_LIMIT=5
-LDFLAGS_OPT=-Os -s INLINING_LIMIT=5
 #######################################################################
 
 #
