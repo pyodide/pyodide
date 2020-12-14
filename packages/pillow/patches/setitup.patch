@@ -1,18 +1,52 @@
---- Pillow-8.0.1-bak/setup.py	2020-12-14 01:04:48.151227278 +0000
-+++ Pillow-8.0.1/setup.py	2020-12-14 01:04:53.654510617 +0000
-@@ -207,6 +207,7 @@
+--- Pillow-8.0.1-bak/setup.py	2020-12-14 08:32:50.000000000 +0100
++++ Pillow-8.0.1/setup.py	2020-12-14 08:34:19.000000000 +0100
+@@ -557,19 +557,11 @@
  
+         if feature.want("zlib"):
+             _dbg("Looking for zlib")
+-            if _find_include_file(self, "zlib.h"):
+-                if _find_library_file(self, "z"):
+-                    feature.zlib = "z"
+-                elif sys.platform == "win32" and _find_library_file(self, "zlib"):
+-                    feature.zlib = "zlib"  # alternative name
++            feature.zlib = "z"
  
- def _find_include_file(self, include):
-+    return 1
-     for directory in self.compiler.include_dirs:
-         _dbg("Checking for include file %s in %s", (include, directory))
-         if os.path.isfile(os.path.join(directory, include)):
-@@ -216,6 +217,7 @@
+         if feature.want("jpeg"):
+             _dbg("Looking for jpeg")
+-            if _find_include_file(self, "jpeglib.h"):
+-                if _find_library_file(self, "jpeg"):
+-                    feature.jpeg = "jpeg"
+-                elif sys.platform == "win32" and _find_library_file(self, "libjpeg"):
+-                    feature.jpeg = "libjpeg"  # alternative name
++            feature.jpeg = "jpeg"
  
+         feature.openjpeg_version = None
+         if feature.want("jpeg2000"):
+@@ -631,26 +623,7 @@
  
- def _find_library_file(self, library):
-+    return 1
-     ret = self.compiler.find_library_file(self.compiler.library_dirs, library)
-     if ret:
-         _dbg("Found library %s at %s", (library, ret))
+         if feature.want("freetype"):
+             _dbg("Looking for freetype")
+-            if _find_library_file(self, "freetype"):
+-                # look for freetype2 include files
+-                freetype_version = 0
+-                for subdir in self.compiler.include_dirs:
+-                    _dbg("Checking for include file %s in %s", ("ft2build.h", subdir))
+-                    if os.path.isfile(os.path.join(subdir, "ft2build.h")):
+-                        _dbg("Found %s in %s", ("ft2build.h", subdir))
+-                        freetype_version = 21
+-                        subdir = os.path.join(subdir, "freetype2")
+-                        break
+-                    subdir = os.path.join(subdir, "freetype2")
+-                    _dbg("Checking for include file %s in %s", ("ft2build.h", subdir))
+-                    if os.path.isfile(os.path.join(subdir, "ft2build.h")):
+-                        _dbg("Found %s in %s", ("ft2build.h", subdir))
+-                        freetype_version = 21
+-                        break
+-                if freetype_version:
+-                    feature.freetype = "freetype"
+-                    if subdir:
+-                        _add_directory(self.compiler.include_dirs, subdir, 0)
++            feature.freetype = "freetype"
+ 
+         if feature.want("lcms"):
+             _dbg("Looking for lcms")
