@@ -319,6 +319,8 @@ def handle_command(line, args, dryrun=False):
             continue
         elif arg == "-lpng16":
             continue
+        elif arg == "-lgfortran":
+            continue
 
         new_args.append(arg)
 
