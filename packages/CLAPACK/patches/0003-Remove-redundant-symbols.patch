@@ -1,26 +1,9 @@
-From 8aae131e7bf4cfe3979edbbdce21803e1c5f9ac1 Mon Sep 17 00:00:00 2001
-From: Roman Yurchak <rth.yurchak@pm.me>
-Date: Thu, 25 Oct 2018 11:50:14 +0200
-Subject: [PATCH 3/3] Remove redundant symbols
+commit 75c2ad0e2f981805b55eef6a8b69e502c07da2bf
+Author: Roman Yurchak <rth.yurchak@pm.me>
+Date:   Thu Oct 25 11:50:14 2018 +0200
 
----
- Makefile     |  9 +++++++++
- SRC/Makefile | 30 ++++++++++++++++++++----------
- make.inc     |  6 +-----
- 3 files changed, 30 insertions(+), 15 deletions(-)
+    Remove redundant symbols
 
-diff --git a/Makefile b/Makefile
-index b3467a6..83baba5 100644
---- a/Makefile
-+++ b/Makefile
-@@ -5,6 +5,7 @@
- #
- 
- include make.inc
-+include ../Makefile.envs
- 
- all: f2clib lib
- #all: f2clib lapack_install lib lapack_testing blas_testing variants_testing
 diff --git a/SRC/Makefile b/SRC/Makefile
 index 7491963..0cc1cda 100644
 --- a/SRC/Makefile
