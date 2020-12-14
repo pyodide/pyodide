@@ -7,7 +7,7 @@ import sys
 args = sys.argv[1:]
 
 def clean_args(args: List[str]) -> None:
-    '''Remove -n <n> from argument list'''
+    """Remove -n <n> from argument list"""
     for i in range(0, len(args)):
         if args[i] == "-n":
             del args[i : i + 2]
