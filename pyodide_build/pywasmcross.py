@@ -312,6 +312,13 @@ def handle_command(line, args, dryrun=False):
             del new_args[-1]
             continue
 
+        if arg == "-lfreetype":
+            continue
+        elif arg == "-lz":
+            continue
+        elif arg == "-lpng16":
+            continue
+
         new_args.append(arg)
 
     # This can only be used for incremental rebuilds -- it generates
