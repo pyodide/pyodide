@@ -13,6 +13,7 @@ source:
       - ./setup.cfg
 build:
   cflags: -s USE_ZLIB=1 -s USE_LIBJPEG=1 -s USE_FREETYPE=1
+  ldflags: -L ../../../../emsdk/emsdk/.emscripten_cache/asmjs/
 test:
   imports:
   - PIL

@@ -1,6 +1,24 @@
---- Pillow-8.0.1-bak/setup.py	2020-12-14 08:32:50.000000000 +0100
-+++ Pillow-8.0.1/setup.py	2020-12-14 08:34:19.000000000 +0100
-@@ -557,19 +557,11 @@
+--- Pillow-8.0.1-bak/setup.py	2020-12-14 15:23:52.000000000 +0100
++++ Pillow-8.0.1/setup.py	2020-12-14 15:24:24.000000000 +0100
+@@ -334,7 +334,7 @@
+                 _dbg("Requiring %s", x)
+                 self.feature.required.add(x)
+ 
+-    def _update_extension(self, name, libraries, define_macros=None, include_dirs=None):
++    def _update_extension(self, name, libraries, define_macros=None, include_dirs=None, extra_objects=None):
+         for extension in self.extensions:
+             if extension.name == name:
+                 extension.libraries += libraries
+@@ -342,6 +342,8 @@
+                     extension.define_macros += define_macros
+                 if include_dirs is not None:
+                     extension.include_dirs += include_dirs
++                if extra_objects is not None:
++                    extension.extra_objects += extra_objects
+                 break
+ 
+     def _remove_extension(self, name):
+@@ -557,19 +559,11 @@
  
          if feature.want("zlib"):
              _dbg("Looking for zlib")
@@ -22,7 +40,7 @@
  
          feature.openjpeg_version = None
          if feature.want("jpeg2000"):
-@@ -631,26 +623,7 @@
+@@ -631,26 +625,7 @@
  
          if feature.want("freetype"):
              _dbg("Looking for freetype")
@@ -50,3 +68,45 @@
  
          if feature.want("lcms"):
              _dbg("Looking for lcms")
+@@ -703,8 +678,10 @@
+ 
+         libs = self.add_imaging_libs.split()
+         defs = []
++        xobj = []
+         if feature.jpeg:
+-            libs.append(feature.jpeg)
++            #libs.append(feature.jpeg)
++            xobj.append("../../../../emsdk/emsdk/.emscripten_cache/asmjs/libjpeg.bc")
+             defs.append(("HAVE_LIBJPEG", None))
+         if feature.jpeg2000:
+             libs.append(feature.jpeg2000)
+@@ -712,7 +689,8 @@
+             if sys.platform == "win32" and not PLATFORM_MINGW:
+                 defs.append(("OPJ_STATIC", None))
+         if feature.zlib:
+-            libs.append(feature.zlib)
++            #libs.append(feature.zlib)
++            xobj.append("../../../../emsdk/emsdk/.emscripten_cache/asmjs/libz.a")
+             defs.append(("HAVE_LIBZ", None))
+         if feature.imagequant:
+             libs.append(feature.imagequant)
+@@ -741,15 +719,16 @@
+         else:
+             defs.append(("PILLOW_VERSION", f'"{PILLOW_VERSION}"'))
+ 
+-        self._update_extension("PIL._imaging", libs, defs)
++        self._update_extension("PIL._imaging", libs, defs, extra_objects=xobj)
+ 
+         #
+         # additional libraries
+ 
+         if feature.freetype:
+-            libs = ["freetype"]
++            libs = []
++            xobj = ["../../../../emsdk/emsdk/.emscripten_cache/asmjs/libfreetype.a"]
+             defs = []
+-            self._update_extension("PIL._imagingft", libs, defs)
++            self._update_extension("PIL._imagingft", libs, defs, extra_objects=xobj)
+         else:
+             self._remove_extension("PIL._imagingft")
+ 
