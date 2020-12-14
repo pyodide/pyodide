@@ -312,6 +312,7 @@ def handle_command(line, args, dryrun=False):
             del new_args[-1]
             continue
 
+        # See https://github.com/emscripten-core/emscripten/issues/8650
         if arg == "-lfreetype":
             continue
         elif arg == "-lz":
