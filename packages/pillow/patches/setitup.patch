@@ -1,112 +1,35 @@
---- Pillow-8.0.1-bak/setup.py	2020-12-14 15:23:52.000000000 +0100
-+++ Pillow-8.0.1/setup.py	2020-12-14 15:24:24.000000000 +0100
-@@ -334,7 +334,7 @@
-                 _dbg("Requiring %s", x)
-                 self.feature.required.add(x)
- 
--    def _update_extension(self, name, libraries, define_macros=None, include_dirs=None):
-+    def _update_extension(self, name, libraries, define_macros=None, include_dirs=None, extra_objects=None):
-         for extension in self.extensions:
-             if extension.name == name:
-                 extension.libraries += libraries
-@@ -342,6 +342,8 @@
-                     extension.define_macros += define_macros
-                 if include_dirs is not None:
-                     extension.include_dirs += include_dirs
-+                if extra_objects is not None:
-+                    extension.extra_objects += extra_objects
-                 break
- 
-     def _remove_extension(self, name):
-@@ -557,19 +559,11 @@
+--- a/setup.py	2020-10-22 16:27:16.000000000 +0200
++++ b/setup.py	2020-12-14 20:24:21.000000000 +0100
+@@ -557,7 +557,9 @@
  
          if feature.want("zlib"):
              _dbg("Looking for zlib")
 -            if _find_include_file(self, "zlib.h"):
--                if _find_library_file(self, "z"):
--                    feature.zlib = "z"
--                elif sys.platform == "win32" and _find_library_file(self, "zlib"):
--                    feature.zlib = "zlib"  # alternative name
-+            feature.zlib = "z"
++            if "PYODIDE_PACKAGE_ABI" in os.environ:
++                feature.zlib = "z"
++            elif _find_include_file(self, "zlib.h"):
+                 if _find_library_file(self, "z"):
+                     feature.zlib = "z"
+                 elif sys.platform == "win32" and _find_library_file(self, "zlib"):
+@@ -565,7 +567,9 @@
  
          if feature.want("jpeg"):
              _dbg("Looking for jpeg")
 -            if _find_include_file(self, "jpeglib.h"):
--                if _find_library_file(self, "jpeg"):
--                    feature.jpeg = "jpeg"
--                elif sys.platform == "win32" and _find_library_file(self, "libjpeg"):
--                    feature.jpeg = "libjpeg"  # alternative name
-+            feature.jpeg = "jpeg"
- 
-         feature.openjpeg_version = None
-         if feature.want("jpeg2000"):
-@@ -631,26 +625,7 @@
++            if "PYODIDE_PACKAGE_ABI" in os.environ:
++                feature.jpeg = "jpeg"
++            elif _find_include_file(self, "jpeglib.h"):
+                 if _find_library_file(self, "jpeg"):
+                     feature.jpeg = "jpeg"
+                 elif sys.platform == "win32" and _find_library_file(self, "libjpeg"):
+@@ -631,7 +635,9 @@
  
          if feature.want("freetype"):
              _dbg("Looking for freetype")
 -            if _find_library_file(self, "freetype"):
--                # look for freetype2 include files
--                freetype_version = 0
--                for subdir in self.compiler.include_dirs:
--                    _dbg("Checking for include file %s in %s", ("ft2build.h", subdir))
--                    if os.path.isfile(os.path.join(subdir, "ft2build.h")):
--                        _dbg("Found %s in %s", ("ft2build.h", subdir))
--                        freetype_version = 21
--                        subdir = os.path.join(subdir, "freetype2")
--                        break
--                    subdir = os.path.join(subdir, "freetype2")
--                    _dbg("Checking for include file %s in %s", ("ft2build.h", subdir))
--                    if os.path.isfile(os.path.join(subdir, "ft2build.h")):
--                        _dbg("Found %s in %s", ("ft2build.h", subdir))
--                        freetype_version = 21
--                        break
--                if freetype_version:
--                    feature.freetype = "freetype"
--                    if subdir:
--                        _add_directory(self.compiler.include_dirs, subdir, 0)
-+            feature.freetype = "freetype"
- 
-         if feature.want("lcms"):
-             _dbg("Looking for lcms")
-@@ -703,8 +678,10 @@
- 
-         libs = self.add_imaging_libs.split()
-         defs = []
-+        xobj = []
-         if feature.jpeg:
--            libs.append(feature.jpeg)
-+            #libs.append(feature.jpeg)
-+            xobj.append("../../../../emsdk/emsdk/.emscripten_cache/asmjs/libjpeg.bc")
-             defs.append(("HAVE_LIBJPEG", None))
-         if feature.jpeg2000:
-             libs.append(feature.jpeg2000)
-@@ -712,7 +689,8 @@
-             if sys.platform == "win32" and not PLATFORM_MINGW:
-                 defs.append(("OPJ_STATIC", None))
-         if feature.zlib:
--            libs.append(feature.zlib)
-+            #libs.append(feature.zlib)
-+            xobj.append("../../../../emsdk/emsdk/.emscripten_cache/asmjs/libz.a")
-             defs.append(("HAVE_LIBZ", None))
-         if feature.imagequant:
-             libs.append(feature.imagequant)
-@@ -741,15 +719,16 @@
-         else:
-             defs.append(("PILLOW_VERSION", f'"{PILLOW_VERSION}"'))
- 
--        self._update_extension("PIL._imaging", libs, defs)
-+        self._update_extension("PIL._imaging", libs, defs, extra_objects=xobj)
- 
-         #
-         # additional libraries
- 
-         if feature.freetype:
--            libs = ["freetype"]
-+            libs = []
-+            xobj = ["../../../../emsdk/emsdk/.emscripten_cache/asmjs/libfreetype.a"]
-             defs = []
--            self._update_extension("PIL._imagingft", libs, defs)
-+            self._update_extension("PIL._imagingft", libs, defs, extra_objects=xobj)
-         else:
-             self._remove_extension("PIL._imagingft")
- 
++            if "PYODIDE_PACKAGE_ABI" in os.environ:
++                feature.freetype = "freetype"
++            elif _find_library_file(self, "freetype"):
+                 # look for freetype2 include files
+                 freetype_version = 0
+                 for subdir in self.compiler.include_dirs:
