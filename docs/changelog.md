@@ -27,6 +27,9 @@
 - Drop support for serving .wasm files with incorrect mime type.
 - Replace C lz4 implementation with (upstream) javascript implementation.
   [#851](https://github.com/iodide-project/pyodide/pull/851)
+- New package
+  [pyodide-interrupt](https://pypi.org/project/pyodide-interrupts/), useful for
+  handling interrupts in Pyodide (see project descripion for details).
 
 ## Version 0.15.0
 *May 19, 2020*
