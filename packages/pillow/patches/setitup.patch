@@ -1,5 +1,5 @@
 --- a/setup.py	2020-10-22 16:27:16.000000000 +0200
-+++ b/setup.py	2020-12-14 20:24:21.000000000 +0100
++++ b/setup.py	2020-12-15 08:43:30.000000000 +0100
 @@ -557,7 +557,9 @@
  
          if feature.want("zlib"):
@@ -33,3 +33,13 @@
                  # look for freetype2 include files
                  freetype_version = 0
                  for subdir in self.compiler.include_dirs:
+@@ -704,7 +710,8 @@
+         libs = self.add_imaging_libs.split()
+         defs = []
+         if feature.jpeg:
+-            libs.append(feature.jpeg)
++            if not "PYODIDE_PACKAGE_ABI" in os.environ:
++                libs.append(feature.jpeg)
+             defs.append(("HAVE_LIBJPEG", None))
+         if feature.jpeg2000:
+             libs.append(feature.jpeg2000)
