@@ -1,0 +1,9 @@
+package:
+  name: pycryptodome
+  version: 3.9.9
+source:
+  sha256: 910e202a557e1131b1c1b3f17a63914d57aac55cf9fb9b51644962841c3995c4
+  url: https://files.pythonhosted.org/packages/c4/3a/5bca2cb1648b171afd6b7d29a11c6bca8b305bb75b7e2d78a0f5c61ff95e/pycryptodome-3.9.9.tar.gz
+test:
+  imports:
+  - pycryptodome
