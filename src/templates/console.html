@@ -36,6 +36,7 @@
               def runcode(self, code):
                   sys.stdout = io.StringIO()
                   sys.stderr = io.StringIO()
+                  term.pause()
                   term.runPython("\\n".join(self.buffer))
           _c = Console(locals=globals())
         `)
@@ -66,6 +67,7 @@
         }
 
         term.handlePythonResult = function(result) {
+          term.resume()
           if (result === undefined) {
             return
           } else if (result['_repr_html_'] !== undefined) {
@@ -76,6 +78,7 @@
         }
 
         term.handlePythonError = function(result) {
+          term.resume()
           term.error(result.toString())
         }
       });
