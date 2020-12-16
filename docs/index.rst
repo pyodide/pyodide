@@ -56,6 +56,7 @@ information about the project's organization.
    :caption: Development
 
    building_from_sources.md
+   building_the_docs.md 
    new_packages.md
    contributing.md
    testing.md
