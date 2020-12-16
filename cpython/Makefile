@@ -21,7 +21,7 @@ SQLITEURL=https://www.sqlite.org/2019/sqlite-autoconf-3270200.tar.gz
 
 BZIP2TARBALL=$(ROOT)/downloads/bzip2-1.0.2.tar.gz
 BZIP2BUILD=$(ROOT)/build/bzip2-1.0.2
-BZIP2URL=ftp://sources.redhat.com/pub/bzip2/v102/bzip2-1.0.2.tar.gz
+BZIP2URL=ftp://sourceware.org/pub/bzip2/v102/bzip2-1.0.2.tar.gz
 
 
 all: $(INSTALL)/lib/$(LIB)
