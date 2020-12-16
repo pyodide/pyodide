@@ -3,9 +3,10 @@ A library of helper utilities for connecting Python to the browser environment.
 """
 
 import ast
+from copy import deepcopy
 from io import StringIO
 from textwrap import dedent
-from typing import Dict, List, Optional, Any
+from typing import Dict, List, Optional, Any, Tuple
 
 
 __version__ = "0.15.0"
@@ -32,10 +33,11 @@ def open_url(url: str) -> StringIO:
     return StringIO(req.response)
 
 
-def eval_code(code: str, ns: Dict[str, Any]) -> None:
-    """Runs a code string
+COMPILE_FLAGS = ast.PyCF_ALLOW_TOP_LEVEL_AWAIT  # type: ignore
 
-    The last part of the provided code may be an expression.
+
+def eval_code(code: str, ns: Dict[str, Any]) -> None:
+    """Runs a code string.
 
     Parameters
     ----------
@@ -46,7 +48,10 @@ def eval_code(code: str, ns: Dict[str, Any]) -> None:
 
     Returns
     -------
-    None
+    If the last nonwhitespace character of code is a semicolon return `None`.
+    If the last statement is an expression, return the result of the
+    expression. If the last statement is an assignment, we return the result
+    of the assignment (including for destructuring assignments).
     """
     # handle mis-indented input from multi-line strings
     code = dedent(code)
@@ -55,19 +60,62 @@ def eval_code(code: str, ns: Dict[str, Any]) -> None:
     if len(mod.body) == 0:
         return None
 
-    expr: Any
-    if isinstance(mod.body[-1], ast.Expr):
-        expr = ast.Expression(mod.body[-1].value)
-        del mod.body[-1]
-    else:
-        expr = None
+    target_name = "<EXEC-LAST-EXPRESSION>"
+    mod = _adjust_ast_to_store_result(target_name, mod, code)
+    # res =
+    eval(compile(mod, "<exec>", mode="exec", flags=COMPILE_FLAGS), ns, ns)
+    # if iscoroutine(res):
+    #     await res
+    return ns.pop(target_name)
 
-    if len(mod.body):
-        exec(compile(mod, "<exec>", mode="exec"), ns, ns)
-    if expr is not None:
-        return eval(compile(expr, "<eval>", mode="eval"), ns, ns)
-    else:
-        return None
+
+def _adjust_ast_to_store_result(
+    target_name: str, tree: ast.Module, code: str
+) -> ast.Module:
+    """Add instruction to store result of expression into a variable with
+    name "target_name"
+    """
+    target = [ast.Name(target_name, ctx=ast.Store())]
+    [tree, result] = _adjust_ast_to_store_result_helper(tree, code)
+    tree.body.append(ast.Assign(target, result))
+    ast.fix_missing_locations(tree)
+    return tree
+
+
+def _adjust_ast_to_store_result_helper(
+    tree: ast.Module, code: str
+) -> Tuple[ast.Module, ast.expr]:
+    # If the source ends in a semicolon, supress the result.
+    if code.strip()[-1] == ";":
+        return (tree, ast.Constant(None, None))  # type: ignore
+
+    # We directly wrap Expr or Await node in an Assign node.
+    last_node = tree.body[-1]
+    if isinstance(last_node, (ast.Expr, ast.Await)):
+        tree.body.pop()
+        return (tree, last_node.value)
+
+    # If node is already an Assign, deep copy the lvalue of the Assign and
+    # store that structure into our result
+    # This has the consequence that "[a, b] = (1,2)" returns "[1, 2]",
+    # while "a, b = (1,2)" returns "(1,2)". This could be mildly unexpected
+    # behavior but it seems entirely harmless.
+    # Also in case of l[5] = 7 evaluates l[5] at the end. Python lvalues
+    # can be pretty complicated.
+    if isinstance(last_node, ast.Assign):
+        target = last_node.targets[0]
+        expr = deepcopy(target)
+        # The deep copied expression was an lvalue but we are trying
+        # to use it as an rvalue.
+        # Need to replace all the "Store" lvalue context markers
+        # with "Load" rvalue context markers.
+        for x in ast.walk(expr):
+            if hasattr(x, "ctx"):
+                x.ctx = ast.Load()  # type: ignore
+        return (tree, expr)
+    # Remaining ast Nodes have no return value
+    # (not sure what other possibilities there are actually...)
+    return (tree, ast.Constant(None, None))  # type: ignore
 
 
 def find_imports(code: str) -> List[str]:
