@@ -1,3 +1,4 @@
+This patch is integrated in scikit-image v0.18.0
 diff --git a/skimage/restoration/_unwrap_2d.pyx b/skimage/restoration/_unwrap_2d.pyx
 index ad0dfa2280..8e2d6ee3ae 100644
 --- a/skimage/restoration/_unwrap_2d.pyx
