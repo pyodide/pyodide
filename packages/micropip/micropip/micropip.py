@@ -198,7 +198,7 @@ class _PackageManager:
             self.installed_packages[name] = ver
 
     def add_requirement(self, requirement: str, ctx, transaction):
-        if requirement.startswith(("http://", "https://")):
+        if requirement.endswith(".whl"):
             # custom download location
             name, wheel, version = _parse_wheel_url(requirement)
             transaction["wheels"].append((name, wheel, version))
@@ -268,23 +268,27 @@ del _PackageManager
 def install(requirements: Union[str, List[str]]):
     """Install the given package and all of its dependencies.
 
-    This only works for pure Python wheels or for packages built
-    in pyodide. If a package is not found in the pyodide repository
-    it will be loaded from PyPi.
+    See {ref}`loading packages <loading_packages>` for more information.
+
+    This only works for packages that are either pure Python or for packages with
+    C extensions that are built in pyodide. If a pure Python package is not found
+    in the pyodide repository it will be loaded from PyPi.
 
     Parameters
     ----------
     requirements
-       a requirements or a list of requirements to install.
-       Can be composed either of
+       A requirement or list of requirements to install.
+       Each requirement is a string.
 
-         - package names, as defined in pyodide repository or on PyPi
-         - URLs pointing to pure Python wheels. The file name of such wheels
-           end with ``none-any.whl``.
+         - If the requirement ends in ".whl", the file will be interpreted as a url.
+           The file must be a wheel named in compliance with the [PEP 427 naming convention](https://www.python.org/dev/peps/pep-0427/#file-format)
+
+         - A package name. A package by this name must either be present in the pyodide
+           repository at `languagePluginUrl` or on PyPi.
 
     Returns
     -------
-    a Promise that resolves when all packages have downloaded and installed.
+    A Promise that resolves when all packages have been downloaded and installed.
     """
 
     def do_install(resolve, reject):
