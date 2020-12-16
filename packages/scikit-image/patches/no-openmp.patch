@@ -1,3 +1,4 @@
+This patch is integrated upstream in scikit-image 0.18.0
 --- a/setup.py	2019-04-01 22:30:11.000000000 +0000
 +++ b/setup.py	2020-12-16 06:21:52.600722138 +0000
 @@ -67,6 +67,7 @@
