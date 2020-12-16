@@ -43,6 +43,8 @@
 
         var c = pyodide.pyimport('_c')
 
+        var python_repr = pyodide.pyimport('repr')
+
         function handleResult(result) {
           if (result) {
             term.set_prompt('[[;gray;]... ]')
@@ -71,10 +73,8 @@
           term.handlePythonCommon()
           if (result === undefined) {
             return
-          } else if (result['_repr_html_'] !== undefined) {
-            term.echo(result['_repr_html_'], {raw: true})
           } else {
-            term.echo(result.toString())
+            term.echo(python_repr(result))
           }
         }
 
