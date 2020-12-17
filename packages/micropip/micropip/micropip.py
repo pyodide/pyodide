@@ -281,7 +281,8 @@ def install(requirements: Union[str, List[str]]):
        Each requirement is a string.
 
          - If the requirement ends in ".whl", the file will be interpreted as a url.
-           The file must be a wheel named in compliance with the [PEP 427 naming convention](https://www.python.org/dev/peps/pep-0427/#file-format)
+           The file must be a wheel named in compliance with the
+           [PEP 427 naming convention](https://www.python.org/dev/peps/pep-0427/#file-format)
 
          - A package name. A package by this name must either be present in the pyodide
            repository at `languagePluginUrl` or on PyPi.
