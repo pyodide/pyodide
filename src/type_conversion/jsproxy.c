@@ -1,3 +1,14 @@
+#define PY_SSIZE_T_CLEAN
+#include <Python.h>
+#include <abstract.h> /* PySendResult */
+#include <object.h> /* sendfunc, Py_TPFLAGS_HAVE_AM_SEND */
+
+typedef enum {
+    PYGEN_RETURN = 0,
+    PYGEN_ERROR = -1,
+    PYGEN_NEXT = 1,
+} PySendResult;
+typedef PySendResult (*sendfunc)(PyObject *iter, PyObject *value, PyObject **result);
 #include "jsproxy.h"
 
 #include "hiwire.h"
@@ -10,7 +21,7 @@ JsBoundMethod_cnew(int this_, const char* name);
 ////////////////////////////////////////////////////////////
 // JsProxy
 //
-// This is a Python object that provides ideomatic access to a Javascript
+// This is a Python object that provides idiomatic access to a Javascript
 // object.
 
 typedef struct
@@ -438,6 +449,232 @@ static PyMethodDef JsProxy_Methods[] = {
 };
 // clang-format on
 
+
+typedef struct
+{
+  PyObject_HEAD int js;
+  int state;
+  JsProxy *wrapped_proxy;
+} JsProxyFuture;
+
+static const char *NON_INIT_CORO_MSG = "can't send non-None value to a just-started coroutine";
+
+static PySendResult 
+JsProxyFuture_am_send(JsProxyFuture *self, PyObject *arg, PyObject **result){
+    self->state++;
+    switch(self->state){
+        case 1:
+            if(arg != Py_None){
+                PyErr_SetString(PyExc_TypeError, NON_INIT_CORO_MSG);
+                return PYGEN_ERROR;
+            }
+            *result = (PyObject *)self->wrapped_proxy;
+            return PYGEN_NEXT;
+
+        case 2:
+            *result = arg;
+            Py_CLEAR(self->wrapped_proxy);
+            return PYGEN_RETURN;
+        
+        default:
+            Py_UNREACHABLE();
+    }
+}
+
+
+static PyObject *
+JsProxyFuture_iternext(JsProxyFuture *self)
+{
+    PyObject *result;
+    switch (JsProxyFuture_am_send(self, Py_None, &result)) {
+        case PYGEN_RETURN:
+            (void)_PyGen_SetStopIterationValue(result);
+            Py_DECREF(result);
+            return NULL;
+        case PYGEN_NEXT:
+            return result;
+        case PYGEN_ERROR:
+            return NULL;
+        default:
+            Py_UNREACHABLE();
+    }
+}
+
+
+// Copied with some modification from:
+// https://github.com/python/cpython/blob/cda99b4022daa08ac74b0420e9903cce883d91c6/Modules/_asynciomodule.c#L1641
+static PyObject * 
+JsProxyFuture_send(JsProxyFuture *self, PyObject *arg){
+    PyObject *result;
+    switch (JsProxyFuture_am_send(self, arg, &result)) {
+        case PYGEN_RETURN:
+            (void)_PyGen_SetStopIterationValue(result);
+            Py_DECREF(result);
+            return NULL;
+        case PYGEN_NEXT:
+            return result;
+        case PYGEN_ERROR:
+            return NULL;
+        default:
+            Py_UNREACHABLE();
+    }
+}
+
+// Basically copied direct from asyncio.
+// https://github.com/python/cpython/blob/cda99b4022daa08ac74b0420e9903cce883d91c6/Modules/_asynciomodule.c#L1668
+static PyObject *
+JsProxyFuture_throw(JsProxyFuture *self, PyObject *args) {
+    PyObject *type, *val = NULL, *tb = NULL;
+    if (!PyArg_ParseTuple(args, "O|OO", &type, &val, &tb))
+        return NULL;
+  
+    if (val == Py_None) {
+        val = NULL;
+    }
+    if (tb == Py_None) {
+        tb = NULL;
+    } else if (tb != NULL && !PyTraceBack_Check(tb)) {
+        PyErr_SetString(PyExc_TypeError, "throw() third argument must be a traceback");
+        return NULL;
+    }
+
+    Py_INCREF(type);
+    Py_XINCREF(val);
+    Py_XINCREF(tb);
+
+    if (PyExceptionClass_Check(type)) {
+        PyErr_NormalizeException(&type, &val, &tb);
+        /* No need to call PyException_SetTraceback since we'll be calling
+           PyErr_Restore for `type`, `val`, and `tb`. */
+    } else if (PyExceptionInstance_Check(type)) {
+        if (val) {
+            PyErr_SetString(PyExc_TypeError,
+                            "instance exception may not have a separate value");
+            goto fail;
+        }
+        val = type;
+        type = PyExceptionInstance_Class(type);
+        Py_INCREF(type);
+        if (tb == NULL)
+            tb = PyException_GetTraceback(val);
+    } else {
+        PyErr_SetString(PyExc_TypeError,
+                        "exceptions must be classes deriving BaseException or "
+                        "instances of such a class");
+        goto fail;
+    }
+
+    Py_CLEAR(self->wrapped_proxy); // Only this line changed from asyncio.
+
+    PyErr_Restore(type, val, tb);
+
+    return NULL;
+
+  fail:
+    Py_DECREF(type);
+    Py_XDECREF(val);
+    Py_XDECREF(tb);
+    return NULL;
+}
+
+static PyObject *
+JsProxyFuture_close(JsProxyFuture *self, PyObject *arg)
+{
+    Py_CLEAR(self->wrapped_proxy);
+    Py_RETURN_NONE;
+}
+
+static int 
+JsProxyFuture_traverse(JsProxyFuture *self, visitproc visit, void *arg)
+{
+    Py_VISIT(self->wrapped_proxy);
+    return 0;
+}
+
+
+static PyMethodDef JsProxyFuture_methods[] = {
+    {"send",  (PyCFunction)JsProxyFuture_send, METH_O, NULL},
+    {"throw", (PyCFunction)JsProxyFuture_throw, METH_VARARGS, NULL},
+    {"close", (PyCFunction)JsProxyFuture_close, METH_NOARGS, NULL},
+    {NULL, NULL}        /* Sentinel */
+};
+
+// static PyAsyncMethods JsProxyFutureType_as_async = {
+//     0,                                  /* am_await */
+//     0,                                  /* am_aiter */
+//     0,                                  /* am_anext */
+//     (sendfunc)JsProxyFuture_am_send,       /* am_send  */
+// };
+
+
+#define JSAF_FREELIST_MAXLEN 255
+static JsProxyFuture *jsaf_freelist = NULL;
+static Py_ssize_t jsaf_freelist_len = 0;
+
+
+static void 
+JsProxyFuture_dealloc(JsProxyFuture *it)
+{
+    PyObject_GC_UnTrack(it);
+    Py_CLEAR(it->wrapped_proxy);
+
+    if (jsaf_freelist_len < JSAF_FREELIST_MAXLEN) {
+        jsaf_freelist_len++;
+        it->wrapped_proxy = (JsProxy*) jsaf_freelist;
+        jsaf_freelist = it;
+    }
+    else {
+        PyObject_GC_Del(it);
+    }
+}
+
+
+static PyTypeObject JsProxyFutureType = {
+    PyVarObject_HEAD_INIT(NULL, 0)
+    "jsproxy.PromiseWrapper",
+    .tp_basicsize = sizeof(JsProxyFuture),
+    .tp_itemsize = 0,
+    .tp_dealloc = (destructor)JsProxyFuture_dealloc,
+    .tp_getattro = PyObject_GenericGetAttr,
+    .tp_flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC,
+    .tp_traverse = (traverseproc)JsProxyFuture_traverse,
+    .tp_iter = PyObject_SelfIter,
+    .tp_iternext = (iternextfunc)JsProxyFuture_iternext,
+    .tp_methods = JsProxyFuture_methods,
+    // .tp_as_async = &JsProxyFutureType_as_async,
+};
+
+
+
+PyObject *
+JSProxy_Await(PyObject *self){
+    JsProxyFuture *it;
+
+    if (jsaf_freelist_len) {
+        jsaf_freelist_len--;
+        it = jsaf_freelist;
+        jsaf_freelist = (JsProxyFuture*) it->wrapped_proxy;
+        it->wrapped_proxy = NULL;
+        _Py_NewReference((PyObject*) it);
+    }
+    else {
+        it = PyObject_GC_New(JsProxyFuture, &JsProxyFutureType);
+        if (it == NULL) {
+            return NULL;
+        }
+    }
+
+    Py_INCREF(self);
+    it->wrapped_proxy = (JsProxy*)self;
+    it->state = 0;
+    PyObject_GC_Track(it);
+    return (PyObject*)it;
+}
+
+static PyAsyncMethods JSProxy_asyncMethods = {
+    .am_await = (unaryfunc)JSProxy_Await
+};
+
 static PyTypeObject JsProxyType = {
   .tp_name = "JsProxy",
   .tp_basicsize = sizeof(JsProxy),
@@ -445,6 +682,7 @@ static PyTypeObject JsProxyType = {
   .tp_call = JsProxy_Call,
   .tp_getattro = JsProxy_GetAttr,
   .tp_setattro = JsProxy_SetAttr,
+  .tp_as_async = &JSProxy_asyncMethods,
   .tp_richcompare = JsProxy_RichCompare,
   .tp_flags = Py_TPFLAGS_DEFAULT,
   .tp_doc = "A proxy to make a Javascript object behave like a Python object",
@@ -507,6 +745,7 @@ JsBoundMethod_Call(PyObject* o, PyObject* args, PyObject* kwargs)
   return pyresult;
 }
 
+
 static PyTypeObject JsBoundMethodType = {
   .tp_name = "JsBoundMethod",
   .tp_basicsize = sizeof(JsBoundMethod),
@@ -547,5 +786,5 @@ JsProxy_AsJs(PyObject* x)
 int
 JsProxy_init()
 {
-  return (PyType_Ready(&JsProxyType) || PyType_Ready(&JsBoundMethodType));
+  return (PyType_Ready(&JsProxyType) || PyType_Ready(&JsBoundMethodType) || PyType_Ready(&JsProxyFutureType));
 }
