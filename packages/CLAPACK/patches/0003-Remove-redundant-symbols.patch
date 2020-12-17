@@ -1,34 +1,9 @@
-From 8aae131e7bf4cfe3979edbbdce21803e1c5f9ac1 Mon Sep 17 00:00:00 2001
-From: Roman Yurchak <rth.yurchak@pm.me>
-Date: Thu, 25 Oct 2018 11:50:14 +0200
-Subject: [PATCH 3/3] Remove redundant symbols
+commit 75c2ad0e2f981805b55eef6a8b69e502c07da2bf
+Author: Roman Yurchak <rth.yurchak@pm.me>
+Date:   Thu Oct 25 11:50:14 2018 +0200
 
----
- Makefile     |  9 +++++++++
- SRC/Makefile | 30 ++++++++++++++++++++----------
- make.inc     |  6 +-----
- 3 files changed, 30 insertions(+), 15 deletions(-)
+    Remove redundant symbols
 
-diff --git a/Makefile b/Makefile
-index b3467a6..83baba5 100644
---- a/Makefile
-+++ b/Makefile
-@@ -5,6 +5,15 @@
- #
- 
- include make.inc
-+include ../Makefile.envs
-+
-+TOPDIR=$(abspath .)
-+
-+CFLAGS    = $(CFLAGS_OPT) -I$(TOPDIR)/INCLUDE -fPIC -DNO_BLAS_WRAP
-+LDFLAGS	  = $(LDFLAGS_OPT) -fPIC
-+DRVCFLAGS = $(CFLAGS)
-+F2CCFLAGS = $(CFLAGS)
-+
- 
- all: f2clib lib
- #all: f2clib lapack_install lib lapack_testing blas_testing variants_testing
 diff --git a/SRC/Makefile b/SRC/Makefile
 index 7491963..0cc1cda 100644
 --- a/SRC/Makefile
@@ -135,31 +110,3 @@ index 7491963..0cc1cda 100644
     zlahrd.o zlahr2.o zlaic1.o zlals0.o zlalsa.o zlalsd.o zlangb.o zlange.o \
     zlangt.o zlanhb.o \
     zlanhe.o \
-diff --git a/make.inc b/make.inc
-index 567c737..d010f57 100644
---- a/make.inc
-+++ b/make.inc
-@@ -21,19 +21,15 @@ PLAT = _WA
- #  and desired load options for your machine.
- #
- #######################################################
-+
- # This is used to compile C libary
- #CC        = gcc  # inherit $CC from emmake
- # if no wrapping of the blas library is needed, uncomment next line
- #CC        = gcc -DNO_BLAS_WRAP
--CFLAGS    = -O3 -I$(TOPDIR)/INCLUDE -fPIC -DNO_BLAS_WRAP
--LDFLAGS	  = -O3
- LOADER    = $(CC)
- LOADOPTS  =
- NOOPT     = -O0 -I$(TOPDIR)/INCLUDE
--DRVCFLAGS = $(CFLAGS)
--F2CCFLAGS = $(CFLAGS)
- #######################################################################
--
- #
- # Timer for the SECOND and DSECND routines
- #
--- 
-2.19.0
-

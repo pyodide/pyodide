@@ -320,7 +320,7 @@ test_json.test_unicode
 test_keyword  subprocess
 test_keywordonlyarg
 test_kqueue
-test_largefile
+test_largefile fs
 test_lib2to3  nonsense
 test_linecache
 test_list

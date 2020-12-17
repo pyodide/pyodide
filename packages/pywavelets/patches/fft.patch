@@ -1,0 +1,13 @@
+This patch can be removed once scipy is updated to >= 0.18
+AttributeError is raised by the absence of next_fast_len
+--- PyWavelets-1.1.1/pywt/_cwt.py.old	2020-12-16 08:19:13.000000000 +0100
++++ PyWavelets-1.1.1/pywt/_cwt.py	2020-12-16 08:20:23.000000000 +0100
+@@ -20,7 +20,7 @@
+         import scipy.fftpack
+         fftmodule = scipy.fftpack
+         next_fast_len = fftmodule.next_fast_len
+-    except ImportError:
++    except (AttributeError, ImportError):
+         fftmodule = np.fft
+ 
+         # provide a fallback so scipy is an optional requirement

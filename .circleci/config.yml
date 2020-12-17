@@ -17,10 +17,7 @@ jobs:
 
       - run:
           name: lint
-          command: |
-            make lint
-            black --check --exclude tools/file_packager.py .
-            mypy --ignore-missing-imports pyodide_build/ src/ packages/micropip/micropip/ packages/*/test*
+          command: make lint
 
   build-core:
     <<: *defaults
@@ -120,7 +117,7 @@ jobs:
       - run:
           name: test
           command: |
-            pytest src packages/micropip/ -v -k firefox -n 3
+            tools/pytest_wrapper.py src packages/micropip/ -v -k firefox -n 3
 
   test-core-chrome:
     <<: *defaults
@@ -130,7 +127,7 @@ jobs:
       - run:
           name: test
           command: |
-            pytest src packages/micropip/ -v -k chrome -n 3
+            tools/pytest_wrapper.py src packages/micropip/ -v -k chrome -n 3
 
   test-packages-firefox:
     <<: *defaults
@@ -140,7 +137,7 @@ jobs:
       - run:
           name: test
           command: |
-            pytest packages/test* packages/*/test* -v -k firefox -n 2
+            tools/pytest_wrapper.py packages/test* packages/*/test* -v -k firefox -n 2
 
   test-packages-chrome:
     <<: *defaults
@@ -150,7 +147,7 @@ jobs:
       - run:
           name: test
           command: |
-            pytest packages/test* packages/*/test* -v -k chrome -n 2
+            tools/pytest_wrapper.py packages/test* packages/*/test* -v -k chrome -n 2
 
   test-python:
     <<: *defaults

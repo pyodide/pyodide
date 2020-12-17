@@ -20,13 +20,16 @@
   [#846](https://github.com/iodide-project/pyodide/pull/846)
 - Updated to emscripten 1.38.34
   [#480](https://github.com/iodide-project/pyodide/pull/480)
-- New packages: freesasa, lxml, python-sat, traits, astropy
+- New packages: freesasa, lxml, python-sat, traits, astropy, pillow
 - Updated packages: numpy 1.15.4, pandas 1.0.5 among others.
 - Updated default `--ldflags` argument to `pyodide_build` scripts to equal what
   pyodide actually uses.
 - Drop support for serving .wasm files with incorrect mime type.
 - Replace C lz4 implementation with (upstream) javascript implementation.
   [#851](https://github.com/iodide-project/pyodide/pull/851)
+- New package
+  [pyodide-interrupt](https://pypi.org/project/pyodide-interrupts/), useful for
+  handling interrupts in Pyodide (see project descripion for details).
 
 ## Version 0.15.0
 *May 19, 2020*
