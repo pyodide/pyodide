@@ -27,15 +27,46 @@
           }
         );
 
+        function trim(string) { return string.replace(/\n$/, "") }
+
+        term.stdout = { write: function (string) { term.echo(trim(string)) } }
+        term.stderr = { write: function (string) { term.error(trim(string)) } }
+
         window.term = term;
         pyodide.runPython(`
           import io, code, sys
-          from js import term, pyodide
+          from js import term
+
+
+          class CallbackBuffer(object):
+              """
+              Internal StdStream buffer that trigger flush callback.
+              """
+              def __init__(self, flush_callback):
+                  self._flush_callback = flush_callback
+                  self.closed = False
+              def writable(self): return True
+              def seekable(self): return False
+              def write(self, data):
+                  self._flush_callback(data.tobytes().decode())
+                  return len(data)
+
+
+          class StdStream(io.TextIOWrapper):
+              """
+              Custom std stream to retdirect sys.stdou/stderr to terminal.
+              """
+              def __init__(self, flush_callback):
+                  buffer = io.BufferedWriter(CallbackBuffer(flush_callback))
+                  super().__init__(buffer, line_buffering=True)
+
+
+          sys.stdout = StdStream(term.stdout.write)
+          sys.stderr = StdStream(term.stderr.write)
+
 
           class Console(code.InteractiveConsole):
               def runcode(self, code):
-                  sys.stdout = io.StringIO()
-                  sys.stderr = io.StringIO()
                   term.pause()
                   term.runPython("\\n".join(self.buffer))
           _c = Console(locals=globals())
@@ -59,28 +90,16 @@
           )
         }
 
-        term.handlePythonCommon = function () {
-          term.resume()
-          var stderr = pyodide.runPython("sys.stderr.getvalue()").trim()
-          if (stderr)
-            term.echo(`[[;red;]${stderr}]`)
-          var stdout = pyodide.runPython("sys.stdout.getvalue()")
-          if (stdout)
-            term.echo(stdout.trim())
-        }
-
         term.handlePythonResult = function(result) {
-          term.handlePythonCommon()
-          if (result === undefined) {
+          term.resume()
+          if (result === undefined)
             return
-          } else {
-            term.echo(python_repr(result))
-          }
+          term.echo(python_repr(result))
         }
 
         term.handlePythonError = function(result) {
-          term.handlePythonCommon()
-          term.error(result.toString())
+          term.resume()
+          term.error(trim(result.toString()))
         }
       });
     </script>
