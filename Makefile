@@ -70,7 +70,8 @@ all: check \
 	build/test.data \
 	build/packages.json \
 	build/test.html \
-	build/webworker.js
+	build/webworker.js \
+	build/webworker_dev.js
 	echo -e "\nSUCCESS!"
 
 
@@ -121,6 +122,10 @@ build/renderedhtml.css: src/css/renderedhtml.less
 build/webworker.js: src/webworker.js
 	cp $< $@
 	sed -i -e 's#{{ PYODIDE_BASE_URL }}#$(PYODIDE_BASE_URL)#g' $@
+
+build/webworker_dev.js: src/webworker.js
+	cp $< $@
+	sed -i -e 's#{{ PYODIDE_BASE_URL }}#./#g' $@
 
 test: all
 	pytest src packages/*/test* pyodide_build -v
