@@ -96,41 +96,41 @@
 #define HAVE_COPYSIGNF 1
 #define HAVE_NEXTAFTERF 1
 #define HAVE_CBRTF 1
-#undef HAVE_SINL
-#undef HAVE_COSL
-#undef HAVE_TANL
-#undef HAVE_SINHL
-#undef HAVE_COSHL
-#undef HAVE_TANHL
-#undef HAVE_FABSL
-#undef HAVE_FLOORL
-#undef HAVE_CEILL
-#undef HAVE_RINTL
-#undef HAVE_TRUNCL
-#undef HAVE_SQRTL
-#undef HAVE_LOG10L
-#undef HAVE_LOGL
-#undef HAVE_LOG1PL
-#undef HAVE_EXPL
-#undef HAVE_EXPM1L
-#undef HAVE_ASINL
-#undef HAVE_ACOSL
-#undef HAVE_ATANL
-#undef HAVE_ASINHL
-#undef HAVE_ACOSHL
-#undef HAVE_ATANHL
-#undef HAVE_HYPOTL
-#undef HAVE_ATAN2L
-#undef HAVE_POWL
-#undef HAVE_FMODL
-#undef HAVE_MODFL
-#undef HAVE_FREXPL
-#undef HAVE_LDEXPL
-#undef HAVE_EXP2L
-#undef HAVE_LOG2L
-#undef HAVE_COPYSIGNL
-#undef HAVE_NEXTAFTERL
-#undef HAVE_CBRTL
+#define HAVE_SINL 1
+#define HAVE_COSL 1
+#define HAVE_TANL 1
+#define HAVE_SINHL 1
+#define HAVE_COSHL 1
+#define HAVE_TANHL 1
+#define HAVE_FABSL 1
+#define HAVE_FLOORL 1
+#define HAVE_CEILL 1
+#define HAVE_RINTL 1
+#define HAVE_TRUNCL 1
+#define HAVE_SQRTL 1
+#define HAVE_LOG10L 1
+#define HAVE_LOGL 1
+#define HAVE_LOG1PL 1
+#define HAVE_EXPL 1
+#define HAVE_EXPM1L 1
+#define HAVE_ASINL 1
+#define HAVE_ACOSL 1
+#define HAVE_ATANL 1
+#define HAVE_ASINHL 1
+#define HAVE_ACOSHL 1
+#define HAVE_ATANHL 1
+#define HAVE_HYPOTL 1
+#define HAVE_ATAN2L 1
+#define HAVE_POWL 1
+#define HAVE_FMODL 1
+#define HAVE_MODFL 1
+#define HAVE_FREXPL 1
+#define HAVE_LDEXPL 1
+#define HAVE_EXP2L 1
+#define HAVE_LOG2L 1
+#define HAVE_COPYSIGNL 1
+#define HAVE_NEXTAFTERL 1
+#define HAVE_CBRTL 1
 #define HAVE_DECL_SIGNBIT
 #undef HAVE_COMPLEX_H
 #define HAVE_CABS 1
