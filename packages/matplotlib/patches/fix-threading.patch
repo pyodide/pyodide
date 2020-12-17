@@ -1,0 +1,67 @@
+diff --git a/lib/matplotlib/backend_bases.py b/lib/matplotlib/backend_bases.py
+--- a/lib/matplotlib/backend_bases.py
++++ b/lib/matplotlib/backend_bases.py
+@@ -1993,6 +1993,7 @@ class FigureCanvasBase:
+ 
+     def draw(self, *args, **kwargs):
+         """Render the `.Figure`."""
++        pass
+ 
+     def draw_idle(self, *args, **kwargs):
+         """
+diff --git a/lib/matplotlib/backends/backend_agg.py b/lib/matplotlib/backends/backend_agg.py
+--- a/lib/matplotlib/backends/backend_agg.py
++++ b/lib/matplotlib/backends/backend_agg.py
+@@ -22,6 +22,8 @@ TODO:
+ """
+ 
+ try:
++    # force use of dummy_threading
++    raise ImportError()
+     import threading
+ except ImportError:
+     import dummy_threading as threading
+@@ -401,13 +403,14 @@ class FigureCanvasAgg(FigureCanvasBase):
+         # docstring inherited
+         self.renderer = self.get_renderer(cleared=True)
+         # Acquire a lock on the shared font cache.
+-        with RendererAgg.lock, \
+-             (self.toolbar._wait_cursor_for_draw_cm() if self.toolbar
++        RendererAgg.lock.acquire()
++        with (self.toolbar._wait_cursor_for_draw_cm() if self.toolbar
+               else nullcontext()):
+             self.figure.draw(self.renderer)
+             # A GUI class may be need to update a window using this draw, so
+             # don't forget to call the superclass.
+             super().draw()
++        RendererAgg.lock.release()
+ 
+     def get_renderer(self, cleared=False):
+         w, h = self.figure.bbox.size
+diff --git a/lib/matplotlib/font_manager.py b/lib/matplotlib/font_manager.py
+--- a/lib/matplotlib/font_manager.py
++++ b/lib/matplotlib/font_manager.py
+@@ -33,6 +33,8 @@ import re
+ import subprocess
+ import sys
+ try:
++    # force use of dummy_threading
++    raise ImportError()
+     from threading import Timer
+ except ImportError:
+     from dummy_threading import Timer
+diff --git a/lib/matplotlib/pyplot.py b/lib/matplotlib/pyplot.py
+--- a/lib/matplotlib/pyplot.py
++++ b/lib/matplotlib/pyplot.py
+@@ -27,6 +27,8 @@ import re
+ import sys
+ import time
+ try:
++    # force use of dummy_threading
++    raise ImportError()
+     import threading
+ except ImportError:
+     import dummy_threading as threading
+-- 
+2.20.1
+
