@@ -3,7 +3,6 @@ A library of helper utilities for connecting Python to the browser environment.
 """
 
 import ast
-from copy import deepcopy
 from io import StringIO
 from textwrap import dedent
 from typing import Dict, List, Optional, Any, Tuple
@@ -95,24 +94,6 @@ def _adjust_ast_to_store_result_helper(
         tree.body.pop()
         return (tree, last_node.value)
 
-    # If node is already an Assign, deep copy the lvalue of the Assign and
-    # store that structure into our result
-    # This has the consequence that "[a, b] = (1,2)" returns "[1, 2]",
-    # while "a, b = (1,2)" returns "(1,2)". This could be mildly unexpected
-    # behavior but it seems entirely harmless.
-    # Also in case of l[5] = 7 evaluates l[5] at the end. Python lvalues
-    # can be pretty complicated.
-    if isinstance(last_node, ast.Assign):
-        target = last_node.targets[0]
-        expr = deepcopy(target)
-        # The deep copied expression was an lvalue but we are trying
-        # to use it as an rvalue.
-        # Need to replace all the "Store" lvalue context markers
-        # with "Load" rvalue context markers.
-        for x in ast.walk(expr):
-            if hasattr(x, "ctx"):
-                x.ctx = ast.Load()  # type: ignore
-        return (tree, expr)
     # Remaining ast Nodes have no return value
     # (not sure what other possibilities there are actually...)
     return (tree, ast.Constant(None, None))  # type: ignore
