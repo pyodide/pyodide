@@ -39,8 +39,6 @@ LDFLAGS=\
 	-s EXPORTED_FUNCTIONS='["___cxa_guard_acquire", "__ZNSt3__28ios_base4initEPv"]' \
 	-s WASM=1 \
 	-s SWAPPABLE_ASM_MODULE=1 \
-	-s USE_FREETYPE=1 \
-	-s USE_LIBPNG=1 \
 	-std=c++14 \
 	-L$(wildcard $(CPYTHONROOT)/build/sqlite*/.libs) -lsqlite3 \
 	$(wildcard $(CPYTHONROOT)/build/bzip2*/libbz2.a) \
