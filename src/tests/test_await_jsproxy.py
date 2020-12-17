@@ -1,5 +1,3 @@
-import pytest
-
 startup = """
     from asyncio import AbstractEventLoop
     from functools import partial
@@ -38,6 +36,7 @@ def test_await_jsproxy(selenium):
         loop.call_soon(temp())
         """
     )
+
 
 def test_await_nonpromise(selenium):
     selenium.run(startup)
