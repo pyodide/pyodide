@@ -77,7 +77,7 @@ def test_await_error(selenium):
     selenium.run_js(
         """
         async function js_raises(){
-            throw Error("This is an error message!");
+            throw new Error("This is an error message!");
         }
         window.js_raises = js_raises;
         """
