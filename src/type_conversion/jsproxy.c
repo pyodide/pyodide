@@ -515,12 +515,6 @@ JsProxyFuture_am_send(JsProxyFuture* self, PyObject* arg, PyObject** result)
   }
 }
 
-static PyObject*
-JsProxyFuture_iternext(JsProxyFuture* self)
-{
-  JsProxyFuture_send(arg, Py_None);
-}
-
 // Copied with some modification from:
 // https://github.com/python/cpython/blob/cda99b4022daa08ac74b0420e9903cce883d91c6/Modules/_asynciomodule.c#L1641
 static PyObject*
@@ -540,6 +534,13 @@ JsProxyFuture_send(JsProxyFuture* self, PyObject* arg)
       Py_UNREACHABLE();
   }
 }
+
+static PyObject*
+JsProxyFuture_iternext(JsProxyFuture* self)
+{
+  return JsProxyFuture_send(self, Py_None);
+}
+
 
 // Basically copied direct from asyncio.
 // https://github.com/python/cpython/blob/cda99b4022daa08ac74b0420e9903cce883d91c6/Modules/_asynciomodule.c#L1668
@@ -645,8 +646,13 @@ static PyTypeObject JsProxyFutureType = {
 };
 
 PyObject*
-JSProxy_Await(PyObject* self)
+JsProxy_Await(PyObject* self)
 {
+  if(!hiwire_is_promise(((JsProxy*)self)->js)){
+    PyErr_SetString(PyExc_TypeError, "Attempted to await a Javascript object which is not a promise.");
+    return NULL;
+  }
+
   JsProxyFuture* it;
 
   if (jsaf_freelist_len) {
@@ -669,8 +675,8 @@ JSProxy_Await(PyObject* self)
   return (PyObject*)it;
 }
 
-static PyAsyncMethods JSProxy_asyncMethods = { .am_await =
-                                                 (unaryfunc)JSProxy_Await };
+static PyAsyncMethods JsProxy_asyncMethods = { .am_await =
+                                                 (unaryfunc)JsProxy_Await };
 
 static PyTypeObject JsProxyType = {
   .tp_name = "JsProxy",
@@ -679,7 +685,7 @@ static PyTypeObject JsProxyType = {
   .tp_call = JsProxy_Call,
   .tp_getattro = JsProxy_GetAttr,
   .tp_setattro = JsProxy_SetAttr,
-  .tp_as_async = &JSProxy_asyncMethods,
+  .tp_as_async = &JsProxy_asyncMethods,
   .tp_richcompare = JsProxy_RichCompare,
   .tp_flags = Py_TPFLAGS_DEFAULT,
   .tp_doc = "A proxy to make a Javascript object behave like a Python object",

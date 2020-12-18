@@ -416,6 +416,15 @@ int
 hiwire_is_function(int idobj);
 
 /**
+ * Returns 1 if the object is a promise. 
+ * Test is Promise.resolve(obj) === obj.
+ *
+ * Returns: C int
+ */
+int
+hiwire_is_promise(int idobj);
+
+/**
  * Gets the string representation of an object by calling `toString`.
  *
  * Returns: New reference to Javascript string

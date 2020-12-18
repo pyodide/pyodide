@@ -288,6 +288,13 @@ EM_JS(int, hiwire_is_function, (int idobj), {
   // clang-format on
 });
 
+EM_JS(int, hiwire_is_promise, (int idobj), {
+  // clang-format off
+  let obj = Module.hiwire_get_value(idobj);
+  return Promise.resolve(obj)  === obj;
+  // clang-format on
+});
+
 EM_JS(int, hiwire_to_string, (int idobj), {
   return Module.hiwire_new_value(Module.hiwire_get_value(idobj).toString());
 });

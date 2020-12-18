@@ -1,3 +1,7 @@
+from selenium.common.exceptions import WebDriverException
+import pytest
+import time 
+
 startup = """
     from asyncio import AbstractEventLoop
     from functools import partial
@@ -30,22 +34,27 @@ def test_await_jsproxy(selenium):
         p = Promise.new(prom)
         async def temp():
             x = await p
-            # TODO: How to assert that x = 10?
-            print(x)
+            global y
+            y = x
         resolve(10)
         loop.call_soon(temp())
         """
     )
+    time.sleep(0.1)
+    assert selenium.run("y") == 10
 
 
 def test_await_nonpromise(selenium):
     selenium.run(startup)
-    selenium.run(
-        """
-        from js import Math
-        async def temp():
-            x = await Math
-            print(x)
-        loop.call_soon(temp())
-        """
-    )
+    msg="TypeError: Attempted to await .* which is not a promise."
+    with pytest.raises(WebDriverException, match=msg):
+        selenium.run(
+            """
+            from js import Math
+            async def temp():
+                x = await Math
+                print(x)
+            c = temp()
+            c.send(None)
+            """
+        )
