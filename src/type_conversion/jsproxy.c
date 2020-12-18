@@ -18,6 +18,14 @@ typedef PySendResult (*sendfunc)(PyObject* iter,
 #include "js2python.h"
 #include "python2js.h"
 
+_Py_IDENTIFIER(get_event_loop);
+_Py_IDENTIFIER(create_future);
+_Py_IDENTIFIER(set_exception);
+_Py_IDENTIFIER(set_result);
+_Py_IDENTIFIER(__await__);
+
+static PyObject *asyncio_get_event_loop;
+
 static PyObject*
 JsBoundMethod_cnew(int this_, const char* name);
 
@@ -31,13 +39,15 @@ typedef struct
 {
   PyObject_HEAD int js;
   PyObject* bytes;
+  PyObject* future; // for promises
 } JsProxy;
 
 static void
 JsProxy_dealloc(JsProxy* self)
 {
   hiwire_decref(self->js);
-  Py_XDECREF(self->bytes);
+  Py_CLEAR(self->bytes);
+  Py_CLEAR(self->future);
   Py_TYPE(self)->tp_free((PyObject*)self);
 }
 
@@ -62,7 +72,11 @@ JsProxy_GetAttr(PyObject* o, PyObject* attr_name)
 
   const char* key = PyUnicode_AsUTF8(str);
 
-  if (strncmp(key, "new", 4) == 0 || strncmp(key, "_has_bytes", 11) == 0) {
+  if (
+    strncmp(key, "new", 4) == 0 
+    || strncmp(key, "_has_bytes", 11) == 0
+    || strncmp(key, "__await__", 10) == 0
+  ) {
     Py_DECREF(str);
     return PyObject_GenericGetAttr(o, attr_name);
   } else if (strncmp(key, "typeof", 7) == 0) {
@@ -415,6 +429,54 @@ JsProxy_Bool(PyObject* o)
   return (self->js && hiwire_get_bool(self->js)) ? 1 : 0;
 }
 
+
+PyObject*
+JsProxy_Await(JsProxy* self)
+{
+  if(self->future != NULL){
+    return _PyObject_CallMethodId(self->future, &PyId___await__, NULL);
+  }
+
+  if(!hiwire_is_promise(((JsProxy*)self)->js)){
+    PyErr_SetString(PyExc_TypeError, 
+      "Attempted to await a Javascript object which is not a promise."
+    );
+    return NULL;
+  }
+  
+  PyObject *loop = _PyObject_CallNoArg(asyncio_get_event_loop);
+  if(loop == NULL){
+    return NULL;
+  }
+
+  PyObject *fut = _PyObject_CallMethodId(loop, &PyId_create_future, NULL);
+  if(fut == NULL){
+    return NULL;
+  }
+
+  Py_CLEAR(loop);
+  PyObject *set_result = _PyObject_GetAttrId(fut, &PyId_set_result);
+  PyObject *set_exception = _PyObject_GetAttrId(fut, &PyId_set_exception);
+
+  int idargs = hiwire_array();
+  int idarg = python2js(set_result);
+  hiwire_push_array(idargs, idarg);
+  hiwire_decref(idarg);
+  hiwire_call_member(self->js, (int)"then", idargs);
+
+  idarg = python2js(set_exception);
+  hiwire_set_member_int(idargs, 0, idarg);
+  hiwire_decref(idarg);
+  hiwire_call_member(self->js, (int)"catch", idargs);
+  hiwire_decref(idargs);
+  
+  self->future = fut;
+
+  return _PyObject_CallMethodId(self->future, &PyId___await__, NULL);
+}
+
+
+
 // clang-format off
 static PyMappingMethods JsProxy_MappingMethods = {
   JsProxy_length,
@@ -440,6 +502,7 @@ static PyMethodDef JsProxy_Methods[] = {
     (PyCFunction)JsProxy_GetIter,
     METH_NOARGS,
     "Get an iterator over the object" },
+  // { "__await__", (PyCFunction)JsProxy_Await, METH_NOARGS, ""},
   { "_has_bytes",
     (PyCFunction)JsProxy_HasBytes,
     METH_NOARGS,
@@ -451,229 +514,7 @@ static PyMethodDef JsProxy_Methods[] = {
   { NULL }
 };
 // clang-format on
-// Here we are one-for-one mimicking similar functions in _asynciomodule
-// Lines 1580 -- 1800
-// https://github.com/python/cpython/blob/cda99b4022daa08ac74b0420e9903cce883d91c6/Modules/_asynciomodule.c#L1580
 
-typedef struct
-{
-  PyObject_HEAD int js;
-  int state;
-  JsProxy* wrapped_proxy;
-} JsProxyFuture;
-
-
-#define JSAF_FREELIST_MAXLEN 255
-static JsProxyFuture* jsaf_freelist = NULL;
-static Py_ssize_t jsaf_freelist_len = 0;
-
-static void
-JsProxyFuture_dealloc(JsProxyFuture* it)
-{
-  PyObject_GC_UnTrack(it);
-  Py_CLEAR(it->wrapped_proxy);
-
-  if (jsaf_freelist_len < JSAF_FREELIST_MAXLEN) {
-    jsaf_freelist_len++;
-    it->wrapped_proxy = (JsProxy*)jsaf_freelist;
-    jsaf_freelist = it;
-  } else {
-    PyObject_GC_Del(it);
-  }
-}
-
-static const char* NON_INIT_CORO_MSG =
-  "can't send non-None value to a just-started coroutine";
-
-static PySendResult
-JsProxyFuture_am_send(JsProxyFuture* self, PyObject* arg, PyObject** result)
-{
-  printf("am_send: Call %d\n", self->state);
-  self->state++;
-  switch (self->state) {
-    case 1:
-      if (arg != Py_None) {
-        PyErr_SetString(PyExc_TypeError, NON_INIT_CORO_MSG);
-        return PYGEN_ERROR;
-      }
-      printf("am_send: Case 1 yield wrapped_proxy");
-      Py_INCREF(self->wrapped_proxy);
-      *result = (PyObject*)self->wrapped_proxy;
-      return PYGEN_NEXT;
-
-    case 2:
-      // Arg is borrowed from caller but caller expects to own 
-      // *result is owned by caller, so we have to incref it.
-      Py_INCREF(arg); 
-      *result = arg;
-      printf("am_send: Case 2: yeild arg, Clear wrapped_proxy\n");
-      Py_CLEAR(self->wrapped_proxy);
-      return PYGEN_RETURN;
-
-    default:
-      Py_UNREACHABLE();
-  }
-}
-
-// Copied with some modification from:
-// https://github.com/python/cpython/blob/cda99b4022daa08ac74b0420e9903cce883d91c6/Modules/_asynciomodule.c#L1641
-static PyObject*
-JsProxyFuture_send(JsProxyFuture* self, PyObject* arg)
-{
-  PyObject* result;
-  switch (JsProxyFuture_am_send(self, arg, &result)) {
-    case PYGEN_RETURN:
-      (void)_PyGen_SetStopIterationValue(result);
-      Py_DECREF(result);
-      return NULL;
-    case PYGEN_NEXT:
-      return result;
-    case PYGEN_ERROR:
-      return NULL;
-    default:
-      Py_UNREACHABLE();
-  }
-}
-
-static PyObject*
-JsProxyFuture_iternext(JsProxyFuture* self)
-{
-  return JsProxyFuture_send(self, Py_None);
-}
-
-
-// Basically copied direct from asyncio.
-// https://github.com/python/cpython/blob/cda99b4022daa08ac74b0420e9903cce883d91c6/Modules/_asynciomodule.c#L1668
-static PyObject*
-JsProxyFuture_throw(JsProxyFuture* self, PyObject* args)
-{
-  PyObject *type, *val = NULL, *tb = NULL;
-  if (!PyArg_ParseTuple(args, "O|OO", &type, &val, &tb))
-    return NULL;
-
-  if (val == Py_None) {
-    val = NULL;
-  }
-  if (tb == Py_None) {
-    tb = NULL;
-  } else if (tb != NULL && !PyTraceBack_Check(tb)) {
-    PyErr_SetString(PyExc_TypeError,
-                    "throw() third argument must be a traceback");
-    return NULL;
-  }
-
-  Py_INCREF(type);
-  Py_XINCREF(val);
-  Py_XINCREF(tb);
-
-  if (PyExceptionClass_Check(type)) {
-    PyErr_NormalizeException(&type, &val, &tb);
-    /* No need to call PyException_SetTraceback since we'll be calling
-       PyErr_Restore for `type`, `val`, and `tb`. */
-  } else if (PyExceptionInstance_Check(type)) {
-    if (val) {
-      PyErr_SetString(PyExc_TypeError,
-                      "instance exception may not have a separate value");
-      goto fail;
-    }
-    val = type;
-    type = PyExceptionInstance_Class(type);
-    Py_INCREF(type);
-    if (tb == NULL)
-      tb = PyException_GetTraceback(val);
-  } else {
-    PyErr_SetString(PyExc_TypeError,
-                    "exceptions must be classes deriving BaseException or "
-                    "instances of such a class");
-    goto fail;
-  }
-
-  Py_CLEAR(self->wrapped_proxy); // Only this line changed from asyncio.
-
-  PyErr_Restore(type, val, tb);
-
-  return NULL;
-
-fail:
-  Py_DECREF(type);
-  Py_XDECREF(val);
-  Py_XDECREF(tb);
-  return NULL;
-}
-
-static PyObject*
-JsProxyFuture_close(JsProxyFuture* self, PyObject* arg)
-{
-  Py_CLEAR(self->wrapped_proxy);
-  Py_RETURN_NONE;
-}
-
-static int
-JsProxyFuture_traverse(JsProxyFuture* self, visitproc visit, void* arg)
-{
-  Py_VISIT(self->wrapped_proxy);
-  return 0;
-}
-
-static PyMethodDef JsProxyFuture_methods[] = {
-  { "send", (PyCFunction)JsProxyFuture_send, METH_O, NULL },
-  { "throw", (PyCFunction)JsProxyFuture_throw, METH_VARARGS, NULL },
-  { "close", (PyCFunction)JsProxyFuture_close, METH_NOARGS, NULL },
-  { NULL, NULL } /* Sentinel */
-};
-
-// static PyAsyncMethods JsProxyFutureType_as_async = {
-//     0,                                  /* am_await */
-//     0,                                  /* am_aiter */
-//     0,                                  /* am_anext */
-//     (sendfunc)JsProxyFuture_am_send,       /* am_send  */
-// };
-
-
-
-static PyTypeObject JsProxyFutureType = {
-  PyVarObject_HEAD_INIT(NULL, 0) "jsproxy.PromiseWrapper",
-  .tp_basicsize = sizeof(JsProxyFuture),
-  .tp_itemsize = 0,
-  .tp_dealloc = (destructor)JsProxyFuture_dealloc,
-  .tp_getattro = PyObject_GenericGetAttr,
-  .tp_flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC,
-  .tp_traverse = (traverseproc)JsProxyFuture_traverse,
-  .tp_iter = PyObject_SelfIter,
-  .tp_iternext = (iternextfunc)JsProxyFuture_iternext,
-  .tp_methods = JsProxyFuture_methods,
-  // .tp_as_async = &JsProxyFutureType_as_async,
-};
-
-PyObject*
-JsProxy_Await(PyObject* self)
-{
-  if(!hiwire_is_promise(((JsProxy*)self)->js)){
-    PyErr_SetString(PyExc_TypeError, "Attempted to await a Javascript object which is not a promise.");
-    return NULL;
-  }
-
-  JsProxyFuture* it;
-
-  if (jsaf_freelist_len) {
-    jsaf_freelist_len--;
-    it = jsaf_freelist;
-    jsaf_freelist = (JsProxyFuture*)it->wrapped_proxy;
-    it->wrapped_proxy = NULL;
-    _Py_NewReference((PyObject*)it);
-  } else {
-    it = PyObject_GC_New(JsProxyFuture, &JsProxyFutureType);
-    if (it == NULL) {
-      return NULL;
-    }
-  }
-
-  Py_INCREF(self);
-  it->wrapped_proxy = (JsProxy*)self;
-  it->state = 0;
-  PyObject_GC_Track(it);
-  return (PyObject*)it;
-}
 
 static PyAsyncMethods JsProxy_asyncMethods = { .am_await =
                                                  (unaryfunc)JsProxy_Await };
@@ -705,6 +546,7 @@ JsProxy_cnew(int idobj)
   self = (JsProxy*)JsProxyType.tp_alloc(&JsProxyType, 0);
   self->js = hiwire_incref(idobj);
   self->bytes = NULL;
+  self->future = NULL;
   return (PyObject*)self;
 }
 
@@ -788,6 +630,21 @@ JsProxy_AsJs(PyObject* x)
 int
 JsProxy_init()
 {
-  return (PyType_Ready(&JsProxyType) || PyType_Ready(&JsBoundMethodType) ||
-          PyType_Ready(&JsProxyFutureType));
+  PyObject *module = PyImport_ImportModule("asyncio");
+  if (module == NULL) {
+    goto fail;
+  }
+
+  asyncio_get_event_loop = PyObject_GetAttrString(module, "get_event_loop");
+  if(asyncio_get_event_loop == NULL){
+    goto fail;
+  }
+
+  Py_CLEAR(module);
+
+  return (PyType_Ready(&JsProxyType) || PyType_Ready(&JsBoundMethodType));
+
+  fail:
+    Py_CLEAR(module);
+    return -1;
 }

@@ -3,25 +3,16 @@ import pytest
 import time 
 
 startup = """
-    from asyncio import AbstractEventLoop
-    from functools import partial
-    class WebLoop(AbstractEventLoop):
-        def call_soon(self, coro, arg=None):
-            try:
-                x = coro.send(arg)
-                x = x.then(partial(self.call_soon, coro))
-                x.catch(partial(self.fail,coro))
-            except StopIteration as result:
-                pass
+import asyncio
+class DumbLoop(asyncio.AbstractEventLoop):
+    def create_future(self):
+        return asyncio.Future(loop=self)
 
-        def fail(self, coro,arg=None):
-            pass
+    def get_debug(self):
+        return False
 
-    import asyncio
-    loop = WebLoop()
-    asyncio.set_event_loop(loop)
+asyncio.set_event_loop(DumbLoop())
 """
-
 
 def test_await_jsproxy(selenium):
     selenium.run(startup)
@@ -34,18 +25,54 @@ def test_await_jsproxy(selenium):
         p = Promise.new(prom)
         async def temp():
             x = await p
-            global y
-            y = x
+            return x + 7
         resolve(10)
-        loop.call_soon(temp())
+        c = temp()
+        r = c.send(None)
+        """
+    )
+    time.sleep(0.01)
+    msg = "StopIteration: 17"
+    with pytest.raises(WebDriverException, match=msg):
+        selenium.run(
+            """
+            c.send(r.result())
+            """
+        )
+
+def test_await_fetch(selenium):
+    selenium.run(startup)
+    selenium.run(
+        """
+        from js import fetch, window
+        async def test():
+            response = await fetch("console.html")
+            result = await response.text()
+            print(result)
+            return result
+        fetch = fetch.bind(window)
+
+        c = test() 
+        r1 = c.send(None)
         """
     )
     time.sleep(0.1)
-    assert selenium.run("y") == 10
+    selenium.run(
+        """
+        r2 = c.send(r1.result())
+        """
+    )
+    time.sleep(0.1)
+    msg = "StopIteration: <!doctype html>"
+    with pytest.raises(WebDriverException, match=msg):
+        selenium.run(
+            """
+            c.send(r2.result())
+            """
+        )
 
 
 def test_await_nonpromise(selenium):
-    selenium.run(startup)
     msg="TypeError: Attempted to await .* which is not a promise."
     with pytest.raises(WebDriverException, match=msg):
         selenium.run(
