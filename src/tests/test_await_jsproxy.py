@@ -1,6 +1,6 @@
 from selenium.common.exceptions import WebDriverException
 import pytest
-import time 
+import time
 
 startup = """
 import asyncio
@@ -13,6 +13,7 @@ class DumbLoop(asyncio.AbstractEventLoop):
 
 asyncio.set_event_loop(DumbLoop())
 """
+
 
 def test_await_jsproxy(selenium):
     selenium.run(startup)
@@ -39,6 +40,7 @@ def test_await_jsproxy(selenium):
             c.send(r.result())
             """
         )
+
 
 def test_await_fetch(selenium):
     selenium.run(startup)
@@ -73,7 +75,7 @@ def test_await_fetch(selenium):
 
 
 def test_await_nonpromise(selenium):
-    msg="TypeError: Attempted to await .* which is not a promise."
+    msg = "TypeError: Attempted to await .* which is not a promise."
     with pytest.raises(WebDriverException, match=msg):
         selenium.run(
             """

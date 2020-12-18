@@ -24,7 +24,7 @@ _Py_IDENTIFIER(set_exception);
 _Py_IDENTIFIER(set_result);
 _Py_IDENTIFIER(__await__);
 
-static PyObject *asyncio_get_event_loop;
+static PyObject* asyncio_get_event_loop;
 
 static PyObject*
 JsBoundMethod_cnew(int this_, const char* name);
@@ -72,11 +72,8 @@ JsProxy_GetAttr(PyObject* o, PyObject* attr_name)
 
   const char* key = PyUnicode_AsUTF8(str);
 
-  if (
-    strncmp(key, "new", 4) == 0 
-    || strncmp(key, "_has_bytes", 11) == 0
-    || strncmp(key, "__await__", 10) == 0
-  ) {
+  if (strncmp(key, "new", 4) == 0 || strncmp(key, "_has_bytes", 11) == 0 ||
+      strncmp(key, "__await__", 10) == 0) {
     Py_DECREF(str);
     return PyObject_GenericGetAttr(o, attr_name);
   } else if (strncmp(key, "typeof", 7) == 0) {
@@ -429,34 +426,33 @@ JsProxy_Bool(PyObject* o)
   return (self->js && hiwire_get_bool(self->js)) ? 1 : 0;
 }
 
-
 PyObject*
 JsProxy_Await(JsProxy* self)
 {
-  if(self->future != NULL){
+  if (self->future != NULL) {
     return _PyObject_CallMethodId(self->future, &PyId___await__, NULL);
   }
 
-  if(!hiwire_is_promise(((JsProxy*)self)->js)){
-    PyErr_SetString(PyExc_TypeError, 
-      "Attempted to await a Javascript object which is not a promise."
-    );
-    return NULL;
-  }
-  
-  PyObject *loop = _PyObject_CallNoArg(asyncio_get_event_loop);
-  if(loop == NULL){
+  if (!hiwire_is_promise(((JsProxy*)self)->js)) {
+    PyErr_SetString(
+      PyExc_TypeError,
+      "Attempted to await a Javascript object which is not a promise.");
     return NULL;
   }
 
-  PyObject *fut = _PyObject_CallMethodId(loop, &PyId_create_future, NULL);
-  if(fut == NULL){
+  PyObject* loop = _PyObject_CallNoArg(asyncio_get_event_loop);
+  if (loop == NULL) {
+    return NULL;
+  }
+
+  PyObject* fut = _PyObject_CallMethodId(loop, &PyId_create_future, NULL);
+  if (fut == NULL) {
     return NULL;
   }
 
   Py_CLEAR(loop);
-  PyObject *set_result = _PyObject_GetAttrId(fut, &PyId_set_result);
-  PyObject *set_exception = _PyObject_GetAttrId(fut, &PyId_set_exception);
+  PyObject* set_result = _PyObject_GetAttrId(fut, &PyId_set_result);
+  PyObject* set_exception = _PyObject_GetAttrId(fut, &PyId_set_exception);
 
   int idargs = hiwire_array();
   int idarg = python2js(set_result);
@@ -469,13 +465,11 @@ JsProxy_Await(JsProxy* self)
   hiwire_decref(idarg);
   hiwire_call_member(self->js, (int)"catch", idargs);
   hiwire_decref(idargs);
-  
+
   self->future = fut;
 
   return _PyObject_CallMethodId(self->future, &PyId___await__, NULL);
 }
-
-
 
 // clang-format off
 static PyMappingMethods JsProxy_MappingMethods = {
@@ -514,7 +508,6 @@ static PyMethodDef JsProxy_Methods[] = {
   { NULL }
 };
 // clang-format on
-
 
 static PyAsyncMethods JsProxy_asyncMethods = { .am_await =
                                                  (unaryfunc)JsProxy_Await };
@@ -630,13 +623,13 @@ JsProxy_AsJs(PyObject* x)
 int
 JsProxy_init()
 {
-  PyObject *module = PyImport_ImportModule("asyncio");
+  PyObject* module = PyImport_ImportModule("asyncio");
   if (module == NULL) {
     goto fail;
   }
 
   asyncio_get_event_loop = PyObject_GetAttrString(module, "get_event_loop");
-  if(asyncio_get_event_loop == NULL){
+  if (asyncio_get_event_loop == NULL) {
     goto fail;
   }
 
@@ -644,7 +637,7 @@ JsProxy_init()
 
   return (PyType_Ready(&JsProxyType) || PyType_Ready(&JsBoundMethodType));
 
-  fail:
-    Py_CLEAR(module);
-    return -1;
+fail:
+  Py_CLEAR(module);
+  return -1;
 }

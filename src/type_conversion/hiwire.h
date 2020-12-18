@@ -416,7 +416,7 @@ int
 hiwire_is_function(int idobj);
 
 /**
- * Returns 1 if the object is a promise. 
+ * Returns 1 if the object is a promise.
  * Test is Promise.resolve(obj) === obj.
  *
  * Returns: C int
