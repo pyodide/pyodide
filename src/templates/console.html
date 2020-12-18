@@ -94,7 +94,7 @@
           term.resume()
           if (result === undefined)
             return
-          term.echo(python_repr(result))
+          term.echo(`[[;green;]${python_repr(result)}]`)
         }
 
         term.handlePythonError = function(result) {
