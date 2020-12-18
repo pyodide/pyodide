@@ -1,12 +1,13 @@
 (loading_packages)=
 # Loading packages
 
-Only the Python standard library and [six](https://pypi.org/project/six/) are available after importing Pyodide.
+Only the Python standard library and [six](https://pypi.org/project/six/) are 
+available after importing Pyodide.
 To use other packages, you’ll need to load them using either:
  - {ref}`pyodide.loadPackage <js_api_pyodide_loadPackage>` for packages built
    with pyodide, or 
- - `micropip.install` for pure Python packages available on PyPi or
-   on other URLs.
+ - `micropip.install` for pure Python packages with wheels available on PyPi or
+   from other URLs.
 
 ```{note}
 `micropip` can also be used to load packages built in pyodide (in

@@ -268,7 +268,7 @@ del _PackageManager
 def install(requirements: Union[str, List[str]]):
     """Install the given package and all of its dependencies.
 
-    See {ref}`loading packages <loading_packages>` for more information.
+    See :ref:`loading packages <loading_packages>` for more information.
 
     This only works for packages that are either pure Python or for packages with
     C extensions that are built in pyodide. If a pure Python package is not found
