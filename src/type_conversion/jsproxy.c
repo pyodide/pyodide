@@ -451,6 +451,9 @@ static PyMethodDef JsProxy_Methods[] = {
   { NULL }
 };
 // clang-format on
+// Here we are one-for-one mimicking similar functions in _asynciomodule
+// Lines 1580 -- 1800
+// https://github.com/python/cpython/blob/cda99b4022daa08ac74b0420e9903cce883d91c6/Modules/_asynciomodule.c#L1580
 
 typedef struct
 {
@@ -459,12 +462,33 @@ typedef struct
   JsProxy* wrapped_proxy;
 } JsProxyFuture;
 
+
+#define JSAF_FREELIST_MAXLEN 255
+static JsProxyFuture* jsaf_freelist = NULL;
+static Py_ssize_t jsaf_freelist_len = 0;
+
+static void
+JsProxyFuture_dealloc(JsProxyFuture* it)
+{
+  PyObject_GC_UnTrack(it);
+  Py_CLEAR(it->wrapped_proxy);
+
+  if (jsaf_freelist_len < JSAF_FREELIST_MAXLEN) {
+    jsaf_freelist_len++;
+    it->wrapped_proxy = (JsProxy*)jsaf_freelist;
+    jsaf_freelist = it;
+  } else {
+    PyObject_GC_Del(it);
+  }
+}
+
 static const char* NON_INIT_CORO_MSG =
   "can't send non-None value to a just-started coroutine";
 
 static PySendResult
 JsProxyFuture_am_send(JsProxyFuture* self, PyObject* arg, PyObject** result)
 {
+  printf("am_send: Call %d\n", self->state);
   self->state++;
   switch (self->state) {
     case 1:
@@ -472,11 +496,17 @@ JsProxyFuture_am_send(JsProxyFuture* self, PyObject* arg, PyObject** result)
         PyErr_SetString(PyExc_TypeError, NON_INIT_CORO_MSG);
         return PYGEN_ERROR;
       }
+      printf("am_send: Case 1 yield wrapped_proxy");
+      Py_INCREF(self->wrapped_proxy);
       *result = (PyObject*)self->wrapped_proxy;
       return PYGEN_NEXT;
 
     case 2:
+      // Arg is borrowed from caller but caller expects to own 
+      // *result is owned by caller, so we have to incref it.
+      Py_INCREF(arg); 
       *result = arg;
+      printf("am_send: Case 2: yeild arg, Clear wrapped_proxy\n");
       Py_CLEAR(self->wrapped_proxy);
       return PYGEN_RETURN;
 
@@ -488,19 +518,7 @@ JsProxyFuture_am_send(JsProxyFuture* self, PyObject* arg, PyObject** result)
 static PyObject*
 JsProxyFuture_iternext(JsProxyFuture* self)
 {
-  PyObject* result;
-  switch (JsProxyFuture_am_send(self, Py_None, &result)) {
-    case PYGEN_RETURN:
-      (void)_PyGen_SetStopIterationValue(result);
-      Py_DECREF(result);
-      return NULL;
-    case PYGEN_NEXT:
-      return result;
-    case PYGEN_ERROR:
-      return NULL;
-    default:
-      Py_UNREACHABLE();
-  }
+  JsProxyFuture_send(arg, Py_None);
 }
 
 // Copied with some modification from:
@@ -610,24 +628,7 @@ static PyMethodDef JsProxyFuture_methods[] = {
 //     (sendfunc)JsProxyFuture_am_send,       /* am_send  */
 // };
 
-#define JSAF_FREELIST_MAXLEN 255
-static JsProxyFuture* jsaf_freelist = NULL;
-static Py_ssize_t jsaf_freelist_len = 0;
 
-static void
-JsProxyFuture_dealloc(JsProxyFuture* it)
-{
-  PyObject_GC_UnTrack(it);
-  Py_CLEAR(it->wrapped_proxy);
-
-  if (jsaf_freelist_len < JSAF_FREELIST_MAXLEN) {
-    jsaf_freelist_len++;
-    it->wrapped_proxy = (JsProxy*)jsaf_freelist;
-    jsaf_freelist = it;
-  } else {
-    PyObject_GC_Del(it);
-  }
-}
 
 static PyTypeObject JsProxyFutureType = {
   PyVarObject_HEAD_INIT(NULL, 0) "jsproxy.PromiseWrapper",
