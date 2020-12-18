@@ -1,3 +1,5 @@
+This comes from #541. We let it as is in case it helps building on Mac.
+
 diff --git a/setupext.py b/setupext.py
 --- a/setupext.py
 +++ b/setupext.py

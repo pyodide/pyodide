@@ -1,14 +1,10 @@
-diff --git a/lib/matplotlib/backend_bases.py b/lib/matplotlib/backend_bases.py
---- a/lib/matplotlib/backend_bases.py
-+++ b/lib/matplotlib/backend_bases.py
-@@ -1993,6 +1993,7 @@ class FigureCanvasBase:
- 
-     def draw(self, *args, **kwargs):
-         """Render the `.Figure`."""
-+        pass
- 
-     def draw_idle(self, *args, **kwargs):
-         """
+Since threading is not yet supported in Pyodide,
+we use the `dummy_thread` module.
+
+Moreover, `dummy_thread`'s RLock does not support
+context managing (with staement) so we explicitly
+invoke aquire/release.
+
 diff --git a/lib/matplotlib/backends/backend_agg.py b/lib/matplotlib/backends/backend_agg.py
 --- a/lib/matplotlib/backends/backend_agg.py
 +++ b/lib/matplotlib/backends/backend_agg.py

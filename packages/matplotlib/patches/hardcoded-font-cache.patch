@@ -1,3 +1,7 @@
+In Pyodide, font list (see packages/matplotlib/src/fontlist.json)
+is manually pushed in the matplotlib's directory (see meta.yaml)
+so we teach `font_manager.py` where to find it.
+
 diff --git a/lib/matplotlib/font_manager.py b/lib/matplotlib/font_manager.py
 --- a/lib/matplotlib/font_manager.py
 +++ b/lib/matplotlib/font_manager.py
