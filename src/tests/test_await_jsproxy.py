@@ -73,6 +73,33 @@ def test_await_fetch(selenium):
             """
         )
 
+def test_await_error(selenium):
+    selenium.run_js(
+        """
+        async function js_raises(){
+            throw Error("This is an error message!");
+        }
+        window.js_raises = js_raises;
+        """
+    )
+    selenium.run(startup)
+    selenium.run(
+        """
+        from js import js_raises
+        async def test():
+            await js_raises()
+        c = test() 
+        r = c.send(None)
+        """
+    )
+    time.sleep(0.01)
+    msg = "This is an error message!" 
+    with pytest.raises(WebDriverException, match=msg):
+        selenium.run(
+            """
+            r.result()
+            """
+        )
 
 def test_await_nonpromise(selenium):
     msg = "TypeError: Attempted to await .* which is not a promise."
