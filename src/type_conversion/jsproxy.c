@@ -4,6 +4,18 @@
 #include "js2python.h"
 #include "python2js.h"
 
+<<<<<<< Updated upstream
+=======
+_Py_IDENTIFIER(get_event_loop);
+_Py_IDENTIFIER(create_future);
+_Py_IDENTIFIER(set_exception);
+_Py_IDENTIFIER(set_result);
+_Py_IDENTIFIER(__await__);
+
+static PyObject* asyncio_get_event_loop;
+static PyObject* pyodide_JsException;
+
+>>>>>>> Stashed changes
 static PyObject*
 JsBoundMethod_cnew(int this_, const char* name);
 
@@ -467,6 +479,18 @@ JsProxy_cnew(int idobj)
   return (PyObject*)self;
 }
 
+PyObject*
+JsProxy_new_error(int idobj){
+  printf("JsProxy_new_error\n");
+  PyObject *proxy = JsProxy_cnew(idobj);
+  printf("Made proxy repr: %s\n", PyUnicode_AsUTF8(PyObject_Repr(proxy)));
+  printf("JsProxyType repr: %s", PyUnicode_AsUTF8(PyObject_Repr(&JsProxyType)));
+  // printf("JsException repr: %s", PyUnicode_AsUTF8(PyObject_Repr(pyodide_JsException)));
+  PyObject *result = PyObject_CallFunctionObjArgs(pyodide_JsException, proxy);
+  printf("Called JsException constructor\n");
+  return result;
+}
+
 ////////////////////////////////////////////////////////////
 // JsBoundMethod
 //
@@ -540,12 +564,61 @@ JsProxy_Check(PyObject* x)
 int
 JsProxy_AsJs(PyObject* x)
 {
-  JsProxy* js_proxy = (JsProxy*)x;
+  JsProxy* js_proxy = (JsProxy*)x; 
   return hiwire_incref(js_proxy->js);
+}
+
+
+int
+JsException_Check(PyObject* x)
+{
+  return PyObject_TypeCheck(x, (PyTypeObject *)pyodide_JsException);
+}
+
+int
+JsException_AsJs(PyObject* x)
+{
+  JsProxy* js_proxy = (JsProxy*)PyObject_GetAttrString(x, "js_error");
+  if(js_proxy == NULL){
+    // Is this the right way to return errors here?
+    // TODO: avoid this?
+    return -1;
+  }
+  int result = hiwire_incref(js_proxy->js);
+  Py_DECREF(js_proxy);
+  return result;
 }
 
 int
 JsProxy_init()
 {
+<<<<<<< Updated upstream
+=======
+  PyObject* module;
+  PyObject* exc;
+
+  module = PyImport_ImportModule("asyncio");
+  if (module == NULL) {
+    goto fail;
+  }
+
+  asyncio_get_event_loop = PyObject_GetAttrString(module, "get_event_loop");
+  if (asyncio_get_event_loop == NULL) {
+    goto fail;
+  }
+
+  Py_CLEAR(module);
+
+  module = PyImport_ImportModule("pyodide");
+  if (module == NULL) {
+    goto fail;
+  }
+  pyodide_JsException = PyObject_GetAttrString(module, "JsException");
+  if (pyodide_JsException == NULL) {
+    goto fail;
+  }
+
+  Py_CLEAR(module);
+>>>>>>> Stashed changes
   return (PyType_Ready(&JsProxyType) || PyType_Ready(&JsBoundMethodType));
 }
