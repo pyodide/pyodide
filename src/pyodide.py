@@ -13,7 +13,7 @@ class JsException(BaseException):
     def __init__(self, js_error, *args):
         print("Calling JsException constructor", js_error, args)
         self.js_error = js_error
-        
+
 
 __version__ = "0.15.0"
 

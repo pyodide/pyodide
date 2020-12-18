@@ -80,10 +80,9 @@ _js2python_error(int id)
 
 // TODO: Add some meaningful order
 
-
-
 EM_JS(int, __js2python, (int id), {
-  function __js2python_string(value){
+  function __js2python_string(value)
+  {
     // The general idea here is to allocate a Python string and then
     // have Javascript write directly into its buffer.  We first need
     // to determine if is needs to be a 1-, 2- or 4-byte string, since
@@ -132,9 +131,7 @@ EM_JS(int, __js2python, (int id), {
   }
 
   // From https://stackoverflow.com/a/45496068
-  function is_error(value){
-    return value && value.stack && value.message;
-  }
+  function is_error(value) { return value && value.stack && value.message; }
 
   // clang-format off
   var value = Module.hiwire_get_value(id);

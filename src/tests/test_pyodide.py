@@ -24,6 +24,7 @@ def test_find_imports():
     )
     assert set(res) == {"numpy", "scipy", "six", "matplotlib"}
 
+
 def test_javascript_error(selenium):
     msg = "pyodide.JsException: Error: hi"
     with pytest.raises(WebDriverException, match=msg):
@@ -35,6 +36,7 @@ def test_javascript_error(selenium):
             """
         )
 
+
 def test_javascript_error_no_new(selenium):
     msg = "pyodide.JsException: Error: hi"
     with pytest.raises(WebDriverException, match=msg):
@@ -45,6 +47,7 @@ def test_javascript_error_no_new(selenium):
             raise err
             """
         )
+
 
 def test_javascript_error_back_to_js(selenium):
     msg = "pyodide.JsException: Error: hi"
