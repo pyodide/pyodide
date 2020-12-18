@@ -38,6 +38,9 @@
   ```
   before loading it.
   [#855](https://github.com/iodide-project/pyodide/pull/855)
+- Improving console.html with more colors, a sync behavior,
+  full stdout/stderr support and a better representation of results
+  [#855](https://github.com/iodide-project/pyodide/pull/875)
 
 
 ## Version 0.15.0
