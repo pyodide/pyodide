@@ -65,7 +65,6 @@ all: check \
 	build/pyodide.asm.js \
 	build/pyodide.asm.data \
 	build/pyodide.js \
-	build/pyodide_dev.js \
 	build/console.html \
 	build/renderedhtml.css \
 	build/test.data \
@@ -102,17 +101,10 @@ build/pyodide.asm.data: root/.built
 	uglifyjs build/pyodide.asm.data.js -o build/pyodide.asm.data.js
 
 
-build/pyodide_dev.js: src/pyodide.js
-	cp $< $@
-	sed -i -e "s#{{DEPLOY}}#./#g" $@
-	sed -i -e "s#{{ABI}}#$(PYODIDE_PACKAGE_ABI)#g" $@
-
-
 build/pyodide.js: src/pyodide.js
 	cp $< $@
-	sed -i -e 's#{{DEPLOY}}#https://cdn.jsdelivr.net/pyodide/v0.15.0/full/#g' $@
-
-	sed -i -e "s#{{ABI}}#$(PYODIDE_PACKAGE_ABI)#g" $@
+	sed -i -e 's#{{ PYODIDE_BASE_URL }}#$(PYODIDE_BASE_URL)#g' $@
+	sed -i -e "s#{{ PYODIDE_PACKAGE_ABI }}#$(PYODIDE_PACKAGE_ABI)#g" $@
 
 
 build/test.html: src/templates/test.html
@@ -121,6 +113,7 @@ build/test.html: src/templates/test.html
 
 build/console.html: src/templates/console.html
 	cp $< $@
+	sed -i -e 's#{{ PYODIDE_BASE_URL }}#$(PYODIDE_BASE_URL)#g' $@
 
 
 build/renderedhtml.css: src/css/renderedhtml.less
@@ -128,12 +121,11 @@ build/renderedhtml.css: src/css/renderedhtml.less
 
 build/webworker.js: src/webworker.js
 	cp $< $@
-	sed -i -e 's#{{DEPLOY}}#https://cdn.jsdelivr.net/pyodide/v0.15.0/full/#g' $@
+	sed -i -e 's#{{ PYODIDE_BASE_URL }}#$(PYODIDE_BASE_URL)#g' $@
 
 build/webworker_dev.js: src/webworker.js
 	cp $< $@
-	sed -i -e "s#{{DEPLOY}}#./#g" $@
-	sed -i -e "s#pyodide.js#pyodide_dev.js#g" $@
+	sed -i -e 's#{{ PYODIDE_BASE_URL }}#./#g' $@
 
 test: all
 	pytest src packages/*/test* pyodide_build -v

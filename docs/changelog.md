@@ -30,6 +30,15 @@
 - New package
   [pyodide-interrupt](https://pypi.org/project/pyodide-interrupts/), useful for
   handling interrupts in Pyodide (see project descripion for details).
+- Pyodide deployment URL can now be specified with the `PYODIDE_BASE_URL`
+  environment variable during build. The `pyodide_dev.js` is no longer distributed.
+  To get an equivalent behavior with `pyodide.js`, set,
+  ```
+  window.languagePluginUrl = './';
+  ```
+  before loading it.
+  [#855](https://github.com/iodide-project/pyodide/pull/855)
+
 
 ## Version 0.15.0
 *May 19, 2020*
