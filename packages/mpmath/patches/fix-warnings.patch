@@ -1,3 +1,6 @@
+This fix for Python 3.8 warnings is already applied in upstream and
+should probably be removed after next mpmath release.
+
 diff --git a/mpmath/ctx_mp_python.py b/mpmath/ctx_mp_python.py
 --- a/mpmath/ctx_mp_python.py
 +++ b/mpmath/ctx_mp_python.py
