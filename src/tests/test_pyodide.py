@@ -39,15 +39,23 @@ def test_javascript_error(selenium):
 
 
 def test_javascript_error_back_to_js(selenium):
-    selenium.run(
+    selenium.run_js(
         """
-        from js import Error
-        err = Error.new("This is a js error")
-        """
-    )
-    msg = selenium.run_js(
-        """
-        return pyodide.globals["err"].message
+        window.err = new Error("This is a js error")
         """
     )
-    assert msg == "This is a js error"
+    assert (
+        selenium.run(
+            """
+        from js import err
+        py_err = err
+        type(py_err).__name__
+        """
+        )
+        == "JsException"
+    )
+    assert selenium.run_js(
+        """
+        return pyodide.globals["py_err"] === err
+        """
+    )
