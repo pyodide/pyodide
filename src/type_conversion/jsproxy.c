@@ -7,13 +7,6 @@
 #include "Python.h"
 #include "structmember.h"
 
-_Py_IDENTIFIER(get_event_loop);
-_Py_IDENTIFIER(create_future);
-_Py_IDENTIFIER(set_exception);
-_Py_IDENTIFIER(set_result);
-_Py_IDENTIFIER(__await__);
-
-static PyObject* asyncio_get_event_loop;
 static PyTypeObject* PyExc_BaseException_Type;
 
 static PyObject*
@@ -662,23 +655,11 @@ JsException_AsJs(PyObject* err)
 int
 JsProxy_init()
 {
-  PyObject* module;
-  PyObject* exc;
-
   PyExc_BaseException_Type = (PyTypeObject*)PyExc_BaseException;
   _Exc_JsException.tp_base = (PyTypeObject*)PyExc_Exception;
 
-  module = PyImport_ImportModule("asyncio");
-  if (module == NULL) {
-    goto fail;
-  }
-
-  asyncio_get_event_loop = PyObject_GetAttrString(module, "get_event_loop");
-  if (asyncio_get_event_loop == NULL) {
-    goto fail;
-  }
-
-  Py_CLEAR(module);
+  PyObject* module;
+  PyObject* exc;
 
   module = PyImport_ImportModule("pyodide");
   if (module == NULL) {
