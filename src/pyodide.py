@@ -7,13 +7,6 @@ from io import StringIO
 from textwrap import dedent
 from typing import Dict, List, Optional, Any
 
-
-# Used in JsProxy
-class JsException(BaseException):
-    def __init__(self, js_error):
-        self.js_error = js_error
-
-
 __version__ = "0.15.0"
 
 

@@ -4,6 +4,9 @@
 #include "js2python.h"
 #include "python2js.h"
 
+#include "Python.h"
+#include "structmember.h"
+
 _Py_IDENTIFIER(get_event_loop);
 _Py_IDENTIFIER(create_future);
 _Py_IDENTIFIER(set_exception);
@@ -11,7 +14,7 @@ _Py_IDENTIFIER(set_result);
 _Py_IDENTIFIER(__await__);
 
 static PyObject* asyncio_get_event_loop;
-static PyObject* pyodide_JsException;
+static PyTypeObject* PyExc_BaseException_Type;
 
 static PyObject*
 JsBoundMethod_cnew(int this_, const char* name);
@@ -476,11 +479,92 @@ JsProxy_cnew(int idobj)
   return (PyObject*)self;
 }
 
+typedef struct
+{
+  PyException_HEAD PyObject* js_error;
+} JsExceptionObject;
+
+static PyMemberDef JsException_members[] = {
+  { "js_error",
+    T_OBJECT_EX,
+    offsetof(JsExceptionObject, js_error),
+    READONLY,
+    PyDoc_STR("A PyProxy object wrapping the javascript error") },
+  { NULL } /* Sentinel */
+};
+
+static int
+JsException_init(JsExceptionObject* self, PyObject* args, PyObject* kwds)
+{
+  Py_ssize_t size = PyTuple_GET_SIZE(args);
+  PyObject* js_error;
+  if (size == 0) {
+    PyErr_SetString(
+      PyExc_TypeError,
+      "__init__() missing 1 required positional argument: 'js_error'.");
+    return -1;
+  }
+
+  js_error = PyTuple_GET_ITEM(args, 0);
+  if (!PyObject_TypeCheck(js_error, &JsProxyType)) {
+    PyErr_SetString(PyExc_TypeError,
+                    "Argument 'js_error' must be an instance of JsProxy.");
+    return -1;
+  }
+
+  if (PyExc_BaseException_Type->tp_init((PyObject*)self, args, kwds) == -1)
+    return -1;
+
+  Py_CLEAR(self->js_error);
+  Py_INCREF(js_error);
+  self->js_error = js_error;
+  return 0;
+}
+
+static int
+JsException_clear(JsExceptionObject* self)
+{
+  Py_CLEAR(self->js_error);
+  return PyExc_BaseException_Type->tp_clear((PyObject*)self);
+}
+
+static void
+JsException_dealloc(JsExceptionObject* self)
+{
+  JsException_clear(self);
+  PyExc_BaseException_Type->tp_free((PyObject*)self);
+}
+
+static int
+JsException_traverse(JsExceptionObject* self, visitproc visit, void* arg)
+{
+  Py_VISIT(self->js_error);
+  return PyExc_BaseException_Type->tp_traverse((PyObject*)self, visit, arg);
+}
+
+static PyTypeObject _Exc_JsException = {
+  PyVarObject_HEAD_INIT(NULL, 0) "JsException",
+  .tp_basicsize = sizeof(JsExceptionObject),
+  .tp_dealloc = (destructor)JsException_dealloc,
+  .tp_flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE | Py_TPFLAGS_HAVE_GC,
+  .tp_doc =
+    PyDoc_STR("An exception which wraps a Javascript error. The js_error field "
+              "contains a JsProxy for the wrapped error."),
+  .tp_traverse = (traverseproc)JsException_traverse,
+  .tp_clear = (inquiry)JsException_clear,
+  .tp_members = JsException_members,
+  // PyExc_Exception isn't static so we fill in .tp_base in JsProxy_init
+  // .tp_base = (PyTypeObject *)PyExc_Exception,
+  .tp_dictoffset = offsetof(JsExceptionObject, dict),
+  .tp_init = (initproc)JsException_init
+};
+static PyObject* Exc_JsException = (PyObject*)&_Exc_JsException;
+
 PyObject*
 JsProxy_new_error(int idobj)
 {
   PyObject* proxy = JsProxy_cnew(idobj);
-  PyObject* result = PyObject_CallFunctionObjArgs(pyodide_JsException, proxy, NULL);
+  PyObject* result = PyObject_CallFunctionObjArgs(Exc_JsException, proxy, NULL);
   return result;
 }
 
@@ -564,21 +648,15 @@ JsProxy_AsJs(PyObject* x)
 int
 JsException_Check(PyObject* x)
 {
-  return PyObject_TypeCheck(x, (PyTypeObject*)pyodide_JsException);
+  return PyObject_TypeCheck(x, (PyTypeObject*)Exc_JsException);
 }
 
 int
-JsException_AsJs(PyObject* x)
+JsException_AsJs(PyObject* err)
 {
-  JsProxy* js_proxy = (JsProxy*)PyObject_GetAttrString(x, "js_error");
-  if (js_proxy == NULL) {
-    // Is this the right way to return errors here?
-    // TODO: avoid this?
-    return -1;
-  }
-  int result = hiwire_incref(js_proxy->js);
-  Py_DECREF(js_proxy);
-  return result;
+  JsExceptionObject* err_obj = (JsExceptionObject*)err;
+  JsProxy* js_error = (JsProxy*)(err_obj->js_error);
+  return hiwire_incref(js_error->js);
 }
 
 int
@@ -586,6 +664,9 @@ JsProxy_init()
 {
   PyObject* module;
   PyObject* exc;
+
+  PyExc_BaseException_Type = (PyTypeObject*)PyExc_BaseException;
+  _Exc_JsException.tp_base = (PyTypeObject*)PyExc_Exception;
 
   module = PyImport_ImportModule("asyncio");
   if (module == NULL) {
@@ -603,13 +684,13 @@ JsProxy_init()
   if (module == NULL) {
     goto fail;
   }
-  pyodide_JsException = PyObject_GetAttrString(module, "JsException");
-  if (pyodide_JsException == NULL) {
+  if (PyObject_SetAttrString(module, "JsException", Exc_JsException)) {
     goto fail;
   }
 
   Py_CLEAR(module);
-  return (PyType_Ready(&JsProxyType) || PyType_Ready(&JsBoundMethodType));
+  return (PyType_Ready(&JsProxyType) || PyType_Ready(&JsBoundMethodType) ||
+          PyType_Ready(&_Exc_JsException));
 
 fail:
   Py_CLEAR(module);
