@@ -15,6 +15,14 @@
   <body>
     <script>
       languagePluginLoader.then(() => {
+        // exposing get_completions to global scope
+        // note: jedi is imported here, otherwise, first completion
+        // takes time to complete since it toggle the first import
+        pyodide.runPython(`
+          import pyodide, js, jedi
+          js.window.get_completions = pyodide.get_completions
+        `)
+
         function pushCode(line) {
           handleResult(c.push(line))
         }
@@ -23,7 +31,10 @@
           pushCode,
           {
             greetings: "Welcome to the Pyodide terminal emulator 🐍",
-            prompt: "[[;blue;]>>> ]"
+            prompt: "[[;blue;]>>> ]",
+            completion: function(command, callback) {
+              callback(get_completions(command))
+            }
           }
         );
 
