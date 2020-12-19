@@ -479,14 +479,8 @@ JsProxy_cnew(int idobj)
 PyObject*
 JsProxy_new_error(int idobj)
 {
-  // printf("JsProxy_new_error\n");
   PyObject* proxy = JsProxy_cnew(idobj);
-  // printf("Made proxy repr: %s\n", PyUnicode_AsUTF8(PyObject_Repr(proxy)));
-  // printf("JsProxyType repr: %s",
-  // PyUnicode_AsUTF8(PyObject_Repr(&JsProxyType))); printf("JsException repr:
-  // %s", PyUnicode_AsUTF8(PyObject_Repr(pyodide_JsException)));
-  PyObject* result = PyObject_CallFunctionObjArgs(pyodide_JsException, proxy);
-  // printf("Called JsException constructor\n");
+  PyObject* result = PyObject_CallFunctionObjArgs(pyodide_JsException, proxy, NULL);
   return result;
 }
 

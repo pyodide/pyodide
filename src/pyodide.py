@@ -10,8 +10,7 @@ from typing import Dict, List, Optional, Any
 
 # Used in JsProxy
 class JsException(BaseException):
-    def __init__(self, js_error, *args):
-        print("Calling JsException constructor", js_error, args)
+    def __init__(self, js_error):
         self.js_error = js_error
 
 
