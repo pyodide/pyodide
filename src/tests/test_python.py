@@ -184,3 +184,31 @@ def test_completions(selenium):
         """
     )
     assert result == ["version", "version_info"]
+
+
+def test_import_created_files(selenium):
+    # Check that creating multiple files per
+    # folder does not prevent module imports (#737)
+
+    selenium.run(
+        """
+        import sys
+        import tempfile
+        from pathlib import Path
+        from os import listdir, stat
+        
+        tmpdir = Path(tempfile.mkdtemp())
+        sys.path.append(str(tmpdir))
+        
+        #create some unrelated file
+        with open(tmpdir / "module_b.py", "w") as fd:
+            fd.write("foo = 54")
+        
+        with open(tmpdir / "module_a.py", "w") as fh:
+            fh.write("foo = 42")
+        
+        import module_a
+        sys.path.pop()
+        assert module_a.foo == 42
+        """
+    )
