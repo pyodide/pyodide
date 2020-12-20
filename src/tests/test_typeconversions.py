@@ -18,9 +18,14 @@ def test_del_jsproxy(selenium):
         """
         from js import point
         assert point.y == 43
-        del point.y
         """
     )
+
+    msg = "AttributeError: z"
+    with pytest.raises(WebDriverException, match=msg):
+        selenium.run("point.z")
+
+    selenium.run("del point.y")
     msg = "AttributeError: y"
     with pytest.raises(WebDriverException, match=msg):
         selenium.run("point.y")
