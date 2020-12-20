@@ -1,4 +1,6 @@
-The original source files are missing some imports.
+The original source files are missing some imports. gcc assumes implicit
+function declaration, so the code compiles fine, but emscripten sets
+ -Werror=implicit-function-declaration so it is a hard error.
 
 --- a/BLAS/SRC/xerbla.c
 +++ b/BLAS/SRC/xerbla.c
