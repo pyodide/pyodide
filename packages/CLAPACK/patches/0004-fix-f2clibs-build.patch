@@ -5,11 +5,9 @@ make sense to strip symbols.
 of object to output, and .xxx is not a recognized extension; this is the error
 message you would receive if you try to run the commands)
 
-diff --git a/F2CLIBS/libf2c/Makefile b/F2CLIBS/libf2c/Makefile
-index 57eff0d..d9a42da 100644
 --- a/F2CLIBS/libf2c/Makefile
 +++ b/F2CLIBS/libf2c/Makefile
-@@ -20,14 +20,12 @@ include $(TOPDIR)/make.inc
+@@ -20,8 +20,6 @@
  # compile, then strip unnecessary symbols
  .c.o:
  	$(CC) -c -DSkip_f2c_Undefs $(CFLAGS) $*.c
@@ -18,10 +16,3 @@ index 57eff0d..d9a42da 100644
  ## Under Solaris (and other systems that do not understand ld -x),
  ## omit -x in the ld line above.
  ## If your system does not have the ld command, comment out
- ## or remove both the ld and mv lines above.
- 
--MISC =	f77vers.o i77vers.o main.o s_rnge.o abort_.o exit_.o getarg_.o iargc_.o\
-+MISC =	f77vers.o i77vers.o s_rnge.o abort_.o exit_.o getarg_.o iargc_.o\
- 	getenv_.o signal_.o s_stop.o s_paus.o system_.o cabs.o ctype.o\
- 	derf_.o derfc_.o erf_.o erfc_.o sig_die.o uninit.o
- POW =	pow_ci.o pow_dd.o pow_di.o pow_hh.o pow_ii.o pow_ri.o pow_zi.o pow_zz.o
