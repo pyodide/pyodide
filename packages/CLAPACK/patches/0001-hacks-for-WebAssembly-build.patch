@@ -6,20 +6,6 @@ Date:   Tue Sep 19 13:30:49 2017 -0700
 
     Co-authored-by: Roman Yurchak <rth.yurchak@gmail.com>
 
-diff --git a/BLAS/SRC/Makefile b/BLAS/SRC/Makefile
-index 4835fd2..e52e4ed 100644
---- a/BLAS/SRC/Makefile
-+++ b/BLAS/SRC/Makefile
-@@ -139,8 +139,7 @@ ALLOBJ=$(SBLAS1) $(SBLAS2) $(SBLAS3) $(DBLAS1) $(DBLAS2) $(DBLAS3)	\
- 	$(ZBLAS2) $(ZBLAS3) $(ALLBLAS)
- 
- $(BLASLIB): $(ALLOBJ)
--	$(ARCH) $(ARCHFLAGS) $@ $(ALLOBJ)
--	$(RANLIB) $@
-+	$(LD) $(LDFLAGS) -o $@ $(ALLOBJ)
- 
- single: $(SBLAS1) $(ALLBLAS) $(SBLAS2) $(SBLAS3)
- 	$(ARCH) $(ARCHFLAGS) $(BLASLIB) $(SBLAS1) $(ALLBLAS) \
 diff --git a/BLAS/SRC/xerbla.c b/BLAS/SRC/xerbla.c
 index 2d7baf5..da1d7fd 100644
 --- a/BLAS/SRC/xerbla.c
@@ -32,39 +18,28 @@ index 2d7baf5..da1d7fd 100644
 +
  #include "f2c.h"
  #include "blaswrap.h"
+
+--- a/INSTALL/tstiee.c
++++ b/INSTALL/tstiee.c
+@@ -10,6 +10,8 @@
+ 		http://www.netlib.org/f2c/libf2c.zip
+ */
  
-diff --git a/BLAS/WRAP/Makefile b/BLAS/WRAP/Makefile
-index d13fc97..16336da 100644
---- a/BLAS/WRAP/Makefile
-+++ b/BLAS/WRAP/Makefile
-@@ -5,12 +5,11 @@ include $(TOPDIR)/make.inc
- #  This is the makefile to create a wrapper for the CBLAS.
- #######################################################################
- 
--all: libcblaswr.a
-+all: libcblaswr.bc
++#include <string.h>
 +
-+libcblaswr.bc: cblaswr.o
-+	$(LD) $(LDFLAGS) -o $@ $?
- 
--libcblaswr.a: cblaswr.o
--	$(ARCH) $(ARCHFLAGS) libcblaswr.a cblaswr.o
--	$(RANLIB) libcblaswr.a
--	
- libfblaswr.a: fblaswr.o
- 	$(ARCH) $(ARCHFLAGS) libfblaswr.a fblaswr.o
- 	$(RANLIB) libfblaswr.a
+ #include "f2c.h"
+ #include "blaswrap.h"
+
 diff --git a/F2CLIBS/libf2c/Makefile b/F2CLIBS/libf2c/Makefile
 index 57eff0d..d9a42da 100644
 --- a/F2CLIBS/libf2c/Makefile
 +++ b/F2CLIBS/libf2c/Makefile
-@@ -20,14 +20,13 @@ include $(TOPDIR)/make.inc
+@@ -20,14 +20,12 @@ include $(TOPDIR)/make.inc
  # compile, then strip unnecessary symbols
  .c.o:
  	$(CC) -c -DSkip_f2c_Undefs $(CFLAGS) $*.c
 -	ld -r -x -o $*.xxx $*.o
 -	mv $*.xxx $*.o
-+
  ## Under Solaris (and other systems that do not understand ld -x),
  ## omit -x in the ld line above.
  ## If your system does not have the ld command, comment out
@@ -75,51 +50,6 @@ index 57eff0d..d9a42da 100644
  	getenv_.o signal_.o s_stop.o s_paus.o system_.o cabs.o ctype.o\
  	derf_.o derfc_.o erf_.o erfc_.o sig_die.o uninit.o
  POW =	pow_ci.o pow_dd.o pow_di.o pow_hh.o pow_ii.o pow_ri.o pow_zi.o pow_zz.o
-@@ -69,11 +68,10 @@ TIME =	dtime_.o etime_.o
- OFILES = $(MISC) $(POW) $(CX) $(DCX) $(REAL) $(DBL) $(INT) \
- 	$(HALF) $(CMP) $(EFL) $(CHAR) $(I77) $(TIME)
- 
--all: f2c.h signal1.h sysdep1.h libf2c.a clapack_install
-+all: f2c.h signal1.h sysdep1.h libf2c.bc clapack_install
- 
--libf2c.a: $(OFILES)
--	ar r libf2c.a $?
--	-ranlib libf2c.a
-+libf2c.bc: $(OFILES)
-+	$(LD) $(LDFLAGS) -o libf2c.bc $?
- 
- ## Shared-library variant: the following rule works on Linux
- ## systems.  Details are system-dependent.  Under Linux, -fPIC
-@@ -82,7 +80,7 @@ libf2c.a: $(OFILES)
- ## of "cc -shared".
- 
- libf2c.so: $(OFILES)
--	cc -shared -o libf2c.so $(OFILES)
-+	$(LD) $(LDFLAGS) -shared -o libf2c.so $(OFILES)
- 
- ### If your system lacks ranlib, you don't need it; see README.
- 
-@@ -117,15 +115,14 @@ sysdep1.h: sysdep1.h0
- #main.o: main.c
- #	$(CC) -c -Donexit=on_exit -DSkip_f2c_Undefs main.c
- 
--install: libf2c.a
--	cp libf2c.a $(LIBDIR)
--	-ranlib $(LIBDIR)/libf2c.a
-+install: libf2c.bc
-+	cp libf2c.bc $(LIBDIR)
- 
--clapack_install: libf2c.a
--	mv libf2c.a ..
-+clapack_install: libf2c.bc
-+	mv libf2c.bc ..
- 
- clean:
--	rm -f libf2c.a *.o arith.h signal1.h sysdep1.h
-+	rm -f libf2c.bc *.o arith.h signal1.h sysdep1.h
- 
- backspac.o:	fio.h
- close.o:	fio.h
 diff --git a/F2CLIBS/libf2c/arith.h b/F2CLIBS/libf2c/arith.h
 new file mode 100644
 index 0000000..e69de29
@@ -127,62 +57,15 @@ diff --git a/Makefile b/Makefile
 index 2875fbc..cf3cb64 100644
 --- a/Makefile
 +++ b/Makefile
-@@ -6,12 +6,12 @@
- 
- include make.inc
- 
--all: f2clib lapack_install lib lapack_testing blas_testing
-+all: f2clib lib
- #all: f2clib lapack_install lib lapack_testing blas_testing variants_testing
- 
- #lib: lapacklib tmglib
- #lib: f2clib lapacklib tmglib
--lib: f2clib blaslib variants lapacklib tmglib
-+lib: f2clib blaslib lapacklib
+@@ -14,9 +14,8 @@
  
  clean: cleanlib cleantesting cleanblas_testing 
- 
-@@ -23,12 +23,12 @@ blaslib:
+
+-lapack_install:
+-	( cd INSTALL; $(MAKE); ./testlsame; ./testslamch; \
+-	  ./testdlamch; ./testsecond; ./testdsecnd; ./testversion )
++lapack_install: f2clib
++	( cd INSTALL; $(MAKE) )
+
+ blaslib:
  	( cd BLAS/SRC; $(MAKE) )
- 
- cblaswrap: 
--	( cd BLAS/WRAP; $(MAKE) libcblaswr.a; cp libcblaswr.a ../.. )
-+	( cd BLAS/WRAP; $(MAKE) libcblaswr.bc; cp libcblaswr.bc ../.. )
- 
- fblaswrap: 
- 	( cd BLAS/WRAP; $(MAKE) libfblaswr.a; cp libfblaswr.a ../.. )
- 
--lapacklib:	lapack_install
-+lapacklib:
- 	( cd SRC; $(MAKE) )
- 
- variants:
-@@ -56,7 +56,7 @@ variants_testing: lib
- 	mv stest.out stest_lurec.out ; mv dtest.out dtest_lurec.out ; mv ctest.out ctest_lurec.out ; mv ztest.out ztest_lurec.out )
- 	( cd TESTING ;  rm -f xlintst* ; $(MAKE)  VARLIB='SRC/VARIANTS/LIB/qrll.a' ; \
- 	mv stest.out stest_qrll.out ; mv dtest.out dtest_qrll.out ; mv ctest.out ctest_qrll.out ; mv ztest.out ztest_qrll.out )
--		
-+
- blas_testing:
- 	( cd BLAS/TESTING; $(MAKE) -f Makeblat1 )
- 	( cd BLAS; ./xblat1s > sblat1.out    ; \
-@@ -95,4 +95,4 @@ cleantesting:
- 	( cd TESTING; rm -f xlin* xeig* )
- 
- cleanall: cleanlib cleanblas_testing cleantesting 
--	rm -f *.a TESTING/*.out INSTALL/test*  BLAS/*.out
-+	rm -f *.bc TESTING/*.out INSTALL/test*  BLAS/*.out
-diff --git a/SRC/Makefile b/SRC/Makefile
-index 223f4da..7491963 100644
---- a/SRC/Makefile
-+++ b/SRC/Makefile
-@@ -369,8 +369,7 @@ ALLOBJ=$(SLASRC) $(DLASRC) $(CLASRC) $(ZLASRC) $(SCLAUX) $(DZLAUX)	\
- 	$(ALLAUX)
- 
- ../$(LAPACKLIB): $(ALLOBJ) $(ALLXOBJ)
--	$(ARCH) $(ARCHFLAGS) $@ $(ALLOBJ) $(ALLXOBJ)
--	$(RANLIB) $@
-+	$(CC) $(CFLAGS) -o $@ $(ALLOBJ) $(ALLXOBJ)
- 
- single: $(SLASRC) $(ALLAUX) $(SCLAUX) 
- 	$(ARCH) $(ARCHFLAGS) ../$(LAPACKLIB) $(SLASRC) $(ALLAUX) \

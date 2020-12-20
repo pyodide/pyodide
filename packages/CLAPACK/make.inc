@@ -52,15 +52,15 @@ TIMER    = INT_CPU_TIME
 #  The archiver and the flag(s) to use when building archive (library)
 #  If you system has no ranlib, set RANLIB = echo.
 #
-ARCH     = ar
+ARCH     = $(AR)
 ARCHFLAGS= cr
-RANLIB   = ranlib
+#RANLIB   = ranlib
 #
 #  The location of BLAS library for linking the testing programs.
 #  The target's machine-specific, optimized BLAS library should be
 #  used whenever possible.
 #
-BLASLIB      = ../../blas$(PLAT).bc
+BLASLIB      = ../../blas$(PLAT).a
 #
 #  Location of the extended-precision BLAS (XBLAS) Fortran library
 #  used for building and testing extended-precision routines.  The
@@ -73,9 +73,8 @@ XBLASLIB     =
 #
 #  Names of generated libraries.
 #
-LAPACKLIB    = lapack$(PLAT).bc
-F2CLIB       = ../../F2CLIBS/libf2c.bc
-TMGLIB       = tmglib$(PLAT).bc
-EIGSRCLIB    = eigsrc$(PLAT).bc
-LINSRCLIB    = linsrc$(PLAT).bc
-
+LAPACKLIB    = lapack$(PLAT).a
+F2CLIB       = ../../F2CLIBS/libf2c.a
+TMGLIB       = tmglib$(PLAT).a
+EIGSRCLIB    = eigsrc$(PLAT).a
+LINSRCLIB    = linsrc$(PLAT).a

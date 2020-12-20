@@ -19,17 +19,25 @@ $(SRC)/lapack_WA.bc:  $(SRC)/Makefile
 	# On target it gets rewritten by pywasmcross to the full patch of
 	# blas_WA.bc, lapack_WA.bc which are linked statically in scipy
 	# in each module that needs them.
-	emmake make -C CLAPACK-WA/ -j $${PYODIDE_JOBS:-3}
+	emmake make -C CLAPACK-WA/ -j $${PYODIDE_JOBS:-3} blaslib lapacklib
 
-
-$(SRC)/Makefile:
+clapack.tgz:
 	wget -q -O clapack.tgz http://www.netlib.org/clapack/clapack.tgz
 	md5sum --quiet --check checksums || (rm -f clapack.tgz; false)
+
+$(SRC)/Makefile: clapack.tgz
 	tar xzf clapack.tgz
 	rm -rf $(SRC)
 	mv CLAPACK-$(CLAPACK_VERSION) $(SRC)
+	chmod -R o+rx $(SRC)
 	( \
 		cd $(SRC); \
 		(cat ../patches/*.patch | patch -p1) \
 	)
 	cp make.inc $(SRC)
+
+	# In CLAPACK's Makefiles, some commands are mistakenly (?) hardcoded
+	# instead of using the right variables
+	sed -i 's/^	-ranlib /^	$(RANLIB)/' **/Makefile
+	sed -i 's/^	ar /^	$(ARCH)/' **/Makefile
+	sed -i 's/^	ld /^	$(LD)/' **/Makefile
