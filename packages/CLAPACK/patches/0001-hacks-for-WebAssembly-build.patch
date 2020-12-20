@@ -50,14 +50,20 @@ index 57eff0d..d9a42da 100644
  	getenv_.o signal_.o s_stop.o s_paus.o system_.o cabs.o ctype.o\
  	derf_.o derfc_.o erf_.o erfc_.o sig_die.o uninit.o
  POW =	pow_ci.o pow_dd.o pow_di.o pow_hh.o pow_ii.o pow_ri.o pow_zi.o pow_zz.o
-diff --git a/F2CLIBS/libf2c/arith.h b/F2CLIBS/libf2c/arith.h
-new file mode 100644
-index 0000000..e69de29
-diff --git a/Makefile b/Makefile
-index 2875fbc..cf3cb64 100644
+@@ -184,8 +184,8 @@
+ arith.h: arithchk.c
+ 	$(CC) $(CFLAGS) -DNO_FPINIT arithchk.c -lm ||\
+ 	 $(CC) -DNO_LONG_LONG $(CFLAGS) -DNO_FPINIT arithchk.c -lm
+-	./a.out >arith.h
+-	rm -f a.out arithchk.o
++	node a.out.js >arith.h
++	rm -f a.out.js a.out.wasm
+ 
+ check:
+ 	xsum Notice README abort_.c arithchk.c backspac.c c_abs.c c_cos.c \
 --- a/Makefile
 +++ b/Makefile
-@@ -14,9 +14,8 @@
+@@ -15,9 +15,8 @@
  
  clean: cleanlib cleantesting cleanblas_testing 
 
