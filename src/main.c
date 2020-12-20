@@ -2,6 +2,7 @@
 #include <emscripten.h>
 
 #include "hiwire.h"
+#include "interrupts.h"
 #include "js2python.h"
 #include "jsimport.h"
 #include "jsproxy.h"
@@ -35,7 +36,8 @@ main(int argc, char** argv)
 
   if (js2python_init() || JsImport_init() || JsProxy_init() ||
       pyimport_init() || pyproxy_init() || python2js_init() ||
-      runpython_init_js() || runpython_init_py() || runpython_finalize_js()) {
+      interrupts_init() || runpython_init_js() || runpython_init_py() ||
+      runpython_finalize_js()) {
     return 1;
   }
 

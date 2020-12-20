@@ -7,6 +7,31 @@ from io import StringIO
 from textwrap import dedent
 from typing import Dict, List, Optional, Any
 
+from contextlib import contextmanager
+
+# pyodide module methods defined in C:
+# set_interrupt_buffer (defined in interrupts.c)
+# get_interrupt_buffer (defined in interrupts.c)
+
+
+@contextmanager
+def interrupt_buffer(callback):
+    """
+    Periodically polls ``callback``. If ``callback`` returns a nonzero value, triggers a ``SIGINT`` signal.
+    By default, the signal handler for ``SIGINT`` raises a ``KeyboardException``, but using the ``signals`` package this can be changed.
+
+    If ``callback`` returns a value that cannot be interpreted as an integer or if an exception is triggered inside of ``callback``
+    then the exception is allowed to propogate but the interrupt buffer is set to ``None``.
+
+    Args:
+        callback -- a zero argument function which returns an int. If it returns a nonzero value, triggers ``SIGINT``.
+    """
+    set_interrupt_buffer(callback)
+    try:
+        yield
+    finally:
+        set_interrupt_buffer(None)
+
 
 __version__ = "0.15.0"
 
