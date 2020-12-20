@@ -9,6 +9,7 @@ static PyObject* interrupt_buffer;
 static int
 do_interrupt_handling()
 {
+  Py_AddPendingCall(&do_interrupt_handling, NULL);
   interrupt_clock--;
   if (interrupt_clock > 0) {
     return 0;
@@ -39,122 +40,6 @@ fail:
   // Clear error?
   return -1;
 }
-
-// Copied from sysmodule
-// https://github.com/python/cpython/blob/v3.8.2/Python/sysmodule.c#L807
-// up to line 919.
-
-/*
- * Cached interned string objects used for calling the profile and
- * trace functions.  Initialized by trace_init().
- */
-static PyObject* whatstrings[8] = { NULL, NULL, NULL, NULL,
-                                    NULL, NULL, NULL, NULL };
-
-static int
-trace_init(void)
-{
-  static const char* const whatnames[8] = { "call",     "exception",
-                                            "line",     "return",
-                                            "c_call",   "c_exception",
-                                            "c_return", "opcode" };
-  PyObject* name;
-  int i;
-  for (i = 0; i < 8; ++i) {
-    if (whatstrings[i] == NULL) {
-      name = PyUnicode_InternFromString(whatnames[i]);
-      if (name == NULL)
-        return -1;
-      whatstrings[i] = name;
-    }
-  }
-  return 0;
-}
-
-static PyObject*
-call_trampoline(PyObject* callback,
-                PyFrameObject* frame,
-                int what,
-                PyObject* arg)
-{
-  PyObject* result;
-  PyObject* stack[3];
-
-  if (PyFrame_FastToLocalsWithError(frame) < 0) {
-    return NULL;
-  }
-
-  stack[0] = (PyObject*)frame;
-  stack[1] = whatstrings[what];
-  stack[2] = (arg != NULL) ? arg : Py_None;
-
-  /* call the Python-level function */
-  result = _PyObject_FastCall(callback, stack, 3);
-
-  PyFrame_LocalsToFast(frame, 1);
-  if (result == NULL) {
-    PyTraceBack_Here(frame);
-  }
-
-  return result;
-}
-
-static int
-trace_trampoline(PyObject* self, PyFrameObject* frame, int what, PyObject* arg)
-{
-  if (do_interrupt_handling()) {
-    return -1;
-  }
-  if (self == NULL) {
-    return 0;
-  }
-
-  PyObject* callback;
-  PyObject* result;
-
-  if (what == PyTrace_CALL)
-    callback = self;
-  else
-    callback = frame->f_trace;
-  if (callback == NULL)
-    return 0;
-  result = call_trampoline(callback, frame, what, arg);
-  if (result == NULL) {
-    PyEval_SetTrace(trace_trampoline, NULL);
-    Py_CLEAR(frame->f_trace);
-    return -1;
-  }
-  if (result != Py_None) {
-    Py_XSETREF(frame->f_trace, result);
-  } else {
-    Py_DECREF(result);
-  }
-  return 0;
-}
-
-static PyObject*
-replacement_sys_settrace(PyObject* self, PyObject* args)
-{
-  if (trace_init() == -1)
-    return NULL;
-  if (args == Py_None)
-    PyEval_SetTrace(trace_trampoline, NULL);
-  else
-    PyEval_SetTrace(trace_trampoline, args);
-  Py_RETURN_NONE;
-}
-
-PyDoc_STRVAR(
-  settrace_doc,
-  "settrace(function)\n"
-  "\n"
-  "Set the global debug tracing function.  It will be called on each\n"
-  "function call.  See the debugger chapter in the library manual.");
-
-static PyMethodDef settrace_methoddef = { "settrace",
-                                          replacement_sys_settrace,
-                                          METH_O,
-                                          settrace_doc };
 
 PyObject*
 pyodide_set_interrupt_buffer(PyObject* self, PyObject* arg)
@@ -244,7 +129,9 @@ interrupts_init()
   Py_INCREF(Py_None);
   interrupt_buffer = Py_None;
 
-  PyEval_SetTrace(trace_trampoline, NULL);
+  // PyEval_SetTrace(trace_trampoline, NULL);
+
+  Py_AddPendingCall(&do_interrupt_handling, NULL);
 
   PyObject* module = NULL;
   PyObject* name = NULL;
@@ -275,23 +162,23 @@ interrupts_init()
   }
   Py_CLEAR(result);
 
-  Py_CLEAR(module);
-  module = PyImport_ImportModule("sys");
-  if (module == NULL) {
-    goto fail;
-  }
-  name = PyModule_GetNameObject(module);
-  if (name == NULL) {
-    goto fail;
-  }
+  // Py_CLEAR(module);
+  // module = PyImport_ImportModule("sys");
+  // if (module == NULL) {
+  //   goto fail;
+  // }
+  // name = PyModule_GetNameObject(module);
+  // if (name == NULL) {
+  //   goto fail;
+  // }
 
-  func = PyCFunction_NewEx(&settrace_methoddef, (PyObject*)module, name);
-  if (func == NULL) {
-    goto fail;
-  }
-  if (PyObject_SetAttrString(module, "settrace", func)) {
-    goto fail;
-  }
+  // func = PyCFunction_NewEx(&settrace_methoddef, (PyObject*)module, name);
+  // if (func == NULL) {
+  //   goto fail;
+  // }
+  // if (PyObject_SetAttrString(module, "settrace", func)) {
+  //   goto fail;
+  // }
 
   Py_CLEAR(module);
   module = PyImport_ImportModule("pyodide");
