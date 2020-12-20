@@ -29,11 +29,14 @@ $(SRC)/Makefile: clapack.tgz
 	tar xzf clapack.tgz
 	rm -rf $(SRC)
 	mv CLAPACK-$(CLAPACK_VERSION) $(SRC)
+
+	# The archive's contents have default permission 0750. If we use docker
+	# to build, then we will not own the contents in the host, which means
+	# we cannot navigate into the folder. Setting it to 0750 makes it
+	# easier to debug.
 	chmod -R o+rx $(SRC)
-	( \
-		cd $(SRC); \
-		(cat ../patches/*.patch | patch -p1) \
-	)
+
+	cd $(SRC); cat ../patches/*.patch | patch -p1
 	cp make.inc $(SRC)
 
 	# In CLAPACK's Makefiles, some commands are mistakenly (?) hardcoded
