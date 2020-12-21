@@ -31,6 +31,7 @@ import os
 from pathlib import Path
 import re
 import subprocess
+import shutil
 import sys
 
 
@@ -91,8 +92,12 @@ def collect_args(basename):
 
     if skip:
         sys.exit(0)
+    compiler_command = [basename]
+    if shutil.which("ccache") is not None:
+        # Enable ccache if it's installed
+        compiler_command.insert(0, "ccache")
 
-    sys.exit(subprocess.run([basename] + sys.argv[1:], env=env).returncode)
+    sys.exit(subprocess.run(compiler_command + sys.argv[1:], env=env).returncode)
 
 
 def make_symlinks(env):
