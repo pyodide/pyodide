@@ -71,7 +71,7 @@ def test_install_custom_url(selenium_standalone, web_server_tst_data):
     selenium_standalone.run("import snowballstemmer")
 
 
-def test_relative_url_1():
+def test_add_requirement_relative_url():
     pytest.importorskip("distlib")
     import micropip
 
