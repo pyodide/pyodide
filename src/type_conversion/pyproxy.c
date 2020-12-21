@@ -170,6 +170,8 @@ _pymapping_getitem(int ptrobj, int idkey)
   PyObject* item = PyObject_GetItem(pyobj, pykey);
   Py_DECREF(pykey);
   if (item == NULL) {
+    // TODO: consider letting error propagate.
+    // Would reduce inconsistency.
     PyErr_Clear();
     return hiwire_undefined();
   }
@@ -216,7 +218,6 @@ _pymapping_delitem(int ptrobj, int idkey)
 
 EM_JS(int, _pyproxy_use, (int ptrobj), {
   // Checks if there is already an existing proxy on ptrobj
-
   if (Module.PyProxies.hasOwnProperty(ptrobj)) {
     return Module.hiwire.new_value(Module.PyProxies[ptrobj]);
   }
@@ -254,7 +255,7 @@ EM_JS(int, _pyproxy_new, (int ptrobj, int pytypeid, int index_type, int iter_typ
   // clang-format on
 });
 
-int get_pyproxy(PyObject *obj){
+int get_pyproxy(PyObject *obj){ 
   // Proxies we've already created are just returned again, so that the
   // same object on the Python side is always the same object on the
   // Javascript side.
@@ -266,7 +267,7 @@ int get_pyproxy(PyObject *obj){
 
   int pytypeid = hiwire_string_ascii((int)obj->ob_type->tp_name);
   int index_type = PySequence_Check(obj) + PyMapping_Check(obj);
-  int iter_type = 0;
+  int iter_type;
   if(PyIter_Check(obj)){
     iter_type = 2;
   } else {
@@ -274,6 +275,9 @@ int get_pyproxy(PyObject *obj){
     if(iter){
       iter_type = 1;
       Py_CLEAR(iter);
+    } else {
+      iter_type = 0;
+      PyErr_Clear();
     }
   }
   
@@ -297,9 +301,9 @@ EM_JS(int, pyproxy_init, (), {
     }
   };
 
-  Module.pyprotowrappers = {};
+  Module.pyprotos = {};
 
-  Module.pyprotowrappers.object = {
+  Module.pyprotos.object = {
     hasattr : function hasattr(jsobj, jskey){
       let ptrobj = jsobj._getPtr();
       let idkey = Module.hiwire.new_value(jskey);
@@ -363,7 +367,7 @@ EM_JS(int, pyproxy_init, (), {
     }
   };
 
-  Module.pyprotowrappers.iterator = {
+  Module.pyprotos.iterator = {
     next : function(jsobj) {
       let ptrobj = jsobj._getPtr();
       let idresult = __pyiterator_next(ptrobj);
@@ -373,7 +377,7 @@ EM_JS(int, pyproxy_init, (), {
     }
   };
 
-  Module.pyprotowrappers.mapping = {
+  Module.pyprotos.mapping = {
     length : function length(jsobj){
       let ptrobj = jsobj._getPtr();
       let idresult = __pymapping_length(ptrobj);
@@ -453,28 +457,28 @@ EM_JS(int, pyproxy_init, (), {
   // https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Map
   Module.PyProxy.MappingProtocol = {
     has: function (jskey) {
-      return Module.pyprotowrappers.mapping.hasitem(this, Number.parseInt(jskey));
+      return Module.pyprotos.mapping.hasitem(this, jskey);
     },
     get: function (jskey) {
-      return Module.pyprotowrappers.mapping.getitem(this, Number.parseInt(jskey));
+      return Module.pyprotos.mapping.getitem(this, jskey);
     },
     set: function (jskey, jsval) {
-      return Module.pyprotowrappers.mapping.setitem(this, Number.parseInt(jskey));
+      return Module.pyprotos.mapping.setitem(this, jskey, jsval);
     },
     delete: function (jskey, jsval) {
-      return Module.pyprotowrappers.mapping.delitem(this, Number.parseInt(jskey));
+      return Module.pyprotos.mapping.delitem(this, jskey);
     },
   };
 
   Module.PyProxy.IterableProtocol = {
     [Symbol.iterator] : function(){
-      return Module.pyprotowrappers.object.iter(this);
+      return Module.pyprotos.object.iter(this);
     }
   };
 
   Module.PyProxy.IteratorProtocol = {
     next : function(){
-      let result = Module.pyprotowrappers.iterator.next(this);
+      let result = Module.pyprotos.iterator.next(this);
       if(result === null){
         return {done : true};
       }
@@ -491,9 +495,9 @@ EM_JS(int, pyproxy_init, (), {
         return true;
       }
       if(Module.helpers.shouldIndexSequence(jsobj, jskey)){
-        return Module.helpers.hasitem(jsobj, Number.parseInt(jskey));
+        return Module.pyprotos.mapping.hasitem(jsobj, Number.parseInt(jskey));
       }
-      return Module.helpers.hasattr(jsobj, jskey);
+      return Module.pyprotos.object.hasattr(jsobj, jskey);
     },
     get: function (jsobj, jskey) {
       ptrobj = jsobj._getPtr();
@@ -501,34 +505,33 @@ EM_JS(int, pyproxy_init, (), {
         return Reflect.get(jsobj, jskey);
       }
       if(Module.helpers.shouldIndexSequence(jsobj, jskey)){
-        return Module.helpers.getitem(jsobj, Number.parseInt(jskey));
+        return Module.pyprotos.mapping.getitem(jsobj, Number.parseInt(jskey));
       }
-      return Module.helpers.getattr(jsobj, jskey);
+      return Module.pyprotos.object.getattr(jsobj, jskey);
     },
     set: function (jsobj, jskey, jsval) {
-      console.log("proxy set");
       if(Reflect.has(jsobj, jskey)){
         throw Error(`Cannot change built-in field {jskey}`);
         return Reflect.set(jsobj, jskey, jsval);
       }
       if(Module.helpers.shouldIndexSequence(jsobj, jskey)){
-        return Module.helpers.setitem(jsobj, Number.parseInt(jskey));
+        return Module.pyprotos.mapping.setitem(jsobj, Number.parseInt(jskey), jsval);
       }
-      return Module.helpers.setattr(jsobj, jskey, jsval);
+      return Module.pyprotos.object.setattr(jsobj, jskey, jsval);
     },
     deleteProperty: function (jsobj, jskey) {
       if(Module.helpers.shouldIndexSequence(jsobj, jskey)){
-        return Module.helpers.delitem(jsobj, Number.parseInt(jskey));
+        return Module.pyprotos.mapping.delitem(jsobj, Number.parseInt(jskey));
       }      
-      return Module.helpers.delattr(jsobj, jskey);
+      return Module.pyprotos.object.delattr(jsobj, jskey);
     },
     ownKeys: function (jsobj) {
-      let jsresult = Module.helpers.dir(jsobj);
+      let jsresult = Module.pyprotos.object.dir(jsobj);
       jsresult.push('toString', 'prototype', 'arguments', 'caller');
       return jsresult;
     },
     apply: function (jsobj, jsthis, jsargs) {
-      return Module.helpers.call(jsobj, jsargs);
+      return Module.pyprotos.object.call(jsobj, jsargs);
     },
     getOwnPropertyDescriptor : function(target, prop){
       if(prop in target){
