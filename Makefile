@@ -128,7 +128,7 @@ build/webworker_dev.js: src/webworker.js
 	sed -i -e 's#{{ PYODIDE_BASE_URL }}#./#g' $@
 
 test: all
-	pytest src packages/*/test* pyodide_build -v
+	pytest src emsdk/tests packages/*/test* pyodide_build -v
 
 
 lint:
