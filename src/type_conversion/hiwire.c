@@ -38,7 +38,7 @@ hiwire_bool(int boolean){
 
 
 EM_JS(void, hiwire_setup, (), {
-  let _hiwire = { objects : {}, counter : 1 };
+  let _hiwire = { objects : new Map(), counter : 1 };
   Module.hiwire = {};
   Module.hiwire.ERROR = _hiwire_error();
   Module.hiwire.UNDEFINED = _hiwire_undefined();
@@ -46,19 +46,33 @@ EM_JS(void, hiwire_setup, (), {
   Module.hiwire.TRUE = _hiwire_true();
   Module.hiwire.FALSE = _hiwire_false();
 
-  _hiwire.objects[Module.hiwire.UNDEFINED] = undefined;
-  _hiwire.objects[Module.hiwire.NULL] = null;
-  _hiwire.objects[Module.hiwire.TRUE] = true;
-  _hiwire.objects[Module.hiwire.FALSE] = false;
+  _hiwire.objects.set(Module.hiwire.UNDEFINED, undefined);
+  _hiwire.objects.set(Module.hiwire.NULL, null);
+  _hiwire.objects.set(Module.hiwire.TRUE, true);
+  _hiwire.objects.set(Module.hiwire.FALSE, false);
 
   Module.hiwire.new_value = function(jsval)
   {
-    var objects = _hiwire.objects;
-    while (_hiwire.counter in objects) {
+    // Should we guard against duplicating standard values?
+    // Probably not worth it for performance: it's harmless to ocassionally duplicate.
+    // Maybe in test builds these should raise?
+    // if(jsval === undefined){
+    //   return Module.hiwire.UNDEFINED;
+    // }
+    // if(jsval === null){
+    //   return Module.hiwire.NULL;
+    // }
+    // if(jsval === true){
+    //   return Module.hiwire.TRUE;
+    // }
+    // if(jsval === false){
+    //   return Module.hiwire.FALSE;
+    // }
+    while (_hiwire.objects.has(_hiwire.counter)) {
       _hiwire.counter = (_hiwire.counter + 1) & 0x7fffffff;
     }
-    var idval = _hiwire.counter;
-    objects[idval] = jsval;
+    let idval = _hiwire.counter;
+    _hiwire.objects.set(idval, jsval);
     _hiwire.counter = (_hiwire.counter + 1) & 0x7fffffff;
     return idval;
   };
@@ -67,10 +81,10 @@ EM_JS(void, hiwire_setup, (), {
     if(!idval){
       throw new Error("Argument to hiwire_get_value is undefined");
     }
-    if (!(idval in _hiwire.objects)){
+    if (!_hiwire.objects.has(idval)){
       throw new Error(`Undefined id ${idval}`);
     }    
-    return _hiwire.objects[idval];
+    return _hiwire.objects.get(idval);
   };
 
   Module.hiwire.decref = function(idval)
@@ -78,8 +92,7 @@ EM_JS(void, hiwire_setup, (), {
     if (idval < 0) {
       return;
     }
-    var objects = _hiwire.objects;
-    delete objects[idval];
+    _hiwire.objects.delete(idval);
   };
 });
 
