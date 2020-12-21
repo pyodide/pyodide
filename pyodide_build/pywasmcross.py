@@ -31,6 +31,7 @@ import os
 from pathlib import Path
 import re
 import subprocess
+import shutil
 import sys
 
 
@@ -91,8 +92,12 @@ def collect_args(basename):
 
     if skip:
         sys.exit(0)
+    compiler_command = [basename]
+    if shutil.which("ccache") is not None:
+        # Enable ccache if it's installed
+        compiler_command.insert(0, "ccache")
 
-    sys.exit(subprocess.run([basename] + sys.argv[1:], env=env).returncode)
+    sys.exit(subprocess.run(compiler_command + sys.argv[1:], env=env).returncode)
 
 
 def make_symlinks(env):
@@ -279,7 +284,7 @@ def handle_command(line, args, dryrun=False):
             lapack_dir = arg.replace("-L", "")
             # For convinience we determine needed scipy link libraries
             # here, instead of in patch files
-            link_libs = ["F2CLIBS/libf2c.bc", "blas_WA.bc"]
+            link_libs = ["F2CLIBS/libf2c.a", "blas_WA.a"]
             if module_name in [
                 "_flapack",
                 "_flinalg",
@@ -288,7 +293,7 @@ def handle_command(line, args, dryrun=False):
                 "_iterative",
                 "_arpack",
             ]:
-                link_libs.append("lapack_WA.bc")
+                link_libs.append("lapack_WA.a")
 
             for lib_name in link_libs:
                 arg = os.path.join(lapack_dir, f"{lib_name}")

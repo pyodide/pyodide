@@ -1,0 +1,18 @@
+lapack_install requires f2clib (see INSTALL/Makefile).
+
+Don't run LAPACK_INSTALL tests since they won't actually run on x86
+
+--- a/Makefile
++++ b/Makefile
+@@ -15,9 +15,8 @@
+ 
+ clean: cleanlib cleantesting cleanblas_testing 
+
+-lapack_install:
+-	( cd INSTALL; $(MAKE); ./testlsame; ./testslamch; \
+-	  ./testdlamch; ./testsecond; ./testdsecnd; ./testversion )
++lapack_install: f2clib
++	( cd INSTALL; $(MAKE) )
+
+ blaslib:
+ 	( cd BLAS/SRC; $(MAKE) )

@@ -149,6 +149,16 @@ jobs:
           command: |
             tools/pytest_wrapper.py packages/test* packages/*/test* -v -k chrome -n 2
 
+  test-emsdk:
+    <<: *defaults
+    steps:
+      - attach_workspace:
+          at: .
+      - run:
+          name: test
+          command: |
+            pytest emsdk/tests -v
+
   test-python:
     <<: *defaults
     steps:
@@ -256,6 +266,9 @@ workflows:
           filters:
             tags:
               only: /.*/
+      - test-emsdk:
+          requires:
+            - build-core
       - test-python:
           filters:
             tags:

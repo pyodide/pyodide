@@ -85,31 +85,6 @@ to make this more complete):
 | `x == y`       | `x == y`        |
 | `x.typeof`     | `typeof x`      |
 
-One important difference between Python objects and Javascript objects is that
-if you access a missing member in Python, an exception is raised. In Javascript,
-it returns `undefined`. Since we can't make any assumptions about whether the
-Javascript member is missing or simply set to `undefined`, Python mirrors the
-Javascript behavior. For example:
-
-```javascript
-// Javascript
-class Point {
-  constructor(x, y) {
-    this.x = x;
-    this.y = y;
-  }
-}
-point = new Point(42, 43))
-```
-
-```python
-# python
-from js import point
-assert point.y == 43
-del point.y
-assert point.y is None
-```
-
 ### Python from Javascript
 
 When passing a Python object to Javascript, the Javascript [Proxy
