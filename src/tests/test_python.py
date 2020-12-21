@@ -1,5 +1,5 @@
+from selenium.common.exceptions import WebDriverException
 import time
-
 import pytest
 
 
@@ -51,6 +51,13 @@ def test_pyimport_same(selenium):
     assert selenium.run_js(
         "return pyodide.pyimport('func') == pyodide.pyimport('func')"
     )
+
+
+def test_pyimport_error(selenium):
+    """See #382"""
+    msg = "KeyError: 'doesnotexist'"
+    with pytest.raises(WebDriverException, match=msg):
+        selenium.run_js("pyodide.pyimport('doesnotexist')")
 
 
 def test_open_url(selenium, httpserver):

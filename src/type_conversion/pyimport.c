@@ -11,7 +11,7 @@ int
 _pyimport(char* name)
 {
   PyObject* pyname = PyUnicode_FromString(name);
-  PyObject* pyval = PyDict_GetItem(globals, pyname);
+  PyObject* pyval = PyDict_GetItemWithError(globals, pyname);
   if (pyval == NULL) {
     Py_DECREF(pyname);
     return pythonexc2js();
