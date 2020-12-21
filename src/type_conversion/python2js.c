@@ -13,6 +13,14 @@ static PyObject* tbmod = NULL;
 static int
 _python2js_unicode(PyObject* x);
 
+void
+set_pytype(int id, char *pytype){
+  int value = hiwire_string_ascii((int)pytype);
+  hiwire_set_member_string(id, (int)"__pytype__", value);
+  hiwire_decref(value);
+}
+
+
 int
 pythonexc2js()
 {
@@ -157,7 +165,9 @@ _python2js_bytes(PyObject* x)
   if (PyBytes_AsStringAndSize(x, &x_buff, &length)) {
     return HW_ERROR;
   }
-  return hiwire_bytes((int)(void*)x_buff, length);
+  int result = hiwire_bytes((int)(void*)x_buff, length);
+  set_pytype(result, "bytes");
+  return result;
 }
 
 static int
@@ -178,7 +188,7 @@ _python2js_sequence(PyObject* x, PyObject* map)
       hiwire_decref(jsarray);
       PyErr_Clear();
       Py_INCREF(x);
-      return pyproxy_new((int)x);
+      return get_pyproxy(x);
     }
     int jsitem = _python2js_cache(pyitem, map);
     if (jsitem == HW_ERROR) {
@@ -252,31 +262,21 @@ _python2js(PyObject* x, PyObject* map)
     return _python2js_bytes(x);
   } else if (JsProxy_Check(x)) {
     return JsProxy_AsJs(x);
-  } else if (PyList_Check(x) || PyTuple_Check(x)) {
-    return _python2js_sequence(x, map);
-  } else if (PyDict_Check(x)) {
-    return _python2js_dict(x, map);
+  } else if (PyTuple_Check(x)) {
+    int result_id = _python2js_sequence(x, map);
+    set_pytype(result_id, "tuple");
+    return result_id;
   } else {
-    int ret = _python2js_buffer(x);
-
-    if (ret != HW_ERROR) {
-      return ret;
-    }
-    if (PySequence_Check(x)) {
-      return _python2js_sequence(x, map);
-    }
-
-    // Proxies we've already created are just returned again, so that the
-    // same object on the Python side is always the same object on the
-    // Javascript side.
-    if ((ret = pyproxy_use((int)x)) != HW_UNDEFINED) {
-      return ret;
-    }
-
-    // Reference counter is increased only once when a PyProxy is created.
-    Py_INCREF(x);
-    return pyproxy_new((int)x);
+    // int ret = _python2js_buffer(x);
+    // if (ret != HW_ERROR) {
+    //   return ret;
+    // }
+    // if (PySequence_Check(x)) {
+    //   return _python2js_sequence(x, map);
+    // }
+    return get_pyproxy(x);
   }
+
 }
 
 /* During conversion of collection types (lists and dicts) from Python to

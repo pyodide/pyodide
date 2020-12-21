@@ -15,6 +15,7 @@ _js2python_allocate_string(int size, int max_code_point)
 }
 
 EM_JS(int, _js2python_string, (int id), {
+  // clang-format off
   var value = Module.hiwire_get_value(id);
   // The general idea here is to allocate a Python string and then
   // have Javascript write directly into its buffer.  We first need
@@ -61,6 +62,7 @@ EM_JS(int, _js2python_string, (int id), {
   }
 
   return result;
+  // clang-format on
 });
 
 int
@@ -138,7 +140,7 @@ EM_JS(int, __js2python, (int id), {
   } else if (value === false) {
     return __js2python_false();
   } else if (Module.PyProxy.isPyProxy(value)) {
-    return __js2python_pyproxy(Module.PyProxy.getPtr(value));
+    return __js2python_pyproxy(value._getPtr());
   } else if (value['byteLength'] !== undefined) {
     return __js2python_memoryview(id);
   } else {
