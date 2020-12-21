@@ -272,6 +272,7 @@ def test_jsproxy_attribute_error(selenium):
         selenium.run("point.y")
     assert selenium.run_js("return point.y;") is None
 
+
 def test_javascript_error(selenium):
     msg = "JsException: Error: This is a js error"
     with pytest.raises(WebDriverException, match=msg):

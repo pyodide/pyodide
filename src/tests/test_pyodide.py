@@ -6,9 +6,6 @@ sys.path.append(str(Path(__file__).parents[2] / "src"))
 
 from pyodide import find_imports  # noqa: E402
 
-from selenium.common.exceptions import WebDriverException
-import pytest
-
 
 def test_find_imports():
 
@@ -23,4 +20,3 @@ def test_find_imports():
         )
     )
     assert set(res) == {"numpy", "scipy", "six", "matplotlib"}
-

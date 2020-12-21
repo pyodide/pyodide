@@ -482,7 +482,8 @@ static PyMemberDef JsException_members[] = {
     T_OBJECT_EX,
     offsetof(JsExceptionObject, js_error),
     READONLY,
-    PyDoc_STR("A PyProxy object wrapping the javascript error") },
+    PyDoc_STR("A wrapper around a Javascript Error to allow the Error to be "
+              "thrown in Python.") },
   { NULL } /* Sentinel */
 };
 
@@ -661,6 +662,7 @@ JsProxy_init()
   PyObject* module;
   PyObject* exc;
 
+  // Add JsException to the pyodide module so people can catch it if they want.
   module = PyImport_ImportModule("pyodide");
   if (module == NULL) {
     goto fail;

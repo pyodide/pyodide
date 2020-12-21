@@ -1,6 +1,8 @@
 """
 A library of helper utilities for connecting Python to the browser environment.
 """
+# Added by C:
+# JsException (from jsproxy.c)
 
 import ast
 from io import StringIO
@@ -163,6 +165,16 @@ def get_completions(
     completions = interp.completions()
 
     return [x.name for x in completions]
+
+
+class JsException(Exception):
+    """
+    A wrapper around a Javascript Error to allow the Error to be thrown in Python.
+    """
+
+    # This gets overwritten in jsproxy.c, it is just here for autodoc and humans
+    # reading this file.
+    pass
 
 
 __all__ = ["open_url", "eval_code", "find_imports", "as_nested_list", "get_completions"]
