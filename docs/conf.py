@@ -17,7 +17,7 @@ import sys
 
 for base_path in [".", ".."]:
     sys.path.insert(0, os.path.abspath(base_path))
-    sys.path.insert(1, os.path.abspath(os.path.join(base_path, "src")))
+    sys.path.insert(1, os.path.abspath(os.path.join(base_path, "src", "pyodide-py")))
     sys.path.insert(
         2, os.path.abspath(os.path.join(base_path, "packages", "micropip", "micropip"))
     )
