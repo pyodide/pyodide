@@ -14,7 +14,7 @@
  * object. There may be one or more keys pointing to the same object.
  */
 
-// Define special ids for singleton constants. These must be less than -1 to
+// Define special ids for singleton constants. These must be negative to
 // avoid being reused for other values.
 #define HW_ERROR -1
 #define HW_UNDEFINED -2

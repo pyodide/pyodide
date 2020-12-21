@@ -16,7 +16,7 @@ _js2python_allocate_string(int size, int max_code_point)
 
 EM_JS(int, _js2python_string, (int id), {
   // clang-format off
-  var value = Module.hiwire_get_value(id);
+  var value = Module.hiwire.get_value(id);
   // The general idea here is to allocate a Python string and then
   // have Javascript write directly into its buffer.  We first need
   // to determine if is needs to be a 1-, 2- or 4-byte string, since
@@ -127,7 +127,7 @@ _js2python_jsproxy(int id)
 
 EM_JS(int, __js2python, (int id), {
   // clang-format off
-  var value = Module.hiwire_get_value(id);
+  var value = Module.hiwire.get_value(id);
   var type = typeof value;
   if (type === 'string') {
     return __js2python_string(id);

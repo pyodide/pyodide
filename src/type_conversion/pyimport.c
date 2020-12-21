@@ -27,8 +27,8 @@ EM_JS(int, pyimport_init, (), {
   {
     var pyname = allocate(intArrayFromString(name), 'i8', ALLOC_NORMAL);
     var idresult = Module.__pyimport(pyname);
-    jsresult = Module.hiwire_get_value(idresult);
-    Module.hiwire_decref(idresult);
+    jsresult = Module.hiwire.get_value(idresult);
+    Module.hiwire.decref(idresult);
     _free(pyname);
     return jsresult;
   };
