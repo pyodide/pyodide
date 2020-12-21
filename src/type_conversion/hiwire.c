@@ -31,6 +31,11 @@ hiwire_false()
   return HW_FALSE;
 }
 
+int
+hiwire_bool(int boolean){
+  return boolean ? hiwire_true() : hiwire_false();
+}
+
 
 EM_JS(void, hiwire_setup, (), {
   let _hiwire = { objects : {}, counter : 1 };

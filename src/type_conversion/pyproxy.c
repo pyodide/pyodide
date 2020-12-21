@@ -13,7 +13,7 @@ _pyobject_hasattr(int ptrobj, int idkey)
   PyObject* pykey = js2python(idkey);
   int hasattr = PyObject_HasAttr(pyobj, pykey);
   Py_DECREF(pykey);
-  return hasattr ? hiwire_true() : hiwire_false();
+  return hiwire_bool(hasattr);
 }
 
 int
@@ -154,12 +154,8 @@ _pymapping_hasitem(int ptrobj, int idkey)
   PyObject* pykey = js2python(idkey);
   PyObject* item = PyObject_GetItem(pyobj, pykey);
   Py_DECREF(pykey);
-  if (item == NULL) {
-    PyErr_Clear();
-    return hiwire_false();
-  } else {
-    return hiwire_true();
-  }
+  PyErr_Clear();
+  return hiwire_bool(item != NULL);
 }
 
 int
