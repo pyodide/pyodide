@@ -23,20 +23,20 @@ def test_python2js(selenium):
     assert selenium.run_js(
         """
         let x = pyodide.runPython("[1, 2, 3]");
-        return ((x instanceof window.Array) && (x.length === 3) &&
-                (x[0] == 1) && (x[1] == 2) && (x[2] == 3))
+        return ((x.length === 3) &&
+                (x[0] === 1) && (x[1] === 2) && (x[2] === 3));
         """
     )
     assert selenium.run_js(
         """
         let x = pyodide.runPython("{42: 64}");
-        return (typeof x === "object") && (x[42] === 64)
+        return (x.get(42) === 64);
         """
     )
     assert selenium.run_js(
         """
-        let x = pyodide.runPython("open('/foo.txt', 'wb')")
-        return (x.tell() === 0)
+        let x = pyodide.runPython("open('/foo.txt', 'wb')");
+        return (x.tell() === 0);
         """
     )
 
