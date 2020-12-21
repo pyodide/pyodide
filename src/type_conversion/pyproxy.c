@@ -48,6 +48,22 @@ _pyobject_setattr(int ptrobj, int idkey, int idval)
   return idval;
 }
 
+int
+_pyobject_delattr(int ptrobj, int idkey)
+{
+  PyObject* pyobj = (PyObject*)ptrobj;
+  PyObject* pykey = js2python(idkey);
+
+  int ret = PyObject_DelAttr(pyobj, pykey);
+  Py_DECREF(pykey);
+
+  if (ret) {
+    return pythonexc2js();
+  }
+
+  return hiwire_undefined();
+}
+
 
 int
 _pyobject_dir(int ptrobj)
@@ -278,7 +294,7 @@ EM_JS(int, pyproxy_init, (), {
   _PyProxy.objects = new Map();
 
   Module.PyProxy = {
-    isPyProxy : function isPyProxy(jsobj) {
+    isPyProxy : function(jsobj) {
       return jsobj["$$"] !== undefined && jsobj["$$"]['type'] === 'PyProxy';
     },
     _new : function(ptrobj, pytypeobj){
@@ -290,7 +306,7 @@ EM_JS(int, pyproxy_init, (), {
 
       // In order to call the resulting proxy we need to make target be a function.
       let target = function(){ throw Error("This should never happen."); };
-      Object.assign(target, _PyProxy.Target);
+      Object.assign(target, _PyProxy.ObjectProtocol);
       let { py_type, index_type, iter_type } = pytypeobj;
       if(index_type > 0){
         Object.assign(target, _PyProxy.MappingProtocol);
@@ -322,17 +338,10 @@ EM_JS(int, pyproxy_init, (), {
     }
   };
 
-  function isStrInteger(str){
-    return !Number.isNaN(str) && Number.isInteger(Number.parseFloat(str));
-  }
-  function shouldIndexSequence (jsobj, jskey){
-    return jsobj["$$"].index_type === 2 && isStrInteger(jskey);
-  };
-
   let pyprotos = {};
 
   pyprotos.object = {
-    hasattr : function hasattr(jsobj, jskey){
+    hasattr : function (jsobj, jskey){
       let ptrobj = jsobj._getPtr();
       let idkey = Module.hiwire.new_value(jskey);
       let idresult = __pyobject_hasattr(ptrobj, idkey);
@@ -341,7 +350,7 @@ EM_JS(int, pyproxy_init, (), {
       Module.hiwire.decref(idresult);
       return jsresult;
     },
-    getattr : function hasattr(jsobj, jskey){
+    getattr : function (jsobj, jskey){
       let ptrobj = jsobj._getPtr();
       let idkey = Module.hiwire.new_value(jskey);
       let idresult = __pyobject_getattr(ptrobj, idkey);
@@ -392,6 +401,11 @@ EM_JS(int, pyproxy_init, (), {
       let jsresult = Module.hiwire.get_value(idresult);
       Module.hiwire.decref(idresult);
       return jsresult;
+    },
+    destroy : function(jsobj){
+      let ptrobj = jsobj._getPtr();
+      __pyobject_decref(ptrobj);
+      _PyProxy.objects.delete(ptrobj);
     }
   };
 
@@ -406,10 +420,10 @@ EM_JS(int, pyproxy_init, (), {
   };
 
   pyprotos.mapping = {
-    length : function length(jsobj){
+    length : function(jsobj){
       return __pymapping_length(jsobj._getPtr());
     },
-    hasitem : function hasattr(jsobj, jskey){
+    hasitem : function(jsobj, jskey){
       let ptrobj = jsobj._getPtr();
       let idkey = Module.hiwire.new_value(jskey);
       let idresult = __pymapping_hasitem(ptrobj, idkey);
@@ -449,24 +463,23 @@ EM_JS(int, pyproxy_init, (), {
     },
   };
 
-  _PyProxy.Target = {
-    _getPtr : function _getPtr() {
+  _PyProxy.ObjectProtocol = {
+    _getPtr : function() {
       let ptr = this["$$"].ptr;
       if (ptr === null) {
         throw new Error("Object has already been destroyed");
       }
       return ptr;
     },
-    toString : function toString() {
+    toString : function() {
       if (self.pyodide.repr === undefined) {
         self.pyodide.repr = self.pyodide.pyimport('repr');
       }      
       return self.pyodide.repr(this);
     },
-    destroy : function destroy() {
-      __pyobject_decref(ptrobj);
-      _PyProxy.objects.delete(ptrobj);
-      this["$$"].ptr = $$_null;
+    destroy : function() {
+      pyprotos.object.destroy(this);
+      this["$$"] = $$_null;
     }
   };
 
@@ -474,21 +487,21 @@ EM_JS(int, pyproxy_init, (), {
   // https://docs.python.org/3.8/c-api/mapping.html
   // https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Map
   _PyProxy.MappingProtocol = {
-    has: function (jskey) {
+    has : function (jskey) {
       return pyprotos.mapping.hasitem(this, jskey);
     },
-    get: function (jskey) {
+    get : function (jskey) {
       return pyprotos.mapping.getitem(this, jskey);
     },
-    set: function (jskey, jsval) {
+    set : function (jskey, jsval) {
       return pyprotos.mapping.setitem(this, jskey, jsval);
     },
-    delete: function (jskey, jsval) {
+    delete : function (jskey, jsval) {
       return pyprotos.mapping.delitem(this, jskey);
     },
     // Cannot call this length, causes 
     // "TypeError: Cannot assign to read only property 'length' of function ..."
-    len: function(){ 
+    len : function(){ 
       return pyprotos.mapping.length(this);
     }
   };
@@ -509,11 +522,24 @@ EM_JS(int, pyproxy_init, (), {
     }
   };
 
-// getPrototypeOf, setPrototypeOf, *isExtensible, preventExtensions, *getOwnPropertyDescriptor
-// defineProperty, *deleteProperty,  *has, *get, *set, *ownKeys, *apply, construct
+  function isStrInteger(str){
+    return !Number.isNaN(str) && Number.isInteger(Number.parseFloat(str));
+  }
+  
+  function shouldIndexSequence (jsobj, jskey){
+    return jsobj["$$"].index_type === 2 && isStrInteger(jskey);
+  };
+
+  // Proxy trap names (stared means we implement it):
+  // getPrototypeOf, setPrototypeOf, *isExtensible, preventExtensions, *getOwnPropertyDescriptor
+  // defineProperty, *deleteProperty,  *has, *get, *set, *ownKeys, *apply, construct
+
+  // We must include "non-configurable own properties of the target object" in the results of
+  // has, get, set, and getOwnPropertyDescriptor. The target object is a function (so we can call it).
+  // Its "nonconfigurable own properties" are "arguments", "caller", and "prototype".
   _PyProxy.Handler = {
     isExtensible: function() { return true },
-    has: function (jsobj, jskey) {
+    has : function (jsobj, jskey) {
       if(jskey === "length" || jskey === "size"){
         return Reflect.has(jsobj, "len");
       }
@@ -525,7 +551,7 @@ EM_JS(int, pyproxy_init, (), {
       }
       return pyprotos.object.hasattr(jsobj, jskey);
     },
-    get: function (jsobj, jskey) {
+    get : function (jsobj, jskey) {
       if(jskey === "length" || jskey === "size"){
         let len_func = Reflect.get(jsobj, "len");
         return len_func && len_func();
@@ -538,36 +564,41 @@ EM_JS(int, pyproxy_init, (), {
       }
       return pyprotos.object.getattr(jsobj, jskey);
     },
-    set: function (jsobj, jskey, jsval) {
+    set : function (jsobj, jskey, jsval) {
       if(jskey === "length" || jskey === "size"){
-        throw new Error(`Cannot change built-in field {jskey}`);
+        throw new Error(`Cannot change builtin field "${jskey}"`);
       }      
       if(Reflect.has(jsobj, jskey)){
-        throw new Error(`Cannot change built-in field {jskey}`);
-        return Reflect.set(jsobj, jskey, jsval);
+        throw new Error(`Cannot change builtin field "${jskey}"`);
       }
       if(shouldIndexSequence(jsobj, jskey)){
         return pyprotos.mapping.setitem(jsobj, Number.parseInt(jskey), jsval);
       }
       return pyprotos.object.setattr(jsobj, jskey, jsval);
     },
-    deleteProperty: function (jsobj, jskey) {
+    deleteProperty : function (jsobj, jskey) {
+      if(Reflect.has(jsobj, jskey)){
+        throw new Error(`Cannot change builtin field "${jskey}"`);
+      }      
       if(shouldIndexSequence(jsobj, jskey)){
         return pyprotos.mapping.delitem(jsobj, Number.parseInt(jskey));
       }      
       return pyprotos.object.delattr(jsobj, jskey);
     },
-    ownKeys: function (jsobj) {
+    ownKeys : function (jsobj) {
       let jsresult = pyprotos.object.dir(jsobj);
-      jsresult.push('toString', 'prototype', 'arguments', 'caller');
+      jsresult.push(...Reflect.ownKeys(jsobj));
       return jsresult;
     },
-    apply: function (jsobj, jsthis, jsargs) {
+    apply : function (jsobj, jsthis, jsargs) {
       return pyprotos.object.call(jsobj, jsargs);
     },
     getOwnPropertyDescriptor : function(target, prop){
       if(prop in target){
-        return Object.getOwnPropertyDescriptor(target, prop);
+        let result = Object.getOwnPropertyDescriptor(target, prop);
+        let hidden = prop === "$$" || prop === "_getPtr";
+        result.enumerable &= !hidden;
+        return result;
       }
       if(!(this.has(target, prop))){
         return undefined;
@@ -575,7 +606,7 @@ EM_JS(int, pyproxy_init, (), {
       let value = this.get(target, prop);
       // "enumerable" controls which properties appear when we loop using 
       // for(let x in py_object), and also which properties appear in Object.keys(py_object)
-      let enumerable = !prop.startsWith("_");
+      let enumerable = true; // !prop.startsWith("_")??
       let writable = true;
       let configurable = true;
       let result = {value, writable, enumerable, configurable};

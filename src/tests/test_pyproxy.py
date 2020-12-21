@@ -1,17 +1,17 @@
 # See also test_typeconversions, and test_python.
 import pytest
 
+define_foo = """
+class Foo:
+    bar = 42
+    def get_value(self, value):
+        return value * 64
+f = Foo()
+"""
+
 
 def test_pyproxy(selenium):
-    selenium.run(
-        """
-        class Foo:
-          bar = 42
-          def get_value(self, value):
-            return value * 64
-        f = Foo()
-        """
-    )
+    selenium.run(define_foo)
     assert selenium.run_js("return pyodide.pyimport('f').get_value(2)") == 128
     assert selenium.run_js("return pyodide.pyimport('f').bar") == 42
     assert selenium.run_js("return ('bar' in pyodide.pyimport('f'))")
@@ -21,46 +21,37 @@ def test_pyproxy(selenium):
         selenium.run_js("return Object.getOwnPropertyNames(pyodide.pyimport('f'))")
     ) == set(
         [
-            "__class__",
-            "__delattr__",
-            "__dict__",
-            "__dir__",
-            "__doc__",
-            "__eq__",
-            "__format__",
-            "__ge__",
-            "__getattribute__",
-            "__gt__",
-            "__hash__",
-            "__init__",
-            "__init_subclass__",
-            "__le__",
-            "__lt__",
-            "__module__",
-            "__ne__",
-            "__new__",
-            "__reduce__",
-            "__reduce_ex__",
-            "__repr__",
-            "__setattr__",
-            "__sizeof__",
-            "__str__",
-            "__subclasshook__",
-            "__weakref__",
-            "bar",
-            "baz",
-            "get_value",
-            "toString",
-            "prototype",
-            "arguments",
-            "caller",
+            # fmt: off
+            "__class__", "__delattr__", "__dict__", "__dir__", "__doc__", "__eq__", 
+            "__format__", "__ge__", "__getattribute__", "__gt__", "__hash__",
+            "__init__", "__init_subclass__", "__le__", "__lt__","__module__",
+            "__ne__", "__new__", "__reduce__", "__reduce_ex__", "__repr__",
+            "__setattr__", "__sizeof__", "__str__", "__subclasshook__",
+            "__weakref__", "bar", "baz", "get_value", "toString", 
+            'destroy', '$$', '_getPtr', 'length', 'name',
+            "prototype"
+            # fmt: on
         ]
     )
+    assert set(
+        selenium.run_js("return Object.keys(pyodide.pyimport('f'))")
+    ) == set(
+        [
+            # fmt: off
+            "__class__", "__delattr__", "__dict__", "__dir__", "__doc__", "__eq__", 
+            "__format__", "__ge__", "__getattribute__", "__gt__", "__hash__",
+            "__init__", "__init_subclass__", "__le__", "__lt__","__module__",
+            "__ne__", "__new__", "__reduce__", "__reduce_ex__", "__repr__",
+            "__setattr__", "__sizeof__", "__str__", "__subclasshook__",
+            "__weakref__", "bar", "baz", "get_value", "toString", "destroy",
+            # fmt: on
+        ]
+    )
+
     assert selenium.run("hasattr(f, 'baz')")
     selenium.run_js("delete pyodide.pyimport('f').baz")
     assert not selenium.run("hasattr(f, 'baz')")
     assert selenium.run_js("return pyodide.pyimport('f').toString()").startswith("<Foo")
-
 
 def test_pyproxy_refcount(selenium):
     selenium.run_js("window.jsfunc = function (f) { f(); }")
@@ -112,15 +103,7 @@ def test_pyproxy_refcount(selenium):
 
 
 def test_pyproxy_destroy(selenium):
-    selenium.run(
-        """
-        class Foo:
-          bar = 42
-          def get_value(self, value):
-            return value * 64
-        f = Foo()
-        """
-    )
+    selenium.run(define_foo)
     msg = "Object has already been destroyed"
     with pytest.raises(selenium.JavascriptException, match=msg):
         selenium.run_js(
@@ -128,6 +111,27 @@ def test_pyproxy_destroy(selenium):
             let f = pyodide.pyimport('f');
             console.assert(f.get_value(1) === 64);
             f.destroy();
-            f.get_value();
+            f.get_value(0);
             """
         )
+
+
+def test_pyproxy_list(selenium):
+    selenium.run("x = [1, 2, 3]")
+    assert set(
+        selenium.run_js("return Object.keys(pyodide.globals['x']);")
+    ) == set(
+        [
+            # fmt: off
+            '__add__', '__class__', '__contains__', '__delattr__', '__delitem__', 
+            '__dir__', '__doc__', '__eq__', '__format__', '__ge__', '__getattribute__', 
+            '__getitem__', '__gt__', '__hash__', '__iadd__', '__imul__', '__init__', 
+            '__init_subclass__', '__iter__', '__le__', '__len__', '__lt__', '__mul__', 
+            '__ne__', '__new__', '__reduce__', '__reduce_ex__', '__repr__', '__reversed__', 
+            '__rmul__', '__setattr__', '__setitem__', '__sizeof__', '__str__', '__subclasshook__', 
+            'append', 'clear', 'copy', 'count', 'delete', 'destroy', 'extend', 'get', 'has', 'index', 
+            'insert', 'len', 'pop', 'remove', 'reverse', 'set', 'sort', 'toString'
+            # fmt: on
+        ]
+    )
+    
