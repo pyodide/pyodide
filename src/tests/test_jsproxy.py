@@ -109,23 +109,17 @@ def test_jsproxy_iter(selenium):
         }
         window.ITER = makeIterator([1, 2, 3]);"""
     )
-    assert selenium.run("from js import ITER\n" "list(ITER)") == [1, 2, 3]
+    selenium.run("from js import ITER")
+    assert selenium.run("list(ITER)") == [1, 2, 3]
 
 
 def test_jsproxy_implicit_iter(selenium):
-    selenium.run_js(
-        """
-        window.ITER = [1, 2, 3];"""
-    )
-    assert selenium.run("from js import ITER, Object\n" "list(ITER)") == [1, 2, 3]
-    assert selenium.run("from js import ITER, Object\n" "list(ITER.values())") == [
-        1,
-        2,
-        3,
-    ]
-    assert selenium.run(
-        "from js import ITER, Object\n" "list(Object.values(ITER))"
-    ) == [1, 2, 3]
+    l = [1, 2, 3]
+    selenium.run_js(f"window.ITER = {l};")
+    selenium.run("from js import ITER, Object")
+    assert selenium.run("list(ITER)") == l
+    assert selenium.run("list(ITER.values())") == l
+    assert selenium.run("list(Object.values(ITER))") == l
 
 
 def test_jsproxy_kwargs(selenium):

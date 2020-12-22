@@ -119,8 +119,8 @@ class SeleniumWrapper:
             """ 
             let result = pyodide.runPython({!r});
             if(result && result.$$){{
-                if(result.$$.py_type === "list"){{
-                    result = Array.from(result);
+                if(result.deep_to_js){{
+                    result = result.deep_to_js();
                 }} else {{
                     result = undefined;
                 }}
@@ -159,8 +159,12 @@ class SeleniumWrapper:
               throw window.output;
             }
             let result = window.output;
-            if(result && result.$$ && result.$$.py_type === "list"){
-                result = Array.from(result);
+            if(result && result.$$){
+                if(result.deep_to_js){
+                    result = result.deep_to_js();
+                } else {
+                    result = undefined;
+                }
             }
             return result;
             """
