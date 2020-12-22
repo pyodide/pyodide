@@ -13,14 +13,6 @@ static PyObject* tbmod = NULL;
 static int
 _python2js_unicode(PyObject* x);
 
-void
-set_pytype(int id, char* pytype)
-{
-  int value = hiwire_string_ascii((int)pytype);
-  hiwire_set_member_string(id, (int)"__pytype__", value);
-  hiwire_decref(value);
-}
-
 int
 pythonexc2js()
 {
@@ -106,7 +98,7 @@ _python2js_copy_add_to_cache(PyObject* map, PyObject* pyparent, int jsparent);
 static int
 _python2js_copy_remove_from_cache(PyObject* map, PyObject* pyparent);
 
-int
+static int
 _python2js_copy_cache(PyObject* x,
                       PyObject* map,
                       int (*caller)(PyObject*, PyObject*));
@@ -167,9 +159,7 @@ _python2js_bytes(PyObject* x)
   if (PyBytes_AsStringAndSize(x, &x_buff, &length)) {
     return HW_ERROR;
   }
-  int result = hiwire_bytes((int)(void*)x_buff, length);
-  set_pytype(result, "bytes");
-  return result;
+  return hiwire_bytes((int)(void*)x_buff, length);
 }
 
 static int
@@ -338,7 +328,7 @@ _python2js_nocopy(PyObject* x, PyObject* map)
  * This cache only lives for each invocation of python2js.
  */
 
-int
+static int
 _python2js_copy_add_to_cache(PyObject* map, PyObject* pyparent, int jsparent)
 {
   /* Use the pointer converted to an int so cache is by identity, not hash */
@@ -351,7 +341,7 @@ _python2js_copy_add_to_cache(PyObject* map, PyObject* pyparent, int jsparent)
   return result ? HW_ERROR : 0;
 }
 
-int
+static int
 _python2js_copy_remove_from_cache(PyObject* map, PyObject* pyparent)
 {
   PyObject* pyparentid = PyLong_FromSize_t((size_t)pyparent);
@@ -361,7 +351,7 @@ _python2js_copy_remove_from_cache(PyObject* map, PyObject* pyparent)
   return result ? HW_ERROR : 0;
 }
 
-int
+static int
 _python2js_copy_cache(PyObject* x,
                       PyObject* map,
                       int (*caller)(PyObject*, PyObject*))

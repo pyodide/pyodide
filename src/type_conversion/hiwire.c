@@ -352,25 +352,24 @@ MAKE_OPERATOR(greater_than_equal, >=);
 EM_JS(int, hiwire_next, (int idobj), {
   // clang-format off
   if (idobj === Module.hiwire.UNDEFINED) {
-    // clang-format on
     return Module.hiwire.ERROR;
   }
 
   var jsobj = Module.hiwire.get_value(idobj);
   return Module.hiwire.new_value(jsobj.next());
+  // clang-format on
 });
 
 EM_JS(int, hiwire_get_iterator, (int idobj), {
   // clang-format off
   if (idobj === Module.hiwire.UNDEFINED) {
-    // clang-format on
     return Module.hiwire.ERROR;
   }
 
   var jsobj = Module.hiwire.get_value(idobj);
-  if (typeof jsobj.next == = 'function') {
+  if (typeof jsobj.next === 'function') {
     return Module.hiwire.new_value(jsobj);
-  } else if (typeof jsobj[Symbol.iterator] == = 'function') {
+  } else if (typeof jsobj[Symbol.iterator] === 'function') {
     return Module.hiwire.new_value(jsobj[Symbol.iterator]());
   } else {
     return Module.hiwire.new_value(Object.entries(jsobj)[Symbol.iterator]());
