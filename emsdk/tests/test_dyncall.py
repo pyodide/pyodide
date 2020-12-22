@@ -2,7 +2,7 @@ import subprocess
 from . import common
 
 
-def test_emulate_function(tmpdir):
+def test_dyncall(tmpdir):
     with tmpdir.as_cwd():
         with open("library.c", "w") as f:
             f.write(
