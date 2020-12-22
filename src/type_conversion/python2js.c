@@ -267,53 +267,65 @@ _python2js_immutable(PyObject* x){
     return _python2js_unicode(x);
   } else if (PyBytes_Check(x)) {
     return _python2js_bytes(x);
-  } else if (JsProxy_Check(x)) {
+  } else {
+    return HW_ERROR;
+  }
+}
+
+
+#define RET_IF_NOT_ERR(x)   \
+  do {                      \
+    result = x;             \
+    if(result != HW_ERROR){ \
+      return result;        \
+    }                       \
+  } while(0)
+
+
+static int
+_python2js_deep(PyObject* x, PyObject* map)
+{
+  int result;
+  RET_IF_NOT_ERR(_python2js_immutable(x));
+
+  int (*self)(PyObject*, PyObject*) = &_python2js_deep;
+  
+  if (JsProxy_Check(x)) {
     return JsProxy_AsJs(x);
   } else if (PyList_Check(x) || PyTuple_Check(x)) {
     return _python2js_sequence(x, map, self);
   } else if (PyDict_Check(x)) {
     return _python2js_dict(x, map, self);
-  } else {
-    int ret = _python2js_buffer(x);
+  }
 
-    if (ret != HW_ERROR) {
-      return ret;
-    }
-    if (PySequence_Check(x)) {
-      return _python2js_sequence(x, map, self);
-    }
+  RET_IF_NOT_ERR(_python2js_buffer(x));
+
+  if (result != HW_ERROR) {
+    return result;
+  }
+
+  if (PySequence_Check(x)) {
+    return _python2js_sequence(x, map, self);
+  }
 
     return get_pyproxy(x);
   }
 }
 
 static int
-_python2js_nocopy(PyObject* x, PyObject* map)
+_python2js_minimal(PyObject* x, PyObject* map)
 {
-  if (x == Py_None) {
-    return hiwire_undefined();
-  } else if (x == Py_True) {
-    return hiwire_true();
-  } else if (x == Py_False) {
-    return hiwire_false();
-  } else if (PyLong_Check(x)) {
-    return _python2js_long(x);
-  } else if (PyFloat_Check(x)) {
-    return _python2js_float(x);
-  } else if (PyUnicode_Check(x)) {
-    return _python2js_unicode(x);
-  } else if (PyBytes_Check(x)) {
-    return _python2js_bytes(x);
-  } else if (JsProxy_Check(x)) {
+  int result;
+  RET_IF_NOT_ERR(_python2js_immutable(x));
+
+  int (*self)(PyObject*, PyObject*) = &_python2js_deep;
+
+  if (JsProxy_Check(x)) {
     return JsProxy_AsJs(x);
   } else if (PyTuple_Check(x)) {
-    int result_id = _python2js_sequence(x, map, &_python2js_nocopy);
-    return result_id;
+    return _python2js_sequence(x, map, &_python2js_nocopy);
   } else {
-    int ret = _python2js_buffer(x);
-    if (ret != HW_ERROR) {
-      return ret;
-    }
+    RET_IF_NOT_ERR(_python2js_tryinto_buffer(x));
     // if (PySequence_Check(x)) {
     //   return _python2js_sequence(x, map);
     // }
@@ -321,25 +333,16 @@ _python2js_nocopy(PyObject* x, PyObject* map)
   }
 }
 
-/* During conversion of collection types (lists and dicts) from Python to
- * Javascript, we need to make sure that those collections don't include
- * themselves, otherwise infinite recursion occurs.
- *
- * The solution is to maintain a cache mapping from the PyObject* to the
- * Javascript object id for all collection objects. (One could do this for
- * scalars as well, but that would imply a larger cache, and identical scalars
- * are probably interned for deduplication on the Javascript side anyway).
- *
- * This cache only lives for each invocation of python2js.
- */
-
 static int
 _python2js_add_to_cache(PyObject* map, PyObject* pyobject, int jsobject)
 {
+  if(map === NULL){
+    return 0;
+  }  
   /* Use the pointer converted to an int so cache is by identity, not hash */
-  PyObject* pyparentid = PyLong_FromSize_t((size_t)pyparent);
-  PyObject* jsparentid = PyLong_FromLong(jsparent);
-  int result = PyDict_SetItem(map, pyparentid, jsparentid);
+  PyObject* pyobjectid = PyLong_FromSize_t((size_t)pyobject);
+  PyObject* jsobjectid = PyLong_FromLong(jsobject);
+  int result = PyDict_SetItem(map, pyparentid, jsobjectid);
   Py_DECREF(pyparentid);
   Py_DECREF(jsparentid);
 
@@ -349,6 +352,9 @@ _python2js_add_to_cache(PyObject* map, PyObject* pyobject, int jsobject)
 static int
 _python2js_remove_from_cache(PyObject* map, PyObject* pyparent)
 {
+  if(map === NULL){
+    return 0;
+  }
   PyObject* pyparentid = PyLong_FromSize_t((size_t)pyparent);
   int result = PyDict_DelItem(map, pyparentid);
   Py_DECREF(pyparentid);
@@ -361,6 +367,9 @@ _python2js_cache(PyObject* x,
                       PyObject* map,
                       int (*caller)(PyObject*, PyObject*))
 {
+  if(map === NULL){
+    return 0;
+  }  
   PyObject* id = PyLong_FromSize_t((size_t)x);
   PyObject* val = PyDict_GetItem(map, id);
   int result;
