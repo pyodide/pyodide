@@ -10,16 +10,14 @@ f = Foo()
 """
 
 
-def test_pyproxy(selenium):
+def test_pyproxy1(selenium):
     selenium.run(define_foo)
     assert selenium.run_js("return pyodide.pyimport('f').get_value(2)") == 128
     assert selenium.run_js("return pyodide.pyimport('f').bar") == 42
     assert selenium.run_js("return ('bar' in pyodide.pyimport('f'))")
     selenium.run_js("f = pyodide.pyimport('f'); f.baz = 32")
     assert selenium.run("f.baz") == 32
-    assert set(
-        selenium.run_js("return Object.getOwnPropertyNames(pyodide.pyimport('f'))")
-    ) == set(
+    assert set(selenium.run_js("return Object.keys(pyodide.pyimport('f'))")) == set(
         [
             # fmt: off
             "__class__", "__delattr__", "__dict__", "__dir__", "__doc__", "__eq__", 
@@ -28,8 +26,7 @@ def test_pyproxy(selenium):
             "__ne__", "__new__", "__reduce__", "__reduce_ex__", "__repr__",
             "__setattr__", "__sizeof__", "__str__", "__subclasshook__",
             "__weakref__", "bar", "baz", "get_value", "toString", 
-            'destroy', '$$', '_getPtr', 'length', 'name',
-            "prototype"
+            'destroy'
             # fmt: on
         ]
     )
@@ -128,7 +125,7 @@ def test_pyproxy_list(selenium):
             '__rmul__', '__setattr__', '__setitem__', '__sizeof__', '__str__', '__subclasshook__', 
             'append', 'clear', 'copy', 'count', 'delete', 'destroy', 'extend', 'get', 'has', 'index', 
             'insert', 'len', 'pop', 'remove', 'reverse', 'set', 'sort', 'toString',
-            'deep_to_js', 'shallow_to_js'
+            'deep_to_js', 'shallow_to_js',  'length'
             # fmt: on
         ]
     )

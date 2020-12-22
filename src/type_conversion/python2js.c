@@ -305,10 +305,10 @@ _python2js_nocopy(PyObject* x, PyObject* map)
     int result_id = _python2js_copy_sequence(x, map, &_python2js_nocopy);
     return result_id;
   } else {
-    // int ret = _python2js_buffer(x);
-    // if (ret != HW_ERROR) {
-    //   return ret;
-    // }
+    int ret = _python2js_buffer(x);
+    if (ret != HW_ERROR) {
+      return ret;
+    }
     // if (PySequence_Check(x)) {
     //   return _python2js_sequence(x, map);
     // }

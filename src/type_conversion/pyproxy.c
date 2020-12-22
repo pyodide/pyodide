@@ -614,6 +614,9 @@ EM_JS(int, pyproxy_init, (), {
         let result = Object.getOwnPropertyDescriptor(target, prop);
         let hidden = prop === "$$" || prop === "_getPtr";
         result.enumerable &= !hidden;
+        if(prop === "length" && Reflect.has(target, "len")){
+          result.enumerable = true;
+        }
         return result;
       }
       if(!(this.has(target, prop))){
