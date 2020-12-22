@@ -1,3 +1,4 @@
+diff --git a/imageio/core/findlib.py b/imageio/core/findlib.py
 --- a/imageio/core/findlib.py
 +++ b/imageio/core/findlib.py
 @@ -7,7 +7,6 @@
