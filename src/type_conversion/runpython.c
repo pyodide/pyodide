@@ -57,8 +57,8 @@ EM_JS(int, runpython_init_js, (), {
   Module._runPythonInternal = function(pycode)
   {
     var idresult = Module.__runPython(pycode);
-    var jsresult = Module.hiwire_get_value(idresult);
-    Module.hiwire_decref(idresult);
+    var jsresult = Module.hiwire.get_value(idresult);
+    Module.hiwire.decref(idresult);
     _free(pycode);
     return jsresult;
   };
@@ -74,8 +74,8 @@ EM_JS(int, runpython_init_js, (), {
     var pycode = allocate(intArrayFromString(code), 'i8', ALLOC_NORMAL);
 
     var idimports = Module.__findImports(pycode);
-    var jsimports = Module.hiwire_get_value(idimports);
-    Module.hiwire_decref(idimports);
+    var jsimports = Module.hiwire.get_value(idimports);
+    Module.hiwire.decref(idimports);
 
     var internal = function(resolve, reject)
     {

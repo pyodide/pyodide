@@ -76,7 +76,7 @@ _js2python_jsproxy(int id)
 
 EM_JS(int, __js2python, (int id), {
   // clang-format off
-  var value = Module.hiwire_get_value(id);
+  var value = Module.hiwire.get_value(id);
   var type = typeof value;
   if (type === 'string') {
     // The general idea here is to allocate a Python string and then
