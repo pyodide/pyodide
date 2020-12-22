@@ -125,6 +125,11 @@ class SeleniumWrapper:
                     result = undefined;
                 }}
             }}
+            try {{
+                JSON.stringify(result);
+            }} catch(e){{
+                result = undefined;
+            }}            
             return result;
             """.format(
                 code
@@ -165,6 +170,11 @@ class SeleniumWrapper:
                 } else {
                     result = undefined;
                 }
+            }
+            try {
+                JSON.stringify(result);
+            } catch(e){
+                result = undefined;
             }
             return result;
             """
