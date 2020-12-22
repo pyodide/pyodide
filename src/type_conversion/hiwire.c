@@ -81,7 +81,7 @@ EM_JS(void, hiwire_setup, (), {
   Module.hiwire.get_value = function(idval)
   {
     if (!idval) {
-      throw new Error("Argument to hiwire_get_value is undefined");
+      throw new Error("Argument to hiwire.get_value is undefined");
     }
     if (!_hiwire.objects.has(idval)) {
       throw new Error(`Undefined id $ { idval }`);
