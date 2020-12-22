@@ -186,7 +186,7 @@ root/.built: \
 		$(PARSO_LIBS) \
 		src/sitecustomize.py \
 		src/webbrowser.py \
-		src/pyodide.py \
+		src/pyodide-py/ \
 		cpython/remove_modules.txt
 	rm -rf root
 	mkdir -p root/lib
@@ -199,7 +199,7 @@ root/.built: \
 	cp src/webbrowser.py root/lib/python$(PYMINOR)
 	cp src/_testcapi.py	root/lib/python$(PYMINOR)
 	cp src/pystone.py root/lib/python$(PYMINOR)
-	cp src/pyodide.py root/lib/python$(PYMINOR)/site-packages
+	cp -r src/pyodide-py/pyodide/ $(SITEPACKAGES)
 	( \
 		cd root/lib/python$(PYMINOR); \
 		rm -fr `cat ../../../cpython/remove_modules.txt`; \
