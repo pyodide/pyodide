@@ -18,7 +18,7 @@ _pyimport(char* name)
   }
 
   Py_DECREF(pyname);
-  int idval = python2js(pyval);
+  int idval = python2js_nocopy(pyval);
   return idval;
 }
 

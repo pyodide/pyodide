@@ -27,7 +27,7 @@ _pyobject_getattr(int ptrobj, int idkey)
     PyErr_Clear();
     return hiwire_undefined();
   }
-  int idattr = python2js(pyattr);
+  int idattr = python2js_nocopy(pyattr);
   Py_DECREF(pyattr);
   return idattr;
 };
@@ -79,7 +79,7 @@ _pyobject_dir(int ptrobj)
   Py_ssize_t n = PyList_Size(pydir);
   for (Py_ssize_t i = 0; i < n; ++i) {
     PyObject* pyentry = PyList_GetItem(pydir, i);
-    int identry = python2js(pyentry);
+    int identry = python2js_nocopy(pyentry);
     hiwire_push_array(iddir, identry);
     hiwire_decref(identry);
   }
@@ -105,7 +105,7 @@ _pyobject_call(int ptrobj, int idargs)
     Py_DECREF(pyargs);
     return pythonexc2js();
   }
-  int idresult = python2js(pyresult);
+  int idresult = python2js_nocopy(pyresult);
   Py_DECREF(pyresult);
   Py_DECREF(pyargs);
   return idresult;
@@ -125,10 +125,11 @@ _pyobject_iter(int ptrobj){
   if(iter == NULL){
     return hiwire_undefined();
   }
-  int iditer = python2js(iter);
+  int iditer = python2js_nocopy(iter);
   Py_DECREF(iter);
   return iditer;
 }
+
 
 // PyIterator protocol
 int
@@ -145,7 +146,7 @@ _pyiterator_next(int ptrobj){
     }
     return hiwire_null();
   }
-  int idresult = python2js(result);
+  int idresult = python2js_nocopy(result);
   Py_DECREF(result);
   return idresult;
 }
@@ -190,7 +191,7 @@ _pymapping_getitem(int ptrobj, int idkey)
     return hiwire_undefined();
   }
 
-  int idattr = python2js(item);
+  int idattr = python2js_nocopy(item);
   Py_DECREF(item);
   return idattr;
 };
@@ -261,6 +262,10 @@ int get_pyproxy(PyObject *obj){
   hiwire_set_member_string(pytypeobjid, (int)"index_type", index_type_id);
   hiwire_decref(index_type_id);
   
+  int can_copy = python2js_can_copy(obj);
+  hiwire_set_member_string(pytypeobjid, (int)"can_copy", hiwire_bool(can_copy));
+
+
   int iter_type;
   if(PyIter_Check(obj)){
     iter_type = 2;
@@ -307,7 +312,7 @@ EM_JS(int, pyproxy_init, (), {
       // In order to call the resulting proxy we need to make target be a function.
       let target = function(){ throw Error("This should never happen."); };
       Object.assign(target, _PyProxy.ObjectProtocol);
-      let { py_type, index_type, iter_type } = pytypeobj;
+      let { py_type, index_type, iter_type, can_copy } = pytypeobj;
       if(index_type > 0){
         Object.assign(target, _PyProxy.MappingProtocol);
       }
@@ -316,6 +321,10 @@ EM_JS(int, pyproxy_init, (), {
       }
       if(iter_type > 1){
         Object.assign(target, _PyProxy.IteratorProtocol);
+      }
+      if(can_copy){
+        target["deep_to_js"] = _PyProxy.deep_to_js;
+        target["shallow_to_js"] = _PyProxy.shallow_to_js;
       }
       target['$$'] = Object.freeze({ ptr : ptrobj, type : 'PyProxy', py_type, index_type, iter_type });
 
@@ -483,6 +492,17 @@ EM_JS(int, pyproxy_init, (), {
     }
   };
 
+  _PyProxy.deep_to_js = function(){
+    let ptrobj = this._getPtr();
+    let idval = _python2js_copy(ptrobj);
+    let jsval = Module.hiwire.get_value(idval);
+    Module.hiwire.decref(idval);
+    return jsval;
+  };
+
+  _PyProxy.shallow_to_js = function(){
+    throw Error("Not implemented...")
+  };
   // Wrap PyMappingProtocol in the javascript Map api (as best as possible)
   // https://docs.python.org/3.8/c-api/mapping.html
   // https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Map
