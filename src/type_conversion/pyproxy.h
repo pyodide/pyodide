@@ -11,7 +11,6 @@
 int
 get_pyproxy(PyObject* obj);
 
-
 int
 pyproxy_init();
 

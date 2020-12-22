@@ -2,8 +2,9 @@
 
 #include "hiwire.h"
 
-int 
-hiwire_error(){
+int
+hiwire_error()
+{
   return HW_ERROR;
 }
 
@@ -32,10 +33,10 @@ hiwire_false()
 }
 
 int
-hiwire_bool(int boolean){
+hiwire_bool(int boolean)
+{
   return boolean ? hiwire_true() : hiwire_false();
 }
-
 
 EM_JS(void, hiwire_setup, (), {
   let _hiwire = { objects : new Map(), counter : 1 };
@@ -54,9 +55,9 @@ EM_JS(void, hiwire_setup, (), {
   Module.hiwire.new_value = function(jsval)
   {
     // Should we guard against duplicating standard values?
-    // Probably not worth it for performance: it's harmless to ocassionally duplicate.
-    // Maybe in test builds these should raise?
-    // if(jsval === undefined){
+    // Probably not worth it for performance: it's harmless to ocassionally
+    // duplicate. Maybe in test builds these should raise? if(jsval ===
+    // undefined){
     //   return Module.hiwire.UNDEFINED;
     // }
     // if(jsval === null){
@@ -77,13 +78,14 @@ EM_JS(void, hiwire_setup, (), {
     return idval;
   };
 
-  Module.hiwire.get_value = function(idval) { 
-    if(!idval){
+  Module.hiwire.get_value = function(idval)
+  {
+    if (!idval) {
       throw new Error("Argument to hiwire_get_value is undefined");
     }
-    if (!_hiwire.objects.has(idval)){
-      throw new Error(`Undefined id ${idval}`);
-    }    
+    if (!_hiwire.objects.has(idval)) {
+      throw new Error(`Undefined id $ { idval }`);
+    }
     return _hiwire.objects.get(idval);
   };
 
@@ -366,14 +368,12 @@ EM_JS(int, hiwire_get_iterator, (int idobj), {
   }
 
   var jsobj = Module.hiwire.get_value(idobj);
-  if (typeof jsobj.next === 'function') {
+  if (typeof jsobj.next == = 'function') {
     return Module.hiwire.new_value(jsobj);
-  } else if (typeof jsobj[Symbol.iterator] === 'function') {
+  } else if (typeof jsobj[Symbol.iterator] == = 'function') {
     return Module.hiwire.new_value(jsobj[Symbol.iterator]());
   } else {
-    return Module.hiwire.new_value(
-      Object.entries(jsobj)[Symbol.iterator]()
-    );
+    return Module.hiwire.new_value(Object.entries(jsobj)[Symbol.iterator]());
   }
   return Module.hiwire.ERROR;
   // clang-format on

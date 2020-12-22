@@ -139,9 +139,9 @@ def test_jsproxy_kwargs(selenium):
     assert (
         selenium.run(
             """
-        from js import kwarg_function
-        kwarg_function(b = 2, a = 10)
-        """
+            from js import kwarg_function
+            kwarg_function(b = 2, a = 10)
+            """
         )
         == 5
     )

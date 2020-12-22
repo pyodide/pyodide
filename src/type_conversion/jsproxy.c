@@ -149,24 +149,26 @@ JsProxy_RichCompare(PyObject* a, PyObject* b, int op)
   int ida = python2js_nocopy(a);
   int idb = python2js_nocopy(b);
   switch (op) {
-    case Py_LT:
-      result = hiwire_less_than(ida, idb);
-      break;
-    case Py_LE:
-      result = hiwire_less_than_equal(ida, idb);
-      break;
     case Py_EQ:
       result = hiwire_equal(ida, idb);
       break;
     case Py_NE:
       result = hiwire_not_equal(ida, idb);
       break;
-    case Py_GT:
-      result = hiwire_greater_than(ida, idb);
-      break;
-    case Py_GE:
-      result = hiwire_greater_than_equal(ida, idb);
-      break;
+    default:
+      return Py_NotImplemented;
+      // case Py_LT:
+      //   result = hiwire_less_than(ida, idb);
+      //   break;
+      // case Py_LE:
+      //   result = hiwire_less_than_equal(ida, idb);
+      //   break;
+      // case Py_GT:
+      //   result = hiwire_greater_than(ida, idb);
+      //   break;
+      // case Py_GE:
+      //   result = hiwire_greater_than_equal(ida, idb);
+      //   break;
   }
 
   hiwire_decref(ida);

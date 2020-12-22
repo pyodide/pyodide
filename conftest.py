@@ -115,7 +115,8 @@ class SeleniumWrapper:
         self.driver.execute_script("window.logs = []")
 
     def run(self, code):
-        return self.run_js(""" 
+        return self.run_js(
+            """ 
             let result = pyodide.runPython({!r});
             if(result && result.$$){{
                 if(result.$$.py_type === "list"){{
@@ -125,11 +126,14 @@ class SeleniumWrapper:
                 }}
             }}
             return result;
-            """.format(code)
+            """.format(
+                code
+            )
         )
 
     def run_async(self, code):
         from selenium.common.exceptions import TimeoutException
+
         self.run_js(
             """
             window.done = false;

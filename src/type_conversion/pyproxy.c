@@ -64,7 +64,6 @@ _pyobject_delattr(int ptrobj, int idkey)
   return hiwire_undefined();
 }
 
-
 int
 _pyobject_dir(int ptrobj)
 {
@@ -119,10 +118,11 @@ _pyobject_decref(int ptrobj)
 }
 
 int
-_pyobject_iter(int ptrobj){
+_pyobject_iter(int ptrobj)
+{
   PyObject* pyobj = (PyObject*)ptrobj;
   PyObject* iter = PyObject_GetIter(pyobj);
-  if(iter == NULL){
+  if (iter == NULL) {
     return hiwire_undefined();
   }
   int iditer = python2js_nocopy(iter);
@@ -130,18 +130,18 @@ _pyobject_iter(int ptrobj){
   return iditer;
 }
 
-
 // PyIterator protocol
 int
-_pyiterator_next(int ptrobj){
+_pyiterator_next(int ptrobj)
+{
   PyObject* pyobj = (PyObject*)ptrobj;
   int is_iter = PyIter_Check(pyobj);
-  if(!is_iter){
+  if (!is_iter) {
     return pythonexc2js();
   }
-  PyObject *result = PyIter_Next(pyobj);
-  if(result == NULL){
-    if(PyErr_Occurred()){
+  PyObject* result = PyIter_Next(pyobj);
+  if (result == NULL) {
+    if (PyErr_Occurred()) {
       return pythonexc2js();
     }
     return hiwire_null();
@@ -152,19 +152,19 @@ _pyiterator_next(int ptrobj){
 }
 
 // PyMappingProtocol Methods
-/* 
+/*
  * Return value is an ACTUAL integer not a hiwire index.
  */
 int
-_pymapping_length(int ptrobj){
+_pymapping_length(int ptrobj)
+{
   PyObject* pyobj = (PyObject*)ptrobj;
   Py_ssize_t length = PyObject_Size(pyobj);
-  if(length < 0){
+  if (length < 0) {
     return pythonexc2js();
   }
   return length;
 }
-
 
 int
 _pymapping_hasitem(int ptrobj, int idkey)
@@ -228,12 +228,7 @@ _pymapping_delitem(int ptrobj, int idkey)
   return hiwire_undefined();
 }
 
-
-
-
-EM_JS(int, _pyproxy_use, (int ptrobj), {
-  return Module.PyProxy._use(ptrobj);
-});
+EM_JS(int, _pyproxy_use, (int ptrobj), { return Module.PyProxy._use(ptrobj); });
 
 EM_JS(int, _pyproxy_new, (int ptrobj, int pytypeobjid), {
   let pytypeobj = Module.hiwire.get_value(pytypeobjid);
@@ -242,7 +237,9 @@ EM_JS(int, _pyproxy_new, (int ptrobj, int pytypeobjid), {
   // clang-format on
 });
 
-int get_pyproxy(PyObject *obj){ 
+int
+get_pyproxy(PyObject* obj)
+{
   // Proxies we've already created are just returned again, so that the
   // same object on the Python side is always the same object on the
   // Javascript side.
@@ -261,17 +258,16 @@ int get_pyproxy(PyObject *obj){
   int index_type_id = hiwire_int(PySequence_Check(obj) + PyMapping_Check(obj));
   hiwire_set_member_string(pytypeobjid, (int)"index_type", index_type_id);
   hiwire_decref(index_type_id);
-  
+
   int can_copy = python2js_can_copy(obj);
   hiwire_set_member_string(pytypeobjid, (int)"can_copy", hiwire_bool(can_copy));
 
-
   int iter_type;
-  if(PyIter_Check(obj)){
+  if (PyIter_Check(obj)) {
     iter_type = 2;
   } else {
     PyObject* iter = PyObject_GetIter(obj);
-    if(iter){
+    if (iter) {
       iter_type = 1;
       Py_CLEAR(iter);
     } else {

@@ -236,14 +236,13 @@ int
 hiwire_false();
 
 /**
- * Create a new Javascript boolean value. 
+ * Create a new Javascript boolean value.
  * Return value is true if boolean != 0, false if boolean == 0.
  *
  * Returns: New reference
  */
 int
 hiwire_bool(int boolean);
-
 
 /**
  * Create a new Javascript Array.

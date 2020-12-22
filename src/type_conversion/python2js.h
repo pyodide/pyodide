@@ -20,10 +20,9 @@ pythonexc2js();
 int
 python2js_copy(PyObject* x);
 
-
-/** Will python2js_copy do anything different than python2js_nocopy? 
+/** Will python2js_copy do anything different than python2js_nocopy?
  *  \param The Python object
- *  \return boolean, whether python2js_copy will make any progress. 
+ *  \return boolean, whether python2js_copy will make any progress.
  */
 int
 python2js_can_copy(PyObject* x);

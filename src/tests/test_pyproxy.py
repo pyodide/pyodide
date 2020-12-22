@@ -33,9 +33,7 @@ def test_pyproxy(selenium):
             # fmt: on
         ]
     )
-    assert set(
-        selenium.run_js("return Object.keys(pyodide.pyimport('f'))")
-    ) == set(
+    assert set(selenium.run_js("return Object.keys(pyodide.pyimport('f'))")) == set(
         [
             # fmt: off
             "__class__", "__delattr__", "__dict__", "__dir__", "__doc__", "__eq__", 
@@ -52,6 +50,7 @@ def test_pyproxy(selenium):
     selenium.run_js("delete pyodide.pyimport('f').baz")
     assert not selenium.run("hasattr(f, 'baz')")
     assert selenium.run_js("return pyodide.pyimport('f').toString()").startswith("<Foo")
+
 
 def test_pyproxy_refcount(selenium):
     selenium.run_js("window.jsfunc = function (f) { f(); }")
@@ -118,9 +117,7 @@ def test_pyproxy_destroy(selenium):
 
 def test_pyproxy_list(selenium):
     selenium.run("x = [1, 2, 3]")
-    assert set(
-        selenium.run_js("return Object.keys(pyodide.globals['x']);")
-    ) == set(
+    assert set(selenium.run_js("return Object.keys(pyodide.globals['x']);")) == set(
         [
             # fmt: off
             '__add__', '__class__', '__contains__', '__delattr__', '__delitem__', 
@@ -130,8 +127,8 @@ def test_pyproxy_list(selenium):
             '__ne__', '__new__', '__reduce__', '__reduce_ex__', '__repr__', '__reversed__', 
             '__rmul__', '__setattr__', '__setitem__', '__sizeof__', '__str__', '__subclasshook__', 
             'append', 'clear', 'copy', 'count', 'delete', 'destroy', 'extend', 'get', 'has', 'index', 
-            'insert', 'len', 'pop', 'remove', 'reverse', 'set', 'sort', 'toString'
+            'insert', 'len', 'pop', 'remove', 'reverse', 'set', 'sort', 'toString',
+            'deep_to_js', 'shallow_to_js'
             # fmt: on
         ]
     )
-    
