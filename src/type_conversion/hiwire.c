@@ -56,19 +56,8 @@ EM_JS(void, hiwire_setup, (), {
   {
     // Should we guard against duplicating standard values?
     // Probably not worth it for performance: it's harmless to ocassionally
-    // duplicate. Maybe in test builds these should raise? if(jsval ===
-    // undefined){
-    //   return Module.hiwire.UNDEFINED;
-    // }
-    // if(jsval === null){
-    //   return Module.hiwire.NULL;
-    // }
-    // if(jsval === true){
-    //   return Module.hiwire.TRUE;
-    // }
-    // if(jsval === false){
-    //   return Module.hiwire.FALSE;
-    // }
+    // duplicate. Maybe in test builds we could raise if jsval is a standard
+    // value?
     while (_hiwire.objects.has(_hiwire.counter)) {
       _hiwire.counter = (_hiwire.counter + 1) & 0x7fffffff;
     }
