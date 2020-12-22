@@ -14,7 +14,7 @@
  * object. There may be one or more keys pointing to the same object.
  */
 
-// Define special ids for singleton constants. These must be less than -1 to
+// Define special ids for singleton constants. These must be negative to
 // avoid being reused for other values.
 #define HW_ERROR -1
 #define HW_UNDEFINED -2
@@ -234,6 +234,15 @@ hiwire_true();
  */
 int
 hiwire_false();
+
+/**
+ * Create a new Javascript boolean value.
+ * Return value is true if boolean != 0, false if boolean == 0.
+ *
+ * Returns: New reference
+ */
+int
+hiwire_bool(int boolean);
 
 /**
  * Create a new Javascript Array.
