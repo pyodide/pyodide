@@ -1,4 +1,4 @@
-def test_pillow(selenium):
+def test_imageio(selenium):
     selenium.load_package(["numpy", "imageio"])
     selenium.run(
         r"""
