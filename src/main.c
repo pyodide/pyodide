@@ -31,11 +31,9 @@
 int
 main(int argc, char** argv)
 {
-  #ifdef TEST
-    EM_ASM({
-      Module.TestEntrypoints = {};
-    });
-  #endif
+#ifdef TEST
+  EM_ASM({ Module.TestEntrypoints = {}; });
+#endif
   hiwire_setup();
   setenv("PYTHONHOME", "/", 0);
 
