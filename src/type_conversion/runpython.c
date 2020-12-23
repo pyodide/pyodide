@@ -4,9 +4,9 @@
 #include <Python.h>
 #include <emscripten.h>
 
-
 int
-runpython_init(){
+runpython_init()
+{
   PyObject* builtins = PyImport_AddModule("builtins");
   if (builtins == NULL) {
     return 1;
@@ -35,9 +35,12 @@ runpython_init(){
   int py_pyodide_id = python2js(py_pyodide);
   Py_CLEAR(py_pyodide);
   int py_globals_id = python2js(globals);
-  EM_ASM({
-    Module.py_pyodide = Module.hiwire.get_value($0);
-    Module.py_globals = Module.hiwire.get_value($1);
-  }, py_pyodide_id, py_globals_id);
-  return 0; 
+  EM_ASM(
+    {
+      Module.py_pyodide = Module.hiwire.get_value($0);
+      Module.globals = Module.hiwire.get_value($1);
+    },
+    py_pyodide_id,
+    py_globals_id);
+  return 0;
 }

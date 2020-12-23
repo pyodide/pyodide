@@ -301,6 +301,7 @@ var languagePluginLoader = new Promise((resolve, reject) => {
   let PUBLIC_API = [
     'globals',
     'loadPackage',
+    'loadPackagesForCode',
     'loadedPackages',
     'pyimport',
     'repr',
@@ -332,7 +333,7 @@ var languagePluginLoader = new Promise((resolve, reject) => {
 
 
   Module.runPython = function(code){
-    return Module.py_pyodide.eval_code(code, Module.py_globals);
+    return Module.py_pyodide.eval_code(code, Module.globals);
   };
 
   Module.loadPackagesForCode = async function(code, messageCallback, errorCallback){
@@ -353,10 +354,9 @@ var languagePluginLoader = new Promise((resolve, reject) => {
     }
   }
 
-  Module.runPythonAsync = async function(code, messageCallback, errorCallback)
-  {
+  Module.runPythonAsync = async function(code, messageCallback, errorCallback){
     await Module.loadPackagesForCode(code, messageCallback, errorCallback);
-    return Module.py_pyodide.eval_code(code, Module.py_globals);
+    return Module.py_pyodide.eval_code(code, Module.globals);
   };
 
   Module.version = function(){
@@ -387,7 +387,6 @@ var languagePluginLoader = new Promise((resolve, reject) => {
           .then((response) => response.json())
           .then((json) => {
             fixRecursionLimit(self.pyodide);
-            self.pyodide.globals = Module.py_globals;
             self.pyodide = makePublicAPI(self.pyodide, PUBLIC_API);
             self.pyodide._module.packages = json;
             if (self.iodide !== undefined) {
