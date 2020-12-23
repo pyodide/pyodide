@@ -167,3 +167,9 @@ EM_JS(int, runpython_finalize_js, (), {
   };
   return 0;
 });
+
+int
+runpython_init()
+{
+  return runpython_init_js() || runpython_init_py() || runpython_finalize_js();
+}
