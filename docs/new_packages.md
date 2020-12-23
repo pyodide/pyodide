@@ -162,12 +162,14 @@ This directory should contain (at least) two files:
   included in the `pyodide` repository.
 
 - `meta.yaml` that specifies metadata about the package. For C libraries, only
-  two options are supported:
+  three options are supported:
 
-  - `library/name`: The name of the library, which must equal the directory
+  - `package/name`: The name of the library, which must equal the directory
     name.
   - `requirements/run`: The dependencies of the library, which can include both
     C libraries and python packages.
+  - `build/library`: This must be set to `true` to indicate that this is a
+    library and not an ordinary package.
 
 After packaging a C library, it can be added as a dependency of a python
 package like a normal dependency. See `lxml` and `libxml` for an example (and
