@@ -17,7 +17,7 @@ _py2js_unicode(PyObject* x);
  * \param cache A python dict
  * \param object A python object that we have converted
  * \param js
- * 
+ *
  */
 static int
 _py2js_add_to_cache(PyObject* cache, PyObject* pyobject, int jsobject);
@@ -26,9 +26,7 @@ static int
 _py2js_remove_from_cache(PyObject* cache, PyObject* pyobject);
 
 static int
-_py2js_cache(PyObject* x,
-                      PyObject* cache,
-                      int (*caller)(PyObject*, PyObject*));
+_py2js_cache(PyObject* x, PyObject* cache, int (*caller)(PyObject*, PyObject*));
 
 /** Cache a conversion of a python object
  * \param cache A python dict
@@ -38,7 +36,6 @@ _py2js_cache(PyObject* x,
  */
 static int
 _python2js_add_to_cache(PyObject* cache, PyObject* pyobject, int jsobject);
-
 
 /** Remove a conversion from the cache.
  * \param cache A python dict
@@ -56,8 +53,8 @@ _python2js_remove_from_cache(PyObject* cache, PyObject* pyobject);
  */
 static int
 _python2js_cache(PyObject* pyobject,
-                      PyObject* cache,
-                      int (*caller)(PyObject*, PyObject*));
+                 PyObject* cache,
+                 int (*caller)(PyObject*, PyObject*));
 
 int
 pythonexc2js()
@@ -199,8 +196,8 @@ _py2js_bytes(PyObject* x)
 
 static int
 _py2js_sequence(PyObject* x,
-                         PyObject* cache,
-                         int (*caller)(PyObject*, PyObject*))
+                PyObject* cache,
+                int (*caller)(PyObject*, PyObject*))
 {
   int jsarray = hiwire_array();
   if (_py2js_add_to_cache(cache, x, jsarray)) {
@@ -238,9 +235,7 @@ _py2js_sequence(PyObject* x,
 }
 
 static int
-_py2js_dict(PyObject* x,
-                     PyObject* cache,
-                     int (*caller)(PyObject*, PyObject*))
+_py2js_dict(PyObject* x, PyObject* cache, int (*caller)(PyObject*, PyObject*))
 {
   int jsdict = hiwire_object();
   if (_py2js_add_to_cache(cache, x, jsdict)) {
@@ -280,8 +275,9 @@ python2js_can(PyObject* x)
   return PySequence_Check(x) || PyDict_Check(x) || PyObject_CheckBuffer(x);
 }
 
-static int 
-_py2js_immutable(PyObject* x){
+static int
+_py2js_immutable(PyObject* x)
+{
   if (x == Py_None) {
     return hiwire_undefined();
   } else if (x == Py_True) {
@@ -301,14 +297,13 @@ _py2js_immutable(PyObject* x){
   }
 }
 
-
-#define RET_IF_NOT_ERR(x)   \
-  do {                      \
-    result = x;             \
-    if(result != HW_ERROR){ \
-      return result;        \
-    }                       \
-  } while(0)
+#define RET_IF_NOT_ERR(x)                                                      \
+  do {                                                                         \
+    result = x;                                                                \
+    if (result != HW_ERROR) {                                                  \
+      return result;                                                           \
+    }                                                                          \
+  } while (0)
 
 static int
 _py2js_minimal(PyObject* x, PyObject* cache)
@@ -320,23 +315,25 @@ _py2js_minimal(PyObject* x, PyObject* cache)
 
   if (JsProxy_Check(x)) {
     return JsProxy_AsJs(x);
-  } 
+  }
   if (PyTuple_Check(x)) {
     return _py2js_sequence(x, cache, callback);
-  } 
+  }
   RET_IF_NOT_ERR(_python2js_buffer(x));
   return get_pyproxy(x);
 }
 
 static int
-_py2js_helper(PyObject* x, PyObject* cache, int (*callback)(PyObject*, PyObject*))
+_py2js_helper(PyObject* x,
+              PyObject* cache,
+              int (*callback)(PyObject*, PyObject*))
 {
   int result;
   RET_IF_NOT_ERR(_py2js_immutable(x));
-  
+
   if (JsProxy_Check(x)) {
     return JsProxy_AsJs(x);
-  } 
+  }
   if (PyList_Check(x) || PyTuple_Check(x)) {
     return _py2js_sequence(x, cache, callback);
   }
@@ -362,7 +359,6 @@ _py2js_deep(PyObject* x, PyObject* cache)
   return _py2js_helper(x, cache, &_py2js_deep);
 }
 
-
 static int
 _py2js_add_to_cache(PyObject* cache, PyObject* pyobject, int jsobject)
 {
@@ -387,9 +383,7 @@ _py2js_remove_from_cache(PyObject* cache, PyObject* pyobject)
 }
 
 static int
-_py2js_cache(PyObject* x,
-                      PyObject* cache,
-                      int (*caller)(PyObject*, PyObject*))
+_py2js_cache(PyObject* x, PyObject* cache, int (*caller)(PyObject*, PyObject*))
 {
   PyObject* id = PyLong_FromSize_t((size_t)x);
   PyObject* val = PyDict_GetItem(cache, id);
@@ -418,7 +412,6 @@ python2js_minimal(PyObject* x)
   return result;
 }
 
-
 int
 python2js_once(PyObject* x)
 {
@@ -445,8 +438,73 @@ python2js(PyObject* x)
   return result;
 }
 
+// Test entrypoints
+
+PyObject* globals;
+
+int
+test_wrapper_python2js_minimal(char* name)
+{
+  PyObject* pyname = PyUnicode_FromString(name);
+  PyObject* pyval = PyDict_GetItem(globals, pyname);
+  if (pyval == NULL) {
+    Py_DECREF(pyname);
+    return pythonexc2js();
+  }
+
+  Py_DECREF(pyname);
+  int idval = python2js_minimal(pyval);
+  return idval;
+}
+
+int
+test_wrapper_python2js_once(char* name)
+{
+  PyObject* pyname = PyUnicode_FromString(name);
+  PyObject* pyval = PyDict_GetItem(globals, pyname);
+  if (pyval == NULL) {
+    Py_DECREF(pyname);
+    return pythonexc2js();
+  }
+
+  Py_DECREF(pyname);
+  int idval = python2js_once(pyval);
+  return idval;
+}
+
 int
 python2js_init()
 {
+  // This is all for test entrypoints
+  PyObject* __main__ = PyImport_AddModule("__main__");
+  if (__main__ == NULL) {
+    return 1;
+  }
+
+  globals = PyModule_GetDict(__main__);
+  if (globals == NULL) {
+    return 1;
+  }
+  EM_ASM({
+    Module.TestEntrypoints.py2js_minimal = function(name)
+    {
+      var pyname = allocate(intArrayFromString(name), 'i8', ALLOC_NORMAL);
+      var idresult = _test_wrapper_python2js_minimal(pyname);
+      jsresult = Module.hiwire.get_value(idresult);
+      Module.hiwire.decref(idresult);
+      _free(pyname);
+      return jsresult;
+    };
+
+    Module.TestEntrypoints.py2js_once = function(name)
+    {
+      var pyname = allocate(intArrayFromString(name), 'i8', ALLOC_NORMAL);
+      var idresult = _test_wrapper_python2js_once(pyname);
+      jsresult = Module.hiwire.get_value(idresult);
+      Module.hiwire.decref(idresult);
+      _free(pyname);
+      return jsresult;
+    };
+  });
   return 0;
 }

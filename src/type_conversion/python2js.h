@@ -20,7 +20,6 @@ pythonexc2js();
 int
 python2js(PyObject* x);
 
-
 /** Convert a Python object to a Javascript object.
  *  \param The Python object
  *  \return The Javascript object -- might be an Error object in the case of an
@@ -29,11 +28,8 @@ python2js(PyObject* x);
 int
 python2js_once(PyObject* x);
 
-
 int
 python2js_minimal(PyObject* x);
-
-
 
 /** Set up the global state for this module.
  */

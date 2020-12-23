@@ -149,7 +149,9 @@ EM_JS(int, pyproxy_new, (int ptrobj), {
   return Module.hiwire.new_value(proxy);
 });
 
-int get_pyproxy(PyObject* x){
+int
+get_pyproxy(PyObject* x)
+{
   int ret;
   if ((ret = pyproxy_use((int)x)) != HW_UNDEFINED) {
     return ret;
@@ -266,6 +268,8 @@ EM_JS(int, pyproxy_init, (), {
       return jsresult;
     },
   };
+
+  Module.TestEntrypoints.isPyProxy = Module.PyProxy.isPyProxy;
 
   return 0;
 // clang-format on

@@ -468,8 +468,9 @@ _python2js_buffer(PyObject* x)
   if (shareable != NOT_SHAREABLE) {
     int idarr = _python2js_buffer_to_typed_array(buff);
     if (idarr == HW_ERROR) {
-      // HC: I don't think this is the right way to communicate an error message?
-      // Seems like it may cause Python to throw unexpected PyErr state errors.
+      // HC: I don't think this is the right way to communicate an error
+      // message? Seems like it may cause Python to throw unexpected PyErr state
+      // errors.
       PyErr_SetString(
         PyExc_TypeError,
         "Internal error: Invalid type to convert to array buffer.");
