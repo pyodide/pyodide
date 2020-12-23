@@ -2,7 +2,7 @@ import sys
 from pathlib import Path
 from textwrap import dedent
 
-sys.path.append(str(Path(__file__).parents[2] / "src"))
+sys.path.append(str(Path(__file__).parents[2] / "src" / "pyodide-py"))
 
 from pyodide import find_imports  # noqa: E402
 

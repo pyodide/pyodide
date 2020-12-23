@@ -10,7 +10,7 @@ _pyproxy_has(int ptrobj, int idkey)
 {
   PyObject* pyobj = (PyObject*)ptrobj;
   PyObject* pykey = js2python(idkey);
-  int result = PyObject_HasAttr(pyobj, pykey) ? hiwire_true() : hiwire_false();
+  int result = hiwire_bool(PyObject_HasAttr(pyobj, pykey));
   Py_DECREF(pykey);
   return result;
 }
@@ -128,10 +128,10 @@ EM_JS(int, pyproxy_use, (int ptrobj), {
   // Checks if there is already an existing proxy on ptrobj
 
   if (Module.PyProxies.hasOwnProperty(ptrobj)) {
-    return Module.hiwire_new_value(Module.PyProxies[ptrobj]);
+    return Module.hiwire.new_value(Module.PyProxies[ptrobj]);
   }
 
-  return -2; /* this means HW_UNDEFINED */
+  return Module.hiwire.UNDEFINED;
 })
 
 EM_JS(int, pyproxy_new, (int ptrobj), {
@@ -146,7 +146,7 @@ EM_JS(int, pyproxy_new, (int ptrobj), {
   var proxy = new Proxy(target, Module.PyProxy);
   Module.PyProxies[ptrobj] = proxy;
 
-  return Module.hiwire_new_value(proxy);
+  return Module.hiwire.new_value(proxy);
 });
 
 EM_JS(int, pyproxy_init, (), {
@@ -172,9 +172,9 @@ EM_JS(int, pyproxy_init, (), {
     isExtensible: function() { return true },
     has: function (jsobj, jskey) {
       ptrobj = this.getPtr(jsobj);
-      var idkey = Module.hiwire_new_value(jskey);
+      var idkey = Module.hiwire.new_value(jskey);
       var result = __pyproxy_has(ptrobj, idkey) != 0;
-      Module.hiwire_decref(idkey);
+      Module.hiwire.decref(idkey);
       return result;
     },
     get: function (jsobj, jskey) {
@@ -195,64 +195,64 @@ EM_JS(int, pyproxy_init, (), {
         }
       } else if (jskey == 'apply') {
         return function(jsthis, jsargs) {
-          var idargs = Module.hiwire_new_value(jsargs);
+          var idargs = Module.hiwire.new_value(jsargs);
           var idresult = __pyproxy_apply(ptrobj, idargs);
-          var jsresult = Module.hiwire_get_value(idresult);
-          Module.hiwire_decref(idresult);
-          Module.hiwire_decref(idargs);
+          var jsresult = Module.hiwire.get_value(idresult);
+          Module.hiwire.decref(idresult);
+          Module.hiwire.decref(idargs);
           return jsresult;
         };
       }
-      var idkey = Module.hiwire_new_value(jskey);
+      var idkey = Module.hiwire.new_value(jskey);
       var idresult = __pyproxy_get(ptrobj, idkey);
-      var jsresult = Module.hiwire_get_value(idresult);
-      Module.hiwire_decref(idkey);
-      Module.hiwire_decref(idresult);
+      var jsresult = Module.hiwire.get_value(idresult);
+      Module.hiwire.decref(idkey);
+      Module.hiwire.decref(idresult);
       return jsresult;
     },
     set: function (jsobj, jskey, jsval) {
       ptrobj = this.getPtr(jsobj);
-      var idkey = Module.hiwire_new_value(jskey);
-      var idval = Module.hiwire_new_value(jsval);
+      var idkey = Module.hiwire.new_value(jskey);
+      var idval = Module.hiwire.new_value(jsval);
       var idresult = __pyproxy_set(ptrobj, idkey, idval);
-      var jsresult = Module.hiwire_get_value(idresult);
-      Module.hiwire_decref(idkey);
-      Module.hiwire_decref(idval);
-      Module.hiwire_decref(idresult);
+      var jsresult = Module.hiwire.get_value(idresult);
+      Module.hiwire.decref(idkey);
+      Module.hiwire.decref(idval);
+      Module.hiwire.decref(idresult);
       return jsresult;
     },
     deleteProperty: function (jsobj, jskey) {
       ptrobj = this.getPtr(jsobj);
-      var idkey = Module.hiwire_new_value(jskey);
+      var idkey = Module.hiwire.new_value(jskey);
       var idresult = __pyproxy_deleteProperty(ptrobj, idkey);
-      var jsresult = Module.hiwire_get_value(idresult);
-      Module.hiwire_decref(idresult);
-      Module.hiwire_decref(idkey);
+      var jsresult = Module.hiwire.get_value(idresult);
+      Module.hiwire.decref(idresult);
+      Module.hiwire.decref(idkey);
       return jsresult;
     },
     ownKeys: function (jsobj) {
       ptrobj = this.getPtr(jsobj);
       var idresult = __pyproxy_ownKeys(ptrobj);
-      var jsresult = Module.hiwire_get_value(idresult);
-      Module.hiwire_decref(idresult);
+      var jsresult = Module.hiwire.get_value(idresult);
+      Module.hiwire.decref(idresult);
       this.addExtraKeys(jsresult);
       return jsresult;
     },
     enumerate: function (jsobj) {
       ptrobj = this.getPtr(jsobj);
       var idresult = __pyproxy_enumerate(ptrobj);
-      var jsresult = Module.hiwire_get_value(idresult);
-      Module.hiwire_decref(idresult);
+      var jsresult = Module.hiwire.get_value(idresult);
+      Module.hiwire.decref(idresult);
       this.addExtraKeys(jsresult);
       return jsresult;
     },
     apply: function (jsobj, jsthis, jsargs) {
       ptrobj = this.getPtr(jsobj);
-      var idargs = Module.hiwire_new_value(jsargs);
+      var idargs = Module.hiwire.new_value(jsargs);
       var idresult = __pyproxy_apply(ptrobj, idargs);
-      var jsresult = Module.hiwire_get_value(idresult);
-      Module.hiwire_decref(idresult);
-      Module.hiwire_decref(idargs);
+      var jsresult = Module.hiwire.get_value(idresult);
+      Module.hiwire.decref(idresult);
+      Module.hiwire.decref(idargs);
       return jsresult;
     },
   };
