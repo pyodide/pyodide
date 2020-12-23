@@ -88,9 +88,6 @@ To build a minimal version of pyodide, set `PYODIDE_PACKAGES="micropip"`. The
 packages micropip and distutils are always automatically included (but an empty
 `PYODIDE_PACKAGES` is interpreted as unset).
 
-If scipy is included in `PYODIDE_PACKAGES`, BLAS/LAPACK must be manually built
-first with `make -C packages/CLAPACK`.
-
 ## Environment variables
 
 Following environment variables additionally impact the build,

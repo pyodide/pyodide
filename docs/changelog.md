@@ -38,6 +38,10 @@
   ```
   before loading it.
   [#855](https://github.com/iodide-project/pyodide/pull/855)
+- Javascript exceptions can now be raised and caught in Python. They are wrapped in pyodide.JsException.
+  [#872](https://github.com/iodide-project/pyodide/pull/872)
+- Build runtime C libraries (e.g. libxml) via package build system with correct
+  dependency resolution
 
 
 ## Version 0.15.0
