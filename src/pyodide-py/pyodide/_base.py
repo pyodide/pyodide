@@ -7,7 +7,8 @@ A library of helper utilities for connecting Python to the browser environment.
 import ast
 from io import StringIO
 from textwrap import dedent
-from typing import Dict, List, Optional, Any
+from typing import Dict, List, Any
+
 
 class JsException(Exception):
     """
@@ -17,7 +18,6 @@ class JsException(Exception):
     # This gets overwritten in jsproxy.c, it is just here for autodoc and humans
     # reading this file.
     pass
-
 
 
 def open_url(url: str) -> StringIO:
