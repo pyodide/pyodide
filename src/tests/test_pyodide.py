@@ -4,7 +4,8 @@ from pathlib import Path
 import sys
 from textwrap import dedent
 
-sys.path.append(str(Path(__file__).parents[2] / "src"))
+sys.path.append(str(Path(__file__).parents[2] / "src" / "pyodide-py"))
+
 from pyodide import find_imports, _adjust_ast_to_store_result, eval_code  # noqa: E402
 
 

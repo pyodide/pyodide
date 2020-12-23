@@ -1,14 +1,13 @@
-commit 75c2ad0e2f981805b55eef6a8b69e502c07da2bf
-Author: Roman Yurchak <rth.yurchak@pm.me>
-Date:   Thu Oct 25 11:50:14 2018 +0200
+Remove a few symbols from LAPACK that are redundantly defined with BLAS or are
+ported in scipy. It wouldn't be an issue if we were linking dynamically, but
+because of static linking otherwise we get errors at link time about symbols
+defined twice.
 
-    Remove redundant symbols
+ - Roman Yurchak (https://github.com/iodide-project/pyodide/pull/238)
 
-diff --git a/SRC/Makefile b/SRC/Makefile
-index 7491963..0cc1cda 100644
 --- a/SRC/Makefile
 +++ b/SRC/Makefile
-@@ -50,9 +50,9 @@ include $(TOPDIR)/make.inc
+@@ -50,9 +50,9 @@
  #
  #######################################################################
  

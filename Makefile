@@ -65,7 +65,6 @@ all: check \
 	build/pyodide.asm.js \
 	build/pyodide.asm.data \
 	build/pyodide.js \
-	build/pyodide_dev.js \
 	build/console.html \
 	build/renderedhtml.css \
 	build/test.data \
@@ -102,17 +101,10 @@ build/pyodide.asm.data: root/.built
 	uglifyjs build/pyodide.asm.data.js -o build/pyodide.asm.data.js
 
 
-build/pyodide_dev.js: src/pyodide.js
-	cp $< $@
-	sed -i -e "s#{{DEPLOY}}#./#g" $@
-	sed -i -e "s#{{ABI}}#$(PYODIDE_PACKAGE_ABI)#g" $@
-
-
 build/pyodide.js: src/pyodide.js
 	cp $< $@
-	sed -i -e 's#{{DEPLOY}}#https://cdn.jsdelivr.net/pyodide/v0.15.0/full/#g' $@
-
-	sed -i -e "s#{{ABI}}#$(PYODIDE_PACKAGE_ABI)#g" $@
+	sed -i -e 's#{{ PYODIDE_BASE_URL }}#$(PYODIDE_BASE_URL)#g' $@
+	sed -i -e "s#{{ PYODIDE_PACKAGE_ABI }}#$(PYODIDE_PACKAGE_ABI)#g" $@
 
 
 build/test.html: src/templates/test.html
@@ -121,6 +113,7 @@ build/test.html: src/templates/test.html
 
 build/console.html: src/templates/console.html
 	cp $< $@
+	sed -i -e 's#{{ PYODIDE_BASE_URL }}#$(PYODIDE_BASE_URL)#g' $@
 
 
 build/renderedhtml.css: src/css/renderedhtml.less
@@ -128,21 +121,22 @@ build/renderedhtml.css: src/css/renderedhtml.less
 
 build/webworker.js: src/webworker.js
 	cp $< $@
-	sed -i -e 's#{{DEPLOY}}#https://cdn.jsdelivr.net/pyodide/v0.15.0/full/#g' $@
+	sed -i -e 's#{{ PYODIDE_BASE_URL }}#$(PYODIDE_BASE_URL)#g' $@
 
 build/webworker_dev.js: src/webworker.js
 	cp $< $@
-	sed -i -e "s#{{DEPLOY}}#./#g" $@
-	sed -i -e "s#pyodide.js#pyodide_dev.js#g" $@
+	sed -i -e 's#{{ PYODIDE_BASE_URL }}#./#g' $@
 
 test: all
-	pytest src packages/*/test* pyodide_build -v
+	pytest src emsdk/tests packages/*/test* pyodide_build -v
 
 
 lint:
 	# check for unused imports, the rest is done by black
 	flake8 --select=F401 src tools pyodide_build benchmark
 	clang-format-6.0 -output-replacements-xml src/*.c src/*.h src/*.js src/*/*.c src/*/*.h src/*/*.js | (! grep '<replacement ')
+	black --check --exclude tools/file_packager.py .
+	mypy --ignore-missing-imports pyodide_build/ src/ packages/micropip/micropip/ packages/*/test*
 
 
 benchmark: all
@@ -192,7 +186,7 @@ root/.built: \
 		$(PARSO_LIBS) \
 		src/sitecustomize.py \
 		src/webbrowser.py \
-		src/pyodide.py \
+		src/pyodide-py/ \
 		cpython/remove_modules.txt
 	rm -rf root
 	mkdir -p root/lib
@@ -205,7 +199,7 @@ root/.built: \
 	cp src/webbrowser.py root/lib/python$(PYMINOR)
 	cp src/_testcapi.py	root/lib/python$(PYMINOR)
 	cp src/pystone.py root/lib/python$(PYMINOR)
-	cp src/pyodide.py root/lib/python$(PYMINOR)/site-packages
+	cp -r src/pyodide-py/pyodide/ $(SITEPACKAGES)
 	( \
 		cd root/lib/python$(PYMINOR); \
 		rm -fr `cat ../../../cpython/remove_modules.txt`; \

@@ -7,6 +7,7 @@ defaults: &defaults
   environment:
     - EMSDK_NUM_CORES: 4
       EMCC_CORES: 4
+      PYODIDE_BASE_URL: https://cdn.jsdelivr.net/pyodide/dev/full/
 
 jobs:
   lint:
@@ -16,10 +17,7 @@ jobs:
 
       - run:
           name: lint
-          command: |
-            make lint
-            black --check --exclude tools/file_packager.py .
-            mypy --ignore-missing-imports pyodide_build/ src/ packages/micropip/micropip/ packages/*/test*
+          command: make lint
 
   build-core:
     <<: *defaults
@@ -151,6 +149,16 @@ jobs:
           command: |
             tools/pytest_wrapper.py packages/test* packages/*/test* -v -k chrome -n 2
 
+  test-emsdk:
+    <<: *defaults
+    steps:
+      - attach_workspace:
+          at: .
+      - run:
+          name: test
+          command: |
+            pytest emsdk/tests -v
+
   test-python:
     <<: *defaults
     steps:
@@ -258,6 +266,9 @@ workflows:
           filters:
             tags:
               only: /.*/
+      - test-emsdk:
+          requires:
+            - build-core
       - test-python:
           filters:
             tags:
