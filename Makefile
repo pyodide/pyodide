@@ -14,7 +14,7 @@ SHELL := /bin/bash
 CC=emcc
 CXX=em++
 OPTFLAGS=-O2
-CFLAGS=$(OPTFLAGS) -g -I$(PYTHONINCLUDE) -Wno-warn-absolute-paths
+CFLAGS=$(OPTFLAGS) -g -I$(PYTHONINCLUDE) -Wno-warn-absolute-paths -D TEST
 CXXFLAGS=$(CFLAGS) -std=c++14
 
 
@@ -162,7 +162,7 @@ clean-all: clean
 	rm -fr cpython/build
 
 %.bc: %.c $(CPYTHONLIB)
-	$(CC) -o $@ -c $< $(CFLAGS) -Isrc/type_conversion/
+	$(CC) -o $@ -c $< $(CFLAGS) $(EXTRA_CFLAGS) -Isrc/type_conversion/
 
 
 build/test.data: $(CPYTHONLIB)

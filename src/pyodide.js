@@ -320,7 +320,6 @@ var languagePluginLoader = new Promise((resolve, reject) => {
   // Loading Pyodide
   let Module = {};
   self.Module = Module;
-  Module.TestEntrypoints = {};
 
   Module.noImageDecoding = true;
   Module.noAudioDecoding = true;

@@ -439,7 +439,7 @@ python2js_deep(PyObject* x)
 }
 
 // Test entrypoints
-
+#ifdef TEST
 PyObject* globals;
 
 int
@@ -473,38 +473,66 @@ test_wrapper_python2js_shallow(char* name)
 }
 
 int
+test_wrapper_python2js_deep(char* name)
+{
+  PyObject* pyname = PyUnicode_FromString(name);
+  PyObject* pyval = PyDict_GetItem(globals, pyname);
+  if (pyval == NULL) {
+    Py_DECREF(pyname);
+    return pythonexc2js();
+  }
+
+  Py_DECREF(pyname);
+  int idval = python2js_deep(pyval);
+  return idval;
+}
+#endif // TEST
+
+int
 python2js_init()
 {
-  // This is all for test entrypoints
-  PyObject* __main__ = PyImport_AddModule("__main__");
-  if (__main__ == NULL) {
-    return 1;
-  }
+  #ifdef TEST
+    // This is all for test entrypoints
+    PyObject* __main__ = PyImport_AddModule("__main__");
+    if (__main__ == NULL) {
+      return 1;
+    }
 
-  globals = PyModule_GetDict(__main__);
-  if (globals == NULL) {
-    return 1;
-  }
-  EM_ASM({
-    Module.TestEntrypoints.py2js_minimal = function(name)
-    {
-      var pyname = allocate(intArrayFromString(name), 'i8', ALLOC_NORMAL);
-      var idresult = _test_wrapper_python2js_minimal(pyname);
-      jsresult = Module.hiwire.get_value(idresult);
-      Module.hiwire.decref(idresult);
-      _free(pyname);
-      return jsresult;
-    };
+    globals = PyModule_GetDict(__main__);
+    if (globals == NULL) {
+      return 1;
+    }
+    EM_ASM({
+      Module.TestEntrypoints.py2js_minimal = function(name)
+      {
+        var pyname = allocate(intArrayFromString(name), 'i8', ALLOC_NORMAL);
+        var idresult = _test_wrapper_python2js_minimal(pyname);
+        jsresult = Module.hiwire.get_value(idresult);
+        Module.hiwire.decref(idresult);
+        _free(pyname);
+        return jsresult;
+      };
 
-    Module.TestEntrypoints.py2js_shallow = function(name)
-    {
-      var pyname = allocate(intArrayFromString(name), 'i8', ALLOC_NORMAL);
-      var idresult = _test_wrapper_python2js_shallow(pyname);
-      jsresult = Module.hiwire.get_value(idresult);
-      Module.hiwire.decref(idresult);
-      _free(pyname);
-      return jsresult;
-    };
-  });
+      Module.TestEntrypoints.py2js_shallow = function(name)
+      {
+        var pyname = allocate(intArrayFromString(name), 'i8', ALLOC_NORMAL);
+        var idresult = _test_wrapper_python2js_shallow(pyname);
+        jsresult = Module.hiwire.get_value(idresult);
+        Module.hiwire.decref(idresult);
+        _free(pyname);
+        return jsresult;
+      };
+
+      Module.TestEntrypoints.py2js_deep = function(name)
+      {
+        var pyname = allocate(intArrayFromString(name), 'i8', ALLOC_NORMAL);
+        var idresult = _test_wrapper_python2js_deep(pyname);
+        jsresult = Module.hiwire.get_value(idresult);
+        Module.hiwire.decref(idresult);
+        _free(pyname);
+        return jsresult;
+      };
+    });
+  #endif // TEST
   return 0;
 }

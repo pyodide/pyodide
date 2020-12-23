@@ -31,8 +31,12 @@
 int
 main(int argc, char** argv)
 {
+  #ifdef TEST
+    EM_ASM({
+      Module.TestEntrypoints = {};
+    });
+  #endif
   hiwire_setup();
-
   setenv("PYTHONHOME", "/", 0);
 
   Py_InitializeEx(0);
