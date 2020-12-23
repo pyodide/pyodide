@@ -331,16 +331,15 @@ var languagePluginLoader = new Promise((resolve, reject) => {
   Module.preloadedWasm = {};
   let isFirefox = navigator.userAgent.toLowerCase().indexOf('firefox') > -1;
 
+  Module.runPython = function(
+      code) { return Module.py_pyodide.eval_code(code, Module.globals); };
 
-  Module.runPython = function(code){
-    return Module.py_pyodide.eval_code(code, Module.globals);
-  };
-
-  Module.loadPackagesForCode = async function(code, messageCallback, errorCallback){
+  Module.loadPackagesForCode =
+      async function(code, messageCallback, errorCallback) {
     let imports = Module.py_pyodide.find_imports(pycode);
     if (imports.length) {
       let packageNames =
-        self.pyodide._module.packages.import_name_to_package_name;
+          self.pyodide._module.packages.import_name_to_package_name;
       let packages = new Set();
       // HC: What the heck does this do? I don't like the look of it.
       for (let name of jsimports) {
@@ -349,19 +348,19 @@ var languagePluginLoader = new Promise((resolve, reject) => {
         }
       }
       if (packages.size) {
-        await loadPackage(Array.from(packages.keys()), messageCallback, errorCallback);
+        await loadPackage(Array.from(packages.keys()), messageCallback,
+                          errorCallback);
       }
     }
   }
 
-  Module.runPythonAsync = async function(code, messageCallback, errorCallback){
+      Module.runPythonAsync =
+          async function(code, messageCallback, errorCallback) {
     await Module.loadPackagesForCode(code, messageCallback, errorCallback);
     return Module.py_pyodide.eval_code(code, Module.globals);
   };
 
-  Module.version = function(){
-    return Module.py_pyodide.__version__;
-  };  
+  Module.version = function() { return Module.py_pyodide.__version__; };
 
   Module.checkABI = function(ABI_number) {
     if (ABI_number !== parseInt('{{ PYODIDE_PACKAGE_ABI }}')) {
