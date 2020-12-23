@@ -139,6 +139,10 @@ lint:
 	mypy --ignore-missing-imports pyodide_build/ src/ packages/micropip/micropip/ packages/*/test*
 
 
+apply-lints:
+	clang-format-6.0 -i src/*.c src/*.h src/*.js src/*/*.c src/*/*.h src/*/*.js
+	black --exclude tools/file_packager.py .
+
 benchmark: all
 	python benchmark/benchmark.py $(HOSTPYTHON) build/benchmarks.json
 	python benchmark/plot_benchmark.py build/benchmarks.json build/benchmarks.png
