@@ -134,7 +134,7 @@ EM_JS(int, __js2python, (int id), {
   function is_error(value) { return value && value.stack && value.message; }
 
   // clang-format off
-  var value = Module.hiwire_get_value(id);
+  var value = Module.hiwire.get_value(id);
   var type = typeof value;
   if (type === 'string') {
     return __js2python_string(value);
