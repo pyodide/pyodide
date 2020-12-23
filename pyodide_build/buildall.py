@@ -29,7 +29,12 @@ class Package:
             raise ValueError(f"Directory {pkgdir} does not contain meta.yaml")
 
         self.meta: dict = common.parse_package(pkgpath)
-        self.name: str = self.meta["package"]["name"]
+        try:
+            self.name: str = self.meta["package"]["name"]
+            self.library: bool = False
+        except KeyError:
+            self.name = self.meta["library"]["name"]
+            self.library = True
 
         assert self.name == pkgdir.stem
 
@@ -39,42 +44,52 @@ class Package:
 
     def build(self, outputdir: Path, args) -> None:
         with open(self.pkgdir / "build.log", "w") as f:
-            p = subprocess.run(
-                [
-                    sys.executable,
-                    "-m",
-                    "pyodide_build",
-                    "buildpkg",
-                    str(self.pkgdir / "meta.yaml"),
-                    "--package_abi",
-                    str(args.package_abi),
-                    "--cflags",
-                    args.cflags,
-                    "--ldflags",
-                    args.ldflags,
-                    "--target",
-                    args.target,
-                    "--install-dir",
-                    args.install_dir,
-                ],
-                check=False,
-                stdout=f,
-                stderr=subprocess.STDOUT,
-            )
+            if self.library:
+                p = subprocess.run(
+                    ["make"],
+                    cwd=self.pkgdir,
+                    check=False,
+                    stdout=f,
+                    stderr=subprocess.STDOUT,
+                )
+            else:
+                p = subprocess.run(
+                    [
+                        sys.executable,
+                        "-m",
+                        "pyodide_build",
+                        "buildpkg",
+                        str(self.pkgdir / "meta.yaml"),
+                        "--package_abi",
+                        str(args.package_abi),
+                        "--cflags",
+                        args.cflags,
+                        "--ldflags",
+                        args.ldflags,
+                        "--target",
+                        args.target,
+                        "--install-dir",
+                        args.install_dir,
+                    ],
+                    check=False,
+                    stdout=f,
+                    stderr=subprocess.STDOUT,
+                )
 
         with open(self.pkgdir / "build.log", "r") as f:
             shutil.copyfileobj(f, sys.stdout)
 
         p.check_returncode()
 
-        shutil.copyfile(
-            self.pkgdir / "build" / (self.name + ".data"),
-            outputdir / (self.name + ".data"),
-        )
-        shutil.copyfile(
-            self.pkgdir / "build" / (self.name + ".js"),
-            outputdir / (self.name + ".js"),
-        )
+        if not self.library:
+            shutil.copyfile(
+                self.pkgdir / "build" / (self.name + ".data"),
+                outputdir / (self.name + ".data"),
+            )
+            shutil.copyfile(
+                self.pkgdir / "build" / (self.name + ".js"),
+                outputdir / (self.name + ".js"),
+            )
 
     # We use this in the priority queue, which pops off the smallest element.
     # So we want the smallest element to have the largest number of dependents
@@ -210,6 +225,9 @@ def build_packages(packages_dir: Path, outputdir: Path, args) -> None:
     }
 
     for name, pkg in pkg_map.items():
+        if pkg.library:
+            continue
+
         package_data["dependencies"][name] = pkg.dependencies
         for imp in pkg.meta.get("test", {}).get("imports", [name]):
             package_data["import_name_to_package_name"][imp] = name

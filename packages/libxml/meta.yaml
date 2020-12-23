@@ -1,0 +1,6 @@
+library:
+  name: libxml
+
+requirements:
+  run:
+    - zlib

@@ -1,0 +1,6 @@
+library:
+  name: libxslt
+
+requirements:
+  run:
+    - libxml

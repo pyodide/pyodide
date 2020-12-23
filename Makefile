@@ -237,28 +237,6 @@ $(CPYTHONLIB): emsdk/emsdk/.complete $(PYODIDE_EMCC) $(PYODIDE_CXX)
 	date +"[%F %T] done building cpython..."
 
 
-$(LIBXML): $(CPYTHONLIB) $(ZLIB)
-	date +"[%F %T] Building libxml..."
-	make -C packages/libxml
-	date +"[%F %T] done building libxml..."
-
-
-$(LIBXSLT): $(CPYTHONLIB) $(LIBXML)
-	date +"[%F %T] Building libxslt..."
-	make -C packages/libxslt
-	date +"[%F %T] done building libxslt..."
-
-$(LIBICONV):
-	date +"[%F %T] Building libiconv..."
-	make -C packages/libiconv
-	date +"[%F %T] done building libiconv..."
-
-$(ZLIB):
-	date +"[%F %T] Building zlib..."
-	make -C packages/zlib
-	date +"[%F %T] done building zlib..."
-
-
 $(SIX_LIBS): $(CPYTHONLIB)
 	date +"[%F %T] Building six..."
 	make -C packages/six
@@ -275,20 +253,6 @@ $(PARSO_LIBS): $(CPYTHONLIB)
 	date +"[%F %T] Building parso..."
 	make -C packages/parso
 	date +"[%F %T] done building parso."
-
-
-$(CLAPACK): $(CPYTHONLIB)
-ifdef PYODIDE_PACKAGES
-	echo "Skipping BLAS/LAPACK build due to PYODIDE_PACKAGES being defined."
-	echo "Build it manually with make -C packages/CLAPACK if needed."
-	mkdir -p packages/CLAPACK/CLAPACK-WA/
-	touch $(CLAPACK)
-else
-	date +"[%F %T] Building CLAPACK..."
-	make -C packages/CLAPACK
-	date +"[%F %T] done building CLAPACK."
-endif
-
 
 
 build/packages.json: $(CLAPACK) $(LIBXML) $(LIBXSLT) FORCE
