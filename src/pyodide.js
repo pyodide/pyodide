@@ -335,8 +335,7 @@ var languagePluginLoader = new Promise((resolve, reject) => {
     return Module.py_pyodide.eval_code(code, Module.py_globals);
   };
 
-  Module.runPythonAsync = async function(code, messageCallback, errorCallback)
-  {
+  Module.loadPackagesForCode = async function(code, messageCallback, errorCallback){
     let imports = Module.py_pyodide.find_imports(pycode);
     if (imports.length) {
       let packageNames =
@@ -352,6 +351,11 @@ var languagePluginLoader = new Promise((resolve, reject) => {
         await loadPackage(Array.from(packages.keys()), messageCallback, errorCallback);
       }
     }
+  }
+
+  Module.runPythonAsync = async function(code, messageCallback, errorCallback)
+  {
+    await Module.loadPackagesForCode(code, messageCallback, errorCallback);
     return Module.py_pyodide.eval_code(code, Module.py_globals);
   };
 
