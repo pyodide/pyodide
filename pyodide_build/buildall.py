@@ -29,12 +29,8 @@ class Package:
             raise ValueError(f"Directory {pkgdir} does not contain meta.yaml")
 
         self.meta: dict = common.parse_package(pkgpath)
-        try:
-            self.name: str = self.meta["package"]["name"]
-            self.library: bool = False
-        except KeyError:
-            self.name = self.meta["library"]["name"]
-            self.library = True
+        self.name: str = self.meta["package"]["name"]
+        self.library: bool = self.get("build", {}).get("library", False)
 
         assert self.name == pkgdir.stem
 

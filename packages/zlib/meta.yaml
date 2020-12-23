@@ -1,2 +1,5 @@
-library:
+package:
   name: zlib
+
+build:
+  library: true

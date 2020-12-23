@@ -1,2 +1,5 @@
-library:
+package:
   name: CLAPACK
+
+build:
+  library: true
