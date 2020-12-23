@@ -50,7 +50,6 @@ def test_build_dependencies(n_jobs, monkeypatch):
     }
     assert build_list.index("distlib") < build_list.index("micropip")
     assert build_list.index("soupsieve") < build_list.index("beautifulsoup4")
-    assert build_list.index("webencodings") < build_list.index("beautifulsoup4")
 
 
 @pytest.mark.parametrize("n_jobs", [1, 4])
