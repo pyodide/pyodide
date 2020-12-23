@@ -38,7 +38,7 @@
   ```
   before loading it.
   [#855](https://github.com/iodide-project/pyodide/pull/855)
-
+- Suppress REPL results by adding a semicolon [#876](https://github.com/iodide-project/pyodide/pull/876)
 
 ## Version 0.15.0
 *May 19, 2020*

@@ -3,6 +3,7 @@ A library of helper utilities for connecting Python to the browser environment.
 """
 
 import ast
+from asyncio import iscoroutine
 from io import StringIO
 from textwrap import dedent
 from typing import Dict, List, Any, Tuple
@@ -29,9 +30,6 @@ def open_url(url: str) -> StringIO:
     return StringIO(req.response)
 
 
-COMPILE_FLAGS = ast.PyCF_ALLOW_TOP_LEVEL_AWAIT  # type: ignore
-
-
 def eval_code(code: str, ns: Dict[str, Any]) -> None:
     """Runs a code string.
 
@@ -45,9 +43,8 @@ def eval_code(code: str, ns: Dict[str, Any]) -> None:
     Returns
     -------
     If the last nonwhitespace character of code is a semicolon return `None`.
-    If the last statement is an expression, return the result of the
-    expression. If the last statement is an assignment, we return the result
-    of the assignment (including for destructuring assignments).
+    If the last statement is an expression, return the
+    result of the expression.
     """
     # handle mis-indented input from multi-line strings
     code = dedent(code)
@@ -58,10 +55,27 @@ def eval_code(code: str, ns: Dict[str, Any]) -> None:
 
     target_name = "<EXEC-LAST-EXPRESSION>"
     mod = _adjust_ast_to_store_result(target_name, mod, code)
-    # res =
-    eval(compile(mod, "<exec>", mode="exec", flags=COMPILE_FLAGS), ns, ns)
-    # if iscoroutine(res):
-    #     await res
+    eval(compile(mod, "<exec>", mode="exec"), ns, ns)
+    return ns.pop(target_name)
+
+
+COMPILE_FLAGS = ast.PyCF_ALLOW_TOP_LEVEL_AWAIT  # type: ignore
+
+
+async def _eval_code_async(code: str, ns: Dict[str, Any]) -> None:
+    """ For use once we add an EventLoop. """
+    # handle mis-indented input from multi-line strings
+    code = dedent(code)
+
+    mod = ast.parse(code)
+    if len(mod.body) == 0:
+        return None
+
+    target_name = "<EXEC-LAST-EXPRESSION>"
+    mod = _adjust_ast_to_store_result(target_name, mod, code)
+    res = eval(compile(mod, "<exec>", mode="exec", flags=COMPILE_FLAGS), ns, ns)
+    if iscoroutine(res):
+        await res
     return ns.pop(target_name)
 
 
