@@ -33,9 +33,11 @@ main(int argc, char** argv)
   }
   Py_DECREF(sys);
 
-  if (js2python_init() || JsImport_init() || JsProxy_init() ||
-      pyimport_init() || pyproxy_init() || python2js_init() ||
-      runpython_init_js() || runpython_init_py() || runpython_finalize_js()) {
+  if (
+    js2python_init() || JsImport_init() || JsProxy_init() ||
+    pyimport_init() || pyproxy_init() || python2js_init() ||
+    runpython_init()
+  ) {
     return 1;
   }
 
