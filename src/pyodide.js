@@ -331,31 +331,35 @@ var languagePluginLoader = new Promise((resolve, reject) => {
   Module.preloadedWasm = {};
   let isFirefox = navigator.userAgent.toLowerCase().indexOf('firefox') > -1;
 
-  Module.runPython = function(
-      code) { return Module.py_pyodide.eval_code(code, Module.globals); };
+  // clang-format off
 
-  Module.loadPackagesForCode =
-      async function(code, messageCallback, errorCallback) {
-    let imports = Module.py_pyodide.find_imports(pycode);
+  Module.runPython = function(code) { return Module.py_pyodide.eval_code(code, Module.globals); };
+
+  Module.loadPackagesForCode = async function(code, messageCallback, errorCallback) {
+    let imports = Module.py_pyodide.find_imports(code);
     if (imports.length) {
       let packageNames =
           self.pyodide._module.packages.import_name_to_package_name;
       let packages = new Set();
-      // HC: What the heck does this do? I don't like the look of it.
       for (let name of jsimports) {
         if (name in packageNames) {
           packages.add(name);
         }
       }
       if (packages.size) {
-        await loadPackage(Array.from(packages.keys()), messageCallback,
-                          errorCallback);
+        await loadPackage(
+          Array.from(packages.keys()), 
+          messageCallback,
+        errorCallback);
       }
     }
-  }
+  };
 
-      Module.runPythonAsync =
-          async function(code, messageCallback, errorCallback) {
+  Module.pyimport = function(name){
+    return Module.globals[name];
+  };
+
+  Module.runPythonAsync = async function(code, messageCallback, errorCallback) {
     await Module.loadPackagesForCode(code, messageCallback, errorCallback);
     return Module.py_pyodide.eval_code(code, Module.globals);
   };

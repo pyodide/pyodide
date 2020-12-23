@@ -5,7 +5,6 @@
 #include "js2python.h"
 #include "jsimport.h"
 #include "jsproxy.h"
-#include "pyimport.h"
 #include "pyproxy.h"
 #include "python2js.h"
 #include "runpython.h"
