@@ -1,6 +1,6 @@
 #include "runpython.h"
-#include "python2js.h"
 #include "pyproxy.h"
+#include "python2js.h"
 
 #include <Python.h>
 #include <emscripten.h>
@@ -33,7 +33,7 @@ runpython_init()
   }
 
   PyObject* py_pyodide = PyImport_ImportModule("pyodide");
-  if(py_pyodide == NULL){
+  if (py_pyodide == NULL) {
     return 1;
   }
 
@@ -41,11 +41,12 @@ runpython_init()
   Py_CLEAR(py_pyodide);
   // Currently by default, python2js copies dicts into objects.
   // We want to feed Module.globals back to `eval_code` in `pyodide.runPython`
-  // (see definition in pyodide.js) but because the round trip conversion 
+  // (see definition in pyodide.js) but because the round trip conversion
   // py => js => py for a dict object is a JsProxy, that causes trouble.
   // Instead we explicitly call pyproxy_new.
-  // We also had to add ad-hoc modifications to _pyproxy_get, etc to support this.
-  // I (HC) will fix this with the rest of the type conversions modifications.
+  // We also had to add ad-hoc modifications to _pyproxy_get, etc to support
+  // this. I (HC) will fix this with the rest of the type conversions
+  // modifications.
   int py_globals_id = pyproxy_new(globals);
   EM_ASM(
     {
