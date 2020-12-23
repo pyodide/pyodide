@@ -32,3 +32,4 @@ index 7e26683..971f83e 100644
 +# from . import freeimagemulti
  
  from . import ffmpeg
+ 
