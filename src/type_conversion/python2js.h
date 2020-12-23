@@ -18,7 +18,7 @@ pythonexc2js();
  *     exception.
  */
 int
-python2js(PyObject* x);
+python2js_deep(PyObject* x);
 
 /** Convert a Python object to a Javascript object.
  *  \param The Python object
@@ -26,7 +26,7 @@ python2js(PyObject* x);
  *     exception.
  */
 int
-python2js_once(PyObject* x);
+python2js_shallow(PyObject* x);
 
 int
 python2js_minimal(PyObject* x);

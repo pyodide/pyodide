@@ -28,7 +28,7 @@ _runPython(char* code)
     return pythonexc2js();
   }
 
-  int id = python2js(ret);
+  int id = python2js_deep(ret);
   Py_DECREF(ret);
   return id;
 }
@@ -48,7 +48,7 @@ _findImports(char* code)
     return pythonexc2js();
   }
 
-  int id = python2js(ret);
+  int id = python2js_deep(ret);
   Py_DECREF(ret);
   return id;
 }

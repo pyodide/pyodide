@@ -27,7 +27,7 @@ _pyproxy_get(int ptrobj, int idkey)
     return hiwire_undefined();
   }
 
-  int idattr = python2js(pyattr);
+  int idattr = python2js_deep(pyattr);
   Py_DECREF(pyattr);
   return idattr;
 };
@@ -78,7 +78,7 @@ _pyproxy_ownKeys(int ptrobj)
   Py_ssize_t n = PyList_Size(pydir);
   for (Py_ssize_t i = 0; i < n; ++i) {
     PyObject* pyentry = PyList_GetItem(pydir, i);
-    int identry = python2js(pyentry);
+    int identry = python2js_deep(pyentry);
     hiwire_push_array(iddir, identry);
     hiwire_decref(identry);
   }
@@ -110,7 +110,7 @@ _pyproxy_apply(int ptrobj, int idargs)
     Py_DECREF(pyargs);
     return pythonexc2js();
   }
-  int idresult = python2js(pyresult);
+  int idresult = python2js_deep(pyresult);
   Py_DECREF(pyresult);
   Py_DECREF(pyargs);
   return idresult;

@@ -425,7 +425,7 @@ python2js_once(PyObject* x)
 }
 
 int
-python2js(PyObject* x)
+python2js_deep(PyObject* x)
 {
   PyObject* cache = PyDict_New();
   int result = _py2js_deep(x, cache);
@@ -458,7 +458,7 @@ test_wrapper_python2js_minimal(char* name)
 }
 
 int
-test_wrapper_python2js_once(char* name)
+test_wrapper_python2js_shallow(char* name)
 {
   PyObject* pyname = PyUnicode_FromString(name);
   PyObject* pyval = PyDict_GetItem(globals, pyname);
@@ -496,10 +496,10 @@ python2js_init()
       return jsresult;
     };
 
-    Module.TestEntrypoints.py2js_once = function(name)
+    Module.TestEntrypoints.py2js_shallow = function(name)
     {
       var pyname = allocate(intArrayFromString(name), 'i8', ALLOC_NORMAL);
-      var idresult = _test_wrapper_python2js_once(pyname);
+      var idresult = _test_wrapper_python2js_shallow(pyname);
       jsresult = Module.hiwire.get_value(idresult);
       Module.hiwire.decref(idresult);
       _free(pyname);
