@@ -149,6 +149,36 @@ A list of required packages.
 
 (Unlike conda, this only supports package names, not versions).
 
+## C library dependencies
+Some python packages depend on certain C libraries, e.g. `lxml` depends on
+`libxml`.
+
+To package a C library, create a directory in `packages/` for the C library.
+This directory should contain (at least) two files:
+
+- `Makefile` that specifies how the library should be be built. Note that the
+  build system will call `make`, not `emmake make`. The convention is that the
+  source for the library is downloaded by the Makefile, as opposed to being
+  included in the `pyodide` repository.
+
+- `meta.yaml` that specifies metadata about the package. For C libraries, only
+  three options are supported:
+
+  - `package/name`: The name of the library, which must equal the directory
+    name.
+  - `requirements/run`: The dependencies of the library, which can include both
+    C libraries and python packages.
+  - `build/library`: This must be set to `true` to indicate that this is a
+    library and not an ordinary package.
+
+After packaging a C library, it can be added as a dependency of a python
+package like a normal dependency. See `lxml` and `libxml` for an example (and
+also `scipy` and `CLAPACK`).
+
+*Remark:* Certain C libraries come as emscripten ports, and do not have to be
+built manually. They can be used by adding e.g. `-s USE_ZLIB` in the `cflags`
+of the python package. See e.g. `matplotlib` for an example.
+
 ## Manual creation of a Pyodide package (advanced)
 The previous sections describes how to add a python package to the pyodide
 build.
