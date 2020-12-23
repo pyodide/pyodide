@@ -2,7 +2,7 @@ Modify MEMFS to update timestamp of parent directory on file creation and remova
 More POSIXish compliant for a one timestamp fs, behaves like a modification date.
 
 --- a/emsdk/fastcomp/emscripten/src/library_memfs.js    2019-08-19 18:11:40.000000000 +0200
-+++ b/emsdk/fastcomp/emscripten/src/library_memfs.js	2020-12-18 14:07:14.000000000 +0100
++++ b/emsdk/fastcomp/emscripten/src/library_memfs.js	2020-12-23 12:22:38.000000000 +0100
 @@ -88,6 +88,7 @@
        // add the new node to the parent
        if (parent) {
@@ -11,14 +11,15 @@ More POSIXish compliant for a one timestamp fs, behaves like a modification date
        }
        return node;
      },
-@@ -213,12 +214,15 @@
+@@ -213,12 +214,16 @@
          }
          // do the internal rewiring
          delete old_node.parent.contents[old_node.name];
-+        old_node.parent.timestamp = Date.now()
++        var now = Date.now();
++        old_node.parent.timestamp = now;
          old_node.name = new_name;
          new_dir.contents[new_name] = old_node;
-+        new_dir.timestamp = old_node.parent.timestamp;
++        new_dir.timestamp = now;
          old_node.parent = new_dir;
        },
        unlink: function(parent, name) {
@@ -27,7 +28,7 @@ More POSIXish compliant for a one timestamp fs, behaves like a modification date
        },
        rmdir: function(parent, name) {
          var node = FS.lookupNode(parent, name);
-@@ -226,6 +230,7 @@
+@@ -226,6 +231,7 @@
            throw new FS.ErrnoError({{{ cDefine('ENOTEMPTY') }}});
          }
          delete parent.contents[name];
