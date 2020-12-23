@@ -38,7 +38,8 @@
   ```
   before loading it.
   [#855](https://github.com/iodide-project/pyodide/pull/855)
-
+- Build runtime C libraries (e.g. libxml) via package build system with correct
+  dependency resolution
 
 ## Version 0.15.0
 *May 19, 2020*
