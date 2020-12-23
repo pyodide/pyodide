@@ -8,7 +8,7 @@ See {ref}`building_from_sources` and {ref}`testing` documentation.
 
 For code-style the use of [pre-commit](https://pre-commit.com/) is also recommended,
 ```
-pip install pre-commit
+pip3 install pre-commit
 pre-commit install
 ```
 This will run a set of linters at each commit. Currently it runs yaml syntax validation and is removing trailing whitespaces.
@@ -63,7 +63,7 @@ when contributing, in particular regarding [cross-referencing
 sections](https://myst-parser.readthedocs.io/en/latest/using/syntax.html#targets-and-cross-referencing).
 
 ### Building the docs
-From the directory ``docs``, first install the python dependencies with ``pip install -r requirements-doc.txt``. 
+From the directory ``docs``, first install the python dependencies with ``pip3 install -r requirements-doc.txt``. 
 Then to build the docs run ``make html``.
 The built documentation will be in the subdirectory ``docs/_build/html``. To view them, cd into ``_build/html`` and start a file server, 
 for instance ``http-server``.
