@@ -72,13 +72,17 @@ _js2python_jsproxy(int id)
   return (int)JsProxy_cnew(id);
 }
 
+int
+_js2python_error(int id)
+{
+  return (int)JsProxy_new_error(id);
+}
+
 // TODO: Add some meaningful order
 
 EM_JS(int, __js2python, (int id), {
-  // clang-format off
-  var value = Module.hiwire.get_value(id);
-  var type = typeof value;
-  if (type === 'string') {
+  function __js2python_string(value)
+  {
     // The general idea here is to allocate a Python string and then
     // have Javascript write directly into its buffer.  We first need
     // to determine if is needs to be a 1-, 2- or 4-byte string, since
@@ -124,6 +128,16 @@ EM_JS(int, __js2python, (int id), {
     }
 
     return result;
+  }
+
+  // From https://stackoverflow.com/a/45496068
+  function is_error(value) { return value && value.stack && value.message; }
+
+  // clang-format off
+  var value = Module.hiwire.get_value(id);
+  var type = typeof value;
+  if (type === 'string') {
+    return __js2python_string(value);
   } else if (type === 'number') {
     return __js2python_number(value);
   } else if (value === undefined || value === null) {
@@ -136,6 +150,8 @@ EM_JS(int, __js2python, (int id), {
     return __js2python_pyproxy(Module.PyProxy.getPtr(value));
   } else if (value['byteLength'] !== undefined) {
     return __js2python_memoryview(id);
+  } else if (is_error(value)) { 
+    return __js2python_error(id);
   } else {
     return __js2python_jsproxy(id);
   }
