@@ -14,20 +14,49 @@ static int
 _py2js_unicode(PyObject* x);
 
 /** Cache a conversion of a python object
- * \param map A python dict
- * \param parent A python object that we have converted
+ * \param cache A python dict
+ * \param object A python object that we have converted
  * \param js
  * 
  */
 static int
-_py2js_add_to_cache(PyObject* map, PyObject* pyobject, int jsobject);
+_py2js_add_to_cache(PyObject* cache, PyObject* pyobject, int jsobject);
 
 static int
-_py2js_remove_from_cache(PyObject* map, PyObject* pyobject);
+_py2js_remove_from_cache(PyObject* cache, PyObject* pyobject);
 
 static int
 _py2js_cache(PyObject* x,
-                      PyObject* map,
+                      PyObject* cache,
+                      int (*caller)(PyObject*, PyObject*));
+
+/** Cache a conversion of a python object
+ * \param cache A python dict
+ * \param pyobject A python object that we have converted
+ * \param jsobject The javascript conversion
+ * \returns Success code.
+ */
+static int
+_python2js_add_to_cache(PyObject* cache, PyObject* pyobject, int jsobject);
+
+
+/** Remove a conversion from the cache.
+ * \param cache A python dict
+ * \param pyobject A python object to remove
+ * \returns Success code.
+ */
+static int
+_python2js_remove_from_cache(PyObject* cache, PyObject* pyobject);
+
+/** If pyobject is in the cache, return the corresponding jsobject.
+ * Otherwise call "caller(pyobject, cache)"
+ * \param cache A python dict
+ * \param pyobject A python object to remove
+ * \returns Success code.
+ */
+static int
+_python2js_cache(PyObject* pyobject,
+                      PyObject* cache,
                       int (*caller)(PyObject*, PyObject*));
 
 int
@@ -170,11 +199,11 @@ _py2js_bytes(PyObject* x)
 
 static int
 _py2js_sequence(PyObject* x,
-                         PyObject* map,
+                         PyObject* cache,
                          int (*caller)(PyObject*, PyObject*))
 {
   int jsarray = hiwire_array();
-  if (_py2js_add_to_cache(map, x, jsarray)) {
+  if (_py2js_add_to_cache(cache, x, jsarray)) {
     hiwire_decref(jsarray);
     return HW_ERROR;
   }
@@ -184,15 +213,15 @@ _py2js_sequence(PyObject* x,
     if (pyitem == NULL) {
       // If something goes wrong converting the sequence (as is the case with
       // Pandas data frames), fallback to the Python object proxy
-      _py2js_remove_from_cache(map, x);
+      _py2js_remove_from_cache(cache, x);
       hiwire_decref(jsarray);
       PyErr_Clear();
       Py_INCREF(x);
       return get_pyproxy(x);
     }
-    int jsitem = _py2js_cache(pyitem, map, caller);
+    int jsitem = _py2js_cache(pyitem, cache, caller);
     if (jsitem == HW_ERROR) {
-      _py2js_remove_from_cache(map, x);
+      _py2js_remove_from_cache(cache, x);
       Py_DECREF(pyitem);
       hiwire_decref(jsarray);
       return HW_ERROR;
@@ -201,7 +230,7 @@ _py2js_sequence(PyObject* x,
     hiwire_push_array(jsarray, jsitem);
     hiwire_decref(jsitem);
   }
-  if (_py2js_remove_from_cache(map, x)) {
+  if (_py2js_remove_from_cache(cache, x)) {
     hiwire_decref(jsarray);
     return HW_ERROR;
   }
@@ -210,26 +239,26 @@ _py2js_sequence(PyObject* x,
 
 static int
 _py2js_dict(PyObject* x,
-                     PyObject* map,
+                     PyObject* cache,
                      int (*caller)(PyObject*, PyObject*))
 {
   int jsdict = hiwire_object();
-  if (_py2js_add_to_cache(map, x, jsdict)) {
+  if (_py2js_add_to_cache(cache, x, jsdict)) {
     hiwire_decref(jsdict);
     return HW_ERROR;
   }
   PyObject *pykey, *pyval;
   Py_ssize_t pos = 0;
   while (PyDict_Next(x, &pos, &pykey, &pyval)) {
-    int jskey = _py2js_cache(pykey, map, caller);
+    int jskey = _py2js_cache(pykey, cache, caller);
     if (jskey == HW_ERROR) {
-      _py2js_remove_from_cache(map, x);
+      _py2js_remove_from_cache(cache, x);
       hiwire_decref(jsdict);
       return HW_ERROR;
     }
-    int jsval = _py2js_cache(pyval, map, caller);
+    int jsval = _py2js_cache(pyval, cache, caller);
     if (jsval == HW_ERROR) {
-      _py2js_remove_from_cache(map, x);
+      _py2js_remove_from_cache(cache, x);
       hiwire_decref(jskey);
       hiwire_decref(jsdict);
       return HW_ERROR;
@@ -238,7 +267,7 @@ _py2js_dict(PyObject* x,
     hiwire_decref(jskey);
     hiwire_decref(jsval);
   }
-  if (_py2js_remove_from_cache(map, x)) {
+  if (_py2js_remove_from_cache(cache, x)) {
     hiwire_decref(jsdict);
     return HW_ERROR;
   }
@@ -281,97 +310,89 @@ _py2js_immutable(PyObject* x){
     }                       \
   } while(0)
 
-
 static int
-_py2js_deep(PyObject* x, PyObject* map)
+_py2js_minimal(PyObject* x, PyObject* cache)
 {
   int result;
   RET_IF_NOT_ERR(_py2js_immutable(x));
 
-  int (*self)(PyObject*, PyObject*) = &_py2js_deep;
+  int (*callback)(PyObject*, PyObject*) = &_py2js_minimal;
+
+  if (JsProxy_Check(x)) {
+    return JsProxy_AsJs(x);
+  } 
+  if (PyTuple_Check(x)) {
+    return _py2js_sequence(x, cache, callback);
+  } 
+  RET_IF_NOT_ERR(_python2js_buffer(x));
+  return get_pyproxy(x);
+}
+
+static int
+_py2js_helper(PyObject* x, PyObject* cache, int (*callback)(PyObject*, PyObject*))
+{
+  int result;
+  RET_IF_NOT_ERR(_py2js_immutable(x));
   
   if (JsProxy_Check(x)) {
     return JsProxy_AsJs(x);
-  } else if (PyList_Check(x) || PyTuple_Check(x)) {
-    return _py2js_sequence(x, map, self);
-  } else if (PyDict_Check(x)) {
-    return _py2js_dict(x, map, self);
+  } 
+  if (PyList_Check(x) || PyTuple_Check(x)) {
+    return _py2js_sequence(x, cache, callback);
   }
-
-  RET_IF_NOT_ERR(_py2js_buffer(x));
-
-  if (result != HW_ERROR) {
-    return result;
+  if (PyDict_Check(x)) {
+    return _py2js_dict(x, cache, callback);
   }
-
+  RET_IF_NOT_ERR(_python2js_buffer(x));
   if (PySequence_Check(x)) {
-    return _py2js_sequence(x, map, self);
+    return _py2js_sequence(x, cache, callback);
   }
-
-    return get_pyproxy(x);
-  }
+  return get_pyproxy(x);
 }
 
 static int
-_py2js_minimal(PyObject* x, PyObject* map)
+_py2js_once(PyObject* x, PyObject* cache)
 {
-  int result;
-  RET_IF_NOT_ERR(_py2js_immutable(x));
-
-  int (*self)(PyObject*, PyObject*) = &_py2js_deep;
-
-  if (JsProxy_Check(x)) {
-    return JsProxy_AsJs(x);
-  } else if (PyTuple_Check(x)) {
-    return _py2js_sequence(x, map, &_py2js_nocopy);
-  } else {
-    RET_IF_NOT_ERR(_py2js_tryinto_buffer(x));
-    // if (PySequence_Check(x)) {
-    //   return _py2js_sequence(x, map);
-    // }
-    return get_pyproxy(x);
-  }
+  return _py2js_helper(x, cache, &_py2js_minimal);
 }
 
 static int
-_py2js_add_to_cache(PyObject* map, PyObject* pyobject, int jsobject)
+_py2js_deep(PyObject* x, PyObject* cache)
 {
-  if(map === NULL){
-    return 0;
-  }  
+  return _py2js_helper(x, cache, &_py2js_deep);
+}
+
+
+static int
+_py2js_add_to_cache(PyObject* cache, PyObject* pyobject, int jsobject)
+{
   /* Use the pointer converted to an int so cache is by identity, not hash */
   PyObject* pyobjectid = PyLong_FromSize_t((size_t)pyobject);
   PyObject* jsobjectid = PyLong_FromLong(jsobject);
-  int result = PyDict_SetItem(map, pyparentid, jsobjectid);
-  Py_DECREF(pyparentid);
-  Py_DECREF(jsparentid);
+  int result = PyDict_SetItem(cache, pyobjectid, jsobjectid);
+  Py_DECREF(pyobjectid);
+  Py_DECREF(jsobjectid);
 
   return result ? HW_ERROR : 0;
 }
 
 static int
-_py2js_remove_from_cache(PyObject* map, PyObject* pyparent)
+_py2js_remove_from_cache(PyObject* cache, PyObject* pyobject)
 {
-  if(map === NULL){
-    return 0;
-  }
-  PyObject* pyparentid = PyLong_FromSize_t((size_t)pyparent);
-  int result = PyDict_DelItem(map, pyparentid);
-  Py_DECREF(pyparentid);
+  PyObject* pyobjectid = PyLong_FromSize_t((size_t)pyobject);
+  int result = PyDict_DelItem(cache, pyobjectid);
+  Py_DECREF(pyobjectid);
 
   return result ? HW_ERROR : 0;
 }
 
 static int
 _py2js_cache(PyObject* x,
-                      PyObject* map,
+                      PyObject* cache,
                       int (*caller)(PyObject*, PyObject*))
 {
-  if(map === NULL){
-    return 0;
-  }  
   PyObject* id = PyLong_FromSize_t((size_t)x);
-  PyObject* val = PyDict_GetItem(map, id);
+  PyObject* val = PyDict_GetItem(cache, id);
   int result;
   if (val) {
     result = PyLong_AsLong(val);
@@ -379,22 +400,31 @@ _py2js_cache(PyObject* x,
       result = hiwire_incref(result);
     }
   } else {
-    result = caller(x, map);
+    result = caller(x, cache);
   }
   Py_DECREF(id);
   return result;
 }
 
 int
-python2js_nocopy(PyObject* x)
+python2js_minimal(PyObject* x)
 {
-  PyObject* map = PyDict_New();
-  // This caching is pretty overkill for the no copy version, since it is only
-  // for tuples. It is TECHNICALLY possible to have a self-referential tuple:
-  // https://stackoverflow.com/questions/11873448/building-self-referencing-tuples
-  // This also allows us to share code.
-  int result = _py2js_cache(x, map, &_py2js_nocopy);
-  Py_DECREF(map);
+  PyObject* cache = PyDict_New();
+  int result = _py2js_minimal(x, cache);
+  Py_DECREF(cache);
+  if (result == HW_ERROR) {
+    return pythonexc2js();
+  }
+  return result;
+}
+
+
+int
+python2js_once(PyObject* x)
+{
+  PyObject* cache = PyDict_New();
+  int result = _py2js_once(x, cache);
+  Py_DECREF(cache);
   if (result == HW_ERROR) {
     return pythonexc2js();
   }
@@ -404,9 +434,9 @@ python2js_nocopy(PyObject* x)
 int
 python2js(PyObject* x)
 {
-  PyObject* map = PyDict_New();
-  int result = _py2js_cache(x, map, &_py2js);
-  Py_DECREF(map);
+  PyObject* cache = PyDict_New();
+  int result = _py2js_deep(x, cache);
+  Py_DECREF(cache);
 
   if (result == HW_ERROR) {
     return pythonexc2js();

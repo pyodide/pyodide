@@ -20,12 +20,6 @@ pythonexc2js();
 int
 python2js(PyObject* x);
 
-/** Will python2js_copy do anything different than python2js_nocopy?
- *  \param The Python object
- *  \return boolean, whether python2js_copy will make any progress.
- */
-int
-python2js_can_copy(PyObject* x);
 
 /** Convert a Python object to a Javascript object.
  *  \param The Python object
@@ -33,7 +27,13 @@ python2js_can_copy(PyObject* x);
  *     exception.
  */
 int
-python2js_nocopy(PyObject* x);
+python2js_once(PyObject* x);
+
+
+int
+python2js_minimal(PyObject* x);
+
+
 
 /** Set up the global state for this module.
  */
