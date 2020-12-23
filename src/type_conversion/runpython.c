@@ -1,11 +1,9 @@
 #include "runpython.h"
+#include "python2js.h"
 
 #include <Python.h>
 #include <emscripten.h>
-#include <node.h> // from Python
 
-#include "hiwire.h"
-#include "python2js.h"
 
 int
 runpython_init(){
