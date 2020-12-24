@@ -451,19 +451,17 @@ JsProxy_Await(JsProxy* self)
   PyObject* set_result = _PyObject_GetAttrId(fut, &PyId_set_result);
   PyObject* set_exception = _PyObject_GetAttrId(fut, &PyId_set_exception);
 
-  if (!hiwire_is_promise(((JsProxy*)self)->js)) {
-    PyObject_CallFunctionObjArgs(set_result, self, NULL);
-  } else {
-    int idargs = hiwire_array();
-    int idarg = python2js(set_result);
-    hiwire_push_array(idargs, idarg);
-    hiwire_decref(idarg);
-    idarg = python2js(set_exception);
-    hiwire_push_array(idargs, idarg);
-    hiwire_decref(idarg);
-    int res = hiwire_call_member(self->js, (int)"then", idargs);
-    hiwire_decref(res);
-  }
+  int promise_id = hiwire_ensure_promise(((JsProxy*)self)->js);
+  int idargs = hiwire_array();
+  int idarg;
+  idarg = python2js(set_result);
+  hiwire_push_array(idargs, idarg);
+  hiwire_decref(idarg);
+  idarg = python2js(set_exception);
+  hiwire_push_array(idargs, idarg);
+  hiwire_decref(idarg);
+  hiwire_decref(hiwire_call_member(promise_id, (int)"then", idargs));
+  hiwire_decref(promise_id);
   self->future = fut;
 
   return _PyObject_CallMethodId(self->future, &PyId___await__, NULL);

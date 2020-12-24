@@ -6,7 +6,18 @@ startup = """
 import asyncio
 class DumbLoop(asyncio.AbstractEventLoop):
     def create_future(self):
-        return asyncio.Future(loop=self)
+        fut = asyncio.Future(loop=self)
+        old_set_result = fut.set_result
+        old_set_exception = fut.set_exception
+        def set_result(a):
+            print("set_result:", a)
+            old_set_result(a)
+        fut.set_result = set_result
+        def set_exception(a):
+            print("set_exception:", a)
+            old_set_exception(a)
+        fut.set_exception = set_exception
+        return fut
 
     def get_debug(self):
         return False
@@ -77,7 +88,12 @@ def test_await_fetch(selenium):
 def test_await_error(selenium):
     selenium.run_js(
         """
-        async function js_raises(){
+        async function async_js_raises(){
+            console.log("Hello there???");
+            throw new Error("This is an error message!");
+        }
+        window.async_js_raises = async_js_raises;
+        function js_raises(){
             throw new Error("This is an error message!");
         }
         window.js_raises = js_raises;
@@ -86,18 +102,19 @@ def test_await_error(selenium):
     selenium.run(startup)
     selenium.run(
         """
-        from js import js_raises
+        from js import async_js_raises, js_raises
         async def test():
-            await js_raises()
+            c = await async_js_raises()
+            return c
         c = test()
-        r = c.send(None)
+        r1 = c.send(None)
         """
     )
-    time.sleep(0.01)
     msg = "This is an error message!"
     with pytest.raises(WebDriverException, match=msg):
+        # Wait for event loop to go around for chome
         selenium.run(
             """
-            r.result()
+            r2 = c.send(r1.result())
             """
         )
