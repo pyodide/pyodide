@@ -731,7 +731,9 @@ JsException_AsJs(PyObject* err)
 int
 JsProxy_init()
 {
-  PyObject* module = PyImport_ImportModule("asyncio");
+  PyObject* module = NULL;
+
+  module = PyImport_ImportModule("asyncio");
   if (module == NULL) {
     goto fail;
   }
@@ -743,9 +745,8 @@ JsProxy_init()
   PyExc_BaseException_Type = (PyTypeObject*)PyExc_BaseException;
   _Exc_JsException.tp_base = (PyTypeObject*)PyExc_Exception;
 
-  PyObject* module;
-  PyObject* exc;
 
+  Py_CLEAR(module);
   // Add JsException to the pyodide module so people can catch it if they want.
   module = PyImport_ImportModule("pyodide");
   if (module == NULL) {
