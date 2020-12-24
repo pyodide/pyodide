@@ -220,11 +220,15 @@ def build_packages(packages_dir: Path, outputdir: Path, args) -> None:
         "import_name_to_package_name": {},
     }
 
+    libraries = [pkg.name for pkg in pkg_map.values() if pkg.library]
+
     for name, pkg in pkg_map.items():
         if pkg.library:
             continue
 
-        package_data["dependencies"][name] = pkg.dependencies
+        package_data["dependencies"][name] = [
+            x for x in pkg.dependencies if x not in libraries
+        ]
         for imp in pkg.meta.get("test", {}).get("imports", [name]):
             package_data["import_name_to_package_name"][imp] = name
 
