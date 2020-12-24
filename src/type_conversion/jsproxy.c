@@ -14,10 +14,10 @@ typedef PySendResult (*sendfunc)(PyObject* iter,
                                  PyObject** result);
 #include "jsproxy.h"
 
+#include "Python.h"
 #include "hiwire.h"
 #include "js2python.h"
 #include "python2js.h"
-#include "Python.h"
 #include "structmember.h"
 
 _Py_IDENTIFIER(get_event_loop);
@@ -27,7 +27,6 @@ _Py_IDENTIFIER(set_result);
 _Py_IDENTIFIER(__await__);
 
 static PyObject* asyncio_get_event_loop;
-
 
 static PyTypeObject* PyExc_BaseException_Type;
 
