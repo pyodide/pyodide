@@ -311,11 +311,14 @@ _py2js_minimal(PyObject* x, PyObject* cache)
   int result;
   RET_IF_NOT_ERR(_py2js_immutable(x));
 
-  int (*callback)(PyObject*, PyObject*) = &_py2js_minimal;
+  if (JsException_Check(x)) {
+    return JsException_AsJs(x);
+  }
 
   if (JsProxy_Check(x)) {
     return JsProxy_AsJs(x);
   }
+  int (*callback)(PyObject*, PyObject*) = &_py2js_minimal;
   if (PyTuple_Check(x)) {
     return _py2js_sequence(x, cache, callback);
   }
@@ -330,6 +333,10 @@ _py2js_helper(PyObject* x,
 {
   int result;
   RET_IF_NOT_ERR(_py2js_immutable(x));
+
+  if (JsException_Check(x)) {
+    return JsException_AsJs(x);
+  }
 
   if (JsProxy_Check(x)) {
     return JsProxy_AsJs(x);
