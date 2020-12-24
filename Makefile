@@ -14,7 +14,7 @@ SHELL := /bin/bash
 CC=emcc
 CXX=em++
 OPTFLAGS=-O2
-CFLAGS=$(OPTFLAGS) -g -I$(PYTHONINCLUDE) -Wno-warn-absolute-paths
+CFLAGS=$(OPTFLAGS) -g -I$(PYTHONINCLUDE) -Wno-warn-absolute-paths -D TEST
 CXXFLAGS=$(CFLAGS) -std=c++14
 
 
@@ -128,13 +128,13 @@ test: all
 lint:
 	# check for unused imports, the rest is done by black
 	flake8 --select=F401 src tools pyodide_build benchmark
-	clang-format-6.0 -output-replacements-xml src/*.c src/*.h src/*.js src/*/*.c src/*/*.h src/*/*.js | (! grep '<replacement ')
+	clang-format-6.0 -output-replacements-xml `find src -type f -regex ".*\.\(c\|h\|js\)"` | (! grep '<replacement ')
 	black --check --exclude tools/file_packager.py .
 	mypy --ignore-missing-imports pyodide_build/ src/ packages/micropip/micropip/ packages/*/test*
 
 
 apply-lints:
-	clang-format-6.0 -i src/*.c src/*.h src/*.js src/*/*.c src/*/*.h src/*/*.js
+	clang-format-6.0 -i `git diff --name-only *.c *.h *.js`
 	black --exclude tools/file_packager.py .
 
 benchmark: all
@@ -162,7 +162,7 @@ clean-all: clean
 	rm -fr cpython/build
 
 %.bc: %.c $(CPYTHONLIB)
-	$(CC) -o $@ -c $< $(CFLAGS) -Isrc/type_conversion/
+	$(CC) -o $@ -c $< $(CFLAGS) $(EXTRA_CFLAGS) -Isrc/type_conversion/
 
 
 build/test.data: $(CPYTHONLIB)
