@@ -299,17 +299,14 @@ var languagePluginLoader = new Promise((resolve, reject) => {
   ////////////////////////////////////////////////////////////
   // Rearrange namespace for public API
   let PUBLIC_API = [
-    'globals',
-    'loadPackage',
-    'loadedPackages',
-    'pyimport',
-    'repr',
-    'runPython',
-    'runPythonAsync',
-    'checkABI',
-    'version',
-    'autocomplete',
+    'globals', 'loadPackage', 'loadedPackages', 'pyimport', 'repr', 'runPython',
+    'runPythonAsync', 'checkABI', 'version', 'autocomplete'
   ];
+  // window.TEST_PYODIDE flag to control exposure of extra private entrypoints
+  // needed for tests.
+  if (window.TEST_PYODIDE) {
+    PUBLIC_API.push("TestEntrypoints");
+  }
 
   function makePublicAPI(module, public_api) {
     var namespace = {_module : module};
