@@ -10,8 +10,8 @@
 PyObject* globals;
 PyObject* pyodide;
 
-_Py_IDENTIFIER("eval_code");
-_Py_IDENTIFIER("find_imports");
+_Py_IDENTIFIER(eval_code);
+_Py_IDENTIFIER(find_imports);
 
 int
 _runPython(char* code)
@@ -23,7 +23,7 @@ _runPython(char* code)
   }
 
   PyObject* ret =
-    PyObject_CallMethodIdObjArgs(pyodide, &PyId_eval_code, globals, NULL);
+    _PyObject_CallMethodIdObjArgs(pyodide, &PyId_eval_code, py_code, globals, NULL);
 
   if (ret == NULL) {
     return pythonexc2js();
@@ -44,7 +44,7 @@ _findImports(char* code)
   }
 
   PyObject* ret =
-    PyObject_CallFunctionObjArgs(pyodide, &PyId_find_imports, py_code, NULL);
+    _PyObject_CallMethodIdObjArgs(pyodide, &PyId_find_imports, py_code, NULL);
 
   if (ret == NULL) {
     return pythonexc2js();
