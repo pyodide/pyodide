@@ -10,7 +10,6 @@ requirements:
   run:
     - numpy
     - asciitree
-    - fasteners
     - numcodecs
 test:
   imports:
