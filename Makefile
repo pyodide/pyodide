@@ -134,7 +134,7 @@ lint:
 
 
 apply-lint:
-	clang-format-6.0 -i `git diff --name-only *.c *.h *.js`
+	clang-format-6.0 -i `git diff --cached --name-only *.c *.h *.js`
 	black --exclude tools/file_packager.py .
 
 benchmark: all
