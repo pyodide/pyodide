@@ -94,6 +94,9 @@ class SeleniumWrapper:
         driver.get(f"http://{server_hostname}:{server_port}/test.html")
         try:
             wait.until(PyodideInited())
+            self.driver.execute_script(
+                "pyodide.TestEntrypoints = pyodide._module.TestEntrypoints"
+            )
         except TimeoutException:
             _display_driver_logs(self.browser, driver)
             raise TimeoutException()
