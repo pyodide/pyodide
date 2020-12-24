@@ -1,0 +1,9 @@
+package:
+  name: fasteners
+  version: '0.16'
+source:
+  sha256: c995d8c26b017c5d6a6de9ad29a0f9cdd57de61ae1113d28fac26622b06a0933
+  url: https://files.pythonhosted.org/packages/d1/8f/a6c06f9bce5691a40283e52b92ec1522d6863951e738a31b109bf6bf2002/fasteners-0.16.tar.gz
+test:
+  imports:
+  - fasteners
