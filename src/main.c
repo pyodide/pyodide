@@ -32,7 +32,12 @@ int
 main(int argc, char** argv)
 {
 #ifdef TEST
-  EM_ASM({ Module.TestEntrypoints = {}; });
+  EM_ASM({
+    Module.TestEntrypoints = {};
+    Module.TestEntrypoints.test_entrypoints = function(){
+      return "It works!";
+    }
+  });
 #endif
   hiwire_setup();
   setenv("PYTHONHOME", "/", 0);

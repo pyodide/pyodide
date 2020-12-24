@@ -303,6 +303,10 @@ var languagePluginLoader = new Promise((resolve, reject) => {
     'runPythonAsync', 'checkABI', 'version', 'autocomplete'
   ];
 
+  if(self.TEST_PYODIDE){
+    PUBLIC_API.push("TestEntrypoints");
+  }
+
   function makePublicAPI(module, public_api) {
     var namespace = {_module : module};
     for (let name of public_api) {
