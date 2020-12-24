@@ -1,12 +1,24 @@
 """
 A library of helper utilities for connecting Python to the browser environment.
 """
+# Added by C:
+# JsException (from jsproxy.c)
 
 import ast
 from asyncio import iscoroutine
 from io import StringIO
 from textwrap import dedent
 from typing import Dict, List, Any, Tuple
+
+
+class JsException(Exception):
+    """
+    A wrapper around a Javascript Error to allow the Error to be thrown in Python.
+    """
+
+    # This gets overwritten in jsproxy.c, it is just here for autodoc and humans
+    # reading this file.
+    pass
 
 
 def open_url(url: str) -> StringIO:

@@ -14,6 +14,13 @@
 PyObject*
 JsProxy_cnew(int v);
 
+/** Make a new JsProxy Error.
+ *  \param v The Javascript error object.
+ *  \return The Python error object wrapping the Javascript error object.
+ */
+PyObject*
+JsProxy_new_error(int v);
+
 /** Check if a Python object is a JsProxy object.
  *  \param x The Python object
  *  \return 1 if the object is a JsProxy object.
@@ -27,6 +34,20 @@ JsProxy_Check(PyObject* x);
  */
 int
 JsProxy_AsJs(PyObject* x);
+
+/** Check if a Python object is a JsException object.
+ *  \param x The Python object
+ *  \return 1 if the object is a JsException object.
+ */
+int
+JsException_Check(PyObject* x);
+
+/** Grab the underlying Javascript error from the JsException object.
+ *  \param x The JsProxy object.  Must confirm that it is a JsException object
+ * using JsProxy_Check. \return The Javascript object.
+ */
+int
+JsException_AsJs(PyObject* x);
 
 /** Initialize global state for the JsProxy functionality. */
 int
