@@ -319,7 +319,7 @@ EM_JS(int, hiwire_is_function, (int idobj), {
 
 EM_JS(int, hiwire_is_promise, (int idobj), {
   // clang-format off
-  let obj = Module.hiwire_get_value(idobj);
+  let obj = Module.hiwire.get_value(idobj);
   return Promise.resolve(obj)  === obj;
   // clang-format on
 });
