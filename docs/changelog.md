@@ -34,7 +34,7 @@
   [#708](https://github.com/iodide-project/pyodide/pull/708)
 - Javascript exceptions can now be raised and caught in Python. They are
   wrapped in pyodide.JsException.
-  [#872](https://github.com/iodide-project/pyodide/pull/872)
+  [#891](https://github.com/iodide-project/pyodide/pull/891)
 
 ### pyodide-py package and micropip
 
