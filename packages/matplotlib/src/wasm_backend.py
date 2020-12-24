@@ -226,7 +226,8 @@ class FigureCanvasWasm(backend_agg.FigureCanvasAgg):
             canvas = self.get_element("canvas")
             if canvas is None:
                 return
-            image_data = ImageData.new(self.buffer_rgba(), width, height)
+            pixels = self.buffer_rgba().tobytes()
+            image_data = ImageData.new(pixels, width, height)
             ctx = canvas.getContext("2d")
             ctx.putImageData(image_data, 0, 0)
         finally:
@@ -286,7 +287,9 @@ class FigureCanvasWasm(backend_agg.FigureCanvasAgg):
     _cursor_map = {0: "pointer", 1: "default", 2: "crosshair", 3: "move"}
 
     def set_cursor(self, cursor):
-        self.get_element("rubberband").style.cursor = self._cursor_map.get(cursor, 0)
+        rubberband = self.get_element("rubberband")
+        if rubberband is not None:
+            rubberband.style.cursor = self._cursor_map.get(cursor, 0)
 
     # http://www.cambiaresearch.com/articles/15/javascript-char-codes-key-codes
     _SHIFT_LUT = {

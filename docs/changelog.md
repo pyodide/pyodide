@@ -21,7 +21,7 @@
 - Updated to emscripten 1.38.34
   [#480](https://github.com/iodide-project/pyodide/pull/480)
 - New packages: freesasa, lxml, python-sat, traits, astropy, pillow
-- Updated packages: numpy 1.15.4, pandas 1.0.5 among others.
+- Updated packages: numpy 1.15.4, pandas 1.0.5, matplotlib 3.3.3 among others.
 - Updated default `--ldflags` argument to `pyodide_build` scripts to equal what
   pyodide actually uses.
 - Drop support for serving .wasm files with incorrect mime type.
@@ -38,6 +38,10 @@
   ```
   before loading it.
   [#855](https://github.com/iodide-project/pyodide/pull/855)
+- Javascript exceptions can now be raised and caught in Python. They are wrapped in pyodide.JsException.
+  [#872](https://github.com/iodide-project/pyodide/pull/872)
+- Build runtime C libraries (e.g. libxml) via package build system with correct
+  dependency resolution
 
 
 ## Version 0.15.0

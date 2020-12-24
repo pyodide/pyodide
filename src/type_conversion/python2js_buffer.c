@@ -32,11 +32,7 @@ static int
 _convert_bool(char* data)
 {
   char v = *((char*)data);
-  if (v) {
-    return hiwire_true();
-  } else {
-    return hiwire_false();
-  }
+  return hiwire_bool((int)v);
 }
 
 static int

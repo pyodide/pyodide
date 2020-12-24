@@ -1,0 +1,20 @@
+In Pyodide, font list (see packages/matplotlib/src/fontlist.json)
+is manually pushed in the matplotlib's directory (see meta.yaml)
+so we teach `font_manager.py` where to find it.
+
+diff --git a/lib/matplotlib/font_manager.py b/lib/matplotlib/font_manager.py
+--- a/lib/matplotlib/font_manager.py
++++ b/lib/matplotlib/font_manager.py
+@@ -1394,8 +1392,7 @@ def is_opentype_cff_font(filename):
+         return False
+ 
+ 
+-_fmcache = os.path.join(
+-    mpl.get_cachedir(), 'fontlist-v{}.json'.format(FontManager.__version__))
++_fmcache = os.path.join(os.path.dirname(__file__), "fontlist.json")
+ fontManager = None
+ 
+ 
+-- 
+2.20.1
+

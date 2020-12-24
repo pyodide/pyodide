@@ -1,0 +1,9 @@
+package:
+  name: libxml
+
+requirements:
+  run:
+    - zlib
+
+build:
+  library: true
