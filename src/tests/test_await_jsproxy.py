@@ -101,18 +101,3 @@ def test_await_error(selenium):
             r.result()
             """
         )
-
-
-def test_await_nonpromise(selenium):
-    msg = "TypeError: Attempted to await .* which is not a promise."
-    with pytest.raises(WebDriverException, match=msg):
-        selenium.run(
-            """
-            from js import Math
-            async def temp():
-                x = await Math
-                print(x)
-            c = temp()
-            c.send(None)
-            """
-        )

@@ -437,13 +437,6 @@ JsProxy_Await(JsProxy* self)
     return _PyObject_CallMethodId(self->future, &PyId___await__, NULL);
   }
 
-  if (!hiwire_is_promise(((JsProxy*)self)->js)) {
-    PyErr_SetString(
-      PyExc_TypeError,
-      "Attempted to await a Javascript object which is not a promise.");
-    return NULL;
-  }
-
   PyObject* loop = _PyObject_CallNoArg(asyncio_get_event_loop);
   if (loop == NULL) {
     return NULL;
@@ -458,18 +451,19 @@ JsProxy_Await(JsProxy* self)
   PyObject* set_result = _PyObject_GetAttrId(fut, &PyId_set_result);
   PyObject* set_exception = _PyObject_GetAttrId(fut, &PyId_set_exception);
 
-  int idargs = hiwire_array();
-  int idarg = python2js(set_result);
-  hiwire_push_array(idargs, idarg);
-  hiwire_decref(idarg);
-  hiwire_call_member(self->js, (int)"then", idargs);
-
-  idarg = python2js(set_exception);
-  hiwire_set_member_int(idargs, 0, idarg);
-  hiwire_decref(idarg);
-  hiwire_call_member(self->js, (int)"catch", idargs);
-  hiwire_decref(idargs);
-
+  if (!hiwire_is_promise(((JsProxy*)self)->js)) {
+    PyObject_CallFunctionObjArgs(set_result, self, NULL);
+  } else {
+    int idargs = hiwire_array();
+    int idarg = python2js(set_result);
+    hiwire_push_array(idargs, idarg);
+    hiwire_decref(idarg);
+    idarg = python2js(set_exception);
+    hiwire_push_array(idargs, idarg);
+    hiwire_decref(idarg);
+    int res = hiwire_call_member(self->js, (int)"then", idargs);
+    hiwire_decref(res);
+  }
   self->future = fut;
 
   return _PyObject_CallMethodId(self->future, &PyId___await__, NULL);
