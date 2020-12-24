@@ -1,0 +1,13 @@
+diff --git a/numcodecs/blosc.pyx b/numcodecs/blosc.pyx
+index 3bfdc00..c6521b7 100644
+--- a/numcodecs/blosc.pyx
++++ b/numcodecs/blosc.pyx
+@@ -77,6 +77,8 @@ AUTOBLOCKS = 0
+ # synchronization
+ try:
+     mutex = multiprocessing.Lock()
++except ModuleNotFoundError:
++    mutex = None
+ except OSError:
+     mutex = None
+ 

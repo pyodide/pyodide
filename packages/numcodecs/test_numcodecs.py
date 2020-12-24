@@ -5,7 +5,95 @@ def test_blosc(selenium_standalone):
         import numpy as np
         from numcodecs import blosc
         from numcodecs.blosc import Blosc
-        from numcodecs.tests.common import check_encode_decode
+        from numcodecs.compat import ensure_bytes, ensure_ndarray
+        from numpy.testing import assert_array_almost_equal, assert_array_equal
+
+        def compare_arrays(arr, res, precision=None):
+            # ensure numpy array with matching dtype
+            res = ensure_ndarray(res).view(arr.dtype)
+
+            # convert to correct shape
+            if arr.flags.f_contiguous:
+                order = 'F'
+            else:
+                order = 'C'
+            res = res.reshape(arr.shape, order=order)
+
+            # exact compare
+            if precision is None:
+                assert_array_equal(arr, res)
+
+            # fuzzy compare
+            else:
+                assert_array_almost_equal(arr, res, decimal=precision)
+
+        def check_encode_decode(arr, codec, precision=None):
+
+            # N.B., watch out here with blosc compressor, if the itemsize of
+            # the source buffer is different then the results of encoding
+            # (i.e., compression) may be different. Hence we *do not* require that
+            # the results of encoding be identical for all possible inputs, rather
+            # we just require that the results of the encode/decode round-trip can
+            # be compared to the original array.
+
+            # encoding should support any object exporting the buffer protocol
+
+            # test encoding of numpy array
+            enc = codec.encode(arr)
+            dec = codec.decode(enc)
+            compare_arrays(arr, dec, precision=precision)
+
+            # test encoding of bytes
+            buf = arr.tobytes(order='A')
+            enc = codec.encode(buf)
+            dec = codec.decode(enc)
+            compare_arrays(arr, dec, precision=precision)
+
+            # test encoding of bytearray
+            buf = bytearray(arr.tobytes(order='A'))
+            enc = codec.encode(buf)
+            dec = codec.decode(enc)
+            compare_arrays(arr, dec, precision=precision)
+
+            # test encoding of array.array
+            buf = array.array('b', arr.tobytes(order='A'))
+            enc = codec.encode(buf)
+            dec = codec.decode(enc)
+            compare_arrays(arr, dec, precision=precision)
+
+            # decoding should support any object exporting the buffer protocol,
+
+            # setup
+            enc_bytes = ensure_bytes(enc)
+
+            # test decoding of raw bytes
+            dec = codec.decode(enc_bytes)
+            compare_arrays(arr, dec, precision=precision)
+
+            # test decoding of bytearray
+            dec = codec.decode(bytearray(enc_bytes))
+            compare_arrays(arr, dec, precision=precision)
+
+            # test decoding of array.array
+            buf = array.array('b', enc_bytes)
+            dec = codec.decode(buf)
+            compare_arrays(arr, dec, precision=precision)
+
+            # test decoding of numpy array
+            buf = np.frombuffer(enc_bytes, dtype='u1')
+            dec = codec.decode(buf)
+            compare_arrays(arr, dec, precision=precision)
+
+            # test decoding directly into numpy array
+            out = np.empty_like(arr)
+            codec.decode(enc_bytes, out=out)
+            compare_arrays(arr, out, precision=precision)
+
+            # test decoding directly into bytearray
+            out = bytearray(arr.nbytes)
+            codec.decode(enc_bytes, out=out)
+            # noinspection PyTypeChecker
+            compare_arrays(arr, out, precision=precision)
 
         # mix of dtypes: integer, float, bool, string
         # mix of shapes: 1D, 2D, 3D
@@ -41,9 +129,9 @@ def test_blosc(selenium_standalone):
             # Blosc(shuffle=Blosc.SHUFFLE, blocksize=2**8),
             # Blosc(cname='lz4', clevel=1, shuffle=Blosc.NOSHUFFLE, blocksize=2**8),
         ]
-        # for codec in codecs:
-        #     for array in arrays:
-        #         check_encode_decode(array, codec)
+        for codec in codecs:
+            for array in arrays:
+                check_encode_decode(array, codec)
         """
 
     selenium.run(cmd)
