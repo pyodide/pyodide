@@ -123,6 +123,12 @@ _js2python_jsproxy(int id)
   return (int)JsProxy_cnew(id);
 }
 
+int
+_js2python_error(int id)
+{
+  return (int)JsProxy_new_error(id);
+}
+
 // TODO: Add some meaningful order
 
 EM_JS(int, __js2python, (int id), {
@@ -143,6 +149,8 @@ EM_JS(int, __js2python, (int id), {
     return __js2python_pyproxy(value._getPtr());
   } else if (value['byteLength'] !== undefined) {
     return __js2python_memoryview(id);
+  } else if (is_error(value)) {
+    return __js2python_error(id);
   } else {
     return __js2python_jsproxy(id);
   }

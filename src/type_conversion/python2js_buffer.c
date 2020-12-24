@@ -32,7 +32,7 @@ static int
 _convert_bool(char* data)
 {
   char v = *((char*)data);
-  return hiwire_bool(v);
+  return hiwire_bool((int)v);
 }
 
 static int

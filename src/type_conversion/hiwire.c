@@ -56,6 +56,7 @@ EM_JS(void, hiwire_setup, (), {
   {
     // Should we guard against duplicating standard values?
     // Probably not worth it for performance: it's harmless to ocassionally
+<<<<<<< HEAD
     // duplicate. Maybe in test builds these should raise? if(jsval ===
     // undefined){
     //   return Module.hiwire.UNDEFINED;
@@ -69,6 +70,10 @@ EM_JS(void, hiwire_setup, (), {
     // if(jsval === false){
     //   return Module.hiwire.FALSE;
     // }
+=======
+    // duplicate. Maybe in test builds we could raise if jsval is a standard
+    // value?
+>>>>>>> 47878173c1b16475994b5b7f865defbc2aea87aa
     while (_hiwire.objects.has(_hiwire.counter)) {
       _hiwire.counter = (_hiwire.counter + 1) & 0x7fffffff;
     }
@@ -81,7 +86,11 @@ EM_JS(void, hiwire_setup, (), {
   Module.hiwire.get_value = function(idval)
   {
     if (!idval) {
+<<<<<<< HEAD
       throw new Error("Argument to hiwire_get_value is undefined");
+=======
+      throw new Error("Argument to hiwire.get_value is undefined");
+>>>>>>> 47878173c1b16475994b5b7f865defbc2aea87aa
     }
     if (!_hiwire.objects.has(idval)) {
       throw new Error(`Undefined id $ { idval }`);

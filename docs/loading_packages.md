@@ -130,9 +130,9 @@ a complete example would be,
 <body>
   <script type="text/javascript">
       // set the pyodide files URL (packages.json, pyodide.asm.data etc)
-      window.languagePluginUrl = 'https://cdn.jsdelivr.net/pyodide/v0.15.0/full/';
+      window.languagePluginUrl = 'https://cdn.jsdelivr.net/pyodide/v0.16.0/full/';
   </script>
-  <script type="text/javascript" src="https://cdn.jsdelivr.net/pyodide/v0.15.0/full/pyodide.js"></script>
+  <script type="text/javascript" src="https://cdn.jsdelivr.net/pyodide/v0.16.0/full/pyodide.js"></script>
   <script type="text/javascript">
     pythonCode = `
       def do_work(*args):

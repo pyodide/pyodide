@@ -1,0 +1,5 @@
+package:
+  name: libiconv
+
+build:
+  library: true

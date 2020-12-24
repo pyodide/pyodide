@@ -1,0 +1,14 @@
+package:
+  name: imageio
+  version: 2.9.0
+source:
+  sha256: 52ddbaeca2dccf53ba2d6dec5676ca7bc3b2403ef8b37f7da78b7654bb3e10f0
+  url: https://files.pythonhosted.org/packages/c3/73/f37f428748c4f10a7991ac5bff00f113a34bcc0d0a78957d6e1cdc29a94e/imageio-2.9.0.tar.gz
+  patches:
+  - patches/setitup.patch
+requirements:
+  run:
+  - numpy
+test:
+  imports:
+  - imageio

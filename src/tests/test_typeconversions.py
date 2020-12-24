@@ -1,5 +1,6 @@
 # See also test_pyproxy, test_jsproxy, and test_python.
 import pytest
+from selenium.common.exceptions import WebDriverException
 
 
 def test_python2js(selenium):
@@ -240,3 +241,69 @@ def test_error_from_js(selenium):
 def test_error_from_python(selenium):
     selenium.run("err = Exception('hello there?');")
     assert_py_to_js_to_py(selenium, "err")
+
+
+def test_jsproxy_attribute_error(selenium):
+    selenium.run_js(
+        """
+        class Point {
+            constructor(x, y) {
+                this.x = x;
+                this.y = y;
+            }
+        }
+        window.point = new Point(42, 43)
+        """
+    )
+    selenium.run(
+        """
+        from js import point
+        assert point.y == 43
+        """
+    )
+
+    msg = "AttributeError: z"
+    with pytest.raises(WebDriverException, match=msg):
+        selenium.run("point.z")
+
+    selenium.run("del point.y")
+    msg = "AttributeError: y"
+    with pytest.raises(WebDriverException, match=msg):
+        selenium.run("point.y")
+    assert selenium.run_js("return point.y;") is None
+
+
+def test_javascript_error(selenium):
+    msg = "JsException: Error: This is a js error"
+    with pytest.raises(WebDriverException, match=msg):
+        selenium.run(
+            """
+            from js import Error
+            err = Error.new("This is a js error")
+            err2 = Error.new("This is another js error")
+            raise err
+            """
+        )
+
+
+def test_javascript_error_back_to_js(selenium):
+    selenium.run_js(
+        """
+        window.err = new Error("This is a js error")
+        """
+    )
+    assert (
+        selenium.run(
+            """
+        from js import err
+        py_err = err
+        type(py_err).__name__
+        """
+        )
+        == "JsException"
+    )
+    assert selenium.run_js(
+        """
+        return pyodide.globals["py_err"] === err
+        """
+    )

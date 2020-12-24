@@ -146,6 +146,7 @@ _pyiterator_next(int ptrobj)
     }
     return hiwire_null();
   }
+
   int idresult = python2js_nocopy(result);
   Py_DECREF(result);
   return idresult;
@@ -479,7 +480,7 @@ EM_JS(int, pyproxy_init, (), {
     toString : function() {
       if (self.pyodide.repr === undefined) {
         self.pyodide.repr = self.pyodide.pyimport('repr');
-      }      
+      }
       return self.pyodide.repr(this);
     },
     destroy : function() {
@@ -515,9 +516,9 @@ EM_JS(int, pyproxy_init, (), {
     delete : function (jskey, jsval) {
       return pyprotos.mapping.delitem(this, jskey);
     },
-    // Cannot call this length, causes 
+    // Cannot call this length, causes
     // "TypeError: Cannot assign to read only property 'length' of function ..."
-    len : function(){ 
+    len : function(){
       return pyprotos.mapping.length(this);
     }
   };
@@ -541,7 +542,7 @@ EM_JS(int, pyproxy_init, (), {
   function isStrInteger(str){
     return !Number.isNaN(str) && Number.isInteger(Number.parseFloat(str));
   }
-  
+
   function shouldIndexSequence (jsobj, jskey){
     return jsobj["$$"].index_type === 2 && isStrInteger(jskey);
   };
@@ -583,7 +584,7 @@ EM_JS(int, pyproxy_init, (), {
     set : function (jsobj, jskey, jsval) {
       if(jskey === "length" || jskey === "size"){
         throw new Error(`Cannot change builtin field "${jskey}"`);
-      }      
+      }
       if(Reflect.has(jsobj, jskey)){
         throw new Error(`Cannot change builtin field "${jskey}"`);
       }
@@ -595,10 +596,10 @@ EM_JS(int, pyproxy_init, (), {
     deleteProperty : function (jsobj, jskey) {
       if(Reflect.has(jsobj, jskey)){
         throw new Error(`Cannot change builtin field "${jskey}"`);
-      }      
+      }
       if(shouldIndexSequence(jsobj, jskey)){
         return pyprotos.mapping.delitem(jsobj, Number.parseInt(jskey));
-      }      
+      }
       return pyprotos.object.delattr(jsobj, jskey);
     },
     ownKeys : function (jsobj) {
@@ -623,7 +624,7 @@ EM_JS(int, pyproxy_init, (), {
         return undefined;
       }
       let value = this.get(target, prop);
-      // "enumerable" controls which properties appear when we loop using 
+      // "enumerable" controls which properties appear when we loop using
       // for(let x in py_object), and also which properties appear in Object.keys(py_object)
       let enumerable = true; // !prop.startsWith("_")??
       let writable = true;

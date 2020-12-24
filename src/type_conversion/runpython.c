@@ -8,9 +8,10 @@
 #include "python2js.h"
 
 PyObject* globals;
+PyObject* pyodide;
 
-PyObject* eval_code;
-PyObject* find_imports;
+_Py_IDENTIFIER(eval_code);
+_Py_IDENTIFIER(find_imports);
 
 int
 _runPython(char* code)
@@ -21,8 +22,8 @@ _runPython(char* code)
     return pythonexc2js();
   }
 
-  PyObject* ret =
-    PyObject_CallFunctionObjArgs(eval_code, py_code, globals, NULL);
+  PyObject* ret = _PyObject_CallMethodIdObjArgs(
+    pyodide, &PyId_eval_code, py_code, globals, NULL);
 
   if (ret == NULL) {
     return pythonexc2js();
@@ -42,7 +43,8 @@ _findImports(char* code)
     return pythonexc2js();
   }
 
-  PyObject* ret = PyObject_CallFunctionObjArgs(find_imports, py_code, NULL);
+  PyObject* ret =
+    _PyObject_CallMethodIdObjArgs(pyodide, &PyId_find_imports, py_code, NULL);
 
   if (ret == NULL) {
     return pythonexc2js();
@@ -136,23 +138,8 @@ runpython_init_py()
     return 1;
   }
 
-  PyObject* m = PyImport_ImportModule("pyodide");
-  if (m == NULL) {
-    return 1;
-  }
-
-  PyObject* d = PyModule_GetDict(m);
-  if (d == NULL) {
-    return 1;
-  }
-
-  eval_code = PyDict_GetItemString(d, "eval_code");
-  if (eval_code == NULL) {
-    return 1;
-  }
-
-  find_imports = PyDict_GetItemString(d, "find_imports");
-  if (find_imports == NULL) {
+  pyodide = PyImport_ImportModule("pyodide");
+  if (pyodide == NULL) {
     return 1;
   }
 
@@ -167,3 +154,9 @@ EM_JS(int, runpython_finalize_js, (), {
   };
   return 0;
 });
+
+int
+runpython_init()
+{
+  return runpython_init_js() || runpython_init_py() || runpython_finalize_js();
+}

@@ -7,7 +7,7 @@ defaults: &defaults
   environment:
     - EMSDK_NUM_CORES: 4
       EMCC_CORES: 4
-      PYODIDE_BASE_URL: https://cdn.jsdelivr.net/pyodide/dev/full/
+      PYODIDE_BASE_URL: https://cdn.jsdelivr.net/pyodide/v0.16.0/full/
 
 jobs:
   lint:
@@ -84,10 +84,6 @@ jobs:
           no_output_timeout: 1200
           command: |
             ccache -z
-            # Mark CLAPACK as not built as it's currently incorrectly marked as built
-            # when running make with PYODIDE_PACKAGES
-            # TODO: this should be resolved with #713
-            make -C packages/CLAPACK clean
             make
             ccache -s
 
@@ -148,6 +144,16 @@ jobs:
           name: test
           command: |
             tools/pytest_wrapper.py packages/test* packages/*/test* -v -k chrome -n 2
+
+  test-emsdk:
+    <<: *defaults
+    steps:
+      - attach_workspace:
+          at: .
+      - run:
+          name: test
+          command: |
+            pytest emsdk/tests -v
 
   test-python:
     <<: *defaults
@@ -256,6 +262,9 @@ workflows:
           filters:
             tags:
               only: /.*/
+      - test-emsdk:
+          requires:
+            - build-core
       - test-python:
           filters:
             tags:

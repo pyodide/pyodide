@@ -341,13 +341,12 @@ var languagePluginLoader = new Promise((resolve, reject) => {
     return true;
   };
 
-  Module.autocomplete =
-      function(path) {
+  Module.autocomplete = function(path) {
     var pyodide_module = Module.pyimport("pyodide");
     return pyodide_module.get_completions(path);
-  }
+  };
 
-      Module.locateFile = (path) => baseURL + path;
+  Module.locateFile = (path) => baseURL + path;
   var postRunPromise = new Promise((resolve, reject) => {
     Module.postRun = () => {
       delete self.Module;

@@ -5,12 +5,6 @@
  */
 
 int
-runpython_init_js();
-
-int
-runpython_init_py();
-
-int
-runpython_finalize_js();
+runpython_init();
 
 #endif /* RUNPYTHON_H */
