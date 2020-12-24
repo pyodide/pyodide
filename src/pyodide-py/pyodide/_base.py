@@ -1,14 +1,23 @@
 """
 A library of helper utilities for connecting Python to the browser environment.
 """
+# Added by C:
+# JsException (from jsproxy.c)
 
 import ast
 from io import StringIO
 from textwrap import dedent
-from typing import Dict, List, Optional, Any
+from typing import Dict, List, Any
 
 
-__version__ = "0.15.0"
+class JsException(Exception):
+    """
+    A wrapper around a Javascript Error to allow the Error to be thrown in Python.
+    """
+
+    # This gets overwritten in jsproxy.c, it is just here for autodoc and humans
+    # reading this file.
+    pass
 
 
 def open_url(url: str) -> StringIO:
@@ -128,42 +137,3 @@ def as_nested_list(obj) -> List:
         return [as_nested_list(x) for x in it]
     except TypeError:
         return obj
-
-
-def get_completions(
-    code: str, cursor: Optional[int] = None, namespaces: Optional[List] = None
-) -> List[str]:
-    """
-    Get code autocompletion candidates
-
-    Note that this function requires to have the jedi module loaded.
-
-    Parameters
-    ----------
-    code
-       the Python code to complete.
-    cursor
-       optional position in the code at which to autocomplete
-    namespaces
-       a list of namespaces
-
-    Returns
-    -------
-    a list of autocompleted modules
-    """
-    import jedi
-    import __main__
-
-    if namespaces is None:
-        namespaces = [__main__.__dict__]
-
-    if cursor is None:
-        cursor = len(code)
-    code = code[:cursor]
-    interp = jedi.Interpreter(code, namespaces)
-    completions = interp.completions()
-
-    return [x.name for x in completions]
-
-
-__all__ = ["open_url", "eval_code", "find_imports", "as_nested_list", "get_completions"]

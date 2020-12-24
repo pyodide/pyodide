@@ -1,10 +1,10 @@
 package:
   name: yt
-  version: 3.5.1
+  version: 3.6.1
 
 source:
-  url: https://pypi.io/packages/source/y/yt/yt-3.5.1.tar.gz
-  sha256: c8ef8eceb934dc189d63dc336109fad3002140a9a32b19f38d1812d5d5a30d71
+  url: https://files.pythonhosted.org/packages/1e/ce/e75e41f077e330f25d912eda4a1ba124e6b5f896f457ec5ca4e8c89b97c2/yt-3.6.1.tar.gz
+  sha256: be454f9d05dcbe0623328b4df43a1bfd1f0925e516be97399710452931a19bb0
 
   patches:
     - patches/skip-openmp.patch

@@ -29,6 +29,7 @@ build:
 requirements:
   run:
     - numpy
+    - CLAPACK
 
 test:
   imports:

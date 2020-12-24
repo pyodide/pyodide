@@ -88,10 +88,11 @@ To build a minimal version of pyodide, set `PYODIDE_PACKAGES="micropip"`. The
 packages micropip and distutils are always automatically included (but an empty
 `PYODIDE_PACKAGES` is interpreted as unset).
 
-If scipy is included in `PYODIDE_PACKAGES`, BLAS/LAPACK must be manually built
-first with `make -C packages/CLAPACK`.
-
 ## Environment variables
 
 Following environment variables additionally impact the build,
  - `PYODIDE_JOBS`: the `-j` option passed to the `emmake make` command when applicable for parallel compilation. Default: 3.
+ - `PYODIDE_BASE_URL`: Base URL where pyodide packages are deployed. It must
+   end with a trailing `/`. Default: `./` to load pyodide packages from the
+   same base URL path as where `pyodide.js` is located.  Example:
+   `https://cdn.jsdelivr.net/pyodide/dev/full/`

@@ -1,4 +1,4 @@
-self.languagePluginUrl = '{{DEPLOY}}'
+self.languagePluginUrl = '{{ PYODIDE_BASE_URL }}'
 importScripts('./pyodide.js')
 
 var onmessage = function(e) { // eslint-disable-line no-unused-vars

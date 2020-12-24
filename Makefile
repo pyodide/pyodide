@@ -7,12 +7,6 @@ FILEPACKAGER=$(PYODIDE_ROOT)/tools/file_packager.py
 CPYTHONROOT=cpython
 CPYTHONLIB=$(CPYTHONROOT)/installs/python-$(PYVERSION)/lib/python$(PYMINOR)
 
-LIBXML=packages/libxml/libxml2-2.9.10/.libs/libxml2.a
-LIBXSLT=packages/libxslt/libxslt-1.1.33/libxslt/.libs/libxslt.a
-LIBICONV=packages/libiconv/libiconv-1.16/lib/.libs/libiconv.a
-ZLIB=packages/zlib/zlib-1.2.11/lib/libz.a
-CLAPACK=packages/CLAPACK/CLAPACK-WA/lapack_WA.bc
-
 PYODIDE_EMCC=$(PYODIDE_ROOT)/ccache/emcc
 PYODIDE_CXX=$(PYODIDE_ROOT)/ccache/em++
 
@@ -65,7 +59,6 @@ all: check \
 	build/pyodide.asm.js \
 	build/pyodide.asm.data \
 	build/pyodide.js \
-	build/pyodide_dev.js \
 	build/console.html \
 	build/renderedhtml.css \
 	build/test.data \
@@ -102,17 +95,10 @@ build/pyodide.asm.data: root/.built
 	uglifyjs build/pyodide.asm.data.js -o build/pyodide.asm.data.js
 
 
-build/pyodide_dev.js: src/pyodide.js
-	cp $< $@
-	sed -i -e "s#{{DEPLOY}}#./#g" $@
-	sed -i -e "s#{{ABI}}#$(PYODIDE_PACKAGE_ABI)#g" $@
-
-
 build/pyodide.js: src/pyodide.js
 	cp $< $@
-	sed -i -e 's#{{DEPLOY}}#https://cdn.jsdelivr.net/pyodide/v0.15.0/full/#g' $@
-
-	sed -i -e "s#{{ABI}}#$(PYODIDE_PACKAGE_ABI)#g" $@
+	sed -i -e 's#{{ PYODIDE_BASE_URL }}#$(PYODIDE_BASE_URL)#g' $@
+	sed -i -e "s#{{ PYODIDE_PACKAGE_ABI }}#$(PYODIDE_PACKAGE_ABI)#g" $@
 
 
 build/test.html: src/templates/test.html
@@ -121,6 +107,7 @@ build/test.html: src/templates/test.html
 
 build/console.html: src/templates/console.html
 	cp $< $@
+	sed -i -e 's#{{ PYODIDE_BASE_URL }}#$(PYODIDE_BASE_URL)#g' $@
 
 
 build/renderedhtml.css: src/css/renderedhtml.less
@@ -128,22 +115,27 @@ build/renderedhtml.css: src/css/renderedhtml.less
 
 build/webworker.js: src/webworker.js
 	cp $< $@
-	sed -i -e 's#{{DEPLOY}}#https://cdn.jsdelivr.net/pyodide/v0.15.0/full/#g' $@
+	sed -i -e 's#{{ PYODIDE_BASE_URL }}#$(PYODIDE_BASE_URL)#g' $@
 
 build/webworker_dev.js: src/webworker.js
 	cp $< $@
-	sed -i -e "s#{{DEPLOY}}#./#g" $@
-	sed -i -e "s#pyodide.js#pyodide_dev.js#g" $@
+	sed -i -e 's#{{ PYODIDE_BASE_URL }}#./#g' $@
 
 test: all
-	pytest src packages/*/test* pyodide_build -v
+	pytest src emsdk/tests packages/*/test* pyodide_build -v
 
 
 lint:
 	# check for unused imports, the rest is done by black
 	flake8 --select=F401 src tools pyodide_build benchmark
 	clang-format-6.0 -output-replacements-xml src/*.c src/*.h src/*.js src/*/*.c src/*/*.h src/*/*.js | (! grep '<replacement ')
+	black --check --exclude tools/file_packager.py .
+	mypy --ignore-missing-imports pyodide_build/ src/ packages/micropip/micropip/ packages/*/test*
 
+
+apply-lints:
+	clang-format-6.0 -i src/*.c src/*.h src/*.js src/*/*.c src/*/*.h src/*/*.js
+	black --exclude tools/file_packager.py .
 
 benchmark: all
 	python benchmark/benchmark.py $(HOSTPYTHON) build/benchmarks.json
@@ -192,7 +184,7 @@ root/.built: \
 		$(PARSO_LIBS) \
 		src/sitecustomize.py \
 		src/webbrowser.py \
-		src/pyodide.py \
+		src/pyodide-py/ \
 		cpython/remove_modules.txt
 	rm -rf root
 	mkdir -p root/lib
@@ -205,7 +197,7 @@ root/.built: \
 	cp src/webbrowser.py root/lib/python$(PYMINOR)
 	cp src/_testcapi.py	root/lib/python$(PYMINOR)
 	cp src/pystone.py root/lib/python$(PYMINOR)
-	cp src/pyodide.py root/lib/python$(PYMINOR)/site-packages
+	cp -r src/pyodide-py/pyodide/ $(SITEPACKAGES)
 	( \
 		cd root/lib/python$(PYMINOR); \
 		rm -fr `cat ../../../cpython/remove_modules.txt`; \
@@ -243,28 +235,6 @@ $(CPYTHONLIB): emsdk/emsdk/.complete $(PYODIDE_EMCC) $(PYODIDE_CXX)
 	date +"[%F %T] done building cpython..."
 
 
-$(LIBXML): $(CPYTHONLIB) $(ZLIB)
-	date +"[%F %T] Building libxml..."
-	make -C packages/libxml
-	date +"[%F %T] done building libxml..."
-
-
-$(LIBXSLT): $(CPYTHONLIB) $(LIBXML)
-	date +"[%F %T] Building libxslt..."
-	make -C packages/libxslt
-	date +"[%F %T] done building libxslt..."
-
-$(LIBICONV):
-	date +"[%F %T] Building libiconv..."
-	make -C packages/libiconv
-	date +"[%F %T] done building libiconv..."
-
-$(ZLIB):
-	date +"[%F %T] Building zlib..."
-	make -C packages/zlib
-	date +"[%F %T] done building zlib..."
-
-
 $(SIX_LIBS): $(CPYTHONLIB)
 	date +"[%F %T] Building six..."
 	make -C packages/six
@@ -283,21 +253,7 @@ $(PARSO_LIBS): $(CPYTHONLIB)
 	date +"[%F %T] done building parso."
 
 
-$(CLAPACK): $(CPYTHONLIB)
-ifdef PYODIDE_PACKAGES
-	echo "Skipping BLAS/LAPACK build due to PYODIDE_PACKAGES being defined."
-	echo "Build it manually with make -C packages/CLAPACK if needed."
-	mkdir -p packages/CLAPACK/CLAPACK-WA/
-	touch $(CLAPACK)
-else
-	date +"[%F %T] Building CLAPACK..."
-	make -C packages/CLAPACK
-	date +"[%F %T] done building CLAPACK."
-endif
-
-
-
-build/packages.json: $(CLAPACK) $(LIBXML) $(LIBXSLT) FORCE
+build/packages.json: FORCE
 	date +"[%F %T] Building packages..."
 	make -C packages
 	date +"[%F %T] done building packages..."
