@@ -252,6 +252,8 @@ _python2js(PyObject* x, PyObject* map)
     return _python2js_bytes(x);
   } else if (JsProxy_Check(x)) {
     return JsProxy_AsJs(x);
+  } else if (JsException_Check(x)) {
+    return JsException_AsJs(x);
   } else if (PyList_Check(x) || PyTuple_Check(x)) {
     return _python2js_sequence(x, map);
   } else if (PyDict_Check(x)) {

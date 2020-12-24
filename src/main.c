@@ -10,6 +10,24 @@
 #include "python2js.h"
 #include "runpython.h"
 
+#define FATAL_ERROR(args...)                                                   \
+  do {                                                                         \
+    printf("FATAL ERROR: ");                                                   \
+    printf(args);                                                              \
+    if (PyErr_Occurred()) {                                                    \
+      printf("Error was triggered by Python exception:\n");                    \
+      PyErr_Print();                                                           \
+    }                                                                          \
+  } while (0)
+
+#define TRY_INIT(mod)                                                          \
+  do {                                                                         \
+    if (mod##_init()) {                                                        \
+      FATAL_ERROR("Failed to initialize module %s.\n", #mod);                  \
+      return 1;                                                                \
+    }                                                                          \
+  } while (0)
+
 int
 main(int argc, char** argv)
 {
@@ -21,24 +39,27 @@ main(int argc, char** argv)
 
   // This doesn't seem to work anymore, but I'm keeping it for good measure
   // anyway The effective way to turn this off is below: setting
-  // sys.done_write_bytecode = True
+  // sys.dont_write_bytecode = True
   setenv("PYTHONDONTWRITEBYTECODE", "1", 0);
 
   PyObject* sys = PyImport_ImportModule("sys");
   if (sys == NULL) {
+    FATAL_ERROR("Failed to import sys module.");
     return 1;
   }
   if (PyObject_SetAttrString(sys, "dont_write_bytecode", Py_True)) {
+    FATAL_ERROR("Failed to set attribute on sys module.");
     return 1;
   }
   Py_DECREF(sys);
 
-  if (js2python_init() || JsImport_init() || JsProxy_init() ||
-      pyimport_init() || pyproxy_init() || python2js_init() ||
-      runpython_init_js() || runpython_init_py() || runpython_finalize_js()) {
-    return 1;
-  }
-
+  TRY_INIT(js2python);
+  TRY_INIT(JsImport);
+  TRY_INIT(JsProxy);
+  TRY_INIT(pyimport);
+  TRY_INIT(pyproxy);
+  TRY_INIT(python2js);
+  TRY_INIT(runpython);
   printf("Python initialization complete\n");
 
   emscripten_exit_with_live_runtime();

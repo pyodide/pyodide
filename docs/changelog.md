@@ -20,8 +20,8 @@
   [#846](https://github.com/iodide-project/pyodide/pull/846)
 - Updated to emscripten 1.38.34
   [#480](https://github.com/iodide-project/pyodide/pull/480)
-- New packages: freesasa, lxml, python-sat, traits, astropy, pillow
-- Updated packages: numpy 1.15.4, pandas 1.0.5 among others.
+- New packages: freesasa, lxml, python-sat, traits, astropy, pillow, scikit-image, imageio
+- Updated packages: numpy 1.15.4, pandas 1.0.5, matplotlib 3.3.3 among others.
 - Updated default `--ldflags` argument to `pyodide_build` scripts to equal what
   pyodide actually uses.
 - Drop support for serving .wasm files with incorrect mime type.
@@ -30,6 +30,20 @@
 - New package
   [pyodide-interrupt](https://pypi.org/project/pyodide-interrupts/), useful for
   handling interrupts in Pyodide (see project descripion for details).
+- Pyodide deployment URL can now be specified with the `PYODIDE_BASE_URL`
+  environment variable during build. The `pyodide_dev.js` is no longer distributed.
+  To get an equivalent behavior with `pyodide.js`, set,
+  ```
+  window.languagePluginUrl = './';
+  ```
+  before loading it.
+  [#855](https://github.com/iodide-project/pyodide/pull/855)
+- Suppress REPL results by adding a semicolon [#876](https://github.com/iodide-project/pyodide/pull/876)
+- Javascript exceptions can now be raised and caught in Python. They are wrapped in pyodide.JsException.
+  [#872](https://github.com/iodide-project/pyodide/pull/872)
+- Build runtime C libraries (e.g. libxml) via package build system with correct
+  dependency resolution
+
 
 ## Version 0.15.0
 *May 19, 2020*
