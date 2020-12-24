@@ -60,6 +60,7 @@ all: check \
 	build/pyodide.asm.data \
 	build/pyodide.js \
 	build/console.html \
+	build/index.html \
 	build/renderedhtml.css \
 	build/test.data \
 	build/packages.json \
@@ -109,6 +110,9 @@ build/console.html: src/templates/console.html
 	cp $< $@
 	sed -i -e 's#{{ PYODIDE_BASE_URL }}#$(PYODIDE_BASE_URL)#g' $@
 
+build/index.html: src/templates/console.html
+	cp $< $@
+	sed -i -e 's#{{ PYODIDE_BASE_URL }}#$(PYODIDE_BASE_URL)#g' $@
 
 build/renderedhtml.css: src/css/renderedhtml.less
 	lessc $< $@
