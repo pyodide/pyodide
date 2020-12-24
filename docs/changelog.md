@@ -106,6 +106,15 @@
 - Dropped support for loading .wasm files with incorrect MIME type, following
   [#851](https://github.com/iodide-project/pyodide/pull/851)
 
+
+### List of contributors
+
+abolger, Aditya Shankar, Akshay Philar, Alexey Ignatiev, Aray Karjauv, casatir,
+chigozienri, Christian glacet, Dexter Chua, Frithjof, Hood Chatham, Jan Max
+Meyer, Jay Harris, jcaesar, Joseph D. Long, Matthew Turk, Michael Greminger,
+Michael Panchenko, mojighahar, Nicolas Ollinger, Ram Rachum, Roman Yurchak,
+Sergio, Seungmin Kim, Shyam Saladi, smkm, Wei Ouyang
+
 ## Version 0.15.0
 *May 19, 2020*
 
