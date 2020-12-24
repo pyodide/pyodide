@@ -34,7 +34,7 @@
   [#708](https://github.com/iodide-project/pyodide/pull/708)
 - Javascript exceptions can now be raised and caught in Python. They are
   wrapped in pyodide.JsException.
-  [#872](https://github.com/iodide-project/pyodide/pull/872)
+  [#891](https://github.com/iodide-project/pyodide/pull/891)
 
 ### pyodide-py package and micropip
 
@@ -45,7 +45,9 @@
   [#846](https://github.com/iodide-project/pyodide/pull/846).
 - Suppress REPL results returned by `pyodide.eval_code` by adding a semicolon
   [#876](https://github.com/iodide-project/pyodide/pull/876).
-
+- Enable monkey patching of `eval_code` and `find_imports` to customize behavior
+  of `runPython` and `runPythonAsync`
+  [#941](https://github.com/iodide-project/pyodide/pull/941).
 
 ### Build system
 
@@ -84,12 +86,12 @@
 ### Other improvements
 
 - Modifiy MEMFS timestamp handling to support better caching. This in particular allows to
-  import newly created python modules without invalidating
+  import newly created python modules without invalidating import caches
   [#893](https://github.com/iodide-project/pyodide/pull/893)
 
 ### Packages
 - New packages: freesasa, lxml, python-sat, traits, astropy, pillow,
-  scikit-image, imageio
+  scikit-image, imageio, numcodecs, msgpack, asciitree, zarr
 
   Note that due to the large size and the experimental state of the scipy
   package, packages that depend on scipy (including scikit-image, scikit-learn)
@@ -105,6 +107,15 @@
 
 - Dropped support for loading .wasm files with incorrect MIME type, following
   [#851](https://github.com/iodide-project/pyodide/pull/851)
+
+
+### List of contributors
+
+abolger, Aditya Shankar, Akshay Philar, Alexey Ignatiev, Aray Karjauv, casatir,
+chigozienri, Christian glacet, Dexter Chua, Frithjof, Hood Chatham, Jan Max
+Meyer, Jay Harris, jcaesar, Joseph D. Long, Matthew Turk, Michael Greminger,
+Michael Panchenko, mojighahar, Nicolas Ollinger, Ram Rachum, Roman Yurchak,
+Sergio, Seungmin Kim, Shyam Saladi, smkm, Wei Ouyang
 
 ## Version 0.15.0
 *May 19, 2020*

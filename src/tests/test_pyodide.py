@@ -65,7 +65,7 @@ def test_adjust_ast():
     assert_stored_none("1+1;")
     assert_stored_none("def f(): 4")
     assert_stored_none(
-        """ 
+        """
         def f():
             print(9)
             return 2*7 + 5
@@ -73,7 +73,7 @@ def test_adjust_ast():
     )
 
     assert_stored_last_line(
-        """ 
+        """
         def f(x):
             print(9)
             return 2*x + 5
@@ -86,7 +86,7 @@ def test_eval_code():
     ns = {}
     assert (
         eval_code(
-            """ 
+            """
         def f(x):
             return 2*x + 5
         f(77)
@@ -103,3 +103,18 @@ def test_eval_code():
     assert ns["x"] == 7
 
     assert eval_code("1+1;", ns) is None
+
+
+def test_monkeypatch_eval_code(selenium):
+    selenium.run(
+        """
+        import pyodide
+        old_eval_code = pyodide.eval_code
+        x = 3
+        def eval_code(code, ns):
+            return [ns["x"], old_eval_code(code, ns)]
+        pyodide.eval_code = eval_code
+        """
+    )
+    assert selenium.run("x = 99; 5") == [3, 5]
+    assert selenium.run("7") == [99, 7]
