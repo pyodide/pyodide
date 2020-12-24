@@ -5,6 +5,8 @@ def test_blosc(selenium_standalone):
 import numpy as np
 from numcodecs import blosc
 from numcodecs.blosc import Blosc
+from numcodecs.zstd import Zstd
+from numcodecs.lz4 import LZ4
 from numcodecs.compat import ensure_bytes, ensure_ndarray
 from numpy.testing import assert_array_almost_equal, assert_array_equal
 import array
@@ -116,6 +118,12 @@ arrays = [
 ]
 
 codecs = [
+    LZ4(),
+    LZ4(acceleration=-1),
+    LZ4(acceleration=10),
+    Zstd(),
+    Zstd(level=-1),
+    Zstd(level=10),
     Blosc(shuffle=Blosc.SHUFFLE),
     Blosc(clevel=0, shuffle=Blosc.SHUFFLE),
     Blosc(cname='lz4', shuffle=Blosc.SHUFFLE),
