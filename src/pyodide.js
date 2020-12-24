@@ -3,10 +3,10 @@
  */
 
 var languagePluginLoader = new Promise((resolve, reject) => {
-  // This is filled in by the Makefile to be either a local file or the
-  // deployed location. TODO: This should be done in a less hacky
-  // way.
-  var baseURL = self.languagePluginUrl || '{{DEPLOY}}';
+  // Note: PYODIDE_BASE_URL is an environement variable replaced in
+  // in this template in the Makefile. It's recommended to always set
+  // languagePluginUrl in any case.
+  var baseURL = self.languagePluginUrl || '{{ PYODIDE_BASE_URL }}';
   baseURL = baseURL.substr(0, baseURL.lastIndexOf('/')) + '/';
 
   ////////////////////////////////////////////////////////////
@@ -321,7 +321,6 @@ var languagePluginLoader = new Promise((resolve, reject) => {
 
   ////////////////////////////////////////////////////////////
   // Loading Pyodide
-  let wasmURL = `${baseURL}pyodide.asm.wasm`;
   let Module = {};
   self.Module = Module;
 
@@ -331,47 +330,23 @@ var languagePluginLoader = new Promise((resolve, reject) => {
   Module.preloadedWasm = {};
   let isFirefox = navigator.userAgent.toLowerCase().indexOf('firefox') > -1;
 
-  let wasm_promise, wasm_fetch = fetch(wasmURL);
-  const compileBuffer = () =>
-      wasm_fetch.then(response => response.arrayBuffer())
-          .then(bytes => WebAssembly.compile(bytes));
-  if (WebAssembly.compileStreaming === undefined) {
-    wasm_promise = compileBuffer();
-  } else {
-    wasm_promise = WebAssembly.compileStreaming(wasm_fetch);
-    wasm_promise = wasm_promise.catch(e => {
-      if (e instanceof TypeError) {
-        console.error("pyodide streaming compilation failed:", e,
-                      "- falling back to buffered compilation");
-        return compileBuffer()
-      }
-      throw e;
-    });
-  }
-
-  Module.instantiateWasm = (info, receiveInstance) => {
-    wasm_promise.then(module => WebAssembly.instantiate(module, info))
-        .then(instance => receiveInstance(instance));
-    return {};
-  };
-
   Module.checkABI = function(ABI_number) {
-    if (ABI_number !== parseInt('{{ABI}}')) {
+    if (ABI_number !== parseInt('{{ PYODIDE_PACKAGE_ABI }}')) {
       var ABI_mismatch_exception =
-          `ABI numbers differ. Expected {{ABI}}, got ${ABI_number}`;
+          `ABI numbers differ. Expected {{ PYODIDE_PACKAGE_ABI }}, got ${
+              ABI_number}`;
       console.error(ABI_mismatch_exception);
       throw ABI_mismatch_exception;
     }
     return true;
   };
 
-  Module.autocomplete =
-      function(path) {
+  Module.autocomplete = function(path) {
     var pyodide_module = Module.pyimport("pyodide");
     return pyodide_module.get_completions(path);
-  }
+  };
 
-      Module.locateFile = (path) => baseURL + path;
+  Module.locateFile = (path) => baseURL + path;
   var postRunPromise = new Promise((resolve, reject) => {
     Module.postRun = () => {
       delete self.Module;

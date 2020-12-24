@@ -1,0 +1,45 @@
+--- a/setup.py	2020-10-22 16:27:16.000000000 +0200
++++ b/setup.py	2020-12-15 08:43:30.000000000 +0100
+@@ -557,7 +557,9 @@
+ 
+         if feature.want("zlib"):
+             _dbg("Looking for zlib")
+-            if _find_include_file(self, "zlib.h"):
++            if "PYODIDE_PACKAGE_ABI" in os.environ:
++                feature.zlib = "z"
++            elif _find_include_file(self, "zlib.h"):
+                 if _find_library_file(self, "z"):
+                     feature.zlib = "z"
+                 elif sys.platform == "win32" and _find_library_file(self, "zlib"):
+@@ -565,7 +567,9 @@
+ 
+         if feature.want("jpeg"):
+             _dbg("Looking for jpeg")
+-            if _find_include_file(self, "jpeglib.h"):
++            if "PYODIDE_PACKAGE_ABI" in os.environ:
++                feature.jpeg = "jpeg"
++            elif _find_include_file(self, "jpeglib.h"):
+                 if _find_library_file(self, "jpeg"):
+                     feature.jpeg = "jpeg"
+                 elif sys.platform == "win32" and _find_library_file(self, "libjpeg"):
+@@ -631,7 +635,9 @@
+ 
+         if feature.want("freetype"):
+             _dbg("Looking for freetype")
+-            if _find_library_file(self, "freetype"):
++            if "PYODIDE_PACKAGE_ABI" in os.environ:
++                feature.freetype = "freetype"
++            elif _find_library_file(self, "freetype"):
+                 # look for freetype2 include files
+                 freetype_version = 0
+                 for subdir in self.compiler.include_dirs:
+@@ -704,7 +710,8 @@
+         libs = self.add_imaging_libs.split()
+         defs = []
+         if feature.jpeg:
+-            libs.append(feature.jpeg)
++            if "PYODIDE_PACKAGE_ABI" not in os.environ:
++                libs.append(feature.jpeg)
+             defs.append(("HAVE_LIBJPEG", None))
+         if feature.jpeg2000:
+             libs.append(feature.jpeg2000)

@@ -245,7 +245,11 @@ class _PackageManager:
             ver = self.version_scheme.suggest(ver)
             if ver is not None:
                 releases.append((ver, files))
-        releases = sorted(releases, reverse=True)
+
+        def version_number(release):
+            return version.NormalizedVersion(release[0])
+
+        releases = sorted(releases, key=version_number, reverse=True)
         matcher = self.version_scheme.matcher(req.requirement)
         for ver, meta in releases:
             if matcher.match(ver):

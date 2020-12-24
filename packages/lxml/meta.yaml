@@ -22,6 +22,10 @@ requirements:
     - beautifulsoup4
     - cssselect
     - html5lib
+    - libxml
+    - libxslt
+    - zlib
+    - libiconv
 test:
   imports:
   - lxml

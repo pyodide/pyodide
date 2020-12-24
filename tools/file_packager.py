@@ -1,3 +1,5 @@
+#!/usr/bin/env python3
+
 # flake8: noqa
 
 # This is forked from emscripten 1.38.22, with the original copyright notice
@@ -72,20 +74,7 @@ import random
 import uuid
 import ctypes
 
-emscripten_dir = os.path.join(
-  os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
-  'emsdk', 'emsdk', 'emscripten'
-)
-tag_dir = sorted(os.listdir(emscripten_dir), key=lambda x: len(x))[0]
-sys.path.insert(1, os.path.join(emscripten_dir, tag_dir))
-
-from tools.toolchain_profiler import ToolchainProfiler
-if __name__ == '__main__':
-  ToolchainProfiler.record_process_start()
-
 import posixpath
-from tools import shared
-from tools.jsrun import run_js
 from subprocess import PIPE
 import fnmatch
 import json
@@ -250,6 +239,10 @@ code = '''
       if (!check) throw msg + new Error().stack;
     }
 '''
+
+def escape_for_js_string(s):
+  s = s.replace('\\', '/').replace("'", "\\'").replace('"', '\\"')
+  return s
 
 
 def has_hidden_attribute(filepath):
@@ -534,9 +527,18 @@ if has_preloaded:
           }
     '''
     use_data += ("          Module['removeRunDependency']('datafile_%s');\n"
-                 % shared.JS.escape_for_js_string(data_target))
+                 % escape_for_js_string(data_target))
 
   else:
+    emscripten_dir = os.path.join(
+      os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
+      'emsdk', 'emsdk', 'fastcomp', 'emscripten'
+    )
+    sys.path.insert(1, emscripten_dir)
+
+    from tools import shared
+    from tools.jsrun import run_js
+
     # LZ4FS usage
     temp = data_target + '.orig'
     shutil.move(data_target, temp)
@@ -551,7 +553,7 @@ if has_preloaded:
           assert(typeof Module.LZ4 === 'object', 'LZ4 not present - was your app build with  -s LZ4=1  ?');
           Module.LZ4.loadPackage({ 'metadata': metadata, 'compressedData': compressedData });
           Module['removeRunDependency']('datafile_%s');
-    ''' % (meta, shared.JS.escape_for_js_string(data_target))
+    ''' % (meta, escape_for_js_string(data_target))
 
   package_uuid = uuid.uuid4()
   package_name = data_target
@@ -574,8 +576,8 @@ if has_preloaded:
       err('warning: you defined Module.locateFilePackage, that has been renamed to Module.locateFile (using your locateFilePackage for now)');
     }
     var REMOTE_PACKAGE_NAME = Module['locateFile'] ? Module['locateFile'](REMOTE_PACKAGE_BASE, '') : REMOTE_PACKAGE_BASE;
-  ''' % (shared.JS.escape_for_js_string(data_target),
-         shared.JS.escape_for_js_string(remote_package_name))
+  ''' % (escape_for_js_string(data_target),
+         escape_for_js_string(remote_package_name))
   metadata['remote_package_size'] = remote_package_size
   metadata['package_uuid'] = str(package_uuid)
   ret += '''
@@ -802,7 +804,7 @@ if has_preloaded:
       %s
     };
     Module['addRunDependency']('datafile_%s');
-  ''' % (use_data, shared.JS.escape_for_js_string(data_target))
+  ''' % (use_data, escape_for_js_string(data_target))
   # use basename because from the browser's point of view,
   # we need to find the datafile in the same dir as the html file
 

@@ -80,18 +80,19 @@ instance,
 PYODIDE_PACKAGES="toolz,attrs" make
 ```
 
-Note that this environment variable must contain both the packages and their
-dependencies. The package names must match the folder names in `packages/`
-exactly; in particular they are case sensitive.
+Dependencies of the listed packages will be built automatically as well.
+The package names must match the folder names in `packages/` exactly; in
+particular they are case sensitive.
 
 To build a minimal version of pyodide, set `PYODIDE_PACKAGES="micropip"`. The
-micropip and package is generally always included for any non empty value of
-`PYODIDE_PACKAGES`.
-
-If scipy is included in `PYODIDE_PACKAGES`, BLAS/LAPACK must be manually built
-first with `make -c packages/CLAPACK`.
+packages micropip and distutils are always automatically included (but an empty
+`PYODIDE_PACKAGES` is interpreted as unset).
 
 ## Environment variables
 
 Following environment variables additionally impact the build,
  - `PYODIDE_JOBS`: the `-j` option passed to the `emmake make` command when applicable for parallel compilation. Default: 3.
+ - `PYODIDE_BASE_URL`: Base URL where pyodide packages are deployed. It must
+   end with a trailing `/`. Default: `./` to load pyodide packages from the
+   same base URL path as where `pyodide.js` is located.  Example:
+   `https://cdn.jsdelivr.net/pyodide/dev/full/`
