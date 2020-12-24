@@ -308,6 +308,10 @@ var languagePluginLoader = new Promise((resolve, reject) => {
     PUBLIC_API.push("TestEntrypoints");
   }
 
+  if (self.TEST_PYODIDE) {
+    PUBLIC_API.push("TestEntrypoints");
+  }
+
   function makePublicAPI(module, public_api) {
     var namespace = {_module : module};
     for (let name of public_api) {
