@@ -1,7 +1,8 @@
 def test_pack(selenium_standalone):
     selenium = selenium_standalone
     selenium.load_package(["msgpack"])
-    selenium.run("""
+    selenium.run(
+        """
 from msgpack import packb, unpackb, Unpacker, Packer, pack
 
 
@@ -45,4 +46,5 @@ test_data = [
 ]
 for td in test_data:
     check(td)
-        """)
+        """
+    )
