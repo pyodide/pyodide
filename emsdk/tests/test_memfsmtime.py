@@ -7,8 +7,8 @@ def test_memfsmtime(tmpdir):
         with open("main.c", "w") as f:
             f.write(
                 r"""\
+#include <assert.h>
 #include <fcntl.h>
-#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>
@@ -42,20 +42,22 @@ int main(int argc, char *argv[])
 {
     char tmpdir[64] = "/tmp/tmpXXXXXXX";
     char fname[64];
-    time_t t0;
+    time_t t0, t1, t2, t3;
 
     mkdtemp(tmpdir);
     strcpy(fname, tmpdir);
     strcat(fname, "/foo.py");
     t0 = getmtime(tmpdir);
-    printf("%ld tmpdir\n", getmtime(tmpdir) - t0);
     mysleep(1);
     writefile(fname, "bar = 54\n");
-    printf("%ld tmpdir\n", getmtime(tmpdir) - t0);
-    printf("%ld tmpdir/foo.py\n", getmtime(fname) - t0);
+    t1 = getmtime(tmpdir);
+    t2 = getmtime(fname);
+    assert(t1 > t0);
+    assert(t1 == t2);
     mysleep(1);
     unlink(fname);
-    printf("%ld tmpdir\n", getmtime(tmpdir) - t0);
+    t3 = getmtime(tmpdir);
+    assert(t3 > t1);
 }
 """
             )
@@ -66,13 +68,11 @@ int main(int argc, char *argv[])
                 "-s",
                 "MAIN_MODULE=1",
                 "main.c",
-                "-s",
-                "EMULATE_FUNCTION_POINTER_CASTS=1",
             ],
             check=True,
             env=common.env,
         )
         out = subprocess.run(
-            ["node", "a.out.js"], capture_output=True, check=True, env=common.env
+            ["node", "a.out.js"], capture_output=True, check=False, env=common.env
         )
-        assert out.stdout == b"0 tmpdir\n1 tmpdir\n1 tmpdir/foo.py\n2 tmpdir\n"
+        assert out.returncode == 0
