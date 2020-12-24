@@ -1,0 +1,13 @@
+diff --git a/zarr/__init__.py b/zarr/__init__.py
+index 8079bab..6a820a4 100644
+--- a/zarr/__init__.py
++++ b/zarr/__init__.py      
+@@ -14,7 +14,7 @@ from zarr.storage import (ABSStore, DBMStore, DictStore, DirectoryStore,
+                           LMDBStore, LRUStoreCache, MemoryStore, MongoDBStore,
+                           NestedDirectoryStore, RedisStore, SQLiteStore,
+                           TempStore, ZipStore)
+-from zarr.sync import ProcessSynchronizer, ThreadSynchronizer
++# from zarr.sync import ProcessSynchronizer, ThreadSynchronizer
+ from zarr.version import version as __version__
+ 
+ # in case setuptools scm screw up and find version to be 0.0.0
