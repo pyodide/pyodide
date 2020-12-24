@@ -38,6 +38,7 @@
   ```
   before loading it.
   [#855](https://github.com/iodide-project/pyodide/pull/855)
+- Suppress REPL results by adding a semicolon [#876](https://github.com/iodide-project/pyodide/pull/876)
 - Javascript exceptions can now be raised and caught in Python. They are wrapped in pyodide.JsException.
   [#872](https://github.com/iodide-project/pyodide/pull/872)
 - Build runtime C libraries (e.g. libxml) via package build system with correct
