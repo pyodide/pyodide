@@ -45,7 +45,9 @@
   [#846](https://github.com/iodide-project/pyodide/pull/846).
 - Suppress REPL results returned by `pyodide.eval_code` by adding a semicolon
   [#876](https://github.com/iodide-project/pyodide/pull/876).
-
+- Enable monkey patching of `eval_code` and `find_imports` to customize behavior
+  of `runPython` and `runPythonAsync`
+  [#941](https://github.com/iodide-project/pyodide/pull/941).
 
 ### Build system
 
