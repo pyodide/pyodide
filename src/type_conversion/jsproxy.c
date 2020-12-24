@@ -731,7 +731,6 @@ JsException_AsJs(PyObject* err)
 int
 JsProxy_init()
 {
-<<<<<<< HEAD
   PyObject* module = PyImport_ImportModule("asyncio");
   if (module == NULL) {
     goto fail;
@@ -739,7 +738,8 @@ JsProxy_init()
 
   asyncio_get_event_loop = PyObject_GetAttrString(module, "get_event_loop");
   if (asyncio_get_event_loop == NULL) {
-=======
+    goto fail;
+  }
   PyExc_BaseException_Type = (PyTypeObject*)PyExc_BaseException;
   _Exc_JsException.tp_base = (PyTypeObject*)PyExc_Exception;
 
@@ -752,18 +752,12 @@ JsProxy_init()
     goto fail;
   }
   if (PyObject_SetAttrString(module, "JsException", Exc_JsException)) {
->>>>>>> bb604b367c0de1a30f35994d5e9be2591481e13a
     goto fail;
   }
 
   Py_CLEAR(module);
-<<<<<<< HEAD
-
-  return (PyType_Ready(&JsProxyType) || PyType_Ready(&JsBoundMethodType));
-=======
   return (PyType_Ready(&JsProxyType) || PyType_Ready(&JsBoundMethodType) ||
           PyType_Ready(&_Exc_JsException));
->>>>>>> bb604b367c0de1a30f35994d5e9be2591481e13a
 
 fail:
   Py_CLEAR(module);
