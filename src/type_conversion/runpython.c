@@ -22,8 +22,8 @@ _runPython(char* code)
     return pythonexc2js();
   }
 
-  PyObject* ret =
-    _PyObject_CallMethodIdObjArgs(pyodide, &PyId_eval_code, py_code, globals, NULL);
+  PyObject* ret = _PyObject_CallMethodIdObjArgs(
+    pyodide, &PyId_eval_code, py_code, globals, NULL);
 
   if (ret == NULL) {
     return pythonexc2js();
