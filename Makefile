@@ -133,7 +133,7 @@ lint:
 	mypy --ignore-missing-imports pyodide_build/ src/ packages/micropip/micropip/ packages/*/test*
 
 
-apply-lints:
+apply-lint:
 	clang-format-6.0 -i `git diff --name-only *.c *.h *.js`
 	black --exclude tools/file_packager.py .
 
