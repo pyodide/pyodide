@@ -89,7 +89,7 @@
 
 ### Packages
 - New packages: freesasa, lxml, python-sat, traits, astropy, pillow,
-  scikit-image, imageio
+  scikit-image, imageio, numcodecs, msgpack, asciitree, fasteners, zarr
 
   Note that due to the large size and the experimental state of the scipy
   package, packages that depend on scipy (including scikit-image, scikit-learn)

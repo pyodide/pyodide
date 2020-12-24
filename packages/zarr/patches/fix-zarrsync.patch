@@ -1,3 +1,4 @@
+This patch disables zarr.sync which uses process and thread
 diff --git a/zarr/__init__.py b/zarr/__init__.py
 index 8079bab..6a820a4 100644
 --- a/zarr/__init__.py

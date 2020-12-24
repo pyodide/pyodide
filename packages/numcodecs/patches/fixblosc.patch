@@ -1,3 +1,4 @@
+This patch disables multiprocessing and pthread for blosc
 diff --git a/numcodecs/blosc.pyx b/numcodecs/blosc.pyx
 index 3bfdc00..c6521b7 100644
 --- a/numcodecs/blosc.pyx

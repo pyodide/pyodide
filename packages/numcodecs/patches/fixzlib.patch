@@ -1,3 +1,4 @@
+This patch adds missing headers in vendored zlib as done in numcodecs.js
 diff --git a/c-blosc/internal-complibs/zlib-1.2.8/gzlib.c b/c-blosc/internal-complibs/zlib-1.2.8/gzlib.c
 index fae202e..80606a6 100644
 --- a/c-blosc/internal-complibs/zlib-1.2.8/gzlib.c

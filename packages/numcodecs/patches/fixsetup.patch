@@ -1,3 +1,4 @@
+This patch disables SSE2 and AVX2 options
 diff --git a/setup.py b/setup.py
 index 3cf27db..74bdea5 100644
 --- a/setup.py
