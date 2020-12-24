@@ -84,7 +84,7 @@
 ### Other improvements
 
 - Modifiy MEMFS timestamp handling to support better caching. This in particular allows to
-  import newly created python modules without invalidating
+  import newly created python modules without invalidating import caches
   [#893](https://github.com/iodide-project/pyodide/pull/893)
 
 ### Packages
