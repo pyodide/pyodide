@@ -46,6 +46,7 @@
 - Suppress REPL results returned by `pyodide.eval_code` by adding a semicolon
   [#876](https://github.com/iodide-project/pyodide/pull/876).
 
+
 ### Build system
 
 - Updated docker image to Debian buster, resulting in smaller images.
@@ -80,6 +81,11 @@
 - Pyodide can now be built in a conda virtual environment
   [#835](https://github.com/iodide-project/pyodide/pull/835)
 
+### Other improvements
+
+- Modifiy MEMFS timestamp handling to support better caching. This in particular allows to
+  import newly created python modules without invalidating
+  [#893](https://github.com/iodide-project/pyodide/pull/893)
 
 ### Packages
 - New packages: freesasa, lxml, python-sat, traits, astropy, pillow,
