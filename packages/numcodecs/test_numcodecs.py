@@ -7,6 +7,7 @@ from numcodecs import blosc
 from numcodecs.blosc import Blosc
 from numcodecs.compat import ensure_bytes, ensure_ndarray
 from numpy.testing import assert_array_almost_equal, assert_array_equal
+import array
 
 def compare_arrays(arr, res, precision=None):
     # ensure numpy array with matching dtype
@@ -130,8 +131,8 @@ codecs = [
     # Blosc(cname='lz4', clevel=1, shuffle=Blosc.NOSHUFFLE, blocksize=2**8),
 ]
 for codec in codecs:
-    for array in arrays:
-        check_encode_decode(array, codec)
+    for arr in arrays:
+        check_encode_decode(arr, codec)
         """
 
     selenium.run(cmd)
