@@ -304,10 +304,6 @@ var languagePluginLoader = new Promise((resolve, reject) => {
   ];
   // window.TEST_PYODIDE flag to control exposure of extra private entrypoints
   // needed for tests.
-  if (window.TEST_PYODIDE) {
-    PUBLIC_API.push("TestEntrypoints");
-  }
-
   if (self.TEST_PYODIDE) {
     PUBLIC_API.push("TestEntrypoints");
   }
