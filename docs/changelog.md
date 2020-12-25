@@ -1,12 +1,14 @@
 (changelog)=
 # Release notes
 
-## Version 0.16.0
-*December 24, 2020*
+## Version 0.16.1
+*December 25, 2020*
 
+Note: due to a CI deployment issue the 0.16.0 release was skipped and replaced
+by 0.16.1 with identical contents.
 
 - Pyodide files are distributed by [JsDelivr](https://www.jsdelivr.com/),
-  `https://cdn.jsdelivr.net/pyodide/v0.16.0/full/pyodide.js`
+  `https://cdn.jsdelivr.net/pyodide/v0.16.1/full/pyodide.js`
   The previous CDN `pyodide-cdn2.iodide.io` still works and there
   are no plans for deprecating it. However please use
   JsDelivr as a more sustainable solution, including for earlier pyodide
