@@ -7,12 +7,6 @@ FILEPACKAGER=$(PYODIDE_ROOT)/tools/file_packager.py
 CPYTHONROOT=cpython
 CPYTHONLIB=$(CPYTHONROOT)/installs/python-$(PYVERSION)/lib/python$(PYMINOR)
 
-LIBXML=packages/libxml/libxml2-2.9.10/.libs/libxml2.a
-LIBXSLT=packages/libxslt/libxslt-1.1.33/libxslt/.libs/libxslt.a
-LIBICONV=packages/libiconv/libiconv-1.16/lib/.libs/libiconv.a
-ZLIB=packages/zlib/zlib-1.2.11/lib/libz.a
-CLAPACK=packages/CLAPACK/CLAPACK-WA/lapack_WA.bc
-
 PYODIDE_EMCC=$(PYODIDE_ROOT)/ccache/emcc
 PYODIDE_CXX=$(PYODIDE_ROOT)/ccache/em++
 
@@ -139,6 +133,10 @@ lint:
 	mypy --ignore-missing-imports pyodide_build/ src/ packages/micropip/micropip/ packages/*/test*
 
 
+apply-lints:
+	clang-format-6.0 -i src/*.c src/*.h src/*.js src/*/*.c src/*/*.h src/*/*.js
+	black --exclude tools/file_packager.py .
+
 benchmark: all
 	python benchmark/benchmark.py $(HOSTPYTHON) build/benchmarks.json
 	python benchmark/plot_benchmark.py build/benchmarks.json build/benchmarks.png
@@ -237,28 +235,6 @@ $(CPYTHONLIB): emsdk/emsdk/.complete $(PYODIDE_EMCC) $(PYODIDE_CXX)
 	date +"[%F %T] done building cpython..."
 
 
-$(LIBXML): $(CPYTHONLIB) $(ZLIB)
-	date +"[%F %T] Building libxml..."
-	make -C packages/libxml
-	date +"[%F %T] done building libxml..."
-
-
-$(LIBXSLT): $(CPYTHONLIB) $(LIBXML)
-	date +"[%F %T] Building libxslt..."
-	make -C packages/libxslt
-	date +"[%F %T] done building libxslt..."
-
-$(LIBICONV):
-	date +"[%F %T] Building libiconv..."
-	make -C packages/libiconv
-	date +"[%F %T] done building libiconv..."
-
-$(ZLIB):
-	date +"[%F %T] Building zlib..."
-	make -C packages/zlib
-	date +"[%F %T] done building zlib..."
-
-
 $(SIX_LIBS): $(CPYTHONLIB)
 	date +"[%F %T] Building six..."
 	make -C packages/six
@@ -277,21 +253,7 @@ $(PARSO_LIBS): $(CPYTHONLIB)
 	date +"[%F %T] done building parso."
 
 
-$(CLAPACK): $(CPYTHONLIB)
-ifdef PYODIDE_PACKAGES
-	echo "Skipping BLAS/LAPACK build due to PYODIDE_PACKAGES being defined."
-	echo "Build it manually with make -C packages/CLAPACK if needed."
-	mkdir -p packages/CLAPACK/CLAPACK-WA/
-	touch $(CLAPACK)
-else
-	date +"[%F %T] Building CLAPACK..."
-	make -C packages/CLAPACK
-	date +"[%F %T] done building CLAPACK."
-endif
-
-
-
-build/packages.json: $(CLAPACK) $(LIBXML) $(LIBXSLT) FORCE
+build/packages.json: FORCE
 	date +"[%F %T] Building packages..."
 	make -C packages
 	date +"[%F %T] done building packages..."
