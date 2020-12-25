@@ -14,7 +14,7 @@ SHELL := /bin/bash
 CC=emcc
 CXX=em++
 OPTFLAGS=-O2
-CFLAGS=$(OPTFLAGS) -g -I$(PYTHONINCLUDE) -Wno-warn-absolute-paths -D TEST
+CFLAGS=$(OPTFLAGS) -g -I$(PYTHONINCLUDE) -Wno-warn-absolute-paths
 CXXFLAGS=$(CFLAGS) -std=c++14
 
 
