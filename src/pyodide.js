@@ -304,7 +304,7 @@ var languagePluginLoader = new Promise((resolve, reject) => {
   ];
 
   if (self.TEST_PYODIDE) {
-    PUBLIC_API.push("TestEntrypoints");
+    PUBLIC_API.push("Tests");
   }
 
   function makePublicAPI(module, public_api) {
