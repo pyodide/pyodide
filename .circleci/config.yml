@@ -103,7 +103,7 @@ jobs:
             - ./build
 
       - store_artifacts:
-          path: /home/circleci/repo/build/
+          path: /root/repo/build/
 
   test-core-firefox:
     <<: *defaults
@@ -175,7 +175,7 @@ jobs:
           command: |
             python benchmark/benchmark.py /usr/local/bin/python3 build/benchmarks.json
       - store_artifacts:
-          path: /home/circleci/repo/build/benchmarks.json
+          path: /root/repo/build/benchmarks.json
 
   deploy-release:
     docker:
