@@ -73,6 +73,7 @@ build/pyodide.asm.js: src/main.bc src/type_conversion/jsimport.bc \
 	        src/type_conversion/jsproxy.bc src/type_conversion/js2python.bc \
 		src/type_conversion/pyimport.bc src/type_conversion/pyproxy.bc \
 		src/type_conversion/python2js.bc \
+		src/type_conversion/testing.bc \
 		src/type_conversion/python2js_buffer.bc \
 		src/type_conversion/runpython.bc src/type_conversion/hiwire.bc
 	date +"[%F %T] Building pyodide.asm.js..."

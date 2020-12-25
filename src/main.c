@@ -1,7 +1,6 @@
+#include "testing.h"
 #include <Python.h>
 #include <emscripten.h>
-#include "testmacros.h"
-
 
 #include "hiwire.h"
 #include "js2python.h"
@@ -31,15 +30,15 @@
   } while (0)
 
 #ifdef TEST
-  int
-  init_test_entrypoints();
+int
+init_test_entrypoints();
 #endif
 
 int
 main(int argc, char** argv)
 {
 #ifdef TEST
-  init_test_entrypoints();
+  TRY_INIT(testing);
 #endif
   hiwire_setup();
   setenv("PYTHONHOME", "/", 0);
@@ -74,34 +73,3 @@ main(int argc, char** argv)
   emscripten_exit_with_live_runtime();
   return 0;
 }
-
-#ifdef TEST
-EM_JS(int, init_test_entrypoints, (), {
-  Module.Tests = {};
-  Module.Tests.test_entrypoints = function() { return "It works!"; };
-  Module.Tests.raise_on_fail = function(result){
-    if (result) {
-      let msg = UTF8ToString(result);
-      _free(result);
-      throw new Error(msg);
-    }
-  };
-  Module.Tests.test_c_tests_success =  _test_c_tests_success;
-  Module.Tests.test_c_tests_fail =  _test_c_tests_fail;
-});
-
-DEFINE_TEST(
-  c_tests_success, {
-    ASSERT(1);
-    ASSERT(1 > -7);
-  }
-)
-
-DEFINE_TEST(
-  c_tests_fail, {
-    char* failure_msg = NULL;
-    ASSERT(0 * (1 + 1 - 88));
-    return failure_msg;
-  }
-)
-#endif
