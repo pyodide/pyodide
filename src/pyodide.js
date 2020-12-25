@@ -341,14 +341,14 @@ var languagePluginLoader = new Promise((resolve, reject) => {
       let packageNames =
           self.pyodide._module.packages.import_name_to_package_name;
       let packages = new Set();
-      for (let name of jsimports) {
+      for (let name of imports) {
         if (name in packageNames) {
           packages.add(name);
         }
       }
       if (packages.size) {
         await loadPackage(
-          Array.from(packages.keys()), 
+          Array.from(packages.keys()),
           messageCallback,
         errorCallback);
       }
