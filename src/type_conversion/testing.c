@@ -9,19 +9,27 @@ EM_JS(int, testing_init, (), {
   // msg_utf8 is either a heap allocated string or null.
   // If it's a heap allocated string, convert to a js string, free it, and
   // return the js string. Otherwise return js false.
-  Module.Tests._convert_message = function(msg_utf8)
+  function c_string_to_js_string(s_utf8)
   {
-    let msg = false;
-    if (msg_utf8) {
-      msg = UTF8ToString(msg_utf8);
-      _free(msg_utf8);
+    let s = false;
+    if (s_utf8) {
+      s = UTF8ToString(s_utf8);
+      _free(s_utf8);
     }
-    return msg;
+    return s;
   };
 
-  Module.Tests._expect_success = function(msg_utf8, name, test_body, line, file)
+  function js_string_to_c_string(s)
   {
-    let msg = Module.Tests._convert_message(msg_utf8);
+    if (!s) {
+      return 0;
+    }
+    return allocate(intArrayFromString(s), "i8", ALLOC_NORMAL);
+  }
+
+  function _expect_success_helper(msg_utf8, name, test_body, line, file)
+  {
+    let msg = c_string_to_js_string(msg_utf8);
     if (msg) {
       let result = [
         `Test "${name}" failed(defined on line ${ line } in ${ file }):`,
@@ -31,12 +39,11 @@ EM_JS(int, testing_init, (), {
     }
     // Test succeeded
     return undefined;
-  };
+  }
 
-  Module.Tests._expect_fail =
-    function(msg_utf8, name, match, test_body, line, file)
+  function _expect_fail_helper(msg_utf8, name, match, test_body, line, file)
   {
-    let msg = Module.Tests._convert_message(msg_utf8);
+    let msg = c_string_to_js_string(msg_utf8);
     let re = new RegExp(match);
     if (!msg) {
       let result = [
@@ -55,18 +62,40 @@ EM_JS(int, testing_init, (), {
     }
     // Test suceeded
     return undefined;
+  }
+
+  Module.Tests._expect_success = function(... args)
+  {
+    return js_string_to_c_string(_expect_success_helper(... args));
   };
 
+  Module.Tests._expect_fail = function(... args)
+  {
+    return js_string_to_c_string(_expect_fail_helper(... args));
+  };
+
+  // The entries in pyodide._module are not enumerable.
+  // So "Object.keys()" or directly using "for(let name in pyodide._module)"
+  // do not work.
+  for (let name of Object.getOwnPropertyNames(Module)) {
+    if (name.startsWith("_test_")) {
+      Module.Tests[name.slice("_test_".length)] = function()
+      {
+        return c_string_to_js_string(Module[name]());
+      };
+    }
+  }
+
   // TODO: figure out how to avoid doing this?
-  Module.Tests.c_tests_expect_success_success =
-    _test_c_tests_expect_success_success;
-  Module.Tests.c_tests_expect_fail_fail = _test_c_tests_expect_fail_fail;
-  Module.Tests.c_tests_expect_success_fails =
-    _test_c_tests_expect_success_fails;
-  Module.Tests.c_tests_expect_fail_succeeds =
-    _test_c_tests_expect_fail_succeeds;
-  Module.Tests.c_tests_expect_fail_wrong_message =
-    _test_c_tests_expect_fail_wrong_message;
+  // Module.Tests.c_tests_expect_success_success =
+  //   _test_c_tests_expect_success_success;
+  // Module.Tests.c_tests_expect_fail_fail = _test_c_tests_expect_fail_fail;
+  // Module.Tests.c_tests_expect_success_fails =
+  //   _test_c_tests_expect_success_fails;
+  // Module.Tests.c_tests_expect_fail_succeeds =
+  //   _test_c_tests_expect_fail_succeeds;
+  // Module.Tests.c_tests_expect_fail_wrong_message =
+  //   _test_c_tests_expect_fail_wrong_message;
   return 0;
 });
 
