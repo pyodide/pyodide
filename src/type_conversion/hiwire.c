@@ -325,6 +325,10 @@ EM_JS(int, hiwire_typeof, (int idobj), {
   return Module.hiwire.new_value(typeof Module.hiwire.get_value(idobj));
 });
 
+EM_JS(int, hiwire_constructor_name, (int idobj), {
+  return Module.hiwire.new_value(Module.hiwire.get_value(idobj).constructor.name);
+});
+
 #define MAKE_OPERATOR(name, op)                                                \
   EM_JS(int, hiwire_##name, (int ida, int idb), {                              \
     return (Module.hiwire.get_value(ida) op Module.hiwire.get_value(idb)) ? 1  \
@@ -405,44 +409,33 @@ EM_JS(int, hiwire_copy_to_ptr, (int idobj, int ptr), {
   Module.HEAPU8.set(new Uint8Array(buffer), ptr);
 });
 
-EM_JS(int, hiwire_get_dtype, (int idobj), {
-  var jsobj = Module.hiwire.get_value(idobj);
-  switch (jsobj.constructor.name) {
-    case 'Int8Array':
-      dtype = 1; // INT8_TYPE;
-      break;
-    case 'Uint8Array':
-      dtype = 2; // UINT8_TYPE;
-      break;
-    case 'Uint8ClampedArray':
-      dtype = 3; // UINT8CLAMPED_TYPE;
-      break;
-    case 'Int16Array':
-      dtype = 4; // INT16_TYPE;
-      break;
-    case 'Uint16Array':
-      dtype = 5; // UINT16_TYPE;
-      break;
-    case 'Int32Array':
-      dtype = 6; // INT32_TYPE;
-      break;
-    case 'Uint32Array':
-      dtype = 7; // UINT32_TYPE;
-      break;
-    case 'Float32Array':
-      dtype = 8; // FLOAT32_TYPE;
-      break;
-    case 'Float64Array':
-      dtype = 9; // FLOAT64_TYPE;
-      break;
-    case 'ArrayBuffer':
-      dtype = 3;
-      break;
-    default:
-      dtype = 3; // UINT8CLAMPED_TYPE;
-      break;
+EM_JS(void, hiwire_get_dtype, (int idobj, int format_ptr, int size_ptr), {
+  if (!Module.hiwire.dtype_map) {
+    let entries = Object.entries({
+      'Int8Array' : [ 'b', 1 ],
+      'Uint8Array' : [ 'B', 1 ],
+      'Uint8ClampedArray' : [ 'B', 1 ],
+      'Int16Array' : [ "h", 2 ],
+      'Uint16Array' : [ "H", 2 ],
+      'Int32Array' : [ "i", 4 ],
+      'Uint32Array' : [ "I", 4 ],
+      'Float32Array' : [ "f", 4 ],
+      'Float64Array' : [ "d", 8 ],
+      'ArrayBuffer' : [ 'B', 1 ], // Default to Uint8;
+    });
+    let map = new Map();
+    for (let[key, [ format, size ]] of entries) {
+      let format_utf8 =
+        allocate(intArrayFromString(format), "i8", ALLOC_NORMAL);
+      map.set(key, [ format, size ]);
+    }
   }
-  return dtype;
+  let jsobj = Module.hiwire.get_value(idobj);
+  let[format, size] =
+    Module.hiwire.dtype_map.get(jsobj.constructor.name) || [ 0, 0 ];
+  // Store results into arguments
+  setValue(format_ptr, format, "i8*");
+  setValue(size_ptr, size, "i32");
 });
 
 EM_JS(int, hiwire_subarray, (int idarr, int start, int end), {

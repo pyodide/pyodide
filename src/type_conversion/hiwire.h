@@ -282,6 +282,7 @@ hiwire_push_object_pair(int idobj, int idkey, int idval);
  * Throws a new Error object with the given message.
  *
  * The message is conventionally a Javascript string, but that is not required.
+ * TODO: should be hiwire_set_error.
  */
 void
 hiwire_throw_error(int idmsg);
@@ -441,6 +442,14 @@ int
 hiwire_typeof(int idobj);
 
 /**
+ * Gets "value.constructor.name".
+ *
+ * Returns: New reference to Javascript string
+ */
+int
+hiwire_constructor_name(int idobj);
+
+/**
  * Returns non-zero if a < b.
  */
 int
@@ -534,24 +543,11 @@ hiwire_get_byteOffset(int idobj);
 int
 hiwire_copy_to_ptr(int idobj, int ptr);
 
-#define INT8_TYPE 1
-#define UINT8_TYPE 2
-#define UINT8CLAMPED_TYPE 3
-#define INT16_TYPE 4
-#define UINT16_TYPE 5
-#define INT32_TYPE 6
-#define UINT32_TYPE 7
-#define FLOAT32_TYPE 8
-#define FLOAT64_TYPE 9
-
 /**
  * Get a data type identifier for a given typedarray.
- *
- * It will be one of INT8_TYPE, UINT8_TYPE, UINT8CLAMPED_TYPE, INT16_TYPE,
- * UINT16_TYPE, INT32_TYPE, UINT32_TYPE, FLOAT32_TYPE, FLOAT64_TYPE.
  */
 int
-hiwire_get_dtype(int idobj);
+hiwire_get_dtype(int idobj, int format_ptr, int size_ptr);
 
 /**
  * Get a subarray from a TypedArray
