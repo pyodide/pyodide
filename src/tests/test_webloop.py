@@ -1,3 +1,4 @@
+import pytest
 from selenium.common.exceptions import TimeoutException
 
 
@@ -8,14 +9,13 @@ class TaskDone:
 
 
 def test_webloop(selenium):
-    selenium.run(loop_script)
-
     # test asyncio.sleep
     selenium.run(
         """
         import js
         import asyncio
-        from pyodide import WebLoop
+        from pyodide import WebLoop, WebLoopPolicy
+        asyncio.set_event_loop_policy(WebLoopPolicy())
         loop = asyncio.get_event_loop()
         assert isinstance(loop, WebLoop)
 
@@ -34,6 +34,45 @@ def test_webloop(selenium):
         selenium.wait.until(TaskDone())
     except TimeoutException:
         raise TimeoutException("asyncio.sleep timed out")
+
+    # test return result
+    selenium.run(
+        """
+        js.window.task_done = False
+        async def foo(arg):
+            return arg
+        
+        def check_result(result):
+            if result == 998:
+                js.window.task_done = True
+        loop.run_until_complete(foo(998)).then(check_result)
+        """
+    )
+    try:
+        selenium.wait.until(TaskDone())
+    except TimeoutException:
+        raise TimeoutException("return result from run_until_complete timed out")
+
+    # test capture exception
+    selenium.run(
+        """
+        class MyException(Exception):
+            pass
+
+        js.window.task_done = False
+        async def foo(arg):
+            raise MyException('oops')
+        
+        def capture_exception(e):
+            if isinstance(e, MyException):
+                js.window.task_done = True
+        loop.run_until_complete(foo(998)).catch(capture_exception)
+        """
+    )
+    try:
+        selenium.wait.until(TaskDone())
+    except TimeoutException:
+        raise TimeoutException("capture exception from run_until_complete timed out")
 
     # test await wrapped js promise
     selenium.run(
@@ -72,6 +111,48 @@ def test_webloop(selenium):
         selenium.wait.until(TaskDone())
     except TimeoutException:
         raise TimeoutException("fetching promise task timed out")
+
+    # test loop-is-already-running exception
+    msg = "This event loop is already running"
+    with pytest.raises(selenium.JavascriptException, match=msg):
+        selenium.run("loop.run_until_complete(sleep_task())")
+
+    # test call soon
+    selenium.run(
+        """
+        js.window.task_done = False
+        def foo(arg):
+            if arg == 'bar':
+                js.window.task_done = True
+        loop.call_soon(foo, 'bar')
+        """
+    )
+    try:
+        selenium.wait.until(TaskDone())
+    except TimeoutException:
+        raise TimeoutException("call_soon timed out")
+
+    # text contextvars
+    selenium.run(
+        """
+        import contextvars
+        request_id = contextvars.ContextVar('Id of request.')
+
+        request_id.set(123)
+        ctx = contextvars.copy_context()
+        request_id.set(456)
+
+        js.window.task_done = False
+        def func_ctx():
+            if request_id.get() == 123:
+                js.window.task_done = True
+        loop.call_soon(func_ctx, context=ctx)
+        """
+    )
+    try:
+        selenium.wait.until(TaskDone())
+    except TimeoutException:
+        raise TimeoutException("call_soon with contextvars timed out")
 
     # test asyncio exception
     selenium.run(

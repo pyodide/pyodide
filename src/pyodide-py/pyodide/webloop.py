@@ -53,7 +53,7 @@ class WebLoop(asyncio.AbstractEventLoop):
         )
         self._exception_handler = None
         self._task_factory = self._default_task_factory
-        self._until_complete = None
+        self._stop_callbacks = None
         self._result = None
         self._exception = None
 
@@ -79,23 +79,28 @@ class WebLoop(asyncio.AbstractEventLoop):
         """
         Run the event loop until stop() is called.
 
-        Note that this function is different from the standard asyncio loop implementation, it won't block the execution
+        Note that this function is different from the standard asyncio loop implementation in two ways:
+         1) It won't block the execution
+         2) It returns a Promise object
 
         """
         if self._running:
             raise RuntimeError("This event loop is already running")
 
-        self._stop = False
-        if asyncio.get_event_loop() == self:
-            asyncio._set_running_loop(self)
-        if not self._running:
+        def run(resolve, reject):
+            self._stop = False
+            if asyncio.get_event_loop() == self:
+                asyncio._set_running_loop(self)
+            self._stop_callbacks = (resolve, reject)
             self._do_tasks(forever=True)
+
+        return js.Promise.new(run)
 
     def run_until_complete(self, future: Awaitable):
         """
         Run until the future (an instance of Future) has completed.
 
-        Note that this function is different from the standard asyncio loop in two ways:
+        Note that this function is different from the standard asyncio loop implementation in two ways:
          1) It won't block the execution
          2) It returns a Promise object
 
@@ -117,25 +122,19 @@ class WebLoop(asyncio.AbstractEventLoop):
             if asyncio.get_event_loop() == self:
                 asyncio._set_running_loop(self)
             self._stop = False
-            if not self._running:
-                self._do_tasks(
-                    until_complete=(
-                        resolve,
-                        reject,
-                    )
-                )
+            self._stop_callbacks = (resolve, reject)
+            self._do_tasks(until_complete=True)
 
         return js.Promise.new(run)
 
     def _do_tasks(
         self,
-        until_complete: Optional[Tuple] = None,
+        until_complete: Optional[bool] = False,
         forever: Optional[bool] = False,
     ):
         """
         Do the tasks
         """
-        self._until_complete = until_complete
         self._exception = None
         self._result = None
         self._running = True
@@ -182,9 +181,9 @@ class WebLoop(asyncio.AbstractEventLoop):
         if asyncio.get_event_loop() == self:
             asyncio._set_running_loop(None)
         self._running = False
-        if self._until_complete:
-            resolve, reject = self._until_complete
-            self._until_complete = None
+        if self._stop_callbacks:
+            resolve, reject = self._stop_callbacks
+            self._stop_callbacks = None
             if self._exception:
                 reject(self._exception)
             else:
