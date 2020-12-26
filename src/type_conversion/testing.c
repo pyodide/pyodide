@@ -5,11 +5,12 @@
 EM_JS(int, testing_init, (), {
   Module.Tests = {};
   Module.Tests.test_entrypoints = function() { return "It works!"; };
-  Module.Tests.UTF8ToString = UTF8ToString;
 
+  // msg_utf8 is either a heap allocated string or null.
+  // If it's a heap allocated string, convert to a js string, free it, and
+  // return the js string. Otherwise return js false.
   Module.Tests._convert_message = function(msg_utf8)
   {
-    // message is heap allocated or null
     let msg = false;
     if (msg_utf8) {
       msg = UTF8ToString(msg_utf8);
@@ -21,18 +22,14 @@ EM_JS(int, testing_init, (), {
   Module.Tests._expect_success = function(msg_utf8, name, test_body, line, file)
   {
     let msg = Module.Tests._convert_message(msg_utf8);
-    console.log(msg, name, test_body, line, file);
     if (msg) {
-      console.log("  Failed");
       let result = [
         `Test "${name}" failed(defined on line ${ line } in ${ file }):`,
         `${ msg }`,
       ].join("\n");
-      console.log(result);
       return result;
     }
-    console.log("  Succeeded");
-    // Test suceeded
+    // Test succeeded
     return undefined;
   };
 
@@ -40,33 +37,27 @@ EM_JS(int, testing_init, (), {
     function(msg_utf8, name, match, test_body, line, file)
   {
     let msg = Module.Tests._convert_message(msg_utf8);
-    console.log("_expect_fail");
-    console.log(msg, name, match, test_body, line, file);
     let re = new RegExp(match);
     if (!msg) {
-      console.log("  Failed: no assert fail");
       let result = [
         `Test "${name}" failed (defined on line ${ line } in ${ file }):`,
         `Expected an assertion failure, but all assertions passed.`,
       ].join("\n");
-      console.log(result);
       return result;
     } else if (!re.test(msg)) {
-      console.log("  Failed: assert fail doesn't match");
       let result = [
         `Test "${name}" failed (defined on line ${ line } in ${ file }):`,
         `Expected an assertion failure matching pattern "${match}".`,
         `Assertion failed, but pattern not found in resulting message:`,
         `${msg}`,
       ].join("\n");
-      console.log(result);
       return result;
     }
-    console.log("  Succeeded");
     // Test suceeded
     return undefined;
   };
 
+  // TODO: figure out how to avoid doing this?
   Module.Tests.c_tests_expect_success_success =
     _test_c_tests_expect_success_success;
   Module.Tests.c_tests_expect_fail_fail = _test_c_tests_expect_fail_fail;

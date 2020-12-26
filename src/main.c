@@ -29,11 +29,6 @@
     }                                                                          \
   } while (0)
 
-#ifdef TEST
-int
-init_test_entrypoints();
-#endif
-
 int
 main(int argc, char** argv)
 {
