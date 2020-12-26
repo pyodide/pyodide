@@ -8,13 +8,14 @@ class TaskDone:
 
 
 def test_webloop(selenium):
+    selenium.run(loop_script)
+
     # test asyncio.sleep
     selenium.run(
         """
         import js
         import asyncio
-        from pyodide import WebLoop, WebLoopPolicy
-        asyncio.set_event_loop_policy(WebLoopPolicy())
+        from pyodide import WebLoop
         loop = asyncio.get_event_loop()
         assert isinstance(loop, WebLoop)
 
@@ -47,6 +48,7 @@ def test_webloop(selenium):
         }
         ''')
 
+        # TODO: remove this when https://github.com/iodide-project/pyodide/pull/880 is merged
         def wrap_promise(promise):
             loop = asyncio.get_event_loop()
             fut = loop.create_future()
