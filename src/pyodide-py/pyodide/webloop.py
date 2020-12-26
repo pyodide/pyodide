@@ -13,6 +13,7 @@ Author: Wei OUYANG (@oeway)
         https://gist.github.com/damonjw/35aac361ca5d313ee9bf79e00261f4ea
 
 Version History:
+        * support contextvars
         * add event loop policy
         * throw error when the loop is already running
         * support Python 3.8
@@ -23,6 +24,7 @@ import heapq
 import asyncio
 import time
 import traceback
+import contextvars
 
 import js
 from typing import Dict, Tuple, Optional, Awaitable, Callable
@@ -35,6 +37,9 @@ class WebLoop(asyncio.AbstractEventLoop):
     """
 
     def __init__(self, debug: Optional[bool] = False, interval: Optional[int] = 10):
+        """
+        Instatiate the web loop
+        """
         self._running = False
         self._immediate = []
         self._scheduled = []
@@ -46,7 +51,8 @@ class WebLoop(asyncio.AbstractEventLoop):
         self._timeout_promise = js.eval(
             "self._timeoutPromise = function(time){return new Promise((resolve)=>{setTimeout(resolve, time);});}"
         )
-        self._exception_handler = self._default_exception_handler
+        self._exception_handler = None
+        self._task_factory = self._default_task_factory
         self._result = None
         self._exception = None
 
@@ -125,6 +131,9 @@ class WebLoop(asyncio.AbstractEventLoop):
         until_complete: Optional[Tuple] = None,
         forever: Optional[bool] = False,
     ):
+        """
+        Do the tasks
+        """
         self._until_complete = until_complete
         self._exception = None
         self._result = None
@@ -166,6 +175,9 @@ class WebLoop(asyncio.AbstractEventLoop):
             self._quit_running()
 
     def _quit_running(self):
+        """
+        Quit running
+        """
         if asyncio.get_event_loop() == self:
             asyncio._set_running_loop(None)
         self._running = False
@@ -177,12 +189,10 @@ class WebLoop(asyncio.AbstractEventLoop):
             else:
                 resolve(self._result)
 
-    def _default_exception_handler(
-        self, loop: asyncio.AbstractEventLoop, context: Dict
-    ):
-        js.console.error(context.get("message"))
-
-    def _timer_handle_cancelled(self, handle):
+    def _timer_handle_cancelled(self, handle: Callable):
+        """
+        Timer handle canlled
+        """
         pass
 
     def is_running(self) -> bool:
@@ -221,7 +231,7 @@ class WebLoop(asyncio.AbstractEventLoop):
         """
         Default exception handler.
         """
-        return self._default_exception_handler
+        js.console.error(context.get("message"))
 
     def call_exception_handler(self, context: Dict):
         """
@@ -239,7 +249,10 @@ class WebLoop(asyncio.AbstractEventLoop):
             ‘transport’ (optional): Transport instance;
             ‘socket’ (optional): socket.socket instance.
         """
-        self._exception_handler(self, context)
+        if self._exception_handler:
+            self._exception_handler(self, context)
+        else:
+            self.default_exception_handler(context)
 
     def set_exception_handler(self, handler: Optional[Callable]):
         """
@@ -253,10 +266,7 @@ class WebLoop(asyncio.AbstractEventLoop):
         containing the details of the exception (see call_exception_handler() documentation
         for details about context).
         """
-        if handler is None:
-            self._exception_handler = self._default_exception_handler
-        else:
-            self._exception_handler = handler
+        self._exception_handler = handler
 
     def get_exception_handler(self):
         """
@@ -264,41 +274,51 @@ class WebLoop(asyncio.AbstractEventLoop):
         """
         return self._exception_handler
 
-    def call_soon(self, callback, *args, context=None):
+    def call_soon(self, callback: Callable, *args, context: contextvars.Context = None):
         """
         Schedule the callback callback to be called with args arguments at the next iteration of the event loop.
         """
-        assert context is None, "context is not supported"
-        h = asyncio.Handle(callback, args, self)
+        h = asyncio.Handle(callback, args, self, context=context)
         self._immediate.append(h)
         return h
 
-    def call_soon_threadsafe(callback, *args, context=None):
+    def call_soon_threadsafe(
+        callback: Callable, *args, context: contextvars.Context = None
+    ):
         """
         A thread-safe variant of call_soon().
 
         Note this function is different from the standard asyncio loop implementation, it is current exactly the same as call_soon
         """
-        assert context is None, "context is not supported"
-        return self.call_soon(callback, *args, context)
+        return self.call_soon(callback, *args, context=context)
 
-    def call_later(self, delay, callback, *args, context=None):
+    def call_later(
+        self,
+        delay: float,
+        callback: Callable,
+        *args,
+        context: contextvars.Context = None
+    ):
         """
         Schedule callback to be called after the given delay number of seconds (can be either an int or a float).
         """
-        assert context is None, "context is not supported"
         if delay < 0:
             raise Exception("Can't schedule in the past")
-        return self.call_at(self.time() + delay, callback, *args)
+        return self.call_at(self.time() + delay, callback, *args, context=context)
 
-    def call_at(self, when, callback, *args, context):
+    def call_at(
+        self,
+        when: float,
+        callback: Callable,
+        *args,
+        context: contextvars.Context = None
+    ):
         """
         Schedule callback to be called at the given absolute timestamp when (an int or a float), using the same time reference as loop.time().
         """
-        assert context is None, "context is not supported"
         if when < self.time():
             raise Exception("Can't schedule in the past")
-        h = asyncio.TimerHandle(when, callback, args, self)
+        h = asyncio.TimerHandle(when, callback, args, self, context=context)
         heapq.heappush(self._scheduled, h)
         h._scheduled = True
         return h
@@ -306,6 +326,17 @@ class WebLoop(asyncio.AbstractEventLoop):
     def create_task(self, coro: Awaitable, name: Optional[str] = None) -> asyncio.Task:
         """
         Schedule the execution of a Coroutines. Return a Task object.
+        """
+        return self._task_factory(self, coro, name=name)
+
+    def _default_task_factory(
+        self,
+        loop: asyncio.AbstractEventLoop,
+        coro: Awaitable,
+        name: Optional[str] = None,
+    ):
+        """
+        The default task factory
         """
 
         async def wrapper():
@@ -317,7 +348,7 @@ class WebLoop(asyncio.AbstractEventLoop):
                     {"message": traceback.format_exc(), "exception": e}
                 )
 
-        return asyncio.Task(wrapper(), loop=self)
+        return asyncio.Task(wrapper(), loop=self, name=name)
 
     def create_future(self):
         """
@@ -332,14 +363,21 @@ class WebLoop(asyncio.AbstractEventLoop):
         self._futures.append(fut)
         return fut
 
-    def set_task_factory(factory: Any):
-        raise NotImplementedError
+    def set_task_factory(self, factory: Callable):
+        """
+        Set the task factory
+        """
+        self._task_factory = factory
 
-    def get_task_factory():
+    def get_task_factory(
+        self,
+    ):
         """
         Return a task factory or None if the default one is in use.
         """
-        return None
+        if self._task_factory == self._default_task_factory:
+            return None
+        return self._task_factory
 
 
 class WebLoopPolicy(asyncio.DefaultEventLoopPolicy):
@@ -348,22 +386,40 @@ class WebLoopPolicy(asyncio.DefaultEventLoopPolicy):
     """
 
     def __init__(self):
+        """
+        Instantiate the web loop policy
+        """
         self._default_loop = None
 
     def get_event_loop(self):
+        """
+        Get the current event loop
+        """
         if self._default_loop is None:
             self._default_loop = WebLoop()
         return self._default_loop
 
     def new_event_loop(self):
+        """
+        Create a new event loop
+        """
         self._default_loop = WebLoop()
         return self._default_loop
 
     def set_event_loop(self, loop: asyncio.AbstractEventLoop):
+        """
+        Set the current event loop
+        """
         self._default_loop = loop
 
     def get_child_watcher(self):
+        """
+        Get the child watcher
+        """
         raise NotImplementedError
 
     def set_child_watcher(self):
+        """
+        Set the child wather
+        """
         raise NotImplementedError
