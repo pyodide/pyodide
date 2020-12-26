@@ -338,7 +338,7 @@ JsProxy_GetBuffer(PyObject* o, Py_buffer* view, int flags)
 
   return 0;
 fail:
-  if(!PyErr_Occurred()){
+  if (!PyErr_Occurred()) {
     PyErr_SetString(PyExc_BufferError, "Can not use as buffer");
   }
   view->obj = NULL;
