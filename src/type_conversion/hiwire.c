@@ -326,7 +326,8 @@ EM_JS(int, hiwire_typeof, (int idobj), {
 });
 
 EM_JS(int, hiwire_constructor_name, (int idobj), {
-  return Module.hiwire.new_value(Module.hiwire.get_value(idobj).constructor.name);
+  return Module.hiwire.new_value(
+    Module.hiwire.get_value(idobj).constructor.name);
 });
 
 #define MAKE_OPERATOR(name, op)                                                \

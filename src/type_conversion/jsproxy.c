@@ -322,8 +322,7 @@ JsProxy_GetBuffer(PyObject* o, Py_buffer* view, int flags)
       "Unknown typed array type '%s'. This is problem with Pyodide, please "
       "open an issue about it here: "
       "https://github.com/iodide-project/pyodide/issues/new",
-      (char *)hiwire_constructor_name(self->js)
-    );
+      (char*)hiwire_constructor_name(self->js));
     return NULL;
   }
 
