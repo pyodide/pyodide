@@ -546,7 +546,7 @@ hiwire_copy_to_ptr(int idobj, int ptr);
 /**
  * Get a data type identifier for a given typedarray.
  */
-int
+void
 hiwire_get_dtype(int idobj, int format_ptr, int size_ptr);
 
 /**
