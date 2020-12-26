@@ -53,6 +53,7 @@ class WebLoop(asyncio.AbstractEventLoop):
         )
         self._exception_handler = None
         self._task_factory = self._default_task_factory
+        self._until_complete = None
         self._result = None
         self._exception = None
 
