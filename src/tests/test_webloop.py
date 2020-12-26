@@ -8,8 +8,6 @@ class TaskDone:
 
 
 def test_webloop(selenium):
-    selenium.run(loop_script)
-
     # test asyncio.sleep
     selenium.run(
         """

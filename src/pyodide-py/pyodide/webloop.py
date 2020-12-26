@@ -3,13 +3,16 @@ import asyncio
 import time
 import traceback
 
+from typing import Dict, Tuple, Optional, Awaitable, Callable
+
+
 class WebLoop(asyncio.AbstractEventLoop):
     """A simple custom loop for asyncio
     Adapted from the EventSimulator made by @damonjw
     https://gist.github.com/damonjw/35aac361ca5d313ee9bf79e00261f4ea
     """
 
-    def __init__(self, debug=False, interval=10):
+    def __init__(self, debug: Optional[bool] = False, interval: Optional[int] = 10):
         self._running = False
         self._immediate = []
         self._scheduled = []
@@ -22,6 +25,8 @@ class WebLoop(asyncio.AbstractEventLoop):
             "self._timeoutPromise = function(time){return new Promise((resolve)=>{setTimeout(resolve, time);});}"
         )
         self._exception_handler = self._default_exception_handler
+        self._result = None
+        self._exception = None
 
     def get_debug(self):
         return self._debug
@@ -30,21 +35,42 @@ class WebLoop(asyncio.AbstractEventLoop):
         return time.time()
 
     def run_forever(self):
+        if self._running:
+            raise RuntimeError("This event loop is already running")
+
         self._stop = False
         if asyncio.get_event_loop() == self:
             asyncio._set_running_loop(self)
         if not self._running:
             self._do_tasks(forever=True)
 
-    def run_until_complete(self, future):
-        asyncio.ensure_future(future)
-        if asyncio.get_event_loop() == self:
-            asyncio._set_running_loop(self)
-        self._stop = False
-        if not self._running:
-            self._do_tasks(until_complete=True)
+    def run_until_complete(self, future: Awaitable):
+        if self._running:
+            raise RuntimeError("This event loop is already running")
 
-    def _do_tasks(self, until_complete=False, forever=False):
+        def run(resolve, reject):
+            asyncio.ensure_future(future)
+            if asyncio.get_event_loop() == self:
+                asyncio._set_running_loop(self)
+            self._stop = False
+            if not self._running:
+                self._do_tasks(
+                    until_complete=(
+                        resolve,
+                        reject,
+                    )
+                )
+
+        return js.Promise.new(run)
+
+    def _do_tasks(
+        self,
+        until_complete: Optional[Tuple] = None,
+        forever: Optional[bool] = False,
+    ):
+        self._until_complete = until_complete
+        self._exception = None
+        self._result = None
         self._running = True
         if self._stop:
             self._quit_running()
@@ -72,12 +98,10 @@ class WebLoop(asyncio.AbstractEventLoop):
             self._next_handle = None
             self._immediate.append(h)
 
-        if forever or (
-            until_complete
-            and (
-                self._immediate or self._scheduled or self._next_handle or self._futures
-            )
-        ):
+        not_finished = (
+            self._immediate or self._scheduled or self._next_handle or self._futures
+        )
+        if forever or (until_complete and not_finished):
             self._timeout_promise(self._interval).then(
                 lambda x: self._do_tasks(until_complete=until_complete, forever=forever)
             )
@@ -88,20 +112,29 @@ class WebLoop(asyncio.AbstractEventLoop):
         if asyncio.get_event_loop() == self:
             asyncio._set_running_loop(None)
         self._running = False
+        if self._until_complete:
+            resolve, reject = self._until_complete
+            self._until_complete = None
+            if self._exception:
+                reject(self._exception)
+            else:
+                resolve(self._result)
 
-    def _default_exception_handler(self, loop, context):
+    def _default_exception_handler(
+        self, loop: asyncio.AbstractEventLoop, context: Dict
+    ):
         js.console.error(context.get("message"))
 
-    def default_exception_handler(self):
+    def default_exception_handler(self) -> Callable:
         return self._default_exception_handler
 
     def _timer_handle_cancelled(self, handle):
         pass
 
-    def is_running(self):
+    def is_running(self) -> bool:
         return self._running
 
-    def is_closed(self):
+    def is_closed(self) -> bool:
         return not self._running
 
     def stop(self):
@@ -148,8 +181,9 @@ class WebLoop(asyncio.AbstractEventLoop):
     def create_task(self, coro):
         async def wrapper():
             try:
-                await coro
+                self._result = await coro
             except Exception as e:
+                self._exception = e
                 self.call_exception_handler(
                     {"message": traceback.format_exc(), "exception": e}
                 )
@@ -166,6 +200,7 @@ class WebLoop(asyncio.AbstractEventLoop):
         self._futures.append(fut)
         return fut
 
+
 class WebLoopPolicy(asyncio.DefaultEventLoopPolicy):
     def __init__(self):
         self._default_loop = None
@@ -179,7 +214,7 @@ class WebLoopPolicy(asyncio.DefaultEventLoopPolicy):
         self._default_loop = WebLoop()
         return self._default_loop
 
-    def set_event_loop(self, loop):
+    def set_event_loop(self, loop: asyncio.AbstractEventLoop):
         self._default_loop = loop
 
     def get_child_watcher(self):
@@ -187,3 +222,6 @@ class WebLoopPolicy(asyncio.DefaultEventLoopPolicy):
 
     def set_child_watcher(self):
         raise NotImplementedError
+
+
+asyncio.set_event_loop_policy(WebLoopPolicy())
