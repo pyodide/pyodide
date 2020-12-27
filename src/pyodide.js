@@ -356,6 +356,7 @@ var languagePluginLoader = new Promise((resolve, reject) => {
             fixRecursionLimit(self.pyodide);
             self.pyodide.globals =
                 self.pyodide.runPython('import sys\nsys.modules["__main__"]');
+            self.pyodide.mountPackage("js", globalThis);
             self.pyodide = makePublicAPI(self.pyodide, PUBLIC_API);
             self.pyodide._module.packages = json;
             if (self.iodide !== undefined) {

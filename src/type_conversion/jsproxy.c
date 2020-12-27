@@ -18,11 +18,14 @@ JsBoundMethod_cnew(int this_, const char* name);
 // This is a Python object that provides ideomatic access to a Javascript
 // object.
 
+// clang-format off
 typedef struct
 {
-  PyObject_HEAD int js;
+  PyObject_HEAD
+  int js;
   PyObject* bytes;
 } JsProxy;
+// clang-format on
 
 static void
 JsProxy_dealloc(JsProxy* self)
@@ -444,7 +447,7 @@ static PyMethodDef JsProxy_Methods[] = {
 // clang-format on
 
 static PyTypeObject JsProxyType = {
-  .tp_name = "JsProxy",
+  .tp_name = "pyodide.JsProxy",
   .tp_basicsize = sizeof(JsProxy),
   .tp_dealloc = (destructor)JsProxy_dealloc,
   .tp_call = JsProxy_Call,
@@ -567,11 +570,14 @@ JsProxy_new_error(int idobj)
 //
 // A special class for bound methods
 
+// clang-format off
 typedef struct
 {
-  PyObject_HEAD int this_;
+  PyObject_HEAD
+  int this_;
   const char* name;
 } JsBoundMethod;
+// clang-format on
 
 static void
 JsBoundMethod_dealloc(JsBoundMethod* self)
@@ -603,7 +609,7 @@ JsBoundMethod_Call(PyObject* o, PyObject* args, PyObject* kwargs)
 }
 
 static PyTypeObject JsBoundMethodType = {
-  .tp_name = "JsBoundMethod",
+  .tp_name = "pyodide.JsBoundMethod",
   .tp_basicsize = sizeof(JsBoundMethod),
   .tp_dealloc = (destructor)JsBoundMethod_dealloc,
   .tp_call = JsBoundMethod_Call,

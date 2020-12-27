@@ -302,7 +302,7 @@ hiwire_get_global(int ptrname);
  * Returns: New reference
  */
 int
-hiwire_get_member_string(int idobj, int ptrname);
+hiwire_get_member_string(int idobj, char* ptrname);
 
 /**
  * Set an object member by string.
