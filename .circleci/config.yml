@@ -235,9 +235,6 @@ workflows:
     jobs:
       - lint
       - build-core:
-          requires:
-            - lint
-            - test-python
           filters:
             tags:
               only: /.*/
@@ -286,6 +283,8 @@ workflows:
             - build-packages
       - deploy-release:
           requires:
+            - lint
+            - test-python
             - test-core-firefox
             - test-packages-firefox
             - test-core-chrome
@@ -298,6 +297,8 @@ workflows:
               only: /^\d+\.\d+\.\d+$/
       - deploy-s3:
           requires:
+            - lint
+            - test-python
             - test-core-firefox
             - test-packages-firefox
             - test-core-chrome
