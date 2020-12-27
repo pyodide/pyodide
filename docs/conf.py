@@ -15,8 +15,12 @@
 import os
 import sys
 
-sys.path.insert(0, os.path.abspath("."))
-sys.path.insert(0, os.path.abspath(".."))
+for base_path in [".", ".."]:
+    sys.path.insert(0, os.path.abspath(base_path))
+    sys.path.insert(1, os.path.abspath(os.path.join(base_path, "src", "pyodide-py")))
+    sys.path.insert(
+        2, os.path.abspath(os.path.join(base_path, "packages", "micropip", "micropip"))
+    )
 
 # -- Project information -----------------------------------------------------
 
@@ -24,7 +28,8 @@ project = "Pyodide"
 copyright = "2019, Mozilla"
 author = "Mozilla"
 
-from src import pyodide
+import pyodide
+import micropip  # noqa
 
 # The full version, including alpha/beta/rc tags.
 release = version = pyodide.__version__
@@ -39,7 +44,15 @@ release = version = pyodide.__version__
 # Add any Sphinx extension module names here, as strings. They can be
 # extensions coming with Sphinx (named 'sphinx.ext.*') or your custom
 # ones.
-extensions = ["sphinx.ext.autodoc", "m2r"]
+extensions = [
+    "sphinx.ext.autodoc",
+    "sphinx.ext.autosummary",
+    "sphinxcontrib.napoleon",
+    "myst_parser",
+]
+
+autosummary_generate = True
+autodoc_default_flags = ["members", "inherited-members"]
 
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ["_templates"]
@@ -49,8 +62,6 @@ templates_path = ["_templates"]
 #
 # source_suffix = ['.rst', '.md']
 source_suffix = [".rst", ".md"]
-
-rst_prolog = ""
 
 # The master toctree document.
 master_doc = "index"
@@ -107,68 +118,10 @@ html_static_path = ["_static"]
 # html_sidebars = {}
 
 
-rst_prolog += """
-.. important::
-    From your browser, you can
-    `try Pyodide in an Iodide notebook <https://alpha.iodide.io/>`_.
-    The `Iodide documentation site <https://iodide-project.github.io/docs/>`_
-    provides additional user and developer documentation.
-"""
-
 # -- Options for HTMLHelp output ---------------------------------------------
 
 # Output file base name for HTML help builder.
 htmlhelp_basename = "Pyodidedoc"
-
-
-# -- Options for LaTeX output ------------------------------------------------
-
-latex_elements = {
-    # The paper size ('letterpaper' or 'a4paper').
-    #
-    # 'papersize': 'letterpaper',
-    # The font size ('10pt', '11pt' or '12pt').
-    #
-    # 'pointsize': '10pt',
-    # Additional stuff for the LaTeX preamble.
-    #
-    # 'preamble': '',
-    # Latex figure (float) alignment
-    #
-    # 'figure_align': 'htbp',
-}
-
-# Grouping the document tree into LaTeX files. List of tuples
-# (source start file, target name, title,
-#  author, documentclass [howto, manual, or own class]).
-latex_documents = [
-    (master_doc, "Pyodide.tex", "Pyodide Documentation", "Mozilla?", "manual")
-]
-
-
-# -- Options for manual page output ------------------------------------------
-
-# One entry per manual page. List of tuples
-# (source start file, name, description, authors, manual section).
-man_pages = [(master_doc, "pyodide", "Pyodide Documentation", [author], 1)]
-
-
-# -- Options for Texinfo output ----------------------------------------------
-
-# Grouping the document tree into Texinfo files. List of tuples
-# (source start file, target name, title, author,
-#  dir menu entry, description, category)
-texinfo_documents = [
-    (
-        master_doc,
-        "Pyodide",
-        "Pyodide Documentation",
-        author,
-        "Pyodide",
-        "One line description of project.",
-        "Miscellaneous",
-    )
-]
 
 
 # -- Options for Epub output -------------------------------------------------
@@ -187,11 +140,3 @@ epub_title = project
 
 # A list of files that should not be packed into the epub file.
 epub_exclude_files = ["search.html"]
-
-
-# -- Extension configuration -------------------------------------------------
-
-extensions = [
-    # other
-    "recommonmark"
-]

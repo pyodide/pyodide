@@ -14,7 +14,7 @@ import sys
 import shutil
 
 ROOT_PATH = pathlib.Path(__file__).parents[0].resolve()
-TEST_PATH = ROOT_PATH / "test"
+TEST_PATH = ROOT_PATH / "src" / "tests"
 BUILD_PATH = ROOT_PATH / "build"
 
 sys.path.append(str(ROOT_PATH))
@@ -25,8 +25,6 @@ import selenium.webdriver.common.utils  # noqa: E402
 # XXX: Temporary fix for ConnectionError in selenium
 
 selenium.webdriver.common.utils.is_connectable = _selenium_is_connectable
-
-collect_ignore_glob = ["packages/*/*/*"]
 
 try:
     import pytest
@@ -340,13 +338,22 @@ if pytest is not None:
 
 @pytest.fixture(scope="session")
 def web_server_main(request):
+    """Web server that serves files in the build/ directory"""
     with spawn_web_server(request.config.option.build_dir) as output:
         yield output
 
 
 @pytest.fixture(scope="session")
 def web_server_secondary(request):
+    """Secondary web server that serves files build/ directory"""
     with spawn_web_server(request.config.option.build_dir) as output:
+        yield output
+
+
+@pytest.fixture(scope="session")
+def web_server_tst_data(request):
+    """Web server that serves files in the src/tests/data/ directory"""
+    with spawn_web_server(TEST_PATH / "data") as output:
         yield output
 
 
@@ -396,18 +403,9 @@ def run_web_server(q, log_filepath, build_dir):
     sys.stdout = log_fh
     sys.stderr = log_fh
 
-    class Handler(http.server.CGIHTTPRequestHandler):
-        def translate_path(self, path):
-            if str(path).startswith("/test/"):
-                return str(TEST_PATH / path[6:])
-            return super(Handler, self).translate_path(path)
+    test_prefix = "/src/tests/"
 
-        def is_cgi(self):
-            if self.path.startswith("/test/") and self.path.endswith(".cgi"):
-                self.cgi_info = "/test", self.path[6:]
-                return True
-            return False
-
+    class Handler(http.server.SimpleHTTPRequestHandler):
         def log_message(self, format_, *args):
             print(
                 "[%s] source: %s:%s - %s"
@@ -418,8 +416,6 @@ def run_web_server(q, log_filepath, build_dir):
             # Enable Cross-Origin Resource Sharing (CORS)
             self.send_header("Access-Control-Allow-Origin", "*")
             super().end_headers()
-
-    Handler.extensions_map[".wasm"] = "application/wasm"
 
     with socketserver.TCPServer(("", 0), Handler) as httpd:
         host, port = httpd.server_address

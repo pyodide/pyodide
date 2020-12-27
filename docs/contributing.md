@@ -4,7 +4,7 @@ Thank you for your interest in contributing to PYODIDE! There are many ways to c
 
 ## Development Workflow
 
-See [building from sources](./building_from_sources.html) and [testing](./testing.html) documentation.
+See {ref}`building_from_sources` and {ref}`testing` documentation.
 
 For code-style the use of [pre-commit](https://pre-commit.com/) is also recommended,
 ```
@@ -15,7 +15,7 @@ This will run a set of linters at each commit. Currently it runs yaml syntax val
 
 ## Code of Conduct
 
-PYODIDE has adopted a [Code of Conduct](code-of-conduct.html) that we expect all contributors and core members to adhere to.
+PYODIDE has adopted a {ref}`code-of-conduct` that we expect all contributors and core members to adhere to.
 
 ## Development
 
@@ -25,13 +25,15 @@ We’ll do our best to keep `master` in a non-breaking state, ideally with tests
 
 PYODIDE follows semantic versioning (http://semver.org/) - major versions for breaking changes (x.0.0), minor versions for new features (0.x.0), and patches for bug fixes (0.0.x).
 
-We keep a file, [doc/changelog.md](./changelog.html), outlining changes to PYODIDE in each release. We like to think of the audience for changelogs as non-developers who primarily run the latest stable. So the change log will primarily outline user-visible changes such as new features and deprecations, and will exclude things that might otherwise be inconsequential to the end user experience, such as infrastructure or refactoring.
+We keep a file, {ref}`docs/changelog.md <changelog>`, outlining changes to PYODIDE in each release. We like to think of the audience for changelogs as non-developers who primarily run the latest stable. So the change log will primarily outline user-visible changes such as new features and deprecations, and will exclude things that might otherwise be inconsequential to the end user experience, such as infrastructure or refactoring.
 
 ## Bugs & Issues
 
 We use [Github Issues](https://github.com/iodide-project/pyodide/issues) for announcing and discussing bugs and features. Use [this link](https://github.com/iodide-project/pyodide/issues/new) to report an bug or issue. We provide a template to give you a guide for how to file optimally. If you have the chance, please search the existing issues before reporting a bug. It's possible that someone else has already reported your error. This doesn't always work, and sometimes it's hard to know what to search for, so consider this extra credit. We won't mind if you accidentally file a duplicate report.
 
 Core contributors are monitoring new issues & comments all the time, and will label & organize issues to align with development priorities.
+
+
 
 ## How to Contribute
 
@@ -43,9 +45,28 @@ If you’re looking for a way to jump in and contribute, our list of [`good firs
 
 If you’d like to fix a currently-filed issue, please take a look at the comment thread on the issue to ensure no one is already working on it. If no one has claimed the issue, make a comment stating you’d like to tackle it in a PR. If someone has claimed the issue but has not worked on it in a few weeks, make a comment asking if you can take over, and we’ll figure it out from there.
 
-We use [py.test](https://pytest.org), driving [Selenium](https://www.seleniumhq.org) as our testing framework. Every PR will automatically run through our tests, and our test framework will alert you on Github if your PR doesn’t pass all of them. If your PR fails a test, try to figure out whether or not you can update your code to make the test pass again, or ask for help. As a policy we will not accept a PR that fails any of our tests, and will likely ask you to add tests if your PR adds new functionality. Writing tests can be scary, but they make open-source contributions easier for everyone to assess. Take a moment and look through how we’ve written our tests, and try to make your tests match. If you are having trouble, we can help you get started on our test-writing journey.
+We use [pytest](https://pytest.org), driving [Selenium](https://www.seleniumhq.org) as our testing framework. Every PR will automatically run through our tests, and our test framework will alert you on Github if your PR doesn’t pass all of them. If your PR fails a test, try to figure out whether or not you can update your code to make the test pass again, or ask for help. As a policy we will not accept a PR that fails any of our tests, and will likely ask you to add tests if your PR adds new functionality. Writing tests can be scary, but they make open-source contributions easier for everyone to assess. Take a moment and look through how we’ve written our tests, and try to make your tests match. If you are having trouble, we can help you get started on our test-writing journey.
 
 All code submissions should pass `make lint`.  Python is checked with the default settings of `flake8`.  C and Javascript are checked against the Mozilla style in `clang-format`.
+
+## Documentation
+
+Documentation is a critical part of any open source project and we are very
+welcome to any documentation improvements.
+pyodide has a documentation written in Markdown in the `docs/` folder. We
+use the [MyST](
+https://myst-parser.readthedocs.io/en/latest/using/syntax.html#targets-and-cross-referencing)
+for parsing Markdown in sphinx.  You may want to have a look at the [MyST
+syntax
+guide](https://myst-parser.readthedocs.io/en/latest/using/syntax.html#the-myst-syntax-guide)
+when contributing, in particular regarding [cross-referencing
+sections](https://myst-parser.readthedocs.io/en/latest/using/syntax.html#targets-and-cross-referencing).
+
+### Building the docs
+From the directory ``docs``, first install the python dependencies with ``pip install -r requirements-doc.txt``. 
+Then to build the docs run ``make html``.
+The built documentation will be in the subdirectory ``docs/_build/html``. To view them, cd into ``_build/html`` and start a file server, 
+for instance ``http-server``.
 
 ## Migrating patches
 

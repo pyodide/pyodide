@@ -1,9 +1,12 @@
+(type_conversions)=
 # Type conversions
 
 Python to Javascript conversions occur:
 
-- when returning the final expression from a `pyodide.runPython` call (evaluating a Python cell in Iodide)
-- using `pyodide.pyimport`
+- when returning the final expression from a
+  {ref}`pyodide.runPython <js_api_pyodide_runPython>` call
+  (evaluating a Python cell in Iodide)
+- using {ref}`pyodide.pyimport <js_api_pyodide_pyimport>`
 - passing arguments to a Javascript function from Python
 
 Javascript to Python conversions occur:
@@ -58,6 +61,7 @@ Any of the types not listed above are shared between languages using proxies
 that allow methods and some operators to be called on the object from the other
 language.
 
+
 ### Javascript from Python
 
 When passing a Javascript object to Python, an extension type is used to
@@ -80,31 +84,6 @@ to make this more complete):
 | `del x[foo]`   | `delete x[foo]` |
 | `x == y`       | `x == y`        |
 | `x.typeof`     | `typeof x`      |
-
-One important difference between Python objects and Javascript objects is that
-if you access a missing member in Python, an exception is raised. In Javascript,
-it returns `undefined`. Since we can't make any assumptions about whether the
-Javascript member is missing or simply set to `undefined`, Python mirrors the
-Javascript behavior. For example:
-
-```javascript
-// Javascript
-class Point {
-  constructor(x, y) {
-    this.x = x;
-    this.y = y;
-  }
-}
-point = new Point(42, 43))
-```
-
-```python
-# python
-from js import point
-assert point.y == 43
-del point.y
-assert point.y is None
-```
 
 ### Python from Javascript
 
@@ -144,14 +123,14 @@ foo.call_method(); // This will raise an exception, since the object has been
 ## Using Python objects from Javascript
 
 A Python object (in global scope) can be brought over to Javascript using the
-`pyodide.pyimport` function. It takes a string giving the name of the variable,
-and returns the object, converted to Javascript (See [type
-conversions](type_conversions.md)).
+{ref}`pyodide.pyimport <js_api_pyodide_pyimport>` function. It takes a string
+giving the name of the variable, and returns the object, converted to
+Javascript.
 
 ```javascript
 var sys = pyodide.pyimport('sys');
 ```
-
+(type_conversions_using_js_obj_from_py)=
 ## Using Javascript objects from Python
 
 Javascript objects can be accessed from Python using the special `js` module.

@@ -1,13 +1,78 @@
-#!/bin/sh
+#!/usr/bin/env bash
+
+set -eo pipefail
+
+
+function usage() {
+  cat > /dev/stdout <<EOF
+Usage:
+  run_docker [OPTIONS]
+
+  Optional flags:
+    -h, --help                  Show this information and exit
+    --pre-built                 Use the prebuilt pyodide image.
+                                This is ignored if the env var PYODIDE_DOCKER_IMAGE is set
+    -p, --port <port>           System port to which to forward.
+                                This is ignored if the env var PYODIDE_SYSTEM_PORT is set
+
+  Prerequisites:
+    Docker has to be set up on your system
+EOF
+}
+
+function error() {
+  usage
+  exit 255
+}
+
+
+PYODIDE_IMAGE_TAG="9"
+PYODIDE_PREBUILT_IMAGE_TAG="0.16.0b1"
+DEFAULT_PYODIDE_DOCKER_IMAGE="iodide/pyodide-env:${PYODIDE_IMAGE_TAG}"
+DEFAULT_PYODIDE_SYSTEM_PORT="8000"
+
+while [[ $# -gt 0 ]]
+do
+  key="$1"
+  case $key in
+      -h|--help)
+        usage
+        exit 0
+      ;;
+      --pre-built)
+        if [[ -n ${PYODIDE_DOCKER_IMAGE} ]]; then
+          echo "WARNING: will use the env var PYODIDE_DOCKER_IMAGE=${PYODIDE_DOCKER_IMAGE},
+          the flag --pre-built has no effect"
+        fi
+        DEFAULT_PYODIDE_DOCKER_IMAGE="iodide/pyodide:${PYODIDE_PREBUILT_IMAGE_TAG}"
+        shift
+      ;;
+      -p|--port)
+        if [ "$#" -lt 2 ]; then
+          >&2 echo "port cannot be empty"
+          error
+        fi
+        if [[ -n ${PYODIDE_SYSTEM_PORT} ]]; then
+          echo "WARNING: will use the env var PYODIDE_SYSTEM_PORT=${PYODIDE_SYSTEM_PORT} instead of the provided port"
+        fi
+        DEFAULT_PYODIDE_SYSTEM_PORT=$2
+        shift 2
+      ;;
+      *)
+        >&2 echo "Unknown option $1"
+        error
+      ;;
+  esac
+done
 
 PYODIDE_DOCKER_PORT=${PYODIDE_DOCKER_PORT:-"8000"}
-PYODIDE_SYSTEM_PORT=${PYODIDE_SYSTEM_PORT:-"8000"}
-PYODIDE_DOCKER_IMAGE=${PYODIDE_DOCKER_IMAGE:-"iodide/pyodide-env:0.16.1"}
+PYODIDE_SYSTEM_PORT=${PYODIDE_SYSTEM_PORT:-${DEFAULT_PYODIDE_SYSTEM_PORT}}
+PYODIDE_DOCKER_IMAGE=${PYODIDE_DOCKER_IMAGE:-${DEFAULT_PYODIDE_DOCKER_IMAGE}}
 
 exec docker run \
-    -p $PYODIDE_SYSTEM_PORT:$PYODIDE_DOCKER_PORT \
+    -p "$PYODIDE_SYSTEM_PORT":"$PYODIDE_DOCKER_PORT" \
     -it --rm \
     -v $PWD:/src \
     --user root -e NB_UID=$UID -e NB_GID=$GID \
-    ${PYODIDE_DOCKER_IMAGE} \
+    "${PYODIDE_DOCKER_IMAGE}" \
     /bin/bash

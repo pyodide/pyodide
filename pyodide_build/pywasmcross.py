@@ -31,6 +31,7 @@ import os
 from pathlib import Path
 import re
 import subprocess
+import shutil
 import sys
 
 
@@ -91,8 +92,12 @@ def collect_args(basename):
 
     if skip:
         sys.exit(0)
+    compiler_command = [basename]
+    if shutil.which("ccache") is not None:
+        # Enable ccache if it's installed
+        compiler_command.insert(0, "ccache")
 
-    sys.exit(subprocess.run([basename] + sys.argv[1:], env=env).returncode)
+    sys.exit(subprocess.run(compiler_command + sys.argv[1:], env=env).returncode)
 
 
 def make_symlinks(env):
@@ -120,9 +125,13 @@ def capture_compile(args):
     make_symlinks(env)
     env["PATH"] = str(ROOTDIR) + ":" + os.environ["PATH"]
 
-    result = subprocess.run(
-        [Path(args.host) / "bin" / "python3", "setup.py", "install"], env=env
-    )
+    cmd = [sys.executable, "setup.py", "install"]
+    if args.install_dir == "skip":
+        cmd[-1] = "build"
+    elif args.install_dir != "":
+        cmd.extend(["--home", args.install_dir])
+
+    result = subprocess.run(cmd, env=env)
     if result.returncode != 0:
         build_log_path = Path("build.log")
         if build_log_path.exists():
@@ -193,8 +202,8 @@ def handle_command(line, args, dryrun=False):
     --------
 
     >>> from collections import namedtuple
-    >>> Args = namedtuple('args', ['cflags', 'ldflags'])
-    >>> args = Args(cflags='', ldflags='')
+    >>> Args = namedtuple('args', ['cflags', 'ldflags', 'host'])
+    >>> args = Args(cflags='', ldflags='', host='')
     >>> handle_command(['gcc', 'test.c'], args, dryrun=True)
     emcc test.c
     ['emcc', 'test.c']
@@ -238,16 +247,19 @@ def handle_command(line, args, dryrun=False):
     # Go through and adjust arguments
     for arg in line[1:]:
         if arg.startswith("-I"):
-            # Don't include any system directories
-            if arg[2:].startswith("/usr"):
-                continue
             if (
-                str(Path(arg[2:]).resolve()).startswith(args.host)
+                str(Path(arg[2:]).resolve()).startswith(sys.prefix + "/include/python")
                 and "site-packages" not in arg
             ):
-                arg = arg.replace("-I" + args.host, "-I" + args.target)
+                arg = arg.replace("-I" + sys.prefix, "-I" + args.target)
+            # Don't include any system directories
+            elif arg[2:].startswith("/usr"):
+                continue
         # Don't include any system directories
         if arg.startswith("-L/usr"):
+            continue
+        # threading is disabled for now
+        if arg == "-pthread":
             continue
         # On Mac, we need to omit some darwin-specific arguments
         if arg in ["-bundle", "-undefined", "dynamic_lookup"]:
@@ -272,7 +284,7 @@ def handle_command(line, args, dryrun=False):
             lapack_dir = arg.replace("-L", "")
             # For convinience we determine needed scipy link libraries
             # here, instead of in patch files
-            link_libs = ["F2CLIBS/libf2c.bc", "blas_WA.bc"]
+            link_libs = ["F2CLIBS/libf2c.a", "blas_WA.a"]
             if module_name in [
                 "_flapack",
                 "_flinalg",
@@ -281,7 +293,7 @@ def handle_command(line, args, dryrun=False):
                 "_iterative",
                 "_arpack",
             ]:
-                link_libs.append("lapack_WA.bc")
+                link_libs.append("lapack_WA.a")
 
             for lib_name in link_libs:
                 arg = os.path.join(lapack_dir, f"{lib_name}")
@@ -297,6 +309,16 @@ def handle_command(line, args, dryrun=False):
             and "-L" in " ".join(line)
         ):
             new_args.append("-Os")
+            continue
+
+        if new_args[-1].startswith("-B") and "compiler_compat" in arg:
+            # conda uses custom compiler search paths with the compiler_compat folder.
+            # Ignore it.
+            del new_args[-1]
+            continue
+
+        # See https://github.com/emscripten-core/emscripten/issues/8650
+        if arg in ["-lfreetype", "-lz", "-lpng16", "-lgfortran"]:
             continue
 
         new_args.append(arg)
@@ -349,7 +371,7 @@ def clean_out_native_artifacts():
 
 def install_for_distribution(args):
     commands = [
-        Path(args.host) / "bin" / "python3",
+        sys.executable,
         "setup.py",
         "install",
         "--skip-build",
@@ -402,18 +424,22 @@ def make_parser(parser):
             help="Extra linking flags",
         )
         parser.add_argument(
-            "--host",
-            type=str,
-            nargs="?",
-            default=common.HOSTPYTHON,
-            help="The path to the host Python installation",
-        )
-        parser.add_argument(
             "--target",
             type=str,
             nargs="?",
             default=common.TARGETPYTHON,
             help="The path to the target Python installation",
+        )
+        parser.add_argument(
+            "--install-dir",
+            type=str,
+            nargs="?",
+            default="",
+            help=(
+                "Directory for installing built host packages. Defaults to setup.py "
+                "default. Set to 'skip' to skip installation. Installation is "
+                "needed if you want to build other packages that depend on this one."
+            ),
         )
     return parser
 

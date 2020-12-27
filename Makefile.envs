@@ -1,32 +1,22 @@
-export EMSCRIPTEN_VERSION = 1.38.31
+export EMSCRIPTEN_VERSION = 1.38.44
+export BINARYEN_VERSION = version_86
 
-export PATH := $(PYODIDE_ROOT)/ccache:$(PYODIDE_ROOT)/emsdk/emsdk:$(PYODIDE_ROOT)/emsdk/emsdk/fastcomp-clang/tag-e$(EMSCRIPTEN_VERSION)/build_tag-e$(EMSCRIPTEN_VERSION)_64/bin:$(PYODIDE_ROOT)/emsdk/emsdk/node/8.9.1_64bit/bin:$(PYODIDE_ROOT)/emsdk/emsdk/emscripten/tag-$(EMSCRIPTEN_VERSION):$(PYODIDE_ROOT)/emsdk/emsdk/binaryen/tag-$(EMSCRIPTEN_VERSION)_64bit_binaryen/bin:$(PATH)
+export PATH := $(PYODIDE_ROOT)/ccache:$(PYODIDE_ROOT)/emsdk/emsdk:$(PYODIDE_ROOT)/emsdk/emsdk/node/12.18.1_64bit/bin:$(PYODIDE_ROOT)/emsdk/emsdk/binaryen/bin/:$(PYODIDE_ROOT)/emsdk/emsdk/fastcomp/emscripten/:$(PATH)
 
 export EMSDK = $(PYODIDE_ROOT)/emsdk/emsdk
 export EM_CONFIG = $(PYODIDE_ROOT)/emsdk/emsdk/.emscripten
 export EM_CACHE = $(PYODIDE_ROOT)/emsdk/emsdk/.emscripten_cache
-export EMSCRIPTEN = $(PYODIDE_ROOT)/emsdk/emsdk/emscripten/tag-$(EMSCRIPTEN_VERSION)
-export BINARYEN_ROOT = $(PYODIDE_ROOT)/emsdk/emsdk/binaryen/tag-$(EMSCRIPTEN_VERSION)_64bit_binaryen
+export BINARYEN_ROOT = $(PYODIDE_ROOT)/emsdk/emsdk/binaryen
 
 export PYVERSION=3.8.2
 export PYMINOR=$(basename $(PYVERSION))
-export HOSTPYTHONROOT=$(PYODIDE_ROOT)/cpython/build/$(PYVERSION)/host
+export HOSTPYTHONROOT=$(shell python -c "import sys; print(sys.prefix)")
 export HOSTPYTHON=$(HOSTPYTHONROOT)/bin/python3
 export TARGETPYTHONROOT=$(PYODIDE_ROOT)/cpython/installs/python-$(PYVERSION)
 export PYTHONINCLUDE=$(PYODIDE_ROOT)/cpython/installs/python-$(PYVERSION)/include/python$(PYMINOR)
 
+# Use env variable if defined, otherwise fallback to './'
+export PYODIDE_BASE_URL?=./
+# This env variable is used to detect pyodide at build time,
+# do not rename it.
 export PYODIDE_PACKAGE_ABI=1
-
-export SIDE_LDFLAGS=\
-	-O3 \
-  -s "BINARYEN_METHOD='native-wasm'" \
-	-Werror \
-  -s EMULATED_FUNCTION_POINTERS=1 \
-  -s EMULATE_FUNCTION_POINTER_CASTS=1 \
-  -s SIDE_MODULE=1 \
-	-s WASM=1 \
-  -s "BINARYEN_TRAP_MODE='clamp'" \
-  --memory-init-file 0 \
-  -s LINKABLE=1 \
-  -s EXPORT_ALL=1 \
-  -s ERROR_ON_MISSING_LIBRARIES=0

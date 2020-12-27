@@ -21,8 +21,8 @@ libraries to the build. We automate the following steps:
     the virtual filesystem.
 
 Lastly, a `packages.json` file is output containing the dependency tree of all
-packages, so `pyodide.loadPackage` can load a package's dependencies
-automatically.
+packages, so  {ref}`pyodide.loadPackage <js_api_pyodide_loadPackage>` can
+load a package's dependencies automatically.
 
 ## mkpkg
 
@@ -148,3 +148,84 @@ Shell commands to run after building the library. These are run inside of
 A list of required packages.
 
 (Unlike conda, this only supports package names, not versions).
+
+## C library dependencies
+Some python packages depend on certain C libraries, e.g. `lxml` depends on
+`libxml`.
+
+To package a C library, create a directory in `packages/` for the C library.
+This directory should contain (at least) two files:
+
+- `Makefile` that specifies how the library should be be built. Note that the
+  build system will call `make`, not `emmake make`. The convention is that the
+  source for the library is downloaded by the Makefile, as opposed to being
+  included in the `pyodide` repository.
+
+- `meta.yaml` that specifies metadata about the package. For C libraries, only
+  three options are supported:
+
+  - `package/name`: The name of the library, which must equal the directory
+    name.
+  - `requirements/run`: The dependencies of the library, which can include both
+    C libraries and python packages.
+  - `build/library`: This must be set to `true` to indicate that this is a
+    library and not an ordinary package.
+
+After packaging a C library, it can be added as a dependency of a python
+package like a normal dependency. See `lxml` and `libxml` for an example (and
+also `scipy` and `CLAPACK`).
+
+*Remark:* Certain C libraries come as emscripten ports, and do not have to be
+built manually. They can be used by adding e.g. `-s USE_ZLIB` in the `cflags`
+of the python package. See e.g. `matplotlib` for an example.
+
+## Manual creation of a Pyodide package (advanced)
+The previous sections describes how to add a python package to the pyodide
+build.
+
+There are cases where you want to ship additional python libraries without
+adding it to pyodide itself. For pure python packages, this can be achieved
+reasonably easily. The most straightforward way is to create a Python wheel and
+load it with micropip. Alternatively, we can construct a python package
+manually.
+
+It is helpful to have some understanding of the structure of a Pyodide package.
+Pyodide is obtained by compiling CPython into web assembly. As such, it loads
+packages the same way as CPython --- it looks for relevant files `.py` files in
+`/lib/python3.x/`. When creating and loading a package, our job is to put our
+`.py` files in the right location in emscripten's virtual filesystem.
+
+Suppose you have a python library that consists of a single directory
+`/PATH/TO/LIB/` whose contents would go into
+`/lib/python3.8/site-packages/PACKAGE_NAME/` under a normal python
+installation.
+
+The simplest version of the corresponding Pyodide package contains two files
+--- `PACKAGE_NAME.data` and `PACKAGE_NAME.js`. The first file
+`PACKAGE_NAME.data` is a concatenation of all contents of `/PATH/TO/LIB`. When
+loading the package via `pyodide.loadPackage`, Pyodide will load and run
+`PACKAGE_NAME.js`. The script then fetches `PACKAGE_NAME.data` and extracts the
+contents to emscripten's virtual filesystem. Afterwards, since the files are
+now in `/lib/python3.8/`, running `import PACKAGE_NAME` in python will
+successfully import the module as usual.
+
+To produce these files, download the `file_packager.py` script from
+[https://github.com/iodide-project/pyodide/blob/master/tools/file_packager.py](https://github.com/iodide-project/pyodide/blob/master/tools/file_packager.py). You then run the command
+```sh
+$ ./file_packager.py PACKAGE_NAME.data --js-output=PACKAGE_NAME.js --abi=1 --export-name=pyodide._module --use-preload-plugins --preload /PATH/TO/LIB/@/lib/python3.8/site-packages/PACKAGE_NAME/ --exclude "*__pycache__*"
+```
+The `--preload` argument instructs the package to look for the file/directory
+before the separator `@` (namely `/PATH/TO/LIB/`) and place it at the path
+after the `@` in the virtual filesystem (namely
+`/lib/python3.8/site-packages/PACKAGE_NAME/`). Remember to use the correct python version in the target path. At the time of writing, the latest release of Pyodide uses python 3.7 while git master uses python 3.8.
+
+The `--exclude` argument
+specifies files to omit from the package. This argument can be repeated, e.g.
+you can append `--exclude README.md` to the command.
+
+**Remark.** The bundled Pyodide packages uses lz4 compression when producing
+`PACKAGE_NAME.data`. These instructions skip this step as it requires
+additional dependencies, which complicates the process. In general, lz4
+compression decreases memory usage and can increase performance. On the other
+hand, if your webserver serves the files with gzip compression, pre-compressing
+with lz4 could in fact increase the number of bytes transferred.

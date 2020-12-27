@@ -20,7 +20,6 @@ source:
     - patches/force_malloc.patch
     - patches/disable_scipy_stats_mvn.patch
     - patches/skip-fortran-fails-to-link.patch
-    - patches/dummy_threading.patch
     - patches/skip_ellip_harm_2_pyx_ctypes.patch
 
 build:
@@ -30,6 +29,7 @@ build:
 requirements:
   run:
     - numpy
+    - CLAPACK
 
 test:
   imports:

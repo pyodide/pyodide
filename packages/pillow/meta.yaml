@@ -1,0 +1,19 @@
+package:
+  name: pillow
+  version: 8.0.1
+source:
+  sha256: 11c5c6e9b02c9dac08af04f093eb5a2f84857df70a7d4a6a6ad461aca803fb9e
+  url: https://files.pythonhosted.org/packages/2b/06/93bf1626ef36815010e971a5ce90f49919d84ab5d2fa310329f843a74bc1/Pillow-8.0.1.tar.gz
+
+  patches:
+   - patches/setitup.patch
+  extras:
+   -
+      - src/setup.cfg
+      - ./setup.cfg
+build:
+  cflags: -s USE_ZLIB=1 -s USE_LIBJPEG=1 -s USE_FREETYPE=1
+  ldflags: -L ../../../../emsdk/emsdk/.emscripten_cache/asmjs/ ../../../../emsdk/emsdk/.emscripten_cache/asmjs/libjpeg.bc
+test:
+  imports:
+  - PIL

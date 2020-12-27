@@ -1,0 +1,29 @@
+threading.Timer is not yet supported in Pyodide.
+
+diff --git a/lib/matplotlib/font_manager.py b/lib/matplotlib/font_manager.py
+--- a/lib/matplotlib/font_manager.py
++++ b/lib/matplotlib/font_manager.py
+@@ -1063,10 +1063,8 @@ class FontManager:
+         self.afmlist = []
+         self.ttflist = []
+ 
+-        # Delay the warning by 5s.
+-        timer = Timer(5, lambda: _log.warning(
+-            'Matplotlib is building the font cache; this may take a moment.'))
+-        timer.start()
++        _log.warning(
++            'Matplotlib is building the font cache; this may take a moment.')
+         try:
+             for fontext in ["afm", "ttf"]:
+                 for path in [*findSystemFonts(paths, fontext=fontext),
+@@ -1079,7 +1077,7 @@ class FontManager:
+                         _log.info("Failed to extract font properties from %s: "
+                                   "%s", path, exc)
+         finally:
+-            timer.cancel()
++            pass
+ 
+     def addfont(self, path):
+         """
+-- 
+2.20.1

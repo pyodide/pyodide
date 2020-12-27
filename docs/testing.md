@@ -1,3 +1,4 @@
+(testing)=
 # Testing and benchmarking
 
 ## Testing
@@ -7,7 +8,7 @@
 Install the following dependencies into the default Python installation:
 
 ```bash
-pip install pytest selenium pytest-instafail
+pip install pytest selenium pytest-instafail pytest-httpserver
 ```
 
 Install [geckodriver](https://github.com/mozilla/geckodriver/releases) and
@@ -19,8 +20,13 @@ and check that they are in your `PATH`.
 To run the pytest suite of tests, type on the command line:
 
 ```bash
-pytest test/ packages/
+pytest src/ pyodide_build/ packages/*/test_*
 ```
+
+There are 3 test locations,
+- `src/tests/`: general pyodide tests and tests running the CPython test suite
+- `pyodide_build/tests/`: tests related to pyodide build system (do not require selenium to run)
+- `packages/*/test_*`: package specific tests.
 
 ### Manual interactive testing
 

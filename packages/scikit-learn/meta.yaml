@@ -1,13 +1,13 @@
 package:
   name: scikit-learn
-  version: 0.20.1
+  version: 0.22.2
 
 source:
-  url: https://github.com/scikit-learn/scikit-learn/archive/0.20.1.tar.gz
-  sha256: 618feea121c59a52ea459d6af7bc179344ca345775b04bd60e96740e9df75960
+  url: https://github.com/scikit-learn/scikit-learn/archive/0.22.2.tar.gz
+  sha256: 54ae27be30ef26718c9e517c4c8f23b6af26c66e52cf16d38799ba4262d4fd3b
 
   patches:
-   - patches/use-site-joblib.patch
+    - patches/disable-openmp.patch
 
 build:
   cflags: -Wno-implicit-function-declaration

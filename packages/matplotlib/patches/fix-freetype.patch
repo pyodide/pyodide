@@ -1,0 +1,18 @@
+Proper Freetype linking.
+
+diff --git a/setupext.py b/setupext.py
+--- a/setupext.py
++++ b/setupext.py
+@@ -522,6 +522,9 @@ class FreeType(SetupPackage):
+     name = "freetype"
+ 
+     def add_flags(self, ext):
++        if "PYODIDE_PACKAGE_ABI" in os.environ:
++            ext.libraries.append('freetype')
++            return
+         ext.sources.insert(0, 'src/checkdep_freetype2.c')
+         if options.get('system_freetype'):
+             pkg_config_setup_extension(
+-- 
+2.20.1
+

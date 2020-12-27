@@ -1,18 +1,16 @@
 package:
   name: matplotlib
-  version: 2.2.3
+  version: 3.3.3
 
 source:
-  url: https://files.pythonhosted.org/packages/eb/a0/31b6ba00bc4dcbc06f0b80d1ad6119a9cc3081ecb04a00117f6c1ca3a084/matplotlib-2.2.3.tar.gz
-  sha256: 7355bf757ecacd5f0ac9dd9523c8e1a1103faadf8d33c22664178e17533f8ce5
+  url: https://files.pythonhosted.org/packages/7b/b3/7c48f648bf83f39d4385e0169d1b68218b838e185047f7f613b1cfc57947/matplotlib-3.3.3.tar.gz
+  sha256: b1b60c6476c4cfe9e5cf8ab0d3127476fd3d5f05de0f343a452badaad0e4bdec
 
   patches:
-    - patches/font_name_encoding.patch
-    - patches/force_malloc_free.patch
-    - patches/hardcoded_font_cache.patch
-    - patches/reduce_cpp_exceptions.patch
-    - patches/reduce-imports.patch
     - patches/disable_macosx_backend.patch
+    - patches/fix-freetype.patch
+    - patches/hardcoded-font-cache.patch
+    - patches/fix-threading.patch
 
   extras:
     -
@@ -30,13 +28,14 @@ build:
     rm -rf $SITEPACKAGES/matplotlib/backends/qt_editor
     rm -rf $SITEPACKAGES/matplotlib/backends/web_backend
     rm -rf $SITEPACKAGES/sphinxext
-    cp $PKGDIR/src/fontList.json $SITEPACKAGES/matplotlib
+    cp $PKGDIR/src/fontlist.json $SITEPACKAGES/matplotlib
 
 requirements:
   run:
     - cycler
     - kiwisolver
     - numpy
+    - pillow
     - pyparsing
     - python-dateutil
     - pytz

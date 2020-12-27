@@ -1,20 +1,20 @@
+(using_from_javascript)=
+
 # Using Pyodide from Javascript
 
-This document describes using Pyodide directly from Javascript. For information
-about using Pyodide from Iodide, see [Using Pyodide from
-Iodide](using_pyodide_from_iodide.md).
+This document describes using Pyodide directly from Javascript. For information about using Pyodide from Iodide, see {ref}`using_from_iodide`.
 
 ## Startup
 
 To include Pyodide in your project you can use the following CDN URL,
 
-  https://pyodide-cdn2.iodide.io/v0.15.0/full/pyodide.js
+  https://cdn.jsdelivr.net/pyodide/v0.16.1/full/pyodide.js
 
 You can also download a release from
 [Github releases](https://github.com/iodide-project/pyodide/releases)
 (or build it yourself), include its contents in your distribution, and import
 the `pyodide.js` file there from a `<script>` tag. See the following section on
-[serving pyodide files](./#serving-pyodide-files) for more details.
+[serving pyodide files](#serving-pyodide-files) for more details.
 
 The `pyodide.js` file has a single `Promise` object which bootstraps the Python
 environment: `languagePluginLoader`. Since this must happen asynchronously, it
@@ -31,10 +31,10 @@ languagePluginLoader.then(() => {
 
 ## Running Python code
 
-Python code is run using the `pyodide.runPython` function. It takes as input a
-string of Python code. If the code ends in an expression, it returns the result
-of the expression, converted to Javascript objects (See [type
-conversions](type_conversions.md)).
+Python code is run using the {ref}`pyodide.runPython <js_api_pyodide_runPython>`
+function. It takes as input a string of Python
+code. If the code ends in an expression, it returns the result of the
+expression, converted to Javascript objects (see {ref}`type_conversions`).
 
 ```javascript
 pyodide.runPython(`
@@ -42,6 +42,9 @@ import sys
 sys.version
 `);
 ```
+
+After importing pyodide, only packages from the standard library are available.
+See {ref}`loading_packages` documentation to load additional packages.
 
 ## Complete example
 
@@ -52,9 +55,9 @@ Create and save a test `index.html` page with the following contents:
   <head>
       <script type="text/javascript">
           // set the pyodide files URL (packages.json, pyodide.asm.data etc)
-          window.languagePluginUrl = 'https://pyodide-cdn2.iodide.io/v0.15.0/full/';
+          window.languagePluginUrl = 'https://cdn.jsdelivr.net/pyodide/v0.16.1/full/';
       </script>
-      <script src="https://pyodide-cdn2.iodide.io/v0.15.0/full/pyodide.js"></script>
+      <script src="https://cdn.jsdelivr.net/pyodide/v0.16.1/full/pyodide.js"></script>
   </head>
   <body>
     Pyodide test page <br>
@@ -72,80 +75,95 @@ Create and save a test `index.html` page with the following contents:
 </html>
 ```
 
-## Loading packages
 
-Only the Python standard library and `six` are available after importing
-Pyodide. To use other libraries, you'll need to load their package using
-`pyodide.loadPackage`. This downloads the file data over the network (as a
-`.data` and `.js` index file) and installs the files in the virtual filesystem.
+## Alternative Example
 
-Packages can be loaded by name, for those included in the official pyodide
-repository (e.g. `pyodide.loadPackage('numpy')`). It is also possible to load
-packages from custom URLs (e.g.
-`pyodide.loadPackage('https://foo/bar/numpy.js')`), in which case the URL must
-end with `<package-name>.js`.
+```html
+<!DOCTYPE html>
+<html>
+<head>
+    <script type="text/javascript">
+        window.languagePluginUrl = 'https://cdn.jsdelivr.net/pyodide/v0.16.1/full/';
+    </script>
+    <script src="https://cdn.jsdelivr.net/pyodide/v0.16.1/full/pyodide.js"></script>
+</head>
 
-When you request a package from the official repository, all of that package's
-dependencies are also loaded. Dependency resolution is not yet implemented
-when loading packages from custom URLs.
+<body>
+  <p>You can execute any Python code. Just enter something in the box below and click the button.</p>
+  <input id='code' value='sum([1, 2, 3, 4, 5])'>
+  <button onclick='evaluatePython()'>Run</button>
+  <br>
+  <br>
+  <div>
+    Output:
+  </div>
+  <textarea id='output' style='width: 100%;' rows='6' disabled></textarea>
 
-Multiple packages can also be loaded in a single call,
+  <script>
+    const output = document.getElementById("output");
+    const code = document.getElementById("code");
+
+    function addToOutput(s) {
+      output.value += '>>>' + code.value + '\n' + s + '\n';
+    }
+
+    output.value = 'Initializing...\n';
+    // init pyodide
+    languagePluginLoader.then(() => { output.value += 'Ready!\n'; });
+
+    function evaluatePython() {
+      pyodide.runPythonAsync(code.value)
+        .then(output => addToOutput(output))
+        .catch((err) => { addToOutput(err) });
+    }
+  </script>
+</body>
+
+</html>
+```
+
+## Accessing Python scope from JavaScript
+
+You can also access from JavaScript all functions and variables defined in Python using the {ref}`pyodide.globals <js_api_pyodide_globals>`) object.
+
+For example, if you initialize the variable `x = numpy.ones([3,3])` in Python, you can access it from JavaScript in your browser's developer console as follows: `pyodide.globals.x`. The same goes for functions and imports. See {ref}`type_conversions` for more details.
+
+You can try it yourself in the browser console:
 ```js
-pyodide.loadPackage(['cycler', 'pytz'])
+pyodide.globals.x
+// >>> [Float64Array(3), Float64Array(3), Float64Array(3)]
+
+// create the same 3x3 ndarray from js
+let x = pyodide.globals.numpy.ones(new Int32Array([3, 3]))
+// x >>> [Float64Array(3), Float64Array(3), Float64Array(3)]
 ```
 
-`pyodide.loadPackage` returns a `Promise`.
+Since you have full scope access, you can also re-assign new values or even JavaScript functions to variables, and create new ones from JavaScript:
 
-```javascript
-pyodide.loadPackage('matplotlib').then(() => {
-  // matplotlib is now available
-});
+```js
+// re-assign a new value to an existing variable
+pyodide.globals.x = 'x will be now string'
+
+// create a new js function that will be available from Python
+// this will show a browser alert if the function is called from Python
+pyodide.globals.alert = msg => alert(msg)
+
+// this new function will also be available in Python and will return the squared value.
+pyodide.globals.squer = x => x*x
 ```
 
-## Serving pyodide files
+Feel free to play around with the code using the browser console and the above example.
 
-If you built your pyodide distribution or downloaded the release tarball
-you need to serve pyodide files with a appropriate headers.
+## Accessing JavaScript scope from Python
 
-Because browsers require WebAssembly files to have mimetype of
-`application/wasm` we're unable to serve our files using Python's built-in
-`SimpleHTTPServer` module.
+The JavaScript scope can be accessed from Python using the `js` module (see {ref}`type_conversions_using_js_obj_from_py`). This module represents the global object `window` that allows us to directly manipulate the DOM and access global variables and functions from Python.
 
-Let's wrap Python's Simple HTTP Server and provide the appropiate mimetype for
-WebAssembly files into a `pyodide_server.py` file (in the `pyodide_local`
-directory):
 ```python
-import sys
-import socketserver
-from http.server import SimpleHTTPRequestHandler
+import js
 
-
-class Handler(SimpleHTTPRequestHandler):
-
-    def end_headers(self):
-        # Enable Cross-Origin Resource Sharing (CORS)
-        self.send_header('Access-Control-Allow-Origin', '*')
-        super().end_headers()
-
-
-if sys.version_info < (3, 7, 5):
-    # Fix for WASM MIME type for older Python versions
-    Handler.extensions_map['.wasm'] = 'application/wasm'
-
-
-if __name__ == '__main__':
-    port = 8000
-    with socketserver.TCPServer(("", port), Handler) as httpd:
-        print("Serving at: http://127.0.0.1:{}".format(port))
-        httpd.serve_forever()
+div = js.document.createElement("div")
+div.innerHTML = "<h1>This element was created from Python</h1>"
+js.document.body.prepend(div)
 ```
 
-Let's test it out.
-In your favourite shell, let's start our WebAssembly aware web server:
-```bash
-python pyodide_server.py
-```
-
-Point your WebAssembly aware browser to
-[http://localhost:8000/index.html](http://localhost:8000/index.html) and open
-your browser console to see the output from python via pyodide!
+See {ref}`serving_pyodide_packages` to distribute pyodide files locally.

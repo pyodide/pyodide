@@ -1,14 +1,14 @@
 PYODIDE_ROOT=$(abspath ../..)
 include ../../Makefile.envs
 
-PARSOVERSION=0.5.1
+PARSOVERSION=0.7.1
 
 ROOT=$(abspath .)
 
 SRC=$(ROOT)/parso-$(PARSOVERSION)
 BUILD=$(SRC)/build/lib/parso
 TARBALL=$(ROOT)/downloads/parso-$(PARSOVERSION).tar.gz
-URL=https://files.pythonhosted.org/packages/21/40/615957db4d178b7504c87b1a5b85fa5945b0b4fa5f5a845e31fc7aad6018/parso-$(PARSOVERSION).tar.gz
+URL=https://files.pythonhosted.org/packages/40/01/e0b8d2168fb299af90a78a5919257f821e5c21399bf0906c14c9e573db3f/parso-$(PARSOVERSION).tar.gz
 
 
 all: $(SRC)/setup.py
