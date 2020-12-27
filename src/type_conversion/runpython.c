@@ -13,44 +13,53 @@ PyObject* pyodide;
 _Py_IDENTIFIER(eval_code);
 _Py_IDENTIFIER(find_imports);
 
-int
+HwObject
 _runPython(char* code)
 {
   PyObject* py_code;
   py_code = PyUnicode_FromString(code);
+  printf("rp1\n");
   if (py_code == NULL) {
-    return pythonexc2js();
+    pythonexc2js();
+    return HW_ERROR;
   }
 
+  printf("rp2\n");
   PyObject* ret = _PyObject_CallMethodIdObjArgs(
     pyodide, &PyId_eval_code, py_code, globals, NULL);
 
+  printf("rp3\n");
+
   if (ret == NULL) {
-    return pythonexc2js();
+    pythonexc2js();
+    return HW_ERROR;
   }
 
-  int id = python2js(ret);
+  printf("rp4\n");
+  HwObject id = python2js(ret);
   Py_DECREF(ret);
   return id;
 }
 
-int
+HwObject
 _findImports(char* code)
 {
   PyObject* py_code;
   py_code = PyUnicode_FromString(code);
   if (py_code == NULL) {
-    return pythonexc2js();
+    pythonexc2js();
+    return HW_ERROR;
   }
 
   PyObject* ret =
     _PyObject_CallMethodIdObjArgs(pyodide, &PyId_find_imports, py_code, NULL);
 
   if (ret == NULL) {
-    return pythonexc2js();
+    pythonexc2js();
+    return HW_ERROR;
   }
 
-  int id = python2js(ret);
+  HwObject id = python2js(ret);
   Py_DECREF(ret);
   return id;
 }
