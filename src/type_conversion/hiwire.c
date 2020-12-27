@@ -428,14 +428,14 @@ EM_JS(void, hiwire_get_dtype, (int idobj, int format_ptr, int size_ptr), {
     for (let[key, [ format, size ]] of entries) {
       let format_utf8 =
         allocate(intArrayFromString(format), "i8", ALLOC_NORMAL);
-      Module.hiwire.dtype_map.set(key, [ format, size ]);
+      Module.hiwire.dtype_map.set(key, [ format_utf8, size ]);
     }
   }
   let jsobj = Module.hiwire.get_value(idobj);
-  let[format, size] =
+  let[format_utf8, size] =
     Module.hiwire.dtype_map.get(jsobj.constructor.name) || [ 0, 0 ];
   // Store results into arguments
-  setValue(format_ptr, format, "i8*");
+  setValue(format_ptr, format_utf8, "i8*");
   setValue(size_ptr, size, "i32");
 });
 
