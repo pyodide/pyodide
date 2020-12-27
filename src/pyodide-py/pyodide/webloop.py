@@ -81,7 +81,7 @@ class WebLoop(asyncio.AbstractEventLoop):
 
         Note that this function is different from the standard asyncio loop implementation in two ways:
          1) It won't block the execution
-         2) It returns a Promise object
+         2) It returns a Promise object that will be resolved when loop.stop() or loop.close() is called
 
         """
         if self._running:
@@ -102,7 +102,7 @@ class WebLoop(asyncio.AbstractEventLoop):
 
         Note that this function is different from the standard asyncio loop implementation in two ways:
          1) It won't block the execution
-         2) It returns a Promise object
+         2) It returns a Promise object that can be resolved into the result of the future object or raise an exception
 
         Parameters
         ----------
@@ -249,6 +249,7 @@ class WebLoop(asyncio.AbstractEventLoop):
             ‘transport’ (optional): Transport instance;
             ‘socket’ (optional): socket.socket instance.
         """
+        # note that custom exception handler has different signature compared to default_exception_handler
         if self._exception_handler:
             self._exception_handler(self, context)
         else:
@@ -266,7 +267,10 @@ class WebLoop(asyncio.AbstractEventLoop):
         containing the details of the exception (see call_exception_handler() documentation
         for details about context).
         """
-        self._exception_handler = handler
+        if handler == self.default_exception_handler:
+            self._exception_handler = None
+        else:
+            self._exception_handler = handler
 
     def get_exception_handler(self):
         """
