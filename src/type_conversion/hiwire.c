@@ -424,11 +424,11 @@ EM_JS(void, hiwire_get_dtype, (int idobj, int format_ptr, int size_ptr), {
       'Float64Array' : [ "d", 8 ],
       'ArrayBuffer' : [ 'B', 1 ], // Default to Uint8;
     });
-    let map = new Map();
+    Module.hiwire.dtype_map = new Map();
     for (let[key, [ format, size ]] of entries) {
       let format_utf8 =
         allocate(intArrayFromString(format), "i8", ALLOC_NORMAL);
-      map.set(key, [ format, size ]);
+      Module.hiwire.dtype_map.set(key, [ format, size ]);
     }
   }
   let jsobj = Module.hiwire.get_value(idobj);
