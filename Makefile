@@ -41,7 +41,6 @@ LDFLAGS=\
 	-lstdc++ \
 	--memory-init-file 0 \
 	-s "BINARYEN_TRAP_MODE='clamp'" \
-	-s TEXTDECODER=0 \
 	-s LZ4=1
 
 SIX_ROOT=packages/six/six-1.11.0/build/lib
