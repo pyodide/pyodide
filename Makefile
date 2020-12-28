@@ -22,7 +22,6 @@ LDFLAGS=\
 	-O2 \
 	-s MODULARIZE=1 \
 	$(CPYTHONROOT)/installs/python-$(PYVERSION)/lib/libpython$(PYMINOR).a \
-	-s "BINARYEN_METHOD='native-wasm'" \
 	-s TOTAL_MEMORY=10485760 \
 	-s ALLOW_MEMORY_GROWTH=1 \
 	-s MAIN_MODULE=1 \
