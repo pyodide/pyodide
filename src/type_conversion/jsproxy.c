@@ -49,17 +49,21 @@ JsProxy_GetAttr(PyObject* o, PyObject* attr_name)
 {
   JsProxy* self = (JsProxy*)o;
 
+  PyObject* result = PyObject_GenericGetAttr(o, attr_name);
+  if (result != NULL) {
+    return result;
+  }
+  PyErr_Clear();
+
   PyObject* str = PyObject_Str(attr_name);
   if (str == NULL) {
     return NULL;
   }
-
   const char* key = PyUnicode_AsUTF8(str);
 
-  if (strncmp(key, "new", 4) == 0 || strncmp(key, "_has_bytes", 11) == 0) {
-    Py_DECREF(str);
-    return PyObject_GenericGetAttr(o, attr_name);
-  } else if (strncmp(key, "typeof", 7) == 0) {
+  // TODO: make typeof into an actually attribute on JsProxy (in an init method)
+  // so this hits the PyObject_GenericGetAttr codepath.
+  if (strncmp(key, "typeof", 7) == 0) {
     Py_DECREF(str);
     int idval = hiwire_typeof(self->js);
     PyObject* result = js2python(idval);
@@ -72,7 +76,7 @@ JsProxy_GetAttr(PyObject* o, PyObject* attr_name)
 
   if (idresult == -1) {
     PyErr_Format(
-      PyExc_AttributeError, "'PyProxy' object has no attribute '%s'", key);
+      PyExc_AttributeError, "'JsProxy' object has no attribute '%s'", key);
     return NULL;
   }
 
@@ -396,7 +400,6 @@ static PyObject*
 JsProxy_Dir(PyObject* o)
 {
   JsProxy* self = (JsProxy*)o;
-
   int iddir = hiwire_dir(self->js);
   PyObject* pydir = js2python(iddir);
   hiwire_decref(iddir);

@@ -309,6 +309,8 @@ var languagePluginLoader = new Promise((resolve, reject) => {
     'checkABI',
     'version',
     'autocomplete',
+    'mountPackage',
+    'dismountPackage',
   ];
 
   function makePublicAPI(module, public_api) {

@@ -120,15 +120,8 @@ def test_monkeypatch_eval_code(selenium):
     assert selenium.run("7") == [99, 7]
 
 
-def test_mount_package(selenium):
-    msg = "xxxx"
-    # selenium.run_js(
-    #     """
-    #     pyodide.dismountPackage("sys")
-    #     """
-    # )
-
-    selenium.run_js(
+def test_mount_object(selenium):
+    result = selenium.run_js(
         """
         function x1(){
             return "x1";
@@ -143,25 +136,106 @@ def test_mount_package(selenium):
         let b = { x : x2, y, u : 3, t : 7};
         pyodide.mountPackage("a", a);
         pyodide.mountPackage("b", b);
-        """
-    )
-    assert (
-        selenium.run(
-            """
-        def test():
+        return pyodide.runPython(`
             from a import x
             from b import x as x2
-            if x() != "x1":
-                return f"x() => {x()} != 'x1'".
-            if x2() != "x2":
-                return f"x2() => {x2()} != 'x1'".
+            result = [x(), x2()]
             import a
-            if a.s != 3:
-                return f"a.s != 3".
-        test()
+            import b
+            result += [a.s, dir(a), dir(b)]
+            # clean up to prevent this test
+            import sys
+            del sys.modules["a"]
+            del sys.modules["b"]
+            result
+        `)
         """
-        )
-        == None
+    )
+    assert result[:3] == ["x1", "x2", 3]
+    assert set([x for x in result[3] if len(x) == 1]) == set(["x", "y", "s", "t"])
+    assert set([x for x in result[4] if len(x) == 1]) == set(["x", "y", "u", "t"])
+
+
+def test_mount_map(selenium):
+    result = selenium.run_js(
+        """
+        function x1(){
+            return "x1";
+        }
+        function x2(){
+            return "x2";
+        }
+        function y(){
+            return "y";
+        }
+        let a = new Map(Object.entries({ x : x1, y, s : 3, t : 7}));
+        let b = new Map(Object.entries({ x : x2, y, u : 3, t : 7}));
+        pyodide.mountPackage("a", a);
+        pyodide.mountPackage("b", b);
+        return pyodide.runPython(`
+            from a import x
+            from b import x as x2
+            result = [x(), x2()]
+            import a
+            import b
+            result += [a.s, dir(a), dir(b)]
+            import sys
+            del sys.modules["a"]
+            del sys.modules["b"]
+            result
+        `)
+        """
+    )
+    assert result[:3] == ["x1", "x2", 3]
+    assert set(result[3]) == set(["x", "y", "s", "t"])
+    assert set(result[4]) == set(["x", "y", "u", "t"])
+
+
+def test_mount_errors(selenium):
+    selenium.run_js(
+        """
+        let a = new Map(Object.entries({ s : 7 }));
+        let b = new Map(Object.entries({ t : 3 }));
+        pyodide.mountPackage("a", a);
+        pyodide.mountPackage("a", b);
+        pyodide.dismountPackage("a")
+        pyodide.runPython(`
+            try:
+                import a
+                assert False
+            except ImportError:
+                pass
+        `)
+        """
+    )
+    selenium.run_js(
+        """
+        try {
+            pyodide.dismountPackage("doesnotexist");
+            throw new Error("dismountPackage should have thrown an error.");
+        } catch(e){
+            if(!e.message.includes("Cannot dismount module 'doesnotexist': no such module exists.")){
+                throw e;
+            }
+        }
+        pyodide.runPython("import pathlib")
+        try {
+            pyodide.dismountPackage("pathlib");
+            throw new Error("dismountPackage should have thrown an error.");
+        } catch(e){
+            if(!e.message.includes("was not mounted with 'pyodide.mountPackage'")){
+                throw e;
+            }
+        }
+        try {
+            pyodide.mountPackage("pathlib", {});
+            throw new Error("dismountPackage should have thrown an error.");
+        } catch(e){
+            if(!e.message.includes("was not mounted with 'pyodide.mountPackage'")){
+                throw e;
+            }
+        }
+        """
     )
 
 

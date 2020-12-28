@@ -9,6 +9,8 @@
 #include "js2python.h"
 
 _Py_IDENTIFIER(__dir__);
+_Py_IDENTIFIER(get);
+_Py_IDENTIFIER(keys);
 
 static void
 _JsImport_setHiwireObject(PyObject* module, int id)
@@ -38,10 +40,22 @@ typedef struct
 } JsImportDir;
 // clang-format on
 
+static bool
+is_jsproxy_map(PyObject* proxy)
+{
+  PyObject* getfunc = _PyObject_GetAttrId(proxy, &PyId_get);
+  if (getfunc) {
+    Py_CLEAR(getfunc);
+    return true;
+  } else {
+    PyErr_Clear();
+    return false;
+  }
+}
+
 static int
 JsImportDir_init(PyObject* o, PyObject* args, PyObject* kwargs)
 {
-  printf("JsImportDir_init!\n");
   JsImportDir* self = (JsImportDir*)o;
   PyObject* module;
   if (!PyArg_UnpackTuple(args, "__init__", 1, 1, &module)) {
@@ -56,12 +70,42 @@ JsImportDir_Call(PyObject* o, PyObject* args, PyObject* kwargs)
 {
   JsImportDir* self = (JsImportDir*)o;
   PyObject* jsproxy = _JsImport_getJsProxy(self->module);
+  PyObject* result = NULL;
 
-  _Py_IDENTIFIER(__dir__);
-  PyObject* dirfunc = _PyDict_GetItemIdWithError(dict, &PyId___dir__);
+  // TODO: add support for maps to jsproxy and use that here.
+  if (is_jsproxy_map(jsproxy)) {
+    PyObject* keysfunc = NULL;
+    PyObject* keys = NULL;
+
+    keysfunc = _PyObject_GetAttrId(jsproxy, &PyId_keys);
+    if (keysfunc == NULL) {
+      goto finally_map;
+    }
+    keys = _PyObject_CallNoArg(keysfunc);
+    if (keys == NULL) {
+      goto finally_map;
+    }
+    result = PySequence_List(keys);
+    if (result == NULL) {
+      goto finally_map;
+    }
+  finally_map:
+    Py_CLEAR(keysfunc);
+    Py_CLEAR(keys);
+    if (result != NULL) {
+      return result;
+    }
+    _PyErr_FormatFromCause(
+      PyExc_RuntimeError,
+      "Object has a 'get' method but its keys method failed.");
+    return NULL;
+  }
+
+  PyObject* dirfunc = _PyObject_GetAttrId(jsproxy, &PyId___dir__);
   if (dirfunc) {
     result = _PyObject_CallNoArg(dirfunc);
   }
+  // Let errors in dir propagate up.
   return result;
 }
 
@@ -83,16 +127,30 @@ static PyObject*
 JsImport_GetAttr(PyObject* self, PyObject* attr)
 {
   PyObject* jsproxy = _JsImport_getJsProxy(self);
-  PyObject* result = PyObject_GetAttr(jsproxy, attr);
-  // Looking at CPython source, it seems that result of PyModule_GetName is borrowed.
-  // It can return an error if the module has an invalid __name__ field, but we should have a valid one.
+  PyObject* result = NULL;
   const char *name = PyModule_GetName(self);
-  if(name == NULL){
-    return NULL;
-  }
-  if(result == NULL && PyErr_ExceptionMatches(PyExc_AttributeError)){
-    // Better attribute error.
-    PyErr_Format(PyExc_AttributeError, "module '%s' has no attribute '%s'", name, attr);
+
+  // TODO: add support for maps to jsproxy and use that here.
+  PyObject* getfunc = _PyObject_GetAttrId(jsproxy, &PyId_get);
+  if(getfunc){ // we consider that it's a map in this case and use get to find the attribute.
+    result = PyObject_CallFunctionObjArgs(getfunc, attr, NULL);
+    Py_CLEAR(getfunc);
+    if(result == Py_None){
+      PyErr_Format(PyExc_AttributeError, "module '%s' has no attribute '%s'", name, attr);
+      return NULL;
+    }
+    return result;
+  } else {
+    PyErr_Clear(); // clear error set by GetAttr
+    result = PyObject_GetAttr(jsproxy, attr);
+
+    if(result == NULL && PyErr_ExceptionMatches(PyExc_AttributeError)){
+      if(name == NULL){
+        return NULL;
+      }
+      // Better attribute error.1
+      _PyErr_FormatFromCause(PyExc_AttributeError, "module '%s' has no attribute '%s'", name, attr);
+    }
   }
   return result;
 }
@@ -110,7 +168,7 @@ static PyMethodDef JsModule_Methods[] = {
     (PyCFunction)JsImport_GetAttr,
     METH_O,
     "Get an object from the Javascript namespace" },
-  { "getproxy", (PyCFunction)JsImport_GetAttr, METH_NOARGS},
+  { "getproxy", (PyCFunction)JsImport_getproxy, METH_NOARGS},
   { NULL }
 };
 
@@ -167,12 +225,15 @@ JsImport_mount(char* name, int package_id){
   PyObject* module = NULL;
   PyObject* __dir__ = NULL;
 
-  PyObject* module_dict = PyImport_GetModuleDict();
-  QUIT_IF_NULL(module_dict);
+  PyObject* sys_modules = PyImport_GetModuleDict();
+  QUIT_IF_NULL(sys_modules);
   {
-    PyObject* check_if_module_exists = PyDict_GetItemString(module_dict, name);
-    if(check_if_module_exists){
-      PyErr_Format(PyExc_ValueError, "A python module named '%s' was already imported.");
+    PyObject* module = PyDict_GetItemString(sys_modules, name);
+    if(module && !JsImport_Check(module)){
+      PyErr_Format(PyExc_KeyError,
+        "Cannot mount with name '%s': there is an existing module by this name that was not mounted with 'pyodide.mountPackage'."
+        , name
+      );
       goto finally;
     }
   }
@@ -199,8 +260,9 @@ JsImport_mount(char* name, int package_id){
 
   __dir__ = PyObject_CallFunctionObjArgs(JsImportDirObject, module, NULL);
   QUIT_IF_NULL(__dir__);
-  QUIT_IF_NZ(PyModule_AddObject(module, "__dir__", __dir__));
-  QUIT_IF_NZ(PyDict_SetItemString(module_dict, name, module));
+  PyObject* module_dict = PyModule_GetDict(module);
+  QUIT_IF_NZ(_PyDict_SetItemId(module_dict, &PyId___dir__, __dir__));
+  QUIT_IF_NZ(PyDict_SetItemString(sys_modules, name, module));
 
   success = true;
 finally:
@@ -215,11 +277,11 @@ finally:
 int
 JsImport_dismount(char* name){
   // Everything is borrowed =D
-  PyObject* module_dict = PyImport_GetModuleDict();
-  if(module_dict == NULL){
+  PyObject* sys_modules = PyImport_GetModuleDict();
+  if(sys_modules == NULL){
     return -1;
   }
-  PyObject* module = PyDict_GetItemString(module_dict, name);
+  PyObject* module = PyDict_GetItemString(sys_modules, name);
   if(module == NULL){
     PyErr_Format(PyExc_KeyError,
       "Cannot dismount module '%s': no such module exists.", name
@@ -233,7 +295,7 @@ JsImport_dismount(char* name){
     );
     return -1;
   }
-  if(PyDict_DelItemString(module_dict, name)){
+  if(PyDict_DelItemString(sys_modules, name)){
     return -1;
   }
   return 0;
