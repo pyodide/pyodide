@@ -54,14 +54,14 @@ JsImportDir_init(PyObject* o, PyObject* args, PyObject* kwargs)
 static PyObject*
 JsImportDir_Call(PyObject* o, PyObject* args, PyObject* kwargs)
 {
-  printf("JsImportDir_call\n");
   JsImportDir* self = (JsImportDir*)o;
-  printf("1\n");
   PyObject* jsproxy = _JsImport_getJsProxy(self->module);
-  printf("2\n");
-  PyObject* result =
-    _PyObject_CallMethodIdObjArgs(jsproxy, &PyId___dir__, NULL);
-  printf("3\n");
+
+  _Py_IDENTIFIER(__dir__);
+  PyObject* dirfunc = _PyDict_GetItemIdWithError(dict, &PyId___dir__);
+  if (dirfunc) {
+    result = _PyObject_CallNoArg(dirfunc);
+  }
   return result;
 }
 
