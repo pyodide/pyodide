@@ -18,24 +18,18 @@ _runPython(char* code)
 {
   PyObject* py_code;
   py_code = PyUnicode_FromString(code);
-  printf("rp1\n");
   if (py_code == NULL) {
     pythonexc2js();
     return HW_ERROR;
   }
 
-  printf("rp2\n");
   PyObject* ret = _PyObject_CallMethodIdObjArgs(
     pyodide, &PyId_eval_code, py_code, globals, NULL);
-
-  printf("rp3\n");
 
   if (ret == NULL) {
     pythonexc2js();
     return HW_ERROR;
   }
-
-  printf("rp4\n");
   HwObject id = python2js(ret);
   Py_DECREF(ret);
   return id;

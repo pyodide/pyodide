@@ -1,5 +1,6 @@
 #ifndef HIWIRE_H
 #define HIWIRE_H
+#include "stdalign.h"
 #include "types.h"
 
 /**
@@ -15,18 +16,18 @@
  * object. There may be one or more keys pointing to the same object.
  */
 
-NEWTYPE(HwObject, int);
+struct _HwObjectStruct
+{};
+
+typedef struct _HwObjectStruct* HwObject;
 
 // Define special ids for singleton constants. These must be negative to
 // avoid being reused for other values.
-#define HW_ERROR TO_NT(HwObject, -1)
-#define HW_UNDEFINED TO_NT(HwObject, -2)
-#define HW_TRUE TO_NT(HwObject, -3)
-#define HW_FALSE TO_NT(HwObject, -4)
-#define HW_NULL TO_NT(HwObject, -5)
-
-bool
-hw_is_error(HwObject key);
+#define HW_ERROR ((HwObject)(-1))
+#define HW_UNDEFINED ((HwObject)(-2))
+#define HW_TRUE ((HwObject)(-3))
+#define HW_FALSE ((HwObject)(-4))
+#define HW_NULL ((HwObject)(-5))
 
 /**
  * Initialize the variables and functions required for hiwire.

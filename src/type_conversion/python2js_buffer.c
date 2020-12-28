@@ -294,7 +294,7 @@ _python2js_buffer_recursive(Py_buffer* buff,
 
   for (i = 0; i < n; ++i) {
     jsitem = _python2js_buffer_recursive(buff, ptr, dim + 1, convert);
-    if (hw_is_error(jsitem)) {
+    if (jsitem == HW_ERROR) {
       hiwire_decref(jsarray);
       return HW_ERROR;
     }
@@ -408,7 +408,7 @@ _python2js_shareable_buffer_recursive(Py_buffer* buff,
   for (i = 0; i < n; ++i) {
     jsitem = _python2js_shareable_buffer_recursive(
       buff, shareable, idarr, ptr, dim + 1);
-    if (hw_is_error(jsitem)) {
+    if (jsitem == HW_ERROR) {
       hiwire_decref(jsarray);
       return HW_ERROR;
     }
@@ -468,7 +468,7 @@ _python2js_buffer(PyObject* x)
 
   if (shareable != NOT_SHAREABLE) {
     HwObject idarr = _python2js_buffer_to_typed_array(buff);
-    if (hw_is_error(idarr)) {
+    if (idarr == HW_ERROR) {
       PyErr_SetString(
         PyExc_TypeError,
         "Internal error: Invalid type to convert to array buffer.");

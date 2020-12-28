@@ -178,7 +178,7 @@ _python2js_sequence(PyObject* x, PyObject* map)
       return pyproxy_new(x);
     }
     HwObject jsitem = _python2js_cache(pyitem, map);
-    if (hw_is_error(jsitem)) {
+    if (jsitem == HW_ERROR) {
       _python2js_remove_from_cache(map, x);
       Py_DECREF(pyitem);
       hiwire_decref(jsarray);
@@ -207,13 +207,13 @@ _python2js_dict(PyObject* x, PyObject* map)
   Py_ssize_t pos = 0;
   while (PyDict_Next(x, &pos, &pykey, &pyval)) {
     HwObject jskey = _python2js_cache(pykey, map);
-    if (hw_is_error(jskey)) {
+    if (jskey == HW_ERROR) {
       _python2js_remove_from_cache(map, x);
       hiwire_decref(jsdict);
       return HW_ERROR;
     }
     HwObject jsval = _python2js_cache(pyval, map);
-    if (hw_is_error(jsval)) {
+    if (jsval == HW_ERROR) {
       _python2js_remove_from_cache(map, x);
       hiwire_decref(jskey);
       hiwire_decref(jsdict);
@@ -258,7 +258,7 @@ _python2js(PyObject* x, PyObject* map)
   } else {
     HwObject ret = _python2js_buffer(x);
 
-    if (hw_is_error(ret)) {
+    if (ret != HW_ERROR) {
       return ret;
     }
     if (PySequence_Check(x)) {
@@ -268,7 +268,8 @@ _python2js(PyObject* x, PyObject* map)
     // Proxies we've already created are just returned again, so that the
     // same object on the Python side is always the same object on the
     // Javascript side.
-    if (!hw_is_error(ret = pyproxy_use(x))) {
+    ret = pyproxy_use(x);
+    if (ret != HW_ERROR) {
       return ret;
     }
 
@@ -295,7 +296,7 @@ _python2js_add_to_cache(PyObject* map, PyObject* pyparent, HwObject jsparent)
 {
   /* Use the pointer converted to an int so cache is by identity, not hash */
   PyObject* pyparentid = PyLong_FromSize_t((size_t)pyparent);
-  PyObject* jsparentid = PyLong_FromLong(FROM_NT(jsparent));
+  PyObject* jsparentid = PyLong_FromLong((int)jsparent);
   int result = PyDict_SetItem(map, pyparentid, jsparentid);
   Py_DECREF(pyparentid);
   Py_DECREF(jsparentid);
@@ -313,6 +314,9 @@ _python2js_remove_from_cache(PyObject* map, PyObject* pyparent)
   return result;
 }
 
+struct test
+{};
+
 HwObject
 _python2js_cache(PyObject* x, PyObject* map)
 {
@@ -320,8 +324,8 @@ _python2js_cache(PyObject* x, PyObject* map)
   PyObject* val = PyDict_GetItem(map, id);
   HwObject result;
   if (val) {
-    result = TO_NT(HwObject, PyLong_AsLong(val));
-    if (!hw_is_error(result)) {
+    result = (HwObject)PyLong_AsLong(val);
+    if (result != HW_ERROR) {
       result = hiwire_incref(result);
     }
   } else {
@@ -338,7 +342,7 @@ python2js(PyObject* x)
   HwObject result = _python2js_cache(x, map);
   Py_DECREF(map);
 
-  if (hw_is_error(result)) {
+  if (result == HW_ERROR) {
     pythonexc2js();
   }
 

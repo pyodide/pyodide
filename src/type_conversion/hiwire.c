@@ -2,12 +2,6 @@
 
 #include "hiwire.h"
 
-bool
-hw_is_error(HwObject key)
-{
-  return FROM_NT(key) == FROM_NT(HW_ERROR);
-}
-
 HwObject
 hiwire_error()
 {

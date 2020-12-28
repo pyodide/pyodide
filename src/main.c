@@ -10,6 +10,8 @@
 #include "python2js.h"
 #include "runpython.h"
 
+#include <stdalign.h>
+
 #define FATAL_ERROR(args...)                                                   \
   do {                                                                         \
     printf("FATAL ERROR: ");                                                   \
@@ -31,6 +33,11 @@
 int
 main(int argc, char** argv)
 {
+  printf("alignof(HwObject): %zu, alignof(int): %zu\n",
+         alignof(HwObject),
+         alignof(int));
+  printf(
+    "sizeof(HwObject): %zu, sizeof(int): %zu\n", sizeof(HwObject), sizeof(int));
   hiwire_setup();
 
   setenv("PYTHONHOME", "/", 0);
