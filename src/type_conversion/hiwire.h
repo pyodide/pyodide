@@ -16,6 +16,16 @@
  * object. There may be one or more keys pointing to the same object.
  */
 
+// HwObject is a NewType of int.
+// I checked and
+//  alignof(HwObject) = alignof(int) = 4
+//  sizeof(HwObject) = sizeof(int) = 4
+// Just to be extra future proof, I added assertions about this to the begining
+// of main.c So we are all good for using HwObject as a newtype for int. I also
+// added
+//  -Werror=int-conversion -Werror=incompatible-pointer-types
+// to the compile flags, so that no implicit casts will happen between HwObject
+// and any other type.
 struct _HwObjectStruct
 {};
 

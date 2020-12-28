@@ -1,5 +1,7 @@
 #include <Python.h>
+#include <assert.h>
 #include <emscripten.h>
+#include <stdalign.h>
 
 #include "hiwire.h"
 #include "js2python.h"
@@ -9,8 +11,6 @@
 #include "pyproxy.h"
 #include "python2js.h"
 #include "runpython.h"
-
-#include <stdalign.h>
 
 #define FATAL_ERROR(args...)                                                   \
   do {                                                                         \
@@ -33,13 +33,12 @@
 int
 main(int argc, char** argv)
 {
-  printf("alignof(HwObject): %zu, alignof(int): %zu\n",
-         alignof(HwObject),
-         alignof(int));
-  printf(
-    "sizeof(HwObject): %zu, sizeof(int): %zu\n", sizeof(HwObject), sizeof(int));
-  hiwire_setup();
-
+  if (alignof(HwObject) != alignof(int)) {
+    FATAL_ERROR("HwObject doesn't have the same alignment as int.");
+  }
+  if (sizeof(HwObject) != sizeof(int)) {
+    FATAL_ERROR("HwObject doesn't have the same size as int.");
+  }
   setenv("PYTHONHOME", "/", 0);
 
   Py_InitializeEx(0);
