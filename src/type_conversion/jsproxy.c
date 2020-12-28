@@ -71,7 +71,8 @@ JsProxy_GetAttr(PyObject* o, PyObject* attr_name)
   Py_DECREF(str);
 
   if (idresult == -1) {
-    PyErr_SetString(PyExc_AttributeError, key);
+    PyErr_Format(
+      PyExc_AttributeError, "'PyProxy' object has no attribute '%s'", key);
     return NULL;
   }
 
@@ -469,6 +470,8 @@ PyObject*
 JsProxy_cnew(int idobj)
 {
   JsProxy* self;
+  // In principle, tp_alloc could memory error. That seems to be the only error
+  // it throws.
   self = (JsProxy*)JsProxyType.tp_alloc(&JsProxyType, 0);
   self->js = hiwire_incref(idobj);
   self->bytes = NULL;
