@@ -255,7 +255,7 @@ $(PARSO_LIBS): $(CPYTHONLIB)
 
 build/packages.json: FORCE
 	date +"[%F %T] Building packages..."
-	python3 -m pip uninstall Tempita
+	python3 -m pip uninstall Tempita -y
 	make -C packages
 	date +"[%F %T] done building packages..."
 
