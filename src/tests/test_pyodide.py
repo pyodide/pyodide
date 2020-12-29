@@ -275,3 +275,18 @@ def test_import_bind(selenium):
         window.fetch("example.com")
         """
     )
+
+
+def test_len_args_jscall(selenium):
+    assert (
+        selenium.run(
+            """
+        window.a = function(){return arguments.length;};
+        return pyodide.runPython(`
+            from js import a
+            [a(), a(1), a(1,2), a(*range(5))];
+        `)
+        """
+        )
+        == [0, 1, 2, 5]
+    )

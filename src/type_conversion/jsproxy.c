@@ -115,6 +115,10 @@ JsProxy_SetAttr(PyObject* o, PyObject* attr_name, PyObject* pyvalue)
 static PyObject*
 JsProxy_Call(PyObject* o, PyObject* args, PyObject* kwargs)
 {
+  printf("JsProxy_Call args:\n");
+  PyObject_Print(args, stdout, 0);
+  printf("\n\nJsProxy_Call kwargs:\n");
+  PyObject_Print(kwargs, stdout, 0);
   JsProxy* self = (JsProxy*)o;
 
   Py_ssize_t nargs = PyTuple_Size(args);
@@ -454,6 +458,7 @@ static PyTypeObject JsProxyType = {
   .tp_basicsize = sizeof(JsProxy),
   .tp_dealloc = (destructor)JsProxy_dealloc,
   .tp_call = JsProxy_Call,
+  // TODO: should this be getattro or getattr?
   .tp_getattro = JsProxy_GetAttr,
   .tp_setattro = JsProxy_SetAttr,
   .tp_richcompare = JsProxy_RichCompare,
