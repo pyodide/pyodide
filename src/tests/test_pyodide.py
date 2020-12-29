@@ -187,8 +187,19 @@ def test_mount_map(selenium):
         """
     )
     assert result[:3] == ["x1", "x2", 3]
-    assert set(result[3]) == set(["x", "y", "s", "t"])
-    assert set(result[4]) == set(["x", "y", "u", "t"])
+    # fmt: off
+    assert set(result[3]) == set(
+        [
+            "x", "y", "s", "t",
+            "__dir__", "__doc__", "__getattr__", "__loader__",
+            "__name__", "__package__", "__spec__",
+            "jsproxy",
+        ]
+    )
+    # fmt: on
+    assert set([x for x in result[4] if not x.startswith("__")]) == set(
+        ["x", "y", "u", "t", "jsproxy"]
+    )
 
 
 def test_mount_errors(selenium):

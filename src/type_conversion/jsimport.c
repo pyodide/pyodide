@@ -142,7 +142,7 @@ JsImport_GetAttr(PyObject* self, PyObject* attr)
     result = PyObject_CallFunctionObjArgs(getfunc, attr, NULL);
     Py_CLEAR(getfunc);
     if(result == Py_None){
-      char* attr_utf8 = PyUnicode_AsUTF8(attr);
+      const char* attr_utf8 = PyUnicode_AsUTF8(attr);
       PyErr_Format(PyExc_AttributeError, "module '%s' has no attribute '%s'", name, attr_utf8);
       return NULL;
     }
