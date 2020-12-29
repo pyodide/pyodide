@@ -317,6 +317,12 @@ EM_JS(int, hiwire_is_function, (int idobj), {
   // clang-format on
 });
 
+EM_JS(int, hiwire_bind, (int idobj, int idthis), {
+  // clang-format off
+  return Module.hiwire.new_value(Module.hiwire.get_value(idobj).bind(Module.hiwire.get_value(idthis)));
+  // clang-format on
+});
+
 EM_JS(int, hiwire_to_string, (int idobj), {
   return Module.hiwire.new_value(Module.hiwire.get_value(idobj).toString());
 });

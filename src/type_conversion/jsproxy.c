@@ -9,9 +9,6 @@
 
 static PyTypeObject* PyExc_BaseException_Type;
 
-static PyObject*
-JsBoundMethod_cnew(int this_, const char* name);
-
 ////////////////////////////////////////////////////////////
 // JsProxy
 //
@@ -81,8 +78,9 @@ JsProxy_GetAttr(PyObject* o, PyObject* attr_name)
   }
 
   if (hiwire_is_function(idresult)) {
+    int idbind = hiwire_bind(idresult, self->js);
     hiwire_decref(idresult);
-    return JsBoundMethod_cnew(self->js, key);
+    idresult = idbind;
   }
 
   PyObject* pyresult = js2python(idresult);
@@ -572,76 +570,12 @@ JsProxy_new_error(int idobj)
 }
 
 ////////////////////////////////////////////////////////////
-// JsBoundMethod
-//
-// A special class for bound methods
-
-// clang-format off
-typedef struct
-{
-  PyObject_HEAD
-  int this_;
-  const char* name;
-} JsBoundMethod;
-// clang-format on
-
-static void
-JsBoundMethod_dealloc(JsBoundMethod* self)
-{
-  hiwire_decref(self->this_);
-  Py_TYPE(self)->tp_free((PyObject*)self);
-}
-
-static PyObject*
-JsBoundMethod_Call(PyObject* o, PyObject* args, PyObject* kwargs)
-{
-  JsBoundMethod* self = (JsBoundMethod*)o;
-
-  Py_ssize_t nargs = PyTuple_Size(args);
-
-  int idargs = hiwire_array();
-
-  for (Py_ssize_t i = 0; i < nargs; ++i) {
-    int idarg = python2js(PyTuple_GET_ITEM(args, i));
-    hiwire_push_array(idargs, idarg);
-    hiwire_decref(idarg);
-  }
-
-  int idresult = hiwire_call_member(self->this_, (int)self->name, idargs);
-  hiwire_decref(idargs);
-  PyObject* pyresult = js2python(idresult);
-  hiwire_decref(idresult);
-  return pyresult;
-}
-
-static PyTypeObject JsBoundMethodType = {
-  .tp_name = "pyodide.JsBoundMethod",
-  .tp_basicsize = sizeof(JsBoundMethod),
-  .tp_dealloc = (destructor)JsBoundMethod_dealloc,
-  .tp_call = JsBoundMethod_Call,
-  .tp_flags = Py_TPFLAGS_DEFAULT,
-  .tp_doc = "A proxy to make it possible to call Javascript bound methods from "
-            "Python."
-};
-
-static PyObject*
-JsBoundMethod_cnew(int this_, const char* name)
-{
-  JsBoundMethod* self;
-  self = (JsBoundMethod*)JsBoundMethodType.tp_alloc(&JsBoundMethodType, 0);
-  self->this_ = hiwire_incref(this_);
-  self->name = name;
-  return (PyObject*)self;
-}
-
-////////////////////////////////////////////////////////////
 // Public functions
 
 int
 JsProxy_Check(PyObject* x)
 {
-  return (PyObject_TypeCheck(x, &JsProxyType) ||
-          PyObject_TypeCheck(x, &JsBoundMethodType));
+  return PyObject_TypeCheck(x, &JsProxyType);
 }
 
 int
@@ -684,8 +618,7 @@ JsProxy_init()
   }
 
   Py_CLEAR(module);
-  return (PyType_Ready(&JsProxyType) || PyType_Ready(&JsBoundMethodType) ||
-          PyType_Ready(&_Exc_JsException));
+  return (PyType_Ready(&JsProxyType) || PyType_Ready(&_Exc_JsException));
 
 fail:
   Py_CLEAR(module);

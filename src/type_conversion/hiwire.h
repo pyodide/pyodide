@@ -425,6 +425,12 @@ int
 hiwire_is_function(int idobj);
 
 /**
+ * Calls obj.bind(this).
+ */
+int
+hiwire_bind(int idobj, int idthis);
+
+/**
  * Gets the string representation of an object by calling `toString`.
  *
  * Returns: New reference to Javascript string
