@@ -77,7 +77,8 @@ JsProxy_GetAttr(PyObject* o, PyObject* attr_name)
     return NULL;
   }
 
-  if (hiwire_is_function(idresult)) {
+  // TODO: how well can we relate the "bind" behavior of Python and Js?
+  if (hiwire_is_function(idresult) && !hiwire_is_pyproxy(idresult)) {
     int idbind = hiwire_bind(idresult, self->js);
     hiwire_decref(idresult);
     idresult = idbind;

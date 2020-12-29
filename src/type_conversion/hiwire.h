@@ -425,6 +425,14 @@ int
 hiwire_is_function(int idobj);
 
 /**
+ * Returns 1 if the object is a PyProxy.
+ *
+ * Returns: C int
+ */
+int
+hiwire_is_pyproxy(int idobj);
+
+/**
  * Calls obj.bind(this).
  */
 int
