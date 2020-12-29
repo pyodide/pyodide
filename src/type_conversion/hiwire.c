@@ -212,7 +212,7 @@ EM_JS(int, hiwire_get_global, (int idname), {
   }
 });
 
-EM_JS(int, hiwire_get_member_string, (int idobj, char* idkey), {
+EM_JS(int, hiwire_get_member_string, (int idobj, int idkey), {
   var jsobj = Module.hiwire.get_value(idobj);
   var jskey = UTF8ToString(idkey);
   if (jskey in jsobj) {

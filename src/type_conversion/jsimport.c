@@ -8,6 +8,7 @@
 #include "hiwire.h"
 #include "js2python.h"
 
+_Py_IDENTIFIER(__dict__);
 _Py_IDENTIFIER(__dir__);
 _Py_IDENTIFIER(get);
 _Py_IDENTIFIER(keys);
@@ -69,6 +70,10 @@ static PyObject*
 JsImportDir_Call(PyObject* o, PyObject* args, PyObject* kwargs)
 {
   JsImportDir* self = (JsImportDir*)o;
+
+  PyObject* dict = _PyObject_GetAttrId(self->module, &PyId___dict__);
+  PyObject* own_keys = PyDict_Keys(dict);
+
   PyObject* jsproxy = _JsImport_getJsProxy(self->module);
   PyObject* result = NULL;
 
@@ -85,12 +90,13 @@ JsImportDir_Call(PyObject* o, PyObject* args, PyObject* kwargs)
     if (keys == NULL) {
       goto finally_map;
     }
-    result = PySequence_List(keys);
+    result = PySequence_InPlaceConcat(own_keys, keys);
     if (result == NULL) {
       goto finally_map;
     }
   finally_map:
     Py_CLEAR(keysfunc);
+    Py_CLEAR(own_keys);
     Py_CLEAR(keys);
     if (result != NULL) {
       return result;
@@ -112,7 +118,7 @@ JsImportDir_Call(PyObject* o, PyObject* args, PyObject* kwargs)
 // clang-format off
 static PyTypeObject JsImportDirType = {
   PyVarObject_HEAD_INIT(NULL, 0)
-  .tp_doc = "Custom objects",
+  .tp_doc = "A closure to work around the fact that module __dir__ does not get called with a reference to the module.",
   .tp_name = "pyodide.JsImportDir",
   .tp_basicsize = sizeof(JsImportDir),
   .tp_new = PyType_GenericNew,
@@ -136,7 +142,8 @@ JsImport_GetAttr(PyObject* self, PyObject* attr)
     result = PyObject_CallFunctionObjArgs(getfunc, attr, NULL);
     Py_CLEAR(getfunc);
     if(result == Py_None){
-      PyErr_Format(PyExc_AttributeError, "module '%s' has no attribute '%s'", name, attr);
+      char* attr_utf8 = PyUnicode_AsUTF8(attr);
+      PyErr_Format(PyExc_AttributeError, "module '%s' has no attribute '%s'", name, attr_utf8);
       return NULL;
     }
     return result;
@@ -168,7 +175,12 @@ static PyMethodDef JsModule_Methods[] = {
     (PyCFunction)JsImport_GetAttr,
     METH_O,
     "Get an object from the Javascript namespace" },
-  { "getproxy", (PyCFunction)JsImport_getproxy, METH_NOARGS},
+  {
+    "jsproxy",
+    (PyCFunction)JsImport_getproxy,
+    METH_NOARGS,
+    "Get the Javascript object wrapped by this module."
+  },
   { NULL }
 };
 
