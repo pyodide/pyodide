@@ -261,3 +261,17 @@ def test_window_invocation(selenium):
         js.fetch("example.com")
         """
     )
+
+
+def test_import_bind(selenium):
+    selenium.run(
+        """
+        from js import Promise
+        Promise.new
+        from js import fetch
+        fetch("example.com")
+        from js import window
+        window.Promise.new
+        window.fetch("example.com")
+        """
+    )
