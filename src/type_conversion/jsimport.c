@@ -2,7 +2,7 @@
 
 #include <emscripten.h>
 
-#include "hiwire.h"
+#include "jsref.h"
 #include "js2python.h"
 
 static PyObject* js_module = NULL;
@@ -14,24 +14,24 @@ JsImport_GetAttr(PyObject* self, PyObject* attr)
   if (c == NULL) {
     return NULL;
   }
-  JsRef idval = hiwire_get_global(c);
+  JsRef idval = Js_get_global(c);
   if (idval == Js_ERROR) {
     PyErr_Format(PyExc_AttributeError, "Unknown attribute '%s'", c);
     return NULL;
   }
   PyObject* result = js2python(idval);
-  hiwire_decref(idval);
+  Js_decref(idval);
   return result;
 }
 
 static PyObject*
 JsImport_Dir()
 {
-  JsRef idwindow = hiwire_get_global("self");
-  JsRef iddir = hiwire_dir(idwindow);
-  hiwire_decref(idwindow);
+  JsRef idwindow = Js_get_global("self");
+  JsRef iddir = Js_dir(idwindow);
+  Js_decref(idwindow);
   PyObject* pydir = js2python(iddir);
-  hiwire_decref(iddir);
+  Js_decref(iddir);
   return pydir;
 }
 

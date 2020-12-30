@@ -3,7 +3,7 @@
 #include <emscripten.h>
 #include <stdalign.h>
 
-#include "hiwire.h"
+#include "jsref.h"
 #include "js2python.h"
 #include "jsimport.h"
 #include "jsproxy.h"

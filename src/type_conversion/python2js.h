@@ -4,7 +4,7 @@
 /** Utilities to convert Python objects to Javascript.
  */
 
-#include "hiwire.h"
+#include "jsref.h"
 #include <Python.h>
 
 /** Convert the active Python exception into a Javascript Error object

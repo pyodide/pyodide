@@ -2,7 +2,7 @@
 
 #include <emscripten.h>
 
-#include "hiwire.h"
+#include "jsref.h"
 #include "jsproxy.h"
 #include "pyproxy.h"
 
@@ -28,7 +28,7 @@ pythonexc2js()
   int exc;
 
   if (type == NULL || type == Py_None || value == NULL || value == Py_None) {
-    excval = hiwire_string_ascii("No exception type or value");
+    excval = Js_string_ascii("No exception type or value");
     PyErr_Print();
     PyErr_Clear();
     goto exit;
@@ -39,7 +39,7 @@ pythonexc2js()
     if (tbmod == NULL) {
       PyObject* repr = PyObject_Repr(value);
       if (repr == NULL) {
-        excval = hiwire_string_ascii("Could not get repr for exception");
+        excval = Js_string_ascii("Could not get repr for exception");
       } else {
         excval = _python2js_unicode(repr);
         Py_DECREF(repr);
@@ -56,7 +56,7 @@ pythonexc2js()
     format_exception = PyObject_GetAttrString(tbmod, "format_exception");
   }
   if (format_exception == NULL) {
-    excval = hiwire_string_ascii("Could not get format_exception function");
+    excval = Js_string_ascii("Could not get format_exception function");
   } else {
     PyObject* pylines;
     if (no_traceback) {
@@ -67,7 +67,7 @@ pythonexc2js()
         format_exception, type, value, traceback, NULL);
     }
     if (pylines == NULL) {
-      excval = hiwire_string_ascii("Error calling traceback.format_exception");
+      excval = Js_string_ascii("Error calling traceback.format_exception");
       PyErr_Print();
       PyErr_Clear();
       goto exit;
@@ -86,7 +86,7 @@ pythonexc2js()
 
 exit:
   PyErr_Clear();
-  hiwire_throw_error(excval);
+  Js_throw_error(excval);
 }
 
 int
@@ -105,7 +105,7 @@ _python2js_float(PyObject* x)
   if (x_double == -1.0 && PyErr_Occurred()) {
     return Js_ERROR;
   }
-  return hiwire_double(x_double);
+  return Js_double(x_double);
 }
 
 static JsRef
@@ -124,7 +124,7 @@ _python2js_long(PyObject* x)
       return Js_ERROR;
     }
   }
-  return hiwire_int(x_long);
+  return Js_int(x_long);
 }
 
 static JsRef
@@ -135,11 +135,11 @@ _python2js_unicode(PyObject* x)
   int length = (int)PyUnicode_GET_LENGTH(x);
   switch (kind) {
     case PyUnicode_1BYTE_KIND:
-      return hiwire_string_ucs1(data, length);
+      return Js_string_ucs1(data, length);
     case PyUnicode_2BYTE_KIND:
-      return hiwire_string_ucs2(data, length);
+      return Js_string_ucs2(data, length);
     case PyUnicode_4BYTE_KIND:
-      return hiwire_string_ucs4(data, length);
+      return Js_string_ucs4(data, length);
     default:
       PyErr_SetString(PyExc_ValueError, "Unknown Unicode KIND");
       return Js_ERROR;
@@ -154,15 +154,15 @@ _python2js_bytes(PyObject* x)
   if (PyBytes_AsStringAndSize(x, &x_buff, &length)) {
     return Js_ERROR;
   }
-  return hiwire_bytes(x_buff, length);
+  return Js_bytes(x_buff, length);
 }
 
 static JsRef
 _python2js_sequence(PyObject* x, PyObject* map)
 {
-  JsRef jsarray = hiwire_array();
+  JsRef jsarray = Js_array();
   if (_python2js_add_to_cache(map, x, jsarray)) {
-    hiwire_decref(jsarray);
+    Js_decref(jsarray);
     return Js_ERROR;
   }
   size_t length = PySequence_Size(x);
@@ -172,7 +172,7 @@ _python2js_sequence(PyObject* x, PyObject* map)
       // If something goes wrong converting the sequence (as is the case with
       // Pandas data frames), fallback to the Python object proxy
       _python2js_remove_from_cache(map, x);
-      hiwire_decref(jsarray);
+      Js_decref(jsarray);
       PyErr_Clear();
       Py_INCREF(x);
       return pyproxy_new(x);
@@ -181,15 +181,15 @@ _python2js_sequence(PyObject* x, PyObject* map)
     if (jsitem == Js_ERROR) {
       _python2js_remove_from_cache(map, x);
       Py_DECREF(pyitem);
-      hiwire_decref(jsarray);
+      Js_decref(jsarray);
       return Js_ERROR;
     }
     Py_DECREF(pyitem);
-    hiwire_push_array(jsarray, jsitem);
-    hiwire_decref(jsitem);
+    Js_push_array(jsarray, jsitem);
+    Js_decref(jsitem);
   }
   if (_python2js_remove_from_cache(map, x)) {
-    hiwire_decref(jsarray);
+    Js_decref(jsarray);
     return Js_ERROR;
   }
   return jsarray;
@@ -198,9 +198,9 @@ _python2js_sequence(PyObject* x, PyObject* map)
 static JsRef
 _python2js_dict(PyObject* x, PyObject* map)
 {
-  JsRef jsdict = hiwire_object();
+  JsRef jsdict = Js_object();
   if (_python2js_add_to_cache(map, x, jsdict)) {
-    hiwire_decref(jsdict);
+    Js_decref(jsdict);
     return Js_ERROR;
   }
   PyObject *pykey, *pyval;
@@ -209,22 +209,22 @@ _python2js_dict(PyObject* x, PyObject* map)
     JsRef jskey = _python2js_cache(pykey, map);
     if (jskey == Js_ERROR) {
       _python2js_remove_from_cache(map, x);
-      hiwire_decref(jsdict);
+      Js_decref(jsdict);
       return Js_ERROR;
     }
     JsRef jsval = _python2js_cache(pyval, map);
     if (jsval == Js_ERROR) {
       _python2js_remove_from_cache(map, x);
-      hiwire_decref(jskey);
-      hiwire_decref(jsdict);
+      Js_decref(jskey);
+      Js_decref(jsdict);
       return Js_ERROR;
     }
-    hiwire_push_object_pair(jsdict, jskey, jsval);
-    hiwire_decref(jskey);
-    hiwire_decref(jsval);
+    Js_push_object_pair(jsdict, jskey, jsval);
+    Js_decref(jskey);
+    Js_decref(jsval);
   }
   if (_python2js_remove_from_cache(map, x)) {
-    hiwire_decref(jsdict);
+    Js_decref(jsdict);
     return Js_ERROR;
   }
   return jsdict;
@@ -234,11 +234,11 @@ static JsRef
 _python2js(PyObject* x, PyObject* map)
 {
   if (x == Py_None) {
-    return hiwire_undefined();
+    return Js_undefined();
   } else if (x == Py_True) {
-    return hiwire_true();
+    return Js_true();
   } else if (x == Py_False) {
-    return hiwire_false();
+    return Js_false();
   } else if (PyLong_Check(x)) {
     return _python2js_long(x);
   } else if (PyFloat_Check(x)) {
@@ -323,7 +323,7 @@ _python2js_cache(PyObject* x, PyObject* map)
   if (val) {
     result = (JsRef)PyLong_AsLong(val);
     if (result != Js_ERROR) {
-      result = hiwire_incref(result);
+      result = Js_incref(result);
     }
   } else {
     result = _python2js(x, map);

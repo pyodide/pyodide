@@ -5,7 +5,7 @@
  * Utilities to convert Javascript objects to Python objects.
  */
 
-#include "hiwire.h"
+#include "jsref.h"
 #include <Python.h>
 
 /** Convert a Javascript object to a Python object.

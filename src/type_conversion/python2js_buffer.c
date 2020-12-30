@@ -4,7 +4,7 @@
 #include <endian.h>
 #include <stdint.h>
 
-#include "hiwire.h"
+#include "jsref.h"
 
 // This file handles the conversion of Python buffer objects (which loosely
 // represent Numpy arrays) to Javascript.
@@ -33,112 +33,112 @@ static JsRef
 _convert_bool(char* data)
 {
   char v = *((char*)data);
-  return hiwire_bool((int)v);
+  return Js_bool((int)v);
 }
 
 static JsRef
 _convert_int8(char* data)
 {
   i8 v = *((i8*)data);
-  return hiwire_int(v);
+  return Js_int(v);
 }
 
 static JsRef
 _convert_uint8(char* data)
 {
   u8 v = *((u8*)data);
-  return hiwire_int(v);
+  return Js_int(v);
 }
 
 static JsRef
 _convert_int16(char* data)
 {
   i16 v = *((i16*)data);
-  return hiwire_int(v);
+  return Js_int(v);
 }
 
 static JsRef
 _convert_int16_swap(char* data)
 {
   i16 v = *((i16*)data);
-  return hiwire_int(be16toh(v));
+  return Js_int(be16toh(v));
 }
 
 static JsRef
 _convert_uint16(char* data)
 {
   u16 v = *((u16*)data);
-  return hiwire_int(v);
+  return Js_int(v);
 }
 
 static JsRef
 _convert_uint16_swap(char* data)
 {
   u16 v = *((u16*)data);
-  return hiwire_int(be16toh(v));
+  return Js_int(be16toh(v));
 }
 
 static JsRef
 _convert_int32(char* data)
 {
   i32 v = *((i32*)data);
-  return hiwire_int(v);
+  return Js_int(v);
 }
 
 static JsRef
 _convert_int32_swap(char* data)
 {
   i32 v = *((i32*)data);
-  return hiwire_int(be32toh(v));
+  return Js_int(be32toh(v));
 }
 
 static JsRef
 _convert_uint32(char* data)
 {
   u32 v = *((u32*)data);
-  return hiwire_int(v);
+  return Js_int(v);
 }
 
 static JsRef
 _convert_uint32_swap(char* data)
 {
   u32 v = *((u32*)data);
-  return hiwire_int(be32toh(v));
+  return Js_int(be32toh(v));
 }
 
 static JsRef
 _convert_int64(char* data)
 {
   i64 v = *((i64*)data);
-  return hiwire_int(v);
+  return Js_int(v);
 }
 
 static JsRef
 _convert_int64_swap(char* data)
 {
   i64 v = *((i64*)data);
-  return hiwire_int(be64toh(v));
+  return Js_int(be64toh(v));
 }
 
 static JsRef
 _convert_uint64(char* data)
 {
   u64 v = *((u64*)data);
-  return hiwire_int(v);
+  return Js_int(v);
 }
 
 static JsRef
 _convert_uint64_swap(char* data)
 {
   u64 v = *((u64*)data);
-  return hiwire_int(be64toh(v));
+  return Js_int(be64toh(v));
 }
 
 static JsRef
 _convert_float32(char* data)
 {
   float v = *((float*)data);
-  return hiwire_double(v);
+  return Js_double(v);
 }
 
 static JsRef
@@ -152,14 +152,14 @@ _convert_float32_swap(char* data)
 
   v.f = *((float*)data);
   v.i = be32toh(v.i);
-  return hiwire_double(v.f);
+  return Js_double(v.f);
 }
 
 static JsRef
 _convert_float64(char* data)
 {
   double v = *((double*)data);
-  return hiwire_double(v);
+  return Js_double(v);
 }
 
 static JsRef
@@ -173,7 +173,7 @@ _convert_float64_swap(char* data)
 
   v.f = *((double*)data);
   v.i = be64toh(v.i);
-  return hiwire_double(v.f);
+  return Js_double(v.f);
 }
 
 static scalar_converter*
@@ -290,16 +290,16 @@ _python2js_buffer_recursive(Py_buffer* buff,
   n = buff->shape[dim];
   stride = buff->strides[dim];
 
-  jsarray = hiwire_array();
+  jsarray = Js_array();
 
   for (i = 0; i < n; ++i) {
     jsitem = _python2js_buffer_recursive(buff, ptr, dim + 1, convert);
     if (jsitem == Js_ERROR) {
-      hiwire_decref(jsarray);
+      Js_decref(jsarray);
       return Js_ERROR;
     }
-    hiwire_push_array(jsarray, jsitem);
-    hiwire_decref(jsitem);
+    Js_push_array(jsarray, jsitem);
+    Js_decref(jsitem);
 
     ptr += stride;
   }
@@ -335,30 +335,30 @@ _python2js_buffer_to_typed_array(Py_buffer* buff)
   switch (format) {
     case 'c':
     case 'b':
-      return hiwire_int8array((i8*)buff->buf, buff->len);
+      return Js_int8array((i8*)buff->buf, buff->len);
     case 'B':
-      return hiwire_uint8array((u8*)buff->buf, buff->len);
+      return Js_uint8array((u8*)buff->buf, buff->len);
     case '?':
       return Js_ERROR;
     case 'h':
-      return hiwire_int16array((i16*)buff->buf, buff->len);
+      return Js_int16array((i16*)buff->buf, buff->len);
     case 'H':
-      return hiwire_uint16array((u16*)buff->buf, buff->len);
+      return Js_uint16array((u16*)buff->buf, buff->len);
     case 'i':
     case 'l':
     case 'n':
-      return hiwire_int32array((i32*)buff->buf, buff->len);
+      return Js_int32array((i32*)buff->buf, buff->len);
     case 'I':
     case 'L':
     case 'N':
-      return hiwire_uint32array((u32*)buff->buf, buff->len);
+      return Js_uint32array((u32*)buff->buf, buff->len);
     case 'q':
     case 'Q':
       return Js_ERROR;
     case 'f':
-      return hiwire_float32array((f32*)buff->buf, buff->len);
+      return Js_float32array((f32*)buff->buf, buff->len);
     case 'd':
-      return hiwire_float64array((f64*)buff->buf, buff->len);
+      return Js_float64array((f64*)buff->buf, buff->len);
     default:
       return Js_ERROR;
   }
@@ -385,14 +385,14 @@ _python2js_shareable_buffer_recursive(Py_buffer* buff,
     case NOT_CONTIGUOUS:
       if (dim >= buff->ndim) {
         // The last dimension isn't contiguous, so we need to output one-by-one
-        return hiwire_get_member_int(idarr, ptr / buff->itemsize);
+        return Js_get_member_int(idarr, ptr / buff->itemsize);
       }
       break;
     case CONTIGUOUS:
       if (dim == buff->ndim - 1) {
         // The last dimension is contiguous, so we can output a whole row at a
         // time
-        return hiwire_subarray(
+        return Js_subarray(
           idarr, ptr / buff->itemsize, ptr / buff->itemsize + buff->shape[dim]);
       }
       break;
@@ -403,17 +403,17 @@ _python2js_shareable_buffer_recursive(Py_buffer* buff,
   n = buff->shape[dim];
   stride = buff->strides[dim];
 
-  jsarray = hiwire_array();
+  jsarray = Js_array();
 
   for (i = 0; i < n; ++i) {
     jsitem = _python2js_shareable_buffer_recursive(
       buff, shareable, idarr, ptr, dim + 1);
     if (jsitem == Js_ERROR) {
-      hiwire_decref(jsarray);
+      Js_decref(jsarray);
       return Js_ERROR;
     }
-    hiwire_push_array(jsarray, jsitem);
-    hiwire_decref(jsitem);
+    Js_push_array(jsarray, jsitem);
+    Js_decref(jsitem);
 
     ptr += stride;
   }

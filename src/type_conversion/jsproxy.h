@@ -1,6 +1,6 @@
 #ifndef JSPROXY_H
 #define JSPROXY_H
-#include "hiwire.h"
+#include "jsref.h"
 
 /** A Python object that a Javascript object inside. Used for any non-standard
  *  data types that are passed from Javascript to Python.

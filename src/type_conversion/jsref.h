@@ -11,8 +11,8 @@
  * By convention, these ids are stored in variable names beginning with `id`.
  *
  * Javascript objects passed to the C side must be manually reference-counted.
- * Use `hiwire_incref` if you plan to store the object on the C side. Use
- * `hiwire_decref` when done. Internally, the objects are stored in a global
+ * Use `Js_incref` if you plan to store the object on the C side. Use
+ * `Js_decref` when done. Internally, the objects are stored in a global
  * object. There may be one or more keys pointing to the same object.
  */
 
@@ -43,7 +43,7 @@ typedef struct _JsRefStruct* JsRef;
  * Initialize the variables and functions required for hiwire.
  */
 int
-hiwire_init();
+Js_init();
 
 /**
  * Increase the reference count on an object.
@@ -51,13 +51,13 @@ hiwire_init();
  * Returns: The new reference
  */
 JsRef
-hiwire_incref(JsRef idval);
+Js_incref(JsRef idval);
 
 /**
  * Decrease the reference count on an object.
  */
 void
-hiwire_decref(JsRef idval);
+Js_decref(JsRef idval);
 
 /**
  * Create a new Javascript integer with the given value.
@@ -65,7 +65,7 @@ hiwire_decref(JsRef idval);
  * Returns: New reference
  */
 JsRef
-hiwire_int(int val);
+Js_int(int val);
 
 /**
  * Create a new Javascript float with the given value.
@@ -73,7 +73,7 @@ hiwire_int(int val);
  * Returns: New reference
  */
 JsRef
-hiwire_double(double val);
+Js_double(double val);
 
 /**
  * Create a new Javascript string, given a pointer to a buffer
@@ -82,7 +82,7 @@ hiwire_double(double val);
  * Returns: New reference
  */
 JsRef
-hiwire_string_ucs4(const char* ptr, int len);
+Js_string_ucs4(const char* ptr, int len);
 
 /**
  * Create a new Javascript string, given a pointer to a buffer
@@ -91,7 +91,7 @@ hiwire_string_ucs4(const char* ptr, int len);
  * Returns: New reference
  */
 JsRef
-hiwire_string_ucs2(const char* ptr, int len);
+Js_string_ucs2(const char* ptr, int len);
 
 /**
  * Create a new Javascript string, given a pointer to a buffer
@@ -100,7 +100,7 @@ hiwire_string_ucs2(const char* ptr, int len);
  * Returns: New reference
  */
 JsRef
-hiwire_string_ucs1(const char* ptr, int len);
+Js_string_ucs1(const char* ptr, int len);
 
 /**
  * Create a new Javascript string, given a pointer to a null-terminated buffer
@@ -109,7 +109,7 @@ hiwire_string_ucs1(const char* ptr, int len);
  * Returns: New reference
  */
 JsRef
-hiwire_string_utf8(const char* ptr);
+Js_string_utf8(const char* ptr);
 
 /**
  * Create a new Javascript string, given a pointer to a null-terminated buffer
@@ -119,7 +119,7 @@ hiwire_string_utf8(const char* ptr);
  * Returns: New reference
  */
 JsRef
-hiwire_string_ascii(const char* ptr);
+Js_string_ascii(const char* ptr);
 
 /**
  * Create a new Javascript Uint8ClampedArray, given a pointer to a buffer and a
@@ -130,7 +130,7 @@ hiwire_string_ascii(const char* ptr);
  * Returns: New reference
  */
 JsRef
-hiwire_bytes(char* ptr, int len);
+Js_bytes(char* ptr, int len);
 
 /**
  * Create a new Javascript Int8Array, given a pointer to a buffer and a
@@ -141,7 +141,7 @@ hiwire_bytes(char* ptr, int len);
  * Returns: New reference
  */
 JsRef
-hiwire_int8array(i8* ptr, int len);
+Js_int8array(i8* ptr, int len);
 
 /**
  * Create a new Javascript Uint8Array, given a pointer to a buffer and a
@@ -152,7 +152,7 @@ hiwire_int8array(i8* ptr, int len);
  * Returns: New reference
  */
 JsRef
-hiwire_uint8array(u8* ptr, int len);
+Js_uint8array(u8* ptr, int len);
 
 /**
  * Create a new Javascript Int16Array, given a pointer to a buffer and a
@@ -163,7 +163,7 @@ hiwire_uint8array(u8* ptr, int len);
  * Returns: New reference
  */
 JsRef
-hiwire_int16array(i16* ptr, int len);
+Js_int16array(i16* ptr, int len);
 
 /**
  * Create a new Javascript Uint16Array, given a pointer to a buffer and a
@@ -174,7 +174,7 @@ hiwire_int16array(i16* ptr, int len);
  * Returns: New reference
  */
 JsRef
-hiwire_uint16array(u16* ptr, int len);
+Js_uint16array(u16* ptr, int len);
 
 /**
  * Create a new Javascript Int32Array, given a pointer to a buffer and a
@@ -185,7 +185,7 @@ hiwire_uint16array(u16* ptr, int len);
  * Returns: New reference
  */
 JsRef
-hiwire_int32array(i32* ptr, int len);
+Js_int32array(i32* ptr, int len);
 
 /**
  * Create a new Javascript Uint32Array, given a pointer to a buffer and a
@@ -196,7 +196,7 @@ hiwire_int32array(i32* ptr, int len);
  * Returns: New reference
  */
 JsRef
-hiwire_uint32array(u32* ptr, int len);
+Js_uint32array(u32* ptr, int len);
 
 /**
  * Create a new Javascript Float32Array, given a pointer to a buffer and a
@@ -207,7 +207,7 @@ hiwire_uint32array(u32* ptr, int len);
  * Returns: New reference
  */
 JsRef
-hiwire_float32array(f32* ptr, int len);
+Js_float32array(f32* ptr, int len);
 
 /**
  * Create a new Javascript Float64Array, given a pointer to a buffer and a
@@ -218,7 +218,7 @@ hiwire_float32array(f32* ptr, int len);
  * Returns: New reference
  */
 JsRef
-hiwire_float64array(f64* ptr, int len);
+Js_float64array(f64* ptr, int len);
 
 /**
  * Create a new Javascript undefined value.
@@ -226,7 +226,7 @@ hiwire_float64array(f64* ptr, int len);
  * Returns: "New" reference
  */
 JsRef
-hiwire_undefined();
+Js_undefined();
 
 /**
  * Create a new Javascript null value.
@@ -234,7 +234,7 @@ hiwire_undefined();
  * Returns: "New" reference
  */
 JsRef
-hiwire_null();
+Js_null();
 
 /**
  * Create a new Javascript true value.
@@ -242,7 +242,7 @@ hiwire_null();
  * Returns: "New" reference
  */
 JsRef
-hiwire_true();
+Js_true();
 
 /**
  * Create a new Javascript false value.
@@ -250,7 +250,7 @@ hiwire_true();
  * Returns: "New" reference
  */
 JsRef
-hiwire_false();
+Js_false();
 
 /**
  * Create a new Javascript boolean value.
@@ -259,7 +259,7 @@ hiwire_false();
  * Returns: "New" reference
  */
 JsRef
-hiwire_bool(bool boolean);
+Js_bool(bool boolean);
 
 /**
  * Create a new Javascript Array.
@@ -267,7 +267,7 @@ hiwire_bool(bool boolean);
  * Returns: New reference
  */
 JsRef
-hiwire_array();
+Js_array();
 
 /**
  * Push a value to the end of a Javascript array.
@@ -276,7 +276,7 @@ hiwire_array();
  * responsibility to decref it.
  */
 void
-hiwire_push_array(JsRef idobj, JsRef idval);
+Js_push_array(JsRef idobj, JsRef idval);
 
 /**
  * Create a new Javascript object.
@@ -284,7 +284,7 @@ hiwire_push_array(JsRef idobj, JsRef idval);
  * Returns: New reference
  */
 JsRef
-hiwire_object();
+Js_object();
 
 /**
  * Add a new key/value pair to a Javascript object.
@@ -293,7 +293,7 @@ hiwire_object();
  * user's responsibility to decref them.
  */
 void
-hiwire_push_object_pair(JsRef idobj, JsRef idkey, JsRef idval);
+Js_push_object_pair(JsRef idobj, JsRef idkey, JsRef idval);
 
 /**
  * Throws a new Error object with the given message.
@@ -301,7 +301,7 @@ hiwire_push_object_pair(JsRef idobj, JsRef idkey, JsRef idval);
  * The message is conventionally a Javascript string, but that is not required.
  */
 void
-hiwire_throw_error(JsRef idmsg);
+Js_throw_error(JsRef idmsg);
 
 /**
  * Get a Javascript object from the global namespace, i.e. window.
@@ -309,7 +309,7 @@ hiwire_throw_error(JsRef idmsg);
  * Returns: New reference
  */
 JsRef
-hiwire_get_global(const char* ptrname);
+Js_get_global(const char* ptrname);
 
 /**
  * Get an object member by string.
@@ -318,20 +318,20 @@ hiwire_get_global(const char* ptrname);
  * Returns: New reference
  */
 JsRef
-hiwire_get_member_string(JsRef idobj, const char* ptrname);
+Js_get_member_string(JsRef idobj, const char* ptrname);
 
 /**
  * Set an object member by string.
  */
 void
-hiwire_set_member_string(JsRef idobj, const char* ptrname, JsRef idval);
+Js_set_member_string(JsRef idobj, const char* ptrname, JsRef idval);
 
 /**
  * Delete an object member by string.
  *
  */
 void
-hiwire_delete_member_string(JsRef idobj, const char* ptrname);
+Js_delete_member_string(JsRef idobj, const char* ptrname);
 
 /**
  * Get an object member by integer.
@@ -341,7 +341,7 @@ hiwire_delete_member_string(JsRef idobj, const char* ptrname);
  * Returns: New reference
  */
 JsRef
-hiwire_get_member_int(JsRef idobj, int idx);
+Js_get_member_int(JsRef idobj, int idx);
 
 /**
  * Set an object member by integer.
@@ -350,7 +350,7 @@ hiwire_get_member_int(JsRef idobj, int idx);
  *
  */
 void
-hiwire_set_member_int(JsRef idobj, int idx, JsRef idval);
+Js_set_member_int(JsRef idobj, int idx, JsRef idval);
 
 /**
  * Get an object member by object.
@@ -358,28 +358,28 @@ hiwire_set_member_int(JsRef idobj, int idx, JsRef idval);
  * Returns: New reference
  */
 JsRef
-hiwire_get_member_obj(JsRef idobj, JsRef ididx);
+Js_get_member_obj(JsRef idobj, JsRef ididx);
 
 /**
  * Set an object member by object.
  *
  */
 void
-hiwire_set_member_obj(JsRef idobj, JsRef ididx, JsRef idval);
+Js_set_member_obj(JsRef idobj, JsRef ididx, JsRef idval);
 
 /**
  * Delete an object member by object.
  *
  */
 void
-hiwire_delete_member_obj(JsRef idobj, JsRef ididx);
+Js_delete_member_obj(JsRef idobj, JsRef ididx);
 
 /**
  * Get the methods on an object, both on itself and what it inherits.
  *
  */
 JsRef
-hiwire_dir(JsRef idobj);
+Js_dir(JsRef idobj);
 
 /**
  * Call a function
@@ -389,7 +389,7 @@ hiwire_dir(JsRef idobj);
  * Returns: New reference
  */
 JsRef
-hiwire_call(JsRef idobj, JsRef idargs);
+Js_call(JsRef idobj, JsRef idargs);
 
 /**
  * Call a member function.
@@ -401,7 +401,7 @@ hiwire_call(JsRef idobj, JsRef idargs);
  * Returns: New reference
  */
 JsRef
-hiwire_call_member(JsRef idobj, const char* ptrname, JsRef idargs);
+Js_call_member(JsRef idobj, const char* ptrname, JsRef idargs);
 
 /**
  * Calls the constructor of a class object.
@@ -411,7 +411,7 @@ hiwire_call_member(JsRef idobj, const char* ptrname, JsRef idargs);
  * Returns: New reference
  */
 JsRef
-hiwire_new(JsRef idobj, JsRef idargs);
+Js_new(JsRef idobj, JsRef idargs);
 
 /**
  * Returns the value of the `length` member on a Javascript object.
@@ -419,7 +419,7 @@ hiwire_new(JsRef idobj, JsRef idargs);
  * Returns: C int
  */
 int
-hiwire_get_length(JsRef idobj);
+Js_get_length(JsRef idobj);
 
 /**
  * Returns the boolean value of a Javascript object.
@@ -427,7 +427,7 @@ hiwire_get_length(JsRef idobj);
  * Returns: C int
  */
 bool
-hiwire_get_bool(JsRef idobj);
+Js_get_bool(JsRef idobj);
 
 /**
  * Returns 1 if the object is a function.
@@ -435,7 +435,7 @@ hiwire_get_bool(JsRef idobj);
  * Returns: C int
  */
 bool
-hiwire_is_function(JsRef idobj);
+Js_is_function(JsRef idobj);
 
 /**
  * Gets the string representation of an object by calling `toString`.
@@ -443,7 +443,7 @@ hiwire_is_function(JsRef idobj);
  * Returns: New reference to Javascript string
  */
 JsRef
-hiwire_to_string(JsRef idobj);
+Js_to_string(JsRef idobj);
 
 /**
  * Gets the "typeof" string for a value.
@@ -451,43 +451,43 @@ hiwire_to_string(JsRef idobj);
  * Returns: New reference to Javascript string
  */
 JsRef
-hiwire_typeof(JsRef idobj);
+Js_typeof(JsRef idobj);
 
 /**
  * Returns non-zero if a < b.
  */
 bool
-hiwire_less_than(JsRef ida, JsRef idb);
+Js_less_than(JsRef ida, JsRef idb);
 
 /**
  * Returns non-zero if a <= b.
  */
 bool
-hiwire_less_than_equal(JsRef ida, JsRef idb);
+Js_less_than_equal(JsRef ida, JsRef idb);
 
 /**
  * Returns non-zero if a == b.
  */
 bool
-hiwire_equal(JsRef ida, JsRef idb);
+Js_equal(JsRef ida, JsRef idb);
 
 /**
  * Returns non-zero if a != b.
  */
 bool
-hiwire_not_equal(JsRef idx, JsRef idb);
+Js_not_equal(JsRef idx, JsRef idb);
 
 /**
  * Returns non-zero if a > b.
  */
 bool
-hiwire_greater_than(JsRef ida, JsRef idb);
+Js_greater_than(JsRef ida, JsRef idb);
 
 /**
  * Returns non-zero if a >= b.
  */
 bool
-hiwire_greater_than_equal(JsRef ida, JsRef idb);
+Js_greater_than_equal(JsRef ida, JsRef idb);
 
 /**
  * Calls the `next` function on an iterator.
@@ -495,57 +495,57 @@ hiwire_greater_than_equal(JsRef ida, JsRef idb);
  * Returns: Js_ERROR if `next` function is undefined.
  */
 JsRef
-hiwire_next(JsRef idobj);
+Js_next(JsRef idobj);
 
 /**
  * Returns the iterator associated with the given object, if any.
  */
 JsRef
-hiwire_get_iterator(JsRef idobj);
+Js_get_iterator(JsRef idobj);
 
 /**
  * Returns 1 if the value is non-zero.
  *
  */
 bool
-hiwire_nonzero(JsRef idobj);
+Js_nonzero(JsRef idobj);
 
 /**
  * Returns 1 if the value is a typedarray.
  */
 bool
-hiwire_is_typedarray(JsRef idobj);
+Js_is_typedarray(JsRef idobj);
 
 /**
  * Returns 1 if the value is a typedarray whose buffer is part of the WASM heap.
  */
 bool
-hiwire_is_on_wasm_heap(JsRef idobj);
+Js_is_on_wasm_heap(JsRef idobj);
 
 /**
  * Returns the value of obj.byteLength.
  *
- * There is no error checking. Caller must ensure that hiwire_is_typedarray is
+ * There is no error checking. Caller must ensure that Js_is_typedarray is
  * true.
  */
 int
-hiwire_get_byteLength(JsRef idobj);
+Js_get_byteLength(JsRef idobj);
 
 /**
  * Returns the value of obj.byteOffset.
  *
- * There is no error checking. Caller must ensure that hiwire_is_typedarray is
- * true and hiwire_is_on_wasm_heap is true.
+ * There is no error checking. Caller must ensure that Js_is_typedarray is
+ * true and Js_is_on_wasm_heap is true.
  */
 int
-hiwire_get_byteOffset(JsRef idobj);
+Js_get_byteOffset(JsRef idobj);
 
 /**
  * Copies the buffer contents of a given typed array or buffer into the memory
  * at ptr.
  */
 void
-hiwire_copy_to_ptr(JsRef idobj, int ptr);
+Js_copy_to_ptr(JsRef idobj, int ptr);
 
 #define INT8_TYPE 1
 #define UINT8_TYPE 2
@@ -564,12 +564,12 @@ hiwire_copy_to_ptr(JsRef idobj, int ptr);
  * UINT16_TYPE, INT32_TYPE, UINT32_TYPE, FLOAT32_TYPE, FLOAT64_TYPE.
  */
 int
-hiwire_get_dtype(JsRef idobj);
+Js_get_dtype(JsRef idobj);
 
 /**
  * Get a subarray from a TypedArray
  */
 JsRef
-hiwire_subarray(JsRef idarr, int start, int end);
+Js_subarray(JsRef idarr, int start, int end);
 
 #endif /* HIWIRE_H */
