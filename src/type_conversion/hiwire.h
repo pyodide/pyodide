@@ -42,7 +42,7 @@ typedef struct _JsRefStruct* JsRef;
 /**
  * Initialize the variables and functions required for hiwire.
  */
-void
+int
 hiwire_init();
 
 /**
