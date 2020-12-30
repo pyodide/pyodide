@@ -99,9 +99,7 @@ EM_JS(void, Js_decref, (JsRef idval), { Module.jsref.decref(idval); });
 
 EM_JS(JsRef, Js_int, (int val), { return Module.jsref.new_value(val); });
 
-EM_JS(JsRef, Js_double, (double val), {
-  return Module.jsref.new_value(val);
-});
+EM_JS(JsRef, Js_double, (double val), { return Module.jsref.new_value(val); });
 
 EM_JS(JsRef, Js_string_ucs4, (const char* ptr, int len), {
   var jsstr = "";
@@ -286,15 +284,12 @@ EM_JS(JsRef, Js_call, (JsRef idfunc, JsRef idargs), {
   return Module.jsref.new_value(jsfunc.apply(jsfunc, jsargs));
 });
 
-EM_JS(JsRef,
-      Js_call_member,
-      (JsRef idobj, const char* ptrname, JsRef idargs),
-      {
-        var jsobj = Module.jsref.get_value(idobj);
-        var jsname = UTF8ToString(ptrname);
-        var jsargs = Module.jsref.get_value(idargs);
-        return Module.jsref.new_value(jsobj[jsname].apply(jsobj, jsargs));
-      });
+EM_JS(JsRef, Js_call_member, (JsRef idobj, const char* ptrname, JsRef idargs), {
+  var jsobj = Module.jsref.get_value(idobj);
+  var jsname = UTF8ToString(ptrname);
+  var jsargs = Module.jsref.get_value(idargs);
+  return Module.jsref.new_value(jsobj[jsname].apply(jsobj, jsargs));
+});
 
 EM_JS(JsRef, Js_new, (JsRef idobj, JsRef idargs), {
   function newCall(Cls)
@@ -333,9 +328,9 @@ EM_JS(JsRef, Js_typeof, (JsRef idobj), {
 });
 
 #define MAKE_OPERATOR(name, op)                                                \
-  EM_JS(bool, Js_##name, (JsRef ida, JsRef idb), {                         \
-    return (Module.jsref.get_value(ida) op Module.jsref.get_value(idb)) ? 1  \
-                                                                          : 0; \
+  EM_JS(bool, Js_##name, (JsRef ida, JsRef idb), {                             \
+    return (Module.jsref.get_value(ida) op Module.jsref.get_value(idb)) ? 1    \
+                                                                        : 0;   \
   })
 
 MAKE_OPERATOR(less_than, <);

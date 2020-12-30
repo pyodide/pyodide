@@ -1,8 +1,8 @@
 #include <Python.h>
 #include <emscripten.h>
 
-#include "jsref.h"
 #include "js2python.h"
+#include "jsref.h"
 #include "python2js.h"
 
 JsRef

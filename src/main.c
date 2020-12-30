@@ -3,10 +3,10 @@
 #include <emscripten.h>
 #include <stdalign.h>
 
-#include "jsref.h"
 #include "js2python.h"
 #include "jsimport.h"
 #include "jsproxy.h"
+#include "jsref.h"
 #include "pyimport.h"
 #include "pyproxy.h"
 #include "python2js.h"

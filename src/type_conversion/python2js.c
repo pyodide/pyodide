@@ -2,8 +2,8 @@
 
 #include <emscripten.h>
 
-#include "jsref.h"
 #include "jsproxy.h"
+#include "jsref.h"
 #include "pyproxy.h"
 
 #include "python2js_buffer.h"

@@ -2,8 +2,8 @@
 
 #include <emscripten.h>
 
-#include "jsref.h"
 #include "js2python.h"
+#include "jsref.h"
 
 static PyObject* js_module = NULL;
 
