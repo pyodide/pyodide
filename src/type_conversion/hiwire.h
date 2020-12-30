@@ -418,7 +418,7 @@ hiwire_new(JsRef idobj, JsRef idargs);
  *
  * Returns: C int
  */
-bool
+int
 hiwire_get_length(JsRef idobj);
 
 /**
