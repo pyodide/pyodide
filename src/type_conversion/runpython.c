@@ -6,6 +6,10 @@
 #include <Python.h>
 #include <emscripten.h>
 
+static PyObject* py_pyodide;
+static PyObject* globals;
+_Py_IDENTIFIER(eval_code);
+
 int
 _runPythonDebug(char* code)
 {
@@ -30,7 +34,7 @@ _runPythonDebug(char* code)
 
   printf("runPythonDebug -- doing python2js(result):\n");
   int id = python2js(result);
-  Py_DECREF(ret);
+  Py_DECREF(result);
   return id;
 }
 
@@ -52,7 +56,7 @@ runpython_init()
     return 1;
   }
 
-  PyObject* globals = PyModule_GetDict(__main__);
+  globals = PyModule_GetDict(__main__);
   if (globals == NULL) {
     return 1;
   }
@@ -61,7 +65,7 @@ runpython_init()
     return 1;
   }
 
-  PyObject* py_pyodide = PyImport_ImportModule("pyodide");
+  py_pyodide = PyImport_ImportModule("pyodide");
   if (py_pyodide == NULL) {
     return 1;
   }
