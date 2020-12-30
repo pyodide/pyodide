@@ -18,6 +18,7 @@ _runPythonDebug(char* code)
   if (py_code == NULL) {
     fprintf(stderr, "runPythonDebug -- error occurred converting argument:\n");
     PyErr_Print();
+    return HW_UNDEFINED;
   }
 
   PyObject* result = _PyObject_CallMethodIdObjArgs(
