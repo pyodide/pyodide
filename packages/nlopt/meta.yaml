@@ -1,0 +1,15 @@
+package:
+  name: nlopt
+  version: 2.7.0
+
+source:
+  path: ../../../nlopt-python
+  sha256: 
+
+requirements:
+  run:
+    - numpy
+
+test:
+  imports:
+    - nlopt
