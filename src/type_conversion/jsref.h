@@ -43,7 +43,7 @@ typedef struct _JsRefStruct* JsRef;
  * Initialize the variables and functions required for hiwire.
  */
 int
-Js_init();
+jsref_init();
 
 /**
  * Increase the reference count on an object.

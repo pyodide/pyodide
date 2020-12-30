@@ -38,7 +38,7 @@ Js_bool(bool boolean)
   return boolean ? Js_true() : Js_false();
 }
 
-EM_JS(int, Js_init, (), {
+EM_JS(int, jsref_init, (), {
   let _jsref = { objects : new Map(), counter : 1 };
   Module.jsref = {};
   Module.jsref.ERROR = _Js_error();

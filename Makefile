@@ -73,7 +73,7 @@ build/pyodide.asm.js: src/main.bc src/type_conversion/jsimport.bc \
 		src/type_conversion/pyimport.bc src/type_conversion/pyproxy.bc \
 		src/type_conversion/python2js.bc \
 		src/type_conversion/python2js_buffer.bc \
-		src/type_conversion/runpython.bc src/type_conversion/hiwire.bc
+		src/type_conversion/runpython.bc src/type_conversion/jsref.bc
 	date +"[%F %T] Building pyodide.asm.js..."
 	[ -d build ] || mkdir build
 	$(CXX) -s EXPORT_NAME="'pyodide'" -o build/pyodide.asm.html $(filter %.bc,$^) \

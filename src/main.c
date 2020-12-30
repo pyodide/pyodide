@@ -39,7 +39,7 @@ main(int argc, char** argv)
   if (sizeof(JsRef) != sizeof(int)) {
     FATAL_ERROR("JsRef doesn't have the same size as int.");
   }
-  TRY_INIT(hiwire);
+  TRY_INIT(jsref);
 
   setenv("PYTHONHOME", "/", 0);
 
