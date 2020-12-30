@@ -14,7 +14,7 @@ let languagePluginLoader = new Promise((resolve, reject) => {
   let loadedPackages = {};
   let loadPackagePromise = new Promise((resolve) => resolve());
   // Regexp for validating package name and URI
-  let package_name_regexp = '[a-z0-9_][a-z0-9_\-]*';
+  let package_name_regexp = '[a-z0-9_][a-z0-9_\-]*'
   let package_uri_regexp =
       new RegExp('^https?://.*?(' + package_name_regexp + ').js$', 'i');
   let package_name_regexp = new RegExp('^' + package_name_regexp + '$', 'i');
@@ -133,7 +133,7 @@ let languagePluginLoader = new Promise((resolve, reject) => {
                          `loaded from ${loadedPackages[pkg]}!`);
           return;
         } else {
-          _messageCallback(`${pkg} already loaded from ${loadedPackages[pkg]}`);
+          _messageCallback(`${pkg} already loaded from ${loadedPackages[pkg]}`)
         }
       } else if (pkg in toLoad) {
         if (package_uri != toLoad[pkg]) {
@@ -178,7 +178,7 @@ let languagePluginLoader = new Promise((resolve, reject) => {
       }
 
       let packageList = Array.from(Object.keys(toLoad));
-      _messageCallback(`Loading ${packageList.join(', ')}`);
+      _messageCallback(`Loading ${packageList.join(', ')}`)
 
       // monitorRunDependencies is called at the beginning and the end of each
       // package being loaded. We know we are done when it has been called
@@ -198,7 +198,7 @@ let languagePluginLoader = new Promise((resolve, reject) => {
           if (packageList.length > 0) {
             resolveMsg += packageList.join(', ');
           } else {
-            resolveMsg += 'no packages';
+            resolveMsg += 'no packages'
           }
 
           if (!isFirefox) {
@@ -232,7 +232,7 @@ let languagePluginLoader = new Promise((resolve, reject) => {
         } else {
           scriptSrc = `${package_uri}`;
         }
-        _messageCallback(`Loading ${pkg} from ${scriptSrc}`);
+        _messageCallback(`Loading ${pkg} from ${scriptSrc}`)
         loadScript(scriptSrc, () => {}, () => {
           // If the package_uri fails to load, call monitorRunDependencies twice
           // (so packageCounter will still hit 0 and finish loading), and remove
@@ -358,24 +358,19 @@ let languagePluginLoader = new Promise((resolve, reject) => {
                 self.pyodide.runPython('import sys\nsys.modules["__main__"]');
             self.pyodide = makePublicAPI(self.pyodide, PUBLIC_API);
             self.pyodide._module.packages = json;
-            if (self.iodide !== undefined) {
-              // Perform some completions immediately so there isn't a delay on
-              // the first call to autocomplete
-              self.pyodide.runPython('import pyodide');
-              self.pyodide.runPython('pyodide.get_completions("")');
-            }
             resolve();
           });
     };
   });
 
   let dataLoadPromise = new Promise((resolve, reject) => {
-    Module.monitorRunDependencies = (n) => {
-      if (n === 0) {
-        delete Module.monitorRunDependencies;
-        resolve();
-      }
-    };
+    Module.monitorRunDependencies =
+        (n) => {
+          if (n === 0) {
+            delete Module.monitorRunDependencies;
+            resolve();
+          }
+        }
   });
 
   Promise.all([ postRunPromise, dataLoadPromise ]).then(() => resolve());
@@ -392,48 +387,5 @@ let languagePluginLoader = new Promise((resolve, reject) => {
       self.pyodide.loadPackage = loadPackage;
     }, () => {});
   }, () => {});
-
-  ////////////////////////////////////////////////////////////
-  // Iodide-specific functionality, that doesn't make sense
-  // if not using with Iodide.
-  if (self.iodide !== undefined) {
-    // Load the custom CSS for Pyodide
-    let link = document.createElement('link');
-    link.rel = 'stylesheet';
-    link.type = 'text/css';
-    link.href = `${baseURL}renderedhtml.css`;
-    document.getElementsByTagName('head')[0].appendChild(link);
-
-    // Add a custom output handler for Python objects
-    self.iodide.addOutputRenderer({
-      shouldRender : (val) => {
-        return (typeof val === 'function' &&
-                pyodide._module.PyProxy.isPyProxy(val));
-      },
-
-      render : (val) => {
-        let div = document.createElement('div');
-        div.className = 'rendered_html';
-        let element;
-        if (val._repr_html_ !== undefined) {
-          let result = val._repr_html_();
-          if (typeof result === 'string') {
-            div.appendChild(new DOMParser()
-                                .parseFromString(result, 'text/html')
-                                .body.firstChild);
-            element = div;
-          } else {
-            element = result;
-          }
-        } else {
-          let pre = document.createElement('pre');
-          pre.textContent = val.toString();
-          div.appendChild(pre);
-          element = div;
-        }
-        return element.outerHTML;
-      }
-    });
-  }
 });
 languagePluginLoader
