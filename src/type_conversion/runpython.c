@@ -1,26 +1,35 @@
 #include "runpython.h"
+#include "hiwire.h"
 #include "pyproxy.h"
 #include "python2js.h"
 
 #include <Python.h>
 #include <emscripten.h>
 
+int
 _runPythonDebug(char* code)
 {
   PyObject* py_code;
   py_code = PyUnicode_FromString(code);
   if (py_code == NULL) {
-    return pythonexc2js();
+    fprintf(stderr, "runPythonDebug -- error occurred converting argument:\n");
+    PyErr_Print();
   }
 
-  PyObject* ret = _PyObject_CallMethodIdObjArgs(
+  PyObject* result = _PyObject_CallMethodIdObjArgs(
     pyodide, &PyId_eval_code, py_code, globals, NULL);
 
-  if (ret == NULL) {
-    return pythonexc2js();
+  if (result == NULL) {
+    fprintf(stderr, "runPythonDebug -- error occurred\n");
+    PyErr_Print();
+    return HW_UNDEFINED;
   }
 
-  int id = python2js(ret);
+  printf("runPythonDebug -- eval_code succeeded, it returned:\n");
+  PyObject_Print(result, stdout, 0);
+
+  printf("runPythonDebug -- doing python2js(result):\n");
+  int id = python2js(result);
   Py_DECREF(ret);
   return id;
 }
@@ -74,7 +83,8 @@ runpython_init()
       Module.globals = Module.hiwire.get_value($1);
 
       // Use this to test python code separate from pyproxy.apply.
-      Module.runPythonDebug = function(code){
+      Module.runPythonDebug = function(code)
+      {
         let pycode = stringToNewUTF8(code);
         let idresult = Module.__runPythonDebug(pycode);
         let jsresult = Module.hiwire.get_value(idresult);
