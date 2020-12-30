@@ -96,9 +96,7 @@ EM_JS(HwRef, hiwire_incref, (HwRef idval), {
 
 EM_JS(void, hiwire_decref, (HwRef idval), { Module.hiwire.decref(idval); });
 
-EM_JS(HwRef, hiwire_int, (int val), {
-  return Module.hiwire.new_value(val);
-});
+EM_JS(HwRef, hiwire_int, (int val), { return Module.hiwire.new_value(val); });
 
 EM_JS(HwRef, hiwire_double, (double val), {
   return Module.hiwire.new_value(val);
@@ -198,15 +196,12 @@ EM_JS(void, hiwire_push_array, (HwRef idarr, HwRef idval), {
 
 EM_JS(HwRef, hiwire_object, (), { return Module.hiwire.new_value({}); });
 
-EM_JS(void,
-      hiwire_push_object_pair,
-      (HwRef idobj, HwRef idkey, HwRef idval),
-      {
-        var jsobj = Module.hiwire.get_value(idobj);
-        var jskey = Module.hiwire.get_value(idkey);
-        var jsval = Module.hiwire.get_value(idval);
-        jsobj[jskey] = jsval;
-      });
+EM_JS(void, hiwire_push_object_pair, (HwRef idobj, HwRef idkey, HwRef idval), {
+  var jsobj = Module.hiwire.get_value(idobj);
+  var jskey = Module.hiwire.get_value(idkey);
+  var jsval = Module.hiwire.get_value(idval);
+  jsobj[jskey] = jsval;
+});
 
 EM_JS(HwRef, hiwire_get_global, (const char* ptrname), {
   var jsname = UTF8ToString(ptrname);
@@ -217,18 +212,15 @@ EM_JS(HwRef, hiwire_get_global, (const char* ptrname), {
   }
 });
 
-EM_JS(HwRef,
-      hiwire_get_member_string,
-      (HwRef idobj, const char* ptrkey),
-      {
-        var jsobj = Module.hiwire.get_value(idobj);
-        var jskey = UTF8ToString(ptrkey);
-        if (jskey in jsobj) {
-          return Module.hiwire.new_value(jsobj[jskey]);
-        } else {
-          return Module.hiwire.ERROR;
-        }
-      });
+EM_JS(HwRef, hiwire_get_member_string, (HwRef idobj, const char* ptrkey), {
+  var jsobj = Module.hiwire.get_value(idobj);
+  var jskey = UTF8ToString(ptrkey);
+  if (jskey in jsobj) {
+    return Module.hiwire.new_value(jsobj[jskey]);
+  } else {
+    return Module.hiwire.ERROR;
+  }
+});
 
 EM_JS(void,
       hiwire_set_member_string,
@@ -265,15 +257,12 @@ EM_JS(HwRef, hiwire_get_member_obj, (HwRef idobj, HwRef ididx), {
   }
 });
 
-EM_JS(void,
-      hiwire_set_member_obj,
-      (HwRef idobj, HwRef ididx, HwRef idval),
-      {
-        var jsobj = Module.hiwire.get_value(idobj);
-        var jsidx = Module.hiwire.get_value(ididx);
-        var jsval = Module.hiwire.get_value(idval);
-        jsobj[jsidx] = jsval;
-      });
+EM_JS(void, hiwire_set_member_obj, (HwRef idobj, HwRef ididx, HwRef idval), {
+  var jsobj = Module.hiwire.get_value(idobj);
+  var jsidx = Module.hiwire.get_value(ididx);
+  var jsval = Module.hiwire.get_value(idval);
+  jsobj[jsidx] = jsval;
+});
 
 EM_JS(void, hiwire_delete_member_obj, (HwRef idobj, HwRef ididx), {
   var jsobj = Module.hiwire.get_value(idobj);
@@ -343,7 +332,7 @@ EM_JS(HwRef, hiwire_typeof, (HwRef idobj), {
 });
 
 #define MAKE_OPERATOR(name, op)                                                \
-  EM_JS(bool, hiwire_##name, (HwRef ida, HwRef idb), {                   \
+  EM_JS(bool, hiwire_##name, (HwRef ida, HwRef idb), {                         \
     return (Module.hiwire.get_value(ida) op Module.hiwire.get_value(idb)) ? 1  \
                                                                           : 0; \
   })

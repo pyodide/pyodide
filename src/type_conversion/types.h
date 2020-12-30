@@ -1,8 +1,8 @@
 #ifndef MY_TYPES_H
 #define MY_TYPES_H
 // https://elixir.bootlin.com/linux/latest/source/arch/powerpc/boot/types.h#L9
-#include "stdint.h"
 #include "stdbool.h"
+#include "stdint.h"
 
 typedef uint8_t u8;
 typedef uint16_t u16;
