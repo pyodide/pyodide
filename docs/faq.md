@@ -21,18 +21,47 @@ Recently there is a [Native File System API](https://wicg.github.io/file-system-
 
 
 ## How can I change the behavior of `runPython` and `runPythonAsync`?
-Internally they use the `pyodide-py` apis `eval_code` and `find_imports`. You can monkey patch these.
-Run the following Python code:
-```python
-import pyodide
-old_eval_code = pyodide.eval_code
-def eval_code(code, ns):
-  extra_info = None
-  result = old_eval_code(code, ns)
-  return [ns["extra_info"], result]
-pyodide.eval_code = eval_code
+The definitions of `runPython` and `runPythonAsync` are very simple:
+```javascript
+function runPython(code){
+  pyodide.py_pyodide.eval_code(code, pyodide.globals);
+}
 ```
-Then `pyodide.runPython("2+7")` returns `9` and `pyodide.runPython("extra_info='hello' ; 2 + 2")` will return `['hello', 4]`.
+
+```javascript
+async function runPythonAsync(code, messageCallback, errorCallback) {
+  await pyodide.loadPackagesForCode(code, messageCallback, errorCallback);
+  return pyodide.runPython(code);
+};
+```
+To make your own version of `runPython`:
+
+```javascript
+pyodide.runPython(
+  `
+  import pyodide
+  old_eval_code = pyodide.eval_code
+  def my_eval_code(code, ns):
+    extra_info = None
+    result = old_eval_code(code, ns)
+    return [ns["extra_info"], result]
+  `
+)
+
+function myRunPython(code){
+  return pyodide.globals.my_eval_code(code, pyodide.globals);
+}
+
+function myAsyncRunPython(code){
+  await pyodide.loadPackagesForCode(code, messageCallback, errorCallback);
+  return pyodide.myRunPython(code, pyodide.globals);
+}
+```
+Then `pyodide.myRunPython("2+7")` returns `[None, 9]` and
+`pyodide.myRunPython("extra_info='hello' ; 2 + 2")` returns `['hello', 4]`.
+If you want to change which packages `loadPackagesForCode` loads, you can
+monkey patch `pyodide-py.find_imports` which takes `code` as an argument
+and returns a list of packages imported.
 
 
 ## How to detect that code is run with Pyodide?
