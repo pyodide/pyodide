@@ -39,6 +39,8 @@ main(int argc, char** argv)
   if (sizeof(HwObject) != sizeof(int)) {
     FATAL_ERROR("HwObject doesn't have the same size as int.");
   }
+  TRY_INIT(hiwire);
+
   setenv("PYTHONHOME", "/", 0);
 
   Py_InitializeEx(0);

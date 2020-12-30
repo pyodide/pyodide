@@ -38,7 +38,7 @@ hiwire_bool(bool boolean)
   return boolean ? hiwire_true() : hiwire_false();
 }
 
-EM_JS(void, hiwire_setup, (), {
+EM_JS(void, hiwire_init, (), {
   let _hiwire = { objects : new Map(), counter : 1 };
   Module.hiwire = {};
   Module.hiwire.ERROR = _hiwire_error();

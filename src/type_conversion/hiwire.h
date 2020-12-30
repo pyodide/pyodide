@@ -43,7 +43,7 @@ typedef struct _HwObjectStruct* HwObject;
  * Initialize the variables and functions required for hiwire.
  */
 void
-hiwire_setup();
+hiwire_init();
 
 /**
  * Increase the reference count on an object.
