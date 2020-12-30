@@ -331,10 +331,9 @@ var languagePluginLoader = new Promise((resolve, reject) => {
   Module.preloadedWasm = {};
   let isFirefox = navigator.userAgent.toLowerCase().indexOf('firefox') > -1;
 
+  Module.runPython = code => Module.py_pyodide.eval_code(code, Module.globals);
+
   // clang-format off
-
-  Module.runPython = function(code) { return Module.py_pyodide.eval_code(code, Module.globals); };
-
   Module.loadPackagesForCode = async function(code, messageCallback, errorCallback) {
     let imports = Module.py_pyodide.find_imports(code);
     if (imports.length) {
@@ -350,14 +349,14 @@ var languagePluginLoader = new Promise((resolve, reject) => {
         await loadPackage(
           Array.from(packages.keys()),
           messageCallback,
-        errorCallback);
+          errorCallback,
+        );
       }
     }
   };
+  // clang-format on
 
-  Module.pyimport = function(name){
-    return Module.globals[name];
-  };
+  Module.pyimport = name => Module.globals[name];
 
   Module.runPythonAsync = async function(code, messageCallback, errorCallback) {
     await Module.loadPackagesForCode(code, messageCallback, errorCallback);
