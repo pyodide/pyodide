@@ -1,7 +1,7 @@
 self.languagePluginUrl = '{{ PYODIDE_BASE_URL }}'
 importScripts('./pyodide.js')
 
-var onmessage = function(e) { // eslint-disable-line no-unused-vars
+let onmessage = function(e) { // eslint-disable-line no-unused-vars
   languagePluginLoader.then(() => {
     const data = e.data;
     const keys = Object.keys(data);

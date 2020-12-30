@@ -25,8 +25,8 @@ _pyimport(char* name)
 EM_JS(int, pyimport_init, (), {
   Module.pyimport = function(name)
   {
-    var pyname = allocate(intArrayFromString(name), 'i8', ALLOC_NORMAL);
-    var idresult = Module.__pyimport(pyname);
+    let pyname = allocate(intArrayFromString(name), 'i8', ALLOC_NORMAL);
+    let idresult = Module.__pyimport(pyname);
     jsresult = Module.hiwire.get_value(idresult);
     Module.hiwire.decref(idresult);
     _free(pyname);

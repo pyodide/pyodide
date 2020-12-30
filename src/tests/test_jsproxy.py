@@ -98,7 +98,7 @@ def test_jsproxy_iter(selenium):
     selenium.run_js(
         """
         function makeIterator(array) {
-          var nextIndex = 0;
+          let nextIndex = 0;
           return {
             next: function() {
               return nextIndex < array.length ?

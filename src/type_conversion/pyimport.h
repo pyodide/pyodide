@@ -1,7 +1,7 @@
 #ifndef PYIMPORT_H
 #define PYIMPORT_H
 
-/** Makes `var foo = pyodide.pyimport('foo')` work in Javascript.
+/** Makes `let foo = pyodide.pyimport('foo')` work in Javascript.
  */
 
 int

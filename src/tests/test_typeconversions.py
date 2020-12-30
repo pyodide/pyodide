@@ -150,7 +150,7 @@ def test_typed_arrays(selenium, wasm_heap, jstype, pytype):
     else:
         selenium.run_js(
             f"""
-             var buffer = pyodide._module._malloc(
+             let buffer = pyodide._module._malloc(
                    4 * {jstype}.BYTES_PER_ELEMENT);
              window.array = new {jstype}(
                    pyodide._module.HEAPU8.buffer, buffer, 4);
@@ -190,7 +190,7 @@ def test_array_buffer(selenium):
 def assert_js_to_py_to_js(selenium, name):
     selenium.run_js(f"window.obj = {name};")
     selenium.run("from js import obj")
-    assert selenium.run_js("return pyodide.globals['obj'] === obj")
+    assert selenium.run_js("return pyodide.globals['obj'] === obj;")
 
 
 def assert_py_to_js_to_py(selenium, name):
@@ -210,7 +210,7 @@ def test_recursive_list_to_js(selenium_standalone):
         x.append(x)
         """
     )
-    selenium_standalone.run_js("x = pyodide.pyimport('x')")
+    selenium_standalone.run_js("x = pyodide.pyimport('x');")
 
 
 def test_recursive_dict_to_js(selenium_standalone):
@@ -220,7 +220,7 @@ def test_recursive_dict_to_js(selenium_standalone):
         x[0] = x
         """
     )
-    selenium_standalone.run_js("x = pyodide.pyimport('x')")
+    selenium_standalone.run_js("x = pyodide.pyimport('x');")
 
 
 def test_list_from_js(selenium):
@@ -252,7 +252,7 @@ def test_jsproxy_attribute_error(selenium):
                 this.y = y;
             }
         }
-        window.point = new Point(42, 43)
+        window.point = new Point(42, 43);
         """
     )
     selenium.run(
@@ -289,7 +289,7 @@ def test_javascript_error(selenium):
 def test_javascript_error_back_to_js(selenium):
     selenium.run_js(
         """
-        window.err = new Error("This is a js error")
+        window.err = new Error("This is a js error");
         """
     )
     assert (
@@ -304,6 +304,6 @@ def test_javascript_error_back_to_js(selenium):
     )
     assert selenium.run_js(
         """
-        return pyodide.globals["py_err"] === err
+        return pyodide.globals["py_err"] === err;
         """
     )

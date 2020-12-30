@@ -58,8 +58,8 @@ _findImports(char* code)
 EM_JS(int, runpython_init_js, (), {
   Module._runPythonInternal = function(pycode)
   {
-    var idresult = Module.__runPython(pycode);
-    var jsresult = Module.hiwire.get_value(idresult);
+    let idresult = Module.__runPython(pycode);
+    let jsresult = Module.hiwire.get_value(idresult);
     Module.hiwire.decref(idresult);
     _free(pycode);
     return jsresult;
@@ -67,19 +67,19 @@ EM_JS(int, runpython_init_js, (), {
 
   Module.runPython = function(code)
   {
-    var pycode = allocate(intArrayFromString(code), 'i8', ALLOC_NORMAL);
+    let pycode = allocate(intArrayFromString(code), 'i8', ALLOC_NORMAL);
     return Module._runPythonInternal(pycode);
   };
 
   Module.runPythonAsync = function(code, messageCallback, errorCallback)
   {
-    var pycode = allocate(intArrayFromString(code), 'i8', ALLOC_NORMAL);
+    let pycode = allocate(intArrayFromString(code), 'i8', ALLOC_NORMAL);
 
-    var idimports = Module.__findImports(pycode);
-    var jsimports = Module.hiwire.get_value(idimports);
+    let idimports = Module.__findImports(pycode);
+    let jsimports = Module.hiwire.get_value(idimports);
     Module.hiwire.decref(idimports);
 
-    var internal = function(resolve, reject)
+    let internal = function(resolve, reject)
     {
       try {
         resolve(Module._runPythonInternal(pycode));
@@ -89,11 +89,11 @@ EM_JS(int, runpython_init_js, (), {
     };
 
     if (jsimports.length) {
-      var packageNames =
+      let packageNames =
         self.pyodide._module.packages.import_name_to_package_name;
-      var packages = {};
-      for (var i = 0; i < jsimports.length; ++i) {
-        var name = jsimports[i];
+      let packages = {};
+      for (let i = 0; i < jsimports.length; ++i) {
+        let name = jsimports[i];
         // clang-format off
         if (packageNames[name] !== undefined) {
           // clang-format on
@@ -101,7 +101,7 @@ EM_JS(int, runpython_init_js, (), {
         }
       }
       if (Object.keys(packages).length) {
-        var runInternal = function() { return new Promise(internal); };
+        let runInternal = function() { return new Promise(internal); };
         return Module
           .loadPackage(Object.keys(packages), messageCallback, errorCallback)
           .then(runInternal);
