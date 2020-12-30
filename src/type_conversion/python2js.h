@@ -18,7 +18,7 @@ pythonexc2js();
  *  \return The Javascript object -- might be an Error object in the case of an
  *     exception.
  */
-HwObject
+HwRef
 python2js(PyObject* x);
 
 /** Set up the global state for this module.

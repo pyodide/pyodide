@@ -14,7 +14,7 @@ JsImport_GetAttr(PyObject* self, PyObject* attr)
   if (c == NULL) {
     return NULL;
   }
-  HwObject idval = hiwire_get_global(c);
+  HwRef idval = hiwire_get_global(c);
   if (idval == HW_ERROR) {
     PyErr_Format(PyExc_AttributeError, "Unknown attribute '%s'", c);
     return NULL;
@@ -27,8 +27,8 @@ JsImport_GetAttr(PyObject* self, PyObject* attr)
 static PyObject*
 JsImport_Dir()
 {
-  HwObject idwindow = hiwire_get_global("self");
-  HwObject iddir = hiwire_dir(idwindow);
+  HwRef idwindow = hiwire_get_global("self");
+  HwRef iddir = hiwire_dir(idwindow);
   hiwire_decref(idwindow);
   PyObject* pydir = js2python(iddir);
   hiwire_decref(iddir);

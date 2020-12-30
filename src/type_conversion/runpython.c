@@ -13,7 +13,7 @@ PyObject* pyodide;
 _Py_IDENTIFIER(eval_code);
 _Py_IDENTIFIER(find_imports);
 
-HwObject
+HwRef
 _runPython(char* code)
 {
   PyObject* py_code;
@@ -30,12 +30,12 @@ _runPython(char* code)
     pythonexc2js();
     return HW_ERROR;
   }
-  HwObject id = python2js(ret);
+  HwRef id = python2js(ret);
   Py_DECREF(ret);
   return id;
 }
 
-HwObject
+HwRef
 _findImports(char* code)
 {
   PyObject* py_code;
@@ -53,7 +53,7 @@ _findImports(char* code)
     return HW_ERROR;
   }
 
-  HwObject id = python2js(ret);
+  HwRef id = python2js(ret);
   Py_DECREF(ret);
   return id;
 }

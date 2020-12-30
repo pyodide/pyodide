@@ -13,7 +13,7 @@
  *  \return The Javascript object -- might be an Error object in the case of an
  *     exception.
  */
-HwObject
+HwRef
 _python2js_buffer(PyObject* x);
 
 #endif /* PYTHON2JS_BUFFER_H */

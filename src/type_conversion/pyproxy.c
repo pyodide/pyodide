@@ -5,17 +5,17 @@
 #include "js2python.h"
 #include "python2js.h"
 
-HwObject
-_pyproxy_has(PyObject* pyobj, HwObject idkey)
+HwRef
+_pyproxy_has(PyObject* pyobj, HwRef idkey)
 {
   PyObject* pykey = js2python(idkey);
-  HwObject result = hiwire_bool(PyObject_HasAttr(pyobj, pykey));
+  HwRef result = hiwire_bool(PyObject_HasAttr(pyobj, pykey));
   Py_DECREF(pykey);
   return result;
 }
 
-HwObject
-_pyproxy_get(PyObject* pyobj, HwObject idkey)
+HwRef
+_pyproxy_get(PyObject* pyobj, HwRef idkey)
 {
   PyObject* pykey = js2python(idkey);
   PyObject* pyattr = PyObject_GetAttr(pyobj, pykey);
@@ -25,13 +25,13 @@ _pyproxy_get(PyObject* pyobj, HwObject idkey)
     return hiwire_undefined();
   }
 
-  HwObject idattr = python2js(pyattr);
+  HwRef idattr = python2js(pyattr);
   Py_DECREF(pyattr);
   return idattr;
 };
 
-HwObject
-_pyproxy_set(PyObject* pyobj, HwObject idkey, HwObject idval)
+HwRef
+_pyproxy_set(PyObject* pyobj, HwRef idkey, HwRef idval)
 {
   PyObject* pykey = js2python(idkey);
   PyObject* pyval = js2python(idval);
@@ -46,8 +46,8 @@ _pyproxy_set(PyObject* pyobj, HwObject idkey, HwObject idval)
   return idval;
 }
 
-HwObject
-_pyproxy_deleteProperty(PyObject* pyobj, HwObject idkey)
+HwRef
+_pyproxy_deleteProperty(PyObject* pyobj, HwRef idkey)
 {
   PyObject* pykey = js2python(idkey);
 
@@ -62,7 +62,7 @@ _pyproxy_deleteProperty(PyObject* pyobj, HwObject idkey)
   return hiwire_undefined();
 }
 
-HwObject
+HwRef
 _pyproxy_ownKeys(PyObject* pyobj)
 {
   PyObject* pydir = PyObject_Dir(pyobj);
@@ -72,11 +72,11 @@ _pyproxy_ownKeys(PyObject* pyobj)
     return HW_ERROR;
   }
 
-  HwObject iddir = hiwire_array();
+  HwRef iddir = hiwire_array();
   Py_ssize_t n = PyList_Size(pydir);
   for (Py_ssize_t i = 0; i < n; ++i) {
     PyObject* pyentry = PyList_GetItem(pydir, i);
-    HwObject identry = python2js(pyentry);
+    HwRef identry = python2js(pyentry);
     hiwire_push_array(iddir, identry);
     hiwire_decref(identry);
   }
@@ -85,19 +85,19 @@ _pyproxy_ownKeys(PyObject* pyobj)
   return iddir;
 }
 
-HwObject
+HwRef
 _pyproxy_enumerate(PyObject* pyobj)
 {
   return _pyproxy_ownKeys(pyobj);
 }
 
-HwObject
-_pyproxy_apply(PyObject* pyobj, HwObject idargs)
+HwRef
+_pyproxy_apply(PyObject* pyobj, HwRef idargs)
 {
   Py_ssize_t length = hiwire_get_length(idargs);
   PyObject* pyargs = PyTuple_New(length);
   for (Py_ssize_t i = 0; i < length; ++i) {
-    HwObject iditem = hiwire_get_member_int(idargs, i);
+    HwRef iditem = hiwire_get_member_int(idargs, i);
     PyObject* pyitem = js2python(iditem);
     PyTuple_SET_ITEM(pyargs, i, pyitem);
     hiwire_decref(iditem);
@@ -108,7 +108,7 @@ _pyproxy_apply(PyObject* pyobj, HwObject idargs)
     pythonexc2js();
     return HW_ERROR;
   }
-  HwObject idresult = python2js(pyresult);
+  HwRef idresult = python2js(pyresult);
   Py_DECREF(pyresult);
   Py_DECREF(pyargs);
   return idresult;
@@ -122,7 +122,7 @@ _pyproxy_destroy(PyObject* ptrobj)
   EM_ASM(delete Module.PyProxies[ptrobj];);
 }
 
-EM_JS(HwObject, pyproxy_use, (PyObject * ptrobj), {
+EM_JS(HwRef, pyproxy_use, (PyObject * ptrobj), {
   // Checks if there is already an existing proxy on ptrobj
 
   if (Module.PyProxies.hasOwnProperty(ptrobj)) {
@@ -132,7 +132,7 @@ EM_JS(HwObject, pyproxy_use, (PyObject * ptrobj), {
   return Module.hiwire.ERROR;
 })
 
-EM_JS(HwObject, pyproxy_new, (PyObject * ptrobj), {
+EM_JS(HwRef, pyproxy_new, (PyObject * ptrobj), {
   // Technically, this leaks memory, since we're holding on to a reference
   // to the proxy forever.  But we have that problem anyway since we don't
   // have a destructor in Javascript to free the Python object.

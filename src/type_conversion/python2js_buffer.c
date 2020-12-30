@@ -27,121 +27,121 @@
 // write code that doesn't rely on either behavior, but treats this simply as
 // the performance optimization that it is.
 
-typedef HwObject(scalar_converter)(char*);
+typedef HwRef(scalar_converter)(char*);
 
-static HwObject
+static HwRef
 _convert_bool(char* data)
 {
   char v = *((char*)data);
   return hiwire_bool((int)v);
 }
 
-static HwObject
+static HwRef
 _convert_int8(char* data)
 {
   i8 v = *((i8*)data);
   return hiwire_int(v);
 }
 
-static HwObject
+static HwRef
 _convert_uint8(char* data)
 {
   u8 v = *((u8*)data);
   return hiwire_int(v);
 }
 
-static HwObject
+static HwRef
 _convert_int16(char* data)
 {
   i16 v = *((i16*)data);
   return hiwire_int(v);
 }
 
-static HwObject
+static HwRef
 _convert_int16_swap(char* data)
 {
   i16 v = *((i16*)data);
   return hiwire_int(be16toh(v));
 }
 
-static HwObject
+static HwRef
 _convert_uint16(char* data)
 {
   u16 v = *((u16*)data);
   return hiwire_int(v);
 }
 
-static HwObject
+static HwRef
 _convert_uint16_swap(char* data)
 {
   u16 v = *((u16*)data);
   return hiwire_int(be16toh(v));
 }
 
-static HwObject
+static HwRef
 _convert_int32(char* data)
 {
   i32 v = *((i32*)data);
   return hiwire_int(v);
 }
 
-static HwObject
+static HwRef
 _convert_int32_swap(char* data)
 {
   i32 v = *((i32*)data);
   return hiwire_int(be32toh(v));
 }
 
-static HwObject
+static HwRef
 _convert_uint32(char* data)
 {
   u32 v = *((u32*)data);
   return hiwire_int(v);
 }
 
-static HwObject
+static HwRef
 _convert_uint32_swap(char* data)
 {
   u32 v = *((u32*)data);
   return hiwire_int(be32toh(v));
 }
 
-static HwObject
+static HwRef
 _convert_int64(char* data)
 {
   i64 v = *((i64*)data);
   return hiwire_int(v);
 }
 
-static HwObject
+static HwRef
 _convert_int64_swap(char* data)
 {
   i64 v = *((i64*)data);
   return hiwire_int(be64toh(v));
 }
 
-static HwObject
+static HwRef
 _convert_uint64(char* data)
 {
   u64 v = *((u64*)data);
   return hiwire_int(v);
 }
 
-static HwObject
+static HwRef
 _convert_uint64_swap(char* data)
 {
   u64 v = *((u64*)data);
   return hiwire_int(be64toh(v));
 }
 
-static HwObject
+static HwRef
 _convert_float32(char* data)
 {
   float v = *((float*)data);
   return hiwire_double(v);
 }
 
-static HwObject
+static HwRef
 _convert_float32_swap(char* data)
 {
   union float32_t
@@ -155,14 +155,14 @@ _convert_float32_swap(char* data)
   return hiwire_double(v.f);
 }
 
-static HwObject
+static HwRef
 _convert_float64(char* data)
 {
   double v = *((double*)data);
   return hiwire_double(v);
 }
 
-static HwObject
+static HwRef
 _convert_float64_swap(char* data)
 {
   union float64_t
@@ -271,7 +271,7 @@ _python2js_buffer_get_converter(Py_buffer* buff)
   }
 }
 
-static HwObject
+static HwRef
 _python2js_buffer_recursive(Py_buffer* buff,
                             char* ptr,
                             int dim,
@@ -281,7 +281,7 @@ _python2js_buffer_recursive(Py_buffer* buff,
   // Numpy to use the Python buffer interface and output Javascript.
 
   Py_ssize_t i, n, stride;
-  HwObject jsarray, jsitem;
+  HwRef jsarray, jsitem;
 
   if (dim >= buff->ndim) {
     return convert(ptr);
@@ -307,7 +307,7 @@ _python2js_buffer_recursive(Py_buffer* buff,
   return jsarray;
 }
 
-static HwObject
+static HwRef
 _python2js_buffer_to_typed_array(Py_buffer* buff)
 {
   // Uses Python's struct typecodes as defined here:
@@ -371,15 +371,15 @@ enum shareable_enum
   NOT_CONTIGUOUS
 };
 
-static HwObject
+static HwRef
 _python2js_shareable_buffer_recursive(Py_buffer* buff,
                                       enum shareable_enum shareable,
-                                      HwObject idarr,
+                                      HwRef idarr,
                                       int ptr,
                                       int dim)
 {
   Py_ssize_t i, n, stride;
-  HwObject jsarray, jsitem;
+  HwRef jsarray, jsitem;
 
   switch (shareable) {
     case NOT_CONTIGUOUS:
@@ -451,7 +451,7 @@ _python2js_buffer_is_shareable(Py_buffer* buff)
   return CONTIGUOUS;
 }
 
-HwObject
+HwRef
 _python2js_buffer(PyObject* x)
 {
   PyObject* memoryview = PyMemoryView_FromObject(x);
@@ -464,10 +464,10 @@ _python2js_buffer(PyObject* x)
   buff = PyMemoryView_GET_BUFFER(memoryview);
 
   enum shareable_enum shareable = _python2js_buffer_is_shareable(buff);
-  HwObject result;
+  HwRef result;
 
   if (shareable != NOT_SHAREABLE) {
-    HwObject idarr = _python2js_buffer_to_typed_array(buff);
+    HwRef idarr = _python2js_buffer_to_typed_array(buff);
     if (idarr == HW_ERROR) {
       PyErr_SetString(
         PyExc_TypeError,

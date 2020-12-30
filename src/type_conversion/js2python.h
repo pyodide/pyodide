@@ -15,7 +15,7 @@
  *    used to obtain the exception.
  */
 PyObject*
-js2python(HwObject x);
+js2python(HwRef x);
 
 /** Initialize any global variables used by this module. */
 int

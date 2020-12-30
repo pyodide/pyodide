@@ -60,27 +60,27 @@ _js2python_pyproxy(PyObject* val)
 }
 
 PyObject*
-_js2python_memoryview(HwObject id)
+_js2python_memoryview(HwRef id)
 {
   PyObject* jsproxy = JsProxy_cnew(id);
   return PyMemoryView_FromObject(jsproxy);
 }
 
 PyObject*
-_js2python_jsproxy(HwObject id)
+_js2python_jsproxy(HwRef id)
 {
   return JsProxy_cnew(id);
 }
 
 PyObject*
-_js2python_error(HwObject id)
+_js2python_error(HwRef id)
 {
   return JsProxy_new_error(id);
 }
 
 // TODO: Add some meaningful order
 
-EM_JS(PyObject*, __js2python, (HwObject id), {
+EM_JS(PyObject*, __js2python, (HwRef id), {
   function __js2python_string(value)
   {
     // The general idea here is to allocate a Python string and then
@@ -159,7 +159,7 @@ EM_JS(PyObject*, __js2python, (HwObject id), {
 });
 
 PyObject*
-js2python(HwObject id)
+js2python(HwRef id)
 {
   return (PyObject*)__js2python(id);
 }
