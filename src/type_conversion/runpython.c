@@ -5,6 +5,26 @@
 #include <Python.h>
 #include <emscripten.h>
 
+_runPythonDebug(char* code)
+{
+  PyObject* py_code;
+  py_code = PyUnicode_FromString(code);
+  if (py_code == NULL) {
+    return pythonexc2js();
+  }
+
+  PyObject* ret = _PyObject_CallMethodIdObjArgs(
+    pyodide, &PyId_eval_code, py_code, globals, NULL);
+
+  if (ret == NULL) {
+    return pythonexc2js();
+  }
+
+  int id = python2js(ret);
+  Py_DECREF(ret);
+  return id;
+}
+
 int
 runpython_init()
 {
@@ -52,6 +72,16 @@ runpython_init()
     {
       Module.py_pyodide = Module.hiwire.get_value($0);
       Module.globals = Module.hiwire.get_value($1);
+
+      // Use this to test python code separate from pyproxy.apply.
+      Module.runPythonDebug = function(code){
+        let pycode = stringToNewUTF8(code);
+        let idresult = Module.__runPythonDebug(pycode);
+        let jsresult = Module.hiwire.get_value(idresult);
+        Module.hiwire.decref(idresult);
+        _free(pycode);
+        return jsresult;
+      };
     },
     py_pyodide_id,
     py_globals_id);
