@@ -336,22 +336,23 @@ var languagePluginLoader = new Promise((resolve, reject) => {
   // clang-format off
   Module.loadPackagesForCode = async function(code, messageCallback, errorCallback) {
     let imports = Module.py_pyodide.find_imports(code);
-    if (imports.length) {
-      let packageNames =
-          self.pyodide._module.packages.import_name_to_package_name;
-      let packages = new Set();
-      for (let name of imports) {
-        if (name in packageNames) {
-          packages.add(name);
-        }
+    if (imports.length === 0) {
+      return;
+    }
+    let packageNames =
+        self.pyodide._module.packages.import_name_to_package_name;
+    let packages = new Set();
+    for (let name of imports) {
+      if (name in packageNames) {
+        packages.add(name);
       }
-      if (packages.size) {
-        await loadPackage(
-          Array.from(packages.keys()),
-          messageCallback,
-          errorCallback,
-        );
-      }
+    }
+    if (packages.size) {
+      await loadPackage(
+        Array.from(packages.keys()),
+        messageCallback,
+        errorCallback,
+      );
     }
   };
   // clang-format on
@@ -360,7 +361,7 @@ var languagePluginLoader = new Promise((resolve, reject) => {
 
   Module.runPythonAsync = async function(code, messageCallback, errorCallback) {
     await Module.loadPackagesForCode(code, messageCallback, errorCallback);
-    return Module.py_pyodide.eval_code(code, Module.globals);
+    return Module.runPython(code);
   };
 
   Module.version = function() { return Module.py_pyodide.__version__; };
