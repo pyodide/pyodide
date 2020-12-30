@@ -38,7 +38,7 @@ hiwire_bool(bool boolean)
   return boolean ? hiwire_true() : hiwire_false();
 }
 
-EM_JS(void, hiwire_init, (), {
+EM_JS(int, hiwire_init, (), {
   let _hiwire = { objects : new Map(), counter : 1 };
   Module.hiwire = {};
   Module.hiwire.ERROR = _hiwire_error();
@@ -85,6 +85,7 @@ EM_JS(void, hiwire_init, (), {
     }
     _hiwire.objects.delete(idval);
   };
+  return 0;
 });
 
 EM_JS(HwRef, hiwire_incref, (HwRef idval), {
