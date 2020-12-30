@@ -33,11 +33,11 @@
 int
 main(int argc, char** argv)
 {
-  if (alignof(HwRef) != alignof(int)) {
-    FATAL_ERROR("HwRef doesn't have the same alignment as int.");
+  if (alignof(JsRef) != alignof(int)) {
+    FATAL_ERROR("JsRef doesn't have the same alignment as int.");
   }
-  if (sizeof(HwRef) != sizeof(int)) {
-    FATAL_ERROR("HwRef doesn't have the same size as int.");
+  if (sizeof(JsRef) != sizeof(int)) {
+    FATAL_ERROR("JsRef doesn't have the same size as int.");
   }
   TRY_INIT(hiwire);
 

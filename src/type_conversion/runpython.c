@@ -13,14 +13,14 @@ PyObject* pyodide;
 _Py_IDENTIFIER(eval_code);
 _Py_IDENTIFIER(find_imports);
 
-HwRef
+JsRef
 _runPython(char* code)
 {
   PyObject* py_code;
   py_code = PyUnicode_FromString(code);
   if (py_code == NULL) {
     pythonexc2js();
-    return HW_ERROR;
+    return Js_ERROR;
   }
 
   PyObject* ret = _PyObject_CallMethodIdObjArgs(
@@ -28,21 +28,21 @@ _runPython(char* code)
 
   if (ret == NULL) {
     pythonexc2js();
-    return HW_ERROR;
+    return Js_ERROR;
   }
-  HwRef id = python2js(ret);
+  JsRef id = python2js(ret);
   Py_DECREF(ret);
   return id;
 }
 
-HwRef
+JsRef
 _findImports(char* code)
 {
   PyObject* py_code;
   py_code = PyUnicode_FromString(code);
   if (py_code == NULL) {
     pythonexc2js();
-    return HW_ERROR;
+    return Js_ERROR;
   }
 
   PyObject* ret =
@@ -50,10 +50,10 @@ _findImports(char* code)
 
   if (ret == NULL) {
     pythonexc2js();
-    return HW_ERROR;
+    return Js_ERROR;
   }
 
-  HwRef id = python2js(ret);
+  JsRef id = python2js(ret);
   Py_DECREF(ret);
   return id;
 }

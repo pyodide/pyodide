@@ -7,7 +7,7 @@
 
 extern PyObject* globals;
 
-HwRef
+JsRef
 _pyimport(char* name)
 {
   PyObject* pyname = PyUnicode_FromString(name);
@@ -15,11 +15,11 @@ _pyimport(char* name)
   if (pyval == NULL) {
     Py_DECREF(pyname);
     pythonexc2js();
-    return HW_ERROR;
+    return Js_ERROR;
   }
 
   Py_DECREF(pyname);
-  HwRef idval = python2js(pyval);
+  JsRef idval = python2js(pyval);
   return idval;
 }
 

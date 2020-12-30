@@ -7,10 +7,10 @@
 // This implements the Javascript Proxy handler interface as defined here:
 //     https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Proxy
 
-HwRef
+JsRef
 pyproxy_use(PyObject* obj);
 
-HwRef
+JsRef
 pyproxy_new(PyObject* obj);
 
 int
