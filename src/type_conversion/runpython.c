@@ -21,7 +21,7 @@ _runPythonDebug(char* code)
   }
 
   PyObject* result = _PyObject_CallMethodIdObjArgs(
-    pyodide, &PyId_eval_code, py_code, globals, NULL);
+    py_pyodide, &PyId_eval_code, py_code, globals, NULL);
 
   if (result == NULL) {
     fprintf(stderr, "runPythonDebug -- error occurred\n");
