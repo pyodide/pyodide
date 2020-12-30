@@ -314,8 +314,6 @@ _python2js_remove_from_cache(PyObject* map, PyObject* pyparent)
   return result;
 }
 
-struct test
-{};
 
 HwObject
 _python2js_cache(PyObject* x, PyObject* map)
