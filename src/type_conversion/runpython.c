@@ -8,47 +8,52 @@
 #include "python2js.h"
 
 PyObject* globals;
+PyObject* pyodide;
 
-PyObject* eval_code;
-PyObject* find_imports;
+_Py_IDENTIFIER(eval_code);
+_Py_IDENTIFIER(find_imports);
 
-int
+JsRef
 _runPython(char* code)
 {
   PyObject* py_code;
   py_code = PyUnicode_FromString(code);
   if (py_code == NULL) {
-    return pythonexc2js();
+    pythonexc2js();
+    return Js_ERROR;
   }
 
-  PyObject* ret =
-    PyObject_CallFunctionObjArgs(eval_code, py_code, globals, NULL);
+  PyObject* ret = _PyObject_CallMethodIdObjArgs(
+    pyodide, &PyId_eval_code, py_code, globals, NULL);
 
   if (ret == NULL) {
-    return pythonexc2js();
+    pythonexc2js();
+    return Js_ERROR;
   }
-
-  int id = python2js(ret);
+  JsRef id = python2js(ret);
   Py_DECREF(ret);
   return id;
 }
 
-int
+JsRef
 _findImports(char* code)
 {
   PyObject* py_code;
   py_code = PyUnicode_FromString(code);
   if (py_code == NULL) {
-    return pythonexc2js();
+    pythonexc2js();
+    return Js_ERROR;
   }
 
-  PyObject* ret = PyObject_CallFunctionObjArgs(find_imports, py_code, NULL);
+  PyObject* ret =
+    _PyObject_CallMethodIdObjArgs(pyodide, &PyId_find_imports, py_code, NULL);
 
   if (ret == NULL) {
-    return pythonexc2js();
+    pythonexc2js();
+    return Js_ERROR;
   }
 
-  int id = python2js(ret);
+  JsRef id = python2js(ret);
   Py_DECREF(ret);
   return id;
 }
@@ -136,23 +141,8 @@ runpython_init_py()
     return 1;
   }
 
-  PyObject* m = PyImport_ImportModule("pyodide");
-  if (m == NULL) {
-    return 1;
-  }
-
-  PyObject* d = PyModule_GetDict(m);
-  if (d == NULL) {
-    return 1;
-  }
-
-  eval_code = PyDict_GetItemString(d, "eval_code");
-  if (eval_code == NULL) {
-    return 1;
-  }
-
-  find_imports = PyDict_GetItemString(d, "find_imports");
-  if (find_imports == NULL) {
+  pyodide = PyImport_ImportModule("pyodide");
+  if (pyodide == NULL) {
     return 1;
   }
 

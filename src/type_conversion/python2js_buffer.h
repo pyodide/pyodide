@@ -4,6 +4,7 @@
 /** Utilities to convert Python buffer objects to Javascript.
  */
 
+#include "hiwire.h"
 #include <Python.h>
 
 /** Convert a Python buffer object to a Javascript object.
@@ -12,7 +13,7 @@
  *  \return The Javascript object -- might be an Error object in the case of an
  *     exception.
  */
-int
+JsRef
 _python2js_buffer(PyObject* x);
 
 #endif /* PYTHON2JS_BUFFER_H */
