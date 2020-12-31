@@ -90,37 +90,22 @@ def test_add_requirement_relative_url():
     assert req["url"] == "./snowballstemmer-2.0.0-py2.py3-none-any.whl"
 
 
-def test_relative_url_2():
-    pytest.importorskip("distlib")
-    import micropip
-
-    url = "./snowballstemmer-2.0.0-py2.py3-none-any.whl"
-    old_get_url = micropip._get_url
-
-    def _get_url(url):
-        assert url == "./snowballstemmer-2.0.0-py2.py3-none-any.whl"
-        url = "https://files.pythonhosted.org/packages/7d/4b/cdf1113a0e88b641893b814e9c36f69a6fda28cd88b62c7f0d858cde3166/snowballstemmer-2.0.0-py2.py3-none-any.whl"
-        return old_get_url(url)
-
-    micropip._get_url = _get_url
-    success = False
-
-    def resolve(msg):
-        nonlocal success
-        success = True
-
-    micropip.PACKAGE_MANAGER.install(url, resolve=resolve)
-    assert success
-
-
 def test_install_custom_relative_url(selenium_standalone):
     selenium_standalone.load_package("micropip")
     selenium_standalone.run("import micropip")
-    url = "./snowballstemmer-2.0.0-py2.py3-none-any.whl"
-    selenium_standalone.run(f"micropip.install('{url}')")
-    # wait untill micropip is loaded
-    time.sleep(1)
-    selenium_standalone.run("import snowballstemmer")
+
+    root = Path(__file__).resolve().parents[2]
+    src = root / "src" / "tests" / "data"
+    target = root / "build" / "test_data"
+    target.symlink_to(src, True)
+    try:
+        url = "./test_data/snowballstemmer-2.0.0-py2.py3-none-any.whl"
+        selenium_standalone.run(f"micropip.install('{url}')")
+        # wait untill micropip is loaded
+        time.sleep(1)
+        selenium_standalone.run("import snowballstemmer")
+    finally:
+        target.unlink()
 
 
 def test_last_version_from_pypi():
