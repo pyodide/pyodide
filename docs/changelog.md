@@ -7,8 +7,15 @@
 - jedi and parso are no longer vendored in the main pyodide package, and need
   to be loaded explicitly
   [#987](https://github.com/iodide-project/pyodide/pull/987).
-- Reduce the size of the core pyodide package 
+- Reduce the size of the core pyodide package
   [#987](https://github.com/iodide-project/pyodide/pull/987).
+
+### Breaking changes
+
+- Removed iodide-specific code in `pyodide.js`. This breaks compatibility with
+  iodide.
+  [#878](https://github.com/iodide-project/pyodide/pull/878).
+
 
 ## Version 0.16.1
 *December 25, 2020*
