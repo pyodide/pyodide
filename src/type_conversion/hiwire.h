@@ -1,5 +1,6 @@
 #ifndef HIWIRE_H
 #define HIWIRE_H
+#include "Python.h"
 #include "stdalign.h"
 #include "types.h"
 
@@ -459,8 +460,8 @@ hiwire_typeof(JsRef idobj);
  *
  * Returns: New reference to Javascript string
  */
-int
-hiwire_constructor_name(int idobj);
+char*
+hiwire_constructor_name(JsRef idobj);
 
 /**
  * Returns non-zero if a < b.
@@ -554,13 +555,13 @@ hiwire_get_byteOffset(JsRef idobj);
  * at ptr.
  */
 void
-hiwire_copy_to_ptr(JsRef idobj, int ptr);
+hiwire_copy_to_ptr(JsRef idobj, void* ptr);
 
 /**
  * Get a data type identifier for a given typedarray.
  */
 void
-hiwire_get_dtype(JsRef idobj, int format_ptr, int size_ptr);
+hiwire_get_dtype(JsRef idobj, char** format_ptr, Py_ssize_t* size_ptr);
 
 /**
  * Get a subarray from a TypedArray
