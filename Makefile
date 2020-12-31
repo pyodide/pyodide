@@ -28,7 +28,6 @@ LDFLAGS=\
 	-s LINKABLE=1 \
 	-s EXPORT_ALL=1 \
 	-s EXPORTED_FUNCTIONS='["___cxa_guard_acquire", "__ZNSt3__28ios_base4initEPv", "_main"]' \
-	-s EXTRA_EXPORTED_RUNTIME_METHODS='["LZ4"]' \
 	-s WASM=1 \
 	-s USE_FREETYPE=1 \
 	-s USE_LIBPNG=1 \
@@ -53,7 +52,6 @@ SITEPACKAGES=root/lib/python$(PYMINOR)/site-packages
 
 all: check \
 	build/pyodide.asm.js \
-	build/pyodide.asm.data \
 	build/pyodide.js \
 	build/console.html \
 	build/renderedhtml.css \
@@ -70,7 +68,8 @@ build/pyodide.asm.js: src/main.bc src/type_conversion/jsimport.bc \
 		src/type_conversion/pyimport.bc src/type_conversion/pyproxy.bc \
 		src/type_conversion/python2js.bc \
 		src/type_conversion/python2js_buffer.bc \
-		src/type_conversion/runpython.bc src/type_conversion/hiwire.bc
+		src/type_conversion/runpython.bc src/type_conversion/hiwire.bc \
+		root/.built
 	date +"[%F %T] Building pyodide.asm.js..."
 	[ -d build ] || mkdir build
 	$(CXX) -s EXPORT_NAME="'pyodide'" -o build/pyodide.asm.js $(filter %.bc,$^) \
