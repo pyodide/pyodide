@@ -454,16 +454,16 @@ JsProxy_Await(JsProxy* self)
   PyObject* set_result = _PyObject_GetAttrId(fut, &PyId_set_result);
   PyObject* set_exception = _PyObject_GetAttrId(fut, &PyId_set_exception);
 
-  int promise_id = hiwire_ensure_promise(((JsProxy*)self)->js);
-  int idargs = hiwire_array();
-  int idarg;
+  JsRef promise_id = hiwire_ensure_promise(((JsProxy*)self)->js);
+  JsRef idargs = hiwire_array();
+  JsRef idarg;
   idarg = python2js(set_result);
   hiwire_push_array(idargs, idarg);
   hiwire_decref(idarg);
   idarg = python2js(set_exception);
   hiwire_push_array(idargs, idarg);
   hiwire_decref(idarg);
-  hiwire_decref(hiwire_call_member(promise_id, (int)"then", idargs));
+  hiwire_decref(hiwire_call_member(promise_id, "then", idargs));
   hiwire_decref(promise_id);
   self->future = fut;
 

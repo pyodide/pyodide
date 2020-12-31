@@ -442,8 +442,8 @@ hiwire_is_function(JsRef idobj);
  *
  * Returns: New reference to Javascript promise
  */
-int
-hiwire_ensure_promise(int idobj);
+JsRef
+hiwire_ensure_promise(JsRef idobj);
 
 /**
  * Gets the string representation of an object by calling `toString`.
