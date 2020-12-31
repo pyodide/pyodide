@@ -202,6 +202,9 @@
     return toLoad;
   }
 
+  let baseURL = self.languagePluginUrl || '{{ PYODIDE_BASE_URL }}';
+  baseURL = baseURL.substr(0, baseURL.lastIndexOf('/')) + '/';
+  // This is used for the Module level variable Module.locateFile.
   function getFileLocator(toLoad = {}) {
     return (path) => {
       // handle packages loaded from custom URLs
@@ -215,6 +218,8 @@
       return baseURL + path;
     };
   }
+
+  Module.locateFile = getFileLocator();
 
   let loadedPackages = {};
   let loadPackagePromise = Promise.resolve();
@@ -414,11 +419,6 @@
     // Note: PYODIDE_BASE_URL is an environment variable replaced in
     // in this template in the Makefile. It's recommended to always set
     // languagePluginUrl in any case.
-    let baseURL = self.languagePluginUrl || '{{ PYODIDE_BASE_URL }}';
-    baseURL = baseURL.substr(0, baseURL.lastIndexOf('/')) + '/';
-
-    Module.locateFile = (path) => baseURL + path;
-
     async function postRun() {
       await postRunPromise;
       delete self.Module;
