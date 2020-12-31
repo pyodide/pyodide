@@ -36,6 +36,9 @@ jobs:
           name: Build docs
           command: python3 -m sphinx -M html docs docs/_build
 
+      - store_artifacts:
+          path: /root/repo/docs/_build/
+
   build-core:
     <<: *defaults
     steps:
