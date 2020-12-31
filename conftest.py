@@ -57,7 +57,9 @@ def PyodideInited(driver):
 
 
 def PyodideInitGetError(driver):
-    return driver.execute_script("return window.PYODIDE_ERROR.message;")
+    return driver.execute_script(
+        "return window.PYODIDE_ERROR && window.PYODIDE_ERROR.message;"
+    )
 
 
 def PackageLoaded(driver):
