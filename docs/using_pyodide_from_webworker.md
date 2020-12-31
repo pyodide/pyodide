@@ -31,7 +31,7 @@ method (and vice versa).
 
 In this example process we will have three parties involved:
 
-* The **service worker** is responsible for running scripts in its own thread separate thread.
+* The **web worker** is responsible for running scripts in its own thread separate thread.
 * The **worker API** exposes a consumer-to-provider communication interface.
 * The **consumer**s want to run some scripts outside the main thread so they don't block the main thread.
 
@@ -79,9 +79,9 @@ main();
 ```
 
 Before writing the API, lets first have a look at how the worker operates.
-How does our service worker will run the `script` using a given `context`.
+How does our web worker will run the `script` using a given `context`.
 
-### Service worker
+### Web worker
 
 [A worker][worker API] is ...
 
@@ -105,8 +105,8 @@ lines `pythonLoading = self.pyodide.loadPackage(['numpy', 'pytz'])` and
 // Setup your project to serve `py-worker.js`. You should also serve
 // `pyodide.js`, and all its associated `.asm.js`, `.data`, `.json`,
 // and `.wasm` files as well:
-self.languagePluginUrl = 'https://cdn.jsdelivr.net/pyodide/v0.16.0/full/';
-importScripts('https://cdn.jsdelivr.net/pyodide/v0.16.0/full/pyodide.js');
+self.languagePluginUrl = 'https://cdn.jsdelivr.net/pyodide/v0.16.1/full/';
+importScripts('https://cdn.jsdelivr.net/pyodide/v0.16.1/full/pyodide.js');
 
 let pythonLoading;
 async function loadPythonPackages(){

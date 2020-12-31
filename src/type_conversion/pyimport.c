@@ -7,18 +7,19 @@
 
 extern PyObject* globals;
 
-int
+JsRef
 _pyimport(char* name)
 {
   PyObject* pyname = PyUnicode_FromString(name);
   PyObject* pyval = PyDict_GetItem(globals, pyname);
   if (pyval == NULL) {
     Py_DECREF(pyname);
-    return pythonexc2js();
+    pythonexc2js();
+    return Js_ERROR;
   }
 
   Py_DECREF(pyname);
-  int idval = python2js_deep(pyval);
+  JsRef idval = python2js_deep(pyval);
   return idval;
 }
 
