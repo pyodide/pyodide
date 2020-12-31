@@ -4,12 +4,13 @@
 /** Utilities to convert Python objects to Javascript.
  */
 
+#include "hiwire.h"
 #include <Python.h>
 
-/** Convert the active Python exception into a Javascript Error object.
- *  \return A Javascript Error object
+/** Convert the active Python exception into a Javascript Error object
+ *  and print it to the console.
  */
-int
+void
 pythonexc2js();
 
 /** Convert a Python object to a Javascript object.
@@ -17,7 +18,7 @@ pythonexc2js();
  *  \return The Javascript object -- might be an Error object in the case of an
  *     exception.
  */
-int
+JsRef
 python2js(PyObject* x);
 
 /** Set up the global state for this module.

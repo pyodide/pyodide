@@ -282,7 +282,7 @@ def handle_command(line, args, dryrun=False):
             module_name = Path(module_name).name.split(".")[0]
 
             lapack_dir = arg.replace("-L", "")
-            # For convinience we determine needed scipy link libraries
+            # For convenience we determine needed scipy link libraries
             # here, instead of in patch files
             link_libs = ["F2CLIBS/libf2c.a", "blas_WA.a"]
             if module_name in [

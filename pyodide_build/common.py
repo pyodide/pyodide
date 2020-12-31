@@ -8,7 +8,6 @@ DEFAULTCFLAGS = ""
 DEFAULTLDFLAGS = " ".join(
     [
         "-O2",
-        "-s", "BINARYEN_METHOD='native-wasm'",
         "-Werror",
         "-s", "EMULATED_FUNCTION_POINTERS=1",
         "-s", "EMULATE_FUNCTION_POINTER_CASTS=1",
