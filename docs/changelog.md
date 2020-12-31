@@ -1,6 +1,14 @@
 (changelog)=
 # Release notes
 
+## Verison 0.17.0
+*Unreleased*
+
+### Breaking changes
+
+- Removed iodide-specific code in `pyodide.js`. This breaks compatibility with
+  iodide.
+
 ## Version 0.16.1
 *December 25, 2020*
 
