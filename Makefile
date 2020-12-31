@@ -43,12 +43,6 @@ LDFLAGS=\
 SIX_ROOT=packages/six/six-1.11.0/build/lib
 SIX_LIBS=$(SIX_ROOT)/six.py
 
-JEDI_ROOT=packages/jedi/jedi-0.17.2/jedi
-JEDI_LIBS=$(JEDI_ROOT)/__init__.py
-
-PARSO_ROOT=packages/parso/parso-0.7.1/parso
-PARSO_LIBS=$(PARSO_ROOT)/__init__.py
-
 SITEPACKAGES=root/lib/python$(PYMINOR)/site-packages
 
 all: check \
@@ -143,8 +137,6 @@ clean:
 	rm -fr src/*.bc
 	make -C packages clean
 	make -C packages/six clean
-	make -C packages/jedi clean
-	make -C packages/parso clean
 	make -C packages/libxslt clean
 	make -C packages/libxml clean
 	make -C packages/libiconv clean
@@ -175,8 +167,6 @@ build/test.data: $(CPYTHONLIB)
 root/.built: \
 		$(CPYTHONLIB) \
 		$(SIX_LIBS) \
-		$(JEDI_LIBS) \
-		$(PARSO_LIBS) \
 		src/sitecustomize.py \
 		src/webbrowser.py \
 		src/pyodide-py/ \
@@ -186,8 +176,6 @@ root/.built: \
 	cp -r $(CPYTHONLIB) root/lib
 	mkdir -p $(SITEPACKAGES)
 	cp $(SIX_LIBS) $(SITEPACKAGES)
-	cp -r $(JEDI_ROOT) $(SITEPACKAGES)
-	cp -r $(PARSO_ROOT) $(SITEPACKAGES)
 	cp src/sitecustomize.py $(SITEPACKAGES)
 	cp src/webbrowser.py root/lib/python$(PYMINOR)
 	cp src/_testcapi.py	root/lib/python$(PYMINOR)
@@ -234,18 +222,6 @@ $(SIX_LIBS): $(CPYTHONLIB)
 	date +"[%F %T] Building six..."
 	make -C packages/six
 	date +"[%F %T] done building six."
-
-
-$(JEDI_LIBS): $(CPYTHONLIB)
-	date +"[%F %T] Building jedi..."
-	make -C packages/jedi
-	date +"[%F %T] done building jedi."
-
-
-$(PARSO_LIBS): $(CPYTHONLIB)
-	date +"[%F %T] Building parso..."
-	make -C packages/parso
-	date +"[%F %T] done building parso."
 
 
 build/packages.json: FORCE
