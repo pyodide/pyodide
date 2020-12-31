@@ -8,6 +8,11 @@
 
 - Removed iodide-specific code in `pyodide.js`. This breaks compatibility with
   iodide.
+- Removed PYODIDE_PACKAGE_ABI and custom `file_packager.py` fork. This means
+  checking for PYODIDE_PACKAGE_ABI in os.environ is no longer a valid way of
+  detecting whether we are being built for pyodide. Instead, look for
+  PYODIDE_BASE_URL. From an API point of view, pyodide.checkABI is no longer
+  present.
 
 ## Version 0.16.1
 *December 25, 2020*
