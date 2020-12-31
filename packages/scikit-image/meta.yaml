@@ -15,6 +15,7 @@ requirements:
     - matplotlib
     - networkx
     - pillow
+    - imageio
     - pywavelets
 test:
   imports:

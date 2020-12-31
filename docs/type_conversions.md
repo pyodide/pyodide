@@ -5,7 +5,6 @@ Python to Javascript conversions occur:
 
 - when returning the final expression from a
   {ref}`pyodide.runPython <js_api_pyodide_runPython>` call
-  (evaluating a Python cell in Iodide)
 - using {ref}`pyodide.pyimport <js_api_pyodide_pyimport>`
 - passing arguments to a Javascript function from Python
 
@@ -84,31 +83,6 @@ to make this more complete):
 | `del x[foo]`   | `delete x[foo]` |
 | `x == y`       | `x == y`        |
 | `x.typeof`     | `typeof x`      |
-
-One important difference between Python objects and Javascript objects is that
-if you access a missing member in Python, an exception is raised. In Javascript,
-it returns `undefined`. Since we can't make any assumptions about whether the
-Javascript member is missing or simply set to `undefined`, Python mirrors the
-Javascript behavior. For example:
-
-```javascript
-// Javascript
-class Point {
-  constructor(x, y) {
-    this.x = x;
-    this.y = y;
-  }
-}
-point = new Point(42, 43))
-```
-
-```python
-# python
-from js import point
-assert point.y == 43
-del point.y
-assert point.y is None
-```
 
 ### Python from Javascript
 

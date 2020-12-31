@@ -13,7 +13,7 @@ RUN apt-get update \
   && chmod a+x /tmp/uglifyjs && mv -t /usr/local/bin /tmp/uglifyjs
 
 RUN pip3 --no-cache-dir install pytest pytest-xdist pytest-instafail pytest-rerunfailures \
-      pytest-httpserver pytest-cov selenium PyYAML flake8 black distlib mypy "Cython<3.0" Tempita
+      pytest-httpserver pytest-cov selenium PyYAML flake8 black distlib mypy "Cython<3.0"
 
 # Get firefox 70.0.1 and geckodriver
 RUN wget -qO- https://ftp.mozilla.org/pub/firefox/releases/70.0.1/linux-x86_64/en-US/firefox-70.0.1.tar.bz2 | tar jx \

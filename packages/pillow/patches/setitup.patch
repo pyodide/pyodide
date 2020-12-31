@@ -38,7 +38,7 @@
          defs = []
          if feature.jpeg:
 -            libs.append(feature.jpeg)
-+            if not "PYODIDE_PACKAGE_ABI" in os.environ:
++            if "PYODIDE_PACKAGE_ABI" not in os.environ:
 +                libs.append(feature.jpeg)
              defs.append(("HAVE_LIBJPEG", None))
          if feature.jpeg2000:

@@ -7,6 +7,7 @@ defaults: &defaults
   environment:
     - EMSDK_NUM_CORES: 4
       EMCC_CORES: 4
+      PYODIDE_BASE_URL: https://cdn.jsdelivr.net/pyodide/dev/full/
 
 jobs:
   lint:
@@ -16,10 +17,27 @@ jobs:
 
       - run:
           name: lint
-          command: |
-            make lint
-            black --check --exclude tools/file_packager.py .
-            mypy --ignore-missing-imports pyodide_build/ src/ packages/micropip/micropip/ packages/*/test*
+          command: make lint
+
+  build-docs:
+    working_directory: ~/repo
+
+    docker:
+      - image: python:3.8-alpine
+
+    steps:
+      - checkout
+
+      - run:
+          name: Install prerequisites
+          command: pip install -r docs/requirements-doc.txt
+
+      - run:
+          name: Build docs
+          command: python3 -m sphinx -M html docs docs/_build
+
+      - store_artifacts:
+          path: /root/repo/docs/_build/
 
   build-core:
     <<: *defaults
@@ -86,10 +104,6 @@ jobs:
           no_output_timeout: 1200
           command: |
             ccache -z
-            # Mark CLAPACK as not built as it's currently incorrectly marked as built
-            # when running make with PYODIDE_PACKAGES
-            # TODO: this should be resolved with #713
-            make -C packages/CLAPACK clean
             make
             ccache -s
 
@@ -109,7 +123,7 @@ jobs:
             - ./build
 
       - store_artifacts:
-          path: /home/circleci/repo/build/
+          path: /root/repo/build/
 
   test-core-firefox:
     <<: *defaults
@@ -151,6 +165,16 @@ jobs:
           command: |
             tools/pytest_wrapper.py packages/test* packages/*/test* -v -k chrome -n 2
 
+  test-emsdk:
+    <<: *defaults
+    steps:
+      - attach_workspace:
+          at: .
+      - run:
+          name: test
+          command: |
+            pytest emsdk/tests -v
+
   test-python:
     <<: *defaults
     steps:
@@ -171,7 +195,7 @@ jobs:
           command: |
             python benchmark/benchmark.py /usr/local/bin/python3 build/benchmarks.json
       - store_artifacts:
-          path: /home/circleci/repo/build/benchmarks.json
+          path: /root/repo/build/benchmarks.json
 
   deploy-release:
     docker:
@@ -230,19 +254,23 @@ workflows:
   build-and-deploy:
     jobs:
       - lint
+      - build-docs
       - build-core:
-          requires:
-            - lint
-            - test-python
           filters:
             tags:
               only: /.*/
       - build-packages:
           requires:
             - build-core
+          filters:
+            tags:
+              only: /.*/
       - test-core-chrome:
           requires:
             - build-core
+          filters:
+            tags:
+              only: /.*/
       - test-core-firefox:
           requires:
             - build-core
@@ -252,9 +280,18 @@ workflows:
       - test-packages-chrome:
           requires:
             - build-packages
+          filters:
+            tags:
+              only: /.*/
       - test-packages-firefox:
           requires:
             - build-packages
+          filters:
+            tags:
+              only: /.*/
+      - test-emsdk:
+          requires:
+            - build-core
           filters:
             tags:
               only: /.*/
@@ -267,8 +304,14 @@ workflows:
             - build-packages
       - deploy-release:
           requires:
+            - lint
+            - test-python
             - test-core-firefox
             - test-packages-firefox
+            - test-core-chrome
+            - test-packages-chrome
+            - test-emsdk
+            - build-docs
           filters:
             branches:
               ignore: /.*/
@@ -276,8 +319,14 @@ workflows:
               only: /^\d+\.\d+\.\d+$/
       - deploy-s3:
           requires:
+            - lint
+            - test-python
             - test-core-firefox
             - test-packages-firefox
+            - test-core-chrome
+            - test-packages-chrome
+            - test-emsdk
+            - build-docs
           filters:
             branches:
               only: master

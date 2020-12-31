@@ -3,10 +3,10 @@
  */
 
 var languagePluginLoader = new Promise((resolve, reject) => {
-  // This is filled in by the Makefile to be either a local file or the
-  // deployed location. TODO: This should be done in a less hacky
-  // way.
-  var baseURL = self.languagePluginUrl || '{{DEPLOY}}';
+  // Note: PYODIDE_BASE_URL is an environement variable replaced in
+  // in this template in the Makefile. It's recommended to always set
+  // languagePluginUrl in any case.
+  var baseURL = self.languagePluginUrl || '{{ PYODIDE_BASE_URL }}';
   baseURL = baseURL.substr(0, baseURL.lastIndexOf('/')) + '/';
 
   ////////////////////////////////////////////////////////////
@@ -331,22 +331,22 @@ var languagePluginLoader = new Promise((resolve, reject) => {
   let isFirefox = navigator.userAgent.toLowerCase().indexOf('firefox') > -1;
 
   Module.checkABI = function(ABI_number) {
-    if (ABI_number !== parseInt('{{ABI}}')) {
+    if (ABI_number !== parseInt('{{ PYODIDE_PACKAGE_ABI }}')) {
       var ABI_mismatch_exception =
-          `ABI numbers differ. Expected {{ABI}}, got ${ABI_number}`;
+          `ABI numbers differ. Expected {{ PYODIDE_PACKAGE_ABI }}, got ${
+              ABI_number}`;
       console.error(ABI_mismatch_exception);
       throw ABI_mismatch_exception;
     }
     return true;
   };
 
-  Module.autocomplete =
-      function(path) {
+  Module.autocomplete = function(path) {
     var pyodide_module = Module.pyimport("pyodide");
     return pyodide_module.get_completions(path);
-  }
+  };
 
-      Module.locateFile = (path) => baseURL + path;
+  Module.locateFile = (path) => baseURL + path;
   var postRunPromise = new Promise((resolve, reject) => {
     Module.postRun = () => {
       delete self.Module;
@@ -358,12 +358,6 @@ var languagePluginLoader = new Promise((resolve, reject) => {
                 self.pyodide.runPython('import sys\nsys.modules["__main__"]');
             self.pyodide = makePublicAPI(self.pyodide, PUBLIC_API);
             self.pyodide._module.packages = json;
-            if (self.iodide !== undefined) {
-              // Perform some completions immediately so there isn't a delay on
-              // the first call to autocomplete
-              self.pyodide.runPython('import pyodide');
-              self.pyodide.runPython('pyodide.get_completions("")');
-            }
             resolve();
           });
     };
@@ -393,48 +387,5 @@ var languagePluginLoader = new Promise((resolve, reject) => {
       self.pyodide.loadPackage = loadPackage;
     }, () => {});
   }, () => {});
-
-  ////////////////////////////////////////////////////////////
-  // Iodide-specific functionality, that doesn't make sense
-  // if not using with Iodide.
-  if (self.iodide !== undefined) {
-    // Load the custom CSS for Pyodide
-    let link = document.createElement('link');
-    link.rel = 'stylesheet';
-    link.type = 'text/css';
-    link.href = `${baseURL}renderedhtml.css`;
-    document.getElementsByTagName('head')[0].appendChild(link);
-
-    // Add a custom output handler for Python objects
-    self.iodide.addOutputRenderer({
-      shouldRender : (val) => {
-        return (typeof val === 'function' &&
-                pyodide._module.PyProxy.isPyProxy(val));
-      },
-
-      render : (val) => {
-        let div = document.createElement('div');
-        div.className = 'rendered_html';
-        var element;
-        if (val._repr_html_ !== undefined) {
-          let result = val._repr_html_();
-          if (typeof result === 'string') {
-            div.appendChild(new DOMParser()
-                                .parseFromString(result, 'text/html')
-                                .body.firstChild);
-            element = div;
-          } else {
-            element = result;
-          }
-        } else {
-          let pre = document.createElement('pre');
-          pre.textContent = val.toString();
-          div.appendChild(pre);
-          element = div;
-        }
-        return element.outerHTML;
-      }
-    });
-  }
 });
 languagePluginLoader

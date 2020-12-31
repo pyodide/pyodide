@@ -54,27 +54,9 @@ pyodide.loadPackage('matplotlib').then(() => {
 
 ### Installing packages from PyPI
 
-Pyodide supports installing pure Python wheels from PyPI.
-
-For use in Iodide:
-
-```
-%% py
-import micropip
-micropip.install('snowballstemmer')
-
-# Iodide implicitly waits for the promise to resolve when the packages have finished
-# installing...
-
-%% py
-import snowballstemmer
-stemmer = snowballstemmer.stemmer('english')
-stemmer.stemWords('go goes going gone'.split())
-```
-
-For use outside of Iodide (just Python), you can use the `then` method on the
-`Promise` that {func}`micropip.install` returns to do work once the packages have
-finished loading:
+Pyodide supports installing pure Python wheels from PyPI with `micropip`. You
+can use the `then` method on the `Promise` that {func}`micropip.install`
+returns to do work once the packages have finished loading:
 
 ```py
 def do_work(*args):
@@ -129,9 +111,9 @@ a complete example would be,
 <body>
   <script type="text/javascript">
       // set the pyodide files URL (packages.json, pyodide.asm.data etc)
-      window.languagePluginUrl = 'https://cdn.jsdelivr.net/pyodide/v0.15.0/full/';
+      window.languagePluginUrl = 'https://cdn.jsdelivr.net/pyodide/v0.16.1/full/';
   </script>
-  <script type="text/javascript" src="https://cdn.jsdelivr.net/pyodide/v0.15.0/full/pyodide.js"></script>
+  <script type="text/javascript" src="https://cdn.jsdelivr.net/pyodide/v0.16.1/full/pyodide.js"></script>
   <script type="text/javascript">
     pythonCode = `
       def do_work(*args):
