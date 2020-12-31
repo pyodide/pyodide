@@ -1,13 +1,17 @@
 (changelog)=
 # Release notes
 
-## Verison 0.17.0
-*Unreleased*
-
+## Verison [Unreleased]
 ### Breaking changes
 
 - Removed iodide-specific code in `pyodide.js`. This breaks compatibility with
   iodide.
+  [#878](https://github.com/iodide-project/pyodide/pull/878),
+  [#981](https://github.com/iodide-project/pyodide/pull/981)
+
+### Added
+- `micropip` now supports installing wheels from relative urls. [#872](https://github.com/iodide-project/pyodide/pull/872)
+
 
 ## Version 0.16.1
 *December 25, 2020*
