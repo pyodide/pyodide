@@ -32,7 +32,6 @@ to be used with Pyodide.
    :maxdepth: 2
    :caption: Usage
 
-   using_pyodide_from_iodide.md
    using_pyodide_from_javascript.md
    using_pyodide_from_webworker.md
    serving_pyodide_packages.md

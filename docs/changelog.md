@@ -1,6 +1,12 @@
 (changelog)=
 # Release notes
 
+## Verison 0.17.0
+*Unreleased*
+
+- Removed iodide-specific code in `pyodide.js`. This breaks compatibility with
+  iodide and other users pretending to be iodide.
+
 ## Version 0.16.1
 *December 25, 2020*
 
