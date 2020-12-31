@@ -48,18 +48,21 @@ except ImportError:
     pytest = None
 
 
-class PyodideInited:
-    def __call__(self, driver):
-        inited = driver.execute_script(
-            "return window.pyodide && window.pyodide.runPython"
-        )
-        return inited is not None
+def PyodideInited(driver):
+    return driver.execute_script(
+        """
+        return !!(window.PYODIDE_READY || window.PYODIDE_ERROR);
+        """
+    )
 
 
-class PackageLoaded:
-    def __call__(self, driver):
-        inited = driver.execute_script("return window.done")
-        return bool(inited)
+def PyodideInitGetError(driver):
+    return driver.execute_script("return window.PYODIDE_ERROR.message;")
+
+
+def PackageLoaded(driver):
+    inited = driver.execute_script("return window.done;")
+    return bool(inited)
 
 
 def _display_driver_logs(browser, driver):
@@ -93,10 +96,15 @@ class SeleniumWrapper:
             )
         driver.get(f"http://{server_hostname}:{server_port}/test.html")
         try:
-            wait.until(PyodideInited())
+            wait.until(PyodideInited)
         except TimeoutException:
             _display_driver_logs(self.browser, driver)
             raise TimeoutException()
+        # raise Exception("Pyodide initialization failed:")
+        error = PyodideInitGetError(driver)
+        print("error:", error)
+        if error is not None:
+            raise Exception("Pyodide initialization failed:", error)
         self.wait = wait
         self.driver = driver
         self.server_port = server_port
@@ -134,7 +142,7 @@ class SeleniumWrapper:
             )
         )
         try:
-            self.wait.until(PackageLoaded())
+            self.wait.until(PackageLoaded)
         except TimeoutException:
             _display_driver_logs(self.browser, self.driver)
             print(self.logs)
@@ -205,7 +213,7 @@ class SeleniumWrapper:
             )
         )
         try:
-            self.wait.until(PackageLoaded())
+            self.wait.until(PackageLoaded)
         except TimeoutException:
             _display_driver_logs(self.browser, self.driver)
             print(self.logs)
@@ -237,7 +245,7 @@ class SeleniumWrapper:
 
         __tracebackhide__ = True
         try:
-            self.wait.until(PackageLoaded())
+            self.wait.until(PackageLoaded)
         except TimeoutException:
             _display_driver_logs(self.browser, self.driver)
             print(self.logs)

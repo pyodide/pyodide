@@ -1,27 +1,36 @@
 <!-- Bootstrap HTML for running the unit tests. -->
 <html>
-    <head>
-        <meta charset="utf-8"/>
-        <script>
-         window.logs = [];
-         console.log = function(message) {
-             window.logs.push(message);
-         }
-         console.warn = function(message) {
-             window.logs.push(message);
-         }
-         console.info = function(message) {
-             window.logs.push(message);
-         }
-         console.error = function(message) {
-             window.logs.push(message);
-         }
-        </script>
-        <script type="text/javascript">
-            // set the pyodide files URL (packages.json, pyodide.asm.data etc)
-            window.languagePluginUrl = './';
-        </script>
-        <script src="./pyodide.js"></script>
-    </head>
-    <body></body>
+  <head>
+  <meta charset="utf-8"/>
+  <script type="text/javascript">
+    window.logs = [];
+    console.log = function(message) {
+      window.logs.push(message);
+    };
+    console.warn = function(message) {
+      window.logs.push(message);
+    };
+    console.info = function(message) {
+      window.logs.push(message);
+    };
+    console.error = function(message) {
+      window.logs.push(message);
+    };
+    // set the pyodide files URL (packages.json, pyodide.asm.data etc)
+    window.languagePluginUrl = './';
+  </script>
+  <script src="./pyodide.js"></script>
+  <script type="text/javascript">
+    async function main(){
+      try {
+        await languagePluginLoader;
+        window.PYODIDE_READY = true;
+      } catch(e) {
+        window.PYODIDE_ERROR = e;
+      }
+    }
+    main();
+  </script>
+</head>
+<body></body>
 </html>
