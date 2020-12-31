@@ -26,7 +26,9 @@ static int
 _py2js_remove_from_cache(PyObject* cache, PyObject* pyobject);
 
 static JsRef
-_py2js_cache(PyObject* x, PyObject* cache, JsRef (*caller)(PyObject*, PyObject*));
+_py2js_cache(PyObject* x,
+             PyObject* cache,
+             JsRef (*caller)(PyObject*, PyObject*));
 
 /** Cache a conversion of a python object
  * \param cache A python dict
@@ -133,7 +135,8 @@ exit:
 }
 
 static JsRef
-_py2js_float(PyObject* x){
+_py2js_float(PyObject* x)
+{
   double x_double = PyFloat_AsDouble(x);
   if (x_double == -1.0 && PyErr_Occurred()) {
     return Js_ERROR;
@@ -384,7 +387,9 @@ _py2js_remove_from_cache(PyObject* cache, PyObject* pyobject)
 }
 
 static JsRef
-_py2js_cache(PyObject* x, PyObject* cache, JsRef (*caller)(PyObject*, PyObject*))
+_py2js_cache(PyObject* x,
+             PyObject* cache,
+             JsRef (*caller)(PyObject*, PyObject*))
 {
   PyObject* id = PyLong_FromSize_t((size_t)x);
   PyObject* val = PyDict_GetItemWithError(cache, id);
@@ -394,7 +399,7 @@ _py2js_cache(PyObject* x, PyObject* cache, JsRef (*caller)(PyObject*, PyObject*)
     if (result != Js_ERROR) {
       result = hiwire_incref(result);
     }
-  } else if(PyErr_Occurred()){
+  } else if (PyErr_Occurred()) {
     return Js_ERROR;
   } else {
     PyErr_Clear();
@@ -456,7 +461,7 @@ test_wrapper_python2js_minimal(char* name)
   PyObject* pyname = PyUnicode_FromString(name);
   PyObject* pyval = PyDict_GetItem(globals, pyname);
   if (pyval == NULL) {
-    if(!PyErr_Occurred()){
+    if (!PyErr_Occurred()) {
       PyErr_Format(PyExc_KeyError, "%s", name);
     }
     Py_DECREF(pyname);
@@ -474,7 +479,7 @@ test_wrapper_python2js_shallow(char* name)
   PyObject* pyname = PyUnicode_FromString(name);
   PyObject* pyval = PyDict_GetItemWithError(globals, pyname);
   if (pyval == NULL) {
-    if(!PyErr_Occurred()){
+    if (!PyErr_Occurred()) {
       PyErr_Format(PyExc_KeyError, "%s", name);
     }
     Py_DECREF(pyname);
@@ -492,7 +497,7 @@ test_wrapper_python2js_deep(char* name)
   PyObject* pyname = PyUnicode_FromString(name);
   PyObject* pyval = PyDict_GetItemWithError(globals, pyname);
   if (pyval == NULL) {
-    if(!PyErr_Occurred()){
+    if (!PyErr_Occurred()) {
       PyErr_Format(PyExc_KeyError, "%s", name);
     }
     Py_DECREF(pyname);
