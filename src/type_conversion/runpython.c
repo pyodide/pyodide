@@ -10,7 +10,7 @@ static PyObject* py_pyodide;
 static PyObject* globals;
 _Py_IDENTIFIER(eval_code);
 
-int
+JsRef
 _runPythonDebug(char* code)
 {
   PyObject* py_code;
@@ -18,7 +18,7 @@ _runPythonDebug(char* code)
   if (py_code == NULL) {
     fprintf(stderr, "runPythonDebug -- error occurred converting argument:\n");
     PyErr_Print();
-    return HW_UNDEFINED;
+    return Js_UNDEFINED;
   }
 
   PyObject* result = _PyObject_CallMethodIdObjArgs(
@@ -27,14 +27,14 @@ _runPythonDebug(char* code)
   if (result == NULL) {
     fprintf(stderr, "runPythonDebug -- error occurred\n");
     PyErr_Print();
-    return HW_UNDEFINED;
+    return Js_UNDEFINED;
   }
 
   printf("runPythonDebug -- eval_code succeeded, it returned:\n");
   PyObject_Print(result, stdout, 0);
 
   printf("runPythonDebug -- doing python2js(result):\n");
-  int id = python2js(result);
+  JsRef id = python2js(result);
   Py_DECREF(result);
   return id;
 }
@@ -71,7 +71,7 @@ runpython_init()
     return 1;
   }
 
-  int py_pyodide_id = python2js(py_pyodide);
+  JsRef py_pyodide_id = python2js(py_pyodide);
   Py_CLEAR(py_pyodide);
   // Currently by default, python2js copies dicts into objects.
   // We want to feed Module.globals back to `eval_code` in `pyodide.runPython`
@@ -81,7 +81,7 @@ runpython_init()
   // We also had to add ad-hoc modifications to _pyproxy_get, etc to support
   // this. I (HC) will fix this with the rest of the type conversions
   // modifications.
-  int py_globals_id = pyproxy_new(globals);
+  JsRef py_globals_id = pyproxy_new(globals);
   EM_ASM(
     {
       Module.py_pyodide = Module.hiwire.get_value($0);
