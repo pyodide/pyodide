@@ -4,8 +4,10 @@
 ## Verison 0.17.0
 *Unreleased*
 
+### Breaking changes
+
 - Removed iodide-specific code in `pyodide.js`. This breaks compatibility with
-  iodide and other users pretending to be iodide.
+  iodide.
 
 ## Version 0.16.1
 *December 25, 2020*
