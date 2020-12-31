@@ -133,8 +133,7 @@ lint:
 
 
 apply-lint:
-	clang-format-6.0 -i `git diff --cached --name-only *.c *.h *.js`
-	black `git diff --cached --name-only *.py`
+	./tools/apply-lint.sh
 
 benchmark: all
 	python benchmark/benchmark.py $(HOSTPYTHON) build/benchmarks.json

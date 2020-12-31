@@ -28,4 +28,4 @@ repos:
     -   id: clang-format
         name: clang-format-6.0
         language: system
-        entry: ./clang-format-precommit.sh
+        entry: ./tools/clang-format-precommit.sh
