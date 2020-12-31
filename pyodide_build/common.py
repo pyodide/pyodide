@@ -9,7 +9,6 @@ DEFAULTLDFLAGS = " ".join(
     [
         "-O2",
         "-Werror",
-        "-s", "EMULATED_FUNCTION_POINTERS=1",
         "-s", "EMULATE_FUNCTION_POINTER_CASTS=1",
         "-s", "SIDE_MODULE=1",
         "-s", "WASM=1",
