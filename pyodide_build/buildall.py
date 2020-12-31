@@ -72,10 +72,15 @@ class Package:
                     stderr=subprocess.STDOUT,
                 )
 
-        with open(self.pkgdir / "build.log", "r") as f:
-            shutil.copyfileobj(f, sys.stdout)
+        try:
+            p.check_returncode()
+        except subprocess.CalledProcessError:
+            print(f"Error building {self.name}. Printing build logs.")
 
-        p.check_returncode()
+            with open(self.pkgdir / "build.log", "r") as f:
+                shutil.copyfileobj(f, sys.stdout)
+
+            raise
 
         if not self.library:
             shutil.copyfile(
