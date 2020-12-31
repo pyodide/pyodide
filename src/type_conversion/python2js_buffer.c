@@ -468,7 +468,7 @@ _python2js_buffer(PyObject* x)
 
   if (shareable != NOT_SHAREABLE) {
     JsRef idarr = _python2js_buffer_to_typed_array(buff);
-    if (idarr == HW_ERROR) {
+    if (idarr == Js_ERROR) {
       // HC: I don't think this is the right way to communicate an error
       // message? Seems like it may cause Python to throw unexpected PyErr state
       // errors.

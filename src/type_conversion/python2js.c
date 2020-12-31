@@ -19,10 +19,10 @@ _py2js_unicode(PyObject* x);
  * \param js
  *
  */
-static JsRef
+static int
 _py2js_add_to_cache(PyObject* cache, PyObject* pyobject, JsRef jsobject);
 
-static JsRef
+static int
 _py2js_remove_from_cache(PyObject* cache, PyObject* pyobject);
 
 static JsRef
@@ -213,7 +213,7 @@ _py2js_sequence(PyObject* x,
       return get_pyproxy(x);
     }
     JsRef jsitem = _py2js_cache(pyitem, cache, caller);
-    if (jsitem == HW_ERROR) {
+    if (jsitem == Js_ERROR) {
       _py2js_remove_from_cache(cache, x);
       Py_DECREF(pyitem);
       hiwire_decref(jsarray);
@@ -242,13 +242,13 @@ _py2js_dict(PyObject* x, PyObject* cache, JsRef (*caller)(PyObject*, PyObject*))
   Py_ssize_t pos = 0;
   while (PyDict_Next(x, &pos, &pykey, &pyval)) {
     JsRef jskey = _py2js_cache(pykey, cache, caller);
-    if (jskey == HW_ERROR) {
+    if (jskey == Js_ERROR) {
       _py2js_remove_from_cache(cache, x);
       hiwire_decref(jsdict);
       return Js_ERROR;
     }
     JsRef jsval = _py2js_cache(pyval, cache, caller);
-    if (jsval == HW_ERROR) {
+    if (jsval == Js_ERROR) {
       _py2js_remove_from_cache(cache, x);
       hiwire_decref(jskey);
       hiwire_decref(jsdict);
@@ -289,14 +289,14 @@ _py2js_immutable(PyObject* x)
   } else if (PyBytes_Check(x)) {
     return _py2js_bytes(x);
   } else {
-    return HW_ERROR;
+    return Js_ERROR;
   }
 }
 
 #define RET_IF_NOT_ERR(x)                                                      \
   do {                                                                         \
     result = x;                                                                \
-    if (result != HW_ERROR) {                                                  \
+    if (result != Js_ERROR) {                                                  \
       return result;                                                           \
     }                                                                          \
   } while (0)
@@ -362,26 +362,24 @@ _py2js_deep(PyObject* x, PyObject* cache)
   return _py2js_helper(x, cache, &_py2js_deep);
 }
 
-static JsRef
+static int
 _py2js_add_to_cache(PyObject* cache, PyObject* pyobject, JsRef jsobject)
 {
   /* Use the pointer converted to an int so cache is by identity, not hash */
   PyObject* pyobjectid = PyLong_FromSize_t((size_t)pyobject);
-  PyObject* jsobjectid = PyLong_FromLong(jsobject);
-  JsRef result = PyDict_SetItem(cache, pyobjectid, jsobjectid);
+  PyObject* jsobjectid = PyLong_FromLong((int)jsobject);
+  int result = PyDict_SetItem(cache, pyobjectid, jsobjectid);
   Py_DECREF(pyobjectid);
   Py_DECREF(jsobjectid);
-
   return result;
 }
 
-static JsRef
+static int
 _py2js_remove_from_cache(PyObject* cache, PyObject* pyobject)
 {
   PyObject* pyobjectid = PyLong_FromSize_t((size_t)pyobject);
-  JsRef result = PyDict_DelItem(cache, pyobjectid);
+  int result = PyDict_DelItem(cache, pyobjectid);
   Py_DECREF(pyobjectid);
-
   return result;
 }
 
@@ -389,17 +387,21 @@ static JsRef
 _py2js_cache(PyObject* x, PyObject* cache, JsRef (*caller)(PyObject*, PyObject*))
 {
   PyObject* id = PyLong_FromSize_t((size_t)x);
-  PyObject* val = PyDict_GetItem(cache, id);
+  PyObject* val = PyDict_GetItemWithError(cache, id);
   JsRef result;
   if (val) {
     result = (JsRef)PyLong_AsLong(val);
     if (result != Js_ERROR) {
       result = hiwire_incref(result);
     }
+  } else if(PyErr_Occurred()){
+    return Js_ERROR;
   } else {
+    PyErr_Clear();
     result = caller(x, cache);
   }
-  Py_DECREF(id);
+  Py_CLEAR(id);
+  Py_CLEAR(val);
   return result;
 }
 
@@ -409,8 +411,9 @@ python2js_minimal(PyObject* x)
   PyObject* cache = PyDict_New();
   JsRef result = _py2js_minimal(x, cache);
   Py_DECREF(cache);
-  if (result == HW_ERROR) {
-    return pythonexc2js();
+  if (result == Js_ERROR) {
+    pythonexc2js();
+    return Js_ERROR;
   }
   return result;
 }
@@ -421,8 +424,9 @@ python2js_once(PyObject* x)
   PyObject* cache = PyDict_New();
   JsRef result = _py2js_once(x, cache);
   Py_DECREF(cache);
-  if (result == HW_ERROR) {
-    return pythonexc2js();
+  if (result == Js_ERROR) {
+    pythonexc2js();
+    return Js_ERROR;
   }
   return result;
 }
@@ -436,6 +440,7 @@ python2js_deep(PyObject* x)
 
   if (result == Js_ERROR) {
     pythonexc2js();
+    return Js_ERROR;
   }
 
   return result;
@@ -451,6 +456,9 @@ test_wrapper_python2js_minimal(char* name)
   PyObject* pyname = PyUnicode_FromString(name);
   PyObject* pyval = PyDict_GetItem(globals, pyname);
   if (pyval == NULL) {
+    if(!PyErr_Occurred()){
+      PyErr_Format(PyExc_KeyError, "%s", name);
+    }
     Py_DECREF(pyname);
     return pythonexc2js();
   }
@@ -464,8 +472,11 @@ JsRef
 test_wrapper_python2js_shallow(char* name)
 {
   PyObject* pyname = PyUnicode_FromString(name);
-  PyObject* pyval = PyDict_GetItem(globals, pyname);
+  PyObject* pyval = PyDict_GetItemWithError(globals, pyname);
   if (pyval == NULL) {
+    if(!PyErr_Occurred()){
+      PyErr_Format(PyExc_KeyError, "%s", name);
+    }
     Py_DECREF(pyname);
     return pythonexc2js();
   }
@@ -479,8 +490,11 @@ JsRef
 test_wrapper_python2js_deep(char* name)
 {
   PyObject* pyname = PyUnicode_FromString(name);
-  PyObject* pyval = PyDict_GetItem(globals, pyname);
+  PyObject* pyval = PyDict_GetItemWithError(globals, pyname);
   if (pyval == NULL) {
+    if(!PyErr_Occurred()){
+      PyErr_Format(PyExc_KeyError, "%s", name);
+    }
     Py_DECREF(pyname);
     return pythonexc2js();
   }
@@ -491,7 +505,7 @@ test_wrapper_python2js_deep(char* name)
 }
 #endif // TEST
 
-JsRef
+int
 python2js_init()
 {
 #ifdef TEST
@@ -508,8 +522,8 @@ python2js_init()
   EM_ASM({
     Module.TestEntrypoints.py2js_minimal = function(name)
     {
-      var pyname = allocate(intArrayFromString(name), 'i8', ALLOC_NORMAL);
-      var idresult = _test_wrapper_python2js_minimal(pyname);
+      let pyname = stringToNewUTF8(name);
+      let idresult = _test_wrapper_python2js_minimal(pyname);
       jsresult = Module.hiwire.get_value(idresult);
       Module.hiwire.decref(idresult);
       _free(pyname);
@@ -518,8 +532,8 @@ python2js_init()
 
     Module.TestEntrypoints.py2js_shallow = function(name)
     {
-      var pyname = allocate(intArrayFromString(name), 'i8', ALLOC_NORMAL);
-      var idresult = _test_wrapper_python2js_shallow(pyname);
+      let pyname = stringToNewUTF8(name);
+      let idresult = _test_wrapper_python2js_shallow(pyname);
       jsresult = Module.hiwire.get_value(idresult);
       Module.hiwire.decref(idresult);
       _free(pyname);
@@ -528,8 +542,8 @@ python2js_init()
 
     Module.TestEntrypoints.py2js_deep = function(name)
     {
-      var pyname = allocate(intArrayFromString(name), 'i8', ALLOC_NORMAL);
-      var idresult = _test_wrapper_python2js_deep(pyname);
+      let pyname = stringToNewUTF8(name);
+      let idresult = _test_wrapper_python2js_deep(pyname);
       jsresult = Module.hiwire.get_value(idresult);
       Module.hiwire.decref(idresult);
       _free(pyname);

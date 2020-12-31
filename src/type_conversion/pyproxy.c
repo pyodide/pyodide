@@ -147,16 +147,16 @@ EM_JS(JsRef, pyproxy_new, (PyObject * ptrobj), {
   return Module.hiwire.new_value(proxy);
 });
 
-int
+JsRef
 get_pyproxy(PyObject* x)
 {
-  int ret;
-  if ((ret = pyproxy_use((int)x)) != HW_UNDEFINED) {
-    return ret;
+  JsRef result = pyproxy_use(x);
+  if (result != Js_ERROR) {
+    return result;
   }
   // Reference counter is increased only once when a PyProxy is created.
   Py_INCREF(x);
-  return pyproxy_new((int)x);
+  return pyproxy_new(x);
 }
 
 EM_JS(int, pyproxy_init, (), {

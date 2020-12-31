@@ -100,7 +100,7 @@ JsProxy_SetAttr(PyObject* o, PyObject* attr_name, PyObject* pyvalue)
     hiwire_delete_member_string(self->js, key);
   } else {
     JsRef idvalue = python2js_deep(pyvalue);
-    hiwire_set_member_string(self->js, (int)key, idvalue);
+    hiwire_set_member_string(self->js, key, idvalue);
     hiwire_decref(idvalue);
   }
   Py_DECREF(attr_name_py_str);
