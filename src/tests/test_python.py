@@ -174,13 +174,3 @@ def test_unknown_attribute(selenium):
             assert "asdf" in str(e)
         """
     )
-
-
-def test_completions(selenium):
-    result = selenium.run(
-        """
-        import pyodide
-        pyodide.get_completions('import sys\\nsys.v')
-        """
-    )
-    assert result == ["version", "version_info"]
