@@ -2,7 +2,7 @@
  * The main bootstrap script for loading pyodide.
  */
 
-async function main() {
+var languagePluginLoader = new Promise((resolve, reject) => {
   // Note: PYODIDE_BASE_URL is an environement variable replaced in
   // in this template in the Makefile. It's recommended to always set
   // languagePluginUrl in any case.
@@ -387,6 +387,5 @@ async function main() {
       self.pyodide.loadPackage = loadPackage;
     }, () => {});
   }, () => {});
-};
-
-globalThis.languagePluginLoader = main();
+});
+languagePluginLoader
