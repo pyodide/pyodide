@@ -19,6 +19,23 @@ jobs:
           name: lint
           command: make lint
 
+  build-docs:
+    working_directory: ~/repo
+
+    docker:
+      - image: python:3.8-alpine
+
+    steps:
+      - checkout
+
+      - run:
+          name: Install prerequisites
+          command: pip install -r docs/requirements-doc.txt
+
+      - run:
+          name: Build docs
+          command: python3 -m sphinx -M html docs docs/_build
+
   build-core:
     <<: *defaults
     steps:
@@ -234,6 +251,7 @@ workflows:
   build-and-deploy:
     jobs:
       - lint
+      - build-docs
       - build-core:
           requires:
             - lint
@@ -291,6 +309,7 @@ workflows:
             - test-core-chrome
             - test-packages-chrome
             - test-emsdk
+            - build-docs
           filters:
             branches:
               ignore: /.*/
@@ -303,6 +322,7 @@ workflows:
             - test-core-chrome
             - test-packages-chrome
             - test-emsdk
+            - build-docs
           filters:
             branches:
               only: master
