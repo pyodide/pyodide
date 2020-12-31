@@ -317,12 +317,15 @@ JsProxy_GetBuffer(PyObject* o, Py_buffer* view, int flags)
   Py_ssize_t itemsize;
   hiwire_get_dtype(self->js, &format, &itemsize);
   if (format == NULL) {
+    char* typename = hiwire_constructor_name(self->js);
     PyErr_Format(
       PyExc_RuntimeError,
       "Unknown typed array type '%s'. This is a problem with Pyodide, please "
       "open an issue about it here: "
       "https://github.com/iodide-project/pyodide/issues/new",
-      (char*)hiwire_constructor_name(self->js));
+      typename);
+    free(typename);
+
     goto fail;
   }
 
