@@ -8,13 +8,17 @@
   iodide.
   [#878](https://github.com/iodide-project/pyodide/pull/878),
   [#981](https://github.com/iodide-project/pyodide/pull/981)
-- Removed PYODIDE_PACKAGE_ABI and custom `file_packager.py` fork. This means
-  checking for PYODIDE_PACKAGE_ABI in os.environ is no longer a valid way of
-  detecting whether we are being built for pyodide. Instead, look for
-  PYODIDE_BASE_URL. From an API point of view, pyodide.checkABI is no longer
-  present. [#991](https://github.com/iodide-project/pyodide/pull/991)
+- Use upstream `file_packager.py`, and stop checking package abi versions.
+  The `PYODIDE_PACKAGE_ABI` environment variable is no longer used, but is
+  still set as some packages use it to detect whether it is being built for
+  pyodide. This usage is deprecated, and a new environment variable `PYODIDE`
+  is introduced for this purpose.
+
+  As part of the change, Module.checkABI is no longer present.
+  [#991](https://github.com/iodide-project/pyodide/pull/991)
 
 ### Added
+- `micropip` now supports installing wheels from relative urls. [#872](https://github.com/iodide-project/pyodide/pull/872)
 
 ## Version 0.16.1
 *December 25, 2020*
