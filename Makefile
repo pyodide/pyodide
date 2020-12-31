@@ -2,8 +2,6 @@ PYODIDE_ROOT=$(abspath .)
 include Makefile.envs
 .PHONY=check
 
-FILEPACKAGER=$(PYODIDE_ROOT)/tools/file_packager.py
-
 CPYTHONROOT=cpython
 CPYTHONLIB=$(CPYTHONROOT)/installs/python-$(PYVERSION)/lib/python$(PYMINOR)
 
@@ -29,6 +27,7 @@ LDFLAGS=\
 	-s LINKABLE=1 \
 	-s EXPORT_ALL=1 \
 	-s EXPORTED_FUNCTIONS='["___cxa_guard_acquire", "__ZNSt3__28ios_base4initEPv", "_main"]' \
+	-s EXTRA_EXPORTED_RUNTIME_METHODS='["LZ4"]' \
 	-s WASM=1 \
 	-s USE_FREETYPE=1 \
 	-s USE_LIBPNG=1 \
@@ -73,9 +72,8 @@ build/pyodide.asm.js: src/main.bc src/type_conversion/jsimport.bc \
 		src/type_conversion/runpython.bc src/type_conversion/hiwire.bc
 	date +"[%F %T] Building pyodide.asm.js..."
 	[ -d build ] || mkdir build
-	$(CXX) -s EXPORT_NAME="'pyodide'" -o build/pyodide.asm.html $(filter %.bc,$^) \
-		$(LDFLAGS) -s FORCE_FILESYSTEM=1
-	rm build/pyodide.asm.html
+	$(CXX) -s EXPORT_NAME="'pyodide'" -o build/pyodide.asm.js $(filter %.bc,$^) \
+		$(LDFLAGS) -s FORCE_FILESYSTEM=1 --preload-file root/lib@lib
 	date +"[%F %T] done building pyodide.asm.js."
 
 
@@ -83,18 +81,9 @@ env:
 	env
 
 
-build/pyodide.asm.data: root/.built
-	( \
-		cd build; \
-		python $(FILEPACKAGER) pyodide.asm.data --abi=$(PYODIDE_PACKAGE_ABI) --lz4 --preload ../root/lib@lib --js-output=pyodide.asm.data.js --use-preload-plugins \
-	)
-	uglifyjs build/pyodide.asm.data.js -o build/pyodide.asm.data.js
-
-
 build/pyodide.js: src/pyodide.js
 	cp $< $@
 	sed -i -e 's#{{ PYODIDE_BASE_URL }}#$(PYODIDE_BASE_URL)#g' $@
-	sed -i -e "s#{{ PYODIDE_PACKAGE_ABI }}#$(PYODIDE_PACKAGE_ABI)#g" $@
 
 
 build/test.html: src/templates/test.html
@@ -167,7 +156,7 @@ build/test.data: $(CPYTHONLIB)
 	)
 	( \
 		cd build; \
-		python $(FILEPACKAGER) test.data --abi=$(PYODIDE_PACKAGE_ABI) --lz4 --preload ../$(CPYTHONLIB)/test@/lib/python3.8/test --js-output=test.js --export-name=pyodide._module --exclude __pycache__ \
+		python $(FILEPACKAGER) test.data --lz4 --preload ../$(CPYTHONLIB)/test@/lib/python3.8/test --js-output=test.js --export-name=pyodide._module --exclude __pycache__ \
 	)
 	uglifyjs build/test.js -o build/test.js
 

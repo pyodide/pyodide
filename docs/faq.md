@@ -63,6 +63,6 @@ To detect pyodide, **at build time** use,
 ```python
 import os
 
-if "PYODIDE_PACKAGE_ABI" in os.environ:
+if "PYODIDE_BASE_URL" in os.environ:
     # building for Pyodide
 ```

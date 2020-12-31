@@ -1,8 +1,10 @@
 from pathlib import Path
 from typing import Optional, Set
 
-ROOTDIR = Path(__file__).parents[1].resolve() / "tools"
-TARGETPYTHON = ROOTDIR / ".." / "cpython" / "installs" / "python-3.8.2"
+ROOTDIR = Path(__file__).parents[1].resolve()
+TOOLSDIR = ROOTDIR / "tools"
+PACKAGERDIR = ROOTDIR / "emsdk" / "emsdk" / "fastcomp" / "emscripten" / "tools"
+TARGETPYTHON = ROOTDIR / "cpython" / "installs" / "python-3.8.2"
 DEFAULTCFLAGS = ""
 # fmt: off
 DEFAULTLDFLAGS = " ".join(

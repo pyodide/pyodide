@@ -306,7 +306,6 @@ var languagePluginLoader = new Promise((resolve, reject) => {
     'repr',
     'runPython',
     'runPythonAsync',
-    'checkABI',
     'version',
     'autocomplete',
   ];
@@ -329,17 +328,6 @@ var languagePluginLoader = new Promise((resolve, reject) => {
   Module.noWasmDecoding = true;
   Module.preloadedWasm = {};
   let isFirefox = navigator.userAgent.toLowerCase().indexOf('firefox') > -1;
-
-  Module.checkABI = function(ABI_number) {
-    if (ABI_number !== parseInt('{{ PYODIDE_PACKAGE_ABI }}')) {
-      var ABI_mismatch_exception =
-          `ABI numbers differ. Expected {{ PYODIDE_PACKAGE_ABI }}, got ${
-              ABI_number}`;
-      console.error(ABI_mismatch_exception);
-      throw ABI_mismatch_exception;
-    }
-    return true;
-  };
 
   Module.autocomplete = function(path) {
     var pyodide_module = Module.pyimport("pyodide");

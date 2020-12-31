@@ -212,7 +212,7 @@ successfully import the module as usual.
 To produce these files, download the `file_packager.py` script from
 [https://github.com/iodide-project/pyodide/blob/master/tools/file_packager.py](https://github.com/iodide-project/pyodide/blob/master/tools/file_packager.py). You then run the command
 ```sh
-$ ./file_packager.py PACKAGE_NAME.data --js-output=PACKAGE_NAME.js --abi=1 --export-name=pyodide._module --use-preload-plugins --preload /PATH/TO/LIB/@/lib/python3.8/site-packages/PACKAGE_NAME/ --exclude "*__pycache__*"
+$ ./file_packager.py PACKAGE_NAME.data --js-output=PACKAGE_NAME.js --export-name=pyodide._module --use-preload-plugins --preload /PATH/TO/LIB/@/lib/python3.8/site-packages/PACKAGE_NAME/ --exclude "*__pycache__*"
 ```
 The `--preload` argument instructs the package to look for the file/directory
 before the separator `@` (namely `/PATH/TO/LIB/`) and place it at the path

@@ -56,8 +56,6 @@ class Package:
                         "pyodide_build",
                         "buildpkg",
                         str(self.pkgdir / "meta.yaml"),
-                        "--package_abi",
-                        str(args.package_abi),
                         "--cflags",
                         args.cflags,
                         "--ldflags",
@@ -257,12 +255,6 @@ def make_parser(parser):
         type=str,
         nargs=1,
         help="Output directory in which to put all built packages",
-    )
-    parser.add_argument(
-        "--package_abi",
-        type=int,
-        required=True,
-        help="The ABI number for the packages to be built",
     )
     parser.add_argument(
         "--cflags",
