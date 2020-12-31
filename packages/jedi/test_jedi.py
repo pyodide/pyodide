@@ -1,4 +1,5 @@
 def test_jedi(selenium_standalone):
+    selenium_standalone.load_package("jedi")
     result = selenium_standalone.run(
         """
         import jedi
@@ -11,6 +12,7 @@ def test_jedi(selenium_standalone):
 
 
 def test_completions(selenium_standalone):
+    selenium_standalone.load_package("jedi")
     result = selenium_standalone.run(
         """
         import pyodide
