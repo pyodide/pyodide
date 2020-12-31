@@ -1,0 +1,9 @@
+package:
+  name: libxslt
+
+requirements:
+  run:
+    - libxml
+
+build:
+  library: true

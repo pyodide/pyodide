@@ -8,77 +8,81 @@
 // Since we're going *to* Python, just let any Python exceptions at conversion
 // bubble out to Python
 
-int
+PyObject*
 _js2python_allocate_string(int size, int max_code_point)
 {
-  return (int)PyUnicode_New(size, max_code_point);
+  return PyUnicode_New(size, max_code_point);
 }
 
-int
-_js2python_get_ptr(int obj)
+void*
+_js2python_get_ptr(PyObject* obj)
 {
-  return (int)PyUnicode_DATA((PyObject*)obj);
+  return PyUnicode_DATA(obj);
 }
 
-int
+PyObject*
 _js2python_number(double val)
 {
   double i;
 
   if (modf(val, &i) == 0.0)
-    return (int)PyLong_FromDouble(i);
+    return PyLong_FromDouble(i);
 
-  return (int)PyFloat_FromDouble(val);
+  return PyFloat_FromDouble(val);
 }
 
-int
+PyObject*
 _js2python_none()
 {
   Py_INCREF(Py_None);
-  return (int)Py_None;
+  return Py_None;
 }
 
-int
+PyObject*
 _js2python_true()
 {
   Py_INCREF(Py_True);
-  return (int)Py_True;
+  return Py_True;
 }
 
-int
+PyObject*
 _js2python_false()
 {
   Py_INCREF(Py_False);
-  return (int)Py_False;
+  return Py_False;
 }
 
-int
+PyObject*
 _js2python_pyproxy(PyObject* val)
 {
   Py_INCREF(val);
-  return (int)val;
+  return val;
 }
 
-int
-_js2python_memoryview(int id)
+PyObject*
+_js2python_memoryview(JsRef id)
 {
   PyObject* jsproxy = JsProxy_cnew(id);
-  return (int)PyMemoryView_FromObject(jsproxy);
+  return PyMemoryView_FromObject(jsproxy);
 }
 
-int
-_js2python_jsproxy(int id)
+PyObject*
+_js2python_jsproxy(JsRef id)
 {
-  return (int)JsProxy_cnew(id);
+  return JsProxy_cnew(id);
+}
+
+PyObject*
+_js2python_error(JsRef id)
+{
+  return JsProxy_new_error(id);
 }
 
 // TODO: Add some meaningful order
 
-EM_JS(int, __js2python, (int id), {
-  // clang-format off
-  var value = Module.hiwire.get_value(id);
-  var type = typeof value;
-  if (type === 'string') {
+EM_JS(PyObject*, __js2python, (JsRef id), {
+  function __js2python_string(value)
+  {
     // The general idea here is to allocate a Python string and then
     // have Javascript write directly into its buffer.  We first need
     // to determine if is needs to be a 1-, 2- or 4-byte string, since
@@ -124,6 +128,16 @@ EM_JS(int, __js2python, (int id), {
     }
 
     return result;
+  }
+
+  // From https://stackoverflow.com/a/45496068
+  function is_error(value) { return value && value.stack && value.message; }
+
+  // clang-format off
+  var value = Module.hiwire.get_value(id);
+  var type = typeof value;
+  if (type === 'string') {
+    return __js2python_string(value);
   } else if (type === 'number') {
     return __js2python_number(value);
   } else if (value === undefined || value === null) {
@@ -136,6 +150,8 @@ EM_JS(int, __js2python, (int id), {
     return __js2python_pyproxy(Module.PyProxy.getPtr(value));
   } else if (value['byteLength'] !== undefined) {
     return __js2python_memoryview(id);
+  } else if (is_error(value)) {
+    return __js2python_error(id);
   } else {
     return __js2python_jsproxy(id);
   }
@@ -143,7 +159,7 @@ EM_JS(int, __js2python, (int id), {
 });
 
 PyObject*
-js2python(int id)
+js2python(JsRef id)
 {
   return (PyObject*)__js2python(id);
 }
