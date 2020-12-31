@@ -1,6 +1,15 @@
 (changelog)=
 # Release notes
 
+## Version 0.17.0
+*Unreleased*
+
+- jedi and parso are no longer vendored in the main pyodide package, and need
+  to be loaded explicitly
+  [#987](https://github.com/iodide-project/pyodide/pull/987).
+- Reduce the size of the core pyodide package 
+  [#987](https://github.com/iodide-project/pyodide/pull/987).
+
 ## Version 0.16.1
 *December 25, 2020*
 
