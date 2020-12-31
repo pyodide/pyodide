@@ -2,6 +2,8 @@ PYODIDE_ROOT=$(abspath .)
 include Makefile.envs
 .PHONY=check
 
+FILEPACKAGER=$(PYODIDE_ROOT)/emsdk/emsdk/fastcomp/emscripten/tools/file_packager.py
+
 CPYTHONROOT=cpython
 CPYTHONLIB=$(CPYTHONROOT)/installs/python-$(PYVERSION)/lib/python$(PYMINOR)
 
@@ -14,7 +16,6 @@ CXX=em++
 OPTFLAGS=-O2
 CFLAGS=$(OPTFLAGS) -g -I$(PYTHONINCLUDE) -Wno-warn-absolute-paths -Werror=int-conversion -Werror=incompatible-pointer-types
 CXXFLAGS=$(CFLAGS) -std=c++14
-
 
 LDFLAGS=\
 	-O2 \
@@ -114,7 +115,7 @@ lint:
 	# check for unused imports, the rest is done by black
 	flake8 --select=F401 src tools pyodide_build benchmark
 	clang-format-6.0 -output-replacements-xml `find src -type f -regex ".*\.\(c\|h\|js\)"` | (! grep '<replacement ')
-	black --check --exclude tools/file_packager.py .
+	black --check .
 	mypy --ignore-missing-imports pyodide_build/ src/ packages/micropip/micropip/ packages/*/test*
 
 
