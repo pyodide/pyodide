@@ -14,7 +14,7 @@ SHELL := /bin/bash
 CC=emcc
 CXX=em++
 OPTFLAGS=-O2
-CFLAGS=$(OPTFLAGS) -g -I$(PYTHONINCLUDE) -Wno-warn-absolute-paths -D TEST
+CFLAGS=$(OPTFLAGS) -g -I$(PYTHONINCLUDE) -Wno-warn-absolute-paths -Werror=int-conversion -Werror=incompatible-pointer-types -D TEST
 CXXFLAGS=$(CFLAGS) -std=c++14
 
 
@@ -22,7 +22,6 @@ LDFLAGS=\
 	-O2 \
 	-s MODULARIZE=1 \
 	$(CPYTHONROOT)/installs/python-$(PYVERSION)/lib/libpython$(PYMINOR).a \
-	-s "BINARYEN_METHOD='native-wasm'" \
 	-s TOTAL_MEMORY=10485760 \
 	-s ALLOW_MEMORY_GROWTH=1 \
 	-s MAIN_MODULE=1 \
@@ -30,7 +29,7 @@ LDFLAGS=\
 	-s EMULATE_FUNCTION_POINTER_CASTS=1 \
 	-s LINKABLE=1 \
 	-s EXPORT_ALL=1 \
-	-s EXPORTED_FUNCTIONS='["___cxa_guard_acquire", "__ZNSt3__28ios_base4initEPv"]' \
+	-s EXPORTED_FUNCTIONS='["___cxa_guard_acquire", "__ZNSt3__28ios_base4initEPv", "_main"]' \
 	-s WASM=1 \
 	-s SWAPPABLE_ASM_MODULE=1 \
 	-s USE_FREETYPE=1 \
@@ -162,7 +161,7 @@ clean-all: clean
 	make -C cpython clean
 	rm -fr cpython/build
 
-%.bc: %.c $(CPYTHONLIB)
+%.bc: %.c $(CPYTHONLIB) $(wildcard src/**/*.h)
 	$(CC) -o $@ -c $< $(CFLAGS) $(EXTRA_CFLAGS) -Isrc/type_conversion/
 
 
@@ -268,3 +267,6 @@ FORCE:
 
 check:
 	./tools/dependency-check.sh
+
+minimal :
+	PYODIDE_PACKAGES="micropip" make

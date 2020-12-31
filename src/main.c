@@ -1,6 +1,8 @@
 #include "testing.h"
 #include <Python.h>
+#include <assert.h>
 #include <emscripten.h>
+#include <stdalign.h>
 
 #include "hiwire.h"
 #include "js2python.h"
@@ -35,7 +37,14 @@ main(int argc, char** argv)
 #ifdef TEST
   TRY_INIT(testing);
 #endif
-  hiwire_setup();
+  if (alignof(JsRef) != alignof(int)) {
+    FATAL_ERROR("JsRef doesn't have the same alignment as int.");
+  }
+  if (sizeof(JsRef) != sizeof(int)) {
+    FATAL_ERROR("JsRef doesn't have the same size as int.");
+  }
+  TRY_INIT(hiwire);
+
   setenv("PYTHONHOME", "/", 0);
 
   Py_InitializeEx(0);
