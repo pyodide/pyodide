@@ -417,34 +417,37 @@ EM_JS(void, hiwire_copy_to_ptr, (JsRef idobj, void* ptr), {
   Module.HEAPU8.set(new Uint8Array(buffer), ptr);
 });
 
-EM_JS(void, hiwire_get_dtype, (JsRef idobj, char** format_ptr, Py_ssize_t* size_ptr), {
-  if (!Module.hiwire.dtype_map) {
-    let entries = Object.entries({
-      'Int8Array' : [ 'b', 1 ],
-      'Uint8Array' : [ 'B', 1 ],
-      'Uint8ClampedArray' : [ 'B', 1 ],
-      'Int16Array' : [ "h", 2 ],
-      'Uint16Array' : [ "H", 2 ],
-      'Int32Array' : [ "i", 4 ],
-      'Uint32Array' : [ "I", 4 ],
-      'Float32Array' : [ "f", 4 ],
-      'Float64Array' : [ "d", 8 ],
-      'ArrayBuffer' : [ 'B', 1 ], // Default to Uint8;
-    });
-    Module.hiwire.dtype_map = new Map();
-    for (let[key, [ format, size ]] of entries) {
-      let format_utf8 =
-        allocate(intArrayFromString(format), "i8", ALLOC_NORMAL);
-      Module.hiwire.dtype_map.set(key, [ format_utf8, size ]);
-    }
-  }
-  let jsobj = Module.hiwire.get_value(idobj);
-  let[format_utf8, size] =
-    Module.hiwire.dtype_map.get(jsobj.constructor.name) || [ 0, 0 ];
-  // Store results into arguments
-  setValue(format_ptr, format_utf8, "i8*");
-  setValue(size_ptr, size, "i32");
-});
+EM_JS(void,
+      hiwire_get_dtype,
+      (JsRef idobj, char** format_ptr, Py_ssize_t* size_ptr),
+      {
+        if (!Module.hiwire.dtype_map) {
+          let entries = Object.entries({
+            'Int8Array' : [ 'b', 1 ],
+            'Uint8Array' : [ 'B', 1 ],
+            'Uint8ClampedArray' : [ 'B', 1 ],
+            'Int16Array' : [ "h", 2 ],
+            'Uint16Array' : [ "H", 2 ],
+            'Int32Array' : [ "i", 4 ],
+            'Uint32Array' : [ "I", 4 ],
+            'Float32Array' : [ "f", 4 ],
+            'Float64Array' : [ "d", 8 ],
+            'ArrayBuffer' : [ 'B', 1 ], // Default to Uint8;
+          });
+          Module.hiwire.dtype_map = new Map();
+          for (let[key, [ format, size ]] of entries) {
+            let format_utf8 =
+              allocate(intArrayFromString(format), "i8", ALLOC_NORMAL);
+            Module.hiwire.dtype_map.set(key, [ format_utf8, size ]);
+          }
+        }
+        let jsobj = Module.hiwire.get_value(idobj);
+        let[format_utf8, size] =
+          Module.hiwire.dtype_map.get(jsobj.constructor.name) || [ 0, 0 ];
+        // Store results into arguments
+        setValue(format_ptr, format_utf8, "i8*");
+        setValue(size_ptr, size, "i32");
+      });
 
 EM_JS(JsRef, hiwire_subarray, (JsRef idarr, int start, int end), {
   var jsarr = Module.hiwire.get_value(idarr);
