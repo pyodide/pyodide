@@ -1,6 +1,11 @@
 (() => {
   /**
    * The main bootstrap script for loading pyodide.
+   *
+   * Emscripten exposes two Module-global callbacks that we have to handle
+   * carefully:
+   *
+   *
    */
 
   ////////////////////////////////////////////////////////////
@@ -26,6 +31,7 @@
       return pyodide_module.get_completions(path);
     },
   };
+  let Module = self.Module;
   let postRunPromise = new Promise(resolve => Module.postRun = resolve);
 
   ////////////////////////////////////////////////////////////
@@ -97,7 +103,7 @@
 
   let dependencyIndex = 0;
   let resolvedDependencies = 0;
-  let dependencyCallbacks = new Map();
+  globalThis.dependencyCallbacks = new Map();
   // Wait for num_dependencies many wasm dependencies to be loaded
   // monitorRunDependencies is called twice per package load
   // That will have happened when monitorRunDependencies has been called
@@ -111,9 +117,8 @@
 
   function runDependencyLoadFailed() {
     // If the package_uri fails to load, call monitorRunDependencies twice
-    // (so packageCounter will still hit 0 and finish loading), and remove
-    // the package from toLoad so we don't mark it as loaded, and remove
-    // the package from packageList so we don't say that it was loaded.
+    // (so resolvedDependencies will equal dependencyIndex at the end and
+    // we can finish loading)
     monitorRunDependencies();
     monitorRunDependencies();
   }
@@ -131,11 +136,10 @@
   // the end of each package being loaded.
   function monitorRunDependencies() {
     resolvedDependencies++;
-    if (resolvedDependencies % 2 === 0) {
-      let promise_handles = dependencyCallbacks.get(resolvedDependencies);
-      if (promise_handles) {
-        promise_handles.resolve();
-      }
+    let promise_handles = dependencyCallbacks.get(resolvedDependencies);
+    if (promise_handles) {
+      promise_handles.resolve();
+      dependencyCallbacks.delete(resolvedDependencies);
     }
   }
 
@@ -144,19 +148,19 @@
 
   // names : A list of package names.
   // Do a DFS to find all dependencies of the requested packages
-  function chaseDependencies(names) {
-    let packages = self.pyodide._module.packages.dependencies;
-    let loadedPackages = self.pyodide.loadedPackages;
+  function chaseDependencies(names, messageCallback, errorCallback) {
+    let packages = Module.packages.dependencies;
+    let loadedPackages = Module.loadedPackages;
     // Copy names into queue.
     let queue = [].concat(names);
-    let toLoad = {};
+    let toFetch = {};
     while (queue.length) {
       let package_uri = queue.pop();
 
       const pkg = _uri_to_package_name(package_uri);
 
       if (pkg === null) {
-        _errorCallback(`Invalid package name or URI '${package_uri}'`);
+        errorCallback(`Invalid package name or URI '${package_uri}'`);
         return;
       } else if (pkg === package_uri) {
         package_uri = 'default channel';
@@ -165,53 +169,54 @@
       // Already loaded?
       if (pkg in loadedPackages) {
         if (package_uri !== loadedPackages[pkg]) {
-          _errorCallback(`URI mismatch, attempting to load package ` +
-                         `${pkg} from ${package_uri} while it is already ` +
-                         `loaded from ${loadedPackages[pkg]}!`);
+          errorCallback(`URI mismatch, attempting to load package ` +
+                        `${pkg} from ${package_uri} while it is already ` +
+                        `loaded from ${loadedPackages[pkg]}!`);
           return;
         }
-        _messageCallback(`${pkg} already loaded from ${loadedPackages[pkg]}`);
+        messageCallback(`${pkg} already loaded from ${loadedPackages[pkg]}`);
         continue;
       }
 
       // Already enqueued?
-      if (pkg in toLoad) {
-        if (package_uri !== toLoad[pkg]) {
-          _errorCallback(`URI mismatch, attempting to load package ` +
-                         `${pkg} from ${package_uri} while it is already ` +
-                         `being loaded from ${toLoad[pkg]}!`);
+      if (pkg in toFetch) {
+        if (package_uri !== toFetch[pkg]) {
+          errorCallback(`URI mismatch, attempting to load package ` +
+                        `${pkg} from ${package_uri} while it is already ` +
+                        `being loaded from ${toFetch[pkg]}!`);
           return;
         }
         continue;
       }
 
-      _messageCallback(
+      messageCallback(
           `${pkg} to be loaded from ${package_uri}`); // debug level info.
-      toLoad[pkg] = package_uri;
+      toFetch[pkg] = package_uri;
       if (!packages.hasOwnProperty(pkg)) {
-        _errorCallback(`Unknown package '${pkg}'`);
+        errorCallback(`Unknown package '${pkg}'`);
         continue;
       }
 
       for (let subpkg of packages[pkg]) {
-        if (!(subpkg in loadedPackages) && !(subpkg in toLoad)) {
+        if (!(subpkg in loadedPackages) && !(subpkg in toFetch)) {
           queue.push(subpkg);
         }
       }
     }
-    return toLoad;
+    return toFetch;
   }
 
   let baseURL = self.languagePluginUrl || '{{ PYODIDE_BASE_URL }}';
   baseURL = baseURL.substr(0, baseURL.lastIndexOf('/')) + '/';
   // This is used for the Module level variable Module.locateFile.
-  function getFileLocator(toLoad = {}) {
+  // We need to update Module.locateFile every time we load a package.
+  function getFileLocator(toFetch = {}) {
     return (path) => {
       // handle packages loaded from custom URLs
       let pkg = path.replace(/\.data$/, "");
-      if (pkg in toLoad) {
-        let package_uri = toLoad[pkg];
-        if (package_uri != 'default channel') {
+      if (pkg in toFetch) {
+        let package_uri = toFetch[pkg];
+        if (package_uri !== 'default channel') {
           return package_uri.replace(/\.js$/, ".data");
         };
       };
@@ -245,42 +250,39 @@
   };
 
   // Note: this modifies the argument in place if it fails to fetch any of them.
-  async function fetchPackages(toLoad) {
+  async function fetchPackages(toFetch, messageCallback, errorCallback) {
     let promises = [];
-    let loaded = {};
+    let fetched = {};
     async function fetchPackageHelper(pkg, package_uri) {
+      let scriptSrc;
       try {
-        let scriptSrc;
-        if (package_uri == 'default channel') {
+        if (package_uri === 'default channel') {
           scriptSrc = `${baseURL}${pkg}.js`;
         } else {
           scriptSrc = `${package_uri}`;
         }
-        _messageCallback(`Loading ${pkg} from ${scriptSrc}`);
+        messageCallback(`Loading ${pkg} from ${scriptSrc}`);
         await loadScript(scriptSrc);
-        loaded[pkg] = package_uri;
+        fetched[pkg] = package_uri;
       } catch {
-        _errorCallback(`Couldn't load package from URL ${scriptSrc}`);
-        let packageListIndex = packageList.indexOf(pkg);
-        if (packageListIndex !== -1) {
-          packageList.splice(packageListIndex, 1);
-        }
+        errorCallback(`Couldn't load package from URL ${scriptSrc}`);
         runDependencyLoadFailed();
       }
     }
 
-    for (let [pkg, package_uri] of Object.entries(toLoad)) {
+    for (let [pkg, package_uri] of Object.entries(toFetch)) {
       promises.push(fetchPackageHelper(pkg, package_uri));
     }
     await Promise.all(promises);
-    return loaded;
+    return fetched;
   }
 
-  async function installPackages(toLoad) {
-    for (let [pkg, package_uri] of Object.entries(toLoad)) {
-      self.pyodide.loadedPackages[pkg] = package_uri;
+  async function installPackages(fetched) {
+    for (let [pkg, package_uri] of Object.entries(fetched)) {
+      Module.loadedPackages[pkg] = package_uri;
     }
     let resolveMsg;
+    let packageList = Array.from(Object.keys(fetched));
     if (packageList.length > 0) {
       let name_list = packageList.join(', ');
       resolveMsg = `Loaded ${name_list}`
@@ -311,38 +313,38 @@
       errorCallback(errMsg);
     };
 
-    let toLoad = chaseDependencies(names);
-    self.pyodide._module.locateFile = getFileLocator(toLoad);
+    let toFetch = chaseDependencies(names, messageCallback, errorCallback);
+    let numDependenciesToFetch = Object.keys(toFetch).length;
+    Module.locateFile = getFileLocator(toFetch);
 
-    if (Object.keys(toLoad).length === 0) {
+    if (numDependenciesToFetch === 0) {
       return 'No new packages to load';
     }
 
-    let packageList = Array.from(Object.keys(toLoad));
-    _messageCallback(`Loading ${packageList.join(', ')}`)
-
     // monitorRunDependencies is called at the beginning and the end of each
     // package being loaded. We know we are done when it has been called
-    // exactly "toLoad * 2" times.
-    let runDependencyPromise =
-        getRunDependencyPromise(Object.keys(toLoad).length);
+    // exactly "numDependenciesToFetch * 2" times.
+    let runDependencyPromise = getRunDependencyPromise(numDependenciesToFetch);
     // Set global window handler so we can cancel package loading if an error
     // occurs
     // TODO: be more specific about which errors are related to pyodide.
     self.addEventListener('error', windowErrorHandler);
-    let fetchPackagePromise = fetchPackages(toLoad);
+    let packageList = Array.from(Object.keys(toFetch));
+    messageCallback(`Fetching ${packageList.join(', ')}`)
+    let fetchPackagePromise =
+        fetchPackages(toFetch, messageCallback, errorCallback);
 
     // We have to invalidate Python's import caches, or it won't
     // see the new files. This is done here so it happens in parallel
     // with the fetching over the network.
-    self.pyodide.runPython('import importlib as _importlib\n' +
-                           '_importlib.invalidate_caches()\n');
+    Module.runPython('import importlib as _importlib\n' +
+                     '_importlib.invalidate_caches()\n');
 
-    let loaded = await fetchPackagePromise;
+    let fetched = await fetchPackagePromise;
 
     await runDependencyPromise;
     self.removeEventListener('error', windowErrorHandler);
-    let packagesLoadedMessage = await installPackages(loaded);
+    let packagesLoadedMessage = await installPackages(fetched);
     return packagesLoadedMessage;
   };
 
@@ -421,7 +423,6 @@
     // languagePluginUrl in any case.
     async function postRun() {
       await postRunPromise;
-      delete self.Module;
       let response = await fetch(`${baseURL}packages.json`);
       let json = await response.json();
       fixRecursionLimit(self.pyodide);
@@ -433,17 +434,18 @@
 
     const dataScriptSrc = `${baseURL}pyodide.asm.data.js`;
     const scriptSrc = `${baseURL}pyodide.asm.js`;
-    let runDependencyPromise = getRunDependencyPromise();
+    let runDependencyPromise = getRunDependencyPromise(2);
     loadScripts([ dataScriptSrc, scriptSrc ]).then(() => {
       // The emscripten module needs to be at this location for the core
       // filesystem to install itself. Once that's complete, it will be replaced
       // by the call to `makePublicAPI` with a more limited public API.
-      self.pyodide = pyodide(Module);
-      self.pyodide.loadedPackages = {};
-      self.pyodide.loadPackage = loadPackage;
+      globalThis.pyodide = pyodide(Module);
+      Module.loadedPackages = {};
+      Module.loadPackage = loadPackage;
     });
 
     await Promise.all([ postRun(), runDependencyPromise ]);
+    delete self.Module;
   };
 
   globalThis.languagePluginLoader = main();
