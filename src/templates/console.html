@@ -14,7 +14,8 @@
   </head>
   <body>
     <script>
-      languagePluginLoader.then(() => {
+      async function main(){
+        await languagePluginLoader;
         function pushCode(line) {
           handleResult(c.push(line))
         }
@@ -78,7 +79,8 @@
         term.handlePythonError = function(result) {
           term.error(result.toString())
         }
-      });
+      };
+      main().catch(err => console.error(err));
     </script>
   </body>
 </html>
