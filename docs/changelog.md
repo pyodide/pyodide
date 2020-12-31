@@ -1,18 +1,20 @@
 (changelog)=
 # Release notes
 
-## Verison 0.17.0
-*Unreleased*
-
+## Verison [Unreleased]
 ### Breaking changes
 
 - Removed iodide-specific code in `pyodide.js`. This breaks compatibility with
   iodide.
+  [#878](https://github.com/iodide-project/pyodide/pull/878),
+  [#981](https://github.com/iodide-project/pyodide/pull/981)
 - Removed PYODIDE_PACKAGE_ABI and custom `file_packager.py` fork. This means
   checking for PYODIDE_PACKAGE_ABI in os.environ is no longer a valid way of
   detecting whether we are being built for pyodide. Instead, look for
   PYODIDE_BASE_URL. From an API point of view, pyodide.checkABI is no longer
-  present.
+  present. [#991](https://github.com/iodide-project/pyodide/pull/991)
+
+### Added
 
 ## Version 0.16.1
 *December 25, 2020*
