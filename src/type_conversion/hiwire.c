@@ -421,24 +421,19 @@ EM_JS(void,
       (JsRef idobj, char** format_ptr, Py_ssize_t* size_ptr),
       {
         if (!Module.hiwire.dtype_map) {
-          let entries = Object.entries({
-            'Int8Array' : [ 'b', 1 ],
-            'Uint8Array' : [ 'B', 1 ],
-            'Uint8ClampedArray' : [ 'B', 1 ],
-            'Int16Array' : [ "h", 2 ],
-            'Uint16Array' : [ "H", 2 ],
-            'Int32Array' : [ "i", 4 ],
-            'Uint32Array' : [ "I", 4 ],
-            'Float32Array' : [ "f", 4 ],
-            'Float64Array' : [ "d", 8 ],
-            'ArrayBuffer' : [ 'B', 1 ], // Default to Uint8;
-          });
-          Module.hiwire.dtype_map = new Map();
-          for (let[key, [ format, size ]] of entries) {
-            let format_utf8 =
-              allocate(intArrayFromString(format), "i8", ALLOC_NORMAL);
-            Module.hiwire.dtype_map.set(key, [ format_utf8, size ]);
-          }
+          let alloc = stringToNewUTF8;
+          Module.hiwire.dtype_map = new Map([
+            [ 'Int8Array', [ alloc('b'), 1 ] ],
+            [ 'Uint8Array', [ alloc('B'), 1 ] ],
+            [ 'Uint8ClampedArray', [ alloc('B'), 1 ] ],
+            [ 'Int16Array', [ alloc('h'), 2 ] ],
+            [ 'Uint16Array', [ alloc('H'), 2 ] ],
+            [ 'Int32Array', [ alloc('i'), 4 ] ],
+            [ 'Uint32Array', [ alloc('I'), 4 ] ],
+            [ 'Float32Array', [ alloc('f'), 4 ] ],
+            [ 'Float64Array', [ alloc('d'), 8 ] ],
+            [ 'ArrayBuffer', [ alloc('B'), 1 ] ], // Default to Uint8;
+          ]);
         }
         let jsobj = Module.hiwire.get_value(idobj);
         let[format_utf8, size] =
