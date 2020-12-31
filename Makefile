@@ -266,3 +266,6 @@ FORCE:
 
 check:
 	./tools/dependency-check.sh
+
+minimal :
+	PYODIDE_PACKAGES="micropip" make
