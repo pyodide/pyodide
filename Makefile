@@ -15,7 +15,6 @@ CC=emcc
 CXX=em++
 OPTFLAGS=-O2
 CFLAGS=$(OPTFLAGS) -g -I$(PYTHONINCLUDE) -Wno-warn-absolute-paths -Werror=int-conversion -Werror=incompatible-pointer-types
-CXXFLAGS=$(CFLAGS) -std=c++14
 
 LDFLAGS=\
 	-O2 \
