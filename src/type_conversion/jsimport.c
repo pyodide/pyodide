@@ -283,6 +283,8 @@ JsImport_mount(char* name_utf8, JsRef package_id){
   QUIT_IF_NULL(name);
   sys_modules = PyImport_GetModuleDict();
   QUIT_IF_NULL(sys_modules);
+  // make cleanup code more consistent by increfing sys_modules.
+  Py_INCREF(sys_modules);
   module = PyDict_GetItemWithError(sys_modules, name);
   Py_XINCREF(module);
   if(module && !JsImport_Check(module)){
