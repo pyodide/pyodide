@@ -3,6 +3,8 @@ include Makefile.envs
 .PHONY=check
 
 FILEPACKAGER=$(PYODIDE_ROOT)/emsdk/emsdk/fastcomp/emscripten/tools/file_packager.py
+UGLIFYJS=$(PYODIDE_ROOT)/node_modules/.bin/uglifyjs
+LESSC=$(PYODIDE_ROOT)/node_modules/.bin/lessc
 
 CPYTHONROOT=cpython
 CPYTHONLIB=$(CPYTHONROOT)/installs/python-$(PYVERSION)/lib/python$(PYMINOR)
@@ -95,7 +97,7 @@ build/console.html: src/templates/console.html
 	sed -i -e 's#{{ PYODIDE_BASE_URL }}#$(PYODIDE_BASE_URL)#g' $@
 
 
-build/renderedhtml.css: src/css/renderedhtml.less
+build/renderedhtml.css: src/css/renderedhtml.less $(LESSC)
 	lessc $< $@
 
 build/webworker.js: src/webworker.js
@@ -130,6 +132,7 @@ clean:
 	rm -fr root
 	rm -fr build/*
 	rm -fr src/*.bc
+	rm -fr node_modules
 	make -C packages clean
 	make -C packages/six clean
 	make -C packages/jedi clean
@@ -158,8 +161,11 @@ build/test.data: $(CPYTHONLIB)
 		cd build; \
 		python $(FILEPACKAGER) test.data --lz4 --preload ../$(CPYTHONLIB)/test@/lib/python3.8/test --js-output=test.js --export-name=pyodide._module --exclude __pycache__ \
 	)
-	uglifyjs build/test.js -o build/test.js
+	$(UGLIFYJS) build/test.js -o build/test.js
 
+
+$(UGLIFYJS) $(LESSC): emsdk/emsdk/.complete
+	npm i --no-save uglify-js lessc
 
 root/.built: \
 		$(CPYTHONLIB) \
