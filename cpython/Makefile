@@ -82,9 +82,10 @@ $(ZLIBBUILD)/.configured: $(ZLIBTARBALL)
 $(SQLITEBUILD)/libsqlite3.la: $(SQLITETARBALL)
 	[ -d $(ROOT)/build ] || (mkdir $(ROOT)/build)
 	tar -C $(ROOT)/build/ -xf $(SQLITETARBALL)
+	# sqlite fails to detect that popen is not available. We have to set it
+	# as a CPPFLAG
 	( \
 		cd $(SQLITEBUILD); \
-		# sqlite fails to detect that popen is not available
 		CPPFLAGS="-DSQLITE_OMIT_POPEN" emconfigure ./configure; \
 		emmake make -j $${PYODIDE_JOBS:-3}; \
 	)
