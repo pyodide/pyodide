@@ -71,24 +71,24 @@
   }
 
   async function loadScript(url) {
-    if (self.document) { // browser
-      const script = self.document.createElement('script');
+    if (globalThis.document) { // browser
+      const script = globalThis.document.createElement('script');
       script.src = url;
       let result = new Promise((resolve, reject) => {
         script.onload = resolve;
         script.onerror = reject;
       })
-      self.document.head.appendChild(script);
+      globalThis.document.head.appendChild(script);
       return result;
-    } else if (self.importScripts) { // webworker
-      self.importScripts(url);
+    } else if (globalThis.importScripts) { // webworker
+      globalThis.importScripts(url);
     }
   }
 
   // Note: PYODIDE_BASE_URL is an environment variable replaced in
   // in this template in the Makefile. It's recommended to always set
   // languagePluginUrl in any case.
-  let baseURL = self.languagePluginUrl || '{{ PYODIDE_BASE_URL }}';
+  let baseURL = globalThis.languagePluginUrl || '{{ PYODIDE_BASE_URL }}';
   baseURL = baseURL.substr(0, baseURL.lastIndexOf('/')) + '/';
   // This creates closures for the Module level callback Module.locateFile.
   // When inside loadPackage, locateFile needs the toFetch metadata to
@@ -254,7 +254,7 @@
   // idea. What are we trying to catch? Can't we be a bit more specific?
   function windowErrorHandler(err) {
     clearRunDependencyCallbacks(err);
-    self.removeEventListener('error', windowErrorHandler);
+    globalThis.removeEventListener('error', windowErrorHandler);
     // Set up a new Promise chain, since this one failed
     loadPackagePromise = Promise.resolve();
     throw err;
@@ -337,7 +337,7 @@
     // Set global window handler so we can cancel package loading if an error
     // occurs
     // TODO: be more specific about which errors are related to pyodide.
-    self.addEventListener('error', windowErrorHandler);
+    globalThis.addEventListener('error', windowErrorHandler);
     let packageList = Array.from(Object.keys(toFetch));
     messageCallback(`Fetching ${packageList.join(', ')}`)
     let fetchPackagePromise =
@@ -352,7 +352,7 @@
     let fetched = await fetchPackagePromise;
 
     await runDependencyPromise;
-    self.removeEventListener('error', windowErrorHandler);
+    globalThis.removeEventListener('error', windowErrorHandler);
     let packagesLoadedMessage = await installPackages(fetched);
     return packagesLoadedMessage;
   };
@@ -438,13 +438,13 @@
       await postRunPromise;
       let response = await fetch(`${baseURL}packages.json`);
       let json = await response.json();
-      fixRecursionLimit(self.pyodide);
-      self.pyodide.globals = self.pyodide.runPython(`
+      fixRecursionLimit(globalThis.pyodide);
+      globalThis.pyodide.globals = globalThis.pyodide.runPython(`
             import sys;
             sys.modules["__main__"]
           `);
-      self.pyodide = makePublicAPI(self.pyodide, PUBLIC_API);
-      self.pyodide._module.packages = json;
+      globalThis.pyodide = makePublicAPI(globalThis.pyodide, PUBLIC_API);
+      globalThis.pyodide._module.packages = json;
     }
 
     // dataScriptSrc must be loaded before scriptSrc.
@@ -455,7 +455,7 @@
       // The emscripten module needs to be at this location for the core
       // filesystem to install itself. Once that's complete, it will be replaced
       // by the call to `makePublicAPI` with a more limited public API.
-      self.Module = Module;
+      globalThis.Module = Module;
       await loadScript(dataScriptSrc);
       await loadScript(scriptSrc);
       globalThis.pyodide = pyodide(Module);
@@ -465,7 +465,7 @@
     }
 
     await Promise.all([ postRun(), runDependencyPromise ]);
-    delete self.Module;
+    delete globalThis.Module;
   };
 
   globalThis.languagePluginLoader = main();
