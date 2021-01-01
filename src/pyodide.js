@@ -307,7 +307,6 @@ var languagePluginLoader = new Promise((resolve, reject) => {
     'repr',
     'runPython',
     'runPythonAsync',
-    'checkABI',
     'version',
     'autocomplete',
   ];
@@ -366,17 +365,6 @@ var languagePluginLoader = new Promise((resolve, reject) => {
 
   Module.version = function() { return Module.py_pyodide.__version__; };
 
-  Module.checkABI = function(ABI_number) {
-    if (ABI_number !== parseInt('{{ PYODIDE_PACKAGE_ABI }}')) {
-      var ABI_mismatch_exception =
-          `ABI numbers differ. Expected {{ PYODIDE_PACKAGE_ABI }}, got ${
-              ABI_number}`;
-      console.error(ABI_mismatch_exception);
-      throw ABI_mismatch_exception;
-    }
-    return true;
-  };
-
   Module.autocomplete = function(path) {
     var pyodide_module = Module.pyimport("pyodide");
     return pyodide_module.get_completions(path);
@@ -409,17 +397,14 @@ var languagePluginLoader = new Promise((resolve, reject) => {
 
   Promise.all([ postRunPromise, dataLoadPromise ]).then(() => resolve());
 
-  const data_script_src = `${baseURL}pyodide.asm.data.js`;
-  loadScript(data_script_src, () => {
-    const scriptSrc = `${baseURL}pyodide.asm.js`;
-    loadScript(scriptSrc, () => {
-      // The emscripten module needs to be at this location for the core
-      // filesystem to install itself. Once that's complete, it will be replaced
-      // by the call to `makePublicAPI` with a more limited public API.
-      self.pyodide = pyodide(Module);
-      self.pyodide.loadedPackages = {};
-      self.pyodide.loadPackage = loadPackage;
-    }, () => {});
+  const scriptSrc = `${baseURL}pyodide.asm.js`;
+  loadScript(scriptSrc, () => {
+    // The emscripten module needs to be at this location for the core
+    // filesystem to install itself. Once that's complete, it will be replaced
+    // by the call to `makePublicAPI` with a more limited public API.
+    self.pyodide = pyodide(Module);
+    self.pyodide.loadedPackages = {};
+    self.pyodide.loadPackage = loadPackage;
   }, () => {});
 });
 languagePluginLoader

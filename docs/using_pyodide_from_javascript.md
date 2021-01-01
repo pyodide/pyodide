@@ -2,7 +2,7 @@
 
 # Using Pyodide from Javascript
 
-This document describes using Pyodide directly from Javascript. For information about using Pyodide from Iodide, see {ref}`using_from_iodide`.
+This document describes using Pyodide directly from Javascript.
 
 ## Startup
 
