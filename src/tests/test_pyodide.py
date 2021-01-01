@@ -9,6 +9,8 @@ sys.path.append(str(Path(__file__).parents[2] / "src" / "pyodide-py"))
 from pyodide import find_imports, eval_code  # noqa: E402
 from pyodide._base import _adjust_ast_to_store_result
 
+import pytest
+
 
 def test_find_imports():
 
@@ -250,6 +252,7 @@ def test_mount_errors(selenium):
     )
 
 
+@pytest.mark.xfail
 def test_window_invocation(selenium):
     """ Make sure js.setTimeout etc don't yeild illegal invocation errors. """
     selenium.run(
