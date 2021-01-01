@@ -84,7 +84,8 @@ $(SQLITEBUILD)/libsqlite3.la: $(SQLITETARBALL)
 	tar -C $(ROOT)/build/ -xf $(SQLITETARBALL)
 	( \
 		cd $(SQLITEBUILD); \
-		emconfigure ./configure; \
+		# sqlite fails to detect that popen is not available
+		CPPFLAGS="-DSQLITE_OMIT_POPEN" emconfigure ./configure; \
 		emmake make -j $${PYODIDE_JOBS:-3}; \
 	)
 
