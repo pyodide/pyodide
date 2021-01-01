@@ -19,6 +19,7 @@
 
 ### Added
 - `micropip` now supports installing wheels from relative urls. [#872](https://github.com/iodide-project/pyodide/pull/872)
+- uglifyjs and lessc no longer need to be installed in the system during build
 
 ## Version 0.16.1
 *December 25, 2020*
