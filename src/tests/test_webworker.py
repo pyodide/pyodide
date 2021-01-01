@@ -1,19 +1,11 @@
-def test_runwebworker(selenium_standalone):
-    output = selenium_standalone.run_webworker(
-        """
-        import numpy as np
-        x = np.zeros(5)
-        str(x)
-        """
-    )
-    assert output == "[0. 0. 0. 0. 0.]"
+import pytest
 
 
 def test_runwebworker_different_package_name(selenium_standalone):
     output = selenium_standalone.run_webworker(
         """
-        import dateutil
-        dateutil.__version__
+        import pyparsing
+        pyparsing.__version__
         """
     )
     assert isinstance(output, str)
@@ -29,44 +21,34 @@ def test_runwebworker_no_imports(selenium_standalone):
 
 
 def test_runwebworker_missing_import(selenium_standalone):
-    try:
+    msg = "ModuleNotFoundError"
+    with pytest.raises(selenium_standalone.JavascriptException, match=msg):
         selenium_standalone.run_webworker(
             """
             import foo
             """
         )
-    except selenium_standalone.JavascriptException as e:
-        assert "ModuleNotFoundError" in str(e)
-    else:
-        assert False
 
 
 def test_runwebworker_exception(selenium_standalone):
-    try:
+    msg = "ZeroDivisionError"
+    with pytest.raises(selenium_standalone.JavascriptException, match=msg):
         selenium_standalone.run_webworker(
             """
             42 / 0
             """
         )
-    except selenium_standalone.JavascriptException as e:
-        assert "ZeroDivisionError" in str(e)
-    else:
-        assert False
 
 
 def test_runwebworker_exception_after_import(selenium_standalone):
-    try:
+    msg = "ZeroDivisionError"
+    with pytest.raises(selenium_standalone.JavascriptException, match=msg):
         selenium_standalone.run_webworker(
             """
-            import numpy as np
-            x = np.empty(5)
+            import pyparsing
             42 / 0
             """
         )
-    except selenium_standalone.JavascriptException as e:
-        assert "ZeroDivisionError" in str(e)
-    else:
-        assert False
 
 
 def test_runwebworker_micropip(selenium_standalone):

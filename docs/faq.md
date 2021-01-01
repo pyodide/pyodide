@@ -9,15 +9,31 @@ The two possible solutions are,
   {ref}`load it with micropip <micropip-installing-from-arbitrary-urls>`.
 - fetch the python code as a string and evaluate it in Python,
   ```js
-  pyodide.eval_code(pyodide.open_url('https://some_url/...'))
+  pyodide.runPython(await fetch('https://some_url/...'))
   ```
 
 In both cases, files need to be served with a web server and cannot be loaded from local file system.
 
 ## Why can't I load files from the local file system?
 
-For security reasons JavaScript in the browser is not allowed to load local
-data files. You need to serve them with a web-browser.
+For security reasons JavaScript in the browser is not allowed to load local data files. You need to serve them with a web-browser.
+Recently there is a [Native File System API](https://wicg.github.io/file-system-access/) supported in Chrome but not in Firefox. [There is a discussion about implementing it for Firefox here.](https://github.com/mozilla/standards-positions/issues/154)
+
+
+## How can I change the behavior of `runPython` and `runPythonAsync`?
+Internally they use the `pyodide-py` apis `eval_code` and `find_imports`. You can monkey patch these.
+Run the following Python code:
+```python
+import pyodide
+old_eval_code = pyodide.eval_code
+def eval_code(code, ns):
+  extra_info = None
+  result = old_eval_code(code, ns)
+  return [ns["extra_info"], result]
+pyodide.eval_code = eval_code
+```
+Then `pyodide.runPython("2+7")` returns `9` and `pyodide.runPython("extra_info='hello' ; 2 + 2")` will return `['hello', 4]`.
+
 
 ## How to detect that code is run with Pyodide?
 
@@ -47,6 +63,8 @@ To detect pyodide, **at build time** use,
 ```python
 import os
 
-if "PYODIDE_PACKAGE_ABI" in os.environ:
+if "PYODIDE" in os.environ:
     # building for Pyodide
 ```
+We used to use the environment variable `PYODIDE_BASE_URL` for this purpose,
+but this usage is deprecated.

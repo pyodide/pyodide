@@ -1,6 +1,5 @@
 import pytest
 import shutil
-import re
 from pathlib import Path
 
 
@@ -38,8 +37,8 @@ def test_load_from_url(selenium_standalone, web_server_secondary, active_server)
     selenium_standalone.run("from pyparsing import Word, alphas")
     selenium_standalone.run("Word(alphas).parseString('hello')")
 
-    selenium_standalone.load_package(f"http://{url}:{port}/numpy.js")
-    selenium_standalone.run("import numpy as np")
+    selenium_standalone.load_package(f"http://{url}:{port}/pytz.js")
+    selenium_standalone.run("import pytz")
 
 
 def test_list_loaded_urls(selenium_standalone):
@@ -74,7 +73,7 @@ def test_invalid_package_name(selenium):
 
 
 @pytest.mark.parametrize(
-    "packages", [["pyparsing", "pytz"], ["pyparsing", "matplotlib"]], ids="-".join
+    "packages", [["pyparsing", "pytz"], ["pyparsing", "packaging"]], ids="-".join
 )
 def test_load_packages_multiple(selenium_standalone, packages):
     selenium = selenium_standalone
@@ -83,13 +82,13 @@ def test_load_packages_multiple(selenium_standalone, packages):
     selenium.run(f"import {packages[1]}")
     # The log must show that each package is loaded exactly once,
     # including when one package is a dependency of the other
-    # ('pyparsing' and 'matplotlib')
+    # ('pyparsing' and 'packaging')
     assert selenium.logs.count(f"Loading {packages[0]} from") == 1
     assert selenium.logs.count(f"Loading {packages[1]} from") == 1
 
 
 @pytest.mark.parametrize(
-    "packages", [["pyparsing", "pytz"], ["pyparsing", "matplotlib"]], ids="-".join
+    "packages", [["pyparsing", "pytz"], ["pyparsing", "packaging"]], ids="-".join
 )
 def test_load_packages_sequential(selenium_standalone, packages):
     selenium = selenium_standalone
@@ -107,35 +106,6 @@ def test_load_packages_sequential(selenium_standalone, packages):
     # ('pyparsing' and 'matplotlib')
     assert selenium.logs.count(f"Loading {packages[0]} from") == 1
     assert selenium.logs.count(f"Loading {packages[1]} from") == 1
-
-
-def test_different_ABI(selenium_standalone):
-    url = selenium_standalone.server_hostname
-    port = selenium_standalone.server_port
-
-    build_dir = Path(__file__).parents[2] / "build"
-
-    original_file = open("build/numpy.js", "r")
-    original_contents = original_file.read()
-    original_file.close()
-
-    modified_contents = re.sub(r"checkABI\(\d+\)", "checkABI(-1)", original_contents)
-    modified_file = open("build/numpy-broken.js", "w+")
-    modified_file.write(modified_contents)
-    modified_file.close()
-
-    try:
-        selenium_standalone.load_package(f"http://{url}:{port}/numpy-broken.js")
-        assert "ABI numbers differ." in selenium_standalone.logs
-    finally:
-        (build_dir / "numpy-broken.js").unlink()
-
-    selenium_standalone.load_package("kiwisolver")
-    selenium_standalone.run("import kiwisolver")
-    assert (
-        selenium_standalone.run("repr(kiwisolver)") == "<module 'kiwisolver' from "
-        "'/lib/python3.8/site-packages/kiwisolver.so'>"
-    )
 
 
 def test_load_handle_failure(selenium_standalone):

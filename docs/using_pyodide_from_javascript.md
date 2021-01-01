@@ -2,13 +2,13 @@
 
 # Using Pyodide from Javascript
 
-This document describes using Pyodide directly from Javascript. For information about using Pyodide from Iodide, see {ref}`using_from_iodide`.
+This document describes using Pyodide directly from Javascript.
 
 ## Startup
 
 To include Pyodide in your project you can use the following CDN URL,
 
-  https://cdn.jsdelivr.net/pyodide/v0.15.0/full/pyodide.js
+  https://cdn.jsdelivr.net/pyodide/v0.16.1/full/pyodide.js
 
 You can also download a release from
 [Github releases](https://github.com/iodide-project/pyodide/releases)
@@ -55,9 +55,9 @@ Create and save a test `index.html` page with the following contents:
   <head>
       <script type="text/javascript">
           // set the pyodide files URL (packages.json, pyodide.asm.data etc)
-          window.languagePluginUrl = 'https://cdn.jsdelivr.net/pyodide/v0.15.0/full/';
+          window.languagePluginUrl = 'https://cdn.jsdelivr.net/pyodide/v0.16.1/full/';
       </script>
-      <script src="https://cdn.jsdelivr.net/pyodide/v0.15.0/full/pyodide.js"></script>
+      <script src="https://cdn.jsdelivr.net/pyodide/v0.16.1/full/pyodide.js"></script>
   </head>
   <body>
     Pyodide test page <br>
@@ -83,9 +83,9 @@ Create and save a test `index.html` page with the following contents:
 <html>
 <head>
     <script type="text/javascript">
-        window.languagePluginUrl = 'https://cdn.jsdelivr.net/pyodide/v0.15.0/full/';
+        window.languagePluginUrl = 'https://cdn.jsdelivr.net/pyodide/v0.16.1/full/';
     </script>
-    <script src="https://cdn.jsdelivr.net/pyodide/v0.15.0/full/pyodide.js"></script>
+    <script src="https://cdn.jsdelivr.net/pyodide/v0.16.1/full/pyodide.js"></script>
 </head>
 
 <body>
@@ -156,7 +156,7 @@ Feel free to play around with the code using the browser console and the above e
 
 ## Accessing JavaScript scope from Python
 
-The JavaScript scope can be accessed from Python using the `js` module (see {ref}`type_conversions_using_js_obj_from_py`). This module represents the gloabal object `window` that allows us to directly manipulate the DOM and access global variables and functions from Python.
+The JavaScript scope can be accessed from Python using the `js` module (see {ref}`type_conversions_using_js_obj_from_py`). This module represents the global object `window` that allows us to directly manipulate the DOM and access global variables and functions from Python.
 
 ```python
 import js

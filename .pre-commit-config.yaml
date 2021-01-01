@@ -1,4 +1,4 @@
-exclude: '^.*patches|file_packager.*|.*\.cgi$'
+exclude: '^.*patches|.*\.cgi$'
 repos:
 -   repo: https://github.com/pre-commit/pre-commit-hooks
     rev: v2.3.0
@@ -23,3 +23,9 @@ repos:
      -  id: mypy
         args:
           - --ignore-missing-imports
+-   repo: local
+    hooks:
+    -   id: clang-format
+        name: clang-format-6.0
+        language: system
+        entry: ./tools/clang-format-precommit.sh

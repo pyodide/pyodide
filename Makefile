@@ -2,17 +2,10 @@ PYODIDE_ROOT=$(abspath .)
 include Makefile.envs
 .PHONY=check
 
-FILEPACKAGER=$(PYODIDE_ROOT)/tools/file_packager.py
+FILEPACKAGER=$(PYODIDE_ROOT)/emsdk/emsdk/fastcomp/emscripten/tools/file_packager.py
 
 CPYTHONROOT=cpython
 CPYTHONLIB=$(CPYTHONROOT)/installs/python-$(PYVERSION)/lib/python$(PYMINOR)
-
-LIBXML=packages/libxml/libxml2-2.9.10/.libs/libxml2.a
-LIBXSLT=packages/libxslt/libxslt-1.1.33/libxslt/.libs/libxslt.a
-LIBICONV=packages/libiconv/libiconv-1.16/lib/.libs/libiconv.a
-ZLIB=packages/zlib/zlib-1.2.11/lib/libz.a
-LZ4LIB=packages/lz4/lz4-1.8.3/lib/liblz4.a
-CLAPACK=packages/CLAPACK/CLAPACK-WA/lapack_WA.bc
 
 PYODIDE_EMCC=$(PYODIDE_ROOT)/ccache/emcc
 PYODIDE_CXX=$(PYODIDE_ROOT)/ccache/em++
@@ -20,27 +13,22 @@ PYODIDE_CXX=$(PYODIDE_ROOT)/ccache/em++
 SHELL := /bin/bash
 CC=emcc
 CXX=em++
-OPTFLAGS=-O3
-CFLAGS=$(OPTFLAGS) -g -I$(PYTHONINCLUDE) -Wno-warn-absolute-paths
+OPTFLAGS=-O2
+CFLAGS=$(OPTFLAGS) -g -I$(PYTHONINCLUDE) -Wno-warn-absolute-paths -Werror=int-conversion -Werror=incompatible-pointer-types
 CXXFLAGS=$(CFLAGS) -std=c++14
 
-
 LDFLAGS=\
-	-O3 \
+	-O2 \
 	-s MODULARIZE=1 \
 	$(CPYTHONROOT)/installs/python-$(PYVERSION)/lib/libpython$(PYMINOR).a \
-	$(LZ4LIB) \
-	-s "BINARYEN_METHOD='native-wasm'" \
 	-s TOTAL_MEMORY=10485760 \
 	-s ALLOW_MEMORY_GROWTH=1 \
 	-s MAIN_MODULE=1 \
-	-s EMULATED_FUNCTION_POINTERS=1 \
 	-s EMULATE_FUNCTION_POINTER_CASTS=1 \
 	-s LINKABLE=1 \
 	-s EXPORT_ALL=1 \
-	-s EXPORTED_FUNCTIONS='["___cxa_guard_acquire", "__ZNSt3__28ios_base4initEPv"]' \
+	-s EXPORTED_FUNCTIONS='["___cxa_guard_acquire", "__ZNSt3__28ios_base4initEPv", "_main"]' \
 	-s WASM=1 \
-	-s SWAPPABLE_ASM_MODULE=1 \
 	-s USE_FREETYPE=1 \
 	-s USE_LIBPNG=1 \
 	-std=c++14 \
@@ -49,23 +37,21 @@ LDFLAGS=\
 	-lstdc++ \
 	--memory-init-file 0 \
 	-s "BINARYEN_TRAP_MODE='clamp'" \
-	-s TEXTDECODER=0 \
 	-s LZ4=1
 
 SIX_ROOT=packages/six/six-1.11.0/build/lib
 SIX_LIBS=$(SIX_ROOT)/six.py
 
-JEDI_ROOT=packages/jedi/jedi-0.15.1/jedi
+JEDI_ROOT=packages/jedi/jedi-0.17.2/jedi
 JEDI_LIBS=$(JEDI_ROOT)/__init__.py
 
-PARSO_ROOT=packages/parso/parso-0.5.1/parso
+PARSO_ROOT=packages/parso/parso-0.7.1/parso
 PARSO_LIBS=$(PARSO_ROOT)/__init__.py
 
 SITEPACKAGES=root/lib/python$(PYMINOR)/site-packages
 
 all: check \
 	build/pyodide.asm.js \
-	build/pyodide.asm.data \
 	build/pyodide.js \
 	build/console.html \
 	build/renderedhtml.css \
@@ -81,26 +67,17 @@ build/pyodide.asm.js: src/main.bc src/type_conversion/jsimport.bc \
 		src/type_conversion/pyimport.bc src/type_conversion/pyproxy.bc \
 		src/type_conversion/python2js.bc \
 		src/type_conversion/python2js_buffer.bc \
-		src/type_conversion/runpython.bc src/type_conversion/hiwire.bc
+		src/type_conversion/runpython.bc src/type_conversion/hiwire.bc \
+		root/.built
 	date +"[%F %T] Building pyodide.asm.js..."
 	[ -d build ] || mkdir build
-	$(CXX) -s EXPORT_NAME="'pyodide'" -o build/pyodide.asm.html $(filter %.bc,$^) \
-		$(LDFLAGS) -s FORCE_FILESYSTEM=1
-	rm build/pyodide.asm.html
+	$(CXX) -s EXPORT_NAME="'pyodide'" -o build/pyodide.asm.js $(filter %.bc,$^) \
+		$(LDFLAGS) -s FORCE_FILESYSTEM=1 --preload-file root/lib@lib
 	date +"[%F %T] done building pyodide.asm.js."
 
 
 env:
 	env
-
-
-build/pyodide.asm.data: root/.built
-	( \
-		cd build; \
-		python $(FILEPACKAGER) pyodide.asm.data --abi=$(PYODIDE_PACKAGE_ABI) --lz4 --preload ../root/lib@lib --js-output=pyodide.asm.data.js --use-preload-plugins \
-	)
-	uglifyjs build/pyodide.asm.data.js -o build/pyodide.asm.data.js
-
 
 build/pyodide.js:
 	cp src/pyodide-js/dist/browser.js $@
@@ -115,20 +92,26 @@ build/test.html: src/templates/test.html
 
 build/console.html: src/templates/console.html
 	cp $< $@
+	sed -i -e 's#{{ PYODIDE_BASE_URL }}#$(PYODIDE_BASE_URL)#g' $@
 
 
 build/renderedhtml.css: src/css/renderedhtml.less
 	lessc $< $@
 
 test: all
-	pytest src packages/*/test* pyodide_build -v
+	pytest src emsdk/tests packages/*/test* pyodide_build -v
 
 
 lint:
 	# check for unused imports, the rest is done by black
 	flake8 --select=F401 src tools pyodide_build benchmark
-	clang-format -output-replacements-xml src/*.c src/*.h src/*.js src/*/*.c src/*/*.h src/*/*.js | (! grep '<replacement ')
+	clang-format-6.0 -output-replacements-xml `find src -type f -regex ".*\.\(c\|h\|js\)"` | (! grep '<replacement ')
+	black --check .
+	mypy --ignore-missing-imports pyodide_build/ src/ packages/micropip/micropip/ packages/*/test*
 
+
+apply-lint:
+	./tools/apply-lint.sh
 
 benchmark: all
 	python benchmark/benchmark.py $(HOSTPYTHON) build/benchmarks.json
@@ -143,7 +126,6 @@ clean:
 	make -C packages/six clean
 	make -C packages/jedi clean
 	make -C packages/parso clean
-	make -C packages/lz4 clean
 	make -C packages/libxslt clean
 	make -C packages/libxml clean
 	make -C packages/libiconv clean
@@ -156,7 +138,7 @@ clean-all: clean
 	rm -fr src/pyodide-js/dist
 	rm -fr cpython/build
 
-%.bc: %.c $(CPYTHONLIB) $(LZ4LIB)
+%.bc: %.c $(CPYTHONLIB) $(wildcard src/**/*.h)
 	$(CC) -o $@ -c $< $(CFLAGS) -Isrc/type_conversion/
 
 
@@ -167,7 +149,7 @@ build/test.data: $(CPYTHONLIB)
 	)
 	( \
 		cd build; \
-		python $(FILEPACKAGER) test.data --abi=$(PYODIDE_PACKAGE_ABI) --lz4 --preload ../$(CPYTHONLIB)/test@/lib/python3.8/test --js-output=test.js --export-name=pyodide._module --exclude __pycache__ \
+		python $(FILEPACKAGER) test.data --lz4 --preload ../$(CPYTHONLIB)/test@/lib/python3.8/test --js-output=test.js --export-name=pyodide._module --exclude __pycache__ \
 	)
 	uglifyjs build/test.js -o build/test.js
 
@@ -179,7 +161,7 @@ root/.built: \
 		$(PARSO_LIBS) \
 		src/sitecustomize.py \
 		src/webbrowser.py \
-		src/pyodide.py \
+		src/pyodide-py/ \
 		cpython/remove_modules.txt
 	rm -rf root
 	mkdir -p root/lib
@@ -192,7 +174,7 @@ root/.built: \
 	cp src/webbrowser.py root/lib/python$(PYMINOR)
 	cp src/_testcapi.py	root/lib/python$(PYMINOR)
 	cp src/pystone.py root/lib/python$(PYMINOR)
-	cp src/pyodide.py root/lib/python$(PYMINOR)/site-packages
+	cp -r src/pyodide-py/pyodide/ $(SITEPACKAGES)
 	( \
 		cd root/lib/python$(PYMINOR); \
 		rm -fr `cat ../../../cpython/remove_modules.txt`; \
@@ -208,7 +190,7 @@ $(PYODIDE_EMCC):
 		if hash ccache &>/dev/null; then \
 			ln -s `which ccache` $@ ; \
 		else \
-	 		ln -s emsdk/emsdk/emscripten/tag-$(EMSCRIPTEN_VERSION)/emcc $@; \
+			ln -s emsdk/emsdk/fastcomp/emscripten/emcc $@; \
 		fi; \
 	fi
 
@@ -219,7 +201,7 @@ $(PYODIDE_CXX):
 		if hash ccache &>/dev/null; then \
 			ln -s `which ccache` $@ ; \
 		else \
-			ln -s emsdk/emsdk/emscripten/tag-$(EMSCRIPTEN_VERSION)/em++ $@; \
+			ln -s emsdk/emsdk/fastcomp/emscripten/em++ $@; \
 		fi; \
 	fi
 
@@ -228,34 +210,6 @@ $(CPYTHONLIB): emsdk/emsdk/.complete $(PYODIDE_EMCC) $(PYODIDE_CXX)
 	date +"[%F %T] Building cpython..."
 	make -C $(CPYTHONROOT)
 	date +"[%F %T] done building cpython..."
-
-
-$(LZ4LIB):
-	date +"[%F %T] Building lz4..."
-	make -C packages/lz4
-	date +"[%F %T] done building lz4."
-
-
-$(LIBXML): $(CPYTHONLIB) $(ZLIB)
-	date +"[%F %T] Building libxml..."
-	make -C packages/libxml
-	date +"[%F %T] done building libxml..."
-
-
-$(LIBXSLT): $(CPYTHONLIB) $(LIBXML)
-	date +"[%F %T] Building libxslt..."
-	make -C packages/libxslt
-	date +"[%F %T] done building libxslt..."
-
-$(LIBICONV):
-	date +"[%F %T] Building libiconv..."
-	make -C packages/libiconv
-	date +"[%F %T] done building libiconv..."
-
-$(ZLIB):
-	date +"[%F %T] Building zlib..."
-	make -C packages/zlib
-	date +"[%F %T] done building zlib..."
 
 
 $(SIX_LIBS): $(CPYTHONLIB)
@@ -276,21 +230,7 @@ $(PARSO_LIBS): $(CPYTHONLIB)
 	date +"[%F %T] done building parso."
 
 
-$(CLAPACK): $(CPYTHONLIB)
-ifdef PYODIDE_PACKAGES
-	echo "Skipping BLAS/LAPACK build due to PYODIDE_PACKAGES being defined."
-	echo "Build it manually with make -C packages/CLAPACK if needed."
-	mkdir -p packages/CLAPACK/CLAPACK-WA/
-	touch $(CLAPACK)
-else
-	date +"[%F %T] Building CLAPACK..."
-	make -C packages/CLAPACK
-	date +"[%F %T] done building CLAPACK."
-endif
-
-
-
-build/packages.json: $(CLAPACK) $(LIBXML) $(LIBXSLT) FORCE
+build/packages.json: FORCE
 	date +"[%F %T] Building packages..."
 	make -C packages
 	date +"[%F %T] done building packages..."
@@ -304,3 +244,6 @@ FORCE:
 
 check:
 	./tools/dependency-check.sh
+
+minimal :
+	PYODIDE_PACKAGES="micropip" make

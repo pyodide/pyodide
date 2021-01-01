@@ -22,14 +22,6 @@ index 2f791d1df9..c775d7711d 100644
  #endif /* HAVE_SIGSET_T */
  
  #ifdef MS_WINDOWS
-@@ -5413,6 +5420,7 @@ parse_posix_spawn_flags(const char *func_name, PyObject *setpgroup,
-         all_flags |= POSIX_SPAWN_SETSIGDEF;
-     }
- 
-+
-     if (scheduler) {
- #ifdef POSIX_SPAWN_SETSCHEDULER
-         PyObject *py_schedpolicy;
 diff --git a/Modules/posixmodule.h b/Modules/posixmodule.h
 index 1e00562abc..229704a831 100644
 --- a/Modules/posixmodule.h

@@ -1,0 +1,22 @@
+package:
+  name: scikit-image
+  version: 0.15.0
+source:
+  patches:
+  - patches/no-openmp.patch
+  - patches/unwrap.patch
+  - patches/preferred_plugins.patch
+  sha256: df111e654b47e5ea456c50553debe4c5ddd97258894c7ad3b7f2f9f10798e053
+  url: https://files.pythonhosted.org/packages/e0/46/ca035f5d7d3414124a3a5ef22cd2e75c0c5149042a668375f1d44eb69f8f/scikit-image-0.15.0.tar.gz
+requirements:
+  run:
+    - numpy
+    - scipy
+    - matplotlib
+    - networkx
+    - pillow
+    - imageio
+    - pywavelets
+test:
+  imports:
+  - skimage

@@ -7,9 +7,10 @@
     <link href="https://cdn.jsdelivr.net/npm/jquery.terminal/css/jquery.terminal.min.css" rel="stylesheet"/>
     <link href="renderedhtml.css" rel="stylesheet"/>
     <script type="text/javascript">
-        window.languagePluginUrl = "./"
+        // set the pyodide files URL (packages.json, pyodide.asm.data etc)
+        window.languagePluginUrl = '{{ PYODIDE_BASE_URL }}';
     </script>
-    <script src="./pyodide_dev.js"></script>
+    <script src="{{ PYODIDE_BASE_URL }}pyodide.js"></script>
   </head>
   <body>
     <script>
