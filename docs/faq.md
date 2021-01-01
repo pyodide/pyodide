@@ -30,7 +30,7 @@ function runPython(code){
 
 ```javascript
 async function runPythonAsync(code, messageCallback, errorCallback) {
-  await pyodide.loadPackagesForCode(code, messageCallback, errorCallback);
+  await pyodide.loadPackagesFromImports(code, messageCallback, errorCallback);
   return pyodide.runPython(code);
 };
 ```
@@ -53,13 +53,13 @@ function myRunPython(code){
 }
 
 function myAsyncRunPython(code){
-  await pyodide.loadPackagesForCode(code, messageCallback, errorCallback);
+  await pyodide.loadPackagesFromImports(code, messageCallback, errorCallback);
   return pyodide.myRunPython(code, pyodide.globals);
 }
 ```
 Then `pyodide.myRunPython("2+7")` returns `[None, 9]` and
 `pyodide.myRunPython("extra_info='hello' ; 2 + 2")` returns `['hello', 4]`.
-If you want to change which packages `loadPackagesForCode` loads, you can
+If you want to change which packages `loadPackagesFromImports` loads, you can
 monkey patch `pyodide-py.find_imports` which takes `code` as an argument
 and returns a list of packages imported.
 
@@ -78,7 +78,7 @@ which will return `2`.
 <!-- TODO: change this when this is fixed! -->
 Current deficiencies in the type conversions prevent the following code from working:
 ```
-pyodide.py_pyodide.eval_code("x", pyodide.globals.ns)
+pyodide.pyodide_py.eval_code("x", pyodide.globals.ns)
 ```
 raises `TypeError: globals must be a real dict`.
 

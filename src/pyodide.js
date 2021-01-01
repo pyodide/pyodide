@@ -301,7 +301,7 @@ var languagePluginLoader = new Promise((resolve, reject) => {
   let PUBLIC_API = [
     'globals',
     'loadPackage',
-    'loadPackagesForCode',
+    'loadPackagesFromImports',
     'loadedPackages',
     'pyimport',
     'repr',
@@ -333,7 +333,7 @@ var languagePluginLoader = new Promise((resolve, reject) => {
   Module.runPython = code => Module.py_pyodide.eval_code(code, Module.globals);
 
   // clang-format off
-  Module.loadPackagesForCode = async function(code, messageCallback, errorCallback) {
+  Module.loadPackagesFromImports  = async function(code, messageCallback, errorCallback) {
     let imports = Module.py_pyodide.find_imports(code);
     if (imports.length === 0) {
       return;
@@ -359,7 +359,7 @@ var languagePluginLoader = new Promise((resolve, reject) => {
   Module.pyimport = name => Module.globals[name];
 
   Module.runPythonAsync = async function(code, messageCallback, errorCallback) {
-    await Module.loadPackagesForCode(code, messageCallback, errorCallback);
+    await Module.loadPackagesFromImports(code, messageCallback, errorCallback);
     return Module.runPython(code);
   };
 

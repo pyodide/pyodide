@@ -1,5 +1,5 @@
-(js_api_pyodide_loadPackagesForCode)=
-# pyodide.loadPackagesForCode(code, messageCallback, errorCallback)
+(js_api_pyodide_loadPackagesFromImports)=
+# pyodide.loadPackagesFromImports(code, messageCallback, errorCallback)
 
 Inspect a Python code chunk and asynchronously load any known packages that the code
 chunk imports.
@@ -11,7 +11,7 @@ import numpy as np
 x = np.array([1, 2, 3])
 ```
 
-`loadPackagesForCode` will call `pyodide.loadPackage(['numpy'])`.
+`loadPackagesFromImports` will call `pyodide.loadPackage(['numpy'])`.
 See also {ref}`js_api_pyodide_runPythonAsync`.
 
 
