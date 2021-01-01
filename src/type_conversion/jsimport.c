@@ -132,6 +132,23 @@ PyObject* JsImportDirObject = (PyObject*)&JsImportDirType;
 static PyObject*
 JsImport_GetAttr(PyObject* self, PyObject* attr)
 {
+  const char* c = PyUnicode_AsUTF8(attr);
+  if (c == NULL) {
+    return NULL;
+  }
+  JsRef idval = hiwire_get_global(c);
+  if (idval == Js_ERROR) {
+    PyErr_Format(PyExc_AttributeError, "Unknown attribute '%s'", c);
+    return NULL;
+  }
+  PyObject* result = js2python(idval);
+  hiwire_decref(idval);
+  return result;
+}
+
+static PyObject*
+JsImport_GetAttrBetter(PyObject* self, PyObject* attr)
+{
   PyObject* jsproxy = _JsImport_getJsProxy(self);
   PyObject* result = NULL;
   const char *name = PyModule_GetName(self);
