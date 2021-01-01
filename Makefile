@@ -98,7 +98,7 @@ build/console.html: src/templates/console.html
 
 
 build/renderedhtml.css: src/css/renderedhtml.less $(LESSC)
-	lessc $< $@
+	$(LESSC) $< $@
 
 build/webworker.js: src/webworker.js
 	cp $< $@
