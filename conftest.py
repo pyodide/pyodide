@@ -58,7 +58,12 @@ def PyodideInited(driver):
 
 def PyodideInitGetError(driver):
     return driver.execute_script(
-        "return window.PYODIDE_ERROR && window.PYODIDE_ERROR.message;"
+        """
+        if(!window.PYODIDE_ERROR){
+            return [undefined, undefined];
+        }
+        return [window.PYODIDE_ERROR.message, window.PYODIDE_ERROR.stack];
+        """
     )
 
 
@@ -103,10 +108,15 @@ class SeleniumWrapper:
             _display_driver_logs(self.browser, driver)
             raise TimeoutException()
         # raise Exception("Pyodide initialization failed:")
-        error = PyodideInitGetError(driver)
-        print("error:", error)
+        [error, traceback] = PyodideInitGetError(driver)
         if error is not None:
-            raise Exception("Pyodide initialization failed:", error)
+            raise Exception(
+                f"""
+                Pyodide initialization failed: {error}
+                Traceback:
+                {traceback}
+                """
+            )
         self.wait = wait
         self.driver = driver
         self.server_port = server_port
