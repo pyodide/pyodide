@@ -261,12 +261,18 @@ JsImport_Check(PyObject* module){
 int
 JsImport_mount(char* name, JsRef package_id){
   bool success = false;
+  // Note: these are all of the objects that we will own.
+  // If a function returns a borrow, we incref the result so that
+  // we can free it in the finally block.
+  // Reference counting is hard, so it's good to be as explicit and consistent
+  // as possible.
   PyObject* sys_modules = NULL;
   PyObject* importlib_machinery = NULL;
   PyObject* ModuleSpec = NULL;
   PyObject* spec = NULL;
   PyObject* module = NULL;
   PyObject* __dir__ = NULL;
+  PyObject* module_dict = NULL;
   PyObject* jsproxy = NULL;
 
   sys_modules = PyImport_GetModuleDict();
@@ -304,8 +310,9 @@ JsImport_mount(char* name, JsRef package_id){
 
   __dir__ = PyObject_CallFunctionObjArgs(JsImportDirObject, module, NULL);
   QUIT_IF_NULL(__dir__);
-  // PyModule_GetDict returns a borrow.
-  PyObject* module_dict = PyModule_GetDict(module);
+  module_dict = PyModule_GetDict(module);
+  // make cleanup code more consistent by increfing module_dict.
+  Py_INCREF(module_dict);
   // "PyDict_SetItem DOES NOT steal a reference to the object"
   // So that means it increfs the value automatically.
   QUIT_IF_NZ(_PyDict_SetItemId(module_dict, &PyId___dir__, __dir__));
@@ -326,6 +333,7 @@ finally:
   Py_CLEAR(spec);
   Py_CLEAR(module);
   Py_CLEAR(__dir__);
+  Py_CLEAR(module_dict);
   Py_CLEAR(jsproxy);
   return success ? 0 : -1;
 }
