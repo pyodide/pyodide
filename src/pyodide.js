@@ -4,13 +4,28 @@
    *
    * Emscripten exposes two Module-global callbacks that we have to handle
    * carefully:
+   *  Module.locateFile :
+   *     We set this once at the start to load pyodide core, and once each time
+   *     loadPackage is called. In loadPackage we use the toFetch package
+   * metadata to decide where to grab the package from, so we use a closure for
+   * this. That closure is provided by the function "getFileLocator"
    *
+   *  Module.dependencyCallbacks :
+   *     gets called at both start and end of package loading
+   *     (why didn't emscripten give us two distict callbacks for these two
+   * distinct things?) We handle this by setting it always to the same value and
+   * counting up the number of times it is called. When it hits certain
+   * interesting points, we resolve a promise.
    *
+   *  Both of these global variables mean we cannot load multiple groups of
+   * files at once or else we won't be able to control where they come from or
+   * what to do when they are done loading. `loadPackage` uses a "promise chain"
+   * to make sure that only one instance can run at a time.
    */
 
   ////////////////////////////////////////////////////////////
   // Loading Pyodide
-  self.Module = {
+  let Module = {
     noImageDecoding : true,
     noAudioDecoding : true,
     noWasmDecoding : true,
@@ -31,7 +46,8 @@
       return pyodide_module.get_completions(path);
     },
   };
-  let Module = self.Module;
+  self.Module = Module;
+
   let postRunPromise = new Promise(resolve => Module.postRun = resolve);
 
   ////////////////////////////////////////////////////////////
@@ -57,25 +73,6 @@
     return namespace;
   }
 
-  // Regexp for validating package name and URI
-  const package_name_regexp_inner = '[a-z0-9_][a-z0-9_\-]*'
-  const package_uri_regexp =
-      new RegExp(`^https?://.*?(${package_name_regexp_inner}).js$`, 'i');
-  const package_name_regexp = new RegExp(`^${package_name_regexp_inner}$`, 'i');
-
-  let _uri_to_package_name = (package_uri) => {
-    // Generate a unique package name from URI
-    if (package_name_regexp.test(package_uri)) {
-      return package_uri;
-    } else if (package_uri_regexp.test(package_uri)) {
-      let match = package_uri_regexp.exec(package_uri);
-      // Get the regexp group corresponding to the package name
-      return match[1];
-    } else {
-      return null;
-    }
-  };
-
   async function loadScript(url) {
     if (self.document) { // browser
       const script = self.document.createElement('script');
@@ -91,7 +88,7 @@
     }
   }
 
-  // Load multiple scripts, in order (not simultaneously).
+  // Load multiple scripts sequentially (not simultaneously).
   async function loadScripts(scripts) {
     if (!(scripts instanceof Array)) {
       scripts = [ scripts ];
@@ -101,13 +98,35 @@
     }
   }
 
+  let baseURL = self.languagePluginUrl || '{{ PYODIDE_BASE_URL }}';
+  baseURL = baseURL.substr(0, baseURL.lastIndexOf('/')) + '/';
+  // This is a closure for the Module level variable Module.locateFile.
+  // When inside loadPackage, locateFile needs the toFetch metadata to
+  // decide where to fetch the package from.
+  // Thus we need to update Module.locateFile every time we load a package.
+  function getFileLocator(toFetch = {}) {
+    return (path) => {
+      // handle packages loaded from custom URLs
+      let pkg = path.replace(/\.data$/, "");
+      if (pkg in toFetch) {
+        let package_uri = toFetch[pkg];
+        if (package_uri !== 'default channel') {
+          return package_uri.replace(/\.js$/, ".data");
+        };
+      };
+      return baseURL + path;
+    };
+  }
+
+  Module.locateFile = getFileLocator();
+
   let dependencyIndex = 0;
   let resolvedDependencies = 0;
-  globalThis.dependencyCallbacks = new Map();
-  // Wait for num_dependencies many wasm dependencies to be loaded
-  // monitorRunDependencies is called twice per package load
-  // That will have happened when monitorRunDependencies has been called
-  // 2*num_dependencies many times.
+  dependencyCallbacks = new Map();
+  // Resolve promise when num_dependencies many wasm dependencies are finished
+  // loaded monitorRunDependencies is called twice per package load So we
+  // resolve when monitorRunDependencies has been called 2*num_dependencies many
+  // times.
   function getRunDependencyPromise(num_dependencies = 1) {
     return new Promise((resolve, reject) => {
       dependencyIndex += 2 * num_dependencies;
@@ -123,6 +142,8 @@
     monitorRunDependencies();
   }
 
+  // Call this to bail out when the window error handler catches an error.
+  // We don't know what's gone wrong so we just assume it's really bad.
   function clearRunDependencyCallbacks(err) {
     for (let promise_handles of dependencyCallbacks.values()) {
       promise_handles.reject(err);
@@ -145,6 +166,25 @@
 
   ////////////////////////////////////////////////////////////
   // Package loading
+
+  // Regexp for validating package name and URI
+  const package_name_regexp_inner = '[a-z0-9_][a-z0-9_\-]*'
+  const package_uri_regexp =
+      new RegExp(`^https?://.*?(${package_name_regexp_inner}).js$`, 'i');
+  const package_name_regexp = new RegExp(`^${package_name_regexp_inner}$`, 'i');
+
+  let _uri_to_package_name = (package_uri) => {
+    // Generate a unique package name from URI
+    if (package_name_regexp.test(package_uri)) {
+      return package_uri;
+    } else if (package_uri_regexp.test(package_uri)) {
+      let match = package_uri_regexp.exec(package_uri);
+      // Get the regexp group corresponding to the package name
+      return match[1];
+    } else {
+      return null;
+    }
+  };
 
   // names : A list of package names.
   // Do a DFS to find all dependencies of the requested packages
@@ -206,26 +246,6 @@
     return toFetch;
   }
 
-  let baseURL = self.languagePluginUrl || '{{ PYODIDE_BASE_URL }}';
-  baseURL = baseURL.substr(0, baseURL.lastIndexOf('/')) + '/';
-  // This is used for the Module level variable Module.locateFile.
-  // We need to update Module.locateFile every time we load a package.
-  function getFileLocator(toFetch = {}) {
-    return (path) => {
-      // handle packages loaded from custom URLs
-      let pkg = path.replace(/\.data$/, "");
-      if (pkg in toFetch) {
-        let package_uri = toFetch[pkg];
-        if (package_uri !== 'default channel') {
-          return package_uri.replace(/\.js$/, ".data");
-        };
-      };
-      return baseURL + path;
-    };
-  }
-
-  Module.locateFile = getFileLocator();
-
   let loadedPackages = {};
   let loadPackagePromise = Promise.resolve();
 
@@ -249,7 +269,7 @@
     throw err;
   };
 
-  // Note: this modifies the argument in place if it fails to fetch any of them.
+  // toFetch : this
   async function fetchPackages(toFetch, messageCallback, errorCallback) {
     let promises = [];
     let fetched = {};
@@ -372,8 +392,10 @@
     if (recursionLimit > 1000) {
       recursionLimit = 1000;
     }
-    pyodide.runPython(
-        `import sys; sys.setrecursionlimit(int(${recursionLimit}))`);
+    pyodide.runPython(`
+      import sys
+      sys.setrecursionlimit(int(${recursionLimit}))
+    `);
   };
 
   // clang-format off
@@ -426,8 +448,10 @@
       let response = await fetch(`${baseURL}packages.json`);
       let json = await response.json();
       fixRecursionLimit(self.pyodide);
-      self.pyodide.globals =
-          self.pyodide.runPython('import sys\nsys.modules["__main__"]');
+      self.pyodide.globals = self.pyodide.runPython(`
+            import sys;
+            sys.modules["__main__"]
+          `);
       self.pyodide = makePublicAPI(self.pyodide, PUBLIC_API);
       self.pyodide._module.packages = json;
     }
