@@ -278,6 +278,7 @@ JsImport_mount(char* name_utf8, JsRef package_id){
   PyObject* module_dict = NULL;
   PyObject* jsproxy = NULL;
 
+
   name = PyUnicode_FromString(name_utf8);
   QUIT_IF_NULL(name);
   sys_modules = PyImport_GetModuleDict();
@@ -307,7 +308,7 @@ JsImport_mount(char* name_utf8, JsRef package_id){
   // PyModule_FromDefAndSpec uses name for the name of the generated module
   // It never uses loader argument and doesn't store the ModuleSpec, so it's fine to pass None
   // for this.
-  spec = PyObject_CallFunction(ModuleSpec, "sO", name, Py_None);
+  spec = PyObject_CallFunctionObjArgs(ModuleSpec, name, Py_None, NULL);
   QUIT_IF_NULL(spec);
   module = PyModule_FromDefAndSpec(&JsModule, spec);
   QUIT_IF_NULL(module);
