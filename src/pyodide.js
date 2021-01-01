@@ -330,11 +330,11 @@ var languagePluginLoader = new Promise((resolve, reject) => {
   Module.preloadedWasm = {};
   let isFirefox = navigator.userAgent.toLowerCase().indexOf('firefox') > -1;
 
-  Module.runPython = code => Module.py_pyodide.eval_code(code, Module.globals);
+  Module.runPython = code => Module.pyodide_py.eval_code(code, Module.globals);
 
   // clang-format off
   Module.loadPackagesFromImports  = async function(code, messageCallback, errorCallback) {
-    let imports = Module.py_pyodide.find_imports(code);
+    let imports = Module.pyodide_py.find_imports(code);
     if (imports.length === 0) {
       return;
     }
@@ -363,7 +363,7 @@ var languagePluginLoader = new Promise((resolve, reject) => {
     return Module.runPython(code);
   };
 
-  Module.version = function() { return Module.py_pyodide.__version__; };
+  Module.version = function() { return Module.pyodide_py.__version__; };
 
   Module.autocomplete = function(path) {
     var pyodide_module = Module.pyimport("pyodide");

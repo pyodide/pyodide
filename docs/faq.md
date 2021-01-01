@@ -24,7 +24,7 @@ Recently there is a [Native File System API](https://wicg.github.io/file-system-
 The definitions of `runPython` and `runPythonAsync` are very simple:
 ```javascript
 function runPython(code){
-  pyodide.py_pyodide.eval_code(code, pyodide.globals);
+  pyodide.pyodide_py.eval_code(code, pyodide.globals);
 }
 ```
 
