@@ -33,7 +33,7 @@ export function uriToPackageName(packageUri: string) {
 }
 
 export function getBaseUrl() {
-  var baseUrl = self.pyodideArtifactsUrl || self.languagePluginUrl  || '__PYODIDE_CDN_URL__';
+  var baseUrl = self.pyodideArtifactsUrl || self.languagePluginUrl  || '__PYODIDE_BASE_URL__';
   baseUrl = baseUrl.substr(0, baseUrl.lastIndexOf('/')) + '/';
   return baseUrl;
 }

@@ -51,15 +51,15 @@ jobs:
       - run:
           name: nodejs dependencies
           command: |
-            sudo apt update
-            sudo apt install -y npm
+            apt update
+            apt install -y npm
 
       - run:
           name: build pyodide-js
           command: |
             cd src/pyodide-js
             npm install
-            PYODIDE_PACKAGE_ABI=1 npm run build
+            npm run build
 
       - run:
           name: build

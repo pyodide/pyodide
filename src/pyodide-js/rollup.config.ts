@@ -3,13 +3,13 @@ import replace from '@rollup/plugin-replace';
 
 const pkg = require("./package.json");
 
-const pyodideCdnUrl = process.env["PYODIDE_CDN_URL"] || `https://cdn.jsdelivr.net/pyodide/${pkg.version}/full/`;
+const pyodideBaseUrl = process.env["PYODIDE_BASE_URL"] || `https://cdn.jsdelivr.net/pyodide/${pkg.version}/full/`;
 const pyodideAbiNumber = process.env["PYODIDE_PACKAGE_ABI"] === undefined ? `1` : process.env["PYODIDE_PACKAGE_ABI"];
 
 const plugins = [
     typescript(),
     replace({
-        "__PYODIDE_CDN_URL__": pyodideCdnUrl,
+        "__PYODIDE_BASE_URL__": pyodideBaseUrl,
         "__PYODIDE_PACKAGE_ABI__": pyodideAbiNumber
     })
 ]
