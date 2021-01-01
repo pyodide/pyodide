@@ -175,12 +175,34 @@ JsImport_GetAttr(PyObject* self, PyObject* attr)
   }
 }
 
-static PyObject*
-JsImport_getproxy(PyObject* self, PyObject* _args)
-{
-  PyObject* jsproxy = _JsImport_getJsProxy(self);
-  Py_INCREF(jsproxy);
-  return jsproxy;
+
+int JsModule_traverse(PyObject *self, visitproc visit, void *arg){
+  PyObject** proxy = (PyObject**)PyModule_GetState(self);
+  if(proxy == NULL){
+    // In python 3.8, JsModule_traverse can be called when module state is NULL.
+    // In python 3.9 this is fixed and we don't need this check.
+    return 0;
+  }
+  Py_VISIT(*proxy);
+  return 0;
+}
+
+static int
+JsModule_clear(PyObject *self){
+  PyObject** proxy = (PyObject**)PyModule_GetState(self);
+  if(proxy == NULL){
+    return 0;
+  }
+  Py_CLEAR(*proxy);
+  return 0;
+}
+
+static void
+JsModule_free(void *self){
+  // cf https://docs.python.org/3.8/c-api/typeobj.html#c.PyTypeObject.tp_clear
+  // "it may be convenient to clear all contained Python objects, and write the type’s tp_dealloc function to invoke tp_clear."
+  // m_free <==> tp_dealloc I think?
+  JsModule_clear((PyObject*)self);
 }
 
 static PyMethodDef JsModule_Methods[] = {
@@ -188,12 +210,6 @@ static PyMethodDef JsModule_Methods[] = {
     (PyCFunction)JsImport_GetAttr,
     METH_O,
     "Get an object from the Javascript namespace" },
-  {
-    "jsproxy",
-    (PyCFunction)JsImport_getproxy,
-    METH_NOARGS,
-    "Get the Javascript object wrapped by this module."
-  },
   { NULL }
 };
 
@@ -214,7 +230,8 @@ static struct PyModuleDef JsModule = {
   .m_slots = JsModule_slots,
   // we store the hiwire id for the js object in m_size.
   .m_size=sizeof(PyObject*),
-  JsModule_Methods
+  .m_free=JsModule_free,
+  .m_methods=JsModule_Methods,
 };
 
 bool
@@ -244,13 +261,15 @@ JsImport_Check(PyObject* module){
 int
 JsImport_mount(char* name, JsRef package_id){
   bool success = false;
+  PyObject* sys_modules = NULL;
   PyObject* importlib_machinery = NULL;
   PyObject* ModuleSpec = NULL;
   PyObject* spec = NULL;
   PyObject* module = NULL;
   PyObject* __dir__ = NULL;
+  PyObject* jsproxy = NULL;
 
-  PyObject* sys_modules = PyImport_GetModuleDict();
+  sys_modules = PyImport_GetModuleDict();
   QUIT_IF_NULL(sys_modules);
   {
     PyObject* module = PyDict_GetItemString(sys_modules, name);
@@ -285,17 +304,29 @@ JsImport_mount(char* name, JsRef package_id){
 
   __dir__ = PyObject_CallFunctionObjArgs(JsImportDirObject, module, NULL);
   QUIT_IF_NULL(__dir__);
+  // PyModule_GetDict returns a borrow.
   PyObject* module_dict = PyModule_GetDict(module);
+  // "PyDict_SetItem DOES NOT steal a reference to the object"
+  // So that means it increfs the value automatically.
   QUIT_IF_NZ(_PyDict_SetItemId(module_dict, &PyId___dir__, __dir__));
+
+  jsproxy = _JsImport_getJsProxy(module);
+  // make cleanup code more consistent by increfing jsproxy.
+  Py_INCREF(jsproxy);
+  // Not worth interning jsproxy if we only use it here.
+  // Though it looks like PyDict_SetItemString always interns the key argument.
+  QUIT_IF_NZ(PyDict_SetItemString(module_dict, "jsproxy", jsproxy));
   QUIT_IF_NZ(PyDict_SetItemString(sys_modules, name, module));
 
   success = true;
 finally:
+  Py_CLEAR(sys_modules);
   Py_CLEAR(importlib_machinery);
   Py_CLEAR(ModuleSpec);
   Py_CLEAR(spec);
   Py_CLEAR(module);
   Py_CLEAR(__dir__);
+  Py_CLEAR(jsproxy);
   return success ? 0 : -1;
 }
 
