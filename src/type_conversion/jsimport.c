@@ -358,14 +358,14 @@ JsImport_dismount(char* name_utf8){
   PyObject* module = PyDict_GetItemWithError(sys_modules, name);
   if(module == NULL){
     PyErr_Format(PyExc_KeyError,
-      "Cannot dismount module '%s': no such module exists.", name
+      "Cannot dismount module '%s': no such module exists.", name_utf8
     );
     goto finally;
   }
   if(!JsImport_Check(module)){
     PyErr_Format(PyExc_KeyError,
       "Cannot dismount module '%s': it was not mounted with 'pyodide.mountPackage',"
-      "rather it is an actual Python module.", name
+      "rather it is an actual Python module.", name_utf8
     );
     goto finally;
   }
