@@ -12,6 +12,8 @@ _Py_IDENTIFIER(__dict__);
 _Py_IDENTIFIER(__dir__);
 _Py_IDENTIFIER(get);
 _Py_IDENTIFIER(keys);
+_Py_IDENTIFIER(jsproxy);
+_Py_IDENTIFIER(ModuleSpec);
 
 // Temporary hack: rather than actually using the JsProxy to index,
 // we will just pull off the JsRef. When #768, #788, #461 are resolved,
@@ -259,13 +261,14 @@ JsImport_Check(PyObject* module){
   } while(0)
 
 int
-JsImport_mount(char* name, JsRef package_id){
+JsImport_mount(char* name_utf8, JsRef package_id){
   bool success = false;
   // Note: these are all of the objects that we will own.
   // If a function returns a borrow, we incref the result so that
   // we can free it in the finally block.
   // Reference counting is hard, so it's good to be as explicit and consistent
   // as possible.
+  PyObject* name;
   PyObject* sys_modules = NULL;
   PyObject* importlib_machinery = NULL;
   PyObject* ModuleSpec = NULL;
@@ -275,15 +278,20 @@ JsImport_mount(char* name, JsRef package_id){
   PyObject* module_dict = NULL;
   PyObject* jsproxy = NULL;
 
+  name = PyUnicode_FromString(name_utf8);
+  QUIT_IF_NULL(name);
   sys_modules = PyImport_GetModuleDict();
   QUIT_IF_NULL(sys_modules);
-  module = PyDict_GetItemString(sys_modules, name);
-  Py_INCREF(module);
+  module = PyDict_GetItemWithError(sys_modules, name);
+  Py_XINCREF(module);
   if(module && !JsImport_Check(module)){
     PyErr_Format(PyExc_KeyError,
       "Cannot mount with name '%s': there is an existing module by this name that was not mounted with 'pyodide.mountPackage'."
       , name
     );
+    goto finally;
+  }
+  if(PyErr_Occurred()){
     goto finally;
   }
 
@@ -293,7 +301,7 @@ JsImport_mount(char* name, JsRef package_id){
   // The name of the module comes from a ModuleSpec. First we need to create the ModuleSpec.
   importlib_machinery = PyImport_ImportModule("importlib.machinery");
   QUIT_IF_NULL(importlib_machinery);
-  ModuleSpec = PyObject_GetAttrString(importlib_machinery, "ModuleSpec");
+  ModuleSpec = _PyObject_GetAttrId(importlib_machinery, &PyId_ModuleSpec);
   QUIT_IF_NULL(ModuleSpec);
   // The ModuleSpec init function takes two arguments, name and loader.
   // PyModule_FromDefAndSpec uses name for the name of the generated module
@@ -319,13 +327,12 @@ JsImport_mount(char* name, JsRef package_id){
   jsproxy = _JsImport_getJsProxy(module);
   // make cleanup code more consistent by increfing jsproxy.
   Py_INCREF(jsproxy);
-  // Not worth interning jsproxy if we only use it here.
-  // Though it looks like PyDict_SetItemString always interns the key argument.
-  QUIT_IF_NZ(PyDict_SetItemString(module_dict, "jsproxy", jsproxy));
-  QUIT_IF_NZ(PyDict_SetItemString(sys_modules, name, module));
+  QUIT_IF_NZ(_PyDict_SetItemId(module_dict, &PyId_jsproxy, jsproxy));
+  QUIT_IF_NZ(PyDict_SetItem(sys_modules, name, module));
 
   success = true;
 finally:
+  Py_CLEAR(name);
   Py_CLEAR(sys_modules);
   Py_CLEAR(importlib_machinery);
   Py_CLEAR(ModuleSpec);
@@ -338,30 +345,35 @@ finally:
 }
 
 int
-JsImport_dismount(char* name){
-  // Everything is borrowed =D
+JsImport_dismount(char* name_utf8){
+  bool success = false;
+  PyObject* name = PyUnicode_FromString(name_utf8);
   PyObject* sys_modules = PyImport_GetModuleDict();
   if(sys_modules == NULL){
-    return -1;
+    goto finally;
   }
-  PyObject* module = PyDict_GetItemString(sys_modules, name);
+  PyObject* module = PyDict_GetItemWithError(sys_modules, name);
   if(module == NULL){
     PyErr_Format(PyExc_KeyError,
       "Cannot dismount module '%s': no such module exists.", name
     );
-    return -1;
+    goto finally;
   }
   if(!JsImport_Check(module)){
     PyErr_Format(PyExc_KeyError,
       "Cannot dismount module '%s': it was not mounted with 'pyodide.mountPackage',"
       "rather it is an actual Python module.", name
     );
-    return -1;
+    goto finally;
   }
-  if(PyDict_DelItemString(sys_modules, name)){
-    return -1;
+  if(PyDict_DelItem(sys_modules, name)){
+    goto finally;
   }
-  return 0;
+
+  success = true;
+finally:
+  Py_CLEAR(name);
+  return success ? 0 : -1;
 }
 
 
