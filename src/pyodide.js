@@ -46,9 +46,6 @@
       return pyodide_module.get_completions(path);
     },
   };
-  self.Module = Module;
-
-  let postRunPromise = new Promise(resolve => Module.postRun = resolve);
 
   ////////////////////////////////////////////////////////////
   // Rearrange namespace for public API
@@ -88,19 +85,12 @@
     }
   }
 
-  // Load multiple scripts sequentially (not simultaneously).
-  async function loadScripts(scripts) {
-    if (!(scripts instanceof Array)) {
-      scripts = [ scripts ];
-    }
-    for (let s of scripts) {
-      await loadScript(s);
-    }
-  }
-
+  // Note: PYODIDE_BASE_URL is an environment variable replaced in
+  // in this template in the Makefile. It's recommended to always set
+  // languagePluginUrl in any case.
   let baseURL = self.languagePluginUrl || '{{ PYODIDE_BASE_URL }}';
   baseURL = baseURL.substr(0, baseURL.lastIndexOf('/')) + '/';
-  // This is a closure for the Module level variable Module.locateFile.
+  // This creates closures for the Module level callback Module.locateFile.
   // When inside loadPackage, locateFile needs the toFetch metadata to
   // decide where to fetch the package from.
   // Thus we need to update Module.locateFile every time we load a package.
@@ -188,6 +178,7 @@
 
   // names : A list of package names.
   // Do a DFS to find all dependencies of the requested packages
+  // Returns: an object "toFetch" which is a map pkgname ==> package_uri
   function chaseDependencies(names, messageCallback, errorCallback) {
     let packages = Module.packages.dependencies;
     let loadedPackages = Module.loadedPackages;
@@ -269,7 +260,9 @@
     throw err;
   };
 
-  // toFetch : this
+  // toFetch : the object map packageName ==> package_uri created by
+  // chaseDependencies. Returns : an object map packageName ==> package_uri
+  // consisting of the entries in toFetch that we successfully fetched.
   async function fetchPackages(toFetch, messageCallback, errorCallback) {
     let promises = [];
     let fetched = {};
@@ -297,6 +290,7 @@
     return fetched;
   }
 
+  // Put the data into Module.loadedPackages and
   async function installPackages(fetched) {
     for (let [pkg, package_uri] of Object.entries(fetched)) {
       Module.loadedPackages[pkg] = package_uri;
@@ -310,13 +304,8 @@
       resolveMsg = 'Loaded no packages'
     }
 
-    let isFirefox = navigator.userAgent.toLowerCase().indexOf('firefox') > -1;
-    if (isFirefox) {
-      return resolveMsg;
-    } else {
-      await preloadWasm();
-      return resolveMsg;
-    }
+    await preloadWasm();
+    return resolveMsg;
   }
 
   async function _loadPackage(names, messageCallback, errorCallback) {
@@ -400,7 +389,11 @@
 
   // clang-format off
   async function preloadWasm() {
-    // On Chrome, we have to instantiate wasm asynchronously. Since that
+    let isFirefox = navigator.userAgent.toLowerCase().indexOf('firefox') > -1;
+    if(isFirefox){
+      return;
+    }
+    // In Chrome, we have to instantiate wasm asynchronously. Since that
     // can't be done synchronously within the call to dlopen, we instantiate
     // every .so that comes our way up front, caching it in the
     // `preloadedWasm` dictionary.
@@ -440,9 +433,7 @@
   // clang-format on
 
   async function main() {
-    // Note: PYODIDE_BASE_URL is an environment variable replaced in
-    // in this template in the Makefile. It's recommended to always set
-    // languagePluginUrl in any case.
+    let postRunPromise = new Promise(resolve => Module.postRun = resolve);
     async function postRun() {
       await postRunPromise;
       let response = await fetch(`${baseURL}packages.json`);
@@ -456,17 +447,22 @@
       self.pyodide._module.packages = json;
     }
 
-    const dataScriptSrc = `${baseURL}pyodide.asm.data.js`;
-    const scriptSrc = `${baseURL}pyodide.asm.js`;
-    let runDependencyPromise = getRunDependencyPromise(2);
-    loadScripts([ dataScriptSrc, scriptSrc ]).then(() => {
+    // dataScriptSrc must be loaded before scriptSrc.
+    async function loadPyodideCore() {
+      let runDependencyPromise = getRunDependencyPromise(2);
+      const dataScriptSrc = `${baseURL}pyodide.asm.data.js`;
+      const scriptSrc = `${baseURL}pyodide.asm.js`;
       // The emscripten module needs to be at this location for the core
       // filesystem to install itself. Once that's complete, it will be replaced
       // by the call to `makePublicAPI` with a more limited public API.
+      self.Module = Module;
+      await loadScript(dataScriptSrc);
+      await loadScript(scriptSrc);
       globalThis.pyodide = pyodide(Module);
       Module.loadedPackages = {};
       Module.loadPackage = loadPackage;
-    });
+      return runDependencyPromise;
+    }
 
     await Promise.all([ postRun(), runDependencyPromise ]);
     delete self.Module;
