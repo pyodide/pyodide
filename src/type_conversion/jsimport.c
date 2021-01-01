@@ -277,15 +277,14 @@ JsImport_mount(char* name, JsRef package_id){
 
   sys_modules = PyImport_GetModuleDict();
   QUIT_IF_NULL(sys_modules);
-  {
-    PyObject* module = PyDict_GetItemString(sys_modules, name);
-    if(module && !JsImport_Check(module)){
-      PyErr_Format(PyExc_KeyError,
-        "Cannot mount with name '%s': there is an existing module by this name that was not mounted with 'pyodide.mountPackage'."
-        , name
-      );
-      goto finally;
-    }
+  module = PyDict_GetItemString(sys_modules, name);
+  Py_INCREF(module);
+  if(module && !JsImport_Check(module)){
+    PyErr_Format(PyExc_KeyError,
+      "Cannot mount with name '%s': there is an existing module by this name that was not mounted with 'pyodide.mountPackage'."
+      , name
+    );
+    goto finally;
   }
 
   // We can't use PyModule_Create because that assumes that we will create only one
