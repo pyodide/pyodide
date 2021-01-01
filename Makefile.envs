@@ -17,6 +17,9 @@ export PYTHONINCLUDE=$(PYODIDE_ROOT)/cpython/installs/python-$(PYVERSION)/includ
 
 # Use env variable if defined, otherwise fallback to './'
 export PYODIDE_BASE_URL?=./
-# This env variable is used to detect pyodide at build time,
-# do not rename it.
+
+# This environment variable is used for packages to detect if they are built
+# for pyodide during build time
+export PYODIDE=1
+# This is the legacy environment variable used for the aforementioned purpose
 export PYODIDE_PACKAGE_ABI=1

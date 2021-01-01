@@ -183,9 +183,8 @@ def package_files(buildpath: Path, srcpath: Path, pkg: Dict[str, Any], args):
     subprocess.run(
         [
             "python",
-            common.ROOTDIR / "file_packager.py",
+            common.PACKAGERDIR / "file_packager.py",
             name + ".data",
-            "--abi={0}".format(args.package_abi),
             "--lz4",
             "--preload",
             "{}@/".format(install_prefix),
@@ -267,12 +266,6 @@ def make_parser(parser: argparse.ArgumentParser):
     parser.description = "Build a pyodide package."
     parser.add_argument(
         "package", type=str, nargs=1, help="Path to meta.yaml package description"
-    )
-    parser.add_argument(
-        "--package_abi",
-        type=int,
-        required=True,
-        help="The ABI number for the package to be built",
     )
     parser.add_argument(
         "--cflags",
