@@ -5,7 +5,7 @@
          if feature.want("zlib"):
              _dbg("Looking for zlib")
 -            if _find_include_file(self, "zlib.h"):
-+            if "PYODIDE_PACKAGE_ABI" in os.environ:
++            if "PYODIDE" in os.environ:
 +                feature.zlib = "z"
 +            elif _find_include_file(self, "zlib.h"):
                  if _find_library_file(self, "z"):
@@ -16,7 +16,7 @@
          if feature.want("jpeg"):
              _dbg("Looking for jpeg")
 -            if _find_include_file(self, "jpeglib.h"):
-+            if "PYODIDE_PACKAGE_ABI" in os.environ:
++            if "PYODIDE" in os.environ:
 +                feature.jpeg = "jpeg"
 +            elif _find_include_file(self, "jpeglib.h"):
                  if _find_library_file(self, "jpeg"):
@@ -27,7 +27,7 @@
          if feature.want("freetype"):
              _dbg("Looking for freetype")
 -            if _find_library_file(self, "freetype"):
-+            if "PYODIDE_PACKAGE_ABI" in os.environ:
++            if "PYODIDE" in os.environ:
 +                feature.freetype = "freetype"
 +            elif _find_library_file(self, "freetype"):
                  # look for freetype2 include files
@@ -38,7 +38,7 @@
          defs = []
          if feature.jpeg:
 -            libs.append(feature.jpeg)
-+            if "PYODIDE_PACKAGE_ABI" not in os.environ:
++            if "PYODIDE" not in os.environ:
 +                libs.append(feature.jpeg)
              defs.append(("HAVE_LIBJPEG", None))
          if feature.jpeg2000:

@@ -1,29 +1,28 @@
 (loading_packages)=
 # Loading packages
 
-Only the Python standard library and six are available after importing Pyodide.
-To use other libraries, you’ll need to load their package using either,
+Only the Python standard library and [six](https://pypi.org/project/six/) are 
+available after importing Pyodide.
+To use other packages, you’ll need to load them using either:
  - {ref}`pyodide.loadPackage <js_api_pyodide_loadPackage>` for packages built
-   with pyodide.
+   with pyodide, or 
  - `micropip.install` for pure Python packages with wheels available on PyPi or
-   on other URLs.
+   from other URLs.
 
 ```{note}
-Note that `micropip` can also be used to load packages built in pyodide (in
-which case it relies on {ref}`pyodide.loadPackage
-<js_api_pyodide_loadPackage>`).
+`micropip` can also be used to load packages built in pyodide (in
+which case it relies on {ref}`pyodide.loadPackage <js_api_pyodide_loadPackage>`).
 ```
 
 Alternatively you can run Python code without manually pre-loading packages.
-You can do this with {ref}`pyodide.runPythonAsync
-<api_pyodide_runPythonAsync>`) function, which will automatically download all
-packages that the code snippet imports. It only supports packages included in
-Pyodide (not on PyPi) at present.
+You can do this with {ref}`pyodide.runPythonAsync <js_api_pyodide_runPythonAsync>` 
+which will automatically download all packages that the code snippet imports. 
+It only supports packages included in Pyodide (not on PyPi) at present.
 
 ## Loading packages with pyodide.loadPackage
 
 Packages can be loaded by name, for those included in the official pyodide
-repository using,
+repository using e.g.,
 ```js
 pyodide.loadPackage('numpy')
 ```
@@ -55,27 +54,9 @@ pyodide.loadPackage('matplotlib').then(() => {
 
 ### Installing packages from PyPI
 
-Pyodide supports installing pure Python wheels from PyPI.
-
-For use in Iodide:
-
-```
-%% py
-import micropip
-micropip.install('snowballstemmer')
-
-# Iodide implicitly waits for the promise to resolve when the packages have finished
-# installing...
-
-%% py
-import snowballstemmer
-stemmer = snowballstemmer.stemmer('english')
-stemmer.stemWords('go goes going gone'.split())
-```
-
-For use outside of Iodide (just Python), you can use the `then` method on the
-`Promise` that {func}`micropip.install` returns to do work once the packages have
-finished loading:
+Pyodide supports installing pure Python wheels from PyPI with `micropip`. You
+can use the `then` method on the `Promise` that {func}`micropip.install`
+returns to do work once the packages have finished loading:
 
 ```py
 def do_work(*args):
@@ -101,16 +82,16 @@ micropip.install(
     'https://example.com/files/snowballstemmer-2.0.0-py2.py3-none-any.whl'
 )
 ```
-
+Micropip currently decides whether a file is a url based on whether it ends in ".whl" or not.
 The wheel name in the URL must follow [PEP 427 naming
 convention](https://www.python.org/dev/peps/pep-0427/#file-format), which will
 be the case if the wheels is made using standard python tools (`pip wheel`,
 `setup.py bdist_wheel`).
 
 All required dependencies need also to be previously installed with `micropip`
-or `pyodide.loadPackage`.
+or {ref}`pyodide.loadPackage <js_api_pyodide_loadPackage>`.
 
-The remote server must set Cross-Origin Resource Sharing (CORS) headers to
+If the file is on a remote server, it must set Cross-Origin Resource Sharing (CORS) headers to
 allow access. Otherwise, you can prepend a CORS proxy to the URL. Note however
 that using third-party CORS proxies has security implications, particularly
 since we are not able to check the file integrity, unlike with installs from

@@ -306,7 +306,6 @@ var languagePluginLoader = new Promise((resolve, reject) => {
     'repr',
     'runPython',
     'runPythonAsync',
-    'checkABI',
     'version',
     'autocomplete',
     'mountPackage',
@@ -332,17 +331,6 @@ var languagePluginLoader = new Promise((resolve, reject) => {
   Module.preloadedWasm = {};
   let isFirefox = navigator.userAgent.toLowerCase().indexOf('firefox') > -1;
 
-  Module.checkABI = function(ABI_number) {
-    if (ABI_number !== parseInt('{{ PYODIDE_PACKAGE_ABI }}')) {
-      var ABI_mismatch_exception =
-          `ABI numbers differ. Expected {{ PYODIDE_PACKAGE_ABI }}, got ${
-              ABI_number}`;
-      console.error(ABI_mismatch_exception);
-      throw ABI_mismatch_exception;
-    }
-    return true;
-  };
-
   Module.autocomplete = function(path) {
     var pyodide_module = Module.pyimport("pyodide");
     return pyodide_module.get_completions(path);
@@ -361,12 +349,6 @@ var languagePluginLoader = new Promise((resolve, reject) => {
             self.pyodide.mountPackage("js", globalThis);
             self.pyodide = makePublicAPI(self.pyodide, PUBLIC_API);
             self.pyodide._module.packages = json;
-            if (self.iodide !== undefined) {
-              // Perform some completions immediately so there isn't a delay on
-              // the first call to autocomplete
-              self.pyodide.runPython('import pyodide');
-              self.pyodide.runPython('pyodide.get_completions("")');
-            }
             resolve();
           });
     };
@@ -384,60 +366,14 @@ var languagePluginLoader = new Promise((resolve, reject) => {
 
   Promise.all([ postRunPromise, dataLoadPromise ]).then(() => resolve());
 
-  const data_script_src = `${baseURL}pyodide.asm.data.js`;
-  loadScript(data_script_src, () => {
-    const scriptSrc = `${baseURL}pyodide.asm.js`;
-    loadScript(scriptSrc, () => {
-      // The emscripten module needs to be at this location for the core
-      // filesystem to install itself. Once that's complete, it will be replaced
-      // by the call to `makePublicAPI` with a more limited public API.
-      self.pyodide = pyodide(Module);
-      self.pyodide.loadedPackages = {};
-      self.pyodide.loadPackage = loadPackage;
-    }, () => {});
+  const scriptSrc = `${baseURL}pyodide.asm.js`;
+  loadScript(scriptSrc, () => {
+    // The emscripten module needs to be at this location for the core
+    // filesystem to install itself. Once that's complete, it will be replaced
+    // by the call to `makePublicAPI` with a more limited public API.
+    self.pyodide = pyodide(Module);
+    self.pyodide.loadedPackages = {};
+    self.pyodide.loadPackage = loadPackage;
   }, () => {});
-
-  ////////////////////////////////////////////////////////////
-  // Iodide-specific functionality, that doesn't make sense
-  // if not using with Iodide.
-  if (self.iodide !== undefined) {
-    // Load the custom CSS for Pyodide
-    let link = document.createElement('link');
-    link.rel = 'stylesheet';
-    link.type = 'text/css';
-    link.href = `${baseURL}renderedhtml.css`;
-    document.getElementsByTagName('head')[0].appendChild(link);
-
-    // Add a custom output handler for Python objects
-    self.iodide.addOutputRenderer({
-      shouldRender : (val) => {
-        return (typeof val === 'function' &&
-                pyodide._module.PyProxy.isPyProxy(val));
-      },
-
-      render : (val) => {
-        let div = document.createElement('div');
-        div.className = 'rendered_html';
-        var element;
-        if (val._repr_html_ !== undefined) {
-          let result = val._repr_html_();
-          if (typeof result === 'string') {
-            div.appendChild(new DOMParser()
-                                .parseFromString(result, 'text/html')
-                                .body.firstChild);
-            element = div;
-          } else {
-            element = result;
-          }
-        } else {
-          let pre = document.createElement('pre');
-          pre.textContent = val.toString();
-          div.appendChild(pre);
-          element = div;
-        }
-        return element.outerHTML;
-      }
-    });
-  }
 });
 languagePluginLoader

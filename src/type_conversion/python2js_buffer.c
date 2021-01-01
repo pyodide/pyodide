@@ -1,4 +1,5 @@
 #include "python2js_buffer.h"
+#include "types.h"
 
 #include <endian.h>
 #include <stdint.h>
@@ -26,126 +27,126 @@
 // write code that doesn't rely on either behavior, but treats this simply as
 // the performance optimization that it is.
 
-typedef int(scalar_converter)(char*);
+typedef JsRef(scalar_converter)(char*);
 
-static int
+static JsRef
 _convert_bool(char* data)
 {
   char v = *((char*)data);
   return hiwire_bool((int)v);
 }
 
-static int
+static JsRef
 _convert_int8(char* data)
 {
-  int8_t v = *((int8_t*)data);
+  i8 v = *((i8*)data);
   return hiwire_int(v);
 }
 
-static int
+static JsRef
 _convert_uint8(char* data)
 {
-  uint8_t v = *((uint8_t*)data);
+  u8 v = *((u8*)data);
   return hiwire_int(v);
 }
 
-static int
+static JsRef
 _convert_int16(char* data)
 {
-  int16_t v = *((int16_t*)data);
+  i16 v = *((i16*)data);
   return hiwire_int(v);
 }
 
-static int
+static JsRef
 _convert_int16_swap(char* data)
 {
-  int16_t v = *((int16_t*)data);
+  i16 v = *((i16*)data);
   return hiwire_int(be16toh(v));
 }
 
-static int
+static JsRef
 _convert_uint16(char* data)
 {
-  uint16_t v = *((uint16_t*)data);
+  u16 v = *((u16*)data);
   return hiwire_int(v);
 }
 
-static int
+static JsRef
 _convert_uint16_swap(char* data)
 {
-  uint16_t v = *((uint16_t*)data);
+  u16 v = *((u16*)data);
   return hiwire_int(be16toh(v));
 }
 
-static int
+static JsRef
 _convert_int32(char* data)
 {
-  int32_t v = *((int32_t*)data);
+  i32 v = *((i32*)data);
   return hiwire_int(v);
 }
 
-static int
+static JsRef
 _convert_int32_swap(char* data)
 {
-  int32_t v = *((int32_t*)data);
+  i32 v = *((i32*)data);
   return hiwire_int(be32toh(v));
 }
 
-static int
+static JsRef
 _convert_uint32(char* data)
 {
-  uint32_t v = *((uint32_t*)data);
+  u32 v = *((u32*)data);
   return hiwire_int(v);
 }
 
-static int
+static JsRef
 _convert_uint32_swap(char* data)
 {
-  uint32_t v = *((uint32_t*)data);
+  u32 v = *((u32*)data);
   return hiwire_int(be32toh(v));
 }
 
-static int
+static JsRef
 _convert_int64(char* data)
 {
-  int64_t v = *((int64_t*)data);
+  i64 v = *((i64*)data);
   return hiwire_int(v);
 }
 
-static int
+static JsRef
 _convert_int64_swap(char* data)
 {
-  int64_t v = *((int64_t*)data);
+  i64 v = *((i64*)data);
   return hiwire_int(be64toh(v));
 }
 
-static int
+static JsRef
 _convert_uint64(char* data)
 {
-  uint64_t v = *((uint64_t*)data);
+  u64 v = *((u64*)data);
   return hiwire_int(v);
 }
 
-static int
+static JsRef
 _convert_uint64_swap(char* data)
 {
-  uint64_t v = *((uint64_t*)data);
+  u64 v = *((u64*)data);
   return hiwire_int(be64toh(v));
 }
 
-static int
+static JsRef
 _convert_float32(char* data)
 {
   float v = *((float*)data);
   return hiwire_double(v);
 }
 
-static int
+static JsRef
 _convert_float32_swap(char* data)
 {
   union float32_t
   {
-    uint32_t i;
+    u32 i;
     float f;
   } v;
 
@@ -154,19 +155,19 @@ _convert_float32_swap(char* data)
   return hiwire_double(v.f);
 }
 
-static int
+static JsRef
 _convert_float64(char* data)
 {
   double v = *((double*)data);
   return hiwire_double(v);
 }
 
-static int
+static JsRef
 _convert_float64_swap(char* data)
 {
   union float64_t
   {
-    uint64_t i;
+    u64 i;
     double f;
   } v;
 
@@ -270,7 +271,7 @@ _python2js_buffer_get_converter(Py_buffer* buff)
   }
 }
 
-static int
+static JsRef
 _python2js_buffer_recursive(Py_buffer* buff,
                             char* ptr,
                             int dim,
@@ -280,7 +281,7 @@ _python2js_buffer_recursive(Py_buffer* buff,
   // Numpy to use the Python buffer interface and output Javascript.
 
   Py_ssize_t i, n, stride;
-  int jsarray, jsitem;
+  JsRef jsarray, jsitem;
 
   if (dim >= buff->ndim) {
     return convert(ptr);
@@ -293,9 +294,9 @@ _python2js_buffer_recursive(Py_buffer* buff,
 
   for (i = 0; i < n; ++i) {
     jsitem = _python2js_buffer_recursive(buff, ptr, dim + 1, convert);
-    if (jsitem == HW_ERROR) {
+    if (jsitem == Js_ERROR) {
       hiwire_decref(jsarray);
-      return HW_ERROR;
+      return Js_ERROR;
     }
     hiwire_push_array(jsarray, jsitem);
     hiwire_decref(jsitem);
@@ -306,7 +307,7 @@ _python2js_buffer_recursive(Py_buffer* buff,
   return jsarray;
 }
 
-static int
+static JsRef
 _python2js_buffer_to_typed_array(Py_buffer* buff)
 {
   // Uses Python's struct typecodes as defined here:
@@ -320,7 +321,7 @@ _python2js_buffer_to_typed_array(Py_buffer* buff)
       case '>':
       case '!':
         // This path can't handle byte-swapping
-        return HW_ERROR;
+        return Js_ERROR;
       case '=':
       case '<':
       case '@':
@@ -334,32 +335,32 @@ _python2js_buffer_to_typed_array(Py_buffer* buff)
   switch (format) {
     case 'c':
     case 'b':
-      return hiwire_int8array((int)buff->buf, buff->len);
+      return hiwire_int8array((i8*)buff->buf, buff->len);
     case 'B':
-      return hiwire_uint8array((int)buff->buf, buff->len);
+      return hiwire_uint8array((u8*)buff->buf, buff->len);
     case '?':
-      return HW_ERROR;
+      return Js_ERROR;
     case 'h':
-      return hiwire_int16array((int)buff->buf, buff->len);
+      return hiwire_int16array((i16*)buff->buf, buff->len);
     case 'H':
-      return hiwire_uint16array((int)buff->buf, buff->len);
+      return hiwire_uint16array((u16*)buff->buf, buff->len);
     case 'i':
     case 'l':
     case 'n':
-      return hiwire_int32array((int)buff->buf, buff->len);
+      return hiwire_int32array((i32*)buff->buf, buff->len);
     case 'I':
     case 'L':
     case 'N':
-      return hiwire_uint32array((int)buff->buf, buff->len);
+      return hiwire_uint32array((u32*)buff->buf, buff->len);
     case 'q':
     case 'Q':
-      return HW_ERROR;
+      return Js_ERROR;
     case 'f':
-      return hiwire_float32array((int)buff->buf, buff->len);
+      return hiwire_float32array((f32*)buff->buf, buff->len);
     case 'd':
-      return hiwire_float64array((int)buff->buf, buff->len);
+      return hiwire_float64array((f64*)buff->buf, buff->len);
     default:
-      return HW_ERROR;
+      return Js_ERROR;
   }
 }
 
@@ -370,15 +371,15 @@ enum shareable_enum
   NOT_CONTIGUOUS
 };
 
-static int
+static JsRef
 _python2js_shareable_buffer_recursive(Py_buffer* buff,
                                       enum shareable_enum shareable,
-                                      int idarr,
+                                      JsRef idarr,
                                       int ptr,
                                       int dim)
 {
   Py_ssize_t i, n, stride;
-  int jsarray, jsitem;
+  JsRef jsarray, jsitem;
 
   switch (shareable) {
     case NOT_CONTIGUOUS:
@@ -407,9 +408,9 @@ _python2js_shareable_buffer_recursive(Py_buffer* buff,
   for (i = 0; i < n; ++i) {
     jsitem = _python2js_shareable_buffer_recursive(
       buff, shareable, idarr, ptr, dim + 1);
-    if (jsitem == HW_ERROR) {
+    if (jsitem == Js_ERROR) {
       hiwire_decref(jsarray);
-      return HW_ERROR;
+      return Js_ERROR;
     }
     hiwire_push_array(jsarray, jsitem);
     hiwire_decref(jsitem);
@@ -450,28 +451,28 @@ _python2js_buffer_is_shareable(Py_buffer* buff)
   return CONTIGUOUS;
 }
 
-int
+JsRef
 _python2js_buffer(PyObject* x)
 {
   PyObject* memoryview = PyMemoryView_FromObject(x);
   if (memoryview == NULL) {
     PyErr_Clear();
-    return HW_ERROR;
+    return Js_ERROR;
   }
 
   Py_buffer* buff;
   buff = PyMemoryView_GET_BUFFER(memoryview);
 
   enum shareable_enum shareable = _python2js_buffer_is_shareable(buff);
-  int result;
+  JsRef result;
 
   if (shareable != NOT_SHAREABLE) {
-    int idarr = _python2js_buffer_to_typed_array(buff);
-    if (idarr == HW_ERROR) {
+    JsRef idarr = _python2js_buffer_to_typed_array(buff);
+    if (idarr == Js_ERROR) {
       PyErr_SetString(
         PyExc_TypeError,
         "Internal error: Invalid type to convert to array buffer.");
-      return HW_ERROR;
+      return Js_ERROR;
     }
 
     result =
@@ -480,7 +481,7 @@ _python2js_buffer(PyObject* x)
     scalar_converter* convert = _python2js_buffer_get_converter(buff);
     if (convert == NULL) {
       Py_DECREF(memoryview);
-      return HW_ERROR;
+      return Js_ERROR;
     }
 
     result = _python2js_buffer_recursive(buff, buff->buf, 0, convert);

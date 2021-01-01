@@ -14,7 +14,7 @@ _Py_IDENTIFIER(get);
 _Py_IDENTIFIER(keys);
 
 static void
-_JsImport_setHiwireObject(PyObject* module, int id)
+_JsImport_setHiwireObject(PyObject* module, JsRef id)
 {
   PyObject** proxy = (PyObject**)PyModule_GetState(module);
   // JsProxy_cnew can memory error but that's the only error it throws.
@@ -246,7 +246,7 @@ JsImport_Check(PyObject* module){
   } while(0)
 
 int
-JsImport_mount(char* name, int package_id){
+JsImport_mount(char* name, JsRef package_id){
   bool success = false;
   PyObject* importlib_machinery = NULL;
   PyObject* ModuleSpec = NULL;
