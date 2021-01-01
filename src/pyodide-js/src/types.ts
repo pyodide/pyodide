@@ -24,13 +24,13 @@ export type PyodideModule = {
     loadWebAssemblyModule(path: string, opts: { loadAsync: boolean; }): any;
     locateFile(name: string): string;
     postRun(): Promise<void>;
-  
+
     preloadedWasm: {
       [path: string]: any;
     }
 
     FS: any;
-  
+
     noImageDecoding: boolean,
     noAudioDecoding: boolean,
     noWasmDecoding: boolean,
@@ -40,7 +40,7 @@ export type PyodideModule = {
     PyProxy: {
       isPyProxy(v: any): boolean
     }
-    
+
 };
 
 
@@ -55,8 +55,7 @@ export type Pyodide = {
     pyimport: (name: string) => any;
     version: () => string;
     autocomplete: any;
-    checkABI: (number: number) => void;
     repr?: (v: any) => string;
     _module: PyodideModule;
-    
+
 }

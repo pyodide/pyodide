@@ -13,7 +13,6 @@ const PUBLIC_API = [
   'repr',
   'runPython',
   'runPythonAsync',
-  'checkABI',
   'version',
   'autocomplete',
 ];

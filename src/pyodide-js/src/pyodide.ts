@@ -10,7 +10,7 @@ const IS_FIREFOX = navigator.userAgent.toLowerCase().indexOf('firefox') > -1;
 export class PyodideLoader {
     public ready: Promise<this>;
     public baseUrl: string;
-  
+
     private readyPromiseResolve!: () => void;
     private pyodideModule!: PyodideModule;
 
@@ -35,7 +35,7 @@ export class PyodideLoader {
         const _errorCallback = (errMsg: string) => {
           errorCallback(errMsg);
         };
-    
+
         // DFS to find all dependencies of the requested packages
         const packages = self.pyodide._module.packages.dependencies;
         const loadedPackages = self.pyodide.loadedPackages;
@@ -44,14 +44,14 @@ export class PyodideLoader {
         while (queue.length) {
           let packageUri: string = queue.pop()!;
           const pkg = uriToPackageName(packageUri);
-    
+
           if (pkg == null) {
             _errorCallback(`Invalid package name or URI '${packageUri}'`);
             return;
           } else if (pkg == packageUri) {
             packageUri = 'default channel';
           }
-    
+
           if (pkg in loadedPackages) {
             if (packageUri != loadedPackages[pkg]) {
               _errorCallback(`URI mismatch, attempting to load package ` +
@@ -70,7 +70,7 @@ export class PyodideLoader {
             }
           } else {
             // console.log(`${pkg} to be loaded from ${package_uri}`); // debug level info.
-    
+
             toLoad[pkg] = packageUri;
             if (packages.hasOwnProperty(pkg)) {
               packages[pkg].forEach((subPackage: string) => {
@@ -102,10 +102,10 @@ export class PyodideLoader {
               resolve('No new packages to load');
               return 'No new packages to load';
             }
-      
+
             const packageList = Array.from(Object.keys(toLoad));
             _messageCallback(`Loading ${packageList.join(', ')}`)
-      
+
             // monitorRunDependencies is called at the beginning and the end of each
             // package being loaded. We know we are done when it has been called
             // exactly "toLoad * 2" times.
@@ -120,7 +120,7 @@ export class PyodideLoader {
                 this.loadPackagePromise = new Promise((resolve) => resolve());
                 reject(err.message);
             };
-      
+
             self.pyodide._module.monitorRunDependencies = () => {
               packageCounter--;
               if (packageCounter === 0) {
@@ -129,14 +129,14 @@ export class PyodideLoader {
                 }
                 delete self.pyodide._module.monitorRunDependencies;
                 self.removeEventListener('error', windowErrorHandler);
-      
+
                 let resolveMsg = `Loaded `;
                 if (packageList.length > 0) {
                   resolveMsg += packageList.join(', ');
                 } else {
                   resolveMsg += 'no packages'
                 }
-      
+
                 if (!IS_FIREFOX) {
                   preloadWasm(this.pyodideModule).then(() => {
                     console.log(resolveMsg);
@@ -148,9 +148,9 @@ export class PyodideLoader {
                 }
               }
             };
-      
+
             self.addEventListener('error', windowErrorHandler);
-      
+
             for (const pkg in toLoad) {
               let scriptSrc: string;
               const packageUri = toLoad[pkg];
@@ -176,14 +176,14 @@ export class PyodideLoader {
                 }
               });
             }
-      
+
             // We have to invalidate Python's import caches, or it won't
             // see the new files. This is done here so it happens in parallel
             // with the fetching over the network.
             self.pyodide.runPython('import importlib as _importlib\n' +
                                   '_importlib.invalidate_caches()\n');
         });
-      
+
         return promise;
     }
 
@@ -201,16 +201,6 @@ export class PyodideLoader {
         noAudioDecoding: true,
         noWasmDecoding: true,
         preloadedWasm: {},
-      }
-
-      module.checkABI = (AbiNumber: number) => {
-        if (AbiNumber !== parseInt('__PYODIDE_PACKAGE_ABI__')) {
-        const AbiMismatchException =
-            `ABI numbers differ. Expected 1, got ${AbiNumber}`;
-        console.error(AbiMismatchException);
-        throw AbiMismatchException;
-        }
-        return true;
       }
 
       module.autocomplete = (path: string) => {
@@ -242,13 +232,13 @@ export class PyodideLoader {
         } else {
           wasmPromise = WebAssembly.compileStreaming(wasmFetch);
         }
-  
+
         this.pyodideModule.instantiateWasm = async (info, receiveInstance) => {
             receiveInstance(await WebAssembly.instantiate(await wasmPromise, info));
             return {};
         };
-        
-        
+
+
         const postRunPromise = new Promise((resolve, reject) => {
             this.pyodideModule.postRun = async () => {
                 delete self.Module;
@@ -260,7 +250,7 @@ export class PyodideLoader {
                 resolve();
             };
         });
-        
+
         const dataLoadPromise = new Promise((resolve, reject) => {
             this.pyodideModule.monitorRunDependencies =
                 (n: number) => {
@@ -272,7 +262,7 @@ export class PyodideLoader {
         });
 
         const promises = Promise.all([ postRunPromise, dataLoadPromise ]);
-    
+
         const dataScriptSrc = `${this.baseUrl}pyodide.asm.data.js`;
         loadScript(dataScriptSrc, () => {
             const scriptSrc = `${this.baseUrl}pyodide.asm.js`;
