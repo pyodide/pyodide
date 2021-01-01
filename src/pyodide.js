@@ -6,18 +6,19 @@
   // Note: PYODIDE_BASE_URL is an environment variable replaced in
   // in this template in the Makefile. It's recommended to always set
   // languagePluginUrl in any case.
-  var baseURL = self.languagePluginUrl || '{{ PYODIDE_BASE_URL }}';
+  let baseURL = self.languagePluginUrl || '{{ PYODIDE_BASE_URL }}';
   baseURL = baseURL.substr(0, baseURL.lastIndexOf('/')) + '/';
 
   ////////////////////////////////////////////////////////////
   // Package loading
   let loadedPackages = {};
-  var loadPackagePromise = new Promise((resolve) => resolve());
+  let loadPackagePromise = new Promise((resolve) => resolve());
   // Regexp for validating package name and URI
-  var package_name_regexp = '[a-z0-9_][a-z0-9_\-]*'
-  var package_uri_regexp =
-      new RegExp('^https?://.*?(' + package_name_regexp + ').js$', 'i');
-  var package_name_regexp = new RegExp('^' + package_name_regexp + '$', 'i');
+  let package_name_regexp_inner = '[a-z0-9_][a-z0-9_\-]*'
+  let package_uri_regexp =
+      new RegExp('^https?://.*?(' + package_name_regexp_inner + ').js$', 'i');
+  let package_name_regexp =
+      new RegExp('^' + package_name_regexp_inner + '$', 'i');
 
   let _uri_to_package_name = (package_uri) => {
     // Generate a unique package name from URI
@@ -183,7 +184,7 @@
       // monitorRunDependencies is called at the beginning and the end of each
       // package being loaded. We know we are done when it has been called
       // exactly "toLoad * 2" times.
-      var packageCounter = Object.keys(toLoad).length * 2;
+      let packageCounter = Object.keys(toLoad).length * 2;
 
       self.pyodide._module.monitorRunDependencies = () => {
         packageCounter--;
@@ -215,7 +216,7 @@
 
       // Add a handler for any exceptions that are thrown in the process of
       // loading a package
-      var windowErrorHandler = (err) => {
+      let windowErrorHandler = (err) => {
         delete self.pyodide._module.monitorRunDependencies;
         self.removeEventListener('error', windowErrorHandler);
         // Set up a new Promise chain, since this one failed
@@ -312,14 +313,14 @@
   ];
 
   function makePublicAPI(module, public_api) {
-    var namespace = {_module : module};
+    let namespace = {_module : module};
     for (let name of public_api) {
       namespace[name] = module[name];
     }
     return namespace;
   }
 
-  var languagePluginLoader = new Promise((resolve, reject) => {
+  let languagePluginLoader = new Promise((resolve, reject) => {
     ////////////////////////////////////////////////////////////
     // Loading Pyodide
     let Module = {};
@@ -332,12 +333,12 @@
     let isFirefox = navigator.userAgent.toLowerCase().indexOf('firefox') > -1;
 
     Module.autocomplete = function(path) {
-      var pyodide_module = Module.pyimport("pyodide");
+      let pyodide_module = Module.pyimport("pyodide");
       return pyodide_module.get_completions(path);
     };
 
     Module.locateFile = (path) => baseURL + path;
-    var postRunPromise = new Promise((resolve, reject) => {
+    let postRunPromise = new Promise((resolve, reject) => {
       Module.postRun = () => {
         delete self.Module;
         fetch(`${baseURL}packages.json`)
@@ -353,7 +354,7 @@
       };
     });
 
-    var dataLoadPromise = new Promise((resolve, reject) => {
+    let dataLoadPromise = new Promise((resolve, reject) => {
       Module.monitorRunDependencies =
           (n) => {
             if (n === 0) {
