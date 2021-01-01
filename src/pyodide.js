@@ -174,7 +174,7 @@
 
     // Reject any remaining dependency callbacks with error "err"
     // and resets the dependency ScriptLoadPromiseManager state.
-    clearRunDependencyCallbacks(err) {
+    clearCallbacks(err) {
       for (let promise_handles of this.dependencyCallbacks.values()) {
         promise_handles.reject(err);
       }
@@ -198,6 +198,8 @@
     return loadPackagePromise;
   };
 
+  // This helper function just makes sure that we restore the state of
+  // ScriptLoadPromiseManager when we're done.
   async function _loadPackage(names, messageCallback, errorCallback) {
     let result;
     try {
@@ -501,7 +503,7 @@
       // filesystem to install itself. Once that's complete, it will be replaced
       // by the call to `makePublicAPI` with a more limited public API.
       globalThis.Module = Module;
-      // dataScriptSrc must be loaded before scriptSrc.
+      // dataScriptSrc must be finished loading before we load scriptSrc.
       await loadScript(dataScriptSrc);
       await loadScript(scriptSrc);
       globalThis.pyodide = pyodide(Module);
