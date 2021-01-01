@@ -204,15 +204,6 @@ EM_JS(void, hiwire_push_object_pair, (JsRef idobj, JsRef idkey, JsRef idval), {
   jsobj[jskey] = jsval;
 });
 
-EM_JS(JsRef, hiwire_get_global, (const char* ptrname), {
-  var jsname = UTF8ToString(ptrname);
-  if (jsname in self) {
-    return Module.hiwire.new_value(self[jsname]);
-  } else {
-    return Module.hiwire.ERROR;
-  }
-});
-
 EM_JS(JsRef, hiwire_get_member_string, (JsRef idobj, const char* ptrkey), {
   var jsobj = Module.hiwire.get_value(idobj);
   var jskey = UTF8ToString(ptrkey);

@@ -13,6 +13,15 @@ _Py_IDENTIFIER(__dir__);
 _Py_IDENTIFIER(get);
 _Py_IDENTIFIER(keys);
 
+// Temporary hack: rather than actually using the JsProxy to index,
+// we will just pull off the JsRef. When #768, #788, #461 are resolved,
+// we will get rid of this.
+typedef struct
+{
+  PyObject_HEAD JsRef js;
+  PyObject* bytes;
+} JsProxy;
+
 static void
 _JsImport_setHiwireObject(PyObject* module, JsRef id)
 {
@@ -132,31 +141,17 @@ PyObject* JsImportDirObject = (PyObject*)&JsImportDirType;
 static PyObject*
 JsImport_GetAttr(PyObject* self, PyObject* attr)
 {
-  const char* c = PyUnicode_AsUTF8(attr);
-  if (c == NULL) {
-    return NULL;
-  }
-  JsRef idval = hiwire_get_global(c);
-  if (idval == Js_ERROR) {
-    PyErr_Format(PyExc_AttributeError, "Unknown attribute '%s'", c);
-    return NULL;
-  }
-  PyObject* result = js2python(idval);
-  hiwire_decref(idval);
-  return result;
-}
-
-static PyObject*
-JsImport_GetAttrBetter(PyObject* self, PyObject* attr)
-{
-  PyObject* jsproxy = _JsImport_getJsProxy(self);
-  PyObject* result = NULL;
   const char *name = PyModule_GetName(self);
-
-  // TODO: add support for maps to jsproxy and use that here.
+  const char* attr_utf8 = PyUnicode_AsUTF8(attr);
+  PyObject* jsproxy = _JsImport_getJsProxy(self);
   PyObject* getfunc = _PyObject_GetAttrId(jsproxy, &PyId_get);
-  if(getfunc){ // we consider that it's a map in this case and use get to find the attribute.
-    result = PyObject_CallFunctionObjArgs(getfunc, attr, NULL);
+  if(getfunc){
+    // we consider that it's a map in this case and use "get" to find the attribute.
+    // TODO: move support of this to JsProxy
+    PyObject* result = PyObject_CallFunctionObjArgs(getfunc, attr, NULL);
+    if(result == NULL){
+      return NULL;
+    }
     Py_CLEAR(getfunc);
     if(result == Py_None){
       const char* attr_utf8 = PyUnicode_AsUTF8(attr);
@@ -165,18 +160,19 @@ JsImport_GetAttrBetter(PyObject* self, PyObject* attr)
     }
     return result;
   } else {
-    PyErr_Clear(); // clear error set by GetAttr
-    result = PyObject_GetAttr(jsproxy, attr);
-
-    if(result == NULL && PyErr_ExceptionMatches(PyExc_AttributeError)){
-      if(name == NULL){
-        return NULL;
-      }
-      // Better attribute error.1
-      _PyErr_FormatFromCause(PyExc_AttributeError, "module '%s' has no attribute '%s'", name, attr);
+    PyErr_Clear(); // clear error set by GetAttr(jsproxy, &PyId_get)
+    const char* attr_utf8 = PyUnicode_AsUTF8(attr);
+    // TODO: remove access to private field of jsproxy
+    JsRef jsproxy_ref = ((JsProxy*)jsproxy) -> js;
+    JsRef idval = hiwire_get_member_string(jsproxy_ref, attr_utf8);
+    if (idval == Js_ERROR) {
+      PyErr_Format(PyExc_AttributeError, "module '%s' has no attribute '%s'", name, attr_utf8);
+      return NULL;
     }
+    PyObject* result = js2python(idval);
+    hiwire_decref(idval);
+    return result;
   }
-  return result;
 }
 
 static PyObject*

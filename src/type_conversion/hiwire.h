@@ -306,14 +306,6 @@ void
 hiwire_throw_error(JsRef idmsg);
 
 /**
- * Get a Javascript object from the global namespace, i.e. window.
- *
- * Returns: New reference
- */
-JsRef
-hiwire_get_global(const char* ptrname);
-
-/**
  * Get an object member by string.
  *
  *

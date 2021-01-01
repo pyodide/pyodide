@@ -44,31 +44,32 @@ JsProxy_Repr(PyObject* o)
   return pyrepr;
 }
 
-static PyObject*
-JsProxy_GetAttr(PyObject* o, PyObject* attr_name)
+PyObject*
+JsProxy_typeof(PyObject* obj, void* _unused)
 {
-  JsProxy* self = (JsProxy*)o;
+  JsProxy* self = (JsProxy*)obj;
+  JsRef idval = hiwire_typeof(self->js);
+  PyObject* result = js2python(idval);
+  hiwire_decref(idval);
+  return result;
+}
 
-  PyObject* str = PyObject_Str(attr_name);
-  if (str == NULL) {
-    return NULL;
-  }
-
-  const char* key = PyUnicode_AsUTF8(str);
-
-  if (strncmp(key, "new", 4) == 0 || strncmp(key, "_has_bytes", 11) == 0) {
-    Py_DECREF(str);
-    return PyObject_GenericGetAttr(o, attr_name);
-  } else if (strncmp(key, "typeof", 7) == 0) {
-    Py_DECREF(str);
-    JsRef idval = hiwire_typeof(self->js);
-    PyObject* result = js2python(idval);
-    hiwire_decref(idval);
+static PyObject*
+JsProxy_GetAttr(PyObject* o, PyObject* attr)
+{
+  PyObject* result = PyObject_GenericGetAttr(o, attr);
+  if (result != NULL) {
     return result;
   }
 
+  PyErr_Clear();
+  JsProxy* self = (JsProxy*)o;
+  const char* key = PyUnicode_AsUTF8(attr);
+  if (key == NULL) {
+    return NULL;
+  }
+
   JsRef idresult = hiwire_get_member_string(self->js, key);
-  Py_DECREF(str);
 
   if (idresult == Js_ERROR) {
     PyErr_SetString(PyExc_AttributeError, key);
@@ -86,15 +87,13 @@ JsProxy_GetAttr(PyObject* o, PyObject* attr_name)
 }
 
 static int
-JsProxy_SetAttr(PyObject* o, PyObject* attr_name, PyObject* pyvalue)
+JsProxy_SetAttr(PyObject* o, PyObject* attr, PyObject* pyvalue)
 {
   JsProxy* self = (JsProxy*)o;
-
-  PyObject* attr_name_py_str = PyObject_Str(attr_name);
-  if (attr_name_py_str == NULL) {
+  const char* key = PyUnicode_AsUTF8(attr);
+  if (key == NULL) {
     return -1;
   }
-  const char* key = PyUnicode_AsUTF8(attr_name_py_str);
 
   if (pyvalue == NULL) {
     hiwire_delete_member_string(self->js, key);
@@ -103,7 +102,6 @@ JsProxy_SetAttr(PyObject* o, PyObject* attr_name, PyObject* pyvalue)
     hiwire_set_member_string(self->js, key, idvalue);
     hiwire_decref(idvalue);
   }
-  Py_DECREF(attr_name_py_str);
 
   return 0;
 }
@@ -418,6 +416,9 @@ static PyMethodDef JsProxy_Methods[] = {
 };
 // clang-format on
 
+static PyGetSetDef JsProxy_GetSet[] = { { "typeof", .get = JsProxy_typeof },
+                                        { NULL } };
+
 static PyTypeObject JsProxyType = {
   .tp_name = "JsProxy",
   .tp_basicsize = sizeof(JsProxy),
@@ -429,6 +430,7 @@ static PyTypeObject JsProxyType = {
   .tp_flags = Py_TPFLAGS_DEFAULT,
   .tp_doc = "A proxy to make a Javascript object behave like a Python object",
   .tp_methods = JsProxy_Methods,
+  .tp_getset = JsProxy_GetSet,
   .tp_as_mapping = &JsProxy_MappingMethods,
   .tp_as_number = &JsProxy_NumberMethods,
   .tp_iter = JsProxy_GetIter,
