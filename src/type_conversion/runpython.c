@@ -39,7 +39,7 @@ _runPythonDebug(char* code)
   return id;
 }
 
-EM_JS(int, runpython_init_js, (JsRef pyodide_py_id, JsRef py_globals_id), {
+EM_JS(int, runpython_init_js, (JsRef pyodide_py_proxy, JsRef globals_proxy), {
   Module.pyodide_py = Module.hiwire.get_value($0);
   Module.globals = Module.hiwire.get_value($1);
 
@@ -59,14 +59,14 @@ EM_JS(int, runpython_init_js, (JsRef pyodide_py_id, JsRef py_globals_id), {
 #define QUIT_IF_NULL(x)                                                        \
   do {                                                                         \
     if (x == NULL) {                                                           \
-      goto finally;                                                            \
+      goto fail;                                                               \
     }                                                                          \
   } while (0)
 
 #define QUIT_IF_NZ(x)                                                          \
   do {                                                                         \
     if (x) {                                                                   \
-      goto finally;                                                            \
+      goto fail;                                                               \
     }                                                                          \
   } while (0)
 
@@ -74,35 +74,36 @@ int
 runpython_init()
 {
   bool success = false;
-  PyObject* builtins = NULL;
-  PyObject* builtins_dict = NULL;
-  PyObject* __main__ = NULL;
-  JsRef pyodide_py_id = -1;
-  JsRef py_globals_id = -1;
+  JsRef pyodide_py_proxy = Js_ERROR;
+  JsRef globals_proxy = Js_ERROR;
 
-  // TODO: reference counting in this function could be improved.
-  builtins = PyImport_AddModule("builtins");
+  // borrowed
+  PyObject* builtins = PyImport_AddModule("builtins");
   QUIT_IF_NULL(builtins);
 
-  builtins_dict = PyModule_GetDict(builtins);
+  // borrowed
+  PyObject* builtins_dict = PyModule_GetDict(builtins);
   QUIT_IF_NULL(builtins_dict);
 
-  __main__ = PyImport_AddModule("__main__");
+  // borrowed
+  PyObject* __main__ = PyImport_AddModule("__main__");
   QUIT_IF_NULL(__main__);
 
-  // globals is static variable
+  // globals is static variable, borrowed
   globals = PyModule_GetDict(__main__);
   QUIT_IF_NULL(globals);
-  Py_INCREF(globals);
+  Py_INCREF(globals); // to owned
 
   QUIT_IF_NZ(PyDict_Update(globals, builtins_dict));
 
-  // pyodide_py is static variable
+  // pyodide_py is static variable, new
   pyodide_py = PyImport_ImportModule("pyodide");
   QUIT_IF_NULL(pyodide_py);
-  Py_INCREF(pyodide_py);
 
-  pyodide_py_id = python2js(pyodide_py);
+  pyodide_py_proxy = python2js(pyodide_py);
+  if (pyodide_py_proxy == Js_ERROR) {
+    goto fail;
+  }
   // Currently by default, python2js copies dicts into objects.
   // We want to feed Module.globals back to `eval_code` in `pyodide.runPython`
   // (see definition in pyodide.js) but because the round trip conversion
@@ -111,21 +112,21 @@ runpython_init()
   // We also had to add ad-hoc modifications to _pyproxy_get, etc to support
   // this. I (HC) will fix this with the rest of the type conversions
   // modifications.
-  Py_INCREF(globals);
-  py_globals_id = pyproxy_new(globals);
-  QUIT_IF_NZ(runpython_init_js(pyodide_py_id, py_globals_id));
+  Py_INCREF(globals); // pyproxy_new steals argument
+  globals_proxy = pyproxy_new(globals);
+  if (globals_proxy == Js_ERROR) {
+    goto fail;
+  }
+  QUIT_IF_NZ(runpython_init_js(pyodide_py_proxy, globals_proxy));
 
-  success = true;
-finally:
-  Py_CLEAR(builtins);
-  Py_CLEAR(builtins_dict);
-  Py_CLEAR(__main__);
-  if (success)
-    return 0;
-  // fail:
+  return 0;
+fail:
+  if (PyErr_Occurred()) {
+    PyErr_Print();
+  }
   Py_CLEAR(pyodide_py);
   Py_CLEAR(globals);
-  hiwire_decref(pyodide_py_id);
-  hiwire_decref(py_globals_id);
+  hiwire_decref(pyodide_py_proxy);
+  hiwire_decref(globals_proxy);
   return -1;
 }
