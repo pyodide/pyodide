@@ -20,7 +20,7 @@ _runPython(char* code)
   py_code = PyUnicode_FromString(code);
   if (py_code == NULL) {
     pythonexc2js();
-    return Js_ERROR;
+    return NULL;
   }
 
   PyObject* ret = _PyObject_CallMethodIdObjArgs(
@@ -28,7 +28,7 @@ _runPython(char* code)
 
   if (ret == NULL) {
     pythonexc2js();
-    return Js_ERROR;
+    return NULL;
   }
   JsRef id = python2js(ret);
   Py_DECREF(ret);
@@ -42,7 +42,7 @@ _findImports(char* code)
   py_code = PyUnicode_FromString(code);
   if (py_code == NULL) {
     pythonexc2js();
-    return Js_ERROR;
+    return NULL;
   }
 
   PyObject* ret =
@@ -50,7 +50,7 @@ _findImports(char* code)
 
   if (ret == NULL) {
     pythonexc2js();
-    return Js_ERROR;
+    return NULL;
   }
 
   JsRef id = python2js(ret);

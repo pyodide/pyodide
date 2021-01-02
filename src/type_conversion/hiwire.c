@@ -33,7 +33,7 @@ hiwire_bool(bool boolean)
 }
 
 EM_JS(int, hiwire_init, (), {
-  let _hiwire = { objects : new Map(), counter : new Uint32Array(1) };
+  let _hiwire = { objects : new Map(), counter : new Uint32Array([1]) };
   Module.hiwire = {};
   Module.hiwire.UNDEFINED = _hiwire_undefined();
   Module.hiwire.NULL = _hiwire_null();

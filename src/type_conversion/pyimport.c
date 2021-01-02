@@ -15,7 +15,7 @@ _pyimport(char* name)
   if (pyval == NULL) {
     Py_DECREF(pyname);
     pythonexc2js();
-    return Js_ERROR;
+    return NULL;
   }
 
   Py_DECREF(pyname);
