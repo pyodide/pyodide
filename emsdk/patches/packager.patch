@@ -1,0 +1,16 @@
+This fixes file_packager.py when used out of emcc, since LZ4 is no
+longer in the namespace
+
+--- a/emsdk/fastcomp/emscripten/tools/file_packager.py
++++ b/emsdk/fastcomp/emscripten/tools/file_packager.py
+@@ -530,8 +530,8 @@
+     use_data = '''
+           var compressedData = %s;
+           compressedData.data = byteArray;
+-          assert(typeof LZ4 === 'object', 'LZ4 not present - was your app build with  -s LZ4=1  ?');
+-          LZ4.loadPackage({ 'metadata': metadata, 'compressedData': compressedData });
++          assert(typeof Module.LZ4 === 'object', 'LZ4 not present - was your app build with  -s LZ4=1  ?');
++          Module.LZ4.loadPackage({ 'metadata': metadata, 'compressedData': compressedData });
+           Module['removeRunDependency']('datafile_%s');
+     ''' % (meta, shared.JS.escape_for_js_string(data_target))
+ 

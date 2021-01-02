@@ -15,14 +15,13 @@ def test_find_imports():
     res = find_imports(
         dedent(
             """
-           import six
            import numpy as np
            from scipy import sparse
            import matplotlib.pyplot as plt
            """
         )
     )
-    assert set(res) == {"numpy", "scipy", "six", "matplotlib"}
+    assert set(res) == {"numpy", "scipy", "matplotlib"}
 
 
 def test_adjust_ast():

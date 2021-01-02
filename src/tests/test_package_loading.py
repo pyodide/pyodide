@@ -1,6 +1,5 @@
 import pytest
 import shutil
-import re
 from pathlib import Path
 
 
@@ -107,36 +106,6 @@ def test_load_packages_sequential(selenium_standalone, packages):
     # ('pyparsing' and 'matplotlib')
     assert selenium.logs.count(f"Loading {packages[0]} from") == 1
     assert selenium.logs.count(f"Loading {packages[1]} from") == 1
-
-
-def test_different_ABI(selenium_standalone):
-    url = selenium_standalone.server_hostname
-    port = selenium_standalone.server_port
-
-    build_dir = Path(__file__).parents[2] / "build"
-
-    original_file = open("build/pytz.js", "r")
-    original_contents = original_file.read()
-    original_file.close()
-
-    modified_contents = re.sub(r"checkABI\(\d+\)", "checkABI(-1)", original_contents)
-    modified_file = open("build/pytz-broken.js", "w+")
-    modified_file.write(modified_contents)
-    modified_file.close()
-
-    try:
-        selenium_standalone.load_package(f"http://{url}:{port}/pytz-broken.js")
-        assert "ABI numbers differ." in selenium_standalone.logs
-    finally:
-        (build_dir / "pytz-broken.js").unlink()
-
-    # other packages continue to load
-    selenium_standalone.load_package("kiwisolver")
-    selenium_standalone.run("import kiwisolver")
-    assert (
-        selenium_standalone.run("repr(kiwisolver)") == "<module 'kiwisolver' from "
-        "'/lib/python3.8/site-packages/kiwisolver.so'>"
-    )
 
 
 def test_load_handle_failure(selenium_standalone):

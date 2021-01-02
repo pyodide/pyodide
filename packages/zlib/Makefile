@@ -32,6 +32,6 @@ $(SRC)/Makefile: $(TARBALL)
 $(SRC)/zlib.a: $(SRC)/Makefile
 	( \
 		cd $(SRC) ; \
-		emconfigure ./configure  --prefix=$(SRC) ; \
+		CFLAGS="-fPIC" emconfigure ./configure --prefix=$(SRC) ; \
 		emmake make install -j $${PYODIDE_JOBS:-3} ; \
 	)

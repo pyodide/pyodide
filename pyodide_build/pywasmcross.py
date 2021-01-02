@@ -40,7 +40,7 @@ import sys
 from pyodide_build import common
 
 
-ROOTDIR = common.ROOTDIR
+TOOLSDIR = common.TOOLSDIR
 symlinks = set(["cc", "c++", "ld", "ar", "gcc", "gfortran"])
 
 
@@ -56,8 +56,8 @@ def collect_args(basename):
     # native compiler
     env = dict(os.environ)
     path = env["PATH"]
-    while str(ROOTDIR) + ":" in path:
-        path = path.replace(str(ROOTDIR) + ":", "")
+    while str(TOOLSDIR) + ":" in path:
+        path = path.replace(str(TOOLSDIR) + ":", "")
     env["PATH"] = path
 
     skip_host = "SKIP_HOST" in os.environ
@@ -107,12 +107,14 @@ def make_symlinks(env):
     """
     exec_path = Path(__file__).resolve()
     for symlink in symlinks:
-        symlink_path = ROOTDIR / symlink
+        symlink_path = TOOLSDIR / symlink
         if os.path.lexists(symlink_path) and not symlink_path.exists():
             # remove broken symlink so it can be re-created
             symlink_path.unlink()
-        if not symlink_path.exists():
+        try:
             symlink_path.symlink_to(exec_path)
+        except FileExistsError:
+            pass
         if symlink == "c++":
             var = "CXX"
         else:
@@ -123,7 +125,7 @@ def make_symlinks(env):
 def capture_compile(args):
     env = dict(os.environ)
     make_symlinks(env)
-    env["PATH"] = str(ROOTDIR) + ":" + os.environ["PATH"]
+    env["PATH"] = str(TOOLSDIR) + ":" + os.environ["PATH"]
 
     cmd = [sys.executable, "setup.py", "install"]
     if args.install_dir == "skip":
@@ -284,7 +286,7 @@ def handle_command(line, args, dryrun=False):
             module_name = Path(module_name).name.split(".")[0]
 
             lapack_dir = arg.replace("-L", "")
-            # For convinience we determine needed scipy link libraries
+            # For convenience we determine needed scipy link libraries
             # here, instead of in patch files
             link_libs = ["F2CLIBS/libf2c.a", "blas_WA.a"]
             if module_name in [

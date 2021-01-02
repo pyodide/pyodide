@@ -7,7 +7,7 @@ diff --git a/setupext.py b/setupext.py
      name = "freetype"
  
      def add_flags(self, ext):
-+        if "PYODIDE_PACKAGE_ABI" in os.environ:
++        if "PYODIDE" in os.environ:
 +            ext.libraries.append('freetype')
 +            return
          ext.sources.insert(0, 'src/checkdep_freetype2.c')
