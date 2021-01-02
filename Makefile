@@ -16,7 +16,8 @@ SHELL := /bin/bash
 CC=emcc
 CXX=em++
 OPTFLAGS=-O2
-CFLAGS=$(OPTFLAGS) -g -I$(PYTHONINCLUDE) -Wno-warn-absolute-paths -Werror=int-conversion -Werror=incompatible-pointer-types
+CFLAGS=$(OPTFLAGS) -g -I$(PYTHONINCLUDE) -D TEST_F \
+  	-Wno-warn-absolute-paths -Werror=int-conversion -Werror=incompatible-pointer-types \
 
 LDFLAGS=\
 	-O2 \

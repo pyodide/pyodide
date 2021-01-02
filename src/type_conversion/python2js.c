@@ -452,7 +452,7 @@ python2js_deep(PyObject* x)
 }
 
 // Test entrypoints
-#ifdef TEST
+#ifdef TEST_F
 PyObject* globals;
 
 JsRef
@@ -508,12 +508,12 @@ test_wrapper_python2js_deep(char* name)
   JsRef idval = python2js_deep(pyval);
   return idval;
 }
-#endif // TEST
+#endif // TEST_F
 
 int
 python2js_init()
 {
-#ifdef TEST
+#ifdef TEST_F
   // This is all for test entrypoints
   PyObject* __main__ = PyImport_AddModule("__main__");
   if (__main__ == NULL) {
@@ -525,7 +525,7 @@ python2js_init()
     return 1;
   }
   EM_ASM({
-    Module.TestEntrypoints.py2js_minimal = function(name)
+    Module.py2js_minimal = function(name)
     {
       let pyname = stringToNewUTF8(name);
       let idresult = _test_wrapper_python2js_minimal(pyname);
@@ -535,7 +535,7 @@ python2js_init()
       return jsresult;
     };
 
-    Module.TestEntrypoints.py2js_shallow = function(name)
+    Module.py2js_shallow = function(name)
     {
       let pyname = stringToNewUTF8(name);
       let idresult = _test_wrapper_python2js_shallow(pyname);
@@ -545,7 +545,7 @@ python2js_init()
       return jsresult;
     };
 
-    Module.TestEntrypoints.py2js_deep = function(name)
+    Module.py2js_deep = function(name)
     {
       let pyname = stringToNewUTF8(name);
       let idresult = _test_wrapper_python2js_deep(pyname);
@@ -555,6 +555,6 @@ python2js_init()
       return jsresult;
     };
   });
-#endif // TEST
+#endif // TEST_F
   return 0;
 }

@@ -267,8 +267,6 @@ EM_JS(int, pyproxy_init, (), {
     },
   };
 
-  Module.TestEntrypoints.isPyProxy = Module.PyProxy.isPyProxy;
-
   return 0;
 // clang-format on
 });
