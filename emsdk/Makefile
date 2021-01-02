@@ -1,6 +1,8 @@
 PYODIDE_ROOT=$(abspath ..)
 include ../Makefile.envs
 
+export PATH := /usr/lib/ccache:$(PATH)
+
 all: emsdk/.complete
 
 emsdk/.complete: ../Makefile.envs $(wildcard patches/*.patch)
