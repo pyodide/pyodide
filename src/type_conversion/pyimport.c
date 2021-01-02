@@ -23,7 +23,7 @@ _pyimport(char* name)
   return idval;
 }
 
-EM_JS(int, pyimport_init, (), {
+EM_JS_RET_INT(int, pyimport_init, (), {
   Module.pyimport = function(name)
   {
     var pyname = allocate(intArrayFromString(name), 'i8', ALLOC_NORMAL);

@@ -58,7 +58,7 @@ _findImports(char* code)
   return id;
 }
 
-EM_JS(int, runpython_init_js, (), {
+EM_JS_RET_INT(int, runpython_init_js, (), {
   Module._runPythonInternal = function(pycode)
   {
     var idresult = Module.__runPython(pycode);
@@ -149,7 +149,7 @@ runpython_init_py()
   return 0;
 }
 
-EM_JS(int, runpython_finalize_js, (), {
+EM_JS_RET_INT(int, runpython_finalize_js, (), {
   Module.version = function()
   {
     Module.runPython("import pyodide");

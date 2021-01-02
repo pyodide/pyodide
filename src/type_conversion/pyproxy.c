@@ -122,7 +122,7 @@ _pyproxy_destroy(PyObject* ptrobj)
   EM_ASM(delete Module.PyProxies[ptrobj];);
 }
 
-EM_JS(JsRef, pyproxy_use, (PyObject * ptrobj), {
+EM_JS_RET_REF(JsRef, pyproxy_use, (PyObject * ptrobj), {
   // Checks if there is already an existing proxy on ptrobj
   if (Module.PyProxies.hasOwnProperty(ptrobj)) {
     return Module.hiwire.new_value(Module.PyProxies[ptrobj]);
@@ -142,7 +142,7 @@ EM_JS(JsRef, pyproxy_use, (PyObject * ptrobj), {
   return Module.hiwire.new_value(proxy);
 });
 
-EM_JS(int, pyproxy_init, (), {
+EM_JS_RET_INT(int, pyproxy_init, (), {
   // clang-format off
   Module.PyProxies = {};
   Module.PyProxy = {
