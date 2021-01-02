@@ -41,7 +41,7 @@ EM_JS(int, hiwire_init, (), {
   // Special values are even. 0 == C NULL is an error code.
   Module.hiwire = {};
   Module.hiwire.UNDEFINED = _hiwire_undefined();
-  Module.hiwire.JSNULL = _hiwire_null();
+  Module.hiwire.JSNULL = _hiwire_jsnull();
   Module.hiwire.TRUE = _hiwire_true();
   Module.hiwire.FALSE = _hiwire_false();
 
