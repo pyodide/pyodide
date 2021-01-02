@@ -31,6 +31,7 @@ $(SRC)/Makefile: $(TARBALL)
 	( \
 		cd $(SRC) ; \
 		emconfigure ./configure \
+			CFLAGS="-fPIC" \
 			--disable-dependency-tracking \
 			--disable-shared \
 			--without-python \
