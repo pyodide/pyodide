@@ -9,7 +9,7 @@ hiwire_undefined()
 }
 
 JsRef
-hiwire_null()
+hiwire_jsnull()
 {
   return Js_NULL;
 }
@@ -33,15 +33,20 @@ hiwire_bool(bool boolean)
 }
 
 EM_JS(int, hiwire_init, (), {
-  let _hiwire = { objects : new Map(), counter : new Uint32Array([1]) };
+  let _hiwire = {
+    objects : new Map(),
+    // Use a native uint32 for our counter. Counter starts at 1.
+    counter : new Uint32Array([1])
+  };
+  // Special values are even. 0 = C NULL is an error code.
   Module.hiwire = {};
   Module.hiwire.UNDEFINED = _hiwire_undefined();
-  Module.hiwire.NULL = _hiwire_null();
+  Module.hiwire.JSNULL = _hiwire_null();
   Module.hiwire.TRUE = _hiwire_true();
   Module.hiwire.FALSE = _hiwire_false();
 
   _hiwire.objects.set(Module.hiwire.UNDEFINED, undefined);
-  _hiwire.objects.set(Module.hiwire.NULL, null);
+  _hiwire.objects.set(Module.hiwire.JSNULL, null);
   _hiwire.objects.set(Module.hiwire.TRUE, true);
   _hiwire.objects.set(Module.hiwire.FALSE, false);
 

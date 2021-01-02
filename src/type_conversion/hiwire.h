@@ -32,13 +32,12 @@ struct _JsRefStruct
 
 typedef struct _JsRefStruct* JsRef;
 
-// Define special ids for singleton constants. These must be negative to
+// Define special ids for singleton constants. These must be even to
 // avoid being reused for other values.
-#define Js_ERROR ((JsRef)(-1))
-#define Js_UNDEFINED ((JsRef)(-2))
-#define Js_TRUE ((JsRef)(-3))
-#define Js_FALSE ((JsRef)(-4))
-#define Js_NULL ((JsRef)(-5))
+#define Js_UNDEFINED ((JsRef)(2))
+#define Js_TRUE ((JsRef)(4))
+#define Js_FALSE ((JsRef)(6))
+#define Js_NULL ((JsRef)(8))
 
 /**
  * Initialize the variables and functions required for hiwire.
