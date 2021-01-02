@@ -71,7 +71,5 @@ int main(int argc, char *argv[])
             ],
             check=True,
         )
-        out = subprocess.run(
-            ["node", "a.out.js"], capture_output=True, check=False
-        )
+        out = subprocess.run(["node", "a.out.js"], capture_output=True, check=False)
         assert out.returncode == 0

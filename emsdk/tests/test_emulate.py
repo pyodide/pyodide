@@ -44,7 +44,5 @@ void foo() {
             ],
             check=True,
         )
-        out = subprocess.run(
-            ["node", "a.out.js"], capture_output=True, check=True
-        )
+        out = subprocess.run(["node", "a.out.js"], capture_output=True, check=True)
         assert out.stdout == b"hello from main\nhello from library\n"
