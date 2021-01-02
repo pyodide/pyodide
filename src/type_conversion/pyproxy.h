@@ -8,10 +8,7 @@
 //     https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Proxy
 
 JsRef
-pyproxy_use(PyObject* obj);
-
-JsRef
-pyproxy_new(PyObject* obj);
+get_pyproxy(PyObject* obj);
 
 int
 pyproxy_init();

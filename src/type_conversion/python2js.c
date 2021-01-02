@@ -87,6 +87,7 @@ pythonexc2js()
 exit:
   PyErr_Clear();
   hiwire_throw_error(excval);
+  hiwire_decref(excval);
 }
 
 int
@@ -175,7 +176,7 @@ _python2js_sequence(PyObject* x, PyObject* map)
       hiwire_decref(jsarray);
       PyErr_Clear();
       Py_INCREF(x);
-      return pyproxy_new(x);
+      return get_pyproxy(x);
     }
     JsRef jsitem = _python2js_cache(pyitem, map);
     if (jsitem == NULL) {
@@ -265,17 +266,7 @@ _python2js(PyObject* x, PyObject* map)
       return _python2js_sequence(x, map);
     }
 
-    // Proxies we've already created are just returned again, so that the
-    // same object on the Python side is always the same object on the
-    // Javascript side.
-    ret = pyproxy_use(x);
-    if (ret != NULL) {
-      return ret;
-    }
-
-    // Reference counter is increased only once when a PyProxy is created.
-    Py_INCREF(x);
-    return pyproxy_new(x);
+    return get_pyproxy(x);
   }
 }
 

@@ -124,15 +124,11 @@ _pyproxy_destroy(PyObject* ptrobj)
 
 EM_JS(JsRef, pyproxy_use, (PyObject * ptrobj), {
   // Checks if there is already an existing proxy on ptrobj
-
   if (Module.PyProxies.hasOwnProperty(ptrobj)) {
     return Module.hiwire.new_value(Module.PyProxies[ptrobj]);
   }
-
-  return Module.hiwire.ERROR;
-})
-
-EM_JS(JsRef, pyproxy_new, (PyObject * ptrobj), {
+  // Reference counter is increased only when a PyProxy is created.
+  _Py_IncRef(ptrobj);
   // Technically, this leaks memory, since we're holding on to a reference
   // to the proxy forever.  But we have that problem anyway since we don't
   // have a destructor in Javascript to free the Python object.
@@ -143,7 +139,6 @@ EM_JS(JsRef, pyproxy_new, (PyObject * ptrobj), {
   target['$$'] = { ptr : ptrobj, type : 'PyProxy' };
   var proxy = new Proxy(target, Module.PyProxy);
   Module.PyProxies[ptrobj] = proxy;
-
   return Module.hiwire.new_value(proxy);
 });
 
