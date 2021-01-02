@@ -39,42 +39,70 @@ _runPythonDebug(char* code)
   return id;
 }
 
+EM_JS(int, runpython_init_js, (JsRef pyodide_py_id, JsRef py_globals_id), {
+  Module.pyodide_py = Module.hiwire.get_value($0);
+  Module.globals = Module.hiwire.get_value($1);
+
+  // Use this to test python code separate from pyproxy.apply.
+  Module.runPythonDebug = function(code)
+  {
+    let pycode = stringToNewUTF8(code);
+    let idresult = Module.__runPythonDebug(pycode);
+    let jsresult = Module.hiwire.get_value(idresult);
+    Module.hiwire.decref(idresult);
+    _free(pycode);
+    return jsresult;
+  };
+  return 0;
+}, );
+
+#define QUIT_IF_NULL(x)                                                        \
+  do {                                                                         \
+    if (x == NULL) {                                                           \
+      goto finally;                                                            \
+    }                                                                          \
+  } while (0)
+
+#define QUIT_IF_NZ(x)                                                          \
+  do {                                                                         \
+    if (x) {                                                                   \
+      goto finally;                                                            \
+    }                                                                          \
+  } while (0)
+
 int
 runpython_init()
 {
+  bool success = false;
+  PyObject* builtins = NULL;
+  PyObject* builtins_dict = NULL;
+  PyObject* __main__ = NULL;
+  JsRef pyodide_py_id = -1;
+  JsRef py_globals_id = -1;
+
   // TODO: reference counting in this function could be improved.
-  PyObject* builtins = PyImport_AddModule("builtins");
-  if (builtins == NULL) {
-    return 1;
-  }
+  builtins = PyImport_AddModule("builtins");
+  QUIT_IF_NULL(builtins);
 
-  PyObject* builtins_dict = PyModule_GetDict(builtins);
-  if (builtins_dict == NULL) {
-    return 1;
-  }
+  builtins_dict = PyModule_GetDict(builtins);
+  QUIT_IF_NULL(builtins_dict);
 
-  PyObject* __main__ = PyImport_AddModule("__main__");
-  if (__main__ == NULL) {
-    return 1;
-  }
+  __main__ = PyImport_AddModule("__main__");
+  QUIT_IF_NULL(__main__);
 
+  // globals is static variable
   globals = PyModule_GetDict(__main__);
+  QUIT_IF_NULL(globals);
   Py_INCREF(globals);
-  if (globals == NULL) {
-    return 1;
-  }
 
-  if (PyDict_Update(globals, builtins_dict)) {
-    return 1;
-  }
+  QUIT_IF_NZ(PyDict_Update(globals, builtins_dict));
 
+  // pyodide_py is static variable
   pyodide_py = PyImport_ImportModule("pyodide");
-  if (pyodide_py == NULL) {
-    return 1;
-  }
-
+  QUIT_IF_NULL(pyodide_py);
   Py_INCREF(pyodide_py);
-  JsRef pyodide_py_id = python2js(pyodide_py);
+
+  pyodide_py_id = python2js(pyodide_py);
   // Currently by default, python2js copies dicts into objects.
   // We want to feed Module.globals back to `eval_code` in `pyodide.runPython`
   // (see definition in pyodide.js) but because the round trip conversion
@@ -84,24 +112,20 @@ runpython_init()
   // this. I (HC) will fix this with the rest of the type conversions
   // modifications.
   Py_INCREF(globals);
-  JsRef py_globals_id = pyproxy_new(globals);
-  EM_ASM(
-    {
-      Module.pyodide_py = Module.hiwire.get_value($0);
-      Module.globals = Module.hiwire.get_value($1);
+  py_globals_id = pyproxy_new(globals);
+  QUIT_IF_NZ(runpython_init_js(pyodide_py_id, py_globals_id));
 
-      // Use this to test python code separate from pyproxy.apply.
-      Module.runPythonDebug = function(code)
-      {
-        let pycode = stringToNewUTF8(code);
-        let idresult = Module.__runPythonDebug(pycode);
-        let jsresult = Module.hiwire.get_value(idresult);
-        Module.hiwire.decref(idresult);
-        _free(pycode);
-        return jsresult;
-      };
-    },
-    pyodide_py_id,
-    py_globals_id);
-  return 0;
+  success = true;
+finally:
+  Py_CLEAR(builtins);
+  Py_CLEAR(builtins_dict);
+  Py_CLEAR(__main__);
+  if (success)
+    return 0;
+  // fail:
+  Py_CLEAR(pyodide_py);
+  Py_CLEAR(globals);
+  hiwire_decref(pyodide_py_id);
+  hiwire_decref(py_globals_id);
+  return -1;
 }

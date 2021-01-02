@@ -190,4 +190,4 @@ def test_run_python_debug(selenium):
     assert selenium.run_js("return pyodide._module.runPythonDebug('1+1');") == 2
     assert selenium.run_js(
         "return pyodide._module.runPythonDebug('[x*x + 1 for x in range(4)]');"
-    ) == [0, 2, 10]
+    ) == [1, 2, 5, 10]
