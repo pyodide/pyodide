@@ -194,7 +194,7 @@ def handle_command(line, args, dryrun=False):
        an iterable with the compilation arguments
     args : {object, namedtuple}
        an container with additional compilation options,
-       in particular containing ``args.cflags`` and ``args.ldflags``
+       in particular containing ``args.cflags``, ``args.cxxflags``, and ``args.ldflags``
     dryrun : bool, default=False
        if True do not run the resulting command, only return it
 
@@ -202,8 +202,8 @@ def handle_command(line, args, dryrun=False):
     --------
 
     >>> from collections import namedtuple
-    >>> Args = namedtuple('args', ['cflags', 'ldflags', 'host'])
-    >>> args = Args(cflags='', ldflags='', host='')
+    >>> Args = namedtuple('args', ['cflags', 'cxxflags', 'ldflags', 'host'])
+    >>> args = Args(cflags='', cxxflags='', ldflags='', host='')
     >>> handle_command(['gcc', 'test.c'], args, dryrun=True)
     emcc test.c
     ['emcc', 'test.c']
@@ -242,7 +242,7 @@ def handle_command(line, args, dryrun=False):
     elif new_args[0] == "emcc":
         new_args.extend(args.cflags.split())
     elif new_args[0] == "em++":
-        new_args.extend(args.cxxflags.split())
+        new_args.extend(args.cflags.split() + args.cxxflags.split())
 
     lapack_dir = None
 
