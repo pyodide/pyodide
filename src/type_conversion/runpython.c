@@ -54,7 +54,7 @@ EM_JS(int, runpython_init_js, (JsRef pyodide_py_proxy, JsRef globals_proxy), {
     return jsresult;
   };
   return 0;
-}, );
+});
 
 #define QUIT_IF_NULL(x)                                                        \
   do {                                                                         \
