@@ -368,14 +368,20 @@ JsProxy_HasBytes(PyObject* o)
     }                                                                          \
   } while (0)
 
+#define QUIT_IF_NZ(x)                                                          \
+  do {                                                                         \
+    if (x != 0) {                                                              \
+      goto finally;                                                            \
+    }                                                                          \
+  } while (0)
+
 static PyObject*
 JsProxy_Dir(PyObject* o)
 {
   PyObject* keys = NULL;
-  PyObject* keys_set = NULL;
+  PyObject* result_set = NULL;
   JsRef iddir = Js_ERROR;
   PyObject* pydir = NULL;
-  PyObject* union_set = NULL;
   PyObject* null_or_pynone = NULL;
 
   PyObject* result = NULL;
@@ -383,25 +389,23 @@ JsProxy_Dir(PyObject* o)
   JsProxy* self = (JsProxy*)o;
   keys = PyDict_Keys(o);
   QUIT_IF_NULL(keys);
-  keys_set = PySet_New(keys);
-  QUIT_IF_NULL(keys_set);
+  result_set = PySet_New(keys);
+  QUIT_IF_NULL(result_set);
 
   iddir = hiwire_dir(self->js);
   pydir = js2python(iddir);
   QUIT_IF_NULL(pydir);
-  union_set = _PySet_Update(keys_set, pydir);
-  QUIT_IF_NULL(union_set);
+  QUIT_IF_NZ(_PySet_Update(result_set, pydir));
   result = PyList_New(0);
   QUIT_IF_NULL(result);
-  null_or_pynone = _PyList_Extend(union_set);
+  null_or_pynone = _PyList_Extend((PyListObject*)result, result_set);
   QUIT_IF_NULL(null_or_pynone);
 
 finally:
   Py_CLEAR(keys);
-  Py_CLEAR(keys_set);
+  Py_CLEAR(result_set);
   hiwire_decref(iddir);
   Py_CLEAR(pydir);
-  Py_CLEAR(union_set);
   Py_CLEAR(null_or_pynone);
   return result;
 }
