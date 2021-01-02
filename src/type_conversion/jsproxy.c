@@ -318,9 +318,7 @@ JsProxy_GetBuffer(PyObject* o, Py_buffer* view, int flags)
   JsProxy* self = (JsProxy*)o;
 
   if (!hiwire_is_typedarray(self->js)) {
-    PyErr_SetString(PyExc_BufferError, "Can not use as buffer");
-    view->obj = NULL;
-    return -1;
+    goto fail;
   }
 
   Py_ssize_t byteLength = hiwire_get_byteLength(self->js);
@@ -332,59 +330,27 @@ JsProxy_GetBuffer(PyObject* o, Py_buffer* view, int flags)
     if (self->bytes == NULL) {
       self->bytes = PyBytes_FromStringAndSize(NULL, byteLength);
       if (self->bytes == NULL) {
-        return -1;
+        goto fail;
       }
     }
-
     ptr = PyBytes_AsString(self->bytes);
-    hiwire_copy_to_ptr(self->js, (int)ptr);
+    hiwire_copy_to_ptr(self->js, ptr);
   }
-
-  int dtype = hiwire_get_dtype(self->js);
 
   char* format;
   Py_ssize_t itemsize;
-  switch (dtype) {
-    case INT8_TYPE:
-      format = "b";
-      itemsize = 1;
-      break;
-    case UINT8_TYPE:
-      format = "B";
-      itemsize = 1;
-      break;
-    case UINT8CLAMPED_TYPE:
-      format = "B";
-      itemsize = 1;
-      break;
-    case INT16_TYPE:
-      format = "h";
-      itemsize = 2;
-      break;
-    case UINT16_TYPE:
-      format = "H";
-      itemsize = 2;
-      break;
-    case INT32_TYPE:
-      format = "i";
-      itemsize = 4;
-      break;
-    case UINT32_TYPE:
-      format = "I";
-      itemsize = 4;
-      break;
-    case FLOAT32_TYPE:
-      format = "f";
-      itemsize = 4;
-      break;
-    case FLOAT64_TYPE:
-      format = "d";
-      itemsize = 8;
-      break;
-    default:
-      format = "B";
-      itemsize = 1;
-      break;
+  hiwire_get_dtype(self->js, &format, &itemsize);
+  if (format == NULL) {
+    char* typename = hiwire_constructor_name(self->js);
+    PyErr_Format(
+      PyExc_RuntimeError,
+      "Unknown typed array type '%s'. This is a problem with Pyodide, please "
+      "open an issue about it here: "
+      "https://github.com/iodide-project/pyodide/issues/new",
+      typename);
+    free(typename);
+
+    goto fail;
   }
 
   Py_INCREF(self);
@@ -401,6 +367,12 @@ JsProxy_GetBuffer(PyObject* o, Py_buffer* view, int flags)
   view->suboffsets = NULL;
 
   return 0;
+fail:
+  if (!PyErr_Occurred()) {
+    PyErr_SetString(PyExc_BufferError, "Can not use as buffer");
+  }
+  view->obj = NULL;
+  return -1;
 }
 
 static PyObject*

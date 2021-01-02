@@ -40,7 +40,7 @@ import sys
 from pyodide_build import common
 
 
-ROOTDIR = common.ROOTDIR
+TOOLSDIR = common.TOOLSDIR
 symlinks = set(["cc", "c++", "ld", "ar", "gcc", "gfortran"])
 
 
@@ -56,8 +56,8 @@ def collect_args(basename):
     # native compiler
     env = dict(os.environ)
     path = env["PATH"]
-    while str(ROOTDIR) + ":" in path:
-        path = path.replace(str(ROOTDIR) + ":", "")
+    while str(TOOLSDIR) + ":" in path:
+        path = path.replace(str(TOOLSDIR) + ":", "")
     env["PATH"] = path
 
     skip_host = "SKIP_HOST" in os.environ
@@ -107,7 +107,7 @@ def make_symlinks(env):
     """
     exec_path = Path(__file__).resolve()
     for symlink in symlinks:
-        symlink_path = ROOTDIR / symlink
+        symlink_path = TOOLSDIR / symlink
         if os.path.lexists(symlink_path) and not symlink_path.exists():
             # remove broken symlink so it can be re-created
             symlink_path.unlink()
@@ -123,7 +123,7 @@ def make_symlinks(env):
 def capture_compile(args):
     env = dict(os.environ)
     make_symlinks(env)
-    env["PATH"] = str(ROOTDIR) + ":" + os.environ["PATH"]
+    env["PATH"] = str(TOOLSDIR) + ":" + os.environ["PATH"]
 
     cmd = [sys.executable, "setup.py", "install"]
     if args.install_dir == "skip":

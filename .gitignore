@@ -12,6 +12,7 @@ firefox/
 .vscode
 .idea
 .mypy_cache/
+node_modules/
 
 build
 downloads

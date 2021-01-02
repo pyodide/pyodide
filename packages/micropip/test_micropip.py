@@ -71,6 +71,43 @@ def test_install_custom_url(selenium_standalone, web_server_tst_data):
     selenium_standalone.run("import snowballstemmer")
 
 
+def test_add_requirement_relative_url():
+    pytest.importorskip("distlib")
+    import micropip
+
+    transaction = {"wheels": []}
+    micropip.PACKAGE_MANAGER.add_requirement(
+        "./snowballstemmer-2.0.0-py2.py3-none-any.whl", {}, transaction
+    )
+    [name, req, version] = transaction["wheels"][0]
+    assert name == "snowballstemmer"
+    assert version == "2.0.0"
+    assert req["filename"] == "snowballstemmer-2.0.0-py2.py3-none-any.whl"
+    assert req["packagetype"] == "bdist_wheel"
+    assert req["python_version"] == "py2.py3"
+    assert req["abi_tag"] == "none"
+    assert req["platform"] == "any"
+    assert req["url"] == "./snowballstemmer-2.0.0-py2.py3-none-any.whl"
+
+
+def test_install_custom_relative_url(selenium_standalone):
+    selenium_standalone.load_package("micropip")
+    selenium_standalone.run("import micropip")
+
+    root = Path(__file__).resolve().parents[2]
+    src = root / "src" / "tests" / "data"
+    target = root / "build" / "test_data"
+    target.symlink_to(src, True)
+    try:
+        url = "./test_data/snowballstemmer-2.0.0-py2.py3-none-any.whl"
+        selenium_standalone.run(f"micropip.install('{url}')")
+        # wait untill micropip is loaded
+        time.sleep(1)
+        selenium_standalone.run("import snowballstemmer")
+    finally:
+        target.unlink()
+
+
 def test_last_version_from_pypi():
     pytest.importorskip("distlib")
     import micropip
