@@ -35,6 +35,7 @@ $(SRC)/.libs/libxml2.a: $(SRC)/Makefile
 	( \
 		cd $(SRC) ; \
 		emconfigure ./configure \
+			CFLAGS="-fPIC" \
 			--disable-dependency-tracking \
 			--disable-shared \
 			--without-python \
