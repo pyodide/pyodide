@@ -387,7 +387,7 @@ JsImport_init()
           if(_JsImport_mount(name_utf8, obj_id)){
             _pythonexc2js();
           }
-          hiwire_decref(obj_id);
+          Module.hiwire.decref(obj_id);
           _free(name_utf8);
         };
 
