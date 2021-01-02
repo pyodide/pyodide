@@ -42,6 +42,7 @@ _runPythonDebug(char* code)
 int
 runpython_init()
 {
+  // TODO: reference counting in this function could be improved.
   PyObject* builtins = PyImport_AddModule("builtins");
   if (builtins == NULL) {
     return 1;
@@ -58,6 +59,7 @@ runpython_init()
   }
 
   globals = PyModule_GetDict(__main__);
+  Py_INCREF(globals);
   if (globals == NULL) {
     return 1;
   }
@@ -71,8 +73,8 @@ runpython_init()
     return 1;
   }
 
+  Py_INCREF(pyodide_py);
   JsRef pyodide_py_id = python2js(pyodide_py);
-  Py_CLEAR(pyodide_py);
   // Currently by default, python2js copies dicts into objects.
   // We want to feed Module.globals back to `eval_code` in `pyodide.runPython`
   // (see definition in pyodide.js) but because the round trip conversion
@@ -81,6 +83,7 @@ runpython_init()
   // We also had to add ad-hoc modifications to _pyproxy_get, etc to support
   // this. I (HC) will fix this with the rest of the type conversions
   // modifications.
+  Py_INCREF(globals);
   JsRef py_globals_id = pyproxy_new(globals);
   EM_ASM(
     {
