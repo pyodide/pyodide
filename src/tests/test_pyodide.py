@@ -145,10 +145,6 @@ def test_mount_object(selenium):
             import a
             import b
             result += [a.s, dir(a), dir(b)]
-            # clean up to prevent this test
-            import sys
-            del sys.modules["a"]
-            del sys.modules["b"]
             result
         `)
         """

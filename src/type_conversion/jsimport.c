@@ -24,15 +24,6 @@ typedef struct
   PyObject* bytes;
 } JsProxy;
 
-static void
-_JsImport_setHiwireObject(PyObject* module, JsRef id)
-{
-  PyObject** proxy = (PyObject**)PyModule_GetState(module);
-  // JsProxy_cnew can memory error but that's the only error it throws.
-  // Our current plan is to crash and burn if that ever happens.
-  *proxy = JsProxy_cnew(id);
-}
-
 static PyObject*
 _JsImport_getJsProxy(PyObject* module)
 {
@@ -316,7 +307,11 @@ JsImport_mount(char* name_utf8, JsRef package_id){
   QUIT_IF_NULL(module);
   QUIT_IF_NZ(PyModule_ExecDef(module, &JsModule));
 
-  _JsImport_setHiwireObject(module, package_id);
+  // I think if PyModule_ExecDef succeeds, then proxy is guaranteed not to be null.
+  PyObject** proxy = (PyObject**)PyModule_GetState(module);
+  // JsProxy_cnew can memory error but that's the only error it throws.
+  *proxy = JsProxy_cnew(package_id);
+  QUIT_IF_NULL(*proxy);
 
   __dir__ = PyObject_CallFunctionObjArgs(JsImportDirObject, module, NULL);
   QUIT_IF_NULL(__dir__);
@@ -388,11 +383,11 @@ JsImport_init()
       try {
         Module.mountPackage = function(name, obj){
           let obj_id = Module.hiwire.new_value(obj);
-          // TODO: Do we need to free name or does the module take ownership of it?
           let name_utf8 = stringToNewUTF8(name);
           if(_JsImport_mount(name_utf8, obj_id)){
             _pythonexc2js();
           }
+          hiwire_decref(obj_id);
           _free(name_utf8);
         };
 
