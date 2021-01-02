@@ -13,3 +13,7 @@ source:
 test:
   imports:
     - pysat
+
+requirements:
+  run:
+    - six

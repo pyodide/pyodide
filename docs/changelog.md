@@ -16,9 +16,12 @@
 
   As part of the change, Module.checkABI is no longer present.
   [#991](https://github.com/iodide-project/pyodide/pull/991)
+- six is no longer vendored in the main pyodide package, and needs to be loaded
+  explicitly [#1010](https://github.com/iodide-project/pyodide/pull/1010)
 
 ### Added
 - `micropip` now supports installing wheels from relative urls. [#872](https://github.com/iodide-project/pyodide/pull/872)
+- uglifyjs and lessc no longer need to be installed in the system during build
 
 ## Version 0.16.1
 *December 25, 2020*

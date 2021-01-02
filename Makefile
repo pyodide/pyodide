@@ -3,6 +3,8 @@ include Makefile.envs
 .PHONY=check
 
 FILEPACKAGER=$(PYODIDE_ROOT)/emsdk/emsdk/fastcomp/emscripten/tools/file_packager.py
+UGLIFYJS=$(PYODIDE_ROOT)/node_modules/.bin/uglifyjs
+LESSC=$(PYODIDE_ROOT)/node_modules/.bin/lessc
 
 CPYTHONROOT=cpython
 CPYTHONLIB=$(CPYTHONROOT)/installs/python-$(PYVERSION)/lib/python$(PYMINOR)
@@ -14,7 +16,7 @@ SHELL := /bin/bash
 CC=emcc
 CXX=em++
 OPTFLAGS=-O2
-CFLAGS=$(OPTFLAGS) -g -I$(PYTHONINCLUDE) -Wno-warn-absolute-paths -Werror=int-conversion -Werror=incompatible-pointer-types
+CFLAGS=$(OPTFLAGS) -g -I$(PYTHONINCLUDE) -Wno-warn-absolute-paths -Werror=int-conversion -Werror=incompatible-pointer-types -fPIC
 
 LDFLAGS=\
 	-O2 \
@@ -37,9 +39,6 @@ LDFLAGS=\
 	--memory-init-file 0 \
 	-s "BINARYEN_TRAP_MODE='clamp'" \
 	-s LZ4=1
-
-SIX_ROOT=packages/six/six-1.11.0/build/lib
-SIX_LIBS=$(SIX_ROOT)/six.py
 
 JEDI_ROOT=packages/jedi/jedi-0.17.2/jedi
 JEDI_LIBS=$(JEDI_ROOT)/__init__.py
@@ -64,7 +63,7 @@ all: check \
 
 build/pyodide.asm.js: src/main.bc src/type_conversion/jsimport.bc \
 	        src/type_conversion/jsproxy.bc src/type_conversion/js2python.bc \
-		src/type_conversion/pyimport.bc src/type_conversion/pyproxy.bc \
+		src/type_conversion/pyproxy.bc \
 		src/type_conversion/python2js.bc \
 		src/type_conversion/python2js_buffer.bc \
 		src/type_conversion/runpython.bc src/type_conversion/hiwire.bc \
@@ -94,8 +93,8 @@ build/console.html: src/templates/console.html
 	sed -i -e 's#{{ PYODIDE_BASE_URL }}#$(PYODIDE_BASE_URL)#g' $@
 
 
-build/renderedhtml.css: src/css/renderedhtml.less
-	lessc $< $@
+build/renderedhtml.css: src/css/renderedhtml.less $(LESSC)
+	$(LESSC) $< $@
 
 build/webworker.js: src/webworker.js
 	cp $< $@
@@ -129,8 +128,8 @@ clean:
 	rm -fr root
 	rm -fr build/*
 	rm -fr src/*.bc
+	rm -fr node_modules
 	make -C packages clean
-	make -C packages/six clean
 	make -C packages/jedi clean
 	make -C packages/parso clean
 	make -C packages/libxslt clean
@@ -157,12 +156,14 @@ build/test.data: $(CPYTHONLIB)
 		cd build; \
 		python $(FILEPACKAGER) test.data --lz4 --preload ../$(CPYTHONLIB)/test@/lib/python3.8/test --js-output=test.js --export-name=pyodide._module --exclude __pycache__ \
 	)
-	uglifyjs build/test.js -o build/test.js
+	$(UGLIFYJS) build/test.js -o build/test.js
 
+
+$(UGLIFYJS) $(LESSC): emsdk/emsdk/.complete
+	npm i --no-save uglify-js lessc
 
 root/.built: \
 		$(CPYTHONLIB) \
-		$(SIX_LIBS) \
 		$(JEDI_LIBS) \
 		$(PARSO_LIBS) \
 		src/sitecustomize.py \
@@ -173,7 +174,6 @@ root/.built: \
 	mkdir -p root/lib
 	cp -r $(CPYTHONLIB) root/lib
 	mkdir -p $(SITEPACKAGES)
-	cp $(SIX_LIBS) $(SITEPACKAGES)
 	cp -r $(JEDI_ROOT) $(SITEPACKAGES)
 	cp -r $(PARSO_ROOT) $(SITEPACKAGES)
 	cp src/sitecustomize.py $(SITEPACKAGES)
@@ -216,12 +216,6 @@ $(CPYTHONLIB): emsdk/emsdk/.complete $(PYODIDE_EMCC) $(PYODIDE_CXX)
 	date +"[%F %T] Building cpython..."
 	make -C $(CPYTHONROOT)
 	date +"[%F %T] done building cpython..."
-
-
-$(SIX_LIBS): $(CPYTHONLIB)
-	date +"[%F %T] Building six..."
-	make -C packages/six
-	date +"[%F %T] done building six."
 
 
 $(JEDI_LIBS): $(CPYTHONLIB)

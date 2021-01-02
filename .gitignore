@@ -12,6 +12,7 @@ firefox/
 .vscode
 .idea
 .mypy_cache/
+node_modules/
 
 build
 downloads
@@ -25,7 +26,6 @@ ccache
 /emsdk/emsdk
 
 *.egg-info/
-packages/six/six-1.11.0
 packages/lz4/lz4-1.8.3
 packages/CLAPACK/CLAPACK-WA
 packages/CLAPACK/clapack.tgz

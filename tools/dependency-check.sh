@@ -37,11 +37,6 @@ check_fortran_dependencies() {
   check_binary_present "f2c"
 }
 
-check_js_dependencies() {
-  check_binary_present "lessc"
-  check_binary_present "uglifyjs"
-}
-
 check_pyyaml() {
   local pyyaml_import_check
   pyyaml_import_check="$(python3 -c 'import yaml' 2>&1)"
@@ -54,5 +49,4 @@ check_python_version
 check_pkgconfig
 #check_python_headers
 check_fortran_dependencies
-check_js_dependencies
 check_pyyaml

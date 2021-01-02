@@ -47,6 +47,7 @@ def test_build_dependencies(n_jobs, monkeypatch):
         "libxml",
         "zlib",
         "libiconv",
+        "six",
     }
     assert build_list.index("distlib") < build_list.index("micropip")
     assert build_list.index("soupsieve") < build_list.index("beautifulsoup4")
