@@ -45,7 +45,7 @@ typedef struct
   PyObject_HEAD
   JsRef js;
   PyObject* bytes;
-  PyObject* future; // for promises
+  bool awaited; // for promises
 } JsProxy;
 // clang-format on
 
@@ -54,7 +54,6 @@ JsProxy_dealloc(JsProxy* self)
 {
   hiwire_decref(self->js);
   Py_CLEAR(self->bytes);
-  Py_CLEAR(self->future);
   Py_TYPE(self)->tp_free((PyObject*)self);
 }
 
@@ -405,30 +404,51 @@ JsProxy_Bool(PyObject* o)
   return hiwire_get_bool(self->js) ? 1 : 0;
 }
 
+#define QUIT_IF_NULL(x)                                                        \
+  do {                                                                         \
+    if (x == NULL) {                                                           \
+      goto finally;                                                            \
+    }                                                                          \
+  } while (0)
+
 PyObject*
 JsProxy_Await(JsProxy* self)
 {
-  if (self->future != NULL) {
-    return _PyObject_CallMethodId(self->future, &PyId___await__, NULL);
-  }
-
-  PyObject* loop = _PyObject_CallNoArg(asyncio_get_event_loop);
-  if (loop == NULL) {
+  // Guards
+  if (self->awaited) {
+    PyErr_SetString(PyExc_RuntimeError,
+                    "cannot reuse already awaited coroutine");
     return NULL;
   }
 
-  PyObject* fut = _PyObject_CallMethodId(loop, &PyId_create_future, NULL);
-  if (fut == NULL) {
-    return NULL;
+  if (!hiwire_is_promise(self->js)) {
+    PyErr_Format(PyExc_TypeError,
+                 "object %s can't be used in 'await' expression", ) return NULL;
   }
 
-  Py_CLEAR(loop);
-  PyObject* set_result = _PyObject_GetAttrId(fut, &PyId_set_result);
-  PyObject* set_exception = _PyObject_GetAttrId(fut, &PyId_set_exception);
+  // Main
+  PyObject* result = NULL;
 
-  JsRef promise_id = hiwire_ensure_promise(((JsProxy*)self)->js);
+  PyObject* loop = NULL;
+  PyObject* fut = NULL;
+  PyObject* set_result = NULL;
+  PyObject* set_exception = NULL;
+
+  loop = _PyObject_CallNoArg(asyncio_get_event_loop);
+  QUIT_IF_NULL(loop);
+
+  fut = _PyObject_CallMethodId(loop, &PyId_create_future, NULL);
+  QUIT_IF_NULL(fut);
+
+  set_result = _PyObject_GetAttrId(fut, &PyId_set_result);
+  QUIT_IF_NULL(set_result);
+  set_exception = _PyObject_GetAttrId(fut, &PyId_set_exception);
+  QUIT_IF_NULL(set_exception);
+
+  JsRef promise_id = hiwire_resolve_promise(self->js);
   JsRef idargs = hiwire_array();
   JsRef idarg;
+  // TODO: does this leak set_result and set_exception? See #1006.
   idarg = python2js(set_result);
   hiwire_push_array(idargs, idarg);
   hiwire_decref(idarg);
@@ -437,9 +457,15 @@ JsProxy_Await(JsProxy* self)
   hiwire_decref(idarg);
   hiwire_decref(hiwire_call_member(promise_id, "then", idargs));
   hiwire_decref(promise_id);
-  self->future = fut;
+  hiwire_decref(idargs);
+  PyObject* result = _PyObject_CallMethodId(fut, &PyId___await__, NULL);
 
-  return _PyObject_CallMethodId(self->future, &PyId___await__, NULL);
+finally:
+  Py_CLEAR(loop);
+  Py_CLEAR(set_result);
+  Py_CLEAR(set_exception);
+  Py_DECREF(fut);
+  return result;
 }
 
 // clang-format off
@@ -510,7 +536,7 @@ JsProxy_cnew(JsRef idobj)
   self = (JsProxy*)JsProxyType.tp_alloc(&JsProxyType, 0);
   self->js = hiwire_incref(idobj);
   self->bytes = NULL;
-  self->future = NULL;
+  self->awaited = false;
   return (PyObject*)self;
 }
 

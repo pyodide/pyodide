@@ -324,7 +324,14 @@ EM_JS(bool, hiwire_is_function, (JsRef idobj), {
   // clang-format on
 });
 
-EM_JS(JsRef, hiwire_ensure_promise, (JsRef idobj), {
+EM_JS(bool, hiwire_is_promise, (JsRef idobj), {
+  // clang-format off
+  let obj = Module.hiwire.get_value(idobj);
+  return Object.prototype.toString.call(obj) === "[object Promise]";
+  // clang-format on
+});
+
+EM_JS(JsRef, hiwire_resolve_promise, (JsRef idobj), {
   // clang-format off
   let obj = Module.hiwire.get_value(idobj);
   let result = Promise.resolve(obj);
