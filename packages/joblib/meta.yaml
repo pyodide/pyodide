@@ -9,7 +9,3 @@ source:
   patches:
     - patches/use-setuptools.patch
     - patches/ctypes-import.patch
-
-test:
-  imports:
-    - joblib

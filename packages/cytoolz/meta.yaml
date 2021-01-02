@@ -8,6 +8,3 @@ requirements:
   run:
   - nose
   - toolz
-test:
-  imports:
-  - cytoolz

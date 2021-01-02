@@ -30,19 +30,3 @@ requirements:
   run:
     - numpy
     - CLAPACK
-
-test:
-  imports:
-    - scipy
-    - scipy.cluster
-    - scipy.constants
-    - scipy.fftpack
-    - scipy.odr
-    - scipy.sparse
-    - scipy.interpolate
-    - scipy.integrate
-    - scipy.linalg
-    - scipy.misc
-    - scipy.ndimage
-    - scipy.spatial
-    - scipy.special

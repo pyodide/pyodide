@@ -9,7 +9,3 @@ source:
 requirements:
   run:
     - setuptools
-
-test:
-  imports:
-    - nose

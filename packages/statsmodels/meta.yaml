@@ -13,7 +13,3 @@ requirements:
     - scipy
     - pandas
     - patsy
-
-test:
-  imports:
-    - statsmodels

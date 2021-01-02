@@ -7,6 +7,3 @@ requirements:
 source:
   sha256: 1cfadcc80506e4b793f5b088558ca1fcbeaec24cd6fc86f1fdccaa3ee1d48708
   url: https://files.pythonhosted.org/packages/8a/43/d433f66b01a355d12602ccc7de409aea4b3a1cfdb7a2fb5dac57eb4b09c1/sympy-1.6.2.tar.gz
-test:
-  imports:
-  - sympy

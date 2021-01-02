@@ -8,7 +8,3 @@ source:
 
   patches:
     - patches/fix-warnings.patch
-
-test:
-  imports:
-    - mpmath

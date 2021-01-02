@@ -12,6 +12,3 @@ requirements:
   run:
     - numpy
     - msgpack
-test:
-  imports:
-  - numcodecs

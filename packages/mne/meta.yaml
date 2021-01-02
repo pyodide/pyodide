@@ -10,7 +10,3 @@ requirements:
   run:
     - numpy
     - scipy
-
-test:
-  imports:
-    - mne

@@ -7,6 +7,3 @@ source:
 requirements:
   run:
     - future
-test:
-  imports:
-  - uncertainties

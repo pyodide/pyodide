@@ -67,7 +67,6 @@ def make_package(package: str, version: Optional[str] = None):
     yaml_content = {
         "package": {"name": package, "version": version},
         "source": {"url": url, "sha256": sha256},
-        "test": {"imports": [package]},
     }
 
     if not (PACKAGES_ROOT / package).is_dir():

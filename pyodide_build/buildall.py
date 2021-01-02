@@ -232,7 +232,7 @@ def build_packages(packages_dir: Path, outputdir: Path, args) -> None:
         package_data["dependencies"][name] = [
             x for x in pkg.dependencies if x not in libraries
         ]
-        for imp in pkg.meta.get("test", {}).get("imports", [name]):
+        for imp in pkg.meta.get("test", {}).get("imports", [name.replace("-", "_")]):
             package_data["import_name_to_package_name"][imp] = name
 
     with open(outputdir / "packages.json", "w") as fd:

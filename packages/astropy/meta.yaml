@@ -9,7 +9,3 @@ source:
 requirements:
   run:
     - numpy
-
-test:
-  imports:
-    - astropy

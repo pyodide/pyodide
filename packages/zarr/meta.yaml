@@ -11,6 +11,3 @@ requirements:
     - numpy
     - asciitree
     - numcodecs
-test:
-  imports:
-  - zarr

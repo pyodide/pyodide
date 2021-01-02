@@ -15,7 +15,3 @@ requirements:
     - matplotlib
     - sympy
     - setuptools
-
-test:
-  imports:
-    - yt

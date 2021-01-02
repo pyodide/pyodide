@@ -10,6 +10,3 @@ requirements:
   run:
   - numpy
   - pillow
-test:
-  imports:
-  - imageio

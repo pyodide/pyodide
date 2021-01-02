@@ -7,6 +7,3 @@ source:
 requirements:
   run:
     - regex
-test:
-  imports:
-  - nltk

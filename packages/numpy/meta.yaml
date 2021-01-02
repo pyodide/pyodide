@@ -20,8 +20,3 @@ source:
 build:
   skip_host: False
   cflags: -include math.h -I../../config
-
-
-test:
-  imports:
-    - numpy
