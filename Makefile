@@ -218,11 +218,6 @@ $(CPYTHONLIB): emsdk/emsdk/.complete $(PYODIDE_EMCC) $(PYODIDE_CXX)
 	date +"[%F %T] done building cpython..."
 
 
-# Shorthand definition
-.PHONY: cpython
-cpython: $(CPYTHONLIB)
-
-
 $(JEDI_LIBS): $(CPYTHONLIB)
 	date +"[%F %T] Building jedi..."
 	make -C packages/jedi
