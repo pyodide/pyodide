@@ -1,6 +1,13 @@
 #include <emscripten.h>
 
 #include "hiwire.h"
+#include "jsproxy.h"
+
+void
+hiwire_py_err_set_js_error(JsRef err)
+{
+  PyObject* py_err = JsException_AsJs(err);
+}
 
 JsRef
 hiwire_undefined()
