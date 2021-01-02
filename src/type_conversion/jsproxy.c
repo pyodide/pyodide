@@ -422,8 +422,12 @@ JsProxy_Await(JsProxy* self)
   }
 
   if (!hiwire_is_promise(self->js)) {
+    PyObject* str = JsProxy_Repr((PyObject*)self);
+    const char* str_utf8 = PyUnicode_AsUTF8(str);
     PyErr_Format(PyExc_TypeError,
-                 "object %s can't be used in 'await' expression", ) return NULL;
+                 "object %s can't be used in 'await' expression",
+                 str_utf8);
+    return NULL;
   }
 
   // Main
@@ -458,7 +462,7 @@ JsProxy_Await(JsProxy* self)
   hiwire_decref(hiwire_call_member(promise_id, "then", idargs));
   hiwire_decref(promise_id);
   hiwire_decref(idargs);
-  PyObject* result = _PyObject_CallMethodId(fut, &PyId___await__, NULL);
+  result = _PyObject_CallMethodId(fut, &PyId___await__, NULL);
 
 finally:
   Py_CLEAR(loop);
