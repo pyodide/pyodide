@@ -56,8 +56,7 @@ all: check \
 	build/test.data \
 	build/packages.json \
 	build/test.html \
-	build/webworker.js \
-	build/webworker_dev.js
+	build/webworker.js
 	echo -e "\nSUCCESS!"
 
 
@@ -78,10 +77,11 @@ build/pyodide.asm.js: src/main.bc src/type_conversion/jsimport.bc \
 env:
 	env
 
+build/pyodide.js:
+	cp src/pyodide-js/dist/browser.js $@
 
-build/pyodide.js: src/pyodide.js
-	cp $< $@
-	sed -i -e 's#{{ PYODIDE_BASE_URL }}#$(PYODIDE_BASE_URL)#g' $@
+build/webworker.js:
+	cp src/pyodide-js/dist/webworker.js $@
 
 
 build/test.html: src/templates/test.html
@@ -95,14 +95,6 @@ build/console.html: src/templates/console.html
 
 build/renderedhtml.css: src/css/renderedhtml.less $(LESSC)
 	$(LESSC) $< $@
-
-build/webworker.js: src/webworker.js
-	cp $< $@
-	sed -i -e 's#{{ PYODIDE_BASE_URL }}#$(PYODIDE_BASE_URL)#g' $@
-
-build/webworker_dev.js: src/webworker.js
-	cp $< $@
-	sed -i -e 's#{{ PYODIDE_BASE_URL }}#./#g' $@
 
 test: all
 	pytest src emsdk/tests packages/*/test* pyodide_build -v
@@ -141,6 +133,7 @@ clean:
 clean-all: clean
 	make -C emsdk clean
 	make -C cpython clean
+	rm -fr src/pyodide-js/dist
 	rm -fr cpython/build
 
 %.bc: %.c $(CPYTHONLIB) $(wildcard src/**/*.h)

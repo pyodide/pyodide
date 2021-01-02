@@ -49,7 +49,20 @@ jobs:
           - -{{ checksum "Makefile.envs" }}-v20201205-
 
       - run:
-          name: build emsdk
+          name: nodejs dependencies
+          command: |
+            apt update
+            apt install -y npm
+
+      - run:
+          name: build pyodide-js
+          command: |
+            cd src/pyodide-js
+            npm install
+            npm run build
+
+      - run:
+          name: build
           no_output_timeout: 1200
           command: |
             ccache -z
