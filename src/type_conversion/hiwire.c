@@ -3,12 +3,6 @@
 #include "hiwire.h"
 
 JsRef
-hiwire_error()
-{
-  return Js_ERROR;
-}
-
-JsRef
 hiwire_undefined()
 {
   return Js_UNDEFINED;
@@ -39,9 +33,8 @@ hiwire_bool(bool boolean)
 }
 
 EM_JS(int, hiwire_init, (), {
-  let _hiwire = { objects : new Map(), counter : 1 };
+  let _hiwire = { objects : new Map(), counter : new Uint32Array(1) };
   Module.hiwire = {};
-  Module.hiwire.ERROR = _hiwire_error();
   Module.hiwire.UNDEFINED = _hiwire_undefined();
   Module.hiwire.NULL = _hiwire_null();
   Module.hiwire.TRUE = _hiwire_true();
@@ -58,12 +51,12 @@ EM_JS(int, hiwire_init, (), {
     // Probably not worth it for performance: it's harmless to ocassionally
     // duplicate. Maybe in test builds we could raise if jsval is a standard
     // value?
-    while (_hiwire.objects.has(_hiwire.counter)) {
-      _hiwire.counter = (_hiwire.counter + 1) & 0x7fffffff;
+    while (_hiwire.objects.has(_hiwire.counter[0])) {
+      _hiwire.counter[0] += 2;
     }
-    let idval = _hiwire.counter;
+    let idval = _hiwire.counter[0];
     _hiwire.objects.set(idval, jsval);
-    _hiwire.counter = (_hiwire.counter + 1) & 0x7fffffff;
+    _hiwire.counter[0] += 2;
     return idval;
   };
 
@@ -73,14 +66,18 @@ EM_JS(int, hiwire_init, (), {
       throw new Error("Argument to hiwire.get_value is undefined");
     }
     if (!_hiwire.objects.has(idval)) {
-      throw new Error(`Undefined id $ { idval }`);
+      // clang-format off
+      throw new Error(`Undefined id ${ idval }`);
+      // clang-format on
     }
     return _hiwire.objects.get(idval);
   };
 
   Module.hiwire.decref = function(idval)
   {
-    if (idval < 0) {
+    // clang-format off
+    if (idval % 2 === 0) {
+      // clang-format on
       return;
     }
     _hiwire.objects.delete(idval);
@@ -89,7 +86,9 @@ EM_JS(int, hiwire_init, (), {
 });
 
 EM_JS(JsRef, hiwire_incref, (JsRef idval), {
-  if (idval < 0) {
+  // clang-format off
+  if (idval % 2 === 0) {
+    // clang-format on
     return;
   }
   return Module.hiwire.new_value(Module.hiwire.get_value(idval));
