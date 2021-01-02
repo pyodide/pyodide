@@ -1,10 +1,10 @@
 def my_setup(selenium):
     selenium.run_js(
         """
-        window.py2js_deep = pyodide.TestEntrypoints.py2js_deep;
-        window.py2js_shallow = pyodide.TestEntrypoints.py2js_shallow;
-        window.py2js_minimal = pyodide.TestEntrypoints.py2js_minimal;
-        window.isPyProxy = pyodide.TestEntrypoints.isPyProxy;
+        window.py2js_deep = pyodide._module.TestEntrypoints.py2js_deep;
+        window.py2js_shallow = pyodide._module.TestEntrypoints.py2js_shallow;
+        window.py2js_minimal = pyodide._module.TestEntrypoints.py2js_minimal;
+        window.isPyProxy = pyodide._module.TestEntrypoints.isPyProxy;
         """
     )
 
