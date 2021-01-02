@@ -4,7 +4,7 @@
 def test_jsproxy_dir(selenium):
     selenium.run_js(
         """
-        a = { x : 2 };
+        window.a = { x : 2 };
         return pyodide.runPython(`
             from js import a
             dir(a)
