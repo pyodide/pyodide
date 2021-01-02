@@ -465,7 +465,8 @@ test_wrapper_python2js_minimal(char* name)
       PyErr_Format(PyExc_KeyError, "%s", name);
     }
     Py_DECREF(pyname);
-    return pythonexc2js();
+    pythonexc2js();
+    return Js_ERROR;
   }
 
   Py_DECREF(pyname);
@@ -483,7 +484,8 @@ test_wrapper_python2js_shallow(char* name)
       PyErr_Format(PyExc_KeyError, "%s", name);
     }
     Py_DECREF(pyname);
-    return pythonexc2js();
+    pythonexc2js();
+    return Js_ERROR;
   }
 
   Py_DECREF(pyname);
@@ -501,7 +503,8 @@ test_wrapper_python2js_deep(char* name)
       PyErr_Format(PyExc_KeyError, "%s", name);
     }
     Py_DECREF(pyname);
-    return pythonexc2js();
+    pythonexc2js();
+    return Js_ERROR;
   }
 
   Py_DECREF(pyname);
