@@ -3,12 +3,15 @@ package:
   version: 2.7.0
 
 source:
-  path: ../../../nlopt-python
+  path: ../../../nlopt
   sha256: 
 
 requirements:
   run:
     - numpy
+
+build:
+  cxxflags: -std=c++11
 
 test:
   imports:

@@ -233,14 +233,16 @@ def handle_command(line, args, dryrun=False):
     else:
         new_args = ["emcc"]
         # distutils doesn't use the c++ compiler when compiling c++ <sigh>
-        if any(arg.endswith(".cpp") for arg in line):
+        if any(arg.endswith( (".cpp", ".cc") ) for arg in line):
             new_args = ["em++"]
     library_output = line[-1].endswith(".so")
 
     if library_output:
         new_args.extend(args.ldflags.split())
-    elif new_args[0] in ("emcc", "em++"):
+    elif new_args[0] == "emcc":
         new_args.extend(args.cflags.split())
+    elif new_args[0] == "em++":
+        new_args.extend(args.cxxflags.split())
 
     lapack_dir = None
 
@@ -415,6 +417,13 @@ def make_parser(parser):
             nargs="?",
             default=common.DEFAULTCFLAGS,
             help="Extra compiling flags",
+        )
+        parser.add_argument(
+            "--cxxflags",
+            type=str,
+            nargs="?",
+            default=common.DEFAULTCXXFLAGS,
+            help="Extra C++ specific compiling flags",
         )
         parser.add_argument(
             "--ldflags",

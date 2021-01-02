@@ -4,6 +4,7 @@ from typing import Optional, Set
 ROOTDIR = Path(__file__).parents[1].resolve() / "tools"
 TARGETPYTHON = ROOTDIR / ".." / "cpython" / "installs" / "python-3.8.2"
 DEFAULTCFLAGS = ""
+DEFAULTCXXFLAGS = ""
 # fmt: off
 DEFAULTLDFLAGS = " ".join(
     [
