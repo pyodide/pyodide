@@ -36,7 +36,6 @@ LDFLAGS=\
 	-lstdc++ \
 	--memory-init-file 0 \
 	-s "BINARYEN_TRAP_MODE='clamp'" \
-	-s ASSERTIONS=2 \
 	-s LZ4=1
 
 SIX_ROOT=packages/six/six-1.11.0/build/lib
@@ -73,7 +72,7 @@ build/pyodide.asm.js: src/main.bc src/type_conversion/jsimport.bc \
 	date +"[%F %T] Building pyodide.asm.js..."
 	[ -d build ] || mkdir build
 	$(CXX) -s EXPORT_NAME="'pyodide'" -o build/pyodide.asm.js $(filter %.bc,$^) \
-		$(LDFLAGS) $(EXTRA_LDFLAGS) -s FORCE_FILESYSTEM=1 --preload-file root/lib@lib
+		$(LDFLAGS) -s FORCE_FILESYSTEM=1 --preload-file root/lib@lib
 	date +"[%F %T] done building pyodide.asm.js."
 
 
