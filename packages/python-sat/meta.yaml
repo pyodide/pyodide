@@ -13,3 +13,4 @@ source:
 test:
   imports:
     - pysat
+    - six

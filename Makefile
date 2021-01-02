@@ -40,9 +40,6 @@ LDFLAGS=\
 	-s "BINARYEN_TRAP_MODE='clamp'" \
 	-s LZ4=1
 
-SIX_ROOT=packages/six/six-1.11.0/build/lib
-SIX_LIBS=$(SIX_ROOT)/six.py
-
 JEDI_ROOT=packages/jedi/jedi-0.17.2/jedi
 JEDI_LIBS=$(JEDI_ROOT)/__init__.py
 
@@ -133,7 +130,6 @@ clean:
 	rm -fr src/*.bc
 	rm -fr node_modules
 	make -C packages clean
-	make -C packages/six clean
 	make -C packages/jedi clean
 	make -C packages/parso clean
 	make -C packages/libxslt clean
@@ -168,7 +164,6 @@ $(UGLIFYJS) $(LESSC): emsdk/emsdk/.complete
 
 root/.built: \
 		$(CPYTHONLIB) \
-		$(SIX_LIBS) \
 		$(JEDI_LIBS) \
 		$(PARSO_LIBS) \
 		src/sitecustomize.py \
@@ -179,7 +174,6 @@ root/.built: \
 	mkdir -p root/lib
 	cp -r $(CPYTHONLIB) root/lib
 	mkdir -p $(SITEPACKAGES)
-	cp $(SIX_LIBS) $(SITEPACKAGES)
 	cp -r $(JEDI_ROOT) $(SITEPACKAGES)
 	cp -r $(PARSO_ROOT) $(SITEPACKAGES)
 	cp src/sitecustomize.py $(SITEPACKAGES)
@@ -222,12 +216,6 @@ $(CPYTHONLIB): emsdk/emsdk/.complete $(PYODIDE_EMCC) $(PYODIDE_CXX)
 	date +"[%F %T] Building cpython..."
 	make -C $(CPYTHONROOT)
 	date +"[%F %T] done building cpython..."
-
-
-$(SIX_LIBS): $(CPYTHONLIB)
-	date +"[%F %T] Building six..."
-	make -C packages/six
-	date +"[%F %T] done building six."
 
 
 $(JEDI_LIBS): $(CPYTHONLIB)
