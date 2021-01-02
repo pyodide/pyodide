@@ -40,8 +40,8 @@ _runPythonDebug(char* code)
 }
 
 EM_JS(int, runpython_init_js, (JsRef pyodide_py_proxy, JsRef globals_proxy), {
-  Module.pyodide_py = Module.hiwire.get_value($0);
-  Module.globals = Module.hiwire.get_value($1);
+  Module.pyodide_py = Module.hiwire.get_value(pyodide_py_proxy);
+  Module.globals = Module.hiwire.get_value(globals_proxy);
 
   // Use this to test python code separate from pyproxy.apply.
   Module.runPythonDebug = function(code)
