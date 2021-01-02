@@ -38,7 +38,7 @@ EM_JS(int, hiwire_init, (), {
     // Use a native uint32 for our counter. Counter starts at 1.
     counter : new Uint32Array([1])
   };
-  // Special values are even. 0 = C NULL is an error code.
+  // Special values are even. 0 == C NULL is an error code.
   Module.hiwire = {};
   Module.hiwire.UNDEFINED = _hiwire_undefined();
   Module.hiwire.JSNULL = _hiwire_null();

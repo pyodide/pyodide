@@ -32,8 +32,9 @@ struct _JsRefStruct
 
 typedef struct _JsRefStruct* JsRef;
 
-// Define special ids for singleton constants. These must be even to
-// avoid being reused for other values.
+// Special JsRefs for singleton constants.
+// (These must be even. hiwire_new_value, hiwire_incref, and hiwire_decref are
+// all noops on even input)
 #define Js_UNDEFINED ((JsRef)(2))
 #define Js_TRUE ((JsRef)(4))
 #define Js_FALSE ((JsRef)(6))
