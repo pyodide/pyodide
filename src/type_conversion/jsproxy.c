@@ -9,7 +9,7 @@
 
 static PyTypeObject* PyExc_BaseException_Type;
 
-_Py_IDENTIFIER(__dict__);
+_Py_IDENTIFIER(__dir__);
 
 static PyObject*
 JsBoundMethod_cnew(JsRef this_, const char* name);
@@ -388,7 +388,7 @@ JsProxy_HasBytes(PyObject* o)
 static PyObject*
 JsProxy_Dir(PyObject* self)
 {
-  PyObject* dict = NULL;
+  PyObject* object__dir__ = NULL;
   PyObject* keys = NULL;
   PyObject* result_set = NULL;
   JsRef iddir = Js_ERROR;
@@ -397,9 +397,9 @@ JsProxy_Dir(PyObject* self)
 
   PyObject* result = NULL;
 
-  dict = _PyObject_GetAttrId(self, &PyId___dict__);
-  QUIT_IF_NULL(dict);
-  keys = PyDict_Keys(dict);
+  PyObject* object__dir__ = PyObjectGetAttrId(PyBaseObject_Type, &PyId___dir__);
+  QUIT_IF_NULL(object__dir__);
+  keys = PyObject_CallObjectArgs(object__dir__, self, NULL);
   QUIT_IF_NULL(keys);
   result_set = PySet_New(keys);
   QUIT_IF_NULL(result_set);
@@ -415,7 +415,7 @@ JsProxy_Dir(PyObject* self)
   QUIT_IF_NZ(PyList_Sort(result));
 
 finally:
-  Py_CLEAR(dict);
+  Py_CLEAR(object__dir__);
   Py_CLEAR(keys);
   Py_CLEAR(result_set);
   hiwire_decref(iddir);

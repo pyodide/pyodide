@@ -1,6 +1,18 @@
 # See also test_typeconversions, and test_python.
 
 
+def test_jsproxy_dir(selenium):
+    selenium.run_js(
+        """
+        a = { x : 2 };
+        return pyodide.runPython(`
+            from js import a
+            dir(a)
+        `);
+        """
+    )
+
+
 def test_jsproxy(selenium):
     assert (
         selenium.run(
