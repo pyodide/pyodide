@@ -61,8 +61,8 @@ JsProxy_GetAttr(PyObject* o, PyObject* attr)
   if (result != NULL) {
     return result;
   }
-
   PyErr_Clear();
+
   JsProxy* self = (JsProxy*)o;
   const char* key = PyUnicode_AsUTF8(attr);
   if (key == NULL) {
@@ -361,15 +361,49 @@ JsProxy_HasBytes(PyObject* o)
   }
 }
 
+#define QUIT_IF_NULL(x)                                                        \
+  do {                                                                         \
+    if (x == NULL) {                                                           \
+      goto finally;                                                            \
+    }                                                                          \
+  } while (0)
+
 static PyObject*
 JsProxy_Dir(PyObject* o)
 {
-  JsProxy* self = (JsProxy*)o;
+  PyObject* keys = NULL;
+  PyObject* keys_set = NULL;
+  JsRef iddir = Js_ERROR;
+  PyObject* pydir = NULL;
+  PyObject* union_set = NULL;
+  PyObject* null_or_pynone = NULL;
 
-  JsRef iddir = hiwire_dir(self->js);
-  PyObject* pydir = js2python(iddir);
+  PyObject* result = NULL;
+
+  JsProxy* self = (JsProxy*)o;
+  keys = PyDict_Keys(o);
+  QUIT_IF_NULL(keys);
+  keys_set = PySet_New(keys);
+  QUIT_IF_NULL(keys_set);
+
+  iddir = hiwire_dir(self->js);
+  pydir = js2python(iddir);
+  QUIT_IF_NULL(pydir);
+  union_set = _PySet_Update(keys_set, pydir);
+  QUIT_IF_NULL(union_set);
+  result = PyList_New(0);
+  QUIT_IF_NULL(result);
+  null_or_pynone = _PyList_Extend(union_set);
+  QUIT_IF_NULL(null_or_pynone);
+
+finally:
+  Py_CLEAR(keys);
+  Py_CLEAR(keys_set);
   hiwire_decref(iddir);
-  return pydir;
+  Py_CLEAR(pydir);
+  Py_CLEAR(union_set);
+  Py_CLEAR(null_or_pynone);
+  return result;
 }
 
 static int
