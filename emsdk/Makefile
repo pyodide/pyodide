@@ -11,8 +11,8 @@ emsdk/.complete: ../Makefile.envs $(wildcard patches/*.patch)
 	cat patches/*.patch | patch -p1
 	cd emsdk && ./emsdk activate --embedded --build=Release $(EMSCRIPTEN_VERSION)-fastcomp
 	cmake -S emsdk/binaryen -B emsdk/binaryen
-	make -C emsdk/binaryen -j5
-	sed -i "s/BINARYEN_ROOT.*/BINARYEN_ROOT = emsdk_path \+ '\/binaryen'/g" emsdk/.emscripten
+	make -C emsdk/binaryen -j5 wasm-opt
+	cp emsdk/binaryen/bin/wasm-opt emsdk/fastcomp/bin/
 	touch emsdk/.complete
 
 clean:
