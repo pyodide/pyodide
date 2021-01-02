@@ -397,9 +397,10 @@ JsProxy_Dir(PyObject* self)
 
   PyObject* result = NULL;
 
-  PyObject* object__dir__ = PyObjectGetAttrId(PyBaseObject_Type, &PyId___dir__);
+  object__dir__ =
+    _PyObject_GetAttrId((PyObject*)&PyBaseObject_Type, &PyId___dir__);
   QUIT_IF_NULL(object__dir__);
-  keys = PyObject_CallObjectArgs(object__dir__, self, NULL);
+  keys = PyObject_CallFunctionObjArgs(object__dir__, self, NULL);
   QUIT_IF_NULL(keys);
   result_set = PySet_New(keys);
   QUIT_IF_NULL(result_set);
