@@ -60,7 +60,7 @@ hiwire_incref(JsRef idval);
 void
 hiwire_decref(JsRef idval);
 
-#define EM_JS_RET_REF(ret, func_name, args, body)                              \
+#define EM_JS_RET_REF(ret, func_name, args, body...)                           \
   EM_JS(ret, func_name, args, {                                                \
     "use strict";                                                              \
     try {                                                                      \
@@ -73,7 +73,7 @@ hiwire_decref(JsRef idval);
     }                                                                          \
   })
 
-#define EM_JS_RET_INT(ret, func_name, args, body)                              \
+#define EM_JS_RET_INT(ret, func_name, args, body...)                           \
   EM_JS(ret, func_name, args, {                                                \
     "use strict";                                                              \
     try {                                                                      \

@@ -6,7 +6,8 @@
 void
 hiwire_py_err_set_js_error(JsRef err)
 {
-  PyObject* py_err = JsException_AsJs(err);
+  PyObject* py_err = JsProxy_new_error(err);
+  PyErr_SetObject((PyObject*)(py_err->ob_type), py_err);
 }
 
 JsRef
