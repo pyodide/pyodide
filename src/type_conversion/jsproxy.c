@@ -9,6 +9,8 @@
 
 static PyTypeObject* PyExc_BaseException_Type;
 
+_Py_IDENTIFIER(__dict__);
+
 static PyObject*
 JsBoundMethod_cnew(JsRef this_, const char* name);
 
@@ -364,20 +366,29 @@ JsProxy_HasBytes(PyObject* o)
 #define QUIT_IF_NULL(x)                                                        \
   do {                                                                         \
     if (x == NULL) {                                                           \
-      goto finally;                                                            \
+      QUIT();                                                                  \
     }                                                                          \
   } while (0)
 
 #define QUIT_IF_NZ(x)                                                          \
   do {                                                                         \
     if (x != 0) {                                                              \
-      goto finally;                                                            \
+      QUIT();                                                                  \
     }                                                                          \
   } while (0)
 
+#define QUIT()                                                                 \
+  do {                                                                         \
+    Py_CLEAR(result);                                                          \
+    goto finally;                                                              \
+  } while (0)
+
+#define GET_JSREF(x) (((JsProxy*)x)->js)
+
 static PyObject*
-JsProxy_Dir(PyObject* o)
+JsProxy_Dir(PyObject* self)
 {
+  PyObject* dict = NULL;
   PyObject* keys = NULL;
   PyObject* result_set = NULL;
   JsRef iddir = Js_ERROR;
@@ -386,13 +397,14 @@ JsProxy_Dir(PyObject* o)
 
   PyObject* result = NULL;
 
-  JsProxy* self = (JsProxy*)o;
-  keys = PyDict_Keys(o);
+  dict = _PyObject_GetAttrId(self, &PyId___dict__);
+  QUIT_IF_NULL(dict);
+  keys = PyDict_Keys(dict);
   QUIT_IF_NULL(keys);
   result_set = PySet_New(keys);
   QUIT_IF_NULL(result_set);
 
-  iddir = hiwire_dir(self->js);
+  iddir = hiwire_dir(GET_JSREF(self));
   pydir = js2python(iddir);
   QUIT_IF_NULL(pydir);
   QUIT_IF_NZ(_PySet_Update(result_set, pydir));
@@ -400,8 +412,10 @@ JsProxy_Dir(PyObject* o)
   QUIT_IF_NULL(result);
   null_or_pynone = _PyList_Extend((PyListObject*)result, result_set);
   QUIT_IF_NULL(null_or_pynone);
+  QUIT_IF_NZ(PyList_Sort(result));
 
 finally:
+  Py_CLEAR(dict);
   Py_CLEAR(keys);
   Py_CLEAR(result_set);
   hiwire_decref(iddir);
