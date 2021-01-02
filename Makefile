@@ -12,7 +12,6 @@ CPYTHONLIB=$(CPYTHONROOT)/installs/python-$(PYVERSION)/lib/python$(PYMINOR)
 PYODIDE_EMCC=$(PYODIDE_ROOT)/ccache/emcc
 PYODIDE_CXX=$(PYODIDE_ROOT)/ccache/em++
 
-SHELL := /bin/bash
 CC=emcc
 CXX=em++
 OPTFLAGS=-O2
