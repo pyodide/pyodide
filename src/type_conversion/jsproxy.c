@@ -366,21 +366,15 @@ JsProxy_HasBytes(PyObject* o)
 #define QUIT_IF_NULL(x)                                                        \
   do {                                                                         \
     if (x == NULL) {                                                           \
-      QUIT();                                                                  \
+      goto finally;                                                            \
     }                                                                          \
   } while (0)
 
 #define QUIT_IF_NZ(x)                                                          \
   do {                                                                         \
     if (x != 0) {                                                              \
-      QUIT();                                                                  \
+      goto finally;                                                            \
     }                                                                          \
-  } while (0)
-
-#define QUIT()                                                                 \
-  do {                                                                         \
-    Py_CLEAR(result);                                                          \
-    goto finally;                                                              \
   } while (0)
 
 #define GET_JSREF(x) (((JsProxy*)x)->js)
@@ -388,6 +382,7 @@ JsProxy_HasBytes(PyObject* o)
 static PyObject*
 JsProxy_Dir(PyObject* self)
 {
+  bool success = false;
   PyObject* object__dir__ = NULL;
   PyObject* keys = NULL;
   PyObject* result_set = NULL;
@@ -397,6 +392,8 @@ JsProxy_Dir(PyObject* self)
 
   PyObject* result = NULL;
 
+  // First get base __dir__ via object.__dir__(self)
+  // Would have been nice if they'd supplied PyObject_GenericDir...
   object__dir__ =
     _PyObject_GetAttrId((PyObject*)&PyBaseObject_Type, &PyId___dir__);
   QUIT_IF_NULL(object__dir__);
@@ -405,9 +402,11 @@ JsProxy_Dir(PyObject* self)
   result_set = PySet_New(keys);
   QUIT_IF_NULL(result_set);
 
+  // Now get attributes of js object
   iddir = hiwire_dir(GET_JSREF(self));
   pydir = js2python(iddir);
   QUIT_IF_NULL(pydir);
+  // Merge and sort
   QUIT_IF_NZ(_PySet_Update(result_set, pydir));
   result = PyList_New(0);
   QUIT_IF_NULL(result);
@@ -415,6 +414,7 @@ JsProxy_Dir(PyObject* self)
   QUIT_IF_NULL(null_or_pynone);
   QUIT_IF_NZ(PyList_Sort(result));
 
+  success = true;
 finally:
   Py_CLEAR(object__dir__);
   Py_CLEAR(keys);
@@ -422,6 +422,9 @@ finally:
   hiwire_decref(iddir);
   Py_CLEAR(pydir);
   Py_CLEAR(null_or_pynone);
+  if (!success) {
+    Py_CLEAR(result);
+  }
   return result;
 }
 
