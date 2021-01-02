@@ -302,11 +302,6 @@ var languagePluginLoader = new Promise((resolve, reject) => {
     'globals', 'loadPackage', 'loadedPackages', 'pyimport', 'repr', 'runPython',
     'runPythonAsync', 'checkABI', 'version', 'autocomplete'
   ];
-  // window.TEST_PYODIDE flag to control exposure of extra private entrypoints
-  // needed for tests.
-  if (self.TEST_PYODIDE) {
-    PUBLIC_API.push("TestEntrypoints");
-  }
 
   function makePublicAPI(module, public_api) {
     var namespace = {_module : module};
@@ -326,17 +321,6 @@ var languagePluginLoader = new Promise((resolve, reject) => {
   Module.noWasmDecoding = true;
   Module.preloadedWasm = {};
   let isFirefox = navigator.userAgent.toLowerCase().indexOf('firefox') > -1;
-
-  Module.checkABI = function(ABI_number) {
-    if (ABI_number !== parseInt('{{ PYODIDE_PACKAGE_ABI }}')) {
-      var ABI_mismatch_exception =
-          `ABI numbers differ. Expected {{ PYODIDE_PACKAGE_ABI }}, got ${
-              ABI_number}`;
-      console.error(ABI_mismatch_exception);
-      throw ABI_mismatch_exception;
-    }
-    return true;
-  };
 
   Module.autocomplete = function(path) {
     var pyodide_module = Module.pyimport("pyodide");
@@ -372,17 +356,14 @@ var languagePluginLoader = new Promise((resolve, reject) => {
 
   Promise.all([ postRunPromise, dataLoadPromise ]).then(() => resolve());
 
-  const data_script_src = `${baseURL}pyodide.asm.data.js`;
-  loadScript(data_script_src, () => {
-    const scriptSrc = `${baseURL}pyodide.asm.js`;
-    loadScript(scriptSrc, () => {
-      // The emscripten module needs to be at this location for the core
-      // filesystem to install itself. Once that's complete, it will be replaced
-      // by the call to `makePublicAPI` with a more limited public API.
-      self.pyodide = pyodide(Module);
-      self.pyodide.loadedPackages = {};
-      self.pyodide.loadPackage = loadPackage;
-    }, () => {});
+  const scriptSrc = `${baseURL}pyodide.asm.js`;
+  loadScript(scriptSrc, () => {
+    // The emscripten module needs to be at this location for the core
+    // filesystem to install itself. Once that's complete, it will be replaced
+    // by the call to `makePublicAPI` with a more limited public API.
+    self.pyodide = pyodide(Module);
+    self.pyodide.loadedPackages = {};
+    self.pyodide.loadPackage = loadPackage;
   }, () => {});
 });
 languagePluginLoader
