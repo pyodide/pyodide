@@ -64,7 +64,7 @@ def test_handle_command():
     args = Args(cflags="", cxxflags="", ldflags="", host="", replace_libs="bob=fred")
     assert (
         handle_command_wrap("gcc -shared -c test.o -lbob -o test.so", args)
-        == "emcc -lm -shared -c test.bc -lfred -o test.wasm"
+        == "emcc -shared -c test.bc -lfred -o test.wasm"
     )
 
     # compilation checks in numpy
