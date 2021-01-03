@@ -107,7 +107,6 @@ class SeleniumWrapper:
         except TimeoutException:
             _display_driver_logs(self.browser, driver)
             raise TimeoutException()
-        # raise Exception("Pyodide initialization failed:")
         [error, traceback] = PyodideInitGetError(driver)
         if error is not None:
             raise Exception(
