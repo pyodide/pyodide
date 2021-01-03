@@ -172,7 +172,11 @@ def f2c(args, dryrun=False):
                 subprocess.check_call(
                     ["f2c", os.path.basename(filename)], cwd=os.path.dirname(filename)
                 )
-                cmd = [sys.executable, Path(__file__).parent.absolute() / "fix_f2c.py",arg[:-2]+".c"]
+                cmd = [
+                    sys.executable,
+                    Path(__file__).parent.absolute() / "fix_f2c.py",
+                    arg[:-2] + ".c",
+                ]
                 subprocess.check_call(cmd)
             new_args.append(arg[:-2] + ".c")
             found_source = True
@@ -264,12 +268,12 @@ def handle_command(line, args, dryrun=False):
         # Don't include any system directories
         if arg.startswith("-L/usr"):
             continue
-        skip_lib=False
+        skip_lib = False
         for l in args.ignore_libs.strip().split(";"):
-          if len(l)>0 and arg.startswith("-l"+l):
-            skip_lib=True
+            if len(l) > 0 and arg.startswith("-l" + l):
+                skip_lib = True
         if skip_lib:
-          continue
+            continue
 
         # threading is disabled for now
         if arg == "-pthread":
