@@ -125,6 +125,12 @@ Extra arguments to pass to the compiler when building for WebAssembly.
 
 (This key is not in the Conda spec).
 
+#### `build/cxxflags`
+
+Extra arguments to pass to the compiler when building C++ files for WebAssembly. Note that both clfags and cxxflags will be used when compiling C++ files. A common example would be to use -std=c++11 for code that makes use of C++11 features.
+
+(This key is not in the Conda spec).
+
 #### `build/ldflags`
 
 Extra arguments to pass to the linker when building for WebAssembly.

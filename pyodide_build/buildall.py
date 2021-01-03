@@ -58,6 +58,8 @@ class Package:
                         str(self.pkgdir / "meta.yaml"),
                         "--cflags",
                         args.cflags,
+                        "--cxxflags",
+                        args.cxxflags,
                         "--ldflags",
                         args.ldflags,
                         "--target",
@@ -262,6 +264,13 @@ def make_parser(parser):
         nargs="?",
         default=common.DEFAULTCFLAGS,
         help="Extra compiling flags",
+    )
+    parser.add_argument(
+        "--cxxflags",
+        type=str,
+        nargs="?",
+        default=common.DEFAULTCXXFLAGS,
+        help="Extra C++ specific compiling flags",
     )
     parser.add_argument(
         "--ldflags",
