@@ -1,12 +1,11 @@
 export EMSCRIPTEN_VERSION = 1.38.44
-export BINARYEN_VERSION = version_86
+export BINARYEN_VERSION = version_89
 
-export PATH := $(PYODIDE_ROOT)/ccache:$(PYODIDE_ROOT)/emsdk/emsdk:$(PYODIDE_ROOT)/emsdk/emsdk/node/12.18.1_64bit/bin:$(PYODIDE_ROOT)/emsdk/emsdk/binaryen/bin/:$(PYODIDE_ROOT)/emsdk/emsdk/fastcomp/emscripten/:$(PATH)
-
-export EMSDK = $(PYODIDE_ROOT)/emsdk/emsdk
-export EM_CONFIG = $(PYODIDE_ROOT)/emsdk/emsdk/.emscripten
-export EM_CACHE = $(PYODIDE_ROOT)/emsdk/emsdk/.emscripten_cache
-export BINARYEN_ROOT = $(PYODIDE_ROOT)/emsdk/emsdk/binaryen
+# BASH_ENV tells bash to run pyodide_env.sh on startup, whcih sets various
+# environment variables. The next line instructs make to use bash to run each
+# command.
+export BASH_ENV := $(PYODIDE_ROOT)/pyodide_env.sh
+SHELL := /bin/bash
 
 export PYVERSION=3.8.2
 export PYMINOR=$(basename $(PYVERSION))
@@ -17,6 +16,9 @@ export PYTHONINCLUDE=$(PYODIDE_ROOT)/cpython/installs/python-$(PYVERSION)/includ
 
 # Use env variable if defined, otherwise fallback to './'
 export PYODIDE_BASE_URL?=./
-# This env variable is used to detect pyodide at build time,
-# do not rename it.
+
+# This environment variable is used for packages to detect if they are built
+# for pyodide during build time
+export PYODIDE=1
+# This is the legacy environment variable used for the aforementioned purpose
 export PYODIDE_PACKAGE_ABI=1

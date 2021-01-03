@@ -1,13 +1,28 @@
 (changelog)=
 # Release notes
 
-## Verison 0.17.0
-*Unreleased*
-
+## Verison [Unreleased]
 ### Breaking changes
 
 - Removed iodide-specific code in `pyodide.js`. This breaks compatibility with
   iodide.
+  [#878](https://github.com/iodide-project/pyodide/pull/878),
+  [#981](https://github.com/iodide-project/pyodide/pull/981)
+- Use upstream `file_packager.py`, and stop checking package abi versions.
+  The `PYODIDE_PACKAGE_ABI` environment variable is no longer used, but is
+  still set as some packages use it to detect whether it is being built for
+  pyodide. This usage is deprecated, and a new environment variable `PYODIDE`
+  is introduced for this purpose.
+
+  As part of the change, Module.checkABI is no longer present.
+  [#991](https://github.com/iodide-project/pyodide/pull/991)
+- six is no longer vendored in the main pyodide package, and needs to be loaded
+  explicitly [#1010](https://github.com/iodide-project/pyodide/pull/1010)
+
+### Added
+- `micropip` now supports installing wheels from relative urls. [#872](https://github.com/iodide-project/pyodide/pull/872)
+- uglifyjs and lessc no longer need to be installed in the system during build
+- Updated packages: bleach 3.2.1, packaging 20.8
 
 ## Version 0.16.1
 *December 25, 2020*

@@ -3,14 +3,10 @@ FROM python:3.8.2-buster
 RUN apt-get update \
   && apt-get install -y --no-install-recommends \
                   # building packages
-                  bzip2 ccache clang-format-6.0 cmake f2c g++ gfortran libtinfo5 node-less swig uglifyjs \
+                  bzip2 ccache clang-format-6.0 cmake f2c g++ gfortran libtinfo5 swig \
                   # testing packages: libgconf-2-4 is necessary for running chromium
                   libgconf-2-4 chromium \
-  && rm -rf /var/lib/apt/lists/* \
-  && test "Comment: Hardcode nodejs path for uglifyjs, so it doesn't conflict with emcc's nodejs" \
-  && test $(which node) = /usr/bin/node && test $(which uglifyjs) = /usr/bin/uglifyjs \
-  && echo '#!/bin/sh -e\nexec /usr/bin/node /usr/bin/uglifyjs "$@"' >/tmp/uglifyjs \
-  && chmod a+x /tmp/uglifyjs && mv -t /usr/local/bin /tmp/uglifyjs
+  && rm -rf /var/lib/apt/lists/*
 
 RUN pip3 --no-cache-dir install pytest pytest-xdist pytest-instafail pytest-rerunfailures \
       pytest-httpserver pytest-cov selenium PyYAML flake8 black distlib mypy "Cython<3.0"

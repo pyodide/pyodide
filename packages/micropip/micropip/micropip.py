@@ -103,40 +103,36 @@ def _parse_wheel_url(url: str) -> Tuple[str, Dict[str, Any], str]:
     return name, wheel, version
 
 
-class _WheelInstaller:
-    def extract_wheel(self, fd):
-        with zipfile.ZipFile(fd) as zf:
-            zf.extractall(WHEEL_BASE)
-
-    def validate_wheel(self, data, fileinfo):
-        if fileinfo.get("digests") is None:
-            # No checksums available, e.g. because installing
-            # from a different location than PyPi.
-            return
-        sha256 = fileinfo["digests"]["sha256"]
-        m = hashlib.sha256()
-        m.update(data.getvalue())
-        if m.hexdigest() != sha256:
-            raise ValueError("Contents don't match hash")
-
-    def __call__(self, name, fileinfo, resolve, reject):
-        url = self.fetch_wheel(name, fileinfo)
-
-        def callback(wheel):
-            try:
-                self.validate_wheel(wheel, fileinfo)
-                self.extract_wheel(wheel)
-            except Exception as e:
-                reject(str(e))
-            else:
-                resolve()
-
-        _get_url_async(url, callback)
+def _extract_wheel(fd):
+    with zipfile.ZipFile(fd) as zf:
+        zf.extractall(WHEEL_BASE)
 
 
-class _RawWheelInstaller(_WheelInstaller):
-    def fetch_wheel(self, name, fileinfo):
-        return fileinfo["url"]
+def _validate_wheel(data, fileinfo):
+    if fileinfo.get("digests") is None:
+        # No checksums available, e.g. because installing
+        # from a different location than PyPi.
+        return
+    sha256 = fileinfo["digests"]["sha256"]
+    m = hashlib.sha256()
+    m.update(data.getvalue())
+    if m.hexdigest() != sha256:
+        raise ValueError("Contents don't match hash")
+
+
+def _install_wheel(name, fileinfo, resolve, reject):
+    url = fileinfo["url"]
+
+    def callback(wheel):
+        try:
+            _validate_wheel(wheel, fileinfo)
+            _extract_wheel(wheel)
+        except Exception as e:
+            reject(str(e))
+        else:
+            resolve()
+
+    _get_url_async(url, callback)
 
 
 class _PackageManager:
@@ -151,16 +147,12 @@ class _PackageManager:
         self,
         requirements: Union[str, List[str]],
         ctx=None,
-        wheel_installer=None,
         resolve=_nullop,
         reject=_nullop,
     ):
         try:
             if ctx is None:
                 ctx = {"extra": None}
-
-            if wheel_installer is None:
-                wheel_installer = _RawWheelInstaller()
 
             complete_ctx = dict(markers.DEFAULT_CONTEXT)
             complete_ctx.update(ctx)
@@ -194,11 +186,11 @@ class _PackageManager:
 
         # Now install PyPI packages
         for name, wheel, ver in transaction["wheels"]:
-            wheel_installer(name, wheel, do_resolve, reject)
+            _install_wheel(name, wheel, do_resolve, reject)
             self.installed_packages[name] = ver
 
     def add_requirement(self, requirement: str, ctx, transaction):
-        if requirement.startswith(("http://", "https://")):
+        if requirement.endswith(".whl"):
             # custom download location
             name, wheel, version = _parse_wheel_url(requirement)
             transaction["wheels"].append((name, wheel, version))
@@ -268,23 +260,28 @@ del _PackageManager
 def install(requirements: Union[str, List[str]]):
     """Install the given package and all of its dependencies.
 
-    This only works for pure Python wheels or for packages built
-    in pyodide. If a package is not found in the pyodide repository
-    it will be loaded from PyPi.
+    See :ref:`loading packages <loading_packages>` for more information.
+
+    This only works for packages that are either pure Python or for packages with
+    C extensions that are built in pyodide. If a pure Python package is not found
+    in the pyodide repository it will be loaded from PyPi.
 
     Parameters
     ----------
     requirements
-       a requirements or a list of requirements to install.
-       Can be composed either of
+       A requirement or list of requirements to install.
+       Each requirement is a string.
 
-         - package names, as defined in pyodide repository or on PyPi
-         - URLs pointing to pure Python wheels. The file name of such wheels
-           end with ``none-any.whl``.
+         - If the requirement ends in ".whl", the file will be interpreted as a url.
+           The file must be a wheel named in compliance with the
+           [PEP 427 naming convention](https://www.python.org/dev/peps/pep-0427/#file-format)
+
+         - A package name. A package by this name must either be present in the pyodide
+           repository at `languagePluginUrl` or on PyPi.
 
     Returns
     -------
-    a Promise that resolves when all packages have downloaded and installed.
+    A Promise that resolves when all packages have been downloaded and installed.
     """
 
     def do_install(resolve, reject):

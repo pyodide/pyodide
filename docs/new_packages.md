@@ -125,6 +125,12 @@ Extra arguments to pass to the compiler when building for WebAssembly.
 
 (This key is not in the Conda spec).
 
+#### `build/cxxflags`
+
+Extra arguments to pass to the compiler when building C++ files for WebAssembly. Note that both clfags and cxxflags will be used when compiling C++ files. A common example would be to use -std=c++11 for code that makes use of C++11 features.
+
+(This key is not in the Conda spec).
+
 #### `build/ldflags`
 
 Extra arguments to pass to the linker when building for WebAssembly.
@@ -179,17 +185,11 @@ also `scipy` and `CLAPACK`).
 built manually. They can be used by adding e.g. `-s USE_ZLIB` in the `cflags`
 of the python package. See e.g. `matplotlib` for an example.
 
-## Manual creation of a Pyodide package (advanced)
-The previous sections describes how to add a python package to the pyodide
-build.
+## Structure of a Pyodide package
+This section describes the structure of a pure python package, and how our
+build system creates it (In general, it is not recommended, to construct these
+by hand; instead create a Python wheel and install it with micropip)
 
-There are cases where you want to ship additional python libraries without
-adding it to pyodide itself. For pure python packages, this can be achieved
-reasonably easily. The most straightforward way is to create a Python wheel and
-load it with micropip. Alternatively, we can construct a python package
-manually.
-
-It is helpful to have some understanding of the structure of a Pyodide package.
 Pyodide is obtained by compiling CPython into web assembly. As such, it loads
 packages the same way as CPython --- it looks for relevant files `.py` files in
 `/lib/python3.x/`. When creating and loading a package, our job is to put our
@@ -209,23 +209,22 @@ contents to emscripten's virtual filesystem. Afterwards, since the files are
 now in `/lib/python3.8/`, running `import PACKAGE_NAME` in python will
 successfully import the module as usual.
 
-To produce these files, download the `file_packager.py` script from
-[https://github.com/iodide-project/pyodide/blob/master/tools/file_packager.py](https://github.com/iodide-project/pyodide/blob/master/tools/file_packager.py). You then run the command
+To construct this bundle, we use the `file_packager.py` script from emscripten.
+We invoke it as follows:
 ```sh
-$ ./file_packager.py PACKAGE_NAME.data --js-output=PACKAGE_NAME.js --abi=1 --export-name=pyodide._module --use-preload-plugins --preload /PATH/TO/LIB/@/lib/python3.8/site-packages/PACKAGE_NAME/ --exclude "*__pycache__*"
+$ ./file_packager.py PACKAGE_NAME.data \
+     --js-output=PACKAGE_NAME.js \
+     --export-name=pyodide._module \
+     --use-preload-plugins \
+     --preload /PATH/TO/LIB/@/lib/python3.8/site-packages/PACKAGE_NAME/ \
+     --exclude "*__pycache__*" \
+     --lz4
 ```
-The `--preload` argument instructs the package to look for the file/directory
-before the separator `@` (namely `/PATH/TO/LIB/`) and place it at the path
-after the `@` in the virtual filesystem (namely
-`/lib/python3.8/site-packages/PACKAGE_NAME/`). Remember to use the correct python version in the target path. At the time of writing, the latest release of Pyodide uses python 3.7 while git master uses python 3.8.
 
-The `--exclude` argument
-specifies files to omit from the package. This argument can be repeated, e.g.
-you can append `--exclude README.md` to the command.
-
-**Remark.** The bundled Pyodide packages uses lz4 compression when producing
-`PACKAGE_NAME.data`. These instructions skip this step as it requires
-additional dependencies, which complicates the process. In general, lz4
-compression decreases memory usage and can increase performance. On the other
-hand, if your webserver serves the files with gzip compression, pre-compressing
-with lz4 could in fact increase the number of bytes transferred.
+The arguments can be explained as follows:
+ - The `--preload` argument instructs the package to look for the
+   file/directory before the separator `@` (namely `/PATH/TO/LIB/`) and place
+   it at the path after the `@` in the virtual filesystem (namely
+   `/lib/python3.8/site-packages/PACKAGE_NAME/`).
+ - The `--exclude` argument specifies files to omit from the package.
+ - The `--lz4` argument says to use LZ4 to compress the files

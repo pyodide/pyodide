@@ -3,7 +3,7 @@ version: 2
 defaults: &defaults
   working_directory: ~/repo
   docker:
-    - image: iodide/pyodide-env:9
+    - image: iodide/pyodide-env:10
   environment:
     - EMSDK_NUM_CORES: 4
       EMCC_CORES: 4
@@ -172,8 +172,7 @@ jobs:
           at: .
       - run:
           name: test
-          command: |
-            pytest emsdk/tests -v
+          command: make -C emsdk test
 
   test-python:
     <<: *defaults

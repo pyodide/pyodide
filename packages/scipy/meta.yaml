@@ -24,7 +24,6 @@ source:
 
 build:
   cflags: -I../../../CLAPACK/CLAPACK-WA/INCLUDE -Wno-implicit-function-declaration
-  cxxflags:
 
 requirements:
   run:
