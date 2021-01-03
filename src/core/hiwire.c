@@ -325,7 +325,7 @@ EM_JS(bool, hiwire_is_function, (JsRef idobj), {
 });
 
 EM_JS(bool, hiwire_function_supports_kwargs, (JsRef idfunc), {
-  let func = Module.hiwire.get_value(idobj);
+  let func = Module.hiwire.get_value(idfunc);
   let funcstr = func.toString();
   let idx = funcstr.indexOf("(");
   let str = funcstr.slice(idx);
