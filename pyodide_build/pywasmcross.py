@@ -172,6 +172,8 @@ def f2c(args, dryrun=False):
                 subprocess.check_call(
                     ["f2c", os.path.basename(filename)], cwd=os.path.dirname(filename)
                 )
+                cmd = [sys.executable, Path(__file__).parent.absolute() / "fix_f2c.py",arg[:-2]+".c"]
+                subprocess.check_call(cmd)
             new_args.append(arg[:-2] + ".c")
             found_source = True
         else:

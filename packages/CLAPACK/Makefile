@@ -38,6 +38,9 @@ $(SRC)/Makefile: clapack.tgz
 
 	cd $(SRC); cat ../patches/*.patch | patch -p1
 	cp make.inc $(SRC)
+    # fix f2c subroutines to return void, so it is consistent with numpy and scipy
+    find $(SRC) -name *.c -exec python ../../pyodide_build/fix_f2c.py {} \+
+    find $(SRC) -name *.h -exec python ../../pyodide_build/fix_f2c.py {} \+
 
 	# In CLAPACK's Makefiles, some commands are mistakenly (?) hardcoded
 	# instead of using the right variables
