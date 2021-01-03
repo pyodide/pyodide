@@ -22,6 +22,7 @@ JsBoundMethod_cnew(JsRef this_, const char* name);
 typedef struct
 {
   PyObject_HEAD
+  vectorcallfunc vectorcall;
   JsRef js;
   PyObject* bytes;
 } JsProxy;
@@ -108,28 +109,50 @@ JsProxy_SetAttr(PyObject* o, PyObject* attr_name, PyObject* pyvalue)
   return 0;
 }
 
+#define JsProxy_JSREF(x) (((PyObject*)x)->js)
+
 static PyObject*
-JsProxy_Call(PyObject* o, PyObject* args, PyObject* kwargs)
+JsProxy_Vectorcall(PyObject* self,
+                   PyObject* const* args,
+                   size_t nargsf,
+                   PyObject* kwnames)
 {
-  JsProxy* self = (JsProxy*)o;
+  bool kwargs = false;
+  if (kwnames != NULL) {
+    PyObject* kwname = PyTuple_GetItem(kwnames, 0);
+    if (kwname != NULL) {
+      kwargs = true;
+    }
+    if (kwargs && !hiwire_function_supports_kwargs(JsProxy_JSREF(self))) {
+      char* kwname_utf8 = PyUnicode_AsUTF8(kwname);
+      PyErr_Format(PyExc_TypeError,
+                   "jsproxy got an unexpected keyword argument '%s'",
+                   kwname_utf8);
+      return NULL;
+    }
+    // Clear IndexError
+    PyErr_CLEAR();
+  }
 
-  Py_ssize_t nargs = PyTuple_Size(args);
-
-  JsRef idargs = hiwire_array();
-
-  for (Py_ssize_t i = 0; i < nargs; ++i) {
-    JsRef idarg = python2js(PyTuple_GET_ITEM(args, i));
+  for (Py_ssize_t i = 0; i < nargsf; ++i) {
+    JsRef idarg = python2js(args[i]);
     hiwire_push_array(idargs, idarg);
     hiwire_decref(idarg);
   }
 
-  if (PyDict_Size(kwargs)) {
-    JsRef idkwargs = python2js(kwargs);
+  if (kwargs) {
+    JsRef idkwargs = hiwire_object();
+    PyTuple_Size(kwnames);
+    for (Py_ssize_t i = 0, k = nargsf; i < nkwargs; ++i, ++k) {
+      PyObject* name = PyTuple_GET_ITEM(kwnames, i);
+      char* name_utf8 = PyUnicode_AsUTF8(name);
+      hiwire_set_member_string(idkwargs, name_utf8, args[k]);
+    }
     hiwire_push_array(idargs, idkwargs);
     hiwire_decref(idkwargs);
   }
 
-  JsRef idresult = hiwire_call(self->js, idargs);
+  JsRef idresult = hiwire_call(JsProxy_JSREF(self), idargs);
   hiwire_decref(idargs);
   PyObject* pyresult = js2python(idresult);
   hiwire_decref(idresult);
@@ -422,11 +445,12 @@ static PyTypeObject JsProxyType = {
   .tp_name = "JsProxy",
   .tp_basicsize = sizeof(JsProxy),
   .tp_dealloc = (destructor)JsProxy_dealloc,
-  .tp_call = JsProxy_Call,
+  .tp_call = PyVectorcall_Call,
+  .tp_vectorcall_offset = offsetof(PyFunctionObject, vectorcall),
   .tp_getattro = JsProxy_GetAttr,
   .tp_setattro = JsProxy_SetAttr,
   .tp_richcompare = JsProxy_RichCompare,
-  .tp_flags = Py_TPFLAGS_DEFAULT,
+  .tp_flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_VECTORCALL,
   .tp_doc = "A proxy to make a Javascript object behave like a Python object",
   .tp_methods = JsProxy_Methods,
   .tp_as_mapping = &JsProxy_MappingMethods,
@@ -442,6 +466,7 @@ JsProxy_cnew(JsRef idobj)
 {
   JsProxy* self;
   self = (JsProxy*)JsProxyType.tp_alloc(&JsProxyType, 0);
+  self->vectorcall = JsProxy_Vectorcall;
   self->js = hiwire_incref(idobj);
   self->bytes = NULL;
   return (PyObject*)self;
