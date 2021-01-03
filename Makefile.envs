@@ -1,7 +1,10 @@
 export EMSCRIPTEN_VERSION = 1.38.44
 export BINARYEN_VERSION = version_86
 
-export BASH_ENV := $(PYODIDE_ROOT)/set_env.sh
+# BASH_ENV tells bash to run pyodide_env.sh on startup, whcih sets various
+# environment variables. The next line instructs make to use bash to run each
+# command.
+export BASH_ENV := $(PYODIDE_ROOT)/pyodide_env.sh
 SHELL := /bin/bash
 
 export PYVERSION=3.8.2
