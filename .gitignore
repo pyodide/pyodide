@@ -27,8 +27,6 @@ ccache
 
 *.egg-info/
 packages/lz4/lz4-1.8.3
-packages/jedi/jedi-*
-packages/parso/parso-*
 packages/.artifacts
 packages/*/build.log
 
