@@ -271,9 +271,6 @@ def handle_command(line, args, dryrun=False):
         # The native build is possibly multithreaded, but the emscripten one
         # definitely isn't
         arg = re.sub(r"/python([0-9]\.[0-9]+)m", r"/python\1", arg)
-        if arg.endswith(".o"):
-            arg = arg[:-2] + ".bc"
-            output = arg
         elif arg.endswith(".so"):
             arg = arg[:-3] + ".wasm"
             output = arg

@@ -8,16 +8,16 @@ ROOT=$(abspath .)
 SRC=$(ROOT)/CLAPACK-WA
 
 
-all: $(SRC)/lapack_WA.bc
+all: $(SRC)/lapack_WA.a
 
 clean:
 	rm -rf CLAPACK-WA
 
-$(SRC)/lapack_WA.bc:  $(SRC)/Makefile
+$(SRC)/lapack_WA.a:  $(SRC)/Makefile
 	# We build BLAS/LAPACK only for target.
 	# On host we include -LCLAPACK-WA path which has no effect on host.
 	# On target it gets rewritten by pywasmcross to the full patch of
-	# blas_WA.bc, lapack_WA.bc which are linked statically in scipy
+	# blas_WA.a, lapack_WA.a which are linked statically in scipy
 	# in each module that needs them.
 	emmake make -C CLAPACK-WA/ -j $${PYODIDE_JOBS:-3} blaslib lapacklib
 
