@@ -62,7 +62,7 @@ def PyodideInitGetError(driver):
     )
 
 
-def PackageLoaded(driver):
+def package_loaded(driver):
     inited = driver.execute_script("return window.done;")
     return bool(inited)
 
