@@ -109,7 +109,7 @@ JsProxy_SetAttr(PyObject* o, PyObject* attr_name, PyObject* pyvalue)
   return 0;
 }
 
-#define JsProxy_JSREF(x) (((PyObject*)x)->js)
+#define JsProxy_JSREF(x) (((JsProxy*)x)->js)
 
 static PyObject*
 JsProxy_Vectorcall(PyObject* self,
@@ -117,6 +117,7 @@ JsProxy_Vectorcall(PyObject* self,
                    size_t nargsf,
                    PyObject* kwnames)
 {
+  printf("Vectorcall??");
   bool kwargs = false;
   if (kwnames != NULL) {
     PyObject* kwname = PyTuple_GetItem(kwnames, 0);
@@ -124,16 +125,17 @@ JsProxy_Vectorcall(PyObject* self,
       kwargs = true;
     }
     if (kwargs && !hiwire_function_supports_kwargs(JsProxy_JSREF(self))) {
-      char* kwname_utf8 = PyUnicode_AsUTF8(kwname);
+      const char* kwname_utf8 = PyUnicode_AsUTF8(kwname);
       PyErr_Format(PyExc_TypeError,
                    "jsproxy got an unexpected keyword argument '%s'",
                    kwname_utf8);
       return NULL;
     }
     // Clear IndexError
-    PyErr_CLEAR();
+    PyErr_Clear();
   }
 
+  JsRef idargs = hiwire_array();
   for (Py_ssize_t i = 0; i < nargsf; ++i) {
     JsRef idarg = python2js(args[i]);
     hiwire_push_array(idargs, idarg);
@@ -142,11 +144,12 @@ JsProxy_Vectorcall(PyObject* self,
 
   if (kwargs) {
     JsRef idkwargs = hiwire_object();
-    PyTuple_Size(kwnames);
+    Py_ssize_t nkwargs = PyTuple_Size(kwnames);
     for (Py_ssize_t i = 0, k = nargsf; i < nkwargs; ++i, ++k) {
       PyObject* name = PyTuple_GET_ITEM(kwnames, i);
-      char* name_utf8 = PyUnicode_AsUTF8(name);
-      hiwire_set_member_string(idkwargs, name_utf8, args[k]);
+      const char* name_utf8 = PyUnicode_AsUTF8(name);
+      JsRef jsarg = python2js(args[k]);
+      hiwire_set_member_string(idkwargs, name_utf8, jsarg);
     }
     hiwire_push_array(idargs, idkwargs);
     hiwire_decref(idkwargs);
@@ -446,11 +449,11 @@ static PyTypeObject JsProxyType = {
   .tp_basicsize = sizeof(JsProxy),
   .tp_dealloc = (destructor)JsProxy_dealloc,
   .tp_call = PyVectorcall_Call,
-  .tp_vectorcall_offset = offsetof(PyFunctionObject, vectorcall),
+  .tp_vectorcall_offset = offsetof(JsProxy, vectorcall),
   .tp_getattro = JsProxy_GetAttr,
   .tp_setattro = JsProxy_SetAttr,
   .tp_richcompare = JsProxy_RichCompare,
-  .tp_flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_VECTORCALL,
+  .tp_flags = Py_TPFLAGS_DEFAULT | _Py_TPFLAGS_HAVE_VECTORCALL,
   .tp_doc = "A proxy to make a Javascript object behave like a Python object",
   .tp_methods = JsProxy_Methods,
   .tp_as_mapping = &JsProxy_MappingMethods,

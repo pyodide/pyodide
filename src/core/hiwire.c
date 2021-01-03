@@ -338,7 +338,9 @@ EM_JS(bool, hiwire_function_supports_kwargs, (JsRef idfunc), {
 
       case ")":
         paren_depth--;
-        if (paren_depth == = 0) {
+        // clang-format off
+        if (paren_depth === 0) {
+          // clang-format on
           return false;
         }
         break;
