@@ -44,3 +44,8 @@ $(SRC)/Makefile: clapack.tgz
 	sed -i 's/^	-ranlib /^	$(RANLIB)/' **/Makefile
 	sed -i 's/^	ar /^	$(ARCH)/' **/Makefile
 	sed -i 's/^	ld /^	$(LD)/' **/Makefile
+	
+	# make return values from subroutines void for consistency throughout project
+	cd ../..; find $(SRC) -name "*.c" -exec python -m pyodide_build pywasmcross --fix_f2c {} \;
+	cd ../..; find $(SRC) -name "*.h" -exec python -m pyodide_build pywasmcross --fix_f2c {} \;
+

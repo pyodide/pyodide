@@ -71,7 +71,7 @@ def test_handle_command():
     assert handle_command_wrap("gcc /usr/file.c", args) is None
 
 
-def test_f2c():
+def test_f2c(tmp_path):
     assert f2c_wrap("gfortran test.f") == "gfortran test.c"
     assert f2c_wrap("gcc test.c") is None
     assert f2c_wrap("gfortran --version") is None
@@ -79,7 +79,30 @@ def test_f2c():
         f2c_wrap("gfortran --shared -c test.o -o test.so")
         == "gfortran --shared -c test.o -o test.so"
     )
+    # check that subroutines return void in translated code
+    Args = namedtuple("args", ["cflags", "cxxflags", "ldflags", "host", "replace_libs"])
+    args = Args(cflags="", cxxflags="", ldflags="", host="", replace_libs="")
+    tmp_f=tmp_path / "temp.f"
+    tmp_f.write_text('''
+      PROGRAM MAIN
+      CALL SAYHELLO("bob")
+      STOP 'End of program'
+      END
 
+C     In the final program this will be a void return
+      SUBROUTINE SAYHELLO(TEXT)
+      CHARACTER*64 TEXT
+      WRITE(*,*)'Hello '
+      WRITE(*,*)TEXT
+      END 
+
+''')
+    f2c(["gfortran", str(tmp_f)])
+    tmp_c=tmp_path/"temp.c"
+    c_code=tmp_c.read_text()
+    print(c_code)
+    # check that the subroutine returns void not int
+    assert c_code.find("void sayhello") != -1
 
 def test_conda_compiler_compat():
     Args = namedtuple("args", ["cflags", "cxxflags", "ldflags", "host", "replace_libs"])

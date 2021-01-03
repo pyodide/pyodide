@@ -155,8 +155,6 @@ def f2c(args, dryrun=False):
     -------
     new_args : list
        output compiler arguments
-
-
     Examples
     --------
 
@@ -172,6 +170,7 @@ def f2c(args, dryrun=False):
                 subprocess.check_call(
                     ["f2c", os.path.basename(filename)], cwd=os.path.dirname(filename)
                 )
+                fix_f2c(arg[:-2] + ".c")
             new_args.append(arg[:-2] + ".c")
             found_source = True
         else:
@@ -185,6 +184,53 @@ def f2c(args, dryrun=False):
         print(f"f2c: source not found, skipping: {new_args_str}")
         return None
     return new_args
+
+
+def fix_f2c(fname):
+    """Fix F2C output so that all fortran subroutines return void
+    Parameters
+    ----------
+    fname : iterable
+        The file name of the C output from f2c (including files in CLAPACK)
+    """
+    print("Fixing ",fname)
+    fileData = open(fname).read()
+    doneFixes = False
+    while True:
+        fromPattern = "/* Subroutine */ int"
+        toPattern = "/* Subroutine */ void"
+        before, at, after = fileData.partition(fromPattern)
+        if len(at) == 0:
+            break
+        doneFixes = True
+        semiPos = after.find(";")
+        bracePos = after.find("{")
+        if semiPos > bracePos and bracePos >= 0:
+            # function definition - fix contents of braces so it returns void
+            endBracePos = bracePos + 1
+            braceLevel = 1
+            while braceLevel != 0:
+                if after[endBracePos] == "{":
+                    braceLevel += 1
+                if after[endBracePos] == "}":
+                    braceLevel -= 1
+                endBracePos += 1
+            fnBody = after[bracePos:endBracePos]
+            fnBody = fnBody.replace("return 0", "return")
+            after = after[:bracePos] + fnBody + after[endBracePos:]
+        # replace this function in the code
+        fileData = before + toPattern + after
+    # fix functions that scipy sparse linalg uses for debugging
+    fileData, count = re.subn(r"(struct \{[^}]+\} debug_;)", r"static \1", fileData)
+    if count > 0:
+        doneFixes = True
+    fileData, count = re.subn(r"(struct \{[^}]+\} timing_;)", r"static \1", fileData)
+    if count > 0:
+        doneFixes = True
+    if doneFixes:
+        print(f"Fixed fortran: {fname}")
+        os.rename(fname, fname + ".orig")
+        open(fname, "w").write(fileData)
 
 
 def handle_command(line, args, dryrun=False):
@@ -403,6 +449,10 @@ def install_for_distribution(args):
 
 
 def build_wrap(args):
+    if args.fix_f2c!="":
+        print(args.fix_f2c)
+        fix_f2c(args.fix_f2c)            
+        return
     build_log_path = Path("build.log")
     if not build_log_path.is_file():
         capture_compile(args)
@@ -467,6 +517,11 @@ def make_parser(parser):
             default="",
             help="Libraries to replace in final link",
         )
+        parser.add_argument("--fix_f2c",
+            type=str,
+            nargs="?",
+            default="",
+            help="fix fortran converted files to return void from subroutines")
     return parser
 
 

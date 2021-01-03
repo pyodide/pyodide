@@ -1,0 +1,374 @@
+diff --git a/scipy/sparse/linalg/dsolve/SuperLU/SRC/.cgsrfs.c.swp b/scipy/sparse/linalg/dsolve/SuperLU/SRC/.cgsrfs.c.swp
+new file mode 100644
+index 0000000..1acfb3d
+Binary files /dev/null and b/scipy/sparse/linalg/dsolve/SuperLU/SRC/.cgsrfs.c.swp differ
+diff --git a/scipy/sparse/linalg/dsolve/SuperLU/SRC/cgsrfs.c b/scipy/sparse/linalg/dsolve/SuperLU/SRC/cgsrfs.c
+index e7c2bc7..c871681 100644
+--- a/scipy/sparse/linalg/dsolve/SuperLU/SRC/cgsrfs.c
++++ b/scipy/sparse/linalg/dsolve/SuperLU/SRC/cgsrfs.c
+@@ -158,13 +158,13 @@ cgsrfs(trans_t trans, SuperMatrix *A, SuperMatrix *L, SuperMatrix *U,
+     float   *rwork;
+     int      *iwork;
+ 
+-    extern int clacon_(int *, complex *, complex *, float *, int *);
++    extern void clacon_(int *, complex *, complex *, float *, int *);
+ #ifdef _CRAY
+     extern int CCOPY(int *, complex *, int *, complex *, int *);
+     extern int CSAXPY(int *, complex *, complex *, int *, complex *, int *);
+ #else
+-    extern int ccopy_(int *, complex *, int *, complex *, int *);
+-    extern int caxpy_(int *, complex *, complex *, int *, complex *, int *);
++    extern void ccopy_(int *, complex *, int *, complex *, int *);
++    extern void caxpy_(int *, complex *, complex *, int *, complex *, int *);
+ #endif
+ 
+     Astore = A->Store;
+diff --git a/scipy/sparse/linalg/dsolve/SuperLU/SRC/clacon.c b/scipy/sparse/linalg/dsolve/SuperLU/SRC/clacon.c
+index d206d5a..4958f44 100644
+--- a/scipy/sparse/linalg/dsolve/SuperLU/SRC/clacon.c
++++ b/scipy/sparse/linalg/dsolve/SuperLU/SRC/clacon.c
+@@ -64,11 +64,11 @@
+  * </pre>
+  */
+ 
+-int
++void
+ clacon_(int *n, complex *v, complex *x, float *est, int *kase)
+ 
+ {
+-
++   extern void ccopy_(int *, complex *, int *, complex *, int *);
+ 
+     /* Table of constant values */
+     int c__1 = 1;
+@@ -97,7 +97,7 @@ clacon_(int *n, complex *v, complex *x, float *est, int *kase)
+ 	}
+ 	*kase = 1;
+ 	jump = 1;
+-	return 0;
++	return;
+     }
+ 
+     switch (jump) {
+@@ -131,7 +131,7 @@ clacon_(int *n, complex *v, complex *x, float *est, int *kase)
+     }
+     *kase = 2;
+     jump = 2;
+-    return 0;
++    return;
+ 
+     /*     ................ ENTRY   (JUMP = 2)   
+ 	   FIRST ITERATION.  X HAS BEEN OVERWRITTEN BY TRANSPOSE(A)*X. */
+@@ -146,7 +146,7 @@ L50:
+     x[j] = one;
+     *kase = 1;
+     jump = 3;
+-    return 0;
++    return;
+ 
+     /*     ................ ENTRY   (JUMP = 3)   
+ 	   X HAS BEEN OVERWRITTEN BY A*X. */
+@@ -176,7 +176,7 @@ L90:
+     }
+     *kase = 2;
+     jump = 4;
+-    return 0;
++    return;
+ 
+     /*     ................ ENTRY   (JUMP = 4)   
+ 	   X HAS BEEN OVERWRITTEN BY TRANDPOSE(A)*X. */
+@@ -199,7 +199,7 @@ L120:
+     }
+     *kase = 1;
+     jump = 5;
+-    return 0;
++    return;
+     
+     /*     ................ ENTRY   (JUMP = 5)   
+ 	   X HAS BEEN OVERWRITTEN BY A*X. */
+@@ -216,6 +216,6 @@ L140:
+ 
+ L150:
+     *kase = 0;
+-    return 0;
++    return;
+ 
+ } /* clacon_ */
+diff --git a/scipy/sparse/linalg/dsolve/SuperLU/SRC/dgsrfs.c b/scipy/sparse/linalg/dsolve/SuperLU/SRC/dgsrfs.c
+index 55531b0..fc600d3 100644
+--- a/scipy/sparse/linalg/dsolve/SuperLU/SRC/dgsrfs.c
++++ b/scipy/sparse/linalg/dsolve/SuperLU/SRC/dgsrfs.c
+@@ -158,13 +158,13 @@ dgsrfs(trans_t trans, SuperMatrix *A, SuperMatrix *L, SuperMatrix *U,
+     double   *rwork;
+     int      *iwork;
+ 
+-    extern int dlacon_(int *, double *, double *, int *, double *, int *);
++    extern void dlacon_(int *, double *, double *, int *, double *, int *);
+ #ifdef _CRAY
+     extern int SCOPY(int *, double *, int *, double *, int *);
+     extern int SSAXPY(int *, double *, double *, int *, double *, int *);
+ #else
+-    extern int dcopy_(int *, double *, int *, double *, int *);
+-    extern int daxpy_(int *, double *, double *, int *, double *, int *);
++    extern void dcopy_(int *, double *, int *, double *, int *);
++    extern void daxpy_(int *, double *, double *, int *, double *, int *);
+ #endif
+ 
+     Astore = A->Store;
+diff --git a/scipy/sparse/linalg/dsolve/SuperLU/SRC/dlacon.c b/scipy/sparse/linalg/dsolve/SuperLU/SRC/dlacon.c
+index 951fe7a..9b917b5 100644
+--- a/scipy/sparse/linalg/dsolve/SuperLU/SRC/dlacon.c
++++ b/scipy/sparse/linalg/dsolve/SuperLU/SRC/dlacon.c
+@@ -87,7 +87,7 @@ dlacon_(int *n, double *v, double *x, int *isgn, double *est, int *kase)
+ #else
+     extern int idamax_(int *, double *, int *);
+     extern double dasum_(int *, double *, int *);
+-    extern int dcopy_(int *, double *, int *, double *, int *);
++    extern void dcopy_(int *, double *, int *, double *, int *);
+ #endif
+ #define d_sign(a, b) (b >= 0 ? fabs(a) : -fabs(a))    /* Copy sign */
+ #define i_dnnt(a) \
+diff --git a/scipy/sparse/linalg/dsolve/SuperLU/SRC/ilu_cdrop_row.c b/scipy/sparse/linalg/dsolve/SuperLU/SRC/ilu_cdrop_row.c
+index 44173c8..9ab3f50 100644
+--- a/scipy/sparse/linalg/dsolve/SuperLU/SRC/ilu_cdrop_row.c
++++ b/scipy/sparse/linalg/dsolve/SuperLU/SRC/ilu_cdrop_row.c
+@@ -13,6 +13,7 @@
+ #include <stdlib.h>
+ #include "slu_cdefs.h"
+ 
++extern void scopy_(int *, float *, int *, float *, int *);
+ extern void cswap_(int *, complex [], int *, complex [], int *);
+ extern void caxpy_(int *, complex *, complex [], int *, complex [], int *);
+ extern void ccopy_(int *, complex [], int *, complex [], int *);
+diff --git a/scipy/sparse/linalg/dsolve/SuperLU/SRC/ilu_zdrop_row.c b/scipy/sparse/linalg/dsolve/SuperLU/SRC/ilu_zdrop_row.c
+index 0a140d4..d6d4b4e 100644
+--- a/scipy/sparse/linalg/dsolve/SuperLU/SRC/ilu_zdrop_row.c
++++ b/scipy/sparse/linalg/dsolve/SuperLU/SRC/ilu_zdrop_row.c
+@@ -13,6 +13,7 @@
+ #include <stdlib.h>
+ #include "slu_zdefs.h"
+ 
++extern void dcopy_(int *, double [], int *, double [], int *);
+ extern void zswap_(int *, doublecomplex [], int *, doublecomplex [], int *);
+ extern void zaxpy_(int *, doublecomplex *, doublecomplex [], int *, doublecomplex [], int *);
+ extern void zcopy_(int *, doublecomplex [], int *, doublecomplex [], int *);
+diff --git a/scipy/sparse/linalg/dsolve/SuperLU/SRC/sgscon.c b/scipy/sparse/linalg/dsolve/SuperLU/SRC/sgscon.c
+index a474967..d64ce07 100644
+--- a/scipy/sparse/linalg/dsolve/SuperLU/SRC/sgscon.c
++++ b/scipy/sparse/linalg/dsolve/SuperLU/SRC/sgscon.c
+@@ -81,9 +81,9 @@ sgscon(char *norm, SuperMatrix *L, SuperMatrix *U,
+     float ainvnm;
+     float *work;
+     int    *iwork;
+-    extern int srscl_(int *, float *, float *, int *);
++    extern void srscl_(int *, float *, float *, int *);
+ 
+-    extern int slacon_(int *, float *, float *, int *, float *, int *);
++    extern void slacon_(int *, float *, float *, int *, float *, int *);
+ 
+     
+     /* Test the input parameters. */
+diff --git a/scipy/sparse/linalg/dsolve/SuperLU/SRC/sgsrfs.c b/scipy/sparse/linalg/dsolve/SuperLU/SRC/sgsrfs.c
+index a93bc5b..a81ab91 100644
+--- a/scipy/sparse/linalg/dsolve/SuperLU/SRC/sgsrfs.c
++++ b/scipy/sparse/linalg/dsolve/SuperLU/SRC/sgsrfs.c
+@@ -158,13 +158,13 @@ sgsrfs(trans_t trans, SuperMatrix *A, SuperMatrix *L, SuperMatrix *U,
+     float   *rwork;
+     int      *iwork;
+ 
+-    extern int slacon_(int *, float *, float *, int *, float *, int *);
++    extern void slacon_(int *, float *, float *, int *, float *, int *);
+ #ifdef _CRAY
+     extern int SCOPY(int *, float *, int *, float *, int *);
+     extern int SSAXPY(int *, float *, float *, int *, float *, int *);
+ #else
+-    extern int scopy_(int *, float *, int *, float *, int *);
+-    extern int saxpy_(int *, float *, float *, int *, float *, int *);
++    extern void scopy_(int *, float *, int *, float *, int *);
++    extern void saxpy_(int *, float *, float *, int *, float *, int *);
+ #endif
+ 
+     Astore = A->Store;
+diff --git a/scipy/sparse/linalg/dsolve/SuperLU/SRC/slacon.c b/scipy/sparse/linalg/dsolve/SuperLU/SRC/slacon.c
+index 4e02fdc..cd39e65 100644
+--- a/scipy/sparse/linalg/dsolve/SuperLU/SRC/slacon.c
++++ b/scipy/sparse/linalg/dsolve/SuperLU/SRC/slacon.c
+@@ -63,7 +63,7 @@
+  * </pre>
+  */
+ 
+-int
++void
+ slacon_(int *n, float *v, float *x, int *isgn, float *est, int *kase)
+ 
+ {
+@@ -87,7 +87,7 @@ slacon_(int *n, float *v, float *x, int *isgn, float *est, int *kase)
+ #else
+     extern int isamax_(int *, float *, int *);
+     extern float sasum_(int *, float *, int *);
+-    extern int scopy_(int *, float *, int *, float *, int *);
++    extern void scopy_(int *, float *, int *, float *, int *);
+ #endif
+ #define d_sign(a, b) (b >= 0 ? fabs(a) : -fabs(a))    /* Copy sign */
+ #define i_dnnt(a) \
+@@ -99,7 +99,7 @@ slacon_(int *n, float *v, float *x, int *isgn, float *est, int *kase)
+ 	}
+ 	*kase = 1;
+ 	jump = 1;
+-	return 0;
++	return;
+     }
+ 
+     switch (jump) {
+@@ -131,7 +131,7 @@ slacon_(int *n, float *v, float *x, int *isgn, float *est, int *kase)
+     }
+     *kase = 2;
+     jump = 2;
+-    return 0;
++    return;
+ 
+     /*     ................ ENTRY   (JUMP = 2)   
+ 	   FIRST ITERATION.  X HAS BEEN OVERWRITTEN BY TRANSPOSE(A)*X. */
+@@ -150,7 +150,7 @@ L50:
+     x[j] = one;
+     *kase = 1;
+     jump = 3;
+-    return 0;
++    return;
+ 
+     /*     ................ ENTRY   (JUMP = 3)   
+ 	   X HAS BEEN OVERWRITTEN BY A*X. */
+@@ -184,7 +184,7 @@ L90:
+     }
+     *kase = 2;
+     jump = 4;
+-    return 0;
++    return;
+ 
+     /*     ................ ENTRY   (JUMP = 4)   
+ 	   X HAS BEEN OVERWRITTEN BY TRANDPOSE(A)*X. */
+@@ -210,7 +210,7 @@ L120:
+     }
+     *kase = 1;
+     jump = 5;
+-    return 0;
++    return;
+     
+     /*     ................ ENTRY   (JUMP = 5)   
+ 	   X HAS BEEN OVERWRITTEN BY A*X. */
+@@ -231,6 +231,6 @@ L140:
+ 
+ L150:
+     *kase = 0;
+-    return 0;
++    return;
+ 
+ } /* slacon_ */
+diff --git a/scipy/sparse/linalg/dsolve/SuperLU/SRC/zgscon.c b/scipy/sparse/linalg/dsolve/SuperLU/SRC/zgscon.c
+index 8bb95aa..ca956a4 100644
+--- a/scipy/sparse/linalg/dsolve/SuperLU/SRC/zgscon.c
++++ b/scipy/sparse/linalg/dsolve/SuperLU/SRC/zgscon.c
+@@ -80,9 +80,9 @@ zgscon(char *norm, SuperMatrix *L, SuperMatrix *U,
+     int    kase, kase1, onenrm, i;
+     double ainvnm;
+     doublecomplex *work;
+-    extern int zrscl_(int *, doublecomplex *, doublecomplex *, int *);
++    extern void zrscl_(int *, doublecomplex *, doublecomplex *, int *);
+ 
+-    extern int zlacon_(int *, doublecomplex *, doublecomplex *, double *, int *);
++    extern void zlacon_(int *, doublecomplex *, doublecomplex *, double *, int *);
+ 
+     
+     /* Test the input parameters. */
+diff --git a/scipy/sparse/linalg/dsolve/SuperLU/SRC/zgsrfs.c b/scipy/sparse/linalg/dsolve/SuperLU/SRC/zgsrfs.c
+index 2ed0481..9f53ae0 100644
+--- a/scipy/sparse/linalg/dsolve/SuperLU/SRC/zgsrfs.c
++++ b/scipy/sparse/linalg/dsolve/SuperLU/SRC/zgsrfs.c
+@@ -158,13 +158,13 @@ zgsrfs(trans_t trans, SuperMatrix *A, SuperMatrix *L, SuperMatrix *U,
+     double   *rwork;
+     int      *iwork;
+ 
+-    extern int zlacon_(int *, doublecomplex *, doublecomplex *, double *, int *);
++    extern void zlacon_(int *, doublecomplex *, doublecomplex *, double *, int *);
+ #ifdef _CRAY
+     extern int CCOPY(int *, doublecomplex *, int *, doublecomplex *, int *);
+     extern int CSAXPY(int *, doublecomplex *, doublecomplex *, int *, doublecomplex *, int *);
+ #else
+-    extern int zcopy_(int *, doublecomplex *, int *, doublecomplex *, int *);
+-    extern int zaxpy_(int *, doublecomplex *, doublecomplex *, int *, doublecomplex *, int *);
++    extern void zcopy_(int *, doublecomplex *, int *, doublecomplex *, int *);
++    extern void zaxpy_(int *, doublecomplex *, doublecomplex *, int *, doublecomplex *, int *);
+ #endif
+ 
+     Astore = A->Store;
+diff --git a/scipy/sparse/linalg/dsolve/SuperLU/SRC/zlacon.c b/scipy/sparse/linalg/dsolve/SuperLU/SRC/zlacon.c
+index b2cd1ed..b357b3c 100644
+--- a/scipy/sparse/linalg/dsolve/SuperLU/SRC/zlacon.c
++++ b/scipy/sparse/linalg/dsolve/SuperLU/SRC/zlacon.c
+@@ -64,11 +64,11 @@
+  * </pre>
+  */
+ 
+-int
++void
+ zlacon_(int *n, doublecomplex *v, doublecomplex *x, double *est, int *kase)
+ 
+ {
+-
++extern void zcopy_(int *, doublecomplex [], int *, doublecomplex [], int *);
+ 
+     /* Table of constant values */
+     int c__1 = 1;
+@@ -97,7 +97,7 @@ zlacon_(int *n, doublecomplex *v, doublecomplex *x, double *est, int *kase)
+ 	}
+ 	*kase = 1;
+ 	jump = 1;
+-	return 0;
++	return;
+     }
+ 
+     switch (jump) {
+@@ -131,7 +131,7 @@ zlacon_(int *n, doublecomplex *v, doublecomplex *x, double *est, int *kase)
+     }
+     *kase = 2;
+     jump = 2;
+-    return 0;
++    return;
+ 
+     /*     ................ ENTRY   (JUMP = 2)   
+ 	   FIRST ITERATION.  X HAS BEEN OVERWRITTEN BY TRANSPOSE(A)*X. */
+@@ -146,7 +146,7 @@ L50:
+     x[j] = one;
+     *kase = 1;
+     jump = 3;
+-    return 0;
++    return;
+ 
+     /*     ................ ENTRY   (JUMP = 3)   
+ 	   X HAS BEEN OVERWRITTEN BY A*X. */
+@@ -176,7 +176,7 @@ L90:
+     }
+     *kase = 2;
+     jump = 4;
+-    return 0;
++    return;
+ 
+     /*     ................ ENTRY   (JUMP = 4)   
+ 	   X HAS BEEN OVERWRITTEN BY TRANDPOSE(A)*X. */
+@@ -199,7 +199,7 @@ L120:
+     }
+     *kase = 1;
+     jump = 5;
+-    return 0;
++    return;
+     
+     /*     ................ ENTRY   (JUMP = 5)   
+ 	   X HAS BEEN OVERWRITTEN BY A*X. */
+@@ -216,6 +216,6 @@ L140:
+ 
+ L150:
+     *kase = 0;
+-    return 0;
++    return;
+ 
+ } /* zlacon_ */
