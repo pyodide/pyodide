@@ -204,12 +204,19 @@ def handle_command(line, args, dryrun=False):
     --------
 
     >>> from collections import namedtuple
-    >>> Args = namedtuple('args', ['cflags', 'cxxflags', 'ldflags', 'host'])
-    >>> args = Args(cflags='', cxxflags='', ldflags='', host='')
+    >>> Args = namedtuple('args', ['cflags', 'cxxflags', 'ldflags', 'host','replace_libs'])
+    >>> args = Args(cflags='', cxxflags='', ldflags='', host='',replace_libs='')
     >>> handle_command(['gcc', 'test.c'], args, dryrun=True)
     emcc test.c
     ['emcc', 'test.c']
     """
+    # some libraries have different names on wasm e.g. png16 = png
+    replace_libs = {}
+    for l in args.replace_libs.split(";"):
+        if len(l) > 0:
+            from_lib, to_lib = l.split("=")
+            replace_libs[from_lib] = to_lib
+
     # This is a special case to skip the compilation tests in numpy that aren't
     # actually part of the build
     for arg in line:
@@ -262,6 +269,10 @@ def handle_command(line, args, dryrun=False):
         # Don't include any system directories
         if arg.startswith("-L/usr"):
             continue
+        if arg.startswith("-l"):
+            if arg[2:] in replace_libs:
+                arg = "-l" + replace_libs[arg[2:]]
+
         # threading is disabled for now
         if arg == "-pthread":
             continue
@@ -448,6 +459,13 @@ def make_parser(parser):
                 "default. Set to 'skip' to skip installation. Installation is "
                 "needed if you want to build other packages that depend on this one."
             ),
+        )
+        parser.add_argument(
+            "--replace-libs",
+            type=str,
+            nargs="?",
+            default="",
+            help="Libraries to replace in final link",
         )
     return parser
 
