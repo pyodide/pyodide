@@ -324,6 +324,30 @@ EM_JS(bool, hiwire_is_function, (JsRef idobj), {
   // clang-format on
 });
 
+EM_JS(bool, hiwire_function_supports_kwargs, (JsRef idfunc), {
+  let funcstr = kwarg_function2.toString();
+  let idx = funcstr.indexOf("(");
+  let str = funcstr.slice(idx);
+  let paren_depth = 0;
+  // iterate over characters of str
+  for (let x of str) {
+    switch (x) {
+      case "(":
+        paren_depth++;
+        break;
+
+      case ")":
+        paren_depth--;
+        if (paren_depth == = 0) {
+          return false;
+        }
+        break;
+      case "{":
+        return true;
+    }
+  }
+});
+
 EM_JS(JsRef, hiwire_to_string, (JsRef idobj), {
   return Module.hiwire.new_value(Module.hiwire.get_value(idobj).toString());
 });

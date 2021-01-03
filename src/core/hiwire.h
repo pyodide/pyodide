@@ -439,6 +439,9 @@ hiwire_get_bool(JsRef idobj);
 bool
 hiwire_is_function(JsRef idobj);
 
+bool
+hiwire_function_supports_kwargs(JsRef idfunc);
+
 /**
  * Gets the string representation of an object by calling `toString`.
  *
