@@ -4,7 +4,7 @@ def test_jedi(selenium_standalone):
         """
         import jedi
         script = jedi.Script("import json\\njson.lo", path='example.py')
-        completions = script.complete(3, len('json.lo'))
+        completions = script.complete(2, len('json.lo'))
         [el.name for el in completions]
         """
     )

@@ -32,6 +32,6 @@ def get_completions(
         cursor = len(code)
     code = code[:cursor]
     interp = jedi.Interpreter(code, namespaces)
-    completions = interp.completions()
+    completions = interp.complete()
 
     return [x.name for x in completions]
