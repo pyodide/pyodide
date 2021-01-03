@@ -177,6 +177,29 @@ def compile(path: Path, srcpath: Path, pkg: Dict[str, Any], args):
     with open(srcpath / ".built", "wb") as fd:
         fd.write(b"\n")
 
+def minify_python(buildpath: Path, srcpath: Path, pkg: Dict[str, Any], args):
+    if (srcpath / ".minified").is_file():
+        return
+    import python_minifier
+    allPythonFiles=srcpath.rglob("*.py")
+    allPythonFiles=[]
+    for fname in allPythonFiles:
+        newName=fname.with_suffix(".ori")
+        shutil.copy(fname,newName)
+        try:
+            with newName.open() as f:            
+                source=f.read()
+                minified=python_minifier.minify(source, filename=str(fname), remove_annotations=True, remove_pass=True, remove_literal_statements=True, combine_imports=True, hoist_literals=True, rename_locals=False, preserve_locals=None, rename_globals=False, preserve_globals=None, remove_object_base=True, convert_posargs_to_args=True)
+                fname.open(mode='w').write(minified)
+        except SyntaxError as e:
+            print("Skipping minify for ",fname)
+        except Exception as e:
+            print("Minify failed ",fname,e)
+        newName.unlink()
+    
+    with open(srcpath / ".minified", "wb") as fd:
+        fd.write(b"\n")
+
 
 def package_files(buildpath: Path, srcpath: Path, pkg: Dict[str, Any], args):
     if (buildpath / ".packaged").is_file():
@@ -254,6 +277,7 @@ def build_package(path: Path, args):
             os.makedirs(buildpath)
         srcpath = download_and_extract(buildpath, packagedir, pkg, args)
         patch(path, srcpath, pkg, args)
+        minify_python(path,srcpath,pkg,args)
         compile(path, srcpath, pkg, args)
         package_files(buildpath, srcpath, pkg, args)
     finally:
