@@ -40,7 +40,7 @@ import sys
 from pyodide_build import common
 
 
-ROOTDIR = common.ROOTDIR
+TOOLSDIR = common.TOOLSDIR
 symlinks = set(["cc", "c++", "ld", "ar", "gcc", "gfortran"])
 
 
@@ -56,8 +56,8 @@ def collect_args(basename):
     # native compiler
     env = dict(os.environ)
     path = env["PATH"]
-    while str(ROOTDIR) + ":" in path:
-        path = path.replace(str(ROOTDIR) + ":", "")
+    while str(TOOLSDIR) + ":" in path:
+        path = path.replace(str(TOOLSDIR) + ":", "")
     env["PATH"] = path
 
     skip_host = "SKIP_HOST" in os.environ
@@ -107,12 +107,14 @@ def make_symlinks(env):
     """
     exec_path = Path(__file__).resolve()
     for symlink in symlinks:
-        symlink_path = ROOTDIR / symlink
+        symlink_path = TOOLSDIR / symlink
         if os.path.lexists(symlink_path) and not symlink_path.exists():
             # remove broken symlink so it can be re-created
             symlink_path.unlink()
-        if not symlink_path.exists():
+        try:
             symlink_path.symlink_to(exec_path)
+        except FileExistsError:
+            pass
         if symlink == "c++":
             var = "CXX"
         else:
@@ -123,7 +125,7 @@ def make_symlinks(env):
 def capture_compile(args):
     env = dict(os.environ)
     make_symlinks(env)
-    env["PATH"] = str(ROOTDIR) + ":" + os.environ["PATH"]
+    env["PATH"] = str(TOOLSDIR) + ":" + os.environ["PATH"]
 
     cmd = [sys.executable, "setup.py", "install"]
     if args.install_dir == "skip":
@@ -194,7 +196,7 @@ def handle_command(line, args, dryrun=False):
        an iterable with the compilation arguments
     args : {object, namedtuple}
        an container with additional compilation options,
-       in particular containing ``args.cflags`` and ``args.ldflags``
+       in particular containing ``args.cflags``, ``args.cxxflags``, and ``args.ldflags``
     dryrun : bool, default=False
        if True do not run the resulting command, only return it
 
@@ -202,8 +204,8 @@ def handle_command(line, args, dryrun=False):
     --------
 
     >>> from collections import namedtuple
-    >>> Args = namedtuple('args', ['cflags', 'ldflags', 'host'])
-    >>> args = Args(cflags='', ldflags='', host='')
+    >>> Args = namedtuple('args', ['cflags', 'cxxflags', 'ldflags', 'host'])
+    >>> args = Args(cflags='', cxxflags='', ldflags='', host='')
     >>> handle_command(['gcc', 'test.c'], args, dryrun=True)
     emcc test.c
     ['emcc', 'test.c']
@@ -233,14 +235,16 @@ def handle_command(line, args, dryrun=False):
     else:
         new_args = ["emcc"]
         # distutils doesn't use the c++ compiler when compiling c++ <sigh>
-        if any(arg.endswith(".cpp") for arg in line):
+        if any(arg.endswith((".cpp", ".cc")) for arg in line):
             new_args = ["em++"]
     library_output = line[-1].endswith(".so")
 
     if library_output:
         new_args.extend(args.ldflags.split())
-    elif new_args[0] in ("emcc", "em++"):
+    elif new_args[0] == "emcc":
         new_args.extend(args.cflags.split())
+    elif new_args[0] == "em++":
+        new_args.extend(args.cflags.split() + args.cxxflags.split())
 
     lapack_dir = None
 
@@ -415,6 +419,13 @@ def make_parser(parser):
             nargs="?",
             default=common.DEFAULTCFLAGS,
             help="Extra compiling flags",
+        )
+        parser.add_argument(
+            "--cxxflags",
+            type=str,
+            nargs="?",
+            default=common.DEFAULTCXXFLAGS,
+            help="Extra C++ specific compiling flags",
         )
         parser.add_argument(
             "--ldflags",
