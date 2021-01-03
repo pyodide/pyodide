@@ -48,7 +48,7 @@ except ImportError:
     pytest = None
 
 
-def PyodideInited(driver):
+def pyodide_inited(driver):
     return driver.execute_script(
         """
         return !!(window.PYODIDE_READY || window.PYODIDE_ERROR);
@@ -56,7 +56,7 @@ def PyodideInited(driver):
     )
 
 
-def PyodideInitGetError(driver):
+def pyodide_init_get_error(driver):
     return driver.execute_script(
         """
         if(!window.PYODIDE_ERROR){
@@ -103,11 +103,11 @@ class SeleniumWrapper:
             )
         driver.get(f"http://{server_hostname}:{server_port}/test.html")
         try:
-            wait.until(PyodideInited)
+            wait.until(pyodide_inited)
         except TimeoutException:
             _display_driver_logs(self.browser, driver)
             raise TimeoutException()
-        [error, traceback] = PyodideInitGetError(driver)
+        [error, traceback] = pyodide_init_get_error(driver)
         if error is not None:
             raise Exception(
                 f"""
