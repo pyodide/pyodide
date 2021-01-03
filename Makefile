@@ -61,16 +61,16 @@ all: check \
 	echo -e "\nSUCCESS!"
 
 
-build/pyodide.asm.js: src/core/main.bc src/core/jsimport.bc \
-	        src/core/jsproxy.bc src/core/js2python.bc \
-		src/core/pyproxy.bc \
-		src/core/python2js.bc \
-		src/core/python2js_buffer.bc \
-		src/core/runpython.bc src/core/hiwire.bc \
+build/pyodide.asm.js: src/core/main.o src/core/jsimport.o \
+	        src/core/jsproxy.o src/core/js2python.o \
+		src/core/pyproxy.o \
+		src/core/python2js.o \
+		src/core/python2js_buffer.o \
+		src/core/runpython.o src/core/hiwire.o \
 		root/.built
 	date +"[%F %T] Building pyodide.asm.js..."
 	[ -d build ] || mkdir build
-	$(CXX) -s EXPORT_NAME="'pyodide'" -o build/pyodide.asm.js $(filter %.bc,$^) \
+	$(CXX) -s EXPORT_NAME="'pyodide'" -o build/pyodide.asm.js $(filter %.o,$^) \
 		$(LDFLAGS) -s FORCE_FILESYSTEM=1 --preload-file root/lib@lib
 	date +"[%F %T] done building pyodide.asm.js."
 
@@ -127,7 +127,7 @@ benchmark: all
 clean:
 	rm -fr root
 	rm -fr build/*
-	rm -fr src/*.bc
+	rm -fr src/*.o
 	rm -fr node_modules
 	make -C packages clean
 	make -C packages/jedi clean
@@ -143,7 +143,7 @@ clean-all: clean
 	make -C cpython clean
 	rm -fr cpython/build
 
-%.bc: %.c $(CPYTHONLIB) $(wildcard src/**/*.h)
+%.o: %.c $(CPYTHONLIB) $(wildcard src/**/*.h)
 	$(CC) -o $@ -c $< $(CFLAGS) -Isrc/core/
 
 
