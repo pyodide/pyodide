@@ -14,7 +14,7 @@ env = {
     "EMSDK": str(EMSDK),
     "EM_CONFIG": str(EMSDK / ".emscripten"),
     "EM_CACHE": str(EMSDK / ".emscripten_cache"),
-    "BINARYEN_ROOT": str(EMSDK / "binaryen"),
+    "BINARYEN_ROOT": str(EMSDK / "fastcomp"),
 }
 
 MAIN_C = """

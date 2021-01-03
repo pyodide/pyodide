@@ -1,7 +1,7 @@
 export EMSCRIPTEN_VERSION = 1.38.44
-export BINARYEN_VERSION = version_86
+export BINARYEN_VERSION = version_89
 
-export PATH := $(PYODIDE_ROOT)/ccache:$(PYODIDE_ROOT)/emsdk/emsdk:$(PYODIDE_ROOT)/emsdk/emsdk/node/12.18.1_64bit/bin:$(PYODIDE_ROOT)/emsdk/emsdk/binaryen/bin/:$(PYODIDE_ROOT)/emsdk/emsdk/fastcomp/emscripten/:$(PYODIDE_ROOT)/node_modules/.bin/:$(PATH)
+export PATH := $(PYODIDE_ROOT)/ccache:$(PYODIDE_ROOT)/emsdk/emsdk:$(PYODIDE_ROOT)/emsdk/emsdk/node/12.18.1_64bit/bin:$(PYODIDE_ROOT)/emsdk/emsdk/fastcomp/emscripten/:$(PYODIDE_ROOT)/node_modules/.bin/:$(PATH)
 
 export EMSDK = $(PYODIDE_ROOT)/emsdk/emsdk
 export EM_CONFIG = $(PYODIDE_ROOT)/emsdk/emsdk/.emscripten

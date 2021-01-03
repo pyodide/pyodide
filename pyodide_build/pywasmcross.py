@@ -111,8 +111,10 @@ def make_symlinks(env):
         if os.path.lexists(symlink_path) and not symlink_path.exists():
             # remove broken symlink so it can be re-created
             symlink_path.unlink()
-        if not symlink_path.exists():
+        try:
             symlink_path.symlink_to(exec_path)
+        except FileExistsError:
+            pass
         if symlink == "c++":
             var = "CXX"
         else:

@@ -6,6 +6,7 @@ requirements:
   - setuptools
   - webencodings
   - packaging
+  - six
 source:
   sha256: 3c4c520fdb9db59ef139915a5db79f8b51bc2a7257ea0389f30c846883430a4b
   url: https://files.pythonhosted.org/packages/a9/ac/dc881fca3ac66d6f2c4c3ac46633af4e9c05ed5a0aa2e7e36dc096687dd7/bleach-3.1.5.tar.gz

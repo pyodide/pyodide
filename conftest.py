@@ -51,7 +51,7 @@ except ImportError:
 class PyodideInited:
     def __call__(self, driver):
         inited = driver.execute_script(
-            "return window.pyodide && window.pyodide.runPython"
+            "return window.pyodide && window.pyodide.runPython && window.pyodide.pyodide_py"
         )
         return inited is not None
 

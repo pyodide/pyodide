@@ -10,6 +10,7 @@ source:
 requirements:
   run:
     - numpy
+    - six
 
 test:
   imports:

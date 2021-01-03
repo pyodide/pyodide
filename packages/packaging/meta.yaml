@@ -8,6 +8,7 @@ source:
 requirements:
   run:
     - pyparsing
+    - six
 
 test:
   imports:

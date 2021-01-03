@@ -1,166 +1,132 @@
 #include "runpython.h"
+#include "hiwire.h"
+#include "pyproxy.h"
+#include "python2js.h"
 
 #include <Python.h>
 #include <emscripten.h>
-#include <node.h> // from Python
 
-#include "hiwire.h"
-#include "python2js.h"
-
-PyObject* globals;
-PyObject* pyodide;
-
+static PyObject* pyodide_py;
+static PyObject* globals;
 _Py_IDENTIFIER(eval_code);
-_Py_IDENTIFIER(find_imports);
 
 JsRef
-_runPython(char* code)
+_runPythonDebug(char* code)
 {
   PyObject* py_code;
   py_code = PyUnicode_FromString(code);
   if (py_code == NULL) {
-    pythonexc2js();
-    return Js_ERROR;
+    fprintf(stderr, "runPythonDebug -- error occurred converting argument:\n");
+    PyErr_Print();
+    return Js_UNDEFINED;
   }
 
-  PyObject* ret = _PyObject_CallMethodIdObjArgs(
-    pyodide, &PyId_eval_code, py_code, globals, NULL);
+  PyObject* result = _PyObject_CallMethodIdObjArgs(
+    pyodide_py, &PyId_eval_code, py_code, globals, NULL);
 
-  if (ret == NULL) {
-    pythonexc2js();
-    return Js_ERROR;
+  if (result == NULL) {
+    fprintf(stderr, "runPythonDebug -- error occurred\n");
+    PyErr_Print();
+    return Js_UNDEFINED;
   }
 
-  JsRef id = python2js_deep(ret);
-  Py_DECREF(ret);
+  printf("runPythonDebug -- eval_code succeeded, it returned:\n");
+  PyObject_Print(result, stdout, 0);
+
+  printf("runPythonDebug -- doing python2js(result):\n");
+  JsRef id = python2js_deep(result);
+  Py_DECREF(result);
   return id;
 }
 
-JsRef
-_findImports(char* code)
-{
-  PyObject* py_code;
-  py_code = PyUnicode_FromString(code);
-  if (py_code == NULL) {
-    pythonexc2js();
-    return Js_ERROR;
-  }
+EM_JS(int, runpython_init_js, (JsRef pyodide_py_proxy, JsRef globals_proxy), {
+  Module.pyodide_py = Module.hiwire.get_value(pyodide_py_proxy);
+  Module.globals = Module.hiwire.get_value(globals_proxy);
 
-  PyObject* ret =
-    _PyObject_CallMethodIdObjArgs(pyodide, &PyId_find_imports, py_code, NULL);
-
-  if (ret == NULL) {
-    pythonexc2js();
-    return Js_ERROR;
-  }
-
-  JsRef id = python2js_deep(ret);
-  Py_DECREF(ret);
-  return id;
-}
-
-EM_JS(int, runpython_init_js, (), {
-  Module._runPythonInternal = function(pycode)
+  // Use this to test python code separate from pyproxy.apply.
+  Module.runPythonDebug = function(code)
   {
-    var idresult = Module.__runPython(pycode);
-    var jsresult = Module.hiwire.get_value(idresult);
+    let pycode = stringToNewUTF8(code);
+    let idresult = Module.__runPythonDebug(pycode);
+    let jsresult = Module.hiwire.get_value(idresult);
     Module.hiwire.decref(idresult);
     _free(pycode);
     return jsresult;
   };
-
-  Module.runPython = function(code)
-  {
-    var pycode = allocate(intArrayFromString(code), 'i8', ALLOC_NORMAL);
-    return Module._runPythonInternal(pycode);
-  };
-
-  Module.runPythonAsync = function(code, messageCallback, errorCallback)
-  {
-    var pycode = allocate(intArrayFromString(code), 'i8', ALLOC_NORMAL);
-
-    var idimports = Module.__findImports(pycode);
-    var jsimports = Module.hiwire.get_value(idimports);
-    Module.hiwire.decref(idimports);
-
-    var internal = function(resolve, reject)
-    {
-      try {
-        resolve(Module._runPythonInternal(pycode));
-      } catch (e) {
-        reject(e);
-      }
-    };
-
-    if (jsimports.length) {
-      var packageNames =
-        self.pyodide._module.packages.import_name_to_package_name;
-      var packages = {};
-      for (var i = 0; i < jsimports.length; ++i) {
-        var name = jsimports[i];
-        // clang-format off
-        if (packageNames[name] !== undefined) {
-          // clang-format on
-          packages[packageNames[name]] = undefined;
-        }
-      }
-      if (Object.keys(packages).length) {
-        var runInternal = function() { return new Promise(internal); };
-        return Module
-          .loadPackage(Object.keys(packages), messageCallback, errorCallback)
-          .then(runInternal);
-      }
-    }
-    return new Promise(internal);
-  };
-});
-
-int
-runpython_init_py()
-{
-  PyObject* builtins = PyImport_AddModule("builtins");
-  if (builtins == NULL) {
-    return 1;
-  }
-
-  PyObject* builtins_dict = PyModule_GetDict(builtins);
-  if (builtins_dict == NULL) {
-    return 1;
-  }
-
-  PyObject* __main__ = PyImport_AddModule("__main__");
-  if (__main__ == NULL) {
-    return 1;
-  }
-
-  globals = PyModule_GetDict(__main__);
-  if (globals == NULL) {
-    return 1;
-  }
-
-  if (PyDict_Update(globals, builtins_dict)) {
-    return 1;
-  }
-
-  pyodide = PyImport_ImportModule("pyodide");
-  if (pyodide == NULL) {
-    return 1;
-  }
-
-  return 0;
-}
-
-EM_JS(int, runpython_finalize_js, (), {
-  Module.version = function()
-  {
-    Module.runPython("import pyodide");
-    return Module.runPython("pyodide.__version__");
-  };
   return 0;
 });
+
+#define QUIT_IF_NULL(x)                                                        \
+  do {                                                                         \
+    if (x == NULL) {                                                           \
+      goto fail;                                                               \
+    }                                                                          \
+  } while (0)
+
+#define QUIT_IF_NZ(x)                                                          \
+  do {                                                                         \
+    if (x) {                                                                   \
+      goto fail;                                                               \
+    }                                                                          \
+  } while (0)
 
 int
 runpython_init()
 {
-  return runpython_init_js() || runpython_init_py() || runpython_finalize_js();
+  bool success = false;
+  JsRef pyodide_py_proxy = Js_ERROR;
+  JsRef globals_proxy = Js_ERROR;
+
+  // borrowed
+  PyObject* builtins = PyImport_AddModule("builtins");
+  QUIT_IF_NULL(builtins);
+
+  // borrowed
+  PyObject* builtins_dict = PyModule_GetDict(builtins);
+  QUIT_IF_NULL(builtins_dict);
+
+  // borrowed
+  PyObject* __main__ = PyImport_AddModule("__main__");
+  QUIT_IF_NULL(__main__);
+
+  // globals is static variable, borrowed
+  globals = PyModule_GetDict(__main__);
+  QUIT_IF_NULL(globals);
+  Py_INCREF(globals); // to owned
+
+  QUIT_IF_NZ(PyDict_Update(globals, builtins_dict));
+
+  // pyodide_py is static variable, new
+  pyodide_py = PyImport_ImportModule("pyodide");
+  QUIT_IF_NULL(pyodide_py);
+
+  pyodide_py_proxy = python2js(pyodide_py);
+  if (pyodide_py_proxy == Js_ERROR) {
+    goto fail;
+  }
+  // Currently by default, python2js copies dicts into objects.
+  // We want to feed Module.globals back to `eval_code` in `pyodide.runPython`
+  // (see definition in pyodide.js) but because the round trip conversion
+  // py => js => py for a dict object is a JsProxy, that causes trouble.
+  // Instead we explicitly call pyproxy_new.
+  // We also had to add ad-hoc modifications to _pyproxy_get, etc to support
+  // this. I (HC) will fix this with the rest of the type conversions
+  // modifications.
+  Py_INCREF(globals); // pyproxy_new steals argument
+  globals_proxy = pyproxy_new(globals);
+  if (globals_proxy == Js_ERROR) {
+    goto fail;
+  }
+  QUIT_IF_NZ(runpython_init_js(pyodide_py_proxy, globals_proxy));
+
+  return 0;
+fail:
+  if (PyErr_Occurred()) {
+    PyErr_Print();
+  }
+  Py_CLEAR(pyodide_py);
+  Py_CLEAR(globals);
+  hiwire_decref(pyodide_py_proxy);
+  hiwire_decref(globals_proxy);
+  return -1;
 }
