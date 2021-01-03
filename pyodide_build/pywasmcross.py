@@ -187,7 +187,7 @@ def f2c(args, dryrun=False):
     return new_args
 
 
-def handle_command(line,args, dryrun=False):
+def handle_command(line, args, dryrun=False):
     """Handle a compilation command
 
     Parameters
