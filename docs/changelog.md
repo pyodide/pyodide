@@ -22,6 +22,7 @@
 ### Added
 - `micropip` now supports installing wheels from relative urls. [#872](https://github.com/iodide-project/pyodide/pull/872)
 - uglifyjs and lessc no longer need to be installed in the system during build
+- Updated packages: bleach 3.2.1, packaging 20.8
 
 ## Version 0.16.1
 *December 25, 2020*
