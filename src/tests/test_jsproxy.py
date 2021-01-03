@@ -151,7 +151,7 @@ def test_jsproxy_call_kwargs(selenium):
         selenium.run_js(
             """
         window.kwarg_function = ({ a = 1, b = 1 }) => {
-            return a / b;
+            return [a, b];
         };
         return pyodide.runPython(
             `
@@ -161,15 +161,58 @@ def test_jsproxy_call_kwargs(selenium):
         );
         """
         )
-        == 5
+        == [10, 2]
     )
 
 
 @pytest.mark.xfail
 def test_jsproxy_call_meth_py(selenium):
-    pass
+    assert selenium.run_js(
+        """
+        window.a = {};
+        return pyodide.runPython(
+            `
+            from js import a
+            def f(self):
+                return self
+            a.f = f
+            a.f() == a
+            `
+        );
+        """
+    )
+
+
+def test_jsproxy_call_meth_js(selenium):
+    assert selenium.run_js(
+        """
+        window.a = {};
+        function f(){return this;}
+        a.f = f;
+        return pyodide.runPython(
+            `
+            from js import a
+            a.f() == a
+            `
+        );
+        """
+    )
 
 
 @pytest.mark.xfail
-def test_jsproxy_call_meth_js(selenium):
-    pass
+def test_jsproxy_call_meth_js_kwargs(selenium):
+    assert selenium.run_js(
+        """
+        window.a = {};
+        function f({ x = 1, y = 1 }){
+            return [this, x, y];
+        }
+        a.f = f;
+        return pyodide.runPython(
+            `
+            from js import a
+            a.f(y=10, x=2) == [a, x, y]
+            `
+        );
+        """
+    )
