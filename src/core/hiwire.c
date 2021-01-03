@@ -35,10 +35,18 @@ hiwire_bool(bool boolean)
 EM_JS(int, hiwire_init, (), {
   let _hiwire = {
     objects : new Map(),
-    // Use a native uint32 for our counter. Counter starts at 1.
+    // counter is used to allocate keys for the objects map.
+    // We use even integers to represent singleton constants which we won't
+    // reference count. We only want to allocate odd keys so we start at 1 and
+    // step by 2. We use a native uint32 for our counter, so counter
+    // automatically overflows back to 1 if it ever gets up to the max u32 =
+    // 2^{31} - 1. This ensures we can keep recycling keys even for very long
+    // sessions. (Also the native u32 is faster since javascript won't convert
+    // it to a float.)
+    // 0 == C NULL is an error code for compatibility with Python calling
+    // conventions.
     counter : new Uint32Array([1])
   };
-  // Special values are even. 0 == C NULL is an error code.
   Module.hiwire = {};
   Module.hiwire.UNDEFINED = _hiwire_undefined();
   Module.hiwire.JSNULL = _hiwire_jsnull();
@@ -57,6 +65,8 @@ EM_JS(int, hiwire_init, (), {
     // duplicate. Maybe in test builds we could raise if jsval is a standard
     // value?
     while (_hiwire.objects.has(_hiwire.counter[0])) {
+      // Increment by two here (and below) because even integers are reserved
+      // for singleton constants
       _hiwire.counter[0] += 2;
     }
     let idval = _hiwire.counter[0];
@@ -81,7 +91,9 @@ EM_JS(int, hiwire_init, (), {
   Module.hiwire.decref = function(idval)
   {
     // clang-format off
-    if (idval % 2 === 0) {
+    if (idval & 1 === 0) {
+      // least significant bit unset ==> idval is a singleton.
+      // We don't reference count singletons.
       // clang-format on
       return;
     }
@@ -92,7 +104,9 @@ EM_JS(int, hiwire_init, (), {
 
 EM_JS(JsRef, hiwire_incref, (JsRef idval), {
   // clang-format off
-  if (idval % 2 === 0) {
+  if (idval & 1 === 0) {
+    // least significant bit unset ==> idval is a singleton.
+    // We don't reference count singletons.
     // clang-format on
     return;
   }
