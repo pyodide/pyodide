@@ -92,10 +92,7 @@ def download_and_extract(
                 tarballname = tarballname[: -len(extension)]
                 break
 
-        if "extract_dir" in pkg["source"]:
-            return buildpath / pkg["source"]["extract_dir"]
-        else:
-            return buildpath / tarballname
+        return buildpath / pkg["source"].get("extract_dir", tarballname)
 
     elif "path" in pkg["source"]:
         srcdir = Path(pkg["source"]["path"])
