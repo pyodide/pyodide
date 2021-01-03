@@ -128,19 +128,36 @@ def test_jsproxy_implicit_iter(selenium):
     ) == [1, 2, 3]
 
 
-def test_jsproxy_kwargs(selenium):
-    selenium.run_js(
+def test_jsproxy_call(selenium):
+    assert (
+        selenium.run_js(
+            """
+        window.f = function(){ return arguments.length; };
+        return pyodide.runPython(
+            `
+            from js import f
+            [f(*range(n)) for n in range(10)]
+            `
+        );
         """
+        )
+        == list(range(10))
+    )
+
+
+def test_jsproxy_call_kwargs(selenium):
+    assert (
+        selenium.run_js(
+            """
         window.kwarg_function = ({ a = 1, b = 1 }) => {
             return a / b;
         };
-        """
-    )
-    assert (
-        selenium.run(
-            """
-        from js import kwarg_function
-        kwarg_function(b = 2, a = 10)
+        return pyodide.runPython(
+            `
+            from js import kwarg_function
+            kwarg_function(b = 2, a = 10)
+            `
+        );
         """
         )
         == 5

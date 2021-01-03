@@ -117,7 +117,6 @@ JsProxy_Vectorcall(PyObject* self,
                    size_t nargsf,
                    PyObject* kwnames)
 {
-  printf("Vectorcall??");
   bool kwargs = false;
   if (kwnames != NULL) {
     PyObject* kwname = PyTuple_GetItem(kwnames, 0);
@@ -135,8 +134,15 @@ JsProxy_Vectorcall(PyObject* self,
     PyErr_Clear();
   }
 
+  // It's currently possible for this to be called recursively in the conversion
+  // functions. python2js does a deep copy and can call PySequenceProtocol apis,
+  // if these have strange user provided implementations then
+  Py_EnterRecursiveCall(" in JsProxy_Vectorcall");
+
+  Py_ssize_t nargs = PyVectorcall_NARGS(nargsf);
   JsRef idargs = hiwire_array();
-  for (Py_ssize_t i = 0; i < nargsf; ++i) {
+  for (Py_ssize_t i = 0; i < nargs; ++i) {
+    PyObject_Print(args[i], stdout, 0);
     JsRef idarg = python2js(args[i]);
     hiwire_push_array(idargs, idarg);
     hiwire_decref(idarg);
@@ -159,6 +165,7 @@ JsProxy_Vectorcall(PyObject* self,
   hiwire_decref(idargs);
   PyObject* pyresult = js2python(idresult);
   hiwire_decref(idresult);
+  Py_LeaveRecursiveCall();
   return pyresult;
 }
 
