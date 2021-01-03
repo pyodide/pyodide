@@ -14,18 +14,7 @@ index e79e732d1f..864dc78a57 100644
  {
 +#ifdef EMSCRIPTEN
 +    return 0;
-+#else
++#endif
  #ifdef MS_WINDOWS
      HANDLE handle;
      DWORD flags;
-@@ -1214,6 +1217,7 @@ set_inheritable(int fd, int inheritable, int raise, int *atomic_flag_works)
-     }
-     return 0;
- #endif
-+#endif
- }
- 
- /* Make the file descriptor non-inheritable.
--- 
-2.25.1
-
