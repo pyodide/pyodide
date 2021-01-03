@@ -34,7 +34,8 @@ $(SRC)/libiconv.a: $(SRC)/Makefile
 	( \
 		cd $(SRC) ; \
 		emconfigure ./configure \
+			CFLAGS="-fPIC" \
 			--disable-dependency-tracking \
 			--disable-shared ; \
-		emmake make -j $${PYODIDE_JOBS:-3} ; \
+		emmake make -j $${PYODIDE_JOBS:-3}; \
 	)

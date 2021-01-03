@@ -19,8 +19,6 @@ Additional build prerequisites are:
 - PyYAML
 - FreeType 2 development libraries to compile Matplotlib.
 - Cython to compile SciPy
-- [lessc](http://lesscss.org/) to compile less to css.
-- [uglifyjs](https://github.com/mishoo/UglifyJS) to minify Javascript builds.
 - gfortran (GNU Fortran 95 compiler)
 - [f2c](http://www.netlib.org/f2c/)
 - [ccache](https://ccache.samba.org) (optional) *highly* recommended for much faster rebuilds.
