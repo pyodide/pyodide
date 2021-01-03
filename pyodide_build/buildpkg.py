@@ -159,7 +159,7 @@ def compile(path: Path, srcpath: Path, pkg: Dict[str, Any], args):
                 "--install-dir",
                 args.install_dir,
                 "--replace-libs",
-                pkg.get("build", {}).get("replace-libs", []).join(";"),
+                ";".join(pkg.get("build", {}).get("replace-libs", []))
             ],
             env=env,
             check=True,

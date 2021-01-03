@@ -210,6 +210,15 @@ def handle_command(line, args, dryrun=False):
     emcc test.c
     ['emcc', 'test.c']
     """
+
+    # some libraries have different names on wasm e.g. png16 = png
+    replace_libs={}
+    for l in args.replace_libs.split(";"):
+        if len(l)>0:
+            from_lib,to_lib=l.split("=")
+            replace_libs[from_lib]=to_lib
+
+
     # This is a special case to skip the compilation tests in numpy that aren't
     # actually part of the build
     for arg in line:
@@ -262,12 +271,9 @@ def handle_command(line, args, dryrun=False):
         # Don't include any system directories
         if arg.startswith("-L/usr"):
             continue
-        if replace_libs in args:
-            for l in args.replace_libs.split(";"):
-                if len(l) > 0:
-                    (from_lib, to_lib) = l.split("=")
-                    if len(from_lib) > 0 and arg.startswith("-l" + from_lib):
-                        arg = arg.replace("-l" + from_lib, "-l" + to_lib)
+        if arg.startswith("-l"):
+            if arg[2:] in replace_libs:
+                arg= "-l"+replace_libs[arg[2:]]
 
         # threading is disabled for now
         if arg == "-pthread":
@@ -460,11 +466,11 @@ def make_parser(parser):
             ),
         )
         parser.add_argument(
-            "--ignore-libs",
+            "--replace-libs",
             type=str,
             nargs="?",
             default="",
-            help="Libraries to ignore in final link",
+            help="Libraries to replace in final link",
         )
     return parser
 
