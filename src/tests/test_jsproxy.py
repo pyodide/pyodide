@@ -1,5 +1,5 @@
 # See also test_typeconversions, and test_python.
-from pytest import xfail
+import pytest
 
 
 def test_jsproxy(selenium):
@@ -165,11 +165,11 @@ def test_jsproxy_call_kwargs(selenium):
     )
 
 
-@xfail
+@pytest.mark.xfail
 def test_jsproxy_call_meth_py(selenium):
     pass
 
 
-@xfail
+@pytest.mark.xfail
 def test_jsproxy_call_meth_js(selenium):
     pass
