@@ -14,10 +14,11 @@ let languagePluginLoader = new Promise((resolve, reject) => {
   let loadedPackages = {};
   let loadPackagePromise = new Promise((resolve) => resolve());
   // Regexp for validating package name and URI
-  let package_name_regexp = '[a-z0-9_][a-z0-9_\-]*'
+  let package_name_regexp_string = '[a-z0-9_][a-z0-9_\-]*'
   let package_uri_regexp =
-      new RegExp('^https?://.*?(' + package_name_regexp + ').js$', 'i');
-  let package_name_regexp = new RegExp('^' + package_name_regexp + '$', 'i');
+      new RegExp('^https?://.*?(' + package_name_regexp_string + ').js$', 'i');
+  let package_name_regexp =
+      new RegExp('^' + package_name_regexp_string + '$', 'i');
 
   let _uri_to_package_name = (package_uri) => {
     // Generate a unique package name from URI
