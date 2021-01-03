@@ -37,21 +37,21 @@ def test_handle_command():
     assert handle_command_wrap("gcc test.c", args) == "emcc test.c"
     assert (
         handle_command_wrap("gcc -shared -c test.o -o test.so", args)
-        == "emcc -shared -c test.bc -o test.wasm"
+        == "emcc -shared -c test.o -o test.wasm"
     )
 
     # check cxxflags injection and cpp detection
     args = Args(cflags="-I./lib2", cxxflags="-std=c++11", ldflags="-lm", host="")
     assert (
         handle_command_wrap("gcc -I./lib1 test.cpp -o test.o", args)
-        == "em++ -I./lib2 -std=c++11 -I./lib1 test.cpp -o test.bc"
+        == "em++ -I./lib2 -std=c++11 -I./lib1 test.cpp -o test.o"
     )
 
     # check ldflags injection
     args = Args(cflags="", cxxflags="", ldflags="-lm", host="")
     assert (
         handle_command_wrap("gcc -shared -c test.o -o test.so", args)
-        == "emcc -lm -shared -c test.bc -o test.wasm"
+        == "emcc -lm -shared -c test.o -o test.wasm"
     )
 
     # compilation checks in numpy
@@ -73,4 +73,4 @@ def test_conda_compiler_compat():
     args = Args(cflags="", cxxflags="", ldflags="", host="")
     assert handle_command_wrap(
         "gcc -shared -c test.o -B /compiler_compat -o test.so", args
-    ) == ("emcc -shared -c test.bc -o test.wasm")
+    ) == ("emcc -shared -c test.o -o test.wasm")
