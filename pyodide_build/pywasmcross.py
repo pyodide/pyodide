@@ -262,6 +262,12 @@ def handle_command(line, args, dryrun=False):
         # Don't include any system directories
         if arg.startswith("-L/usr"):
             continue
+        for l in args.replace_libs.split(";"):
+            if len(l)>0:
+                (from_lib,to_lib) = l.split("=")
+                if len(from_lib)>0 and arg.startswith("-l"+from_lib):
+                    arg= arg.replace("-l"+from_lib,"-l"+to_lib)
+
         # threading is disabled for now
         if arg == "-pthread":
             continue
@@ -451,6 +457,13 @@ def make_parser(parser):
                 "default. Set to 'skip' to skip installation. Installation is "
                 "needed if you want to build other packages that depend on this one."
             ),
+        )
+        parser.add_argument(
+            "--ignore-libs",
+            type=str,
+            nargs="?",
+            default="",
+            help="Libraries to ignore in final link",
         )
     return parser
 
