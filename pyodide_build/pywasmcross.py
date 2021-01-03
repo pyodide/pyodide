@@ -193,7 +193,7 @@ def fix_f2c(fname):
     fname : iterable
         The file name of the C output from f2c (including files in CLAPACK)
     """
-    print("Fixing ",fname)
+    print("Fixing ", fname)
     fileData = open(fname).read()
     doneFixes = False
     while True:
@@ -449,9 +449,9 @@ def install_for_distribution(args):
 
 
 def build_wrap(args):
-    if args.fix_f2c!="":
+    if args.fix_f2c != "":
         print(args.fix_f2c)
-        fix_f2c(args.fix_f2c)            
+        fix_f2c(args.fix_f2c)
         return
     build_log_path = Path("build.log")
     if not build_log_path.is_file():
@@ -517,11 +517,13 @@ def make_parser(parser):
             default="",
             help="Libraries to replace in final link",
         )
-        parser.add_argument("--fix_f2c",
+        parser.add_argument(
+            "--fix_f2c",
             type=str,
             nargs="?",
             default="",
-            help="fix fortran converted files to return void from subroutines")
+            help="fix fortran converted files to return void from subroutines",
+        )
     return parser
 
 

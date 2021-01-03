@@ -82,8 +82,9 @@ def test_f2c(tmp_path):
     # check that subroutines return void in translated code
     Args = namedtuple("args", ["cflags", "cxxflags", "ldflags", "host", "replace_libs"])
     args = Args(cflags="", cxxflags="", ldflags="", host="", replace_libs="")
-    tmp_f=tmp_path / "temp.f"
-    tmp_f.write_text('''
+    tmp_f = tmp_path / "temp.f"
+    tmp_f.write_text(
+        """
       PROGRAM MAIN
       CALL SAYHELLO("bob")
       STOP 'End of program'
@@ -96,13 +97,15 @@ C     In the final program this will be a void return
       WRITE(*,*)TEXT
       END 
 
-''')
+"""
+    )
     f2c(["gfortran", str(tmp_f)])
-    tmp_c=tmp_path/"temp.c"
-    c_code=tmp_c.read_text()
+    tmp_c = tmp_path / "temp.c"
+    c_code = tmp_c.read_text()
     print(c_code)
     # check that the subroutine returns void not int
     assert c_code.find("void sayhello") != -1
+
 
 def test_conda_compiler_compat():
     Args = namedtuple("args", ["cflags", "cxxflags", "ldflags", "host", "replace_libs"])
