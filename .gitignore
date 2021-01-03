@@ -27,12 +27,6 @@ ccache
 
 *.egg-info/
 packages/lz4/lz4-1.8.3
-packages/CLAPACK/CLAPACK-WA
-packages/CLAPACK/clapack.tgz
-packages/libxml/libxml*
-packages/libxslt/libxslt*
-packages/libiconv/libiconv*
-packages/zlib/zlib*
 packages/.artifacts
 packages/*/build.log
 
