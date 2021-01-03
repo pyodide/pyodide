@@ -172,8 +172,7 @@ jobs:
           at: .
       - run:
           name: test
-          command: |
-            pytest emsdk/tests -v
+          command: make -C emsdk test
 
   test-python:
     <<: *defaults
