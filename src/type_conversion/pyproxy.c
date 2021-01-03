@@ -5,80 +5,100 @@
 #include "js2python.h"
 #include "python2js.h"
 
-int
-_pyproxy_has(int ptrobj, int idkey)
+JsRef
+_pyproxy_has(PyObject* pyobj, JsRef idkey)
 {
-  PyObject* pyobj = (PyObject*)ptrobj;
   PyObject* pykey = js2python(idkey);
-  int result = hiwire_bool(PyObject_HasAttr(pyobj, pykey));
+  JsRef result = hiwire_bool(PyObject_HasAttr(pyobj, pykey));
   Py_DECREF(pykey);
   return result;
 }
 
-int
-_pyproxy_get(int ptrobj, int idkey)
+JsRef
+_pyproxy_get(PyObject* pyobj, JsRef idkey)
 {
-  PyObject* pyobj = (PyObject*)ptrobj;
   PyObject* pykey = js2python(idkey);
-  PyObject* pyattr = PyObject_GetAttr(pyobj, pykey);
+  PyObject* pyattr;
+  // HC: HACK until my more thorough rework of pyproxy goes through.
+  // We need globals to work, I want it to be proxied, but we also need
+  // indexing in js to do GetItem, SetItem, and DelItem.
+  // This is harmless though because currently dicts will not get proxied at
+  // all, aside from globals which I specifically hand proxy in runpython.c.
+  if (PyDict_Check(pyobj)) {
+    pyattr = PyObject_GetItem(pyobj, pykey);
+  } else {
+    pyattr = PyObject_GetAttr(pyobj, pykey);
+  }
+
   Py_DECREF(pykey);
   if (pyattr == NULL) {
     PyErr_Clear();
     return hiwire_undefined();
   }
 
-  int idattr = python2js(pyattr);
+  JsRef idattr = python2js(pyattr);
   Py_DECREF(pyattr);
   return idattr;
 };
 
-int
-_pyproxy_set(int ptrobj, int idkey, int idval)
+JsRef
+_pyproxy_set(PyObject* pyobj, JsRef idkey, JsRef idval)
 {
-  PyObject* pyobj = (PyObject*)ptrobj;
   PyObject* pykey = js2python(idkey);
   PyObject* pyval = js2python(idval);
-  int result = PyObject_SetAttr(pyobj, pykey, pyval);
+  // HC: HACK see comment in _pyproxy_get.
+  int result;
+  if (PyDict_Check(pyobj)) {
+    PyObject_SetItem(pyobj, pykey, pyval);
+  } else {
+    PyObject_SetAttr(pyobj, pykey, pyval);
+  }
   Py_DECREF(pykey);
   Py_DECREF(pyval);
 
   if (result) {
-    return pythonexc2js();
+    pythonexc2js();
+    return Js_ERROR;
   }
   return idval;
 }
 
-int
-_pyproxy_deleteProperty(int ptrobj, int idkey)
+JsRef
+_pyproxy_deleteProperty(PyObject* pyobj, JsRef idkey)
 {
-  PyObject* pyobj = (PyObject*)ptrobj;
   PyObject* pykey = js2python(idkey);
-
-  int ret = PyObject_DelAttr(pyobj, pykey);
+  int ret;
+  // HC: HACK see comment in _pyproxy_get.
+  if (PyDict_Check(pyobj)) {
+    ret = PyObject_DelItem(pyobj, pykey);
+  } else {
+    ret = PyObject_DelAttr(pyobj, pykey);
+  }
   Py_DECREF(pykey);
 
   if (ret) {
-    return pythonexc2js();
+    pythonexc2js();
+    return Js_ERROR;
   }
 
   return hiwire_undefined();
 }
 
-int
-_pyproxy_ownKeys(int ptrobj)
+JsRef
+_pyproxy_ownKeys(PyObject* pyobj)
 {
-  PyObject* pyobj = (PyObject*)ptrobj;
   PyObject* pydir = PyObject_Dir(pyobj);
 
   if (pydir == NULL) {
-    return pythonexc2js();
+    pythonexc2js();
+    return Js_ERROR;
   }
 
-  int iddir = hiwire_array();
+  JsRef iddir = hiwire_array();
   Py_ssize_t n = PyList_Size(pydir);
   for (Py_ssize_t i = 0; i < n; ++i) {
     PyObject* pyentry = PyList_GetItem(pydir, i);
-    int identry = python2js(pyentry);
+    JsRef identry = python2js(pyentry);
     hiwire_push_array(iddir, identry);
     hiwire_decref(identry);
   }
@@ -87,20 +107,19 @@ _pyproxy_ownKeys(int ptrobj)
   return iddir;
 }
 
-int
-_pyproxy_enumerate(int ptrobj)
+JsRef
+_pyproxy_enumerate(PyObject* pyobj)
 {
-  return _pyproxy_ownKeys(ptrobj);
+  return _pyproxy_ownKeys(pyobj);
 }
 
-int
-_pyproxy_apply(int ptrobj, int idargs)
+JsRef
+_pyproxy_apply(PyObject* pyobj, JsRef idargs)
 {
-  PyObject* pyobj = (PyObject*)ptrobj;
   Py_ssize_t length = hiwire_get_length(idargs);
   PyObject* pyargs = PyTuple_New(length);
   for (Py_ssize_t i = 0; i < length; ++i) {
-    int iditem = hiwire_get_member_int(idargs, i);
+    JsRef iditem = hiwire_get_member_int(idargs, i);
     PyObject* pyitem = js2python(iditem);
     PyTuple_SET_ITEM(pyargs, i, pyitem);
     hiwire_decref(iditem);
@@ -108,33 +127,34 @@ _pyproxy_apply(int ptrobj, int idargs)
   PyObject* pyresult = PyObject_Call(pyobj, pyargs, NULL);
   if (pyresult == NULL) {
     Py_DECREF(pyargs);
-    return pythonexc2js();
+    pythonexc2js();
+    return Js_ERROR;
   }
-  int idresult = python2js(pyresult);
+  JsRef idresult = python2js(pyresult);
   Py_DECREF(pyresult);
   Py_DECREF(pyargs);
   return idresult;
 }
 
 void
-_pyproxy_destroy(int ptrobj)
+_pyproxy_destroy(PyObject* ptrobj)
 {
-  PyObject* pyobj = (PyObject*)ptrobj;
+  PyObject* pyobj = ptrobj;
   Py_DECREF(ptrobj);
   EM_ASM(delete Module.PyProxies[ptrobj];);
 }
 
-EM_JS(int, pyproxy_use, (int ptrobj), {
+EM_JS(JsRef, pyproxy_use, (PyObject * ptrobj), {
   // Checks if there is already an existing proxy on ptrobj
 
   if (Module.PyProxies.hasOwnProperty(ptrobj)) {
     return Module.hiwire.new_value(Module.PyProxies[ptrobj]);
   }
 
-  return Module.hiwire.UNDEFINED;
+  return Module.hiwire.ERROR;
 })
 
-EM_JS(int, pyproxy_new, (int ptrobj), {
+EM_JS(JsRef, pyproxy_new, (PyObject * ptrobj), {
   // Technically, this leaks memory, since we're holding on to a reference
   // to the proxy forever.  But we have that problem anyway since we don't
   // have a destructor in Javascript to free the Python object.

@@ -5,6 +5,7 @@
  * Utilities to convert Javascript objects to Python objects.
  */
 
+#include "hiwire.h"
 #include <Python.h>
 
 /** Convert a Javascript object to a Python object.
@@ -14,7 +15,7 @@
  *    used to obtain the exception.
  */
 PyObject*
-js2python(int x);
+js2python(JsRef x);
 
 /** Initialize any global variables used by this module. */
 int
