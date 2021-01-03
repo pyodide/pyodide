@@ -1,0 +1,9 @@
+package:
+  name: pyflakes
+  version: 2.1.1
+source:
+  sha256: d976835886f8c5b31d47970ed689944a0262b5f3afa00a5a7b4dc81e5449f8a2
+  url: https://files.pythonhosted.org/packages/52/64/87303747635c2988fcaef18af54bfdec925b6ea3b80bcd28aaca5ba41c9e/pyflakes-2.1.1.tar.gz
+test:
+  imports:
+  - pyflakes

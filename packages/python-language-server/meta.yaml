@@ -1,0 +1,26 @@
+package:
+  name: python-language-server
+  version: 0.31.6
+source:
+  patches:
+    - patches/dummy_threading.patch
+  url: https://files.pythonhosted.org/packages/ae/b8/5a9d460555a11e82282d8998146c63bbdb5c2aa03e1a8ad10dadbd53a23f/python-language-server-0.31.6.tar.gz
+
+test:
+  imports:
+    - pyls
+
+build:
+  entry_points:
+    - pyls = pyls.__main__:main
+
+about:
+  home: https://github.com/palantir/python-language-server
+  license: MIT
+  license_family: MIT
+  license_file: LICENSE
+  summary: An implementation of the Language Server Protocol for Python
+  description: |
+    A Python 2.7 and 3.4+ implementation of the Language Server Protocol
+    making use of Jedi, pycodestyle, Pyflakes and YAPF.
+  dev_url: https://github.com/palantir/python-language-server

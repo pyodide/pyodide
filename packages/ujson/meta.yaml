@@ -1,0 +1,9 @@
+package:
+  name: ujson
+  version: '1.35'
+source:
+  sha256: f66073e5506e91d204ab0c614a148d5aa938bdbf104751be66f8ad7a222f5f86
+  url: https://files.pythonhosted.org/packages/16/c4/79f3409bc710559015464e5f49b9879430d8f87498ecdc335899732e5377/ujson-1.35.tar.gz
+test:
+  imports:
+  - ujson
