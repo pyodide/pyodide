@@ -39,12 +39,6 @@ LDFLAGS=\
 	-s "BINARYEN_TRAP_MODE='clamp'" \
 	-s LZ4=1
 
-JEDI_ROOT=packages/jedi/jedi-0.17.2/jedi
-JEDI_LIBS=$(JEDI_ROOT)/__init__.py
-
-PARSO_ROOT=packages/parso/parso-0.7.1/parso
-PARSO_LIBS=$(PARSO_ROOT)/__init__.py
-
 SITEPACKAGES=root/lib/python$(PYMINOR)/site-packages
 
 all: check \
@@ -129,8 +123,6 @@ clean:
 	rm -fr src/*.o
 	rm -fr node_modules
 	make -C packages clean
-	make -C packages/jedi clean
-	make -C packages/parso clean
 	make -C packages/libxslt clean
 	make -C packages/libxml clean
 	make -C packages/libiconv clean
@@ -163,8 +155,6 @@ $(UGLIFYJS) $(LESSC): emsdk/emsdk/.complete
 
 root/.built: \
 		$(CPYTHONLIB) \
-		$(JEDI_LIBS) \
-		$(PARSO_LIBS) \
 		src/sitecustomize.py \
 		src/webbrowser.py \
 		src/pyodide-py/ \
@@ -173,8 +163,6 @@ root/.built: \
 	mkdir -p root/lib
 	cp -r $(CPYTHONLIB) root/lib
 	mkdir -p $(SITEPACKAGES)
-	cp -r $(JEDI_ROOT) $(SITEPACKAGES)
-	cp -r $(PARSO_ROOT) $(SITEPACKAGES)
 	cp src/sitecustomize.py $(SITEPACKAGES)
 	cp src/webbrowser.py root/lib/python$(PYMINOR)
 	cp src/_testcapi.py	root/lib/python$(PYMINOR)
@@ -215,19 +203,6 @@ $(CPYTHONLIB): emsdk/emsdk/.complete $(PYODIDE_EMCC) $(PYODIDE_CXX)
 	date +"[%F %T] Building cpython..."
 	make -C $(CPYTHONROOT)
 	date +"[%F %T] done building cpython..."
-
-
-$(JEDI_LIBS): $(CPYTHONLIB)
-	date +"[%F %T] Building jedi..."
-	make -C packages/jedi
-	date +"[%F %T] done building jedi."
-
-
-$(PARSO_LIBS): $(CPYTHONLIB)
-	date +"[%F %T] Building parso..."
-	make -C packages/parso
-	date +"[%F %T] done building parso."
-
 
 build/packages.json: FORCE
 	date +"[%F %T] Building packages..."
