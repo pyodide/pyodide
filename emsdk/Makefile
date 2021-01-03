@@ -17,5 +17,9 @@ emsdk/.complete: ../Makefile.envs $(wildcard patches/*.patch)
 	cp emsdk/binaryen/bin/wasm-opt emsdk/fastcomp/bin/
 	touch emsdk/.complete
 
+.PHONY: test
+test:
+	pytest tests/ -v
+
 clean:
 	rm -rf emsdk

@@ -12,7 +12,6 @@ CPYTHONLIB=$(CPYTHONROOT)/installs/python-$(PYVERSION)/lib/python$(PYMINOR)
 PYODIDE_EMCC=$(PYODIDE_ROOT)/ccache/emcc
 PYODIDE_CXX=$(PYODIDE_ROOT)/ccache/em++
 
-SHELL := /bin/bash
 CC=emcc
 CXX=em++
 OPTFLAGS=-O2
@@ -61,12 +60,12 @@ all: check \
 	echo -e "\nSUCCESS!"
 
 
-build/pyodide.asm.js: src/main.bc src/type_conversion/jsimport.bc \
-	        src/type_conversion/jsproxy.bc src/type_conversion/js2python.bc \
-		src/type_conversion/pyimport.bc src/type_conversion/pyproxy.bc \
-		src/type_conversion/python2js.bc \
-		src/type_conversion/python2js_buffer.bc \
-		src/type_conversion/runpython.bc src/type_conversion/hiwire.bc \
+build/pyodide.asm.js: src/core/main.bc src/core/jsimport.bc \
+	        src/core/jsproxy.bc src/core/js2python.bc \
+		src/core/pyproxy.bc \
+		src/core/python2js.bc \
+		src/core/python2js_buffer.bc \
+		src/core/runpython.bc src/core/hiwire.bc \
 		root/.built
 	date +"[%F %T] Building pyodide.asm.js..."
 	[ -d build ] || mkdir build
@@ -144,7 +143,7 @@ clean-all: clean
 	rm -fr cpython/build
 
 %.bc: %.c $(CPYTHONLIB) $(wildcard src/**/*.h)
-	$(CC) -o $@ -c $< $(CFLAGS) -Isrc/type_conversion/
+	$(CC) -o $@ -c $< $(CFLAGS) -Isrc/core/
 
 
 build/test.data: $(CPYTHONLIB)

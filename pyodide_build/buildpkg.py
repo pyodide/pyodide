@@ -150,6 +150,8 @@ def compile(path: Path, srcpath: Path, pkg: Dict[str, Any], args):
                 "pywasmcross",
                 "--cflags",
                 args.cflags + " " + pkg.get("build", {}).get("cflags", ""),
+                "--cxxflags",
+                args.cxxflags + " " + pkg.get("build", {}).get("cxxflags", ""),
                 "--ldflags",
                 args.ldflags + " " + pkg.get("build", {}).get("ldflags", ""),
                 "--target",
@@ -273,6 +275,13 @@ def make_parser(parser: argparse.ArgumentParser):
         nargs="?",
         default=common.DEFAULTCFLAGS,
         help="Extra compiling flags",
+    )
+    parser.add_argument(
+        "--cxxflags",
+        type=str,
+        nargs="?",
+        default=common.DEFAULTCXXFLAGS,
+        help="Extra C++ specifc compiling flags",
     )
     parser.add_argument(
         "--ldflags",

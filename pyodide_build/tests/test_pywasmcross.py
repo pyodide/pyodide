@@ -31,8 +31,8 @@ f2c_wrap = _args_wrapper(f2c)
 
 
 def test_handle_command():
-    Args = namedtuple("args", ["cflags", "ldflags", "host"])
-    args = Args(cflags="", ldflags="", host="")
+    Args = namedtuple("args", ["cflags", "cxxflags", "ldflags", "host"])
+    args = Args(cflags="", cxxflags="", ldflags="", host="")
     assert handle_command_wrap("gcc -print-multiarch", args) is None
     assert handle_command_wrap("gcc test.c", args) == "emcc test.c"
     assert (
@@ -40,8 +40,15 @@ def test_handle_command():
         == "emcc -shared -c test.bc -o test.wasm"
     )
 
+    # check cxxflags injection and cpp detection
+    args = Args(cflags="-I./lib2", cxxflags="-std=c++11", ldflags="-lm", host="")
+    assert (
+        handle_command_wrap("gcc -I./lib1 test.cpp -o test.o", args)
+        == "em++ -I./lib2 -std=c++11 -I./lib1 test.cpp -o test.bc"
+    )
+
     # check ldflags injection
-    args = Args(cflags="", ldflags="-lm", host="")
+    args = Args(cflags="", cxxflags="", ldflags="-lm", host="")
     assert (
         handle_command_wrap("gcc -shared -c test.o -o test.so", args)
         == "emcc -lm -shared -c test.bc -o test.wasm"
@@ -62,8 +69,8 @@ def test_f2c():
 
 
 def test_conda_compiler_compat():
-    Args = namedtuple("args", ["cflags", "ldflags", "host"])
-    args = Args(cflags="", ldflags="", host="")
+    Args = namedtuple("args", ["cflags", "cxxflags", "ldflags", "host"])
+    args = Args(cflags="", cxxflags="", ldflags="", host="")
     assert handle_command_wrap(
         "gcc -shared -c test.o -B /compiler_compat -o test.so", args
     ) == ("emcc -shared -c test.bc -o test.wasm")

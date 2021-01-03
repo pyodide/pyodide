@@ -18,7 +18,18 @@ JsRef
 _pyproxy_get(PyObject* pyobj, JsRef idkey)
 {
   PyObject* pykey = js2python(idkey);
-  PyObject* pyattr = PyObject_GetAttr(pyobj, pykey);
+  PyObject* pyattr;
+  // HC: HACK until my more thorough rework of pyproxy goes through.
+  // We need globals to work, I want it to be proxied, but we also need
+  // indexing in js to do GetItem, SetItem, and DelItem.
+  // This is harmless though because currently dicts will not get proxied at
+  // all, aside from globals which I specifically hand proxy in runpython.c.
+  if (PyDict_Check(pyobj)) {
+    pyattr = PyObject_GetItem(pyobj, pykey);
+  } else {
+    pyattr = PyObject_GetAttr(pyobj, pykey);
+  }
+
   Py_DECREF(pykey);
   if (pyattr == NULL) {
     PyErr_Clear();
@@ -35,7 +46,13 @@ _pyproxy_set(PyObject* pyobj, JsRef idkey, JsRef idval)
 {
   PyObject* pykey = js2python(idkey);
   PyObject* pyval = js2python(idval);
-  int result = PyObject_SetAttr(pyobj, pykey, pyval);
+  // HC: HACK see comment in _pyproxy_get.
+  int result;
+  if (PyDict_Check(pyobj)) {
+    PyObject_SetItem(pyobj, pykey, pyval);
+  } else {
+    PyObject_SetAttr(pyobj, pykey, pyval);
+  }
   Py_DECREF(pykey);
   Py_DECREF(pyval);
 
@@ -50,8 +67,13 @@ JsRef
 _pyproxy_deleteProperty(PyObject* pyobj, JsRef idkey)
 {
   PyObject* pykey = js2python(idkey);
-
-  int ret = PyObject_DelAttr(pyobj, pykey);
+  int ret;
+  // HC: HACK see comment in _pyproxy_get.
+  if (PyDict_Check(pyobj)) {
+    ret = PyObject_DelItem(pyobj, pykey);
+  } else {
+    ret = PyObject_DelAttr(pyobj, pykey);
+  }
   Py_DECREF(pykey);
 
   if (ret) {
