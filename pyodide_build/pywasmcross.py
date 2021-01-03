@@ -212,12 +212,11 @@ def handle_command(line, args, dryrun=False):
     """
 
     # some libraries have different names on wasm e.g. png16 = png
-    replace_libs={}
+    replace_libs = {}
     for l in args.replace_libs.split(";"):
-        if len(l)>0:
-            from_lib,to_lib=l.split("=")
-            replace_libs[from_lib]=to_lib
-
+        if len(l) > 0:
+            from_lib, to_lib = l.split("=")
+            replace_libs[from_lib] = to_lib
 
     # This is a special case to skip the compilation tests in numpy that aren't
     # actually part of the build
@@ -273,7 +272,7 @@ def handle_command(line, args, dryrun=False):
             continue
         if arg.startswith("-l"):
             if arg[2:] in replace_libs:
-                arg= "-l"+replace_libs[arg[2:]]
+                arg = "-l" + replace_libs[arg[2:]]
 
         # threading is disabled for now
         if arg == "-pthread":
