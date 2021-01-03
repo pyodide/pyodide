@@ -184,7 +184,6 @@ def minify_python(buildpath: Path, srcpath: Path, pkg: Dict[str, Any], args):
     import python_minifier
 
     allPythonFiles = srcpath.rglob("*.py")
-    allPythonFiles = []
     for fname in allPythonFiles:
         newName = fname.with_suffix(".ori")
         shutil.copy(fname, newName)
