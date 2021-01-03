@@ -61,7 +61,7 @@ def test_handle_command():
     )
 
     # check library replacement
-    args = Args(cflags="", cxxflags="", ldflags="", host="", replace_libs=["bob=fred"])
+    args = Args(cflags="", cxxflags="", ldflags="", host="", replace_libs="bob=fred")
     assert (
         handle_command_wrap("gcc -shared -c test.o -lbob1213 -o test.so", args)
         == "emcc -lm -shared -c test.bc -lfred1213 -o test.wasm"
