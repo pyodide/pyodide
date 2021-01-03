@@ -269,9 +269,10 @@ def handle_command(line, args, dryrun=False):
         if arg.startswith("-L/usr"):
             continue
         skip_lib = False
-        for l in args.ignore_libs.strip().split(";"):
-            if len(l) > 0 and arg.startswith("-l" + l):
-                skip_lib = True
+        if ignore_libs in args:
+            for l in args.ignore_libs.strip().split(";"):
+                if len(l) > 0 and arg.startswith("-l" + l):
+                    skip_lib = True
         if skip_lib:
             continue
 
