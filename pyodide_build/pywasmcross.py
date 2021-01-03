@@ -262,11 +262,12 @@ def handle_command(line, args, dryrun=False):
         # Don't include any system directories
         if arg.startswith("-L/usr"):
             continue
-        for l in args.replace_libs.split(";"):
-            if len(l)>0:
-                (from_lib,to_lib) = l.split("=")
-                if len(from_lib)>0 and arg.startswith("-l"+from_lib):
-                    arg= arg.replace("-l"+from_lib,"-l"+to_lib)
+        if replace_libs in args:
+            for l in args.replace_libs.split(";"):
+                if len(l) > 0:
+                    (from_lib, to_lib) = l.split("=")
+                    if len(from_lib) > 0 and arg.startswith("-l" + from_lib):
+                        arg = arg.replace("-l" + from_lib, "-l" + to_lib)
 
         # threading is disabled for now
         if arg == "-pthread":
