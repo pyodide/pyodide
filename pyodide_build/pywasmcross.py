@@ -187,7 +187,7 @@ def f2c(args, dryrun=False):
     return new_args
 
 
-def handle_command(line, args, dryrun=False):
+def handle_command(line,args, dryrun=False):
     """Handle a compilation command
 
     Parameters
@@ -204,13 +204,12 @@ def handle_command(line, args, dryrun=False):
     --------
 
     >>> from collections import namedtuple
-    >>> Args = namedtuple('args', ['cflags', 'cxxflags', 'ldflags', 'host'])
-    >>> args = Args(cflags='', cxxflags='', ldflags='', host='')
+    >>> Args = namedtuple('args', ['cflags', 'cxxflags', 'ldflags', 'host','replace_libs'])
+    >>> args = Args(cflags='', cxxflags='', ldflags='', host='',replace_libs='')
     >>> handle_command(['gcc', 'test.c'], args, dryrun=True)
     emcc test.c
     ['emcc', 'test.c']
     """
-
     # some libraries have different names on wasm e.g. png16 = png
     replace_libs = {}
     for l in args.replace_libs.split(";"):
