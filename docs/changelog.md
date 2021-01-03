@@ -16,9 +16,13 @@
 
   As part of the change, Module.checkABI is no longer present.
   [#991](https://github.com/iodide-project/pyodide/pull/991)
-- six, jedi and parso is no longer vendored in the main pyodide package, and needs to be loaded
-  explicitly [#1010](https://github.com/iodide-project/pyodide/pull/1010),
+- six, jedi and parso are no longer vendored in the main pyodide package, and
+  need to be loaded explicitly
+  [#1010](https://github.com/iodide-project/pyodide/pull/1010),
   [#987](https://github.com/iodide-project/pyodide/pull/987).
+
+  This also implies that to use `pyodide.autocomplete`, the jedi
+  package must be explicitly loaded.
 
 
 ### Added
