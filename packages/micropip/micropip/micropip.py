@@ -103,12 +103,12 @@ def _parse_wheel_url(url: str) -> Tuple[str, Dict[str, Any], str]:
     return name, wheel, version
 
 
-def extract_wheel(fd):
+def _extract_wheel(fd):
     with zipfile.ZipFile(fd) as zf:
         zf.extractall(WHEEL_BASE)
 
 
-def validate_wheel(data, fileinfo):
+def _validate_wheel(data, fileinfo):
     if fileinfo.get("digests") is None:
         # No checksums available, e.g. because installing
         # from a different location than PyPi.
@@ -120,13 +120,13 @@ def validate_wheel(data, fileinfo):
         raise ValueError("Contents don't match hash")
 
 
-def install_wheel(name, fileinfo, resolve, reject):
+def _install_wheel(name, fileinfo, resolve, reject):
     url = fileinfo["url"]
 
     def callback(wheel):
         try:
-            validate_wheel(wheel, fileinfo)
-            extract_wheel(wheel)
+            _validate_wheel(wheel, fileinfo)
+            _extract_wheel(wheel)
         except Exception as e:
             reject(str(e))
         else:
@@ -186,7 +186,7 @@ class _PackageManager:
 
         # Now install PyPI packages
         for name, wheel, ver in transaction["wheels"]:
-            install_wheel(name, wheel, do_resolve, reject)
+            _install_wheel(name, wheel, do_resolve, reject)
             self.installed_packages[name] = ver
 
     def add_requirement(self, requirement: str, ctx, transaction):
