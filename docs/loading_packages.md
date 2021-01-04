@@ -1,8 +1,7 @@
 (loading_packages)=
 # Loading packages
 
-Only the Python standard library and [six](https://pypi.org/project/six/) are 
-available after importing Pyodide.
+Only the Python standard library is available after importing Pyodide.
 To use other packages, you’ll need to load them using either:
  - {ref}`pyodide.loadPackage <js_api_pyodide_loadPackage>` for packages built
    with pyodide, or 
