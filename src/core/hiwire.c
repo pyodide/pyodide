@@ -91,7 +91,7 @@ EM_JS(int, hiwire_init, (), {
   Module.hiwire.decref = function(idval)
   {
     // clang-format off
-    if (idval & 1 === 0) {
+    if ((idval & 1) === 0) {
       // least significant bit unset ==> idval is a singleton.
       // We don't reference count singletons.
       // clang-format on
@@ -104,7 +104,7 @@ EM_JS(int, hiwire_init, (), {
 
 EM_JS(JsRef, hiwire_incref, (JsRef idval), {
   // clang-format off
-  if (idval & 1 === 0) {
+  if ((idval & 1) === 0) {
     // least significant bit unset ==> idval is a singleton.
     // We don't reference count singletons.
     // clang-format on
