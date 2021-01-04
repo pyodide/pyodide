@@ -92,7 +92,8 @@ def download_and_extract(
                 tarballname = tarballname[: -len(extension)]
                 break
 
-        return buildpath / tarballname
+        return buildpath / pkg["source"].get("extract_dir", tarballname)
+
     elif "path" in pkg["source"]:
         srcdir = Path(pkg["source"]["path"])
 
@@ -212,6 +213,23 @@ def package_files(buildpath: Path, srcpath: Path, pkg: Dict[str, Any], args):
         fd.write(b"\n")
 
 
+def run_script(buildpath: Path, srcpath: Path, pkg: Dict[str, Any]):
+    # We don't really do packaging, but needs_rebuild checks .packaged to
+    # determine if it needs to rebuild
+    if (buildpath / ".packaged").is_file():
+        return
+
+    orig_path = Path.cwd()
+    os.chdir(srcpath)
+    try:
+        subprocess.run(["bash", "-c", pkg["build"]["script"]], check=True)
+    finally:
+        os.chdir(orig_path)
+
+    with open(buildpath / ".packaged", "wb") as fd:
+        fd.write(b"\n")
+
+
 def needs_rebuild(pkg: Dict[str, Any], path: Path, buildpath: Path) -> bool:
     """
     Determines if a package needs a rebuild because its meta.yaml, patches, or
@@ -240,7 +258,7 @@ def build_package(path: Path, args):
     name = pkg["package"]["name"]
     t0 = datetime.now()
     print("[{}] Building package {}...".format(t0.strftime("%Y-%m-%d %H:%M:%S"), name))
-    packagedir = name + "-" + pkg["package"]["version"]
+    packagedir = name + "-" + str(pkg["package"]["version"])
     dirpath = path.parent
     orig_path = Path.cwd()
     os.chdir(dirpath)
@@ -254,8 +272,11 @@ def build_package(path: Path, args):
             os.makedirs(buildpath)
         srcpath = download_and_extract(buildpath, packagedir, pkg, args)
         patch(path, srcpath, pkg, args)
-        compile(path, srcpath, pkg, args)
-        package_files(buildpath, srcpath, pkg, args)
+        if pkg.get("build", {}).get("library"):
+            run_script(buildpath, srcpath, pkg)
+        else:
+            compile(path, srcpath, pkg, args)
+            package_files(buildpath, srcpath, pkg, args)
     finally:
         os.chdir(orig_path)
         t1 = datetime.now()

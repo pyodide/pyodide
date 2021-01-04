@@ -123,11 +123,7 @@ clean:
 	rm -fr src/*.o
 	rm -fr node_modules
 	make -C packages clean
-	make -C packages/libxslt clean
-	make -C packages/libxml clean
-	make -C packages/libiconv clean
-	make -C packages/zlib clean
-	echo "The Emsdk, CPython and CLAPACK are not cleaned. cd into those directories to do so."
+	echo "The Emsdk, CPython are not cleaned. cd into those directories to do so."
 
 clean-all: clean
 	make -C emsdk clean
