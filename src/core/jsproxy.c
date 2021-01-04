@@ -23,6 +23,7 @@ typedef struct
 {
   PyObject_HEAD
   vectorcallfunc vectorcall;
+  int supports_kwargs; // -1 : don't know. 0 : no, 1 : yes
   JsRef js;
   PyObject* bytes;
 } JsProxy;
@@ -110,6 +111,7 @@ JsProxy_SetAttr(PyObject* o, PyObject* attr_name, PyObject* pyvalue)
 }
 
 #define JsProxy_JSREF(x) (((JsProxy*)x)->js)
+#define JsProxy_SUPPORTS_KWARGS(x) (((JsProxy*)x)->supports_kwargs)
 
 static PyObject*
 JsProxy_Vectorcall(PyObject* self,
@@ -125,8 +127,12 @@ JsProxy_Vectorcall(PyObject* self,
     PyErr_Clear();
     if (kwname != NULL) {
       kwargs = true;
+      if (JsProxy_SUPPORTS_KWARGS(self) == -1) {
+        JsProxy_SUPPORTS_KWARGS(self) =
+          hiwire_function_supports_kwargs(JsProxy_JSREF(self));
+      }
     }
-    if (kwargs && !hiwire_function_supports_kwargs(JsProxy_JSREF(self))) {
+    if (kwargs && !JsProxy_SUPPORTS_KWARGS(self)) {
       // We have kwargs but function doesn't support them. Raise error.
       const char* kwname_utf8 = PyUnicode_AsUTF8(kwname);
       PyErr_Format(PyExc_TypeError,
@@ -478,6 +484,7 @@ JsProxy_cnew(JsRef idobj)
   self->vectorcall = JsProxy_Vectorcall;
   self->js = hiwire_incref(idobj);
   self->bytes = NULL;
+  self->supports_kwargs = -1; // don't know
   return (PyObject*)self;
 }
 
