@@ -69,7 +69,3 @@ def _monkeypatch_path_importer_cache():
         return cls._path_hooks(path)
 
     PathFinder._path_importer_cache = _path_importer_cache
-
-
-_monkeypatch_path_importer_cache()
-del _monkeypatch_path_importer_cache
