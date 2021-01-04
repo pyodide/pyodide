@@ -153,7 +153,7 @@ class SeleniumWrapper:
             )
         )
         try:
-            self.wait.until(PackageLoaded)
+            self.wait.until(package_loaded)
         except TimeoutException:
             _display_driver_logs(self.browser, self.driver)
             print(self.logs)
@@ -224,7 +224,7 @@ class SeleniumWrapper:
             )
         )
         try:
-            self.wait.until(PackageLoaded)
+            self.wait.until(package_loaded)
         except TimeoutException:
             _display_driver_logs(self.browser, self.driver)
             print(self.logs)
@@ -256,7 +256,7 @@ class SeleniumWrapper:
 
         __tracebackhide__ = True
         try:
-            self.wait.until(PackageLoaded)
+            self.wait.until(package_loaded)
         except TimeoutException:
             _display_driver_logs(self.browser, self.driver)
             print(self.logs)
