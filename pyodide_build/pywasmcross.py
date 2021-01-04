@@ -330,7 +330,7 @@ def handle_command(line, args, dryrun=False):
             continue
 
         # See https://github.com/emscripten-core/emscripten/issues/8650
-        if arg in ["-lfreetype", "-lz", "-lpng16", "-lgfortran"]:
+        if arg in ["-lfreetype", "-lz", "-lpng", "-lgfortran"]:
             continue
 
         new_args.append(arg)
