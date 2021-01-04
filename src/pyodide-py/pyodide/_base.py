@@ -8,7 +8,7 @@ import ast
 from asyncio import iscoroutine
 from io import StringIO
 from textwrap import dedent
-from typing import Dict, List, Any, Tuple
+from typing import Dict, List, Any
 import tokenize
 
 
@@ -77,7 +77,7 @@ def quiet_code(code: str) -> bool:
     return False
 
 
-def eval_code(code: str, ns: Dict[str, Any]) -> None:
+def eval_code(code: str, ns: Dict[str, Any], compile_flags: int = 0) -> Any:
     """Runs a code string.
 
     Parameters
@@ -86,6 +86,8 @@ def eval_code(code: str, ns: Dict[str, Any]) -> None:
        the Python code to run.
     ns
        `locals()` or `globals()` context where to execute code.
+    compile_flags
+       AST compile flags.
 
     Returns
     -------
@@ -100,61 +102,25 @@ def eval_code(code: str, ns: Dict[str, Any]) -> None:
     if len(mod.body) == 0:
         return None
 
-    target_name = "<EXEC-LAST-EXPRESSION>"
-    mod = _adjust_ast_to_store_result(target_name, mod, code)
-    eval(compile(mod, "<exec>", mode="exec"), ns, ns)
-    return ns.pop(target_name)
+    # we extract last expression
+    last_expr = None
+    if isinstance(mod.body[-1], (ast.Expr, ast.Await)) and not quiet_code(code):
+        last_expr = ast.Expression(mod.body.pop().value)  # type: ignore
+
+    # then run code
+    if len(mod.body):
+        exec(compile(mod, "<exec>", "exec", flags=compile_flags), ns, ns)
+    if last_expr is not None:
+        return eval(compile(last_expr, "<exec>", "eval", flags=compile_flags), ns, ns)
 
 
-COMPILE_FLAGS = ast.PyCF_ALLOW_TOP_LEVEL_AWAIT  # type: ignore
-
-
-async def _eval_code_async(code: str, ns: Dict[str, Any]) -> None:
+async def _eval_code_async(code: str, ns: Dict[str, Any]) -> Any:
     """ For use once we add an EventLoop. """
-    # handle mis-indented input from multi-line strings
-    code = dedent(code)
-
-    mod = ast.parse(code)
-    if len(mod.body) == 0:
-        return None
-
-    target_name = "<EXEC-LAST-EXPRESSION>"
-    mod = _adjust_ast_to_store_result(target_name, mod, code)
-    res = eval(compile(mod, "<exec>", mode="exec", flags=COMPILE_FLAGS), ns, ns)
+    res = eval_code(code, ns, compile_flags=ast.PyCF_ALLOW_TOP_LEVEL_AWAIT)  # type: ignore
     if iscoroutine(res):
-        await res
-    return ns.pop(target_name)
-
-
-def _adjust_ast_to_store_result(
-    target_name: str, tree: ast.Module, code: str
-) -> ast.Module:
-    """Add instruction to store result of expression into a variable with
-    name "target_name"
-    """
-    target = [ast.Name(target_name, ctx=ast.Store())]
-    [tree, result] = _adjust_ast_to_store_result_helper(tree, code)
-    tree.body.append(ast.Assign(target, result))
-    ast.fix_missing_locations(tree)
-    return tree
-
-
-def _adjust_ast_to_store_result_helper(
-    tree: ast.Module, code: str
-) -> Tuple[ast.Module, ast.expr]:
-    # If the source ends in a semicolon, supress the result.
-    if quiet_code(code):
-        return (tree, ast.Constant(None, None))  # type: ignore
-
-    # We directly wrap Expr or Await node in an Assign node.
-    last_node = tree.body[-1]
-    if isinstance(last_node, (ast.Expr, ast.Await)):
-        tree.body.pop()
-        return (tree, last_node.value)
-
-    # Remaining ast Nodes have no return value
-    # (not sure what other possibilities there are actually...)
-    return (tree, ast.Constant(None, None))  # type: ignore
+        return await res
+    else:
+        return res
 
 
 def find_imports(code: str) -> List[str]:
