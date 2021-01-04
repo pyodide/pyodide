@@ -252,7 +252,7 @@ JsImport_Check(PyObject* module){
   } while(0)
 
 int
-JsImport_mount(char* name_utf8, JsRef package_id){
+JsImport_register(char* name_utf8, JsRef package_id){
   bool success = false;
   // Note: these are all of the objects that we will own.
   // If a function returns a borrow, we incref the result so that
@@ -343,7 +343,7 @@ finally:
 }
 
 int
-JsImport_dismount(char* name_utf8){
+JsImport_unregister(char* name_utf8){
   bool success = false;
   PyObject* name = PyUnicode_FromString(name_utf8);
   PyObject* sys_modules = PyImport_GetModuleDict();
@@ -381,19 +381,19 @@ JsImport_init()
   if(
     EM_ASM_INT({
       try {
-        Module.mountPackage = function(name, obj){
+        Module.registerJsModule = function(name, obj){
           let obj_id = Module.hiwire.new_value(obj);
           let name_utf8 = stringToNewUTF8(name);
-          if(_JsImport_mount(name_utf8, obj_id)){
+          if(_JsImport_register(name_utf8, obj_id)){
             _pythonexc2js();
           }
           Module.hiwire.decref(obj_id);
           _free(name_utf8);
         };
 
-        Module.dismountPackage = function(name){
+        Module.unregisterJsModule = function(name){
           let name_utf8 = stringToNewUTF8(name);
-          if(_JsImport_dismount(name_utf8)){
+          if(_JsImport_unregister(name_utf8)){
             _pythonexc2js();
           }
           _free(name_utf8);
