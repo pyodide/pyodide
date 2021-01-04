@@ -103,8 +103,8 @@ def test_jsproxy_iter(selenium):
           return {
             next: function() {
               return nextIndex < array.length ?
-                {value: array[nextIndex++], done: False} :
-                {done: True};
+                {value: array[nextIndex++], done: false} :
+                {done: true};
             }
           };
         }
