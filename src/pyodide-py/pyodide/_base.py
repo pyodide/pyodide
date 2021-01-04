@@ -58,7 +58,7 @@ def quiet_code(code: str) -> bool:
     for token in reversed(tokens):
         if token.type in (
             tokenize.ENDMARKER,
-            tokenize.NL,
+            tokenize.NL,  # ignoring empty lines (\n\n)
             tokenize.NEWLINE,
             tokenize.COMMENT,
         ):
