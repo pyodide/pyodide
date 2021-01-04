@@ -48,6 +48,15 @@ def quiet_code(code: str) -> bool:
     Does the last nonwhitespace character of code is a semicolon?
 
     This can be overridden to customize the way eval_code is silenced.
+
+    Examples
+    --------
+    >>> quiet_code('x + 1')
+    False
+    >>> quiet_code('x + 1 ;')
+    True
+    >>> quiet_code('x + 1 # comment ;')
+    False
     """
     # largely inspired from IPython:
     # https://github.com/ipython/ipython/blob/86d24741188b0cedd78ab080d498e775ed0e5272/IPython/core/displayhook.py#L84
