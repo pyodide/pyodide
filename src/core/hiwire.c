@@ -139,42 +139,43 @@ EM_JS(int, hiwire_init, (), {
       if(x === " " || x === "\n" || x === "\t"){
         continue;
       }
-      if(paren_depth === 0 && x === ")" && STATE !== QUOTE && STATE !== QUOTE_ESCAPE)
-      {
-        // We hit closing brace which ends argspec.
-        // We have to handle this up here in case argspec ends in a trailing comma
-        // (if we're in state START_ARG, the next check would clobber arg_is_obj_dest).
-        return arg_is_obj_dest;
+      if(paren_depth === 0){
+        if(x === ")" && STATE !== QUOTE && STATE !== QUOTE_ESCAPE){
+          // We hit closing brace which ends argspec.
+          // We have to handle this up here in case argspec ends in a trailing comma
+          // (if we're in state START_ARG, the next check would clobber arg_is_obj_dest).
+          return arg_is_obj_dest;
+        }
+        if(x === ","){
+          state = START_ARG;
+          continue;
+        }
+        // otherwise fall through
       }
       if(state === START_ARG){
         // Nonwhitespace character in START_ARG so now we're in state arg.
         state = ARG;
         arg_is_obj_dest = x === "{";
-        // don't continue.
+        // don't continue, fall through to next switch
       }
       switch(x){
-        case ",":
-          if(paren_depth === 0){
-            state = START_ARG;
-          }
-          continue;
         case "[": case "{": case "(":
           paren_depth ++;
           continue;
         case "]": case "}": case ")":
           paren_depth--;
           continue;
-        case "'": case '"': case '`':
+        case "'": case '"': case '\`':
           state = QUOTE;
           quote_start = x;
           continue;
       }
     }
-    // clang-format on
     // Correct exit is paren_depth === 0 && x === ")" test above.
-    throw new Error("Assertion failure: this is a logic error in "
-                    "hiwire_function_supports_kwargs");
-  }
+    throw new Error("Assertion failure: this is a logic error in \
+                     hiwire_function_supports_kwargs");
+    // clang-format on
+  };
 
   return 0;
 });
