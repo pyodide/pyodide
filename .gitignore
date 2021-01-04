@@ -1,4 +1,3 @@
-*.bc
 *.a
 *.o
 *.pyc
@@ -21,12 +20,10 @@ installs
 ccache
 
 /root/
-/build/
 
 /emsdk/emsdk
 
 *.egg-info/
-packages/lz4/lz4-1.8.3
 packages/.artifacts
 packages/*/build.log
 
