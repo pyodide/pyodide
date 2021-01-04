@@ -9,6 +9,7 @@ from asyncio import iscoroutine
 from io import StringIO
 from textwrap import dedent
 from typing import Dict, List, Any, Tuple
+import tokenize
 
 
 class JsException(Exception):
@@ -40,6 +41,31 @@ def open_url(url: str) -> StringIO:
     req.open("GET", url, False)
     req.send(None)
     return StringIO(req.response)
+
+
+def quiet_code(code: str) -> bool:
+    """
+    Does the last nonwhitespace character of code is a semicolon?
+
+    This can be overridden to customize the way eval_code is silenced.
+    """
+    # largely inspired from IPython:
+    # https://github.com/ipython/ipython/blob/86d24741188b0cedd78ab080d498e775ed0e5272/IPython/core/displayhook.py#L84
+
+    codeio = StringIO(code)
+    tokens = list(tokenize.generate_tokens(codeio.readline))
+
+    for token in reversed(tokens):
+        if token.type in (
+            tokenize.ENDMARKER,
+            tokenize.NL,
+            tokenize.NEWLINE,
+            tokenize.COMMENT,
+        ):
+            continue
+        return (token.type == tokenize.OP) and (token.string == ";")
+
+    return False
 
 
 def eval_code(code: str, ns: Dict[str, Any]) -> None:
@@ -108,7 +134,7 @@ def _adjust_ast_to_store_result_helper(
     tree: ast.Module, code: str
 ) -> Tuple[ast.Module, ast.expr]:
     # If the source ends in a semicolon, supress the result.
-    if code.strip()[-1] == ";":
+    if quiet_code(code):
         return (tree, ast.Constant(None, None))  # type: ignore
 
     # We directly wrap Expr or Await node in an Assign node.
