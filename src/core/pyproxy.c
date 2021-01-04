@@ -58,7 +58,7 @@ _pyproxy_set(PyObject* pyobj, JsRef idkey, JsRef idval)
 
   if (result) {
     pythonexc2js();
-    return Js_ERROR;
+    return NULL;
   }
   return idval;
 }
@@ -78,7 +78,7 @@ _pyproxy_deleteProperty(PyObject* pyobj, JsRef idkey)
 
   if (ret) {
     pythonexc2js();
-    return Js_ERROR;
+    return NULL;
   }
 
   return hiwire_undefined();
@@ -91,7 +91,7 @@ _pyproxy_ownKeys(PyObject* pyobj)
 
   if (pydir == NULL) {
     pythonexc2js();
-    return Js_ERROR;
+    return NULL;
   }
 
   JsRef iddir = hiwire_array();
@@ -128,7 +128,7 @@ _pyproxy_apply(PyObject* pyobj, JsRef idargs)
   if (pyresult == NULL) {
     Py_DECREF(pyargs);
     pythonexc2js();
-    return Js_ERROR;
+    return NULL;
   }
   JsRef idresult = python2js(pyresult);
   Py_DECREF(pyresult);
