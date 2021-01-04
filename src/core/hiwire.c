@@ -85,6 +85,102 @@ EM_JS(int, hiwire_init, (), {
     }
     _hiwire.objects.delete(idval);
   };
+
+  // Put this here so we can test it.
+  Module.hiwire.function_supports_kwargs = function(funcstr)
+  {
+    // This is basically a finite state machine (except for paren counting)
+    // Start at beginning of argspec
+    let idx = funcstr.indexOf("(") + 1;
+    // States:
+    // START_ARG -- Start of an argument. We leave this state when we see a non
+    // whitespace character.
+    //    If the first nonwhitespace character we see is `{` this is an object
+    //    destructuring argument. Else it's not. When we see non whitespace goto
+    //    state ARG and set `arg_is_obj_dest` true if it's "{", else false.
+    // ARG -- we're in the middle of an argument. Count parens. On comma, if
+    // parens_depth === 0 goto state START_ARG, on quote set
+    //      set quote_start and goto state QUOTE.
+    // QUOTE -- We're in a quote. Record quote_start in quote_start and look for
+    // a matching end quote.
+    //    On end quote, goto state ARGS. If we see "\\" goto state QUOTE_ESCAPE.
+    // QUOTE_ESCAPE -- unconditionally goto state QUOTE.
+    // If we see a ) when parens_depth === 0, return arg_is_obj_dest.
+    let START_ARG = 1;
+    let ARG = 2;
+    let QUOTE = 3;
+    let QUOTE_ESCAPE = 4;
+    let paren_depth = 0;
+    let arg_start = 0;
+    let arg_is_obj_dest = false;
+    let quote_start = undefined;
+    let state = START_ARG;
+    for (i = idx; i < funcstr.length; i++) {
+      let x = funcstr[i];
+      if (state == = QUOTE) {
+        switch (x) {
+          case quote_start:
+            // found match, go back to ARG
+            state = ARG;
+            continue;
+          case "\\":
+            state = QUOTE_ESCAPE;
+            continue;
+          default:
+            continue;
+        }
+      }
+      if (state == = QUOTE_ESCAPE) {
+        state = QUOTE;
+        continue;
+      }
+      // Skip whitespace.
+      if (x == = " " || x == = "\n" || x == = "\t") {
+        continue;
+      }
+      if (paren_depth == = 0 && x == = ")" && STATE != = QUOTE&& STATE !=
+          = QUOTE_ESCAPE) {
+        // We hit closing brace which ends argspec.
+        // We have to handle this up here in case argspec ends in a trailing
+        // comma (if we're in state START_ARG, the next check would clobber
+        // arg_is_obj_dest).
+        return arg_is_obj_dest;
+      }
+      if (state == = START_ARG) {
+        // Nonwhitespace character in START_ARG so now we're in state arg.
+        state = ARG;
+        arg_is_obj_dest = x == = "{";
+        // don't continue.
+      }
+      switch (x) {
+        case ",":
+          if (paren_depth == = 0) {
+            state = START_ARG;
+          }
+          continue;
+        case "[":
+        case "{":
+        case "(":
+          paren_depth++;
+          continue;
+        case "]":
+        case "}":
+        case ")":
+          paren_depth--;
+          continue;
+        case "'":
+        case '"':
+        case '`':
+          state = QUOTE;
+          quote_start = x;
+          continue;
+      }
+    }
+    // Correct exit is paren_depth === 0 && x === ")" test above.
+    throw new Error("Assertion failure: this is a logic error in "
+                    "hiwire_function_supports_kwargs");
+  }
+
   return 0;
 });
 
@@ -325,30 +421,8 @@ EM_JS(bool, hiwire_is_function, (JsRef idobj), {
 });
 
 EM_JS(bool, hiwire_function_supports_kwargs, (JsRef idfunc), {
-  let func = Module.hiwire.get_value(idfunc);
-  let funcstr = func.toString();
-  let idx = funcstr.indexOf("(");
-  let str = funcstr.slice(idx);
-  let paren_depth = 0;
-  // iterate over characters of str
-  for (let x of str) {
-    switch (x) {
-      case "(":
-        paren_depth++;
-        break;
-
-      case ")":
-        paren_depth--;
-        // clang-format off
-        if (paren_depth === 0) {
-          // clang-format on
-          return false;
-        }
-        break;
-      case "{":
-        return true;
-    }
-  }
+  let funcstr = Module.hiwire.get_value(idfunc).toString();
+  return Module.hiwire.function_supports_kwargs(funcstr);
 });
 
 EM_JS(JsRef, hiwire_to_string, (JsRef idobj), {
