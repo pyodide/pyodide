@@ -159,7 +159,6 @@ JsImport_GetAttr_Map(PyObject* self, PyObject* attr, PyObject* getfunc)
                  attr_utf8);
     return NULL;
   }
-<<<<<<< HEAD
   return result;
 }
 
@@ -189,11 +188,6 @@ JsImport_GetAttr_Object(PyObject* self, PyObject* attr, PyObject* jsproxy)
                  "module '%s' has no attribute '%s'",
                  name_utf8,
                  attr_utf8);
-=======
-  JsRef idval = hiwire_get_global(c);
-  if (idval == NULL) {
-    PyErr_Format(PyExc_AttributeError, "Unknown attribute '%s'", c);
->>>>>>> master
     return NULL;
   }
   PyObject* result = js2python(idval);
