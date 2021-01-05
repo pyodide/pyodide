@@ -38,7 +38,7 @@ class JsImporter(MetaPathFinder, ExtensionFileLoader):
             "find_module() is deprecated in favor of find_spec() since Python 3.4"
         )
 
-    def invalidate_caches(self) -> None:
+    def invalidate_caches() -> None:
         pass
 
     ### Loader methods
