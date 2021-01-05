@@ -68,7 +68,7 @@ Typically this will be called ``result``, but in this case the function is named
 // ... [SNIP]
 ```
 
-4. The finally block. Here we will clear all the variables we declared at the top. Do not clear the arguments! They are borrowed. According to the standard Python function calling convention, the calling code will clear them for you.
+4. The finally block. Here we will clear all the variables we declared at the top. Do not clear the arguments! They are borrowed. According to the standard Python function calling convention, they are the responsibility of the calling code.
 ```
   success = true;
 finally:
