@@ -76,6 +76,12 @@ The url of the source tarball.
 The tarball may be in any of the formats supported by Python's
 `shutil.unpack_archive`: `tar`, `gztar`, `bztar`, `xztar`, and `zip`.
 
+### `source/extract_dir`
+
+The top level directory name of the contents of the source tarball (i.e. once
+you extract the tarball, all the contents are in the directory named
+`source/extract_dir`). This defaults to the tarball name (sans extension).
+
 #### `source/path`
 
 Alternatively to `source/url`, a relative or absolute path can be specified
@@ -122,6 +128,12 @@ therefore it is built both for host and target.
 #### `build/cflags`
 
 Extra arguments to pass to the compiler when building for WebAssembly.
+
+(This key is not in the Conda spec).
+
+#### `build/cxxflags`
+
+Extra arguments to pass to the compiler when building C++ files for WebAssembly. Note that both clfags and cxxflags will be used when compiling C++ files. A common example would be to use -std=c++11 for code that makes use of C++11 features.
 
 (This key is not in the Conda spec).
 

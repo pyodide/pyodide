@@ -23,8 +23,7 @@ source:
     - patches/skip_ellip_harm_2_pyx_ctypes.patch
 
 build:
-  cflags: -I../../../CLAPACK/CLAPACK-WA/INCLUDE -Wno-implicit-function-declaration
-  cxxflags:
+  cflags: -I../../../CLAPACK/build/CLAPACK-3.2.1/INCLUDE -Wno-implicit-function-declaration
 
 requirements:
   run:

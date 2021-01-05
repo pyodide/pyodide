@@ -301,6 +301,7 @@ var languagePluginLoader = new Promise((resolve, reject) => {
   let PUBLIC_API = [
     'globals',
     'loadPackage',
+    'loadPackagesFromImports',
     'loadedPackages',
     'pyimport',
     'repr',
@@ -329,6 +330,41 @@ var languagePluginLoader = new Promise((resolve, reject) => {
   Module.preloadedWasm = {};
   let isFirefox = navigator.userAgent.toLowerCase().indexOf('firefox') > -1;
 
+  Module.runPython = code => Module.pyodide_py.eval_code(code, Module.globals);
+
+  // clang-format off
+  Module.loadPackagesFromImports  = async function(code, messageCallback, errorCallback) {
+    let imports = Module.pyodide_py.find_imports(code);
+    if (imports.length === 0) {
+      return;
+    }
+    let packageNames =
+        self.pyodide._module.packages.import_name_to_package_name;
+    let packages = new Set();
+    for (let name of imports) {
+      if (name in packageNames) {
+        packages.add(name);
+      }
+    }
+    if (packages.size) {
+      await loadPackage(
+        Array.from(packages.keys()),
+        messageCallback,
+        errorCallback,
+      );
+    }
+  };
+  // clang-format on
+
+  Module.pyimport = name => Module.globals[name];
+
+  Module.runPythonAsync = async function(code, messageCallback, errorCallback) {
+    await Module.loadPackagesFromImports(code, messageCallback, errorCallback);
+    return Module.runPython(code);
+  };
+
+  Module.version = function() { return Module.pyodide_py.__version__; };
+
   Module.autocomplete = function(path) {
     var pyodide_module = Module.pyimport("pyodide");
     return pyodide_module.get_completions(path);
@@ -342,8 +378,6 @@ var languagePluginLoader = new Promise((resolve, reject) => {
           .then((response) => response.json())
           .then((json) => {
             fixRecursionLimit(self.pyodide);
-            self.pyodide.globals =
-                self.pyodide.runPython('import sys\nsys.modules["__main__"]');
             self.pyodide = makePublicAPI(self.pyodide, PUBLIC_API);
             self.pyodide._module.packages = json;
             resolve();

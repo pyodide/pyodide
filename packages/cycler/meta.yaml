@@ -9,3 +9,7 @@ source:
 test:
   imports:
     - cycler
+
+requirements:
+  run:
+    - six

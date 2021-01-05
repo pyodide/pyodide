@@ -1,4 +1,4 @@
-PYODIDE_ROOT=$(abspath ..)
+export PYODIDE_ROOT=$(abspath ..)
 PYODIDE_LIBRARIES=$(abspath ./.artifacts)
 include ../Makefile.envs
 

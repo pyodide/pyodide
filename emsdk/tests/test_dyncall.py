@@ -53,7 +53,6 @@ void foo() {
                 "EXPORT_ALL=1",
             ],
             check=True,
-            env=common.env,
         )
         subprocess.run(
             [
@@ -67,9 +66,6 @@ void foo() {
                 "EMULATE_FUNCTION_POINTER_CASTS=1",
             ],
             check=True,
-            env=common.env,
         )
-        out = subprocess.run(
-            ["node", "a.out.js"], capture_output=True, check=True, env=common.env
-        )
+        out = subprocess.run(["node", "a.out.js"], capture_output=True, check=True)
         assert out.stdout == b"hello from main\n0\n4\n"

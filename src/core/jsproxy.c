@@ -93,7 +93,7 @@ JsProxy_GetAttr(PyObject* o, PyObject* attr_name)
   JsRef idresult = hiwire_get_member_string(self->js, key);
   Py_DECREF(str);
 
-  if (idresult == Js_ERROR) {
+  if (idresult == NULL) {
     PyErr_SetString(PyExc_AttributeError, key);
     return NULL;
   }
@@ -215,7 +215,7 @@ JsProxy_GetIter(PyObject* o)
 
   JsRef iditer = hiwire_get_iterator(self->js);
 
-  if (iditer == Js_ERROR) {
+  if (iditer == NULL) {
     PyErr_SetString(PyExc_TypeError, "Object is not iterable");
     return NULL;
   }
@@ -229,7 +229,7 @@ JsProxy_IterNext(PyObject* o)
   JsProxy* self = (JsProxy*)o;
 
   JsRef idresult = hiwire_next(self->js);
-  if (idresult == Js_ERROR) {
+  if (idresult == NULL) {
     return NULL;
   }
 
@@ -286,7 +286,7 @@ JsProxy_subscript(PyObject* o, PyObject* pyidx)
   JsRef ididx = python2js(pyidx);
   JsRef idresult = hiwire_get_member_obj(self->js, ididx);
   hiwire_decref(ididx);
-  if (idresult == Js_ERROR) {
+  if (idresult == NULL) {
     PyErr_SetObject(PyExc_KeyError, pyidx);
     return NULL;
   }

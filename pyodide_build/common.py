@@ -5,7 +5,9 @@ ROOTDIR = Path(__file__).parents[1].resolve()
 TOOLSDIR = ROOTDIR / "tools"
 PACKAGERDIR = ROOTDIR / "emsdk" / "emsdk" / "fastcomp" / "emscripten" / "tools"
 TARGETPYTHON = ROOTDIR / "cpython" / "installs" / "python-3.8.2"
-DEFAULTCFLAGS = ""
+# Leading space so that argparse doesn't think this is a flag
+DEFAULTCFLAGS = " -fPIC"
+DEFAULTCXXFLAGS = ""
 # fmt: off
 DEFAULTLDFLAGS = " ".join(
     [
