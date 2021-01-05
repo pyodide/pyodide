@@ -10,7 +10,7 @@ By being as consistent as possible, we reduce the burden on people reading the c
 1. The guard block. The first block of a function does sanity checks on the inputs and ArgParsing, but only to
 the extent possible without creating any owned references. If you check more complicated invariants on the inputs in a way that requires creating owned references, this logic belongs in the body block.
 
-Here's an exmaple of a ``METH_VARARGS`` function:
+Here's an example of a ``METH_VARARGS`` function:
 ```C
 PyObject*
 JsImport_CreateModule(PyObject* self, PyObject* args)
