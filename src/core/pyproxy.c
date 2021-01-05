@@ -173,7 +173,7 @@ JsRef
 get_pyproxy(PyObject* x)
 {
   JsRef result = pyproxy_use(x);
-  if (result != Js_ERROR) {
+  if (result != NULL) {
     return result;
   }
   // Reference counter is increased only once when a PyProxy is created.

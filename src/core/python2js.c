@@ -292,7 +292,7 @@ _py2js_immutable(PyObject* x)
   } else if (PyBytes_Check(x)) {
     return _py2js_bytes(x);
   } else {
-    return Js_ERROR;
+    return NULL;
   }
 }
 
@@ -400,7 +400,7 @@ _py2js_cache(PyObject* x,
       result = hiwire_incref(result);
     }
   } else if (PyErr_Occurred()) {
-    return Js_ERROR;
+    return NULL;
   } else {
     PyErr_Clear();
     result = caller(x, cache);
@@ -416,9 +416,9 @@ python2js_minimal(PyObject* x)
   PyObject* cache = PyDict_New();
   JsRef result = _py2js_minimal(x, cache);
   Py_DECREF(cache);
-  if (result == Js_ERROR) {
+  if (result == NULL) {
     pythonexc2js();
-    return Js_ERROR;
+    return NULL;
   }
   return result;
 }
@@ -429,9 +429,9 @@ python2js_once(PyObject* x)
   PyObject* cache = PyDict_New();
   JsRef result = _py2js_once(x, cache);
   Py_DECREF(cache);
-  if (result == Js_ERROR) {
+  if (result == NULL) {
     pythonexc2js();
-    return Js_ERROR;
+    return NULL;
   }
   return result;
 }
@@ -445,7 +445,7 @@ python2js_deep(PyObject* x)
 
   if (result == NULL) {
     pythonexc2js();
-    return Js_ERROR;
+    return NULL;
   }
 
   return result;
@@ -466,7 +466,7 @@ test_wrapper_python2js_minimal(char* name)
     }
     Py_DECREF(pyname);
     pythonexc2js();
-    return Js_ERROR;
+    return NULL;
   }
 
   Py_DECREF(pyname);
@@ -485,7 +485,7 @@ test_wrapper_python2js_shallow(char* name)
     }
     Py_DECREF(pyname);
     pythonexc2js();
-    return Js_ERROR;
+    return NULL;
   }
 
   Py_DECREF(pyname);
@@ -504,7 +504,7 @@ test_wrapper_python2js_deep(char* name)
     }
     Py_DECREF(pyname);
     pythonexc2js();
-    return Js_ERROR;
+    return NULL;
   }
 
   Py_DECREF(pyname);
