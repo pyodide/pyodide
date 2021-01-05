@@ -5,6 +5,7 @@ from textwrap import dedent
 sys.path.append(str(Path(__file__).parents[2] / "src" / "pyodide-py"))
 
 from pyodide import find_imports, eval_code  # noqa: E402
+from pyodide._base import CodeRunner  # noqa: E402
 
 
 def test_find_imports():
@@ -19,6 +20,14 @@ def test_find_imports():
         )
     )
     assert set(res) == {"numpy", "scipy", "matplotlib"}
+
+
+def test_code_runner():
+    ns = {}
+    assert CodeRunner("1+1;", ns).quiet()
+    assert not CodeRunner("1+1#;", ns).quiet()
+    assert not CodeRunner("5-2  # comment with trailing semicolon ;", ns).quiet()
+    assert CodeRunner("4//2\n", ns).run() == 2
 
 
 def test_eval_code():

@@ -43,41 +43,137 @@ def open_url(url: str) -> StringIO:
     return StringIO(req.response)
 
 
-def quiet_code(code: str) -> bool:
+class CodeRunner(object):
     """
-    Does the last nonwhitespace character of code is a semicolon?
-
-    This can be overridden to customize the way eval_code is silenced.
+    A code runner to serve eval_code and eval_code_async.
 
     Examples
     --------
-    >>> quiet_code('x + 1')
-    False
-    >>> quiet_code('x + 1 ;')
-    True
-    >>> quiet_code('x + 1 # comment ;')
-    False
+    >>> CodeRunner("1+1", {}).run()
+    2
+    >>> CodeRunner("1+1;", {}).run()
     """
-    # largely inspired from IPython:
-    # https://github.com/ipython/ipython/blob/86d24741188b0cedd78ab080d498e775ed0e5272/IPython/core/displayhook.py#L84
 
-    codeio = StringIO(code)
-    tokens = list(tokenize.generate_tokens(codeio.readline))
+    def __init__(self, code: str, ns: Dict[str, Any]):
+        """
+        Constructor.
 
-    for token in reversed(tokens):
-        if token.type in (
-            tokenize.ENDMARKER,
-            tokenize.NL,  # ignoring empty lines (\n\n)
-            tokenize.NEWLINE,
-            tokenize.COMMENT,
-        ):
-            continue
-        return (token.type == tokenize.OP) and (token.string == ";")
+        Parameters
+        ----------
+        code
+        the Python code to run.
+        ns
+        `locals()` or `globals()` context where to execute code.
+        """
+        # handle mis-indented input from multi-line strings
+        code = dedent(code)
 
-    return False
+        self.code = code
+        self.ns = ns
+        self.filename = "<exec>"
+        self.mod = None
+        self.last_expr = None
+
+        mod = ast.parse(code)
+        if len(mod.body) == 0:
+            return
+
+        # we extract last expression
+        last_expr = None
+        if isinstance(mod.body[-1], (ast.Expr, ast.Await)) and not self.quiet():
+            last_expr = ast.Expression(mod.body.pop().value)  # type: ignore
+        self.mod = mod
+        self.last_expr = last_expr
+
+    def quiet(self) -> bool:
+        """
+        Does the last nonwhitespace character of code is a semicolon?
+
+        This can be overridden to customize the way run() is silenced.
+
+        Examples
+        --------
+        >>> CodeRunner('x + 1', {}).quiet()
+        False
+        >>> CodeRunner('x + 1 ;', {}).quiet()
+        True
+        >>> CodeRunner('x + 1 # comment ;', {}).quiet()
+        False
+        """
+        # largely inspired from IPython:
+        # https://github.com/ipython/ipython/blob/86d24741188b0cedd78ab080d498e775ed0e5272/IPython/core/displayhook.py#L84
+
+        # We need to wrap tokens in a buffer because:
+        # "Tokenize requires one argument, readline, which must be
+        # a callable object which provides the same interface as the
+        # io.IOBase.readline() method of file objects"
+        codeio = StringIO(self.code)
+        tokens = list(tokenize.generate_tokens(codeio.readline))
+
+        for token in reversed(tokens):
+            if token.type in (
+                tokenize.ENDMARKER,
+                tokenize.NL,  # ignoring empty lines (\n\n)
+                tokenize.NEWLINE,
+                tokenize.COMMENT,
+            ):
+                continue
+            return (token.type == tokenize.OP) and (token.string == ";")
+
+        return False
+
+    def _compile_mod(self, flags: int = 0x0):
+        """
+        Compile first part of the code (everything but last expression)
+        """
+        return compile(self.mod, self.filename, "exec", flags=flags)  # type: ignore
+
+    def _compile_last_expr(self, flags: int = 0x0):
+        """
+        Compile last part of the code (last expression)
+        """
+        return compile(self.last_expr, self.filename, "eval", flags=flags)  # type: ignore
+
+    def run(self) -> Any:
+        """
+        Returns
+        -------
+        If the last nonwhitespace character of code is a semicolon,
+        return `None`.
+        If the last statement is an expression, return the
+        result of the expression.
+        """
+        # running first part
+        if self.mod is not None:
+            exec(self._compile_mod(), self.ns, self.ns)
+
+        # evaluating last expression
+        if self.last_expr is not None:
+            return eval(self._compile_last_expr(), self.ns, self.ns)
+
+    async def run_async(self) -> Any:
+        """ //!\\ WARNING //!\\
+        This is not working yet. For use once we add an EventLoop.
+
+        Note: see `_eval_code_async`.
+        """
+        raise NotImplementedError("Async is not yet supported in Pyodide.")
+        flags = ast.PyCF_ALLOW_TOP_LEVEL_AWAIT
+        # running first part
+        if self.mod is not None:
+            coro = eval(self._compile_mod(flags), self.ns, self.ns)
+            if iscoroutine(coro):
+                await coro
+
+        # evaluating last expression
+        if self.last_expr is not None:
+            res = eval(self._compile_last_expr(flags), self.ns, self.ns)
+            if iscoroutine(res):
+                res = await res
+            return res
 
 
-def eval_code(code: str, ns: Dict[str, Any], compile_flags: int = 0) -> Any:
+def eval_code(code: str, ns: Dict[str, Any]) -> Any:
     """Runs a code string.
 
     Parameters
@@ -86,8 +182,6 @@ def eval_code(code: str, ns: Dict[str, Any], compile_flags: int = 0) -> Any:
        the Python code to run.
     ns
        `locals()` or `globals()` context where to execute code.
-    compile_flags
-       AST compile flags.
 
     Returns
     -------
@@ -95,32 +189,21 @@ def eval_code(code: str, ns: Dict[str, Any], compile_flags: int = 0) -> Any:
     If the last statement is an expression, return the
     result of the expression.
     """
-    # handle mis-indented input from multi-line strings
-    code = dedent(code)
-
-    mod = ast.parse(code)
-    if len(mod.body) == 0:
-        return None
-
-    # we extract last expression
-    last_expr = None
-    if isinstance(mod.body[-1], (ast.Expr, ast.Await)) and not quiet_code(code):
-        last_expr = ast.Expression(mod.body.pop().value)  # type: ignore
-
-    # then run code
-    if len(mod.body):
-        exec(compile(mod, "<exec>", "exec", flags=compile_flags), ns, ns)
-    if last_expr is not None:
-        return eval(compile(last_expr, "<exec>", "eval", flags=compile_flags), ns, ns)
+    return CodeRunner(code, ns).run()
 
 
 async def _eval_code_async(code: str, ns: Dict[str, Any]) -> Any:
-    """ For use once we add an EventLoop. """
-    res = eval_code(code, ns, compile_flags=ast.PyCF_ALLOW_TOP_LEVEL_AWAIT)  # type: ignore
-    if iscoroutine(res):
-        return await res
-    else:
-        return res
+    """ //!\\ WARNING //!\\
+    This is not working yet. For use once we add an EventLoop.
+
+    Note: once async is working, one should:
+      - rename `_eval_code_async` in `eval_code_async` (remove leading '_')
+      - remove exceptions here and in `CodeRunner.run_async`
+      - add docstrings here and in `CodeRunner.run_async`
+      - add tests
+    """
+    raise NotImplementedError("Async is not yet supported in Pyodide.")
+    return await CodeRunner(code, ns).run_async()
 
 
 def find_imports(code: str) -> List[str]:
