@@ -34,7 +34,7 @@ Typically this will be called ``result``, but in this case the function is named
 ```C
   bool success = false;
   // Note: these are all of the objects that we will own. If a function returns
-  // a borrow, we incref the result so that we can free it in the finally block.
+  // a borrow, we XINCREF the result so that we can CLEAR it in the finally block.
   // Reference counting is hard, so it's good to be as explicit and consistent
   // as possible!
   PyObject* sys_modules = NULL;
@@ -47,7 +47,7 @@ Typically this will be called ``result``, but in this case the function is named
   PyObject* module = NULL;
   ```
 
-3. The body of the function. The vast majority of API calls can return error codes. You MUST check every fallible API for an error. In the most typical case you can do this using the macros QUIT_IF_NULL() for APIs that return a pointer and QUIT_IF_MINUS_ONE() for APIs that return an int. There is also ``QUIT()`` for an unconditional ``goto finally`` and ``QUIT_IF_ERR_OCCURRED()`` which quits if ``PyErr_Occurred``. These macros will ``goto finally`` if the error condition is hit. Furthermore, check every API that returns a reference for whether it returns a borrowed reference or an owned one. If it returns a borrowed reference, immediately `Py_XINCREF()` the result to convert it into an owned reference (before ``QUIT_IF_NULL``, this is to be consistent with the case where you use custom error handling).
+3. The body of the function. The vast majority of API calls can return error codes. You MUST check every fallible API for an error. In the most typical case you can do this using the macro ``QUIT_IF_NULL`` for APIs that return a pointer and ``QUIT_IF_MINUS_ONE`` for APIs that return an int. There is also ``QUIT()`` for an unconditional ``goto finally`` and ``QUIT_IF_ERR_OCCURRED()`` which quits if ``PyErr_Occurred()``. These macros will ``goto finally`` if the error condition is satisfied. Also, as you are writing the code, you should look up every Python API you use that returns a reference to determine whether it returns a borrowed reference or a new one. If it returns a borrowed reference, immediately `Py_XINCREF()` the result to convert it into an owned reference (before ``QUIT_IF_NULL``, this is to be consistent with the case where you use custom error handling).
 
 ```C
   name = PyUnicode_FromString(name_utf8);
@@ -68,7 +68,7 @@ Typically this will be called ``result``, but in this case the function is named
 // ... [SNIP]
 ```
 
-4. The finally block. Here we will clear all the variables we declared at the top. Do not clear the arguments! They are borrowed. According to the standard Python function calling convention, they are the responsibility of the calling code.
+4. The finally block. Here we will clear all the variables we declared at the top in exactly the same order. Do not clear the arguments! They are borrowed. According to the standard Python function calling convention, they are the responsibility of the calling code.
 ```
   success = true;
 finally:
