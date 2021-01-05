@@ -386,7 +386,7 @@ JsProxy_Dir(PyObject* self)
   PyObject* object__dir__ = NULL;
   PyObject* keys = NULL;
   PyObject* result_set = NULL;
-  JsRef iddir = Js_ERROR;
+  JsRef iddir = NULL;
   PyObject* pydir = NULL;
   PyObject* null_or_pynone = NULL;
 

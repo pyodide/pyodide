@@ -4,14 +4,45 @@
 def test_jsproxy_dir(selenium):
     result = selenium.run_js(
         """
-        window.a = { x : 2 };
+        window.a = { x : 2, y : "9" };
         return pyodide.runPython(`
             from js import a
             dir(a)
         `);
         """
     )
-    assert [x for x in result if len(x) == 1] == ["x"]
+    assert set(result).issuperset(
+        [
+            "__bool__",
+            "__call__",
+            "__class__",
+            "__defineGetter__",
+            "__defineSetter__",
+            "__delattr__",
+            "__delitem__",
+            "constructor",
+            "new",
+            "toString",
+            "typeof",
+            "valueOf",
+            "x",
+        ]
+    )
+
+
+def test_jsproxy_getattr(selenium):
+    assert (
+        selenium.run_js(
+            """
+        window.a = { x : 2, y : "9", typeof : 7 };
+        return pyodide.runPython(`
+            from js import a
+            [ a.x, a.y, a.typeof ]
+        `);
+        """
+        )
+        == [2, "9", "object"]
+    )
 
 
 def test_jsproxy(selenium):
