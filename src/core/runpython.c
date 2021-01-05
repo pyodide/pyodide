@@ -74,8 +74,8 @@ int
 runpython_init()
 {
   bool success = false;
-  JsRef pyodide_py_proxy = Js_ERROR;
-  JsRef globals_proxy = Js_ERROR;
+  JsRef pyodide_py_proxy = NULL;
+  JsRef globals_proxy = NULL;
 
   // borrowed
   PyObject* builtins = PyImport_AddModule("builtins");
@@ -101,7 +101,7 @@ runpython_init()
   QUIT_IF_NULL(pyodide_py);
 
   pyodide_py_proxy = python2js_deep(pyodide_py);
-  if (pyodide_py_proxy == Js_ERROR) {
+  if (pyodide_py_proxy == NULL) {
     goto fail;
   }
   // Currently by default, python2js copies dicts into objects.
@@ -114,7 +114,7 @@ runpython_init()
   // modifications.
   Py_INCREF(globals); // pyproxy_new steals argument
   globals_proxy = get_pyproxy(globals);
-  if (globals_proxy == Js_ERROR) {
+  if (globals_proxy == NULL) {
     goto fail;
   }
   QUIT_IF_NZ(runpython_init_js(pyodide_py_proxy, globals_proxy));

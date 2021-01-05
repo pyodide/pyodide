@@ -12,7 +12,6 @@ CPYTHONLIB=$(CPYTHONROOT)/installs/python-$(PYVERSION)/lib/python$(PYMINOR)
 PYODIDE_EMCC=$(PYODIDE_ROOT)/ccache/emcc
 PYODIDE_CXX=$(PYODIDE_ROOT)/ccache/em++
 
-SHELL := /bin/bash
 CC=emcc
 CXX=em++
 OPTFLAGS=-O2
@@ -41,12 +40,6 @@ LDFLAGS=\
 	-s "BINARYEN_TRAP_MODE='clamp'" \
 	-s LZ4=1
 
-JEDI_ROOT=packages/jedi/jedi-0.17.2/jedi
-JEDI_LIBS=$(JEDI_ROOT)/__init__.py
-
-PARSO_ROOT=packages/parso/parso-0.7.1/parso
-PARSO_LIBS=$(PARSO_ROOT)/__init__.py
-
 SITEPACKAGES=root/lib/python$(PYMINOR)/site-packages
 
 all: check \
@@ -62,16 +55,16 @@ all: check \
 	echo -e "\nSUCCESS!"
 
 
-build/pyodide.asm.js: src/main.bc src/type_conversion/jsimport.bc \
-	        src/type_conversion/jsproxy.bc src/type_conversion/js2python.bc \
-		src/type_conversion/pyproxy.bc \
-		src/type_conversion/python2js.bc \
-		src/type_conversion/python2js_buffer.bc \
-		src/type_conversion/runpython.bc src/type_conversion/hiwire.bc \
+build/pyodide.asm.js: src/core/main.o src/core/jsimport.o \
+	        src/core/jsproxy.o src/core/js2python.o \
+		src/core/pyproxy.o \
+		src/core/python2js.o \
+		src/core/python2js_buffer.o \
+		src/core/runpython.o src/core/hiwire.o \
 		root/.built
 	date +"[%F %T] Building pyodide.asm.js..."
 	[ -d build ] || mkdir build
-	$(CXX) -s EXPORT_NAME="'pyodide'" -o build/pyodide.asm.js $(filter %.bc,$^) \
+	$(CXX) -s EXPORT_NAME="'pyodide'" -o build/pyodide.asm.js $(filter %.o,$^) \
 		$(LDFLAGS) -s FORCE_FILESYSTEM=1 --preload-file root/lib@lib
 	date +"[%F %T] done building pyodide.asm.js."
 
@@ -128,24 +121,18 @@ benchmark: all
 clean:
 	rm -fr root
 	rm -fr build/*
-	rm -fr src/*.bc
+	rm -fr src/*.o
 	rm -fr node_modules
 	make -C packages clean
-	make -C packages/jedi clean
-	make -C packages/parso clean
-	make -C packages/libxslt clean
-	make -C packages/libxml clean
-	make -C packages/libiconv clean
-	make -C packages/zlib clean
-	echo "The Emsdk, CPython and CLAPACK are not cleaned. cd into those directories to do so."
+	echo "The Emsdk, CPython are not cleaned. cd into those directories to do so."
 
 clean-all: clean
 	make -C emsdk clean
 	make -C cpython clean
 	rm -fr cpython/build
 
-%.bc: %.c $(CPYTHONLIB) $(wildcard src/**/*.h)
-	$(CC) -o $@ -c $< $(CFLAGS) $(EXTRA_CFLAGS) -Isrc/type_conversion/
+%.o: %.c $(CPYTHONLIB) $(wildcard src/**/*.h)
+	$(CC) -o $@ -c $< $(CFLAGS) -Isrc/core/
 
 
 build/test.data: $(CPYTHONLIB)
@@ -165,8 +152,6 @@ $(UGLIFYJS) $(LESSC): emsdk/emsdk/.complete
 
 root/.built: \
 		$(CPYTHONLIB) \
-		$(JEDI_LIBS) \
-		$(PARSO_LIBS) \
 		src/sitecustomize.py \
 		src/webbrowser.py \
 		src/pyodide-py/ \
@@ -175,8 +160,6 @@ root/.built: \
 	mkdir -p root/lib
 	cp -r $(CPYTHONLIB) root/lib
 	mkdir -p $(SITEPACKAGES)
-	cp -r $(JEDI_ROOT) $(SITEPACKAGES)
-	cp -r $(PARSO_ROOT) $(SITEPACKAGES)
 	cp src/sitecustomize.py $(SITEPACKAGES)
 	cp src/webbrowser.py root/lib/python$(PYMINOR)
 	cp src/_testcapi.py	root/lib/python$(PYMINOR)
@@ -217,19 +200,6 @@ $(CPYTHONLIB): emsdk/emsdk/.complete $(PYODIDE_EMCC) $(PYODIDE_CXX)
 	date +"[%F %T] Building cpython..."
 	make -C $(CPYTHONROOT)
 	date +"[%F %T] done building cpython..."
-
-
-$(JEDI_LIBS): $(CPYTHONLIB)
-	date +"[%F %T] Building jedi..."
-	make -C packages/jedi
-	date +"[%F %T] done building jedi."
-
-
-$(PARSO_LIBS): $(CPYTHONLIB)
-	date +"[%F %T] Building parso..."
-	make -C packages/parso
-	date +"[%F %T] done building parso."
-
 
 build/packages.json: FORCE
 	date +"[%F %T] Building packages..."
