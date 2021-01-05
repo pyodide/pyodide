@@ -60,20 +60,6 @@ EM_JS_NUM(int,
             return 0;
           });
 
-#define QUIT_IF_NULL(x)                                                        \
-  do {                                                                         \
-    if (x == NULL) {                                                           \
-      goto fail;                                                               \
-    }                                                                          \
-  } while (0)
-
-#define QUIT_IF_NZ(x)                                                          \
-  do {                                                                         \
-    if (x) {                                                                   \
-      goto fail;                                                               \
-    }                                                                          \
-  } while (0)
-
 int
 runpython_init()
 {
@@ -83,26 +69,26 @@ runpython_init()
 
   // borrowed
   PyObject* builtins = PyImport_AddModule("builtins");
-  QUIT_IF_NULL(builtins);
+  FAIL_IF_NULL(builtins);
 
   // borrowed
   PyObject* builtins_dict = PyModule_GetDict(builtins);
-  QUIT_IF_NULL(builtins_dict);
+  FAIL_IF_NULL(builtins_dict);
 
   // borrowed
   PyObject* __main__ = PyImport_AddModule("__main__");
-  QUIT_IF_NULL(__main__);
+  FAIL_IF_NULL(__main__);
 
   // globals is static variable, borrowed
   globals = PyModule_GetDict(__main__);
-  QUIT_IF_NULL(globals);
+  FAIL_IF_NULL(globals);
   Py_INCREF(globals); // to owned
 
-  QUIT_IF_NZ(PyDict_Update(globals, builtins_dict));
+  FAIL_IF_MINUS_ONE(PyDict_Update(globals, builtins_dict));
 
   // pyodide_py is static variable, new
   pyodide_py = PyImport_ImportModule("pyodide");
-  QUIT_IF_NULL(pyodide_py);
+  FAIL_IF_NULL(pyodide_py);
 
   pyodide_py_proxy = python2js(pyodide_py);
   if (pyodide_py_proxy == NULL) {
@@ -121,10 +107,13 @@ runpython_init()
   if (globals_proxy == NULL) {
     goto fail;
   }
-  QUIT_IF_NZ(runpython_init_js(pyodide_py_proxy, globals_proxy));
+  FAIL_IF_MINUS_ONE(runpython_init_js(pyodide_py_proxy, globals_proxy));
 
-  return 0;
-fail:
+  success = true;
+finally:
+  if (success) {
+    return 0;
+  }
   if (PyErr_Occurred()) {
     PyErr_Print();
   }
