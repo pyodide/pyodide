@@ -71,3 +71,36 @@ To lint the code, run:
 ```bash
 make lint
 ```
+
+## Testing framework
+
+### run_in_pyodide
+Many tests simply involve running a chunk of code in pyodide and ensuring it
+doesn't error. In this case, one can use the `run_in_pyodide` decorate from
+`tools/testing.py`, e.g.
+
+```python
+from tools.testing import run_in_pyodide
+
+@run_in_pyodide
+def test_add():
+    assert 1 + 1 == 2
+```
+In this case, the body of the function will automatically be run in pyodide.
+The decorator can also be called with arguments. It has two configuration
+options --- standalone and packages.
+
+Setting `standalone = True` starts a standalone browser session to run the test
+(the session is shared between tests by default). This is useful for testing
+things like package loading.
+
+The `packages` option lists packages to load before running the test. For
+example,
+```python
+from tools.testing import run_in_pyodide
+
+@run_in_pyodide(standalone = True, packages = ["regex"])
+def test_regex():
+    import regex
+    assert regex.search("o", "foo").end() == 2
+```
