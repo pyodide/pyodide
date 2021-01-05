@@ -33,6 +33,8 @@
   [#987](https://github.com/iodide-project/pyodide/pull/987).
 - Updated packages: bleach 3.2.1, packaging 20.8
 
+### Fixed
+- getattr and dir on JsProxy now report consistent results and include all names defined on the Python dictionary backing JsProxy. [#1017](https://github.com/iodide-project/pyodide/pull/1017)
 
 ## Version 0.16.1
 *December 25, 2020*
