@@ -21,10 +21,10 @@
   </script>
   <script src="./pyodide.js"></script>
   <script type="text/javascript">
-    window.TEST_PYODIDE = true;
     async function main(){
       try {
         await languagePluginLoader;
+        pyodide.Tests = pyodide._module.Tests;
         window.PYODIDE_READY = true;
       } catch(e) {
         window.PYODIDE_ERROR = e;

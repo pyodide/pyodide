@@ -85,17 +85,6 @@ EM_JS(int, testing_init, (), {
       };
     }
   }
-
-  // TODO: figure out how to avoid doing this?
-  // Module.Tests.c_tests_expect_success_success =
-  //   _test_c_tests_expect_success_success;
-  // Module.Tests.c_tests_expect_fail_fail = _test_c_tests_expect_fail_fail;
-  // Module.Tests.c_tests_expect_success_fails =
-  //   _test_c_tests_expect_success_fails;
-  // Module.Tests.c_tests_expect_fail_succeeds =
-  //   _test_c_tests_expect_fail_succeeds;
-  // Module.Tests.c_tests_expect_fail_wrong_message =
-  //   _test_c_tests_expect_fail_wrong_message;
   return 0;
 });
 
