@@ -182,7 +182,7 @@ JsImport_GetAttr_Object(PyObject* self, PyObject* attr, PyObject* jsproxy)
   const char* attr_utf8 = PyUnicode_AsUTF8(attr);
   JsRef jsproxy_ref = ((JsProxy*)jsproxy)->js;
   JsRef idval = hiwire_get_member_string(jsproxy_ref, attr_utf8);
-  if (idval == Js_ERROR) {
+  if (idval == NULL) {
     const char* name_utf8 = PyModule_GetName(self);
     PyErr_Format(PyExc_AttributeError,
                  "module '%s' has no attribute '%s'",

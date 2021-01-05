@@ -500,7 +500,7 @@ hiwire_greater_than_equal(JsRef ida, JsRef idb);
 /**
  * Calls the `next` function on an iterator.
  *
- * Returns: Js_ERROR if `next` function is undefined.
+ * Returns: NULL if `next` function is undefined.
  */
 JsRef
 hiwire_next(JsRef idobj);
