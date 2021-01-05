@@ -1,9 +1,9 @@
 package:
   name: packaging
-  version: '20.4'
+  version: '20.8'
 source:
-  sha256: 4357f74f47b9c12db93624a82154e9b120fa8293699949152b22065d556079f8
-  url: https://files.pythonhosted.org/packages/55/fd/fc1aca9cf51ed2f2c11748fa797370027babd82f87829c7a8e6dbe720145/packaging-20.4.tar.gz
+  sha256: 78598185a7008a470d64526a8059de9aaa449238f280fc9eb6b13ba6c4109093
+  url: https://files.pythonhosted.org/packages/d7/c5/e81b9fb8033fe78a2355ea7b1774338e1dca2c9cbd2ee140211a9e6291ab/packaging-20.8.tar.gz
 
 requirements:
   run:

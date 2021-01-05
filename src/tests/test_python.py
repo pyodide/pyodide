@@ -176,11 +176,8 @@ def test_unknown_attribute(selenium):
     )
 
 
-def test_completions(selenium):
-    result = selenium.run(
-        """
-        import pyodide
-        pyodide.get_completions('import sys\\nsys.v')
-        """
-    )
-    assert result == ["version", "version_info"]
+def test_run_python_debug(selenium):
+    assert selenium.run_js("return pyodide._module.runPythonDebug('1+1');") == 2
+    assert selenium.run_js(
+        "return pyodide._module.runPythonDebug('[x*x + 1 for x in range(4)]');"
+    ) == [1, 2, 5, 10]

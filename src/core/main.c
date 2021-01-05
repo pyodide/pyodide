@@ -8,7 +8,6 @@
 #include "js2python.h"
 #include "jsimport.h"
 #include "jsproxy.h"
-#include "pyimport.h"
 #include "pyproxy.h"
 #include "python2js.h"
 #include "runpython.h"
@@ -20,6 +19,7 @@
     if (PyErr_Occurred()) {                                                    \
       printf("Error was triggered by Python exception:\n");                    \
       PyErr_Print();                                                           \
+      return 1;                                                                \
     }                                                                          \
   } while (0)
 
@@ -27,7 +27,6 @@
   do {                                                                         \
     if (mod##_init()) {                                                        \
       FATAL_ERROR("Failed to initialize module %s.\n", #mod);                  \
-      return 1;                                                                \
     }                                                                          \
   } while (0)
 
@@ -57,18 +56,16 @@ main(int argc, char** argv)
   PyObject* sys = PyImport_ImportModule("sys");
   if (sys == NULL) {
     FATAL_ERROR("Failed to import sys module.");
-    return 1;
   }
+
   if (PyObject_SetAttrString(sys, "dont_write_bytecode", Py_True)) {
     FATAL_ERROR("Failed to set attribute on sys module.");
-    return 1;
   }
   Py_DECREF(sys);
 
   TRY_INIT(js2python);
   TRY_INIT(JsImport);
   TRY_INIT(JsProxy);
-  TRY_INIT(pyimport);
   TRY_INIT(pyproxy);
   TRY_INIT(python2js);
   TRY_INIT(runpython);

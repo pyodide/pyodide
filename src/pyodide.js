@@ -299,13 +299,17 @@ var languagePluginLoader = new Promise((resolve, reject) => {
   ////////////////////////////////////////////////////////////
   // Rearrange namespace for public API
   let PUBLIC_API = [
-    'globals', 'loadPackage', 'loadedPackages', 'pyimport', 'repr', 'runPython',
-    'runPythonAsync', 'checkABI', 'version', 'autocomplete'
+    'globals',
+    'loadPackage',
+    'loadPackagesFromImports',
+    'loadedPackages',
+    'pyimport',
+    'repr',
+    'runPython',
+    'runPythonAsync',
+    'version',
+    'autocomplete',
   ];
-
-  if (self.TEST_PYODIDE) {
-    PUBLIC_API.push("Tests");
-  }
 
   function makePublicAPI(module, public_api) {
     var namespace = {_module : module};
@@ -326,16 +330,40 @@ var languagePluginLoader = new Promise((resolve, reject) => {
   Module.preloadedWasm = {};
   let isFirefox = navigator.userAgent.toLowerCase().indexOf('firefox') > -1;
 
-  Module.checkABI = function(ABI_number) {
-    if (ABI_number !== parseInt('{{ PYODIDE_PACKAGE_ABI }}')) {
-      var ABI_mismatch_exception =
-          `ABI numbers differ. Expected {{ PYODIDE_PACKAGE_ABI }}, got ${
-              ABI_number}`;
-      console.error(ABI_mismatch_exception);
-      throw ABI_mismatch_exception;
+  Module.runPython = code => Module.pyodide_py.eval_code(code, Module.globals);
+
+  // clang-format off
+  Module.loadPackagesFromImports  = async function(code, messageCallback, errorCallback) {
+    let imports = Module.pyodide_py.find_imports(code);
+    if (imports.length === 0) {
+      return;
     }
-    return true;
+    let packageNames =
+        self.pyodide._module.packages.import_name_to_package_name;
+    let packages = new Set();
+    for (let name of imports) {
+      if (name in packageNames) {
+        packages.add(name);
+      }
+    }
+    if (packages.size) {
+      await loadPackage(
+        Array.from(packages.keys()),
+        messageCallback,
+        errorCallback,
+      );
+    }
   };
+  // clang-format on
+
+  Module.pyimport = name => Module.globals[name];
+
+  Module.runPythonAsync = async function(code, messageCallback, errorCallback) {
+    await Module.loadPackagesFromImports(code, messageCallback, errorCallback);
+    return Module.runPython(code);
+  };
+
+  Module.version = function() { return Module.pyodide_py.__version__; };
 
   Module.autocomplete = function(path) {
     var pyodide_module = Module.pyimport("pyodide");
@@ -350,8 +378,6 @@ var languagePluginLoader = new Promise((resolve, reject) => {
           .then((response) => response.json())
           .then((json) => {
             fixRecursionLimit(self.pyodide);
-            self.pyodide.globals =
-                self.pyodide.runPython('import sys\nsys.modules["__main__"]');
             self.pyodide = makePublicAPI(self.pyodide, PUBLIC_API);
             self.pyodide._module.packages = json;
             resolve();
@@ -371,17 +397,14 @@ var languagePluginLoader = new Promise((resolve, reject) => {
 
   Promise.all([ postRunPromise, dataLoadPromise ]).then(() => resolve());
 
-  const data_script_src = `${baseURL}pyodide.asm.data.js`;
-  loadScript(data_script_src, () => {
-    const scriptSrc = `${baseURL}pyodide.asm.js`;
-    loadScript(scriptSrc, () => {
-      // The emscripten module needs to be at this location for the core
-      // filesystem to install itself. Once that's complete, it will be replaced
-      // by the call to `makePublicAPI` with a more limited public API.
-      self.pyodide = pyodide(Module);
-      self.pyodide.loadedPackages = {};
-      self.pyodide.loadPackage = loadPackage;
-    }, () => {});
+  const scriptSrc = `${baseURL}pyodide.asm.js`;
+  loadScript(scriptSrc, () => {
+    // The emscripten module needs to be at this location for the core
+    // filesystem to install itself. Once that's complete, it will be replaced
+    // by the call to `makePublicAPI` with a more limited public API.
+    self.pyodide = pyodide(Module);
+    self.pyodide.loadedPackages = {};
+    self.pyodide.loadPackage = loadPackage;
   }, () => {});
 });
 languagePluginLoader

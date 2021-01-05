@@ -294,9 +294,9 @@ _python2js_buffer_recursive(Py_buffer* buff,
 
   for (i = 0; i < n; ++i) {
     jsitem = _python2js_buffer_recursive(buff, ptr, dim + 1, convert);
-    if (jsitem == Js_ERROR) {
+    if (jsitem == NULL) {
       hiwire_decref(jsarray);
-      return Js_ERROR;
+      return NULL;
     }
     hiwire_push_array(jsarray, jsitem);
     hiwire_decref(jsitem);
@@ -321,7 +321,7 @@ _python2js_buffer_to_typed_array(Py_buffer* buff)
       case '>':
       case '!':
         // This path can't handle byte-swapping
-        return Js_ERROR;
+        return NULL;
       case '=':
       case '<':
       case '@':
@@ -339,7 +339,7 @@ _python2js_buffer_to_typed_array(Py_buffer* buff)
     case 'B':
       return hiwire_uint8array((u8*)buff->buf, buff->len);
     case '?':
-      return Js_ERROR;
+      return NULL;
     case 'h':
       return hiwire_int16array((i16*)buff->buf, buff->len);
     case 'H':
@@ -354,13 +354,13 @@ _python2js_buffer_to_typed_array(Py_buffer* buff)
       return hiwire_uint32array((u32*)buff->buf, buff->len);
     case 'q':
     case 'Q':
-      return Js_ERROR;
+      return NULL;
     case 'f':
       return hiwire_float32array((f32*)buff->buf, buff->len);
     case 'd':
       return hiwire_float64array((f64*)buff->buf, buff->len);
     default:
-      return Js_ERROR;
+      return NULL;
   }
 }
 
@@ -408,9 +408,9 @@ _python2js_shareable_buffer_recursive(Py_buffer* buff,
   for (i = 0; i < n; ++i) {
     jsitem = _python2js_shareable_buffer_recursive(
       buff, shareable, idarr, ptr, dim + 1);
-    if (jsitem == Js_ERROR) {
+    if (jsitem == NULL) {
       hiwire_decref(jsarray);
-      return Js_ERROR;
+      return NULL;
     }
     hiwire_push_array(jsarray, jsitem);
     hiwire_decref(jsitem);
@@ -457,7 +457,7 @@ _python2js_buffer(PyObject* x)
   PyObject* memoryview = PyMemoryView_FromObject(x);
   if (memoryview == NULL) {
     PyErr_Clear();
-    return Js_ERROR;
+    return NULL;
   }
 
   Py_buffer* buff;
@@ -468,11 +468,11 @@ _python2js_buffer(PyObject* x)
 
   if (shareable != NOT_SHAREABLE) {
     JsRef idarr = _python2js_buffer_to_typed_array(buff);
-    if (idarr == Js_ERROR) {
+    if (idarr == NULL) {
       PyErr_SetString(
         PyExc_TypeError,
         "Internal error: Invalid type to convert to array buffer.");
-      return Js_ERROR;
+      return NULL;
     }
 
     result =
@@ -481,7 +481,7 @@ _python2js_buffer(PyObject* x)
     scalar_converter* convert = _python2js_buffer_get_converter(buff);
     if (convert == NULL) {
       Py_DECREF(memoryview);
-      return Js_ERROR;
+      return NULL;
     }
 
     result = _python2js_buffer_recursive(buff, buff->buf, 0, convert);
