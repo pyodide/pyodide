@@ -39,22 +39,24 @@ _runPythonDebug(char* code)
   return id;
 }
 
-EM_JS(int, runpython_init_js, (JsRef pyodide_py_proxy, JsRef globals_proxy), {
-  Module.pyodide_py = Module.hiwire.get_value(pyodide_py_proxy);
-  Module.globals = Module.hiwire.get_value(globals_proxy);
+EM_JS_INT(int runpython_init_js,
+          (JsRef pyodide_py_proxy, JsRef globals_proxy),
+          {
+            Module.pyodide_py = Module.hiwire.get_value(pyodide_py_proxy);
+            Module.globals = Module.hiwire.get_value(globals_proxy);
 
-  // Use this to test python code separate from pyproxy.apply.
-  Module.runPythonDebug = function(code)
-  {
-    let pycode = stringToNewUTF8(code);
-    let idresult = Module.__runPythonDebug(pycode);
-    let jsresult = Module.hiwire.get_value(idresult);
-    Module.hiwire.decref(idresult);
-    _free(pycode);
-    return jsresult;
-  };
-  return 0;
-});
+            // Use this to test python code separate from pyproxy.apply.
+            Module.runPythonDebug = function(code)
+            {
+              let pycode = stringToNewUTF8(code);
+              let idresult = Module.__runPythonDebug(pycode);
+              let jsresult = Module.hiwire.get_value(idresult);
+              Module.hiwire.decref(idresult);
+              _free(pycode);
+              return jsresult;
+            };
+            return 0;
+          });
 
 #define QUIT_IF_NULL(x)                                                        \
   do {                                                                         \
