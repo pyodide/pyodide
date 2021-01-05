@@ -2,7 +2,7 @@
 
 
 def test_jsproxy_dir(selenium):
-    selenium.run_js(
+    result = selenium.run_js(
         """
         window.a = { x : 2 };
         return pyodide.runPython(`
@@ -11,6 +11,7 @@ def test_jsproxy_dir(selenium):
         `);
         """
     )
+    assert [x for x in result if len(x) == 1] == ["x"]
 
 
 def test_jsproxy(selenium):
