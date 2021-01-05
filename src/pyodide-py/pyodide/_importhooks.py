@@ -1,4 +1,3 @@
-# mypy gets angry about PathFinder._path_importer_cache.
 # mypy: ignore-errors
 from importlib.machinery import ExtensionFileLoader
 from importlib.abc import MetaPathFinder
@@ -10,9 +9,6 @@ def create_module_inner(spec, jsproxy):
 
 
 # From Python glossary: An importer is "both a finder and loader object."
-# InspectLoader:
-# An abstract base class for a loader which implements the optional
-# PEP 302 protocol for loaders that inspect modules.
 class JsImporter(MetaPathFinder, ExtensionFileLoader):
     jsproxies = {}
     ### Finder methods
@@ -49,7 +45,7 @@ class JsImporter(MetaPathFinder, ExtensionFileLoader):
     def create_module(self, spec):
         return create_module_inner(spec, self.jsproxy)
 
-    # use ExtensionFileLoader.exec_module
+    # use ExtensionFileLoader.exec_module (no override)
 
     # used by importlib.util.spec_from_loader
     def is_package(self, fullname):
