@@ -100,7 +100,7 @@ runpython_init()
   pyodide_py = PyImport_ImportModule("pyodide");
   QUIT_IF_NULL(pyodide_py);
 
-  pyodide_py_proxy = python2js(pyodide_py);
+  pyodide_py_proxy = python2js_deep(pyodide_py);
   if (pyodide_py_proxy == Js_ERROR) {
     goto fail;
   }
@@ -113,7 +113,7 @@ runpython_init()
   // this. I (HC) will fix this with the rest of the type conversions
   // modifications.
   Py_INCREF(globals); // pyproxy_new steals argument
-  globals_proxy = pyproxy_new(globals);
+  globals_proxy = get_pyproxy(globals);
   if (globals_proxy == Js_ERROR) {
     goto fail;
   }
