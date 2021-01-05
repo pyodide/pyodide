@@ -24,7 +24,7 @@ pythonexc2js()
   PyErr_Fetch(&type, &value, &traceback);
   PyErr_NormalizeException(&type, &value, &traceback);
 
-  JsRef excval = Js_ERROR;
+  JsRef excval = NULL;
   int exc;
 
   if (type == NULL || type == Py_None || value == NULL || value == Py_None) {
@@ -103,7 +103,7 @@ _python2js_float(PyObject* x)
 {
   double x_double = PyFloat_AsDouble(x);
   if (x_double == -1.0 && PyErr_Occurred()) {
-    return Js_ERROR;
+    return NULL;
   }
   return hiwire_double(x_double);
 }
@@ -117,11 +117,11 @@ _python2js_long(PyObject* x)
     if (overflow) {
       PyObject* py_float = PyNumber_Float(x);
       if (py_float == NULL) {
-        return Js_ERROR;
+        return NULL;
       }
       return _python2js_float(py_float);
     } else if (PyErr_Occurred()) {
-      return Js_ERROR;
+      return NULL;
     }
   }
   return hiwire_int(x_long);
@@ -142,7 +142,7 @@ _python2js_unicode(PyObject* x)
       return hiwire_string_ucs4(data, length);
     default:
       PyErr_SetString(PyExc_ValueError, "Unknown Unicode KIND");
-      return Js_ERROR;
+      return NULL;
   }
 }
 
@@ -152,7 +152,7 @@ _python2js_bytes(PyObject* x)
   char* x_buff;
   Py_ssize_t length;
   if (PyBytes_AsStringAndSize(x, &x_buff, &length)) {
-    return Js_ERROR;
+    return NULL;
   }
   return hiwire_bytes(x_buff, length);
 }
@@ -163,7 +163,7 @@ _python2js_sequence(PyObject* x, PyObject* map)
   JsRef jsarray = hiwire_array();
   if (_python2js_add_to_cache(map, x, jsarray)) {
     hiwire_decref(jsarray);
-    return Js_ERROR;
+    return NULL;
   }
   size_t length = PySequence_Size(x);
   for (size_t i = 0; i < length; ++i) {
@@ -178,11 +178,11 @@ _python2js_sequence(PyObject* x, PyObject* map)
       return pyproxy_new(x);
     }
     JsRef jsitem = _python2js_cache(pyitem, map);
-    if (jsitem == Js_ERROR) {
+    if (jsitem == NULL) {
       _python2js_remove_from_cache(map, x);
       Py_DECREF(pyitem);
       hiwire_decref(jsarray);
-      return Js_ERROR;
+      return NULL;
     }
     Py_DECREF(pyitem);
     hiwire_push_array(jsarray, jsitem);
@@ -190,7 +190,7 @@ _python2js_sequence(PyObject* x, PyObject* map)
   }
   if (_python2js_remove_from_cache(map, x)) {
     hiwire_decref(jsarray);
-    return Js_ERROR;
+    return NULL;
   }
   return jsarray;
 }
@@ -201,23 +201,23 @@ _python2js_dict(PyObject* x, PyObject* map)
   JsRef jsdict = hiwire_object();
   if (_python2js_add_to_cache(map, x, jsdict)) {
     hiwire_decref(jsdict);
-    return Js_ERROR;
+    return NULL;
   }
   PyObject *pykey, *pyval;
   Py_ssize_t pos = 0;
   while (PyDict_Next(x, &pos, &pykey, &pyval)) {
     JsRef jskey = _python2js_cache(pykey, map);
-    if (jskey == Js_ERROR) {
+    if (jskey == NULL) {
       _python2js_remove_from_cache(map, x);
       hiwire_decref(jsdict);
-      return Js_ERROR;
+      return NULL;
     }
     JsRef jsval = _python2js_cache(pyval, map);
-    if (jsval == Js_ERROR) {
+    if (jsval == NULL) {
       _python2js_remove_from_cache(map, x);
       hiwire_decref(jskey);
       hiwire_decref(jsdict);
-      return Js_ERROR;
+      return NULL;
     }
     hiwire_push_object_pair(jsdict, jskey, jsval);
     hiwire_decref(jskey);
@@ -225,7 +225,7 @@ _python2js_dict(PyObject* x, PyObject* map)
   }
   if (_python2js_remove_from_cache(map, x)) {
     hiwire_decref(jsdict);
-    return Js_ERROR;
+    return NULL;
   }
   return jsdict;
 }
@@ -258,7 +258,7 @@ _python2js(PyObject* x, PyObject* map)
   } else {
     JsRef ret = _python2js_buffer(x);
 
-    if (ret != Js_ERROR) {
+    if (ret != NULL) {
       return ret;
     }
     if (PySequence_Check(x)) {
@@ -269,7 +269,7 @@ _python2js(PyObject* x, PyObject* map)
     // same object on the Python side is always the same object on the
     // Javascript side.
     ret = pyproxy_use(x);
-    if (ret != Js_ERROR) {
+    if (ret != NULL) {
       return ret;
     }
 
@@ -322,7 +322,7 @@ _python2js_cache(PyObject* x, PyObject* map)
   JsRef result;
   if (val) {
     result = (JsRef)PyLong_AsLong(val);
-    if (result != Js_ERROR) {
+    if (result != NULL) {
       result = hiwire_incref(result);
     }
   } else {
@@ -339,7 +339,7 @@ python2js(PyObject* x)
   JsRef result = _python2js_cache(x, map);
   Py_DECREF(map);
 
-  if (result == Js_ERROR) {
+  if (result == NULL) {
     pythonexc2js();
   }
 
