@@ -104,6 +104,12 @@ def test_eval_code():
     assert ns["x"] == 7
 
     assert eval_code("1+1;", ns) is None
+    assert eval_code("1+1#;", ns) == 2
+    assert eval_code("5-2  # comment with trailing semicolon ;", ns) == 3
+    assert eval_code("4//2\n", ns) == 2
+    assert eval_code("2**1\n\n", ns) == 2
+    assert eval_code("4//2;\n", ns) is None
+    assert eval_code("2**1;\n\n", ns) is None
 
 
 def test_monkeypatch_eval_code(selenium):
