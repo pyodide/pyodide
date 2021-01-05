@@ -1,4 +1,5 @@
 #include "runpython.h"
+#include "error_handling.h"
 #include "hiwire.h"
 #include "pyproxy.h"
 #include "python2js.h"
@@ -39,7 +40,8 @@ _runPythonDebug(char* code)
   return id;
 }
 
-EM_JS_INT(int runpython_init_js,
+EM_JS_NUM(int,
+          runpython_init_js,
           (JsRef pyodide_py_proxy, JsRef globals_proxy),
           {
             Module.pyodide_py = Module.hiwire.get_value(pyodide_py_proxy);

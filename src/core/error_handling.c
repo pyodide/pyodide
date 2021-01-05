@@ -1,3 +1,8 @@
+#include "error_handling.h"
+#include "Python.h"
+#include "hiwire.h"
+#include "jsproxy.h"
+
 void
 PyodideErr_SetJsError(JsRef err)
 {

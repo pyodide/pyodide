@@ -1,3 +1,6 @@
+#ifndef ERROR_HANDLING_H
+#define ERROR_HANDLING_H
+
 /**  Wrap EM_JS so that it produces functions that follow the Python return
  *  conventions. We catch javascript errors and proxy them and use
  *  `PyErr_SetObject` to hand them off to python. We need two variants, one
@@ -7,6 +10,8 @@
 
 typedef int errcode;
 
+// Hiwire wants to import us for errcode, so import hiwire after typedef.
+#include "hiwire.h"
 void
 PyodideErr_SetJsError(JsRef err);
 
@@ -39,3 +44,5 @@ PyodideErr_SetJsError(JsRef err);
       return -1;                                                               \
     }                                                                          \
   })
+
+#endif // ERROR_HANDLING_H

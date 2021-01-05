@@ -1,4 +1,5 @@
 #include "js2python.h"
+#include "error_handling.h"
 
 #include <emscripten.h>
 
