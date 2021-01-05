@@ -196,7 +196,7 @@ def handle_command(line, args, dryrun=False):
        an iterable with the compilation arguments
     args : {object, namedtuple}
        an container with additional compilation options,
-       in particular containing ``args.cflags`` and ``args.ldflags``
+       in particular containing ``args.cflags``, ``args.cxxflags``, and ``args.ldflags``
     dryrun : bool, default=False
        if True do not run the resulting command, only return it
 
@@ -204,12 +204,19 @@ def handle_command(line, args, dryrun=False):
     --------
 
     >>> from collections import namedtuple
-    >>> Args = namedtuple('args', ['cflags', 'ldflags', 'host'])
-    >>> args = Args(cflags='', ldflags='', host='')
+    >>> Args = namedtuple('args', ['cflags', 'cxxflags', 'ldflags', 'host','replace_libs'])
+    >>> args = Args(cflags='', cxxflags='', ldflags='', host='',replace_libs='')
     >>> handle_command(['gcc', 'test.c'], args, dryrun=True)
     emcc test.c
     ['emcc', 'test.c']
     """
+    # some libraries have different names on wasm e.g. png16 = png
+    replace_libs = {}
+    for l in args.replace_libs.split(";"):
+        if len(l) > 0:
+            from_lib, to_lib = l.split("=")
+            replace_libs[from_lib] = to_lib
+
     # This is a special case to skip the compilation tests in numpy that aren't
     # actually part of the build
     for arg in line:
@@ -235,14 +242,16 @@ def handle_command(line, args, dryrun=False):
     else:
         new_args = ["emcc"]
         # distutils doesn't use the c++ compiler when compiling c++ <sigh>
-        if any(arg.endswith(".cpp") for arg in line):
+        if any(arg.endswith((".cpp", ".cc")) for arg in line):
             new_args = ["em++"]
     library_output = line[-1].endswith(".so")
 
     if library_output:
         new_args.extend(args.ldflags.split())
-    elif new_args[0] in ("emcc", "em++"):
+    elif new_args[0] == "emcc":
         new_args.extend(args.cflags.split())
+    elif new_args[0] == "em++":
+        new_args.extend(args.cflags.split() + args.cxxflags.split())
 
     lapack_dir = None
 
@@ -260,6 +269,10 @@ def handle_command(line, args, dryrun=False):
         # Don't include any system directories
         if arg.startswith("-L/usr"):
             continue
+        if arg.startswith("-l"):
+            if arg[2:] in replace_libs:
+                arg = "-l" + replace_libs[arg[2:]]
+
         # threading is disabled for now
         if arg == "-pthread":
             continue
@@ -269,15 +282,12 @@ def handle_command(line, args, dryrun=False):
         # The native build is possibly multithreaded, but the emscripten one
         # definitely isn't
         arg = re.sub(r"/python([0-9]\.[0-9]+)m", r"/python\1", arg)
-        if arg.endswith(".o"):
-            arg = arg[:-2] + ".bc"
-            output = arg
-        elif arg.endswith(".so"):
+        if arg.endswith(".so"):
             arg = arg[:-3] + ".wasm"
             output = arg
 
         # Fix for scipy to link to the correct BLAS/LAPACK files
-        if arg.startswith("-L") and "CLAPACK-WA" in arg:
+        if arg.startswith("-L") and "CLAPACK" in arg:
             out_idx = line.index("-o")
             out_idx += 1
             module_name = line[out_idx]
@@ -320,7 +330,7 @@ def handle_command(line, args, dryrun=False):
             continue
 
         # See https://github.com/emscripten-core/emscripten/issues/8650
-        if arg in ["-lfreetype", "-lz", "-lpng16", "-lgfortran"]:
+        if arg in ["-lfreetype", "-lz", "-lpng", "-lgfortran"]:
             continue
 
         new_args.append(arg)
@@ -419,6 +429,13 @@ def make_parser(parser):
             help="Extra compiling flags",
         )
         parser.add_argument(
+            "--cxxflags",
+            type=str,
+            nargs="?",
+            default=common.DEFAULTCXXFLAGS,
+            help="Extra C++ specific compiling flags",
+        )
+        parser.add_argument(
             "--ldflags",
             type=str,
             nargs="?",
@@ -442,6 +459,13 @@ def make_parser(parser):
                 "default. Set to 'skip' to skip installation. Installation is "
                 "needed if you want to build other packages that depend on this one."
             ),
+        )
+        parser.add_argument(
+            "--replace-libs",
+            type=str,
+            nargs="?",
+            default="",
+            help="Libraries to replace in final link",
         )
     return parser
 

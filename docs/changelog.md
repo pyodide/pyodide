@@ -16,12 +16,23 @@
 
   As part of the change, Module.checkABI is no longer present.
   [#991](https://github.com/iodide-project/pyodide/pull/991)
-- six is no longer vendored in the main pyodide package, and needs to be loaded
-  explicitly [#1010](https://github.com/iodide-project/pyodide/pull/1010)
+- six, jedi and parso are no longer vendored in the main pyodide package, and
+  need to be loaded explicitly
+  [#1010](https://github.com/iodide-project/pyodide/pull/1010),
+  [#987](https://github.com/iodide-project/pyodide/pull/987).
+
+  This also implies that to use `pyodide.autocomplete`, the jedi
+  package must be explicitly loaded.
+
 
 ### Added
 - `micropip` now supports installing wheels from relative urls. [#872](https://github.com/iodide-project/pyodide/pull/872)
 - uglifyjs and lessc no longer need to be installed in the system during build
+  [#878](https://github.com/iodide-project/pyodide/pull/878).
+- Reduce the size of the core pyodide package
+  [#987](https://github.com/iodide-project/pyodide/pull/987).
+- Updated packages: bleach 3.2.1, packaging 20.8
+
 
 ## Version 0.16.1
 *December 25, 2020*
