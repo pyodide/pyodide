@@ -138,7 +138,7 @@ _pyproxy_apply(PyObject* pyobj, JsRef idargs)
 
 void
 _pyproxy_destroy(PyObject* ptrobj)
-{
+{ // See bug #1049
   PyObject* pyobj = ptrobj;
   Py_DECREF(ptrobj);
   EM_ASM(delete Module.PyProxies[ptrobj];);
@@ -168,6 +168,20 @@ EM_JS(JsRef, pyproxy_new, (PyObject * ptrobj), {
 
   return Module.hiwire.new_value(proxy);
 });
+
+// See bug #1049
+JsRef
+get_pyproxy(PyObject* x)
+{
+  JsRef result = pyproxy_use(x);
+  if (result != NULL) {
+    return result;
+  }
+
+  // Reference counter is increased only once when a PyProxy is created.
+  Py_INCREF(x);
+  return pyproxy_new(x);
+}
 
 EM_JS(int, pyproxy_init, (), {
   // clang-format off
@@ -209,6 +223,7 @@ EM_JS(int, pyproxy_init, (), {
       } else if (jskey === '$$') {
         return jsobj['$$'];
       } else if (jskey === 'destroy') {
+        // See bug #1049
         return function() {
           __pyproxy_destroy(ptrobj);
           jsobj['$$']['ptr'] = null;
