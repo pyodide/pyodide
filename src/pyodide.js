@@ -309,8 +309,8 @@ var languagePluginLoader = new Promise((resolve, reject) => {
     'runPythonAsync',
     'version',
     'autocomplete',
-    'mountPackage',
-    'dismountPackage',
+    'registerJsModule',
+    'unregisterJsModule',
   ];
 
   function makePublicAPI(module, public_api) {
@@ -331,8 +331,6 @@ var languagePluginLoader = new Promise((resolve, reject) => {
   Module.noWasmDecoding = true;
   Module.preloadedWasm = {};
   let isFirefox = navigator.userAgent.toLowerCase().indexOf('firefox') > -1;
-
-  Module.runPython = code => Module.pyodide_py.eval_code(code, Module.globals);
 
   // clang-format off
   Module.loadPackagesFromImports  = async function(code, messageCallback, errorCallback) {
@@ -359,13 +357,21 @@ var languagePluginLoader = new Promise((resolve, reject) => {
   // clang-format on
 
   Module.pyimport = name => Module.globals[name];
+  Module.runPython = code => Module.pyodide_py.eval_code(code, Module.globals);
 
   Module.runPythonAsync = async function(code, messageCallback, errorCallback) {
     await Module.loadPackagesFromImports(code, messageCallback, errorCallback);
     return Module.runPython(code);
   };
 
-  Module.version = function() { return Module.pyodide_py.__version__; };
+  Module.registerJsModule =
+      function(name,
+               module) { Module.pyodide_py.register_js_module(name, module); }
+
+      Module.unregisterJsModule =
+          function(name) { Module.pyodide_py.unregister_js_module(name); }
+
+          Module.version = function() { return Module.pyodide_py.__version__; };
 
   Module.autocomplete = function(path) {
     var pyodide_module = Module.pyimport("pyodide");
@@ -380,7 +386,7 @@ var languagePluginLoader = new Promise((resolve, reject) => {
           .then((response) => response.json())
           .then((json) => {
             fixRecursionLimit(self.pyodide);
-            self.pyodide.mountPackage("js", globalThis);
+            self.pyodide.registerJsModule("js", globalThis);
             self.pyodide = makePublicAPI(self.pyodide, PUBLIC_API);
             self.pyodide._module.packages = json;
             resolve();
