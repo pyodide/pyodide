@@ -141,8 +141,8 @@ def test_mount_object(selenium):
         }
         let a = { x : x1, y, s : 3, t : 7};
         let b = { x : x2, y, u : 3, t : 7};
-        pyodide.mountPackage("a", a);
-        pyodide.mountPackage("b", b);
+        pyodide.registerJsPackage("a", a);
+        pyodide.registerJsPackage("b", b);
         return pyodide.runPython(`
             from a import x
             from b import x as x2
@@ -173,8 +173,8 @@ def test_mount_map(selenium):
         }
         let a = new Map(Object.entries({ x : x1, y, s : 3, t : 7}));
         let b = new Map(Object.entries({ x : x2, y, u : 3, t : 7}));
-        pyodide.mountPackage("a", a);
-        pyodide.mountPackage("b", b);
+        pyodide.registerJsPackage("a", a);
+        pyodide.registerJsPackage("b", b);
         return pyodide.runPython(`
             from a import x
             from b import x as x2
@@ -210,9 +210,9 @@ def test_mount_errors(selenium):
         """
         let a = new Map(Object.entries({ s : 7 }));
         let b = new Map(Object.entries({ t : 3 }));
-        pyodide.mountPackage("a", a);
-        pyodide.mountPackage("a", b);
-        pyodide.dismountPackage("a")
+        pyodide.registerJsPackage("a", a);
+        pyodide.registerJsPackage("a", b);
+        pyodide.unregisterJsPackage("a")
         pyodide.runPython(`
             try:
                 import a
@@ -225,8 +225,8 @@ def test_mount_errors(selenium):
     selenium.run_js(
         """
         try {
-            pyodide.dismountPackage("doesnotexist");
-            throw new Error("dismountPackage should have thrown an error.");
+            pyodide.unregisterJsPackage("doesnotexist");
+            throw new Error("unregisterJsPackage should have thrown an error.");
         } catch(e){
             if(!e.message.includes("Cannot dismount module 'doesnotexist': no such module exists.")){
                 throw e;
@@ -234,18 +234,18 @@ def test_mount_errors(selenium):
         }
         pyodide.runPython("import pathlib")
         try {
-            pyodide.dismountPackage("pathlib");
-            throw new Error("dismountPackage should have thrown an error.");
+            pyodide.unregisterJsPackage("pathlib");
+            throw new Error("unregisterJsPackage should have thrown an error.");
         } catch(e){
-            if(!e.message.includes("was not mounted with 'pyodide.mountPackage'")){
+            if(!e.message.includes("was not mounted with 'pyodide.registerJsPackage'")){
                 throw e;
             }
         }
         try {
-            pyodide.mountPackage("pathlib", {});
-            throw new Error("dismountPackage should have thrown an error.");
+            pyodide.registerJsPackage("pathlib", {});
+            throw new Error("unregisterJsPackage should have thrown an error.");
         } catch(e){
-            if(!e.message.includes("was not mounted with 'pyodide.mountPackage'")){
+            if(!e.message.includes("was not mounted with 'pyodide.registerJsPackage'")){
                 throw e;
             }
         }
