@@ -2,6 +2,7 @@
 from importlib.machinery import ExtensionFileLoader
 from importlib.abc import MetaPathFinder
 from importlib.util import spec_from_loader
+import sys
 
 
 def create_module_inner(spec, jsproxy):
@@ -14,26 +15,25 @@ class JsImporter(MetaPathFinder, ExtensionFileLoader):
     ### Finder methods
     @classmethod
     def find_spec(cls, fullname, path, target=None):
-        try:
-            [base_name, *splitname] = fullname.split(".")
-            try:
-                jsproxy = JsImporter.jsproxies[base_name]
-                for part in splitname:
-                    jsproxy = getattr(jsproxy, part)
-            except (AttributeError, KeyError):
-                # No jspackage found
-                return None
-            name = (
-                splitname[-1] if splitname else base_name
-            )  # or should we use fullname?
-            loader = cls(name, jsproxy)
-            return spec_from_loader(fullname, loader, origin="javascript")
-        except Exception as e:
-            raise ImportError(
-                "JsImporter experienced an unexpected error while trying to load {!r}".format(
-                    fullname
+        # Wait until here to import so we know JsProxy isn't the dummy.
+        from ._base import JsProxy
+
+        print("JsImporter.find_spec fullname:", fullname)
+        [parent, _, child] = fullname.rpartition(".")
+        if parent:
+            parent_module = sys.modules[parent]
+            jsproxy = getattr(parent_module, child)
+            if type(child) != JsProxy:
+                raise ModuleNotFoundError(
+                    f"No module named {fullname:r}", name=fullname
                 )
-            ) from e
+        else:
+            try:
+                jsproxy = JsImporter.jsproxies[fullname]
+            except KeyError:
+                return None
+        loader = cls(fullname, jsproxy)
+        return spec_from_loader(fullname, loader, origin="javascript")
 
     def __init__(self, name, jsproxy):
         super().__init__(name, "<javscript module>")

@@ -12,6 +12,10 @@ from typing import Dict, List, Any, Tuple
 import tokenize
 
 
+class JsProxy:
+    """ A wrapper around a javascript object to allow it to be used from Python. """
+
+
 class JsException(Exception):
     """
     A wrapper around a Javascript Error to allow the Error to be thrown in Python.
@@ -19,7 +23,6 @@ class JsException(Exception):
 
     # This gets overwritten in jsproxy.c, it is just here for autodoc and humans
     # reading this file.
-    pass
 
 
 def open_url(url: str) -> StringIO:

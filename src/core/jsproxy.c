@@ -647,8 +647,14 @@ JsProxy_init()
   if (PyObject_SetAttrString(module, "JsException", Exc_JsException)) {
     goto fail;
   }
-
   Py_CLEAR(module);
+
+  // Add JsProxy to pyodide._base for typechecking.
+  module = PyImport_ImportModule("pyodide._base");
+  if (PyObject_SetAttrString(module, "JsProxy", &JsProxyType)) {
+    goto fail;
+  }
+
   return (PyType_Ready(&JsProxyType) || PyType_Ready(&JsBoundMethodType) ||
           PyType_Ready(&_Exc_JsException));
 
