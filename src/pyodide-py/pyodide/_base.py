@@ -65,8 +65,6 @@ class CodeRunner:
     """
 
     def __init__(self, ns: Dict[str, Any] = None):
-        # handle mis-indented input from multi-line strings
-
         self.ns = ns if ns is not None else {}
         self.filename = "<exec>"
 
@@ -119,6 +117,7 @@ class CodeRunner:
         code object
             last expression's code object (or None)
         """
+        # handle mis-indented input from multi-line strings
         code = dedent(code)
 
         mod = ast.parse(code)
