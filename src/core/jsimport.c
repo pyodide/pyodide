@@ -122,7 +122,7 @@ JsImport_Dir(PyObject* self)
     jskeys = JsImport_Dir_object(self, jsproxy);
   }
   QUIT_IF_NULL(jskeys);
-  QUIT_IF_NZ(_PySet_Update(result_set, pykeys));
+  QUIT_IF_NZ(_PySet_Update(result_set, jskeys));
   result = PyList_New(0);
   QUIT_IF_NULL(result);
   null_or_pynone = _PyList_Extend((PyListObject*)result, result_set);

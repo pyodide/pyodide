@@ -21,12 +21,21 @@ class JsImporter(MetaPathFinder, ExtensionFileLoader):
         [parent, _, child] = fullname.rpartition(".")
         if parent:
             parent_module = sys.modules[parent]
+            if not hasattr(parent_module, "__loader__") or not isinstance(
+                parent_module.__loader__, JsImporter
+            ):
+                # Not one of us.
+                return None
             try:
                 jsproxy = getattr(parent_module, child)
             except AttributeError:
-                return None
+                raise ModuleNotFoundError(
+                    f"No module named {fullname!r}", name=fullname
+                )
             if not isinstance(jsproxy, JsProxy):
-                return None
+                raise ModuleNotFoundError(
+                    f"No module named {fullname!r}", name=fullname
+                )
         else:
             try:
                 jsproxy = JsImporter.jsproxies[fullname]
