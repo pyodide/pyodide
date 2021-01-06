@@ -60,6 +60,11 @@ class CodeRunner:
         or the last (named) assignment.
         'none' will always return `None`.
         Other values will be interpreted as 'none'.
+    quiet_trailing_semicolon
+        wether a trailing semicolon should 'quiet' the result or not.
+        Setting this to `True` (default) mimic the CPython's interpret
+        behavior ; whereas setting it to `False` mimic the IPython's
+        interpret behavior.
     filename:
         file from which the code was read.
 
@@ -78,17 +83,18 @@ class CodeRunner:
         self,
         ns: Dict[str, Any] = None,
         mode: str = "last_expr",
+        quiet_trailing_semicolon: bool = True,
         filename: str = "<exec>",
     ):
         self.ns = ns if ns is not None else {}
+        self.quiet_trailing_semicolon = quiet_trailing_semicolon
         self.filename = filename
         self.mode = mode
 
     def quiet(self, code: str) -> bool:
         """
-        Does the last nonwhitespace character of code is a semicolon?
-
-        This can be overridden to customize the way run() is silenced.
+        If `quiet_trailing_semicolon` is set tot True in the constructor,
+        does the last nonwhitespace character of code is a semicolon?
 
         Examples
         --------
@@ -98,9 +104,14 @@ class CodeRunner:
         True
         >>> CodeRunner().quiet('1 + 1 # comment ;')
         False
+        >>> CodeRunner(quiet_trailing_semicolon=False).quiet('1 + 1 ;')
+        False
         """
         # largely inspired from IPython:
         # https://github.com/ipython/ipython/blob/86d24741188b0cedd78ab080d498e775ed0e5272/IPython/core/displayhook.py#L84
+
+        if not self.quiet_trailing_semicolon:
+            return False
 
         # We need to wrap tokens in a buffer because:
         # "Tokenize requires one argument, readline, which must be
@@ -204,6 +215,8 @@ class CodeRunner:
         return `None`.
         If the last statement is an expression, return the
         result of the expression.
+        Use the `mode` and `quiet_trailing_semicolon` parameters in the
+        constructor to modify this default behavior.
         """
         mod, last_expr = self._split_and_compile(code)
 
@@ -240,7 +253,11 @@ class CodeRunner:
 
 
 def eval_code(
-    code: str, ns: Dict[str, Any], mode: str = "last_expr", filename: str = "<exec>"
+    code: str,
+    ns: Dict[str, Any],
+    mode: str = "last_expr",
+    quiet_trailing_semicolon: bool = True,
+    filename: str = "<exec>",
 ) -> Any:
     """Runs a code string.
 
@@ -258,6 +275,10 @@ def eval_code(
        or the last (named) assignment.
        'none' will always return `None`.
            Other values will be interpreted as 'none'.
+    quiet_trailing_semicolon
+       wether a trailing semicolon should 'quiet' the result or not.
+       Setting this to `True` (default) mimic the CPython's interpret
+       behavior ; whereas setting it to `False` mimic the IPython's
     filename:
        file from which the code was read.
 
@@ -266,12 +287,18 @@ def eval_code(
     If the last nonwhitespace character of code is a semicolon return `None`.
     If the last statement is an expression, return the
     result of the expression.
+    Use the `mode` and `quiet_trailing_semicolon` parameters to modify
+    this default behavior.
     """
-    return CodeRunner(ns, mode, filename).run(code)
+    return CodeRunner(ns, mode, quiet_trailing_semicolon, filename).run(code)
 
 
 async def _eval_code_async(
-    code: str, ns: Dict[str, Any], mode: str = "last_expr", filename: str = "<exec>"
+    code: str,
+    ns: Dict[str, Any],
+    mode: str = "last_expr",
+    quiet_trailing_semicolon: bool = True,
+    filename: str = "<exec>",
 ) -> Any:
     """ //!\\ WARNING //!\\
     This is not working yet. For use once we add an EventLoop.
@@ -283,7 +310,9 @@ async def _eval_code_async(
       - add tests
     """
     raise NotImplementedError("Async is not yet supported in Pyodide.")
-    return await CodeRunner(ns, mode, filename).run_async(code)
+    return await CodeRunner(ns, mode, quiet_trailing_semicolon, filename).run_async(
+        code
+    )
 
 
 def find_imports(code: str) -> List[str]:
