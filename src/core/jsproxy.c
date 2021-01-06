@@ -1,17 +1,6 @@
 #define PY_SSIZE_T_CLEAN
 #include <Python.h>
-#include <abstract.h> /* PySendResult */
-#include <object.h>   /* sendfunc, Py_TPFLAGS_HAVE_AM_SEND */
 
-typedef enum
-{
-  PYGEN_RETURN = 0,
-  PYGEN_ERROR = -1,
-  PYGEN_NEXT = 1,
-} PySendResult;
-typedef PySendResult (*sendfunc)(PyObject* iter,
-                                 PyObject* value,
-                                 PyObject** result);
 #include "jsproxy.h"
 
 #include "Python.h"
@@ -550,7 +539,7 @@ static PyMethodDef JsProxy_Methods[] = {
     (PyCFunction)JsProxy_GetIter,
     METH_NOARGS,
     "Get an iterator over the object" },
-  // { "__await__", (PyCFunction)JsProxy_Await, METH_NOARGS, ""},
+  { "__await__", (PyCFunction)JsProxy_Await, METH_NOARGS, ""},
   { "_has_bytes",
     (PyCFunction)JsProxy_HasBytes,
     METH_NOARGS,
@@ -791,7 +780,7 @@ JsProxy_init()
     goto fail;
   }
 
-  asyncio_get_event_loop = PyObject_GetAttrString(module, "get_event_loop");
+  asyncio_get_event_loop = PyObject_GetAttrId(module, &PyId_get_event_loop);
   if (asyncio_get_event_loop == NULL) {
     goto fail;
   }
