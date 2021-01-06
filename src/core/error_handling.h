@@ -42,4 +42,27 @@ typedef int errcode;
   })
 // clang-format on
 
+#define FAIL() goto finally
+
+#define FAIL_IF_NULL(x)                                                        \
+  do {                                                                         \
+    if (x == NULL) {                                                           \
+      FAIL();                                                                  \
+    }                                                                          \
+  } while (0)
+
+#define FAIL_IF_MINUS_ONE(x)                                                   \
+  do {                                                                         \
+    if (x != 0) {                                                              \
+      FAIL();                                                                  \
+    }                                                                          \
+  } while (0)
+
+#define FAIL_IF_ERR_OCCURRED(x)                                                \
+  do {                                                                         \
+    if (PyErr_Occurred()) {                                                    \
+      FAIL();                                                                  \
+    }                                                                          \
+  } while (0)
+
 #endif // ERROR_HANDLING_H
