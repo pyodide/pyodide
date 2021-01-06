@@ -48,23 +48,6 @@ except ImportError:
     pytest = None
 
 
-def package_loaded(driver):
-    inited = driver.execute_script("return window.done;")
-    return bool(inited)
-
-
-def _display_driver_logs(browser, driver):
-    if browser == "chrome":
-        print("# Selenium browser logs")
-        print(driver.get_log("browser"))
-    elif browser == "firefox":
-        # browser logs are not available in GeckoDriver
-        # https://github.com/mozilla/geckodriver/issues/284
-        print(
-            "Accessing raw browser logs with Selenium is not " "supported by Firefox."
-        )
-
-
 class JavascriptException(Exception):
     def __init__(self, msg, stack):
         self.msg = msg
