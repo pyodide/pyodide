@@ -14,15 +14,26 @@ class JsImporter(MetaPathFinder, ExtensionFileLoader):
     ### Finder methods
     @classmethod
     def find_spec(cls, fullname, path, target=None):
-        [base_name, *splitname] = fullname.split(".")
-        if base_name not in JsImporter.jsproxies:
-            return None
-        jsproxy = JsImporter.jsproxies[base_name]
-        for part in splitname:
-            jsproxy = getattr(jsproxy, part)
-        name = splitname[-1] if splitname else base_name  # or should we use fullname?
-        loader = cls(name, jsproxy)
-        return spec_from_loader(fullname, loader, origin="javascript")
+        try:
+            [base_name, *splitname] = fullname.split(".")
+            try:
+                jsproxy = JsImporter.jsproxies[base_name]
+                for part in splitname:
+                    jsproxy = getattr(jsproxy, part)
+            except (AttributeError, KeyError):
+                # No jspackage found
+                return None
+            name = (
+                splitname[-1] if splitname else base_name
+            )  # or should we use fullname?
+            loader = cls(name, jsproxy)
+            return spec_from_loader(fullname, loader, origin="javascript")
+        except Exception as e:
+            raise ImportError(
+                "JsImporter experienced an unexpected error while trying to load {!r}".format(
+                    fullname
+                )
+            ) from e
 
     def __init__(self, name, jsproxy):
         super().__init__(name, "<javscript module>")
