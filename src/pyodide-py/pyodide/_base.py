@@ -47,25 +47,27 @@ class CodeRunner:
     """
     A code runner to serve eval_code and eval_code_async.
 
+    Parameters
+    ----------
+    ns
+        `locals()` or `globals()` context where to execute code.
+        This namespace is updated by the subsequent calls to `run()`.
+
     Examples
     --------
     >>> CodeRunner().run("1+1")
     2
     >>> CodeRunner().run("1+1;")
+    >>> runner = CodeRunner()
+    >>> runner.run("x = 5")
+    >>> runner.run("x + 1")
+    6
     """
 
-    def __init__(self, ns: Dict[str, Any] = {}):
-        """
-        Constructor.
-
-        Parameters
-        ----------
-        ns
-           `locals()` or `globals()` context where to execute code.
-        """
+    def __init__(self, ns: Dict[str, Any] = None):
         # handle mis-indented input from multi-line strings
 
-        self.ns = ns
+        self.ns = ns if ns is not None else {}
         self.filename = "<exec>"
 
     def quiet(self, code: str) -> bool:
