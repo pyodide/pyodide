@@ -422,7 +422,7 @@ var languagePluginLoader = new Promise((resolve, reject) => {
         continue;
       }
       if(paren_depth === 0){
-        if(x === ")" && STATE !== QUOTE && STATE !== QUOTE_ESCAPE){
+        if(x === ")" && state !== QUOTE && state !== QUOTE_ESCAPE){
           // We hit closing brace which ends argspec.
           // We have to handle this up here in case argspec ends in a trailing comma
           // (if we're in state START_ARG, the next check would clobber arg_is_obj_dest).

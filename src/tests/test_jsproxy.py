@@ -298,5 +298,5 @@ def test_supports_kwargs(selenium):
     for (s, res) in tests:
         s = f"function f({s}){{}}"
         selenium.run_js(
-            f"return pyodide._module.hiwire.function_supports_kwargs({repr(s)})"
+            f"return pyodide._module.function_supports_kwargs({repr(s)})"
         ) == res
