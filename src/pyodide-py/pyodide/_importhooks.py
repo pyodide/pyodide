@@ -45,8 +45,11 @@ class JsImporter(MetaPathFinder, ExtensionFileLoader):
         return spec_from_loader(fullname, loader, origin="javascript")
 
     def __init__(self, name, jsproxy):
-        super().__init__(name, "<javscript module>")
+        super().__init__(name, None)
         self.jsproxy = jsproxy
+
+    def __repr__(self) -> str:
+        return "javascript module"
 
     @classmethod
     def find_module(cls, fullname, path):
@@ -77,4 +80,9 @@ def register_js_module(name, jsproxy):
 
 
 def unregister_js_module(name):
-    del JsImporter.jsproxies[name]
+    try:
+        del JsImporter.jsproxies[name]
+    except KeyError:
+        raise ValueError(
+            f"Cannot unregister module {name!r}, no such module is registered."
+        )

@@ -191,7 +191,7 @@ def test_mount_map(selenium):
     )
     assert result[:3] == ["x1", "x2", 3]
     # fmt: off
-    assert set(result[3]) == set(
+    assert set(result[3]).issuperset(
         [
             "x", "y", "s", "t",
             "__dir__", "__doc__", "__getattr__", "__loader__",
@@ -200,9 +200,7 @@ def test_mount_map(selenium):
         ]
     )
     # fmt: on
-    assert set([x for x in result[4] if not x.startswith("__")]) == set(
-        ["x", "y", "u", "t", "jsproxy"]
-    )
+    assert set(result[4]).issuperset(["x", "y", "u", "t", "jsproxy"])
 
 
 def test_mount_errors(selenium):
@@ -228,24 +226,7 @@ def test_mount_errors(selenium):
             pyodide.unregisterJsModule("doesnotexist");
             throw new Error("unregisterJsModule should have thrown an error.");
         } catch(e){
-            if(!e.message.includes("Cannot dismount module 'doesnotexist': no such module exists.")){
-                throw e;
-            }
-        }
-        pyodide.runPython("import pathlib")
-        try {
-            pyodide.unregisterJsModule("pathlib");
-            throw new Error("unregisterJsModule should have thrown an error.");
-        } catch(e){
-            if(!e.message.includes("was not mounted with 'pyodide.registerJsModule'")){
-                throw e;
-            }
-        }
-        try {
-            pyodide.registerJsModule("pathlib", {});
-            throw new Error("unregisterJsModule should have thrown an error.");
-        } catch(e){
-            if(!e.message.includes("was not mounted with 'pyodide.registerJsModule'")){
+            if(!e.message.includes("Cannot unregister module 'doesnotexist': no such module exists.")){
                 throw e;
             }
         }
