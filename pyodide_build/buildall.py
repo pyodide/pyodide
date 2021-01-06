@@ -40,37 +40,28 @@ class Package:
 
     def build(self, outputdir: Path, args) -> None:
         with open(self.pkgdir / "build.log", "w") as f:
-            if self.library:
-                p = subprocess.run(
-                    ["make"],
-                    cwd=self.pkgdir,
-                    check=False,
-                    stdout=f,
-                    stderr=subprocess.STDOUT,
-                )
-            else:
-                p = subprocess.run(
-                    [
-                        sys.executable,
-                        "-m",
-                        "pyodide_build",
-                        "buildpkg",
-                        str(self.pkgdir / "meta.yaml"),
-                        "--cflags",
-                        args.cflags,
-                        "--cxxflags",
-                        args.cxxflags,
-                        "--ldflags",
-                        args.ldflags,
-                        "--target",
-                        args.target,
-                        "--install-dir",
-                        args.install_dir,
-                    ],
-                    check=False,
-                    stdout=f,
-                    stderr=subprocess.STDOUT,
-                )
+            p = subprocess.run(
+                [
+                    sys.executable,
+                    "-m",
+                    "pyodide_build",
+                    "buildpkg",
+                    str(self.pkgdir / "meta.yaml"),
+                    "--cflags",
+                    args.cflags,
+                    "--cxxflags",
+                    args.cxxflags,
+                    "--ldflags",
+                    args.ldflags,
+                    "--target",
+                    args.target,
+                    "--install-dir",
+                    args.install_dir,
+                ],
+                check=False,
+                stdout=f,
+                stderr=subprocess.STDOUT,
+            )
 
         try:
             p.check_returncode()

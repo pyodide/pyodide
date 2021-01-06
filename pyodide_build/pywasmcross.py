@@ -287,7 +287,7 @@ def handle_command(line, args, dryrun=False):
             output = arg
 
         # Fix for scipy to link to the correct BLAS/LAPACK files
-        if arg.startswith("-L") and "CLAPACK-WA" in arg:
+        if arg.startswith("-L") and "CLAPACK" in arg:
             out_idx = line.index("-o")
             out_idx += 1
             module_name = line[out_idx]
@@ -330,7 +330,7 @@ def handle_command(line, args, dryrun=False):
             continue
 
         # See https://github.com/emscripten-core/emscripten/issues/8650
-        if arg in ["-lfreetype", "-lz", "-lpng16", "-lgfortran"]:
+        if arg in ["-lfreetype", "-lz", "-lpng", "-lgfortran"]:
             continue
 
         new_args.append(arg)

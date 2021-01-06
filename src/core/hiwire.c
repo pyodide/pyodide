@@ -3,19 +3,13 @@
 #include "hiwire.h"
 
 JsRef
-hiwire_error()
-{
-  return Js_ERROR;
-}
-
-JsRef
 hiwire_undefined()
 {
   return Js_UNDEFINED;
 }
 
 JsRef
-hiwire_null()
+hiwire_jsnull()
 {
   return Js_NULL;
 }
@@ -39,16 +33,28 @@ hiwire_bool(bool boolean)
 }
 
 EM_JS(int, hiwire_init, (), {
-  let _hiwire = { objects : new Map(), counter : 1 };
+  let _hiwire = {
+    objects : new Map(),
+    // counter is used to allocate keys for the objects map.
+    // We use even integers to represent singleton constants which we won't
+    // reference count. We only want to allocate odd keys so we start at 1 and
+    // step by 2. We use a native uint32 for our counter, so counter
+    // automatically overflows back to 1 if it ever gets up to the max u32 =
+    // 2^{31} - 1. This ensures we can keep recycling keys even for very long
+    // sessions. (Also the native u32 is faster since javascript won't convert
+    // it to a float.)
+    // 0 == C NULL is an error code for compatibility with Python calling
+    // conventions.
+    counter : new Uint32Array([1])
+  };
   Module.hiwire = {};
-  Module.hiwire.ERROR = _hiwire_error();
   Module.hiwire.UNDEFINED = _hiwire_undefined();
-  Module.hiwire.NULL = _hiwire_null();
+  Module.hiwire.JSNULL = _hiwire_jsnull();
   Module.hiwire.TRUE = _hiwire_true();
   Module.hiwire.FALSE = _hiwire_false();
 
   _hiwire.objects.set(Module.hiwire.UNDEFINED, undefined);
-  _hiwire.objects.set(Module.hiwire.NULL, null);
+  _hiwire.objects.set(Module.hiwire.JSNULL, null);
   _hiwire.objects.set(Module.hiwire.TRUE, true);
   _hiwire.objects.set(Module.hiwire.FALSE, false);
 
@@ -58,12 +64,14 @@ EM_JS(int, hiwire_init, (), {
     // Probably not worth it for performance: it's harmless to ocassionally
     // duplicate. Maybe in test builds we could raise if jsval is a standard
     // value?
-    while (_hiwire.objects.has(_hiwire.counter)) {
-      _hiwire.counter = (_hiwire.counter + 1) & 0x7fffffff;
+    while (_hiwire.objects.has(_hiwire.counter[0])) {
+      // Increment by two here (and below) because even integers are reserved
+      // for singleton constants
+      _hiwire.counter[0] += 2;
     }
-    let idval = _hiwire.counter;
+    let idval = _hiwire.counter[0];
     _hiwire.objects.set(idval, jsval);
-    _hiwire.counter = (_hiwire.counter + 1) & 0x7fffffff;
+    _hiwire.counter[0] += 2;
     return idval;
   };
 
@@ -73,14 +81,20 @@ EM_JS(int, hiwire_init, (), {
       throw new Error("Argument to hiwire.get_value is undefined");
     }
     if (!_hiwire.objects.has(idval)) {
-      throw new Error(`Undefined id $ { idval }`);
+      // clang-format off
+      throw new Error(`Undefined id ${ idval }`);
+      // clang-format on
     }
     return _hiwire.objects.get(idval);
   };
 
   Module.hiwire.decref = function(idval)
   {
-    if (idval < 0) {
+    // clang-format off
+    if ((idval & 1) === 0) {
+      // least significant bit unset ==> idval is a singleton.
+      // We don't reference count singletons.
+      // clang-format on
       return;
     }
     _hiwire.objects.delete(idval);
@@ -89,7 +103,11 @@ EM_JS(int, hiwire_init, (), {
 });
 
 EM_JS(JsRef, hiwire_incref, (JsRef idval), {
-  if (idval < 0) {
+  // clang-format off
+  if ((idval & 1) === 0) {
+    // least significant bit unset ==> idval is a singleton.
+    // We don't reference count singletons.
+    // clang-format on
     return;
   }
   return Module.hiwire.new_value(Module.hiwire.get_value(idval));
