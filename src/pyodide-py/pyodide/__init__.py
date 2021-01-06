@@ -3,7 +3,10 @@ from .console import get_completions
 from ._importhooks import JsImporter, register_js_module, unregister_js_module
 import sys
 
-sys.meta_path.append(JsImporter)  # type: ignore
+import platform
+
+if platform.system() == "Emscripten":
+    sys.meta_path.append(JsImporter)  # type: ignore
 
 
 __version__ = "0.16.1"

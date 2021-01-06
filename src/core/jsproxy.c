@@ -651,7 +651,7 @@ JsProxy_init()
 
   // Add JsProxy to pyodide._base for typechecking.
   module = PyImport_ImportModule("pyodide._base");
-  if (PyObject_SetAttrString(module, "JsProxy", &JsProxyType)) {
+  if (PyObject_SetAttrString(module, "JsProxy", (PyObject*)&JsProxyType)) {
     goto fail;
   }
 

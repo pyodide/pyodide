@@ -253,6 +253,18 @@ def test_mount_errors(selenium):
     )
 
 
+def test_nested_import(selenium):
+    assert (
+        selenium.run_js(
+            """
+        a = new Map([["b", new Map([["c", {d : 2}]])]])
+        return pyodide.runPython("from js.a.b import c; c.d");
+        """
+        )
+        == 2
+    )
+
+
 @pytest.mark.xfail
 def test_window_invocation(selenium):
     """ Make sure js.setTimeout etc don't yeild illegal invocation errors. """
