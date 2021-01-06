@@ -52,6 +52,14 @@ class CodeRunner:
     ns
         `locals()` or `globals()` context where to execute code.
         This namespace is updated by the subsequent calls to `run()`.
+    mode
+        'last_expr' , 'last_expr_or_assign' or 'none',
+        specifying what should be evaluated and what should be executed.
+        'last_expr' will return the last expression
+        'last_expr_or_assign' will return the last expression
+        or the last (named) assignment.
+        'none' will always return `None`.
+        Other values will be interpreted as 'none'.
     filename:
         file from which the code was read.
 
@@ -66,9 +74,15 @@ class CodeRunner:
     6
     """
 
-    def __init__(self, ns: Dict[str, Any] = None, filename: str = "<exec>"):
+    def __init__(
+        self,
+        ns: Dict[str, Any] = None,
+        mode: str = "last_expr",
+        filename: str = "<exec>",
+    ):
         self.ns = ns if ns is not None else {}
         self.filename = filename
+        self.mode = mode
 
     def quiet(self, code: str) -> bool:
         """
@@ -107,6 +121,35 @@ class CodeRunner:
 
         return False
 
+    def _last_assign_to_expr(self, mod: ast.Module):
+        """
+        Implementation of 'last_expr_or_assign' mode.
+        It modify the supplyied AST module so that the last
+        statement's value can be returned in 'last_expr' mode.
+
+        Largely inspired from IPython:
+        https://github.com/ipython/ipython/blob/3587f5bb6c8570e7bbb06cf5f7e3bc9b9467355a/IPython/core/interactiveshell.py#L3229
+        """
+        assign_nodes = (ast.AugAssign, ast.AnnAssign, ast.Assign)
+        single_targets_nodes = (ast.AugAssign, ast.AnnAssign)
+
+        last_node = mod.body[-1]
+
+        if not isinstance(last_node, assign_nodes):
+            return
+
+        target: Any
+        if isinstance(last_node, ast.Assign) and len(last_node.targets) == 1:
+            target = last_node.targets[0]
+        elif isinstance(last_node, single_targets_nodes):
+            target = last_node.target
+        else:
+            target = None
+        if isinstance(target, ast.Name):
+            last_node = ast.Expr(ast.Name(target.id, ast.Load()))
+            mod.body.append(last_node)
+            ast.fix_missing_locations(mod)
+
     def _split_and_compile(self, code: str, flags: int = 0x0) -> Tuple[Any, Any]:
         """
         Split code in two parts, everything but last expression and
@@ -126,9 +169,18 @@ class CodeRunner:
         if not mod.body:
             return None, None
 
+        mode = self.mode
+        if mode == "last_expr_or_assign":
+            self._last_assign_to_expr(mod)
+            mode = "last_expr"
+
         # we extract last expression
         last_expr = None
-        if isinstance(mod.body[-1], (ast.Expr, ast.Await)) and not self.quiet(code):
+        if (
+            mode == "last_expr"
+            and isinstance(mod.body[-1], (ast.Expr, ast.Await))
+            and not self.quiet(code)
+        ):
             last_expr = ast.Expression(mod.body.pop().value)  # type: ignore
 
         # we compile
@@ -187,7 +239,9 @@ class CodeRunner:
             return res
 
 
-def eval_code(code: str, ns: Dict[str, Any], filename: str = "<exec>") -> Any:
+def eval_code(
+    code: str, ns: Dict[str, Any], mode: str = "last_expr", filename: str = "<exec>"
+) -> Any:
     """Runs a code string.
 
     Parameters
@@ -196,6 +250,14 @@ def eval_code(code: str, ns: Dict[str, Any], filename: str = "<exec>") -> Any:
        the Python code to run.
     ns
        `locals()` or `globals()` context where to execute code.
+    mode
+       'last_expr' , 'last_expr_or_assign' or 'none',
+       specifying what should be evaluated and what should be executed.
+       'last_expr' will return the last expression
+       'last_expr_or_assign' will return the last expression
+       or the last (named) assignment.
+       'none' will always return `None`.
+           Other values will be interpreted as 'none'.
     filename:
        file from which the code was read.
 
@@ -205,11 +267,11 @@ def eval_code(code: str, ns: Dict[str, Any], filename: str = "<exec>") -> Any:
     If the last statement is an expression, return the
     result of the expression.
     """
-    return CodeRunner(ns, filename).run(code)
+    return CodeRunner(ns, mode, filename).run(code)
 
 
 async def _eval_code_async(
-    code: str, ns: Dict[str, Any], filename: str = "<exec>"
+    code: str, ns: Dict[str, Any], mode: str = "last_expr", filename: str = "<exec>"
 ) -> Any:
     """ //!\\ WARNING //!\\
     This is not working yet. For use once we add an EventLoop.
@@ -221,7 +283,7 @@ async def _eval_code_async(
       - add tests
     """
     raise NotImplementedError("Async is not yet supported in Pyodide.")
-    return await CodeRunner(ns, filename).run_async(code)
+    return await CodeRunner(ns, mode, filename).run_async(code)
 
 
 def find_imports(code: str) -> List[str]:

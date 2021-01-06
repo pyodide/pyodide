@@ -50,6 +50,7 @@ def test_eval_code():
     assert eval_code("x=7", ns) is None
     assert ns["x"] == 7
 
+    # default mode ('last_expr'), semicolon
     assert eval_code("1+1;", ns) is None
     assert eval_code("1+1#;", ns) == 2
     assert eval_code("5-2  # comment with trailing semicolon ;", ns) == 3
@@ -57,6 +58,20 @@ def test_eval_code():
     assert eval_code("2**1\n\n", ns) == 2
     assert eval_code("4//2;\n", ns) is None
     assert eval_code("2**1;\n\n", ns) is None
+
+    # 'last_expr_or_assign' mode, semicolon
+    assert eval_code("1 + 1", ns, mode="last_expr_or_assign") == 2
+    assert eval_code("x = 1 + 1", ns, mode="last_expr_or_assign") == 2
+    assert eval_code("a = 5 ; a += 1", ns, mode="last_expr_or_assign") == 6
+    assert eval_code("a = 5 ; a += 1;", ns, mode="last_expr_or_assign") is None
+    assert eval_code("l = [1, 1, 2] ; l[0] = 0", ns, mode="last_expr_or_assign") is None
+
+    # 'none' mode, (useless) semicolon
+    assert eval_code("1 + 1", ns, mode="none") is None
+    assert eval_code("x = 1 + 1", ns, mode="none") is None
+    assert eval_code("a = 5 ; a += 1", ns, mode="none") is None
+    assert eval_code("a = 5 ; a += 1;", ns, mode="none") is None
+    assert eval_code("l = [1, 1, 2] ; l[0] = 0", ns, mode="none") is None
 
 
 def test_monkeypatch_eval_code(selenium):
