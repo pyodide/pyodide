@@ -363,20 +363,6 @@ JsProxy_HasBytes(PyObject* o)
   }
 }
 
-#define QUIT_IF_NULL(x)                                                        \
-  do {                                                                         \
-    if (x == NULL) {                                                           \
-      goto finally;                                                            \
-    }                                                                          \
-  } while (0)
-
-#define QUIT_IF_NZ(x)                                                          \
-  do {                                                                         \
-    if (x != 0) {                                                              \
-      goto finally;                                                            \
-    }                                                                          \
-  } while (0)
-
 #define GET_JSREF(x) (((JsProxy*)x)->js)
 
 static PyObject*
@@ -396,23 +382,23 @@ JsProxy_Dir(PyObject* self)
   // Would have been nice if they'd supplied PyObject_GenericDir...
   object__dir__ =
     _PyObject_GetAttrId((PyObject*)&PyBaseObject_Type, &PyId___dir__);
-  QUIT_IF_NULL(object__dir__);
+  FAIL_IF_NULL(object__dir__);
   keys = PyObject_CallFunctionObjArgs(object__dir__, self, NULL);
-  QUIT_IF_NULL(keys);
+  FAIL_IF_NULL(keys);
   result_set = PySet_New(keys);
-  QUIT_IF_NULL(result_set);
+  FAIL_IF_NULL(result_set);
 
   // Now get attributes of js object
   iddir = hiwire_dir(GET_JSREF(self));
   pydir = js2python(iddir);
-  QUIT_IF_NULL(pydir);
+  FAIL_IF_NULL(pydir);
   // Merge and sort
-  QUIT_IF_NZ(_PySet_Update(result_set, pydir));
+  FAIL_IF_MINUS_ONE(_PySet_Update(result_set, pydir));
   result = PyList_New(0);
-  QUIT_IF_NULL(result);
+  FAIL_IF_NULL(result);
   null_or_pynone = _PyList_Extend((PyListObject*)result, result_set);
-  QUIT_IF_NULL(null_or_pynone);
-  QUIT_IF_NZ(PyList_Sort(result));
+  FAIL_IF_NULL(null_or_pynone);
+  FAIL_IF_MINUS_ONE(PyList_Sort(result));
 
   success = true;
 finally:
@@ -689,6 +675,7 @@ JsException_AsJs(PyObject* err)
 int
 JsProxy_init()
 {
+  bool success = false;
   PyExc_BaseException_Type = (PyTypeObject*)PyExc_BaseException;
   _Exc_JsException.tp_base = (PyTypeObject*)PyExc_Exception;
 
@@ -697,18 +684,16 @@ JsProxy_init()
 
   // Add JsException to the pyodide module so people can catch it if they want.
   module = PyImport_ImportModule("pyodide");
-  if (module == NULL) {
-    goto fail;
-  }
-  if (PyObject_SetAttrString(module, "JsException", Exc_JsException)) {
-    goto fail;
-  }
+  FAIL_IF_NULL(module);
+  FAIL_IF_MINUS_ONE(
+    PyObject_SetAttrString(module, "JsException", Exc_JsException));
 
+  success = true;
+finally:
   Py_CLEAR(module);
+  if (!success) {
+    return -1;
+  }
   return (PyType_Ready(&JsProxyType) || PyType_Ready(&JsBoundMethodType) ||
           PyType_Ready(&_Exc_JsException));
-
-fail:
-  Py_CLEAR(module);
-  return -1;
 }
