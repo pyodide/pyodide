@@ -1,0 +1,148 @@
+diff --git a/scipy/sparse/linalg/dsolve/SuperLU/SRC/ilu_ccopy_to_ucol.c b/scipy/sparse/linalg/dsolve/SuperLU/SRC/ilu_ccopy_to_ucol.c
+index 5a7203d..a17a3e0 100644
+--- a/scipy/sparse/linalg/dsolve/SuperLU/SRC/ilu_ccopy_to_ucol.c
++++ b/scipy/sparse/linalg/dsolve/SuperLU/SRC/ilu_ccopy_to_ucol.c
+@@ -16,7 +16,7 @@
+ int num_drop_U;
+ #endif
+ 
+-extern void ccopy_(int *, complex [], int *, complex [], int *);
++extern int ccopy_(int *, complex [], int *, complex [], int *);
+ #if SCIPY_FIX
+ extern double dlamch_(char *);
+ #endif
+diff --git a/scipy/sparse/linalg/dsolve/SuperLU/SRC/ilu_cdrop_row.c b/scipy/sparse/linalg/dsolve/SuperLU/SRC/ilu_cdrop_row.c
+index 44173c8..bf8de6f 100644
+--- a/scipy/sparse/linalg/dsolve/SuperLU/SRC/ilu_cdrop_row.c
++++ b/scipy/sparse/linalg/dsolve/SuperLU/SRC/ilu_cdrop_row.c
+@@ -14,8 +14,8 @@
+ #include "slu_cdefs.h"
+ 
+ extern void cswap_(int *, complex [], int *, complex [], int *);
+-extern void caxpy_(int *, complex *, complex [], int *, complex [], int *);
+-extern void ccopy_(int *, complex [], int *, complex [], int *);
++extern int caxpy_(int *, complex *, complex [], int *, complex [], int *);
++extern int ccopy_(int *, complex [], int *, complex [], int *);
+ extern float scasum_(int *, complex *, int *);
+ extern float scnrm2_(int *, complex *, int *);
+ extern double dnrm2_(int *, double [], int *);
+diff --git a/scipy/sparse/linalg/dsolve/SuperLU/SRC/ilu_dcopy_to_ucol.c b/scipy/sparse/linalg/dsolve/SuperLU/SRC/ilu_dcopy_to_ucol.c
+index e9162a7..0120565 100644
+--- a/scipy/sparse/linalg/dsolve/SuperLU/SRC/ilu_dcopy_to_ucol.c
++++ b/scipy/sparse/linalg/dsolve/SuperLU/SRC/ilu_dcopy_to_ucol.c
+@@ -16,7 +16,7 @@
+ int num_drop_U;
+ #endif
+ 
+-extern void dcopy_(int *, double [], int *, double [], int *);
++extern int dcopy_(int *, double [], int *, double [], int *);
+ 
+ #if 0
+ static double *A;  /* used in _compare_ only */
+diff --git a/scipy/sparse/linalg/dsolve/SuperLU/SRC/ilu_ddrop_row.c b/scipy/sparse/linalg/dsolve/SuperLU/SRC/ilu_ddrop_row.c
+index a08c85c..e556370 100644
+--- a/scipy/sparse/linalg/dsolve/SuperLU/SRC/ilu_ddrop_row.c
++++ b/scipy/sparse/linalg/dsolve/SuperLU/SRC/ilu_ddrop_row.c
+@@ -14,8 +14,8 @@
+ #include "slu_ddefs.h"
+ 
+ extern void dswap_(int *, double [], int *, double [], int *);
+-extern void daxpy_(int *, double *, double [], int *, double [], int *);
+-extern void dcopy_(int *, double [], int *, double [], int *);
++extern int daxpy_(int *, double *, double [], int *, double [], int *);
++extern int dcopy_(int *, double [], int *, double [], int *);
+ extern double dasum_(int *, double *, int *);
+ extern double dnrm2_(int *, double *, int *);
+ extern double dnrm2_(int *, double [], int *);
+diff --git a/scipy/sparse/linalg/dsolve/SuperLU/SRC/ilu_scopy_to_ucol.c b/scipy/sparse/linalg/dsolve/SuperLU/SRC/ilu_scopy_to_ucol.c
+index b9fd387..3774cf2 100644
+--- a/scipy/sparse/linalg/dsolve/SuperLU/SRC/ilu_scopy_to_ucol.c
++++ b/scipy/sparse/linalg/dsolve/SuperLU/SRC/ilu_scopy_to_ucol.c
+@@ -16,7 +16,7 @@
+ int num_drop_U;
+ #endif
+ 
+-extern void scopy_(int *, float [], int *, float [], int *);
++extern int scopy_(int *, float [], int *, float [], int *);
+ #if SCIPY_FIX
+ extern double dlamch_(char *);
+ #endif
+diff --git a/scipy/sparse/linalg/dsolve/SuperLU/SRC/ilu_sdrop_row.c b/scipy/sparse/linalg/dsolve/SuperLU/SRC/ilu_sdrop_row.c
+index 108f849..d37f863 100644
+--- a/scipy/sparse/linalg/dsolve/SuperLU/SRC/ilu_sdrop_row.c
++++ b/scipy/sparse/linalg/dsolve/SuperLU/SRC/ilu_sdrop_row.c
+@@ -13,9 +13,9 @@
+ #include <stdlib.h>
+ #include "slu_sdefs.h"
+ 
+-extern void sswap_(int *, float [], int *, float [], int *);
+-extern void saxpy_(int *, float *, float [], int *, float [], int *);
+-extern void scopy_(int *, float [], int *, float [], int *);
++extern int sswap_(int *, float [], int *, float [], int *);
++extern int saxpy_(int *, float *, float [], int *, float [], int *);
++extern int scopy_(int *, float [], int *, float [], int *);
+ extern float sasum_(int *, float *, int *);
+ extern float snrm2_(int *, float *, int *);
+ extern double dnrm2_(int *, double [], int *);
+diff --git a/scipy/sparse/linalg/dsolve/SuperLU/SRC/ilu_zcopy_to_ucol.c b/scipy/sparse/linalg/dsolve/SuperLU/SRC/ilu_zcopy_to_ucol.c
+index ddf3a63..8e96e32 100644
+--- a/scipy/sparse/linalg/dsolve/SuperLU/SRC/ilu_zcopy_to_ucol.c
++++ b/scipy/sparse/linalg/dsolve/SuperLU/SRC/ilu_zcopy_to_ucol.c
+@@ -16,7 +16,7 @@
+ int num_drop_U;
+ #endif
+ 
+-extern void zcopy_(int *, doublecomplex [], int *, doublecomplex [], int *);
++extern int zcopy_(int *, doublecomplex [], int *, doublecomplex [], int *);
+ 
+ #if 0
+ static doublecomplex *A;  /* used in _compare_ only */
+diff --git a/scipy/sparse/linalg/dsolve/SuperLU/SRC/ilu_zdrop_row.c b/scipy/sparse/linalg/dsolve/SuperLU/SRC/ilu_zdrop_row.c
+index 0a140d4..87dd1ae 100644
+--- a/scipy/sparse/linalg/dsolve/SuperLU/SRC/ilu_zdrop_row.c
++++ b/scipy/sparse/linalg/dsolve/SuperLU/SRC/ilu_zdrop_row.c
+@@ -14,8 +14,8 @@
+ #include "slu_zdefs.h"
+ 
+ extern void zswap_(int *, doublecomplex [], int *, doublecomplex [], int *);
+-extern void zaxpy_(int *, doublecomplex *, doublecomplex [], int *, doublecomplex [], int *);
+-extern void zcopy_(int *, doublecomplex [], int *, doublecomplex [], int *);
++extern int zaxpy_(int *, doublecomplex *, doublecomplex [], int *, doublecomplex [], int *);
++extern int zcopy_(int *, doublecomplex [], int *, doublecomplex [], int *);
+ extern double dzasum_(int *, doublecomplex *, int *);
+ extern double dznrm2_(int *, doublecomplex *, int *);
+ extern double dnrm2_(int *, double [], int *);
+diff --git a/scipy/sparse/linalg/dsolve/SuperLU/SRC/scomplex.c b/scipy/sparse/linalg/dsolve/SuperLU/SRC/scomplex.c
+index 2f78c07..7169dd7 100644
+--- a/scipy/sparse/linalg/dsolve/SuperLU/SRC/scomplex.c
++++ b/scipy/sparse/linalg/dsolve/SuperLU/SRC/scomplex.c
+@@ -19,7 +19,7 @@
+ 
+ 
+ /*! \brief Complex Division c = a/b */
+-void c_div(complex *c, complex *a, complex *b)
++int c_div(complex *c, complex *a, complex *b)
+ {
+     float ratio, den;
+     float abr, abi, cr, ci;
+@@ -45,6 +45,7 @@ void c_div(complex *c, complex *a, complex *b)
+     }
+     c->r = cr;
+     c->i = ci;
++    return 0;
+ }
+ 
+ 
+diff --git a/scipy/sparse/linalg/dsolve/SuperLU/SRC/slu_scomplex.h b/scipy/sparse/linalg/dsolve/SuperLU/SRC/slu_scomplex.h
+index c17490d..892bc87 100644
+--- a/scipy/sparse/linalg/dsolve/SuperLU/SRC/slu_scomplex.h
++++ b/scipy/sparse/linalg/dsolve/SuperLU/SRC/slu_scomplex.h
+@@ -58,7 +58,7 @@ extern "C" {
+ #endif
+ 
+ /* Prototypes for functions in scomplex.c */
+-void c_div(complex *, complex *, complex *);
++int c_div(complex *, complex *, complex *);
+ double c_abs(complex *);     /* exact */
+ double c_abs1(complex *);    /* approximate */
+ void c_exp(complex *, complex *);

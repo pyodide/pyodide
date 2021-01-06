@@ -21,6 +21,7 @@ source:
     - patches/disable_scipy_stats_mvn.patch
     - patches/skip-fortran-fails-to-link.patch
     - patches/skip_ellip_harm_2_pyx_ctypes.patch
+    - patches/make-int-return-values.patch
 
 build:
   cflags: -I../../../CLAPACK/build/CLAPACK-3.2.1/INCLUDE -Wno-implicit-function-declaration

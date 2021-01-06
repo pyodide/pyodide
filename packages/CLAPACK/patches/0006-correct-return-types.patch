@@ -1,0 +1,13 @@
+diff --git a/F2CLIBS/libf2c/ef1asc_.c b/F2CLIBS/libf2c/ef1asc_.c
+index 70be0bc..b2a82a2 100644
+--- a/F2CLIBS/libf2c/ef1asc_.c
++++ b/F2CLIBS/libf2c/ef1asc_.c
+@@ -13,7 +13,7 @@ extern "C" {
+ extern VOID s_copy();
+ ef1asc_(a, la, b, lb) ftnint *a, *b; ftnlen *la, *lb;
+ #else
+-extern void s_copy(char*,char*,ftnlen,ftnlen);
++extern int s_copy(char*,char*,ftnlen,ftnlen);
+ int ef1asc_(ftnint *a, ftnlen *la, ftnint *b, ftnlen *lb)
+ #endif
+ {
