@@ -1,3 +1,4 @@
+#include "error_handling.h"
 #include <Python.h>
 #include <emscripten.h>
 
@@ -144,7 +145,7 @@ _pyproxy_destroy(PyObject* ptrobj)
   EM_ASM(delete Module.PyProxies[ptrobj];);
 }
 
-EM_JS(JsRef, pyproxy_use, (PyObject * ptrobj), {
+EM_JS_REF(JsRef, pyproxy_use, (PyObject * ptrobj), {
   // Checks if there is already an existing proxy on ptrobj
 
   if (Module.PyProxies.hasOwnProperty(ptrobj)) {
@@ -154,7 +155,7 @@ EM_JS(JsRef, pyproxy_use, (PyObject * ptrobj), {
   return Module.hiwire.ERROR;
 })
 
-EM_JS(JsRef, pyproxy_new, (PyObject * ptrobj), {
+EM_JS_REF(JsRef, pyproxy_new, (PyObject * ptrobj), {
   // Technically, this leaks memory, since we're holding on to a reference
   // to the proxy forever.  But we have that problem anyway since we don't
   // have a destructor in Javascript to free the Python object.
@@ -169,7 +170,7 @@ EM_JS(JsRef, pyproxy_new, (PyObject * ptrobj), {
   return Module.hiwire.new_value(proxy);
 });
 
-EM_JS(int, pyproxy_init, (), {
+EM_JS_NUM(int, pyproxy_init, (), {
   // clang-format off
   Module.PyProxies = {};
   Module.PyProxy = {

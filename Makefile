@@ -56,6 +56,7 @@ all: check \
 
 build/pyodide.asm.js: src/core/main.o src/core/jsimport.o \
 	        src/core/jsproxy.o src/core/js2python.o \
+		src/core/error_handling.o \
 		src/core/pyproxy.o \
 		src/core/python2js.o \
 		src/core/python2js_buffer.o \
