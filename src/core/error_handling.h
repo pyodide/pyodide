@@ -17,6 +17,13 @@ typedef int errcode;
 int
 error_handling_init();
 
+// WARNING: These wrappers around EM_JS cause macros in body to be expanded.
+// This causes trouble with true and false.
+// In types.h we provide nonstandard definitions:
+// false ==> (!!0)
+// true ==> (!!1)
+// These work as expected in both C and javascript.
+
 // clang-format off
 #define EM_JS_REF(ret, func_name, args, body...)                               \
   EM_JS(ret, func_name, args, {                                                \
