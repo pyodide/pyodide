@@ -31,7 +31,7 @@ class JsImporter(MetaPathFinder, ExtensionFileLoader):
             except AttributeError:
                 raise ModuleNotFoundError(
                     f"No module named {fullname!r}", name=fullname
-                )
+                ) from None
             if not isinstance(jsproxy, JsProxy):
                 raise ModuleNotFoundError(
                     f"No module named {fullname!r}", name=fullname

@@ -238,9 +238,9 @@ def test_nested_import(selenium):
     assert (
         selenium.run_js(
             """
-        a = new Map([["b", new Map([["c", {d : 2}]])]])
-        return pyodide.runPython("from js.a.b import c; c.d");
-        """
+            window.a = new Map([["b", new Map([["c", {d : 2}]])]])
+            return pyodide.runPython("from js.a.b import c; c.d");
+            """
         )
         == 2
     )
