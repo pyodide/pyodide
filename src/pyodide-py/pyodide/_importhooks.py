@@ -18,7 +18,6 @@ class JsImporter(MetaPathFinder, ExtensionFileLoader):
         # Wait until here to import so we know JsProxy isn't the dummy.
         from ._base import JsProxy
 
-        print("JsImporter.find_spec fullname:", fullname)
         [parent, _, child] = fullname.rpartition(".")
         if parent:
             parent_module = sys.modules[parent]
@@ -26,7 +25,7 @@ class JsImporter(MetaPathFinder, ExtensionFileLoader):
                 jsproxy = getattr(parent_module, child)
             except AttributeError:
                 return None
-            if type(child) != JsProxy:
+            if not isinstance(jsproxy, JsProxy):
                 return None
         else:
             try:
