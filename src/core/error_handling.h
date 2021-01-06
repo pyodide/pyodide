@@ -28,11 +28,11 @@ error_handling_init();
 #define EM_JS_REF(ret, func_name, args, body...)                               \
   EM_JS(ret, func_name, args, {                                                \
     /* "use strict";  TODO: enable this. */                                    \
-    try    /* intentionally no braces. */                                      \
+    try    /* intentionally no braces, body already has them */                \
       body /* <== body of func */                                              \
     catch (e) {                                                                \
-        throw e;                                                               \
         /* Dummied out until calling code is ready to catch these errors */    \
+        throw e;                                                               \
         Module.handle_js_error(e);                                             \
         return -1;                                                             \
     }                                                                          \
@@ -41,11 +41,11 @@ error_handling_init();
 #define EM_JS_NUM(ret, func_name, args, body...)                               \
   EM_JS(ret, func_name, args, {                                                \
     /* "use strict";  TODO: enable this. */                                    \
-    try    /* intentionally no braces. */                                      \
+    try    /* intentionally no braces, body already has them */                \
       body /* <== body of func */                                              \
     catch (e) {                                                                \
-        throw e;                                                               \
         /* Dummied out until calling code is ready to catch these errors */    \
+        throw e;                                                               \
         Module.handle_js_error(e);                                             \
         return -1;                                                             \
     }                                                                          \
