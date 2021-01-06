@@ -84,5 +84,5 @@ def unregister_js_module(name):
         del JsImporter.jsproxies[name]
     except KeyError:
         raise ValueError(
-            f"Cannot unregister module {name!r}, no such module is registered."
-        )
+            f"Cannot unregister {name!r}: no javacript module with that name is registered"
+        ) from None

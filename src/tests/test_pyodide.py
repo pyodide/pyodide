@@ -226,7 +226,7 @@ def test_mount_errors(selenium):
             pyodide.unregisterJsModule("doesnotexist");
             throw new Error("unregisterJsModule should have thrown an error.");
         } catch(e){
-            if(!e.message.includes("Cannot unregister module 'doesnotexist': no such module exists.")){
+            if(!e.message.includes("Cannot unregister 'doesnotexist': no javacript module with that name is registered")){
                 throw e;
             }
         }
