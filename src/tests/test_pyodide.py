@@ -23,11 +23,11 @@ def test_find_imports():
 
 
 def test_code_runner():
-    ns = {}
-    assert CodeRunner("1+1;", ns).quiet()
-    assert not CodeRunner("1+1#;", ns).quiet()
-    assert not CodeRunner("5-2  # comment with trailing semicolon ;", ns).quiet()
-    assert CodeRunner("4//2\n", ns).run() == 2
+    runner = CodeRunner()
+    assert runner.quiet("1+1;")
+    assert not runner.quiet("1+1#;")
+    assert not runner.quiet("5-2  # comment with trailing semicolon ;")
+    assert runner.run("4//2\n") == 2
 
 
 def test_eval_code():

@@ -8,7 +8,7 @@ import ast
 from asyncio import iscoroutine
 from io import StringIO
 from textwrap import dedent
-from typing import Dict, List, Any
+from typing import Dict, List, Any, Tuple
 import tokenize
 
 
@@ -49,43 +49,26 @@ class CodeRunner:
 
     Examples
     --------
-    >>> CodeRunner("1+1", {}).run()
+    >>> CodeRunner().run("1+1")
     2
-    >>> CodeRunner("1+1;", {}).run()
+    >>> CodeRunner().run("1+1;")
     """
 
-    def __init__(self, code: str, ns: Dict[str, Any]):
+    def __init__(self, ns: Dict[str, Any] = {}):
         """
         Constructor.
 
         Parameters
         ----------
-        code
-           the Python code to run.
         ns
            `locals()` or `globals()` context where to execute code.
         """
         # handle mis-indented input from multi-line strings
-        code = dedent(code)
 
-        self.code = code
         self.ns = ns
         self.filename = "<exec>"
-        self.mod = None
-        self.last_expr = None
 
-        mod = ast.parse(code)
-        if len(mod.body) == 0:
-            return
-
-        # we extract last expression
-        last_expr = None
-        if isinstance(mod.body[-1], (ast.Expr, ast.Await)) and not self.quiet():
-            last_expr = ast.Expression(mod.body.pop().value)  # type: ignore
-        self.mod = mod
-        self.last_expr = last_expr
-
-    def quiet(self) -> bool:
+    def quiet(self, code: str) -> bool:
         """
         Does the last nonwhitespace character of code is a semicolon?
 
@@ -93,11 +76,11 @@ class CodeRunner:
 
         Examples
         --------
-        >>> CodeRunner('1 + 1', {}).quiet()
+        >>> CodeRunner().quiet('1 + 1')
         False
-        >>> CodeRunner('1 + 1 ;', {}).quiet()
+        >>> CodeRunner().quiet('1 + 1 ;')
         True
-        >>> CodeRunner('1 + 1 # comment ;', {}).quiet()
+        >>> CodeRunner().quiet('1 + 1 # comment ;')
         False
         """
         # largely inspired from IPython:
@@ -107,7 +90,7 @@ class CodeRunner:
         # "Tokenize requires one argument, readline, which must be
         # a callable object which provides the same interface as the
         # io.IOBase.readline() method of file objects"
-        codeio = StringIO(self.code)
+        codeio = StringIO(code)
         tokens = list(tokenize.generate_tokens(codeio.readline))
 
         for token in reversed(tokens):
@@ -122,20 +105,44 @@ class CodeRunner:
 
         return False
 
-    def _compile_mod(self, flags: int = 0x0):
+    def _split_and_compile(self, code: str, flags: int = 0x0) -> Tuple[Any, Any]:
         """
-        Compile first part of the code (everything but last expression)
-        """
-        return compile(self.mod, self.filename, "exec", flags=flags)  # type: ignore
+        Split code in two parts, everything but last expression and
+        last expresion then compile each part.
 
-    def _compile_last_expr(self, flags: int = 0x0):
+        Returns:
+        --------
+        code object
+            first part's code object (or None)
+        code object
+            last expression's code object (or None)
         """
-        Compile last part of the code (last expression)
-        """
-        return compile(self.last_expr, self.filename, "eval", flags=flags)  # type: ignore
+        code = dedent(code)
 
-    def run(self) -> Any:
+        mod = ast.parse(code)
+        if not mod.body:
+            return None, None
+
+        # we extract last expression
+        last_expr = None
+        if isinstance(mod.body[-1], (ast.Expr, ast.Await)) and not self.quiet(code):
+            last_expr = ast.Expression(mod.body.pop().value)  # type: ignore
+
+        # we compile
+        mod = compile(mod, self.filename, "exec", flags=flags)  # type: ignore
+        if last_expr is not None:
+            last_expr = compile(last_expr, self.filename, "eval", flags=flags)  # type: ignore
+
+        return mod, last_expr
+
+    def run(self, code: str) -> Any:
         """
+
+        Parameters
+        ----------
+        code
+           the Python code to run.
+
         Returns
         -------
         If the last nonwhitespace character of code is a semicolon,
@@ -143,31 +150,35 @@ class CodeRunner:
         If the last statement is an expression, return the
         result of the expression.
         """
+        mod, last_expr = self._split_and_compile(code)
+
         # running first part
-        if self.mod is not None:
-            exec(self._compile_mod(), self.ns, self.ns)
+        if mod is not None:
+            exec(mod, self.ns, self.ns)
 
         # evaluating last expression
-        if self.last_expr is not None:
-            return eval(self._compile_last_expr(), self.ns, self.ns)
+        if last_expr is not None:
+            return eval(last_expr, self.ns, self.ns)
 
-    async def run_async(self) -> Any:
+    async def run_async(self, code: str) -> Any:
         """ //!\\ WARNING //!\\
         This is not working yet. For use once we add an EventLoop.
 
         Note: see `_eval_code_async`.
         """
         raise NotImplementedError("Async is not yet supported in Pyodide.")
-        flags = ast.PyCF_ALLOW_TOP_LEVEL_AWAIT
+        mod, last_expr = self._split_and_compile(
+            code, flags=ast.PyCF_ALLOW_TOP_LEVEL_AWAIT
+        )
         # running first part
-        if self.mod is not None:
-            coro = eval(self._compile_mod(flags), self.ns, self.ns)
+        if mod is not None:
+            coro = eval(mod, self.ns, self.ns)
             if iscoroutine(coro):
                 await coro
 
         # evaluating last expression
-        if self.last_expr is not None:
-            res = eval(self._compile_last_expr(flags), self.ns, self.ns)
+        if last_expr is not None:
+            res = eval(last_expr, self.ns, self.ns)
             if iscoroutine(res):
                 res = await res
             return res
@@ -189,7 +200,7 @@ def eval_code(code: str, ns: Dict[str, Any]) -> Any:
     If the last statement is an expression, return the
     result of the expression.
     """
-    return CodeRunner(code, ns).run()
+    return CodeRunner(ns).run(code)
 
 
 async def _eval_code_async(code: str, ns: Dict[str, Any]) -> Any:
@@ -203,7 +214,7 @@ async def _eval_code_async(code: str, ns: Dict[str, Any]) -> Any:
       - add tests
     """
     raise NotImplementedError("Async is not yet supported in Pyodide.")
-    return await CodeRunner(code, ns).run_async()
+    return await CodeRunner(ns).run_async(code)
 
 
 def find_imports(code: str) -> List[str]:
