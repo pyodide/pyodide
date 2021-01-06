@@ -33,6 +33,8 @@ hiwire_bool(bool boolean)
   return boolean ? hiwire_true() : hiwire_false();
 }
 
+#undef true
+#undef false
 EM_JS(int, hiwire_init, (), {
   let _hiwire = {
     objects : new Map(),
@@ -102,6 +104,8 @@ EM_JS(int, hiwire_init, (), {
   };
   return 0;
 });
+#define true 1
+#define false 0
 
 EM_JS_REF(JsRef, hiwire_incref, (JsRef idval), {
   // clang-format off

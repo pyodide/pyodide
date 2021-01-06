@@ -80,8 +80,9 @@ _js2python_error(JsRef id)
 }
 
 // TODO: Add some meaningful order
-
-EM_JS(PyObject*, __js2python, (JsRef id), {
+#undef true
+#undef false
+EM_JS_REF(PyObject*, __js2python, (JsRef id), {
   function __js2python_string(value)
   {
     // The general idea here is to allocate a Python string and then
@@ -158,6 +159,8 @@ EM_JS(PyObject*, __js2python, (JsRef id), {
   }
   // clang-format on
 });
+#define true 1
+#define false 0
 
 PyObject*
 js2python(JsRef id)
