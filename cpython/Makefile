@@ -8,7 +8,7 @@ INSTALL=$(ROOT)/installs/python-$(PYVERSION)
 TARBALL=$(ROOT)/downloads/Python-$(PYVERSION).tgz
 URL=https://www.python.org/ftp/python/$(PYVERSION)/Python-$(PYVERSION).tgz
 LIB=libpython$(PYMINOR).a
-
+SYSCONFIG_NAME=_sysconfigdata__emscripten_
 
 ZLIBVERSION = 1.2.11
 ZLIBTARBALL=$(ROOT)/downloads/zlib-$(ZLIBVERSION).tar.gz
@@ -33,10 +33,14 @@ $(INSTALL)/lib/$(LIB): $(BUILD)/$(LIB)
 		sed -i -e 's/libinstall:.*/libinstall:/' Makefile; \
 		touch $(BUILD)/$(LIB) ; \
 		emmake make PYTHON_FOR_BUILD=$(HOSTPYTHON) CROSS_COMPILE=yes inclinstall libinstall $(LIB) -j $${PYODIDE_JOBS:-3} && \
-		cp $(LIB) $(INSTALL)/lib/ && \
-		cp $(HOSTPYTHONROOT)/lib/python$(PYMINOR)/`$(HOSTPYTHON) -c "import sysconfig; print(sysconfig._get_sysconfigdata_name())"`.py $(INSTALL)/lib/python$(PYMINOR)/_sysconfigdata__emscripten_.py; \
-		sed -i -e 's#'"$(PYODIDE_ROOT)"'##g' $(INSTALL)/lib/python$(PYMINOR)/_sysconfigdata__emscripten_.py; \
+		cp $(LIB) $(INSTALL)/lib/ \
 	)
+	# Generate sysconfigdata. It outputs into a subfolder of build/, and
+	# the subfolder is written to pybuilddir.txt.
+	_PYTHON_SYSCONFIGDATA_NAME=$(SYSCONFIG_NAME) _PYTHON_PROJECT_BASE=$(BUILD) python -m sysconfig --generate-posix-vars
+	mv `cat pybuilddir.txt`/$(SYSCONFIG_NAME).py $(INSTALL)/lib/python$(PYMINOR)/
+	rmdir `cat pybuilddir.txt`
+	rm pybuilddir.txt
 
 
 clean:
@@ -123,9 +127,7 @@ $(BUILD)/$(LIB): $(BUILD)/Makefile Setup.local
 	cp Setup.local $(BUILD)/Modules/
 	cat pyconfig.undefs.h >> $(BUILD)/pyconfig.h
 	( \
-		cp $(HOSTPYTHONROOT)/lib/python$(PYMINOR)/`$(HOSTPYTHON) -c "import sysconfig; print(sysconfig._get_sysconfigdata_name())"`.py $(BUILD)/Lib/_sysconfigdata__emscripten_.py; \
 		cd $(BUILD); \
 		emmake make CROSS_COMPILE=yes $(LIB) -j $${PYODIDE_JOBS:-3} \
 	)
-	sed -i -e 's/\-undefined dynamic_lookup//' $(BUILD)/Lib/_sysconfigdata__emscripten_.py
 	touch $(BUILD)/$(LIB)

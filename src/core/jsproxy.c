@@ -9,6 +9,8 @@
 
 static PyTypeObject* PyExc_BaseException_Type;
 
+_Py_IDENTIFIER(__dir__);
+
 static PyObject*
 JsBoundMethod_cnew(JsRef this_, const char* name);
 
@@ -44,33 +46,34 @@ JsProxy_Repr(PyObject* o)
   return pyrepr;
 }
 
-static PyObject*
-JsProxy_GetAttr(PyObject* o, PyObject* attr_name)
+PyObject*
+JsProxy_typeof(PyObject* obj, void* _unused)
 {
-  JsProxy* self = (JsProxy*)o;
+  JsProxy* self = (JsProxy*)obj;
+  JsRef idval = hiwire_typeof(self->js);
+  PyObject* result = js2python(idval);
+  hiwire_decref(idval);
+  return result;
+}
 
-  PyObject* str = PyObject_Str(attr_name);
-  if (str == NULL) {
+static PyObject*
+JsProxy_GetAttr(PyObject* o, PyObject* attr)
+{
+  PyObject* result = PyObject_GenericGetAttr(o, attr);
+  if (result != NULL) {
+    return result;
+  }
+  PyErr_Clear();
+
+  JsProxy* self = (JsProxy*)o;
+  const char* key = PyUnicode_AsUTF8(attr);
+  if (key == NULL) {
     return NULL;
   }
 
-  const char* key = PyUnicode_AsUTF8(str);
-
-  if (strncmp(key, "new", 4) == 0 || strncmp(key, "_has_bytes", 11) == 0) {
-    Py_DECREF(str);
-    return PyObject_GenericGetAttr(o, attr_name);
-  } else if (strncmp(key, "typeof", 7) == 0) {
-    Py_DECREF(str);
-    JsRef idval = hiwire_typeof(self->js);
-    PyObject* result = js2python(idval);
-    hiwire_decref(idval);
-    return result;
-  }
-
   JsRef idresult = hiwire_get_member_string(self->js, key);
-  Py_DECREF(str);
 
-  if (idresult == Js_ERROR) {
+  if (idresult == NULL) {
     PyErr_SetString(PyExc_AttributeError, key);
     return NULL;
   }
@@ -86,15 +89,13 @@ JsProxy_GetAttr(PyObject* o, PyObject* attr_name)
 }
 
 static int
-JsProxy_SetAttr(PyObject* o, PyObject* attr_name, PyObject* pyvalue)
+JsProxy_SetAttr(PyObject* o, PyObject* attr, PyObject* pyvalue)
 {
   JsProxy* self = (JsProxy*)o;
-
-  PyObject* attr_name_py_str = PyObject_Str(attr_name);
-  if (attr_name_py_str == NULL) {
+  const char* key = PyUnicode_AsUTF8(attr);
+  if (key == NULL) {
     return -1;
   }
-  const char* key = PyUnicode_AsUTF8(attr_name_py_str);
 
   if (pyvalue == NULL) {
     hiwire_delete_member_string(self->js, key);
@@ -103,7 +104,6 @@ JsProxy_SetAttr(PyObject* o, PyObject* attr_name, PyObject* pyvalue)
     hiwire_set_member_string(self->js, key, idvalue);
     hiwire_decref(idvalue);
   }
-  Py_DECREF(attr_name_py_str);
 
   return 0;
 }
@@ -192,7 +192,7 @@ JsProxy_GetIter(PyObject* o)
 
   JsRef iditer = hiwire_get_iterator(self->js);
 
-  if (iditer == Js_ERROR) {
+  if (iditer == NULL) {
     PyErr_SetString(PyExc_TypeError, "Object is not iterable");
     return NULL;
   }
@@ -206,7 +206,7 @@ JsProxy_IterNext(PyObject* o)
   JsProxy* self = (JsProxy*)o;
 
   JsRef idresult = hiwire_next(self->js);
-  if (idresult == Js_ERROR) {
+  if (idresult == NULL) {
     return NULL;
   }
 
@@ -263,7 +263,7 @@ JsProxy_subscript(PyObject* o, PyObject* pyidx)
   JsRef ididx = python2js(pyidx);
   JsRef idresult = hiwire_get_member_obj(self->js, ididx);
   hiwire_decref(ididx);
-  if (idresult == Js_ERROR) {
+  if (idresult == NULL) {
     PyErr_SetObject(PyExc_KeyError, pyidx);
     return NULL;
   }
@@ -363,15 +363,69 @@ JsProxy_HasBytes(PyObject* o)
   }
 }
 
-static PyObject*
-JsProxy_Dir(PyObject* o)
-{
-  JsProxy* self = (JsProxy*)o;
+#define QUIT_IF_NULL(x)                                                        \
+  do {                                                                         \
+    if (x == NULL) {                                                           \
+      goto finally;                                                            \
+    }                                                                          \
+  } while (0)
 
-  JsRef iddir = hiwire_dir(self->js);
-  PyObject* pydir = js2python(iddir);
+#define QUIT_IF_NZ(x)                                                          \
+  do {                                                                         \
+    if (x != 0) {                                                              \
+      goto finally;                                                            \
+    }                                                                          \
+  } while (0)
+
+#define GET_JSREF(x) (((JsProxy*)x)->js)
+
+static PyObject*
+JsProxy_Dir(PyObject* self)
+{
+  bool success = false;
+  PyObject* object__dir__ = NULL;
+  PyObject* keys = NULL;
+  PyObject* result_set = NULL;
+  JsRef iddir = NULL;
+  PyObject* pydir = NULL;
+  PyObject* null_or_pynone = NULL;
+
+  PyObject* result = NULL;
+
+  // First get base __dir__ via object.__dir__(self)
+  // Would have been nice if they'd supplied PyObject_GenericDir...
+  object__dir__ =
+    _PyObject_GetAttrId((PyObject*)&PyBaseObject_Type, &PyId___dir__);
+  QUIT_IF_NULL(object__dir__);
+  keys = PyObject_CallFunctionObjArgs(object__dir__, self, NULL);
+  QUIT_IF_NULL(keys);
+  result_set = PySet_New(keys);
+  QUIT_IF_NULL(result_set);
+
+  // Now get attributes of js object
+  iddir = hiwire_dir(GET_JSREF(self));
+  pydir = js2python(iddir);
+  QUIT_IF_NULL(pydir);
+  // Merge and sort
+  QUIT_IF_NZ(_PySet_Update(result_set, pydir));
+  result = PyList_New(0);
+  QUIT_IF_NULL(result);
+  null_or_pynone = _PyList_Extend((PyListObject*)result, result_set);
+  QUIT_IF_NULL(null_or_pynone);
+  QUIT_IF_NZ(PyList_Sort(result));
+
+  success = true;
+finally:
+  Py_CLEAR(object__dir__);
+  Py_CLEAR(keys);
+  Py_CLEAR(result_set);
   hiwire_decref(iddir);
-  return pydir;
+  Py_CLEAR(pydir);
+  Py_CLEAR(null_or_pynone);
+  if (!success) {
+    Py_CLEAR(result);
+  }
+  return result;
 }
 
 static int
@@ -418,6 +472,9 @@ static PyMethodDef JsProxy_Methods[] = {
 };
 // clang-format on
 
+static PyGetSetDef JsProxy_GetSet[] = { { "typeof", .get = JsProxy_typeof },
+                                        { NULL } };
+
 static PyTypeObject JsProxyType = {
   .tp_name = "JsProxy",
   .tp_basicsize = sizeof(JsProxy),
@@ -429,6 +486,7 @@ static PyTypeObject JsProxyType = {
   .tp_flags = Py_TPFLAGS_DEFAULT,
   .tp_doc = "A proxy to make a Javascript object behave like a Python object",
   .tp_methods = JsProxy_Methods,
+  .tp_getset = JsProxy_GetSet,
   .tp_as_mapping = &JsProxy_MappingMethods,
   .tp_as_number = &JsProxy_NumberMethods,
   .tp_iter = JsProxy_GetIter,
