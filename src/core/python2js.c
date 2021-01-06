@@ -335,7 +335,6 @@ _python2js_cache(PyObject* x, PyObject* map)
 JsRef
 python2js(PyObject* x)
 {
-  PyObject_Print(x, stderr, 0);
   PyObject* map = PyDict_New();
   JsRef result = _python2js_cache(x, map);
   Py_DECREF(map);
