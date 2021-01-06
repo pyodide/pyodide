@@ -14,6 +14,9 @@ typedef int errcode;
 #include "hiwire.h"
 #include <emscripten.h>
 
+int
+error_handling_init();
+
 // clang-format off
 #define EM_JS_REF(ret, func_name, args, body...)                               \
   EM_JS(ret, func_name, args, {                                                \
