@@ -31,8 +31,6 @@ error_handling_init();
     try    /* intentionally no braces. */                                      \
       body /* <== body of func */                                              \
     catch (e) {                                                                \
-        throw e;                                                               \
-        /* Dummied out until calling code is ready to catch these errors */    \
         Module.handle_js_error(e);                                             \
         return -1;                                                             \
     }                                                                          \
@@ -44,8 +42,6 @@ error_handling_init();
     try    /* intentionally no braces. */                                      \
       body /* <== body of func */                                              \
     catch (e) {                                                                \
-        throw e;                                                               \
-        /* Dummied out until calling code is ready to catch these errors */    \
         Module.handle_js_error(e);                                             \
         return -1;                                                             \
     }                                                                          \
