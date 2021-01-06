@@ -34,7 +34,7 @@ error_handling_init();
         /* Dummied out until calling code is ready to catch these errors */    \
         throw e;                                                               \
         Module.handle_js_error(e);                                             \
-        return -1;                                                             \
+        return 0;                                                              \
     }                                                                          \
   })
 
