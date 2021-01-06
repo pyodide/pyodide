@@ -173,7 +173,7 @@ def compile(path: Path, srcpath: Path, pkg: Dict[str, Any], args):
         site_packages_dir = srcpath / "install" / "lib" / "python3.8" / "site-packages"
         pkgdir = path.parent.resolve()
         env = {"SITEPACKAGES": str(site_packages_dir), "PKGDIR": str(pkgdir)}
-        subprocess.run(["bash", "-c", post], env=env, check=True)
+        subprocess.run(["bash", "-ce", post], env=env, check=True)
 
     with open(srcpath / ".built", "wb") as fd:
         fd.write(b"\n")
@@ -222,7 +222,7 @@ def run_script(buildpath: Path, srcpath: Path, pkg: Dict[str, Any]):
     orig_path = Path.cwd()
     os.chdir(srcpath)
     try:
-        subprocess.run(["bash", "-c", pkg["build"]["script"]], check=True)
+        subprocess.run(["bash", "-ce", pkg["build"]["script"]], check=True)
     finally:
         os.chdir(orig_path)
 
