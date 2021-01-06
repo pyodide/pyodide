@@ -98,7 +98,7 @@ class SeleniumWrapper:
         return self.run_js("return pyodide.runPython({!r})".format(code))
 
     def run_async(self, code):
-        self.run_js_async("await pyodide.runPythonAsync({!r})".format(code))
+        return self.run_js_async("return pyodide.runPythonAsync({!r})".format(code))
 
     def run_js(self, code):
         if isinstance(code, str) and code.startswith("\n"):
