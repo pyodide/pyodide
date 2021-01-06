@@ -52,6 +52,8 @@ class CodeRunner:
     ns
         `locals()` or `globals()` context where to execute code.
         This namespace is updated by the subsequent calls to `run()`.
+    filename:
+        file from which the code was read.
 
     Examples
     --------
@@ -64,9 +66,9 @@ class CodeRunner:
     6
     """
 
-    def __init__(self, ns: Dict[str, Any] = None):
+    def __init__(self, ns: Dict[str, Any] = None, filename: str = "<exec>"):
         self.ns = ns if ns is not None else {}
-        self.filename = "<exec>"
+        self.filename = filename
 
     def quiet(self, code: str) -> bool:
         """
@@ -185,7 +187,7 @@ class CodeRunner:
             return res
 
 
-def eval_code(code: str, ns: Dict[str, Any]) -> Any:
+def eval_code(code: str, ns: Dict[str, Any], filename: str = "<exec>") -> Any:
     """Runs a code string.
 
     Parameters
@@ -194,6 +196,8 @@ def eval_code(code: str, ns: Dict[str, Any]) -> Any:
        the Python code to run.
     ns
        `locals()` or `globals()` context where to execute code.
+    filename:
+       file from which the code was read.
 
     Returns
     -------
@@ -201,10 +205,12 @@ def eval_code(code: str, ns: Dict[str, Any]) -> Any:
     If the last statement is an expression, return the
     result of the expression.
     """
-    return CodeRunner(ns).run(code)
+    return CodeRunner(ns, filename).run(code)
 
 
-async def _eval_code_async(code: str, ns: Dict[str, Any]) -> Any:
+async def _eval_code_async(
+    code: str, ns: Dict[str, Any], filename: str = "<exec>"
+) -> Any:
     """ //!\\ WARNING //!\\
     This is not working yet. For use once we add an EventLoop.
 
@@ -215,7 +221,7 @@ async def _eval_code_async(code: str, ns: Dict[str, Any]) -> Any:
       - add tests
     """
     raise NotImplementedError("Async is not yet supported in Pyodide.")
-    return await CodeRunner(ns).run_async(code)
+    return await CodeRunner(ns, filename).run_async(code)
 
 
 def find_imports(code: str) -> List[str]:
