@@ -43,7 +43,7 @@ def open_url(url: str) -> StringIO:
     return StringIO(req.response)
 
 
-class CodeRunner(object):
+class CodeRunner:
     """
     A code runner to serve eval_code and eval_code_async.
 
@@ -61,9 +61,9 @@ class CodeRunner(object):
         Parameters
         ----------
         code
-        the Python code to run.
+           the Python code to run.
         ns
-        `locals()` or `globals()` context where to execute code.
+           `locals()` or `globals()` context where to execute code.
         """
         # handle mis-indented input from multi-line strings
         code = dedent(code)
@@ -93,11 +93,11 @@ class CodeRunner(object):
 
         Examples
         --------
-        >>> CodeRunner('x + 1', {}).quiet()
+        >>> CodeRunner('1 + 1', {}).quiet()
         False
-        >>> CodeRunner('x + 1 ;', {}).quiet()
+        >>> CodeRunner('1 + 1 ;', {}).quiet()
         True
-        >>> CodeRunner('x + 1 # comment ;', {}).quiet()
+        >>> CodeRunner('1 + 1 # comment ;', {}).quiet()
         False
         """
         # largely inspired from IPython:
