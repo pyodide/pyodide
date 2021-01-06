@@ -33,7 +33,7 @@ hiwire_bool(bool boolean)
   return boolean ? hiwire_true() : hiwire_false();
 }
 
-EM_JS_NUM(int, hiwire_init, (), {
+EM_JS(int, hiwire_init, (), {
   let _hiwire = {
     objects : new Map(),
     // counter is used to allocate keys for the objects map.

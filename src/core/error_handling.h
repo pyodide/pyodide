@@ -12,37 +12,34 @@ typedef int errcode;
 
 // Hiwire wants to import us for errcode, so import hiwire after typedef.
 #include "hiwire.h"
-void
-PyodideErr_SetJsError(JsRef err);
+#include <emscripten.h>
 
+// clang-format off
 #define EM_JS_REF(ret, func_name, args, body...)                               \
   EM_JS(ret, func_name, args, {                                                \
     /* "use strict";  TODO: enable this. */                                    \
-    try {                                                                      \
-      body                                                                     \
-    } catch (e) {                                                              \
-      /* Dummied out until calling code is ready to catch these errors */      \
-      throw e;                                                                 \
-      let err = Module.hiwire.new_value(e);                                    \
-      PyodideErr_SetJsError(err);                                              \
-      Module.hiwire.decref(err);                                               \
-      return 0;                                                                \
+    try    /* intentionally no braces. */                                      \
+      body /* <== body of func */                                              \
+    catch (e) {                                                                \
+        throw e;                                                               \
+        /* Dummied out until calling code is ready to catch these errors */    \
+        Module.handle_js_error(e);                                             \
+        return -1;                                                             \
     }                                                                          \
   })
 
 #define EM_JS_NUM(ret, func_name, args, body...)                               \
   EM_JS(ret, func_name, args, {                                                \
     /* "use strict";  TODO: enable this. */                                    \
-    try {                                                                      \
-      body                                                                     \
-    } catch (e) {                                                              \
-      throw e;                                                                 \
-      /* Dummied out until calling code is ready to catch these errors */      \
-      let err = Module.hiwire.new_value(e);                                    \
-      PyodideErr_SetJsError(err);                                              \
-      Module.hiwire.decref(err);                                               \
-      return -1;                                                               \
+    try    /* intentionally no braces. */                                      \
+      body /* <== body of func */                                              \
+    catch (e) {                                                                \
+        throw e;                                                               \
+        /* Dummied out until calling code is ready to catch these errors */    \
+        Module.handle_js_error(e);                                             \
+        return -1;                                                             \
     }                                                                          \
   })
+// clang-format on
 
 #endif // ERROR_HANDLING_H
