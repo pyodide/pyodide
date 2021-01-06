@@ -246,6 +246,12 @@ def test_nested_import(selenium):
     )
 
 
+def test_jsmodule_repr(selenium):
+    assert (
+        selenium.run("""import js; repr(js)""") == "<module 'js' (javascript module)>"
+    )
+
+
 @pytest.mark.xfail
 def test_window_invocation(selenium):
     """ Make sure js.setTimeout etc don't yeild illegal invocation errors. """
