@@ -780,7 +780,7 @@ JsProxy_init()
     goto fail;
   }
 
-  asyncio_get_event_loop = PyObject_GetAttrId(module, &PyId_get_event_loop);
+  asyncio_get_event_loop = _PyObject_GetAttrId(module, &PyId_get_event_loop);
   if (asyncio_get_event_loop == NULL) {
     goto fail;
   }
