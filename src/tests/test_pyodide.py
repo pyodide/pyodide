@@ -74,6 +74,7 @@ def test_eval_code():
     assert eval_code("a = 5 ; a += 1", ns, mode="last_expr_or_assign") == 6
     assert eval_code("a = 5 ; a += 1;", ns, mode="last_expr_or_assign") is None
     assert eval_code("l = [1, 1, 2] ; l[0] = 0", ns, mode="last_expr_or_assign") is None
+    assert eval_code("a = b = 2", ns, mode="last_expr_or_assign") == 2
 
     # 'none' mode, (useless) semicolon
     assert eval_code("1 + 1", ns, mode="none") is None

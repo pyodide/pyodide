@@ -150,7 +150,7 @@ class CodeRunner:
             return
 
         target: Any
-        if isinstance(last_node, ast.Assign) and len(last_node.targets) == 1:
+        if isinstance(last_node, ast.Assign):
             target = last_node.targets[0]
         elif isinstance(last_node, single_targets_nodes):
             target = last_node.target
