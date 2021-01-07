@@ -212,7 +212,10 @@ EM_JS_NUM(int, pyproxy_init, (), {
       ptrobj = this.getPtr(jsobj);
       if (jskey === 'toString') {
         return function() {
-          return __pyproxy_repr(ptrobj);
+          let jsref_repr = __pyproxy_repr(ptrobj);
+          let repr = Module.hiwire.get_value(jsref_repr);
+          Module.hiwire.decref(jsref_repr);
+          return repr;
         }
       } else if (jskey === '$$') {
         return jsobj['$$'];
