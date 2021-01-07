@@ -35,6 +35,7 @@
 
 ### Fixed
 - getattr and dir on JsProxy now report consistent results and include all names defined on the Python dictionary backing JsProxy. [#1017](https://github.com/iodide-project/pyodide/pull/1017)
+- `JsProxy.__bool__` now produces better results: it used to be `bool(window)` and `bool(zero-arg-callback)` were `False`, and `bool(empty_js_set)` and `bool(empty_js_map)` were `True`. All four of these outputs have been negated. [#1061](https://github.com/iodide-project/pyodide/pull/1061)
 
 ## Version 0.16.1
 *December 25, 2020*
