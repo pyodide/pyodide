@@ -149,7 +149,7 @@ Should be set to true for library packages. Library packages are packages that a
 
 #### `build/script`
 
-The script section is required for a library package (`build/library` set to true). For a Python package this section is optional. If it is specified for a Python package, the script section will be run before the build system runs `setup.py`. This script is run by `bash` in the root directory where the tarball was extracted.
+The script section is required for a library package (`build/library` set to true). For a Python package this section is optional. If it is specified for a Python package, the script section will be run before the build system runs `setup.py`. This script is run by `bash` in the directory where the tarball was extracted.
 
 #### `build/post`
 
