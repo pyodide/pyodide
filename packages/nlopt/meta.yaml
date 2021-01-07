@@ -32,6 +32,7 @@ build:
        ..
     emmake make -j ${PYODIDE_JOBS:-3}
     make install
+    cp ./src/swig/nlopt.py ../nlopt/
 
 test:
   imports:
