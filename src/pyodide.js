@@ -304,7 +304,6 @@ var languagePluginLoader = new Promise((resolve, reject) => {
     'loadPackagesFromImports',
     'loadedPackages',
     'pyimport',
-    'repr',
     'runPython',
     'runPythonAsync',
     'version',

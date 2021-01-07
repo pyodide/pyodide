@@ -172,6 +172,7 @@ EM_JS_REF(JsRef, pyproxy_new, (PyObject * ptrobj), {
 
 EM_JS_NUM(int, pyproxy_init, (), {
   // clang-format off
+  let repr = pyodide.globals.repr;
   Module.PyProxies = {};
   Module.PyProxy = {
     getPtr: function(jsobj) {
@@ -202,10 +203,7 @@ EM_JS_NUM(int, pyproxy_init, (), {
       ptrobj = this.getPtr(jsobj);
       if (jskey === 'toString') {
         return function() {
-          if (self.pyodide.repr === undefined) {
-            self.pyodide.repr = self.pyodide.pyimport('repr');
-          }
-          return self.pyodide.repr(jsobj);
+          return repr(jsobj);
         }
       } else if (jskey === '$$') {
         return jsobj['$$'];
