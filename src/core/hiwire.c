@@ -346,14 +346,14 @@ EM_JS_NUM(int, hiwire_get_length, (JsRef idobj), {
 EM_JS_NUM(bool, hiwire_get_bool, (JsRef idobj), {
   var val = Module.hiwire.get_value(idobj);
   // clang-format off
-  if(!val){
+  if (!val) {
     return false;
   }
-  if(val.size === 0){
+  if (val.size === 0) {
     // I think things with a size are all container types.
     return false;
   }
-  if(Array.isArray(val) && val.length === 0){
+  if (Array.isArray(val) && val.length === 0) {
     return false;
   }
   return true;
