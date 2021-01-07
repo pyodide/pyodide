@@ -227,7 +227,7 @@ def run_script(buildpath: Path, srcpath: Path, pkg: Dict[str, Any]):
         os.chdir(orig_path)
 
     # If library, we're done so create .packaged file
-    if pkg.get("build", {}).get("library"):
+    if pkg["build"].get("library"):
         with open(buildpath / ".packaged", "wb") as fd:
             fd.write(b"\n")
 
