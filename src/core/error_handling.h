@@ -17,6 +17,9 @@ typedef int errcode;
 int
 error_handling_init();
 
+errcode
+log_error(char* msg);
+
 // WARNING: These wrappers around EM_JS cause macros in body to be expanded.
 // This causes trouble with true and false.
 // In types.h we provide nonstandard definitions:
@@ -63,7 +66,7 @@ error_handling_init();
              __LINE__,                                                         \
              __func__,                                                         \
              __FILE__);                                                        \
-    hiwire_log_error(msg);                                                     \
+    log_error(msg);                                                            \
     free(msg);                                                                 \
     goto finally                                                               \
   } while (0)
