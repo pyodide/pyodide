@@ -2,7 +2,7 @@ PYODIDE_ROOT=$(abspath .)
 include Makefile.envs
 .PHONY=check
 
-FILEPACKAGER=$(PYODIDE_ROOT)/emsdk/emsdk/fastcomp/emscripten/tools/file_packager.py
+FILEPACKAGER=$(PYODIDE_ROOT)/emsdk/emsdk/upstream/emscripten/tools/file_packager.py
 UGLIFYJS=$(PYODIDE_ROOT)/node_modules/.bin/uglifyjs
 LESSC=$(PYODIDE_ROOT)/node_modules/.bin/lessc
 
@@ -31,12 +31,12 @@ LDFLAGS=\
 	-s WASM=1 \
 	-s USE_FREETYPE=1 \
 	-s USE_LIBPNG=1 \
+    -s LZ4=1 \
 	-std=c++14 \
 	-L$(wildcard $(CPYTHONROOT)/build/sqlite*/.libs) -lsqlite3 \
 	$(wildcard $(CPYTHONROOT)/build/bzip2*/libbz2.a) \
 	-lstdc++ \
 	--memory-init-file 0 \
-	-s "BINARYEN_TRAP_MODE='clamp'" \
 	-s LZ4=1
 
 SITEPACKAGES=root/lib/python$(PYMINOR)/site-packages
@@ -179,7 +179,7 @@ $(PYODIDE_EMCC):
 		if hash ccache &>/dev/null; then \
 			ln -s `which ccache` $@ ; \
 		else \
-			ln -s emsdk/emsdk/fastcomp/emscripten/emcc $@; \
+			ln -s emsdk/emsdk/upstream/emscripten/emcc $@; \
 		fi; \
 	fi
 
@@ -190,7 +190,7 @@ $(PYODIDE_CXX):
 		if hash ccache &>/dev/null; then \
 			ln -s `which ccache` $@ ; \
 		else \
-			ln -s emsdk/emsdk/fastcomp/emscripten/em++ $@; \
+			ln -s emsdk/emsdk/upstream/emscripten/em++ $@; \
 		fi; \
 	fi
 

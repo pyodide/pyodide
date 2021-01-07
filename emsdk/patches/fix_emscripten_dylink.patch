@@ -1,0 +1,15 @@
+diff --git a/upstream/emscripten/src/library_dylink.js b/upstream/emscripten/src/library_dylink.js
+index f8ddec2..22b9013 100644
+--- a/emsdk/upstream/emscripten/src/library_dylink.js
++++ b/emsdk/upstream/emscripten/src/library_dylink.js
+@@ -738,6 +738,10 @@ var LibraryDylink = {
+     // http://pubs.opengroup.org/onlinepubs/009695399/functions/dlsym.html
+     symbol = UTF8ToString(symbol);
+     var result;
++#if EMULATE_FUNCTION_POINTER_CASTS=1
++      // look for fpcast-emu version as this is deffo going to be a function pointer that we return
++      symbol="byn$fpcast-emu$"+symbol
++#endif
+ 
+     if (handle == {{{ cDefine('RTLD_DEFAULT') }}}) {
+       result = resolveGlobalSymbol(symbol, true);

@@ -28,7 +28,7 @@ import argparse
 import importlib.machinery
 import json
 import os
-from pathlib import Path
+from pathlib import Path,PurePosixPath
 import re
 import subprocess
 import shutil
@@ -43,6 +43,12 @@ from pyodide_build import common
 TOOLSDIR = common.TOOLSDIR
 symlinks = set(["cc", "c++", "ld", "ar", "gcc", "gfortran"])
 
+
+class EnvironmentRewritingArgument(argparse.Action):
+    def __call__(self,parser,namespace,values,option_string=None):
+        for e_name,e_value in os.environ.items():
+            values=values.replace(f"$({e_name})",e_value)
+        setattr(namespace, self.dest, values)
 
 def collect_args(basename):
     """
@@ -217,6 +223,7 @@ def handle_command(line, args, dryrun=False):
             from_lib, to_lib = l.split("=")
             replace_libs[from_lib] = to_lib
 
+
     # This is a special case to skip the compilation tests in numpy that aren't
     # actually part of the build
     for arg in line:
@@ -255,6 +262,8 @@ def handle_command(line, args, dryrun=False):
 
     lapack_dir = None
 
+    used_libs={}
+
     # Go through and adjust arguments
     for arg in line[1:]:
         if arg.startswith("-I"):
@@ -270,9 +279,19 @@ def handle_command(line, args, dryrun=False):
         if arg.startswith("-L/usr"):
             continue
         if arg.startswith("-l"):
-            if arg[2:] in replace_libs:
-                arg = "-l" + replace_libs[arg[2:]]
-
+            # WASM link doesn't like libraries being included twice
+            # skip second one
+            if arg in used_libs:
+                continue
+            used_libs[arg]=1
+        if arg.startswith("-l"):
+            for lib_name in replace_libs.keys():
+                # this enables glob style **/* matching
+                if PurePosixPath(arg[2:]).match(lib_name):
+                    if len(replace_libs[lib_name])>0:
+                        arg = "-l" + replace_libs[lib_name]
+                    else:
+                        continue
         # threading is disabled for now
         if arg == "-pthread":
             continue
@@ -283,8 +302,10 @@ def handle_command(line, args, dryrun=False):
         # definitely isn't
         arg = re.sub(r"/python([0-9]\.[0-9]+)m", r"/python\1", arg)
         if arg.endswith(".so"):
-            arg = arg[:-3] + ".wasm"
             output = arg
+        # don't include libraries from native builds
+        if arg.startswith("-l"+args.install_dir) or arg.startswith("-L"+args.install_dir):
+            continue
 
         # Fix for scipy to link to the correct BLAS/LAPACK files
         if arg.startswith("-L") and "CLAPACK" in arg:
@@ -332,6 +353,10 @@ def handle_command(line, args, dryrun=False):
         # See https://github.com/emscripten-core/emscripten/issues/8650
         if arg in ["-lfreetype", "-lz", "-lpng", "-lgfortran"]:
             continue
+        # don't use -shared, SIDE_MODULE is already used
+        # and -shared breaks it
+        if arg in ["-shared"]:
+            continue
 
         new_args.append(arg)
 
@@ -350,14 +375,14 @@ def handle_command(line, args, dryrun=False):
 
     # Emscripten .so files shouldn't have the native platform slug
     if library_output:
-        renamed = output[:-5] + ".so"
+        renamed=output
         for ext in importlib.machinery.EXTENSION_SUFFIXES:
             if ext == ".so":
                 continue
             if renamed.endswith(ext):
                 renamed = renamed[: -len(ext)] + ".so"
                 break
-        if not dryrun:
+        if not dryrun and output!=renamed:
             os.rename(output, renamed)
     return new_args
 
@@ -427,6 +452,7 @@ def make_parser(parser):
             nargs="?",
             default=common.DEFAULTCFLAGS,
             help="Extra compiling flags",
+            action=EnvironmentRewritingArgument
         )
         parser.add_argument(
             "--cxxflags",
@@ -434,6 +460,7 @@ def make_parser(parser):
             nargs="?",
             default=common.DEFAULTCXXFLAGS,
             help="Extra C++ specific compiling flags",
+            action=EnvironmentRewritingArgument
         )
         parser.add_argument(
             "--ldflags",
@@ -441,6 +468,7 @@ def make_parser(parser):
             nargs="?",
             default=common.DEFAULTLDFLAGS,
             help="Extra linking flags",
+            action=EnvironmentRewritingArgument
         )
         parser.add_argument(
             "--target",
@@ -466,6 +494,7 @@ def make_parser(parser):
             nargs="?",
             default="",
             help="Libraries to replace in final link",
+            action=EnvironmentRewritingArgument
         )
     return parser
 

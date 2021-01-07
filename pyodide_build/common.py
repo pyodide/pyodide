@@ -3,7 +3,7 @@ from typing import Optional, Set
 
 ROOTDIR = Path(__file__).parents[1].resolve()
 TOOLSDIR = ROOTDIR / "tools"
-PACKAGERDIR = ROOTDIR / "emsdk" / "emsdk" / "fastcomp" / "emscripten" / "tools"
+PACKAGERDIR = ROOTDIR / "emsdk" / "emsdk" / "upstream" / "emscripten" / "tools"
 TARGETPYTHON = ROOTDIR / "cpython" / "installs" / "python-3.8.2"
 # Leading space so that argparse doesn't think this is a flag
 DEFAULTCFLAGS = " -fPIC"
@@ -16,7 +16,6 @@ DEFAULTLDFLAGS = " ".join(
         "-s", "EMULATE_FUNCTION_POINTER_CASTS=1",
         "-s", "SIDE_MODULE=1",
         "-s", "WASM=1",
-        "-s", "BINARYEN_TRAP_MODE='clamp'",
         "--memory-init-file", "0",
         "-s", "LINKABLE=1",
         "-s", "EXPORT_ALL=1",
