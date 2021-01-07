@@ -36,6 +36,7 @@
             class Console(console.InteractiveConsole):
                 def runcode(self, code):
                     super().runcode(code)
+                    term.pause()
                     term.runPython("\\n".join(self.buffer))
 
 
@@ -68,6 +69,7 @@
         };
 
         term.handlePythonResult = function(result) {
+          term.resume();
           if (result === undefined) {
             return;
           } else if (result['_repr_html_'] !== undefined) {
@@ -78,7 +80,8 @@
         };
 
         term.handlePythonError = function(result) {
-          term.error(result.toString());
+          term.resume();
+          term.error(result.toString()):
         };
       });
     </script>
