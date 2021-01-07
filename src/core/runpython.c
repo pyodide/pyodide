@@ -91,9 +91,7 @@ runpython_init()
   FAIL_IF_NULL(pyodide_py);
 
   pyodide_py_proxy = python2js(pyodide_py);
-  if (pyodide_py_proxy == NULL) {
-    goto fail;
-  }
+  FAIL_IF_NULL(pyodide_py_proxy);
   // Currently by default, python2js copies dicts into objects.
   // We want to feed Module.globals back to `eval_code` in `pyodide.runPython`
   // (see definition in pyodide.js) but because the round trip conversion
@@ -104,19 +102,20 @@ runpython_init()
   // modifications.
   Py_INCREF(globals); // pyproxy_new steals argument
   globals_proxy = pyproxy_new(globals);
-  if (globals_proxy == NULL) {
-    goto fail;
-  }
+  FAIL_IF_NULL(globals_proxy);
   FAIL_IF_MINUS_ONE(runpython_init_js(pyodide_py_proxy, globals_proxy));
 
-  return 0;
-fail:
+  success = true;
+finally:
+  hiwire_decref(pyodide_py_proxy);
+  hiwire_decref(globals_proxy);
+  if (success) {
+    return 0;
+  }
   if (PyErr_Occurred()) {
     PyErr_Print();
   }
   Py_CLEAR(pyodide_py);
   Py_CLEAR(globals);
-  hiwire_decref(pyodide_py_proxy);
-  hiwire_decref(globals_proxy);
   return -1;
 }

@@ -59,21 +59,21 @@ JsProxy_typeof(PyObject* self, void* _unused)
 static PyObject*
 JsProxy_GetAttr(PyObject* self, PyObject* attr)
 {
-  PyObject* result = PyObject_GenericGetAttr(o, attr);
+  PyObject* result = PyObject_GenericGetAttr(self, attr);
   if (result != NULL) {
     return result;
   }
   PyErr_Clear();
 
   bool success = false;
-  JsRef idresult
-    // result:
-    PyObject* pyresult;
+  JsRef idresult;
+  // result:
+  PyObject* pyresult;
 
   const char* key = PyUnicode_AsUTF8(attr);
   FAIL_IF_NULL(key);
 
-  JsRef idresult = hiwire_get_member_string(JsProxy_REF(self), key);
+  idresult = hiwire_get_member_string(JsProxy_REF(self), key);
   if (idresult == NULL) {
     PyErr_SetString(PyExc_AttributeError, key);
     FAIL();
