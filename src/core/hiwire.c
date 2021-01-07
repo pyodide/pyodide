@@ -118,6 +118,11 @@ EM_JS_NUM(errcode, hiwire_decref, (JsRef idval), {
   Module.hiwire.decref(idval);
 });
 
+EM_JS_NUM(errcode, hiwire_log_error, (char* msg), {
+  let jsmsg = UTF8ToString(msg);
+  console.error(jsmsg);
+});
+
 EM_JS_REF(JsRef, hiwire_int, (int val), {
   return Module.hiwire.new_value(val);
 });
