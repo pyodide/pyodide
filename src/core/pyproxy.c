@@ -7,6 +7,16 @@
 #include "python2js.h"
 
 JsRef
+_pyproxy_repr(PyObject* pyobj)
+{
+  PyObject* repr_py = PyObject_Repr(pyobj);
+  const char* repr_utf8 = PyUnicode_AsUTF8(repr_py);
+  JsRef repr_js = hiwire_string_utf8(repr_utf8);
+  Py_CLEAR(repr_py);
+  return repr_js;
+}
+
+JsRef
 _pyproxy_has(PyObject* pyobj, JsRef idkey)
 {
   PyObject* pykey = js2python(idkey);
@@ -172,7 +182,6 @@ EM_JS_REF(JsRef, pyproxy_new, (PyObject * ptrobj), {
 
 EM_JS_NUM(int, pyproxy_init, (), {
   // clang-format off
-  let repr = pyodide.globals.repr;
   Module.PyProxies = {};
   Module.PyProxy = {
     getPtr: function(jsobj) {
@@ -203,7 +212,7 @@ EM_JS_NUM(int, pyproxy_init, (), {
       ptrobj = this.getPtr(jsobj);
       if (jskey === 'toString') {
         return function() {
-          return repr(jsobj);
+          return __pyproxy_repr(ptrobj);
         }
       } else if (jskey === '$$') {
         return jsobj['$$'];
