@@ -12,9 +12,6 @@
 #include "python2js.h"
 #include "runpython.h"
 
-_Py_IDENTIFIER(__version__);
-_Py_IDENTIFIER(version);
-
 #define FATAL_ERROR(args...)                                                   \
   do {                                                                         \
     printf("FATAL ERROR: ");                                                   \
@@ -22,7 +19,7 @@ _Py_IDENTIFIER(version);
     if (PyErr_Occurred()) {                                                    \
       printf("Error was triggered by Python exception:\n");                    \
       PyErr_Print();                                                           \
-      return -1;                                                               \
+      return 1;                                                                \
     }                                                                          \
   } while (0)
 
@@ -33,36 +30,10 @@ _Py_IDENTIFIER(version);
     }                                                                          \
   } while (0)
 
+_Py_IDENTIFIER(__version__);
+_Py_IDENTIFIER(version);
+
 static int
-PythonInterpreter_init()
-{
-  bool success = false;
-  setenv("PYTHONHOME", "/", 0);
-
-  Py_InitializeEx(0);
-
-  // This doesn't seem to work anymore, but I'm keeping it for good measure
-  // anyway The effective way to turn this off is below: setting
-  // sys.dont_write_bytecode = True
-  setenv("PYTHONDONTWRITEBYTECODE", "1", 0);
-
-  PyObject* sys = PyImport_ImportModule("sys");
-  if (sys == NULL) {
-    printf("Failed to import sys module.\n");
-    goto finally;
-  }
-
-  if (PyObject_SetAttrString(sys, "dont_write_bytecode", Py_True)) {
-    printf("Failed to set attribute on sys module.\n");
-    goto finally;
-  }
-  success = true;
-finally:
-  Py_CLEAR(sys);
-  return success ? 0 : -1;
-}
-
-int
 version_info_init()
 {
   PyObject* pyodide = PyImport_ImportModule("pyodide");
@@ -88,21 +59,46 @@ version_info_init()
 }
 
 int
-main(int argc, char** argv) TRY_INIT(hiwire);
-TRY_INIT(PythonInterpreter);
+main(int argc, char** argv)
+{
+  if (alignof(JsRef) != alignof(int)) {
+    FATAL_ERROR("JsRef doesn't have the same alignment as int.");
+  }
+  if (sizeof(JsRef) != sizeof(int)) {
+    FATAL_ERROR("JsRef doesn't have the same size as int.");
+  }
+  TRY_INIT(hiwire);
 
-TRY_INIT(error_handling);
-TRY_INIT(js2python);
-TRY_INIT(JsImport);
-TRY_INIT(JsProxy);
-TRY_INIT(pyproxy);
-TRY_INIT(python2js);
-TRY_INIT(runpython);
+  setenv("PYTHONHOME", "/", 0);
 
-version_info_init();
+  Py_InitializeEx(0);
 
-printf("Python initialization complete\n");
+  // This doesn't seem to work anymore, but I'm keeping it for good measure
+  // anyway The effective way to turn this off is below: setting
+  // sys.dont_write_bytecode = True
+  setenv("PYTHONDONTWRITEBYTECODE", "1", 0);
 
-emscripten_exit_with_live_runtime();
-return 0;
+  PyObject* sys = PyImport_ImportModule("sys");
+  if (sys == NULL) {
+    FATAL_ERROR("Failed to import sys module.");
+  }
+
+  if (PyObject_SetAttrString(sys, "dont_write_bytecode", Py_True)) {
+    FATAL_ERROR("Failed to set attribute on sys module.");
+  }
+  Py_DECREF(sys);
+
+  TRY_INIT(error_handling);
+  TRY_INIT(js2python);
+  TRY_INIT(JsImport);
+  TRY_INIT(JsProxy);
+  TRY_INIT(pyproxy);
+  TRY_INIT(python2js);
+  TRY_INIT(runpython);
+
+  TRY_INIT(version_info);
+  printf("Python initialization complete\n");
+
+  emscripten_exit_with_live_runtime();
+  return 0;
 }
