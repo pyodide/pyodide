@@ -43,6 +43,12 @@ typedef struct _JsRefStruct* JsRef;
 #define Js_FALSE ((JsRef)(6))
 #define Js_NULL ((JsRef)(8))
 
+#define hiwire_CLEAR(x)                                                        \
+  do {                                                                         \
+    hiwire_decref(x);                                                          \
+    x = NULL;                                                                  \
+  } while (0)
+
 /**
  * Initialize the variables and functions required for hiwire.
  */
