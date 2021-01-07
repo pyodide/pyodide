@@ -308,6 +308,7 @@ var languagePluginLoader = new Promise((resolve, reject) => {
     'runPython',
     'runPythonAsync',
     'version',
+    'pythonVersion',
     'autocomplete',
   ];
 
@@ -362,8 +363,6 @@ var languagePluginLoader = new Promise((resolve, reject) => {
     await Module.loadPackagesFromImports(code, messageCallback, errorCallback);
     return Module.runPython(code);
   };
-
-  Module.version = function() { return Module.pyodide_py.__version__; };
 
   Module.autocomplete = function(path) {
     var pyodide_module = Module.pyimport("pyodide");

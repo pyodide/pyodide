@@ -10,7 +10,7 @@ Backward compatibility of the API is not guaranteed at this point.
 
 .. autosummary::
    :toctree: ./python-api/
-   
+
    pyodide.as_nested_list
    pyodide.eval_code
    pyodide.find_imports
@@ -48,6 +48,7 @@ Backward compatibility of the API is not guaranteed at this point.
    js-api/pyodide_runPython.md
    js-api/pyodide_runPythonAsync.md
    js-api/pyodide_version.md
+   js-api/pyodide_pythonVersion.md
 ```
 
 

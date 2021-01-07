@@ -93,9 +93,12 @@ def test_version_info(selenium):
     version_py = LooseVersion(version_py_str)
     assert version_py > LooseVersion("0.0.1")
 
-    version_js_str = selenium.run_js("return pyodide.version()")
-    version_js = LooseVersion(version_js_str)
-    assert version_py == version_js
+    version_js_str = selenium.run_js("return pyodide.version;")
+    assert version_py_str == version_js_str
+
+    version_python_str = selenium.run("import sys; sys.version")
+    version_js_str = selenium.run_js("return pyodide.pythonVersion;")
+    assert version_python_str == version_js_str
 
 
 def test_runpythonasync(selenium_standalone):

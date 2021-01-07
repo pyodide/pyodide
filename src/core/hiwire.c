@@ -33,7 +33,26 @@ hiwire_bool(bool boolean)
   return boolean ? hiwire_true() : hiwire_false();
 }
 
-EM_JS(int, hiwire_init, (), {
+int
+hiwire_init_js();
+
+int
+hiwire_init()
+{
+  if (alignof(JsRef) != alignof(int)) {
+    PyErr_SetString(PyExc_SystemError,
+                    "JsRef doesn't have the same alignment as int.");
+    return -1;
+  }
+  if (sizeof(JsRef) != sizeof(int)) {
+    PyErr_SetString(PyExc_SystemError,
+                    "JsRef doesn't have the same size as int.");
+    return -1;
+  }
+  return hiwire_init_js();
+}
+
+EM_JS(int, hiwire_init_js, (), {
   let _hiwire = {
     objects : new Map(),
     // counter is used to allocate keys for the objects map.
