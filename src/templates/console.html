@@ -29,15 +29,17 @@
 
         window.term = term;
         pyodide.runPython(`
-          import io, code, sys
-          from js import term, pyodide
+            from pyodide import console
+            from js import term
 
-          class Console(code.InteractiveConsole):
-              def runcode(self, code):
-                  sys.stdout = io.StringIO()
-                  sys.stderr = io.StringIO()
-                  term.runPython("\\n".join(self.buffer))
-          _c = Console(locals=globals())
+
+            class Console(console.InteractiveConsole):
+                def runcode(self, code):
+                    super().runcode(code)
+                    term.runPython("\\n".join(self.buffer))
+
+
+            _c = Console(locals=globals())
         `)
 
         let c = pyodide.pyimport('_c');
