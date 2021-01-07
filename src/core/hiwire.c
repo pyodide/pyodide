@@ -346,7 +346,17 @@ EM_JS_NUM(int, hiwire_get_length, (JsRef idobj), {
 EM_JS_NUM(bool, hiwire_get_bool, (JsRef idobj), {
   var val = Module.hiwire.get_value(idobj);
   // clang-format off
-  return (val && (val.length === undefined || val.length)) ? 1 : 0;
+  if(!val){
+    return false;
+  }
+  if(val.size === 0){
+    // I think things with a size are all container types.
+    return false;
+  }
+  if(Array.isArray(val) && val.length === 0){
+    return false;
+  }
+  return true;
   // clang-format on
 });
 
@@ -376,8 +386,10 @@ EM_JS_REF(char*, hiwire_constructor_name, (JsRef idobj), {
 
 MAKE_OPERATOR(less_than, <);
 MAKE_OPERATOR(less_than_equal, <=);
-MAKE_OPERATOR(equal, ==);
-MAKE_OPERATOR(not_equal, !=);
+// clang-format off
+MAKE_OPERATOR(equal, ===);
+MAKE_OPERATOR(not_equal, !==);
+// clang-format on
 MAKE_OPERATOR(greater_than, >);
 MAKE_OPERATOR(greater_than_equal, >=);
 

@@ -128,6 +128,27 @@ def test_js2python(selenium):
     )
 
 
+def test_js2python_bool(selenium):
+    selenium.run_js(
+        """
+        window.f = ()=>{}
+        window.m0 = new Map();
+        window.m1 = new Map([[0, 1]]);
+        window.s0 = new Set();
+        window.s1 = new Set([0]);
+        """
+    )
+    assert (
+        selenium.run(
+            """
+        from js import window, f, m0, m1, s0, s1
+        [bool(x) for x in [f, m0, m1, s0, s1]]
+        """
+        )
+        == [True, False, True, False, True]
+    )
+
+
 @pytest.mark.parametrize("wasm_heap", (False, True))
 @pytest.mark.parametrize(
     "jstype, pytype",
