@@ -40,7 +40,7 @@ version_info_init()
   PyObject* pyodide_version = _PyObject_GetAttrId(pyodide, &PyId___version__);
   const char* pyodide_version_utf8 = PyUnicode_AsUTF8(pyodide_version);
   PyObject* sys = PyImport_ImportModule("sys");
-  PyObject* python_version = _PyObject_GetAttrId(sys, &PyId___version__);
+  PyObject* python_version = _PyObject_GetAttrId(sys, &PyId_version);
   const char* python_version_utf8 = PyUnicode_AsUTF8(python_version);
 
   EM_ASM(
