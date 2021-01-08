@@ -42,11 +42,7 @@ def test_download_and_extract(monkeypatch):
 def test_run_script(is_library, tmpdir):
     build_dir = Path(tmpdir.mkdir("build"))
     src_dir = Path(tmpdir.mkdir("build/package_name"))
-    script = dedent(
-        """
-         touch out.txt
-    """
-    )
+    script = "touch out.txt"
     pkg = {"build": {"script": script, "library": is_library}}
     buildpkg.run_script(build_dir, src_dir, pkg)
     assert (src_dir / "out.txt").exists()
