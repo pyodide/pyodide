@@ -66,7 +66,7 @@ log_error(char* msg);
 #define _EM_JS_WRAP_HELPER2(ret, func_name, args, body...)  \
   EM_JS(ret, func_name, args, body)
 
-#define _EM_JS_WRAP_HELPER(succ_ret, err_ret, ret, func_name, args, body...) \
+#define _EM_JS_WRAP_HELPER(succ_ret, err_ret, ret, func_name, args, body...)   \
   _EM_JS_WRAP_HELPER2(ret, func_name, args, {                                  \
     /* "use strict";  TODO: enable this. */                                    \
     EM_JS_TRACE_ENTER(func_name);                                              \
@@ -84,18 +84,22 @@ log_error(char* msg);
     succ_ret;                                                                  \
   })
 
-#define EM_JS_REF(ret, func_name, args, body...)                                 \
-  _EM_JS_WRAP_HELPER(                                                            \
-    Module.handle_js_error("Control reached end of nonvoid function w/o return"),\
-    return 0,                                                                     \
+#define EM_JS_REF(ret, func_name, args, body...)                               \
+  _EM_JS_WRAP_HELPER(                                                          \
+    /* In this case, throw error if we don't return otherwise */               \
+    Module.handle_js_error(                                                    \
+      new Error("Control reached end of nonvoid function w/o return")          \
+    );                                                                         \
+    return 0;,                                                                 \
+    return 0,  /* on failure return 0 (null) */                                \
     ret, func_name, args, body)
 
 #define EM_JS_NUM(ret, func_name, args, body...)                               \
-  _EM_JS_WRAP_HELPER(
-    return 0,  /* if control reaches end with no error return 0 */
-    return -1, /* on failure return -1 */
+  _EM_JS_WRAP_HELPER(                                                          \
+    return 0,  /* if control reaches end with no error return 0 */             \
+    return -1, /* on failure return -1 */                                      \
     ret, func_name, args, body)
-    // clang-format on
+// clang-format on
 
 #ifdef DEBUG_F
 #define FAIL()                                                                 \
