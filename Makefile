@@ -2,7 +2,7 @@ PYODIDE_ROOT=$(abspath .)
 include Makefile.envs
 .PHONY=check
 
-FILEPACKAGER=$(PYODIDE_ROOT)/emsdk/emsdk/fastcomp/emscripten/tools/file_packager.py
+FILEPACKAGER=$$EM_DIR/tools/file_packager.py
 UGLIFYJS=$(PYODIDE_ROOT)/node_modules/.bin/uglifyjs
 LESSC=$(PYODIDE_ROOT)/node_modules/.bin/lessc
 

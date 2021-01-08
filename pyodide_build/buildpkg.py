@@ -188,7 +188,7 @@ def package_files(buildpath: Path, srcpath: Path, pkg: Dict[str, Any], args):
     subprocess.run(
         [
             "python",
-            common.PACKAGERDIR / "file_packager.py",
+            common.file_packager_path(),
             name + ".data",
             "--lz4",
             "--preload",
