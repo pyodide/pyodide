@@ -56,6 +56,7 @@ all: check \
 
 build/pyodide.asm.js: src/core/main.o src/core/jsimport.o \
 	        src/core/jsproxy.o src/core/js2python.o \
+		src/core/error_handling.o \
 		src/core/pyproxy.o \
 		src/core/python2js.o \
 		src/core/python2js_buffer.o \
@@ -153,7 +154,7 @@ root/.built: \
 		$(CPYTHONLIB) \
 		src/sitecustomize.py \
 		src/webbrowser.py \
-		src/pyodide-py/ \
+		$(wildcard src/pyodide-py/pyodide/*.py) \
 		cpython/remove_modules.txt
 	rm -rf root
 	mkdir -p root/lib

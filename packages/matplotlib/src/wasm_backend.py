@@ -102,14 +102,8 @@ class FigureCanvasWasm(backend_agg.FigureCanvasAgg):
         return (getattr(window, "devicePixelRatio", 0) or 1) / backing_store
 
     def create_root_element(self):
-        # Designed to be overridden by subclasses for use in contexts other
-        # than iodide.
-        try:
-            from js import iodide
-
-            return iodide.output.element("div")
-        except ImportError:
-            return document.createElement("div")
+        # Designed to be overridden by subclasses
+        return document.createElement("div")
 
     def show(self):
         # If we've already shown this canvas elsewhere, don't create a new one,
