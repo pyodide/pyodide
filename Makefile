@@ -152,7 +152,6 @@ $(UGLIFYJS) $(LESSC): emsdk/emsdk/.complete
 
 root/.built: \
 		$(CPYTHONLIB) \
-		src/sitecustomize.py \
 		src/webbrowser.py \
 		$(wildcard src/pyodide-py/pyodide/*.py) \
 		cpython/remove_modules.txt
@@ -160,7 +159,6 @@ root/.built: \
 	mkdir -p root/lib
 	cp -r $(CPYTHONLIB) root/lib
 	mkdir -p $(SITEPACKAGES)
-	cp src/sitecustomize.py $(SITEPACKAGES)
 	cp src/webbrowser.py root/lib/python$(PYMINOR)
 	cp src/_testcapi.py	root/lib/python$(PYMINOR)
 	cp src/pystone.py root/lib/python$(PYMINOR)
