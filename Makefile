@@ -154,7 +154,7 @@ root/.built: \
 		$(CPYTHONLIB) \
 		src/sitecustomize.py \
 		src/webbrowser.py \
-		src/pyodide-py/ \
+		$(wildcard src/pyodide-py/pyodide/*.py) \
 		cpython/remove_modules.txt
 	rm -rf root
 	mkdir -p root/lib
