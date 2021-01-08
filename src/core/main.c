@@ -31,7 +31,6 @@
   } while (0)
 
 _Py_IDENTIFIER(__version__);
-_Py_IDENTIFIER(version);
 
 static int
 version_info_init()
