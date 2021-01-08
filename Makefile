@@ -2,7 +2,7 @@ PYODIDE_ROOT=$(abspath .)
 include Makefile.envs
 .PHONY=check
 
-FILEPACKAGER=$(PYODIDE_ROOT)/emsdk/emsdk/fastcomp/emscripten/tools/file_packager.py
+FILEPACKAGER=$$EM_DIR/tools/file_packager.py
 UGLIFYJS=$(PYODIDE_ROOT)/node_modules/.bin/uglifyjs
 LESSC=$(PYODIDE_ROOT)/node_modules/.bin/lessc
 
@@ -57,6 +57,7 @@ all: check \
 
 build/pyodide.asm.js: src/core/main.o src/core/jsimport.o \
 	        src/core/jsproxy.o src/core/js2python.o \
+		src/core/error_handling.o \
 		src/core/pyproxy.o \
 		src/core/python2js.o \
 		src/type_conversion/testing.o \
@@ -153,15 +154,13 @@ $(UGLIFYJS) $(LESSC): emsdk/emsdk/.complete
 
 root/.built: \
 		$(CPYTHONLIB) \
-		src/sitecustomize.py \
 		src/webbrowser.py \
-		src/pyodide-py/ \
+		$(wildcard src/pyodide-py/pyodide/*.py) \
 		cpython/remove_modules.txt
 	rm -rf root
 	mkdir -p root/lib
 	cp -r $(CPYTHONLIB) root/lib
 	mkdir -p $(SITEPACKAGES)
-	cp src/sitecustomize.py $(SITEPACKAGES)
 	cp src/webbrowser.py root/lib/python$(PYMINOR)
 	cp src/_testcapi.py	root/lib/python$(PYMINOR)
 	cp src/pystone.py root/lib/python$(PYMINOR)

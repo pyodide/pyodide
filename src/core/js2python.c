@@ -1,4 +1,5 @@
 #include "js2python.h"
+#include "error_handling.h"
 
 #include <emscripten.h>
 
@@ -79,8 +80,7 @@ _js2python_error(JsRef id)
 }
 
 // TODO: Add some meaningful order
-
-EM_JS(PyObject*, __js2python, (JsRef id), {
+EM_JS_REF(PyObject*, __js2python, (JsRef id), {
   function __js2python_string(value)
   {
     // The general idea here is to allocate a Python string and then
