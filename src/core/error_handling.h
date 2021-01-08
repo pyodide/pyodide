@@ -20,41 +20,6 @@ error_handling_init();
 errcode
 log_error(char* msg);
 
-// Poor clang-format, both macros and javascript at once make it pretty sick.
-// clang-format off
-#ifdef EM_JS_TRACE_F
-// Tracing macros if compiled with "-D EM_JS_TRACE_F"
-// Print extra info whenever we enter or exit EM_JS calls.
-// Yes, the "do {} while(0)" trickworks in javascript too!
-#define EM_JS_TRACE_ENTER(func_name)                                           \
-  let ____haderr = false;                                                      \
-  do {                                                                         \
-    console.log(`Entering function func_name                                   \
-      (line __LINE__ file __FILE__ )`);                                        \
-    console.log("Arguments were:", arguments);                                 \
-  } while (0)
-
-#define EM_JS_TRACE_ERROR(func_name, err)                                      \
-  do {                                                                         \
-    ____haderr = true;                                                         \
-    console.log(`Exiting function with error func_name                         \
-      (line __LINE__ file __FILE__ )`);                                        \
-    console.error("error was:", err);                                          \
-  } while (0)
-
-#define EM_JS_TRACE_EXIT(func_name)                                            \
-  if(!____haderr){                                                             \
-    console.log(`Exiting function func_name                                    \
-      (line __LINE__ file __FILE__ )`);                                        \
-  }
-
-#else
-// Without "-D EM_JS_TRACE_F" these just do nothing.
-#define EM_JS_TRACE_ENTER(func_name)
-#define EM_JS_TRACE_ERROR(func_name, err)
-#define EM_JS_TRACE_EXIT(func_name)
-#endif
-
 // WARNING: These wrappers around EM_JS cause macros in body to be expanded.
 // This causes trouble with true and false.
 // In types.h we provide nonstandard definitions:
@@ -62,43 +27,34 @@ log_error(char* msg);
 // true ==> (!!1)
 // These work as expected in both C and javascript.
 
-
-#define _EM_JS_WRAP_HELPER2(ret, func_name, args, body...)  \
-  EM_JS(ret, func_name, args, body)
-
-#define _EM_JS_WRAP_HELPER(succ_ret, err_ret, ret, func_name, args, body...)   \
-  _EM_JS_WRAP_HELPER2(ret, func_name, args, {                                  \
+// clang-format off
+#define EM_JS_REF(ret, func_name, args, body...)                               \
+  EM_JS(ret, func_name, args, {                                                \
     /* "use strict";  TODO: enable this. */                                    \
-    EM_JS_TRACE_ENTER(func_name);                                              \
     try    /* intentionally no braces, body already has them */                \
       body /* <== body of func */                                              \
     catch (e) {                                                                \
-      EM_JS_TRACE_ERROR(func_name, e);                                         \
-      /* Dummied out until calling code is ready to catch these errors */      \
-      throw e;                                                                 \
-      Module.handle_js_error(e);                                               \
-      err_ret;                                                                 \
-    } finally {                                                                \
-      EM_JS_TRACE_EXIT(func_name);                                             \
+        /* Dummied out until calling code is ready to catch these errors */    \
+        throw e;                                                               \
+        Module.handle_js_error(e);                                             \
+        return 0;                                                              \
     }                                                                          \
-    succ_ret;                                                                  \
+    throw new Error("Assertion error: control reached end of function without return");\
   })
 
-#define EM_JS_REF(ret, func_name, args, body...)                               \
-  _EM_JS_WRAP_HELPER(                                                          \
-    /* In this case, throw error if we don't return otherwise */               \
-    Module.handle_js_error(                                                    \
-      new Error("Control reached end of nonvoid function w/o return")          \
-    );                                                                         \
-    return 0;,                                                                 \
-    return 0,  /* on failure return 0 (null) */                                \
-    ret, func_name, args, body)
-
 #define EM_JS_NUM(ret, func_name, args, body...)                               \
-  _EM_JS_WRAP_HELPER(                                                          \
-    return 0,  /* if control reaches end with no error return 0 */             \
-    return -1, /* on failure return -1 */                                      \
-    ret, func_name, args, body)
+  EM_JS(ret, func_name, args, {                                                \
+    /* "use strict";  TODO: enable this. */                                    \
+    try    /* intentionally no braces, body already has them */                \
+      body /* <== body of func */                                              \
+    catch (e) {                                                                \
+        /* Dummied out until calling code is ready to catch these errors */    \
+        throw e;                                                               \
+        Module.handle_js_error(e);                                             \
+        return -1;                                                             \
+    }                                                                          \
+    return 0;  /* some of these were void */                                   \
+  })
 // clang-format on
 
 #ifdef DEBUG_F
@@ -112,7 +68,7 @@ log_error(char* msg);
              __FILE__);                                                        \
     log_error(msg);                                                            \
     free(msg);                                                                 \
-    goto finally;                                                              \
+    goto finally                                                               \
   } while (0)
 
 #else
