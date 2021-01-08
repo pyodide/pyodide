@@ -7,6 +7,16 @@
 #include "python2js.h"
 
 JsRef
+_pyproxy_repr(PyObject* pyobj)
+{
+  PyObject* repr_py = PyObject_Repr(pyobj);
+  const char* repr_utf8 = PyUnicode_AsUTF8(repr_py);
+  JsRef repr_js = hiwire_string_utf8(repr_utf8);
+  Py_CLEAR(repr_py);
+  return repr_js;
+}
+
+JsRef
 _pyproxy_has(PyObject* pyobj, JsRef idkey)
 {
   PyObject* pykey = js2python(idkey);
@@ -202,10 +212,10 @@ EM_JS_NUM(int, pyproxy_init, (), {
       ptrobj = this.getPtr(jsobj);
       if (jskey === 'toString') {
         return function() {
-          if (self.pyodide.repr === undefined) {
-            self.pyodide.repr = self.pyodide.pyimport('repr');
-          }
-          return self.pyodide.repr(jsobj);
+          let jsref_repr = __pyproxy_repr(ptrobj);
+          let repr = Module.hiwire.get_value(jsref_repr);
+          Module.hiwire.decref(jsref_repr);
+          return repr;
         }
       } else if (jskey === '$$') {
         return jsobj['$$'];

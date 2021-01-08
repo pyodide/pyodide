@@ -1,7 +1,7 @@
 (changelog)=
 # Release notes
 
-## Verison [Unreleased]
+## Version [Unreleased]
 ### Breaking changes
 
 - Removed iodide-specific code in `pyodide.js`. This breaks compatibility with
@@ -20,9 +20,10 @@
   need to be loaded explicitly
   [#1010](https://github.com/iodide-project/pyodide/pull/1010),
   [#987](https://github.com/iodide-project/pyodide/pull/987).
-
 - Removed the `pyodide.autocomplete` API, use Jedi directly instead.
   [#1066](https://github.com/iodide-project/pyodide/pull/1066)
+- Removed repr API.
+  [#1067](https://github.com/iodide-project/pyodide/pull/1067)
 
 ### Added
 - `micropip` now supports installing wheels from relative urls. [#872](https://github.com/iodide-project/pyodide/pull/872)
