@@ -9,14 +9,3 @@ def test_jedi(selenium_standalone):
         """
     )
     assert result == ["load", "loads"]
-
-
-def test_completions(selenium_standalone):
-    selenium_standalone.load_package("jedi")
-    result = selenium_standalone.run(
-        """
-        import pyodide
-        pyodide.get_completions('import sys\\nsys.v')
-        """
-    )
-    assert result == ["version", "version_info"]

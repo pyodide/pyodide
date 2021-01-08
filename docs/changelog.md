@@ -20,12 +20,10 @@
   need to be loaded explicitly
   [#1010](https://github.com/iodide-project/pyodide/pull/1010),
   [#987](https://github.com/iodide-project/pyodide/pull/987).
-
-  This also implies that to use `pyodide.autocomplete`, the jedi
-  package must be explicitly loaded.
+- Removed the `pyodide.autocomplete` API, use Jedi directly instead.
+  [#1066](https://github.com/iodide-project/pyodide/pull/1066)
 - Removed repr API.
   [#1067](https://github.com/iodide-project/pyodide/pull/1067)
-
 
 ### Added
 - `micropip` now supports installing wheels from relative urls. [#872](https://github.com/iodide-project/pyodide/pull/872)

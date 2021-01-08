@@ -307,7 +307,6 @@ var languagePluginLoader = new Promise((resolve, reject) => {
     'runPython',
     'runPythonAsync',
     'version',
-    'autocomplete',
   ];
 
   function makePublicAPI(module, public_api) {
@@ -363,11 +362,6 @@ var languagePluginLoader = new Promise((resolve, reject) => {
   };
 
   Module.version = function() { return Module.pyodide_py.__version__; };
-
-  Module.autocomplete = function(path) {
-    var pyodide_module = Module.pyimport("pyodide");
-    return pyodide_module.get_completions(path);
-  };
 
   Module.locateFile = (path) => baseURL + path;
   var postRunPromise = new Promise((resolve, reject) => {
