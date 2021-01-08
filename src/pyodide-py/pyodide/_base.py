@@ -8,7 +8,7 @@ import ast
 from asyncio import iscoroutine
 from io import StringIO
 from textwrap import dedent
-from typing import Dict, List, Any, Tuple
+from typing import Dict, List, Any, Tuple, Optional
 import tokenize
 
 
@@ -81,7 +81,7 @@ class CodeRunner:
 
     def __init__(
         self,
-        ns: Dict[str, Any] = None,
+        ns: Optional[Dict[str, Any]] = None,
         mode: str = "last_expr",
         quiet_trailing_semicolon: bool = True,
         filename: str = "<exec>",
@@ -199,7 +199,7 @@ class CodeRunner:
         return mod, last_expr
 
     def run(self, code: str) -> Any:
-        """
+        """Runs a code string.
 
         Parameters
         ----------
