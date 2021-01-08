@@ -393,14 +393,9 @@ static PyObject*
 JsProxy_Dir(PyObject* self)
 {
   bool success = false;
-  PyObject* object__dir__ = NULL;
-  PyObject* keys = NULL;
-  PyObject* result_set = NULL;
-  JsRef iddir = NULL;
-  PyObject* pydir = NULL;
-  PyObject* null_or_pynone = NULL;
-
-  PyObject* result = NULL;
+  DECLARE_PyObjects(object__dir__, keys, result_set, pydir, null_or_pynone, );
+  DECLARE_JsRefs(iddir);
+  PyObject* result; // Note: do not declare result with DECLARE_PyObjects.
 
   // First get base __dir__ via object.__dir__(self)
   // Would have been nice if they'd supplied PyObject_GenericDir...
@@ -426,12 +421,8 @@ JsProxy_Dir(PyObject* self)
 
   success = true;
 finally:
-  Py_CLEAR(object__dir__);
-  Py_CLEAR(keys);
-  Py_CLEAR(result_set);
-  hiwire_decref(iddir);
-  Py_CLEAR(pydir);
-  Py_CLEAR(null_or_pynone);
+  CLEAR_PyObjects(object__dir__, keys, result_set, pydir, null_or_pynone, );
+  CLEAR_JsRefs(iddir);
   if (!success) {
     Py_CLEAR(result);
   }
