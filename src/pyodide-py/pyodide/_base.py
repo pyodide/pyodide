@@ -8,7 +8,7 @@ import ast
 from asyncio import iscoroutine
 from io import StringIO
 from textwrap import dedent
-from typing import Dict, List, Any, Tuple
+from typing import Dict, List, Any, Tuple, Optional
 import tokenize
 
 
@@ -52,6 +52,21 @@ class CodeRunner:
     ns
         `locals()` or `globals()` context where to execute code.
         This namespace is updated by the subsequent calls to `run()`.
+    mode
+        'last_expr' , 'last_expr_or_assign' or 'none',
+        specifying what should be evaluated and what should be executed.
+        'last_expr' will return the last expression
+        'last_expr_or_assign' will return the last expression
+        or the last (named) assignment.
+        'none' will always return `None`.
+        Other values will be interpreted as 'none'.
+    quiet_trailing_semicolon
+        wether a trailing semicolon should 'quiet' the result or not.
+        Setting this to `True` (default) mimic the CPython's interpret
+        behavior ; whereas setting it to `False` mimic the IPython's
+        interpret behavior.
+    filename:
+        file from which the code was read.
 
     Examples
     --------
@@ -64,15 +79,22 @@ class CodeRunner:
     6
     """
 
-    def __init__(self, ns: Dict[str, Any] = None):
+    def __init__(
+        self,
+        ns: Optional[Dict[str, Any]] = None,
+        mode: str = "last_expr",
+        quiet_trailing_semicolon: bool = True,
+        filename: str = "<exec>",
+    ):
         self.ns = ns if ns is not None else {}
-        self.filename = "<exec>"
+        self.quiet_trailing_semicolon = quiet_trailing_semicolon
+        self.filename = filename
+        self.mode = mode
 
     def quiet(self, code: str) -> bool:
         """
-        Does the last nonwhitespace character of code is a semicolon?
-
-        This can be overridden to customize the way run() is silenced.
+        If `quiet_trailing_semicolon` is set tot True in the constructor,
+        does the last nonwhitespace character of code is a semicolon?
 
         Examples
         --------
@@ -82,9 +104,14 @@ class CodeRunner:
         True
         >>> CodeRunner().quiet('1 + 1 # comment ;')
         False
+        >>> CodeRunner(quiet_trailing_semicolon=False).quiet('1 + 1 ;')
+        False
         """
         # largely inspired from IPython:
         # https://github.com/ipython/ipython/blob/86d24741188b0cedd78ab080d498e775ed0e5272/IPython/core/displayhook.py#L84
+
+        if not self.quiet_trailing_semicolon:
+            return False
 
         # We need to wrap tokens in a buffer because:
         # "Tokenize requires one argument, readline, which must be
@@ -105,6 +132,31 @@ class CodeRunner:
 
         return False
 
+    def _last_assign_to_expr(self, mod: ast.Module):
+        """
+        Implementation of 'last_expr_or_assign' mode.
+        It modify the supplyied AST module so that the last
+        statement's value can be returned in 'last_expr' mode.
+        """
+        # Largely inspired from IPython:
+        # https://github.com/ipython/ipython/blob/3587f5bb6c8570e7bbb06cf5f7e3bc9b9467355a/IPython/core/interactiveshell.py#L3229
+
+        last_node = mod.body[-1]
+
+        if isinstance(last_node, ast.Assign):
+            # In this case there can be multiple targets as in `a = b = 1`.
+            # We just take the first one.
+            target = last_node.targets[0]
+        elif isinstance(last_node, (ast.AugAssign, ast.AnnAssign)):
+            target = last_node.target
+        else:
+            return
+        if isinstance(target, ast.Name):
+            last_node = ast.Expr(ast.Name(target.id, ast.Load()))
+            mod.body.append(last_node)
+            # Update the line numbers shown in error messages.
+            ast.fix_missing_locations(mod)
+
     def _split_and_compile(self, code: str, flags: int = 0x0) -> Tuple[Any, Any]:
         """
         Split code in two parts, everything but last expression and
@@ -124,9 +176,19 @@ class CodeRunner:
         if not mod.body:
             return None, None
 
+        if self.mode == "last_expr_or_assign":
+            # If the last statement is a named assignment, add an extra
+            # expression to the end with just the L-value so that we can
+            # handle it with the last_expr code.
+            self._last_assign_to_expr(mod)
+
         # we extract last expression
         last_expr = None
-        if isinstance(mod.body[-1], (ast.Expr, ast.Await)) and not self.quiet(code):
+        if (
+            self.mode.startswith("last_expr")  # last_expr or last_expr_or_assign
+            and isinstance(mod.body[-1], (ast.Expr, ast.Await))
+            and not self.quiet(code)
+        ):
             last_expr = ast.Expression(mod.body.pop().value)  # type: ignore
 
         # we compile
@@ -137,7 +199,7 @@ class CodeRunner:
         return mod, last_expr
 
     def run(self, code: str) -> Any:
-        """
+        """Runs a code string.
 
         Parameters
         ----------
@@ -150,6 +212,8 @@ class CodeRunner:
         return `None`.
         If the last statement is an expression, return the
         result of the expression.
+        Use the `mode` and `quiet_trailing_semicolon` parameters in the
+        constructor to modify this default behavior.
         """
         mod, last_expr = self._split_and_compile(code)
 
@@ -185,7 +249,13 @@ class CodeRunner:
             return res
 
 
-def eval_code(code: str, ns: Dict[str, Any]) -> Any:
+def eval_code(
+    code: str,
+    ns: Dict[str, Any],
+    mode: str = "last_expr",
+    quiet_trailing_semicolon: bool = True,
+    filename: str = "<exec>",
+) -> Any:
     """Runs a code string.
 
     Parameters
@@ -194,17 +264,39 @@ def eval_code(code: str, ns: Dict[str, Any]) -> Any:
        the Python code to run.
     ns
        `locals()` or `globals()` context where to execute code.
+    mode
+       'last_expr' , 'last_expr_or_assign' or 'none',
+       specifying what should be evaluated and what should be executed.
+       'last_expr' will return the last expression
+       'last_expr_or_assign' will return the last expression
+       or the last (named) assignment.
+       'none' will always return `None`.
+           Other values will be interpreted as 'none'.
+    quiet_trailing_semicolon
+       wether a trailing semicolon should 'quiet' the result or not.
+       Setting this to `True` (default) mimic the CPython's interpret
+       behavior ; whereas setting it to `False` mimic the IPython's
+    filename:
+       file from which the code was read.
 
     Returns
     -------
     If the last nonwhitespace character of code is a semicolon return `None`.
     If the last statement is an expression, return the
     result of the expression.
+    Use the `mode` and `quiet_trailing_semicolon` parameters to modify
+    this default behavior.
     """
-    return CodeRunner(ns).run(code)
+    return CodeRunner(ns, mode, quiet_trailing_semicolon, filename).run(code)
 
 
-async def _eval_code_async(code: str, ns: Dict[str, Any]) -> Any:
+async def _eval_code_async(
+    code: str,
+    ns: Dict[str, Any],
+    mode: str = "last_expr",
+    quiet_trailing_semicolon: bool = True,
+    filename: str = "<exec>",
+) -> Any:
     """ //!\\ WARNING //!\\
     This is not working yet. For use once we add an EventLoop.
 
@@ -215,7 +307,9 @@ async def _eval_code_async(code: str, ns: Dict[str, Any]) -> Any:
       - add tests
     """
     raise NotImplementedError("Async is not yet supported in Pyodide.")
-    return await CodeRunner(ns).run_async(code)
+    return await CodeRunner(ns, mode, quiet_trailing_semicolon, filename).run_async(
+        code
+    )
 
 
 def find_imports(code: str) -> List[str]:
