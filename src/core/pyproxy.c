@@ -151,7 +151,6 @@ EM_JS_REF(JsRef, pyproxy_new, (PyObject * ptrobj), {
   // have a destructor in Javascript to free the Python object.
   // _pyproxy_destroy, which is a way for users to manually delete the proxy,
   // also deletes the proxy from this set.
-
   if (Module.PyProxies.hasOwnProperty(ptrobj)) {
     return Module.hiwire.new_value(Module.PyProxies[ptrobj]);
   }
