@@ -226,8 +226,10 @@ def run_script(buildpath: Path, srcpath: Path, pkg: Dict[str, Any]):
     finally:
         os.chdir(orig_path)
 
-    with open(buildpath / ".packaged", "wb") as fd:
-        fd.write(b"\n")
+    # If library, we're done so create .packaged file
+    if pkg["build"].get("library"):
+        with open(buildpath / ".packaged", "wb") as fd:
+            fd.write(b"\n")
 
 
 def needs_rebuild(pkg: Dict[str, Any], path: Path, buildpath: Path) -> bool:
@@ -275,6 +277,8 @@ def build_package(path: Path, args):
         if pkg.get("build", {}).get("library"):
             run_script(buildpath, srcpath, pkg)
         else:
+            if pkg.get("build", {}).get("script"):
+                run_script(buildpath, srcpath, pkg)
             compile(path, srcpath, pkg, args)
             package_files(buildpath, srcpath, pkg, args)
     finally:
