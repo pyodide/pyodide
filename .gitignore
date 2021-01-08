@@ -1,4 +1,3 @@
-*.bc
 *.a
 *.o
 *.pyc
@@ -12,6 +11,7 @@ firefox/
 .vscode
 .idea
 .mypy_cache/
+node_modules/
 
 build
 downloads
@@ -20,21 +20,10 @@ installs
 ccache
 
 /root/
-/build/
 
 /emsdk/emsdk
 
 *.egg-info/
-packages/six/six-1.11.0
-packages/lz4/lz4-1.8.3
-packages/CLAPACK/CLAPACK-WA
-packages/CLAPACK/clapack.tgz
-packages/jedi/jedi-*
-packages/parso/parso-*
-packages/libxml/libxml*
-packages/libxslt/libxslt*
-packages/libiconv/libiconv*
-packages/zlib/zlib*
 packages/.artifacts
 packages/*/build.log
 

@@ -13,7 +13,6 @@ __all__ = [
     "eval_code",
     "find_imports",
     "as_nested_list",
-    "get_completions",
     "JsException",
     "WebLoop",
     "WebLoopPolicy",

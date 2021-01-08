@@ -83,19 +83,12 @@ def test_load_package_after_convert_string(selenium):
 def test_version_info(selenium):
     from distutils.version import LooseVersion
 
-    version_py_str = selenium.run(
-        """
-            import pyodide
-
-            pyodide.__version__
-            """
-    )
+    version_py_str = selenium.run("import pyodide; pyodide.__version__")
     version_py = LooseVersion(version_py_str)
     assert version_py > LooseVersion("0.0.1")
 
-    version_js_str = selenium.run_js("return pyodide.version()")
-    version_js = LooseVersion(version_js_str)
-    assert version_py == version_js
+    version_js_str = selenium.run_js("return pyodide.version;")
+    assert version_py_str == version_js_str
 
 
 def test_runpythonasync(selenium_standalone):
@@ -176,11 +169,8 @@ def test_unknown_attribute(selenium):
     )
 
 
-def test_completions(selenium):
-    result = selenium.run(
-        """
-        import pyodide
-        pyodide.get_completions('import sys\\nsys.v')
-        """
-    )
-    assert result == ["version", "version_info"]
+def test_run_python_debug(selenium):
+    assert selenium.run_js("return pyodide._module.runPythonDebug('1+1');") == 2
+    assert selenium.run_js(
+        "return pyodide._module.runPythonDebug('[x*x + 1 for x in range(4)]');"
+    ) == [1, 2, 5, 10]

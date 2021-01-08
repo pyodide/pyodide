@@ -1,6 +1,42 @@
 (changelog)=
 # Release notes
 
+## Version [Unreleased]
+### Breaking changes
+
+- Removed iodide-specific code in `pyodide.js`. This breaks compatibility with
+  iodide.
+  [#878](https://github.com/iodide-project/pyodide/pull/878),
+  [#981](https://github.com/iodide-project/pyodide/pull/981)
+- Use upstream `file_packager.py`, and stop checking package abi versions.
+  The `PYODIDE_PACKAGE_ABI` environment variable is no longer used, but is
+  still set as some packages use it to detect whether it is being built for
+  pyodide. This usage is deprecated, and a new environment variable `PYODIDE`
+  is introduced for this purpose.
+
+  As part of the change, Module.checkABI is no longer present.
+  [#991](https://github.com/iodide-project/pyodide/pull/991)
+- six, jedi and parso are no longer vendored in the main pyodide package, and
+  need to be loaded explicitly
+  [#1010](https://github.com/iodide-project/pyodide/pull/1010),
+  [#987](https://github.com/iodide-project/pyodide/pull/987).
+- Removed the `pyodide.autocomplete` API, use Jedi directly instead.
+  [#1066](https://github.com/iodide-project/pyodide/pull/1066)
+- Removed repr API.
+  [#1067](https://github.com/iodide-project/pyodide/pull/1067)
+
+### Added
+- `micropip` now supports installing wheels from relative urls. [#872](https://github.com/iodide-project/pyodide/pull/872)
+- uglifyjs and lessc no longer need to be installed in the system during build
+  [#878](https://github.com/iodide-project/pyodide/pull/878).
+- Reduce the size of the core pyodide package
+  [#987](https://github.com/iodide-project/pyodide/pull/987).
+- Updated packages: bleach 3.2.1, packaging 20.8
+
+### Fixed
+- getattr and dir on JsProxy now report consistent results and include all names defined on the Python dictionary backing JsProxy. [#1017](https://github.com/iodide-project/pyodide/pull/1017)
+- `JsProxy.__bool__` now produces more consistent results: both `bool(window)` and `bool(zero-arg-callback)` were `False` but now are `True`. Conversely, `bool(empty_js_set)` and `bool(empty_js_map)` were `True` but now are `False`. [#1061](https://github.com/iodide-project/pyodide/pull/1061)
+
 ## Version 0.16.1
 *December 25, 2020*
 

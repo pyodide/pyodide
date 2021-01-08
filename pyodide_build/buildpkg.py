@@ -92,7 +92,8 @@ def download_and_extract(
                 tarballname = tarballname[: -len(extension)]
                 break
 
-        return buildpath / tarballname
+        return buildpath / pkg["source"].get("extract_dir", tarballname)
+
     elif "path" in pkg["source"]:
         srcdir = Path(pkg["source"]["path"])
 
@@ -150,12 +151,16 @@ def compile(path: Path, srcpath: Path, pkg: Dict[str, Any], args):
                 "pywasmcross",
                 "--cflags",
                 args.cflags + " " + pkg.get("build", {}).get("cflags", ""),
+                "--cxxflags",
+                args.cxxflags + " " + pkg.get("build", {}).get("cxxflags", ""),
                 "--ldflags",
                 args.ldflags + " " + pkg.get("build", {}).get("ldflags", ""),
                 "--target",
                 args.target,
                 "--install-dir",
                 args.install_dir,
+                "--replace-libs",
+                ";".join(pkg.get("build", {}).get("replace-libs", [])),
             ],
             env=env,
             check=True,
@@ -168,7 +173,7 @@ def compile(path: Path, srcpath: Path, pkg: Dict[str, Any], args):
         site_packages_dir = srcpath / "install" / "lib" / "python3.8" / "site-packages"
         pkgdir = path.parent.resolve()
         env = {"SITEPACKAGES": str(site_packages_dir), "PKGDIR": str(pkgdir)}
-        subprocess.run(["bash", "-c", post], env=env, check=True)
+        subprocess.run(["bash", "-ce", post], env=env, check=True)
 
     with open(srcpath / ".built", "wb") as fd:
         fd.write(b"\n")
@@ -183,9 +188,8 @@ def package_files(buildpath: Path, srcpath: Path, pkg: Dict[str, Any], args):
     subprocess.run(
         [
             "python",
-            common.ROOTDIR / "file_packager.py",
+            common.PACKAGERDIR / "file_packager.py",
             name + ".data",
-            "--abi={0}".format(args.package_abi),
             "--lz4",
             "--preload",
             "{}@/".format(install_prefix),
@@ -204,6 +208,23 @@ def package_files(buildpath: Path, srcpath: Path, pkg: Dict[str, Any], args):
         ["uglifyjs", buildpath / (name + ".js"), "-o", buildpath / (name + ".js")],
         check=True,
     )
+
+    with open(buildpath / ".packaged", "wb") as fd:
+        fd.write(b"\n")
+
+
+def run_script(buildpath: Path, srcpath: Path, pkg: Dict[str, Any]):
+    # We don't really do packaging, but needs_rebuild checks .packaged to
+    # determine if it needs to rebuild
+    if (buildpath / ".packaged").is_file():
+        return
+
+    orig_path = Path.cwd()
+    os.chdir(srcpath)
+    try:
+        subprocess.run(["bash", "-ce", pkg["build"]["script"]], check=True)
+    finally:
+        os.chdir(orig_path)
 
     with open(buildpath / ".packaged", "wb") as fd:
         fd.write(b"\n")
@@ -237,7 +258,7 @@ def build_package(path: Path, args):
     name = pkg["package"]["name"]
     t0 = datetime.now()
     print("[{}] Building package {}...".format(t0.strftime("%Y-%m-%d %H:%M:%S"), name))
-    packagedir = name + "-" + pkg["package"]["version"]
+    packagedir = name + "-" + str(pkg["package"]["version"])
     dirpath = path.parent
     orig_path = Path.cwd()
     os.chdir(dirpath)
@@ -251,8 +272,11 @@ def build_package(path: Path, args):
             os.makedirs(buildpath)
         srcpath = download_and_extract(buildpath, packagedir, pkg, args)
         patch(path, srcpath, pkg, args)
-        compile(path, srcpath, pkg, args)
-        package_files(buildpath, srcpath, pkg, args)
+        if pkg.get("build", {}).get("library"):
+            run_script(buildpath, srcpath, pkg)
+        else:
+            compile(path, srcpath, pkg, args)
+            package_files(buildpath, srcpath, pkg, args)
     finally:
         os.chdir(orig_path)
         t1 = datetime.now()
@@ -269,17 +293,18 @@ def make_parser(parser: argparse.ArgumentParser):
         "package", type=str, nargs=1, help="Path to meta.yaml package description"
     )
     parser.add_argument(
-        "--package_abi",
-        type=int,
-        required=True,
-        help="The ABI number for the package to be built",
-    )
-    parser.add_argument(
         "--cflags",
         type=str,
         nargs="?",
         default=common.DEFAULTCFLAGS,
         help="Extra compiling flags",
+    )
+    parser.add_argument(
+        "--cxxflags",
+        type=str,
+        nargs="?",
+        default=common.DEFAULTCXXFLAGS,
+        help="Extra C++ specifc compiling flags",
     )
     parser.add_argument(
         "--ldflags",

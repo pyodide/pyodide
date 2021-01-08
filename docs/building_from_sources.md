@@ -3,7 +3,7 @@
 
 Building is easiest on Linux and relatively straightforward on Mac. For
 Windows, we currently recommend using the Docker image (described below) to
-build Pyodide.
+build Pyodide. Another option for building on Windows is to use [WSL2](https://docs.microsoft.com/en-us/windows/wsl/install-win10) to create a Linux build environment.
 
 ## Build using `make`
 
@@ -18,8 +18,8 @@ Additional build prerequisites are:
 - CMake
 - PyYAML
 - FreeType 2 development libraries to compile Matplotlib.
-- [lessc](http://lesscss.org/) to compile less to css.
-- [uglifyjs](https://github.com/mishoo/UglifyJS) to minify Javascript builds.
+- Cython to compile SciPy
+- SWIG to compile NLopt
 - gfortran (GNU Fortran 95 compiler)
 - [f2c](http://www.netlib.org/f2c/)
 - [ccache](https://ccache.samba.org) (optional) *highly* recommended for much faster rebuilds.
@@ -30,6 +30,8 @@ On Mac, you will also need:
 - System libraries in the root directory (`sudo installer -pkg /Library/Developer/CommandLineTools/Packages/macOS_SDK_headers_for_macOS_10.14.pkg -target /` should do it, see https://github.com/pyenv/pyenv/issues/1219#issuecomment-428305417)
 - coreutils for md5sum and other essential Unix utilities (`brew install coreutils`)
 - cmake (`brew install cmake`)
+- Cython to compile SciPy (`brew install cython`)
+- SWIG to compile NLopt (`brew install swig`)
 - pkg-config (`brew install pkg-config`)
 - openssl (`brew install openssl`)
 - gfortran (`brew cask install gfortran`)
