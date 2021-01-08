@@ -1,6 +1,5 @@
 # See also test_pyproxy, test_jsproxy, and test_python.
 import pytest
-from selenium.common.exceptions import WebDriverException
 
 
 def test_python2js(selenium):
@@ -263,19 +262,19 @@ def test_jsproxy_attribute_error(selenium):
     )
 
     msg = "AttributeError: z"
-    with pytest.raises(WebDriverException, match=msg):
+    with pytest.raises(selenium.JavascriptException, match=msg):
         selenium.run("point.z")
 
     selenium.run("del point.y")
     msg = "AttributeError: y"
-    with pytest.raises(WebDriverException, match=msg):
+    with pytest.raises(selenium.JavascriptException, match=msg):
         selenium.run("point.y")
     assert selenium.run_js("return point.y;") is None
 
 
 def test_javascript_error(selenium):
     msg = "JsException: Error: This is a js error"
-    with pytest.raises(WebDriverException, match=msg):
+    with pytest.raises(selenium.JavascriptException, match=msg):
         selenium.run(
             """
             from js import Error

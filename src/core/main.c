@@ -3,6 +3,7 @@
 #include <emscripten.h>
 #include <stdalign.h>
 
+#include "error_handling.h"
 #include "hiwire.h"
 #include "js2python.h"
 #include "jsimport.h"
@@ -59,6 +60,7 @@ main(int argc, char** argv)
   }
   Py_DECREF(sys);
 
+  TRY_INIT(error_handling);
   TRY_INIT(js2python);
   TRY_INIT(JsImport);
   TRY_INIT(JsProxy);

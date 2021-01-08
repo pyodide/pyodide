@@ -1,3 +1,4 @@
+#include "error_handling.h"
 #include <Python.h>
 #include <emscripten.h>
 
@@ -144,22 +145,18 @@ _pyproxy_destroy(PyObject* ptrobj)
   EM_ASM(delete Module.PyProxies[ptrobj];);
 }
 
-EM_JS(JsRef, pyproxy_use, (PyObject * ptrobj), {
-  // Checks if there is already an existing proxy on ptrobj
-
-  if (Module.PyProxies.hasOwnProperty(ptrobj)) {
-    return Module.hiwire.new_value(Module.PyProxies[ptrobj]);
-  }
-
-  return Module.hiwire.ERROR;
-})
-
-EM_JS(JsRef, pyproxy_new, (PyObject * ptrobj), {
+EM_JS_REF(JsRef, pyproxy_new, (PyObject * ptrobj), {
   // Technically, this leaks memory, since we're holding on to a reference
   // to the proxy forever.  But we have that problem anyway since we don't
   // have a destructor in Javascript to free the Python object.
   // _pyproxy_destroy, which is a way for users to manually delete the proxy,
   // also deletes the proxy from this set.
+
+  if (Module.PyProxies.hasOwnProperty(ptrobj)) {
+    return Module.hiwire.new_value(Module.PyProxies[ptrobj]);
+  }
+
+  _Py_Incref(x);
 
   var target = function(){};
   target['$$'] = { ptr : ptrobj, type : 'PyProxy' };
@@ -168,20 +165,6 @@ EM_JS(JsRef, pyproxy_new, (PyObject * ptrobj), {
 
   return Module.hiwire.new_value(proxy);
 });
-
-// See bug #1049
-JsRef
-get_pyproxy(PyObject* x)
-{
-  JsRef result = pyproxy_use(x);
-  if (result != NULL) {
-    return result;
-  }
-
-  // Reference counter is increased only once when a PyProxy is created.
-  Py_INCREF(x);
-  return pyproxy_new(x);
-}
 
 EM_JS(int, pyproxy_init, (), {
   // clang-format off
