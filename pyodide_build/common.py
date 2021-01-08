@@ -4,16 +4,8 @@ import shutil
 
 ROOTDIR = Path(__file__).parents[1].resolve()
 TOOLSDIR = ROOTDIR / "tools"
-
-# Use emcc.py because emcc may be a ccache symlink
-_EMCC_PATH = shutil.which("emcc.py")
-if _EMCC_PATH is None:
-    print("emcc.py not found. Setting file_packager.py path to /dev/null")
-    PACKAGERPATH = Path("/dev/null")
-else:
-    PACKAGERPATH = Path(_EMCC_PATH).parent / "tools" / "file_packager.py"
-
 TARGETPYTHON = ROOTDIR / "cpython" / "installs" / "python-3.8.2"
+
 # Leading space so that argparse doesn't think this is a flag
 DEFAULTCFLAGS = " -fPIC"
 DEFAULTCXXFLAGS = ""
@@ -58,3 +50,14 @@ def _parse_package_subset(query: Optional[str]) -> Optional[Set[str]]:
     packages = [el.strip() for el in packages]
     packages = ["micropip", "distlib"] + packages
     return set(packages)
+
+
+def file_packager_path() -> Path:
+    # Use emcc.py because emcc may be a ccache symlink
+    emcc_path = shutil.which("emcc.py")
+    if emcc_path is None:
+        raise RuntimeError(
+            "emcc.py not found. Setting file_packager.py path to /dev/null"
+        )
+
+    return Path(emcc_path).parent / "tools" / "file_packager.py"
