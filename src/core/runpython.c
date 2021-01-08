@@ -117,7 +117,7 @@ runpython_init()
   // this. I (HC) will fix this with the rest of the type conversions
   // modifications.
   Py_INCREF(globals); // pyproxy_new steals argument
-  globals_proxy = get_pyproxy(globals);
+  globals_proxy = pyproxy_new(globals);
   if (globals_proxy == NULL) {
     goto fail;
   }
