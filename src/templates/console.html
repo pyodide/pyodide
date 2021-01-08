@@ -35,12 +35,14 @@
 
             class Console(console.InteractiveConsole):
                 def runcode(self, code):
-                    super().runcode(code)
                     term.pause()
                     term.runPython("\\n".join(self.buffer))
 
 
-            _c = Console(locals=globals())
+            # JQuery.terminal add trailing newline that is not easy to remove
+            # with the current API. Doing our best here.
+            _c = Console(stdout_callback=lambda s: term.echo(s.rstrip("\\n")),
+                         stderr_callback=lambda s: term.error(s.rstrip("\\n")))
         `)
 
         let c = pyodide.pyimport('_c');
@@ -50,15 +52,6 @@
             term.set_prompt('[[;gray;]... ]');
           } else {
             term.set_prompt('[[;red;]>>> ]');
-            let stderr = pyodide.runPython("sys.stderr.getvalue()").trim();
-            if (stderr) {
-              term.echo(`[[;red;]${stderr}]`);
-            } else {
-              let stdout = pyodide.runPython("sys.stdout.getvalue()");
-              if (stdout) {
-                term.echo(stdout.trim());
-              }
-            }
           }
         }
 
