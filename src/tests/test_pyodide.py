@@ -29,6 +29,15 @@ def test_code_runner():
     assert not runner.quiet("5-2  # comment with trailing semicolon ;")
     assert runner.run("4//2\n") == 2
     assert runner.run("4//2;") is None
+    assert runner.run("x = 2\nx") == 2
+    assert runner.run("def f(x):\n    return x*x+1\n[f(x) for x in range(6)]") == [
+        1,
+        2,
+        5,
+        10,
+        17,
+        26,
+    ]
 
     # with 'quiet_trailing_semicolon' set to False
     runner = CodeRunner(quiet_trailing_semicolon=False)
