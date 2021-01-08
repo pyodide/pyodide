@@ -791,17 +791,18 @@ JsProxy_init()
   PyExc_BaseException_Type = (PyTypeObject*)PyExc_BaseException;
   _Exc_JsException.tp_base = (PyTypeObject*)PyExc_Exception;
 
-  module = PyImport_ImportModule("asyncio");
-  FAIL_IF_NULL(module == NULL);
+  asyncio_module = PyImport_ImportModule("asyncio");
+  FAIL_IF_NULL(asyncio_module);
 
-  asyncio_get_event_loop = _PyObject_GetAttrId(module, &PyId_get_event_loop);
-  FAIL_IF_NULL(asyncio_get_event_loop == NULL);
+  asyncio_get_event_loop =
+    _PyObject_GetAttrId(asyncio_module, &PyId_get_event_loop);
+  FAIL_IF_NULL(asyncio_get_event_loop);
 
   // Add JsException to the pyodide module so people can catch it if they want.
   pyodide_module = PyImport_ImportModule("pyodide");
-  FAIL_IF_NULL(module);
+  FAIL_IF_NULL(pyodide_module);
   FAIL_IF_MINUS_ONE(
-    PyObject_SetAttrString(module, "JsException", Exc_JsException));
+    PyObject_SetAttrString(pyodide_module, "JsException", Exc_JsException));
   FAIL_IF_MINUS_ONE(PyType_Ready(&JsProxyType));
   FAIL_IF_MINUS_ONE(PyType_Ready(&JsBoundMethodType));
   FAIL_IF_MINUS_ONE(PyType_Ready(&_Exc_JsException));
