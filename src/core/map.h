@@ -1,7 +1,8 @@
-// This is:
+// From:
 // https://github.com/Erlkoenig90/map-macro/blob/37c567dbe6a6b7710e5272ab1f81ac721f98cabd/map.h
+// We need this fork of the original because it adds MAP_UD which we'll use.
 // clang-format off
-
+// original file starts here:
 /*
  * Copyright (C) 2012 William Swanson
  *
