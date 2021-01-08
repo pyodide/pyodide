@@ -39,22 +39,11 @@ version_info_init()
   PyObject* pyodide = PyImport_ImportModule("pyodide");
   PyObject* pyodide_version = _PyObject_GetAttrId(pyodide, &PyId___version__);
   const char* pyodide_version_utf8 = PyUnicode_AsUTF8(pyodide_version);
-  PyObject* sys = PyImport_ImportModule("sys");
-  PyObject* python_version = _PyObject_GetAttrId(sys, &PyId_version);
-  const char* python_version_utf8 = PyUnicode_AsUTF8(python_version);
 
-  EM_ASM(
-    {
-      Module.version = UTF8ToString($0);
-      Module.pythonVersion = UTF8ToString($1);
-    },
-    pyodide_version_utf8,
-    python_version_utf8);
+  EM_ASM({ Module.version = UTF8ToString($0); }, pyodide_version_utf8);
 
   Py_CLEAR(pyodide);
   Py_CLEAR(pyodide_version);
-  Py_CLEAR(sys);
-  Py_CLEAR(python_version);
   return 0;
 }
 

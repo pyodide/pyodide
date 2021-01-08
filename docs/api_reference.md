@@ -48,7 +48,6 @@ Backward compatibility of the API is not guaranteed at this point.
    js-api/pyodide_runPython.md
    js-api/pyodide_runPythonAsync.md
    js-api/pyodide_version.md
-   js-api/pyodide_pythonVersion.md
 ```
 
 

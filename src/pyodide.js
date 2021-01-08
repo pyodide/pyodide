@@ -308,7 +308,6 @@ var languagePluginLoader = new Promise((resolve, reject) => {
     'runPython',
     'runPythonAsync',
     'version',
-    'pythonVersion',
     'autocomplete',
   ];
 
