@@ -4,6 +4,11 @@
 #include "jsproxy.h"
 #include <emscripten.h>
 
+EM_JS_NUM(errcode, log_error, (char* msg), {
+  let jsmsg = UTF8ToString(msg);
+  console.error(jsmsg);
+});
+
 void
 PyodideErr_SetJsError(JsRef err)
 {
