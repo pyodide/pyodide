@@ -137,28 +137,24 @@ class CodeRunner:
         Implementation of 'last_expr_or_assign' mode.
         It modify the supplyied AST module so that the last
         statement's value can be returned in 'last_expr' mode.
-
-        Largely inspired from IPython:
-        https://github.com/ipython/ipython/blob/3587f5bb6c8570e7bbb06cf5f7e3bc9b9467355a/IPython/core/interactiveshell.py#L3229
         """
-        assign_nodes = (ast.AugAssign, ast.AnnAssign, ast.Assign)
-        single_targets_nodes = (ast.AugAssign, ast.AnnAssign)
+        # Largely inspired from IPython:
+        # https://github.com/ipython/ipython/blob/3587f5bb6c8570e7bbb06cf5f7e3bc9b9467355a/IPython/core/interactiveshell.py#L3229
 
         last_node = mod.body[-1]
 
-        if not isinstance(last_node, assign_nodes):
-            return
-
-        target: Any
         if isinstance(last_node, ast.Assign):
+            # In this case there can be multiple targets as in `a = b = 1`.
+            # We just take the first one.
             target = last_node.targets[0]
-        elif isinstance(last_node, single_targets_nodes):
+        elif isinstance(last_node, (ast.AugAssign, ast.AnnAssign)):
             target = last_node.target
         else:
-            target = None
+            return
         if isinstance(target, ast.Name):
             last_node = ast.Expr(ast.Name(target.id, ast.Load()))
             mod.body.append(last_node)
+            # Update the line numbers shown in error messages.
             ast.fix_missing_locations(mod)
 
     def _split_and_compile(self, code: str, flags: int = 0x0) -> Tuple[Any, Any]:
@@ -180,15 +176,16 @@ class CodeRunner:
         if not mod.body:
             return None, None
 
-        mode = self.mode
-        if mode == "last_expr_or_assign":
+        if self.mode == "last_expr_or_assign":
+            # If the last statement is a named assignment, add an extra
+            # expression to the end with just the L-value so that we can
+            # handle it with the last_expr code.
             self._last_assign_to_expr(mod)
-            mode = "last_expr"
 
         # we extract last expression
         last_expr = None
         if (
-            mode == "last_expr"
+            self.mode.startswith("last_expr")  # last_expr or last_expr_or_assign
             and isinstance(mod.body[-1], (ast.Expr, ast.Await))
             and not self.quiet(code)
         ):
