@@ -89,7 +89,6 @@ def test_version_info(selenium):
 
     version_js_str = selenium.run_js("return pyodide.version;")
     assert version_py_str == version_js_str
-    assert version_python_str.strip() == version_js_str.strip()
 
 
 def test_runpythonasync(selenium_standalone):
