@@ -343,7 +343,7 @@ var languagePluginLoader = new Promise((resolve, reject) => {
     let packages = new Set();
     for (let name of imports) {
       if (name in packageNames) {
-        packages.add(name);
+        packages.add(packageNames[name]);
       }
     }
     if (packages.size) {

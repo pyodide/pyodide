@@ -6,7 +6,7 @@ index f8ddec2..22b9013 100644
      // http://pubs.opengroup.org/onlinepubs/009695399/functions/dlsym.html
      symbol = UTF8ToString(symbol);
      var result;
-+#if EMULATE_FUNCTION_POINTER_CASTS=1
++#if EMULATE_FUNCTION_POINTER_CASTS==1
 +      // look for fpcast-emu version as this is deffo going to be a function pointer that we return
 +      symbol="byn$fpcast-emu$"+symbol
 +#endif
