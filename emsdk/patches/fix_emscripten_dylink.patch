@@ -1,8 +1,68 @@
-diff --git a/upstream/emscripten/src/library_dylink.js b/upstream/emscripten/src/library_dylink.js
-index f8ddec2..22b9013 100644
+diff --git  a/emsdk/upstream/emscripten/src/library_dylink.js b/emsdk/upstream/emscripten/src/library_dylink.js
+index f8ddec2..a5e8682 100644
 --- a/emsdk/upstream/emscripten/src/library_dylink.js
 +++ b/emsdk/upstream/emscripten/src/library_dylink.js
-@@ -738,6 +738,10 @@ var LibraryDylink = {
+@@ -57,6 +57,7 @@ var LibraryDylink = {
+         err("new GOT entry: " + symName);
+ #endif
+       }
++
+       return GOT[symName]
+     }
+   },
+@@ -79,28 +80,41 @@ var LibraryDylink = {
+         replace = true;
+       }
+ #endif
+-
+-      if (!GOT[symName]) {
+-        GOT[symName] = new WebAssembly.Global({value: 'i32', mutable: true});
++      baseName=symName;
++#if EMULATE_FUNCTION_POINTER_CASTS==1
++      const FPCAST_PREFIX="byn$fpcast-emu$";
++      if(symName.startsWith(FPCAST_PREFIX))
++      {
++          baseName=symName.substr(FPCAST_PREFIX.length)
++      }else
++      {
++         if(FPCAST_PREFIX+symName in exports)
++         {
++            continue;
++         }
+       }
+-      if (replace || GOT[symName].value == 0) {
++#endif
++      if (!GOT[baseName]) {
++        GOT[baseName] = new WebAssembly.Global({value: 'i32', mutable: true});
++      }
++      if (replace || GOT[baseName].value == 0) {
+         if (typeof value === 'function') {
+-          GOT[symName].value = addFunctionWasm(value);
++          GOT[baseName].value = addFunctionWasm(value);
+ #if DYLINK_DEBUG
+-          err("updateGOT FUNC: " + symName + ' : ' + GOT[symName].value);
++          err("updateGOT FUNC: " + symName + ' : ' + GOT[baseName].value);
+ #endif
+         } else if (typeof value === 'number') {
+-          GOT[symName].value = value;
++          GOT[baseName].value = value;
+         } else {
+           err("unhandled export type for `" + symName + "`: " + (typeof value));
+         }
+ #if DYLINK_DEBUG
+-        err("updateGOT: " + symName + ' : ' + GOT[symName].value);
++        err("updateGOT: " + baseName + "("+ symName + ")" + ' : ' + GOT[symName].value);
+ #endif
+       }
+ #if DYLINK_DEBUG
+-      else if (GOT[symName].value != value) {
+-        err("updateGOT: EXISTING SYMBOL: " + symName + ' : ' + GOT[symName].value + " " + value);
++      else if (GOT[baseName].value != value) {
++        err("updateGOT: EXISTING SYMBOL: " + symName + ' : ' + GOT[baseName].value + " " + value);
+       }
+ #endif
+     }
+@@ -738,6 +752,10 @@ var LibraryDylink = {
      // http://pubs.opengroup.org/onlinepubs/009695399/functions/dlsym.html
      symbol = UTF8ToString(symbol);
      var result;
