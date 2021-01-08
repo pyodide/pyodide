@@ -6,7 +6,13 @@ ROOTDIR = Path(__file__).parents[1].resolve()
 TOOLSDIR = ROOTDIR / "tools"
 
 # Use emcc.py because emcc may be a ccache symlink
-PACKAGERDIR = Path(shutil.which("emcc.py")).parent / "tools"
+_EMCC_PATH = shutil.which("emcc.py")
+if _EMCC_PATH is None:
+    print("emcc.py not found. Setting file_packager.py path to /dev/null")
+    PACKAGERPATH = Path("/dev/null")
+else:
+    PACKAGERPATH = Path(_EMCC_PATH).parent / "tools" / "file_packager.py"
+
 TARGETPYTHON = ROOTDIR / "cpython" / "installs" / "python-3.8.2"
 # Leading space so that argparse doesn't think this is a flag
 DEFAULTCFLAGS = " -fPIC"
