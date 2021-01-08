@@ -366,15 +366,14 @@ EM_JS_NUM(bool, hiwire_is_function, (JsRef idobj), {
   // clang-format on
 });
 
-<<<<<<< HEAD
-EM_JS(bool, hiwire_is_promise, (JsRef idobj), {
+EM_JS_NUM(bool, hiwire_is_promise, (JsRef idobj), {
   // clang-format off
   let obj = Module.hiwire.get_value(idobj);
   return Object.prototype.toString.call(obj) === "[object Promise]";
   // clang-format on
 });
 
-EM_JS(JsRef, hiwire_resolve_promise, (JsRef idobj), {
+EM_JS_REF(JsRef, hiwire_resolve_promise, (JsRef idobj), {
   // clang-format off
   let obj = Module.hiwire.get_value(idobj);
   let result = Promise.resolve(obj);
@@ -382,10 +381,7 @@ EM_JS(JsRef, hiwire_resolve_promise, (JsRef idobj), {
   // clang-format on
 });
 
-EM_JS(JsRef, hiwire_to_string, (JsRef idobj), {
-=======
 EM_JS_REF(JsRef, hiwire_to_string, (JsRef idobj), {
->>>>>>> master
   return Module.hiwire.new_value(Module.hiwire.get_value(idobj).toString());
 });
 
