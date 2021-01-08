@@ -19,6 +19,7 @@ Additional build prerequisites are:
 - PyYAML
 - FreeType 2 development libraries to compile Matplotlib.
 - Cython to compile SciPy
+- SWIG to compile NLopt
 - gfortran (GNU Fortran 95 compiler)
 - [f2c](http://www.netlib.org/f2c/)
 - [ccache](https://ccache.samba.org) (optional) *highly* recommended for much faster rebuilds.
@@ -30,6 +31,7 @@ On Mac, you will also need:
 - coreutils for md5sum and other essential Unix utilities (`brew install coreutils`)
 - cmake (`brew install cmake`)
 - Cython to compile SciPy (`brew install cython`)
+- SWIG to compile NLopt (`brew install swig`)
 - pkg-config (`brew install pkg-config`)
 - openssl (`brew install openssl`)
 - gfortran (`brew cask install gfortran`)
