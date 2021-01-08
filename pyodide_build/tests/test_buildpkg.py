@@ -1,7 +1,10 @@
 import shutil
 import subprocess
+from textwrap import dedent
 
 from pathlib import Path
+
+import pytest
 
 from pyodide_build import buildpkg, common
 
@@ -33,3 +36,21 @@ def test_download_and_extract(monkeypatch):
         srcpath = buildpkg.download_and_extract(buildpath, packagedir, pkg, args=None)
 
         assert srcpath.name.lower().endswith(packagedir.lower())
+
+
+@pytest.mark.parametrize("is_library", [True, False])
+def test_run_script(is_library, tmpdir):
+    build_dir = Path(tmpdir.mkdir("build"))
+    src_dir = Path(tmpdir.mkdir("build/package_name"))
+    script = dedent(
+        """
+         touch out.txt
+    """
+    )
+    pkg = {"build": {"script": script, "library": is_library}}
+    buildpkg.run_script(build_dir, src_dir, pkg)
+    assert (src_dir / "out.txt").exists()
+    if is_library:
+        assert (build_dir / ".packaged").exists()
+    else:
+        assert not (build_dir / ".packaged").exists()
