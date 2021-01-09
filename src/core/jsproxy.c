@@ -698,22 +698,22 @@ JsException_AsJs(PyObject* err)
 
 // Copied from Python 3.9
 static int
-PyModule_AddType(PyObject *module, PyTypeObject *type)
+PyModule_AddType(PyObject* module, PyTypeObject* type)
 {
-    if (PyType_Ready(type) < 0) {
-        return -1;
-    }
+  if (PyType_Ready(type) < 0) {
+    return -1;
+  }
 
-    const char *name = _PyType_Name(type);
-    assert(name != NULL);
+  const char* name = _PyType_Name(type);
+  assert(name != NULL);
 
-    Py_INCREF(type);
-    if (PyModule_AddObject(module, name, (PyObject *)type) < 0) {
-        Py_DECREF(type);
-        return -1;
-    }
+  Py_INCREF(type);
+  if (PyModule_AddObject(module, name, (PyObject*)type) < 0) {
+    Py_DECREF(type);
+    return -1;
+  }
 
-    return 0;
+  return 0;
 }
 
 int
