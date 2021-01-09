@@ -57,6 +57,7 @@ log_error(char* msg);
       body /* <== body of func */                                              \
     catch (e) {                                                                \
         LOG_EM_JS_ERROR(__funcname__, err);                                    \
+        throw e;                                                               \
         Module.handle_js_error(e);                                             \
         return 0;                                                              \
     }                                                                          \
@@ -72,6 +73,7 @@ log_error(char* msg);
       body /* <== body of func */                                              \
     catch (e) {                                                                \
         LOG_EM_JS_ERROR(__funcname__, err);                                    \
+        throw e;                                                               \
         Module.handle_js_error(e);                                             \
         return -1;                                                             \
     }                                                                          \
