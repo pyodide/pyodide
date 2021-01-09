@@ -87,7 +87,9 @@ var languagePluginLoader = new Promise((resolve, reject) => {
   } else if (self.importScripts) { // webworker
     loadScript = async (url) => {  // This is async only for consistency
       self.importScripts(url);
-    } else { throw new Error("Assertion Error"); }
+    } else {
+      throw new Error("Assertion Error");
+    }
   }
 
   function recursiveDependencies(names) {
@@ -217,9 +219,10 @@ var languagePluginLoader = new Promise((resolve, reject) => {
     let windowErrorHandler;
     let windowErrorPromise = new Promise((_res, rej) => {
       windowErrorHandler = e => {
-         console.error("Unhandled error. We don't know what it is or whether it is related to 'loadPackage' but out of an abundance of caution we will assume that loading failed.");
-         console.error(e);
-         rej(e.message);
+        console.error(
+            "Unhandled error. We don't know what it is or whether it is related to 'loadPackage' but out of an abundance of caution we will assume that loading failed.");
+        console.error(e);
+        rej(e.message);
       };
       self.addEventListener('error', windowErrorHandler);
     });
@@ -262,7 +265,7 @@ var languagePluginLoader = new Promise((resolve, reject) => {
     let resolveMsg;
     if (packageList.length > 0) {
       let package_names = packageList.join(', ');
-      resolveMsg =  `Loaded ${packageList}`;
+      resolveMsg = `Loaded ${packageList}`;
     } else {
       resolveMsg = 'No packages loaded';
     }
