@@ -82,6 +82,12 @@ jobs:
             - ~/.ccache
           key: -{{ checksum "Makefile.envs" }}-v20201205-{{ .BuildNum }}
 
+      - run:
+          name: Clean up workspace
+          command: |
+            rm -rf cpython/{build,downloads}
+            rm -rf emsdk/emsdk/binaryen
+
       - persist_to_workspace:
           root: .
           paths:

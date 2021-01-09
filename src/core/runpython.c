@@ -1,4 +1,5 @@
 #include "runpython.h"
+#include "error_handling.h"
 #include "hiwire.h"
 #include "pyproxy.h"
 #include "python2js.h"
@@ -39,36 +40,25 @@ _runPythonDebug(char* code)
   return id;
 }
 
-EM_JS(int, runpython_init_js, (JsRef pyodide_py_proxy, JsRef globals_proxy), {
-  Module.pyodide_py = Module.hiwire.get_value(pyodide_py_proxy);
-  Module.globals = Module.hiwire.get_value(globals_proxy);
+EM_JS_NUM(int,
+          runpython_init_js,
+          (JsRef pyodide_py_proxy, JsRef globals_proxy),
+          {
+            Module.pyodide_py = Module.hiwire.get_value(pyodide_py_proxy);
+            Module.globals = Module.hiwire.get_value(globals_proxy);
 
-  // Use this to test python code separate from pyproxy.apply.
-  Module.runPythonDebug = function(code)
-  {
-    let pycode = stringToNewUTF8(code);
-    let idresult = Module.__runPythonDebug(pycode);
-    let jsresult = Module.hiwire.get_value(idresult);
-    Module.hiwire.decref(idresult);
-    _free(pycode);
-    return jsresult;
-  };
-  return 0;
-});
-
-#define QUIT_IF_NULL(x)                                                        \
-  do {                                                                         \
-    if (x == NULL) {                                                           \
-      goto fail;                                                               \
-    }                                                                          \
-  } while (0)
-
-#define QUIT_IF_NZ(x)                                                          \
-  do {                                                                         \
-    if (x) {                                                                   \
-      goto fail;                                                               \
-    }                                                                          \
-  } while (0)
+            // Use this to test python code separate from pyproxy.apply.
+            Module.runPythonDebug = function(code)
+            {
+              let pycode = stringToNewUTF8(code);
+              let idresult = Module.__runPythonDebug(pycode);
+              let jsresult = Module.hiwire.get_value(idresult);
+              Module.hiwire.decref(idresult);
+              _free(pycode);
+              return jsresult;
+            };
+            return 0;
+          });
 
 int
 runpython_init()
@@ -79,31 +69,29 @@ runpython_init()
 
   // borrowed
   PyObject* builtins = PyImport_AddModule("builtins");
-  QUIT_IF_NULL(builtins);
+  FAIL_IF_NULL(builtins);
 
   // borrowed
   PyObject* builtins_dict = PyModule_GetDict(builtins);
-  QUIT_IF_NULL(builtins_dict);
+  FAIL_IF_NULL(builtins_dict);
 
   // borrowed
   PyObject* __main__ = PyImport_AddModule("__main__");
-  QUIT_IF_NULL(__main__);
+  FAIL_IF_NULL(__main__);
 
   // globals is static variable, borrowed
   globals = PyModule_GetDict(__main__);
-  QUIT_IF_NULL(globals);
+  FAIL_IF_NULL(globals);
   Py_INCREF(globals); // to owned
 
-  QUIT_IF_NZ(PyDict_Update(globals, builtins_dict));
+  FAIL_IF_MINUS_ONE(PyDict_Update(globals, builtins_dict));
 
   // pyodide_py is static variable, new
   pyodide_py = PyImport_ImportModule("pyodide");
-  QUIT_IF_NULL(pyodide_py);
+  FAIL_IF_NULL(pyodide_py);
 
   pyodide_py_proxy = python2js_deep(pyodide_py);
-  if (pyodide_py_proxy == NULL) {
-    goto fail;
-  }
+  FAIL_IF_NULL(pyodide_py_proxy);
   // Currently by default, python2js copies dicts into objects.
   // We want to feed Module.globals back to `eval_code` in `pyodide.runPython`
   // (see definition in pyodide.js) but because the round trip conversion
@@ -113,20 +101,21 @@ runpython_init()
   // this. I (HC) will fix this with the rest of the type conversions
   // modifications.
   Py_INCREF(globals); // pyproxy_new steals argument
-  globals_proxy = get_pyproxy(globals);
-  if (globals_proxy == NULL) {
-    goto fail;
-  }
-  QUIT_IF_NZ(runpython_init_js(pyodide_py_proxy, globals_proxy));
+  globals_proxy = pyproxy_new(globals);
+  FAIL_IF_NULL(globals_proxy);
+  FAIL_IF_MINUS_ONE(runpython_init_js(pyodide_py_proxy, globals_proxy));
 
-  return 0;
-fail:
+  success = true;
+finally:
+  hiwire_decref(pyodide_py_proxy);
+  hiwire_decref(globals_proxy);
+  if (success) {
+    return 0;
+  }
   if (PyErr_Occurred()) {
     PyErr_Print();
   }
   Py_CLEAR(pyodide_py);
   Py_CLEAR(globals);
-  hiwire_decref(pyodide_py_proxy);
-  hiwire_decref(globals_proxy);
   return -1;
 }

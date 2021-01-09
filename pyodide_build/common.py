@@ -1,10 +1,11 @@
 from pathlib import Path
 from typing import Optional, Set
+import shutil
 
 ROOTDIR = Path(__file__).parents[1].resolve()
 TOOLSDIR = ROOTDIR / "tools"
-PACKAGERDIR = ROOTDIR / "emsdk" / "emsdk" / "fastcomp" / "emscripten" / "tools"
 TARGETPYTHON = ROOTDIR / "cpython" / "installs" / "python-3.8.2"
+
 # Leading space so that argparse doesn't think this is a flag
 DEFAULTCFLAGS = " -fPIC"
 DEFAULTCXXFLAGS = ""
@@ -49,3 +50,14 @@ def _parse_package_subset(query: Optional[str]) -> Optional[Set[str]]:
     packages = [el.strip() for el in packages]
     packages = ["micropip", "distlib"] + packages
     return set(packages)
+
+
+def file_packager_path() -> Path:
+    # Use emcc.py because emcc may be a ccache symlink
+    emcc_path = shutil.which("emcc.py")
+    if emcc_path is None:
+        raise RuntimeError(
+            "emcc.py not found. Setting file_packager.py path to /dev/null"
+        )
+
+    return Path(emcc_path).parent / "tools" / "file_packager.py"
