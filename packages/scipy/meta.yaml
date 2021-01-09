@@ -25,6 +25,10 @@ source:
 
 build:
   cflags: -I../../../CLAPACK/build/CLAPACK-3.2.1/INCLUDE -Wno-implicit-function-declaration
+  script: |
+    cd scipy/linalg
+    python _cython_wrapper_generators.py
+    cd ..
 
 requirements:
   run:
