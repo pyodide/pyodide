@@ -38,8 +38,7 @@ log_error(char* msg);
 #define LOG_EM_JS_ERROR(__funcname__, err)                                     \
   do {                                                                         \
     console.error(                                                             \
-      `EM_JS raised exception on line __LINE__ in func __funcname__,           \
-       file __FILE__\n`);                                                      \
+      `EM_JS raised exception on line __LINE__ in func __funcname__`);         \
     console.error("Error was:", err);                                          \
   } while (0)
 #else
@@ -48,7 +47,7 @@ log_error(char* msg);
 
 // Need an extra layer to expand LOG_EM_JS_ERROR.
 #define EM_JS_DEFER(ret, func_name, args, body...)                             \
-  EM_JS(ret, func_name, args, body...)
+  EM_JS(ret, func_name, args, body)
 
 #define EM_JS_REF(ret, func_name, args, body...)                               \
   EM_JS_DEFER(ret, func_name, args, {                                          \
@@ -56,7 +55,7 @@ log_error(char* msg);
     try    /* intentionally no braces, body already has them */                \
       body /* <== body of func */                                              \
     catch (e) {                                                                \
-        LOG_EM_JS_ERROR(__funcname__, err);                                    \
+        LOG_EM_JS_ERROR(func_name, err);                                       \
         Module.handle_js_error(e);                                             \
         return 0;                                                              \
     }                                                                          \
@@ -71,7 +70,7 @@ log_error(char* msg);
     try    /* intentionally no braces, body already has them */                \
       body /* <== body of func */                                              \
     catch (e) {                                                                \
-        LOG_EM_JS_ERROR(__funcname__, err);                                    \
+        LOG_EM_JS_ERROR(func_name, err);                                       \
         Module.handle_js_error(e);                                             \
         return -1;                                                             \
     }                                                                          \
@@ -112,7 +111,7 @@ log_error(char* msg);
              __FILE__);                                                        \
     log_error(msg);                                                            \
     free(msg);                                                                 \
-    goto finally                                                               \
+    goto finally;                                                              \
   } while (0)
 
 #else
