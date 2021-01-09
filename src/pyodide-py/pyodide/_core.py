@@ -17,7 +17,7 @@ else:
 
         # Defined in jsproxy.c
 
-    class JsProxy:
+    class JsBoundMethod:
         """A proxy to make it possible to call Javascript bound methods from Python."""
 
         # Defined in jsproxy.c
