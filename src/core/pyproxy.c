@@ -204,7 +204,7 @@ EM_JS_NUM(int, pyproxy_init, (), {
     has: function (jsobj, jskey) {
       let ptrobj = this.getPtr(jsobj);
       var idkey = Module.hiwire.new_value(jskey);
-      var result = __pyproxy_has(ptrobj, idkey) != 0;
+      var result = __pyproxy_has(ptrobj, idkey) !== 0;
       Module.hiwire.decref(idkey);
       return result;
     },
@@ -224,7 +224,7 @@ EM_JS_NUM(int, pyproxy_init, (), {
           __pyproxy_destroy(ptrobj);
           jsobj['$$']['ptr'] = null;
         }
-      } else if (jskey == 'apply') {
+      } else if (jskey === 'apply') {
         return function(jsthis, jsargs) {
           var idargs = Module.hiwire.new_value(jsargs);
           var idresult = __pyproxy_apply(ptrobj, idargs);
