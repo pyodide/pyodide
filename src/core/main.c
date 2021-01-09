@@ -58,19 +58,13 @@ main(int argc, char** argv)
   PyObject* sys = NULL;
   PyObject* core_module = NULL;
 
-  core_module = PyModule_Create(&core_module_def);
-  if (core_module == NULL) {
-    FATAL_ERROR("Failed to create core module.");
-  }
-
   setenv("PYTHONHOME", "/", 0);
-
-  Py_InitializeEx(0);
-
   // This doesn't seem to work anymore, but I'm keeping it for good measure
   // anyway The effective way to turn this off is below: setting
   // sys.dont_write_bytecode = True
   setenv("PYTHONDONTWRITEBYTECODE", "1", 0);
+
+  Py_InitializeEx(0);
 
   PyImport_ImportModule("sys");
   if (sys == NULL) {
@@ -88,6 +82,12 @@ main(int argc, char** argv)
   if (sizeof(JsRef) != sizeof(int)) {
     FATAL_ERROR("JsRef doesn't have the same size as int.");
   }
+
+  core_module = PyModule_Create(&core_module_def);
+  if (core_module == NULL) {
+    FATAL_ERROR("Failed to create core module.");
+  }
+
   TRY_INIT(hiwire);
   TRY_INIT(error_handling);
   TRY_INIT(js2python);
