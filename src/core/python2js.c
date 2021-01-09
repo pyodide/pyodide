@@ -213,7 +213,7 @@ _py2js_sequence(PyObject* x,
       hiwire_decref(jsarray);
       PyErr_Clear();
       Py_INCREF(x);
-      return get_pyproxy(x);
+      return pyproxy_new(x);
     }
     JsRef jsitem = _py2js_cache(pyitem, cache, caller);
     if (jsitem == NULL) {
@@ -322,7 +322,7 @@ _py2js_minimal(PyObject* x, PyObject* cache)
     return _py2js_sequence(x, cache, callback);
   }
   RET_IF_NOT_ERR(_python2js_buffer(x));
-  return get_pyproxy(x);
+  return pyproxy_new(x);
 }
 
 static JsRef
@@ -350,7 +350,7 @@ _py2js_helper(PyObject* x,
   if (PySequence_Check(x)) {
     return _py2js_sequence(x, cache, callback);
   }
-  return get_pyproxy(x);
+  return pyproxy_new(x);
 }
 
 static JsRef
