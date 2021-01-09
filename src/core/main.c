@@ -32,7 +32,7 @@
 
 _Py_IDENTIFIER(__version__);
 
-static int version_info_init(core_module)
+static int version_info_init(PyObject* core_module)
 { // TODO: move this into pyodide.js
   PyObject* pyodide = PyImport_ImportModule("pyodide");
   PyObject* pyodide_version = _PyObject_GetAttrId(pyodide, &PyId___version__);
@@ -56,7 +56,7 @@ int
 main(int argc, char** argv)
 {
   PyObject* sys = NULL;
-  PyModule* core_module = NULL;
+  PyObject* core_module = NULL;
 
   core_module = PyModule_Create(&core_module_def);
   if (core_module == NULL) {
