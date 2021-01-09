@@ -81,12 +81,14 @@ class CodeRunner:
 
     def __init__(
         self,
-        ns: Optional[Dict[str, Any]] = None,
+        globals: Optional[Dict[str, Any]] = None,
+        locals: Optional[Dict[str, Any]] = None,
         mode: str = "last_expr",
         quiet_trailing_semicolon: bool = True,
         filename: str = "<exec>",
     ):
-        self.ns = ns if ns is not None else {}
+        self.globals = globals if globals is not None else {}
+        self.locals = locals if locals is not None else self.globals
         self.quiet_trailing_semicolon = quiet_trailing_semicolon
         self.filename = filename
         self.mode = mode
@@ -219,11 +221,11 @@ class CodeRunner:
 
         # running first part
         if mod is not None:
-            exec(mod, self.ns, self.ns)
+            exec(mod, self.globals, self.locals)
 
         # evaluating last expression
         if last_expr is not None:
-            return eval(last_expr, self.ns, self.ns)
+            return eval(last_expr, self.globals, self.locals)
 
     async def run_async(self, code: str) -> Any:
         """ //!\\ WARNING //!\\
@@ -237,13 +239,13 @@ class CodeRunner:
         )
         # running first part
         if mod is not None:
-            coro = eval(mod, self.ns, self.ns)
+            coro = eval(mod, self.globals, self.locals)
             if iscoroutine(coro):
                 await coro
 
         # evaluating last expression
         if last_expr is not None:
-            res = eval(last_expr, self.ns, self.ns)
+            res = eval(last_expr, self.globals, self.locals)
             if iscoroutine(res):
                 res = await res
             return res
@@ -251,7 +253,8 @@ class CodeRunner:
 
 def eval_code(
     code: str,
-    ns: Dict[str, Any],
+    globals: Dict[str, Any] = None,
+    locals: Dict[str, Any] = None,
     mode: str = "last_expr",
     quiet_trailing_semicolon: bool = True,
     filename: str = "<exec>",
@@ -287,12 +290,19 @@ def eval_code(
     Use the `mode` and `quiet_trailing_semicolon` parameters to modify
     this default behavior.
     """
-    return CodeRunner(ns, mode, quiet_trailing_semicolon, filename).run(code)
+    return CodeRunner(
+        globals=globals,
+        locals=locals,
+        mode=mode,
+        quiet_trailing_semicolon=quiet_trailing_semicolon,
+        filename=filename,
+    ).run(code)
 
 
-async def _eval_code_async(
+async def eval_code_async(
     code: str,
-    ns: Dict[str, Any],
+    globals: Dict[str, Any] = None,
+    locals: Dict[str, Any] = None,
     mode: str = "last_expr",
     quiet_trailing_semicolon: bool = True,
     filename: str = "<exec>",
@@ -307,9 +317,13 @@ async def _eval_code_async(
       - add tests
     """
     raise NotImplementedError("Async is not yet supported in Pyodide.")
-    return await CodeRunner(ns, mode, quiet_trailing_semicolon, filename).run_async(
-        code
-    )
+    return await CodeRunner(
+        globals=globals,
+        locals=locals,
+        mode=mode,
+        quiet_trailing_semicolon=quiet_trailing_semicolon,
+        filename=filename,
+    ).run_async(code)
 
 
 def find_imports(code: str) -> List[str]:
