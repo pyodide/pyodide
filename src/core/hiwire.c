@@ -104,7 +104,7 @@ EM_JS(int, hiwire_init, (), {
   Module.hiwire.isPromise = function(obj)
   {
     // clang-format off
-    Object.prototype.toString.call(obj) === "[object Promise]";
+    return Object.prototype.toString.call(obj) === "[object Promise]";
     // clang-format on
   };
   return 0;
