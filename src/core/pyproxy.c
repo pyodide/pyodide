@@ -177,19 +177,19 @@ EM_JS_REF(JsRef, pyproxy_new, (PyObject * ptrobj), {
   // clang-format off
   Object.assign(target, {
     toString : function() {
-      let ptrobj = this.getPtr(jsobj);
+      let ptrobj = Module.PyProxy.getPtr(this);
       let jsref_repr = __pyproxy_repr(ptrobj);
       let repr = Module.hiwire.get_value(jsref_repr);
       Module.hiwire.decref(jsref_repr);
       return repr;
     },
     destroy : function() {
-      let ptrobj = this.getPtr(jsobj);
+      let ptrobj = Module.PyProxy.getPtr(this);
       __pyproxy_destroy(ptrobj);
-      jsobj['$$']['ptr'] = null;
+      this['$$']['ptr'] = null;
     },
     apply : function(jsthis, jsargs) {
-      let ptrobj = this.getPtr(jsobj);
+      let ptrobj = Module.PyProxy.getPtr(this);
       let idargs = Module.hiwire.new_value(jsargs);
       let idresult = __pyproxy_apply(ptrobj, idargs);
       let jsresult = Module.hiwire.get_value(idresult);
