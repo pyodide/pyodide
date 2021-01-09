@@ -7,6 +7,6 @@
 
 /** Install the import hook to support "from js import …". */
 int
-JsImport_init();
+JsImport_init(PyObject* core_module);
 
 #endif /* JSIMPORT_H */

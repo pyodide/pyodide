@@ -697,26 +697,18 @@ JsException_AsJs(PyObject* err)
 }
 
 int
-JsProxy_init()
+JsProxy_init(PyObject* core_module)
 {
   bool success = false;
   PyExc_BaseException_Type = (PyTypeObject*)PyExc_BaseException;
   _Exc_JsException.tp_base = (PyTypeObject*)PyExc_Exception;
 
-  PyObject* module;
-  PyObject* exc;
-
   // Add JsException to the pyodide module so people can catch it if they want.
-  module = PyImport_ImportModule("pyodide");
-  FAIL_IF_NULL(module);
-  FAIL_IF_MINUS_ONE(
-    PyObject_SetAttrString(module, "JsException", Exc_JsException));
-  FAIL_IF_MINUS_ONE(PyType_Ready(&JsProxyType));
-  FAIL_IF_MINUS_ONE(PyType_Ready(&JsBoundMethodType));
-  FAIL_IF_MINUS_ONE(PyType_Ready(&_Exc_JsException));
+  FAIL_IF_MINUS_ONE(PyModule_AddType(core_module, &JsProxyType));
+  FAIL_IF_MINUS_ONE(PyModule_AddType(core_module, &JsBoundMethodType));
+  FAIL_IF_MINUS_ONE(PyModule_AddType(core_module, Exc_JsException));
 
   success = true;
 finally:
-  Py_CLEAR(module);
   return success ? 0 : -1;
 }

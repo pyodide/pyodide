@@ -5,6 +5,6 @@
  */
 
 int
-runpython_init();
+runpython_init(PyObject* core_module);
 
 #endif /* RUNPYTHON_H */

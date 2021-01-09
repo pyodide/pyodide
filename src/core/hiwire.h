@@ -53,7 +53,7 @@ typedef struct _JsRefStruct* JsRef;
  * Initialize the variables and functions required for hiwire.
  */
 int
-hiwire_init();
+hiwire_init(PyObject* core_module);
 
 /**
  * Increase the reference count on an object.

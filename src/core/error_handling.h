@@ -5,7 +5,7 @@
 typedef int errcode;
 
 int
-error_handling_init();
+error_handling_init(PyObject* core_module);
 
 errcode
 log_error(char* msg);

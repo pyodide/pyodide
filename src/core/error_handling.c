@@ -16,7 +16,7 @@ PyodideErr_SetJsError(JsRef err)
 }
 
 int
-error_handling_init()
+error_handling_init(PyObject* core_module)
 {
   EM_ASM({
     Module.handle_js_error = function(e)

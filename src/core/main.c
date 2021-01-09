@@ -25,16 +25,15 @@
 
 #define TRY_INIT(mod)                                                          \
   do {                                                                         \
-    if (mod##_init()) {                                                        \
+    if (mod##_init(core_module)) {                                             \
       FATAL_ERROR("Failed to initialize module %s.\n", #mod);                  \
     }                                                                          \
   } while (0)
 
 _Py_IDENTIFIER(__version__);
 
-static int
-version_info_init()
-{
+static int version_info_init(core_module)
+{ // TODO: move this into pyodide.js
   PyObject* pyodide = PyImport_ImportModule("pyodide");
   PyObject* pyodide_version = _PyObject_GetAttrId(pyodide, &PyId___version__);
   const char* pyodide_version_utf8 = PyUnicode_AsUTF8(pyodide_version);
@@ -46,16 +45,23 @@ version_info_init()
   return 0;
 }
 
+static struct PyModuleDef core_module_def = {
+  PyModuleDef_HEAD_INIT,
+  .m_name = "_core",
+  .m_doc = "Pyodide C builtins",
+  .m_size = -1,
+};
+
 int
 main(int argc, char** argv)
 {
-  if (alignof(JsRef) != alignof(int)) {
-    FATAL_ERROR("JsRef doesn't have the same alignment as int.");
+  PyObject* sys = NULL;
+  PyModule* core_module = NULL;
+
+  core_module = PyModule_Create(&core_module_def);
+  if (core_module == NULL) {
+    FATAL_ERROR("Failed to create core module.");
   }
-  if (sizeof(JsRef) != sizeof(int)) {
-    FATAL_ERROR("JsRef doesn't have the same size as int.");
-  }
-  TRY_INIT(hiwire);
 
   setenv("PYTHONHOME", "/", 0);
 
@@ -66,7 +72,7 @@ main(int argc, char** argv)
   // sys.dont_write_bytecode = True
   setenv("PYTHONDONTWRITEBYTECODE", "1", 0);
 
-  PyObject* sys = PyImport_ImportModule("sys");
+  PyImport_ImportModule("sys");
   if (sys == NULL) {
     FATAL_ERROR("Failed to import sys module.");
   }
@@ -74,19 +80,35 @@ main(int argc, char** argv)
   if (PyObject_SetAttrString(sys, "dont_write_bytecode", Py_True)) {
     FATAL_ERROR("Failed to set attribute on sys module.");
   }
-  Py_DECREF(sys);
 
+  if (alignof(JsRef) != alignof(int)) {
+    FATAL_ERROR("JsRef doesn't have the same alignment as int.");
+  }
+
+  if (sizeof(JsRef) != sizeof(int)) {
+    FATAL_ERROR("JsRef doesn't have the same size as int.");
+  }
+  TRY_INIT(hiwire);
   TRY_INIT(error_handling);
   TRY_INIT(js2python);
   TRY_INIT(JsImport);
   TRY_INIT(JsProxy);
   TRY_INIT(pyproxy);
   TRY_INIT(python2js);
+
+  PyObject* module_dict = PyImport_GetModuleDict(); // borrowed
+  if (PyDict_SetItemString(module_dict, "_core", core_module)) {
+    FATAL_ERROR("Failed to add '_core' module to modules dict.");
+  }
+
+  // pyodide.py imported for these two.
+  // They should appear last so that core_module is ready.
   TRY_INIT(runpython);
-
   TRY_INIT(version_info);
-  printf("Python initialization complete\n");
 
+  Py_CLEAR(sys);
+  Py_CLEAR(core_module);
+  printf("Python initialization complete\n");
   emscripten_exit_with_live_runtime();
   return 0;
 }

@@ -15,6 +15,6 @@ JsRef
 pyproxy_new(PyObject* obj);
 
 int
-pyproxy_init();
+pyproxy_init(PyObject* core_module);
 
 #endif /* PYPROXY_H */

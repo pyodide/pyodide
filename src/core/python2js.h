@@ -24,6 +24,6 @@ python2js(PyObject* x);
 /** Set up the global state for this module.
  */
 int
-python2js_init();
+python2js_init(PyObject* core_module);
 
 #endif /* PYTHON2JS_H */

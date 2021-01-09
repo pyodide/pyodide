@@ -165,7 +165,7 @@ js2python(JsRef id)
 }
 
 int
-js2python_init()
+js2python_init(PyObject* core_module)
 {
   return 0;
 }

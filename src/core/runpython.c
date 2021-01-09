@@ -61,7 +61,7 @@ EM_JS_NUM(int,
           });
 
 int
-runpython_init()
+runpython_init(PyObject* core_module)
 {
   bool success = false;
   JsRef pyodide_py_proxy = NULL;
