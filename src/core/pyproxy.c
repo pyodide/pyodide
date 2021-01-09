@@ -173,7 +173,7 @@ EM_JS_REF(JsRef, pyproxy_new, (PyObject * ptrobj), {
   // also deletes the proxy from this set.
 
   var target = function(){};
-  target['$$'] = { ptr : ptrobj, type : 'PyProxy' }
+  target['$$'] = { ptr : ptrobj, type : 'PyProxy' };
   // clang-format off
   Object.assign(target, {
     toString : function() {
