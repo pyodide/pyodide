@@ -255,11 +255,12 @@ var languagePluginLoader = new Promise((resolve, reject) => {
       packageList.push(pkg);
     }
 
-    let resolveMsg = `Loaded `;
+    let resolveMsg;
     if (packageList.length > 0) {
-      resolveMsg += packageList.join(', ');
+      let package_names = packageList.join(', ');
+      resolveMsg =  `Loaded ${packageList}`;
     } else {
-      resolveMsg += 'no packages'
+      resolveMsg = 'No packages loaded';
     }
 
     if (!isFirefox) {
