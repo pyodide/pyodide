@@ -111,8 +111,8 @@ var languagePluginLoader = new Promise((resolve, reject) => {
       const pkgname = _uri_to_package_name(name);
       if (pkgname !== null) {
         if (toLoad.has(pkgname) && toLoad.get(pkgname) !== name) {
-          console.error(
-              `Loading same package ${pkgname} from ${name} and ${toLoad.get(pkgname)}`);
+          console.error(`Loading same package ${pkgname} from ${name} and ${
+              toLoad.get(pkgname)}`);
           continue;
         }
         toLoad.set(pkgname, name);

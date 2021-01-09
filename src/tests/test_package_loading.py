@@ -155,7 +155,10 @@ def test_load_twice(selenium_standalone):
 
 def test_load_twice_different_source(selenium_standalone):
     selenium_standalone.load_package(["https://foo/pytz.js", "https://bar/pytz.js"])
-    assert "Loading same package pytz from https://bar/pytz.js and https://foo/pytz.js" in selenium_standalone.logs
+    assert (
+        "Loading same package pytz from https://bar/pytz.js and https://foo/pytz.js"
+        in selenium_standalone.logs
+    )
 
 
 def test_load_twice_same_source(selenium_standalone):
