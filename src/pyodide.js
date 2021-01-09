@@ -217,8 +217,7 @@ var languagePluginLoader = new Promise((resolve, reject) => {
     // We must start waiting for runDependencies *after* all the JS files are
     // loaded, since the number of runDependencies may happen to equal zero
     // between package files loading.
-    let successPromise =
-        Promise.all(scriptPromises).then(() => waitRunDependency());
+    let successPromise = Promise.all(scriptPromises).then(waitRunDependency);
     try {
       await Promise.race([ successPromise, windowErrorPromise ]);
     } finally {
@@ -344,7 +343,7 @@ var languagePluginLoader = new Promise((resolve, reject) => {
     }
     if (packages.size) {
       await loadPackage(
-        Array.from(packages.keys(), messageCallback, errorCallback)
+        Array.from(packages.keys()), messageCallback, errorCallback
       );
     }
   };
