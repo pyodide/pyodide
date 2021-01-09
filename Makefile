@@ -16,8 +16,7 @@ CC=emcc
 CXX=em++
 OPTFLAGS=-O2
 CFLAGS=$(OPTFLAGS) -g -I$(PYTHONINCLUDE) -fPIC \
-	-Wno-warn-absolute-paths -Werror=int-conversion -Werror=incompatible-pointer-types \
-	-D DEBUG_F
+	-Wno-warn-absolute-paths -Werror=int-conversion -Werror=incompatible-pointer-types
 
 LDFLAGS=\
 	-O2 \
