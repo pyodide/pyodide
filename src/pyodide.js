@@ -149,50 +149,6 @@ var languagePluginLoader = new Promise((resolve, reject) => {
       messageCallback(`Loading ${[...toLoad.keys()].join(', ')}`)
     }
 
-    // When we load a package, we first load a JS file, and then the JS file
-    // loads the data file. The status of the first step is tracked by the
-    // loadScript function above. The status of the second step is tracked by
-    // emscripten's runDependency system.
-    //
-    // When the JS file is loaded, it *synchronously* adds a runDependency to
-    // emscripten. When it finishes loading, it removes the runDependency.
-    // Whenever the number of runDependencies changes, monitorRunDependency is
-    // called with the number of pending dependencies.
-    //
-    // Under this system, packages have completed loading if all javascript
-    // files are loaded, and then the number of runDependencies becomes zero.
-    // The number of runDependencies may happen to equal zero in between
-    // package files loading if we are loading multiple packages. We must avoid
-    // accidentally returning early if this happens.
-
-    // runDepPromise is a promise such that at any point in time, it is
-    // resolved if and only if the number of pending run dependencies is 0.
-    // We assume that at this point in time, there are no pending run
-    // dependencies.
-    //
-    // The promise it refers to may be replaced when a runDependency is added,
-    // so we must be careful to only await for this after we know all
-    // runDependencies have been added.
-    let runDepPromise = Promise.resolve();
-    // runDepResolve is the resolve function of runDepPromise if it is
-    // unresolved, undefined otherwise.
-    let runDepResolve = undefined;
-
-    // We must start monitoring before we load any script, as this function is
-    // triggered by the script loading.
-    self.pyodide._module.monitorRunDependencies = (n) => {
-      if (n === 0) {
-        if (runDepResolve !== undefined) {
-          runDepResolve();
-          runDepResolve = undefined;
-        }
-      } else {
-        if (runDepResolve === undefined) {
-          runDepPromise = new Promise(r => runDepResolve = r);
-        }
-      }
-    };
-
     // Try to catch errors thrown when running a script. Since the script is
     // added via a script tag, there is no good way to capture errors from
     // the script only, so try to capture all errors them.
@@ -211,8 +167,8 @@ var languagePluginLoader = new Promise((resolve, reject) => {
       self.addEventListener('error', windowErrorHandler);
     });
 
-    // Promises for each script load. The promises already handle error and
-    // never fail.
+    // This is a collection of promises that resolve when the package's JS file
+    // is loaded. The promises already handle error and never fail.
     let scriptPromises = [];
 
     for (let [pkg, uri] of toLoad) {
@@ -238,9 +194,31 @@ var languagePluginLoader = new Promise((resolve, reject) => {
       }));
     }
 
-    // Wait for all scripts to be loaded first. Then all the run dependencies
-    // have been added. Then wait for the dependencies to be removed.
-    let successPromise = Promise.all(scriptPromises).then(() => runDepPromise);
+    // When the JS loads, it synchronously adds a runDependency to emscripten.
+    // It then loads the data file, and removes the runDependency from
+    // emscripten. This function returns a promise that resolves when there are
+    // no pending runDependencies.
+    function waitRunDependency() {
+      const promise = new Promise(r => {
+        self.pyodide._module.monitorRunDependencies = (n) => {
+          if (n === 0) {
+            r();
+          }
+        };
+      });
+      // If there are no pending dependencies left, monitorRunDependencies will
+      // never be called. Since we can't check the number of dependencies,
+      // manually trigger a call.
+      self.pyodide._module.addRunDependency("dummy");
+      self.pyodide._module.removeRunDependency("dummy");
+      return promise;
+    }
+
+    // We must start waiting for runDependencies *after* all the JS files are
+    // loaded, since the number of runDependencies may happen to equal zero
+    // between package files loading.
+    let successPromise =
+        Promise.all(scriptPromises).then(() => waitRunDependency());
     try {
       await Promise.race([ successPromise, windowErrorPromise ]);
     } finally {
