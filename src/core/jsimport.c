@@ -56,7 +56,7 @@ static struct PyModuleDef JsModule = {
 };
 
 int
-JsImport_init(PyObject* core_module)
+JsImport_init()
 {
   PyObject* module_dict = PyImport_GetModuleDict();
   if (module_dict == NULL) {

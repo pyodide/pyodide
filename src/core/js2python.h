@@ -19,6 +19,6 @@ js2python(JsRef x);
 
 /** Initialize any global variables used by this module. */
 int
-js2python_init(PyObject* core_module);
+js2python_init();
 
 #endif /* JS2PYTHON_H */

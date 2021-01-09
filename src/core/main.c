@@ -25,6 +25,13 @@
 
 #define TRY_INIT(mod)                                                          \
   do {                                                                         \
+    if (mod##_init()) {                                                        \
+      FATAL_ERROR("Failed to initialize module %s.\n", #mod);                  \
+    }                                                                          \
+  } while (0)
+
+#define TRY_INIT_WITH_CORE_MODULE(mod)                                         \
+  do {                                                                         \
     if (mod##_init(core_module)) {                                             \
       FATAL_ERROR("Failed to initialize module %s.\n", #mod);                  \
     }                                                                          \
@@ -32,7 +39,7 @@
 
 _Py_IDENTIFIER(__version__);
 
-static int version_info_init(PyObject* core_module)
+static int version_info_init()
 { // TODO: move this into pyodide.js
   PyObject* pyodide = PyImport_ImportModule("pyodide");
   PyObject* pyodide_version = _PyObject_GetAttrId(pyodide, &PyId___version__);
@@ -57,6 +64,8 @@ main(int argc, char** argv)
 {
   PyObject* sys = NULL;
   PyObject* core_module = NULL;
+
+  TRY_INIT(hiwire);
 
   setenv("PYTHONHOME", "/", 0);
   // This doesn't seem to work anymore, but I'm keeping it for good measure
@@ -88,11 +97,10 @@ main(int argc, char** argv)
     FATAL_ERROR("Failed to create core module.");
   }
 
-  TRY_INIT(hiwire);
   TRY_INIT(error_handling);
   TRY_INIT(js2python);
   TRY_INIT(JsImport);
-  TRY_INIT(JsProxy);
+  TRY_INIT_WITH_CORE_MODULE(JsProxy);
   TRY_INIT(pyproxy);
   TRY_INIT(python2js);
 

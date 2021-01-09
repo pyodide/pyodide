@@ -347,7 +347,7 @@ python2js(PyObject* x)
 }
 
 int
-python2js_init(PyObject* core_module)
+python2js_init()
 {
   return 0;
 }

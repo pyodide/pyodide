@@ -1,12 +1,11 @@
 #ifndef ERROR_HANDLING_H
 #define ERROR_HANDLING_H
 #include <emscripten.h>
-#include "Python.h"
 
 typedef int errcode;
 
 int
-error_handling_init(PyObject* core_module);
+error_handling_init();
 
 errcode
 log_error(char* msg);
