@@ -17,4 +17,4 @@ requirements:
 
 test:
   imports:
-  - swiglpk
+    - swiglpk
