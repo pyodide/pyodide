@@ -216,7 +216,11 @@ var languagePluginLoader = new Promise((resolve, reject) => {
     // with other promises via Promise.race.
     let windowErrorHandler;
     let windowErrorPromise = new Promise((_res, rej) => {
-      windowErrorHandler = e => rej(e.message);
+      windowErrorHandler = e => {
+         console.error("Unhandled error. We don't know what it is or whether it is related to 'loadPackage' but out of an abundance of caution we will assume that loading failed.");
+         console.error(e);
+         rej(e.message);
+      };
       self.addEventListener('error', windowErrorHandler);
     });
 
