@@ -9,9 +9,12 @@ else:
         """
         A wrapper around a Javascript Error to allow the Error to be thrown in Python.
         """
+        # Defined in jsproxy.c
 
     class JsProxy:
         """A proxy to make a Javascript object behave like a Python object"""
+        # Defined in jsproxy.c
 
     class JsProxy:
         """A proxy to make it possible to call Javascript bound methods from Python."""
+        # Defined in jsproxy.c
