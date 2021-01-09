@@ -100,6 +100,11 @@ EM_JS(int, hiwire_init, (), {
     }
     _hiwire.objects.delete(idval);
   };
+
+  Module.hiwire.isPromise = function(obj)
+  {
+    Object.prototype.toString.call(obj) == = "[object Promise]";
+  }
   return 0;
 });
 
@@ -369,7 +374,7 @@ EM_JS_NUM(bool, hiwire_is_function, (JsRef idobj), {
 EM_JS_NUM(bool, hiwire_is_promise, (JsRef idobj), {
   // clang-format off
   let obj = Module.hiwire.get_value(idobj);
-  return Object.prototype.toString.call(obj) === "[object Promise]";
+  return Module.hiwire.isPromise(obj);
   // clang-format on
 });
 
