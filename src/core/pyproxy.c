@@ -202,14 +202,14 @@ EM_JS_NUM(int, pyproxy_init, (), {
     },
     isExtensible: function() { return true },
     has: function (jsobj, jskey) {
-      ptrobj = this.getPtr(jsobj);
+      let ptrobj = this.getPtr(jsobj);
       var idkey = Module.hiwire.new_value(jskey);
       var result = __pyproxy_has(ptrobj, idkey) != 0;
       Module.hiwire.decref(idkey);
       return result;
     },
     get: function (jsobj, jskey) {
-      ptrobj = this.getPtr(jsobj);
+      let ptrobj = this.getPtr(jsobj);
       if (jskey === 'toString') {
         return function() {
           let jsref_repr = __pyproxy_repr(ptrobj);
@@ -242,7 +242,7 @@ EM_JS_NUM(int, pyproxy_init, (), {
       return jsresult;
     },
     set: function (jsobj, jskey, jsval) {
-      ptrobj = this.getPtr(jsobj);
+      let ptrobj = this.getPtr(jsobj);
       var idkey = Module.hiwire.new_value(jskey);
       var idval = Module.hiwire.new_value(jsval);
       var idresult = __pyproxy_set(ptrobj, idkey, idval);
@@ -253,7 +253,7 @@ EM_JS_NUM(int, pyproxy_init, (), {
       return jsresult;
     },
     deleteProperty: function (jsobj, jskey) {
-      ptrobj = this.getPtr(jsobj);
+      let ptrobj = this.getPtr(jsobj);
       var idkey = Module.hiwire.new_value(jskey);
       var idresult = __pyproxy_deleteProperty(ptrobj, idkey);
       var jsresult = Module.hiwire.get_value(idresult);
@@ -262,7 +262,7 @@ EM_JS_NUM(int, pyproxy_init, (), {
       return jsresult;
     },
     ownKeys: function (jsobj) {
-      ptrobj = this.getPtr(jsobj);
+      let ptrobj = this.getPtr(jsobj);
       var idresult = __pyproxy_ownKeys(ptrobj);
       var jsresult = Module.hiwire.get_value(idresult);
       Module.hiwire.decref(idresult);
@@ -270,7 +270,7 @@ EM_JS_NUM(int, pyproxy_init, (), {
       return jsresult;
     },
     enumerate: function (jsobj) {
-      ptrobj = this.getPtr(jsobj);
+      let ptrobj = this.getPtr(jsobj);
       var idresult = __pyproxy_enumerate(ptrobj);
       var jsresult = Module.hiwire.get_value(idresult);
       Module.hiwire.decref(idresult);
@@ -278,7 +278,7 @@ EM_JS_NUM(int, pyproxy_init, (), {
       return jsresult;
     },
     apply: function (jsobj, jsthis, jsargs) {
-      ptrobj = this.getPtr(jsobj);
+      let ptrobj = this.getPtr(jsobj);
       var idargs = Module.hiwire.new_value(jsargs);
       var idresult = __pyproxy_apply(ptrobj, idargs);
       var jsresult = Module.hiwire.get_value(idresult);
