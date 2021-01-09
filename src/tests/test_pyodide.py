@@ -1,3 +1,4 @@
+import pytest
 from pathlib import Path
 import sys
 from textwrap import dedent
@@ -107,6 +108,25 @@ def test_eval_code():
     assert eval_code("2**1\n\n", ns, quiet_trailing_semicolon=False) == 2
     assert eval_code("4//2;\n", ns, quiet_trailing_semicolon=False) == 2
     assert eval_code("2**1;\n\n", ns, quiet_trailing_semicolon=False) == 2
+
+
+def test_eval_code_locals():
+    globals = {}
+    eval_code("x=2", globals, {})
+    with pytest.raises(NameError):
+        eval_code("x", globals, {})
+
+    eval_code("import sys; sys.getrecursionlimit()", globals, {})
+    with pytest.raises(NameError):
+        eval_code("sys.getrecursionlimit()", globals, {})
+
+    locals = {}
+    eval_code(
+        "from importlib import invalidate_caches; invalidate_caches()", globals, locals
+    )
+    with pytest.raises(NameError):
+        eval_code("invalidate_caches()", globals, globals)
+    eval_code("invalidate_caches()", globals, locals)
 
 
 def test_monkeypatch_eval_code(selenium):
