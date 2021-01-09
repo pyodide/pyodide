@@ -1,4 +1,5 @@
 # See also test_typeconversions, and test_python.
+import pytest
 
 
 def test_jsproxy_dir(selenium):
