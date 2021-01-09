@@ -49,9 +49,12 @@ class CodeRunner:
 
     Parameters
     ----------
-    ns
-        `locals()` or `globals()` context where to execute code.
-        This namespace is updated by the subsequent calls to `run()`.
+    globals
+        The global scope in which to execute code. This is used as the `exec` `globals` parameter.
+        See [the exec documentation](https://docs.python.org/3/library/functions.html#exec) for more info.
+    locals
+        The local scope in which to execute code. This is used as the `eval` `globals` parameter.
+        See [the exec documentation](https://docs.python.org/3/library/functions.html#exec) for more info.
     mode
         'last_expr' , 'last_expr_or_assign' or 'none',
         specifying what should be evaluated and what should be executed.
@@ -265,8 +268,12 @@ def eval_code(
     ----------
     code
        the Python code to run.
-    ns
-       `locals()` or `globals()` context where to execute code.
+    globals
+        The global scope in which to execute code. This is used as the `exec` `globals` parameter.
+        See [the exec documentation](https://docs.python.org/3/library/functions.html#exec) for more info.
+    locals
+        The local scope in which to execute code. This is used as the `eval` `globals` parameter.
+        See [the exec documentation](https://docs.python.org/3/library/functions.html#exec) for more info.
     mode
        'last_expr' , 'last_expr_or_assign' or 'none',
        specifying what should be evaluated and what should be executed.
