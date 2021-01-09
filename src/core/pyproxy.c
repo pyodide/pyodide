@@ -152,7 +152,7 @@ _pyproxy_destroy(PyObject* ptrobj)
 {
   PyObject* pyobj = ptrobj;
   Py_DECREF(ptrobj);
-  EM_ASM(delete Module.PyProxies[ptrobj];);
+  EM_ASM({ delete Module.PyProxies[$0]; }, ptrobj);
 }
 
 EM_JS_REF(JsRef, pyproxy_use, (PyObject * ptrobj), {
