@@ -87,7 +87,7 @@ var languagePluginLoader = new Promise((resolve, reject) => {
   } else if (self.importScripts) { // webworker
     loadScript = async (url) => {  // This is async only for consistency
       self.importScripts(url);
-    }
+    } else { throw new Error("Assertion Error"); }
   }
 
   function recursiveDependencies(names) {
