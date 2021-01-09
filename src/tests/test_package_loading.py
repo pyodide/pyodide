@@ -93,12 +93,7 @@ def test_load_packages_multiple(selenium_standalone, packages):
 def test_load_packages_sequential(selenium_standalone, packages):
     selenium = selenium_standalone
     promises = ",".join('pyodide.loadPackage("{}")'.format(x) for x in packages)
-    selenium.run_js(
-        "window.done = false\n"
-        + "Promise.all([{}])".format(promises)
-        + ".finally(function() { window.done = true; })"
-    )
-    selenium.wait_until_packages_loaded()
+    selenium.run_js_async("return Promise.all([{}])".format(promises))
     selenium.run(f"import {packages[0]}")
     selenium.run(f"import {packages[1]}")
     # The log must show that each package is loaded exactly once,
@@ -150,5 +145,5 @@ def test_load_package_unknown(selenium_standalone):
         (build_dir / "pyparsing-custom.data").unlink()
 
     assert selenium_standalone.run_js(
-        "return window.pyodide.loadedPackages." "hasOwnProperty('pyparsing-custom')"
+        "return window.pyodide.loadedPackages.hasOwnProperty('pyparsing-custom')"
     )

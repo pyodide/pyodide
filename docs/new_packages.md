@@ -76,6 +76,12 @@ The url of the source tarball.
 The tarball may be in any of the formats supported by Python's
 `shutil.unpack_archive`: `tar`, `gztar`, `bztar`, `xztar`, and `zip`.
 
+### `source/extract_dir`
+
+The top level directory name of the contents of the source tarball (i.e. once
+you extract the tarball, all the contents are in the directory named
+`source/extract_dir`). This defaults to the tarball name (sans extension).
+
 #### `source/path`
 
 Alternatively to `source/url`, a relative or absolute path can be specified
@@ -125,11 +131,25 @@ Extra arguments to pass to the compiler when building for WebAssembly.
 
 (This key is not in the Conda spec).
 
+#### `build/cxxflags`
+
+Extra arguments to pass to the compiler when building C++ files for WebAssembly. Note that both clfags and cxxflags will be used when compiling C++ files. A common example would be to use -std=c++11 for code that makes use of C++11 features.
+
+(This key is not in the Conda spec).
+
 #### `build/ldflags`
 
 Extra arguments to pass to the linker when building for WebAssembly.
 
 (This key is not in the Conda spec).
+
+#### `build/library`
+
+Should be set to true for library packages. Library packages are packages that are needed for other packages but are not Python packages themselves. For library packages, the script specified in the `build/script` section is run to compile the library. See the [zlib meta.yaml](https://github.com/iodide-project/pyodide/blob/master/packages/zlib/meta.yaml) for an example of a library package specification.
+
+#### `build/script`
+
+The script section is required for a library package (`build/library` set to true). For a Python package this section is optional. If it is specified for a Python package, the script section will be run before the build system runs `setup.py`. This script is run by `bash` in the directory where the tarball was extracted.
 
 #### `build/post`
 

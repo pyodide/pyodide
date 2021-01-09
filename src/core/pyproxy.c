@@ -1,9 +1,20 @@
+#include "error_handling.h"
 #include <Python.h>
 #include <emscripten.h>
 
 #include "hiwire.h"
 #include "js2python.h"
 #include "python2js.h"
+
+JsRef
+_pyproxy_repr(PyObject* pyobj)
+{
+  PyObject* repr_py = PyObject_Repr(pyobj);
+  const char* repr_utf8 = PyUnicode_AsUTF8(repr_py);
+  JsRef repr_js = hiwire_string_utf8(repr_utf8);
+  Py_CLEAR(repr_py);
+  return repr_js;
+}
 
 JsRef
 _pyproxy_has(PyObject* pyobj, JsRef idkey)
@@ -58,7 +69,7 @@ _pyproxy_set(PyObject* pyobj, JsRef idkey, JsRef idval)
 
   if (result) {
     pythonexc2js();
-    return Js_ERROR;
+    return NULL;
   }
   return idval;
 }
@@ -78,7 +89,7 @@ _pyproxy_deleteProperty(PyObject* pyobj, JsRef idkey)
 
   if (ret) {
     pythonexc2js();
-    return Js_ERROR;
+    return NULL;
   }
 
   return hiwire_undefined();
@@ -91,7 +102,7 @@ _pyproxy_ownKeys(PyObject* pyobj)
 
   if (pydir == NULL) {
     pythonexc2js();
-    return Js_ERROR;
+    return NULL;
   }
 
   JsRef iddir = hiwire_array();
@@ -128,7 +139,7 @@ _pyproxy_apply(PyObject* pyobj, JsRef idargs)
   if (pyresult == NULL) {
     Py_DECREF(pyargs);
     pythonexc2js();
-    return Js_ERROR;
+    return NULL;
   }
   JsRef idresult = python2js(pyresult);
   Py_DECREF(pyresult);
@@ -144,7 +155,7 @@ _pyproxy_destroy(PyObject* ptrobj)
   EM_ASM(delete Module.PyProxies[ptrobj];);
 }
 
-EM_JS(JsRef, pyproxy_use, (PyObject * ptrobj), {
+EM_JS_REF(JsRef, pyproxy_use, (PyObject * ptrobj), {
   // Checks if there is already an existing proxy on ptrobj
 
   if (Module.PyProxies.hasOwnProperty(ptrobj)) {
@@ -154,7 +165,7 @@ EM_JS(JsRef, pyproxy_use, (PyObject * ptrobj), {
   return Module.hiwire.ERROR;
 })
 
-EM_JS(JsRef, pyproxy_new, (PyObject * ptrobj), {
+EM_JS_REF(JsRef, pyproxy_new, (PyObject * ptrobj), {
   // Technically, this leaks memory, since we're holding on to a reference
   // to the proxy forever.  But we have that problem anyway since we don't
   // have a destructor in Javascript to free the Python object.
@@ -169,7 +180,7 @@ EM_JS(JsRef, pyproxy_new, (PyObject * ptrobj), {
   return Module.hiwire.new_value(proxy);
 });
 
-EM_JS(int, pyproxy_init, (), {
+EM_JS_NUM(int, pyproxy_init, (), {
   // clang-format off
   Module.PyProxies = {};
   Module.PyProxy = {
@@ -201,10 +212,10 @@ EM_JS(int, pyproxy_init, (), {
       ptrobj = this.getPtr(jsobj);
       if (jskey === 'toString') {
         return function() {
-          if (self.pyodide.repr === undefined) {
-            self.pyodide.repr = self.pyodide.pyimport('repr');
-          }
-          return self.pyodide.repr(jsobj);
+          let jsref_repr = __pyproxy_repr(ptrobj);
+          let repr = Module.hiwire.get_value(jsref_repr);
+          Module.hiwire.decref(jsref_repr);
+          return repr;
         }
       } else if (jskey === '$$') {
         return jsobj['$$'];
