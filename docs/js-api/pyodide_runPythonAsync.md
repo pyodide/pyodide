@@ -31,4 +31,4 @@ pyodide.runPythonAsync(code, messageCallback)
 
 | name       | type    | description                              |
 |------------|---------|------------------------------------------|
-| *result*   | Promise | Resolves to the result of the code chunk. Rejects if a fatal error occurs during import. |
+| *result*   | Promise | Resolves to the result of the code chunk |

@@ -11,19 +11,14 @@ var languagePluginLoader = new Promise((resolve, reject) => {
 
   ////////////////////////////////////////////////////////////
   // Package loading
-  let loadedPackages = {};
+  const DEFAULT_CHANNEL = "default channel";
+
   // Regexp for validating package name and URI
-  var package_name_regexp = '[a-z0-9_][a-z0-9_\-]*'
-  var package_uri_regexp =
-      new RegExp('^https?://.*?(' + package_name_regexp + ').js$', 'i');
-  var package_name_regexp = new RegExp('^' + package_name_regexp + '$', 'i');
+  const package_uri_regexp =
+      new RegExp('^https?://.*?([a-z0-9_][a-z0-9_\-]*).js$', 'i');
 
   let _uri_to_package_name = (package_uri) => {
-    // Generate a unique package name from URI
-
-    if (package_name_regexp.test(package_uri)) {
-      return package_uri;
-    } else if (package_uri_regexp.test(package_uri)) {
+    if (package_uri_regexp.test(package_uri)) {
       let match = package_uri_regexp.exec(package_uri);
       // Get the regexp group corresponding to the package name
       return match[1];
@@ -87,86 +82,71 @@ var languagePluginLoader = new Promise((resolve, reject) => {
   } else if (self.importScripts) { // webworker
     loadScript = async (url) => {  // This is async only for consistency
       self.importScripts(url);
-    } else {
-      throw new Error("Assertion Error");
     }
+  } else {
+    throw new Error("Cannot determine runtime environment");
   }
 
   function recursiveDependencies(names) {
-    let err = (err_msg) => {
-      console.error(err_msg);
-      throw new Error(err_msg);
-    };
+    const packages = self.pyodide._module.packages.dependencies;
+    const loadedPackages = self.pyodide.loadedPackages;
+    const toLoad = new Map();
 
-    let packages = self.pyodide._module.packages.dependencies;
-    let loadedPackages = self.pyodide.loadedPackages;
-    let queue = [].concat(names || []);
-    let toLoad = {};
-    while (queue.length) {
-      let package_uri = queue.pop();
-
-      const pkg = _uri_to_package_name(package_uri);
-
-      if (pkg == null) {
-        err(`Invalid package name or URI '${package_uri}'`);
-      } else if (pkg == package_uri) {
-        package_uri = 'default channel';
+    const addPackage = (pkg) => {
+      if (toLoad.has(pkg)) {
+        return;
       }
-
-      if (pkg in loadedPackages) {
-        if (package_uri != loadedPackages[pkg]) {
-          err(`URI mismatch, attempting to load package ` +
-              `${pkg} from ${package_uri} while it is already ` +
-              `loaded from ${loadedPackages[pkg]}!`);
-        } else {
-          console.log(`${pkg} already loaded from ${loadedPackages[pkg]}`)
+      toLoad.set(pkg, DEFAULT_CHANNEL);
+      // If the package is already loaded, we don't add dependencies, but warn
+      // the user later. This is especially important if the loaded package is
+      // from a custom url, in which case adding dependencies is wrong.
+      if (loadedPackages[pkg] !== undefined) {
+        return;
+      }
+      for (let dep of packages[pkg]) {
+        addPackage(dep);
+      }
+    };
+    for (let name of names) {
+      const pkgname = _uri_to_package_name(name);
+      if (pkgname !== null) {
+        if (toLoad.has(pkgname) && toLoad.get(pkgname) !== name) {
+          console.error(
+              `Loading same package ${pkgname} from ${name} and ${toLoad.get(pkgname)}`);
+          continue;
         }
-      } else if (pkg in toLoad) {
-        if (package_uri != toLoad[pkg]) {
-          err(`URI mismatch, attempting to load package ` +
-              `${pkg} from ${package_uri} while it is already ` +
-              `being loaded from ${toLoad[pkg]}!`);
-          return;
-        }
+        toLoad.set(pkgname, name);
+      } else if (name in packages) {
+        addPackage(name);
       } else {
-        console.log(
-            `${pkg} to be loaded from ${package_uri}`); // debug level info.
-
-        toLoad[pkg] = package_uri;
-        if (packages.hasOwnProperty(pkg)) {
-          packages[pkg].forEach((subpackage) => {
-            if (!(subpackage in loadedPackages) && !(subpackage in toLoad)) {
-              queue.push(subpackage);
-            }
-          });
-        } else {
-          console.error(`Unknown package '${pkg}'`);
-        }
+        console.error(`Skipping unknown package '${name}'`);
       }
     }
     return toLoad;
   }
 
   async function _loadPackage(names) {
-    // toLoad is a dictionary pkg_name => pkg_uri
+    // toLoad is a map pkg_name => pkg_uri
     let toLoad = recursiveDependencies(names);
 
+    // locateFile is the function used by the .js file to locate the .data
+    // file given the filename
     self.pyodide._module.locateFile = (path) => {
       // handle packages loaded from custom URLs
       let pkg = path.replace(/\.data$/, "");
-      if (pkg in toLoad) {
-        let package_uri = toLoad[pkg];
-        if (package_uri != 'default channel') {
+      if (toLoad.has(pkg)) {
+        let package_uri = toLoad.get(pkg);
+        if (package_uri != DEFAULT_CHANNEL) {
           return package_uri.replace(/\.js$/, ".data");
         };
       };
       return baseURL + path;
     };
 
-    if (Object.keys(toLoad).length === 0) {
+    if (toLoad.size === 0) {
       return Promise.resolve('No new packages to load');
     } else {
-      console.log(`Loading ${Object.keys(toLoad).join(', ')}`)
+      console.log(`Loading ${[...toLoad.keys()].join(', ')}`)
     }
 
     // When we load a package, we first load a JS file, and then the JS file
@@ -213,7 +193,11 @@ var languagePluginLoader = new Promise((resolve, reject) => {
       }
     };
 
-    // Add a promise that rejects when any exceptions is thrown in the process
+    // Try to catch errors thrown when running a script. Since the script is
+    // added via a script tag, there is no good way to capture errors from
+    // the script only, so try to capture all errors them.
+    //
+    // windowErrorPromise rejects when any exceptions is thrown in the process
     // of loading a script. The promise never resolves, and we combine it
     // with other promises via Promise.race.
     let windowErrorHandler;
@@ -231,18 +215,26 @@ var languagePluginLoader = new Promise((resolve, reject) => {
     // never fail.
     let scriptPromises = [];
 
-    for (let pkg in toLoad) {
-      let scriptSrc;
-      let package_uri = toLoad[pkg];
-      if (package_uri == 'default channel') {
-        scriptSrc = `${baseURL}${pkg}.js`;
-      } else {
-        scriptSrc = `${package_uri}`;
+    for (let [pkg, uri] of toLoad) {
+      let loaded = self.pyodide.loadedPackages[pkg];
+      if (loaded !== undefined) {
+        // If uri is from the DEFAULT_CHANNEL, we assume it was added as a
+        // depedency, which was previously overridden.
+        if (loaded === uri || uri === DEFAULT_CHANNEL) {
+          console.log(`${pkg} already loaded from ${loaded}`);
+          continue;
+        } else {
+          console.error(`URI mismatch, attempting to load package ${pkg} from ${
+              uri} while it is already loaded from ${
+              loaded}. To override a dependency, load the custom package first.`);
+          continue;
+        }
       }
-      console.log(`Loading ${pkg} from ${scriptSrc}`)
+      let scriptSrc = uri === DEFAULT_CHANNEL ? `${baseURL}${pkg}.js` : uri;
+      console.log(`Loading ${pkg} from ${scriptSrc}`);
       scriptPromises.push(loadScript(scriptSrc).catch(() => {
         console.error(`Couldn't load package from URL ${scriptSrc}`);
-        delete toLoad[pkg];
+        toLoad.delete(pkg);
       }));
     }
 
@@ -257,8 +249,8 @@ var languagePluginLoader = new Promise((resolve, reject) => {
     }
 
     let packageList = [];
-    for (let pkg in toLoad) {
-      self.pyodide.loadedPackages[pkg] = toLoad[pkg];
+    for (let [pkg, uri] of toLoad) {
+      self.pyodide.loadedPackages[pkg] = uri;
       packageList.push(pkg);
     }
 
@@ -286,6 +278,9 @@ var languagePluginLoader = new Promise((resolve, reject) => {
   let loadPackageChain = Promise.resolve();
 
   async function loadPackage(names) {
+    if (!Array.isArray(names)) {
+      names = [ names ];
+    }
     let promise = loadPackageChain.then(() => _loadPackage(names));
     loadPackageChain = loadPackageChain.then(() => promise.catch(() => {}));
     await promise;
