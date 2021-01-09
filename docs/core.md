@@ -1,5 +1,10 @@
 # Core
 
+## What the files do
+
+
+
+
 ## Structure of functions
 
 It takes special care to correctly and cleanly handle both reference counting and exceptions.
@@ -32,20 +37,20 @@ JsImport_CreateModule(PyObject* self, PyObject* args)
 Typically this will be called ``result``, but in this case the function is named ``CreateModule`` so we name the return variable ``module``.
 
 ```C
-  bool success = false;
-  // Note: these are all of the objects that we will own. If a function returns
-  // a borrow, we XINCREF the result so that we can CLEAR it in the finally block.
-  // Reference counting is hard, so it's good to be as explicit and consistent
-  // as possible!
-  PyObject* sys_modules = NULL;
-  PyObject* importlib_machinery = NULL;
-  PyObject* ModuleSpec = NULL;
-  PyObject* spec = NULL;
-  PyObject* __dir__ = NULL;
-  PyObject* module_dict = NULL;
-  // result
-  PyObject* module = NULL;
-  ```
+bool success = false;
+// Note: these are all of the objects that we will own. If a function returns
+// a borrow, we XINCREF the result so that we can CLEAR it in the finally block.
+// Reference counting is hard, so it's good to be as explicit and consistent
+// as possible!
+PyObject* sys_modules = NULL;
+PyObject* importlib_machinery = NULL;
+PyObject* ModuleSpec = NULL;
+PyObject* spec = NULL;
+PyObject* __dir__ = NULL;
+PyObject* module_dict = NULL;
+// result
+PyObject* module = NULL;
+```
 
 3. The body of the function. The vast majority of API calls can return error codes. You MUST check every fallible API for an error. In the most typical case you can do this using the macro ``QUIT_IF_NULL`` for APIs that return a pointer and ``QUIT_IF_MINUS_ONE`` for APIs that return an int. There is also ``QUIT()`` for an unconditional ``goto finally`` and ``QUIT_IF_ERR_OCCURRED()`` which quits if ``PyErr_Occurred()``. These macros will ``goto finally`` if the error condition is satisfied. Also, as you are writing the code, you should look up every Python API you use that returns a reference to determine whether it returns a borrowed reference or a new one. If it returns a borrowed reference, immediately `Py_XINCREF()` the result to convert it into an owned reference (before ``QUIT_IF_NULL``, this is to be consistent with the case where you use custom error handling).
 
@@ -106,7 +111,7 @@ Instead use ``PyDict_GetItemWithError`` and ``_PyDict_GetItemIdWithError``.
 
 2. ``PyObject_HasAttrString``, ``PyObject_GetAttrString``,  ``PyDict_GetItemString``, ``PyDict_SetItemString``, ``PyMapping_HasKeyString`` etc, etc.
 
-If the string you are using is a constant: ``PyDict_GetItemString(dict, "identifier")``, then make an id with ``Py_Identifier(identifier)`` and then use ``_PyDict_GetItemId(&PyId_identifier)``. If the string is not constant, convert it to a python object with ``PyUnicode_FromString()`` and then use e.g., ``PyDict_GetItem``.
+If the string you are using is a constant, e.g., ``PyDict_GetItemString(dict, "identifier")``, then make an id with ``Py_Identifier(identifier)`` and then use ``_PyDict_GetItemId(&PyId_identifier)``. If the string is not constant, convert it to a python object with ``PyUnicode_FromString()`` and then use e.g., ``PyDict_GetItem``.
 
 3. ``PyModule_AddObject``. This steals a reference on success but not on failure and requires unique cleanup code.
 Instead use ``PyObject_SetAttr``.
