@@ -456,13 +456,6 @@ JsProxy_Bool(PyObject* o)
   return hiwire_get_bool(self->js) ? 1 : 0;
 }
 
-#define QUIT_IF_NULL(x)                                                        \
-  do {                                                                         \
-    if (x == NULL) {                                                           \
-      goto finally;                                                            \
-    }                                                                          \
-  } while (0)
-
 PyObject*
 JsProxy_Await(JsProxy* self)
 {
@@ -491,15 +484,15 @@ JsProxy_Await(JsProxy* self)
   PyObject* set_exception = NULL;
 
   loop = _PyObject_CallNoArg(asyncio_get_event_loop);
-  QUIT_IF_NULL(loop);
+  FAIL_IF_NULL(loop);
 
   fut = _PyObject_CallMethodId(loop, &PyId_create_future, NULL);
-  QUIT_IF_NULL(fut);
+  FAIL_IF_NULL(fut);
 
   set_result = _PyObject_GetAttrId(fut, &PyId_set_result);
-  QUIT_IF_NULL(set_result);
+  FAIL_IF_NULL(set_result);
   set_exception = _PyObject_GetAttrId(fut, &PyId_set_exception);
-  QUIT_IF_NULL(set_exception);
+  FAIL_IF_NULL(set_exception);
 
   JsRef promise_id = hiwire_resolve_promise(self->js);
   JsRef idargs = hiwire_array();
