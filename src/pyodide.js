@@ -91,9 +91,9 @@ var languagePluginLoader = new Promise((resolve, reject) => {
   }
 
   function recursiveDependencies(names) {
-    let err = (e) => {
-      console.log(e);
-      throw e;
+    let err = (err_msg) => {
+      console.error(err_msg);
+      throw new Error(err_msg);
     };
 
     let packages = self.pyodide._module.packages.dependencies;
