@@ -56,20 +56,18 @@ def test_list_loaded_urls(selenium_standalone):
 
 def test_uri_mismatch(selenium_standalone):
     selenium_standalone.load_package("pyparsing")
-    selenium_standalone.load_package("http://some_url/pyparsing.js")
-    assert (
-        "URI mismatch, attempting to load package pyparsing" in selenium_standalone.logs
-    )
-    assert "Invalid package name or URI" not in selenium_standalone.logs
+    msg = "URI mismatch, attempting to load package pyparsing"
+    with pytest.raises(selenium_standalone.JavascriptException, match=msg):
+        selenium_standalone.load_package("http://some_url/pyparsing.js")
 
 
 def test_invalid_package_name(selenium):
-    selenium.load_package("wrong name+$")
-    assert "Invalid package name or URI" in selenium.logs
-    selenium.clean_logs()
+    msg = "Invalid package name or URI"
+    with pytest.raises(selenium.JavascriptException, match=msg):
+        selenium.load_package("wrong name+$")
 
-    selenium.load_package("tcp://some_url")
-    assert "Invalid package name or URI" in selenium.logs
+    with pytest.raises(selenium.JavascriptException, match=msg):
+        selenium.load_package("tcp://some_url")
 
 
 @pytest.mark.parametrize(

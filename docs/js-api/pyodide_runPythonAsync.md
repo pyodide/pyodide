@@ -26,11 +26,9 @@ pyodide.runPythonAsync(code, messageCallback)
 | name              | type     | description                    |
 |-------------------|----------|--------------------------------|
 | *code*            | String   | Python code to evaluate        |
-| *messageCallback* | function        | A callback, called with progress messages. (optional) |
-| *errorCallback*   | function        | A callback, called with error/warning messages. (optional) |
 
 *Returns*
 
 | name       | type    | description                              |
 |------------|---------|------------------------------------------|
-| *result*   | Promise | Resolves to the result of the code chunk |
+| *result*   | Promise | Resolves to the result of the code chunk. Rejects if a fatal error occurs during import. |

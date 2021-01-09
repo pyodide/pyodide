@@ -20,11 +20,9 @@ See also {ref}`js_api_pyodide_runPythonAsync`.
 | name              | type     | description                    |
 |-------------------|----------|--------------------------------|
 | *code*            | String   | code to inspect for packages to load. |
-| *messageCallback* | function | A callback, called with progress messages. (optional) |
-| *errorCallback*   | function | A callback, called with error/warning messages. (optional) |
 
 *Returns*
 
 | name       | type    | description                              |
 |------------|---------|------------------------------------------|
-| *result*   | Promise | Resolves to undefined on success. |
+| *result*   | Promise | Resolves to undefined on success. Rejects if a fatal error occurs when loading imports. |

@@ -26,11 +26,11 @@ Backward compatibility of the API is not guaranteed at this point.
 | | |
 |-|-|
 | **{ref}`js_api_pyodide_globals`**        | An alias to the global Python namespace                        |
-| **{ref}`pyodide.loadPackage(names, ...) <js_api_pyodide_loadPackage>`**    | Load a package or a list of packages over the network          |
+| **{ref}`pyodide.loadPackage(names) <js_api_pyodide_loadPackage>`**    | Load a package or a list of packages over the network          |
 | **{ref}`js_api_pyodide_loadedPackages`** | `Object` with loaded packages.                                 |
 | **{ref}`js_api_pyodide_pyimport`**       | Access a Python object in the global namespace from Javascript |
 | **{ref}`js_api_pyodide_runPython`**      | Runs Python code from Javascript.                              |
-| **{ref}`pyodide.runPythonAsync(code, ...) <js_api_pyodide_runPythonAsync>`** | Runs Python code with automatic preloading of imports.         |
+| **{ref}`pyodide.runPythonAsync(code) <js_api_pyodide_runPythonAsync>`** | Runs Python code with automatic preloading of imports.         |
 | **{ref}`js_api_pyodide_version`**        | Returns the pyodide version.                                   |
 
 
