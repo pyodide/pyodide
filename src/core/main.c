@@ -19,8 +19,8 @@
     if (PyErr_Occurred()) {                                                    \
       printf("Error was triggered by Python exception:\n");                    \
       PyErr_Print();                                                           \
-      return 1;                                                                \
     }                                                                          \
+    return -1;                                                                 \
   } while (0)
 
 #define TRY_INIT(mod)                                                          \
@@ -39,7 +39,8 @@
 
 _Py_IDENTIFIER(__version__);
 
-static int version_info_init()
+static int
+version_info_init()
 { // TODO: move this into pyodide.js
   PyObject* pyodide = PyImport_ImportModule("pyodide");
   PyObject* pyodide_version = _PyObject_GetAttrId(pyodide, &PyId___version__);
@@ -64,7 +65,6 @@ main(int argc, char** argv)
 {
   PyObject* sys = NULL;
   PyObject* core_module = NULL;
-
   TRY_INIT(hiwire);
 
   setenv("PYTHONHOME", "/", 0);
@@ -75,11 +75,11 @@ main(int argc, char** argv)
 
   Py_InitializeEx(0);
 
-  PyImport_ImportModule("sys");
+  sys = PyImport_ImportModule("sys");
   if (sys == NULL) {
     FATAL_ERROR("Failed to import sys module.");
   }
-
+  printf("sys: %p\n", sys);
   if (PyObject_SetAttrString(sys, "dont_write_bytecode", Py_True)) {
     FATAL_ERROR("Failed to set attribute on sys module.");
   }
