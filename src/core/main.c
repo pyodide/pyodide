@@ -79,7 +79,7 @@ main(int argc, char** argv)
   if (sys == NULL) {
     FATAL_ERROR("Failed to import sys module.");
   }
-  printf("sys: %p\n", sys);
+
   if (PyObject_SetAttrString(sys, "dont_write_bytecode", Py_True)) {
     FATAL_ERROR("Failed to set attribute on sys module.");
   }
