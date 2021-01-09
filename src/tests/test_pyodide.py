@@ -28,6 +28,24 @@ def test_code_runner():
     assert not runner.quiet("1+1#;")
     assert not runner.quiet("5-2  # comment with trailing semicolon ;")
     assert runner.run("4//2\n") == 2
+    assert runner.run("4//2;") is None
+    assert runner.run("x = 2\nx") == 2
+    assert runner.run("def f(x):\n    return x*x+1\n[f(x) for x in range(6)]") == [
+        1,
+        2,
+        5,
+        10,
+        17,
+        26,
+    ]
+
+    # with 'quiet_trailing_semicolon' set to False
+    runner = CodeRunner(quiet_trailing_semicolon=False)
+    assert not runner.quiet("1+1;")
+    assert not runner.quiet("1+1#;")
+    assert not runner.quiet("5-2  # comment with trailing semicolon ;")
+    assert runner.run("4//2\n") == 2
+    assert runner.run("4//2;") == 2
 
 
 def test_eval_code():
@@ -50,6 +68,7 @@ def test_eval_code():
     assert eval_code("x=7", ns) is None
     assert ns["x"] == 7
 
+    # default mode ('last_expr'), semicolon
     assert eval_code("1+1;", ns) is None
     assert eval_code("1+1#;", ns) == 2
     assert eval_code("5-2  # comment with trailing semicolon ;", ns) == 3
@@ -57,6 +76,37 @@ def test_eval_code():
     assert eval_code("2**1\n\n", ns) == 2
     assert eval_code("4//2;\n", ns) is None
     assert eval_code("2**1;\n\n", ns) is None
+
+    # 'last_expr_or_assign' mode, semicolon
+    assert eval_code("1 + 1", ns, mode="last_expr_or_assign") == 2
+    assert eval_code("x = 1 + 1", ns, mode="last_expr_or_assign") == 2
+    assert eval_code("a = 5 ; a += 1", ns, mode="last_expr_or_assign") == 6
+    assert eval_code("a = 5 ; a += 1;", ns, mode="last_expr_or_assign") is None
+    assert eval_code("l = [1, 1, 2] ; l[0] = 0", ns, mode="last_expr_or_assign") is None
+    assert eval_code("a = b = 2", ns, mode="last_expr_or_assign") == 2
+
+    # 'none' mode, (useless) semicolon
+    assert eval_code("1 + 1", ns, mode="none") is None
+    assert eval_code("x = 1 + 1", ns, mode="none") is None
+    assert eval_code("a = 5 ; a += 1", ns, mode="none") is None
+    assert eval_code("a = 5 ; a += 1;", ns, mode="none") is None
+    assert eval_code("l = [1, 1, 2] ; l[0] = 0", ns, mode="none") is None
+
+    # with 'quiet_trailing_semicolon' set to False
+    assert eval_code("1+1;", ns, quiet_trailing_semicolon=False) == 2
+    assert eval_code("1+1#;", ns, quiet_trailing_semicolon=False) == 2
+    assert (
+        eval_code(
+            "5-2  # comment with trailing semicolon ;",
+            ns,
+            quiet_trailing_semicolon=False,
+        )
+        == 3
+    )
+    assert eval_code("4//2\n", ns, quiet_trailing_semicolon=False) == 2
+    assert eval_code("2**1\n\n", ns, quiet_trailing_semicolon=False) == 2
+    assert eval_code("4//2;\n", ns, quiet_trailing_semicolon=False) == 2
+    assert eval_code("2**1;\n\n", ns, quiet_trailing_semicolon=False) == 2
 
 
 def test_monkeypatch_eval_code(selenium):
