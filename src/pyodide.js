@@ -211,13 +211,13 @@ var languagePluginLoader = new Promise((resolve, reject) => {
       }
     };
 
-    // Add a handler for any exceptions that are thrown in the process of
-    // loading a script. The promise never resolves, and we combine it with
-    // other promises via Promise.race.
+    // Add a promise that rejects when any exceptions is thrown in the process
+    // of loading a script. The promise never resolves, and we combine it
+    // with other promises via Promise.race.
     let windowErrorHandler;
     let windowErrorPromise = new Promise((_res, rej) => {
-      windowErrorHandler = rej;
-      self.addEventListener('error', rej);
+      windowErrorHandler = e => rej(e.message);
+      self.addEventListener('error', windowErrorHandler);
     });
 
     // Promises for each script load. The promises already handle error and
