@@ -50,19 +50,24 @@ class CodeRunner:
     Parameters
     ----------
     globals
-        The global scope in which to execute code. This is used as the `exec` `globals` parameter.
-        See [the exec documentation](https://docs.python.org/3/library/functions.html#exec) for more info.
+        The global scope in which to execute code. This is used as the `exec`
+        `globals` parameter. See
+        [the exec documentation](https://docs.python.org/3/library/functions.html#exec)
+        for more info.
     locals
-        The local scope in which to execute code. This is used as the `eval` `globals` parameter.
-        See [the exec documentation](https://docs.python.org/3/library/functions.html#exec) for more info.
-    mode
-        'last_expr' , 'last_expr_or_assign' or 'none',
-        specifying what should be evaluated and what should be executed.
-        'last_expr' will return the last expression
-        'last_expr_or_assign' will return the last expression
-        or the last (named) assignment.
-        'none' will always return `None`.
-        Other values will be interpreted as 'none'.
+        The local scope in which to execute code. This is used as the `exec`
+        `locals` parameter. As with `exec`, if `locals` is absent, it is set equal
+        to `globals`. See
+        [the exec documentation](https://docs.python.org/3/library/functions.html#exec)
+        for more info.
+    return_mode
+        Specifies what should be returned, must be one of 'last_expr',
+        'last_expr_or_assign' or `None`. On other values an exception is raised.
+
+        'last_expr' -- return the last expression
+        'last_expr_or_assign' -- return the last expression or the last
+        (named) assignment.
+        `None` -- always return `None`.
     quiet_trailing_semicolon
         wether a trailing semicolon should 'quiet' the result or not.
         Setting this to `True` (default) mimic the CPython's interpret
@@ -86,7 +91,7 @@ class CodeRunner:
         self,
         globals: Optional[Dict[str, Any]] = None,
         locals: Optional[Dict[str, Any]] = None,
-        mode: str = "last_expr",
+        return_mode: str = "last_expr",
         quiet_trailing_semicolon: bool = True,
         filename: str = "<exec>",
     ):
@@ -94,7 +99,9 @@ class CodeRunner:
         self.locals = locals if locals is not None else self.globals
         self.quiet_trailing_semicolon = quiet_trailing_semicolon
         self.filename = filename
-        self.mode = mode
+        if return_mode not in ["last_expr", "last_expr_or_assign", None]:
+            raise ValueError(f"Unrecognized return_mode {return_mode!r}")
+        self.return_mode = return_mode
 
     def quiet(self, code: str) -> bool:
         """
@@ -139,9 +146,9 @@ class CodeRunner:
 
     def _last_assign_to_expr(self, mod: ast.Module):
         """
-        Implementation of 'last_expr_or_assign' mode.
+        Implementation of 'last_expr_or_assign' return_mode.
         It modify the supplyied AST module so that the last
-        statement's value can be returned in 'last_expr' mode.
+        statement's value can be returned in 'last_expr' return_mode.
         """
         # Largely inspired from IPython:
         # https://github.com/ipython/ipython/blob/3587f5bb6c8570e7bbb06cf5f7e3bc9b9467355a/IPython/core/interactiveshell.py#L3229
@@ -181,20 +188,21 @@ class CodeRunner:
         if not mod.body:
             return None, None
 
-        if self.mode == "last_expr_or_assign":
+        if self.return_mode == "last_expr_or_assign":
             # If the last statement is a named assignment, add an extra
             # expression to the end with just the L-value so that we can
             # handle it with the last_expr code.
             self._last_assign_to_expr(mod)
 
         # we extract last expression
-        last_expr = None
         if (
-            self.mode.startswith("last_expr")  # last_expr or last_expr_or_assign
+            self.return_mode.startswith("last_expr")  # last_expr or last_expr_or_assign
             and isinstance(mod.body[-1], (ast.Expr, ast.Await))
             and not self.quiet(code)
         ):
             last_expr = ast.Expression(mod.body.pop().value)  # type: ignore
+        else:
+            last_expr = None  # type: ignore
 
         # we compile
         mod = compile(mod, self.filename, "exec", flags=flags)  # type: ignore
@@ -217,7 +225,7 @@ class CodeRunner:
         return `None`.
         If the last statement is an expression, return the
         result of the expression.
-        Use the `mode` and `quiet_trailing_semicolon` parameters in the
+        Use the `return_mode` and `quiet_trailing_semicolon` parameters in the
         constructor to modify this default behavior.
         """
         mod, last_expr = self._split_and_compile(code)
@@ -256,9 +264,9 @@ class CodeRunner:
 
 def eval_code(
     code: str,
-    globals: Dict[str, Any] = None,
-    locals: Dict[str, Any] = None,
-    mode: str = "last_expr",
+    globals: Optional[Dict[str, Any]] = None,
+    locals: Optional[Dict[str, Any]] = None,
+    return_mode: str = "last_expr",
     quiet_trailing_semicolon: bool = True,
     filename: str = "<exec>",
 ) -> Any:
@@ -269,23 +277,28 @@ def eval_code(
     code
        the Python code to run.
     globals
-        The global scope in which to execute code. This is used as the `exec` `globals` parameter.
-        See [the exec documentation](https://docs.python.org/3/library/functions.html#exec) for more info.
+        The global scope in which to execute code. This is used as the `exec`
+        `globals` parameter. See
+        [the exec documentation](https://docs.python.org/3/library/functions.html#exec)
+        for more info.
     locals
-        The local scope in which to execute code. This is used as the `eval` `globals` parameter.
-        See [the exec documentation](https://docs.python.org/3/library/functions.html#exec) for more info.
-    mode
-       'last_expr' , 'last_expr_or_assign' or 'none',
-       specifying what should be evaluated and what should be executed.
-       'last_expr' will return the last expression
-       'last_expr_or_assign' will return the last expression
-       or the last (named) assignment.
-       'none' will always return `None`.
-           Other values will be interpreted as 'none'.
+        The local scope in which to execute code. This is used as the `exec`
+        `locals` parameter. As with `exec`, if `locals` is absent, it is set equal
+        to `globals`. See
+        [the exec documentation](https://docs.python.org/3/library/functions.html#exec)
+        for more info.
+    return_mode
+        Specifies what should be returned, must be one of 'last_expr',
+        'last_expr_or_assign' or `None`. On other values an exception is raised.
+
+        'last_expr' -- return the last expression
+        'last_expr_or_assign' -- return the last expression or the last
+        (named) assignment.
+        `None` -- always return `None`.
     quiet_trailing_semicolon
-       wether a trailing semicolon should 'quiet' the result or not.
-       Setting this to `True` (default) mimic the CPython's interpret
-       behavior ; whereas setting it to `False` mimic the IPython's
+        whether a trailing semicolon should 'quiet' the result or not.
+        Setting this to `True` (default) mimic the CPython's interpret
+        behavior ; whereas setting it to `False` mimic the IPython's
     filename:
        file from which the code was read.
 
@@ -294,13 +307,13 @@ def eval_code(
     If the last nonwhitespace character of code is a semicolon return `None`.
     If the last statement is an expression, return the
     result of the expression.
-    Use the `mode` and `quiet_trailing_semicolon` parameters to modify
+    Use the `return_mode` and `quiet_trailing_semicolon` parameters to modify
     this default behavior.
     """
     return CodeRunner(
         globals=globals,
         locals=locals,
-        mode=mode,
+        return_mode=return_mode,
         quiet_trailing_semicolon=quiet_trailing_semicolon,
         filename=filename,
     ).run(code)
@@ -308,9 +321,9 @@ def eval_code(
 
 async def eval_code_async(
     code: str,
-    globals: Dict[str, Any] = None,
-    locals: Dict[str, Any] = None,
-    mode: str = "last_expr",
+    globals: Optional[Dict[str, Any]] = None,
+    locals: Optional[Dict[str, Any]] = None,
+    return_mode: str = "last_expr",
     quiet_trailing_semicolon: bool = True,
     filename: str = "<exec>",
 ) -> Any:
@@ -327,7 +340,7 @@ async def eval_code_async(
     return await CodeRunner(
         globals=globals,
         locals=locals,
-        mode=mode,
+        return_mode=return_mode,
         quiet_trailing_semicolon=quiet_trailing_semicolon,
         filename=filename,
     ).run_async(code)
