@@ -194,7 +194,7 @@ def test_jsproxy_kwargs(selenium):
 
 import time
 
-startup = """
+ASYNCIO_EVENT_LOOP_STARTUP = """
 import asyncio
 class DumbLoop(asyncio.AbstractEventLoop):
     def create_future(self):
@@ -219,7 +219,7 @@ asyncio.set_event_loop(DumbLoop())
 
 
 def test_await_jsproxy(selenium):
-    selenium.run(startup)
+    selenium.run(ASYNCIO_EVENT_LOOP_STARTUP)
     selenium.run(
         """
         def prom(res,rej):
@@ -246,7 +246,7 @@ def test_await_jsproxy(selenium):
 
 
 def test_await_fetch(selenium):
-    selenium.run(startup)
+    selenium.run(ASYNCIO_EVENT_LOOP_STARTUP)
     selenium.run(
         """
         from js import fetch, window
@@ -291,7 +291,7 @@ def test_await_error(selenium):
         window.js_raises = js_raises;
         """
     )
-    selenium.run(startup)
+    selenium.run(ASYNCIO_EVENT_LOOP_STARTUP)
     selenium.run(
         """
         from js import async_js_raises, js_raises
