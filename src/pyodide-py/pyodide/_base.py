@@ -67,7 +67,7 @@ class CodeRunner:
         'last_expr' -- return the last expression
         'last_expr_or_assign' -- return the last expression or the last
         (named) assignment.
-        `None` -- always return `None`.
+        'none' -- always return `None`.
     quiet_trailing_semicolon
         wether a trailing semicolon should 'quiet' the result or not.
         Setting this to `True` (default) mimic the CPython's interpret
@@ -99,7 +99,7 @@ class CodeRunner:
         self.locals = locals if locals is not None else self.globals
         self.quiet_trailing_semicolon = quiet_trailing_semicolon
         self.filename = filename
-        if return_mode not in ["last_expr", "last_expr_or_assign", None]:
+        if return_mode not in ["last_expr", "last_expr_or_assign", 'none', None]:
             raise ValueError(f"Unrecognized return_mode {return_mode!r}")
         self.return_mode = return_mode
 
@@ -294,7 +294,7 @@ def eval_code(
         'last_expr' -- return the last expression
         'last_expr_or_assign' -- return the last expression or the last
         (named) assignment.
-        `None` -- always return `None`.
+        'none' -- always return `None`.
     quiet_trailing_semicolon
         whether a trailing semicolon should 'quiet' the result or not.
         Setting this to `True` (default) mimic the CPython's interpret
