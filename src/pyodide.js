@@ -87,7 +87,7 @@ var languagePluginLoader = new Promise((resolve, reject) => {
     throw new Error("Cannot determine runtime environment");
   }
 
-  function recursiveDependencies(names) {
+  function recursiveDependencies(names, _messageCallback, errorCallback) {
     const packages = self.pyodide._module.packages.dependencies;
     const loadedPackages = self.pyodide.loadedPackages;
     const toLoad = new Map();
@@ -111,7 +111,7 @@ var languagePluginLoader = new Promise((resolve, reject) => {
       const pkgname = _uri_to_package_name(name);
       if (pkgname !== null) {
         if (toLoad.has(pkgname) && toLoad.get(pkgname) !== name) {
-          console.error(`Loading same package ${pkgname} from ${name} and ${
+          errorCallback(`Loading same package ${pkgname} from ${name} and ${
               toLoad.get(pkgname)}`);
           continue;
         }
@@ -119,15 +119,15 @@ var languagePluginLoader = new Promise((resolve, reject) => {
       } else if (name in packages) {
         addPackage(name);
       } else {
-        console.error(`Skipping unknown package '${name}'`);
+        errorCallback(`Skipping unknown package '${name}'`);
       }
     }
     return toLoad;
   }
 
-  async function _loadPackage(names) {
+  async function _loadPackage(names, messageCallback, errorCallback) {
     // toLoad is a map pkg_name => pkg_uri
-    let toLoad = recursiveDependencies(names);
+    let toLoad = recursiveDependencies(names, messageCallback, errorCallback);
 
     // locateFile is the function used by the .js file to locate the .data
     // file given the filename
@@ -146,7 +146,7 @@ var languagePluginLoader = new Promise((resolve, reject) => {
     if (toLoad.size === 0) {
       return Promise.resolve('No new packages to load');
     } else {
-      console.log(`Loading ${[...toLoad.keys()].join(', ')}`)
+      messageCallback(`Loading ${[...toLoad.keys()].join(', ')}`)
     }
 
     // When we load a package, we first load a JS file, and then the JS file
@@ -203,9 +203,9 @@ var languagePluginLoader = new Promise((resolve, reject) => {
     let windowErrorHandler;
     let windowErrorPromise = new Promise((_res, rej) => {
       windowErrorHandler = e => {
-        console.error(
+        errorCallback(
             "Unhandled error. We don't know what it is or whether it is related to 'loadPackage' but out of an abundance of caution we will assume that loading failed.");
-        console.error(e);
+        errorCallback(e);
         rej(e.message);
       };
       self.addEventListener('error', windowErrorHandler);
@@ -221,19 +221,19 @@ var languagePluginLoader = new Promise((resolve, reject) => {
         // If uri is from the DEFAULT_CHANNEL, we assume it was added as a
         // depedency, which was previously overridden.
         if (loaded === uri || uri === DEFAULT_CHANNEL) {
-          console.log(`${pkg} already loaded from ${loaded}`);
+          messageCallback(`${pkg} already loaded from ${loaded}`);
           continue;
         } else {
-          console.error(`URI mismatch, attempting to load package ${pkg} from ${
+          errorCallback(`URI mismatch, attempting to load package ${pkg} from ${
               uri} while it is already loaded from ${
               loaded}. To override a dependency, load the custom package first.`);
           continue;
         }
       }
       let scriptSrc = uri === DEFAULT_CHANNEL ? `${baseURL}${pkg}.js` : uri;
-      console.log(`Loading ${pkg} from ${scriptSrc}`);
+      messageCallback(`Loading ${pkg} from ${scriptSrc}`);
       scriptPromises.push(loadScript(scriptSrc).catch(() => {
-        console.error(`Couldn't load package from URL ${scriptSrc}`);
+        errorCallback(`Couldn't load package from URL ${scriptSrc}`);
         toLoad.delete(pkg);
       }));
     }
@@ -265,7 +265,7 @@ var languagePluginLoader = new Promise((resolve, reject) => {
     if (!isFirefox) {
       await preloadWasm();
     }
-    console.log(resolveMsg);
+    messageCallback(resolveMsg);
 
     // We have to invalidate Python's import caches, or it won't
     // see the new files.
@@ -277,11 +277,13 @@ var languagePluginLoader = new Promise((resolve, reject) => {
   // It never fails.
   let loadPackageChain = Promise.resolve();
 
-  async function loadPackage(names) {
+  async function loadPackage(names, messageCallback, errorCallback) {
     if (!Array.isArray(names)) {
       names = [ names ];
     }
-    let promise = loadPackageChain.then(() => _loadPackage(names));
+    let promise = loadPackageChain.then(
+        () => _loadPackage(names, messageCallback || console.log,
+                           errorCallback || console.error));
     loadPackageChain = loadPackageChain.then(() => promise.catch(() => {}));
     await promise;
   }
@@ -349,7 +351,7 @@ var languagePluginLoader = new Promise((resolve, reject) => {
   Module.runPython = code => Module.pyodide_py.eval_code(code, Module.globals);
 
   // clang-format off
-  Module.loadPackagesFromImports  = async function(code) {
+  Module.loadPackagesFromImports  = async function(code, messageCallback, errorCallback) {
     let imports = Module.pyodide_py.find_imports(code);
     if (imports.length === 0) {
       return;
@@ -364,7 +366,7 @@ var languagePluginLoader = new Promise((resolve, reject) => {
     }
     if (packages.size) {
       await loadPackage(
-        Array.from(packages.keys())
+        Array.from(packages.keys(), messageCallback, errorCallback)
       );
     }
   };
@@ -372,8 +374,8 @@ var languagePluginLoader = new Promise((resolve, reject) => {
 
   Module.pyimport = name => Module.globals[name];
 
-  Module.runPythonAsync = async function(code) {
-    await Module.loadPackagesFromImports(code);
+  Module.runPythonAsync = async function(code, messageCallback, errorCallback) {
+    await Module.loadPackagesFromImports(code, messageCallback, errorCallback);
     return Module.runPython(code);
   };
 

@@ -20,6 +20,8 @@ See also {ref}`js_api_pyodide_runPythonAsync`.
 | name              | type     | description                    |
 |-------------------|----------|--------------------------------|
 | *code*            | String   | code to inspect for packages to load. |
+| *messageCallback* | function | A callback, called with progress messages. (optional) |
+| *errorCallback*   | function | A callback, called with error/warning messages. (optional) |
 
 *Returns*
 

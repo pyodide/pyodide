@@ -11,6 +11,8 @@ The package needs to be imported from Python before it can be used.
 | name              | type            | description                           |
 |-------------------|-----------------|---------------------------------------|
 | *names*           | {String, Array} | package name, or URL. Can be either a single element, or an array.          |
+| *messageCallback* | function        | A callback, called with progress messages. (optional) |
+| *errorCallback*   | function        | A callback, called with error/warning messages. (optional) |
 
 *Returns*
 
