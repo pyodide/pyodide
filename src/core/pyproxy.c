@@ -165,7 +165,7 @@ EM_JS_REF(JsRef, pyproxy_new, (PyObject * ptrobj), {
     return Module.hiwire.new_value(Module.PyProxies[ptrobj]);
   }
 
-  _Py_IncRef(x);
+  _Py_IncRef(ptrobj);
 
   var target = function(){};
   target['$$'] = { ptr : ptrobj, type : 'PyProxy' };
