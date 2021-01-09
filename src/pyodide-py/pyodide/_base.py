@@ -99,7 +99,7 @@ class CodeRunner:
         self.locals = locals if locals is not None else self.globals
         self.quiet_trailing_semicolon = quiet_trailing_semicolon
         self.filename = filename
-        if return_mode not in ["last_expr", "last_expr_or_assign", 'none', None]:
+        if return_mode not in ["last_expr", "last_expr_or_assign", "none", None]:
             raise ValueError(f"Unrecognized return_mode {return_mode!r}")
         self.return_mode = return_mode
 
