@@ -1,18 +1,8 @@
 #ifndef ERROR_HANDLING_H
 #define ERROR_HANDLING_H
-
-/**  Wrap EM_JS so that it produces functions that follow the Python return
- *  conventions. We catch javascript errors and proxy them and use
- *  `PyErr_SetObject` to hand them off to python. We need two variants, one
- *  for functions that return pointers / references (return 0)
- *  the other for functions that return numbers (return -1).
- */
+#include <emscripten.h>
 
 typedef int errcode;
-
-// Hiwire wants to import us for errcode, so import hiwire after typedef.
-#include "hiwire.h"
-#include <emscripten.h>
 
 int
 error_handling_init();
@@ -20,42 +10,96 @@ error_handling_init();
 errcode
 log_error(char* msg);
 
-// WARNING: These wrappers around EM_JS cause macros in body to be expanded.
-// This causes trouble with true and false.
-// In types.h we provide nonstandard definitions:
-// false ==> (!!0)
-// true ==> (!!1)
-// These work as expected in both C and javascript.
+/** EM_JS Wrappers
+ * Wrap EM_JS so that it produces functions that follow the Python return
+ * conventions. We catch javascript errors and proxy them and use
+ * `PyErr_SetObject` to hand them off to python. We need two variants, one
+ * for functions that return pointers / references (return 0)
+ * the other for functions that return numbers (return -1).
+ *
+ * WARNING: These wrappers around EM_JS cause macros in body to be expanded,
+ * where this would be prevented by the ordinary EM_JS macro.
+ * This causes trouble with true and false.
+ * In types.h we provide nonstandard definitions:
+ * false ==> (!!0)
+ * true ==> (!!1)
+ * These work as expected in both C and javascript.
+ *
+ * Note: this change in expansion behavior is unavoidable unless we copy the
+ * definition of macro EM_JS into our code due to limitations of the C macro
+ * engine. It is useful to be able to use macros in the EM_JS, but it might lead
+ * to some unpleasant surprises down the road...
+ */
 
 // clang-format off
+#ifdef DEBUG_F
+// Yes, the "do {} while(0)" trick solves the same problem in the same way in
+// javascript!
+#define LOG_EM_JS_ERROR(__funcname__, err)                                     \
+  do {                                                                         \
+    console.error(                                                             \
+      `EM_JS raised exception on line __LINE__ in func __funcname__,           \
+       file __FILE__\n`);                                                      \
+    console.error("Error was:", err);                                          \
+  } while (0)
+#else
+#define LOG_EM_JS_ERROR(__funcname__, err)
+#endif
+
+// Need an extra layer to expand LOG_EM_JS_ERROR.
+#define EM_JS_DEFER(ret, func_name, args, body...)                             \
+  EM_JS(ret, func_name, args, body...)
+
 #define EM_JS_REF(ret, func_name, args, body...)                               \
-  EM_JS(ret, func_name, args, {                                                \
+  EM_JS_DEFER(ret, func_name, args, {                                          \
     /* "use strict";  TODO: enable this. */                                    \
     try    /* intentionally no braces, body already has them */                \
       body /* <== body of func */                                              \
     catch (e) {                                                                \
-        /* Dummied out until calling code is ready to catch these errors */    \
-        throw e;                                                               \
+        LOG_EM_JS_ERROR(__funcname__, err);                                    \
         Module.handle_js_error(e);                                             \
         return 0;                                                              \
     }                                                                          \
-    throw new Error("Assertion error: control reached end of function without return");\
+    throw new Error(                                                           \
+      "Assertion error: control reached end of function without return"        \
+    );                                                                         \
   })
 
 #define EM_JS_NUM(ret, func_name, args, body...)                               \
-  EM_JS(ret, func_name, args, {                                                \
+  EM_JS_DEFER(ret, func_name, args, {                                          \
     /* "use strict";  TODO: enable this. */                                    \
     try    /* intentionally no braces, body already has them */                \
       body /* <== body of func */                                              \
     catch (e) {                                                                \
-        /* Dummied out until calling code is ready to catch these errors */    \
-        throw e;                                                               \
+        LOG_EM_JS_ERROR(__funcname__, err);                                    \
         Module.handle_js_error(e);                                             \
         return -1;                                                             \
     }                                                                          \
     return 0;  /* some of these were void */                                   \
   })
 // clang-format on
+
+/** Failure Macros
+ * These macros are intended to help make error handling as uniform and
+ * unobtrusive as possible. The EM_JS wrappers above make it so that the
+ * EM_JS calls behave just like Python API calls when it comes to errors
+ * So these can be used equally well for both cases.
+ *
+ * These all use "goto finally;" so any function that uses them must have
+ * a finally label. Luckily, the compiler errors triggered byforgetting
+ * this are usually quite clear.
+ *
+ * We define a feature flag "DEBUG_F" that will use "console.error" to
+ * report a message whenever these functions exit with error. This should
+ * particularly help to track down problems when C code fails to handle
+ * the error generated.
+ *
+ * FAIL() -- unconditionally goto finally; (but also log it with
+ *           console.error if DEBUG_F is enabled)
+ * FAIL_IF_NULL(ref) -- FAIL() if ref == NULL
+ * FAIL_IF_MINUS_ONE(num) -- FAIL() if num == -1
+ * FAIL_IF_ERR_OCCURRED(num) -- FAIL() if PyErr_Occurred()
+ */
 
 #ifdef DEBUG_F
 #define FAIL()                                                                 \
@@ -75,21 +119,21 @@ log_error(char* msg);
 #define FAIL() goto finally
 #endif
 
-#define FAIL_IF_NULL(x)                                                        \
+#define FAIL_IF_NULL(ref)                                                      \
   do {                                                                         \
-    if (x == NULL) {                                                           \
+    if (ref == NULL) {                                                         \
       FAIL();                                                                  \
     }                                                                          \
   } while (0)
 
-#define FAIL_IF_MINUS_ONE(x)                                                   \
+#define FAIL_IF_MINUS_ONE(num)                                                 \
   do {                                                                         \
-    if (x != 0) {                                                              \
+    if (num != 0) {                                                            \
       FAIL();                                                                  \
     }                                                                          \
   } while (0)
 
-#define FAIL_IF_ERR_OCCURRED(x)                                                \
+#define FAIL_IF_ERR_OCCURRED()                                                 \
   do {                                                                         \
     if (PyErr_Occurred()) {                                                    \
       FAIL();                                                                  \
