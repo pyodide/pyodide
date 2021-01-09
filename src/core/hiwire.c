@@ -93,9 +93,9 @@ EM_JS(int, hiwire_init, (), {
   {
     // clang-format off
     if ((idval & 1) === 0) {
+      // clang-format on
       // least significant bit unset ==> idval is a singleton.
       // We don't reference count singletons.
-      // clang-format on
       return;
     }
     _hiwire.objects.delete(idval);
@@ -103,7 +103,9 @@ EM_JS(int, hiwire_init, (), {
 
   Module.hiwire.isPromise = function(obj)
   {
-    Object.prototype.toString.call(obj) == = "[object Promise]";
+    // clang-format off
+    Object.prototype.toString.call(obj) === "[object Promise]";
+    // clang-format on
   }
   return 0;
 });
