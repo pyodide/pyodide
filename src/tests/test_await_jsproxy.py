@@ -1,4 +1,3 @@
-from selenium.common.exceptions import WebDriverException
 import pytest
 import time
 
@@ -45,7 +44,7 @@ def test_await_jsproxy(selenium):
     )
     time.sleep(0.01)
     msg = "StopIteration: 17"
-    with pytest.raises(WebDriverException, match=msg):
+    with pytest.raises(selenium.JavascriptException, match=msg):
         selenium.run(
             """
             c.send(r.result())
@@ -77,7 +76,7 @@ def test_await_fetch(selenium):
     )
     time.sleep(0.1)
     msg = "StopIteration: <!doctype html>"
-    with pytest.raises(WebDriverException, match=msg):
+    with pytest.raises(selenium.JavascriptException, match=msg):
         selenium.run(
             """
             c.send(r2.result())
@@ -111,7 +110,7 @@ def test_await_error(selenium):
         """
     )
     msg = "This is an error message!"
-    with pytest.raises(WebDriverException, match=msg):
+    with pytest.raises(selenium.JavascriptException, match=msg):
         # Wait for event loop to go around for chome
         selenium.run(
             """
