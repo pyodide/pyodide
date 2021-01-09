@@ -116,11 +116,12 @@ def test_eval_code_locals():
     with pytest.raises(NameError):
         eval_code("x", globals, {})
 
-    eval_code("import sys; sys.getrecursionlimit()", globals, {})
+    locals = {}
+    eval_code("import sys; sys.getrecursionlimit()", globals, locals)
     with pytest.raises(NameError):
         eval_code("sys.getrecursionlimit()", globals, {})
+    eval_code("sys.getrecursionlimit()", globals, locals)
 
-    locals = {}
     eval_code(
         "from importlib import invalidate_caches; invalidate_caches()", globals, locals
     )
