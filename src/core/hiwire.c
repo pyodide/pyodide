@@ -206,7 +206,8 @@ EM_JS_REF(JsRef, hiwire_float64array, (f64 * ptr, int len), {
   return Module.hiwire.new_value(array);
 })
 
-EM_JS_NUM(errcode, hiwire_throw_error, (JsRef idmsg), {
+// This CANNOT be EM_JS_NUM, that will catch the error we are trying to throw.
+EM_JS(void, hiwire_throw_error, (JsRef idmsg), {
   var jsmsg = Module.hiwire.get_value(idmsg);
   Module.hiwire.decref(idmsg);
   throw new Error(jsmsg);
