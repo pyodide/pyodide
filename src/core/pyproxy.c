@@ -34,7 +34,7 @@ _pyproxy_has(PyObject* pyobj, JsRef idkey)
     item = PyObject_GetAttr(pyobj, pykey);
     FAIL_IF_ERR_NOT_MATCHES(PyExc_AttributeError);
   } else {
-    PyObject* item = PyDict_GetItemWithError(pyobj, pykey);
+    item = PyDict_GetItemWithError(pyobj, pykey);
     Py_XINCREF(item);
     FAIL_IF_ERR_OCCURRED();
   }
@@ -46,7 +46,7 @@ _pyproxy_has(PyObject* pyobj, JsRef idkey)
     Py_XINCREF(builtins);
     FAIL_IF_ERR_OCCURRED();
     if (builtins != NULL) {
-      PyObject* item = PyDict_GetItemWithError(builtins, pykey);
+      item = PyDict_GetItemWithError(builtins, pykey);
       Py_XINCREF(item);
       FAIL_IF_ERR_OCCURRED();
     }
