@@ -1,3 +1,6 @@
+import pytest
+
+
 def test_optlang(selenium):
     selenium.load_package("optlang")
     selenium.run(
