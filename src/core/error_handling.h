@@ -50,8 +50,8 @@ log_error(char* msg);
   EM_JS(ret, func_name, args, body)
 
 #define EM_JS_REF(ret, func_name, args, body...)                               \
-  EM_JS_DEFER(ret, func_name, args, {                                          \
-    /* "use strict";  TODO: enable this. */                                    \
+  EM_JS_DEFER(ret, func_name, args, {                                                \
+    "use strict";                                                              \
     try    /* intentionally no braces, body already has them */                \
       body /* <== body of func */                                              \
     catch (e) {                                                                \
@@ -65,8 +65,8 @@ log_error(char* msg);
   })
 
 #define EM_JS_NUM(ret, func_name, args, body...)                               \
-  EM_JS_DEFER(ret, func_name, args, {                                          \
-    /* "use strict";  TODO: enable this. */                                    \
+  EM_JS_DEFER(ret, func_name, args, {                                                \
+    "use strict";                                                              \
     try    /* intentionally no braces, body already has them */                \
       body /* <== body of func */                                              \
     catch (e) {                                                                \
