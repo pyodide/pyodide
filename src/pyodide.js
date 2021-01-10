@@ -253,8 +253,10 @@ var languagePluginLoader = new Promise((resolve, reject) => {
       // We have to invalidate Python's import caches, or it won't
       // see the new files. This is done here so it happens in parallel
       // with the fetching over the network.
-      self.pyodide.runPython('import importlib as _importlib\n' +
-                             '_importlib.invalidate_caches()\n');
+      self.pyodide.runPythonWithLocals(`
+        import importlib
+        importlib.invalidate_caches()
+      `);
     });
 
     return promise;
@@ -292,8 +294,10 @@ var languagePluginLoader = new Promise((resolve, reject) => {
     if (recursionLimit > 1000) {
       recursionLimit = 1000;
     }
-    pyodide.runPython(
-        `import sys; sys.setrecursionlimit(int(${recursionLimit}))`);
+    pyodide.runPythonWithLocals(`
+      import sys
+      sys.setrecursionlimit(int(${recursionLimit}))
+    `);
   };
 
   ////////////////////////////////////////////////////////////
@@ -328,7 +332,10 @@ var languagePluginLoader = new Promise((resolve, reject) => {
   Module.preloadedWasm = {};
   let isFirefox = navigator.userAgent.toLowerCase().indexOf('firefox') > -1;
 
+  Module.version = Module.pyodide_py.__version__;
   Module.runPython = code => Module.pyodide_py.eval_code(code, Module.globals);
+  Module.runPythonWithLocals = code =>
+      Module.pyodide_py._eval_code_with_locals(code, Module.globals);
 
   // clang-format off
   Module.loadPackagesFromImports  = async function(code, messageCallback, errorCallback) {
