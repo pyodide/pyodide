@@ -2,7 +2,7 @@
 import platform
 
 if platform.system() == "Emscripten":
-    from _core import JsProxy, JsBoundMethod, JsException
+    from _pyodide_core import JsProxy, JsBoundMethod, JsException
 else:
     # Can add shims here if we are so inclined.
     class JsException(Exception):

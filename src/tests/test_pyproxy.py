@@ -62,49 +62,6 @@ def test_pyproxy(selenium):
     assert selenium.run_js("return pyodide.pyimport('f').toString()").startswith("<Foo")
 
 
-def test_pyproxy2(selenium):
-    result = selenium.run_js(
-        """
-        pyodide.runPython(`
-            class Foo:
-                pass
-            f = Foo()
-        `);
-        return pyodide.pyimport('f').toString();
-        """
-    )
-    print(result)
-    assert result.startswith("<Foo")
-
-
-def test_pyproxy3(selenium):
-    selenium.run_js(
-        """
-        window.jspython = pyodide.pyimport("open");
-        pyodide.runPython(`
-            from js import jspython
-            jspython is open
-        `)
-        """
-    )
-
-
-def test_pyproxy4(selenium):
-    selenium.run_js(
-        """
-        window.jspython = pyodide.pyimport("open");
-        console.log("jspython:", window.jspython)
-        """
-    )
-    assert selenium.run(
-        """
-        from js import jspython
-        print(jspython, open)
-        jspython is open
-        """
-    )
-
-
 def test_pyproxy_refcount(selenium):
     selenium.run_js("window.jsfunc = function (f) { f(); }")
     selenium.run(

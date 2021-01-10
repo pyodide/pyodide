@@ -55,7 +55,7 @@ version_info_init()
 
 static struct PyModuleDef core_module_def = {
   PyModuleDef_HEAD_INIT,
-  .m_name = "_core",
+  .m_name = "_pyodide_core",
   .m_doc = "Pyodide C builtins",
   .m_size = -1,
 };
@@ -105,8 +105,8 @@ main(int argc, char** argv)
   TRY_INIT(python2js);
 
   PyObject* module_dict = PyImport_GetModuleDict(); // borrowed
-  if (PyDict_SetItemString(module_dict, "_core", core_module)) {
-    FATAL_ERROR("Failed to add '_core' module to modules dict.");
+  if (PyDict_SetItemString(module_dict, "_pyodide_core", core_module)) {
+    FATAL_ERROR("Failed to add '_pyodide_core' module to modules dict.");
   }
 
   // pyodide.py imported for these two.
