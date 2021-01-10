@@ -1,15 +1,27 @@
 import pytest
 import inspect
+from typing import Optional, List, Callable
 
 
-def run_in_pyodide(_function=None, standalone=False, packages=[]):
+def run_in_pyodide(
+    _function: Optional[Callable] = None,
+    standalone: bool = False,
+    packages: List[str] = [],
+) -> Callable:
     """
     This decorator can be called in two ways --- with arguments and without
     arguments. If it is called without arguments, then the `_function` kwarg
     catches the function the decorator is applied to. Otherewise, standalone
     and packages are the actual arguments to the decorator.
 
-    See docs/testing.md for details on how to use this
+    See docs/testing.md for details on how to use this.
+
+    Parameters
+    ----------
+    standalone : bool, default=False
+        Whether to use a standalone selenium instance to run the test or not
+    packages : List[str]
+        List of packages to load before running the test
     """
 
     def decorator(f):
