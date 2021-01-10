@@ -36,6 +36,7 @@ _pyproxy_has(PyObject* pyobj, JsRef idkey)
     Py_CLEAR(item);
   } else {
     PyObject* item = PyDict_GetItemWithError(pyobj, pykey);
+    Py_XINCREF(item);
     FAIL_IF_ERR_OCCURRED();
     found_item = item != NULL;
     Py_CLEAR(item);
@@ -44,9 +45,11 @@ _pyproxy_has(PyObject* pyobj, JsRef idkey)
   if (!found_item && PyDict_Check(pyobj)) {
     // Not found. Maybe this is a namespace? Try a builtin.
     builtins = _PyDict_GetItemIdWithError(pyobj, &PyId___builtins__);
+    Py_XINCREF(builtins);
     FAIL_IF_ERR_OCCURRED();
     if (builtins != NULL) {
       PyObject* item = PyDict_GetItemWithError(builtins, pykey);
+      Py_XINCREF(item);
       FAIL_IF_ERR_OCCURRED();
       found_item = item != NULL;
       Py_CLEAR(item);
@@ -90,6 +93,7 @@ _pyproxy_get(PyObject* pyobj, JsRef idkey)
   // all, aside from globals which I specifically hand proxy in runpython.c.
   if (PyDict_Check(pyobj)) {
     pyresult = PyDict_GetItemWithError(pyobj, pykey);
+    Py_XINCREF(pyresult);
     FAIL_IF_ERR_OCCURRED();
   } else {
     pyresult = PyObject_GetAttr(pyobj, pykey);
@@ -101,9 +105,11 @@ _pyproxy_get(PyObject* pyobj, JsRef idkey)
   if (pyresult == NULL && PyDict_Check(pyobj)) {
     // Not found. Maybe this is a namespace? Try a builtin.
     builtins = _PyDict_GetItemIdWithError(pyobj, &PyId___builtins__);
+    Py_XINCREF(builtins);
     FAIL_IF_ERR_OCCURRED();
     if (builtins != NULL) {
       pyresult = PyDict_GetItemWithError(builtins, pykey);
+      Py_XINCREF(pyresult);
       FAIL_IF_ERR_OCCURRED();
     }
   }
@@ -278,13 +284,9 @@ EM_JS_NUM(int, pyproxy_init, (), {
     has: function (jsobj, jskey) {
       let ptrobj = this.getPtr(jsobj);
       let idkey = Module.hiwire.new_value(jskey);
-<<<<<<< HEAD
       let idresult = __pyproxy_has(ptrobj, idkey);
       let result = Module.hiwire.get_value(idresult);
       Module.hiwire.decref(idresult);
-=======
-      let result = __pyproxy_has(ptrobj, idkey) !== 0;
->>>>>>> master
       Module.hiwire.decref(idkey);
       return result;
     },
