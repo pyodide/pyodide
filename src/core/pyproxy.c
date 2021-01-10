@@ -1,6 +1,6 @@
 #define PY_SSIZE_T_CLEAN
-#include "error_handling.h"
 #include <Python.h>
+#include "error_handling.h"
 #include <emscripten.h>
 
 #include "hiwire.h"
