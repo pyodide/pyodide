@@ -139,7 +139,7 @@ jobs:
       - run:
           name: test
           command: |
-            tools/pytest_wrapper.py src packages/micropip/ -v -k firefox -n 3
+            tools/pytest_wrapper.py src packages/micropip/ -k firefox -n 3
 
   test-core-chrome:
     <<: *defaults
@@ -149,7 +149,7 @@ jobs:
       - run:
           name: test
           command: |
-            tools/pytest_wrapper.py src packages/micropip/ -v -k chrome -n 3
+            tools/pytest_wrapper.py src packages/micropip/ -k chrome -n 3
 
   test-packages-firefox:
     <<: *defaults
@@ -159,7 +159,7 @@ jobs:
       - run:
           name: test
           command: |
-            tools/pytest_wrapper.py packages/test* packages/*/test* -v -k firefox -n 2
+            tools/pytest_wrapper.py packages/test* packages/*/test* -k firefox -n 2
 
   test-packages-chrome:
     <<: *defaults
@@ -169,7 +169,7 @@ jobs:
       - run:
           name: test
           command: |
-            tools/pytest_wrapper.py packages/test* packages/*/test* -v -k chrome -n 2
+            tools/pytest_wrapper.py packages/test* packages/*/test* -k chrome -n 2
 
   test-emsdk:
     <<: *defaults
@@ -187,7 +187,7 @@ jobs:
       - run:
           name: test
           command: |
-            pytest src pyodide_build packages/micropip/ -v -k 'not (chrome or firefox)' --cov=pyodide_build --cov=pyodide
+            pytest -r fE -v src pyodide_build packages/micropip/ -k 'not (chrome or firefox)' --cov=pyodide_build --cov=pyodide
 
   benchmark:
     <<: *defaults

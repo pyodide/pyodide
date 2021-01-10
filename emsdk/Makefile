@@ -19,7 +19,7 @@ emsdk/.complete: ../Makefile.envs $(wildcard patches/*.patch)
 
 .PHONY: test
 test:
-	pytest tests/ -v
+	pytest tests/ -v -r fE
 
 clean:
 	rm -rf emsdk
