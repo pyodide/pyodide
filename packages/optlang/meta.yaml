@@ -1,10 +1,10 @@
 package:
   name: optlang
-  version: 1.4.4
+  version: 1.4.7
 
 source:
-  sha256: 3cff64dae1ebe8eaef6291c2d1b4f459d58f97ee73b4757e7584d764eb4a0031
-  url: https://files.pythonhosted.org/packages/13/e4/f755f3cd8371a3cdc620bb8460f8afcd7e0a13b894067cdf12b4740fa740/optlang-1.4.4.tar.gz
+  sha256: 0c9d7aae9babd5f9eac296b6f975a0e475545ac7ced9790f43796671157eb017
+  url: https://files.pythonhosted.org/packages/47/85/9d028fbc971b1db9b8c3e58072237e8a7fda5cd936dd73f0b179805b5464/optlang-1.4.7.tar.gz
 
 requirements:
   run:
@@ -14,6 +14,6 @@ requirements:
 
 test:
   imports:
-  - optlang
-  - optlang.glpk_interface
-  - optlang.symbolics
+    - optlang
+    - optlang.glpk_interface
+    - optlang.symbolics
