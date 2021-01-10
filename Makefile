@@ -73,8 +73,8 @@ build/pyodide.asm.js: src/core/main.o src/core/jsimport.o \
 		--preload-file src/_testcapi.py@/lib/python$(PYMINOR)/_testcapi.py \
 		--preload-file src/pystone.py@/lib/python$(PYMINOR)/pystone.py \
 		--preload-file src/pyodide-py/pyodide@/lib/python$(PYMINOR)/site-packages/pyodide \
-		--exclude-file __pycache__ \
-		--exclude-file /lib/python$(PYMINOR)/test/
+		--exclude-file "*__pycache__*" \
+		--exclude-file "*/test/*"
 	date +"[%F %T] done building pyodide.asm.js."
 
 
