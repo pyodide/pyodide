@@ -2,7 +2,7 @@
 #define MY_TYPES_H
 // https://elixir.bootlin.com/linux/latest/source/arch/powerpc/boot/types.h#L9
 #define PY_SSIZE_T_CLEAN
-#include <Python.h>
+#include "Python.h"
 
 #include "stdbool.h"
 #include "stdint.h"

@@ -4,7 +4,7 @@
 /** Utilities to convert Python buffer objects to Javascript.
  */
 #define PY_SSIZE_T_CLEAN
-#include <Python.h>
+#include "Python.h"
 #include "hiwire.h"
 
 /** Convert a Python buffer object to a Javascript object.

@@ -5,7 +5,7 @@
  * Utilities to convert Javascript objects to Python objects.
  */
 #define PY_SSIZE_T_CLEAN
-#include <Python.h>
+#include "Python.h"
 #include "hiwire.h"
 
 /** Convert a Javascript object to a Python object.
