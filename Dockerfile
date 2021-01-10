@@ -1,9 +1,10 @@
-FROM python:3.8.2-buster
+FROM python:3.8.2-slim-buster
 
 RUN apt-get update \
   && apt-get install -y --no-install-recommends \
                   # building packages
-                  bzip2 ccache clang-format-6.0 cmake f2c g++ gfortran libtinfo5 swig \
+                  bzip2 ccache clang-format-6.0 cmake f2c g++ gfortran git make \
+                  patch pkg-config swig unzip wget xz-utils \
                   # testing packages: libgconf-2-4 is necessary for running chromium
                   libgconf-2-4 chromium \
   && rm -rf /var/lib/apt/lists/*
