@@ -122,3 +122,49 @@ def test_monkeypatch_eval_code(selenium):
     )
     assert selenium.run("x = 99; 5") == [3, 5]
     assert selenium.run("7") == [99, 7]
+
+
+def test_hiwire_is_promise(selenium):
+    for s in [
+        "0",
+        "1",
+        "'x'",
+        "''",
+        "document.all",
+        "false",
+        "undefined",
+        "null",
+        "NaN",
+        "0n",
+        "[0,1,2]",
+        "[]",
+        "{}",
+        "{a : 2}",
+        "(()=>{})",
+        "((x) => x*x)",
+        "(function(x, y){ return x*x + y*y; })",
+        "Array",
+        "Map",
+        "Set",
+        "Promise",
+        "new Array()",
+        "new Map()",
+        "new Set()",
+    ]:
+        assert not selenium.run_js(f"return pyodide._module.hiwire.isPromise({s})")
+
+    assert selenium.run_js(
+        "return pyodide._module.hiwire.isPromise(Promise.resolve());"
+    )
+
+    assert selenium.run_js(
+        """
+        return pyodide._module.hiwire.isPromise(new Promise((resolve, reject) => {}));
+        """
+    )
+
+    assert not selenium.run_js(
+        """
+        return pyodide._module.hiwire.isPromise(pyodide.globals);
+        """
+    )
