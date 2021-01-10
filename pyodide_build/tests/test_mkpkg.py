@@ -36,7 +36,7 @@ def test_mkpkg_update(tmpdir, monkeypatch):
             "sha256": "b307872f855b18632ce0c21c5e45be78c0ea7ae4c15c828c20788b26921eb3f6",
             "url": "https://<some>/idna-2.0.tar.gz",
         },
-        "test": {"imports": ["idna"], "custom": 2},
+        "test": {"imports": ["idna"]},
     }
 
     os.mkdir(base_dir / "idna")
