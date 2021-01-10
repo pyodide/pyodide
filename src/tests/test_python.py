@@ -182,6 +182,22 @@ def test_del_builtin(selenium):
     assert selenium.run_js("""!!pyodide.pyimport("open")""")
 
 
+def test_in_pyproxy(selenium):
+    selenium.run("yyyyy = 7")
+    assert (
+        selenium.run_js(
+            """
+            let result = [];
+            result.push("xxxxx" in pyodide.globals);
+            result.push("yyyyy" in pyodide.globals);
+            result.push("globals" in pyodide.globals);
+            result.push("open" in pyodide.globals);
+            """
+        )
+        == [False, True, True, True]
+    )
+
+
 def test_run_python_debug(selenium):
     assert selenium.run_js("return pyodide._module.runPythonDebug('1+1');") == 2
     assert selenium.run_js(
