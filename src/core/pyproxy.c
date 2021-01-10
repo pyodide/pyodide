@@ -6,6 +6,8 @@
 #include "js2python.h"
 #include "python2js.h"
 
+_Py_IDENTIFIER(__builtins__);
+
 JsRef
 _pyproxy_repr(PyObject* pyobj)
 {
@@ -25,8 +27,13 @@ _pyproxy_has(PyObject* pyobj, JsRef idkey)
   return result;
 }
 
-// Fails with an exception set if a problem occurs
-// If function succeeds but
+/**
+ * If _pyproxy_get succeeds but the key is not found, it returns
+ * hiwire_undefined. (Is this what we should do?) If the object is a dict with a
+ * __builtins__ field, treat it as a global namespace. In this case if the key
+ * is not found as an item in the dict, try looking it up in __builtins__. This
+ * mimics normal python name resolution on a global namespace.
+ */
 JsRef
 _pyproxy_get(PyObject* pyobj, JsRef idkey)
 {
@@ -56,7 +63,7 @@ _pyproxy_get(PyObject* pyobj, JsRef idkey)
     if (!PyDict_Check(pyobj)) {
       goto finished_builtin_handling;
     }
-    builtins = _PyObject_GetItemId(pyobj, &PyId___builtins__);
+    builtins = _PyDict_GetItemId(pyobj, &PyId___builtins__);
     if (builtins == NULL) {
       goto finished_builtin_handling;
     }

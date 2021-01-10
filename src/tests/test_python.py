@@ -169,6 +169,19 @@ def test_unknown_attribute(selenium):
     )
 
 
+def test_del_builtin(selenium):
+    msg = "NameError"
+    with pytest.raises(selenium_standalone.JavascriptException, match=msg):
+        # can't del a builtin
+        selenium.run(
+            """
+            del globals
+            """
+        )
+    # Can still pyimport it even though we tried to del it.
+    assert selenium.run_js("""!!pyodide.pyimport("open")""")
+
+
 def test_run_python_debug(selenium):
     assert selenium.run_js("return pyodide._module.runPythonDebug('1+1');") == 2
     assert selenium.run_js(

@@ -68,7 +68,7 @@ runpython_init()
   JsRef globals_proxy = NULL;
 
   // globals is static variable
-  globals = PyDict_New(__main__);
+  globals = PyDict_New();
   FAIL_IF_NULL(globals);
 
   // pyodide_py is static variable
