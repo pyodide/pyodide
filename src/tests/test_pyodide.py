@@ -192,3 +192,26 @@ def test_hiwire_is_promise(selenium):
         return pyodide._module.hiwire.isPromise(pyodide.globals);
         """
     )
+
+
+def test_run_python_with_locals(selenium):
+    msg = "NameError"
+    with pytest.raises(selenium.JsException, match=msg):
+        selenium.run("_importlib")
+    with pytest.raises(selenium.JsException, match=msg):
+        selenium.run("importlib")
+    with pytest.raises(selenium.JsException, match=msg):
+        selenium.run("sys")
+
+    selenium.run_js(
+        """
+        pyodide._module.runPythonWithLocals(`
+            x = 2
+            global y
+            y = 3
+        `);
+        """
+    )
+    with pytest.raises(selenium.JsException, match=msg):
+        selenium.run("x")
+    assert selenium.run("y") == 3
