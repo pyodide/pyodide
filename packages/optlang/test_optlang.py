@@ -27,8 +27,8 @@ status = model.optimize()
     )
     result = selenium.run("""model.status""")
     assert result == "optimal"
-    result = selenium.run("""'%.4f' % model.objective.value""")
-    assert result == "733.3333"
+    result = selenium.run("model.objective.value")
+    assert result == pytest.approx(733.3333, abs=1e-4)
     result = selenium.run("""'%.4f' % model.variables['x1'].primal""")
     assert result == "33.3333"
     result = selenium.run("""'%.4f' % model.variables['x2'].primal""")
