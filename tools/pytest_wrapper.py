@@ -7,6 +7,7 @@ import sys
 EXTRA_ARGS = ["-v", "-r", "fE"]
 args = EXTRA_ARGS + sys.argv[1:]
 
+
 def clean_args(args: List[str]) -> None:
     """Remove -n <n> from argument list"""
     for i in range(0, len(args)):
