@@ -1,5 +1,7 @@
+// clang-format off
 #define PY_SSIZE_T_CLEAN
 #include "Python.h"
+// clang-format on
 #include "error_handling.h"
 #include "jsproxy.h"
 #include <emscripten.h>

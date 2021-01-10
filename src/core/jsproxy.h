@@ -1,7 +1,9 @@
 #ifndef JSPROXY_H
 #define JSPROXY_H
+// clang-format off
 #define PY_SSIZE_T_CLEAN
 #include "Python.h"
+// clang-format on
 #include "hiwire.h"
 
 /** A Python object that a Javascript object inside. Used for any non-standard

@@ -3,8 +3,10 @@
 
 /** Utilities to convert Python objects to Javascript.
  */
+// clang-format off
 #define PY_SSIZE_T_CLEAN
 #include "Python.h"
+// clang-format on
 #include "hiwire.h"
 
 /** Convert the active Python exception into a Javascript Error object
