@@ -179,7 +179,7 @@ def test_del_builtin(selenium):
             """
         )
     # Can still pyimport it even though we tried to del it.
-    assert selenium.run_js("""!!pyodide.pyimport("open")""")
+    assert selenium.run_js("""return !!pyodide.pyimport("open");""")
 
 
 def test_in_pyproxy(selenium):
@@ -192,6 +192,7 @@ def test_in_pyproxy(selenium):
             result.push("yyyyy" in pyodide.globals);
             result.push("globals" in pyodide.globals);
             result.push("open" in pyodide.globals);
+            return result;
             """
         )
         == [False, True, True, True]
