@@ -33,15 +33,14 @@ _pyproxy_has(PyObject* pyobj, JsRef idkey)
   if (!PyDict_Check(pyobj)) {
     item = PyObject_GetAttr(pyobj, pykey);
     FAIL_IF_ERR_NOT_MATCHES(PyExc_AttributeError);
-    found_item = item != NULL;
   } else {
     PyObject* item = PyDict_GetItemWithError(pyobj, pykey);
     Py_XINCREF(item);
     FAIL_IF_ERR_OCCURRED();
-    found_item = item != NULL;
   }
+  PyErr_Clear();
 
-  if (!found_item && PyDict_Check(pyobj)) {
+  if (item == NULL && PyDict_Check(pyobj)) {
     // Not found. Maybe this is a namespace? Try a builtin.
     builtins = _PyDict_GetItemIdWithError(pyobj, &PyId___builtins__);
     Py_XINCREF(builtins);
@@ -50,11 +49,11 @@ _pyproxy_has(PyObject* pyobj, JsRef idkey)
       PyObject* item = PyDict_GetItemWithError(builtins, pykey);
       Py_XINCREF(item);
       FAIL_IF_ERR_OCCURRED();
-      found_item = item != NULL;
     }
   }
+  PyErr_Clear();
 
-  result = hiwire_bool(found_item);
+  result = hiwire_bool(item != NULL);
   success = true;
 finally:
   Py_CLEAR(item);
@@ -113,8 +112,8 @@ _pyproxy_get(PyObject* pyobj, JsRef idkey)
     }
   }
 
+  PyErr_Clear();
   if (pyresult == NULL) {
-    PyErr_Clear();
     result = hiwire_undefined();
   } else {
     result = python2js(pyresult);
