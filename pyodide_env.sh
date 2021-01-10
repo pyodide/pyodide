@@ -6,3 +6,4 @@ ROOT=`dirname ${BASH_SOURCE[0]}`
 # exist yet (i.e. before building emsdk)
 source "$ROOT/emsdk/emsdk/emsdk_env.sh" 2> /dev/null || true
 export PATH=$ROOT/ccache:$ROOT/node_modules/.bin/:$PATH
+export EM_DIR=$(dirname $(which emcc.py || echo "."))

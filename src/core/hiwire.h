@@ -1,5 +1,6 @@
 #ifndef HIWIRE_H
 #define HIWIRE_H
+#define PY_SSIZE_T_CLEAN
 #include "Python.h"
 #include "stdalign.h"
 #include "types.h"
@@ -450,6 +451,20 @@ hiwire_is_function(JsRef idobj);
 
 bool
 hiwire_function_supports_kwargs(JsRef idfunc);
+
+/**
+ * Returns true if the object is a promise.
+ */
+bool
+hiwire_is_promise(JsRef idobj);
+
+/**
+ * Returns Promise.resolve(obj)
+ *
+ * Returns: New reference to Javascript promise
+ */
+JsRef
+hiwire_resolve_promise(JsRef idobj);
 
 /**
  * Gets the string representation of an object by calling `toString`.
