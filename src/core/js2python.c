@@ -90,7 +90,7 @@ EM_JS_REF(PyObject*, __js2python, (JsRef id), {
     let max_code_point = 0;
     let length = value.length;
     for (let i = 0; i < value.length; i++) {
-      code_point = value.codePointAt(i);
+      let code_point = value.codePointAt(i);
       max_code_point = Math.max(max_code_point, code_point);
       if (code_point > 0xffff) {
         // If we have a code point requiring UTF-16 surrogate pairs, the
@@ -102,7 +102,9 @@ EM_JS_REF(PyObject*, __js2python, (JsRef id), {
     }
 
     let result = __js2python_allocate_string(length, max_code_point);
-    if (result == 0) {
+    // clang-format off
+    if (result === 0) {
+      // clang-format on
       return 0;
     }
 
