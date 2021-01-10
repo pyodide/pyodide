@@ -28,7 +28,7 @@ model.add([c1, c2, c3])
 status = model.optimize()
 """
     )
-    result = selenium.run("""model.status""")
+    result = selenium.run("model.status")
     assert result == "optimal"
     result = selenium.run("model.objective.value")
     assert result == pytest.approx(733.3333, abs=1e-4)
