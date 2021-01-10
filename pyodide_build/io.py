@@ -70,8 +70,12 @@ def check_package_config(
 
     # Check subsections
     for section_key in config:
+        if section_key not in PACKAGE_CONFIG_SPEC:
+            # Don't check subsections is the main section is invalid
+            continue
         actual_keys = set(config[section_key].keys())
         expected_keys = set(PACKAGE_CONFIG_SPEC[section_key].keys())
+
         wrong_keys = set(actual_keys).difference(expected_keys)
         if wrong_keys:
             errors_msg.append(
@@ -87,12 +91,13 @@ def check_package_config(
             try:
                 expected_type = PACKAGE_CONFIG_SPEC[section_key][subsection_key]
             except KeyError:
-                # Unkown key, which was already reported previously
+                # Unkown key, which was already reported previously, don't
+                # check types
                 continue
             if not isinstance(value, expected_type):
                 errors_msg.append(
                     f"Wrong type for '{section_key}/{subsection_key}': "
-                    f"expected {expected_type}, got {type(value)}."
+                    f"expected {expected_type.__name__}, got {type(value).__name__}."
                 )
 
     if raise_errors and errors_msg:

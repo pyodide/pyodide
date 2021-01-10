@@ -261,7 +261,7 @@ def build_package(path: Path, args):
     name = pkg["package"]["name"]
     t0 = datetime.now()
     print("[{}] Building package {}...".format(t0.strftime("%Y-%m-%d %H:%M:%S"), name))
-    packagedir = name + "-" + str(pkg["package"]["version"])
+    packagedir = name + "-" + pkg["package"]["version"]
     dirpath = path.parent
     orig_path = Path.cwd()
     os.chdir(dirpath)
