@@ -1,5 +1,24 @@
-diff --git a/scipy/linalg/_cython_wrapper_generators.py b/scipy/linalg/_cython_wrapper_generators.py
-index 62be001..ec44713 100644
+The return values of f2c functions are insignificant in most cases, so often it
+is treated as returning void, when it really should return int (values are
+"returned" by writing to pointers passed as an argument, but an obscure feature
+known as alternative returns can cause the return value to be significant).
+
+emscripten is more strict about void vs int returns, so we change everything to
+return int.
+
+scipy uses a large amount of f2c functions, and it is infeasible to patch these
+by hand. Fortunately, most of the headers are machine generated. Starting with
+the lapack source files, apply _cython_signature_generators.py to get some .txt
+files, then apply _cython_wrapper_generators.py to generate the header files
+from the .txt files.
+
+To avoid having to fetch the original Fortran lapack source files, we only
+patch _cython_wrapper_generators.py and tell it to replace every instance of
+void with int. We then regenerate header files from the vendored (and
+incorrect) .txt files.
+
+Of course, there is still non-generated code that needs to be patched by hand.
+
 --- a/scipy/linalg/_cython_wrapper_generators.py
 +++ b/scipy/linalg/_cython_wrapper_generators.py
 @@ -15,7 +15,8 @@ fortran_types = {'int': 'integer',
@@ -59,8 +78,6 @@ index 62be001..ec44713 100644
  
  
  def c_sub_decl(name, return_type, args):
-diff --git a/scipy/sparse/linalg/dsolve/SuperLU/SRC/ilu_ccopy_to_ucol.c b/scipy/sparse/linalg/dsolve/SuperLU/SRC/ilu_ccopy_to_ucol.c
-index 5a7203d..a17a3e0 100644
 --- a/scipy/sparse/linalg/dsolve/SuperLU/SRC/ilu_ccopy_to_ucol.c
 +++ b/scipy/sparse/linalg/dsolve/SuperLU/SRC/ilu_ccopy_to_ucol.c
 @@ -16,7 +16,7 @@
@@ -72,8 +89,6 @@ index 5a7203d..a17a3e0 100644
  #if SCIPY_FIX
  extern double dlamch_(char *);
  #endif
-diff --git a/scipy/sparse/linalg/dsolve/SuperLU/SRC/ilu_cdrop_row.c b/scipy/sparse/linalg/dsolve/SuperLU/SRC/ilu_cdrop_row.c
-index 44173c8..bf8de6f 100644
 --- a/scipy/sparse/linalg/dsolve/SuperLU/SRC/ilu_cdrop_row.c
 +++ b/scipy/sparse/linalg/dsolve/SuperLU/SRC/ilu_cdrop_row.c
 @@ -14,8 +14,8 @@
@@ -87,8 +102,6 @@ index 44173c8..bf8de6f 100644
  extern float scasum_(int *, complex *, int *);
  extern float scnrm2_(int *, complex *, int *);
  extern double dnrm2_(int *, double [], int *);
-diff --git a/scipy/sparse/linalg/dsolve/SuperLU/SRC/ilu_dcopy_to_ucol.c b/scipy/sparse/linalg/dsolve/SuperLU/SRC/ilu_dcopy_to_ucol.c
-index e9162a7..0120565 100644
 --- a/scipy/sparse/linalg/dsolve/SuperLU/SRC/ilu_dcopy_to_ucol.c
 +++ b/scipy/sparse/linalg/dsolve/SuperLU/SRC/ilu_dcopy_to_ucol.c
 @@ -16,7 +16,7 @@
@@ -100,8 +113,6 @@ index e9162a7..0120565 100644
  
  #if 0
  static double *A;  /* used in _compare_ only */
-diff --git a/scipy/sparse/linalg/dsolve/SuperLU/SRC/ilu_ddrop_row.c b/scipy/sparse/linalg/dsolve/SuperLU/SRC/ilu_ddrop_row.c
-index a08c85c..e556370 100644
 --- a/scipy/sparse/linalg/dsolve/SuperLU/SRC/ilu_ddrop_row.c
 +++ b/scipy/sparse/linalg/dsolve/SuperLU/SRC/ilu_ddrop_row.c
 @@ -14,8 +14,8 @@
@@ -115,8 +126,6 @@ index a08c85c..e556370 100644
  extern double dasum_(int *, double *, int *);
  extern double dnrm2_(int *, double *, int *);
  extern double dnrm2_(int *, double [], int *);
-diff --git a/scipy/sparse/linalg/dsolve/SuperLU/SRC/ilu_scopy_to_ucol.c b/scipy/sparse/linalg/dsolve/SuperLU/SRC/ilu_scopy_to_ucol.c
-index b9fd387..3774cf2 100644
 --- a/scipy/sparse/linalg/dsolve/SuperLU/SRC/ilu_scopy_to_ucol.c
 +++ b/scipy/sparse/linalg/dsolve/SuperLU/SRC/ilu_scopy_to_ucol.c
 @@ -16,7 +16,7 @@
@@ -128,8 +137,6 @@ index b9fd387..3774cf2 100644
  #if SCIPY_FIX
  extern double dlamch_(char *);
  #endif
-diff --git a/scipy/sparse/linalg/dsolve/SuperLU/SRC/ilu_sdrop_row.c b/scipy/sparse/linalg/dsolve/SuperLU/SRC/ilu_sdrop_row.c
-index 108f849..d37f863 100644
 --- a/scipy/sparse/linalg/dsolve/SuperLU/SRC/ilu_sdrop_row.c
 +++ b/scipy/sparse/linalg/dsolve/SuperLU/SRC/ilu_sdrop_row.c
 @@ -13,9 +13,9 @@
@@ -145,8 +152,6 @@ index 108f849..d37f863 100644
  extern float sasum_(int *, float *, int *);
  extern float snrm2_(int *, float *, int *);
  extern double dnrm2_(int *, double [], int *);
-diff --git a/scipy/sparse/linalg/dsolve/SuperLU/SRC/ilu_zcopy_to_ucol.c b/scipy/sparse/linalg/dsolve/SuperLU/SRC/ilu_zcopy_to_ucol.c
-index ddf3a63..8e96e32 100644
 --- a/scipy/sparse/linalg/dsolve/SuperLU/SRC/ilu_zcopy_to_ucol.c
 +++ b/scipy/sparse/linalg/dsolve/SuperLU/SRC/ilu_zcopy_to_ucol.c
 @@ -16,7 +16,7 @@
@@ -158,8 +163,6 @@ index ddf3a63..8e96e32 100644
  
  #if 0
  static doublecomplex *A;  /* used in _compare_ only */
-diff --git a/scipy/sparse/linalg/dsolve/SuperLU/SRC/ilu_zdrop_row.c b/scipy/sparse/linalg/dsolve/SuperLU/SRC/ilu_zdrop_row.c
-index 0a140d4..87dd1ae 100644
 --- a/scipy/sparse/linalg/dsolve/SuperLU/SRC/ilu_zdrop_row.c
 +++ b/scipy/sparse/linalg/dsolve/SuperLU/SRC/ilu_zdrop_row.c
 @@ -14,8 +14,8 @@
@@ -173,8 +176,6 @@ index 0a140d4..87dd1ae 100644
  extern double dzasum_(int *, doublecomplex *, int *);
  extern double dznrm2_(int *, doublecomplex *, int *);
  extern double dnrm2_(int *, double [], int *);
-diff --git a/scipy/sparse/linalg/dsolve/SuperLU/SRC/scomplex.c b/scipy/sparse/linalg/dsolve/SuperLU/SRC/scomplex.c
-index 2f78c07..7169dd7 100644
 --- a/scipy/sparse/linalg/dsolve/SuperLU/SRC/scomplex.c
 +++ b/scipy/sparse/linalg/dsolve/SuperLU/SRC/scomplex.c
 @@ -19,7 +19,7 @@
@@ -194,8 +195,6 @@ index 2f78c07..7169dd7 100644
  }
  
  
-diff --git a/scipy/sparse/linalg/dsolve/SuperLU/SRC/slu_scomplex.h b/scipy/sparse/linalg/dsolve/SuperLU/SRC/slu_scomplex.h
-index c17490d..892bc87 100644
 --- a/scipy/sparse/linalg/dsolve/SuperLU/SRC/slu_scomplex.h
 +++ b/scipy/sparse/linalg/dsolve/SuperLU/SRC/slu_scomplex.h
 @@ -58,7 +58,7 @@ extern "C" {
@@ -207,8 +206,6 @@ index c17490d..892bc87 100644
  double c_abs(complex *);     /* exact */
  double c_abs1(complex *);    /* approximate */
  void c_exp(complex *, complex *);
-diff --git a/scipy/sparse/linalg/eigen/arpack/ARPACK/SRC/debug.h b/scipy/sparse/linalg/eigen/arpack/ARPACK/SRC/debug.h
-index 5eb0bb1..03fb23d 100644
 --- a/scipy/sparse/linalg/eigen/arpack/ARPACK/SRC/debug.h
 +++ b/scipy/sparse/linalg/eigen/arpack/ARPACK/SRC/debug.h
 @@ -1,16 +1,16 @@
@@ -238,8 +235,6 @@ index 5eb0bb1..03fb23d 100644
 +c     &         msaupd, msaup2, msaitr, mseigt, msapps, msgets, mseupd,
 +c     &         mnaupd, mnaup2, mnaitr, mneigh, mnapps, mngets, mneupd,
 +c     &         mcaupd, mcaup2, mcaitr, mceigh, mcapps, mcgets, mceupd
-diff --git a/scipy/sparse/linalg/eigen/arpack/ARPACK/SRC/stat.h b/scipy/sparse/linalg/eigen/arpack/ARPACK/SRC/stat.h
-index 66a8e9f..1f2d49c 100644
 --- a/scipy/sparse/linalg/eigen/arpack/ARPACK/SRC/stat.h
 +++ b/scipy/sparse/linalg/eigen/arpack/ARPACK/SRC/stat.h
 @@ -5,17 +5,17 @@ c

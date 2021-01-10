@@ -1,10 +1,12 @@
+#define PY_SSIZE_T_CLEAN
+#include "Python.h"
+
 #include "jsproxy.h"
 
 #include "hiwire.h"
 #include "js2python.h"
 #include "python2js.h"
 
-#include "Python.h"
 #include "structmember.h"
 
 static PyTypeObject* PyExc_BaseException_Type;
