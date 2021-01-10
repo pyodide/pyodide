@@ -1,6 +1,8 @@
-#include "error_handling.h"
+// clang-format off
+#define PY_SSIZE_T_CLEAN
 #include "Python.h"
-#include "hiwire.h"
+// clang-format on
+#include "error_handling.h"
 #include "jsproxy.h"
 #include <emscripten.h>
 
@@ -20,11 +22,12 @@ int
 error_handling_init()
 {
   EM_ASM({
-    Module.handle_js_error = function(e){
+    Module.handle_js_error = function(e)
+    {
       let err = Module.hiwire.new_value(e);
       PyodideErr_SetJsError(err);
       Module.hiwire.decref(err);
-}
-});
-return 0;
+    };
+  });
+  return 0;
 }

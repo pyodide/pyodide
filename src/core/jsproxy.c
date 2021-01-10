@@ -1,12 +1,11 @@
 #define PY_SSIZE_T_CLEAN
-#include <Python.h>
+#include "Python.h"
 
 #include "jsproxy.h"
-
-#include "Python.h"
 #include "hiwire.h"
 #include "js2python.h"
 #include "python2js.h"
+
 #include "structmember.h"
 
 _Py_IDENTIFIER(get_event_loop);

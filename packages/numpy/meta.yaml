@@ -16,6 +16,7 @@ source:
     - patches/init-alloc-cache.patch
     - patches/use-local-blas-lapack.patch
     - patches/fix-install-with-skip-build.patch
+    - patches/make-int-return-values.patch
 
 build:
   skip_host: False
