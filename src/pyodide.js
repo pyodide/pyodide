@@ -304,11 +304,9 @@ var languagePluginLoader = new Promise((resolve, reject) => {
     'loadPackagesFromImports',
     'loadedPackages',
     'pyimport',
-    'repr',
     'runPython',
     'runPythonAsync',
     'version',
-    'autocomplete',
   ];
 
   function makePublicAPI(module, public_api) {
@@ -363,39 +361,16 @@ var languagePluginLoader = new Promise((resolve, reject) => {
     return Module.runPython(code);
   };
 
-  Module.version = function() { return Module.pyodide_py.__version__; };
-
-  Module.autocomplete = function(path) {
-    var pyodide_module = Module.pyimport("pyodide");
-    return pyodide_module.get_completions(path);
-  };
-
   Module.locateFile = (path) => baseURL + path;
-  var postRunPromise = new Promise((resolve, reject) => {
-    Module.postRun = () => {
-      delete self.Module;
-      fetch(`${baseURL}packages.json`)
-          .then((response) => response.json())
-          .then((json) => {
-            fixRecursionLimit(self.pyodide);
-            self.pyodide = makePublicAPI(self.pyodide, PUBLIC_API);
-            self.pyodide._module.packages = json;
-            resolve();
-          });
-    };
-  });
-
-  var dataLoadPromise = new Promise((resolve, reject) => {
-    Module.monitorRunDependencies =
-        (n) => {
-          if (n === 0) {
-            delete Module.monitorRunDependencies;
-            resolve();
-          }
-        }
-  });
-
-  Promise.all([ postRunPromise, dataLoadPromise ]).then(() => resolve());
+  Module.postRun = async () => {
+    delete self.Module;
+    let response = await fetch(`${baseURL}packages.json`);
+    let json = await response.json();
+    fixRecursionLimit(self.pyodide);
+    self.pyodide = makePublicAPI(self.pyodide, PUBLIC_API);
+    self.pyodide._module.packages = json;
+    resolve();
+  };
 
   const scriptSrc = `${baseURL}pyodide.asm.js`;
   loadScript(scriptSrc, () => {

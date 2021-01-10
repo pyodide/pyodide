@@ -3,9 +3,9 @@ package:
   version: 3.2.1
 
 source:
+  sha256: 6dc4c382164beec8aaed8fd2acc36ad24232c406eda6db462bd4c41d5e455fac
   url: http://www.netlib.org/clapack/clapack.tgz
   extract_dir: CLAPACK-3.2.1
-  sha256sum: 6dc4c382164beec8aaed8fd2acc36ad24232c406eda6db462bd4c41d5e455fac
   patches:
     - patches/0001-add-missing-import.patch
     - patches/0002-fix-arith-h.patch

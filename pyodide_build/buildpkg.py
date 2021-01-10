@@ -173,7 +173,7 @@ def compile(path: Path, srcpath: Path, pkg: Dict[str, Any], args):
         site_packages_dir = srcpath / "install" / "lib" / "python3.8" / "site-packages"
         pkgdir = path.parent.resolve()
         env = {"SITEPACKAGES": str(site_packages_dir), "PKGDIR": str(pkgdir)}
-        subprocess.run(["bash", "-c", post], env=env, check=True)
+        subprocess.run(["bash", "-ce", post], env=env, check=True)
 
     with open(srcpath / ".built", "wb") as fd:
         fd.write(b"\n")
@@ -188,7 +188,7 @@ def package_files(buildpath: Path, srcpath: Path, pkg: Dict[str, Any], args):
     subprocess.run(
         [
             "python",
-            common.PACKAGERDIR / "file_packager.py",
+            common.file_packager_path(),
             name + ".data",
             "--lz4",
             "--preload",
@@ -224,12 +224,12 @@ def run_script(buildpath: Path, srcpath: Path, pkg: Dict[str, Any]):
     orig_path = Path.cwd()
     os.chdir(srcpath)
     try:
-        subprocess.run(["bash", "-c", pkg["build"]["script"]], check=True)
+        subprocess.run(["bash", "-ce", pkg["build"]["script"]], check=True)
     finally:
         os.chdir(orig_path)
 
-    if pkg.get("build", {}).get("library"):
-        # in libraries this  writes the packaged flag
+    # If library, we're done so create .packaged file
+    if pkg["build"].get("library"):
         with open(buildpath / ".packaged", "wb") as fd:
             fd.write(b"\n")
 

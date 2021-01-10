@@ -26,6 +26,10 @@ source:
 build:
   cflags: -I../../../CLAPACK/build/CLAPACK-3.2.1/INCLUDE -Wno-implicit-function-declaration
   ldflags: -L$(PYODIDE_ROOT)/packages/numpy/build/numpy-1.15.4/install/lib/python3.8/site-packages/numpy/core/lib/
+  script: |
+    cd scipy/linalg
+    python _cython_wrapper_generators.py
+    cd ..
 
 requirements:
   run:
