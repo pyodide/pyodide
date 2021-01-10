@@ -253,7 +253,7 @@ var languagePluginLoader = new Promise((resolve, reject) => {
       // We have to invalidate Python's import caches, or it won't
       // see the new files. This is done here so it happens in parallel
       // with the fetching over the network.
-      self.pyodide.runPythonWithLocals(`
+      self.pyodide._module.runPythonWithLocals(`
         import importlib
         importlib.invalidate_caches()
       `);
@@ -294,7 +294,7 @@ var languagePluginLoader = new Promise((resolve, reject) => {
     if (recursionLimit > 1000) {
       recursionLimit = 1000;
     }
-    pyodide.runPythonWithLocals(`
+    self.pyodide._module.runPythonWithLocals(`
       import sys
       sys.setrecursionlimit(int(${recursionLimit}))
     `);
