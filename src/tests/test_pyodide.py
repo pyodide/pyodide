@@ -200,8 +200,6 @@ def test_run_python_with_locals(selenium):
         selenium.run("_importlib")
     with pytest.raises(selenium.JsException, match=msg):
         selenium.run("importlib")
-    with pytest.raises(selenium.JsException, match=msg):
-        selenium.run("sys")
 
     selenium.run_js(
         """
