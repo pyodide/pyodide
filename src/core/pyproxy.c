@@ -30,7 +30,10 @@ _pyproxy_has(PyObject* pyobj, JsRef idkey)
   pykey = js2python(idkey);
   FAIL_IF_NULL(pykey);
   if (!PyDict_Check(pyobj)) {
-    found_item = PyObject_HasAttr(pyobj, pykey);
+    PyObject* item = PyObject_GetAttr(pyobj, pykey);
+    FAIL_IF_ERR_NOT_MATCHES(PyExc_AttributeError);
+    found_item = item != NULL;
+    Py_CLEAR(item);
   } else {
     PyObject* item = PyDict_GetItemWithError(pyobj, pykey);
     FAIL_IF_ERR_OCCURRED();
@@ -40,7 +43,8 @@ _pyproxy_has(PyObject* pyobj, JsRef idkey)
 
   if (!found_item && PyDict_Check(pyobj)) {
     // Not found. Maybe this is a namespace? Try a builtin.
-    builtins = _PyDict_GetItemId(pyobj, &PyId___builtins__);
+    builtins = _PyDict_GetItemIdWithError(pyobj, &PyId___builtins__);
+    FAIL_IF_ERR_OCCURRED();
     if (builtins != NULL) {
       PyObject* item = PyDict_GetItemWithError(builtins, pykey);
       FAIL_IF_ERR_OCCURRED();
@@ -89,12 +93,15 @@ _pyproxy_get(PyObject* pyobj, JsRef idkey)
     FAIL_IF_ERR_OCCURRED();
   } else {
     pyresult = PyObject_GetAttr(pyobj, pykey);
+    FAIL_IF_ERR_NOT_MATCHES(PyExc_AttributeError);
   }
 
   PyErr_Clear();
+
   if (pyresult == NULL && PyDict_Check(pyobj)) {
     // Not found. Maybe this is a namespace? Try a builtin.
-    builtins = _PyDict_GetItemId(pyobj, &PyId___builtins__);
+    builtins = _PyDict_GetItemIdWithError(pyobj, &PyId___builtins__);
+    FAIL_IF_ERR_OCCURRED();
     if (builtins != NULL) {
       pyresult = PyDict_GetItemWithError(builtins, pykey);
       FAIL_IF_ERR_OCCURRED();

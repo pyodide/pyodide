@@ -122,4 +122,11 @@ log_error(char* msg);
     }                                                                          \
   } while (0)
 
+#define FAIL_IF_ERR_NOT_MATCHES(exc_type)                                      \
+  do {                                                                         \
+    if (PyErr_Occurred() && !PyErr_ExceptionMatches(exc_type)) {               \
+      FAIL();                                                                  \
+    }                                                                          \
+  } while (0)
+
 #endif // ERROR_HANDLING_H

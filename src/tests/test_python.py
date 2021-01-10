@@ -171,11 +171,11 @@ def test_unknown_attribute(selenium):
 
 def test_del_builtin(selenium):
     msg = "NameError"
-    with pytest.raises(selenium_standalone.JavascriptException, match=msg):
+    with pytest.raises(selenium.JavascriptException, match=msg):
         # can't del a builtin
         selenium.run(
             """
-            del globals
+            del open
             """
         )
     # Can still pyimport it even though we tried to del it.
