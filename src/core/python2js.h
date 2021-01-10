@@ -4,8 +4,8 @@
 /** Utilities to convert Python objects to Javascript.
  */
 #define PY_SSIZE_T_CLEAN
-#include "hiwire.h"
 #include "Python.h"
+#include "hiwire.h"
 
 /** Convert the active Python exception into a Javascript Error object
  *  and print it to the console.
