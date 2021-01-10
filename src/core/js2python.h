@@ -4,7 +4,7 @@
 /**
  * Utilities to convert Javascript objects to Python objects.
  */
-
+#define PY_SSIZE_T_CLEAN
 #include "hiwire.h"
 #include <Python.h>
 

@@ -3,7 +3,7 @@
 
 /** Utilities to convert Python buffer objects to Javascript.
  */
-
+#define PY_SSIZE_T_CLEAN
 #include "hiwire.h"
 #include <Python.h>
 

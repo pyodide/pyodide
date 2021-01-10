@@ -1,5 +1,7 @@
 #ifndef ERROR_HANDLING_H
 #define ERROR_HANDLING_H
+#define PY_SSIZE_T_CLEAN
+#include "Python.h"
 #include <emscripten.h>
 
 typedef int errcode;

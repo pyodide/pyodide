@@ -1,3 +1,6 @@
+#define PY_SSIZE_T_CLEAN
+#include <Python.h>
+
 #include "python2js_buffer.h"
 #include "types.h"
 
