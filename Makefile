@@ -15,7 +15,10 @@ PYODIDE_CXX=$(PYODIDE_ROOT)/ccache/em++
 CC=emcc
 CXX=em++
 OPTFLAGS=-O2
-CFLAGS=$(OPTFLAGS) -g -I$(PYTHONINCLUDE) -Wno-warn-absolute-paths -Werror=int-conversion -Werror=incompatible-pointer-types -fPIC
+EXTRA_C_FLAGS=""
+CFLAGS=$(OPTFLAGS) -g -I$(PYTHONINCLUDE) -fPIC \
+	-Wno-warn-absolute-paths -Werror=int-conversion -Werror=incompatible-pointer-types \
+	$(EXTRA_C_FLAGS)
 
 LDFLAGS=\
 	-O2 \
@@ -203,3 +206,6 @@ check:
 
 minimal :
 	PYODIDE_PACKAGES="micropip" make
+
+debug :
+	EXTRA_C_FLAGS="-D DEBUG_F" PYODIDE_PACKAGES="micropip" make
