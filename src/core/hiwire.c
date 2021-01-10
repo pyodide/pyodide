@@ -79,6 +79,9 @@ EM_JS(int, hiwire_init, (), {
   Module.hiwire.get_value = function(idval)
   {
     if (!idval) {
+      if (_PyErr_Occurred()) {
+        _pythonexc2js();
+      }
       throw new Error("Argument to hiwire.get_value is undefined");
     }
     if (!_hiwire.objects.has(idval)) {
