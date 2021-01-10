@@ -25,21 +25,20 @@ _pyproxy_has(PyObject* pyobj, JsRef idkey)
   bool found_item;
   PyObject* pykey = NULL;
   PyObject* builtins;
+  PyObject* item;
   JsRef result = NULL;
 
   pykey = js2python(idkey);
   FAIL_IF_NULL(pykey);
   if (!PyDict_Check(pyobj)) {
-    PyObject* item = PyObject_GetAttr(pyobj, pykey);
+    item = PyObject_GetAttr(pyobj, pykey);
     FAIL_IF_ERR_NOT_MATCHES(PyExc_AttributeError);
     found_item = item != NULL;
-    Py_CLEAR(item);
   } else {
     PyObject* item = PyDict_GetItemWithError(pyobj, pykey);
     Py_XINCREF(item);
     FAIL_IF_ERR_OCCURRED();
     found_item = item != NULL;
-    Py_CLEAR(item);
   }
 
   if (!found_item && PyDict_Check(pyobj)) {
@@ -52,13 +51,13 @@ _pyproxy_has(PyObject* pyobj, JsRef idkey)
       Py_XINCREF(item);
       FAIL_IF_ERR_OCCURRED();
       found_item = item != NULL;
-      Py_CLEAR(item);
     }
   }
 
   result = hiwire_bool(found_item);
   success = true;
 finally:
+  Py_CLEAR(item);
   Py_CLEAR(pykey);
   Py_CLEAR(builtins);
   if (!success) {
