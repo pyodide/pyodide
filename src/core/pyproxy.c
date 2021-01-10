@@ -25,11 +25,20 @@ _pyproxy_has(PyObject* pyobj, JsRef idkey)
   return result;
 }
 
+// Fails with an exception set if a problem occurs
+// If function succeeds but
 JsRef
 _pyproxy_get(PyObject* pyobj, JsRef idkey)
 {
-  PyObject* pykey = js2python(idkey);
-  PyObject* pyattr;
+  bool success = false;
+  PyObject* pykey = NULL;
+  PyObject* pyattr = NULL;
+  PyObject* builtins = NULL;
+  // result:
+  JsRef result = NULL;
+
+  pykey = js2python(idkey);
+  FAIL_IF_NULL(pykey);
   // HC: HACK until my more thorough rework of pyproxy goes through.
   // We need globals to work, I want it to be proxied, but we also need
   // indexing in js to do GetItem, SetItem, and DelItem.
@@ -41,15 +50,37 @@ _pyproxy_get(PyObject* pyobj, JsRef idkey)
     pyattr = PyObject_GetAttr(pyobj, pykey);
   }
 
-  Py_DECREF(pykey);
   if (pyattr == NULL) {
     PyErr_Clear();
-    return hiwire_undefined();
+    // Not found. Maybe this is a namespace? Try a builtin.
+    if (!PyDict_Check(pyobj)) {
+      goto finished_builtin_handling;
+    }
+    builtins = _PyObject_GetItemId(pyobj, &PyId___builtins__);
+    if (builtins == NULL) {
+      goto finished_builtin_handling;
+    }
+    pyattr = PyObject_GetItem(builtins, pykey);
   }
+finished_builtin_handling:
 
-  JsRef idattr = python2js(pyattr);
-  Py_DECREF(pyattr);
-  return idattr;
+  if (pyattr == NULL) {
+    PyErr_Clear();
+    result = hiwire_undefined();
+  } else {
+    result = python2js(pyattr);
+  }
+  FAIL_IF_NULL(result);
+
+  success = true;
+finally:
+  Py_CLEAR(pykey);
+  Py_CLEAR(pyattr);
+  Py_CLEAR(builtins);
+  if (!success) {
+    hiwire_CLEAR(result);
+  }
+  return result;
 };
 
 JsRef

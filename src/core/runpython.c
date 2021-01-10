@@ -67,26 +67,11 @@ runpython_init()
   JsRef pyodide_py_proxy = NULL;
   JsRef globals_proxy = NULL;
 
-  // borrowed
-  PyObject* builtins = PyImport_AddModule("builtins");
-  FAIL_IF_NULL(builtins);
-
-  // borrowed
-  PyObject* builtins_dict = PyModule_GetDict(builtins);
-  FAIL_IF_NULL(builtins_dict);
-
-  // borrowed
-  PyObject* __main__ = PyImport_AddModule("__main__");
-  FAIL_IF_NULL(__main__);
-
-  // globals is static variable, borrowed
-  globals = PyModule_GetDict(__main__);
+  // globals is static variable
+  globals = PyDict_New(__main__);
   FAIL_IF_NULL(globals);
-  Py_INCREF(globals); // to owned
 
-  FAIL_IF_MINUS_ONE(PyDict_Update(globals, builtins_dict));
-
-  // pyodide_py is static variable, new
+  // pyodide_py is static variable
   pyodide_py = PyImport_ImportModule("pyodide");
   FAIL_IF_NULL(pyodide_py);
 
