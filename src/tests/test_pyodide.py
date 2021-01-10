@@ -1,3 +1,4 @@
+import pytest
 from pathlib import Path
 import sys
 from textwrap import dedent
@@ -68,7 +69,7 @@ def test_eval_code():
     assert eval_code("x=7", ns) is None
     assert ns["x"] == 7
 
-    # default mode ('last_expr'), semicolon
+    # default return_mode ('last_expr'), semicolon
     assert eval_code("1+1;", ns) is None
     assert eval_code("1+1#;", ns) == 2
     assert eval_code("5-2  # comment with trailing semicolon ;", ns) == 3
@@ -77,20 +78,23 @@ def test_eval_code():
     assert eval_code("4//2;\n", ns) is None
     assert eval_code("2**1;\n\n", ns) is None
 
-    # 'last_expr_or_assign' mode, semicolon
-    assert eval_code("1 + 1", ns, mode="last_expr_or_assign") == 2
-    assert eval_code("x = 1 + 1", ns, mode="last_expr_or_assign") == 2
-    assert eval_code("a = 5 ; a += 1", ns, mode="last_expr_or_assign") == 6
-    assert eval_code("a = 5 ; a += 1;", ns, mode="last_expr_or_assign") is None
-    assert eval_code("l = [1, 1, 2] ; l[0] = 0", ns, mode="last_expr_or_assign") is None
-    assert eval_code("a = b = 2", ns, mode="last_expr_or_assign") == 2
+    # 'last_expr_or_assign' return_mode, semicolon
+    assert eval_code("1 + 1", ns, return_mode="last_expr_or_assign") == 2
+    assert eval_code("x = 1 + 1", ns, return_mode="last_expr_or_assign") == 2
+    assert eval_code("a = 5 ; a += 1", ns, return_mode="last_expr_or_assign") == 6
+    assert eval_code("a = 5 ; a += 1;", ns, return_mode="last_expr_or_assign") is None
+    assert (
+        eval_code("l = [1, 1, 2] ; l[0] = 0", ns, return_mode="last_expr_or_assign")
+        is None
+    )
+    assert eval_code("a = b = 2", ns, return_mode="last_expr_or_assign") == 2
 
-    # 'none' mode, (useless) semicolon
-    assert eval_code("1 + 1", ns, mode="none") is None
-    assert eval_code("x = 1 + 1", ns, mode="none") is None
-    assert eval_code("a = 5 ; a += 1", ns, mode="none") is None
-    assert eval_code("a = 5 ; a += 1;", ns, mode="none") is None
-    assert eval_code("l = [1, 1, 2] ; l[0] = 0", ns, mode="none") is None
+    # 'none' return_mode, (useless) semicolon
+    assert eval_code("1 + 1", ns, return_mode="none") is None
+    assert eval_code("x = 1 + 1", ns, return_mode="none") is None
+    assert eval_code("a = 5 ; a += 1", ns, return_mode="none") is None
+    assert eval_code("a = 5 ; a += 1;", ns, return_mode="none") is None
+    assert eval_code("l = [1, 1, 2] ; l[0] = 0", ns, return_mode="none") is None
 
     # with 'quiet_trailing_semicolon' set to False
     assert eval_code("1+1;", ns, quiet_trailing_semicolon=False) == 2
@@ -107,6 +111,26 @@ def test_eval_code():
     assert eval_code("2**1\n\n", ns, quiet_trailing_semicolon=False) == 2
     assert eval_code("4//2;\n", ns, quiet_trailing_semicolon=False) == 2
     assert eval_code("2**1;\n\n", ns, quiet_trailing_semicolon=False) == 2
+
+
+def test_eval_code_locals():
+    globals = {}
+    eval_code("x=2", globals, {})
+    with pytest.raises(NameError):
+        eval_code("x", globals, {})
+
+    locals = {}
+    eval_code("import sys; sys.getrecursionlimit()", globals, locals)
+    with pytest.raises(NameError):
+        eval_code("sys.getrecursionlimit()", globals, {})
+    eval_code("sys.getrecursionlimit()", globals, locals)
+
+    eval_code(
+        "from importlib import invalidate_caches; invalidate_caches()", globals, locals
+    )
+    with pytest.raises(NameError):
+        eval_code("invalidate_caches()", globals, globals)
+    eval_code("invalidate_caches()", globals, locals)
 
 
 def test_monkeypatch_eval_code(selenium):
