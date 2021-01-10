@@ -173,36 +173,10 @@ EM_JS_REF(JsRef, pyproxy_new, (PyObject * ptrobj), {
 
   let target = function(){};
   target['$$'] = { ptr : ptrobj, type : 'PyProxy' };
-  // clang-format off
-  Object.assign(target, {
-    toString : function() {
-      let ptrobj = Module.PyProxy.getPtr(this);
-      let jsref_repr = __pyproxy_repr(ptrobj);
-      let repr = Module.hiwire.get_value(jsref_repr);
-      Module.hiwire.decref(jsref_repr);
-      return repr;
-    },
-    destroy : function() {
-      let ptrobj = Module.PyProxy.getPtr(this);
-      __pyproxy_destroy(ptrobj);
-      this['$$']['ptr'] = null;
-    },
-    apply : function(jsthis, jsargs) {
-      let ptrobj = Module.PyProxy.getPtr(this);
-      let idargs = Module.hiwire.new_value(jsargs);
-      let idresult = __pyproxy_apply(ptrobj, idargs);
-      let jsresult = Module.hiwire.get_value(idresult);
-      Module.hiwire.decref(idresult);
-      Module.hiwire.decref(idargs);
-      return jsresult;
-    },
-  });
-// clang-format on
+  let proxy = new Proxy(target, Module.PyProxy);
+  Module.PyProxies[ptrobj] = proxy;
 
-let proxy = new Proxy(target, Module.PyProxy);
-Module.PyProxies[ptrobj] = proxy;
-
-return Module.hiwire.new_value(proxy);
+  return Module.hiwire.new_value(proxy);
 });
 
 EM_JS_NUM(int, pyproxy_init, (), {
@@ -234,10 +208,31 @@ EM_JS_NUM(int, pyproxy_init, (), {
       return result;
     },
     get: function (jsobj, jskey) {
-      if(jskey in jsobj){
-        return jsobj[jskey];
-      }
       let ptrobj = this.getPtr(jsobj);
+      if (jskey === 'toString') {
+        return function() {
+          let jsref_repr = __pyproxy_repr(ptrobj);
+          let repr = Module.hiwire.get_value(jsref_repr);
+          Module.hiwire.decref(jsref_repr);
+          return repr;
+        }
+      } else if (jskey === '$$') {
+        return jsobj['$$'];
+      } else if (jskey === 'destroy') {
+        return function() {
+          __pyproxy_destroy(ptrobj);
+          jsobj['$$']['ptr'] = null;
+        }
+      } else if (jskey === 'apply') {
+        return function(jsthis, jsargs) {
+          let idargs = Module.hiwire.new_value(jsargs);
+          let idresult = __pyproxy_apply(ptrobj, idargs);
+          let jsresult = Module.hiwire.get_value(idresult);
+          Module.hiwire.decref(idresult);
+          Module.hiwire.decref(idargs);
+          return jsresult;
+        };
+      }
       let idkey = Module.hiwire.new_value(jskey);
       let idresult = __pyproxy_get(ptrobj, idkey);
       let jsresult = Module.hiwire.get_value(idresult);
