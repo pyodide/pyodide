@@ -369,7 +369,6 @@ var languagePluginLoader = new Promise((resolve, reject) => {
 
   Module.locateFile = (path) => baseURL + path;
   Module.postRun = async () => {
-    Module.version = Module.pyodide_py.__version__;
     delete self.Module;
     let response = await fetch(`${baseURL}packages.json`);
     let json = await response.json();
