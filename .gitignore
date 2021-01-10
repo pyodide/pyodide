@@ -19,8 +19,6 @@ host
 installs
 ccache
 
-/root/
-
 /emsdk/emsdk
 
 *.egg-info/
