@@ -697,6 +697,7 @@ JsException_AsJs(PyObject* err)
 }
 
 // Copied from Python 3.9
+// TODO: remove once we update to Python 3.9
 static int
 PyModule_AddType(PyObject* module, PyTypeObject* type)
 {
