@@ -300,6 +300,8 @@ def test_supports_kwargs(selenium):
         selenium.run_js(
             f"return pyodide._module.function_supports_kwargs({repr(s)})"
         ) == res
+
+
 import time
 
 ASYNCIO_EVENT_LOOP_STARTUP = """
