@@ -1,8 +1,8 @@
 #ifndef JSPROXY_H
 #define JSPROXY_H
 #define PY_SSIZE_T_CLEAN
-#include "hiwire.h"
 #include "Python.h"
+#include "hiwire.h"
 
 /** A Python object that a Javascript object inside. Used for any non-standard
  *  data types that are passed from Javascript to Python.
