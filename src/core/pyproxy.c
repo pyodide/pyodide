@@ -279,7 +279,9 @@ EM_JS_NUM(int, pyproxy_init, (), {
     has: function (jsobj, jskey) {
       ptrobj = this.getPtr(jsobj);
       let idkey = Module.hiwire.new_value(jskey);
-      let result = __pyproxy_has(ptrobj, idkey) != 0;
+      let idresult = __pyproxy_has(ptrobj, idkey);
+      let result = Module.hiwire.get_value(idresult);
+      Module.hiwire.decref(idresult);
       Module.hiwire.decref(idkey);
       return result;
     },
