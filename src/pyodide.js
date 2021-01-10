@@ -332,7 +332,6 @@ var languagePluginLoader = new Promise((resolve, reject) => {
   Module.preloadedWasm = {};
   let isFirefox = navigator.userAgent.toLowerCase().indexOf('firefox') > -1;
 
-  Module.version = Module.pyodide_py.__version__;
   Module.runPython = code => Module.pyodide_py.eval_code(code, Module.globals);
   Module.runPythonWithLocals = code =>
       Module.pyodide_py._eval_code_with_locals(code, Module.globals);
@@ -370,6 +369,7 @@ var languagePluginLoader = new Promise((resolve, reject) => {
 
   Module.locateFile = (path) => baseURL + path;
   Module.postRun = async () => {
+    Module.version = Module.pyodide_py.__version__;
     delete self.Module;
     let response = await fetch(`${baseURL}packages.json`);
     let json = await response.json();
