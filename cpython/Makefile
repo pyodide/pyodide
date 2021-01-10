@@ -27,7 +27,7 @@ BZIP2URL=ftp://sourceware.org/pub/bzip2/v102/bzip2-1.0.2.tar.gz
 all: $(INSTALL)/lib/$(LIB)
 
 
-$(INSTALL)/lib/$(LIB): $(BUILD)/$(LIB)
+$(INSTALL)/lib/$(LIB): $(BUILD)/$(LIB) remove_modules.txt
 	( \
 		cd $(BUILD); \
 		sed -i -e 's/libinstall:.*/libinstall:/' Makefile; \
@@ -41,6 +41,7 @@ $(INSTALL)/lib/$(LIB): $(BUILD)/$(LIB)
 	mv `cat pybuilddir.txt`/$(SYSCONFIG_NAME).py $(INSTALL)/lib/python$(PYMINOR)/
 	rmdir `cat pybuilddir.txt`
 	rm pybuilddir.txt
+	cd $(INSTALL)/lib/python$(PYMINOR)/ && rm -rf `cat $(ROOT)/remove_modules.txt`
 
 
 clean:
