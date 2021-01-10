@@ -33,7 +33,7 @@ _pyproxy_has(PyObject* pyobj, JsRef idkey)
     found_item = PyObject_HasAttr(pyobj, pykey);
   } else {
     PyObject* item = PyDict_GetItemWithError(pyobj, pykey);
-    FAIL_IF_ERROR_OCCURRED();
+    FAIL_IF_ERR_OCCURRED();
     found_item = item != NULL;
     Py_CLEAR(item);
   }
@@ -43,7 +43,7 @@ _pyproxy_has(PyObject* pyobj, JsRef idkey)
     builtins = _PyDict_GetItemId(pyobj, &PyId___builtins__);
     if (builtins != NULL) {
       PyObject* item = PyDict_GetItemWithError(builtins, pykey);
-      FAIL_IF_ERROR_OCCURRED();
+      FAIL_IF_ERR_OCCURRED();
       found_item = item != NULL;
       Py_CLEAR(item);
     }
@@ -86,7 +86,7 @@ _pyproxy_get(PyObject* pyobj, JsRef idkey)
   // all, aside from globals which I specifically hand proxy in runpython.c.
   if (PyDict_Check(pyobj)) {
     pyresult = PyDict_GetItemWithError(pyobj, pykey);
-    FAIL_IF_ERROR_OCCURRED();
+    FAIL_IF_ERR_OCCURRED();
   } else {
     pyresult = PyObject_GetAttr(pyobj, pykey);
   }
@@ -97,7 +97,7 @@ _pyproxy_get(PyObject* pyobj, JsRef idkey)
     builtins = _PyDict_GetItemId(pyobj, &PyId___builtins__);
     if (builtins != NULL) {
       pyresult = PyDict_GetItemWithError(builtins, pykey);
-      FAIL_IF_ERROR_OCCURRED();
+      FAIL_IF_ERR_OCCURRED();
     }
   }
 
