@@ -278,7 +278,7 @@ def build_package(path: Path, args):
         patch(path, srcpath, pkg, args)
         if pkg.get("build", {}).get("script"):
             run_script(buildpath, srcpath, pkg)
-        if not pkg.get("build", {}).get("library",False):
+        if not pkg.get("build", {}).get("library", False):
             compile(path, srcpath, pkg, args)
             package_files(buildpath, srcpath, pkg, args)
     finally:
