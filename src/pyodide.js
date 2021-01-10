@@ -294,7 +294,7 @@ var languagePluginLoader = new Promise((resolve, reject) => {
     if (recursionLimit > 1000) {
       recursionLimit = 1000;
     }
-    self.pyodide._module.runPythonWithLocals(`
+    pyodide.runPythonWithLocals(`
       import sys
       sys.setrecursionlimit(int(${recursionLimit}))
     `);
