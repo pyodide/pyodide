@@ -1,5 +1,8 @@
-#include "js2python.h"
+#define PY_SSIZE_T_CLEAN
+#include "Python.h"
+
 #include "error_handling.h"
+#include "js2python.h"
 
 #include <emscripten.h>
 

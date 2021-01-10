@@ -1,5 +1,6 @@
 #ifndef PYPROXY_H
 #define PYPROXY_H
+#define PY_SSIZE_T_CLEAN
 #include "Python.h"
 
 /** Makes Python objects usable from Javascript.
