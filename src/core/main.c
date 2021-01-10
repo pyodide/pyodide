@@ -1,4 +1,5 @@
-#include <Python.h>
+#define PY_SSIZE_T_CLEAN
+#include "Python.h"
 #include <assert.h>
 #include <emscripten.h>
 #include <stdalign.h>

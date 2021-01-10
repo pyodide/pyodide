@@ -1,10 +1,11 @@
-#include "python2js.h"
-
-#include <emscripten.h>
+#define PY_SSIZE_T_CLEAN
+#include "Python.h"
 
 #include "hiwire.h"
 #include "jsproxy.h"
 #include "pyproxy.h"
+#include "python2js.h"
+#include <emscripten.h>
 
 #include "python2js_buffer.h"
 

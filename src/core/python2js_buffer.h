@@ -3,9 +3,11 @@
 
 /** Utilities to convert Python buffer objects to Javascript.
  */
-
+// clang-format off
+#define PY_SSIZE_T_CLEAN
+#include "Python.h"
+// clang-format on
 #include "hiwire.h"
-#include <Python.h>
 
 /** Convert a Python buffer object to a Javascript object.
  *
