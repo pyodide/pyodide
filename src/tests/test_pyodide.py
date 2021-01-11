@@ -196,9 +196,9 @@ def test_hiwire_is_promise(selenium):
 
 def test_run_python_with_locals(selenium):
     msg = "NameError"
-    with pytest.raises(selenium.JsException, match=msg):
+    with pytest.raises(selenium.JavascriptException, match=msg):
         selenium.run("_importlib")
-    with pytest.raises(selenium.JsException, match=msg):
+    with pytest.raises(selenium.JavascriptException, match=msg):
         selenium.run("importlib")
 
     selenium.run_js(
@@ -210,6 +210,6 @@ def test_run_python_with_locals(selenium):
         `);
         """
     )
-    with pytest.raises(selenium.JsException, match=msg):
+    with pytest.raises(selenium.JavascriptException, match=msg):
         selenium.run("x")
     assert selenium.run("y") == 3
