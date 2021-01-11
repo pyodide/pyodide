@@ -58,7 +58,6 @@ _pyproxy_set(PyObject* pyobj, JsRef idkey, JsRef idval)
   PyObject* pykey = js2python(idkey);
   PyObject* pyval = js2python(idval);
   // HC: HACK see comment in _pyproxy_get.
-  int result;
   if (PyDict_Check(pyobj)) {
     PyObject_SetItem(pyobj, pykey, pyval);
   } else {
@@ -67,10 +66,6 @@ _pyproxy_set(PyObject* pyobj, JsRef idkey, JsRef idval)
   Py_DECREF(pykey);
   Py_DECREF(pyval);
 
-  if (result) {
-    pythonexc2js();
-    return NULL;
-  }
   return idval;
 }
 
