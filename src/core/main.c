@@ -24,6 +24,11 @@
     }                                                                          \
   } while (0)
 
+#define FAIL_IF_STATUS_EXCEPTION(status)                                       \
+  if (PyStatus_Exception(status)) {                                            \
+    goto finally;                                                              \
+  }
+
 #define TRY_INIT(mod)                                                          \
   do {                                                                         \
     if (mod##_init()) {                                                        \
@@ -31,9 +36,37 @@
     }                                                                          \
   } while (0)
 
+// Initialize python. exit() and print message to stderr on failure.
+static void
+initialize_python()
+{
+  bool success = false;
+  PyStatus status;
+  PyConfig config;
+  PyConfig_InitPythonConfig(&config);
+  status = PyConfig_SetString(config, &config.home, "/");
+  FAIL_IF_STATUS_EXCEPTION(status);
+  config.write_bytecode = false;
+  config.install_signal_handlers = false;
+  status = Py_InitializeFromConfig(&config);
+  FAIL_IF_STATUS_EXCEPTION(status);
+
+  success = true;
+finally:
+  PyConfig_Clear(&config);
+  if (!success) {
+    // This will exit().
+    Py_ExitStatusException(status);
+  }
+}
+
 int
 main(int argc, char** argv)
 {
+  // This exits and prints a message to stderr on failure,
+  // no status code to check.
+  initialize_python();
+
   if (alignof(JsRef) != alignof(int)) {
     FATAL_ERROR("JsRef doesn't have the same alignment as int.");
   }
@@ -41,25 +74,6 @@ main(int argc, char** argv)
     FATAL_ERROR("JsRef doesn't have the same size as int.");
   }
   TRY_INIT(hiwire);
-
-  setenv("PYTHONHOME", "/", 0);
-
-  Py_InitializeEx(0);
-
-  // This doesn't seem to work anymore, but I'm keeping it for good measure
-  // anyway The effective way to turn this off is below: setting
-  // sys.dont_write_bytecode = True
-  setenv("PYTHONDONTWRITEBYTECODE", "1", 0);
-
-  PyObject* sys = PyImport_ImportModule("sys");
-  if (sys == NULL) {
-    FATAL_ERROR("Failed to import sys module.");
-  }
-
-  if (PyObject_SetAttrString(sys, "dont_write_bytecode", Py_True)) {
-    FATAL_ERROR("Failed to set attribute on sys module.");
-  }
-  Py_DECREF(sys);
 
   TRY_INIT(error_handling);
   TRY_INIT(js2python);
