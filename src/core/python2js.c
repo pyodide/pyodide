@@ -269,13 +269,6 @@ _python2js(PyObject* x, PyObject* map)
     // Proxies we've already created are just returned again, so that the
     // same object on the Python side is always the same object on the
     // Javascript side.
-    ret = pyproxy_use(x);
-    if (ret != NULL) {
-      return ret;
-    }
-
-    // Reference counter is increased only once when a PyProxy is created.
-    Py_INCREF(x);
     return pyproxy_new(x);
   }
 }
