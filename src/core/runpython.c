@@ -69,8 +69,31 @@ runpython_init()
   JsRef pyodide_py_proxy = NULL;
   JsRef globals_proxy = NULL;
 
+<<<<<<< HEAD
   // globals is static variable
   globals = PyDict_New();
+=======
+  // I'm a bit confused about this deal with globals and builtins:
+  // 1. Why are we using __main__.__dict__ as globals? Shouldn't we make a fresh
+  // dictionary?
+  // 2. Why do we dump "builtins" directly into the dict? Normally we would
+  // leave the builtins where they belong as globals().__builtins__.
+
+  // borrowed
+  PyObject* builtins = PyImport_AddModule("builtins");
+  FAIL_IF_NULL(builtins);
+
+  // borrowed
+  PyObject* builtins_dict = PyModule_GetDict(builtins);
+  FAIL_IF_NULL(builtins_dict);
+
+  // borrowed
+  PyObject* __main__ = PyImport_AddModule("__main__");
+  FAIL_IF_NULL(__main__);
+
+  // globals is static variable, borrowed
+  globals = PyModule_GetDict(__main__);
+>>>>>>> master
   FAIL_IF_NULL(globals);
 
   // pyodide_py is static variable
