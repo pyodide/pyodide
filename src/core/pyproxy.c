@@ -61,9 +61,9 @@ _pyproxy_set(PyObject* pyobj, JsRef idkey, JsRef idval)
   // HC: HACK see comment in _pyproxy_get.
   int result;
   if (PyDict_Check(pyobj)) {
-    PyObject_SetItem(pyobj, pykey, pyval);
+    result = PyObject_SetItem(pyobj, pykey, pyval);
   } else {
-    PyObject_SetAttr(pyobj, pykey, pyval);
+    result = PyObject_SetAttr(pyobj, pykey, pyval);
   }
   Py_DECREF(pykey);
   Py_DECREF(pyval);
