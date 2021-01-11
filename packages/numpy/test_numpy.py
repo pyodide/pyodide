@@ -114,9 +114,9 @@ def test_py2js_buffer_clear_error_flag(selenium_standalone):
     assert (
         selenium.run_js(
             """
-        pyodide.globals.x
-        return pyodide._module._PyErr_Occurred();
-        """
+            pyodide.globals.x
+            return pyodide._module._PyErr_Occurred();
+            """
         )
         == 0
     )
