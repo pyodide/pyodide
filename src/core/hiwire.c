@@ -335,6 +335,16 @@ EM_JS_REF(JsRef, hiwire_call, (JsRef idfunc, JsRef idargs), {
 });
 
 EM_JS_REF(JsRef,
+          hiwire_call_bound,
+          (JsRef idfunc, JsRef idthis, JsRef idargs),
+          {
+            let func = Module.hiwire.get_value(idfunc);
+            let this_ = Module.hiwire.get_value(idthis);
+            let args = Module.hiwire.get_value(idargs);
+            return Module.hiwire.new_value(func.apply(this_, args));
+          });
+
+EM_JS_REF(JsRef,
           hiwire_call_member,
           (JsRef idobj, const char* ptrname, JsRef idargs),
           {
@@ -373,6 +383,12 @@ EM_JS_NUM(bool, hiwire_get_bool, (JsRef idobj), {
     return false;
   }
   return true;
+  // clang-format on
+});
+
+EM_JS_NUM(bool, hiwire_is_pyproxy, (JsRef idobj), {
+  // clang-format off
+  return Module.PyProxy.isPyProxy(Module.hiwire.get_value(idobj));
   // clang-format on
 });
 
