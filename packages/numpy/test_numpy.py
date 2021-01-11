@@ -111,12 +111,15 @@ def test_python2js_numpy_dtype(selenium_standalone):
 
 def test_py2js_buffer_clear_error_flag(selenium_standalone):
     selenium.run("x = np.array([['string1', 'string2'], ['string3', 'string4']])")
-    selenium.run_js("return pyodide.globals.x")
-    selenium.run_js("return pyodide.globals.x")
-    selenium.run_js("return pyodide.globals.x")
-    selenium.run_js("return pyodide.globals.x")
-    selenium.run_js("return pyodide.globals.x")
-    selenium.run_js("return pyodide.globals.x")
+    assert (
+        selenium.run_js(
+            """
+        pyodide.globals.x
+        return pyodide._module._PyErr_Occurred();
+        """
+        )
+        == 0
+    )
 
 
 def test_python2js_numpy_scalar(selenium_standalone):
