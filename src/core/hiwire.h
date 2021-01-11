@@ -450,6 +450,20 @@ bool
 hiwire_is_function(JsRef idobj);
 
 /**
+ * Returns true if the object is a promise.
+ */
+bool
+hiwire_is_promise(JsRef idobj);
+
+/**
+ * Returns Promise.resolve(obj)
+ *
+ * Returns: New reference to Javascript promise
+ */
+JsRef
+hiwire_resolve_promise(JsRef idobj);
+
+/**
  * Gets the string representation of an object by calling `toString`.
  *
  * Returns: New reference to Javascript string

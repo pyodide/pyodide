@@ -38,22 +38,6 @@
     }                                                                          \
   } while (0)
 
-_Py_IDENTIFIER(__version__);
-
-static int
-version_info_init()
-{ // TODO: move this into pyodide.js
-  PyObject* pyodide = PyImport_ImportModule("pyodide");
-  PyObject* pyodide_version = _PyObject_GetAttrId(pyodide, &PyId___version__);
-  const char* pyodide_version_utf8 = PyUnicode_AsUTF8(pyodide_version);
-
-  EM_ASM({ Module.version = UTF8ToString($0); }, pyodide_version_utf8);
-
-  Py_CLEAR(pyodide);
-  Py_CLEAR(pyodide_version);
-  return 0;
-}
-
 static struct PyModuleDef core_module_def = {
   PyModuleDef_HEAD_INIT,
   .m_name = "_pyodide_core",
@@ -113,7 +97,6 @@ main(int argc, char** argv)
   // pyodide.py imported for these two.
   // They should appear last so that core_module is ready.
   TRY_INIT(runpython);
-  TRY_INIT(version_info);
 
   Py_CLEAR(sys);
   Py_CLEAR(core_module);
