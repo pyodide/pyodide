@@ -9,8 +9,7 @@ emsdk/.complete: ../Makefile.envs $(wildcard patches/*.patch)
 	if [ -d emsdk ]; then rm -rf emsdk; fi
 	git clone --depth 1 https://github.com/emscripten-core/emsdk.git
 	cd emsdk && ./emsdk install --build=Release $(EMSCRIPTEN_VERSION)
-	git clone --depth 1 https://github.com/WebAssembly/binaryen.git emsdk/binaryen
-	cd emsdk/binaryen && git fetch origin $(BINARYEN_VERSION) && git checkout $(BINARYEN_VERSION)
+	git clone -b $(BINARYEN_VERSION) --depth 1 https://github.com/WebAssembly/binaryen.git emsdk/binaryen
 	cat patches/*.patch | patch -p1
 	cd emsdk && ./emsdk activate --embedded --build=Release $(EMSCRIPTEN_VERSION)
 	cmake -S emsdk/binaryen -B emsdk/binaryen -DBUILD_STATIC_LIB=ON
