@@ -31,13 +31,13 @@ f2c_wrap = _args_wrapper(f2c)
 
 
 def test_handle_command():
-    Args = namedtuple("args", ["cflags", "cxxflags", "ldflags", "host", "replace_libs"])
-    args = Args(cflags="", cxxflags="", ldflags="", host="", replace_libs="")
+    Args = namedtuple("args", ["cflags", "cxxflags", "ldflags", "host", "replace_libs","install_dir"])
+    args = Args(cflags="", cxxflags="", ldflags="", host="", replace_libs="",install_dir="")
     assert handle_command_wrap("gcc -print-multiarch", args) is None
     assert handle_command_wrap("gcc test.c", args) == "emcc test.c"
     assert (
         handle_command_wrap("gcc -shared -c test.o -o test.so", args)
-        == "emcc -shared -c test.o -o test.wasm"
+        == "emcc -c test.o -o test.so"
     )
 
     # check cxxflags injection and cpp detection
@@ -47,6 +47,7 @@ def test_handle_command():
         ldflags="-lm",
         host="",
         replace_libs="",
+	install_dir="",
     )
     assert (
         handle_command_wrap("gcc -I./lib1 test.cpp -o test.o", args)
@@ -54,17 +55,17 @@ def test_handle_command():
     )
 
     # check ldflags injection
-    args = Args(cflags="", cxxflags="", ldflags="-lm", host="", replace_libs="")
+    args = Args(cflags="", cxxflags="", ldflags="-lm", host="", replace_libs="",install_dir="")
     assert (
         handle_command_wrap("gcc -shared -c test.o -o test.so", args)
-        == "emcc -lm -shared -c test.o -o test.wasm"
+        == "emcc -lm -c test.o -o test.so"
     )
 
-    # check library replacement
-    args = Args(cflags="", cxxflags="", ldflags="", host="", replace_libs="bob=fred")
+    # check library replacement and removal of double libraries
+    args = Args(cflags="", cxxflags="", ldflags="", host="", replace_libs="bob=fred",install_dir="")
     assert (
-        handle_command_wrap("gcc -shared -c test.o -lbob -o test.so", args)
-        == "emcc -shared -c test.o -lfred -o test.wasm"
+        handle_command_wrap("gcc -shared test.o -lbob -ljim -ljim -o test.so", args)
+        == "emcc test.o -lfred -ljim -o test.so"
     )
 
     # compilation checks in numpy
@@ -82,8 +83,8 @@ def test_f2c():
 
 
 def test_conda_compiler_compat():
-    Args = namedtuple("args", ["cflags", "cxxflags", "ldflags", "host", "replace_libs"])
-    args = Args(cflags="", cxxflags="", ldflags="", host="", replace_libs="")
+    Args = namedtuple("args", ["cflags", "cxxflags", "ldflags", "host", "replace_libs","install_dir"])
+    args = Args(cflags="", cxxflags="", ldflags="", host="", replace_libs="",install_dir="")
     assert handle_command_wrap(
         "gcc -shared -c test.o -B /compiler_compat -o test.so", args
-    ) == ("emcc -shared -c test.o -o test.wasm")
+    ) == ("emcc -c test.o -o test.so")

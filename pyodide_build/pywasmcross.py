@@ -211,8 +211,8 @@ def handle_command(line, args, dryrun=False):
     --------
 
     >>> from collections import namedtuple
-    >>> Args = namedtuple('args', ['cflags', 'cxxflags', 'ldflags', 'host','replace_libs'])
-    >>> args = Args(cflags='', cxxflags='', ldflags='', host='',replace_libs='')
+    >>> Args = namedtuple('args', ['cflags', 'cxxflags', 'ldflags', 'host','replace_libs','install_dir'])
+    >>> args = Args(cflags='', cxxflags='', ldflags='', host='',replace_libs='',install_dir='')
     >>> handle_command(['gcc', 'test.c'], args, dryrun=True)
     emcc test.c
     ['emcc', 'test.c']
@@ -262,7 +262,7 @@ def handle_command(line, args, dryrun=False):
 
     lapack_dir = None
 
-    used_libs = {}
+    used_libs = set()
 
     # Go through and adjust arguments
     for arg in line[1:]:
@@ -279,12 +279,6 @@ def handle_command(line, args, dryrun=False):
         if arg.startswith("-L/usr"):
             continue
         if arg.startswith("-l"):
-            # WASM link doesn't like libraries being included twice
-            # skip second one
-            if arg in used_libs:
-                continue
-            used_libs[arg] = 1
-        if arg.startswith("-l"):
             for lib_name in replace_libs.keys():
                 # this enables glob style **/* matching
                 if PurePosixPath(arg[2:]).match(lib_name):
@@ -292,6 +286,12 @@ def handle_command(line, args, dryrun=False):
                         arg = "-l" + replace_libs[lib_name]
                     else:
                         continue
+        if arg.startswith("-l"):
+            # WASM link doesn't like libraries being included twice
+            # skip second one
+            if arg in used_libs:
+                continue
+            used_libs.add(arg)
         # threading is disabled for now
         if arg == "-pthread":
             continue
@@ -304,7 +304,7 @@ def handle_command(line, args, dryrun=False):
         if arg.endswith(".so"):
             output = arg
         # don't include libraries from native builds
-        if arg.startswith("-l" + args.install_dir) or arg.startswith(
+        if len(args.install_dir)>0 and arg.startswith("-l" + args.install_dir) or arg.startswith(
             "-L" + args.install_dir
         ):
             continue
