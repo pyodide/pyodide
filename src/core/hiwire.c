@@ -82,6 +82,12 @@ EM_JS(int, hiwire_init, (), {
   Module.hiwire.get_value = function(idval)
   {
     if (!idval) {
+      // This might have happened because the error indicator is set. Let's
+      // check.
+      if (_PyErr_Occurred()) {
+        // This will lead to a more helpful error message.
+        _pythonexc2js();
+      }
       throw new Error("Argument to hiwire.get_value is undefined");
     }
     if (!_hiwire.objects.has(idval)) {
