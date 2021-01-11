@@ -333,31 +333,3 @@ def test_window_isnt_super_weird_anymore():
     assert js.window.Array == Array
     assert js.window.window.window.window == window
     assert window.window.window.window.Array == Array
-
-
-@pytest.xfail
-@run_in_pyodide
-def test_import_bind():
-    from js import Promise
-
-    Promise.new
-    from js import fetch
-
-    fetch("example.com")
-    from js import window
-
-    window.Promise.new
-    window.fetch("example.com")
-
-
-@pytest.xfail
-@run_in_pyodide
-def test_window_invocation(selenium):
-    """ Make sure js.setTimeout etc don't yeild illegal invocation errors. """
-    import js
-
-    def temp():
-        print("okay?")
-
-    js.setTimeout(temp, 100)
-    js.fetch("example.com")
