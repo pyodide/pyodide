@@ -110,6 +110,8 @@ def test_python2js_numpy_dtype(selenium_standalone):
 
 
 def test_py2js_buffer_clear_error_flag(selenium):
+    selenium.load_package("numpy")
+    selenium.run("import numpy as np")
     selenium.run("x = np.array([['string1', 'string2'], ['string3', 'string4']])")
     assert (
         selenium.run_js(
