@@ -109,7 +109,7 @@ class SeleniumWrapper:
             let run = () => { %s }
             try {
                 let result = run();
-                if(pyodide._module._PyErr_Occurred()){
+                if(pyodide && pyodide._module && pyodide._module._PyErr_Occurred()){
                     try {
                         pyodide._module._pythonexc2js();
                     } catch(e){
@@ -143,7 +143,7 @@ class SeleniumWrapper:
             (async () => {
                 try {
                     let result = await run();
-                    if(pyodide._module._PyErr_Occurred()){
+                    if(pyodide && pyodide._module && pyodide._module._PyErr_Occurred()){
                         try {
                             pyodide._module._pythonexc2js();
                         } catch(e){
