@@ -95,13 +95,7 @@ class SeleniumWrapper:
         self.driver.execute_script("window.logs = []")
 
     def run(self, code):
-        return self.run_js(
-            """
-            return pyodide.runPython({!r});
-            """.format(
-                code
-            )
-        )
+        return self.run_js("return pyodide.runPython({!r})".format(code))
 
     def run_async(self, code):
         return self.run_js_async("return pyodide.runPythonAsync({!r})".format(code))
@@ -115,7 +109,7 @@ class SeleniumWrapper:
             let run = () => { %s }
             try {
                 let result = run();
-                if(pyodide._module._PyErr_Occurred){
+                if(pyodide._module._PyErr_Occurred()){
                     try {
                         pyodide._module._pythonexc2js();
                     } catch(e){
@@ -149,7 +143,7 @@ class SeleniumWrapper:
             (async () => {
                 try {
                     let result = await run();
-                    if(pyodide._module._PyErr_Occurred){
+                    if(pyodide._module._PyErr_Occurred()){
                         try {
                             pyodide._module._pythonexc2js();
                         } catch(e){
