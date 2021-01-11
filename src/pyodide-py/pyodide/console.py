@@ -119,3 +119,9 @@ class InteractiveConsole(code.InteractiveConsole):
 
     def __del__(self):
         self.restore_stdstreams()
+
+    def banner(self):
+        """ A banner similar to the one printed by the real Python interpreter. """
+        # copyied from https://github.com/python/cpython/blob/799f8489d418b7f9207d333eac38214931bd7dcc/Lib/code.py#L214
+        cprt = 'Type "help", "copyright", "credits" or "license" for more information.'
+        return f"Python {sys.version} on {sys.platform}\n{cprt}"

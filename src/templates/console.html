@@ -15,37 +15,38 @@
   <body>
     <script>
       languagePluginLoader.then(() => {
+        pyodide.runPython(`
+            from pyodide import console
+            import js
+
+
+            class Console(console.InteractiveConsole):
+                def runcode(self, code):
+                    js.term.pause()
+                    js.term.runPython("\\n".join(self.buffer))
+
+
+            # JQuery.terminal add trailing newline that is not easy to remove
+            # with the current API. Doing our best here.
+            _c = Console(stdout_callback=lambda s: js.term.echo(s.rstrip("\\n")),
+                         stderr_callback=lambda s: js.term.error(s.rstrip("\\n")))
+        `)
+
+        let c = pyodide.pyimport('_c');
+
         function pushCode(line) {
-          handleResult(c.push(line))
+          handleResult(c.push(line));
         }
 
-        let term = $('body').terminal(
+        var term = $('body').terminal(
           pushCode,
           {
-            greetings: "Welcome to the Pyodide terminal emulator 🐍",
+              greetings: c.banner(),
             prompt: "[[;red;]>>> ]"
           }
         );
 
         window.term = term;
-        pyodide.runPython(`
-            from pyodide import console
-            from js import term
-
-
-            class Console(console.InteractiveConsole):
-                def runcode(self, code):
-                    term.pause()
-                    term.runPython("\\n".join(self.buffer))
-
-
-            # JQuery.terminal add trailing newline that is not easy to remove
-            # with the current API. Doing our best here.
-            _c = Console(stdout_callback=lambda s: term.echo(s.rstrip("\\n")),
-                         stderr_callback=lambda s: term.error(s.rstrip("\\n")))
-        `)
-
-        let c = pyodide.pyimport('_c');
 
         function handleResult(result) {
           if (result) {
