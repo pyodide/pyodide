@@ -262,6 +262,7 @@ _python2js(PyObject* x, PyObject* map)
     if (ret != NULL) {
       return ret;
     }
+    PyErr_Clear();
     if (PySequence_Check(x)) {
       return _python2js_sequence(x, map);
     }
