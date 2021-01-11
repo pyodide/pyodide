@@ -17,6 +17,7 @@ from time import sleep
 from typing import Dict, Set, Optional, List
 
 from . import common
+from .io import parse_package_config
 
 
 @total_ordering
@@ -28,7 +29,7 @@ class Package:
         if not pkgpath.is_file():
             raise ValueError(f"Directory {pkgdir} does not contain meta.yaml")
 
-        self.meta: dict = common.parse_package(pkgpath)
+        self.meta: dict = parse_package_config(pkgpath)
         self.name: str = self.meta["package"]["name"]
         self.library: bool = self.meta.get("build", {}).get("library", False)
 
