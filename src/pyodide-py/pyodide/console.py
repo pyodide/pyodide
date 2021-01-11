@@ -17,8 +17,13 @@ class _StdStream(io.TextIOWrapper):
         Function to call at each flush.
     """
 
-    def __init__(self, flush_callback: Callable[[str], None]):
-        buffer = io.BufferedWriter(_CallbackBuffer(flush_callback))
+    def __init__(
+        self, flush_callback: Callable[[str], None], name: Optional[str] = None
+    ):
+        # we just need to set internal buffer's name as
+        # it will automatically buble up to each buffer
+        internal_buffer = _CallbackBuffer(flush_callback, name=name)
+        buffer = io.BufferedWriter(internal_buffer)
         super().__init__(buffer, line_buffering=True)  # type: ignore
 
 
@@ -32,8 +37,11 @@ class _CallbackBuffer(io.RawIOBase):
         Function to call at each flush.
     """
 
-    def __init__(self, flush_callback: Callable[[str], None]):
+    def __init__(
+        self, flush_callback: Callable[[str], None], name: Optional[str] = None
+    ):
         self._flush_callback = flush_callback
+        self.name = name
 
     def writable(self):
         return True
@@ -97,8 +105,11 @@ class InteractiveConsole(code.InteractiveConsole):
         self._old_stdout = sys.stdout
         self._old_stderr = sys.stderr
 
-        sys.stdout = _StdStream(meta_stdout_callback)
-        sys.stderr = _StdStream(meta_stderr_callback)
+        # it would be more robust to use sys.stdout.name and sys.stderr.name
+        # but testing system oveload them. Anyway it should be pretty stable
+        # upstream.
+        sys.stdout = _StdStream(meta_stdout_callback, name="<stdout>")
+        sys.stderr = _StdStream(meta_stderr_callback, name="<stderr>")
 
     def restore_stdstreams(self):
         """Restore stdout/stderr to the value it was before
