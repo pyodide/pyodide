@@ -19,74 +19,51 @@
     <script>
       languagePluginLoader.then(() => {
         pyodide.runPython(`
-            from pyodide import console
+            from pyodide.console import InteractiveConsole
             import js
 
 
-            class Console(console.InteractiveConsole):
+            class PyConsole(InteractiveConsole):
+                def __init__(self):
+                    # JQuery.terminal adds a trailing newline that is not easy
+                    # to remove with the current API. Doing our best here.
+                    def trim(string):
+                        return string.rstrip("\\n")
+
+                    super().__init__(
+                        stdout_callback=lambda s: js.term.echo(trim(s)),
+                        stderr_callback=lambda s: js.term.error(trim(s)),
+                        persistent_stream_redirection=False,
+                    )
+
                 def runcode(self, code):
-                    self.redirect_stdstreams()
                     js.term.pause()
-                    js.term.runPython("\\n".join(self.buffer))
+                    resume = lambda *args: js.term.resume()
+                    return super().runcode(code).then(resume)
 
                 def banner(self):
                     return f"Welcome to the Pyodide terminal emulator 🐍\\n{super().banner()}"
 
 
-            # JQuery.terminal add trailing newline that is not easy to remove
-            # with the current API. Doing our best here.
-            _c = Console(stdout_callback=lambda s: js.term.echo(s.rstrip("\\n")),
-                         stderr_callback=lambda s: js.term.error(s.rstrip("\\n")),
-                         persistent_stream_redirection=False)
-        `)
+            js.window.pyconsole = PyConsole()
+        `);
 
-        let c = pyodide.pyimport('_c');
+        let ps1 = '>>> ', ps2 = '... ';
 
-        function pushCode(line) {
-          handleResult(c.push(line));
+        function interpreter(command) {
+            const prompt = pyconsole.push(command) ? ps2 : ps1;
+            term.set_prompt(prompt);
         }
 
         let term = $('body').terminal(
-          pushCode,
+          interpreter,
           {
-              greetings: c.banner(),
-            prompt: "[[;red;]>>> ]"
+            greetings: pyconsole.banner(),
+            prompt: ps1
           }
         );
 
         window.term = term;
-
-        function handleResult(result) {
-          if (result) {
-            term.set_prompt('[[;gray;]... ]');
-          } else {
-            term.set_prompt('[[;red;]>>> ]');
-          }
-        }
-
-        term.runPython = function(code) {
-          pyodide.runPythonAsync(code).then(
-            term.handlePythonResult, term.handlePythonError
-          );
-        };
-
-        term.handlePythonResult = function(result) {
-          c.restore_stdstreams();
-          term.resume();
-          if (result === undefined) {
-            return;
-          } else if (result['_repr_html_'] !== undefined) {
-            term.echo(result['_repr_html_'], {raw: true});
-          } else {
-            term.echo(result.toString());
-          }
-        };
-
-        term.handlePythonError = function(result) {
-          c.restore_stdstreams();
-          term.resume();
-          term.error(result.toString());
-        }
       });
     </script>
   </body>

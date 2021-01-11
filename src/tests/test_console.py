@@ -1,6 +1,7 @@
 import pytest
 from pathlib import Path
 import sys
+from selenium.webdriver.support.ui import WebDriverWait
 
 sys.path.append(str(Path(__file__).parents[2] / "src" / "pyodide-py"))
 
@@ -23,15 +24,13 @@ def test_stream_redirection():
 
 
 @pytest.fixture
-def safe_stdstreams():
-    stdout = sys.stdout
-    stderr = sys.stderr
+def safe_sys_redirections():
+    redirected = sys.stdout, sys.stderr, sys.displayhook
     yield
-    sys.stdout = stdout
-    sys.stderr = stderr
+    sys.stdout, sys.stderr, sys.displayhook = redirected
 
 
-def test_interactive_console_streams(safe_stdstreams):
+def test_interactive_console_streams(safe_sys_redirections):
 
     my_stdout = ""
     my_stderr = ""
@@ -94,3 +93,39 @@ def test_interactive_console_streams(safe_stdstreams):
 
     print("bar")
     assert my_stdout == "foobar\n"
+
+
+@pytest.fixture
+def safe_selenium_sys_redirections(selenium):
+    selenium.run("_redirected = sys.stdout, sys.stderr, sys.displayhook")
+    yield
+    selenium.run("sys.stdout, sys.stderr, sys.displayhook = _redirected")
+
+
+def test_interactive_console(selenium, safe_selenium_sys_redirections):
+    selenium.run(
+        """
+    from pyodide.console import InteractiveConsole
+
+    result = None
+
+    def displayhook(value):
+        global result
+        result = value
+
+    shell = InteractiveConsole()
+    sys.displayhook = displayhook"""
+    )
+
+    selenium.run("shell.push('x = 5')")
+    selenium.run("shell.push('x')")
+    WebDriverWait(selenium, 1).until(lambda driver: selenium.run("result == 5"))
+
+    selenium.run("shell.push('x ** 2')")
+    WebDriverWait(selenium, 1).until(lambda driver: selenium.run("result == 25"))
+
+    # import numpy
+    selenium.run("shell.push('import numpy as np; np.gcd(6, 15)')")
+    WebDriverWait(selenium, 10).until(lambda driver: selenium.run("result == 3"))
+    selenium.run("shell.push('int(np.pi * 100)')")
+    WebDriverWait(selenium, 1).until(lambda driver: selenium.run("result == 314"))

@@ -3,6 +3,15 @@ import code
 import io
 import sys
 import platform
+from contextlib import contextmanager
+
+# this import can fail when we are outside a browser (e.g. for tests)
+try:
+    import js
+
+    load_packages_from_imports = js.pyodide.loadPackagesFromImports
+except ImportError:
+    load_packages_from_imports = None
 
 
 __all__ = ["InteractiveConsole"]
@@ -62,7 +71,9 @@ class InteractiveConsole(code.InteractiveConsole):
     """Interactive Pyodide console
 
     Base implementation for an interactive console that manages
-    stdout/stderr redirection.
+    stdout/stderr redirection. Since packages are loaded before running
+    code, `runcode` returns a JS promise. Override `sys.displayhook` to
+    catch the result of an execution.
 
     `self.stdout_callback` and `self.stderr_callback` can be overloaded.
 
@@ -134,13 +145,33 @@ class InteractiveConsole(code.InteractiveConsole):
         sys.stdout = self._old_stdout
         sys.stderr = self._old_stderr
 
-    def runcode(self, code):
-        if self._persistent_stream_redirection:
-            super().runcode(code)
-        else:
+    @contextmanager
+    def stdstreams_redirections(self):
+        """ Ensure std stream redirection """
+        if not self._persistent_stream_redirection:
             self.redirect_stdstreams()
-            super().runcode(code)
+        yield
+        if not self._persistent_stream_redirection:
             self.restore_stdstreams()
+
+    def runsource(self, *args, **kwargs):
+        # syntax errors are not catched at runcode level but at runsource
+        with self.stdstreams_redirections():
+            return super().runsource(*args, **kwargs)
+
+    def runcode(self, code):
+        """ Load imported packages then run code, async. """
+        parent_runcode = super().runcode
+
+        def run(*args):
+            with self.stdstreams_redirections():
+                return parent_runcode(code)
+
+        if load_packages_from_imports is None:
+            return run()
+
+        source = "\n".join(self.buffer)
+        return load_packages_from_imports(source).then(run)
 
     def __del__(self):
         if self._persistent_stream_redirection:
