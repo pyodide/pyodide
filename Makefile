@@ -208,4 +208,6 @@ minimal :
 	PYODIDE_PACKAGES="micropip" make
 
 debug :
-	EXTRA_C_FLAGS="-D DEBUG_F" PYODIDE_PACKAGES="micropip" make
+	EXTRA_C_FLAGS="-D DEBUG_F -s ASSERTIONS=2" \
+	PYODIDE_PACKAGES="micropip,pyparsing,pytz,packaging,kiwisolver" \
+	make
