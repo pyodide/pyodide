@@ -110,7 +110,6 @@ main(int argc, char** argv)
   // They should appear last so that core_module is ready.
   TRY_INIT(runpython);
 
-  Py_CLEAR(sys);
   Py_CLEAR(core_module);
   printf("Python initialization complete\n");
   emscripten_exit_with_live_runtime();
