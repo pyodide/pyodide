@@ -45,7 +45,7 @@ try:
 
 
 except ImportError:
-    pytest = None
+    pytest = None  # type: ignore
 
 
 class JavascriptException(Exception):
@@ -55,7 +55,7 @@ class JavascriptException(Exception):
 
     def __str__(self):
         if self.stack:
-            return self.msg + "\n" + self.stack
+            return self.msg + "\n\n" + self.stack
         else:
             return self.msg
 
