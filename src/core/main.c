@@ -44,7 +44,7 @@ initialize_python()
   PyStatus status;
   PyConfig config;
   PyConfig_InitPythonConfig(&config);
-  status = PyConfig_SetString(config, &config.home, "/");
+  status = PyConfig_SetBytesString(&config, &config.home, "/");
   FAIL_IF_STATUS_EXCEPTION(status);
   config.write_bytecode = false;
   config.install_signal_handlers = false;
