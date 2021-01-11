@@ -1,10 +1,12 @@
-#include "runpython.h"
+#define PY_SSIZE_T_CLEAN
+#include "Python.h"
+
 #include "error_handling.h"
 #include "hiwire.h"
 #include "pyproxy.h"
 #include "python2js.h"
+#include "runpython.h"
 
-#include <Python.h>
 #include <emscripten.h>
 
 static PyObject* pyodide_py;

@@ -1,3 +1,6 @@
+#define PY_SSIZE_T_CLEAN
+#include "Python.h"
+
 #include "error_handling.h"
 #include <emscripten.h>
 
@@ -96,12 +99,19 @@ EM_JS(int, hiwire_init, (), {
   {
     // clang-format off
     if ((idval & 1) === 0) {
+      // clang-format on
       // least significant bit unset ==> idval is a singleton.
       // We don't reference count singletons.
-      // clang-format on
       return;
     }
     _hiwire.objects.delete(idval);
+  };
+
+  Module.hiwire.isPromise = function(obj)
+  {
+    // clang-format off
+    return Object.prototype.toString.call(obj) === "[object Promise]";
+    // clang-format on
   };
   return 0;
 });
@@ -366,6 +376,21 @@ EM_JS_NUM(bool, hiwire_get_bool, (JsRef idobj), {
 EM_JS_NUM(bool, hiwire_is_function, (JsRef idobj), {
   // clang-format off
   return typeof Module.hiwire.get_value(idobj) === 'function';
+  // clang-format on
+});
+
+EM_JS_NUM(bool, hiwire_is_promise, (JsRef idobj), {
+  // clang-format off
+  let obj = Module.hiwire.get_value(idobj);
+  return Module.hiwire.isPromise(obj);
+  // clang-format on
+});
+
+EM_JS_REF(JsRef, hiwire_resolve_promise, (JsRef idobj), {
+  // clang-format off
+  let obj = Module.hiwire.get_value(idobj);
+  let result = Promise.resolve(obj);
+  return Module.hiwire.new_value(result);
   // clang-format on
 });
 

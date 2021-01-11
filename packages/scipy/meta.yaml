@@ -26,6 +26,8 @@ source:
 build:
   cflags: -I../../../CLAPACK/build/CLAPACK-3.2.1/INCLUDE -Wno-implicit-function-declaration
   script: |
+    # Regenerate header files after make-int-return-values patch to fix return
+    # types of f2c functions.
     cd scipy/linalg
     python _cython_wrapper_generators.py
     cd ..

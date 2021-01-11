@@ -1,5 +1,9 @@
 #ifndef ERROR_HANDLING_H
 #define ERROR_HANDLING_H
+// clang-format off
+#define PY_SSIZE_T_CLEAN
+#include "Python.h"
+// clang-format on
 #include <emscripten.h>
 
 typedef int errcode;
@@ -94,7 +98,7 @@ log_error(char* msg);
              __FILE__);                                                        \
     log_error(msg);                                                            \
     free(msg);                                                                 \
-    goto finally                                                               \
+    goto finally;                                                              \
   } while (0)
 
 #else
