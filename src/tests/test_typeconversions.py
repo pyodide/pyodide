@@ -369,7 +369,7 @@ def test_python2js_with_depth(selenium):
         """
         res = pyodide._module.test_python2js_with_depth("a", -1);
         return Array.isArray(res) && \
-            JSON.stringify(a3) === `[[1,2],[3,4],[5,6],{"2":3,"4":9}]`;
+            JSON.stringify(res) === `[[1,2],[3,4],[5,6],{"2":3,"4":9}]`;
         """
     )
 
