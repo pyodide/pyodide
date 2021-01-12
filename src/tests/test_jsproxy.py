@@ -174,6 +174,7 @@ def test_jsproxy_implicit_iter(selenium):
     ) == [1, 2, 3]
 
 
+@pytest.mark.xfail
 def test_jsproxy_kwargs(selenium):
     selenium.run_js(
         """
