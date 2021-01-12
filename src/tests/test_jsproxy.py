@@ -1,5 +1,6 @@
 # See also test_typeconversions, and test_python.
 import pytest
+from pyodide_build.testing import run_in_pyodide
 
 
 def test_jsproxy_dir(selenium):
@@ -310,3 +311,32 @@ def test_await_error(selenium):
             r2 = c.send(r1.result())
             """
         )
+
+
+@run_in_pyodide
+def test_window_invocation(selenium):
+    """ Make sure js.setTimeout etc don't yeild illegal invocation errors. """
+    selenium.run(
+        """
+        import js
+        def temp():
+            print("okay?")
+        js.setTimeout(temp, 100)
+        js.fetch("example.com")
+        """
+    )
+
+
+@run_in_pyodide
+def test_import_bind(selenium):
+    selenium.run(
+        """
+        from js import Promise
+        Promise.new
+        from js import fetch
+        fetch("example.com")
+        from js import window
+        # window.Promise.new # broken without PR #1124
+        window.fetch("example.com")
+        """
+    )
