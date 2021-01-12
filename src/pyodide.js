@@ -170,7 +170,8 @@ var languagePluginLoader = new Promise((resolve, reject) => {
         self.addEventListener('error', windowErrorHandler);
       });
     } else {
-      windowErrorPromise = Promise.resolve();
+      // This should be a promise that never resolves
+      windowErrorPromise = new Promise(() => {});
     }
 
     // This is a collection of promises that resolve when the package's JS file
