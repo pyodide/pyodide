@@ -344,3 +344,28 @@ def test_memoryview_conversion(selenium):
         }
         """
     )
+
+
+def test_python2js_with_depth(selenium):
+    selenium.run(
+        """
+        a = [1,[2,[3,[4,[5,[6,[7]]]]]]]
+        """
+    )
+    selenium.run_js(
+        """
+        function assert(x, msg){
+            if(x !== true){
+                throw new Error(`Assertion failed: ${msg}`);
+            }
+        }
+        for(let i=0; i <= 7; i++){
+            let x = pyodide._module.py2js_minimal("a", i);
+            for(let j=0; j < i; j++){
+                assert(Array.isArray(x), `i: ${i}, j: ${j}`);
+                x = x[1];
+            }
+            assert(!Array.isArray(x), `i: ${i}, j: ${i}`);
+        }
+        """
+    )
