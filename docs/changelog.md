@@ -36,6 +36,8 @@
 - Reduce the size of the core pyodide package
   [#987](https://github.com/iodide-project/pyodide/pull/987).
 - Updated packages: bleach 3.2.1, packaging 20.8
+- `eval_code` now accepts separate `globals` and `locals` parameters.
+  [#1083](https://github.com/iodide-project/pyodide/pull/1083)
 
 ### Fixed
 - getattr and dir on JsProxy now report consistent results and include all names defined on the Python dictionary backing JsProxy. [#1017](https://github.com/iodide-project/pyodide/pull/1017)

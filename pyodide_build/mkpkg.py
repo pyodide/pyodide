@@ -9,6 +9,8 @@ import sys
 from pathlib import Path
 from typing import Dict, Tuple, Any, Optional
 
+from .io import parse_package_config
+
 PACKAGES_ROOT = Path(__file__).parent.parent / "packages"
 
 
@@ -80,12 +82,7 @@ def update_package(package: str):
     import yaml
 
     meta_path = PACKAGES_ROOT / package / "meta.yaml"
-    if not meta_path.exists():
-        print(f"Skipping: {meta_path} does not exist!")
-        sys.exit(1)
-
-    with open(meta_path, "r") as fd:
-        yaml_content = yaml.safe_load(fd)
+    yaml_content = parse_package_config(meta_path)
 
     if "url" not in yaml_content["source"]:
         print(f"Skipping: {package} is a local package!")

@@ -1,11 +1,20 @@
-#include "jsproxy.h"
+#define PY_SSIZE_T_CLEAN
+#include "Python.h"
 
 #include "hiwire.h"
 #include "js2python.h"
+#include "jsproxy.h"
 #include "python2js.h"
 
-#include "Python.h"
 #include "structmember.h"
+
+_Py_IDENTIFIER(get_event_loop);
+_Py_IDENTIFIER(create_future);
+_Py_IDENTIFIER(set_exception);
+_Py_IDENTIFIER(set_result);
+_Py_IDENTIFIER(__await__);
+
+static PyObject* asyncio_get_event_loop;
 
 static PyTypeObject* PyExc_BaseException_Type;
 
@@ -17,7 +26,7 @@ JsBoundMethod_cnew(JsRef this_, const char* name);
 ////////////////////////////////////////////////////////////
 // JsProxy
 //
-// This is a Python object that provides ideomatic access to a Javascript
+// This is a Python object that provides idiomatic access to a Javascript
 // object.
 
 // clang-format off
@@ -26,6 +35,7 @@ typedef struct
   PyObject_HEAD
   JsRef js;
   PyObject* bytes;
+  bool awaited; // for promises
 } JsProxy;
 // clang-format on
 
@@ -35,7 +45,7 @@ static void
 JsProxy_dealloc(JsProxy* self)
 {
   hiwire_decref(self->js);
-  Py_XDECREF(self->bytes);
+  Py_CLEAR(self->bytes);
   Py_TYPE(self)->tp_free((PyObject*)self);
 }
 
@@ -445,6 +455,67 @@ JsProxy_Bool(PyObject* o)
   return hiwire_get_bool(self->js) ? 1 : 0;
 }
 
+PyObject*
+JsProxy_Await(JsProxy* self)
+{
+  // Guards
+  if (self->awaited) {
+    PyErr_SetString(PyExc_RuntimeError,
+                    "cannot reuse already awaited coroutine");
+    return NULL;
+  }
+
+  if (!hiwire_is_promise(self->js)) {
+    PyObject* str = JsProxy_Repr((PyObject*)self);
+    const char* str_utf8 = PyUnicode_AsUTF8(str);
+    PyErr_Format(PyExc_TypeError,
+                 "object %s can't be used in 'await' expression",
+                 str_utf8);
+    return NULL;
+  }
+
+  // Main
+  PyObject* result = NULL;
+
+  PyObject* loop = NULL;
+  PyObject* fut = NULL;
+  PyObject* set_result = NULL;
+  PyObject* set_exception = NULL;
+
+  loop = _PyObject_CallNoArg(asyncio_get_event_loop);
+  FAIL_IF_NULL(loop);
+
+  fut = _PyObject_CallMethodId(loop, &PyId_create_future, NULL);
+  FAIL_IF_NULL(fut);
+
+  set_result = _PyObject_GetAttrId(fut, &PyId_set_result);
+  FAIL_IF_NULL(set_result);
+  set_exception = _PyObject_GetAttrId(fut, &PyId_set_exception);
+  FAIL_IF_NULL(set_exception);
+
+  JsRef promise_id = hiwire_resolve_promise(self->js);
+  JsRef idargs = hiwire_array();
+  JsRef idarg;
+  // TODO: does this leak set_result and set_exception? See #1006.
+  idarg = python2js(set_result);
+  hiwire_push_array(idargs, idarg);
+  hiwire_decref(idarg);
+  idarg = python2js(set_exception);
+  hiwire_push_array(idargs, idarg);
+  hiwire_decref(idarg);
+  hiwire_decref(hiwire_call_member(promise_id, "then", idargs));
+  hiwire_decref(promise_id);
+  hiwire_decref(idargs);
+  result = _PyObject_CallMethodId(fut, &PyId___await__, NULL);
+
+finally:
+  Py_CLEAR(loop);
+  Py_CLEAR(set_result);
+  Py_CLEAR(set_exception);
+  Py_DECREF(fut);
+  return result;
+}
+
 // clang-format off
 static PyMappingMethods JsProxy_MappingMethods = {
   JsProxy_length,
@@ -470,6 +541,7 @@ static PyMethodDef JsProxy_Methods[] = {
     (PyCFunction)JsProxy_GetIter,
     METH_NOARGS,
     "Get an iterator over the object" },
+  { "__await__", (PyCFunction)JsProxy_Await, METH_NOARGS, ""},
   { "_has_bytes",
     (PyCFunction)JsProxy_HasBytes,
     METH_NOARGS,
@@ -482,6 +554,8 @@ static PyMethodDef JsProxy_Methods[] = {
 };
 // clang-format on
 
+static PyAsyncMethods JsProxy_asyncMethods = { .am_await =
+                                                 (unaryfunc)JsProxy_Await };
 static PyGetSetDef JsProxy_GetSet[] = { { "typeof", .get = JsProxy_typeof },
                                         { NULL } };
 
@@ -492,6 +566,7 @@ static PyTypeObject JsProxyType = {
   .tp_call = JsProxy_Call,
   .tp_getattro = JsProxy_GetAttr,
   .tp_setattro = JsProxy_SetAttr,
+  .tp_as_async = &JsProxy_asyncMethods,
   .tp_richcompare = JsProxy_RichCompare,
   .tp_flags = Py_TPFLAGS_DEFAULT,
   .tp_doc = "A proxy to make a Javascript object behave like a Python object",
@@ -512,6 +587,7 @@ JsProxy_cnew(JsRef idobj)
   self = (JsProxy*)JsProxyType.tp_alloc(&JsProxyType, 0);
   self->js = hiwire_incref(idobj);
   self->bytes = NULL;
+  self->awaited = false;
   return (PyObject*)self;
 }
 
@@ -696,27 +772,53 @@ JsException_AsJs(PyObject* err)
   return hiwire_incref(js_error->js);
 }
 
+// Copied from Python 3.9
+// TODO: remove once we update to Python 3.9
+static int
+PyModule_AddType(PyObject* module, PyTypeObject* type)
+{
+  if (PyType_Ready(type) < 0) {
+    return -1;
+  }
+
+  const char* name = _PyType_Name(type);
+  assert(name != NULL);
+
+  Py_INCREF(type);
+  if (PyModule_AddObject(module, name, (PyObject*)type) < 0) {
+    Py_DECREF(type);
+    return -1;
+  }
+
+  return 0;
+}
+
 int
-JsProxy_init()
+JsProxy_init(PyObject* core_module)
 {
   bool success = false;
+
+  PyObject* asyncio_module = NULL;
+  PyObject* pyodide_module = NULL;
+
+  asyncio_module = PyImport_ImportModule("asyncio");
+  FAIL_IF_NULL(asyncio_module);
+
+  asyncio_get_event_loop =
+    _PyObject_GetAttrId(asyncio_module, &PyId_get_event_loop);
+  FAIL_IF_NULL(asyncio_get_event_loop);
+
   PyExc_BaseException_Type = (PyTypeObject*)PyExc_BaseException;
   _Exc_JsException.tp_base = (PyTypeObject*)PyExc_Exception;
 
-  PyObject* module;
-  PyObject* exc;
-
   // Add JsException to the pyodide module so people can catch it if they want.
-  module = PyImport_ImportModule("pyodide");
-  FAIL_IF_NULL(module);
-  FAIL_IF_MINUS_ONE(
-    PyObject_SetAttrString(module, "JsException", Exc_JsException));
-  FAIL_IF_MINUS_ONE(PyType_Ready(&JsProxyType));
-  FAIL_IF_MINUS_ONE(PyType_Ready(&JsBoundMethodType));
-  FAIL_IF_MINUS_ONE(PyType_Ready(&_Exc_JsException));
+  FAIL_IF_MINUS_ONE(PyModule_AddType(core_module, &JsProxyType));
+  FAIL_IF_MINUS_ONE(PyModule_AddType(core_module, &JsBoundMethodType));
+  FAIL_IF_MINUS_ONE(PyModule_AddType(core_module, &_Exc_JsException));
 
   success = true;
 finally:
-  Py_CLEAR(module);
+  Py_CLEAR(asyncio_module);
+  Py_CLEAR(pyodide_module);
   return success ? 0 : -1;
 }

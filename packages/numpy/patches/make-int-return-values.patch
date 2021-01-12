@@ -1,5 +1,11 @@
-diff --git a/numpy/linalg/lapack_lite/f2c.c b/numpy/linalg/lapack_lite/f2c.c
-index 1114bef..905beaa 100644
+The return values of f2c functions are insignificant in most cases, so often it
+is treated as returning void, when it really should return int (values are
+"returned" by writing to pointers passed as an argument, but an obscure feature
+known as alternative returns can cause the return value to be significant).
+
+emscripten is more strict about void vs int returns, so we change everything to
+return int.
+
 --- a/numpy/linalg/lapack_lite/f2c.c
 +++ b/numpy/linalg/lapack_lite/f2c.c
 @@ -14,9 +14,9 @@
@@ -41,8 +47,6 @@ index 1114bef..905beaa 100644
  	}
  
  
-diff --git a/numpy/linalg/lapack_lite/f2c.h b/numpy/linalg/lapack_lite/f2c.h
-index 80f1a12..2520479 100644
 --- a/numpy/linalg/lapack_lite/f2c.h
 +++ b/numpy/linalg/lapack_lite/f2c.h
 @@ -259,7 +259,7 @@ extern double d_tan(double *);

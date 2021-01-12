@@ -1,12 +1,14 @@
 #ifndef JSPROXY_H
 #define JSPROXY_H
+// clang-format off
+#define PY_SSIZE_T_CLEAN
+#include "Python.h"
+// clang-format on
 #include "hiwire.h"
 
 /** A Python object that a Javascript object inside. Used for any non-standard
  *  data types that are passed from Javascript to Python.
  */
-
-#include <Python.h>
 
 /** Make a new JsProxy.
  *  \param v The Javascript object.
@@ -52,6 +54,6 @@ JsException_AsJs(PyObject* x);
 
 /** Initialize global state for the JsProxy functionality. */
 int
-JsProxy_init();
+JsProxy_init(PyObject* core_module);
 
 #endif /* JSPROXY_H */
