@@ -1,4 +1,4 @@
-<!doctype html>
+    <!doctype html>
 <html>
   <head>
     <meta charset="UTF-8">
@@ -46,6 +46,20 @@
           if (result) {
             term.set_prompt('[[;gray;]... ]')
           } else {
+            // run some code - await result below because we run async to make imports work
+            term.pause()
+          }
+        }
+
+        term.runPython = function(code) {
+          pyodide.runPythonAsync(code).then(
+            term.handlePythonResult, term.handlePythonError
+          )
+        }
+
+        function showIO()
+        {
+            term.resume()
             term.set_prompt('[[;red;]>>> ]')
             var stderr = pyodide.runPython("sys.stderr.getvalue()").trim()
             if (stderr) {
@@ -56,16 +70,10 @@
                 term.echo(stdout.trim())
               }
             }
-          }
-        }
-
-        term.runPython = function(code) {
-          pyodide.runPythonAsync(code).then(
-            term.handlePythonResult, term.handlePythonError
-          )
         }
 
         term.handlePythonResult = function(result) {
+          showIO();
           if (result === undefined) {
             return
           } else if (result['_repr_html_'] !== undefined) {
@@ -76,6 +84,7 @@
         }
 
         term.handlePythonError = function(result) {
+          showIO();
           term.error(result.toString())
         }
       });
