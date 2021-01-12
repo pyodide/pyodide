@@ -331,6 +331,7 @@ def test_import_bind():
     fetch("packages.json")
 
 
+@run_in_pyodide
 def test_nested_attribute_access():
     import js
     from js import window
