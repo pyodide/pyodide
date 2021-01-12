@@ -54,6 +54,6 @@ JsException_AsJs(PyObject* x);
 
 /** Initialize global state for the JsProxy functionality. */
 int
-JsProxy_init();
+JsProxy_init(PyObject* core_module);
 
 #endif /* JSPROXY_H */

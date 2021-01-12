@@ -3,9 +3,9 @@ from ._base import (
     eval_code,
     find_imports,
     as_nested_list,
-    JsException,
     _eval_code_with_locals,
 )
+from ._core import JsException  # type: ignore
 
 # Not public, mypy has to be convinced it is used.
 _eval_code_with_locals = _eval_code_with_locals
