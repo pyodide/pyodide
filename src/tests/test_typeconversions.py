@@ -334,7 +334,7 @@ def test_memoryview_conversion(selenium):
         """
         import array
         a = array.array("Q", [1,2,3])
-        b = array.array("u", b"123")
+        b = array.array("u", "123")
         """
     )
     selenium.run_js(
