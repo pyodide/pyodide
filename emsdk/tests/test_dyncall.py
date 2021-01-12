@@ -41,9 +41,10 @@ void foo() {
 
         subprocess.run(
             [
-                "emcc",
+                "emcc","-g4",
                 "-s",
                 "SIDE_MODULE=1",
+                "-sWASM_BIGINT",
                 "library.c",
                 "-o",
                 "library.wasm",
@@ -56,7 +57,7 @@ void foo() {
         )
         subprocess.run(
             [
-                "emcc",
+                "emcc","-g4",
                 "-s",
                 "MAIN_MODULE=1",
                 "main.c",
@@ -64,8 +65,9 @@ void foo() {
                 "library.wasm",
                 "-s",
                 "EMULATE_FUNCTION_POINTER_CASTS=1",
+                "-sWASM_BIGINT",
             ],
             check=True,
         )
         out = subprocess.run(["node", "a.out.js"], capture_output=True, check=True)
-        assert out.stdout == b"hello from main\n0\n4\n"
+        assert out.stdout == b"hello from main\n0\n1\n"

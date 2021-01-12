@@ -9,7 +9,9 @@ def test_emulate_function(tmpdir):
                 """\
 #include <stdio.h>
 
-void foo() {
+// emulate function pointer casts - this has the
+// wrong arguments and return type
+int foo(int extra_args) {
   puts("hello from library");
 }"""
             )

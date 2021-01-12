@@ -1,4 +1,4 @@
-MAIN_C = """
+MAIN_C = r"""
 #include <stdio.h>
 #include <dlfcn.h>
 

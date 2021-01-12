@@ -1,8 +1,38 @@
-diff --git  a/emsdk/upstream/emscripten/src/library_dylink.js b/emsdk/upstream/emscripten/src/library_dylink.js
-index f8ddec2..a5e8682 100644
+diff --git a/emsdk/upstream/emscripten/src/library.js b/emsdk/upstream/emscripten/src/library.js
+index d5e9d62..ea4cf27 100644
+--- a/emsdk/upstream/emscripten/src/library.js
++++ b/emsdk/upstream/emscripten/src/library.js
+@@ -3747,6 +3747,15 @@ LibraryManager.library = {
+ #endif
+ #if ASSERTIONS
+     assert(wasmTable.get(ptr), 'missing table entry in dynCall: ' + ptr);
++#endif
++#if EMULATE_FUNCTION_POINTER_CASTS
++    if( ptr in dyncallInvokeMap)
++    {
++        // in fpcast mode, we use a separate table or else we'll attempt
++        // to call the fpcast emulated version which is not what the linker 
++        // expects for a linked dynamic call
++        ptr=dyncallInvokeMap[ptr];
++    }
+ #endif
+     return wasmTable.get(ptr).apply(null, args)
+ #endif
+diff --git a/emsdk/upstream/emscripten/src/library_dylink.js b/emsdk/upstream/emscripten/src/library_dylink.js
+index 876492b..3839ea2 100644
 --- a/emsdk/upstream/emscripten/src/library_dylink.js
 +++ b/emsdk/upstream/emscripten/src/library_dylink.js
-@@ -57,6 +57,7 @@ var LibraryDylink = {
+@@ -3,7 +3,9 @@
+ //
+ // ==========================================================================
+ 
++
+ var LibraryDylink = {
++
+ #if RELOCATABLE
+   $asmjsMangle: function(x) {
+     var unmangledSymbols = {{{ buildStringArray(WASM_SYSTEM_EXPORTS) }}};
+@@ -57,6 +59,7 @@ var LibraryDylink = {
          err("new GOT entry: " + symName);
  #endif
        }
@@ -10,7 +40,7 @@ index f8ddec2..a5e8682 100644
        return GOT[symName]
      }
    },
-@@ -79,28 +80,41 @@ var LibraryDylink = {
+@@ -94,29 +97,59 @@ var LibraryDylink = {
          replace = true;
        }
  #endif
@@ -20,6 +50,7 @@ index f8ddec2..a5e8682 100644
 +      baseName=symName;
 +#if EMULATE_FUNCTION_POINTER_CASTS==1
 +      const FPCAST_PREFIX="byn$fpcast-emu$";
++      const FPCAST_DYNCALL_PREFIX="$no-fpcast-emu$";
 +      if(symName.startsWith(FPCAST_PREFIX))
 +      {
 +          baseName=symName.substr(FPCAST_PREFIX.length)
@@ -27,7 +58,7 @@ index f8ddec2..a5e8682 100644
 +      {
 +         if(FPCAST_PREFIX+symName in exports)
 +         {
-+            continue;
++             baseName=FPCAST_DYNCALL_PREFIX+symName;
 +         }
        }
 -      if (replace || GOT[symName].value == 0) {
@@ -60,9 +91,26 @@ index f8ddec2..a5e8682 100644
 +      else if (GOT[baseName].value != value) {
 +        err("updateGOT: EXISTING SYMBOL: " + symName + ' : ' + GOT[baseName].value + " " + value);
        }
++#endif
++#if EMULATE_FUNCTION_POINTER_CASTS==1
++        // update map for dynamic calls so they can bypass fp casts
++        if(symName.startsWith(FPCAST_PREFIX))
++        {
++            if(GOT[FPCAST_DYNCALL_PREFIX+baseName] && GOT[FPCAST_DYNCALL_PREFIX+baseName].value!=0)
++            {
++                dyncallInvokeMap[GOT[baseName].value]=GOT[FPCAST_DYNCALL_PREFIX+baseName].value;
++            }
++        }else if(baseName.startsWith(FPCAST_DYNCALL_PREFIX))
++        {
++            if(GOT[symName] && GOT[symName].value!=0)
++            {
++                dyncallInvokeMap[GOT[symName].value]=GOT[baseName].value;
++            }
++        }
  #endif
      }
-@@ -738,6 +752,10 @@ var LibraryDylink = {
+ #if DYLINK_DEBUG
+@@ -754,6 +787,10 @@ var LibraryDylink = {
      // http://pubs.opengroup.org/onlinepubs/009695399/functions/dlsym.html
      symbol = UTF8ToString(symbol);
      var result;
@@ -73,3 +121,25 @@ index f8ddec2..a5e8682 100644
  
      if (handle == {{{ cDefine('RTLD_DEFAULT') }}}) {
        result = resolveGlobalSymbol(symbol, true);
+diff --git a/emsdk/upstream/emscripten/src/runtime_init_table.js b/emsdk/upstream/emscripten/src/runtime_init_table.js
+index c8af59d..7084ff7 100644
+--- a/emsdk/upstream/emscripten/src/runtime_init_table.js
++++ b/emsdk/upstream/emscripten/src/runtime_init_table.js
+@@ -13,3 +13,17 @@ var wasmTable = new WebAssembly.Table({
+ // the exports are available.
+ var wasmTable;
+ #endif
++#if EMULATE_FUNCTION_POINTER_CASTS==1
++    // when we call dynamic link functions through the relocation
++    // invoke xxx methods, we aren't doing a function pointer
++    // call, so we don't mess with the function prototype.
++    // however, we do need to make the function table
++    // point to the emulated bny$fpcast-emu$ function pointer calls or else you
++    // can't take function pointers in wasm code.
++    // this means we need a different table for javascript dyncall invokes
++    // as given these are pre-linked and don't use function pointer casts, they
++    // will use the non-emulated version with the normal arguments.
++    // nb. this doesn't have to be a proper wasm table because it is
++    // only ever called from javascript
++    var dyncallInvokeMap={};
++#endif
