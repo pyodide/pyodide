@@ -329,3 +329,24 @@ def test_import_bind():
     from js import fetch
 
     fetch("packages.json")
+
+
+def test_nested_attribute_access():
+    import js
+    from js import window
+
+    js.URL.createObjectURL
+    window.URL.createObjectURL
+
+
+@run_in_pyodide
+def test_window_isnt_super_weird_anymore():
+    import js
+    from js import window, Array
+
+    assert window.Array != window
+    assert window.Array == Array
+    assert window.window.window.window == window
+    assert js.window.Array == Array
+    assert js.window.window.window.window == window
+    assert window.window.window.window.Array == Array
