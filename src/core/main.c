@@ -84,8 +84,8 @@ main(int argc, char** argv)
 
   TRY_INIT(error_handling);
   TRY_INIT(js2python);
+  TRY_INIT_WITH_CORE_MODULE(JsProxy); // JsProxy needs to be before JsImport
   TRY_INIT(JsImport);
-  TRY_INIT_WITH_CORE_MODULE(JsProxy);
   TRY_INIT(pyproxy);
   TRY_INIT(python2js);
 
