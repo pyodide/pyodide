@@ -327,3 +327,20 @@ def test_javascript_error_back_to_js(selenium):
         return pyodide.globals["py_err"] === err
         """
     )
+
+
+def test_memoryview_conversion(selenium):
+    selenium.run(
+        """
+        import array
+        a = array.array("Q", [1,2,3])
+        """
+    )
+    selenium.run_js(
+        """
+        pyodide.globals.a
+        if(pyodide._module._PyErr_Occurred()){
+            pyodide._module._pythonexc2js();
+        }
+        """
+    )
