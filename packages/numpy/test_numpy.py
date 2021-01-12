@@ -116,8 +116,8 @@ def test_py2js_buffer_clear_error_flag(selenium):
     selenium.run_js(
         """
         pyodide.globals.x
-        # Implicit assertion: this doesn't leave python error indicator set
-        # (automatically checked in conftest.py)
+        // Implicit assertion: this doesn't leave python error indicator set
+        // (automatically checked in conftest.py)
         """
     )
 
