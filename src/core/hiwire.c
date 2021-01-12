@@ -323,15 +323,15 @@ EM_JS_REF(JsRef, hiwire_dir, (JsRef idobj), {
   let jsobj = Module.hiwire.get_value(idobj);
   let result = [];
   do {
-    result.push.apply(result, Object.getOwnPropertyNames(jsobj));
-  } while ((jsobj = Object.getPrototypeOf(jsobj)));
+    result.push(... Object.getOwnPropertyNames(jsobj));
+  } while (jsobj = Object.getPrototypeOf(jsobj));
   return Module.hiwire.new_value(result);
 });
 
 EM_JS_REF(JsRef, hiwire_call, (JsRef idfunc, JsRef idargs), {
   let jsfunc = Module.hiwire.get_value(idfunc);
   let jsargs = Module.hiwire.get_value(idargs);
-  return Module.hiwire.new_value(jsfunc.apply(jsfunc, jsargs));
+  return Module.hiwire.new_value(jsfunc(... jsargs));
 });
 
 EM_JS_REF(JsRef,
@@ -341,18 +341,13 @@ EM_JS_REF(JsRef,
             let jsobj = Module.hiwire.get_value(idobj);
             let jsname = UTF8ToString(ptrname);
             let jsargs = Module.hiwire.get_value(idargs);
-            return Module.hiwire.new_value(jsobj[jsname].apply(jsobj, jsargs));
+            return Module.hiwire.new_value(jsobj[jsname](... jsargs));
           });
 
 EM_JS_REF(JsRef, hiwire_new, (JsRef idobj, JsRef idargs), {
-  function newCall(Cls)
-  {
-    return new (Function.prototype.bind.apply(Cls, arguments));
-  }
   let jsobj = Module.hiwire.get_value(idobj);
   let jsargs = Module.hiwire.get_value(idargs);
-  jsargs.unshift(jsobj);
-  return Module.hiwire.new_value(newCall.apply(newCall, jsargs));
+  return Module.hiwire.new_value(Reflect.construct(jsobj, jsargs));
 });
 
 EM_JS_NUM(int, hiwire_get_length, (JsRef idobj), {
