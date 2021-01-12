@@ -58,7 +58,7 @@ var languagePluginLoader = new Promise((resolve, reject) => {
         if (entry.endsWith('.so')) {
           if (Module['preloadedWasm'][path] === undefined) {
             promise = promise
-              .then(() => Module['loadSideModule'](
+              .then(() => Module['loadDynamicLibrary'](
                 FS.readFile(path), {loadAsync: true,allowUndefined: true}))
               .then((module) => {
                 Module['preloadedWasm'][path] = module;
