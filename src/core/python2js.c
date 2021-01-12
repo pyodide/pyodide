@@ -411,7 +411,7 @@ python2js_init()
     return 1;
   }
   EM_ASM({
-    Module.python2js_with_depth = function(name, depth)
+    Module.test_python2js_with_depth = function(name, depth)
     {
       let pyname = stringToNewUTF8(name);
       let idresult = _test_python2js_with_depth(pyname, depth);
