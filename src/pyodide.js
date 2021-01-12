@@ -381,7 +381,6 @@ var languagePluginLoader = new Promise((resolve, reject) => {
       self.pyodide = x;
       self.pyodide.loadedPackages = {};
       self.pyodide.loadPackage = loadPackage;
-      self.LZ4 = Module['LZ4'];
     });
   }, () => {});
 });
