@@ -131,7 +131,7 @@ log_error(char* msg);
 
 #define FAIL_IF_MINUS_ONE(num)                                                 \
   do {                                                                         \
-    if ((num) != 0) {                                                          \
+    if ((num) == -1) {                                                         \
       FAIL();                                                                  \
     }                                                                          \
   } while (0)
