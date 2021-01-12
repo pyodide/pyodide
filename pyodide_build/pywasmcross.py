@@ -304,8 +304,10 @@ def handle_command(line, args, dryrun=False):
         if arg.endswith(".so"):
             output = arg
         # don't include libraries from native builds
-        if len(args.install_dir)>0 and arg.startswith("-l" + args.install_dir) or arg.startswith(
-            "-L" + args.install_dir
+        if (
+            len(args.install_dir) > 0
+            and arg.startswith("-l" + args.install_dir)
+            or arg.startswith("-L" + args.install_dir)
         ):
             continue
 

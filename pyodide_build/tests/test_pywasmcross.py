@@ -31,8 +31,12 @@ f2c_wrap = _args_wrapper(f2c)
 
 
 def test_handle_command():
-    Args = namedtuple("args", ["cflags", "cxxflags", "ldflags", "host", "replace_libs","install_dir"])
-    args = Args(cflags="", cxxflags="", ldflags="", host="", replace_libs="",install_dir="")
+    Args = namedtuple(
+        "args", ["cflags", "cxxflags", "ldflags", "host", "replace_libs", "install_dir"]
+    )
+    args = Args(
+        cflags="", cxxflags="", ldflags="", host="", replace_libs="", install_dir=""
+    )
     assert handle_command_wrap("gcc -print-multiarch", args) is None
     assert handle_command_wrap("gcc test.c", args) == "emcc test.c"
     assert (
@@ -47,7 +51,7 @@ def test_handle_command():
         ldflags="-lm",
         host="",
         replace_libs="",
-	install_dir="",
+        install_dir="",
     )
     assert (
         handle_command_wrap("gcc -I./lib1 test.cpp -o test.o", args)
@@ -55,14 +59,23 @@ def test_handle_command():
     )
 
     # check ldflags injection
-    args = Args(cflags="", cxxflags="", ldflags="-lm", host="", replace_libs="",install_dir="")
+    args = Args(
+        cflags="", cxxflags="", ldflags="-lm", host="", replace_libs="", install_dir=""
+    )
     assert (
         handle_command_wrap("gcc -shared -c test.o -o test.so", args)
         == "emcc -lm -c test.o -o test.so"
     )
 
     # check library replacement and removal of double libraries
-    args = Args(cflags="", cxxflags="", ldflags="", host="", replace_libs="bob=fred",install_dir="")
+    args = Args(
+        cflags="",
+        cxxflags="",
+        ldflags="",
+        host="",
+        replace_libs="bob=fred",
+        install_dir="",
+    )
     assert (
         handle_command_wrap("gcc -shared test.o -lbob -ljim -ljim -o test.so", args)
         == "emcc test.o -lfred -ljim -o test.so"
@@ -83,8 +96,12 @@ def test_f2c():
 
 
 def test_conda_compiler_compat():
-    Args = namedtuple("args", ["cflags", "cxxflags", "ldflags", "host", "replace_libs","install_dir"])
-    args = Args(cflags="", cxxflags="", ldflags="", host="", replace_libs="",install_dir="")
+    Args = namedtuple(
+        "args", ["cflags", "cxxflags", "ldflags", "host", "replace_libs", "install_dir"]
+    )
+    args = Args(
+        cflags="", cxxflags="", ldflags="", host="", replace_libs="", install_dir=""
+    )
     assert handle_command_wrap(
         "gcc -shared -c test.o -B /compiler_compat -o test.so", args
     ) == ("emcc -c test.o -o test.so")
