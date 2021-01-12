@@ -15,10 +15,16 @@ PYODIDE_CXX=$(PYODIDE_ROOT)/ccache/em++
 CC=emcc
 CXX=em++
 OPTFLAGS=-O2
+<<<<<<< HEAD
 EXTRA_C_FLAGS=""
 CFLAGS=$(OPTFLAGS) -g -I$(PYTHONINCLUDE) -fPIC \
 	-Wno-warn-absolute-paths -Werror=int-conversion -Werror=incompatible-pointer-types \
 	$(EXTRA_C_FLAGS)
+=======
+CFLAGS=$(OPTFLAGS) -g -I$(PYTHONINCLUDE) -fPIC \
+	-Wno-warn-absolute-paths -Werror=int-conversion -Werror=incompatible-pointer-types \
+	$(EXTRA_CFLAGS)
+>>>>>>> master
 
 LDFLAGS=\
 	-O2 \
@@ -40,7 +46,8 @@ LDFLAGS=\
 	-lstdc++ \
 	--memory-init-file 0 \
 	-s "BINARYEN_TRAP_MODE='clamp'" \
-	-s LZ4=1
+	-s LZ4=1	\
+	$(EXTRA_LDFLAGS)
 
 all: check \
 	build/pyodide.asm.js \
@@ -208,6 +215,7 @@ minimal :
 	PYODIDE_PACKAGES="micropip" make
 
 debug :
-	EXTRA_C_FLAGS="-D DEBUG_F -s ASSERTIONS=2" \
-	PYODIDE_PACKAGES="micropip,pyparsing,pytz,packaging,kiwisolver" \
+	EXTRA_CFLAGS="-D DEBUG_F" \
+	EXTRA_LDFLAGS="-s ASSERTIONS=2" \
+	PYODIDE_PACKAGES+="micropip,pyparsing,pytz,packaging,kiwisolver" \
 	make

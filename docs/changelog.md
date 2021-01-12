@@ -24,6 +24,10 @@
   [#1066](https://github.com/iodide-project/pyodide/pull/1066)
 - Removed repr API.
   [#1067](https://github.com/iodide-project/pyodide/pull/1067)
+- If `messageCallback` and `errorCallback` are supplied to
+  `pyodide.loadPackage`, `pyodide.runPythonAsync` and
+  `pyodide.loadPackagesFromImport`, then the messages are no longer
+  automatically logged to the console.
 
 ### Added
 - `micropip` now supports installing wheels from relative urls. [#872](https://github.com/iodide-project/pyodide/pull/872)
