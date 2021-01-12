@@ -142,7 +142,7 @@ JsProxy_Vectorcall(PyObject* self,
   bool kwargs = false;
   if (kwnames != NULL) {
     // There were kwargs? But maybe kwnames is the empty tuple?
-    PyObject* kwname = PyTuple_GetItem(kwnames, 0);
+    PyObject* kwname = PyTuple_GetItem(kwnames, 0); /* borrowed!*/
     // Clear IndexError
     PyErr_Clear();
     if (kwname != NULL) {
@@ -150,6 +150,10 @@ JsProxy_Vectorcall(PyObject* self,
       if (JsProxy_SUPPORTS_KWARGS(self) == -1) {
         JsProxy_SUPPORTS_KWARGS(self) =
           hiwire_function_supports_kwargs(JsProxy_JSREF(self));
+        if (JsProxy_SUPPORTS_KWARGS(self) == -1) {
+          // if it's still -1, hiwire_function_supports_kwargs threw an error.
+          return NULL;
+        }
       }
     }
     if (kwargs && !JsProxy_SUPPORTS_KWARGS(self)) {
@@ -162,35 +166,55 @@ JsProxy_Vectorcall(PyObject* self,
     }
   }
 
-  Py_EnterRecursiveCall(" in JsProxy_Vectorcall");
+  // Recursion error?
+  FAIL_IF_NONZERO(Py_EnterRecursiveCall(" in JsProxy_Vectorcall"));
+
+  JsRef idargs = NULL;
+  JsRef idkwargs = NULL;
+  JsRef idarg = NULL;
+  JsRef idresult = NULL;
 
   Py_ssize_t nargs = PyVectorcall_NARGS(nargsf);
-  JsRef idargs = hiwire_array();
+  idargs = hiwire_array();
+  FAIL_IF_NULL(idargs);
   for (Py_ssize_t i = 0; i < nargs; ++i) {
-    JsRef idarg = python2js(args[i]);
-    hiwire_push_array(idargs, idarg);
-    hiwire_decref(idarg);
+    idarg = python2js(args[i]);
+    FAIL_IF_NULL(idarg);
+    FAIL_IF_MINUS_ONE(hiwire_push_array(idargs, idarg));
+    hiwire_CLEAR(idarg);
   }
 
   if (kwargs) {
     // store kwargs into an object which we'll use as the last argument.
-    JsRef idkwargs = hiwire_object();
+    idkwargs = hiwire_object();
+    FAIL_IF_NULL(idkwargs);
     Py_ssize_t nkwargs = PyTuple_Size(kwnames);
     for (Py_ssize_t i = 0, k = nargsf; i < nkwargs; ++i, ++k) {
-      PyObject* name = PyTuple_GET_ITEM(kwnames, i);
+      PyObject* name = PyTuple_GET_ITEM(kwnames, i); /* borrowed! */
       const char* name_utf8 = PyUnicode_AsUTF8(name);
-      JsRef jsarg = python2js(args[k]);
-      hiwire_set_member_string(idkwargs, name_utf8, jsarg);
+      idarg = python2js(args[k]);
+      FAIL_IF_NULL(idarg);
+      FAIL_IF_MINUS_ONE(hiwire_set_member_string(idkwargs, name_utf8, idarg));
+      hiwire_CLEAR(idarg);
     }
-    hiwire_push_array(idargs, idkwargs);
-    hiwire_decref(idkwargs);
+    FAIL_IF_MINUS_ONE(hiwire_push_array(idargs, idkwargs));
   }
 
-  JsRef idresult = hiwire_call(JsProxy_JSREF(self), idargs);
-  hiwire_decref(idargs);
+  idresult = hiwire_call(JsProxy_JSREF(self), idargs);
+  FAIL_IF_NULL(idresult);
   PyObject* pyresult = js2python(idresult);
-  hiwire_decref(idresult);
+  FAIL_IF_NULL(pyresult);
   Py_LeaveRecursiveCall(/* " in JsProxy_Vectorcall" */);
+
+  success = true;
+finally:
+  hiwire_CLEAR(idargs);
+  hiwire_CLEAR(idkwargs);
+  hiwire_CLEAR(idarg);
+  hiwire_CLEAR(idresult);
+  if (!success) {
+    Py_CLEAR(pyresult);
+  }
   return pyresult;
 }
 
