@@ -70,7 +70,7 @@ var languagePluginLoader = new Promise((resolve, reject) => {
   }
   // clang-format on
 
-  let loadScript = () => {};
+  let loadScript;
   if (self.document) { // browser
     loadScript = (url) => new Promise((res, rej) => {
       const script = self.document.createElement('script');
@@ -149,23 +149,29 @@ var languagePluginLoader = new Promise((resolve, reject) => {
       messageCallback(`Loading ${[...toLoad.keys()].join(', ')}`)
     }
 
-    // Try to catch errors thrown when running a script. Since the script is
-    // added via a script tag, there is no good way to capture errors from
-    // the script only, so try to capture all errors them.
+    // If running in main browser thread, try to catch errors thrown when
+    // running a script. Since the script is added via a script tag, there is
+    // no good way to capture errors from the script only, so try to capture
+    // all errors them.
     //
     // windowErrorPromise rejects when any exceptions is thrown in the process
     // of loading a script. The promise never resolves, and we combine it
     // with other promises via Promise.race.
     let windowErrorHandler;
-    let windowErrorPromise = new Promise((_res, rej) => {
-      windowErrorHandler = e => {
-        errorCallback(
-            "Unhandled error. We don't know what it is or whether it is related to 'loadPackage' but out of an abundance of caution we will assume that loading failed.");
-        errorCallback(e);
-        rej(e.message);
-      };
-      self.addEventListener('error', windowErrorHandler);
-    });
+    let windowErrorPromise;
+    if (self.document) {
+      windowErrorPromise = new Promise((_res, rej) => {
+        windowErrorHandler = e => {
+          errorCallback(
+              "Unhandled error. We don't know what it is or whether it is related to 'loadPackage' but out of an abundance of caution we will assume that loading failed.");
+          errorCallback(e);
+          rej(e.message);
+        };
+        self.addEventListener('error', windowErrorHandler);
+      });
+    } else {
+      windowErrorPromise = Promise.resolve();
+    }
 
     // This is a collection of promises that resolve when the package's JS file
     // is loaded. The promises already handle error and never fail.
@@ -222,7 +228,9 @@ var languagePluginLoader = new Promise((resolve, reject) => {
       await Promise.race([ successPromise, windowErrorPromise ]);
     } finally {
       delete self.pyodide._module.monitorRunDependencies;
-      self.removeEventListener('error', windowErrorHandler);
+      if (windowErrorHandler) {
+        self.removeEventListener('error', windowErrorHandler);
+      }
     }
 
     let packageList = [];
