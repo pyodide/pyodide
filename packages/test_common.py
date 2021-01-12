@@ -1,7 +1,8 @@
 import pytest
 import os
 from pathlib import Path
-from pyodide_build.common import parse_package, _parse_package_subset
+from pyodide_build.common import _parse_package_subset
+from pyodide_build.io import parse_package_config
 
 PKG_DIR = Path(__file__).parent
 
@@ -20,7 +21,9 @@ def registered_packages_meta():
     for each registered package
     """
     packages = registered_packages
-    return {name: parse_package(PKG_DIR / name / "meta.yaml") for name in packages}
+    return {
+        name: parse_package_config(PKG_DIR / name / "meta.yaml") for name in packages
+    }
 
 
 UNSUPPORTED_PACKAGES = {"chrome": ["pandas", "scipy", "scikit-learn"], "firefox": []}
@@ -29,7 +32,7 @@ UNSUPPORTED_PACKAGES = {"chrome": ["pandas", "scipy", "scikit-learn"], "firefox"
 @pytest.mark.parametrize("name", registered_packages())
 def test_parse_package(name):
     # check that we can parse the meta.yaml
-    meta = parse_package(PKG_DIR / name / "meta.yaml")
+    meta = parse_package_config(PKG_DIR / name / "meta.yaml")
 
     skip_host = meta.get("build", {}).get("skip_host", True)
     if name == "numpy":
@@ -41,7 +44,7 @@ def test_parse_package(name):
 @pytest.mark.parametrize("name", registered_packages())
 def test_import(name, selenium_standalone):
     # check that we can parse the meta.yaml
-    meta = parse_package(PKG_DIR / name / "meta.yaml")
+    meta = parse_package_config(PKG_DIR / name / "meta.yaml")
 
     if name in UNSUPPORTED_PACKAGES[selenium_standalone.browser]:
         pytest.xfail(

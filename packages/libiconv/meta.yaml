@@ -1,6 +1,6 @@
 package:
   name: libiconv
-  version: 1.16
+  version: "1.16"
 
 source:
   url: https://ftp.gnu.org/pub/gnu/libiconv/libiconv-1.16.tar.gz
