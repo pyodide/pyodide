@@ -397,7 +397,7 @@ def test_python2js_with_depth(selenium):
     )
 
     selenium.run("a = [1, (2, (3, [4, (5, (6, [7]))]))]")
-    assert selenium.run_js(
+    selenium.run_js(
         """
         function assert(x, msg){
             if(x !== true){
