@@ -113,14 +113,12 @@ def test_py2js_buffer_clear_error_flag(selenium):
     selenium.load_package("numpy")
     selenium.run("import numpy as np")
     selenium.run("x = np.array([['string1', 'string2'], ['string3', 'string4']])")
-    assert (
-        selenium.run_js(
-            """
-            pyodide.globals.x
-            return pyodide._module._PyErr_Occurred();
-            """
-        )
-        == 0
+    selenium.run_js(
+        """
+        pyodide.globals.x
+        # Implicit assertion: this doesn't leave python error indicator set
+        # (automatically checked in conftest.py)
+        """
     )
 
 

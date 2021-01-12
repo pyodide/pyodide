@@ -339,8 +339,7 @@ def test_memoryview_conversion(selenium):
     selenium.run_js(
         """
         pyodide.globals.a
-        if(pyodide._module._PyErr_Occurred()){
-            pyodide._module._pythonexc2js();
-        }
+        # Implicit assertion: this doesn't leave python error indicator set
+        # (automatically checked in conftest.py)
         """
     )
