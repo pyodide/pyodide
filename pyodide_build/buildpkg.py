@@ -18,6 +18,7 @@ from typing import Any, Dict
 
 
 from . import common
+from .io import parse_package_config
 
 
 def check_checksum(path: Path, pkg: Dict[str, Any]):
@@ -256,11 +257,11 @@ def needs_rebuild(pkg: Dict[str, Any], path: Path, buildpath: Path) -> bool:
 
 
 def build_package(path: Path, args):
-    pkg = common.parse_package(path)
+    pkg = parse_package_config(path)
     name = pkg["package"]["name"]
     t0 = datetime.now()
     print("[{}] Building package {}...".format(t0.strftime("%Y-%m-%d %H:%M:%S"), name))
-    packagedir = name + "-" + str(pkg["package"]["version"])
+    packagedir = name + "-" + pkg["package"]["version"]
     dirpath = path.parent
     orig_path = Path.cwd()
     os.chdir(dirpath)

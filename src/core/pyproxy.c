@@ -61,9 +61,9 @@ _pyproxy_set(PyObject* pyobj, JsRef idkey, JsRef idval)
   // HC: HACK see comment in _pyproxy_get.
   int result;
   if (PyDict_Check(pyobj)) {
-    PyObject_SetItem(pyobj, pykey, pyval);
+    result = PyObject_SetItem(pyobj, pykey, pyval);
   } else {
-    PyObject_SetAttr(pyobj, pykey, pyval);
+    result = PyObject_SetAttr(pyobj, pykey, pyval);
   }
   Py_DECREF(pykey);
   Py_DECREF(pyval);
@@ -150,20 +150,10 @@ _pyproxy_apply(PyObject* pyobj, JsRef idargs)
 
 void
 _pyproxy_destroy(PyObject* ptrobj)
-{
+{ // See bug #1049
   Py_DECREF(ptrobj);
   EM_ASM({ delete Module.PyProxies[$0]; }, ptrobj);
 }
-
-EM_JS_REF(JsRef, pyproxy_use, (PyObject * ptrobj), {
-  // Checks if there is already an existing proxy on ptrobj
-
-  if (Module.PyProxies.hasOwnProperty(ptrobj)) {
-    return Module.hiwire.new_value(Module.PyProxies[ptrobj]);
-  }
-
-  return Module.hiwire.ERROR;
-})
 
 EM_JS_REF(JsRef, pyproxy_new, (PyObject * ptrobj), {
   // Technically, this leaks memory, since we're holding on to a reference
@@ -171,6 +161,11 @@ EM_JS_REF(JsRef, pyproxy_new, (PyObject * ptrobj), {
   // have a destructor in Javascript to free the Python object.
   // _pyproxy_destroy, which is a way for users to manually delete the proxy,
   // also deletes the proxy from this set.
+  if (Module.PyProxies.hasOwnProperty(ptrobj)) {
+    return Module.hiwire.new_value(Module.PyProxies[ptrobj]);
+  }
+
+  _Py_IncRef(ptrobj);
 
   let target = function(){};
   target['$$'] = { ptr : ptrobj, type : 'PyProxy' };
@@ -180,7 +175,7 @@ EM_JS_REF(JsRef, pyproxy_new, (PyObject * ptrobj), {
   return Module.hiwire.new_value(proxy);
 });
 
-EM_JS_NUM(int, pyproxy_init, (), {
+EM_JS(int, pyproxy_init, (), {
   // clang-format off
   Module.PyProxies = {};
   Module.PyProxy = {
@@ -220,6 +215,7 @@ EM_JS_NUM(int, pyproxy_init, (), {
       } else if (jskey === '$$') {
         return jsobj['$$'];
       } else if (jskey === 'destroy') {
+        // See bug #1049
         return function() {
           __pyproxy_destroy(ptrobj);
           jsobj['$$']['ptr'] = null;

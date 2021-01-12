@@ -5,7 +5,8 @@ from pathlib import Path
 
 import pytest
 
-from pyodide_build import buildpkg, common
+from pyodide_build import buildpkg
+from pyodide_build.io import parse_package_config
 
 
 def test_download_and_extract(monkeypatch):
@@ -16,8 +17,8 @@ def test_download_and_extract(monkeypatch):
     test_pkgs = []
 
     # tarballname == version
-    test_pkgs.append(common.parse_package("./packages/scipy/meta.yaml"))
-    test_pkgs.append(common.parse_package("./packages/numpy/meta.yaml"))
+    test_pkgs.append(parse_package_config("./packages/scipy/meta.yaml"))
+    test_pkgs.append(parse_package_config("./packages/numpy/meta.yaml"))
 
     # tarballname != version
     test_pkgs.append(
