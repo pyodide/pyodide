@@ -69,14 +69,18 @@ finally__skip_print_tb:
   Py_CLEAR(type);
   Py_CLEAR(value);
   Py_CLEAR(traceback);
-  hiwire_CLEAR(excval);
   Py_CLEAR(pylines);
   Py_CLEAR(empty);
   Py_CLEAR(pystr);
   if (excval != NULL) {
+    // this throws an error making it pretty difficult to decref excval.
+    // hiwire_throw_error will decref it for us (so it steals a reference to its
+    // argument).
     hiwire_throw_error(excval);
   } else {
-    PySys_WriteStderr("Internal error: failed to generate exception!");
+    // In this case there will be an error in the calling code, calling code
+    // currently expects us to throw no matter what.
+    PySys_WriteStderr("Internal error: failed to generate exception!\n");
   }
 }
 
