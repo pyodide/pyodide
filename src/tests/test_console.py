@@ -1,3 +1,4 @@
+import pytest
 from pathlib import Path
 import sys
 
@@ -9,11 +10,11 @@ from pyodide import console  # noqa: E402
 def test_stream_redirection():
     my_buffer = ""
 
-    def stdout_callback(string):
+    def callback(string):
         nonlocal my_buffer
         my_buffer += string
 
-    my_stream = console._StdStream(stdout_callback)
+    my_stream = console._StdStream(callback)
 
     print("foo", file=my_stream)
     assert my_buffer == "foo\n"
@@ -21,7 +22,16 @@ def test_stream_redirection():
     assert my_buffer == "foo\nbar\n"
 
 
-def test_interactive_console_streams():
+@pytest.fixture
+def safe_stdstreams():
+    stdout = sys.stdout
+    stderr = sys.stderr
+    yield
+    sys.stdout = stdout
+    sys.stderr = stderr
+
+
+def test_interactive_console_streams(safe_stdstreams):
 
     my_stdout = ""
     my_stderr = ""
