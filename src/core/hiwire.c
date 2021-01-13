@@ -1,3 +1,6 @@
+#define PY_SSIZE_T_CLEAN
+#include "Python.h"
+
 #include "error_handling.h"
 #include <emscripten.h>
 
@@ -79,6 +82,12 @@ EM_JS(int, hiwire_init, (), {
   Module.hiwire.get_value = function(idval)
   {
     if (!idval) {
+      // This might have happened because the error indicator is set. Let's
+      // check.
+      if (_PyErr_Occurred()) {
+        // This will lead to a more helpful error message.
+        _pythonexc2js();
+      }
       throw new Error("Argument to hiwire.get_value is undefined");
     }
     if (!_hiwire.objects.has(idval)) {
@@ -93,12 +102,19 @@ EM_JS(int, hiwire_init, (), {
   {
     // clang-format off
     if ((idval & 1) === 0) {
+      // clang-format on
       // least significant bit unset ==> idval is a singleton.
       // We don't reference count singletons.
-      // clang-format on
       return;
     }
     _hiwire.objects.delete(idval);
+  };
+
+  Module.hiwire.isPromise = function(obj)
+  {
+    // clang-format off
+    return Object.prototype.toString.call(obj) === "[object Promise]";
+    // clang-format on
   };
   return 0;
 });
@@ -127,27 +143,27 @@ EM_JS_REF(JsRef, hiwire_double, (double val), {
 });
 
 EM_JS_REF(JsRef, hiwire_string_ucs4, (const char* ptr, int len), {
-  var jsstr = "";
-  var idx = ptr / 4;
-  for (var i = 0; i < len; ++i) {
+  let jsstr = "";
+  let idx = ptr / 4;
+  for (let i = 0; i < len; ++i) {
     jsstr += String.fromCodePoint(Module.HEAPU32[idx + i]);
   }
   return Module.hiwire.new_value(jsstr);
 });
 
 EM_JS_REF(JsRef, hiwire_string_ucs2, (const char* ptr, int len), {
-  var jsstr = "";
-  var idx = ptr / 2;
-  for (var i = 0; i < len; ++i) {
+  let jsstr = "";
+  let idx = ptr / 2;
+  for (let i = 0; i < len; ++i) {
     jsstr += String.fromCharCode(Module.HEAPU16[idx + i]);
   }
   return Module.hiwire.new_value(jsstr);
 });
 
 EM_JS_REF(JsRef, hiwire_string_ucs1, (const char* ptr, int len), {
-  var jsstr = "";
-  var idx = ptr;
-  for (var i = 0; i < len; ++i) {
+  let jsstr = "";
+  let idx = ptr;
+  for (let i = 0; i < len; ++i) {
     jsstr += String.fromCharCode(Module.HEAPU8[idx + i]);
   }
   return Module.hiwire.new_value(jsstr);
@@ -162,52 +178,52 @@ EM_JS_REF(JsRef, hiwire_string_ascii, (const char* ptr), {
 });
 
 EM_JS_REF(JsRef, hiwire_bytes, (char* ptr, int len), {
-  var bytes = new Uint8ClampedArray(Module.HEAPU8.buffer, ptr, len);
+  let bytes = new Uint8ClampedArray(Module.HEAPU8.buffer, ptr, len);
   return Module.hiwire.new_value(bytes);
 });
 
 EM_JS_REF(JsRef, hiwire_int8array, (i8 * ptr, int len), {
-  var array = new Int8Array(Module.HEAPU8.buffer, ptr, len);
+  let array = new Int8Array(Module.HEAPU8.buffer, ptr, len);
   return Module.hiwire.new_value(array);
 })
 
 EM_JS_REF(JsRef, hiwire_uint8array, (u8 * ptr, int len), {
-  var array = new Uint8Array(Module.HEAPU8.buffer, ptr, len);
+  let array = new Uint8Array(Module.HEAPU8.buffer, ptr, len);
   return Module.hiwire.new_value(array);
 })
 
 EM_JS_REF(JsRef, hiwire_int16array, (i16 * ptr, int len), {
-  var array = new Int16Array(Module.HEAPU8.buffer, ptr, len);
+  let array = new Int16Array(Module.HEAPU8.buffer, ptr, len);
   return Module.hiwire.new_value(array);
 })
 
 EM_JS_REF(JsRef, hiwire_uint16array, (u16 * ptr, int len), {
-  var array = new Uint16Array(Module.HEAPU8.buffer, ptr, len);
+  let array = new Uint16Array(Module.HEAPU8.buffer, ptr, len);
   return Module.hiwire.new_value(array);
 })
 
 EM_JS_REF(JsRef, hiwire_int32array, (i32 * ptr, int len), {
-  var array = new Int32Array(Module.HEAPU8.buffer, ptr, len);
+  let array = new Int32Array(Module.HEAPU8.buffer, ptr, len);
   return Module.hiwire.new_value(array);
 })
 
 EM_JS_REF(JsRef, hiwire_uint32array, (u32 * ptr, int len), {
-  var array = new Uint32Array(Module.HEAPU8.buffer, ptr, len);
+  let array = new Uint32Array(Module.HEAPU8.buffer, ptr, len);
   return Module.hiwire.new_value(array);
 })
 
 EM_JS_REF(JsRef, hiwire_float32array, (f32 * ptr, int len), {
-  var array = new Float32Array(Module.HEAPU8.buffer, ptr, len);
+  let array = new Float32Array(Module.HEAPU8.buffer, ptr, len);
   return Module.hiwire.new_value(array);
 })
 
 EM_JS_REF(JsRef, hiwire_float64array, (f64 * ptr, int len), {
-  var array = new Float64Array(Module.HEAPU8.buffer, ptr, len);
+  let array = new Float64Array(Module.HEAPU8.buffer, ptr, len);
   return Module.hiwire.new_value(array);
 })
 
-EM_JS_NUM(errcode, hiwire_throw_error, (JsRef idmsg), {
-  var jsmsg = Module.hiwire.get_value(idmsg);
+EM_JS(void, hiwire_throw_error, (JsRef idmsg), {
+  let jsmsg = Module.hiwire.get_value(idmsg);
   Module.hiwire.decref(idmsg);
   throw new Error(jsmsg);
 });
@@ -224,14 +240,14 @@ EM_JS_NUM(errcode,
           hiwire_push_object_pair,
           (JsRef idobj, JsRef idkey, JsRef idval),
           {
-            var jsobj = Module.hiwire.get_value(idobj);
-            var jskey = Module.hiwire.get_value(idkey);
-            var jsval = Module.hiwire.get_value(idval);
+            let jsobj = Module.hiwire.get_value(idobj);
+            let jskey = Module.hiwire.get_value(idkey);
+            let jsval = Module.hiwire.get_value(idval);
             jsobj[jskey] = jsval;
           });
 
 EM_JS_REF(JsRef, hiwire_get_global, (const char* ptrname), {
-  var jsname = UTF8ToString(ptrname);
+  let jsname = UTF8ToString(ptrname);
   if (jsname in self) {
     return Module.hiwire.new_value(self[jsname]);
   } else {
@@ -240,8 +256,8 @@ EM_JS_REF(JsRef, hiwire_get_global, (const char* ptrname), {
 });
 
 EM_JS_REF(JsRef, hiwire_get_member_string, (JsRef idobj, const char* ptrkey), {
-  var jsobj = Module.hiwire.get_value(idobj);
-  var jskey = UTF8ToString(ptrkey);
+  let jsobj = Module.hiwire.get_value(idobj);
+  let jskey = UTF8ToString(ptrkey);
   if (jskey in jsobj) {
     return Module.hiwire.new_value(jsobj[jskey]);
   } else {
@@ -253,9 +269,9 @@ EM_JS_NUM(errcode,
           hiwire_set_member_string,
           (JsRef idobj, const char* ptrkey, JsRef idval),
           {
-            var jsobj = Module.hiwire.get_value(idobj);
-            var jskey = UTF8ToString(ptrkey);
-            var jsval = Module.hiwire.get_value(idval);
+            let jsobj = Module.hiwire.get_value(idobj);
+            let jskey = UTF8ToString(ptrkey);
+            let jsval = Module.hiwire.get_value(idval);
             jsobj[jskey] = jsval;
           });
 
@@ -263,13 +279,13 @@ EM_JS_NUM(errcode,
           hiwire_delete_member_string,
           (JsRef idobj, const char* ptrkey),
           {
-            var jsobj = Module.hiwire.get_value(idobj);
-            var jskey = UTF8ToString(ptrkey);
+            let jsobj = Module.hiwire.get_value(idobj);
+            let jskey = UTF8ToString(ptrkey);
             delete jsobj[jskey];
           });
 
 EM_JS_REF(JsRef, hiwire_get_member_int, (JsRef idobj, int idx), {
-  var jsobj = Module.hiwire.get_value(idobj);
+  let jsobj = Module.hiwire.get_value(idobj);
   return Module.hiwire.new_value(jsobj[idx]);
 });
 
@@ -278,8 +294,8 @@ EM_JS_NUM(errcode, hiwire_set_member_int, (JsRef idobj, int idx, JsRef idval), {
 });
 
 EM_JS_REF(JsRef, hiwire_get_member_obj, (JsRef idobj, JsRef ididx), {
-  var jsobj = Module.hiwire.get_value(idobj);
-  var jsidx = Module.hiwire.get_value(ididx);
+  let jsobj = Module.hiwire.get_value(idobj);
+  let jsidx = Module.hiwire.get_value(ididx);
   if (jsidx in jsobj) {
     return Module.hiwire.new_value(jsobj[jsidx]);
   } else {
@@ -291,52 +307,47 @@ EM_JS_NUM(errcode,
           hiwire_set_member_obj,
           (JsRef idobj, JsRef ididx, JsRef idval),
           {
-            var jsobj = Module.hiwire.get_value(idobj);
-            var jsidx = Module.hiwire.get_value(ididx);
-            var jsval = Module.hiwire.get_value(idval);
+            let jsobj = Module.hiwire.get_value(idobj);
+            let jsidx = Module.hiwire.get_value(ididx);
+            let jsval = Module.hiwire.get_value(idval);
             jsobj[jsidx] = jsval;
           });
 
 EM_JS_NUM(errcode, hiwire_delete_member_obj, (JsRef idobj, JsRef ididx), {
-  var jsobj = Module.hiwire.get_value(idobj);
-  var jsidx = Module.hiwire.get_value(ididx);
+  let jsobj = Module.hiwire.get_value(idobj);
+  let jsidx = Module.hiwire.get_value(ididx);
   delete jsobj[jsidx];
 });
 
 EM_JS_REF(JsRef, hiwire_dir, (JsRef idobj), {
-  var jsobj = Module.hiwire.get_value(idobj);
-  var result = [];
+  let jsobj = Module.hiwire.get_value(idobj);
+  let result = [];
   do {
-    result.push.apply(result, Object.getOwnPropertyNames(jsobj));
-  } while ((jsobj = Object.getPrototypeOf(jsobj)));
+    result.push(... Object.getOwnPropertyNames(jsobj));
+  } while (jsobj = Object.getPrototypeOf(jsobj));
   return Module.hiwire.new_value(result);
 });
 
 EM_JS_REF(JsRef, hiwire_call, (JsRef idfunc, JsRef idargs), {
-  var jsfunc = Module.hiwire.get_value(idfunc);
-  var jsargs = Module.hiwire.get_value(idargs);
-  return Module.hiwire.new_value(jsfunc.apply(jsfunc, jsargs));
+  let jsfunc = Module.hiwire.get_value(idfunc);
+  let jsargs = Module.hiwire.get_value(idargs);
+  return Module.hiwire.new_value(jsfunc(... jsargs));
 });
 
 EM_JS_REF(JsRef,
           hiwire_call_member,
           (JsRef idobj, const char* ptrname, JsRef idargs),
           {
-            var jsobj = Module.hiwire.get_value(idobj);
-            var jsname = UTF8ToString(ptrname);
-            var jsargs = Module.hiwire.get_value(idargs);
-            return Module.hiwire.new_value(jsobj[jsname].apply(jsobj, jsargs));
+            let jsobj = Module.hiwire.get_value(idobj);
+            let jsname = UTF8ToString(ptrname);
+            let jsargs = Module.hiwire.get_value(idargs);
+            return Module.hiwire.new_value(jsobj[jsname](... jsargs));
           });
 
 EM_JS_REF(JsRef, hiwire_new, (JsRef idobj, JsRef idargs), {
-  function newCall(Cls)
-  {
-    return new (Function.prototype.bind.apply(Cls, arguments));
-  }
-  var jsobj = Module.hiwire.get_value(idobj);
-  var jsargs = Module.hiwire.get_value(idargs);
-  jsargs.unshift(jsobj);
-  return Module.hiwire.new_value(newCall.apply(newCall, jsargs));
+  let jsobj = Module.hiwire.get_value(idobj);
+  let jsargs = Module.hiwire.get_value(idargs);
+  return Module.hiwire.new_value(Reflect.construct(jsobj, jsargs));
 });
 
 EM_JS_NUM(int, hiwire_get_length, (JsRef idobj), {
@@ -344,7 +355,7 @@ EM_JS_NUM(int, hiwire_get_length, (JsRef idobj), {
 });
 
 EM_JS_NUM(bool, hiwire_get_bool, (JsRef idobj), {
-  var val = Module.hiwire.get_value(idobj);
+  let val = Module.hiwire.get_value(idobj);
   // clang-format off
   if (!val) {
     return false;
@@ -363,6 +374,21 @@ EM_JS_NUM(bool, hiwire_get_bool, (JsRef idobj), {
 EM_JS_NUM(bool, hiwire_is_function, (JsRef idobj), {
   // clang-format off
   return typeof Module.hiwire.get_value(idobj) === 'function';
+  // clang-format on
+});
+
+EM_JS_NUM(bool, hiwire_is_promise, (JsRef idobj), {
+  // clang-format off
+  let obj = Module.hiwire.get_value(idobj);
+  return Module.hiwire.isPromise(obj);
+  // clang-format on
+});
+
+EM_JS_REF(JsRef, hiwire_resolve_promise, (JsRef idobj), {
+  // clang-format off
+  let obj = Module.hiwire.get_value(idobj);
+  let result = Promise.resolve(obj);
+  return Module.hiwire.new_value(result);
   // clang-format on
 });
 
@@ -399,7 +425,7 @@ EM_JS_REF(JsRef, hiwire_next, (JsRef idobj), {
     return Module.hiwire.ERROR;
   }
 
-  var jsobj = Module.hiwire.get_value(idobj);
+  let jsobj = Module.hiwire.get_value(idobj);
   return Module.hiwire.new_value(jsobj.next());
   // clang-format on
 });
@@ -410,7 +436,7 @@ EM_JS_REF(JsRef, hiwire_get_iterator, (JsRef idobj), {
     return Module.hiwire.ERROR;
   }
 
-  var jsobj = Module.hiwire.get_value(idobj);
+  let jsobj = Module.hiwire.get_value(idobj);
   if (typeof jsobj.next === 'function') {
     return Module.hiwire.new_value(jsobj);
   } else if (typeof jsobj[Symbol.iterator] === 'function') {
@@ -423,39 +449,39 @@ EM_JS_REF(JsRef, hiwire_get_iterator, (JsRef idobj), {
 })
 
 EM_JS_NUM(bool, hiwire_nonzero, (JsRef idobj), {
-  var jsobj = Module.hiwire.get_value(idobj);
+  let jsobj = Module.hiwire.get_value(idobj);
   // TODO: should this be !== 0?
   return (jsobj != 0) ? 1 : 0;
 });
 
 EM_JS_NUM(bool, hiwire_is_typedarray, (JsRef idobj), {
-  var jsobj = Module.hiwire.get_value(idobj);
+  let jsobj = Module.hiwire.get_value(idobj);
   // clang-format off
   return (jsobj['byteLength'] !== undefined) ? 1 : 0;
   // clang-format on
 });
 
 EM_JS_NUM(bool, hiwire_is_on_wasm_heap, (JsRef idobj), {
-  var jsobj = Module.hiwire.get_value(idobj);
+  let jsobj = Module.hiwire.get_value(idobj);
   // clang-format off
   return (jsobj.buffer === Module.HEAPU8.buffer) ? 1 : 0;
   // clang-format on
 });
 
 EM_JS_NUM(int, hiwire_get_byteOffset, (JsRef idobj), {
-  var jsobj = Module.hiwire.get_value(idobj);
+  let jsobj = Module.hiwire.get_value(idobj);
   return jsobj['byteOffset'];
 });
 
 EM_JS_NUM(int, hiwire_get_byteLength, (JsRef idobj), {
-  var jsobj = Module.hiwire.get_value(idobj);
+  let jsobj = Module.hiwire.get_value(idobj);
   return jsobj['byteLength'];
 });
 
 EM_JS_NUM(errcode, hiwire_copy_to_ptr, (JsRef idobj, void* ptr), {
-  var jsobj = Module.hiwire.get_value(idobj);
+  let jsobj = Module.hiwire.get_value(idobj);
   // clang-format off
-  var buffer = (jsobj['buffer'] !== undefined) ? jsobj.buffer : jsobj;
+  let buffer = (jsobj['buffer'] !== undefined) ? jsobj.buffer : jsobj;
   // clang-format on
   Module.HEAPU8.set(new Uint8Array(buffer), ptr);
 });
@@ -488,7 +514,7 @@ EM_JS_NUM(errcode,
           });
 
 EM_JS_REF(JsRef, hiwire_subarray, (JsRef idarr, int start, int end), {
-  var jsarr = Module.hiwire.get_value(idarr);
-  var jssub = jsarr.subarray(start, end);
+  let jsarr = Module.hiwire.get_value(idarr);
+  let jssub = jsarr.subarray(start, end);
   return Module.hiwire.new_value(jssub);
 });

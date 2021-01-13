@@ -1,10 +1,12 @@
-#include "runpython.h"
+#define PY_SSIZE_T_CLEAN
+#include "Python.h"
+
 #include "error_handling.h"
 #include "hiwire.h"
 #include "pyproxy.h"
 #include "python2js.h"
+#include "runpython.h"
 
-#include <Python.h>
 #include <emscripten.h>
 
 static PyObject* pyodide_py;
@@ -66,6 +68,12 @@ runpython_init()
   bool success = false;
   JsRef pyodide_py_proxy = NULL;
   JsRef globals_proxy = NULL;
+
+  // I'm a bit confused about this deal with globals and builtins:
+  // 1. Why are we using __main__.__dict__ as globals? Shouldn't we make a fresh
+  // dictionary?
+  // 2. Why do we dump "builtins" directly into the dict? Normally we would
+  // leave the builtins where they belong as globals().__builtins__.
 
   // borrowed
   PyObject* builtins = PyImport_AddModule("builtins");

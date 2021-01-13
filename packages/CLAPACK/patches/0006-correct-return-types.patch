@@ -1,0 +1,19 @@
+The return values of f2c functions are insignificant in most cases, so often it
+is treated as returning void, when it really should return int (values are
+"returned" by writing to pointers passed as an argument, but an obscure feature
+known as alternative returns can cause the return value to be significant).
+
+emscripten is more strict about void vs int returns, so we change everything to
+return int.
+
+--- a/F2CLIBS/libf2c/ef1asc_.c
++++ b/F2CLIBS/libf2c/ef1asc_.c
+@@ -13,7 +13,7 @@ extern "C" {
+ extern VOID s_copy();
+ ef1asc_(a, la, b, lb) ftnint *a, *b; ftnlen *la, *lb;
+ #else
+-extern void s_copy(char*,char*,ftnlen,ftnlen);
++extern int s_copy(char*,char*,ftnlen,ftnlen);
+ int ef1asc_(ftnint *a, ftnlen *la, ftnint *b, ftnlen *lb)
+ #endif
+ {

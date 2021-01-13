@@ -327,3 +327,28 @@ def test_javascript_error_back_to_js(selenium):
         return pyodide.globals["py_err"] === err;
         """
     )
+
+
+def test_memoryview_conversion(selenium):
+    selenium.run(
+        """
+        import array
+        a = array.array("Q", [1,2,3])
+        b = array.array("u", "123")
+        """
+    )
+    selenium.run_js(
+        """
+        pyodide.globals.a
+        // Implicit assertion: this doesn't leave python error indicator set
+        // (automatically checked in conftest.py)
+        """
+    )
+
+    selenium.run_js(
+        """
+        pyodide.globals.b
+        // Implicit assertion: this doesn't leave python error indicator set
+        // (automatically checked in conftest.py)
+        """
+    )

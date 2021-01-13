@@ -24,6 +24,10 @@
   [#1066](https://github.com/iodide-project/pyodide/pull/1066)
 - Removed repr API.
   [#1067](https://github.com/iodide-project/pyodide/pull/1067)
+- If `messageCallback` and `errorCallback` are supplied to
+  `pyodide.loadPackage`, `pyodide.runPythonAsync` and
+  `pyodide.loadPackagesFromImport`, then the messages are no longer
+  automatically logged to the console.
 
 ### Added
 - `micropip` now supports installing wheels from relative urls. [#872](https://github.com/iodide-project/pyodide/pull/872)
@@ -32,6 +36,8 @@
 - Reduce the size of the core pyodide package
   [#987](https://github.com/iodide-project/pyodide/pull/987).
 - Updated packages: bleach 3.2.1, packaging 20.8
+- `eval_code` now accepts separate `globals` and `locals` parameters.
+  [#1083](https://github.com/iodide-project/pyodide/pull/1083)
 
 ### Fixed
 - getattr and dir on JsProxy now report consistent results and include all names defined on the Python dictionary backing JsProxy. [#1017](https://github.com/iodide-project/pyodide/pull/1017)

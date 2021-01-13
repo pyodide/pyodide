@@ -1,5 +1,9 @@
 #ifndef ERROR_HANDLING_H
 #define ERROR_HANDLING_H
+// clang-format off
+#define PY_SSIZE_T_CLEAN
+#include "Python.h"
+// clang-format on
 #include <emscripten.h>
 
 typedef int errcode;
@@ -51,12 +55,11 @@ log_error(char* msg);
 
 #define EM_JS_REF(ret, func_name, args, body...)                               \
   EM_JS_DEFER(ret, func_name, args, {                                          \
-    /* "use strict";  TODO: enable this. */                                    \
+    "use strict";                                                              \
     try    /* intentionally no braces, body already has them */                \
       body /* <== body of func */                                              \
     catch (e) {                                                                \
         LOG_EM_JS_ERROR(func_name, err);                                       \
-        throw e;                                                               \
         Module.handle_js_error(e);                                             \
         return 0;                                                              \
     }                                                                          \
@@ -67,12 +70,11 @@ log_error(char* msg);
 
 #define EM_JS_NUM(ret, func_name, args, body...)                               \
   EM_JS_DEFER(ret, func_name, args, {                                          \
-    /* "use strict";  TODO: enable this. */                                    \
+    "use strict";                                                              \
     try    /* intentionally no braces, body already has them */                \
       body /* <== body of func */                                              \
     catch (e) {                                                                \
         LOG_EM_JS_ERROR(func_name, err);                                       \
-        throw e;                                                               \
         Module.handle_js_error(e);                                             \
         return -1;                                                             \
     }                                                                          \
@@ -122,14 +124,14 @@ log_error(char* msg);
 
 #define FAIL_IF_NULL(ref)                                                      \
   do {                                                                         \
-    if (ref == NULL) {                                                         \
+    if ((ref) == NULL) {                                                       \
       FAIL();                                                                  \
     }                                                                          \
   } while (0)
 
 #define FAIL_IF_MINUS_ONE(num)                                                 \
   do {                                                                         \
-    if (num != 0) {                                                            \
+    if ((num) == -1) {                                                         \
       FAIL();                                                                  \
     }                                                                          \
   } while (0)

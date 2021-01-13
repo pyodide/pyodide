@@ -3,8 +3,8 @@ package:
   version: 1.1.33
 
 source:
+  sha256: 8e36605144409df979cab43d835002f63988f3dc94d5d3537c12796db90e38c8
   url: ftp://xmlsoft.org/libxml2/libxslt-1.1.33.tar.gz
-  sha256sum: 8e36605144409df979cab43d835002f63988f3dc94d5d3537c12796db90e38c8
 
 requirements:
   run:

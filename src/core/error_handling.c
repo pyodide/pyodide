@@ -1,5 +1,8 @@
-#include "error_handling.h"
+// clang-format off
+#define PY_SSIZE_T_CLEAN
 #include "Python.h"
+// clang-format on
+#include "error_handling.h"
 #include "jsproxy.h"
 #include <emscripten.h>
 
@@ -22,7 +25,7 @@ error_handling_init()
     Module.handle_js_error = function(e)
     {
       let err = Module.hiwire.new_value(e);
-      PyodideErr_SetJsError(err);
+      _PyodideErr_SetJsError(err);
       Module.hiwire.decref(err);
     };
   });
