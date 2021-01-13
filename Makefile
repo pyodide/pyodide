@@ -15,16 +15,9 @@ PYODIDE_CXX=$(PYODIDE_ROOT)/ccache/em++
 CC=emcc
 CXX=em++
 OPTFLAGS=-O2
-<<<<<<< HEAD
-EXTRA_C_FLAGS=""
-CFLAGS=$(OPTFLAGS) -g -I$(PYTHONINCLUDE) -fPIC \
-	-Wno-warn-absolute-paths -Werror=int-conversion -Werror=incompatible-pointer-types \
-	$(EXTRA_C_FLAGS)
-=======
 CFLAGS=$(OPTFLAGS) -g -I$(PYTHONINCLUDE) -fPIC \
 	-Wno-warn-absolute-paths -Werror=int-conversion -Werror=incompatible-pointer-types \
 	$(EXTRA_CFLAGS)
->>>>>>> master
 
 LDFLAGS=\
 	-O2 \
