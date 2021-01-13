@@ -25,6 +25,7 @@
 
             class Console(console.InteractiveConsole):
                 def runcode(self, code):
+                    self.redirect_stdstreams()
                     js.term.pause()
                     js.term.runPython("\\n".join(self.buffer))
 
@@ -32,7 +33,8 @@
             # JQuery.terminal add trailing newline that is not easy to remove
             # with the current API. Doing our best here.
             _c = Console(stdout_callback=lambda s: js.term.echo(s.rstrip("\\n")),
-                         stderr_callback=lambda s: js.term.error(s.rstrip("\\n")))
+                         stderr_callback=lambda s: js.term.error(s.rstrip("\\n")),
+                         persistent_stream_redirection=False)
         `)
 
         let c = pyodide.pyimport('_c');
@@ -66,6 +68,7 @@
         };
 
         term.handlePythonResult = function(result) {
+          c.restore_stdstreams();
           term.resume();
           if (result === undefined) {
             return;
@@ -77,9 +80,10 @@
         };
 
         term.handlePythonError = function(result) {
+          c.restore_stdstreams();
           term.resume();
-          term.error(result.toString()):
-        };
+          term.error(result.toString());
+        }
       });
     </script>
   </body>

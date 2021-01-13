@@ -35,7 +35,9 @@ def test_interactive_console_streams():
         my_stderr += string
 
     shell = console.InteractiveConsole(
-        stdout_callback=stdout_callback, stderr_callback=stderr_callback
+        stdout_callback=stdout_callback,
+        stderr_callback=stderr_callback,
+        persistent_stream_redirection=True,
     )
 
     # std names
