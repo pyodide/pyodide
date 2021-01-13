@@ -2,11 +2,11 @@
  * The main bootstrap script for loading pyodide.
  */
 
-var languagePluginLoader = new Promise((resolve, reject) => {
+globalThis.languagePluginLoader = new Promise((resolve, reject) => {
   // Note: PYODIDE_BASE_URL is an environement variable replaced in
   // in this template in the Makefile. It's recommended to always set
   // languagePluginUrl in any case.
-  var baseURL = self.languagePluginUrl || '{{ PYODIDE_BASE_URL }}';
+  let baseURL = self.languagePluginUrl || '{{ PYODIDE_BASE_URL }}';
   baseURL = baseURL.substr(0, baseURL.lastIndexOf('/')) + '/';
 
   ////////////////////////////////////////////////////////////
@@ -316,7 +316,7 @@ var languagePluginLoader = new Promise((resolve, reject) => {
   ];
 
   function makePublicAPI(module, public_api) {
-    var namespace = {_module : module};
+    let namespace = {_module : module};
     for (let name of public_api) {
       namespace[name] = module[name];
     }
