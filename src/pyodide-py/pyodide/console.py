@@ -2,6 +2,7 @@ from typing import Optional, Callable
 import code
 import io
 import sys
+import platform
 
 
 __all__ = ["InteractiveConsole"]
@@ -149,4 +150,4 @@ class InteractiveConsole(code.InteractiveConsole):
         """ A banner similar to the one printed by the real Python interpreter. """
         # copyied from https://github.com/python/cpython/blob/799f8489d418b7f9207d333eac38214931bd7dcc/Lib/code.py#L214
         cprt = 'Type "help", "copyright", "credits" or "license" for more information.'
-        return f"Python {sys.version} on {sys.platform}\n{cprt}"
+        return f"Python {platform.python_version()} {platform.python_build()} on WebAssembly VM\n{cprt}"

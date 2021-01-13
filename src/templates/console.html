@@ -29,6 +29,9 @@
                     js.term.pause()
                     js.term.runPython("\\n".join(self.buffer))
 
+                def banner(self):
+                    return f"Welcome to the Pyodide terminal emulator 🐍\\n{super().banner()}"
+
 
             # JQuery.terminal add trailing newline that is not easy to remove
             # with the current API. Doing our best here.
