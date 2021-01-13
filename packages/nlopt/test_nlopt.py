@@ -1,7 +1,7 @@
 from pyodide_build.testing import run_in_pyodide
 
 
-@run_in_pyodide(packages="nlopt")
+@run_in_pyodide(packages=["nlopt"])
 def test_nlopt():
     import numpy as np
     import nlopt

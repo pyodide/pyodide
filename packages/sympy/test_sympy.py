@@ -1,7 +1,7 @@
 from pyodide_build.testing import run_in_pyodide
 
 
-@run_in_pyodide(packages="sympy")
+@run_in_pyodide(packages=["sympy"])
 def test_sympy():
     import sympy
 

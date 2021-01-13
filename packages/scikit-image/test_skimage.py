@@ -1,7 +1,7 @@
 from pyodide_build.testing import run_in_pyodide
 
 
-@run_in_pyodide(packages="scikit-image")
+@run_in_pyodide(packages=["scikit-image"])
 def test_skimage():
     import numpy as np
 

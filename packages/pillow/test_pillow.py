@@ -1,7 +1,7 @@
 from pyodide_build.testing import run_in_pyodide
 
 
-@run_in_pyodide(packages="pillow")
+@run_in_pyodide(packages=["pillow"])
 def test_pillow():
     from PIL import Image, ImageDraw, ImageOps
     import io
