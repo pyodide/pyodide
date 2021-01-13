@@ -168,7 +168,7 @@ JsProxy_Vectorcall(PyObject* self,
 
   // Recursion error?
   FAIL_IF_NONZERO(Py_EnterRecursiveCall(" in JsProxy_Vectorcall"));
-
+  bool success = false;
   JsRef idargs = NULL;
   JsRef idkwargs = NULL;
   JsRef idarg = NULL;
@@ -204,10 +204,10 @@ JsProxy_Vectorcall(PyObject* self,
   FAIL_IF_NULL(idresult);
   PyObject* pyresult = js2python(idresult);
   FAIL_IF_NULL(pyresult);
-  Py_LeaveRecursiveCall(/* " in JsProxy_Vectorcall" */);
 
   success = true;
 finally:
+  Py_LeaveRecursiveCall(/* " in JsProxy_Vectorcall" */);
   hiwire_CLEAR(idargs);
   hiwire_CLEAR(idkwargs);
   hiwire_CLEAR(idarg);
