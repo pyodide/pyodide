@@ -52,8 +52,8 @@ pythonexc2js()
   FAIL_IF_NULL(pystr);
   const char* pystr_utf8 = PyUnicode_AsUTF8(pystr);
   FAIL_IF_NULL(pystr_utf8);
-  printf("Python exception:\n");
-  printf("%s\n", pystr_utf8);
+  PySys_WriteStderr("Python exception:\n");
+  PySys_WriteStderr("%s\n", pystr_utf8);
   excval = _python2js_unicode(pystr);
 
   success = true;
