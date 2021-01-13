@@ -21,7 +21,7 @@ static PyTypeObject* PyExc_BaseException_Type;
 _Py_IDENTIFIER(__dir__);
 
 static PyObject*
-JsBoundMethod_cnew(JsRef this_, const char* name);
+JsBoundMethod_cnew(JsRef func, JsRef this_);
 
 ////////////////////////////////////////////////////////////
 // JsProxy
@@ -89,8 +89,8 @@ JsProxy_GetAttr(PyObject* self, PyObject* attr)
     FAIL();
   }
 
-  if (hiwire_is_function(idresult)) {
-    pyresult = JsBoundMethod_cnew(JsProxy_REF(self), key);
+  if (!hiwire_is_pyproxy(idresult) && hiwire_is_function(idresult)) {
+    pyresult = JsBoundMethod_cnew(idresult, JsProxy_REF(self));
   } else {
     pyresult = js2python(idresult);
   }
@@ -568,7 +568,7 @@ static PyTypeObject JsProxyType = {
   .tp_setattro = JsProxy_SetAttr,
   .tp_as_async = &JsProxy_asyncMethods,
   .tp_richcompare = JsProxy_RichCompare,
-  .tp_flags = Py_TPFLAGS_DEFAULT,
+  .tp_flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE,
   .tp_doc = "A proxy to make a Javascript object behave like a Python object",
   .tp_methods = JsProxy_Methods,
   .tp_getset = JsProxy_GetSet,
@@ -580,15 +580,22 @@ static PyTypeObject JsProxyType = {
   .tp_as_buffer = &JsProxy_BufferProcs
 };
 
-PyObject*
-JsProxy_cnew(JsRef idobj)
+// TODO: Instead use tp_new and Python's inheritance system
+void
+JsProxy_cinit(PyObject* obj, JsRef idobj)
 {
-  JsProxy* self;
-  self = (JsProxy*)JsProxyType.tp_alloc(&JsProxyType, 0);
+  JsProxy* self = (JsProxy*)obj;
   self->js = hiwire_incref(idobj);
   self->bytes = NULL;
   self->awaited = false;
-  return (PyObject*)self;
+}
+
+PyObject*
+JsProxy_cnew(JsRef idobj)
+{
+  PyObject* self = JsProxyType.tp_alloc(&JsProxyType, 0);
+  JsProxy_cinit(self, idobj);
+  return self;
 }
 
 typedef struct
@@ -688,22 +695,25 @@ JsProxy_new_error(JsRef idobj)
 
 typedef struct
 {
-  PyObject_HEAD JsRef this_;
-  const char* name;
+  JsProxy super;
+  JsRef this_;
 } JsBoundMethod;
 
+#define JsBoundMethod_THIS(x) (((JsBoundMethod*)x)->this_)
+
 static void
-JsBoundMethod_dealloc(JsBoundMethod* self)
+JsBoundMethod_dealloc(PyObject* self)
 {
-  hiwire_decref(self->this_);
-  Py_TYPE(self)->tp_free((PyObject*)self);
+  hiwire_CLEAR(JsBoundMethod_THIS(self));
+  Py_TYPE(self)->tp_free(self);
 }
 
+// TODO: once #1033 is accepted, switch to VECTOR_CALL for this and unify the
+// argument handling here and there so that bound methods and unbound methods
+// actually behave the same.
 static PyObject*
-JsBoundMethod_Call(PyObject* o, PyObject* args, PyObject* kwargs)
+JsBoundMethod_Call(PyObject* self, PyObject* args, PyObject* kwargs)
 {
-  JsBoundMethod* self = (JsBoundMethod*)o;
-
   Py_ssize_t nargs = PyTuple_Size(args);
 
   JsRef idargs = hiwire_array();
@@ -714,7 +724,8 @@ JsBoundMethod_Call(PyObject* o, PyObject* args, PyObject* kwargs)
     hiwire_decref(idarg);
   }
 
-  JsRef idresult = hiwire_call_member(self->this_, self->name, idargs);
+  JsRef idresult =
+    hiwire_call_bound(JsProxy_REF(self), JsBoundMethod_THIS(self), idargs);
   hiwire_decref(idargs);
   PyObject* pyresult = js2python(idresult);
   hiwire_decref(idresult);
@@ -722,23 +733,24 @@ JsBoundMethod_Call(PyObject* o, PyObject* args, PyObject* kwargs)
 }
 
 static PyTypeObject JsBoundMethodType = {
+  //.tp_base = &JsProxy, // We have to do this in jsproxy_init.
   .tp_name = "JsBoundMethod",
   .tp_basicsize = sizeof(JsBoundMethod),
   .tp_dealloc = (destructor)JsBoundMethod_dealloc,
   .tp_call = JsBoundMethod_Call,
-  .tp_flags = Py_TPFLAGS_DEFAULT,
+  .tp_flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE,
   .tp_doc = "A proxy to make it possible to call Javascript bound methods from "
             "Python."
 };
 
+// TODO: use tp_new and Python inheritance system
 static PyObject*
-JsBoundMethod_cnew(JsRef this_, const char* name)
+JsBoundMethod_cnew(JsRef func, JsRef this_)
 {
-  JsBoundMethod* self;
-  self = (JsBoundMethod*)JsBoundMethodType.tp_alloc(&JsBoundMethodType, 0);
-  self->this_ = hiwire_incref(this_);
-  self->name = name;
-  return (PyObject*)self;
+  PyObject* self = JsBoundMethodType.tp_alloc(&JsBoundMethodType, 0);
+  JsProxy_cinit(self, func);
+  JsBoundMethod_THIS(self) = hiwire_incref(this_);
+  return self;
 }
 
 ////////////////////////////////////////////////////////////
@@ -747,8 +759,7 @@ JsBoundMethod_cnew(JsRef this_, const char* name)
 bool
 JsProxy_Check(PyObject* x)
 {
-  return (PyObject_TypeCheck(x, &JsProxyType) ||
-          PyObject_TypeCheck(x, &JsBoundMethodType));
+  return PyObject_TypeCheck(x, &JsProxyType);
 }
 
 JsRef
@@ -811,6 +822,7 @@ JsProxy_init(PyObject* core_module)
   PyExc_BaseException_Type = (PyTypeObject*)PyExc_BaseException;
   _Exc_JsException.tp_base = (PyTypeObject*)PyExc_Exception;
 
+  JsBoundMethodType.tp_base = &JsProxyType;
   // Add JsException to the pyodide module so people can catch it if they want.
   FAIL_IF_MINUS_ONE(PyModule_AddType(core_module, &JsProxyType));
   FAIL_IF_MINUS_ONE(PyModule_AddType(core_module, &JsBoundMethodType));

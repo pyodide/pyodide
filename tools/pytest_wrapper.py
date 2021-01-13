@@ -18,15 +18,21 @@ def clean_args(args: List[str]) -> None:
 if __name__ == "__main__":
     try:
         subprocess.run(["pytest"] + args, check=True)
+        sys.exit(0)
     except subprocess.CalledProcessError:
-        # Failed tests. Look up number of failed tests
-        with open(".pytest_cache/v/cache/lastfailed") as f:
-            num_failed = sum(1 for line in f) - 2
+        pass
 
-        if num_failed < 10:
-            print("Rerunnning failed tests sequentially")
-            clean_args(args)
-            subprocess.run(["pytest", "--lf"] + args, check=True)
-        else:
-            print("More than 9 tests failed. Not rerunning")
-            raise
+    # Failed tests. Look up number of failed tests
+    with open(".pytest_cache/v/cache/lastfailed") as f:
+        num_failed = sum(1 for line in f) - 2
+
+    if num_failed > 9:
+        print("More than 9 tests failed. Not rerunning")
+        sys.exit(1)
+
+    print("Rerunnning failed tests sequentially")
+    clean_args(args)
+    try:
+        subprocess.run(["pytest", "--lf"] + args, check=True)
+    except subprocess.CalledProcessError:
+        sys.exit(1)

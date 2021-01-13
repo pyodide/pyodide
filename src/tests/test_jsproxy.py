@@ -1,5 +1,6 @@
 # See also test_typeconversions, and test_python.
 import pytest
+from pyodide_build.testing import run_in_pyodide
 
 
 def test_jsproxy_dir(selenium):
@@ -310,3 +311,25 @@ def test_await_error(selenium):
             r2 = c.send(r1.result())
             """
         )
+
+
+@run_in_pyodide
+def test_nested_attribute_access():
+    import js
+    from js import window
+
+    js.URL.createObjectURL
+    window.URL.createObjectURL
+
+
+@run_in_pyodide
+def test_window_isnt_super_weird_anymore():
+    import js
+    from js import window, Array
+
+    assert window.Array != window
+    assert window.Array == Array
+    assert window.window.window.window == window
+    assert js.window.Array == Array
+    assert js.window.window.window.window == window
+    assert window.window.window.window.Array == Array

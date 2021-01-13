@@ -334,13 +334,21 @@ def test_memoryview_conversion(selenium):
         """
         import array
         a = array.array("Q", [1,2,3])
+        b = array.array("u", "123")
         """
     )
     selenium.run_js(
         """
         pyodide.globals.a
-        if(pyodide._module._PyErr_Occurred()){
-            pyodide._module._pythonexc2js();
-        }
+        // Implicit assertion: this doesn't leave python error indicator set
+        // (automatically checked in conftest.py)
+        """
+    )
+
+    selenium.run_js(
+        """
+        pyodide.globals.b
+        // Implicit assertion: this doesn't leave python error indicator set
+        // (automatically checked in conftest.py)
         """
     )

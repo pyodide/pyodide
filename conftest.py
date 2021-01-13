@@ -108,7 +108,18 @@ class SeleniumWrapper:
             Error.stackTraceLimit = Infinity;
             let run = () => { %s }
             try {
-                return [0, run()]
+                let result = run();
+                if(pyodide && pyodide._module && pyodide._module._PyErr_Occurred()){
+                    try {
+                        pyodide._module._pythonexc2js();
+                    } catch(e){
+                        console.error(`Python exited with error flag set! Error was:\n{e.message}`);
+                        // Don't put original error message in new one: we want
+                        // "pytest.raises(xxx, match=msg)" to fail
+                        throw new Error(`Python exited with error flag set!`);
+                    }
+                }
+                return [0, result]
             } catch (e) {
                 return [1, e.toString(), e.stack];
             }
@@ -130,11 +141,22 @@ class SeleniumWrapper:
             let cb = arguments[arguments.length - 1];
             let run = async () => { %s }
             (async () => {
-                try {{
-                    cb([0, await run()]);
-                }} catch (e) {{
+                try {
+                    let result = await run();
+                    if(pyodide && pyodide._module && pyodide._module._PyErr_Occurred()){
+                        try {
+                            pyodide._module._pythonexc2js();
+                        } catch(e){
+                            console.error(`Python exited with error flag set! Error was:\n{e.message}`);
+                            // Don't put original error message in new one: we want
+                            // "pytest.raises(xxx, match=msg)" to fail
+                            throw new Error(`Python exited with error flag set!`);
+                        }
+                    }
+                    cb([0, result]);
+                } catch (e) {
                     cb([1, e.toString(), e.stack]);
-                }}
+                }
             })()
         """
 
