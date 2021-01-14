@@ -19,7 +19,7 @@
           handleResult(c.push(line))
         }
 
-        var term = $('body').terminal(
+        let term = $('body').terminal(
           pushCode,
           {
             greetings: "Welcome to the Pyodide terminal emulator 🐍",
@@ -40,20 +40,20 @@
           _c = Console(locals=globals())
         `)
 
-        var c = pyodide.pyimport('_c')
+        let c = pyodide.pyimport('_c');
 
         function handleResult(result) {
           if (result) {
-            term.set_prompt('[[;gray;]... ]')
+            term.set_prompt('[[;gray;]... ]');
           } else {
-            term.set_prompt('[[;red;]>>> ]')
-            var stderr = pyodide.runPython("sys.stderr.getvalue()").trim()
+            term.set_prompt('[[;red;]>>> ]');
+            let stderr = pyodide.runPython("sys.stderr.getvalue()").trim();
             if (stderr) {
-              term.echo(`[[;red;]${stderr}]`)
+              term.echo(`[[;red;]${stderr}]`);
             } else {
-              var stdout = pyodide.runPython("sys.stdout.getvalue()")
+              let stdout = pyodide.runPython("sys.stdout.getvalue()");
               if (stdout) {
-                term.echo(stdout.trim())
+                term.echo(stdout.trim());
               }
             }
           }
@@ -62,22 +62,22 @@
         term.runPython = function(code) {
           pyodide.runPythonAsync(code).then(
             term.handlePythonResult, term.handlePythonError
-          )
-        }
+          );
+        };
 
         term.handlePythonResult = function(result) {
           if (result === undefined) {
-            return
+            return;
           } else if (result['_repr_html_'] !== undefined) {
-            term.echo(result['_repr_html_'], {raw: true})
+            term.echo(result['_repr_html_'], {raw: true});
           } else {
-            term.echo(result.toString())
+            term.echo(result.toString());
           }
-        }
+        };
 
         term.handlePythonError = function(result) {
-          term.error(result.toString())
-        }
+          term.error(result.toString());
+        };
       });
     </script>
   </body>

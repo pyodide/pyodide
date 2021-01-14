@@ -124,14 +124,21 @@ log_error(char* msg);
 
 #define FAIL_IF_NULL(ref)                                                      \
   do {                                                                         \
-    if (ref == NULL) {                                                         \
+    if ((ref) == NULL) {                                                       \
       FAIL();                                                                  \
     }                                                                          \
   } while (0)
 
 #define FAIL_IF_MINUS_ONE(num)                                                 \
   do {                                                                         \
-    if (num != 0) {                                                            \
+    if ((num) == -1) {                                                         \
+      FAIL();                                                                  \
+    }                                                                          \
+  } while (0)
+
+#define FAIL_IF_NONZERO(num)                                                   \
+  do {                                                                         \
+    if ((num) != 0) {                                                          \
       FAIL();                                                                  \
     }                                                                          \
   } while (0)
