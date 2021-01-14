@@ -144,7 +144,7 @@ def test_jsproxy_iter(selenium):
     selenium.run_js(
         """
         function makeIterator(array) {
-          var nextIndex = 0;
+          let nextIndex = 0;
           return {
             next: function() {
               return nextIndex < array.length ?
@@ -174,23 +174,133 @@ def test_jsproxy_implicit_iter(selenium):
     ) == [1, 2, 3]
 
 
-def test_jsproxy_kwargs(selenium):
-    selenium.run_js(
-        """
-        window.kwarg_function = ({ a = 1, b = 1 }) => {
-            return a / b;
-        };
-        """
-    )
+def test_jsproxy_call(selenium):
     assert (
-        selenium.run(
+        selenium.run_js(
             """
-        from js import kwarg_function
-        kwarg_function(b = 2, a = 10)
+        window.f = function(){ return arguments.length; };
+        return pyodide.runPython(
+            `
+            from js import f
+            [f(*range(n)) for n in range(10)]
+            `
+        );
         """
         )
-        == 5
+        == list(range(10))
     )
+
+
+def test_jsproxy_call_kwargs(selenium):
+    assert (
+        selenium.run_js(
+            """
+        window.kwarg_function = ({ a = 1, b = 1 }) => {
+            return [a, b];
+        };
+        return pyodide.runPython(
+            `
+            from js import kwarg_function
+            kwarg_function(b = 2, a = 10)
+            `
+        );
+        """
+        )
+        == [10, 2]
+    )
+
+
+@pytest.mark.xfail
+def test_jsproxy_call_meth_py(selenium):
+    assert selenium.run_js(
+        """
+        window.a = {};
+        return pyodide.runPython(
+            `
+            from js import a
+            def f(self):
+                return self
+            a.f = f
+            a.f() == a
+            `
+        );
+        """
+    )
+
+
+def test_jsproxy_call_meth_js(selenium):
+    assert selenium.run_js(
+        """
+        window.a = {};
+        function f(){return this;}
+        a.f = f;
+        return pyodide.runPython(
+            `
+            from js import a
+            a.f() == a
+            `
+        );
+        """
+    )
+
+
+@pytest.mark.xfail
+def test_jsproxy_call_meth_js_kwargs(selenium):
+    assert selenium.run_js(
+        """
+        window.a = {};
+        function f({ x = 1, y = 1 }){
+            return [this, x, y];
+        }
+        a.f = f;
+        return pyodide.runPython(
+            `
+            from js import a
+            a.f(y=10, x=2) == [a, x, y]
+            `
+        );
+        """
+    )
+
+
+def test_supports_kwargs(selenium):
+    tests = [
+        ["", False],
+        ["x", False],
+        ["x     ", False],
+        ["{x}", True],
+        ["x, y, z", False],
+        ["x, y, {z}", True],
+        ["x, {y}, z", False],
+        ["x, {y}, {z}", True],
+        ["{}", True],
+        ["{} = {}", True],
+        ["[] = {}", False],
+        ["{} = []", True],
+        ["[] = []", False],
+        ["{} = null", True],
+        ["x = '2, `, {y}'", False],
+        ["{x} = '2, \\', x'", True],
+        ["[{x}]", False],
+        ["[x, y, z]", False],
+        ["x,", False],
+        ["{x},", True],
+        ["x, { y = 2 }", True],
+        ["{ y = 2 }, x", False],
+        ["{ x = 2 }, { y = 2 }", True],
+        ["{ a = 7, b = 2}", True],
+        ["{ a = 7, b = 2} = {b : 3}", True],
+        ["{ a = [7, 1], b = { c : 2} } = {}", True],
+        ["{ a = 7, b = 2} = {}", True],
+        ["{ a = 7, b = 2} = null", True],
+        ["{ x = { y : 2 }}", True],
+        ["{ x : 2 }", True],
+    ]
+    for (s, res) in tests:
+        s = f"function f({s}){{}}"
+        selenium.run_js(
+            f"return pyodide._module.function_supports_kwargs({repr(s)})"
+        ) == res
 
 
 import time

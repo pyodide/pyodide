@@ -36,7 +36,7 @@ access arrays on the Javascript heap), and the data type is preserved. This
 makes it easy to correctly convert it to a Numpy array using `numpy.asarray`:
 
 ```javascript
-array = Float32Array([1, 2, 3])
+let array = Float32Array([1, 2, 3]);
 ```
 
 ```python
@@ -112,7 +112,7 @@ Therefore, custom Python objects must be manually destroyed when passed to Javas
 they will leak. To do this, call `.destroy()` on the object, after which Javascript will no longer have access to the object.
 
 ```javascript
-var foo = pyodide.pyimport('foo');
+let foo = pyodide.pyimport('foo');
 foo.call_method();
 foo.destroy();
 foo.call_method(); // This will raise an exception, since the object has been
@@ -127,7 +127,7 @@ giving the name of the variable, and returns the object, converted to
 Javascript.
 
 ```javascript
-var sys = pyodide.pyimport('sys');
+let sys = pyodide.pyimport('sys');
 ```
 (type_conversions_using_js_obj_from_py)=
 ## Using Javascript objects from Python
@@ -152,7 +152,7 @@ Python, you may want to store it in a Python variable or use the `from js import
 For example, given this large Javascript variable:
 
 ```javascript
-var x = new Array(1000).fill(0)
+let x = new Array(1000).fill(0);
 ```
 
 Use it from Python as follows:

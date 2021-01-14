@@ -455,6 +455,9 @@ hiwire_is_pyproxy(JsRef idobj);
 bool
 hiwire_is_function(JsRef idobj);
 
+bool
+hiwire_function_supports_kwargs(JsRef idfunc);
+
 /**
  * Returns true if the object is a promise.
  */
