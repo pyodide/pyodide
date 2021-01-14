@@ -24,6 +24,11 @@
     return -1;                                                                 \
   } while (0)
 
+#define FAIL_IF_STATUS_EXCEPTION(status)                                       \
+  if (PyStatus_Exception(status)) {                                            \
+    goto finally;                                                              \
+  }
+
 #define TRY_INIT(mod)                                                          \
   do {                                                                         \
     if (mod##_init()) {                                                        \
@@ -31,6 +36,29 @@
     }                                                                          \
   } while (0)
 
+// Initialize python. exit() and print message to stderr on failure.
+static void
+initialize_python()
+{
+  bool success = false;
+  PyStatus status;
+  PyConfig config;
+  PyConfig_InitPythonConfig(&config);
+  status = PyConfig_SetBytesString(&config, &config.home, "/");
+  FAIL_IF_STATUS_EXCEPTION(status);
+  config.write_bytecode = false;
+  config.install_signal_handlers = false;
+  status = Py_InitializeFromConfig(&config);
+  FAIL_IF_STATUS_EXCEPTION(status);
+
+  success = true;
+finally:
+  PyConfig_Clear(&config);
+  if (!success) {
+    // This will exit().
+    Py_ExitStatusException(status);
+  }
+}
 #define TRY_INIT_WITH_CORE_MODULE(mod)                                         \
   do {                                                                         \
     if (mod##_init(core_module)) {                                             \
@@ -48,40 +76,24 @@ static struct PyModuleDef core_module_def = {
 int
 main(int argc, char** argv)
 {
-  PyObject* sys = NULL;
-  PyObject* core_module = NULL;
-  TRY_INIT(hiwire);
-
-  setenv("PYTHONHOME", "/", 0);
-  // This doesn't seem to work anymore, but I'm keeping it for good measure
-  // anyway The effective way to turn this off is below: setting
-  // sys.dont_write_bytecode = True
-  setenv("PYTHONDONTWRITEBYTECODE", "1", 0);
-
-  Py_InitializeEx(0);
-
-  sys = PyImport_ImportModule("sys");
-  if (sys == NULL) {
-    FATAL_ERROR("Failed to import sys module.");
-  }
-
-  if (PyObject_SetAttrString(sys, "dont_write_bytecode", Py_True)) {
-    FATAL_ERROR("Failed to set attribute on sys module.");
-  }
+  // This exits and prints a message to stderr on failure,
+  // no status code to check.
+  initialize_python();
 
   if (alignof(JsRef) != alignof(int)) {
     FATAL_ERROR("JsRef doesn't have the same alignment as int.");
   }
-
   if (sizeof(JsRef) != sizeof(int)) {
     FATAL_ERROR("JsRef doesn't have the same size as int.");
   }
 
+  PyObject* core_module = NULL;
   core_module = PyModule_Create(&core_module_def);
   if (core_module == NULL) {
     FATAL_ERROR("Failed to create core module.");
   }
 
+  TRY_INIT(hiwire);
   TRY_INIT(error_handling);
   TRY_INIT(js2python);
   TRY_INIT_WITH_CORE_MODULE(JsProxy); // JsProxy needs to be before JsImport
@@ -98,7 +110,6 @@ main(int argc, char** argv)
   // They should appear last so that core_module is ready.
   TRY_INIT(runpython);
 
-  Py_CLEAR(sys);
   Py_CLEAR(core_module);
   printf("Python initialization complete\n");
   emscripten_exit_with_live_runtime();

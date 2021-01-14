@@ -5,7 +5,7 @@ Access a Python object in the global namespace from Javascript.
 
 For example, to access the `foo` Python object from Javascript:
 ```javascript
-var foo = pyodide.pyimport('foo')
+let foo = pyodide.pyimport('foo');
 ```
 
 *Parameters*
