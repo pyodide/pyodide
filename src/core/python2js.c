@@ -55,6 +55,7 @@ pythonexc2js()
   PySys_WriteStderr("Python exception:\n");
   PySys_WriteStderr("%s\n", pystr_utf8);
   excval = _python2js_unicode(pystr);
+  FAIL_IF_NULL(excval);
 
   success = true;
 finally:
