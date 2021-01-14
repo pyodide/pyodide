@@ -120,12 +120,6 @@ _pyproxy_ownKeys(PyObject* pyobj)
 }
 
 JsRef
-_pyproxy_enumerate(PyObject* pyobj)
-{
-  return _pyproxy_ownKeys(pyobj);
-}
-
-JsRef
 _pyproxy_apply(PyObject* pyobj, JsRef idargs)
 {
   Py_ssize_t length = hiwire_get_length(idargs);
