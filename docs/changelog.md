@@ -44,6 +44,8 @@
 - `JsProxy.__bool__` now produces more consistent results: both `bool(window)` and `bool(zero-arg-callback)` were `False` but now are `True`. Conversely, `bool(empty_js_set)` and `bool(empty_js_map)` were `True` but now are `False`. [#1061](https://github.com/iodide-project/pyodide/pull/1061)
 - When calling a javascript function from Python without keyword arguments, Pyodide no longer passes a `PyProxy`-wrapped `NULL` pointer as the last argument.
 [#1033](https://github.com/iodide-project/pyodide/pull/1033)
+- JsBoundMethod is now a subclass of JsProxy, which fixes nested attribute access and various other strange bugs.
+  [#1124](https://github.com/iodide-project/pyodide/pull/1124)
 
 
 ## Version 0.16.1
