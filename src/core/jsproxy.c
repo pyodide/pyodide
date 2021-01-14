@@ -753,12 +753,11 @@ JsMethod_jsnew(PyObject* o, PyObject* args, PyObject* kwargs)
   return pyresult;
 }
 
-static PyMethodDef JsMethod_Methods[] = {
-  { "new",
-    (PyCFunction)JsMethod_jsnew,
-    METH_VARARGS | METH_KEYWORDS,
-    "Construct a new instance" },
-};
+static PyMethodDef JsMethod_Methods[] = { { "new",
+                                            (PyCFunction)JsMethod_jsnew,
+                                            METH_VARARGS | METH_KEYWORDS,
+                                            "Construct a new instance" },
+                                          { NULL } };
 
 static PyTypeObject JsMethodType = {
   //.tp_base = &JsProxy, // We have to do this in jsproxy_init.
