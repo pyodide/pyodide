@@ -190,7 +190,7 @@ EM_JS(int, pyproxy_init, (), {
   Module.PyProxy = {
     _getPtr,
     isPyProxy: function(jsobj) {
-      return jsobj['$$'] !== undefined && jsobj['$$']['type'] === 'PyProxy';
+      return jsobj && jsobj['$$'] !== undefined && jsobj['$$']['type'] === 'PyProxy';
     },
   };
 
