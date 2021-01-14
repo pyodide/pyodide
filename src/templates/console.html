@@ -60,47 +60,19 @@
           if (result) {
             term.set_prompt('[[;gray;]... ]');
           } else {
-<<<<<<< HEAD
-            // run some code - await result below because we run async to make imports work
-            term.pause()
-=======
             term.set_prompt('[[;red;]>>> ]');
->>>>>>> c01ce7415bbb5298dd76f0d53ddc60d9983d1d64
           }
         }
 
         term.runPython = function(code) {
           pyodide.runPythonAsync(code).then(
             term.handlePythonResult, term.handlePythonError
-<<<<<<< HEAD
-          )
-        }
-
-        function showIO()
-        {
-            term.resume()
-            term.set_prompt('[[;red;]>>> ]')
-            var stderr = pyodide.runPython("sys.stderr.getvalue()").trim()
-            if (stderr) {
-              term.echo(`[[;red;]${stderr}]`)
-            } else {
-              var stdout = pyodide.runPython("sys.stdout.getvalue()")
-              if (stdout) {
-                term.echo(stdout.trim())
-              }
-            }
-        }
-
-        term.handlePythonResult = function(result) {
-          showIO();
-=======
           );
         };
 
         term.handlePythonResult = function(result) {
           c.restore_stdstreams();
           term.resume();
->>>>>>> c01ce7415bbb5298dd76f0d53ddc60d9983d1d64
           if (result === undefined) {
             return;
           } else if (result['_repr_html_'] !== undefined) {
@@ -111,14 +83,9 @@
         };
 
         term.handlePythonError = function(result) {
-<<<<<<< HEAD
-          showIO();
-          term.error(result.toString())
-=======
           c.restore_stdstreams();
           term.resume();
           term.error(result.toString());
->>>>>>> c01ce7415bbb5298dd76f0d53ddc60d9983d1d64
         }
       });
     </script>

@@ -478,9 +478,11 @@ globalThis.languagePluginLoader = new Promise((resolve, reject) => {
     // The emscripten module needs to be at this location for the core
     // filesystem to install itself. Once that's complete, it will be replaced
     // by the call to `makePublicAPI` with a more limited public API.
-    self.pyodide = pyodide(Module);
-    self.pyodide.loadedPackages = {};
-    self.pyodide.loadPackage = loadPackage;
+      pyodide(Module).then((x) => {
+      self.pyodide = x;
+      self.pyodide.loadedPackages = {};
+      self.pyodide.loadPackage = loadPackage;
+    }, () => {});    
   });
 });
 languagePluginLoader
