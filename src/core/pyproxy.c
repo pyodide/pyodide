@@ -208,7 +208,7 @@ EM_JS(int, pyproxy_init, (), {
       Module.hiwire.decref(idresult);
       Module.hiwire.decref(idargs);
       return jsresult;
-    };
+    },
   };
 
   // See explanation of which methods should be defined here and what they do here:
