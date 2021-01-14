@@ -1,0 +1,13 @@
+package:
+  name: glpk
+  version: "4.65"
+
+source:
+  sha256: 4281e29b628864dfe48d393a7bedd781e5b475387c20d8b0158f329994721a10
+  url: https://ftp.gnu.org/gnu/glpk/glpk-4.65.tar.gz
+
+build:
+  library: true
+  script: |
+     CFLAGS="-fPIC" emconfigure ./configure  --prefix=$PWD
+     emmake make -j ${PYODIDE_JOBS:-3}

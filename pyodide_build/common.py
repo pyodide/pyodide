@@ -25,16 +25,6 @@ DEFAULTLDFLAGS = " ".join(
 # fmt: on
 
 
-def parse_package(package):
-    # Import yaml here because pywasmcross needs to run in the built native
-    # Python, which won't have PyYAML
-    import yaml
-
-    # TODO: Validate against a schema
-    with open(package) as fd:
-        return yaml.safe_load(fd)
-
-
 def _parse_package_subset(query: Optional[str]) -> Optional[Set[str]]:
     """Parse the list of packages specified with PYODIDE_PACKAGES env var.
 

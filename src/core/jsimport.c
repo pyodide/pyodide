@@ -1,3 +1,6 @@
+#define PY_SSIZE_T_CLEAN
+#include "Python.h"
+
 #include "jsimport.h"
 
 #include <emscripten.h>
@@ -60,17 +63,17 @@ JsImport_init()
 {
   PyObject* module_dict = PyImport_GetModuleDict();
   if (module_dict == NULL) {
-    return 1;
+    return -1;
   }
 
   js_module = PyModule_Create(&JsModule);
   if (js_module == NULL) {
-    return 1;
+    return -1;
   }
 
   if (PyDict_SetItemString(module_dict, "js", js_module)) {
     Py_DECREF(js_module);
-    return 1;
+    return -1;
   }
 
   return 0;

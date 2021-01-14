@@ -1,31 +1,43 @@
-#include "jsproxy.h"
+#define PY_SSIZE_T_CLEAN
+#include "Python.h"
 
 #include "hiwire.h"
 #include "js2python.h"
+#include "jsproxy.h"
 #include "python2js.h"
 
-#include "Python.h"
 #include "structmember.h"
+
+_Py_IDENTIFIER(get_event_loop);
+_Py_IDENTIFIER(create_future);
+_Py_IDENTIFIER(set_exception);
+_Py_IDENTIFIER(set_result);
+_Py_IDENTIFIER(__await__);
+
+static PyObject* asyncio_get_event_loop;
 
 static PyTypeObject* PyExc_BaseException_Type;
 
 _Py_IDENTIFIER(__dir__);
 
 static PyObject*
-JsBoundMethod_cnew(JsRef this_, const char* name);
+JsBoundMethod_cnew(JsRef func, JsRef this_);
 
 ////////////////////////////////////////////////////////////
 // JsProxy
 //
-// This is a Python object that provides ideomatic access to a Javascript
+// This is a Python object that provides idiomatic access to a Javascript
 // object.
 
 // clang-format off
 typedef struct
 {
   PyObject_HEAD
+  vectorcallfunc vectorcall;
+  int supports_kwargs; // -1 : don't know. 0 : no, 1 : yes
   JsRef js;
   PyObject* bytes;
+  bool awaited; // for promises
 } JsProxy;
 // clang-format on
 
@@ -35,7 +47,7 @@ static void
 JsProxy_dealloc(JsProxy* self)
 {
   hiwire_decref(self->js);
-  Py_XDECREF(self->bytes);
+  Py_CLEAR(self->bytes);
   Py_TYPE(self)->tp_free((PyObject*)self);
 }
 
@@ -79,8 +91,8 @@ JsProxy_GetAttr(PyObject* self, PyObject* attr)
     FAIL();
   }
 
-  if (hiwire_is_function(idresult)) {
-    pyresult = JsBoundMethod_cnew(JsProxy_REF(self), key);
+  if (!hiwire_is_pyproxy(idresult) && hiwire_is_function(idresult)) {
+    pyresult = JsBoundMethod_cnew(idresult, JsProxy_REF(self));
   } else {
     pyresult = js2python(idresult);
   }
@@ -118,41 +130,87 @@ finally:
   return success ? 0 : -1;
 }
 
+#define JsProxy_JSREF(x) (((JsProxy*)x)->js)
+#define JsProxy_SUPPORTS_KWARGS(x) (((JsProxy*)x)->supports_kwargs)
+
 static PyObject*
-JsProxy_Call(PyObject* self, PyObject* args, PyObject* kwargs)
+JsProxy_Vectorcall(PyObject* self,
+                   PyObject* const* args,
+                   size_t nargsf,
+                   PyObject* kwnames)
 {
+  bool kwargs = false;
+  if (kwnames != NULL) {
+    // There were kwargs? But maybe kwnames is the empty tuple?
+    PyObject* kwname = PyTuple_GetItem(kwnames, 0); /* borrowed!*/
+    // Clear IndexError
+    PyErr_Clear();
+    if (kwname != NULL) {
+      kwargs = true;
+      if (JsProxy_SUPPORTS_KWARGS(self) == -1) {
+        JsProxy_SUPPORTS_KWARGS(self) =
+          hiwire_function_supports_kwargs(JsProxy_JSREF(self));
+        if (JsProxy_SUPPORTS_KWARGS(self) == -1) {
+          // if it's still -1, hiwire_function_supports_kwargs threw an error.
+          return NULL;
+        }
+      }
+    }
+    if (kwargs && !JsProxy_SUPPORTS_KWARGS(self)) {
+      // We have kwargs but function doesn't support them. Raise error.
+      const char* kwname_utf8 = PyUnicode_AsUTF8(kwname);
+      PyErr_Format(PyExc_TypeError,
+                   "jsproxy got an unexpected keyword argument '%s'",
+                   kwname_utf8);
+      return NULL;
+    }
+  }
+
+  // Recursion error?
+  FAIL_IF_NONZERO(Py_EnterRecursiveCall(" in JsProxy_Vectorcall"));
   bool success = false;
   JsRef idargs = NULL;
-  JsRef idarg = NULL;
   JsRef idkwargs = NULL;
+  JsRef idarg = NULL;
   JsRef idresult = NULL;
-  // result:
-  PyObject* pyresult;
-  Py_ssize_t nargs = PyTuple_Size(args);
 
+  Py_ssize_t nargs = PyVectorcall_NARGS(nargsf);
   idargs = hiwire_array();
+  FAIL_IF_NULL(idargs);
   for (Py_ssize_t i = 0; i < nargs; ++i) {
-    idarg = python2js(PyTuple_GET_ITEM(args, i));
+    idarg = python2js(args[i]);
     FAIL_IF_NULL(idarg);
     FAIL_IF_MINUS_ONE(hiwire_push_array(idargs, idarg));
     hiwire_CLEAR(idarg);
   }
 
-  if (PyDict_Size(kwargs)) {
-    idkwargs = python2js(kwargs);
+  if (kwargs) {
+    // store kwargs into an object which we'll use as the last argument.
+    idkwargs = hiwire_object();
+    FAIL_IF_NULL(idkwargs);
+    Py_ssize_t nkwargs = PyTuple_Size(kwnames);
+    for (Py_ssize_t i = 0, k = nargsf; i < nkwargs; ++i, ++k) {
+      PyObject* name = PyTuple_GET_ITEM(kwnames, i); /* borrowed! */
+      const char* name_utf8 = PyUnicode_AsUTF8(name);
+      idarg = python2js(args[k]);
+      FAIL_IF_NULL(idarg);
+      FAIL_IF_MINUS_ONE(hiwire_set_member_string(idkwargs, name_utf8, idarg));
+      hiwire_CLEAR(idarg);
+    }
     FAIL_IF_MINUS_ONE(hiwire_push_array(idargs, idkwargs));
   }
 
-  idresult = hiwire_call(JsProxy_REF(self), idargs);
+  idresult = hiwire_call(JsProxy_JSREF(self), idargs);
   FAIL_IF_NULL(idresult);
-  pyresult = js2python(idresult);
+  PyObject* pyresult = js2python(idresult);
   FAIL_IF_NULL(pyresult);
 
   success = true;
 finally:
+  Py_LeaveRecursiveCall(/* " in JsProxy_Vectorcall" */);
   hiwire_CLEAR(idargs);
-  hiwire_CLEAR(idarg);
   hiwire_CLEAR(idkwargs);
+  hiwire_CLEAR(idarg);
   hiwire_CLEAR(idresult);
   if (!success) {
     Py_CLEAR(pyresult);
@@ -445,6 +503,67 @@ JsProxy_Bool(PyObject* o)
   return hiwire_get_bool(self->js) ? 1 : 0;
 }
 
+PyObject*
+JsProxy_Await(JsProxy* self)
+{
+  // Guards
+  if (self->awaited) {
+    PyErr_SetString(PyExc_RuntimeError,
+                    "cannot reuse already awaited coroutine");
+    return NULL;
+  }
+
+  if (!hiwire_is_promise(self->js)) {
+    PyObject* str = JsProxy_Repr((PyObject*)self);
+    const char* str_utf8 = PyUnicode_AsUTF8(str);
+    PyErr_Format(PyExc_TypeError,
+                 "object %s can't be used in 'await' expression",
+                 str_utf8);
+    return NULL;
+  }
+
+  // Main
+  PyObject* result = NULL;
+
+  PyObject* loop = NULL;
+  PyObject* fut = NULL;
+  PyObject* set_result = NULL;
+  PyObject* set_exception = NULL;
+
+  loop = _PyObject_CallNoArg(asyncio_get_event_loop);
+  FAIL_IF_NULL(loop);
+
+  fut = _PyObject_CallMethodId(loop, &PyId_create_future, NULL);
+  FAIL_IF_NULL(fut);
+
+  set_result = _PyObject_GetAttrId(fut, &PyId_set_result);
+  FAIL_IF_NULL(set_result);
+  set_exception = _PyObject_GetAttrId(fut, &PyId_set_exception);
+  FAIL_IF_NULL(set_exception);
+
+  JsRef promise_id = hiwire_resolve_promise(self->js);
+  JsRef idargs = hiwire_array();
+  JsRef idarg;
+  // TODO: does this leak set_result and set_exception? See #1006.
+  idarg = python2js(set_result);
+  hiwire_push_array(idargs, idarg);
+  hiwire_decref(idarg);
+  idarg = python2js(set_exception);
+  hiwire_push_array(idargs, idarg);
+  hiwire_decref(idarg);
+  hiwire_decref(hiwire_call_member(promise_id, "then", idargs));
+  hiwire_decref(promise_id);
+  hiwire_decref(idargs);
+  result = _PyObject_CallMethodId(fut, &PyId___await__, NULL);
+
+finally:
+  Py_CLEAR(loop);
+  Py_CLEAR(set_result);
+  Py_CLEAR(set_exception);
+  Py_DECREF(fut);
+  return result;
+}
+
 // clang-format off
 static PyMappingMethods JsProxy_MappingMethods = {
   JsProxy_length,
@@ -470,6 +589,7 @@ static PyMethodDef JsProxy_Methods[] = {
     (PyCFunction)JsProxy_GetIter,
     METH_NOARGS,
     "Get an iterator over the object" },
+  { "__await__", (PyCFunction)JsProxy_Await, METH_NOARGS, ""},
   { "_has_bytes",
     (PyCFunction)JsProxy_HasBytes,
     METH_NOARGS,
@@ -482,6 +602,8 @@ static PyMethodDef JsProxy_Methods[] = {
 };
 // clang-format on
 
+static PyAsyncMethods JsProxy_asyncMethods = { .am_await =
+                                                 (unaryfunc)JsProxy_Await };
 static PyGetSetDef JsProxy_GetSet[] = { { "typeof", .get = JsProxy_typeof },
                                         { NULL } };
 
@@ -489,11 +611,14 @@ static PyTypeObject JsProxyType = {
   .tp_name = "JsProxy",
   .tp_basicsize = sizeof(JsProxy),
   .tp_dealloc = (destructor)JsProxy_dealloc,
-  .tp_call = JsProxy_Call,
+  .tp_call = PyVectorcall_Call,
+  .tp_vectorcall_offset = offsetof(JsProxy, vectorcall),
   .tp_getattro = JsProxy_GetAttr,
   .tp_setattro = JsProxy_SetAttr,
+  .tp_as_async = &JsProxy_asyncMethods,
   .tp_richcompare = JsProxy_RichCompare,
-  .tp_flags = Py_TPFLAGS_DEFAULT,
+  .tp_flags =
+    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE | _Py_TPFLAGS_HAVE_VECTORCALL,
   .tp_doc = "A proxy to make a Javascript object behave like a Python object",
   .tp_methods = JsProxy_Methods,
   .tp_getset = JsProxy_GetSet,
@@ -505,14 +630,24 @@ static PyTypeObject JsProxyType = {
   .tp_as_buffer = &JsProxy_BufferProcs
 };
 
+// TODO: Instead use tp_new and Python's inheritance system
+void
+JsProxy_cinit(PyObject* obj, JsRef idobj)
+{
+  JsProxy* self = (JsProxy*)obj;
+  self->vectorcall = JsProxy_Vectorcall;
+  self->js = hiwire_incref(idobj);
+  self->bytes = NULL;
+  self->supports_kwargs = -1; // don't know
+  self->awaited = false;
+}
+
 PyObject*
 JsProxy_cnew(JsRef idobj)
 {
-  JsProxy* self;
-  self = (JsProxy*)JsProxyType.tp_alloc(&JsProxyType, 0);
-  self->js = hiwire_incref(idobj);
-  self->bytes = NULL;
-  return (PyObject*)self;
+  PyObject* self = JsProxyType.tp_alloc(&JsProxyType, 0);
+  JsProxy_cinit(self, idobj);
+  return self;
 }
 
 typedef struct
@@ -612,22 +747,25 @@ JsProxy_new_error(JsRef idobj)
 
 typedef struct
 {
-  PyObject_HEAD JsRef this_;
-  const char* name;
+  JsProxy super;
+  JsRef this_;
 } JsBoundMethod;
 
+#define JsBoundMethod_THIS(x) (((JsBoundMethod*)x)->this_)
+
 static void
-JsBoundMethod_dealloc(JsBoundMethod* self)
+JsBoundMethod_dealloc(PyObject* self)
 {
-  hiwire_decref(self->this_);
-  Py_TYPE(self)->tp_free((PyObject*)self);
+  hiwire_CLEAR(JsBoundMethod_THIS(self));
+  Py_TYPE(self)->tp_free(self);
 }
 
+// TODO: once #1033 is accepted, switch to VECTOR_CALL for this and unify the
+// argument handling here and there so that bound methods and unbound methods
+// actually behave the same.
 static PyObject*
-JsBoundMethod_Call(PyObject* o, PyObject* args, PyObject* kwargs)
+JsBoundMethod_Call(PyObject* self, PyObject* args, PyObject* kwargs)
 {
-  JsBoundMethod* self = (JsBoundMethod*)o;
-
   Py_ssize_t nargs = PyTuple_Size(args);
 
   JsRef idargs = hiwire_array();
@@ -638,7 +776,8 @@ JsBoundMethod_Call(PyObject* o, PyObject* args, PyObject* kwargs)
     hiwire_decref(idarg);
   }
 
-  JsRef idresult = hiwire_call_member(self->this_, self->name, idargs);
+  JsRef idresult =
+    hiwire_call_bound(JsProxy_REF(self), JsBoundMethod_THIS(self), idargs);
   hiwire_decref(idargs);
   PyObject* pyresult = js2python(idresult);
   hiwire_decref(idresult);
@@ -646,23 +785,24 @@ JsBoundMethod_Call(PyObject* o, PyObject* args, PyObject* kwargs)
 }
 
 static PyTypeObject JsBoundMethodType = {
+  //.tp_base = &JsProxy, // We have to do this in jsproxy_init.
   .tp_name = "JsBoundMethod",
   .tp_basicsize = sizeof(JsBoundMethod),
   .tp_dealloc = (destructor)JsBoundMethod_dealloc,
   .tp_call = JsBoundMethod_Call,
-  .tp_flags = Py_TPFLAGS_DEFAULT,
+  .tp_flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE,
   .tp_doc = "A proxy to make it possible to call Javascript bound methods from "
             "Python."
 };
 
+// TODO: use tp_new and Python inheritance system
 static PyObject*
-JsBoundMethod_cnew(JsRef this_, const char* name)
+JsBoundMethod_cnew(JsRef func, JsRef this_)
 {
-  JsBoundMethod* self;
-  self = (JsBoundMethod*)JsBoundMethodType.tp_alloc(&JsBoundMethodType, 0);
-  self->this_ = hiwire_incref(this_);
-  self->name = name;
-  return (PyObject*)self;
+  PyObject* self = JsBoundMethodType.tp_alloc(&JsBoundMethodType, 0);
+  JsProxy_cinit(self, func);
+  JsBoundMethod_THIS(self) = hiwire_incref(this_);
+  return self;
 }
 
 ////////////////////////////////////////////////////////////
@@ -671,8 +811,7 @@ JsBoundMethod_cnew(JsRef this_, const char* name)
 bool
 JsProxy_Check(PyObject* x)
 {
-  return (PyObject_TypeCheck(x, &JsProxyType) ||
-          PyObject_TypeCheck(x, &JsBoundMethodType));
+  return PyObject_TypeCheck(x, &JsProxyType);
 }
 
 JsRef
@@ -696,27 +835,54 @@ JsException_AsJs(PyObject* err)
   return hiwire_incref(js_error->js);
 }
 
+// Copied from Python 3.9
+// TODO: remove once we update to Python 3.9
+static int
+PyModule_AddType(PyObject* module, PyTypeObject* type)
+{
+  if (PyType_Ready(type) < 0) {
+    return -1;
+  }
+
+  const char* name = _PyType_Name(type);
+  assert(name != NULL);
+
+  Py_INCREF(type);
+  if (PyModule_AddObject(module, name, (PyObject*)type) < 0) {
+    Py_DECREF(type);
+    return -1;
+  }
+
+  return 0;
+}
+
 int
-JsProxy_init()
+JsProxy_init(PyObject* core_module)
 {
   bool success = false;
+
+  PyObject* asyncio_module = NULL;
+  PyObject* pyodide_module = NULL;
+
+  asyncio_module = PyImport_ImportModule("asyncio");
+  FAIL_IF_NULL(asyncio_module);
+
+  asyncio_get_event_loop =
+    _PyObject_GetAttrId(asyncio_module, &PyId_get_event_loop);
+  FAIL_IF_NULL(asyncio_get_event_loop);
+
   PyExc_BaseException_Type = (PyTypeObject*)PyExc_BaseException;
   _Exc_JsException.tp_base = (PyTypeObject*)PyExc_Exception;
 
-  PyObject* module;
-  PyObject* exc;
-
+  JsBoundMethodType.tp_base = &JsProxyType;
   // Add JsException to the pyodide module so people can catch it if they want.
-  module = PyImport_ImportModule("pyodide");
-  FAIL_IF_NULL(module);
-  FAIL_IF_MINUS_ONE(
-    PyObject_SetAttrString(module, "JsException", Exc_JsException));
-  FAIL_IF_MINUS_ONE(PyType_Ready(&JsProxyType));
-  FAIL_IF_MINUS_ONE(PyType_Ready(&JsBoundMethodType));
-  FAIL_IF_MINUS_ONE(PyType_Ready(&_Exc_JsException));
+  FAIL_IF_MINUS_ONE(PyModule_AddType(core_module, &JsProxyType));
+  FAIL_IF_MINUS_ONE(PyModule_AddType(core_module, &JsBoundMethodType));
+  FAIL_IF_MINUS_ONE(PyModule_AddType(core_module, &_Exc_JsException));
 
   success = true;
 finally:
-  Py_CLEAR(module);
+  Py_CLEAR(asyncio_module);
+  Py_CLEAR(pyodide_module);
   return success ? 0 : -1;
 }

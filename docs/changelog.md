@@ -24,6 +24,10 @@
   [#1066](https://github.com/iodide-project/pyodide/pull/1066)
 - Removed repr API.
   [#1067](https://github.com/iodide-project/pyodide/pull/1067)
+- If `messageCallback` and `errorCallback` are supplied to
+  `pyodide.loadPackage`, `pyodide.runPythonAsync` and
+  `pyodide.loadPackagesFromImport`, then the messages are no longer
+  automatically logged to the console.
 
 ### Added
 - `micropip` now supports installing wheels from relative urls. [#872](https://github.com/iodide-project/pyodide/pull/872)
@@ -32,10 +36,19 @@
 - Reduce the size of the core pyodide package
   [#987](https://github.com/iodide-project/pyodide/pull/987).
 - Updated packages: bleach 3.2.1, packaging 20.8
+- `eval_code` now accepts separate `globals` and `locals` parameters.
+  [#1083](https://github.com/iodide-project/pyodide/pull/1083)
+- An InteractiveConsole to ease the integration of Pyodide REPL in
+  webpages (used in console.html) [#1125](https://github.com/iodide-project/pyodide/pull/1125)
 
 ### Fixed
 - getattr and dir on JsProxy now report consistent results and include all names defined on the Python dictionary backing JsProxy. [#1017](https://github.com/iodide-project/pyodide/pull/1017)
 - `JsProxy.__bool__` now produces more consistent results: both `bool(window)` and `bool(zero-arg-callback)` were `False` but now are `True`. Conversely, `bool(empty_js_set)` and `bool(empty_js_map)` were `True` but now are `False`. [#1061](https://github.com/iodide-project/pyodide/pull/1061)
+- When calling a javascript function from Python without keyword arguments, Pyodide no longer passes a `PyProxy`-wrapped `NULL` pointer as the last argument.
+[#1033](https://github.com/iodide-project/pyodide/pull/1033)
+- JsBoundMethod is now a subclass of JsProxy, which fixes nested attribute access and various other strange bugs.
+  [#1124](https://github.com/iodide-project/pyodide/pull/1124)
+- In console.html: sync behavior, full stdout/stderr support, clean namespace and bigger font [#1125](https://github.com/iodide-project/pyodide/pull/1125)
 
 ## Version 0.16.1
 *December 25, 2020*

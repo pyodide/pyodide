@@ -15,7 +15,9 @@ PYODIDE_CXX=$(PYODIDE_ROOT)/ccache/em++
 CC=emcc
 CXX=em++
 OPTFLAGS=-O2
-CFLAGS=$(OPTFLAGS) -g -I$(PYTHONINCLUDE) -Wno-warn-absolute-paths -Werror=int-conversion -Werror=incompatible-pointer-types -fPIC
+CFLAGS=$(OPTFLAGS) -g -I$(PYTHONINCLUDE) -fPIC \
+	-Wno-warn-absolute-paths -Werror=int-conversion -Werror=incompatible-pointer-types \
+	$(EXTRA_CFLAGS)
 
 LDFLAGS=\
 	-O2 \
@@ -37,9 +39,8 @@ LDFLAGS=\
 	$(wildcard $(CPYTHONROOT)/build/bzip2*/libbz2.a) \
 	-lstdc++ \
 	--memory-init-file 0 \
-	-s LZ4=1
-
-SITEPACKAGES=root/lib/python$(PYMINOR)/site-packages
+	-s LZ4=1	\
+	$(EXTRA_LDFLAGS)
 
 all: check \
 	build/pyodide.asm.js \
@@ -61,11 +62,22 @@ build/pyodide.asm.js: src/core/main.o src/core/jsimport.o \
 		src/core/python2js.o \
 		src/core/python2js_buffer.o \
 		src/core/runpython.o src/core/hiwire.o \
-		root/.built
+		src/webbrowser.py \
+		src/_testcapi.py \
+		src/pystone.py \
+		$(wildcard src/pyodide-py/pyodide/*.py) \
+		$(CPYTHONLIB)
 	date +"[%F %T] Building pyodide.asm.js..."
 	[ -d build ] || mkdir build
 	$(CXX) -s EXPORT_NAME="'pyodide'" -o build/pyodide.asm.js $(filter %.o,$^) \
-		$(LDFLAGS) -s FORCE_FILESYSTEM=1 --preload-file root/lib@lib
+		$(LDFLAGS) -s FORCE_FILESYSTEM=1 \
+		--preload-file $(CPYTHONLIB)@/lib/python$(PYMINOR) \
+		--preload-file src/webbrowser.py@/lib/python$(PYMINOR)/webbrowser.py \
+		--preload-file src/_testcapi.py@/lib/python$(PYMINOR)/_testcapi.py \
+		--preload-file src/pystone.py@/lib/python$(PYMINOR)/pystone.py \
+		--preload-file src/pyodide-py/pyodide@/lib/python$(PYMINOR)/site-packages/pyodide \
+		--exclude-file "*__pycache__*" \
+		--exclude-file "*/test/*"
 	date +"[%F %T] done building pyodide.asm.js."
 
 
@@ -104,10 +116,10 @@ test: all
 
 lint:
 	# check for unused imports, the rest is done by black
-	flake8 --select=F401 src tools pyodide_build benchmark
+	flake8 --select=F401 src tools pyodide_build benchmark conftest.py
 	clang-format-6.0 -output-replacements-xml `find src -type f -regex ".*\.\(c\|h\|js\)"` | (! grep '<replacement ')
 	black --check .
-	mypy --ignore-missing-imports pyodide_build/ src/ packages/micropip/micropip/ packages/*/test*
+	mypy --ignore-missing-imports pyodide_build/ src/ packages/micropip/micropip/ packages/*/test* conftest.py
 
 
 apply-lint:
@@ -119,7 +131,6 @@ benchmark: all
 
 
 clean:
-	rm -fr root
 	rm -fr build/*
 	rm -fr src/*.o
 	rm -fr node_modules
@@ -149,27 +160,6 @@ build/test.data: $(CPYTHONLIB)
 
 $(UGLIFYJS) $(LESSC): emsdk/emsdk/.complete
 	npm i --no-save uglify-js lessc
-
-root/.built: \
-		$(CPYTHONLIB) \
-		src/webbrowser.py \
-		$(wildcard src/pyodide-py/pyodide/*.py) \
-		cpython/remove_modules.txt
-	rm -rf root
-	mkdir -p root/lib
-	cp -r $(CPYTHONLIB) root/lib
-	mkdir -p $(SITEPACKAGES)
-	cp src/webbrowser.py root/lib/python$(PYMINOR)
-	cp src/_testcapi.py	root/lib/python$(PYMINOR)
-	cp src/pystone.py root/lib/python$(PYMINOR)
-	cp -r src/pyodide-py/pyodide/ $(SITEPACKAGES)
-	( \
-		cd root/lib/python$(PYMINOR); \
-		rm -fr `cat ../../../cpython/remove_modules.txt`; \
-		rm -fr test; \
-		find . -type d -name __pycache__ -prune -exec rm -rf {} \; \
-	)
-	touch root/.built
 
 
 $(PYODIDE_EMCC):
@@ -216,3 +206,9 @@ check:
 
 minimal :
 	PYODIDE_PACKAGES="micropip" make
+
+debug :
+	EXTRA_CFLAGS="-D DEBUG_F" \
+	EXTRA_LDFLAGS="-s ASSERTIONS=2" \
+	PYODIDE_PACKAGES+="micropip,pyparsing,pytz,packaging,kiwisolver" \
+	make

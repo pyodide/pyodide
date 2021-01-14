@@ -1,5 +1,6 @@
 #ifndef HIWIRE_H
 #define HIWIRE_H
+#define PY_SSIZE_T_CLEAN
 #include "Python.h"
 #include "stdalign.h"
 #include "types.h"
@@ -311,7 +312,7 @@ hiwire_push_object_pair(JsRef idobj, JsRef idkey, JsRef idval);
  * The message is conventionally a Javascript string, but that is not required.
  * TODO: should be hiwire_set_error.
  */
-errcode
+void
 hiwire_throw_error(JsRef idmsg);
 
 /**
@@ -402,6 +403,9 @@ hiwire_dir(JsRef idobj);
 JsRef
 hiwire_call(JsRef idobj, JsRef idargs);
 
+JsRef
+hiwire_call_bound(JsRef idfunc, JsRef idthis, JsRef idargs);
+
 /**
  * Call a member function.
  *
@@ -440,6 +444,9 @@ hiwire_get_length(JsRef idobj);
 bool
 hiwire_get_bool(JsRef idobj);
 
+bool
+hiwire_is_pyproxy(JsRef idobj);
+
 /**
  * Returns 1 if the object is a function.
  *
@@ -447,6 +454,23 @@ hiwire_get_bool(JsRef idobj);
  */
 bool
 hiwire_is_function(JsRef idobj);
+
+bool
+hiwire_function_supports_kwargs(JsRef idfunc);
+
+/**
+ * Returns true if the object is a promise.
+ */
+bool
+hiwire_is_promise(JsRef idobj);
+
+/**
+ * Returns Promise.resolve(obj)
+ *
+ * Returns: New reference to Javascript promise
+ */
+JsRef
+hiwire_resolve_promise(JsRef idobj);
 
 /**
  * Gets the string representation of an object by calling `toString`.

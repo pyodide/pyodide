@@ -35,6 +35,10 @@ When you request a package from the official repository, all of that package's
 dependencies are also loaded. Dependency resolution is not yet implemented
 when loading packages from custom URLs.
 
+In general, loading a package twice is not permitted. However, one can override
+a dependency by loading a custom URL with the same package name before loading
+the dependent.
+
 Multiple packages can also be loaded in a single call,
 ```js
 pyodide.loadPackage(['cycler', 'pytz'])

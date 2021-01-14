@@ -161,6 +161,12 @@ Shell commands to run after building the library. These are run inside of
 
 (This key is not in the Conda spec).
 
+#### `build/replace-libs`
+
+A list of strings of the form `<old_name>=<new_name>`, to rename libraries when linking. This in particular
+might be necessary when using emscripten ports.
+For instance, `png16=png` is currently used in matplotlib.
+
 ### `requirements`
 
 #### `requirements/run`
@@ -168,6 +174,12 @@ Shell commands to run after building the library. These are run inside of
 A list of required packages.
 
 (Unlike conda, this only supports package names, not versions).
+
+### `test`
+
+#### `test/imports`
+
+List of imports to test after the package is built.
 
 ## C library dependencies
 Some python packages depend on certain C libraries, e.g. `lxml` depends on
