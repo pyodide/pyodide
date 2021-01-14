@@ -225,7 +225,7 @@ EM_JS(int, pyproxy_init, (), {
     },
     get: function (jsobj, jskey) {
       if(Reflect.has(jsobj, jskey)){
-        Reflect.get(jsobj, jskey);
+        return Reflect.get(jsobj, jskey);
       }
       let ptrobj = _getPtr(jsobj);
       let idkey = Module.hiwire.new_value(jskey);
