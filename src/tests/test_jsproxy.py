@@ -191,6 +191,7 @@ def test_jsproxy_call(selenium):
     )
 
 
+@pytest.mark.xfail
 def test_jsproxy_call_kwargs(selenium):
     assert (
         selenium.run_js(
