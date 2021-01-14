@@ -75,7 +75,7 @@ def test_load_package_after_convert_string(selenium):
     See #93.
     """
     selenium.run("import sys\n" "x = sys.version")
-    selenium.run_js("var x = pyodide.pyimport('x')\n" "console.log(x)")
+    selenium.run_js("let x = pyodide.pyimport('x');\n" "console.log(x);")
     selenium.load_package("kiwisolver")
     selenium.run("import kiwisolver")
 

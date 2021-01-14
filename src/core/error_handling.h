@@ -136,6 +136,13 @@ log_error(char* msg);
     }                                                                          \
   } while (0)
 
+#define FAIL_IF_NONZERO(num)                                                   \
+  do {                                                                         \
+    if ((num) != 0) {                                                          \
+      FAIL();                                                                  \
+    }                                                                          \
+  } while (0)
+
 #define FAIL_IF_ERR_OCCURRED()                                                 \
   do {                                                                         \
     if (PyErr_Occurred()) {                                                    \

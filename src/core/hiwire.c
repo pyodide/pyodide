@@ -397,6 +397,11 @@ EM_JS_NUM(bool, hiwire_is_function, (JsRef idobj), {
   // clang-format on
 });
 
+EM_JS_NUM(bool, hiwire_function_supports_kwargs, (JsRef idfunc), {
+  let funcstr = Module.hiwire.get_value(idfunc).toString();
+  return Module.function_supports_kwargs(funcstr);
+});
+
 EM_JS_NUM(bool, hiwire_is_promise, (JsRef idobj), {
   // clang-format off
   let obj = Module.hiwire.get_value(idobj);
