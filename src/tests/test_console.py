@@ -44,6 +44,9 @@ def test_interactive_console_streams(safe_stdstreams):
         nonlocal my_stderr
         my_stderr += string
 
+    ##########################
+    # Persistent redirection #
+    ##########################
     shell = console.InteractiveConsole(
         stdout_callback=stdout_callback,
         stderr_callback=stderr_callback,
@@ -60,7 +63,9 @@ def test_interactive_console_streams(safe_stdstreams):
     print("bar", file=sys.stderr)
     assert my_stderr == "bar\n"
 
-    # redirections disabled at destruction
+    shell.push("print('foobar')")
+    assert my_stdout == "foo\nfoobar\n"
+
     shell.restore_stdstreams()
 
     my_stdout = ""
@@ -71,3 +76,21 @@ def test_interactive_console_streams(safe_stdstreams):
 
     print("foo", file=sys.stdout)
     assert my_stderr == ""
+
+    ##############################
+    # Non persistent redirection #
+    ##############################
+    shell = console.InteractiveConsole(
+        stdout_callback=stdout_callback,
+        stderr_callback=stderr_callback,
+        persistent_stream_redirection=False,
+    )
+
+    print("foo")
+    assert my_stdout == ""
+
+    shell.push("print('foobar')")
+    assert my_stdout == "foobar\n"
+
+    print("bar")
+    assert my_stdout == "foobar\n"
