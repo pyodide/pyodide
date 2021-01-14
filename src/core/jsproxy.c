@@ -78,9 +78,9 @@ JsProxy_GetAttr(PyObject* self, PyObject* attr)
   PyErr_Clear();
 
   bool success = false;
-  JsRef idresult=0;
+  JsRef idresult = 0;
   // result:
-  PyObject* pyresult=NULL;
+  PyObject* pyresult = NULL;
 
   const char* key = PyUnicode_AsUTF8(attr);
   FAIL_IF_NULL(key);
