@@ -38,6 +38,8 @@
 - Updated packages: bleach 3.2.1, packaging 20.8
 - `eval_code` now accepts separate `globals` and `locals` parameters.
   [#1083](https://github.com/iodide-project/pyodide/pull/1083)
+- An InteractiveConsole to ease the integration of Pyodide REPL in
+  webpages (used in console.html) [#1125](https://github.com/iodide-project/pyodide/pull/1125)
 
 ### Fixed
 - getattr and dir on JsProxy now report consistent results and include all names defined on the Python dictionary backing JsProxy. [#1017](https://github.com/iodide-project/pyodide/pull/1017)
@@ -46,7 +48,7 @@
 [#1033](https://github.com/iodide-project/pyodide/pull/1033)
 - JsBoundMethod is now a subclass of JsProxy, which fixes nested attribute access and various other strange bugs.
   [#1124](https://github.com/iodide-project/pyodide/pull/1124)
-
+- In console.html: sync behavior, full stdout/stderr support, clean namespace and bigger font [#1125](https://github.com/iodide-project/pyodide/pull/1125)
 
 ## Version 0.16.1
 *December 25, 2020*
