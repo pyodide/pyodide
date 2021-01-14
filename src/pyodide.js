@@ -367,6 +367,12 @@ var languagePluginLoader = new Promise((resolve, reject) => {
     let response = await fetch(`${baseURL}packages.json`);
     let json = await response.json();
     fixRecursionLimit(self.pyodide);
+    // lots of things in tests try to wait for processes to end using os.waitpid. This breaks because
+    // emscripten doesn't support processes (and in recent emscripten this syscall 
+    // actually calls abort on the wasm runtime so most tests break.)
+    pyodide.runPython(
+        "import os\ndef _wait_pid_nop(x,y):\n print('WARNING: wait_pid is a NOP in emscripten')\n return (0,0)\nos.waitpid=_wait_pid_nop\n");
+
     self.pyodide = makePublicAPI(self.pyodide, PUBLIC_API);
     self.pyodide._module.packages = json;
     resolve();
