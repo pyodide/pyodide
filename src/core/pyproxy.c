@@ -202,6 +202,7 @@ EM_JS(int, pyproxy_init, (), {
       this['$$']['ptr'] = null;
     },
     apply : function(jsthis, jsargs) {
+      let ptrobj = _getPtr(this);
       let idargs = Module.hiwire.new_value(jsargs);
       let idresult = __pyproxy_apply(ptrobj, idargs);
       let jsresult = Module.hiwire.get_value(idresult);
