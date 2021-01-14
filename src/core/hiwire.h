@@ -403,6 +403,9 @@ hiwire_dir(JsRef idobj);
 JsRef
 hiwire_call(JsRef idobj, JsRef idargs);
 
+JsRef
+hiwire_call_bound(JsRef idfunc, JsRef idthis, JsRef idargs);
+
 /**
  * Call a member function.
  *
@@ -440,6 +443,9 @@ hiwire_get_length(JsRef idobj);
  */
 bool
 hiwire_get_bool(JsRef idobj);
+
+bool
+hiwire_is_pyproxy(JsRef idobj);
 
 /**
  * Returns 1 if the object is a function.
