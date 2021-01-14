@@ -634,13 +634,8 @@ static PyTypeObject JsProxyType = {
 void
 JsProxy_cinit(PyObject* obj, JsRef idobj)
 {
-<<<<<<< HEAD
   JsProxy* self = (JsProxy*)obj;
-=======
-  JsProxy* self;
-  self = (JsProxy*)JsProxyType.tp_alloc(&JsProxyType, 0);
   self->vectorcall = JsProxy_Vectorcall;
->>>>>>> master
   self->js = hiwire_incref(idobj);
   self->bytes = NULL;
   self->supports_kwargs = -1; // don't know
