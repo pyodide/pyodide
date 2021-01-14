@@ -212,11 +212,16 @@ EM_JS(int, pyproxy_init, (), {
     },
   };
 
+  let ignoredTargetFields = ["name", "length"];
+
   // See explanation of which methods should be defined here and what they do here:
   // https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Proxy
   Module.PyProxyHandlers = {
     isExtensible: function() { return true },
     has: function (jsobj, jskey) {
+      if(Reflect.has(jsobj, jskey) && !ignoredTargetFields.includes(jskey)){
+        return true;
+      }
       let ptrobj = _getPtr(jsobj);
       let idkey = Module.hiwire.new_value(jskey);
       let result = __pyproxy_has(ptrobj, idkey) !== 0;
@@ -224,7 +229,7 @@ EM_JS(int, pyproxy_init, (), {
       return result;
     },
     get: function (jsobj, jskey) {
-      if(Reflect.has(jsobj, jskey)){
+      if(Reflect.has(jsobj, jskey) && !ignoredTargetFields.includes(jskey)){
         return Reflect.get(jsobj, jskey);
       }
       let ptrobj = _getPtr(jsobj);
@@ -236,6 +241,9 @@ EM_JS(int, pyproxy_init, (), {
       return jsresult;
     },
     set: function (jsobj, jskey, jsval) {
+      if(Reflect.has(jsobj, jskey) && !ignoredTargetFields.includes(jskey)){
+        throw new Error(`Cannot set read only field ${jskey}`);
+      }
       let ptrobj = _getPtr(jsobj);
       let idkey = Module.hiwire.new_value(jskey);
       let idval = Module.hiwire.new_value(jsval);
@@ -247,6 +255,9 @@ EM_JS(int, pyproxy_init, (), {
       return jsresult;
     },
     deleteProperty: function (jsobj, jskey) {
+      if(Reflect.has(jsobj, jskey) && !ignoredTargetFields.includes(jskey)){
+        throw new Error(`Cannot delete read only field ${jskey}`);
+      }
       let ptrobj = _getPtr(jsobj);
       let idkey = Module.hiwire.new_value(jskey);
       let idresult = __pyproxy_deleteProperty(ptrobj, idkey);
@@ -256,13 +267,18 @@ EM_JS(int, pyproxy_init, (), {
       return jsresult;
     },
     ownKeys: function (jsobj) {
-      let result = Reflect.ownKeys(jsobj);
+      let result = new Set(Reflect.ownKeys(jsobj));
+      for(let key of ignoredTargetFields){
+        result.delete(key);
+      }
       let ptrobj = _getPtr(jsobj);
       let idresult = __pyproxy_ownKeys(ptrobj);
       let jsresult = Module.hiwire.get_value(idresult);
       Module.hiwire.decref(idresult);
-      result.push(...jsresult);
-      return result;
+      for(let key of jsresult){
+        result.add(key);
+      }
+      return Array.from(result);
     },
     apply: function (jsobj, jsthis, jsargs) {
       return jsobj.apply(jsthis, jsargs);
