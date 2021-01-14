@@ -33,6 +33,8 @@ JsBoundMethod_cnew(JsRef func, JsRef this_);
 typedef struct
 {
   PyObject_HEAD
+  vectorcallfunc vectorcall;
+  int supports_kwargs; // -1 : don't know. 0 : no, 1 : yes
   JsRef js;
   PyObject* bytes;
   bool awaited; // for promises
@@ -128,41 +130,87 @@ finally:
   return success ? 0 : -1;
 }
 
+#define JsProxy_JSREF(x) (((JsProxy*)x)->js)
+#define JsProxy_SUPPORTS_KWARGS(x) (((JsProxy*)x)->supports_kwargs)
+
 static PyObject*
-JsProxy_Call(PyObject* self, PyObject* args, PyObject* kwargs)
+JsProxy_Vectorcall(PyObject* self,
+                   PyObject* const* args,
+                   size_t nargsf,
+                   PyObject* kwnames)
 {
+  bool kwargs = false;
+  if (kwnames != NULL) {
+    // There were kwargs? But maybe kwnames is the empty tuple?
+    PyObject* kwname = PyTuple_GetItem(kwnames, 0); /* borrowed!*/
+    // Clear IndexError
+    PyErr_Clear();
+    if (kwname != NULL) {
+      kwargs = true;
+      if (JsProxy_SUPPORTS_KWARGS(self) == -1) {
+        JsProxy_SUPPORTS_KWARGS(self) =
+          hiwire_function_supports_kwargs(JsProxy_JSREF(self));
+        if (JsProxy_SUPPORTS_KWARGS(self) == -1) {
+          // if it's still -1, hiwire_function_supports_kwargs threw an error.
+          return NULL;
+        }
+      }
+    }
+    if (kwargs && !JsProxy_SUPPORTS_KWARGS(self)) {
+      // We have kwargs but function doesn't support them. Raise error.
+      const char* kwname_utf8 = PyUnicode_AsUTF8(kwname);
+      PyErr_Format(PyExc_TypeError,
+                   "jsproxy got an unexpected keyword argument '%s'",
+                   kwname_utf8);
+      return NULL;
+    }
+  }
+
+  // Recursion error?
+  FAIL_IF_NONZERO(Py_EnterRecursiveCall(" in JsProxy_Vectorcall"));
   bool success = false;
   JsRef idargs = NULL;
-  JsRef idarg = NULL;
   JsRef idkwargs = NULL;
+  JsRef idarg = NULL;
   JsRef idresult = NULL;
-  // result:
-  PyObject* pyresult;
-  Py_ssize_t nargs = PyTuple_Size(args);
 
+  Py_ssize_t nargs = PyVectorcall_NARGS(nargsf);
   idargs = hiwire_array();
+  FAIL_IF_NULL(idargs);
   for (Py_ssize_t i = 0; i < nargs; ++i) {
-    idarg = python2js(PyTuple_GET_ITEM(args, i));
+    idarg = python2js(args[i]);
     FAIL_IF_NULL(idarg);
     FAIL_IF_MINUS_ONE(hiwire_push_array(idargs, idarg));
     hiwire_CLEAR(idarg);
   }
 
-  if (PyDict_Size(kwargs)) {
-    idkwargs = python2js(kwargs);
+  if (kwargs) {
+    // store kwargs into an object which we'll use as the last argument.
+    idkwargs = hiwire_object();
+    FAIL_IF_NULL(idkwargs);
+    Py_ssize_t nkwargs = PyTuple_Size(kwnames);
+    for (Py_ssize_t i = 0, k = nargsf; i < nkwargs; ++i, ++k) {
+      PyObject* name = PyTuple_GET_ITEM(kwnames, i); /* borrowed! */
+      const char* name_utf8 = PyUnicode_AsUTF8(name);
+      idarg = python2js(args[k]);
+      FAIL_IF_NULL(idarg);
+      FAIL_IF_MINUS_ONE(hiwire_set_member_string(idkwargs, name_utf8, idarg));
+      hiwire_CLEAR(idarg);
+    }
     FAIL_IF_MINUS_ONE(hiwire_push_array(idargs, idkwargs));
   }
 
-  idresult = hiwire_call(JsProxy_REF(self), idargs);
+  idresult = hiwire_call(JsProxy_JSREF(self), idargs);
   FAIL_IF_NULL(idresult);
-  pyresult = js2python(idresult);
+  PyObject* pyresult = js2python(idresult);
   FAIL_IF_NULL(pyresult);
 
   success = true;
 finally:
+  Py_LeaveRecursiveCall(/* " in JsProxy_Vectorcall" */);
   hiwire_CLEAR(idargs);
-  hiwire_CLEAR(idarg);
   hiwire_CLEAR(idkwargs);
+  hiwire_CLEAR(idarg);
   hiwire_CLEAR(idresult);
   if (!success) {
     Py_CLEAR(pyresult);
@@ -563,12 +611,14 @@ static PyTypeObject JsProxyType = {
   .tp_name = "JsProxy",
   .tp_basicsize = sizeof(JsProxy),
   .tp_dealloc = (destructor)JsProxy_dealloc,
-  .tp_call = JsProxy_Call,
+  .tp_call = PyVectorcall_Call,
+  .tp_vectorcall_offset = offsetof(JsProxy, vectorcall),
   .tp_getattro = JsProxy_GetAttr,
   .tp_setattro = JsProxy_SetAttr,
   .tp_as_async = &JsProxy_asyncMethods,
   .tp_richcompare = JsProxy_RichCompare,
-  .tp_flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE,
+  .tp_flags =
+    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE | _Py_TPFLAGS_HAVE_VECTORCALL,
   .tp_doc = "A proxy to make a Javascript object behave like a Python object",
   .tp_methods = JsProxy_Methods,
   .tp_getset = JsProxy_GetSet,
@@ -585,8 +635,10 @@ void
 JsProxy_cinit(PyObject* obj, JsRef idobj)
 {
   JsProxy* self = (JsProxy*)obj;
+  self->vectorcall = JsProxy_Vectorcall;
   self->js = hiwire_incref(idobj);
   self->bytes = NULL;
+  self->supports_kwargs = -1; // don't know
   self->awaited = false;
 }
 

@@ -1,12 +1,11 @@
-def test_sympy(selenium):
-    selenium.load_package("sympy")
-    assert selenium.run(
-        """
-        import sympy
+from pyodide_build.testing import run_in_pyodide
 
-        a, b = sympy.symbols('a,b')
-        c = sympy.sqrt(a**2 + b**2)
 
-        c.subs({a:3, b:4}) == 5
-    """
-    )
+@run_in_pyodide(packages=["sympy"])
+def test_sympy():
+    import sympy
+
+    a, b = sympy.symbols("a,b")
+    c = sympy.sqrt(a ** 2 + b ** 2)
+
+    c.subs({a: 3, b: 4}) == 5
