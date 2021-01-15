@@ -31,7 +31,6 @@ def test_threading_import(selenium):
         """
         import threading
         threading.local()
-        pass
         """
     )
 
