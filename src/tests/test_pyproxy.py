@@ -54,8 +54,6 @@ def test_pyproxy(selenium):
             "prototype",
             "apply",
             "destroy",
-            "name",
-            "length",
             "$$",
         ]
     )
