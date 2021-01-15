@@ -155,12 +155,22 @@ class InteractiveConsole(code.InteractiveConsole):
             self.restore_stdstreams()
 
     def runsource(self, *args, **kwargs):
-        # syntax errors are not catched at runcode level but at runsource
+        """Force streams redirection.
+
+        Syntax errors are not thrown by runcode but here in runsource.
+        This is why we force redirection here since doing twice
+        is not an issue."""
+
         with self.stdstreams_redirections():
             return super().runsource(*args, **kwargs)
 
     def runcode(self, code):
-        """ Load imported packages then run code, async. """
+        """Load imported packages then run code, async.
+
+        To achieve nice result representation, the interactive console
+        is fully implemented in Python. This has a major drawback:
+        packages should be loaded from here. This is why this
+        function returns a promise."""
         parent_runcode = super().runcode
 
         def run(*args):
