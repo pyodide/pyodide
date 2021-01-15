@@ -13,7 +13,7 @@ hiwire_undefined()
 }
 
 JsRef
-hiwire_jsnull()
+hiwire_null()
 {
   return Js_NULL;
 }
