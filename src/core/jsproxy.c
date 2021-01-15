@@ -59,7 +59,7 @@ JsProxy_Repr(PyObject* self)
   return pyrepr;
 }
 
-PyObject*
+static PyObject*
 JsProxy_typeof(PyObject* self, void* _unused)
 {
   JsRef idval = hiwire_typeof(JsProxy_REF(self));
@@ -396,7 +396,7 @@ JsProxy_Bool(PyObject* o)
   return hiwire_get_bool(self->js) ? 1 : 0;
 }
 
-PyObject*
+static PyObject*
 JsProxy_Await(JsProxy* self)
 {
   // Guards
@@ -518,7 +518,7 @@ static PyTypeObject JsProxyType = {
 };
 
 // TODO: Instead use tp_new and Python's inheritance system
-void
+static void
 JsProxy_cinit(PyObject* obj, JsRef idobj)
 {
   JsProxy* self = (JsProxy*)obj;
@@ -529,7 +529,7 @@ JsProxy_cinit(PyObject* obj, JsRef idobj)
   self->awaited = false;
 }
 
-PyObject*
+static PyObject*
 JsProxy_cnew(JsRef idobj)
 {
   PyObject* self = JsProxyType.tp_alloc(&JsProxyType, 0);
@@ -619,7 +619,7 @@ static PyTypeObject _Exc_JsException = {
 };
 static PyObject* Exc_JsException = (PyObject*)&_Exc_JsException;
 
-PyObject*
+static PyObject*
 JsProxy_new_error(JsRef idobj)
 {
   PyObject* proxy = JsProxy_cnew(idobj);
@@ -795,6 +795,18 @@ JsMethod_cnew(JsRef func, JsRef this_)
 
 ////////////////////////////////////////////////////////////
 // Public functions
+
+PyObject*
+JsProxy_create(JsRef object)
+{
+  if (hiwire_is_error(object)) {
+    return JsProxy_new_error(object);
+  } else if (hiwire_is_function(object)) {
+    return JsMethod_cnew(object, hiwire_null());
+  } else {
+    return JsProxy_cnew(object);
+  }
+}
 
 bool
 JsProxy_Check(PyObject* x)

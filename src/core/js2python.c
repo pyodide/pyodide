@@ -66,14 +66,14 @@ _js2python_pyproxy(PyObject* val)
 PyObject*
 _js2python_memoryview(JsRef id)
 {
-  PyObject* jsproxy = JsProxy_cnew(id);
+  PyObject* jsproxy = JsProxy_create(id);
   return PyMemoryView_FromObject(jsproxy);
 }
 
 PyObject*
 _js2python_jsproxy(JsRef id)
 {
-  return JsProxy_cnew(id);
+  return JsProxy_create(id);
 }
 
 PyObject*
@@ -155,8 +155,6 @@ EM_JS_REF(PyObject*, __js2python, (JsRef id), {
     return __js2python_pyproxy(Module.PyProxy.getPtr(value));
   } else if (value['byteLength'] !== undefined) {
     return __js2python_memoryview(id);
-  } else if (is_error(value)) {
-    return __js2python_error(id);
   } else {
     return __js2python_jsproxy(id);
   }
