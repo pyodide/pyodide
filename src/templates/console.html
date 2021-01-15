@@ -19,8 +19,36 @@
     <script>
       languagePluginLoader.then(() => {
         pyodide.runPython(`
-            from pyodide.console import InteractiveConsole
+            import sys
+            import builtins
             import js
+            from reprlib import Repr
+            from pyodide.console import InteractiveConsole
+
+
+            # limiting output size to 1000 to avoid console hang
+            _repr = Repr()
+            _repr.maxdict = _repr.maxlist = _repr.maxtuple = _repr.maxset = _repr.maxfrozenset = _repr.maxdeque = _repr.maxarray = _repr.maxlong = _repr.maxstring = _repr.maxother = 10 ** 3
+
+            def displayhook(value):
+                # from https://docs.python.org/3/library/sys.html#sys.displayhook
+                if value is None:
+                    return
+                builtins._ = None
+                text = _repr.repr(value)
+                try:
+                    sys.stdout.write(text)
+                except UnicodeEncodeError:
+                    bytes = text.encode(sys.stdout.encoding, 'backslashreplace')
+                    if hasattr(sys.stdout, 'buffer'):
+                        sys.stdout.buffer.write(bytes)
+                    else:
+                        text = bytes.decode(sys.stdout.encoding, 'strict')
+                        sys.stdout.write(text)
+                sys.stdout.write("\\n")
+                builtins._ = value
+
+            sys.displayhook = displayhook
 
 
             class PyConsole(InteractiveConsole):
