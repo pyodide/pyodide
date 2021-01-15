@@ -181,4 +181,6 @@ class InteractiveConsole(code.InteractiveConsole):
         """ A banner similar to the one printed by the real Python interpreter. """
         # copyied from https://github.com/python/cpython/blob/799f8489d418b7f9207d333eac38214931bd7dcc/Lib/code.py#L214
         cprt = 'Type "help", "copyright", "credits" or "license" for more information.'
-        return f"Python {platform.python_version()} {platform.python_build()} on WebAssembly VM\n{cprt}"
+        version = platform.python_version()
+        build = f"({', '.join(platform.python_build())})"
+        return f"Python {version} {build} on WebAssembly VM\n{cprt}"
