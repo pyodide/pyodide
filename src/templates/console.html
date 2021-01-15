@@ -68,11 +68,6 @@
                         persistent_stream_redirection=False,
                     )
 
-                def runcode(self, code):
-                    js.term.pause()
-                    resume = lambda *args: js.term.resume()
-                    return super().runcode(code).then(resume)
-
                 def banner(self):
                     return f"Welcome to the Pyodide terminal emulator 🐍\\n{super().banner()}"
 
@@ -82,9 +77,15 @@
 
         let ps1 = '>>> ', ps2 = '... ';
 
-        function interpreter(command) {
-            const prompt = pyconsole.push(command) ? ps2 : ps1;
-            term.set_prompt(prompt);
+        async function interpreter(command) {
+            // multiline should be splitted (usefull when pasting)
+            term.pause();
+            for( const c of command.split('\n') ) {
+                const prompt = pyconsole.push(c) ? ps2 : ps1;
+                term.set_prompt(prompt);
+                await pyconsole.run_complete;
+            }
+            term.resume();
         }
 
         let term = $('body').terminal(

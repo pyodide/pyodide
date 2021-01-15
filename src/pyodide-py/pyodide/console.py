@@ -170,7 +170,9 @@ class InteractiveConsole(code.InteractiveConsole):
         To achieve nice result representation, the interactive console
         is fully implemented in Python. This has a major drawback:
         packages should be loaded from here. This is why this
-        function returns a promise."""
+        function sets the promise `self.run_complete`.
+        If you need to wait for the end of the computation,
+        you should await for it."""
         parent_runcode = super().runcode
 
         def run(*args):
@@ -181,7 +183,7 @@ class InteractiveConsole(code.InteractiveConsole):
             return run()
 
         source = "\n".join(self.buffer)
-        return load_packages_from_imports(source).then(run)
+        self.run_complete = load_packages_from_imports(source).then(run)
 
     def __del__(self):
         if self._persistent_stream_redirection:
