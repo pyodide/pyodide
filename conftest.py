@@ -105,7 +105,6 @@ class SeleniumWrapper:
             # we have a multiline string, fix indentation
             code = textwrap.dedent(code)
         wrapper = """
-            Error.stackTraceLimit = Infinity;
             let run = () => { %s }
             try {
                 let result = run();
