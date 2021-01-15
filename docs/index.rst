@@ -55,7 +55,8 @@ information about the project's organization.
 
    building_from_sources.md
    new_packages.md
-   contributing.md
+   contributing/contributing.md
+   contributing/core.md
    testing.md
 
 .. toctree::

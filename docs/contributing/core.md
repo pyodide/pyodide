@@ -1,6 +1,26 @@
 # Core
 
 ## What the files do
+``main.c`` is responsible for configuring and initializing the python interpreter, initializing the other source files, and creating the ``_pyodide_core`` module which is used to expose Python objects to ``pyodide_py``. ``main.c`` also tries to generate fatal initialization error messages to help with debugging when there is a mistake in the initialization code.
+
+### Backend utilities
+* ``hiwire`` -- A helper framework. It is impossible for wasm to directly hold owning references to javascript objects. The primary purpose of hiwire is to act as a surrogate owner for javascript references by holding the references in a javascript ``Map``. ``hiwire`` also defines a wide variety of ``EM_JS`` helper functions to do javascript operations on the held objects. The primary type that hiwire exports is ``JsRef``. References are created with ``Module.hiwire.new_value`` (only can be done from javascript) and must be destroyed from C with ``hiwire_decref`` or ``hiwire_CLEAR``, or from javascript with ``Module.hiwire.decref``.
+* ``error_handling`` -- defines macros useful for error propagation and for adapting javascript functions to the CPython calling convention. See more in the "Error Handling Macros" section below.
+
+### Type conversion from Javascript to Python
+
+* ``js2python`` -- converts basic types from javascript to python, leaves more complicated stuff to jsproxy.
+* ``jsproxy`` -- Defines Python classes to proxy complex javascript types into Python. A complex file responsible for many of the core behaviors of pyodide.
+
+### Type conversion from Python to Javascript
+
+* ``python2js`` -- Converts basic types from Python to Javascript and also implements deep copy from Python to Javascript.
+* ``python2js_buffer`` -- Attempts to convert Python objects that implement the Python [Buffer Protocol](https://docs.python.org/3/c-api/buffer.html). This includes ``bytes`` objects, ``memoryview``s, ``array.array`` and a wide variety of types exposed by extension modules like ``numpy``. If the data is a 1d array in a contiguous block it can be sliced directly out of the wasm heap to produce a Javascript ``TypedArray``, but Javascript does not have native support for pointers so higher dimensional arrays are more complicated.
+* ``pyproxy`` -- Defines a Javascript ``Proxy`` object that passes calls through to a Python object. Another important core file, ``PyProxy.apply`` is the primary entrypoint into Python code. ``pyproxy.c`` is much simpler than ``jsproxy.c`` though.
+
+### Other
+* ``runpython`` -- Defines the ``_runPythonDebug`` entrypoint to help in case there is a bug in `PyProxy.apply`. (Most of the rest of the stuff in this file might be better folded into ``main.c``, moved elsewhere, or removed?)
+* ``jsimport`` -- Defines the ``js`` Python module, to support the syntax ``from js import fetch``.
 
 
 ## CPython APIs
