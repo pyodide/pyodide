@@ -396,7 +396,7 @@ EM_JS_NUM(bool, hiwire_is_function, (JsRef idobj), {
 EM_JS_NUM(bool, hiwire_is_error, (JsRef idobj), {
   // From https://stackoverflow.com/a/45496068
   let value = Module.hiwire.get_value(idobj);
-  return value && value.stack && value.message;
+  return !!(value && value.stack && value.message);
 });
 
 EM_JS_NUM(bool, hiwire_function_supports_kwargs, (JsRef idfunc), {
