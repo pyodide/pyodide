@@ -27,10 +27,10 @@
 
 ### Conventions for indicating errors
 The two main ways to indicate errors:
-1. If the function returns a pointer, (usually PyObject*) then to indicate an error set an exception and return NULL.
-2. If the function returns int or float and a correct output must be nonnegative, to indicate an error set an exception and return -1.
+1. If the function returns a pointer, (most often ``PyObject*``, ``char*``, or ``const char*``) then to indicate an error set an exception and return ``NULL``.
+2. If the function returns ``int`` or ``float`` and a correct output must be nonnegative, to indicate an error set an exception and return ``-1``.
 
-Certain functions have "successful errors" like ``PyIter_Next`` (successful error is "StopIteration") and ``PyDict_GetItemWithError`` (successful error is "KeyError"). These functions will return ``NULL`` without setting an exception to indicate the "successful error" occurred. Check what happened with ``PyErr_Occurred``. Also, functions that return ``int`` for which ``-1`` is a valid return value will return ``-1`` with no error set to indicate that the result is ``-1`` and ``-1`` with an error set if an error did occur. The simplest way to handle this is to always check ``PyErr_Occurred``.
+Certain functions have "successful errors" like ``PyIter_Next`` (successful error is ``StopIteration``) and ``PyDict_GetItemWithError`` (successful error is ``KeyError``). These functions will return ``NULL`` without setting an exception to indicate the "successful error" occurred. Check what happened with ``PyErr_Occurred``. Also, functions that return ``int`` for which ``-1`` is a valid return value will return ``-1`` with no error set to indicate that the result is ``-1`` and ``-1`` with an error set if an error did occur. The simplest way to handle this is to always check ``PyErr_Occurred``.
 
 Lastly, the argument parsing functions ``PyArg_ParseTuple``, ``PyArg_Parse``, etc are edge cases. These return ``true`` on success and return ``false`` and set an error on failure.
 
@@ -53,7 +53,7 @@ If the string you are using is a constant, e.g., ``PyDict_GetItemString(dict, "i
 The file ``error_handling.h`` defines several macros to help make error handling as simple and uniform as possible.
 
 ### Error Propagation Macros
-In a language with exception handling as a feature, error propagation requires no explicit code, it is only if you want to prevent an error from propagating that you use a ``try``/``catch`` block. On the other hand, in ``C`` all error propagation must be done explicitly.
+In a language with exception handling as a feature, error propagation requires no explicit code, it is only if you want to prevent an error from propagating that you use a ``try``/``catch`` block. On the other hand, in C all error propagation must be done explicitly.
 
 We define macros to help make error propagation look as simple and uniform as possible.
 They can only be used in a function with a ``finally:`` label which should handle resource cleanup for both the success branch and all the failing branches (see structure of functions section below). When compiled with ``DEBUG_F``, these commands will write a message to ``console.error`` reporting the line, function, and file where the error occurred.
@@ -66,7 +66,7 @@ They can only be used in a function with a ``finally:`` label which should handl
 * ``FAIL_IF_ERR_MATCHES(python_err_type)`` -- ``goto finally;`` if ``PyErr_ExceptionMatches(python_err_type)``, for example ``FAIL_IF_ERR_MATCHES(PyExc_AttributeError);``
 
 ### Javascript to CPython calling convention adapators
-If we call a javascript function from C and that javascript function throws an error, it is impossible to catch it in C. We define two ``EM_JS`` adaptors to convert from the Javascript calling convention to the CPython calling convention. The point of this is to ensure that errors that occur in ``EM_JS`` functions can be handled in ``C`` code using the ``FAIL_*`` macros. When compiled with ``DEBUG_F``, when a javascript error is thrown a message will also be written to ``console.error``. The wrappers do roughly the following:
+If we call a javascript function from C and that javascript function throws an error, it is impossible to catch it in C. We define two ``EM_JS`` adaptors to convert from the Javascript calling convention to the CPython calling convention. The point of this is to ensure that errors that occur in ``EM_JS`` functions can be handled in C code using the ``FAIL_*`` macros. When compiled with ``DEBUG_F``, when a javascript error is thrown a message will also be written to ``console.error``. The wrappers do roughly the following:
 ```javascript
 try {
   // body of function here
@@ -107,13 +107,13 @@ These wrappers enable the following sort of code:
 ```python
 try:
   jsfunc()
-catch JsException:
+except JsException:
   print("Caught an exception thrown in javascript!")
 ```
 
 ## Structure of functions
 
-In ``C`` it takes special care to correctly and cleanly handle both reference counting and exception propagation. In Python (or other higher level languages), all references are released in an implicit finally block at the end of the function. Implicitly, it is as if you wrote:
+In C it takes special care to correctly and cleanly handle both reference counting and exception propagation. In Python (or other higher level languages), all references are released in an implicit finally block at the end of the function. Implicitly, it is as if you wrote:
 ```python
 def f():
   try: # implicit
@@ -133,8 +133,7 @@ To do this, we divide any function that produces more than a couple of owned ``P
 The more owned references there are in a function and the longer it is, the more important it becomes to follow this style carefully.
 By being as consistent as possible, we reduce the burden on people reading the code to double check that you are not leaking memory or errors. In short functions it is fine to do something ad hoc.
 
-1. The guard block. The first block of a function does sanity checks on the inputs and ArgParsing, but only to
-the extent possible without creating any owned references. If you check more complicated invariants on the inputs in a way that requires creating owned references, this logic belongs in the body block.
+1. The guard block. The first block of a function does sanity checks on the inputs and argument parsing, but only to the extent possible without creating any owned references. If you check more complicated invariants on the inputs in a way that requires creating owned references, this logic belongs in the body block.
 
 Here's an example of a ``METH_VARARGS`` function:
 ```C
@@ -185,6 +184,7 @@ PyObject* module = NULL;
   FAIL_IF_NULL(sys_modules);
   module = PyDict_GetItemWithError(sys_modules, name); // returns borrow
   Py_XINCREF(module);
+  FAIL_IF_NULL(module);
   if(module && !JsImport_Check(module)){
     PyErr_Format(PyExc_KeyError,
       "Cannot mount with name '%s': there is an existing module by this name that was not mounted with 'pyodide.mountPackage'."
@@ -192,12 +192,11 @@ PyObject* module = NULL;
     );
     FAIL();
   }
-  FAIL_IF_ERR_OCCURRED();
 // ... [SNIP]
 ```
 
 4. The finally block. Here we will clear all the variables we declared at the top in exactly the same order. Do not clear the arguments! They are borrowed. According to the standard Python function calling convention, they are the responsibility of the calling code.
-```
+```C
   success = true;
 finally:
   Py_CLEAR(sys_modules);
@@ -213,6 +212,23 @@ finally:
 }
 ```
 
+One case where you do need to ``Py_CLEAR`` a variable in the body of a function is if that variable is allocated in a loop:
+```C
+  // refcounted variable declarations
+  PyObject* pyentry = NULL;
+  // ... other stuff
+  Py_ssize_t n = PySequence_Length(pylist);
+  for (Py_ssize_t i = 0; i < n; i++) {
+    pyentry = PySequence_GetItem(pydir, i);
+    FAIL_IF_MINUS_ONE(do_something(pyentry));
+    Py_CLEAR(pyentry); // important to use Py_CLEAR and not Py_decref.
+  }
+
+  success = true
+finally:
+  // have to clear pyentry at end too in case do_something failed in the loop body
+  Py_CLEAR(pyentry);
+```
 ## Testing
 Any nonstatic C function called ``some_name`` defined not using ``EM_JS`` will be exposed as ``pyodide._module._some_name``, and this can be used in tests to good effect. If the arguments / return value are not just numbers and booleans, it may take some effort to set up the function call.
 
