@@ -53,7 +53,7 @@ EM_JS(int, hiwire_init, (), {
   };
   Module.hiwire = {};
   Module.hiwire.UNDEFINED = _hiwire_undefined();
-  Module.hiwire.JSNULL = _hiwire_jsnull();
+  Module.hiwire.JSNULL = _hiwire_null();
   Module.hiwire.TRUE = _hiwire_true();
   Module.hiwire.FALSE = _hiwire_false();
 
