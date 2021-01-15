@@ -126,6 +126,6 @@ def test_interactive_console(selenium, safe_selenium_sys_redirections):
 
     # import numpy
     selenium.run("shell.push('import numpy as np; np.gcd(6, 15)')")
-    WebDriverWait(selenium, 10).until(lambda driver: selenium.run("result == 3"))
+    WebDriverWait(selenium, 30).until(lambda driver: selenium.run("result == 3"))
     selenium.run("shell.push('int(np.pi * 100)')")
     WebDriverWait(selenium, 1).until(lambda driver: selenium.run("result == 314"))
