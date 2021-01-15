@@ -48,7 +48,7 @@
 [#1033](https://github.com/iodide-project/pyodide/pull/1033)
 - JsBoundMethod is now a subclass of JsProxy, which fixes nested attribute access and various other strange bugs.
   [#1124](https://github.com/iodide-project/pyodide/pull/1124)
-- In console.html: sync behavior, full stdout/stderr support, clean namespace and bigger font [#1125](https://github.com/iodide-project/pyodide/pull/1125)
+- In console.html: sync behavior, full stdout/stderr support, clean namespace, bigger font, correct result representation, clean traceback [#1125](https://github.com/iodide-project/pyodide/pull/1125) and [#1141](https://github.com/iodide-project/pyodide/pull/1141)
 
 ## Version 0.16.1
 *December 25, 2020*
