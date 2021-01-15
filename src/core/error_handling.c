@@ -34,11 +34,6 @@ error_handling_init()
       _PyodideErr_SetJsError(err);
       Module.hiwire.decref(err);
     };
-    Module.fatal_error = function(e)
-    {
-      console.error("FATAL RUNTIME ERROR!");
-      throw e;
-    }
   });
   return 0;
 }
