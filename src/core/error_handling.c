@@ -14,7 +14,7 @@ EM_JS_NUM(errcode, log_error, (char* msg), {
 void
 PyodideErr_SetJsError(JsRef err)
 {
-  PyObject* py_err = JsProxy_new_error(err);
+  PyObject* py_err = JsProxy_create(err);
   PyErr_SetObject((PyObject*)(py_err->ob_type), py_err);
 }
 

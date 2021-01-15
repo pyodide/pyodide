@@ -33,8 +33,6 @@ JsMethod_cnew(JsRef func, JsRef this_);
 typedef struct
 {
   PyObject_HEAD
-  vectorcallfunc vectorcall;
-  int supports_kwargs; // -1 : don't know. 0 : no, 1 : yes
   JsRef js;
   PyObject* bytes;
   bool awaited; // for promises
@@ -131,7 +129,6 @@ finally:
 }
 
 #define JsProxy_JSREF(x) (((JsProxy*)x)->js)
-#define JsProxy_SUPPORTS_KWARGS(x) (((JsProxy*)x)->supports_kwargs)
 
 static PyObject*
 JsProxy_RichCompare(PyObject* a, PyObject* b, int op)
@@ -522,10 +519,8 @@ static void
 JsProxy_cinit(PyObject* obj, JsRef idobj)
 {
   JsProxy* self = (JsProxy*)obj;
-  self->vectorcall = JsProxy_Vectorcall;
   self->js = hiwire_incref(idobj);
   self->bytes = NULL;
-  self->supports_kwargs = -1; // don't know
   self->awaited = false;
 }
 
