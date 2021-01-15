@@ -66,7 +66,7 @@ They can only be used in a function with a ``finally:`` label which should handl
 * ``FAIL_IF_ERR_MATCHES(python_err_type)`` -- ``goto finally;`` if ``PyErr_ExceptionMatches(python_err_type)``, for example ``FAIL_IF_ERR_MATCHES(PyExc_AttributeError);``
 
 ### Javascript to CPython calling convention adapators
-If we call a javascript function from C and that javascript function throws an error, it is impossible to catch it in C. We define two ``EM_JS`` adaptors to convert from the Javascript calling convention to the CPython calling convention. The point of this is to ensure that errors that occur in ``EM_JS`` functions can be handled in ``C`` code using the ``FAIL_*`` macros. The wrappers do roughly the following:
+If we call a javascript function from C and that javascript function throws an error, it is impossible to catch it in C. We define two ``EM_JS`` adaptors to convert from the Javascript calling convention to the CPython calling convention. The point of this is to ensure that errors that occur in ``EM_JS`` functions can be handled in ``C`` code using the ``FAIL_*`` macros. When compiled with ``DEBUG_F``, when a javascript error is thrown a message will also be written to ``console.error``. The wrappers do roughly the following:
 ```javascript
 try {
   // body of function here
@@ -75,7 +75,35 @@ try {
   // return error code
 }
 ```
-There are two variants: ``EM_JS_NUM`` returns ``-1`` as the error code, ``EM_JS_REF`` returns ``NULL == 0`` as the error code. These wrappers enable the following sort of code:
+There are two variants: ``EM_JS_NUM`` returns ``-1`` as the error code, ``EM_JS_REF`` returns ``NULL == 0`` as the error code. A couple of simple examples:
+Use ``EM_JS_REF`` when return value is a ``JsRef``:
+```javascript
+EM_JS_REF(JsRef, hiwire_call, (JsRef idfunc, JsRef idargs), {
+  let jsfunc = Module.hiwire.get_value(idfunc);
+  let jsargs = Module.hiwire.get_value(idargs);
+  return Module.hiwire.new_value(jsfunc(... jsargs));
+});
+```
+Use ``EM_JS_REF`` when return value is a ``PyObject``:
+```javascript
+EM_JS_REF(PyObject*, __js2python, (JsRef id), {
+  // body here
+});
+```
+If the function would return ``void``, use ``EM_JS_NUM`` with return type ``errcode``. ``errcode`` is a typedef for ``int``. ``EM_JS_NUM`` will automatically return ``-1`` if an error occurs and ``0`` if not:
+```javascript
+EM_JS_NUM(errcode, hiwire_set_member_int, (JsRef idobj, int idx, JsRef idval), {
+  Module.hiwire.get_value(idobj)[idx] = Module.hiwire.get_value(idval);
+});
+```
+If the function returns ``int`` or ``bool`` use ``EM_JS_NUM``:
+```javascript
+EM_JS_NUM(int, hiwire_get_length, (JsRef idobj), {
+  return Module.hiwire.get_value(idobj).length;
+});
+```
+
+These wrappers enable the following sort of code:
 ```python
 try:
   jsfunc()
