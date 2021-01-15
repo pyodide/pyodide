@@ -1,6 +1,7 @@
 import pytest
 from pathlib import Path
 import sys
+import io
 from selenium.webdriver.support.ui import WebDriverWait
 
 sys.path.append(str(Path(__file__).parents[2] / "src" / "pyodide-py"))
@@ -93,6 +94,14 @@ def test_interactive_console_streams(safe_sys_redirections):
 
     print("bar")
     assert my_stdout == "foobar\n"
+
+
+def test_repr(safe_sys_redirections):
+    assert len(console.repr_abreviate("x" * 10 ** 5, 100)) <= 100
+
+    sys.stdout = io.StringIO()
+    console.displayhook([0] * 100, lambda v: console.repr_abreviate(v, 100))
+    assert len(sys.stdout.getvalue()) <= 100
 
 
 @pytest.fixture

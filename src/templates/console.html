@@ -20,51 +20,20 @@
       languagePluginLoader.then(() => {
         pyodide.runPython(`
             import sys
-            import builtins
             import js
-            from pyodide.console import InteractiveConsole
+            from pyodide import console
 
 
-            # limiting output size to REPR_LIMIT to avoid console hang
-            REPR_LIMIT = 1000
-            REPR_SPLIT = REPR_LIMIT // 4
-            def custom_repr(value):
-                text = repr(value)
-                if len(text) > REPR_LIMIT:
-                    text = f"{text[:REPR_SPLIT]}...{text[-REPR_SPLIT:]}"
-                return text
-
-            def displayhook(value):
-                # from https://docs.python.org/3/library/sys.html#sys.displayhook
-                if value is None:
-                    return
-                builtins._ = None
-                text = custom_repr(value)
-                try:
-                    sys.stdout.write(text)
-                except UnicodeEncodeError:
-                    bytes = text.encode(sys.stdout.encoding, 'backslashreplace')
-                    if hasattr(sys.stdout, 'buffer'):
-                        sys.stdout.buffer.write(bytes)
-                    else:
-                        text = bytes.decode(sys.stdout.encoding, 'strict')
-                        sys.stdout.write(text)
-                sys.stdout.write("\\n")
-                builtins._ = value
-
-            sys.displayhook = displayhook
+            sys.displayhook = lambda v: console.displayhook(v, console.repr_abreviate)
 
 
-            class PyConsole(InteractiveConsole):
+            class PyConsole(console.InteractiveConsole):
                 def __init__(self):
                     # JQuery.terminal adds a trailing newline that is not easy
                     # to remove with the current API. Doing our best here.
-                    def trim(string):
-                        return string.rstrip("\\n")
-
                     super().__init__(
-                        stdout_callback=lambda s: js.term.echo(trim(s)),
-                        stderr_callback=lambda s: js.term.error(trim(s)),
+                        stdout_callback=lambda s: js.term.echo(s.rstrip("\\n")),
+                        stderr_callback=lambda s: js.term.error(s.rstrip("\\n")),
                         persistent_stream_redirection=False,
                     )
 

@@ -1,9 +1,10 @@
-from typing import Optional, Callable
+from typing import Optional, Callable, Any
 import code
 import io
 import sys
 import platform
 from contextlib import contextmanager
+import builtins
 
 # this import can fail when we are outside a browser (e.g. for tests)
 try:
@@ -196,3 +197,44 @@ class InteractiveConsole(code.InteractiveConsole):
         version = platform.python_version()
         build = f"({', '.join(platform.python_build())})"
         return f"Python {version} {build} on WebAssembly VM\n{cprt}"
+
+
+def repr_abreviate(value: Any, limit: int = 1000, split: Optional[int] = None):
+    """Compute the string representation of `value` and abreviat it
+    if necessary.
+
+    If it is longer than `limit` then return the firsts `split`
+    characters and the last `split` characters seperated by '...'.
+    Default value for `split` is `limit // 4`.
+    """
+    if split is None:
+        split = limit // 4
+    text = repr(value)
+    if len(text) > limit:
+        text = f"{text[:split]}...{text[-split:]}"
+    return text
+
+
+def displayhook(value, repr: Callable[[Any], str]):
+    """A displayhook with custom `repr` function.
+
+    It is intendend to overload `sys.displayhook`. Note that monkeypatch
+    `builtins.repr` does not work in `sys.displayhook`. The pointer to
+    `repr` seems hardcoded in default `sys.displayhook` version
+    (which is written in C)."""
+    # from https://docs.python.org/3/library/sys.html#sys.displayhook
+    if value is None:
+        return
+    builtins._ = None  # type: ignore
+    text = repr(value)
+    try:
+        sys.stdout.write(text)
+    except UnicodeEncodeError:
+        bytes = text.encode(sys.stdout.encoding, "backslashreplace")
+        if hasattr(sys.stdout, "buffer"):
+            sys.stdout.buffer.write(bytes)
+        else:
+            text = bytes.decode(sys.stdout.encoding, "strict")
+            sys.stdout.write(text)
+    sys.stdout.write("\n")
+    builtins._ = value  # type: ignore
