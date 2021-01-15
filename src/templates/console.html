@@ -22,20 +22,24 @@
             import sys
             import builtins
             import js
-            from reprlib import Repr
             from pyodide.console import InteractiveConsole
 
 
-            # limiting output size to 1000 to avoid console hang
-            _repr = Repr()
-            _repr.maxdict = _repr.maxlist = _repr.maxtuple = _repr.maxset = _repr.maxfrozenset = _repr.maxdeque = _repr.maxarray = _repr.maxlong = _repr.maxstring = _repr.maxother = 10 ** 3
+            # limiting output size to REPR_LIMIT to avoid console hang
+            REPR_LIMIT = 1000
+            REPR_SPLIT = REPR_LIMIT // 4
+            def custom_repr(value):
+                text = repr(value)
+                if len(text) > REPR_LIMIT:
+                    text = f"{text[:REPR_SPLIT]}...{text[-REPR_SPLIT:]}"
+                return text
 
             def displayhook(value):
                 # from https://docs.python.org/3/library/sys.html#sys.displayhook
                 if value is None:
                     return
                 builtins._ = None
-                text = _repr.repr(value)
+                text = custom_repr(value)
                 try:
                     sys.stdout.write(text)
                 except UnicodeEncodeError:
