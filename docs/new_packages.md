@@ -143,6 +143,14 @@ Extra arguments to pass to the linker when building for WebAssembly.
 
 (This key is not in the Conda spec).
 
+#### `build/library`
+
+Should be set to true for library packages. Library packages are packages that are needed for other packages but are not Python packages themselves. For library packages, the script specified in the `build/script` section is run to compile the library. See the [zlib meta.yaml](https://github.com/iodide-project/pyodide/blob/master/packages/zlib/meta.yaml) for an example of a library package specification.
+
+#### `build/script`
+
+The script section is required for a library package (`build/library` set to true). For a Python package this section is optional. If it is specified for a Python package, the script section will be run before the build system runs `setup.py`. This script is run by `bash` in the directory where the tarball was extracted.
+
 #### `build/post`
 
 Shell commands to run after building the library. These are run inside of
@@ -153,6 +161,12 @@ Shell commands to run after building the library. These are run inside of
 
 (This key is not in the Conda spec).
 
+#### `build/replace-libs`
+
+A list of strings of the form `<old_name>=<new_name>`, to rename libraries when linking. This in particular
+might be necessary when using emscripten ports.
+For instance, `png16=png` is currently used in matplotlib.
+
 ### `requirements`
 
 #### `requirements/run`
@@ -160,6 +174,12 @@ Shell commands to run after building the library. These are run inside of
 A list of required packages.
 
 (Unlike conda, this only supports package names, not versions).
+
+### `test`
+
+#### `test/imports`
+
+List of imports to test after the package is built.
 
 ## C library dependencies
 Some python packages depend on certain C libraries, e.g. `lxml` depends on

@@ -1,5 +1,6 @@
 #ifndef HIWIRE_H
 #define HIWIRE_H
+#define PY_SSIZE_T_CLEAN
 #include "Python.h"
 #include "stdalign.h"
 #include "types.h"
@@ -32,6 +33,9 @@ struct _JsRefStruct
 
 typedef struct _JsRefStruct* JsRef;
 
+// Error handling will want to see JsRef.
+#include "error_handling.h"
+
 // Special JsRefs for singleton constants.
 // (These must be even because the least significance bit is set to 0 for
 // singleton constants.)
@@ -39,6 +43,12 @@ typedef struct _JsRefStruct* JsRef;
 #define Js_TRUE ((JsRef)(4))
 #define Js_FALSE ((JsRef)(6))
 #define Js_NULL ((JsRef)(8))
+
+#define hiwire_CLEAR(x)                                                        \
+  do {                                                                         \
+    hiwire_decref(x);                                                          \
+    x = NULL;                                                                  \
+  } while (0)
 
 /**
  * Initialize the variables and functions required for hiwire.
@@ -57,7 +67,7 @@ hiwire_incref(JsRef idval);
 /**
  * Decrease the reference count on an object.
  */
-void
+errcode
 hiwire_decref(JsRef idval);
 
 /**
@@ -276,7 +286,7 @@ hiwire_array();
  * If the user no longer needs the value outside of the array, it is the user's
  * responsibility to decref it.
  */
-void
+errcode
 hiwire_push_array(JsRef idobj, JsRef idval);
 
 /**
@@ -293,7 +303,7 @@ hiwire_object();
  * If the user no longer needs the key or value outside of the object, it is the
  * user's responsibility to decref them.
  */
-void
+errcode
 hiwire_push_object_pair(JsRef idobj, JsRef idkey, JsRef idval);
 
 /**
@@ -325,14 +335,14 @@ hiwire_get_member_string(JsRef idobj, const char* ptrname);
 /**
  * Set an object member by string.
  */
-void
+errcode
 hiwire_set_member_string(JsRef idobj, const char* ptrname, JsRef idval);
 
 /**
  * Delete an object member by string.
  *
  */
-void
+errcode
 hiwire_delete_member_string(JsRef idobj, const char* ptrname);
 
 /**
@@ -351,7 +361,7 @@ hiwire_get_member_int(JsRef idobj, int idx);
  * The integer is a C integer, not an id reference to a Javascript integer.
  *
  */
-void
+errcode
 hiwire_set_member_int(JsRef idobj, int idx, JsRef idval);
 
 /**
@@ -366,14 +376,14 @@ hiwire_get_member_obj(JsRef idobj, JsRef ididx);
  * Set an object member by object.
  *
  */
-void
+errcode
 hiwire_set_member_obj(JsRef idobj, JsRef ididx, JsRef idval);
 
 /**
  * Delete an object member by object.
  *
  */
-void
+errcode
 hiwire_delete_member_obj(JsRef idobj, JsRef ididx);
 
 /**
@@ -392,6 +402,9 @@ hiwire_dir(JsRef idobj);
  */
 JsRef
 hiwire_call(JsRef idobj, JsRef idargs);
+
+JsRef
+hiwire_call_bound(JsRef idfunc, JsRef idthis, JsRef idargs);
 
 /**
  * Call a member function.
@@ -431,6 +444,9 @@ hiwire_get_length(JsRef idobj);
 bool
 hiwire_get_bool(JsRef idobj);
 
+bool
+hiwire_is_pyproxy(JsRef idobj);
+
 /**
  * Returns 1 if the object is a function.
  *
@@ -438,6 +454,23 @@ hiwire_get_bool(JsRef idobj);
  */
 bool
 hiwire_is_function(JsRef idobj);
+
+bool
+hiwire_function_supports_kwargs(JsRef idfunc);
+
+/**
+ * Returns true if the object is a promise.
+ */
+bool
+hiwire_is_promise(JsRef idobj);
+
+/**
+ * Returns Promise.resolve(obj)
+ *
+ * Returns: New reference to Javascript promise
+ */
+JsRef
+hiwire_resolve_promise(JsRef idobj);
 
 /**
  * Gets the string representation of an object by calling `toString`.
@@ -554,13 +587,13 @@ hiwire_get_byteOffset(JsRef idobj);
  * Copies the buffer contents of a given typed array or buffer into the memory
  * at ptr.
  */
-void
+errcode
 hiwire_copy_to_ptr(JsRef idobj, void* ptr);
 
 /**
  * Get a data type identifier for a given typedarray.
  */
-void
+errcode
 hiwire_get_dtype(JsRef idobj, char** format_ptr, Py_ssize_t* size_ptr);
 
 /**

@@ -1,11 +1,10 @@
-def test_jinja2(selenium):
-    selenium.load_package("Jinja2")
-    selenium.run(
-        """
-        import jinja2
+from pyodide_build.testing import run_in_pyodide
 
-        template = jinja2.Template('Hello {{ name }}!')
-    """
-    )
-    content = selenium.run("""template.render(name='Zach')""")
+
+@run_in_pyodide(packages=["Jinja2"])
+def test_jinja2():
+    import jinja2
+
+    template = jinja2.Template("Hello {{ name }}!")
+    content = template.render(name="Zach")
     assert content == "Hello Zach!"

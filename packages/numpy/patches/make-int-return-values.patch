@@ -1,0 +1,90 @@
+The return values of f2c functions are insignificant in most cases, so often it
+is treated as returning void, when it really should return int (values are
+"returned" by writing to pointers passed as an argument, but an obscure feature
+known as alternative returns can cause the return value to be significant).
+
+emscripten is more strict about void vs int returns, so we change everything to
+return int.
+
+--- a/numpy/linalg/lapack_lite/f2c.c
++++ b/numpy/linalg/lapack_lite/f2c.c
+@@ -14,9 +14,9 @@
+ #include "f2c.h"
+ 
+ 
+-extern void s_wsfe(cilist *f) {;}
+-extern void e_wsfe(void) {;}
+-extern void do_fio(integer *c, char *s, ftnlen l) {;}
++extern int s_wsfe(cilist *f) {return 0;}
++extern int e_wsfe(void) {return 0;}
++extern int do_fio(integer *c, char *s, ftnlen l) {return 0;}
+ 
+ /* You'll want this if you redo the f2c_*.c files with the -C option
+  * to f2c for checking array subscripts. (It's not suggested you do that
+@@ -377,7 +377,7 @@ p->i = p1.i;
+ 
+ #endif /* NO_OVERWRITE */
+ 
+- VOID
++ int
+ #ifdef KR_headers
+ s_cat(lp, rpp, rnp, np, ll) char *lp, *rpp[]; ftnlen rnp[], *np, ll;
+ #else
+@@ -487,7 +487,7 @@ return(0);
+ #ifdef KR_headers
+ VOID s_copy(a, b, la, lb) register char *a, *b; ftnlen la, lb;
+ #else
+-void s_copy(register char *a, register char *b, ftnlen la, ftnlen lb)
++int s_copy(register char *a, register char *b, ftnlen la, ftnlen lb)
+ #endif
+ {
+ 	register char *aend, *bend;
+@@ -524,6 +524,7 @@ void s_copy(register char *a, register char *b, ftnlen la, ftnlen lb)
+ 		while(a < aend)
+ 			*a++ = ' ';
+ 		}
++        return 0;
+ 	}
+ 
+ 
+--- a/numpy/linalg/lapack_lite/f2c.h
++++ b/numpy/linalg/lapack_lite/f2c.h
+@@ -259,7 +259,7 @@ extern double d_tan(double *);
+ extern double d_tanh(double *);
+ extern double derf_(double *);
+ extern double derfc_(double *);
+-extern void do_fio(ftnint *, char *, ftnlen);
++extern int do_fio(ftnint *, char *, ftnlen);
+ extern integer do_lio(ftnint *, ftnint *, char *, ftnlen);
+ extern integer do_uio(ftnint *, char *, ftnlen);
+ extern integer e_rdfe(void);
+@@ -271,7 +271,7 @@ extern integer e_rsli(void);
+ extern integer e_rsue(void);
+ extern integer e_wdfe(void);
+ extern integer e_wdue(void);
+-extern void e_wsfe(void);
++extern int e_wsfe(void);
+ extern integer e_wsfi(void);
+ extern integer e_wsle(void);
+ extern integer e_wsli(void);
+@@ -346,9 +346,9 @@ extern double r_sinh(float *);
+ extern double r_sqrt(float *);
+ extern double r_tan(float *);
+ extern double r_tanh(float *);
+-extern void s_cat(char *, char **, integer *, integer *, ftnlen);
++extern int s_cat(char *, char **, integer *, integer *, ftnlen);
+ extern integer s_cmp(char *, char *, ftnlen, ftnlen);
+-extern void s_copy(char *, char *, ftnlen, ftnlen);
++extern int s_copy(char *, char *, ftnlen, ftnlen);
+ extern int s_paus(char *, ftnlen);
+ extern integer s_rdfe(cilist *);
+ extern integer s_rdue(cilist *);
+@@ -363,7 +363,7 @@ extern integer s_rsue(cilist *);
+ extern int s_stop(char *, ftnlen);
+ extern integer s_wdfe(cilist *);
+ extern integer s_wdue(cilist *);
+-extern void s_wsfe(	cilist *);
++extern int s_wsfe(	cilist *);
+ extern integer s_wsfi(icilist *);
+ extern integer s_wsle(cilist *);
+ extern integer s_wsli(icilist *);

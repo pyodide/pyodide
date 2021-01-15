@@ -114,7 +114,7 @@ async function loadPythonPackages(){
     pythonLoading = self.pyodide.loadPackage(['numpy', 'pytz']);
 }
 
-var onmessage = async(event) => {
+let onmessage = async(event) => {
     await languagePluginLoader;
      // since loading package is asynchronous, we need to make sure loading is done:
     await pythonLoading;
