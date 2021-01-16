@@ -2,40 +2,26 @@
 #include "Python.h"
 
 #include "jsimport.h"
-
+#include "jsproxy.h"
 #include <emscripten.h>
 
 #include "hiwire.h"
 #include "js2python.h"
 
 static PyObject* js_module = NULL;
+static PyObject* globalThis = NULL;
+_Py_IDENTIFIER(__dir__);
 
 static PyObject*
 JsImport_GetAttr(PyObject* self, PyObject* attr)
 {
-  const char* c = PyUnicode_AsUTF8(attr);
-  if (c == NULL) {
-    return NULL;
-  }
-  JsRef idval = hiwire_get_global(c);
-  if (idval == NULL) {
-    PyErr_Format(PyExc_AttributeError, "Unknown attribute '%s'", c);
-    return NULL;
-  }
-  PyObject* result = js2python(idval);
-  hiwire_decref(idval);
-  return result;
+  return PyObject_GetAttr(globalThis, attr);
 }
 
 static PyObject*
 JsImport_Dir()
 {
-  JsRef idwindow = hiwire_get_global("self");
-  JsRef iddir = hiwire_dir(idwindow);
-  hiwire_decref(idwindow);
-  PyObject* pydir = js2python(iddir);
-  hiwire_decref(iddir);
-  return pydir;
+  return _PyObject_CallMethodIdObjArgs(globalThis, &PyId___dir__, NULL);
 }
 
 static PyMethodDef JsModule_Methods[] = {
@@ -61,6 +47,10 @@ static struct PyModuleDef JsModule = {
 int
 JsImport_init()
 {
+  JsRef globalThis_ref = hiwire_get_global("globalThis");
+  globalThis = JsProxy_cnew(globalThis_ref);
+  hiwire_decref(globalThis_ref);
+
   PyObject* module_dict = PyImport_GetModuleDict();
   if (module_dict == NULL) {
     return -1;

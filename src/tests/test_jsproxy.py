@@ -191,6 +191,7 @@ def test_jsproxy_call(selenium):
     )
 
 
+@pytest.mark.xfail
 def test_jsproxy_call_kwargs(selenium):
     assert (
         selenium.run_js(
@@ -421,6 +422,24 @@ def test_await_error(selenium):
             r2 = c.send(r1.result())
             """
         )
+
+
+@run_in_pyodide
+def test_import_invocation():
+    import js
+
+    def temp():
+        print("okay?")
+
+    js.setTimeout(temp, 100)
+    js.fetch("packages.json")
+
+
+@run_in_pyodide
+def test_import_bind():
+    from js import fetch
+
+    fetch("packages.json")
 
 
 @run_in_pyodide
