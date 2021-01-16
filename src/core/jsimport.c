@@ -48,7 +48,7 @@ int
 JsImport_init()
 {
   JsRef globalThis_ref = hiwire_get_global("globalThis");
-  globalThis = JsProxy_cnew(globalThis_ref);
+  globalThis = JsProxy_create(globalThis_ref);
   hiwire_decref(globalThis_ref);
 
   PyObject* module_dict = PyImport_GetModuleDict();

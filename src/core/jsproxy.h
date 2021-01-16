@@ -15,14 +15,7 @@
  *  \return The Python object wrapping the Javascript object.
  */
 PyObject*
-JsProxy_cnew(JsRef v);
-
-/** Make a new JsProxy Error.
- *  \param v The Javascript error object.
- *  \return The Python error object wrapping the Javascript error object.
- */
-PyObject*
-JsProxy_new_error(JsRef v);
+JsProxy_create(JsRef v);
 
 /** Check if a Python object is a JsProxy object.
  *  \param x The Python object
