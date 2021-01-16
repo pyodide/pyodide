@@ -233,9 +233,9 @@ _python2js_dict(PyObject* x, PyObject* map, int depth)
 
 #define RETURN_IF_SUCCEEDS(x)                                                  \
   do {                                                                         \
-    JsRef fresh1278134_result = x;                                             \
-    if (fresh1278134_result != NULL) {                                         \
-      return fresh1278134_result;                                              \
+    JsRef _fresh_result = x;                                             \
+    if (_fresh_result != NULL) {                                         \
+      return _fresh_result;                                              \
     }                                                                          \
     PyErr_Clear();                                                             \
   } while (0)
