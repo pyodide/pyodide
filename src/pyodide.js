@@ -313,6 +313,8 @@ globalThis.languagePluginLoader = new Promise((resolve, reject) => {
     'runPython',
     'runPythonAsync',
     'version',
+    'registerJsModule',
+    'unregisterJsModule',    
   ];
 
   function makePublicAPI(module, public_api) {
@@ -363,6 +365,13 @@ globalThis.languagePluginLoader = new Promise((resolve, reject) => {
   Module.runPythonAsync = async function(code, messageCallback, errorCallback) {
     await Module.loadPackagesFromImports(code, messageCallback, errorCallback);
     return Module.runPython(code);
+  };
+
+  Module.registerJsModule = function(name, module) { 
+    Module.pyodide_py.register_js_module(name, module); 
+  };
+  Module.unregisterJsModule =function(name) { 
+    Module.pyodide_py.unregister_js_module(name); 
   };
 
   Module.function_supports_kwargs = function(funcstr) {
@@ -461,6 +470,7 @@ globalThis.languagePluginLoader = new Promise((resolve, reject) => {
     let response = await fetch(`${baseURL}packages.json`);
     let json = await response.json();
     fixRecursionLimit(self.pyodide);
+    self.pyodide.registerJsModule("js", globalThis);    
     self.pyodide = makePublicAPI(self.pyodide, PUBLIC_API);
     self.pyodide._module.packages = json;
     resolve();
