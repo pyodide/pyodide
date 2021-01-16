@@ -7,29 +7,36 @@ def test_jsproxy_dir(selenium):
     result = selenium.run_js(
         """
         window.a = { x : 2, y : "9" };
+        window.b = function(){};
         return pyodide.runPython(`
             from js import a
-            dir(a)
+            from js import b
+            [dir(a), dir(b)]
         `);
         """
     )
-    assert set(result).issuperset(
-        [
-            "__bool__",
-            "__call__",
-            "__class__",
-            "__defineGetter__",
-            "__defineSetter__",
-            "__delattr__",
-            "__delitem__",
-            "constructor",
-            "new",
-            "toString",
-            "typeof",
-            "valueOf",
-            "x",
-        ]
-    )
+    jsproxy_items = set([
+        "__bool__",
+        "__class__",
+        "__defineGetter__",
+        "__defineSetter__",
+        "__delattr__",
+        "__delitem__",
+        "constructor",
+        "toString",
+        "typeof",
+        "valueOf",
+    ])
+    a_items = set(["x", "y"])
+    callable_items = set(["__call__", "new"])
+    set1 = set(result[1])
+    set2 = set(result[2])
+    assert set1.issuperset(jsproxy_items)
+    assert set2.issuperset(jsproxy_items)
+    assert set1.isdisjoint(callable_items)
+    assert set2.issuperset(callable_items)
+    assert set1.issuperset(a_items)
+    assert set2.isdisjoint(a_items)
 
 
 def test_jsproxy_getattr(selenium):
