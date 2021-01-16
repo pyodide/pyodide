@@ -264,7 +264,8 @@ def test_jsproxy_call_meth_js_kwargs(selenium):
         return pyodide.runPython(
             `
             from js import a
-            a.f(y=10, x=2) == [a, 2, 10]
+            [r0, r1, r2] = a.f(y=10, x=2)
+            r0 == a and r1 == 2 and r2 == 10
             `
         );
         """
