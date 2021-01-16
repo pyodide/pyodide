@@ -11,6 +11,10 @@ EM_JS_NUM(errcode, log_error, (char* msg), {
   console.error(jsmsg);
 });
 
+EM_JS_NUM(errcode, log_error_obj, (JsRef obj), {
+  console.error(Module.hiwire.get_value(obj));
+});
+
 void
 PyodideErr_SetJsError(JsRef err)
 {
