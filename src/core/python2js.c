@@ -11,82 +11,72 @@
 
 static PyObject* tbmod = NULL;
 
+_Py_IDENTIFIER(format_exception);
+
 static JsRef
 _python2js_unicode(PyObject* x);
 
 void
 pythonexc2js()
 {
-  PyObject* type;
-  PyObject* value;
-  PyObject* traceback;
-  int no_traceback = 0;
+  bool success = false;
+  PyObject* type = NULL;
+  PyObject* value = NULL;
+  PyObject* traceback = NULL;
+  JsRef excval = NULL;
+  PyObject* pylines = NULL;
+  PyObject* empty = NULL;
+  PyObject* pystr = NULL;
 
   PyErr_Fetch(&type, &value, &traceback);
   PyErr_NormalizeException(&type, &value, &traceback);
 
-  JsRef excval = NULL;
-  int exc;
-
   if (type == NULL || type == Py_None || value == NULL || value == Py_None) {
     excval = hiwire_string_ascii("No exception type or value");
+    PySys_WriteStderr("No exception type or value\n");
+    goto finally__skip_print_tb;
+    return;
+  }
+
+  if (traceback == NULL) {
+    traceback = Py_None;
+    Py_INCREF(traceback);
+  }
+
+  pylines = _PyObject_CallMethodIdObjArgs(
+    tbmod, &PyId_format_exception, type, value, traceback, NULL);
+  FAIL_IF_NULL(pylines);
+  empty = PyUnicode_New(0, 0);
+  FAIL_IF_NULL(empty);
+  pystr = PyUnicode_Join(empty, pylines);
+  FAIL_IF_NULL(pystr);
+  const char* pystr_utf8 = PyUnicode_AsUTF8(pystr);
+  FAIL_IF_NULL(pystr_utf8);
+  PySys_WriteStderr("Python exception:\n");
+  PySys_WriteStderr("%s\n", pystr_utf8);
+  excval = _python2js_unicode(pystr);
+  FAIL_IF_NULL(excval);
+
+  success = true;
+finally:
+  if (!success) {
+    excval = hiwire_string_ascii("Error occurred while formatting traceback");
+    PySys_WriteStderr("Error occurred while formatting traceback:\n");
     PyErr_Print();
-    PyErr_Clear();
-    goto exit;
+    PySys_WriteStderr("\nOriginal exception was:\n");
+    PyErr_Display(type, value, traceback);
   }
-
-  if (tbmod == NULL) {
-    tbmod = PyImport_ImportModule("traceback");
-    if (tbmod == NULL) {
-      PyObject* repr = PyObject_Repr(value);
-      if (repr == NULL) {
-        excval = hiwire_string_ascii("Could not get repr for exception");
-      } else {
-        excval = _python2js_unicode(repr);
-        Py_DECREF(repr);
-      }
-      goto exit;
-    }
-  }
-
-  PyObject* format_exception;
-  if (traceback == NULL || traceback == Py_None) {
-    no_traceback = 1;
-    format_exception = PyObject_GetAttrString(tbmod, "format_exception_only");
-  } else {
-    format_exception = PyObject_GetAttrString(tbmod, "format_exception");
-  }
-  if (format_exception == NULL) {
-    excval = hiwire_string_ascii("Could not get format_exception function");
-  } else {
-    PyObject* pylines;
-    if (no_traceback) {
-      pylines =
-        PyObject_CallFunctionObjArgs(format_exception, type, value, NULL);
-    } else {
-      pylines = PyObject_CallFunctionObjArgs(
-        format_exception, type, value, traceback, NULL);
-    }
-    if (pylines == NULL) {
-      excval = hiwire_string_ascii("Error calling traceback.format_exception");
-      PyErr_Print();
-      PyErr_Clear();
-      goto exit;
-    } else {
-      PyObject* empty = PyUnicode_FromString("");
-      PyObject* pystr = PyUnicode_Join(empty, pylines);
-      printf("Python exception:\n");
-      printf("%s\n", PyUnicode_AsUTF8(pystr));
-      excval = _python2js_unicode(pystr);
-      Py_DECREF(pystr);
-      Py_DECREF(empty);
-      Py_DECREF(pylines);
-    }
-    Py_DECREF(format_exception);
-  }
-
-exit:
-  PyErr_Clear();
+finally__skip_print_tb:
+  Py_CLEAR(type);
+  Py_CLEAR(value);
+  Py_CLEAR(traceback);
+  Py_CLEAR(pylines);
+  Py_CLEAR(empty);
+  Py_CLEAR(pystr);
+  // hiwire_string_ascii never fails so excval is guaranteed not to be null at
+  // this point. This throws an error making it pretty difficult to decref
+  // excval, so hiwire_throw_error will decref it for us (in other words
+  // hiwire_throw_error steals a reference to its argument).
   hiwire_throw_error(excval);
 }
 
@@ -401,15 +391,13 @@ test_python2js_with_depth(char* name, int depth)
 int
 python2js_init()
 {
-  PyObject* __main__ = PyImport_AddModule("__main__");
-  if (__main__ == NULL) {
-    return 1;
-  }
+  bool success = false;
+  PyObject* __main__ = PyImport_AddModule("__main__"); // borrowed!
+  FAIL_IF_NULL(__main__);
 
   globals = PyModule_GetDict(__main__);
-  if (globals == NULL) {
-    return 1;
-  }
+  FAIL_IF_NULL(globals);
+
   EM_ASM({
     Module.test_python2js_with_depth = function(name, depth)
     {
@@ -422,5 +410,9 @@ python2js_init()
     };
   });
 
-  return 0;
+  tbmod = PyImport_ImportModule("traceback");
+  FAIL_IF_NULL(tbmod);
+  success = true;
+finally: 
+  return success ? 0 : -1;
 }

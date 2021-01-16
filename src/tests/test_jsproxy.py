@@ -1,34 +1,44 @@
 # See also test_typeconversions, and test_python.
 import pytest
+from pyodide_build.testing import run_in_pyodide
 
 
 def test_jsproxy_dir(selenium):
     result = selenium.run_js(
         """
         window.a = { x : 2, y : "9" };
+        window.b = function(){};
         return pyodide.runPython(`
             from js import a
-            dir(a)
+            from js import b
+            [dir(a), dir(b)]
         `);
         """
     )
-    assert set(result).issuperset(
+    jsproxy_items = set(
         [
             "__bool__",
-            "__call__",
             "__class__",
             "__defineGetter__",
             "__defineSetter__",
             "__delattr__",
             "__delitem__",
             "constructor",
-            "new",
             "toString",
             "typeof",
             "valueOf",
-            "x",
         ]
     )
+    a_items = set(["x", "y"])
+    callable_items = set(["__call__", "new"])
+    set0 = set(result[0])
+    set1 = set(result[1])
+    assert set0.issuperset(jsproxy_items)
+    assert set0.isdisjoint(callable_items)
+    assert set0.issuperset(a_items)
+    assert set1.issuperset(jsproxy_items)
+    assert set1.issuperset(callable_items)
+    assert set1.isdisjoint(a_items)
 
 
 def test_jsproxy_getattr(selenium):
@@ -143,7 +153,7 @@ def test_jsproxy_iter(selenium):
     selenium.run_js(
         """
         function makeIterator(array) {
-          var nextIndex = 0;
+          let nextIndex = 0;
           return {
             next: function() {
               return nextIndex < array.length ?
@@ -173,23 +183,134 @@ def test_jsproxy_implicit_iter(selenium):
     ) == [1, 2, 3]
 
 
-def test_jsproxy_kwargs(selenium):
-    selenium.run_js(
-        """
-        window.kwarg_function = ({ a = 1, b = 1 }) => {
-            return a / b;
-        };
-        """
-    )
+def test_jsproxy_call(selenium):
     assert (
-        selenium.run(
+        selenium.run_js(
             """
-        from js import kwarg_function
-        kwarg_function(b = 2, a = 10)
+        window.f = function(){ return arguments.length; };
+        return pyodide.runPython(
+            `
+            from js import f
+            [f(*range(n)) for n in range(10)]
+            `
+        );
         """
         )
-        == 5
+        == list(range(10))
     )
+
+
+@pytest.mark.xfail
+def test_jsproxy_call_kwargs(selenium):
+    assert (
+        selenium.run_js(
+            """
+        window.kwarg_function = ({ a = 1, b = 1 }) => {
+            return [a, b];
+        };
+        return pyodide.runPython(
+            `
+            from js import kwarg_function
+            kwarg_function(b = 2, a = 10)
+            `
+        );
+        """
+        )
+        == [10, 2]
+    )
+
+
+@pytest.mark.xfail
+def test_jsproxy_call_meth_py(selenium):
+    assert selenium.run_js(
+        """
+        window.a = {};
+        return pyodide.runPython(
+            `
+            from js import a
+            def f(self):
+                return self
+            a.f = f
+            a.f() == a
+            `
+        );
+        """
+    )
+
+
+def test_jsproxy_call_meth_js(selenium):
+    assert selenium.run_js(
+        """
+        window.a = {};
+        function f(){return this;}
+        a.f = f;
+        return pyodide.runPython(
+            `
+            from js import a
+            a.f() == a
+            `
+        );
+        """
+    )
+
+
+def test_jsproxy_call_meth_js_kwargs(selenium):
+    assert selenium.run_js(
+        """
+        window.a = {};
+        function f({ x = 1, y = 1 }){
+            return [this, x, y];
+        }
+        a.f = f;
+        return pyodide.runPython(
+            `
+            from js import a
+            [r0, r1, r2] = a.f(y=10, x=2)
+            r0 == a and r1 == 2 and r2 == 10
+            `
+        );
+        """
+    )
+
+
+def test_supports_kwargs(selenium):
+    tests = [
+        ["", False],
+        ["x", False],
+        ["x     ", False],
+        ["{x}", True],
+        ["x, y, z", False],
+        ["x, y, {z}", True],
+        ["x, {y}, z", False],
+        ["x, {y}, {z}", True],
+        ["{}", True],
+        ["{} = {}", True],
+        ["[] = {}", False],
+        ["{} = []", True],
+        ["[] = []", False],
+        ["{} = null", True],
+        ["x = '2, `, {y}'", False],
+        ["{x} = '2, \\', x'", True],
+        ["[{x}]", False],
+        ["[x, y, z]", False],
+        ["x,", False],
+        ["{x},", True],
+        ["x, { y = 2 }", True],
+        ["{ y = 2 }, x", False],
+        ["{ x = 2 }, { y = 2 }", True],
+        ["{ a = 7, b = 2}", True],
+        ["{ a = 7, b = 2} = {b : 3}", True],
+        ["{ a = [7, 1], b = { c : 2} } = {}", True],
+        ["{ a = 7, b = 2} = {}", True],
+        ["{ a = 7, b = 2} = null", True],
+        ["{ x = { y : 2 }}", True],
+        ["{ x : 2 }", True],
+    ]
+    for (s, res) in tests:
+        s = f"function f({s}){{}}"
+        selenium.run_js(
+            f"return pyodide._module.function_supports_kwargs({repr(s)})"
+        ) == res
 
 
 import time
@@ -310,3 +431,43 @@ def test_await_error(selenium):
             r2 = c.send(r1.result())
             """
         )
+
+
+@run_in_pyodide
+def test_import_invocation():
+    import js
+
+    def temp():
+        print("okay?")
+
+    js.setTimeout(temp, 100)
+    js.fetch("packages.json")
+
+
+@run_in_pyodide
+def test_import_bind():
+    from js import fetch
+
+    fetch("packages.json")
+
+
+@run_in_pyodide
+def test_nested_attribute_access():
+    import js
+    from js import window
+
+    js.URL.createObjectURL
+    window.URL.createObjectURL
+
+
+@run_in_pyodide
+def test_window_isnt_super_weird_anymore():
+    import js
+    from js import window, Array
+
+    assert window.Array != window
+    assert window.Array == Array
+    assert window.window.window.window == window
+    assert js.window.Array == Array
+    assert js.window.window.window.window == window
+    assert window.window.window.window.Array == Array

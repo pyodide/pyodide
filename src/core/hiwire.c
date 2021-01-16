@@ -13,7 +13,7 @@ hiwire_undefined()
 }
 
 JsRef
-hiwire_jsnull()
+hiwire_null()
 {
   return Js_NULL;
 }
@@ -53,7 +53,7 @@ EM_JS(int, hiwire_init, (), {
   };
   Module.hiwire = {};
   Module.hiwire.UNDEFINED = _hiwire_undefined();
-  Module.hiwire.JSNULL = _hiwire_jsnull();
+  Module.hiwire.JSNULL = _hiwire_null();
   Module.hiwire.TRUE = _hiwire_true();
   Module.hiwire.FALSE = _hiwire_false();
 
@@ -335,6 +335,23 @@ EM_JS_REF(JsRef, hiwire_call, (JsRef idfunc, JsRef idargs), {
 });
 
 EM_JS_REF(JsRef,
+          hiwire_call_bound,
+          (JsRef idfunc, JsRef idthis, JsRef idargs),
+          {
+            let func = Module.hiwire.get_value(idfunc);
+            let this_;
+            // clang-format off
+            if (idthis === 0) {
+              // clang-format on
+              this_ = null;
+            } else {
+              this_ = Module.hiwire.get_value(idthis);
+            }
+            let args = Module.hiwire.get_value(idargs);
+            return Module.hiwire.new_value(func.apply(this_, args));
+          });
+
+EM_JS_REF(JsRef,
           hiwire_call_member,
           (JsRef idobj, const char* ptrname, JsRef idargs),
           {
@@ -371,10 +388,27 @@ EM_JS_NUM(bool, hiwire_get_bool, (JsRef idobj), {
   // clang-format on
 });
 
+EM_JS_NUM(bool, hiwire_is_pyproxy, (JsRef idobj), {
+  // clang-format off
+  return Module.PyProxy.isPyProxy(Module.hiwire.get_value(idobj));
+  // clang-format on
+});
+
 EM_JS_NUM(bool, hiwire_is_function, (JsRef idobj), {
   // clang-format off
   return typeof Module.hiwire.get_value(idobj) === 'function';
   // clang-format on
+});
+
+EM_JS_NUM(bool, hiwire_is_error, (JsRef idobj), {
+  // From https://stackoverflow.com/a/45496068
+  let value = Module.hiwire.get_value(idobj);
+  return !!(value && value.stack && value.message);
+});
+
+EM_JS_NUM(bool, hiwire_function_supports_kwargs, (JsRef idfunc), {
+  let funcstr = Module.hiwire.get_value(idfunc).toString();
+  return Module.function_supports_kwargs(funcstr);
 });
 
 EM_JS_NUM(bool, hiwire_is_promise, (JsRef idobj), {

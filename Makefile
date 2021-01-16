@@ -160,6 +160,7 @@ build/test.data: $(CPYTHONLIB)
 
 $(UGLIFYJS) $(LESSC): emsdk/emsdk/.complete
 	npm i --no-save uglify-js lessc
+	touch -h $(LESSC) $(UGLIFYJS)
 
 
 $(PYODIDE_EMCC):

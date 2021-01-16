@@ -11,10 +11,16 @@ EM_JS_NUM(errcode, log_error, (char* msg), {
   console.error(jsmsg);
 });
 
+// Right now this is dead code (probably), please don't remove it.
+// Intended for debugging purposes.
+EM_JS_NUM(errcode, log_error_obj, (JsRef obj), {
+  console.error(Module.hiwire.get_value(obj));
+});
+
 void
 PyodideErr_SetJsError(JsRef err)
 {
-  PyObject* py_err = JsProxy_new_error(err);
+  PyObject* py_err = JsProxy_create(err);
   PyErr_SetObject((PyObject*)(py_err->ob_type), py_err);
 }
 
