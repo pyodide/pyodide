@@ -15,6 +15,8 @@ error_handling_init();
 errcode
 log_error(char* msg);
 
+// Right now this is dead code (probably), please don't remove it.
+// Intended for debugging purposes.
 errcode
 log_error_obj(JsRef obj);
 

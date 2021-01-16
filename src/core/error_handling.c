@@ -11,6 +11,8 @@ EM_JS_NUM(errcode, log_error, (char* msg), {
   console.error(jsmsg);
 });
 
+// Right now this is dead code (probably), please don't remove it.
+// Intended for debugging purposes.
 EM_JS_NUM(errcode, log_error_obj, (JsRef obj), {
   console.error(Module.hiwire.get_value(obj));
 });
