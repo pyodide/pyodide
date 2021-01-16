@@ -314,7 +314,7 @@ globalThis.languagePluginLoader = new Promise((resolve, reject) => {
     'runPythonAsync',
     'version',
     'registerJsModule',
-    'unregisterJsModule',    
+    'unregisterJsModule',
   ];
 
   function makePublicAPI(module, public_api) {
@@ -367,12 +367,10 @@ globalThis.languagePluginLoader = new Promise((resolve, reject) => {
     return Module.runPython(code);
   };
 
-  Module.registerJsModule = function(name, module) { 
-    Module.pyodide_py.register_js_module(name, module); 
-  };
-  Module.unregisterJsModule =function(name) { 
-    Module.pyodide_py.unregister_js_module(name); 
-  };
+  Module.registerJsModule = function(
+      name, module) { Module.pyodide_py.register_js_module(name, module); };
+  Module.unregisterJsModule = function(
+      name) { Module.pyodide_py.unregister_js_module(name); };
 
   Module.function_supports_kwargs = function(funcstr) {
     // This is basically a finite state machine (except for paren counting)
@@ -470,7 +468,7 @@ globalThis.languagePluginLoader = new Promise((resolve, reject) => {
     let response = await fetch(`${baseURL}packages.json`);
     let json = await response.json();
     fixRecursionLimit(self.pyodide);
-    self.pyodide.registerJsModule("js", globalThis);    
+    self.pyodide.registerJsModule("js", globalThis);
     self.pyodide = makePublicAPI(self.pyodide, PUBLIC_API);
     self.pyodide._module.packages = json;
     resolve();
