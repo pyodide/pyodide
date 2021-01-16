@@ -10,9 +10,30 @@ import builtins
 try:
     import js
 
+    dummy_promise = js.Promise.resolve()
     load_packages_from_imports = js.pyodide.loadPackagesFromImports
+
 except ImportError:
-    load_packages_from_imports = None
+
+    class FakePromise:
+        """ A promise that mimic the JS promises.
+
+        Only `then is supported` and there is no asynchronicity.
+        execution occurs when then is call.
+
+        This is mainly to fake `load_packages_from_imports`
+        and `InteractiveConsole.run_complete` in contexts
+        where JS promises are not available (tests). """
+        def __init__(self, args=None):
+            self.args = (args,) if args is not None else ()
+
+        def then(self, func, *args):
+            return FakePromise(func(*self.args))
+
+    dummy_promise = FakePromise()
+
+    def load_packages_from_imports(*args):
+        return dummy_promise
 
 
 __all__ = ["InteractiveConsole"]
@@ -106,6 +127,7 @@ class InteractiveConsole(code.InteractiveConsole):
         self._persistent_stream_redirection = persistent_stream_redirection
         if self._persistent_stream_redirection:
             self.redirect_stdstreams()
+        self.run_complete = dummy_promise
 
     def redirect_stdstreams(self):
         """ Toggle stdout/stderr redirections. """
@@ -175,16 +197,17 @@ class InteractiveConsole(code.InteractiveConsole):
         If you need to wait for the end of the computation,
         you should await for it."""
         parent_runcode = super().runcode
-
-        def run(*args):
-            with self.stdstreams_redirections():
-                return parent_runcode(code)
-
-        if load_packages_from_imports is None:
-            return run()
-
         source = "\n".join(self.buffer)
-        self.run_complete = load_packages_from_imports(source).then(run)
+
+        def load_packages_and_run(*args):
+            def run(*args):
+                with self.stdstreams_redirections():
+                    parent_runcode(code)
+                return dummy_promise
+
+            return load_packages_from_imports(source).then(run)
+
+        self.run_complete = self.run_complete.then(load_packages_and_run)
 
     def __del__(self):
         if self._persistent_stream_redirection:

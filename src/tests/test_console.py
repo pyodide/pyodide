@@ -2,7 +2,6 @@ import pytest
 from pathlib import Path
 import sys
 import io
-from selenium.webdriver.support.ui import WebDriverWait
 
 sys.path.append(str(Path(__file__).parents[2] / "src" / "pyodide-py"))
 
@@ -66,6 +65,12 @@ def test_interactive_console_streams(safe_sys_redirections):
     shell.push("print('foobar')")
     assert my_stdout == "foo\nfoobar\n"
 
+    shell.push("print('foobar')")
+    assert my_stdout == "foo\nfoobar\nfoobar\n"
+
+    shell.push("1+1")
+    assert my_stdout == "foo\nfoobar\nfoobar\n2\n"
+
     shell.restore_stdstreams()
 
     my_stdout = ""
@@ -112,21 +117,17 @@ def safe_selenium_sys_redirections(selenium):
 
 
 def test_interactive_console(selenium, safe_selenium_sys_redirections):
+    def ensure_run_completed():
+        selenium.driver.execute_async_script(
+            """
+        const done = arguments[arguments.length - 1];
+        pyodide.globals.shell.run_complete.then(done);
+        """
+        )
+
     selenium.run(
         """
     from pyodide.console import InteractiveConsole
-    import js
-
-    my_stdout = ""
-    my_stderr = ""
-
-    def stdout_callback(string):
-        global my_stdout
-        my_stdout += string
-
-    def stderr_callback(string):
-        global my_stderr
-        my_stderr += string
 
     result = None
 
@@ -134,31 +135,28 @@ def test_interactive_console(selenium, safe_selenium_sys_redirections):
         global result
         result = value
 
-    shell = InteractiveConsole(
-        stdout_callback=stdout_callback,
-        stderr_callback=stderr_callback,)
+    shell = InteractiveConsole()
     sys.displayhook = displayhook"""
     )
 
     selenium.run("shell.push('x = 5')")
     selenium.run("shell.push('x')")
-    WebDriverWait(selenium, 1).until(lambda driver: selenium.run("result == 5"))
+    ensure_run_completed()
+    assert selenium.run("result == 5")
 
     selenium.run("shell.push('x ** 2')")
-    WebDriverWait(selenium, 1).until(lambda driver: selenium.run("result == 25"))
+    ensure_run_completed()
+    assert selenium.run("result == 25")
 
     selenium.run("shell.push('def f(x):')")
     selenium.run("shell.push('    return x*x + 1')")
     selenium.run("shell.push('')")
     selenium.run("shell.push('[f(x) for x in range(5)]')")
-    WebDriverWait(selenium, 1).until(
-        lambda driver: selenium.run("result == [1, 2, 5, 10, 17]")
-    )
+    ensure_run_completed()
+    assert selenium.run("result == [1, 2, 5, 10, 17]")
 
-    # import numpy
-    selenium.run("shell.push('import numpy as np; np.gcd(6, 15)')")
-    selenium.run("import js ; js.console.log(my_stdout)")
-    selenium.run("import js ; js.console.log(my_stderr)")
-    WebDriverWait(selenium, 30).until(lambda driver: selenium.run("result == 3"))
-    selenium.run("shell.push('int(np.pi * 100)')")
-    WebDriverWait(selenium, 1).until(lambda driver: selenium.run("result == 314"))
+    # with package load
+    selenium.run("shell.push('import pytz')")
+    selenium.run("shell.push('pytz.utc.zone')")
+    ensure_run_completed()
+    assert selenium.run("result") == "UTC"
