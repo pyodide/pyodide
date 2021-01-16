@@ -501,8 +501,7 @@ static PyTypeObject JsProxyType = {
   .tp_setattro = JsProxy_SetAttr,
   .tp_as_async = &JsProxy_asyncMethods,
   .tp_richcompare = JsProxy_RichCompare,
-  .tp_flags =
-    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE,
+  .tp_flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE,
   .tp_doc = "A proxy to make a Javascript object behave like a Python object",
   .tp_methods = JsProxy_Methods,
   .tp_getset = JsProxy_GetSet,
