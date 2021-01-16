@@ -55,7 +55,7 @@ all: check \
 	echo -e "\nSUCCESS!"
 
 
-build/pyodide.asm.js: src/core/main.o src/core/jsimport.o \
+build/pyodide.asm.js: src/core/main.o  \
 	        src/core/jsproxy.o src/core/js2python.o \
 		src/core/error_handling.o \
 		src/core/pyproxy.o \
