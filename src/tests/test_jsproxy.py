@@ -7,29 +7,38 @@ def test_jsproxy_dir(selenium):
     result = selenium.run_js(
         """
         window.a = { x : 2, y : "9" };
+        window.b = function(){};
         return pyodide.runPython(`
             from js import a
-            dir(a)
+            from js import b
+            [dir(a), dir(b)]
         `);
         """
     )
-    assert set(result).issuperset(
+    jsproxy_items = set(
         [
             "__bool__",
-            "__call__",
             "__class__",
             "__defineGetter__",
             "__defineSetter__",
             "__delattr__",
             "__delitem__",
             "constructor",
-            "new",
             "toString",
             "typeof",
             "valueOf",
-            "x",
         ]
     )
+    a_items = set(["x", "y"])
+    callable_items = set(["__call__", "new"])
+    set0 = set(result[0])
+    set1 = set(result[1])
+    assert set0.issuperset(jsproxy_items)
+    assert set0.isdisjoint(callable_items)
+    assert set0.issuperset(a_items)
+    assert set1.issuperset(jsproxy_items)
+    assert set1.issuperset(callable_items)
+    assert set1.isdisjoint(a_items)
 
 
 def test_jsproxy_getattr(selenium):
@@ -191,6 +200,7 @@ def test_jsproxy_call(selenium):
     )
 
 
+@pytest.mark.xfail
 def test_jsproxy_call_kwargs(selenium):
     assert (
         selenium.run_js(
@@ -244,7 +254,6 @@ def test_jsproxy_call_meth_js(selenium):
     )
 
 
-@pytest.mark.xfail
 def test_jsproxy_call_meth_js_kwargs(selenium):
     assert selenium.run_js(
         """
@@ -256,7 +265,8 @@ def test_jsproxy_call_meth_js_kwargs(selenium):
         return pyodide.runPython(
             `
             from js import a
-            a.f(y=10, x=2) == [a, x, y]
+            [r0, r1, r2] = a.f(y=10, x=2)
+            r0 == a and r1 == 2 and r2 == 10
             `
         );
         """
@@ -421,6 +431,24 @@ def test_await_error(selenium):
             r2 = c.send(r1.result())
             """
         )
+
+
+@run_in_pyodide
+def test_import_invocation():
+    import js
+
+    def temp():
+        print("okay?")
+
+    js.setTimeout(temp, 100)
+    js.fetch("packages.json")
+
+
+@run_in_pyodide
+def test_import_bind():
+    from js import fetch
+
+    fetch("packages.json")
 
 
 @run_in_pyodide
