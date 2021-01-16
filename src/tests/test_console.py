@@ -117,15 +117,26 @@ def test_interactive_console(selenium, safe_selenium_sys_redirections):
     from pyodide.console import InteractiveConsole
     import js
 
+    my_stdout = ""
+    my_stderr = ""
+
+    def stdout_callback(string):
+        global my_stdout
+        my_stdout += string
+
+    def stderr_callback(string):
+        global my_stderr
+        my_stderr += string
+
     result = None
 
     def displayhook(value):
         global result
-        js.console.log(result)
-        js.console.log(value)
         result = value
 
-    shell = InteractiveConsole()
+    shell = InteractiveConsole(
+        stdout_callback=stdout_callback,
+        stderr_callback=stderr_callback,)
     sys.displayhook = displayhook"""
     )
 
@@ -136,8 +147,18 @@ def test_interactive_console(selenium, safe_selenium_sys_redirections):
     selenium.run("shell.push('x ** 2')")
     WebDriverWait(selenium, 1).until(lambda driver: selenium.run("result == 25"))
 
+    selenium.run("shell.push('def f(x):')")
+    selenium.run("shell.push('    return x*x + 1')")
+    selenium.run("shell.push('')")
+    selenium.run("shell.push('[f(x) for x in range(5)]')")
+    WebDriverWait(selenium, 1).until(
+        lambda driver: selenium.run("result == [1, 2, 5, 10, 17]")
+    )
+
     # import numpy
     selenium.run("shell.push('import numpy as np; np.gcd(6, 15)')")
+    selenium.run("import js ; js.console.log(my_stdout)")
+    selenium.run("import js ; js.console.log(my_stderr)")
     WebDriverWait(selenium, 30).until(lambda driver: selenium.run("result == 3"))
     selenium.run("shell.push('int(np.pi * 100)')")
     WebDriverWait(selenium, 1).until(lambda driver: selenium.run("result == 314"))
