@@ -2,7 +2,7 @@ def test_matplotlib(selenium_standalone):
     selenium = selenium_standalone
     selenium.load_package("matplotlib")
     selenium.run("from matplotlib import pyplot as plt")
-    selenium.run("plt.figure()")
+    selenium.run("plt.figure(); pass")
     selenium.run("plt.plot([1,2,3])")
     selenium.run("plt.show()")
 
@@ -10,7 +10,7 @@ def test_matplotlib(selenium_standalone):
 def test_svg(selenium):
     selenium.load_package("matplotlib")
     selenium.run("from matplotlib import pyplot as plt")
-    selenium.run("plt.figure()")
+    selenium.run("plt.figure(); pass")
     selenium.run("x = plt.plot([1,2,3])")
     selenium.run("import io")
     selenium.run("fd = io.BytesIO()")
@@ -23,7 +23,7 @@ def test_svg(selenium):
 def test_pdf(selenium):
     selenium.load_package("matplotlib")
     selenium.run("from matplotlib import pyplot as plt")
-    selenium.run("plt.figure()")
+    selenium.run("plt.figure(); pass")
     selenium.run("x = plt.plot([1,2,3])")
     selenium.run("import io")
     selenium.run("fd = io.BytesIO()")
