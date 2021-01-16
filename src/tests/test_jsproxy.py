@@ -217,7 +217,6 @@ def test_jsproxy_call_kwargs(selenium):
     )
 
 
-@pytest.mark.xfail
 def test_jsproxy_call_meth_py(selenium):
     assert selenium.run_js(
         """
@@ -251,7 +250,6 @@ def test_jsproxy_call_meth_js(selenium):
     )
 
 
-@pytest.mark.xfail
 def test_jsproxy_call_meth_js_kwargs(selenium):
     assert selenium.run_js(
         """
