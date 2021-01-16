@@ -223,9 +223,9 @@ _python2js_dict(PyObject* x, PyObject* map, int depth)
 
 #define RETURN_IF_SUCCEEDS(x)                                                  \
   do {                                                                         \
-    JsRef _fresh_result = x;                                             \
-    if (_fresh_result != NULL) {                                         \
-      return _fresh_result;                                              \
+    JsRef _fresh_result = x;                                                   \
+    if (_fresh_result != NULL) {                                               \
+      return _fresh_result;                                                    \
     }                                                                          \
     PyErr_Clear();                                                             \
   } while (0)
@@ -413,6 +413,6 @@ python2js_init()
   tbmod = PyImport_ImportModule("traceback");
   FAIL_IF_NULL(tbmod);
   success = true;
-finally: 
+finally:
   return success ? 0 : -1;
 }
