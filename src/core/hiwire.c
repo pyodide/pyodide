@@ -340,7 +340,9 @@ EM_JS_REF(JsRef,
           {
             let func = Module.hiwire.get_value(idfunc);
             let this_;
-            if(idthis === 0){
+            // clang-format off
+            if (idthis === 0) {
+              // clang-format on
               this_ = null;
             } else {
               this_ = Module.hiwire.get_value(idthis);
