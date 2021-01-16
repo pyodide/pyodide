@@ -52,12 +52,12 @@ class JavascriptException(Exception):
     def __init__(self, msg, stack):
         self.msg = msg
         self.stack = stack
+        # In chrome the stack contains the message
+        if self.stack and self.stack.startswith(self.msg):
+            self.msg = ""
 
     def __str__(self):
-        if self.stack:
-            return self.msg + "\n\n" + self.stack
-        else:
-            return self.msg
+        return "\n\n".join(x for x in [self.msg, self.stack] if x)
 
 
 class SeleniumWrapper:
@@ -105,7 +105,6 @@ class SeleniumWrapper:
             # we have a multiline string, fix indentation
             code = textwrap.dedent(code)
         wrapper = """
-            Error.stackTraceLimit = Infinity;
             let run = () => { %s }
             try {
                 let result = run();
