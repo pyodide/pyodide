@@ -11,7 +11,7 @@ source:
     - patches/0002-fix-arith-h.patch
     - patches/0003-lapack-install-make.patch
     - patches/0004-fix-f2clibs-build.patch
-    - patches/0005-remove-redundant-symbols.patch
+# we remove redundant symbols in scipy now
     - patches/0006-correct-return-types.patch
   extras:
     - [make.inc, make.inc]
