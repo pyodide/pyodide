@@ -1,5 +1,6 @@
 # See also test_typeconversions, and test_python.
 import pytest
+from pyodide_build.testing import run_in_pyodide
 
 
 def test_jsproxy_dir(selenium):
@@ -252,6 +253,7 @@ def test_jsproxy_call_meth_js(selenium):
         """
     )
 
+
 def test_jsproxy_call_meth_js_kwargs(selenium):
     assert selenium.run_js(
         """
@@ -309,6 +311,7 @@ def test_supports_kwargs(selenium):
         selenium.run_js(
             f"return pyodide._module.function_supports_kwargs({repr(s)})"
         ) == res
+
 
 @run_in_pyodide
 def test_import_invocation():
