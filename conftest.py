@@ -70,7 +70,7 @@ class SeleniumWrapper:
             build_dir = BUILD_PATH
 
         self.driver = self.get_driver()
-        self.driver.set_script_timeout(10)
+        self.driver.set_script_timeout(15)
         self.server_port = server_port
         self.server_hostname = server_hostname
         self.server_log = server_log
