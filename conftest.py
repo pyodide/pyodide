@@ -81,7 +81,7 @@ class SeleniumWrapper:
             )
         self.driver.get(f"http://{server_hostname}:{server_port}/test.html")
         self.run_js("Error.stackTraceLimit = Infinity")
-        self.run_js_async("await languagePluginLoader")
+        self.run_js("await languagePluginLoader")
 
     @property
     def logs(self):
@@ -98,40 +98,9 @@ class SeleniumWrapper:
         return self.run_js("return pyodide.runPython({!r})".format(code))
 
     def run_async(self, code):
-        return self.run_js_async("return pyodide.runPythonAsync({!r})".format(code))
+        return self.run_js("return pyodide.runPythonAsync({!r})".format(code))
 
     def run_js(self, code):
-        if isinstance(code, str) and code.startswith("\n"):
-            # we have a multiline string, fix indentation
-            code = textwrap.dedent(code)
-        wrapper = """
-            let run = () => { %s }
-            try {
-                let result = run();
-                if(pyodide && pyodide._module && pyodide._module._PyErr_Occurred()){
-                    try {
-                        pyodide._module._pythonexc2js();
-                    } catch(e){
-                        console.error(`Python exited with error flag set! Error was:\n{e.message}`);
-                        // Don't put original error message in new one: we want
-                        // "pytest.raises(xxx, match=msg)" to fail
-                        throw new Error(`Python exited with error flag set!`);
-                    }
-                }
-                return [0, result]
-            } catch (e) {
-                return [1, e.toString(), e.stack];
-            }
-            """
-
-        retval = self.driver.execute_script(wrapper % code)
-
-        if retval[0] == 0:
-            return retval[1]
-        else:
-            raise JavascriptException(retval[1], retval[2])
-
-    def run_js_async(self, code):
         if isinstance(code, str) and code.startswith("\n"):
             # we have a multiline string, fix indentation
             code = textwrap.dedent(code)
@@ -171,7 +140,7 @@ class SeleniumWrapper:
             # we have a multiline string, fix indentation
             code = textwrap.dedent(code)
 
-        return self.run_js_async(
+        return self.run_js(
             """
             let worker = new Worker( '{}' );
             worker.postMessage({{ python: {!r} }});
@@ -192,7 +161,7 @@ class SeleniumWrapper:
         )
 
     def load_package(self, packages):
-        self.run_js_async("await pyodide.loadPackage({!r})".format(packages))
+        self.run_js("await pyodide.loadPackage({!r})".format(packages))
 
     @property
     def urls(self):
