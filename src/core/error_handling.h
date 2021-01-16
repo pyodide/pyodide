@@ -7,12 +7,18 @@
 #include <emscripten.h>
 
 typedef int errcode;
+#include "hiwire.h"
 
 int
 error_handling_init();
 
 errcode
 log_error(char* msg);
+
+// Right now this is dead code (probably), please don't remove it.
+// Intended for debugging purposes.
+errcode
+log_error_obj(JsRef obj);
 
 /** EM_JS Wrappers
  * Wrap EM_JS so that it produces functions that follow the Python return
@@ -59,7 +65,7 @@ log_error(char* msg);
     try    /* intentionally no braces, body already has them */                \
       body /* <== body of func */                                              \
     catch (e) {                                                                \
-        LOG_EM_JS_ERROR(func_name, err);                                       \
+        LOG_EM_JS_ERROR(func_name, e);                                       \
         Module.handle_js_error(e);                                             \
         return 0;                                                              \
     }                                                                          \
@@ -74,7 +80,7 @@ log_error(char* msg);
     try    /* intentionally no braces, body already has them */                \
       body /* <== body of func */                                              \
     catch (e) {                                                                \
-        LOG_EM_JS_ERROR(func_name, err);                                       \
+        LOG_EM_JS_ERROR(func_name, e);                                       \
         Module.handle_js_error(e);                                             \
         return -1;                                                             \
     }                                                                          \
