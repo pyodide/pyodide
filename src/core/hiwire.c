@@ -13,7 +13,7 @@ hiwire_undefined()
 }
 
 JsRef
-hiwire_jsnull()
+hiwire_null()
 {
   return Js_NULL;
 }
@@ -53,7 +53,7 @@ EM_JS(int, hiwire_init, (), {
   };
   Module.hiwire = {};
   Module.hiwire.UNDEFINED = _hiwire_undefined();
-  Module.hiwire.JSNULL = _hiwire_jsnull();
+  Module.hiwire.JSNULL = _hiwire_null();
   Module.hiwire.TRUE = _hiwire_true();
   Module.hiwire.FALSE = _hiwire_false();
 
@@ -82,6 +82,12 @@ EM_JS(int, hiwire_init, (), {
   Module.hiwire.get_value = function(idval)
   {
     if (!idval) {
+      // This might have happened because the error indicator is set. Let's
+      // check.
+      if (_PyErr_Occurred()) {
+        // This will lead to a more helpful error message.
+        _pythonexc2js();
+      }
       throw new Error("Argument to hiwire.get_value is undefined");
     }
     if (!_hiwire.objects.has(idval)) {
@@ -216,7 +222,7 @@ EM_JS_REF(JsRef, hiwire_float64array, (f64 * ptr, int len), {
   return Module.hiwire.new_value(array);
 })
 
-EM_JS_NUM(errcode, hiwire_throw_error, (JsRef idmsg), {
+EM_JS(void, hiwire_throw_error, (JsRef idmsg), {
   let jsmsg = Module.hiwire.get_value(idmsg);
   Module.hiwire.decref(idmsg);
   throw new Error(jsmsg);
@@ -317,16 +323,33 @@ EM_JS_REF(JsRef, hiwire_dir, (JsRef idobj), {
   let jsobj = Module.hiwire.get_value(idobj);
   let result = [];
   do {
-    result.push.apply(result, Object.getOwnPropertyNames(jsobj));
-  } while ((jsobj = Object.getPrototypeOf(jsobj)));
+    result.push(... Object.getOwnPropertyNames(jsobj));
+  } while (jsobj = Object.getPrototypeOf(jsobj));
   return Module.hiwire.new_value(result);
 });
 
 EM_JS_REF(JsRef, hiwire_call, (JsRef idfunc, JsRef idargs), {
   let jsfunc = Module.hiwire.get_value(idfunc);
   let jsargs = Module.hiwire.get_value(idargs);
-  return Module.hiwire.new_value(jsfunc.apply(jsfunc, jsargs));
+  return Module.hiwire.new_value(jsfunc(... jsargs));
 });
+
+EM_JS_REF(JsRef,
+          hiwire_call_bound,
+          (JsRef idfunc, JsRef idthis, JsRef idargs),
+          {
+            let func = Module.hiwire.get_value(idfunc);
+            let this_;
+            // clang-format off
+            if (idthis === 0) {
+              // clang-format on
+              this_ = null;
+            } else {
+              this_ = Module.hiwire.get_value(idthis);
+            }
+            let args = Module.hiwire.get_value(idargs);
+            return Module.hiwire.new_value(func.apply(this_, args));
+          });
 
 EM_JS_REF(JsRef,
           hiwire_call_member,
@@ -335,18 +358,13 @@ EM_JS_REF(JsRef,
             let jsobj = Module.hiwire.get_value(idobj);
             let jsname = UTF8ToString(ptrname);
             let jsargs = Module.hiwire.get_value(idargs);
-            return Module.hiwire.new_value(jsobj[jsname].apply(jsobj, jsargs));
+            return Module.hiwire.new_value(jsobj[jsname](... jsargs));
           });
 
 EM_JS_REF(JsRef, hiwire_new, (JsRef idobj, JsRef idargs), {
-  function newCall(Cls)
-  {
-    return new (Function.prototype.bind.apply(Cls, arguments));
-  }
   let jsobj = Module.hiwire.get_value(idobj);
   let jsargs = Module.hiwire.get_value(idargs);
-  jsargs.unshift(jsobj);
-  return Module.hiwire.new_value(newCall.apply(newCall, jsargs));
+  return Module.hiwire.new_value(Reflect.construct(jsobj, jsargs));
 });
 
 EM_JS_NUM(int, hiwire_get_length, (JsRef idobj), {
@@ -370,10 +388,27 @@ EM_JS_NUM(bool, hiwire_get_bool, (JsRef idobj), {
   // clang-format on
 });
 
+EM_JS_NUM(bool, hiwire_is_pyproxy, (JsRef idobj), {
+  // clang-format off
+  return Module.PyProxy.isPyProxy(Module.hiwire.get_value(idobj));
+  // clang-format on
+});
+
 EM_JS_NUM(bool, hiwire_is_function, (JsRef idobj), {
   // clang-format off
   return typeof Module.hiwire.get_value(idobj) === 'function';
   // clang-format on
+});
+
+EM_JS_NUM(bool, hiwire_is_error, (JsRef idobj), {
+  // From https://stackoverflow.com/a/45496068
+  let value = Module.hiwire.get_value(idobj);
+  return !!(value && value.stack && value.message);
+});
+
+EM_JS_NUM(bool, hiwire_function_supports_kwargs, (JsRef idfunc), {
+  let funcstr = Module.hiwire.get_value(idfunc).toString();
+  return Module.function_supports_kwargs(funcstr);
 });
 
 EM_JS_NUM(bool, hiwire_is_promise, (JsRef idobj), {
