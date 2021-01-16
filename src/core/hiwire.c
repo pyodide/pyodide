@@ -339,7 +339,12 @@ EM_JS_REF(JsRef,
           (JsRef idfunc, JsRef idthis, JsRef idargs),
           {
             let func = Module.hiwire.get_value(idfunc);
-            let this_ = Module.hiwire.get_value(idthis);
+            let this_;
+            if(idthis === 0){
+              this_ = null;
+            } else {
+              this_ = Module.hiwire.get_value(idthis);
+            }
             let args = Module.hiwire.get_value(idargs);
             return Module.hiwire.new_value(func.apply(this_, args));
           });
