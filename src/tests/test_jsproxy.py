@@ -473,7 +473,6 @@ def test_window_isnt_super_weird_anymore():
     assert window.window.window.window.Array == Array
 
 
-
 def test_mount_object(selenium):
     result = selenium.run_js(
         """
@@ -580,6 +579,7 @@ def test_mount_errors(selenium):
         }
         """
     )
+
 
 def test_nested_import(selenium):
     assert (
