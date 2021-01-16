@@ -115,11 +115,14 @@ def test_interactive_console(selenium, safe_selenium_sys_redirections):
     selenium.run(
         """
     from pyodide.console import InteractiveConsole
+    import js
 
     result = None
 
     def displayhook(value):
         global result
+        js.console.log(result)
+        js.console.log(value)
         result = value
 
     shell = InteractiveConsole()
