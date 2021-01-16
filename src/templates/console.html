@@ -24,7 +24,12 @@
             from pyodide import console
 
 
-            sys.displayhook = lambda v: console.displayhook(v, console.repr_abreviate)
+            def displayhook(value):
+                separator = "\\n[[;orange;]<long repl output truncated>]\\n"
+                _repr = lambda v: console.repr_abreviate(v, separator=separator)
+                return console.displayhook(value, _repr)
+
+            sys.displayhook = displayhook
 
 
             class PyConsole(console.InteractiveConsole):

@@ -222,19 +222,21 @@ class InteractiveConsole(code.InteractiveConsole):
         return f"Python {version} {build} on WebAssembly VM\n{cprt}"
 
 
-def repr_abreviate(value: Any, limit: int = 1000, split: Optional[int] = None):
+def repr_abreviate(
+    value: Any, limit: int = 1000, split: Optional[int] = None, separator: str = "..."
+):
     """Compute the string representation of `value` and abreviat it
     if necessary.
 
     If it is longer than `limit` then return the firsts `split`
     characters and the last `split` characters seperated by '...'.
-    Default value for `split` is `limit // 4`.
+    Default value for `split` is `limit // 2`.
     """
     if split is None:
-        split = limit // 4
+        split = limit // 2
     text = repr(value)
     if len(text) > limit:
-        text = f"{text[:split]}...{text[-split:]}"
+        text = f"{text[:split]}{separator}{text[-split:]}"
     return text
 
 

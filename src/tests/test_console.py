@@ -102,11 +102,11 @@ def test_interactive_console_streams(safe_sys_redirections):
 
 
 def test_repr(safe_sys_redirections):
-    assert len(console.repr_abreviate("x" * 10 ** 5, 100)) <= 100
+    assert len(console.repr_abreviate("x" * 10 ** 5, 100)) <= 110
 
     sys.stdout = io.StringIO()
     console.displayhook([0] * 100, lambda v: console.repr_abreviate(v, 100))
-    assert len(sys.stdout.getvalue()) <= 100
+    assert len(sys.stdout.getvalue()) <= 110
 
 
 @pytest.fixture
