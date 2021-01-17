@@ -88,6 +88,9 @@ class JsLoader(Loader):
     def create_module(self, spec):
         return self.jsproxy
 
+    def exec_module(self, module):
+        pass
+
     # used by importlib.util.spec_from_loader
     def is_package(self, fullname):
         return True
