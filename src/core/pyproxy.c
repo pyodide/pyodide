@@ -79,7 +79,6 @@ _pyproxy_get(PyObject* pyobj, JsRef idkey)
   bool success = false;
   PyObject* pykey = NULL;
   PyObject* pyresult = NULL;
-  PyObject* builtins = NULL;
   // result:
   JsRef result = NULL;
 
@@ -103,9 +102,13 @@ _pyproxy_get(PyObject* pyobj, JsRef idkey)
 
   if (pyresult == NULL && PyDict_Check(pyobj)) {
     // Not found. Maybe this is a namespace? Try a builtin.
-    builtins = _PyDict_GetItemIdWithError(pyobj, &PyId___builtins__);
-    Py_XINCREF(builtins);
+    PyObject* builtins = _PyDict_GetItemIdWithError(pyobj, &PyId___builtins__); // borrowed
     FAIL_IF_ERR_OCCURRED();
+    // __builtins__ might be either the builtins module or the associated dict.
+    // If it's a module, get the dict.
+    if(builtins != NULL && PyModule_Check(builtins)){
+      builtins = PyModule_GetDict(builtins); // borrowed also
+    }
     if (builtins != NULL) {
       pyresult = PyDict_GetItemWithError(builtins, pykey);
       Py_XINCREF(pyresult);
@@ -125,7 +128,6 @@ _pyproxy_get(PyObject* pyobj, JsRef idkey)
 finally:
   Py_CLEAR(pykey);
   Py_CLEAR(pyresult);
-  Py_CLEAR(builtins);
   if (!success) {
     hiwire_CLEAR(result);
   }
