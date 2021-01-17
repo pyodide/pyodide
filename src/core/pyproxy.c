@@ -22,14 +22,16 @@ _pyproxy_repr(PyObject* pyobj)
 JsRef
 _pyproxy_has(PyObject* pyobj, JsRef idkey)
 {
-  JsRef result = _pyproxy_get(pyobj, idkey);
-  if(result != NULL){
-    hiwire_CLEAR(result);
-    return true;
+  JsRef value = _pyproxy_get(pyobj, idkey);
+  bool result;
+  if(value != NULL){
+    hiwire_CLEAR(value);
+    result = true;
   } else {
     PyErr_Clear();
-    return false;
+    result = false;
   }
+  return hiwire_bool(result);
 }
 
 /**
