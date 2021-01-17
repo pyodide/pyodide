@@ -352,3 +352,85 @@ def test_memoryview_conversion(selenium):
         // (automatically checked in conftest.py)
         """
     )
+
+
+def test_python2js_with_depth(selenium):
+
+    selenium.run("a = [1, 2, 3]")
+    assert selenium.run_js(
+        """
+        res = pyodide._module.test_python2js_with_depth("a", -1);
+        return (Array.isArray(res)) && JSON.stringify(res) === "[1,2,3]";
+        """
+    )
+
+    selenium.run("a = (1, 2, 3)")
+    assert selenium.run_js(
+        """
+        res = pyodide._module.test_python2js_with_depth("a", -1);
+        return (Array.isArray(res)) && JSON.stringify(res) === "[1,2,3]";
+        """
+    )
+
+    selenium.run("a = [(1,2), (3,4), [5, 6], { 2 : 3,  4 : 9}]")
+    assert selenium.run_js(
+        """
+        res = pyodide._module.test_python2js_with_depth("a", -1);
+        return Array.isArray(res) && \
+            JSON.stringify(res) === `[[1,2],[3,4],[5,6],{"2":3,"4":9}]`;
+        """
+    )
+
+    selenium.run(
+        """
+        a = [1,[2,[3,[4,[5,[6,[7]]]]]]]
+        """
+    )
+    selenium.run_js(
+        """
+        function assert(x, msg){
+            if(x !== true){
+                throw new Error(`Assertion failed: ${msg}`);
+            }
+        }
+        for(let i=0; i < 7; i++){
+            let x = pyodide._module.test_python2js_with_depth("a", i);
+            for(let j=0; j < i; j++){
+                assert(Array.isArray(x), `i: ${i}, j: ${j}`);
+                x = x[1];
+            }
+            assert(pyodide._module.PyProxy.isPyProxy(x), `i: ${i}, j: ${i}`);
+        }
+        """
+    )
+
+    selenium.run("a = [1, (2, (3, [4, (5, (6, [7]))]))]")
+    selenium.run_js(
+        """
+        function assert(x, msg){
+            if(x !== true){
+                throw new Error(`Assertion failed: ${msg}`);
+            }
+        }
+        let depths = [0, 3, 3, 3, 6, 6, 6]
+        for(let i=0; i < 7; i++){
+            let x = pyodide._module.test_python2js_with_depth("a", i);
+            for(let j=0; j < depths[i]; j++){
+                assert(Array.isArray(x), `i: ${i}, j: ${j}`);
+                x = x[1];
+            }
+            assert(pyodide._module.PyProxy.isPyProxy(x), `i: ${i}, j: ${i}`);
+        }
+        """
+    )
+
+
+@pytest.mark.xfail
+def test_py2js_set(selenium):
+    selenium.run("a = {1, 2, 3}")
+    assert selenium.run_js(
+        """
+        let res = pyodide._module.test_python2js_with_depth("a", -1);
+        return res instanceof Set;
+        """
+    )
