@@ -35,9 +35,13 @@ class JsFinder(MetaPathFinder):
 
     def register_js_module(self, name, jsproxy):
         if not isinstance(name, str):
-            raise TypeError(f"Argument 'name' must be a str, not {type(name).__name__!r}")
+            raise TypeError(
+                f"Argument 'name' must be a str, not {type(name).__name__!r}"
+            )
         if not isinstance(jsproxy, JsProxy):
-            raise TypeError(f"Argument 'jsproxy' must be a JsProxy, not {type(jsproxy).__name__!r}")
+            raise TypeError(
+                f"Argument 'jsproxy' must be a JsProxy, not {type(jsproxy).__name__!r}"
+            )
         self.jsproxies[name] = jsproxy
 
     def unregister_js_module(self, name):
