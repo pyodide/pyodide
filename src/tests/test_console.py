@@ -100,6 +100,16 @@ def test_interactive_console_streams(safe_sys_redirections):
     print("bar")
     assert my_stdout == "foobar\n"
 
+    shell.push("print('foobar')")
+    assert my_stdout == "foobar\nfoobar\n"
+
+    shell.push("import sys")
+    shell.push("print('foobar', file=sys.stderr)")
+    assert my_stderr == "foobar\n"
+
+    shell.push("1+1")
+    assert my_stdout == "foobar\nfoobar\n2\n"
+
 
 def test_repr(safe_sys_redirections):
     assert len(console.repr_abreviate("x" * 10 ** 5, 100)) <= 110
@@ -142,18 +152,28 @@ def test_interactive_console(selenium, safe_selenium_sys_redirections):
     selenium.run("shell.push('x = 5')")
     selenium.run("shell.push('x')")
     ensure_run_completed()
-    assert selenium.run("result == 5")
+    assert selenium.run("result") == 5
 
     selenium.run("shell.push('x ** 2')")
     ensure_run_completed()
-    assert selenium.run("result == 25")
+    assert selenium.run("result") == 25
 
     selenium.run("shell.push('def f(x):')")
     selenium.run("shell.push('    return x*x + 1')")
     selenium.run("shell.push('')")
     selenium.run("shell.push('[f(x) for x in range(5)]')")
     ensure_run_completed()
-    assert selenium.run("result == [1, 2, 5, 10, 17]")
+    assert selenium.run("result") == [1, 2, 5, 10, 17]
+
+    selenium.run("shell.push('def factorial(n):')")
+    selenium.run("shell.push('    if n < 2:')")
+    selenium.run("shell.push('        return 1')")
+    selenium.run("shell.push('    else:')")
+    selenium.run("shell.push('        return n * factorial(n - 1)')")
+    selenium.run("shell.push('')")
+    selenium.run("shell.push('factorial(10)')")
+    ensure_run_completed()
+    assert selenium.run("result") == 3628800
 
     # with package load
     selenium.run("shell.push('import pytz')")
