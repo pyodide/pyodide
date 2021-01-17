@@ -550,7 +550,7 @@ def test_mount_map(selenium):
     assert set(result[4]).issuperset(["x", "y", "u", "t", "jsproxy"])
 
 
-def test_mount_errors(selenium):
+def test_unregister_jsmodule(selenium):
     selenium.run_js(
         """
         let a = new Map(Object.entries({ s : 7 }));
@@ -567,6 +567,8 @@ def test_mount_errors(selenium):
         `)
         """
     )
+
+def test_unregister_jsmodule_error(selenium):
     selenium.run_js(
         """
         try {
