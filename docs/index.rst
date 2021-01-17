@@ -31,13 +31,13 @@ additional packages may be installed from PyPI to be used with Pyodide.
    :maxdepth: 2
    :caption: Usage
 
-   using_pyodide_from_javascript.md
-   using_pyodide_from_webworker.md
-   serving_pyodide_packages.md
-   loading_packages.md
-   type_conversions.md
-   api_reference.md
-   faq.md
+   usage/using_pyodide_from_javascript.md
+   usage/using_pyodide_from_webworker.md
+   usage/serving_pyodide_packages.md
+   usage/loading_packages.md
+   usage/type_conversions.md
+   usage/api_reference.md
+   usage/faq.md
 
 Developing Pyodide
 ==================
@@ -53,18 +53,18 @@ information about the project's organization.
    :maxdepth: 1
    :caption: Development
 
-   building_from_sources.md
-   new_packages.md
-   contributing.md
-   testing.md
+   development/building_from_sources.md
+   development/new_packages.md
+   development/contributing.md
+   development/testing.md
 
 .. toctree::
    :titlesonly:
    :caption: Project
 
-   about.md
-   code-of-conduct
-   changelog.md
+   project/about.md
+   project/code-of-conduct.md
+   project/changelog.md
 
 Indices and tables
 ==================
