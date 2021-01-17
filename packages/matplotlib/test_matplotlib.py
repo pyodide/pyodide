@@ -3,7 +3,7 @@ def test_matplotlib(selenium_standalone):
     selenium.load_package("matplotlib")
     selenium.run("from matplotlib import pyplot as plt")
     selenium.run("plt.figure(); pass")
-    selenium.run("plt.plot([1,2,3])")
+    selenium.run("x = plt.plot([1,2,3])")
     selenium.run("plt.show()")
 
 
