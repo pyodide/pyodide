@@ -187,7 +187,7 @@ EM_JS(int, pyproxy_init, (), {
       return ptr;
     },
     isPyProxy: function(jsobj) {
-      return jsobj['$$'] !== undefined && jsobj['$$']['type'] === 'PyProxy';
+      return jsobj && jsobj['$$'] !== undefined && jsobj['$$']['type'] === 'PyProxy';
     },
     addExtraKeys: function(result) {
       result.push('toString');

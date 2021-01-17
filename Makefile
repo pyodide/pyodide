@@ -55,7 +55,7 @@ all: check \
 	echo -e "\nSUCCESS!"
 
 
-build/pyodide.asm.js: src/core/main.o src/core/jsimport.o \
+build/pyodide.asm.js: src/core/main.o  \
 	        src/core/jsproxy.o src/core/js2python.o \
 		src/core/error_handling.o \
 		src/core/pyproxy.o \
@@ -160,6 +160,7 @@ build/test.data: $(CPYTHONLIB)
 
 $(UGLIFYJS) $(LESSC): emsdk/emsdk/.complete
 	npm i --no-save uglify-js lessc
+	touch -h $(LESSC) $(UGLIFYJS)
 
 
 $(PYODIDE_EMCC):

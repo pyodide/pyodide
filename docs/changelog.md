@@ -40,6 +40,8 @@
   [#1083](https://github.com/iodide-project/pyodide/pull/1083)
 - An InteractiveConsole to ease the integration of Pyodide REPL in
   webpages (used in console.html) [#1125](https://github.com/iodide-project/pyodide/pull/1125)
+- Flexible jsimports: it now possible to add custom Python "packages" backed by Javascript code, like the js package.
+  The js package is now implemented using this system. [#1146](https://github.com/iodide-project/pyodide/pull/1146)
 
 ### Fixed
 - getattr and dir on JsProxy now report consistent results and include all names defined on the Python dictionary backing JsProxy. [#1017](https://github.com/iodide-project/pyodide/pull/1017)
@@ -49,6 +51,9 @@
 - JsBoundMethod is now a subclass of JsProxy, which fixes nested attribute access and various other strange bugs.
   [#1124](https://github.com/iodide-project/pyodide/pull/1124)
 - In console.html: sync behavior, full stdout/stderr support, clean namespace, bigger font, correct result representation, clean traceback [#1125](https://github.com/iodide-project/pyodide/pull/1125) and [#1141](https://github.com/iodide-project/pyodide/pull/1141)
+- Javascript functions imported like `from js import fetch` no longer trigger "invalid invocation" errors (issue [#461](https://github.com/iodide-project/pyodide/issues/461)) and `js.fetch("some_url")` also works now (issue [#768](https://github.com/iodide-project/pyodide/issues/461)).
+[#1126](https://github.com/iodide-project/pyodide/pull/1126)
+- Javascript bound method calls now work correctly with keyword arguments. [#1138](https://github.com/iodide-project/pyodide/pull/1138)
 
 ## Version 0.16.1
 *December 25, 2020*
