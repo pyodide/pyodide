@@ -594,3 +594,35 @@ def test_nested_import(selenium):
         )
         == 2
     )
+
+
+def test_register_jsmodule_docs_example(selenium):
+    selenium.run_js(
+        """
+        let my_module = {
+        f : function(x){
+            return x*x + 1;
+        },
+        g : function(x){
+            console.log(`Calling g on argument ${x}`);
+            return x;
+        },
+        submodule : {
+            h : function(x) {
+            return x*x - 1;
+            },
+            c  : 2,
+        },  
+        };
+        pyodide.registerJsModule("my_js_module", my_module);
+        """
+    )
+    selenium.run(
+        """
+        import my_js_module
+        from my_js_module.submodule import h, c
+        assert my_js_module.f(7) == 50
+        assert h(9) == 80
+        assert c == 2
+        """
+    )

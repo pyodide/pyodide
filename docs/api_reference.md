@@ -16,6 +16,8 @@ Backward compatibility of the API is not guaranteed at this point.
    pyodide.find_imports
    pyodide.open_url
    pyodide.JsException
+   pyodide.register_js_module
+   pyodide.unregister_js_module
 ```
 
 
@@ -28,10 +30,12 @@ Backward compatibility of the API is not guaranteed at this point.
 | **{ref}`js_api_pyodide_globals`**        | An alias to the global Python namespace                        |
 | **{ref}`pyodide.loadPackage(names, ...) <js_api_pyodide_loadPackage>`**    | Load a package or a list of packages over the network          |
 | **{ref}`js_api_pyodide_loadedPackages`** | `Object` with loaded packages.                                 |
+| **{ref}`pyodide.registerJsPackage(name, js_object) <js_api_pyodide_registerJsModule>`**   | Registers a javascript object as a Python module.        |
+| **{ref}`pyodide.unregisterJsPackage(name) <js_api_pyodide_unregisterJsModule>`** | Unregisters a module previously registered with `js_api_pyodide_registerJsPackage`.        |
 | **{ref}`js_api_pyodide_pyimport`**       | Access a Python object in the global namespace from Javascript |
 | **{ref}`js_api_pyodide_runPython`**      | Runs Python code from Javascript.                              |
 | **{ref}`pyodide.runPythonAsync(code, ...) <js_api_pyodide_runPythonAsync>`** | Runs Python code with automatic preloading of imports.         |
-| **{ref}`js_api_pyodide_version`**        | Returns the pyodide version.                                   |
+| **{ref}`js_api_pyodide_version`**        | The pyodide version string.                                    |
 
 
 ```{eval-rst}
