@@ -223,10 +223,10 @@ class InteractiveConsole(code.InteractiveConsole):
         return f"Python {version} {build} on WebAssembly VM\n{cprt}"
 
 
-def repr_abreviate(
+def repr_shorten(
     value: Any, limit: int = 1000, split: Optional[int] = None, separator: str = "..."
 ):
-    """Compute the string representation of `value` and abreviat it
+    """Compute the string representation of `value` and shorten it
     if necessary.
 
     If it is longer than `limit` then return the firsts `split`
