@@ -89,7 +89,6 @@ runpython_init()
   // We also had to add ad-hoc modifications to _pyproxy_get, etc to support
   // this. I (HC) will fix this with the rest of the type conversions
   // modifications.
-  Py_INCREF(globals); // pyproxy_new steals argument
   globals_proxy = pyproxy_new(globals);
   FAIL_IF_NULL(globals_proxy);
   FAIL_IF_MINUS_ONE(runpython_init_js(pyodide_py_proxy, globals_proxy));
