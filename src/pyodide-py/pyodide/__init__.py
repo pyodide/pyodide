@@ -1,8 +1,6 @@
 from ._base import open_url, eval_code, find_imports, as_nested_list
 from ._core import JsException  # type: ignore
 from ._importhooks import JsFinder
-
-import platform
 import sys
 
 jsfinder = JsFinder()
