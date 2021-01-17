@@ -88,7 +88,6 @@ finally:
   return result;
 };
 
-
 JsRef
 _pyproxy_has(PyObject* pyobj, JsRef idkey)
 {
@@ -103,7 +102,6 @@ _pyproxy_has(PyObject* pyobj, JsRef idkey)
   }
   return hiwire_bool(result);
 }
-
 
 JsRef
 _pyproxy_set(PyObject* pyobj, JsRef idkey, JsRef idval)
