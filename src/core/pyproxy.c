@@ -102,11 +102,12 @@ _pyproxy_get(PyObject* pyobj, JsRef idkey)
 
   if (pyresult == NULL && PyDict_Check(pyobj)) {
     // Not found. Maybe this is a namespace? Try a builtin.
-    PyObject* builtins = _PyDict_GetItemIdWithError(pyobj, &PyId___builtins__); // borrowed
+    PyObject* builtins =
+      _PyDict_GetItemIdWithError(pyobj, &PyId___builtins__); // borrowed
     FAIL_IF_ERR_OCCURRED();
     // __builtins__ might be either the builtins module or the associated dict.
     // If it's a module, get the dict.
-    if(builtins != NULL && PyModule_Check(builtins)){
+    if (builtins != NULL && PyModule_Check(builtins)) {
       builtins = PyModule_GetDict(builtins); // borrowed also
     }
     if (builtins != NULL) {
