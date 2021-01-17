@@ -25,7 +25,7 @@
 
 
             def displayhook(value):
-                separator = "\\n[[;orange;]<long repl output truncated>]\\n"
+                separator = "\\n[[;orange;]<long output truncated>]\\n"
                 _repr = lambda v: console.repr_abreviate(v, separator=separator)
                 return console.displayhook(value, _repr)
 

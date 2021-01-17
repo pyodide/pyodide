@@ -16,14 +16,15 @@ try:
 except ImportError:
 
     class FakePromise:
-        """ A promise that mimic the JS promises.
+        """A promise that mimic the JS promises.
 
         Only `then is supported` and there is no asynchronicity.
         execution occurs when then is call.
 
         This is mainly to fake `load_packages_from_imports`
         and `InteractiveConsole.run_complete` in contexts
-        where JS promises are not available (tests). """
+        where JS promises are not available (tests)."""
+
         def __init__(self, args=None):
             self.args = (args,) if args is not None else ()
 
