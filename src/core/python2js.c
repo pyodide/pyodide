@@ -16,7 +16,7 @@ _Py_IDENTIFIER(format_exception);
 static JsRef
 _python2js_unicode(PyObject* x);
 
-void
+void _Py_NO_RETURN
 pythonexc2js()
 {
   bool success = false;
@@ -35,7 +35,6 @@ pythonexc2js()
     excval = hiwire_string_ascii("No exception type or value");
     PySys_WriteStderr("No exception type or value\n");
     goto finally__skip_print_tb;
-    return;
   }
 
   if (traceback == NULL) {
