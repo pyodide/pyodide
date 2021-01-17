@@ -10,12 +10,12 @@ import builtins
 try:
     import js
 
-    dummy_promise = js.Promise.resolve()
-    load_packages_from_imports = js.pyodide.loadPackagesFromImports
+    _dummy_promise = js.Promise.resolve()
+    _load_packages_from_imports = js.pyodide.loadPackagesFromImports
 
 except ImportError:
 
-    class FakePromise:
+    class _FakePromise:
         """A promise that mimic the JS promises.
 
         Only `then is supported` and there is no asynchronicity.
@@ -29,12 +29,12 @@ except ImportError:
             self.args = (args,) if args is not None else ()
 
         def then(self, func, *args):
-            return FakePromise(func(*self.args))
+            return _FakePromise(func(*self.args))
 
-    dummy_promise = FakePromise()
+    _dummy_promise = _FakePromise()
 
-    def load_packages_from_imports(*args):
-        return dummy_promise
+    def _load_packages_from_imports(*args):
+        return _dummy_promise
 
 
 __all__ = ["InteractiveConsole"]
@@ -128,7 +128,7 @@ class InteractiveConsole(code.InteractiveConsole):
         self._persistent_stream_redirection = persistent_stream_redirection
         if self._persistent_stream_redirection:
             self.redirect_stdstreams()
-        self.run_complete = dummy_promise
+        self.run_complete = _dummy_promise
 
     def redirect_stdstreams(self):
         """ Toggle stdout/stderr redirections. """
@@ -204,9 +204,9 @@ class InteractiveConsole(code.InteractiveConsole):
             def run(*args):
                 with self.stdstreams_redirections():
                     parent_runcode(code)
-                return dummy_promise
+                return _dummy_promise
 
-            return load_packages_from_imports(source).then(run)
+            return _load_packages_from_imports(source).then(run)
 
         self.run_complete = self.run_complete.then(load_packages_and_run)
 
