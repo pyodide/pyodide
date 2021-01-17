@@ -197,7 +197,7 @@ def test_hiwire_is_promise(selenium):
 def test_keyboard_interrupt(selenium):
     assert selenium.run_js(
         """
-        x = new Int8Array(new SharedArrayBuffer(1))
+        x = new Int8Array(1)
         pyodide._module.setInterruptBuffer(x)
         function triggerKeyboardInterrupt(){
             x[0] = 2;
