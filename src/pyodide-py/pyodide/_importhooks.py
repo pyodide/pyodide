@@ -36,6 +36,10 @@ class JsFinder(MetaPathFinder):
         return spec_from_loader(fullname, loader, origin="javascript")
 
     def register_js_module(self, name, jsproxy):
+        if not isinstance(name, str):
+            raise TypeError(f"Argument 'name' must be a str, not {type(name).__name__!r}")
+        if not isinstance(jsproxy, JsProxy):
+            raise TypeError(f"Argument 'jsproxy' must be a JsProxy, not {type(jsproxy).__name__!r}")
         self.jsproxies[name] = jsproxy
 
     def unregister_js_module(self, name):
@@ -43,7 +47,7 @@ class JsFinder(MetaPathFinder):
             del self.jsproxies[name]
         except KeyError:
             raise ValueError(
-                f"Cannot unregister {name!r}: no javacript module with that name is registered"
+                f"Cannot unregister {name!r}: no javascript module with that name is registered"
             ) from None
 
 
