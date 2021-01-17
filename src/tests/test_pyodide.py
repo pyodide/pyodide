@@ -199,7 +199,7 @@ def test_keyboard_interrupt(selenium):
         """
         x = new Int8Array(1)
         pyodide._module.setInterruptBuffer(x)
-        function triggerKeyboardInterrupt(){
+        window.triggerKeyboardInterrupt = function(){
             x[0] = 2;
         }
         try { 
