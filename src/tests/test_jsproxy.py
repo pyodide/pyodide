@@ -568,6 +568,7 @@ def test_unregister_jsmodule(selenium):
         """
     )
 
+
 def test_unregister_jsmodule_error(selenium):
     selenium.run_js(
         """
