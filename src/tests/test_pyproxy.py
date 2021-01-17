@@ -59,7 +59,7 @@ def test_pyproxy(selenium):
     assert selenium.run("hasattr(f, 'baz')")
     selenium.run_js("delete pyodide.pyimport('f').baz")
     assert not selenium.run("hasattr(f, 'baz')")
-    assert selenium.run_js("return pyodide.pyimport('f').toString()").startswith("<Foo")
+    assert selenium.run_js("return pyodide.pyimport('f').toString()").startswith("<__main__.Foo")
 
 
 def test_pyproxy_refcount(selenium):
