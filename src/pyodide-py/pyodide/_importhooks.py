@@ -12,9 +12,7 @@ class JsFinder(MetaPathFinder):
         [parent, _, child] = fullname.rpartition(".")
         if parent:
             parent_module = sys.modules[parent]
-            if not hasattr(parent_module, "__loader__") or not isinstance(
-                parent_module.__loader__, JsLoader
-            ):
+            if not isinstance(parent_module, JsProxy):
                 # Not one of us.
                 return None
             try:
@@ -32,7 +30,7 @@ class JsFinder(MetaPathFinder):
                 jsproxy = self.jsproxies[fullname]
             except KeyError:
                 return None
-        loader = JsLoader(fullname, jsproxy)
+        loader = JsLoader(jsproxy)
         return spec_from_loader(fullname, loader, origin="javascript")
 
     def register_js_module(self, name, jsproxy):
@@ -52,8 +50,7 @@ class JsFinder(MetaPathFinder):
 
 
 class JsLoader(Loader):
-    def __init__(self, name, jsproxy):
-        super().__init__(name, None)
+    def __init__(self, jsproxy):
         self.jsproxy = jsproxy
 
     def create_module(self, spec):
