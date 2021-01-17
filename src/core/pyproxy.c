@@ -93,11 +93,10 @@ _pyproxy_has(PyObject* pyobj, JsRef idkey)
 {
   JsRef value = _pyproxy_get(pyobj, idkey);
   bool result;
-  if (value != NULL) {
+  if (value != hiwire_undefined()) {
     hiwire_CLEAR(value);
     result = true;
   } else {
-    PyErr_Clear();
     result = false;
   }
   return hiwire_bool(result);
