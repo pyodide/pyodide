@@ -69,9 +69,11 @@ runpython_init()
   JsRef pyodide_py_proxy = NULL;
   JsRef globals_proxy = NULL;
 
+  PyObject* main_module = PyImport_AddModule("__main__");
+  FAIL_IF_NULL(main_module);
   // globals is static variable
-  globals = PyDict_New();
-  FAIL_IF_NULL(globals);
+  globals = PyModule_GetDict(main_module);
+  Py_INCREF(globals);
 
   // pyodide_py is static variable
   pyodide_py = PyImport_ImportModule("pyodide");
