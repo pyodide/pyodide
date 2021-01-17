@@ -19,21 +19,6 @@ _pyproxy_repr(PyObject* pyobj)
   return repr_js;
 }
 
-JsRef
-_pyproxy_has(PyObject* pyobj, JsRef idkey)
-{
-  JsRef value = _pyproxy_get(pyobj, idkey);
-  bool result;
-  if (value != NULL) {
-    hiwire_CLEAR(value);
-    result = true;
-  } else {
-    PyErr_Clear();
-    result = false;
-  }
-  return hiwire_bool(result);
-}
-
 /**
  * If _pyproxy_get succeeds but the key is not found, it returns
  * hiwire_undefined. (Is this what we should do?) If the object is a dict with a
@@ -102,6 +87,23 @@ finally:
   }
   return result;
 };
+
+
+JsRef
+_pyproxy_has(PyObject* pyobj, JsRef idkey)
+{
+  JsRef value = _pyproxy_get(pyobj, idkey);
+  bool result;
+  if (value != NULL) {
+    hiwire_CLEAR(value);
+    result = true;
+  } else {
+    PyErr_Clear();
+    result = false;
+  }
+  return hiwire_bool(result);
+}
+
 
 JsRef
 _pyproxy_set(PyObject* pyobj, JsRef idkey, JsRef idval)
