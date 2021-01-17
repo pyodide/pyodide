@@ -6,7 +6,7 @@ import sys
 
 class JsFinder(MetaPathFinder):
     def __init__(self):
-        jsproxies = {}
+        self.jsproxies = {}
 
     def find_spec(self, fullname, path, target=None):
         [parent, _, child] = fullname.rpartition(".")
