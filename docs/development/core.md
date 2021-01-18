@@ -37,16 +37,14 @@ Lastly, the argument parsing functions ``PyArg_ParseTuple``, ``PyArg_Parse``, et
 
 ### Python APIs to avoid:
 
-1. ``PyDict_GetItem``, ``PyDict_GetItemString``, and ``_PyDict_GetItemId``
-
+* ``PyDict_GetItem``, ``PyDict_GetItemString``, and ``_PyDict_GetItemId``
 These APIs do not do correct error reporting and there is talk in the Python community of deprecating them going forward. Instead use ``PyDict_GetItemWithError`` and ``_PyDict_GetItemIdWithError`` (there is no ``PyDict_GetItemStringWithError`` API because use of ``GetXString`` APIs is also discouraged).
 
-2. ``PyObject_HasAttrString``, ``PyObject_GetAttrString``,  ``PyDict_GetItemString``, ``PyDict_SetItemString``, ``PyMapping_HasKeyString`` etc, etc.
-
+* ``PyObject_HasAttrString``, ``PyObject_GetAttrString``,  ``PyDict_GetItemString``, ``PyDict_SetItemString``, ``PyMapping_HasKeyString`` etc, etc.
 These APIs cause wasteful repeated string conversion.
 If the string you are using is a constant, e.g., ``PyDict_GetItemString(dict, "identifier")``, then make an id with ``Py_Identifier(identifier)`` and then use ``_PyDict_GetItemId(&PyId_identifier)``. If the string is not constant, convert it to a python object with ``PyUnicode_FromString()`` and then use e.g., ``PyDict_GetItem``.
 
-3. ``PyModule_AddObject``. This steals a reference on success but not on failure and requires unique cleanup code. Instead use ``PyObject_SetAttr``.
+* ``PyModule_AddObject``. This steals a reference on success but not on failure and requires unique cleanup code. Instead use ``PyObject_SetAttr``.
 
 
 ## Error Handling Macros
@@ -121,8 +119,8 @@ def f():
     b = do_something_else()
     c = a + b
     return some_func(c)
-  # implicit, free references both on successful exit and on exception
   finally:
+    # implicit, free references both on successful exit and on exception
     decref(a)
     decref(b)
     decref(c)
@@ -159,19 +157,19 @@ JsImport_CreateModule(PyObject* self, PyObject* args)
 Typically this will be called ``result``, but in this case the function is named ``CreateModule`` so we name the return variable ``module``.
 
 ```C
-bool success = false;
-// Note: these are all of the objects that we will own. If a function returns
-// a borrow, we XINCREF the result so that we can CLEAR it in the finally block.
-// Reference counting is hard, so it's good to be as explicit and consistent
-// as possible!
-PyObject* sys_modules = NULL;
-PyObject* importlib_machinery = NULL;
-PyObject* ModuleSpec = NULL;
-PyObject* spec = NULL;
-PyObject* __dir__ = NULL;
-PyObject* module_dict = NULL;
-// result
-PyObject* module = NULL;
+  bool success = false;
+  // Note: these are all of the objects that we will own. If a function returns
+  // a borrow, we XINCREF the result so that we can CLEAR it in the finally block.
+  // Reference counting is hard, so it's good to be as explicit and consistent
+  // as possible!
+  PyObject* sys_modules = NULL;
+  PyObject* importlib_machinery = NULL;
+  PyObject* ModuleSpec = NULL;
+  PyObject* spec = NULL;
+  PyObject* __dir__ = NULL;
+  PyObject* module_dict = NULL;
+  // result
+  PyObject* module = NULL;
 ```
 
 3. The body of the function. The vast majority of API calls can return error codes. You MUST check every fallible API for an error.  Also, as you are writing the code, you should look up every Python API you use that returns a reference to determine whether it returns a borrowed reference or a new one. If it returns a borrowed reference, immediately `Py_XINCREF()` the result to convert it into an owned reference (before ``FAIL_IF_NULL``, to be consistent with the case where you use custom error handling).
