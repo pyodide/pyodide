@@ -71,7 +71,7 @@ _pyproxy_set(PyObject* pyobj, JsRef idkey, JsRef idval)
   if (result) {
     return NULL;
   }
-  return idval;
+  return hiwire_incref(idval);
 }
 
 JsRef

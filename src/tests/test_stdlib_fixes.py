@@ -30,7 +30,7 @@ def test_threading_import(selenium):
     selenium.run(
         """
         import threading
-        threading.local()
+        threading.local(); pass
         """
     )
 
