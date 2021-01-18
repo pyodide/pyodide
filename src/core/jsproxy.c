@@ -34,7 +34,6 @@ typedef struct
 {
   PyObject_HEAD
   JsRef js;
-  PyObject* bytes;
   bool awaited; // for promises
 } JsProxy;
 // clang-format on
@@ -45,7 +44,6 @@ static void
 JsProxy_dealloc(JsProxy* self)
 {
   hiwire_decref(self->js);
-  Py_CLEAR(self->bytes);
   Py_TYPE(self)->tp_free((PyObject*)self);
 }
 
@@ -260,80 +258,6 @@ JsProxy_ass_subscript(PyObject* o, PyObject* pyidx, PyObject* pyvalue)
   return 0;
 }
 
-static int
-JsProxy_GetBuffer(PyObject* o, Py_buffer* view, int flags)
-{
-  JsProxy* self = (JsProxy*)o;
-
-  if (!hiwire_is_typedarray(self->js)) {
-    goto fail;
-  }
-
-  Py_ssize_t byteLength = hiwire_get_byteLength(self->js);
-
-  void* ptr;
-  if (hiwire_is_on_wasm_heap(self->js)) {
-    ptr = (void*)hiwire_get_byteOffset(self->js);
-  } else {
-    if (self->bytes == NULL) {
-      self->bytes = PyBytes_FromStringAndSize(NULL, byteLength);
-      if (self->bytes == NULL) {
-        goto fail;
-      }
-    }
-    ptr = PyBytes_AsString(self->bytes);
-    hiwire_copy_to_ptr(self->js, ptr);
-  }
-
-  char* format;
-  Py_ssize_t itemsize;
-  hiwire_get_dtype(self->js, &format, &itemsize);
-  if (format == NULL) {
-    char* typename = hiwire_constructor_name(self->js);
-    PyErr_Format(
-      PyExc_RuntimeError,
-      "Unknown typed array type '%s'. This is a problem with Pyodide, please "
-      "open an issue about it here: "
-      "https://github.com/iodide-project/pyodide/issues/new",
-      typename);
-    free(typename);
-
-    goto fail;
-  }
-
-  Py_INCREF(self);
-
-  view->buf = ptr;
-  view->obj = (PyObject*)self;
-  view->len = byteLength;
-  view->readonly = 0;
-  view->itemsize = itemsize;
-  view->format = format;
-  view->ndim = 1;
-  view->shape = NULL;
-  view->strides = NULL;
-  view->suboffsets = NULL;
-
-  return 0;
-fail:
-  if (!PyErr_Occurred()) {
-    PyErr_SetString(PyExc_BufferError, "Can not use as buffer");
-  }
-  view->obj = NULL;
-  return -1;
-}
-
-static PyObject*
-JsProxy_HasBytes(PyObject* o)
-{
-  JsProxy* self = (JsProxy*)o;
-
-  if (self->bytes == NULL) {
-    Py_RETURN_FALSE;
-  } else {
-    Py_RETURN_TRUE;
-  }
-}
 
 #define GET_JSREF(x) (((JsProxy*)x)->js)
 
@@ -465,21 +389,12 @@ static PyNumberMethods JsProxy_NumberMethods = {
   .nb_bool = JsProxy_Bool
 };
 
-static PyBufferProcs JsProxy_BufferProcs = {
-  JsProxy_GetBuffer,
-  NULL
-};
-
 static PyMethodDef JsProxy_Methods[] = {
   { "__iter__",
     (PyCFunction)JsProxy_GetIter,
     METH_NOARGS,
     "Get an iterator over the object" },
   { "__await__", (PyCFunction)JsProxy_Await, METH_NOARGS, ""},
-  { "_has_bytes",
-    (PyCFunction)JsProxy_HasBytes,
-    METH_NOARGS,
-    "Returns true if instance has buffer memory. For testing only." },
   { "__dir__",
     (PyCFunction)JsProxy_Dir,
     METH_NOARGS,
@@ -510,7 +425,6 @@ static PyTypeObject JsProxyType = {
   .tp_iter = JsProxy_GetIter,
   .tp_iternext = JsProxy_IterNext,
   .tp_repr = JsProxy_Repr,
-  .tp_as_buffer = &JsProxy_BufferProcs
 };
 
 // TODO: Instead use tp_new and Python's inheritance system
@@ -519,7 +433,6 @@ JsProxy_cinit(PyObject* obj, JsRef idobj)
 {
   JsProxy* self = (JsProxy*)obj;
   self->js = hiwire_incref(idobj);
-  self->bytes = NULL;
   self->awaited = false;
 }
 
@@ -788,15 +701,147 @@ JsMethod_cnew(JsRef func, JsRef this_)
 }
 
 ////////////////////////////////////////////////////////////
+// JsBuffer
+//
+// A subclass of JsProxy for Buffers
+
+typedef struct {
+  JsProxy super;
+  Py_ssize_t byteLength;
+  char* format;
+  Py_ssize_t itemsize;  
+  PyObject* bytes;
+} JsBuffer;
+
+static PyObject*
+JsBuffer_HasBytes(PyObject* o, PyObject* _args) /* METH_NO_ARGS ==> _args is always NULL */
+{
+  JsBuffer* self = (JsBuffer*)o;
+  if (self->bytes == NULL) {
+    Py_RETURN_FALSE;
+  } else {
+    Py_RETURN_TRUE;
+  }
+}
+
+static int
+JsBuffer_GetBuffer(PyObject* obj, Py_buffer* view, int flags)
+{
+  bool success = false;
+  JsBuffer* self = (JsBuffer*) obj;
+  view->obj = NULL;
+
+  void* ptr;
+  if (hiwire_is_on_wasm_heap(JsProxy_REF(self))) {
+    ptr = (void*)hiwire_get_byteOffset(JsProxy_REF(self));
+  } else {
+    // Every time JsBuffer_GetBuffer is called, copy the current data from the 
+    // TypedArray into the buffer. (TODO: don't do this.)
+    ptr = PyBytes_AsString(self->bytes);
+    FAIL_IF_NULL(ptr);
+    hiwire_copy_to_ptr(JsProxy_REF(self), ptr);
+  }
+
+  Py_INCREF(self);
+
+  view->buf = ptr;
+  view->obj = (PyObject*)self;
+  view->len = self->byteLength;
+  view->readonly = false;
+  view->itemsize = self->itemsize;
+  view->format = self->format;
+  view->ndim = 1;
+  view->shape = NULL;
+  view->strides = NULL;
+  view->suboffsets = NULL;
+
+  success = true;
+finally:
+  return success ? 0 : -1;
+}
+
+static void
+JsBuffer_dealloc(JsBuffer* self)
+{
+  Py_CLEAR(self->bytes);
+  Py_TYPE(self)->tp_free((PyObject*)self);
+}
+
+static PyBufferProcs JsBuffer_BufferProcs = {
+  .bf_getbuffer = JsBuffer_GetBuffer,
+  .bf_releasebuffer = NULL,
+};
+
+static PyMethodDef JsBuffer_Methods[] = {
+  { "_has_bytes",
+    JsBuffer_HasBytes,
+    METH_NOARGS,
+    "Returns true if instance has buffer memory. For testing only." },
+  { NULL }
+};
+
+static PyTypeObject JsBufferType = {
+  //.tp_base = &JsProxy, // We have to do this in jsproxy_init.
+  .tp_name = "JsBuffer",
+  .tp_basicsize = sizeof(JsBuffer),
+  .tp_dealloc = (destructor)JsBuffer_dealloc,
+  .tp_methods = JsBuffer_Methods,
+  .tp_as_buffer = &JsBuffer_BufferProcs,
+  .tp_doc = "A proxy to make it possible to use Javascript TypedArrays as Python memory buffers",
+};
+
+PyObject*
+JsBuffer_cnew(JsRef buff){
+  bool success = false;
+  JsBuffer* self = (JsBuffer*)JsBufferType.tp_alloc(&JsMethodType, 0);
+  FAIL_IF_NULL(self);
+  JsProxy_cinit((PyObject*)self, buff);
+  self->byteLength = hiwire_get_byteLength(JsProxy_REF(self));
+  if (hiwire_is_on_wasm_heap(JsProxy_REF(self))) {
+    self->bytes = NULL;
+  } else {
+    self->bytes = PyBytes_FromStringAndSize(NULL, self->byteLength);
+    FAIL_IF_NULL(self->bytes);
+  }
+
+  // format string is borrowed from hiwire_get_dtype, DO NOT DEALLOCATE!
+  hiwire_get_dtype(JsProxy_REF(self), &self->format, &self->itemsize);
+  if (self->format == NULL) {
+    char* typename = hiwire_constructor_name(JsProxy_REF(self));
+    PyErr_Format(
+      PyExc_RuntimeError,
+      "Unknown typed array type '%s'. This is a problem with Pyodide, please "
+      "open an issue about it here: "
+      "https://github.com/iodide-project/pyodide/issues/new",
+      typename);
+    free(typename);
+    FAIL();
+  }
+
+  success = true;
+finally:
+  if(!success){
+    Py_CLEAR(self);
+  }
+  return (PyObject*)self;
+}
+
+
+////////////////////////////////////////////////////////////
 // Public functions
 
 PyObject*
 JsProxy_create(JsRef object)
 {
+  // The conditions hiwire_is_error, hiwire_is_function, and hiwire_is_typedarray
+  // are not mutually exclusive, but any input that demonstrates this is likely
+  // malicious...
   if (hiwire_is_error(object)) {
     return JsProxy_new_error(object);
   } else if (hiwire_is_function(object)) {
     return JsMethod_cnew(object, hiwire_null());
+  } else if (hiwire_is_typedarray(object)) {
+    return JsBuffer_cnew(object);
   } else {
     return JsProxy_cnew(object);
   }
@@ -869,8 +914,10 @@ JsProxy_init(PyObject* core_module)
   _Exc_JsException.tp_base = (PyTypeObject*)PyExc_Exception;
 
   JsMethodType.tp_base = &JsProxyType;
+  JsBufferType.tp_base = &JsProxyType;
   // Add JsException to the pyodide module so people can catch it if they want.
   FAIL_IF_MINUS_ONE(PyModule_AddType(core_module, &JsProxyType));
+  FAIL_IF_MINUS_ONE(PyModule_AddType(core_module, &JsBufferType));
   FAIL_IF_MINUS_ONE(PyModule_AddType(core_module, &JsMethodType));
   FAIL_IF_MINUS_ONE(PyModule_AddType(core_module, &_Exc_JsException));
 
