@@ -312,7 +312,7 @@ hiwire_push_object_pair(JsRef idobj, JsRef idkey, JsRef idval);
  * The message is conventionally a Javascript string, but that is not required.
  * TODO: should be hiwire_set_error.
  */
-void
+void _Py_NO_RETURN
 hiwire_throw_error(JsRef idmsg);
 
 /**
