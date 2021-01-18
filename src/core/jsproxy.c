@@ -258,7 +258,6 @@ JsProxy_ass_subscript(PyObject* o, PyObject* pyidx, PyObject* pyvalue)
   return 0;
 }
 
-
 #define GET_JSREF(x) (((JsProxy*)x)->js)
 
 static PyObject*
@@ -705,16 +704,18 @@ JsMethod_cnew(JsRef func, JsRef this_)
 //
 // A subclass of JsProxy for Buffers
 
-typedef struct {
+typedef struct
+{
   JsProxy super;
   Py_ssize_t byteLength;
   char* format;
-  Py_ssize_t itemsize;  
+  Py_ssize_t itemsize;
   PyObject* bytes;
 } JsBuffer;
 
 static PyObject*
-JsBuffer_HasBytes(PyObject* o, PyObject* _args) /* METH_NO_ARGS ==> _args is always NULL */
+JsBuffer_HasBytes(PyObject* o,
+                  PyObject* _args) /* METH_NO_ARGS ==> _args is always NULL */
 {
   JsBuffer* self = (JsBuffer*)o;
   if (self->bytes == NULL) {
@@ -728,14 +729,14 @@ static int
 JsBuffer_GetBuffer(PyObject* obj, Py_buffer* view, int flags)
 {
   bool success = false;
-  JsBuffer* self = (JsBuffer*) obj;
+  JsBuffer* self = (JsBuffer*)obj;
   view->obj = NULL;
 
   void* ptr;
   if (hiwire_is_on_wasm_heap(JsProxy_REF(self))) {
     ptr = (void*)hiwire_get_byteOffset(JsProxy_REF(self));
   } else {
-    // Every time JsBuffer_GetBuffer is called, copy the current data from the 
+    // Every time JsBuffer_GetBuffer is called, copy the current data from the
     // TypedArray into the buffer. (TODO: don't do this.)
     ptr = PyBytes_AsString(self->bytes);
     FAIL_IF_NULL(ptr);
@@ -787,11 +788,13 @@ static PyTypeObject JsBufferType = {
   .tp_dealloc = (destructor)JsBuffer_dealloc,
   .tp_methods = JsBuffer_Methods,
   .tp_as_buffer = &JsBuffer_BufferProcs,
-  .tp_doc = "A proxy to make it possible to use Javascript TypedArrays as Python memory buffers",
+  .tp_doc = "A proxy to make it possible to use Javascript TypedArrays as "
+            "Python memory buffers",
 };
 
 PyObject*
-JsBuffer_cnew(JsRef buff){
+JsBuffer_cnew(JsRef buff)
+{
   bool success = false;
   JsBuffer* self = (JsBuffer*)JsBufferType.tp_alloc(&JsBufferType, 0);
   FAIL_IF_NULL(self);
@@ -820,12 +823,11 @@ JsBuffer_cnew(JsRef buff){
 
   success = true;
 finally:
-  if(!success){
+  if (!success) {
     Py_CLEAR(self);
   }
   return (PyObject*)self;
 }
-
 
 ////////////////////////////////////////////////////////////
 // Public functions
@@ -833,9 +835,9 @@ finally:
 PyObject*
 JsProxy_create(JsRef object)
 {
-  // The conditions hiwire_is_error, hiwire_is_function, and hiwire_is_typedarray
-  // are not mutually exclusive, but any input that demonstrates this is likely
-  // malicious...
+  // The conditions hiwire_is_error, hiwire_is_function, and
+  // hiwire_is_typedarray are not mutually exclusive, but any input that
+  // demonstrates this is likely malicious...
   if (hiwire_is_error(object)) {
     return JsProxy_new_error(object);
   } else if (hiwire_is_function(object)) {
