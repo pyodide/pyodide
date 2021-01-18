@@ -187,6 +187,12 @@ class InteractiveConsole(code.InteractiveConsole):
             yield
             self.restore_stdstreams()
 
+    def flush_all(self):
+        """ Force stdout/stderr flush. """
+        with self.stdstreams_redirections():
+            sys.stdout.flush()
+            sys.stderr.flush()
+
     def runsource(self, *args, **kwargs):
         """Force streams redirection.
 
@@ -213,6 +219,11 @@ class InteractiveConsole(code.InteractiveConsole):
             def run(*args):
                 with self.stdstreams_redirections():
                     parent_runcode(code)
+                    # in CPython's REPL, flush is performed
+                    # by input(prompt) at each new prompt ;
+                    # since we are not using input, we force
+                    # flushing here
+                    self.flush_all()
                 return _dummy_promise
 
             return _load_packages_from_imports(source).then(run)
