@@ -18,7 +18,7 @@ The Python scientific stack, compiled to WebAssembly.
    package.
 
    To create a Pyodide package to support and share libraries for new
-   applications, try `Creating a Pyodide package <new_packages.html>`_.
+   applications, try `Creating a Pyodide package <new-packages.html>`_.
 
 Using Pyodide
 =============
@@ -31,12 +31,12 @@ additional packages may be installed from PyPI to be used with Pyodide.
    :maxdepth: 2
    :caption: Usage
 
-   usage/using_pyodide_from_javascript.md
-   usage/using_pyodide_from_webworker.md
-   usage/serving_pyodide_packages.md
-   usage/loading_packages.md
-   usage/type_conversions.md
-   usage/api_reference.md
+   usage/using-pyodide-from-javascript.md
+   usage/using-pyodide-from-webworker.md
+   usage/serving-pyodide-packages.md
+   usage/loading-packages.md
+   usage/type-conversions.md
+   usage/api-reference.md
    usage/faq.md
 
 Developing Pyodide
@@ -53,8 +53,8 @@ information about the project's organization.
    :maxdepth: 1
    :caption: Development
 
-   development/building_from_sources.md
-   development/new_packages.md
+   development/building-from-sources.md
+   development/new-packages.md
    development/contributing.md
    development/testing.md
 
