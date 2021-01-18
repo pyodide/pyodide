@@ -71,7 +71,9 @@ def test_jsproxy(selenium):
     assert selenium.run("repr(document)") == "[object HTMLDocument]"
     selenium.run_js("window.square = function (x) { return x*x; }")
     assert selenium.run("from js import square\n" "square(2)") == 4
-    assert selenium.run("from js import ImageData\n" "ImageData.new(64, 64)")
+    assert (
+        selenium.run("from js import ImageData\n" "ImageData.new(64, 64).width") == 64
+    )
     assert selenium.run("from js import ImageData\n" "ImageData.typeof") == "function"
     selenium.run_js(
         """
