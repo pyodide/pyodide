@@ -793,7 +793,7 @@ static PyTypeObject JsBufferType = {
 PyObject*
 JsBuffer_cnew(JsRef buff){
   bool success = false;
-  JsBuffer* self = (JsBuffer*)JsBufferType.tp_alloc(&JsMethodType, 0);
+  JsBuffer* self = (JsBuffer*)JsBufferType.tp_alloc(&JsBufferType, 0);
   FAIL_IF_NULL(self);
   JsProxy_cinit((PyObject*)self, buff);
   self->byteLength = hiwire_get_byteLength(JsProxy_REF(self));
