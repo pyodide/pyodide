@@ -12,7 +12,7 @@ def test_jsproxy_dir(selenium):
             from js import a
             from js import b
             [dir(a), dir(b)]
-        `);
+        `).deepCopyToJavascript();
         """
     )
     jsproxy_items = set(
@@ -195,7 +195,7 @@ def test_jsproxy_call(selenium):
             from js import f
             [f(*range(n)) for n in range(10)]
             `
-        );
+        ).deepCopyToJavascript();
         """
         )
         == list(range(10))
