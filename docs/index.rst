@@ -31,8 +31,8 @@ additional packages may be installed from PyPI to be used with Pyodide.
    :maxdepth: 2
    :caption: Usage
 
-   usage/using-pyodide-from-javascript.md
-   usage/using-pyodide-from-webworker.md
+   usage/quickstart.md
+   usage/webworker.md
    usage/serving-pyodide-packages.md
    usage/loading-packages.md
    usage/type-conversions.md
