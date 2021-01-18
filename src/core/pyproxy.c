@@ -210,6 +210,12 @@ EM_JS(int, pyproxy_init, (), {
       Module.hiwire.decref(idargs);
       return jsresult;
     },
+    shallowCopyToJavascript : function(){
+      return python2js_with_depth(_getPtr(this), 1);
+    },
+    deepCopyToJavascript : function(depth = -1){
+      return python2js_with_depth(_getPtr(this), depth);
+    },
   };
 
   let ignoredTargetFields = ["name", "length"];

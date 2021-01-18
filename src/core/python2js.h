@@ -16,12 +16,23 @@ void
 pythonexc2js();
 
 /** Convert a Python object to a Javascript object.
- *  \param The Python object
+ *  \param x The Python object
  *  \return The Javascript object -- might be an Error object in the case of an
  *     exception.
  */
 JsRef
 python2js(PyObject* x);
+
+
+/** Convert a Python object to a Javascript object, copying standard collections into javascript down to specified depth
+ *  \param x The Python object
+ *  \param depth The maximum depth to copy
+ *  \return The Javascript object -- might be an Error object in the case of an
+ *     exception.
+ */
+JsRef
+python2js_with_depth(PyObject* x, int depth);
+
 
 /** Set up the global state for this module.
  */
