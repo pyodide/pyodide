@@ -1,4 +1,6 @@
-# Core
+# Contributing to the "core" C Code
+
+This file is intended as guidelines to help contributors trying to modify the C source files in `src/core`.
 
 ## What the files do
 * ``main.c`` -- responsible for configuring and initializing the python interpreter, initializing the other source files, and creating the ``_pyodide_core`` module which is used to expose Python objects to ``pyodide_py``. ``main.c`` also tries to generate fatal initialization error messages to help with debugging when there is a mistake in the initialization code.
