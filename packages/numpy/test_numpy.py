@@ -4,9 +4,9 @@ def test_numpy(selenium):
     selenium.run("x = numpy.ones((32, 64))")
     assert selenium.run_js("return pyodide.pyimport('x').length == 32")
     for i in range(32):
-        assert selenium.run_js(f"return pyodide.pyimport('x')[{i}].length == 64")
+        assert selenium.run_js(f"return pyodide.pyimport('x').deepCopyToJavascript()[{i}].length == 64")
         for j in range(64):
-            assert selenium.run_js(f"return pyodide.pyimport('x')[{i}][{j}] == 1")
+            assert selenium.run_js(f"return pyodide.pyimport('x').deepCopyToJavascript()[{i}][{j}] == 1")
 
 
 def test_typed_arrays(selenium):
@@ -48,7 +48,7 @@ def test_python2js_numpy_dtype(selenium_standalone):
             for j in range(2):
                 for k in range(2):
                     assert (
-                        selenium.run_js(f"return pyodide.pyimport('x')[{i}][{j}][{k}]")
+                        selenium.run_js(f"return pyodide.pyimport('x').deepCopyToJavascript()[{i}][{j}][{k}]")
                         == expected_result[i][j][k]
                     )
 
@@ -176,7 +176,7 @@ def test_runpythonasync_numpy(selenium_standalone):
         """
     )
     for i in range(5):
-        assert selenium_standalone.run_js(f"return pyodide.pyimport('x')[{i}] == 0")
+        assert selenium_standalone.run_js(f"return pyodide.pyimport('x').deepCopyToJavascript()[{i}] == 0")
 
 
 def test_runwebworker_numpy(selenium_standalone):
