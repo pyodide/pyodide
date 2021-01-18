@@ -2,7 +2,9 @@ def test_numpy(selenium):
     selenium.load_package("numpy")
     selenium.run("import numpy")
     selenium.run("x = numpy.ones((32, 64))")
-    assert selenium.run_js("return pyodide.pyimport('x').deepCopyToJavascript().length == 32")
+    assert selenium.run_js(
+        "return pyodide.pyimport('x').deepCopyToJavascript().length == 32"
+    )
     for i in range(32):
         assert selenium.run_js(
             f"return pyodide.pyimport('x').deepCopyToJavascript()[{i}].length == 64"
@@ -110,9 +112,18 @@ def test_python2js_numpy_dtype(selenium_standalone):
     assert selenium.run("np.array([True, False])") == [True, False]
 
     selenium.run("x = np.array([['string1', 'string2'], ['string3', 'string4']])")
-    assert selenium.run_js("return pyodide.pyimport('x').deepCopyToJavascript().length") == 2
-    assert selenium.run_js("return pyodide.pyimport('x').deepCopyToJavascript()[0][0]") == "string1"
-    assert selenium.run_js("return pyodide.pyimport('x').deepCopyToJavascript()[1][1]") == "string4"
+    assert (
+        selenium.run_js("return pyodide.pyimport('x').deepCopyToJavascript().length")
+        == 2
+    )
+    assert (
+        selenium.run_js("return pyodide.pyimport('x').deepCopyToJavascript()[0][0]")
+        == "string1"
+    )
+    assert (
+        selenium.run_js("return pyodide.pyimport('x').deepCopyToJavascript()[1][1]")
+        == "string4"
+    )
 
 
 def test_py2js_buffer_clear_error_flag(selenium):
