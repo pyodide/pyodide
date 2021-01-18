@@ -186,6 +186,7 @@ EM_JS(int, pyproxy_init, (), {
 
   Module.PyProxyPublicMethods = {
     toString : function() {
+      let ptrobj = _getPtr(this);
       let jsref_repr;
       try {
         jsref_repr = __pyproxy_repr(ptrobj);
