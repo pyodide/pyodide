@@ -125,13 +125,16 @@ class InteractiveConsole(code.InteractiveConsole):
         self._stderr = None
         self.stdout_callback = stdout_callback
         self.stderr_callback = stderr_callback
-        self._persistent_stream_redirection = persistent_stream_redirection
-        if self._persistent_stream_redirection:
+        self._streams_redirected = False
+        if persistent_stream_redirection:
             self.redirect_stdstreams()
         self.run_complete = _dummy_promise
 
     def redirect_stdstreams(self):
         """ Toggle stdout/stderr redirections. """
+        # already redirected?
+        if self._streams_redirected:
+            return
 
         if self._stdout is None:
             # we use meta callbacks to allow self.std{out,err}_callback
@@ -162,20 +165,26 @@ class InteractiveConsole(code.InteractiveConsole):
         # actual redirection
         sys.stdout = self._stdout
         sys.stderr = self._stderr
+        self._streams_redirected = True
 
     def restore_stdstreams(self):
         """Restore stdout/stderr to the value it was before
         the creation of the object."""
-        sys.stdout = self._old_stdout
-        sys.stderr = self._old_stderr
+        if self._streams_redirected:
+            sys.stdout = self._old_stdout
+            sys.stderr = self._old_stderr
+            self._streams_redirected = False
 
     @contextmanager
     def stdstreams_redirections(self):
-        """ Ensure std stream redirection """
-        if not self._persistent_stream_redirection:
+        """Ensure std stream redirection.
+
+        This supports nesting."""
+        if self._streams_redirected:
+            yield
+        else:
             self.redirect_stdstreams()
-        yield
-        if not self._persistent_stream_redirection:
+            yield
             self.restore_stdstreams()
 
     def runsource(self, *args, **kwargs):
@@ -211,8 +220,7 @@ class InteractiveConsole(code.InteractiveConsole):
         self.run_complete = self.run_complete.then(load_packages_and_run)
 
     def __del__(self):
-        if self._persistent_stream_redirection:
-            self.restore_stdstreams()
+        self.restore_stdstreams()
 
     def banner(self):
         """ A banner similar to the one printed by the real Python interpreter. """
