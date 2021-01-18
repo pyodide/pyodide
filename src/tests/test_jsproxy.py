@@ -499,7 +499,7 @@ def test_mount_object(selenium):
             import b
             result += [a.s, dir(a), dir(b)]
             result
-        `)
+        `).deepCopyToJavascript()
         """
     )
     assert result[:3] == ["x1", "x2", 3]
