@@ -249,6 +249,11 @@ def displayhook(value, repr: Callable[[Any], str]):
     `repr` seems hardcoded in default `sys.displayhook` version
     (which is written in C)."""
     # from https://docs.python.org/3/library/sys.html#sys.displayhook
+    # If value is not None, this function prints repr(value) to
+    # sys.stdout, and saves value in builtins._. If repr(value) is not
+    # encodable to sys.stdout.encoding with sys.stdout.errors error
+    # handler (which is probably 'strict'), encode it to
+    # sys.stdout.encoding with 'backslashreplace' error handler.
     if value is None:
         return
     builtins._ = None  # type: ignore
