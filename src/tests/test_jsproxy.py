@@ -49,7 +49,7 @@ def test_jsproxy_getattr(selenium):
         return pyodide.runPython(`
             from js import a
             [ a.x, a.y, a.typeof ]
-        `);
+        `).deepCopyToJavascript();
         """
         )
         == [2, "9", "object"]
