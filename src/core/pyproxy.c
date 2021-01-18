@@ -320,8 +320,9 @@ EM_JS(int, pyproxy_init, (), {
         result.delete(key);
       }
       let ptrobj = _getPtr(jsobj);
+      let idresult;
       try {
-        let idresult = __pyproxy_ownKeys(ptrobj);
+        idresult = __pyproxy_ownKeys(ptrobj);
       } catch(e) {
         Module.fatal_error(e);
       }
