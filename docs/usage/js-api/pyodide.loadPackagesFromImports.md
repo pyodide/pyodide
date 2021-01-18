@@ -1,8 +1,7 @@
 (js_api_pyodide_loadPackagesFromImports)=
 # pyodide.loadPackagesFromImports(code, messageCallback, errorCallback)
 
-Inspect a Python code chunk and asynchronously load any known packages that the code
-chunk imports.
+Inspect a Python code chunk and use ``pyodide.loadPackage` to load any known packages that the code chunk imports. Uses `pyodide_py.find_imports <pyodide.find\_imports>` to inspect the code.
 
 For example, given the following code chunk
 
