@@ -120,12 +120,6 @@ _pyproxy_ownKeys(PyObject* pyobj)
 }
 
 JsRef
-_pyproxy_enumerate(PyObject* pyobj)
-{
-  return _pyproxy_ownKeys(pyobj);
-}
-
-JsRef
 _pyproxy_apply(PyObject* pyobj, JsRef idargs)
 {
   Py_ssize_t length = hiwire_get_length(idargs);
@@ -169,7 +163,8 @@ EM_JS_REF(JsRef, pyproxy_new, (PyObject * ptrobj), {
 
   let target = function(){};
   target['$$'] = { ptr : ptrobj, type : 'PyProxy' };
-  let proxy = new Proxy(target, Module.PyProxy);
+  Object.assign(target, Module.PyProxyPublicMethods);
+  let proxy = new Proxy(target, Module.PyProxyHandlers);
   Module.PyProxies[ptrobj] = proxy;
 
   return Module.hiwire.new_value(proxy);
@@ -178,58 +173,66 @@ EM_JS_REF(JsRef, pyproxy_new, (PyObject * ptrobj), {
 EM_JS(int, pyproxy_init, (), {
   // clang-format off
   Module.PyProxies = {};
+  function _getPtr(jsobj) {
+    let ptr = jsobj['$$']['ptr'];
+    if (ptr === null) {
+      throw new Error("Object has already been destroyed");
+    }
+    return ptr;
+  }
+  // Static methods
   Module.PyProxy = {
-    getPtr: function(jsobj) {
-      let ptr = jsobj['$$']['ptr'];
-      if (ptr === null) {
-        throw new Error("Object has already been destroyed");
-      }
-      return ptr;
-    },
+    _getPtr,
     isPyProxy: function(jsobj) {
-      return jsobj['$$'] !== undefined && jsobj['$$']['type'] === 'PyProxy';
+      return jsobj && jsobj['$$'] !== undefined && jsobj['$$']['type'] === 'PyProxy';
     },
-    addExtraKeys: function(result) {
-      result.push('toString');
-      result.push('prototype');
-      result.push('arguments');
-      result.push('caller');
+  };
+
+  Module.PyProxyPublicMethods = {
+    toString : function() {
+      let ptrobj = _getPtr(this);
+      let jsref_repr = __pyproxy_repr(ptrobj);
+      let repr = Module.hiwire.get_value(jsref_repr);
+      Module.hiwire.decref(jsref_repr);
+      return repr;
     },
+    destroy : function() {
+      let ptrobj = _getPtr(this);
+      __pyproxy_destroy(ptrobj);
+      this['$$']['ptr'] = null;
+    },
+    apply : function(jsthis, jsargs) {
+      let ptrobj = _getPtr(this);
+      let idargs = Module.hiwire.new_value(jsargs);
+      let idresult = __pyproxy_apply(ptrobj, idargs);
+      let jsresult = Module.hiwire.get_value(idresult);
+      Module.hiwire.decref(idresult);
+      Module.hiwire.decref(idargs);
+      return jsresult;
+    },
+  };
+
+  let ignoredTargetFields = ["name", "length"];
+
+  // See explanation of which methods should be defined here and what they do here:
+  // https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Proxy
+  Module.PyProxyHandlers = {
     isExtensible: function() { return true },
     has: function (jsobj, jskey) {
-      let ptrobj = this.getPtr(jsobj);
+      if(Reflect.has(jsobj, jskey) && !ignoredTargetFields.includes(jskey)){
+        return true;
+      }
+      let ptrobj = _getPtr(jsobj);
       let idkey = Module.hiwire.new_value(jskey);
       let result = __pyproxy_has(ptrobj, idkey) !== 0;
       Module.hiwire.decref(idkey);
       return result;
     },
     get: function (jsobj, jskey) {
-      let ptrobj = this.getPtr(jsobj);
-      if (jskey === 'toString') {
-        return function() {
-          let jsref_repr = __pyproxy_repr(ptrobj);
-          let repr = Module.hiwire.get_value(jsref_repr);
-          Module.hiwire.decref(jsref_repr);
-          return repr;
-        }
-      } else if (jskey === '$$') {
-        return jsobj['$$'];
-      } else if (jskey === 'destroy') {
-        // See bug #1049
-        return function() {
-          __pyproxy_destroy(ptrobj);
-          jsobj['$$']['ptr'] = null;
-        }
-      } else if (jskey === 'apply') {
-        return function(jsthis, jsargs) {
-          let idargs = Module.hiwire.new_value(jsargs);
-          let idresult = __pyproxy_apply(ptrobj, idargs);
-          let jsresult = Module.hiwire.get_value(idresult);
-          Module.hiwire.decref(idresult);
-          Module.hiwire.decref(idargs);
-          return jsresult;
-        };
+      if(Reflect.has(jsobj, jskey) && !ignoredTargetFields.includes(jskey)){
+        return Reflect.get(jsobj, jskey);
       }
+      let ptrobj = _getPtr(jsobj);
       let idkey = Module.hiwire.new_value(jskey);
       let idresult = __pyproxy_get(ptrobj, idkey);
       let jsresult = Module.hiwire.get_value(idresult);
@@ -238,7 +241,10 @@ EM_JS(int, pyproxy_init, (), {
       return jsresult;
     },
     set: function (jsobj, jskey, jsval) {
-      let ptrobj = this.getPtr(jsobj);
+      if(Reflect.has(jsobj, jskey) && !ignoredTargetFields.includes(jskey)){
+        throw new Error(`Cannot set read only field ${jskey}`);
+      }
+      let ptrobj = _getPtr(jsobj);
       let idkey = Module.hiwire.new_value(jskey);
       let idval = Module.hiwire.new_value(jsval);
       let idresult = __pyproxy_set(ptrobj, idkey, idval);
@@ -249,7 +255,10 @@ EM_JS(int, pyproxy_init, (), {
       return jsresult;
     },
     deleteProperty: function (jsobj, jskey) {
-      let ptrobj = this.getPtr(jsobj);
+      if(Reflect.has(jsobj, jskey) && !ignoredTargetFields.includes(jskey)){
+        throw new Error(`Cannot delete read only field ${jskey}`);
+      }
+      let ptrobj = _getPtr(jsobj);
       let idkey = Module.hiwire.new_value(jskey);
       let idresult = __pyproxy_deleteProperty(ptrobj, idkey);
       let jsresult = Module.hiwire.get_value(idresult);
@@ -258,29 +267,21 @@ EM_JS(int, pyproxy_init, (), {
       return jsresult;
     },
     ownKeys: function (jsobj) {
-      let ptrobj = this.getPtr(jsobj);
+      let result = new Set(Reflect.ownKeys(jsobj));
+      for(let key of ignoredTargetFields){
+        result.delete(key);
+      }
+      let ptrobj = _getPtr(jsobj);
       let idresult = __pyproxy_ownKeys(ptrobj);
       let jsresult = Module.hiwire.get_value(idresult);
       Module.hiwire.decref(idresult);
-      this.addExtraKeys(jsresult);
-      return jsresult;
-    },
-    enumerate: function (jsobj) {
-      let ptrobj = this.getPtr(jsobj);
-      let idresult = __pyproxy_enumerate(ptrobj);
-      let jsresult = Module.hiwire.get_value(idresult);
-      Module.hiwire.decref(idresult);
-      this.addExtraKeys(jsresult);
-      return jsresult;
+      for(let key of jsresult){
+        result.add(key);
+      }
+      return Array.from(result);
     },
     apply: function (jsobj, jsthis, jsargs) {
-      let ptrobj = this.getPtr(jsobj);
-      let idargs = Module.hiwire.new_value(jsargs);
-      let idresult = __pyproxy_apply(ptrobj, idargs);
-      let jsresult = Module.hiwire.get_value(idresult);
-      Module.hiwire.decref(idresult);
-      Module.hiwire.decref(idargs);
-      return jsresult;
+      return jsobj.apply(jsthis, jsargs);
     },
   };
 

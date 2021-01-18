@@ -234,9 +234,8 @@ class CodeRunner:
 
         Note: see `_eval_code_async`.
         """
-        raise NotImplementedError("Async is not yet supported in Pyodide.")
         mod, last_expr = self._split_and_compile(
-            code, flags=ast.PyCF_ALLOW_TOP_LEVEL_AWAIT
+            code, flags=ast.PyCF_ALLOW_TOP_LEVEL_AWAIT  # type: ignore
         )
         # running first part
         if mod is not None:
@@ -326,7 +325,6 @@ async def eval_code_async(
       - add docstrings here and in `CodeRunner.run_async`
       - add tests
     """
-    raise NotImplementedError("Async is not yet supported in Pyodide.")
     return await CodeRunner(
         globals=globals,
         locals=locals,

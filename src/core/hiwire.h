@@ -312,7 +312,7 @@ hiwire_push_object_pair(JsRef idobj, JsRef idkey, JsRef idval);
  * The message is conventionally a Javascript string, but that is not required.
  * TODO: should be hiwire_set_error.
  */
-void
+void _Py_NO_RETURN
 hiwire_throw_error(JsRef idmsg);
 
 /**
@@ -454,6 +454,9 @@ hiwire_is_pyproxy(JsRef idobj);
  */
 bool
 hiwire_is_function(JsRef idobj);
+
+bool
+hiwire_is_error(JsRef idobj);
 
 bool
 hiwire_function_supports_kwargs(JsRef idfunc);

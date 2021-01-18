@@ -63,7 +63,7 @@ If you want to change which packages `loadPackagesFromImports` loads, you can
 monkey patch `pyodide-py.find_imports` which takes `code` as an argument
 and returns a list of packages imported.
 
-# How can I execute code in a custom namespace?
+## How can I execute code in a custom namespace?
 The second argument to `eval_code` is a namespace to execute the code in.
 The namespace is a python dictionary. So you can use:
 ```javascript
@@ -116,3 +116,35 @@ if "PYODIDE" in os.environ:
 ```
 We used to use the environment variable `PYODIDE_BASE_URL` for this purpose,
 but this usage is deprecated.
+
+
+## How do I create custom python packages from javascript?
+
+Put a collection of functions into a javascript object and use `pyodide.registerJsModule`:
+Javascript:
+```javascript
+let my_module = {
+  f : function(x){
+    return x*x + 1;
+  },
+  g : function(x){
+    console.log(`Calling g on argument ${x}`);
+    return x;
+  },
+  submodule : {
+    h : function(x) {
+      return x*x - 1;
+    },
+    c  : 2,
+  },  
+};
+pyodide.registerJsModule("my_js_module", my_module);
+```
+You can import your package like a normal Python package:
+```
+import my_js_module
+from my_js_module.submodule import h, c
+assert my_js_module.f(7) == 50
+assert h(9) == 80
+assert c == 2
+```
