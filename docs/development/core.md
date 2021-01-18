@@ -3,7 +3,7 @@
 This file is intended as guidelines to help contributors trying to modify the C source files in `src/core`.
 
 ## What the files do
-The primary purpose of `core` is to implement {ref}`type_conversions` between Python and Javascript. Here is a breakdown of the purposes of the files.
+The primary purpose of `core` is to implement {ref}`type conversions <type_conversions>` between Python and Javascript. Here is a breakdown of the purposes of the files.
 
 * `main.c` -- responsible for configuring and initializing the python interpreter, initializing the other source files, and creating the `_pyodide_core` module which is used to expose Python objects to `pyodide_py`. `main.c` also tries to generate fatal initialization error messages to help with debugging when there is a mistake in the initialization code.
 
@@ -49,8 +49,8 @@ If the string you are using is a constant, e.g., `PyDict_GetItemString(dict, "id
 * `PyModule_AddObject`. This steals a reference on success but not on failure and requires unique cleanup code. Instead use `PyObject_SetAttr`.
 
 
-## Error Handling Macros
 (error_handling_macros)=
+## Error Handling Macros
 The file `error_handling.h` defines several macros to help make error handling as simple and uniform as possible.
 
 ### Error Propagation Macros
