@@ -34,7 +34,10 @@
 
             class PyConsole(console.InteractiveConsole):
                 def __init__(self):
-                    super().__init__(persistent_stream_redirection=False)
+                    super().__init__(
+                        persistent_stream_redirection=False,
+                        completion=True,
+                    )
 
                 def banner(self):
                     return f"Welcome to the Pyodide terminal emulator 🐍\\n{super().banner()}"
@@ -60,7 +63,10 @@
           interpreter,
           {
             greetings: pyconsole.banner(),
-            prompt: ps1
+            prompt: ps1,
+            completion: function(command, callback) {
+              callback(pyconsole.complete(command).map((c) => c.name));
+            }
           }
         );
 

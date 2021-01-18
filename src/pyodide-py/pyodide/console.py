@@ -1,4 +1,4 @@
-from typing import Optional, Callable, Any
+from typing import Optional, Callable, Any, List
 import code
 import io
 import sys
@@ -111,6 +111,10 @@ class InteractiveConsole(code.InteractiveConsole):
     persistent_stream_redirection
         Wether or not the std redirection should be kept between calls to
         `runcode`.
+    completion
+        Should completion be used? This preloads the `jedi` module to
+        later be used in `complete`. The underlying promise is set to
+        `self.preloads_complete`.
     """
 
     def __init__(
@@ -119,6 +123,7 @@ class InteractiveConsole(code.InteractiveConsole):
         stdout_callback: Optional[Callable[[str], None]] = None,
         stderr_callback: Optional[Callable[[str], None]] = None,
         persistent_stream_redirection: bool = False,
+        completion=True,
     ):
         super().__init__(locals)
         self._stdout = None
@@ -129,6 +134,8 @@ class InteractiveConsole(code.InteractiveConsole):
         if persistent_stream_redirection:
             self.redirect_stdstreams()
         self.run_complete = _dummy_promise
+        if completion:
+            self.preloads_complete = _load_packages_from_imports("import jedi")
 
     def redirect_stdstreams(self):
         """ Toggle stdout/stderr redirections. """
@@ -240,6 +247,19 @@ class InteractiveConsole(code.InteractiveConsole):
         version = platform.python_version()
         build = f"({', '.join(platform.python_build())})"
         return f"Python {version} {build} on WebAssembly VM\n{cprt}"
+
+    def complete(self, source: str) -> List[Any]:
+        """Use jedi to complete a source from local namespace.
+
+        Returns
+        -------
+        A list of Jedi's Completion objects, sorted by name.
+        """
+        try:
+            import jedi
+        except ImportError:
+            return []
+        return jedi.Interpreter(source, [self.locals]).complete()  # type: ignore
 
 
 def repr_shorten(

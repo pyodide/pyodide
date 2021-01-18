@@ -187,3 +187,35 @@ def test_interactive_console(selenium, safe_selenium_sys_redirections):
     selenium.run("shell.push('pytz.utc.zone')")
     ensure_run_completed()
     assert selenium.run("result") == "UTC"
+
+
+def test_completion(selenium, safe_selenium_sys_redirections):
+    def ensure_preloads_completed():
+        selenium.driver.execute_async_script(
+            """
+        const done = arguments[arguments.length - 1];
+        pyodide.globals.shell.run_complete.then(done);
+        """
+        )
+
+    selenium.run(
+        """
+    from pyodide import console
+
+    shell = console.InteractiveConsole(completion=True)
+    """
+    )
+    ensure_preloads_completed()
+
+    assert selenium.run("[x.name for x in shell.complete('a')]") == [
+        "abs",
+        "all",
+        "any",
+        "ArithmeticError",
+        "ascii",
+        "assert",
+        "AssertionError",
+        "async",
+        "AttributeError",
+        "await",
+    ]
