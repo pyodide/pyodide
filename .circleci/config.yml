@@ -30,7 +30,9 @@ jobs:
 
       - run:
           name: Install prerequisites
-          command: pip install -r docs/requirements-doc.txt
+          command: |
+            pip install -r docs/requirements-doc.txt
+            npm install -g jsdoc
 
       - run:
           name: Build docs

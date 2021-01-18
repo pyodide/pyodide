@@ -349,10 +349,12 @@ def find_imports(code: str) -> List[str]:
 
     Examples
     --------
+    ```python
     >>> from pyodide import find_imports
     >>> code = "import numpy as np; import scipy.stats"
     >>> find_imports(code)
     ['numpy', 'scipy']
+    ```
     """
     # handle mis-indented input from multi-line strings
     code = dedent(code)

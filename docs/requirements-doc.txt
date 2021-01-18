@@ -4,3 +4,4 @@ sphinx_rtd_theme
 myst-parser==0.13.1
 sphinxcontrib-napoleon
 distlib   # required by micropip
+sphinx-js==3.1

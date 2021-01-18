@@ -263,7 +263,25 @@ globalThis.languagePluginLoader = new Promise((resolve, reject) => {
   // It never fails.
   let loadPackageChain = Promise.resolve();
 
-  async function loadPackage(names, messageCallback, errorCallback) {
+  /**
+   * @type {object}
+   * 
+   * Use ``Object.keys(pyodide.loadedPackages)`` to get the list of names of
+   * loaded packages, and ``pyodide.loadedPackages[package_name]`` to access
+   * install location for a particular ``package_name``.
+   */
+  Module.loadedPackages = {};
+  
+  /**
+   * Load a package or a list of packages over the network.
+   * This makes the files for the package available in the virtual filesystem.
+   * The package needs to be imported from Python before it can be used.
+   * @param {String | Array} names package name, or URL. Can be either a single element, or an array
+   * @param {function} messageCallback A callback, called with progress messages (optional)
+   * @param {function} errorCallback A callback, called with error/warning messages (optional)
+   * @returns {Promise} Resolves to ``undefined`` when loading is complete
+   */
+  Module.loadPackage = async function(names, messageCallback, errorCallback) {
     if (!Array.isArray(names)) {
       names = [ names ];
     }
@@ -359,9 +377,61 @@ globalThis.languagePluginLoader = new Promise((resolve, reject) => {
     throw e;
   };
 
+
+  /**
+   * @member {PyProxy} pyodide_py 
+   * An alias to the Python pyodide package.
+   */
+  
+  /**
+   * @member {PyProxy} globals 
+   * An alias to the global Python namespace.
+   *
+   * An object whose attributes are members of the Python global namespace. This is 
+   * an alternative to :meth:`pyimport`.
+   * For example, to access the ``foo`` Python object from Javascript use
+   * ``pyodide.globals.get("foo")``
+   */
+
+  /**
+   * @member {string} version
+   * The pyodide version.
+   *
+   * It can be either the exact release version (e.g. `0.1.0`), or
+   * the latest release version followed by the number of commits since, and
+   * the git hash of the current commit (e.g. `0.1.0-1-bd84646`).
+   */
+
+  /**
+   * Runs a string of Python code from Javascript.
+   *
+   * The last part of the string may be an expression, in which case, its value is returned.
+   *
+   * @param {string} code Python code to evaluate
+   * @returns The result of the python code converted to Javascript
+   */
   Module.runPython = code => Module.pyodide_py.eval_code(code, Module.globals);
 
   // clang-format off
+  /**
+   * Inspect a Python code chunk and use ``pyodide.loadPackage` to load any known 
+   * packages that the code chunk imports. Uses 
+   * :func:`pyodide_py.find_imports <pyodide.find\_imports>` to inspect the code.
+
+   * For example, given the following code chunk as input
+   * 
+   * .. code-block:: python
+   * 
+   *    import numpy as np
+   *    x = np.array([1, 2, 3])
+   * 
+   * :js:func:`loadPackagesFromImports` will call ``pyodide.loadPackage(['numpy'])``.
+   * See also :js:func:`runPythonAsync`.
+   *
+   * @param {*} code 
+   * @param {*} messageCallback 
+   * @param {*} errorCallback 
+   */
   Module.loadPackagesFromImports  = async function(code, messageCallback, errorCallback) {
     let imports = Module.pyodide_py.find_imports(code).deepCopyToJavascript();
     if (imports.length === 0) {
@@ -376,22 +446,74 @@ globalThis.languagePluginLoader = new Promise((resolve, reject) => {
       }
     }
     if (packages.size) {
-      await loadPackage(
+      await Module.loadPackage(
         Array.from(packages.keys()), messageCallback, errorCallback
       );
     }
   };
   // clang-format on
 
+  /**
+   * Access a Python object in the global namespace from Javascript.
+   * @param {string} name Python variable name
+   * @returns If the Python object is an immutable type (string, number, boolean),
+   * it is converted to Javascript and returned.  For other types, a `PyProxy`
+   * object is returned.
+   */
   Module.pyimport = name => Module.globals[name];
 
+  /**
+   * Runs Python code, possibly asynchronously loading any known packages that the code
+   * chunk imports.
+   * For example, given the following code chunk
+   *
+   * .. code-block:: python
+   * 
+   *    import numpy as np
+   *    x = np.array([1, 2, 3])
+   *
+   * pyodide will first call `pyodide.loadPackage(['numpy'])`, and then run the code
+   * chunk, returning the result. Since package fetching must happen asynchronously,
+   * this function returns a `Promise` which resolves to the output. For example:
+   * 
+   * .. code-block:: javascript
+   *    
+   *    pyodide.runPythonAsync(code, messageCallback)
+   *           .then((output) => handleOutput(output))
+   * 
+   * @param {string} code Python code to evaluate
+   * @param {Function} messageCallback A callback, called with progress messages. (optional)
+   * @param {Function} errorCallback A callback, called with error/warning messages. (optional)
+   */
   Module.runPythonAsync = async function(code, messageCallback, errorCallback) {
     await Module.loadPackagesFromImports(code, messageCallback, errorCallback);
     return Module.runPython(code);
   };
 
+  /**
+   * Registers the Js object ``module`` as a Js module with ``name``. 
+   * This module can then be imported from Python using the standard Python import 
+   * system. If another module by the same name has already been imported, this won't
+   * have much effect unless you also delete the imported module from 
+   * ``sys.modules``. This calls the ``pyodide_py`` api 
+   * :func:`pyodide.register_js_module`.
+   * 
+   * @param {string} name Name of js module to add
+   * @param {object} module Javascript object backing the module
+   */
   Module.registerJsModule = function(
       name, module) { Module.pyodide_py.register_js_module(name, module); };
+
+  /**
+   * Unregisters a Js module with given name that has been previously registered with 
+   * :js:func:`registerJsModule` or :func:`pyodide.register_js_module`. If a Js 
+   * module with that name does not already exist, will throw an error. Note that if 
+   * the module has already been imported, this won't have much effect unless you 
+   * also delete the imported module from ``sys.modules``. This calls the 
+   * ``pyodide_py`` api :func:`pyodide.unregister_js_module`.
+   * 
+   * @param {string} name Name of js module to remove
+   */
   Module.unregisterJsModule = function(
       name) { Module.pyodide_py.unregister_js_module(name); };
 
@@ -504,8 +626,6 @@ globalThis.languagePluginLoader = new Promise((resolve, reject) => {
     // filesystem to install itself. Once that's complete, it will be replaced
     // by the call to `makePublicAPI` with a more limited public API.
     self.pyodide = pyodide(Module);
-    self.pyodide.loadedPackages = {};
-    self.pyodide.loadPackage = loadPackage;
   });
 });
 languagePluginLoader
