@@ -34,13 +34,7 @@
 
             class PyConsole(console.InteractiveConsole):
                 def __init__(self):
-                    # JQuery.terminal adds a trailing newline that is not easy
-                    # to remove with the current API. Doing our best here.
-                    super().__init__(
-                        stdout_callback=lambda s: js.term.echo(s.rstrip("\\n")),
-                        stderr_callback=lambda s: js.term.error(s.rstrip("\\n")),
-                        persistent_stream_redirection=False,
-                    )
+                    super().__init__(persistent_stream_redirection=False)
 
                 def banner(self):
                     return f"Welcome to the Pyodide terminal emulator 🐍\\n{super().banner()}"
@@ -70,7 +64,28 @@
           }
         );
 
-        window.term = term;
+        // JQuery.terminal adds a trailing newline that is not easy
+        // to remove with the current API. Doing our best here.
+        term.echo_no_newline = (function (message) {
+          // prompt can be polluted with previous echo
+          // _prompt_tail is the line part just before the prompt
+          this._prompt_tail = this._prompt_tail || '';
+          let prompt = this.get_prompt();
+          if( prompt.startsWith(this._prompt_tail) )
+            prompt = prompt.slice(this._prompt_tail.length);
+          else
+            this._prompt_tail = '';
+          // here, prompt and _prompt_tail should be correctly isolated
+          const lines = message.split('\n');
+          lines[0] = this._prompt_tail + lines[0];
+          this._prompt_tail = lines.pop();
+          this.set_prompt(this._prompt_tail + prompt);
+          if( lines.length )
+            this.echo(lines.join('\n'));
+        }).bind(term);
+
+        pyconsole.stdout_callback = term.echo_no_newline;
+        pyconsole.stderr_callback = (s) => term.error(s.replace(/\n+$/, ""));
       });
     </script>
   </body>
