@@ -5,7 +5,7 @@ This file is intended as guidelines to help contributors trying to modify the C 
 ## What the files do
 * `main.c` -- responsible for configuring and initializing the python interpreter, initializing the other source files, and creating the `_pyodide_core` module which is used to expose Python objects to `pyodide_py`. `main.c` also tries to generate fatal initialization error messages to help with debugging when there is a mistake in the initialization code.
 
-* `runpython` -- Defines the `_runPythonDebug` entrypoint to help in case there is a bug in `PyProxy.apply`. (Most of the rest of the stuff in this file might be better folded into `main.c`, moved elsewhere, or removed?)
+* `runpython` -- Defines the `_runPythonDebug` entrypoint to help in case there is a bug in `PyProxy.apply`.
 
 
 ### Backend utilities
