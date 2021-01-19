@@ -123,7 +123,7 @@ class InteractiveConsole(code.InteractiveConsole):
         stdout_callback: Optional[Callable[[str], None]] = None,
         stderr_callback: Optional[Callable[[str], None]] = None,
         persistent_stream_redirection: bool = False,
-        completion=True,
+        completion=False,
     ):
         super().__init__(locals)
         self._stdout = None
