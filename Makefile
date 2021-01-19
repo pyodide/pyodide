@@ -141,7 +141,7 @@ clean-all: clean
 	$(CC) -o $@ -c $< $(CFLAGS) -Isrc/core/
 
 
-build/test.data: $(CPYTHONLIB)
+build/test.data: $(CPYTHONLIB) $(UGLIFYJS)
 	( \
 		cd $(CPYTHONLIB)/test; \
 		find . -type d -name __pycache__ -prune -exec rm -rf {} \; \
