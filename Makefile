@@ -46,7 +46,6 @@ all: check \
 	build/pyodide.asm.js \
 	build/pyodide.js \
 	build/console.html \
-	build/renderedhtml.css \
 	build/test.data \
 	build/packages.json \
 	build/test.html \
@@ -98,9 +97,6 @@ build/console.html: src/templates/console.html
 	cp $< $@
 	sed -i -e 's#{{ PYODIDE_BASE_URL }}#$(PYODIDE_BASE_URL)#g' $@
 
-
-build/renderedhtml.css: src/css/renderedhtml.less $(LESSC)
-	$(LESSC) $< $@
 
 build/webworker.js: src/webworker.js
 	cp $< $@
