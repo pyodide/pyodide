@@ -4,7 +4,6 @@ include Makefile.envs
 
 FILEPACKAGER=$$EM_DIR/tools/file_packager.py
 UGLIFYJS=$(PYODIDE_ROOT)/node_modules/.bin/uglifyjs
-LESSC=$(PYODIDE_ROOT)/node_modules/.bin/lessc
 
 CPYTHONROOT=cpython
 CPYTHONLIB=$(CPYTHONROOT)/installs/python-$(PYVERSION)/lib/python$(PYMINOR)
@@ -46,7 +45,6 @@ all: check \
 	build/pyodide.asm.js \
 	build/pyodide.js \
 	build/console.html \
-	build/renderedhtml.css \
 	build/test.data \
 	build/packages.json \
 	build/test.html \
@@ -99,9 +97,6 @@ build/console.html: src/templates/console.html
 	sed -i -e 's#{{ PYODIDE_BASE_URL }}#$(PYODIDE_BASE_URL)#g' $@
 
 
-build/renderedhtml.css: src/css/renderedhtml.less $(LESSC)
-	$(LESSC) $< $@
-
 build/webworker.js: src/webworker.js
 	cp $< $@
 	sed -i -e 's#{{ PYODIDE_BASE_URL }}#$(PYODIDE_BASE_URL)#g' $@
@@ -146,7 +141,7 @@ clean-all: clean
 	$(CC) -o $@ -c $< $(CFLAGS) -Isrc/core/
 
 
-build/test.data: $(CPYTHONLIB)
+build/test.data: $(CPYTHONLIB) $(UGLIFYJS)
 	( \
 		cd $(CPYTHONLIB)/test; \
 		find . -type d -name __pycache__ -prune -exec rm -rf {} \; \
@@ -158,9 +153,9 @@ build/test.data: $(CPYTHONLIB)
 	$(UGLIFYJS) build/test.js -o build/test.js
 
 
-$(UGLIFYJS) $(LESSC): emsdk/emsdk/.complete
-	npm i --no-save uglify-js lessc
-	touch -h $(LESSC) $(UGLIFYJS)
+$(UGLIFYJS): emsdk/emsdk/.complete
+	npm i --no-save uglify-js
+	touch -h $(UGLIFYJS)
 
 
 $(PYODIDE_EMCC):
