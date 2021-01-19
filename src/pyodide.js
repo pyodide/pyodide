@@ -315,6 +315,7 @@ globalThis.languagePluginLoader = new Promise((resolve, reject) => {
     'version',
     'registerJsModule',
     'unregisterJsModule',
+    'formatError',
   ];
 
   function makePublicAPI(module, public_api) {
@@ -359,6 +360,25 @@ globalThis.languagePluginLoader = new Promise((resolve, reject) => {
     }
   };
   // clang-format on
+  Module.formatError = function formatError(e, cur_tb=""){
+    if(cur_tb === ""){
+      cur_tb += "Traceback (most recent call last):\n"
+    }
+    let split_stack = e.stack.split("\n");
+    split_stack = split_stack.slice(1).filter(e => e.indexOf("pyodide.asm") === -1);
+    split_stack.reverse();
+    cur_tb += split_stack.join("\n") + "\n";
+    if(e.name === "PythonError"){
+      cur_tb = pyodide._module.pyodide_py.format_error(e.pythonError, cur_tb);
+    } else {
+      cur_tb += (e.name || e.constructor.name || "<Unknown Error>");
+      if(e.message){
+        cur_tb += ": " + e.message;
+      }
+      cur_tb += "\n";
+    }
+    return cur_tb;
+  };
 
   Module.pyimport = name => Module.globals[name];
 
@@ -470,6 +490,7 @@ globalThis.languagePluginLoader = new Promise((resolve, reject) => {
     fixRecursionLimit(self.pyodide);
     self.pyodide.registerJsModule("js", globalThis);
     self.pyodide = makePublicAPI(self.pyodide, PUBLIC_API);
+    self.pyodide.registerJsModule("pyodide_js", self.pyodide);
     self.pyodide._module.packages = json;
     resolve();
   };
