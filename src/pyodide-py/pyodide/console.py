@@ -4,7 +4,6 @@ import io
 import sys
 import platform
 
-
 __all__ = ["InteractiveConsole"]
 
 

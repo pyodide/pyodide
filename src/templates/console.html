@@ -85,7 +85,7 @@
         term.handlePythonError = function(result) {
           c.restore_stdstreams();
           term.resume();
-          term.error(result.toString());
+          term.error(pyodide.formatError(result));
         }
       });
     </script>
