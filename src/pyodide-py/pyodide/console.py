@@ -134,8 +134,10 @@ class InteractiveConsole(code.InteractiveConsole):
         if persistent_stream_redirection:
             self.redirect_stdstreams()
         self.run_complete = _dummy_promise
+        self.preloads_complete = _dummy_promise
+        self._completion = completion
         if completion:
-            self.preloads_complete = _load_packages_from_imports("import jedi")
+            self._init_completion()
 
     def redirect_stdstreams(self):
         """ Toggle stdout/stderr redirections. """
@@ -248,17 +250,37 @@ class InteractiveConsole(code.InteractiveConsole):
         build = f"({', '.join(platform.python_build())})"
         return f"Python {version} {build} on WebAssembly VM\n{cprt}"
 
+    def _init_completion(self):
+        """ Initalise the completion system (loading Jedi package)."""
+        self._completion_ready = False
+
+        this = self
+
+        def set_ready(*args):
+            this._completion_ready = True
+
+        def load_jedi(*args):
+            return _load_packages_from_imports("import jedi")
+
+        self.preloads_complete = self.preloads_complete.then(load_jedi).then(set_ready)
+
     def complete(self, source: str) -> List[Any]:
         """Use jedi to complete a source from local namespace.
+
+        If completion has not been activated in constructor or if
+        it is not yet available (due to package load), it returns
+        an empty list.
 
         Returns
         -------
         A list of Jedi's Completion objects, sorted by name.
         """
-        try:
-            import jedi
-        except ImportError:
+        if not self._completion or not self._completion_ready:
             return []
+
+        # here jedi should be ready
+        import jedi
+
         return jedi.Interpreter(source, [self.locals]).complete()  # type: ignore
 
 

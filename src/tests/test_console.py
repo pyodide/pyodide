@@ -219,3 +219,7 @@ def test_completion(selenium, safe_selenium_sys_redirections):
         "AttributeError",
         "await",
     ]
+
+    # without completion activated
+    selenium.run("shell = console.InteractiveConsole(completion=False)")
+    selenium.run("shell.complete('a')") == []
