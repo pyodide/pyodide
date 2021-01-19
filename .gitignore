@@ -25,6 +25,6 @@ ccache
 packages/.artifacts
 packages/*/build.log
 
-docs/python-api/
-docs/micropip-api/
+docs/usage/python-api/
+docs/usage/micropip-api/
 docs/_build/
