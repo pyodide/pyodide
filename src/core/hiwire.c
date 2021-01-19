@@ -227,7 +227,9 @@ EM_JS_REF(JsRef, hiwire_float64array, (f64 * ptr, int len), {
 EM_JS(void _Py_NO_RETURN, hiwire_throw_error, (JsRef iderr), {
   let jserr = Module.hiwire.get_value(iderr);
   Module.hiwire.decref(iderr);
-  if (typeof(jserr) == = "string") {
+  // clang-format off
+  if (typeof(jserr) === "string") {
+  // clang-format on
     jserr = new Error(jserr);
   }
   throw jserr;
