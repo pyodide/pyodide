@@ -4,7 +4,6 @@ include Makefile.envs
 
 FILEPACKAGER=$$EM_DIR/tools/file_packager.py
 UGLIFYJS=$(PYODIDE_ROOT)/node_modules/.bin/uglifyjs
-LESSC=$(PYODIDE_ROOT)/node_modules/.bin/lessc
 
 CPYTHONROOT=cpython
 CPYTHONLIB=$(CPYTHONROOT)/installs/python-$(PYVERSION)/lib/python$(PYMINOR)
@@ -154,9 +153,9 @@ build/test.data: $(CPYTHONLIB)
 	$(UGLIFYJS) build/test.js -o build/test.js
 
 
-$(UGLIFYJS) $(LESSC): emsdk/emsdk/.complete
-	npm i --no-save uglify-js lessc
-	touch -h $(LESSC) $(UGLIFYJS)
+$(UGLIFYJS): emsdk/emsdk/.complete
+	npm i --no-save uglify-js
+	touch -h $(UGLIFYJS)
 
 
 $(PYODIDE_EMCC):
