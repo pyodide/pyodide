@@ -18,6 +18,9 @@ Backward compatibility of the API is not guaranteed at this point.
    pyodide.JsException
    pyodide.register_js_module
    pyodide.unregister_js_module
+   pyodide.console.InteractiveConsole
+   pyodide.console.repr_shorten
+   pyodide.console.displayhook
 ```
 
 

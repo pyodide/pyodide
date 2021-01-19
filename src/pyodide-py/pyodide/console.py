@@ -37,7 +37,7 @@ except ImportError:
         return _dummy_promise
 
 
-__all__ = ["InteractiveConsole"]
+__all__ = ["InteractiveConsole", "repr_shorten", "displayhook"]
 
 
 class _StdStream(io.TextIOWrapper):
