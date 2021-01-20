@@ -41,7 +41,8 @@ void foo() {
 
         subprocess.run(
             [
-                "emcc","-g4",
+                "emcc",
+                "-g4",
                 "-s",
                 "SIDE_MODULE=1",
                 "-sWASM_BIGINT",
@@ -57,7 +58,8 @@ void foo() {
         )
         subprocess.run(
             [
-                "emcc","-g4",
+                "emcc",
+                "-g4",
                 "-s",
                 "MAIN_MODULE=1",
                 "main.c",
