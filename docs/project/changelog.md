@@ -38,8 +38,8 @@
 - Updated packages: bleach 3.2.1, packaging 20.8
 - `eval_code` now accepts separate `globals` and `locals` parameters.
   [#1083](https://github.com/iodide-project/pyodide/pull/1083)
-- An InteractiveConsole to ease the integration of Pyodide REPL in
-  webpages (used in console.html) [#1125](https://github.com/iodide-project/pyodide/pull/1125)
+- An InteractiveConsole with completion support to ease the integration
+  of Pyodide REPL in webpages (used in console.html) [#1125](https://github.com/iodide-project/pyodide/pull/1125) and [#1155](https://github.com/iodide-project/pyodide/pull/1155)
 - Flexible jsimports: it now possible to add custom Python "packages" backed by Javascript code, like the js package.
   The js package is now implemented using this system. [#1146](https://github.com/iodide-project/pyodide/pull/1146)
 
