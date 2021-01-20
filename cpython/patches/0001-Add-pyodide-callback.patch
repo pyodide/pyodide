@@ -1,0 +1,174 @@
+From ff5dbb071a679ee1ea158feac363388e878ce402 Mon Sep 17 00:00:00 2001
+From: Hood <hood@mit.edu>
+Date: Sat, 16 Jan 2021 11:54:57 -0800
+Subject: [PATCH] Add pyodide callback
+
+---
+ Include/ceval.h           |  1 +
+ Include/cpython/pystate.h |  3 ++
+ Python/ceval.c            | 60 +++++++++++++++++++++++----------------
+ Python/pystate.c          |  2 ++
+ 4 files changed, 42 insertions(+), 24 deletions(-)
+
+This patch adds a callback called pyodide_callback with signature 
+`int callback(void)` to the main loop in `ceval.c`. This function gets called once 
+per opcode except after opcodes `SETUP_FINALLY`, `SETUP_WITH`, `BEFORE_ASYNC_WITH`,
+and `YIELD_FROM`. The main loop normally prevents signal handling, etc from happening
+after these instructions, so I figured this should apply to my callback too.
+(There is an extra layer of protection here though because in the callback we use 
+`PyErr_SetInterrupt` which simulates a SIGINT signal and triggers the KeyboardInterrupt
+via the standard mechanism.)
+
+Note that we call the callback outside of the normal 
+`if (_Py_atomic_load_relaxed(eval_breaker))` 
+block where most of the "periodic things" happen. This is because normally when a 
+"periodic thing" is queued, the `eval_breaker` flag is set signalling the need for
+handling. The whole point of this patch though is that we need to be able to set an
+interrupt from a remote thread and the `eval_breaker` flag lives on the WASM heap.
+Unless the whole WASM heap is made into a `SharedArrayBuffer` and shared between 
+webworkers, we have no way to set the `eval_breaker` flag. We still want to skip
+the callback after the sensitive opcodes `SETUP_FINALLY`, `SETUP_WITH`, 
+`BEFORE_ASYNC_WITH`, and `YIELD_FROM`, so we hoisted the check for that condition
+out of the `eval_breaker` conditional.
+
+We also patched the `threadstate` struct to include a `pyodide_callback` field, patch
+`new_threadstate` to initialize the `pyodide_callback` field to `NULL`, and add a new
+API `PyPyodide_SetPyodideCallback` to set `pyodide_callback`. This makes 
+`PyPyodide_SetPyodideCallback` behave much like `PyEval_SetTrace`, except lighter 
+weight.
+
+diff --git a/Include/ceval.h b/Include/ceval.h
+index 36fd014..5f5fbc4 100644
+--- a/Include/ceval.h
++++ b/Include/ceval.h
+@@ -31,6 +31,7 @@ PyAPI_FUNC(PyObject *) PyEval_CallMethod(PyObject *obj,
+ #ifndef Py_LIMITED_API
+ PyAPI_FUNC(void) PyEval_SetProfile(Py_tracefunc, PyObject *);
+ PyAPI_FUNC(void) PyEval_SetTrace(Py_tracefunc, PyObject *);
++PyAPI_FUNC(void) PyPyodide_SetPyodideCallback(PyPyodide_callback);
+ PyAPI_FUNC(void) _PyEval_SetCoroutineOriginTrackingDepth(int new_depth);
+ PyAPI_FUNC(int) _PyEval_GetCoroutineOriginTrackingDepth(void);
+ PyAPI_FUNC(void) _PyEval_SetAsyncGenFirstiter(PyObject *);
+diff --git a/Include/cpython/pystate.h b/Include/cpython/pystate.h
+index 94b0809..b215056 100644
+--- a/Include/cpython/pystate.h
++++ b/Include/cpython/pystate.h
+@@ -17,6 +17,7 @@ PyAPI_FUNC(PyObject *) _PyInterpreterState_GetMainModule(PyInterpreterState *);
+ 
+ /* Py_tracefunc return -1 when raising an exception, or 0 for success. */
+ typedef int (*Py_tracefunc)(PyObject *, struct _frame *, int, PyObject *);
++typedef int (*PyPyodide_callback)(void);
+ 
+ /* The following values are used for 'what' for tracefunc functions
+  *
+@@ -73,6 +74,8 @@ struct _ts {
+     Py_tracefunc c_tracefunc;
+     PyObject *c_profileobj;
+     PyObject *c_traceobj;
++    
++    PyPyodide_callback pyodide_callback;
+ 
+     /* The exception currently being raised */
+     PyObject *curexc_type;
+diff --git a/Python/ceval.c b/Python/ceval.c
+index 3306fb9..86e7639 100644
+--- a/Python/ceval.c
++++ b/Python/ceval.c
+@@ -1198,31 +1198,31 @@ main_loop:
+            async I/O handler); see Py_AddPendingCall() and
+            Py_MakePendingCalls() above. */
+ 
+-        if (_Py_atomic_load_relaxed(eval_breaker)) {
+-            opcode = _Py_OPCODE(*next_instr);
+-            if (opcode == SETUP_FINALLY ||
+-                opcode == SETUP_WITH ||
+-                opcode == BEFORE_ASYNC_WITH ||
+-                opcode == YIELD_FROM) {
+-                /* Few cases where we skip running signal handlers and other
+-                   pending calls:
+-                   - If we're about to enter the 'with:'. It will prevent
+-                     emitting a resource warning in the common idiom
+-                     'with open(path) as file:'.
+-                   - If we're about to enter the 'async with:'.
+-                   - If we're about to enter the 'try:' of a try/finally (not
+-                     *very* useful, but might help in some cases and it's
+-                     traditional)
+-                   - If we're resuming a chain of nested 'yield from' or
+-                     'await' calls, then each frame is parked with YIELD_FROM
+-                     as its next opcode. If the user hit control-C we want to
+-                     wait until we've reached the innermost frame before
+-                     running the signal handler and raising KeyboardInterrupt
+-                     (see bpo-30039).
+-                */
+-                goto fast_next_opcode;
+-            }
++        opcode = _Py_OPCODE(*next_instr);
++        if (opcode == SETUP_FINALLY ||
++            opcode == SETUP_WITH ||
++            opcode == BEFORE_ASYNC_WITH ||
++            opcode == YIELD_FROM) {
++            /* Few cases where we skip running signal handlers and other
++                pending calls:
++                - If we're about to enter the 'with:'. It will prevent
++                    emitting a resource warning in the common idiom
++                    'with open(path) as file:'.
++                - If we're about to enter the 'async with:'.
++                - If we're about to enter the 'try:' of a try/finally (not
++                    *very* useful, but might help in some cases and it's
++                    traditional)
++                - If we're resuming a chain of nested 'yield from' or
++                    'await' calls, then each frame is parked with YIELD_FROM
++                    as its next opcode. If the user hit control-C we want to
++                    wait until we've reached the innermost frame before
++                    running the signal handler and raising KeyboardInterrupt
++                    (see bpo-30039).
++            */
++            goto fast_next_opcode;
++        }
+ 
++        if (_Py_atomic_load_relaxed(eval_breaker)) {
+             if (_Py_atomic_load_relaxed(&ceval->signals_pending)) {
+                 if (handle_signals(runtime) != 0) {
+                     goto error;
+@@ -1262,6 +1262,12 @@ main_loop:
+                 goto error;
+             }
+         }
++        
++        if(tstate->pyodide_callback != NULL){
++            if(tstate->pyodide_callback() != 0){
++                goto error;
++            }
++        }        
+ 
+     fast_next_opcode:
+         f->f_lasti = INSTR_OFFSET();
+@@ -4727,6 +4733,12 @@ PyEval_SetTrace(Py_tracefunc func, PyObject *arg)
+                            || (tstate->c_profilefunc != NULL));
+ }
+ 
++void
++PyPyodide_SetPyodideCallback(PyPyodide_callback pyodide_callback){
++    PyThreadState *tstate = _PyThreadState_GET();
++    tstate->pyodide_callback = pyodide_callback;
++}
++
+ void
+ _PyEval_SetCoroutineOriginTrackingDepth(int new_depth)
+ {
+diff --git a/Python/pystate.c b/Python/pystate.c
+index aba673c..b809208 100644
+--- a/Python/pystate.c
++++ b/Python/pystate.c
+@@ -592,6 +592,8 @@ new_threadstate(PyInterpreterState *interp, int init)
+     tstate->c_tracefunc = NULL;
+     tstate->c_profileobj = NULL;
+     tstate->c_traceobj = NULL;
++    
++    tstate->pyodide_callback = NULL;
+ 
+     tstate->trash_delete_nesting = 0;
+     tstate->trash_delete_later = NULL;
+-- 
+2.17.1
+

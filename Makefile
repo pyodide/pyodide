@@ -53,16 +53,21 @@ all: check \
 	echo -e "\nSUCCESS!"
 
 
-build/pyodide.asm.js: src/core/main.o  \
-	        src/core/jsproxy.o src/core/js2python.o \
+build/pyodide.asm.js: \
 		src/core/error_handling.o \
+		src/core/hiwire.o \
+		src/core/js2python.o \
+		src/core/jsproxy.o \
+		src/core/keyboard_interrupt.o \
+		src/core/main.o  \
 		src/core/pyproxy.o \
-		src/core/python2js.o \
 		src/core/python2js_buffer.o \
-		src/core/runpython.o src/core/hiwire.o \
-		src/webbrowser.py \
-		src/_testcapi.py \
+		src/core/python2js.o \
+		src/core/runpython.o \
 		src/pystone.py \
+		src/_testcapi.py \
+		src/webbrowser.py \
+		\
 		$(wildcard src/pyodide-py/pyodide/*.py) \
 		$(CPYTHONLIB)
 	date +"[%F %T] Building pyodide.asm.js..."
