@@ -319,6 +319,7 @@ globalThis.languagePluginLoader = new Promise((resolve, reject) => {
 
   function makePublicAPI(module, public_api) {
     let namespace = {_module : module};
+    module.public_api = namespace;
     for (let name of public_api) {
       namespace[name] = module[name];
     }
@@ -335,6 +336,27 @@ globalThis.languagePluginLoader = new Promise((resolve, reject) => {
   Module.noWasmDecoding = true;
   Module.preloadedWasm = {};
   let isFirefox = navigator.userAgent.toLowerCase().indexOf('firefox') > -1;
+
+  Module.fatal_error = function(e) {
+    for (let [key, value] of Object.entries(Module.public_api)) {
+      if (key.startsWith("_")) {
+        // delete Module.public_api[key];
+        continue;
+      }
+      // Have to do this case first because typeof(some_pyproxy) === "function".
+      if (Module.PyProxy.isPyProxy(value)) {
+        value.destroy();
+        continue;
+      }
+      if (typeof (value) === "function") {
+        Module.public_api[key] = function() {
+          throw Error("Pyodide has suffered a fatal error, refresh the page. " +
+                      "Please report this to the Pyodide maintainers.");
+        }
+      }
+    }
+    throw e;
+  };
 
   Module.runPython = code => Module.pyodide_py.eval_code(code, Module.globals);
 
