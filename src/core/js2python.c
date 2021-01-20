@@ -143,7 +143,7 @@ EM_JS_REF(PyObject*, __js2python, (JsRef id), {
   } else if (value === false) {
     return __js2python_false();
   } else if (Module.PyProxy.isPyProxy(value)) {
-    return __js2python_pyproxy(Module.PyProxy.getPtr(value));
+    return __js2python_pyproxy(Module.PyProxy._getPtr(value));
   } else if (value['byteLength'] !== undefined) {
     return __js2python_memoryview(id);
   } else {

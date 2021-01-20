@@ -16,7 +16,7 @@ _Py_IDENTIFIER(format_exception);
 static JsRef
 _python2js_unicode(PyObject* x);
 
-void
+void _Py_NO_RETURN
 pythonexc2js()
 {
   bool success = false;
@@ -35,7 +35,6 @@ pythonexc2js()
     excval = hiwire_string_ascii("No exception type or value");
     PySys_WriteStderr("No exception type or value\n");
     goto finally__skip_print_tb;
-    return;
   }
 
   if (traceback == NULL) {
@@ -87,7 +86,7 @@ int
 _python2js_remove_from_cache(PyObject* map, PyObject* pyparent);
 
 JsRef
-_python2js_cache(PyObject* x, PyObject* map);
+_python2js_cache(PyObject* x, PyObject* map, int depth);
 
 static JsRef
 _python2js_float(PyObject* x)
@@ -149,7 +148,7 @@ _python2js_bytes(PyObject* x)
 }
 
 static JsRef
-_python2js_sequence(PyObject* x, PyObject* map)
+_python2js_sequence(PyObject* x, PyObject* map, int depth)
 {
   JsRef jsarray = hiwire_array();
   if (_python2js_add_to_cache(map, x, jsarray)) {
@@ -168,7 +167,7 @@ _python2js_sequence(PyObject* x, PyObject* map)
       Py_INCREF(x);
       return pyproxy_new(x);
     }
-    JsRef jsitem = _python2js_cache(pyitem, map);
+    JsRef jsitem = _python2js_cache(pyitem, map, depth);
     if (jsitem == NULL) {
       _python2js_remove_from_cache(map, x);
       Py_DECREF(pyitem);
@@ -187,7 +186,7 @@ _python2js_sequence(PyObject* x, PyObject* map)
 }
 
 static JsRef
-_python2js_dict(PyObject* x, PyObject* map)
+_python2js_dict(PyObject* x, PyObject* map, int depth)
 {
   JsRef jsdict = hiwire_object();
   if (_python2js_add_to_cache(map, x, jsdict)) {
@@ -197,13 +196,13 @@ _python2js_dict(PyObject* x, PyObject* map)
   PyObject *pykey, *pyval;
   Py_ssize_t pos = 0;
   while (PyDict_Next(x, &pos, &pykey, &pyval)) {
-    JsRef jskey = _python2js_cache(pykey, map);
+    JsRef jskey = _python2js_cache(pykey, map, depth);
     if (jskey == NULL) {
       _python2js_remove_from_cache(map, x);
       hiwire_decref(jsdict);
       return NULL;
     }
-    JsRef jsval = _python2js_cache(pyval, map);
+    JsRef jsval = _python2js_cache(pyval, map, depth);
     if (jsval == NULL) {
       _python2js_remove_from_cache(map, x);
       hiwire_decref(jskey);
@@ -221,8 +220,17 @@ _python2js_dict(PyObject* x, PyObject* map)
   return jsdict;
 }
 
+#define RETURN_IF_SUCCEEDS(x)                                                  \
+  do {                                                                         \
+    JsRef _fresh_result = x;                                                   \
+    if (_fresh_result != NULL) {                                               \
+      return _fresh_result;                                                    \
+    }                                                                          \
+    PyErr_Clear();                                                             \
+  } while (0)
+
 static JsRef
-_python2js(PyObject* x, PyObject* map)
+_python2js_immutable(PyObject* x, PyObject* map, int depth)
 {
   if (x == Py_None) {
     return hiwire_undefined();
@@ -242,25 +250,38 @@ _python2js(PyObject* x, PyObject* map)
     return JsProxy_AsJs(x);
   } else if (JsException_Check(x)) {
     return JsException_AsJs(x);
-  } else if (PyList_Check(x) || PyTuple_Check(x)) {
-    return _python2js_sequence(x, map);
-  } else if (PyDict_Check(x)) {
-    return _python2js_dict(x, map);
-  } else {
-    JsRef ret = _python2js_buffer(x);
+  } else if (PyTuple_Check(x)) {
+    return _python2js_sequence(x, map, depth);
+  }
+  return NULL;
+}
 
-    if (ret != NULL) {
-      return ret;
-    }
-    PyErr_Clear();
-    if (PySequence_Check(x)) {
-      return _python2js_sequence(x, map);
-    }
+static JsRef
+_python2js_deep(PyObject* x, PyObject* map, int depth)
+{
+  RETURN_IF_SUCCEEDS(_python2js_immutable(x, map, depth));
+  if (PyList_Check(x)) {
+    return _python2js_sequence(x, map, depth);
+  }
+  if (PyDict_Check(x)) {
+    return _python2js_dict(x, map, depth);
+  }
+  RETURN_IF_SUCCEEDS(_python2js_buffer(x));
 
-    // Proxies we've already created are just returned again, so that the
-    // same object on the Python side is always the same object on the
-    // Javascript side.
+  if (PySequence_Check(x)) {
+    return _python2js_sequence(x, map, depth);
+  }
+  return pyproxy_new(x);
+}
+
+static JsRef
+_python2js(PyObject* x, PyObject* map, int depth)
+{
+  if (depth == 0) {
+    RETURN_IF_SUCCEEDS(_python2js_immutable(x, map, 0));
     return pyproxy_new(x);
+  } else {
+    return _python2js_deep(x, map, depth - 1);
   }
 }
 
@@ -300,7 +321,7 @@ _python2js_remove_from_cache(PyObject* map, PyObject* pyparent)
 }
 
 JsRef
-_python2js_cache(PyObject* x, PyObject* map)
+_python2js_cache(PyObject* x, PyObject* map, int depth)
 {
   PyObject* id = PyLong_FromSize_t((size_t)x);
   PyObject* val = PyDict_GetItem(map, id);
@@ -311,7 +332,7 @@ _python2js_cache(PyObject* x, PyObject* map)
       result = hiwire_incref(result);
     }
   } else {
-    result = _python2js(x, map);
+    result = _python2js(x, map, depth);
   }
   Py_DECREF(id);
   return result;
@@ -321,7 +342,7 @@ JsRef
 python2js(PyObject* x)
 {
   PyObject* map = PyDict_New();
-  JsRef result = _python2js_cache(x, map);
+  JsRef result = _python2js_cache(x, map, -1);
   Py_DECREF(map);
 
   if (result == NULL) {
@@ -331,10 +352,63 @@ python2js(PyObject* x)
   return result;
 }
 
+JsRef
+python2js_with_depth(PyObject* x, int depth)
+{
+  PyObject* map = PyDict_New();
+  JsRef result = _python2js_cache(x, map, depth);
+  Py_DECREF(map);
+
+  if (result == NULL) {
+    pythonexc2js();
+  }
+
+  return result;
+}
+
+PyObject* globals;
+
+JsRef
+test_python2js_with_depth(char* name, int depth)
+{
+  PyObject* pyname = PyUnicode_FromString(name);
+  PyObject* pyval = PyDict_GetItem(globals, pyname);
+  if (pyval == NULL) {
+    if (!PyErr_Occurred()) {
+      PyErr_Format(PyExc_KeyError, "%s", name);
+    }
+    Py_DECREF(pyname);
+    pythonexc2js();
+    return NULL;
+  }
+
+  Py_DECREF(pyname);
+  JsRef idval = python2js_with_depth(pyval, depth);
+  return idval;
+}
+
 int
 python2js_init()
 {
   bool success = false;
+  PyObject* __main__ = PyImport_AddModule("__main__"); // borrowed!
+  FAIL_IF_NULL(__main__);
+
+  globals = PyModule_GetDict(__main__);
+  FAIL_IF_NULL(globals);
+
+  EM_ASM({
+    Module.test_python2js_with_depth = function(name, depth)
+    {
+      let pyname = stringToNewUTF8(name);
+      let idresult = _test_python2js_with_depth(pyname, depth);
+      jsresult = Module.hiwire.get_value(idresult);
+      Module.hiwire.decref(idresult);
+      _free(pyname);
+      return jsresult;
+    };
+  });
+
   tbmod = PyImport_ImportModule("traceback");
   FAIL_IF_NULL(tbmod);
   success = true;
