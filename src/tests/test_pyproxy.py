@@ -52,8 +52,9 @@ def test_pyproxy(selenium):
             "get_value",
             "toString",
             "prototype",
-            "arguments",
-            "caller",
+            "apply",
+            "destroy",
+            "$$",
         ]
     )
     assert selenium.run("hasattr(f, 'baz')")
