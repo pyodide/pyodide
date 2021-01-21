@@ -1,5 +1,7 @@
 PYODIDE_ROOT=$(abspath .)
+
 include Makefile.envs
+
 .PHONY=check
 
 FILEPACKAGER=$$EM_DIR/tools/file_packager.py
@@ -13,13 +15,21 @@ PYODIDE_CXX=$(PYODIDE_ROOT)/ccache/em++
 
 CC=emcc
 CXX=em++
+
 OPTFLAGS=-O2
-CFLAGS=$(OPTFLAGS) -g -I$(PYTHONINCLUDE) -fPIC \
-	-Wno-warn-absolute-paths -Werror=int-conversion -Werror=incompatible-pointer-types \
+
+CFLAGS=\
+	$(OPTFLAGS) \
+	-g \
+	-I$(PYTHONINCLUDE) \
+	-fPIC \
+	-Wno-warn-absolute-paths \
+	-Werror=int-conversion \
+	-Werror=incompatible-pointer-types \
 	$(EXTRA_CFLAGS)
 
 LDFLAGS=\
-	-O2 \
+	$(OPTFLAGS) \
 	-s MODULARIZE=1 \
 	$(CPYTHONROOT)/installs/python-$(PYVERSION)/lib/libpython$(PYMINOR).a \
 	-s TOTAL_MEMORY=10485760 \
@@ -38,7 +48,7 @@ LDFLAGS=\
 	-lstdc++ \
 	--memory-init-file 0 \
 	-s "BINARYEN_TRAP_MODE='clamp'" \
-	-s LZ4=1	\
+	-s LZ4=1 \
 	$(EXTRA_LDFLAGS)
 
 all: check \
@@ -49,27 +59,28 @@ all: check \
 	build/packages.json \
 	build/test.html \
 	build/webworker.js \
-	build/webworker_dev.js
+	build/webworker_dev.js \
+
 	echo -e "\nSUCCESS!"
 
 
 build/pyodide.asm.js: \
-		src/core/error_handling.o \
-		src/core/hiwire.o \
-		src/core/js2python.o \
-		src/core/jsproxy.o \
-		src/core/keyboard_interrupt.o \
-		src/core/main.o  \
-		src/core/pyproxy.o \
-		src/core/python2js_buffer.o \
-		src/core/python2js.o \
-		src/core/runpython.o \
-		src/pystone.py \
-		src/_testcapi.py \
-		src/webbrowser.py \
-		\
-		$(wildcard src/pyodide-py/pyodide/*.py) \
-		$(CPYTHONLIB)
+	src/core/error_handling.o \
+	src/core/hiwire.o \
+	src/core/js2python.o \
+	src/core/jsproxy.o \
+	src/core/keyboard_interrupt.o \
+	src/core/main.o  \
+	src/core/pyproxy.o \
+	src/core/python2js_buffer.o \
+	src/core/python2js.o \
+	src/core/runpython.o \
+	src/pystone.py \
+	src/_testcapi.py \
+	src/webbrowser.py \
+	$(wildcard src/pyodide-py/pyodide/*.py) \
+	$(CPYTHONLIB) \
+
 	date +"[%F %T] Building pyodide.asm.js..."
 	[ -d build ] || mkdir build
 	$(CXX) -s EXPORT_NAME="'pyodide'" -o build/pyodide.asm.js $(filter %.o,$^) \
@@ -153,7 +164,7 @@ build/test.data: $(CPYTHONLIB) $(UGLIFYJS)
 	)
 	( \
 		cd build; \
-		python $(FILEPACKAGER) test.data --lz4 --preload ../$(CPYTHONLIB)/test@/lib/python3.8/test --js-output=test.js --export-name=pyodide._module --exclude __pycache__ \
+		python $(FILEPACKAGER) test.data --lz4 --preload ../$(CPYTHONLIB)/test@/lib/python$(PYMINOR)/test --js-output=test.js --export-name=pyodide._module --exclude __pycache__ \
 	)
 	$(UGLIFYJS) build/test.js -o build/test.js
 
