@@ -297,7 +297,9 @@ EM_JS(int, pyproxy_init, (), {
       if(result === -1){
         _pythonexc2js();
       }
-      return result !== 0;
+      let jsresult = Module.hiwire.get_value(result);
+      Module.hiwire.decref(result);
+      return jsresult;
     },
     get: function (jsobj, jskey) {
       if(Reflect.has(jsobj, jskey) && !ignoredTargetFields.includes(jskey)){
