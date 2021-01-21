@@ -1,12 +1,13 @@
 from collections import namedtuple
 from pathlib import Path
 import sys
+import argparse
 
 sys.path.append(str(Path(__file__).parents[2]))
 
 from pyodide_build.pywasmcross import handle_command  # noqa: E402
 from pyodide_build.pywasmcross import f2c  # noqa: E402
-
+from pyodide_build.pywasmcross import make_parser
 
 def _args_wrapper(func):
     """Convert function to take as input / return a string instead of a
@@ -105,3 +106,17 @@ def test_conda_compiler_compat():
     assert handle_command_wrap(
         "gcc -shared -c test.o -B /compiler_compat -o test.so", args
     ) == ("emcc -c test.o -o test.so")
+
+def test_environment_var_substitution(monkeypatch):
+    monkeypatch.setenv("PYODIDE_BASE","pyodide_build_dir")
+    monkeypatch.setenv("BOB","Robert Mc Roberts")
+    monkeypatch.setenv("FRED","Frederick F. Freddertson Esq.")
+    monkeypatch.setenv("JIM","James Ignatius Morrison:Jimmy")
+    call_args="pywasmcross.py --ldflags \"-l$(PYODIDE_BASE)\" --cxxflags $(BOB) --cflags $(FRED) --replace-libs $(JIM)"
+    monkeypatch.setattr(sys,"argv",call_args.split(" "))
+    parser=argparse.ArgumentParser()
+    make_parser(parser)
+    args=parser.parse_args()
+    assert(
+        args.cflags=='Frederick F. Freddertson Esq.' and args.cxxflags=='Robert Mc Roberts'
+        and args.ldflags=='"-lpyodide_build_dir"' and args.replace_libs=='James Ignatius Morrison:Jimmy')
