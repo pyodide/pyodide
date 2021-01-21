@@ -54,6 +54,7 @@
 - Javascript functions imported like `from js import fetch` no longer trigger "invalid invocation" errors (issue [#461](https://github.com/iodide-project/pyodide/issues/461)) and `js.fetch("some_url")` also works now (issue [#768](https://github.com/iodide-project/pyodide/issues/461)).
 [#1126](https://github.com/iodide-project/pyodide/pull/1126)
 - Javascript bound method calls now work correctly with keyword arguments. [#1138](https://github.com/iodide-project/pyodide/pull/1138)
+- Switched from ̀Jedi` to `rlcompleter` for completion in `pyodide.console.InteractiveConsole` and so in `console.html`. This fixes some completion issues (see [#821](https://github.com/iodide-project/pyodide/issues/821) and [#1160](https://github.com/iodide-project/pyodide/issues/821)
 
 ## Version 0.16.1
 *December 25, 2020*

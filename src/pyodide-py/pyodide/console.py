@@ -274,10 +274,6 @@ class InteractiveConsole(code.InteractiveConsole):
         >>> shell.complete("a = 5 ; str.isa")
         (['str.isalnum(', 'str.isalpha(', 'str.isascii('], 8)
         """
-        # not sure if this will be faster with regex like that:
-        # import re
-        # regex = '|'.join(map(re.escape, self.completer_word_break_characters))
-        # start = len(source) - re.search(regex, source[::-1]).start()
         start = max(map(source.rfind, self.completer_word_break_characters)) + 1
         source = source[start:]
         if "." in source:
