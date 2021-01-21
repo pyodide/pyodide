@@ -21,6 +21,7 @@ CFLAGS=$(OPTFLAGS) -g -I$(PYTHONINCLUDE) -fPIC \
 
 LDFLAGS=\
 	-O2 \
+	-s BINARYEN_EXTRA_PASSES="--pass-arg=max-func-params@61" \
 	-s MODULARIZE=1 \
 	$(CPYTHONROOT)/installs/python-$(PYVERSION)/lib/libpython$(PYMINOR).a \
 	-s TOTAL_MEMORY=10485760 \
@@ -33,7 +34,6 @@ LDFLAGS=\
 	-s WASM=1 \
 	-s USE_FREETYPE=1 \
 	-s USE_LIBPNG=1 \
-    -s LZ4=1 \
 	-std=c++14 \
 	-L$(wildcard $(CPYTHONROOT)/build/sqlite*/.libs) -lsqlite3 \
 	$(wildcard $(CPYTHONROOT)/build/bzip2*/libbz2.a) \

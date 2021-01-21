@@ -1,3 +1,13 @@
+The return values of f2c functions are insignificant in most cases, so often it
+is treated as returning void, when it really should return int (values are
+"returned" by writing to pointers passed as an argument, but an obscure feature
+known as alternative returns can cause the return value to be significant).
+
+emscripten is more strict about void vs int returns, so we change everything to
+return int.
+
+Also f2py makes subroutines void. This is fixed in numpy patches.
+
 diff --git a/scipy/_build_utils/_fortran.py b/scipy/_build_utils/_fortran.py
 index 93ca908..038855b 100644
 --- a/scipy/_build_utils/_fortran.py
@@ -51,7 +61,7 @@ index 0f95237..5a7adb7 100644
 +extern int dgeev_(char *jobvl, char *jobvr, int *n, double *a, int *lda, double *wr, double *wi, double *vl, int *ldvl, double *vr, int *ldvr, double *work, int *lwork, int *info);
  #define c_dgeev F_FUNC(dgeev,DGEEV)
 diff --git a/scipy/linalg/_cython_wrapper_generators.py b/scipy/linalg/_cython_wrapper_generators.py
-index 62be001..56acd92 100644
+index 62be001..efb7194 100644
 --- a/scipy/linalg/_cython_wrapper_generators.py
 +++ b/scipy/linalg/_cython_wrapper_generators.py
 @@ -15,7 +15,9 @@ fortran_types = {'int': 'integer',
@@ -172,7 +182,16 @@ index 62be001..56acd92 100644
      return pxd_template.format(name=name, ret_type=ret_type, args=args)
  
  blas_pxd_preamble = """# Within scipy, these wrappers can be used via relative or absolute cimport.
-@@ -559,16 +605,18 @@ def make_c_args(args):
+@@ -535,6 +581,8 @@ def process_fortran_name(name, funcname):
+ 
+ 
+ def fort_subroutine_wrapper(name, ret_type, args):
++    if ret_type=='s':
++        ret_type='d'
+     if name[0] in ['c', 's'] or name in ['zladiv', 'zdotu', 'zdotc']:
+         wrapper = 'w' + name
+     else:
+@@ -559,16 +607,18 @@ def make_c_args(args):
      types = [c_types[arg] for arg in types]
      return ', '.join('{0} *{1}'.format(t, n) for t, n in zip(types, names))
  

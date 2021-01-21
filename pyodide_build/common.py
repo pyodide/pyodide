@@ -15,6 +15,7 @@ DEFAULTLDFLAGS = " ".join(
         "-O2",
         "-Werror",
         "-s", "EMULATE_FUNCTION_POINTER_CASTS=1",
+        "-s",'BINARYEN_EXTRA_PASSES="--pass-arg=max-func-params@61"',
         "-s", "SIDE_MODULE=1",
         "-s", "WASM=1",
         "--memory-init-file", "0",

@@ -2,22 +2,6 @@ diff --git a/src/passes/FuncCastEmulation.cpp b/src/passes/FuncCastEmulation.cpp
 index 9d232c9..35d6d68 100644
 --- a/emsdk/binaryen/src/passes/FuncCastEmulation.cpp
 +++ b/emsdk/binaryen/src/passes/FuncCastEmulation.cpp
-@@ -167,13 +167,14 @@ private:
- struct FuncCastEmulation : public Pass {
-   void run(PassRunner* runner, Module* module) override {
-     Index numParams =
--      std::stoul(runner->options.getArgumentOrDefault("max-func-params", "16"));
-+      std::stoul(runner->options.getArgumentOrDefault("max-func-params", "61"));
-     // we just need the one ABI function type for all indirect calls
-     Signature ABIType(Type(std::vector<Type>(numParams, Type::i64)), Type::i64);
-     // Add a thunk for each function in the table, and do the call through it.
-     std::unordered_map<Name, Name> funcThunks;
-     for (auto& segment : module->table.segments) {
-       for (auto& name : segment.data) {
-+
-         auto iter = funcThunks.find(name);
-         if (iter == funcThunks.end()) {
-           auto thunk = makeThunk(name, module, numParams);
 @@ -184,6 +185,41 @@ struct FuncCastEmulation : public Pass {
          }
        }
