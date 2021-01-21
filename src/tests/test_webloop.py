@@ -44,6 +44,7 @@ def test_return_result(selenium):
                 resolve()
             else:
                 raise Exception(f"Unexpected result {result!r}")
+        import asyncio
         fut = asyncio.ensure_future(foo(998))
         fut.add_done_callback(check_result)
         """,
@@ -67,6 +68,7 @@ def test_capture_exception(selenium):
                 resolve()
             else:
                 raise Exception("Expected fut.result() to raise MyException")
+        import asyncio
         fut = asyncio.ensure_future(foo(998))
         fut.add_done_callback(capture_exception)                
         """,
@@ -82,6 +84,7 @@ def test_await_js_promise(selenium):
             print('fetching data...')
             result = await fetch('console.html')
             resolve()
+        import asyncio
         asyncio.ensure_future(fetch_task())
         """,
     )
