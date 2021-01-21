@@ -4,7 +4,6 @@ include Makefile.envs
 
 FILEPACKAGER=$$EM_DIR/tools/file_packager.py
 UGLIFYJS=$(PYODIDE_ROOT)/node_modules/.bin/uglifyjs
-LESSC=$(PYODIDE_ROOT)/node_modules/.bin/lessc
 
 CPYTHONROOT=cpython
 CPYTHONLIB=$(CPYTHONROOT)/installs/python-$(PYVERSION)/lib/python$(PYMINOR)
@@ -46,7 +45,6 @@ all: check \
 	build/pyodide.asm.js \
 	build/pyodide.js \
 	build/console.html \
-	build/renderedhtml.css \
 	build/test.data \
 	build/packages.json \
 	build/test.html \
@@ -55,16 +53,21 @@ all: check \
 	echo -e "\nSUCCESS!"
 
 
-build/pyodide.asm.js: src/core/main.o src/core/jsimport.o \
-	        src/core/jsproxy.o src/core/js2python.o \
+build/pyodide.asm.js: \
 		src/core/error_handling.o \
+		src/core/hiwire.o \
+		src/core/js2python.o \
+		src/core/jsproxy.o \
+		src/core/keyboard_interrupt.o \
+		src/core/main.o  \
 		src/core/pyproxy.o \
-		src/core/python2js.o \
 		src/core/python2js_buffer.o \
-		src/core/runpython.o src/core/hiwire.o \
-		src/webbrowser.py \
-		src/_testcapi.py \
+		src/core/python2js.o \
+		src/core/runpython.o \
 		src/pystone.py \
+		src/_testcapi.py \
+		src/webbrowser.py \
+		\
 		$(wildcard src/pyodide-py/pyodide/*.py) \
 		$(CPYTHONLIB)
 	date +"[%F %T] Building pyodide.asm.js..."
@@ -98,9 +101,6 @@ build/console.html: src/templates/console.html
 	cp $< $@
 	sed -i -e 's#{{ PYODIDE_BASE_URL }}#$(PYODIDE_BASE_URL)#g' $@
 
-
-build/renderedhtml.css: src/css/renderedhtml.less $(LESSC)
-	$(LESSC) $< $@
 
 build/webworker.js: src/webworker.js
 	cp $< $@
@@ -146,7 +146,7 @@ clean-all: clean
 	$(CC) -o $@ -c $< $(CFLAGS) -Isrc/core/
 
 
-build/test.data: $(CPYTHONLIB)
+build/test.data: $(CPYTHONLIB) $(UGLIFYJS)
 	( \
 		cd $(CPYTHONLIB)/test; \
 		find . -type d -name __pycache__ -prune -exec rm -rf {} \; \
@@ -158,8 +158,9 @@ build/test.data: $(CPYTHONLIB)
 	$(UGLIFYJS) build/test.js -o build/test.js
 
 
-$(UGLIFYJS) $(LESSC): emsdk/emsdk/.complete
-	npm i --no-save uglify-js lessc
+$(UGLIFYJS): emsdk/emsdk/.complete
+	npm i --no-save uglify-js
+	touch -h $(UGLIFYJS)
 
 
 $(PYODIDE_EMCC):

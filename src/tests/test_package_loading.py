@@ -93,7 +93,7 @@ def test_load_packages_multiple(selenium_standalone, packages):
 def test_load_packages_sequential(selenium_standalone, packages):
     selenium = selenium_standalone
     promises = ",".join('pyodide.loadPackage("{}")'.format(x) for x in packages)
-    selenium.run_js_async("return Promise.all([{}])".format(promises))
+    selenium.run_js("return Promise.all([{}])".format(promises))
     selenium.run(f"import {packages[0]}")
     selenium.run(f"import {packages[1]}")
     # The log must show that each package is loaded exactly once,

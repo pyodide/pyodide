@@ -213,3 +213,28 @@ def test_run_python_with_locals(selenium):
     with pytest.raises(selenium.JavascriptException, match=msg):
         selenium.run("x")
     assert selenium.run("y") == 3
+
+
+def test_keyboard_interrupt(selenium):
+    assert selenium.run_js(
+        """
+        x = new Int8Array(1)
+        pyodide._module.setInterruptBuffer(x)
+        window.triggerKeyboardInterrupt = function(){
+            x[0] = 2;
+        }
+        try { 
+            pyodide.runPython(`
+                from js import triggerKeyboardInterrupt
+                x = 0
+                while True:
+                    x += 1
+                    if x == 2000:
+                        triggerKeyboardInterrupt()
+            `)
+        } catch(e){}
+        return pyodide.runPython(`
+            2000 < x < 2500
+        `)
+        """
+    )

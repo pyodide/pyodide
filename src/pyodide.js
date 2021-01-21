@@ -2,11 +2,11 @@
  * The main bootstrap script for loading pyodide.
  */
 
-var languagePluginLoader = new Promise((resolve, reject) => {
+globalThis.languagePluginLoader = new Promise((resolve, reject) => {
   // Note: PYODIDE_BASE_URL is an environement variable replaced in
   // in this template in the Makefile. It's recommended to always set
   // languagePluginUrl in any case.
-  var baseURL = self.languagePluginUrl || '{{ PYODIDE_BASE_URL }}';
+  let baseURL = self.languagePluginUrl || '{{ PYODIDE_BASE_URL }}';
   baseURL = baseURL.substr(0, baseURL.lastIndexOf('/')) + '/';
 
   ////////////////////////////////////////////////////////////
@@ -317,10 +317,13 @@ var languagePluginLoader = new Promise((resolve, reject) => {
     'runPython',
     'runPythonAsync',
     'version',
+    'registerJsModule',
+    'unregisterJsModule',
   ];
 
   function makePublicAPI(module, public_api) {
-    var namespace = {_module : module};
+    let namespace = {_module : module};
+    module.public_api = namespace;
     for (let name of public_api) {
       namespace[name] = module[name];
     }
@@ -337,6 +340,27 @@ var languagePluginLoader = new Promise((resolve, reject) => {
   Module.noWasmDecoding = true;
   Module.preloadedWasm = {};
   let isFirefox = navigator.userAgent.toLowerCase().indexOf('firefox') > -1;
+
+  Module.fatal_error = function(e) {
+    for (let [key, value] of Object.entries(Module.public_api)) {
+      if (key.startsWith("_")) {
+        // delete Module.public_api[key];
+        continue;
+      }
+      // Have to do this case first because typeof(some_pyproxy) === "function".
+      if (Module.PyProxy.isPyProxy(value)) {
+        value.destroy();
+        continue;
+      }
+      if (typeof (value) === "function") {
+        Module.public_api[key] = function() {
+          throw Error("Pyodide has suffered a fatal error, refresh the page. " +
+                      "Please report this to the Pyodide maintainers.");
+        }
+      }
+    }
+    throw e;
+  };
 
   Module.runPython = code => Module.pyodide_py.eval_code(code, Module.globals);
   Module.runPythonWithLocals = code =>
@@ -371,6 +395,100 @@ var languagePluginLoader = new Promise((resolve, reject) => {
     return Module.runPython(code);
   };
 
+  Module.registerJsModule = function(
+      name, module) { Module.pyodide_py.register_js_module(name, module); };
+  Module.unregisterJsModule = function(
+      name) { Module.pyodide_py.unregister_js_module(name); };
+
+  Module.function_supports_kwargs = function(funcstr) {
+    // This is basically a finite state machine (except for paren counting)
+    // Start at beginning of argspec
+    let idx = funcstr.indexOf("(") + 1;
+    // States:
+    // START_ARG -- Start of an argument. We leave this state when we see a non
+    // whitespace character.
+    //    If the first nonwhitespace character we see is `{` this is an object
+    //    destructuring argument. Else it's not. When we see non whitespace goto
+    //    state ARG and set `arg_is_obj_dest` true if it's "{", else false.
+    // ARG -- we're in the middle of an argument. Count parens. On comma, if
+    // parens_depth === 0 goto state START_ARG, on quote set
+    //      set quote_start and goto state QUOTE.
+    // QUOTE -- We're in a quote. Record quote_start in quote_start and look for
+    // a matching end quote.
+    //    On end quote, goto state ARGS. If we see "\\" goto state QUOTE_ESCAPE.
+    // QUOTE_ESCAPE -- unconditionally goto state QUOTE.
+    // If we see a ) when parens_depth === 0, return arg_is_obj_dest.
+    let START_ARG = 1;
+    let ARG = 2;
+    let QUOTE = 3;
+    let QUOTE_ESCAPE = 4;
+    let paren_depth = 0;
+    let arg_start = 0;
+    let arg_is_obj_dest = false;
+    let quote_start = undefined;
+    let state = START_ARG;
+    // clang-format off
+    for (i = idx; i < funcstr.length; i++) {
+      let x = funcstr[i];
+      if(state === QUOTE){
+        switch(x){
+          case quote_start:
+            // found match, go back to ARG
+            state = ARG;
+            continue;
+          case "\\":
+            state = QUOTE_ESCAPE;
+            continue;
+          default:
+            continue;
+        }
+      }
+      if(state === QUOTE_ESCAPE){
+        state = QUOTE;
+        continue;
+      }
+      // Skip whitespace.
+      if(x === " " || x === "\n" || x === "\t"){
+        continue;
+      }
+      if(paren_depth === 0){
+        if(x === ")" && state !== QUOTE && state !== QUOTE_ESCAPE){
+          // We hit closing brace which ends argspec.
+          // We have to handle this up here in case argspec ends in a trailing comma
+          // (if we're in state START_ARG, the next check would clobber arg_is_obj_dest).
+          return arg_is_obj_dest;
+        }
+        if(x === ","){
+          state = START_ARG;
+          continue;
+        }
+        // otherwise fall through
+      }
+      if(state === START_ARG){
+        // Nonwhitespace character in START_ARG so now we're in state arg.
+        state = ARG;
+        arg_is_obj_dest = x === "{";
+        // don't continue, fall through to next switch
+      }
+      switch(x){
+        case "[": case "{": case "(":
+          paren_depth ++;
+          continue;
+        case "]": case "}": case ")":
+          paren_depth--;
+          continue;
+        case "'": case '"': case '\`':
+          state = QUOTE;
+          quote_start = x;
+          continue;
+      }
+    }
+    // Correct exit is paren_depth === 0 && x === ")" test above.
+    throw new Error("Assertion failure: this is a logic error in \
+                     hiwire_function_supports_kwargs");
+    // clang-format on
+  };
+
   Module.locateFile = (path) => baseURL + path;
   Module.postRun = async () => {
     Module.version = Module.pyodide_py.__version__;
@@ -378,6 +496,7 @@ var languagePluginLoader = new Promise((resolve, reject) => {
     let response = await fetch(`${baseURL}packages.json`);
     let json = await response.json();
     fixRecursionLimit(self.pyodide);
+    self.pyodide.registerJsModule("js", globalThis);
     self.pyodide = makePublicAPI(self.pyodide, PUBLIC_API);
     self.pyodide._module.packages = json;
     resolve();
