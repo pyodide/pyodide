@@ -15,9 +15,7 @@ PYODIDE_CXX=$(PYODIDE_ROOT)/ccache/em++
 
 CC=emcc
 CXX=em++
-
 OPTFLAGS=-O2
-
 CFLAGS=\
 	$(OPTFLAGS) \
 	-g \
@@ -27,7 +25,6 @@ CFLAGS=\
 	-Werror=int-conversion \
 	-Werror=incompatible-pointer-types \
 	$(EXTRA_CFLAGS)
-
 LDFLAGS=\
 	$(OPTFLAGS) \
 	-s MODULARIZE=1 \
@@ -59,8 +56,7 @@ all: check \
 	build/packages.json \
 	build/test.html \
 	build/webworker.js \
-	build/webworker_dev.js \
-
+	build/webworker_dev.js
 	echo -e "\nSUCCESS!"
 
 
@@ -79,8 +75,7 @@ build/pyodide.asm.js: \
 	src/_testcapi.py \
 	src/webbrowser.py \
 	$(wildcard src/pyodide-py/pyodide/*.py) \
-	$(CPYTHONLIB) \
-
+	$(CPYTHONLIB)
 	date +"[%F %T] Building pyodide.asm.js..."
 	[ -d build ] || mkdir build
 	$(CXX) -s EXPORT_NAME="'pyodide'" -o build/pyodide.asm.js $(filter %.o,$^) \
