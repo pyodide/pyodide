@@ -95,30 +95,10 @@ class SeleniumWrapper:
         self.driver.execute_script("window.logs = []")
 
     def run(self, code):
-        return self.run_js(
-            f"""
-            let result = pyodide.runPython({code!r});
-            if(result && result.deepCopyToJavascript){{
-                let converted_result = result.deepCopyToJavascript();
-                result.destroy();
-                return converted_result;
-            }}
-            return result;
-            """
-        )
+        return self.run_js("return pyodide.runPython({!r})".format(code))
 
     def run_async(self, code):
-        return self.run_js(
-            f"""
-            let result = await pyodide.runPythonAsync({code!r});
-            if(result && result.deepCopyToJavascript){{
-                let converted_result = result.deepCopyToJavascript();
-                result.destroy();
-                return converted_result;
-            }}
-            return result;
-            """
-        )
+        return self.run_js("return pyodide.runPythonAsync({!r})".format(code))
 
     def run_js(self, code):
         if isinstance(code, str) and code.startswith("\n"):
