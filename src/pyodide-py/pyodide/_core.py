@@ -2,7 +2,7 @@
 import platform
 
 if platform.system() == "Emscripten":
-    from _pyodide_core import JsProxy, JsMethod, JsException
+    from _pyodide_core import JsProxy, JsMethod, JsException, JsBuffer
 else:
     # Can add shims here if we are so inclined.
     class JsException(Exception):
@@ -19,6 +19,11 @@ else:
 
     class JsMethod:
         """A proxy to make it possible to call Javascript bound methods from Python."""
+
+        # Defined in jsproxy.c
+
+    class JsBuffer:
+        """A proxy to make it possible to call Javascript typed arrays from Python."""
 
         # Defined in jsproxy.c
 

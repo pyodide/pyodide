@@ -358,11 +358,6 @@ python2js_with_depth(PyObject* x, int depth)
   PyObject* map = PyDict_New();
   JsRef result = _python2js_cache(x, map, depth);
   Py_DECREF(map);
-
-  if (result == NULL) {
-    pythonexc2js();
-  }
-
   return result;
 }
 

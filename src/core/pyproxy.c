@@ -69,10 +69,9 @@ _pyproxy_set(PyObject* pyobj, JsRef idkey, JsRef idval)
   Py_DECREF(pyval);
 
   if (result) {
-    pythonexc2js();
     return NULL;
   }
-  return idval;
+  return hiwire_incref(idval);
 }
 
 JsRef
@@ -89,7 +88,6 @@ _pyproxy_deleteProperty(PyObject* pyobj, JsRef idkey)
   Py_DECREF(pykey);
 
   if (ret) {
-    pythonexc2js();
     return NULL;
   }
 
@@ -102,7 +100,6 @@ _pyproxy_ownKeys(PyObject* pyobj)
   PyObject* pydir = PyObject_Dir(pyobj);
 
   if (pydir == NULL) {
-    pythonexc2js();
     return NULL;
   }
 
@@ -133,7 +130,6 @@ _pyproxy_apply(PyObject* pyobj, JsRef idargs)
   PyObject* pyresult = PyObject_Call(pyobj, pyargs, NULL);
   if (pyresult == NULL) {
     Py_DECREF(pyargs);
-    pythonexc2js();
     return NULL;
   }
   JsRef idresult = python2js(pyresult);
@@ -191,7 +187,15 @@ EM_JS(int, pyproxy_init, (), {
   Module.PyProxyPublicMethods = {
     toString : function() {
       let ptrobj = _getPtr(this);
-      let jsref_repr = __pyproxy_repr(ptrobj);
+      let jsref_repr;
+      try {
+        jsref_repr = __pyproxy_repr(ptrobj);
+      } catch(e){
+        Module.fatal_error(e);
+      }
+      if(jsref_repr === 0){
+        _pythonexc2js();
+      }
       let repr = Module.hiwire.get_value(jsref_repr);
       Module.hiwire.decref(jsref_repr);
       return repr;
@@ -204,10 +208,19 @@ EM_JS(int, pyproxy_init, (), {
     apply : function(jsthis, jsargs) {
       let ptrobj = _getPtr(this);
       let idargs = Module.hiwire.new_value(jsargs);
-      let idresult = __pyproxy_apply(ptrobj, idargs);
+      let idresult;
+      try {
+        idresult = __pyproxy_apply(ptrobj, idargs);
+      } catch(e){
+        Module.fatal_error(e);
+      } finally {
+        Module.hiwire.decref(idargs);
+      }
+      if(idresult === 0){
+        _pythonexc2js();
+      }
       let jsresult = Module.hiwire.get_value(idresult);
       Module.hiwire.decref(idresult);
-      Module.hiwire.decref(idargs);
       return jsresult;
     },
     shallowCopyToJavascript : function(){
@@ -236,9 +249,18 @@ EM_JS(int, pyproxy_init, (), {
       }
       let ptrobj = _getPtr(jsobj);
       let idkey = Module.hiwire.new_value(jskey);
-      let result = __pyproxy_has(ptrobj, idkey) !== 0;
-      Module.hiwire.decref(idkey);
-      return result;
+      let result;
+      try {
+        result = __pyproxy_has(ptrobj, idkey);
+      } catch(e){
+        Module.fatal_error(e);
+      } finally {
+        Module.hiwire.decref(idkey);
+      }
+      if(result === -1){
+        _pythonexc2js();
+      }
+      return result !== 0;
     },
     get: function (jsobj, jskey) {
       if(Reflect.has(jsobj, jskey) && !ignoredTargetFields.includes(jskey)){
@@ -246,9 +268,18 @@ EM_JS(int, pyproxy_init, (), {
       }
       let ptrobj = _getPtr(jsobj);
       let idkey = Module.hiwire.new_value(jskey);
-      let idresult = __pyproxy_get(ptrobj, idkey);
+      let idresult;
+      try {
+        idresult = __pyproxy_get(ptrobj, idkey);
+      } catch(e) {
+        Module.fatal_error(e);
+      } finally {
+        Module.hiwire.decref(idkey);
+      }
+      if(idresult === 0){
+        _pythonexc2js();
+      }
       let jsresult = Module.hiwire.get_value(idresult);
-      Module.hiwire.decref(idkey);
       Module.hiwire.decref(idresult);
       return jsresult;
     },
@@ -259,10 +290,19 @@ EM_JS(int, pyproxy_init, (), {
       let ptrobj = _getPtr(jsobj);
       let idkey = Module.hiwire.new_value(jskey);
       let idval = Module.hiwire.new_value(jsval);
-      let idresult = __pyproxy_set(ptrobj, idkey, idval);
+      let idresult;
+      try {
+        idresult = __pyproxy_set(ptrobj, idkey, idval);
+      } catch(e) {
+        Module.fatal_error(e);
+      } finally {
+        Module.hiwire.decref(idkey);
+        Module.hiwire.decref(idval);
+      }
+      if(idresult === 0){
+        _pythonexc2js();
+      }
       let jsresult = Module.hiwire.get_value(idresult);
-      Module.hiwire.decref(idkey);
-      Module.hiwire.decref(idval);
       Module.hiwire.decref(idresult);
       return jsresult;
     },
@@ -272,10 +312,19 @@ EM_JS(int, pyproxy_init, (), {
       }
       let ptrobj = _getPtr(jsobj);
       let idkey = Module.hiwire.new_value(jskey);
-      let idresult = __pyproxy_deleteProperty(ptrobj, idkey);
+      let idresult;
+      try {
+        idresult = __pyproxy_deleteProperty(ptrobj, idkey);
+      } catch(e) {
+        Module.fatal_error(e);
+      } finally {
+        Module.hiwire.decref(idkey);
+      }
+      if(idresult === 0){
+        _pythonexc2js();
+      }
       let jsresult = Module.hiwire.get_value(idresult);
       Module.hiwire.decref(idresult);
-      Module.hiwire.decref(idkey);
       return jsresult;
     },
     ownKeys: function (jsobj) {
@@ -284,7 +333,12 @@ EM_JS(int, pyproxy_init, (), {
         result.delete(key);
       }
       let ptrobj = _getPtr(jsobj);
-      let idresult = __pyproxy_ownKeys(ptrobj);
+      let idresult;
+      try {
+        idresult = __pyproxy_ownKeys(ptrobj);
+      } catch(e) {
+        Module.fatal_error(e);
+      }
       let jsresult = Module.hiwire.get_value(idresult);
       Module.hiwire.decref(idresult);
       for(let key of jsresult){
