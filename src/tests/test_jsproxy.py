@@ -12,7 +12,7 @@ def test_jsproxy_dir(selenium):
             from js import a
             from js import b
             [dir(a), dir(b)]
-        `).deepCopyToJavascript();
+        `);
         """
     )
     jsproxy_items = set(
@@ -49,7 +49,7 @@ def test_jsproxy_getattr(selenium):
         return pyodide.runPython(`
             from js import a
             [ a.x, a.y, a.typeof ]
-        `).deepCopyToJavascript();
+        `);
         """
         )
         == [2, "9", "object"]
@@ -195,7 +195,7 @@ def test_jsproxy_call(selenium):
             from js import f
             [f(*range(n)) for n in range(10)]
             `
-        ).deepCopyToJavascript();
+        );
         """
         )
         == list(range(10))
@@ -379,7 +379,7 @@ def test_mount_object(selenium):
             import b
             result += [a.s, dir(a), dir(b)]
             result
-        `).deepCopyToJavascript()
+        `)
         """
     )
     assert result[:3] == ["x1", "x2", 3]

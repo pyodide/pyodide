@@ -342,7 +342,7 @@ JsRef
 python2js(PyObject* x)
 {
   PyObject* map = PyDict_New();
-  JsRef result = _python2js_cache(x, map, 0);
+  JsRef result = _python2js_cache(x, map, -1);
   Py_DECREF(map);
 
   if (result == NULL) {

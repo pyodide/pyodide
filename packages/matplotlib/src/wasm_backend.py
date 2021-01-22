@@ -190,7 +190,7 @@ class FigureCanvasWasm(backend_agg.FigureCanvasAgg):
         rubberband.addEventListener("keydown", self.onkeydown)
         context = rubberband.getContext("2d")
         context.strokeStyle = "#000000"
-        # context.setLineDash([2, 2])
+        context.setLineDash([2, 2])
         canvas_div.appendChild(rubberband)
 
         div.appendChild(canvas_div)
