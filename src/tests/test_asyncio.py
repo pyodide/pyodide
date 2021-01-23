@@ -262,26 +262,33 @@ def test_eval_code_await_error(selenium):
             """
         )
 
+
 def test_await_pyproxy(selenium):
-    assert selenium.run_js(
-        """
-        let c = pyodide._module.pyodide_py._base.eval_code_async("1+1")
+    assert (
+        selenium.run_js(
+            """
+        let c = pyodide._module.pyodide_py._base.eval_code_async("1+1");
         return await c;
         """
-    ) == 2
+        )
+        == 2
+    )
 
-
-    assert selenium.run_js(
-        """
+    assert (
+        selenium.run_js(
+            """
         let finally_occurred = false;
         let c = pyodide._module.pyodide_py._base.eval_code_async("1+1");
         let result = await c.finally(() => { finally_occurred = true; });
         return [result, finally_occurred];
         """
-    ) == [2, True]
+        )
+        == [2, True]
+    )
 
-    assert selenium.run_js(
-        """
+    assert (
+        selenium.run_js(
+            """
         let finally_occurred = false;
         let err_occurred = false;
         let c = pyodide._module.pyodide_py._base.eval_code_async("raise ValueError('hi')");
@@ -292,7 +299,9 @@ def test_await_pyproxy(selenium):
         }
         return [finally_occurred, err_occurred];
         """
-    ) == [True, True]
+        )
+        == [True, True]
+    )
 
     assert selenium.run_js(
         """
@@ -308,5 +317,20 @@ def test_await_pyproxy(selenium):
             await (await fetch('packages.json')).json()
         `);
         return (!!packages.dependencies) && (!!packages.import_name_to_package_name);
+        """
+    )
+
+    assert selenium.run_js(
+        """
+        let c = pyodide._module.pyodide_py._base.eval_code_async("1+1");
+        await c;
+        let err_occurred = false;
+        try {
+            // Triggers: cannot await already awaited coroutine
+            await c;
+        } catch(e){
+            err_occurred = true;
+        }
+        return err_occurred;
         """
     )

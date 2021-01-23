@@ -151,7 +151,9 @@ _pyproxy_destroy(PyObject* ptrobj)
   EM_ASM({ delete Module.PyProxies[$0]; }, ptrobj);
 }
 
-bool _pyproxy_is_awaitable(PyObject* pyobject){
+bool
+_pyproxy_is_awaitable(PyObject* pyobject)
+{
   PyObject* awaitable = _PyCoro_GetAwaitableIter(pyobject);
   PyErr_Clear();
   bool result = awaitable != NULL;
@@ -168,24 +170,25 @@ typedef struct {
 // clang-format on
 
 static void
-FutureDoneCallback_dealloc(FutureDoneCallback *self)
+FutureDoneCallback_dealloc(FutureDoneCallback* self)
 {
-    hiwire_CLEAR(self->resolve_handle);
-    hiwire_CLEAR(self->reject_handle);
-    Py_TYPE(self)->tp_free((PyObject *) self);
+  hiwire_CLEAR(self->resolve_handle);
+  hiwire_CLEAR(self->reject_handle);
+  Py_TYPE(self)->tp_free((PyObject*)self);
 }
 
 int
-FutureDoneCallback_call_resolve(FutureDoneCallback* self, PyObject* result){
+FutureDoneCallback_call_resolve(FutureDoneCallback* self, PyObject* result)
+{
   bool success = false;
-  JsRef result_js = NULL; 
+  JsRef result_js = NULL;
   JsRef idargs = NULL;
   JsRef output = NULL;
   result_js = python2js(result);
   idargs = hiwire_array();
   hiwire_push_array(idargs, result_js);
   output = hiwire_call(self->resolve_handle, idargs);
-  
+
   success = true;
 finally:
   hiwire_CLEAR(result_js);
@@ -194,9 +197,9 @@ finally:
   return success ? 0 : -1;
 }
 
-
 int
-FutureDoneCallback_call_reject(FutureDoneCallback* self){
+FutureDoneCallback_call_reject(FutureDoneCallback* self)
+{
   bool success = false;
   JsRef excval = NULL;
   JsRef idargs = NULL;
@@ -206,7 +209,7 @@ FutureDoneCallback_call_reject(FutureDoneCallback* self){
   idargs = hiwire_array();
   hiwire_push_array(idargs, excval);
   result = hiwire_call(self->reject_handle, idargs);
-  
+
   success = true;
 finally:
   hiwire_CLEAR(excval);
@@ -216,19 +219,22 @@ finally:
 }
 
 PyObject*
-FutureDoneCallback_call(FutureDoneCallback *self, PyObject *args, PyObject *kwargs){
+FutureDoneCallback_call(FutureDoneCallback* self,
+                        PyObject* args,
+                        PyObject* kwargs)
+{
   PyObject* fut;
-  if(!PyArg_UnpackTuple(args, "future_done_callback", 1, 1, &fut)){
+  if (!PyArg_UnpackTuple(args, "future_done_callback", 1, 1, &fut)) {
     return NULL;
   }
   PyObject* result = _PyObject_CallMethodIdObjArgs(fut, &PyId_result, NULL);
   int errcode;
-  if(result != NULL){
+  if (result != NULL) {
     errcode = FutureDoneCallback_call_resolve(self, result);
   } else {
     errcode = FutureDoneCallback_call_reject(self);
   }
-  if(errcode == 0){
+  if (errcode == 0) {
     Py_RETURN_NONE;
   } else {
     return NULL;
@@ -518,15 +524,16 @@ EM_JS_NUM(int, pyproxy_init_js, (), {
 });
 
 int
-pyproxy_init(){
+pyproxy_init()
+{
   asyncio = PyImport_ImportModule("asyncio");
-  if(asyncio == NULL){
+  if (asyncio == NULL) {
     return -1;
   }
-  if(PyType_Ready(&FutureDoneCallbackType)){
+  if (PyType_Ready(&FutureDoneCallbackType)) {
     return -1;
   }
-  if(pyproxy_init_js()){
+  if (pyproxy_init_js()) {
     return -1;
   }
   return 0;

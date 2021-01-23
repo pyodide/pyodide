@@ -53,7 +53,7 @@ finally:
   Py_CLEAR(value);
   Py_CLEAR(traceback);
   hiwire_CLEAR(pyexc_proxy);
-  if(!success){
+  if (!success) {
     hiwire_CLEAR(jserror);
   }
   return jserror;
@@ -445,7 +445,7 @@ python2js_init()
         this.name = this.constructor.name;
         this.pythonError = pythonError;
       }
-    }; 
+    };
     Module.PythonError = PythonError;
 
     Module.test_python2js_with_depth = function(name, depth)
