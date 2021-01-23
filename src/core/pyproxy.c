@@ -7,6 +7,12 @@
 #include "js2python.h"
 #include "python2js.h"
 
+_Py_IDENTIFIER(result);
+_Py_IDENTIFIER(ensure_future);
+_Py_IDENTIFIER(add_done_callback);
+
+static PyObject* asyncio;
+
 JsRef
 _pyproxy_repr(PyObject* pyobj)
 {
@@ -145,6 +151,131 @@ _pyproxy_destroy(PyObject* ptrobj)
   EM_ASM({ delete Module.PyProxies[$0]; }, ptrobj);
 }
 
+bool _pyproxy_is_awaitable(PyObject* pyobject){
+  PyObject* awaitable = _PyCoro_GetAwaitableIter(pyobject);
+  PyErr_Clear();
+  bool result = awaitable != NULL;
+  Py_CLEAR(awaitable);
+  return result;
+}
+
+// clang-format off
+typedef struct {
+    PyObject_HEAD
+    JsRef resolve_handle;
+    JsRef reject_handle;
+} FutureDoneCallback;
+// clang-format on
+
+static void
+FutureDoneCallback_dealloc(FutureDoneCallback *self)
+{
+    hiwire_CLEAR(self->resolve_handle);
+    hiwire_CLEAR(self->reject_handle);
+    Py_TYPE(self)->tp_free((PyObject *) self);
+}
+
+int
+FutureDoneCallback_call_resolve(FutureDoneCallback* self, PyObject* result){
+  bool success = false;
+  JsRef result_js = NULL; 
+  JsRef idargs = NULL;
+  JsRef output = NULL;
+  result_js = python2js(result);
+  idargs = hiwire_array();
+  hiwire_push_array(idargs, result_js);
+  output = hiwire_call(self->resolve_handle, idargs);
+  
+  success = true;
+finally:
+  hiwire_CLEAR(result_js);
+  hiwire_CLEAR(idargs);
+  hiwire_CLEAR(output);
+  return success ? 0 : -1;
+}
+
+
+int
+FutureDoneCallback_call_reject(FutureDoneCallback* self){
+  bool success = false;
+  JsRef excval = NULL;
+  JsRef idargs = NULL;
+  JsRef result = NULL;
+  excval = wrap_exception();
+  FAIL_IF_NULL(excval);
+  idargs = hiwire_array();
+  hiwire_push_array(idargs, excval);
+  result = hiwire_call(self->reject_handle, idargs);
+  
+  success = true;
+finally:
+  hiwire_CLEAR(excval);
+  hiwire_CLEAR(idargs);
+  hiwire_CLEAR(result);
+  return success ? 0 : -1;
+}
+
+PyObject*
+FutureDoneCallback_call(FutureDoneCallback *self, PyObject *args, PyObject *kwargs){
+  PyObject* fut;
+  if(!PyArg_UnpackTuple(args, "future_done_callback", 1, 1, &fut)){
+    return NULL;
+  }
+  PyObject* result = _PyObject_CallMethodIdObjArgs(fut, &PyId_result, NULL);
+  int errcode;
+  if(result != NULL){
+    errcode = FutureDoneCallback_call_resolve(self, result);
+  } else {
+    errcode = FutureDoneCallback_call_reject(self);
+  }
+  if(errcode == 0){
+    Py_RETURN_NONE;
+  } else {
+    return NULL;
+  }
+}
+
+// clang-format off
+static PyTypeObject FutureDoneCallbackType = {
+    .tp_name = "FutureDoneCallback",
+    .tp_doc = "Callback for internal use to allow awaiting a future from javascript",
+    .tp_basicsize = sizeof(FutureDoneCallback),
+    .tp_itemsize = 0,
+    .tp_flags = Py_TPFLAGS_DEFAULT,
+    .tp_dealloc = (destructor) FutureDoneCallback_dealloc,
+    .tp_call = (ternaryfunc) FutureDoneCallback_call,
+};
+
+static PyObject *
+FutureDoneCallback_cnew(JsRef resolve_handle, JsRef reject_handle)
+{
+    FutureDoneCallback *self = (FutureDoneCallback *) FutureDoneCallbackType.tp_alloc(&FutureDoneCallbackType, 0);
+    self->resolve_handle = hiwire_incref(resolve_handle);
+    self->reject_handle = hiwire_incref(reject_handle);
+    return (PyObject *) self;
+}
+
+
+int
+_pyproxy_ensure_future(PyObject* pyobject, JsRef resolve_handle, JsRef reject_handle){
+  bool success = false;
+  PyObject* future = NULL;
+  PyObject* callback = NULL;
+  PyObject* retval = NULL;
+  future = _PyObject_CallMethodIdObjArgs(asyncio, &PyId_ensure_future, pyobject, NULL);
+  FAIL_IF_NULL(future);
+  callback = FutureDoneCallback_cnew(resolve_handle, reject_handle);
+  retval = _PyObject_CallMethodIdObjArgs(future, &PyId_add_done_callback, callback);
+  FAIL_IF_NULL(retval);
+
+  success = true;
+finally:
+  Py_CLEAR(future);
+  Py_CLEAR(callback);
+  Py_CLEAR(retval);
+  return success ? 0 : -1;
+}
+
 EM_JS_REF(JsRef, pyproxy_new, (PyObject * ptrobj), {
   // Technically, this leaks memory, since we're holding on to a reference
   // to the proxy forever.  But we have that problem anyway since we don't
@@ -162,11 +293,15 @@ EM_JS_REF(JsRef, pyproxy_new, (PyObject * ptrobj), {
   Object.assign(target, Module.PyProxyPublicMethods);
   let proxy = new Proxy(target, Module.PyProxyHandlers);
   Module.PyProxies[ptrobj] = proxy;
+  let is_awaitable = __pyproxy_is_awaitable(ptrobj);
+  if(is_awaitable){
+    Object.assign(target, Module.PyProxyAwaitableMethods);
+  }
 
   return Module.hiwire.new_value(proxy);
 });
 
-EM_JS(int, pyproxy_init, (), {
+EM_JS_NUM(int, pyproxy_init_js, (), {
   // clang-format off
   Module.PyProxies = {};
   function _getPtr(jsobj) {
@@ -183,6 +318,45 @@ EM_JS(int, pyproxy_init, (), {
       return jsobj && jsobj['$$'] !== undefined && jsobj['$$']['type'] === 'PyProxy';
     },
   };
+
+  Module.PyProxyAwaitableMethods = {
+    _ensure_future : function(){
+      let resolve_handle_id = 0;
+      let reject_handle_id = 0;
+      let resolveHandle;
+      let rejectHandle;
+      let promise;
+      try {
+        promise = new Promise((resolve, reject) => {
+          resolveHandle = resolve;
+          rejectHandle = reject;
+        });
+        resolve_handle_id = Module.hiwire.new_value(resolveHandle);
+        reject_handle_id = Module.hiwire.new_value(rejectHandle);
+        let ptrobj = _getPtr(this);
+        let errcode = __pyproxy_ensure_future(ptrobj, resolve_handle_id, reject_handle_id);
+        if(errcode === -1){
+          _pythonexc2js();
+        }
+      } finally {
+        Module.hiwire.decref(resolve_handle_id);
+        Module.hiwire.decref(reject_handle_id);
+      }
+      return promise;
+    },
+    then : function(onFulfilled, onRejected){
+      let promise = this._ensure_future();
+      return promise.then(onFulfilled, onRejected);
+    },
+    catch : function(onRejected){
+      let promise = this._ensure_future();
+      return promise.catch(onRejected);
+    },
+    finally : function(onFinally){
+      let promise = this._ensure_future();
+      return promise.finally(onFinally);
+    }
+  }
 
   Module.PyProxyPublicMethods = {
     toString : function() {
@@ -342,3 +516,18 @@ EM_JS(int, pyproxy_init, (), {
   return 0;
 // clang-format on
 });
+
+int
+pyproxy_init(){
+  asyncio = PyImport_ImportModule("asyncio");
+  if(asyncio == NULL){
+    return -1;
+  }
+  if(PyType_Ready(&FutureDoneCallbackType)){
+    return -1;
+  }
+  if(pyproxy_init_js()){
+    return -1;
+  }
+  return 0;
+}
