@@ -319,45 +319,6 @@ EM_JS_NUM(int, pyproxy_init_js, (), {
     },
   };
 
-  Module.PyProxyAwaitableMethods = {
-    _ensure_future : function(){
-      let resolve_handle_id = 0;
-      let reject_handle_id = 0;
-      let resolveHandle;
-      let rejectHandle;
-      let promise;
-      try {
-        promise = new Promise((resolve, reject) => {
-          resolveHandle = resolve;
-          rejectHandle = reject;
-        });
-        resolve_handle_id = Module.hiwire.new_value(resolveHandle);
-        reject_handle_id = Module.hiwire.new_value(rejectHandle);
-        let ptrobj = _getPtr(this);
-        let errcode = __pyproxy_ensure_future(ptrobj, resolve_handle_id, reject_handle_id);
-        if(errcode === -1){
-          _pythonexc2js();
-        }
-      } finally {
-        Module.hiwire.decref(resolve_handle_id);
-        Module.hiwire.decref(reject_handle_id);
-      }
-      return promise;
-    },
-    then : function(onFulfilled, onRejected){
-      let promise = this._ensure_future();
-      return promise.then(onFulfilled, onRejected);
-    },
-    catch : function(onRejected){
-      let promise = this._ensure_future();
-      return promise.catch(onRejected);
-    },
-    finally : function(onFinally){
-      let promise = this._ensure_future();
-      return promise.finally(onFinally);
-    }
-  }
-
   Module.PyProxyPublicMethods = {
     toString : function() {
       let ptrobj = _getPtr(this);
@@ -511,6 +472,45 @@ EM_JS_NUM(int, pyproxy_init_js, (), {
     apply: function (jsobj, jsthis, jsargs) {
       return jsobj.apply(jsthis, jsargs);
     },
+  };
+
+  Module.PyProxyAwaitableMethods = {
+    _ensure_future : function(){
+      let resolve_handle_id = 0;
+      let reject_handle_id = 0;
+      let resolveHandle;
+      let rejectHandle;
+      let promise;
+      try {
+        promise = new Promise((resolve, reject) => {
+          resolveHandle = resolve;
+          rejectHandle = reject;
+        });
+        resolve_handle_id = Module.hiwire.new_value(resolveHandle);
+        reject_handle_id = Module.hiwire.new_value(rejectHandle);
+        let ptrobj = _getPtr(this);
+        let errcode = __pyproxy_ensure_future(ptrobj, resolve_handle_id, reject_handle_id);
+        if(errcode === -1){
+          _pythonexc2js();
+        }
+      } finally {
+        Module.hiwire.decref(resolve_handle_id);
+        Module.hiwire.decref(reject_handle_id);
+      }
+      return promise;
+    },
+    then : function(onFulfilled, onRejected){
+      let promise = this._ensure_future();
+      return promise.then(onFulfilled, onRejected);
+    },
+    catch : function(onRejected){
+      let promise = this._ensure_future();
+      return promise.catch(onRejected);
+    },
+    finally : function(onFinally){
+      let promise = this._ensure_future();
+      return promise.finally(onFinally);
+    }
   };
 
   return 0;
