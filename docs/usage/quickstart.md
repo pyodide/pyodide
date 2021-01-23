@@ -34,7 +34,7 @@ languagePluginLoader.then(() => {
 Python code is run using the {any}`pyodide.runPython`
 function. It takes as input a string of Python
 code. If the code ends in an expression, it returns the result of the
-expression, converted to Javascript objects (see {ref}`type_conversions`).
+expression, translated to Javascript objects (see {ref}`type-translations`).
 
 ```javascript
 pyodide.runPython(`
@@ -126,7 +126,7 @@ Create and save a test `index.html` page with the following contents:
 
 You can also access from JavaScript all functions and variables defined in Python using the {any}`pyodide.globals`) object.
 
-For example, if you initialize the variable `x = numpy.ones([3,3])` in Python, you can access it from JavaScript in your browser's developer console as follows: `pyodide.globals.x`. The same goes for functions and imports. See {ref}`type_conversions` for more details.
+For example, if you initialize the variable `x = numpy.ones([3,3])` in Python, you can access it from JavaScript in your browser's developer console as follows: `pyodide.globals.x`. The same goes for functions and imports. See {ref}`type-translations` for more details.
 
 You can try it yourself in the browser console:
 ```js
@@ -156,7 +156,7 @@ Feel free to play around with the code using the browser console and the above e
 
 ## Accessing JavaScript scope from Python
 
-The JavaScript scope can be accessed from Python using the `js` module (see {ref}`type_conversions_using_js_obj_from_py`). This module represents the global object `window` that allows us to directly manipulate the DOM and access global variables and functions from Python.
+The JavaScript scope can be accessed from Python using the `js` module (see {ref}`type-translations_using-js-obj-from-py`). This module represents the global object `window` that allows us to directly manipulate the DOM and access global variables and functions from Python.
 
 ```python
 import js

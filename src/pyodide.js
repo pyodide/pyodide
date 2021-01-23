@@ -419,7 +419,7 @@ globalThis.languagePluginLoader = new Promise((resolve, reject) => {
 
   // clang-format off
   /**
-   * Inspect a Python code chunk and use ``pyodide.loadPackage` to load any known 
+   * Inspect a Python code chunk and use :js:func:`pyodide.loadPackage` to load any known 
    * packages that the code chunk imports. Uses 
    * :func:`pyodide_py.find_imports <pyodide.find\_imports>` to inspect the code.
 
