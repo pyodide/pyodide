@@ -490,8 +490,9 @@ globalThis.languagePluginLoader = new Promise((resolve, reject) => {
     let response = await fetch(`${baseURL}packages.json`);
     let json = await response.json();
     fixRecursionLimit(self.pyodide);
-    self.pyodide.registerJsModule("js", globalThis);
     self.pyodide = makePublicAPI(self.pyodide, PUBLIC_API);
+    self.pyodide.registerJsModule("js", globalThis);
+    self.pyodide.registerJsModule("pyodide_js", self.pyodide);
     self.pyodide._module.packages = json;
     resolve();
   };
