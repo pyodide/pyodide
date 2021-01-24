@@ -21,6 +21,8 @@ int foo(int extra_args) {
         subprocess.run(
             [
                 "emcc",
+                "-s"
+                'BINARYEN_EXTRA_PASSES="--pass-arg=max-func-params@61"',
                 "-s",
                 "SIDE_MODULE=1",
                 "library.c",
@@ -43,6 +45,8 @@ int foo(int extra_args) {
                 "library.wasm",
                 "-s",
                 "EMULATE_FUNCTION_POINTER_CASTS=1",
+                "-s"
+                'BINARYEN_EXTRA_PASSES="--pass-arg=max-func-params@61"',
             ],
             check=True,
         )
