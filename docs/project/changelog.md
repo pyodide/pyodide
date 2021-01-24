@@ -42,6 +42,7 @@
   of Pyodide REPL in webpages (used in console.html) [#1125](https://github.com/iodide-project/pyodide/pull/1125) and [#1155](https://github.com/iodide-project/pyodide/pull/1155)
 - Flexible jsimports: it now possible to add custom Python "packages" backed by Javascript code, like the js package.
   The js package is now implemented using this system. [#1146](https://github.com/iodide-project/pyodide/pull/1146)
+- Added the `pyodide.setInterruptBuffer` API. This can be used to set a `SharedArrayBuffer` to be the keyboard interupt buffer. If Pyodide is running on a webworker, the main thread can signal to the webworker that it should raise a `KeyboardInterrupt` by writing to the interrupt buffer.
 
 ### Fixed
 - getattr and dir on JsProxy now report consistent results and include all names defined on the Python dictionary backing JsProxy. [#1017](https://github.com/iodide-project/pyodide/pull/1017)
