@@ -24,11 +24,15 @@ source:
     - patches/make-int-return-values.patch
 
 build:
-  cflags: -I../../../CLAPACK/build/CLAPACK-3.2.1/INCLUDE -Werror=implicit-function-declaration -Werror=mismatched-parameter-types -DUNDERSCORE_G77 -Werror=mismatched-return-types
-  ldflags: -L$(PYODIDE_ROOT)/packages/numpy/build/numpy-1.15.4/install/lib/python3.8/site-packages/numpy/core/lib/
+# linker and C flags are set to error on anything to do with function declarations being wrong. By default these
+# are just warnings, but in webassembbly, any conflicts mean that a randomly selected 50% of calls to the function 
+# will fail. This is understandably bad. Better to fail at compile or link time
+  cflags: -I ../../../numpy/config -I../../../CLAPACK/build/CLAPACK-3.2.1/INCLUDE -Werror=implicit-function-declaration -Werror=mismatched-parameter-types -DUNDERSCORE_G77 -Werror=mismatched-return-types
+  ldflags: -L$(PYODIDE_ROOT)/packages/numpy/build/numpy-1.15.4/install/lib/python3.8/site-packages/numpy/core/lib/ -Wl,--fatal-warnings
   script: |
     # Regenerate header files after make-int-return-values patch to fix return
     # types of f2c functions.
+    echo "Regenerating cython wrappers"
     cd scipy/linalg
     python _cython_wrapper_generators.py
     cd ..

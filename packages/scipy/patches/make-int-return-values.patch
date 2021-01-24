@@ -3,10 +3,18 @@ is treated as returning void, when it really should return int (values are
 "returned" by writing to pointers passed as an argument, but an obscure feature
 known as alternative returns can cause the return value to be significant).
 
-emscripten is more strict about void vs int returns, so we change everything to
-return int.
+There's a big change to scipy/linalg/_cython_wrapper_generators.py, which is
+called on build to generate python wrappers for lapack and BLAS. The change
+makes everything call direct to CLAPACK with the correct function signatures
+and also fixes some fortran -> c linking oddities that occur because f2py assumes
+different function signatures to f2c, which in turn creates different function 
+signatures compared to what has been done in CLAPACK. 
 
-Also f2py makes subroutines void. This is fixed in numpy patches.
+f2py is patched in numpy to make subroutines return int.
+
+emscripten is very strict about void vs int returns and function signatures, so we change everything to
+return int from subroutines, and signatures are altered to be consistent.
+
 
 diff --git a/scipy/_build_utils/_fortran.py b/scipy/_build_utils/_fortran.py
 index 93ca908..038855b 100644
@@ -50,6 +58,283 @@ index b71ce90..4fbf2ca 100644
                   double *alpha, double *A, int *lda, double *B, int *ldb,
                   double *beta, double *C, int *ldc) nogil
  
+diff --git a/scipy/fftpack/src/convolve.c b/scipy/fftpack/src/convolve.c
+index 1597a43..c59762a 100644
+--- a/scipy/fftpack/src/convolve.c
++++ b/scipy/fftpack/src/convolve.c
+@@ -12,9 +12,9 @@
+ #include "fftpack.h"
+ 
+ /**************** FFTPACK ZFFT **********************/
+-extern void F_FUNC(dfftf, DFFTF) (int *, double *, double *);
+-extern void F_FUNC(dfftb, DFFTB) (int *, double *, double *);
+-extern void F_FUNC(dffti, DFFTI) (int *, double *);
++extern int F_FUNC(dfftf, DFFTF) (int *, double *, double *);
++extern int F_FUNC(dfftb, DFFTB) (int *, double *, double *);
++extern int F_FUNC(dffti, DFFTI) (int *, double *);
+ GEN_CACHE(dfftpack, (int n)
+           , double *wsave;, (caches_dfftpack[i].n == n)
+           , caches_dfftpack[id].wsave =
+diff --git a/scipy/fftpack/src/dct.c.src b/scipy/fftpack/src/dct.c.src
+index 1e9042f..07af8ff 100644
+--- a/scipy/fftpack/src/dct.c.src
++++ b/scipy/fftpack/src/dct.c.src
+@@ -18,11 +18,11 @@ enum normalize {
+ #pref=,d#
+ #PREF=,D#
+ */
+-extern void F_FUNC(@pref@costi, @PREF@COSTI)(int*, @type@*);
+-extern void F_FUNC(@pref@cost, @PREF@COST)(int*, @type@*, @type@*);
+-extern void F_FUNC(@pref@cosqi, @PREF@COSQI)(int*, @type@*);
+-extern void F_FUNC(@pref@cosqb, @PREF@COSQB)(int*, @type@*, @type@*);
+-extern void F_FUNC(@pref@cosqf, @PREF@COSQF)(int*, @type@*, @type@*);
++extern int F_FUNC(@pref@costi, @PREF@COSTI)(int*, @type@*);
++extern int F_FUNC(@pref@cost, @PREF@COST)(int*, @type@*, @type@*);
++extern int F_FUNC(@pref@cosqi, @PREF@COSQI)(int*, @type@*);
++extern int F_FUNC(@pref@cosqb, @PREF@COSQB)(int*, @type@*, @type@*);
++extern int F_FUNC(@pref@cosqf, @PREF@COSQF)(int*, @type@*, @type@*);
+ 
+ GEN_CACHE(@pref@dct1,(int n)
+       ,@type@* wsave;
+@@ -40,7 +40,7 @@ GEN_CACHE(@pref@dct2,(int n)
+       ,free(caches_@pref@dct2[id].wsave);
+       ,10)
+ 
+-void @pref@dct1(@type@ * inout, int n, int howmany, int normalize)
++int @pref@dct1(@type@ * inout, int n, int howmany, int normalize)
+ {
+     int i;
+     @type@ *ptr = inout;
+@@ -80,7 +80,7 @@ void @pref@dct1(@type@ * inout, int n, int howmany, int normalize)
+     }
+ }
+ 
+-void @pref@dct2(@type@ * inout, int n, int howmany, int normalize)
++int @pref@dct2(@type@ * inout, int n, int howmany, int normalize)
+ {
+     int i, j;
+     @type@ *ptr = inout;
+@@ -125,7 +125,7 @@ void @pref@dct2(@type@ * inout, int n, int howmany, int normalize)
+     }
+ }
+ 
+-void @pref@dct3(@type@ * inout, int n, int howmany, int normalize)
++int @pref@dct3(@type@ * inout, int n, int howmany, int normalize)
+ {
+     int i, j;
+     @type@ *ptr = inout;
+diff --git a/scipy/fftpack/src/drfft.c b/scipy/fftpack/src/drfft.c
+index 835415d..cf4b7e6 100644
+--- a/scipy/fftpack/src/drfft.c
++++ b/scipy/fftpack/src/drfft.c
+@@ -6,12 +6,12 @@
+ 
+ #include "fftpack.h"
+ 
+-extern void F_FUNC(dfftf, DFFTF) (int *, double *, double *);
+-extern void F_FUNC(dfftb, DFFTB) (int *, double *, double *);
+-extern void F_FUNC(dffti, DFFTI) (int *, double *);
+-extern void F_FUNC(rfftf, RFFTF) (int *, float *, float *);
+-extern void F_FUNC(rfftb, RFFTB) (int *, float *, float *);
+-extern void F_FUNC(rffti, RFFTI) (int *, float *);
++extern int F_FUNC(dfftf, DFFTF) (int *, double *, double *);
++extern int F_FUNC(dfftb, DFFTB) (int *, double *, double *);
++extern int F_FUNC(dffti, DFFTI) (int *, double *);
++extern int F_FUNC(rfftf, RFFTF) (int *, float *, float *);
++extern int F_FUNC(rfftb, RFFTB) (int *, float *, float *);
++extern int F_FUNC(rffti, RFFTI) (int *, float *);
+ 
+ 
+ GEN_CACHE(drfft, (int n)
+@@ -32,7 +32,7 @@ GEN_CACHE(rfft, (int n)
+ 	  , free(caches_rfft[id].wsave);
+ 	  , 10)
+ 
+-void drfft(double *inout, int n, int direction, int howmany,
++int drfft(double *inout, int n, int direction, int howmany,
+ 			  int normalize)
+ {
+     int i;
+@@ -67,7 +67,7 @@ void drfft(double *inout, int n, int direction, int howmany,
+     }
+ }
+ 
+-void rfft(float *inout, int n, int direction, int howmany,
++int rfft(float *inout, int n, int direction, int howmany,
+ 			 int normalize)
+ {
+     int i;
+diff --git a/scipy/fftpack/src/dst.c.src b/scipy/fftpack/src/dst.c.src
+index 3c952f5..859a2ee 100644
+--- a/scipy/fftpack/src/dst.c.src
++++ b/scipy/fftpack/src/dst.c.src
+@@ -18,11 +18,11 @@ enum normalize {
+ #pref=,d#
+ #PREF=,D#
+ */
+-extern void F_FUNC(@pref@sinti, @PREF@SINTI)(int*, @type@*);
+-extern void F_FUNC(@pref@sint, @PREF@SINT)(int*, @type@*, @type@*);
+-extern void F_FUNC(@pref@sinqi, @PREF@SINQI)(int*, @type@*);
+-extern void F_FUNC(@pref@sinqb, @PREF@SINQB)(int*, @type@*, @type@*);
+-extern void F_FUNC(@pref@sinqf, @PREF@SINQF)(int*, @type@*, @type@*);
++extern int F_FUNC(@pref@sinti, @PREF@SINTI)(int*, @type@*);
++extern int F_FUNC(@pref@sint, @PREF@SINT)(int*, @type@*, @type@*);
++extern int F_FUNC(@pref@sinqi, @PREF@SINQI)(int*, @type@*);
++extern int F_FUNC(@pref@sinqb, @PREF@SINQB)(int*, @type@*, @type@*);
++extern int F_FUNC(@pref@sinqf, @PREF@SINQF)(int*, @type@*, @type@*);
+ 
+ GEN_CACHE(@pref@dst1,(int n)
+       ,@type@* wsave;
+@@ -40,7 +40,7 @@ GEN_CACHE(@pref@dst2,(int n)
+       ,free(caches_@pref@dst2[id].wsave);
+       ,10)
+ 
+-void @pref@dst1(@type@ * inout, int n, int howmany, int normalize)
++int @pref@dst1(@type@ * inout, int n, int howmany, int normalize)
+ {
+     int i;
+     @type@ *ptr = inout;
+@@ -80,7 +80,7 @@ void @pref@dst1(@type@ * inout, int n, int howmany, int normalize)
+     }
+ }
+ 
+-void @pref@dst2(@type@ * inout, int n, int howmany, int normalize)
++int @pref@dst2(@type@ * inout, int n, int howmany, int normalize)
+ {
+     int i, j;
+     @type@ *ptr = inout;
+@@ -125,7 +125,7 @@ void @pref@dst2(@type@ * inout, int n, int howmany, int normalize)
+     }
+ }
+ 
+-void @pref@dst3(@type@ * inout, int n, int howmany, int normalize)
++int @pref@dst3(@type@ * inout, int n, int howmany, int normalize)
+ {
+     int i, j;
+     @type@ *ptr = inout;
+diff --git a/scipy/fftpack/src/zfft.c b/scipy/fftpack/src/zfft.c
+index 45c0536..09b92d2 100644
+--- a/scipy/fftpack/src/zfft.c
++++ b/scipy/fftpack/src/zfft.c
+@@ -6,12 +6,12 @@
+ 
+ #include "fftpack.h"
+ 
+-extern void F_FUNC(zfftf,ZFFTF)(int*,double*,double*);
+-extern void F_FUNC(zfftb,ZFFTB)(int*,double*,double*);
+-extern void F_FUNC(zffti,ZFFTI)(int*,double*);
+-extern void F_FUNC(cfftf,CFFTF)(int*,float*,float*);
+-extern void F_FUNC(cfftb,CFFTB)(int*,float*,float*);
+-extern void F_FUNC(cffti,CFFTI)(int*,float*);
++extern int F_FUNC(zfftf,ZFFTF)(int*,double*,double*);
++extern int F_FUNC(zfftb,ZFFTB)(int*,double*,double*);
++extern int F_FUNC(zffti,ZFFTI)(int*,double*);
++extern int F_FUNC(cfftf,CFFTF)(int*,float*,float*);
++extern int F_FUNC(cfftb,CFFTB)(int*,float*,float*);
++extern int F_FUNC(cffti,CFFTI)(int*,float*);
+ 
+ GEN_CACHE(zfft,(int n)
+ 	  ,double* wsave;
+@@ -29,7 +29,7 @@ GEN_CACHE(cfft,(int n)
+ 	  ,free(caches_cfft[id].wsave);
+ 	  ,10)
+ 
+-void zfft(complex_double * inout, int n, int direction, int howmany,
++int zfft(complex_double * inout, int n, int direction, int howmany,
+ 		int normalize)
+ {
+ 	int i;
+@@ -64,7 +64,7 @@ void zfft(complex_double * inout, int n, int direction, int howmany,
+ 	}
+ }
+ 
+-void cfft(complex_float * inout, int n, int direction, int howmany,
++int cfft(complex_float * inout, int n, int direction, int howmany,
+ 	int normalize)
+ {
+ 	int i;
+diff --git a/scipy/fftpack/src/zfftnd.c b/scipy/fftpack/src/zfftnd.c
+index 457a913..5952403 100644
+--- a/scipy/fftpack/src/zfftnd.c
++++ b/scipy/fftpack/src/zfftnd.c
+@@ -121,13 +121,13 @@ void sflatten(complex_float * dest, complex_float * src,
+     }
+ }
+ 
+-extern void cfft(complex_float * inout,
++extern int cfft(complex_float * inout,
+ 		 int n, int direction, int howmany, int normalize);
+ 
+-extern void zfft(complex_double * inout,
++extern int zfft(complex_double * inout,
+ 		 int n, int direction, int howmany, int normalize);
+ 
+-extern void zfftnd(complex_double * inout, int rank,
++extern int zfftnd(complex_double * inout, int rank,
+ 			   int *dims, int direction, int howmany,
+ 			   int normalize)
+ {
+@@ -170,7 +170,7 @@ extern void zfftnd(complex_double * inout, int rank,
+ 
+ }
+ 
+-extern void cfftnd(complex_float * inout, int rank,
++extern int cfftnd(complex_float * inout, int rank,
+ 			   int *dims, int direction, int howmany,
+ 			   int normalize)
+ {
+diff --git a/scipy/fftpack/src/zrfft.c b/scipy/fftpack/src/zrfft.c
+index c3f54ef..e8f1d48 100644
+--- a/scipy/fftpack/src/zrfft.c
++++ b/scipy/fftpack/src/zrfft.c
+@@ -6,10 +6,10 @@
+ 
+ #include "fftpack.h"
+ 
+-extern void drfft(double *inout,int n,int direction,int howmany,int normalize);
+-extern void rfft(float *inout,int n,int direction,int howmany,int normalize);
++extern int drfft(double *inout,int n,int direction,int howmany,int normalize);
++extern int rfft(float *inout,int n,int direction,int howmany,int normalize);
+ 
+-extern void zrfft(complex_double *inout,
++extern int zrfft(complex_double *inout,
+ 		  int n,int direction,int howmany,int normalize) {
+   int i,j,k;
+   double* ptr = (double *)inout;
+@@ -54,7 +54,7 @@ extern void zrfft(complex_double *inout,
+   }
+ }
+ 
+-extern void crfft(complex_float *inout,
++extern int crfft(complex_float *inout,
+ 		  int n,int direction,int howmany,int normalize) {
+   int i,j,k;
+   float* ptr = (float *)inout;
+diff --git a/scipy/integrate/__quadpack.h b/scipy/integrate/__quadpack.h
+index 2bf7aad..3610462 100644
+--- a/scipy/integrate/__quadpack.h
++++ b/scipy/integrate/__quadpack.h
+@@ -51,13 +51,13 @@
+   #endif
+ #endif
+ 
+-void DQAGSE();
+-void DQAGIE();
+-void DQAGPE();
+-void DQAWOE();
+-void DQAWFE();
+-void DQAWSE();
+-void DQAWCE();
++int DQAGSE();
++int DQAGIE();
++int DQAGPE();
++int DQAWOE();
++int DQAWFE();
++int DQAWSE();
++int DQAWCE();
+ 
+ 
+ typedef enum {
 diff --git a/scipy/interpolate/blas_defs.h b/scipy/interpolate/blas_defs.h
 index 0f95237..5a7adb7 100644
 --- a/scipy/interpolate/blas_defs.h
@@ -60,11 +345,86 @@ index 0f95237..5a7adb7 100644
  
 +extern int dgeev_(char *jobvl, char *jobvr, int *n, double *a, int *lda, double *wr, double *wi, double *vl, int *ldvl, double *vr, int *ldvr, double *work, int *lwork, int *info);
  #define c_dgeev F_FUNC(dgeev,DGEEV)
+diff --git a/scipy/interpolate/src/__fitpack.h b/scipy/interpolate/src/__fitpack.h
+index eccc5a8..5ed3cc3 100644
+--- a/scipy/interpolate/src/__fitpack.h
++++ b/scipy/interpolate/src/__fitpack.h
+@@ -76,35 +76,35 @@
+ 	#endif
+ #endif
+ 
+-void CURFIT(int*,int*,double*,double*,double*,double*,
++int CURFIT(int*,int*,double*,double*,double*,double*,
+         double*,int*,double*,int*,int*,double*,double*,
+         double*,double*,int*,int*,int*);
+-void PERCUR(int*,int*,double*,double*,double*,int*,
++int PERCUR(int*,int*,double*,double*,double*,int*,
+         double*,int*,int*,double*,double*,double*,
+         double*,int*,int*,int*);
+-void SPALDE(double*,int*,double*,int*,double*,double*,int*);
+-void SPLDER(double*,int*,double*,int*,int*,double*,
++int SPALDE(double*,int*,double*,int*,double*,double*,int*);
++int SPLDER(double*,int*,double*,int*,int*,double*,
+         double*,int*,int*,double*,int*);
+-void SPLEV(double*,int*,double*,int*,double*,double*,int*,int*,int*);
++int SPLEV(double*,int*,double*,int*,double*,double*,int*,int*,int*);
+ double SPLINT(double*,int*,double*,int*,double*,double*,double*);
+-void SPROOT(double*,int*,double*,double*,int*,int*,int*);
+-void PARCUR(int*,int*,int*,int*,double*,int*,double*,
++int SPROOT(double*,int*,double*,double*,int*,int*,int*);
++int PARCUR(int*,int*,int*,int*,double*,int*,double*,
+         double*,double*,double*,int*,double*,int*,int*,
+         double*,int*,double*,double*,double*,int*,int*,int*);
+-void CLOCUR(int*,int*,int*,int*,double*,int*,double*,
++int CLOCUR(int*,int*,int*,int*,double*,int*,double*,
+         double*,int*,double*,int*,int*,double*,int*,
+         double*,double*,double*,int*,int*,int*);
+-void SURFIT(int*,int*,double*,double*,double*,double*,
++int SURFIT(int*,int*,double*,double*,double*,double*,
+         double*,double*,double*,double*,int*,int*,double*,
+         int*,int*,int*,double*,int*,double*,int*,double*,
+         double*,double*,double*,int*,double*,int*,int*,int*,int*);
+-void BISPEV(double*,int*,double*,int*,double*,int*,int*,
++int BISPEV(double*,int*,double*,int*,double*,int*,int*,
+         double*,int*,double*,int*,double*,double*,int*,
+         int*,int*,int*);
+-void PARDER(double*,int*,double*,int*,double*,int*,int*,
++int PARDER(double*,int*,double*,int*,double*,int*,int*,
+         int*,int*,double*,int*,double*,int*,double*,
+         double*,int*,int*,int*,int*);
+-void INSERT(int*,double*,int*,double*,int*,double*,double*,
++int INSERT(int*,double*,int*,double*,int*,double*,double*,
+         int*,double*,int*,int*);
+ 
+ /* Note that curev, cualde need no interface. */
+@@ -865,7 +865,7 @@ fail:
+ }
+ 
+ 
+-static void
++static int
+ _deBoor_D(double *t, double x, int k, int ell, int m, double *result) {
+     /*
+      * On completion the result array stores
 diff --git a/scipy/linalg/_cython_wrapper_generators.py b/scipy/linalg/_cython_wrapper_generators.py
-index 62be001..efb7194 100644
+index 62be001..b62c31a 100644
 --- a/scipy/linalg/_cython_wrapper_generators.py
 +++ b/scipy/linalg/_cython_wrapper_generators.py
-@@ -15,7 +15,9 @@ fortran_types = {'int': 'integer',
+@@ -3,8 +3,13 @@ Code generator script to make the Cython BLAS and LAPACK wrappers
+ from the files "cython_blas_signatures.txt" and
+ "cython_lapack_signatures.txt" which contain the signatures for
+ all the BLAS/LAPACK routines that should be included in the wrappers.
++
++# NB: this version is updated for CLAPACK. It makes the assumption (as does
++# everything else in scipy, that CLAPACK long int is the same size as int )
+ """
+ 
++
++
+ from operator import itemgetter
+ 
+ fortran_types = {'int': 'integer',
+@@ -15,7 +20,9 @@ fortran_types = {'int': 'integer',
                   'char': 'character',
                   'bint': 'logical'}
  
@@ -75,16 +435,62 @@ index 62be001..efb7194 100644
             'c': 'npy_complex64',
             'd': 'double',
             's': 'float',
-@@ -37,7 +39,7 @@ def arg_names_and_types(args):
+@@ -31,17 +38,29 @@ c_types = {'int': 'int',
+            'zselect1': '_zselect1',
+            'zselect2': '_zselect2'}
+ 
++py_type_replacements={'npy_complex64':'float complex',
++                       'npy_complex128':'double complex'}
++
+ 
+ def arg_names_and_types(args):
+     return zip(*[arg.split(' *') for arg in args.split(', ')])
  
  pyx_func_template = """
++
  cdef extern from "{header_name}":
 -    void _fortran_{name} "F_FUNC({name}wrp, {upname}WRP)"({ret_type} *out, {fort_args}) nogil
-+    int _fortran_{name} "F_FUNC({name}wrp, {upname}WRP)"({ret_type} *out, {fort_args}) nogil
- cdef {ret_type} {name}({args}) nogil:
-     cdef {ret_type} out
-     _fortran_{name}(&out, {argnames})
-@@ -58,8 +60,10 @@ def arg_casts(arg):
+-cdef {ret_type} {name}({args}) nogil:
+-    cdef {ret_type} out
+-    _fortran_{name}(&out, {argnames})
+-    return out
++    {c_ret_type} _fortran_{name} "F_FUNC({name}, {upname})"({args}) nogil
++cdef {py_ret_type} {name}({py_args}) nogil:
++    return  _fortran_{name}({argnames})
++"""
++
++# CLAPACK returns complex by pointer
++pyx_func_template_complex = """
++cdef extern from "{header_name}":
++    void _fortran_{name} "F_FUNC({name}, {upname})"({c_ret_type} *ret_val,{args}) nogil
++cdef {py_ret_type} {name}({py_args}) nogil:
++    cdef {py_ret_type} ret_val
++    _fortran_{name}(<{c_ret_type}*>&ret_val,{argnames})
++    return ret_val
+ """
+ 
+ npy_types = {'c': 'npy_complex64', 'z': 'npy_complex128',
+@@ -50,57 +69,114 @@ npy_types = {'c': 'npy_complex64', 'z': 'npy_complex128',
+              'sselect2': '_sselect2', 'sselect3': '_sselect3',
+              'zselect1': '_zselect1', 'zselect2': '_zselect2'}
+ 
++# methods that use char* need a wrapper building,
++# because CLAPACK uses null terminated strings
++# and f2c uses char* + extra length args
++# the wrapper will be called in preprocessing of
++# f2c generated code
++
++def needs_wrapper(argtypes):
++    for c in argtypes:
++        if c=='char':
++            return True
++    return False
+ 
+ def arg_casts(arg):
+     if arg in ['npy_complex64', 'npy_complex128', '_cselect1', '_cselect2',
+                '_dselect2', '_dselect3', '_sselect2', '_sselect3',
+-               '_zselect1', '_zselect2']:
++               '_zselect1', '_zselect2','f2c_complex','f2c_doublecomplex','integer','real','doublereal','logical']:
          return '<{0}*>'.format(arg)
      return ''
  
@@ -93,118 +499,282 @@ index 62be001..efb7194 100644
 +    # clapack returns double for single precision functions (why?)
 +    if ret_type=='s':
 +        ret_type='d'
++
++    c_ret_type=c_types[ret_type]
++    if ret_type=='z':
++        py_ret_type='double complex'
++    elif ret_type=='c':
++        py_ret_type='float complex'
++    else:
++         py_ret_type=c_ret_type
      argtypes, argnames = arg_names_and_types(args)
-     # Fix the case where one of the arguments has the same name as the
-     # abbreviation for the argument type.
-@@ -74,21 +78,42 @@ def pyx_decl_func(name, ret_type, args, header_name):
-     argtypes = [npy_types.get(t, t) for t in argtypes]
-     fort_args = ', '.join([' *'.join([n, t])
+-    # Fix the case where one of the arguments has the same name as the
+-    # abbreviation for the argument type.
+-    # Otherwise the variable passed as an argument is considered overwrites
+-    # the previous typedef and Cython compilation fails.
+-    if ret_type in argnames:
+-        argnames = [n if n != ret_type else ret_type + '_' for n in argnames]
+-        argnames = [n if n not in ['lambda', 'in'] else n + '_'
+-                    for n in argnames]
+-        args = ', '.join([' *'.join([n, t])
+-                          for n, t in zip(argtypes, argnames)])
+-    argtypes = [npy_types.get(t, t) for t in argtypes]
+-    fort_args = ', '.join([' *'.join([n, t])
++    argtypes = [c_types.get(t, t) for t in argtypes]
++    pyargtypes = [py_type_replacements.get(t, t) for t in argtypes]
++    py_args = ', '.join([' *'.join([n, t])
++                           for n, t in zip(pyargtypes, argnames)])
++    args = ', '.join([' *'.join([n, t])
                             for n, t in zip(argtypes, argnames)])
 +    unwrapper_argnames=",".join(argnames)
      argnames = [arg_casts(t) + n for n, t in zip(argnames, argtypes)]
      argnames = ', '.join(argnames)
-     c_ret_type = c_types[ret_type]
+-    c_ret_type = c_types[ret_type]
      args = args.replace('lambda', 'lambda_')
 -    return pyx_func_template.format(name=name, upname=name.upper(), args=args,
+-                                    fort_args=fort_args, ret_type=ret_type,
+-                                    c_ret_type=c_ret_type, argnames=argnames,
 +    # CLAPACK handles strings c style i.e. by null termination
 +    # these unwrappers remove the fortran style length arguments
++    # they are for calling from f2c only
 +    # I think normally they'd be in the lapack already, but they aren't in 
-+    # clapack
++    # clapack. They are made public for use in f2c generated code
 +    unwrapper=""
-+    if name[0] in ['c', 's'] and not name in ['cdotu','cdotc','cladiv']:
-+        extra_args=fort_args
++    if needs_wrapper(argtypes):
++        extra_args=args
 +        num_extra=0
 +        for c in argtypes:
 +            if c=='char':
 +                num_extra+=1
 +                extra_args+=", int ignore_%d"%(num_extra)
-+        unwrapper=pyx_clapack_unwrapper_template.format(name=name,extra_args=extra_args,argnames=unwrapper_argnames,args=fort_args,ret_type=c_ret_type)
-+    return unwrapper+pyx_func_template.format(name=name, upname=name.upper(), args=args,
-                                     fort_args=fort_args, ret_type=ret_type,
-                                     c_ret_type=c_ret_type, argnames=argnames,
++        unwrapper=pyx_clapack_unwrapper_template.format(name=name,extra_args=extra_args,argnames=unwrapper_argnames,args=args,c_ret_type=c_ret_type)
++    if ret_type=='z' or ret_type=='c':
++        return unwrapper+pyx_func_template_complex.format(name=name,upname=name.upper(),args=args,
++                                    ret_type=c_ret_type,c_ret_type=c_ret_type,py_ret_type=py_ret_type,
++                                    argnames=argnames,header_name=header_name,py_args=py_args)
++    else:
++        return unwrapper+pyx_func_template.format(name=name, upname=name.upper(), args=args,
++                                    ret_type=c_ret_type,c_ret_type=c_ret_type,py_args=py_args,
++                                    argnames=argnames,py_ret_type=py_ret_type,
                                      header_name=header_name)
  
  pyx_sub_template = """cdef extern from "{header_name}":
 -    void _fortran_{name} "F_FUNC({name},{upname})"({fort_args}) nogil
 -cdef void {name}({args}) nogil:
-+    int _fortran_{name} "F_FUNC({name},{upname})"({fort_args}) nogil
-+cdef int {name}({args}) nogil:
++    int _fortran_{name} "F_FUNC({name},{upname})"({args}) nogil
++cdef int {name}({py_args}) nogil:
      _fortran_{name}({argnames})
  """
  
 +pyx_clapack_unwrapper_template= """
 +
-+cdef extern {ret_type} {name}_({args})
++cdef extern {c_ret_type} {name}_({args})
 +
-+cdef public {ret_type} w{name}_({extra_args}):
++cdef public {c_ret_type} w{name}_({extra_args}):
 +    return {name}_({argnames});
 +"""
  
  def pyx_decl_sub(name, args, header_name):
      argtypes, argnames = arg_names_and_types(args)
-@@ -96,10 +121,24 @@ def pyx_decl_sub(name, args, header_name):
+-    argtypes = [npy_types.get(t, t) for t in argtypes]
++    argtypes = [c_types.get(t, t) for t in argtypes]
      argnames = [n if n not in ['lambda', 'in'] else n + '_' for n in argnames]
-     fort_args = ', '.join([' *'.join([n, t])
+-    fort_args = ', '.join([' *'.join([n, t])
++    pyargtypes = [py_type_replacements.get(t, t) for t in argtypes]
++    py_args = ', '.join([' *'.join([n, t])
++                           for n, t in zip(pyargtypes, argnames)])
++    args = ', '.join([' *'.join([n, t])
                             for n, t in zip(argtypes, argnames)])
 +    unwrapper_argnames=",".join(argnames)
      argnames = [arg_casts(t) + n for n, t in zip(argnames, argtypes)]
      argnames = ', '.join(argnames)
      args = args.replace('*lambda,', '*lambda_,').replace('*in,', '*in_,')
 -    return pyx_sub_template.format(name=name, upname=name.upper(),
+-                                   args=args, fort_args=fort_args,
 +    # CLAPACK handles strings c style i.e. by null termination
 +    # these unwrappers remove the fortran style length arguments
-+    # normally they'd be in the lapack already, but they aren't in 
-+    # clapack
++    # normally the lapack would be a fortran library so it would need 
++    # them, but not CLAPACK
 +    unwrapper=""
-+    if name[0] in ['c', 's'] and not name in ['cdotu','cdotc','cladiv']:
-+        extra_args=fort_args
++    if needs_wrapper(argtypes):
++        extra_args=args
 +        num_extra=0
 +        for c in argtypes:
 +            if c=='char':
 +                num_extra+=1
 +                extra_args+=", int ignore_%d"%(num_extra)
-+        unwrapper=pyx_clapack_unwrapper_template.format(name=name,extra_args=extra_args,argnames=unwrapper_argnames,args=fort_args,ret_type='int')
++        unwrapper=pyx_clapack_unwrapper_template.format(name=name,extra_args=extra_args,argnames=unwrapper_argnames,args=args,c_ret_type='int')
 +    return unwrapper+ pyx_sub_template.format(name=name, upname=name.upper(),
-                                    args=args, fort_args=fort_args,
++                                   args=args, py_args=py_args,
                                     argnames=argnames, header_name=header_name)
  
-@@ -452,6 +491,13 @@ pxd_template = """cdef {ret_type} {name}({args}) nogil
+ blas_pyx_preamble = '''# cython: boundscheck = False
+@@ -190,14 +266,14 @@ from numpy cimport npy_complex64, npy_complex128
+ cdef extern from "_lapack_subroutines.h":
+     # Function pointer type declarations for
+     # gees and gges families of functions.
+-    ctypedef bint _cselect1(npy_complex64*)
+-    ctypedef bint _cselect2(npy_complex64*, npy_complex64*)
+-    ctypedef bint _dselect2(d*, d*)
+-    ctypedef bint _dselect3(d*, d*, d*)
+-    ctypedef bint _sselect2(s*, s*)
+-    ctypedef bint _sselect3(s*, s*, s*)
+-    ctypedef bint _zselect1(npy_complex128*)
+-    ctypedef bint _zselect2(npy_complex128*, npy_complex128*)
++    ctypedef int _cselect1(npy_complex64*)
++    ctypedef int _cselect2(npy_complex64*, npy_complex64*)
++    ctypedef int _dselect2(d*, d*)
++    ctypedef int _dselect3(d*, d*, d*)
++    ctypedef int _sselect2(s*, s*)
++    ctypedef int _sselect3(s*, s*, s*)
++    ctypedef int _zselect1(npy_complex128*)
++    ctypedef int _zselect2(npy_complex128*, npy_complex128*)
+ 
+ '''
+ 
+@@ -210,7 +286,7 @@ blas_py_wrappers = """
+ 
+ # Python-accessible wrappers for testing:
+ 
+-cdef inline bint _is_contiguous(double[:,:] a, int axis) nogil:
++cdef inline int _is_contiguous(double[:,:] a, int axis) nogil:
+     return (a.strides[axis] == sizeof(a[0,0]) or a.shape[axis] == 1)
+ 
+ cpdef float complex _test_cdotc(float complex[:] cx, float complex[:] cy) nogil:
+@@ -452,6 +528,16 @@ pxd_template = """cdef {ret_type} {name}({args}) nogil
  
  def pxd_decl(name, ret_type, args):
      args = args.replace('lambda', 'lambda_').replace('*in,', '*in_,')
-+    if ret_type=='void':
-+        ret_type='int'
-+    if ret_type=='float':
-+        ret_type='double'
++
++    argtypes, argnames = arg_names_and_types(args)
++    argtypes = [c_types.get(t, t) for t in argtypes]
++    argtypes = [py_type_replacements.get(t, t) for t in argtypes]
++    args = ', '.join([' *'.join([n, t])
++                           for n, t in zip(argtypes, argnames)])
 +    if ret_type=='s':
 +        ret_type='d'
-+        
++    ret_type=c_types[ret_type]
++    ret_type=py_type_replacements.get(ret_type,ret_type)
      return pxd_template.format(name=name, ret_type=ret_type, args=args)
  
  blas_pxd_preamble = """# Within scipy, these wrappers can be used via relative or absolute cimport.
-@@ -535,6 +581,8 @@ def process_fortran_name(name, funcname):
+@@ -470,6 +556,7 @@ ctypedef double d
+ ctypedef float complex c
+ ctypedef double complex z
+ 
++from numpy cimport npy_complex64, npy_complex128
+ """
+ 
+ 
+@@ -488,27 +575,43 @@ lapack_pxd_preamble = """# Within scipy, these wrappers can be used via relative
+ # these wrappers should not be used.
+ # The original libraries should be linked directly.
+ 
++
+ ctypedef float s
+ ctypedef double d
+ ctypedef float complex c
+ ctypedef double complex z
+ 
++from numpy cimport npy_complex64, npy_complex128
++
+ # Function pointer type declarations for
+ # gees and gges families of functions.
+-ctypedef bint cselect1(c*)
+-ctypedef bint cselect2(c*, c*)
+-ctypedef bint dselect2(d*, d*)
+-ctypedef bint dselect3(d*, d*, d*)
+-ctypedef bint sselect2(s*, s*)
+-ctypedef bint sselect3(s*, s*, s*)
+-ctypedef bint zselect1(z*)
+-ctypedef bint zselect2(z*, z*)
++#ctypedef int cselect1(npy_complex64*)
++#ctypedef int cselect2(npy_complex64*, npy_complex64*)
++#ctypedef int dselect2(double*, double*)
++#ctypedef int dselect3(double*,double*,double*)
++#ctypedef int sselect2(float*,float*)
++#ctypedef int sselect3(float*,float*,float*)
++#ctypedef int zselect1(npy_complex128*)
++#ctypedef int zselect2(npy_complex128*,npy_complex128*,npy_complex128*)
++
++cdef extern from "_lapack_subroutines.h":
++    # Function pointer type declarations for
++    # gees and gges families of functions.
++    ctypedef int _cselect1(npy_complex64*)
++    ctypedef int _cselect2(npy_complex64*, npy_complex64*)
++    ctypedef int _dselect2(d*, d*)
++    ctypedef int _dselect3(d*, d*, d*)
++    ctypedef int _sselect2(s*, s*)
++    ctypedef int _sselect3(s*, s*, s*)
++    ctypedef int _zselect1(npy_complex128*)
++    ctypedef int _zselect2(npy_complex128*, npy_complex128*)
++
+ 
+ """
+ 
+ 
+ def generate_lapack_pxd(all_sigs):
+-    return lapack_pxd_preamble + '\n'.join(pxd_decl(*sig) for sig in all_sigs)
++    return lapack_pxd_preamble  + '\n'.join(pxd_decl(*sig) for sig in all_sigs)
+ 
+ fortran_template = """      subroutine {name}wrp(ret, {argnames})
+         external {wrapper}
+@@ -535,12 +638,14 @@ def process_fortran_name(name, funcname):
  
  
  def fort_subroutine_wrapper(name, ret_type, args):
+-    if name[0] in ['c', 's'] or name in ['zladiv', 'zdotu', 'zdotc']:
 +    if ret_type=='s':
 +        ret_type='d'
-     if name[0] in ['c', 's'] or name in ['zladiv', 'zdotu', 'zdotc']:
++    types, names = arg_names_and_types(args)
++    argnames = ', '.join(names)
++    if needs_wrapper(types):
          wrapper = 'w' + name
      else:
-@@ -559,16 +607,18 @@ def make_c_args(args):
+         wrapper = name
+-    types, names = arg_names_and_types(args)
+-    argnames = ', '.join(names)
+ 
+     names = [process_fortran_name(n, name) for n in names]
+     argdecls = '\n        '.join('{0} {1}'.format(fortran_types[t], n)
+@@ -554,21 +659,38 @@ def generate_fortran(func_sigs):
+     return "\n".join(fort_subroutine_wrapper(*sig) for sig in func_sigs)
+ 
+ 
+-def make_c_args(args):
++def make_c_args(args,*,add_char_length_args=False):
+     types, names = arg_names_and_types(args)
++    names=list(names)
      types = [c_types[arg] for arg in types]
++    if add_char_length_args:
++        new_args=0
++        for c in types:
++            if c=='char':
++                new_args+=1
++        for c in range(new_args):
++            types.append('ftnlen')
++            names.append('ignore_%d'%c)
      return ', '.join('{0} *{1}'.format(t, n) for t, n in zip(types, names))
  
 -c_func_template = "void F_FUNC({name}wrp, {upname}WRP)({return_type} *ret, {args});\n"
-+c_func_template = "int F_FUNC({name}wrp, {upname}WRP)({return_type} *ret, {args});\n"
++c_func_template = "{return_type} F_FUNC({name}, {upname})( {args});\n"
++c_func_template_complex = "void F_FUNC({name}, {upname})({return_type} *ret, {args});\n"
  
  
  def c_func_decl(name, return_type, args):
+-    args = make_c_args(args)
+-    return_type = c_types[return_type]
+-    return c_func_template.format(name=name, upname=name.upper(),
 +    if return_type=='s':
 +        return_type='d'
-     args = make_c_args(args)
-     return_type = c_types[return_type]
-     return c_func_template.format(name=name, upname=name.upper(),
++    args = make_c_args(args,add_char_length_args=False)
++    if return_type=='z' or return_type=='c':
++        return_type = c_types[return_type]
++        return c_func_template_complex.format(name=name, upname=name.upper(),
++                                  return_type=return_type, args=args)
++    else:
++        return_type = c_types[return_type]
++        return c_func_template.format(name=name, upname=name.upper(),
                                    return_type=return_type, args=args)
  
 -c_sub_template = "void F_FUNC({name},{upname})({args});\n"
@@ -212,6 +782,50 @@ index 62be001..efb7194 100644
  
  
  def c_sub_decl(name, return_type, args):
+@@ -579,6 +701,7 @@ c_preamble = """#ifndef SCIPY_LINALG_{lib}_FORTRAN_WRAPPERS_H
+ #define SCIPY_LINALG_{lib}_FORTRAN_WRAPPERS_H
+ #include "fortran_defs.h"
+ #include "numpy/arrayobject.h"
++#include "f2c.h"
+ """
+ 
+ lapack_decls = """
+@@ -630,6 +753,15 @@ def filter_lines(ls):
+     all_sigs = list(sorted(func_sigs + sub_sigs, key=itemgetter(0)))
+     return func_sigs, sub_sigs, all_sigs
+ 
++def generate_wrapper_list(sigs):
++    wrappers=""
++    for name,rt,args in sigs:
++        anames,atypes=arg_names_and_types(args)
++        if "char" in atypes:
++            wrappers+=name+":w"+name+",\n"
++    return wrappers
++
++    
+ 
+ def make_all(blas_signature_file="cython_blas_signatures.txt",
+              lapack_signature_file="cython_lapack_signatures.txt",
+@@ -682,6 +814,10 @@ def make_all(blas_signature_file="cython_blas_signatures.txt",
+     with open(lapack_header_name, 'w') as f:
+         f.write(ccomment)
+         f.write(lapack_c_header)
++    wrapper_list = generate_wrapper_list([*lapack_sigs[2]]+[*blas_sigs[2]])
++    with open("wrapper_list.txt",'w') as f:
++        f.write(ccomment)
++        f.write(wrapper_list)
+ 
+ if __name__ == '__main__':
+     make_all()
+diff --git a/scipy/linalg/cython_lapack_signatures.txt b/scipy/linalg/cython_lapack_signatures.txt
+index 0455995..34d0782 100644
+--- a/scipy/linalg/cython_lapack_signatures.txt
++++ b/scipy/linalg/cython_lapack_signatures.txt
+@@ -1296,3 +1296,4 @@ void zunmrz(char *side, char *trans, int *m, int *n, int *k, int *l, z *a, int *
+ void zunmtr(char *side, char *uplo, char *trans, int *m, int *n, z *a, int *lda, z *tau, z *c, int *ldc, z *work, int *lwork, int *info)
+ void zupgtr(char *uplo, int *n, z *ap, z *tau, z *q, int *ldq, z *work, int *info)
+ void zupmtr(char *side, char *uplo, char *trans, int *m, int *n, z *ap, z *tau, z *c, int *ldc, z *work, int *info)
++void ilaenv(int *ispec, char *name, char *opts, int *n1, int *n2, int *n3, int *n4)
 diff --git a/scipy/linalg/fblas_l1.pyf.src b/scipy/linalg/fblas_l1.pyf.src
 index 5008ee8..6380740 100644
 --- a/scipy/linalg/fblas_l1.pyf.src
@@ -460,6 +1074,1426 @@ index 8084aa8..5408c79 100755
  
      config.add_extension('_flapack',
                           sources=sources,
+diff --git a/after/scipy/linalg/src/calc_lwork.c b/scipy/linalg/src/calc_lwork.c
+new file mode 100644
+index 0000000..b779142
+--- /dev/null
++++ b/scipy/linalg/src/calc_lwork.c
+@@ -0,0 +1,941 @@
++/* calc_lwork.f -- translated by f2c (version 20160102).
++   You must link the resulting object file with libf2c:
++	on Microsoft Windows system, link with libf2c.lib;
++	on Linux or Unix systems, link with .../path/to/libf2c.a -lm
++	or, if you install libf2c.a in a standard place, with -lf2c -lm
++	-- in that order, at the end of the command line, as in
++		cc *.o -lf2c -lm
++	Source for libf2c is in /netlib/f2c/libf2c.zip, e.g.,
++
++		http://www.netlib.org/f2c/libf2c.zip
++*/
++
++#include "f2c.h"
++
++/* Table of constant values */
++
++static integer c__1 = 1;
++static integer c_n1 = -1;
++static integer c__2 = 2;
++static integer c__9 = 9;
++static integer c__0 = 0;
++static integer c__6 = 6;
++static integer c__8 = 8;
++static integer c__4 = 4;
++
++/* Subroutine */ int gehrd_(integer *min_lwork__, integer *max_lwork__, char *
++	prefix, integer *n, integer *lo, integer *hi, ftnlen prefix_len)
++{
++    /* System generated locals */
++    address a__1[2];
++    integer i__1, i__2, i__3[2];
++    char ch__1[6];
++
++    /* Builtin functions */
++    /* Subroutine */ int s_cat(char *, char **, integer *, integer *, ftnlen);
++
++    /* Local variables */
++    static integer nb;
++    extern integer ilaenz_(integer *, char *, char *, integer *, integer *, 
++	    integer *, integer *, ftnlen, ftnlen);
++
++
++/*     Returned maxwrk is actually optimal lwork. */
++
++/* f2py intent(out,out=minwrk) :: min_lwork */
++/* f2py intent(out,out=maxwrk) :: max_lwork */
++/* f2py intent(in) :: prefix */
++/* f2py intent(in) :: n,lo,hi */
++/* Computing MIN */
++/* Writing concatenation */
++    i__3[0] = 1, a__1[0] = prefix;
++    i__3[1] = 5, a__1[1] = "GEHRD";
++    s_cat(ch__1, a__1, i__3, &c__2, (ftnlen)6);
++    i__1 = 64, i__2 = ilaenz_(&c__1, ch__1, " ", n, lo, hi, &c_n1, (ftnlen)6, 
++	    (ftnlen)1);
++    nb = min(i__1,i__2);
++    *max_lwork__ = *n * nb;
++/* Computing MIN */
++    i__1 = *max_lwork__, i__2 = max(1,*n);
++    *min_lwork__ = min(i__1,i__2);
++    return 0;
++} /* gehrd_ */
++
++/* Subroutine */ int gesdd_(integer *min_lwork__, integer *max_lwork__, char *
++	prefix, integer *m, integer *n, integer *compute_uv__, ftnlen 
++	prefix_len)
++{
++    /* System generated locals */
++    address a__1[2];
++    integer i__1[2], i__2, i__3;
++    char ch__1[6];
++
++    /* Builtin functions */
++    /* Subroutine */ int s_cat(char *, char **, integer *, integer *, ftnlen);
++
++    /* Local variables */
++    static integer minmn, wrkbl, mnthr, bdspac, bdspan;
++    extern integer ilaenz_(integer *, char *, char *, integer *, integer *, 
++	    integer *, integer *, ftnlen, ftnlen);
++    static integer minwrk, maxwrk, smlsiz;
++
++/* f2py callstatement (*f2py_func)(&min_lwork,&max_lwork,prefix,&m,&n,&compute_uv) */
++/* f2py callprotoargument int*,int*,char*,int*,int*,int* */
++/* f2py intent(out,out=minwrk) :: min_lwork */
++/* f2py intent(out,out=maxwrk) :: max_lwork */
++/* f2py intent(in) :: prefix */
++/* f2py intent(in) :: m,n,compute_uv */
++    minmn = min(*m,*n);
++    mnthr = (integer) (minmn * 11. / 6.);
++    minwrk = 1;
++    maxwrk = 1;
++/* Writing concatenation */
++    i__1[0] = 1, a__1[0] = prefix;
++    i__1[1] = 5, a__1[1] = "GESDD";
++    s_cat(ch__1, a__1, i__1, &c__2, (ftnlen)6);
++    smlsiz = ilaenz_(&c__9, ch__1, " ", &c__0, &c__0, &c__0, &c__0, (ftnlen)6,
++	     (ftnlen)1);
++    if (*m >= *n) {
++
++/*           Compute space needed for DBDSDC */
++
++	bdspac = *n * 3 * *n + *n * 7;
++/* Computing MAX */
++	i__2 = *n * 12 + 4, i__3 = (*n << 3) + 2 + smlsiz * (smlsiz + 8);
++	bdspan = max(i__2,i__3);
++	if (*m >= mnthr) {
++	    if (*compute_uv__ == 0) {
++
++/*     Path 1 (M much larger than N, JOBZ='N') */
++
++/* Writing concatenation */
++		i__1[0] = 1, a__1[0] = prefix;
++		i__1[1] = 5, a__1[1] = "GEQRF";
++		s_cat(ch__1, a__1, i__1, &c__2, (ftnlen)6);
++		maxwrk = *n + *n * ilaenz_(&c__1, ch__1, " ", m, n, &c_n1, &
++			c_n1, (ftnlen)6, (ftnlen)1);
++/* Computing MAX */
++/* Writing concatenation */
++		i__1[0] = 1, a__1[0] = prefix;
++		i__1[1] = 5, a__1[1] = "GEBRD";
++		s_cat(ch__1, a__1, i__1, &c__2, (ftnlen)6);
++		i__2 = maxwrk, i__3 = *n * 3 + (*n << 1) * ilaenz_(&c__1, 
++			ch__1, " ", n, n, &c_n1, &c_n1, (ftnlen)6, (ftnlen)1);
++		maxwrk = max(i__2,i__3);
++		maxwrk = max(maxwrk,bdspac);
++		minwrk = bdspac;
++	    } else {
++
++/*     Path 4 (M much larger than N, JOBZ='A') */
++
++/* Writing concatenation */
++		i__1[0] = 1, a__1[0] = prefix;
++		i__1[1] = 5, a__1[1] = "GEQRF";
++		s_cat(ch__1, a__1, i__1, &c__2, (ftnlen)6);
++		wrkbl = *n + *n * ilaenz_(&c__1, ch__1, " ", m, n, &c_n1, &
++			c_n1, (ftnlen)6, (ftnlen)1);
++/* Computing MAX */
++/* Writing concatenation */
++		i__1[0] = 1, a__1[0] = prefix;
++		i__1[1] = 5, a__1[1] = "ORGQR";
++		s_cat(ch__1, a__1, i__1, &c__2, (ftnlen)6);
++		i__2 = wrkbl, i__3 = *n + *m * ilaenz_(&c__1, ch__1, " ", m, 
++			m, n, &c_n1, (ftnlen)6, (ftnlen)1);
++		wrkbl = max(i__2,i__3);
++/* Computing MAX */
++/* Writing concatenation */
++		i__1[0] = 1, a__1[0] = prefix;
++		i__1[1] = 5, a__1[1] = "GEBRD";
++		s_cat(ch__1, a__1, i__1, &c__2, (ftnlen)6);
++		i__2 = wrkbl, i__3 = *n * 3 + (*n << 1) * ilaenz_(&c__1, 
++			ch__1, " ", n, n, &c_n1, &c_n1, (ftnlen)6, (ftnlen)1);
++		wrkbl = max(i__2,i__3);
++/* Computing MAX */
++/* Writing concatenation */
++		i__1[0] = 1, a__1[0] = prefix;
++		i__1[1] = 5, a__1[1] = "ORMBR";
++		s_cat(ch__1, a__1, i__1, &c__2, (ftnlen)6);
++		i__2 = wrkbl, i__3 = *n * 3 + *n * ilaenz_(&c__1, ch__1, 
++			"QLN", n, n, n, &c_n1, (ftnlen)6, (ftnlen)3);
++		wrkbl = max(i__2,i__3);
++/* Computing MAX */
++/* Writing concatenation */
++		i__1[0] = 1, a__1[0] = prefix;
++		i__1[1] = 5, a__1[1] = "ORMBR";
++		s_cat(ch__1, a__1, i__1, &c__2, (ftnlen)6);
++		i__2 = wrkbl, i__3 = *n * 3 + *n * ilaenz_(&c__1, ch__1, 
++			"PRT", n, n, n, &c_n1, (ftnlen)6, (ftnlen)3);
++		wrkbl = max(i__2,i__3);
++/* Computing MAX */
++		i__2 = wrkbl, i__3 = bdspac + (*n << 1);
++		wrkbl = max(i__2,i__3);
++		maxwrk = *n * *n + wrkbl;
++		minwrk = bdspac + *n * *n + *m + *n;
++	    }
++	} else {
++
++/*     Path 5 (M at least N, but not much larger) */
++
++/* Writing concatenation */
++	    i__1[0] = 1, a__1[0] = prefix;
++	    i__1[1] = 5, a__1[1] = "GEBRD";
++	    s_cat(ch__1, a__1, i__1, &c__2, (ftnlen)6);
++	    wrkbl = *n * 3 + (*m + *n) * ilaenz_(&c__1, ch__1, " ", m, n, &
++		    c_n1, &c_n1, (ftnlen)6, (ftnlen)1);
++	    if (*compute_uv__ == 0) {
++/* Computing MAX */
++		i__2 = wrkbl, i__3 = bdspac + *n * 3;
++		maxwrk = max(i__2,i__3);
++		minwrk = *n * 3 + max(*m,bdspac);
++	    } else {
++/* Computing MAX */
++/* Writing concatenation */
++		i__1[0] = 1, a__1[0] = prefix;
++		i__1[1] = 5, a__1[1] = "ORMBR";
++		s_cat(ch__1, a__1, i__1, &c__2, (ftnlen)6);
++		i__2 = maxwrk, i__3 = *n * 3 + *m * ilaenz_(&c__1, ch__1, 
++			"QLN", m, m, n, &c_n1, (ftnlen)6, (ftnlen)3);
++		maxwrk = max(i__2,i__3);
++/* Computing MAX */
++/* Writing concatenation */
++		i__1[0] = 1, a__1[0] = prefix;
++		i__1[1] = 5, a__1[1] = "ORMBR";
++		s_cat(ch__1, a__1, i__1, &c__2, (ftnlen)6);
++		i__2 = maxwrk, i__3 = *n * 3 + *n * ilaenz_(&c__1, ch__1, 
++			"PRT", n, n, n, &c_n1, (ftnlen)6, (ftnlen)3);
++		maxwrk = max(i__2,i__3);
++/* Computing MAX */
++		i__2 = maxwrk, i__3 = bdspac + (*n << 1) + *m;
++		maxwrk = max(i__2,i__3);
++		minwrk = bdspac + (*n << 1) + *m;
++	    }
++	}
++    } else {
++
++/*     Compute space needed for DBDSDC */
++
++	bdspac = *m * 3 * *m + *m * 7;
++/* Computing MAX */
++	i__2 = *m * 12 + 4, i__3 = (*m << 3) + 2 + smlsiz * (smlsiz + 8);
++	bdspan = max(i__2,i__3);
++	if (*n >= mnthr) {
++	    if (*compute_uv__ == 0) {
++
++/*     Path 1t (N much larger than M, JOBZ='N') */
++
++/* Writing concatenation */
++		i__1[0] = 1, a__1[0] = prefix;
++		i__1[1] = 5, a__1[1] = "GELQF";
++		s_cat(ch__1, a__1, i__1, &c__2, (ftnlen)6);
++		maxwrk = *m + *m * ilaenz_(&c__1, ch__1, " ", m, n, &c_n1, &
++			c_n1, (ftnlen)6, (ftnlen)1);
++/* Computing MAX */
++/* Writing concatenation */
++		i__1[0] = 1, a__1[0] = prefix;
++		i__1[1] = 5, a__1[1] = "GEBRD";
++		s_cat(ch__1, a__1, i__1, &c__2, (ftnlen)6);
++		i__2 = maxwrk, i__3 = *m * 3 + (*m << 1) * ilaenz_(&c__1, 
++			ch__1, " ", m, m, &c_n1, &c_n1, (ftnlen)6, (ftnlen)1);
++		maxwrk = max(i__2,i__3);
++		maxwrk = max(maxwrk,bdspac);
++		minwrk = bdspac;
++	    } else {
++
++/*     Path 4t (N much larger than M, JOBZ='A') */
++
++/* Writing concatenation */
++		i__1[0] = 1, a__1[0] = prefix;
++		i__1[1] = 5, a__1[1] = "GELQF";
++		s_cat(ch__1, a__1, i__1, &c__2, (ftnlen)6);
++		wrkbl = *m + *m * ilaenz_(&c__1, ch__1, " ", m, n, &c_n1, &
++			c_n1, (ftnlen)6, (ftnlen)1);
++/* Computing MAX */
++/* Writing concatenation */
++		i__1[0] = 1, a__1[0] = prefix;
++		i__1[1] = 5, a__1[1] = "ORGLQ";
++		s_cat(ch__1, a__1, i__1, &c__2, (ftnlen)6);
++		i__2 = wrkbl, i__3 = *m + *n * ilaenz_(&c__1, ch__1, " ", n, 
++			n, m, &c_n1, (ftnlen)6, (ftnlen)1);
++		wrkbl = max(i__2,i__3);
++/* Computing MAX */
++/* Writing concatenation */
++		i__1[0] = 1, a__1[0] = prefix;
++		i__1[1] = 5, a__1[1] = "GEBRD";
++		s_cat(ch__1, a__1, i__1, &c__2, (ftnlen)6);
++		i__2 = wrkbl, i__3 = *m * 3 + (*m << 1) * ilaenz_(&c__1, 
++			ch__1, " ", m, m, &c_n1, &c_n1, (ftnlen)6, (ftnlen)1);
++		wrkbl = max(i__2,i__3);
++/* Computing MAX */
++/* Writing concatenation */
++		i__1[0] = 1, a__1[0] = prefix;
++		i__1[1] = 5, a__1[1] = "ORMBR";
++		s_cat(ch__1, a__1, i__1, &c__2, (ftnlen)6);
++		i__2 = wrkbl, i__3 = *m * 3 + *m * ilaenz_(&c__1, ch__1, 
++			"QLN", m, m, m, &c_n1, (ftnlen)6, (ftnlen)3);
++		wrkbl = max(i__2,i__3);
++/* Computing MAX */
++/* Writing concatenation */
++		i__1[0] = 1, a__1[0] = prefix;
++		i__1[1] = 5, a__1[1] = "ORMBR";
++		s_cat(ch__1, a__1, i__1, &c__2, (ftnlen)6);
++		i__2 = wrkbl, i__3 = *m * 3 + *m * ilaenz_(&c__1, ch__1, 
++			"PRT", m, m, m, &c_n1, (ftnlen)6, (ftnlen)3);
++		wrkbl = max(i__2,i__3);
++/* Computing MAX */
++		i__2 = wrkbl, i__3 = bdspac + (*m << 1);
++		wrkbl = max(i__2,i__3);
++		maxwrk = wrkbl + *m * *m;
++		minwrk = bdspac + *m * *m + *m + *n;
++	    }
++	} else {
++/* Writing concatenation */
++	    i__1[0] = 1, a__1[0] = prefix;
++	    i__1[1] = 5, a__1[1] = "GEBRD";
++	    s_cat(ch__1, a__1, i__1, &c__2, (ftnlen)6);
++	    wrkbl = *m * 3 + (*m + *n) * ilaenz_(&c__1, ch__1, " ", m, n, &
++		    c_n1, &c_n1, (ftnlen)6, (ftnlen)1);
++	    if (*compute_uv__ == 0) {
++/* Computing MAX */
++		i__2 = wrkbl, i__3 = bdspac + *m * 3;
++		maxwrk = max(i__2,i__3);
++		minwrk = *m * 3 + max(*n,bdspac);
++	    } else {
++/* Computing MAX */
++/* Writing concatenation */
++		i__1[0] = 1, a__1[0] = prefix;
++		i__1[1] = 5, a__1[1] = "ORMBR";
++		s_cat(ch__1, a__1, i__1, &c__2, (ftnlen)6);
++		i__2 = maxwrk, i__3 = *m * 3 + *m * ilaenz_(&c__1, ch__1, 
++			"QLN", m, m, n, &c_n1, (ftnlen)6, (ftnlen)3);
++		maxwrk = max(i__2,i__3);
++/* Computing MAX */
++/* Writing concatenation */
++		i__1[0] = 1, a__1[0] = prefix;
++		i__1[1] = 5, a__1[1] = "ORMBR";
++		s_cat(ch__1, a__1, i__1, &c__2, (ftnlen)6);
++		i__2 = maxwrk, i__3 = *m * 3 + *n * ilaenz_(&c__1, ch__1, 
++			"PRT", n, n, m, &c_n1, (ftnlen)6, (ftnlen)3);
++		maxwrk = max(i__2,i__3);
++/* Computing MAX */
++		i__2 = maxwrk, i__3 = bdspac + (*m << 1);
++		maxwrk = max(i__2,i__3);
++		minwrk = bdspac + (*m << 1) + *n;
++	    }
++	}
++    }
++    *min_lwork__ = minwrk;
++    *max_lwork__ = max(minwrk,maxwrk);
++    return 0;
++} /* gesdd_ */
++
++/* Subroutine */ int gelss_(integer *min_lwork__, integer *max_lwork__, char *
++	prefix, integer *m, integer *n, integer *nrhs, ftnlen prefix_len)
++{
++    /* System generated locals */
++    address a__1[2];
++    integer i__1[2], i__2, i__3;
++    char ch__1[6];
++
++    /* Builtin functions */
++    /* Subroutine */ int s_cat(char *, char **, integer *, integer *, ftnlen);
++
++    /* Local variables */
++    static integer mm, minmn, maxmn, mnthr, bdspac;
++    extern integer ilaenz_(integer *, char *, char *, integer *, integer *, 
++	    integer *, integer *, ftnlen, ftnlen);
++    static integer minwrk, maxwrk;
++
++/* f2py callstatement (*f2py_func)(&min_lwork,&max_lwork,prefix,&m,&n,&nrhs) */
++/* f2py callprotoargument int*,int*,char*,int*,int*,int* */
++/* f2py intent(out,out=minwrk) :: min_lwork */
++/* f2py intent(out,out=maxwrk) :: max_lwork */
++/* f2py intent(in) :: prefix */
++/* f2py intent(in) :: m,n,nrhs */
++    minmn = min(*m,*n);
++    maxmn = max(*m,*n);
++/* Writing concatenation */
++    i__1[0] = 1, a__1[0] = prefix;
++    i__1[1] = 5, a__1[1] = "GELSS";
++    s_cat(ch__1, a__1, i__1, &c__2, (ftnlen)6);
++    mnthr = ilaenz_(&c__6, ch__1, " ", m, n, nrhs, &c_n1, (ftnlen)6, (ftnlen)
++	    1);
++    minwrk = 1;
++    maxwrk = 0;
++    mm = *m;
++    if (*m >= *n && *m >= mnthr) {
++
++/*     Path 1a - overdetermined, with many more rows than columns */
++
++	mm = *n;
++/* Computing MAX */
++/* Writing concatenation */
++	i__1[0] = 1, a__1[0] = prefix;
++	i__1[1] = 5, a__1[1] = "GEQRF";
++	s_cat(ch__1, a__1, i__1, &c__2, (ftnlen)6);
++	i__2 = maxwrk, i__3 = *n + *n * ilaenz_(&c__1, ch__1, " ", m, n, &
++		c_n1, &c_n1, (ftnlen)6, (ftnlen)1);
++	maxwrk = max(i__2,i__3);
++/* Computing MAX */
++/* Writing concatenation */
++	i__1[0] = 1, a__1[0] = prefix;
++	i__1[1] = 5, a__1[1] = "ORMQR";
++	s_cat(ch__1, a__1, i__1, &c__2, (ftnlen)6);
++	i__2 = maxwrk, i__3 = *n + *nrhs * ilaenz_(&c__1, ch__1, "LT", m, 
++		nrhs, n, &c_n1, (ftnlen)6, (ftnlen)2);
++	maxwrk = max(i__2,i__3);
++    }
++    if (*m >= *n) {
++
++/*     Path 1 - overdetermined or exactly determined */
++
++/*     Compute workspace neede for BDSQR */
++
++/* Computing MAX */
++	i__2 = 1, i__3 = *n * 5;
++	bdspac = max(i__2,i__3);
++/* Computing MAX */
++/* Writing concatenation */
++	i__1[0] = 1, a__1[0] = prefix;
++	i__1[1] = 5, a__1[1] = "GEBRD";
++	s_cat(ch__1, a__1, i__1, &c__2, (ftnlen)6);
++	i__2 = maxwrk, i__3 = *n * 3 + (mm + *n) * ilaenz_(&c__1, ch__1, 
++		" ", &mm, n, &c_n1, &c_n1, (ftnlen)6, (ftnlen)1);
++	maxwrk = max(i__2,i__3);
++/* Computing MAX */
++/* Writing concatenation */
++	i__1[0] = 1, a__1[0] = prefix;
++	i__1[1] = 5, a__1[1] = "ORMBR";
++	s_cat(ch__1, a__1, i__1, &c__2, (ftnlen)6);
++	i__2 = maxwrk, i__3 = *n * 3 + *nrhs * ilaenz_(&c__1, ch__1, "QLT", &
++		mm, nrhs, n, &c_n1, (ftnlen)6, (ftnlen)3);
++	maxwrk = max(i__2,i__3);
++/* Computing MAX */
++/* Writing concatenation */
++	i__1[0] = 1, a__1[0] = prefix;
++	i__1[1] = 5, a__1[1] = "ORGBR";
++	s_cat(ch__1, a__1, i__1, &c__2, (ftnlen)6);
++	i__2 = maxwrk, i__3 = *n * 3 + (*n - 1) * ilaenz_(&c__1, ch__1, "P", 
++		n, n, n, &c_n1, (ftnlen)6, (ftnlen)1);
++	maxwrk = max(i__2,i__3);
++	maxwrk = max(maxwrk,bdspac);
++/* Computing MAX */
++	i__2 = maxwrk, i__3 = *n * *nrhs;
++	maxwrk = max(i__2,i__3);
++/* Computing MAX */
++	i__2 = *n * 3 + mm, i__3 = *n * 3 + *nrhs, i__2 = max(i__2,i__3);
++	minwrk = max(i__2,bdspac);
++	maxwrk = max(minwrk,maxwrk);
++    }
++    if (*n > *m) {
++
++/*     Compute workspace neede for DBDSQR */
++
++/* Computing MAX */
++	i__2 = 1, i__3 = *m * 5;
++	bdspac = max(i__2,i__3);
++/* Computing MAX */
++	i__2 = *m * 3 + *nrhs, i__3 = *m * 3 + *n, i__2 = max(i__2,i__3);
++	minwrk = max(i__2,bdspac);
++	if (*n >= mnthr) {
++
++/*     Path 2a - underdetermined, with many more columns */
++/*     than rows */
++
++/* Writing concatenation */
++	    i__1[0] = 1, a__1[0] = prefix;
++	    i__1[1] = 5, a__1[1] = "GELQF";
++	    s_cat(ch__1, a__1, i__1, &c__2, (ftnlen)6);
++	    maxwrk = *m + *m * ilaenz_(&c__1, ch__1, " ", m, n, &c_n1, &c_n1, 
++		    (ftnlen)6, (ftnlen)1);
++/* Computing MAX */
++/* Writing concatenation */
++	    i__1[0] = 1, a__1[0] = prefix;
++	    i__1[1] = 5, a__1[1] = "GEBRD";
++	    s_cat(ch__1, a__1, i__1, &c__2, (ftnlen)6);
++	    i__2 = maxwrk, i__3 = *m * *m + (*m << 2) + (*m << 1) * ilaenz_(&
++		    c__1, ch__1, " ", m, m, &c_n1, &c_n1, (ftnlen)6, (ftnlen)
++		    1);
++	    maxwrk = max(i__2,i__3);
++/* Computing MAX */
++/* Writing concatenation */
++	    i__1[0] = 1, a__1[0] = prefix;
++	    i__1[1] = 5, a__1[1] = "ORMBR";
++	    s_cat(ch__1, a__1, i__1, &c__2, (ftnlen)6);
++	    i__2 = maxwrk, i__3 = *m * *m + (*m << 2) + *nrhs * ilaenz_(&c__1,
++		     ch__1, "QLT", m, nrhs, m, &c_n1, (ftnlen)6, (ftnlen)3);
++	    maxwrk = max(i__2,i__3);
++/* Computing MAX */
++/* Writing concatenation */
++	    i__1[0] = 1, a__1[0] = prefix;
++	    i__1[1] = 5, a__1[1] = "ORGBR";
++	    s_cat(ch__1, a__1, i__1, &c__2, (ftnlen)6);
++	    i__2 = maxwrk, i__3 = *m * *m + (*m << 2) + (*m - 1) * ilaenz_(&
++		    c__1, ch__1, "P", m, m, m, &c_n1, (ftnlen)6, (ftnlen)1);
++	    maxwrk = max(i__2,i__3);
++/* Computing MAX */
++	    i__2 = maxwrk, i__3 = *m * *m + *m + bdspac;
++	    maxwrk = max(i__2,i__3);
++	    if (*nrhs > 1) {
++/* Computing MAX */
++		i__2 = maxwrk, i__3 = *m * *m + *m + *m * *nrhs;
++		maxwrk = max(i__2,i__3);
++	    } else {
++/* Computing MAX */
++		i__2 = maxwrk, i__3 = *m * *m + (*m << 1);
++		maxwrk = max(i__2,i__3);
++	    }
++/* Computing MAX */
++/* Writing concatenation */
++	    i__1[0] = 1, a__1[0] = prefix;
++	    i__1[1] = 5, a__1[1] = "ORMLQ";
++	    s_cat(ch__1, a__1, i__1, &c__2, (ftnlen)6);
++	    i__2 = maxwrk, i__3 = *m + *nrhs * ilaenz_(&c__1, ch__1, "LT", n, 
++		    nrhs, m, &c_n1, (ftnlen)6, (ftnlen)2);
++	    maxwrk = max(i__2,i__3);
++	} else {
++
++/*     Path 2 - underdetermined */
++
++/* Writing concatenation */
++	    i__1[0] = 1, a__1[0] = prefix;
++	    i__1[1] = 5, a__1[1] = "GEBRD";
++	    s_cat(ch__1, a__1, i__1, &c__2, (ftnlen)6);
++	    maxwrk = *m * 3 + (*n + *m) * ilaenz_(&c__1, ch__1, " ", m, n, &
++		    c_n1, &c_n1, (ftnlen)6, (ftnlen)1);
++/* Computing MAX */
++/* Writing concatenation */
++	    i__1[0] = 1, a__1[0] = prefix;
++	    i__1[1] = 5, a__1[1] = "ORMBR";
++	    s_cat(ch__1, a__1, i__1, &c__2, (ftnlen)6);
++	    i__2 = maxwrk, i__3 = *m * 3 + *nrhs * ilaenz_(&c__1, ch__1, 
++		    "QLT", m, nrhs, m, &c_n1, (ftnlen)6, (ftnlen)3);
++	    maxwrk = max(i__2,i__3);
++/* Computing MAX */
++/* Writing concatenation */
++	    i__1[0] = 1, a__1[0] = prefix;
++	    i__1[1] = 5, a__1[1] = "ORGBR";
++	    s_cat(ch__1, a__1, i__1, &c__2, (ftnlen)6);
++	    i__2 = maxwrk, i__3 = *m * 3 + *m * ilaenz_(&c__1, ch__1, "P", m, 
++		    n, m, &c_n1, (ftnlen)6, (ftnlen)1);
++	    maxwrk = max(i__2,i__3);
++	    maxwrk = max(maxwrk,bdspac);
++/* Computing MAX */
++	    i__2 = maxwrk, i__3 = *n * *nrhs;
++	    maxwrk = max(i__2,i__3);
++	}
++    }
++    maxwrk = max(minwrk,maxwrk);
++    minwrk = max(minwrk,1);
++    *min_lwork__ = minwrk;
++    *max_lwork__ = maxwrk;
++    return 0;
++} /* gelss_ */
++
++/* Subroutine */ int getri_(integer *min_lwork__, integer *max_lwork__, char *
++	prefix, integer *n, ftnlen prefix_len)
++{
++    /* System generated locals */
++    address a__1[2];
++    integer i__1[2];
++    char ch__1[6];
++
++    /* Builtin functions */
++    /* Subroutine */ int s_cat(char *, char **, integer *, integer *, ftnlen);
++
++    /* Local variables */
++    static integer nb;
++    extern integer ilaenz_(integer *, char *, char *, integer *, integer *, 
++	    integer *, integer *, ftnlen, ftnlen);
++
++/* f2py callstatement (*f2py_func)(&min_lwork,&max_lwork,prefix,&n) */
++/* f2py callprotoargument int*,int*,char*,int* */
++/* f2py intent(out,out=minwrk) :: min_lwork */
++/* f2py intent(out,out=maxwrk) :: max_lwork */
++/* f2py intent(in) :: prefix */
++/* f2py intent(in) :: n */
++/* Writing concatenation */
++    i__1[0] = 1, a__1[0] = prefix;
++    i__1[1] = 5, a__1[1] = "GETRI";
++    s_cat(ch__1, a__1, i__1, &c__2, (ftnlen)6);
++    nb = ilaenz_(&c__1, ch__1, " ", n, &c_n1, &c_n1, &c_n1, (ftnlen)6, (
++	    ftnlen)1);
++    *min_lwork__ = *n;
++    *max_lwork__ = *n * nb;
++    return 0;
++} /* getri_ */
++
++/* Subroutine */ int geev_(integer *min_lwork__, integer *max_lwork__, char *
++	prefix, integer *n, integer *compute_vl__, integer *compute_vr__, 
++	ftnlen prefix_len)
++{
++    /* System generated locals */
++    address a__1[2];
++    integer i__1[2], i__2, i__3, i__4, i__5;
++    char ch__1[6];
++
++    /* Builtin functions */
++    /* Subroutine */ int s_cat(char *, char **, integer *, integer *, ftnlen);
++
++    /* Local variables */
++    static integer k, maxb;
++    extern integer ilaenz_(integer *, char *, char *, integer *, integer *, 
++	    integer *, integer *, ftnlen, ftnlen);
++    static integer minwrk, maxwrk;
++    static logical wantvl;
++    static integer hswork;
++    static logical wantvr;
++
++/* f2py callstatement (*f2py_func)(&min_lwork,&max_lwork,prefix,&n,&compute_vl,&compute_vr) */
++/* f2py callprotoargument int*,int*,char*,int*,int*,int* */
++/* f2py intent(out,out=minwrk) :: min_lwork */
++/* f2py intent(out,out=maxwrk) :: max_lwork */
++/* f2py integer optional,intent(in) :: compute_vl = 1,compute_vr = 1 */
++/* f2py intent(in) :: prefix */
++/* f2py intent(in) :: n */
++    wantvl = *compute_vl__ == 1;
++    wantvr = *compute_vr__ == 1;
++    minwrk = 1;
++/* Writing concatenation */
++    i__1[0] = 1, a__1[0] = prefix;
++    i__1[1] = 5, a__1[1] = "GEHRD";
++    s_cat(ch__1, a__1, i__1, &c__2, (ftnlen)6);
++    maxwrk = (*n << 1) + *n * ilaenz_(&c__1, ch__1, " ", n, &c__1, n, &c__0, (
++	    ftnlen)6, (ftnlen)1);
++    if (! wantvl && ! wantvr) {
++/* Computing MAX */
++	i__2 = 1, i__3 = *n * 3;
++	minwrk = max(i__2,i__3);
++/* Computing MAX */
++/* Writing concatenation */
++	i__1[0] = 1, a__1[0] = prefix;
++	i__1[1] = 5, a__1[1] = "HSEQR";
++	s_cat(ch__1, a__1, i__1, &c__2, (ftnlen)6);
++	i__2 = ilaenz_(&c__8, ch__1, "EN", n, &c__1, n, &c_n1, (ftnlen)6, (
++		ftnlen)2);
++	maxb = max(i__2,2);
++/* Computing MIN */
++/* Computing MAX */
++/* Writing concatenation */
++	i__1[0] = 1, a__1[0] = prefix;
++	i__1[1] = 5, a__1[1] = "HSEQR";
++	s_cat(ch__1, a__1, i__1, &c__2, (ftnlen)6);
++	i__4 = 2, i__5 = ilaenz_(&c__4, ch__1, "EN", n, &c__1, n, &c_n1, (
++		ftnlen)6, (ftnlen)2);
++	i__2 = min(maxb,*n), i__3 = max(i__4,i__5);
++	k = min(i__2,i__3);
++/* Computing MAX */
++	i__2 = k * (k + 2), i__3 = *n << 1;
++	hswork = max(i__2,i__3);
++/* Computing MAX */
++	i__2 = maxwrk, i__3 = *n + 1, i__2 = max(i__2,i__3), i__3 = *n + 
++		hswork;
++	maxwrk = max(i__2,i__3);
++    } else {
++/* Computing MAX */
++	i__2 = 1, i__3 = *n << 2;
++	minwrk = max(i__2,i__3);
++/* Computing MAX */
++/* Writing concatenation */
++	i__1[0] = 1, a__1[0] = prefix;
++	i__1[1] = 5, a__1[1] = "ORGHR";
++	s_cat(ch__1, a__1, i__1, &c__2, (ftnlen)6);
++	i__2 = maxwrk, i__3 = (*n << 1) + (*n - 1) * ilaenz_(&c__1, ch__1, 
++		" ", n, &c__1, n, &c_n1, (ftnlen)6, (ftnlen)1);
++	maxwrk = max(i__2,i__3);
++/* Computing MAX */
++/* Writing concatenation */
++	i__1[0] = 1, a__1[0] = prefix;
++	i__1[1] = 5, a__1[1] = "HSEQR";
++	s_cat(ch__1, a__1, i__1, &c__2, (ftnlen)6);
++	i__2 = ilaenz_(&c__8, ch__1, "SV", n, &c__1, n, &c_n1, (ftnlen)6, (
++		ftnlen)2);
++	maxb = max(i__2,2);
++/* Computing MIN */
++/* Computing MAX */
++/* Writing concatenation */
++	i__1[0] = 1, a__1[0] = prefix;
++	i__1[1] = 5, a__1[1] = "HSEQR";
++	s_cat(ch__1, a__1, i__1, &c__2, (ftnlen)6);
++	i__4 = 2, i__5 = ilaenz_(&c__4, ch__1, "SV", n, &c__1, n, &c_n1, (
++		ftnlen)6, (ftnlen)2);
++	i__2 = min(maxb,*n), i__3 = max(i__4,i__5);
++	k = min(i__2,i__3);
++/* Computing MAX */
++	i__2 = k * (k + 2), i__3 = *n << 1;
++	hswork = max(i__2,i__3);
++/* Computing MAX */
++	i__2 = maxwrk, i__3 = *n + 1, i__2 = max(i__2,i__3), i__3 = *n + 
++		hswork;
++	maxwrk = max(i__2,i__3);
++/* Computing MAX */
++	i__2 = maxwrk, i__3 = *n << 2;
++	maxwrk = max(i__2,i__3);
++    }
++    *min_lwork__ = minwrk;
++    *max_lwork__ = maxwrk;
++    return 0;
++} /* geev_ */
++
++/* Subroutine */ int heev_(integer *min_lwork__, integer *max_lwork__, char *
++	prefix, integer *n, integer *lower, ftnlen prefix_len)
++{
++    /* System generated locals */
++    address a__1[2];
++    integer i__1[2], i__2, i__3;
++    char ch__1[6];
++
++    /* Builtin functions */
++    /* Subroutine */ int s_cat(char *, char **, integer *, integer *, ftnlen);
++
++    /* Local variables */
++    static integer nb;
++    static char uplo[1];
++    extern integer ilaenz_(integer *, char *, char *, integer *, integer *, 
++	    integer *, integer *, ftnlen, ftnlen);
++
++/* f2py callstatement (*f2py_func)(&min_lwork,&max_lwork,prefix,&n,&lower) */
++/* f2py callprotoargument int*,int*,char*,int*,int* */
++/* f2py intent(out,out=minwrk) :: min_lwork */
++/* f2py intent(out,out=maxwrk) :: max_lwork */
++/* f2py integer optional,intent(in) :: lower = 0 */
++/* f2py intent(in) :: prefix */
++/* f2py intent(in) :: n */
++    *(unsigned char *)uplo = 'L';
++    if (*lower == 0) {
++	*(unsigned char *)uplo = 'U';
++    }
++/* Writing concatenation */
++    i__1[0] = 1, a__1[0] = prefix;
++    i__1[1] = 5, a__1[1] = "HETRD";
++    s_cat(ch__1, a__1, i__1, &c__2, (ftnlen)6);
++    nb = ilaenz_(&c__1, ch__1, uplo, n, &c_n1, &c_n1, &c_n1, (ftnlen)6, (
++	    ftnlen)1);
++/* Computing MAX */
++    i__2 = 1, i__3 = (*n << 1) - 1;
++    *min_lwork__ = max(i__2,i__3);
++/* Computing MAX */
++    i__2 = 1, i__3 = (nb + 1) * *n;
++    *max_lwork__ = max(i__2,i__3);
++    return 0;
++} /* heev_ */
++
++/* Subroutine */ int syev_(integer *min_lwork__, integer *max_lwork__, char *
++	prefix, integer *n, integer *lower, ftnlen prefix_len)
++{
++    /* System generated locals */
++    address a__1[2];
++    integer i__1[2], i__2, i__3;
++    char ch__1[6];
++
++    /* Builtin functions */
++    /* Subroutine */ int s_cat(char *, char **, integer *, integer *, ftnlen);
++
++    /* Local variables */
++    static integer nb;
++    static char uplo[1];
++    extern integer ilaenz_(integer *, char *, char *, integer *, integer *, 
++	    integer *, integer *, ftnlen, ftnlen);
++
++/* f2py callstatement (*f2py_func)(&min_lwork,&max_lwork,prefix,&n,&lower) */
++/* f2py callprotoargument int*,int*,char*,int*,int* */
++/* f2py intent(out,out=minwrk) :: min_lwork */
++/* f2py intent(out,out=maxwrk) :: max_lwork */
++/* f2py integer optional,intent(in) :: lower = 0 */
++/* f2py intent(in) :: prefix */
++/* f2py intent(in) :: n */
++    *(unsigned char *)uplo = 'L';
++    if (*lower == 0) {
++	*(unsigned char *)uplo = 'U';
++    }
++/* Writing concatenation */
++    i__1[0] = 1, a__1[0] = prefix;
++    i__1[1] = 5, a__1[1] = "SYTRD";
++    s_cat(ch__1, a__1, i__1, &c__2, (ftnlen)6);
++    nb = ilaenz_(&c__1, ch__1, uplo, n, &c_n1, &c_n1, &c_n1, (ftnlen)6, (
++	    ftnlen)1);
++/* Computing MAX */
++    i__2 = 1, i__3 = *n * 3 - 1;
++    *min_lwork__ = max(i__2,i__3);
++/* Computing MAX */
++    i__2 = 1, i__3 = (nb + 2) * *n;
++    *max_lwork__ = max(i__2,i__3);
++    return 0;
++} /* syev_ */
++
++/* Subroutine */ int gees_(integer *min_lwork__, integer *max_lwork__, char *
++	prefix, integer *n, integer *compute_v__, ftnlen prefix_len)
++{
++    /* System generated locals */
++    address a__1[2];
++    integer i__1[2], i__2, i__3, i__4, i__5;
++    char ch__1[6];
++
++    /* Builtin functions */
++    /* Subroutine */ int s_cat(char *, char **, integer *, integer *, ftnlen);
++
++    /* Local variables */
++    static integer k, maxb;
++    extern integer ilaenz_(integer *, char *, char *, integer *, integer *, 
++	    integer *, integer *, ftnlen, ftnlen);
++    static integer minwrk, maxwrk, hswork;
++
++/* f2py callstatement (*f2py_func)(&min_lwork,&max_lwork,prefix,&n,&compute_v) */
++/* f2py callprotoargument int*,int*,char*,int*,int* */
++/* f2py intent(out,out=minwrk) :: min_lwork */
++/* f2py intent(out,out=maxwrk) :: max_lwork */
++/* f2py integer optional,intent(in) :: compute_v = 1 */
++/* f2py intent(in) :: prefix */
++/* f2py intent(in) :: n */
++/* Writing concatenation */
++    i__1[0] = 1, a__1[0] = prefix;
++    i__1[1] = 5, a__1[1] = "GEHRD";
++    s_cat(ch__1, a__1, i__1, &c__2, (ftnlen)6);
++    maxwrk = *n + *n * ilaenz_(&c__1, ch__1, " ", n, &c__1, n, &c__0, (ftnlen)
++	    6, (ftnlen)1);
++/* Computing MAX */
++    i__2 = 1, i__3 = *n << 1;
++    minwrk = max(i__2,i__3);
++    if (*compute_v__ == 0) {
++/* Computing MAX */
++/* Writing concatenation */
++	i__1[0] = 1, a__1[0] = prefix;
++	i__1[1] = 5, a__1[1] = "HSEQR";
++	s_cat(ch__1, a__1, i__1, &c__2, (ftnlen)6);
++	i__2 = ilaenz_(&c__8, ch__1, "SN", n, &c__1, n, &c_n1, (ftnlen)6, (
++		ftnlen)2);
++	maxb = max(i__2,2);
++/* Computing MIN */
++/* Computing MAX */
++/* Writing concatenation */
++	i__1[0] = 1, a__1[0] = prefix;
++	i__1[1] = 5, a__1[1] = "HSEQR";
++	s_cat(ch__1, a__1, i__1, &c__2, (ftnlen)6);
++	i__4 = 2, i__5 = ilaenz_(&c__4, ch__1, "SN", n, &c__1, n, &c_n1, (
++		ftnlen)6, (ftnlen)2);
++	i__2 = min(maxb,*n), i__3 = max(i__4,i__5);
++	k = min(i__2,i__3);
++/* Computing MAX */
++	i__2 = k * (k + 2), i__3 = *n << 1;
++	hswork = max(i__2,i__3);
++/* Computing MAX */
++	i__2 = max(maxwrk,hswork);
++	maxwrk = max(i__2,1);
++    } else {
++/* Computing MAX */
++/* Writing concatenation */
++	i__1[0] = 1, a__1[0] = prefix;
++	i__1[1] = 5, a__1[1] = "UNGHR";
++	s_cat(ch__1, a__1, i__1, &c__2, (ftnlen)6);
++	i__2 = maxwrk, i__3 = *n + (*n - 1) * ilaenz_(&c__1, ch__1, " ", n, &
++		c__1, n, &c_n1, (ftnlen)6, (ftnlen)1);
++	maxwrk = max(i__2,i__3);
++/* Computing MAX */
++/* Writing concatenation */
++	i__1[0] = 1, a__1[0] = prefix;
++	i__1[1] = 5, a__1[1] = "HSEQR";
++	s_cat(ch__1, a__1, i__1, &c__2, (ftnlen)6);
++	i__2 = ilaenz_(&c__8, ch__1, "EN", n, &c__1, n, &c_n1, (ftnlen)6, (
++		ftnlen)2);
++	maxb = max(i__2,2);
++/* Computing MIN */
++/* Computing MAX */
++/* Writing concatenation */
++	i__1[0] = 1, a__1[0] = prefix;
++	i__1[1] = 5, a__1[1] = "HSEQR";
++	s_cat(ch__1, a__1, i__1, &c__2, (ftnlen)6);
++	i__4 = 2, i__5 = ilaenz_(&c__4, ch__1, "EN", n, &c__1, n, &c_n1, (
++		ftnlen)6, (ftnlen)2);
++	i__2 = min(maxb,*n), i__3 = max(i__4,i__5);
++	k = min(i__2,i__3);
++/* Computing MAX */
++	i__2 = k * (k + 2), i__3 = *n << 1;
++	hswork = max(i__2,i__3);
++/* Computing MAX */
++	i__2 = max(maxwrk,hswork);
++	maxwrk = max(i__2,1);
++    }
++    *min_lwork__ = minwrk;
++    *max_lwork__ = maxwrk;
++    return 0;
++} /* gees_ */
++
++/* Subroutine */ int geqrf_(integer *min_lwork__, integer *max_lwork__, char *
++	prefix, integer *m, integer *n, ftnlen prefix_len)
++{
++    /* System generated locals */
++    address a__1[2];
++    integer i__1[2], i__2, i__3;
++    char ch__1[6];
++
++    /* Builtin functions */
++    /* Subroutine */ int s_cat(char *, char **, integer *, integer *, ftnlen);
++
++    /* Local variables */
++    static integer nb;
++    extern integer ilaenz_(integer *, char *, char *, integer *, integer *, 
++	    integer *, integer *, ftnlen, ftnlen);
++
++/* f2py callstatement (*f2py_func)(&min_lwork,&max_lwork,prefix,&m,&n) */
++/* f2py callprotoargument int*,int*,char*,int*,int* */
++/* f2py intent(out,out=minwrk) :: min_lwork */
++/* f2py intent(out,out=maxwrk) :: max_lwork */
++/* f2py intent(in) :: prefix */
++/* f2py intent(in) :: m,n */
++/* Writing concatenation */
++    i__1[0] = 1, a__1[0] = prefix;
++    i__1[1] = 5, a__1[1] = "GEQRF";
++    s_cat(ch__1, a__1, i__1, &c__2, (ftnlen)6);
++    nb = ilaenz_(&c__1, ch__1, " ", m, n, &c_n1, &c_n1, (ftnlen)6, (ftnlen)1);
++    *min_lwork__ = max(1,*n);
++/* Computing MAX */
++    i__2 = 1, i__3 = *n * nb;
++    *max_lwork__ = max(i__2,i__3);
++    return 0;
++} /* geqrf_ */
++
++/* Subroutine */ int gqr_(integer *min_lwork__, integer *max_lwork__, char *
++	prefix, integer *m, integer *n, ftnlen prefix_len)
++{
++    /* System generated locals */
++    address a__1[2];
++    integer i__1[2], i__2, i__3;
++    char ch__1[6];
++
++    /* Builtin functions */
++    /* Subroutine */ int s_cat(char *, char **, integer *, integer *, ftnlen);
++
++    /* Local variables */
++    static integer nb;
++    extern integer ilaenz_(integer *, char *, char *, integer *, integer *, 
++	    integer *, integer *, ftnlen, ftnlen);
++
++/* f2py callstatement (*f2py_func)(&min_lwork,&max_lwork,prefix,&m,&n) */
++/* f2py callprotoargument int*,int*,char*,int*,int* */
++/* f2py intent(out,out=minwrk) :: min_lwork */
++/* f2py intent(out,out=maxwrk) :: max_lwork */
++/* f2py intent(in) :: prefix */
++/* f2py intent(in) :: m,n */
++    if (*(unsigned char *)prefix == 'd' || *(unsigned char *)prefix == 's' || 
++	    *(unsigned char *)prefix == 'D' || *(unsigned char *)prefix == 
++	    'S') {
++/* Writing concatenation */
++	i__1[0] = 1, a__1[0] = prefix;
++	i__1[1] = 5, a__1[1] = "ORGQR";
++	s_cat(ch__1, a__1, i__1, &c__2, (ftnlen)6);
++	nb = ilaenz_(&c__1, ch__1, " ", m, n, &c_n1, &c_n1, (ftnlen)6, (
++		ftnlen)1);
++    } else {
++/* Writing concatenation */
++	i__1[0] = 1, a__1[0] = prefix;
++	i__1[1] = 5, a__1[1] = "UNGQR";
++	s_cat(ch__1, a__1, i__1, &c__2, (ftnlen)6);
++	nb = ilaenz_(&c__1, ch__1, " ", m, n, &c_n1, &c_n1, (ftnlen)6, (
++		ftnlen)1);
++    }
++    *min_lwork__ = max(1,*n);
++/* Computing MAX */
++    i__2 = 1, i__3 = *n * nb;
++    *max_lwork__ = max(i__2,i__3);
++    return 0;
++} /* gqr_ */
++
+diff --git a/scipy/linalg/src/calc_lwork.f b/scipy/linalg/src/calc_lwork.f
+index 2c00970..60216a3 100644
+--- a/scipy/linalg/src/calc_lwork.f
++++ b/scipy/linalg/src/calc_lwork.f
+@@ -10,10 +10,10 @@ cf2py intent(in) :: prefix
+ cf2py intent(in) :: n,lo,hi
+ 
+       INTEGER NB
+-      EXTERNAL ILAENV
++      EXTERNAL ILAENZ
+       INTRINSIC MIN
+ 
+-      NB = MIN( 64, ILAENV( 1, prefix // 'GEHRD', ' ', n, lo, hi, -1 ) )
++      NB = MIN( 64, ILAENZ( 1, prefix // 'GEHRD', ' ', n, lo, hi, -1 ) )
+       max_lwork = n * NB
+       min_lwork = MIN(max_lwork,MAX(1,n))
+ 
+@@ -31,15 +31,15 @@ cf2py intent(in) :: prefix
+ cf2py intent(in) :: m,n,compute_uv
+ 
+       INTEGER MINMN, MNTHR, MINWRK, MAXWRK, SMLSIZ, BDSPAC, BDSPAN
+-      INTEGER            ILAENV, WRKBL
+-      EXTERNAL           ILAENV
++      INTEGER            ILAENZ, WRKBL
++      EXTERNAL           ILAENZ
+       INTRINSIC          INT, MAX, MIN
+ 
+       MINMN = MIN( M, N )
+       MNTHR = INT( MINMN*11.0D0 / 6.0D0 )
+       MINWRK = 1
+       MAXWRK = 1
+-      SMLSIZ = ILAENV( 9, prefix // 'GESDD', ' ', 0, 0, 0, 0 )
++      SMLSIZ = ILAENZ( 9, prefix // 'GESDD', ' ', 0, 0, 0, 0 )
+       IF( M.GE.N ) THEN
+ *
+ *           Compute space needed for DBDSDC
+@@ -51,11 +51,11 @@ cf2py intent(in) :: m,n,compute_uv
+ *
+ *     Path 1 (M much larger than N, JOBZ='N')
+ *
+-               MAXWRK = N + N*ILAENV( 1, prefix // 'GEQRF', ' ', 
++               MAXWRK = N + N*ILAENZ( 1, prefix // 'GEQRF', ' ', 
+      $              M, N, -1,
+      $              -1 )
+                MAXWRK = MAX( MAXWRK, 3*N+2*N*
+-     $              ILAENV( 1, prefix // 'GEBRD', ' ',
++     $              ILAENZ( 1, prefix // 'GEBRD', ' ',
+      $              N, N, -1, -1 ) )
+                MAXWRK = MAX( MAXWRK, BDSPAC )
+                MINWRK = BDSPAC
+@@ -63,19 +63,19 @@ cf2py intent(in) :: m,n,compute_uv
+ *     
+ *     Path 4 (M much larger than N, JOBZ='A')
+ *
+-               WRKBL = N + N*ILAENV( 1, prefix // 'GEQRF', ' ',
++               WRKBL = N + N*ILAENZ( 1, prefix // 'GEQRF', ' ',
+      $              M, N, -1, -1 )
+-               WRKBL = MAX( WRKBL, N+M*ILAENV( 1, prefix // 'ORGQR',
++               WRKBL = MAX( WRKBL, N+M*ILAENZ( 1, prefix // 'ORGQR',
+      $              ' ', M,
+      $              M, N, -1 ) )
+                WRKBL = MAX( WRKBL, 3*N+2*N*
+-     $              ILAENV( 1, prefix // 'GEBRD', ' ',
++     $              ILAENZ( 1, prefix // 'GEBRD', ' ',
+      $              N, N, -1, -1 ) )
+                WRKBL = MAX( WRKBL, 3*N+N*
+-     $              ILAENV( 1, prefix // 'ORMBR', 'QLN', 
++     $              ILAENZ( 1, prefix // 'ORMBR', 'QLN', 
+      $              N, N, N, -1 ) )
+                WRKBL = MAX( WRKBL, 3*N+N*
+-     $              ILAENV( 1, prefix // 'ORMBR', 'PRT', 
++     $              ILAENZ( 1, prefix // 'ORMBR', 'PRT', 
+      $              N, N, N, -1 ) )
+                WRKBL = MAX( WRKBL, BDSPAC+2*N )
+                MAXWRK = N*N + WRKBL
+@@ -85,17 +85,17 @@ cf2py intent(in) :: m,n,compute_uv
+ *
+ *     Path 5 (M at least N, but not much larger)
+ *     
+-            WRKBL = 3*N + ( M+N )*ILAENV( 1, prefix // 'GEBRD', ' ',
++            WRKBL = 3*N + ( M+N )*ILAENZ( 1, prefix // 'GEBRD', ' ',
+      $           M, N, -1, -1)
+             IF (compute_uv.eq.0) THEN
+                MAXWRK = MAX(WRKBL,BDSPAC + 3*N)
+                MINWRK = 3*N + MAX(M,BDSPAC)
+             ELSE
+                MAXWRK = MAX( MAXWRK, 3*N+M*
+-     $              ILAENV( 1, prefix // 'ORMBR', 'QLN', 
++     $              ILAENZ( 1, prefix // 'ORMBR', 'QLN', 
+      $              M, M, N, -1 ) )
+                MAXWRK = MAX( MAXWRK, 3*N+N*
+-     $              ILAENV( 1, prefix // 'ORMBR', 'PRT', 
++     $              ILAENZ( 1, prefix // 'ORMBR', 'PRT', 
+      $              N, N, N, -1 ) )
+                MAXWRK = MAX( MAXWRK, BDSPAC+2*N+M )
+                MINWRK = BDSPAC + 2*N + M
+@@ -112,11 +112,11 @@ cf2py intent(in) :: m,n,compute_uv
+ *     
+ *     Path 1t (N much larger than M, JOBZ='N')
+ *     
+-               MAXWRK = M + M*ILAENV( 1, prefix // 'GELQF', ' ',
++               MAXWRK = M + M*ILAENZ( 1, prefix // 'GELQF', ' ',
+      $              M, N, -1,
+      $              -1 )
+                MAXWRK = MAX( MAXWRK, 3*M+2*M*
+-     $              ILAENV( 1, prefix // 'GEBRD', ' ',
++     $              ILAENZ( 1, prefix // 'GEBRD', ' ',
+      $              M, M, -1, -1 ) )
+                MAXWRK = MAX( MAXWRK, BDSPAC )
+                MINWRK = BDSPAC
+@@ -124,26 +124,26 @@ cf2py intent(in) :: m,n,compute_uv
+ *
+ *     Path 4t (N much larger than M, JOBZ='A')
+ *     
+-               WRKBL = M + M*ILAENV( 1, prefix // 'GELQF', ' ',
++               WRKBL = M + M*ILAENZ( 1, prefix // 'GELQF', ' ',
+      $              M, N, -1, -1 )
+-               WRKBL = MAX( WRKBL, M+N*ILAENV( 1, prefix // 'ORGLQ',
++               WRKBL = MAX( WRKBL, M+N*ILAENZ( 1, prefix // 'ORGLQ',
+      $              ' ', N,
+      $              N, M, -1 ) )
+                WRKBL = MAX( WRKBL, 3*M+2*M*
+-     $              ILAENV( 1, prefix // 'GEBRD', ' ', 
++     $              ILAENZ( 1, prefix // 'GEBRD', ' ', 
+      $              M, M, -1, -1 ) )
+                WRKBL = MAX( WRKBL, 3*M+M*
+-     $              ILAENV( 1, prefix // 'ORMBR', 'QLN', 
++     $              ILAENZ( 1, prefix // 'ORMBR', 'QLN', 
+      $              M, M, M, -1 ) )
+                WRKBL = MAX( WRKBL, 3*M+M*
+-     $              ILAENV( 1, prefix // 'ORMBR', 'PRT', 
++     $              ILAENZ( 1, prefix // 'ORMBR', 'PRT', 
+      $              M, M, M, -1 ) )
+                WRKBL = MAX( WRKBL, BDSPAC+2*M )
+                MAXWRK = WRKBL + M*M
+                MINWRK = BDSPAC + M*M + M + N
+             ENDIF
+          ELSE
+-            WRKBL = 3*M + ( M+N )*ILAENV( 1, prefix // 'GEBRD', ' ',
++            WRKBL = 3*M + ( M+N )*ILAENZ( 1, prefix // 'GEBRD', ' ',
+      $           M, N, -1,
+      $           -1 )
+             IF (compute_uv.eq.0) THEN
+@@ -151,10 +151,10 @@ cf2py intent(in) :: m,n,compute_uv
+                MINWRK = 3*M + MAX(N,BDSPAC)               
+             ELSE
+                MAXWRK = MAX( MAXWRK, 3*M+M*
+-     $              ILAENV( 1, prefix // 'ORMBR', 'QLN', 
++     $              ILAENZ( 1, prefix // 'ORMBR', 'QLN', 
+      $              M, M, N, -1 ) )
+                MAXWRK = MAX( MAXWRK, 3*M+N*
+-     $              ILAENV( 1, prefix // 'ORMBR', 'PRT', 
++     $              ILAENZ( 1, prefix // 'ORMBR', 'PRT', 
+      $              N, N, M, -1 ) )
+                MAXWRK = MAX( MAXWRK, BDSPAC+2*M )
+                MINWRK = BDSPAC + 2*M + N
+@@ -178,13 +178,13 @@ cf2py intent(in) :: prefix
+ cf2py intent(in) :: m,n,nrhs
+ 
+       INTEGER MAXWRK, MINMN, MINWRK, MM, MNTHR
+-      INTEGER ILAENV, BDSPAC, MAXMN
+-      EXTERNAL ILAENV
++      INTEGER ILAENZ, BDSPAC, MAXMN
++      EXTERNAL ILAENZ
+       INTRINSIC          MAX, MIN
+ 
+       MINMN = MIN( M, N )
+       MAXMN = MAX( M, N )
+-      MNTHR = ILAENV( 6, prefix // 'GELSS', ' ', M, N, NRHS, -1 )
++      MNTHR = ILAENZ( 6, prefix // 'GELSS', ' ', M, N, NRHS, -1 )
+       MINWRK = 1
+       MAXWRK = 0
+       MM = M
+@@ -193,10 +193,10 @@ cf2py intent(in) :: m,n,nrhs
+ *     Path 1a - overdetermined, with many more rows than columns
+ *     
+          MM = N
+-         MAXWRK = MAX( MAXWRK, N+N*ILAENV( 1, prefix //  'GEQRF', ' ',
++         MAXWRK = MAX( MAXWRK, N+N*ILAENZ( 1, prefix //  'GEQRF', ' ',
+      $        M, N, -1, -1 ) )
+          MAXWRK = MAX( MAXWRK, N+NRHS*
+-     $        ILAENV( 1, prefix //  'ORMQR', 'LT', M, NRHS, N, -1 ) )
++     $        ILAENZ( 1, prefix //  'ORMQR', 'LT', M, NRHS, N, -1 ) )
+       END IF
+       IF( M.GE.N ) THEN
+ *     
+@@ -206,11 +206,11 @@ cf2py intent(in) :: m,n,nrhs
+ *     
+          BDSPAC = MAX( 1, 5*N )
+          MAXWRK = MAX( MAXWRK, 3*N+( MM+N )*
+-     $        ILAENV( 1, prefix // 'GEBRD', ' ', MM, N, -1, -1 ) )
++     $        ILAENZ( 1, prefix // 'GEBRD', ' ', MM, N, -1, -1 ) )
+          MAXWRK = MAX( MAXWRK, 3*N+NRHS*
+-     $        ILAENV( 1, prefix // 'ORMBR', 'QLT', MM, NRHS, N, -1 ) )
++     $        ILAENZ( 1, prefix // 'ORMBR', 'QLT', MM, NRHS, N, -1 ) )
+          MAXWRK = MAX( MAXWRK, 3*N+( N-1 )*
+-     $        ILAENV( 1, prefix // 'ORGBR', 'P', N, N, N, -1 ) )
++     $        ILAENZ( 1, prefix // 'ORGBR', 'P', N, N, N, -1 ) )
+          MAXWRK = MAX( MAXWRK, BDSPAC )
+          MAXWRK = MAX( MAXWRK, N*NRHS )
+          MINWRK = MAX( 3*N+MM, 3*N+NRHS, BDSPAC )
+@@ -228,14 +228,14 @@ cf2py intent(in) :: m,n,nrhs
+ *     Path 2a - underdetermined, with many more columns
+ *     than rows
+ *     
+-            MAXWRK = M + M*ILAENV( 1, prefix // 'GELQF', ' ', 
++            MAXWRK = M + M*ILAENZ( 1, prefix // 'GELQF', ' ', 
+      $           M, N, -1, -1 )
+             MAXWRK = MAX( MAXWRK, M*M+4*M+2*M*
+-     $           ILAENV( 1, prefix //  'GEBRD', ' ', M, M, -1, -1 ) )
++     $           ILAENZ( 1, prefix //  'GEBRD', ' ', M, M, -1, -1 ) )
+             MAXWRK = MAX( MAXWRK, M*M+4*M+NRHS*
+-     $           ILAENV( 1, prefix // 'ORMBR', 'QLT', M, NRHS, M, -1 ))
++     $           ILAENZ( 1, prefix // 'ORMBR', 'QLT', M, NRHS, M, -1 ))
+             MAXWRK = MAX( MAXWRK, M*M+4*M+( M-1 )*
+-     $           ILAENV( 1, prefix // 'ORGBR', 'P', M, M, M, -1 ) )
++     $           ILAENZ( 1, prefix // 'ORGBR', 'P', M, M, M, -1 ) )
+             MAXWRK = MAX( MAXWRK, M*M+M+BDSPAC )
+             IF( NRHS.GT.1 ) THEN
+                MAXWRK = MAX( MAXWRK, M*M+M+M*NRHS )
+@@ -243,18 +243,18 @@ cf2py intent(in) :: m,n,nrhs
+                MAXWRK = MAX( MAXWRK, M*M+2*M )
+             END IF
+             MAXWRK = MAX( MAXWRK, M+NRHS*
+-     $           ILAENV( 1, prefix // 'ORMLQ', 'LT', N, NRHS, M, -1 ) )
++     $           ILAENZ( 1, prefix // 'ORMLQ', 'LT', N, NRHS, M, -1 ) )
+             
+          ELSE
+ *     
+ *     Path 2 - underdetermined
+ *     
+-            MAXWRK = 3*M + ( N+M )*ILAENV( 1, prefix // 'GEBRD', ' ',
++            MAXWRK = 3*M + ( N+M )*ILAENZ( 1, prefix // 'GEBRD', ' ',
+      $           M, N, -1, -1 )
+             MAXWRK = MAX( MAXWRK, 3*M+NRHS*
+-     $           ILAENV( 1, prefix // 'ORMBR', 'QLT', M, NRHS, M, -1 ) )
++     $           ILAENZ( 1, prefix // 'ORMBR', 'QLT', M, NRHS, M, -1 ) )
+             MAXWRK = MAX( MAXWRK, 3*M+M*
+-     $           ILAENV( 1, prefix // 'ORGBR', 'P', M, N, M, -1 ) )
++     $           ILAENZ( 1, prefix // 'ORGBR', 'P', M, N, M, -1 ) )
+             MAXWRK = MAX( MAXWRK, BDSPAC )
+             MAXWRK = MAX( MAXWRK, N*NRHS )
+          END IF
+@@ -275,9 +275,9 @@ cf2py intent(out,out=minwrk) :: min_lwork
+ cf2py intent(out,out=maxwrk) :: max_lwork
+ cf2py intent(in) :: prefix
+ cf2py intent(in) :: n
+-      INTEGER ILAENV, NB
+-      EXTERNAL ILAENV
+-      NB = ILAENV( 1, prefix // 'GETRI', ' ', N, -1, -1, -1 )
++      INTEGER ILAENZ, NB
++      EXTERNAL ILAENZ
++      NB = ILAENZ( 1, prefix // 'GETRI', ' ', N, -1, -1, -1 )
+       min_lwork = N
+       max_lwork = N*NB
+       end
+@@ -296,30 +296,30 @@ cf2py intent(in) :: prefix
+ cf2py intent(in) :: n
+ 
+       LOGICAL WANTVL, WANTVR
+-      INTEGER ILAENV, MINWRK, MAXWRK, MAXB, HSWORK, K
+-      EXTERNAL ILAENV
++      INTEGER ILAENZ, MINWRK, MAXWRK, MAXB, HSWORK, K
++      EXTERNAL ILAENZ
+       INTRINSIC          MAX, MIN
+ 
+       WANTVL = compute_vl.eq.1
+       WANTVR = compute_vr.eq.1
+ 
+       MINWRK = 1
+-      MAXWRK = 2*N + N*ILAENV( 1, prefix // 'GEHRD', ' ', N, 1, N, 0 )
++      MAXWRK = 2*N + N*ILAENZ( 1, prefix // 'GEHRD', ' ', N, 1, N, 0 )
+       IF( ( .NOT.WANTVL ) .AND. ( .NOT.WANTVR ) ) THEN
+          MINWRK = MAX( 1, 3*N )
+-         MAXB = MAX( ILAENV( 8, prefix // 'HSEQR', 'EN', N, 1, N, -1 )
++         MAXB = MAX( ILAENZ( 8, prefix // 'HSEQR', 'EN', N, 1, N, -1 )
+      $        , 2 )
+-         K = MIN( MAXB, N, MAX( 2, ILAENV( 4, prefix // 'HSEQR', 'EN', N
++         K = MIN( MAXB, N, MAX( 2, ILAENZ( 4, prefix // 'HSEQR', 'EN', N
+      $        , 1,  N, -1 ) ) )
+          HSWORK = MAX( K*( K+2 ), 2*N )
+          MAXWRK = MAX( MAXWRK, N+1, N+HSWORK )
+       ELSE
+          MINWRK = MAX( 1, 4*N )
+          MAXWRK = MAX( MAXWRK, 2*N+( N-1 )*
+-     $        ILAENV( 1, prefix // 'ORGHR', ' ', N, 1, N, -1 ) )
+-         MAXB = MAX( ILAENV( 8, prefix // 'HSEQR', 'SV', N, 1, N, -1 ), 
++     $        ILAENZ( 1, prefix // 'ORGHR', ' ', N, 1, N, -1 ) )
++         MAXB = MAX( ILAENZ( 8, prefix // 'HSEQR', 'SV', N, 1, N, -1 ), 
+      $        2  )
+-         K = MIN( MAXB, N, MAX( 2, ILAENV( 4, prefix // 'HSEQR', 'SV', N
++         K = MIN( MAXB, N, MAX( 2, ILAENZ( 4, prefix // 'HSEQR', 'SV', N
+      $        , 1, N, -1 ) ) )
+          HSWORK = MAX( K*( K+2 ), 2*N )
+          MAXWRK = MAX( MAXWRK, N+1, N+HSWORK )
+@@ -342,8 +342,8 @@ cf2py intent(in) :: prefix
+ cf2py intent(in) :: n
+ 
+       CHARACTER UPLO
+-      INTEGER ILAENV, NB
+-      EXTERNAL ILAENV
++      INTEGER ILAENZ, NB
++      EXTERNAL ILAENZ
+       INTRINSIC MAX
+ 
+       UPLO = 'L'
+@@ -351,7 +351,7 @@ cf2py intent(in) :: n
+         UPLO = 'U'
+       endif
+ 
+-      NB = ILAENV( 1, prefix // 'HETRD', UPLO, N, -1, -1, -1 )
++      NB = ILAENZ( 1, prefix // 'HETRD', UPLO, N, -1, -1, -1 )
+ 
+       min_lwork = MAX(1,2*N-1)
+       max_lwork = MAX( 1, ( NB+1 )*N )
+@@ -371,8 +371,8 @@ cf2py intent(in) :: prefix
+ cf2py intent(in) :: n
+ 
+       CHARACTER UPLO
+-      INTEGER ILAENV, NB
+-      EXTERNAL ILAENV
++      INTEGER ILAENZ, NB
++      EXTERNAL ILAENZ
+       INTRINSIC MAX
+ 
+       UPLO = 'L'
+@@ -380,7 +380,7 @@ cf2py intent(in) :: n
+         UPLO = 'U'
+       end if
+ 
+-      NB = ILAENV( 1, prefix // 'SYTRD', UPLO, N, -1, -1, -1 )
++      NB = ILAENZ( 1, prefix // 'SYTRD', UPLO, N, -1, -1, -1 )
+ 
+       min_lwork = MAX(1,3*N-1)
+       max_lwork = MAX( 1, ( NB+2 )*N )
+@@ -401,25 +401,25 @@ cf2py intent(in) :: prefix
+ cf2py intent(in) :: n
+ 
+       INTEGER            HSWORK, MAXWRK, MINWRK, MAXB, K
+-      INTEGER            ILAENV
+-      EXTERNAL           ILAENV
++      INTEGER            ILAENZ
++      EXTERNAL           ILAENZ
+       INTRINSIC          MAX, MIN
+ 
+-      MAXWRK = N + N*ILAENV( 1, prefix // 'GEHRD', ' ', N, 1, N, 0 )
++      MAXWRK = N + N*ILAENZ( 1, prefix // 'GEHRD', ' ', N, 1, N, 0 )
+       MINWRK = MAX( 1, 2*N )
+       IF( compute_v.eq.0 ) THEN
+-         MAXB = MAX( ILAENV( 8, prefix // 'HSEQR',
++         MAXB = MAX( ILAENZ( 8, prefix // 'HSEQR',
+      $        'SN', N, 1, N, -1 ), 2 )
+-         K = MIN( MAXB, N, MAX( 2, ILAENV( 4, prefix // 'HSEQR', 
++         K = MIN( MAXB, N, MAX( 2, ILAENZ( 4, prefix // 'HSEQR', 
+      $    'SN', N, 1, N, -1 ) ) )
+          HSWORK = MAX( K*( K+2 ), 2*N )
+          MAXWRK = MAX( MAXWRK, HSWORK, 1 )
+       ELSE
+          MAXWRK = MAX( MAXWRK, N+( N-1 )*
+-     $        ILAENV( 1, prefix // 'UNGHR', ' ', N, 1, N, -1 ) )
+-         MAXB = MAX( ILAENV( 8, prefix // 'HSEQR',
++     $        ILAENZ( 1, prefix // 'UNGHR', ' ', N, 1, N, -1 ) )
++         MAXB = MAX( ILAENZ( 8, prefix // 'HSEQR',
+      $        'EN', N, 1, N, -1 ), 2 )
+-         K = MIN( MAXB, N, MAX( 2, ILAENV( 4, prefix // 'HSEQR',
++         K = MIN( MAXB, N, MAX( 2, ILAENZ( 4, prefix // 'HSEQR',
+      $        'EN', N, 1, N, -1 ) ) )
+          HSWORK = MAX( K*( K+2 ), 2*N )
+          MAXWRK = MAX( MAXWRK, HSWORK, 1 )
+@@ -443,11 +443,11 @@ cf2py intent(in) :: prefix
+ cf2py intent(in) :: m,n
+ 
+       INTEGER NB
+-      INTEGER ILAENV
+-      EXTERNAL ILAENV
++      INTEGER ILAENZ
++      EXTERNAL ILAENZ
+       INTRINSIC MAX
+ 
+-      NB = ILAENV( 1, prefix // 'GEQRF', ' ', M, N, -1, -1 )
++      NB = ILAENZ( 1, prefix // 'GEQRF', ' ', M, N, -1, -1 )
+ 
+       min_lwork = MAX(1,N)
+       max_lwork = MAX(1,N*NB)
+@@ -466,15 +466,15 @@ cf2py intent(in) :: prefix
+ cf2py intent(in) :: m,n
+ 
+       INTEGER NB
+-      INTEGER ILAENV
+-      EXTERNAL ILAENV
++      INTEGER ILAENZ
++      EXTERNAL ILAENZ
+       INTRINSIC MAX
+ 
+       if ((prefix.eq.'d').or.(prefix.eq.'s')
+      $     .or.(prefix.eq.'D').or.(prefix.eq.'S')) then
+-         NB = ILAENV( 1, prefix // 'ORGQR', ' ', M, N, -1, -1 )
++         NB = ILAENZ( 1, prefix // 'ORGQR', ' ', M, N, -1, -1 )
+       else
+-         NB = ILAENV( 1, prefix // 'UNGQR', ' ', M, N, -1, -1 )
++         NB = ILAENZ( 1, prefix // 'UNGQR', ' ', M, N, -1, -1 )
+       endif
+       min_lwork = MAX(1,N)
+       max_lwork = MAX(1,N*NB)
+diff --git a/scipy/odr/__odrpack.c b/scipy/odr/__odrpack.c
+index 2d136d1..39d9139 100644
+--- a/scipy/odr/__odrpack.c
++++ b/scipy/odr/__odrpack.c
+@@ -12,7 +12,7 @@
+ #include "odrpack.h"
+ 
+ 
+-void F_FUNC(dodrc,DODRC)(void (*fcn)(int *n, int *m, int *np, int *nq, int *ldn, int *ldm, 
++int F_FUNC(dodrc,DODRC)(void (*fcn)(int *n, int *m, int *np, int *nq, int *ldn, int *ldm, 
+             int *ldnp, double *beta, double *xplusd, int *ifixb, int *ifixx, 
+             int *ldifx, int *ideval, double *f, double *fjacb, double *fjacd, 
+             int *istop), 
+@@ -23,7 +23,7 @@ void F_FUNC(dodrc,DODRC)(void (*fcn)(int *n, int *m, int *np, int *nq, int *ldn,
+            int *maxit, int *iprint, int *lunerr, int *lunrpt, double *stpb,
+            double *stpd, int *ldstpd, double *sclb, double *scld, int *ldscld,
+            double *work, int *lwork, int *iwork, int *liwork, int *info);
+-void F_FUNC(dwinf,DWINF)(int *n, int *m, int *np, int *nq, int *ldwe, int *ld2we, int *isodr,
++int F_FUNC(dwinf,DWINF)(int *n, int *m, int *np, int *nq, int *ldwe, int *ld2we, int *isodr,
+         int *delta, int *eps, int *xplus, int *fn, int *sd, int *vcv, int *rvar,
+         int *wss, int *wssde, int *wssep, int *rcond, int *eta, int *olmav, 
+         int *tau, int *alpha, int *actrs, int *pnorm, int *rnors, int *prers,
+@@ -32,8 +32,8 @@ void F_FUNC(dwinf,DWINF)(int *n, int *m, int *np, int *nq, int *ldwe, int *ld2we
+         int *fs, int *fjacb, int *we1, int *diff, int *delts, int *deltn, 
+         int *t, int *tt, int *omega, int *fjacd, int *wrk1, int *wrk2, 
+         int *wrk3, int *wrk4, int *wrk5, int *wrk6, int *wrk7, int *lwkmn);
+-void F_FUNC(dluno,DLUNO)(int *lun, char *fn, int fnlen);
+-void F_FUNC(dlunc,DLUNC)(int *lun);
++int F_FUNC(dluno,DLUNO)(int *lun, char *fn, int fnlen);
++int F_FUNC(dlunc,DLUNC)(int *lun);
+ 
+ 
+ 
+diff --git a/scipy/optimize/__minpack.h b/scipy/optimize/__minpack.h
+index 8a2042d..6aca268 100644
+--- a/scipy/optimize/__minpack.h
++++ b/scipy/optimize/__minpack.h
+@@ -47,12 +47,12 @@
+ #endif
+ #endif
+ 
+-extern void CHKDER(int*,int*,double*,double*,double*,int*,double*,double*,int*,double*);
+-extern void HYBRD(void*,int*,double*,double*,double*,int*,int*,int*,double*,double*,int*,double*,int*,int*,int*,double*,int*,double*,int*,double*,double*,double*,double*,double*);
+-extern void HYBRJ(void*,int*,double*,double*,double*,int*,double*,int*,double*,int*,double*,int*,int*,int*,int*,double*,int*,double*,double*,double*,double*,double*);
+-extern void LMDIF(void*,int*,int*,double*,double*,double*,double*,double*,int*,double*,double*,int*,double*,int*,int*,int*,double*,int*,int*,double*,double*,double*,double*,double*);
+-extern void LMDER(void*,int*,int*,double*,double*,double*,int*,double*,double*,double*,int*,double*,int*,double*,int*,int*,int*,int*,int*,double*,double*,double*,double*,double*);
+-extern void LMSTR(void*,int*,int*,double*,double*,double*,int*,double*,double*,double*,int*,double*,int*,double*,int*,int*,int*,int*,int*,double*,double*,double*,double*,double*);
++extern int CHKDER(int*,int*,double*,double*,double*,int*,double*,double*,int*,double*);
++extern int HYBRD(void*,int*,double*,double*,double*,int*,int*,int*,double*,double*,int*,double*,int*,int*,int*,double*,int*,double*,int*,double*,double*,double*,double*,double*);
++extern int HYBRJ(void*,int*,double*,double*,double*,int*,double*,int*,double*,int*,double*,int*,int*,int*,int*,double*,int*,double*,double*,double*,double*,double*);
++extern int LMDIF(void*,int*,int*,double*,double*,double*,double*,double*,int*,double*,double*,int*,double*,int*,int*,int*,double*,int*,int*,double*,double*,double*,double*,double*);
++extern int LMDER(void*,int*,int*,double*,double*,double*,int*,double*,double*,double*,int*,double*,int*,double*,int*,int*,int*,int*,int*,double*,double*,double*,double*,double*);
++extern int LMSTR(void*,int*,int*,double*,double*,double*,int*,double*,double*,double*,int*,double*,int*,double*,int*,int*,int*,int*,int*,double*,double*,double*,double*,double*);
+ 
+ int raw_multipack_calling_function(int *n, double *x, double *fvec, int *iflag)
+ {
+diff --git a/scipy/optimize/_lsq/setup.py b/scipy/optimize/_lsq/setup.py
+index b9222a0..863400b 100644
+--- a/scipy/optimize/_lsq/setup.py
++++ b/scipy/optimize/_lsq/setup.py
+@@ -5,7 +5,7 @@ def configuration(parent_package='', top_path=None):
+     from numpy.distutils.misc_util import Configuration
+     config = Configuration('_lsq', parent_package, top_path)
+     config.add_extension('givens_elimination',
+-                         sources=['givens_elimination.c'])
++                         sources=['givens_elimination.c'],include_dirs=['../../linalg'])
+     return config
+ 
+ 
 diff --git a/scipy/sparse/linalg/dsolve/SuperLU/SRC/cgscon.c b/scipy/sparse/linalg/dsolve/SuperLU/SRC/cgscon.c
 index e17532d..a7a5629 100644
 --- a/scipy/sparse/linalg/dsolve/SuperLU/SRC/cgscon.c
@@ -1452,6 +3486,25 @@ index 7a0a3ba..0000000
 - 	perm_r[*pivrow] = jcol;
 - #else
 - 	perm_r[diagind] = jcol;
+diff --git a/scipy/sparse/linalg/dsolve/_superlu_utils.c b/scipy/sparse/linalg/dsolve/_superlu_utils.c
+index c2a10a7..eb85c3b 100644
+--- a/scipy/sparse/linalg/dsolve/_superlu_utils.c
++++ b/scipy/sparse/linalg/dsolve/_superlu_utils.c
+@@ -79,12 +79,12 @@ void superlu_python_module_free(void *ptr)
+  * Stubs for Harwell Subroutine Library functions that SuperLU tries to call.
+  */
+ 
+-void mc64id_(int *a)
++int mc64id_(int *a)
+ {
+     superlu_python_module_abort("chosen functionality not available");
+ }
+ 
+-void mc64ad_(int *a, int *b, int *c, int d[], int e[], double f[],
++int mc64ad_(int *a, int *b, int *c, int d[], int e[], double f[],
+ 	     int *g, int h[], int *i, int j[], int *k, double l[],
+ 	     int m[], int n[])
+ {
 diff --git a/scipy/sparse/linalg/eigen/arpack/ARPACK/SRC/debug.h b/scipy/sparse/linalg/eigen/arpack/ARPACK/SRC/debug.h
 index 5eb0bb1..03fb23d 100644
 --- a/scipy/sparse/linalg/eigen/arpack/ARPACK/SRC/debug.h
@@ -1542,6 +3595,118 @@ index 8cd34d4..0000000
 -‹  ?»-e±NÃ0Eçø+®Ä’‰”P
 -Œ)T* Š.ÝäÅ±äøÛ	íßã„‰é¾áž«ó¬9eªç ZöÙ†B ‹vtu4ì¸EÍý`éåõØ“‹P®cçH«h&û†¼8]²—|›£š·<µYõ¼Çácÿ‰¢Äuñô¸¾A¹¾¿-î ¬fob×c½Z‰^…H>cïl®yWÙ¡#üSÙ»RâUâMâ].Çßdíœ±£DWÆ_þp•‘Ø˜ßz*$_3-ò!½E<O¦¡&Oôö<°KoejeÓèk$W49òjÞ^XæSÙBü £zâîL  
 \ No newline at end of file
+diff --git a/scipy/special/cdf_wrappers.c b/scipy/special/cdf_wrappers.c
+index 08121f2..7ee9b28 100644
+--- a/scipy/special/cdf_wrappers.c
++++ b/scipy/special/cdf_wrappers.c
+@@ -52,7 +52,7 @@ static void show_error(char *func, int status, int bound) {
+   }
+ }
+ 
+-extern void F_FUNC(cdfbet,CDFBET)(int*,double*,double*,double*,double*,double*,double*,int*,double*);
++extern int F_FUNC(cdfbet,CDFBET)(int*,double*,double*,double*,double*,double*,double*,int*,double*);
+ 
+ double cdfbet3_wrap(double p, double b, double x) {
+   int which=3;
+@@ -83,7 +83,7 @@ double cdfbet4_wrap(double a, double p, double x) {
+ }
+ 
+ 
+-extern void F_FUNC(cdfbin,CDFBIN)(int*,double*,double*,double*,double*,double*,double*,int*,double*);
++extern int F_FUNC(cdfbin,CDFBIN)(int*,double*,double*,double*,double*,double*,double*,int*,double*);
+ 
+ double cdfbin2_wrap(double p, double xn, double pr) {
+   int which=2;
+@@ -113,7 +113,7 @@ double cdfbin3_wrap(double s, double p, double pr) {
+   return xn;
+ }
+ 
+-extern void F_FUNC(cdfchi,CDFCHI)(int*,double*,double*,double*,double*,int*,double*);
++extern int F_FUNC(cdfchi,CDFCHI)(int*,double*,double*,double*,double*,int*,double*);
+ double cdfchi3_wrap(double p, double x){
+   int which=3;
+   double q=1.0-p, df, bound;
+@@ -128,7 +128,7 @@ double cdfchi3_wrap(double p, double x){
+   return df;
+ }
+ 
+-extern void F_FUNC(cdfchn,CDFCHN)(int*,double*,double*,double*,double*,double*,int*,double*);
++extern int F_FUNC(cdfchn,CDFCHN)(int*,double*,double*,double*,double*,double*,int*,double*);
+ double cdfchn1_wrap(double x, double df, double nc) {
+   int which=1;
+   double q, p, bound;
+@@ -184,7 +184,7 @@ double cdfchn4_wrap(double x, double df, double p) {
+   return nc;
+ }
+ 
+-extern void F_FUNC(cdff,CDFF)(int*,double*,double*,double*,double*,double*,int*,double*);
++extern int F_FUNC(cdff,CDFF)(int*,double*,double*,double*,double*,double*,int*,double*);
+ /*
+ double cdff1_wrap(double dfn, double dfd, double f) {
+   int which=1;
+@@ -243,7 +243,7 @@ double cdff4_wrap(double dfn, double p, double f) {
+ }
+ 
+ 
+-extern void F_FUNC(cdffnc,CDFFNC)(int*,double*,double*,double*,double*,double*,double*,int*,double*);
++extern int F_FUNC(cdffnc,CDFFNC)(int*,double*,double*,double*,double*,double*,double*,int*,double*);
+ double cdffnc1_wrap(double dfn, double dfd, double nc, double f) {
+   int which=1;
+   double q, p, bound;
+@@ -316,7 +316,7 @@ double cdffnc5_wrap(double dfn, double dfd, double p, double f) {
+ /* scl == a in gdtr
+    shp == b in gdtr
+ */ 
+-extern void F_FUNC(cdfgam,CDFGAM)(int*,double*,double*,double*,double*,double*,int*,double*);
++extern int F_FUNC(cdfgam,CDFGAM)(int*,double*,double*,double*,double*,double*,int*,double*);
+ double cdfgam1_wrap(double scl, double shp, double x) {
+   int which=1;
+   double q, p, bound;
+@@ -372,7 +372,7 @@ double cdfgam4_wrap(double p, double shp, double x) {
+   return scl;
+ }
+ 
+-extern void F_FUNC(cdfnbn,CDFNBN)(int*,double*,double*,double*,double*,double*,double*,int*,double*);
++extern int F_FUNC(cdfnbn,CDFNBN)(int*,double*,double*,double*,double*,double*,double*,int*,double*);
+ double cdfnbn2_wrap(double p, double xn, double pr) {
+   int which=2;
+   double q=1.0-p, s, ompr=1.0-pr, bound;
+@@ -401,7 +401,7 @@ double cdfnbn3_wrap(double s, double p, double pr) {
+   return xn;
+ }
+ 
+-extern void F_FUNC(cdfnor,CDFNOR)(int*,double*,double*,double*,double*,double*,int*,double*);
++extern int F_FUNC(cdfnor,CDFNOR)(int*,double*,double*,double*,double*,double*,int*,double*);
+ double cdfnor3_wrap(double p, double std, double x) {
+   int which=3;
+   double q=1.0-p, mn, bound;
+@@ -430,7 +430,7 @@ double cdfnor4_wrap(double mn, double p, double x) {
+   return std;
+ }
+ 
+-extern void F_FUNC(cdfpoi,CDFPOI)(int*,double*,double*,double*,double*,int*,double*);
++extern int F_FUNC(cdfpoi,CDFPOI)(int*,double*,double*,double*,double*,int*,double*);
+ double cdfpoi2_wrap(double p, double xlam){
+   int which=2;
+   double q=1.0-p, s, bound;
+@@ -445,7 +445,7 @@ double cdfpoi2_wrap(double p, double xlam){
+   return s;
+ }
+ 
+-extern void F_FUNC(cdft,CDFT)(int*,double*,double*,double*,double*,int*,double*);
++extern int F_FUNC(cdft,CDFT)(int*,double*,double*,double*,double*,int*,double*);
+ double cdft1_wrap(double df, double t){
+   int which=1;
+   double q, p, bound;
+@@ -487,7 +487,7 @@ double cdft3_wrap(double p, double t){
+   return df;
+ }
+ 
+-extern void F_FUNC(cdftnc,CDFTNC)(int*,double*,double*,double*,double*,double*,int*,double*);
++extern int F_FUNC(cdftnc,CDFTNC)(int*,double*,double*,double*,double*,double*,int*,double*);
+ double cdftnc1_wrap(double df, double nc, double t) {
+   int which=1;
+   double q, p, bound;
 diff --git a/scipy/special/lapack_defs.h b/scipy/special/lapack_defs.h
 index fb8fd80..d84cd3f 100644
 --- a/scipy/special/lapack_defs.h
@@ -1554,14 +3719,92 @@ index fb8fd80..d84cd3f 100644
  #define c_dstevr F_FUNC(dstevr,DSTEVR)
  
 diff --git a/scipy/special/specfun_wrappers.c b/scipy/special/specfun_wrappers.c
-index 8772dd1..8850496 100644
+index 8772dd1..d38505f 100644
 --- a/scipy/special/specfun_wrappers.c
 +++ b/scipy/special/specfun_wrappers.c
-@@ -35,6 +35,7 @@ extern void F_FUNC(chgu,CHGU)(double*,double*,double*,double*,int*);
- extern void F_FUNC(itairy,ITAIRY)(double*,double*,double*,double*,double*);
- extern void F_FUNC(e1xb,E1XB)(double*,double*);
- extern void F_FUNC(e1z,E1Z)(npy_cdouble*,npy_cdouble*);
-+extern void F_FUNC(eixz,E1Z)(npy_cdouble*,npy_cdouble*);
- extern void F_FUNC(eix,EIX)(double*,double*);
- extern void F_FUNC(cerror,CERROR)(npy_cdouble*,npy_cdouble*);
- extern void F_FUNC(stvh0,STVH0)(double*,double*);
+@@ -26,45 +26,46 @@
+ extern double cephes_psi(double);
+ extern double cephes_struve(double, double);
+ 
+-extern void F_FUNC(cgama,CGAMA)(double*,double*,int*,double*,double*);
+-extern void F_FUNC(cpsi,CPSI)(double*,double*,double*,double*);
+-extern void F_FUNC(hygfz,HYGFZ)(double*,double*,double*,npy_cdouble*,npy_cdouble*);
+-extern void F_FUNC(cchg,CCHG)(double*,double*,npy_cdouble*,npy_cdouble*);
+-extern void F_FUNC(chgm,CHGM)(double*,double*,double*,double*);
+-extern void F_FUNC(chgu,CHGU)(double*,double*,double*,double*,int*);
+-extern void F_FUNC(itairy,ITAIRY)(double*,double*,double*,double*,double*);
+-extern void F_FUNC(e1xb,E1XB)(double*,double*);
+-extern void F_FUNC(e1z,E1Z)(npy_cdouble*,npy_cdouble*);
+-extern void F_FUNC(eix,EIX)(double*,double*);
+-extern void F_FUNC(cerror,CERROR)(npy_cdouble*,npy_cdouble*);
+-extern void F_FUNC(stvh0,STVH0)(double*,double*);
+-extern void F_FUNC(stvh1,STVH1)(double*,double*);
+-extern void F_FUNC(stvhv,STVHV)(double*,double*,double*);
+-extern void F_FUNC(stvl0,STVL0)(double*,double*);
+-extern void F_FUNC(stvl1,STVL1)(double*,double*);
+-extern void F_FUNC(stvlv,STVLV)(double*,double*,double*);
+-extern void F_FUNC(itsh0,ITSH0)(double*,double*);
+-extern void F_FUNC(itth0,ITTH0)(double*,double*);
+-extern void F_FUNC(itsl0,ITSL0)(double*,double*);
+-extern void F_FUNC(klvna,KLVNA)(double*,double*,double*,double*,double*,double*,double*,double*,double*);
+-extern void F_FUNC(itjya,ITJYA)(double*,double*,double*);
+-extern void F_FUNC(ittjya,ITTJYA)(double*,double*,double*);
+-extern void F_FUNC(itika,ITIKA)(double*,double*,double*);
+-extern void F_FUNC(ittika,ITTIKA)(double*,double*,double*);
+-extern void F_FUNC(cfc,CFC)(npy_cdouble*,npy_cdouble*,npy_cdouble*);
+-extern void F_FUNC(cfs,CFS)(npy_cdouble*,npy_cdouble*,npy_cdouble*);
+-extern void F_FUNC(cva2,CVA2)(int*,int*,double*,double*);
+-extern void F_FUNC(mtu0,MTU0)(int*,int*,double*,double*,double*,double*);
+-extern void F_FUNC(mtu12,MTU12)(int*,int*,int*,double*,double*,double*,double*,double*,double*);
+-extern void F_FUNC(lpmv,LPMV)(double*,int*,double*,double*);
+-extern void F_FUNC(pbwa,PBWA)(double*,double*,double*,double*,double*,double*);
+-extern void F_FUNC(pbdv,PBDV)(double*,double*,double*,double*,double*,double*);
+-extern void F_FUNC(pbvv,PBVV)(double*,double*,double*,double*,double*,double*);
+-extern void F_FUNC(segv,SEGV)(int*,int*,double*,int*,double*,double*);
+-extern void F_FUNC(aswfa,ASWFA)(int*,int*,double*,double*,int*,double*,double*,double*);
+-extern void F_FUNC(rswfp,RSWFP)(int*,int*,double*,double*,double*,int*,double*,double*,double*,double*);
+-extern void F_FUNC(rswfo,RSWFO)(int*,int*,double*,double*,double*,int*,double*,double*,double*,double*);
+-extern void F_FUNC(ffk,FFK)(int*,double*,double*,double*,double*,double*,double*,double*,double*,double*);
++extern int F_FUNC(cgama,CGAMA)(double*,double*,int*,double*,double*);
++extern int F_FUNC(cpsi,CPSI)(double*,double*,double*,double*);
++extern int F_FUNC(hygfz,HYGFZ)(double*,double*,double*,npy_cdouble*,npy_cdouble*);
++extern int F_FUNC(cchg,CCHG)(double*,double*,npy_cdouble*,npy_cdouble*);
++extern int F_FUNC(chgm,CHGM)(double*,double*,double*,double*);
++extern int F_FUNC(chgu,CHGU)(double*,double*,double*,double*,int*);
++extern int F_FUNC(itairy,ITAIRY)(double*,double*,double*,double*,double*);
++extern int F_FUNC(e1xb,E1XB)(double*,double*);
++extern int F_FUNC(e1z,E1Z)(npy_cdouble*,npy_cdouble*);
++extern int F_FUNC(eixz,E1Z)(npy_cdouble*,npy_cdouble*);
++extern int F_FUNC(eix,EIX)(double*,double*);
++extern int F_FUNC(cerror,CERROR)(npy_cdouble*,npy_cdouble*);
++extern int F_FUNC(stvh0,STVH0)(double*,double*);
++extern int F_FUNC(stvh1,STVH1)(double*,double*);
++extern int F_FUNC(stvhv,STVHV)(double*,double*,double*);
++extern int F_FUNC(stvl0,STVL0)(double*,double*);
++extern int F_FUNC(stvl1,STVL1)(double*,double*);
++extern int F_FUNC(stvlv,STVLV)(double*,double*,double*);
++extern int F_FUNC(itsh0,ITSH0)(double*,double*);
++extern int F_FUNC(itth0,ITTH0)(double*,double*);
++extern int F_FUNC(itsl0,ITSL0)(double*,double*);
++extern int F_FUNC(klvna,KLVNA)(double*,double*,double*,double*,double*,double*,double*,double*,double*);
++extern int F_FUNC(itjya,ITJYA)(double*,double*,double*);
++extern int F_FUNC(ittjya,ITTJYA)(double*,double*,double*);
++extern int F_FUNC(itika,ITIKA)(double*,double*,double*);
++extern int F_FUNC(ittika,ITTIKA)(double*,double*,double*);
++extern int F_FUNC(cfc,CFC)(npy_cdouble*,npy_cdouble*,npy_cdouble*);
++extern int F_FUNC(cfs,CFS)(npy_cdouble*,npy_cdouble*,npy_cdouble*);
++extern int F_FUNC(cva2,CVA2)(int*,int*,double*,double*);
++extern int F_FUNC(mtu0,MTU0)(int*,int*,double*,double*,double*,double*);
++extern int F_FUNC(mtu12,MTU12)(int*,int*,int*,double*,double*,double*,double*,double*,double*);
++extern int F_FUNC(lpmv,LPMV)(double*,int*,double*,double*);
++extern int F_FUNC(pbwa,PBWA)(double*,double*,double*,double*,double*,double*);
++extern int F_FUNC(pbdv,PBDV)(double*,double*,double*,double*,double*,double*);
++extern int F_FUNC(pbvv,PBVV)(double*,double*,double*,double*,double*,double*);
++extern int F_FUNC(segv,SEGV)(int*,int*,double*,int*,double*,double*);
++extern int F_FUNC(aswfa,ASWFA)(int*,int*,double*,double*,int*,double*,double*,double*);
++extern int F_FUNC(rswfp,RSWFP)(int*,int*,double*,double*,double*,int*,double*,double*,double*,double*);
++extern int F_FUNC(rswfo,RSWFO)(int*,int*,double*,double*,double*,int*,double*,double*,double*,double*);
++extern int F_FUNC(ffk,FFK)(int*,double*,double*,double*,double*,double*,double*,double*,double*,double*);
+ 
+ 
+ /* This must be linked with fortran
