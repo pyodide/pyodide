@@ -1,7 +1,7 @@
 diff --git a/src/passes/FuncCastEmulation.cpp b/src/passes/FuncCastEmulation.cpp
 index 9d232c9..e479733 100644
---- a/src/passes/FuncCastEmulation.cpp
-+++ b/src/passes/FuncCastEmulation.cpp
+--- a/emsdk/binaryen/src/passes/FuncCastEmulation.cpp
++++ b/emsdk/binaryen/src/passes/FuncCastEmulation.cpp
 @@ -174,16 +174,59 @@ struct FuncCastEmulation : public Pass {
      std::unordered_map<Name, Name> funcThunks;
      for (auto& segment : module->table.segments) {
@@ -16,7 +16,7 @@ index 9d232c9..e479733 100644
 +        // don't create FPCAST emulation for javascript legalizer stubs
 +        // (used when javascript doesn't have 64 bit support, so 
 +        // can't use fpcast emulation calls which need 64 bit support)
-+        if(name.str.rfind("$legalstub",0)!=0)
++        if(strncmp(name.str,"$legalstub",10)!=0)
 +        {
 +            auto iter = funcThunks.find(name);
 +            if (iter == funcThunks.end()) {
@@ -39,7 +39,7 @@ index 9d232c9..e479733 100644
 +        // don't create FPCAST emulation for javascript legalizer stubs
 +        // (used when javascript doesn't have 64 bit support, so 
 +        // can't use fpcast emulation calls which need 64 bit support)
-+        if(module->getFunctionOrNull(exportValue) && exportName.str.rfind("$legalstub",0)!=0 )
++        if(module->getFunctionOrNull(exportValue) && strncmp(exportValue.str,"$legalstub",10)!=0 )
 +        {
 +          Name exportThunkName = std::string("byn$fpcast-emu$") + exportName.str;
 +          auto iter = funcThunks.find(exportValue);          if (iter == funcThunks.end()) 
