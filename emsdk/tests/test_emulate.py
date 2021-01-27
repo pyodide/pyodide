@@ -13,6 +13,7 @@ def test_emulate_function(tmpdir):
 // wrong arguments and return type
 int foo(int extra_args) {
   puts("hello from library");
+  return 0;
 }"""
             )
         with open("main.c", "w") as f:
