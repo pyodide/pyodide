@@ -91,7 +91,7 @@ index 2990646..517fc33 100644
      return wasmTable.get(ptr).apply(null, args)
  #endif
 diff --git a/emsdk/upstream/emscripten/src/library_dylink.js b/emsdk/upstream/emscripten/src/library_dylink.js
-index 876492b..684f1e0 100644
+index 876492b..7920ae4 100644
 --- a/emsdk/upstream/emscripten/src/library_dylink.js
 +++ b/emsdk/upstream/emscripten/src/library_dylink.js
 @@ -3,7 +3,9 @@
@@ -191,7 +191,16 @@ index 876492b..684f1e0 100644
          moduleExports = relocateExports(instance.exports, memoryBase);
          if (!flags.allowUndefined) {
            reportUndefinedSymbols();
-@@ -754,6 +789,10 @@ var LibraryDylink = {
+@@ -713,6 +748,8 @@ var LibraryDylink = {
+       nodelete: Boolean(flags & {{{ cDefine('RTLD_NODELETE') }}}),
+ 
+       fs: FS, // load libraries from provided filesystem
++      allowUndefined: true, // allow undefined symbols - otherwise scipy won't
++                            // import because modules have cross dependencies
+     }
+ 
+     try {
+@@ -754,6 +791,10 @@ var LibraryDylink = {
      // http://pubs.opengroup.org/onlinepubs/009695399/functions/dlsym.html
      symbol = UTF8ToString(symbol);
      var result;
@@ -248,7 +257,7 @@ index c8af59d..7084ff7 100644
 +    var dyncallInvokeMap={};
 +#endif
 diff --git a/emsdk/upstream/emscripten/tools/__pycache__/shared.cpython-38.pyc b/emsdk/upstream/emscripten/tools/__pycache__/shared.cpython-38.pyc
-index ad0e38b..872c6f0 100644
+index 087e7fd..872c6f0 100644
 Binary files a/emsdk/upstream/emscripten/tools/__pycache__/shared.cpython-38.pyc and b/emsdk/upstream/emscripten/tools/__pycache__/shared.cpython-38.pyc differ
 diff --git a/emsdk/upstream/emscripten/tools/shared.py b/emsdk/upstream/emscripten/tools/shared.py
 index 74666ee..3d5657b 100644
