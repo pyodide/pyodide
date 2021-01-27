@@ -1,11 +1,96 @@
+diff --git a/emsdk/upstream/emscripten/node_modules/ws/build/Makefile b/emsdk/upstream/emscripten/node_modules/ws/build/Makefile
+index 9c95eac..c69a553 100644
+--- a/emsdk/upstream/emscripten/node_modules/ws/build/Makefile
++++ b/emsdk/upstream/emscripten/node_modules/ws/build/Makefile
+@@ -314,7 +314,7 @@ endif
+ 
+ quiet_cmd_regen_makefile = ACTION Regenerating $@
+ cmd_regen_makefile = cd $(srcdir); /src/emsdk/emsdk/node/12.18.1_64bit/lib/node_modules/npm/node_modules/node-gyp/gyp/gyp_main.py -fmake --ignore-environment "-Dlibrary=shared_library" "-Dvisibility=default" "-Dnode_root_dir=/root/.cache/node-gyp/12.18.1" "-Dnode_gyp_dir=/src/emsdk/emsdk/node/12.18.1_64bit/lib/node_modules/npm/node_modules/node-gyp" "-Dnode_lib_file=/root/.cache/node-gyp/12.18.1/<(target_arch)/node.lib" "-Dmodule_root_dir=/src/emsdk/emsdk/upstream/emscripten/node_modules/ws" "-Dnode_engine=v8" "--depth=." "-Goutput_dir=." "--generator-output=build" -I/src/emsdk/emsdk/upstream/emscripten/node_modules/ws/build/config.gypi -I/src/emsdk/emsdk/node/12.18.1_64bit/lib/node_modules/npm/node_modules/node-gyp/addon.gypi -I/root/.cache/node-gyp/12.18.1/include/node/common.gypi "--toplevel-dir=." binding.gyp
+-Makefile: $(srcdir)/build/config.gypi $(srcdir)/binding.gyp $(srcdir)/../../../../../../../root/.cache/node-gyp/12.18.1/include/node/common.gypi $(srcdir)/../../../../node/12.18.1_64bit/lib/node_modules/npm/node_modules/node-gyp/addon.gypi
++Makefile: $(srcdir)/binding.gyp $(srcdir)/../../../../node/12.18.1_64bit/lib/node_modules/npm/node_modules/node-gyp/addon.gypi $(srcdir)/../../../../../../../root/.cache/node-gyp/12.18.1/include/node/common.gypi $(srcdir)/build/config.gypi
+ 	$(call do_cmd,regen_makefile)
+ 
+ # "all" is a concatenation of the "all" targets from all the included
 diff --git a/emsdk/upstream/emscripten/src/library.js b/emsdk/upstream/emscripten/src/library.js
-index d5e9d62..ea4cf27 100644
+index 2990646..517fc33 100644
 --- a/emsdk/upstream/emscripten/src/library.js
 +++ b/emsdk/upstream/emscripten/src/library.js
-@@ -3747,6 +3747,15 @@ LibraryManager.library = {
+@@ -3749,6 +3749,87 @@ LibraryManager.library = {
  #endif
  #if ASSERTIONS
      assert(wasmTable.get(ptr), 'missing table entry in dynCall: ' + ptr);
++#endif
++#if EMULATE_FUNCTION_POINTER_CASTS
++    if( ptr in dyncallInvokeMap)
++    {
++        // in fpcast mode, we use a separate table or else we'll attempt
++        // to call the fpcast emulated version which is not what the linker 
++        // expects for a linked dynamic call
++        ptr=dyncallInvokeMap[ptr];
++    }
++#endif
++#if EMULATE_FUNCTION_POINTER_CASTS
++    if( ptr in dyncallInvokeMap)
++    {
++        // in fpcast mode, we use a separate table or else we'll attempt
++        // to call the fpcast emulated version which is not what the linker 
++        // expects for a linked dynamic call
++        ptr=dyncallInvokeMap[ptr];
++    }
++#endif
++#if EMULATE_FUNCTION_POINTER_CASTS
++    if( ptr in dyncallInvokeMap)
++    {
++        // in fpcast mode, we use a separate table or else we'll attempt
++        // to call the fpcast emulated version which is not what the linker 
++        // expects for a linked dynamic call
++        ptr=dyncallInvokeMap[ptr];
++    }
++#endif
++#if EMULATE_FUNCTION_POINTER_CASTS
++    if( ptr in dyncallInvokeMap)
++    {
++        // in fpcast mode, we use a separate table or else we'll attempt
++        // to call the fpcast emulated version which is not what the linker 
++        // expects for a linked dynamic call
++        ptr=dyncallInvokeMap[ptr];
++    }
++#endif
++#if EMULATE_FUNCTION_POINTER_CASTS
++    if( ptr in dyncallInvokeMap)
++    {
++        // in fpcast mode, we use a separate table or else we'll attempt
++        // to call the fpcast emulated version which is not what the linker 
++        // expects for a linked dynamic call
++        ptr=dyncallInvokeMap[ptr];
++    }
++#endif
++#if EMULATE_FUNCTION_POINTER_CASTS
++    if( ptr in dyncallInvokeMap)
++    {
++        // in fpcast mode, we use a separate table or else we'll attempt
++        // to call the fpcast emulated version which is not what the linker 
++        // expects for a linked dynamic call
++        ptr=dyncallInvokeMap[ptr];
++    }
++#endif
++#if EMULATE_FUNCTION_POINTER_CASTS
++    if( ptr in dyncallInvokeMap)
++    {
++        // in fpcast mode, we use a separate table or else we'll attempt
++        // to call the fpcast emulated version which is not what the linker 
++        // expects for a linked dynamic call
++        ptr=dyncallInvokeMap[ptr];
++    }
++#endif
++#if EMULATE_FUNCTION_POINTER_CASTS
++    if( ptr in dyncallInvokeMap)
++    {
++        // in fpcast mode, we use a separate table or else we'll attempt
++        // to call the fpcast emulated version which is not what the linker 
++        // expects for a linked dynamic call
++        ptr=dyncallInvokeMap[ptr];
++    }
 +#endif
 +#if EMULATE_FUNCTION_POINTER_CASTS
 +    if( ptr in dyncallInvokeMap)
@@ -19,7 +104,7 @@ index d5e9d62..ea4cf27 100644
      return wasmTable.get(ptr).apply(null, args)
  #endif
 diff --git a/emsdk/upstream/emscripten/src/library_dylink.js b/emsdk/upstream/emscripten/src/library_dylink.js
-index 876492b..3839ea2 100644
+index 876492b..684f1e0 100644
 --- a/emsdk/upstream/emscripten/src/library_dylink.js
 +++ b/emsdk/upstream/emscripten/src/library_dylink.js
 @@ -3,7 +3,9 @@
@@ -110,7 +195,16 @@ index 876492b..3839ea2 100644
  #endif
      }
  #if DYLINK_DEBUG
-@@ -754,6 +787,10 @@ var LibraryDylink = {
+@@ -428,6 +461,8 @@ var LibraryDylink = {
+           assert(table.get(tableBase + i) !== undefined, 'table entry was not filled in');
+         }
+ #endif
++        // make sure that internal wasm stuff knows about everything in the table
++        updateWasmFunctionMap(tableBase,tableSize);
+         moduleExports = relocateExports(instance.exports, memoryBase);
+         if (!flags.allowUndefined) {
+           reportUndefinedSymbols();
+@@ -754,6 +789,10 @@ var LibraryDylink = {
      // http://pubs.opengroup.org/onlinepubs/009695399/functions/dlsym.html
      symbol = UTF8ToString(symbol);
      var result;
@@ -121,6 +215,29 @@ index 876492b..3839ea2 100644
  
      if (handle == {{{ cDefine('RTLD_DEFAULT') }}}) {
        result = resolveGlobalSymbol(symbol, true);
+diff --git a/emsdk/upstream/emscripten/src/runtime_functions.js b/emsdk/upstream/emscripten/src/runtime_functions.js
+index 5ae5cfc..02474b3 100644
+--- a/emsdk/upstream/emscripten/src/runtime_functions.js
++++ b/emsdk/upstream/emscripten/src/runtime_functions.js
+@@ -114,6 +114,18 @@ function getEmptyTableSlot() {
+   return wasmTable.length - 1;
+ }
+ 
++function updateWasmFunctionMap(start,count)
++{
++    for(var i=start;i<start+count;i++)
++    {
++       var item = wasmTable.get(i);
++       // Ignore null values.
++       if (item) {
++         functionsInTableMap.set(item, i);
++       }
++    }
++}
++
+ // Add a wasm function to the table.
+ function addFunctionWasm(func, sig) {
+   // Check if the function is already in the table, to ensure each function
 diff --git a/emsdk/upstream/emscripten/src/runtime_init_table.js b/emsdk/upstream/emscripten/src/runtime_init_table.js
 index c8af59d..7084ff7 100644
 --- a/emsdk/upstream/emscripten/src/runtime_init_table.js
@@ -143,3 +260,19 @@ index c8af59d..7084ff7 100644
 +    // only ever called from javascript
 +    var dyncallInvokeMap={};
 +#endif
+diff --git a/emsdk/upstream/emscripten/tools/__pycache__/shared.cpython-38.pyc b/emsdk/upstream/emscripten/tools/__pycache__/shared.cpython-38.pyc
+index ad0e38b..872c6f0 100644
+Binary files a/emsdk/upstream/emscripten/tools/__pycache__/shared.cpython-38.pyc and b/emsdk/upstream/emscripten/tools/__pycache__/shared.cpython-38.pyc differ
+diff --git a/emsdk/upstream/emscripten/tools/shared.py b/emsdk/upstream/emscripten/tools/shared.py
+index 74666ee..3d5657b 100644
+--- a/emsdk/upstream/emscripten/tools/shared.py
++++ b/emsdk/upstream/emscripten/tools/shared.py
+@@ -844,7 +844,7 @@ class JS(object):
+       else:
+         return 'Module["dynCall_%s"](%s)' % (sig, args)
+     else:
+-      return 'wasmTable.get(%s)(%s)' % (args[0], ','.join(args[1:]))
++        return 'dynCall("%s",%s,[%s])' %(sig,args[0],','.join(args[1:]))
+ 
+   @staticmethod
+   def make_invoke(sig, named=True):
