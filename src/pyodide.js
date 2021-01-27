@@ -251,6 +251,7 @@ globalThis.languagePluginLoader = new Promise((resolve, reject) => {
     if (!isFirefox) {
       await preloadWasm();
     }
+    self.pyodide._module.reportUndefinedSymbols();
     messageCallback(resolveMsg);
 
     // We have to invalidate Python's import caches, or it won't

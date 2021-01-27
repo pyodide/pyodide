@@ -1,16 +1,3 @@
-diff --git a/emsdk/upstream/emscripten/node_modules/ws/build/Makefile b/emsdk/upstream/emscripten/node_modules/ws/build/Makefile
-index 9c95eac..c69a553 100644
---- a/emsdk/upstream/emscripten/node_modules/ws/build/Makefile
-+++ b/emsdk/upstream/emscripten/node_modules/ws/build/Makefile
-@@ -314,7 +314,7 @@ endif
- 
- quiet_cmd_regen_makefile = ACTION Regenerating $@
- cmd_regen_makefile = cd $(srcdir); /src/emsdk/emsdk/node/12.18.1_64bit/lib/node_modules/npm/node_modules/node-gyp/gyp/gyp_main.py -fmake --ignore-environment "-Dlibrary=shared_library" "-Dvisibility=default" "-Dnode_root_dir=/root/.cache/node-gyp/12.18.1" "-Dnode_gyp_dir=/src/emsdk/emsdk/node/12.18.1_64bit/lib/node_modules/npm/node_modules/node-gyp" "-Dnode_lib_file=/root/.cache/node-gyp/12.18.1/<(target_arch)/node.lib" "-Dmodule_root_dir=/src/emsdk/emsdk/upstream/emscripten/node_modules/ws" "-Dnode_engine=v8" "--depth=." "-Goutput_dir=." "--generator-output=build" -I/src/emsdk/emsdk/upstream/emscripten/node_modules/ws/build/config.gypi -I/src/emsdk/emsdk/node/12.18.1_64bit/lib/node_modules/npm/node_modules/node-gyp/addon.gypi -I/root/.cache/node-gyp/12.18.1/include/node/common.gypi "--toplevel-dir=." binding.gyp
--Makefile: $(srcdir)/build/config.gypi $(srcdir)/binding.gyp $(srcdir)/../../../../../../../root/.cache/node-gyp/12.18.1/include/node/common.gypi $(srcdir)/../../../../node/12.18.1_64bit/lib/node_modules/npm/node_modules/node-gyp/addon.gypi
-+Makefile: $(srcdir)/binding.gyp $(srcdir)/../../../../node/12.18.1_64bit/lib/node_modules/npm/node_modules/node-gyp/addon.gypi $(srcdir)/../../../../../../../root/.cache/node-gyp/12.18.1/include/node/common.gypi $(srcdir)/build/config.gypi
- 	$(call do_cmd,regen_makefile)
- 
- # "all" is a concatenation of the "all" targets from all the included
 diff --git a/emsdk/upstream/emscripten/src/library.js b/emsdk/upstream/emscripten/src/library.js
 index 2990646..517fc33 100644
 --- a/emsdk/upstream/emscripten/src/library.js
