@@ -382,7 +382,7 @@ globalThis.languagePluginLoader = new Promise((resolve, reject) => {
   };
   // clang-format on
 
-  Module.pyimport = name => Module.globals[name];
+  Module.pyimport = name => Module.globals.get(name);
 
   Module.runPythonAsync = async function(code, messageCallback, errorCallback) {
     await Module.loadPackagesFromImports(code, messageCallback, errorCallback);
