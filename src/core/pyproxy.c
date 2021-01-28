@@ -17,81 +17,144 @@ _pyproxy_repr(PyObject* pyobj)
   return repr_js;
 }
 
-JsRef
-_pyproxy_has(PyObject* pyobj, JsRef idkey)
+int
+_pyproxy_hasattr(PyObject* pyobj, JsRef idkey)
 {
-  PyObject* pykey = js2python(idkey);
-  JsRef result = hiwire_bool(PyObject_HasAttr(pyobj, pykey));
-  Py_DECREF(pykey);
+  bool success = false;
+  PyObject* pykey = NULL;
+  int result = -1;
+
+  pykey = js2python(idkey);
+  FAIL_IF_NULL(pykey);
+  result = PyObject_HasAttr(pyobj, pykey);
+
+  success = true;
+finally:
+  Py_CLEAR(pykey);
   return result;
 }
 
 JsRef
-_pyproxy_get(PyObject* pyobj, JsRef idkey)
+_pyproxy_getattr(PyObject* pyobj, JsRef idkey)
 {
-  PyObject* pykey = js2python(idkey);
-  PyObject* pyattr;
-  // HC: HACK until my more thorough rework of pyproxy goes through.
-  // We need globals to work, I want it to be proxied, but we also need
-  // indexing in js to do GetItem, SetItem, and DelItem.
-  // This is harmless though because currently dicts will not get proxied at
-  // all, aside from globals which I specifically hand proxy in runpython.c.
-  if (PyDict_Check(pyobj)) {
-    pyattr = PyObject_GetItem(pyobj, pykey);
-  } else {
-    pyattr = PyObject_GetAttr(pyobj, pykey);
-  }
+  bool success = false;
+  PyObject* pykey = NULL;
+  PyObject* pyresult = NULL;
+  JsRef idresult = NULL;
 
-  Py_DECREF(pykey);
-  if (pyattr == NULL) {
-    PyErr_Clear();
-    return hiwire_undefined();
-  }
+  pykey = js2python(idkey);
+  FAIL_IF_NULL(pykey);
+  pyresult = PyObject_GetAttr(pyobj, pykey);
+  FAIL_IF_NULL(pyresult);
+  idresult = python2js(pyresult);
+  FAIL_IF_NULL(idresult);
 
-  JsRef idattr = python2js(pyattr);
-  Py_DECREF(pyattr);
-  return idattr;
+  success = true;
+finally:
+  Py_CLEAR(pykey);
+  Py_CLEAR(pyresult);
+  if (!success) {
+    hiwire_CLEAR(idresult);
+  }
+  return idresult;
 };
 
-JsRef
-_pyproxy_set(PyObject* pyobj, JsRef idkey, JsRef idval)
+int
+_pyproxy_setattr(PyObject* pyobj, JsRef idkey, JsRef idval)
 {
-  PyObject* pykey = js2python(idkey);
-  PyObject* pyval = js2python(idval);
-  // HC: HACK see comment in _pyproxy_get.
-  int result;
-  if (PyDict_Check(pyobj)) {
-    result = PyObject_SetItem(pyobj, pykey, pyval);
-  } else {
-    result = PyObject_SetAttr(pyobj, pykey, pyval);
-  }
-  Py_DECREF(pykey);
-  Py_DECREF(pyval);
+  bool success = false;
+  PyObject* pykey = NULL;
+  PyObject* pyval = NULL;
 
-  if (result) {
-    return NULL;
-  }
-  return hiwire_incref(idval);
+  pykey = js2python(idkey);
+  FAIL_IF_NULL(pykey);
+  pyval = js2python(idval);
+  FAIL_IF_NULL(pyval);
+  FAIL_IF_MINUS_ONE(PyObject_SetAttr(pyobj, pykey, pyval));
+
+  success = true;
+finally:
+  Py_CLEAR(pykey);
+  Py_CLEAR(pyval);
+  return success ? 0 : -1;
+}
+
+int
+_pyproxy_delattr(PyObject* pyobj, JsRef idkey)
+{
+  bool success = false;
+  PyObject* pykey = NULL;
+
+  pykey = js2python(idkey);
+  FAIL_IF_NULL(pykey);
+  FAIL_IF_MINUS_ONE(PyObject_DelAttr(pyobj, pykey));
+
+  success = true;
+finally:
+  Py_CLEAR(pykey);
+  return success ? 0 : -1;
 }
 
 JsRef
-_pyproxy_deleteProperty(PyObject* pyobj, JsRef idkey)
+_pyproxy_getitem(PyObject* pyobj, JsRef idkey)
 {
-  PyObject* pykey = js2python(idkey);
-  int ret;
-  // HC: HACK see comment in _pyproxy_get.
-  if (PyDict_Check(pyobj)) {
-    ret = PyObject_DelItem(pyobj, pykey);
-  } else {
-    ret = PyObject_DelAttr(pyobj, pykey);
-  }
-  Py_DECREF(pykey);
+  bool success = false;
+  PyObject* pykey = NULL;
+  PyObject* pyresult = NULL;
+  JsRef result = NULL;
 
-  if (ret) {
-    return NULL;
-  }
+  pykey = js2python(idkey);
+  FAIL_IF_NULL(pykey);
+  pyresult = PyObject_GetItem(pyobj, pykey);
+  FAIL_IF_NULL(pyresult);
+  result = python2js(pyresult);
+  FAIL_IF_NULL(result);
 
-  return hiwire_undefined();
+  success = true;
+finally:
+  PyErr_Clear();
+  Py_CLEAR(pykey);
+  Py_CLEAR(pyresult);
+  if (!success) {
+    hiwire_CLEAR(result);
+  }
+  return result;
+};
+
+int
+_pyproxy_setitem(PyObject* pyobj, JsRef idkey, JsRef idval)
+{
+  bool success = false;
+  PyObject* pykey = NULL;
+  PyObject* pyval = NULL;
+
+  pykey = js2python(idkey);
+  FAIL_IF_NULL(pykey);
+  pyval = js2python(idval);
+  FAIL_IF_NULL(pyval);
+  FAIL_IF_MINUS_ONE(PyObject_SetItem(pyobj, pykey, pyval));
+
+  success = true;
+finally:
+  Py_CLEAR(pykey);
+  Py_CLEAR(pyval);
+  return success ? 0 : -1;
+}
+
+int
+_pyproxy_delitem(PyObject* pyobj, JsRef idkey)
+{
+  bool success = false;
+  PyObject* pykey = NULL;
+
+  pykey = js2python(idkey);
+  FAIL_IF_NULL(pykey);
+  FAIL_IF_MINUS_ONE(PyObject_DelItem(pyobj, pykey));
+
+  success = true;
+finally:
+  Py_CLEAR(pykey);
+  return success ? 0 : -1;
 }
 
 JsRef
@@ -160,6 +223,16 @@ EM_JS_REF(JsRef, pyproxy_new, (PyObject * ptrobj), {
   let target = function(){};
   target['$$'] = { ptr : ptrobj, type : 'PyProxy' };
   Object.assign(target, Module.PyProxyPublicMethods);
+
+  // clang-format off
+  if (_PyMapping_Check(ptrobj) === 1) {
+    // clang-format on
+    // Note: this applies to lists and tuples and sequence-like things
+    // _PyMapping_Check returns true on a superset of things _PySequence_Check
+    // accepts.
+    Object.assign(target, Module.PyProxyMappingMethods);
+  }
+
   let proxy = new Proxy(target, Module.PyProxyHandlers);
   Module.PyProxies[ptrobj] = proxy;
 
@@ -225,6 +298,64 @@ EM_JS(int, pyproxy_init, (), {
     },
   };
 
+  // Note: these methods appear for lists and tuples and sequence-like things
+  // _PyMapping_Check returns true on a superset of things _PySequence_Check accepts.
+  Module.PyProxyMappingMethods = {
+    get : function(key){
+      let ptrobj = _getPtr(jsobj);
+      let idkey = Module.hiwire.new_value(jskey);
+      let idresult;
+      try {
+        idresult = __pyproxy_getitem(ptrobj, idkey);
+      } catch(e) {
+        Module.fatal_error(e);
+      } finally {
+        Module.hiwire.decref(idkey);
+      }
+      if(idresult === 0){
+        _pythonexc2js();
+      }
+      let jsresult = Module.hiwire.get_value(idresult);
+      Module.hiwire.decref(idresult);
+      return jsresult;
+    },
+    set : function(key, value){
+      let ptrobj = _getPtr(jsobj);
+      let idkey = Module.hiwire.new_value(jskey);
+      let idval = Module.hiwire.new_value(jsval);
+      let errcode;
+      try {
+        errcode = __pyproxy_setitem(ptrobj, idkey, idval);
+      } catch(e) {
+        Module.fatal_error(e);
+      } finally {
+        Module.hiwire.decref(idkey);
+        Module.hiwire.decref(idval);
+      }
+      if(errcode === -1){
+        _pythonexc2js();
+      }
+    },
+    has : function(key) {
+      return this.get(key) !== undefined;
+    },
+    delete : function(key) {
+      let ptrobj = _getPtr(jsobj);
+      let idkey = Module.hiwire.new_value(jskey);
+      let errcode;
+      try {
+        errcode = __pyproxy_delitem(ptrobj, idkey);
+      } catch(e) {
+        Module.fatal_error(e);
+      } finally {
+        Module.hiwire.decref(idkey);
+      }
+      if(errcode === -1){
+        _pythonexc2js();
+      }
+    }
+  };
+
   let ignoredTargetFields = ["name", "length"];
 
   // See explanation of which methods should be defined here and what they do here:
@@ -239,7 +370,7 @@ EM_JS(int, pyproxy_init, (), {
       let idkey = Module.hiwire.new_value(jskey);
       let result;
       try {
-        result = __pyproxy_has(ptrobj, idkey);
+        result = __pyproxy_hasattr(ptrobj, idkey);
       } catch(e){
         Module.fatal_error(e);
       } finally {
@@ -258,7 +389,7 @@ EM_JS(int, pyproxy_init, (), {
       let idkey = Module.hiwire.new_value(jskey);
       let idresult;
       try {
-        idresult = __pyproxy_get(ptrobj, idkey);
+        idresult = __pyproxy_getattr(ptrobj, idkey);
       } catch(e) {
         Module.fatal_error(e);
       } finally {
@@ -278,21 +409,19 @@ EM_JS(int, pyproxy_init, (), {
       let ptrobj = _getPtr(jsobj);
       let idkey = Module.hiwire.new_value(jskey);
       let idval = Module.hiwire.new_value(jsval);
-      let idresult;
+      let errcode;
       try {
-        idresult = __pyproxy_set(ptrobj, idkey, idval);
+        errcode = __pyproxy_setattr(ptrobj, idkey, idval);
       } catch(e) {
         Module.fatal_error(e);
       } finally {
         Module.hiwire.decref(idkey);
         Module.hiwire.decref(idval);
       }
-      if(idresult === 0){
+      if(errcode === -1){
         _pythonexc2js();
       }
-      let jsresult = Module.hiwire.get_value(idresult);
-      Module.hiwire.decref(idresult);
-      return jsresult;
+      return true;
     },
     deleteProperty: function (jsobj, jskey) {
       if(Reflect.has(jsobj, jskey) && !ignoredTargetFields.includes(jskey)){
@@ -300,20 +429,18 @@ EM_JS(int, pyproxy_init, (), {
       }
       let ptrobj = _getPtr(jsobj);
       let idkey = Module.hiwire.new_value(jskey);
-      let idresult;
+      let errcode;
       try {
-        idresult = __pyproxy_deleteProperty(ptrobj, idkey);
+        errcode = __pyproxy_delattr(ptrobj, idkey);
       } catch(e) {
         Module.fatal_error(e);
       } finally {
         Module.hiwire.decref(idkey);
       }
-      if(idresult === 0){
+      if(errcode === -1){
         _pythonexc2js();
       }
-      let jsresult = Module.hiwire.get_value(idresult);
-      Module.hiwire.decref(idresult);
-      return jsresult;
+      return true;
     },
     ownKeys: function (jsobj) {
       let result = new Set(Reflect.ownKeys(jsobj));
