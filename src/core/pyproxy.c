@@ -302,7 +302,7 @@ EM_JS(int, pyproxy_init, (), {
   // _PyMapping_Check returns true on a superset of things _PySequence_Check accepts.
   Module.PyProxyMappingMethods = {
     get : function(key){
-      let ptrobj = _getPtr(jsobj);
+      let ptrobj = _getPtr(this);
       let idkey = Module.hiwire.new_value(jskey);
       let idresult;
       try {
@@ -320,7 +320,7 @@ EM_JS(int, pyproxy_init, (), {
       return jsresult;
     },
     set : function(key, value){
-      let ptrobj = _getPtr(jsobj);
+      let ptrobj = _getPtr(this);
       let idkey = Module.hiwire.new_value(jskey);
       let idval = Module.hiwire.new_value(jsval);
       let errcode;
@@ -340,7 +340,7 @@ EM_JS(int, pyproxy_init, (), {
       return this.get(key) !== undefined;
     },
     delete : function(key) {
-      let ptrobj = _getPtr(jsobj);
+      let ptrobj = _getPtr(this);
       let idkey = Module.hiwire.new_value(jskey);
       let errcode;
       try {
