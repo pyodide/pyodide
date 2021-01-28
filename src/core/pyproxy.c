@@ -303,7 +303,7 @@ EM_JS(int, pyproxy_init, (), {
   Module.PyProxyMappingMethods = {
     get : function(key){
       let ptrobj = _getPtr(this);
-      let idkey = Module.hiwire.new_value(jskey);
+      let idkey = Module.hiwire.new_value(key);
       let idresult;
       try {
         idresult = __pyproxy_getitem(ptrobj, idkey);
@@ -321,8 +321,8 @@ EM_JS(int, pyproxy_init, (), {
     },
     set : function(key, value){
       let ptrobj = _getPtr(this);
-      let idkey = Module.hiwire.new_value(jskey);
-      let idval = Module.hiwire.new_value(jsval);
+      let idkey = Module.hiwire.new_value(key);
+      let idval = Module.hiwire.new_value(value);
       let errcode;
       try {
         errcode = __pyproxy_setitem(ptrobj, idkey, idval);
@@ -341,7 +341,7 @@ EM_JS(int, pyproxy_init, (), {
     },
     delete : function(key) {
       let ptrobj = _getPtr(this);
-      let idkey = Module.hiwire.new_value(jskey);
+      let idkey = Module.hiwire.new_value(key);
       let errcode;
       try {
         errcode = __pyproxy_delitem(ptrobj, idkey);
