@@ -47,7 +47,7 @@ int foo(int extra_args) {
                 "-s",
                 "EMULATE_FUNCTION_POINTER_CASTS=1",
                 "-s",
-                "EXPORT_ALL=1"
+                "EXPORT_ALL=1",
             ],
             check=True,
         )

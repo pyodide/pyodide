@@ -20,10 +20,16 @@ __attribute__ ((noinline)) int indirect_function(int a, float b, int c, double d
 typedef int (*type_iifid) (int, float, int, double);
 
 void foo() {
+  // Hack to force inclusion of malloc
+  volatile int x = (int) malloc(1);
+  free((void *) x);
   type_iifid fp = &indirect_function;
-  int i=5;
+  jmp_buf buf;
+  int i = setjmp(buf);
   printf("%d\\n", i);
   assert(fp(i, 0, 0, 0) == i);
+  if (i == 0) longjmp(buf, 1);
+
 }
 """
             )
@@ -63,4 +69,4 @@ void foo() {
             check=True,
         )
         out = subprocess.run(["node", "a.out.js"], capture_output=True, check=True)
-        assert out.stdout == b"hello from main\n5\n"
+        assert out.stdout == b"hello from main\n0\n1\n"
