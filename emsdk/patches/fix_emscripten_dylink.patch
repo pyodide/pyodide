@@ -1,8 +1,6 @@
 diff --git a/emsdk/upstream/emscripten/src/library.js b/emsdk/upstream/emscripten/src/library.js
 index 2990646..517fc33 100644
---- a/emsdk/upstream/emscripten/src/library.js
-+++ b/emsdk/upstream/emscripten/src/library.js
-@@ -3749,6 +3749,87 @@ LibraryManager.library = {
+@@ -3749,6 +3749,15 @@ LibraryManager.library = {
  #endif
  #if ASSERTIONS
      assert(wasmTable.get(ptr), 'missing table entry in dynCall: ' + ptr);
@@ -11,79 +9,7 @@ index 2990646..517fc33 100644
 +    if( ptr in dyncallInvokeMap)
 +    {
 +        // in fpcast mode, we use a separate table or else we'll attempt
-+        // to call the fpcast emulated version which is not what the linker 
-+        // expects for a linked dynamic call
-+        ptr=dyncallInvokeMap[ptr];
-+    }
-+#endif
-+#if EMULATE_FUNCTION_POINTER_CASTS
-+    if( ptr in dyncallInvokeMap)
-+    {
-+        // in fpcast mode, we use a separate table or else we'll attempt
-+        // to call the fpcast emulated version which is not what the linker 
-+        // expects for a linked dynamic call
-+        ptr=dyncallInvokeMap[ptr];
-+    }
-+#endif
-+#if EMULATE_FUNCTION_POINTER_CASTS
-+    if( ptr in dyncallInvokeMap)
-+    {
-+        // in fpcast mode, we use a separate table or else we'll attempt
-+        // to call the fpcast emulated version which is not what the linker 
-+        // expects for a linked dynamic call
-+        ptr=dyncallInvokeMap[ptr];
-+    }
-+#endif
-+#if EMULATE_FUNCTION_POINTER_CASTS
-+    if( ptr in dyncallInvokeMap)
-+    {
-+        // in fpcast mode, we use a separate table or else we'll attempt
-+        // to call the fpcast emulated version which is not what the linker 
-+        // expects for a linked dynamic call
-+        ptr=dyncallInvokeMap[ptr];
-+    }
-+#endif
-+#if EMULATE_FUNCTION_POINTER_CASTS
-+    if( ptr in dyncallInvokeMap)
-+    {
-+        // in fpcast mode, we use a separate table or else we'll attempt
-+        // to call the fpcast emulated version which is not what the linker 
-+        // expects for a linked dynamic call
-+        ptr=dyncallInvokeMap[ptr];
-+    }
-+#endif
-+#if EMULATE_FUNCTION_POINTER_CASTS
-+    if( ptr in dyncallInvokeMap)
-+    {
-+        // in fpcast mode, we use a separate table or else we'll attempt
-+        // to call the fpcast emulated version which is not what the linker 
-+        // expects for a linked dynamic call
-+        ptr=dyncallInvokeMap[ptr];
-+    }
-+#endif
-+#if EMULATE_FUNCTION_POINTER_CASTS
-+    if( ptr in dyncallInvokeMap)
-+    {
-+        // in fpcast mode, we use a separate table or else we'll attempt
-+        // to call the fpcast emulated version which is not what the linker 
-+        // expects for a linked dynamic call
-+        ptr=dyncallInvokeMap[ptr];
-+    }
-+#endif
-+#if EMULATE_FUNCTION_POINTER_CASTS
-+    if( ptr in dyncallInvokeMap)
-+    {
-+        // in fpcast mode, we use a separate table or else we'll attempt
-+        // to call the fpcast emulated version which is not what the linker 
-+        // expects for a linked dynamic call
-+        ptr=dyncallInvokeMap[ptr];
-+    }
-+#endif
-+#if EMULATE_FUNCTION_POINTER_CASTS
-+    if( ptr in dyncallInvokeMap)
-+    {
-+        // in fpcast mode, we use a separate table or else we'll attempt
-+        // to call the fpcast emulated version which is not what the linker 
++        // to call the fpcast emulated version which is not what the linker
 +        // expects for a linked dynamic call
 +        ptr=dyncallInvokeMap[ptr];
 +    }
@@ -91,13 +17,13 @@ index 2990646..517fc33 100644
      return wasmTable.get(ptr).apply(null, args)
  #endif
 diff --git a/emsdk/upstream/emscripten/src/library_dylink.js b/emsdk/upstream/emscripten/src/library_dylink.js
-index 876492b..7920ae4 100644
+index 876492b..50106f2 100644
 --- a/emsdk/upstream/emscripten/src/library_dylink.js
 +++ b/emsdk/upstream/emscripten/src/library_dylink.js
 @@ -3,7 +3,9 @@
  //
  // ==========================================================================
- 
+
 +
  var LibraryDylink = {
 +
@@ -112,7 +38,12 @@ index 876492b..7920ae4 100644
        return GOT[symName]
      }
    },
-@@ -94,29 +97,59 @@ var LibraryDylink = {
+@@ -90,33 +93,84 @@ var LibraryDylink = {
+       var value = exports[symName];
+ #if !WASM_BIGINT
+       if (symName.indexOf('orig$') == 0) {
+-        symName = symName.split('$')[1];
++        symName = symName.substring(5);
          replace = true;
        }
  #endif
@@ -123,15 +54,25 @@ index 876492b..7920ae4 100644
 +#if EMULATE_FUNCTION_POINTER_CASTS==1
 +      const FPCAST_PREFIX="byn$fpcast-emu$";
 +      const FPCAST_DYNCALL_PREFIX="$no-fpcast-emu$";
-+      if(symName.startsWith(FPCAST_PREFIX))
++      var dyncallName;
++      var is_fpcast=false;
++      var is_nonfpcast=false;
++      var newFn;
++      if(typeof(value) === 'function')
 +      {
-+          baseName=symName.substr(FPCAST_PREFIX.length)
-+      }else
-+      {
-+         if(FPCAST_PREFIX+symName in exports)
-+         {
-+             baseName=FPCAST_DYNCALL_PREFIX+symName;
-+         }
++          if(symName.startsWith(FPCAST_PREFIX))
++          {
++              baseName=symName.substr(FPCAST_PREFIX.length);
++              dyncallName=FPCAST_DYNCALL_PREFIX+baseName;
++              is_fpcast=true;
++          }else
++          {
++             if(FPCAST_PREFIX+symName in exports)
++             {
++                 baseName=FPCAST_DYNCALL_PREFIX+symName;
++                 is_nonfpcast=true;
++             }
++          }
        }
 -      if (replace || GOT[symName].value == 0) {
 +#endif
@@ -141,7 +82,8 @@ index 876492b..7920ae4 100644
 +      if (replace || GOT[baseName].value == 0) {
          if (typeof value === 'function') {
 -          GOT[symName].value = addFunctionWasm(value);
-+          GOT[baseName].value = addFunctionWasm(value);
++          newFn=addFunctionWasm(value);
++          GOT[baseName].value = newFn
  #if DYLINK_DEBUG
 -          err("updateGOT FUNC: " + symName + ' : ' + GOT[symName].value);
 +          err("updateGOT FUNC: " + symName + ' : ' + GOT[baseName].value);
@@ -166,23 +108,33 @@ index 876492b..7920ae4 100644
 +#endif
 +#if EMULATE_FUNCTION_POINTER_CASTS==1
 +        // update map for dynamic calls so they can bypass fp casts
-+        if(symName.startsWith(FPCAST_PREFIX))
++        if(is_fpcast)
 +        {
-+            if(GOT[FPCAST_DYNCALL_PREFIX+baseName] && GOT[FPCAST_DYNCALL_PREFIX+baseName].value!=0)
++            dyncallGOT=GOT[dyncallName]
++            if(dyncallGOT)
 +            {
-+                dyncallInvokeMap[GOT[baseName].value]=GOT[FPCAST_DYNCALL_PREFIX+baseName].value;
++                dcVal=dyncallGOT.value;
++                if(dcVal!=0)
++                {
++                    dyncallInvokeMap[newFn]=dcVal;
++                }
 +            }
-+        }else if(baseName.startsWith(FPCAST_DYNCALL_PREFIX))
++        }else if(is_nonfpcast)
 +        {
-+            if(GOT[symName] && GOT[symName].value!=0)
++            fpcGOT=GOT[symName];
++            if(fpcGOT)
 +            {
-+                dyncallInvokeMap[GOT[symName].value]=GOT[baseName].value;
++                fpVal=fpcGOT.value;
++                if(fpVal!=0)
++                {
++                    dyncallInvokeMap[fpVal]=newFn;
++                }
 +            }
 +        }
  #endif
      }
  #if DYLINK_DEBUG
-@@ -428,6 +461,8 @@ var LibraryDylink = {
+@@ -428,6 +482,8 @@ var LibraryDylink = {
            assert(table.get(tableBase + i) !== undefined, 'table entry was not filled in');
          }
  #endif
@@ -191,16 +143,16 @@ index 876492b..7920ae4 100644
          moduleExports = relocateExports(instance.exports, memoryBase);
          if (!flags.allowUndefined) {
            reportUndefinedSymbols();
-@@ -713,6 +748,8 @@ var LibraryDylink = {
+@@ -713,6 +769,8 @@ var LibraryDylink = {
        nodelete: Boolean(flags & {{{ cDefine('RTLD_NODELETE') }}}),
- 
+
        fs: FS, // load libraries from provided filesystem
 +      allowUndefined: true, // allow undefined symbols - otherwise scipy won't
 +                            // import because modules have cross dependencies
      }
- 
+
      try {
-@@ -754,6 +791,10 @@ var LibraryDylink = {
+@@ -754,6 +812,10 @@ var LibraryDylink = {
      // http://pubs.opengroup.org/onlinepubs/009695399/functions/dlsym.html
      symbol = UTF8ToString(symbol);
      var result;
@@ -208,7 +160,7 @@ index 876492b..7920ae4 100644
 +      // look for fpcast-emu version as this is deffo going to be a function pointer that we return
 +      symbol="byn$fpcast-emu$"+symbol
 +#endif
- 
+
      if (handle == {{{ cDefine('RTLD_DEFAULT') }}}) {
        result = resolveGlobalSymbol(symbol, true);
 diff --git a/emsdk/upstream/emscripten/src/runtime_functions.js b/emsdk/upstream/emscripten/src/runtime_functions.js
