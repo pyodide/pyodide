@@ -314,10 +314,13 @@ globalThis.languagePluginLoader = new Promise((resolve, reject) => {
     'runPython',
     'runPythonAsync',
     'version',
+    'registerJsModule',
+    'unregisterJsModule',
   ];
 
   function makePublicAPI(module, public_api) {
     let namespace = {_module : module};
+    module.public_api = namespace;
     for (let name of public_api) {
       namespace[name] = module[name];
     }
@@ -334,6 +337,27 @@ globalThis.languagePluginLoader = new Promise((resolve, reject) => {
   Module.noWasmDecoding = true;
   Module.preloadedWasm = {};
   let isFirefox = navigator.userAgent.toLowerCase().indexOf('firefox') > -1;
+
+  Module.fatal_error = function(e) {
+    for (let [key, value] of Object.entries(Module.public_api)) {
+      if (key.startsWith("_")) {
+        // delete Module.public_api[key];
+        continue;
+      }
+      // Have to do this case first because typeof(some_pyproxy) === "function".
+      if (Module.PyProxy.isPyProxy(value)) {
+        value.destroy();
+        continue;
+      }
+      if (typeof (value) === "function") {
+        Module.public_api[key] = function() {
+          throw Error("Pyodide has suffered a fatal error, refresh the page. " +
+                      "Please report this to the Pyodide maintainers.");
+        }
+      }
+    }
+    throw e;
+  };
 
   Module.runPython = code => Module.pyodide_py.eval_code(code, Module.globals);
 
@@ -365,6 +389,11 @@ globalThis.languagePluginLoader = new Promise((resolve, reject) => {
     await Module.loadPackagesFromImports(code, messageCallback, errorCallback);
     return Module.runPython(code);
   };
+
+  Module.registerJsModule = function(
+      name, module) { Module.pyodide_py.register_js_module(name, module); };
+  Module.unregisterJsModule = function(
+      name) { Module.pyodide_py.unregister_js_module(name); };
 
   Module.function_supports_kwargs = function(funcstr) {
     // This is basically a finite state machine (except for paren counting)
@@ -462,6 +491,7 @@ globalThis.languagePluginLoader = new Promise((resolve, reject) => {
     let response = await fetch(`${baseURL}packages.json`);
     let json = await response.json();
     fixRecursionLimit(self.pyodide);
+    self.pyodide.registerJsModule("js", globalThis);
     self.pyodide = makePublicAPI(self.pyodide, PUBLIC_API);
     self.pyodide._module.packages = json;
     resolve();

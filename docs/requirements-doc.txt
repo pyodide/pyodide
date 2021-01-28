@@ -1,5 +1,6 @@
 sphinx
 sphinx_rtd_theme
-myst-parser
+# Pin while https://github.com/executablebooks/MyST-Parser/issues/299 is resolved for the 0.13.2 release
+myst-parser==0.13.1
 sphinxcontrib-napoleon
 distlib   # required by micropip

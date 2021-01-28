@@ -109,11 +109,10 @@ $(BUILD)/Makefile: $(BUILD)/.patched $(ZLIBBUILD)/.configured $(SQLITEBUILD)/lib
 	cp config.site $(BUILD)/
 	( \
 		cd $(BUILD); \
-		 CONFIG_SITE=./config.site READELF=true LD_RUN_PATH="$(SQLITEBUILD):$(BZIP2BUILD)" emconfigure \
+		CONFIG_SITE=./config.site READELF=true emconfigure \
 		  ./configure \
 			  CFLAGS="-fPIC -sEMULATE_FUNCTION_POINTER_CASTS=1" \
 			  CPPFLAGS="-I$(SQLITEBUILD) -I$(BZIP2BUILD) -I$(ZLIBBUILD)" \
-			  LDFLAGS="-sEMULATE_FUNCTION_POINTER_CASTS=1 -L$(SQLITEBUILD) -L$(BZIP2BUILD)" \
 			  --without-pymalloc \
 			  --disable-shared \
 			  --disable-ipv6 \

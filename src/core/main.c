@@ -7,8 +7,8 @@
 #include "error_handling.h"
 #include "hiwire.h"
 #include "js2python.h"
-#include "jsimport.h"
 #include "jsproxy.h"
+#include "keyboard_interrupt.h"
 #include "pyproxy.h"
 #include "python2js.h"
 #include "runpython.h"
@@ -96,10 +96,10 @@ main(int argc, char** argv)
   TRY_INIT(hiwire);
   TRY_INIT(error_handling);
   TRY_INIT(js2python);
-  TRY_INIT(JsImport);
-  TRY_INIT_WITH_CORE_MODULE(JsProxy);
+  TRY_INIT_WITH_CORE_MODULE(JsProxy); // JsProxy needs to be before JsImport
   TRY_INIT(pyproxy);
   TRY_INIT(python2js);
+  TRY_INIT(keyboard_interrupt);
 
   PyObject* module_dict = PyImport_GetModuleDict(); // borrowed
   if (PyDict_SetItemString(module_dict, "_pyodide_core", core_module)) {

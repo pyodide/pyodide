@@ -1,10 +1,11 @@
 PYODIDE_ROOT=$(abspath .)
+
 include Makefile.envs
+
 .PHONY=check
 
 FILEPACKAGER=$$EM_DIR/tools/file_packager.py
 UGLIFYJS=$(PYODIDE_ROOT)/node_modules/.bin/uglifyjs
-LESSC=$(PYODIDE_ROOT)/node_modules/.bin/lessc
 
 CPYTHONROOT=cpython
 CPYTHONLIB=$(CPYTHONROOT)/installs/python-$(PYVERSION)/lib/python$(PYMINOR)
@@ -15,16 +16,21 @@ PYODIDE_CXX=$(PYODIDE_ROOT)/ccache/em++
 CC=emcc
 CXX=em++
 OPTFLAGS=-O2
-CFLAGS=$(OPTFLAGS) -g -I$(PYTHONINCLUDE) -fPIC \
-	-Wno-warn-absolute-paths -Werror=int-conversion -Werror=incompatible-pointer-types \
+CFLAGS=\
+	$(OPTFLAGS) \
+	-g \
+	-I$(PYTHONINCLUDE) \
+	-fPIC \
+	-Wno-warn-absolute-paths \
+	-Werror=int-conversion \
+	-Werror=incompatible-pointer-types \
 	$(EXTRA_CFLAGS)
-
 LDFLAGS=\
-	-O2 \
 	-s BINARYEN_EXTRA_PASSES="--pass-arg=max-func-params@61" \
+	$(OPTFLAGS) \
 	-s MODULARIZE=1 \
 	$(CPYTHONROOT)/installs/python-$(PYVERSION)/lib/libpython$(PYMINOR).a \
-	-s TOTAL_MEMORY=10485760 \
+	-s TOTAL_MEMORY=20971520 \
 	-s ALLOW_MEMORY_GROWTH=1 \
 	-s MAIN_MODULE=1 \
 	-s EMULATE_FUNCTION_POINTER_CASTS=1 \
@@ -39,14 +45,13 @@ LDFLAGS=\
 	$(wildcard $(CPYTHONROOT)/build/bzip2*/libbz2.a) \
 	-lstdc++ \
 	--memory-init-file 0 \
-	-s LZ4=1	\
+	-s LZ4=1 \
 	$(EXTRA_LDFLAGS)
 
 all: check \
 	build/pyodide.asm.js \
 	build/pyodide.js \
 	build/console.html \
-	build/renderedhtml.css \
 	build/test.data \
 	build/packages.json \
 	build/test.html \
@@ -55,18 +60,22 @@ all: check \
 	echo -e "\nSUCCESS!"
 
 
-build/pyodide.asm.js: src/core/main.o src/core/jsimport.o \
-	        src/core/jsproxy.o src/core/js2python.o \
-		src/core/error_handling.o \
-		src/core/pyproxy.o \
-		src/core/python2js.o \
-		src/core/python2js_buffer.o \
-		src/core/runpython.o src/core/hiwire.o \
-		src/webbrowser.py \
-		src/_testcapi.py \
-		src/pystone.py \
-		$(wildcard src/pyodide-py/pyodide/*.py) \
-		$(CPYTHONLIB)
+build/pyodide.asm.js: \
+	src/core/error_handling.o \
+	src/core/hiwire.o \
+	src/core/js2python.o \
+	src/core/jsproxy.o \
+	src/core/keyboard_interrupt.o \
+	src/core/main.o  \
+	src/core/pyproxy.o \
+	src/core/python2js_buffer.o \
+	src/core/python2js.o \
+	src/core/runpython.o \
+	src/pystone.py \
+	src/_testcapi.py \
+	src/webbrowser.py \
+	$(wildcard src/pyodide-py/pyodide/*.py) \
+	$(CPYTHONLIB)
 	date +"[%F %T] Building pyodide.asm.js..."
 	[ -d build ] || mkdir build
 	$(CXX) -s EXPORT_NAME="'pyodide'" -o build/pyodide.asm.js $(filter %.o,$^) \
@@ -98,9 +107,6 @@ build/console.html: src/templates/console.html
 	cp $< $@
 	sed -i -e 's#{{ PYODIDE_BASE_URL }}#$(PYODIDE_BASE_URL)#g' $@
 
-
-build/renderedhtml.css: src/css/renderedhtml.less $(LESSC)
-	$(LESSC) $< $@
 
 build/webworker.js: src/webworker.js
 	cp $< $@
@@ -146,20 +152,21 @@ clean-all: clean
 	$(CC) -o $@ -c $< $(CFLAGS) -Isrc/core/
 
 
-build/test.data: $(CPYTHONLIB)
+build/test.data: $(CPYTHONLIB) $(UGLIFYJS)
 	( \
 		cd $(CPYTHONLIB)/test; \
 		find . -type d -name __pycache__ -prune -exec rm -rf {} \; \
 	)
 	( \
 		cd build; \
-		python $(FILEPACKAGER) test.data --lz4 --preload ../$(CPYTHONLIB)/test@/lib/python3.8/test --js-output=test.js --export-name=pyodide._module --exclude __pycache__ \
+		python $(FILEPACKAGER) test.data --lz4 --preload ../$(CPYTHONLIB)/test@/lib/python$(PYMINOR)/test --js-output=test.js --export-name=pyodide._module --exclude __pycache__ \
 	)
 	$(UGLIFYJS) build/test.js -o build/test.js
 
 
-$(UGLIFYJS) $(LESSC): emsdk/emsdk/.complete
-	npm i --no-save uglify-js lessc
+$(UGLIFYJS): emsdk/emsdk/.complete
+	npm i --no-save uglify-js
+	touch -h $(UGLIFYJS)
 
 
 $(PYODIDE_EMCC):
