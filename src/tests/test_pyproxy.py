@@ -19,7 +19,7 @@ def test_pyproxy(selenium):
     assert selenium.run("f.baz") == 32
     assert set(
         selenium.run_js("return Object.getOwnPropertyNames(pyodide.pyimport('f'))")
-    ) == set(
+    ).issuperset(
         [
             "__class__",
             "__delattr__",
