@@ -366,6 +366,9 @@ EM_JS(int, pyproxy_init, (), {
       if(Reflect.has(jsobj, jskey) && !ignoredTargetFields.includes(jskey)){
         return true;
       }
+      if(typeof(jskey) === "symbol"){
+        return false;
+      }
       let ptrobj = _getPtr(jsobj);
       let idkey = Module.hiwire.new_value(jskey);
       let result;
@@ -385,6 +388,9 @@ EM_JS(int, pyproxy_init, (), {
       if(Reflect.has(jsobj, jskey) && !ignoredTargetFields.includes(jskey)){
         return Reflect.get(jsobj, jskey);
       }
+      if(typeof(jskey) === "symbol"){
+        return undefined;
+      }
       let ptrobj = _getPtr(jsobj);
       let idkey = Module.hiwire.new_value(jskey);
       let idresult;
@@ -403,8 +409,11 @@ EM_JS(int, pyproxy_init, (), {
       return jsresult;
     },
     set: function (jsobj, jskey, jsval) {
-      if(Reflect.has(jsobj, jskey) && !ignoredTargetFields.includes(jskey)){
-        throw new Error(`Cannot set read only field ${jskey}`);
+      if(
+        Reflect.has(jsobj, jskey) && !ignoredTargetFields.includes(jskey)
+        || typeof(jskey) === "symbol"
+      ){
+        throw new Error(`Cannot set read only field ${jskey.toString()}`);
       }
       let ptrobj = _getPtr(jsobj);
       let idkey = Module.hiwire.new_value(jskey);
@@ -424,8 +433,11 @@ EM_JS(int, pyproxy_init, (), {
       return true;
     },
     deleteProperty: function (jsobj, jskey) {
-      if(Reflect.has(jsobj, jskey) && !ignoredTargetFields.includes(jskey)){
-        throw new Error(`Cannot delete read only field ${jskey}`);
+      if(
+        Reflect.has(jsobj, jskey) && !ignoredTargetFields.includes(jskey)
+        || typeof(jskey) === "symbol"
+      ){
+        throw new Error(`Cannot delete read only field ${jskey.toString()}`);
       }
       let ptrobj = _getPtr(jsobj);
       let idkey = Module.hiwire.new_value(jskey);
