@@ -493,8 +493,39 @@ globalThis.languagePluginLoader = new Promise((resolve, reject) => {
     self.pyodide.registerJsModule("js", globalThis);
     self.pyodide = makePublicAPI(self.pyodide, PUBLIC_API);
     self.pyodide._module.packages = json;
+    self.pyodide.registerJsModule("pyodide_js", self.pyodide);
     resolve();
   };
+
+  Module.jsFuncWrapper = function(name, args, src, freevars, closure_cells){
+    if(freevars.length === 0){
+      // Don't need a closure.
+      return new Function(...args, src);
+    }
+    // Set up closure: freevars contains the names of the closure variables,
+    // closure is the list of 
+    let ctx = {};
+    for(let i = 0; i < freevars.length; i++){
+      ctx[freevars[i]] = closure[i];
+    }
+    let $$ctx = new Proxy(ctx, {
+      get : function(obj, key){
+        if(key === Symbol.unscopables){
+          return [];
+        }
+        return obj[key].cell_contents;
+      },
+      set : function(obj, key, val){
+        obj[key].cell_contents = val;
+        return true;
+      }
+    });
+    return new Function("$$ctx", `return function ${name}_inner(${args}) {
+      with($$ctx){
+        ${src}
+      }
+    }`)($$ctx);
+  }
 
   const scriptSrc = `${baseURL}pyodide.asm.js`;
   loadScript(scriptSrc).then(() => {

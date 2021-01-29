@@ -6,6 +6,7 @@ A library of helper utilities for connecting Python to the browser environment.
 
 import ast
 from asyncio import iscoroutine
+import functools
 from io import StringIO
 from textwrap import dedent
 from typing import Dict, List, Any, Tuple, Optional
@@ -392,3 +393,18 @@ def as_nested_list(obj) -> List:
         return [as_nested_list(x) for x in it]
     except TypeError:
         return obj
+
+def jsfunc(func):
+    from pyodide_js._module import jsFuncWrapper
+    import inspect
+    from functools import wraps
+    sig = inspect.signature(func)
+    arg_names = list(sig.parameters.keys())    
+    code = inspect.getdoc(func)
+    inner = jsFuncWrapper(func.__name__, arg_names, code,  func.__code__.co_freevars, func.__closure__)
+    @functools.wraps(func)
+    def wrapper(*args, **kwargs):
+        inner_args = sig.bind(*args, **kwargs)
+        inner_args.apply_defaults()
+        return inner(*inner_args.arguments.values())
+    return wrapper
