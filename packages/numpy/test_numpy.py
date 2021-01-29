@@ -115,7 +115,7 @@ def test_py2js_buffer_clear_error_flag(selenium):
     selenium.run("x = np.array([['string1', 'string2'], ['string3', 'string4']])")
     selenium.run_js(
         """
-        pyodide.globals.x
+        pyodide.globals.get("x")
         // Implicit assertion: this doesn't leave python error indicator set
         // (automatically checked in conftest.py)
         """
