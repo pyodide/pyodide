@@ -220,7 +220,7 @@ EM_JS_REF(JsRef, pyproxy_new, (PyObject * ptrobj), {
 
   _Py_IncRef(ptrobj);
 
-  let target = function(){};
+  let target = new Module.PyProxyClass();
   target['$$'] = { ptr : ptrobj, type : 'PyProxy' };
   Object.assign(target, Module.PyProxyPublicMethods);
 
@@ -249,6 +249,8 @@ EM_JS(int, pyproxy_init, (), {
     }
     return ptr;
   }
+  // 
+  Module.PyProxyClass = class PyProxy extends Function {};
   // Static methods
   Module.PyProxy = {
     _getPtr,
@@ -257,7 +259,9 @@ EM_JS(int, pyproxy_init, (), {
     },
   };
 
+  // Methods always present
   Module.PyProxyPublicMethods = {
+    [Symbol.toStringTag] : "PyProxy",
     toString : function() {
       let ptrobj = _getPtr(this);
       let jsref_repr;
@@ -298,7 +302,7 @@ EM_JS(int, pyproxy_init, (), {
     },
   };
 
-  // Note: these methods appear for lists and tuples and sequence-like things
+  // These methods appear for lists and tuples and sequence-like things
   // _PyMapping_Check returns true on a superset of things _PySequence_Check accepts.
   Module.PyProxyMappingMethods = {
     get : function(key){
@@ -356,6 +360,8 @@ EM_JS(int, pyproxy_init, (), {
     }
   };
 
+  // These fields appear in the target by default because the target is a function.
+  // we want to filter them out.
   let ignoredTargetFields = ["name", "length"];
 
   // See explanation of which methods should be defined here and what they do here:
@@ -413,7 +419,10 @@ EM_JS(int, pyproxy_init, (), {
         Reflect.has(jsobj, jskey) && !ignoredTargetFields.includes(jskey)
         || typeof(jskey) === "symbol"
       ){
-        throw new Error(`Cannot set read only field ${jskey.toString()}`);
+        if(typeof(jskey) === "symbol"){
+          jskey = jskey.description;
+        }
+        throw new Error(`Cannot set read only field ${jskey}`);
       }
       let ptrobj = _getPtr(jsobj);
       let idkey = Module.hiwire.new_value(jskey);
@@ -437,7 +446,10 @@ EM_JS(int, pyproxy_init, (), {
         Reflect.has(jsobj, jskey) && !ignoredTargetFields.includes(jskey)
         || typeof(jskey) === "symbol"
       ){
-        throw new Error(`Cannot delete read only field ${jskey.toString()}`);
+        if(typeof(jskey) === "symbol"){
+          jskey = jskey.description;
+        }        
+        throw new Error(`Cannot delete read only field ${jskey}`);
       }
       let ptrobj = _getPtr(jsobj);
       let idkey = Module.hiwire.new_value(jskey);
