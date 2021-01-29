@@ -317,7 +317,7 @@ JsProxy_Bool(PyObject* o)
 }
 
 static PyObject*
-JsProxy_Await(JsProxy* self, PyObject* _args)
+JsProxy_Await(JsProxy* self)
 {
   // Guards
   if (self->awaited) {
@@ -389,7 +389,6 @@ static PyNumberMethods JsProxy_NumberMethods = {
 };
 
 static PyMethodDef JsProxy_Methods[] = {
-  { "__await__", (PyCFunction)JsProxy_Await, METH_NOARGS, ""},
   { "__dir__",
     (PyCFunction)JsProxy_Dir,
     METH_NOARGS,
