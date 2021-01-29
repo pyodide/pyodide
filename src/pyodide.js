@@ -497,17 +497,19 @@ globalThis.languagePluginLoader = new Promise((resolve, reject) => {
     resolve();
   };
 
-  Module.jsFuncWrapper = function(name, args, src, freevars, closure_cells){
-    if(freevars.length === 0){
+  Module.jsFuncWrapper = function(name, args, src, closure_vars, closure_cells){
+    if(closure_vars.length === 0){
       // Don't need a closure.
-      return new Function(...args, src);
+      return new Function(...args, `"use strict"; ${src}`);
     }
-    // Set up closure: freevars contains the names of the closure variables,
-    // closure is the list of 
+    // Set up closure: closure_vars contains the names of the closure variables,
+    // closure_cells is the list of python Cell objects
     let ctx = {};
-    for(let i = 0; i < freevars.length; i++){
-      ctx[freevars[i]] = closure[i];
+    for(let i = 0; i < closure_vars.length; i++){
+      ctx[closure_vars[i]] = closure_cells[i];
     }
+    // Ensure reading from and assigning to the closure variables stays up to
+    // date with the Python cell objects
     let $$ctx = new Proxy(ctx, {
       get : function(obj, key){
         if(key === Symbol.unscopables){
@@ -520,11 +522,14 @@ globalThis.languagePluginLoader = new Promise((resolve, reject) => {
         return true;
       }
     });
-    return new Function("$$ctx", `return function ${name}_inner(${args}) {
-      with($$ctx){
-        ${src}
+    return new Function("$$ctx", `
+      "use strict";
+      return function ${name}_inner(${args}) {
+        with($$ctx){
+          ${src}
+        }
       }
-    }`)($$ctx);
+    `)($$ctx);
   }
 
   const scriptSrc = `${baseURL}pyodide.asm.js`;

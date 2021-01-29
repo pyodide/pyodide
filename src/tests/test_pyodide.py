@@ -2,7 +2,7 @@ import pytest
 from pathlib import Path
 import sys
 from textwrap import dedent
-
+from pyodide_build.testing import run_in_pyodide
 sys.path.append(str(Path(__file__).parents[2] / "src" / "pyodide-py"))
 
 from pyodide import find_imports, eval_code  # noqa: E402
@@ -217,3 +217,26 @@ def test_keyboard_interrupt(selenium):
         `)
         """
     )
+
+@run_in_pyodide
+def test_jsfunc():
+    from pyodide._base import jsfunc
+    def f():
+        x = 2
+        @jsfunc
+        def g(y, z):
+            """
+                x++;
+                return x*y + z;
+            """
+            x # have to mention x in body of function
+
+        def h():
+            return x
+        return [g, h]
+    g, h = f()
+    assert h() == 2
+    assert g(2, 1) == 7
+    assert h() == 3
+    assert g(2, 1) == 9
+    assert h() == 4
