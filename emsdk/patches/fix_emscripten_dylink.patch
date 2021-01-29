@@ -16,9 +16,70 @@ index 2990646..517fc33 100644
  #endif
      return wasmTable.get(ptr).apply(null, args)
  #endif
-diff --git a/emsdk/upstream/emscripten/src/library_dylink.js b/emsdk/upstream/emscripten/src/library_dylink.js
-index 876492b..50106f2 100644
---- a/emsdk/upstream/emscripten/src/library_dylink.js
+diff --git a/emsdk/upstream/emscripten/src/runtime_functions.js b/emsdk/upstream/emscripten/src/runtime_functions.js
+index 5ae5cfc..02474b3 100644
+--- a/emsdk/upstream/emscripten/src/runtime_functions.js
++++ b/emsdk/upstream/emscripten/src/runtime_functions.js
+@@ -114,6 +114,18 @@ function getEmptyTableSlot() {
+   return wasmTable.length - 1;
+ }
+ 
++function updateWasmFunctionMap(start,count)
++{
++    for(var i=start;i<start+count;i++)
++    {
++       var item = wasmTable.get(i);
++       // Ignore null values.
++       if (item) {
++         functionsInTableMap.set(item, i);
++       }
++    }
++}
++
+ // Add a wasm function to the table.
+ function addFunctionWasm(func, sig) {
+   // Check if the function is already in the table, to ensure each function
+diff --git a/emsdk/upstream/emscripten/src/runtime_init_table.js b/emsdk/upstream/emscripten/src/runtime_init_table.js
+index c8af59d..7084ff7 100644
+--- a/emsdk/upstream/emscripten/src/runtime_init_table.js
++++ b/emsdk/upstream/emscripten/src/runtime_init_table.js
+@@ -13,3 +13,17 @@ var wasmTable = new WebAssembly.Table({
+ // the exports are available.
+ var wasmTable;
+ #endif
++#if EMULATE_FUNCTION_POINTER_CASTS==1
++    // when we call dynamic link functions through the relocation
++    // invoke xxx methods, we aren't doing a function pointer
++    // call, so we don't mess with the function prototype.
++    // however, we do need to make the function table
++    // point to the emulated bny$fpcast-emu$ function pointer calls or else you
++    // can't take function pointers in wasm code.
++    // this means we need a different table for javascript dyncall invokes
++    // as given these are pre-linked and don't use function pointer casts, they
++    // will use the non-emulated version with the normal arguments.
++    // nb. this doesn't have to be a proper wasm table because it is
++    // only ever called from javascript
++    var dyncallInvokeMap={};
++#endif
+diff --git a/emsdk/upstream/emscripten/tools/__pycache__/shared.cpython-38.pyc b/emsdk/upstream/emscripten/tools/__pycache__/shared.cpython-38.pyc
+index 087e7fd..872c6f0 100644
+Binary files a/emsdk/upstream/emscripten/tools/__pycache__/shared.cpython-38.pyc and b/emsdk/upstream/emscripten/tools/__pycache__/shared.cpython-38.pyc differ
+diff --git a/emsdk/upstream/emscripten/tools/shared.py b/emsdk/upstream/emscripten/tools/shared.py
+index 74666ee..3d5657b 100644
+--- a/emsdk/upstream/emscripten/tools/shared.py
++++ b/emsdk/upstream/emscripten/tools/shared.py
+@@ -844,7 +844,7 @@ class JS(object):
+       else:
+         return 'Module["dynCall_%s"](%s)' % (sig, args)
+     else:
+-      return 'wasmTable.get(%s)(%s)' % (args[0], ','.join(args[1:]))
++        return 'dynCall("%s",%s,[%s])' %(sig,args[0],','.join(args[1:]))
+ 
+   @staticmethod
+   def make_invoke(sig, named=True):
+diff --git a/emdsk/upstream/emscripten/src/library_dylink.js b/emsdk/upstream/emscripten/src/library_dylink.js
+index 876492b..750a18d 100644
+--- a/emdsk/upstream/emscripten/src/library_dylink.js
 +++ b/emsdk/upstream/emscripten/src/library_dylink.js
 @@ -3,7 +3,9 @@
  //
@@ -108,24 +169,24 @@ index 876492b..50106f2 100644
 +#endif
 +#if EMULATE_FUNCTION_POINTER_CASTS==1
 +        // update map for dynamic calls so they can bypass fp casts
-+        if(is_fpcast)
++        if(is_fpcast && newFn)
 +        {
 +            dyncallGOT=GOT[dyncallName]
 +            if(dyncallGOT)
 +            {
 +                dcVal=dyncallGOT.value;
-+                if(dcVal!=0)
++                if(dcVal)
 +                {
 +                    dyncallInvokeMap[newFn]=dcVal;
 +                }
 +            }
-+        }else if(is_nonfpcast)
++        }else if(is_nonfpcast && newFn)
 +        {
 +            fpcGOT=GOT[symName];
 +            if(fpcGOT)
 +            {
 +                fpVal=fpcGOT.value;
-+                if(fpVal!=0)
++                if(fpVal)
 +                {
 +                    dyncallInvokeMap[fpVal]=newFn;
 +                }
@@ -163,64 +224,3 @@ index 876492b..50106f2 100644
 
      if (handle == {{{ cDefine('RTLD_DEFAULT') }}}) {
        result = resolveGlobalSymbol(symbol, true);
-diff --git a/emsdk/upstream/emscripten/src/runtime_functions.js b/emsdk/upstream/emscripten/src/runtime_functions.js
-index 5ae5cfc..02474b3 100644
---- a/emsdk/upstream/emscripten/src/runtime_functions.js
-+++ b/emsdk/upstream/emscripten/src/runtime_functions.js
-@@ -114,6 +114,18 @@ function getEmptyTableSlot() {
-   return wasmTable.length - 1;
- }
- 
-+function updateWasmFunctionMap(start,count)
-+{
-+    for(var i=start;i<start+count;i++)
-+    {
-+       var item = wasmTable.get(i);
-+       // Ignore null values.
-+       if (item) {
-+         functionsInTableMap.set(item, i);
-+       }
-+    }
-+}
-+
- // Add a wasm function to the table.
- function addFunctionWasm(func, sig) {
-   // Check if the function is already in the table, to ensure each function
-diff --git a/emsdk/upstream/emscripten/src/runtime_init_table.js b/emsdk/upstream/emscripten/src/runtime_init_table.js
-index c8af59d..7084ff7 100644
---- a/emsdk/upstream/emscripten/src/runtime_init_table.js
-+++ b/emsdk/upstream/emscripten/src/runtime_init_table.js
-@@ -13,3 +13,17 @@ var wasmTable = new WebAssembly.Table({
- // the exports are available.
- var wasmTable;
- #endif
-+#if EMULATE_FUNCTION_POINTER_CASTS==1
-+    // when we call dynamic link functions through the relocation
-+    // invoke xxx methods, we aren't doing a function pointer
-+    // call, so we don't mess with the function prototype.
-+    // however, we do need to make the function table
-+    // point to the emulated bny$fpcast-emu$ function pointer calls or else you
-+    // can't take function pointers in wasm code.
-+    // this means we need a different table for javascript dyncall invokes
-+    // as given these are pre-linked and don't use function pointer casts, they
-+    // will use the non-emulated version with the normal arguments.
-+    // nb. this doesn't have to be a proper wasm table because it is
-+    // only ever called from javascript
-+    var dyncallInvokeMap={};
-+#endif
-diff --git a/emsdk/upstream/emscripten/tools/__pycache__/shared.cpython-38.pyc b/emsdk/upstream/emscripten/tools/__pycache__/shared.cpython-38.pyc
-index 087e7fd..872c6f0 100644
-Binary files a/emsdk/upstream/emscripten/tools/__pycache__/shared.cpython-38.pyc and b/emsdk/upstream/emscripten/tools/__pycache__/shared.cpython-38.pyc differ
-diff --git a/emsdk/upstream/emscripten/tools/shared.py b/emsdk/upstream/emscripten/tools/shared.py
-index 74666ee..3d5657b 100644
---- a/emsdk/upstream/emscripten/tools/shared.py
-+++ b/emsdk/upstream/emscripten/tools/shared.py
-@@ -844,7 +844,7 @@ class JS(object):
-       else:
-         return 'Module["dynCall_%s"](%s)' % (sig, args)
-     else:
--      return 'wasmTable.get(%s)(%s)' % (args[0], ','.join(args[1:]))
-+        return 'dynCall("%s",%s,[%s])' %(sig,args[0],','.join(args[1:]))
- 
-   @staticmethod
-   def make_invoke(sig, named=True):
