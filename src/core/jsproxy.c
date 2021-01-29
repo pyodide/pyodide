@@ -389,11 +389,6 @@ static PyNumberMethods JsProxy_NumberMethods = {
 };
 
 static PyMethodDef JsProxy_Methods[] = {
-  { "__iter__",
-    (PyCFunction)JsProxy_GetIter,
-    METH_NOARGS,
-    "Get an iterator over the object" },
-  { "__await__", (PyCFunction)JsProxy_Await, METH_NOARGS, ""},
   { "__dir__",
     (PyCFunction)JsProxy_Dir,
     METH_NOARGS,
