@@ -398,6 +398,7 @@ def as_nested_list(obj) -> List:
 def jsfunc(func):
     from pyodide_js._module import jsFuncWrapper
     import inspect
+
     sig = inspect.signature(func)
     arg_names = list(sig.parameters.keys())
     code = inspect.getdoc(func)
