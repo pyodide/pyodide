@@ -1,5 +1,4 @@
-(changelog)=
-# Release notes
+(changelog)= # Release notes
 
 ## Version [Unreleased]
 ### Breaking changes
@@ -43,6 +42,7 @@
 - Flexible jsimports: it now possible to add custom Python "packages" backed by Javascript code, like the js package.
   The js package is now implemented using this system. [#1146](https://github.com/iodide-project/pyodide/pull/1146)
 - Added the `pyodide.setInterruptBuffer` API. This can be used to set a `SharedArrayBuffer` to be the keyboard interupt buffer. If Pyodide is running on a webworker, the main thread can signal to the webworker that it should raise a `KeyboardInterrupt` by writing to the interrupt buffer.
+[#1148](https://github.com/iodide-project/pyodide/pull/1148) and [#1173](https://github.com/iodide-project/pyodide/pull/1173)
 
 ### Fixed
 - getattr and dir on JsProxy now report consistent results and include all names defined on the Python dictionary backing JsProxy. [#1017](https://github.com/iodide-project/pyodide/pull/1017)
@@ -54,37 +54,40 @@
 - In console.html: sync behavior, full stdout/stderr support, clean namespace, bigger font, correct result representation, clean traceback [#1125](https://github.com/iodide-project/pyodide/pull/1125) and [#1141](https://github.com/iodide-project/pyodide/pull/1141)
 - Javascript functions imported like `from js import fetch` no longer trigger "invalid invocation" errors (issue [#461](https://github.com/iodide-project/pyodide/issues/461)) and `js.fetch("some_url")` also works now (issue [#768](https://github.com/iodide-project/pyodide/issues/461)).
 [#1126](https://github.com/iodide-project/pyodide/pull/1126)
-- Javascript bound method calls now work correctly with keyword arguments. [#1138](https://github.com/iodide-project/pyodide/pull/1138)
-- Switched from ̀Jedi` to `rlcompleter` for completion in `pyodide.console.InteractiveConsole` and so in `console.html`. This fixes some completion issues (see [#821](https://github.com/iodide-project/pyodide/issues/821) and [#1160](https://github.com/iodide-project/pyodide/issues/821)
+- Javascript bound method calls now work correctly with keyword arguments.
+  [#1138](https://github.com/iodide-project/pyodide/pull/1138)
+- Switched from ̀Jedi` to `rlcompleter` for completion in
+  `pyodide.console.InteractiveConsole` and so in `console.html`. This fixes
+some completion issues (see
+[#821](https://github.com/iodide-project/pyodide/issues/821) and
+[#1160](https://github.com/iodide-project/pyodide/issues/821)
 
-## Version 0.16.1
-*December 25, 2020*
+## Version 0.16.1 *December 25, 2020*
 
 Note: due to a CI deployment issue the 0.16.0 release was skipped and replaced
 by 0.16.1 with identical contents.
 
 - Pyodide files are distributed by [JsDelivr](https://www.jsdelivr.com/),
-  `https://cdn.jsdelivr.net/pyodide/v0.16.1/full/pyodide.js`
-  The previous CDN `pyodide-cdn2.iodide.io` still works and there
-  are no plans for deprecating it. However please use
-  JsDelivr as a more sustainable solution, including for earlier pyodide
-  versions.
+  `https://cdn.jsdelivr.net/pyodide/v0.16.1/full/pyodide.js` The previous CDN
+`pyodide-cdn2.iodide.io` still works and there are no plans for deprecating it.
+However please use JsDelivr as a more sustainable solution, including for
+earlier pyodide versions.
 
 ### Python and the standard library
 
 - Pyodide includes CPython 3.8.2
   [#712](https://github.com/iodide-project/pyodide/pull/712)
-- ENH Patches for the threading module were removed in all packages.
-  Importing the module, and a subset of functionality (e.g. locks) works,
-  while starting a new thread will produce an exception, as expected.
-  [#796](https://github.com/iodide-project/pyodide/pull/796). See
-  [#237](https://github.com/iodide-project/pyodide/pull/237) for the current
-  status of the threading support.
+- ENH Patches for the threading module were removed in all packages.  Importing
+  the module, and a subset of functionality (e.g. locks) works, while starting
+a new thread will produce an exception, as expected.
+[#796](https://github.com/iodide-project/pyodide/pull/796). See
+[#237](https://github.com/iodide-project/pyodide/pull/237) for the current
+status of the threading support.
 - ENH The multiprocessing module is now included, and will not fail at import,
-  thus avoiding the necessity to patch included packages. Starting a new process
-  will produce an exception due to the limitation of the WebAssembly VM  with
-  the following message: `Resource temporarily unavailable`
-  [#796](https://github.com/iodide-project/pyodide/pull/796).
+  thus avoiding the necessity to patch included packages. Starting a new
+process will produce an exception due to the limitation of the WebAssembly VM
+with the following message: `Resource temporarily unavailable`
+[#796](https://github.com/iodide-project/pyodide/pull/796).
 
 ### Python / JS type conversions
 
@@ -92,20 +95,20 @@ by 0.16.1 with identical contents.
   [#708](https://github.com/iodide-project/pyodide/pull/708)
 - Javascript exceptions can now be raised and caught in Python. They are
   wrapped in pyodide.JsException.
-  [#891](https://github.com/iodide-project/pyodide/pull/891)
+[#891](https://github.com/iodide-project/pyodide/pull/891)
 
 ### pyodide-py package and micropip
 
 - The `pyodide.py` file was transformed to a pyodide-py package. The imports
   remain the same so this change is transparent to the users
-  [#909](https://github.com/iodide-project/pyodide/pull/909).
+[#909](https://github.com/iodide-project/pyodide/pull/909).
 - FIX Get last version from PyPi when installing a module via micropip
   [#846](https://github.com/iodide-project/pyodide/pull/846).
 - Suppress REPL results returned by `pyodide.eval_code` by adding a semicolon
   [#876](https://github.com/iodide-project/pyodide/pull/876).
-- Enable monkey patching of `eval_code` and `find_imports` to customize behavior
-  of `runPython` and `runPythonAsync`
-  [#941](https://github.com/iodide-project/pyodide/pull/941).
+- Enable monkey patching of `eval_code` and `find_imports` to customize
+  behavior of `runPython` and `runPythonAsync`
+[#941](https://github.com/iodide-project/pyodide/pull/941).
 
 ### Build system
 
@@ -113,28 +116,25 @@ by 0.16.1 with identical contents.
   [#815](https://github.com/iodide-project/pyodide/pull/815)
 - Pre-built docker images are now available as
   [`iodide-project/pyodide`](https://hub.docker.com/r/iodide/pyodide)
-  [#787](https://github.com/iodide-project/pyodide/pull/787)
+[#787](https://github.com/iodide-project/pyodide/pull/787)
 - Host python is no longer compiled, reducing compilation time. This also
   implies that python 3.8 is now required to build pyodide. It can for instance
-  be installed with conda.
-  [#830](https://github.com/iodide-project/pyodide/pull/830)
+be installed with conda.
+[#830](https://github.com/iodide-project/pyodide/pull/830)
 - FIX Infer package tarball directory from source url
   [#687](https://github.com/iodide-project/pyodide/pull/687)
-- Updated to emscripten 1.38.44 and binaryen v86
-  (see related [commits](https://github.com/iodide-project/pyodide/search?q=emscripten&type=commits))
+- Updated to emscripten 1.38.44 and binaryen v86 (see related
+  [commits](https://github.com/iodide-project/pyodide/search?q=emscripten&type=commits))
 - Updated default `--ldflags` argument to `pyodide_build` scripts to equal what
   pyodide actually uses.
-  [#817](https://github.com/iodide-project/pyodide/pull/480)
+[#817](https://github.com/iodide-project/pyodide/pull/480)
 - Replace C lz4 implementation with the (upstream) Javascript implementation.
   [#851](https://github.com/iodide-project/pyodide/pull/851)
 - Pyodide deployment URL can now be specified with the `PYODIDE_BASE_URL`
-  environment variable during build. The `pyodide_dev.js` is no longer distributed.
-  To get an equivalent behavior with `pyodide.js`, set,
-  ```
-  window.languagePluginUrl = './';
-  ```
-  before loading it.
-  [#855](https://github.com/iodide-project/pyodide/pull/855)
+  environment variable during build. The `pyodide_dev.js` is no longer
+distributed.  To get an equivalent behavior with `pyodide.js`, set, ```
+window.languagePluginUrl = './'; ``` before loading it.
+[#855](https://github.com/iodide-project/pyodide/pull/855)
 - Build runtime C libraries (e.g. libxml) via package build system with correct
   dependency resolution
   [#927](https://github.com/iodide-project/pyodide/pull/927)
