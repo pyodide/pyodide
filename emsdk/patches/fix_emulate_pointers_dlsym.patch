@@ -1,36 +1,16 @@
-diff --git a/emsdk/binaryen/src/passes/FuncCastEmulation.cpp b/src/passes/FuncCastEmulation.cpp
-index 9d232c9..47ab46c 100644
+diff --git a/emsdk/binary/src/passes/FuncCastEmulation.cpp b/src/passes/FuncCastEmulation.cpp
+index 9d232c9..60d3990 100644
 --- a/emsdk/binaryen/src/passes/FuncCastEmulation.cpp
 +++ b/emsdk/binaryen/src/passes/FuncCastEmulation.cpp
-@@ -174,16 +174,95 @@ struct FuncCastEmulation : public Pass {
-     std::unordered_map<Name, Name> funcThunks;
-     for (auto& segment : module->table.segments) {
-       for (auto& name : segment.data) {
--        auto iter = funcThunks.find(name);
--        if (iter == funcThunks.end()) {
--          auto thunk = makeThunk(name, module, numParams);
--          funcThunks[name] = thunk;
--          name = thunk;
--        } else {
--          name = iter->second;
-+        // don't create FPCAST emulation for javascript legalizer stubs
-+        // (used when javascript doesn't have 64 bit support, so 
-+        // can't use fpcast emulation calls which need 64 bit support)
-+        if(strncmp(name.str,"legalstub$",10)!=0)
-+        {
-+            auto iter = funcThunks.find(name);
-+            if (iter == funcThunks.end()) {
-+              auto thunk = makeThunk(name, module, numParams);
-+              funcThunks[name] = thunk;
-+              name = thunk;
-+            } else {
-+              name = iter->second;
-+            }
-         }
-       }
-     }
+@@ -170,20 +170,88 @@ struct FuncCastEmulation : public Pass {
+       std::stoul(runner->options.getArgumentOrDefault("max-func-params", "16"));
+     // we just need the one ABI function type for all indirect calls
+     Signature ABIType(Type(std::vector<Type>(numParams, Type::i64)), Type::i64);
+-    // Add a thunk for each function in the table, and do the call through it.
++
 +    // make sure everything in exports has a thunk
 +    // so dlsym works
+     std::unordered_map<Name, Name> funcThunks;
 +    std::unordered_map<Name, Name> exportThunks;
 +    for(auto& function: module->exports)
 +    {
@@ -56,49 +36,63 @@ index 9d232c9..47ab46c 100644
 +          }
 +       }
 +     }
-+    
-+     // add thunks to exports if their unthunked version is in exports
-+     for(auto& thunk: exportThunks)
++    int exportCount=0;
++    // Add a thunk for each function in the table, and do the call through it.
+     for (auto& segment : module->table.segments) {
+       for (auto& name : segment.data) {
+-        auto iter = funcThunks.find(name);
+-        if (iter == funcThunks.end()) {
+-          auto thunk = makeThunk(name, module, numParams);
+-          funcThunks[name] = thunk;
+-          name = thunk;
+-        } else {
+-          name = iter->second;
++        // don't create FPCAST emulation for javascript legalizer stubs
++        // (used when javascript doesn't have 64 bit support, so 
++        // can't use fpcast emulation calls which need 64 bit support)
++        if(strncmp(name.str,"legalstub$",10)!=0)
 +        {
-+		auto* export_ = new Export;
-+		export_->name = thunk.first;
-+	        export_->value = thunk.second;
-+	        export_->kind = ExternalKind::Function;
-+	        module->addExport(export_);
-+        }
-+
-+    // for things that aren't in exports, we need to have a way to map from
-+    // the thunk to the normal function in dyncall where functions are called 
-+    // indirect via Javascript - i.e. if a function pointer to a static function
-+    // is passed out of main module
-+    // we do this by adding exports for all functions and their thunks with names like 'modulename_anon_1 ....'
-+    // these should never be called by name, so name isn't important
-+    // n.b. right now I think this only works for static things in the main module
-+    // for side modules really need to only pass non-static functions
-+    int count=0;
-+    for(auto& thunk:funcThunks)
++            auto iter = funcThunks.find(name);
++            if (iter == funcThunks.end()) {
++              // we've already made thunks for exported funcionts so
++              // this is a static function - make the thunk and make an anon export 
++              // to it so that it can be called by pyodide
++                Name orig_name(name);
++                auto thunk = makeThunk(name, module, numParams);
++                funcThunks[name] = thunk;
++                exportCount+=1;
++                char buffer[256];
++                snprintf(buffer,256,"byn$fpcast-emu$__static_%d",exportCount);
++                // first make the fpcast version of the function
++                auto* export_ = new Export;
++                export_->name = buffer;
++                export_->value = thunk;
++                export_->kind = ExternalKind::Function;
++                module->addExport(export_);
++                // now make the non-fpcast version
++                snprintf(buffer,256,"__static_%d",exportCount);
++                auto* export2_ = new Export;
++                export2_->name = buffer;
++                export2_->value = orig_name;
++                printf("Orig_name %s\n",orig_name.str);
++                export2_->kind = ExternalKind::Function;
++                module->addExport(export2_);
++                name = thunk;
++                printf("Orig_name2 %s,%d\n",orig_name.str,exportCount);
++            } else {
++              name = iter->second;
++            }
+         }
+       }
+     }
++    // make exports for all export thunks    
++    for(auto& thunk: exportThunks)
 +    {
-+        auto iter = exportThunks.find(thunk.first);          
-+        if(iter==exportThunks.end())
-+        {
-+            count+=1;
-+            // static function - create an export for it
-+            char buffer[256];
-+            snprintf(buffer,256,"byn$fpcast-emu$__static_%d",count);
-+            // first make the fpcast version of the function
-+    		auto* export_ = new Export;
-+	    	export_->name = buffer;
-+	        export_->value = thunk.second;
-+	        export_->kind = ExternalKind::Function;
-+	        module->addExport(export_);
-+            // now make the non-fpcast version
-+            snprintf(buffer,256,"__static_%d",count);
-+    		auto* export2_ = new Export;
-+	    	export2_->name = buffer;
-+	        export2_->value = thunk.first;
-+	        export2_->kind = ExternalKind::Function;
-+	        module->addExport(export2_);
-+        }
++	    auto* export_ = new Export;
++    	export_->name = thunk.first;
++        export_->value = thunk.second;
++        export_->kind = ExternalKind::Function;
++        module->addExport(export_);
 +    }
 +
 +
