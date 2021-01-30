@@ -59,7 +59,7 @@ index c8af59d..7084ff7 100644
 +    // will use the non-emulated version with the normal arguments.
 +    // nb. this doesn't have to be a proper wasm table because it is
 +    // only ever called from javascript
-+    var dyncallInvokeMap={};
++    var dyncallInvokeMap=new Map();
 +#endif
 diff --git a/emsdk/upstream/emscripten/tools/__pycache__/shared.cpython-38.pyc b/emsdk/upstream/emscripten/tools/__pycache__/shared.cpython-38.pyc
 index 087e7fd..872c6f0 100644
@@ -169,11 +169,11 @@ index 876492b..750a18d 100644
 +#endif
 +#if EMULATE_FUNCTION_POINTER_CASTS==1
 +        // update map for dynamic calls so they can bypass fp casts
++        if(!newFn)newFn= GOT[baseName].value;
 +        if(is_fpcast && newFn)
 +        {
 +            dyncallGOT=GOT[dyncallName]
-+            if(dyncallGOT)
-+            {
++            if(dyncallGOT){
 +                dcVal=dyncallGOT.value;
 +                if(dcVal)
 +                {
