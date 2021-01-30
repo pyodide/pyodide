@@ -157,10 +157,10 @@ by 0.16.1 with identical contents.
   [#851](https://github.com/iodide-project/pyodide/pull/851)
 - Pyodide deployment URL can now be specified with the `PYODIDE_BASE_URL`
   environment variable during build. The `pyodide_dev.js` is no longer
-  distributed.  To get an equivalent behavior with `pyodide.js`, set, 
+  distributed.  To get an equivalent behavior with `pyodide.js`, set
   ```javascript
-  window.languagePluginUrl = './'; 
-  ``` 
+  window.languagePluginUrl = './';
+  ```
   before loading it.
   [#855](https://github.com/iodide-project/pyodide/pull/855)
 - Build runtime C libraries (e.g. libxml) via package build system with correct
@@ -213,9 +213,10 @@ Sergio, Seungmin Kim, Shyam Saladi, smkm, Wei Ouyang
 - Adds support for installing pure Python wheels from arbitrary URLs with
   micropip.
 - The CDN URL for pyodide changed to
-  https://pyodide-cdn2.iodide.io/v0.15.0/full/pyodide.js It now supports
-  versioning and should provide faster downloads. The latest release can be
-  accessed via `https://pyodide-cdn2.iodide.io/latest/full/`
+  https://pyodide-cdn2.iodide.io/v0.15.0/full/pyodide.js 
+  It now supports versioning and should provide faster downloads. 
+  The latest release can be accessed via 
+  https://pyodide-cdn2.iodide.io/latest/full/
 - Adds `messageCallback` and `errorCallback` to {ref}`pyodide.loadPackage
   <js_api_pyodide_loadPackage>`.
 - Reduces the initial memory footprint (`TOTAL_MEMORY`) from 1 GiB to 5 MiB.
