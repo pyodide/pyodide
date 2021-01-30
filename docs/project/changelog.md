@@ -86,7 +86,7 @@
   [#821](https://github.com/iodide-project/pyodide/issues/821) and
   [#1160](https://github.com/iodide-project/pyodide/issues/821)
 
-## Version 0.16.1 
+## Version 0.16.1
 *December 25, 2020*
 
 Note: due to a CI deployment issue the 0.16.0 release was skipped and replaced
