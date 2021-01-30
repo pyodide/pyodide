@@ -497,35 +497,55 @@ globalThis.languagePluginLoader = new Promise((resolve, reject) => {
     resolve();
   };
 
-  Module.jsFuncWrapper = function(name, args, src, closure_vars, closure_cells){
-    if(closure_vars.length === 0){
-      // Don't need a closure.
-      return new Function(...args, `"use strict"; ${src}`);
-    }
+  Module.jsFuncWrapper =
+      function(name, args, src, globals, builtins, closure_vars,
+               closure_cells) {
     // Set up closure: closure_vars contains the names of the closure variables,
     // closure_cells is the list of python Cell objects
     let ctx = {};
-    for(let i = 0; i < closure_vars.length; i++){
+    for (let i = 0; i < closure_vars.length; i++) {
       ctx[closure_vars[i]] = closure_cells[i];
     }
     // Ensure reading from and assigning to the closure variables stays up to
     // date with the Python cell objects
     let $$ctx = new Proxy(ctx, {
-      get : function(obj, key){
-        if(key === Symbol.unscopables){
+      get : function(obj, key) {
+        if (key === Symbol.unscopables) {
           return [];
         }
-        return obj[key].cell_contents;
+        if (key in obj) {
+          return obj[key].cell_contents;
+        }
+        if (key in globals) {
+          return globals[key];
+        }
+        if (key in builtins) {
+          return builtins[key];
+        }
       },
-      set : function(obj, key, val){
-        obj[key].cell_contents = val;
-        return true;
+      set : function(obj, key, val) {
+        if (key in obj) {
+          obj[key].cell_contents = val;
+          return true;
+        }
+        if (key in globals) {
+          globals[key] = val;
+          return true;
+        }
+        return false;
+      },
+      // clang-format off
+      has : function(obj, key) { 
+        return key in obj || key in globals || key in builtins; 
       }
+      // clang-format on
     });
+    console.log("globals:", globals);
+    console.log("ctx:", $$ctx);
     return new Function("$$ctx", `
-      "use strict";
-      return function ${name}_inner(${args}) {
-        with($$ctx){
+      with($$ctx){
+        return function ${name}_inner(${args}) {
+          "use strict";          
           ${src}
         }
       }

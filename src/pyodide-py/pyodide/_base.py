@@ -394,17 +394,31 @@ def as_nested_list(obj) -> List:
     except TypeError:
         return obj
 
+
 def jsfunc(func):
     from pyodide_js._module import jsFuncWrapper
     import inspect
-    from functools import wraps
     sig = inspect.signature(func)
-    arg_names = list(sig.parameters.keys())    
+    arg_names = list(sig.parameters.keys())
     code = inspect.getdoc(func)
-    inner = jsFuncWrapper(func.__name__, arg_names, code,  func.__code__.co_freevars, func.__closure__)
+    builtins = func.__globals__["__builtins__"]
+    if type(builtins) != dict:
+        # builtins might be a module sometimes...
+        builtins = builtins.__dict__
+    inner = jsFuncWrapper(
+        func.__name__,
+        arg_names,
+        code,
+        func.__globals__,
+        builtins,
+        func.__code__.co_freevars,
+        func.__closure__,
+    )
+
     @functools.wraps(func)
     def wrapper(*args, **kwargs):
         inner_args = sig.bind(*args, **kwargs)
         inner_args.apply_defaults()
         return inner(*inner_args.arguments.values())
+
     return wrapper

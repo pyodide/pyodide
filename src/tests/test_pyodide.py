@@ -3,6 +3,7 @@ from pathlib import Path
 import sys
 from textwrap import dedent
 from pyodide_build.testing import run_in_pyodide
+
 sys.path.append(str(Path(__file__).parents[2] / "src" / "pyodide-py"))
 
 from pyodide import find_imports, eval_code  # noqa: E402
@@ -218,22 +219,89 @@ def test_keyboard_interrupt(selenium):
         """
     )
 
+
+def test_jsfunc_simple(selenium):
+    selenium.run_js(
+        """
+        window.p = Promise.resolve();
+        window.q = Promise.resolve;
+        """
+    )
+    selenium.run(
+        '''
+        from pyodide._base import jsfunc
+        @jsfunc
+        def is_promise(obj):
+            """
+            return Object.prototype.toString.call(obj) === "[object Promise]";
+            """
+        from js import p, q
+        assert is_promise(p)
+        assert not is_promise(q)
+        '''
+    )
+
+
+@pytest.mark.xfail
 @run_in_pyodide
-def test_jsfunc():
+def test_jsfunc_globals():
+    """ Won't work until #1167 merges"""
     from pyodide._base import jsfunc
+
+    global x
+    x = 2
+
+    @jsfunc
+    def test():
+        """
+        let y = 7;
+        console.log("x: " + x);
+        console.log(typeof(x));
+        return x + y;
+        """
+
+    assert test() == 9
+    x = 9
+    assert test() == 16
+
+
+@pytest.mark.xfail
+@run_in_pyodide
+def test_jsfunc_globals_assign():
+    """ Won't work until #1167 merges"""
+    from pyodide._base import jsfunc
+
+    x = 2
+
+    @jsfunc
+    def test():
+        """
+        x = 10;
+        """
+
+    assert x == 10
+
+
+@run_in_pyodide
+def test_jsfunc_closure():
+    from pyodide._base import jsfunc
+
     def f():
         x = 2
+
         @jsfunc
         def g(y, z):
             """
-                x++;
-                return x*y + z;
+            x++;
+            return x*y + z;
             """
-            x # have to mention x in body of function
+            x  # have to mention x in body of function
 
         def h():
             return x
+
         return [g, h]
+
     g, h = f()
     assert h() == 2
     assert g(2, 1) == 7
