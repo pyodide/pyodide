@@ -72,9 +72,7 @@ def parse_numpy_benchmark(filename):
 
 def get_numpy_benchmarks():
     root = Path(__file__).resolve().parent / "benchmarks"
-    filenames = list(root.iterdir());
-    filenames.sort()
-    for filename in filenames:
+    for filename in sorted(root.iterdir()):
         name = filename.stem
         if name in SKIP:
             continue
