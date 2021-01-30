@@ -45,45 +45,46 @@
   [#1155](https://github.com/iodide-project/pyodide/pull/1155)
 - Flexible jsimports: it now possible to add custom Python "packages" backed by
   Javascript code, like the js package.  The js package is now implemented
-using this system. [#1146](https://github.com/iodide-project/pyodide/pull/1146)
+  using this system. 
+  [#1146](https://github.com/iodide-project/pyodide/pull/1146)
 - Added the `pyodide.setInterruptBuffer` API. This can be used to set a
   `SharedArrayBuffer` to be the keyboard interupt buffer. If Pyodide is running
-on a webworker, the main thread can signal to the webworker that it should
-raise a `KeyboardInterrupt` by writing to the interrupt buffer.
-[#1148](https://github.com/iodide-project/pyodide/pull/1148) and
-[#1173](https://github.com/iodide-project/pyodide/pull/1173)
+  on a webworker, the main thread can signal to the webworker that it should
+  raise a `KeyboardInterrupt` by writing to the interrupt buffer.
+  [#1148](https://github.com/iodide-project/pyodide/pull/1148) and
+  [#1173](https://github.com/iodide-project/pyodide/pull/1173)
 
 ### Fixed
 - getattr and dir on JsProxy now report consistent results and include all
   names defined on the Python dictionary backing JsProxy.
-[#1017](https://github.com/iodide-project/pyodide/pull/1017)
+  [#1017](https://github.com/iodide-project/pyodide/pull/1017)
 - `JsProxy.__bool__` now produces more consistent results: both `bool(window)`
   and `bool(zero-arg-callback)` were `False` but now are `True`. Conversely,
-`bool(empty_js_set)` and `bool(empty_js_map)` were `True` but now are `False`.
-[#1061](https://github.com/iodide-project/pyodide/pull/1061)
+  `bool(empty_js_set)` and `bool(empty_js_map)` were `True` but now are `False`.
+  [#1061](https://github.com/iodide-project/pyodide/pull/1061)
 - When calling a javascript function from Python without keyword arguments,
   Pyodide no longer passes a `PyProxy`-wrapped `NULL` pointer as the last
-argument.  [#1033](https://github.com/iodide-project/pyodide/pull/1033)
+  argument.  [#1033](https://github.com/iodide-project/pyodide/pull/1033)
 - JsBoundMethod is now a subclass of JsProxy, which fixes nested attribute
   access and various other strange bugs.
-[#1124](https://github.com/iodide-project/pyodide/pull/1124)
+  [#1124](https://github.com/iodide-project/pyodide/pull/1124)
 - In console.html: sync behavior, full stdout/stderr support, clean namespace,
   bigger font, correct result representation, clean traceback
-[#1125](https://github.com/iodide-project/pyodide/pull/1125) and
-[#1141](https://github.com/iodide-project/pyodide/pull/1141)
+  [#1125](https://github.com/iodide-project/pyodide/pull/1125) and
+  [#1141](https://github.com/iodide-project/pyodide/pull/1141)
 - Javascript functions imported like `from js import fetch` no longer trigger
   "invalid invocation" errors (issue
-[#461](https://github.com/iodide-project/pyodide/issues/461)) and
-`js.fetch("some_url")` also works now (issue
-[#768](https://github.com/iodide-project/pyodide/issues/461)).
-[#1126](https://github.com/iodide-project/pyodide/pull/1126)
+  [#461](https://github.com/iodide-project/pyodide/issues/461)) and
+  `js.fetch("some_url")` also works now (issue
+  [#768](https://github.com/iodide-project/pyodide/issues/461)).
+  [#1126](https://github.com/iodide-project/pyodide/pull/1126)
 - Javascript bound method calls now work correctly with keyword arguments.
   [#1138](https://github.com/iodide-project/pyodide/pull/1138)
 - Switched from ̀Jedi` to `rlcompleter` for completion in
   `pyodide.console.InteractiveConsole` and so in `console.html`. This fixes
-some completion issues (see
-[#821](https://github.com/iodide-project/pyodide/issues/821) and
-[#1160](https://github.com/iodide-project/pyodide/issues/821)
+  some completion issues (see
+  [#821](https://github.com/iodide-project/pyodide/issues/821) and
+  [#1160](https://github.com/iodide-project/pyodide/issues/821)
 
 ## Version 0.16.1 
 *December 25, 2020*
@@ -119,7 +120,7 @@ by 0.16.1 with identical contents.
   [#708](https://github.com/iodide-project/pyodide/pull/708)
 - Javascript exceptions can now be raised and caught in Python. They are
   wrapped in pyodide.JsException.
-[#891](https://github.com/iodide-project/pyodide/pull/891)
+  [#891](https://github.com/iodide-project/pyodide/pull/891)
 
 ### pyodide-py package and micropip
 
