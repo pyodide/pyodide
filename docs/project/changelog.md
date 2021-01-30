@@ -1,4 +1,4 @@
-(changelog)= 
+(changelog)=
 # Release notes
 
 ## Version [Unreleased]
@@ -93,9 +93,9 @@ by 0.16.1 with identical contents.
 
 - Pyodide files are distributed by [JsDelivr](https://www.jsdelivr.com/),
   `https://cdn.jsdelivr.net/pyodide/v0.16.1/full/pyodide.js` The previous CDN
-`pyodide-cdn2.iodide.io` still works and there are no plans for deprecating it.
-However please use JsDelivr as a more sustainable solution, including for
-earlier pyodide versions.
+  `pyodide-cdn2.iodide.io` still works and there are no plans for deprecating it.
+  However please use JsDelivr as a more sustainable solution, including for
+  earlier pyodide versions.
 
 ### Python and the standard library
 
@@ -109,9 +109,9 @@ earlier pyodide versions.
   status of the threading support.
 - ENH The multiprocessing module is now included, and will not fail at import,
   thus avoiding the necessity to patch included packages. Starting a new
-process will produce an exception due to the limitation of the WebAssembly VM
-with the following message: `Resource temporarily unavailable`
-[#796](https://github.com/iodide-project/pyodide/pull/796).
+  process will produce an exception due to the limitation of the WebAssembly VM
+  with the following message: `Resource temporarily unavailable`
+  [#796](https://github.com/iodide-project/pyodide/pull/796).
 
 ### Python / JS type conversions
 
@@ -156,8 +156,11 @@ with the following message: `Resource temporarily unavailable`
   [#851](https://github.com/iodide-project/pyodide/pull/851)
 - Pyodide deployment URL can now be specified with the `PYODIDE_BASE_URL`
   environment variable during build. The `pyodide_dev.js` is no longer
-  distributed.  To get an equivalent behavior with `pyodide.js`, set, ```
-  window.languagePluginUrl = './'; ``` before loading it.
+  distributed.  To get an equivalent behavior with `pyodide.js`, set, 
+  ```javascript
+  window.languagePluginUrl = './'; 
+  ``` 
+  before loading it.
   [#855](https://github.com/iodide-project/pyodide/pull/855)
 - Build runtime C libraries (e.g. libxml) via package build system with correct
   dependency resolution
@@ -199,7 +202,7 @@ Meyer, Jay Harris, jcaesar, Joseph D. Long, Matthew Turk, Michael Greminger,
 Michael Panchenko, mojighahar, Nicolas Ollinger, Ram Rachum, Roman Yurchak,
 Sergio, Seungmin Kim, Shyam Saladi, smkm, Wei Ouyang
 
-## Version 0.15.0 
+## Version 0.15.0
 *May 19, 2020*
 
 - Upgrades pyodide to CPython 3.7.4.
@@ -221,7 +224,7 @@ Sergio, Seungmin Kim, Shyam Saladi, smkm, Wei Ouyang
   documentation <partial-builds>` for more details.
 - New packages: future, autograd
 
-## Version 0.14.3 
+## Version 0.14.3
 *Dec 11, 2019*
 
 - Convert JavaScript numbers containing integers, e.g. `3.0`, to a real Python
@@ -230,18 +233,18 @@ Sergio, Seungmin Kim, Shyam Saladi, smkm, Wei Ouyang
 - Adds a Javascript-side auto completion function for Iodide that uses jedi.
 - New packages: nltk, jeudi, statsmodels, regex, cytoolz, xlrd, uncertainties
 
-## Version 0.14.0 
+## Version 0.14.0
 *Aug 14, 2019*
 
 - The built-in `sqlite` and `bz2` modules of Python are now enabled.
 - Adds support for auto-completion based on jedi when used in iodide
 
-## Version 0.13.0 
+## Version 0.13.0
 *May 31, 2019*
 
 - Tagged versions of Pyodide are now deployed to Netlify.
 
-## Version 0.12.0 
+## Version 0.12.0
 *May 3, 2019*
 
 **User improvements:**
@@ -262,7 +265,8 @@ Sergio, Seungmin Kim, Shyam Saladi, smkm, Wei Ouyang
 
 - Pyodide now works on Safari.
 
-## Version 0.11.0 *Apr 12, 2019*
+## Version 0.11.0
+*Apr 12, 2019*
 
 **User improvements:**
 
@@ -281,7 +285,7 @@ Sergio, Seungmin Kim, Shyam Saladi, smkm, Wei Ouyang
 
 - New packages: `jinja2`, `MarkupSafe`
 
-## Version 0.10.0 
+## Version 0.10.0
 *Mar 21, 2019*
 
 **User improvements:**
