@@ -64,7 +64,7 @@
   [#1061](https://github.com/iodide-project/pyodide/pull/1061)
 - When calling a javascript function from Python without keyword arguments,
   Pyodide no longer passes a `PyProxy`-wrapped `NULL` pointer as the last
-  argument.  [#1033](https://github.com/iodide-project/pyodide/pull/1033)
+  argument. [#1033](https://github.com/iodide-project/pyodide/pull/1033)
 - JsBoundMethod is now a subclass of JsProxy, which fixes nested attribute
   access and various other strange bugs.
   [#1124](https://github.com/iodide-project/pyodide/pull/1124)
@@ -103,7 +103,7 @@ by 0.16.1 with identical contents.
 
 - Pyodide includes CPython 3.8.2
   [#712](https://github.com/iodide-project/pyodide/pull/712)
-- ENH Patches for the threading module were removed in all packages.  Importing
+- ENH Patches for the threading module were removed in all packages. Importing
   the module, and a subset of functionality (e.g. locks) works, while starting
   a new thread will produce an exception, as expected.
   [#796](https://github.com/iodide-project/pyodide/pull/796). 
@@ -223,7 +223,7 @@ Sergio, Seungmin Kim, Shyam Saladi, smkm, Wei Ouyang
 - Reduces the initial memory footprint (`TOTAL_MEMORY`) from 1 GiB to 5 MiB.
   More memory will be allocated as needed.
 - When building from source, only a subset of packages can be built by setting
-  the `PYODIDE_PACKAGES` environment variable. See 
+  the `PYODIDE_PACKAGES` environment variable. See
   {ref}`partial builds documentation <partial-builds>` for more details.
 - New packages: future, autograd
 
