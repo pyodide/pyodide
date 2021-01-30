@@ -178,7 +178,7 @@ JsProxy_RichCompare(PyObject* a, PyObject* b, int op)
 }
 
 static PyObject*
-JsProxy_GetIter(PyObject* o)
+JsProxy_GetIter(PyObject* o, PyObject* _args)
 {
   JsProxy* self = (JsProxy*)o;
 
@@ -317,7 +317,7 @@ JsProxy_Bool(PyObject* o)
 }
 
 static PyObject*
-JsProxy_Await(JsProxy* self)
+JsProxy_Await(JsProxy* self, PyObject* _args)
 {
   // Guards
   if (self->awaited) {
