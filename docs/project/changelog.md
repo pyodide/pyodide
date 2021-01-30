@@ -80,7 +80,7 @@
   [#1126](https://github.com/iodide-project/pyodide/pull/1126)
 - Javascript bound method calls now work correctly with keyword arguments.
   [#1138](https://github.com/iodide-project/pyodide/pull/1138)
-- Switched from ̀Jedi` to `rlcompleter` for completion in
+- Switched from ̀Jedi to rlcompleter for completion in
   `pyodide.console.InteractiveConsole` and so in `console.html`. This fixes
   some completion issues (see
   [#821](https://github.com/iodide-project/pyodide/issues/821) and
@@ -93,10 +93,11 @@ Note: due to a CI deployment issue the 0.16.0 release was skipped and replaced
 by 0.16.1 with identical contents.
 
 - Pyodide files are distributed by [JsDelivr](https://www.jsdelivr.com/),
-  `https://cdn.jsdelivr.net/pyodide/v0.16.1/full/pyodide.js` The previous CDN
-  `pyodide-cdn2.iodide.io` still works and there are no plans for deprecating it.
-  However please use JsDelivr as a more sustainable solution, including for
-  earlier pyodide versions.
+  `https://cdn.jsdelivr.net/pyodide/v0.16.1/full/pyodide.js`
+  The previous CDN `pyodide-cdn2.iodide.io` still works and there
+  are no plans for deprecating it. However please use
+  JsDelivr as a more sustainable solution, including for earlier pyodide
+  versions.
 
 ### Python and the standard library
 
@@ -157,7 +158,7 @@ by 0.16.1 with identical contents.
   [#851](https://github.com/iodide-project/pyodide/pull/851)
 - Pyodide deployment URL can now be specified with the `PYODIDE_BASE_URL`
   environment variable during build. The `pyodide_dev.js` is no longer
-  distributed.  To get an equivalent behavior with `pyodide.js`, set
+  distributed. To get an equivalent behavior with `pyodide.js`, set
   ```javascript
   window.languagePluginUrl = './';
   ```
@@ -217,13 +218,13 @@ Sergio, Seungmin Kim, Shyam Saladi, smkm, Wei Ouyang
   It now supports versioning and should provide faster downloads. 
   The latest release can be accessed via 
   https://pyodide-cdn2.iodide.io/latest/full/
-- Adds `messageCallback` and `errorCallback` to {ref}`pyodide.loadPackage
-  <js_api_pyodide_loadPackage>`.
+- Adds `messageCallback` and `errorCallback` to 
+  {ref}`pyodide.loadPackage <js_api_pyodide_loadPackage>`.
 - Reduces the initial memory footprint (`TOTAL_MEMORY`) from 1 GiB to 5 MiB.
   More memory will be allocated as needed.
 - When building from source, only a subset of packages can be built by setting
-  the `PYODIDE_PACKAGES` environment variable. See {ref}`partial builds
-  documentation <partial-builds>` for more details.
+  the `PYODIDE_PACKAGES` environment variable. See 
+  {ref}`partial builds documentation <partial-builds>` for more details.
 - New packages: future, autograd
 
 ## Version 0.14.3
