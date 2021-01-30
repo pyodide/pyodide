@@ -85,7 +85,8 @@ some completion issues (see
 [#821](https://github.com/iodide-project/pyodide/issues/821) and
 [#1160](https://github.com/iodide-project/pyodide/issues/821)
 
-## Version 0.16.1 *December 25, 2020*
+## Version 0.16.1 
+*December 25, 2020*
 
 Note: due to a CI deployment issue the 0.16.0 release was skipped and replaced
 by 0.16.1 with identical contents.
@@ -198,7 +199,8 @@ Meyer, Jay Harris, jcaesar, Joseph D. Long, Matthew Turk, Michael Greminger,
 Michael Panchenko, mojighahar, Nicolas Ollinger, Ram Rachum, Roman Yurchak,
 Sergio, Seungmin Kim, Shyam Saladi, smkm, Wei Ouyang
 
-## Version 0.15.0 *May 19, 2020*
+## Version 0.15.0 
+*May 19, 2020*
 
 - Upgrades pyodide to CPython 3.7.4.
 - micropip no longer uses a CORS proxy to install pure Python packages from
@@ -219,7 +221,8 @@ Sergio, Seungmin Kim, Shyam Saladi, smkm, Wei Ouyang
   documentation <partial-builds>` for more details.
 - New packages: future, autograd
 
-## Version 0.14.3 *Dec 11, 2019*
+## Version 0.14.3 
+*Dec 11, 2019*
 
 - Convert JavaScript numbers containing integers, e.g. `3.0`, to a real Python
   long (e.g. `3`).
@@ -227,16 +230,19 @@ Sergio, Seungmin Kim, Shyam Saladi, smkm, Wei Ouyang
 - Adds a Javascript-side auto completion function for Iodide that uses jedi.
 - New packages: nltk, jeudi, statsmodels, regex, cytoolz, xlrd, uncertainties
 
-## Version 0.14.0 *Aug 14, 2019*
+## Version 0.14.0 
+*Aug 14, 2019*
 
 - The built-in `sqlite` and `bz2` modules of Python are now enabled.
 - Adds support for auto-completion based on jedi when used in iodide
 
-## Version 0.13.0 *May 31, 2019*
+## Version 0.13.0 
+*May 31, 2019*
 
 - Tagged versions of Pyodide are now deployed to Netlify.
 
-## Version 0.12.0 *May 3, 2019*
+## Version 0.12.0 
+*May 3, 2019*
 
 **User improvements:**
 
@@ -275,7 +281,8 @@ Sergio, Seungmin Kim, Shyam Saladi, smkm, Wei Ouyang
 
 - New packages: `jinja2`, `MarkupSafe`
 
-## Version 0.10.0 *Mar 21, 2019*
+## Version 0.10.0 
+*Mar 21, 2019*
 
 **User improvements:**
 
