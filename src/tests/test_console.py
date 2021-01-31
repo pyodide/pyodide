@@ -191,36 +191,34 @@ def test_interactive_console(selenium, safe_selenium_sys_redirections):
 
 
 def test_completion(selenium, safe_selenium_sys_redirections):
-    def ensure_preloads_completed():
-        selenium.driver.execute_async_script(
-            """
-        const done = arguments[arguments.length - 1];
-        pyodide.globals.shell.preloads_complete.then(done);
-        """
-        )
-
     selenium.run(
         """
     from pyodide import console
 
-    shell = console.InteractiveConsole(completion=True)
+    shell = console.InteractiveConsole()
     """
     )
-    ensure_preloads_completed()
 
-    assert selenium.run("[x.name for x in shell.complete('a')]") == [
-        "abs",
-        "all",
-        "any",
-        "ArithmeticError",
-        "ascii",
-        "assert",
-        "AssertionError",
-        "async",
-        "AttributeError",
-        "await",
+    assert selenium.run("shell.complete('a')") == [
+        [
+            "and ",
+            "as ",
+            "assert ",
+            "async ",
+            "await ",
+            "abs(",
+            "all(",
+            "any(",
+            "ascii(",
+        ],
+        0,
     ]
 
-    # without completion activated
-    selenium.run("shell = console.InteractiveConsole(completion=False)")
-    selenium.run("shell.complete('a')") == []
+    assert selenium.run("shell.complete('a = 0 ; print.__g')") == [
+        [
+            "print.__ge__(",
+            "print.__getattribute__(",
+            "print.__gt__(",
+        ],
+        8,
+    ]

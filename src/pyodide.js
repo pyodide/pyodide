@@ -319,6 +319,7 @@ globalThis.languagePluginLoader = new Promise((resolve, reject) => {
     'version',
     'registerJsModule',
     'unregisterJsModule',
+    'setInterruptBuffer',
   ];
 
   function makePublicAPI(module, public_api) {

@@ -35,7 +35,6 @@
                 def __init__(self):
                     super().__init__(
                         persistent_stream_redirection=False,
-                        completion=True,
                     )
 
                 def banner(self):
@@ -63,8 +62,9 @@
           {
             greetings: pyconsole.banner(),
             prompt: ps1,
+            completionEscape: false,
             completion: function(command, callback) {
-              callback(pyconsole.complete(command).map((c) => c.name));
+              callback(pyconsole.complete(command)[0]);
             }
           }
         );
