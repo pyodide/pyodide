@@ -17,7 +17,7 @@ build:
     -I/src/emsdk/emsdk/fastcomp/emscripten/system/include/libc
     -I/src/packages/libyaml/build/include
   ldflags: |
-    -L/src/packages/libyaml/build/lib
+    -L/src/packages/libyaml/build/
 
 requirements:
   run:
