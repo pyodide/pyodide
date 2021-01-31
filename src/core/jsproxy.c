@@ -260,7 +260,7 @@ JsProxy_ass_subscript(PyObject* o, PyObject* pyidx, PyObject* pyvalue)
 #define GET_JSREF(x) (((JsProxy*)x)->js)
 
 static PyObject*
-JsProxy_Dir(PyObject* self)
+JsProxy_Dir(PyObject* self, PyObject* _args)
 {
   bool success = false;
   PyObject* object__dir__ = NULL;
@@ -316,7 +316,7 @@ JsProxy_Bool(PyObject* o)
 }
 
 static PyObject*
-JsProxy_Await(JsProxy* self)
+JsProxy_Await(JsProxy* self, PyObject* _args)
 {
   if (!hiwire_is_promise(self->js)) {
     PyObject* str = JsProxy_Repr((PyObject*)self);
@@ -381,11 +381,6 @@ static PyNumberMethods JsProxy_NumberMethods = {
 };
 
 static PyMethodDef JsProxy_Methods[] = {
-  { "__iter__",
-    (PyCFunction)JsProxy_GetIter,
-    METH_NOARGS,
-    "Get an iterator over the object" },
-  { "__await__", (PyCFunction)JsProxy_Await, METH_NOARGS, ""},
   { "__dir__",
     (PyCFunction)JsProxy_Dir,
     METH_NOARGS,
