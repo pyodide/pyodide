@@ -30,7 +30,8 @@
   automatically logged to the console.
 
 ### Added
-- `micropip` now supports installing wheels from relative urls. [#872](https://github.com/iodide-project/pyodide/pull/872)
+- `micropip` now supports installing wheels from relative urls. 
+  [#872](https://github.com/iodide-project/pyodide/pull/872)
 - uglifyjs and lessc no longer need to be installed in the system during build
   [#878](https://github.com/iodide-project/pyodide/pull/878).
 - Reduce the size of the core pyodide package
@@ -39,22 +40,51 @@
 - `eval_code` now accepts separate `globals` and `locals` parameters.
   [#1083](https://github.com/iodide-project/pyodide/pull/1083)
 - An InteractiveConsole with completion support to ease the integration
-  of Pyodide REPL in webpages (used in console.html) [#1125](https://github.com/iodide-project/pyodide/pull/1125) and [#1155](https://github.com/iodide-project/pyodide/pull/1155)
-- Flexible jsimports: it now possible to add custom Python "packages" backed by Javascript code, like the js package.
-  The js package is now implemented using this system. [#1146](https://github.com/iodide-project/pyodide/pull/1146)
+  of Pyodide REPL in webpages (used in console.html) 
+  [#1125](https://github.com/iodide-project/pyodide/pull/1125) and 
+  [#1155](https://github.com/iodide-project/pyodide/pull/1155)
+- Flexible jsimports: it now possible to add custom Python "packages" backed by
+  Javascript code, like the js package.  The js package is now implemented
+  using this system. 
+  [#1146](https://github.com/iodide-project/pyodide/pull/1146)
+- Added the `pyodide.setInterruptBuffer` API. This can be used to set a
+  `SharedArrayBuffer` to be the keyboard interupt buffer. If Pyodide is running
+  on a webworker, the main thread can signal to the webworker that it should
+  raise a `KeyboardInterrupt` by writing to the interrupt buffer.
+  [#1148](https://github.com/iodide-project/pyodide/pull/1148) and
+  [#1173](https://github.com/iodide-project/pyodide/pull/1173)
 
 ### Fixed
-- getattr and dir on JsProxy now report consistent results and include all names defined on the Python dictionary backing JsProxy. [#1017](https://github.com/iodide-project/pyodide/pull/1017)
-- `JsProxy.__bool__` now produces more consistent results: both `bool(window)` and `bool(zero-arg-callback)` were `False` but now are `True`. Conversely, `bool(empty_js_set)` and `bool(empty_js_map)` were `True` but now are `False`. [#1061](https://github.com/iodide-project/pyodide/pull/1061)
-- When calling a javascript function from Python without keyword arguments, Pyodide no longer passes a `PyProxy`-wrapped `NULL` pointer as the last argument.
-[#1033](https://github.com/iodide-project/pyodide/pull/1033)
-- JsBoundMethod is now a subclass of JsProxy, which fixes nested attribute access and various other strange bugs.
+- getattr and dir on JsProxy now report consistent results and include all
+  names defined on the Python dictionary backing JsProxy.
+  [#1017](https://github.com/iodide-project/pyodide/pull/1017)
+- `JsProxy.__bool__` now produces more consistent results: both `bool(window)`
+  and `bool(zero-arg-callback)` were `False` but now are `True`. Conversely,
+  `bool(empty_js_set)` and `bool(empty_js_map)` were `True` but now are `False`.
+  [#1061](https://github.com/iodide-project/pyodide/pull/1061)
+- When calling a javascript function from Python without keyword arguments,
+  Pyodide no longer passes a `PyProxy`-wrapped `NULL` pointer as the last
+  argument. [#1033](https://github.com/iodide-project/pyodide/pull/1033)
+- JsBoundMethod is now a subclass of JsProxy, which fixes nested attribute
+  access and various other strange bugs.
   [#1124](https://github.com/iodide-project/pyodide/pull/1124)
-- In console.html: sync behavior, full stdout/stderr support, clean namespace, bigger font, correct result representation, clean traceback [#1125](https://github.com/iodide-project/pyodide/pull/1125) and [#1141](https://github.com/iodide-project/pyodide/pull/1141)
-- Javascript functions imported like `from js import fetch` no longer trigger "invalid invocation" errors (issue [#461](https://github.com/iodide-project/pyodide/issues/461)) and `js.fetch("some_url")` also works now (issue [#768](https://github.com/iodide-project/pyodide/issues/461)).
-[#1126](https://github.com/iodide-project/pyodide/pull/1126)
-- Javascript bound method calls now work correctly with keyword arguments. [#1138](https://github.com/iodide-project/pyodide/pull/1138)
-- Switched from ̀Jedi` to `rlcompleter` for completion in `pyodide.console.InteractiveConsole` and so in `console.html`. This fixes some completion issues (see [#821](https://github.com/iodide-project/pyodide/issues/821) and [#1160](https://github.com/iodide-project/pyodide/issues/821)
+- In console.html: sync behavior, full stdout/stderr support, clean namespace,
+  bigger font, correct result representation, clean traceback
+  [#1125](https://github.com/iodide-project/pyodide/pull/1125) and
+  [#1141](https://github.com/iodide-project/pyodide/pull/1141)
+- Javascript functions imported like `from js import fetch` no longer trigger
+  "invalid invocation" errors (issue
+  [#461](https://github.com/iodide-project/pyodide/issues/461)) and
+  `js.fetch("some_url")` also works now (issue
+  [#768](https://github.com/iodide-project/pyodide/issues/461)).
+  [#1126](https://github.com/iodide-project/pyodide/pull/1126)
+- Javascript bound method calls now work correctly with keyword arguments.
+  [#1138](https://github.com/iodide-project/pyodide/pull/1138)
+- Switched from ̀Jedi to rlcompleter for completion in
+  `pyodide.console.InteractiveConsole` and so in `console.html`. This fixes
+  some completion issues (see
+  [#821](https://github.com/iodide-project/pyodide/issues/821) and
+  [#1160](https://github.com/iodide-project/pyodide/issues/821)
 
 ## Version 0.16.1
 *December 25, 2020*
@@ -73,16 +103,16 @@ by 0.16.1 with identical contents.
 
 - Pyodide includes CPython 3.8.2
   [#712](https://github.com/iodide-project/pyodide/pull/712)
-- ENH Patches for the threading module were removed in all packages.
-  Importing the module, and a subset of functionality (e.g. locks) works,
-  while starting a new thread will produce an exception, as expected.
-  [#796](https://github.com/iodide-project/pyodide/pull/796). See
-  [#237](https://github.com/iodide-project/pyodide/pull/237) for the current
+- ENH Patches for the threading module were removed in all packages. Importing
+  the module, and a subset of functionality (e.g. locks) works, while starting
+  a new thread will produce an exception, as expected.
+  [#796](https://github.com/iodide-project/pyodide/pull/796). 
+  See [#237](https://github.com/iodide-project/pyodide/pull/237) for the current
   status of the threading support.
 - ENH The multiprocessing module is now included, and will not fail at import,
-  thus avoiding the necessity to patch included packages. Starting a new process
-  will produce an exception due to the limitation of the WebAssembly VM  with
-  the following message: `Resource temporarily unavailable`
+  thus avoiding the necessity to patch included packages. Starting a new
+  process will produce an exception due to the limitation of the WebAssembly VM
+  with the following message: `Resource temporarily unavailable`
   [#796](https://github.com/iodide-project/pyodide/pull/796).
 
 ### Python / JS type conversions
@@ -102,8 +132,8 @@ by 0.16.1 with identical contents.
   [#846](https://github.com/iodide-project/pyodide/pull/846).
 - Suppress REPL results returned by `pyodide.eval_code` by adding a semicolon
   [#876](https://github.com/iodide-project/pyodide/pull/876).
-- Enable monkey patching of `eval_code` and `find_imports` to customize behavior
-  of `runPython` and `runPythonAsync`
+- Enable monkey patching of `eval_code` and `find_imports` to customize
+  behavior of `runPython` and `runPythonAsync`
   [#941](https://github.com/iodide-project/pyodide/pull/941).
 
 ### Build system
@@ -119,17 +149,17 @@ by 0.16.1 with identical contents.
   [#830](https://github.com/iodide-project/pyodide/pull/830)
 - FIX Infer package tarball directory from source url
   [#687](https://github.com/iodide-project/pyodide/pull/687)
-- Updated to emscripten 1.38.44 and binaryen v86
-  (see related [commits](https://github.com/iodide-project/pyodide/search?q=emscripten&type=commits))
+- Updated to emscripten 1.38.44 and binaryen v86 (see related
+  [commits](https://github.com/iodide-project/pyodide/search?q=emscripten&type=commits))
 - Updated default `--ldflags` argument to `pyodide_build` scripts to equal what
   pyodide actually uses.
   [#817](https://github.com/iodide-project/pyodide/pull/480)
 - Replace C lz4 implementation with the (upstream) Javascript implementation.
   [#851](https://github.com/iodide-project/pyodide/pull/851)
 - Pyodide deployment URL can now be specified with the `PYODIDE_BASE_URL`
-  environment variable during build. The `pyodide_dev.js` is no longer distributed.
-  To get an equivalent behavior with `pyodide.js`, set,
-  ```
+  environment variable during build. The `pyodide_dev.js` is no longer
+  distributed. To get an equivalent behavior with `pyodide.js`, set
+  ```javascript
   window.languagePluginUrl = './';
   ```
   before loading it.
@@ -142,9 +172,9 @@ by 0.16.1 with identical contents.
 
 ### Other improvements
 
-- Modifiy MEMFS timestamp handling to support better caching. This in particular allows to
-  import newly created python modules without invalidating import caches
-  [#893](https://github.com/iodide-project/pyodide/pull/893)
+- Modifiy MEMFS timestamp handling to support better caching. This in
+  particular allows to import newly created python modules without invalidating
+  import caches [#893](https://github.com/iodide-project/pyodide/pull/893)
 
 ### Packages
 - New packages: freesasa, lxml, python-sat, traits, astropy, pillow,
@@ -181,15 +211,17 @@ Sergio, Seungmin Kim, Shyam Saladi, smkm, Wei Ouyang
 - micropip no longer uses a CORS proxy to install pure Python packages from
   PyPi. Packages are now installed from PyPi directly.
 - micropip can now be used from web workers.
-- Adds support for installing pure Python wheels from arbitrary URLs with micropip.
+- Adds support for installing pure Python wheels from arbitrary URLs with
+  micropip.
 - The CDN URL for pyodide changed to
-  https://pyodide-cdn2.iodide.io/v0.15.0/full/pyodide.js
-  It now supports versioning and should provide faster downloads. The latest release
-  can be accessed via `https://pyodide-cdn2.iodide.io/latest/full/`
-- Adds `messageCallback` and `errorCallback` to
+  https://pyodide-cdn2.iodide.io/v0.15.0/full/pyodide.js 
+  It now supports versioning and should provide faster downloads. 
+  The latest release can be accessed via 
+  https://pyodide-cdn2.iodide.io/latest/full/
+- Adds `messageCallback` and `errorCallback` to 
   {ref}`pyodide.loadPackage <js_api_pyodide_loadPackage>`.
-- Reduces the initial memory footprint (`TOTAL_MEMORY`) from 1 GiB to 5 MiB. More
-  memory will be allocated as needed.
+- Reduces the initial memory footprint (`TOTAL_MEMORY`) from 1 GiB to 5 MiB.
+  More memory will be allocated as needed.
 - When building from source, only a subset of packages can be built by setting
   the `PYODIDE_PACKAGES` environment variable. See
   {ref}`partial builds documentation <partial-builds>` for more details.
@@ -231,8 +263,8 @@ Sergio, Seungmin Kim, Shyam Saladi, smkm, Wei Ouyang
 
 - Calling `dir()` in Python on a JavaScript proxy now works.
 
-- Passing an `ArrayBuffer` from Javascript to Python now correctly creates
-  a `memoryview` object.
+- Passing an `ArrayBuffer` from Javascript to Python now correctly creates a
+  `memoryview` object.
 
 - Pyodide now works on Safari.
 
@@ -248,8 +280,8 @@ Sergio, Seungmin Kim, Shyam Saladi, smkm, Wei Ouyang
 
 **Developer improvements:**
 
-- The `mkpkg` command will now select an appropriate archive to use, rather than
-  just using the first.
+- The `mkpkg` command will now select an appropriate archive to use, rather
+  than just using the first.
 
 - The included version of emscripten has been upgraded to 1.38.30 (plus a
   bugfix).
