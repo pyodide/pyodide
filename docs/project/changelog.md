@@ -53,6 +53,10 @@
   raise a `KeyboardInterrupt` by writing to the interrupt buffer.
   [#1148](https://github.com/iodide-project/pyodide/pull/1148) and
   [#1173](https://github.com/iodide-project/pyodide/pull/1173)
+- Added asyncio support.
+  [#891](https://github.com/iodide-project/pyodide/pull/891)
+  [#1158](https://github.com/iodide-project/pyodide/pull/1158)
+  [#1170](https://github.com/iodide-project/pyodide/pull/1170)
 
 ### Fixed
 - getattr and dir on JsProxy now report consistent results and include all
