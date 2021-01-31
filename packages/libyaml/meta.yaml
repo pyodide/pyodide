@@ -1,0 +1,5 @@
+package:
+  name: libyaml
+
+build:
+  library: true

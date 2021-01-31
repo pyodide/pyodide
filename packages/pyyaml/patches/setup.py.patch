@@ -1,0 +1,11 @@
+--- downloads/pyyaml-5.3.1/setup.py	2020-03-18 21:09:19.000000000 +0000
++++ patches/setup.py	2020-11-24 06:47:26.652992652 +0000
+@@ -287,6 +287,8 @@ if bdist_wheel:
+ 
+ 
+ if __name__ == '__main__':
++    from distutils import sysconfig
++    sysconfig._config_vars['EXT_SUFFIX'] = '.js'
+ 
+     setup(
+         name=NAME,
