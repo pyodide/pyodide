@@ -1,10 +1,11 @@
-from typing import Optional, Callable, Any, List
+from typing import Optional, Callable, Any, List, Tuple
 import code
 import io
 import sys
 import platform
 from contextlib import contextmanager
 import builtins
+import rlcompleter
 
 # this import can fail when we are outside a browser (e.g. for tests)
 try:
@@ -111,10 +112,6 @@ class InteractiveConsole(code.InteractiveConsole):
     persistent_stream_redirection
         Wether or not the std redirection should be kept between calls to
         `runcode`.
-    completion
-        Should completion be used? This preloads the `jedi` module to
-        later be used in `complete`. The underlying promise is set to
-        `self.preloads_complete`.
     """
 
     def __init__(
@@ -123,7 +120,6 @@ class InteractiveConsole(code.InteractiveConsole):
         stdout_callback: Optional[Callable[[str], None]] = None,
         stderr_callback: Optional[Callable[[str], None]] = None,
         persistent_stream_redirection: bool = False,
-        completion=False,
     ):
         super().__init__(locals)
         self._stdout = None
@@ -134,10 +130,12 @@ class InteractiveConsole(code.InteractiveConsole):
         if persistent_stream_redirection:
             self.redirect_stdstreams()
         self.run_complete = _dummy_promise
-        self.preloads_complete = _dummy_promise
-        self._completion = completion
-        if completion:
-            self._init_completion()
+        self._completer = rlcompleter.Completer(self.locals)  # type: ignore
+        # all nonalphanums except '.'
+        # see https://github.com/python/cpython/blob/a4258e8cd776ba655cc54ba54eaeffeddb0a267c/Modules/readline.c#L1211
+        self.completer_word_break_characters = (
+            """ \t\n`~!@#$%^&*()-=+[{]}\\|;:'\",<>/?"""
+        )
 
     def redirect_stdstreams(self):
         """ Toggle stdout/stderr redirections. """
@@ -250,38 +248,39 @@ class InteractiveConsole(code.InteractiveConsole):
         build = f"({', '.join(platform.python_build())})"
         return f"Python {version} {build} on WebAssembly VM\n{cprt}"
 
-    def _init_completion(self):
-        """ Initalise the completion system (loading Jedi package)."""
-        self._completion_ready = False
+    def complete(self, source: str) -> Tuple[List[str], int]:
+        """Use CPython's rlcompleter to complete a source from local namespace.
 
-        this = self
+        You can use `completer_word_break_characters` to get/set the
+        way `source` is splitted to find the last part to be completed.
 
-        def set_ready(*args):
-            this._completion_ready = True
-
-        def load_jedi(*args):
-            return _load_packages_from_imports("import jedi")
-
-        self.preloads_complete = self.preloads_complete.then(load_jedi).then(set_ready)
-
-    def complete(self, source: str) -> List[Any]:
-        """Use jedi to complete a source from local namespace.
-
-        If completion has not been activated in constructor or if
-        it is not yet available (due to package load), it returns
-        an empty list.
+        Parameters
+        ----------
+        source
+            The source string to complete at the end.
 
         Returns
         -------
-        A list of Jedi's Completion objects, sorted by name.
+        completions
+            A list of completion strings.
+        start
+            The index where completion starts.
+
+        Examples
+        --------
+        >>> shell = InteractiveConsole()
+        >>> shell.complete("str.isa")
+        (['str.isalnum(', 'str.isalpha(', 'str.isascii('], 0)
+        >>> shell.complete("a = 5 ; str.isa")
+        (['str.isalnum(', 'str.isalpha(', 'str.isascii('], 8)
         """
-        if not self._completion or not self._completion_ready:
-            return []
-
-        # here jedi should be ready
-        import jedi
-
-        return jedi.Interpreter(source, [self.locals]).complete()  # type: ignore
+        start = max(map(source.rfind, self.completer_word_break_characters)) + 1
+        source = source[start:]
+        if "." in source:
+            completions = self._completer.attr_matches(source)  # type: ignore
+        else:
+            completions = self._completer.global_matches(source)  # type: ignore
+        return completions, start
 
 
 def repr_shorten(
