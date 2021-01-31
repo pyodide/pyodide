@@ -41,6 +41,7 @@ Backward compatibility of the API is not guaranteed at this point.
 | **{ref}`js_api_pyodide_runPython`**      | Runs Python code from Javascript.                              |
 | **{ref}`pyodide.runPythonAsync(code, ...) <js_api_pyodide_runPythonAsync>`** | Runs Python code with automatic preloading of imports.         |
 | **{ref}`js_api_pyodide_version`**        | The pyodide version string.                                    |
+| **{ref}`pyodide.setInterruptBuffer(interruptBuffer) <js_api_pyodide_setInterruptBuffer>`** | Set the keyboard interrupt buffer                |
 
 
 ```{eval-rst}
