@@ -68,13 +68,13 @@ def test_import(name, selenium_standalone):
         ))
         """
     )
-    # instead of loading packages using pyodide.loadPackage, this test now 
+    # instead of loading packages using pyodide.loadPackage, this test now
     # tests loading packages just through calling import, as that should
-    # call loadPackage internally, and is more representative of how 
+    # call loadPackage internally, and is more representative of how
     # python actually does it
     loaded_packages = []
     for import_name in meta.get("test", {}).get("imports", []):
-        selenium_standalone.run_async("import %s"%import_name)
+        selenium_standalone.run_async("import %s" % import_name)
         # Make sure that even after importing, there are no additional .pyc
         # files
         assert (
