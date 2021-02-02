@@ -175,7 +175,9 @@ def test_hiwire_is_promise(selenium):
         "new Map()",
         "new Set()",
     ]:
-        assert selenium.run_js(f"return pyodide._module.hiwire.isPromise({s}) === false;")
+        assert selenium.run_js(
+            f"return pyodide._module.hiwire.isPromise({s}) === false;"
+        )
 
     assert selenium.run_js(
         "return pyodide._module.hiwire.isPromise(Promise.resolve()) === true;"

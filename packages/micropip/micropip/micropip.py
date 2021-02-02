@@ -13,7 +13,7 @@ except ImportError:
         class _module:
             class packages:
                 class dependencies:
-                    def object_entries(self):
+                    def object_entries():
                         return []
 
 
@@ -142,7 +142,9 @@ class _PackageManager:
 
     def __init__(self):
         self.builtin_packages = {}
-        self.builtin_packages.update(js_pyodide._module.packages.dependencies.object_entries())
+        self.builtin_packages.update(
+            js_pyodide._module.packages.dependencies.object_entries()
+        )
         self.installed_packages = {}
 
     def install(
