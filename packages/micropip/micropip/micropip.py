@@ -12,7 +12,9 @@ except ImportError:
 
         class _module:
             class packages:
-                dependencies = []  # type: ignore
+                class dependencies:
+                    def object_entries(self):
+                        return []
 
 
 import hashlib

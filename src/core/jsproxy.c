@@ -94,10 +94,10 @@ JsProxy_GetAttr(PyObject* self, PyObject* attr)
 
   const char* key = PyUnicode_AsUTF8(attr);
   FAIL_IF_NULL(key);
-  if(strcmp(key, "keys") == 0 && hiwire_is_array(JsProxy_REF(self))){
-    // Sometimes Python APIs test for the existence of a "keys" function 
+  if (strcmp(key, "keys") == 0 && hiwire_is_array(JsProxy_REF(self))) {
+    // Sometimes Python APIs test for the existence of a "keys" function
     // to decide whether something should be treated like a dict.
-    // This mixes badly with the javascript Array.keys api, so pretend that it 
+    // This mixes badly with the javascript Array.keys api, so pretend that it
     // doesn't exist. (Array.keys isn't very useful anyways so hopefully this
     // won't confuse too many people...)
     PyErr_SetString(PyExc_AttributeError, key);
@@ -241,10 +241,11 @@ JsProxy_IterNext(PyObject* o)
 }
 
 static PyObject*
-JsProxy_object_entries(PyObject* o, PyObject* _args){
+JsProxy_object_entries(PyObject* o, PyObject* _args)
+{
   JsProxy* self = (JsProxy*)o;
   JsRef result_id = hiwire_object_entries(self->js);
-  if(result_id == NULL){
+  if (result_id == NULL) {
     return NULL;
   }
   PyObject* result = JsProxy_create(result_id);
@@ -431,7 +432,7 @@ JsProxy_Dir(PyObject* self, PyObject* _args)
   FAIL_IF_NULL(pydir);
   // Merge and sort
   FAIL_IF_MINUS_ONE(_PySet_Update(result_set, pydir));
-  if(hiwire_is_array(GET_JSREF(self))){
+  if (hiwire_is_array(GET_JSREF(self))) {
     // See comment about Array.keys in GetAttr
     keys_str = PyUnicode_FromString("keys");
     FAIL_IF_NULL(keys_str);

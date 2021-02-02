@@ -230,7 +230,7 @@ EM_JS(void _Py_NO_RETURN, hiwire_throw_error, (JsRef idmsg), {
 
 EM_JS_REF(bool, hiwire_is_array, (JsRef idobj), {
   let obj = Module.hiwire.get_value(idobj);
-  if(Array.isArray(obj)){
+  if (Array.isArray(obj)) {
     return true;
   }
   let result = Object.prototype.toString.call(obj);
