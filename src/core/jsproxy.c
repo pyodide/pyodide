@@ -94,6 +94,15 @@ JsProxy_GetAttr(PyObject* self, PyObject* attr)
 
   const char* key = PyUnicode_AsUTF8(attr);
   FAIL_IF_NULL(key);
+  if(strcmp(key, "keys") == 0 && hiwire_is_array(JsProxy_REF(self))){
+    // Sometimes Python APIs test for the existence of a "keys" function 
+    // to decide whether something should be treated like a dict.
+    // This mixes badly with the javascript Array.keys api, so pretend that it 
+    // doesn't exist. (Array.keys isn't very useful anyways so hopefully this
+    // won't confuse too many people...)
+    PyErr_SetString(PyExc_AttributeError, key);
+    FAIL();
+  }
 
   idresult = hiwire_get_member_string(JsProxy_REF(self), key);
   if (idresult == NULL) {
@@ -229,6 +238,18 @@ JsProxy_IterNext(PyObject* o)
 
   hiwire_decref(idresult);
   return pyvalue;
+}
+
+static PyObject*
+JsProxy_object_entries(PyObject* o, PyObject* _args){
+  JsProxy* self = (JsProxy*)o;
+  JsRef result_id = hiwire_object_entries(self->js);
+  if(result_id == NULL){
+    return NULL;
+  }
+  PyObject* result = JsProxy_create(result_id);
+  hiwire_decref(result_id);
+  return result;
 }
 
 static Py_ssize_t
@@ -389,6 +410,7 @@ JsProxy_Dir(PyObject* self, PyObject* _args)
   PyObject* result_set = NULL;
   JsRef iddir = NULL;
   PyObject* pydir = NULL;
+  PyObject* keys_str = NULL;
   PyObject* null_or_pynone = NULL;
 
   PyObject* result = NULL;
@@ -409,6 +431,12 @@ JsProxy_Dir(PyObject* self, PyObject* _args)
   FAIL_IF_NULL(pydir);
   // Merge and sort
   FAIL_IF_MINUS_ONE(_PySet_Update(result_set, pydir));
+  if(hiwire_is_array(GET_JSREF(self))){
+    // See comment about Array.keys in GetAttr
+    keys_str = PyUnicode_FromString("keys");
+    FAIL_IF_NULL(keys_str);
+    FAIL_IF_MINUS_ONE(PySet_Discard(result_set, keys_str));
+  }
   result = PyList_New(0);
   FAIL_IF_NULL(result);
   null_or_pynone = _PyList_Extend((PyListObject*)result, result_set);
@@ -422,6 +450,7 @@ finally:
   Py_CLEAR(result_set);
   hiwire_decref(iddir);
   Py_CLEAR(pydir);
+  Py_CLEAR(keys_str);
   Py_CLEAR(null_or_pynone);
   if (!success) {
     Py_CLEAR(result);
@@ -829,6 +858,7 @@ static PyTypeObject JsBufferType = {
   .tp_basicsize = sizeof(JsBuffer),
   .tp_dealloc = (destructor)JsBuffer_dealloc,
   .tp_as_buffer = &JsBuffer_BufferProcs,
+  .tp_flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE,
   .tp_doc = "A proxy to make it possible to use Javascript TypedArrays as "
             "Python memory buffers",
 };
@@ -875,12 +905,20 @@ JsProxy_create_subtype(int flags)
   PyMemberDef members[5];
   int cur_member = 0;
 
-  methods[cur_method++] = (PyMethodDef){ 
+  // clang-format off
+  methods[cur_method++] = (PyMethodDef){
     "__dir__",
     (PyCFunction)JsProxy_Dir,
     METH_NOARGS,
     "Returns a list of the members and methods on the object." 
   };
+  methods[cur_method++] = (PyMethodDef){
+    "object_entries",
+    (PyCFunction)JsProxy_object_entries,
+    METH_NOARGS,
+    "Returns a list of the members and methods on the object."
+  };
+  // clang-format on
 
   PyTypeObject* base = &JsProxyType;
   int tp_flags = Py_TPFLAGS_DEFAULT;
@@ -923,12 +961,14 @@ JsProxy_create_subtype(int flags)
     tp_flags |= _Py_TPFLAGS_HAVE_VECTORCALL;
     slots[cur_slot++] =
       (PyType_Slot){ .slot = Py_tp_call, .pfunc = (void*)PyVectorcall_Call };
-    methods[cur_method++] = (PyMethodDef){ 
+    // clang-format off
+    methods[cur_method++] = (PyMethodDef){
       "new",
       (PyCFunction)JsMethod_jsnew,
       METH_VARARGS | METH_KEYWORDS,
-      "Construct a new instance" 
+      "Construct a new instance"
     };
+    // clang-format on
   }
   if (flags & IS_BUFFER) {
     base = &JsBufferType;
@@ -940,14 +980,12 @@ JsProxy_create_subtype(int flags)
     };
   }
   if (flags & IS_ARRAY) {
-    slots[cur_slot++] = (PyType_Slot){ 
-        .slot = Py_mp_subscript,
-        .pfunc = (void*)JsProxy_subscript_array 
-      };
-    slots[cur_slot++] = (PyType_Slot){ 
-        .slot = Py_mp_ass_subscript,
-        .pfunc = (void*)JsProxy_ass_subscript_array 
-      };
+    slots[cur_slot++] =
+      (PyType_Slot){ .slot = Py_mp_subscript,
+                     .pfunc = (void*)JsProxy_subscript_array };
+    slots[cur_slot++] =
+      (PyType_Slot){ .slot = Py_mp_ass_subscript,
+                     .pfunc = (void*)JsProxy_ass_subscript_array };
   }
   methods[cur_method++] = (PyMethodDef){ 0 };
   members[cur_member++] = (PyMemberDef){ 0 };

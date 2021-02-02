@@ -22,7 +22,6 @@ def test_jsproxy_dir(selenium):
             "__defineGetter__",
             "__defineSetter__",
             "__delattr__",
-            "__delitem__",
             "constructor",
             "toString",
             "typeof",

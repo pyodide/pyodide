@@ -113,7 +113,7 @@ EM_JS(int, hiwire_init, (), {
   Module.hiwire.isPromise = function(obj)
   {
     // clang-format off
-    return obj && typeof obj.then == 'function';
+    return (!!obj) && typeof obj.then === 'function';
     // clang-format on
   };
   return 0;
@@ -229,7 +229,15 @@ EM_JS(void _Py_NO_RETURN, hiwire_throw_error, (JsRef idmsg), {
 });
 
 EM_JS_REF(bool, hiwire_is_array, (JsRef idobj), {
-  return Array.isArray(Module.hiwire.get_value(idobj));
+  let obj = Module.hiwire.get_value(idobj);
+  if(Array.isArray(obj)){
+    return true;
+  }
+  let result = Object.prototype.toString.call(obj);
+  // We want to treat some standard array-like objects as Array.
+  // clang-format off
+  return result === "[object HTMLCollection]" || result === "[object NodeList]";
+  // clang-format on
 });
 
 EM_JS_REF(JsRef, hiwire_array, (), { return Module.hiwire.new_value([]); });
@@ -394,7 +402,7 @@ EM_JS_NUM(int, hiwire_get_length, (JsRef idobj), {
   let val = Module.hiwire.get_value(idobj);
   // clang-format off
   if (val.size !== undefined) {
-  // clang-format on
+    // clang-format on
     return val.size;
   }
   return val.length;
@@ -566,6 +574,11 @@ EM_JS_REF(JsRef, hiwire_get_iterator, (JsRef idobj), {
   let jsobj = Module.hiwire.get_value(idobj);
   return Module.hiwire.new_value(jsobj[Symbol.iterator]());
 })
+
+EM_JS_REF(JsRef, hiwire_object_entries, (JsRef idobj), {
+  let jsobj = Module.hiwire.get_value(idobj);
+  return Module.hiwire.new_value(Object.entries(jsobj));
+});
 
 EM_JS_NUM(bool, hiwire_nonzero, (JsRef idobj), {
   let jsobj = Module.hiwire.get_value(idobj);

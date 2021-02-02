@@ -591,6 +591,10 @@ hiwire_is_iterable(JsRef idobj);
 JsRef
 hiwire_get_iterator(JsRef idobj);
 
+
+JsRef
+hiwire_object_entries(JsRef idobj);
+
 /**
  * Returns 1 if the value is non-zero.
  *
