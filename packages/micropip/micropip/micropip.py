@@ -13,6 +13,7 @@ except ImportError:
         class _module:
             class packages:
                 class dependencies:
+                    @staticmethod
                     def object_entries():
                         return []
 

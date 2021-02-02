@@ -87,28 +87,25 @@ def test_jsproxy(selenium):
     assert (
         selenium.run(
             """
-        from js import TEST
-        del TEST.y
-        hasattr(TEST, 'y')"""
+            from js import TEST
+            del TEST.y
+            hasattr(TEST, 'y')
+            """
         )
         is False
     )
     selenium.run_js(
         """
-        class Point {
-          constructor(x, y) {
-            this.x = x;
-            this.y = y;
-          }
-        }
-        window.TEST = new Point(42, 43);"""
+        window.TEST = new Map([["x", 42], ["y", 43]]);
+        """
     )
     assert (
         selenium.run(
             """
-        from js import TEST
-        del TEST['y']
-        'y' in TEST"""
+            from js import TEST
+            del TEST['y']
+            'y' in TEST
+            """
         )
         is False
     )
@@ -133,7 +130,7 @@ def test_jsproxy(selenium):
         selenium.run(
             """
         from js import TEST
-        dict(TEST) == {'foo': 'bar', 'baz': 'bap'}
+        dict(TEST.object_entries()) == {'foo': 'bar', 'baz': 'bap'}
         """
         )
         is True
