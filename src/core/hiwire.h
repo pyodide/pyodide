@@ -272,6 +272,9 @@ hiwire_false();
 JsRef
 hiwire_bool(bool boolean);
 
+bool
+hiwire_is_array(JsRef idobj);
+
 /**
  * Create a new Javascript Array.
  *
@@ -364,6 +367,9 @@ hiwire_get_member_int(JsRef idobj, int idx);
 errcode
 hiwire_set_member_int(JsRef idobj, int idx, JsRef idval);
 
+errcode
+hiwire_delete_member_int(JsRef idobj, int idx);
+
 /**
  * Get an object member by object.
  *
@@ -428,6 +434,9 @@ hiwire_call_member(JsRef idobj, const char* ptrname, JsRef idargs);
 JsRef
 hiwire_new(JsRef idobj, JsRef idargs);
 
+bool
+hiwire_has_length(JsRef idobj);
+
 /**
  * Returns the value of the `length` member on a Javascript object.
  *
@@ -443,6 +452,33 @@ hiwire_get_length(JsRef idobj);
  */
 bool
 hiwire_get_bool(JsRef idobj);
+
+bool
+hiwire_has_has_meth(JsRef idobj);
+
+bool
+hiwire_has_meth(JsRef idobj, JsRef idval);
+
+bool
+hiwire_has_includes_meth(JsRef idobj);
+
+bool
+hiwire_includes_meth(JsRef idobj, JsRef idval);
+
+bool
+hiwire_has_get_meth(JsRef idobj);
+
+JsRef
+hiwire_get_meth(JsRef idobj, JsRef idkey);
+
+bool
+hiwire_has_set_meth(JsRef idobj);
+
+errcode
+hiwire_set_meth(JsRef idobj, JsRef idkey, JsRef idval);
+
+errcode
+hiwire_delete_meth(JsRef idobj, JsRef idkey);
 
 bool
 hiwire_is_pyproxy(JsRef idobj);
@@ -535,6 +571,9 @@ hiwire_greater_than(JsRef ida, JsRef idb);
 bool
 hiwire_greater_than_equal(JsRef ida, JsRef idb);
 
+JsRef
+hiwire_is_iterator(JsRef idobj);
+
 /**
  * Calls the `next` function on an iterator.
  *
@@ -542,6 +581,9 @@ hiwire_greater_than_equal(JsRef ida, JsRef idb);
  */
 JsRef
 hiwire_next(JsRef idobj);
+
+JsRef
+hiwire_is_iterable(JsRef idobj);
 
 /**
  * Returns the iterator associated with the given object, if any.

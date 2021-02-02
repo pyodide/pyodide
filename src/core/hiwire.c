@@ -113,7 +113,7 @@ EM_JS(int, hiwire_init, (), {
   Module.hiwire.isPromise = function(obj)
   {
     // clang-format off
-    return Object.prototype.toString.call(obj) === "[object Promise]";
+    return obj && typeof obj.then == 'function';
     // clang-format on
   };
   return 0;
@@ -228,6 +228,10 @@ EM_JS(void _Py_NO_RETURN, hiwire_throw_error, (JsRef idmsg), {
   throw new Error(jsmsg);
 });
 
+EM_JS_REF(bool, hiwire_is_array, (JsRef idobj), {
+  return Array.isArray(Module.hiwire.get_value(idobj));
+});
+
 EM_JS_REF(JsRef, hiwire_array, (), { return Module.hiwire.new_value([]); });
 
 EM_JS_NUM(errcode, hiwire_push_array, (JsRef idarr, JsRef idval), {
@@ -285,12 +289,23 @@ EM_JS_NUM(errcode,
           });
 
 EM_JS_REF(JsRef, hiwire_get_member_int, (JsRef idobj, int idx), {
-  let jsobj = Module.hiwire.get_value(idobj);
-  return Module.hiwire.new_value(jsobj[idx]);
+  let obj = Module.hiwire.get_value(idobj);
+  if (idx < 0 || idx >= obj.length) {
+    return 0;
+  }
+  return Module.hiwire.new_value(obj[idx]);
 });
 
 EM_JS_NUM(errcode, hiwire_set_member_int, (JsRef idobj, int idx, JsRef idval), {
   Module.hiwire.get_value(idobj)[idx] = Module.hiwire.get_value(idval);
+});
+
+EM_JS_NUM(errcode, hiwire_delete_member_int, (JsRef idobj, int idx), {
+  let obj = Module.hiwire.get_value(idobj);
+  if (idx < 0 || idx >= obj.length) {
+    return -1;
+  }
+  obj.splice(idx, 1);
 });
 
 EM_JS_REF(JsRef, hiwire_get_member_obj, (JsRef idobj, JsRef ididx), {
@@ -367,8 +382,22 @@ EM_JS_REF(JsRef, hiwire_new, (JsRef idobj, JsRef idargs), {
   return Module.hiwire.new_value(Reflect.construct(jsobj, jsargs));
 });
 
+EM_JS_NUM(bool, hiwire_has_length, (JsRef idobj), {
+  let val = Module.hiwire.get_value(idobj);
+  // clang-format off
+  return (val.size !== undefined) ||
+         (val.length !== undefined && typeof val !== "function");
+  // clang-format on
+});
+
 EM_JS_NUM(int, hiwire_get_length, (JsRef idobj), {
-  return Module.hiwire.get_value(idobj).length;
+  let val = Module.hiwire.get_value(idobj);
+  // clang-format off
+  if (val.size !== undefined) {
+  // clang-format on
+    return val.size;
+  }
+  return val.length;
 });
 
 EM_JS_NUM(bool, hiwire_get_bool, (JsRef idobj), {
@@ -388,10 +417,71 @@ EM_JS_NUM(bool, hiwire_get_bool, (JsRef idobj), {
   // clang-format on
 });
 
-EM_JS_NUM(bool, hiwire_is_pyproxy, (JsRef idobj), {
+EM_JS_NUM(bool, hiwire_has_has_meth, (JsRef idobj), {
   // clang-format off
-  return Module.PyProxy.isPyProxy(Module.hiwire.get_value(idobj));
+  let obj = Module.hiwire.get_value(idobj);
+  return obj && typeof obj.has === "function";
   // clang-format on
+});
+
+EM_JS_NUM(bool, hiwire_has_meth, (JsRef idobj, JsRef idkey), {
+  // clang-format off
+  let obj = Module.hiwire.get_value(idobj);
+  let key = Module.hiwire.get_value(idkey);
+  return obj.has(key);
+  // clang-format on
+});
+
+EM_JS_NUM(bool, hiwire_has_includes_meth, (JsRef idobj), {
+  // clang-format off
+  let obj = Module.hiwire.get_value(idobj);
+  return obj && typeof obj.includes === "function";
+  // clang-format on
+});
+
+EM_JS_NUM(bool, hiwire_includes_meth, (JsRef idobj, JsRef idval), {
+  let obj = Module.hiwire.get_value(idobj);
+  let val = Module.hiwire.get_value(idval);
+  return obj.includes(val);
+});
+
+EM_JS_NUM(bool, hiwire_has_get_meth, (JsRef idobj), {
+  // clang-format off
+  let obj = Module.hiwire.get_value(idobj);
+  return obj && typeof obj.get === "function";
+  // clang-format on
+});
+
+EM_JS_NUM(JsRef, hiwire_get_meth, (JsRef idobj, JsRef idkey), {
+  let obj = Module.hiwire.get_value(idobj);
+  let key = Module.hiwire.get_value(idkey);
+  return Module.hiwire.new_value(obj.get(key));
+});
+
+EM_JS_NUM(bool, hiwire_has_set_meth, (JsRef idobj), {
+  // clang-format off
+  let obj = Module.hiwire.get_value(idobj);
+  return obj && typeof obj.set === "function";
+  // clang-format on
+});
+
+EM_JS_NUM(errcode, hiwire_set_meth, (JsRef idobj, JsRef idkey, JsRef idval), {
+  let obj = Module.hiwire.get_value(idobj);
+  let key = Module.hiwire.get_value(idkey);
+  let val = Module.hiwire.get_value(idval);
+  obj.set(key, val);
+});
+
+EM_JS_NUM(errcode, hiwire_delete_meth, (JsRef idobj, JsRef idkey), {
+  let obj = Module.hiwire.get_value(idobj);
+  let key = Module.hiwire.get_value(idkey);
+  if (!obj.delete(key)) {
+    return -1;
+  }
+});
+
+EM_JS_NUM(bool, hiwire_is_pyproxy, (JsRef idobj), {
+  return Module.PyProxy.isPyProxy(Module.hiwire.get_value(idobj));
 });
 
 EM_JS_NUM(bool, hiwire_is_function, (JsRef idobj), {
@@ -453,33 +543,28 @@ MAKE_OPERATOR(not_equal, !==);
 MAKE_OPERATOR(greater_than, >);
 MAKE_OPERATOR(greater_than_equal, >=);
 
-EM_JS_REF(JsRef, hiwire_next, (JsRef idobj), {
+EM_JS_REF(JsRef, hiwire_is_iterator, (JsRef idobj), {
+  let jsobj = Module.hiwire.get_value(idobj);
   // clang-format off
-  if (idobj === Module.hiwire.UNDEFINED) {
-    return Module.hiwire.ERROR;
-  }
+  return typeof jsobj.next === 'function';
+  // clang-format on
+});
 
+EM_JS_REF(JsRef, hiwire_next, (JsRef idobj), {
   let jsobj = Module.hiwire.get_value(idobj);
   return Module.hiwire.new_value(jsobj.next());
+});
+
+EM_JS_REF(JsRef, hiwire_is_iterable, (JsRef idobj), {
+  let jsobj = Module.hiwire.get_value(idobj);
+  // clang-format off
+  return typeof jsobj[Symbol.iterator] === 'function';
   // clang-format on
 });
 
 EM_JS_REF(JsRef, hiwire_get_iterator, (JsRef idobj), {
-  // clang-format off
-  if (idobj === Module.hiwire.UNDEFINED) {
-    return Module.hiwire.ERROR;
-  }
-
   let jsobj = Module.hiwire.get_value(idobj);
-  if (typeof jsobj.next === 'function') {
-    return Module.hiwire.new_value(jsobj);
-  } else if (typeof jsobj[Symbol.iterator] === 'function') {
-    return Module.hiwire.new_value(jsobj[Symbol.iterator]());
-  } else {
-    return Module.hiwire.new_value(Object.entries(jsobj)[Symbol.iterator]());
-  }
-  return Module.hiwire.ERROR;
-  // clang-format on
+  return Module.hiwire.new_value(jsobj[Symbol.iterator]());
 })
 
 EM_JS_NUM(bool, hiwire_nonzero, (JsRef idobj), {
