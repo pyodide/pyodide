@@ -249,7 +249,7 @@ EM_JS(int, pyproxy_init, (), {
     }
     return ptr;
   }
-  // 
+  // We inherit from Function so that we can be callable. 
   Module.PyProxyClass = class PyProxy extends Function {};
   // Static methods
   Module.PyProxy = {
