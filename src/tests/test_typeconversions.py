@@ -22,14 +22,14 @@ def test_python2js(selenium):
     )
     assert selenium.run_js(
         """
-        let x = pyodide.runPython("[1, 2, 3]");
+        let x = pyodide.runPython("[1, 2, 3]").deepCopyToJavascript();
         return ((x instanceof window.Array) && (x.length === 3) &&
                 (x[0] == 1) && (x[1] == 2) && (x[2] == 3))
         """
     )
     assert selenium.run_js(
         """
-        let x = pyodide.runPython("{42: 64}");
+        let x = pyodide.runPython("{42: 64}").deepCopyToJavascript();
         return (typeof x === "object") && (x[42] === 64)
         """
     )
@@ -230,7 +230,7 @@ def test_recursive_list_to_js(selenium_standalone):
         x.append(x)
         """
     )
-    selenium_standalone.run_js("x = pyodide.pyimport('x');")
+    selenium_standalone.run_js("x = pyodide.pyimport('x').deepCopyToJavascript();")
 
 
 def test_recursive_dict_to_js(selenium_standalone):
@@ -240,7 +240,7 @@ def test_recursive_dict_to_js(selenium_standalone):
         x[0] = x
         """
     )
-    selenium_standalone.run_js("x = pyodide.pyimport('x');")
+    selenium_standalone.run_js("x = pyodide.pyimport('x').deepCopyToJavascript();")
 
 
 def test_list_from_js(selenium):

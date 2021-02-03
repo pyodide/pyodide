@@ -55,6 +55,8 @@ def test_pyproxy(selenium):
             "apply",
             "destroy",
             "$$",
+            "deepCopyToJavascript",
+            "shallowCopyToJavascript",
         ]
     )
     assert selenium.run("hasattr(f, 'baz')")
