@@ -80,7 +80,7 @@ def test_handle_command():
     )
     assert (
         handle_command_wrap("gcc -shared test.o -lbob -ljim -ljim -o test.so", args)
-        == "emcc test.o -lfred -ljim -o test.wasm"
+        == "emcc test.o -lfred -ljim -ljim -o test.wasm"
     )
 
     # compilation checks in numpy

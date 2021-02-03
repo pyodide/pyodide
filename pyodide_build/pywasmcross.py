@@ -27,7 +27,7 @@ import argparse
 import importlib.machinery
 import json
 import os
-from pathlib import Path, PurePosixPath
+from pathlib import Path
 import re
 import subprocess
 import shutil
@@ -37,7 +37,6 @@ import sys
 # absolute import is necessary as this file will be symlinked
 # under tools
 from pyodide_build import common
-from pyodide_build._f2c_fixes import fix_f2c_clapack_calls
 
 
 TOOLSDIR = common.TOOLSDIR
@@ -179,7 +178,6 @@ def f2c(args, dryrun=False):
                 subprocess.check_call(
                     ["f2c", os.path.basename(filename)], cwd=os.path.dirname(filename)
                 )
-                fix_f2c_clapack_calls(arg[:-2] + ".c")
             new_args.append(arg[:-2] + ".c")
             found_source = True
         else:
@@ -252,10 +250,7 @@ def handle_command(line, args, dryrun=False):
         # distutils doesn't use the c++ compiler when compiling c++ <sigh>
         if any(arg.endswith((".cpp", ".cc")) for arg in line):
             new_args = ["em++"]
-    library_output = False
-    for arg in line:
-        if arg.endswith(".so") and not arg.startswith("-"):
-            library_output = True
+    library_output = line[-1].endswith(".so")
 
     if library_output:
         new_args.extend(args.ldflags.split())
@@ -265,8 +260,6 @@ def handle_command(line, args, dryrun=False):
         new_args.extend(args.cflags.split() + args.cxxflags.split())
 
     lapack_dir = None
-
-    used_libs = set()
 
     # Go through and adjust arguments
     for arg in line[1:]:
@@ -283,19 +276,9 @@ def handle_command(line, args, dryrun=False):
         if arg.startswith("-L/usr"):
             continue
         if arg.startswith("-l"):
-            for lib_name in replace_libs.keys():
-                # this enables glob style **/* matching
-                if PurePosixPath(arg[2:]).match(lib_name):
-                    if len(replace_libs[lib_name]) > 0:
-                        arg = "-l" + replace_libs[lib_name]
-                    else:
-                        continue
-        if arg.startswith("-l"):
-            # WASM link doesn't like libraries being included twice
-            # skip second one
-            if arg in used_libs:
-                continue
-            used_libs.add(arg)
+            if arg[2:] in replace_libs:
+                arg = "-l" + replace_libs[arg[2:]]
+
         # threading is disabled for now
         if arg == "-pthread":
             continue
@@ -308,13 +291,6 @@ def handle_command(line, args, dryrun=False):
         if arg.endswith(".so"):
             arg = arg[:-3] + ".wasm"
             output = arg
-        # don't include libraries from native builds
-        if (
-            len(args.install_dir) > 0
-            and arg.startswith("-l" + args.install_dir)
-            or arg.startswith("-L" + args.install_dir)
-        ):
-            continue
 
         # Fix for scipy to link to the correct BLAS/LAPACK files
         if arg.startswith("-L") and "CLAPACK" in arg:
@@ -391,7 +367,7 @@ def handle_command(line, args, dryrun=False):
             if renamed.endswith(ext):
                 renamed = renamed[: -len(ext)] + ".so"
                 break
-        if not dryrun and output != renamed:
+        if not dryrun:
             os.rename(output, renamed)
     return new_args
 
