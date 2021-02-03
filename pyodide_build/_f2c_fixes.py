@@ -2,7 +2,8 @@ import re
 
 
 def fix_f2c_clapack_calls(f2c_output_name: str):
-    """
+    """Fix F2C CLAPACK calls
+
     f2c compiles code with fortran linkage, which means that
     strings are passed as char* plus extra length argument at
     the end.
