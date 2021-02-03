@@ -7,7 +7,7 @@ import contextvars
 from typing import Awaitable, Callable
 
 
-class SimpleWebLoop(asyncio.AbstractEventLoop):
+class WebLoop(asyncio.AbstractEventLoop):
     """A custom event loop for use in Pyodide.
 
     Does no lifecycle management and runs forever (it is just deferring work to the
