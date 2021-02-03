@@ -927,7 +927,7 @@ JsProxy_create_subtype(int flags)
       (PyType_Slot){ .slot = Py_tp_iter, .pfunc = (void*)JsProxy_GetIter };
   }
   if (flags & IS_ITERATOR) {
-    // JsProxy_GetIter would work just as well as PyObject_SelfIter but 
+    // JsProxy_GetIter would work just as well as PyObject_SelfIter but
     // PyObject_SelfIter avoids an unnecessary allocation.
     slots[cur_slot++] =
       (PyType_Slot){ .slot = Py_tp_iter, .pfunc = (void*)PyObject_SelfIter };
@@ -935,8 +935,8 @@ JsProxy_create_subtype(int flags)
       (PyType_Slot){ .slot = Py_tp_iternext, .pfunc = (void*)JsProxy_IterNext };
   }
   if (flags & HAS_LENGTH) {
-    // If the function has a `size` or `length` member, use this for `len(proxy)`
-    // Prefer `size` to `length`.
+    // If the function has a `size` or `length` member, use this for
+    // `len(proxy)` Prefer `size` to `length`.
     slots[cur_slot++] =
       (PyType_Slot){ .slot = Py_mp_length, .pfunc = (void*)JsProxy_length };
   }
@@ -950,9 +950,9 @@ JsProxy_create_subtype(int flags)
     slots[cur_slot++] = (PyType_Slot){ .slot = Py_mp_ass_subscript,
                                        .pfunc = (void*)JsProxy_ass_subscript };
   }
-  // Overloads for the `in` operator: javascript uses `obj.has()` for cheap containment
-  // checks (e.g., set, map) and `includes` for less cheap ones (eg array).
-  // Prefer the `has` method if present.
+  // Overloads for the `in` operator: javascript uses `obj.has()` for cheap
+  // containment checks (e.g., set, map) and `includes` for less cheap ones (eg
+  // array). Prefer the `has` method if present.
   if (flags & HAS_INCLUDES) {
     slots[cur_slot++] =
       (PyType_Slot){ .slot = Py_sq_contains, .pfunc = (void*)JsProxy_includes };
@@ -995,8 +995,9 @@ JsProxy_create_subtype(int flags)
   }
   if (flags & IS_ARRAY) {
     // If the object is an array (or a HTMLCollection or NodeList), then we want
-    // subscripting `proxy[idx]` to go to `jsobj[idx]` instead of `jsobj.get(idx)`.
-    // Hopefully anyone else who defines a custom array object will subclass Array.
+    // subscripting `proxy[idx]` to go to `jsobj[idx]` instead of
+    // `jsobj.get(idx)`. Hopefully anyone else who defines a custom array object
+    // will subclass Array.
     slots[cur_slot++] =
       (PyType_Slot){ .slot = Py_mp_subscript,
                      .pfunc = (void*)JsProxy_subscript_array };
@@ -1012,15 +1013,15 @@ JsProxy_create_subtype(int flags)
   PyObject* bases = NULL;
   PyObject* result = NULL;
 
-  // PyType_FromSpecWithBases copies "members" automatically into the end of the type
-  // It doesn't store the slots. But it just copies the pointer to "methods" into the
-  // PyTypeObject, so if we give it a stack allocated methods there will be trouble.
-  // (There are several other buggy behaviors in PyType_FromSpecWithBases, like if you 
-  // use two PyMembers slots, the first one with more members than the second, it will 
-  // corrupt memory).
-  // If the type object were later deallocated, we would leak this memory. It's 
-  // unclear how to fix that, but we store the type in JsProxy_TypeDict forever 
-  // anyway so it will never be deallocated.
+  // PyType_FromSpecWithBases copies "members" automatically into the end of the
+  // type It doesn't store the slots. But it just copies the pointer to
+  // "methods" into the PyTypeObject, so if we give it a stack allocated methods
+  // there will be trouble. (There are several other buggy behaviors in
+  // PyType_FromSpecWithBases, like if you use two PyMembers slots, the first
+  // one with more members than the second, it will corrupt memory). If the type
+  // object were later deallocated, we would leak this memory. It's unclear how
+  // to fix that, but we store the type in JsProxy_TypeDict forever anyway so it
+  // will never be deallocated.
   methods_heap = (PyMethodDef*)PyMem_Malloc(sizeof(PyMethodDef) * cur_method);
   if (methods_heap == NULL) {
     PyErr_NoMemory();
@@ -1050,8 +1051,9 @@ JsProxy_create_subtype(int flags)
   result = PyType_FromSpecWithBases(&spec, bases);
   FAIL_IF_NULL(result);
   if (flags & IS_CALLABLE) {
-    // Python 3.9 provides an alternate way to do this by setting a special member
-    // __vectorcall_offset__ but it doesn't work in I like this approach better
+    // Python 3.9 provides an alternate way to do this by setting a special
+    // member __vectorcall_offset__ but it doesn't work in I like this approach
+    // better
     ((PyTypeObject*)result)->tp_vectorcall_offset =
       offsetof(JsProxy, vectorcall);
   }
