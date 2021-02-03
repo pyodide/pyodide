@@ -1,7 +1,7 @@
 from ._base import open_url, eval_code, find_imports, as_nested_list
 from ._core import JsException  # type: ignore
 from ._importhooks import JsFinder
-from .simple_web_loop import SimpleWebLoopPolicy
+from .web_loop import WebLoopPolicy
 import asyncio
 import sys
 import platform
