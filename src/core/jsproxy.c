@@ -196,25 +196,23 @@ static PyObject*
 JsProxy_IterNext(PyObject* o)
 {
   JsProxy* self = (JsProxy*)o;
+  JsRef idresult = NULL;
+  PyObject* result = NULL;
 
-  JsRef idresult = hiwire_next(self->js);
-  if (idresult == NULL) {
-    return NULL;
+  int done = hiwire_next(self->js, &idresult);
+  FAIL_IF_MINUS_ONE(done);
+  // If there was no "value", "idresult" will be jsundefined
+  // so pyvalue will be set to Py_None.
+  result = js2python(idresult);
+  FAIL_IF_NULL(result);
+  if (done) {
+    PyErr_SetObject(PyExc_StopIteration, result);
+    Py_CLEAR(result);
   }
 
-  JsRef iddone = hiwire_get_member_string(idresult, "done");
-  int done = hiwire_nonzero(iddone);
-  hiwire_decref(iddone);
-
-  PyObject* pyvalue = NULL;
-  if (!done) {
-    JsRef idvalue = hiwire_get_member_string(idresult, "value");
-    pyvalue = js2python(idvalue);
-    hiwire_decref(idvalue);
-  }
-
-  hiwire_decref(idresult);
-  return pyvalue;
+finally:
+  hiwire_CLEAR(idresult);
+  return result;
 }
 
 static Py_ssize_t
