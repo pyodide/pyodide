@@ -199,7 +199,12 @@ def test_completion(selenium, safe_selenium_sys_redirections):
     """
     )
 
-    assert selenium.run("shell.complete('a')") == [
+    assert selenium.run(
+        """
+        [completions, start] = shell.complete('a')
+        [tuple(completions), start]
+        """
+    ) == [
         [
             "and ",
             "as ",
@@ -214,7 +219,12 @@ def test_completion(selenium, safe_selenium_sys_redirections):
         0,
     ]
 
-    assert selenium.run("shell.complete('a = 0 ; print.__g')") == [
+    assert selenium.run(
+        """
+        [completions, start] = shell.complete('a = 0 ; print.__g')
+        [tuple(completions), start]
+        """
+    ) == [
         [
             "print.__ge__(",
             "print.__getattribute__(",
