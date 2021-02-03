@@ -178,8 +178,8 @@ def test_python2js_numpy_scalar(selenium_standalone):
         assert (
             selenium.run_js(
                 """
-            return pyodide.pyimport('x') == 1
-            """
+                return pyodide.pyimport('x').deepCopyToJavascript() == 1
+                """
             )
             is True
         )
