@@ -265,12 +265,12 @@ def test_error_py2js2py(selenium):
 
 def test_list_py2js2py(selenium):
     selenium.run("x = ['a', 'b']")
-    assert_py_to_js_to_py("x")
+    assert_py_to_js_to_py(selenium, "x")
 
 
 def test_dict_py2js2py(selenium):
     selenium.run("x = {'a' : 5, 'b' : 1}")
-    assert_py_to_js_to_py("x")
+    assert_py_to_js_to_py(selenium, "x")
 
 
 def test_jsproxy_attribute_error(selenium):
