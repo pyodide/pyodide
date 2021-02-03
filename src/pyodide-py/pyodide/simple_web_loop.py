@@ -32,7 +32,7 @@ class WebLoop(asyncio.AbstractEventLoop):
         return False
 
     #
-    # Lifecycle methods: We just ignore all lifecycle management
+    # Lifecycle methods: We ignore all lifecycle management
     #
 
     def is_running(self) -> bool:
