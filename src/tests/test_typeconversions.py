@@ -267,6 +267,7 @@ def test_list_py2js2py(selenium):
     selenium.run("x = ['a', 'b']")
     assert_py_to_js_to_py("x")
 
+
 def test_dict_py2js2py(selenium):
     selenium.run("x = {'a' : 5, 'b' : 1}")
     assert_py_to_js_to_py("x")
@@ -432,6 +433,7 @@ def test_python2js_with_depth(selenium):
         }
         """
     )
+
 
 @pytest.mark.xfail
 def test_py2js_set(selenium):
