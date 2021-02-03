@@ -43,7 +43,7 @@ def test_handle_command():
     assert handle_command_wrap("gcc test.c", args) == "emcc test.c"
     assert (
         handle_command_wrap("gcc -shared -c test.o -o test.so", args)
-        == "emcc -c test.o -o test.so"
+        == "emcc -c test.o -o test.wasm"
     )
 
     # check cxxflags injection and cpp detection
@@ -66,7 +66,7 @@ def test_handle_command():
     )
     assert (
         handle_command_wrap("gcc -shared -c test.o -o test.so", args)
-        == "emcc -lm -c test.o -o test.so"
+        == "emcc -lm -c test.o -o test.wasm"
     )
 
     # check library replacement and removal of double libraries
@@ -80,7 +80,7 @@ def test_handle_command():
     )
     assert (
         handle_command_wrap("gcc -shared test.o -lbob -ljim -ljim -o test.so", args)
-        == "emcc test.o -lfred -ljim -o test.so"
+        == "emcc test.o -lfred -ljim -o test.wasm"
     )
 
     # compilation checks in numpy
@@ -106,7 +106,7 @@ def test_conda_compiler_compat():
     )
     assert handle_command_wrap(
         "gcc -shared -c test.o -B /compiler_compat -o test.so", args
-    ) == ("emcc -c test.o -o test.so")
+    ) == ("emcc -c test.o -o test.wasm")
 
 
 def test_environment_var_substitution(monkeypatch):

@@ -306,6 +306,7 @@ def handle_command(line, args, dryrun=False):
         # definitely isn't
         arg = re.sub(r"/python([0-9]\.[0-9]+)m", r"/python\1", arg)
         if arg.endswith(".so"):
+            arg = arg[:-3] + ".wasm"
             output = arg
         # don't include libraries from native builds
         if (
@@ -383,7 +384,7 @@ def handle_command(line, args, dryrun=False):
 
     # Emscripten .so files shouldn't have the native platform slug
     if library_output:
-        renamed = output
+        renamed = output[:-5] + ".so"
         for ext in importlib.machinery.EXTENSION_SUFFIXES:
             if ext == ".so":
                 continue
