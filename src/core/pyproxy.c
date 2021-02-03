@@ -273,7 +273,7 @@ EM_JS(int, pyproxy_init, (), {
       return jsresult;
     },
     shallowCopyToJavascript : function(){
-      let idresult = _python2js_with_depth(_getPtr(this), depth);
+      let idresult = _python2js_with_depth(_getPtr(this), 1);
       let result = Module.hiwire.get_value(idresult);
       Module.hiwire.decref(idresult);
       return result;
