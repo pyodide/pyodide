@@ -50,7 +50,10 @@ class WebLoop(asyncio.AbstractEventLoop):
         return False
 
     def _check_closed(self):
-        """Used in create_task. Would raise an error if self.is_closed(), but we are skipping all lifecycle stuff. """
+        """Used in create_task. 
+        
+        Would raise an error if self.is_closed(), but we are skipping all lifecycle stuff.
+        """
         pass
 
     def run_forever(self):
@@ -185,6 +188,9 @@ class WebLoop(asyncio.AbstractEventLoop):
         if self._task_factory is None:
             task = tasks.Task(coro, loop=self, name=name)
             if task._source_traceback:
+                # Added comment:
+                # this only happens if get_debug() returns True.
+                # In that case, remove create_task from _source_traceback.
                 del task._source_traceback[-1]
         else:
             task = self._task_factory(self, coro)
