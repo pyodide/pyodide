@@ -34,7 +34,6 @@ typedef struct
 {
   PyObject_HEAD
   JsRef js;
-  bool awaited; // for promises
 } JsProxy;
 // clang-format on
 
@@ -319,13 +318,6 @@ JsProxy_Bool(PyObject* o)
 static PyObject*
 JsProxy_Await(JsProxy* self, PyObject* _args)
 {
-  // Guards
-  if (self->awaited) {
-    PyErr_SetString(PyExc_RuntimeError,
-                    "cannot reuse already awaited coroutine");
-    return NULL;
-  }
-
   if (!hiwire_is_promise(self->js)) {
     PyObject* str = JsProxy_Repr((PyObject*)self);
     const char* str_utf8 = PyUnicode_AsUTF8(str);
@@ -427,7 +419,6 @@ JsProxy_cinit(PyObject* obj, JsRef idobj)
 {
   JsProxy* self = (JsProxy*)obj;
   self->js = hiwire_incref(idobj);
-  self->awaited = false;
 }
 
 static PyObject*
