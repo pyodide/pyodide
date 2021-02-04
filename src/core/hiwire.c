@@ -110,10 +110,17 @@ EM_JS(int, hiwire_init, (), {
     _hiwire.objects.delete(idval);
   };
 
+  Module.hiwire.pop_value = function(idval)
+  {
+    let result = Module.hiwire.get_value(idval);
+    Module.hiwire.decref(idval);
+    return result;
+  };
+
   Module.hiwire.isPromise = function(obj)
   {
     // clang-format off
-    return Object.prototype.toString.call(obj) === "[object Promise]";
+    return (!!obj) && typeof obj.then === 'function';
     // clang-format on
   };
   return 0;
@@ -558,9 +565,12 @@ EM_JS_REF(JsRef, hiwire_is_iterator, (JsRef idobj), {
   // clang-format on
 });
 
-EM_JS_REF(JsRef, hiwire_next, (JsRef idobj), {
+EM_JS_REF(int, hiwire_next, (JsRef idobj, JsRef* result_ptr), {
   let jsobj = Module.hiwire.get_value(idobj);
-  return Module.hiwire.new_value(jsobj.next());
+  let { done, value } = jsobj.next();
+  let result_id = Module.hiwire.new_value(value);
+  setValue(result_ptr, result_id, "i32");
+  return done;
 });
 
 EM_JS_REF(JsRef, hiwire_is_iterable, (JsRef idobj), {
@@ -578,12 +588,6 @@ EM_JS_REF(JsRef, hiwire_get_iterator, (JsRef idobj), {
 EM_JS_REF(JsRef, hiwire_object_entries, (JsRef idobj), {
   let jsobj = Module.hiwire.get_value(idobj);
   return Module.hiwire.new_value(Object.entries(jsobj));
-});
-
-EM_JS_NUM(bool, hiwire_nonzero, (JsRef idobj), {
-  let jsobj = Module.hiwire.get_value(idobj);
-  // TODO: should this be !== 0?
-  return (jsobj != 0) ? 1 : 0;
 });
 
 EM_JS_NUM(bool, hiwire_is_typedarray, (JsRef idobj), {

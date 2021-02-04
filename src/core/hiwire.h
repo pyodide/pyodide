@@ -577,10 +577,11 @@ hiwire_is_iterator(JsRef idobj);
 /**
  * Calls the `next` function on an iterator.
  *
- * Returns: Js_ERROR if `next` function is undefined.
+ * Returns -1 if an error occurs.
+ * Stores "value" into argument "result", returns "done".
  */
-JsRef
-hiwire_next(JsRef idobj);
+int
+hiwire_next(JsRef idobj, JsRef* result);
 
 JsRef
 hiwire_is_iterable(JsRef idobj);
@@ -593,13 +594,6 @@ hiwire_get_iterator(JsRef idobj);
 
 JsRef
 hiwire_object_entries(JsRef idobj);
-
-/**
- * Returns 1 if the value is non-zero.
- *
- */
-bool
-hiwire_nonzero(JsRef idobj);
 
 /**
  * Returns 1 if the value is a typedarray.

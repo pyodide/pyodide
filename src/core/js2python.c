@@ -38,22 +38,19 @@ _js2python_number(double val)
 PyObject*
 _js2python_none()
 {
-  Py_INCREF(Py_None);
-  return Py_None;
+  Py_RETURN_NONE;
 }
 
 PyObject*
 _js2python_true()
 {
-  Py_INCREF(Py_True);
-  return Py_True;
+  Py_RETURN_TRUE;
 }
 
 PyObject*
 _js2python_false()
 {
-  Py_INCREF(Py_False);
-  return Py_False;
+  Py_RETURN_FALSE;
 }
 
 PyObject*

@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-
 """Helper for cross-compiling distutils-based Python extensions.
 
 distutils has never had a proper cross-compilation story. This is a hack, which
@@ -42,6 +41,13 @@ from pyodide_build import common
 
 TOOLSDIR = common.TOOLSDIR
 symlinks = set(["cc", "c++", "ld", "ar", "gcc", "gfortran"])
+
+
+class EnvironmentRewritingArgument(argparse.Action):
+    def __call__(self, parser, namespace, values, option_string=None):
+        for e_name, e_value in os.environ.items():
+            values = values.replace(f"$({e_name})", e_value)
+        setattr(namespace, self.dest, values)
 
 
 def collect_args(basename):
@@ -204,8 +210,8 @@ def handle_command(line, args, dryrun=False):
     --------
 
     >>> from collections import namedtuple
-    >>> Args = namedtuple('args', ['cflags', 'cxxflags', 'ldflags', 'host','replace_libs'])
-    >>> args = Args(cflags='', cxxflags='', ldflags='', host='',replace_libs='')
+    >>> Args = namedtuple('args', ['cflags', 'cxxflags', 'ldflags', 'host','replace_libs','install_dir'])
+    >>> args = Args(cflags='', cxxflags='', ldflags='', host='',replace_libs='',install_dir='')
     >>> handle_command(['gcc', 'test.c'], args, dryrun=True)
     emcc test.c
     ['emcc', 'test.c']
@@ -332,6 +338,10 @@ def handle_command(line, args, dryrun=False):
         # See https://github.com/emscripten-core/emscripten/issues/8650
         if arg in ["-lfreetype", "-lz", "-lpng", "-lgfortran"]:
             continue
+        # don't use -shared, SIDE_MODULE is already used
+        # and -shared breaks it
+        if arg in ["-shared"]:
+            continue
 
         new_args.append(arg)
 
@@ -427,6 +437,7 @@ def make_parser(parser):
             nargs="?",
             default=common.DEFAULTCFLAGS,
             help="Extra compiling flags",
+            action=EnvironmentRewritingArgument,
         )
         parser.add_argument(
             "--cxxflags",
@@ -434,6 +445,7 @@ def make_parser(parser):
             nargs="?",
             default=common.DEFAULTCXXFLAGS,
             help="Extra C++ specific compiling flags",
+            action=EnvironmentRewritingArgument,
         )
         parser.add_argument(
             "--ldflags",
@@ -441,6 +453,7 @@ def make_parser(parser):
             nargs="?",
             default=common.DEFAULTLDFLAGS,
             help="Extra linking flags",
+            action=EnvironmentRewritingArgument,
         )
         parser.add_argument(
             "--target",
@@ -466,6 +479,7 @@ def make_parser(parser):
             nargs="?",
             default="",
             help="Libraries to replace in final link",
+            action=EnvironmentRewritingArgument,
         )
     return parser
 
