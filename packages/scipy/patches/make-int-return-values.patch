@@ -2639,8 +2639,6 @@ index 2e235db..666630e 100644
  #define qh_dgetrf F_FUNC(dgetrf,DGETRF)
  #define qh_dgecon F_FUNC(dgecon,DGECON)
  #define qh_dgetrs F_FUNC(dgetrs,DGETRS)
-diff --git a/scipy/special/amos/.master.gz b/before/scipy/special/amos/.master.gz
-deleted file mode 100644
 diff --git a/scipy/special/cdf_wrappers.c b/scipy/special/cdf_wrappers.c
 index 08121f2..7ee9b28 100644
 --- a/scipy/special/cdf_wrappers.c
