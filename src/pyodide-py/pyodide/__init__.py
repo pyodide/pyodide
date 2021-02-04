@@ -13,6 +13,10 @@ sys.meta_path.append(jsfinder)  # type: ignore
 
 if platform.system() == "Emscripten":
     asyncio.set_event_loop_policy(WebLoopPolicy())
+    # Start event loop running. This is so asyncio.create_task will work without
+    # first calling asyncio.ensure_future, asyncio.get_event_loop, or manually 
+    # starting an event loop.
+    asyncio.get_event_loop()
 
 
 __version__ = "0.16.1"
