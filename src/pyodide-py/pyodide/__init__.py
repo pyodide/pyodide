@@ -12,7 +12,7 @@ unregister_js_module = jsfinder.unregister_js_module
 sys.meta_path.append(jsfinder)  # type: ignore
 
 if platform.system() == "Emscripten":
-    asyncio.set_event_loop_policy(SimpleWebLoopPolicy())
+    asyncio.set_event_loop_policy(WebLoopPolicy())
 
 
 __version__ = "0.16.1"
