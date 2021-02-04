@@ -233,9 +233,9 @@ class WebLoopPolicy(asyncio.DefaultEventLoopPolicy):
 
     def get_event_loop(self):
         """Get the current event loop"""
-        if self._default_loop is None:
-            self._default_loop = WebLoop()
-        return self._default_loop
+        if self._default_loop:
+            return self._default_loop
+        return self.new_event_loop()
 
     def new_event_loop(self):
         """Create a new event loop"""
