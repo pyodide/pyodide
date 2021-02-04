@@ -567,7 +567,9 @@ EM_JS_REF(JsRef, hiwire_is_iterator, (JsRef idobj), {
 
 EM_JS_REF(int, hiwire_next, (JsRef idobj, JsRef* result_ptr), {
   let jsobj = Module.hiwire.get_value(idobj);
+  // clang-format on
   let { done, value } = jsobj.next();
+  // clang-format off
   let result_id = Module.hiwire.new_value(value);
   setValue(result_ptr, result_id, "i32");
   return done;
