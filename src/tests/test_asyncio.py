@@ -156,7 +156,7 @@ def test_eval_code_async_loop():
         globals=globals(),
         locals=locals(),
     )
-    fut = asyncio.ensure_future(c)
+    fut = asyncio.create_task(c)
     asyncio.get_event_loop().run_until_complete(fut)
     assert fut.result() == 45
 

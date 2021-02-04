@@ -64,7 +64,7 @@
 - Added a Python event loop to support asyncio by scheduling coroutines to run 
   as jobs on the browser event loop. This event loop is available by default and 
   automatically enabled by any relevant asyncio API, so for instance 
-  `asyncio.ensure_future` works without any configuration.
+  `asyncio.create_task` works without any configuration.
   [#1158](https://github.com/iodide-project/pyodide/pull/1158)
 - Made PyProxy of an iterable Python object an iterable Js object: defined the
   `[Symbol.iterator]` method, can be used like `for(let x of proxy)`.
