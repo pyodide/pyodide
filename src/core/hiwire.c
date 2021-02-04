@@ -113,7 +113,7 @@ EM_JS(int, hiwire_init, (), {
   Module.hiwire.isPromise = function(obj)
   {
     // clang-format off
-    return Object.prototype.toString.call(obj) === "[object Promise]";
+    return (!!obj) && typeof obj.then === 'function';
     // clang-format on
   };
   return 0;
@@ -453,14 +453,13 @@ MAKE_OPERATOR(not_equal, !==);
 MAKE_OPERATOR(greater_than, >);
 MAKE_OPERATOR(greater_than_equal, >=);
 
-EM_JS_REF(JsRef, hiwire_next, (JsRef idobj), {
+EM_JS_REF(int, hiwire_next, (JsRef idobj, JsRef* result_ptr), {
   // clang-format off
-  if (idobj === Module.hiwire.UNDEFINED) {
-    return Module.hiwire.ERROR;
-  }
-
   let jsobj = Module.hiwire.get_value(idobj);
-  return Module.hiwire.new_value(jsobj.next());
+  let { done, value } = jsobj.next();
+  let result_id = Module.hiwire.new_value(value);
+  setValue(result_ptr, result_id, "i32");
+  return done;
   // clang-format on
 });
 
@@ -481,12 +480,6 @@ EM_JS_REF(JsRef, hiwire_get_iterator, (JsRef idobj), {
   return Module.hiwire.ERROR;
   // clang-format on
 })
-
-EM_JS_NUM(bool, hiwire_nonzero, (JsRef idobj), {
-  let jsobj = Module.hiwire.get_value(idobj);
-  // TODO: should this be !== 0?
-  return (jsobj != 0) ? 1 : 0;
-});
 
 EM_JS_NUM(bool, hiwire_is_typedarray, (JsRef idobj), {
   let jsobj = Module.hiwire.get_value(idobj);
