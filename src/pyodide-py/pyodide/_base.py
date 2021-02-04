@@ -250,26 +250,6 @@ class CodeRunner:
                 res = await res
             return res
 
-
-def _eval_code_with_locals(
-    code: str,
-    globals: Optional[Dict[str, Any]] = None,
-    return_mode: str = "last_expr",
-    quiet_trailing_semicolon: bool = True,
-    filename: str = "<exec>",
-) -> Any:
-    """ Runs a code string in a new empty locals dict. Other arguments as as for eval_code. """
-    # TODO: remove this once we fix type conversions code (should be possible to create a dict in js!)
-    return eval_code(
-        code,
-        globals=globals,
-        locals={},  # New empty locals dict
-        return_mode=return_mode,
-        quiet_trailing_semicolon=quiet_trailing_semicolon,
-        filename=filename,
-    )
-
-
 def eval_code(
     code: str,
     globals: Optional[Dict[str, Any]] = None,

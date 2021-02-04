@@ -364,8 +364,12 @@ globalThis.languagePluginLoader = new Promise((resolve, reject) => {
   };
 
   Module.runPython = code => Module.pyodide_py.eval_code(code, Module.globals);
-  Module.runPythonWithLocals = code =>
-      Module.pyodide_py._eval_code_with_locals(code, Module.globals);
+  Module.runPythonWithLocals = code => {
+    let locals = Module.globals.dict();
+    let result = Module.pyodide_py.eval_code(code, Module.globals, locals);
+    locals.destroy();
+    return result;
+  }
 
   // clang-format off
   Module.loadPackagesFromImports  = async function(code, messageCallback, errorCallback) {
