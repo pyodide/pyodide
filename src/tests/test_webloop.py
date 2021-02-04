@@ -24,7 +24,7 @@ def test_asyncio_sleep(selenium):
             await asyncio.sleep(1)
             print('sleeping done')
             resolve()
-        asyncio.ensure_future(sleep_task())
+        asyncio.create_task(sleep_task())
         """,
     )
 
@@ -45,7 +45,7 @@ def test_return_result(selenium):
             else:
                 raise Exception(f"Unexpected result {result!r}")
         import asyncio
-        fut = asyncio.ensure_future(foo(998))
+        fut = asyncio.create_task(foo(998))
         fut.add_done_callback(check_result)
         """,
     )
@@ -69,7 +69,7 @@ def test_capture_exception(selenium):
             else:
                 raise Exception("Expected fut.result() to raise MyException")
         import asyncio
-        fut = asyncio.ensure_future(foo(998))
+        fut = asyncio.create_task(foo(998))
         fut.add_done_callback(capture_exception)                
         """,
     )
@@ -85,7 +85,7 @@ def test_await_js_promise(selenium):
             result = await fetch('console.html')
             resolve()
         import asyncio
-        asyncio.ensure_future(fetch_task())
+        asyncio.create_task(fetch_task())
         """,
     )
 
@@ -142,6 +142,6 @@ def test_asyncio_exception(selenium):
             else:
                 raise Exception("Expected ValueError")
         import asyncio
-        asyncio.ensure_future(capture_exception())
+        asyncio.create_task(capture_exception())
         """,
     )
