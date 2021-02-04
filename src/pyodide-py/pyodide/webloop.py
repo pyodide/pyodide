@@ -13,14 +13,14 @@ class WebLoop(asyncio.AbstractEventLoop):
     Schedules tasks on the browser event loop. Does no lifecycle management and runs
     forever.
 
-    `run_forever` and `run_until_complete` cannot block like a normal event loop would
+    ``run_forever`` and ``run_until_complete`` cannot block like a normal event loop would
     because we only have one thread so blocking would stall the browser event loop
     and prevent anything from ever happening.
 
     We defer all work to the browser event loop using the setTimeout function.
     To ensure that this event loop doesn't stall out UI and other browser handling,
     we want to make sure that each task is scheduled on the browser event loop as a
-    task not as a microtask. `setTimeout(callback, 0)` enqueues the callback as a
+    task not as a microtask. ``setTimeout(callback, 0)`` enqueues the callback as a
     task so it works well for our purposes.
     """
 
@@ -36,23 +36,23 @@ class WebLoop(asyncio.AbstractEventLoop):
     #
 
     def is_running(self) -> bool:
-        """Returns True if the event loop is running.
+        """Returns ``True`` if the event loop is running.
 
-        Always returns `True` because WebLoop has no lifecycle management.
+        Always returns ``True`` because WebLoop has no lifecycle management.
         """
         return True
 
     def is_closed(self) -> bool:
-        """Returns True if the event loop was closed.
+        """Returns ``True`` if the event loop was closed.
 
-        Always returns `False` because WebLoop has no lifecycle management.
+        Always returns ``False`` because WebLoop has no lifecycle management.
         """
         return False
 
     def _check_closed(self):
-        """Used in create_task. 
-        
-        Would raise an error if self.is_closed(), but we are skipping all lifecycle stuff.
+        """Used in create_task.
+
+        Would raise an error if ``self.is_closed()``, but we are skipping all lifecycle stuff.
         """
         pass
 
@@ -75,10 +75,11 @@ class WebLoop(asyncio.AbstractEventLoop):
         Since we cannot block, we just ensure that the future is scheduled and
         return the future. This makes this method a bit useless. Instead, use
         `future.add_done_callback(do_something_with_result)` or:
-        ```
+        ```python
         async def wrapper():
             result = await future
             do_something_with_result(result)
+        ```
         """
         return asyncio.ensure_future(future)
 
@@ -92,7 +93,7 @@ class WebLoop(asyncio.AbstractEventLoop):
         Any positional arguments after the callback will be passed to
         the callback when it is called.
 
-        This schedules the callback on the browser event loop using `setTimeout(callback, 0)`.
+        This schedules the callback on the browser event loop using ``setTimeout(callback, 0)``.
         """
         delay = 0
         return self.call_later(delay, callback, *args, context=context)
@@ -100,9 +101,9 @@ class WebLoop(asyncio.AbstractEventLoop):
     def call_soon_threadsafe(
         callback: Callable, *args, context: contextvars.Context = None
     ):
-        """Like call_soon(), but thread-safe.
+        """Like ``call_soon()``, but thread-safe.
 
-        We have no threads so everything is "thread safe", and we just use call_soon.
+        We have no threads so everything is "thread safe", and we just use ``call_soon``.
         """
         return self.call_soon(callback, *args, context=context)
 
@@ -145,11 +146,11 @@ class WebLoop(asyncio.AbstractEventLoop):
         *args,
         context: contextvars.Context = None
     ):
-        """Like call_later(), but uses an absolute time.
+        """Like ``call_later()``, but uses an absolute time.
 
-        Absolute time corresponds to the event loop's time() method.
+        Absolute time corresponds to the event loop's ``time()`` method.
 
-        This uses `setTimeout(callback, when - cur_time)`
+        This uses ``setTimeout(callback, when - cur_time)``
         """
         cur_time = self.time()
         delay = when - cur_time
@@ -166,14 +167,14 @@ class WebLoop(asyncio.AbstractEventLoop):
         epoch, precision, accuracy and drift are unspecified and may
         differ per event loop.
 
-        Copied from BaseEventLoop.time
+        Copied from ``BaseEventLoop.time``
         """
         return time.monotonic()
 
     def create_future(self):
         """Create a Future object attached to the loop.
 
-        Copied from BaseEventLoop.create_future
+        Copied from ``BaseEventLoop.create_future``
         """
         return futures.Future(loop=self)
 
@@ -182,7 +183,7 @@ class WebLoop(asyncio.AbstractEventLoop):
 
         Return a task object.
 
-        Copied from BaseEventLoop.create_task
+        Copied from ``BaseEventLoop.create_task``
         """
         self._check_closed()
         if self._task_factory is None:
@@ -208,7 +209,7 @@ class WebLoop(asyncio.AbstractEventLoop):
         event loop, 'coro' will be a coroutine object.  The callable
         must return a Future.
 
-        Copied from BaseEventLoop.set_task_factory
+        Copied from ``BaseEventLoop.set_task_factory``
         """
         if factory is not None and not callable(factory):
             raise TypeError("task factory must be a callable or None")
@@ -217,7 +218,7 @@ class WebLoop(asyncio.AbstractEventLoop):
     def get_task_factory(self):
         """Return a task factory, or None if the default one is in use.
 
-        Copied from BaseEventLoop.get_task_factory
+        Copied from ``BaseEventLoop.get_task_factory``
         """
         return self._task_factory
 
@@ -231,22 +232,16 @@ class WebLoopPolicy(asyncio.DefaultEventLoopPolicy):
         self._default_loop = None
 
     def get_event_loop(self):
-        """
-        Get the current event loop
-        """
+        """Get the current event loop"""
         if self._default_loop is None:
             self._default_loop = WebLoop()
         return self._default_loop
 
     def new_event_loop(self):
-        """
-        Create a new event loop
-        """
+        """Create a new event loop"""
         self._default_loop = WebLoop()
         return self._default_loop
 
     def set_event_loop(self, loop: asyncio.AbstractEventLoop):
-        """
-        Set the current event loop
-        """
+        """Set the current event loop"""
         self._default_loop = loop
