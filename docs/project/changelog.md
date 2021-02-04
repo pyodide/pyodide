@@ -58,6 +58,7 @@
   raise a `KeyboardInterrupt` by writing to the interrupt buffer.
   [#1148](https://github.com/iodide-project/pyodide/pull/1148) and
   [#1173](https://github.com/iodide-project/pyodide/pull/1173)
+<<<<<<< HEAD
 - A `JsProxy` of a Javascript `Promise` or other awaitable object is now a 
   Python awaitable.
   [#880](https://github.com/iodide-project/pyodide/pull/880)
@@ -66,6 +67,15 @@
   automatically enabled by any relevant asyncio API, so for instance 
   `asyncio.ensure_future` works without any configuration.
   [#1158](https://github.com/iodide-project/pyodide/pull/1158)
+=======
+- Made PyProxy of an iterable Python object an iterable Js object: defined the
+  `[Symbol.iterator]` method, can be used like `for(let x of proxy)`.
+  Made a PyProxy of a Python iterator an iterator: `proxy.next()` is
+  translated to `next(it)`.
+  Made a PyProxy of a Python generator into a Javascript generator:
+  `proxy.next(val)` is translated to `gen.send(val)`.
+  [#1180](https://github.com/iodide-project/pyodide/pull/1180)
+>>>>>>> master
 
 ### Fixed
 - getattr and dir on JsProxy now report consistent results and include all
