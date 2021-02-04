@@ -13,11 +13,11 @@ source:
 build:
   skip_host: True
   cflags: |
-    -I/src/cpython/installs/python-3.8.2/include/python3.8
-    -I/src/emsdk/emsdk/fastcomp/emscripten/system/include/libc
-    -I/src/packages/libyaml/build/include
+    -I../../../../cpython/installs/python-3.8.2/include/python3.8
+    -I../../../../emsdk/emsdk/fastcomp/emscripten/system/include/libc
+    -I../../../libyaml/build/include
   ldflags: |
-    -L/src/packages/libyaml/build/
+    -L../../../libyaml/build/
 
 requirements:
   run:

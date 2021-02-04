@@ -10,5 +10,5 @@ build:
   script: |
     emcmake cmake -DCMAKE_INSTALL_PREFIX=.. .
     emmake make -j ${PYODIDE_JOBS:-3}
-    ln -s /src/packages/libyaml/build/libyaml-0.2.1/libyaml_static.a /src/packages/libyaml/build/libyaml.a
-    ln -s /src/packages/libyaml/build/libyaml-0.2.1/include /src/packages/libyaml/build/
+    ln -s libyaml-0.2.1/libyaml_static.a ../libyaml.a
+    ln -s libyaml-0.2.1/include ..
