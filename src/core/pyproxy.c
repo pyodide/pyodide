@@ -408,7 +408,11 @@ EM_JS(int, pyproxy_init, (), {
         Module.hiwire.decref(idkey);
       }
       if(idresult === 0){
-        _pythonexc2js();
+        if(Module._PyErr_Occurred()){
+          _pythonexc2js();
+        } else {
+          return undefined;
+        }
       }
       return Module.hiwire.pop_value(idresult);
     },
