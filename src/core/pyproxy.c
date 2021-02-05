@@ -384,16 +384,12 @@ EM_JS(int, pyproxy_init, (), {
       return Module.hiwire.pop_value(idresult);
     },
     shallowCopyToJavascript : function(){
-      let idresult = _python2js_with_depth(_getPtr(this), depth);
-      let result = Module.hiwire.get_value(idresult);
-      Module.hiwire.decref(idresult);
-      return result;
+      let idresult = _python2js_with_depth(_getPtr(this), 1);
+      return Module.hiwire.pop_value(idresult);
     },
     deepCopyToJavascript : function(depth = -1){
       let idresult = _python2js_with_depth(_getPtr(this), depth);
-      let result = Module.hiwire.get_value(idresult);
-      Module.hiwire.decref(idresult);
-      return result;
+      return Module.hiwire.pop_value(idresult);
     },
   };
 
@@ -414,9 +410,7 @@ EM_JS(int, pyproxy_init, (), {
       if(idresult === 0){
         _pythonexc2js();
       }
-      let jsresult = Module.hiwire.get_value(idresult);
-      Module.hiwire.decref(idresult);
-      return jsresult;
+      return Module.hiwire.pop_value(idresult);
     },
     set : function(key, value){
       let ptrobj = _getPtr(this);
@@ -584,11 +578,7 @@ EM_JS(int, pyproxy_init, (), {
       if(errcode === -1){
         _pythonexc2js();
       }
-<<<<<<< HEAD
       return true;
-=======
-      return Module.hiwire.pop_value(idresult);
->>>>>>> master
     },
     deleteProperty: function (jsobj, jskey) {
       if(
@@ -613,11 +603,7 @@ EM_JS(int, pyproxy_init, (), {
       if(errcode === -1){
         _pythonexc2js();
       }
-<<<<<<< HEAD
       return true;
-=======
-      return Module.hiwire.pop_value(idresult);
->>>>>>> master
     },
     ownKeys: function (jsobj) {
       let result = new Set(Reflect.ownKeys(jsobj));
