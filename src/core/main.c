@@ -105,6 +105,13 @@ main(int argc, char** argv)
     FATAL_ERROR("Failed to add '_pyodide_core' module to modules dict.");
   }
 
+  PyObject* pyodide_py = PyImport_ImportModule("pyodide");
+  JsRef pyodide_py_proxy = python2js(pyodide_py);
+  Py_CLEAR(pyodide_py);
+  EM_ASM({
+    pyodide.pyodide_py = Module.hiwire.pop_value($0)
+  }, pyodide_py_proxy);
+
   Py_CLEAR(core_module);
   printf("Python initialization complete\n");
   emscripten_exit_with_live_runtime();

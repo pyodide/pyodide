@@ -363,7 +363,7 @@ globalThis.languagePluginLoader = new Promise((resolve, reject) => {
     let code_c_string = Module.stringToNewUTF8(code);
     Module._PyRun_SimpleString(code_c_string);
     Module._free(code_c_string);
-    if (Module._PyErrOccurred()) {
+    if (Module._PyErr_Occurred()) {
       pythonexc2js();
     }
   };
@@ -371,13 +371,12 @@ globalThis.languagePluginLoader = new Promise((resolve, reject) => {
   Module.runPython = code => Module.pyodide_py.eval_code(code, Module.globals);
 
   // clang-format off
-  Module.loadPackagesFromImports  = async function(code, messageCallback, errorCallback) {
+  Module.loadPackagesFromImports = async function(code, messageCallback, errorCallback) {
     let imports = Module.pyodide_py.find_imports(code).deepCopyToJavascript();
     if (imports.length === 0) {
       return;
     }
-    let packageNames =
-        self.pyodide._module.packages.import_name_to_package_name;
+    let packageNames = self.pyodide._module.packages.import_name_to_package_name;
     let packages = new Set();
     for (let name of imports) {
       if (name in packageNames) {
@@ -385,9 +384,7 @@ globalThis.languagePluginLoader = new Promise((resolve, reject) => {
       }
     }
     if (packages.size) {
-      await loadPackage(
-        Array.from(packages.keys()), messageCallback, errorCallback
-      );
+      await loadPackage(Array.from(packages.keys()), messageCallback, errorCallback);
     }
   };
   // clang-format on
@@ -399,10 +396,14 @@ globalThis.languagePluginLoader = new Promise((resolve, reject) => {
     return Module.runPython(code);
   };
 
-  Module.registerJsModule = function(
-      name, module) { Module.pyodide_py.register_js_module(name, module); };
-  Module.unregisterJsModule = function(
-      name) { Module.pyodide_py.unregister_js_module(name); };
+  // clang-format off
+  Module.registerJsModule = function(name, module) {
+    Module.pyodide_py.register_js_module(name, module);
+  };
+  Module.unregisterJsModule = function(name) {
+    Module.pyodide_py.unregister_js_module(name);
+  };
+  // clang-format on
 
   Module.function_supports_kwargs = function(funcstr) {
     // This is basically a finite state machine (except for paren counting)
@@ -495,6 +496,7 @@ globalThis.languagePluginLoader = new Promise((resolve, reject) => {
 
   Module.locateFile = (path) => baseURL + path;
   Module.postRun = async () => {
+    self.pyodide.registerJsModule("js", globalThis);
     // Unfortunately the indentation here matters.
     Module.runPythonSimple(`
 def temp():
@@ -508,7 +510,6 @@ def temp():
 
   Module.version = pyodide.__version__
   Module.globals = globals
-  Module.pyodide_py = pyodide
 
 temp()
 del temp
@@ -519,7 +520,6 @@ del temp
     let json = await response.json();
 
     fixRecursionLimit(self.pyodide);
-    self.pyodide.registerJsModule("js", globalThis);
     self.pyodide = makePublicAPI(self.pyodide, PUBLIC_API);
     self.pyodide._module.packages = json;
     resolve();
