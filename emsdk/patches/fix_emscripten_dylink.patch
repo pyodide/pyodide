@@ -81,24 +81,6 @@ diff --git a/emdsk/upstream/emscripten/src/library_dylink.js b/emsdk/upstream/em
 index 876492b..750a18d 100644
 --- a/emdsk/upstream/emscripten/src/library_dylink.js
 +++ b/emsdk/upstream/emscripten/src/library_dylink.js
-@@ -3,7 +3,9 @@
- //
- // ==========================================================================
-
-+
- var LibraryDylink = {
-+
- #if RELOCATABLE
-   $asmjsMangle: function(x) {
-     var unmangledSymbols = {{{ buildStringArray(WASM_SYSTEM_EXPORTS) }}};
-@@ -57,6 +59,7 @@ var LibraryDylink = {
-         err("new GOT entry: " + symName);
- #endif
-       }
-+
-       return GOT[symName]
-     }
-   },
 @@ -90,33 +93,84 @@ var LibraryDylink = {
        var value = exports[symName];
  #if !WASM_BIGINT
