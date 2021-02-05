@@ -92,10 +92,6 @@
 - JsBoundMethod is now a subclass of JsProxy, which fixes nested attribute
   access and various other strange bugs.
   [#1124](https://github.com/iodide-project/pyodide/pull/1124)
-- In console.html: sync behavior, full stdout/stderr support, clean namespace,
-  bigger font, correct result representation, clean traceback
-  [#1125](https://github.com/iodide-project/pyodide/pull/1125) and
-  [#1141](https://github.com/iodide-project/pyodide/pull/1141)
 - Javascript functions imported like `from js import fetch` no longer trigger
   "invalid invocation" errors (issue
   [#461](https://github.com/iodide-project/pyodide/issues/461)) and
@@ -104,6 +100,10 @@
   [#1126](https://github.com/iodide-project/pyodide/pull/1126)
 - Javascript bound method calls now work correctly with keyword arguments.
   [#1138](https://github.com/iodide-project/pyodide/pull/1138)
+- In console.html: sync behavior, full stdout/stderr support, clean namespace,
+  bigger font, correct result representation, clean traceback
+  [#1125](https://github.com/iodide-project/pyodide/pull/1125) and
+  [#1141](https://github.com/iodide-project/pyodide/pull/1141)
 - Switched from ̀Jedi to rlcompleter for completion in
   `pyodide.console.InteractiveConsole` and so in `console.html`. This fixes
   some completion issues (see

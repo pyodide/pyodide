@@ -387,7 +387,7 @@ EM_JS_REF(JsRef, pyproxy_new, (PyObject * ptrobj), {
   // clang-format on
   Module.PyProxies[ptrobj] = proxy;
   let is_awaitable = __pyproxy_is_awaitable(ptrobj);
-  if(is_awaitable){
+  if (is_awaitable) {
     Object.assign(target, Module.PyProxyAwaitableMethods);
   }
 
