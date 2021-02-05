@@ -302,7 +302,7 @@ globalThis.languagePluginLoader = new Promise((resolve, reject) => {
     }
     pyodide.runPythonWithLocals(`
       import sys
-      sys.setrecursionlimit(int(${recursionLimit}))
+      sys.setrecursionlimit(${recursionLimit})
     `);
   };
 
