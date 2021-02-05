@@ -144,6 +144,84 @@ _pyproxy_apply(PyObject* pyobj, JsRef idargs)
   return idresult;
 }
 
+// Return 2 if obj is iterator
+// Return 1 if iterable but not iterator
+// Return 0 if not iterable
+int
+_pyproxy_iterator_type(PyObject* obj)
+{
+  if (PyIter_Check(obj)) {
+    return 2;
+  }
+  PyObject* iter = PyObject_GetIter(obj);
+  int result = iter != NULL;
+  Py_CLEAR(iter);
+  PyErr_Clear();
+  return result;
+}
+
+JsRef
+_pyproxy_iter_next(PyObject* iterator)
+{
+  PyObject* item = PyIter_Next(iterator);
+  if (item == NULL) {
+    return NULL;
+  }
+  JsRef result = python2js(item);
+  Py_CLEAR(item);
+  return result;
+}
+
+JsRef
+_pyproxy_iter_send(PyObject* receiver, JsRef jsval)
+{
+  bool success = false;
+  PyObject* v = NULL;
+  PyObject* retval = NULL;
+  JsRef jsresult = NULL;
+
+  // cf implementation of YIELD_FROM opcode in ceval.c
+  v = js2python(jsval);
+  FAIL_IF_NULL(v);
+  if (PyGen_CheckExact(receiver) || PyCoro_CheckExact(receiver)) {
+    retval = _PyGen_Send((PyGenObject*)receiver, v);
+  } else if (v == Py_None) {
+    retval = Py_TYPE(receiver)->tp_iternext(receiver);
+  } else {
+    _Py_IDENTIFIER(send);
+    retval = _PyObject_CallMethodIdObjArgs(receiver, &PyId_send, v, NULL);
+  }
+  FAIL_IF_NULL(retval);
+
+  jsresult = python2js(retval);
+  FAIL_IF_NULL(jsresult);
+
+  success = true;
+finally:
+  Py_CLEAR(v);
+  Py_CLEAR(retval);
+  if (!success) {
+    hiwire_CLEAR(jsresult);
+  }
+  return jsresult;
+}
+
+JsRef
+_pyproxy_iter_fetch_stopiteration()
+{
+  PyObject* val = NULL;
+  // cf implementation of YIELD_FROM opcode in ceval.c
+  // _PyGen_FetchStopIterationValue returns an error code, but it seems
+  // redundant
+  _PyGen_FetchStopIterationValue(&val);
+  if (val == NULL) {
+    return NULL;
+  }
+  JsRef result = python2js(val);
+  Py_CLEAR(val);
+  return result;
+}
+
 void
 _pyproxy_destroy(PyObject* ptrobj)
 { // See bug #1049
@@ -298,6 +376,15 @@ EM_JS_REF(JsRef, pyproxy_new, (PyObject * ptrobj), {
   target['$$'] = { ptr : ptrobj, type : 'PyProxy' };
   Object.assign(target, Module.PyProxyPublicMethods);
   let proxy = new Proxy(target, Module.PyProxyHandlers);
+  let itertype = __pyproxy_iterator_type(ptrobj);
+  // clang-format off
+  if (itertype === 2) {
+    Object.assign(target, Module.PyProxyIteratorMethods);
+  }
+  if (itertype === 1) {
+    Object.assign(target, Module.PyProxyIterableMethods);
+  }
+  // clang-format on
   Module.PyProxies[ptrobj] = proxy;
   let is_awaitable = __pyproxy_is_awaitable(ptrobj);
   if(is_awaitable){
@@ -337,9 +424,7 @@ EM_JS_NUM(int, pyproxy_init_js, (), {
       if(jsref_repr === 0){
         _pythonexc2js();
       }
-      let repr = Module.hiwire.get_value(jsref_repr);
-      Module.hiwire.decref(jsref_repr);
-      return repr;
+      return Module.hiwire.pop_value(jsref_repr);
     },
     destroy : function() {
       let ptrobj = _getPtr(this);
@@ -360,9 +445,71 @@ EM_JS_NUM(int, pyproxy_init_js, (), {
       if(idresult === 0){
         _pythonexc2js();
       }
-      let jsresult = Module.hiwire.get_value(idresult);
+      return Module.hiwire.pop_value(idresult);
+    },
+    shallowCopyToJavascript : function(){
+      let idresult = _python2js_with_depth(_getPtr(this), depth);
+      let result = Module.hiwire.get_value(idresult);
       Module.hiwire.decref(idresult);
-      return jsresult;
+      return result;
+    },
+    deepCopyToJavascript : function(depth = -1){
+      let idresult = _python2js_with_depth(_getPtr(this), depth);
+      let result = Module.hiwire.get_value(idresult);
+      Module.hiwire.decref(idresult);
+      return result;
+    },
+  };
+
+  // See: 
+  // https://docs.python.org/3/c-api/iter.html
+  // https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Iteration_protocols
+  // This avoids allocating a PyProxy wrapper for the temporary iterator.
+  Module.PyProxyIterableMethods = {
+    [Symbol.iterator] : function*() {
+      let iterptr = _PyObject_GetIter(_getPtr(this));
+      if(iterptr === 0){
+        pythonexc2js();
+      }
+      let item;
+      while((item = __pyproxy_iter_next(iterptr))){
+        yield Module.hiwire.pop_value(item);
+      }
+      if(_PyErr_Occurred()){
+        pythonexc2js();
+      }
+      _Py_DecRef(iterptr);
+    }
+  };
+
+  Module.PyProxyIteratorMethods = {
+    [Symbol.iterator] : function() {
+      return this;
+    },    
+    next : function(arg) {
+      let idresult;
+      // Note: arg is optional, if arg is not supplied, it will be undefined
+      // which gets converted to "Py_None". This is as intended.
+      let idarg = Module.hiwire.new_value(arg);
+      try {
+        idresult = __pyproxy_iter_send(_getPtr(this), idarg);
+      } catch(e) {
+        Module.fatal_error(e);
+      } finally {
+        Module.hiwire.decref(idarg);
+      }      
+
+      let done = false;
+      if(idresult === 0){
+        idresult = __pyproxy_iter_fetch_stopiteration();
+        if (idresult){
+          done = true;
+        } else {
+          _pythonexc2js();
+        }
+      }
+      let value = Module.hiwire.pop_value(idresult);
+      return { done, value };
     },
   };
 
@@ -408,9 +555,7 @@ EM_JS_NUM(int, pyproxy_init_js, (), {
       if(idresult === 0){
         _pythonexc2js();
       }
-      let jsresult = Module.hiwire.get_value(idresult);
-      Module.hiwire.decref(idresult);
-      return jsresult;
+      return Module.hiwire.pop_value(idresult);
     },
     set: function (jsobj, jskey, jsval) {
       if(Reflect.has(jsobj, jskey) && !ignoredTargetFields.includes(jskey)){
@@ -431,9 +576,7 @@ EM_JS_NUM(int, pyproxy_init_js, (), {
       if(idresult === 0){
         _pythonexc2js();
       }
-      let jsresult = Module.hiwire.get_value(idresult);
-      Module.hiwire.decref(idresult);
-      return jsresult;
+      return Module.hiwire.pop_value(idresult);
     },
     deleteProperty: function (jsobj, jskey) {
       if(Reflect.has(jsobj, jskey) && !ignoredTargetFields.includes(jskey)){
@@ -452,9 +595,7 @@ EM_JS_NUM(int, pyproxy_init_js, (), {
       if(idresult === 0){
         _pythonexc2js();
       }
-      let jsresult = Module.hiwire.get_value(idresult);
-      Module.hiwire.decref(idresult);
-      return jsresult;
+      return Module.hiwire.pop_value(idresult);
     },
     ownKeys: function (jsobj) {
       let result = new Set(Reflect.ownKeys(jsobj));
@@ -468,8 +609,7 @@ EM_JS_NUM(int, pyproxy_init_js, (), {
       } catch(e) {
         Module.fatal_error(e);
       }
-      let jsresult = Module.hiwire.get_value(idresult);
-      Module.hiwire.decref(idresult);
+      let jsresult = Module.hiwire.pop_value(idresult);
       for(let key of jsresult){
         result.add(key);
       }

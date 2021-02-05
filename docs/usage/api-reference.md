@@ -21,6 +21,7 @@ Backward compatibility of the API is not guaranteed at this point.
    pyodide.console.InteractiveConsole
    pyodide.console.repr_shorten
    pyodide.console.displayhook
+   pyodide.webloop.WebLoop
 ```
 
 

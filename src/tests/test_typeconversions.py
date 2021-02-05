@@ -22,14 +22,14 @@ def test_python2js(selenium):
     )
     assert selenium.run_js(
         """
-        let x = pyodide.runPython("[1, 2, 3]");
+        let x = pyodide.runPython("[1, 2, 3]").deepCopyToJavascript();
         return ((x instanceof window.Array) && (x.length === 3) &&
                 (x[0] == 1) && (x[1] == 2) && (x[2] == 3))
         """
     )
     assert selenium.run_js(
         """
-        let x = pyodide.runPython("{42: 64}");
+        let x = pyodide.runPython("{42: 64}").deepCopyToJavascript();
         return (typeof x === "object") && (x[42] === 64)
         """
     )
@@ -230,7 +230,7 @@ def test_recursive_list_to_js(selenium_standalone):
         x.append(x)
         """
     )
-    selenium_standalone.run_js("x = pyodide.pyimport('x');")
+    selenium_standalone.run_js("x = pyodide.pyimport('x').deepCopyToJavascript();")
 
 
 def test_recursive_dict_to_js(selenium_standalone):
@@ -240,27 +240,37 @@ def test_recursive_dict_to_js(selenium_standalone):
         x[0] = x
         """
     )
-    selenium_standalone.run_js("x = pyodide.pyimport('x');")
+    selenium_standalone.run_js("x = pyodide.pyimport('x').deepCopyToJavascript();")
 
 
-def test_list_from_js(selenium):
+def test_list_js2py2js(selenium):
     selenium.run_js("window.x = [1,2,3];")
     assert_js_to_py_to_js(selenium, "x")
 
 
-def test_dict_from_js(selenium):
+def test_dict_js2py2js(selenium):
     selenium.run_js("window.x = { a : 1, b : 2, 0 : 3 };")
     assert_js_to_py_to_js(selenium, "x")
 
 
-def test_error_from_js(selenium):
+def test_error_js2py2js(selenium):
     selenium.run_js("window.err = new Error('hello there?');")
     assert_js_to_py_to_js(selenium, "err")
 
 
-def test_error_from_python(selenium):
+def test_error_py2js2py(selenium):
     selenium.run("err = Exception('hello there?');")
     assert_py_to_js_to_py(selenium, "err")
+
+
+def test_list_py2js2py(selenium):
+    selenium.run("x = ['a', 'b']")
+    assert_py_to_js_to_py(selenium, "x")
+
+
+def test_dict_py2js2py(selenium):
+    selenium.run("x = {'a' : 5, 'b' : 1}")
+    assert_py_to_js_to_py(selenium, "x")
 
 
 def test_jsproxy_attribute_error(selenium):

@@ -28,6 +28,11 @@
   `pyodide.loadPackage`, `pyodide.runPythonAsync` and
   `pyodide.loadPackagesFromImport`, then the messages are no longer
   automatically logged to the console.
+- Instead of automatically copying Python lists and dicts into Javascript, they
+  are now wrapped in `PyProxy`. Added new `deepCopyToJavascript` and 
+  `shallowCopyToJavascript` APIs to `PyProxy` which cause the copying behavior
+  that used to be implicit.
+  [#1167](https://github.com/iodide-project/pyodide/pull/1167)
 
 ### Added
 - `micropip` now supports installing wheels from relative urls. 
@@ -53,10 +58,25 @@
   raise a `KeyboardInterrupt` by writing to the interrupt buffer.
   [#1148](https://github.com/iodide-project/pyodide/pull/1148) and
   [#1173](https://github.com/iodide-project/pyodide/pull/1173)
-- Added asyncio support.
-  [#891](https://github.com/iodide-project/pyodide/pull/891)
+- Added a Python event loop to support asyncio by scheduling coroutines to run 
+  as jobs on the browser event loop. This event loop is available by default and 
+  automatically enabled by any relevant asyncio API, so for instance 
+  `asyncio.ensure_future` works without any configuration.
   [#1158](https://github.com/iodide-project/pyodide/pull/1158)
+- A `PyProxy` of a Python coroutine or awaitable is now an awaitable javascript
+  object. Awaiting a coroutine will schedule it to run on the Python event loop
+  using `asyncio.ensure_future`.
   [#1170](https://github.com/iodide-project/pyodide/pull/1170)
+- A `JsProxy` of a Javascript `Promise` or other awaitable object is now a 
+  Python awaitable.
+  [#880](https://github.com/iodide-project/pyodide/pull/880)
+- Made PyProxy of an iterable Python object an iterable Js object: defined the
+  `[Symbol.iterator]` method, can be used like `for(let x of proxy)`.
+  Made a PyProxy of a Python iterator an iterator: `proxy.next()` is
+  translated to `next(it)`.
+  Made a PyProxy of a Python generator into a Javascript generator:
+  `proxy.next(val)` is translated to `gen.send(val)`.
+  [#1180](https://github.com/iodide-project/pyodide/pull/1180)
 
 ### Fixed
 - getattr and dir on JsProxy now report consistent results and include all
