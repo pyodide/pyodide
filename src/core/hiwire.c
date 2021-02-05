@@ -110,6 +110,13 @@ EM_JS(int, hiwire_init, (), {
     _hiwire.objects.delete(idval);
   };
 
+  Module.hiwire.pop_value = function(idval)
+  {
+    let result = Module.hiwire.get_value(idval);
+    Module.hiwire.decref(idval);
+    return result;
+  };
+
   Module.hiwire.isPromise = function(obj)
   {
     // clang-format off
