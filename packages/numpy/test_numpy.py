@@ -178,7 +178,13 @@ def test_python2js_numpy_scalar(selenium_standalone):
         assert (
             selenium.run_js(
                 """
-                return pyodide.pyimport('x').deepCopyToJavascript() == 1
+                let x = pyodide.pyimport('x');
+                if(x.deepCopyToJavascript){
+                    let result = x.deepCopyToJavascript();
+                    x.destroy();
+                    return result;
+                }
+                return x
                 """
             )
             is True
