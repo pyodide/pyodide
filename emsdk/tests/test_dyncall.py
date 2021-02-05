@@ -46,7 +46,6 @@ void foo() {
                 "-g4",
                 "-s",
                 "SIDE_MODULE=1",
-                "-sWASM_BIGINT",
                 "library.c",
                 "-o",
                 "library.wasm",
@@ -68,7 +67,6 @@ void foo() {
                 "library.wasm",
                 "-s",
                 "EMULATE_FUNCTION_POINTER_CASTS=1",
-                "-sWASM_BIGINT",
             ],
             check=True,
         )
