@@ -628,6 +628,37 @@ EM_JS(int, pyproxy_init, (), {
     },
   };
 
+
+  // A special proxy that we use to wrap pyodide.globals to allow property access
+  // like `pyodide.globals.x`.
+  // TODO: Should we have this?
+  Module.NamespaceProxyHandlers = {
+    has : function(obj, key){
+      return Reflect.has(obj, key) || obj.has(key);
+    },
+    get : function(obj, key){
+      if(Reflect.has(obj, key)){
+        return Reflect.get(obj, key);
+      }
+      return obj.get(key);
+    },
+    set : function(obj, key, value){
+      if(Reflect.has(jsobj, jskey)){
+        throw new Error(`Cannot set read only field ${jskey}`);
+      }
+      obj.set(key, value);
+    },
+    ownKeys: function (obj) {
+      let result = new Set(Reflect.ownKeys(obj));
+      let iter = obj.keys();
+      for(let key of iter){
+        result.add(key);
+      }
+      iter.destroy();
+      return Array.from(result);
+    }
+  };
+
   return 0;
 // clang-format on
 });

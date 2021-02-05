@@ -390,10 +390,14 @@ globalThis.languagePluginLoader = new Promise((resolve, reject) => {
     return Module.runPython(code);
   };
 
-  Module.registerJsModule = function(
-      name, module) { Module.pyodide_py.register_js_module(name, module); };
-  Module.unregisterJsModule = function(
-      name) { Module.pyodide_py.unregister_js_module(name); };
+  // clang-format off
+  Module.registerJsModule = function(name, module) { 
+    Module.pyodide_py.register_js_module(name, module); 
+  };
+  Module.unregisterJsModule = function(name) { 
+    Module.pyodide_py.unregister_js_module(name); 
+  };
+  // clang-format on
 
   Module.function_supports_kwargs = function(funcstr) {
     // This is basically a finite state machine (except for paren counting)
@@ -487,6 +491,9 @@ globalThis.languagePluginLoader = new Promise((resolve, reject) => {
   Module.locateFile = (path) => baseURL + path;
   Module.postRun = async () => {
     Module.version = Module.pyodide_py.__version__;
+    // Wrap "globals" in a special Proxy that allows `pyodide.globals.x` access.
+    // TODO: Should we have this?
+    Module.globals = new Proxy(Module.globals, Module.NamespaceProxyHandlers);
     delete self.Module;
     let response = await fetch(`${baseURL}packages.json`);
     let json = await response.json();
