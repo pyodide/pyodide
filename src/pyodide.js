@@ -359,6 +359,15 @@ globalThis.languagePluginLoader = new Promise((resolve, reject) => {
     throw e;
   };
 
+  Module.runPythonSimple = function(code) {
+    let code_c_string = Module.stringToNewUTF8(code);
+    Module._PyRun_SimpleString(code_c_string);
+    Module._free(code_c_string);
+    if (Module._PyErrOccurred()) {
+      pythonexc2js();
+    }
+  };
+
   Module.runPython = code => Module.pyodide_py.eval_code(code, Module.globals);
 
   // clang-format off
@@ -487,9 +496,30 @@ globalThis.languagePluginLoader = new Promise((resolve, reject) => {
   Module.locateFile = (path) => baseURL + path;
   Module.postRun = async () => {
     Module.version = Module.pyodide_py.__version__;
+
+    // Unfortunately the indentation here matters.
+    Module.runPythonSimple(`
+def temp():
+  import pyodide
+  import __main__
+  from js import Module
+  import builtins
+
+  globals = __main__.__dict__
+  globals.update(builtins.__dict__)
+
+  Module.version = pyodide.__version__
+  Module.globals = globals
+  Module.pyodide_py = pyodide
+
+temp()
+del temp
+    `);
+
     delete self.Module;
     let response = await fetch(`${baseURL}packages.json`);
     let json = await response.json();
+
     fixRecursionLimit(self.pyodide);
     self.pyodide.registerJsModule("js", globalThis);
     self.pyodide = makePublicAPI(self.pyodide, PUBLIC_API);

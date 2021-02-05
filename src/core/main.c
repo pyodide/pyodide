@@ -11,7 +11,6 @@
 #include "keyboard_interrupt.h"
 #include "pyproxy.h"
 #include "python2js.h"
-#include "runpython.h"
 
 #define FATAL_ERROR(args...)                                                   \
   do {                                                                         \
@@ -96,7 +95,7 @@ main(int argc, char** argv)
   TRY_INIT(hiwire);
   TRY_INIT(error_handling);
   TRY_INIT(js2python);
-  TRY_INIT_WITH_CORE_MODULE(JsProxy); // JsProxy needs to be before JsImport
+  TRY_INIT_WITH_CORE_MODULE(JsProxy);
   TRY_INIT(pyproxy);
   TRY_INIT(python2js);
   TRY_INIT(keyboard_interrupt);
@@ -105,10 +104,6 @@ main(int argc, char** argv)
   if (PyDict_SetItemString(module_dict, "_pyodide_core", core_module)) {
     FATAL_ERROR("Failed to add '_pyodide_core' module to modules dict.");
   }
-
-  // pyodide.py imported for these two.
-  // They should appear last so that core_module is ready.
-  TRY_INIT(runpython);
 
   Py_CLEAR(core_module);
   printf("Python initialization complete\n");
