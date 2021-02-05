@@ -108,7 +108,7 @@
   `pyodide.console.InteractiveConsole` and so in `console.html`. This fixes
   some completion issues (see
   [#821](https://github.com/iodide-project/pyodide/issues/821) and
-  [#1160](https://github.com/iodide-project/pyodide/issues/821)
+  [#1160](https://github.com/iodide-project/pyodide/issues/1160)
 
 ## Version 0.16.1
 *December 25, 2020*
