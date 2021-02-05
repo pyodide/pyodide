@@ -250,6 +250,7 @@ class CodeRunner:
                 res = await res
             return res
 
+
 def eval_code(
     code: str,
     globals: Optional[Dict[str, Any]] = None,
