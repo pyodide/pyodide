@@ -37,6 +37,7 @@ import sys
 # absolute import is necessary as this file will be symlinked
 # under tools
 from pyodide_build import common
+from pyodide_build._f2c_fixes import fix_f2c_clapack_calls
 
 
 TOOLSDIR = common.TOOLSDIR
@@ -178,6 +179,7 @@ def f2c(args, dryrun=False):
                 subprocess.check_call(
                     ["f2c", os.path.basename(filename)], cwd=os.path.dirname(filename)
                 )
+                fix_f2c_clapack_calls(arg[:-2] + ".c")
             new_args.append(arg[:-2] + ".c")
             found_source = True
         else:
