@@ -495,8 +495,6 @@ globalThis.languagePluginLoader = new Promise((resolve, reject) => {
 
   Module.locateFile = (path) => baseURL + path;
   Module.postRun = async () => {
-    Module.version = Module.pyodide_py.__version__;
-
     // Unfortunately the indentation here matters.
     Module.runPythonSimple(`
 def temp():
