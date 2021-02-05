@@ -58,6 +58,13 @@
   raise a `KeyboardInterrupt` by writing to the interrupt buffer.
   [#1148](https://github.com/iodide-project/pyodide/pull/1148) and
   [#1173](https://github.com/iodide-project/pyodide/pull/1173)
+- Made PyProxy of an iterable Python object an iterable Js object: defined the
+  `[Symbol.iterator]` method, can be used like `for(let x of proxy)`.
+  Made a PyProxy of a Python iterator an iterator: `proxy.next()` is
+  translated to `next(it)`.
+  Made a PyProxy of a Python generator into a Javascript generator:
+  `proxy.next(val)` is translated to `gen.send(val)`.
+  [#1180](https://github.com/iodide-project/pyodide/pull/1180)
 
 ### Fixed
 - getattr and dir on JsProxy now report consistent results and include all
