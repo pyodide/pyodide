@@ -109,8 +109,7 @@ main(int argc, char** argv)
   PyObject* __main__ = PyImport_AddModule("__main__");
   PyObject* globals = PyModule_GetDict(__main__);
   JsRef globals_proxy = python2js(globals);
-  EM_ASM({ Module.raw_globals = Module.hiwire.pop_value($0) },
-         globals_proxy);
+  EM_ASM({ Module.raw_globals = Module.hiwire.pop_value($0) }, globals_proxy);
 
   Py_CLEAR(core_module);
   printf("Python initialization complete\n");

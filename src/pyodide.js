@@ -512,11 +512,11 @@ def temp(Module):
     `);
     Module.raw_globals["temp"](Module);
     Module.runPythonSimple(`del temp`);
-    
+
     delete self.Module;
     let response = await fetch(`${baseURL}packages.json`);
     let json = await response.json();
-    
+
     fixRecursionLimit(self.pyodide);
     self.pyodide.registerJsModule("js", globalThis);
     self.pyodide = makePublicAPI(self.pyodide, PUBLIC_API);
