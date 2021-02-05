@@ -369,7 +369,7 @@ globalThis.languagePluginLoader = new Promise((resolve, reject) => {
     let result = Module.pyodide_py.eval_code(code, Module.globals, locals);
     locals.destroy();
     return result;
-  }
+  };
 
   // clang-format off
   Module.loadPackagesFromImports  = async function(code, messageCallback, errorCallback) {
