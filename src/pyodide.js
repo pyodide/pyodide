@@ -496,13 +496,11 @@ globalThis.languagePluginLoader = new Promise((resolve, reject) => {
 
   Module.locateFile = (path) => baseURL + path;
   Module.postRun = async () => {
-    self.pyodide.registerJsModule("js", globalThis);
     // Unfortunately the indentation here matters.
     Module.runPythonSimple(`
-def temp():
+def temp(Module):
   import pyodide
   import __main__
-  from js import Module
   import builtins
 
   globals = __main__.__dict__
@@ -510,16 +508,17 @@ def temp():
 
   Module.version = pyodide.__version__
   Module.globals = globals
-
-temp()
-del temp
+  Module.pyodide_py = pyodide
     `);
-
+    Module.raw_globals["temp"](Module);
+    Module.runPythonSimple(`del temp`);
+    
     delete self.Module;
     let response = await fetch(`${baseURL}packages.json`);
     let json = await response.json();
-
+    
     fixRecursionLimit(self.pyodide);
+    self.pyodide.registerJsModule("js", globalThis);
     self.pyodide = makePublicAPI(self.pyodide, PUBLIC_API);
     self.pyodide._module.packages = json;
     resolve();
