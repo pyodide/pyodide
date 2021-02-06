@@ -150,7 +150,7 @@ def test_monkeypatch_eval_code(selenium):
         """
         pyodide.eval_code = old_eval_code
         """
-    )    
+    )
 
 
 def test_hiwire_is_promise(selenium):
