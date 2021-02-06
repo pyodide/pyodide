@@ -146,6 +146,11 @@ def test_monkeypatch_eval_code(selenium):
     )
     assert selenium.run("x = 99; 5") == [3, 5]
     assert selenium.run("7") == [99, 7]
+    selenium.run(
+        """
+        pyodide.eval_code = old_eval_code
+        """
+    )    
 
 
 def test_hiwire_is_promise(selenium):
