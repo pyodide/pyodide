@@ -53,7 +53,7 @@ globalThis.languagePluginLoader = new Promise((resolve, reject) => {
           if (Module['preloadedWasm'][path] === undefined) {
             promise = promise
               .then(() => Module['loadWebAssemblyModule'](
-                FS.readFile(path), {loadAsync: true}))
+                FS.readFile(path), {loadAsync: true,allowUndefined: true}))
               .then((module) => {
                 Module['preloadedWasm'][path] = module;
               });
@@ -250,6 +250,7 @@ globalThis.languagePluginLoader = new Promise((resolve, reject) => {
 
     if (!isFirefox) {
       await preloadWasm();
+      self.pyodide._module.reportUndefinedSymbols();
     }
     messageCallback(resolveMsg);
 
@@ -380,7 +381,7 @@ globalThis.languagePluginLoader = new Promise((resolve, reject) => {
     let packages = new Set();
     for (let name of imports) {
       if (name in packageNames) {
-        packages.add(name);
+        packages.add(packageNames[name]);
       }
     }
     if (packages.size) {
@@ -530,9 +531,11 @@ def temp(Module):
     // The emscripten module needs to be at this location for the core
     // filesystem to install itself. Once that's complete, it will be replaced
     // by the call to `makePublicAPI` with a more limited public API.
-    self.pyodide = pyodide(Module);
-    self.pyodide.loadedPackages = {};
-    self.pyodide.loadPackage = loadPackage;
+    pyodide(Module).then((x) => {
+      self.pyodide = x;
+      self.pyodide.loadedPackages = {};
+      self.pyodide.loadPackage = loadPackage;
+    }, () => {});
   });
 });
 languagePluginLoader
