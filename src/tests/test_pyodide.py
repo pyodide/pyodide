@@ -154,6 +154,7 @@ def test_monkeypatch_eval_code(selenium):
             """
         )
 
+
 def test_hiwire_is_promise(selenium):
     for s in [
         "0",
