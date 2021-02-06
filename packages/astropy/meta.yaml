@@ -5,6 +5,8 @@ package:
 source:
   url: https://pypi.io/packages/source/a/astropy/astropy-3.2.3.tar.gz
   sha256: 47f00816c2978fdd10f448c8f0337d6dca7b8cbeaab4bf272b5fd37cb4b890d3
+  patches:
+    - patches/fix_link_opts.patch
 
 requirements:
   run:

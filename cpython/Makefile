@@ -109,15 +109,15 @@ $(BUILD)/Makefile: $(BUILD)/.patched $(ZLIBBUILD)/.configured $(SQLITEBUILD)/lib
 	cp config.site $(BUILD)/
 	( \
 		cd $(BUILD); \
-		EMCC_CFLAGS="-s WASM=0" CONFIG_SITE=./config.site READELF=true emconfigure \
+		CONFIG_SITE=./config.site READELF=true emconfigure \
 		  ./configure \
-			  CFLAGS="-fPIC" \
+			  CFLAGS="-fPIC -sEMULATE_FUNCTION_POINTER_CASTS=1" \
 			  CPPFLAGS="-I$(SQLITEBUILD) -I$(BZIP2BUILD) -I$(ZLIBBUILD)" \
 			  --without-pymalloc \
 			  --disable-shared \
 			  --disable-ipv6 \
 			  --without-gcc \
-			  --host=asmjs-unknown-emscripten \
+			  --host=wasm32-unknown-emscripten\
 			  --build=$(shell $(BUILD)/config.guess) \
 			  --prefix=$(INSTALL) ; \
 	)

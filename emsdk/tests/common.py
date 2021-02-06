@@ -1,6 +1,15 @@
-MAIN_C = """
+MAIN_C = r"""
 #include <stdio.h>
 #include <dlfcn.h>
+#include <setjmp.h>
+
+void never_called()
+{
+    jmp_buf buf;
+    int i=setjmp(buf);
+    longjmp(buf,1);
+}
+
 
 int main() {
   puts("hello from main");
