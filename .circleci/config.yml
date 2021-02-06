@@ -23,7 +23,7 @@ jobs:
     working_directory: ~/repo
 
     docker:
-      - image: python:3.8-alpine-node
+      - image: circle-ci/python:3.8.2-node
 
     steps:
       - checkout
