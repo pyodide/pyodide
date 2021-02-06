@@ -49,7 +49,10 @@ extensions = [
     "sphinx.ext.autosummary",
     "sphinxcontrib.napoleon",
     "myst_parser",
+    "sphinx_js",
 ]
+
+js_source_path = "../src/"
 
 autosummary_generate = True
 autodoc_default_flags = ["members", "inherited-members"]

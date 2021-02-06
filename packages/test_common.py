@@ -26,7 +26,7 @@ def registered_packages_meta():
     }
 
 
-UNSUPPORTED_PACKAGES = {"chrome": ["pandas", "scipy", "scikit-learn"], "firefox": []}
+UNSUPPORTED_PACKAGES = {"chrome": [], "firefox": []}
 
 
 @pytest.mark.parametrize("name", registered_packages())
@@ -68,34 +68,9 @@ def test_import(name, selenium_standalone):
         ))
         """
     )
-
-    selenium_standalone.load_package(name)
-
-    # Make sure there are no additional .pyc file
-    assert (
-        selenium_standalone.run(
-            """
-        len(list(glob.glob(
-            '/lib/python3.8/site-packages/**/*.pyc',
-            recursive=True)
-        ))
-        """
-        )
-        == baseline_pyc
-    )
-
     loaded_packages = []
     for import_name in meta.get("test", {}).get("imports", []):
-
-        if name not in loaded_packages:
-            selenium_standalone.load_package(name)
-            loaded_packages.append(name)
-        try:
-            selenium_standalone.run("import %s" % import_name)
-        except Exception:
-            print(selenium_standalone.logs)
-            raise
-
+        selenium_standalone.run_async("import %s" % import_name)
         # Make sure that even after importing, there are no additional .pyc
         # files
         assert (

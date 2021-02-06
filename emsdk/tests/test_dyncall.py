@@ -33,6 +33,7 @@ void foo() {
   assert(fp(i, 0, 0, 0) == i);
 
   if (i == 0) longjmp(buf, 1);
+
 }
 """
             )
@@ -42,6 +43,7 @@ void foo() {
         subprocess.run(
             [
                 "emcc",
+                "-g4",
                 "-s",
                 "SIDE_MODULE=1",
                 "library.c",
@@ -57,6 +59,7 @@ void foo() {
         subprocess.run(
             [
                 "emcc",
+                "-g4",
                 "-s",
                 "MAIN_MODULE=1",
                 "main.c",
@@ -68,4 +71,4 @@ void foo() {
             check=True,
         )
         out = subprocess.run(["node", "a.out.js"], capture_output=True, check=True)
-        assert out.stdout == b"hello from main\n0\n4\n"
+        assert out.stdout == b"hello from main\n0\n1\n"
