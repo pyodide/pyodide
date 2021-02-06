@@ -3,6 +3,7 @@
  */
 
 globalThis.languagePluginLoader = new Promise((resolve, reject) => {
+  let Module = {};
   // Note: PYODIDE_BASE_URL is an environement variable replaced in
   // in this template in the Makefile. It's recommended to always set
   // languagePluginUrl in any case.
@@ -351,7 +352,6 @@ globalThis.languagePluginLoader = new Promise((resolve, reject) => {
 
   ////////////////////////////////////////////////////////////
   // Loading Pyodide
-  let Module = {};
   self.Module = Module;
 
   Module.noImageDecoding = true;
