@@ -5,10 +5,12 @@ package:
 source:
   url: https://files.pythonhosted.org/packages/31/29/ede692aa6547dfc1f07a4d69e8411b35225218bcfbe9787e78b67a35d103/pandas-1.0.5.tar.gz
   sha256: 69c5d920a0b2a9838e677f78f4dde506b95ea8e4d30da25859db6469ded84fa8
+  patches:
+    - patches/fix_json_signature.patch
 
 build:
-  cflags: -Wno-implicit-function-declaration
-
+  cflags: -Werror=implicit-function-declaration -Werror=mismatched-parameter-types -Werror=mismatched-return-types
+  ldflags: --Wl,--fatal-warnings
 requirements:
   run:
     - numpy
