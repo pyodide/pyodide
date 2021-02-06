@@ -64,6 +64,7 @@ sections](https://myst-parser.readthedocs.io/en/latest/using/syntax.html#targets
 
 ### Building the docs
 From the directory ``docs``, first install the python dependencies with ``pip install -r requirements-doc.txt``.
+You also need to install JsDoc, which is a ``node`` dependency. Install it with ``sudo npm install -g jsdoc``.
 Then to build the docs run ``make html``.
 The built documentation will be in the subdirectory ``docs/_build/html``. To view them, cd into ``_build/html`` and start a file server,
 for instance ``http-server``.
