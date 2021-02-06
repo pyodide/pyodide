@@ -3,18 +3,17 @@
 
 Only the Python standard library is available after importing Pyodide.
 To use other packages, you’ll need to load them using either:
- - {ref}`pyodide.loadPackage <js_api_pyodide_loadPackage>` for packages built
-   with pyodide, or 
+ - {any}`pyodide.loadPackage` for packages built with pyodide, or 
  - `micropip.install` for pure Python packages with wheels available on PyPi or
    from other URLs.
 
 ```{note}
 `micropip` can also be used to load packages built in pyodide (in
-which case it relies on {ref}`pyodide.loadPackage <js_api_pyodide_loadPackage>`).
+which case it relies on {any}`pyodide.loadPackage`).
 ```
 
 Alternatively you can run Python code without manually pre-loading packages.
-You can do this with {ref}`pyodide.runPythonAsync <js_api_pyodide_runPythonAsync>` 
+You can do this with {any}`pyodide.runPythonAsync` 
 which will automatically download all packages that the code snippet imports. 
 It only supports packages included in Pyodide (not on PyPi) at present.
 
@@ -92,7 +91,7 @@ be the case if the wheels is made using standard python tools (`pip wheel`,
 `setup.py bdist_wheel`).
 
 All required dependencies need also to be previously installed with `micropip`
-or {ref}`pyodide.loadPackage <js_api_pyodide_loadPackage>`.
+or {any}`pyodide.loadPackage`.
 
 If the file is on a remote server, it must set Cross-Origin Resource Sharing (CORS) headers to
 allow access. Otherwise, you can prepend a CORS proxy to the URL. Note however
