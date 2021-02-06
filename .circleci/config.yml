@@ -23,7 +23,7 @@ jobs:
     working_directory: ~/repo
 
     docker:
-      - image: circle-ci/python:3.8.2-node
+      - image: cimg/python:3.8.2-node
 
     steps:
       - checkout
