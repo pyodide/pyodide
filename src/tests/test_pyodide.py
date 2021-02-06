@@ -134,24 +134,25 @@ def test_eval_code_locals():
 
 
 def test_monkeypatch_eval_code(selenium):
-    selenium.run(
-        """
-        import pyodide
-        old_eval_code = pyodide.eval_code
-        x = 3
-        def eval_code(code, ns):
-            return [ns["x"], old_eval_code(code, ns)]
-        pyodide.eval_code = eval_code
-        """
-    )
-    assert selenium.run("x = 99; 5") == [3, 5]
-    assert selenium.run("7") == [99, 7]
-    selenium.run(
-        """
-        pyodide.eval_code = old_eval_code
-        """
-    )
-
+    try:
+        selenium.run(
+            """
+            import pyodide
+            old_eval_code = pyodide.eval_code
+            x = 3
+            def eval_code(code, ns):
+                return [ns["x"], old_eval_code(code, ns)]
+            pyodide.eval_code = eval_code
+            """
+        )
+        assert selenium.run("x = 99; 5") == [3, 5]
+        assert selenium.run("7") == [99, 7]
+    finally:
+        selenium.run(
+            """
+            pyodide.eval_code = old_eval_code
+            """
+        )
 
 def test_hiwire_is_promise(selenium):
     for s in [
