@@ -1,4 +1,4 @@
-export EMSCRIPTEN_VERSION = 2.0.12
+export EMSCRIPTEN_VERSION = 2.0.13
 export BINARYEN_VERSION = version_99
 
 # BASH_ENV tells bash to run pyodide_env.sh on startup, whcih sets various
