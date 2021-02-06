@@ -32,7 +32,7 @@ jobs:
           name: Install prerequisites
           command: |
             pip install -r docs/requirements-doc.txt
-            npm install -g jsdoc
+            sudo npm install -g jsdoc
 
       - run:
           name: Build docs
