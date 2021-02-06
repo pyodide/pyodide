@@ -3,9 +3,8 @@
 
 Python to Javascript conversions occur:
 
-- when returning the final expression from a
-  {ref}`pyodide.runPython <js_api_pyodide_runPython>` call
-- using {ref}`pyodide.pyimport <js_api_pyodide_pyimport>`
+- when returning the final expression from {any}`pyodide.runPython`
+- using {any}`pyodide.pyimport`
 - passing arguments to a Javascript function from Python
 
 Javascript to Python conversions occur:
@@ -122,7 +121,7 @@ foo.call_method(); // This will raise an exception, since the object has been
 ## Using Python objects from Javascript
 
 A Python object (in global scope) can be brought over to Javascript using the
-{ref}`pyodide.pyimport <js_api_pyodide_pyimport>` function. It takes a string
+{any}`pyodide.pyimport` function. It takes a string
 giving the name of the variable, and returns the object, converted to
 Javascript.
 

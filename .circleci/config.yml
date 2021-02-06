@@ -23,14 +23,16 @@ jobs:
     working_directory: ~/repo
 
     docker:
-      - image: python:3.8-alpine
+      - image: cimg/python:3.8.2-node
 
     steps:
       - checkout
 
       - run:
           name: Install prerequisites
-          command: pip install -r docs/requirements-doc.txt
+          command: |
+            pip install -r docs/requirements-doc.txt
+            sudo npm install -g jsdoc
 
       - run:
           name: Build docs

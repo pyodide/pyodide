@@ -31,7 +31,7 @@ languagePluginLoader.then(() => {
 
 ## Running Python code
 
-Python code is run using the {ref}`pyodide.runPython <js_api_pyodide_runPython>`
+Python code is run using the {any}`pyodide.runPython`
 function. It takes as input a string of Python
 code. If the code ends in an expression, it returns the result of the
 expression, converted to Javascript objects (see {ref}`type_conversions`).
@@ -124,7 +124,7 @@ Create and save a test `index.html` page with the following contents:
 
 ## Accessing Python scope from JavaScript
 
-You can also access from JavaScript all functions and variables defined in Python using the {ref}`pyodide.globals <js_api_pyodide_globals>`) object.
+You can also access from JavaScript all functions and variables defined in Python using the {any}`pyodide.globals`) object.
 
 For example, if you initialize the variable `x = numpy.ones([3,3])` in Python, you can access it from JavaScript in your browser's developer console as follows: `pyodide.globals.x`. The same goes for functions and imports. See {ref}`type_conversions` for more details.
 
