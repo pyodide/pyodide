@@ -232,38 +232,6 @@ JsRef
 hiwire_float64array(f64* ptr, int len);
 
 /**
- * Create a new Javascript undefined value.
- *
- * Returns: "New" reference
- */
-JsRef
-hiwire_undefined();
-
-/**
- * Create a new Javascript null value.
- *
- * Returns: "New" reference
- */
-JsRef
-hiwire_null();
-
-/**
- * Create a new Javascript true value.
- *
- * Returns: "New" reference
- */
-JsRef
-hiwire_true();
-
-/**
- * Create a new Javascript false value.
- *
- * Returns: "New" reference
- */
-JsRef
-hiwire_false();
-
-/**
  * Create a new Javascript boolean value.
  * Return value is true if boolean != 0, false if boolean == 0.
  *
