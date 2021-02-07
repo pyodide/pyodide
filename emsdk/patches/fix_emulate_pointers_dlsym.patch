@@ -74,11 +74,9 @@ index 9d232c9..60d3990 100644
 +                auto* export2_ = new Export;
 +                export2_->name = buffer;
 +                export2_->value = orig_name;
-+                printf("Orig_name %s\n",orig_name.str);
 +                export2_->kind = ExternalKind::Function;
 +                module->addExport(export2_);
 +                name = thunk;
-+                printf("Orig_name2 %s,%d\n",orig_name.str,exportCount);
 +            } else {
 +              name = iter->second;
 +            }
