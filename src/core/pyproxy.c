@@ -223,6 +223,92 @@ _pyproxy_destroy(PyObject* ptrobj)
   EM_ASM({ delete Module.PyProxies[$0]; }, ptrobj);
 }
 
+size_t py_buffer_len_offset = offsetof(Py_buffer, len);
+size_t py_buffer_shape_offset = offsetof(Py_buffer, shape);
+
+bool _pyproxy_is_buffer(PyObject* ptrobj){
+  return PyObject_CheckBuffer(ptrobj);
+}
+
+JsRef
+array_to_js(Py_ssize_t *array, int len){
+  JsRef result = hiwire_array();
+  for(int i = 0; i < len; i++){
+    JsRef val = hiwire_int(array[i]);
+    hiwire_push_array(result, val);
+    hiwire_decref(val);
+  }
+  return result;
+}
+
+// The order of these fields has to match the code in getRawBuffer
+typedef struct {
+  void* start_ptr;
+  void* smallest_ptr; 
+  void* largest_ptr;
+  JsRef shape;
+  JsRef strides;
+  Py_buffer* view;
+} buffer_struct;
+
+buffer_struct*
+_pyproxy_memoryview_get_buffer(PyObject* ptrobj){
+  if(!PyObject_CheckBuffer(ptrobj)){
+    return NULL;
+  }
+  Py_buffer view; 
+  if(PyObject_GetBuffer(ptrobj, &view, PyBUF_RECORDS_RO) == -1){
+    PyErr_Clear();
+    return NULL;
+  }
+
+  bool success = false;
+  if(view.ndim == 0){
+    FAIL();
+  }
+  buffer_struct result = { 0 };
+  result.shape = array_to_js(view.shape, view.ndim);
+
+  result.start_ptr = result.smallest_ptr = result.largest_ptr = view.buf;
+
+  if(view.strides == NULL){
+    result.largest_ptr += view.len;
+    Py_ssize_t strides[view.ndim];
+    PyBuffer_FillContiguousStrides(view.ndim, view.shape, strides, view.itemsize, 'C');
+    result.strides = array_to_js(strides, view.ndim);
+    goto success;
+  }
+
+  for(int i=0; i < view.ndim; i++){
+    if(view.shape[i] == 0){
+      FAIL();
+    }
+    if(view.strides[i] > 0 ){
+      result.largest_ptr += view.strides[i] * (view.shape[i] - 1);
+    } else {
+      result.smallest_ptr += view.strides[i] * (view.shape[i] - 1);
+    }
+  }
+  result.largest_ptr += view.itemsize;
+  result.strides = array_to_js(view.strides, view.ndim);
+
+success:
+  success = true;
+finally:
+  if(success) {
+    result.view = (Py_buffer*)PyMem_Malloc(sizeof(Py_buffer));
+    *result.view = view;
+    buffer_struct* result_heap = (buffer_struct*)PyMem_Malloc(sizeof(buffer_struct));
+    *result_heap = result;
+    return result_heap;
+  } else {
+    hiwire_CLEAR(result.shape);
+    hiwire_CLEAR(result.strides);
+    PyBuffer_Release(&view);
+    return NULL;
+  }
+}
+
 EM_JS_REF(JsRef, pyproxy_new, (PyObject * ptrobj), {
   // Technically, this leaks memory, since we're holding on to a reference
   // to the proxy forever.  But we have that problem anyway since we don't
@@ -247,13 +333,16 @@ EM_JS_REF(JsRef, pyproxy_new, (PyObject * ptrobj), {
   if (itertype === 1) {
     Object.assign(target, Module.PyProxyIterableMethods);
   }
+  if(__pyproxy_is_buffer(ptrobj)){
+    Object.assign(target, Module.PyProxyBufferMethods);
+  }
   // clang-format on
   Module.PyProxies[ptrobj] = proxy;
 
   return Module.hiwire.new_value(proxy);
 });
 
-EM_JS(int, pyproxy_init, (), {
+EM_JS_NUM(int, pyproxy_init, (), {
   // clang-format off
   Module.PyProxies = {};
   function _getPtr(jsobj) {
@@ -370,6 +459,83 @@ EM_JS(int, pyproxy_init, (), {
       let value = Module.hiwire.pop_value(idresult);
       return { done, value };
     },
+  };
+
+  let type_to_array_map = new Map(
+    [
+      ["i8", Int8Array],
+      ["u8", Uint8Array],
+      ["i16", Int16Array],
+      ["u16", Uint16Array],
+      ["i32", Int32Array],
+      ["u32", Uint32Array],
+      ["i32", Int32Array],
+      ["u32", Uint32Array],      
+      ["f32", Float32Array],      
+      ["f64", Float64Array],      
+    ]
+  );
+  if(window.BigInt64Array){
+      type_to_array_map.set("i64", BigInt64Array);
+      type_to_array_map.set("u64", BigUint64Array);
+  }
+
+  Module.PyProxyBufferMethods = {
+    getRawBuffer : function(type = "u8"){
+      let ArrayType = type_to_array_map.get(type);
+      if(ArrayType === undefined){
+        throw new Error(`Unknown type ${type}`);
+      }
+      let this_ptr = _getPtr(this);
+      let buffer_struct_ptr = __pyproxy_memoryview_get_buffer(this_ptr);
+      if(buffer_struct_ptr === 0){
+        throw new Error("Failed");
+      }
+
+      _Py_IncRef(this_ptr);
+      
+      // This has to match the order of the fields in buffer_struct
+      let cur_ptr = buffer_struct_ptr/4;
+      let start = HEAP32[cur_ptr++];
+      let smallest = HEAP32[cur_ptr++];
+      let largest = HEAP32[cur_ptr++];
+      let shape = Module.hiwire.pop_value(HEAP32[cur_ptr++]);
+      let strides = Module.hiwire.pop_value(HEAP32[cur_ptr++]);
+      let view_ptr = HEAP32[cur_ptr++];
+      _PyMem_Free(buffer_struct_ptr);
+
+
+      let alignment = parseInt(type.slice(1))/8;
+      if(start % alignment !== 0 || smallest % alignment !== 0 || largest % alignment !== 0){
+        _PyBuffer_Release(view_ptr);
+        _PyMem_Free(view_ptr);
+        throw new Error(`Buffer does not have valid alignment for type ${type}`);
+      }
+      
+      let length = (largest - smallest) / alignment;
+      let offset = (start - smallest) / alignment;
+
+      let buffer = new ArrayType(HEAP8.buffer, smallest, length);
+      
+      for(let i of strides.keys()){
+        strides[i] /= alignment;
+      }
+      let released = false;
+      return { 
+        offset,
+        shape, 
+        strides,
+        buffer,
+        release : () => {
+          if(released){
+            return;
+          }
+          _PyBuffer_Release(view_ptr);
+          _PyMem_Free(view_ptr);
+          released = true;
+        }
+      };
+    }
   };
 
   let ignoredTargetFields = ["name", "length"];
