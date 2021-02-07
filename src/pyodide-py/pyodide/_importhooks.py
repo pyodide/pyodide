@@ -1,4 +1,4 @@
-from ._core import JsProxy
+from ._core import JsProxy  # type: ignore
 from importlib.abc import MetaPathFinder, Loader
 from importlib.util import spec_from_loader
 import sys
