@@ -1,5 +1,5 @@
 export EMSCRIPTEN_VERSION = 2.0.13
-export BINARYEN_VERSION = version_99
+export BINARYEN_VERSION = ed20954 # version_99. The git tag tags the wrong commit
 
 # BASH_ENV tells bash to run pyodide_env.sh on startup, whcih sets various
 # environment variables. The next line instructs make to use bash to run each
