@@ -825,7 +825,7 @@ JsProxy_create(JsRef object)
   if (hiwire_is_error(object)) {
     return JsProxy_new_error(object);
   } else if (hiwire_is_function(object)) {
-    return JsMethod_cnew(object, Js_NULL);
+    return JsMethod_cnew(object, Js_null);
   } else if (hiwire_is_typedarray(object)) {
     return JsBuffer_cnew(object);
   } else {

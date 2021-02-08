@@ -233,11 +233,11 @@ static JsRef
 _python2js_immutable(PyObject* x, PyObject* map, int depth)
 {
   if (x == Py_None) {
-    return Js_UNDEFINED;
+    return Js_undefined;
   } else if (x == Py_True) {
-    return Js_TRUE;
+    return Js_true;
   } else if (x == Py_False) {
-    return Js_FALSE;
+    return Js_false;
   } else if (PyLong_Check(x)) {
     return _python2js_long(x);
   } else if (PyFloat_Check(x)) {
