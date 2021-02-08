@@ -21,7 +21,7 @@ _runPythonDebug(char* code)
   if (py_code == NULL) {
     fprintf(stderr, "runPythonDebug -- error occurred converting argument:\n");
     PyErr_Print();
-    return Js_UNDEFINED;
+    return Js_undefined;
   }
 
   PyObject* result = _PyObject_CallMethodIdObjArgs(
@@ -30,7 +30,7 @@ _runPythonDebug(char* code)
   if (result == NULL) {
     fprintf(stderr, "runPythonDebug -- error occurred\n");
     PyErr_Print();
-    return Js_UNDEFINED;
+    return Js_undefined;
   }
 
   printf("runPythonDebug -- eval_code succeeded, it returned:\n");
