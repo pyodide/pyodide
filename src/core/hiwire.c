@@ -6,6 +6,11 @@
 
 #include "hiwire.h"
 
+const JsRef Js_undefined = ((JsRef)(2));
+const JsRef Js_true = ((JsRef)(4));
+const JsRef Js_false = ((JsRef)(6));
+const JsRef Js_null = ((JsRef)(8));
+
 JsRef
 hiwire_bool(bool boolean)
 {

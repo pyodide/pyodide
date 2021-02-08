@@ -39,10 +39,10 @@ typedef struct _JsRefStruct* JsRef;
 // Special JsRefs for singleton constants.
 // (These must be even because the least significance bit is set to 0 for
 // singleton constants.)
-const JsRef Js_undefined = ((JsRef)(2));
-const JsRef Js_true = ((JsRef)(4));
-const JsRef Js_false = ((JsRef)(6));
-const JsRef Js_null = ((JsRef)(8));
+extern const JsRef Js_undefined;
+extern const JsRef Js_true;
+extern const JsRef Js_false;
+extern const JsRef Js_null;
 
 #define hiwire_CLEAR(x)                                                        \
   do {                                                                         \
