@@ -1,8 +1,6 @@
 PYODIDE_ROOT=$(abspath ..)
 include ../Makefile.envs
 
-export PATH := /usr/lib/ccache:$(PATH)
-
 all: emsdk/.complete
 
 emsdk/.complete: ../Makefile.envs $(wildcard patches/*.patch)
@@ -12,7 +10,7 @@ emsdk/.complete: ../Makefile.envs $(wildcard patches/*.patch)
 	git clone -b $(BINARYEN_VERSION) --depth 1 https://github.com/WebAssembly/binaryen.git emsdk/binaryen
 	cat patches/*.patch | patch -p1
 	cd emsdk && ./emsdk activate --embedded --build=Release $(EMSCRIPTEN_VERSION)
-	cmake -S emsdk/binaryen -B emsdk/binaryen -DBUILD_STATIC_LIB=ON
+	cmake -S emsdk/binaryen -B emsdk/binaryen -DBUILD_STATIC_LIB=ON -DCMAKE_CXX_COMPILER_LAUNCHER=ccache
 	make -C emsdk/binaryen -j5 wasm-opt
 	cp emsdk/binaryen/bin/wasm-opt emsdk/upstream/bin/
 	touch emsdk/.complete
