@@ -2,7 +2,7 @@ diff --git a/emsdk/binary/src/passes/FuncCastEmulation.cpp b/src/passes/FuncCast
 index 9d232c9..60d3990 100644
 --- a/emsdk/binaryen/src/passes/FuncCastEmulation.cpp
 +++ b/emsdk/binaryen/src/passes/FuncCastEmulation.cpp
-@@ -170,20 +170,88 @@ struct FuncCastEmulation : public Pass {
+@@ -170,20 +170,86 @@ struct FuncCastEmulation : public Pass {
        std::stoul(runner->options.getArgumentOrDefault("max-func-params", "16"));
      // we just need the one ABI function type for all indirect calls
      Signature ABIType(Type(std::vector<Type>(numParams, Type::i64)), Type::i64);
