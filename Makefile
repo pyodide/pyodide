@@ -10,9 +10,6 @@ UGLIFYJS=$(PYODIDE_ROOT)/node_modules/.bin/uglifyjs
 CPYTHONROOT=cpython
 CPYTHONLIB=$(CPYTHONROOT)/installs/python-$(PYVERSION)/lib/python$(PYMINOR)
 
-PYODIDE_EMCC=$(PYODIDE_ROOT)/ccache/emcc
-PYODIDE_CXX=$(PYODIDE_ROOT)/ccache/em++
-
 CC=emcc
 CXX=em++
 OPTFLAGS=-O2
@@ -166,28 +163,6 @@ build/test.data: $(CPYTHONLIB) $(UGLIFYJS)
 $(UGLIFYJS): emsdk/emsdk/.complete
 	npm i --no-save uglify-js
 	touch -h $(UGLIFYJS)
-
-
-$(PYODIDE_EMCC):
-	mkdir -p $(PYODIDE_ROOT)/ccache ; \
-	if test ! -h $@; then \
-		if hash ccache &>/dev/null; then \
-			ln -s `which ccache` $@ ; \
-		else \
-			ln -s emsdk/emsdk/upstream/emscripten/emcc $@; \
-		fi; \
-	fi
-
-
-$(PYODIDE_CXX):
-	mkdir -p $(PYODIDE_ROOT)/ccache ; \
-	if test ! -h $@; then \
-		if hash ccache &>/dev/null; then \
-			ln -s `which ccache` $@ ; \
-		else \
-			ln -s emsdk/emsdk/upstream/emscripten/em++ $@; \
-		fi; \
-	fi
 
 
 $(CPYTHONLIB): emsdk/emsdk/.complete $(PYODIDE_EMCC) $(PYODIDE_CXX)

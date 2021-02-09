@@ -316,7 +316,6 @@ workflows:
             - test-core-firefox
             - test-packages-firefox
             - test-core-chrome
-            - test-packages-chrome
             - test-emsdk
             - build-docs
           filters:
@@ -331,7 +330,6 @@ workflows:
             - test-core-firefox
             - test-packages-firefox
             - test-core-chrome
-            - test-packages-chrome
             - test-emsdk
             - build-docs
           filters:
