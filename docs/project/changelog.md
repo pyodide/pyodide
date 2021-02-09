@@ -239,7 +239,7 @@ Sergio, Seungmin Kim, Shyam Saladi, smkm, Wei Ouyang
   The latest release can be accessed via 
   https://pyodide-cdn2.iodide.io/latest/full/
 - Adds `messageCallback` and `errorCallback` to 
-  {ref}`pyodide.loadPackage <js_api_pyodide_loadPackage>`.
+  {any}`pyodide.loadPackage`.
 - Reduces the initial memory footprint (`TOTAL_MEMORY`) from 1 GiB to 5 MiB.
   More memory will be allocated as needed.
 - When building from source, only a subset of packages can be built by setting
