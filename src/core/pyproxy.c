@@ -349,7 +349,7 @@ _pyproxy_ensure_future(PyObject* pyobject, JsRef resolve_handle, JsRef reject_ha
   future = _PyObject_CallMethodIdObjArgs(asyncio, &PyId_ensure_future, pyobject, NULL);
   FAIL_IF_NULL(future);
   callback = FutureDoneCallback_cnew(resolve_handle, reject_handle);
-  retval = _PyObject_CallMethodIdObjArgs(future, &PyId_add_done_callback, callback);
+  retval = _PyObject_CallMethodIdObjArgs(future, &PyId_add_done_callback, callback, NULL);
   FAIL_IF_NULL(retval);
 
   success = true;
