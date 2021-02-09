@@ -89,7 +89,7 @@ globalThis.languagePluginLoader = new Promise((resolve, reject) => {
   }
 
   function recursiveDependencies(names, _messageCallback, errorCallback) {
-    const packages = self.pyodide._module.packages.dependencies;
+    const packages = Module.packages.dependencies;
     const loadedPackages = self.pyodide.loadedPackages;
     const toLoad = new Map();
 
@@ -132,7 +132,7 @@ globalThis.languagePluginLoader = new Promise((resolve, reject) => {
 
     // locateFile is the function used by the .js file to locate the .data
     // file given the filename
-    self.pyodide._module.locateFile = (path) => {
+    Module.locateFile = (path) => {
       // handle packages loaded from custom URLs
       let pkg = path.replace(/\.data$/, "");
       if (toLoad.has(pkg)) {
@@ -208,7 +208,7 @@ globalThis.languagePluginLoader = new Promise((resolve, reject) => {
     // no pending runDependencies.
     function waitRunDependency() {
       const promise = new Promise(r => {
-        self.pyodide._module.monitorRunDependencies = (n) => {
+        Module.monitorRunDependencies = (n) => {
           if (n === 0) {
             r();
           }
@@ -217,8 +217,8 @@ globalThis.languagePluginLoader = new Promise((resolve, reject) => {
       // If there are no pending dependencies left, monitorRunDependencies will
       // never be called. Since we can't check the number of dependencies,
       // manually trigger a call.
-      self.pyodide._module.addRunDependency("dummy");
-      self.pyodide._module.removeRunDependency("dummy");
+      Module.addRunDependency("dummy");
+      Module.removeRunDependency("dummy");
       return promise;
     }
 
@@ -229,7 +229,7 @@ globalThis.languagePluginLoader = new Promise((resolve, reject) => {
     try {
       await Promise.race([ successPromise, windowErrorPromise ]);
     } finally {
-      delete self.pyodide._module.monitorRunDependencies;
+      delete Module.monitorRunDependencies;
       if (windowErrorHandler) {
         self.removeEventListener('error', windowErrorHandler);
       }
@@ -251,13 +251,13 @@ globalThis.languagePluginLoader = new Promise((resolve, reject) => {
 
     if (!isFirefox) {
       await preloadWasm();
-      self.pyodide._module.reportUndefinedSymbols();
+      Module.reportUndefinedSymbols();
     }
     messageCallback(resolveMsg);
 
     // We have to invalidate Python's import caches, or it won't
     // see the new files.
-    self.pyodide.runPythonSimple('import importlib\n' +
+    Module.runPythonSimple('import importlib\n' +
                                  'importlib.invalidate_caches()\n');
   };
 
@@ -454,7 +454,7 @@ globalThis.languagePluginLoader = new Promise((resolve, reject) => {
     if (imports.length === 0) {
       return;
     }
-    let packageNames = self.pyodide._module.packages.import_name_to_package_name;
+    let packageNames = Module.packages.import_name_to_package_name;
     let packages = new Set();
     for (let name of imports) {
       if (name in packageNames) {
@@ -656,7 +656,7 @@ def temp(Module):
     self.pyodide = makePublicAPI(self.pyodide, PUBLIC_API);
     self.pyodide.registerJsModule("js", globalThis);
     self.pyodide.registerJsModule("pyodide_js", self.pyodide);
-    self.pyodide._module.packages = json;
+    Module.packages = json;
     resolve();
   };
 
