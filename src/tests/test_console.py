@@ -128,6 +128,7 @@ def test_repr(safe_sys_redirections):
 
 @pytest.fixture
 def safe_selenium_sys_redirections(selenium):
+    selenium.run("import sys")
     selenium.run("_redirected = sys.stdout, sys.stderr, sys.displayhook")
     yield
     selenium.run("sys.stdout, sys.stderr, sys.displayhook = _redirected")
