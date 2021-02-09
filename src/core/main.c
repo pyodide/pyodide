@@ -72,6 +72,8 @@ static struct PyModuleDef core_module_def = {
   .m_size = -1,
 };
 
+int py_exec = Py_file_input;
+
 int
 main(int argc, char** argv)
 {
@@ -105,11 +107,9 @@ main(int argc, char** argv)
     FATAL_ERROR("Failed to add '_pyodide_core' module to modules dict.");
   }
 
-  // __main__ and globals are borrowed.
-  PyObject* __main__ = PyImport_AddModule("__main__");
-  PyObject* globals = PyModule_GetDict(__main__);
-  JsRef globals_proxy = python2js(globals);
-  EM_ASM({ Module.raw_globals = Module.hiwire.pop_value($0) }, globals_proxy);
+  PyObject* init_dict = PyDict_New();
+  JsRef init_dict_proxy = python2js(init_dict);
+  EM_ASM({ Module.init_dict = Module.hiwire.pop_value($0) }, init_dict_proxy);
 
   Py_CLEAR(core_module);
   printf("Python initialization complete\n");

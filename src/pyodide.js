@@ -257,8 +257,8 @@ globalThis.languagePluginLoader = new Promise((resolve, reject) => {
 
     // We have to invalidate Python's import caches, or it won't
     // see the new files.
-    self.pyodide.runPython('import importlib as _importlib\n' +
-                           '_importlib.invalidate_caches()\n');
+    self.pyodide.runPythonSimple('import importlib\n' +
+                                 'importlib.invalidate_caches()\n');
   };
 
   // This is a promise that is resolved iff there are no pending package loads.
@@ -322,7 +322,7 @@ globalThis.languagePluginLoader = new Promise((resolve, reject) => {
     if (recursionLimit > 1000) {
       recursionLimit = 1000;
     }
-    pyodide.runPython(
+    pyodide.runPythonSimple(
         `import sys; sys.setrecursionlimit(int(${recursionLimit}))`);
   };
 
@@ -384,10 +384,13 @@ globalThis.languagePluginLoader = new Promise((resolve, reject) => {
 
   Module.runPythonSimple = function(code) {
     let code_c_string = Module.stringToNewUTF8(code);
-    Module._PyRun_SimpleString(code_c_string);
+    let run_as_exec = Module.HEAP32[Module._py_exec / 4];
+    let init_dict_ptr = Module.init_dict.$$.ptr;
+    Module._PyRun_String(code_c_string, run_as_exec, init_dict_ptr,
+                         init_dict_ptr);
     Module._free(code_c_string);
     if (Module._PyErr_Occurred()) {
-      pythonexc2js();
+      Module._pythonexc2js();
     }
   };
 
@@ -643,8 +646,7 @@ def temp(Module):
   Module.globals = globals
   Module.pyodide_py = pyodide
     `);
-    Module.raw_globals["temp"](Module);
-    Module.runPythonSimple(`del temp`);
+    Module.init_dict["temp"](Module);
 
     delete self.Module;
     let response = await fetch(`${baseURL}packages.json`);
