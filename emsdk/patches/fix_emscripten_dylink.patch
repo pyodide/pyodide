@@ -61,9 +61,6 @@ index c8af59d..7084ff7 100644
 +    // only ever called from javascript
 +    var dyncallInvokeMap=new Map();
 +#endif
-diff --git a/emsdk/upstream/emscripten/tools/__pycache__/shared.cpython-38.pyc b/emsdk/upstream/emscripten/tools/__pycache__/shared.cpython-38.pyc
-index 087e7fd..872c6f0 100644
-Binary files a/emsdk/upstream/emscripten/tools/__pycache__/shared.cpython-38.pyc and b/emsdk/upstream/emscripten/tools/__pycache__/shared.cpython-38.pyc differ
 diff --git a/emsdk/upstream/emscripten/tools/shared.py b/emsdk/upstream/emscripten/tools/shared.py
 index 74666ee..3d5657b 100644
 --- a/emsdk/upstream/emscripten/tools/shared.py

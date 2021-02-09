@@ -51,7 +51,7 @@ _pyproxy_get(PyObject* pyobj, JsRef idkey)
   Py_DECREF(pykey);
   if (pyattr == NULL) {
     PyErr_Clear();
-    return hiwire_undefined();
+    return Js_undefined;
   }
 
   JsRef idattr = python2js(pyattr);
@@ -97,7 +97,7 @@ _pyproxy_deleteProperty(PyObject* pyobj, JsRef idkey)
     return NULL;
   }
 
-  return hiwire_undefined();
+  return Js_undefined;
 }
 
 JsRef
