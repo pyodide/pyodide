@@ -39,10 +39,10 @@ typedef struct _JsRefStruct* JsRef;
 // Special JsRefs for singleton constants.
 // (These must be even because the least significance bit is set to 0 for
 // singleton constants.)
-#define Js_UNDEFINED ((JsRef)(2))
-#define Js_TRUE ((JsRef)(4))
-#define Js_FALSE ((JsRef)(6))
-#define Js_NULL ((JsRef)(8))
+extern const JsRef Js_undefined;
+extern const JsRef Js_true;
+extern const JsRef Js_false;
+extern const JsRef Js_null;
 
 #define hiwire_CLEAR(x)                                                        \
   do {                                                                         \
@@ -230,38 +230,6 @@ hiwire_float32array(f32* ptr, int len);
  */
 JsRef
 hiwire_float64array(f64* ptr, int len);
-
-/**
- * Create a new Javascript undefined value.
- *
- * Returns: "New" reference
- */
-JsRef
-hiwire_undefined();
-
-/**
- * Create a new Javascript null value.
- *
- * Returns: "New" reference
- */
-JsRef
-hiwire_null();
-
-/**
- * Create a new Javascript true value.
- *
- * Returns: "New" reference
- */
-JsRef
-hiwire_true();
-
-/**
- * Create a new Javascript false value.
- *
- * Returns: "New" reference
- */
-JsRef
-hiwire_false();
 
 /**
  * Create a new Javascript boolean value.
