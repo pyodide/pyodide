@@ -21,7 +21,7 @@ libraries to the build. We automate the following steps:
     the virtual filesystem.
 
 Lastly, a `packages.json` file is output containing the dependency tree of all
-packages, so  {ref}`pyodide.loadPackage <js_api_pyodide_loadPackage>` can
+packages, so  {any}`pyodide.loadPackage` can
 load a package's dependencies automatically.
 
 ## mkpkg

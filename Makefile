@@ -10,9 +10,6 @@ UGLIFYJS=$(PYODIDE_ROOT)/node_modules/.bin/uglifyjs
 CPYTHONROOT=cpython
 CPYTHONLIB=$(CPYTHONROOT)/installs/python-$(PYVERSION)/lib/python$(PYMINOR)
 
-PYODIDE_EMCC=$(PYODIDE_ROOT)/ccache/emcc
-PYODIDE_CXX=$(PYODIDE_ROOT)/ccache/em++
-
 CC=emcc
 CXX=em++
 OPTFLAGS=-O2
@@ -26,10 +23,11 @@ CFLAGS=\
 	-Werror=incompatible-pointer-types \
 	$(EXTRA_CFLAGS)
 LDFLAGS=\
+	-s BINARYEN_EXTRA_PASSES="--pass-arg=max-func-params@61" \
 	$(OPTFLAGS) \
 	-s MODULARIZE=1 \
 	$(CPYTHONROOT)/installs/python-$(PYVERSION)/lib/libpython$(PYMINOR).a \
-	-s TOTAL_MEMORY=10485760 \
+	-s TOTAL_MEMORY=20971520 \
 	-s ALLOW_MEMORY_GROWTH=1 \
 	-s MAIN_MODULE=1 \
 	-s EMULATE_FUNCTION_POINTER_CASTS=1 \
@@ -44,7 +42,6 @@ LDFLAGS=\
 	$(wildcard $(CPYTHONROOT)/build/bzip2*/libbz2.a) \
 	-lstdc++ \
 	--memory-init-file 0 \
-	-s "BINARYEN_TRAP_MODE='clamp'" \
 	-s LZ4=1 \
 	$(EXTRA_LDFLAGS)
 
@@ -167,28 +164,6 @@ build/test.data: $(CPYTHONLIB) $(UGLIFYJS)
 $(UGLIFYJS): emsdk/emsdk/.complete
 	npm i --no-save uglify-js
 	touch -h $(UGLIFYJS)
-
-
-$(PYODIDE_EMCC):
-	mkdir -p $(PYODIDE_ROOT)/ccache ; \
-	if test ! -h $@; then \
-		if hash ccache &>/dev/null; then \
-			ln -s `which ccache` $@ ; \
-		else \
-			ln -s emsdk/emsdk/fastcomp/emscripten/emcc $@; \
-		fi; \
-	fi
-
-
-$(PYODIDE_CXX):
-	mkdir -p $(PYODIDE_ROOT)/ccache ; \
-	if test ! -h $@; then \
-		if hash ccache &>/dev/null; then \
-			ln -s `which ccache` $@ ; \
-		else \
-			ln -s emsdk/emsdk/fastcomp/emscripten/em++ $@; \
-		fi; \
-	fi
 
 
 $(CPYTHONLIB): emsdk/emsdk/.complete $(PYODIDE_EMCC) $(PYODIDE_CXX)

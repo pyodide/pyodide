@@ -6,34 +6,15 @@
 
 #include "hiwire.h"
 
-JsRef
-hiwire_undefined()
-{
-  return Js_UNDEFINED;
-}
-
-JsRef
-hiwire_null()
-{
-  return Js_NULL;
-}
-
-JsRef
-hiwire_true()
-{
-  return Js_TRUE;
-}
-
-JsRef
-hiwire_false()
-{
-  return Js_FALSE;
-}
+const JsRef Js_undefined = ((JsRef)(2));
+const JsRef Js_true = ((JsRef)(4));
+const JsRef Js_false = ((JsRef)(6));
+const JsRef Js_null = ((JsRef)(8));
 
 JsRef
 hiwire_bool(bool boolean)
 {
-  return boolean ? hiwire_true() : hiwire_false();
+  return boolean ? Js_true : Js_false;
 }
 
 EM_JS(int, hiwire_init, (), {
@@ -52,10 +33,10 @@ EM_JS(int, hiwire_init, (), {
     counter : new Uint32Array([1])
   };
   Module.hiwire = {};
-  Module.hiwire.UNDEFINED = _hiwire_undefined();
-  Module.hiwire.JSNULL = _hiwire_null();
-  Module.hiwire.TRUE = _hiwire_true();
-  Module.hiwire.FALSE = _hiwire_false();
+  Module.hiwire.UNDEFINED = HEAP8[_Js_undefined];
+  Module.hiwire.JSNULL = HEAP8[_Js_null];
+  Module.hiwire.TRUE = HEAP8[_Js_true];
+  Module.hiwire.FALSE = HEAP8[_Js_false];
 
   _hiwire.objects.set(Module.hiwire.UNDEFINED, undefined);
   _hiwire.objects.set(Module.hiwire.JSNULL, null);

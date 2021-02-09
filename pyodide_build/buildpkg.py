@@ -215,10 +215,12 @@ def package_files(buildpath: Path, srcpath: Path, pkg: Dict[str, Any], args):
 
 
 def run_script(buildpath: Path, srcpath: Path, pkg: Dict[str, Any]):
-    # We don't really do packaging, but needs_rebuild checks .packaged to
-    # determine if it needs to rebuild
-    if (buildpath / ".packaged").is_file():
-        return
+    if pkg.get("build", {}).get("library"):
+        # in libraries this  writes the packaged flag
+        # We don't really do packaging, but needs_rebuild checks .packaged to
+        # determine if it needs to rebuild
+        if (buildpath / ".packaged").is_file():
+            return
 
     orig_path = Path.cwd()
     os.chdir(srcpath)
@@ -275,11 +277,9 @@ def build_package(path: Path, args):
             os.makedirs(buildpath)
         srcpath = download_and_extract(buildpath, packagedir, pkg, args)
         patch(path, srcpath, pkg, args)
-        if pkg.get("build", {}).get("library"):
+        if pkg.get("build", {}).get("script"):
             run_script(buildpath, srcpath, pkg)
-        else:
-            if pkg.get("build", {}).get("script"):
-                run_script(buildpath, srcpath, pkg)
+        if not pkg.get("build", {}).get("library", False):
             compile(path, srcpath, pkg, args)
             package_files(buildpath, srcpath, pkg, args)
     finally:

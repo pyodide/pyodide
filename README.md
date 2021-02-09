@@ -41,17 +41,17 @@ These include:
   repository's [releases
   page](https://github.com/iodide-project/pyodide/releases/) and serve its contents with
   a web server.
-- [Build Pyodide from source](https://pyodide.readthedocs.io/en/latest/building_from_sources.html)
+- [Build Pyodide from source](https://pyodide.readthedocs.io/en/latest/development/building-from-sources.html)
   - Build natively with `make`: primarily for Linux users who want to
     experiment or contribute back to the project.
-  - [Use a Docker image](https://pyodide.readthedocs.io/en/latest/building_from_sources.html#using-docker):
+  - [Use a Docker image](https://pyodide.readthedocs.io/en/latest/development/building-from-sources.html#using-docker):
     recommended for Windows and macOS users and for Linux users who prefer a
     Debian-based Docker image with the dependencies already installed.
 
 ## Contributing
 
 Please view the
-[contributing guide](https://pyodide.readthedocs.io/en/latest/contributing.html)
+[contributing guide](https://pyodide.readthedocs.io/en/latest/development/contributing.html)
 for tips on filing issues, making changes, and submitting pull requests.
 
 ## License

@@ -58,6 +58,14 @@
   raise a `KeyboardInterrupt` by writing to the interrupt buffer.
   [#1148](https://github.com/iodide-project/pyodide/pull/1148) and
   [#1173](https://github.com/iodide-project/pyodide/pull/1173)
+- A `JsProxy` of a Javascript `Promise` or other awaitable object is now a 
+  Python awaitable.
+  [#880](https://github.com/iodide-project/pyodide/pull/880)
+- Added a Python event loop to support asyncio by scheduling coroutines to run 
+  as jobs on the browser event loop. This event loop is available by default and 
+  automatically enabled by any relevant asyncio API, so for instance 
+  `asyncio.ensure_future` works without any configuration.
+  [#1158](https://github.com/iodide-project/pyodide/pull/1158)
 - Made PyProxy of an iterable Python object an iterable Js object: defined the
   `[Symbol.iterator]` method, can be used like `for(let x of proxy)`.
   Made a PyProxy of a Python iterator an iterator: `proxy.next()` is
@@ -231,7 +239,7 @@ Sergio, Seungmin Kim, Shyam Saladi, smkm, Wei Ouyang
   The latest release can be accessed via 
   https://pyodide-cdn2.iodide.io/latest/full/
 - Adds `messageCallback` and `errorCallback` to 
-  {ref}`pyodide.loadPackage <js_api_pyodide_loadPackage>`.
+  {any}`pyodide.loadPackage`.
 - Reduces the initial memory footprint (`TOTAL_MEMORY`) from 1 GiB to 5 MiB.
   More memory will be allocated as needed.
 - When building from source, only a subset of packages can be built by setting
