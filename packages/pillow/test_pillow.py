@@ -1,6 +1,8 @@
+import pytest
 from pyodide_build.testing import run_in_pyodide
 
 
+@pytest.mark.xfail
 @run_in_pyodide(packages=["pillow"])
 def test_pillow():
     from PIL import Image, ImageDraw, ImageOps
@@ -29,9 +31,6 @@ def test_pillow():
             == b"\xff\x00\x00\xff\x00\x00\xff\x00\x00\xff\x00\x00\xff\x00\x00\x00\x00\x00\x00\x00\xff\xff\x00\x00\xff\x00\x00\x00\xff\x00\x00\x00\x00\xff\x00\x00\xff\x00\x00\xff\x00\x00\xff\x00\x00\xff\x00\x00"
         )
 
-    # TODO: investigate why the following fails on chrome
-    #       see https://github.com/iodide-project/pyodide/issues/1201
-    return
     with io.BytesIO() as asjpg:
         img.save(asjpg, format="JPEG")
         img = Image.open(asjpg)
