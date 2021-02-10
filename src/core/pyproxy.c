@@ -226,14 +226,17 @@ _pyproxy_destroy(PyObject* ptrobj)
 size_t py_buffer_len_offset = offsetof(Py_buffer, len);
 size_t py_buffer_shape_offset = offsetof(Py_buffer, shape);
 
-bool _pyproxy_is_buffer(PyObject* ptrobj){
+bool
+_pyproxy_is_buffer(PyObject* ptrobj)
+{
   return PyObject_CheckBuffer(ptrobj);
 }
 
 JsRef
-array_to_js(Py_ssize_t *array, int len){
+array_to_js(Py_ssize_t* array, int len)
+{
   JsRef result = hiwire_array();
-  for(int i = 0; i < len; i++){
+  for (int i = 0; i < len; i++) {
     JsRef val = hiwire_int(array[i]);
     hiwire_push_array(result, val);
     hiwire_decref(val);
@@ -242,9 +245,10 @@ array_to_js(Py_ssize_t *array, int len){
 }
 
 // The order of these fields has to match the code in getRawBuffer
-typedef struct {
+typedef struct
+{
   void* start_ptr;
-  void* smallest_ptr; 
+  void* smallest_ptr;
   void* largest_ptr;
   JsRef shape;
   JsRef strides;
@@ -252,18 +256,19 @@ typedef struct {
 } buffer_struct;
 
 buffer_struct*
-_pyproxy_memoryview_get_buffer(PyObject* ptrobj){
-  if(!PyObject_CheckBuffer(ptrobj)){
+_pyproxy_memoryview_get_buffer(PyObject* ptrobj)
+{
+  if (!PyObject_CheckBuffer(ptrobj)) {
     return NULL;
   }
-  Py_buffer view; 
-  if(PyObject_GetBuffer(ptrobj, &view, PyBUF_RECORDS_RO) == -1){
+  Py_buffer view;
+  if (PyObject_GetBuffer(ptrobj, &view, PyBUF_RECORDS_RO) == -1) {
     PyErr_Clear();
     return NULL;
   }
 
   bool success = false;
-  if(view.ndim == 0){
+  if (view.ndim == 0) {
     FAIL();
   }
   buffer_struct result = { 0 };
@@ -271,19 +276,20 @@ _pyproxy_memoryview_get_buffer(PyObject* ptrobj){
 
   result.start_ptr = result.smallest_ptr = result.largest_ptr = view.buf;
 
-  if(view.strides == NULL){
+  if (view.strides == NULL) {
     result.largest_ptr += view.len;
     Py_ssize_t strides[view.ndim];
-    PyBuffer_FillContiguousStrides(view.ndim, view.shape, strides, view.itemsize, 'C');
+    PyBuffer_FillContiguousStrides(
+      view.ndim, view.shape, strides, view.itemsize, 'C');
     result.strides = array_to_js(strides, view.ndim);
     goto success;
   }
 
-  for(int i=0; i < view.ndim; i++){
-    if(view.shape[i] == 0){
+  for (int i = 0; i < view.ndim; i++) {
+    if (view.shape[i] == 0) {
       FAIL();
     }
-    if(view.strides[i] > 0 ){
+    if (view.strides[i] > 0) {
       result.largest_ptr += view.strides[i] * (view.shape[i] - 1);
     } else {
       result.smallest_ptr += view.strides[i] * (view.shape[i] - 1);
@@ -295,10 +301,11 @@ _pyproxy_memoryview_get_buffer(PyObject* ptrobj){
 success:
   success = true;
 finally:
-  if(success) {
+  if (success) {
     result.view = (Py_buffer*)PyMem_Malloc(sizeof(Py_buffer));
     *result.view = view;
-    buffer_struct* result_heap = (buffer_struct*)PyMem_Malloc(sizeof(buffer_struct));
+    buffer_struct* result_heap =
+      (buffer_struct*)PyMem_Malloc(sizeof(buffer_struct));
     *result_heap = result;
     return result_heap;
   } else {
