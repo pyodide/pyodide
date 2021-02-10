@@ -14,7 +14,6 @@ Backward compatibility of the API is not guaranteed at this point.
    pyodide.as_nested_list
    pyodide.eval_code
    pyodide.find_imports
-   pyodide.open_url
    pyodide.JsException
    pyodide.register_js_module
    pyodide.unregister_js_module

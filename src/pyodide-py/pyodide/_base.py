@@ -1,8 +1,6 @@
 """
 A library of helper utilities for connecting Python to the browser environment.
 """
-# Added by C:
-# JsException (from jsproxy.c)
 
 import ast
 from asyncio import iscoroutine
@@ -10,28 +8,6 @@ from io import StringIO
 from textwrap import dedent
 from typing import Dict, List, Any, Tuple, Optional
 import tokenize
-
-
-def open_url(url: str) -> StringIO:
-    """
-    Fetches a given URL
-
-    Parameters
-    ----------
-    url
-       URL to fetch
-
-    Returns
-    -------
-    a io.StringIO object with the contents of the URL.
-    """
-    from js import XMLHttpRequest
-
-    req = XMLHttpRequest.new()
-    req.open("GET", url, False)
-    req.send(None)
-    return StringIO(req.response)
-
 
 class CodeRunner:
     """
