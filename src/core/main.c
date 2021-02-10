@@ -125,11 +125,11 @@ main(int argc, char** argv)
       Module.init_dict = Module.hiwire.pop_value($0);
       Module.runPythonSimple = function(code)
       {
-        let code_c_string = Module.stringToNewUTF8(code);
+        let code_c_string = stringToNewUTF8(code);
         try {
-          Module._run_python_simple_inner(code_c_string);
+          _run_python_simple_inner(code_c_string);
         } finally {
-          Module._free(code_c_string);
+          _free(code_c_string);
         }
       };
     },
