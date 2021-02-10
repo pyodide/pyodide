@@ -6,9 +6,6 @@ import pytest
 def test_scipy_linalg(selenium_standalone, request):
     selenium = selenium_standalone
 
-    if selenium.browser == "chrome":
-        request.applymarker(pytest.mark.xfail(run=False, reason="chrome not supported"))
-
     selenium.load_package("scipy")
     cmd = dedent(
         r"""
