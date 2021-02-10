@@ -203,6 +203,7 @@ def test_pyproxy_iter(selenium):
     )
     assert result == result2
 
+
 def test_pyproxy_mixins(selenium):
     result = selenium.run_js(
         """
@@ -233,10 +234,22 @@ def test_pyproxy_mixins(selenium):
         """
     )
     assert result == dict(
-        noimpls=dict(then=False, catch=False, finally_=False, iterable=False, iterator=False),
-        awaitable=dict(then=True, catch=True, finally_=True, iterable=False, iterator=False),
-        iterable=dict(then=False, catch=False, finally_=False, iterable=True, iterator=False),
-        iterator=dict(then=False, catch=False, finally_=False, iterable=True, iterator=True),
-        awaititerable=dict(then=True, catch=True, finally_=True, iterable=False, iterator=True),
-        awaititerator=dict(then=True, catch=True, finally_=True, iterable=True, iterator=True),
+        noimpls=dict(
+            then=False, catch=False, finally_=False, iterable=False, iterator=False
+        ),
+        awaitable=dict(
+            then=True, catch=True, finally_=True, iterable=False, iterator=False
+        ),
+        iterable=dict(
+            then=False, catch=False, finally_=False, iterable=True, iterator=False
+        ),
+        iterator=dict(
+            then=False, catch=False, finally_=False, iterable=True, iterator=True
+        ),
+        awaititerable=dict(
+            then=True, catch=True, finally_=True, iterable=False, iterator=True
+        ),
+        awaititerator=dict(
+            then=True, catch=True, finally_=True, iterable=True, iterator=True
+        ),
     )

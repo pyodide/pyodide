@@ -335,6 +335,7 @@ def test_await_pyproxy_eval_async(selenium):
         """
     )
 
+
 def test_await_pyproxy_async_def(selenium):
     assert selenium.run_js(
         """
