@@ -229,6 +229,15 @@ _pyproxy_destroy(PyObject* ptrobj)
   EM_ASM({ delete Module.PyProxies[$0]; }, ptrobj);
 }
 
+/**
+ * Test if a PyObject is awaitable. 
+ * Uses _PyCoro_GetAwaitableIter like in the implementation of the GET_AWAITABLE 
+ * opcode (see ceval.c). Unfortunately this is not a public API (see issue
+ * https://bugs.python.org/issue24510) so it could be a source of instability.
+ *
+ * :param pyobject: The Python object.
+ * :return: 1 if the python code "await obj" would succeed, 0 otherwise. Never fails.
+ */
 bool
 _pyproxy_is_awaitable(PyObject* pyobject)
 {
@@ -240,9 +249,15 @@ _pyproxy_is_awaitable(PyObject* pyobject)
 }
 
 // clang-format off
+/**
+ * A simple Callable python object. Intended to be called with a single argument
+ * which is the future that was resolved.
+ */
 typedef struct {
     PyObject_HEAD
+    /** Will call this function with the result if the future succeeded */
     JsRef resolve_handle;
+    /** Will call this function with the error if the future succeeded */
     JsRef reject_handle;
 } FutureDoneCallback;
 // clang-format on
@@ -255,47 +270,52 @@ FutureDoneCallback_dealloc(FutureDoneCallback* self)
   Py_TYPE(self)->tp_free((PyObject*)self);
 }
 
+/**
+  * Helper method: if the future resolved successfully, call resolve_handle on the 
+  * result.
+  */
 int
 FutureDoneCallback_call_resolve(FutureDoneCallback* self, PyObject* result)
 {
   bool success = false;
   JsRef result_js = NULL;
-  JsRef idargs = NULL;
   JsRef output = NULL;
   result_js = python2js(result);
-  idargs = hiwire_array();
-  hiwire_push_array(idargs, result_js);
-  output = hiwire_call(self->resolve_handle, idargs);
+  output = hiwire_call_OneArg(self->resolve_handle, result_js);
 
   success = true;
 finally:
   hiwire_CLEAR(result_js);
-  hiwire_CLEAR(idargs);
   hiwire_CLEAR(output);
   return success ? 0 : -1;
 }
 
+/**
+  * Helper method: if the future threw an error, call reject_handle on a converted 
+  * exception. The caller leaves the python error indicator set.
+  */
 int
 FutureDoneCallback_call_reject(FutureDoneCallback* self)
 {
   bool success = false;
   JsRef excval = NULL;
-  JsRef idargs = NULL;
   JsRef result = NULL;
+  // wrap_exception looks up the current exception and wraps it in a Js error.
   excval = wrap_exception();
   FAIL_IF_NULL(excval);
-  idargs = hiwire_array();
-  hiwire_push_array(idargs, excval);
-  result = hiwire_call(self->reject_handle, idargs);
+  result = hiwire_call_OneArg(self->reject_handle, excval);
 
   success = true;
 finally:
   hiwire_CLEAR(excval);
-  hiwire_CLEAR(idargs);
   hiwire_CLEAR(result);
   return success ? 0 : -1;
 }
 
+/**
+  * Intended to be called with a single argument which is the future that was resolved.
+  * Resolves the promise as appropriate based on the result of the future.
+  */
 PyObject*
 FutureDoneCallback_call(FutureDoneCallback* self,
                         PyObject* args,
@@ -339,7 +359,14 @@ FutureDoneCallback_cnew(JsRef resolve_handle, JsRef reject_handle)
     return (PyObject *) self;
 }
 
-
+/**
+  * Intended to be called with a single argument which is the future that was resolved.
+  * Resolves the promise as appropriate based on the result of the future.
+  * :param pyobject: An awaitable python object
+  * :param resolve_handle: The resolve javascript method for a promise
+  * :param reject_handle: The reject javascript method for a promise
+  * :return: 0 on success, -1 on failure
+  */
 int
 _pyproxy_ensure_future(PyObject* pyobject, JsRef resolve_handle, JsRef reject_handle){
   bool success = false;

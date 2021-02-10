@@ -371,6 +371,9 @@ hiwire_dir(JsRef idobj);
 JsRef
 hiwire_call(JsRef idobj, JsRef idargs);
 
+JsRef 
+hiwire_call_OneArg(JsRef idfunc, JsRef idarg);
+
 JsRef
 hiwire_call_bound(JsRef idfunc, JsRef idthis, JsRef idargs);
 
