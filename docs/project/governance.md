@@ -86,8 +86,8 @@ are made according to the following rules:
   Request can be merged.
 
 * **Code changes impacting user facing APIs, or having backward compatibility
-  implications** require a review and an approval (+1 vote) by a core
-  developer, no objections with -1 vote by a core developer (lazy consensus).
+  implications** require review and approval by a core
+  developer and no objections raised by any core developer (lazy consensus).
   This process happens on the pull-request page.
 
 * **Changes to the governance model** use the same decision process outlined
