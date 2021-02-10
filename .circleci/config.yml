@@ -8,6 +8,8 @@ defaults: &defaults
     - EMSDK_NUM_CORES: 4
       EMCC_CORES: 4
       PYODIDE_BASE_URL: https://cdn.jsdelivr.net/pyodide/dev/full/
+      PYODIDE_EMSCRIPTEN_VERSION: tot
+      PYODIDE_BINARYEN_VERSION: HEAD
 
 jobs:
   lint:
