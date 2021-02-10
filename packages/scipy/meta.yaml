@@ -35,7 +35,7 @@ build:
     echo "Regenerating cython wrappers"
     cd scipy/linalg
     python _cython_wrapper_generators.py
-    cd ..
+    cd ../..
     sed -i 's/extern void F_FUNC/extern int F_FUNC/g' scipy/**/*.c*
 
 requirements:
