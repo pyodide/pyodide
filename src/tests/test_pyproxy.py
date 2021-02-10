@@ -230,7 +230,17 @@ def test_pyproxy_mixins(selenium):
         `);
         let name_proxy = {noimpls, awaitable, iterable, iterator, awaititerable, awaititerator};
         let result = {};
-
+        for(let [name, x] of Object.entries(name_proxy)){
+            let impls = { 
+                "then" : x.then !== undefined,
+                "catch" : x.catch !== undefined,
+                "finally" : x.finally !== undefined,
+                "iterable" : x[Symbol.iterator] !== undefined,
+                "iterator" : x.next !== undefined
+            }
+            result[name] = impls;
+        }
+        return result;
         """
     )
     assert result == dict(
