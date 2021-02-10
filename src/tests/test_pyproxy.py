@@ -257,7 +257,7 @@ def test_pyproxy_mixins(selenium):
             then=False, catch=False, finally_=False, iterable=True, iterator=True
         ),
         awaititerable=dict(
-            then=True, catch=True, finally_=True, iterable=False, iterator=True
+            then=True, catch=True, finally_=True, iterable=True, iterator=False
         ),
         awaititerator=dict(
             then=True, catch=True, finally_=True, iterable=True, iterator=True
