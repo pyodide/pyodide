@@ -382,7 +382,6 @@ globalThis.languagePluginLoader = new Promise((resolve, reject) => {
     throw e;
   };
 
-
   /**
    * @member {PyProxy} pyodide_py
    * An alias to the Python pyodide package.
