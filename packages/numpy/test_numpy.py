@@ -208,6 +208,7 @@ def test_runwebworker_numpy(selenium_standalone):
     )
     assert output == "[0. 0. 0. 0. 0.]"
 
+
 def test_get_raw_buffer(selenium):
     selenium.run_js(
         """
