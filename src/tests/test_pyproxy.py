@@ -234,7 +234,7 @@ def test_pyproxy_mixins(selenium):
             let impls = { 
                 "then" : x.then !== undefined,
                 "catch" : x.catch !== undefined,
-                "finally" : x.finally !== undefined,
+                "finally_" : x.finally !== undefined,
                 "iterable" : x[Symbol.iterator] !== undefined,
                 "iterator" : x.next !== undefined
             }
