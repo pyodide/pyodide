@@ -65,6 +65,7 @@ information about the project's organization.
 
    project/about.md
    project/code-of-conduct.md
+   project/governance.md
    project/changelog.md
 
 Indices and tables
