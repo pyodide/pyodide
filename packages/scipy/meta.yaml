@@ -36,7 +36,7 @@ build:
     cd scipy/linalg
     python _cython_wrapper_generators.py
     cd ../..
-    sed -i 's/extern void F_FUNC/extern int F_FUNC/g' scipy/**/*.c*
+    find scipy -name "*.c*" | xargs sed -i 's/extern void F_FUNC/extern int F_FUNC/g'
 
 requirements:
   run:
