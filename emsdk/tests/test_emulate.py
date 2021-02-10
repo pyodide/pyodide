@@ -9,8 +9,11 @@ def test_emulate_function(tmpdir):
                 """\
 #include <stdio.h>
 
-void foo() {
+// emulate function pointer casts - this has the
+// wrong arguments and return type
+int foo(int extra_args) {
   puts("hello from library");
+  return 0;
 }"""
             )
         with open("main.c", "w") as f:
@@ -19,6 +22,7 @@ void foo() {
         subprocess.run(
             [
                 "emcc",
+                "-g",
                 "-s",
                 "SIDE_MODULE=1",
                 "library.c",
@@ -30,11 +34,11 @@ void foo() {
                 "EXPORT_ALL=1",
             ],
             check=True,
-            env=common.env,
         )
         subprocess.run(
             [
                 "emcc",
+                "-g",
                 "-s",
                 "MAIN_MODULE=1",
                 "main.c",
@@ -42,11 +46,10 @@ void foo() {
                 "library.wasm",
                 "-s",
                 "EMULATE_FUNCTION_POINTER_CASTS=1",
+                "-s",
+                "EXPORT_ALL=1",
             ],
             check=True,
-            env=common.env,
         )
-        out = subprocess.run(
-            ["node", "a.out.js"], capture_output=True, check=True, env=common.env
-        )
+        out = subprocess.run(["node", "a.out.js"], capture_output=True, check=True)
         assert out.stdout == b"hello from main\nhello from library\n"

@@ -1,14 +1,14 @@
 package:
   name: bleach
-  version: 3.1.5
+  version: 3.2.1
 requirements:
   run:
-  - setuptools
   - webencodings
   - packaging
+  - six
 source:
-  sha256: 3c4c520fdb9db59ef139915a5db79f8b51bc2a7257ea0389f30c846883430a4b
-  url: https://files.pythonhosted.org/packages/a9/ac/dc881fca3ac66d6f2c4c3ac46633af4e9c05ed5a0aa2e7e36dc096687dd7/bleach-3.1.5.tar.gz
+  sha256: 52b5919b81842b1854196eaae5ca29679a2f2e378905c346d3ca8227c2c66080
+  url: https://files.pythonhosted.org/packages/04/2c/8e256291cfeaefb72d1dafc888b1ad447e754d8062520b41f1d3ffa7e139/bleach-3.2.1.tar.gz
 test:
   imports:
   - bleach

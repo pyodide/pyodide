@@ -2,11 +2,17 @@ def test_numpy(selenium):
     selenium.load_package("numpy")
     selenium.run("import numpy")
     selenium.run("x = numpy.ones((32, 64))")
-    assert selenium.run_js("return pyodide.pyimport('x').length == 32")
+    assert selenium.run_js(
+        "return pyodide.pyimport('x').deepCopyToJavascript().length == 32"
+    )
     for i in range(32):
-        assert selenium.run_js(f"return pyodide.pyimport('x')[{i}].length == 64")
+        assert selenium.run_js(
+            f"return pyodide.pyimport('x').deepCopyToJavascript()[{i}].length == 64"
+        )
         for j in range(64):
-            assert selenium.run_js(f"return pyodide.pyimport('x')[{i}][{j}] == 1")
+            assert selenium.run_js(
+                f"return pyodide.pyimport('x').deepCopyToJavascript()[{i}][{j}] == 1"
+            )
 
 
 def test_typed_arrays(selenium):
@@ -48,7 +54,9 @@ def test_python2js_numpy_dtype(selenium_standalone):
             for j in range(2):
                 for k in range(2):
                     assert (
-                        selenium.run_js(f"return pyodide.pyimport('x')[{i}][{j}][{k}]")
+                        selenium.run_js(
+                            f"return pyodide.pyimport('x').deepCopyToJavascript()[{i}][{j}][{k}]"
+                        )
                         == expected_result[i][j][k]
                     )
 
@@ -74,7 +82,7 @@ def test_python2js_numpy_dtype(selenium_standalone):
             )
             assert_equal()
             classname = selenium.run_js(
-                "return pyodide.pyimport('x')[0][0].constructor.name"
+                "return pyodide.pyimport('x').deepCopyToJavascript()[0][0].constructor.name"
             )
             if order == "C" and dtype not in ("uint64", "int64"):
                 # Here we expect a TypedArray subclass, such as Uint8Array, but
@@ -90,7 +98,7 @@ def test_python2js_numpy_dtype(selenium_standalone):
             )
             assert_equal()
             classname = selenium.run_js(
-                "return pyodide.pyimport('x')[0][0].constructor.name"
+                "return pyodide.pyimport('x').deepCopyToJavascript()[0][0].constructor.name"
             )
             if order == "C" and dtype in ("int8", "uint8"):
                 # Here we expect a TypedArray subclass, such as Uint8Array, but
@@ -104,9 +112,31 @@ def test_python2js_numpy_dtype(selenium_standalone):
     assert selenium.run("np.array([True, False])") == [True, False]
 
     selenium.run("x = np.array([['string1', 'string2'], ['string3', 'string4']])")
-    assert selenium.run_js("return pyodide.pyimport('x').length") == 2
-    assert selenium.run_js("return pyodide.pyimport('x')[0][0]") == "string1"
-    assert selenium.run_js("return pyodide.pyimport('x')[1][1]") == "string4"
+    assert (
+        selenium.run_js("return pyodide.pyimport('x').deepCopyToJavascript().length")
+        == 2
+    )
+    assert (
+        selenium.run_js("return pyodide.pyimport('x').deepCopyToJavascript()[0][0]")
+        == "string1"
+    )
+    assert (
+        selenium.run_js("return pyodide.pyimport('x').deepCopyToJavascript()[1][1]")
+        == "string4"
+    )
+
+
+def test_py2js_buffer_clear_error_flag(selenium):
+    selenium.load_package("numpy")
+    selenium.run("import numpy as np")
+    selenium.run("x = np.array([['string1', 'string2'], ['string3', 'string4']])")
+    selenium.run_js(
+        """
+        pyodide.globals.x
+        // Implicit assertion: this doesn't leave python error indicator set
+        // (automatically checked in conftest.py)
+        """
+    )
 
 
 def test_python2js_numpy_scalar(selenium_standalone):
@@ -163,7 +193,9 @@ def test_runpythonasync_numpy(selenium_standalone):
         """
     )
     for i in range(5):
-        assert selenium_standalone.run_js(f"return pyodide.pyimport('x')[{i}] == 0")
+        assert selenium_standalone.run_js(
+            f"return pyodide.pyimport('x').deepCopyToJavascript()[{i}] == 0"
+        )
 
 
 def test_runwebworker_numpy(selenium_standalone):

@@ -3,7 +3,7 @@ version: 2
 defaults: &defaults
   working_directory: ~/repo
   docker:
-    - image: iodide/pyodide-env:9
+    - image: iodide/pyodide-env:11
   environment:
     - EMSDK_NUM_CORES: 4
       EMCC_CORES: 4
@@ -18,6 +18,28 @@ jobs:
       - run:
           name: lint
           command: make lint
+
+  build-docs:
+    working_directory: ~/repo
+
+    docker:
+      - image: cimg/python:3.8.2-node
+
+    steps:
+      - checkout
+
+      - run:
+          name: Install prerequisites
+          command: |
+            pip install -r docs/requirements-doc.txt
+            sudo npm install -g jsdoc
+
+      - run:
+          name: Build docs
+          command: python3 -m sphinx -M html docs docs/_build
+
+      - store_artifacts:
+          path: /root/repo/docs/_build/
 
   build-core:
     <<: *defaults
@@ -62,6 +84,12 @@ jobs:
             - ~/.ccache
           key: -{{ checksum "Makefile.envs" }}-v20201205-{{ .BuildNum }}
 
+      - run:
+          name: Clean up workspace
+          command: |
+            rm -rf cpython/{build,downloads}
+            rm -rf emsdk/emsdk/binaryen
+
       - persist_to_workspace:
           root: .
           paths:
@@ -103,7 +131,7 @@ jobs:
             - ./build
 
       - store_artifacts:
-          path: /home/circleci/repo/build/
+          path: /root/repo/build/
 
   test-core-firefox:
     <<: *defaults
@@ -152,8 +180,7 @@ jobs:
           at: .
       - run:
           name: test
-          command: |
-            pytest emsdk/tests -v
+          command: make -C emsdk test
 
   test-python:
     <<: *defaults
@@ -175,7 +202,7 @@ jobs:
           command: |
             python benchmark/benchmark.py /usr/local/bin/python3 build/benchmarks.json
       - store_artifacts:
-          path: /home/circleci/repo/build/benchmarks.json
+          path: /root/repo/build/benchmarks.json
 
   deploy-release:
     docker:
@@ -234,19 +261,23 @@ workflows:
   build-and-deploy:
     jobs:
       - lint
+      - build-docs
       - build-core:
-          requires:
-            - lint
-            - test-python
           filters:
             tags:
               only: /.*/
       - build-packages:
           requires:
             - build-core
+          filters:
+            tags:
+              only: /.*/
       - test-core-chrome:
           requires:
             - build-core
+          filters:
+            tags:
+              only: /.*/
       - test-core-firefox:
           requires:
             - build-core
@@ -256,6 +287,9 @@ workflows:
       - test-packages-chrome:
           requires:
             - build-packages
+          filters:
+            tags:
+              only: /.*/
       - test-packages-firefox:
           requires:
             - build-packages
@@ -265,6 +299,9 @@ workflows:
       - test-emsdk:
           requires:
             - build-core
+          filters:
+            tags:
+              only: /.*/
       - test-python:
           filters:
             tags:
@@ -274,8 +311,13 @@ workflows:
             - build-packages
       - deploy-release:
           requires:
+            - lint
+            - test-python
             - test-core-firefox
             - test-packages-firefox
+            - test-core-chrome
+            - test-emsdk
+            - build-docs
           filters:
             branches:
               ignore: /.*/
@@ -283,8 +325,13 @@ workflows:
               only: /^\d+\.\d+\.\d+$/
       - deploy-s3:
           requires:
+            - lint
+            - test-python
             - test-core-firefox
             - test-packages-firefox
+            - test-core-chrome
+            - test-emsdk
+            - build-docs
           filters:
             branches:
               only: master

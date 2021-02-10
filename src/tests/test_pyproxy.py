@@ -52,8 +52,11 @@ def test_pyproxy(selenium):
             "get_value",
             "toString",
             "prototype",
-            "arguments",
-            "caller",
+            "apply",
+            "destroy",
+            "$$",
+            "deepCopyToJavascript",
+            "shallowCopyToJavascript",
         ]
     )
     assert selenium.run("hasattr(f, 'baz')")
@@ -131,3 +134,71 @@ def test_pyproxy_destroy(selenium):
             f.get_value();
             """
         )
+
+
+def test_pyproxy_iter(selenium):
+    assert (
+        selenium.run_js(
+            """
+        let c = pyodide.runPython(`
+            def test():
+                for i in range(10):
+                    yield i
+            test()
+        `);
+        return [...c];
+        """
+        )
+        == list(range(10))
+    )
+
+    assert (
+        set(
+            selenium.run_js(
+                """
+        c = pyodide.runPython(`
+            from collections import ChainMap
+            ChainMap({"a" : 2, "b" : 3})
+        `);
+        return [...c];
+        """
+            )
+        )
+        == set(["a", "b"])
+    )
+
+    [result, result2] = selenium.run_js(
+        """
+        let c = pyodide.runPython(`
+            def test():
+                acc = 0
+                for i in range(10):
+                    r = yield acc
+                    acc += i * r
+            test()
+        `)
+        let {done, value} = c.next();
+        let result = [];
+        while(!done){
+            result.push(value);
+            ({done, value} = c.next(value + 1));
+        }
+
+        function* test(){
+            let acc = 0;
+            for(let i=0; i < 10; i++){
+                let r = yield acc;
+                acc += i * r;
+            }
+        }
+        c = test();
+        ({done, value} = c.next());
+        let result2 = [];
+        while(!done){
+            result2.push(value);
+            ({done, value} = c.next(value + 1));
+        }
+        return [result, result2];
+        """
+    )
+    assert result == result2

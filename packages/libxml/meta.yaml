@@ -1,9 +1,24 @@
 package:
   name: libxml
+  version: 2.9.10
+
+source:
+  sha256: aafee193ffb8fe0c82d4afef6ef91972cbaf5feea100edc2f262750611b4be1f
+  url: ftp://xmlsoft.org/libxml2/libxml2-2.9.10.tar.gz
 
 requirements:
   run:
     - zlib
+    - libiconv
 
 build:
   library: true
+  script: |
+    emconfigure ./configure \
+        CFLAGS="-fPIC" \
+        --disable-dependency-tracking \
+        --disable-shared \
+        --without-python \
+        --with-iconv="$PYODIDE_ROOT/packages/libiconv/build/libiconv-1.16/lib/.libs" \
+        --with-zlib="$PYODIDE_ROOT/packages/zlib/build/zlib-1.2.11/"
+    emmake make -j ${PYODIDE_JOBS:-3}

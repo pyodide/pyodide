@@ -1,7 +1,8 @@
 import pytest
 import os
 from pathlib import Path
-from pyodide_build.common import parse_package, _parse_package_subset
+from pyodide_build.common import _parse_package_subset
+from pyodide_build.io import parse_package_config
 
 PKG_DIR = Path(__file__).parent
 
@@ -20,16 +21,18 @@ def registered_packages_meta():
     for each registered package
     """
     packages = registered_packages
-    return {name: parse_package(PKG_DIR / name / "meta.yaml") for name in packages}
+    return {
+        name: parse_package_config(PKG_DIR / name / "meta.yaml") for name in packages
+    }
 
 
-UNSUPPORTED_PACKAGES = {"chrome": ["pandas", "scipy", "scikit-learn"], "firefox": []}
+UNSUPPORTED_PACKAGES = {"chrome": [], "firefox": []}
 
 
 @pytest.mark.parametrize("name", registered_packages())
 def test_parse_package(name):
     # check that we can parse the meta.yaml
-    meta = parse_package(PKG_DIR / name / "meta.yaml")
+    meta = parse_package_config(PKG_DIR / name / "meta.yaml")
 
     skip_host = meta.get("build", {}).get("skip_host", True)
     if name == "numpy":
@@ -41,7 +44,7 @@ def test_parse_package(name):
 @pytest.mark.parametrize("name", registered_packages())
 def test_import(name, selenium_standalone):
     # check that we can parse the meta.yaml
-    meta = parse_package(PKG_DIR / name / "meta.yaml")
+    meta = parse_package_config(PKG_DIR / name / "meta.yaml")
 
     if name in UNSUPPORTED_PACKAGES[selenium_standalone.browser]:
         pytest.xfail(
@@ -65,34 +68,9 @@ def test_import(name, selenium_standalone):
         ))
         """
     )
-
-    selenium_standalone.load_package(name)
-
-    # Make sure there are no additional .pyc file
-    assert (
-        selenium_standalone.run(
-            """
-        len(list(glob.glob(
-            '/lib/python3.8/site-packages/**/*.pyc',
-            recursive=True)
-        ))
-        """
-        )
-        == baseline_pyc
-    )
-
     loaded_packages = []
     for import_name in meta.get("test", {}).get("imports", []):
-
-        if name not in loaded_packages:
-            selenium_standalone.load_package(name)
-            loaded_packages.append(name)
-        try:
-            selenium_standalone.run("import %s" % import_name)
-        except Exception:
-            print(selenium_standalone.logs)
-            raise
-
+        selenium_standalone.run_async("import %s" % import_name)
         # Make sure that even after importing, there are no additional .pyc
         # files
         assert (

@@ -1,13 +1,28 @@
-from ._base import open_url, eval_code, find_imports, as_nested_list, JsException
-from .console import get_completions
+from ._base import open_url, eval_code, find_imports, as_nested_list
+from ._core import JsException  # type: ignore
+from ._importhooks import JsFinder
+from .webloop import WebLoopPolicy
+import asyncio
+import sys
+import platform
 
-__version__ = "0.15.0"
+jsfinder = JsFinder()
+register_js_module = jsfinder.register_js_module
+unregister_js_module = jsfinder.unregister_js_module
+sys.meta_path.append(jsfinder)  # type: ignore
+
+if platform.system() == "Emscripten":
+    asyncio.set_event_loop_policy(WebLoopPolicy())
+
+
+__version__ = "0.16.1"
 
 __all__ = [
     "open_url",
     "eval_code",
     "find_imports",
     "as_nested_list",
-    "get_completions",
     "JsException",
+    "register_js_module",
+    "unregister_js_module",
 ]

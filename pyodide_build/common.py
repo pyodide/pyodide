@@ -1,36 +1,29 @@
 from pathlib import Path
 from typing import Optional, Set
+import shutil
 
-ROOTDIR = Path(__file__).parents[1].resolve() / "tools"
-TARGETPYTHON = ROOTDIR / ".." / "cpython" / "installs" / "python-3.8.2"
-DEFAULTCFLAGS = ""
+ROOTDIR = Path(__file__).parents[1].resolve()
+TOOLSDIR = ROOTDIR / "tools"
+TARGETPYTHON = ROOTDIR / "cpython" / "installs" / "python-3.8.2"
+
+# Leading space so that argparse doesn't think this is a flag
+DEFAULTCFLAGS = " -fPIC"
+DEFAULTCXXFLAGS = ""
 # fmt: off
 DEFAULTLDFLAGS = " ".join(
     [
         "-O2",
-        "-s", "BINARYEN_METHOD='native-wasm'",
         "-Werror",
-        "-s", "EMULATED_FUNCTION_POINTERS=1",
         "-s", "EMULATE_FUNCTION_POINTER_CASTS=1",
+        "-s",'BINARYEN_EXTRA_PASSES="--pass-arg=max-func-params@61"',
         "-s", "SIDE_MODULE=1",
         "-s", "WASM=1",
-        "-s", "BINARYEN_TRAP_MODE='clamp'",
         "--memory-init-file", "0",
         "-s", "LINKABLE=1",
         "-s", "EXPORT_ALL=1",
     ]
 )
 # fmt: on
-
-
-def parse_package(package):
-    # Import yaml here because pywasmcross needs to run in the built native
-    # Python, which won't have PyYAML
-    import yaml
-
-    # TODO: Validate against a schema
-    with open(package) as fd:
-        return yaml.safe_load(fd)
 
 
 def _parse_package_subset(query: Optional[str]) -> Optional[Set[str]]:
@@ -47,3 +40,14 @@ def _parse_package_subset(query: Optional[str]) -> Optional[Set[str]]:
     packages = [el.strip() for el in packages]
     packages = ["micropip", "distlib"] + packages
     return set(packages)
+
+
+def file_packager_path() -> Path:
+    # Use emcc.py because emcc may be a ccache symlink
+    emcc_path = shutil.which("emcc.py")
+    if emcc_path is None:
+        raise RuntimeError(
+            "emcc.py not found. Setting file_packager.py path to /dev/null"
+        )
+
+    return Path(emcc_path).parent / "tools" / "file_packager.py"

@@ -1,6 +1,5 @@
 # See also test_pyproxy, test_jsproxy, and test_python.
 import pytest
-from selenium.common.exceptions import WebDriverException
 
 
 def test_python2js(selenium):
@@ -23,14 +22,14 @@ def test_python2js(selenium):
     )
     assert selenium.run_js(
         """
-        let x = pyodide.runPython("[1, 2, 3]");
+        let x = pyodide.runPython("[1, 2, 3]").deepCopyToJavascript();
         return ((x instanceof window.Array) && (x.length === 3) &&
                 (x[0] == 1) && (x[1] == 2) && (x[2] == 3))
         """
     )
     assert selenium.run_js(
         """
-        let x = pyodide.runPython("{42: 64}");
+        let x = pyodide.runPython("{42: 64}").deepCopyToJavascript();
         return (typeof x === "object") && (x[42] === 64)
         """
     )
@@ -129,6 +128,27 @@ def test_js2python(selenium):
     )
 
 
+def test_js2python_bool(selenium):
+    selenium.run_js(
+        """
+        window.f = ()=>{}
+        window.m0 = new Map();
+        window.m1 = new Map([[0, 1]]);
+        window.s0 = new Set();
+        window.s1 = new Set([0]);
+        """
+    )
+    assert (
+        selenium.run(
+            """
+        from js import window, f, m0, m1, s0, s1
+        [bool(x) for x in [f, m0, m1, s0, s1]]
+        """
+        )
+        == [True, False, True, False, True]
+    )
+
+
 @pytest.mark.parametrize("wasm_heap", (False, True))
 @pytest.mark.parametrize(
     "jstype, pytype",
@@ -150,7 +170,7 @@ def test_typed_arrays(selenium, wasm_heap, jstype, pytype):
     else:
         selenium.run_js(
             f"""
-             var buffer = pyodide._module._malloc(
+             let buffer = pyodide._module._malloc(
                    4 * {jstype}.BYTES_PER_ELEMENT);
              window.array = new {jstype}(
                    pyodide._module.HEAPU8.buffer, buffer, 4);
@@ -190,7 +210,7 @@ def test_array_buffer(selenium):
 def assert_js_to_py_to_js(selenium, name):
     selenium.run_js(f"window.obj = {name};")
     selenium.run("from js import obj")
-    assert selenium.run_js("return pyodide.globals['obj'] === obj")
+    assert selenium.run_js("return pyodide.globals['obj'] === obj;")
 
 
 def assert_py_to_js_to_py(selenium, name):
@@ -210,7 +230,7 @@ def test_recursive_list_to_js(selenium_standalone):
         x.append(x)
         """
     )
-    selenium_standalone.run_js("x = pyodide.pyimport('x')")
+    selenium_standalone.run_js("x = pyodide.pyimport('x').deepCopyToJavascript();")
 
 
 def test_recursive_dict_to_js(selenium_standalone):
@@ -220,27 +240,37 @@ def test_recursive_dict_to_js(selenium_standalone):
         x[0] = x
         """
     )
-    selenium_standalone.run_js("x = pyodide.pyimport('x')")
+    selenium_standalone.run_js("x = pyodide.pyimport('x').deepCopyToJavascript();")
 
 
-def test_list_from_js(selenium):
+def test_list_js2py2js(selenium):
     selenium.run_js("window.x = [1,2,3];")
     assert_js_to_py_to_js(selenium, "x")
 
 
-def test_dict_from_js(selenium):
+def test_dict_js2py2js(selenium):
     selenium.run_js("window.x = { a : 1, b : 2, 0 : 3 };")
     assert_js_to_py_to_js(selenium, "x")
 
 
-def test_error_from_js(selenium):
+def test_error_js2py2js(selenium):
     selenium.run_js("window.err = new Error('hello there?');")
     assert_js_to_py_to_js(selenium, "err")
 
 
-def test_error_from_python(selenium):
+def test_error_py2js2py(selenium):
     selenium.run("err = Exception('hello there?');")
     assert_py_to_js_to_py(selenium, "err")
+
+
+def test_list_py2js2py(selenium):
+    selenium.run("x = ['a', 'b']")
+    assert_py_to_js_to_py(selenium, "x")
+
+
+def test_dict_py2js2py(selenium):
+    selenium.run("x = {'a' : 5, 'b' : 1}")
+    assert_py_to_js_to_py(selenium, "x")
 
 
 def test_jsproxy_attribute_error(selenium):
@@ -252,7 +282,7 @@ def test_jsproxy_attribute_error(selenium):
                 this.y = y;
             }
         }
-        window.point = new Point(42, 43)
+        window.point = new Point(42, 43);
         """
     )
     selenium.run(
@@ -263,19 +293,19 @@ def test_jsproxy_attribute_error(selenium):
     )
 
     msg = "AttributeError: z"
-    with pytest.raises(WebDriverException, match=msg):
+    with pytest.raises(selenium.JavascriptException, match=msg):
         selenium.run("point.z")
 
     selenium.run("del point.y")
     msg = "AttributeError: y"
-    with pytest.raises(WebDriverException, match=msg):
+    with pytest.raises(selenium.JavascriptException, match=msg):
         selenium.run("point.y")
     assert selenium.run_js("return point.y;") is None
 
 
 def test_javascript_error(selenium):
     msg = "JsException: Error: This is a js error"
-    with pytest.raises(WebDriverException, match=msg):
+    with pytest.raises(selenium.JavascriptException, match=msg):
         selenium.run(
             """
             from js import Error
@@ -289,7 +319,7 @@ def test_javascript_error(selenium):
 def test_javascript_error_back_to_js(selenium):
     selenium.run_js(
         """
-        window.err = new Error("This is a js error")
+        window.err = new Error("This is a js error");
         """
     )
     assert (
@@ -304,6 +334,113 @@ def test_javascript_error_back_to_js(selenium):
     )
     assert selenium.run_js(
         """
-        return pyodide.globals["py_err"] === err
+        return pyodide.globals["py_err"] === err;
+        """
+    )
+
+
+def test_memoryview_conversion(selenium):
+    selenium.run(
+        """
+        import array
+        a = array.array("Q", [1,2,3])
+        b = array.array("u", "123")
+        """
+    )
+    selenium.run_js(
+        """
+        pyodide.globals.a
+        // Implicit assertion: this doesn't leave python error indicator set
+        // (automatically checked in conftest.py)
+        """
+    )
+
+    selenium.run_js(
+        """
+        pyodide.globals.b
+        // Implicit assertion: this doesn't leave python error indicator set
+        // (automatically checked in conftest.py)
+        """
+    )
+
+
+def test_python2js_with_depth(selenium):
+
+    selenium.run("a = [1, 2, 3]")
+    assert selenium.run_js(
+        """
+        res = pyodide._module.test_python2js_with_depth("a", -1);
+        return (Array.isArray(res)) && JSON.stringify(res) === "[1,2,3]";
+        """
+    )
+
+    selenium.run("a = (1, 2, 3)")
+    assert selenium.run_js(
+        """
+        res = pyodide._module.test_python2js_with_depth("a", -1);
+        return (Array.isArray(res)) && JSON.stringify(res) === "[1,2,3]";
+        """
+    )
+
+    selenium.run("a = [(1,2), (3,4), [5, 6], { 2 : 3,  4 : 9}]")
+    assert selenium.run_js(
+        """
+        res = pyodide._module.test_python2js_with_depth("a", -1);
+        return Array.isArray(res) && \
+            JSON.stringify(res) === `[[1,2],[3,4],[5,6],{"2":3,"4":9}]`;
+        """
+    )
+
+    selenium.run(
+        """
+        a = [1,[2,[3,[4,[5,[6,[7]]]]]]]
+        """
+    )
+    selenium.run_js(
+        """
+        function assert(x, msg){
+            if(x !== true){
+                throw new Error(`Assertion failed: ${msg}`);
+            }
+        }
+        for(let i=0; i < 7; i++){
+            let x = pyodide._module.test_python2js_with_depth("a", i);
+            for(let j=0; j < i; j++){
+                assert(Array.isArray(x), `i: ${i}, j: ${j}`);
+                x = x[1];
+            }
+            assert(pyodide._module.PyProxy.isPyProxy(x), `i: ${i}, j: ${i}`);
+        }
+        """
+    )
+
+    selenium.run("a = [1, (2, (3, [4, (5, (6, [7]))]))]")
+    selenium.run_js(
+        """
+        function assert(x, msg){
+            if(x !== true){
+                throw new Error(`Assertion failed: ${msg}`);
+            }
+        }
+        let depths = [0, 3, 3, 3, 6, 6, 6]
+        for(let i=0; i < 7; i++){
+            let x = pyodide._module.test_python2js_with_depth("a", i);
+            for(let j=0; j < depths[i]; j++){
+                assert(Array.isArray(x), `i: ${i}, j: ${j}`);
+                x = x[1];
+            }
+            assert(pyodide._module.PyProxy.isPyProxy(x), `i: ${i}, j: ${i}`);
+        }
+        """
+    )
+
+
+@pytest.mark.xfail
+def test_py2js_set(selenium):
+    selenium.run("a = {1, 2, 3}")
+    assert selenium.run_js(
+        """
+        let res = pyodide._module.test_python2js_with_depth("a", -1);
+        return res instanceof Set;
         """
     )
