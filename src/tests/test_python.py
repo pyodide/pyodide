@@ -64,6 +64,7 @@ def test_open_url(selenium, httpserver):
             f"""
             def open_url(url):
                 from js import XMLHttpRequest
+                from io import StringIO
                 req = XMLHttpRequest.new()
                 req.open("GET", url, False)
                 req.send(None)

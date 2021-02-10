@@ -66,6 +66,7 @@ def test_load_largish_file(selenium_standalone, request, httpserver):
         import pandas as pd
         def open_url(url):
             from js import XMLHttpRequest
+            from io import StringIO
             req = XMLHttpRequest.new()
             req.open("GET", url, False)
             req.send(None)
