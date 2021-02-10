@@ -382,17 +382,6 @@ globalThis.languagePluginLoader = new Promise((resolve, reject) => {
     throw e;
   };
 
-  Module.runPythonSimple = function(code) {
-    let code_c_string = Module.stringToNewUTF8(code);
-    let run_as_exec = Module.HEAP32[Module._py_exec / 4];
-    let init_dict_ptr = Module.init_dict.$$.ptr;
-    Module._PyRun_String(code_c_string, run_as_exec, init_dict_ptr,
-                         init_dict_ptr);
-    Module._free(code_c_string);
-    if (Module._PyErr_Occurred()) {
-      Module._pythonexc2js();
-    }
-  };
 
   /**
    * @member {PyProxy} pyodide_py

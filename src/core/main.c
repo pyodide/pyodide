@@ -72,7 +72,17 @@ static struct PyModuleDef core_module_def = {
   .m_size = -1,
 };
 
-int py_exec = Py_file_input;
+PyObject* init_dict;
+
+void
+run_python_simple_inner(char* code){
+  PyObject* result = PyRun_String(code, Py_file_input, init_dict, init_dict);
+  if (result == NULL) {
+    pythonexc2js();
+  } else {
+    Py_DECREF(result);
+  }
+}
 
 int
 main(int argc, char** argv)
@@ -107,9 +117,19 @@ main(int argc, char** argv)
     FATAL_ERROR("Failed to add '_pyodide_core' module to modules dict.");
   }
 
-  PyObject* init_dict = PyDict_New();
+  init_dict = PyDict_New();
   JsRef init_dict_proxy = python2js(init_dict);
-  EM_ASM({ Module.init_dict = Module.hiwire.pop_value($0) }, init_dict_proxy);
+  EM_ASM({ 
+    Module.init_dict = Module.hiwire.pop_value($0); 
+    Module.runPythonSimple = function(code) {
+      let code_c_string = Module.stringToNewUTF8(code);
+      try {
+        run_python_simple_inner(code_c_string);
+      } finally {
+        Module._free(code_c_string);
+      }
+    };
+  }, init_dict_proxy);
 
   Py_CLEAR(core_module);
   printf("Python initialization complete\n");
