@@ -1,4 +1,4 @@
-diff --git a/upstream/emscripten/src/library.js b/upstream/emscripten/src/library.js.new
+diff --git a/upstream/emscripten/src/library.js b/upstream/emscripten/src/library.js
 index ea4cf27..6a692bd 100644
 --- a/emsdk/upstream/emscripten/src/library.js
 +++ b/emsdk/upstream/emscripten/src/library.js

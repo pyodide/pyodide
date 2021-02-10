@@ -2,7 +2,7 @@ diff --git a/emsdk/binary/src/passes/FuncCastEmulation.cpp b/src/passes/FuncCast
 index 9d232c9..60d3990 100644
 --- a/emsdk/binaryen/src/passes/FuncCastEmulation.cpp
 +++ b/emsdk/binaryen/src/passes/FuncCastEmulation.cpp
-@@ -170,20 +170,88 @@ struct FuncCastEmulation : public Pass {
+@@ -170,20 +170,86 @@ struct FuncCastEmulation : public Pass {
        std::stoul(runner->options.getArgumentOrDefault("max-func-params", "16"));
      // we just need the one ABI function type for all indirect calls
      Signature ABIType(Type(std::vector<Type>(numParams, Type::i64)), Type::i64);
@@ -74,11 +74,9 @@ index 9d232c9..60d3990 100644
 +                auto* export2_ = new Export;
 +                export2_->name = buffer;
 +                export2_->value = orig_name;
-+                printf("Orig_name %s\n",orig_name.str);
 +                export2_->kind = ExternalKind::Function;
 +                module->addExport(export2_);
 +                name = thunk;
-+                printf("Orig_name2 %s,%d\n",orig_name.str,exportCount);
 +            } else {
 +              name = iter->second;
 +            }
