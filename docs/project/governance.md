@@ -2,7 +2,7 @@
 
 The purpose of this document is to formalize the governance process used by the
 pyodide project, to clarify how decisions are made and how the various
-elements of our community interact.
+members of our community interact.
 This document establishes a decision-making structure that takes into account
 feedback from all members of the community and strives to find consensus, while
 avoiding any deadlocks.
@@ -10,8 +10,7 @@ avoiding any deadlocks.
 Anyone with an
 interest in the project can join the community, contribute to the project
 design and participate in the decision making process. This document describes
-how that participation takes place and how to set about earning merit within
-the project community.
+how to participate and earn merit in the pyodide community.
 
 ## Roles And Responsibilities
 
@@ -27,11 +26,9 @@ The community members team is composed of community members who have permission 
 Github to label and close issues. Their work is
 crucial to improve the communication in the project.
 
-Similarly to what has been decided in the [CPython project](
-https://devguide.python.org/triaging/#becoming-a-member-of-the-python-triage-team),
-any contributor may become a member of this team, after
-showing some continuity in participating in pyodide
-development (with pull requests and reviews).
+After participating in pyodide development with pull requests and reviews for a period of time, any contributor may become a member of the team.
+The process for adding team members is modeled on the [CPython project](
+https://devguide.python.org/triaging/#becoming-a-member-of-the-python-triage-team).
 Any core developer is welcome to propose a pyodide contributor to join the
 community members team. Other core developers are then consulted: while it is expected
 that most acceptances will be unanimous, a two-thirds majority is enough.
