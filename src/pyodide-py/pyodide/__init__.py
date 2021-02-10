@@ -20,6 +20,7 @@ __version__ = "0.16.1"
 __all__ = [
     "open_url",
     "eval_code",
+    "eval_code_async",
     "find_imports",
     "as_nested_list",
     "JsException",
