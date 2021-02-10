@@ -263,7 +263,7 @@ def test_eval_code_await_error(selenium):
         )
 
 
-def test_await_pyproxy(selenium):
+def test_await_pyproxy_eval_async(selenium):
     assert (
         selenium.run_js(
             """
@@ -332,5 +332,18 @@ def test_await_pyproxy(selenium):
             err_occurred = true;
         }
         return err_occurred;
+        """
+    )
+
+def test_await_pyproxy_async_def(selenium):
+    assert selenium.run_js(
+        """
+        let packages = await pyodide.runPython(`
+            from js import fetch
+            async def temp():
+                return await (await fetch('packages.json')).json()
+            temp()  
+        `);
+        return (!!packages.dependencies) && (!!packages.import_name_to_package_name);
         """
     )
