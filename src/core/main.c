@@ -127,7 +127,7 @@ main(int argc, char** argv)
       {
         let code_c_string = Module.stringToNewUTF8(code);
         try {
-          run_python_simple_inner(code_c_string);
+          Module._run_python_simple_inner(code_c_string);
         } finally {
           Module._free(code_c_string);
         }
