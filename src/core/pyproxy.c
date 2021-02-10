@@ -230,13 +230,14 @@ _pyproxy_destroy(PyObject* ptrobj)
 }
 
 /**
- * Test if a PyObject is awaitable. 
- * Uses _PyCoro_GetAwaitableIter like in the implementation of the GET_AWAITABLE 
+ * Test if a PyObject is awaitable.
+ * Uses _PyCoro_GetAwaitableIter like in the implementation of the GET_AWAITABLE
  * opcode (see ceval.c). Unfortunately this is not a public API (see issue
  * https://bugs.python.org/issue24510) so it could be a source of instability.
  *
  * :param pyobject: The Python object.
- * :return: 1 if the python code "await obj" would succeed, 0 otherwise. Never fails.
+ * :return: 1 if the python code "await obj" would succeed, 0 otherwise. Never
+ * fails.
  */
 bool
 _pyproxy_is_awaitable(PyObject* pyobject)
@@ -271,9 +272,9 @@ FutureDoneCallback_dealloc(FutureDoneCallback* self)
 }
 
 /**
-  * Helper method: if the future resolved successfully, call resolve_handle on the 
-  * result.
-  */
+ * Helper method: if the future resolved successfully, call resolve_handle on
+ * the result.
+ */
 int
 FutureDoneCallback_call_resolve(FutureDoneCallback* self, PyObject* result)
 {
@@ -291,9 +292,9 @@ finally:
 }
 
 /**
-  * Helper method: if the future threw an error, call reject_handle on a converted 
-  * exception. The caller leaves the python error indicator set.
-  */
+ * Helper method: if the future threw an error, call reject_handle on a
+ * converted exception. The caller leaves the python error indicator set.
+ */
 int
 FutureDoneCallback_call_reject(FutureDoneCallback* self)
 {
@@ -313,9 +314,10 @@ finally:
 }
 
 /**
-  * Intended to be called with a single argument which is the future that was resolved.
-  * Resolves the promise as appropriate based on the result of the future.
-  */
+ * Intended to be called with a single argument which is the future that was
+ * resolved. Resolves the promise as appropriate based on the result of the
+ * future.
+ */
 PyObject*
 FutureDoneCallback_call(FutureDoneCallback* self,
                         PyObject* args,
