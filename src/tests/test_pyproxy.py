@@ -207,13 +207,19 @@ def test_pyproxy_iter(selenium):
 def test_pyproxy_get_raw_buffer(selenium):
     selenium.run_js(
         """
-        await pyodide.runPythonAsync(`
-            import numpy as np
+        await pyodide.runPython(`
+            from sys import getrefcount
             z1 = memoryview(bytes(range(24))).cast("b", [8,3])
             z2 = z1[-1::-1]
         `);
         for(let x of ["z1", "z2"]){
-            let z = pyodide.pyimport(x).getRawBuffer("u32");
+            pyodide.runPython(`assert getrefcount(${x}) == 2`);
+            let proxy = pyodide.pyimport(x);
+            pyodide.runPython(`assert getrefcount(${x}) == 3`);
+            let z = proxy.getRawBuffer();
+            pyodide.runPython(`assert getrefcount(${x}) == 4`);
+            proxy.destroy();
+            pyodide.runPython(`assert getrefcount(${x}) == 3`);
             for(let idx1 = 0; idx1 < 8; idx1++) {
                 for(let idx2 = 0; idx2 < 3; idx2++){
                     let v1 = z.buffer[z.offset + z.strides[0] * idx1 + z.strides[1] * idx2];
@@ -225,6 +231,8 @@ def test_pyproxy_get_raw_buffer(selenium):
                 }
             }
             z.release();
+            pyodide.runPython(`assert getrefcount(${x}) == 2`);
+            pyodide.runPython(`del ${x}`);
         }
         """
     )

@@ -499,8 +499,6 @@ EM_JS_NUM(int, pyproxy_init, (), {
         throw new Error("Failed");
       }
 
-      _Py_IncRef(this_ptr);
-      
       // This has to match the order of the fields in buffer_struct
       let cur_ptr = buffer_struct_ptr/4;
       let start = HEAP32[cur_ptr++];
