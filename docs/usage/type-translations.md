@@ -1,6 +1,8 @@
 (type-translations)=
 # Type translations
-In order to communicate between Python and Javascript, we "translate" objects between the two languages. Depending on the type of the object we either translate it by implicitly "converting" it or by "proxying" it. By "converting" an object we mean producing a new object in the target language which is the equivalent of the object from the source language, for example converting a Python string to the equivalent a Javascript string. By "proxying" an object we mean producing a special object in the target language that forwards requests to the source language. A proxied object can be explicitly converted using the converter methods `JsProxy.to_py` and `PyProxy.toJs`.
+In order to communicate between Python and Javascript, we "translate" objects between the two languages. Depending on the type of the object we either translate it by implicitly "converting" it or by "proxying" it. By "converting" an object we mean producing a new object in the target language which is the equivalent of the object from the source language, for example converting a Python string to the equivalent a Javascript string. By "proxying" an object we mean producing a special object in the target language that forwards requests to the source language. 
+When we proxy a Javascript object into Python, the result is a `JsProxy` object. When we proxy a Python object into Javascript, the result is a `PyProxy` object.
+A proxied object can be explicitly converted using the explicit conversion methods `JsProxy.to_py` and `PyProxy.toJs`.
 
 Python to Javascript translations occur:
 
@@ -36,7 +38,8 @@ object (in the sense that they live at the same memory address).
 ## Implicit conversions
 
 We only implicitly convert immutable types. This is to ensure that a mutable type in Python can be modified in Javascript and vice-versa.
-Python has immutable types such as `tuples` and `bytes` that have no equivalent in Javascript. In order to maximize flexibility, we do not perform implicit conversions on `tuples` and `bytes`. This also has the benefit of ensuring that implicit conversions take a constant amount of time.
+Python has immutable types such as `tuple` and `bytes` that have no equivalent in Javascript. In order to ensure that round trip translations yield an object of the same type as the original object, we proxy `tuple` and `bytes` objects. Proxying tuples also has the benefit of ensuring that implicit conversions take a constant amount of time.
+
 The following immutable types are implicitly converted between Javascript and Python. 
 
 ### Python to Javascript
