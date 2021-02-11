@@ -1233,7 +1233,6 @@ JsProxy_init(PyObject* core_module)
   JsBufferType.tp_base = &JsProxyType;
   FAIL_IF_MINUS_ONE(PyModule_AddType(core_module, &JsProxyType));
   FAIL_IF_MINUS_ONE(PyModule_AddType(core_module, &JsBufferType));
-  // Add JsException to the core_module module so people can catch it if they want.
   FAIL_IF_MINUS_ONE(PyModule_AddType(core_module, &_Exc_JsException));
 
   success = true;
