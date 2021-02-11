@@ -88,9 +88,11 @@ globalThis.languagePluginLoader = new Promise((resolve, reject) => {
     throw new Error("Cannot determine runtime environment");
   }
 
-  function recursiveDependencies(names, _messageCallback, errorCallback) {
+  function recursiveDependencies(names, _messageCallback, errorCallback,
+                                 sharedLibsOnly) {
     const packages = self.pyodide._module.packages.dependencies;
     const loadedPackages = self.pyodide.loadedPackages;
+    const sharedLibraries = self.pyodide._module.packages.shared_library;
     const toLoad = new Map();
 
     const addPackage = (pkg) => {
@@ -122,6 +124,15 @@ globalThis.languagePluginLoader = new Promise((resolve, reject) => {
       } else {
         errorCallback(`Skipping unknown package '${name}'`);
       }
+    }
+    if (sharedLibsOnly) {
+      onlySharedLibs = new Map();
+      for (let c of toLoad) {
+        if (c[0] in sharedLibraries) {
+          onlySharedLibs.set(c[0], toLoad.get(c[0]));
+        }
+      }
+      return onlySharedLibs;
     }
     return toLoad;
   }
@@ -249,10 +260,13 @@ globalThis.languagePluginLoader = new Promise((resolve, reject) => {
       resolveMsg = 'No packages loaded';
     }
 
-    if (!isFirefox) {
-      await preloadWasm();
-      self.pyodide._module.reportUndefinedSymbols();
-    }
+    // preload all .so files in package on load. Otherwise we
+    // have to do it in dlopen, which doesn't work in chrome
+    // and means doing a long async operation in firefox,
+    // which can cause warning messages
+    await preloadWasm();
+    self.pyodide._module.reportUndefinedSymbols();
+
     messageCallback(resolveMsg);
 
     // We have to invalidate Python's import caches, or it won't
@@ -291,7 +305,21 @@ globalThis.languagePluginLoader = new Promise((resolve, reject) => {
     if (!Array.isArray(names)) {
       names = [ names ];
     }
+    // get shared library packages and load those first
+    // otherwise bad things happen with linking them in firefox.
+    sharedLibraryPackagesToLoad =
+        recursiveDependencies(names, messageCallback, errorCallback, true);
+    sharedLibraryNames = [] for (pkg of sharedLibraryPackagesToLoad) {
+      sharedLibraryNames.push(pkg[0]);
+    }
+    console.log("Shared libs:", sharedLibraryNames);
+
     let promise = loadPackageChain.then(
+        () => _loadPackage(sharedLibraryNames, messageCallback || console.log,
+                           errorCallback || console.error));
+    loadPackageChain = loadPackageChain.then(() => promise.catch(() => {}));
+    await promise;
+    promise = loadPackageChain.then(
         () => _loadPackage(names, messageCallback || console.log,
                            errorCallback || console.error));
     loadPackageChain = loadPackageChain.then(() => promise.catch(() => {}));

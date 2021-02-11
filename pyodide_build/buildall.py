@@ -32,6 +32,9 @@ class Package:
         self.meta: dict = parse_package_config(pkgpath)
         self.name: str = self.meta["package"]["name"]
         self.library: bool = self.meta.get("build", {}).get("library", False)
+        self.shared_library: bool = self.meta.get("build", {}).get(
+            "sharedlibrary", False
+        )
 
         assert self.name == pkgdir.stem
 
@@ -215,6 +218,7 @@ def build_packages(packages_dir: Path, outputdir: Path, args) -> None:
     package_data: dict = {
         "dependencies": {"test": []},
         "import_name_to_package_name": {},
+        "shared_library": {},
     }
 
     libraries = [pkg.name for pkg in pkg_map.values() if pkg.library]
@@ -222,7 +226,8 @@ def build_packages(packages_dir: Path, outputdir: Path, args) -> None:
     for name, pkg in pkg_map.items():
         if pkg.library:
             continue
-
+        if pkg.shared_library:
+            package_data["shared_library"][name] = True
         package_data["dependencies"][name] = [
             x for x in pkg.dependencies if x not in libraries
         ]
