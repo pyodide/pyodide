@@ -67,7 +67,6 @@ build/pyodide.asm.js: \
 	src/core/pyproxy.o \
 	src/core/python2js_buffer.o \
 	src/core/python2js.o \
-	src/core/runpython.o \
 	src/pystone.py \
 	src/_testcapi.py \
 	src/webbrowser.py \

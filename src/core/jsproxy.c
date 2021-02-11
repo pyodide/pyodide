@@ -1216,7 +1216,6 @@ JsProxy_init(PyObject* core_module)
   bool success = false;
 
   PyObject* asyncio_module = NULL;
-  PyObject* pyodide_module = NULL;
 
   asyncio_module = PyImport_ImportModule("asyncio");
   FAIL_IF_NULL(asyncio_module);
@@ -1234,12 +1233,11 @@ JsProxy_init(PyObject* core_module)
   JsBufferType.tp_base = &JsProxyType;
   FAIL_IF_MINUS_ONE(PyModule_AddType(core_module, &JsProxyType));
   FAIL_IF_MINUS_ONE(PyModule_AddType(core_module, &JsBufferType));
-  // Add JsException to the pyodide module so people can catch it if they want.
+  // Add JsException to the core_module module so people can catch it if they want.
   FAIL_IF_MINUS_ONE(PyModule_AddType(core_module, &_Exc_JsException));
 
   success = true;
 finally:
   Py_CLEAR(asyncio_module);
-  Py_CLEAR(pyodide_module);
   return success ? 0 : -1;
 }
