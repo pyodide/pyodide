@@ -317,29 +317,7 @@ def handle_command(line, args, dryrun=False):
 
         # Fix for scipy to link to the correct BLAS/LAPACK files
         if arg.startswith("-L") and "CLAPACK" in arg:
-            out_idx = line.index("-o")
-            out_idx += 1
-            module_name = line[out_idx]
-            module_name = Path(module_name).name.split(".")[0]
-
-            lapack_dir = arg.replace("-L", "")
-            # For convenience we determine needed scipy link libraries
-            # here, instead of in patch files
-            link_libs = ["F2CLIBS/libf2c.a", "blas_WA.a"]
-            if module_name in [
-                "_flapack",
-                "_flinalg",
-                "_calc_lwork",
-                "cython_lapack",
-                "_iterative",
-                "_arpack",
-            ]:
-                link_libs.append("lapack_WA.a")
-
-            for lib_name in link_libs:
-                arg = os.path.join(lapack_dir, f"{lib_name}")
-                new_args.append(arg)
-
+            # BLAS and lapack are just a package now
             new_args.extend(["-s", "INLINING_LIMIT=5"])
             continue
 

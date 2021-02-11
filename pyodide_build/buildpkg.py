@@ -280,7 +280,11 @@ def build_package(path: Path, args):
         if pkg.get("build", {}).get("script"):
             run_script(buildpath, srcpath, pkg)
         if not pkg.get("build", {}).get("library", False):
-            compile(path, srcpath, pkg, args)
+            # shared libraries get built by the script and put into install
+            # subfolder, then packaged into a pyodide module
+            # i.e. they need package running, but not compile
+            if not pkg.get("build",{}).get("sharedlibrary"):
+                compile(path, srcpath, pkg, args)
             package_files(buildpath, srcpath, pkg, args)
     finally:
         os.chdir(orig_path)
