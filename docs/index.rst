@@ -35,7 +35,7 @@ additional packages may be installed from PyPI to be used with Pyodide.
    usage/webworker.md
    usage/serving-pyodide-packages.md
    usage/loading-packages.md
-   usage/type-translations.md
+   usage/type-conversions.md
    usage/api-reference.md
    usage/faq.md
 
