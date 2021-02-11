@@ -642,7 +642,6 @@ def temp(Module):
     // TODO: Should we have this?
     Module.globals = new Proxy(Module.globals, Module.NamespaceProxyHandlers);
 
-
     delete self.Module;
     let response = await fetch(`${baseURL}packages.json`);
     let json = await response.json();
