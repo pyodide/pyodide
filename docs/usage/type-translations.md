@@ -17,11 +17,26 @@ Javascript to Python translations occur:
 - returning the result of a Javascript function called from Python
 - when indexing a `JsProxy`
 
+## Round trip conversions 
+Translating an object from Python to Javascript and then from Javascript back
+to Python is guaranteed to give an object that is equal to the original object
+(with the exception of `nan` because `nan != nan`). 
+Furthermore, if the object is proxied into javascript, then translation back
+unwraps the proxy, and the result of the round trip conversion `is` the original
+object (in the sense that they live at the same memory address).
+
+Translating an object from Javascript to Python and then from Python back
+to Javascript gives an object that is `===` to the original object
+(with the exception of `NaN` because `NaN !== NaN`, and of `null` which after a 
+round trip is converted to `undefined`).
+Furthermore, if the object is proxied into Python, then translation back
+unwraps the proxy, and the result of the round trip conversion is the original
+object (in the sense that they live at the same memory address).
 
 ## Implicit conversions
 
-As a rule, we only implicitly convert immutable types. This is to ensure that a mutable type in Python can be modified in Javascript and vice-versa.
-Python has immutable types such as `tuples` and `bytes` that have no equivalent in Javascript. In order to maximize flexibility, we do not perform implicit conversions on `tuples` and `bytes`. This has the benefit of ensuring that implicit conversions take a constant amount of time.
+We only implicitly convert immutable types. This is to ensure that a mutable type in Python can be modified in Javascript and vice-versa.
+Python has immutable types such as `tuples` and `bytes` that have no equivalent in Javascript. In order to maximize flexibility, we do not perform implicit conversions on `tuples` and `bytes`. This also has the benefit of ensuring that implicit conversions take a constant amount of time.
 The following immutable types are implicitly converted between Javascript and Python. 
 
 ### Python to Javascript
@@ -45,33 +60,6 @@ The following immutable types are implicitly converted between Javascript and Py
 | `null`          | `None`                          |
 
 
-## Buffers
-
-### Converting Javascript Typed Arrays to Python
-
-Javascript typed arrays (`Int8Array` and friends) are translated to Python
-`memoryviews`. This happens with a single binary memory copy (since Python can't
-directly access arrays if they are outside of the wasm heap), and the data type is preserved. This
-makes it easy to correctly convert the array to a Numpy array using `numpy.asarray`:
-
-```javascript
-let array = Float32Array([1, 2, 3]);
-```
-
-```python
-from js import array
-import numpy as np
-numpy_array = np.asarray(array)
-```
-
-### Converting Python Buffer objects to Javascript
-
-Python `bytes` and `buffer` objects are translated to Javascript as `TypedArray`s without any memory copy at all. This conversion is thus very efficient, but be aware that any changes to the buffer will be reflected in both places.
-
-Numpy arrays are currently converted to Javascript as nested (regular) Arrays. A
-more efficient method will probably emerge as we decide on an ndarray
-implementation for Javascript.
-
 ## Proxying
 
 Any of the types not listed above are shared between languages using proxies
@@ -79,7 +67,7 @@ that allow methods and some operations to be called on the object from the other
 language.
 
 
-### Proxying from Javascript to Python
+### Proxying from Javascript into Python
 
 When most Javascript objects are translated into Python a `JsProxy` is returned.
 The following operations are currently supported on a `JsProxy`. (More should be possible in the future -- work is ongoing
@@ -142,9 +130,9 @@ uses `array["7"]`. For these cases, we translate:
 | `del proxy[idx]`          | `proxy.splice(idx)`    |
 
 
-### Proxying from Python to Javascript
+### Proxying from Python into Javascript
 
-When most Python objects are translated to Javascript a `PyProxy` is produced. Fewer operations can be overloaded in Javascript than in Python so some operations are more cumbersome when using Python from Javascript than vice versa. The following operations are
+When most Python objects are translated to Javascript a `PyProxy` is produced. Fewer operations can be overloaded in Javascript than in Python so some operations are more cumbersome on a `PyProxy` than on a `JsProxy`. The following operations are
 currently supported:
 
 | Javascript                 | Python                   |
@@ -167,10 +155,13 @@ currently supported:
 | `await x`                  | `await x`                |
 | `Object.entries(x)`        |  `repr(x)`               |
 
-An additional limitation is that when passing a Python object to Javascript,
-there is no way for Javascript to automatically garbage collect that object.
-Therefore, custom Python objects must be manually destroyed when passed to Javascript, or
-they will leak. To do this, call `.destroy()` on the object, after which Javascript will no longer have access to the object.
+An additional limitation is that when proxying a Python object into Javascript,
+there is no way for Javascript to automatically garbage collect the Proxy.
+Therefore, the `PyProxy` must be manually destroyed when passed to Javascript, or
+the proxied Python object will leak. To do this, call `PyProxy.destroy()` on the 
+`PyProxy`, after which Javascript will no longer have access to the Python object.
+If no references to the Python object exist in Python either, then the Python 
+garbage collector can eventually collect it.
 
 ```javascript
 let foo = pyodide.pyimport('foo');
@@ -180,12 +171,40 @@ foo.call_method(); // This will raise an exception, since the object has been
                    // destroyed
 ```
 
+
+## Buffers
+
+### Converting Javascript Typed Arrays to Python
+
+Javascript typed arrays (`Int8Array` and friends) are translated to Python
+`memoryviews`. This happens with a single binary memory copy (since Python can't
+directly access arrays if they are outside of the wasm heap), and the data type is preserved. This
+makes it easy to correctly convert the array to a Numpy array using `numpy.asarray`:
+
+```javascript
+let array = new Float32Array([1, 2, 3]);
+```
+
+```python
+from js import array
+import numpy as np
+numpy_array = np.asarray(array)
+```
+
+### Converting Python Buffer objects to Javascript
+
+Python `bytes` and `buffer` objects are translated to Javascript as `TypedArray`s without any memory copy at all. This conversion is thus very efficient, but be aware that any changes to the buffer will be reflected in both places.
+
+Numpy arrays are currently converted to Javascript as nested (regular) Arrays. A
+more efficient method will probably emerge as we decide on an ndarray
+implementation for Javascript.
+
+
 ## Importing Python objects into Javascript
 
-A Python object in the global scope can imported into Javascript using the
-{any}`pyodide.pyimport` function. It takes a string
-giving the name of the variable, and returns the object, translated to
-Javascript.
+A Python object in the `__main__` global scope can imported into Javascript using the
+{any}`pyodide.pyimport` function. Given the name of the Python object to import, 
+`pyimport` returns the object translated to Javascript.
 
 ```javascript
 let sys = pyodide.pyimport('sys');
@@ -193,12 +212,17 @@ let sys = pyodide.pyimport('sys');
 (type-translations_using-js-obj-from-py)=
 ## Importing Javascript objects into Python
 
-Javascript objects can be imported into Python using the `js` module.
-This module looks up attributes of the `globalThis` namespace on the
-Javascript side. You can create your own custom javascript modules using
-{any}`pyodide.registerJsModule`.
+Javascript objects in the 
+[`globalThis`](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/globalThis) 
+global scope can be imported into Python using the `js` module.
+
+When importing a name from the `js` module, the `js` module looks up Javascript attributes
+of the `globalThis` scope and translates the Javascript objects into Python. 
+You can create your own custom javascript modules using {any}`pyodide.registerJsModule`.
 
 ```python
 import js
 js.document.title = 'New window title'
+from js.document.location import reload as reload_page
+reload_page()
 ```
