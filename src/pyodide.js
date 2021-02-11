@@ -438,7 +438,7 @@ globalThis.languagePluginLoader = new Promise((resolve, reject) => {
    * @param {*} errorCallback 
    */
   Module.loadPackagesFromImports  = async function(code, messageCallback, errorCallback) {
-    let imports = Module.pyodide_py.find_imports(code).deepCopyToJavascript();
+    let imports = Module.pyodide_py.find_imports(code).toJs();
     if (imports.length === 0) {
       return;
     }
