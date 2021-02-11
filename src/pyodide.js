@@ -307,12 +307,18 @@ globalThis.languagePluginLoader = new Promise((resolve, reject) => {
     }
     // get shared library packages and load those first
     // otherwise bad things happen with linking them in firefox.
-    sharedLibraryPackagesToLoad =
-        recursiveDependencies(names, messageCallback, errorCallback, true);
-    sharedLibraryNames = [] for (pkg of sharedLibraryPackagesToLoad) {
-      sharedLibraryNames.push(pkg[0]);
+    sharedLibraryNames = [] ;
+    try
+    {
+        sharedLibraryPackagesToLoad =
+            recursiveDependencies(names, messageCallback, errorCallback, true);
+        for (pkg of sharedLibraryPackagesToLoad) {
+          sharedLibraryNames.push(pkg[0]);
+        }
+    }catch(e)
+    {
+        // do nothing - let the main load throw any errors
     }
-    console.log("Shared libs:", sharedLibraryNames);
 
     let promise = loadPackageChain.then(
         () => _loadPackage(sharedLibraryNames, messageCallback || console.log,
