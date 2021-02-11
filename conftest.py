@@ -98,8 +98,8 @@ class SeleniumWrapper:
         return self.run_js(
             f"""
             let result = pyodide.runPython({code!r});
-            if(result && result.deepCopyToJavascript){{
-                let converted_result = result.deepCopyToJavascript();
+            if(result && result.toJs){{
+                let converted_result = result.toJs();
                 result.destroy();
                 return converted_result;
             }}
@@ -111,8 +111,8 @@ class SeleniumWrapper:
         return self.run_js(
             f"""
             let result = await pyodide.runPythonAsync({code!r});
-            if(result && result.deepCopyToJavascript){{
-                let converted_result = result.deepCopyToJavascript();
+            if(result && result.toJs){{
+                let converted_result = result.toJs();
                 result.destroy();
                 return converted_result;
             }}
