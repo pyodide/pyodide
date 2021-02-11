@@ -636,7 +636,7 @@ def temp(Module):
   Module.builtins = builtins.__dict__
   Module.pyodide_py = pyodide
     `);
-    Module.init_dict["temp"](Module);
+    Module.init_dict.get("temp")(Module);
 
     // Wrap "globals" in a special Proxy that allows `pyodide.globals.x` access.
     // TODO: Should we have this?
