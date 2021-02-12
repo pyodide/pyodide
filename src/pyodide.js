@@ -319,12 +319,21 @@ globalThis.languagePluginLoader = new Promise((resolve, reject) => {
     {
         // do nothing - let the main load throw any errors
     }
-
+    let allLibs=[];
+    let oldOpen=Module.FS.open;
+    newOpen= (path,flags,mode) => {allLibs.push(path); return oldOpen(path,flags,mode);};
+    Module.FS.open=newOpen;
     let promise = loadPackageChain.then(
         () => _loadPackage(sharedLibraryNames, messageCallback || console.log,
                            errorCallback || console.error));
     loadPackageChain = loadPackageChain.then(() => promise.catch(() => {}));
     await promise;
+    Module.FS.open=oldOpen;
+    console.log("LIBS:",allLibs);
+    for(let newLib of allLibs)
+    {
+        await Module.loadDynamicLibrary(newLib,{global:true,nodelete:true,fs:Module.FS,async:true});
+    }
     promise = loadPackageChain.then(
         () => _loadPackage(names, messageCallback || console.log,
                            errorCallback || console.error));
