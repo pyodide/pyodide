@@ -19,7 +19,7 @@ def test_pyproxy(selenium):
     assert selenium.run_js("return ('bar' in f)")
     selenium.run_js("f.baz = 32")
     assert selenium.run("f.baz") == 32
-    assert set(selenium.run_js("return Object.getOwnPropertyNames(f)")) == set(
+    assert set(selenium.run_js("return Object.getOwnPropertyNames(f)")) > set(
         [
             "__class__",
             "__delattr__",
@@ -50,12 +50,6 @@ def test_pyproxy(selenium):
             "bar",
             "baz",
             "get_value",
-            "toString",
-            "prototype",
-            "apply",
-            "destroy",
-            "$$",
-            "toJs",
         ]
     )
     assert selenium.run("hasattr(f, 'baz')")
