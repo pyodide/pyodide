@@ -8,11 +8,11 @@
 [![Build Status](https://circleci.com/gh/iodide-project/pyodide.png)](https://circleci.com/gh/iodide-project/pyodide)
 [![Documentation Status](https://readthedocs.org/projects/pyodide/badge/?version=latest)](https://pyodide.readthedocs.io/?badge=latest)
 
-The Python scientific stack, compiled to WebAssembly.
+Python and the scientific stack, compiled to WebAssembly.
 
 ## What is Pyodide?
 
-**Pyodide** brings the Python 3.8 runtime to the browser via WebAssembly, along with the Python scientific stack including NumPy, Pandas, Matplotlib, parts of SciPy, and NetworkX. The [`packages` directory](https://github.com/iodide-project/pyodide/tree/master/packages) lists over 35 packages which are currently available.
+**Pyodide** brings the Python 3.8 runtime to the browser via WebAssembly, along with the Python scientific stack including NumPy, Pandas, Matplotlib, SciPy, and scikit-learn. The [`packages` directory](https://github.com/iodide-project/pyodide/tree/master/packages) lists over 75 packages which are currently available. In addition it's possible to install pure Python wheels from PyPi.
 
 **Pyodide** provides transparent conversion of objects between Javascript and Python.
 When used inside a browser, Python has full access to the Web APIs.
@@ -23,8 +23,7 @@ browser**.
 
 ## Try Pyodide (no installation needed)
 
-Try the [iodide demo notebook](https://alpha.iodide.io/notebooks/300/) or fire
-up a [Python REPL](https://pyodide-cdn2.iodide.io/v0.16.1/full/console.html) directly in your
+Try pyodide in [Python REPL](https://pyodide-cdn2.iodide.io/v0.16.1/full/console.html) directly in your
 browser.
 
 For further information, look through the [documentation](https://pyodide.readthedocs.io/).
