@@ -1,5 +1,3 @@
-diff --git a/srctemp/library_syscall.js b/emsdk/upstream/emscripten/src/library_syscall.js
-index 5a1c978..725459e 100644
 --- a/emsdk/upstream/emscripten/src/library_syscall.js
 +++ b/emsdk/upstream/emscripten/src/library_syscall.js
 @@ -755,7 +755,8 @@ var SyscallsLibrary = {
@@ -7,8 +5,7 @@ index 5a1c978..725459e 100644
    __sys_wait4__proxy: false,
    __sys_wait4: function(pid, wstart, options, rusage) {
 -    abort('cannot wait on child processes');
-+    // Makes no sense in a single-process environment.
-+    return -({{{ cDefine('ECHILD') }}});
++    return -({{{ cDefine('ENOSYS') }}});
    },
    __sys_setdomainname__nothrow: true,
    __sys_setdomainname__proxy: false,
