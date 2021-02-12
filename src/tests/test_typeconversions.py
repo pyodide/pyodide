@@ -463,6 +463,45 @@ def test_to_py(selenium):
         "{1: [1, 2, {1, 2, 3}], 2: {1: 2, 2: 7, 'a': {...}}}",
     ]
 
+    result = selenium.run_js(
+        """
+        window.a = { "x" : 2, "y" : 7, "z" : [1,2] };
+        a.z.push(a);
+        let result = [];
+        for(let i = 0; i < 4; i++){
+            result.push(pyodide.runPython(`
+                from js import a
+                repr(a.to_py(${i}))
+            `));
+        }
+        return result;
+        """
+    )
+    assert result == [
+        "[object Object]",
+        "{'x': 2, 'y': 7, 'z': 1,2,[object Object]}",
+        "{'x': 2, 'y': 7, 'z': [1, 2, [object Object]]}",
+        "{'x': 2, 'y': 7, 'z': [1, 2, {...}]}",
+    ]
+
+    result = selenium.run_js(
+        """
+        class Temp {
+            constructor(){
+                this.x = 2;
+                this.y = 7;
+            }
+        }
+        window.a = new Temp();
+        let result = pyodide.runPython(`
+            from js import a
+            b = a.to_py()
+            repr(type(b))
+        `);
+        """
+    )
+    assert result == "<class 'JsProxy'>"
+
 
 @pytest.mark.xfail
 def test_py2js_set(selenium):
