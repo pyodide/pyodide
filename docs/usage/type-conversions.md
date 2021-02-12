@@ -214,9 +214,9 @@ performs the following explicit conversions:
 | Javascript       | Python              |
 |------------------|---------------------|
 | `Array`          | `list`              |
+| `Object`**       | `dict`              |
 | `Map`            | `dict`              |
 | `Set`            | `set`               |
-| `Object`**       | `dict`            |
 
 ** `to_py` will only convert an object into a dictionary if its constructor
 is `Object`, otherwise the object will be left alone. Example:
@@ -233,7 +233,6 @@ pyodide.runPython(`
     assert y.to_py() == y
 `)
 ```
-
 
 ## Buffers
 
