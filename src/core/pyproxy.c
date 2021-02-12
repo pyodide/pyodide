@@ -217,7 +217,8 @@ _pyproxy_iter_fetch_stopiteration()
 }
 
 JsRef
-_pyproxy_type(PyObject* ptrobj){
+_pyproxy_type(PyObject* ptrobj)
+{
   return hiwire_string_ascii(ptrobj->ob_type->tp_name);
 }
 

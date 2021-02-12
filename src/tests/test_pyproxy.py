@@ -12,16 +12,14 @@ def test_pyproxy(selenium):
         f = Foo()
         """
     )
-    selenium.run_js("f = pyodide.pyimport('f')");
+    selenium.run_js("f = pyodide.pyimport('f')")
     assert selenium.run_js("return f.type") == "Foo"
     assert selenium.run_js("return f.get_value(2)") == 128
     assert selenium.run_js("return f.bar") == 42
     assert selenium.run_js("return ('bar' in f)")
     selenium.run_js("f.baz = 32")
     assert selenium.run("f.baz") == 32
-    assert set(
-        selenium.run_js("return Object.getOwnPropertyNames(f)")
-    ) == set(
+    assert set(selenium.run_js("return Object.getOwnPropertyNames(f)")) == set(
         [
             "__class__",
             "__delattr__",
@@ -148,8 +146,8 @@ def test_pyproxy_iter(selenium):
         `);
         return [c.type, [...c]];
         """
-    )    
-    assert ty == "generator" 
+    )
+    assert ty == "generator"
     assert l == list(range(10))
 
     [ty, l] = selenium.run_js(
@@ -161,7 +159,7 @@ def test_pyproxy_iter(selenium):
         return [c.type, [...c]];
         """
     )
-    assert ty == "ChainMap" 
+    assert ty == "ChainMap"
     assert set(l) == set(["a", "b"])
 
     [result, result2] = selenium.run_js(
