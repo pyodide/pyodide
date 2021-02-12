@@ -498,6 +498,7 @@ def test_to_py(selenium):
             b = a.to_py()
             repr(type(b))
         `);
+        return result;
         """
     )
     assert result == "<class 'JsProxy'>"
