@@ -487,6 +487,26 @@ EM_JS_NUM(int, pyproxy_init, (), {
       type_to_array_map.set("u64", BigUint64Array);
   }
 
+  class PyBuffer {
+    constructor({ offset, shape, strides, buffer, view_ptr }){
+      this._released = false;
+      this.offset = offset;
+      this.shape = shape;
+      this.strides = strides;
+      this.buffer = buffer;
+      this._view_ptr = view_ptr;
+    }
+
+    release(){
+      if(this._released){
+        return;
+      }
+      _PyBuffer_Release(this._view_ptr);
+      _PyMem_Free(this._view_ptr);
+      this._released = true;
+    }
+  }
+
   Module.PyProxyBufferMethods = {
     getRawBuffer : function(type = "u8"){
       let ArrayType = type_to_array_map.get(type);
@@ -521,25 +541,10 @@ EM_JS_NUM(int, pyproxy_init, (), {
       let offset = (start - smallest) / alignment;
 
       let buffer = new ArrayType(HEAP8.buffer, smallest, length);
-      
       for(let i of strides.keys()){
         strides[i] /= alignment;
       }
-      let released = false;
-      return { 
-        offset,
-        shape, 
-        strides,
-        buffer,
-        release : () => {
-          if(released){
-            return;
-          }
-          _PyBuffer_Release(view_ptr);
-          _PyMem_Free(view_ptr);
-          released = true;
-        }
-      };
+      return new PyBuffer({ offset, shape, strides, buffer, view_ptr });
     }
   };
 
