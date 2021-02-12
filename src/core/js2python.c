@@ -187,16 +187,16 @@ EM_JS_NUM(errcode, js2python_init, (), {
     return list;
   };
 
-  Module.__js2python_convertMap = function(obj, map, depth)
+  Module.__js2python_convertMap = function(obj, entries, map, depth)
   {
-    let dict = _PyDict_New(obj.length);
+    let dict = _PyDict_New();
     // clang-format off
     if (dict === 0) {
       // clang-format on
       return 0;
     }
     map.set(obj, dict);
-    for (let[key_js, value_js] of obj.entries()) {
+    for (let[key_js, value_js] of entries) {
       let key_id = Module.hiwire.new_value(key_js);
       let key_py = Module.__js2python_convert(key_id, map, depth);
       Module.hiwire.decref(key_id);
@@ -271,10 +271,13 @@ EM_JS_NUM(errcode, js2python_init, (), {
       return Module.__js2python_convertList(value, map, depth);
     }
     if (toStringTag === "[object Map]" || value instanceof Map) {
-      return Module.__js2python_convertMap(value, map, depth);
+      return Module.__js2python_convertMap(value, value.entries(), map, depth);
     }
     if (toStringTag === "[object Set]" || obj instanceof Set) {
       return Module.__js2python_convertSet(value, map, depth);
+    }
+    if (toStringTag === "[object Object]" && obj.constructor.name === "Object") {
+      return Module.__js2python_convertMap(value, Object.entries(value), map, depth);
     }
     // clang-format on
     return _JsProxy_create(id);
