@@ -276,7 +276,7 @@ EM_JS_NUM(errcode, js2python_init, (), {
     if (toStringTag === "[object Set]" || value instanceof Set) {
       return Module.__js2python_convertSet(value, map, depth);
     }
-    if (toStringTag === "[object Object]" && value.constructor.name === "Object") {
+    if (toStringTag === "[object Object]" && (value.constructor === undefined || value.constructor.name === "Object")) {
       return Module.__js2python_convertMap(value, Object.entries(value), map, depth);
     }
     // clang-format on
