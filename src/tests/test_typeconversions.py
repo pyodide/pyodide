@@ -444,7 +444,7 @@ def test_python2js_with_depth(selenium):
 def test_to_py(selenium):
     result = selenium.run_js(
         """
-        let a = new Map([[1, [1,2,new Set([1,2,3])]], [2, new Map([[1,2],[2,7]])]]);
+        window.a = new Map([[1, [1,2,new Set([1,2,3])]], [2, new Map([[1,2],[2,7]])]]);
         a.get(2).set("a", a);
         let result = [];
         for(let i = 0; i < 4; i++){
