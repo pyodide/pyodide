@@ -53,10 +53,9 @@ the same type as the original object, we proxy `tuple` and `bytes` objects.
 Proxying tuples also has the benefit of ensuring that implicit conversions take
 a constant amount of time.
 
-The following immutable types are implicitly converted between Javascript and
-Python. 
-
 ### Python to Javascript
+The following immutable types are implicitly converted from Javascript to
+Python:
 
 | Python          | Javascript          |
 |-----------------|---------------------|
@@ -67,6 +66,8 @@ Python.
 | `None`          | `undefined`         |
 
 ### Javascript to Python
+The following immutable types are implicitly converted from Python to
+Javascript:
 
 | Javascript      | Python                          |
 |-----------------|---------------------------------|
@@ -188,6 +189,49 @@ foo.call_method();
 foo.destroy();
 foo.call_method(); // This will raise an exception, since the object has been
                    // destroyed
+```
+
+## Explicit Conversion of Proxies
+
+### Python to Javascript
+Explicit conversion of a `PyProxy` into a native Javascript object is done with
+the `toJs` method. By default, the `toJs` method does a recursive "deep"
+conversion, to do a shallow conversion use `proxy.toJs(1)`. The `toJs` method
+performs the following explicit conversions:
+
+| Python           | Javascript          |
+|------------------|---------------------|
+| `list`, `tuple`  | `Array`             |
+| `dict`           | `Object`            |
+| `set`            | `Set`               |
+
+### Javascript to Python
+Explicit conversion of a `JsProxy` into a native Python object is done with the
+`to_py` method. By default, the `to_py` method does a recursive "deep"
+conversion, to do a shallow conversion use `proxy.to_py(1)` The `to_py` method
+performs the following explicit conversions:
+
+| Javascript       | Python              |
+|------------------|---------------------|
+| `Array`          | `list`              |
+| `Map`            | `dict`              |
+| `Set`            | `set`               |
+| `Object`**       | `dict`            |
+
+** `to_py` will only convert an object into a dictionary if its constructor
+is `Object`, otherwise the object will be left alone. Example:
+```javascript
+class Test {};
+window.x = { "a" : 7, "b" : 2};
+window.y = { "a" : 7, "b" : 2};
+Object.setPrototypeOf(y, Test.prototype);
+pyodide.runPython(`
+    from js import x, y
+    # x is converted to a dictionary
+    assert x.to_py() == { "a" : 7, "b" : 2} 
+    # y is not a "raw object" so it's not converted
+    assert y.to_py() == y
+`)
 ```
 
 
