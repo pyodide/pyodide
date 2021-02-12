@@ -441,6 +441,29 @@ def test_python2js_with_depth(selenium):
     )
 
 
+def test_to_py(selenium):
+    result = selenium.run_js(
+        """
+        let a = new Map([[1, [1,2,new Set([1,2,3])]], [2, new Map([[1,2],[2,7]])]]);
+        a.get(2).set("a", a);
+        let result = [];
+        for(let i = 0; i < 4; i++){
+            result.push(pyodide.runPython(`
+                from js import a
+                repr(a.to_py(${i}))
+            `));
+        }
+        return result;
+        """
+    )
+    assert result == [
+        "[object Map]",
+        "{1: 1,2,[object Set], 2: [object Map]}",
+        "{1: [1, 2, [object Set]], 2: {1: 2, 2: 7, 'a': [object Map]}}",
+        "{1: [1, 2, {1, 2, 3}], 2: {1: 2, 2: 7, 'a': {...}}}",
+    ]
+
+
 @pytest.mark.xfail
 def test_py2js_set(selenium):
     selenium.run("a = {1, 2, 3}")

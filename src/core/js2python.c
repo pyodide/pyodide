@@ -9,9 +9,6 @@
 #include "jsproxy.h"
 #include "pyproxy.h"
 
-// Since we're going *to* Python, just let any Python exceptions at conversion
-// bubble out to Python
-
 PyObject*
 _js2python_allocate_string(int size, int max_code_point)
 {
@@ -67,15 +64,27 @@ _js2python_memoryview(JsRef id)
   return PyMemoryView_FromObject(jsproxy);
 }
 
-PyObject*
-_js2python_jsproxy(JsRef id)
-{
-  return JsProxy_create(id);
-}
+EM_JS_REF(PyObject*, js2python, (JsRef id), {
+  let value = Module.hiwire.get_value(id);
+  let result = Module.__js2python_convertImmutable(value);
+  // clang-format off
+  if (result !== 0) {
+    return result;
+  }
+  if (value['byteLength'] !== undefined) {
+    return __js2python_memoryview(id);
+  } else {
+    return _JsProxy_create(id);
+  }
+  // clang-format on
+})
 
-// TODO: Add some meaningful order
-EM_JS_REF(PyObject*, __js2python, (JsRef id), {
-  function __js2python_string(value)
+EM_JS_REF(PyObject*, js2python_convert, (JsRef id, int depth), {
+  return Module.__js2python_convert(id, new Map(), depth);
+});
+
+EM_JS_NUM(errcode, js2python_init, (), {
+  Module.__js2python_string = function(value)
   {
     // The general idea here is to allocate a Python string and then
     // have Javascript write directly into its buffer.  We first need
@@ -124,39 +133,171 @@ EM_JS_REF(PyObject*, __js2python, (JsRef id), {
     }
 
     return result;
-  }
+  };
 
-  // clang-format off
-  let value = Module.hiwire.get_value(id);
-  let type = typeof value;
-  if (type === 'string') {
-    return __js2python_string(value);
-  } else if (type === 'number') {
-    return __js2python_number(value);
-  } else if (value === undefined || value === null) {
-    return __js2python_none();
-  } else if (value === true) {
-    return __js2python_true();
-  } else if (value === false) {
-    return __js2python_false();
-  } else if (Module.PyProxy.isPyProxy(value)) {
-    return __js2python_pyproxy(Module.PyProxy._getPtr(value));
-  } else if (value['byteLength'] !== undefined) {
-    return __js2python_memoryview(id);
-  } else {
-    return __js2python_jsproxy(id);
-  }
-  // clang-format on
-});
+  Module.__js2python_convertImmutable = function(value)
+  {
+    let type = typeof value;
+    // clang-format off
+    if (type === 'string') {
+      return Module.__js2python_string(value);
+    } else if (type === 'number') {
+      return __js2python_number(value);
+    } else if (value === undefined || value === null) {
+      return __js2python_none();
+    } else if (value === true) {
+      return __js2python_true();
+    } else if (value === false) {
+      return __js2python_false();
+    } else if (Module.PyProxy.isPyProxy(value)) {
+      return __js2python_pyproxy(Module.PyProxy._getPtr(value));
+    }
+    // clang-format on
+    return 0;
+  };
 
-PyObject*
-js2python(JsRef id)
-{
-  return (PyObject*)__js2python(id);
-}
+  Module.__js2python_convertList = function(obj, map, depth)
+  {
+    let list = _PyList_New(obj.length);
+    // clang-format off
+    if (list === 0) {
+      // clang-format on
+      return 0;
+    }
+    map.set(obj, list);
+    for (let i = 0; i < obj.length; i++) {
+      let entryid = Module.hiwire.new_value(obj[i]);
+      let item = Module.__js2python_convert(entryid, map, depth);
+      Module.hiwire.decref(entryid);
+      // clang-format off
+      if (item === 0) {
+        // clang-format on
+        _Py_DecRef(list);
+        return 0;
+      }
+      // PyList_SetItem steals a reference to item no matter what
+      let errcode = _PyList_SetItem(list, i, item);
+      // clang-format off
+      if (errcode === -1) {
+        // clang-format on
+        _Py_DecRef(list);
+        return 0;
+      }
+    }
+    return list;
+  };
 
-int
-js2python_init()
-{
+  Module.__js2python_convertMap = function(obj, map, depth)
+  {
+    let dict = _PyDict_New(obj.length);
+    // clang-format off
+    if (dict === 0) {
+      // clang-format on
+      return 0;
+    }
+    map.set(obj, dict);
+    for (let[key_js, value_js] of obj.entries()) {
+      let key_id = Module.hiwire.new_value(key_js);
+      let key_py = Module.__js2python_convert(key_id, map, depth);
+      Module.hiwire.decref(key_id);
+      // clang-format off
+      if (key_py === 0) {
+        // clang-format on
+        _Py_DecRef(dict);
+        return 0;
+      }
+
+      let value_id = Module.hiwire.new_value(value_js);
+      let value_py = Module.__js2python_convert(value_id, map, depth);
+      Module.hiwire.decref(value_id);
+      // clang-format off
+      if (value_py === 0) {
+        // clang-format on
+        _Py_DecRef(dict);
+        return 0;
+      }
+
+      // PyDict_SetItem does not steal references
+      let errcode = _PyDict_SetItem(dict, key_py, value_py);
+      _Py_DecRef(key_py);
+      _Py_DecRef(value_py);
+      // clang-format off
+      if (errcode === -1) {
+        // clang-format on
+        _Py_DecRef(dict);
+        return 0;
+      }
+    }
+    return dict;
+  };
+
+  Module.__js2python_convertSet = function(obj, map, depth)
+  {
+    let set = _PySet_New(0);
+    // clang-format off
+    if (set === 0) {
+      // clang-format on
+      return 0;
+    }
+    map.set(obj, set);
+    for (let key_js of obj) {
+      let key_id = Module.hiwire.new_value(key_js);
+      let key_py = Module.__js2python_convert(key_id, map, depth);
+      Module.hiwire.decref(key_id);
+      // clang-format off
+      if (key_py === 0) {
+        // clang-format on
+        _Py_DecRef(set);
+        return 0;
+      }
+      let errcode = _PySet_Add(set, key_py);
+      _Py_DecRef(key_py);
+      // clang-format off
+      if (errcode === -1) {
+        // clang-format on
+        _Py_DecRef(set);
+        return 0;
+      }
+    }
+    return set;
+  };
+
+  Module.__js2python_convertOther = function(id, value, map, depth)
+  {
+    let toStringTag = Object.prototype.toString.call(value);
+    // clang-format off
+    if (Array.isArray(value) || value === "[object HTMLCollection]" ||
+                                           value === "[object NodeList]") {
+      return Module.__js2python_convertList(value, map, depth);
+    }
+    if (toStringTag === "[object Map]" || value instanceof Map) {
+      return Module.__js2python_convertMap(value, map, depth);
+    }
+    if (toStringTag === "[object Set]" || obj instanceof Set) {
+      return Module.__js2python_convertSet(value, map, depth);
+    }
+    // clang-format on
+    return _JsProxy_create(id);
+  };
+
+  Module.__js2python_convert = function(id, map, depth)
+  {
+    let value = Module.hiwire.get_value(id);
+    let result = Module.__js2python_convertImmutable(value);
+    // clang-format off
+    if (result !== 0) {
+      return result;
+    }
+    if (depth === 0) {
+      return _JsProxy_create(id);
+    }
+    result = map.get(value);
+    if (result !== undefined) {
+      return result;
+    }
+    // clang-format on
+    return Module.__js2python_convertOther(id, value, map, depth - 1);
+  };
+
   return 0;
-}
+})
