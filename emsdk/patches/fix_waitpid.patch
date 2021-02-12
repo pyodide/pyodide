@@ -1,6 +1,6 @@
 --- a/emsdk/upstream/emscripten/src/library_syscall.js
 +++ b/emsdk/upstream/emscripten/src/library_syscall.js
-@@ -755,7 +755,8 @@ var SyscallsLibrary = {
+@@ -755,7 +755,7 @@ var SyscallsLibrary = {
    },
    __sys_wait4__proxy: false,
    __sys_wait4: function(pid, wstart, options, rusage) {
