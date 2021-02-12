@@ -12,7 +12,7 @@ def test_pyproxy(selenium):
         f = Foo()
         """
     )
-    selenium.run_js("f = pyodide.pyimport('f')")
+    selenium.run_js("window.f = pyodide.pyimport('f')")
     assert selenium.run_js("return f.type") == "Foo"
     assert selenium.run_js("return f.get_value(2)") == 128
     assert selenium.run_js("return f.bar") == 42
