@@ -2,7 +2,7 @@
 # Type translations
 In order to communicate between Python and Javascript, we "translate" objects
 between the two languages. Depending on the type of the object we either
-translate it by implicitly "converting" it or by "proxying" it. By "converting"
+translate the object by implicitly converting it or by proxying it. By converting
 an object we mean producing a new object in the target language which is the
 equivalent of the object from the source language, for example converting a
 Python string to the equivalent a Javascript string. By "proxying" an object we
@@ -28,14 +28,14 @@ Javascript to Python translations occur:
 - when indexing a `JsProxy`
 
 ## Round trip conversions 
-Translating an object from Python to Javascript and then from Javascript back to
+Translating an object from Python to Javascript and then back to
 Python is guaranteed to give an object that is equal to the original object
 (with the exception of `nan` because `nan != nan`). Furthermore, if the object
 is proxied into javascript, then translation back unwraps the proxy, and the
 result of the round trip conversion `is` the original object (in the sense that
 they live at the same memory address).
 
-Translating an object from Javascript to Python and then from Python back to
+Translating an object from Javascript to Python and then back to
 Javascript gives an object that is `===` to the original object (with the
 exception of `NaN` because `NaN !== NaN`, and of `null` which after a round trip
 is converted to `undefined`). Furthermore, if the object is proxied into Python,
@@ -92,7 +92,7 @@ possible in the future -- work is ongoing to make this more complete):
 
 | Python                    | Javascript             |
 |---------------------------|------------------------|
-| `repr(proxy)`             | `x.toString()`         |
+| `str(proxy)`             | `x.toString()`         |
 | `proxy.foo`               | `x.foo`                |
 | `proxy.foo = bar`         | `x.foo = bar`          |
 | `del proxy.foo`           | `delete x.foo`         |
