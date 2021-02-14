@@ -652,7 +652,7 @@ def temp(Module):
   Module.pyodide_py = pyodide
 `);
   Module.init_dict["temp"](Module);
-  
+
   // Wrap "globals" in a special Proxy that allows `pyodide.globals.x` access.
   // TODO: Should we have this?
   Module.globals = new Proxy(Module.globals, Module.NamespaceProxyHandlers);
