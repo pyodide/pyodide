@@ -2,7 +2,7 @@
  * The main bootstrap script for loading pyodide.
  */
 
-globalThis.languagePluginLoader = new Promise((resolve, reject) => {
+globalThis.languagePluginLoader = (async () => {
   let Module = {};
   // Note: PYODIDE_BASE_URL is an environement variable replaced in
   // in this template in the Makefile. It's recommended to always set
@@ -438,7 +438,7 @@ globalThis.languagePluginLoader = new Promise((resolve, reject) => {
    * @param {*} errorCallback 
    */
   Module.loadPackagesFromImports  = async function(code, messageCallback, errorCallback) {
-    let imports = Module.pyodide_py.find_imports(code).deepCopyToJavascript();
+    let imports = Module.pyodide_py.find_imports(code).toJs();
     if (imports.length === 0) {
       return;
     }
@@ -620,9 +620,24 @@ globalThis.languagePluginLoader = new Promise((resolve, reject) => {
   };
 
   Module.locateFile = (path) => baseURL + path;
-  Module.postRun = async () => {
-    // Unfortunately the indentation here matters.
-    Module.runPythonSimple(`
+
+  let moduleLoaded = new Promise(r => Module.postRun = r);
+
+  const scriptSrc = `${baseURL}pyodide.asm.js`;
+
+  await loadScript(scriptSrc);
+
+  // The emscripten module needs to be at this location for the core
+  // filesystem to install itself. Once that's complete, it will be replaced
+  // by the call to `makePublicAPI` with a more limited public API.
+  self.pyodide = await pyodide(Module);
+
+  // There is some work to be done between the module being "ready" and postRun
+  // being called.
+  await moduleLoaded;
+
+  // Unfortunately the indentation here matters.
+  Module.runPythonSimple(`
 def temp(Module):
   import pyodide
   import __main__
@@ -635,31 +650,20 @@ def temp(Module):
   Module.globals = globals
   Module.builtins = builtins.__dict__
   Module.pyodide_py = pyodide
-    `);
-    Module.init_dict.get("temp")(Module);
+`);
+  Module.init_dict["temp"](Module);
+  
+  // Wrap "globals" in a special Proxy that allows `pyodide.globals.x` access.
+  // TODO: Should we have this?
+  Module.globals = new Proxy(Module.globals, Module.NamespaceProxyHandlers);
 
-    // Wrap "globals" in a special Proxy that allows `pyodide.globals.x` access.
-    // TODO: Should we have this?
-    Module.globals = new Proxy(Module.globals, Module.NamespaceProxyHandlers);
+  delete self.Module;
+  let response = await fetch(`${baseURL}packages.json`);
+  Module.packages = await response.json();
 
-    delete self.Module;
-    let response = await fetch(`${baseURL}packages.json`);
-    let json = await response.json();
-
-    fixRecursionLimit(self.pyodide);
-    self.pyodide = makePublicAPI(self.pyodide, PUBLIC_API);
-    self.pyodide.registerJsModule("js", globalThis);
-    self.pyodide.registerJsModule("pyodide_js", self.pyodide);
-    Module.packages = json;
-    resolve();
-  };
-
-  const scriptSrc = `${baseURL}pyodide.asm.js`;
-  loadScript(scriptSrc).then(async () => {
-    // The emscripten module needs to be at this location for the core
-    // filesystem to install itself. Once that's complete, it will be replaced
-    // by the call to `makePublicAPI` with a more limited public API.
-    self.pyodide = await pyodide(Module);
-  });
-});
+  fixRecursionLimit(self.pyodide);
+  self.pyodide = makePublicAPI(self.pyodide, PUBLIC_API);
+  self.pyodide.registerJsModule("js", globalThis);
+  self.pyodide.registerJsModule("pyodide_js", self.pyodide);
+})();
 languagePluginLoader

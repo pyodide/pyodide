@@ -12,14 +12,14 @@ def test_pyproxy(selenium):
         f = Foo()
         """
     )
-    assert selenium.run_js("return pyodide.pyimport('f').get_value(2)") == 128
-    assert selenium.run_js("return pyodide.pyimport('f').bar") == 42
-    assert selenium.run_js("return ('bar' in pyodide.pyimport('f'))")
-    selenium.run_js("f = pyodide.pyimport('f'); f.baz = 32")
+    selenium.run_js("window.f = pyodide.pyimport('f')")
+    assert selenium.run_js("return f.type") == "Foo"
+    assert selenium.run_js("return f.get_value(2)") == 128
+    assert selenium.run_js("return f.bar") == 42
+    assert selenium.run_js("return ('bar' in f)")
+    selenium.run_js("f.baz = 32")
     assert selenium.run("f.baz") == 32
-    assert set(
-        selenium.run_js("return Object.getOwnPropertyNames(pyodide.pyimport('f'))")
-    ).issuperset(
+    assert set(selenium.run_js("return Object.getOwnPropertyNames(f)")) > set(
         [
             "__class__",
             "__delattr__",
@@ -50,13 +50,6 @@ def test_pyproxy(selenium):
             "bar",
             "baz",
             "get_value",
-            "toString",
-            "prototype",
-            "apply",
-            "destroy",
-            "$$",
-            "deepCopyToJavascript",
-            "shallowCopyToJavascript",
         ]
     )
     assert selenium.run("hasattr(f, 'baz')")
@@ -137,35 +130,31 @@ def test_pyproxy_destroy(selenium):
 
 
 def test_pyproxy_iter(selenium):
-    assert (
-        selenium.run_js(
-            """
+    [ty, l] = selenium.run_js(
+        """
         let c = pyodide.runPython(`
             def test():
                 for i in range(10):
                     yield i
             test()
         `);
-        return [...c];
+        return [c.type, [...c]];
         """
-        )
-        == list(range(10))
     )
+    assert ty == "generator"
+    assert l == list(range(10))
 
-    assert (
-        set(
-            selenium.run_js(
-                """
+    [ty, l] = selenium.run_js(
+        """
         c = pyodide.runPython(`
             from collections import ChainMap
             ChainMap({"a" : 2, "b" : 3})
         `);
-        return [...c];
+        return [c.type, [...c]];
         """
-            )
-        )
-        == set(["a", "b"])
     )
+    assert ty == "ChainMap"
+    assert set(l) == set(["a", "b"])
 
     [result, result2] = selenium.run_js(
         """
@@ -202,3 +191,64 @@ def test_pyproxy_iter(selenium):
         """
     )
     assert result == result2
+
+
+def test_pyproxy_mixins(selenium):
+    result = selenium.run_js(
+        """
+        let [noimpls, awaitable, iterable, iterator, awaititerable, awaititerator] = pyodide.runPython(`
+            class NoImpls: pass
+
+            class Await:
+                def __await__(self):
+                    return iter([])
+            
+            class Iter:
+                def __iter__(self):
+                    return iter([])
+            
+            class Next:
+                def __next__(self):
+                    pass
+            
+            class AwaitIter(Await, Iter): pass
+
+            class AwaitNext(Await, Next): pass
+
+            [NoImpls(), Await(), Iter(), Next(), AwaitIter(), AwaitNext()]
+        `);
+        let name_proxy = {noimpls, awaitable, iterable, iterator, awaititerable, awaititerator};
+        let result = {};
+        for(let [name, x] of Object.entries(name_proxy)){
+            let impls = { 
+                "then" : x.then !== undefined,
+                "catch" : x.catch !== undefined,
+                "finally_" : x.finally !== undefined,
+                "iterable" : x[Symbol.iterator] !== undefined,
+                "iterator" : x.next !== undefined
+            }
+            result[name] = impls;
+        }
+        return result;
+        """
+    )
+    assert result == dict(
+        noimpls=dict(
+            then=False, catch=False, finally_=False, iterable=False, iterator=False
+        ),
+        awaitable=dict(
+            then=True, catch=True, finally_=True, iterable=False, iterator=False
+        ),
+        iterable=dict(
+            then=False, catch=False, finally_=False, iterable=True, iterator=False
+        ),
+        iterator=dict(
+            then=False, catch=False, finally_=False, iterable=True, iterator=True
+        ),
+        awaititerable=dict(
+            then=True, catch=True, finally_=True, iterable=True, iterator=False
+        ),
+        awaititerator=dict(
+            then=True, catch=True, finally_=True, iterable=True, iterator=True
+        ),
+    )

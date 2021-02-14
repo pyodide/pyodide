@@ -16,6 +16,49 @@ _Py_IDENTIFIER(format_exception);
 static JsRef
 _python2js_unicode(PyObject* x);
 
+EM_JS_REF(JsRef, pyproxy_to_js_error, (JsRef pyproxy), {
+  return Module.hiwire.new_value(
+    new Module.PythonError(Module.hiwire.get_value(pyproxy)));
+});
+
+JsRef
+wrap_exception()
+{
+  bool success = true;
+  PyObject* type = NULL;
+  PyObject* value = NULL;
+  PyObject* traceback = NULL;
+  JsRef pyexc_proxy = NULL;
+  JsRef jserror = NULL;
+
+  PyErr_Fetch(&type, &value, &traceback);
+  PyErr_NormalizeException(&type, &value, &traceback);
+  if (type == NULL || type == Py_None || value == NULL || value == Py_None) {
+    PyErr_SetString(PyExc_TypeError, "No exception type or value");
+    FAIL();
+  }
+
+  if (traceback == NULL) {
+    traceback = Py_None;
+    Py_INCREF(traceback);
+  }
+  PyException_SetTraceback(value, traceback);
+
+  pyexc_proxy = pyproxy_new(value);
+  jserror = pyproxy_to_js_error(pyexc_proxy);
+
+  success = true;
+finally:
+  Py_CLEAR(type);
+  Py_CLEAR(value);
+  Py_CLEAR(traceback);
+  hiwire_CLEAR(pyexc_proxy);
+  if (!success) {
+    hiwire_CLEAR(jserror);
+  }
+  return jserror;
+}
+
 void _Py_NO_RETURN
 pythonexc2js()
 {
@@ -230,7 +273,7 @@ _python2js_dict(PyObject* x, PyObject* map, int depth)
   } while (0)
 
 static JsRef
-_python2js_immutable(PyObject* x, PyObject* map, int depth)
+_python2js_immutable(PyObject* x)
 {
   if (x == Py_None) {
     return Js_undefined;
@@ -244,14 +287,10 @@ _python2js_immutable(PyObject* x, PyObject* map, int depth)
     return _python2js_float(x);
   } else if (PyUnicode_Check(x)) {
     return _python2js_unicode(x);
-  } else if (PyBytes_Check(x)) {
-    return _python2js_bytes(x);
   } else if (JsProxy_Check(x)) {
     return JsProxy_AsJs(x);
   } else if (JsException_Check(x)) {
     return JsException_AsJs(x);
-  } else if (PyTuple_Check(x)) {
-    return _python2js_sequence(x, map, depth);
   }
   return NULL;
 }
@@ -259,8 +298,8 @@ _python2js_immutable(PyObject* x, PyObject* map, int depth)
 static JsRef
 _python2js_deep(PyObject* x, PyObject* map, int depth)
 {
-  RETURN_IF_SUCCEEDS(_python2js_immutable(x, map, depth));
-  if (PyList_Check(x)) {
+  RETURN_IF_SUCCEEDS(_python2js_immutable(x));
+  if (PyList_Check(x) || PyTuple_Check(x)) {
     return _python2js_sequence(x, map, depth);
   }
   if (PyDict_Check(x)) {
@@ -278,11 +317,10 @@ static JsRef
 _python2js(PyObject* x, PyObject* map, int depth)
 {
   if (depth == 0) {
-    RETURN_IF_SUCCEEDS(_python2js_immutable(x, map, 0));
+    RETURN_IF_SUCCEEDS(_python2js_immutable(x));
     return pyproxy_new(x);
-  } else {
-    return _python2js_deep(x, map, depth - 1);
   }
+  return _python2js_deep(x, map, depth - 1);
 }
 
 /* During conversion of collection types (lists and dicts) from Python to
@@ -341,15 +379,9 @@ _python2js_cache(PyObject* x, PyObject* map, int depth)
 JsRef
 python2js(PyObject* x)
 {
-  PyObject* map = PyDict_New();
-  JsRef result = _python2js_cache(x, map, 0);
-  Py_DECREF(map);
-
-  if (result == NULL) {
-    pythonexc2js();
-  }
-
-  return result;
+  RETURN_IF_SUCCEEDS(_python2js_immutable(x));
+  RETURN_IF_SUCCEEDS(pyproxy_new(x));
+  pythonexc2js();
 }
 
 JsRef
@@ -393,6 +425,18 @@ python2js_init()
   FAIL_IF_NULL(globals);
 
   EM_ASM({
+    class PythonError extends Error
+    {
+      constructor(pythonError)
+      {
+        let message = "Python Error";
+        super(message);
+        this.name = this.constructor.name;
+        this.pythonError = pythonError;
+      }
+    };
+    Module.PythonError = PythonError;
+
     Module.test_python2js_with_depth = function(name, depth)
     {
       let pyname = stringToNewUTF8(name);
