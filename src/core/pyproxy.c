@@ -353,33 +353,42 @@ static PyTypeObject FutureDoneCallbackType = {
 };
 // clang-format on
 
-static PyObject *
+static PyObject*
 FutureDoneCallback_cnew(JsRef resolve_handle, JsRef reject_handle)
 {
-    FutureDoneCallback *self = (FutureDoneCallback *) FutureDoneCallbackType.tp_alloc(&FutureDoneCallbackType, 0);
-    self->resolve_handle = hiwire_incref(resolve_handle);
-    self->reject_handle = hiwire_incref(reject_handle);
-    return (PyObject *) self;
+  FutureDoneCallback* self =
+    (FutureDoneCallback*)FutureDoneCallbackType.tp_alloc(
+      &FutureDoneCallbackType, 0);
+  self->resolve_handle = hiwire_incref(resolve_handle);
+  self->reject_handle = hiwire_incref(reject_handle);
+  return (PyObject*)self;
 }
 
 /**
-  * Intended to be called with a single argument which is the future that was resolved.
-  * Resolves the promise as appropriate based on the result of the future.
-  * :param pyobject: An awaitable python object
-  * :param resolve_handle: The resolve javascript method for a promise
-  * :param reject_handle: The reject javascript method for a promise
-  * :return: 0 on success, -1 on failure
-  */
+ * Intended to be called with a single argument which is the future that was
+ * resolved. Resolves the promise as appropriate based on the result of the
+ * future.
+ *
+ * :param pyobject: An awaitable python object
+ * :param resolve_handle: The resolve javascript method for a promise
+ * :param reject_handle: The reject javascript method for a promise
+ * :return: 0 on success, -1 on failure
+ */
 int
-_pyproxy_ensure_future(PyObject* pyobject, JsRef resolve_handle, JsRef reject_handle){
+_pyproxy_ensure_future(PyObject* pyobject,
+                       JsRef resolve_handle,
+                       JsRef reject_handle)
+{
   bool success = false;
   PyObject* future = NULL;
   PyObject* callback = NULL;
   PyObject* retval = NULL;
-  future = _PyObject_CallMethodIdObjArgs(asyncio, &PyId_ensure_future, pyobject, NULL);
+  future =
+    _PyObject_CallMethodIdObjArgs(asyncio, &PyId_ensure_future, pyobject, NULL);
   FAIL_IF_NULL(future);
   callback = FutureDoneCallback_cnew(resolve_handle, reject_handle);
-  retval = _PyObject_CallMethodIdObjArgs(future, &PyId_add_done_callback, callback, NULL);
+  retval = _PyObject_CallMethodIdObjArgs(
+    future, &PyId_add_done_callback, callback, NULL);
   FAIL_IF_NULL(retval);
 
   success = true;
@@ -491,7 +500,7 @@ EM_JS_NUM(int, pyproxy_init_js, (), {
     },
   };
 
-  // See: 
+  // See:
   // https://docs.python.org/3/c-api/iter.html
   // https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Iteration_protocols
   // This avoids allocating a PyProxy wrapper for the temporary iterator.
@@ -515,7 +524,7 @@ EM_JS_NUM(int, pyproxy_init_js, (), {
   Module.PyProxyIteratorMethods = {
     [Symbol.iterator] : function() {
       return this;
-    },    
+    },
     next : function(arg) {
       let idresult;
       // Note: arg is optional, if arg is not supplied, it will be undefined
@@ -527,7 +536,7 @@ EM_JS_NUM(int, pyproxy_init_js, (), {
         Module.fatal_error(e);
       } finally {
         Module.hiwire.decref(idarg);
-      }      
+      }
 
       let done = false;
       if(idresult === 0){
