@@ -22,14 +22,14 @@ def test_python2js(selenium):
     )
     assert selenium.run_js(
         """
-        let x = pyodide.runPython("[1, 2, 3]").deepCopyToJavascript();
+        let x = pyodide.runPython("[1, 2, 3]").toJs();
         return ((x instanceof window.Array) && (x.length === 3) &&
                 (x[0] == 1) && (x[1] == 2) && (x[2] == 3))
         """
     )
     assert selenium.run_js(
         """
-        let x = pyodide.runPython("{42: 64}").deepCopyToJavascript();
+        let x = pyodide.runPython("{42: 64}").toJs();
         return (typeof x === "object") && (x[42] === 64)
         """
     )
@@ -54,6 +54,12 @@ def test_pythonexc2js(selenium):
     msg = "ZeroDivisionError"
     with pytest.raises(selenium.JavascriptException, match=msg):
         selenium.run_js('return pyodide.runPython("5 / 0")')
+
+
+def test_run_python_simple_error(selenium):
+    msg = "ZeroDivisionError"
+    with pytest.raises(selenium.JavascriptException, match=msg):
+        selenium.run_js("return pyodide._module.runPythonSimple('5 / 0');")
 
 
 def test_js2python(selenium):
@@ -230,7 +236,7 @@ def test_recursive_list_to_js(selenium_standalone):
         x.append(x)
         """
     )
-    selenium_standalone.run_js("x = pyodide.pyimport('x').deepCopyToJavascript();")
+    selenium_standalone.run_js("x = pyodide.pyimport('x').toJs();")
 
 
 def test_recursive_dict_to_js(selenium_standalone):
@@ -240,7 +246,7 @@ def test_recursive_dict_to_js(selenium_standalone):
         x[0] = x
         """
     )
-    selenium_standalone.run_js("x = pyodide.pyimport('x').deepCopyToJavascript();")
+    selenium_standalone.run_js("x = pyodide.pyimport('x').toJs();")
 
 
 def test_list_js2py2js(selenium):

@@ -486,13 +486,7 @@ EM_JS_NUM(int, pyproxy_init_js, (), {
       }
       return Module.hiwire.pop_value(idresult);
     },
-    shallowCopyToJavascript : function(){
-      let idresult = _python2js_with_depth(_getPtr(this), depth);
-      let result = Module.hiwire.get_value(idresult);
-      Module.hiwire.decref(idresult);
-      return result;
-    },
-    deepCopyToJavascript : function(depth = -1){
+    toJs : function(depth = -1){
       let idresult = _python2js_with_depth(_getPtr(this), depth);
       let result = Module.hiwire.get_value(idresult);
       Module.hiwire.decref(idresult);

@@ -28,10 +28,9 @@
   `pyodide.loadPackage`, `pyodide.runPythonAsync` and
   `pyodide.loadPackagesFromImport`, then the messages are no longer
   automatically logged to the console.
-- Instead of automatically copying Python lists and dicts into Javascript, they
-  are now wrapped in `PyProxy`. Added new `deepCopyToJavascript` and 
-  `shallowCopyToJavascript` APIs to `PyProxy` which cause the copying behavior
-  that used to be implicit.
+- Instead of automatically converting Python lists and dicts into Javascript, they
+  are now wrapped in `PyProxy`. Added a new `toJs` API to `PyProxy` to request the
+  conversion behavior that used to be implicit.
   [#1167](https://github.com/iodide-project/pyodide/pull/1167)
 
 ### Added
