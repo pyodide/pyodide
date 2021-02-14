@@ -351,6 +351,7 @@ static PyTypeObject FutureDoneCallbackType = {
     .tp_dealloc = (destructor) FutureDoneCallback_dealloc,
     .tp_call = (ternaryfunc) FutureDoneCallback_call,
 };
+// clang-format on
 
 static PyObject *
 FutureDoneCallback_cnew(JsRef resolve_handle, JsRef reject_handle)
