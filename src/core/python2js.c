@@ -16,6 +16,49 @@ _Py_IDENTIFIER(format_exception);
 static JsRef
 _python2js_unicode(PyObject* x);
 
+EM_JS_REF(JsRef, pyproxy_to_js_error, (JsRef pyproxy), {
+  return Module.hiwire.new_value(
+    new Module.PythonError(Module.hiwire.get_value(pyproxy)));
+});
+
+JsRef
+wrap_exception()
+{
+  bool success = true;
+  PyObject* type = NULL;
+  PyObject* value = NULL;
+  PyObject* traceback = NULL;
+  JsRef pyexc_proxy = NULL;
+  JsRef jserror = NULL;
+
+  PyErr_Fetch(&type, &value, &traceback);
+  PyErr_NormalizeException(&type, &value, &traceback);
+  if (type == NULL || type == Py_None || value == NULL || value == Py_None) {
+    PyErr_SetString(PyExc_TypeError, "No exception type or value");
+    FAIL();
+  }
+
+  if (traceback == NULL) {
+    traceback = Py_None;
+    Py_INCREF(traceback);
+  }
+  PyException_SetTraceback(value, traceback);
+
+  pyexc_proxy = pyproxy_new(value);
+  jserror = pyproxy_to_js_error(pyexc_proxy);
+
+  success = true;
+finally:
+  Py_CLEAR(type);
+  Py_CLEAR(value);
+  Py_CLEAR(traceback);
+  hiwire_CLEAR(pyexc_proxy);
+  if (!success) {
+    hiwire_CLEAR(jserror);
+  }
+  return jserror;
+}
+
 void _Py_NO_RETURN
 pythonexc2js()
 {
@@ -393,6 +436,18 @@ python2js_init()
   FAIL_IF_NULL(globals);
 
   EM_ASM({
+    class PythonError extends Error
+    {
+      constructor(pythonError)
+      {
+        let message = "Python Error";
+        super(message);
+        this.name = this.constructor.name;
+        this.pythonError = pythonError;
+      }
+    };
+    Module.PythonError = PythonError;
+
     Module.test_python2js_with_depth = function(name, depth)
     {
       let pyname = stringToNewUTF8(name);
