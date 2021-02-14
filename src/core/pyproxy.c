@@ -222,6 +222,12 @@ _pyproxy_iter_fetch_stopiteration()
   return result;
 }
 
+JsRef
+_pyproxy_type(PyObject* ptrobj)
+{
+  return hiwire_string_ascii(ptrobj->ob_type->tp_name);
+}
+
 void
 _pyproxy_destroy(PyObject* ptrobj)
 { // See bug #1049
@@ -411,9 +417,8 @@ EM_JS_REF(JsRef, pyproxy_new, (PyObject * ptrobj), {
 
   _Py_IncRef(ptrobj);
 
-  let target = function(){};
+  let target = new Module.PyProxyClass();
   target['$$'] = { ptr : ptrobj, type : 'PyProxy' };
-  Object.assign(target, Module.PyProxyPublicMethods);
   let proxy = new Proxy(target, Module.PyProxyHandlers);
   let itertype = __pyproxy_iterator_type(ptrobj);
   // clang-format off
@@ -451,8 +456,12 @@ EM_JS_NUM(int, pyproxy_init_js, (), {
     },
   };
 
-  Module.PyProxyPublicMethods = {
-    toString : function() {
+  Module.PyProxyClass = class extends Function {
+    get type() {
+      let ptrobj = _getPtr(this);
+      return Module.hiwire.pop_value(__pyproxy_type(ptrobj));
+    }
+    toString() {
       let ptrobj = _getPtr(this);
       let jsref_repr;
       try {
@@ -464,13 +473,13 @@ EM_JS_NUM(int, pyproxy_init_js, (), {
         _pythonexc2js();
       }
       return Module.hiwire.pop_value(jsref_repr);
-    },
-    destroy : function() {
+    }
+    destroy() {
       let ptrobj = _getPtr(this);
       __pyproxy_destroy(ptrobj);
       this['$$']['ptr'] = null;
-    },
-    apply : function(jsthis, jsargs) {
+    }
+    apply(jsthis, jsargs) {
       let ptrobj = _getPtr(this);
       let idargs = Module.hiwire.new_value(jsargs);
       let idresult;
@@ -485,13 +494,13 @@ EM_JS_NUM(int, pyproxy_init_js, (), {
         _pythonexc2js();
       }
       return Module.hiwire.pop_value(idresult);
-    },
-    toJs : function(depth = -1){
+    }
+    toJs(depth = -1){
       let idresult = _python2js_with_depth(_getPtr(this), depth);
       let result = Module.hiwire.get_value(idresult);
       Module.hiwire.decref(idresult);
       return result;
-    },
+    }
   };
 
   // See:

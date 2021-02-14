@@ -22,15 +22,21 @@ def test_python2js(selenium):
     )
     assert selenium.run_js(
         """
-        let x = pyodide.runPython("[1, 2, 3]").toJs();
-        return ((x instanceof window.Array) && (x.length === 3) &&
-                (x[0] == 1) && (x[1] == 2) && (x[2] == 3))
+        let proxy = pyodide.runPython("[1, 2, 3]");
+        let typename = proxy.type;
+        let x = proxy.toJs();
+        proxy.destroy();
+        return ((typename === "list") && (x instanceof window.Array) && 
+                (x.length === 3) && (x[0] == 1) && (x[1] == 2) && (x[2] == 3));
         """
     )
     assert selenium.run_js(
         """
-        let x = pyodide.runPython("{42: 64}").toJs();
-        return (typeof x === "object") && (x[42] === 64)
+        let proxy = pyodide.runPython("{42: 64}");
+        let typename = proxy.type;
+        let x = proxy.toJs();
+        proxy.destroy();
+        return (typename === "dict") && (typeof x === "object") && (x[42] === 64)
         """
     )
     assert selenium.run_js(
@@ -112,7 +118,10 @@ def test_js2python(selenium):
         """
     )
     assert selenium.run(
-        "from js import jsobject\n" 'str(jsobject) == "[object XMLHttpRequest]"'
+        """
+        from js import jsobject
+        str(jsobject) == "[object XMLHttpRequest]"
+        """
     )
     assert selenium.run(
         """
@@ -331,10 +340,10 @@ def test_javascript_error_back_to_js(selenium):
     assert (
         selenium.run(
             """
-        from js import err
-        py_err = err
-        type(py_err).__name__
-        """
+            from js import err
+            py_err = err
+            type(py_err).__name__
+            """
         )
         == "JsException"
     )

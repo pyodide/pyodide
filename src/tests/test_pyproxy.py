@@ -12,14 +12,14 @@ def test_pyproxy(selenium):
         f = Foo()
         """
     )
-    assert selenium.run_js("return pyodide.pyimport('f').get_value(2)") == 128
-    assert selenium.run_js("return pyodide.pyimport('f').bar") == 42
-    assert selenium.run_js("return ('bar' in pyodide.pyimport('f'))")
-    selenium.run_js("f = pyodide.pyimport('f'); f.baz = 32")
+    selenium.run_js("window.f = pyodide.pyimport('f')")
+    assert selenium.run_js("return f.type") == "Foo"
+    assert selenium.run_js("return f.get_value(2)") == 128
+    assert selenium.run_js("return f.bar") == 42
+    assert selenium.run_js("return ('bar' in f)")
+    selenium.run_js("f.baz = 32")
     assert selenium.run("f.baz") == 32
-    assert set(
-        selenium.run_js("return Object.getOwnPropertyNames(pyodide.pyimport('f'))")
-    ) == set(
+    assert set(selenium.run_js("return Object.getOwnPropertyNames(f)")) > set(
         [
             "__class__",
             "__delattr__",
@@ -50,12 +50,6 @@ def test_pyproxy(selenium):
             "bar",
             "baz",
             "get_value",
-            "toString",
-            "prototype",
-            "apply",
-            "destroy",
-            "$$",
-            "toJs",
         ]
     )
     assert selenium.run("hasattr(f, 'baz')")
@@ -136,35 +130,31 @@ def test_pyproxy_destroy(selenium):
 
 
 def test_pyproxy_iter(selenium):
-    assert (
-        selenium.run_js(
-            """
+    [ty, l] = selenium.run_js(
+        """
         let c = pyodide.runPython(`
             def test():
                 for i in range(10):
                     yield i
             test()
         `);
-        return [...c];
+        return [c.type, [...c]];
         """
-        )
-        == list(range(10))
     )
+    assert ty == "generator"
+    assert l == list(range(10))
 
-    assert (
-        set(
-            selenium.run_js(
-                """
+    [ty, l] = selenium.run_js(
+        """
         c = pyodide.runPython(`
             from collections import ChainMap
             ChainMap({"a" : 2, "b" : 3})
         `);
-        return [...c];
+        return [c.type, [...c]];
         """
-            )
-        )
-        == set(["a", "b"])
     )
+    assert ty == "ChainMap"
+    assert set(l) == set(["a", "b"])
 
     [result, result2] = selenium.run_js(
         """
