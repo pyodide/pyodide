@@ -14,12 +14,14 @@ def test_python2js(selenium):
     assert selenium.run_js('return pyodide.runPython("\'ιωδιούχο\'") === "ιωδιούχο"')
     assert selenium.run_js('return pyodide.runPython("\'碘化物\'") === "碘化物"')
     assert selenium.run_js('return pyodide.runPython("\'🐍\'") === "🐍"')
-    assert selenium.run_js(
-        "let x = pyodide.runPython(\"b'bytes'\");\n"
-        "return (x instanceof window.Uint8ClampedArray) && "
-        "(x.length === 5) && "
-        "(x[0] === 98)"
-    )
+    # TODO: replace with suitable test for the behavior of bytes objects once we
+    # get the new behavior specified.
+    # assert selenium.run_js(
+    #     "let x = pyodide.runPython(\"b'bytes'\");\n"
+    #     "return (x instanceof window.Uint8ClampedArray) && "
+    #     "(x.length === 5) && "
+    #     "(x[0] === 98)"
+    # )
     assert selenium.run_js(
         """
         let proxy = pyodide.runPython("[1, 2, 3]");
@@ -437,10 +439,9 @@ def test_python2js_with_depth(selenium):
                 throw new Error(`Assertion failed: ${msg}`);
             }
         }
-        let depths = [0, 3, 3, 3, 6, 6, 6]
         for(let i=0; i < 7; i++){
             let x = pyodide._module.test_python2js_with_depth("a", i);
-            for(let j=0; j < depths[i]; j++){
+            for(let j=0; j < i; j++){
                 assert(Array.isArray(x), `i: ${i}, j: ${j}`);
                 x = x[1];
             }

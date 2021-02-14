@@ -273,7 +273,7 @@ _python2js_dict(PyObject* x, PyObject* map, int depth)
   } while (0)
 
 static JsRef
-_python2js_immutable(PyObject* x, PyObject* map, int depth)
+_python2js_immutable(PyObject* x)
 {
   if (x == Py_None) {
     return Js_undefined;
@@ -287,14 +287,10 @@ _python2js_immutable(PyObject* x, PyObject* map, int depth)
     return _python2js_float(x);
   } else if (PyUnicode_Check(x)) {
     return _python2js_unicode(x);
-  } else if (PyBytes_Check(x)) {
-    return _python2js_bytes(x);
   } else if (JsProxy_Check(x)) {
     return JsProxy_AsJs(x);
   } else if (JsException_Check(x)) {
     return JsException_AsJs(x);
-  } else if (PyTuple_Check(x)) {
-    return _python2js_sequence(x, map, depth);
   }
   return NULL;
 }
@@ -302,8 +298,8 @@ _python2js_immutable(PyObject* x, PyObject* map, int depth)
 static JsRef
 _python2js_deep(PyObject* x, PyObject* map, int depth)
 {
-  RETURN_IF_SUCCEEDS(_python2js_immutable(x, map, depth));
-  if (PyList_Check(x)) {
+  RETURN_IF_SUCCEEDS(_python2js_immutable(x));
+  if (PyList_Check(x) || PyTuple_Check(x)) {
     return _python2js_sequence(x, map, depth);
   }
   if (PyDict_Check(x)) {
@@ -321,11 +317,10 @@ static JsRef
 _python2js(PyObject* x, PyObject* map, int depth)
 {
   if (depth == 0) {
-    RETURN_IF_SUCCEEDS(_python2js_immutable(x, map, 0));
+    RETURN_IF_SUCCEEDS(_python2js_immutable(x));
     return pyproxy_new(x);
-  } else {
-    return _python2js_deep(x, map, depth - 1);
   }
+  return _python2js_deep(x, map, depth - 1);
 }
 
 /* During conversion of collection types (lists and dicts) from Python to
@@ -384,15 +379,9 @@ _python2js_cache(PyObject* x, PyObject* map, int depth)
 JsRef
 python2js(PyObject* x)
 {
-  PyObject* map = PyDict_New();
-  JsRef result = _python2js_cache(x, map, 0);
-  Py_DECREF(map);
-
-  if (result == NULL) {
-    pythonexc2js();
-  }
-
-  return result;
+  RETURN_IF_SUCCEEDS(_python2js_immutable(x));
+  RETURN_IF_SUCCEEDS(pyproxy_new(x));
+  pythonexc2js();
 }
 
 JsRef
