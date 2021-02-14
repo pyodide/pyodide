@@ -570,4 +570,16 @@ hiwire_get_dtype(JsRef idobj, char** format_ptr, Py_ssize_t* size_ptr);
 JsRef
 hiwire_subarray(JsRef idarr, int start, int end);
 
+JsRef
+JsMap_New();
+
+errcode
+JsMap_Set(JsRef mapid, JsRef keyid, JsRef valueid);
+
+JsRef
+JsSet_New();
+
+errcode
+JsSet_Add(JsRef mapid, JsRef keyid);
+
 #endif /* HIWIRE_H */

@@ -9,6 +9,12 @@
 typedef int errcode;
 #include "hiwire.h"
 
+extern PyObject* internal_error;
+
+/** Raised when conversion between Javascript and Python fails.
+ */
+extern PyObject* conversion_error;
+
 int
 error_handling_init();
 
@@ -65,7 +71,7 @@ log_error_obj(JsRef obj);
     try    /* intentionally no braces, body already has them */                \
       body /* <== body of func */                                              \
     catch (e) {                                                                \
-        LOG_EM_JS_ERROR(func_name, e);                                       \
+        LOG_EM_JS_ERROR(func_name, e);                                         \
         Module.handle_js_error(e);                                             \
         return 0;                                                              \
     }                                                                          \

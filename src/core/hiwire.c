@@ -17,7 +17,7 @@ hiwire_bool(bool boolean)
   return boolean ? Js_true : Js_false;
 }
 
-EM_JS(int, hiwire_init, (), {
+EM_JS_NUM(int, hiwire_init, (), {
   let _hiwire = {
     objects : new Map(),
     // counter is used to allocate keys for the objects map.
@@ -60,6 +60,8 @@ EM_JS(int, hiwire_init, (), {
     return idval;
   };
 
+  Module.hiwire.num_keys = function() { return _hiwire.objects.size; };
+
   Module.hiwire.get_value = function(idval)
   {
     if (!idval) {
@@ -73,6 +75,7 @@ EM_JS(int, hiwire_init, (), {
     }
     if (!_hiwire.objects.has(idval)) {
       // clang-format off
+      console.error(`Undefined id ${ idval }`);
       throw new Error(`Undefined id ${ idval }`);
       // clang-format on
     }
@@ -539,3 +542,20 @@ EM_JS_REF(JsRef, hiwire_subarray, (JsRef idarr, int start, int end), {
   let jssub = jsarr.subarray(start, end);
   return Module.hiwire.new_value(jssub);
 });
+
+EM_JS_NUM(JsRef, JsMap_New, (), { return Module.hiwire.new_value(new Map()); })
+
+EM_JS_NUM(errcode, JsMap_Set, (JsRef mapid, JsRef keyid, JsRef valueid), {
+  let map = Module.hiwire.get_value(mapid);
+  let key = Module.hiwire.get_value(keyid);
+  let value = Module.hiwire.get_value(valueid);
+  map.set(key, value);
+})
+
+EM_JS_NUM(JsRef, JsSet_New, (), { return Module.hiwire.new_value(new Set()); })
+
+EM_JS_NUM(errcode, JsSet_Add, (JsRef mapid, JsRef keyid), {
+  let set = Module.hiwire.get_value(mapid);
+  let key = Module.hiwire.get_value(keyid);
+  set.add(key);
+})
