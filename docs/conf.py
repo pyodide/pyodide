@@ -14,6 +14,7 @@
 #
 import os
 import sys
+from typing import Dict, Any
 
 for base_path in [".", ".."]:
     sys.path.insert(0, os.path.abspath(base_path))
@@ -96,23 +97,12 @@ pygments_style = None
 html_theme = "sphinx_book_theme"
 html_logo = "_static/img/pyodide-logo.png"
 html_title = f"Version {version}"
-html_theme_options = {
-    "github_url": "https://github.com/iodide-project/pyodide",
-    "repository_url": "https://github.com/iodide-project/pyodide",
-}
 
 # Theme options are theme-specific and customize the look and feel of a theme
 # further.  For a list of options available for each theme, see the
 # documentation.
-#
-# html_theme_options = {
-#    "display_version": True,
-#    "prev_next_buttons_location": "bottom",
-#    # Toc options
-#    "collapse_navigation": True,
-#    "sticky_navigation": True,
-#    "navigation_depth": 2,
-# }
+
+html_theme_options: Dict[str, Any] = {}
 
 # Add any paths that contain custom static files (such as style sheets) here,
 # relative to this directory. They are copied after the builtin static files,
