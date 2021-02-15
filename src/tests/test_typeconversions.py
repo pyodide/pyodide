@@ -38,7 +38,7 @@ def test_python2js(selenium):
         let typename = proxy.type;
         let x = proxy.toJs();
         proxy.destroy();
-        return (typename === "dict") && (x instanceof Map) && (x.get(42) === 64)
+        return (typename === "dict") && (x.constructor.name === "Map") && (x.get(42) === 64)
         """
     )
     assert selenium.run_js(
@@ -539,6 +539,6 @@ def test_py2js_set(selenium):
         """
         pyodide.runPython("a = {1, 2, 3}")
         let res = pyodide.pyimport("a").toJs();
-        return res instanceof Set;
+        return res.constructor.name === "Set";
         """
     )
