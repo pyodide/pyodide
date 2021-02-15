@@ -22,10 +22,10 @@ is a `Promise`, which you must call `then` on to complete initialization. When
 the promise resolves, pyodide will have installed a namespace in global scope:
 `pyodide`.
 
-```javascript
+```pyodide
 languagePluginLoader.then(() => {
   // pyodide is now ready to use...
-  console.log(pyodide.runPython('import sys\nsys.version'));
+  console.log(pyodide.runPython(`import sys\nsys.version`));
 });
 ```
 
@@ -36,7 +36,7 @@ function. It takes as input a string of Python
 code. If the code ends in an expression, it returns the result of the
 expression, converted to Javascript objects (see {ref}`type_conversions`).
 
-```javascript
+```pyodide
 pyodide.runPython(`
 import sys
 sys.version
@@ -49,7 +49,7 @@ See {ref}`loading_packages` documentation to load additional packages.
 ## Complete example
 
 Create and save a test `index.html` page with the following contents:
-```html
+```html-pyodide
 <!DOCTYPE html>
 <html>
   <head>
@@ -68,7 +68,7 @@ Create and save a test `index.html` page with the following contents:
                   import sys
                   sys.version
               `));
-              console.log(pyodide.runPython('print(1 + 2)'));
+              console.log(pyodide.runPython(`print(1 + 2)`));
           });
     </script>
   </body>
