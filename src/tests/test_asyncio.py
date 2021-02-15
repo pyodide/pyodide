@@ -261,3 +261,90 @@ def test_eval_code_await_error(selenium):
             r2 = c.send(r1.result())
             """
         )
+
+
+def test_await_pyproxy_eval_async(selenium):
+    assert (
+        selenium.run_js(
+            """
+        let c = pyodide._module.pyodide_py._base.eval_code_async("1+1");
+        return await c;
+        """
+        )
+        == 2
+    )
+
+    assert (
+        selenium.run_js(
+            """
+        let finally_occurred = false;
+        let c = pyodide._module.pyodide_py._base.eval_code_async("1+1");
+        let result = await c.finally(() => { finally_occurred = true; });
+        return [result, finally_occurred];
+        """
+        )
+        == [2, True]
+    )
+
+    assert (
+        selenium.run_js(
+            """
+        let finally_occurred = false;
+        let err_occurred = false;
+        let c = pyodide._module.pyodide_py._base.eval_code_async("raise ValueError('hi')");
+        try {
+            let result = await c.finally(() => { finally_occurred = true; });
+        } catch(e){
+            err_occurred = e.constructor.name === "PythonError";
+        }
+        return [finally_occurred, err_occurred];
+        """
+        )
+        == [True, True]
+    )
+
+    assert selenium.run_js(
+        """
+        let c = pyodide._module.pyodide_py._base.eval_code_async("raise ValueError('hi')");
+        return await c.catch(e => e.constructor.name === "PythonError");
+        """
+    )
+
+    assert selenium.run_js(
+        """
+        let packages = await pyodide._module.pyodide_py._base.eval_code_async(`
+            from js import fetch
+            await (await fetch('packages.json')).json()
+        `);
+        return (!!packages.dependencies) && (!!packages.import_name_to_package_name);
+        """
+    )
+
+    assert selenium.run_js(
+        """
+        let c = pyodide._module.pyodide_py._base.eval_code_async("1+1");
+        await c;
+        let err_occurred = false;
+        try {
+            // Triggers: cannot await already awaited coroutine
+            await c;
+        } catch(e){
+            err_occurred = true;
+        }
+        return err_occurred;
+        """
+    )
+
+
+def test_await_pyproxy_async_def(selenium):
+    assert selenium.run_js(
+        """
+        let packages = await pyodide.runPython(`
+            from js import fetch
+            async def temp():
+                return await (await fetch('packages.json')).json()
+            temp()  
+        `);
+        return (!!packages.dependencies) && (!!packages.import_name_to_package_name);
+        """
+    )
