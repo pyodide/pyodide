@@ -340,6 +340,7 @@ globalThis.languagePluginLoader = (async () => {
     'registerJsModule',
     'unregisterJsModule',
     'setInterruptBuffer',
+    'pyodide_py'
   ];
 
   function makePublicAPI(module, public_api) {
