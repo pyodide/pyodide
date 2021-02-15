@@ -34,8 +34,12 @@ def test_load_from_url(selenium_standalone, web_server_secondary, active_server)
         # no additional ressources were loaded from the other server
         assert len(fh_backup.read()) == 0
 
-    selenium_standalone.run("from pyparsing import Word, alphas")
-    selenium_standalone.run("Word(alphas).parseString('hello')")
+    selenium_standalone.run(
+        """
+        from pyparsing import Word, alphas
+        repr(Word(alphas).parseString('hello'))
+        """
+    )
 
     selenium_standalone.load_package(f"http://{url}:{port}/pytz.js")
     selenium_standalone.run("import pytz")
