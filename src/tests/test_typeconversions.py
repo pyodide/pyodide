@@ -517,7 +517,7 @@ def test_to_py(selenium):
     with pytest.raises(selenium.JavascriptException, match=msg):
         selenium.run_js(
             """
-            z = new Map([[[1,1], 2]]);
+            window.z = new Map([[[1,1], 2]]);
             pyodide.runPython(`
                 from js import z
                 z.to_py()
@@ -529,7 +529,7 @@ def test_to_py(selenium):
     with pytest.raises(selenium.JavascriptException, match=msg):
         selenium.run_js(
             """
-            z = new Set([[1,1]]);
+            window.z = new Set([[1,1]]);
             pyodide.runPython(`
                 from js import z
                 z.to_py()
@@ -541,7 +541,7 @@ def test_to_py(selenium):
     with pytest.raises(selenium.JavascriptException, match=msg):
         selenium.run_js(
             """
-            m = new Map([[0, 2], [false, 3]]);
+            window.m = new Map([[0, 2], [false, 3]]);
             pyodide.runPython(`
                 from js import m
                 m.to_py()
@@ -553,7 +553,7 @@ def test_to_py(selenium):
     with pytest.raises(selenium.JavascriptException, match=msg):
         selenium.run_js(
             """
-            m = new Map([[1, 2], [true, 3]]);
+            window.m = new Map([[1, 2], [true, 3]]);
             pyodide.runPython(`
                 from js import m
                 m.to_py()
@@ -565,7 +565,7 @@ def test_to_py(selenium):
     with pytest.raises(selenium.JavascriptException, match=msg):
         selenium.run_js(
             """
-            m = new Set([0, false]);
+            window.m = new Set([0, false]);
             pyodide.runPython(`
                 from js import m
                 m.to_py()
@@ -577,7 +577,7 @@ def test_to_py(selenium):
     with pytest.raises(selenium.JavascriptException, match=msg):
         selenium.run_js(
             """
-            m = new Set([1, true]);
+            window.m = new Set([1, true]);
             pyodide.runPython(`
                 from js import m
                 m.to_py()
