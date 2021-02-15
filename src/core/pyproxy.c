@@ -13,6 +13,92 @@ _Py_IDENTIFIER(add_done_callback);
 
 static PyObject* asyncio;
 
+// Flags controlling presence or absence of many small mixins
+// clang-format off
+#define HAS_LENGTH   (1 << 0)
+#define HAS_GET      (1 << 1)
+#define HAS_SET      (1 << 2)
+#define HAS_CONTAINS (1 << 3)
+#define IS_ITERABLE  (1 << 4)
+#define IS_ITERATOR  (1 << 5)
+#define IS_AWAITABLE (1 << 6)
+#define IS_BUFFER    (1 << 7)
+#define IS_CALLABLE  (1 << 8)
+// clang-format on
+
+static int
+gen_is_coroutine(PyObject* o)
+{
+  if (PyGen_CheckExact(o)) {
+    PyCodeObject* code = (PyCodeObject*)((PyGenObject*)o)->gi_code;
+    if (code->co_flags & CO_ITERABLE_COROUTINE) {
+      return 1;
+    }
+  }
+  return 0;
+}
+
+int
+pyproxy_getflags(PyObject* pyobj)
+{
+  // Reduce casework by ensuring that protos are't NULL.
+  PyTypeObject* obj_type = pyobj->ob_type;
+
+  PySequenceMethods null_seq_proto = { 0 };
+  PySequenceMethods* seq_proto =
+    obj_type->tp_as_sequence ? obj_type->tp_as_sequence : &null_seq_proto;
+
+  PyMappingMethods null_map_proto = { 0 };
+  PyMappingMethods* map_proto =
+    obj_type->tp_as_mapping ? obj_type->tp_as_mapping : &null_map_proto;
+
+  PyAsyncMethods null_async_proto = { 0 };
+  PyAsyncMethods* async_proto =
+    obj_type->tp_as_async ? obj_type->tp_as_async : &null_async_proto;
+
+  PyBufferProcs null_buffer_proto = { 0 };
+  PyBufferProcs* buffer_proto =
+    obj_type->tp_as_buffer ? obj_type->tp_as_buffer : &null_buffer_proto;
+
+  int result = 0;
+  if (seq_proto->sq_length || map_proto->mp_length) {
+    result |= HAS_LENGTH;
+  }
+  if (map_proto->mp_subscript || seq_proto->sq_item) {
+    result |= HAS_GET;
+  } else if (PyType_Check(pyobj)) {
+    _Py_IDENTIFIER(__class_getitem__);
+    if (_PyObject_HasAttrId(pyobj, &PyId___class_getitem__)) {
+      result |= HAS_GET;
+    }
+  }
+  if (map_proto->mp_ass_subscript || seq_proto->sq_ass_item) {
+    result |= HAS_SET;
+  }
+  if (seq_proto->sq_contains) {
+    result |= HAS_CONTAINS;
+  }
+  if (obj_type->tp_iter || PySequence_Check(pyobj)) {
+    result |= IS_ITERABLE;
+  }
+  if (PyIter_Check(pyobj)) {
+    result &= ~IS_ITERABLE;
+    result |= IS_ITERATOR;
+  }
+  if (PyCoro_CheckExact(pyobj) || gen_is_coroutine(pyobj) ||
+      (async_proto->am_await)) {
+    result |= IS_AWAITABLE;
+  }
+  if (buffer_proto->bf_getbuffer) {
+    result |= IS_BUFFER;
+  }
+  if (_PyVectorcall_Function(pyobj) || PyCFunction_Check(pyobj) ||
+      obj_type->tp_call) {
+    result |= IS_CALLABLE;
+  }
+  return result;
+}
+
 JsRef
 _pyproxy_repr(PyObject* pyobj)
 {
@@ -60,6 +146,9 @@ finally:
   Py_CLEAR(pykey);
   Py_CLEAR(pyresult);
   if (!success) {
+    if (PyErr_ExceptionMatches(PyExc_AttributeError)) {
+      PyErr_Clear();
+    }
     hiwire_CLEAR(idresult);
   }
   return idresult;
@@ -161,6 +250,21 @@ _pyproxy_delitem(PyObject* pyobj, JsRef idkey)
 finally:
   Py_CLEAR(pykey);
   return success ? 0 : -1;
+}
+
+int
+_pyproxy_contains(PyObject* pyobj, JsRef idkey)
+{
+  PyObject* pykey = NULL;
+  int result = -1;
+
+  pykey = js2python(idkey);
+  FAIL_IF_NULL(pykey);
+  result = PySequence_Contains(pyobj, pykey);
+
+finally:
+  Py_CLEAR(pykey);
+  return result;
 }
 
 JsRef
@@ -477,42 +581,15 @@ EM_JS_REF(JsRef, pyproxy_new, (PyObject * ptrobj), {
   if (Module.PyProxies.hasOwnProperty(ptrobj)) {
     return Module.hiwire.new_value(Module.PyProxies[ptrobj]);
   }
-
-  _Py_IncRef(ptrobj);
-
-  let target = new Module.PyProxyClass();
-  target['$$'] = { ptr : ptrobj, type : 'PyProxy' };
-
-  // clang-format off
-  if (_PyMapping_Check(ptrobj) === 1) {
-    // clang-format on
-    // Note: this applies to lists and tuples and sequence-like things
-    // _PyMapping_Check returns true on a superset of things _PySequence_Check
-    // accepts.
-    Object.assign(target, Module.PyProxyMappingMethods);
-  }
-
+  let flags = _pyproxy_getflags(ptrobj);
+  let cls = Module.getPyProxyClass(flags);
+  let target = Reflect.construct(Module.PyProxyClass, [ptrobj], cls);
   let proxy = new Proxy(target, Module.PyProxyHandlers);
-  let itertype = __pyproxy_iterator_type(ptrobj);
-  // clang-format off
-  if (itertype === 2) {
-    Object.assign(target, Module.PyProxyIteratorMethods);
-  }
-  if (itertype === 1) {
-    Object.assign(target, Module.PyProxyIterableMethods);
-  }
-  // clang-format on
-  Module.PyProxies[ptrobj] = proxy;
-  let is_awaitable = __pyproxy_is_awaitable(ptrobj);
-  if (is_awaitable) {
-    Object.assign(target, Module.PyProxyAwaitableMethods);
-  }
-
   return Module.hiwire.new_value(proxy);
 });
 
+// clang-format off
 EM_JS_NUM(int, pyproxy_init_js, (), {
-  // clang-format off
   Module.PyProxies = {};
   function _getPtr(jsobj) {
     let ptr = jsobj.$$.ptr;
@@ -532,6 +609,13 @@ EM_JS_NUM(int, pyproxy_init_js, (), {
 
   // We inherit from Function so that we can be callable. 
   Module.PyProxyClass = class extends Function {
+    constructor(ptr){
+      super();
+      delete this.length;
+      delete this.name;
+      this.$$ = { ptr, type : 'PyProxy' };
+      _Py_IncRef(ptr);
+    }
     get [Symbol.toStringTag] (){
         return "PyProxy";
     }
@@ -581,9 +665,84 @@ EM_JS_NUM(int, pyproxy_init_js, (), {
     }
   };
 
+  let _pyproxyClassMap = new Map([[0, Module.PyProxyClass]]);
+  Module.getPyProxyClass = function(flags){
+    let result = _pyproxyClassMap.get(flags);
+    if(result){
+      return result;
+    }
+    let descriptors = {};
+    if(flags & HAS_LENGTH){
+      Object.assign(descriptors,
+        Object.getOwnPropertyDescriptors(Module.PyProxyLengthMethods)
+      );
+    }
+    if(flags & HAS_GET){
+      Object.assign(descriptors,
+        Object.getOwnPropertyDescriptors(Module.PyProxyGetItemMethods)
+      );
+    }
+    if(flags & HAS_SET){
+      Object.assign(descriptors,
+        Object.getOwnPropertyDescriptors(Module.PyProxySetItemMethods)
+      );
+    }
+    if(flags & HAS_CONTAINS){
+      Object.assign(descriptors,
+        Object.getOwnPropertyDescriptors(Module.PyProxyContainsMethods)
+      );
+    }
+    if(flags & IS_ITERABLE){
+      Object.assign(descriptors,
+        Object.getOwnPropertyDescriptors(Module.PyProxyIterableMethods)
+      );
+    }
+    if(flags & IS_ITERATOR){
+      Object.assign(descriptors,
+        Object.getOwnPropertyDescriptors(Module.PyProxyIteratorMethods)
+      );
+    }
+    if(flags & IS_AWAITABLE){
+      Object.assign(descriptors,
+        Object.getOwnPropertyDescriptors(Module.PyProxyAwaitableMethods)
+      );
+    }
+    if(flags & IS_BUFFER){
+      Object.assign(descriptors,
+        Object.getOwnPropertyDescriptors(Module.PyProxyBufferMethods)
+      );
+    }
+    if(flags & IS_CALLABLE){
+      Object.assign(descriptors,
+        Object.getOwnPropertyDescriptors(Module.PyProxyCallableMethods)
+      );
+    }
+    let new_proto = Object.create(Module.PyProxyClass.prototype, descriptors);
+    function PyProxy(){};
+    PyProxy.prototype = new_proto;
+    _pyproxyClassMap.set(flags, PyProxy);
+    return PyProxy;
+  };
+
+  Module.PyProxyLengthMethods = {
+    get length(){
+      let ptrobj = _getPtr(this);
+      let length;
+      try {
+        length = _PyObject_Size(ptrobj);
+      } catch(e) {
+        Module.fatal_error(e);
+      }
+      if(length === -1){
+        _pythonexc2js();
+      }
+      return length;
+    }
+  };
+
   // These methods appear for lists and tuples and sequence-like things
   // _PyMapping_Check returns true on a superset of things _PySequence_Check accepts.
-  Module.PyProxyMappingMethods = {
+  Module.PyProxyGetItemMethods = {
     get : function(key){
       let ptrobj = _getPtr(this);
       let idkey = Module.hiwire.new_value(key);
@@ -604,6 +763,9 @@ EM_JS_NUM(int, pyproxy_init_js, (), {
       }
       return Module.hiwire.pop_value(idresult);
     },
+  };
+
+  Module.PyProxySetItemMethods = {
     set : function(key, value){
       let ptrobj = _getPtr(this);
       let idkey = Module.hiwire.new_value(key);
@@ -621,9 +783,6 @@ EM_JS_NUM(int, pyproxy_init_js, (), {
         _pythonexc2js();
       }
     },
-    has : function(key) {
-      return this.get(key) !== undefined;
-    },
     delete : function(key) {
       let ptrobj = _getPtr(this);
       let idkey = Module.hiwire.new_value(key);
@@ -639,6 +798,25 @@ EM_JS_NUM(int, pyproxy_init_js, (), {
         _pythonexc2js();
       }
     }
+  };
+
+  Module.PyProxyContainsMethods = {
+    has : function(key) {
+      let ptrobj = _getPtr(this);
+      let idkey = Module.hiwire.new_value(key);
+      let result;
+      try {
+        result = _pyproxy_contains(ptrobj, idkey);
+      } catch(e) {
+        Module.fatal_error(e);
+      } finally {
+        Module.hiwire.decref(idkey);
+      }
+      if(result === -1){
+        _pythonexc2js();
+      }
+      return result === 1;
+    },
   };
 
   // See:
@@ -693,21 +871,7 @@ EM_JS_NUM(int, pyproxy_init_js, (), {
     },
   };
 
-  // These fields appear in the target by default because the target is a function.
-  // we want to filter them out.
-  let ignoredTargetFields = ["name", "length"];
-
-  // See explanation of which methods should be defined here and what they do here:
-  // https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Proxy
-  Module.PyProxyHandlers = {
-    isExtensible: function() { return true },
-    has: function (jsobj, jskey) {
-      if(Reflect.has(jsobj, jskey) && !ignoredTargetFields.includes(jskey)){
-        return true;
-      }
-      if(typeof(jskey) === "symbol"){
-        return false;
-      }
+  function python_hasattr(jsobj, jskey){
       let ptrobj = _getPtr(jsobj);
       let idkey = Module.hiwire.new_value(jskey);
       let result;
@@ -722,37 +886,72 @@ EM_JS_NUM(int, pyproxy_init_js, (), {
         _pythonexc2js();
       }
       return result !== 0;
+  }
+
+  function python_getattr(jsobj, jskey){
+    let ptrobj = _getPtr(jsobj);
+    let idkey = Module.hiwire.new_value(jskey);
+    let idresult;
+    try {
+      idresult = __pyproxy_getattr(ptrobj, idkey);
+    } catch(e) {
+      Module.fatal_error(e);
+    } finally {
+      Module.hiwire.decref(idkey);
+    }
+    if(idresult === 0){
+      if(_PyErr_Occurred()){
+        _pythonexc2js();
+      }
+    }
+    return idresult;
+  }
+
+  // These fields appear in the target by default because the target is a function.
+  // we want to filter them out.
+  let ignoredTargetFields = ["name", "length"];
+
+  // See explanation of which methods should be defined here and what they do here:
+  // https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Proxy
+  Module.PyProxyHandlers = {
+    isExtensible: function() { return true },
+    has: function (jsobj, jskey) {
+      let objHasKey = Reflect.has(jsobj, jskey);
+      if(objHasKey && !ignoredTargetFields.includes(jskey)){
+        return true;
+      }
+      if(typeof(jskey) === "symbol"){
+        // If we had it we would have already found it.
+        // python_hasattr will crash when given a Symbol.
+        return false;
+      }
+      if(python_hasattr(jsobj, jskey)){
+        return true;
+      }
+      return objHasKey && !!Object.getOwnPropertyDescriptor(Reflect.getPrototypeOf(jsobj), jskey);
     },
     get: function (jsobj, jskey) {
-      if(Reflect.has(jsobj, jskey) && !ignoredTargetFields.includes(jskey)){
+      if(Object.hasOwnProperty(jsobj)){
         return Reflect.get(jsobj, jskey);
       }
       if(typeof(jskey) === "symbol"){
-        return undefined;
+        // python_hasattr will crash when given a Symbol.
+        return Reflect.get(jsobj, jskey);
       }
-      let ptrobj = _getPtr(jsobj);
-      let idkey = Module.hiwire.new_value(jskey);
-      let idresult;
-      try {
-        idresult = __pyproxy_getattr(ptrobj, idkey);
-      } catch(e) {
-        Module.fatal_error(e);
-      } finally {
-        Module.hiwire.decref(idkey);
+      let idresult = python_getattr(jsobj, jskey);
+      if(idresult !== 0){
+        return Module.hiwire.pop_value(idresult);
       }
-      if(idresult === 0){
-        _pythonexc2js();
+      if(!ignoredTargetFields.includes(jskey) || Object.getOwnPropertyDescriptor(Reflect.getPrototypeOf(jsobj), jskey)){
+        return Reflect.get(jsobj, jskey);
       }
-      return Module.hiwire.pop_value(idresult);
+      return undefined;
     },
     set: function (jsobj, jskey, jsval) {
-      if(
-        Reflect.has(jsobj, jskey) && !ignoredTargetFields.includes(jskey)
-        || typeof(jskey) === "symbol"
-      ){
-        if(typeof(jskey) === "symbol"){
-          jskey = jskey.description;
-        }
+      if(typeof(jskey) === "symbol"){
+        throw new Error(`Cannot set read only field ${jskey.description}`);
+      }
+      if(Object.hasOwnProperty(jsobj, jskey)){
         throw new Error(`Cannot set read only field ${jskey}`);
       }
       let ptrobj = _getPtr(jsobj);
@@ -773,13 +972,10 @@ EM_JS_NUM(int, pyproxy_init_js, (), {
       return true;
     },
     deleteProperty: function (jsobj, jskey) {
-      if(
-        Reflect.has(jsobj, jskey) && !ignoredTargetFields.includes(jskey)
-        || typeof(jskey) === "symbol"
-      ){
-        if(typeof(jskey) === "symbol"){
-          jskey = jskey.description;
-        }        
+      if(typeof(jskey) === "symbol"){
+        throw new Error(`Cannot delete read only field ${jskey.description}`);
+      }
+      if(Object.hasOwnProperty(jsobj, jskey)){
         throw new Error(`Cannot delete read only field ${jskey}`);
       }
       let ptrobj = _getPtr(jsobj);
@@ -798,10 +994,6 @@ EM_JS_NUM(int, pyproxy_init_js, (), {
       return true;
     },
     ownKeys: function (jsobj) {
-      let result = new Set(Reflect.ownKeys(jsobj));
-      for(let key of ignoredTargetFields){
-        result.delete(key);
-      }
       let ptrobj = _getPtr(jsobj);
       let idresult;
       try {
@@ -809,11 +1001,9 @@ EM_JS_NUM(int, pyproxy_init_js, (), {
       } catch(e) {
         Module.fatal_error(e);
       }
-      let jsresult = Module.hiwire.pop_value(idresult);
-      for(let key of jsresult){
-        result.add(key);
-      }
-      return Array.from(result);
+      let result = Module.hiwire.pop_value(idresult);
+      result.push(...Reflect.ownKeys(jsobj));
+      return result;
     },
     apply: function (jsobj, jsthis, jsargs) {
       return jsobj.apply(jsthis, jsargs);
@@ -859,6 +1049,8 @@ EM_JS_NUM(int, pyproxy_init_js, (), {
     }
   };
 
+  Module.PyProxyBufferMethods = {};
+  Module.PyProxyCallableMethods = {};
 
   // A special proxy that we use to wrap pyodide.globals to allow property access
   // like `pyodide.globals.x`.
@@ -909,8 +1101,8 @@ EM_JS_NUM(int, pyproxy_init_js, (), {
   };
 
   return 0;
-// clang-format on
 });
+// clang-format on
 
 int
 pyproxy_init()
