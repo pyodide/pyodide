@@ -221,11 +221,15 @@ def test_pyproxy_mixins(selenium):
         let result = {};
         for(let [name, x] of Object.entries(name_proxy)){
             let impls = {};
-            for(let field of ["then", "catch", "finally", "iterable", "iterator"]){
-                impls[field] = field in x;
+            for(let [name, key] of [
+                ["then", "then"],
+                ["catch", "catch"],
+                ["finally_", "finally"],
+                ["iterable", Symbol.iterator],
+                ["iterator", "next"],
+            ]){
+                impls[name] = key in x;
             }
-            impls["finally_"] = impls["finally"];
-            delete impls["finally"];
             result[name] = impls;
         }
         return result;
