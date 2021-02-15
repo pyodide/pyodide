@@ -1,6 +1,6 @@
 <div align="center">
   <a href="https://github.com/iodide-project/pyodide">
-  <img src="./docs/images/pyodide-logo.png" alt="Pyodide">
+  <img src="./docs/_static/img/pyodide-logo-readme.png" alt="Pyodide">
   </a>
 </div>
 
