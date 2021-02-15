@@ -150,37 +150,52 @@ from pygments.lexers.javascript import JavascriptLexer
 from pygments.lexers.html import HtmlLexer
 from pygments.token import *
 
+
 class PyodideLexer(JavascriptLexer):
     tokens = {
-        'root': [
+        "root": [
             (
-                rf"""(pyodide)(\.)(runPython|runPythonAsync)(\()(`)""",  
-                bygroups(Token.Name, Token.Operator, Token.Name, Token.Punctuation, Token.Literal.String.Single), 
-                'python-code'
+                rf"""(pyodide)(\.)(runPython|runPythonAsync)(\()(`)""",
+                bygroups(
+                    Token.Name,
+                    Token.Operator,
+                    Token.Name,
+                    Token.Punctuation,
+                    Token.Literal.String.Single,
+                ),
+                "python-code",
             ),
             inherit,
         ],
-        'python-code' : [
+        "python-code": [
             (
-                r'(.+?)(`)(\))',
-                bygroups(using(PythonLexer), Token.Literal.String.Single, Token.Punctuation),
-                "#pop"
+                r"(.+?)(`)(\))",
+                bygroups(
+                    using(PythonLexer), Token.Literal.String.Single, Token.Punctuation
+                ),
+                "#pop",
             )
-        ]
-    }
-
-class HtmlPyodideLexer(HtmlLexer):
-    tokens = {
-        'script-content': [
-            (r'(<)(\s*)(/)(\s*)(script)(\s*)(>)',
-             bygroups(Punctuation, Text, Punctuation, Text, Name.Tag, Text,
-                      Punctuation), '#pop'),
-            (r'.+?(?=<\s*/\s*script\s*>)', using(PyodideLexer)),
-            (r'.+?\n', using(PyodideLexer), '#pop'),
-            (r'.+', using(PyodideLexer), '#pop'),
         ],
     }
 
+
+class HtmlPyodideLexer(HtmlLexer):
+    tokens = {
+        "script-content": [
+            (
+                r"(<)(\s*)(/)(\s*)(script)(\s*)(>)",
+                bygroups(
+                    Punctuation, Text, Punctuation, Text, Name.Tag, Text, Punctuation
+                ),
+                "#pop",
+            ),
+            (r".+?(?=<\s*/\s*script\s*>)", using(PyodideLexer)),
+            (r".+?\n", using(PyodideLexer), "#pop"),
+            (r".+", using(PyodideLexer), "#pop"),
+        ],
+    }
+
+
 def setup(app):
-    app.add_lexer('pyodide', PyodideLexer)
-    app.add_lexer('html-pyodide', HtmlPyodideLexer)
+    app.add_lexer("pyodide", PyodideLexer)
+    app.add_lexer("html-pyodide", HtmlPyodideLexer)
