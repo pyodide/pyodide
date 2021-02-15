@@ -1,10 +1,19 @@
+---
+substitutions:
+  API: "<span class='badge badge-warning'>API Change</span>"
+  Enhancement : "<span class='badge badge-info'>Enhancement</span>"
+  Feature : "<span class='badge badge-success'>Feature</span>"
+  Fix : "<span class='badge badge-danger'>Fix</span>"
+---
+
+
 (changelog)=
 # Release notes
 
 ## Version [Unreleased]
 ### Breaking changes
 
-- Removed iodide-specific code in `pyodide.js`. This breaks compatibility with
+- {{ API }} Removed iodide-specific code in `pyodide.js`. This breaks compatibility with
   iodide.
   [#878](https://github.com/iodide-project/pyodide/pull/878),
   [#981](https://github.com/iodide-project/pyodide/pull/981)
@@ -20,9 +29,9 @@
   need to be loaded explicitly
   [#1010](https://github.com/iodide-project/pyodide/pull/1010),
   [#987](https://github.com/iodide-project/pyodide/pull/987).
-- Removed the `pyodide.autocomplete` API, use Jedi directly instead.
+- {{ API }} Removed the `pyodide.autocomplete` API, use Jedi directly instead.
   [#1066](https://github.com/iodide-project/pyodide/pull/1066)
-- Removed repr API.
+- {{ API }} Removed repr API.
   [#1067](https://github.com/iodide-project/pyodide/pull/1067)
 - If `messageCallback` and `errorCallback` are supplied to
   `pyodide.loadPackage`, `pyodide.runPythonAsync` and
@@ -34,22 +43,22 @@
   [#1167](https://github.com/iodide-project/pyodide/pull/1167)
 
 ### Added
-- `micropip` now supports installing wheels from relative urls. 
+- {{ Feature }} `micropip` now supports installing wheels from relative urls.
   [#872](https://github.com/iodide-project/pyodide/pull/872)
 - uglifyjs and lessc no longer need to be installed in the system during build
   [#878](https://github.com/iodide-project/pyodide/pull/878).
-- Reduce the size of the core pyodide package
+- {{ Enhancement }} Reduce the size of the core pyodide package
   [#987](https://github.com/iodide-project/pyodide/pull/987).
 - Updated packages: bleach 3.2.1, packaging 20.8
 - `eval_code` now accepts separate `globals` and `locals` parameters.
   [#1083](https://github.com/iodide-project/pyodide/pull/1083)
 - An InteractiveConsole with completion support to ease the integration
-  of Pyodide REPL in webpages (used in console.html) 
-  [#1125](https://github.com/iodide-project/pyodide/pull/1125) and 
+  of Pyodide REPL in webpages (used in console.html)
+  [#1125](https://github.com/iodide-project/pyodide/pull/1125) and
   [#1155](https://github.com/iodide-project/pyodide/pull/1155)
 - Flexible jsimports: it now possible to add custom Python "packages" backed by
   Javascript code, like the js package.  The js package is now implemented
-  using this system. 
+  using this system.
   [#1146](https://github.com/iodide-project/pyodide/pull/1146)
 - Added the `pyodide.setInterruptBuffer` API. This can be used to set a
   `SharedArrayBuffer` to be the keyboard interupt buffer. If Pyodide is running
@@ -57,9 +66,12 @@
   raise a `KeyboardInterrupt` by writing to the interrupt buffer.
   [#1148](https://github.com/iodide-project/pyodide/pull/1148) and
   [#1173](https://github.com/iodide-project/pyodide/pull/1173)
-- Added a Python event loop to support asyncio by scheduling coroutines to run 
-  as jobs on the browser event loop. This event loop is available by default and 
-  automatically enabled by any relevant asyncio API, so for instance 
+- A `JsProxy` of a Javascript `Promise` or other awaitable object is now a
+  Python awaitable.
+  [#880](https://github.com/iodide-project/pyodide/pull/880)
+- Added a Python event loop to support asyncio by scheduling coroutines to run
+  as jobs on the browser event loop. This event loop is available by default and
+  automatically enabled by any relevant asyncio API, so for instance
   `asyncio.ensure_future` works without any configuration.
   [#1158](https://github.com/iodide-project/pyodide/pull/1158)
 - A `PyProxy` of a Python coroutine or awaitable is now an awaitable javascript
@@ -78,7 +90,7 @@
   [#1180](https://github.com/iodide-project/pyodide/pull/1180)
 
 ### Fixed
-- getattr and dir on JsProxy now report consistent results and include all
+- {{ Fix }} getattr and dir on JsProxy now report consistent results and include all
   names defined on the Python dictionary backing JsProxy.
   [#1017](https://github.com/iodide-project/pyodide/pull/1017)
 - `JsProxy.__bool__` now produces more consistent results: both `bool(window)`
@@ -129,7 +141,7 @@ by 0.16.1 with identical contents.
 - ENH Patches for the threading module were removed in all packages. Importing
   the module, and a subset of functionality (e.g. locks) works, while starting
   a new thread will produce an exception, as expected.
-  [#796](https://github.com/iodide-project/pyodide/pull/796). 
+  [#796](https://github.com/iodide-project/pyodide/pull/796).
   See [#237](https://github.com/iodide-project/pyodide/pull/237) for the current
   status of the threading support.
 - ENH The multiprocessing module is now included, and will not fail at import,
@@ -237,11 +249,11 @@ Sergio, Seungmin Kim, Shyam Saladi, smkm, Wei Ouyang
 - Adds support for installing pure Python wheels from arbitrary URLs with
   micropip.
 - The CDN URL for pyodide changed to
-  https://pyodide-cdn2.iodide.io/v0.15.0/full/pyodide.js 
-  It now supports versioning and should provide faster downloads. 
-  The latest release can be accessed via 
+  https://pyodide-cdn2.iodide.io/v0.15.0/full/pyodide.js
+  It now supports versioning and should provide faster downloads.
+  The latest release can be accessed via
   https://pyodide-cdn2.iodide.io/latest/full/
-- Adds `messageCallback` and `errorCallback` to 
+- Adds `messageCallback` and `errorCallback` to
   {any}`pyodide.loadPackage`.
 - Reduces the initial memory footprint (`TOTAL_MEMORY`) from 1 GiB to 5 MiB.
   More memory will be allocated as needed.

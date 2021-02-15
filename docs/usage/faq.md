@@ -36,17 +36,15 @@ async function runPythonAsync(code, messageCallback, errorCallback) {
 ```
 To make your own version of `runPython`:
 
-```javascript
-pyodide.runPython(
-  `
+```pyodide
+pyodide.runPython(`
   import pyodide
   old_eval_code = pyodide.eval_code
   def my_eval_code(code, ns):
     extra_info = None
     result = old_eval_code(code, ns)
     return [ns["extra_info"], result]
-  `
-)
+`)
 
 function myRunPython(code){
   return pyodide.globals.my_eval_code(code, pyodide.globals);
@@ -64,6 +62,7 @@ monkey patch `pyodide-py.find_imports` which takes `code` as an argument
 and returns a list of packages imported.
 
 ## How can I execute code in a custom namespace?
+
 The second argument to {any}`pyodide.eval_code` is a global namespace to execute the code in.
 The namespace is a python dictionary. 
 ```javascript
@@ -72,7 +71,10 @@ pyodide.pyodide_py.eval_code(`x = 1 + 1`, my_namespace);
 pyodide.pyodide_py.eval_code(`y = x ** x`, my_namespace);
 my_namespace.y; // ==> 4
 ```
-This effectively runs the code in "module scope". Like the [Python `eval` function](https://docs.python.org/3/library/functions.html?highlight=eval#eval) you can provide a third argument to `eval_code` to specify a separate `locals` dict to run code in "function scope".
+This effectively runs the code in "module scope". Like the
+[Python `eval` function](https://docs.python.org/3/library/functions.html?highlight=eval#eval)
+you can provide a third argument to `eval_code` to specify a separate `locals` dict to
+run code in "function scope".
 
 ## How to detect that code is run with Pyodide?
 
@@ -132,7 +134,7 @@ let my_module = {
 pyodide.registerJsModule("my_js_module", my_module);
 ```
 You can import your package like a normal Python package:
-```
+```py
 import my_js_module
 from my_js_module.submodule import h, c
 assert my_js_module.f(7) == 50
