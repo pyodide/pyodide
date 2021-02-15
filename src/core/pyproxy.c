@@ -892,7 +892,7 @@ EM_JS_NUM(int, pyproxy_init_js, (), {
   
   Module.wrapNamespace = function wrapNamespace(ns){
     return new Proxy(ns, NamespaceProxyHandlers);
-  }
+  };
 
   return 0;
 // clang-format on
