@@ -86,7 +86,7 @@ are made according to the following rules:
   others would agree. If no review is received within this time, the Pull
   Request can be merged.
 
-* **Code changes in general, and expecially those impacting user facing APIs**,
+* **Code changes in general, and especially those impacting user facing APIs**,
   as well as more significant documentation changes, require review and
   approval by a core developer and no objections raised by any core developer
   (lazy consensus). This process happens on the pull-request page.
