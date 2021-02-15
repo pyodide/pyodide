@@ -36,17 +36,15 @@ async function runPythonAsync(code, messageCallback, errorCallback) {
 ```
 To make your own version of `runPython`:
 
-```javascript
-pyodide.runPython(
-  `
+```pyodide
+pyodide.runPython(`
   import pyodide
   old_eval_code = pyodide.eval_code
   def my_eval_code(code, ns):
     extra_info = None
     result = old_eval_code(code, ns)
     return [ns["extra_info"], result]
-  `
-)
+`)
 
 function myRunPython(code){
   return pyodide.globals.my_eval_code(code, pyodide.globals);
@@ -66,7 +64,7 @@ and returns a list of packages imported.
 ## How can I execute code in a custom namespace?
 The second argument to `eval_code` is a namespace to execute the code in.
 The namespace is a python dictionary. So you can use:
-```javascript
+```pyodide
 pyodide.runPython(`
 my_namespace = { "x" : 2, "y" : 7 }
 def eval_in_my_namespace(code):
@@ -141,7 +139,7 @@ let my_module = {
 pyodide.registerJsModule("my_js_module", my_module);
 ```
 You can import your package like a normal Python package:
-```
+```py
 import my_js_module
 from my_js_module.submodule import h, c
 assert my_js_module.f(7) == 50
