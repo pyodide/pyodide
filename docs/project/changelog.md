@@ -57,7 +57,7 @@ substitutions:
   [#1125](https://github.com/iodide-project/pyodide/pull/1125) and
   [#1155](https://github.com/iodide-project/pyodide/pull/1155)
 - Flexible jsimports: it now possible to add custom Python "packages" backed by
-  Javascript code, like the js package.  The js package is now implemented
+  Javascript code, like the `js` package.  The `js` package is now implemented
   using this system.
   [#1146](https://github.com/iodide-project/pyodide/pull/1146)
 - Added the `pyodide.setInterruptBuffer` API. This can be used to set a
@@ -81,13 +81,17 @@ substitutions:
 - A `JsProxy` of a Javascript `Promise` or other awaitable object is now a 
   Python awaitable.
   [#880](https://github.com/iodide-project/pyodide/pull/880)
-- Made PyProxy of an iterable Python object an iterable Js object: defined the
+- Made `PyProxy` of an iterable Python object an iterable Js object: defined the
   `[Symbol.iterator]` method, can be used like `for(let x of proxy)`.
-  Made a PyProxy of a Python iterator an iterator: `proxy.next()` is
+  Made a `PyProxy` of a Python iterator an iterator: `proxy.next()` is
   translated to `next(it)`.
-  Made a PyProxy of a Python generator into a Javascript generator:
+  Made a `PyProxy` of a Python generator into a Javascript generator:
   `proxy.next(val)` is translated to `gen.send(val)`.
   [#1180](https://github.com/iodide-project/pyodide/pull/1180)
+- Updated `PyProxy` so that if the wrapped Python object supports `__getitem__`
+  access, then the wrapper has `get`, `set`, `has`, and `delete` methods which do
+  `obj[key]`, `obj[key] = val`, `key in obj` and `del obj[key]` respectively.
+  [#1175](https://github.com/iodide-project/pyodide/pull/1175)
 
 ### Fixed
 - {{ Fix }} getattr and dir on JsProxy now report consistent results and include all
