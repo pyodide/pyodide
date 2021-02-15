@@ -47,7 +47,7 @@ pyodide.runPython(`
 `)
 
 function myRunPython(code){
-  return pyodide.globals.my_eval_code(code, pyodide.globals);
+  return pyodide.globals.get("my_eval_code")(code, pyodide.globals);
 }
 
 function myAsyncRunPython(code){

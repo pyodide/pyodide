@@ -655,7 +655,7 @@ def temp(Module):
 
   // Wrap "globals" in a special Proxy that allows `pyodide.globals.x` access.
   // TODO: Should we have this?
-  Module.globals = new Proxy(Module.globals, Module.NamespaceProxyHandlers);
+  Module.globals = Module.wrapNamespace(Module.globals);
 
   delete self.Module;
   let response = await fetch(`${baseURL}packages.json`);

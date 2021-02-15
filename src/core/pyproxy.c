@@ -515,22 +515,22 @@ EM_JS_NUM(int, pyproxy_init_js, (), {
   // clang-format off
   Module.PyProxies = {};
   function _getPtr(jsobj) {
-    let ptr = jsobj['$$']['ptr'];
+    let ptr = jsobj.$$.ptr;
     if (ptr === null) {
       throw new Error("Object has already been destroyed");
     }
     return ptr;
   }
-  // We inherit from Function so that we can be callable. 
-  Module.PyProxyClass = class PyProxy extends Function {};
+  
   // Static methods
   Module.PyProxy = {
     _getPtr,
     isPyProxy: function(jsobj) {
-      return jsobj && jsobj['$$'] !== undefined && jsobj['$$']['type'] === 'PyProxy';
+      return jsobj && jsobj.$$ !== undefined && jsobj.$$.type === 'PyProxy';
     },
   };
 
+  // We inherit from Function so that we can be callable. 
   Module.PyProxyClass = class extends Function {
     get [Symbol.toStringTag] (){
         return "PyProxy";
@@ -555,7 +555,7 @@ EM_JS_NUM(int, pyproxy_init_js, (), {
     destroy() {
       let ptrobj = _getPtr(this);
       __pyproxy_destroy(ptrobj);
-      this['$$']['ptr'] = null;
+      this.$$.ptr = null;
     }
     apply(jsthis, jsargs) {
       let ptrobj = _getPtr(this);
@@ -819,36 +819,6 @@ EM_JS_NUM(int, pyproxy_init_js, (), {
       return jsobj.apply(jsthis, jsargs);
     },
   };
-
-  // A special proxy that we use to wrap pyodide.globals to allow property access
-  // like `pyodide.globals.x`.
-  // TODO: Should we have this?
-  Module.NamespaceProxyHandlers = {
-    has : function(obj, key){
-      return Reflect.has(obj, key) || obj.has(key);
-    },
-    get : function(obj, key){
-      if(Reflect.has(obj, key)){
-        return Reflect.get(obj, key);
-      }
-      return obj.get(key);
-    },
-    set : function(obj, key, value){
-      if(Reflect.has(jsobj, jskey)){
-        throw new Error(`Cannot set read only field ${jskey}`);
-      }
-      obj.set(key, value);
-    },
-    ownKeys: function (obj) {
-      let result = new Set(Reflect.ownKeys(obj));
-      let iter = obj.keys();
-      for(let key of iter){
-        result.add(key);
-      }
-      iter.destroy();
-      return Array.from(result);
-    }
-  };
   
   Module.PyProxyAwaitableMethods = {
     _ensure_future : function(){
@@ -888,6 +858,41 @@ EM_JS_NUM(int, pyproxy_init_js, (), {
       return promise.finally(onFinally);
     }
   };
+
+
+  // A special proxy that we use to wrap pyodide.globals to allow property access
+  // like `pyodide.globals.x`.
+  // TODO: Should we have this?
+  let NamespaceProxyHandlers = {
+    has : function(obj, key){
+      return Reflect.has(obj, key) || obj.has(key);
+    },
+    get : function(obj, key){
+      if(Reflect.has(obj, key)){
+        return Reflect.get(obj, key);
+      }
+      return obj.get(key);
+    },
+    set : function(obj, key, value){
+      if(Reflect.has(obj, key)){
+        throw new Error(`Cannot set read only field ${key}`);
+      }
+      obj.set(key, value);
+    },
+    ownKeys: function (obj) {
+      let result = new Set(Reflect.ownKeys(obj));
+      let iter = obj.keys();
+      for(let key of iter){
+        result.add(key);
+      }
+      iter.destroy();
+      return Array.from(result);
+    }
+  };
+  
+  Module.wrapNamespace = function wrapNamespace(ns){
+    return new Proxy(ns, NamespaceProxyHandlers);
+  }
 
   return 0;
 // clang-format on
