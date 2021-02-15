@@ -328,11 +328,22 @@ globalThis.languagePluginLoader = (async () => {
 
   ////////////////////////////////////////////////////////////
   // Rearrange namespace for public API
+  // clang-format off
   let PUBLIC_API = [
-    'globals', 'loadPackage', 'loadPackagesFromImports', 'loadedPackages',
-    'pyimport', 'runPython', 'runPythonAsync', 'version', 'registerJsModule',
-    'unregisterJsModule', 'setInterruptBuffer', 'pyodide_py'
+    'globals',
+    'loadPackage',
+    'loadPackagesFromImports',
+    'loadedPackages',
+    'pyimport',
+    'runPython',
+    'runPythonAsync',
+    'version',
+    'registerJsModule',
+    'unregisterJsModule',
+    'setInterruptBuffer',
+    'pyodide_py'
   ];
+  // clang-format on
 
   function makePublicAPI(module, public_api) {
     let namespace = {_module : module};
