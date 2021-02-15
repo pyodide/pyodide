@@ -9,6 +9,9 @@
 // clang-format on
 #include "hiwire.h"
 
+JsRef
+wrap_exception();
+
 /** Convert the active Python exception into a Javascript Error object
  *  and print it to the console.
  */

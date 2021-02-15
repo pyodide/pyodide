@@ -57,14 +57,18 @@
   raise a `KeyboardInterrupt` by writing to the interrupt buffer.
   [#1148](https://github.com/iodide-project/pyodide/pull/1148) and
   [#1173](https://github.com/iodide-project/pyodide/pull/1173)
-- A `JsProxy` of a Javascript `Promise` or other awaitable object is now a 
-  Python awaitable.
-  [#880](https://github.com/iodide-project/pyodide/pull/880)
 - Added a Python event loop to support asyncio by scheduling coroutines to run 
   as jobs on the browser event loop. This event loop is available by default and 
   automatically enabled by any relevant asyncio API, so for instance 
   `asyncio.ensure_future` works without any configuration.
   [#1158](https://github.com/iodide-project/pyodide/pull/1158)
+- A `PyProxy` of a Python coroutine or awaitable is now an awaitable javascript
+  object. Awaiting a coroutine will schedule it to run on the Python event loop
+  using `asyncio.ensure_future`.
+  [#1170](https://github.com/iodide-project/pyodide/pull/1170)
+- A `JsProxy` of a Javascript `Promise` or other awaitable object is now a 
+  Python awaitable.
+  [#880](https://github.com/iodide-project/pyodide/pull/880)
 - Made PyProxy of an iterable Python object an iterable Js object: defined the
   `[Symbol.iterator]` method, can be used like `for(let x of proxy)`.
   Made a PyProxy of a Python iterator an iterator: `proxy.next()` is
@@ -87,10 +91,6 @@
 - JsBoundMethod is now a subclass of JsProxy, which fixes nested attribute
   access and various other strange bugs.
   [#1124](https://github.com/iodide-project/pyodide/pull/1124)
-- In console.html: sync behavior, full stdout/stderr support, clean namespace,
-  bigger font, correct result representation, clean traceback
-  [#1125](https://github.com/iodide-project/pyodide/pull/1125) and
-  [#1141](https://github.com/iodide-project/pyodide/pull/1141)
 - Javascript functions imported like `from js import fetch` no longer trigger
   "invalid invocation" errors (issue
   [#461](https://github.com/iodide-project/pyodide/issues/461)) and
@@ -99,11 +99,15 @@
   [#1126](https://github.com/iodide-project/pyodide/pull/1126)
 - Javascript bound method calls now work correctly with keyword arguments.
   [#1138](https://github.com/iodide-project/pyodide/pull/1138)
+- In console.html: sync behavior, full stdout/stderr support, clean namespace,
+  bigger font, correct result representation, clean traceback
+  [#1125](https://github.com/iodide-project/pyodide/pull/1125) and
+  [#1141](https://github.com/iodide-project/pyodide/pull/1141)
 - Switched from ̀Jedi to rlcompleter for completion in
   `pyodide.console.InteractiveConsole` and so in `console.html`. This fixes
   some completion issues (see
   [#821](https://github.com/iodide-project/pyodide/issues/821) and
-  [#1160](https://github.com/iodide-project/pyodide/issues/821)
+  [#1160](https://github.com/iodide-project/pyodide/issues/1160)
 
 ## Version 0.16.1
 *December 25, 2020*
