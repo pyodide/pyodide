@@ -62,24 +62,19 @@ monkey patch `pyodide-py.find_imports` which takes `code` as an argument
 and returns a list of packages imported.
 
 ## How can I execute code in a custom namespace?
-The second argument to `eval_code` is a namespace to execute the code in.
-The namespace is a python dictionary. So you can use:
-```pyodide
-pyodide.runPython(`
-my_namespace = { "x" : 2, "y" : 7 }
-def eval_in_my_namespace(code):
-  return eval_code(code, my_namespace)
-`);
-pyodide.globals.eval_in_my_namespace("x")
-```
-which will return `2`.
-<!-- TODO: change this when this is fixed! -->
-Current deficiencies in the type conversions prevent the following code from working:
-```
-pyodide.pyodide_py.eval_code("x", pyodide.globals.ns)
-```
-raises `TypeError: globals must be a real dict`.
 
+The second argument to {any}`pyodide.eval_code` is a global namespace to execute the code in.
+The namespace is a python dictionary. 
+```javascript
+let my_namespace = pyodide.globals.dict();
+pyodide.pyodide_py.eval_code(`x = 1 + 1`, my_namespace);
+pyodide.pyodide_py.eval_code(`y = x ** x`, my_namespace);
+my_namespace.y; // ==> 4
+```
+This effectively runs the code in "module scope". Like the
+[Python `eval` function](https://docs.python.org/3/library/functions.html?highlight=eval#eval)
+you can provide a third argument to `eval_code` to specify a separate `locals` dict to
+run code in "function scope".
 
 ## How to detect that code is run with Pyodide?
 
