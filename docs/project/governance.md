@@ -7,18 +7,18 @@ This document establishes a decision-making structure that takes into account
 feedback from all members of the community and strives to find consensus, while
 avoiding any deadlocks.
 
-Anyone with an
-interest in the project can join the community, contribute to the project
-design and participate in the decision making process. This document describes
-how to participate and earn merit in the pyodide community.
+Anyone with an interest in the project can join the community, contribute to
+the project design and participate in the decision making process. This
+document describes how to participate and earn merit in the pyodide community.
 
 ## Roles And Responsibilities
 
 ### Contributors
 
 Contributors are community members who contribute in concrete ways to the
-project. Anyone can become a contributor, and contributions can take many forms
-– not only code – as detailed in the {ref}`how_to_contibute`.
+project. Anyone can become a contributor, and contributions can take many
+forms, for instance, answering user questions – not only code – as detailed in
+the {ref}`how_to_contibute`
 
 ### Community members team
 
@@ -26,7 +26,8 @@ The community members team is composed of community members who have permission 
 Github to label and close issues. Their work is
 crucial to improve the communication in the project.
 
-After participating in pyodide development with pull requests and reviews for a period of time, any contributor may become a member of the team.
+After participating in pyodide development with pull requests and reviews for a
+period of time, any contributor may become a member of the team.
 The process for adding team members is modeled on the [CPython project](
 https://devguide.python.org/triaging/#becoming-a-member-of-the-python-triage-team).
 Any core developer is welcome to propose a pyodide contributor to join the
@@ -44,8 +45,8 @@ project’s repository and is represented as being a member of the core team on 
 pyodide [GitHub organization](https://github.com/orgs/pyodide/teams/core/members).
 Core developers are expected to review code
 contributions, can merge approved pull requests, can cast votes for and against
-merging a pull-request, and can be involved in deciding major changes to the
-API.
+merging a pull-request, and can make decisions about major changes to the
+API (all contributors are welcome to participate in the discussion).
 
 New core developers can be nominated by any existing core developers. Once they
 have been nominated, there will be a vote by the current core developers.
@@ -78,17 +79,17 @@ hereafter may refer to as “the decision making process”.
 Decisions (in addition to adding core developers as above)
 are made according to the following rules:
 
-* **Minor Documentation changes and minor build setup changes**, include for
+* **Maintenance changes**, include for
   instance improving the wording in the documentation, updating CI or
   dependencies.  Core developers are expected to give “reasonable time” to
   others to give their opinion on the pull request if they’re not confident
   others would agree. If no review is received within this time, the Pull
   Request can be merged.
 
-* **Code changes impacting user facing APIs, or having backward compatibility
-  implications** require review and approval by a core
-  developer and no objections raised by any core developer (lazy consensus).
-  This process happens on the pull-request page.
+* **Code changes in general, and expecially those impacting user facing APIs**,
+  as well as more significant documentation changes, require review and
+  approval by a core developer and no objections raised by any core developer
+  (lazy consensus). This process happens on the pull-request page.
 
 * **Changes to the governance model** use the same decision process outlined
   above.
