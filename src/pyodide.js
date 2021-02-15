@@ -329,18 +329,9 @@ globalThis.languagePluginLoader = (async () => {
   ////////////////////////////////////////////////////////////
   // Rearrange namespace for public API
   let PUBLIC_API = [
-    'globals',
-    'loadPackage',
-    'loadPackagesFromImports',
-    'loadedPackages',
-    'pyimport',
-    'runPython',
-    'runPythonAsync',
-    'version',
-    'registerJsModule',
-    'unregisterJsModule',
-    'setInterruptBuffer',
-    'pyodide_py'
+    'globals', 'loadPackage', 'loadPackagesFromImports', 'loadedPackages',
+    'pyimport', 'runPython', 'runPythonAsync', 'version', 'registerJsModule',
+    'unregisterJsModule', 'setInterruptBuffer', 'pyodide_py'
   ];
 
   function makePublicAPI(module, public_api) {
