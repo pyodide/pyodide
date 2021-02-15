@@ -73,9 +73,8 @@ EM_JS_REF(PyObject*, js2python, (JsRef id), {
   }
   if (value['byteLength'] !== undefined) {
     return __js2python_memoryview(id);
-  } else {
-    return _JsProxy_create(id);
   }
+  return _JsProxy_create(id);
   // clang-format on
 })
 
@@ -189,6 +188,14 @@ EM_JS_NUM(errcode, js2python_init, (), {
 
   Module.__js2python_convertMap = function(obj, entries, map, depth)
   {
+    if (map.has(1) && map.has(true)) {
+      throw new Error("Cannot faithfully convert Map into Python since it " +
+                      "contains both 1 and true as keys.");
+    }
+    if (map.has(0) && map.has(false)) {
+      throw new Error("Cannot faithfully convert Map into Python since it " +
+                      "contains both 0 and false as keys.");
+    }
     let dict = _PyDict_New();
     // clang-format off
     if (dict === 0) {
@@ -217,7 +224,6 @@ EM_JS_NUM(errcode, js2python_init, (), {
         return 0;
       }
 
-      // PyDict_SetItem does not steal references
       let errcode = _PyDict_SetItem(dict, key_py, value_py);
       _Py_DecRef(key_py);
       _Py_DecRef(value_py);
@@ -233,6 +239,14 @@ EM_JS_NUM(errcode, js2python_init, (), {
 
   Module.__js2python_convertSet = function(obj, map, depth)
   {
+    if (set.has(1) && set.has(true)) {
+      throw new Error("Cannot faithfully convert Set into Python since it " +
+                      "contains both 1 and true as keys.");
+    }
+    if (set.has(0) && set.has(false)) {
+      throw new Error("Cannot faithfully convert Set into Python since it " +
+                      "contains both 0 and false as keys.");
+    }
     let set = _PySet_New(0);
     // clang-format off
     if (set === 0) {
