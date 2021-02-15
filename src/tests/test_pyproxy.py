@@ -221,7 +221,7 @@ def test_pyproxy_mixins(selenium):
         let result = {};
         for(let [name, x] of Object.entries(name_proxy)){
             let impls = {};
-            for(let field of ["then", "catch", "finally", "iterable", "iterator]){
+            for(let field of ["then", "catch", "finally", "iterable", "iterator"]){
                 impls[field] = field in x;
             }
             impls["finally_"] = impls["finally"];
