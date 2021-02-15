@@ -513,6 +513,78 @@ def test_to_py(selenium):
     )
     assert result == "<class 'JsProxy'>"
 
+    msg = "Cannot use key of type Array as a key to a Python dict"
+    with pytest.raises(selenium.JavascriptException, match=msg):
+        selenium.run_js(
+            """
+            z = new Map([[[1,1], 2]]);
+            pyodide.runPython(`
+                from js import z
+                z.to_py()
+            `);
+            """
+        )
+
+    msg = "Cannot use key of type Array as a key to a Python set"
+    with pytest.raises(selenium.JavascriptException, match=msg):
+        selenium.run_js(
+            """
+            z = new Set([[1,1]]);
+            pyodide.runPython(`
+                from js import z
+                z.to_py()
+            `);
+            """
+        )
+
+    msg = "contains both 0 and false"
+    with pytest.raises(selenium.JavascriptException, match=msg):
+        selenium.run_js(
+            """
+            m = new Map([[0, 2], [false, 3]]);
+            pyodide.runPython(`
+                from js import m
+                m.to_py()
+            `);
+            """
+        )
+
+    msg = "contains both 1 and true"
+    with pytest.raises(selenium.JavascriptException, match=msg):
+        selenium.run_js(
+            """
+            m = new Map([[1, 2], [true, 3]]);
+            pyodide.runPython(`
+                from js import m
+                m.to_py()
+            `);
+            """
+        )
+
+    msg = "contains both 0 and false"
+    with pytest.raises(selenium.JavascriptException, match=msg):
+        selenium.run_js(
+            """
+            m = new Set([0, false]);
+            pyodide.runPython(`
+                from js import m
+                m.to_py()
+            `);
+            """
+        )
+
+    msg = "contains both 1 and true"
+    with pytest.raises(selenium.JavascriptException, match=msg):
+        selenium.run_js(
+            """
+            m = new Set([1, true]);
+            pyodide.runPython(`
+                from js import m
+                m.to_py()
+            `);
+            """
+        )
+
 
 @pytest.mark.xfail
 def test_py2js_set(selenium):
