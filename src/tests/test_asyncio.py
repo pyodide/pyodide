@@ -8,6 +8,7 @@ import time
 from pyodide._base import eval_code_async
 import asyncio
 
+
 def test_await_jsproxy(selenium):
     selenium.run(
         """
