@@ -17,7 +17,7 @@ Python with the scientific stack, compiled to WebAssembly.
    :ref:`micropip` .
 
    To create a Pyodide package to support and share libraries for new
-   applications, try `Creating a Pyodide package <new-packages.html>`_.
+   applications, try :ref:`new-packages` .
 
 Using Pyodide
 =============
