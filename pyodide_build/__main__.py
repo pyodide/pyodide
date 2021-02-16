@@ -6,6 +6,7 @@ from . import buildpkg
 from . import pywasmcross
 from . import serve
 from . import mkpkg
+from . import ci_job_required
 
 
 def main():
@@ -18,6 +19,7 @@ def main():
         ("pywasmcross", pywasmcross),
         ("serve", serve),
         ("mkpkg", mkpkg),
+        ("check_ci_required", ci_job_required),
     ):
         parser = module.make_parser(subparsers.add_parser(command_name))
         parser.set_defaults(func=module.main)
