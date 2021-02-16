@@ -1,3 +1,4 @@
+(new-packages)=
 # Creating a Pyodide package
 
 Pyodide includes a toolchain to make it easier to add new third-party Python
