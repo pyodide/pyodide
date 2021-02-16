@@ -14,10 +14,10 @@ Python with the scientific stack, compiled to WebAssembly.
    many other libraries in the Python scientific stack.
 
    To use additional packages from PyPI, see
-   `Installing packages from PyPI <pypi.html>`_ .
+   :ref:`micropip` .
 
-   To create a Pyodide package to support and share libraries for new
-   applications, try `Creating a Pyodide package <new-packages.html>`_.
+   You can also :ref:`create a Pyodide package <new-packages>` to support and share libraries for new
+   applications.
 
 Using Pyodide
 =============
