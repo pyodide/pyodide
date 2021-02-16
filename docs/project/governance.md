@@ -53,10 +53,10 @@ have been nominated, there will be a vote by the current core developers.
 Voting on new core developers is one of the few activities that takes place on
 the project's private communication channels. While it is expected that most votes
 will be unanimous, a two-thirds majority of the cast votes is enough. The vote
-needs to be open for at least 1 week.
+needs to be open for at least one week.
 
 Core developers that have not contributed to the project (commits or GitHub
-comments) in the past 2 years will be asked if they want to become emeritus
+comments) in the past two years will be asked if they want to become emeritus
 core developers and recant their commit and voting rights until they become
 active again.
 
@@ -79,12 +79,12 @@ hereafter may refer to as “the decision making process”.
 Decisions (in addition to adding core developers as above)
 are made according to the following rules:
 
-* **Maintenance changes**, include for
-  instance improving the wording in the documentation, updating CI or
-  dependencies.  Core developers are expected to give “reasonable time” to
-  others to give their opinion on the pull request if they’re not confident
-  others would agree. If no review is received within this time, the Pull
-  Request can be merged.
+* **Maintenance changes**, include for instance improving the wording in the
+  documentation, updating CI or dependencies.  Core developers are expected to
+  give “reasonable time” to others to give their opinion on the Pull Request in
+  case they’re not confident that others would agree. If no further review on
+  the Pull Request is received within this time, it can be merged. If a review
+  is received, then the consensus rules from the following section apply.
 
 * **Code changes in general, and especially those impacting user facing APIs**,
   as well as more significant documentation changes, require review and
