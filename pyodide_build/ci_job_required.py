@@ -16,18 +16,18 @@ CI_DEPENDENCIES = {
         "cpython/*",
         "emsdk/*",
         "Makefile*",
-        #        ".circleci/*",
+        ".circleci/*",
         "conftest.py",
         "src/core/*",
         "src/*.js",
         "benchmark/*",
-        #        "pyodide_build/*",
+        "pyodide_build/*",
         "tools/*",
     ],
     # + all build_packages patterns, see below
     # since core is a dependency of build packages. The above
     # file patterns do not need to be repeated.
-    "build_core": ["src/tests/*", "src/pyodide-py/*", "pyodide_build/*"],
+    "build_core": ["src/tests/*", "src/pyodide-py/*"],
 }
 
 
