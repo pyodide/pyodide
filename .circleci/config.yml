@@ -46,7 +46,9 @@ jobs:
     steps:
       - checkout
 
-      - ./bin/pyodide check_ci_required build_core
+      - run:
+          name: Check if CI job is necessairy
+          command: ./bin/pyodide check_ci_required build_core
 
       - restore_cache:
           keys:
@@ -102,7 +104,9 @@ jobs:
     steps:
       - checkout
 
-      - ./bin/pyodide check_ci_required build_packages
+      - run:
+          name: Check if CI job is necessairy
+          command: ./bin/pyodide check_ci_required build_packages
 
       - attach_workspace:
           at: .
