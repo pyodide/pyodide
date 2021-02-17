@@ -208,6 +208,12 @@ jobs:
   test-emsdk:
     <<: *defaults
     steps:
+      - checkout
+
+      - run:
+          name: Check if CI job is necessairy
+          command: ./bin/pyodide check_ci_required build_core
+
       - attach_workspace:
           at: .
       - run:
