@@ -6,26 +6,25 @@
 Pyodide
 =======
 
-The Python scientific stack, compiled to WebAssembly.
+Python with the scientific stack, compiled to WebAssembly.
 
 .. note::
 
    Pyodide bundles support for the following packages: numpy, scipy, and
    many other libraries in the Python scientific stack.
 
-   To use additional packages from PyPI, try the experimental feature,
-   `Installing packages from PyPI <pypi.html>`_ and try to `pip install` the
-   package.
+   To use additional packages from PyPI, see
+   :ref:`micropip` .
 
-   To create a Pyodide package to support and share libraries for new
-   applications, try `Creating a Pyodide package <new-packages.html>`_.
+   You can also :ref:`create a Pyodide package <new-packages>` to support and share libraries for new
+   applications.
 
 Using Pyodide
 =============
 
 Pyodide may be used in several ways: directly from JavaScript, or to execute
-Python scripts asynchronously in a web worker. Although still experimental,
-additional packages may be installed from PyPI to be used with Pyodide.
+Python scripts asynchronously in a web worker. Additional Pure python packages
+may be installed from PyPI to be used with Pyodide.
 
 .. toctree::
    :maxdepth: 2
