@@ -125,7 +125,7 @@ pyproxy_getflags(PyObject* pyobj)
 //
 // This section defines wrappers for Python Object protocol API calls that we
 // are planning to offer on the PyProxy. Much of this could be written in
-// Javascript instead. Some reasons to do it in C: 
+// Javascript instead. Some reasons to do it in C:
 //  1. Some CPython APIs are actually secretly macros which cannot be used from
 //     Javascript.
 //  2. The code is a bit more concise in C.
@@ -153,7 +153,7 @@ _pyproxy_repr(PyObject* pyobj)
   return repr_js;
 }
 
-/** 
+/**
  * Wrapper for the "proxy.type" getter, which behaves a little bit like
  * `type(obj)`, but instead of returning the class we just return the name of
  * the class. The exact behavior is that this usually gives "module.name" but
@@ -393,10 +393,10 @@ _pyproxy_iter_next(PyObject* iterator)
   return result;
 }
 
-/** 
+/**
  * In Python 3.10, they have added the PyIter_Send API (and removed _PyGen_Send)
  * so in v3.10 this would be a simple API call wrapper like the rest of the code
- * here. For now, we're just copying the YIELD_FROM opcode (see ceval.c). 
+ * here. For now, we're just copying the YIELD_FROM opcode (see ceval.c).
  *
  * When the iterator is done, it returns NULL and sets StopIteration. We'll use
  * _pyproxyGen_FetchStopIterationValue below to get the return value of the
@@ -435,9 +435,9 @@ finally:
   return jsresult;
 }
 
-/** 
+/**
  * If StopIteration was set, return the value it was set with. Otherwise, return
- * NULL. 
+ * NULL.
  */
 JsRef
 _pyproxyGen_FetchStopIterationValue()
@@ -454,7 +454,6 @@ _pyproxyGen_FetchStopIterationValue()
   Py_CLEAR(val);
   return result;
 }
-
 
 ///////////////////////////////////////////////////////////////////////////////
 //
@@ -624,7 +623,7 @@ finally:
 // Javascript code
 //
 // The rest of the file is in Javascript. It would probably be better to move it
-// into a .js file. 
+// into a .js file.
 //
 
 EM_JS_REF(JsRef, pyproxy_new, (PyObject * ptrobj), {
@@ -638,11 +637,22 @@ EM_JS_REF(JsRef, pyproxy_new, (PyObject * ptrobj), {
   }
   let flags = _pyproxy_getflags(ptrobj);
   let cls = Module.getPyProxyClass(flags);
-  // Reflect.construct calls the constructor of Module.PyProxyClass but sets the prototype
-  // as cls.prototype. This gives us a way to dynamically create subclasses of PyProxyClass
-  // (as long as we don't need to use the "new cls(ptrobj)" syntax).
-  let target = Reflect.construct(Module.PyProxyClass, [ptrobj], cls);
+  // Reflect.construct calls the constructor of Module.PyProxyClass but sets the
+  // prototype as cls.prototype. This gives us a way to dynamically create
+  // subclasses of PyProxyClass (as long as we don't need to use the "new
+  // cls(ptrobj)" syntax).
+  let target;
+  if (flags & IS_CALLABLE) {
+    // To make a callable proxy, we must call the Function constructor.
+    // In this case we are effectively subclassing Function.
+    target = Reflect.construct(Function, [], cls);
+  } else {
+    target = Object.create(cls.prototype);
+  }
+  target.$$ = { ptr : ptrobj, type : 'PyProxy' };
+  _Py_IncRef(ptrobj);
   let proxy = new Proxy(target, Module.PyProxyHandlers);
+  Module.PyProxies[ptrobj] = proxy;
   return Module.hiwire.new_value(proxy);
 });
 
@@ -759,12 +769,11 @@ EM_JS_NUM(int, pyproxy_init_js, (), {
    * "prototype" which like "length" and "name" could be overwritten but only at
    * the cost of breaking the Proxy.
    */
-  Module.PyProxyClass = class extends Function {
-    constructor(ptr){
-      super();
-      this.$$ = { ptr, type : 'PyProxy' };
-      _Py_IncRef(ptr);
+  Module.PyProxyClass = class {
+    constructor(){
+      throw new TypeError('PyProxy is not a constructor');
     }
+
     get [Symbol.toStringTag] (){
         return "PyProxy";
     }
@@ -789,22 +798,6 @@ EM_JS_NUM(int, pyproxy_init_js, (), {
       let ptrobj = _getPtr(this);
       __pyproxy_destroy(ptrobj);
       this.$$.ptr = null;
-    }
-    apply(jsthis, jsargs) {
-      let ptrobj = _getPtr(this);
-      let idargs = Module.hiwire.new_value(jsargs);
-      let idresult;
-      try {
-        idresult = __pyproxy_apply(ptrobj, idargs);
-      } catch(e){
-        Module.fatal_error(e);
-      } finally {
-        Module.hiwire.decref(idargs);
-      }
-      if(idresult === 0){
-        _pythonexc2js();
-      }
-      return Module.hiwire.pop_value(idresult);
     }
     /** 
       * This one doesn't follow the pattern: the inner function
@@ -901,7 +894,7 @@ EM_JS_NUM(int, pyproxy_init_js, (), {
       let idkey = Module.hiwire.new_value(key);
       let result;
       try {
-        result = _pyproxy_contains(ptrobj, idkey);
+        result = __pyproxy_contains(ptrobj, idkey);
       } catch(e) {
         Module.fatal_error(e);
       } finally {
@@ -1035,8 +1028,10 @@ EM_JS_NUM(int, pyproxy_init_js, (), {
       // ownProperties of jsobj (well we could filter out "$$", but there's not
       // really any reason to do so.) We want to allow Python properties to
       // override anything up the prototype chain, so we specifically want
-      // `Object.hasOwnProperty` here not `Reflect.has`.
-      if(Object.hasOwnProperty(jsobj)){
+      // `Object.getOwnPropertyDescriptor` here not `Reflect.has`. Using
+      // `Object.hasOwnProperty` here also doesn't work for reasons I don't
+      // understand.
+      if(Object.getOwnPropertyDescriptor(jsobj, jskey)){
         return Reflect.get(jsobj, jskey);
       }
       if(typeof(jskey) === "symbol"){
@@ -1064,7 +1059,7 @@ EM_JS_NUM(int, pyproxy_init_js, (), {
       if(typeof(jskey) === "symbol"){
         throw new Error(`Cannot set read only field ${jskey.description}`);
       }
-      if(Object.hasOwnProperty(jsobj, jskey)){
+      if(Object.getOwnPropertyDescriptor(jsobj, jskey)){
         throw new Error(`Cannot set read only field ${jskey}`);
       }
       let ptrobj = _getPtr(jsobj);
@@ -1089,7 +1084,7 @@ EM_JS_NUM(int, pyproxy_init_js, (), {
       if(typeof(jskey) === "symbol"){
         throw new Error(`Cannot delete read only field ${jskey.description}`);
       }
-      if(Object.hasOwnProperty(jsobj, jskey)){
+      if(Object.getOwnPropertyDescriptor(jsobj, jskey)){
         throw new Error(`Cannot delete read only field ${jskey}`);
       }
       let ptrobj = _getPtr(jsobj);
@@ -1120,7 +1115,20 @@ EM_JS_NUM(int, pyproxy_init_js, (), {
       return result;
     },
     apply: function (jsobj, jsthis, jsargs) {
-      return jsobj.apply(jsthis, jsargs);
+      let ptrobj = _getPtr(jsobj);
+      let idargs = Module.hiwire.new_value(jsargs);
+      let idresult;
+      try {
+        idresult = __pyproxy_apply(ptrobj, idargs);
+      } catch(e){
+        Module.fatal_error(e);
+      } finally {
+        Module.hiwire.decref(idargs);
+      }
+      if(idresult === 0){
+        _pythonexc2js();
+      }
+      return Module.hiwire.pop_value(idresult);
     },
   };
   
@@ -1171,8 +1179,8 @@ EM_JS_NUM(int, pyproxy_init_js, (), {
     }
   };
 
+  Module.PyProxyCallableMethods = Function.prototype;
   Module.PyProxyBufferMethods = {};
-  Module.PyProxyCallableMethods = {};
 
   // A special proxy that we use to wrap pyodide.globals to allow property access
   // like `pyodide.globals.x`.
