@@ -27,7 +27,7 @@ CI_DEPENDENCIES = {
     # + all build_packages patterns, see below
     # since core is a dependency of build packages. The above
     # file patterns do not need to be repeated.
-    "build_core": ["src/tests/*", "src/pyodide-py/*"],
+    "build_core": ["src/tests/*", "src/pyodide-py/*", "pyodide_build/*"],
 }
 
 
