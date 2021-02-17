@@ -13,7 +13,8 @@ _Py_IDENTIFIER(add_done_callback);
 
 static PyObject* asyncio;
 
-// Flags controlling presence or absence of many small mixins
+// Flags controlling presence or absence of many small mixins depending on which
+// abstract protocols the Python object supports.
 // clang-format off
 #define HAS_LENGTH   (1 << 0)
 #define HAS_GET      (1 << 1)
@@ -26,6 +27,8 @@ static PyObject* asyncio;
 #define IS_CALLABLE  (1 << 8)
 // clang-format on
 
+// Taken from genobject.c
+// For checking whether an object is awaitable.
 static int
 gen_is_coroutine(PyObject* o)
 {
@@ -38,10 +41,17 @@ gen_is_coroutine(PyObject* o)
   return 0;
 }
 
+/**
+ * Do introspection on the python object to work out which abstract protocols it
+ * supports. Most of these tests are taken from a corresponding abstract Object
+ * protocol API defined in `abstract.c`. We wrote these tests to check whether
+ * the corresponding CPython APIs are likely to work without actually creating
+ * any temporary objects.
+ */
 int
 pyproxy_getflags(PyObject* pyobj)
 {
-  // Reduce casework by ensuring that protos are't NULL.
+  // Reduce casework by ensuring that protos aren't NULL.
   PyTypeObject* obj_type = pyobj->ob_type;
 
   PySequenceMethods null_seq_proto = { 0 };
@@ -61,9 +71,11 @@ pyproxy_getflags(PyObject* pyobj)
     obj_type->tp_as_buffer ? obj_type->tp_as_buffer : &null_buffer_proto;
 
   int result = 0;
+  // PyObject_Size
   if (seq_proto->sq_length || map_proto->mp_length) {
     result |= HAS_LENGTH;
   }
+  // PyObject_GetItem
   if (map_proto->mp_subscript || seq_proto->sq_item) {
     result |= HAS_GET;
   } else if (PyType_Check(pyobj)) {
@@ -72,12 +84,15 @@ pyproxy_getflags(PyObject* pyobj)
       result |= HAS_GET;
     }
   }
+  // PyObject_SetItem
   if (map_proto->mp_ass_subscript || seq_proto->sq_ass_item) {
     result |= HAS_SET;
   }
+  // PySequence_Contains
   if (seq_proto->sq_contains) {
     result |= HAS_CONTAINS;
   }
+  // PyObject_GetIter
   if (obj_type->tp_iter || PySequence_Check(pyobj)) {
     result |= IS_ITERABLE;
   }
@@ -85,19 +100,48 @@ pyproxy_getflags(PyObject* pyobj)
     result &= ~IS_ITERABLE;
     result |= IS_ITERATOR;
   }
-  if (PyCoro_CheckExact(pyobj) || gen_is_coroutine(pyobj) ||
-      (async_proto->am_await)) {
+  // There's no CPython API that corresponds directly to the "await" keyword.
+  // Looking at disassembly, "await" translates into opcodes GET_AWAITABLE and
+  // YIELD_FROM. GET_AWAITABLE uses _PyCoro_GetAwaitableIter defined in
+  // genobject.c. This tests whether _PyCoro_GetAwaitableIter is likely to
+  // succeed.
+  if (async_proto->am_await || gen_is_coroutine(pyobj)) {
     result |= IS_AWAITABLE;
   }
   if (buffer_proto->bf_getbuffer) {
     result |= IS_BUFFER;
   }
+  // PyObject_Call (from call.c)
   if (_PyVectorcall_Function(pyobj) || PyCFunction_Check(pyobj) ||
       obj_type->tp_call) {
     result |= IS_CALLABLE;
   }
   return result;
 }
+
+///////////////////////////////////////////////////////////////////////////////
+//
+// Object protocol wrappers
+//
+// This section defines wrappers for Python Object protocol API calls that we
+// are planning to offer on the PyProxy. Much of this could be written in
+// Javascript instead. Some reasons to do it in C: 
+//  1. Some CPython APIs are actually secretly macros which cannot be used from
+//     Javascript.
+//  2. The code is a bit more concise in C.
+//  3. It may be preferable to minimize the number of times we cross between
+//     wasm and javascript for performance reasons, I'm not sure.
+//  4. Better separation of functionality: Most of the Javascript code is
+//     boilerpalte. Most of this code here is boilerplate. However, the
+//     boilerplate in these C API wwrappers is a bit different than the
+//     boilerplate in the javascript wrappers, so we've factored it into two
+//     distinct layers of boilerplate.
+//
+//  Item 1 makes it technically necessary to use these wrappers once in a while.
+//  I think all of these advantages outweigh the cost of splitting up the
+//  implementation of each feature like this, especially because most of the
+//  logic is very boilerplatey, so there isn't much surprising code hidden
+//  somewhere else.
 
 JsRef
 _pyproxy_repr(PyObject* pyobj)
@@ -107,6 +151,32 @@ _pyproxy_repr(PyObject* pyobj)
   JsRef repr_js = hiwire_string_utf8(repr_utf8);
   Py_CLEAR(repr_py);
   return repr_js;
+}
+
+/** 
+ * Wrapper for the "proxy.type" getter, which behaves a little bit like
+ * `type(obj)`, but instead of returning the class we just return the name of
+ * the class. The exact behavior is that this usually gives "module.name" but
+ * for builtins just gives "name". So in particular, usually it is equivalent
+ * to:
+ *
+ * `type(x).__module__ + "." + type(x).__name__`
+ *
+ * But other times it behaves like:
+ *
+ * `type(x).__name__`
+ */
+JsRef
+_pyproxy_type(PyObject* ptrobj)
+{
+  return hiwire_string_ascii(ptrobj->ob_type->tp_name);
+}
+
+void
+_pyproxy_destroy(PyObject* ptrobj)
+{ // See bug #1049
+  Py_DECREF(ptrobj);
+  EM_ASM({ delete Module.PyProxies[$0]; }, ptrobj);
 }
 
 int
@@ -311,22 +381,6 @@ _pyproxy_apply(PyObject* pyobj, JsRef idargs)
   return idresult;
 }
 
-// Return 2 if obj is iterator
-// Return 1 if iterable but not iterator
-// Return 0 if not iterable
-int
-_pyproxy_iterator_type(PyObject* obj)
-{
-  if (PyIter_Check(obj)) {
-    return 2;
-  }
-  PyObject* iter = PyObject_GetIter(obj);
-  int result = iter != NULL;
-  Py_CLEAR(iter);
-  PyErr_Clear();
-  return result;
-}
-
 JsRef
 _pyproxy_iter_next(PyObject* iterator)
 {
@@ -339,15 +393,23 @@ _pyproxy_iter_next(PyObject* iterator)
   return result;
 }
 
+/** 
+ * In Python 3.10, they have added the PyIter_Send API (and removed _PyGen_Send)
+ * so in v3.10 this would be a simple API call wrapper like the rest of the code
+ * here. For now, we're just copying the YIELD_FROM opcode (see ceval.c). 
+ *
+ * When the iterator is done, it returns NULL and sets StopIteration. We'll use
+ * _pyproxyGen_FetchStopIterationValue below to get the return value of the
+ * generator (again copying from YIELD_FROM).
+ */
 JsRef
-_pyproxy_iter_send(PyObject* receiver, JsRef jsval)
+_pyproxyGen_Send(PyObject* receiver, JsRef jsval)
 {
   bool success = false;
   PyObject* v = NULL;
   PyObject* retval = NULL;
   JsRef jsresult = NULL;
 
-  // cf implementation of YIELD_FROM opcode in ceval.c
   v = js2python(jsval);
   FAIL_IF_NULL(v);
   if (PyGen_CheckExact(receiver) || PyCoro_CheckExact(receiver)) {
@@ -373,8 +435,12 @@ finally:
   return jsresult;
 }
 
+/** 
+ * If StopIteration was set, return the value it was set with. Otherwise, return
+ * NULL. 
+ */
 JsRef
-_pyproxy_iter_fetch_stopiteration()
+_pyproxyGen_FetchStopIterationValue()
 {
   PyObject* val = NULL;
   // cf implementation of YIELD_FROM opcode in ceval.c
@@ -389,44 +455,25 @@ _pyproxy_iter_fetch_stopiteration()
   return result;
 }
 
-JsRef
-_pyproxy_type(PyObject* ptrobj)
-{
-  return hiwire_string_ascii(ptrobj->ob_type->tp_name);
-}
 
-void
-_pyproxy_destroy(PyObject* ptrobj)
-{ // See bug #1049
-  Py_DECREF(ptrobj);
-  EM_ASM({ delete Module.PyProxies[$0]; }, ptrobj);
-}
+///////////////////////////////////////////////////////////////////////////////
+//
+// Await / "then" Implementation
+//
+// We want convert the object to a future with `ensure_future` and then make a
+// promise that resolves when the future does. We can add a callback to the
+// future with future.add_done_callback but we need to make a little python
+// closure "FutureDoneCallback" that remembers how to resolve the promise.
+//
+// From Javascript we will use the single function _pyproxy_ensure_future, the
+// rest of this segment is helper functions for _pyproxy_ensure_future. The
+// FutureDoneCallback object is never exposed to the user.
 
-/**
- * Test if a PyObject is awaitable.
- * Uses _PyCoro_GetAwaitableIter like in the implementation of the GET_AWAITABLE
- * opcode (see ceval.c). Unfortunately this is not a public API (see issue
- * https://bugs.python.org/issue24510) so it could be a source of instability.
- *
- * :param pyobject: The Python object.
- * :return: 1 if the python code "await obj" would succeed, 0 otherwise. Never
- * fails.
- */
-bool
-_pyproxy_is_awaitable(PyObject* pyobject)
-{
-  PyObject* awaitable = _PyCoro_GetAwaitableIter(pyobject);
-  PyErr_Clear();
-  bool result = awaitable != NULL;
-  Py_CLEAR(awaitable);
-  return result;
-}
-
-// clang-format off
 /**
  * A simple Callable python object. Intended to be called with a single argument
  * which is the future that was resolved.
  */
+// clang-format off
 typedef struct {
     PyObject_HEAD
     /** Will call this function with the result if the future succeeded */
@@ -572,6 +619,14 @@ finally:
   return success ? 0 : -1;
 }
 
+///////////////////////////////////////////////////////////////////////////////
+//
+// Javascript code
+//
+// The rest of the file is in Javascript. It would probably be better to move it
+// into a .js file. 
+//
+
 EM_JS_REF(JsRef, pyproxy_new, (PyObject * ptrobj), {
   // Technically, this leaks memory, since we're holding on to a reference
   // to the proxy forever.  But we have that problem anyway since we don't
@@ -583,6 +638,9 @@ EM_JS_REF(JsRef, pyproxy_new, (PyObject * ptrobj), {
   }
   let flags = _pyproxy_getflags(ptrobj);
   let cls = Module.getPyProxyClass(flags);
+  // Reflect.construct calls the constructor of Module.PyProxyClass but sets the prototype
+  // as cls.prototype. This gives us a way to dynamically create subclasses of PyProxyClass
+  // (as long as we don't need to use the "new cls(ptrobj)" syntax).
   let target = Reflect.construct(Module.PyProxyClass, [ptrobj], cls);
   let proxy = new Proxy(target, Module.PyProxyHandlers);
   return Module.hiwire.new_value(proxy);
@@ -591,6 +649,7 @@ EM_JS_REF(JsRef, pyproxy_new, (PyObject * ptrobj), {
 // clang-format off
 EM_JS_NUM(int, pyproxy_init_js, (), {
   Module.PyProxies = {};
+
   function _getPtr(jsobj) {
     let ptr = jsobj.$$.ptr;
     if (ptr === null) {
@@ -598,74 +657,15 @@ EM_JS_NUM(int, pyproxy_init_js, (), {
     }
     return ptr;
   }
-  
-  // Static methods
-  Module.PyProxy = {
-    _getPtr,
-    isPyProxy: function(jsobj) {
-      return jsobj && jsobj.$$ !== undefined && jsobj.$$.type === 'PyProxy';
-    },
-  };
 
-  // We inherit from Function so that we can be callable. 
-  Module.PyProxyClass = class extends Function {
-    constructor(ptr){
-      super();
-      delete this.length;
-      delete this.name;
-      this.$$ = { ptr, type : 'PyProxy' };
-      _Py_IncRef(ptr);
-    }
-    get [Symbol.toStringTag] (){
-        return "PyProxy";
-    }
-    get type() {
-      let ptrobj = _getPtr(this);
-      return Module.hiwire.pop_value(__pyproxy_type(ptrobj));
-    }
-    toString() {
-      let ptrobj = _getPtr(this);
-      let jsref_repr;
-      try {
-        jsref_repr = __pyproxy_repr(ptrobj);
-      } catch(e){
-        Module.fatal_error(e);
-      }
-      if(jsref_repr === 0){
-        _pythonexc2js();
-      }
-      return Module.hiwire.pop_value(jsref_repr);
-    }
-    destroy() {
-      let ptrobj = _getPtr(this);
-      __pyproxy_destroy(ptrobj);
-      this.$$.ptr = null;
-    }
-    apply(jsthis, jsargs) {
-      let ptrobj = _getPtr(this);
-      let idargs = Module.hiwire.new_value(jsargs);
-      let idresult;
-      try {
-        idresult = __pyproxy_apply(ptrobj, idargs);
-      } catch(e){
-        Module.fatal_error(e);
-      } finally {
-        Module.hiwire.decref(idargs);
-      }
-      if(idresult === 0){
-        _pythonexc2js();
-      }
-      return Module.hiwire.pop_value(idresult);
-    }
-    toJs(depth = -1){
-      let idresult = _python2js_with_depth(_getPtr(this), depth);
-      let result = Module.hiwire.get_value(idresult);
-      Module.hiwire.decref(idresult);
-      return result;
-    }
-  };
-
-  let _pyproxyClassMap = new Map([[0, Module.PyProxyClass]]);
+  let _pyproxyClassMap = new Map();
+  /** 
+   * Retreive the appropriate mixins based on the features requested in flags.
+   * Used by pyproxy_new. The "flags" variable is produced by the C function
+   * pyproxy_getflags. Multiple PyProxies with the same set of feature flags
+   * will share the same prototype, so the memory footprint of each individual
+   * PyProxy is minimal.
+   */
   Module.getPyProxyClass = function(flags){
     let result = _pyproxyClassMap.get(flags);
     if(result){
@@ -722,6 +722,101 @@ EM_JS_NUM(int, pyproxy_init_js, (), {
     PyProxy.prototype = new_proto;
     _pyproxyClassMap.set(flags, PyProxy);
     return PyProxy;
+  };
+
+  // Static methods
+  Module.PyProxy = {
+    _getPtr,
+    isPyProxy: function(jsobj) {
+      return jsobj && jsobj.$$ !== undefined && jsobj.$$.type === 'PyProxy';
+    },
+  };
+
+  // Now a lot of boilerplate to wrap the abstract Object protocol wrappers
+  // above in Javascript functions.
+
+  /** 
+   * PyProxyClass inherits from Function so that PyProxy objects can be
+   * callable.
+   *
+   * The following properties on a Python object will be shadowed in the proxy:
+   *  - "arguments",
+   *  - "caller", and 
+   *  - "prototype" 
+   *
+   * The properties "name" and "length" are also mildly weird special cases, but
+   * they should behave more or less as a user might expect. Perhaps we should
+   * give some sort of warning if the Python object has members with shadowed
+   * names?
+   *
+   * Inheriting from Funcion has the unfortunate sideeffect that we MUST expose
+   * the members "proxy.arguments" and "proxy.caller" because they are
+   * nonconfigurable, nonwriteable, nonenumerable own properties. They are just
+   * always `null`. 
+   *
+   * We also get the properties "length" and "name" which are configurable so we
+   * overwrite them or drop them using the Proxy. Lastly we have the property
+   * "prototype" which like "length" and "name" could be overwritten but only at
+   * the cost of breaking the Proxy.
+   */
+  Module.PyProxyClass = class extends Function {
+    constructor(ptr){
+      super();
+      this.$$ = { ptr, type : 'PyProxy' };
+      _Py_IncRef(ptr);
+    }
+    get [Symbol.toStringTag] (){
+        return "PyProxy";
+    }
+    get type() {
+      let ptrobj = _getPtr(this);
+      return Module.hiwire.pop_value(__pyproxy_type(ptrobj));
+    }
+    toString() {
+      let ptrobj = _getPtr(this);
+      let jsref_repr;
+      try {
+        jsref_repr = __pyproxy_repr(ptrobj);
+      } catch(e){
+        Module.fatal_error(e);
+      }
+      if(jsref_repr === 0){
+        _pythonexc2js();
+      }
+      return Module.hiwire.pop_value(jsref_repr);
+    }
+    destroy() {
+      let ptrobj = _getPtr(this);
+      __pyproxy_destroy(ptrobj);
+      this.$$.ptr = null;
+    }
+    apply(jsthis, jsargs) {
+      let ptrobj = _getPtr(this);
+      let idargs = Module.hiwire.new_value(jsargs);
+      let idresult;
+      try {
+        idresult = __pyproxy_apply(ptrobj, idargs);
+      } catch(e){
+        Module.fatal_error(e);
+      } finally {
+        Module.hiwire.decref(idargs);
+      }
+      if(idresult === 0){
+        _pythonexc2js();
+      }
+      return Module.hiwire.pop_value(idresult);
+    }
+    /** 
+      * This one doesn't follow the pattern: the inner function
+      * _python2js_with_depth is defined in python2js.c and is not a Python
+      * Object Protocol wrapper.
+      */
+    toJs(depth = -1){
+      let idresult = _python2js_with_depth(_getPtr(this), depth);
+      let result = Module.hiwire.get_value(idresult);
+      Module.hiwire.decref(idresult);
+      return result;
+    }
   };
 
   Module.PyProxyLengthMethods = {
@@ -850,7 +945,7 @@ EM_JS_NUM(int, pyproxy_init_js, (), {
       // which gets converted to "Py_None". This is as intended.
       let idarg = Module.hiwire.new_value(arg);
       try {
-        idresult = __pyproxy_iter_send(_getPtr(this), idarg);
+        idresult = __pyproxyGen_Send(_getPtr(this), idarg);
       } catch(e) {
         Module.fatal_error(e);
       } finally {
@@ -859,7 +954,7 @@ EM_JS_NUM(int, pyproxy_init_js, (), {
 
       let done = false;
       if(idresult === 0){
-        idresult = __pyproxy_iter_fetch_stopiteration();
+        idresult = __pyproxyGen_FetchStopIterationValue();
         if (idresult){
           done = true;
         } else {
@@ -907,8 +1002,10 @@ EM_JS_NUM(int, pyproxy_init_js, (), {
     return idresult;
   }
 
-  // These fields appear in the target by default because the target is a function.
-  // we want to filter them out.
+  // These fields appear in the target by default because the target is a
+  // function. we want to filter them out. It would be nice to also filter out
+  // "arguments", "caller", and "prototype", but it won't work (because they are
+  // not configurable)
   let ignoredTargetFields = ["name", "length"];
 
   // See explanation of which methods should be defined here and what they do here:
@@ -928,9 +1025,17 @@ EM_JS_NUM(int, pyproxy_init_js, (), {
       if(python_hasattr(jsobj, jskey)){
         return true;
       }
+      // This covers the case where "jskey" is "name" or "length" and the
+      // prototype defines it. This only currentlys happen with "length"
+      // (PyProxyLengthMethods).
       return objHasKey && !!Object.getOwnPropertyDescriptor(Reflect.getPrototypeOf(jsobj), jskey);
     },
     get: function (jsobj, jskey) {
+      // In order for stuff to work we have to correctly report the
+      // ownProperties of jsobj (well we could filter out "$$", but there's not
+      // really any reason to do so.) We want to allow Python properties to
+      // override anything up the prototype chain, so we specifically want
+      // `Object.hasOwnProperty` here not `Reflect.has`.
       if(Object.hasOwnProperty(jsobj)){
         return Reflect.get(jsobj, jskey);
       }
@@ -942,12 +1047,20 @@ EM_JS_NUM(int, pyproxy_init_js, (), {
       if(idresult !== 0){
         return Module.hiwire.pop_value(idresult);
       }
+      // If we didn't find the key on the python object, now we go up the
+      // prototype chain. This funny conditional is needed to filter out "name"
+      // and "length" if they come from the Function prototype: if `jskey` is
+      // `name` or `length`, make sure that it's an ownProperty of the
+      // prototype, not coming from further up the prototype chain. Note that we
+      // need to use `Object.getOwnPropertyDescriptor` not
+      // `Object.hasOwnProperty` (the latter will throw an error for getters).
       if(!ignoredTargetFields.includes(jskey) || Object.getOwnPropertyDescriptor(Reflect.getPrototypeOf(jsobj), jskey)){
         return Reflect.get(jsobj, jskey);
       }
       return undefined;
     },
     set: function (jsobj, jskey, jsval) {
+      // We're only willing to set properties on the python object.
       if(typeof(jskey) === "symbol"){
         throw new Error(`Cannot set read only field ${jskey.description}`);
       }
@@ -972,6 +1085,7 @@ EM_JS_NUM(int, pyproxy_init_js, (), {
       return true;
     },
     deleteProperty: function (jsobj, jskey) {
+      // We're only willing to delete properties on the python object.
       if(typeof(jskey) === "symbol"){
         throw new Error(`Cannot delete read only field ${jskey.description}`);
       }
@@ -1010,7 +1124,15 @@ EM_JS_NUM(int, pyproxy_init_js, (), {
     },
   };
   
+  /** 
+   * The Promise / javascript awaitable API.
+   */
   Module.PyProxyAwaitableMethods = {
+    /** 
+     * This wraps __pyproxy_ensure_future and makes a function that converts a
+     * Python awaitable to a promise, scheduling the awaitable on the Python
+     * event loop if necessary.
+     */
     _ensure_future : function(){
       let resolve_handle_id = 0;
       let reject_handle_id = 0;
@@ -1054,7 +1176,6 @@ EM_JS_NUM(int, pyproxy_init_js, (), {
 
   // A special proxy that we use to wrap pyodide.globals to allow property access
   // like `pyodide.globals.x`.
-  // TODO: Should we have this?
   let globalsPropertyAccessWarned = false;
   let globalsPropertyAccessWarningMsg =
     "Access to pyodide.globals via pyodide.globals.key is deprecated and " +
