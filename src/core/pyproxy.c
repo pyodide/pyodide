@@ -863,6 +863,11 @@ EM_JS_NUM(int, pyproxy_init_js, (), {
   // A special proxy that we use to wrap pyodide.globals to allow property access
   // like `pyodide.globals.x`.
   // TODO: Should we have this?
+  let globalsPropertyAccessWarned = false;
+  let globalsPropertyAccessWarningMsg =
+    "Access to pyodide.globals via pyodide.globals.key is deprecated and " +
+    "will be removed in version 0.18.0. Use pyodide.globals.get('key'), " +
+    "pyodide.globals.set('key', value), pyodide.globals.delete('key') instead.";
   let NamespaceProxyHandlers = {
     has : function(obj, key){
       return Reflect.has(obj, key) || obj.has(key);
@@ -871,11 +876,20 @@ EM_JS_NUM(int, pyproxy_init_js, (), {
       if(Reflect.has(obj, key)){
         return Reflect.get(obj, key);
       }
-      return obj.get(key);
+      let result = obj.get(key);
+      if(!globalsPropertyAccessWarned && result !== undefined){
+        console.warn(globalsPropertyAccessWarningMsg);
+        globalsPropertyAccessWarned = true;
+      }
+      return result;
     },
     set : function(obj, key, value){
       if(Reflect.has(obj, key)){
         throw new Error(`Cannot set read only field ${key}`);
+      }
+      if(!globalsPropertyAccessWarned){
+        globalsPropertyAccessWarned = true;
+        console.warn(globalsPropertyAccessWarningMsg);
       }
       obj.set(key, value);
     },
