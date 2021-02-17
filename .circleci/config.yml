@@ -144,6 +144,12 @@ jobs:
   test-core-firefox:
     <<: *defaults
     steps:
+      - checkout
+
+      - run:
+          name: Check if CI job is necessairy
+          command: ./bin/pyodide check_ci_required build_core
+
       - attach_workspace:
           at: .
       - run:
@@ -154,6 +160,12 @@ jobs:
   test-core-chrome:
     <<: *defaults
     steps:
+      - checkout
+
+      - run:
+          name: Check if CI job is necessairy
+          command: ./bin/pyodide check_ci_required build_core
+
       - attach_workspace:
           at: .
       - run:
@@ -164,6 +176,12 @@ jobs:
   test-packages-firefox:
     <<: *defaults
     steps:
+      - checkout
+
+      - run:
+          name: Check if CI job is necessairy
+          command: ./bin/pyodide check_ci_required build_packages
+
       - attach_workspace:
           at: .
       - run:
@@ -174,6 +192,12 @@ jobs:
   test-packages-chrome:
     <<: *defaults
     steps:
+      - checkout
+
+      - run:
+          name: Check if CI job is necessairy
+          command: ./bin/pyodide check_ci_required build_packages
+
       - attach_workspace:
           at: .
       - run:
@@ -203,6 +227,11 @@ jobs:
     <<: *defaults
     steps:
       - checkout
+
+      - run:
+          name: Check if CI job is necessairy
+          command: ./bin/pyodide check_ci_required build_packages
+
       - attach_workspace:
           at: .
       - run:
