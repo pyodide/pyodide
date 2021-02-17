@@ -23,7 +23,7 @@ Using Pyodide
 =============
 
 Pyodide may be used in several ways: directly from JavaScript, or to execute
-Python scripts asynchronously in a web worker. Additional Pure python packages
+Python scripts asynchronously in a web worker. Additional pure Python packages
 may be installed from PyPI to be used with Pyodide.
 
 .. toctree::
