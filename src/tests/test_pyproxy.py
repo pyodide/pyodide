@@ -259,39 +259,91 @@ def test_pyproxy_mixins(selenium):
         ),
     )
 
+
 def test_pyproxy_mixins2(selenium):
     selenium.run_js(
         """
-        window.assert = function assert(x, msg){
-            if(x !== true){
-                throw new Error(`Assertion failed: ${msg}`);
+        window.assert = function assert(cb){
+            if(cb() !== true){
+                throw new Error(`Assertion failed: ${cb.toString().slice(6)}`);
             }
         };
-        assert(!("prototype" in pyodide.globals), '!("prototype" in pyodide.globals)');
-        assert(!("caller" in pyodide.globals), '!("caller" in pyodide.globals)');
-        assert("length" in pyodide.globals, '"length" in pyodide.globals');
+        window.assertThrows = function assert(cb, errname, pattern){
+          let err = undefined;
+          try {
+            cb();
+          } catch(e) {
+            err = e;
+          } finally {
+            if(!err){
+              throw new Error(`assertThrows(${cb.toString()}) failed, no error thrown`);
+            }
+            if(err.constructor.name !== errname){
+              console.log(err.toString());
+              throw new Error(
+                `assertThrows(${cb.toString()}) failed, expected error` +
+                `of type '${errname}' got type '${err.constructor.name}'`
+              );
+            }
+            if(!pattern.test(err.message)){
+              console.log(err.toString());
+              throw new Error(
+                `assertThrows(${cb.toString()}) failed, expected error` +
+                `message to match pattern '${pattern}' got:\n${err.message}`
+              );
+            }
+          }
+        };
+        assert(() => !("prototype" in pyodide.globals));
+        assert(() => !("caller" in pyodide.globals));
+        assert(() => !("name" in pyodide.globals));
+        assert(() => "length" in pyodide.globals);
         let get_method = pyodide.globals.__getitem__;
-        assert("prototype" in get_method,'"prototype" in get_method');
-        assert("caller" in get_method,'"caller" in get_method');
-        assert(!("length" in get_method), '!("length" in get_method)');
+        assert(() => "caller" in get_method);
+        assert(() => "arguments" in get_method);
+        assert(() => "prototype" in get_method);
+        assert(() => get_method.prototype === undefined);
+        assert(() => !("length" in get_method));
+        assert(() => !("name" in get_method));
         
-        assert(pyodide.globals.get.type === "builtin_function_or_method");
-        assert(pyodide.globals.set.type === undefined);
+        assert(() => pyodide.globals.get.type === "builtin_function_or_method");
+        assert(() => pyodide.globals.set.type === undefined);
 
         let [Test, t] = pyodide.runPython(`
             class Test: pass
             [Test, Test()]
         `);
-        assert(Test.caller===null, 'Test.caller===null');
-        assert(Test.arguments===null, 'Test.arguments===null');
-        assert(Test.prototype === undefined, 'Test.prototype === undefined');
-        assert(!("name" in Test), '!("name" in t)');
-        assert(!("length" in Test), '!("length" in t)');
+        assert(() => Test.caller===null);
+        assert(() => Test.arguments===null);
+        assert(() => Test.prototype === undefined);
+        assert(() => !("name" in Test));
+        assert(() => !("length" in Test));
 
-        assert(!("prototype" in t), '!("prototype" in t)');
-        assert(!("caller" in t), '!("caller" in t)');
-        assert(!("name" in t), '!("name" in t)');
-        assert(!("length" in t), '!("length" in t)');
+        assert(() => !("prototype" in t));
+        assert(() => !("caller" in t));
+        assert(() => !("name" in t));
+        assert(() => !("length" in t));
+
+        Test.prototype = 7;
+        Test.name = 7;
+        Test.length = 7;
+        pyodide.runPython("assert Test.prototype == 7");
+        pyodide.runPython("assert Test.name == 7");
+        pyodide.runPython("assert Test.length == 7");
+        delete Test.prototype;
+        delete Test.name;
+        delete Test.length;
+        pyodide.runPython(`assert not hasattr(Test, "prototype")`);
+        pyodide.runPython(`assert not hasattr(Test, "name")`);
+        pyodide.runPython(`assert not hasattr(Test, "length")`);
+
+        assertThrows( () => Test.arguments = 7, "TypeError", /^Cannot set read only field/);
+        assertThrows( () => Test.caller = 7, "TypeError", /^Cannot set read only field/);
+        assertThrows( () => Test.$$ = 7, "TypeError", /^Cannot set read only field/);
+
+        assertThrows( () => delete Test.arguments, "TypeError", /^Cannot delete read only field/);
+        assertThrows( () => delete Test.caller, "TypeError", /^Cannot delete read only field/);
+        assertThrows( () => delete Test.$$, "TypeError", /^Cannot delete read only field/);
 
         [Test, t] = pyodide.runPython(`
             class Test:
@@ -301,16 +353,16 @@ def test_pyproxy_mixins2(selenium):
                 length=7
             [Test, Test()]
         `);
-        assert(Test.caller===null, 'Test.caller===null');
-        assert(Test.arguments===null, 'Test.arguments===null');
-        assert(Test.prototype === "prototype", 'Test.prototype === "prototype"');
-        assert(Test.name==="me", 'Test.name==="me"');
-        assert(Test.length === 7, 'Test.length === 7');
+        assert(() => Test.caller===null);
+        assert(() => Test.arguments===null);
+        assert(() => Test.prototype === "prototype");
+        assert(() => Test.name==="me");
+        assert(() => Test.length === 7);
 
-        assert(t.caller === "fifty", 't.caller === "fifty"');
-        assert(t.prototype === "prototype", 't.prototype === "prototype"');
-        assert(t.name==="me", 't.name==="me"');
-        assert(t.length === 7, 't.length === 7');
+        assert(() => t.caller === "fifty");
+        assert(() => t.prototype === "prototype");
+        assert(() => t.name==="me");
+        assert(() => t.length === 7);
 
 
         [Test, t] = pyodide.runPython(`
@@ -319,10 +371,26 @@ def test_pyproxy_mixins2(selenium):
                     return 9
             [Test, Test()]
         `);
-        assert(!("length" in Test), '!("length" in t)');        
-        assert(t.length === 9, 't.length === 9');
+        assert(() => !("length" in Test));
+        assert(() => t.length === 9);
         t.length = 10;
-        assert(t.length === 10, 't.length === 10');
-        assert(t.__len__() === 9, 't.__len__() === 9');
+        assert(() => t.length === 10);
+        assert(() => t.__len__() === 9);
+
+        let l = pyodide.runPython(`
+            l = [5, 6, 7] ; l
+        `);
+        assert(() => l.get.type === undefined);
+        assert(() => l.get(1) === 6);
+        assert(() => l.length === 3);
+        l.set(0, 80);
+        pyodide.runPython(`
+            assert l[0] == 80
+        `);
+        l.delete(1);
+        pyodide.runPython(`
+            assert len(l) == 2 and l[1] == 7
+        `);
+        assert(() => l.length === 2 && l.get(1) === 7);
         """
     )

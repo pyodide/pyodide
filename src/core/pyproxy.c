@@ -626,6 +626,25 @@ finally:
 // into a .js file.
 //
 
+/**
+ * In the case that the Python object is callable, PyProxyClass inherits from
+ * Function so that PyProxy objects can be callable.
+ *
+ * The following properties on a Python object will be shadowed in the proxy in
+ * the case that the Python object is callable:
+ *  - "arguments" and
+ *  - "caller"
+ *
+ * Inheriting from Function has the unfortunate side effect that we MUST expose
+ * the members "proxy.arguments" and "proxy.caller" because they are
+ * nonconfigurable, nonwritable, nonenumerable own properties. They are just
+ * always `null`.
+ *
+ * We also get the properties "length" and "name" which are configurable so we
+ * delete them in the constructor. "prototype" is not configurable so we can't
+ * delete it, however it *is* writable so we set it to be undefined. We must
+ * still make "prototype in proxy" be true though.
+ */
 EM_JS_REF(JsRef, pyproxy_new, (PyObject * ptrobj), {
   // Technically, this leaks memory, since we're holding on to a reference
   // to the proxy forever.  But we have that problem anyway since we don't
@@ -646,13 +665,18 @@ EM_JS_REF(JsRef, pyproxy_new, (PyObject * ptrobj), {
     // To make a callable proxy, we must call the Function constructor.
     // In this case we are effectively subclassing Function.
     target = Reflect.construct(Function, [], cls);
+    // Remove undesireable properties added by Function constructor. Note: we
+    // can't remove "arguments" or "caller" because they are not configurable
+    // and not writable
     delete target.length;
     delete target.name;
+    // prototype isn't configurable so we can't delete it but it's writable.
     target.prototype = undefined;
   } else {
     target = Object.create(cls.prototype);
   }
-  target.$$ = { ptr : ptrobj, type : 'PyProxy' };
+  Object.defineProperty(
+    target, "$$", { value : { ptr : ptrobj, type : 'PyProxy' } });
   _Py_IncRef(ptrobj);
   let proxy = new Proxy(target, Module.PyProxyHandlers);
   Module.PyProxies[ptrobj] = proxy;
@@ -748,30 +772,6 @@ EM_JS_NUM(int, pyproxy_init_js, (), {
   // Now a lot of boilerplate to wrap the abstract Object protocol wrappers
   // above in Javascript functions.
 
-  /** 
-   * PyProxyClass inherits from Function so that PyProxy objects can be
-   * callable.
-   *
-   * The following properties on a Python object will be shadowed in the proxy:
-   *  - "arguments",
-   *  - "caller", and 
-   *  - "prototype" 
-   *
-   * The properties "name" and "length" are also mildly weird special cases, but
-   * they should behave more or less as a user might expect. Perhaps we should
-   * give some sort of warning if the Python object has members with shadowed
-   * names?
-   *
-   * Inheriting from Funcion has the unfortunate sideeffect that we MUST expose
-   * the members "proxy.arguments" and "proxy.caller" because they are
-   * nonconfigurable, nonwriteable, nonenumerable own properties. They are just
-   * always `null`. 
-   *
-   * We also get the properties "length" and "name" which are configurable so we
-   * overwrite them or drop them using the Proxy. Lastly we have the property
-   * "prototype" which like "length" and "name" could be overwritten but only at
-   * the cost of breaking the Proxy.
-   */
   Module.PyProxyClass = class {
     constructor(){
       throw new TypeError('PyProxy is not a constructor');
@@ -815,6 +815,8 @@ EM_JS_NUM(int, pyproxy_init_js, (), {
     }
   };
 
+  // Controlled by HAS_LENGTH, appears for any object with __len__ or sq_length
+  // or mp_length methods
   Module.PyProxyLengthMethods = {
     get length(){
       let ptrobj = _getPtr(this);
@@ -831,8 +833,8 @@ EM_JS_NUM(int, pyproxy_init_js, (), {
     }
   };
 
-  // These methods appear for lists and tuples and sequence-like things
-  // _PyMapping_Check returns true on a superset of things _PySequence_Check accepts.
+  // Controlled by HAS_GET, appears for any class with __getitem__,
+  // mp_subscript, or sq_item methods
   Module.PyProxyGetItemMethods = {
     get : function(key){
       let ptrobj = _getPtr(this);
@@ -856,6 +858,8 @@ EM_JS_NUM(int, pyproxy_init_js, (), {
     },
   };
 
+  // Controlled by HAS_SET, appears for any class with __setitem__, __delitem__,
+  // mp_ass_subscript,  or sq_ass_item.
   Module.PyProxySetItemMethods = {
     set : function(key, value){
       let ptrobj = _getPtr(this);
@@ -891,6 +895,8 @@ EM_JS_NUM(int, pyproxy_init_js, (), {
     }
   };
 
+  // Controlled by HAS_CONTAINS flag, appears for any class with __contains__ or
+  // sq_contains
   Module.PyProxyContainsMethods = {
     has : function(key) {
       let ptrobj = _getPtr(this);
@@ -910,6 +916,8 @@ EM_JS_NUM(int, pyproxy_init_js, (), {
     },
   };
 
+  // Controlled by IS_ITERABLE, appears for any object with __iter__ or tp_iter, unless
+  // they are iterators.
   // See:
   // https://docs.python.org/3/c-api/iter.html
   // https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Iteration_protocols
@@ -931,6 +939,8 @@ EM_JS_NUM(int, pyproxy_init_js, (), {
     }
   };
 
+  // Controlled by IS_ITERATOR, appears for any object with a __next__ or
+  // tp_iternext method.
   Module.PyProxyIteratorMethods = {
     [Symbol.iterator] : function() {
       return this;
@@ -962,6 +972,10 @@ EM_JS_NUM(int, pyproxy_init_js, (), {
     },
   };
 
+  // Another layer of boilerplate. The PyProxyHandlers have some annoying logic
+  // to deal with straining out the spurious "Function" properties "prototype",
+  // "arguments", and "length", to deal with correctly satisfying the Proxy
+  // invariants, and to deal with the mro
   function python_hasattr(jsobj, jskey){
       let ptrobj = _getPtr(jsobj);
       let idkey = Module.hiwire.new_value(jskey);
@@ -979,6 +993,9 @@ EM_JS_NUM(int, pyproxy_init_js, (), {
       return result !== 0;
   }
 
+  // Returns a JsRef in order to allow us to differentiate between "not found"
+  // (in which case we return 0) and "found 'None'" (in which case we return
+  // Js_undefined).
   function python_getattr(jsobj, jskey){
     let ptrobj = _getPtr(jsobj);
     let idkey = Module.hiwire.new_value(jskey);
@@ -998,112 +1015,112 @@ EM_JS_NUM(int, pyproxy_init_js, (), {
     return idresult;
   }
 
-  // These fields appear in the target by default because the target is a
-  // function. we want to filter them out. It would be nice to also filter out
-  // "arguments", "caller", and "prototype", but it won't work (because they are
-  // not configurable)
-  let ignoredTargetFields = ["name", "length"];
+  function python_setattr(jsobj, jskey, jsval){
+    let ptrobj = _getPtr(jsobj);
+    let idkey = Module.hiwire.new_value(jskey);
+    let idval = Module.hiwire.new_value(jsval);
+    let errcode;
+    try {
+      errcode = __pyproxy_setattr(ptrobj, idkey, idval);
+    } catch(e) {
+      Module.fatal_error(e);
+    } finally {
+      Module.hiwire.decref(idkey);
+      Module.hiwire.decref(idval);
+    }
+    if(errcode === -1){
+      _pythonexc2js();
+    }
+  }
+
+  function python_delattr(jsobj, jskey){
+    let ptrobj = _getPtr(jsobj);
+    let idkey = Module.hiwire.new_value(jskey);
+    let errcode;
+    try {
+      errcode = __pyproxy_delattr(ptrobj, idkey);
+    } catch(e) {
+      Module.fatal_error(e);
+    } finally {
+      Module.hiwire.decref(idkey);
+    }
+    if(errcode === -1){
+      _pythonexc2js();
+    }
+  }
 
   // See explanation of which methods should be defined here and what they do here:
   // https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Proxy
   Module.PyProxyHandlers = {
     isExtensible: function() { return true },
     has: function (jsobj, jskey) {
+      // Note: must report "prototype" in proxy when we are callable.
+      // (We can return the wrong value from "get" handler though.)
       let objHasKey = Reflect.has(jsobj, jskey);
-      if(objHasKey && !ignoredTargetFields.includes(jskey)){
+      if(objHasKey){
         return true;
       }
+      // python_hasattr will crash when given a Symbol.
       if(typeof(jskey) === "symbol"){
-        // If we had it we would have already found it.
-        // python_hasattr will crash when given a Symbol.
         return false;
       }
-      if(python_hasattr(jsobj, jskey)){
-        return true;
-      }
-      // This covers the case where "jskey" is "name" or "length" and the
-      // prototype defines it. This only currentlys happen with "length"
-      // (PyProxyLengthMethods).
-      return objHasKey && !!Object.getOwnPropertyDescriptor(Reflect.getPrototypeOf(jsobj), jskey);
+      return python_hasattr(jsobj, jskey);
     },
     get: function (jsobj, jskey) {
-      // In order for stuff to work we have to correctly report the
-      // ownProperties of jsobj (well we could filter out "$$", but there's not
-      // really any reason to do so.) We want to allow Python properties to
-      // override anything up the prototype chain, so we specifically want
-      // `Object.getOwnPropertyDescriptor` here not `Reflect.has`. Using
-      // `Object.hasOwnProperty` here also doesn't work for reasons I don't
-      // understand.
+      // Preference order:
+      // 1. things we have to return to avoid making Javascript angry
+      // 2. the result of Python getattr
+      // 3. stuff from the prototype chain
+
+      // 1. things we have to return to avoid making Javascript angry
+      // This conditional looks funky but it's the only thing I found that
+      // worked right in all cases.
       if((jskey in jsobj) && !(jskey in Object.getPrototypeOf(jsobj)) ){
         return Reflect.get(jsobj, jskey);
       }
+      // python_getattr will crash when given a Symbol
       if(typeof(jskey) === "symbol"){
-        // python_hasattr will crash when given a Symbol.
         return Reflect.get(jsobj, jskey);
       }
+      // 2. The result of getattr
       let idresult = python_getattr(jsobj, jskey);
       if(idresult !== 0){
         return Module.hiwire.pop_value(idresult);
       }
-      // If we didn't find the key on the python object, now we go up the
-      // prototype chain. This funny conditional is needed to filter out "name"
-      // and "length" if they come from the Function prototype: if `jskey` is
-      // `name` or `length`, make sure that it's an ownProperty of the
-      // prototype, not coming from further up the prototype chain. Note that we
-      // need to use `Object.getOwnPropertyDescriptor` not
-      // `Object.hasOwnProperty` (the latter will throw an error for getters).
-      if(!ignoredTargetFields.includes(jskey) || Object.getOwnPropertyDescriptor(Reflect.getPrototypeOf(jsobj), jskey)){
-        return Reflect.get(jsobj, jskey);
-      }
-      return undefined;
+      // 3. stuff from the prototype chain.
+      return Reflect.get(jsobj, jskey);
     },
     set: function (jsobj, jskey, jsval) {
-      // We're only willing to set properties on the python object.
+      // We're only willing to set properties on the python object, throw an
+      // error if user tries to write over any key of type 1. things we have to
+      // return to avoid making Javascript angry
       if(typeof(jskey) === "symbol"){
-        throw new Error(`Cannot set read only field ${jskey.description}`);
+        throw new TypeError(`Cannot set read only field '${jskey.description}'`);
       }
-      if(Object.getOwnPropertyDescriptor(jsobj, jskey)){
-        throw new Error(`Cannot set read only field ${jskey}`);
+      // Again this is a funny looking conditional, I found it as the result of
+      // a lengthy search for something that worked right.
+      let descr = Object.getOwnPropertyDescriptor(jsobj, jskey);
+      if(descr && !descr.writable){
+        throw new TypeError(`Cannot set read only field '${jskey}'`);
       }
-      let ptrobj = _getPtr(jsobj);
-      let idkey = Module.hiwire.new_value(jskey);
-      let idval = Module.hiwire.new_value(jsval);
-      let errcode;
-      try {
-        errcode = __pyproxy_setattr(ptrobj, idkey, idval);
-      } catch(e) {
-        Module.fatal_error(e);
-      } finally {
-        Module.hiwire.decref(idkey);
-        Module.hiwire.decref(idval);
-      }
-      if(errcode === -1){
-        _pythonexc2js();
-      }
+      python_setattr(jsobj, jskey, jsval);
       return true;
     },
     deleteProperty: function (jsobj, jskey) {
-      // We're only willing to delete properties on the python object.
+      // We're only willing to delete properties on the python object, throw an
+      // error if user tries to write over any key of type 1. things we have to
+      // return to avoid making Javascript angry
       if(typeof(jskey) === "symbol"){
-        throw new Error(`Cannot delete read only field ${jskey.description}`);
+        throw new TypeError(`Cannot delete read only field '${jskey.description}'`);
       }
-      if(Object.getOwnPropertyDescriptor(jsobj, jskey)){
-        throw new Error(`Cannot delete read only field ${jskey}`);
+      let descr = Object.getOwnPropertyDescriptor(jsobj, jskey);
+      if(descr && !descr.writable){
+        throw new TypeError(`Cannot delete read only field '${jskey}'`);
       }
-      let ptrobj = _getPtr(jsobj);
-      let idkey = Module.hiwire.new_value(jskey);
-      let errcode;
-      try {
-        errcode = __pyproxy_delattr(ptrobj, idkey);
-      } catch(e) {
-        Module.fatal_error(e);
-      } finally {
-        Module.hiwire.decref(idkey);
-      }
-      if(errcode === -1){
-        _pythonexc2js();
-      }
-      return true;
+      python_delattr(jsobj, jskey);
+      // Must return "false" if "jskey" is a nonconfigurable own property.
+      // Otherwise Javascript will throw a TypeError.
+      return !descr || descr.configurable;
     },
     ownKeys: function (jsobj) {
       let ptrobj = _getPtr(jsobj);
