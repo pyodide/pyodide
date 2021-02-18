@@ -646,6 +646,9 @@ EM_JS_REF(JsRef, pyproxy_new, (PyObject * ptrobj), {
     // To make a callable proxy, we must call the Function constructor.
     // In this case we are effectively subclassing Function.
     target = Reflect.construct(Function, [], cls);
+    delete target.length;
+    delete target.name;
+    target.prototype = undefined;
   } else {
     target = Object.create(cls.prototype);
   }
@@ -1031,7 +1034,7 @@ EM_JS_NUM(int, pyproxy_init_js, (), {
       // `Object.getOwnPropertyDescriptor` here not `Reflect.has`. Using
       // `Object.hasOwnProperty` here also doesn't work for reasons I don't
       // understand.
-      if(Object.getOwnPropertyDescriptor(jsobj, jskey)){
+      if((jskey in jsobj) && !(jskey in Object.getPrototypeOf(jsobj)) ){
         return Reflect.get(jsobj, jskey);
       }
       if(typeof(jskey) === "symbol"){
@@ -1179,7 +1182,7 @@ EM_JS_NUM(int, pyproxy_init_js, (), {
     }
   };
 
-  Module.PyProxyCallableMethods = Function.prototype;
+  Module.PyProxyCallableMethods = { prototype : Function.prototype };
   Module.PyProxyBufferMethods = {};
 
   // A special proxy that we use to wrap pyodide.globals to allow property access

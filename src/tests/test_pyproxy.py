@@ -258,3 +258,71 @@ def test_pyproxy_mixins(selenium):
             then=True, catch=True, finally_=True, iterable=True, iterator=True
         ),
     )
+
+def test_pyproxy_mixins2(selenium):
+    selenium.run_js(
+        """
+        window.assert = function assert(x, msg){
+            if(x !== true){
+                throw new Error(`Assertion failed: ${msg}`);
+            }
+        };
+        assert(!("prototype" in pyodide.globals), '!("prototype" in pyodide.globals)');
+        assert(!("caller" in pyodide.globals), '!("caller" in pyodide.globals)');
+        assert("length" in pyodide.globals, '"length" in pyodide.globals');
+        let get_method = pyodide.globals.__getitem__;
+        assert("prototype" in get_method,'"prototype" in get_method');
+        assert("caller" in get_method,'"caller" in get_method');
+        assert(!("length" in get_method), '!("length" in get_method)');
+        
+        assert(pyodide.globals.get.type === "builtin_function_or_method");
+        assert(pyodide.globals.set.type === undefined);
+
+        let [Test, t] = pyodide.runPython(`
+            class Test: pass
+            [Test, Test()]
+        `);
+        assert(Test.caller===null, 'Test.caller===null');
+        assert(Test.arguments===null, 'Test.arguments===null');
+        assert(Test.prototype === undefined, 'Test.prototype === undefined');
+        assert(!("name" in Test), '!("name" in t)');
+        assert(!("length" in Test), '!("length" in t)');
+
+        assert(!("prototype" in t), '!("prototype" in t)');
+        assert(!("caller" in t), '!("caller" in t)');
+        assert(!("name" in t), '!("name" in t)');
+        assert(!("length" in t), '!("length" in t)');
+
+        [Test, t] = pyodide.runPython(`
+            class Test:
+                caller="fifty"
+                prototype="prototype"
+                name="me"
+                length=7
+            [Test, Test()]
+        `);
+        assert(Test.caller===null, 'Test.caller===null');
+        assert(Test.arguments===null, 'Test.arguments===null');
+        assert(Test.prototype === "prototype", 'Test.prototype === "prototype"');
+        assert(Test.name==="me", 'Test.name==="me"');
+        assert(Test.length === 7, 'Test.length === 7');
+
+        assert(t.caller === "fifty", 't.caller === "fifty"');
+        assert(t.prototype === "prototype", 't.prototype === "prototype"');
+        assert(t.name==="me", 't.name==="me"');
+        assert(t.length === 7, 't.length === 7');
+
+
+        [Test, t] = pyodide.runPython(`
+            class Test:
+                def __len__(self):
+                    return 9
+            [Test, Test()]
+        `);
+        assert(!("length" in Test), '!("length" in t)');        
+        assert(t.length === 9, 't.length === 9');
+        t.length = 10;
+        assert(t.length === 10, 't.length === 10');
+        assert(t.__len__() === 9, 't.__len__() === 9');
+        """
+    )
