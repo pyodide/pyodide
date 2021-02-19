@@ -106,7 +106,7 @@ def test_python2js_numpy_dtype(selenium_standalone):
                 assert classname == "Array"
 
     assert selenium.run("np.array([True, False])") == [True, False]
-    
+
 
 def test_py2js_buffer_clear_error_flag(selenium):
     selenium.load_package("numpy")
