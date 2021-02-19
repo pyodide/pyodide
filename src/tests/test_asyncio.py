@@ -5,38 +5,11 @@ sys.path.append(str(Path(__file__).parents[2] / "src" / "pyodide-py"))
 
 import pytest  # type: ignore
 import time
-
-
-def test_eval_async():
-    pass
-
-
-ASYNCIO_EVENT_LOOP_STARTUP = """
+from pyodide._base import eval_code_async
 import asyncio
-class DumbLoop(asyncio.AbstractEventLoop):
-    def create_future(self):
-        fut = asyncio.Future(loop=self)
-        old_set_result = fut.set_result
-        old_set_exception = fut.set_exception
-        def set_result(a):
-            print("set_result:", a)
-            old_set_result(a)
-        fut.set_result = set_result
-        def set_exception(a):
-            print("set_exception:", a)
-            old_set_exception(a)
-        fut.set_exception = set_exception
-        return fut
-
-    def get_debug(self):
-        return False
-
-asyncio.set_event_loop(DumbLoop())
-"""
 
 
 def test_await_jsproxy(selenium):
-    selenium.run(ASYNCIO_EVENT_LOOP_STARTUP)
     selenium.run(
         """
         def prom(res,rej):
@@ -63,7 +36,6 @@ def test_await_jsproxy(selenium):
 
 
 def test_await_fetch(selenium):
-    selenium.run(ASYNCIO_EVENT_LOOP_STARTUP)
     selenium.run(
         """
         from js import fetch, window
@@ -108,7 +80,6 @@ def test_await_error(selenium):
         window.js_raises = js_raises;
         """
     )
-    selenium.run(ASYNCIO_EVENT_LOOP_STARTUP)
     selenium.run(
         """
         from js import async_js_raises, js_raises
@@ -129,16 +100,10 @@ def test_await_error(selenium):
         )
 
 
-from pyodide._base import eval_code_async
-
-
 def test_eval_code_async_simple():
     c = eval_code_async("1+92")
     with pytest.raises(StopIteration, match="93"):
         c.send(None)
-
-
-import asyncio
 
 
 def test_eval_code_async_loop():
@@ -162,7 +127,6 @@ def test_eval_code_async_loop():
 
 
 def test_eval_code_await_jsproxy(selenium):
-    selenium.run(ASYNCIO_EVENT_LOOP_STARTUP)
     selenium.run(
         """
         def prom(res,rej):
@@ -193,7 +157,6 @@ def test_eval_code_await_jsproxy(selenium):
 
 
 def test_eval_code_await_fetch(selenium):
-    selenium.run(ASYNCIO_EVENT_LOOP_STARTUP)
     selenium.run(
         """
         from js import fetch, window
@@ -239,7 +202,6 @@ def test_eval_code_await_error(selenium):
         window.js_raises = js_raises;
         """
     )
-    selenium.run(ASYNCIO_EVENT_LOOP_STARTUP)
     selenium.run(
         """
         from js import async_js_raises, js_raises
@@ -267,9 +229,9 @@ def test_await_pyproxy_eval_async(selenium):
     assert (
         selenium.run_js(
             """
-        let c = pyodide._module.pyodide_py._base.eval_code_async("1+1");
-        return await c;
-        """
+            let c = pyodide._module.pyodide_py._base.eval_code_async("1+1");
+            return await c;
+            """
         )
         == 2
     )
