@@ -5,10 +5,8 @@ This file is intended as guidelines to help contributors trying to modify the C 
 ## What the files do
 The primary purpose of `core` is to implement {ref}`type conversions <type_conversions>` between Python and Javascript. Here is a breakdown of the purposes of the files.
 
-* `main.c` -- responsible for configuring and initializing the python interpreter, initializing the other source files, and creating the `_pyodide_core` module which is used to expose Python objects to `pyodide_py`. `main.c` also tries to generate fatal initialization error messages to help with debugging when there is a mistake in the initialization code.
-
-* `runpython` -- Defines the `_runPythonDebug` entrypoint to help in case there is a bug in `PyProxy.apply`.
-
+* `main` -- responsible for configuring and initializing the python interpreter, initializing the other source files, and creating the `_pyodide_core` module which is used to expose Python objects to `pyodide_py`. `main.c` also tries to generate fatal initialization error messages to help with debugging when there is a mistake in the initialization code.
+* `keyboard_interrupt` -- This sets up the keyboard interrupts system for using Pyodide with a webworker.
 
 ### Backend utilities
 * `hiwire` -- A helper framework. It is impossible for wasm to directly hold owning references to javascript objects. The primary purpose of hiwire is to act as a surrogate owner for javascript references by holding the references in a javascript `Map`. `hiwire` also defines a wide variety of `EM_JS` helper functions to do javascript operations on the held objects. The primary type that hiwire exports is `JsRef`. References are created with `Module.hiwire.new_value` (only can be done from javascript) and must be destroyed from C with `hiwire_decref` or `hiwire_CLEAR`, or from javascript with `Module.hiwire.decref`.

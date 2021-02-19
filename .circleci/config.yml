@@ -39,7 +39,7 @@ jobs:
           command: python3 -m sphinx -M html docs docs/_build
 
       - store_artifacts:
-          path: /root/repo/docs/_build/
+          path: /home/circleci/repo/docs/_build/
 
   build-core:
     <<: *defaults
@@ -316,7 +316,6 @@ workflows:
             - test-core-firefox
             - test-packages-firefox
             - test-core-chrome
-            - test-packages-chrome
             - test-emsdk
             - build-docs
           filters:
@@ -331,7 +330,6 @@ workflows:
             - test-core-firefox
             - test-packages-firefox
             - test-core-chrome
-            - test-packages-chrome
             - test-emsdk
             - build-docs
           filters:

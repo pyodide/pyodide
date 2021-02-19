@@ -64,8 +64,7 @@
             prompt: ps1,
             completionEscape: false,
             completion: function(command, callback) {
-              const completions = pyconsole.complete(command)[0];
-              callback(completions.deepCopyToJavascript());
+              callback(pyconsole.complete(command).toJs()[0]);
             }
           }
         );

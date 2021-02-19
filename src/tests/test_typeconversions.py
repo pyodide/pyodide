@@ -14,23 +14,31 @@ def test_python2js(selenium):
     assert selenium.run_js('return pyodide.runPython("\'ιωδιούχο\'") === "ιωδιούχο"')
     assert selenium.run_js('return pyodide.runPython("\'碘化物\'") === "碘化物"')
     assert selenium.run_js('return pyodide.runPython("\'🐍\'") === "🐍"')
+    # TODO: replace with suitable test for the behavior of bytes objects once we
+    # get the new behavior specified.
+    # assert selenium.run_js(
+    #     "let x = pyodide.runPython(\"b'bytes'\");\n"
+    #     "return (x instanceof window.Uint8ClampedArray) && "
+    #     "(x.length === 5) && "
+    #     "(x[0] === 98)"
+    # )
     assert selenium.run_js(
-        "let x = pyodide.runPython(\"b'bytes'\");\n"
-        "return (x instanceof window.Uint8ClampedArray) && "
-        "(x.length === 5) && "
-        "(x[0] === 98)"
+        """
+        let proxy = pyodide.runPython("[1, 2, 3]");
+        let typename = proxy.type;
+        let x = proxy.toJs();
+        proxy.destroy();
+        return ((typename === "list") && (x instanceof window.Array) && 
+                (x.length === 3) && (x[0] == 1) && (x[1] == 2) && (x[2] == 3));
+        """
     )
     assert selenium.run_js(
         """
-        let x = pyodide.runPython("[1, 2, 3]").deepCopyToJavascript();
-        return ((x instanceof window.Array) && (x.length === 3) &&
-                (x[0] == 1) && (x[1] == 2) && (x[2] == 3))
-        """
-    )
-    assert selenium.run_js(
-        """
-        let x = pyodide.runPython("{42: 64}").deepCopyToJavascript();
-        return (typeof x === "object") && (x[42] === 64)
+        let proxy = pyodide.runPython("{42: 64}");
+        let typename = proxy.type;
+        let x = proxy.toJs();
+        proxy.destroy();
+        return (typename === "dict") && (typeof x === "object") && (x[42] === 64)
         """
     )
     assert selenium.run_js(
@@ -54,6 +62,12 @@ def test_pythonexc2js(selenium):
     msg = "ZeroDivisionError"
     with pytest.raises(selenium.JavascriptException, match=msg):
         selenium.run_js('return pyodide.runPython("5 / 0")')
+
+
+def test_run_python_simple_error(selenium):
+    msg = "ZeroDivisionError"
+    with pytest.raises(selenium.JavascriptException, match=msg):
+        selenium.run_js("return pyodide._module.runPythonSimple('5 / 0');")
 
 
 def test_js2python(selenium):
@@ -106,7 +120,10 @@ def test_js2python(selenium):
         """
     )
     assert selenium.run(
-        "from js import jsobject\n" 'str(jsobject) == "[object XMLHttpRequest]"'
+        """
+        from js import jsobject
+        str(jsobject) == "[object XMLHttpRequest]"
+        """
     )
     assert selenium.run(
         """
@@ -230,7 +247,7 @@ def test_recursive_list_to_js(selenium_standalone):
         x.append(x)
         """
     )
-    selenium_standalone.run_js("x = pyodide.pyimport('x').deepCopyToJavascript();")
+    selenium_standalone.run_js("x = pyodide.pyimport('x').toJs();")
 
 
 def test_recursive_dict_to_js(selenium_standalone):
@@ -240,7 +257,7 @@ def test_recursive_dict_to_js(selenium_standalone):
         x[0] = x
         """
     )
-    selenium_standalone.run_js("x = pyodide.pyimport('x').deepCopyToJavascript();")
+    selenium_standalone.run_js("x = pyodide.pyimport('x').toJs();")
 
 
 def test_list_js2py2js(selenium):
@@ -325,10 +342,10 @@ def test_javascript_error_back_to_js(selenium):
     assert (
         selenium.run(
             """
-        from js import err
-        py_err = err
-        type(py_err).__name__
-        """
+            from js import err
+            py_err = err
+            type(py_err).__name__
+            """
         )
         == "JsException"
     )
@@ -422,10 +439,9 @@ def test_python2js_with_depth(selenium):
                 throw new Error(`Assertion failed: ${msg}`);
             }
         }
-        let depths = [0, 3, 3, 3, 6, 6, 6]
         for(let i=0; i < 7; i++){
             let x = pyodide._module.test_python2js_with_depth("a", i);
-            for(let j=0; j < depths[i]; j++){
+            for(let j=0; j < i; j++){
                 assert(Array.isArray(x), `i: ${i}, j: ${j}`);
                 x = x[1];
             }

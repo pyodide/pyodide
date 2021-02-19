@@ -825,7 +825,7 @@ JsProxy_create(JsRef object)
   if (hiwire_is_error(object)) {
     return JsProxy_new_error(object);
   } else if (hiwire_is_function(object)) {
-    return JsMethod_cnew(object, hiwire_null());
+    return JsMethod_cnew(object, Js_null);
   } else if (hiwire_is_typedarray(object)) {
     return JsBuffer_cnew(object);
   } else {
@@ -887,7 +887,6 @@ JsProxy_init(PyObject* core_module)
   bool success = false;
 
   PyObject* asyncio_module = NULL;
-  PyObject* pyodide_module = NULL;
 
   asyncio_module = PyImport_ImportModule("asyncio");
   FAIL_IF_NULL(asyncio_module);
@@ -901,7 +900,7 @@ JsProxy_init(PyObject* core_module)
 
   JsMethodType.tp_base = &JsProxyType;
   JsBufferType.tp_base = &JsProxyType;
-  // Add JsException to the pyodide module so people can catch it if they want.
+  // Add JsException to core_module so people can catch it if they want.
   FAIL_IF_MINUS_ONE(PyModule_AddType(core_module, &JsProxyType));
   FAIL_IF_MINUS_ONE(PyModule_AddType(core_module, &JsBufferType));
   FAIL_IF_MINUS_ONE(PyModule_AddType(core_module, &JsMethodType));
@@ -910,6 +909,5 @@ JsProxy_init(PyObject* core_module)
   success = true;
 finally:
   Py_CLEAR(asyncio_module);
-  Py_CLEAR(pyodide_module);
   return success ? 0 : -1;
 }

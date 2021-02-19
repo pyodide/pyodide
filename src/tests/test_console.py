@@ -26,8 +26,10 @@ def test_stream_redirection():
 @pytest.fixture
 def safe_sys_redirections():
     redirected = sys.stdout, sys.stderr, sys.displayhook
-    yield
-    sys.stdout, sys.stderr, sys.displayhook = redirected
+    try:
+        yield
+    finally:
+        sys.stdout, sys.stderr, sys.displayhook = redirected
 
 
 def test_interactive_console_streams(safe_sys_redirections):
@@ -128,9 +130,12 @@ def test_repr(safe_sys_redirections):
 
 @pytest.fixture
 def safe_selenium_sys_redirections(selenium):
+    selenium.run("import sys")
     selenium.run("_redirected = sys.stdout, sys.stderr, sys.displayhook")
-    yield
-    selenium.run("sys.stdout, sys.stderr, sys.displayhook = _redirected")
+    try:
+        yield
+    finally:
+        selenium.run("sys.stdout, sys.stderr, sys.displayhook = _redirected")
 
 
 def test_interactive_console(selenium, safe_selenium_sys_redirections):

@@ -16,31 +16,6 @@ index 2990646..517fc33 100644
  #endif
      return wasmTable.get(ptr).apply(null, args)
  #endif
-diff --git a/emsdk/upstream/emscripten/src/runtime_functions.js b/emsdk/upstream/emscripten/src/runtime_functions.js
-index 5ae5cfc..02474b3 100644
---- a/emsdk/upstream/emscripten/src/runtime_functions.js
-+++ b/emsdk/upstream/emscripten/src/runtime_functions.js
-@@ -114,6 +114,18 @@ function getEmptyTableSlot() {
-   return wasmTable.length - 1;
- }
- 
-+function updateWasmFunctionMap(start,count)
-+{
-+    for(var i=start;i<start+count;i++)
-+    {
-+       var item = wasmTable.get(i);
-+       // Ignore null values.
-+       if (item) {
-+         functionsInTableMap.set(item, i);
-+       }
-+    }
-+}
-+
- // Add a wasm function to the table.
- function addFunctionWasm(func, sig) {
-   // Check if the function is already in the table, to ensure each function
-diff --git a/emsdk/upstream/emscripten/src/runtime_init_table.js b/emsdk/upstream/emscripten/src/runtime_init_table.js
-index c8af59d..7084ff7 100644
 --- a/emsdk/upstream/emscripten/src/runtime_init_table.js
 +++ b/emsdk/upstream/emscripten/src/runtime_init_table.js
 @@ -13,3 +13,17 @@ var wasmTable = new WebAssembly.Table({
@@ -61,9 +36,6 @@ index c8af59d..7084ff7 100644
 +    // only ever called from javascript
 +    var dyncallInvokeMap=new Map();
 +#endif
-diff --git a/emsdk/upstream/emscripten/tools/__pycache__/shared.cpython-38.pyc b/emsdk/upstream/emscripten/tools/__pycache__/shared.cpython-38.pyc
-index 087e7fd..872c6f0 100644
-Binary files a/emsdk/upstream/emscripten/tools/__pycache__/shared.cpython-38.pyc and b/emsdk/upstream/emscripten/tools/__pycache__/shared.cpython-38.pyc differ
 diff --git a/emsdk/upstream/emscripten/tools/shared.py b/emsdk/upstream/emscripten/tools/shared.py
 index 74666ee..3d5657b 100644
 --- a/emsdk/upstream/emscripten/tools/shared.py
@@ -177,15 +149,6 @@ index 876492b..750a18d 100644
  #endif
      }
  #if DYLINK_DEBUG
-@@ -428,6 +482,8 @@ var LibraryDylink = {
-           assert(table.get(tableBase + i) !== undefined, 'table entry was not filled in');
-         }
- #endif
-+        // make sure that internal wasm stuff knows about everything in the table
-+        updateWasmFunctionMap(tableBase,tableSize);
-         moduleExports = relocateExports(instance.exports, memoryBase);
-         if (!flags.allowUndefined) {
-           reportUndefinedSymbols();
 @@ -713,6 +769,8 @@ var LibraryDylink = {
        nodelete: Boolean(flags & {{{ cDefine('RTLD_NODELETE') }}}),
 
