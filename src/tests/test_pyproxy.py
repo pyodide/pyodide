@@ -299,8 +299,6 @@ def test_pyproxy_mixins2(selenium):
         assert(() => !("name" in pyodide.globals));
         assert(() => "length" in pyodide.globals);
         let get_method = pyodide.globals.__getitem__;
-        assert(() => "caller" in get_method);
-        assert(() => "arguments" in get_method);
         assert(() => "prototype" in get_method);
         assert(() => get_method.prototype === undefined);
         assert(() => !("length" in get_method));
@@ -313,8 +311,6 @@ def test_pyproxy_mixins2(selenium):
             class Test: pass
             [Test, Test()]
         `);
-        assert(() => Test.caller===null);
-        assert(() => Test.arguments===null);
         assert(() => Test.prototype === undefined);
         assert(() => !("name" in Test));
         assert(() => !("length" in Test));
@@ -337,12 +333,7 @@ def test_pyproxy_mixins2(selenium):
         pyodide.runPython(`assert not hasattr(Test, "name")`);
         pyodide.runPython(`assert not hasattr(Test, "length")`);
 
-        assertThrows( () => Test.arguments = 7, "TypeError", /^Cannot set read only field/);
-        assertThrows( () => Test.caller = 7, "TypeError", /^Cannot set read only field/);
         assertThrows( () => Test.$$ = 7, "TypeError", /^Cannot set read only field/);
-
-        assertThrows( () => delete Test.arguments, "TypeError", /^Cannot delete read only field/);
-        assertThrows( () => delete Test.caller, "TypeError", /^Cannot delete read only field/);
         assertThrows( () => delete Test.$$, "TypeError", /^Cannot delete read only field/);
 
         [Test, t] = pyodide.runPython(`
@@ -353,8 +344,6 @@ def test_pyproxy_mixins2(selenium):
                 length=7
             [Test, Test()]
         `);
-        assert(() => Test.caller===null);
-        assert(() => Test.arguments===null);
         assert(() => Test.prototype === "prototype");
         assert(() => Test.name==="me");
         assert(() => Test.length === 7);
