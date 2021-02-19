@@ -34,6 +34,7 @@
             class PyConsole(console.InteractiveConsole):
                 def __init__(self):
                     super().__init__(
+                        globals(),
                         persistent_stream_redirection=False,
                     )
 
