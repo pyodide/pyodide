@@ -106,12 +106,7 @@ def test_python2js_numpy_dtype(selenium_standalone):
                 assert classname == "Array"
 
     assert selenium.run("np.array([True, False])") == [True, False]
-
-    selenium.run("x = np.array([['string1', 'string2'], ['string3', 'string4']])")
-    assert selenium.run_js("return pyodide.pyimport('x').toJs().length") == 2
-    assert selenium.run_js("return pyodide.pyimport('x').toJs()[0][0]") == "string1"
-    assert selenium.run_js("return pyodide.pyimport('x').toJs()[1][1]") == "string4"
-
+    
 
 def test_py2js_buffer_clear_error_flag(selenium):
     selenium.load_package("numpy")
