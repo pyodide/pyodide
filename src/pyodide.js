@@ -268,7 +268,7 @@ globalThis.languagePluginLoader = (async () => {
   /**
    * @type {object}
    *
-   * Use ``Object.keys(pyodide.loadedPackages)`` to get the list of names of 
+   * Use ``Object.keys(pyodide.loadedPackages)`` to get the list of names of
    * loaded packages, and ``pyodide.loadedPackages[package_name]`` to access
    * the install location for a particular ``package_name``.
    */
@@ -475,22 +475,22 @@ globalThis.languagePluginLoader = (async () => {
    * An `async` function. First it runs
    * :any:`pyodide.loadPackagesFromImports(code)
    * <pyodide.loadPackagesFromImports>` to asynchronously load any known
-   * packages that ``code`` imports. 
+   * packages that ``code`` imports.
    *
    * Then it will run ``code`` using :any:`pyodide.eval_code_async`. Examples:
-   * 
+   *
    * .. code-block:: pyodide
-   *    
+   *
    *    let packages_json = await pyodide.loadPackagesFromImports(`
    *      from js import fetch
    *      response = js.fetch("packages.json")
    *      await response.json
    *    `);
-   * 
+   *
    * .. code-block:: pyodide
-   *    
+   *
    *    let x = await pyodide.runPythonAsync(`
-   *      import numpy as np 
+   *      import numpy as np
    *      x = np.array([1, 2, 3])
    *    `);
    *
