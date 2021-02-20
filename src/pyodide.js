@@ -496,7 +496,13 @@ globalThis.languagePluginLoader = (async () => {
    */
   Module.runPythonAsync = async function(code, messageCallback, errorCallback) {
     await Module.loadPackagesFromImports(code, messageCallback, errorCallback);
-    return Module.runPython(code);
+    let coroutine = Module.pyodide_py.eval_code_async(code, Module.globals);
+    try {
+      let result = await coroutine;
+      return result;
+    } finally {
+      coroutine.destroy();
+    }
   };
 
   // clang-format off
