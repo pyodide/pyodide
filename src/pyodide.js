@@ -268,9 +268,9 @@ globalThis.languagePluginLoader = (async () => {
   /**
    * @type {object}
    *
-   * Use ``Object.keys(pyodide.loadedPackages)`` to get the list of names of
+   * Use ``Object.keys(pyodide.loadedPackages)`` to get the list of names of 
    * loaded packages, and ``pyodide.loadedPackages[package_name]`` to access
-   * install location for a particular ``package_name``.
+   * the install location for a particular ``package_name``.
    */
   Module.loadedPackages = {};
 
@@ -422,19 +422,21 @@ globalThis.languagePluginLoader = (async () => {
 
   // clang-format off
   /**
-   * Inspect a Python code chunk and use ``pyodide.loadPackage` to load any known 
-   * packages that the code chunk imports. Uses 
-   * :func:`pyodide_py.find_imports <pyodide.find\_imports>` to inspect the code.
-
-   * For example, given the following code chunk as input
-   * 
-   * .. code-block:: python
-   * 
-   *    import numpy as np
-   *    x = np.array([1, 2, 3])
-   * 
-   * :js:func:`loadPackagesFromImports` will call ``pyodide.loadPackage(['numpy'])``.
-   * See also :js:func:`runPythonAsync`.
+   * Inspect a Python code chunk with :any:`pyodide.find_imports` to determine
+   * which packages the code imports and use :any:`pyodide.loadPackage` to load
+   * any known packages that the code chunk imports.
+   *
+   * For example, given the following code:
+   *
+   * .. code-block:: pyodide
+   *    
+   *    pyodide.loadPackagesFromImports(`
+   *      import numpy as np 
+   *      x = np.array([1, 2, 3])
+   *    `);
+   *
+   * :js:func:`loadPackagesFromImports` will call
+   * ``pyodide.loadPackage(['numpy'])``. See also :js:func:`runPythonAsync`.
    *
    * @param {*} code 
    * @param {*} messageCallback 
@@ -470,23 +472,27 @@ globalThis.languagePluginLoader = (async () => {
   Module.pyimport = name => Module.globals[name];
 
   /**
-   * Runs Python code, possibly asynchronously loading any known packages that
-   * the code chunk imports. For example, given the following code chunk
+   * An `async` function. First it runs
+   * :any:`pyodide.loadPackagesFromImports(code)
+   * <pyodide.loadPackagesFromImports>` to asynchronously load any known
+   * packages that ``code`` imports. 
    *
-   * .. code-block:: python
-   *
-   *    import numpy as np
-   *    x = np.array([1, 2, 3])
-   *
-   * pyodide will first call `pyodide.loadPackage(['numpy'])`, and then run the
-   * code chunk, returning the result. Since package fetching must happen
-   * asynchronously, this function returns a `Promise` which resolves to the
-   * output. For example:
-   *
-   * .. code-block:: javascript
-   *
-   *    pyodide.runPythonAsync(code, messageCallback)
-   *           .then((output) => handleOutput(output))
+   * Then it will run ``code`` using :any:`pyodide.eval_code_async`. Examples:
+   * 
+   * .. code-block:: pyodide
+   *    
+   *    let packages_json = await pyodide.loadPackagesFromImports(`
+   *      from js import fetch
+   *      response = js.fetch("packages.json")
+   *      await response.json
+   *    `);
+   * 
+   * .. code-block:: pyodide
+   *    
+   *    let x = await pyodide.runPythonAsync(`
+   *      import numpy as np 
+   *      x = np.array([1, 2, 3])
+   *    `);
    *
    * @param {string} code Python code to evaluate
    * @param {Function} messageCallback A callback, called with progress
