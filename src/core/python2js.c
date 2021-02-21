@@ -17,15 +17,19 @@ static JsRef
 _python2js_unicode(PyObject* x);
 
 EM_JS_REF(JsRef, new_error, (const char* msg, JsRef pyproxy), {
-  return Module.hiwire.new_value(
-    new Module.PythonError(UTF8ToString(msg), Module.hiwire.get_value(pyproxy)));
+  return Module.hiwire.new_value(new Module.PythonError(
+    UTF8ToString(msg), Module.hiwire.get_value(pyproxy)));
 });
 
 static int
-fetch_and_normalize_exception(PyObject** type, PyObject** value, PyObject** traceback){
+fetch_and_normalize_exception(PyObject** type,
+                              PyObject** value,
+                              PyObject** traceback)
+{
   PyErr_Fetch(type, value, traceback);
   PyErr_NormalizeException(type, value, traceback);
-  if (*type == NULL || *type == Py_None || *value == NULL || *value == Py_None) {
+  if (*type == NULL || *type == Py_None || *value == NULL ||
+      *value == Py_None) {
     Py_CLEAR(*type);
     Py_CLEAR(*value);
     PyErr_SetString(PyExc_TypeError, "No exception type or value");
@@ -44,7 +48,8 @@ finally:
 }
 
 static PyObject*
-format_exception_traceback(PyObject* type, PyObject* value, PyObject* traceback){
+format_exception_traceback(PyObject* type, PyObject* value, PyObject* traceback)
+{
   PyObject* pylines = NULL;
   PyObject* empty = NULL;
   PyObject* result = NULL;
@@ -63,7 +68,6 @@ finally:
   return result;
 }
 
-
 JsRef
 wrap_exception(bool attach_python_error)
 {
@@ -81,7 +85,7 @@ wrap_exception(bool attach_python_error)
   const char* pystr_utf8 = PyUnicode_AsUTF8(pystr);
   FAIL_IF_NULL(pystr_utf8);
 
-  if(attach_python_error){
+  if (attach_python_error) {
     pyexc_proxy = pyproxy_new(value);
   } else {
     pyexc_proxy = Js_undefined;
@@ -91,15 +95,17 @@ wrap_exception(bool attach_python_error)
   success = true;
 finally:
   // Log an appropriate warning.
-  if (success){
-    EM_ASM({
+  if (success) {
+    EM_ASM(
+      {
         let msg = Module.hiwire.get_value($0).message;
         console.warn("Python exception:\n" + msg + "\n");
-    }, jserror);
+      },
+      jserror);
   } else {
     PySys_WriteStderr("Error occurred while formatting traceback:\n");
     PyErr_Print();
-    if(type != NULL){
+    if (type != NULL) {
       PySys_WriteStderr("\nOriginal exception was:\n");
       PyErr_Display(type, value, traceback);
     }
@@ -119,8 +125,9 @@ void _Py_NO_RETURN
 pythonexc2js()
 {
   JsRef jserror = wrap_exception(false);
-  if(jserror == NULL) {
-    jserror = new_error("Error occurred while formatting traceback", Js_undefined);
+  if (jserror == NULL) {
+    jserror =
+      new_error("Error occurred while formatting traceback", Js_undefined);
   }
 
   // This throws an error making it pretty difficult to decref
@@ -441,8 +448,9 @@ python2js_init()
         this.pythonError = pythonError;
       }
 
-      clear(){
-        if(this.pythonError){
+      clear()
+      {
+        if (this.pythonError) {
           this.pythonError.destroy();
           delete this.pythonError;
         }
