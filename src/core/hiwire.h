@@ -276,6 +276,7 @@ hiwire_push_object_pair(JsRef idobj, JsRef idkey, JsRef idval);
 
 /**
  * Throw a javascript Error object.
+ * Steals a reference to the argument.
  */
 void _Py_NO_RETURN
 hiwire_throw_error(JsRef iderr);

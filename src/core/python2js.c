@@ -129,10 +129,7 @@ pythonexc2js()
     jserror =
       new_error("Error occurred while formatting traceback", Js_undefined);
   }
-
-  // This throws an error making it pretty difficult to decref
-  // excval, so hiwire_throw_error will decref it for us (in other words
-  // hiwire_throw_error steals a reference to its argument).
+  // hiwire_throw_error steals jserror
   hiwire_throw_error(jserror);
 }
 
