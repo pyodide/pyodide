@@ -210,10 +210,10 @@ EM_JS_REF(JsRef, hiwire_float64array, (f64 * ptr, int len), {
   return Module.hiwire.new_value(array);
 })
 
-EM_JS(void _Py_NO_RETURN, hiwire_throw_error, (JsRef idmsg), {
-  let jsmsg = Module.hiwire.get_value(idmsg);
-  Module.hiwire.decref(idmsg);
-  throw new Error(jsmsg);
+EM_JS(void _Py_NO_RETURN, hiwire_throw_error, (JsRef iderr), {
+  let jserr = Module.hiwire.get_value(iderr);
+  Module.hiwire.decref(iderr);
+  throw jserr;
 });
 
 EM_JS_REF(JsRef, hiwire_array, (), { return Module.hiwire.new_value([]); });

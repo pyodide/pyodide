@@ -308,7 +308,7 @@ FutureDoneCallback_call_reject(FutureDoneCallback* self)
   JsRef excval = NULL;
   JsRef result = NULL;
   // wrap_exception looks up the current exception and wraps it in a Js error.
-  excval = wrap_exception();
+  excval = wrap_exception(false);
   FAIL_IF_NULL(excval);
   result = hiwire_call_OneArg(self->reject_handle, excval);
 
