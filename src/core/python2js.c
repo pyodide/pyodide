@@ -194,7 +194,7 @@ _python2js_bytes(PyObject* x)
   if (PyBytes_AsStringAndSize(x, &x_buff, &length)) {
     return NULL;
   }
-  return EM_ASM_INT(
+  return (JsRef)EM_ASM_INT(
     { return Module.hiwire.new_value(HEAP8.slice($0, $0 + $1)) }, x, length);
 }
 
@@ -230,7 +230,8 @@ _python2js_sequence(PyObject* x, PyObject* cache, int depth)
   for (Py_ssize_t i = 0; i < length; ++i) {
     PyObject* pyitem = PySequence_GetItem(x, i);
     FAIL_IF_NULL(pyitem);
-    jsitem = _python2js(pyitem, cache, depth) FAIL_IF_NULL(jsitem);
+    jsitem = _python2js(pyitem, cache, depth);
+    FAIL_IF_NULL(jsitem);
     hiwire_push_array(jsarray, jsitem);
     Py_CLEAR(pyitem);
     hiwire_CLEAR(jsitem);
