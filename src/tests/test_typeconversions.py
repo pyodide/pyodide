@@ -227,11 +227,11 @@ def test_array_buffer(selenium):
 def assert_js_to_py_to_js(selenium, name):
     selenium.run_js(f"window.obj = {name};")
     selenium.run("from js import obj")
-    assert selenium.run_js("return pyodide.globals['obj'] === obj;")
+    assert selenium.run_js("return pyodide.globals.get('obj') === obj;")
 
 
 def assert_py_to_js_to_py(selenium, name):
-    selenium.run_js(f"window.obj = pyodide.globals['{name}'];")
+    selenium.run_js(f"window.obj = pyodide.globals.get('{name}');")
     assert selenium.run(
         f"""
         from js import obj
@@ -351,7 +351,7 @@ def test_javascript_error_back_to_js(selenium):
     )
     assert selenium.run_js(
         """
-        return pyodide.globals["py_err"] === err;
+        return pyodide.globals.get("py_err") === err;
         """
     )
 
@@ -366,7 +366,7 @@ def test_memoryview_conversion(selenium):
     )
     selenium.run_js(
         """
-        pyodide.globals.a
+        pyodide.globals.get("a")
         // Implicit assertion: this doesn't leave python error indicator set
         // (automatically checked in conftest.py)
         """
@@ -374,7 +374,7 @@ def test_memoryview_conversion(selenium):
 
     selenium.run_js(
         """
-        pyodide.globals.b
+        pyodide.globals.get("b")
         // Implicit assertion: this doesn't leave python error indicator set
         // (automatically checked in conftest.py)
         """

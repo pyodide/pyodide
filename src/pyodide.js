@@ -467,7 +467,7 @@ globalThis.languagePluginLoader = (async () => {
    * boolean), it is converted to Javascript and returned.  For other types, a
    * `PyProxy` object is returned.
    */
-  Module.pyimport = name => Module.globals[name];
+  Module.pyimport = name => Module.globals.get(name);
 
   /**
    * Runs Python code, possibly asynchronously loading any known packages that
@@ -512,8 +512,9 @@ globalThis.languagePluginLoader = (async () => {
    * @param {string} name Name of js module to add
    * @param {object} module Javascript object backing the module
    */
-  Module.registerJsModule = function(name, module) {
-    Module.pyodide_py.register_js_module(name, module);
+  // clang-format off
+  Module.registerJsModule = function(name, module) { 
+    Module.pyodide_py.register_js_module(name, module); 
   };
 
   /**
@@ -527,8 +528,8 @@ globalThis.languagePluginLoader = (async () => {
    *
    * @param {string} name Name of js module to remove
    */
-  Module.unregisterJsModule = function(name) {
-    Module.pyodide_py.unregister_js_module(name);
+  Module.unregisterJsModule = function(name) { 
+    Module.pyodide_py.unregister_js_module(name); 
   };
   // clang-format on
 
@@ -650,9 +651,14 @@ def temp(Module):
 
   Module.version = pyodide.__version__
   Module.globals = globals
+  Module.builtins = builtins.__dict__
   Module.pyodide_py = pyodide
 `);
-  Module.init_dict["temp"](Module);
+  Module.init_dict.get("temp")(Module);
+
+  // Wrap "globals" in a special Proxy that allows `pyodide.globals.x` access.
+  // TODO: Should we have this?
+  Module.globals = Module.wrapNamespace(Module.globals);
 
   delete self.Module;
   let response = await fetch(`${baseURL}packages.json`);

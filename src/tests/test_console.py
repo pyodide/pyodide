@@ -143,7 +143,7 @@ def test_interactive_console(selenium, safe_selenium_sys_redirections):
         selenium.driver.execute_async_script(
             """
         const done = arguments[arguments.length - 1];
-        pyodide.globals.shell.run_complete.then(done);
+        pyodide.globals.get("shell").run_complete.then(done);
         """
         )
 
