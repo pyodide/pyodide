@@ -70,7 +70,7 @@
           }
         );
 
-        pyconsole.stdout_callback = (s) => term.error(s, {newline : false});
+        pyconsole.stdout_callback = (s) => term.echo(s, {newline : false});
         pyconsole.stderr_callback = (s) => term.error(s, {newline : false});
       });
     </script>
