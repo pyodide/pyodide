@@ -275,13 +275,11 @@ errcode
 hiwire_push_object_pair(JsRef idobj, JsRef idkey, JsRef idval);
 
 /**
- * Throws a new Error object with the given message.
- *
- * The message is conventionally a Javascript string, but that is not required.
- * TODO: should be hiwire_set_error.
+ * Throw a javascript Error object.
+ * Steals a reference to the argument.
  */
 void _Py_NO_RETURN
-hiwire_throw_error(JsRef idmsg);
+hiwire_throw_error(JsRef iderr);
 
 /**
  * Get a Javascript object from the global namespace, i.e. window.

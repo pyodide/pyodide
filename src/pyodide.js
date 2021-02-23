@@ -422,11 +422,11 @@ globalThis.languagePluginLoader = (async () => {
 
   // clang-format off
   /**
-   * Inspect a Python code chunk and use ``pyodide.loadPackage` to load any known 
-   * packages that the code chunk imports. Uses 
+   * Inspect a Python code block and use ``pyodide.loadPackage` to load any known 
+   * packages that the code imports. Uses 
    * :func:`pyodide_py.find_imports <pyodide.find\_imports>` to inspect the code.
 
-   * For example, given the following code chunk as input
+   * For example, given the following code as input
    * 
    * .. code-block:: python
    * 
@@ -471,7 +471,7 @@ globalThis.languagePluginLoader = (async () => {
 
   /**
    * Runs Python code, possibly asynchronously loading any known packages that
-   * the code chunk imports. For example, given the following code chunk
+   * the code imports. For example, given the following code
    *
    * .. code-block:: python
    *
@@ -479,7 +479,7 @@ globalThis.languagePluginLoader = (async () => {
    *    x = np.array([1, 2, 3])
    *
    * pyodide will first call `pyodide.loadPackage(['numpy'])`, and then run the
-   * code chunk, returning the result. Since package fetching must happen
+   * code, returning the result. Since package fetching must happen
    * asynchronously, this function returns a `Promise` which resolves to the
    * output. For example:
    *
