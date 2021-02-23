@@ -709,50 +709,22 @@ EM_JS_NUM(int, pyproxy_init_js, (), {
       return result;
     }
     let descriptors = {};
-    if(flags & HAS_LENGTH){
-      Object.assign(descriptors,
-        Object.getOwnPropertyDescriptors(Module.PyProxyLengthMethods)
-      );
-    }
-    if(flags & HAS_GET){
-      Object.assign(descriptors,
-        Object.getOwnPropertyDescriptors(Module.PyProxyGetItemMethods)
-      );
-    }
-    if(flags & HAS_SET){
-      Object.assign(descriptors,
-        Object.getOwnPropertyDescriptors(Module.PyProxySetItemMethods)
-      );
-    }
-    if(flags & HAS_CONTAINS){
-      Object.assign(descriptors,
-        Object.getOwnPropertyDescriptors(Module.PyProxyContainsMethods)
-      );
-    }
-    if(flags & IS_ITERABLE){
-      Object.assign(descriptors,
-        Object.getOwnPropertyDescriptors(Module.PyProxyIterableMethods)
-      );
-    }
-    if(flags & IS_ITERATOR){
-      Object.assign(descriptors,
-        Object.getOwnPropertyDescriptors(Module.PyProxyIteratorMethods)
-      );
-    }
-    if(flags & IS_AWAITABLE){
-      Object.assign(descriptors,
-        Object.getOwnPropertyDescriptors(Module.PyProxyAwaitableMethods)
-      );
-    }
-    if(flags & IS_BUFFER){
-      Object.assign(descriptors,
-        Object.getOwnPropertyDescriptors(Module.PyProxyBufferMethods)
-      );
-    }
-    if(flags & IS_CALLABLE){
-      Object.assign(descriptors,
-        Object.getOwnPropertyDescriptors(Module.PyProxyCallableMethods)
-      );
+    for(let [feature_flag, methods] of [
+      [HAS_LENGTH, Module.PyProxyLengthMethods],
+      [HAS_GET, Module.PyProxyGetItemMethods],
+      [HAS_SET, Module.PyProxySetItemMethods],
+      [HAS_CONTAINS, Module.PyProxyContainsMethods],
+      [IS_ITERABLE, Module.PyProxyIterableMethods],
+      [IS_ITERATOR, Module.PyProxyIteratorMethods],
+      [IS_AWAITABLE, Module.PyProxyAwaitableMethods],
+      [IS_BUFFER, Module.PyProxyBufferMethods],
+      [IS_CALLABLE, Module.PyProxyCallableMethods],
+    ]){
+      if(flags & feature_flag){
+        Object.assign(descriptors,
+          Object.getOwnPropertyDescriptors(methods)
+        );
+      }
     }
     let new_proto = Object.create(Module.PyProxyClass.prototype, descriptors);
     function PyProxy(){};
