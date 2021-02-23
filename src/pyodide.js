@@ -418,7 +418,7 @@ globalThis.languagePluginLoader = (async () => {
    * @param {string} code Python code to evaluate
    * @returns The result of the python code converted to Javascript
    */
-  Module.runPython = code => Module.pyodide_py.eval_code(code, Module.globals);
+  Module.runPython = (code, globals) => Module.pyodide_py.eval_code(code, globals ?? Module.globals);
 
   // clang-format off
   /**
