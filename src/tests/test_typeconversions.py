@@ -451,6 +451,141 @@ def test_python2js_with_depth(selenium):
     )
 
 
+def test_to_py(selenium):
+    result = selenium.run_js(
+        """
+        window.a = new Map([[1, [1,2,new Set([1,2,3])]], [2, new Map([[1,2],[2,7]])]]);
+        a.get(2).set("a", a);
+        let result = [];
+        for(let i = 0; i < 4; i++){
+            result.push(pyodide.runPython(`
+                from js import a
+                repr(a.to_py(${i}))
+            `));
+        }
+        return result;
+        """
+    )
+    assert result == [
+        "[object Map]",
+        "{1: 1,2,[object Set], 2: [object Map]}",
+        "{1: [1, 2, [object Set]], 2: {1: 2, 2: 7, 'a': [object Map]}}",
+        "{1: [1, 2, {1, 2, 3}], 2: {1: 2, 2: 7, 'a': {...}}}",
+    ]
+
+    result = selenium.run_js(
+        """
+        window.a = { "x" : 2, "y" : 7, "z" : [1,2] };
+        a.z.push(a);
+        let result = [];
+        for(let i = 0; i < 4; i++){
+            result.push(pyodide.runPython(`
+                from js import a
+                repr(a.to_py(${i}))
+            `));
+        }
+        return result;
+        """
+    )
+    assert result == [
+        "[object Object]",
+        "{'x': 2, 'y': 7, 'z': 1,2,[object Object]}",
+        "{'x': 2, 'y': 7, 'z': [1, 2, [object Object]]}",
+        "{'x': 2, 'y': 7, 'z': [1, 2, {...}]}",
+    ]
+
+    result = selenium.run_js(
+        """
+        class Temp {
+            constructor(){
+                this.x = 2;
+                this.y = 7;
+            }
+        }
+        window.a = new Temp();
+        let result = pyodide.runPython(`
+            from js import a
+            b = a.to_py()
+            repr(type(b))
+        `);
+        return result;
+        """
+    )
+    assert result == "<class 'JsProxy'>"
+
+    msg = "Cannot use key of type Array as a key to a Python dict"
+    with pytest.raises(selenium.JavascriptException, match=msg):
+        selenium.run_js(
+            """
+            window.z = new Map([[[1,1], 2]]);
+            pyodide.runPython(`
+                from js import z
+                z.to_py()
+            `);
+            """
+        )
+
+    msg = "Cannot use key of type Array as a key to a Python set"
+    with pytest.raises(selenium.JavascriptException, match=msg):
+        selenium.run_js(
+            """
+            window.z = new Set([[1,1]]);
+            pyodide.runPython(`
+                from js import z
+                z.to_py()
+            `);
+            """
+        )
+
+    msg = "contains both 0 and false"
+    with pytest.raises(selenium.JavascriptException, match=msg):
+        selenium.run_js(
+            """
+            window.m = new Map([[0, 2], [false, 3]]);
+            pyodide.runPython(`
+                from js import m
+                m.to_py()
+            `);
+            """
+        )
+
+    msg = "contains both 1 and true"
+    with pytest.raises(selenium.JavascriptException, match=msg):
+        selenium.run_js(
+            """
+            window.m = new Map([[1, 2], [true, 3]]);
+            pyodide.runPython(`
+                from js import m
+                m.to_py()
+            `);
+            """
+        )
+
+    msg = "contains both 0 and false"
+    with pytest.raises(selenium.JavascriptException, match=msg):
+        selenium.run_js(
+            """
+            window.m = new Set([0, false]);
+            pyodide.runPython(`
+                from js import m
+                m.to_py()
+            `);
+            """
+        )
+
+    msg = "contains both 1 and true"
+    with pytest.raises(selenium.JavascriptException, match=msg):
+        selenium.run_js(
+            """
+            window.m = new Set([1, true]);
+            pyodide.runPython(`
+                from js import m
+                m.to_py()
+            `);
+            """
+        )
+
+
 @pytest.mark.xfail
 def test_py2js_set(selenium):
     selenium.run("a = {1, 2, 3}")
