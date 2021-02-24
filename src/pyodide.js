@@ -265,7 +265,7 @@ globalThis.languagePluginLoader = (async () => {
     // and means doing a long async operation in firefox,
     // which can cause warning messages
     await preloadWasm();
-    self.pyodide._module.reportUndefinedSymbols();
+    Module.reportUndefinedSymbols();
 
     messageCallback(resolveMsg);
 
