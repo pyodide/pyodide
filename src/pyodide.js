@@ -330,7 +330,6 @@ globalThis.languagePluginLoader = (async () => {
     loadPackageChain = loadPackageChain.then(() => promise.catch(() => {}));
     await promise;
     Module.FS.open = oldOpen;
-    console.log("LIBS:", allLibs);
     for (let newLib of allLibs) {
       await Module.loadDynamicLibrary(
           newLib,

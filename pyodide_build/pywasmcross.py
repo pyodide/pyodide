@@ -318,21 +318,6 @@ def handle_command(line, args, dryrun=False):
         ):
             continue
 
-        # Fix for scipy to link to the correct BLAS/LAPACK files
-        if arg.startswith("-L") and "CLAPACK" in arg:
-            # BLAS and lapack are just a package now
-            new_args.extend(["-s", "INLINING_LIMIT=5"])
-            continue
-
-        # Use -Os for files that are statically linked to CLAPACK
-        if (
-            arg.startswith("-O")
-            and "CLAPACK" in " ".join(line)
-            and "-L" in " ".join(line)
-        ):
-            new_args.append("-Os")
-            continue
-
         if new_args[-1].startswith("-B") and "compiler_compat" in arg:
             # conda uses custom compiler search paths with the compiler_compat folder.
             # Ignore it.
