@@ -299,6 +299,9 @@ def handle_command(line, args, dryrun=False):
         # threading is disabled for now
         if arg == "-pthread":
             continue
+        # this only applies to compiling fortran code, but we already f2c'd
+        if arg == "-ffixed-form":
+            continue
         # On Mac, we need to omit some darwin-specific arguments
         if arg in ["-bundle", "-undefined", "dynamic_lookup"]:
             continue

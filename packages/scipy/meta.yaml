@@ -22,6 +22,7 @@ source:
     - patches/skip-fortran-fails-to-link.patch
     - patches/skip_ellip_harm_2_pyx_ctypes.patch
     - patches/make-int-return-values.patch
+    - patches/add-missing-extern.patch
 
 build:
 # linker and C flags are set to error on anything to do with function declarations being wrong. By default these
@@ -35,7 +36,8 @@ build:
     echo "Regenerating cython wrappers"
     cd scipy/linalg
     python _cython_wrapper_generators.py
-    cd ..
+    cd ../..
+    find scipy -name "*.c*" | xargs sed -i 's/extern void F_FUNC/extern int F_FUNC/g'
 
 requirements:
   run:
