@@ -3,7 +3,7 @@ Date:   Sun Aug 30 12:54:22 2020 +0100
 
     MAINT: Remove duplicated symbols from link step
     
-    https://github.com/numpy/numpy/pull/17127
+    Included in numpy 1.20.0 (https://github.com/numpy/numpy/pull/17127)
 
 diff --git a/numpy/core/setup.py b/numpy/core/setup.py
 index 16a34dd1e..71b4a7c0a 100644
