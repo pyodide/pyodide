@@ -667,5 +667,3 @@ def test_to_py(selenium):
             `);
             """
         )
-
-
