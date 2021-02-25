@@ -306,6 +306,25 @@ finally:
   return result;
 }
 
+static PyObject*
+JsProxy_toPy(PyObject* self, PyObject* const* args, Py_ssize_t nargs)
+{
+  if (nargs > 1) {
+    PyErr_Format(
+      PyExc_TypeError, "to_py expected at most 1 argument, got %zd", nargs);
+    return NULL;
+  }
+  int depth = -1;
+  if (nargs == 1) {
+    int overflow;
+    depth = PyLong_AsLongAndOverflow(args[0], &overflow);
+    if (overflow == 0 && depth == -1 && PyErr_Occurred()) {
+      return NULL;
+    }
+  }
+  return js2python_convert(GET_JSREF(self), depth);
+}
+
 static int
 JsProxy_Bool(PyObject* o)
 {
@@ -382,7 +401,12 @@ static PyMethodDef JsProxy_Methods[] = {
   { "__dir__",
     (PyCFunction)JsProxy_Dir,
     METH_NOARGS,
-    "Returns a list of the members and methods on the object." },
+    PyDoc_STR("Returns a list of the members and methods on the object.") },
+  {
+    "to_py",
+    (PyCFunction)JsProxy_toPy,
+    METH_FASTCALL,
+    PyDoc_STR("Convert the JsProxy to a native Python object (as best as possible)")},
   { NULL }
 };
 // clang-format on
