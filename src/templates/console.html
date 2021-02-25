@@ -71,7 +71,7 @@
         );
 
         pyconsole.stdout_callback = (s) => term.echo(s, {newline : false});
-        pyconsole.stderr_callback = (s) => term.error(s, {newline : false});
+        pyconsole.stderr_callback = (s) => term.echo(`[[;red;]${s}\u200B]`, {newline : false});
       });
     </script>
   </body>
