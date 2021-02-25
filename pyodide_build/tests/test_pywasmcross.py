@@ -3,11 +3,15 @@ from pathlib import Path
 import sys
 import argparse
 
+import pytest
+
 sys.path.append(str(Path(__file__).parents[2]))
 
 from pyodide_build.pywasmcross import handle_command  # noqa: E402
 from pyodide_build.pywasmcross import f2c  # noqa: E402
 from pyodide_build.pywasmcross import make_parser
+
+ARG_FIELDS = ["cflags", "cxxflags", "ldflags", "host", "replace_libs", "install_dir"]
 
 
 def _args_wrapper(func):
@@ -33,12 +37,8 @@ f2c_wrap = _args_wrapper(f2c)
 
 
 def test_handle_command():
-    Args = namedtuple(
-        "args", ["cflags", "cxxflags", "ldflags", "host", "replace_libs", "install_dir"]
-    )
-    args = Args(
-        cflags="", cxxflags="", ldflags="", host="", replace_libs="", install_dir=""
-    )
+    Args = namedtuple("args", ARG_FIELDS, defaults=("",) * len(ARG_FIELDS))
+    args = Args()
     assert handle_command_wrap("gcc -print-multiarch", args) is None
     assert handle_command_wrap("gcc test.c", args) == "emcc test.c"
     assert (
@@ -51,9 +51,6 @@ def test_handle_command():
         cflags="-I./lib2",
         cxxflags="-std=c++11",
         ldflags="-lm",
-        host="",
-        replace_libs="",
-        install_dir="",
     )
     assert (
         handle_command_wrap("gcc -I./lib1 test.cpp -o test.o", args)
@@ -71,12 +68,7 @@ def test_handle_command():
 
     # check library replacement and removal of double libraries
     args = Args(
-        cflags="",
-        cxxflags="",
-        ldflags="",
-        host="",
         replace_libs="bob=fred",
-        install_dir="",
     )
     assert (
         handle_command_wrap("gcc -shared test.o -lbob -ljim -ljim -o test.so", args)
@@ -85,6 +77,26 @@ def test_handle_command():
 
     # compilation checks in numpy
     assert handle_command_wrap("gcc /usr/file.c", args) is None
+
+
+@pytest.mark.parametrize(
+    "in_ext, out_ext, executable, flag_name",
+    [
+        (".c", ".o", "emcc", "cflags"),
+        (".cpp", ".o", "em++", "cxxflags"),
+        (".c", ".so", "emcc", "ldflags"),
+    ],
+)
+def test_handle_command_optflags(in_ext, out_ext, executable, flag_name):
+    # Make sure that when multiple optflags are present those in cflags,
+    # cxxflags, or ldflags has priority
+
+    Args = namedtuple("args", ARG_FIELDS, defaults=("",) * len(ARG_FIELDS))
+    args = Args(**{flag_name: "-Oz"})
+    assert (
+        handle_command_wrap(f"gcc -O3 test.{in_ext} -o test.{out_ext}", args)
+        == f"{executable} -Oz test.{in_ext} -o test.{out_ext}"
+    )
 
 
 def test_f2c():
