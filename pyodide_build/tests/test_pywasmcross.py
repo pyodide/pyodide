@@ -14,7 +14,7 @@ from pyodide_build.pywasmcross import make_parser
 
 @dataclass
 class BuildArgs:
-    """A simple ArgumentParser like object for tests"""
+    """An object to hold build arguments"""
 
     cflags: str = ""
     cxxflags: str = ""
