@@ -28,49 +28,6 @@ globalThis.languagePluginLoader = (async () => {
     }
   };
 
-  // clang-format off
-  let preloadWasm = () => {
-    // On Chrome, we have to instantiate wasm asynchronously. Since that
-    // can't be done synchronously within the call to dlopen, we instantiate
-    // every .so that comes our way up front, caching it in the
-    // `preloadedWasm` dictionary.
-
-    let promise = new Promise((resolve) => resolve());
-    let FS = pyodide._module.FS;
-
-    function recurseDir(rootpath) {
-      let dirs;
-      try {
-        dirs = FS.readdir(rootpath);
-      } catch {
-        return;
-      }
-      for (let entry of dirs) {
-        if (entry.startsWith('.')) {
-          continue;
-        }
-        const path = rootpath + entry;
-        if (entry.endsWith('.so')) {
-          if (Module['preloadedWasm'][path] === undefined) {
-            promise = promise
-              .then(() => Module['loadWebAssemblyModule'](
-                FS.readFile(path), {loadAsync: true,allowUndefined: true}))
-              .then((module) => {
-                Module['preloadedWasm'][path] = module;
-              });
-          }
-        } else if (FS.isDir(FS.lookupPath(path).node.mode)) {
-          recurseDir(path + '/');
-        }
-      }
-    }
-
-    recurseDir('/');
-
-    return promise;
-  }
-  // clang-format on
-
   let loadScript;
   if (self.document) { // browser
     loadScript = (url) => new Promise((res, rej) => {
@@ -260,11 +217,6 @@ globalThis.languagePluginLoader = (async () => {
       resolveMsg = 'No packages loaded';
     }
 
-    // preload all .so files in package on load. Otherwise we
-    // have to do it in dlopen, which doesn't work in chrome
-    // and means doing a long async operation in firefox,
-    // which can cause warning messages
-    await preloadWasm();
     self.pyodide._module.reportUndefinedSymbols();
 
     messageCallback(resolveMsg);
@@ -317,24 +269,39 @@ globalThis.languagePluginLoader = (async () => {
     } catch (e) {
       // do nothing - let the main load throw any errors
     }
-    let allLibs = [];
-    let oldOpen = Module.FS.open;
-    newOpen = (path, flags, mode) => {
-      allLibs.push(path);
-      return oldOpen(path, flags, mode);
+    // override the load plugin so that it imports any dlls also
+    let oldPlugin;
+    for (let p in Module.preloadPlugins) {
+      if (Module.preloadPlugins[p].canHandle("test.so")) {
+        oldPlugin = Module.preloadPlugins[p];
+      }
+    }
+    let dynamicLoadHandler = {
+      get : function(obj, prop) {
+        if (prop === 'handle') {
+          return function(bytes, name) {
+            obj[prop].apply(obj, arguments);
+            this["asyncWasmLoadPromise"] =
+                this["asyncWasmLoadPromise"].then(function() {
+                  Module.loadDynamicLibrary(name,
+                                            {global : true, nodelete : true})
+                });
+          }
+        } else {
+          return obj[prop];
+        }
+      }
     };
-    Module.FS.open = newOpen;
+    var loadPluginOverride = new Proxy(oldPlugin, dynamicLoadHandler);
+    Module.preloadPlugins.unshift(loadPluginOverride);
+
     let promise = loadPackageChain.then(
         () => _loadPackage(sharedLibraryNames, messageCallback || console.log,
                            errorCallback || console.error));
     loadPackageChain = loadPackageChain.then(() => promise.catch(() => {}));
     await promise;
-    Module.FS.open = oldOpen;
-    for (let newLib of allLibs) {
-      await Module.loadDynamicLibrary(
-          newLib,
-          {global : true, nodelete : true, fs : Module.FS, async : true});
-    }
+    Module.preloadPlugins.shift(loadPluginOverride);
+
     promise = loadPackageChain.then(
         () => _loadPackage(names, messageCallback || console.log,
                            errorCallback || console.error));
@@ -404,7 +371,8 @@ globalThis.languagePluginLoader = (async () => {
 
   Module.noImageDecoding = true;
   Module.noAudioDecoding = true;
-  Module.noWasmDecoding = true;
+  Module.noWasmDecoding =
+      false; // we preload wasm using the built in plugin now
   Module.preloadedWasm = {};
   let isFirefox = navigator.userAgent.toLowerCase().indexOf('firefox') > -1;
 
