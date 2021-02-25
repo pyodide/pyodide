@@ -1,0 +1,17 @@
+Use float error status without external includes in numpy
+
+TODO: this patch should not be necessary as using the default solution with
+      fenv.h from musl is a better solution (https://github.com/numpy/numpy/pull/12124).
+      However so far I'm getting errors about
+      undefined FE_DIVBYZERO, FE_DIVBYZERO etc after including fenv.h.
+
+diff --git a/numpy/core/src/npymath/ieee754.c.src b/numpy/core/src/npymath/ieee754.c.src
+--- a/numpy/core/src/npymath/ieee754.c.src
++++ b/numpy/core/src/npymath/ieee754.c.src
+@@ -682,7 +683,8 @@
+ }
+ 
+ #elif defined(_MSC_VER) || (defined(__osf__) && defined(__alpha)) || \
+-      defined (__UCLIBC__) || (defined(__arc__) && defined(__GLIBC__))
++      defined (__UCLIBC__) || (defined(__arc__) && defined(__GLIBC__)) || \
++      defined(__EMSCRIPTEN__)
