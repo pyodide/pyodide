@@ -71,7 +71,7 @@
         );
 
         pyconsole.stdout_callback = (s) => term.echo(s, {newline : false});
-        pyconsole.stderr_callback = (s) => term.echo(`[[;red;]${s}\u200B]`, {newline : false});
+        pyconsole.stderr_callback = (s) => term.echo(`[[;red;]${$.terminal.escape_brackets(s)}\u200B]`, {newline : false});
       });
     </script>
   </body>
