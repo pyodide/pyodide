@@ -217,7 +217,7 @@ globalThis.languagePluginLoader = (async () => {
       resolveMsg = 'No packages loaded';
     }
 
-    self.pyodide._module.reportUndefinedSymbols();
+    Module.reportUndefinedSymbols();
 
     messageCallback(resolveMsg);
 
@@ -270,10 +270,18 @@ globalThis.languagePluginLoader = (async () => {
       // do nothing - let the main load throw any errors
     }
     // override the load plugin so that it imports any dlls also
+    // this only needs to be done for shared library packages because
+    // we assume that if a package depends on a shared library
+    // it needs to have access to it.
+    // not needed for so in standard module because those are linked together
+    // correctly, it is only where linking goes across modules that it needs to
+    // be done. Hence we only put this extra preload plugin in during the shared
+    // library load
     let oldPlugin;
     for (let p in Module.preloadPlugins) {
       if (Module.preloadPlugins[p].canHandle("test.so")) {
         oldPlugin = Module.preloadPlugins[p];
+        break;
       }
     }
     let dynamicLoadHandler = {
@@ -293,6 +301,7 @@ globalThis.languagePluginLoader = (async () => {
       }
     };
     var loadPluginOverride = new Proxy(oldPlugin, dynamicLoadHandler);
+    // restore the preload plugin
     Module.preloadPlugins.unshift(loadPluginOverride);
 
     let promise = loadPackageChain.then(
