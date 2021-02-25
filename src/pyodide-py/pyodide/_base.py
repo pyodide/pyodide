@@ -174,7 +174,7 @@ class CodeRunner:
         # handle mis-indented input from multi-line strings
         code = dedent(code)
 
-        mod = ast.parse(code)
+        mod = ast.parse(code, filename=self.filename)
         if not mod.body:
             return None, None
 
@@ -229,10 +229,25 @@ class CodeRunner:
             return eval(last_expr, self.globals, self.locals)
 
     async def run_async(self, code: str) -> Any:
-        """ //!\\ WARNING //!\\
-        This is not working yet. For use once we add an EventLoop.
+        """Runs a code string asynchronously.
 
-        Note: see `_eval_code_async`.
+        Uses
+        [PyCF_ALLOW_TOP_LEVEL_AWAIT](https://docs.python.org/3/library/ast.html#ast.PyCF_ALLOW_TOP_LEVEL_AWAIT)
+        to compile to code.
+
+        Parameters
+        ----------
+        code
+           the Python code to run.
+
+        Returns
+        -------
+        If the last nonwhitespace character of code is a semicolon,
+        return `None`.
+        If the last statement is an expression, return the
+        result of the expression.
+        Use the `return_mode` and `quiet_trailing_semicolon` parameters in the
+        constructor to modify this default behavior.
         """
         mod, last_expr = self._split_and_compile(
             code, flags=ast.PyCF_ALLOW_TOP_LEVEL_AWAIT  # type: ignore
@@ -316,14 +331,49 @@ async def eval_code_async(
     quiet_trailing_semicolon: bool = True,
     filename: str = "<exec>",
 ) -> Any:
-    """ //!\\ WARNING //!\\
-    This is not working yet. For use once we add an EventLoop.
+    """Runs a code string asynchronously.
 
-    Note: once async is working, one should:
-      - rename `_eval_code_async` in `eval_code_async` (remove leading '_')
-      - remove exceptions here and in `CodeRunner.run_async`
-      - add docstrings here and in `CodeRunner.run_async`
-      - add tests
+    Uses
+    [PyCF_ALLOW_TOP_LEVEL_AWAIT](https://docs.python.org/3/library/ast.html#ast.PyCF_ALLOW_TOP_LEVEL_AWAIT)
+    to compile to code.
+
+    Parameters
+    ----------
+    code
+       the Python code to run.
+    globals
+        The global scope in which to execute code. This is used as the `exec`
+        `globals` parameter. See
+        [the exec documentation](https://docs.python.org/3/library/functions.html#exec)
+        for more info.
+    locals
+        The local scope in which to execute code. This is used as the `exec`
+        `locals` parameter. As with `exec`, if `locals` is absent, it is set equal
+        to `globals`. See
+        [the exec documentation](https://docs.python.org/3/library/functions.html#exec)
+        for more info.
+    return_mode
+        Specifies what should be returned, must be one of 'last_expr',
+        'last_expr_or_assign' or `None`. On other values an exception is raised.
+
+        'last_expr' -- return the last expression
+        'last_expr_or_assign' -- return the last expression or the last
+        (named) assignment.
+        'none' -- always return `None`.
+    quiet_trailing_semicolon
+        whether a trailing semicolon should 'quiet' the result or not.
+        Setting this to `True` (default) mimic the CPython's interpret
+        behavior ; whereas setting it to `False` mimic the IPython's
+    filename:
+       file from which the code was read.
+
+    Returns
+    -------
+    If the last nonwhitespace character of code is a semicolon return `None`.
+    If the last statement is an expression, return the
+    result of the expression.
+    Use the `return_mode` and `quiet_trailing_semicolon` parameters to modify
+    this default behavior.
     """
     return await CodeRunner(
         globals=globals,

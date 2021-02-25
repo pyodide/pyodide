@@ -58,44 +58,10 @@ index b71ce90..4fbf2ca 100644
                   double *alpha, double *A, int *lda, double *B, int *ldb,
                   double *beta, double *C, int *ldc) nogil
  
-diff --git a/scipy/fftpack/src/convolve.c b/scipy/fftpack/src/convolve.c
-index 1597a43..c59762a 100644
---- a/scipy/fftpack/src/convolve.c
-+++ b/scipy/fftpack/src/convolve.c
-@@ -12,9 +12,9 @@
- #include "fftpack.h"
- 
- /**************** FFTPACK ZFFT **********************/
--extern void F_FUNC(dfftf, DFFTF) (int *, double *, double *);
--extern void F_FUNC(dfftb, DFFTB) (int *, double *, double *);
--extern void F_FUNC(dffti, DFFTI) (int *, double *);
-+extern int F_FUNC(dfftf, DFFTF) (int *, double *, double *);
-+extern int F_FUNC(dfftb, DFFTB) (int *, double *, double *);
-+extern int F_FUNC(dffti, DFFTI) (int *, double *);
- GEN_CACHE(dfftpack, (int n)
-           , double *wsave;, (caches_dfftpack[i].n == n)
-           , caches_dfftpack[id].wsave =
 diff --git a/scipy/fftpack/src/dct.c.src b/scipy/fftpack/src/dct.c.src
 index 1e9042f..07af8ff 100644
 --- a/scipy/fftpack/src/dct.c.src
 +++ b/scipy/fftpack/src/dct.c.src
-@@ -18,11 +18,11 @@ enum normalize {
- #pref=,d#
- #PREF=,D#
- */
--extern void F_FUNC(@pref@costi, @PREF@COSTI)(int*, @type@*);
--extern void F_FUNC(@pref@cost, @PREF@COST)(int*, @type@*, @type@*);
--extern void F_FUNC(@pref@cosqi, @PREF@COSQI)(int*, @type@*);
--extern void F_FUNC(@pref@cosqb, @PREF@COSQB)(int*, @type@*, @type@*);
--extern void F_FUNC(@pref@cosqf, @PREF@COSQF)(int*, @type@*, @type@*);
-+extern int F_FUNC(@pref@costi, @PREF@COSTI)(int*, @type@*);
-+extern int F_FUNC(@pref@cost, @PREF@COST)(int*, @type@*, @type@*);
-+extern int F_FUNC(@pref@cosqi, @PREF@COSQI)(int*, @type@*);
-+extern int F_FUNC(@pref@cosqb, @PREF@COSQB)(int*, @type@*, @type@*);
-+extern int F_FUNC(@pref@cosqf, @PREF@COSQF)(int*, @type@*, @type@*);
- 
- GEN_CACHE(@pref@dct1,(int n)
-       ,@type@* wsave;
 @@ -40,7 +40,7 @@ GEN_CACHE(@pref@dct2,(int n)
        ,free(caches_@pref@dct2[id].wsave);
        ,10)
@@ -127,25 +93,6 @@ diff --git a/scipy/fftpack/src/drfft.c b/scipy/fftpack/src/drfft.c
 index 835415d..cf4b7e6 100644
 --- a/scipy/fftpack/src/drfft.c
 +++ b/scipy/fftpack/src/drfft.c
-@@ -6,12 +6,12 @@
- 
- #include "fftpack.h"
- 
--extern void F_FUNC(dfftf, DFFTF) (int *, double *, double *);
--extern void F_FUNC(dfftb, DFFTB) (int *, double *, double *);
--extern void F_FUNC(dffti, DFFTI) (int *, double *);
--extern void F_FUNC(rfftf, RFFTF) (int *, float *, float *);
--extern void F_FUNC(rfftb, RFFTB) (int *, float *, float *);
--extern void F_FUNC(rffti, RFFTI) (int *, float *);
-+extern int F_FUNC(dfftf, DFFTF) (int *, double *, double *);
-+extern int F_FUNC(dfftb, DFFTB) (int *, double *, double *);
-+extern int F_FUNC(dffti, DFFTI) (int *, double *);
-+extern int F_FUNC(rfftf, RFFTF) (int *, float *, float *);
-+extern int F_FUNC(rfftb, RFFTB) (int *, float *, float *);
-+extern int F_FUNC(rffti, RFFTI) (int *, float *);
- 
- 
- GEN_CACHE(drfft, (int n)
 @@ -32,7 +32,7 @@ GEN_CACHE(rfft, (int n)
  	  , free(caches_rfft[id].wsave);
  	  , 10)
@@ -168,23 +115,6 @@ diff --git a/scipy/fftpack/src/dst.c.src b/scipy/fftpack/src/dst.c.src
 index 3c952f5..859a2ee 100644
 --- a/scipy/fftpack/src/dst.c.src
 +++ b/scipy/fftpack/src/dst.c.src
-@@ -18,11 +18,11 @@ enum normalize {
- #pref=,d#
- #PREF=,D#
- */
--extern void F_FUNC(@pref@sinti, @PREF@SINTI)(int*, @type@*);
--extern void F_FUNC(@pref@sint, @PREF@SINT)(int*, @type@*, @type@*);
--extern void F_FUNC(@pref@sinqi, @PREF@SINQI)(int*, @type@*);
--extern void F_FUNC(@pref@sinqb, @PREF@SINQB)(int*, @type@*, @type@*);
--extern void F_FUNC(@pref@sinqf, @PREF@SINQF)(int*, @type@*, @type@*);
-+extern int F_FUNC(@pref@sinti, @PREF@SINTI)(int*, @type@*);
-+extern int F_FUNC(@pref@sint, @PREF@SINT)(int*, @type@*, @type@*);
-+extern int F_FUNC(@pref@sinqi, @PREF@SINQI)(int*, @type@*);
-+extern int F_FUNC(@pref@sinqb, @PREF@SINQB)(int*, @type@*, @type@*);
-+extern int F_FUNC(@pref@sinqf, @PREF@SINQF)(int*, @type@*, @type@*);
- 
- GEN_CACHE(@pref@dst1,(int n)
-       ,@type@* wsave;
 @@ -40,7 +40,7 @@ GEN_CACHE(@pref@dst2,(int n)
        ,free(caches_@pref@dst2[id].wsave);
        ,10)
@@ -216,25 +146,6 @@ diff --git a/scipy/fftpack/src/zfft.c b/scipy/fftpack/src/zfft.c
 index 45c0536..09b92d2 100644
 --- a/scipy/fftpack/src/zfft.c
 +++ b/scipy/fftpack/src/zfft.c
-@@ -6,12 +6,12 @@
- 
- #include "fftpack.h"
- 
--extern void F_FUNC(zfftf,ZFFTF)(int*,double*,double*);
--extern void F_FUNC(zfftb,ZFFTB)(int*,double*,double*);
--extern void F_FUNC(zffti,ZFFTI)(int*,double*);
--extern void F_FUNC(cfftf,CFFTF)(int*,float*,float*);
--extern void F_FUNC(cfftb,CFFTB)(int*,float*,float*);
--extern void F_FUNC(cffti,CFFTI)(int*,float*);
-+extern int F_FUNC(zfftf,ZFFTF)(int*,double*,double*);
-+extern int F_FUNC(zfftb,ZFFTB)(int*,double*,double*);
-+extern int F_FUNC(zffti,ZFFTI)(int*,double*);
-+extern int F_FUNC(cfftf,CFFTF)(int*,float*,float*);
-+extern int F_FUNC(cfftb,CFFTB)(int*,float*,float*);
-+extern int F_FUNC(cffti,CFFTI)(int*,float*);
- 
- GEN_CACHE(zfft,(int n)
- 	  ,double* wsave;
 @@ -29,7 +29,7 @@ GEN_CACHE(cfft,(int n)
  	  ,free(caches_cfft[id].wsave);
  	  ,10)
@@ -2255,118 +2166,6 @@ index 2e235db..666630e 100644
  #define qh_dgetrf F_FUNC(dgetrf,DGETRF)
  #define qh_dgecon F_FUNC(dgecon,DGECON)
  #define qh_dgetrs F_FUNC(dgetrs,DGETRS)
-diff --git a/scipy/special/cdf_wrappers.c b/scipy/special/cdf_wrappers.c
-index 08121f2..7ee9b28 100644
---- a/scipy/special/cdf_wrappers.c
-+++ b/scipy/special/cdf_wrappers.c
-@@ -52,7 +52,7 @@ static void show_error(char *func, int status, int bound) {
-   }
- }
- 
--extern void F_FUNC(cdfbet,CDFBET)(int*,double*,double*,double*,double*,double*,double*,int*,double*);
-+extern int F_FUNC(cdfbet,CDFBET)(int*,double*,double*,double*,double*,double*,double*,int*,double*);
- 
- double cdfbet3_wrap(double p, double b, double x) {
-   int which=3;
-@@ -83,7 +83,7 @@ double cdfbet4_wrap(double a, double p, double x) {
- }
- 
- 
--extern void F_FUNC(cdfbin,CDFBIN)(int*,double*,double*,double*,double*,double*,double*,int*,double*);
-+extern int F_FUNC(cdfbin,CDFBIN)(int*,double*,double*,double*,double*,double*,double*,int*,double*);
- 
- double cdfbin2_wrap(double p, double xn, double pr) {
-   int which=2;
-@@ -113,7 +113,7 @@ double cdfbin3_wrap(double s, double p, double pr) {
-   return xn;
- }
- 
--extern void F_FUNC(cdfchi,CDFCHI)(int*,double*,double*,double*,double*,int*,double*);
-+extern int F_FUNC(cdfchi,CDFCHI)(int*,double*,double*,double*,double*,int*,double*);
- double cdfchi3_wrap(double p, double x){
-   int which=3;
-   double q=1.0-p, df, bound;
-@@ -128,7 +128,7 @@ double cdfchi3_wrap(double p, double x){
-   return df;
- }
- 
--extern void F_FUNC(cdfchn,CDFCHN)(int*,double*,double*,double*,double*,double*,int*,double*);
-+extern int F_FUNC(cdfchn,CDFCHN)(int*,double*,double*,double*,double*,double*,int*,double*);
- double cdfchn1_wrap(double x, double df, double nc) {
-   int which=1;
-   double q, p, bound;
-@@ -184,7 +184,7 @@ double cdfchn4_wrap(double x, double df, double p) {
-   return nc;
- }
- 
--extern void F_FUNC(cdff,CDFF)(int*,double*,double*,double*,double*,double*,int*,double*);
-+extern int F_FUNC(cdff,CDFF)(int*,double*,double*,double*,double*,double*,int*,double*);
- /*
- double cdff1_wrap(double dfn, double dfd, double f) {
-   int which=1;
-@@ -243,7 +243,7 @@ double cdff4_wrap(double dfn, double p, double f) {
- }
- 
- 
--extern void F_FUNC(cdffnc,CDFFNC)(int*,double*,double*,double*,double*,double*,double*,int*,double*);
-+extern int F_FUNC(cdffnc,CDFFNC)(int*,double*,double*,double*,double*,double*,double*,int*,double*);
- double cdffnc1_wrap(double dfn, double dfd, double nc, double f) {
-   int which=1;
-   double q, p, bound;
-@@ -316,7 +316,7 @@ double cdffnc5_wrap(double dfn, double dfd, double p, double f) {
- /* scl == a in gdtr
-    shp == b in gdtr
- */ 
--extern void F_FUNC(cdfgam,CDFGAM)(int*,double*,double*,double*,double*,double*,int*,double*);
-+extern int F_FUNC(cdfgam,CDFGAM)(int*,double*,double*,double*,double*,double*,int*,double*);
- double cdfgam1_wrap(double scl, double shp, double x) {
-   int which=1;
-   double q, p, bound;
-@@ -372,7 +372,7 @@ double cdfgam4_wrap(double p, double shp, double x) {
-   return scl;
- }
- 
--extern void F_FUNC(cdfnbn,CDFNBN)(int*,double*,double*,double*,double*,double*,double*,int*,double*);
-+extern int F_FUNC(cdfnbn,CDFNBN)(int*,double*,double*,double*,double*,double*,double*,int*,double*);
- double cdfnbn2_wrap(double p, double xn, double pr) {
-   int which=2;
-   double q=1.0-p, s, ompr=1.0-pr, bound;
-@@ -401,7 +401,7 @@ double cdfnbn3_wrap(double s, double p, double pr) {
-   return xn;
- }
- 
--extern void F_FUNC(cdfnor,CDFNOR)(int*,double*,double*,double*,double*,double*,int*,double*);
-+extern int F_FUNC(cdfnor,CDFNOR)(int*,double*,double*,double*,double*,double*,int*,double*);
- double cdfnor3_wrap(double p, double std, double x) {
-   int which=3;
-   double q=1.0-p, mn, bound;
-@@ -430,7 +430,7 @@ double cdfnor4_wrap(double mn, double p, double x) {
-   return std;
- }
- 
--extern void F_FUNC(cdfpoi,CDFPOI)(int*,double*,double*,double*,double*,int*,double*);
-+extern int F_FUNC(cdfpoi,CDFPOI)(int*,double*,double*,double*,double*,int*,double*);
- double cdfpoi2_wrap(double p, double xlam){
-   int which=2;
-   double q=1.0-p, s, bound;
-@@ -445,7 +445,7 @@ double cdfpoi2_wrap(double p, double xlam){
-   return s;
- }
- 
--extern void F_FUNC(cdft,CDFT)(int*,double*,double*,double*,double*,int*,double*);
-+extern int F_FUNC(cdft,CDFT)(int*,double*,double*,double*,double*,int*,double*);
- double cdft1_wrap(double df, double t){
-   int which=1;
-   double q, p, bound;
-@@ -487,7 +487,7 @@ double cdft3_wrap(double p, double t){
-   return df;
- }
- 
--extern void F_FUNC(cdftnc,CDFTNC)(int*,double*,double*,double*,double*,double*,int*,double*);
-+extern int F_FUNC(cdftnc,CDFTNC)(int*,double*,double*,double*,double*,double*,int*,double*);
- double cdftnc1_wrap(double df, double nc, double t) {
-   int which=1;
-   double q, p, bound;
 diff --git a/scipy/special/lapack_defs.h b/scipy/special/lapack_defs.h
 index fb8fd80..d84cd3f 100644
 --- a/scipy/special/lapack_defs.h
@@ -2378,93 +2177,4 @@ index fb8fd80..d84cd3f 100644
 +int dstevr_(char *jobz, char *range, int *n, double *d, double *e, double *vl, double *vu, int *il, int *iu, double *abstol, int *m, double *w, double *z, int *ldz, int *isuppz, double *work, int *lwork, int *iwork, int *liwork, int *info);
  #define c_dstevr F_FUNC(dstevr,DSTEVR)
  
-diff --git a/scipy/special/specfun_wrappers.c b/scipy/special/specfun_wrappers.c
-index 8772dd1..d38505f 100644
---- a/scipy/special/specfun_wrappers.c
-+++ b/scipy/special/specfun_wrappers.c
-@@ -26,45 +26,46 @@
- extern double cephes_psi(double);
- extern double cephes_struve(double, double);
- 
--extern void F_FUNC(cgama,CGAMA)(double*,double*,int*,double*,double*);
--extern void F_FUNC(cpsi,CPSI)(double*,double*,double*,double*);
--extern void F_FUNC(hygfz,HYGFZ)(double*,double*,double*,npy_cdouble*,npy_cdouble*);
--extern void F_FUNC(cchg,CCHG)(double*,double*,npy_cdouble*,npy_cdouble*);
--extern void F_FUNC(chgm,CHGM)(double*,double*,double*,double*);
--extern void F_FUNC(chgu,CHGU)(double*,double*,double*,double*,int*);
--extern void F_FUNC(itairy,ITAIRY)(double*,double*,double*,double*,double*);
--extern void F_FUNC(e1xb,E1XB)(double*,double*);
--extern void F_FUNC(e1z,E1Z)(npy_cdouble*,npy_cdouble*);
--extern void F_FUNC(eix,EIX)(double*,double*);
--extern void F_FUNC(cerror,CERROR)(npy_cdouble*,npy_cdouble*);
--extern void F_FUNC(stvh0,STVH0)(double*,double*);
--extern void F_FUNC(stvh1,STVH1)(double*,double*);
--extern void F_FUNC(stvhv,STVHV)(double*,double*,double*);
--extern void F_FUNC(stvl0,STVL0)(double*,double*);
--extern void F_FUNC(stvl1,STVL1)(double*,double*);
--extern void F_FUNC(stvlv,STVLV)(double*,double*,double*);
--extern void F_FUNC(itsh0,ITSH0)(double*,double*);
--extern void F_FUNC(itth0,ITTH0)(double*,double*);
--extern void F_FUNC(itsl0,ITSL0)(double*,double*);
--extern void F_FUNC(klvna,KLVNA)(double*,double*,double*,double*,double*,double*,double*,double*,double*);
--extern void F_FUNC(itjya,ITJYA)(double*,double*,double*);
--extern void F_FUNC(ittjya,ITTJYA)(double*,double*,double*);
--extern void F_FUNC(itika,ITIKA)(double*,double*,double*);
--extern void F_FUNC(ittika,ITTIKA)(double*,double*,double*);
--extern void F_FUNC(cfc,CFC)(npy_cdouble*,npy_cdouble*,npy_cdouble*);
--extern void F_FUNC(cfs,CFS)(npy_cdouble*,npy_cdouble*,npy_cdouble*);
--extern void F_FUNC(cva2,CVA2)(int*,int*,double*,double*);
--extern void F_FUNC(mtu0,MTU0)(int*,int*,double*,double*,double*,double*);
--extern void F_FUNC(mtu12,MTU12)(int*,int*,int*,double*,double*,double*,double*,double*,double*);
--extern void F_FUNC(lpmv,LPMV)(double*,int*,double*,double*);
--extern void F_FUNC(pbwa,PBWA)(double*,double*,double*,double*,double*,double*);
--extern void F_FUNC(pbdv,PBDV)(double*,double*,double*,double*,double*,double*);
--extern void F_FUNC(pbvv,PBVV)(double*,double*,double*,double*,double*,double*);
--extern void F_FUNC(segv,SEGV)(int*,int*,double*,int*,double*,double*);
--extern void F_FUNC(aswfa,ASWFA)(int*,int*,double*,double*,int*,double*,double*,double*);
--extern void F_FUNC(rswfp,RSWFP)(int*,int*,double*,double*,double*,int*,double*,double*,double*,double*);
--extern void F_FUNC(rswfo,RSWFO)(int*,int*,double*,double*,double*,int*,double*,double*,double*,double*);
--extern void F_FUNC(ffk,FFK)(int*,double*,double*,double*,double*,double*,double*,double*,double*,double*);
-+extern int F_FUNC(cgama,CGAMA)(double*,double*,int*,double*,double*);
-+extern int F_FUNC(cpsi,CPSI)(double*,double*,double*,double*);
-+extern int F_FUNC(hygfz,HYGFZ)(double*,double*,double*,npy_cdouble*,npy_cdouble*);
-+extern int F_FUNC(cchg,CCHG)(double*,double*,npy_cdouble*,npy_cdouble*);
-+extern int F_FUNC(chgm,CHGM)(double*,double*,double*,double*);
-+extern int F_FUNC(chgu,CHGU)(double*,double*,double*,double*,int*);
-+extern int F_FUNC(itairy,ITAIRY)(double*,double*,double*,double*,double*);
-+extern int F_FUNC(e1xb,E1XB)(double*,double*);
-+extern int F_FUNC(e1z,E1Z)(npy_cdouble*,npy_cdouble*);
-+extern int F_FUNC(eixz,E1Z)(npy_cdouble*,npy_cdouble*);
-+extern int F_FUNC(eix,EIX)(double*,double*);
-+extern int F_FUNC(cerror,CERROR)(npy_cdouble*,npy_cdouble*);
-+extern int F_FUNC(stvh0,STVH0)(double*,double*);
-+extern int F_FUNC(stvh1,STVH1)(double*,double*);
-+extern int F_FUNC(stvhv,STVHV)(double*,double*,double*);
-+extern int F_FUNC(stvl0,STVL0)(double*,double*);
-+extern int F_FUNC(stvl1,STVL1)(double*,double*);
-+extern int F_FUNC(stvlv,STVLV)(double*,double*,double*);
-+extern int F_FUNC(itsh0,ITSH0)(double*,double*);
-+extern int F_FUNC(itth0,ITTH0)(double*,double*);
-+extern int F_FUNC(itsl0,ITSL0)(double*,double*);
-+extern int F_FUNC(klvna,KLVNA)(double*,double*,double*,double*,double*,double*,double*,double*,double*);
-+extern int F_FUNC(itjya,ITJYA)(double*,double*,double*);
-+extern int F_FUNC(ittjya,ITTJYA)(double*,double*,double*);
-+extern int F_FUNC(itika,ITIKA)(double*,double*,double*);
-+extern int F_FUNC(ittika,ITTIKA)(double*,double*,double*);
-+extern int F_FUNC(cfc,CFC)(npy_cdouble*,npy_cdouble*,npy_cdouble*);
-+extern int F_FUNC(cfs,CFS)(npy_cdouble*,npy_cdouble*,npy_cdouble*);
-+extern int F_FUNC(cva2,CVA2)(int*,int*,double*,double*);
-+extern int F_FUNC(mtu0,MTU0)(int*,int*,double*,double*,double*,double*);
-+extern int F_FUNC(mtu12,MTU12)(int*,int*,int*,double*,double*,double*,double*,double*,double*);
-+extern int F_FUNC(lpmv,LPMV)(double*,int*,double*,double*);
-+extern int F_FUNC(pbwa,PBWA)(double*,double*,double*,double*,double*,double*);
-+extern int F_FUNC(pbdv,PBDV)(double*,double*,double*,double*,double*,double*);
-+extern int F_FUNC(pbvv,PBVV)(double*,double*,double*,double*,double*,double*);
-+extern int F_FUNC(segv,SEGV)(int*,int*,double*,int*,double*,double*);
-+extern int F_FUNC(aswfa,ASWFA)(int*,int*,double*,double*,int*,double*,double*,double*);
-+extern int F_FUNC(rswfp,RSWFP)(int*,int*,double*,double*,double*,int*,double*,double*,double*,double*);
-+extern int F_FUNC(rswfo,RSWFO)(int*,int*,double*,double*,double*,int*,double*,double*,double*,double*);
-+extern int F_FUNC(ffk,FFK)(int*,double*,double*,double*,double*,double*,double*,double*,double*,double*);
- 
- 
- /* This must be linked with fortran
+

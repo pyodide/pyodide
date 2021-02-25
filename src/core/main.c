@@ -11,7 +11,6 @@
 #include "keyboard_interrupt.h"
 #include "pyproxy.h"
 #include "python2js.h"
-#include "runpython.h"
 
 #define FATAL_ERROR(args...)                                                   \
   do {                                                                         \
@@ -73,6 +72,19 @@ static struct PyModuleDef core_module_def = {
   .m_size = -1,
 };
 
+PyObject* init_dict;
+
+void
+run_python_simple_inner(char* code)
+{
+  PyObject* result = PyRun_String(code, Py_file_input, init_dict, init_dict);
+  if (result == NULL) {
+    pythonexc2js();
+  } else {
+    Py_DECREF(result);
+  }
+}
+
 int
 main(int argc, char** argv)
 {
@@ -96,7 +108,7 @@ main(int argc, char** argv)
   TRY_INIT(hiwire);
   TRY_INIT(error_handling);
   TRY_INIT(js2python);
-  TRY_INIT_WITH_CORE_MODULE(JsProxy); // JsProxy needs to be before JsImport
+  TRY_INIT_WITH_CORE_MODULE(JsProxy);
   TRY_INIT(pyproxy);
   TRY_INIT(python2js);
   TRY_INIT(keyboard_interrupt);
@@ -106,9 +118,22 @@ main(int argc, char** argv)
     FATAL_ERROR("Failed to add '_pyodide_core' module to modules dict.");
   }
 
-  // pyodide.py imported for these two.
-  // They should appear last so that core_module is ready.
-  TRY_INIT(runpython);
+  init_dict = PyDict_New();
+  JsRef init_dict_proxy = python2js(init_dict);
+  EM_ASM(
+    {
+      Module.init_dict = Module.hiwire.pop_value($0);
+      Module.runPythonSimple = function(code)
+      {
+        let code_c_string = stringToNewUTF8(code);
+        try {
+          _run_python_simple_inner(code_c_string);
+        } finally {
+          _free(code_c_string);
+        }
+      };
+    },
+    init_dict_proxy);
 
   Py_CLEAR(core_module);
   printf("Python initialization complete\n");

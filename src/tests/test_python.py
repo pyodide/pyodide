@@ -149,7 +149,7 @@ def test_py(selenium_standalone):
         """
     )
 
-    assert selenium_standalone.run_js("return pyodide.globals.func()") == 42
+    assert selenium_standalone.run_js("return pyodide.globals.get('func')()") == 42
 
 
 def test_eval_nothing(selenium):
@@ -167,10 +167,3 @@ def test_unknown_attribute(selenium):
             assert "asdf" in str(e)
         """
     )
-
-
-def test_run_python_debug(selenium):
-    assert selenium.run_js("return pyodide._module.runPythonDebug('1+1');") == 2
-    assert selenium.run_js(
-        "return pyodide._module.runPythonDebug('[x*x + 1 for x in range(4)]').deepCopyToJavascript();"
-    ) == [1, 2, 5, 10]

@@ -16,67 +16,121 @@ _Py_IDENTIFIER(format_exception);
 static JsRef
 _python2js_unicode(PyObject* x);
 
-void _Py_NO_RETURN
-pythonexc2js()
+EM_JS_REF(JsRef, new_error, (const char* msg, JsRef pyproxy), {
+  return Module.hiwire.new_value(new Module.PythonError(
+    UTF8ToString(msg), Module.hiwire.get_value(pyproxy)));
+});
+
+static int
+fetch_and_normalize_exception(PyObject** type,
+                              PyObject** value,
+                              PyObject** traceback)
 {
-  bool success = false;
-  PyObject* type = NULL;
-  PyObject* value = NULL;
-  PyObject* traceback = NULL;
-  JsRef excval = NULL;
+  PyErr_Fetch(type, value, traceback);
+  PyErr_NormalizeException(type, value, traceback);
+  if (*type == NULL || *type == Py_None || *value == NULL ||
+      *value == Py_None) {
+    Py_CLEAR(*type);
+    Py_CLEAR(*value);
+    PyErr_SetString(PyExc_TypeError, "No exception type or value");
+    FAIL();
+  }
+
+  if (*traceback == NULL) {
+    *traceback = Py_None;
+    Py_INCREF(*traceback);
+  }
+  PyException_SetTraceback(*value, *traceback);
+  return 0;
+
+finally:
+  return -1;
+}
+
+static PyObject*
+format_exception_traceback(PyObject* type, PyObject* value, PyObject* traceback)
+{
   PyObject* pylines = NULL;
   PyObject* empty = NULL;
-  PyObject* pystr = NULL;
-
-  PyErr_Fetch(&type, &value, &traceback);
-  PyErr_NormalizeException(&type, &value, &traceback);
-
-  if (type == NULL || type == Py_None || value == NULL || value == Py_None) {
-    excval = hiwire_string_ascii("No exception type or value");
-    PySys_WriteStderr("No exception type or value\n");
-    goto finally__skip_print_tb;
-  }
-
-  if (traceback == NULL) {
-    traceback = Py_None;
-    Py_INCREF(traceback);
-  }
+  PyObject* result = NULL;
 
   pylines = _PyObject_CallMethodIdObjArgs(
     tbmod, &PyId_format_exception, type, value, traceback, NULL);
   FAIL_IF_NULL(pylines);
   empty = PyUnicode_New(0, 0);
   FAIL_IF_NULL(empty);
-  pystr = PyUnicode_Join(empty, pylines);
+  result = PyUnicode_Join(empty, pylines);
+  FAIL_IF_NULL(result);
+
+finally:
+  Py_CLEAR(pylines);
+  Py_CLEAR(empty);
+  return result;
+}
+
+JsRef
+wrap_exception(bool attach_python_error)
+{
+  bool success = false;
+  PyObject* type = NULL;
+  PyObject* value = NULL;
+  PyObject* traceback = NULL;
+  PyObject* pystr;
+  JsRef pyexc_proxy = NULL;
+  JsRef jserror = NULL;
+
+  FAIL_IF_MINUS_ONE(fetch_and_normalize_exception(&type, &value, &traceback));
+  pystr = format_exception_traceback(type, value, traceback);
   FAIL_IF_NULL(pystr);
   const char* pystr_utf8 = PyUnicode_AsUTF8(pystr);
   FAIL_IF_NULL(pystr_utf8);
-  PySys_WriteStderr("Python exception:\n");
-  PySys_WriteStderr("%s\n", pystr_utf8);
-  excval = _python2js_unicode(pystr);
-  FAIL_IF_NULL(excval);
+
+  if (attach_python_error) {
+    pyexc_proxy = pyproxy_new(value);
+  } else {
+    pyexc_proxy = Js_undefined;
+  }
+  jserror = new_error(pystr_utf8, pyexc_proxy);
 
   success = true;
 finally:
-  if (!success) {
-    excval = hiwire_string_ascii("Error occurred while formatting traceback");
+  // Log an appropriate warning.
+  if (success) {
+    EM_ASM(
+      {
+        let msg = Module.hiwire.get_value($0).message;
+        console.warn("Python exception:\n" + msg + "\n");
+      },
+      jserror);
+  } else {
     PySys_WriteStderr("Error occurred while formatting traceback:\n");
     PyErr_Print();
-    PySys_WriteStderr("\nOriginal exception was:\n");
-    PyErr_Display(type, value, traceback);
+    if (type != NULL) {
+      PySys_WriteStderr("\nOriginal exception was:\n");
+      PyErr_Display(type, value, traceback);
+    }
   }
-finally__skip_print_tb:
   Py_CLEAR(type);
   Py_CLEAR(value);
   Py_CLEAR(traceback);
-  Py_CLEAR(pylines);
-  Py_CLEAR(empty);
   Py_CLEAR(pystr);
-  // hiwire_string_ascii never fails so excval is guaranteed not to be null at
-  // this point. This throws an error making it pretty difficult to decref
-  // excval, so hiwire_throw_error will decref it for us (in other words
-  // hiwire_throw_error steals a reference to its argument).
-  hiwire_throw_error(excval);
+  hiwire_CLEAR(pyexc_proxy);
+  if (!success) {
+    hiwire_CLEAR(jserror);
+  }
+  return jserror;
+}
+
+void _Py_NO_RETURN
+pythonexc2js()
+{
+  JsRef jserror = wrap_exception(false);
+  if (jserror == NULL) {
+    jserror =
+      new_error("Error occurred while formatting traceback", Js_undefined);
+  }
+  // hiwire_throw_error steals jserror
+  hiwire_throw_error(jserror);
 }
 
 int
@@ -230,7 +284,7 @@ _python2js_dict(PyObject* x, PyObject* map, int depth)
   } while (0)
 
 static JsRef
-_python2js_immutable(PyObject* x, PyObject* map, int depth)
+_python2js_immutable(PyObject* x)
 {
   if (x == Py_None) {
     return Js_undefined;
@@ -244,14 +298,10 @@ _python2js_immutable(PyObject* x, PyObject* map, int depth)
     return _python2js_float(x);
   } else if (PyUnicode_Check(x)) {
     return _python2js_unicode(x);
-  } else if (PyBytes_Check(x)) {
-    return _python2js_bytes(x);
   } else if (JsProxy_Check(x)) {
     return JsProxy_AsJs(x);
   } else if (JsException_Check(x)) {
     return JsException_AsJs(x);
-  } else if (PyTuple_Check(x)) {
-    return _python2js_sequence(x, map, depth);
   }
   return NULL;
 }
@@ -259,8 +309,8 @@ _python2js_immutable(PyObject* x, PyObject* map, int depth)
 static JsRef
 _python2js_deep(PyObject* x, PyObject* map, int depth)
 {
-  RETURN_IF_SUCCEEDS(_python2js_immutable(x, map, depth));
-  if (PyList_Check(x)) {
+  RETURN_IF_SUCCEEDS(_python2js_immutable(x));
+  if (PyList_Check(x) || PyTuple_Check(x)) {
     return _python2js_sequence(x, map, depth);
   }
   if (PyDict_Check(x)) {
@@ -278,11 +328,10 @@ static JsRef
 _python2js(PyObject* x, PyObject* map, int depth)
 {
   if (depth == 0) {
-    RETURN_IF_SUCCEEDS(_python2js_immutable(x, map, 0));
+    RETURN_IF_SUCCEEDS(_python2js_immutable(x));
     return pyproxy_new(x);
-  } else {
-    return _python2js_deep(x, map, depth - 1);
   }
+  return _python2js_deep(x, map, depth - 1);
 }
 
 /* During conversion of collection types (lists and dicts) from Python to
@@ -341,15 +390,9 @@ _python2js_cache(PyObject* x, PyObject* map, int depth)
 JsRef
 python2js(PyObject* x)
 {
-  PyObject* map = PyDict_New();
-  JsRef result = _python2js_cache(x, map, 0);
-  Py_DECREF(map);
-
-  if (result == NULL) {
-    pythonexc2js();
-  }
-
-  return result;
+  RETURN_IF_SUCCEEDS(_python2js_immutable(x));
+  RETURN_IF_SUCCEEDS(pyproxy_new(x));
+  pythonexc2js();
 }
 
 JsRef
@@ -393,6 +436,25 @@ python2js_init()
   FAIL_IF_NULL(globals);
 
   EM_ASM({
+    class PythonError extends Error
+    {
+      constructor(message, pythonError)
+      {
+        super(message);
+        this.name = this.constructor.name;
+        this.pythonError = pythonError;
+      }
+
+      clear()
+      {
+        if (this.pythonError) {
+          this.pythonError.destroy();
+          delete this.pythonError;
+        }
+      }
+    };
+    Module.PythonError = PythonError;
+
     Module.test_python2js_with_depth = function(name, depth)
     {
       let pyname = stringToNewUTF8(name);
