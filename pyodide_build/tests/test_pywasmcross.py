@@ -13,7 +13,7 @@ from pyodide_build.pywasmcross import make_parser
 
 
 @dataclass
-class CompileArgs:
+class BuildArgs:
     """A simple ArgumentParser like object for tests"""
 
     cflags: str = ""
@@ -47,7 +47,7 @@ f2c_wrap = _args_wrapper(f2c)
 
 
 def test_handle_command():
-    args = CompileArgs()
+    args = BuildArgs()
     assert handle_command_wrap("gcc -print-multiarch", args) is None
     assert handle_command_wrap("gcc test.c", args) == "emcc test.c"
     assert (
@@ -56,7 +56,7 @@ def test_handle_command():
     )
 
     # check cxxflags injection and cpp detection
-    args = CompileArgs(
+    args = BuildArgs(
         cflags="-I./lib2",
         cxxflags="-std=c++11",
         ldflags="-lm",
@@ -67,7 +67,7 @@ def test_handle_command():
     )
 
     # check ldflags injection
-    args = CompileArgs(
+    args = BuildArgs(
         cflags="", cxxflags="", ldflags="-lm", host="", replace_libs="", install_dir=""
     )
     assert (
@@ -76,7 +76,7 @@ def test_handle_command():
     )
 
     # check library replacement and removal of double libraries
-    args = CompileArgs(
+    args = BuildArgs(
         replace_libs="bob=fred",
     )
     assert (
@@ -100,7 +100,7 @@ def test_handle_command_optflags(in_ext, out_ext, executable, flag_name):
     # Make sure that when multiple optflags are present those in cflags,
     # cxxflags, or ldflags has priority
 
-    args = CompileArgs(**{flag_name: "-Oz"})
+    args = BuildArgs(**{flag_name: "-Oz"})
     assert (
         handle_command_wrap(f"gcc -O3 test.{in_ext} -o test.{out_ext}", args)
         == f"{executable} -Oz test.{in_ext} -o test.{out_ext}"
@@ -118,7 +118,7 @@ def test_f2c():
 
 
 def test_conda_compiler_compat():
-    args = CompileArgs()
+    args = BuildArgs()
     assert handle_command_wrap(
         "gcc -shared -c test.o -B /compiler_compat -o test.so", args
     ) == ("emcc -c test.o -o test.so")
