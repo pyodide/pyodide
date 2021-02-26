@@ -12,6 +12,11 @@ substitutions:
 
 ## Version [Unreleased]
 
+### Improvements to package loading and dynamic linking
+- {{Enhancement}} Uses the emscripten preload plugin system to preload .so files in packages
+- {{Enhancement}} Support for shared library packages. This is used for CLAPACK which makes scipy a lot smaller.
+  [#1236] https://github.com/iodide-project/pyodide/pull/1236
+
 ### Python / JS type conversions
 - {{ Feature }} A `JsProxy` of a Javascript `Promise` or other awaitable object is now a
   Python awaitable.
