@@ -15,8 +15,7 @@ source:
     # these patches can be found as commits in
     #    https://github.com/rth/scipy/tree/1.0.1-pyodide
     # on top of the v1.0.1 tag
-    - patches/skip_ellip_harm_2_pyx_ctypes.patch
-    - patches/dummy_threading.patch
+    #- patches/skip_ellip_harm_2_pyx_ctypes.patch
     - patches/fix-blas.patch
     - patches/fix-build-gcc5-a80460.patch
     - patches/force_malloc.patch
