@@ -1,3 +1,6 @@
-# sphinx
-sphinx_rtd_theme
-myst-parser
+sphinx
+sphinx_book_theme
+myst-parser==0.13.3
+sphinxcontrib-napoleon
+distlib   # required by micropip
+sphinx-js==3.1

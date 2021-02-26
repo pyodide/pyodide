@@ -13,8 +13,8 @@ source:
 
   patches:
     # these patches can be found as commits in
-    #    https://github.com/rth/scipy/tree/0.17.1-pyodide
-    # on top of the v0.17.1 tag
+    #    https://github.com/rth/scipy/tree/1.0.1-pyodide
+    # on top of the v1.0.1 tag
     - patches/skip_ellip_harm_2_pyx_ctypes.patch
     - patches/dummy_threading.patch
     - patches/fix-blas.patch
@@ -22,14 +22,29 @@ source:
     - patches/force_malloc.patch
     - patches/disable_scipy_stats_mvn.patch
     - patches/skip-fortran-fails-to-link.patch
+    - patches/skip_ellip_harm_2_pyx_ctypes.patch
+    - patches/make-int-return-values.patch
+    - patches/add-missing-extern.patch
 
 build:
-  cflags: -I../../../CLAPACK/CLAPACK-WA/INCLUDE -Wno-implicit-function-declaration
-  cxxflags:
+# linker and C flags are set to error on anything to do with function declarations being wrong. By default these
+# are just warnings, but in webassembbly, any conflicts mean that a randomly selected 50% of calls to the function
+# will fail. This is understandably bad. Better to fail at compile or link time
+  cflags: -I ../../../numpy/config -I../../../CLAPACK/build/CLAPACK-3.2.1/INCLUDE -Werror=implicit-function-declaration -Werror=mismatched-parameter-types -DUNDERSCORE_G77 -Werror=mismatched-return-types
+  ldflags: -L$(PYODIDE_ROOT)/packages/numpy/build/numpy-1.15.4/install/lib/python3.8/site-packages/numpy/core/lib/ -Wl,--fatal-warnings
+  script: |
+    # Regenerate header files after make-int-return-values patch to fix return
+    # types of f2c functions.
+    echo "Regenerating cython wrappers"
+    cd scipy/linalg
+    python _cython_wrapper_generators.py
+    cd ../..
+    find scipy -name "*.c*" | xargs sed -i 's/extern void F_FUNC/extern int F_FUNC/g'
 
 requirements:
   run:
     - numpy
+    - CLAPACK
 
 test:
   imports:

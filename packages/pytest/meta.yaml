@@ -17,6 +17,7 @@ requirements:
     - pluggy
     - py
     - setuptools
+    - six
 
 test:
   imports:

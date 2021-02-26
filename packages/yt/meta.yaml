@@ -1,0 +1,21 @@
+package:
+  name: yt
+  version: 3.6.1
+
+source:
+  url: https://files.pythonhosted.org/packages/1e/ce/e75e41f077e330f25d912eda4a1ba124e6b5f896f457ec5ca4e8c89b97c2/yt-3.6.1.tar.gz
+  sha256: be454f9d05dcbe0623328b4df43a1bfd1f0925e516be97399710452931a19bb0
+
+  patches:
+    - patches/skip-openmp.patch
+
+requirements:
+  run:
+    - numpy
+    - matplotlib
+    - sympy
+    - setuptools
+
+test:
+  imports:
+    - yt

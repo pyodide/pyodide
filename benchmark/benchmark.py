@@ -23,10 +23,15 @@ def print_entry(name, res):
 
 
 def run_native(hostpython, code):
+    root = Path(__file__).resolve().parents[1]
     output = subprocess.check_output(
         [hostpython.resolve(), "-c", code],
         cwd=Path(__file__).resolve().parent,
-        env={"PYTHONPATH": str(Path(__file__).resolve().parents[1] / "src")},
+        env={
+            "PYTHONPATH": str(root / "src")
+            + ":"
+            + str(root / "packages" / ".artifacts" / "lib" / "python")
+        },
     )
     return float(output.strip().split()[-1])
 
@@ -67,7 +72,7 @@ def parse_numpy_benchmark(filename):
 
 def get_numpy_benchmarks():
     root = Path(__file__).resolve().parent / "benchmarks"
-    for filename in root.iterdir():
+    for filename in sorted(root.iterdir()):
         name = filename.stem
         if name in SKIP:
             continue

@@ -16,11 +16,15 @@ source:
     - patches/init-alloc-cache.patch
     - patches/use-local-blas-lapack.patch
     - patches/fix-install-with-skip-build.patch
+    - patches/make-int-return-values.patch
 
 build:
   skip_host: False
   cflags: -include math.h -I../../config
-
+  post: |
+    # copy the correct numpy config into the build artifacts. Otherwise scipy will try to build with the config
+    # from the build computer and bad things will happen
+    cp config/* $PKGDIR/../.artifacts/lib/python/numpy-1.15.4-py3.8-linux-x86_64.egg/numpy/core/include/numpy
 
 test:
   imports:

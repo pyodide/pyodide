@@ -6,40 +6,37 @@
 Pyodide
 =======
 
-The Python scientific stack, compiled to WebAssembly.
+Python with the scientific stack, compiled to WebAssembly.
 
 .. note::
 
    Pyodide bundles support for the following packages: numpy, scipy, and
    many other libraries in the Python scientific stack.
 
-   To use additional packages from PyPI, try the experimental feature,
-   `Installing packages from PyPI <pypi.html>`_ and try to `pip install` the
-   package.
+   To use additional packages from PyPI, see
+   :ref:`micropip` .
 
-   To create a Pyodide package to support and share libraries for new
-   applications, try `Creating a Pyodide package <new_packages.html>`_.
+   You can also :ref:`create a Pyodide package <new-packages>` to support and share libraries for new
+   applications.
 
 Using Pyodide
 =============
 
-Pyodide may be used in several ways, including in an Iodide notebook, directly
-from JavaScript, or to execute Python scripts asynchronously in a web worker.
-Although still experimental, additional packages may be installed from PyPI
-to be used with Pyodide.
+Pyodide may be used in several ways: directly from JavaScript, or to execute
+Python scripts asynchronously in a web worker. Additional pure Python packages
+may be installed from PyPI to be used with Pyodide.
 
 .. toctree::
-   :maxdepth: 1
+   :maxdepth: 2
    :caption: Usage
 
-   using_pyodide_from_iodide.md
-   using_pyodide_from_javascript.md
-   using_pyodide_from_webworker.md
-   serving_pyodide_packages.md
-   loading_packages.md
-   type_conversions.md
-   api_reference.md
-   faq.md
+   usage/quickstart.md
+   usage/webworker.md
+   usage/serving-pyodide-packages.md
+   usage/loading-packages.md
+   usage/type-conversions.md
+   usage/api-reference.md
+   usage/faq.md
 
 Developing Pyodide
 ==================
@@ -55,18 +52,19 @@ information about the project's organization.
    :maxdepth: 1
    :caption: Development
 
-   building_from_sources.md
-   new_packages.md
-   contributing.md
-   testing.md
+   development/building-from-sources.md
+   development/new-packages.md
+   development/contributing.md
+   development/core.md
+   development/testing.md
 
 .. toctree::
    :titlesonly:
    :caption: Project
 
-   about.md
-   code-of-conduct
-   changelog.md
+   project/about.md
+   project/code-of-conduct.md
+   project/changelog.md
 
 Indices and tables
 ==================

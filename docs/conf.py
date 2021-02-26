@@ -14,9 +14,14 @@
 #
 import os
 import sys
+from typing import Dict, Any
 
-sys.path.insert(0, os.path.abspath("."))
-sys.path.insert(0, os.path.abspath(".."))
+for base_path in [".", ".."]:
+    sys.path.insert(0, os.path.abspath(base_path))
+    sys.path.insert(1, os.path.abspath(os.path.join(base_path, "src", "pyodide-py")))
+    sys.path.insert(
+        2, os.path.abspath(os.path.join(base_path, "packages", "micropip", "micropip"))
+    )
 
 # -- Project information -----------------------------------------------------
 
@@ -24,7 +29,8 @@ project = "Pyodide"
 copyright = "2019, Mozilla"
 author = "Mozilla"
 
-from src import pyodide
+import pyodide
+import micropip  # noqa
 
 # The full version, including alpha/beta/rc tags.
 release = version = pyodide.__version__
@@ -39,7 +45,20 @@ release = version = pyodide.__version__
 # Add any Sphinx extension module names here, as strings. They can be
 # extensions coming with Sphinx (named 'sphinx.ext.*') or your custom
 # ones.
-extensions = ["sphinx.ext.autodoc", "myst_parser"]
+extensions = [
+    "sphinx.ext.autodoc",
+    "sphinx.ext.autosummary",
+    "sphinxcontrib.napoleon",
+    "myst_parser",
+    "sphinx_js",
+]
+
+myst_enable_extensions = ["substitution"]
+
+js_source_path = "../src/"
+
+autosummary_generate = True
+autodoc_default_flags = ["members", "inherited-members"]
 
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ["_templates"]
@@ -74,25 +93,26 @@ pygments_style = None
 # The theme to use for HTML and HTML Help pages.  See the documentation for
 # a list of builtin themes.
 #
-html_theme = "sphinx_rtd_theme"
+# html_theme = "sphinx_rtd_theme"
+html_theme = "sphinx_book_theme"
+html_logo = "_static/img/pyodide-logo.png"
+html_title = f"Version {version}"
 
 # Theme options are theme-specific and customize the look and feel of a theme
 # further.  For a list of options available for each theme, see the
 # documentation.
-#
-html_theme_options = {
-    "display_version": True,
-    "prev_next_buttons_location": "bottom",
-    # Toc options
-    "collapse_navigation": True,
-    "sticky_navigation": True,
-    "navigation_depth": 2,
-}
+
+html_theme_options: Dict[str, Any] = {}
 
 # Add any paths that contain custom static files (such as style sheets) here,
 # relative to this directory. They are copied after the builtin static files,
 # so a file named "default.css" will overwrite the builtin "default.css".
 html_static_path = ["_static"]
+
+
+html_css_files = [
+    "css/pyodide.css",
+]
 
 # Custom sidebar templates, must be a dictionary that maps document names
 # to template names.
@@ -103,7 +123,6 @@ html_static_path = ["_static"]
 # 'searchbox.html']``.
 #
 # html_sidebars = {}
-
 
 # -- Options for HTMLHelp output ---------------------------------------------
 
@@ -127,3 +146,59 @@ epub_title = project
 
 # A list of files that should not be packed into the epub file.
 epub_exclude_files = ["search.html"]
+
+from pygments.lexer import bygroups, inherit, using
+from pygments.lexers import PythonLexer
+from pygments.lexers.javascript import JavascriptLexer
+from pygments.lexers.html import HtmlLexer
+from pygments.token import *
+
+
+class PyodideLexer(JavascriptLexer):
+    tokens = {
+        "root": [
+            (
+                rf"""(pyodide)(\.)(runPython|runPythonAsync)(\()(`)""",
+                bygroups(
+                    Token.Name,
+                    Token.Operator,
+                    Token.Name,
+                    Token.Punctuation,
+                    Token.Literal.String.Single,
+                ),
+                "python-code",
+            ),
+            inherit,
+        ],
+        "python-code": [
+            (
+                r"(.+?)(`)(\))",
+                bygroups(
+                    using(PythonLexer), Token.Literal.String.Single, Token.Punctuation
+                ),
+                "#pop",
+            )
+        ],
+    }
+
+
+class HtmlPyodideLexer(HtmlLexer):
+    tokens = {
+        "script-content": [
+            (
+                r"(<)(\s*)(/)(\s*)(script)(\s*)(>)",
+                bygroups(
+                    Punctuation, Text, Punctuation, Text, Name.Tag, Text, Punctuation
+                ),
+                "#pop",
+            ),
+            (r".+?(?=<\s*/\s*script\s*>)", using(PyodideLexer)),
+            (r".+?\n", using(PyodideLexer), "#pop"),
+            (r".+", using(PyodideLexer), "#pop"),
+        ],
+    }
+
+
+def setup(app):
+    app.add_lexer("pyodide", PyodideLexer)
+    app.add_lexer("html-pyodide", HtmlPyodideLexer)

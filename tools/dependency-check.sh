@@ -5,6 +5,12 @@ failure_exit() {
   exit 1
 }
 
+check_python_version() {
+  if ! command -v python3.8 &> /dev/null; then
+    echo >&2 "Must compile with python 3.8."
+    exit 1
+  fi
+}
 check_python_headers() {
   local python_headers_present
   python_headers_present="$(pkg-config --libs python-3.8)"
@@ -31,11 +37,6 @@ check_fortran_dependencies() {
   check_binary_present "f2c"
 }
 
-check_js_dependencies() {
-  check_binary_present "lessc"
-  check_binary_present "uglifyjs"
-}
-
 check_pyyaml() {
   local pyyaml_import_check
   pyyaml_import_check="$(python3 -c 'import yaml' 2>&1)"
@@ -44,8 +45,8 @@ check_pyyaml() {
   fi
 }
 
+check_python_version
 check_pkgconfig
 #check_python_headers
 check_fortran_dependencies
-check_js_dependencies
 check_pyyaml

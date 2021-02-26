@@ -1,0 +1,171 @@
+diff --git a/emsdk/upstream/emscripten/src/library.js b/emsdk/upstream/emscripten/src/library.js
+index 2990646..517fc33 100644
+@@ -3749,6 +3749,15 @@ LibraryManager.library = {
+ #endif
+ #if ASSERTIONS
+     assert(wasmTable.get(ptr), 'missing table entry in dynCall: ' + ptr);
++#endif
++#if EMULATE_FUNCTION_POINTER_CASTS
++    if( ptr in dyncallInvokeMap)
++    {
++        // in fpcast mode, we use a separate table or else we'll attempt
++        // to call the fpcast emulated version which is not what the linker
++        // expects for a linked dynamic call
++        ptr=dyncallInvokeMap[ptr];
++    }
+ #endif
+     return wasmTable.get(ptr).apply(null, args)
+ #endif
+--- a/emsdk/upstream/emscripten/src/runtime_init_table.js
++++ b/emsdk/upstream/emscripten/src/runtime_init_table.js
+@@ -13,3 +13,17 @@ var wasmTable = new WebAssembly.Table({
+ // the exports are available.
+ var wasmTable;
+ #endif
++#if EMULATE_FUNCTION_POINTER_CASTS==1
++    // when we call dynamic link functions through the relocation
++    // invoke xxx methods, we aren't doing a function pointer
++    // call, so we don't mess with the function prototype.
++    // however, we do need to make the function table
++    // point to the emulated bny$fpcast-emu$ function pointer calls or else you
++    // can't take function pointers in wasm code.
++    // this means we need a different table for javascript dyncall invokes
++    // as given these are pre-linked and don't use function pointer casts, they
++    // will use the non-emulated version with the normal arguments.
++    // nb. this doesn't have to be a proper wasm table because it is
++    // only ever called from javascript
++    var dyncallInvokeMap=new Map();
++#endif
+diff --git a/emsdk/upstream/emscripten/tools/shared.py b/emsdk/upstream/emscripten/tools/shared.py
+index 74666ee..3d5657b 100644
+--- a/emsdk/upstream/emscripten/tools/shared.py
++++ b/emsdk/upstream/emscripten/tools/shared.py
+@@ -844,7 +844,7 @@ class JS(object):
+       else:
+         return 'Module["dynCall_%s"](%s)' % (sig, args)
+     else:
+-      return 'wasmTable.get(%s)(%s)' % (args[0], ','.join(args[1:]))
++        return 'dynCall("%s",%s,[%s])' %(sig,args[0],','.join(args[1:]))
+ 
+   @staticmethod
+   def make_invoke(sig, named=True):
+diff --git a/emdsk/upstream/emscripten/src/library_dylink.js b/emsdk/upstream/emscripten/src/library_dylink.js
+index 876492b..750a18d 100644
+--- a/emdsk/upstream/emscripten/src/library_dylink.js
++++ b/emsdk/upstream/emscripten/src/library_dylink.js
+@@ -90,33 +93,84 @@ var LibraryDylink = {
+       var value = exports[symName];
+ #if !WASM_BIGINT
+       if (symName.indexOf('orig$') == 0) {
+-        symName = symName.split('$')[1];
++        symName = symName.substring(5);
+         replace = true;
+       }
+ #endif
+-
+-      if (!GOT[symName]) {
+-        GOT[symName] = new WebAssembly.Global({value: 'i32', mutable: true});
++      baseName=symName;
++#if EMULATE_FUNCTION_POINTER_CASTS==1
++      const FPCAST_PREFIX="byn$fpcast-emu$";
++      const FPCAST_DYNCALL_PREFIX="$no-fpcast-emu$";
++      var dyncallName;
++      var is_fpcast=false;
++      var is_nonfpcast=false;
++      var newFn;
++      if(typeof(value) === 'function')
++      {
++          if(symName.startsWith(FPCAST_PREFIX))
++          {
++              baseName=symName.substr(FPCAST_PREFIX.length);
++              dyncallName=FPCAST_DYNCALL_PREFIX+baseName;
++              is_fpcast=true;
++          }else
++          {
++             if(FPCAST_PREFIX+symName in exports)
++             {
++                 baseName=FPCAST_DYNCALL_PREFIX+symName;
++                 is_nonfpcast=true;
++             }
++          }
+       }
+-      if (replace || GOT[symName].value == 0) {
++#endif
++      if (!GOT[baseName]) {
++        GOT[baseName] = new WebAssembly.Global({value: 'i32', mutable: true});
++      }
++      if (replace || GOT[baseName].value == 0) {
+         if (typeof value === 'function') {
+-          GOT[symName].value = addFunctionWasm(value);
++          newFn=addFunctionWasm(value);
++          GOT[baseName].value = newFn
+ #if DYLINK_DEBUG
+-          err("updateGOT FUNC: " + symName + ' : ' + GOT[symName].value);
++          err("updateGOT FUNC: " + symName + ' : ' + GOT[baseName].value);
+ #endif
+         } else if (typeof value === 'number') {
+-          GOT[symName].value = value;
++          GOT[baseName].value = value;
+         } else {
+           err("unhandled export type for `" + symName + "`: " + (typeof value));
+         }
+ #if DYLINK_DEBUG
+-        err("updateGOT: " + symName + ' : ' + GOT[symName].value);
++        err("updateGOT: " + baseName + "("+ symName + ")" + ' : ' + GOT[symName].value);
+ #endif
+       }
+ #if DYLINK_DEBUG
+-      else if (GOT[symName].value != value) {
+-        err("updateGOT: EXISTING SYMBOL: " + symName + ' : ' + GOT[symName].value + " " + value);
++      else if (GOT[baseName].value != value) {
++        err("updateGOT: EXISTING SYMBOL: " + symName + ' : ' + GOT[baseName].value + " " + value);
+       }
++#endif
++#if EMULATE_FUNCTION_POINTER_CASTS==1
++        // update map for dynamic calls so they can bypass fp casts
++        if(!newFn)newFn= GOT[baseName].value;
++        if(is_fpcast && newFn)
++        {
++            dyncallGOT=GOT[dyncallName]
++            if(dyncallGOT){
++                dcVal=dyncallGOT.value;
++                if(dcVal)
++                {
++                    dyncallInvokeMap[newFn]=dcVal;
++                }
++            }
++        }else if(is_nonfpcast && newFn)
++        {
++            fpcGOT=GOT[symName];
++            if(fpcGOT)
++            {
++                fpVal=fpcGOT.value;
++                if(fpVal)
++                {
++                    dyncallInvokeMap[fpVal]=newFn;
++                }
++            }
++        }
+ #endif
+     }
+ #if DYLINK_DEBUG
+@@ -713,6 +769,8 @@ var LibraryDylink = {
+       nodelete: Boolean(flags & {{{ cDefine('RTLD_NODELETE') }}}),
+
+       fs: FS, // load libraries from provided filesystem
++      allowUndefined: true, // allow undefined symbols - otherwise scipy won't
++                            // import because modules have cross dependencies
+     }
+
+     try {
+@@ -754,6 +812,10 @@ var LibraryDylink = {
+     // http://pubs.opengroup.org/onlinepubs/009695399/functions/dlsym.html
+     symbol = UTF8ToString(symbol);
+     var result;
++#if EMULATE_FUNCTION_POINTER_CASTS==1
++      // look for fpcast-emu version as this is deffo going to be a function pointer that we return
++      symbol="byn$fpcast-emu$"+symbol
++#endif
+
+     if (handle == {{{ cDefine('RTLD_DEFAULT') }}}) {
+       result = resolveGlobalSymbol(symbol, true);
