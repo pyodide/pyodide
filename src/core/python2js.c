@@ -114,7 +114,7 @@ finally:
     }
   }
 
-  if(success){
+  if (success) {
     _PySys_SetObjectId(&PyId_last_type, type);
     _PySys_SetObjectId(&PyId_last_value, value);
     _PySys_SetObjectId(&PyId_last_traceback, traceback);
