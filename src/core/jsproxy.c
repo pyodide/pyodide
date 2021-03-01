@@ -925,19 +925,19 @@ JsProxy_create_subtype(int flags)
     "__dir__",
     (PyCFunction)JsProxy_Dir,
     METH_NOARGS,
-    "Returns a list of the members and methods on the object." 
+    PyDoc_STR("Returns a list of the members and methods on the object."),
   };
   methods[cur_method++] = (PyMethodDef){
     "to_py",
     (PyCFunction)JsProxy_toPy,
     METH_FASTCALL,
-    PyDoc_STR("Convert the JsProxy to a native Python object (as best as possible)")},
+    PyDoc_STR("Convert the JsProxy to a native Python object (as best as possible)"),
   };
   methods[cur_method++] = (PyMethodDef){
     "object_entries",
     (PyCFunction)JsProxy_object_entries,
     METH_NOARGS,
-    "This does javascript Object.entries(object)."
+    PyDoc_STR("This does javascript Object.entries(object)."),
   };
   // clang-format on
 
