@@ -174,7 +174,7 @@ class CodeRunner:
         # handle mis-indented input from multi-line strings
         code = dedent(code)
 
-        mod = ast.parse(code)
+        mod = ast.parse(code, filename=self.filename)
         if not mod.body:
             return None, None
 
