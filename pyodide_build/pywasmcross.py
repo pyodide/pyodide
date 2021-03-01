@@ -299,6 +299,9 @@ def handle_command(line, args, dryrun=False):
         # threading is disabled for now
         if arg == "-pthread":
             continue
+        # --version-script is not suported during linking
+        if "--version-script" in arg:
+            continue
         # this only applies to compiling fortran code, but we already f2c'd
         if arg == "-ffixed-form":
             continue

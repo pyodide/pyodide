@@ -46,6 +46,11 @@ def test_handle_command():
         == "emcc -c test.o -o test.so"
     )
 
+    assert (
+        handle_command_wrap("gcc -c vq.c -o _vq.so -Wl,--version-script=_vq.map", args)
+        == "emcc -c vq.c -o _vq.so"
+    )
+
     # check cxxflags injection and cpp detection
     args = Args(
         cflags="-I./lib2",

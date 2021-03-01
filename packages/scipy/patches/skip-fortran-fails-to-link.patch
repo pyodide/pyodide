@@ -1,125 +1,107 @@
-commit c3affe05b5cb8d992cb7a955ff8b4c79452f3cc9
-Author: Roman Yurchak <rth.yurchak@pm.me>
-Date:   Thu Oct 11 17:10:36 2018 +0200
+commit 335dcd46578a66d385973ea1630f01c2efdbd752
+Author: Roman Yurchak <rth.yurchak@gmail.com>
+Date:   Sat Feb 27 12:17:47 2021 +0100
 
-    Skip fortran code that fails to link
-    
-       scipy.integrate.odepack
+    Skip Fortran files that fail to link
 
 diff --git a/scipy/integrate/_ode.py b/scipy/integrate/_ode.py
-index de1064048..52bf3875a 100644
+index d97370e14..2ad6caefb 100644
 --- a/scipy/integrate/_ode.py
 +++ b/scipy/integrate/_ode.py
-@@ -89,10 +89,19 @@ import re
- import warnings
+@@ -87,9 +87,9 @@ import warnings
  
- from numpy import asarray, array, zeros, int32, isscalar, real, imag, vstack
--
+ from numpy import asarray, array, zeros, isscalar, real, imag, vstack
+ 
 -from . import vode as _vode
 -from . import _dop
 -from . import lsoda as _lsoda
-+try:
-+    from . import vode as _vode
-+except ImportError:
-+    _vode = None
-+try:
-+    from . import _dop
-+except ImportError:
-+    _dop = None
-+
-+try:
-+    from . import lsoda as _lsoda
-+except ImportError:
-+    _lsoda = None
++_vode = None
++_dop = None
++_lsoda = None
  
  
- #------------------------------------------------------------------------------
+ _dop_int_dtype = _dop.types.intvar.dtype
 diff --git a/scipy/integrate/odepack.py b/scipy/integrate/odepack.py
-index eee2b04a3..17224f54e 100644
+index 8119d2acc..be42392fa 100644
 --- a/scipy/integrate/odepack.py
 +++ b/scipy/integrate/odepack.py
-@@ -3,7 +3,8 @@ from __future__ import division, print_function, absolute_import
- 
+@@ -3,7 +3,7 @@
  __all__ = ['odeint']
  
+ import numpy as np
 -from . import _odepack
-+# from . import _odepack
 +_odepack = None
  from copy import copy
  import warnings
  
 diff --git a/scipy/integrate/setup.py b/scipy/integrate/setup.py
-index 4725eb1c0..0545dc759 100755
+index 11ce3d1aa..323e748c3 100644
 --- a/scipy/integrate/setup.py
 +++ b/scipy/integrate/setup.py
-@@ -27,7 +27,7 @@ def configuration(parent_package='',top_path=None):
-     config.add_library('mach', sources=mach_src,
-                        config_fc={'noopt':(__file__,1)})
-     config.add_library('quadpack', sources=quadpack_src)
--    config.add_library('odepack', sources=odepack_src)
-+    #config.add_library('odepack', sources=odepack_src)
-     config.add_library('dop', sources=dop_src)
+@@ -37,8 +37,6 @@ def configuration(parent_package='',top_path=None):
+     config.add_library('mach', sources=mach_src, config_fc={'noopt': (__file__, 1)},
+                        _pre_build_hook=pre_build_hook)
+     config.add_library('quadpack', sources=quadpack_src, _pre_build_hook=pre_build_hook)
+-    config.add_library('lsoda', sources=lsoda_src, _pre_build_hook=pre_build_hook)
+-    config.add_library('vode', sources=vode_src, _pre_build_hook=pre_build_hook)
+     config.add_library('dop', sources=dop_src, _pre_build_hook=pre_build_hook)
  
      # Extensions
-@@ -44,27 +44,27 @@ def configuration(parent_package='',top_path=None):
- 
-     odepack_opts = lapack_opt.copy()
-     odepack_opts.update(numpy_nodepr_api)
+@@ -56,30 +54,14 @@ def configuration(parent_package='',top_path=None):
+     # odepack/lsoda-odeint
+     cfg = combine_dict(lapack_opt, numpy_nodepr_api,
+                        libraries=['lsoda', 'mach'])
 -    config.add_extension('_odepack',
 -                         sources=['_odepackmodule.c'],
--                         libraries=odepack_libs,
--                         depends=(odepack_src + mach_src),
--                         **odepack_opts)
-+    #config.add_extension('_odepack',
-+    #                     sources=['_odepackmodule.c'],
-+    #                     libraries=odepack_libs,
-+    #                     depends=(odepack_src + mach_src),
-+    #                     **odepack_opts)
+-                         depends=(lsoda_src + mach_src),
+-                         **cfg)
  
      # vode
--    config.add_extension('vode',
--                         sources=['vode.pyf'],
--                         libraries=odepack_libs,
--                         depends=(odepack_src
--                                  + mach_src),
--                         **lapack_opt)
-+    #config.add_extension('vode',
-+    #                     sources=['vode.pyf'],
-+    #                     libraries=odepack_libs,
-+    #                     depends=(odepack_src
-+    #                              + mach_src),
-+    #                     **lapack_opt)
+     cfg = combine_dict(lapack_opt,
+                        libraries=['vode'])
+-    ext = config.add_extension('vode',
+-                               sources=['vode.pyf'],
+-                               depends=vode_src,
+-                               f2py_options=f2py_options,
+-                               **cfg)
+-    ext._pre_build_hook = pre_build_hook
  
      # lsoda
--    config.add_extension('lsoda',
--                         sources=['lsoda.pyf'],
--                         libraries=odepack_libs,
--                         depends=(odepack_src
--                                  + mach_src),
--                         **lapack_opt)
-+    #config.add_extension('lsoda',
-+    #                     sources=['lsoda.pyf'],
-+    #                     libraries=odepack_libs,
-+    #                     depends=(odepack_src
-+    #                              + mach_src),
-+    #                     **lapack_opt)
+     cfg = combine_dict(lapack_opt,
+                        libraries=['lsoda', 'mach'])
+-    ext = config.add_extension('lsoda',
+-                               sources=['lsoda.pyf'],
+-                               depends=(lsoda_src + mach_src),
+-                               f2py_options=f2py_options,
+-                               **cfg)
+-    ext._pre_build_hook = pre_build_hook
  
      # dop
-     #config.add_extension('_dop',
-@@ -76,11 +76,11 @@ def configuration(parent_package='',top_path=None):
-                          sources=quadpack_test_src)
- 
+     ext = config.add_extension('_dop',
+@@ -95,12 +77,6 @@ def configuration(parent_package='',top_path=None):
      # Fortran+f2py extension module for testing odeint.
--    config.add_extension('_test_odeint_banded',
--                         sources=odeint_banded_test_src,
--                         libraries=odepack_libs,
--                         depends=(odepack_src + mach_src),
--                         **lapack_opt)
-+    #config.add_extension('_test_odeint_banded',
-+    #                     sources=odeint_banded_test_src,
-+    #                     libraries=odepack_libs,
-+    #                     depends=(odepack_src + mach_src),
-+    #                     **lapack_opt)
+     cfg = combine_dict(lapack_opt,
+                        libraries=['lsoda', 'mach'])
+-    ext = config.add_extension('_test_odeint_banded',
+-                               sources=odeint_banded_test_src,
+-                               depends=(lsoda_src + mach_src),
+-                               f2py_options=f2py_options,
+-                               **cfg)
+-    ext._pre_build_hook = pre_build_hook
  
+     config.add_subpackage('_ivp')
+ 
+diff --git a/scipy/io/setup.py b/scipy/io/setup.py
+index bec840e36..f3fb726c2 100644
+--- a/scipy/io/setup.py
++++ b/scipy/io/setup.py
+@@ -3,9 +3,6 @@ def configuration(parent_package='',top_path=None):
+     from numpy.distutils.misc_util import Configuration
+     config = Configuration('io', parent_package, top_path)
+ 
+-    config.add_extension('_test_fortran',
+-                         sources=['_test_fortran.pyf', '_test_fortran.f'])
+-
      config.add_data_dir('tests')
-     return config
+     config.add_subpackage('matlab')
+     config.add_subpackage('arff')
