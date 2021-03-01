@@ -1,4 +1,4 @@
-export PYODIDE_EMSCRIPTEN_VERSION ?= 2.0.13
+export PYODIDE_EMSCRIPTEN_VERSION ?= 2.0.14
 export PYODIDE_BINARYEN_VERSION ?= ed20954 # version_99. The git tag tags the wrong commit
 
 # BASH_ENV tells bash to run pyodide_env.sh on startup, whcih sets various
@@ -9,8 +9,8 @@ SHELL := /bin/bash
 
 export PYVERSION=3.8.2
 export PYMINOR=$(basename $(PYVERSION))
-export HOSTPYTHONROOT=$(shell python -c "import sys; print(sys.prefix)")
-export HOSTPYTHON=$(HOSTPYTHONROOT)/bin/python3
+export HOSTPYTHONROOT=$(shell python3.8 -c "import sys; print(sys.prefix)")
+export HOSTPYTHON=$(HOSTPYTHONROOT)/bin/python3.8
 export TARGETPYTHONROOT=$(PYODIDE_ROOT)/cpython/installs/python-$(PYVERSION)
 export PYTHONINCLUDE=$(PYODIDE_ROOT)/cpython/installs/python-$(PYVERSION)/include/python$(PYMINOR)
 

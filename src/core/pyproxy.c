@@ -23,81 +23,144 @@ _pyproxy_repr(PyObject* pyobj)
   return repr_js;
 }
 
-JsRef
-_pyproxy_has(PyObject* pyobj, JsRef idkey)
+int
+_pyproxy_hasattr(PyObject* pyobj, JsRef idkey)
 {
-  PyObject* pykey = js2python(idkey);
-  JsRef result = hiwire_bool(PyObject_HasAttr(pyobj, pykey));
-  Py_DECREF(pykey);
+  bool success = false;
+  PyObject* pykey = NULL;
+  int result = -1;
+
+  pykey = js2python(idkey);
+  FAIL_IF_NULL(pykey);
+  result = PyObject_HasAttr(pyobj, pykey);
+
+  success = true;
+finally:
+  Py_CLEAR(pykey);
   return result;
 }
 
 JsRef
-_pyproxy_get(PyObject* pyobj, JsRef idkey)
+_pyproxy_getattr(PyObject* pyobj, JsRef idkey)
 {
-  PyObject* pykey = js2python(idkey);
-  PyObject* pyattr;
-  // HC: HACK until my more thorough rework of pyproxy goes through.
-  // We need globals to work, I want it to be proxied, but we also need
-  // indexing in js to do GetItem, SetItem, and DelItem.
-  // This is harmless though because currently dicts will not get proxied at
-  // all, aside from globals which I specifically hand proxy in runpython.c.
-  if (PyDict_Check(pyobj)) {
-    pyattr = PyObject_GetItem(pyobj, pykey);
-  } else {
-    pyattr = PyObject_GetAttr(pyobj, pykey);
-  }
+  bool success = false;
+  PyObject* pykey = NULL;
+  PyObject* pyresult = NULL;
+  JsRef idresult = NULL;
 
-  Py_DECREF(pykey);
-  if (pyattr == NULL) {
-    PyErr_Clear();
-    return Js_undefined;
-  }
+  pykey = js2python(idkey);
+  FAIL_IF_NULL(pykey);
+  pyresult = PyObject_GetAttr(pyobj, pykey);
+  FAIL_IF_NULL(pyresult);
+  idresult = python2js(pyresult);
+  FAIL_IF_NULL(idresult);
 
-  JsRef idattr = python2js(pyattr);
-  Py_DECREF(pyattr);
-  return idattr;
+  success = true;
+finally:
+  Py_CLEAR(pykey);
+  Py_CLEAR(pyresult);
+  if (!success) {
+    hiwire_CLEAR(idresult);
+  }
+  return idresult;
 };
 
-JsRef
-_pyproxy_set(PyObject* pyobj, JsRef idkey, JsRef idval)
+int
+_pyproxy_setattr(PyObject* pyobj, JsRef idkey, JsRef idval)
 {
-  PyObject* pykey = js2python(idkey);
-  PyObject* pyval = js2python(idval);
-  // HC: HACK see comment in _pyproxy_get.
-  int result;
-  if (PyDict_Check(pyobj)) {
-    result = PyObject_SetItem(pyobj, pykey, pyval);
-  } else {
-    result = PyObject_SetAttr(pyobj, pykey, pyval);
-  }
-  Py_DECREF(pykey);
-  Py_DECREF(pyval);
+  bool success = false;
+  PyObject* pykey = NULL;
+  PyObject* pyval = NULL;
 
-  if (result) {
-    return NULL;
-  }
-  return hiwire_incref(idval);
+  pykey = js2python(idkey);
+  FAIL_IF_NULL(pykey);
+  pyval = js2python(idval);
+  FAIL_IF_NULL(pyval);
+  FAIL_IF_MINUS_ONE(PyObject_SetAttr(pyobj, pykey, pyval));
+
+  success = true;
+finally:
+  Py_CLEAR(pykey);
+  Py_CLEAR(pyval);
+  return success ? 0 : -1;
+}
+
+int
+_pyproxy_delattr(PyObject* pyobj, JsRef idkey)
+{
+  bool success = false;
+  PyObject* pykey = NULL;
+
+  pykey = js2python(idkey);
+  FAIL_IF_NULL(pykey);
+  FAIL_IF_MINUS_ONE(PyObject_DelAttr(pyobj, pykey));
+
+  success = true;
+finally:
+  Py_CLEAR(pykey);
+  return success ? 0 : -1;
 }
 
 JsRef
-_pyproxy_deleteProperty(PyObject* pyobj, JsRef idkey)
+_pyproxy_getitem(PyObject* pyobj, JsRef idkey)
 {
-  PyObject* pykey = js2python(idkey);
-  int ret;
-  // HC: HACK see comment in _pyproxy_get.
-  if (PyDict_Check(pyobj)) {
-    ret = PyObject_DelItem(pyobj, pykey);
-  } else {
-    ret = PyObject_DelAttr(pyobj, pykey);
-  }
-  Py_DECREF(pykey);
+  bool success = false;
+  PyObject* pykey = NULL;
+  PyObject* pyresult = NULL;
+  JsRef result = NULL;
 
-  if (ret) {
-    return NULL;
-  }
+  pykey = js2python(idkey);
+  FAIL_IF_NULL(pykey);
+  pyresult = PyObject_GetItem(pyobj, pykey);
+  FAIL_IF_NULL(pyresult);
+  result = python2js(pyresult);
+  FAIL_IF_NULL(result);
 
-  return Js_undefined;
+  success = true;
+finally:
+  PyErr_Clear();
+  Py_CLEAR(pykey);
+  Py_CLEAR(pyresult);
+  if (!success) {
+    hiwire_CLEAR(result);
+  }
+  return result;
+};
+
+int
+_pyproxy_setitem(PyObject* pyobj, JsRef idkey, JsRef idval)
+{
+  bool success = false;
+  PyObject* pykey = NULL;
+  PyObject* pyval = NULL;
+
+  pykey = js2python(idkey);
+  FAIL_IF_NULL(pykey);
+  pyval = js2python(idval);
+  FAIL_IF_NULL(pyval);
+  FAIL_IF_MINUS_ONE(PyObject_SetItem(pyobj, pykey, pyval));
+
+  success = true;
+finally:
+  Py_CLEAR(pykey);
+  Py_CLEAR(pyval);
+  return success ? 0 : -1;
+}
+
+int
+_pyproxy_delitem(PyObject* pyobj, JsRef idkey)
+{
+  bool success = false;
+  PyObject* pykey = NULL;
+
+  pykey = js2python(idkey);
+  FAIL_IF_NULL(pykey);
+  FAIL_IF_MINUS_ONE(PyObject_DelItem(pyobj, pykey));
+
+  success = true;
+finally:
+  Py_CLEAR(pykey);
+  return success ? 0 : -1;
 }
 
 JsRef
@@ -308,7 +371,7 @@ FutureDoneCallback_call_reject(FutureDoneCallback* self)
   JsRef excval = NULL;
   JsRef result = NULL;
   // wrap_exception looks up the current exception and wraps it in a Js error.
-  excval = wrap_exception();
+  excval = wrap_exception(false);
   FAIL_IF_NULL(excval);
   result = hiwire_call_OneArg(self->reject_handle, excval);
 
@@ -419,6 +482,16 @@ EM_JS_REF(JsRef, pyproxy_new, (PyObject * ptrobj), {
 
   let target = new Module.PyProxyClass();
   target['$$'] = { ptr : ptrobj, type : 'PyProxy' };
+
+  // clang-format off
+  if (_PyMapping_Check(ptrobj) === 1) {
+    // clang-format on
+    // Note: this applies to lists and tuples and sequence-like things
+    // _PyMapping_Check returns true on a superset of things _PySequence_Check
+    // accepts.
+    Object.assign(target, Module.PyProxyMappingMethods);
+  }
+
   let proxy = new Proxy(target, Module.PyProxyHandlers);
   let itertype = __pyproxy_iterator_type(ptrobj);
   // clang-format off
@@ -442,21 +515,26 @@ EM_JS_NUM(int, pyproxy_init_js, (), {
   // clang-format off
   Module.PyProxies = {};
   function _getPtr(jsobj) {
-    let ptr = jsobj['$$']['ptr'];
+    let ptr = jsobj.$$.ptr;
     if (ptr === null) {
       throw new Error("Object has already been destroyed");
     }
     return ptr;
   }
+  
   // Static methods
   Module.PyProxy = {
     _getPtr,
     isPyProxy: function(jsobj) {
-      return jsobj && jsobj['$$'] !== undefined && jsobj['$$']['type'] === 'PyProxy';
+      return jsobj && jsobj.$$ !== undefined && jsobj.$$.type === 'PyProxy';
     },
   };
 
+  // We inherit from Function so that we can be callable. 
   Module.PyProxyClass = class extends Function {
+    get [Symbol.toStringTag] (){
+        return "PyProxy";
+    }
     get type() {
       let ptrobj = _getPtr(this);
       return Module.hiwire.pop_value(__pyproxy_type(ptrobj));
@@ -477,7 +555,7 @@ EM_JS_NUM(int, pyproxy_init_js, (), {
     destroy() {
       let ptrobj = _getPtr(this);
       __pyproxy_destroy(ptrobj);
-      this['$$']['ptr'] = null;
+      this.$$.ptr = null;
     }
     apply(jsthis, jsargs) {
       let ptrobj = _getPtr(this);
@@ -500,6 +578,66 @@ EM_JS_NUM(int, pyproxy_init_js, (), {
       let result = Module.hiwire.get_value(idresult);
       Module.hiwire.decref(idresult);
       return result;
+    }
+  };
+
+  // These methods appear for lists and tuples and sequence-like things
+  // _PyMapping_Check returns true on a superset of things _PySequence_Check accepts.
+  Module.PyProxyMappingMethods = {
+    get : function(key){
+      let ptrobj = _getPtr(this);
+      let idkey = Module.hiwire.new_value(key);
+      let idresult;
+      try {
+        idresult = __pyproxy_getitem(ptrobj, idkey);
+      } catch(e) {
+        Module.fatal_error(e);
+      } finally {
+        Module.hiwire.decref(idkey);
+      }
+      if(idresult === 0){
+        if(Module._PyErr_Occurred()){
+          _pythonexc2js();
+        } else {
+          return undefined;
+        }
+      }
+      return Module.hiwire.pop_value(idresult);
+    },
+    set : function(key, value){
+      let ptrobj = _getPtr(this);
+      let idkey = Module.hiwire.new_value(key);
+      let idval = Module.hiwire.new_value(value);
+      let errcode;
+      try {
+        errcode = __pyproxy_setitem(ptrobj, idkey, idval);
+      } catch(e) {
+        Module.fatal_error(e);
+      } finally {
+        Module.hiwire.decref(idkey);
+        Module.hiwire.decref(idval);
+      }
+      if(errcode === -1){
+        _pythonexc2js();
+      }
+    },
+    has : function(key) {
+      return this.get(key) !== undefined;
+    },
+    delete : function(key) {
+      let ptrobj = _getPtr(this);
+      let idkey = Module.hiwire.new_value(key);
+      let errcode;
+      try {
+        errcode = __pyproxy_delitem(ptrobj, idkey);
+      } catch(e) {
+        Module.fatal_error(e);
+      } finally {
+        Module.hiwire.decref(idkey);
+      }
+      if(errcode === -1){
+        _pythonexc2js();
+      }
     }
   };
 
@@ -555,6 +693,8 @@ EM_JS_NUM(int, pyproxy_init_js, (), {
     },
   };
 
+  // These fields appear in the target by default because the target is a function.
+  // we want to filter them out.
   let ignoredTargetFields = ["name", "length"];
 
   // See explanation of which methods should be defined here and what they do here:
@@ -565,11 +705,14 @@ EM_JS_NUM(int, pyproxy_init_js, (), {
       if(Reflect.has(jsobj, jskey) && !ignoredTargetFields.includes(jskey)){
         return true;
       }
+      if(typeof(jskey) === "symbol"){
+        return false;
+      }
       let ptrobj = _getPtr(jsobj);
       let idkey = Module.hiwire.new_value(jskey);
       let result;
       try {
-        result = __pyproxy_has(ptrobj, idkey);
+        result = __pyproxy_hasattr(ptrobj, idkey);
       } catch(e){
         Module.fatal_error(e);
       } finally {
@@ -584,11 +727,14 @@ EM_JS_NUM(int, pyproxy_init_js, (), {
       if(Reflect.has(jsobj, jskey) && !ignoredTargetFields.includes(jskey)){
         return Reflect.get(jsobj, jskey);
       }
+      if(typeof(jskey) === "symbol"){
+        return undefined;
+      }
       let ptrobj = _getPtr(jsobj);
       let idkey = Module.hiwire.new_value(jskey);
       let idresult;
       try {
-        idresult = __pyproxy_get(ptrobj, idkey);
+        idresult = __pyproxy_getattr(ptrobj, idkey);
       } catch(e) {
         Module.fatal_error(e);
       } finally {
@@ -600,44 +746,56 @@ EM_JS_NUM(int, pyproxy_init_js, (), {
       return Module.hiwire.pop_value(idresult);
     },
     set: function (jsobj, jskey, jsval) {
-      if(Reflect.has(jsobj, jskey) && !ignoredTargetFields.includes(jskey)){
+      if(
+        Reflect.has(jsobj, jskey) && !ignoredTargetFields.includes(jskey)
+        || typeof(jskey) === "symbol"
+      ){
+        if(typeof(jskey) === "symbol"){
+          jskey = jskey.description;
+        }
         throw new Error(`Cannot set read only field ${jskey}`);
       }
       let ptrobj = _getPtr(jsobj);
       let idkey = Module.hiwire.new_value(jskey);
       let idval = Module.hiwire.new_value(jsval);
-      let idresult;
+      let errcode;
       try {
-        idresult = __pyproxy_set(ptrobj, idkey, idval);
+        errcode = __pyproxy_setattr(ptrobj, idkey, idval);
       } catch(e) {
         Module.fatal_error(e);
       } finally {
         Module.hiwire.decref(idkey);
         Module.hiwire.decref(idval);
       }
-      if(idresult === 0){
+      if(errcode === -1){
         _pythonexc2js();
       }
-      return Module.hiwire.pop_value(idresult);
+      return true;
     },
     deleteProperty: function (jsobj, jskey) {
-      if(Reflect.has(jsobj, jskey) && !ignoredTargetFields.includes(jskey)){
+      if(
+        Reflect.has(jsobj, jskey) && !ignoredTargetFields.includes(jskey)
+        || typeof(jskey) === "symbol"
+      ){
+        if(typeof(jskey) === "symbol"){
+          jskey = jskey.description;
+        }        
         throw new Error(`Cannot delete read only field ${jskey}`);
       }
       let ptrobj = _getPtr(jsobj);
       let idkey = Module.hiwire.new_value(jskey);
-      let idresult;
+      let errcode;
       try {
-        idresult = __pyproxy_deleteProperty(ptrobj, idkey);
+        errcode = __pyproxy_delattr(ptrobj, idkey);
       } catch(e) {
         Module.fatal_error(e);
       } finally {
         Module.hiwire.decref(idkey);
       }
-      if(idresult === 0){
+      if(errcode === -1){
         _pythonexc2js();
       }
-      return Module.hiwire.pop_value(idresult);
+      return true;
     },
     ownKeys: function (jsobj) {
       let result = new Set(Reflect.ownKeys(jsobj));
@@ -661,7 +819,7 @@ EM_JS_NUM(int, pyproxy_init_js, (), {
       return jsobj.apply(jsthis, jsargs);
     },
   };
-
+  
   Module.PyProxyAwaitableMethods = {
     _ensure_future : function(){
       let resolve_handle_id = 0;
@@ -699,6 +857,55 @@ EM_JS_NUM(int, pyproxy_init_js, (), {
       let promise = this._ensure_future();
       return promise.finally(onFinally);
     }
+  };
+
+
+  // A special proxy that we use to wrap pyodide.globals to allow property access
+  // like `pyodide.globals.x`.
+  // TODO: Should we have this?
+  let globalsPropertyAccessWarned = false;
+  let globalsPropertyAccessWarningMsg =
+    "Access to pyodide.globals via pyodide.globals.key is deprecated and " +
+    "will be removed in version 0.18.0. Use pyodide.globals.get('key'), " +
+    "pyodide.globals.set('key', value), pyodide.globals.delete('key') instead.";
+  let NamespaceProxyHandlers = {
+    has : function(obj, key){
+      return Reflect.has(obj, key) || obj.has(key);
+    },
+    get : function(obj, key){
+      if(Reflect.has(obj, key)){
+        return Reflect.get(obj, key);
+      }
+      let result = obj.get(key);
+      if(!globalsPropertyAccessWarned && result !== undefined){
+        console.warn(globalsPropertyAccessWarningMsg);
+        globalsPropertyAccessWarned = true;
+      }
+      return result;
+    },
+    set : function(obj, key, value){
+      if(Reflect.has(obj, key)){
+        throw new Error(`Cannot set read only field ${key}`);
+      }
+      if(!globalsPropertyAccessWarned){
+        globalsPropertyAccessWarned = true;
+        console.warn(globalsPropertyAccessWarningMsg);
+      }
+      obj.set(key, value);
+    },
+    ownKeys: function (obj) {
+      let result = new Set(Reflect.ownKeys(obj));
+      let iter = obj.keys();
+      for(let key of iter){
+        result.add(key);
+      }
+      iter.destroy();
+      return Array.from(result);
+    }
+  };
+  
+  Module.wrapNamespace = function wrapNamespace(ns){
+    return new Proxy(ns, NamespaceProxyHandlers);
   };
 
   return 0;

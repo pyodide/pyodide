@@ -107,11 +107,6 @@ def test_python2js_numpy_dtype(selenium_standalone):
 
     assert selenium.run("np.array([True, False])") == [True, False]
 
-    selenium.run("x = np.array([['string1', 'string2'], ['string3', 'string4']])")
-    assert selenium.run_js("return pyodide.pyimport('x').toJs().length") == 2
-    assert selenium.run_js("return pyodide.pyimport('x').toJs()[0][0]") == "string1"
-    assert selenium.run_js("return pyodide.pyimport('x').toJs()[1][1]") == "string4"
-
 
 def test_py2js_buffer_clear_error_flag(selenium):
     selenium.load_package("numpy")
@@ -119,7 +114,7 @@ def test_py2js_buffer_clear_error_flag(selenium):
     selenium.run("x = np.array([['string1', 'string2'], ['string3', 'string4']])")
     selenium.run_js(
         """
-        pyodide.globals.x
+        pyodide.globals.get("x")
         // Implicit assertion: this doesn't leave python error indicator set
         // (automatically checked in conftest.py)
         """
