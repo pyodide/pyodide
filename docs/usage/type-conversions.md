@@ -18,14 +18,14 @@ Python to Javascript translations occur:
 - when using {any}`pyodide.pyimport`,
 - when passing arguments to a Javascript function called from Python,
 - when returning the results of a Python function called from Javascript,
-- when indexing a `PyProxy`
+- when accessing an attribute of a `PyProxy`
 
 Javascript to Python translations occur:
 
 - when using the `from js import ...` syntax
 - passing arguments to a Python function called from Javascript
 - returning the result of a Javascript function called from Python
-- when indexing a `JsProxy`
+- when accessing an attribute of a `JsProxy`
 
 ## Round trip conversions 
 Translating an object from Python to Javascript and then back to
