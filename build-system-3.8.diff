@@ -1,0 +1,106 @@
+diff --git a/Makefile b/Makefile
+index 9079eb3..131db57 100644
+--- a/Makefile
++++ b/Makefile
+@@ -156,7 +156,7 @@ build/test.data: $(CPYTHONLIB) $(UGLIFYJS)
+ 	)
+ 	( \
+ 		cd build; \
+-		python $(FILEPACKAGER) test.data --lz4 --preload ../$(CPYTHONLIB)/test@/lib/python$(PYMINOR)/test --js-output=test.js --export-name=pyodide._module --exclude __pycache__ \
++		${HOSTPYTHON} $(FILEPACKAGER) test.data --lz4 --preload ../$(CPYTHONLIB)/test@/lib/python$(PYMINOR)/test --js-output=test.js --export-name=pyodide._module --exclude __pycache__ \
+ 	)
+ 	$(UGLIFYJS) build/test.js -o build/test.js
+ 
+diff --git a/Makefile.envs b/Makefile.envs
+index 17b76ef..4f16265 100644
+--- a/Makefile.envs
++++ b/Makefile.envs
+@@ -10,7 +10,7 @@ SHELL := /bin/bash
+ export PYVERSION=3.8.2
+ export PYMINOR=$(basename $(PYVERSION))
+ export HOSTPYTHONROOT=$(shell python3.8 -c "import sys; print(sys.prefix)")
+-export HOSTPYTHON=$(HOSTPYTHONROOT)/bin/python3.8
++export HOSTPYTHON=${HOSTPYTHON:-$(HOSTPYTHONROOT)/bin/python3.8}
+ export TARGETPYTHONROOT=$(PYODIDE_ROOT)/cpython/installs/python-$(PYVERSION)
+ export PYTHONINCLUDE=$(PYODIDE_ROOT)/cpython/installs/python-$(PYVERSION)/include/python$(PYMINOR)
+ 
+diff --git a/cpython/Makefile b/cpython/Makefile
+index 3c0220b..9db88c8 100644
+--- a/cpython/Makefile
++++ b/cpython/Makefile
+@@ -37,7 +37,7 @@ $(INSTALL)/lib/$(LIB): $(BUILD)/$(LIB) remove_modules.txt
+ 	)
+ 	# Generate sysconfigdata. It outputs into a subfolder of build/, and
+ 	# the subfolder is written to pybuilddir.txt.
+-	_PYTHON_SYSCONFIGDATA_NAME=$(SYSCONFIG_NAME) _PYTHON_PROJECT_BASE=$(BUILD) python -m sysconfig --generate-posix-vars
++	_PYTHON_SYSCONFIGDATA_NAME=$(SYSCONFIG_NAME) _PYTHON_PROJECT_BASE=$(BUILD) $(file < ../bin/PYTHON_FOR_CI) -m sysconfig --generate-posix-vars
+ 	mv `cat pybuilddir.txt`/$(SYSCONFIG_NAME).py $(INSTALL)/lib/python$(PYMINOR)/
+ 	rmdir `cat pybuilddir.txt`
+ 	rm pybuilddir.txt
+@@ -109,7 +109,7 @@ $(BUILD)/Makefile: $(BUILD)/.patched $(ZLIBBUILD)/.configured $(SQLITEBUILD)/lib
+ 	cp config.site $(BUILD)/
+ 	( \
+ 		cd $(BUILD); \
+-		CONFIG_SITE=./config.site READELF=true emconfigure \
++		CONFIG_SITE=./config.site READELF=true PYTHON_FOR_BUILD=$(file < ../bin/PYTHON_FOR_CI) emconfigure \
+ 		  ./configure \
+ 			  CFLAGS="-fPIC -sEMULATE_FUNCTION_POINTER_CASTS=1" \
+ 			  CPPFLAGS="-I$(SQLITEBUILD) -I$(BZIP2BUILD) -I$(ZLIBBUILD)" \
+diff --git a/packages/Makefile b/packages/Makefile
+index d088b7e..872846e 100644
+--- a/packages/Makefile
++++ b/packages/Makefile
+@@ -4,8 +4,8 @@ include ../Makefile.envs
+ 
+ all:
+ 	mkdir -p $(PYODIDE_LIBRARIES)
+-	PYTHONPATH=$(PYODIDE_LIBRARIES)/lib/python ../bin/pyodide buildall . ../build \
+-		--target=$(TARGETPYTHONROOT) --only $(PYODIDE_PACKAGES) --install-dir $(PYODIDE_LIBRARIES)
++	PYTHONPATH=$(PYODIDE_LIBRARIES)/lib/python PYODIDE_LIBRARIES=$(PYODIDE_LIBRARIES) ../bin/pyodide buildall . ../build \
++ --target=$(TARGETPYTHONROOT) --install-dir $(PYODIDE_LIBRARIES) --only $(PYODIDE_PACKAGES)
+ 
+ update-all:
+ 	for pkg in $$(find . -maxdepth 1 -type d -exec basename {} \; | tail -n +2); do \
+diff --git a/pyodide_build/buildpkg.py b/pyodide_build/buildpkg.py
+index 816120b..49308fa 100755
+--- a/pyodide_build/buildpkg.py
++++ b/pyodide_build/buildpkg.py
+@@ -139,6 +139,7 @@ def compile(path: Path, srcpath: Path, pkg: Dict[str, Any], args):
+ 
+     orig_dir = Path.cwd()
+     os.chdir(srcpath)
++
+     env = dict(os.environ)
+     if pkg.get("build", {}).get("skip_host", True):
+         env["SKIP_HOST"] = ""
+@@ -188,7 +189,7 @@ def package_files(buildpath: Path, srcpath: Path, pkg: Dict[str, Any], args):
+     install_prefix = (srcpath / "install").resolve()
+     subprocess.run(
+         [
+-            "python",
++            sys.executable,
+             common.file_packager_path(),
+             name + ".data",
+             "--lz4",
+diff --git a/pyodide_build/pywasmcross.py b/pyodide_build/pywasmcross.py
+index 52aa6ef..69a7db6 100755
+--- a/pyodide_build/pywasmcross.py
++++ b/pyodide_build/pywasmcross.py
+@@ -343,6 +343,17 @@ def handle_command(line, args, dryrun=False):
+     print(" ".join(new_args))
+ 
+     if not dryrun:
++        import glob
++        print("===========================================================",os.getcwd())
++        for egg in glob.glob('.eggs/*.egg'):
++            if os.path.isfile(egg):
++                print("===================== ZIP ! ===========================",os.getcwd(),egg)
++                os.system(f"""
++mv {egg} egg.zip
++mkdir {egg} && cd {egg} && unzip ../../egg.zip
++rm egg.zip
++""")
++        #raise SystemExit(1)
+         result = subprocess.run(new_args)
+         if result.returncode != 0:
+             sys.exit(result.returncode)

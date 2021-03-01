@@ -1,0 +1,48 @@
+name: push
+
+on: [push]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v1
+    - name: PyDK prepare
+      run: |
+            WD=$(pwd)
+            python3 -V
+            echo $WD
+            clang --version | head -n 1
+            echo
+            gcc --version | head -n 1
+            echo
+            env|grep GITHUB
+            echo
+            grep "^Pkg.Revision =" ${ANDROID_HOME}/ndk-bundle/source.properties
+            sudo apt-get update
+            sudo apt-get install bash wget
+            echo pydk support
+            sudo apt-get install -y python3-venv libfuse-dev >/dev/null
+            echo python3 support
+            sudo apt-get install -y  libsqlite3-dev ninja-build bison flex  zlib1g-dev >/dev/null
+            echo gl-gles-gles2 dev
+            sudo apt-get install -y  libgl1-mesa-dev libgles2-mesa-dev libglapi-mesa mesa-common-dev libegl1-mesa-dev >/dev/null
+            echo panda3d support
+            sudo apt-get install -y libbullet-dev libfreetype6-dev libjpeg-dev libode-dev libopenal-dev libpng-dev libssl-dev libogg-dev libvorbis-dev  >/dev/null
+            #echo maybe pyproot support libtalloc-dev libfuse3-dev
+            #echo emscripten support
+            #git clone https://github.com/emscripten-core/emsdk.git
+            #cd emsdk && ./emsdk update-tags && ./emsdk install --embedded latest && ./emsdk activate --embedded latest
+            #echo
+            #echo " === Building pre-requisite HOST support ===="
+            #cd /home/runner/work/pydk/pydk
+            #ARCHITECTURES=hostonly time sh pydk-all.sh
+            cd $WD
+    - name: PyDK Emscripten build wasm
+      run: |
+            make
+    - name: PyDK Package SDK
+      uses: actions/upload-artifact@v2
+      with:
+        name: pydk-min
+        path: /home/runner/work/pydk/pydk/pydk-min
