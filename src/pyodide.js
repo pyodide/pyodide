@@ -361,6 +361,7 @@ globalThis.languagePluginLoader = (async () => {
     'registerJsModule',
     'unregisterJsModule',
     'setInterruptBuffer',
+    'checkInterrupt',
     'pyodide_py'
   ];
   // clang-format on

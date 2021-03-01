@@ -26,6 +26,15 @@ PyodideErr_SetJsError(JsRef err)
 
 PyObject* internal_error;
 PyObject* conversion_error;
+int
+error_check_for_keyboard_interrupt()
+{
+  if (PyErr_Occurred() && PyErr_ExceptionMatches(PyExc_KeyboardInterrupt)) {
+    return -1;
+  } else {
+    return 0;
+  }
+}
 
 int
 error_handling_init(PyObject* core_module)
@@ -47,9 +56,18 @@ error_handling_init(PyObject* core_module)
   EM_ASM({
     Module.handle_js_error = function(e)
     {
+      if (_error_check_for_keyboard_interrupt()) {
+        return;
+      }
       let err = Module.hiwire.new_value(e);
       _PyodideErr_SetJsError(err);
       Module.hiwire.decref(err);
+    };
+    Module.checkInterrupt = function()
+    {
+      if (Module._PyErr_CheckSignals() == -1) {
+        throw new Error("KeyboardInterrupt");
+      }
     };
   });
 
