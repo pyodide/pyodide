@@ -17,6 +17,9 @@
 PyObject*
 js2python(JsRef x);
 
+PyObject*
+js2python_convert(JsRef x, int depth);
+
 /** Initialize any global variables used by this module. */
 int
 js2python_init();

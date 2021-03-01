@@ -2,8 +2,9 @@
 <html>
   <head>
     <meta charset="UTF-8">
-    <script src="https://code.jquery.com/jquery-latest.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/jquery"></script>
     <script src="https://cdn.jsdelivr.net/npm/jquery.terminal/js/jquery.terminal.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/jquery.terminal/js/echo_newline.js"></script>
     <link href="https://cdn.jsdelivr.net/npm/jquery.terminal/css/jquery.terminal.min.css" rel="stylesheet"/>
     <script type="text/javascript">
         // set the pyodide files URL (packages.json, pyodide.asm.data etc)
@@ -17,6 +18,7 @@
   <body>
     <script>
       languagePluginLoader.then(() => {
+        let namespace = pyodide.pyimport("dict")();
         pyodide.runPython(`
             import sys
             import js
@@ -34,6 +36,7 @@
             class PyConsole(console.InteractiveConsole):
                 def __init__(self):
                     super().__init__(
+                        globals(),
                         persistent_stream_redirection=False,
                     )
 
@@ -42,7 +45,8 @@
 
 
             js.window.pyconsole = PyConsole()
-        `);
+        `, namespace);
+        namespace.destroy();
 
         let ps1 = '>>> ', ps2 = '... ';
 
@@ -64,34 +68,13 @@
             prompt: ps1,
             completionEscape: false,
             completion: function(command, callback) {
-              const completions = pyconsole.complete(command)[0];
-              callback(completions.deepCopyToJavascript());
+              callback(pyconsole.complete(command).toJs()[0]);
             }
           }
         );
 
-        // JQuery.terminal adds a trailing newline that is not easy
-        // to remove with the current API. Doing our best here.
-        term.echo_no_newline = (function (message) {
-          // prompt can be polluted with previous echo
-          // _prompt_tail is the line part just before the prompt
-          this._prompt_tail = this._prompt_tail || '';
-          let prompt = this.get_prompt();
-          if( prompt.startsWith(this._prompt_tail) )
-            prompt = prompt.slice(this._prompt_tail.length);
-          else
-            this._prompt_tail = '';
-          // here, prompt and _prompt_tail should be correctly isolated
-          const lines = message.split('\n');
-          lines[0] = this._prompt_tail + lines[0];
-          this._prompt_tail = lines.pop();
-          this.set_prompt(this._prompt_tail + prompt);
-          if( lines.length )
-            this.echo(lines.join('\n'));
-        }).bind(term);
-
-        pyconsole.stdout_callback = term.echo_no_newline;
-        pyconsole.stderr_callback = (s) => term.error(s.replace(/\n+$/, ""));
+        pyconsole.stdout_callback = (s) => term.echo(s, {newline : false});
+        pyconsole.stderr_callback = (s) => term.echo(`[[;red;]${$.terminal.escape_brackets(s)}\u200B]`, {newline : false});
       });
     </script>
   </body>

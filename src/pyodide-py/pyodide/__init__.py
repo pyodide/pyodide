@@ -1,4 +1,4 @@
-from ._base import open_url, eval_code, find_imports, as_nested_list
+from ._base import open_url, eval_code, eval_code_async, find_imports, as_nested_list
 from ._core import JsException  # type: ignore
 from ._importhooks import JsFinder
 from .webloop import WebLoopPolicy
@@ -15,11 +15,12 @@ if platform.system() == "Emscripten":
     asyncio.set_event_loop_policy(WebLoopPolicy())
 
 
-__version__ = "0.16.1"
+__version__ = "0.17.dev0"
 
 __all__ = [
     "open_url",
     "eval_code",
+    "eval_code_async",
     "find_imports",
     "as_nested_list",
     "JsException",
