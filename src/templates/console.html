@@ -18,6 +18,7 @@
   <body>
     <script>
       languagePluginLoader.then(() => {
+        let namespace = pyodide.pyimport("dict")();
         pyodide.runPython(`
             import sys
             import js
@@ -35,6 +36,7 @@
             class PyConsole(console.InteractiveConsole):
                 def __init__(self):
                     super().__init__(
+                        globals(),
                         persistent_stream_redirection=False,
                     )
 
@@ -43,7 +45,8 @@
 
 
             js.window.pyconsole = PyConsole()
-        `);
+        `, namespace);
+        namespace.destroy();
 
         let ps1 = '>>> ', ps2 = '... ';
 
@@ -71,7 +74,7 @@
         );
 
         pyconsole.stdout_callback = (s) => term.echo(s, {newline : false});
-        pyconsole.stderr_callback = (s) => term.error(s, {newline : false});
+        pyconsole.stderr_callback = (s) => term.echo(`[[;red;]${$.terminal.escape_brackets(s)}\u200B]`, {newline : false});
       });
     </script>
   </body>

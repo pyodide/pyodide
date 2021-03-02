@@ -12,6 +12,11 @@ substitutions:
 
 ## Version [Unreleased]
 
+### Improvements to package loading and dynamic linking
+- {{Enhancement}} Uses the emscripten preload plugin system to preload .so files in packages
+- {{Enhancement}} Support for shared library packages. This is used for CLAPACK which makes scipy a lot smaller.
+  [#1236] https://github.com/iodide-project/pyodide/pull/1236
+
 ### Python / JS type conversions
 - {{ Feature }} A `JsProxy` of a Javascript `Promise` or other awaitable object is now a
   Python awaitable.
@@ -93,6 +98,8 @@ substitutions:
   `pyodide.loadPackage`, `pyodide.runPythonAsync` and
   `pyodide.loadPackagesFromImport`, then the messages are no longer
   automatically logged to the console.
+- {{ Feature }} `runPythonAsync` now runs the code with `eval_code_async`. In
+  particular, it is possible to use top level `await` inside of `runPythonAsync`.
 - `eval_code` now accepts separate `globals` and `locals` parameters.
   [#1083](https://github.com/iodide-project/pyodide/pull/1083)
 - Added the `pyodide.setInterruptBuffer` API. This can be used to set a

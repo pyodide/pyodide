@@ -10,7 +10,7 @@
 #include "hiwire.h"
 
 JsRef
-wrap_exception();
+wrap_exception(bool attach_python_error);
 
 /** Convert the active Python exception into a Javascript Error object
  *  and print it to the console.

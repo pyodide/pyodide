@@ -28,49 +28,6 @@ globalThis.languagePluginLoader = (async () => {
     }
   };
 
-  // clang-format off
-  let preloadWasm = () => {
-    // On Chrome, we have to instantiate wasm asynchronously. Since that
-    // can't be done synchronously within the call to dlopen, we instantiate
-    // every .so that comes our way up front, caching it in the
-    // `preloadedWasm` dictionary.
-
-    let promise = new Promise((resolve) => resolve());
-    let FS = pyodide._module.FS;
-
-    function recurseDir(rootpath) {
-      let dirs;
-      try {
-        dirs = FS.readdir(rootpath);
-      } catch {
-        return;
-      }
-      for (let entry of dirs) {
-        if (entry.startsWith('.')) {
-          continue;
-        }
-        const path = rootpath + entry;
-        if (entry.endsWith('.so')) {
-          if (Module['preloadedWasm'][path] === undefined) {
-            promise = promise
-              .then(() => Module['loadWebAssemblyModule'](
-                FS.readFile(path), {loadAsync: true,allowUndefined: true}))
-              .then((module) => {
-                Module['preloadedWasm'][path] = module;
-              });
-          }
-        } else if (FS.isDir(FS.lookupPath(path).node.mode)) {
-          recurseDir(path + '/');
-        }
-      }
-    }
-
-    recurseDir('/');
-
-    return promise;
-  }
-  // clang-format on
-
   let loadScript;
   if (self.document) { // browser
     loadScript = (url) => new Promise((res, rej) => {
@@ -88,9 +45,11 @@ globalThis.languagePluginLoader = (async () => {
     throw new Error("Cannot determine runtime environment");
   }
 
-  function recursiveDependencies(names, _messageCallback, errorCallback) {
-    const packages = Module.packages.dependencies;
+  function recursiveDependencies(names, _messageCallback, errorCallback,
+                                 sharedLibsOnly) {
+    const packages = self.pyodide._module.packages.dependencies;
     const loadedPackages = self.pyodide.loadedPackages;
+    const sharedLibraries = self.pyodide._module.packages.shared_library;
     const toLoad = new Map();
 
     const addPackage = (pkg) => {
@@ -122,6 +81,15 @@ globalThis.languagePluginLoader = (async () => {
       } else {
         errorCallback(`Skipping unknown package '${name}'`);
       }
+    }
+    if (sharedLibsOnly) {
+      onlySharedLibs = new Map();
+      for (let c of toLoad) {
+        if (c[0] in sharedLibraries) {
+          onlySharedLibs.set(c[0], toLoad.get(c[0]));
+        }
+      }
+      return onlySharedLibs;
     }
     return toLoad;
   }
@@ -249,10 +217,8 @@ globalThis.languagePluginLoader = (async () => {
       resolveMsg = 'No packages loaded';
     }
 
-    if (!isFirefox) {
-      await preloadWasm();
-      Module.reportUndefinedSymbols();
-    }
+    Module.reportUndefinedSymbols();
+
     messageCallback(resolveMsg);
 
     // We have to invalidate Python's import caches, or it won't
@@ -291,7 +257,61 @@ globalThis.languagePluginLoader = (async () => {
     if (!Array.isArray(names)) {
       names = [ names ];
     }
+    // get shared library packages and load those first
+    // otherwise bad things happen with linking them in firefox.
+    sharedLibraryNames = [];
+    try {
+      sharedLibraryPackagesToLoad =
+          recursiveDependencies(names, messageCallback, errorCallback, true);
+      for (pkg of sharedLibraryPackagesToLoad) {
+        sharedLibraryNames.push(pkg[0]);
+      }
+    } catch (e) {
+      // do nothing - let the main load throw any errors
+    }
+    // override the load plugin so that it imports any dlls also
+    // this only needs to be done for shared library packages because
+    // we assume that if a package depends on a shared library
+    // it needs to have access to it.
+    // not needed for so in standard module because those are linked together
+    // correctly, it is only where linking goes across modules that it needs to
+    // be done. Hence we only put this extra preload plugin in during the shared
+    // library load
+    let oldPlugin;
+    for (let p in Module.preloadPlugins) {
+      if (Module.preloadPlugins[p].canHandle("test.so")) {
+        oldPlugin = Module.preloadPlugins[p];
+        break;
+      }
+    }
+    let dynamicLoadHandler = {
+      get : function(obj, prop) {
+        if (prop === 'handle') {
+          return function(bytes, name) {
+            obj[prop].apply(obj, arguments);
+            this["asyncWasmLoadPromise"] =
+                this["asyncWasmLoadPromise"].then(function() {
+                  Module.loadDynamicLibrary(name,
+                                            {global : true, nodelete : true})
+                });
+          }
+        } else {
+          return obj[prop];
+        }
+      }
+    };
+    var loadPluginOverride = new Proxy(oldPlugin, dynamicLoadHandler);
+    // restore the preload plugin
+    Module.preloadPlugins.unshift(loadPluginOverride);
+
     let promise = loadPackageChain.then(
+        () => _loadPackage(sharedLibraryNames, messageCallback || console.log,
+                           errorCallback || console.error));
+    loadPackageChain = loadPackageChain.then(() => promise.catch(() => {}));
+    await promise;
+    Module.preloadPlugins.shift(loadPluginOverride);
+
+    promise = loadPackageChain.then(
         () => _loadPackage(names, messageCallback || console.log,
                            errorCallback || console.error));
     loadPackageChain = loadPackageChain.then(() => promise.catch(() => {}));
@@ -360,7 +380,8 @@ globalThis.languagePluginLoader = (async () => {
 
   Module.noImageDecoding = true;
   Module.noAudioDecoding = true;
-  Module.noWasmDecoding = true;
+  Module.noWasmDecoding =
+      false; // we preload wasm using the built in plugin now
   Module.preloadedWasm = {};
   let isFirefox = navigator.userAgent.toLowerCase().indexOf('firefox') > -1;
 
@@ -418,15 +439,17 @@ globalThis.languagePluginLoader = (async () => {
    * @param {string} code Python code to evaluate
    * @returns The result of the python code converted to Javascript
    */
-  Module.runPython = code => Module.pyodide_py.eval_code(code, Module.globals);
+  Module.runPython = function(code, globals = Module.globals) {
+    return Module.pyodide_py.eval_code(code, globals);
+  };
 
   // clang-format off
   /**
-   * Inspect a Python code chunk and use ``pyodide.loadPackage` to load any known 
-   * packages that the code chunk imports. Uses 
+   * Inspect a Python code block and use ``pyodide.loadPackage` to load any known 
+   * packages that the code imports. Uses 
    * :func:`pyodide_py.find_imports <pyodide.find\_imports>` to inspect the code.
 
-   * For example, given the following code chunk as input
+   * For example, given the following code as input
    * 
    * .. code-block:: python
    * 
@@ -471,7 +494,7 @@ globalThis.languagePluginLoader = (async () => {
 
   /**
    * Runs Python code, possibly asynchronously loading any known packages that
-   * the code chunk imports. For example, given the following code chunk
+   * the code imports. For example, given the following code
    *
    * .. code-block:: python
    *
@@ -479,7 +502,7 @@ globalThis.languagePluginLoader = (async () => {
    *    x = np.array([1, 2, 3])
    *
    * pyodide will first call `pyodide.loadPackage(['numpy'])`, and then run the
-   * code chunk, returning the result. Since package fetching must happen
+   * code, returning the result. Since package fetching must happen
    * asynchronously, this function returns a `Promise` which resolves to the
    * output. For example:
    *

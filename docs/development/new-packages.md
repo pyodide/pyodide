@@ -148,6 +148,10 @@ Extra arguments to pass to the linker when building for WebAssembly.
 
 Should be set to true for library packages. Library packages are packages that are needed for other packages but are not Python packages themselves. For library packages, the script specified in the `build/script` section is run to compile the library. See the [zlib meta.yaml](https://github.com/iodide-project/pyodide/blob/master/packages/zlib/meta.yaml) for an example of a library package specification.
 
+#### `build/sharedlibrary`
+
+Should be set to true for shared library packages. Shared library packages are packages that are needed for other packages, but are loaded dynamically when pyodide is run. For shared library packages, the script specified in the `build/script` section is run to compile the library. The script should build the shared library and copy into into a subfolder of the source folder called `install`. Files or folders in this install folder will be packaged to make the pyodide package. See the [CLAPACK meta.yaml](https://github.com/iodide-project/pyodide/blob/master/packages/CLAPACK/meta.yaml) for an example of a shared library specification.
+
 #### `build/script`
 
 The script section is required for a library package (`build/library` set to true). For a Python package this section is optional. If it is specified for a Python package, the script section will be run before the build system runs `setup.py`. This script is run by `bash` in the directory where the tarball was extracted.
