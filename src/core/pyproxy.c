@@ -130,7 +130,7 @@ pyproxy_getflags(PyObject* pyobj)
 //     Javascript.
 //  2. The code is a bit more concise in C.
 //  3. It may be preferable to minimize the number of times we cross between
-//     wasm and javascript for performance reasons, I'm not sure.
+//     wasm and javascript for performance reasons
 //  4. Better separation of functionality: Most of the Javascript code is
 //     boilerpalte. Most of this code here is boilerplate. However, the
 //     boilerplate in these C API wwrappers is a bit different than the
