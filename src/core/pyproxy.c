@@ -664,7 +664,7 @@ EM_JS_NUM(int, pyproxy_init_js, (), {
       ["f64", Float64Array],      
     ]
   );
-  if(window.BigInt64Array){
+  if(globalThis.BigInt64Array){
       type_to_array_map.set("i64", BigInt64Array);
       type_to_array_map.set("u64", BigUint64Array);
   }
