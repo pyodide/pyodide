@@ -9,28 +9,35 @@ scikit-learn,scikit-image,\
 astropy,\
 "
 
-export TESTING="statsmodels,"
+TESTING="statsmodels,"
 
 # kiwisolver need cppyy unpacking
 
-export EGGUNPACK="kiwisolver,"
+EGGUNPACK="kiwisolver,"
 
-export CIRCULAR="\
+CIRCULAR="\
 pandas,setuptools,glpk,traits,nlopt,\
 Jinja2,jedi,autograd,matplotlib,cloudpickle,docutils,\
 networkx,lxml,pytest,mpmath,nltk,bleach,yt,\
 zarr,cytoolz,python-sat,biopython,\
 "
+
+
 # clean packages
 
-export PYODIDE_PACKAGES="Pygments,attrs,numpy,pillow,six,zlib,webencodings,regex,six,\
-future,html5lib,imageio,joblib,libiconv,libxml,libxslt,xlrd,asciitree,beautifulsoup4,\
-micropip,packaging,parso,pytz,python-dateutil,cssselect,distlib,\
-patsy,pluggy,msgpack,MarkupSafe,more-itertools,pyparsing,decorator,\
+MINIMAL="micropip,distlib,parso,pytz,python-dateutil,regex,six,zlib,future,"
+
+export PYODIDE_PACKAGES="${MINIMAL},Pygments,attrs,numpy,pillow,webencodings,\
+html5lib,imageio,joblib,libiconv,libxml,libxslt,xlrd,asciitree,beautifulsoup4,\
+packaging,cssselect,patsy,pluggy,msgpack,MarkupSafe,more-itertools,pyparsing,decorator,\
 CLAPACK,pyodide-interrupts,toolz,uncertainties,atomicwrites,\
 numcodecs,nose,cycler,soupsieve,sympy,freesasa,\
-${EGGUNPACK}${CIRCULAR}${TESTING}py
+py
 "
+
+# TODO incremental build of those
+# ${EGGUNPACK}${CIRCULAR}${TESTING}py
+
 
 export HOSTPYTHON=$(command -v python3.8)
 export PYTHON_FOR_BUILD=$HOSTPYTHON
