@@ -39,8 +39,7 @@ jobs:
             #echo " === Building pre-requisite HOST support ===="
             #cd /home/runner/work/pydk/pydk
             #ARCHITECTURES=hostonly time sh pydk-all.sh
-            mkdir -p /home/runner/work/pyodide/pyodide/packages/.artifacts/lib/python
-            cd $WD
+            cd $WD && mkdir -p /home/runner/work/pyodide/pyodide/packages/.artifacts/lib/python
     - name: PyDK Emscripten build wasm
       run: |
             make
