@@ -224,3 +224,32 @@ def test_keyboard_interrupt(selenium):
         `)
         """
     )
+
+
+def test_run_python_async_toplevel_await(selenium):
+    selenium.run_js(
+        """
+        pyodide.runPythonAsync(`
+            from js import fetch
+            resp = await fetch("packages.json")
+            json = await resp.json()
+            assert hasattr(json, "dependencies")
+        `);
+        """
+    )
+
+
+def test_run_python_last_exc(selenium):
+    selenium.run_js(
+        """
+        try {
+            pyodide.runPython("x = ValueError(77); raise x");
+        } catch(e){}
+        pyodide.runPython(`
+            import sys
+            assert sys.last_value is x
+            assert sys.last_type is type(x)
+            assert sys.last_traceback is x.__traceback__
+        `);
+        """
+    )

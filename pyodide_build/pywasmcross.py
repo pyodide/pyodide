@@ -264,12 +264,26 @@ def handle_command(line, args, dryrun=False):
     elif new_args[0] == "em++":
         new_args.extend(args.cflags.split() + args.cxxflags.split())
 
+    optflags_valid = [f"-O{tok}" for tok in "01234sz"]
+    optflag = None
+    # Identify the optflag (e.g. -O3) in cflags/cxxflags/ldflags. Last one has
+    # priority.
+    for arg in new_args[::-1]:
+        if arg in optflags_valid:
+            optflag = arg
+            break
+
     lapack_dir = None
 
     used_libs = set()
 
     # Go through and adjust arguments
     for arg in line[1:]:
+        if arg in optflags_valid and optflag is not None and arg != optflag:
+            # There are multiple contradictory optflags provided, use the one
+            # from cflags/cxxflags/ldflags
+            continue
+
         if arg.startswith("-I"):
             if (
                 str(Path(arg[2:]).resolve()).startswith(sys.prefix + "/include/python")
@@ -316,43 +330,6 @@ def handle_command(line, args, dryrun=False):
             and arg.startswith("-l" + args.install_dir)
             or arg.startswith("-L" + args.install_dir)
         ):
-            continue
-
-        # Fix for scipy to link to the correct BLAS/LAPACK files
-        if arg.startswith("-L") and "CLAPACK" in arg:
-            out_idx = line.index("-o")
-            out_idx += 1
-            module_name = line[out_idx]
-            module_name = Path(module_name).name.split(".")[0]
-
-            lapack_dir = arg.replace("-L", "")
-            # For convenience we determine needed scipy link libraries
-            # here, instead of in patch files
-            link_libs = ["F2CLIBS/libf2c.a", "blas_WA.a"]
-            if module_name in [
-                "_flapack",
-                "_flinalg",
-                "_calc_lwork",
-                "cython_lapack",
-                "_iterative",
-                "_arpack",
-            ]:
-                link_libs.append("lapack_WA.a")
-
-            for lib_name in link_libs:
-                arg = os.path.join(lapack_dir, f"{lib_name}")
-                new_args.append(arg)
-
-            new_args.extend(["-s", "INLINING_LIMIT=5"])
-            continue
-
-        # Use -Os for files that are statically linked to CLAPACK
-        if (
-            arg.startswith("-O")
-            and "CLAPACK" in " ".join(line)
-            and "-L" in " ".join(line)
-        ):
-            new_args.append("-Os")
             continue
 
         if new_args[-1].startswith("-B") and "compiler_compat" in arg:

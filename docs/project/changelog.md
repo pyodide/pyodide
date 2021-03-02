@@ -12,6 +12,11 @@ substitutions:
 
 ## Version [Unreleased]
 
+### Improvements to package loading and dynamic linking
+- {{Enhancement}} Uses the emscripten preload plugin system to preload .so files in packages
+- {{Enhancement}} Support for shared library packages. This is used for CLAPACK which makes scipy a lot smaller.
+  [#1236] https://github.com/iodide-project/pyodide/pull/1236
+
 ### Python / JS type conversions
 - {{ Feature }} A `JsProxy` of a Javascript `Promise` or other awaitable object is now a
   Python awaitable.
@@ -21,7 +26,7 @@ substitutions:
   conversion behavior that used to be implicit.
   [#1167](https://github.com/iodide-project/pyodide/pull/1167)
 - {{ Feature }} Flexible jsimports: it now possible to add custom Python
-  "packages" backed by Javascript code, like the js package.  The `js` package
+  "packages" backed by Javascript code, like the `js` package.  The `js` package
   is now implemented using this system.
   [#1146](https://github.com/iodide-project/pyodide/pull/1146)
 - {{ Feature }} A `PyProxy` of a Python coroutine or awaitable is now an awaitable javascript
@@ -31,13 +36,19 @@ substitutions:
 - {{ Feature }} A `JsProxy` of a Javascript `Promise` or other awaitable object is now a
   Python awaitable.
   [#880](https://github.com/iodide-project/pyodide/pull/880)
-- {{ Enhancement }} Made PyProxy of an iterable Python object an iterable Js object: defined the
+- {{ Enhancement }} Made `PyProxy` of an iterable Python object an iterable Js object: defined the
   `[Symbol.iterator]` method, can be used like `for(let x of proxy)`.
-  Made a PyProxy of a Python iterator an iterator: `proxy.next()` is
+  Made a `PyProxy` of a Python iterator an iterator: `proxy.next()` is
   translated to `next(it)`.
-  Made a PyProxy of a Python generator into a Javascript generator:
+  Made a `PyProxy` of a Python generator into a Javascript generator:
   `proxy.next(val)` is translated to `gen.send(val)`.
   [#1180](https://github.com/iodide-project/pyodide/pull/1180)
+- Updated `PyProxy` so that if the wrapped Python object supports `__getitem__`
+  access, then the wrapper has `get`, `set`, `has`, and `delete` methods which do
+  `obj[key]`, `obj[key] = val`, `key in obj` and `del obj[key]` respectively.
+  [#1175](https://github.com/iodide-project/pyodide/pull/1175)
+
+### Fixed
 - {{ Fix }} getattr and dir on JsProxy now report consistent results and include all
   names defined on the Python dictionary backing JsProxy.
   [#1017](https://github.com/iodide-project/pyodide/pull/1017)
@@ -87,6 +98,8 @@ substitutions:
   `pyodide.loadPackage`, `pyodide.runPythonAsync` and
   `pyodide.loadPackagesFromImport`, then the messages are no longer
   automatically logged to the console.
+- {{ Feature }} `runPythonAsync` now runs the code with `eval_code_async`. In
+  particular, it is possible to use top level `await` inside of `runPythonAsync`.
 - `eval_code` now accepts separate `globals` and `locals` parameters.
   [#1083](https://github.com/iodide-project/pyodide/pull/1083)
 - Added the `pyodide.setInterruptBuffer` API. This can be used to set a

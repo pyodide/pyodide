@@ -106,7 +106,7 @@ main(int argc, char** argv)
   }
 
   TRY_INIT(hiwire);
-  TRY_INIT(error_handling);
+  TRY_INIT_WITH_CORE_MODULE(error_handling);
   TRY_INIT(js2python);
   TRY_INIT_WITH_CORE_MODULE(JsProxy);
   TRY_INIT(pyproxy);
