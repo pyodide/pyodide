@@ -2,19 +2,19 @@
 
 ## WebAssembly ecosystem
 
-- [emscripten](https://emscripten.org/) is a compiler toolchain for WebAssembly
-  that made pyodide possible.
+- [emscripten](https://emscripten.org/) is the compiler toolchain for WebAssembly
+  that made Pyodide possible.
 
 ## Notebook environements / IDEs / REPLs
 
- - [Iodide](https://github.com/iodide-project/iodide) is an notebook like
-   environement for literate scientific computing and communication for the
-   web. It is no longer actively developped. Historically, pyodide started
+ - [Iodide](https://github.com/iodide-project/iodide) is a notebook-like
+   environment for literate scientific computing and communication for the
+   web. It is no longer actively developed. Historically, Pyodide started
    as plugin for iodide.
  - [Starboard notebook](https://github.com/gzuidhof/starboard-notebook) is an
-   in browser literal notebook runtime that uses pyodide for Python.
+   in-browser literal notebook runtime that uses Pyodide for Python.
  - [Basthon notebook](https://notebook.basthon.fr/) is a static fork of Jupyter
-   notebook with a pyodide kernel (currently in French).
+   notebook with a Pyodide kernel (currently in French).
 
 ## Other projects
 
