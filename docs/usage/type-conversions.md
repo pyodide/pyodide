@@ -93,7 +93,7 @@ possible in the future -- work is ongoing to make this more complete):
 
 | Python                    | Javascript             |
 |---------------------------|------------------------|
-| `str(proxy)`             | `x.toString()`         |
+| `str(proxy)`              | `x.toString()`         |
 | `proxy.foo`               | `x.foo`                |
 | `proxy.foo = bar`         | `x.foo = bar`          |
 | `del proxy.foo`           | `delete x.foo`         |
@@ -155,25 +155,25 @@ Fewer operations can be overloaded in Javascript than in Python so some
 operations are more cumbersome on a `PyProxy` than on a `JsProxy`. The following
 operations are currently supported:
 
-| Javascript                 | Python                   |
-|----------------------------|--------------------------|
-| `foo in proxy`             | `hasattr(x, 'foo')`      |
-| `proxy.foo`                | `x.foo`                  |
-| `proxy.foo = bar`          | `x.foo = bar`            |
-| `delete proxy.foo`         | `del x.foo`              |
-| `proxy.ownKeys()`          | `dir(x)`                 |
-| `proxy(...)`               | `x(...)`                 |
-| `proxy.foo(...)`           | `x.foo(...)`             |
-| `proxy.length` or `x.size` | `len(x)`                 |
-| `proxy.has(foo)`           | `foo in x`               |
-| `proxy.get(foo)`           | `x[foo]`                 |
-| `proxy.set(foo, bar)`      | `x[foo] = bar`           |
-| `proxy.delete(foo)`        | `del x[foo]`             |
-| `x.type`                   | `type(x)`                |
-| `x[Symbol.iterator]()`     | `iter(x)`                |
-| `x.next()`                 | `next(x)`                |
-| `await x`                  | `await x`                |
-| `Object.entries(x)`        |  `repr(x)`               |
+| Javascript                            | Python                   |
+|---------------------------------------|--------------------------|
+| `foo in proxy`                        | `hasattr(x, 'foo')`      |
+| `proxy.foo`                           | `x.foo`                  |
+| `proxy.foo = bar`                     | `x.foo = bar`            |
+| `delete proxy.foo`                    | `del x.foo`              |
+| `Object.getOwnPropertyNames(proxy)`   | `dir(x)`                 |
+| `proxy(...)`                          | `x(...)`                 |
+| `proxy.foo(...)`                      | `x.foo(...)`             |
+| `proxy.length` or `x.size`            | `len(x)`                 |
+| `proxy.has(foo)`                      | `foo in x`               |
+| `proxy.get(foo)`                      | `x[foo]`                 |
+| `proxy.set(foo, bar)`                 | `x[foo] = bar`           |
+| `proxy.delete(foo)`                   | `del x[foo]`             |
+| `x.type`                              | `type(x)`                |
+| `x[Symbol.iterator]()`                | `iter(x)`                |
+| `x.next()`                            | `next(x)`                |
+| `await x`                             | `await x`                |
+| `Object.entries(x)`                   |  `repr(x)`               |
 
 An additional limitation is that when proxying a Python object into Javascript,
 there is no way for Javascript to automatically garbage collect the Proxy.
@@ -202,8 +202,15 @@ performs the following explicit conversions:
 | Python           | Javascript          |
 |------------------|---------------------|
 | `list`, `tuple`  | `Array`             |
-| `dict`           | `Object`            |
+| `dict`           | `Map`               |
 | `set`            | `Set`               |
+
+In Javascript, `Map` and `Set` keys are compared using object identity unless
+the key is an immutable type (meaning a string, a number, a bigint, a boolean,
+`undefined`, or `null`). On the other hand, in Python, `dict` and `set` keys are
+compared using deep equality. If a key is encountered in a `dict` or `set` that
+would have different semantics in Javascript than in Python, then a
+`ConversionError` will be thrown.
 
 ### Javascript to Python
 Explicit conversion of a `JsProxy` into a native Python object is done with the
@@ -231,8 +238,19 @@ pyodide.runPython(`
     assert x.to_py() == { "a" : 7, "b" : 2} 
     # y is not a "raw object" so it's not converted
     assert y.to_py() == y
-`)
+`);
 ```
+
+In Javascript, `Map` and `Set` keys are compared using object identity unless
+the key is an immutable type (meaning a string, a number, a bigint, a boolean,
+`undefined`, or `null`). On the other hand, in Python, `dict` and `set` keys are
+compared using deep equality. If a key is encountered in a `Map` or `Set` that
+would have different semantics in Python than in Javascript, then a
+`ConversionError` will be thrown. Also, in Javascript, `true !== 1` and `false
+!== 0`, but in Python, `True == 1` and `False == 0`. This has the result that a
+Javascript map can use `true` and `1` as distinct keys but a Python `dict`
+cannot. If the Javascript map contains both `true` and `1` a `ConversionError`
+will be thrown.
 
 ## Buffers
 
@@ -275,6 +293,7 @@ to import, `pyimport` returns the object translated to Javascript.
 ```javascript
 let sys = pyodide.pyimport('sys');
 ```
+
 (type-translations_using-js-obj-from-py)=
 ## Importing Javascript objects into Python
 
