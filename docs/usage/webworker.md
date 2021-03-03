@@ -37,7 +37,7 @@ In this example process we will have three parties involved:
 
 ### Consumers
 
-Our goal is to run some python code in another thread, this other thread will
+Our goal is to run some Python code in another thread, this other thread will
 not have access to the main thread objects. Therefore we will need an API that takes
 as input not only the python `script` we wan to run, but also the `context` on which
 it relies (some javascript variables that we would normally get access to if we
