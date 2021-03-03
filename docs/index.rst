@@ -32,7 +32,7 @@ may be installed from PyPI to be used with Pyodide.
 
    usage/quickstart.md
    usage/webworker.md
-   usage/serving-pyodide-packages.md
+   usage/serving-pyodide-files.md
    usage/loading-packages.md
    usage/type-conversions.md
    usage/api-reference.md

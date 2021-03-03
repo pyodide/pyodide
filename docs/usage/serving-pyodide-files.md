@@ -1,5 +1,5 @@
-(serving_pyodide_packages)=
-# Serving pyodide packages
+(serving_pyodide_files)=
+# Serving pyodide files
 
 
 If you built your pyodide distribution or downloaded the release tarball
