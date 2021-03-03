@@ -253,3 +253,28 @@ def test_run_python_last_exc(selenium):
         `);
         """
     )
+
+def test_check_interrupt(selenium):
+    assert selenium.run_js(
+        """
+        let buffer = new Uint8Array(1);
+        let x = 0;
+        pyodide.setInterruptBuffer(buffer);
+        function test(){
+            buffer[0] = 2;
+            pyodide.checkInterrupt();
+            x = 1;
+        }
+        window.test = test;
+        let err;
+        try {
+            pyodide.runPython(`
+                from js import test;
+                test();
+            `);
+        } catch(e){
+            err = e;
+        }
+        return x === 0 && err.message.includes("KeyboardInterrupt");
+        """
+    )
