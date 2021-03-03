@@ -77,7 +77,7 @@ downloaded wheel against pre-recorded hash digests from the PyPi JSON API.
 
 ### Installing wheels from arbitrary URLs
 
-Pure python wheels can also be installed from any URL with micropip,
+Pure Python wheels can also be installed from any URL with micropip,
 ```py
 import micropip
 micropip.install(
@@ -87,7 +87,7 @@ micropip.install(
 Micropip currently decides whether a file is a url based on whether it ends in ".whl" or not.
 The wheel name in the URL must follow [PEP 427 naming
 convention](https://www.python.org/dev/peps/pep-0427/#file-format), which will
-be the case if the wheels is made using standard python tools (`pip wheel`,
+be the case if the wheels is made using standard Python tools (`pip wheel`,
 `setup.py bdist_wheel`).
 
 All required dependencies need also to be previously installed with `micropip`

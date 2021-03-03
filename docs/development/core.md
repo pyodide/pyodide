@@ -5,7 +5,7 @@ This file is intended as guidelines to help contributors trying to modify the C 
 ## What the files do
 The primary purpose of `core` is to implement {ref}`type conversions <type_conversions>` between Python and Javascript. Here is a breakdown of the purposes of the files.
 
-* `main` -- responsible for configuring and initializing the python interpreter, initializing the other source files, and creating the `_pyodide_core` module which is used to expose Python objects to `pyodide_py`. `main.c` also tries to generate fatal initialization error messages to help with debugging when there is a mistake in the initialization code.
+* `main` -- responsible for configuring and initializing the Python interpreter, initializing the other source files, and creating the `_pyodide_core` module which is used to expose Python objects to `pyodide_py`. `main.c` also tries to generate fatal initialization error messages to help with debugging when there is a mistake in the initialization code.
 * `keyboard_interrupt` -- This sets up the keyboard interrupts system for using Pyodide with a webworker.
 
 ### Backend utilities
@@ -14,7 +14,7 @@ The primary purpose of `core` is to implement {ref}`type conversions <type_conve
 
 ### Type conversion from Javascript to Python
 
-* `js2python` -- converts basic types from javascript to python, leaves more complicated stuff to jsproxy.
+* `js2python` -- converts basic types from javascript to Python, leaves more complicated stuff to jsproxy.
 * `jsproxy` -- Defines Python classes to proxy complex javascript types into Python. A complex file responsible for many of the core behaviors of pyodide.
 
 ### Type conversion from Python to Javascript
@@ -42,7 +42,7 @@ These APIs do not do correct error reporting and there is talk in the Python com
 
 * `PyObject_HasAttrString`, `PyObject_GetAttrString`,  `PyDict_GetItemString`, `PyDict_SetItemString`, `PyMapping_HasKeyString` etc, etc.
 These APIs cause wasteful repeated string conversion.
-If the string you are using is a constant, e.g., `PyDict_GetItemString(dict, "identifier")`, then make an id with `Py_Identifier(identifier)` and then use `_PyDict_GetItemId(&PyId_identifier)`. If the string is not constant, convert it to a python object with `PyUnicode_FromString()` and then use e.g., `PyDict_GetItem`.
+If the string you are using is a constant, e.g., `PyDict_GetItemString(dict, "identifier")`, then make an id with `Py_Identifier(identifier)` and then use `_PyDict_GetItemId(&PyId_identifier)`. If the string is not constant, convert it to a Python object with `PyUnicode_FromString()` and then use e.g., `PyDict_GetItem`.
 
 * `PyModule_AddObject`. This steals a reference on success but not on failure and requires unique cleanup code. Instead use `PyObject_SetAttr`.
 
@@ -70,7 +70,7 @@ If we call a javascript function from C and that javascript function throws an e
 try {
   // body of function here
 } catch(e) {
-  // wrap e in a Python exception and set the python error indicator
+  // wrap e in a Python exception and set the Python error indicator
   // return error code
 }
 ```
@@ -126,7 +126,7 @@ def f():
     decref(b)
     decref(c)
 ```
-Freeing all references at the end of the function allows us to separate reference counting boilerplate from the "actual logic" of the function definition. When a function does correct error propogation, there will be many different execution paths, roughly linearly many in the length of the function. For example, the above psuedocode could exit in five different ways: `do_something` could raise an exception, `do_something_else` could raise an exception, `a + b` could raise an exception, `some_func` could raise an exception, or the function could return successfully. (Even a python function like `def f(a,b,c,d): return (a + b) * c - d` has four execution paths.) The point of the `try`/`finally` block is that we know the resources are freed correctly without checking once for each execution path.
+Freeing all references at the end of the function allows us to separate reference counting boilerplate from the "actual logic" of the function definition. When a function does correct error propogation, there will be many different execution paths, roughly linearly many in the length of the function. For example, the above psuedocode could exit in five different ways: `do_something` could raise an exception, `do_something_else` could raise an exception, `a + b` could raise an exception, `some_func` could raise an exception, or the function could return successfully. (Even a Python function like `def f(a,b,c,d): return (a + b) * c - d` has four execution paths.) The point of the `try`/`finally` block is that we know the resources are freed correctly without checking once for each execution path.
 
 To do this, we divide any function that produces more than a couple of owned `PyObject*`s or `JsRef`s into several "segments".
 The more owned references there are in a function and the longer it is, the more important it becomes to follow this style carefully.

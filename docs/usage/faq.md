@@ -1,13 +1,13 @@
 # Frequently Asked Questions (FAQ)
 
-## How can I load external python files in Pyodide?
+## How can I load external Python files in Pyodide?
 
 The two possible solutions are,
 
-- include these files in a python package, build a pure python wheel with
+- include these files in a Python package, build a pure Python wheel with
   `python setup.py bdist_wheel` and
   {ref}`load it with micropip <micropip-installing-from-arbitrary-urls>`.
-- fetch the python code as a string and evaluate it in Python,
+- fetch the Python code as a string and evaluate it in Python,
   ```js
   pyodide.runPython(await fetch('https://some_url/...'))
   ```
@@ -64,7 +64,7 @@ and returns a list of packages imported.
 ## How can I execute code in a custom namespace?
 
 The second argument to {any}`pyodide.eval_code` is a global namespace to execute the code in.
-The namespace is a python dictionary. 
+The namespace is a Python dictionary. 
 ```javascript
 let my_namespace = pyodide.globals.dict();
 pyodide.pyodide_py.eval_code(`x = 1 + 1`, my_namespace);
@@ -111,7 +111,7 @@ We used to use the environment variable `PYODIDE_BASE_URL` for this purpose,
 but this usage is deprecated.
 
 
-## How do I create custom python packages from javascript?
+## How do I create custom Python packages from javascript?
 
 Put a collection of functions into a javascript object and use `pyodide.registerJsModule`:
 Javascript:

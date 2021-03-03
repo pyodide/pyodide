@@ -187,7 +187,7 @@ A list of required packages.
 List of imports to test after the package is built.
 
 ## C library dependencies
-Some python packages depend on certain C libraries, e.g. `lxml` depends on
+Some Python packages depend on certain C libraries, e.g. `lxml` depends on
 `libxml`.
 
 To package a C library, create a directory in `packages/` for the C library.
@@ -204,20 +204,20 @@ This directory should contain (at least) two files:
   - `package/name`: The name of the library, which must equal the directory
     name.
   - `requirements/run`: The dependencies of the library, which can include both
-    C libraries and python packages.
+    C libraries and Python packages.
   - `build/library`: This must be set to `true` to indicate that this is a
     library and not an ordinary package.
 
-After packaging a C library, it can be added as a dependency of a python
+After packaging a C library, it can be added as a dependency of a Python
 package like a normal dependency. See `lxml` and `libxml` for an example (and
 also `scipy` and `CLAPACK`).
 
 *Remark:* Certain C libraries come as emscripten ports, and do not have to be
 built manually. They can be used by adding e.g. `-s USE_ZLIB` in the `cflags`
-of the python package. See e.g. `matplotlib` for an example.
+of the Python package. See e.g. `matplotlib` for an example.
 
 ## Structure of a Pyodide package
-This section describes the structure of a pure python package, and how our
+This section describes the structure of a pure Python package, and how our
 build system creates it (In general, it is not recommended, to construct these
 by hand; instead create a Python wheel and install it with micropip)
 
@@ -226,9 +226,9 @@ packages the same way as CPython --- it looks for relevant files `.py` files in
 `/lib/python3.x/`. When creating and loading a package, our job is to put our
 `.py` files in the right location in emscripten's virtual filesystem.
 
-Suppose you have a python library that consists of a single directory
+Suppose you have a Python library that consists of a single directory
 `/PATH/TO/LIB/` whose contents would go into
-`/lib/python3.8/site-packages/PACKAGE_NAME/` under a normal python
+`/lib/python3.8/site-packages/PACKAGE_NAME/` under a normal Python
 installation.
 
 The simplest version of the corresponding Pyodide package contains two files
@@ -237,7 +237,7 @@ The simplest version of the corresponding Pyodide package contains two files
 loading the package via `pyodide.loadPackage`, Pyodide will load and run
 `PACKAGE_NAME.js`. The script then fetches `PACKAGE_NAME.data` and extracts the
 contents to emscripten's virtual filesystem. Afterwards, since the files are
-now in `/lib/python3.8/`, running `import PACKAGE_NAME` in python will
+now in `/lib/python3.8/`, running `import PACKAGE_NAME` in Python will
 successfully import the module as usual.
 
 To construct this bundle, we use the `file_packager.py` script from emscripten.

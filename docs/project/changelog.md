@@ -209,8 +209,8 @@ by 0.16.1 with identical contents.
 - Pre-built docker images are now available as
   [`iodide-project/pyodide`](https://hub.docker.com/r/iodide/pyodide)
   [#787](https://github.com/iodide-project/pyodide/pull/787)
-- Host python is no longer compiled, reducing compilation time. This also
-  implies that python 3.8 is now required to build Pyodide. It can for instance
+- Host Python is no longer compiled, reducing compilation time. This also
+  implies that Python 3.8 is now required to build Pyodide. It can for instance
   be installed with conda.
   [#830](https://github.com/iodide-project/pyodide/pull/830)
 - FIX Infer package tarball directory from source url
@@ -239,7 +239,7 @@ by 0.16.1 with identical contents.
 ### Other improvements
 
 - Modifiy MEMFS timestamp handling to support better caching. This in
-  particular allows to import newly created python modules without invalidating
+  particular allows to import newly created Python modules without invalidating
   import caches [#893](https://github.com/iodide-project/pyodide/pull/893)
 
 ### Packages
