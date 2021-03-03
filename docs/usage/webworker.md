@@ -1,7 +1,7 @@
 (using_from_webworker)=
 # Using Pyodide from a web worker
 
-This document describes how to use pyodide to execute python scripts
+This document describes how to use Pyodide to execute python scripts
 asynchronously in a web worker.
 
 ## Startup

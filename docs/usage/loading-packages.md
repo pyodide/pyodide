@@ -3,12 +3,12 @@
 
 Only the Python standard library is available after importing Pyodide.
 To use other packages, you’ll need to load them using either:
- - {any}`pyodide.loadPackage` for packages built with pyodide, or 
+ - {any}`pyodide.loadPackage` for packages built with Pyodide, or 
  - `micropip.install` for pure Python packages with wheels available on PyPi or
    from other URLs.
 
 ```{note}
-`micropip` can also be used to load packages built in pyodide (in
+`micropip` can also be used to load packages built in Pyodide (in
 which case it relies on {any}`pyodide.loadPackage`).
 ```
 
@@ -19,7 +19,7 @@ It only supports packages included in Pyodide (not on PyPi) at present.
 
 ## Loading packages with pyodide.loadPackage
 
-Packages can be loaded by name, for those included in the official pyodide
+Packages can be loaded by name, for those included in the official Pyodide
 repository using e.g.,
 ```js
 pyodide.loadPackage('numpy')
@@ -112,7 +112,7 @@ a complete example would be,
 </head>
 <body>
   <script type="text/javascript">
-      // set the pyodide files URL (packages.json, pyodide.asm.data etc)
+      // set the Pyodide files URL (packages.json, pyodide.asm.data etc)
       window.languagePluginUrl = 'https://cdn.jsdelivr.net/pyodide/v0.16.1/full/';
   </script>
   <script type="text/javascript" src="https://cdn.jsdelivr.net/pyodide/v0.16.1/full/pyodide.js"></script>

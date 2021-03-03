@@ -38,7 +38,7 @@ To make your own version of `runPython`:
 
 ```pyodide
 pyodide.runPython(`
-  import pyodide
+  import Pyodide
   old_eval_code = pyodide.eval_code
   def my_eval_code(code, ns):
     extra_info = None
@@ -96,11 +96,11 @@ if platform.system() == 'Emscripten':
 ```
 
 This however will not work at build time (i.e. in a `setup.py`) due to the way
-the pyodide build system works. It first compiles packages with the host compiler
+the Pyodide build system works. It first compiles packages with the host compiler
 (e.g. gcc) and then re-runs the compilation commands with emsdk. So the `setup.py` is
 never run inside the Pyodide environement.
 
-To detect pyodide, **at build time** use,
+To detect Pyodide, **at build time** use,
 ```python
 import os
 

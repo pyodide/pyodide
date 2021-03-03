@@ -27,7 +27,7 @@ load a package's dependencies automatically.
 
 ## mkpkg
 
-If you wish to create a new package for pyodide, the easiest place to start is
+If you wish to create a new package for Pyodide, the easiest place to start is
 with the `mkpkg` tool. If your package is on PyPI, just run:
 
 `bin/pyodide mkpkg $PACKAGE_NAME`
@@ -150,7 +150,7 @@ Should be set to true for library packages. Library packages are packages that a
 
 #### `build/sharedlibrary`
 
-Should be set to true for shared library packages. Shared library packages are packages that are needed for other packages, but are loaded dynamically when pyodide is run. For shared library packages, the script specified in the `build/script` section is run to compile the library. The script should build the shared library and copy into into a subfolder of the source folder called `install`. Files or folders in this install folder will be packaged to make the pyodide package. See the [CLAPACK meta.yaml](https://github.com/iodide-project/pyodide/blob/master/packages/CLAPACK/meta.yaml) for an example of a shared library specification.
+Should be set to true for shared library packages. Shared library packages are packages that are needed for other packages, but are loaded dynamically when Pyodide is run. For shared library packages, the script specified in the `build/script` section is run to compile the library. The script should build the shared library and copy into into a subfolder of the source folder called `install`. Files or folders in this install folder will be packaged to make the Pyodide package. See the [CLAPACK meta.yaml](https://github.com/iodide-project/pyodide/blob/master/packages/CLAPACK/meta.yaml) for an example of a shared library specification.
 
 #### `build/script`
 

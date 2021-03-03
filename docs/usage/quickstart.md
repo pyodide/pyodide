@@ -14,17 +14,17 @@ You can also download a release from
 [Github releases](https://github.com/iodide-project/pyodide/releases)
 (or build it yourself), include its contents in your distribution, and import
 the `pyodide.js` file there from a `<script>` tag. See the following section on
-[serving pyodide files](#serving-pyodide-files) for more details.
+[serving Pyodide files](#serving-pyodide-files) for more details.
 
 The `pyodide.js` file has a single `Promise` object which bootstraps the Python
 environment: `languagePluginLoader`. Since this must happen asynchronously, it
 is a `Promise`, which you must call `then` on to complete initialization. When
-the promise resolves, pyodide will have installed a namespace in global scope:
+the promise resolves, Pyodide will have installed a namespace in global scope:
 `pyodide`.
 
 ```pyodide
 languagePluginLoader.then(() => {
-  // pyodide is now ready to use...
+  // Pyodide is now ready to use...
   console.log(pyodide.runPython(`import sys\nsys.version`));
 });
 ```
@@ -43,7 +43,7 @@ sys.version
 `);
 ```
 
-After importing pyodide, only packages from the standard library are available.
+After importing Pyodide, only packages from the standard library are available.
 See {ref}`loading_packages` documentation to load additional packages.
 
 ## Complete example
@@ -54,14 +54,14 @@ Create and save a test `index.html` page with the following contents:
 <html>
   <head>
       <script type="text/javascript">
-          // set the pyodide files URL (packages.json, pyodide.asm.data etc)
+          // set the Pyodide files URL (packages.json, pyodide.asm.data etc)
           window.languagePluginUrl = 'https://cdn.jsdelivr.net/pyodide/v0.16.1/full/';
       </script>
       <script src="https://cdn.jsdelivr.net/pyodide/v0.16.1/full/pyodide.js"></script>
   </head>
   <body>
     Pyodide test page <br>
-    Open your browser console to see pyodide output
+    Open your browser console to see Pyodide output
     <script type="text/javascript">
           languagePluginLoader.then(function () {
               console.log(pyodide.runPython(`
@@ -108,7 +108,7 @@ Create and save a test `index.html` page with the following contents:
     }
 
     output.value = 'Initializing...\n';
-    // init pyodide
+    // init Pyodide
     languagePluginLoader.then(() => { output.value += 'Ready!\n'; });
 
     function evaluatePython() {
@@ -167,4 +167,4 @@ div.innerHTML = "<h1>This element was created from Python</h1>"
 js.document.body.prepend(div)
 ```
 
-See {ref}`serving_pyodide_packages` to distribute pyodide files locally.
+See {ref}`serving_pyodide_packages` to distribute Pyodide files locally.

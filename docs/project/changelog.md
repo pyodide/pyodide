@@ -128,7 +128,7 @@ substitutions:
   [#991](https://github.com/iodide-project/pyodide/pull/991)
 - uglifyjs and lessc no longer need to be installed in the system during build
   [#878](https://github.com/iodide-project/pyodide/pull/878).
-- {{ Enhancement }} Reduce the size of the core pyodide package
+- {{ Enhancement }} Reduce the size of the core Pyodide package
   [#987](https://github.com/iodide-project/pyodide/pull/987).
 
 ### REPL
@@ -145,7 +145,7 @@ substitutions:
 
 ### Packages
 
-- six, jedi and parso are no longer vendored in the main pyodide package, and
+- six, jedi and parso are no longer vendored in the main Pyodide package, and
   need to be loaded explicitly
   [#1010](https://github.com/iodide-project/pyodide/pull/1010),
   [#987](https://github.com/iodide-project/pyodide/pull/987).
@@ -162,7 +162,7 @@ by 0.16.1 with identical contents.
   `https://cdn.jsdelivr.net/pyodide/v0.16.1/full/pyodide.js`
   The previous CDN `pyodide-cdn2.iodide.io` still works and there
   are no plans for deprecating it. However please use
-  JsDelivr as a more sustainable solution, including for earlier pyodide
+  JsDelivr as a more sustainable solution, including for earlier Pyodide
   versions.
 
 ### Python and the standard library
@@ -218,7 +218,7 @@ by 0.16.1 with identical contents.
 - Updated to emscripten 1.38.44 and binaryen v86 (see related
   [commits](https://github.com/iodide-project/pyodide/search?q=emscripten&type=commits))
 - Updated default `--ldflags` argument to `pyodide_build` scripts to equal what
-  pyodide actually uses.
+  Pyodide actually uses.
   [#817](https://github.com/iodide-project/pyodide/pull/480)
 - Replace C lz4 implementation with the (upstream) Javascript implementation.
   [#851](https://github.com/iodide-project/pyodide/pull/851)
@@ -273,13 +273,13 @@ Sergio, Seungmin Kim, Shyam Saladi, smkm, Wei Ouyang
 ## Version 0.15.0
 *May 19, 2020*
 
-- Upgrades pyodide to CPython 3.7.4.
+- Upgrades Pyodide to CPython 3.7.4.
 - micropip no longer uses a CORS proxy to install pure Python packages from
   PyPi. Packages are now installed from PyPi directly.
 - micropip can now be used from web workers.
 - Adds support for installing pure Python wheels from arbitrary URLs with
   micropip.
-- The CDN URL for pyodide changed to
+- The CDN URL for Pyodide changed to
   https://pyodide-cdn2.iodide.io/v0.15.0/full/pyodide.js
   It now supports versioning and should provide faster downloads.
   The latest release can be accessed via

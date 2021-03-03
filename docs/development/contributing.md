@@ -53,7 +53,7 @@ All code submissions should pass `make lint`.  Python is checked with the defaul
 
 Documentation is a critical part of any open source project and we are very
 welcome to any documentation improvements.
-pyodide has a documentation written in Markdown in the `docs/` folder. We
+Pyodide has a documentation written in Markdown in the `docs/` folder. We
 use the [MyST](
 https://myst-parser.readthedocs.io/en/latest/using/syntax.html#targets-and-cross-referencing)
 for parsing Markdown in sphinx.  You may want to have a look at the [MyST
