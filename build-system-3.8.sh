@@ -27,17 +27,17 @@ zarr,cytoolz,python-sat,biopython,\
 
 MINIMAL="micropip,distlib,parso,pytz,python-dateutil,regex,six,zlib,future,"
 
-export PYODIDE_PACKAGES="${MINIMAL},Pygments,attrs,numpy,pillow,webencodings,\
+FULL="${MINIMAL},Pygments,attrs,numpy,pillow,webencodings,\
 html5lib,imageio,joblib,libiconv,libxml,libxslt,xlrd,asciitree,beautifulsoup4,\
 packaging,cssselect,patsy,pluggy,msgpack,MarkupSafe,more-itertools,pyparsing,decorator,\
 CLAPACK,pyodide-interrupts,toolz,uncertainties,atomicwrites,\
 numcodecs,nose,cycler,soupsieve,sympy,freesasa,\
-py
 "
 
 # TODO incremental build of those
 # ${EGGUNPACK}${CIRCULAR}${TESTING}py
 
+export PYODIDE_PACKAGES="${MINIMAL}py"
 
 export HOSTPYTHON=$(command -v python3.8)
 export PYTHON_FOR_BUILD=$HOSTPYTHON
