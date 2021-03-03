@@ -121,7 +121,7 @@ substitutions:
 - {{ API }} Use upstream `file_packager.py`, and stop checking package abi versions.
   The `PYODIDE_PACKAGE_ABI` environment variable is no longer used, but is
   still set as some packages use it to detect whether it is being built for
-  pyodide. This usage is deprecated, and a new environment variable `PYODIDE`
+  Pyodide. This usage is deprecated, and a new environment variable `PYODIDE`
   is introduced for this purpose.
 
   As part of the change, Module.checkABI is no longer present.
@@ -210,7 +210,7 @@ by 0.16.1 with identical contents.
   [`iodide-project/pyodide`](https://hub.docker.com/r/iodide/pyodide)
   [#787](https://github.com/iodide-project/pyodide/pull/787)
 - Host python is no longer compiled, reducing compilation time. This also
-  implies that python 3.8 is now required to build pyodide. It can for instance
+  implies that python 3.8 is now required to build Pyodide. It can for instance
   be installed with conda.
   [#830](https://github.com/iodide-project/pyodide/pull/830)
 - FIX Infer package tarball directory from source url

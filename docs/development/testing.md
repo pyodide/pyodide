@@ -36,11 +36,11 @@ used.
 1. Bind port 8000 for testing. To automatically bind port 8000 of the docker
 environment and the host system, run: `./run_docker`
 
-2. Now, this can be used to test the `pyodide` builds running within the
+2. Now, this can be used to test the Pyodide builds running within the
 docker environment using external browser programs on the host system. To do
 this, run: `./bin/pyodide serve`
 
-3. This serves the ``build`` directory of the ``pyodide`` project on port 8000.
+3. This serves the ``build`` directory of the Pyodide project on port 8000.
     * To serve a different directory, use the ``--build_dir`` argument followed
       by the path of the directory.
     * To serve on a different port, use the ``--port`` argument followed by the

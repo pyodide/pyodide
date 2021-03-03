@@ -196,7 +196,7 @@ This directory should contain (at least) two files:
 - `Makefile` that specifies how the library should be be built. Note that the
   build system will call `make`, not `emmake make`. The convention is that the
   source for the library is downloaded by the Makefile, as opposed to being
-  included in the `pyodide` repository.
+  included in the Pyodide repository.
 
 - `meta.yaml` that specifies metadata about the package. For C libraries, only
   three options are supported:
