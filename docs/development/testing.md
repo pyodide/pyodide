@@ -24,8 +24,8 @@ pytest src/ pyodide_build/ packages/*/test_*
 ```
 
 There are 3 test locations,
-- `src/tests/`: general pyodide tests and tests running the CPython test suite
-- `pyodide_build/tests/`: tests related to pyodide build system (do not require selenium to run)
+- `src/tests/`: general Pyodide tests and tests running the CPython test suite
+- `pyodide_build/tests/`: tests related to Pyodide build system (do not require selenium to run)
 - `packages/*/test_*`: package specific tests.
 
 ### Manual interactive testing
@@ -36,11 +36,11 @@ used.
 1. Bind port 8000 for testing. To automatically bind port 8000 of the docker
 environment and the host system, run: `./run_docker`
 
-2. Now, this can be used to test the `pyodide` builds running within the
+2. Now, this can be used to test the Pyodide builds running within the
 docker environment using external browser programs on the host system. To do
 this, run: `./bin/pyodide serve`
 
-3. This serves the ``build`` directory of the ``pyodide`` project on port 8000.
+3. This serves the ``build`` directory of the Pyodide project on port 8000.
     * To serve a different directory, use the ``--build_dir`` argument followed
       by the path of the directory.
     * To serve on a different port, use the ``--port`` argument followed by the
@@ -75,7 +75,7 @@ make lint
 ## Testing framework
 
 ### run_in_pyodide
-Many tests simply involve running a chunk of code in pyodide and ensuring it
+Many tests simply involve running a chunk of code in Pyodide and ensuring it
 doesn't error. In this case, one can use the `run_in_pyodide` decorate from
 `pyodide_build/testing.py`, e.g.
 

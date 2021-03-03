@@ -1,7 +1,7 @@
 (using_from_webworker)=
 # Using Pyodide from a web worker
 
-This document describes how to use pyodide to execute python scripts
+This document describes how to use Pyodide to execute Python scripts
 asynchronously in a web worker.
 
 ## Startup
@@ -37,15 +37,15 @@ In this example process we will have three parties involved:
 
 ### Consumers
 
-Our goal is to run some javascript code in another thread, this other thread will
+Our goal is to run some Javascript code in another thread, this other thread will
 not have access to the main thread objects. Therefore we will need an API that takes
-as input not only the python `script` we wan to run, but also the `context` on which
-it relies (some javascript variables that we would normally get access to if we
-were running the python script in the main thread). Let's first describe what API
+as input not only the Python `script` we wan to run, but also the `context` on which
+it relies (some Javascript variables that we would normally get access to if we
+were running the Python script in the main thread). Let's first describe what API
 we would like to have.
 
 Here is an example of consumer that will exchange with the , via the worker
-interface/API `py-worker.js` to run the following python `script` using the provided `context`
+interface/API `py-worker.js` to run the following Python `script` using the provided `context`
 using a function called `asyncRun()`.
 
 ```js
@@ -85,14 +85,14 @@ How does our web worker will run the `script` using a given `context`.
 
 [A worker][worker API] is ...
 
-> A worker is an object created using a constructor (e.g. [Worker()][Worker constructor])  that runs a named JavaScript file — this file contains the code that will run in the worker thread; workers run in another global context that is different from the current window. This context is represented by either a DedicatedWorkerGlobalScope object (in the case of dedicated workers - workers that are utilized by a single script), or a SharedWorkerGlobalScope (in the case of shared workers - workers that are shared between multiple scripts).
+> A worker is an object created using a constructor (e.g. [Worker()][Worker constructor])  that runs a named Javascript file — this file contains the code that will run in the worker thread; workers run in another global context that is different from the current window. This context is represented by either a DedicatedWorkerGlobalScope object (in the case of dedicated workers - workers that are utilized by a single script), or a SharedWorkerGlobalScope (in the case of shared workers - workers that are shared between multiple scripts).
 
-In our case we will use a single worker to execute python code without interfering with
-client side rendering (which is done by the main javascript thread). The worker does
+In our case we will use a single worker to execute Python code without interfering with
+client side rendering (which is done by the main Javascript thread). The worker does
 two things:
 
 1. Listen on new messages from the main thread
-2. Respond back once it finished executing the python script
+2. Respond back once it finished executing the Python script
 
 These are the required tasks it should fulfill, but it can do other things.
 For example, to always load packages `numpy` and `pytz`, you would insert the
@@ -176,7 +176,7 @@ export function asyncRun(script, context) {
 
 ## Caveats
 
-Using a web worker is advantageous because the python code is run in a separate
+Using a web worker is advantageous because the Python code is run in a separate
 thread from your main UI, and hence does not impact your application's
 responsiveness.
 There are some limitations, however.
@@ -185,5 +185,5 @@ packages between multiple web workers or with your main thread.
 Since web workers are each in their own virtual machine, you also cannot share
 globals between a web worker and your main thread.
 Finally, although the web worker is separate from your main thread,
-the web worker is itself single threaded, so only one python script will
+the web worker is itself single threaded, so only one Python script will
 execute at a time.
