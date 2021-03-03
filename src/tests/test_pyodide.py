@@ -254,6 +254,7 @@ def test_run_python_last_exc(selenium):
         """
     )
 
+
 def test_check_interrupt(selenium):
     assert selenium.run_js(
         """
@@ -290,5 +291,3 @@ def test_check_interrupt(selenium):
         return buffer[0] === 0 && errcode === -1 && err_occurred !== 0;
         """
     )
-
-
