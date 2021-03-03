@@ -38,7 +38,7 @@ To make your own version of `runPython`:
 
 ```pyodide
 pyodide.runPython(`
-  import Pyodide
+  import pyodide
   old_eval_code = pyodide.eval_code
   def my_eval_code(code, ns):
     extra_info = None
