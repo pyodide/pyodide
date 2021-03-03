@@ -9,13 +9,13 @@ The primary purpose of `core` is to implement {ref}`type conversions <type_conve
 * `keyboard_interrupt` -- This sets up the keyboard interrupts system for using Pyodide with a webworker.
 
 ### Backend utilities
-* `hiwire` -- A helper framework. It is impossible for wasm to directly hold owning references to javascript objects. The primary purpose of hiwire is to act as a surrogate owner for javascript references by holding the references in a javascript `Map`. `hiwire` also defines a wide variety of `EM_JS` helper functions to do javascript operations on the held objects. The primary type that hiwire exports is `JsRef`. References are created with `Module.hiwire.new_value` (only can be done from javascript) and must be destroyed from C with `hiwire_decref` or `hiwire_CLEAR`, or from javascript with `Module.hiwire.decref`.
-* `error_handling` -- defines macros useful for error propagation and for adapting javascript functions to the CPython calling convention. See more in the {ref}`error_handling_macros` section.
+* `hiwire` -- A helper framework. It is impossible for wasm to directly hold owning references to Javascript objects. The primary purpose of hiwire is to act as a surrogate owner for Javascript references by holding the references in a Javascript `Map`. `hiwire` also defines a wide variety of `EM_JS` helper functions to do Javascript operations on the held objects. The primary type that hiwire exports is `JsRef`. References are created with `Module.hiwire.new_value` (only can be done from Javascript) and must be destroyed from C with `hiwire_decref` or `hiwire_CLEAR`, or from Javascript with `Module.hiwire.decref`.
+* `error_handling` -- defines macros useful for error propagation and for adapting Javascript functions to the CPython calling convention. See more in the {ref}`error_handling_macros` section.
 
 ### Type conversion from Javascript to Python
 
-* `js2python` -- converts basic types from javascript to Python, leaves more complicated stuff to jsproxy.
-* `jsproxy` -- Defines Python classes to proxy complex javascript types into Python. A complex file responsible for many of the core behaviors of pyodide.
+* `js2python` -- converts basic types from Javascript to Python, leaves more complicated stuff to jsproxy.
+* `jsproxy` -- Defines Python classes to proxy complex Javascript types into Python. A complex file responsible for many of the core behaviors of pyodide.
 
 ### Type conversion from Python to Javascript
 
@@ -65,7 +65,7 @@ They can only be used in a function with a `finally:` label which should handle 
 * `FAIL_IF_ERR_MATCHES(python_err_type)` -- `goto finally;` if `PyErr_ExceptionMatches(python_err_type)`, for example `FAIL_IF_ERR_MATCHES(PyExc_AttributeError);`
 
 ### Javascript to CPython calling convention adapators
-If we call a javascript function from C and that javascript function throws an error, it is impossible to catch it in C. We define two `EM_JS` adaptors to convert from the Javascript calling convention to the CPython calling convention. The point of this is to ensure that errors that occur in `EM_JS` functions can be handled in C code using the `FAIL_*`` macros. When compiled with `DEBUG_F`, when a javascript error is thrown a message will also be written to `console.error`. The wrappers do roughly the following:
+If we call a Javascript function from C and that Javascript function throws an error, it is impossible to catch it in C. We define two `EM_JS` adaptors to convert from the Javascript calling convention to the CPython calling convention. The point of this is to ensure that errors that occur in `EM_JS` functions can be handled in C code using the `FAIL_*`` macros. When compiled with `DEBUG_F`, when a Javascript error is thrown a message will also be written to `console.error`. The wrappers do roughly the following:
 ```javascript
 try {
   // body of function here
@@ -107,7 +107,7 @@ These wrappers enable the following sort of code:
 try:
   jsfunc()
 except JsException:
-  print("Caught an exception thrown in javascript!")
+  print("Caught an exception thrown in Javascript!")
 ```
 
 ## Structure of functions

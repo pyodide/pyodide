@@ -37,10 +37,10 @@ In this example process we will have three parties involved:
 
 ### Consumers
 
-Our goal is to run some javascript code in another thread, this other thread will
+Our goal is to run some Javascript code in another thread, this other thread will
 not have access to the main thread objects. Therefore we will need an API that takes
 as input not only the Python `script` we wan to run, but also the `context` on which
-it relies (some javascript variables that we would normally get access to if we
+it relies (some Javascript variables that we would normally get access to if we
 were running the Python script in the main thread). Let's first describe what API
 we would like to have.
 
@@ -85,10 +85,10 @@ How does our web worker will run the `script` using a given `context`.
 
 [A worker][worker API] is ...
 
-> A worker is an object created using a constructor (e.g. [Worker()][Worker constructor])  that runs a named JavaScript file — this file contains the code that will run in the worker thread; workers run in another global context that is different from the current window. This context is represented by either a DedicatedWorkerGlobalScope object (in the case of dedicated workers - workers that are utilized by a single script), or a SharedWorkerGlobalScope (in the case of shared workers - workers that are shared between multiple scripts).
+> A worker is an object created using a constructor (e.g. [Worker()][Worker constructor])  that runs a named Javascript file — this file contains the code that will run in the worker thread; workers run in another global context that is different from the current window. This context is represented by either a DedicatedWorkerGlobalScope object (in the case of dedicated workers - workers that are utilized by a single script), or a SharedWorkerGlobalScope (in the case of shared workers - workers that are shared between multiple scripts).
 
 In our case we will use a single worker to execute Python code without interfering with
-client side rendering (which is done by the main javascript thread). The worker does
+client side rendering (which is done by the main Javascript thread). The worker does
 two things:
 
 1. Listen on new messages from the main thread

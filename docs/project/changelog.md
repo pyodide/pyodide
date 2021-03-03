@@ -29,7 +29,7 @@ substitutions:
   "packages" backed by Javascript code, like the `js` package.  The `js` package
   is now implemented using this system.
   [#1146](https://github.com/iodide-project/pyodide/pull/1146)
-- {{ Feature }} A `PyProxy` of a Python coroutine or awaitable is now an awaitable javascript
+- {{ Feature }} A `PyProxy` of a Python coroutine or awaitable is now an awaitable Javascript
   object. Awaiting a coroutine will schedule it to run on the Python event loop
   using `asyncio.ensure_future`.
   [#1170](https://github.com/iodide-project/pyodide/pull/1170)
@@ -57,7 +57,7 @@ substitutions:
   Conversely, `bool(empty_js_set)` and `bool(empty_js_map)` were `True` but now
   are `False`.
   [#1061](https://github.com/iodide-project/pyodide/pull/1061)
-- {{ Fix }} When calling a javascript function from Python without keyword
+- {{ Fix }} When calling a Javascript function from Python without keyword
   arguments, Pyodide no longer passes a `PyProxy`-wrapped `NULL` pointer as the
   last argument. [#1033](https://github.com/iodide-project/pyodide/pull/1033)
 - {{ Fix }} JsBoundMethod is now a subclass of JsProxy, which fixes nested
@@ -296,7 +296,7 @@ Sergio, Seungmin Kim, Shyam Saladi, smkm, Wei Ouyang
 ## Version 0.14.3
 *Dec 11, 2019*
 
-- Convert JavaScript numbers containing integers, e.g. `3.0`, to a real Python
+- Convert Javascript numbers containing integers, e.g. `3.0`, to a real Python
   long (e.g. `3`).
 - Adds `__bool__` method to for `JsProxy` objects.
 - Adds a Javascript-side auto completion function for Iodide that uses jedi.
@@ -327,7 +327,7 @@ Sergio, Seungmin Kim, Shyam Saladi, smkm, Wei Ouyang
 - Passing a Python object to Javascript always creates the same object in
   Javascript. This makes APIs like `removeEventListener` usable.
 
-- Calling `dir()` in Python on a JavaScript proxy now works.
+- Calling `dir()` in Python on a Javascript proxy now works.
 
 - Passing an `ArrayBuffer` from Javascript to Python now correctly creates a
   `memoryview` object.

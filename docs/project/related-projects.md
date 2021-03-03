@@ -19,5 +19,5 @@
 ## Other projects
 
 - [wc-code](https://github.com/vanillawc/wc-code) is a library to run
-  JavaScript, Python and Theme the browser with inline code blocks.
+  Javascript, Python and Theme the browser with inline code blocks.
   It uses Pyodide to execute Python code.

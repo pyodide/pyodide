@@ -122,11 +122,11 @@ Create and save a test `index.html` page with the following contents:
 </html>
 ```
 
-## Accessing Python scope from JavaScript
+## Accessing Python scope from Javascript
 
-You can also access from JavaScript all functions and variables defined in Python using the {any}`pyodide.globals` object.
+You can also access from Javascript all functions and variables defined in Python using the {any}`pyodide.globals` object.
 
-For example, if you initialize the variable `x = numpy.ones([3,3])` in Python, you can access it from JavaScript in your browser's developer console as follows: `pyodide.globals.get("x")`. The same goes for functions and imports. See {ref}`type_conversions` for more details.
+For example, if you initialize the variable `x = numpy.ones([3,3])` in Python, you can access it from Javascript in your browser's developer console as follows: `pyodide.globals.get("x")`. The same goes for functions and imports. See {ref}`type_conversions` for more details.
 
 You can try it yourself in the browser console:
 ```js
@@ -139,7 +139,7 @@ let x = pyodide.globals.get("numpy").ones(new Int32Array([3, 3]));
 // x >>> [Float64Array(3), Float64Array(3), Float64Array(3)]
 ```
 
-Since you have full scope access, you can also re-assign new values or even JavaScript functions to variables, and create new ones from JavaScript:
+Since you have full scope access, you can also re-assign new values or even Javascript functions to variables, and create new ones from Javascript:
 
 ```js
 // re-assign a new value to an existing variable
@@ -155,9 +155,9 @@ pyodide.globals.set("square", x => x*x);
 
 Feel free to play around with the code using the browser console and the above example.
 
-## Accessing JavaScript scope from Python
+## Accessing Javascript scope from Python
 
-The JavaScript scope can be accessed from Python using the `js` module (see {ref}`type_conversions_using_js_obj_from_py`). This module represents the global object `window` that allows us to directly manipulate the DOM and access global variables and functions from Python.
+The Javascript scope can be accessed from Python using the `js` module (see {ref}`type_conversions_using_js_obj_from_py`). This module represents the global object `window` that allows us to directly manipulate the DOM and access global variables and functions from Python.
 
 ```python
 import js

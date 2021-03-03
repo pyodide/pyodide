@@ -16,7 +16,7 @@ In both cases, files need to be served with a web server and cannot be loaded fr
 
 ## Why can't I load files from the local file system?
 
-For security reasons JavaScript in the browser is not allowed to load local data files. You need to serve them with a web-browser.
+For security reasons Javascript in the browser is not allowed to load local data files. You need to serve them with a web-browser.
 Recently there is a [Native File System API](https://wicg.github.io/file-system-access/) supported in Chrome but not in Firefox. [There is a discussion about implementing it for Firefox here.](https://github.com/mozilla/standards-positions/issues/154)
 
 
@@ -111,9 +111,9 @@ We used to use the environment variable `PYODIDE_BASE_URL` for this purpose,
 but this usage is deprecated.
 
 
-## How do I create custom Python packages from javascript?
+## How do I create custom Python packages from Javascript?
 
-Put a collection of functions into a javascript object and use `pyodide.registerJsModule`:
+Put a collection of functions into a Javascript object and use `pyodide.registerJsModule`:
 Javascript:
 ```javascript
 let my_module = {
