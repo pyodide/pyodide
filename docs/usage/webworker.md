@@ -18,7 +18,7 @@ Update the `webworker.js` sample so that it has as valid URL for `pyodide.js`, a
 `self.languagePluginUrl` to the location of the supporting files.
 
 In your application code create a web worker `new Worker(...)`,
-and attach listeners to it using its `.onerror` and [`.onmessage`][onmessage]
+and attach listeners to it using its `.onerror` and `.onmessage`
 methods (listeners).
 
 Communication from the worker to the main thread is done via the `Worker.postMessage()`
@@ -31,22 +31,22 @@ method (and vice versa).
 
 In this example process we will have three parties involved:
 
-* The **web worker** is responsible for running scripts in its own thread separate thread.
+* The **web worker** is responsible for running scripts in its own separate thread.
 * The **worker API** exposes a consumer-to-provider communication interface.
 * The **consumer**s want to run some scripts outside the main thread so they don't block the main thread.
 
 ### Consumers
 
-Our goal is to run some javascript code in another thread, this other thread will
+Our goal is to run some python code in another thread, this other thread will
 not have access to the main thread objects. Therefore we will need an API that takes
 as input not only the python `script` we wan to run, but also the `context` on which
 it relies (some javascript variables that we would normally get access to if we
 were running the python script in the main thread). Let's first describe what API
 we would like to have.
 
-Here is an example of consumer that will exchange with the , via the worker
-interface/API `py-worker.js` to run the following python `script` using the provided `context`
-using a function called `asyncRun()`.
+Here is an example of consumer that will exchange with the web worker, via the worker
+interface/API `py-worker.js`. It runs the following python `script` using the provided `context`
+and a function called `asyncRun()`.
 
 ```js
 import { asyncRun } from './py-worker';
@@ -79,11 +79,11 @@ main();
 ```
 
 Before writing the API, lets first have a look at how the worker operates.
-How does our web worker will run the `script` using a given `context`.
+How does our web worker run the `script` using a given `context`.
 
 ### Web worker
 
-[A worker][worker API] is ...
+Let's start with the definition of [a worker][worker API] is ...
 
 > A worker is an object created using a constructor (e.g. [Worker()][Worker constructor])  that runs a named JavaScript file — this file contains the code that will run in the worker thread; workers run in another global context that is different from the current window. This context is represented by either a DedicatedWorkerGlobalScope object (in the case of dedicated workers - workers that are utilized by a single script), or a SharedWorkerGlobalScope (in the case of shared workers - workers that are shared between multiple scripts).
 
@@ -91,8 +91,8 @@ In our case we will use a single worker to execute python code without interferi
 client side rendering (which is done by the main javascript thread). The worker does
 two things:
 
-1. Listen on new messages from the main thread
-2. Respond back once it finished executing the python script
+1. Listen on new messages from the main thread,
+2. Respond back once it finished executing the python script.
 
 These are the required tasks it should fulfill, but it can do other things.
 For example, to always load packages `numpy` and `pytz`, you would insert the
