@@ -6,15 +6,17 @@ This document describes using Pyodide directly from Javascript.
 
 ## Startup
 
-To include Pyodide in your project you can use the following CDN URL,
+To include Pyodide in your project you can use the following CDN URL:
 
+```html 
   https://cdn.jsdelivr.net/pyodide/v0.16.1/full/pyodide.js
+```
 
 You can also download a release from
 [Github releases](https://github.com/iodide-project/pyodide/releases)
 (or build it yourself), include its contents in your distribution, and import
-the `pyodide.js` file there from a `<script>` tag. See the following section on
-[serving pyodide files](#serving-pyodide-files) for more details.
+the `pyodide.js` file there from a `<script>` tag. Check
+{ref}`serving_pyodide_files` for more details.
 
 The `pyodide.js` file has a single `Promise` object which bootstraps the Python
 environment: `languagePluginLoader`. Since this must happen asynchronously, it
@@ -167,4 +169,4 @@ div.innerHTML = "<h1>This element was created from Python</h1>"
 js.document.body.prepend(div)
 ```
 
-See {ref}`serving_pyodide_packages` to distribute pyodide files locally.
+See {ref}`serving_pyodide_files` to distribute pyodide files locally.
