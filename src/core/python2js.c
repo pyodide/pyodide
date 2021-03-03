@@ -12,6 +12,9 @@
 static PyObject* tbmod = NULL;
 
 _Py_IDENTIFIER(format_exception);
+_Py_IDENTIFIER(last_type);
+_Py_IDENTIFIER(last_value);
+_Py_IDENTIFIER(last_traceback);
 
 static JsRef
 _python2js_unicode(PyObject* x);
@@ -112,6 +115,12 @@ finally:
       PySys_WriteStderr("\nOriginal exception was:\n");
       PyErr_Display(type, value, traceback);
     }
+  }
+
+  if (success) {
+    _PySys_SetObjectId(&PyId_last_type, type);
+    _PySys_SetObjectId(&PyId_last_value, value);
+    _PySys_SetObjectId(&PyId_last_traceback, traceback);
   }
   Py_CLEAR(type);
   Py_CLEAR(value);
