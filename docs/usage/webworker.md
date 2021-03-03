@@ -83,7 +83,7 @@ How does our web worker run the `script` using a given `context`.
 
 ### Web worker
 
-Let's start with the definition of [a worker][worker API] is ...
+Let's start with the definition of [a worker][worker API] is.
 
 > A worker is an object created using a constructor (e.g. [Worker()][Worker constructor])  that runs a named JavaScript file — this file contains the code that will run in the worker thread; workers run in another global context that is different from the current window. This context is represented by either a DedicatedWorkerGlobalScope object (in the case of dedicated workers - workers that are utilized by a single script), or a SharedWorkerGlobalScope (in the case of shared workers - workers that are shared between multiple scripts).
 
