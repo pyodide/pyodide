@@ -42,7 +42,7 @@ jobs:
             cd $WD && mkdir -p /home/runner/work/pyodide/pyodide/packages/.artifacts/lib/python
     - name: PyDK Emscripten build wasm
       run: |
-            make
+            bash build-system-3.8.sh
     - name: PyDK Package SDK
       uses: actions/upload-artifact@v2
       with:
