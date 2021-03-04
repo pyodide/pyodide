@@ -32,9 +32,11 @@ zarr,cytoolz,python-sat,biopython,\
 
 # clean packages
 
-MINIMAL="micropip,distlib,parso,pytz,python-dateutil,regex,six,zlib,future,"
+MINIMAL="micropip,distlib,parso,pytz,python-dateutil,six,zlib,future,"
 
-FULL="${MINIMAL},Pygments,attrs,numpy,pillow,webencodings,\
+# regex failed once
+
+FULL="${MINIMAL},regex,Pygments,attrs,numpy,pillow,webencodings,\
 html5lib,imageio,joblib,libiconv,libxml,libxslt,xlrd,asciitree,beautifulsoup4,\
 packaging,cssselect,patsy,pluggy,msgpack,MarkupSafe,more-itertools,pyparsing,decorator,\
 CLAPACK,pyodide-interrupts,toolz,uncertainties,atomicwrites,\
