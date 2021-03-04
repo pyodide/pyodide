@@ -14,7 +14,7 @@ You can also download a release from
 [Github releases](https://github.com/iodide-project/pyodide/releases)
 (or build it yourself), include its contents in your distribution, and import
 the `pyodide.js` file there from a `<script>` tag. See the following section on
-[serving Pyodide files](#serving-pyodide-files) for more details.
+{ref}`serving_pyodide_packages` for more details.
 
 The `pyodide.js` file has a single `Promise` object which bootstraps the Python
 environment: `languagePluginLoader`. Since this must happen asynchronously, it
