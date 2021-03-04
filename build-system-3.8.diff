@@ -42,7 +42,7 @@ index 3c0220b..9db88c8 100644
  	( \
  		cd $(BUILD); \
 -		CONFIG_SITE=./config.site READELF=true emconfigure \
-+		CONFIG_SITE=./config.site READELF=true PYTHON_FOR_BUILD=$(file < ../bin/PYTHON_FOR_CI) emconfigure \
++		CONFIG_SITE=./config.site READELF=true PYTHON_FOR_BUILD=$(file < ../bin/PYTHON_FOR_BUILD) emconfigure \
  		  ./configure \
  			  CFLAGS="-fPIC -sEMULATE_FUNCTION_POINTER_CASTS=1" \
  			  CPPFLAGS="-I$(SQLITEBUILD) -I$(BZIP2BUILD) -I$(ZLIBBUILD)" \

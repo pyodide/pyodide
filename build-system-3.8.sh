@@ -1,6 +1,13 @@
 #!/bin/bash
 reset
-patch -p1 < build-system-3.8.diff
+
+# running in pyodide git tree from CI
+if [ -d /home/runner/work ]
+then
+    patch -p1 < build-system-3.8.diff
+    mkdir -p /home/runner/work/pyodide/pyodide/packages/.artifacts/lib/python
+fi
+
 
 # trouble with cross compilation or circular deps on a failed package
 # most likely pkg that rely on egg decompression or include path redirection
@@ -45,6 +52,8 @@ mkdir -p bin
 ln -sf $HOSTPYTHON ./bin/python
 ln -sf $HOSTPYTHON ./bin/python3
 ln -sf $HOSTPYTHON ./bin/python3.8
+
+echo $PYTHON_FOR_BUILD > bin/PYTHON_FOR_BUILD
 
 PATH=$(pwd)/bin:$PATH make
 
