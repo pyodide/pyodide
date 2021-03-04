@@ -124,33 +124,39 @@ Create and save a test `index.html` page with the following contents:
 
 ## Accessing Python scope from Javascript
 
-You can also access from Javascript all functions and variables defined in Python using the {any}`pyodide.globals` object.
+You can access from Javascript all functions and variables defined in Python by using the {any}`pyodide.globals` object or {any}`pyodide.pyimport` .
 
-For example, if you initialize the variable `x = numpy.ones([3,3])` in Python, you can access it from Javascript in your browser's developer console as follows: `pyodide.globals.get("x")`. The same goes for functions and imports. See {ref}`type_conversions` for more details.
+For example, if you initialize the variable `x = numpy.ones([3,3])` in Python, you can access it from Javascript in your browser's developer console by using either `pyodide.globals.x` or `pyodide.pyimport('x')`. The same goes for functions and imports. See {ref}`type_conversions` for more details.
 
 You can try it yourself in the browser console:
 ```js
+pyodide.runPython(`import numpy`);
 pyodide.runPython(`x=numpy.ones([3, 3])`);
-pyodide.globals.get("x");
+pyodide.globals.x;
+pyodide.pyimport('x');
 // >>> [Float64Array(3), Float64Array(3), Float64Array(3)]
 
-// create the same 3x3 ndarray from js
-let x = pyodide.globals.get("numpy").ones(new Int32Array([3, 3]));
-// x >>> [Float64Array(3), Float64Array(3), Float64Array(3)]
+// update the ndarray from js
+x = pyodide.globals.numpy.ones(new Int32Array([4, 4]));
+// x >>> [ Float64Array(4), Float64Array(4), Float64Array(4), Float64Array(4) ]
 ```
 
 Since you have full scope access, you can also re-assign new values or even Javascript functions to variables, and create new ones from Javascript:
 
 ```js
 // re-assign a new value to an existing variable
-pyodide.globals.set("x", 'x will be now string');
+pyodide.globals.x = 'x will be now string';
 
 // create a new js function that will be available from Python
 // this will show a browser alert if the function is called from Python
-pyodide.globals.set("alert", alert);
+pyodide.globals.alert = alert;
 
 // this new function will also be available in Python and will return the squared value.
-pyodide.globals.set("square", x => x*x);
+pyodide.globals.square = x => x*x;
+
+// You can test your new Python function in the console by running
+pyodide.runPython(`square(3)`);
+
 ```
 
 Feel free to play around with the code using the browser console and the above example.
