@@ -1,3 +1,5 @@
+(how_to_contribute)=
+
 # How to Contribute
 
 Thank you for your interest in contributing to PYODIDE! There are many ways to contribute, and we appreciate all of them. Here are some guidelines & pointers for diving into it.
@@ -53,7 +55,7 @@ All code submissions should pass `make lint`.  Python is checked with the defaul
 
 Documentation is a critical part of any open source project and we are very
 welcome to any documentation improvements.
-pyodide has a documentation written in Markdown in the `docs/` folder. We
+Pyodide has a documentation written in Markdown in the `docs/` folder. We
 use the [MyST](
 https://myst-parser.readthedocs.io/en/latest/using/syntax.html#targets-and-cross-referencing)
 for parsing Markdown in sphinx.  You may want to have a look at the [MyST
@@ -63,7 +65,7 @@ when contributing, in particular regarding [cross-referencing
 sections](https://myst-parser.readthedocs.io/en/latest/using/syntax.html#targets-and-cross-referencing).
 
 ### Building the docs
-From the directory ``docs``, first install the python dependencies with ``pip install -r requirements-doc.txt``.
+From the directory ``docs``, first install the Python dependencies with ``pip install -r requirements-doc.txt``.
 You also need to install JsDoc, which is a ``node`` dependency. Install it with ``sudo npm install -g jsdoc``.
 Then to build the docs run ``make html``.
 The built documentation will be in the subdirectory ``docs/_build/html``. To view them, cd into ``_build/html`` and start a file server,

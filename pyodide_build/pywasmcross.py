@@ -264,12 +264,26 @@ def handle_command(line, args, dryrun=False):
     elif new_args[0] == "em++":
         new_args.extend(args.cflags.split() + args.cxxflags.split())
 
+    optflags_valid = [f"-O{tok}" for tok in "01234sz"]
+    optflag = None
+    # Identify the optflag (e.g. -O3) in cflags/cxxflags/ldflags. Last one has
+    # priority.
+    for arg in new_args[::-1]:
+        if arg in optflags_valid:
+            optflag = arg
+            break
+
     lapack_dir = None
 
     used_libs = set()
 
     # Go through and adjust arguments
     for arg in line[1:]:
+        if arg in optflags_valid and optflag is not None and arg != optflag:
+            # There are multiple contradictory optflags provided, use the one
+            # from cflags/cxxflags/ldflags
+            continue
+
         if arg.startswith("-I"):
             if (
                 str(Path(arg[2:]).resolve()).startswith(sys.prefix + "/include/python")

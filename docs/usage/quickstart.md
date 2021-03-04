@@ -14,17 +14,17 @@ You can also download a release from
 [Github releases](https://github.com/iodide-project/pyodide/releases)
 (or build it yourself), include its contents in your distribution, and import
 the `pyodide.js` file there from a `<script>` tag. See the following section on
-[serving pyodide files](#serving-pyodide-files) for more details.
+[serving Pyodide files](#serving-pyodide-files) for more details.
 
 The `pyodide.js` file has a single `Promise` object which bootstraps the Python
 environment: `languagePluginLoader`. Since this must happen asynchronously, it
 is a `Promise`, which you must call `then` on to complete initialization. When
-the promise resolves, pyodide will have installed a namespace in global scope:
+the promise resolves, Pyodide will have installed a namespace in global scope:
 `pyodide`.
 
 ```pyodide
 languagePluginLoader.then(() => {
-  // pyodide is now ready to use...
+  // Pyodide is now ready to use...
   console.log(pyodide.runPython(`import sys\nsys.version`));
 });
 ```
@@ -43,7 +43,7 @@ sys.version
 `);
 ```
 
-After importing pyodide, only packages from the standard library are available.
+After importing Pyodide, only packages from the standard library are available.
 See {ref}`loading_packages` documentation to load additional packages.
 
 ## Complete example
@@ -54,14 +54,14 @@ Create and save a test `index.html` page with the following contents:
 <html>
   <head>
       <script type="text/javascript">
-          // set the pyodide files URL (packages.json, pyodide.asm.data etc)
+          // set the Pyodide files URL (packages.json, pyodide.asm.data etc)
           window.languagePluginUrl = 'https://cdn.jsdelivr.net/pyodide/v0.16.1/full/';
       </script>
       <script src="https://cdn.jsdelivr.net/pyodide/v0.16.1/full/pyodide.js"></script>
   </head>
   <body>
     Pyodide test page <br>
-    Open your browser console to see pyodide output
+    Open your browser console to see Pyodide output
     <script type="text/javascript">
           languagePluginLoader.then(function () {
               console.log(pyodide.runPython(`
@@ -108,7 +108,7 @@ Create and save a test `index.html` page with the following contents:
     }
 
     output.value = 'Initializing...\n';
-    // init pyodide
+    // init Pyodide
     languagePluginLoader.then(() => { output.value += 'Ready!\n'; });
 
     function evaluatePython() {
@@ -122,11 +122,11 @@ Create and save a test `index.html` page with the following contents:
 </html>
 ```
 
-## Accessing Python scope from JavaScript
+## Accessing Python scope from Javascript
 
-You can also access from JavaScript all functions and variables defined in Python using the {any}`pyodide.globals` object.
+You can also access from Javascript all functions and variables defined in Python using the {any}`pyodide.globals` object.
 
-For example, if you initialize the variable `x = numpy.ones([3,3])` in Python, you can access it from JavaScript in your browser's developer console as follows: `pyodide.globals.get("x")`. The same goes for functions and imports. See {ref}`type_conversions` for more details.
+For example, if you initialize the variable `x = numpy.ones([3,3])` in Python, you can access it from Javascript in your browser's developer console as follows: `pyodide.globals.get("x")`. The same goes for functions and imports. See {ref}`type_conversions` for more details.
 
 You can try it yourself in the browser console:
 ```js
@@ -139,7 +139,7 @@ let x = pyodide.globals.get("numpy").ones(new Int32Array([3, 3]));
 // x >>> [Float64Array(3), Float64Array(3), Float64Array(3)]
 ```
 
-Since you have full scope access, you can also re-assign new values or even JavaScript functions to variables, and create new ones from JavaScript:
+Since you have full scope access, you can also re-assign new values or even Javascript functions to variables, and create new ones from Javascript:
 
 ```js
 // re-assign a new value to an existing variable
@@ -155,9 +155,9 @@ pyodide.globals.set("square", x => x*x);
 
 Feel free to play around with the code using the browser console and the above example.
 
-## Accessing JavaScript scope from Python
+## Accessing Javascript scope from Python
 
-The JavaScript scope can be accessed from Python using the `js` module (see {ref}`type_conversions_using_js_obj_from_py`). This module represents the global object `window` that allows us to directly manipulate the DOM and access global variables and functions from Python.
+The Javascript scope can be accessed from Python using the `js` module (see {ref}`type_conversions_using_js_obj_from_py`). This module represents the global object `window` that allows us to directly manipulate the DOM and access global variables and functions from Python.
 
 ```python
 import js
@@ -167,4 +167,4 @@ div.innerHTML = "<h1>This element was created from Python</h1>"
 js.document.body.prepend(div)
 ```
 
-See {ref}`serving_pyodide_packages` to distribute pyodide files locally.
+See {ref}`serving_pyodide_packages` to distribute Pyodide files locally.
