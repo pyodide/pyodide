@@ -44,7 +44,9 @@ numcodecs,nose,cycler,soupsieve,sympy,freesasa,\
 # TODO incremental build of those
 # ${MINIMAL}${EGGUNPACK}${CIRCULAR}${TESTING}py
 
-export PYODIDE_PACKAGES="micropip,py"
+
+export PYODIDE_PACKAGES="micropip,${MINIMAL}py"
+
 export HOSTPYTHON=$(command -v python3.8)
 export PYTHON_FOR_BUILD=$HOSTPYTHON
 
