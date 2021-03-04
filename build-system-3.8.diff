@@ -33,7 +33,7 @@ index 3c0220b..9db88c8 100644
  	# Generate sysconfigdata. It outputs into a subfolder of build/, and
  	# the subfolder is written to pybuilddir.txt.
 -	_PYTHON_SYSCONFIGDATA_NAME=$(SYSCONFIG_NAME) _PYTHON_PROJECT_BASE=$(BUILD) python -m sysconfig --generate-posix-vars
-+	_PYTHON_SYSCONFIGDATA_NAME=$(SYSCONFIG_NAME) _PYTHON_PROJECT_BASE=$(BUILD) $(file < ../bin/PYTHON_FOR_CI) -m sysconfig --generate-posix-vars
++	_PYTHON_SYSCONFIGDATA_NAME=$(SYSCONFIG_NAME) _PYTHON_PROJECT_BASE=$(BUILD) $(file < ../bin/PYTHON_FOR_BUILD) -m sysconfig --generate-posix-vars
  	mv `cat pybuilddir.txt`/$(SYSCONFIG_NAME).py $(INSTALL)/lib/python$(PYMINOR)/
  	rmdir `cat pybuilddir.txt`
  	rm pybuilddir.txt
