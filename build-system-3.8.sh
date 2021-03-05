@@ -68,3 +68,6 @@ echo
 echo
 
 cat FAILURES
+
+# try to understand why this one fails
+PYODIDE_PACKAGES="kiwisolver" make
