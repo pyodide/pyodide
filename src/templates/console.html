@@ -23,6 +23,7 @@
             import sys
             import js
             from pyodide import console
+            import __main__
 
 
             def displayhook(value):
@@ -36,7 +37,7 @@
             class PyConsole(console.InteractiveConsole):
                 def __init__(self):
                     super().__init__(
-                        globals(),
+                        __main__.__dict__,
                         persistent_stream_redirection=False,
                     )
 
