@@ -70,4 +70,4 @@ echo
 cat FAILURES
 
 # try to understand why this one fails
-CC=clang CXX=clang++ PYODIDE_PACKAGES="kiwisolver" emmake make
+CC=clang CXX=clang++ PYODIDE_PACKAGES="kiwisolver" make
