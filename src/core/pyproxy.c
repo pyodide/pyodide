@@ -172,13 +172,6 @@ _pyproxy_type(PyObject* ptrobj)
   return hiwire_string_ascii(ptrobj->ob_type->tp_name);
 }
 
-void
-_pyproxy_destroy(PyObject* ptrobj)
-{ // See bug #1049
-  Py_DECREF(ptrobj);
-  EM_ASM({ delete Module.PyProxies[$0]; }, ptrobj);
-}
-
 int
 _pyproxy_hasattr(PyObject* pyobj, JsRef idkey)
 {
@@ -646,26 +639,14 @@ finally:
  * still make "prototype in proxy" be true though.
  */
 EM_JS_REF(JsRef, pyproxy_new, (PyObject * ptrobj), {
-  // Technically, this leaks memory, since we're holding on to a reference
-  // to the proxy forever.  But we have that problem anyway since we don't
-  // have a destructor in Javascript to free the Python object.
-  // _pyproxy_destroy, which is a way for users to manually delete the proxy,
-  // also deletes the proxy from this set.
-  if (Module.PyProxies.hasOwnProperty(ptrobj)) {
-    return Module.hiwire.new_value(Module.PyProxies[ptrobj]);
-  }
   let flags = _pyproxy_getflags(ptrobj);
   let cls = Module.getPyProxyClass(flags);
-  // Reflect.construct calls the constructor of Module.PyProxyClass but sets the
-  // prototype as cls.prototype. This gives us a way to dynamically create
-  // subclasses of PyProxyClass (as long as we don't need to use the "new
-  // cls(ptrobj)" syntax).
   let target;
   if (flags & IS_CALLABLE) {
     // To make a callable proxy, we must call the Function constructor.
     // In this case we are effectively subclassing Function.
     target = Reflect.construct(Function, [], cls);
-    // Remove undesireable properties added by Function constructor. Note: we
+    // Remove undesirable properties added by Function constructor. Note: we
     // can't remove "arguments" or "caller" because they are not configurable
     // and not writable
     delete target.length;
@@ -679,14 +660,22 @@ EM_JS_REF(JsRef, pyproxy_new, (PyObject * ptrobj), {
     target, "$$", { value : { ptr : ptrobj, type : 'PyProxy' } });
   _Py_IncRef(ptrobj);
   let proxy = new Proxy(target, Module.PyProxyHandlers);
-  Module.PyProxies[ptrobj] = proxy;
+  Module.finalizationRegistry.register(proxy, ptrobj, proxy);
   return Module.hiwire.new_value(proxy);
 });
 
 // clang-format off
 EM_JS_NUM(int, pyproxy_init_js, (), {
-  Module.PyProxies = {};
-
+  if(globalThis.FinalizationRegistry){
+    Module.finalizationRegistry = new FinalizationRegistry((ptr) => {
+      _Py_DecRef(ptr);
+    });
+  } else {
+    Module.finalizationRegistry = {
+      register(){},
+      unregister(){}
+    };
+  }
   function _getPtr(jsobj) {
     let ptr = jsobj.$$.ptr;
     if (ptr === null) {
@@ -771,7 +760,8 @@ EM_JS_NUM(int, pyproxy_init_js, (), {
     }
     destroy() {
       let ptrobj = _getPtr(this);
-      __pyproxy_destroy(ptrobj);
+      Module.finalizationRegistry.unregister(this);
+      _Py_DecRef(ptrobj);
       this.$$.ptr = null;
     }
     /** 

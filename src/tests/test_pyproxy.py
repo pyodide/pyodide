@@ -383,3 +383,139 @@ def test_pyproxy_mixins2(selenium):
         assert(() => l.length === 2 && l.get(1) === 7);
         """
     )
+
+
+def test_pyproxy_gc(selenium):
+    if selenium.browser != "chrome":
+        pytest.skip("No gc exposed")
+
+    # Two ways to trigger garbage collection in Chrome:
+    # 1. options.add_argument("--js-flags=--expose-gc") in conftest, and use
+    #    gc() in javascript.
+    # 2. selenium.driver.execute_cdp_cmd("HeapProfiler.collectGarbage", {})
+    #
+    # Unclear how to trigger gc in Firefox. Possible to do this by navigating to
+    # "about:memory" and then triggering a button press to the "GC" button, but
+    # that seems too annoying.
+
+    selenium.run_js(
+        """
+        window.x = new FinalizationRegistry((val) => { window.val = val; });
+        x.register({}, 77);
+        gc();
+        """
+    )
+    assert selenium.run_js("return window.val;") == 77
+
+    selenium.run_js(
+        """
+        window.res = new Map();
+
+        let d = pyodide.runPython(`
+            from js import res
+            def get_ref_count(x):
+                res[x] = sys.getrefcount(d)
+                return res[x]
+
+            import sys
+            class Test:
+                def __del__(self):
+                    res["destructor_ran"] = True
+
+                def get(self):
+                    return 7
+
+            d = Test()
+            get_ref_count(0)
+            d
+        `);
+        let get_ref_count = pyodide.globals.get("get_ref_count");
+        get_ref_count(1);
+        d.get();
+        get_ref_count(2);
+        d.get();
+        """
+    )
+    selenium.driver.execute_cdp_cmd("HeapProfiler.collectGarbage", {})
+
+    selenium.run(
+        """
+        get_ref_count(3)
+        del d
+        """
+    )
+    selenium.driver.execute_cdp_cmd("HeapProfiler.collectGarbage", {})
+    a = selenium.run_js("return res;")
+    assert a == {"0": 2, "1": 3, "3": 2, "destructor_ran": True}
+
+
+def test_pyproxy_gc_destroy(selenium):
+    if selenium.browser != "chrome":
+        pytest.skip("No gc exposed")
+
+    selenium.run_js(
+        """
+        window.res = new Map();
+        let d = pyodide.runPython(`
+            from js import res
+            def get_ref_count(x):
+                res[x] = sys.getrefcount(d)
+                return res[x]
+            import sys
+            class Test:
+                def __del__(self):
+                    res["destructor_ran"] = True
+
+                def get(self):
+                    return 7
+
+            d = Test()
+            get_ref_count(0)
+            d
+        `);
+        let get_ref_count = pyodide.globals.get("get_ref_count");
+        get_ref_count(1);
+        d.get();
+        get_ref_count(2);
+        d.get();
+        get_ref_count(3);
+        d.destroy();
+        get_ref_count(4);
+        gc();
+        get_ref_count(5);
+        """
+    )
+    selenium.driver.execute_cdp_cmd("HeapProfiler.collectGarbage", {})
+    selenium.run(
+        """
+        get_ref_count(6)
+        del d
+        """
+    )
+    a = selenium.run_js("return res;")
+    assert a == {
+        "0": 2,
+        "1": 3,
+        "2": 4,
+        "3": 5,
+        "4": 4,
+        "5": 4,
+        "6": 2,
+        "destructor_ran": True,
+    }
+
+
+def test_pyproxy_copy(selenium):
+    result = selenium.run_js(
+        """
+        let result = [];
+        let a = pyodide.runPython(`d = { 1 : 2}; d`);
+        let b = pyodide.runPython(`d`);
+        result.push(a.get(1));
+        a.destroy();
+        result.push(b.get(1));
+        return result;
+        """
+    )
+    assert result[0] == 2
+    assert result[1] == 2
