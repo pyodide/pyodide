@@ -54,7 +54,7 @@ unset PYODIDE_PACKAGES
 for package in $PACKAGES
 do
     echo "building $package ..."
-    if PYODIDE_PACKAGES="$package" emmake make 2>&1 >/dev/null
+    if CC=clang CXX=clang++ PYODIDE_PACKAGES="$package" make 2>&1 >/dev/null
     then
         echo "$package -> ok"
     else
@@ -70,4 +70,4 @@ echo
 cat FAILURES
 
 # try to understand why this one fails
-CC=emcc CXX=em++ PYODIDE_PACKAGES="kiwisolver" emmake make
+CC=clang CXX=clang++ PYODIDE_PACKAGES="kiwisolver" emmake make
