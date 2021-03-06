@@ -16,19 +16,20 @@ fi
 
 # TODO incremental build of those
 # regex failed once
-PACKAGES="\
- kiwisolver\
- pandas setuptools glpk traits nlopt Jinja2 jedi autograd matplotlib cloudpickle docutils\
- networkx lxml pytest mpmath nltk bleach yt zarr cytoolz python-sat biopython\
- regex Pygments attrs numpy pillow webencodings\
- html5lib imageio joblib libiconv libxml libxslt xlrd asciitree beautifulsoup4\
- packaging cssselect patsy pluggy msgpack MarkupSafe more-itertools pyparsing decorator\
- CLAPACK pyodide-interrupts toolz uncertainties atomicwrites\
- numcodecs nose cycler soupsieve sympy freesasa\
- statsmodels\
- swiglpk optlang mne scipy pywavelets scikit-learn scikit-image astropy\
+CLEAN="\
+ kiwisolver setuptools glpk jedi cloudpickle docutils pytest mpmath\
+ bleach zarr python-sat Pygments attrs webencodings html5lib joblib\
+ libiconv libxml libxslt xlrd asciitree beautifulsoup4\
+ packaging cssselect pluggy msgpack more-itertools pyparsing decorator\
+ CLAPACK toolz uncertainties atomicwrites nose cycler soupsieve sympy\
 "
 
+FAIL="\
+ pandas traits nlopt Jinja2 autograd matplotlib networkx lxml nltk yt cytoolz\
+ biopython regex numpy pillow imageio patsy MarkupSafe pyodide-interrupts\
+ numcodecs freesasa statsmodels swiglpk optlang mne scipy\
+ pywavelets scikit-learn scikit-image astropy\
+"
 
 
 export HOSTPYTHON=$(command -v python3.8)
@@ -51,10 +52,10 @@ unset PYODIDE_PACKAGES
 
 > FAILURES
 
-for package in $PACKAGES
+for package in $CLEAN
 do
     echo "building $package ..."
-    if CC=clang CXX=clang++ PYODIDE_PACKAGES="$package" make 2>&1 >/dev/null
+    if PYODIDE_PACKAGES="$package" make 2>&1 >/dev/null
     then
         echo "$package -> ok"
     else
@@ -70,4 +71,4 @@ echo
 cat FAILURES
 
 # try to understand why this one fails
-CC=clang CXX=clang++ PYODIDE_PACKAGES="kiwisolver" make
+PYODIDE_PACKAGES="regex" make
