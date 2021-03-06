@@ -168,7 +168,8 @@ finally:
 }
 
 /**
- * setattr / delttr overload. TODO: Raise an error if the attribute exists on the proxy.
+ * setattr / delttr overload. TODO: Raise an error if the attribute exists on
+ * the proxy.
  */
 static int
 JsProxy_SetAttr(PyObject* self, PyObject* attr, PyObject* pyvalue)
@@ -264,7 +265,7 @@ JsProxy_GetIter(PyObject* o)
 }
 
 /**
- * next overload. Present if IS_ITERATOR. 
+ * next overload. Controlled by IS_ITERATOR.
  * TODO: Should add a similar send method for generator support.
  * Python 3.10 has a different way to handle this.
  */
@@ -276,7 +277,7 @@ JsProxy_IterNext(PyObject* o)
   PyObject* result = NULL;
 
   int done = hiwire_next(self->js, &idresult);
-  // done: 
+  // done:
   //   1 ==> finished
   //   0 ==> not finished
   //  -1 ==> unexpected Js error occurred (logic error in hiwire_next?)
@@ -879,11 +880,11 @@ finally:
   return pyresult;
 }
 
-/** 
- * This doesn't construct a new JsMethod object, it does Reflect.construct(this, args). 
- * In other words, this treats the JsMethod as a javascript class, constructs a new 
- * javascript object of that class and returns a new JsProxy wrapping it.
- * Similar to `new this(args)`.
+/**
+ * This doesn't construct a new JsMethod object, it does Reflect.construct(this,
+ * args). In other words, this treats the JsMethod as a javascript class,
+ * constructs a new javascript object of that class and returns a new JsProxy
+ * wrapping it. Similar to `new this(args)`.
  */
 static PyObject*
 JsMethod_jsnew(PyObject* o, PyObject* args, PyObject* kwargs)
@@ -1228,8 +1229,9 @@ finally:
 static PyObject* JsProxy_TypeDict;
 
 /**
- * Look up the appropriate type object in the types dict, if we don't find it call JsProxy_create_subtype.
- * This is a helper for JsProxy_create_with_this, JsProxy_create.
+ * Look up the appropriate type object in the types dict, if we don't find it
+ * call JsProxy_create_subtype. This is a helper for JsProxy_create_with_this
+ * and JsProxy_create.
  */
 static PyTypeObject*
 JsProxy_get_subtype(int flags)
