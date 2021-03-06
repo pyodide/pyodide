@@ -91,6 +91,9 @@ JsProxy_dealloc(JsProxy* self)
   Py_TYPE(self)->tp_free((PyObject*)self);
 }
 
+/**
+ * repr overload, does `obj.toString()` which produces a low-quality repr.
+ */
 static PyObject*
 JsProxy_Repr(PyObject* self)
 {
@@ -99,6 +102,9 @@ JsProxy_Repr(PyObject* self)
   return pyrepr;
 }
 
+/**
+ * typeof getter, returns `typeof(obj)`.
+ */
 static PyObject*
 JsProxy_typeof(PyObject* self, void* _unused)
 {
@@ -108,6 +114,11 @@ JsProxy_typeof(PyObject* self, void* _unused)
   return result;
 }
 
+/**
+ * getattr overload, first checks whether the attribute exists in the JsProxy
+ * dict, and if so returns that. Otherwise, it attempts lookup on the wrapped
+ * object.
+ */
 static PyObject*
 JsProxy_GetAttr(PyObject* self, PyObject* attr)
 {
@@ -156,6 +167,9 @@ finally:
   return pyresult;
 }
 
+/**
+ * setattr / delttr overload. TODO: Raise an error if the attribute exists on the proxy.
+ */
 static int
 JsProxy_SetAttr(PyObject* self, PyObject* attr, PyObject* pyvalue)
 {
@@ -230,6 +244,10 @@ JsProxy_RichCompare(PyObject* a, PyObject* b, int op)
   }
 }
 
+/**
+ * iter overload. Present if IS_ITERABLE but not IS_ITERATOR (if the IS_ITERATOR
+ * flag is present we use PyObject_SelfIter). Does `obj[Symbol.iterator]()`.
+ */
 static PyObject*
 JsProxy_GetIter(PyObject* o)
 {
@@ -245,6 +263,11 @@ JsProxy_GetIter(PyObject* o)
   return js2python(iditer);
 }
 
+/**
+ * next overload. Present if IS_ITERATOR. 
+ * TODO: Should add a similar send method for generator support.
+ * Python 3.10 has a different way to handle this.
+ */
 static PyObject*
 JsProxy_IterNext(PyObject* o)
 {
@@ -253,12 +276,17 @@ JsProxy_IterNext(PyObject* o)
   PyObject* result = NULL;
 
   int done = hiwire_next(self->js, &idresult);
+  // done: 
+  //   1 ==> finished
+  //   0 ==> not finished
+  //  -1 ==> unexpected Js error occurred (logic error in hiwire_next?)
   FAIL_IF_MINUS_ONE(done);
   // If there was no "value", "idresult" will be jsundefined
   // so pyvalue will be set to Py_None.
   result = js2python(idresult);
   FAIL_IF_NULL(result);
   if (done) {
+    // For the return value of a generator, raise StopIteration with result.
     PyErr_SetObject(PyExc_StopIteration, result);
     Py_CLEAR(result);
   }
@@ -293,7 +321,7 @@ JsProxy_length(PyObject* o)
 }
 
 /**
- * __getitem__ for proxies of Js Arrays
+ * __getitem__ for proxies of Js Arrays, controlled by IS_ARRAY
  */
 static PyObject*
 JsProxy_subscript_array(PyObject* o, PyObject* item)
@@ -327,7 +355,7 @@ JsProxy_subscript_array(PyObject* o, PyObject* item)
 }
 
 /**
- * __setitem__ and __delitem__ for proxies of Js Arrays
+ * __setitem__ and __delitem__ for proxies of Js Arrays, controlled by IS_ARRAY
  */
 static int
 JsProxy_ass_subscript_array(PyObject* o, PyObject* item, PyObject* pyvalue)
@@ -371,7 +399,7 @@ finally:
 
 /**
  * __getitem__ for JsProxies that have a "get" method. Translates proxy[key] to
- * obj.get(key).
+ * obj.get(key). Controlled by HAS_GET
  */
 static PyObject*
 JsProxy_subscript(PyObject* o, PyObject* pyidx)
@@ -394,7 +422,8 @@ JsProxy_subscript(PyObject* o, PyObject* pyidx)
  * __setitem__ / __delitem__ for JsProxies that have a "set" method (it's
  * currently assumed that they'll also have a del method...). Translates
  * `proxy[key] = value` to `obj.set(key, value)` and `del proxy[key]` to
- * `obj.del(key)`
+ * `obj.del(key)`.
+ * Controlled by HAS_SET.
  */
 static int
 JsProxy_ass_subscript(PyObject* o, PyObject* pyidx, PyObject* pyvalue)
@@ -425,6 +454,7 @@ finally:
  * Overload of the "in" operator for objects with an "includes" method.
  * Translates `key in proxy` to `obj.includes(key)`. We prefer to use
  * JsProxy_has when the object has both an `includes` and a `has` method.
+ * Controlled by HAS_INCLUDES.
  */
 static int
 JsProxy_includes(JsProxy* self, PyObject* obj)
@@ -442,6 +472,7 @@ finally:
 /**
  * Overload of the "in" operator for objects with a "has" method.
  * Translates `key in proxy` to `obj.has(key)`.
+ * Controlled by HAS_HAS.
  */
 static int
 JsProxy_has(JsProxy* self, PyObject* obj)
@@ -559,6 +590,7 @@ JsProxy_Bool(PyObject* o)
 
 /**
  * Overload for `await proxy` for js objects that have a `then` method.
+ * Controlled by IS_AWAITABLE.
  */
 static PyObject*
 JsProxy_Await(JsProxy* self, PyObject* _args)
@@ -713,6 +745,8 @@ JsException_traverse(JsExceptionObject* self, visitproc visit, void* arg)
   return PyExc_BaseException_Type->tp_traverse((PyObject*)self, visit, arg);
 }
 
+// Not sure we are interfacing with the GC correctly. There should be a call to
+// PyObject_GC_Track somewhere?
 static PyTypeObject _Exc_JsException = {
   PyVarObject_HEAD_INIT(NULL, 0) "JsException",
   .tp_basicsize = sizeof(JsExceptionObject),
@@ -754,7 +788,7 @@ finally:
 #define JsMethod_SUPPORTS_KWARGS(x) (((JsProxy*)x)->supports_kwargs)
 
 /**
- * Call overload for methods.
+ * Call overload for methods. Controlled by IS_CALLABLE.
  */
 static PyObject*
 JsMethod_Vectorcall(PyObject* self,
@@ -841,9 +875,11 @@ finally:
   return pyresult;
 }
 
-/* This doesn't construct a new JsMethod object, it treats the JsMethod as a
- * javascript class and this constructs a new javascript object of that class
- * and returns a new JsProxy wrapping it.
+/** 
+ * This doesn't construct a new JsMethod object, it does Reflect.construct(this, args). 
+ * In other words, this treats the JsMethod as a javascript class, constructs a new 
+ * javascript object of that class and returns a new JsProxy wrapping it.
+ * Similar to `new this(args)`.
  */
 static PyObject*
 JsMethod_jsnew(PyObject* o, PyObject* args, PyObject* kwargs)
@@ -994,9 +1030,19 @@ finally:
   return success ? 0 : -1;
 }
 
+/**
+ * This dynamically creates a subtype of JsProxy using PyType_FromSpecWithBases.
+ * It is called from JsProxy_get_subtype(flags) when a type with the given flags
+ * doesn't already exist.
+ *
+ * None of these types have tp_new method, we create them with tp_alloc and then
+ * call whatever init methods are needed. "new" and multiple inheritance don't
+ * go together very well.
+ */
 static PyObject*
 JsProxy_create_subtype(int flags)
 {
+  // Make sure these stack allocations are large enough to fit!
   PyType_Slot slots[20];
   int cur_slot = 0;
   PyMethodDef methods[5];
@@ -1177,6 +1223,10 @@ finally:
 
 static PyObject* JsProxy_TypeDict;
 
+/**
+ * Look up the appropriate type object in the types dict, if we don't find it call JsProxy_create_subtype.
+ * This is a helper for JsProxy_create_with_this, JsProxy_create.
+ */
 static PyTypeObject*
 JsProxy_get_subtype(int flags)
 {
@@ -1197,6 +1247,12 @@ finally:
 ////////////////////////////////////////////////////////////
 // Public functions
 
+/**
+ * Create a JsProxy. In case it's a method, bind "this" to the argument. (In
+ * most cases "this" will be NULL, `JsProxy_create` specializes to this case.)
+ * We check what capabilities are present on the javascript object, set
+ * appropriate flags, then we get the appropriate type with JsProxy_get_subtype.
+ */
 PyObject*
 JsProxy_create_with_this(JsRef object, JsRef this)
 {
