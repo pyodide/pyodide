@@ -734,3 +734,50 @@ def test_memory_leaks(selenium):
         `);
         """
     )
+
+
+def test_array_slice(selenium):
+    assert selenium.run_js(
+        """
+        window.a = Array(20).fill(0).map((_,idx)=>2*idx);
+        window.result = [];
+        pyodide.runPython(`
+            from js import a, result
+            result.push(a[::-1])
+            result.push(a[::-2])
+            result.push(a[::2])
+            result.push(a[:])
+            result.push(a[3:10:2])
+            result.push(a[3:15:3])
+        `);
+        return result;
+        """
+    ) == [
+        [38, 36, 34, 32, 30, 28, 26, 24, 22, 20, 18, 16, 14, 12, 10, 8, 6, 4, 2, 0],
+        [38, 34, 30, 26, 22, 18, 14, 10, 6, 2],
+        [0, 4, 8, 12, 16, 20, 24, 28, 32, 36],
+        [0, 2, 4, 6, 8, 10, 12, 14, 16, 18, 20, 22, 24, 26, 28, 30, 32, 34, 36, 38],
+        [6, 10, 14, 18],
+        [6, 12, 18, 24],
+    ]
+
+
+def test_array_slice_assign(selenium):
+    assert selenium.run_js(
+        """
+        window.a = Array(20).fill(0).map((_,idx)=>2*idx);
+        window.b = Array(20).fill(0).map((_,idx)=>2*idx);
+        pyodide.runPython(`
+            from js import a,b
+            del a[::2]
+            b[1:5] = ["a", "b", "c", "d"]
+            b[10:20:2] = range(5)
+        `);
+        console.log(a);
+        console.log(b);
+        return [a,b];
+        """
+    ) == [
+        [0, 2, 4, 6, 8, 10, 12, 14, 16, 18, 20, 22, 24, 26, 28, 30, 32, 34, 38],
+        [0, "a", "b", "c", "d", 10, 12, 14, 16, 18, 0, 22, 1, 26, 2, 30, 3, 34, 4, 38],
+    ]

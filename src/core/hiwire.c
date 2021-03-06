@@ -264,6 +264,11 @@ EM_JS_NUM(bool, hiwire_is_array, (JsRef idobj), {
 
 EM_JS_REF(JsRef, hiwire_array, (), { return Module.hiwire.new_value([]); });
 
+EM_JS_REF(JsRef, JsArray_slice, (JsRef idarr, int start, int stop), {
+  return Module.hiwire.new_value(
+    Module.hiwire.get_value(idarr).slice(start, stop));
+});
+
 EM_JS_NUM(errcode, hiwire_push_array, (JsRef idarr, JsRef idval), {
   Module.hiwire.get_value(idarr).push(Module.hiwire.get_value(idval));
 });

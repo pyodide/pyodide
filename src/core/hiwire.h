@@ -251,6 +251,9 @@ hiwire_is_array(JsRef idobj);
 JsRef
 hiwire_array();
 
+JsRef
+JsArray_slice(JsRef idarr, int start, int stop);
+
 /**
  * Push a value to the end of a Javascript array.
  *

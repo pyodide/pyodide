@@ -397,6 +397,66 @@ JsProxy_length(PyObject* o)
 }
 
 /**
+ * Helper for JsProxy_subscript_array in the case the argument is an integer
+ */
+static PyObject*
+JsProxy_subscript_array_index(JsProxy* self, PyObject* item)
+{
+  Py_ssize_t i;
+  i = PyNumber_AsSsize_t(item, PyExc_IndexError);
+  if (i == -1 && PyErr_Occurred())
+    return NULL;
+  if (i < 0)
+    i += hiwire_get_length(self->js);
+  JsRef result = hiwire_get_member_int(self->js, i);
+  if (result == NULL) {
+    PyErr_SetObject(PyExc_KeyError, item);
+    return NULL;
+  }
+  PyObject* pyresult = js2python(result);
+  hiwire_decref(result);
+  return pyresult;
+}
+
+/**
+ * Helper for JsProxy_subscript_array in the case the argument is a slice
+ */
+static PyObject*
+JsProxy_subscript_array_slice(JsProxy* self, PyObject* item)
+{
+  JsRef result = NULL;
+  Py_ssize_t start, stop, step;
+  if (PySlice_Unpack(item, &start, &stop, &step) == -1) {
+    return NULL;
+  }
+  if (step == 1) {
+    result = JsArray_slice(self->js, start, stop);
+  } else {
+    Py_ssize_t length = hiwire_get_length(self->js);
+    Py_ssize_t slicelength = PySlice_AdjustIndices(length, &start, &stop, step);
+    result = (JsRef)EM_ASM_INT(
+      {
+        let source = Module.hiwire.get_value($0);
+        let result = [];
+        for (let i = 0; i < $3; i++) {
+          result.push(source[$1 + $2 * i]);
+        }
+        return Module.hiwire.new_value(result);
+      },
+      self->js,
+      start,
+      step,
+      slicelength);
+  }
+  if (result == NULL) {
+    return NULL;
+  }
+  PyObject* proxy = JsProxy_create(result);
+  hiwire_decref(result);
+  return proxy;
+}
+
+/**
  * __getitem__ for proxies of Js Arrays, controlled by IS_ARRAY
  */
 static PyObject*
@@ -404,32 +464,156 @@ JsProxy_subscript_array(PyObject* o, PyObject* item)
 {
   JsProxy* self = (JsProxy*)o;
   if (PyIndex_Check(item)) {
-    Py_ssize_t i;
-    i = PyNumber_AsSsize_t(item, PyExc_IndexError);
-    if (i == -1 && PyErr_Occurred())
-      return NULL;
-    if (i < 0)
-      i += hiwire_get_length(self->js);
-    JsRef result = hiwire_get_member_int(self->js, i);
-    if (result == NULL) {
-      if (!PyErr_Occurred()) {
-        PyErr_SetObject(PyExc_IndexError, item);
-      }
-      return NULL;
-    }
-    PyObject* pyresult = js2python(result);
-    hiwire_decref(result);
-    return pyresult;
+    return JsProxy_subscript_array_index(self, item);
   }
   if (PySlice_Check(item)) {
-    PyErr_SetString(PyExc_NotImplementedError,
-                    "Slice subscripting isn't implemented");
-    return NULL;
+    return JsProxy_subscript_array_slice(self, item);
   }
   PyErr_Format(PyExc_TypeError,
                "list indices must be integers or slices, not %.200s",
                item->ob_type->tp_name);
   return NULL;
+}
+
+/**
+ * Helper for JsProxy_ass_subscript_array in the case the argument is an integer
+ */
+static int
+JsProxy_ass_subscript_array_index(JsProxy* self,
+                                  PyObject* item,
+                                  PyObject* pyvalue)
+{
+  Py_ssize_t i = PyNumber_AsSsize_t(item, PyExc_IndexError);
+  if (i == -1 && PyErr_Occurred()) {
+    return -1;
+  }
+  if (i < 0) {
+    i += hiwire_get_length(self->js);
+  }
+
+  if (pyvalue == NULL) {
+    // Delete item
+    if (hiwire_delete_member_int(self->js, i)) {
+      if (!PyErr_Occurred()) {
+        PyErr_SetObject(PyExc_IndexError, item);
+      }
+      return -1;
+    }
+  }
+
+  // Set item
+  bool success = false;
+  JsRef idvalue = python2js(pyvalue);
+  FAIL_IF_NULL(idvalue);
+  FAIL_IF_MINUS_ONE(hiwire_set_member_int(self->js, i, idvalue));
+  success = true;
+finally:
+  hiwire_CLEAR(idvalue);
+  return success ? 0 : -1;
+}
+
+/**
+ * Helper for JsProxy_ass_subscript_array
+ */
+// clang-format off
+EM_JS_NUM(int, JsProxy_ass_subscript_array_slice_js, (
+  JsRef self,
+  Py_ssize_t start,
+  Py_ssize_t stop,
+  Py_ssize_t step,
+  Py_ssize_t slicelength,
+  PyObject* pyvalue,
+  Py_ssize_t* value_length
+), {
+  let target = Module.hiwire.get_value(self);
+  if (pyvalue === 0) {
+    // Delete
+    if (step == 1) {
+      target.splice(start, stop);
+      return 0;
+    } else {
+      if (slicelength <= 0) {
+        return 0;
+      }
+      if (step > 0) {
+        start = start + step * (slicelength - 1);
+        stop = start;
+        step = -step;
+      }
+      for (let i = start; i >= stop; i += step) {
+        target.splice(i, 1);
+      }
+      return 0;
+    }
+  }
+  let value = Module.hiwire.pop_value(_python2js(pyvalue));
+  try {
+    if (!value[Symbol.iterator]) {
+      // TypeError: can only assign an iterable to slice
+      return -2;
+    }
+    if (step === 1) {
+      target.splice(start, slicelength, ...value);
+      return 0;
+    } else {
+      let source = value;
+      if (!Array.isArray(value)) {
+        // Collect source into an arraay so we can measure the length
+        source = [...value];
+      }
+      if (source.length !== slicelength) {
+        setValue(value_length, source.length, "i32");
+        // ValueError: attempt to assign sequence of size %zd to
+        // extended slice of size %zd
+        return -3;
+      }
+      for (let i = 0; i < slicelength; i++) {
+        target[start + i * step] = source[i];
+      }
+      return 0;
+    }
+  } finally {
+    if (Module.PyProxy.isPyProxy(value)) {
+      value.destroy();
+    }
+  }
+})
+// clang-format on
+
+/**
+ * Helper for JsProxy_ass_subscript_array in the case that the key is a slice
+ */
+static int
+JsProxy_ass_subscript_array_slice(JsProxy* self,
+                                  PyObject* item,
+                                  PyObject* pyvalue)
+{
+  Py_ssize_t start, stop, step;
+  if (PySlice_Unpack(item, &start, &stop, &step) == -1) {
+    return -1;
+  }
+  Py_ssize_t length = hiwire_get_length(self->js);
+  Py_ssize_t slicelength = PySlice_AdjustIndices(length, &start, &stop, step);
+  if ((step < 0 && start < stop) || (step > 0 && start > stop)) {
+    stop = start;
+  }
+  Py_ssize_t value_length = -1;
+  int result = JsProxy_ass_subscript_array_slice_js(
+    self->js, start, stop, step, slicelength, pyvalue, &value_length);
+  if (result == 0) {
+    return 0;
+  }
+  if (result == -2) {
+    PyErr_SetString(PyExc_TypeError, "can only assign an iterable to slice");
+  }
+  if (result == -3) {
+    PyErr_Format(
+      PyExc_ValueError,
+      "attempt to assign sequence of size %zd to extended slice of size %zd",
+      value_length,
+      slicelength);
+  }
+  return -1;
 }
 
 /**
@@ -439,42 +623,16 @@ static int
 JsProxy_ass_subscript_array(PyObject* o, PyObject* item, PyObject* pyvalue)
 {
   JsProxy* self = (JsProxy*)o;
-  Py_ssize_t i;
+  if (PyIndex_Check(item)) {
+    return JsProxy_ass_subscript_array_index(self, item, pyvalue);
+  }
   if (PySlice_Check(item)) {
-    PyErr_SetString(PyExc_NotImplementedError,
-                    "Slice subscripting isn't implemented");
-    return -1;
-  } else if (PyIndex_Check(item)) {
-    i = PyNumber_AsSsize_t(item, PyExc_IndexError);
-    if (i == -1 && PyErr_Occurred())
-      return -1;
-    if (i < 0)
-      i += hiwire_get_length(self->js);
-  } else {
-    PyErr_Format(PyExc_TypeError,
-                 "list indices must be integers or slices, not %.200s",
-                 item->ob_type->tp_name);
-    return -1;
+    return JsProxy_ass_subscript_array_slice(self, item, pyvalue);
   }
-
-  bool success = false;
-  JsRef idvalue = NULL;
-  if (pyvalue == NULL) {
-    if (hiwire_delete_member_int(self->js, i)) {
-      if (!PyErr_Occurred()) {
-        PyErr_SetObject(PyExc_IndexError, item);
-      }
-      FAIL();
-    }
-  } else {
-    idvalue = python2js(pyvalue);
-    FAIL_IF_NULL(idvalue);
-    FAIL_IF_MINUS_ONE(hiwire_set_member_int(self->js, i, idvalue));
-  }
-  success = true;
-finally:
-  hiwire_CLEAR(idvalue);
-  return success ? 0 : -1;
+  PyErr_Format(PyExc_TypeError,
+               "list indices must be integers or slices, not %.200s",
+               item->ob_type->tp_name);
+  return -1;
 }
 
 /**
@@ -1145,10 +1303,10 @@ JsMethod_jsnew(PyObject* o, PyObject* args, PyObject* kwargs)
 }
 
 // clang-format off
-PyMethodDef JsMethod_jsnew_MethodDef = { 
+PyMethodDef JsMethod_jsnew_MethodDef = {
   "new",
   (PyCFunction)JsMethod_jsnew,
-  METH_VARARGS | METH_KEYWORDS 
+  METH_VARARGS | METH_KEYWORDS
 };
 // clang-format on
 
