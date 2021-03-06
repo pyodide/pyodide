@@ -1,21 +1,53 @@
---- pyodide/build-system-3.8.sh	2021-03-06 00:00:49.941446274 +0100
+--- pyodide/build-system-3.8.sh	2021-03-06 08:51:39.257217163 +0100
 +++ pyodide-sysbuild/build-system-3.8.sh	2021-03-05 17:04:43.298455712 +0100
-@@ -54,7 +54,7 @@
- for package in $PACKAGES
+@@ -16,20 +16,19 @@
+ 
+ # TODO incremental build of those
+ # regex failed once
+-CLEAN="\
+- kiwisolver setuptools glpk jedi cloudpickle docutils pytest mpmath\
+- bleach zarr python-sat Pygments attrs webencodings html5lib joblib\
+- libiconv libxml libxslt xlrd asciitree beautifulsoup4\
+- packaging cssselect pluggy msgpack more-itertools pyparsing decorator\
+- CLAPACK toolz uncertainties atomicwrites nose cycler soupsieve sympy\
++PACKAGES="\
++ kiwisolver\
++ pandas setuptools glpk traits nlopt Jinja2 jedi autograd matplotlib cloudpickle docutils\
++ networkx lxml pytest mpmath nltk bleach yt zarr cytoolz python-sat biopython\
++ regex Pygments attrs numpy pillow webencodings\
++ html5lib imageio joblib libiconv libxml libxslt xlrd asciitree beautifulsoup4\
++ packaging cssselect patsy pluggy msgpack MarkupSafe more-itertools pyparsing decorator\
++ CLAPACK pyodide-interrupts toolz uncertainties atomicwrites\
++ numcodecs nose cycler soupsieve sympy freesasa\
++ statsmodels\
++ swiglpk optlang mne scipy pywavelets scikit-learn scikit-image astropy\
+ "
+ 
+-FAIL="\
+- pandas traits nlopt Jinja2 autograd matplotlib networkx lxml nltk yt cytoolz\
+- biopython regex numpy pillow imageio patsy MarkupSafe pyodide-interrupts\
+- numcodecs freesasa statsmodels swiglpk optlang mne scipy\
+- pywavelets scikit-learn scikit-image astropy\
+-"
+ 
+ 
+ export HOSTPYTHON=$(command -v python3.8)
+@@ -52,7 +51,7 @@
+ 
+ > FAILURES
+ 
+-for package in $CLEAN
++for package in $PACKAGES
  do
      echo "building $package ..."
--    if CC=clang CXX=clang++ PYODIDE_PACKAGES="$package" make 2>&1 >/dev/null
-+    if PYODIDE_PACKAGES="$package" make 2>&1 >/dev/null
-     then
-         echo "$package -> ok"
-     else
-@@ -68,6 +68,3 @@
+     if PYODIDE_PACKAGES="$package" make 2>&1 >/dev/null
+@@ -69,6 +68,3 @@
  echo
  
  cat FAILURES
 -
 -# try to understand why this one fails
--CC=clang CXX=clang++ PYODIDE_PACKAGES="kiwisolver" make
+-PYODIDE_PACKAGES="regex" make
 --- pyodide/cpython/Makefile	2021-03-04 12:25:31.824153471 +0100
 +++ pyodide-sysbuild/cpython/Makefile	2021-03-06 07:51:13.509330319 +0100
 @@ -37,7 +37,7 @@
