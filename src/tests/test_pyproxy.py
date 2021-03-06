@@ -446,7 +446,7 @@ def test_pyproxy_gc(selenium):
     )
     selenium.driver.execute_cdp_cmd("HeapProfiler.collectGarbage", {})
     a = selenium.run_js("return res;")
-    assert a == {"0": 2, "1": 3, "3": 2, "destructor_ran": True}
+    assert a == {"0": 2, "1": 3, "2": 4, "3": 2, "destructor_ran": True}
 
 
 def test_pyproxy_gc_destroy(selenium):

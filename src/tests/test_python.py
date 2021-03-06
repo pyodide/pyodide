@@ -44,6 +44,7 @@ def test_pyimport_multiple(selenium):
     selenium.run_js("pyodide.pyimport('v')")
     selenium.run_js("pyodide.pyimport('v')")
 
+
 def test_open_url(selenium, httpserver):
     httpserver.expect_request("/data").respond_with_data(
         b"HELLO", content_type="text/text", headers={"Access-Control-Allow-Origin": "*"}
