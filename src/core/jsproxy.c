@@ -313,6 +313,10 @@ JsProxy_object_entries(PyObject* o, PyObject* _args)
   return result;
 }
 
+/**
+ * len(proxy) overload for proxies of Js objects with `length` or `size` fields.
+ * Prefers `object.size` over `object.length`. Controlled by HAS_LENGTH.
+ */
 static Py_ssize_t
 JsProxy_length(PyObject* o)
 {
