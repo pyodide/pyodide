@@ -281,7 +281,7 @@ JsProxy_subscript_array(PyObject* o, PyObject* item)
   }
   if (PySlice_Check(item)) {
     PyErr_SetString(PyExc_NotImplementedError,
-                    "Haven't implemented slice subscript yet");
+                    "Slice subscripting isn't implemented");
     return NULL;
   }
   PyErr_Format(PyExc_TypeError,
@@ -297,7 +297,7 @@ JsProxy_ass_subscript_array(PyObject* o, PyObject* item, PyObject* pyvalue)
   Py_ssize_t i;
   if (PySlice_Check(item)) {
     PyErr_SetString(PyExc_NotImplementedError,
-                    "Haven't implemented slice assign yet");
+                    "Slice subscripting isn't implemented");
     return -1;
   } else if (PyIndex_Check(item)) {
     i = PyNumber_AsSsize_t(item, PyExc_IndexError);
