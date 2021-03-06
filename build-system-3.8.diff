@@ -1,34 +1,24 @@
-diff --git a/Makefile b/Makefile
-index 9079eb3..131db57 100644
---- a/Makefile
-+++ b/Makefile
-@@ -156,7 +156,7 @@ build/test.data: $(CPYTHONLIB) $(UGLIFYJS)
- 	)
- 	( \
- 		cd build; \
--		python $(FILEPACKAGER) test.data --lz4 --preload ../$(CPYTHONLIB)/test@/lib/python$(PYMINOR)/test --js-output=test.js --export-name=pyodide._module --exclude __pycache__ \
-+		${HOSTPYTHON} $(FILEPACKAGER) test.data --lz4 --preload ../$(CPYTHONLIB)/test@/lib/python$(PYMINOR)/test --js-output=test.js --export-name=pyodide._module --exclude __pycache__ \
- 	)
- 	$(UGLIFYJS) build/test.js -o build/test.js
+--- pyodide/build-system-3.8.sh	2021-03-06 00:00:49.941446274 +0100
++++ pyodide-sysbuild/build-system-3.8.sh	2021-03-05 17:04:43.298455712 +0100
+@@ -54,7 +54,7 @@
+ for package in $PACKAGES
+ do
+     echo "building $package ..."
+-    if CC=clang CXX=clang++ PYODIDE_PACKAGES="$package" make 2>&1 >/dev/null
++    if PYODIDE_PACKAGES="$package" make 2>&1 >/dev/null
+     then
+         echo "$package -> ok"
+     else
+@@ -68,6 +68,3 @@
+ echo
  
-diff --git a/Makefile.envs b/Makefile.envs
-index 17b76ef..4f16265 100644
---- a/Makefile.envs
-+++ b/Makefile.envs
-@@ -10,7 +10,7 @@ SHELL := /bin/bash
- export PYVERSION=3.8.2
- export PYMINOR=$(basename $(PYVERSION))
- export HOSTPYTHONROOT=$(shell python3.8 -c "import sys; print(sys.prefix)")
--export HOSTPYTHON=$(HOSTPYTHONROOT)/bin/python3.8
-+export HOSTPYTHON=${HOSTPYTHON:-$(HOSTPYTHONROOT)/bin/python3.8}
- export TARGETPYTHONROOT=$(PYODIDE_ROOT)/cpython/installs/python-$(PYVERSION)
- export PYTHONINCLUDE=$(PYODIDE_ROOT)/cpython/installs/python-$(PYVERSION)/include/python$(PYMINOR)
- 
-diff --git a/cpython/Makefile b/cpython/Makefile
-index 3c0220b..9db88c8 100644
---- a/cpython/Makefile
-+++ b/cpython/Makefile
-@@ -37,7 +37,7 @@ $(INSTALL)/lib/$(LIB): $(BUILD)/$(LIB) remove_modules.txt
+ cat FAILURES
+-
+-# try to understand why this one fails
+-CC=clang CXX=clang++ PYODIDE_PACKAGES="kiwisolver" make
+--- pyodide/cpython/Makefile	2021-03-04 12:25:31.824153471 +0100
++++ pyodide-sysbuild/cpython/Makefile	2021-03-06 07:51:13.509330319 +0100
+@@ -37,7 +37,7 @@
  	)
  	# Generate sysconfigdata. It outputs into a subfolder of build/, and
  	# the subfolder is written to pybuilddir.txt.
@@ -37,7 +27,7 @@ index 3c0220b..9db88c8 100644
  	mv `cat pybuilddir.txt`/$(SYSCONFIG_NAME).py $(INSTALL)/lib/python$(PYMINOR)/
  	rmdir `cat pybuilddir.txt`
  	rm pybuilddir.txt
-@@ -109,7 +109,7 @@ $(BUILD)/Makefile: $(BUILD)/.patched $(ZLIBBUILD)/.configured $(SQLITEBUILD)/lib
+@@ -109,7 +109,7 @@
  	cp config.site $(BUILD)/
  	( \
  		cd $(BUILD); \
@@ -46,11 +36,31 @@ index 3c0220b..9db88c8 100644
  		  ./configure \
  			  CFLAGS="-fPIC -sEMULATE_FUNCTION_POINTER_CASTS=1" \
  			  CPPFLAGS="-I$(SQLITEBUILD) -I$(BZIP2BUILD) -I$(ZLIBBUILD)" \
-diff --git a/packages/Makefile b/packages/Makefile
-index d088b7e..872846e 100644
---- a/packages/Makefile
-+++ b/packages/Makefile
-@@ -4,8 +4,8 @@ include ../Makefile.envs
+--- pyodide/Makefile	2021-03-04 12:25:31.815153584 +0100
++++ pyodide-sysbuild/Makefile	2021-03-06 07:51:13.509330319 +0100
+@@ -156,7 +156,7 @@
+ 	)
+ 	( \
+ 		cd build; \
+-		python $(FILEPACKAGER) test.data --lz4 --preload ../$(CPYTHONLIB)/test@/lib/python$(PYMINOR)/test --js-output=test.js --export-name=pyodide._module --exclude __pycache__ \
++		${HOSTPYTHON} $(FILEPACKAGER) test.data --lz4 --preload ../$(CPYTHONLIB)/test@/lib/python$(PYMINOR)/test --js-output=test.js --export-name=pyodide._module --exclude __pycache__ \
+ 	)
+ 	$(UGLIFYJS) build/test.js -o build/test.js
+ 
+--- pyodide/Makefile.envs	2021-03-04 12:25:31.823153483 +0100
++++ pyodide-sysbuild/Makefile.envs	2021-03-06 07:51:13.509330319 +0100
+@@ -10,7 +10,7 @@
+ export PYVERSION=3.8.2
+ export PYMINOR=$(basename $(PYVERSION))
+ export HOSTPYTHONROOT=$(shell python3.8 -c "import sys; print(sys.prefix)")
+-export HOSTPYTHON=$(HOSTPYTHONROOT)/bin/python3.8
++export HOSTPYTHON=${HOSTPYTHON:-$(HOSTPYTHONROOT)/bin/python3.8}
+ export TARGETPYTHONROOT=$(PYODIDE_ROOT)/cpython/installs/python-$(PYVERSION)
+ export PYTHONINCLUDE=$(PYODIDE_ROOT)/cpython/installs/python-$(PYVERSION)/include/python$(PYMINOR)
+ 
+--- pyodide/packages/Makefile	2021-03-04 12:25:31.824153471 +0100
++++ pyodide-sysbuild/packages/Makefile	2021-03-06 07:51:13.510330307 +0100
+@@ -4,8 +4,8 @@
  
  all:
  	mkdir -p $(PYODIDE_LIBRARIES)
@@ -61,11 +71,9 @@ index d088b7e..872846e 100644
  
  update-all:
  	for pkg in $$(find . -maxdepth 1 -type d -exec basename {} \; | tail -n +2); do \
-diff --git a/pyodide_build/buildpkg.py b/pyodide_build/buildpkg.py
-index 816120b..49308fa 100755
---- a/pyodide_build/buildpkg.py
-+++ b/pyodide_build/buildpkg.py
-@@ -139,6 +139,7 @@ def compile(path: Path, srcpath: Path, pkg: Dict[str, Any], args):
+--- pyodide/pyodide_build/buildpkg.py	2021-03-04 12:25:31.824153471 +0100
++++ pyodide-sysbuild/pyodide_build/buildpkg.py	2021-03-06 07:51:13.510330307 +0100
+@@ -139,6 +139,7 @@
  
      orig_dir = Path.cwd()
      os.chdir(srcpath)
@@ -73,7 +81,7 @@ index 816120b..49308fa 100755
      env = dict(os.environ)
      if pkg.get("build", {}).get("skip_host", True):
          env["SKIP_HOST"] = ""
-@@ -188,7 +189,7 @@ def package_files(buildpath: Path, srcpath: Path, pkg: Dict[str, Any], args):
+@@ -188,7 +189,7 @@
      install_prefix = (srcpath / "install").resolve()
      subprocess.run(
          [
@@ -82,11 +90,50 @@ index 816120b..49308fa 100755
              common.file_packager_path(),
              name + ".data",
              "--lz4",
-diff --git a/pyodide_build/pywasmcross.py b/pyodide_build/pywasmcross.py
-index 52aa6ef..69a7db6 100755
---- a/pyodide_build/pywasmcross.py
-+++ b/pyodide_build/pywasmcross.py
-@@ -343,6 +343,17 @@ def handle_command(line, args, dryrun=False):
+--- pyodide/pyodide_build/pywasmcross.py	2021-03-04 15:03:12.426432221 +0100
++++ pyodide-sysbuild/pyodide_build/pywasmcross.py	2021-03-06 07:51:20.479243512 +0100
+@@ -264,26 +264,12 @@
+     elif new_args[0] == "em++":
+         new_args.extend(args.cflags.split() + args.cxxflags.split())
+ 
+-    optflags_valid = [f"-O{tok}" for tok in "01234sz"]
+-    optflag = None
+-    # Identify the optflag (e.g. -O3) in cflags/cxxflags/ldflags. Last one has
+-    # priority.
+-    for arg in new_args[::-1]:
+-        if arg in optflags_valid:
+-            optflag = arg
+-            break
+-
+     lapack_dir = None
+ 
+     used_libs = set()
+ 
+     # Go through and adjust arguments
+     for arg in line[1:]:
+-        if arg in optflags_valid and optflag is not None and arg != optflag:
+-            # There are multiple contradictory optflags provided, use the one
+-            # from cflags/cxxflags/ldflags
+-            continue
+-
+         if arg.startswith("-I"):
+             if (
+                 str(Path(arg[2:]).resolve()).startswith(sys.prefix + "/include/python")
+@@ -310,6 +296,13 @@
+             if arg in used_libs:
+                 continue
+             used_libs.add(arg)
++
++        # -Bsymbolic-functions and  -Wl,-Bsymbolic-functions  unsupported by wasm-ld
++        if arg == "-Bsymbolic-functions":
++            continue
++        if arg == "-Wl,-Bsymbolic-functions":
++            continue
++
+         # threading is disabled for now
+         if arg == "-pthread":
+             continue
+@@ -357,6 +350,17 @@
      print(" ".join(new_args))
  
      if not dryrun:
