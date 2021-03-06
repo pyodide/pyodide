@@ -1,3 +1,33 @@
+/**
+ * JsProxy Class
+ *
+ * The root JsProxy class is a simple class that wraps a JsRef.  We define
+ * overloads for getattr, setattr, delattr, repr, bool, and comparison opertaors
+ * on the base class.
+ *
+ * We define a wide variety of subclasses on the fly with different operator
+ * overloads depending on the functionality detected on the wrapped js object.
+ * This is pretty much an identical strategy to the one used in PyProxy.
+ *
+ * Most of the overloads do not require any extra space which is convenient
+ * because multiple inheritance does not work well with different sized C
+ * structs. The Callable subclass and the Buffer subclass both need some extra
+ * space. Currently we use the maximum paranoia approach: JsProxy always
+ * allocates the extra 12 bytes needed for a Callable, and that way if an object
+ * ever comes around that is a Buffer and also is Callable, we've got it
+ * covered.
+ *
+ * We create the dynamic types as heap types with PyType_FromSpecWithBases. It's
+ * a good idea to consult the source for PyType_FromSpecWithBases in
+ * typeobject.c before modifying since the behavior doesn't exactly match the
+ * documentation.
+ *
+ * We don't currently have any way to define a new heap type
+ * without leaking the dynamically allocated methods array, but this is fine
+ * because we never free the dynamic types we construct. (it'd probably be
+ * possible by subclassing PyType with a different tp_dealloc method).
+ */
+
 #define PY_SSIZE_T_CLEAN
 #include "Python.h"
 
@@ -238,6 +268,10 @@ finally:
   return result;
 }
 
+/**
+ * This is exposed as a METH_NOARGS method on the JsProxy. It returns
+ * Object.entries(obj) as a new JsProxy.
+ */
 static PyObject*
 JsProxy_object_entries(PyObject* o, PyObject* _args)
 {
@@ -255,10 +289,12 @@ static Py_ssize_t
 JsProxy_length(PyObject* o)
 {
   JsProxy* self = (JsProxy*)o;
-
   return hiwire_get_length(self->js);
 }
 
+/**
+ * __getitem__ for proxies of Js Arrays
+ */
 static PyObject*
 JsProxy_subscript_array(PyObject* o, PyObject* item)
 {
@@ -290,6 +326,9 @@ JsProxy_subscript_array(PyObject* o, PyObject* item)
   return NULL;
 }
 
+/**
+ * __setitem__ and __delitem__ for proxies of Js Arrays
+ */
 static int
 JsProxy_ass_subscript_array(PyObject* o, PyObject* item, PyObject* pyvalue)
 {
@@ -330,6 +369,10 @@ finally:
   return success ? 0 : -1;
 }
 
+/**
+ * __getitem__ for JsProxies that have a "get" method. Translates proxy[key] to
+ * obj.get(key).
+ */
 static PyObject*
 JsProxy_subscript(PyObject* o, PyObject* pyidx)
 {
@@ -347,6 +390,12 @@ JsProxy_subscript(PyObject* o, PyObject* pyidx)
   return pyresult;
 }
 
+/**
+ * __setitem__ / __delitem__ for JsProxies that have a "set" method (it's
+ * currently assumed that they'll also have a del method...). Translates
+ * `proxy[key] = value` to `obj.set(key, value)` and `del proxy[key]` to
+ * `obj.del(key)`
+ */
 static int
 JsProxy_ass_subscript(PyObject* o, PyObject* pyidx, PyObject* pyvalue)
 {
@@ -372,6 +421,11 @@ finally:
   return success ? 0 : -1;
 }
 
+/**
+ * Overload of the "in" operator for objects with an "includes" method.
+ * Translates `key in proxy` to `obj.includes(key)`. We prefer to use
+ * JsProxy_has when the object has both an `includes` and a `has` method.
+ */
 static int
 JsProxy_includes(JsProxy* self, PyObject* obj)
 {
@@ -385,6 +439,10 @@ finally:
   return result;
 }
 
+/**
+ * Overload of the "in" operator for objects with a "has" method.
+ * Translates `key in proxy` to `obj.has(key)`.
+ */
 static int
 JsProxy_has(JsProxy* self, PyObject* obj)
 {
@@ -400,6 +458,10 @@ finally:
 
 #define GET_JSREF(x) (((JsProxy*)x)->js)
 
+/**
+ * Overload of `dir(proxy)`. Walks the prototype chain of the object and adds
+ * the ownPropertyNames of each prototype.
+ */
 static PyObject*
 JsProxy_Dir(PyObject* self, PyObject* _args)
 {
@@ -457,6 +519,9 @@ finally:
   return result;
 }
 
+/**
+ * The to_py method, uses METH_FASTCALL calling convention.
+ */
 static PyObject*
 JsProxy_toPy(PyObject* self, PyObject* const* args, Py_ssize_t nargs)
 {
@@ -476,6 +541,15 @@ JsProxy_toPy(PyObject* self, PyObject* const* args, Py_ssize_t nargs)
   return js2python_convert(GET_JSREF(self), depth);
 }
 
+/**
+ * Overload for bool(proxy), implemented for every JsProxy. Return `False` if
+ * the object is falsey in Javascript, or if it has a `size` field equal to 0,
+ * or if it has a `length` field equal to zero and is an array. Otherwise return
+ * `True`. This last convention could be replaced with "has a length equal to
+ * zero and is not a function". In Javascript, `func.length` returns the number
+ * of arguments `func` expects. We definitely don't want 0-argument functions to
+ * be falsey.
+ */
 static int
 JsProxy_Bool(PyObject* o)
 {
@@ -483,6 +557,9 @@ JsProxy_Bool(PyObject* o)
   return hiwire_get_bool(self->js) ? 1 : 0;
 }
 
+/**
+ * Overload for `await proxy` for js objects that have a `then` method.
+ */
 static PyObject*
 JsProxy_Await(JsProxy* self, PyObject* _args)
 {
@@ -568,6 +645,10 @@ JsProxy_cinit(PyObject* obj, JsRef idobj)
   return 0;
 }
 
+/**
+ * A wrapper for JsProxy that inherits from Exception. TODO: consider just
+ * making JsProxy of an exception inherit from Exception?
+ */
 typedef struct
 {
   PyException_HEAD PyObject* js_error;
@@ -672,6 +753,9 @@ finally:
 #define JsMethod_THIS(x) (((JsProxy*)x)->this_)
 #define JsMethod_SUPPORTS_KWARGS(x) (((JsProxy*)x)->supports_kwargs)
 
+/**
+ * Call overload for methods.
+ */
 static PyObject*
 JsMethod_Vectorcall(PyObject* self,
                     PyObject* const* args,
@@ -1037,7 +1121,7 @@ JsProxy_create_subtype(int flags)
   PyObject* result = NULL;
 
   // PyType_FromSpecWithBases copies "members" automatically into the end of the
-  // type It doesn't store the slots. But it just copies the pointer to
+  // type. It doesn't store the slots. But it just copies the pointer to
   // "methods" into the PyTypeObject, so if we give it a stack allocated methods
   // there will be trouble. (There are several other buggy behaviors in
   // PyType_FromSpecWithBases, like if you use two PyMembers slots, the first
@@ -1059,7 +1143,8 @@ JsProxy_create_subtype(int flags)
   slots[cur_slot++] = (PyType_Slot){ 0 };
 
   PyType_Spec spec = {
-    .name = "JsProxy", // TODO: this will need to change for Python 3.9
+    // TODO: for Python3.9 the name will need to change to "pyodide.JsProxy"
+    .name = "JsProxy",
     .itemsize = 0,
     .flags = tp_flags,
     .slots = slots,
@@ -1075,8 +1160,8 @@ JsProxy_create_subtype(int flags)
   FAIL_IF_NULL(result);
   if (flags & IS_CALLABLE) {
     // Python 3.9 provides an alternate way to do this by setting a special
-    // member __vectorcall_offset__ but it doesn't work in I like this approach
-    // better
+    // member __vectorcall_offset__ but it doesn't work in 3.8. I like this
+    // approach better.
     ((PyTypeObject*)result)->tp_vectorcall_offset =
       offsetof(JsProxy, vectorcall);
   }
