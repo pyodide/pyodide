@@ -423,31 +423,31 @@ bool
 hiwire_get_bool(JsRef idobj);
 
 bool
-hiwire_has_has_meth(JsRef idobj);
+hiwire_has_has_method(JsRef idobj);
 
 bool
-hiwire_has_meth(JsRef idobj, JsRef idval);
+hiwire_has_method(JsRef idobj, JsRef idval);
 
 bool
-hiwire_has_includes_meth(JsRef idobj);
+hiwire_has_includes_method(JsRef idobj);
 
 bool
-hiwire_includes_meth(JsRef idobj, JsRef idval);
+hiwire_includes_method(JsRef idobj, JsRef idval);
 
 bool
-hiwire_has_get_meth(JsRef idobj);
+hiwire_has_get_method(JsRef idobj);
 
 JsRef
-hiwire_get_meth(JsRef idobj, JsRef idkey);
+hiwire_get_method(JsRef idobj, JsRef idkey);
 
 bool
-hiwire_has_set_meth(JsRef idobj);
+hiwire_has_set_method(JsRef idobj);
 
 errcode
-hiwire_set_meth(JsRef idobj, JsRef idkey, JsRef idval);
+hiwire_set_method(JsRef idobj, JsRef idkey, JsRef idval);
 
 errcode
-hiwire_delete_meth(JsRef idobj, JsRef idkey);
+hiwire_delete_method(JsRef idobj, JsRef idkey);
 
 bool
 hiwire_is_pyproxy(JsRef idobj);

@@ -336,7 +336,7 @@ JsProxy_subscript(PyObject* o, PyObject* pyidx)
   JsProxy* self = (JsProxy*)o;
 
   JsRef ididx = python2js(pyidx);
-  JsRef idresult = hiwire_get_meth(self->js, ididx);
+  JsRef idresult = hiwire_get_method(self->js, ididx);
   hiwire_decref(ididx);
   if (idresult == NULL) {
     PyErr_SetObject(PyExc_KeyError, pyidx);
@@ -356,14 +356,14 @@ JsProxy_ass_subscript(PyObject* o, PyObject* pyidx, PyObject* pyvalue)
   JsRef idvalue = NULL;
   ididx = python2js(pyidx);
   if (pyvalue == NULL) {
-    if (hiwire_delete_meth(self->js, ididx)) {
+    if (hiwire_delete_method(self->js, ididx)) {
       PyErr_SetObject(PyExc_KeyError, pyidx);
       FAIL();
     }
   } else {
     idvalue = python2js(pyvalue);
     FAIL_IF_NULL(idvalue);
-    FAIL_IF_MINUS_ONE(hiwire_set_meth(self->js, ididx, idvalue));
+    FAIL_IF_MINUS_ONE(hiwire_set_method(self->js, ididx, idvalue));
   }
   success = true;
 finally:
@@ -378,7 +378,7 @@ JsProxy_includes(JsProxy* self, PyObject* obj)
   int result = -1;
   JsRef jsobj = python2js(obj);
   FAIL_IF_NULL(jsobj);
-  result = hiwire_includes_meth(self->js, jsobj);
+  result = hiwire_includes_method(self->js, jsobj);
 
 finally:
   hiwire_CLEAR(jsobj);
@@ -391,7 +391,7 @@ JsProxy_has(JsProxy* self, PyObject* obj)
   int result = -1;
   JsRef jsobj = python2js(obj);
   FAIL_IF_NULL(jsobj);
-  result = hiwire_has_meth(self->js, jsobj);
+  result = hiwire_has_method(self->js, jsobj);
 
 finally:
   hiwire_CLEAR(jsobj);
@@ -1134,16 +1134,16 @@ JsProxy_create_with_this(JsRef object, JsRef this)
   if (hiwire_has_length(object)) {
     type_flags |= HAS_LENGTH;
   }
-  if (hiwire_has_get_meth(object)) {
+  if (hiwire_has_get_method(object)) {
     type_flags |= HAS_GET;
   }
-  if (hiwire_has_set_meth(object)) {
+  if (hiwire_has_set_method(object)) {
     type_flags |= HAS_SET;
   }
-  if (hiwire_has_has_meth(object)) {
+  if (hiwire_has_has_method(object)) {
     type_flags |= HAS_HAS;
   }
-  if (hiwire_has_includes_meth(object)) {
+  if (hiwire_has_includes_method(object)) {
     type_flags |= HAS_INCLUDES;
   }
   if (hiwire_is_typedarray(object)) {
