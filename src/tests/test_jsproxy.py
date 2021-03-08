@@ -504,3 +504,64 @@ def test_register_jsmodule_docs_example(selenium):
         assert c == 2
         """
     )
+
+    # define IS_ITERABLE  (1<<0)
+    # define IS_ITERATOR  (1<<1)
+    # define HAS_LENGTH   (1<<2)
+    # define HAS_GET      (1<<3)
+    # define HAS_SET      (1<<4)
+    # define HAS_HAS      (1<<5)
+    # define HAS_INCLUDES (1<<6)
+    # define IS_AWAITABLE (1<<7)
+    # define IS_BUFFER    (1<<8)
+    # define IS_CALLABLE  (1<<9)
+    # define IS_ARRAY     (1<<10)
+
+
+def test_mixins(selenium):
+    result = selenium.run_js(
+        """
+        window.testObjects = {};
+        testObjects.iterable = { *[Symbol.iterator](){
+            yield 3; yield 5; yield 7;
+        } };
+        testObjects.iterator = testObjects.iterable[Symbol.iterator]();
+        testObjects.has_len1 = { length : 7, size : 10 };
+        testObjects.has_len2 = { length : 7 };
+        testObjects.has_get = { get(x){ return x; } };
+        testObjects.has_getset = new Map();
+        testObjects.has_has = { has(x){ typeof(x) === "string" && x.startsWith("x") } };
+        testObjects.has_includes = { includes(x){ typeof(x) === "string" && x.startsWith("a") } };
+        testObjects.has_has_includes = { 
+            includes(x){ typeof(x) === "string" && x.startsWith("a") },
+            has(x){ typeof(x) === "string" && x.startsWith("x") }
+        };
+        testObjects.awaitable = { then(cb){ cb(7); } };
+
+        return await pyodide.runPythonAsync(`
+            from js import testObjects as obj
+            result = []
+            result.push(["iterable1", list(iter(obj.iterable)), [3, 5, 7]])
+            result.push(["iterable2", [*obj.iterable], [3, 5, 7]])
+            it = obj.iterator
+            result.push(["iterator", [next(it), next(it), next(it)], [3, 5, 7]])
+            result.push(["has_len1", len(obj.has_len1), 10])
+            result.push(["has_len2", len(obj.has_len2), 7])
+            result.push(["has_get1", obj.has_get[10], 10])
+            result.push(["has_get2", obj.has_get[11], 11])
+            m = obj.has_getset
+            m[1] = 6
+            m[2] = 77
+            m[3] = 9
+            m[2] = 5
+            del m[3]
+            result.push(["has_getset", [x.to_py() for x in m.entries()], [[1, 6], [2, 5]]])
+            result.push(["has_has", [n in obj.has_has for n in ["x9", "a9"]], [True, False]])
+            result.push(["has_includes", [n in obj.has_includes for n in ["x9", "a9"]], [False, True]])
+            result.push(["has_has_includes", [n in obj.has_has_includes for n in ["x9", "a9"]], [True, False]])
+            result.push(["awaitable", await obj.awaitable, 7])
+        `);
+        """
+    )
+    for [desc, a, b] in result:
+        assert a == b, desc
