@@ -530,37 +530,39 @@ def test_mixins(selenium):
         testObjects.has_len2 = { length : 7 };
         testObjects.has_get = { get(x){ return x; } };
         testObjects.has_getset = new Map();
-        testObjects.has_has = { has(x){ typeof(x) === "string" && x.startsWith("x") } };
-        testObjects.has_includes = { includes(x){ typeof(x) === "string" && x.startsWith("a") } };
+        testObjects.has_has = { has(x){ return typeof(x) === "string" && x.startsWith("x") } };
+        testObjects.has_includes = { includes(x){ return typeof(x) === "string" && x.startsWith("a") } };
         testObjects.has_has_includes = { 
-            includes(x){ typeof(x) === "string" && x.startsWith("a") },
-            has(x){ typeof(x) === "string" && x.startsWith("x") }
+            includes(x){ return typeof(x) === "string" && x.startsWith("a") },
+            has(x){ return typeof(x) === "string" && x.startsWith("x") }
         };
         testObjects.awaitable = { then(cb){ cb(7); } };
 
-        return await pyodide.runPythonAsync(`
+        let result = await pyodide.runPythonAsync(`
             from js import testObjects as obj
             result = []
-            result.push(["iterable1", list(iter(obj.iterable)), [3, 5, 7]])
-            result.push(["iterable2", [*obj.iterable], [3, 5, 7]])
+            result.append(["iterable1", list(iter(obj.iterable)), [3, 5, 7]])
+            result.append(["iterable2", [*obj.iterable], [3, 5, 7]])
             it = obj.iterator
-            result.push(["iterator", [next(it), next(it), next(it)], [3, 5, 7]])
-            result.push(["has_len1", len(obj.has_len1), 10])
-            result.push(["has_len2", len(obj.has_len2), 7])
-            result.push(["has_get1", obj.has_get[10], 10])
-            result.push(["has_get2", obj.has_get[11], 11])
+            result.append(["iterator", [next(it), next(it), next(it)], [3, 5, 7]])
+            result.append(["has_len1", len(obj.has_len1), 10])
+            result.append(["has_len2", len(obj.has_len2), 7])
+            result.append(["has_get1", obj.has_get[10], 10])
+            result.append(["has_get2", obj.has_get[11], 11])
             m = obj.has_getset
             m[1] = 6
             m[2] = 77
             m[3] = 9
             m[2] = 5
             del m[3]
-            result.push(["has_getset", [x.to_py() for x in m.entries()], [[1, 6], [2, 5]]])
-            result.push(["has_has", [n in obj.has_has for n in ["x9", "a9"]], [True, False]])
-            result.push(["has_includes", [n in obj.has_includes for n in ["x9", "a9"]], [False, True]])
-            result.push(["has_has_includes", [n in obj.has_has_includes for n in ["x9", "a9"]], [True, False]])
-            result.push(["awaitable", await obj.awaitable, 7])
+            result.append(["has_getset", [x.to_py() for x in m.entries()], [[1, 6], [2, 5]]])
+            result.append(["has_has", [n in obj.has_has for n in ["x9", "a9"]], [True, False]])
+            result.append(["has_includes", [n in obj.has_includes for n in ["x9", "a9"]], [False, True]])
+            result.append(["has_has_includes", [n in obj.has_has_includes for n in ["x9", "a9"]], [True, False]])
+            result.append(["awaitable", await obj.awaitable, 7])
+            result
         `);
+        return result.toJs();
         """
     )
     for [desc, a, b] in result:
