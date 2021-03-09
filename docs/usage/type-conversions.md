@@ -86,7 +86,7 @@ to make this more complete):
 ### Python from Javascript
 
 When passing a Python object to Javascript, the Javascript [Proxy
-API](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Proxy)
+API](https://developer.mozilla.org/en-US/docs/Web/Javascript/Reference/Global_Objects/Proxy)
 is used to delegate Javascript operations to the Python side. In general, the
 Proxy API is more limited than what can be done with a Python extension, so
 there are certain operations that are impossible or more cumbersome when using

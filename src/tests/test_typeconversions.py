@@ -38,7 +38,7 @@ def test_python2js(selenium):
         let typename = proxy.type;
         let x = proxy.toJs();
         proxy.destroy();
-        return (typename === "dict") && (typeof x === "object") && (x[42] === 64)
+        return (typename === "dict") && (x.constructor.name === "Map") && (x.get(42) === 64)
         """
     )
     assert selenium.run_js(
@@ -382,46 +382,48 @@ def test_memoryview_conversion(selenium):
 
 
 def test_python2js_with_depth(selenium):
-
-    selenium.run("a = [1, 2, 3]")
     assert selenium.run_js(
         """
-        res = pyodide._module.test_python2js_with_depth("a", -1);
+        pyodide.runPython("a = [1, 2, 3]");
+        let res = pyodide.pyimport("a").toJs();
         return (Array.isArray(res)) && JSON.stringify(res) === "[1,2,3]";
         """
     )
 
-    selenium.run("a = (1, 2, 3)")
     assert selenium.run_js(
         """
-        res = pyodide._module.test_python2js_with_depth("a", -1);
+        pyodide.runPython("a = (1, 2, 3)");
+        let res = pyodide.pyimport("a").toJs();
         return (Array.isArray(res)) && JSON.stringify(res) === "[1,2,3]";
         """
     )
 
-    selenium.run("a = [(1,2), (3,4), [5, 6], { 2 : 3,  4 : 9}]")
     assert selenium.run_js(
         """
-        res = pyodide._module.test_python2js_with_depth("a", -1);
+        pyodide.runPython("a = [(1,2), (3,4), [5, 6], { 2 : 3,  4 : 9}]")
+        let res = pyodide.pyimport("a").toJs();
         return Array.isArray(res) && \
-            JSON.stringify(res) === `[[1,2],[3,4],[5,6],{"2":3,"4":9}]`;
+            JSON.stringify(res) === `[[1,2],[3,4],[5,6],{}]` && \
+            JSON.stringify(Array.from(res[3].entries())) === "[[2,3],[4,9]]";
         """
     )
 
-    selenium.run(
-        """
-        a = [1,[2,[3,[4,[5,[6,[7]]]]]]]
-        """
-    )
     selenium.run_js(
         """
-        function assert(x, msg){
+        window.assert = function assert(x, msg){
             if(x !== true){
                 throw new Error(`Assertion failed: ${msg}`);
             }
         }
+        """
+    )
+
+    selenium.run_js(
+        """
+        pyodide.runPython("a = [1,[2,[3,[4,[5,[6,[7]]]]]]]")
+        let a = pyodide.pyimport("a");
         for(let i=0; i < 7; i++){
-            let x = pyodide._module.test_python2js_with_depth("a", i);
+            let x = a.toJs(i);
             for(let j=0; j < i; j++){
                 assert(Array.isArray(x), `i: ${i}, j: ${j}`);
                 x = x[1];
@@ -431,16 +433,17 @@ def test_python2js_with_depth(selenium):
         """
     )
 
-    selenium.run("a = [1, (2, (3, [4, (5, (6, [7]))]))]")
     selenium.run_js(
         """
+        pyodide.runPython("a = [1, (2, (3, [4, (5, (6, [7]))]))]")
         function assert(x, msg){
             if(x !== true){
                 throw new Error(`Assertion failed: ${msg}`);
             }
         }
+        let a = pyodide.pyimport("a");
         for(let i=0; i < 7; i++){
-            let x = pyodide._module.test_python2js_with_depth("a", i);
+            let x = a.toJs(i);
             for(let j=0; j < i; j++){
                 assert(Array.isArray(x), `i: ${i}, j: ${j}`);
                 x = x[1];
@@ -448,6 +451,86 @@ def test_python2js_with_depth(selenium):
             assert(pyodide._module.PyProxy.isPyProxy(x), `i: ${i}, j: ${i}`);
         }
         """
+    )
+
+    selenium.run_js(
+        """
+        pyodide.runPython(`
+            a = [1, 2, 3, 4, 5]
+            b = [a, a, a, a, a]
+            c = [b, b, b, b, b]
+        `);
+        let total_refs = pyodide._module.hiwire.num_keys();
+        let res = pyodide.pyimport("c").toJs();
+        let new_total_refs = pyodide._module.hiwire.num_keys();
+        assert(total_refs === new_total_refs);
+        assert(res[0] === res[1]);
+        assert(res[0][0] === res[1][1]);
+        assert(res[4][0] === res[1][4]);
+        """
+    )
+
+    selenium.run_js(
+        """
+        pyodide.runPython(`
+            a = [["b"]]
+            b = [1,2,3, a[0]]
+            a[0].append(b)
+            a.append(b)
+        `);
+        let total_refs = pyodide._module.hiwire.num_keys();
+        let res = pyodide.pyimport("a").toJs();
+        let new_total_refs = pyodide._module.hiwire.num_keys();
+        assert(total_refs === new_total_refs);
+        assert(res[0][0] === "b");
+        assert(res[1][2] === 3);
+        assert(res[1][3] === res[0]);
+        assert(res[0][1] === res[1]);
+        """
+    )
+    msg = "pyodide.ConversionError"
+    with pytest.raises(selenium.JavascriptException, match=msg):
+        selenium.run_js(
+            """
+            pyodide.runPython(`
+                { (2,2) : 0 }
+            `).toJs()
+            """
+        )
+
+    with pytest.raises(selenium.JavascriptException, match=msg):
+        selenium.run_js(
+            """
+            pyodide.runPython(`
+                { (2,2) }
+            `).toJs()
+            """
+        )
+
+    assert (
+        set(
+            selenium.run_js(
+                """
+        return Array.from(pyodide.runPython(`
+            { 1, "1" }
+        `).toJs().values())
+        """
+            )
+        )
+        == {1, "1"}
+    )
+
+    assert (
+        dict(
+            selenium.run_js(
+                """
+        return Array.from(pyodide.runPython(`
+            { 1 : 7, "1" : 9 }
+        `).toJs().entries())
+        """
+            )
+        )
+        == {1: 7, "1": 9}
     )
 
 
@@ -584,14 +667,3 @@ def test_to_py(selenium):
             `);
             """
         )
-
-
-@pytest.mark.xfail
-def test_py2js_set(selenium):
-    selenium.run("a = {1, 2, 3}")
-    assert selenium.run_js(
-        """
-        let res = pyodide._module.test_python2js_with_depth("a", -1);
-        return res instanceof Set;
-        """
-    )

@@ -1,7 +1,9 @@
-from collections import namedtuple
 from pathlib import Path
 import sys
 import argparse
+from dataclasses import dataclass
+
+import pytest
 
 import pytest
 
@@ -12,6 +14,18 @@ from pyodide_build.pywasmcross import f2c  # noqa: E402
 from pyodide_build.pywasmcross import make_parser
 
 ARG_FIELDS = ["cflags", "cxxflags", "ldflags", "host", "replace_libs", "install_dir"]
+
+
+@dataclass
+class BuildArgs:
+    """An object to hold build arguments"""
+
+    cflags: str = ""
+    cxxflags: str = ""
+    ldflags: str = ""
+    host: str = ""
+    replace_libs: str = ""
+    install_dir: str = ""
 
 
 def _args_wrapper(func):
@@ -37,8 +51,7 @@ f2c_wrap = _args_wrapper(f2c)
 
 
 def test_handle_command():
-    Args = namedtuple("args", ARG_FIELDS, defaults=("",) * len(ARG_FIELDS))
-    args = Args()
+    args = BuildArgs()
     assert handle_command_wrap("gcc -print-multiarch", args) is None
     assert handle_command_wrap("gcc test.c", args) == "emcc test.c"
     assert (
@@ -47,7 +60,7 @@ def test_handle_command():
     )
 
     # check cxxflags injection and cpp detection
-    args = Args(
+    args = BuildArgs(
         cflags="-I./lib2",
         cxxflags="-std=c++11",
         ldflags="-lm",
@@ -58,7 +71,7 @@ def test_handle_command():
     )
 
     # check ldflags injection
-    args = Args(
+    args = BuildArgs(
         cflags="", cxxflags="", ldflags="-lm", host="", replace_libs="", install_dir=""
     )
     assert (
@@ -67,7 +80,7 @@ def test_handle_command():
     )
 
     # check library replacement and removal of double libraries
-    args = Args(
+    args = BuildArgs(
         replace_libs="bob=fred",
     )
     assert (
@@ -90,9 +103,7 @@ def test_handle_command():
 def test_handle_command_optflags(in_ext, out_ext, executable, flag_name):
     # Make sure that when multiple optflags are present those in cflags,
     # cxxflags, or ldflags has priority
-
-    Args = namedtuple("args", ARG_FIELDS, defaults=("",) * len(ARG_FIELDS))
-    args = Args(**{flag_name: "-Oz"})
+    args = BuildArgs(**{flag_name: "-Oz"})
     assert (
         handle_command_wrap(f"gcc -O3 test.{in_ext} -o test.{out_ext}", args)
         == f"{executable} -Oz test.{in_ext} -o test.{out_ext}"
@@ -110,12 +121,7 @@ def test_f2c():
 
 
 def test_conda_compiler_compat():
-    Args = namedtuple(
-        "args", ["cflags", "cxxflags", "ldflags", "host", "replace_libs", "install_dir"]
-    )
-    args = Args(
-        cflags="", cxxflags="", ldflags="", host="", replace_libs="", install_dir=""
-    )
+    args = BuildArgs()
     assert handle_command_wrap(
         "gcc -shared -c test.o -B /compiler_compat -o test.so", args
     ) == ("emcc -c test.o -o test.so")
