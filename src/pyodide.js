@@ -385,6 +385,10 @@ globalThis.languagePluginLoader = (async () => {
   Module.preloadedWasm = {};
   let isFirefox = navigator.userAgent.toLowerCase().indexOf('firefox') > -1;
 
+  let fatal_error_msg =
+      "Pyodide has suffered a fatal error, refresh the page. " +
+      "Please report this to the Pyodide maintainers.";
+
   Module.fatal_error = function(e) {
     for (let [key, value] of Object.entries(Module.public_api)) {
       if (key.startsWith("_")) {
@@ -397,12 +401,10 @@ globalThis.languagePluginLoader = (async () => {
         continue;
       }
       if (typeof (value) === "function") {
-        Module.public_api[key] = function() {
-          throw Error("Pyodide has suffered a fatal error, refresh the page. " +
-                      "Please report this to the Pyodide maintainers.");
-        }
+        Module.public_api[key] = function() { throw Error(fatal_error_msg); }
       }
     }
+    console.error(fatal_error_msg);
     throw e;
   };
 
