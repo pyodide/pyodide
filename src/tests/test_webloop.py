@@ -1,6 +1,7 @@
 def run_with_resolve(selenium, code):
     selenium.run_js(
         f"""
+        await pyodide.loadPackage("pytest");
         try {{
             let promise = new Promise((resolve) => window.resolve = resolve);
             pyodide.runPython({code!r});
@@ -62,12 +63,10 @@ def test_capture_exception(selenium):
             raise MyException('oops')
         
         def capture_exception(fut):
-            try:
+            from pytest import raises
+            with raises(MyException):
                 fut.result()
-            except MyException:
-                resolve()
-            else:
-                raise Exception("Expected fut.result() to raise MyException")
+            resolve()
         import asyncio
         fut = asyncio.ensure_future(foo(998))
         fut.add_done_callback(capture_exception)                
@@ -135,12 +134,10 @@ def test_asyncio_exception(selenium):
         async def dummy_task():
             raise ValueError("oops!")
         async def capture_exception():
-            try:
+            from pytest import raises
+            with raises(ValueError):
                 await dummy_task()
-            except ValueError:
-                resolve()
-            else:
-                raise Exception("Expected ValueError")
+            resolve()
         import asyncio
         asyncio.ensure_future(capture_exception())
         """,

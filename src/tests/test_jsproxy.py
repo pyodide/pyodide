@@ -436,12 +436,10 @@ def test_unregister_jsmodule(selenium):
         pyodide.registerJsModule("a", a);
         pyodide.registerJsModule("a", b);
         pyodide.unregisterJsModule("a")
-        pyodide.runPython(`
-            try:
+        await pyodide.runPythonAsync(`
+            from pytest import raises
+            with raises(ImportError):
                 import a
-                assert False
-            except ImportError:
-                pass
         `)
         """
     )
@@ -505,20 +503,51 @@ def test_register_jsmodule_docs_example(selenium):
         """
     )
 
-    # define IS_ITERABLE  (1<<0)
-    # define IS_ITERATOR  (1<<1)
-    # define HAS_LENGTH   (1<<2)
-    # define HAS_GET      (1<<3)
-    # define HAS_SET      (1<<4)
-    # define HAS_HAS      (1<<5)
-    # define HAS_INCLUDES (1<<6)
-    # define IS_AWAITABLE (1<<7)
-    # define IS_BUFFER    (1<<8)
-    # define IS_CALLABLE  (1<<9)
-    # define IS_ARRAY     (1<<10)
+
+def test_mixins_feature_presence(selenium):
+    result = selenium.run_js(
+        """
+        let fields = [
+            [{ [Symbol.iterator](){} }, "__iter__"],
+            [{ next(){} }, "__next__", "__iter__"],
+            [{ length : 1 }, "__len__"],
+            [{ get(){} }, "__getitem__"],
+            [{ set(){} }, "__setitem__", "__delitem__"],
+            [{ has(){} }, "__contains__"],
+            [{ then(){} }, "__await__"]
+        ];
+        
+        let test_object = pyodide.runPython(`
+            from js import console
+            def test_object(obj, keys_expected):
+                for [key, expected_val] in keys_expected.object_entries():
+                    actual_val = hasattr(obj, key)
+                    if actual_val != expected_val:
+                        console.log(obj)
+                        console.log(key)
+                        console.log(actual_val)
+                        assert False
+            test_object
+        `);
+
+        for(let flags = 0; flags < (1 << fields.length); flags ++){
+            let o = {};
+            let keys_expected = {};
+            for(let [idx, [obj, ...keys]] of fields.entries()){
+                if(flags & (1<<idx)){
+                    Object.assign(o, obj);
+                }
+                for(let key of keys){
+                    keys_expected[key] = keys_expected[key] || !!(flags & (1<<idx));
+                }
+            }
+            test_object(o, keys_expected);
+        }
+        """
+    )
 
 
-def test_mixins(selenium):
+def test_mixins_calls(selenium):
     result = selenium.run_js(
         """
         window.testObjects = {};
@@ -567,3 +596,111 @@ def test_mixins(selenium):
     )
     for [desc, a, b] in result:
         assert a == b, desc
+
+
+def test_mixins_errors(selenium):
+    selenium.run_js(
+        """
+        window.a = [];
+        window.b = { 
+            has(){ return false; },
+            get(){ return undefined; },
+            set(){ return false; },
+            delete(){ return false; },
+        };
+        await pyodide.runPythonAsync(`
+            from pytest import raises
+            from js import a, b
+            with raises(IndexError):
+                a[0]
+            with raises(IndexError):
+                del a[0]
+            with raises(KeyError):
+                b[0]
+            with raises(KeyError):
+                del b[0]
+        `);
+
+        window.c = {
+            next(){},
+            length : 1,
+            get(){},
+            set(){},
+            has(){},
+            then(){}     
+        };
+        window.d = {
+            [Symbol.iterator](){},
+        };
+        pyodide.runPython("from js import c, d");
+        delete c.next;
+        delete c.length;
+        delete c.get;
+        delete c.set;
+        delete c.has;
+        delete c.then;
+        delete d[Symbol.iterator];
+        await pyodide.runPythonAsync(`
+            from pytest import raises
+            from pyodide import JsException
+            msg = "^TypeError:.* is not a function$"
+            with raises(JsException, match=msg):
+                next(c)
+            with raises(JsException, match=msg):
+                iter(d)
+            with raises(TypeError, match="object does not have a valid length"):
+                len(c)
+            with raises(JsException, match=msg):
+                c[0]
+            with raises(JsException, match=msg):
+                c[0] = 7
+            with raises(JsException, match=msg):
+                del c[0]
+            with raises(TypeError, match="can't be used in 'await' expression"):
+                await c
+        `);
+
+        window.l = [0, false, NaN, undefined, null];
+        window.l[6] = 7;
+        await pyodide.runPythonAsync(`
+            from js import l
+            from pytest import raises
+            with raises(IndexError):
+                l[10]
+            with raises(IndexError):
+                l[5]
+            assert len(l) == 7
+            l[0]; l[1]; l[2]; l[3]
+            l[4]; l[6]
+            del l[1]
+            with raises(IndexError):
+                l[4]
+            l[5]
+            del l[4]
+            l[3]; l[4]
+        `);
+
+        window.l = [0, false, NaN, undefined, null];
+        window.l[6] = 7;
+        let a = Array.from(window.l.entries());
+        console.log(a);
+        a.splice(5, 1);
+        window.m = new Map(a);
+        console.log(m.size);
+        await pyodide.runPythonAsync(`
+            from js import m
+            from pytest import raises
+            with raises(KeyError):
+                m[10]
+            with raises(KeyError):
+                m[5]
+            assert len(m) == 6
+            m[0]; m[1]; m[2]; m[3]
+            m[4]; m[6]
+            del m[1]
+            with raises(KeyError):
+                m[1]
+            assert len(m) == 5
+        `);
+        """
+    )

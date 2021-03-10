@@ -160,10 +160,9 @@ def test_eval_nothing(selenium):
 def test_unknown_attribute(selenium):
     selenium.run(
         """
+        from pytest import raises
         import js
-        try:
+        with raises(AttributeError, match="asdf"):
             js.asdf
-        except AttributeError as e:
-            assert "asdf" in str(e)
         """
     )

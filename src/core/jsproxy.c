@@ -255,9 +255,7 @@ JsProxy_GetIter(PyObject* o)
   JsProxy* self = (JsProxy*)o;
 
   JsRef iditer = hiwire_get_iterator(self->js);
-
   if (iditer == NULL) {
-    PyErr_SetString(PyExc_TypeError, "Object is not iterable");
     return NULL;
   }
 
@@ -322,7 +320,11 @@ static Py_ssize_t
 JsProxy_length(PyObject* o)
 {
   JsProxy* self = (JsProxy*)o;
-  return hiwire_get_length(self->js);
+  int result = hiwire_get_length(self->js);
+  if (result == -1) {
+    PyErr_SetString(PyExc_TypeError, "object does not have a valid length");
+  }
+  return result;
 }
 
 /**
@@ -341,7 +343,9 @@ JsProxy_subscript_array(PyObject* o, PyObject* item)
       i += hiwire_get_length(self->js);
     JsRef result = hiwire_get_member_int(self->js, i);
     if (result == NULL) {
-      PyErr_SetObject(PyExc_KeyError, item);
+      if (!PyErr_Occurred()) {
+        PyErr_SetObject(PyExc_IndexError, item);
+      }
       return NULL;
     }
     PyObject* pyresult = js2python(result);
@@ -388,7 +392,9 @@ JsProxy_ass_subscript_array(PyObject* o, PyObject* item, PyObject* pyvalue)
   JsRef idvalue = NULL;
   if (pyvalue == NULL) {
     if (hiwire_delete_member_int(self->js, i)) {
-      PyErr_SetObject(PyExc_KeyError, item);
+      if (!PyErr_Occurred()) {
+        PyErr_SetObject(PyExc_IndexError, item);
+      }
       FAIL();
     }
   } else {
@@ -410,16 +416,24 @@ static PyObject*
 JsProxy_subscript(PyObject* o, PyObject* pyidx)
 {
   JsProxy* self = (JsProxy*)o;
+  JsRef ididx = NULL;
+  JsRef idresult = NULL;
+  PyObject* pyresult = NULL;
 
-  JsRef ididx = python2js(pyidx);
-  JsRef idresult = hiwire_get_method(self->js, ididx);
-  hiwire_decref(ididx);
+  ididx = python2js(pyidx);
+  FAIL_IF_NULL(ididx);
+  idresult = hiwire_get_method(self->js, ididx);
   if (idresult == NULL) {
-    PyErr_SetObject(PyExc_KeyError, pyidx);
-    return NULL;
+    if (!PyErr_Occurred()) {
+      PyErr_SetObject(PyExc_KeyError, pyidx);
+    }
+    FAIL();
   }
-  PyObject* pyresult = js2python(idresult);
-  hiwire_decref(idresult);
+  pyresult = js2python(idresult);
+
+finally:
+  hiwire_CLEAR(ididx);
+  hiwire_CLEAR(idresult);
   return pyresult;
 }
 
@@ -440,7 +454,9 @@ JsProxy_ass_subscript(PyObject* o, PyObject* pyidx, PyObject* pyvalue)
   ididx = python2js(pyidx);
   if (pyvalue == NULL) {
     if (hiwire_delete_method(self->js, ididx)) {
-      PyErr_SetObject(PyExc_KeyError, pyidx);
+      if (!PyErr_Occurred()) {
+        PyErr_SetObject(PyExc_KeyError, pyidx);
+      }
       FAIL();
     }
   } else {
