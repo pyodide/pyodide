@@ -6,6 +6,9 @@
 
 #include "hiwire.h"
 
+#define ERROR_REF (0)
+#define ERROR_NUM (-1)
+
 const JsRef Js_undefined = ((JsRef)(2));
 const JsRef Js_true = ((JsRef)(4));
 const JsRef Js_false = ((JsRef)(6));
@@ -249,11 +252,11 @@ EM_JS_NUM(errcode,
 
 EM_JS_REF(JsRef, hiwire_get_global, (const char* ptrname), {
   let jsname = UTF8ToString(ptrname);
-  if (jsname in self) {
-    return Module.hiwire.new_value(self[jsname]);
-  } else {
-    return Module.hiwire.ERROR;
+  let result = globalThis[jsname];
+  if (result === undefined && !(jsname in globalThis)) {
+    return ERROR_REF;
   }
+  return Module.hiwire.new_value(result);
 });
 
 EM_JS_REF(JsRef, hiwire_get_member_string, (JsRef idobj, const char* ptrkey), {
@@ -261,12 +264,11 @@ EM_JS_REF(JsRef, hiwire_get_member_string, (JsRef idobj, const char* ptrkey), {
   let jskey = UTF8ToString(ptrkey);
   let result = jsobj[jskey];
   // clang-format off
-  if (result !== undefined || jskey in jsobj) {
+  if (result === undefined && !(jskey in jsobj)) {
     // clang-format on
-    return Module.hiwire.new_value(result);
-  } else {
-    return Module.hiwire.ERROR;
+    return ERROR_REF;
   }
+  return Module.hiwire.new_value(result);
 });
 
 EM_JS_NUM(errcode,
@@ -294,7 +296,7 @@ EM_JS_REF(JsRef, hiwire_get_member_int, (JsRef idobj, int idx), {
   // clang-format off
   if (result === undefined && !(idx in obj)) {
     // clang-format on
-    return 0;
+    return ERROR_REF;
   }
   return Module.hiwire.new_value(result);
 });
@@ -308,7 +310,7 @@ EM_JS_NUM(errcode, hiwire_delete_member_int, (JsRef idobj, int idx), {
   // Weird edge case: allow deleting an empty entry, but we raise a key error if
   // access is attempted.
   if (idx < 0 || idx >= obj.length) {
-    return -1;
+    return ERROR_NUM;
   }
   obj.splice(idx, 1);
 });
@@ -316,11 +318,11 @@ EM_JS_NUM(errcode, hiwire_delete_member_int, (JsRef idobj, int idx), {
 EM_JS_REF(JsRef, hiwire_get_member_obj, (JsRef idobj, JsRef ididx), {
   let jsobj = Module.hiwire.get_value(idobj);
   let jsidx = Module.hiwire.get_value(ididx);
-  if (jsidx in jsobj) {
-    return Module.hiwire.new_value(jsobj[jsidx]);
-  } else {
-    return Module.hiwire.ERROR;
+  let result = jsobj[jsidx];
+  if (result === undefined && !(jsidx in jsobj)) {
+    return ERROR_REF;
   }
+  return Module.hiwire.new_value(result);
 });
 
 EM_JS_NUM(errcode,
@@ -411,7 +413,7 @@ EM_JS_NUM(int, hiwire_get_length, (JsRef idobj), {
     return val.length;
   }
   // clang-format on
-  return -1;
+  return ERROR_NUM;
 });
 
 EM_JS_NUM(bool, hiwire_get_bool, (JsRef idobj), {
@@ -477,7 +479,7 @@ EM_JS_REF(JsRef, hiwire_get_method, (JsRef idobj, JsRef idkey), {
     // key is missing. Otherwise, assume key present and value was undefined.
     // TODO: in absence of a "has" method, should we return None or KeyError?
     if (obj.has && typeof obj.has === "function" && !obj.has(key)) {
-      return 0;
+      return ERROR_REF;
     }
   }
   // clang-format on
