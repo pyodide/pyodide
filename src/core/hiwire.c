@@ -444,7 +444,7 @@ EM_JS_NUM(bool, hiwire_has_has_method, (JsRef idobj), {
   // clang-format on
 });
 
-EM_JS_NUM(bool, hiwire_has_method, (JsRef idobj, JsRef idkey), {
+EM_JS_NUM(bool, hiwire_call_has_method, (JsRef idobj, JsRef idkey), {
   // clang-format off
   let obj = Module.hiwire.get_value(idobj);
   let key = Module.hiwire.get_value(idkey);
@@ -459,7 +459,7 @@ EM_JS_NUM(bool, hiwire_has_includes_method, (JsRef idobj), {
   // clang-format on
 });
 
-EM_JS_NUM(bool, hiwire_includes_method, (JsRef idobj, JsRef idval), {
+EM_JS_NUM(bool, hiwire_call_includes_method, (JsRef idobj, JsRef idval), {
   let obj = Module.hiwire.get_value(idobj);
   let val = Module.hiwire.get_value(idval);
   return obj.includes(val);
@@ -472,7 +472,7 @@ EM_JS_NUM(bool, hiwire_has_get_method, (JsRef idobj), {
   // clang-format on
 });
 
-EM_JS_REF(JsRef, hiwire_get_method, (JsRef idobj, JsRef idkey), {
+EM_JS_REF(JsRef, hiwire_call_get_method, (JsRef idobj, JsRef idkey), {
   let obj = Module.hiwire.get_value(idobj);
   let key = Module.hiwire.get_value(idkey);
   let result = obj.get(key);
@@ -497,14 +497,14 @@ EM_JS_NUM(bool, hiwire_has_set_method, (JsRef idobj), {
   // clang-format on
 });
 
-EM_JS_NUM(errcode, hiwire_set_method, (JsRef idobj, JsRef idkey, JsRef idval), {
+EM_JS_NUM(errcode, hiwire_call_set_method, (JsRef idobj, JsRef idkey, JsRef idval), {
   let obj = Module.hiwire.get_value(idobj);
   let key = Module.hiwire.get_value(idkey);
   let val = Module.hiwire.get_value(idval);
   let result = obj.set(key, val);
 });
 
-EM_JS_NUM(errcode, hiwire_delete_method, (JsRef idobj, JsRef idkey), {
+EM_JS_NUM(errcode, hiwire_call_delete_method, (JsRef idobj, JsRef idkey), {
   let obj = Module.hiwire.get_value(idobj);
   let key = Module.hiwire.get_value(idkey);
   if (!obj.delete(key)) {

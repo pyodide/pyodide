@@ -422,7 +422,7 @@ JsProxy_subscript(PyObject* o, PyObject* pyidx)
 
   ididx = python2js(pyidx);
   FAIL_IF_NULL(ididx);
-  idresult = hiwire_get_method(self->js, ididx);
+  idresult = hiwire_call_get_method(self->js, ididx);
   if (idresult == NULL) {
     if (!PyErr_Occurred()) {
       PyErr_SetObject(PyExc_KeyError, pyidx);
@@ -453,7 +453,7 @@ JsProxy_ass_subscript(PyObject* o, PyObject* pyidx, PyObject* pyvalue)
   JsRef idvalue = NULL;
   ididx = python2js(pyidx);
   if (pyvalue == NULL) {
-    if (hiwire_delete_method(self->js, ididx)) {
+    if (hiwire_call_delete_method(self->js, ididx)) {
       if (!PyErr_Occurred()) {
         PyErr_SetObject(PyExc_KeyError, pyidx);
       }
@@ -462,7 +462,7 @@ JsProxy_ass_subscript(PyObject* o, PyObject* pyidx, PyObject* pyvalue)
   } else {
     idvalue = python2js(pyvalue);
     FAIL_IF_NULL(idvalue);
-    FAIL_IF_MINUS_ONE(hiwire_set_method(self->js, ididx, idvalue));
+    FAIL_IF_MINUS_ONE(hiwire_call_set_method(self->js, ididx, idvalue));
   }
   success = true;
 finally:
@@ -483,7 +483,7 @@ JsProxy_includes(JsProxy* self, PyObject* obj)
   int result = -1;
   JsRef jsobj = python2js(obj);
   FAIL_IF_NULL(jsobj);
-  result = hiwire_includes_method(self->js, jsobj);
+  result = hiwire_call_includes_method(self->js, jsobj);
 
 finally:
   hiwire_CLEAR(jsobj);
@@ -501,7 +501,7 @@ JsProxy_has(JsProxy* self, PyObject* obj)
   int result = -1;
   JsRef jsobj = python2js(obj);
   FAIL_IF_NULL(jsobj);
-  result = hiwire_has_method(self->js, jsobj);
+  result = hiwire_call_has_method(self->js, jsobj);
 
 finally:
   hiwire_CLEAR(jsobj);
