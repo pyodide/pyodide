@@ -497,12 +497,15 @@ EM_JS_NUM(bool, hiwire_has_set_method, (JsRef idobj), {
   // clang-format on
 });
 
-EM_JS_NUM(errcode, hiwire_call_set_method, (JsRef idobj, JsRef idkey, JsRef idval), {
-  let obj = Module.hiwire.get_value(idobj);
-  let key = Module.hiwire.get_value(idkey);
-  let val = Module.hiwire.get_value(idval);
-  let result = obj.set(key, val);
-});
+EM_JS_NUM(errcode,
+          hiwire_call_set_method,
+          (JsRef idobj, JsRef idkey, JsRef idval),
+          {
+            let obj = Module.hiwire.get_value(idobj);
+            let key = Module.hiwire.get_value(idkey);
+            let val = Module.hiwire.get_value(idval);
+            let result = obj.set(key, val);
+          });
 
 EM_JS_NUM(errcode, hiwire_call_delete_method, (JsRef idobj, JsRef idkey), {
   let obj = Module.hiwire.get_value(idobj);

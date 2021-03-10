@@ -407,8 +407,8 @@ hiwire_has_length(JsRef idobj);
 /**
  * Returns the value of the `size` or `length` member on a Javascript object.
  * Prefers the `size` member if present and a number to the `length` field. If
- * both `size` and `length` are missing or not a number, returns `-1` to indicate
- * error.
+ * both `size` and `length` are missing or not a number, returns `-1` to
+ * indicate error.
  */
 int
 hiwire_get_length(JsRef idobj);
@@ -426,8 +426,8 @@ bool
 hiwire_has_has_method(JsRef idobj);
 
 /**
- * Does `obj.has(val)`. Doesn't check type of return value, if it isn't a boolean
- * or an integer it will get coerced to false.
+ * Does `obj.has(val)`. Doesn't check type of return value, if it isn't a
+ * boolean or an integer it will get coerced to false.
  */
 bool
 hiwire_call_has_method(JsRef idobj, JsRef idval);
@@ -439,8 +439,8 @@ bool
 hiwire_has_includes_method(JsRef idobj);
 
 /**
- * Does `obj.includes(val)`. Doesn't check type of return value, if it isn't a boolean
- * or an integer it will get coerced to `false`.
+ * Does `obj.includes(val)`. Doesn't check type of return value, if it isn't a
+ * boolean or an integer it will get coerced to `false`.
  */
 bool
 hiwire_call_includes_method(JsRef idobj, JsRef idval);
@@ -452,10 +452,10 @@ bool
 hiwire_has_get_method(JsRef idobj);
 
 /**
- * Call `obj.get(key)`. If the result is `undefined`, we check for a `has` method
- * and if one is present call `obj.has(key)`. If this returns false we return `NULL`
- * to signal a `KeyError` otherwise we return `Js_Undefined`. If no `has` method is
- * present, we return `Js_Undefined`.
+ * Call `obj.get(key)`. If the result is `undefined`, we check for a `has`
+ * method and if one is present call `obj.has(key)`. If this returns false we
+ * return `NULL` to signal a `KeyError` otherwise we return `Js_Undefined`. If
+ * no `has` method is present, we return `Js_Undefined`.
  */
 JsRef
 hiwire_call_get_method(JsRef idobj, JsRef idkey);
@@ -474,8 +474,8 @@ errcode
 hiwire_call_set_method(JsRef idobj, JsRef idkey, JsRef idval);
 
 /**
- * Call `obj.delete(key)`. Javascript standard is that `delete` returns `false` to
- * indicate an error condition, if `false` is returned we return `-1` to
+ * Call `obj.delete(key)`. Javascript standard is that `delete` returns `false`
+ * to indicate an error condition, if `false` is returned we return `-1` to
  * indicate the error.
  */
 errcode
