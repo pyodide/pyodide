@@ -145,7 +145,10 @@ def test_monkeypatch_eval_code(selenium):
             pyodide.eval_code = eval_code
             """
         )
-        assert selenium.run_js("return pyodide.runPython('x = 99; 5').toJs();") == [3, 5]
+        assert selenium.run_js("return pyodide.runPython('x = 99; 5').toJs();") == [
+            3,
+            5,
+        ]
         assert selenium.run_js("return pyodide.runPython('7').toJs();") == [99, 7]
     finally:
         selenium.run(
