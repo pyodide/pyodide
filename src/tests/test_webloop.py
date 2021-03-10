@@ -1,8 +1,6 @@
 def run_with_resolve(selenium, code):
     selenium.run_js(
         f"""
-        from unittest import TestCase
-        raises = TestCase().assertRaises
         try {{
             let promise = new Promise((resolve) => window.resolve = resolve);
             pyodide.runPython({code!r});
@@ -57,6 +55,8 @@ def test_capture_exception(selenium):
     run_with_resolve(
         selenium,
         """
+        from unittest import TestCase
+        raises = TestCase().assertRaises
         from js import resolve
         class MyException(Exception):
             pass
@@ -130,6 +130,8 @@ def test_asyncio_exception(selenium):
     run_with_resolve(
         selenium,
         """
+        from unittest import TestCase
+        raises = TestCase().assertRaises
         from js import resolve
         async def dummy_task():
             raise ValueError("oops!")
