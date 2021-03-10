@@ -383,12 +383,10 @@ globalThis.languagePluginLoader = (async () => {
   Module.noWasmDecoding =
       false; // we preload wasm using the built in plugin now
   Module.preloadedWasm = {};
-  let isFirefox = navigator.userAgent.toLowerCase().indexOf('firefox') > -1;
 
   let fatal_error_msg =
       "Pyodide has suffered a fatal error, refresh the page. " +
       "Please report this to the Pyodide maintainers.";
-
   Module.fatal_error = function(e) {
     for (let [key, value] of Object.entries(Module.public_api)) {
       if (key.startsWith("_")) {
@@ -405,6 +403,7 @@ globalThis.languagePluginLoader = (async () => {
       }
     }
     console.error(fatal_error_msg);
+    console.error("The cause of the fatal error was:\n", e);
     throw e;
   };
 
