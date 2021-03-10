@@ -1,7 +1,8 @@
 def run_with_resolve(selenium, code):
     selenium.run_js(
         f"""
-        await pyodide.loadPackage("pytest");
+        from unittest import TestCase
+        raises = TestCase().assertRaises
         try {{
             let promise = new Promise((resolve) => window.resolve = resolve);
             pyodide.runPython({code!r});
@@ -63,7 +64,6 @@ def test_capture_exception(selenium):
             raise MyException('oops')
         
         def capture_exception(fut):
-            from pytest import raises
             with raises(MyException):
                 fut.result()
             resolve()
@@ -134,7 +134,6 @@ def test_asyncio_exception(selenium):
         async def dummy_task():
             raise ValueError("oops!")
         async def capture_exception():
-            from pytest import raises
             with raises(ValueError):
                 await dummy_task()
             resolve()

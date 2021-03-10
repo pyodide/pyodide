@@ -437,7 +437,8 @@ def test_unregister_jsmodule(selenium):
         pyodide.registerJsModule("a", b);
         pyodide.unregisterJsModule("a")
         await pyodide.runPythonAsync(`
-            from pytest import raises
+            from unittest import TestCase
+            raises = TestCase().assertRaises
             with raises(ImportError):
                 import a
         `)
@@ -609,7 +610,8 @@ def test_mixins_errors(selenium):
             delete(){ return false; },
         };
         await pyodide.runPythonAsync(`
-            from pytest import raises
+            from unittest import TestCase
+            raises = TestCase().assertRaises
             from js import a, b
             with raises(IndexError):
                 a[0]
@@ -641,7 +643,13 @@ def test_mixins_errors(selenium):
         delete c.then;
         delete d[Symbol.iterator];
         await pyodide.runPythonAsync(`
-            from pytest import raises
+            from contextlib import contextmanager
+            from unittest import TestCase
+            @contextmanager
+            def raises(exc, match=None):
+                with TestCase().assertRaisesRegex(exc, match) as e:
+                    yield e
+
             from pyodide import JsException
             msg = "^TypeError:.* is not a function$"
             with raises(JsException, match=msg):
@@ -663,8 +671,9 @@ def test_mixins_errors(selenium):
         window.l = [0, false, NaN, undefined, null];
         window.l[6] = 7;
         await pyodide.runPythonAsync(`
+            from unittest import TestCase
+            raises = TestCase().assertRaises
             from js import l
-            from pytest import raises
             with raises(IndexError):
                 l[10]
             with raises(IndexError):
@@ -689,7 +698,8 @@ def test_mixins_errors(selenium):
         console.log(m.size);
         await pyodide.runPythonAsync(`
             from js import m
-            from pytest import raises
+            from unittest import TestCase
+            raises = TestCase().assertRaises
             with raises(KeyError):
                 m[10]
             with raises(KeyError):

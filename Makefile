@@ -192,5 +192,5 @@ minimal :
 debug :
 	EXTRA_CFLAGS="-D DEBUG_F" \
 	EXTRA_LDFLAGS="-s ASSERTIONS=2" \
-	PYODIDE_PACKAGES+="micropip,pyparsing,pytz,packaging,kiwisolver,pytest" \
+	PYODIDE_PACKAGES+="micropip,pyparsing,pytz,packaging,kiwisolver" \
 	make
