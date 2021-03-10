@@ -253,7 +253,9 @@ EM_JS_NUM(errcode,
 EM_JS_REF(JsRef, hiwire_get_global, (const char* ptrname), {
   let jsname = UTF8ToString(ptrname);
   let result = globalThis[jsname];
+  // clang-format off
   if (result === undefined && !(jsname in globalThis)) {
+    // clang-format on
     return ERROR_REF;
   }
   return Module.hiwire.new_value(result);
@@ -319,7 +321,9 @@ EM_JS_REF(JsRef, hiwire_get_member_obj, (JsRef idobj, JsRef ididx), {
   let jsobj = Module.hiwire.get_value(idobj);
   let jsidx = Module.hiwire.get_value(ididx);
   let result = jsobj[jsidx];
+  // clang-format off
   if (result === undefined && !(jsidx in jsobj)) {
+    // clang-format on
     return ERROR_REF;
   }
   return Module.hiwire.new_value(result);
