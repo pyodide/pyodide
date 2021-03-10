@@ -260,7 +260,9 @@ EM_JS_REF(JsRef, hiwire_get_member_string, (JsRef idobj, const char* ptrkey), {
   let jsobj = Module.hiwire.get_value(idobj);
   let jskey = UTF8ToString(ptrkey);
   let result = jsobj[jskey];
+  // clang-format off
   if (result !== undefined || jskey in jsobj) {
+    // clang-format on
     return Module.hiwire.new_value(result);
   } else {
     return Module.hiwire.ERROR;
@@ -291,7 +293,7 @@ EM_JS_REF(JsRef, hiwire_get_member_int, (JsRef idobj, int idx), {
   let result = obj[idx];
   // clang-format off
   if (result === undefined && !(idx in obj)) {
-  // clang-format on
+    // clang-format on
     return 0;
   }
   return Module.hiwire.new_value(result);
