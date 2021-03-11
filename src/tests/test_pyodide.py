@@ -229,7 +229,7 @@ def test_keyboard_interrupt(selenium):
 def test_run_python_async_toplevel_await(selenium):
     selenium.run_js(
         """
-        pyodide.runPythonAsync(`
+        await pyodide.runPythonAsync(`
             from js import fetch
             resp = await fetch("packages.json")
             json = await resp.json()
