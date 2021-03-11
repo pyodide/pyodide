@@ -12,7 +12,10 @@ except ImportError:
 
         class _module:
             class packages:
-                dependencies = []  # type: ignore
+                class dependencies:
+                    @staticmethod
+                    def object_entries():
+                        return []
 
 
 import hashlib
@@ -140,7 +143,9 @@ class _PackageManager:
 
     def __init__(self):
         self.builtin_packages = {}
-        self.builtin_packages.update(js_pyodide._module.packages.dependencies)
+        self.builtin_packages.update(
+            js_pyodide._module.packages.dependencies.object_entries()
+        )
         self.installed_packages = {}
 
     def install(

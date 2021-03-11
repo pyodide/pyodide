@@ -6,6 +6,9 @@
 
 #include "hiwire.h"
 
+#define ERROR_REF (0)
+#define ERROR_NUM (-1)
+
 const JsRef Js_undefined = ((JsRef)(2));
 const JsRef Js_true = ((JsRef)(4));
 const JsRef Js_false = ((JsRef)(6));
@@ -217,6 +220,18 @@ EM_JS(void _Py_NO_RETURN, hiwire_throw_error, (JsRef iderr), {
   throw Module.hiwire.pop_value(iderr);
 });
 
+EM_JS_NUM(bool, hiwire_is_array, (JsRef idobj), {
+  let obj = Module.hiwire.get_value(idobj);
+  if (Array.isArray(obj)) {
+    return true;
+  }
+  let result = Object.prototype.toString.call(obj);
+  // We want to treat some standard array-like objects as Array.
+  // clang-format off
+  return result === "[object HTMLCollection]" || result === "[object NodeList]";
+  // clang-format on
+});
+
 EM_JS_REF(JsRef, hiwire_array, (), { return Module.hiwire.new_value([]); });
 
 EM_JS_NUM(errcode, hiwire_push_array, (JsRef idarr, JsRef idval), {
@@ -237,21 +252,25 @@ EM_JS_NUM(errcode,
 
 EM_JS_REF(JsRef, hiwire_get_global, (const char* ptrname), {
   let jsname = UTF8ToString(ptrname);
-  if (jsname in self) {
-    return Module.hiwire.new_value(self[jsname]);
-  } else {
-    return Module.hiwire.ERROR;
+  let result = globalThis[jsname];
+  // clang-format off
+  if (result === undefined && !(jsname in globalThis)) {
+    // clang-format on
+    return ERROR_REF;
   }
+  return Module.hiwire.new_value(result);
 });
 
 EM_JS_REF(JsRef, hiwire_get_member_string, (JsRef idobj, const char* ptrkey), {
   let jsobj = Module.hiwire.get_value(idobj);
   let jskey = UTF8ToString(ptrkey);
-  if (jskey in jsobj) {
-    return Module.hiwire.new_value(jsobj[jskey]);
-  } else {
-    return Module.hiwire.ERROR;
+  let result = jsobj[jskey];
+  // clang-format off
+  if (result === undefined && !(jskey in jsobj)) {
+    // clang-format on
+    return ERROR_REF;
   }
+  return Module.hiwire.new_value(result);
 });
 
 EM_JS_NUM(errcode,
@@ -274,22 +293,40 @@ EM_JS_NUM(errcode,
           });
 
 EM_JS_REF(JsRef, hiwire_get_member_int, (JsRef idobj, int idx), {
-  let jsobj = Module.hiwire.get_value(idobj);
-  return Module.hiwire.new_value(jsobj[idx]);
+  let obj = Module.hiwire.get_value(idobj);
+  let result = obj[idx];
+  // clang-format off
+  if (result === undefined && !(idx in obj)) {
+    // clang-format on
+    return ERROR_REF;
+  }
+  return Module.hiwire.new_value(result);
 });
 
 EM_JS_NUM(errcode, hiwire_set_member_int, (JsRef idobj, int idx, JsRef idval), {
   Module.hiwire.get_value(idobj)[idx] = Module.hiwire.get_value(idval);
 });
 
+EM_JS_NUM(errcode, hiwire_delete_member_int, (JsRef idobj, int idx), {
+  let obj = Module.hiwire.get_value(idobj);
+  // Weird edge case: allow deleting an empty entry, but we raise a key error if
+  // access is attempted.
+  if (idx < 0 || idx >= obj.length) {
+    return ERROR_NUM;
+  }
+  obj.splice(idx, 1);
+});
+
 EM_JS_REF(JsRef, hiwire_get_member_obj, (JsRef idobj, JsRef ididx), {
   let jsobj = Module.hiwire.get_value(idobj);
   let jsidx = Module.hiwire.get_value(ididx);
-  if (jsidx in jsobj) {
-    return Module.hiwire.new_value(jsobj[jsidx]);
-  } else {
-    return Module.hiwire.ERROR;
+  let result = jsobj[jsidx];
+  // clang-format off
+  if (result === undefined && !(jsidx in jsobj)) {
+    // clang-format on
+    return ERROR_REF;
   }
+  return Module.hiwire.new_value(result);
 });
 
 EM_JS_NUM(errcode,
@@ -362,8 +399,25 @@ EM_JS_REF(JsRef, hiwire_new, (JsRef idobj, JsRef idargs), {
   return Module.hiwire.new_value(Reflect.construct(jsobj, jsargs));
 });
 
+EM_JS_NUM(bool, hiwire_has_length, (JsRef idobj), {
+  let val = Module.hiwire.get_value(idobj);
+  // clang-format off
+  return (typeof val.size === "number") ||
+         (typeof val.length === "number" && typeof val !== "function");
+  // clang-format on
+});
+
 EM_JS_NUM(int, hiwire_get_length, (JsRef idobj), {
-  return Module.hiwire.get_value(idobj).length;
+  let val = Module.hiwire.get_value(idobj);
+  // clang-format off
+  if (typeof val.size === "number") {
+    return val.size;
+  }
+  if (typeof val.length === "number") {
+    return val.length;
+  }
+  // clang-format on
+  return ERROR_NUM;
 });
 
 EM_JS_NUM(bool, hiwire_get_bool, (JsRef idobj), {
@@ -383,10 +437,86 @@ EM_JS_NUM(bool, hiwire_get_bool, (JsRef idobj), {
   // clang-format on
 });
 
-EM_JS_NUM(bool, hiwire_is_pyproxy, (JsRef idobj), {
+EM_JS_NUM(bool, hiwire_has_has_method, (JsRef idobj), {
   // clang-format off
-  return Module.PyProxy.isPyProxy(Module.hiwire.get_value(idobj));
+  let obj = Module.hiwire.get_value(idobj);
+  return obj && typeof obj.has === "function";
   // clang-format on
+});
+
+EM_JS_NUM(bool, hiwire_call_has_method, (JsRef idobj, JsRef idkey), {
+  // clang-format off
+  let obj = Module.hiwire.get_value(idobj);
+  let key = Module.hiwire.get_value(idkey);
+  return obj.has(key);
+  // clang-format on
+});
+
+EM_JS_NUM(bool, hiwire_has_includes_method, (JsRef idobj), {
+  // clang-format off
+  let obj = Module.hiwire.get_value(idobj);
+  return obj && typeof obj.includes === "function";
+  // clang-format on
+});
+
+EM_JS_NUM(bool, hiwire_call_includes_method, (JsRef idobj, JsRef idval), {
+  let obj = Module.hiwire.get_value(idobj);
+  let val = Module.hiwire.get_value(idval);
+  return obj.includes(val);
+});
+
+EM_JS_NUM(bool, hiwire_has_get_method, (JsRef idobj), {
+  // clang-format off
+  let obj = Module.hiwire.get_value(idobj);
+  return obj && typeof obj.get === "function";
+  // clang-format on
+});
+
+EM_JS_REF(JsRef, hiwire_call_get_method, (JsRef idobj, JsRef idkey), {
+  let obj = Module.hiwire.get_value(idobj);
+  let key = Module.hiwire.get_value(idkey);
+  let result = obj.get(key);
+  // clang-format off
+  if (result === undefined) {
+    // Try to distinguish between undefined and missing:
+    // If the object has a "has" method and it returns false for this key, the
+    // key is missing. Otherwise, assume key present and value was undefined.
+    // TODO: in absence of a "has" method, should we return None or KeyError?
+    if (obj.has && typeof obj.has === "function" && !obj.has(key)) {
+      return ERROR_REF;
+    }
+  }
+  // clang-format on
+  return Module.hiwire.new_value(result);
+});
+
+EM_JS_NUM(bool, hiwire_has_set_method, (JsRef idobj), {
+  // clang-format off
+  let obj = Module.hiwire.get_value(idobj);
+  return obj && typeof obj.set === "function";
+  // clang-format on
+});
+
+EM_JS_NUM(errcode,
+          hiwire_call_set_method,
+          (JsRef idobj, JsRef idkey, JsRef idval),
+          {
+            let obj = Module.hiwire.get_value(idobj);
+            let key = Module.hiwire.get_value(idkey);
+            let val = Module.hiwire.get_value(idval);
+            let result = obj.set(key, val);
+          });
+
+EM_JS_NUM(errcode, hiwire_call_delete_method, (JsRef idobj, JsRef idkey), {
+  let obj = Module.hiwire.get_value(idobj);
+  let key = Module.hiwire.get_value(idkey);
+  if (!obj.delete(key)) {
+    return -1;
+  }
+});
+
+EM_JS_NUM(bool, hiwire_is_pyproxy, (JsRef idobj), {
+  return Module.PyProxy.isPyProxy(Module.hiwire.get_value(idobj));
 });
 
 EM_JS_NUM(bool, hiwire_is_function, (JsRef idobj), {
@@ -448,33 +578,39 @@ MAKE_OPERATOR(not_equal, !==);
 MAKE_OPERATOR(greater_than, >);
 MAKE_OPERATOR(greater_than_equal, >=);
 
-EM_JS_REF(int, hiwire_next, (JsRef idobj, JsRef* result_ptr), {
-  // clang-format off
+EM_JS_REF(JsRef, hiwire_is_iterator, (JsRef idobj), {
   let jsobj = Module.hiwire.get_value(idobj);
+  // clang-format off
+  return typeof jsobj.next === 'function';
+  // clang-format on
+});
+
+EM_JS_NUM(int, hiwire_next, (JsRef idobj, JsRef* result_ptr), {
+  let jsobj = Module.hiwire.get_value(idobj);
+  // clang-format off
   let { done, value } = jsobj.next();
+  // clang-format on
   let result_id = Module.hiwire.new_value(value);
   setValue(result_ptr, result_id, "i32");
   return done;
+});
+
+EM_JS_REF(JsRef, hiwire_is_iterable, (JsRef idobj), {
+  let jsobj = Module.hiwire.get_value(idobj);
+  // clang-format off
+  return typeof jsobj[Symbol.iterator] === 'function';
   // clang-format on
 });
 
 EM_JS_REF(JsRef, hiwire_get_iterator, (JsRef idobj), {
-  // clang-format off
-  if (idobj === Module.hiwire.UNDEFINED) {
-    return Module.hiwire.ERROR;
-  }
-
   let jsobj = Module.hiwire.get_value(idobj);
-  if (typeof jsobj.next === 'function') {
-    return Module.hiwire.new_value(jsobj);
-  } else if (typeof jsobj[Symbol.iterator] === 'function') {
-    return Module.hiwire.new_value(jsobj[Symbol.iterator]());
-  } else {
-    return Module.hiwire.new_value(Object.entries(jsobj)[Symbol.iterator]());
-  }
-  return Module.hiwire.ERROR;
-  // clang-format on
+  return Module.hiwire.new_value(jsobj[Symbol.iterator]());
 })
+
+EM_JS_REF(JsRef, hiwire_object_entries, (JsRef idobj), {
+  let jsobj = Module.hiwire.get_value(idobj);
+  return Module.hiwire.new_value(Object.entries(jsobj));
+});
 
 EM_JS_NUM(bool, hiwire_is_typedarray, (JsRef idobj), {
   let jsobj = Module.hiwire.get_value(idobj);
@@ -541,7 +677,7 @@ EM_JS_REF(JsRef, hiwire_subarray, (JsRef idarr, int start, int end), {
   return Module.hiwire.new_value(jssub);
 });
 
-EM_JS_NUM(JsRef, JsMap_New, (), { return Module.hiwire.new_value(new Map()); })
+EM_JS_REF(JsRef, JsMap_New, (), { return Module.hiwire.new_value(new Map()); })
 
 EM_JS_NUM(errcode, JsMap_Set, (JsRef mapid, JsRef keyid, JsRef valueid), {
   let map = Module.hiwire.get_value(mapid);
@@ -550,7 +686,7 @@ EM_JS_NUM(errcode, JsMap_Set, (JsRef mapid, JsRef keyid, JsRef valueid), {
   map.set(key, value);
 })
 
-EM_JS_NUM(JsRef, JsSet_New, (), { return Module.hiwire.new_value(new Set()); })
+EM_JS_REF(JsRef, JsSet_New, (), { return Module.hiwire.new_value(new Set()); })
 
 EM_JS_NUM(errcode, JsSet_Add, (JsRef mapid, JsRef keyid), {
   let set = Module.hiwire.get_value(mapid);

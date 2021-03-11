@@ -231,7 +231,8 @@ _python2js_bytes(PyObject* x)
 // and PySequence_Check returns 1 for classes with a __getitem__ method that
 // don't subclass dict. For this reason, I think we should stick to subclasses.
 
-/** WARNING: This function is not suitable for fallbacks. If this function
+/**
+ * WARNING: This function is not suitable for fallbacks. If this function
  * returns NULL, we must assume that the cache has been corrupted and bail out.
  */
 static JsRef
@@ -266,7 +267,8 @@ finally:
   return jsarray;
 }
 
-/** WARNING: This function is not suitable for fallbacks. If this function
+/**
+ * WARNING: This function is not suitable for fallbacks. If this function
  * returns NULL, we must assume that the cache has been corrupted and bail out.
  */
 static JsRef
