@@ -332,43 +332,6 @@ def handle_command(line, args, dryrun=False):
         ):
             continue
 
-        # Fix for scipy to link to the correct BLAS/LAPACK files
-        if arg.startswith("-L") and "CLAPACK" in arg:
-            out_idx = line.index("-o")
-            out_idx += 1
-            module_name = line[out_idx]
-            module_name = Path(module_name).name.split(".")[0]
-
-            lapack_dir = arg.replace("-L", "")
-            # For convenience we determine needed scipy link libraries
-            # here, instead of in patch files
-            link_libs = ["F2CLIBS/libf2c.a", "blas_WA.a"]
-            if module_name in [
-                "_flapack",
-                "_flinalg",
-                "_calc_lwork",
-                "cython_lapack",
-                "_iterative",
-                "_arpack",
-            ]:
-                link_libs.append("lapack_WA.a")
-
-            for lib_name in link_libs:
-                arg = os.path.join(lapack_dir, f"{lib_name}")
-                new_args.append(arg)
-
-            new_args.extend(["-s", "INLINING_LIMIT=5"])
-            continue
-
-        # Use -Os for files that are statically linked to CLAPACK
-        if (
-            arg.startswith("-O")
-            and "CLAPACK" in " ".join(line)
-            and "-L" in " ".join(line)
-        ):
-            new_args.append("-Os")
-            continue
-
         if new_args[-1].startswith("-B") and "compiler_compat" in arg:
             # conda uses custom compiler search paths with the compiler_compat folder.
             # Ignore it.
