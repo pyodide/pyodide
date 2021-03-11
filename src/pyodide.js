@@ -383,8 +383,10 @@ globalThis.languagePluginLoader = (async () => {
   Module.noWasmDecoding =
       false; // we preload wasm using the built in plugin now
   Module.preloadedWasm = {};
-  let isFirefox = navigator.userAgent.toLowerCase().indexOf('firefox') > -1;
 
+  let fatal_error_msg =
+      "Pyodide has suffered a fatal error, refresh the page. " +
+      "Please report this to the Pyodide maintainers.";
   Module.fatal_error = function(e) {
     for (let [key, value] of Object.entries(Module.public_api)) {
       if (key.startsWith("_")) {
@@ -397,12 +399,11 @@ globalThis.languagePluginLoader = (async () => {
         continue;
       }
       if (typeof (value) === "function") {
-        Module.public_api[key] = function() {
-          throw Error("Pyodide has suffered a fatal error, refresh the page. " +
-                      "Please report this to the Pyodide maintainers.");
-        }
+        Module.public_api[key] = function() { throw Error(fatal_error_msg); }
       }
     }
+    console.error(fatal_error_msg);
+    console.error("The cause of the fatal error was:\n", e);
     throw e;
   };
 
@@ -519,7 +520,13 @@ globalThis.languagePluginLoader = (async () => {
    */
   Module.runPythonAsync = async function(code, messageCallback, errorCallback) {
     await Module.loadPackagesFromImports(code, messageCallback, errorCallback);
-    return Module.runPython(code);
+    let coroutine = Module.pyodide_py.eval_code_async(code, Module.globals);
+    try {
+      let result = await coroutine;
+      return result;
+    } finally {
+      coroutine.destroy();
+    }
   };
 
   // clang-format off

@@ -22,7 +22,6 @@ def test_jsproxy_dir(selenium):
             "__defineGetter__",
             "__defineSetter__",
             "__delattr__",
-            "__delitem__",
             "constructor",
             "toString",
             "typeof",
@@ -88,28 +87,25 @@ def test_jsproxy(selenium):
     assert (
         selenium.run(
             """
-        from js import TEST
-        del TEST.y
-        hasattr(TEST, 'y')"""
+            from js import TEST
+            del TEST.y
+            hasattr(TEST, 'y')
+            """
         )
         is False
     )
     selenium.run_js(
         """
-        class Point {
-          constructor(x, y) {
-            this.x = x;
-            this.y = y;
-          }
-        }
-        window.TEST = new Point(42, 43);"""
+        window.TEST = new Map([["x", 42], ["y", 43]]);
+        """
     )
     assert (
         selenium.run(
             """
-        from js import TEST
-        del TEST['y']
-        'y' in TEST"""
+            from js import TEST
+            del TEST['y']
+            'y' in TEST
+            """
         )
         is False
     )
@@ -134,7 +130,7 @@ def test_jsproxy(selenium):
         selenium.run(
             """
         from js import TEST
-        dict(TEST) == {'foo': 'bar', 'baz': 'bap'}
+        dict(TEST.object_entries()) == {'foo': 'bar', 'baz': 'bap'}
         """
         )
         is True
@@ -440,12 +436,11 @@ def test_unregister_jsmodule(selenium):
         pyodide.registerJsModule("a", a);
         pyodide.registerJsModule("a", b);
         pyodide.unregisterJsModule("a")
-        pyodide.runPython(`
-            try:
+        await pyodide.runPythonAsync(`
+            from unittest import TestCase
+            raises = TestCase().assertRaises
+            with raises(ImportError):
                 import a
-                assert False
-            except ImportError:
-                pass
         `)
         """
     )
@@ -506,5 +501,216 @@ def test_register_jsmodule_docs_example(selenium):
         assert my_js_module.f(7) == 50
         assert h(9) == 80
         assert c == 2
+        """
+    )
+
+
+def test_mixins_feature_presence(selenium):
+    result = selenium.run_js(
+        """
+        let fields = [
+            [{ [Symbol.iterator](){} }, "__iter__"],
+            [{ next(){} }, "__next__", "__iter__"],
+            [{ length : 1 }, "__len__"],
+            [{ get(){} }, "__getitem__"],
+            [{ set(){} }, "__setitem__", "__delitem__"],
+            [{ has(){} }, "__contains__"],
+            [{ then(){} }, "__await__"]
+        ];
+        
+        let test_object = pyodide.runPython(`
+            from js import console
+            def test_object(obj, keys_expected):
+                for [key, expected_val] in keys_expected.object_entries():
+                    actual_val = hasattr(obj, key)
+                    if actual_val != expected_val:
+                        console.log(obj)
+                        console.log(key)
+                        console.log(actual_val)
+                        assert False
+            test_object
+        `);
+
+        for(let flags = 0; flags < (1 << fields.length); flags ++){
+            let o = {};
+            let keys_expected = {};
+            for(let [idx, [obj, ...keys]] of fields.entries()){
+                if(flags & (1<<idx)){
+                    Object.assign(o, obj);
+                }
+                for(let key of keys){
+                    keys_expected[key] = keys_expected[key] || !!(flags & (1<<idx));
+                }
+            }
+            test_object(o, keys_expected);
+        }
+        """
+    )
+
+
+def test_mixins_calls(selenium):
+    result = selenium.run_js(
+        """
+        window.testObjects = {};
+        testObjects.iterable = { *[Symbol.iterator](){
+            yield 3; yield 5; yield 7;
+        } };
+        testObjects.iterator = testObjects.iterable[Symbol.iterator]();
+        testObjects.has_len1 = { length : 7, size : 10 };
+        testObjects.has_len2 = { length : 7 };
+        testObjects.has_get = { get(x){ return x; } };
+        testObjects.has_getset = new Map();
+        testObjects.has_has = { has(x){ return typeof(x) === "string" && x.startsWith("x") } };
+        testObjects.has_includes = { includes(x){ return typeof(x) === "string" && x.startsWith("a") } };
+        testObjects.has_has_includes = { 
+            includes(x){ return typeof(x) === "string" && x.startsWith("a") },
+            has(x){ return typeof(x) === "string" && x.startsWith("x") }
+        };
+        testObjects.awaitable = { then(cb){ cb(7); } };
+
+        let result = await pyodide.runPythonAsync(`
+            from js import testObjects as obj
+            result = []
+            result.append(["iterable1", list(iter(obj.iterable)), [3, 5, 7]])
+            result.append(["iterable2", [*obj.iterable], [3, 5, 7]])
+            it = obj.iterator
+            result.append(["iterator", [next(it), next(it), next(it)], [3, 5, 7]])
+            result.append(["has_len1", len(obj.has_len1), 10])
+            result.append(["has_len2", len(obj.has_len2), 7])
+            result.append(["has_get1", obj.has_get[10], 10])
+            result.append(["has_get2", obj.has_get[11], 11])
+            m = obj.has_getset
+            m[1] = 6
+            m[2] = 77
+            m[3] = 9
+            m[2] = 5
+            del m[3]
+            result.append(["has_getset", [x.to_py() for x in m.entries()], [[1, 6], [2, 5]]])
+            result.append(["has_has", [n in obj.has_has for n in ["x9", "a9"]], [True, False]])
+            result.append(["has_includes", [n in obj.has_includes for n in ["x9", "a9"]], [False, True]])
+            result.append(["has_has_includes", [n in obj.has_has_includes for n in ["x9", "a9"]], [True, False]])
+            result.append(["awaitable", await obj.awaitable, 7])
+            result
+        `);
+        return result.toJs();
+        """
+    )
+    for [desc, a, b] in result:
+        assert a == b, desc
+
+
+def test_mixins_errors(selenium):
+    selenium.run_js(
+        """
+        window.a = [];
+        window.b = { 
+            has(){ return false; },
+            get(){ return undefined; },
+            set(){ return false; },
+            delete(){ return false; },
+        };
+        await pyodide.runPythonAsync(`
+            from unittest import TestCase
+            raises = TestCase().assertRaises
+            from js import a, b
+            with raises(IndexError):
+                a[0]
+            with raises(IndexError):
+                del a[0]
+            with raises(KeyError):
+                b[0]
+            with raises(KeyError):
+                del b[0]
+        `);
+
+        window.c = {
+            next(){},
+            length : 1,
+            get(){},
+            set(){},
+            has(){},
+            then(){}     
+        };
+        window.d = {
+            [Symbol.iterator](){},
+        };
+        pyodide.runPython("from js import c, d");
+        delete c.next;
+        delete c.length;
+        delete c.get;
+        delete c.set;
+        delete c.has;
+        delete c.then;
+        delete d[Symbol.iterator];
+        await pyodide.runPythonAsync(`
+            from contextlib import contextmanager
+            from unittest import TestCase
+            @contextmanager
+            def raises(exc, match=None):
+                with TestCase().assertRaisesRegex(exc, match) as e:
+                    yield e
+
+            from pyodide import JsException
+            msg = "^TypeError:.* is not a function$"
+            with raises(JsException, match=msg):
+                next(c)
+            with raises(JsException, match=msg):
+                iter(d)
+            with raises(TypeError, match="object does not have a valid length"):
+                len(c)
+            with raises(JsException, match=msg):
+                c[0]
+            with raises(JsException, match=msg):
+                c[0] = 7
+            with raises(JsException, match=msg):
+                del c[0]
+            with raises(TypeError, match="can't be used in 'await' expression"):
+                await c
+        `);
+
+        window.l = [0, false, NaN, undefined, null];
+        window.l[6] = 7;
+        await pyodide.runPythonAsync(`
+            from unittest import TestCase
+            raises = TestCase().assertRaises
+            from js import l
+            with raises(IndexError):
+                l[10]
+            with raises(IndexError):
+                l[5]
+            assert len(l) == 7
+            l[0]; l[1]; l[2]; l[3]
+            l[4]; l[6]
+            del l[1]
+            with raises(IndexError):
+                l[4]
+            l[5]
+            del l[4]
+            l[3]; l[4]
+        `);
+
+        window.l = [0, false, NaN, undefined, null];
+        window.l[6] = 7;
+        let a = Array.from(window.l.entries());
+        console.log(a);
+        a.splice(5, 1);
+        window.m = new Map(a);
+        console.log(m.size);
+        await pyodide.runPythonAsync(`
+            from js import m
+            from unittest import TestCase
+            raises = TestCase().assertRaises
+            with raises(KeyError):
+                m[10]
+            with raises(KeyError):
+                m[5]
+            assert len(m) == 6
+            m[0]; m[1]; m[2]; m[3]
+            m[4]; m[6]
+            del m[1]
+            with raises(KeyError):
+                m[1]
+            assert len(m) == 5
+        `);
         """
     )

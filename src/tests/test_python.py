@@ -158,12 +158,12 @@ def test_eval_nothing(selenium):
 
 
 def test_unknown_attribute(selenium):
-    selenium.run(
+    selenium.run_async(
         """
+        from unittest import TestCase
+        raises = TestCase().assertRaisesRegex
         import js
-        try:
+        with raises(AttributeError, "asdf"):
             js.asdf
-        except AttributeError as e:
-            assert "asdf" in str(e)
         """
     )
