@@ -314,7 +314,7 @@ def handle_command(line, args, dryrun=False):
         if arg == "-Bsymbolic-functions":
             continue
         if arg == "-Wl,-Bsymbolic-functions":
-            continue            
+            continue
         # threading is disabled for now
         if arg == "-pthread":
             continue
