@@ -1,76 +1,8 @@
---- pyodide/build-system-3.8.sh	2021-03-06 08:51:39.257217163 +0100
-+++ pyodide-sysbuild/build-system-3.8.sh	2021-03-05 17:04:43.298455712 +0100
-@@ -16,20 +16,19 @@
- 
- # TODO incremental build of those
- # regex failed once
--CLEAN="\
-- kiwisolver setuptools glpk jedi cloudpickle docutils pytest mpmath\
-- bleach zarr python-sat Pygments attrs webencodings html5lib joblib\
-- libiconv libxml libxslt xlrd asciitree beautifulsoup4\
-- packaging cssselect pluggy msgpack more-itertools pyparsing decorator\
-- CLAPACK toolz uncertainties atomicwrites nose cycler soupsieve sympy\
-+PACKAGES="\
-+ kiwisolver\
-+ pandas setuptools glpk traits nlopt Jinja2 jedi autograd matplotlib cloudpickle docutils\
-+ networkx lxml pytest mpmath nltk bleach yt zarr cytoolz python-sat biopython\
-+ regex Pygments attrs numpy pillow webencodings\
-+ html5lib imageio joblib libiconv libxml libxslt xlrd asciitree beautifulsoup4\
-+ packaging cssselect patsy pluggy msgpack MarkupSafe more-itertools pyparsing decorator\
-+ CLAPACK pyodide-interrupts toolz uncertainties atomicwrites\
-+ numcodecs nose cycler soupsieve sympy freesasa\
-+ statsmodels\
-+ swiglpk optlang mne scipy pywavelets scikit-learn scikit-image astropy\
- "
- 
--FAIL="\
-- pandas traits nlopt Jinja2 autograd matplotlib networkx lxml nltk yt cytoolz\
-- biopython regex numpy pillow imageio patsy MarkupSafe pyodide-interrupts\
-- numcodecs freesasa statsmodels swiglpk optlang mne scipy\
-- pywavelets scikit-learn scikit-image astropy\
--"
- 
- 
- export HOSTPYTHON=$(command -v python3.8)
-@@ -52,7 +51,7 @@
- 
- > FAILURES
- 
--for package in $CLEAN
-+for package in $PACKAGES
- do
-     echo "building $package ..."
-     if PYODIDE_PACKAGES="$package" make 2>&1 >/dev/null
-@@ -69,6 +68,3 @@
- echo
- 
- cat FAILURES
--
--# try to understand why this one fails
--PYODIDE_PACKAGES="regex" make
---- pyodide/cpython/Makefile	2021-03-04 12:25:31.824153471 +0100
-+++ pyodide-sysbuild/cpython/Makefile	2021-03-06 07:51:13.509330319 +0100
-@@ -37,7 +37,7 @@
- 	)
- 	# Generate sysconfigdata. It outputs into a subfolder of build/, and
- 	# the subfolder is written to pybuilddir.txt.
--	_PYTHON_SYSCONFIGDATA_NAME=$(SYSCONFIG_NAME) _PYTHON_PROJECT_BASE=$(BUILD) python -m sysconfig --generate-posix-vars
-+	_PYTHON_SYSCONFIGDATA_NAME=$(SYSCONFIG_NAME) _PYTHON_PROJECT_BASE=$(BUILD) $(file < ../bin/PYTHON_FOR_BUILD) -m sysconfig --generate-posix-vars
- 	mv `cat pybuilddir.txt`/$(SYSCONFIG_NAME).py $(INSTALL)/lib/python$(PYMINOR)/
- 	rmdir `cat pybuilddir.txt`
- 	rm pybuilddir.txt
-@@ -109,7 +109,7 @@
- 	cp config.site $(BUILD)/
- 	( \
- 		cd $(BUILD); \
--		CONFIG_SITE=./config.site READELF=true emconfigure \
-+		CONFIG_SITE=./config.site READELF=true PYTHON_FOR_BUILD=$(file < ../bin/PYTHON_FOR_BUILD) emconfigure \
- 		  ./configure \
- 			  CFLAGS="-fPIC -sEMULATE_FUNCTION_POINTER_CASTS=1" \
- 			  CPPFLAGS="-I$(SQLITEBUILD) -I$(BZIP2BUILD) -I$(ZLIBBUILD)" \
---- pyodide/Makefile	2021-03-04 12:25:31.815153584 +0100
-+++ pyodide-sysbuild/Makefile	2021-03-06 07:51:13.509330319 +0100
-@@ -156,7 +156,7 @@
+diff --git a/Makefile b/Makefile
+index 9079eb3..131db57 100644
+--- a/Makefile
++++ b/Makefile
+@@ -156,7 +156,7 @@ build/test.data: $(CPYTHONLIB) $(UGLIFYJS)
  	)
  	( \
  		cd build; \
@@ -79,9 +11,11 @@
  	)
  	$(UGLIFYJS) build/test.js -o build/test.js
  
---- pyodide/Makefile.envs	2021-03-04 12:25:31.823153483 +0100
-+++ pyodide-sysbuild/Makefile.envs	2021-03-06 07:51:13.509330319 +0100
-@@ -10,7 +10,7 @@
+diff --git a/Makefile.envs b/Makefile.envs
+index ee8706f..511d7e9 100644
+--- a/Makefile.envs
++++ b/Makefile.envs
+@@ -10,7 +10,7 @@ SHELL := /bin/bash
  export PYVERSION=3.8.2
  export PYMINOR=$(basename $(PYVERSION))
  export HOSTPYTHONROOT=$(shell python3.8 -c "import sys; print(sys.prefix)")
@@ -90,9 +24,33 @@
  export TARGETPYTHONROOT=$(PYODIDE_ROOT)/cpython/installs/python-$(PYVERSION)
  export PYTHONINCLUDE=$(PYODIDE_ROOT)/cpython/installs/python-$(PYVERSION)/include/python$(PYMINOR)
  
---- pyodide/packages/Makefile	2021-03-04 12:25:31.824153471 +0100
-+++ pyodide-sysbuild/packages/Makefile	2021-03-06 07:51:13.510330307 +0100
-@@ -4,8 +4,8 @@
+diff --git a/cpython/Makefile b/cpython/Makefile
+index 3c0220b..2740b1d 100644
+--- a/cpython/Makefile
++++ b/cpython/Makefile
+@@ -37,7 +37,7 @@ $(INSTALL)/lib/$(LIB): $(BUILD)/$(LIB) remove_modules.txt
+ 	)
+ 	# Generate sysconfigdata. It outputs into a subfolder of build/, and
+ 	# the subfolder is written to pybuilddir.txt.
+-	_PYTHON_SYSCONFIGDATA_NAME=$(SYSCONFIG_NAME) _PYTHON_PROJECT_BASE=$(BUILD) python -m sysconfig --generate-posix-vars
++	_PYTHON_SYSCONFIGDATA_NAME=$(SYSCONFIG_NAME) _PYTHON_PROJECT_BASE=$(BUILD) $(file < ../bin/PYTHON_FOR_BUILD) -m sysconfig --generate-posix-vars
+ 	mv `cat pybuilddir.txt`/$(SYSCONFIG_NAME).py $(INSTALL)/lib/python$(PYMINOR)/
+ 	rmdir `cat pybuilddir.txt`
+ 	rm pybuilddir.txt
+@@ -109,7 +109,7 @@ $(BUILD)/Makefile: $(BUILD)/.patched $(ZLIBBUILD)/.configured $(SQLITEBUILD)/lib
+ 	cp config.site $(BUILD)/
+ 	( \
+ 		cd $(BUILD); \
+-		CONFIG_SITE=./config.site READELF=true emconfigure \
++		CONFIG_SITE=./config.site READELF=true PYTHON_FOR_BUILD=$(file < ../bin/PYTHON_FOR_BUILD) emconfigure \
+ 		  ./configure \
+ 			  CFLAGS="-fPIC -sEMULATE_FUNCTION_POINTER_CASTS=1" \
+ 			  CPPFLAGS="-I$(SQLITEBUILD) -I$(BZIP2BUILD) -I$(ZLIBBUILD)" \
+diff --git a/packages/Makefile b/packages/Makefile
+index d088b7e..872846e 100644
+--- a/packages/Makefile
++++ b/packages/Makefile
+@@ -4,8 +4,8 @@ include ../Makefile.envs
  
  all:
  	mkdir -p $(PYODIDE_LIBRARIES)
@@ -103,9 +61,11 @@
  
  update-all:
  	for pkg in $$(find . -maxdepth 1 -type d -exec basename {} \; | tail -n +2); do \
---- pyodide/pyodide_build/buildpkg.py	2021-03-04 12:25:31.824153471 +0100
-+++ pyodide-sysbuild/pyodide_build/buildpkg.py	2021-03-06 07:51:13.510330307 +0100
-@@ -139,6 +139,7 @@
+diff --git a/pyodide_build/buildpkg.py b/pyodide_build/buildpkg.py
+index 816120b..49308fa 100755
+--- a/pyodide_build/buildpkg.py
++++ b/pyodide_build/buildpkg.py
+@@ -139,6 +139,7 @@ def compile(path: Path, srcpath: Path, pkg: Dict[str, Any], args):
  
      orig_dir = Path.cwd()
      os.chdir(srcpath)
@@ -113,7 +73,7 @@
      env = dict(os.environ)
      if pkg.get("build", {}).get("skip_host", True):
          env["SKIP_HOST"] = ""
-@@ -188,7 +189,7 @@
+@@ -188,7 +189,7 @@ def package_files(buildpath: Path, srcpath: Path, pkg: Dict[str, Any], args):
      install_prefix = (srcpath / "install").resolve()
      subprocess.run(
          [
@@ -122,9 +82,11 @@
              common.file_packager_path(),
              name + ".data",
              "--lz4",
---- pyodide/pyodide_build/pywasmcross.py	2021-03-04 15:03:12.426432221 +0100
-+++ pyodide-sysbuild/pyodide_build/pywasmcross.py	2021-03-06 07:51:20.479243512 +0100
-@@ -264,26 +264,12 @@
+diff --git a/pyodide_build/pywasmcross.py b/pyodide_build/pywasmcross.py
+index bf39963..bf80e91 100755
+--- a/pyodide_build/pywasmcross.py
++++ b/pyodide_build/pywasmcross.py
+@@ -264,26 +264,12 @@ def handle_command(line, args, dryrun=False):
      elif new_args[0] == "em++":
          new_args.extend(args.cflags.split() + args.cxxflags.split())
  
@@ -151,21 +113,7 @@
          if arg.startswith("-I"):
              if (
                  str(Path(arg[2:]).resolve()).startswith(sys.prefix + "/include/python")
-@@ -310,6 +296,13 @@
-             if arg in used_libs:
-                 continue
-             used_libs.add(arg)
-+
-+        # -Bsymbolic-functions and  -Wl,-Bsymbolic-functions  unsupported by wasm-ld
-+        if arg == "-Bsymbolic-functions":
-+            continue
-+        if arg == "-Wl,-Bsymbolic-functions":
-+            continue
-+
-         # threading is disabled for now
-         if arg == "-pthread":
-             continue
-@@ -357,6 +350,17 @@
+@@ -362,6 +348,17 @@ def handle_command(line, args, dryrun=False):
      print(" ".join(new_args))
  
      if not dryrun:
