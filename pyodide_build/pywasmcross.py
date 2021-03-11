@@ -310,6 +310,11 @@ def handle_command(line, args, dryrun=False):
             if arg in used_libs:
                 continue
             used_libs.add(arg)
+        # some gcc flags that clang does not support actually
+        if arg == "-Bsymbolic-functions":
+            continue
+        if arg == "-Wl,-Bsymbolic-functions":
+            continue            
         # threading is disabled for now
         if arg == "-pthread":
             continue
