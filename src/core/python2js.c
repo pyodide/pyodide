@@ -432,9 +432,3 @@ python2js_with_depth(PyObject* x, int depth)
   }
   return result;
 }
-
-int
-python2js_init()
-{
-  return 0;
-}

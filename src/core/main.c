@@ -10,7 +10,6 @@
 #include "jsproxy.h"
 #include "keyboard_interrupt.h"
 #include "pyproxy.h"
-#include "python2js.h"
 
 #define FATAL_ERROR(args...)                                                   \
   do {                                                                         \
@@ -110,7 +109,6 @@ main(int argc, char** argv)
   TRY_INIT(js2python);
   TRY_INIT_WITH_CORE_MODULE(JsProxy);
   TRY_INIT(pyproxy);
-  TRY_INIT(python2js);
   TRY_INIT(keyboard_interrupt);
 
   PyObject* module_dict = PyImport_GetModuleDict(); // borrowed

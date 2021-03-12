@@ -27,10 +27,4 @@ python2js(PyObject* x);
 JsRef
 python2js_with_depth(PyObject* x, int depth);
 
-/**
- * Set up the global state for this module.
- */
-int
-python2js_init();
-
 #endif /* PYTHON2JS_H */
