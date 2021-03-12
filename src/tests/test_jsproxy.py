@@ -40,10 +40,16 @@ def test_jsproxy_dir(selenium):
     assert set1.isdisjoint(a_items)
     selenium.run_js(
         """
-        window.a = [0];
+        window.a = [0,1,2,3,4,5,6,7,8,9];
+        a[":"] = 0;
+        a["/"] = 0;
         pyodide.runPython(`
             from js import a
-            assert '0' not in dir(a)
+            d = dir(a)
+            assert '0' not in d
+            assert '9' not in d
+            assert ':' in d
+            assert '/' in d
         `);
         """
     )

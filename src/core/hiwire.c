@@ -353,7 +353,7 @@ EM_JS_REF(JsRef, hiwire_dir, (JsRef idobj), {
     result.push(... Object.getOwnPropertyNames(jsobj).filter(
       s => {
         let c = s.charCodeAt(0);
-        return c < 49 || c > 57; /* Filter out integer array indices */
+        return c < 48 || c > 57; /* Filter out integer array indices */
       }
     ));
     // clang-format on
