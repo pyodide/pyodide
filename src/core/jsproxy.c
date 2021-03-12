@@ -1323,6 +1323,7 @@ JsProxy_create_subtype(int flags)
     (PyType_Slot){ .slot = Py_tp_methods, .pfunc = (void*)methods_heap };
   slots[cur_slot++] = (PyType_Slot){ 0 };
 
+  // clang-format off
   PyType_Spec spec = {
     // TODO: for Python3.9 the name will need to change to "pyodide.JsProxy"
     .name = "JsProxy",
@@ -1331,6 +1332,7 @@ JsProxy_create_subtype(int flags)
     .flags = tp_flags,
     .slots = slots,
   };
+  // clang-format on
   bases = Py_BuildValue("(O)", base);
   FAIL_IF_NULL(bases);
   result = PyType_FromSpecWithBases(&spec, bases);
