@@ -111,19 +111,15 @@ EM_JS_NUM(int, hiwire_init, (), {
     // clang-format on
   };
 
-  Module.typedArrayAsUint8Array = function(typedArray)
+  Module.typedArrayAsUint8Array = function(arg)
   {
-    let byteOffset = undefined;
-    let byteLength = undefined;
-    let buffer = typedArray;
     // clang-format off
-    if(typedArray.buffer !== undefined){
+    if(arg.buffer !== undefined){
       // clang-format on
-      buffer = typedArray.buffer;
-      byteOffset = typedArray.byteOffset;
-      byteLength = typedArray.byteLength;
+      return new Uint8Array(arg.buffer, arg.byteOffset, arg.byteLength);
+    } else {
+      return new Uint8Array(arg);
     }
-    return new Uint8Array(buffer, byteOffset, byteLength)
   };
 
   return 0;
