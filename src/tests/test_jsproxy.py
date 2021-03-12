@@ -38,6 +38,15 @@ def test_jsproxy_dir(selenium):
     assert set1.issuperset(jsproxy_items)
     assert set1.issuperset(callable_items)
     assert set1.isdisjoint(a_items)
+    selenium.run_js(
+        """
+        window.a = [0];
+        pyodide.runPython(`
+            from js import a
+            assert '0' not in dir(a)
+        `);
+        """
+    )
 
 
 def test_jsproxy_getattr(selenium):
