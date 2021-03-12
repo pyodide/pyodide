@@ -168,7 +168,6 @@ def test_js2python_bool(selenium):
     )
 
 
-@pytest.mark.parametrize("wasm_heap", (False, True))
 @pytest.mark.parametrize(
     "jstype, pytype",
     (
@@ -183,34 +182,22 @@ def test_js2python_bool(selenium):
         ("Float64Array", "d"),
     ),
 )
-def test_typed_arrays(selenium, wasm_heap, jstype, pytype):
-    if not wasm_heap:
-        selenium.run_js(f"window.array = new {jstype}([1, 2, 3, 4]);\n")
-    else:
-        selenium.run_js(
-            f"""
-             let buffer = pyodide._module._malloc(
-                   4 * {jstype}.BYTES_PER_ELEMENT);
-             window.array = new {jstype}(
-                   pyodide._module.HEAPU8.buffer, buffer, 4);
-             window.array[0] = 1;
-             window.array[1] = 2;
-             window.array[2] = 3;
-             window.array[3] = 4;
-             """
-        )
-    assert selenium.run(
+def test_typed_arrays(selenium, jstype, pytype):
+    assert selenium.run_js(
         f"""
-         from js import array
-         array = array.new_copy()
-         import struct
-         expected = struct.pack("{pytype*4}", 1, 2, 3, 4)
-         print(array.format, array.tolist(), array.tobytes())
-         ((array.format == "{pytype}")
-          and array.tolist() == [1, 2, 3, 4]
-          and array.tobytes() == expected
-          and array.obj._has_bytes() is {not wasm_heap})
-         """
+        window.array = new {jstype}([1, 2, 3, 4]);
+        return pyodide.runPython(`
+            from js import array
+            array = array.new_copy()
+            import struct
+            expected = struct.pack("{pytype*4}", 1, 2, 3, 4)
+            print(array.format, array.tolist(), array.tobytes())
+            # Result:
+            ((array.format == "{pytype}")
+            and array.tolist() == [1, 2, 3, 4]
+            and array.tobytes() == expected)
+        `);
+        """
     )
 
 
