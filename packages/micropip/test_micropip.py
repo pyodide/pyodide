@@ -27,13 +27,16 @@ def test_install_simple(selenium_standalone):
         else:
             time.sleep(1)
 
-    assert selenium_standalone.run(
-        """
-        import snowballstemmer
-        stemmer = snowballstemmer.stemmer('english')
-        stemmer.stemWords('go going goes gone'.split())
-        """
-    ) == ["go", "go", "goe", "gone"]
+    assert (
+        selenium_standalone.run(
+            """
+            import snowballstemmer
+            stemmer = snowballstemmer.stemmer('english')
+            stemmer.stemWords('go going goes gone'.split())
+            """
+        )
+        == ["go", "go", "goe", "gone"]
+    )
 
 
 def test_parse_wheel_url():
