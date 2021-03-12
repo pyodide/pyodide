@@ -10,6 +10,7 @@
 #include "jsproxy.h"
 #include "keyboard_interrupt.h"
 #include "pyproxy.h"
+#include "python2js.h"
 
 #define FATAL_ERROR(args...)                                                   \
   do {                                                                         \
