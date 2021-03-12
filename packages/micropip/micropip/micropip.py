@@ -42,7 +42,7 @@ if XMLHttpRequest is not None:
         req = XMLHttpRequest.new()
         req.open("GET", url, False)
         req.send(None)
-        return io.StringIO(req.response.new_copy())
+        return io.StringIO(req.response)
 
     def _get_url_async(url, cb):
         req = XMLHttpRequest.new()
