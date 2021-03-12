@@ -1,23 +1,4 @@
-try:
-    from js import Promise, XMLHttpRequest
-except ImportError:
-    XMLHttpRequest = None
-
-try:
-    from js import pyodide as js_pyodide
-except ImportError:
-
-    class js_pyodide:  # type: ignore
-        """A mock object to allow import of this package outside pyodide"""
-
-        class _module:
-            class packages:
-                class dependencies:
-                    @staticmethod
-                    def object_entries():
-                        return []
-
-
+import asyncio
 import hashlib
 import importlib
 import io
@@ -29,32 +10,49 @@ from typing import Dict, Any, Union, List, Tuple
 from distlib import markers, util, version
 
 
-def _nullop(*args):
-    return
+try:
+    from js import XMLHttpRequest
+    from js import pyodide as js_pyodide
+except ImportError:
+    XMLHttpRequest = None
+
+    class js_pyodide:  # type: ignore
+        """A mock object to allow import of this package outside pyodide
+        Report that all dependencies are empty.
+        """
+
+        class _module:
+            class packages:
+                class dependencies:
+                    @staticmethod
+                    def object_entries():
+                        return []
 
 
 # Provide implementations of HTTP fetching for in-browser and out-of-browser to
 # make testing easier
 if XMLHttpRequest is not None:
-    import pyodide  # noqa
 
-    def _get_url(url):
-        req = XMLHttpRequest.new()
-        req.open("GET", url, False)
-        req.send(None)
-        return io.StringIO(req.response)
-
-    def _get_url_async(url, cb):
+    async def _get_url(url):
         req = XMLHttpRequest.new()
         req.open("GET", url, True)
         req.responseType = "arraybuffer"
 
-        def callback(e):
-            if req.readyState == 4:
-                cb(io.BytesIO(req.response))
+        fut = Future()
 
+        def callback(e):
+            if e.target.readyState == 4:
+                fut.set_result()
+
+        # TODO: this leaks the callback pyproxy, figure out how to reclaim it
         req.onreadystatechange = callback
         req.send(None)
+        await fut
+        # Not good enough to reclaim callback...
+        req.onreadystatechange = None
+        return io.BytesIO(req.response)
+
+    gather = asyncio.gather
 
     # In practice, this is the `site-packages` directory.
     WHEEL_BASE = Path(__file__).parent
@@ -62,20 +60,26 @@ else:
     # Outside the browser
     from urllib.request import urlopen
 
-    def _get_url(url):
+    async def _get_url(url):
         with urlopen(url) as fd:
             content = fd.read()
         return io.BytesIO(content)
 
-    def _get_url_async(url, cb):
-        cb(_get_url(url))
-
     WHEEL_BASE = Path(".") / "wheels"
 
+    # asyncio.gather will schedule any coroutines to run on the event loop which
+    # isn't running, so it will stall the program. In reality, everything is
+    # sync in this case anyways so just do everything in order.
+    async def gather(*coroutines):
+        result = []
+        for coroutine in coroutines:
+            result.append(await coroutine)
+        return result
 
-def _get_pypi_json(pkgname):
+
+async def _get_pypi_json(pkgname):
     url = f"https://pypi.org/pypi/{pkgname}/json"
-    fd = _get_url(url)
+    fd = await _get_url(url)
     return json.load(fd)
 
 
@@ -123,19 +127,11 @@ def _validate_wheel(data, fileinfo):
         raise ValueError("Contents don't match hash")
 
 
-def _install_wheel(name, fileinfo, resolve, reject):
+async def _install_wheel(name, fileinfo):
     url = fileinfo["url"]
-
-    def callback(wheel):
-        try:
-            _validate_wheel(wheel, fileinfo)
-            _extract_wheel(wheel)
-        except Exception as e:
-            reject(str(e))
-        else:
-            resolve()
-
-    _get_url_async(url, callback)
+    wheel = await _get_url(url)
+    _validate_wheel(wheel, fileinfo)
+    _extract_wheel(wheel)
 
 
 class _PackageManager:
@@ -148,53 +144,47 @@ class _PackageManager:
         )
         self.installed_packages = {}
 
-    def install(
-        self,
-        requirements: Union[str, List[str]],
-        ctx=None,
-        resolve=_nullop,
-        reject=_nullop,
-    ):
-        try:
-            if ctx is None:
-                ctx = {"extra": None}
+    async def install(self, requirements: Union[str, List[str]], ctx=None):
+        if ctx is None:
+            ctx = {"extra": None}
 
-            complete_ctx = dict(markers.DEFAULT_CONTEXT)
-            complete_ctx.update(ctx)
+        complete_ctx = dict(markers.DEFAULT_CONTEXT)
+        complete_ctx.update(ctx)
 
-            if isinstance(requirements, str):
-                requirements = [requirements]
+        if isinstance(requirements, str):
+            requirements = [requirements]
 
-            transaction: Dict[str, Any] = {
-                "wheels": [],
-                "pyodide_packages": set(),
-                "locked": dict(self.installed_packages),
-            }
-            for requirement in requirements:
+        transaction: Dict[str, Any] = {
+            "wheels": [],
+            "pyodide_packages": set(),
+            "locked": dict(self.installed_packages),
+        }
+        requirement_promises = []
+        for requirement in requirements:
+            requirement_promises.append(
                 self.add_requirement(requirement, complete_ctx, transaction)
-        except Exception as e:
-            reject(str(e))
+            )
 
-        resolve_count = [len(transaction["wheels"])]
+        await gather(*requirement_promises)
 
-        def do_resolve(*args):
-            resolve_count[0] -= 1
-            if resolve_count[0] == 0:
-                resolve(f'Installed {", ".join(self.installed_packages.keys())}')
+        wheel_promises = []
 
         # Install built-in packages
         pyodide_packages = transaction["pyodide_packages"]
         if len(pyodide_packages):
-            resolve_count[0] += 1
+            # Note: branch never happens in out-of-browser testing because we
+            # report that all dependencies are empty.
             self.installed_packages.update(dict((k, None) for k in pyodide_packages))
-            js_pyodide.loadPackage(list(pyodide_packages)).then(do_resolve)
+            wheel_promises.append(js_pyodide.loadPackage(list(pyodide_packages)))
 
         # Now install PyPI packages
         for name, wheel, ver in transaction["wheels"]:
-            _install_wheel(name, wheel, do_resolve, reject)
+            wheel_promises.append(_install_wheel(name, wheel))
             self.installed_packages[name] = ver
+        await gather(*wheel_promises)
+        return f'Installed {", ".join(self.installed_packages.keys())}'
 
-    def add_requirement(self, requirement: str, ctx, transaction):
+    async def add_requirement(self, requirement: str, ctx, transaction):
         if requirement.endswith(".whl"):
             # custom download location
             name, wheel, version = _parse_wheel_url(requirement)
@@ -226,13 +216,13 @@ class _PackageManager:
                         f"but {name}=={ver} is already installed"
                     )
         else:
-            metadata = _get_pypi_json(req.name)
+            metadata = await _get_pypi_json(req.name)
             wheel, ver = self.find_wheel(metadata, req)
             transaction["locked"][req.name] = ver
 
             recurs_reqs = metadata.get("info", {}).get("requires_dist") or []
             for recurs_req in recurs_reqs:
-                self.add_requirement(recurs_req, ctx, transaction)
+                await self.add_requirement(recurs_req, ctx, transaction)
 
             transaction["wheels"].append((req.name, wheel, ver))
 
@@ -286,14 +276,10 @@ def install(requirements: Union[str, List[str]]):
 
     Returns
     -------
-    A Promise that resolves when all packages have been downloaded and installed.
+    A Future that resolves when all packages have been downloaded and installed.
     """
-
-    def do_install(resolve, reject):
-        PACKAGE_MANAGER.install(requirements, resolve=resolve, reject=reject)
-        importlib.invalidate_caches()
-
-    return Promise.new(do_install)
+    importlib.invalidate_caches()
+    return asyncio.ensure_future(PACKAGE_MANAGER.install(requirements))
 
 
 __all__ = ["install"]
