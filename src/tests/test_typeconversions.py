@@ -200,6 +200,7 @@ def test_typed_arrays(selenium, wasm_heap, jstype, pytype):
     assert selenium.run(
         f"""
          from js import array
+         array = array.new_copy()
          import struct
          expected = struct.pack("{pytype*4}", 1, 2, 3, 4)
          print(array.format, array.tolist(), array.tobytes())
