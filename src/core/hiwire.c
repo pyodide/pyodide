@@ -110,6 +110,22 @@ EM_JS_NUM(int, hiwire_init, (), {
     return (!!obj) && typeof obj.then === 'function';
     // clang-format on
   };
+
+  Module.typedArrayAsUint8Array = function(typedArray)
+  {
+    let byteOffset = undefined;
+    let byteLength = undefined;
+    let buffer = typedArray;
+    // clang-format off
+    if(typedArray.buffer !== undefined){
+      // clang-format on
+      buffer = typedArray.buffer;
+      byteOffset = typedArray.byteOffset;
+      byteLength = typedArray.byteLength;
+    }
+    return new Uint8Array(buffer, byteOffset, byteLength)
+  };
+
   return 0;
 });
 
@@ -225,11 +241,18 @@ EM_JS_NUM(bool, hiwire_is_array, (JsRef idobj), {
   if (Array.isArray(obj)) {
     return true;
   }
-  let result = Object.prototype.toString.call(obj);
+  let typeTag = Object.prototype.toString.call(obj);
   // We want to treat some standard array-like objects as Array.
   // clang-format off
-  return result === "[object HTMLCollection]" || result === "[object NodeList]";
-  // clang-format on
+  if(typeTag === "[object HTMLCollection]" || typeTag === "[object NodeList]"){
+    // clang-format on
+    return true;
+  }
+  // What if it's a TypedArray?
+  if (!!(obj.buffer instanceof ArrayBuffer && obj.BYTES_PER_ELEMENT)) {
+    return true;
+  }
+  return false;
 });
 
 EM_JS_REF(JsRef, hiwire_array, (), { return Module.hiwire.new_value([]); });
@@ -638,10 +661,13 @@ EM_JS_NUM(int, hiwire_get_byteLength, (JsRef idobj), {
 
 EM_JS_NUM(errcode, hiwire_copy_to_ptr, (JsRef idobj, void* ptr), {
   let jsobj = Module.hiwire.get_value(idobj);
-  // clang-format off
-  let buffer = (jsobj['buffer'] !== undefined) ? jsobj.buffer : jsobj;
-  // clang-format on
-  Module.HEAPU8.set(new Uint8Array(buffer), ptr);
+  Module.HEAPU8.set(Module.typedArrayAsUint8Array(jsobj), ptr);
+});
+
+EM_JS_NUM(errcode, hiwire_copy_from_ptr, (JsRef idobj, void* ptr), {
+  let jsobj = Module.hiwire.get_value(idobj);
+  Module.typedArrayAsUint8Array(jsobj).set(
+    Module.HEAPU8.subarray(ptr, ptr + jsobj.byteLength));
 });
 
 EM_JS_NUM(errcode,

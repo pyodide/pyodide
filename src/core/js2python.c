@@ -57,25 +57,12 @@ _js2python_pyproxy(PyObject* val)
   return val;
 }
 
-PyObject*
-_js2python_memoryview(JsRef id)
-{
-  PyObject* jsproxy = JsProxy_create(id);
-  if (jsproxy == NULL) {
-    return NULL;
-  }
-  return PyMemoryView_FromObject(jsproxy);
-}
-
 EM_JS_REF(PyObject*, js2python, (JsRef id), {
   let value = Module.hiwire.get_value(id);
   let result = Module.__js2python_convertImmutable(value);
   // clang-format off
   if (result !== 0) {
     return result;
-  }
-  if (value['byteLength'] !== undefined) {
-    return __js2python_memoryview(id);
   }
   return _JsProxy_create(id);
   // clang-format on

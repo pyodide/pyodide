@@ -654,6 +654,12 @@ errcode
 hiwire_copy_to_ptr(JsRef idobj, void* ptr);
 
 /**
+ * Copies the memory at ptr into a given typed array or buffer.
+ */
+errcode
+hiwire_copy_from_ptr(JsRef idobj, void* ptr);
+
+/**
  * Get a data type identifier for a given typedarray.
  */
 errcode

@@ -714,3 +714,61 @@ def test_mixins_errors(selenium):
         `);
         """
     )
+
+
+def test_buffer(selenium):
+    selenium.run_js(
+        """
+        self.a = new Uint32Array(Array(10).fill(0).map((_,idx) => idx));
+        pyodide.runPython(`
+            from js import a
+            b = a.new_copy()
+            b[4] = 7
+            assert b[8] == 8
+            a.copy_into_buffer(b)
+            assert b[4] == 4
+            b[4] = 7
+            a.copy_from_buffer(b)
+            assert a[4] == 7
+        `);
+        if(a[4] !== 7){
+            throw Error();
+        }
+        """
+    )
+    selenium.run_js(
+        """
+        self.a = new Uint32Array(Array(10).fill(0).map((_,idx) => idx));
+        self.b = pyodide._module.HEAP8.subarray(0, 100);
+        pyodide.runPython(`
+            import js
+            from unittest import TestCase
+            raises = TestCase().assertRaisesRegex
+            with raises(ValueError, "Will not import"):
+                from js import b
+            from array import array
+            from js import a
+            c = array('b', range(30))
+            d = array('b', range(40))
+            with raises(ValueError, "cannot copy from TypedArray"):
+                a.copy_into_buffer(c)
+
+            with raises(ValueError, "cannot copy from buffer"):
+                a.copy_from_buffer(c)
+
+            with raises(ValueError, "incompatible formats"):
+                a.copy_into_buffer(d)
+
+            with raises(ValueError, "incompatible formats"):
+                a.copy_from_buffer(d)
+
+            e = array('I', range(10, 20))
+            a.copy_from_buffer(e)
+        `);
+        for(let [k, v] of a.entries()){
+            if(v !== k + 10){
+                throw new Error([v, k]);
+            }
+        }
+        """
+    )
