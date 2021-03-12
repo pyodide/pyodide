@@ -202,13 +202,16 @@ def test_typed_arrays(selenium, jstype, pytype):
 
 
 def test_array_buffer(selenium):
-    selenium.run_js("window.array = new ArrayBuffer(100);\n")
     assert (
-        selenium.run(
+        selenium.run_js(
             """
-        from js import array
-        len(array.tobytes())
-        """
+            window.array = new ArrayBuffer(100);
+            return pyodide.runPython(`
+                from js import array
+                array = array.new_copy()
+                len(array.tobytes())
+            `);
+            """
         )
         == 100
     )
