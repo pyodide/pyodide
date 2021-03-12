@@ -107,6 +107,7 @@ def test_js2python(selenium):
     assert selenium.run(
         """
         from js import jsbytes
+        jsbytes = jsbytes.new_copy()
         ((jsbytes.tolist() == [1, 2, 3])
          and (jsbytes.tobytes() == b"\x01\x02\x03"))
         """
@@ -114,6 +115,7 @@ def test_js2python(selenium):
     assert selenium.run(
         """
         from js import jsfloats
+        jsfloats = jsfloats.new_copy()
         import struct
         expected = struct.pack("fff", 1, 2, 3)
         (jsfloats.tolist() == [1, 2, 3]) and (jsfloats.tobytes() == expected)
