@@ -29,7 +29,7 @@ def test_typed_arrays(selenium):
         selenium.run_js(f"window.array = new {jstype}([1, 2, 3, 4]);\n")
         assert selenium.run(
             "from js import array\n"
-            "npyarray = numpy.asarray(array)\n"
+            "npyarray = numpy.asarray(array.new_copy())\n"
             f'npyarray.dtype.name == "{npytype}" '
             "and npyarray == [1, 2, 3, 4]"
         )

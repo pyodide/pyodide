@@ -42,7 +42,7 @@ if XMLHttpRequest is not None:
         req = XMLHttpRequest.new()
         req.open("GET", url, False)
         req.send(None)
-        return io.StringIO(req.response)
+        return io.StringIO(req.response.new_copy())
 
     def _get_url_async(url, cb):
         req = XMLHttpRequest.new()
@@ -51,7 +51,7 @@ if XMLHttpRequest is not None:
 
         def callback(e):
             if req.readyState == 4:
-                cb(io.BytesIO(req.response))
+                cb(io.BytesIO(req.response.new_copy()))
 
         req.onreadystatechange = callback
         req.send(None)
