@@ -349,7 +349,14 @@ EM_JS_REF(JsRef, hiwire_dir, (JsRef idobj), {
   let jsobj = Module.hiwire.get_value(idobj);
   let result = [];
   do {
-    result.push(... Object.getOwnPropertyNames(jsobj));
+    // clang-format off
+    result.push(... Object.getOwnPropertyNames(jsobj).filter(
+      s => {
+        let c = s.charCodeAt(0);
+        return c < 48 || c > 57; /* Filter out integer array indices */
+      }
+    ));
+    // clang-format on
   } while (jsobj = Object.getPrototypeOf(jsobj));
   return Module.hiwire.new_value(result);
 });
