@@ -1,13 +1,13 @@
 # Frequently Asked Questions (FAQ)
 
-## How can I load external python files in Pyodide?
+## How can I load external Python files in Pyodide?
 
 The two possible solutions are,
 
-- include these files in a python package, build a pure python wheel with
+- include these files in a Python package, build a pure Python wheel with
   `python setup.py bdist_wheel` and
   {ref}`load it with micropip <micropip-installing-from-arbitrary-urls>`.
-- fetch the python code as a string and evaluate it in Python,
+- fetch the Python code as a string and evaluate it in Python,
   ```js
   pyodide.runPython(await fetch('https://some_url/...'))
   ```
@@ -16,7 +16,7 @@ In both cases, files need to be served with a web server and cannot be loaded fr
 
 ## Why can't I load files from the local file system?
 
-For security reasons JavaScript in the browser is not allowed to load local data files. You need to serve them with a web-browser.
+For security reasons Javascript in the browser is not allowed to load local data files. You need to serve them with a web-browser.
 Recently there is a [Native File System API](https://wicg.github.io/file-system-access/) supported in Chrome but not in Firefox. [There is a discussion about implementing it for Firefox here.](https://github.com/mozilla/standards-positions/issues/154)
 
 
@@ -64,7 +64,7 @@ and returns a list of packages imported.
 ## How can I execute code in a custom namespace?
 
 The second argument to {any}`pyodide.eval_code` is a global namespace to execute the code in.
-The namespace is a python dictionary. 
+The namespace is a Python dictionary. 
 ```javascript
 let my_namespace = pyodide.globals.dict();
 pyodide.pyodide_py.eval_code(`x = 1 + 1`, my_namespace);
@@ -96,11 +96,11 @@ if platform.system() == 'Emscripten':
 ```
 
 This however will not work at build time (i.e. in a `setup.py`) due to the way
-the pyodide build system works. It first compiles packages with the host compiler
+the Pyodide build system works. It first compiles packages with the host compiler
 (e.g. gcc) and then re-runs the compilation commands with emsdk. So the `setup.py` is
 never run inside the Pyodide environement.
 
-To detect pyodide, **at build time** use,
+To detect Pyodide, **at build time** use,
 ```python
 import os
 
@@ -111,9 +111,9 @@ We used to use the environment variable `PYODIDE_BASE_URL` for this purpose,
 but this usage is deprecated.
 
 
-## How do I create custom python packages from javascript?
+## How do I create custom Python packages from Javascript?
 
-Put a collection of functions into a javascript object and use `pyodide.registerJsModule`:
+Put a collection of functions into a Javascript object and use `pyodide.registerJsModule`:
 Javascript:
 ```javascript
 let my_module = {

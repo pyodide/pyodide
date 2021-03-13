@@ -31,7 +31,7 @@ Javascript to Python translations occur:
 Translating an object from Python to Javascript and then back to
 Python is guaranteed to give an object that is equal to the original object
 (with the exception of `nan` because `nan != nan`). Furthermore, if the object
-is proxied into javascript, then translation back unwraps the proxy, and the
+is proxied into Javascript, then translation back unwraps the proxy, and the
 result of the round trip conversion `is` the original object (in the sense that
 they live at the same memory address).
 
@@ -114,19 +114,19 @@ possible in the future -- work is ongoing to make this more complete):
 | `proxy.object_entries()`  | `Object.entries(x)`    |
 
 Some other code snippets:
-```python
+```py
 for v in proxy:
     # do something
 ```
 is equivalent to:
-```javascript
+```js
 for(let v of x){
     // do something
 }
 ```
 The `dir` method has been overloaded to return all keys on the prototype chain
 of `x`, so `dir(x)` roughly translates to:
-```javascript
+```js
 function dir(x){
     let result = [];
     do {
@@ -138,7 +138,7 @@ function dir(x){
 
 As a special case, Javascript `Array`, `HTMLCollection`, and `NodeList` are
 container types, but instead of using `array.get(7)` to get the 7th element,
-javascript uses `array["7"]`. For these cases, we translate:
+Javascript uses `array["7"]`. For these cases, we translate:
 
 | Python                    | Javascript             |
 |---------------------------|------------------------|
@@ -227,7 +227,7 @@ performs the following explicit conversions:
 
 ** `to_py` will only convert an object into a dictionary if its constructor
 is `Object`, otherwise the object will be left alone. Example:
-```javascript
+```pyodide
 class Test {};
 window.x = { "a" : 7, "b" : 2};
 window.y = { "a" : 7, "b" : 2};
@@ -236,7 +236,7 @@ pyodide.runPython(`
     from js import x, y
     # x is converted to a dictionary
     assert x.to_py() == { "a" : 7, "b" : 2} 
-    # y is not a "raw object" so it's not converted
+    # y is not a "Plain Old JavaScript Object", it's an instance of type Test so it's not converted
     assert y.to_py() == y
 `);
 ```
@@ -262,11 +262,11 @@ directly access arrays if they are outside of the wasm heap), and the data type
 is preserved. This makes it easy to correctly convert the array to a Numpy array
 using `numpy.asarray`:
 
-```javascript
+```js
 let array = new Float32Array([1, 2, 3]);
 ```
 
-```python
+```py
 from js import array
 import numpy as np
 numpy_array = np.asarray(array)
@@ -290,7 +290,7 @@ A Python object in the `__main__` global scope can imported into Javascript
 using the {any}`pyodide.pyimport` function. Given the name of the Python object
 to import, `pyimport` returns the object translated to Javascript.
 
-```javascript
+```js
 let sys = pyodide.pyimport('sys');
 ```
 
@@ -303,10 +303,10 @@ global scope can be imported into Python using the `js` module.
 
 When importing a name from the `js` module, the `js` module looks up Javascript
 attributes of the `globalThis` scope and translates the Javascript objects into
-Python. You can create your own custom javascript modules using
+Python. You can create your own custom Javascript modules using
 {any}`pyodide.registerJsModule`.
 
-```python
+```py
 import js
 js.document.title = 'New window title'
 from js.document.location import reload as reload_page
