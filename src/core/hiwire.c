@@ -245,7 +245,7 @@ EM_JS_NUM(bool, hiwire_is_array, (JsRef idobj), {
     return true;
   }
   // What if it's a TypedArray?
-  if (!!(obj.buffer instanceof ArrayBuffer && obj.BYTES_PER_ELEMENT)) {
+  if (!!(obj.buffer && obj.buffer.constructor.name === "ArrayBuffer" && obj.BYTES_PER_ELEMENT)) {
     return true;
   }
   return false;
