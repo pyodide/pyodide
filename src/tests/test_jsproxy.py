@@ -715,6 +715,7 @@ def test_mixins_errors(selenium):
         """
     )
 
+
 def test_memory_leaks(selenium):
     assert 1 == selenium.run_js(
         """
