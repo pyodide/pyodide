@@ -13,7 +13,8 @@ IN_BROWSER = "js" in sys.modules
 if IN_BROWSER:
     from js.pyodide import loadPackagesFromImports as _load_packages_from_imports
 else:
-    def _load_packages_from_imports(*args): # type: ignore
+
+    def _load_packages_from_imports(*args):  # type: ignore
         fut = Future()
         fut.set_result(None)
         return fut
@@ -193,9 +194,14 @@ class InteractiveConsole(code.InteractiveConsole):
             return super().runsource(*args, **kwargs)
 
     if IN_BROWSER:
+
         def runcode(self, code):
-            self.run_complete = ensure_future(self.runcode_async(code, self.run_complete))
+            self.run_complete = ensure_future(
+                self.runcode_async(code, self.run_complete)
+            )
+
     else:
+
         def runcode(self, code):
             coroutine = self.runcode_async(code, self.run_complete)
             try:
