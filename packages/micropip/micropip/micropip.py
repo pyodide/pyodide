@@ -11,6 +11,7 @@ from distlib import markers, util, version
 
 import sys
 
+# Provide stubs for testing in native python
 IN_BROWSER = "js" in sys.modules
 
 if IN_BROWSER:
@@ -19,7 +20,6 @@ if IN_BROWSER:
 else:
     WHEEL_BASE = Path(".") / "wheels"
 
-# Implementations of HTTP fetching for in-browser and out-of-browser
 if IN_BROWSER:
     from js import fetch
 
