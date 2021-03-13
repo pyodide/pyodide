@@ -57,7 +57,9 @@
             for( const c of command.split('\n') ) {
                 const prompt = pyconsole.push(c) ? ps2 : ps1;
                 term.set_prompt(prompt);
-                await pyconsole.run_complete;
+                run_complete = pyconsole.run_complete;
+                await run_complete;
+                run_complete.destroy();
             }
             term.resume();
         }
@@ -69,7 +71,9 @@
             prompt: ps1,
             completionEscape: false,
             completion: function(command, callback) {
-              callback(pyconsole.complete(command).toJs()[0]);
+              let proxy = pyconsole.complete(command);
+              callback(proxy[0]);
+              proxy.destroy();
             }
           }
         );
