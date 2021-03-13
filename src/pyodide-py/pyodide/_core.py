@@ -2,7 +2,13 @@
 import platform
 
 if platform.system() == "Emscripten":
-    from _pyodide_core import JsProxy, JsException, JsBuffer, create_once_proxy
+    from _pyodide_core import (
+        JsProxy,
+        JsException,
+        JsBuffer,
+        create_proxy,
+        create_once_proxy,
+    )
 else:
     # Can add shims here if we are so inclined.
     class JsException(Exception):
@@ -23,6 +29,9 @@ else:
         # Defined in jsproxy.c
 
     def create_once_proxy(obj):
+        return obj
+
+    def create_proxy(obj):
         return obj
 
 

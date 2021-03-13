@@ -255,3 +255,110 @@ def test_run_python_last_exc(selenium):
         `);
         """
     )
+
+
+def test_create_once_proxy(selenium):
+    selenium.run_js(
+        """
+        window.call7 = function call7(f){
+            return f(7);
+        }
+        pyodide.runPython(`
+            from pyodide import create_once_proxy, JsException
+            from js import call7;
+            from unittest import TestCase
+            raises = TestCase().assertRaisesRegex
+            class Square:
+                def __call__(self, x):
+                    return x*x
+
+                def __del__(self):
+                    global destroyed
+                    destroyed = True
+
+            f = Square()
+            import sys
+            assert sys.getrefcount(f) == 2
+            proxy = create_once_proxy(f)
+            assert sys.getrefcount(f) == 3
+            assert call7(proxy) == 49
+            assert sys.getrefcount(f) == 2
+            with raises(JsException, "can only be called once"):
+                call7(proxy)
+            destroyed = False
+            del f
+            assert destroyed == True
+            del proxy # causes a fatal error =(
+        `);
+        """
+    )
+
+
+def test_create_once_weird_fatal_error(selenium):
+    # A minimized version of the test failure in the previous one
+    selenium.run_js(
+        """
+        window.call = function(f){
+            return f();
+        }
+        pyodide.runPython(`
+            from pyodide import create_once_proxy
+            from js import call;
+            def f(): pass
+            proxy = create_once_proxy(f)
+            proxy()
+            try:
+                call(proxy)
+            except:
+                pass
+            del proxy
+        `);
+        """
+    )
+
+
+def test_create_proxy(selenium):
+    selenium.run_js(
+        """
+        window.testAddListener = function(f){
+            window.listener = f;
+        }
+        window.testCallListener = function(f){
+            return window.listener();
+        }
+        window.testRemoveListener = function(f){
+            return window.listener === f;
+        }
+        pyodide.runPython(`
+            from pyodide import create_proxy
+            from js import testAddListener, testCallListener, testRemoveListener;
+            class Test:
+                def __call__(self):
+                    return 7
+
+                def __del__(self):
+                    global destroyed
+                    destroyed = True
+
+            f = Test()
+            import sys
+            assert sys.getrefcount(f) == 2
+            proxy = create_proxy(f)
+            assert sys.getrefcount(f) == 3
+            assert proxy() == 7
+            testAddListener(proxy)
+            assert sys.getrefcount(f) == 3
+            assert testCallListener() == 7
+            assert sys.getrefcount(f) == 3
+            assert testCallListener() == 7
+            assert sys.getrefcount(f) == 3
+            assert testRemoveListener(f)
+            assert sys.getrefcount(f) == 3
+            proxy.destroy()
+            assert sys.getrefcount(f) == 2
+            destroyed = False
+            del f
+            assert destroyed == True
+        `);
+        """
+    )
