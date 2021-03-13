@@ -99,6 +99,7 @@ JsProxy_Repr(PyObject* self)
 {
   JsRef idrepr = hiwire_to_string(JsProxy_REF(self));
   PyObject* pyrepr = js2python(idrepr);
+  hiwire_decref(idrepr);
   return pyrepr;
 }
 
@@ -258,8 +259,9 @@ JsProxy_GetIter(PyObject* o)
   if (iditer == NULL) {
     return NULL;
   }
-
-  return js2python(iditer);
+  PyObject* result = js2python(iditer);
+  hiwire_decref(iditer);
+  return result;
 }
 
 /**
