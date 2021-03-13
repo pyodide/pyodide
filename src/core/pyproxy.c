@@ -5,6 +5,7 @@
 
 #include "hiwire.h"
 #include "js2python.h"
+#include "jsproxy.h"
 #include "python2js.h"
 
 _Py_IDENTIFIER(result);
@@ -1225,9 +1226,54 @@ EM_JS_NUM(int, pyproxy_init_js, (), {
 });
 // clang-format on
 
-int
-pyproxy_init()
+JsRef
+create_once_proxy(PyObject* obj)
 {
+  Py_INCREF(obj);
+  return (JsRef)EM_ASM_INT(
+    {
+      let o = { $$ : { ptr : $0 } };
+      function wrapper(... args)
+      {
+        if (!o) {
+          throw new Error("OnceProxy can only be called once");
+        }
+        try {
+          Module.PyProxyHandlers.apply(o, undefined, args);
+        } finally {
+          o = undefined;
+          _Py_DecRef($0);
+        }
+      }
+      return Module.hiwire.new_value(wrapper);
+    },
+    obj);
+}
+
+static PyObject*
+create_once_proxy_py(PyObject* mod, PyObject* obj)
+{
+  JsRef ref = create_once_proxy(obj);
+  PyObject* result = JsProxy_create(ref);
+  hiwire_decref(ref);
+  return result;
+}
+
+static PyMethodDef pyproxy_methods[] = {
+  {
+    "create_once_proxy",
+    create_once_proxy_py,
+    METH_O,
+    PyDoc_STR("Create a wrapper around a Python function that can be called "
+              "once from Javascript"),
+  },
+  { NULL } /* Sentinel */
+};
+
+int
+pyproxy_init(PyObject* core)
+{
+  PyModule_AddFunctions(core, pyproxy_methods);
   asyncio = PyImport_ImportModule("asyncio");
   if (asyncio == NULL) {
     return -1;

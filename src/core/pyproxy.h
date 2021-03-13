@@ -12,6 +12,9 @@
 JsRef
 pyproxy_new(PyObject* obj);
 
+JsRef
+create_once_proxy(PyObject* obj);
+
 int
 pyproxy_init();
 

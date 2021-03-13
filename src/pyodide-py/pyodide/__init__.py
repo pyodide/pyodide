@@ -1,5 +1,5 @@
 from ._base import open_url, eval_code, eval_code_async, find_imports, as_nested_list
-from ._core import JsException  # type: ignore
+from ._core import JsException, create_once_proxy  # type: ignore
 from ._importhooks import JsFinder
 from .webloop import WebLoopPolicy
 import asyncio

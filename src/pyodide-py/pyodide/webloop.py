@@ -99,7 +99,7 @@ class WebLoop(asyncio.AbstractEventLoop):
         return self.call_later(delay, callback, *args, context=context)
 
     def call_soon_threadsafe(
-        callback: Callable, *args, context: contextvars.Context = None
+        self, callback: Callable, *args, context: contextvars.Context = None
     ):
         """Like ``call_soon()``, but thread-safe.
 
@@ -132,11 +132,12 @@ class WebLoop(asyncio.AbstractEventLoop):
         This uses `setTimeout(callback, delay)`
         """
         from js import setTimeout
+        from . import create_once_proxy
 
         if delay < 0:
             raise ValueError("Can't schedule in the past")
         h = asyncio.Handle(callback, args, self, context=context)
-        setTimeout(h._run, delay * 1000)
+        setTimeout(create_once_proxy(h._run), delay * 1000)
         return h
 
     def call_at(
