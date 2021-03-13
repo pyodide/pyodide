@@ -82,7 +82,7 @@ def test_add_requirement_relative_url():
     )
     try:
         coroutine.send(None)
-    except StopIteration as result:
+    except StopIteration as _result:
         pass
     else:
         raise Exception("Coroutine didn't finish in one pass")
