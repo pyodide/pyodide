@@ -2,6 +2,7 @@ import pytest
 from pathlib import Path
 import sys
 import io
+import time
 
 sys.path.append(str(Path(__file__).parents[2] / "src" / "pyodide-py"))
 
@@ -140,11 +141,12 @@ def safe_selenium_sys_redirections(selenium):
 
 def test_interactive_console(selenium, safe_selenium_sys_redirections):
     def ensure_run_completed():
+        time.sleep(0.5)
         selenium.driver.execute_async_script(
             """
-        const done = arguments[arguments.length - 1];
-        pyodide.globals.get("shell").run_complete.then(done);
-        """
+            const done = arguments[arguments.length - 1];
+            pyodide.globals.get("shell").run_complete.then(done);
+            """
         )
 
     selenium.run(
