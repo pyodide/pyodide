@@ -28,13 +28,14 @@ Javascript to Python translations occur:
 - returning the result of a Javascript function called from Python
 - when accessing an attribute of a `JsProxy`
 
-:::{admonition} Memory leaks and Python to Javascript translations
+`````{admonition} Memory Leaks and Python to Javascript translations
 :class: warning
 
 Any time a Python to Javascript translation occurs, it may create a `PyProxy`.
 To avoid memory leaks, you must store the result and destroy it when you are
 done with it. Unfortunately, we currently provide no convenient way to do this,
 particularly when calling Javascript functions from Python.
+`````
 
 ## Round trip conversions 
 Translating an object from Python to Javascript and then back to
@@ -183,30 +184,32 @@ operations are currently supported:
 | `await x`                             | `await x`                |
 | `Object.entries(x)`                   |  `repr(x)`               |
 
-:::{admonition} Memory Usage and PyProxy
+`````{admonition} Memory Leaks and PyProxy
 :class: warning
-An additional limitation is that when proxying a Python object into Javascript,
-there is no way for Javascript to automatically garbage collect the Proxy.
-The `PyProxy` must be manually destroyed when passed to Javascript,
-or the proxied Python object will leak. To do this, call `PyProxy.destroy()` on
-the `PyProxy`, after which Javascript will no longer have access to the Python
-object. If no references to the Python object exist in Python either, then the
-Python garbage collector can eventually collect it.
+When proxying a Python object into Javascript, there is no way for Javascript to
+automatically garbage collect the Proxy. The `PyProxy` must be manually
+destroyed when passed to Javascript, or the proxied Python object will leak. To
+do this, call `PyProxy.destroy()` on the `PyProxy`, after which Javascript will
+no longer have access to the Python object. If no references to the Python
+object exist in Python either, then the Python garbage collector can eventually
+collect it.
 
 ```javascript
 let foo = pyodide.pyimport('foo');
-foo.call_method();
+foo();
 foo.destroy();
-foo.call_method(); // This will raise an exception, since the object has been
-                   // destroyed
+foo(); // throws Error: Object has already been destroyed
 ```
+`````
 
-:::{admonition} Memory Leaks and method calls
+`````{admonition} Memory Leaks and PyProxy method calls
 :class: warning
 
 Every time you access a Python method on a `PyProxy`, it creates a new temporary
 `PyProxy` of a Python bound method. If you do not capture this temporary and
-destroy it, you will leak the Python object. For example:
+destroy it, you will leak the Python object. 
+`````
+Here's an example:
 
 ```pyodide
 pyodide.runPython(`
@@ -274,12 +277,15 @@ compared using deep equality. If a key is encountered in a `dict` or `set` that
 would have different semantics in Javascript than in Python, then a
 `ConversionError` will be thrown.
 
-:::{admonition} Memory Usage and `toJs`
+`````{admonition} Memory Leaks and toJs
 :class: warning
 
 The `toJs` method can create many proxies at arbitrary depth. It is your
 responsibility to manually `destroy` these proxies if you wish to avoid memory
-leaks, but we provide no way to manage this. The following code works:
+leaks, but we provide no way to manage this. 
+`````
+
+To ensure that no `PyProxy` is leaked, the following code suffices:
 ```js
 function destroyToJsResult(x){
     if(!x){
@@ -379,6 +385,9 @@ to import, `pyimport` returns the object translated to Javascript.
 ```js
 let sys = pyodide.pyimport('sys');
 ```
+
+As always, if the result is a `PyProxy` and you care about not leaking the Python 
+object, you must destroy it when you are done.
 
 (type-translations_using-js-obj-from-py)=
 ## Importing Javascript objects into Python
