@@ -9,18 +9,37 @@ from typing import Dict, Any, Union, List, Tuple
 
 from distlib import markers, util, version
 
+import sys
+IN_BROWSER = "js" in sys.modules
 
-try:
-    from js import XMLHttpRequest
+if IN_BROWSER:
+    # In practice, this is the `site-packages` directory.
+    WHEEL_BASE = Path(__file__).parent
+else:
+    WHEEL_BASE = Path(".") / "wheels"
+
+# Implementations of HTTP fetching for in-browser and out-of-browser
+if IN_BROWSER:
+    from js import fetch
+    async def _get_url(url):
+        resp = await fetch(url)
+        if not resp.ok:
+            raise OSError(f"Request for {url} failed with status {resp.status}: {resp.statusText}")
+        return io.BytesIO(await resp.arrayBuffer())
+else:
+    from urllib.request import urlopen
+    async def _get_url(url):
+        with urlopen(url) as fd:
+            content = fd.read()
+        return io.BytesIO(content)
+
+if IN_BROWSER:
     from js import pyodide as js_pyodide
-except ImportError:
-    XMLHttpRequest = None
-
+else:
     class js_pyodide:  # type: ignore
         """A mock object to allow import of this package outside pyodide
         Report that all dependencies are empty.
         """
-
         class _module:
             class packages:
                 class dependencies:
@@ -28,60 +47,22 @@ except ImportError:
                     def object_entries():
                         return []
 
-
-# Provide implementations of HTTP fetching for in-browser and out-of-browser to
-# make testing easier
-if XMLHttpRequest is not None:
-
-    async def _get_url(url):
-        req = XMLHttpRequest.new()
-        req.open("GET", url, True)
-        req.responseType = "arraybuffer"
-
-        fut = Future()
-
-        def callback(e):
-            if e.target.readyState == 4:
-                fut.set_result()
-
-        # TODO: this leaks the callback pyproxy, figure out how to reclaim it
-        req.onreadystatechange = callback
-        req.send(None)
-        await fut
-        # Not good enough to reclaim callback...
-        req.onreadystatechange = None
-        return io.BytesIO(req.response)
-
-    gather = asyncio.gather
-
-    # In practice, this is the `site-packages` directory.
-    WHEEL_BASE = Path(__file__).parent
+if IN_BROWSER:
+    from asyncio import gather
 else:
-    # Outside the browser
-    from urllib.request import urlopen
-
-    async def _get_url(url):
-        with urlopen(url) as fd:
-            content = fd.read()
-        return io.BytesIO(content)
-
-    WHEEL_BASE = Path(".") / "wheels"
-
-    # asyncio.gather will schedule any coroutines to run on the event loop which
-    # isn't running, so it will stall the program. In reality, everything is
-    # sync in this case anyways so just do everything in order.
+    # asyncio.gather will schedule any coroutines to run on the event loop but
+    # we want to avoid using the event loop at all. Instead just run the
+    # coroutines in sequence.
     async def gather(*coroutines):
         result = []
         for coroutine in coroutines:
             result.append(await coroutine)
         return result
 
-
 async def _get_pypi_json(pkgname):
     url = f"https://pypi.org/pypi/{pkgname}/json"
     fd = await _get_url(url)
     return json.load(fd)
-
 
 def _parse_wheel_url(url: str) -> Tuple[str, Dict[str, Any], str]:
     """Parse wheels url and extract available metadata
