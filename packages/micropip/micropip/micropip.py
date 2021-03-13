@@ -10,6 +10,7 @@ from typing import Dict, Any, Union, List, Tuple
 from distlib import markers, util, version
 
 import sys
+
 IN_BROWSER = "js" in sys.modules
 
 if IN_BROWSER:
@@ -21,25 +22,34 @@ else:
 # Implementations of HTTP fetching for in-browser and out-of-browser
 if IN_BROWSER:
     from js import fetch
+
     async def _get_url(url):
         resp = await fetch(url)
         if not resp.ok:
-            raise OSError(f"Request for {url} failed with status {resp.status}: {resp.statusText}")
+            raise OSError(
+                f"Request for {url} failed with status {resp.status}: {resp.statusText}"
+            )
         return io.BytesIO(await resp.arrayBuffer())
+
+
 else:
     from urllib.request import urlopen
+
     async def _get_url(url):
         with urlopen(url) as fd:
             content = fd.read()
         return io.BytesIO(content)
 
+
 if IN_BROWSER:
     from js import pyodide as js_pyodide
 else:
+
     class js_pyodide:  # type: ignore
         """A mock object to allow import of this package outside pyodide
         Report that all dependencies are empty.
         """
+
         class _module:
             class packages:
                 class dependencies:
@@ -47,22 +57,25 @@ else:
                     def object_entries():
                         return []
 
+
 if IN_BROWSER:
     from asyncio import gather
 else:
     # asyncio.gather will schedule any coroutines to run on the event loop but
     # we want to avoid using the event loop at all. Instead just run the
     # coroutines in sequence.
-    async def gather(*coroutines):
+    async def gather(*coroutines):  # type: ignore
         result = []
         for coroutine in coroutines:
             result.append(await coroutine)
         return result
 
+
 async def _get_pypi_json(pkgname):
     url = f"https://pypi.org/pypi/{pkgname}/json"
     fd = await _get_url(url)
     return json.load(fd)
+
 
 def _parse_wheel_url(url: str) -> Tuple[str, Dict[str, Any], str]:
     """Parse wheels url and extract available metadata
