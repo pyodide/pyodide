@@ -80,6 +80,9 @@ def test_add_requirement_relative_url():
     coroutine = micropip.PACKAGE_MANAGER.add_requirement(
         "./snowballstemmer-2.0.0-py2.py3-none-any.whl", {}, transaction
     )
+    # The following is a way to synchronously run a coroutine that does only
+    # synchronous operations (and assert that it indeed only did synch
+    # operations)
     try:
         coroutine.send(None)
     except StopIteration as _result:
