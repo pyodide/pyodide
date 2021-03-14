@@ -8,26 +8,24 @@ sys.path.append(str(Path(__file__).resolve().parent / "micropip"))
 
 
 def test_install_simple(selenium_standalone):
-    selenium_standalone.run("import os")
-    selenium_standalone.load_package("micropip")
-    selenium_standalone.run("import micropip")
-    selenium_standalone.run("micropip.install('pyodide-micropip-test')")
-    # Package 'pyodide-micropip-test' has dependency on 'snowballstemmer'
-    # It is used to test markers support
-
-    for i in range(10):
-        if selenium_standalone.run(
-            "os.path.exists" "('/lib/python3.8/site-packages/snowballstemmer')"
-        ):
-            break
-        else:
-            time.sleep(1)
-
-    selenium_standalone.run("import snowballstemmer")
-    selenium_standalone.run("stemmer = snowballstemmer.stemmer('english')")
-    assert selenium_standalone.run(
-        "stemmer.stemWords('go going goes gone'.split())"
-    ) == ["go", "go", "goe", "gone"]
+    assert (
+        selenium_standalone.run_js(
+            """
+        let result = await pyodide.runPythonAsync(`
+            import os
+            import micropip
+            # Package 'pyodide-micropip-test' has dependency on 'snowballstemmer'
+            # It is used to test markers support
+            await micropip.install('pyodide-micropip-test')
+            import snowballstemmer
+            stemmer = snowballstemmer.stemmer('english')
+            stemmer.stemWords('go going goes gone'.split())
+        `);
+        return result.toJs();
+        """
+        )
+        == ["go", "go", "goe", "gone"]
+    )
 
 
 def test_parse_wheel_url():
@@ -61,14 +59,17 @@ def test_parse_wheel_url():
 
 def test_install_custom_url(selenium_standalone, web_server_tst_data):
     server_hostname, server_port, server_log = web_server_tst_data
-    selenium_standalone.load_package("micropip")
-    selenium_standalone.run("import micropip")
     base_url = f"http://{server_hostname}:{server_port}/"
     url = base_url + "snowballstemmer-2.0.0-py2.py3-none-any.whl"
-    selenium_standalone.run(f"micropip.install('{url}')")
-    # wait untill micropip is loaded
-    time.sleep(1)
-    selenium_standalone.run("import snowballstemmer")
+    selenium_standalone.run_js(
+        f"""
+        await pyodide.runPythonAsync(`
+            import micropip
+            await micropip.install('{url}')
+            import snowballstemmer
+        `);
+        """
+    )
 
 
 def test_add_requirement_relative_url():
@@ -76,9 +77,19 @@ def test_add_requirement_relative_url():
     import micropip
 
     transaction = {"wheels": []}
-    micropip.PACKAGE_MANAGER.add_requirement(
+    coroutine = micropip.PACKAGE_MANAGER.add_requirement(
         "./snowballstemmer-2.0.0-py2.py3-none-any.whl", {}, transaction
     )
+    # The following is a way to synchronously run a coroutine that does only
+    # synchronous operations (and assert that it indeed only did synch
+    # operations)
+    try:
+        coroutine.send(None)
+    except StopIteration as _result:
+        pass
+    else:
+        raise Exception("Coroutine didn't finish in one pass")
+
     [name, req, version] = transaction["wheels"][0]
     assert name == "snowballstemmer"
     assert version == "2.0.0"
@@ -91,19 +102,21 @@ def test_add_requirement_relative_url():
 
 
 def test_install_custom_relative_url(selenium_standalone):
-    selenium_standalone.load_package("micropip")
-    selenium_standalone.run("import micropip")
-
     root = Path(__file__).resolve().parents[2]
     src = root / "src" / "tests" / "data"
     target = root / "build" / "test_data"
     target.symlink_to(src, True)
+    url = "./test_data/snowballstemmer-2.0.0-py2.py3-none-any.whl"
     try:
-        url = "./test_data/snowballstemmer-2.0.0-py2.py3-none-any.whl"
-        selenium_standalone.run(f"micropip.install('{url}')")
-        # wait untill micropip is loaded
-        time.sleep(1)
-        selenium_standalone.run("import snowballstemmer")
+        selenium_standalone.run_js(
+            f"""
+            await pyodide.runPythonAsync(`
+                import micropip
+                await micropip.install('{url}')
+                import snowballstemmer
+            `)
+            """
+        )
     finally:
         target.unlink()
 
