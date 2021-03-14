@@ -93,8 +93,9 @@ packages micropip and distutils are always automatically included (but an empty
 ## Environment variables
 
 Following environment variables additionally impact the build,
- - `PYODIDE_JOBS`: the `-j` option passed to the `emmake make` command when applicable for parallel compilation. Default: 3.
- - `PYODIDE_BASE_URL`: Base URL where Pyodide packages are deployed. It must
-   end with a trailing `/`. Default: `./` to load Pyodide packages from the
-   same base URL path as where `pyodide.js` is located.  Example:
+ - `PYODIDE_JOBS`: the `-j` option passed to the `emmake make` command when
+   applicable for parallel compilation. Default: 3.
+ - `PYODIDE_BASE_URL`: Base URL where Pyodide packages are deployed. It must end
+   with a trailing `/`. Default: `./` to load Pyodide packages from the same
+   base URL path as where `pyodide.js` is located.  Example:
    `https://cdn.jsdelivr.net/pyodide/dev/full/`
