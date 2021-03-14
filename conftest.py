@@ -100,6 +100,9 @@ class SeleniumWrapper:
             let result = pyodide.runPython({code!r});
             if(result && result.toJs){{
                 let converted_result = result.toJs();
+                if(pyodide._module.PyProxy.isPyProxy(converted_result)){{
+                    converted_result = undefined;
+                }}
                 result.destroy();
                 return converted_result;
             }}
@@ -113,6 +116,9 @@ class SeleniumWrapper:
             let result = await pyodide.runPythonAsync({code!r});
             if(result && result.toJs){{
                 let converted_result = result.toJs();
+                if(pyodide._module.PyProxy.isPyProxy(converted_result)){{
+                    converted_result = undefined;
+                }}
                 result.destroy();
                 return converted_result;
             }}

@@ -1,5 +1,3 @@
-import time
-
 import pytest
 
 
@@ -9,8 +7,7 @@ def test_init(selenium_standalone):
 
 
 def test_webbrowser(selenium):
-    selenium.run("import antigravity")
-    time.sleep(2)
+    selenium.run_async("import antigravity")
     assert len(selenium.driver.window_handles) == 2
 
 
