@@ -299,8 +299,8 @@ def test_create_once_weird_fatal_error(selenium_standalone):
     selenium_standalone.run_js(
         """
         window.call = function(f){
-            return f();
-        }
+            f();
+        };
         pyodide.runPython(`
             from pyodide import create_once_proxy
             from js import call;

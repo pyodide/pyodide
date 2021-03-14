@@ -1245,7 +1245,7 @@ create_once_proxy(PyObject* obj)
           throw new Error("OnceProxy can only be called once");
         }
         try {
-          return Module.PyProxyHandlers.apply(o, undefined, args);
+          return Module.PyProxyClass.prototype.apply.call(o, undefined, args);
         } finally {
           o = undefined;
           _Py_DecRef($0);
