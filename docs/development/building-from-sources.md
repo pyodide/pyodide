@@ -88,7 +88,8 @@ particular they are case sensitive.
 
 To build a minimal version of Pyodide, set `PYODIDE_PACKAGES="micropip"`. The
 packages micropip and distutils are always automatically included (but an empty
-`PYODIDE_PACKAGES` is interpreted as unset).
+`PYODIDE_PACKAGES` is interpreted as unset). As a shorthand for this, one can
+say `make minimal`.
 
 ## Environment variables
 
@@ -99,3 +100,17 @@ Following environment variables additionally impact the build,
    with a trailing `/`. Default: `./` to load Pyodide packages from the same
    base URL path as where `pyodide.js` is located.  Example:
    `https://cdn.jsdelivr.net/pyodide/dev/full/`
+ - `EXTRA_CFLAGS` : Add extra compilation flags.
+ - `EXTRA_LDFLAGS` : Add extra linker flags.
+
+Setting `EXTRA_CFLAGS="-D DEBUG_F"` provides detailed diagnostic information
+whenever error branches are taken inside of the Pyodide core code. These error
+messages are frequently helpful even when the problem is a fatal configuration
+problem and Pyodide cannot even be initialized. These error branches occur also
+in correctly working code, but they are relatively uncommon so in practice the
+amount of noise generated isn't too large. The shorthand `make debug`
+automatically sets this flag.
+
+In certain cases, setting `EXTRA_LDFLAGS="-s ASSERTIONS=1` or `ASSERTIONS=2` can
+also be helpful, but this slows down the linking and the runtime speed of
+Pyodide a lot and generates a large amount of noise in the console.
