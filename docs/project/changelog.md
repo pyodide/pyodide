@@ -113,7 +113,7 @@ substitutions:
 
 - {{ Feature }} `micropip` now supports installing wheels from relative urls.
   [#872](https://github.com/iodide-project/pyodide/pull/872)
-- {{ Change }} `micropip.install` now returns a Python `Future` instead of a Javascript `Promise`.
+- {{ API }} `micropip.install` now returns a Python `Future` instead of a Javascript `Promise`.
 
 ### Build system
 
