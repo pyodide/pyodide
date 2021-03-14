@@ -21,7 +21,7 @@ EM_JS_NUM(errcode, log_error, (char* msg), {
 
 // Right now this is dead code (probably), please don't remove it.
 // Intended for debugging purposes.
-EM_JS_NUM(errcode, log_error_obj, (JsRef obj), {
+EM_JS_NUM(errcode, console_error_obj, (JsRef obj), {
   console.error(Module.hiwire.get_value(obj));
 });
 
@@ -114,14 +114,7 @@ wrap_exception(bool attach_python_error)
   success = true;
 finally:
   // Log an appropriate warning.
-  if (success) {
-    EM_ASM(
-      {
-        let msg = Module.hiwire.get_value($0).message;
-        console.warn("Python exception:\n" + msg + "\n");
-      },
-      jserror);
-  } else {
+  if (!success) {
     PySys_WriteStderr("Error occurred while formatting traceback:\n");
     PyErr_Print();
     if (type != NULL) {
@@ -146,11 +139,19 @@ finally:
   return jserror;
 }
 
+EM_JS_NUM(errcode, log_python_error, (JsRef jserror), {
+  let msg = Module.hiwire.get_value(jserror).message;
+  console.warn("Python exception:\n" + msg + "\n");
+  return 0;
+});
+
 void _Py_NO_RETURN
 pythonexc2js()
 {
   JsRef jserror = wrap_exception(false);
-  if (jserror == NULL) {
+  if (jserror != NULL) {
+    log_python_error(jserror);
+  } else {
     jserror =
       new_error("Error occurred while formatting traceback", Js_undefined);
   }

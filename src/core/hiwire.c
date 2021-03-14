@@ -46,6 +46,11 @@ EM_JS_NUM(int, hiwire_init, (), {
   _hiwire.objects.set(Module.hiwire.TRUE, true);
   _hiwire.objects.set(Module.hiwire.FALSE, false);
 
+#ifdef DEBUG_F
+  Module.hiwire._hiwire = _hiwire;
+  let many_objects_warning_threshold = 200;
+#endif
+
   Module.hiwire.new_value = function(jsval)
   {
     // Should we guard against duplicating standard values?
@@ -60,6 +65,14 @@ EM_JS_NUM(int, hiwire_init, (), {
     let idval = _hiwire.counter[0];
     _hiwire.objects.set(idval, jsval);
     _hiwire.counter[0] += 2;
+#ifdef DEBUG_F
+    if (_hiwire.objects.size > many_objects_warning_threshold) {
+      console.warn(
+        "A fairly large number of hiwire objects are present, this could " +
+        "be a sign of a memory leak.");
+      many_objects_warning_threshold += 100;
+    }
+#endif
     return idval;
   };
 
@@ -68,13 +81,27 @@ EM_JS_NUM(int, hiwire_init, (), {
   Module.hiwire.get_value = function(idval)
   {
     if (!idval) {
+      // clang-format off
       // This might have happened because the error indicator is set. Let's
       // check.
       if (_PyErr_Occurred()) {
         // This will lead to a more helpful error message.
-        _pythonexc2js();
+        let exc = _wrap_exception();
+        let e = Module.hiwire.pop_value(exc);
+        console.error(
+          `Internal error: Argument '${idval}' to hiwire.get_value is falsy. ` +
+          "This was probably because the Python error indicator was set when get_value was called. " +
+          "The Python error that caused this was:",
+          e
+        );
+        throw e;
+      } else {
+        throw new Error(
+          `Internal error: Argument '${idval}' to hiwire.get_value is falsy`
+          + ' (but error indicator is not set).'
+        );
       }
-      throw new Error("Argument to hiwire.get_value is undefined");
+      // clang-format on
     }
     if (!_hiwire.objects.has(idval)) {
       // clang-format off

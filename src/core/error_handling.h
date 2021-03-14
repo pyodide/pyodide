@@ -23,19 +23,25 @@ JsRef
 wrap_exception(bool attach_python_error);
 
 /**
+ * Argument should be output of wrap_exception.
+ */
+errcode log_python_error(JsRef);
+
+/**
  * Convert the active Python exception into a Javascript Error object and print
  * it to the console.
  */
 void
 pythonexc2js();
 
+// Used by LOG_EM_JS_ERROR (behind DEBUG_F flag)
 errcode
-log_error(char* msg);
+console_error(char* msg);
 
 // Right now this is dead code (probably), please don't remove it.
 // Intended for debugging purposes.
 errcode
-log_error_obj(JsRef obj);
+console_error_obj(JsRef obj);
 
 /**
  * EM_JS Wrappers
@@ -138,7 +144,7 @@ log_error_obj(JsRef obj);
              __LINE__,                                                         \
              __func__,                                                         \
              __FILE__);                                                        \
-    log_error(msg);                                                            \
+    console_error(msg);                                                        \
     free(msg);                                                                 \
     goto finally;                                                              \
   } while (0)
