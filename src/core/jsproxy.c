@@ -852,6 +852,7 @@ JsMethod_Vectorcall(PyObject* self,
   JsRef idkwargs = NULL;
   JsRef idarg = NULL;
   JsRef idresult = NULL;
+  PyObject* pyresult = NULL;
 
   Py_ssize_t nargs = PyVectorcall_NARGS(nargsf);
   idargs = hiwire_array();
@@ -881,7 +882,7 @@ JsMethod_Vectorcall(PyObject* self,
 
   idresult = hiwire_call_bound(JsProxy_REF(self), JsMethod_THIS(self), idargs);
   FAIL_IF_NULL(idresult);
-  PyObject* pyresult = js2python(idresult);
+  pyresult = js2python(idresult);
   FAIL_IF_NULL(pyresult);
 
   success = true;

@@ -298,17 +298,16 @@ def test_create_once_weird_fatal_error(selenium_standalone):
     # A minimized version of the test failure in the previous one
     selenium_standalone.run_js(
         """
-        window.call = function(f){
-            f();
+        window.throwError = function(){
+            throw new Error();
         };
         pyodide.runPython(`
             from pyodide import create_once_proxy
-            from js import call;
+            from js import throwError;
             def f(): pass
             proxy = create_once_proxy(f)
-            proxy()
             try:
-                call(proxy)
+                throwError()
             except:
                 pass
             del proxy
