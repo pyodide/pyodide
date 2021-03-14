@@ -21,6 +21,7 @@ CFLAGS=\
 	-Wall \
 	-Wno-warn-absolute-paths \
 	-Werror=unused-variable \
+	-Werror=sometimes-uninitialized \
 	-Werror=int-conversion \
 	-Werror=incompatible-pointer-types \
 	$(EXTRA_CFLAGS)
