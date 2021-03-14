@@ -18,7 +18,9 @@ CFLAGS=\
 	-g \
 	-I$(PYTHONINCLUDE) \
 	-fPIC \
+	-Wall \
 	-Wno-warn-absolute-paths \
+	-Werror=unused-variable \
 	-Werror=int-conversion \
 	-Werror=incompatible-pointer-types \
 	$(EXTRA_CFLAGS)
