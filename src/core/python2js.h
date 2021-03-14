@@ -1,7 +1,7 @@
 #ifndef PYTHON2JS_H
 #define PYTHON2JS_H
 
-/** Utilities to convert Python objects to Javascript.
+/** Translate Python objects to Javascript.
  */
 // clang-format off
 #define PY_SSIZE_T_CLEAN

@@ -335,33 +335,34 @@ _python2js_buffer_to_typed_array(Py_buffer* buff)
     }
   }
 
+  Py_ssize_t len = buff->len / buff->itemsize;
   switch (format) {
     case 'c':
     case 'b':
-      return hiwire_int8array((i8*)buff->buf, buff->len);
+      return hiwire_int8array((i8*)buff->buf, len);
     case 'B':
-      return hiwire_uint8array((u8*)buff->buf, buff->len);
+      return hiwire_uint8array((u8*)buff->buf, len);
     case '?':
       return NULL;
     case 'h':
-      return hiwire_int16array((i16*)buff->buf, buff->len);
+      return hiwire_int16array((i16*)buff->buf, len);
     case 'H':
-      return hiwire_uint16array((u16*)buff->buf, buff->len);
+      return hiwire_uint16array((u16*)buff->buf, len);
     case 'i':
     case 'l':
     case 'n':
-      return hiwire_int32array((i32*)buff->buf, buff->len);
+      return hiwire_int32array((i32*)buff->buf, len);
     case 'I':
     case 'L':
     case 'N':
-      return hiwire_uint32array((u32*)buff->buf, buff->len);
+      return hiwire_uint32array((u32*)buff->buf, len);
     case 'q':
     case 'Q':
       return NULL;
     case 'f':
-      return hiwire_float32array((f32*)buff->buf, buff->len);
+      return hiwire_float32array((f32*)buff->buf, len);
     case 'd':
-      return hiwire_float64array((f64*)buff->buf, buff->len);
+      return hiwire_float64array((f64*)buff->buf, len);
     default:
       return NULL;
   }
@@ -480,6 +481,7 @@ _python2js_buffer(PyObject* x)
 
     result =
       _python2js_shareable_buffer_recursive(buff, shareable, idarr, 0, 0);
+    hiwire_decref(idarr);
   } else {
     scalar_converter* convert = _python2js_buffer_get_converter(buff);
     if (convert == NULL) {
