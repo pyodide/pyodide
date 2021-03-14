@@ -257,8 +257,8 @@ def test_run_python_last_exc(selenium):
     )
 
 
-def test_create_once_proxy(selenium):
-    selenium.run_js(
+def test_create_once_proxy(selenium_standalone):
+    selenium_standalone.run_js(
         """
         window.call7 = function call7(f){
             return f(7);
@@ -294,9 +294,9 @@ def test_create_once_proxy(selenium):
     )
 
 
-def test_create_once_weird_fatal_error(selenium):
+def test_create_once_weird_fatal_error(selenium_standalone):
     # A minimized version of the test failure in the previous one
-    selenium.run_js(
+    selenium_standalone.run_js(
         """
         window.call = function(f){
             return f();

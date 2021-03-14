@@ -27,5 +27,5 @@ __all__ = [
     "register_js_module",
     "unregister_js_module",
     "create_once_proxy",
-    "create_proxy"
+    "create_proxy",
 ]
