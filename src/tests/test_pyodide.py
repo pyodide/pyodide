@@ -257,8 +257,8 @@ def test_run_python_last_exc(selenium):
     )
 
 
-def test_create_once_proxy(selenium_standalone):
-    selenium_standalone.run_js(
+def test_create_once_proxy(selenium):
+    selenium.run_js(
         """
         window.call7 = function call7(f){
             return f(7);
@@ -289,28 +289,6 @@ def test_create_once_proxy(selenium_standalone):
             del f
             assert destroyed == True
             del proxy # causes a fatal error =(
-        `);
-        """
-    )
-
-
-def test_create_once_weird_fatal_error(selenium_standalone):
-    # A minimized version of the test failure in the previous one
-    selenium_standalone.run_js(
-        """
-        window.throwError = function(){
-            throw new Error();
-        };
-        pyodide.runPython(`
-            from pyodide import create_once_proxy
-            from js import throwError;
-            def f(): pass
-            proxy = create_once_proxy(f)
-            try:
-                throwError()
-            except:
-                pass
-            del proxy
         `);
         """
     )
