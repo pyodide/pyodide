@@ -20,7 +20,7 @@ extern PyObject* internal_error;
 extern PyObject* conversion_error;
 
 JsRef
-wrap_exception(bool attach_python_error);
+wrap_exception();
 
 /**
  * Argument should be output of wrap_exception.
@@ -104,7 +104,7 @@ console_error_obj(JsRef obj);
     try    /* intentionally no braces, body already has them */                \
       body /* <== body of func */                                              \
     catch (e) {                                                                \
-        LOG_EM_JS_ERROR(func_name, e);                                       \
+        LOG_EM_JS_ERROR(func_name, e);                                         \
         Module.handle_js_error(e);                                             \
         return -1;                                                             \
     }                                                                          \
