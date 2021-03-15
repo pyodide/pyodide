@@ -5,15 +5,11 @@ from dataclasses import dataclass
 
 import pytest
 
-import pytest
-
 sys.path.append(str(Path(__file__).parents[2]))
 
 from pyodide_build.pywasmcross import handle_command  # noqa: E402
 from pyodide_build.pywasmcross import f2c  # noqa: E402
 from pyodide_build.pywasmcross import make_parser
-
-ARG_FIELDS = ["cflags", "cxxflags", "ldflags", "host", "replace_libs", "install_dir"]
 
 
 @dataclass
@@ -103,6 +99,7 @@ def test_handle_command():
 def test_handle_command_optflags(in_ext, out_ext, executable, flag_name):
     # Make sure that when multiple optflags are present those in cflags,
     # cxxflags, or ldflags has priority
+
     args = BuildArgs(**{flag_name: "-Oz"})
     assert (
         handle_command_wrap(f"gcc -O3 test.{in_ext} -o test.{out_ext}", args)
