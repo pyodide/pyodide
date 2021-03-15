@@ -110,7 +110,6 @@ main(int argc, char** argv)
   TRY_INIT(js2python);
   TRY_INIT_WITH_CORE_MODULE(JsProxy);
   TRY_INIT(pyproxy);
-  TRY_INIT(python2js);
   TRY_INIT(keyboard_interrupt);
 
   PyObject* module_dict = PyImport_GetModuleDict(); // borrowed

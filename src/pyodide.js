@@ -446,10 +446,10 @@ globalThis.languagePluginLoader = (async () => {
 
   // clang-format off
   /**
-   * Inspect a Python code block and use ``pyodide.loadPackage` to load any known 
-   * packages that the code imports. Uses 
+   * Inspect a Python code chunk and use :js:func:`pyodide.loadPackage` to load any known 
+   * packages that the code chunk imports. Uses 
    * :func:`pyodide_py.find_imports <pyodide.find\_imports>` to inspect the code.
-
+   * 
    * For example, given the following code as input
    * 
    * .. code-block:: python
