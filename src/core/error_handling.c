@@ -94,7 +94,7 @@ wrap_exception(bool attach_python_error)
   PyObject* type = NULL;
   PyObject* value = NULL;
   PyObject* traceback = NULL;
-  PyObject* pystr;
+  PyObject* pystr = NULL;
   JsRef pyexc_proxy = NULL;
   JsRef jserror = NULL;
 

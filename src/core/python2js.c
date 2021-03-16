@@ -192,7 +192,6 @@ static JsRef
 _python2js_set(PyObject* x, PyObject* cache, int depth)
 {
   bool success = false;
-  bool cached = false;
   PyObject* iter = NULL;
   PyObject* pykey = NULL;
   JsRef jskey = NULL;

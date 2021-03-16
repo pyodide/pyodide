@@ -18,7 +18,10 @@ CFLAGS=\
 	-g \
 	-I$(PYTHONINCLUDE) \
 	-fPIC \
+	-Wall \
 	-Wno-warn-absolute-paths \
+	-Werror=unused-variable \
+	-Werror=sometimes-uninitialized \
 	-Werror=int-conversion \
 	-Werror=incompatible-pointer-types \
 	$(EXTRA_CFLAGS)
@@ -135,7 +138,7 @@ benchmark: all
 
 clean:
 	rm -fr build/*
-	rm -fr src/*.o
+	rm -fr src/*/*.o
 	rm -fr node_modules
 	make -C packages clean
 	echo "The Emsdk, CPython are not cleaned. cd into those directories to do so."
