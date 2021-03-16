@@ -247,8 +247,9 @@ if pytest is not None:
     @pytest.fixture(params=["firefox", "chrome"], scope="function")
     def selenium_standalone(request, web_server_main):
         try:
-            selenium = next(selenium_common(request, web_server_main))
-            yield selenium
+            selenium_common_gen = selenium_common(request, web_server_main)
+            yield next(selenium_common_gen)
+            yield from selenium_common_gen
         finally:
             print(selenium.logs)
 
