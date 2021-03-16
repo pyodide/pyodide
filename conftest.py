@@ -227,6 +227,7 @@ class ChromeWrapper(SeleniumWrapper):
 
 if pytest is not None:
 
+    @contextlib.contextmanager
     def selenium_common(request, web_server_main):
         server_hostname, server_port, server_log = web_server_main
         if request.param == "firefox":
@@ -246,16 +247,17 @@ if pytest is not None:
 
     @pytest.fixture(params=["firefox", "chrome"], scope="function")
     def selenium_standalone(request, web_server_main):
-        try:
-            selenium = next(selenium_common(request, web_server_main))
-            yield selenium
-        finally:
-            print(selenium.logs)
+        with selenium_common(request, web_server_main) as selenium:
+            try:
+                yield selenium
+            finally:
+                print(selenium.logs)
 
     # selenium instance cached at the module level
     @pytest.fixture(params=["firefox", "chrome"], scope="module")
     def selenium_module_scope(request, web_server_main):
-        yield from selenium_common(request, web_server_main)
+        with selenium_common(request, web_server_main) as selenium:
+            yield selenium
 
     # We want one version of this decorated as a function-scope fixture and one
     # version decorated as a context manager.
