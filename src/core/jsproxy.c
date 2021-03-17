@@ -84,15 +84,11 @@ typedef struct
 #define JsProxy_REF(x) (((JsProxy*)x)->js)
 
 static void
-JsProxy_finalize(JsProxy* self){
-  hiwire_CLEAR(self->js);
-  hiwire_CLEAR(self->this_);
-}
-
-static void
 JsProxy_dealloc(JsProxy* self)
 {
   PyTypeObject *tp = Py_TYPE(self);
+  hiwire_CLEAR(self->js);
+  hiwire_CLEAR(self->this_);
   tp->tp_free(self);
   Py_DECREF(tp);
 }
@@ -686,7 +682,6 @@ static PyTypeObject JsProxyType = {
   .tp_name = "JsProxy",
   .tp_basicsize = sizeof(JsProxy),
   .tp_dealloc = (destructor)JsProxy_dealloc,
-  .tp_finalize = (destructor)JsProxy_finalize,
   .tp_getattro = JsProxy_GetAttr,
   .tp_setattro = JsProxy_SetAttr,
   .tp_richcompare = JsProxy_RichCompare,
@@ -1009,7 +1004,7 @@ static void
 JsBuffer_dealloc(JsBuffer* self)
 {
   Py_CLEAR(self->bytes);
-  Py_TYPE(self)->tp_free((PyObject*)self);
+  JsProxy_dealloc((JsProxy*)self);
 }
 
 static PyBufferProcs JsBuffer_BufferProcs = {
