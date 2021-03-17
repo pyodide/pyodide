@@ -175,6 +175,11 @@ def test_js2python_bool(selenium):
         )
         == [True, False, True, False, True]
     )
+    selenium.run(
+        """
+        del window; del f; del m0; del m1; del s0; del s1
+        """
+    )
 
 
 @pytest.mark.parametrize("wasm_heap", (False, True))
@@ -220,6 +225,7 @@ def test_typed_arrays(selenium, wasm_heap, jstype, pytype):
           and array.obj._has_bytes() is {not wasm_heap})
          """
     )
+    selenium.run("del array")
 
 
 def test_array_buffer(selenium):
@@ -227,18 +233,20 @@ def test_array_buffer(selenium):
     assert (
         selenium.run(
             """
-        from js import array
-        len(array.tobytes())
-        """
+            from js import array
+            len(array.tobytes())
+            """
         )
         == 100
     )
+    selenium.run("del array")
 
 
 def assert_js_to_py_to_js(selenium, name):
     selenium.run_js(f"window.obj = {name};")
     selenium.run("from js import obj")
     assert selenium.run_js("return pyodide.globals.get('obj') === obj;")
+    selenium.run("del obj")
 
 
 def assert_py_to_js_to_py(selenium, name):
@@ -249,6 +257,7 @@ def assert_py_to_js_to_py(selenium, name):
         obj is {name}
         """
     )
+    selenium.run("del obj")
 
 
 def test_recursive_list_to_js(selenium_standalone):
@@ -329,6 +338,7 @@ def test_jsproxy_attribute_error(selenium):
     with pytest.raises(selenium.JavascriptException, match=msg):
         selenium.run("point.y")
     assert selenium.run_js("return point.y;") is None
+    selenium.run("del point")
 
 
 def test_javascript_error(selenium):
@@ -342,6 +352,7 @@ def test_javascript_error(selenium):
             raise err
             """
         )
+        selenium.run("del Error")
 
 
 def test_javascript_error_back_to_js(selenium):
@@ -365,6 +376,7 @@ def test_javascript_error_back_to_js(selenium):
         return pyodide.globals.get("py_err") === err;
         """
     )
+    selenium.run("del err")
 
 
 def test_memoryview_conversion(selenium):
