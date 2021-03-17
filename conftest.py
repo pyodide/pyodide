@@ -164,6 +164,9 @@ class SeleniumWrapper:
     def get_num_hiwire_keys(self):
         return self.run_js("return pyodide._module.hiwire.num_keys();")
 
+    def clear_globals(self):
+        self.run_js("pyodide.globals.clear();")
+
     def run_webworker(self, code):
         if isinstance(code, str) and code.startswith("\n"):
             # we have a multiline string, fix indentation
@@ -258,6 +261,7 @@ def test_wrapper_check_for_memory_leaks(selenium):
     # if there was an error in the body of the test, flush it out by calling
     # get_result (we don't want to override the error message by raising a
     # different error here.)
+    selenium.clear_globals()
     a.get_result()
     delta_keys = selenium.get_num_hiwire_keys() - init_num_keys
     assert delta_keys == 0
