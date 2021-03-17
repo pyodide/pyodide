@@ -100,6 +100,7 @@ JsProxy_Repr(PyObject* self)
 {
   JsRef idrepr = hiwire_to_string(JsProxy_REF(self));
   PyObject* pyrepr = js2python(idrepr);
+  hiwire_decref(idrepr);
   return pyrepr;
 }
 
@@ -200,8 +201,6 @@ finally:
 static PyObject*
 JsProxy_RichCompare(PyObject* a, PyObject* b, int op)
 {
-  JsProxy* aproxy = (JsProxy*)a;
-
   if (!JsProxy_Check(b)) {
     switch (op) {
       case Py_EQ:
@@ -259,8 +258,9 @@ JsProxy_GetIter(PyObject* o)
   if (iditer == NULL) {
     return NULL;
   }
-
-  return js2python(iditer);
+  PyObject* result = js2python(iditer);
+  hiwire_decref(iditer);
+  return result;
 }
 
 /**
@@ -819,6 +819,13 @@ JsMethod_Vectorcall(PyObject* self,
                     PyObject* kwnames)
 {
   bool kwargs = false;
+  bool success = false;
+  JsRef idargs = NULL;
+  JsRef idkwargs = NULL;
+  JsRef idarg = NULL;
+  JsRef idresult = NULL;
+  PyObject* pyresult = NULL;
+
   if (kwnames != NULL) {
     // There were kwargs? But maybe kwnames is the empty tuple?
     PyObject* kwname = PyTuple_GetItem(kwnames, 0); /* borrowed!*/
@@ -847,12 +854,6 @@ JsMethod_Vectorcall(PyObject* self,
 
   // Recursion error?
   FAIL_IF_NONZERO(Py_EnterRecursiveCall(" in JsProxy_Vectorcall"));
-  bool success = false;
-  JsRef idargs = NULL;
-  JsRef idkwargs = NULL;
-  JsRef idarg = NULL;
-  JsRef idresult = NULL;
-  PyObject* pyresult = NULL;
 
   Py_ssize_t nargs = PyVectorcall_NARGS(nargsf);
   idargs = hiwire_array();

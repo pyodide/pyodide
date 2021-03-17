@@ -13,9 +13,11 @@ substitutions:
 ## Version [Unreleased]
 
 ### Improvements to package loading and dynamic linking
-- {{Enhancement}} Uses the emscripten preload plugin system to preload .so files in packages
-- {{Enhancement}} Support for shared library packages. This is used for CLAPACK which makes scipy a lot smaller.
-  [#1236] https://github.com/iodide-project/pyodide/pull/1236
+- {{ Enhancement }} Uses the emscripten preload plugin system to preload .so files in packages
+- {{ Enhancement }} Support for shared library packages. This is used for CLAPACK which makes scipy a lot smaller.
+  [#1236](https://github.com/iodide-project/pyodide/pull/1236)
+- {{ Fix }} Pyodide and included packages can now be used with Safari v14+.
+  Safari v13 has also been observed to work on some (but not all) devices.
 
 ### Python / JS type conversions
 - {{ Feature }} A `JsProxy` of a Javascript `Promise` or other awaitable object is now a
@@ -150,7 +152,7 @@ substitutions:
   need to be loaded explicitly
   [#1010](https://github.com/iodide-project/pyodide/pull/1010),
   [#987](https://github.com/iodide-project/pyodide/pull/987).
-- Updated packages: bleach 3.2.1, packaging 20.8
+- Updated packages: bleach 3.3.0, packaging 20.8
 
 
 ## Version 0.16.1

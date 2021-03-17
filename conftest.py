@@ -227,53 +227,52 @@ class ChromeWrapper(SeleniumWrapper):
 
 if pytest is not None:
 
-    @pytest.fixture(params=["firefox", "chrome"])
+    @contextlib.contextmanager
+    def selenium_common(request, web_server_main):
+        server_hostname, server_port, server_log = web_server_main
+        if request.param == "firefox":
+            cls = FirefoxWrapper
+        elif request.param == "chrome":
+            cls = ChromeWrapper
+        selenium = cls(
+            build_dir=request.config.option.build_dir,
+            server_port=server_port,
+            server_hostname=server_hostname,
+            server_log=server_log,
+        )
+        try:
+            yield selenium
+        finally:
+            selenium.driver.quit()
+
+    @pytest.fixture(params=["firefox", "chrome"], scope="function")
     def selenium_standalone(request, web_server_main):
-        server_hostname, server_port, server_log = web_server_main
-        if request.param == "firefox":
-            cls = FirefoxWrapper
-        elif request.param == "chrome":
-            cls = ChromeWrapper
-        selenium = cls(
-            build_dir=request.config.option.build_dir,
-            server_port=server_port,
-            server_hostname=server_hostname,
-            server_log=server_log,
-        )
-        try:
-            yield selenium
-        finally:
-            print(selenium.logs)
-            selenium.driver.quit()
+        with selenium_common(request, web_server_main) as selenium:
+            try:
+                yield selenium
+            finally:
+                print(selenium.logs)
 
+    # selenium instance cached at the module level
     @pytest.fixture(params=["firefox", "chrome"], scope="module")
-    def _selenium_cached(request, web_server_main):
-        # Cached selenium instance. This is a copy-paste of
-        # selenium_standalone to avoid fixture scope issues
-        server_hostname, server_port, server_log = web_server_main
-        if request.param == "firefox":
-            cls = FirefoxWrapper
-        elif request.param == "chrome":
-            cls = ChromeWrapper
-        selenium = cls(
-            build_dir=request.config.option.build_dir,
-            server_port=server_port,
-            server_hostname=server_hostname,
-            server_log=server_log,
-        )
-        try:
+    def selenium_module_scope(request, web_server_main):
+        with selenium_common(request, web_server_main) as selenium:
             yield selenium
-        finally:
-            selenium.driver.quit()
 
-    @pytest.fixture
-    def selenium(_selenium_cached):
-        # selenium instance cached at the module level
+    # We want one version of this decorated as a function-scope fixture and one
+    # version decorated as a context manager.
+    def selenium_per_function(selenium_module_scope):
         try:
-            _selenium_cached.clean_logs()
-            yield _selenium_cached
+            selenium_module_scope.clean_logs()
+            yield selenium_module_scope
         finally:
-            print(_selenium_cached.logs)
+            print(selenium_module_scope.logs)
+
+    selenium = pytest.fixture(selenium_per_function)
+    # Hypothesis is unhappy with function scope fixtures. Instead, use the
+    # module scope fixture `selenium_module_scope` and use:
+    # `with selenium_context_manager(selenium_module_scope) as selenium`
+    selenium_context_manager = contextlib.contextmanager(selenium_per_function)
 
 
 @pytest.fixture(scope="session")
