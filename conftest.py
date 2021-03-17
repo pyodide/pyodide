@@ -45,15 +45,17 @@ try:
 
     def pytest_configure(config):
         old_cwd_relative_nodeid = config.cwd_relative_nodeid
+
         def cwd_relative_nodeid(*args):
             result = old_cwd_relative_nodeid(*args)
             if result.startswith("src/tests/"):
-                result = result[len("src/tests/"):]
+                result = result[len("src/tests/") :]
             if result.startswith("packages/"):
-                result = result[len("packages/"):]
+                result = result[len("packages/") :]
             return result
+
         config.cwd_relative_nodeid = cwd_relative_nodeid
-    
+
 
 except ImportError:
     pytest = None  # type: ignore
