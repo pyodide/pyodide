@@ -90,7 +90,6 @@ JsProxy_dealloc(JsProxy* self)
   hiwire_CLEAR(self->js);
   hiwire_CLEAR(self->this_);
   tp->tp_free(self);
-  Py_DECREF(tp);
 }
 
 /**
