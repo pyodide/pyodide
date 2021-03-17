@@ -33,18 +33,23 @@ def test_await_jsproxy(selenium):
             c.send(r.result())
             """
         )
+    pyodide.run(
+        """
+        del p
+        del Promise
+        """
+    )
 
 
 def test_await_fetch(selenium):
     selenium.run(
         """
-        from js import fetch, window
+        from js import fetch
         async def test():
             response = await fetch("console.html")
             result = await response.text()
             print(result)
             return result
-        fetch = fetch.bind(window)
 
         c = test()
         r1 = c.send(None)
@@ -64,6 +69,11 @@ def test_await_fetch(selenium):
             c.send(r2.result())
             """
         )
+    selenium.run(
+        """
+        del fetch
+        """
+    )
 
 
 def test_await_error(selenium):
@@ -98,6 +108,12 @@ def test_await_error(selenium):
             r2 = c.send(r1.result())
             """
         )
+    selenium.run(
+        """
+        del async_js_raises
+        del js_raises
+        """
+    )
 
 
 def test_eval_code_async_simple():
@@ -154,6 +170,13 @@ def test_eval_code_await_jsproxy(selenium):
             c.send(r.result())
             """
         )
+    selenium.run(
+        """
+        del Promise
+        del resolve
+        del p
+        """
+    )
 
 
 def test_eval_code_await_fetch(selenium):
@@ -296,6 +319,7 @@ def test_await_pyproxy_eval_async(selenium):
         return err_occurred;
         """
     )
+    selenium.run("del fetch")
 
 
 def test_await_pyproxy_async_def(selenium):
