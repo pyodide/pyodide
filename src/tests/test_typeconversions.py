@@ -1,5 +1,28 @@
 # See also test_pyproxy, test_jsproxy, and test_python.
 import pytest
+from hypothesis import given
+from hypothesis.strategies import text
+from conftest import selenium_context_manager
+
+
+@given(s=text())
+def test_string_conversion(selenium_module_scope, s):
+    with selenium_context_manager(selenium_module_scope) as selenium:
+        # careful string escaping here -- hypothesis will fuzz it.
+        sbytes = list(s.encode())
+        selenium.run_js(
+            f"""
+            window.sjs = (new TextDecoder("utf8")).decode(new Uint8Array({sbytes}));
+            pyodide.runPython('spy = bytes({sbytes}).decode()');
+            """
+        )
+        assert selenium.run_js(f"""return pyodide.runPython('spy') === sjs;""")
+        assert selenium.run(
+            """
+            from js import sjs
+            sjs == spy
+            """
+        )
 
 
 def test_python2js(selenium):

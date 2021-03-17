@@ -4,7 +4,7 @@ import time
 import contextvars
 
 
-from typing import Awaitable, Callable
+from typing import Callable
 
 
 class WebLoop(asyncio.AbstractEventLoop):
@@ -65,7 +65,7 @@ class WebLoop(asyncio.AbstractEventLoop):
         """
         pass
 
-    def run_until_complete(self, future: Awaitable):
+    def run_until_complete(self, future):
         """Run until future is done.
 
         If the argument is a coroutine, it is wrapped in a Task.
@@ -224,7 +224,7 @@ class WebLoop(asyncio.AbstractEventLoop):
         return self._task_factory
 
 
-class WebLoopPolicy(asyncio.DefaultEventLoopPolicy):
+class WebLoopPolicy(asyncio.DefaultEventLoopPolicy):  # type: ignore
     """
     A simple event loop policy for managing WebLoop based event loops.
     """
