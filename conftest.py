@@ -52,6 +52,11 @@ try:
                 result = result[len("src/tests/") :]
             if result.startswith("packages/"):
                 result = result[len("packages/") :]
+            result = result.replace("::test_", "::")
+            result = result.replace("[chrome]", "")
+            result = result.replace("[firefox]", "")
+            result = result.replace("chrome-", "")
+            result = result.replace("firefox-", "")
             return result
 
         config.cwd_relative_nodeid = cwd_relative_nodeid
