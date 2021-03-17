@@ -4,8 +4,6 @@
 #include "keyboard_interrupt.h"
 #include <emscripten.h>
 
-static int callback_clock = 1000;
-
 int
 pyodide_callback(void)
 {
