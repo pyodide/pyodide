@@ -423,7 +423,7 @@ def test_mount_object(selenium):
         let b = { x : x2, y, u : 3, t : 7};
         pyodide.registerJsModule("a", a);
         pyodide.registerJsModule("b", b);
-        return pyodide.runPython(`
+        let result_proxy = pyodide.runPython(`
             from a import x
             from b import x as x2
             result = [x(), x2()]
@@ -431,7 +431,10 @@ def test_mount_object(selenium):
             import b
             result += [a.s, dir(a), dir(b)]
             result
-        `).toJs()
+        `);
+        let result = result_proxy.toJs()
+        result_proxy.destroy();
+        return result;
         """
     )
     assert result[:3] == ["x1", "x2", 3]
