@@ -86,7 +86,7 @@ typedef struct
 static void
 JsProxy_dealloc(JsProxy* self)
 {
-  PyTypeObject *tp = Py_TYPE(self);
+  PyTypeObject* tp = Py_TYPE(self);
   hiwire_CLEAR(self->js);
   hiwire_CLEAR(self->this_);
   tp->tp_free(self);
