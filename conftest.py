@@ -164,8 +164,30 @@ class SeleniumWrapper:
     def get_num_hiwire_keys(self):
         return self.run_js("return pyodide._module.hiwire.num_keys();")
 
-    def clear_globals(self):
-        self.run_js("pyodide.globals.clear();")
+    def save_globals(self):
+        self.run_js(
+            """
+            pyodide.runPython(`
+                __saved_globals = {}
+                __saved_globals.update(globals())
+            `);
+            if(window.__saved_globals){
+                window.__saved_globals.destroy();
+            }
+            window.__saved_globals = pyodide.globals.pop("__saved_globals");
+            """
+        )
+    
+    def restore_globals(self):
+        self.run_js(
+            """
+            if(!window.__saved_globals){
+                throw new Error("No saved globals to restore");
+            }
+            pyodide.globals.destroy();
+            pyodide.globals.update(window.__saved_globals);
+            """
+        )
 
     def run_webworker(self, code):
         if isinstance(code, str) and code.startswith("\n"):
@@ -256,12 +278,13 @@ def pytest_runtest_call(item):
 
 
 def test_wrapper_check_for_memory_leaks(selenium):
+    selenium.save_globals()    
     init_num_keys = selenium.get_num_hiwire_keys()
     a = yield
     # if there was an error in the body of the test, flush it out by calling
     # get_result (we don't want to override the error message by raising a
     # different error here.)
-    selenium.clear_globals()
+    selenium.restore_globals()
     a.get_result()
     delta_keys = selenium.get_num_hiwire_keys() - init_num_keys
     assert delta_keys == 0
