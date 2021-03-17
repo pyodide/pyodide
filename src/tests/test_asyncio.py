@@ -33,10 +33,12 @@ def test_await_jsproxy(selenium):
             c.send(r.result())
             """
         )
-    pyodide.run(
+    selenium.run(
         """
         del p
         del Promise
+        del r
+        del resolve
         """
     )
 
