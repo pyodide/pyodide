@@ -90,6 +90,9 @@ JsProxy_dealloc(JsProxy* self)
   hiwire_CLEAR(self->js);
   hiwire_CLEAR(self->this_);
   tp->tp_free(self);
+  if (PyType_GetFlags(tp) & Py_TPFLAGS_HEAPTYPE) {
+    Py_DECREF(tp);
+  }
 }
 
 /**
