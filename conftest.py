@@ -177,14 +177,14 @@ class SeleniumWrapper:
             window.__saved_globals = pyodide.globals.pop("__saved_globals");
             """
         )
-    
+
     def restore_globals(self):
         self.run_js(
             """
             if(!window.__saved_globals){
                 throw new Error("No saved globals to restore");
             }
-            pyodide.globals.destroy();
+            pyodide.globals.clear();
             pyodide.globals.update(window.__saved_globals);
             """
         )
@@ -278,7 +278,7 @@ def pytest_runtest_call(item):
 
 
 def test_wrapper_check_for_memory_leaks(selenium):
-    selenium.save_globals()    
+    selenium.save_globals()
     init_num_keys = selenium.get_num_hiwire_keys()
     a = yield
     # if there was an error in the body of the test, flush it out by calling

@@ -131,11 +131,15 @@ def test_repr(safe_sys_redirections):
 @pytest.fixture
 def safe_selenium_sys_redirections(selenium):
     selenium.run("import sys")
-    selenium.run("_redirected = sys.stdout, sys.stderr, sys.displayhook")
+    selenium.run_js(
+        "pyodide._module.runPythonSimple(_redirected = sys.stdout, sys.stderr, sys.displayhook)"
+    )
     try:
         yield
     finally:
-        selenium.run("sys.stdout, sys.stderr, sys.displayhook = _redirected")
+        selenium.run_js(
+            "pyodide._module.runPythonSimple(sys.stdout, sys.stderr, sys.displayhook = _redirected)"
+        )
 
 
 def test_interactive_console(selenium, safe_selenium_sys_redirections):
