@@ -388,6 +388,8 @@ globalThis.languagePluginLoader = (async () => {
       "Pyodide has suffered a fatal error, refresh the page. " +
       "Please report this to the Pyodide maintainers.";
   Module.fatal_error = function(e) {
+    console.error(fatal_error_msg);
+    console.error("The cause of the fatal error was:\n", e);
     for (let [key, value] of Object.entries(Module.public_api)) {
       if (key.startsWith("_")) {
         // delete Module.public_api[key];
@@ -402,8 +404,6 @@ globalThis.languagePluginLoader = (async () => {
         Module.public_api[key] = function() { throw Error(fatal_error_msg); }
       }
     }
-    console.error(fatal_error_msg);
-    console.error("The cause of the fatal error was:\n", e);
     throw e;
   };
 
