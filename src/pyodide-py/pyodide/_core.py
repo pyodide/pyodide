@@ -4,7 +4,6 @@ if platform.system() == "Emscripten":
     from _pyodide_core import (
         JsProxy,
         JsException,
-        JsBuffer,
         create_proxy,
         create_once_proxy,
     )
