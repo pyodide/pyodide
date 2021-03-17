@@ -22,7 +22,6 @@ else:
 
         # Defined in jsproxy.c
 
-
         # Defined in jsproxy.c
 
     def create_once_proxy(obj):
