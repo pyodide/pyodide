@@ -73,21 +73,24 @@ def test_run_python_simple_error(selenium):
 def test_js2python(selenium):
     selenium.run_js(
         """
-        window.jsstring_ucs1 = "pyodidé";
-        window.jsstring_ucs2 = "碘化物";
-        window.jsstring_ucs4 = "🐍";
-        window.jsnumber0 = 42;
-        window.jsnumber1 = 42.5;
-        window.jsundefined = undefined;
-        window.jsnull = null;
-        window.jstrue = true;
-        window.jsfalse = false;
-        window.jsarray0 = [];
-        window.jsarray1 = [1, 2, 3];
-        window.jspython = pyodide.pyimport("open");
-        window.jsbytes = new Uint8Array([1, 2, 3]);
-        window.jsfloats = new Float32Array([1, 2, 3]);
-        window.jsobject = new XMLHttpRequest();
+        window.test_objects = {            
+            jsstring_ucs1 : "pyodidé",
+            jsstring_ucs2 : "碘化物",
+            jsstring_ucs4 : "🐍",
+            jsnumber0 : 42,
+            jsnumber1 : 42.5,
+            jsundefined : undefined,
+            jsnull : null,
+            jstrue : true,
+            jsfalse : false,
+            jsarray0 : [],
+            jsarray1 : [1, 2, 3],
+            jspython : pyodide.pyimport("open"),
+            jsbytes : new Uint8Array([1, 2, 3]),
+            jsfloats : new Float32Array([1, 2, 3]),
+            jsobject : new XMLHttpRequest(),
+        };
+        Object.assign(window, test_objects);
         """
     )
     assert selenium.run("from js import jsstring_ucs1\n" 'jsstring_ucs1 == "pyodidé"')
@@ -101,6 +104,7 @@ def test_js2python(selenium):
         "jsnumber1 == 42.5 and isinstance(jsnumber1, float)"
     )
     assert selenium.run("from js import jsundefined\n" "jsundefined is None")
+    assert selenium.run("from js import jsnull\n" "jsnull is None")
     assert selenium.run("from js import jstrue\n" "jstrue is True")
     assert selenium.run("from js import jsfalse\n" "jsfalse is False")
     assert selenium.run("from js import jspython\n" "jspython is open")
@@ -141,6 +145,13 @@ def test_js2python(selenium):
         """
         from js import jsarray1
         bool(jsarray1) == True
+        """
+    )
+    selenium.run_js(
+        """
+        for(let key of Object.keys(test_objects)){
+            pyodide.runPython(`del ${key}`);
+        }
         """
     )
 
@@ -600,10 +611,10 @@ def test_to_py(selenium):
     with pytest.raises(selenium.JavascriptException, match=msg):
         selenium.run_js(
             """
-            window.z = new Map([[[1,1], 2]]);
+            window.a = new Map([[[1,1], 2]]);
             pyodide.runPython(`
-                from js import z
-                z.to_py()
+                from js import a
+                a.to_py()
             `);
             """
         )
@@ -612,10 +623,10 @@ def test_to_py(selenium):
     with pytest.raises(selenium.JavascriptException, match=msg):
         selenium.run_js(
             """
-            window.z = new Set([[1,1]]);
+            window.a = new Set([[1,1]]);
             pyodide.runPython(`
-                from js import z
-                z.to_py()
+                from js import a
+                a.to_py()
             `);
             """
         )
@@ -624,10 +635,10 @@ def test_to_py(selenium):
     with pytest.raises(selenium.JavascriptException, match=msg):
         selenium.run_js(
             """
-            window.m = new Map([[0, 2], [false, 3]]);
+            window.a = new Map([[0, 2], [false, 3]]);
             pyodide.runPython(`
-                from js import m
-                m.to_py()
+                from js import a
+                a.to_py()
             `);
             """
         )
@@ -636,10 +647,10 @@ def test_to_py(selenium):
     with pytest.raises(selenium.JavascriptException, match=msg):
         selenium.run_js(
             """
-            window.m = new Map([[1, 2], [true, 3]]);
+            window.a = new Map([[1, 2], [true, 3]]);
             pyodide.runPython(`
-                from js import m
-                m.to_py()
+                from js import a
+                a.to_py()
             `);
             """
         )
@@ -648,10 +659,10 @@ def test_to_py(selenium):
     with pytest.raises(selenium.JavascriptException, match=msg):
         selenium.run_js(
             """
-            window.m = new Set([0, false]);
+            window.a = new Set([0, false]);
             pyodide.runPython(`
-                from js import m
-                m.to_py()
+                from js import a
+                a.to_py()
             `);
             """
         )
@@ -660,10 +671,12 @@ def test_to_py(selenium):
     with pytest.raises(selenium.JavascriptException, match=msg):
         selenium.run_js(
             """
-            window.m = new Set([1, true]);
+            window.a = new Set([1, true]);
             pyodide.runPython(`
-                from js import m
-                m.to_py()
+                from js import a
+                a.to_py()
             `);
             """
         )
+
+    selenium.run("del a")

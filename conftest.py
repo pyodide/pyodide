@@ -259,7 +259,8 @@ def test_wrapper_check_for_memory_leaks(selenium):
     # get_result (we don't want to override the error message by raising a
     # different error here.)
     a.get_result()
-    assert init_num_keys == selenium.get_num_hiwire_keys()
+    delta_keys = selenium.get_num_hiwire_keys() - init_num_keys
+    assert delta_keys == 0
 
 
 if pytest is not None:

@@ -204,7 +204,7 @@ def test_hiwire_is_promise(selenium):
 
 
 def test_keyboard_interrupt(selenium):
-    assert selenium.run_js(
+    x = selenium.run_js(
         """
         x = new Int8Array(1)
         pyodide._module.setInterruptBuffer(x)
@@ -221,11 +221,11 @@ def test_keyboard_interrupt(selenium):
                         triggerKeyboardInterrupt()
             `)
         } catch(e){}
-        return pyodide.runPython(`
-            2000 < x < 2500
-        `)
+        return pyodide.runPython('x')
         """
     )
+    assert 2000 < x < 2500
+    selenium.run("del triggerKeyboardInterrupt")
 
 
 def test_run_python_async_toplevel_await(selenium):

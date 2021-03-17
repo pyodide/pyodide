@@ -197,10 +197,10 @@ def test_interactive_console(selenium, safe_selenium_sys_redirections):
 def test_completion(selenium, safe_selenium_sys_redirections):
     selenium.run(
         """
-    from pyodide import console
+        from pyodide import console
 
-    shell = console.InteractiveConsole()
-    """
+        shell = console.InteractiveConsole()
+        """
     )
 
     assert selenium.run(
