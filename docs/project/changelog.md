@@ -113,6 +113,7 @@ substitutions:
 
 - {{ Feature }} `micropip` now supports installing wheels from relative urls.
   [#872](https://github.com/iodide-project/pyodide/pull/872)
+- {{ API }} `micropip.install` now returns a Python `Future` instead of a Javascript `Promise`.
 
 ### Build system
 
@@ -149,7 +150,7 @@ substitutions:
   need to be loaded explicitly
   [#1010](https://github.com/iodide-project/pyodide/pull/1010),
   [#987](https://github.com/iodide-project/pyodide/pull/987).
-- Updated packages: bleach 3.2.1, packaging 20.8
+- Updated packages: bleach 3.3.0, packaging 20.8
 
 
 ## Version 0.16.1
