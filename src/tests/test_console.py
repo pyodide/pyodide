@@ -134,7 +134,9 @@ def safe_selenium_sys_redirections(selenium):
     # the memory leak checker
     selenium.run_js("pyodide._module.runPythonSimple(`from pyodide import console`)")
 
-    selenium.run_js("pyodide._module.runPythonSimple(`import sys; _redirected = sys.stdout, sys.stderr, sys.displayhook`)")
+    selenium.run_js(
+        "pyodide._module.runPythonSimple(`import sys; _redirected = sys.stdout, sys.stderr, sys.displayhook`)"
+    )
     try:
         yield
     finally:

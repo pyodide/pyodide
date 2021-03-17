@@ -10,6 +10,7 @@ import rlcompleter
 # this import can fail when we are outside a browser (e.g. for tests)
 try:
     import js
+
     _dummy_promise = js.Promise.resolve()
     _load_packages_from_imports = js.pyodide.loadPackagesFromImports
 
@@ -219,6 +220,7 @@ class InteractiveConsole(code.InteractiveConsole):
         If you need to wait for the end of the computation,
         you should await for it."""
         from pyodide import create_once_proxy
+
         parent_runcode = super().runcode
         source = "\n".join(self.buffer)
 
@@ -234,7 +236,9 @@ class InteractiveConsole(code.InteractiveConsole):
 
             return _load_packages_from_imports(source).then(create_once_proxy(run))
 
-        self.run_complete = self.run_complete.then(create_once_proxy(load_packages_and_run))
+        self.run_complete = self.run_complete.then(
+            create_once_proxy(load_packages_and_run)
+        )
 
     def __del__(self):
         self.restore_stdstreams()
