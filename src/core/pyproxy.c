@@ -5,6 +5,7 @@
 
 #include "hiwire.h"
 #include "js2python.h"
+#include "jsproxy.h"
 #include "python2js.h"
 
 _Py_IDENTIFIER(result);
@@ -785,6 +786,25 @@ EM_JS_NUM(int, pyproxy_init_js, (), {
       Module.hiwire.decref(idresult);
       return result;
     }
+    apply(jsthis, jsargs) {
+      let ptrobj = _getPtr(this);
+      let idargs = Module.hiwire.new_value(jsargs);
+      let idresult;
+      try {
+        idresult = __pyproxy_apply(ptrobj, idargs);
+      } catch(e){
+        Module.fatal_error(e);
+      } finally {
+        Module.hiwire.decref(idargs);
+      }
+      if(idresult === 0){
+        _pythonexc2js();
+      }
+      return Module.hiwire.pop_value(idresult);
+    }
+    call(jsthis, ...jsargs){
+      return this.apply(jsthis, jsargs);
+    }
   };
 
   // Controlled by HAS_LENGTH, appears for any object with __len__ or sq_length
@@ -1107,20 +1127,7 @@ EM_JS_NUM(int, pyproxy_init_js, (), {
       return result;
     },
     apply: function (jsobj, jsthis, jsargs) {
-      let ptrobj = _getPtr(jsobj);
-      let idargs = Module.hiwire.new_value(jsargs);
-      let idresult;
-      try {
-        idresult = __pyproxy_apply(ptrobj, idargs);
-      } catch(e){
-        Module.fatal_error(e);
-      } finally {
-        Module.hiwire.decref(idargs);
-      }
-      if(idresult === 0){
-        _pythonexc2js();
-      }
-      return Module.hiwire.pop_value(idresult);
+      return jsobj.apply(jsthis, jsargs);
     },
   };
   
@@ -1225,9 +1232,69 @@ EM_JS_NUM(int, pyproxy_init_js, (), {
 });
 // clang-format on
 
-int
-pyproxy_init()
+JsRef
+create_once_proxy(PyObject* obj)
 {
+  Py_INCREF(obj);
+  return (JsRef)EM_ASM_INT(
+    {
+      let o = { $$ : { ptr : $0 } };
+      function wrapper(... args)
+      {
+        if (!o) {
+          throw new Error("OnceProxy can only be called once");
+        }
+        try {
+          return Module.PyProxyClass.prototype.apply.call(o, undefined, args);
+        } finally {
+          o = undefined;
+          _Py_DecRef($0);
+        }
+      }
+      return Module.hiwire.new_value(wrapper);
+    },
+    obj);
+}
+
+static PyObject*
+create_once_proxy_py(PyObject* _mod, PyObject* obj)
+{
+  JsRef ref = create_once_proxy(obj);
+  PyObject* result = JsProxy_create(ref);
+  hiwire_decref(ref);
+  return result;
+}
+
+static PyObject*
+create_proxy(PyObject* _mod, PyObject* obj)
+{
+  JsRef ref = pyproxy_new(obj);
+  PyObject* result = JsProxy_create(ref);
+  hiwire_decref(ref);
+  return result;
+}
+
+static PyMethodDef pyproxy_methods[] = {
+  {
+    "create_once_proxy",
+    create_once_proxy_py,
+    METH_O,
+    PyDoc_STR("Create a wrapper around a Python function that can be called "
+              "once from Javascript"),
+  },
+  {
+    "create_proxy",
+    create_proxy,
+    METH_O,
+    PyDoc_STR("Create a PyProxy"),
+  },
+  { NULL } /* Sentinel */
+};
+
+int
+pyproxy_init(PyObject* core)
+{
+  PyModule_AddFunctions(core, pyproxy_methods);
   asyncio = PyImport_ImportModule("asyncio");
   if (asyncio == NULL) {
     return -1;

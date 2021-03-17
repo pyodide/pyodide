@@ -34,6 +34,7 @@
 #include "hiwire.h"
 #include "js2python.h"
 #include "jsproxy.h"
+#include "pyproxy.h"
 #include "python2js.h"
 
 #include "structmember.h"
@@ -648,11 +649,11 @@ JsProxy_Await(JsProxy* self, PyObject* _args)
   JsRef promise_id = hiwire_resolve_promise(self->js);
   JsRef idargs = hiwire_array();
   JsRef idarg;
-  // TODO: does this leak set_result and set_exception? See #1006.
-  idarg = python2js(set_result);
+  // use create_once_proxy to avoid leaks!
+  idarg = create_once_proxy(set_result);
   hiwire_push_array(idargs, idarg);
   hiwire_decref(idarg);
-  idarg = python2js(set_exception);
+  idarg = create_once_proxy(set_exception);
   hiwire_push_array(idargs, idarg);
   hiwire_decref(idarg);
   hiwire_decref(hiwire_call_member(promise_id, "then", idargs));
