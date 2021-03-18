@@ -83,7 +83,7 @@ def test_then_jsproxy(selenium):
         """
         p = Promise.new(prom)
         p.then(onfulfilled, onrejected)
-        p.reject(10)
+        reject(10)
         """
     )
     time.sleep(0.01)
@@ -99,7 +99,7 @@ def test_then_jsproxy(selenium):
         """
         p = Promise.new(prom)
         p.catch(onrejected)
-        p.resolve(10)
+        resolve(10)
         """
     )
     time.sleep(0.01)
@@ -109,7 +109,7 @@ def test_then_jsproxy(selenium):
         """
         p = Promise.new(prom)
         p.catch(onrejected)
-        p.reject(10)
+        reject(10)
         """
     )
     time.sleep(0.01)
@@ -124,7 +124,7 @@ def test_then_jsproxy(selenium):
         """
         p = Promise.new(prom)
         p.finally_(onfinally)
-        p.resolve(10)
+        resolve(10)
         """
     )
     time.sleep(0.01)
@@ -139,7 +139,7 @@ def test_then_jsproxy(selenium):
         """
         p = Promise.new(prom)
         p.finally_(onfinally)
-        p.reject(10)
+        reject(10)
         """
     )
     time.sleep(0.01)
