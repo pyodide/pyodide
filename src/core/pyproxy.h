@@ -20,7 +20,7 @@ pyproxy_new(PyObject* obj);
  * reference count without calling the function.
  */
 JsRef
-create_once_proxy(PyObject* obj);
+create_once_callback(PyObject* obj);
 
 /**
  * Wrap a pair of Python callables in a Javascript function that can be called

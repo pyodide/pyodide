@@ -714,7 +714,7 @@ JsProxy_catch(JsProxy* self, PyObject* onrejected)
   JsRef result_promise = NULL;
   PyObject* result = NULL;
 
-  proxy = create_once_proxy(onrejected);
+  proxy = create_once_callback(onrejected);
   FAIL_IF_NULL(proxy);
   result_promise = hiwire_call_member(self->js, "catch", proxy);
   if (result_promise == NULL) {
@@ -739,7 +739,7 @@ JsProxy_finally(JsProxy* self, PyObject* onfinally)
   JsRef result_promise = NULL;
   PyObject* result = NULL;
 
-  proxy = create_once_proxy(onfinally);
+  proxy = create_once_callback(onfinally);
   FAIL_IF_NULL(proxy);
   result_promise = hiwire_call_member(self->js, "finally", proxy);
   if (result_promise == NULL) {

@@ -6,7 +6,7 @@ if platform.system() == "Emscripten":
         JsProxy,
         JsException,
         create_proxy,
-        create_once_proxy,
+        create_once_callback,
     )
 else:
     # Can add shims here if we are so inclined.
@@ -24,7 +24,7 @@ else:
 
         # Defined in jsproxy.c
 
-    def create_once_proxy(obj: Callable) -> JsProxy:
+    def create_once_callback(obj: Callable) -> JsProxy:
         """Wrap a Python callable in a Javascript function that can be called
         once. After being called the proxy will decrement the reference count
         of the Callable. The javascript function also has a `destroy` API that
@@ -37,4 +37,4 @@ else:
         return obj
 
 
-__all__ = ["JsProxy", "JsException", "create_proxy", "create_once_proxy"]
+__all__ = ["JsProxy", "JsException", "create_proxy", "create_once_callback"]
