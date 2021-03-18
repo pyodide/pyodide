@@ -14,13 +14,23 @@ JsRef
 pyproxy_new(PyObject* obj);
 
 /**
- * Wrap a Python object in a Javascript function that can be called once. After
- * being called, the reference count of the python object is automatically
+ * Wrap a Python callable in a Javascript function that can be called once.
+ * After being called, the reference count of the python object is automatically
  * decremented. The Proxy also has a "destroy" API that can decrement the
  * reference count without calling the function.
  */
 JsRef
 create_once_proxy(PyObject* obj);
+
+/**
+ * Wrap a pair of Python callables in a Javascript function that can be called
+ * once between the two of them. After being called, the reference counts of
+ * both python objects are automatically decremented. The wrappers also have a
+ * "destroy" API that can decrement the reference counts without calling the
+ * function. Intended for use with `promise.then`.
+ */
+JsRef
+create_promise_handles(PyObject* onfulfilled, PyObject* onrejected);
 
 int
 pyproxy_init();

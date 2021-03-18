@@ -1230,7 +1230,6 @@ EM_JS_NUM(int, pyproxy_init_js, (), {
   Module.wrapNamespace = function wrapNamespace(ns){
     return new Proxy(ns, NamespaceProxyHandlers);
   };
-
   return 0;
 });
 // clang-format on
@@ -1269,6 +1268,54 @@ create_once_proxy_py(PyObject* _mod, PyObject* obj)
   hiwire_decref(ref);
   return result;
 }
+
+// clang-format off
+EM_JS_REF(JsRef, create_promise_handles, (
+  PyObject* handle_result, PyObject* handle_exception
+), {
+  if (handle_result) {
+    _Py_IncRef(handle_result);
+  }
+  if (handle_exception) {
+    _Py_IncRef(handle_exception);
+  }
+  let used = false;
+  function checkUsed(){
+    if (used) {
+      throw new Error("One of the promise handles has already been called.");
+    }
+  }
+  function destroy(){
+    checkUsed();
+    used = true;
+    if(handle_result){
+      _Py_DecRef(set_result);
+    }
+    if(handle_exception){
+      _Py_DecRef(set_exception)
+    }
+  }
+  function onFulfilled(res) {
+    checkUsed();
+    if(handle_result){
+      Module.callPyObject(handle_result, res);
+    }
+    destroy();
+  }
+  function onRejected(err) {
+    checkUsed();
+    if(handle_exception){
+      Module.callPyObject(handle_exception, err);
+    }
+    destroy();
+  }
+  onFulfilled.destroy = destroy;
+  onRejected.destroy = destroy;
+  return Module.hiwire.new_value(
+    [onFulfilled, onRejected]
+  );
+})
+// clang-format on
 
 static PyObject*
 create_proxy(PyObject* _mod, PyObject* obj)

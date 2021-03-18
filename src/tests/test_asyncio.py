@@ -7,6 +7,7 @@ import pytest  # type: ignore
 import time
 from pyodide._base import eval_code_async
 import asyncio
+from pyodide_build.testing import run_in_pyodide
 
 
 def test_await_jsproxy(selenium):
@@ -33,6 +34,69 @@ def test_await_jsproxy(selenium):
             c.send(r.result())
             """
         )
+
+
+@run_in_pyodide
+def test_then_jsproxy():
+    def prom(res, rej):
+        global resolve
+        global reject
+        resolve = res
+        reject = rej
+
+    from js import Promise
+
+    p = Promise.new(prom)
+    result = None
+    err = None
+    finally_occurred = False
+
+    def onfulfilled(value):
+        global result
+        result = value
+
+    def onrejected(value):
+        global err
+        err = value
+
+    def onfinally():
+        global finally_occurred
+        finally_occurred = True
+
+    p.then(onfulfilled, onrejected)
+    resolve(10)
+    assert result == 10
+    assert err is None
+    result = None
+    p = Promise.new(prom)
+    p.then(onfulfilled, onrejected)
+    p.reject(10)
+    assert result is None
+    assert err == 10
+    err = None
+
+    p = Promise.new(prom)
+    p.catch(onrejected)
+    p.resolve(10)
+    assert err is None
+
+    p = Promise.new(prom)
+    p.catch(onrejected)
+    p.reject(10)
+    assert err == 10
+    err = None
+
+    p = Promise.new(prom)
+    p.finally_(onfinally)
+    p.resolve(10)
+    assert finally_occurred
+    finally_occurred = False
+
+    p = Promise.new(prom)
+    p.finally_(onfinally)
+    p.reject(10)
+    assert finally_occurred
+    finally_occurred = False
 
 
 def test_await_fetch(selenium):
