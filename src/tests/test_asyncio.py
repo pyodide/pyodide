@@ -7,7 +7,6 @@ import pytest  # type: ignore
 import time
 from pyodide._base import eval_code_async
 import asyncio
-from pyodide_build.testing import run_in_pyodide
 
 
 def test_await_jsproxy(selenium):

@@ -1297,17 +1297,23 @@ EM_JS_REF(JsRef, create_promise_handles, (
   }
   function onFulfilled(res) {
     checkUsed();
-    if(handle_result){
-      Module.callPyObject(handle_result, res);
+    try {
+      if(handle_result){
+        return Module.callPyObject(handle_result, res);
+      }
+    } finally {
+      destroy();
     }
-    destroy();
   }
   function onRejected(err) {
     checkUsed();
-    if(handle_exception){
-      Module.callPyObject(handle_exception, err);
+    try {
+      if(handle_exception){
+        return Module.callPyObject(handle_exception, err);
+      }
+    } finally {
+      destroy();
     }
-    destroy();
   }
   onFulfilled.destroy = destroy;
   onRejected.destroy = destroy;
