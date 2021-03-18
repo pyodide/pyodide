@@ -73,6 +73,9 @@ EM_JS_NUM(int, hiwire_init, (), {
       many_objects_warning_threshold += 100;
     }
 #endif
+#ifdef HW_TRACE_REFS
+    console.warn("hw.new_value", idval, jsval);
+#endif
     return idval;
   };
 
@@ -574,14 +577,6 @@ EM_JS_NUM(bool, hiwire_is_promise, (JsRef idobj), {
   // clang-format off
   let obj = Module.hiwire.get_value(idobj);
   return Module.hiwire.isPromise(obj);
-  // clang-format on
-});
-
-EM_JS_REF(JsRef, hiwire_resolve_promise, (JsRef idobj), {
-  // clang-format off
-  let obj = Module.hiwire.get_value(idobj);
-  let result = Promise.resolve(obj);
-  return Module.hiwire.new_value(result);
   // clang-format on
 });
 

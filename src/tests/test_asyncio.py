@@ -184,8 +184,7 @@ def test_eval_code_await_jsproxy(selenium):
 def test_eval_code_await_fetch(selenium):
     selenium.run(
         """
-        from js import fetch, window
-        fetch = fetch.bind(window)
+        from js import fetch
         from pyodide._base import eval_code_async
         c = eval_code_async(
             '''

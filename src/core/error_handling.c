@@ -30,6 +30,7 @@ PyodideErr_SetJsError(JsRef err)
 {
   PyObject* py_err = JsProxy_create(err);
   PyErr_SetObject((PyObject*)(py_err->ob_type), py_err);
+  Py_DECREF(py_err);
 }
 
 PyObject* internal_error;

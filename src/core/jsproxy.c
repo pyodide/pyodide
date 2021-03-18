@@ -87,6 +87,9 @@ typedef struct
 static void
 JsProxy_dealloc(JsProxy* self)
 {
+#ifdef HW_TRACE_REFS
+  printf("jsproxy delloc %zd, %zd\n", (long)self, (long)self->js);
+#endif
   PyTypeObject* tp = Py_TYPE(self);
   hiwire_CLEAR(self->js);
   hiwire_CLEAR(self->this_);
@@ -611,6 +614,27 @@ JsProxy_Bool(PyObject* o)
   return hiwire_get_bool(self->js) ? 1 : 0;
 }
 
+// clang-format off
+EM_JS_NUM(errcode, JsProxy_Await_helper, (
+  JsRef idobj, PyObject* set_result, PyObject* set_exception
+), {
+  let obj = Module.hiwire.get_value(idobj);
+  let promise = Promise.resolve(obj);
+  promise.then(
+    function onFulfilled(res) {
+      Module.callPyObject(set_result, res);
+      _Py_DecRef(set_result);
+      _Py_DecRef(set_exception);
+    },
+    function onRejected(err) {
+      Module.callPyObject(set_exception, err);
+      _Py_DecRef(set_result);
+      _Py_DecRef(set_exception);
+    }
+  );
+})
+// clang-format on
+
 /**
  * Overload for `await proxy` for js objects that have a `then` method.
  * Controlled by IS_AWAITABLE.
@@ -628,12 +652,13 @@ JsProxy_Await(JsProxy* self, PyObject* _args)
   }
 
   // Main
-  PyObject* result = NULL;
+  bool success = false;
 
   PyObject* loop = NULL;
   PyObject* fut = NULL;
   PyObject* set_result = NULL;
   PyObject* set_exception = NULL;
+  PyObject* result = NULL;
 
   loop = _PyObject_CallNoArg(asyncio_get_event_loop);
   FAIL_IF_NULL(loop);
@@ -645,27 +670,19 @@ JsProxy_Await(JsProxy* self, PyObject* _args)
   FAIL_IF_NULL(set_result);
   set_exception = _PyObject_GetAttrId(fut, &PyId_set_exception);
   FAIL_IF_NULL(set_exception);
+  FAIL_IF_MINUS_ONE(JsProxy_Await_helper(self->js, set_result, set_exception));
 
-  JsRef promise_id = hiwire_resolve_promise(self->js);
-  JsRef idargs = hiwire_array();
-  JsRef idarg;
-  // use create_once_proxy to avoid leaks!
-  idarg = create_once_proxy(set_result);
-  hiwire_push_array(idargs, idarg);
-  hiwire_decref(idarg);
-  idarg = create_once_proxy(set_exception);
-  hiwire_push_array(idargs, idarg);
-  hiwire_decref(idarg);
-  hiwire_decref(hiwire_call_member(promise_id, "then", idargs));
-  hiwire_decref(promise_id);
-  hiwire_decref(idargs);
   result = _PyObject_CallMethodId(fut, &PyId___await__, NULL);
-
+  success = true;
 finally:
   Py_CLEAR(loop);
-  Py_CLEAR(set_result);
-  Py_CLEAR(set_exception);
-  Py_DECREF(fut);
+  Py_CLEAR(fut);
+  if (!success) {
+    Py_CLEAR(result);
+    // JsProxy_Await_helper steals set_result and set_exception
+    Py_CLEAR(set_result);
+    Py_CLEAR(set_exception);
+  }
   return result;
 }
 
@@ -697,6 +714,9 @@ JsProxy_cinit(PyObject* obj, JsRef idobj)
 {
   JsProxy* self = (JsProxy*)obj;
   self->js = hiwire_incref(idobj);
+#ifdef HW_TRACE_REFS
+  printf("JsProxy cinit: %zd, object: %zd\n", (long)obj, (long)self->js);
+#endif
   return 0;
 }
 
@@ -799,6 +819,7 @@ JsProxy_new_error(JsRef idobj)
   result = PyObject_CallFunctionObjArgs(Exc_JsException, proxy, NULL);
   FAIL_IF_NULL(result);
 finally:
+  Py_CLEAR(proxy);
   return result;
 }
 

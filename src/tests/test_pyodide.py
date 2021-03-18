@@ -257,6 +257,24 @@ def test_run_python_last_exc(selenium):
     )
 
 
+def test_run_python_js_error(selenium):
+    selenium.run_js(
+        """
+        function throwError(){
+            throw new Error("blah!");
+        }
+        pyodide.runPython(`
+            from js import throwError
+            from unittest import TestCase
+            from pyodide import JsException
+            raises = TestCase().assertRaisesRegex
+            with raises(JsException, blah):
+                throwError()
+        `);
+        """
+    )
+
+
 def test_create_once_proxy(selenium):
     selenium.run_js(
         """
@@ -288,7 +306,7 @@ def test_create_once_proxy(selenium):
             destroyed = False
             del f
             assert destroyed == True
-            del proxy # causes a fatal error =(
+            del proxy
         `);
         """
     )
