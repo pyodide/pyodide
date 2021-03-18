@@ -6,8 +6,6 @@ import asyncio
 import sys
 import platform
 
-import typing
-
 jsfinder = JsFinder()
 register_js_module = jsfinder.register_js_module
 unregister_js_module = jsfinder.unregister_js_module

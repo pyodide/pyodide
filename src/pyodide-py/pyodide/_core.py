@@ -5,7 +5,6 @@ if platform.system() == "Emscripten":
     from _pyodide_core import (
         JsProxy,
         JsException,
-        JsBuffer,
         create_proxy,
         create_once_proxy,
     )
@@ -38,4 +37,4 @@ else:
         return obj
 
 
-__all__ = ["JsProxy", "JsException"]
+__all__ = ["JsProxy", "JsException", "create_proxy", "create_once_proxy"]
