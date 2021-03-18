@@ -614,27 +614,6 @@ JsProxy_Bool(PyObject* o)
   return hiwire_get_bool(self->js) ? 1 : 0;
 }
 
-// clang-format off
-EM_JS_NUM(errcode, JsProxy_Await_helper, (
-  JsRef idobj, PyObject* set_result, PyObject* set_exception
-), {
-  let obj = Module.hiwire.get_value(idobj);
-  let promise = Promise.resolve(obj);
-  promise.then(
-    function onFulfilled(res) {
-      Module.callPyObject(set_result, res);
-      _Py_DecRef(set_result);
-      _Py_DecRef(set_exception);
-    },
-    function onRejected(err) {
-      Module.callPyObject(set_exception, err);
-      _Py_DecRef(set_result);
-      _Py_DecRef(set_exception);
-    }
-  );
-})
-// clang-format on
-
 /**
  * Overload for `await proxy` for js objects that have a `then` method.
  * Controlled by IS_AWAITABLE.
@@ -670,7 +649,6 @@ JsProxy_Await(JsProxy* self, PyObject* _args)
   FAIL_IF_NULL(set_result);
   set_exception = _PyObject_GetAttrId(fut, &PyId_set_exception);
   FAIL_IF_NULL(set_exception);
-  FAIL_IF_MINUS_ONE(JsProxy_Await_helper(self->js, set_result, set_exception));
 
   promise_handles = create_promise_handles(set_result, set_exception);
   FAIL_IF_NULL(promise_handles);
