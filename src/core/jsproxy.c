@@ -651,13 +651,13 @@ JsProxy_Await(JsProxy* self, PyObject* _args)
     return NULL;
   }
 
-  // Main
-  bool success = false;
-
   PyObject* loop = NULL;
   PyObject* fut = NULL;
   PyObject* set_result = NULL;
   PyObject* set_exception = NULL;
+  JsRef promise_id = NULL;
+  JsRef promise_handles = NULL;
+  JsRef promise_result = NULL;
   PyObject* result = NULL;
 
   loop = _PyObject_CallNoArg(asyncio_get_event_loop);
@@ -672,17 +672,111 @@ JsProxy_Await(JsProxy* self, PyObject* _args)
   FAIL_IF_NULL(set_exception);
   FAIL_IF_MINUS_ONE(JsProxy_Await_helper(self->js, set_result, set_exception));
 
+  promise_id = hiwire_resolve_promise(self->js);
+  FAIL_IF_NULL(promise_id);
+  promise_handles = create_promise_handles(set_result, set_exception);
+  FAIL_IF_NULL(promise_handles);
+  promise_result = hiwire_call_member(promise_id, "then", promise_handles);
+  FAIL_IF_NULL(promise_result);
   result = _PyObject_CallMethodId(fut, &PyId___await__, NULL);
   success = true;
 finally:
   Py_CLEAR(loop);
   Py_CLEAR(fut);
-  if (!success) {
-    Py_CLEAR(result);
-    // JsProxy_Await_helper steals set_result and set_exception
-    Py_CLEAR(set_result);
-    Py_CLEAR(set_exception);
+  Py_CLEAR(set_result);
+  Py_CLEAR(set_exception);
+  hiwire_CLEAR(promise_id);
+  hiwire_CLEAR(promise_handles);
+  hiwire_CLEAR(promise_result);
+  return result;
+}
+
+/**
+ * Overload for `then` for JsProxies with a `then` method.
+ */
+PyObject*
+JsProxy_then(JsProxy* self, PyObject* args, PyObject* kwds)
+{
+  PyObject* onfulfilled = NULL;
+  PyObject* onrejected = NULL;
+  JsRef promise_handles = NULL;
+  JsRef result_promise = NULL;
+  PyObject* result = NULL;
+
+  static char* kwlist[] = { "onfulfilled", "onrejected", 0 };
+  if (!PyArg_ParseTupleAndKeywords(
+        args, kwds, "|OO:then", kwlist, &onfulfilled, &onrejected)) {
+    return NULL;
   }
+  if (onfulfilled == Py_None) {
+    Py_CLEAR(onfulfilled);
+  }
+  if (onrejected == Py_None) {
+    Py_CLEAR(onrejected);
+  }
+  promise_handles = create_promise_handles(onfulfilled, onrejected);
+  FAIL_IF_NULL(promise_handles);
+  result_promise = hiwire_call_member(self->js, "then", promise_handles);
+  if (result_promise == NULL) {
+    Py_CLEAR(onfulfilled);
+    Py_CLEAR(onrejected);
+    FAIL();
+  }
+  result = JsProxy_create(result_promise);
+
+finally:
+  hiwire_CLEAR(promise_handles);
+  hiwire_CLEAR(result_promise);
+  return result;
+}
+
+/**
+ * Overload for `catch` for JsProxies with a `then` method.
+ */
+PyObject*
+JsProxy_catch(JsProxy* self, PyObject* onrejected)
+{
+  JsRef proxy = NULL;
+  JsRef result_promise = NULL;
+  PyObject* result = NULL;
+
+  proxy = create_once_callback(onrejected);
+  FAIL_IF_NULL(proxy);
+  result_promise = hiwire_call_member_va(self->js, "catch", proxy, NULL);
+  if (result_promise == NULL) {
+    Py_DECREF(onrejected);
+    FAIL();
+  }
+  result = JsProxy_create(result_promise);
+
+finally:
+  hiwire_CLEAR(proxy);
+  hiwire_CLEAR(result_promise);
+  return result;
+}
+
+/**
+ * Overload for `finally` for JsProxies with a `then` method.
+ */
+PyObject*
+JsProxy_finally(JsProxy* self, PyObject* onfinally)
+{
+  JsRef proxy = NULL;
+  JsRef result_promise = NULL;
+  PyObject* result = NULL;
+
+  proxy = create_once_callback(onfinally);
+  FAIL_IF_NULL(proxy);
+  result_promise = hiwire_call_member_va(self->js, "finally", proxy, NULL);
+  if (result_promise == NULL) {
+    Py_DECREF(onfinally);
+    FAIL();
+  }
+  result = JsProxy_create(result_promise);
+
+finally:
+  hiwire_CLEAR(proxy);
+  hiwire_CLEAR(result_promise);
   return result;
 }
 
@@ -1091,7 +1185,7 @@ JsProxy_create_subtype(int flags)
   // Make sure these stack allocations are large enough to fit!
   PyType_Slot slots[20];
   int cur_slot = 0;
-  PyMethodDef methods[5];
+  PyMethodDef methods[10];
   int cur_method = 0;
   PyMemberDef members[5];
   int cur_member = 0;
@@ -1164,6 +1258,35 @@ JsProxy_create_subtype(int flags)
   if (flags & IS_AWAITABLE) {
     slots[cur_slot++] =
       (PyType_Slot){ .slot = Py_am_await, .pfunc = (void*)JsProxy_Await };
+    methods[cur_method++] = (PyMethodDef){
+      "then",
+      (PyCFunction)JsProxy_then,
+      METH_VARARGS | METH_KEYWORDS,
+      PyDoc_STR(
+        "then(onfulfilled : Callable = None, onrejected : Callable = None)"
+        " -> JsProxy"
+        "\n\n"
+        "The promise.then api, wrapped to manage the lifetimes of the "
+        "arguments"),
+    };
+    methods[cur_method++] = (PyMethodDef){
+      "catch",
+      (PyCFunction)JsProxy_catch,
+      METH_O,
+      PyDoc_STR("catch(onrejected : Callable) -> JsProxy"
+                "\n\n"
+                "The promise.catch api, wrapped to manage the lifetime of the "
+                "argument."),
+    };
+    methods[cur_method++] = (PyMethodDef){
+      "finally_",
+      (PyCFunction)JsProxy_finally,
+      METH_O,
+      PyDoc_STR("finally_(onrejected : Callable) -> JsProxy"
+                "\n\n"
+                "The promise.finally api, wrapped to manage the lifetime of "
+                "the argument."),
+    };
   }
   if (flags & IS_CALLABLE) {
     tp_flags |= _Py_TPFLAGS_HAVE_VECTORCALL;

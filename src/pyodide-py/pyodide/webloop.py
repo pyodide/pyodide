@@ -132,12 +132,12 @@ class WebLoop(asyncio.AbstractEventLoop):
         This uses `setTimeout(callback, delay)`
         """
         from js import setTimeout
-        from . import create_once_proxy
+        from . import create_once_callback
 
         if delay < 0:
             raise ValueError("Can't schedule in the past")
         h = asyncio.Handle(callback, args, self, context=context)
-        setTimeout(create_once_proxy(h._run), delay * 1000)
+        setTimeout(create_once_callback(h._run), delay * 1000)
         return h
 
     def call_at(
