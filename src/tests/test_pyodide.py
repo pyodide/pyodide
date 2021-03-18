@@ -257,13 +257,13 @@ def test_run_python_last_exc(selenium):
     )
 
 
-<<<<<<< HEAD
 def test_run_python_js_error(selenium):
     selenium.run_js(
         """
         function throwError(){
             throw new Error("blah!");
         }
+        window.throwError = throwError;
         pyodide.runPython(`
             from js import throwError
             from unittest import TestCase
@@ -276,10 +276,7 @@ def test_run_python_js_error(selenium):
     )
 
 
-def test_create_once_proxy(selenium):
-=======
 def test_create_once_callback(selenium):
->>>>>>> pyproxy-once-cb
     selenium.run_js(
         """
         window.call7 = function call7(f){

@@ -672,14 +672,11 @@ JsProxy_Await(JsProxy* self, PyObject* _args)
   FAIL_IF_NULL(set_exception);
   FAIL_IF_MINUS_ONE(JsProxy_Await_helper(self->js, set_result, set_exception));
 
-  promise_id = hiwire_resolve_promise(self->js);
-  FAIL_IF_NULL(promise_id);
   promise_handles = create_promise_handles(set_result, set_exception);
   FAIL_IF_NULL(promise_handles);
-  promise_result = hiwire_call_member(promise_id, "then", promise_handles);
+  promise_result = hiwire_call_member(self->js, "then", promise_handles);
   FAIL_IF_NULL(promise_result);
   result = _PyObject_CallMethodId(fut, &PyId___await__, NULL);
-  success = true;
 finally:
   Py_CLEAR(loop);
   Py_CLEAR(fut);

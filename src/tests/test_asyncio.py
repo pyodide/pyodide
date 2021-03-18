@@ -187,18 +187,12 @@ def test_await_fetch(selenium):
             c.send(r2.result())
             """
         )
-    selenium.run(
-        """
-        del fetch
-        """
-    )
 
 
 def test_await_error(selenium):
     selenium.run_js(
         """
         async function async_js_raises(){
-            console.log("Hello there???");
             throw new Error("This is an error message!");
         }
         window.async_js_raises = async_js_raises;
@@ -436,7 +430,6 @@ def test_await_pyproxy_eval_async(selenium):
         return err_occurred;
         """
     )
-    selenium.run("del fetch")
 
 
 def test_await_pyproxy_async_def(selenium):
