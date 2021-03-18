@@ -1235,29 +1235,31 @@ EM_JS_NUM(int, pyproxy_init_js, (), {
 });
 // clang-format on
 
-JsRef
-create_once_proxy(PyObject* obj)
-{
-  Py_INCREF(obj);
-  return (JsRef)EM_ASM_INT(
-    {
-      let alreadyCalled = false;
-      function wrapper(... args)
-      {
-        if (alreadyCalled) {
-          throw new Error("OnceProxy can only be called once");
-        }
-        alreadyCalled = true;
-        try {
-          return Module.callPyObject($0, ... args);
-        } finally {
-          _Py_DecRef($0);
-        }
-      }
-      return Module.hiwire.new_value(wrapper);
-    },
-    obj);
-}
+EM_JS_REF(JsRef, create_once_proxy, (PyObject * obj), {
+  _Py_IncRef(obj);
+  let alreadyCalled = false;
+  function wrapper(... args)
+  {
+    if (alreadyCalled) {
+      throw new Error("OnceProxy can only be called once");
+    }
+    alreadyCalled = true;
+    try {
+      return Module.callPyObject(obj, ... args);
+    } finally {
+      _Py_DecRef(obj);
+    }
+  }
+  wrapper.destroy = function()
+  {
+    if (alreadyCalled) {
+      throw new Error("OnceProxy has already been destroyed");
+    }
+    alreadyCalled = true;
+    _Py_DecRef(obj);
+  };
+  return Module.hiwire.new_value(wrapper);
+});
 
 static PyObject*
 create_once_proxy_py(PyObject* _mod, PyObject* obj)
@@ -1282,14 +1284,21 @@ static PyMethodDef pyproxy_methods[] = {
     "create_once_proxy",
     create_once_proxy_py,
     METH_O,
-    PyDoc_STR("Create a wrapper around a Python function that can be called "
-              "once from Javascript"),
+    PyDoc_STR(
+      "create_once_proxy(obj : Callable) -> JsProxy"
+      "\n\n"
+      "Wrap a Python callable in a Javascript function that can be called "
+      "once. After being called the proxy will decrement the reference count "
+      "of the Callable. The javascript function also has a `destroy` API that "
+      "can be used to release the proxy without calling it."),
   },
   {
     "create_proxy",
     create_proxy,
     METH_O,
-    PyDoc_STR("Create a PyProxy"),
+    PyDoc_STR("create_proxy(obj : Any) -> JsProxy"
+              "\n\n"
+              "Create a PyProxy"),
   },
   { NULL } /* Sentinel */
 };
