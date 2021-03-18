@@ -1,4 +1,5 @@
 import platform
+from typing import Any, Callable
 
 if platform.system() == "Emscripten":
     from _pyodide_core import (
@@ -22,13 +23,18 @@ else:
 
         # Defined in jsproxy.c
 
-
         # Defined in jsproxy.c
 
-    def create_once_proxy(obj):
+    def create_once_proxy(obj: Callable) -> JsProxy:
+        """Wrap a Python callable in a Javascript function that can be called
+        once. After being called the proxy will decrement the reference count
+        of the Callable. The javascript function also has a `destroy` API that
+        can be used to release the proxy without calling it.
+        """
         return obj
 
-    def create_proxy(obj):
+    def create_proxy(obj: Any) -> JsProxy:
+        """Create a PyProxy """
         return obj
 
 
