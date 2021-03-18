@@ -742,6 +742,22 @@ EM_JS_NUM(int, pyproxy_init_js, (), {
     },
   };
 
+  Module.callPyObject = function(ptrobj, ...jsargs) {
+    let idargs = Module.hiwire.new_value(jsargs);
+    let idresult;
+    try {
+      idresult = __pyproxy_apply(ptrobj, idargs);
+    } catch(e){
+      Module.fatal_error(e);
+    } finally {
+      Module.hiwire.decref(idargs);
+    }
+    if(idresult === 0){
+      _pythonexc2js();
+    }
+    return Module.hiwire.pop_value(idresult);
+  };
+
   // Now a lot of boilerplate to wrap the abstract Object protocol wrappers
   // above in Javascript functions.
 
@@ -787,23 +803,10 @@ EM_JS_NUM(int, pyproxy_init_js, (), {
       return result;
     }
     apply(jsthis, jsargs) {
-      let ptrobj = _getPtr(this);
-      let idargs = Module.hiwire.new_value(jsargs);
-      let idresult;
-      try {
-        idresult = __pyproxy_apply(ptrobj, idargs);
-      } catch(e){
-        Module.fatal_error(e);
-      } finally {
-        Module.hiwire.decref(idargs);
-      }
-      if(idresult === 0){
-        _pythonexc2js();
-      }
-      return Module.hiwire.pop_value(idresult);
+      return Module.callPyObject(_getPtr(this), ...jsargs);
     }
     call(jsthis, ...jsargs){
-      return this.apply(jsthis, jsargs);
+      return Module.callPyObject(_getPtr(this), ...jsargs);
     }
   };
 
@@ -1238,16 +1241,16 @@ create_once_proxy(PyObject* obj)
   Py_INCREF(obj);
   return (JsRef)EM_ASM_INT(
     {
-      let o = { $$ : { ptr : $0 } };
+      let alreadyCalled = false;
       function wrapper(... args)
       {
-        if (!o) {
+        if (alreadyCalled) {
           throw new Error("OnceProxy can only be called once");
         }
+        alreadyCalled = true;
         try {
-          return Module.PyProxyClass.prototype.apply.call(o, undefined, args);
+          return Module.callPyObject($0, ... args);
         } finally {
-          o = undefined;
           _Py_DecRef($0);
         }
       }
