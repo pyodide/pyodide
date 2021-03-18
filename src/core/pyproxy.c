@@ -502,7 +502,7 @@ FutureDoneCallback_call_resolve(FutureDoneCallback* self, PyObject* result)
   JsRef result_js = NULL;
   JsRef output = NULL;
   result_js = python2js(result);
-  output = hiwire_call_OneArg(self->resolve_handle, result_js);
+  output = hiwire_call_va(self->resolve_handle, result_js, NULL);
 
   success = true;
 finally:
@@ -524,7 +524,7 @@ FutureDoneCallback_call_reject(FutureDoneCallback* self)
   // wrap_exception looks up the current exception and wraps it in a Js error.
   excval = wrap_exception(false);
   FAIL_IF_NULL(excval);
-  result = hiwire_call_OneArg(self->reject_handle, excval);
+  result = hiwire_call_va(self->reject_handle, excval, NULL);
 
   success = true;
 finally:

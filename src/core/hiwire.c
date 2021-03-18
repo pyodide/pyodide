@@ -420,12 +420,6 @@ hiwire_call_va(JsRef idobj, ...)
   return idresult;
 }
 
-EM_JS_REF(JsRef, hiwire_call_OneArg, (JsRef idfunc, JsRef idarg), {
-  let jsfunc = Module.hiwire.get_value(idfunc);
-  let jsarg = Module.hiwire.get_value(idarg);
-  return Module.hiwire.new_value(jsfunc(jsarg));
-});
-
 EM_JS_REF(JsRef,
           hiwire_call_bound,
           (JsRef idfunc, JsRef idthis, JsRef idargs),
