@@ -364,10 +364,18 @@ hiwire_dir(JsRef idobj);
  *
  * idargs is a hiwire Array containing the arguments.
  *
- * Returns: New reference
  */
 JsRef
 hiwire_call(JsRef idobj, JsRef idargs);
+
+/**
+ * Call a function
+ *
+ * Arguments are specified as a NULL-terminated valist of JsRefs.
+ *
+ */
+JsRef
+hiwire_call_va(JsRef idobj, ...);
 
 JsRef
 hiwire_call_OneArg(JsRef idfunc, JsRef idarg);
@@ -378,14 +386,25 @@ hiwire_call_bound(JsRef idfunc, JsRef idthis, JsRef idargs);
 /**
  * Call a member function.
  *
- * ptrname is the member name, as a char * to null-terminated UTF8.
+ * ptrname is the member name, as a null-terminated UTF8.
  *
  * idargs is a hiwire Array containing the arguments.
  *
- * Returns: New reference
  */
 JsRef
 hiwire_call_member(JsRef idobj, const char* ptrname, JsRef idargs);
+
+
+/**
+ * Call a member function.
+ *
+ * ptrname is the member name, as a null-terminated UTF8.
+ *
+  * Arguments are specified as a NULL-terminated valist of JsRefs.
+ *
+ */
+JsRef
+hiwire_call_member_va(JsRef idobj, const char* ptrname, ...);
 
 /**
  * Calls the constructor of a class object.
