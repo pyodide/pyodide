@@ -1289,10 +1289,10 @@ EM_JS_REF(JsRef, create_promise_handles, (
     checkUsed();
     used = true;
     if(handle_result){
-      _Py_DecRef(set_result);
+      _Py_DecRef(handle_result);
     }
     if(handle_exception){
-      _Py_DecRef(set_exception)
+      _Py_DecRef(handle_exception)
     }
   }
   function onFulfilled(res) {
