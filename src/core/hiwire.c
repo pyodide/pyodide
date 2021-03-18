@@ -388,11 +388,13 @@ EM_JS_REF(JsRef, hiwire_dir, (JsRef idobj), {
   return Module.hiwire.new_value(result);
 });
 
-static JsRef convert_va_args(va_list args){
+static JsRef
+convert_va_args(va_list args)
+{
   JsRef idargs = hiwire_array();
-  while(true){
+  while (true) {
     JsRef idarg = va_arg(args, JsRef);
-    if(idarg == NULL){
+    if (idarg == NULL) {
       break;
     }
     hiwire_push_array(idargs, idarg);
@@ -407,7 +409,9 @@ EM_JS_REF(JsRef, hiwire_call, (JsRef idfunc, JsRef idargs), {
   return Module.hiwire.new_value(jsfunc(... jsargs));
 });
 
-JsRef hiwire_call_va(JsRef idobj, ...){
+JsRef
+hiwire_call_va(JsRef idobj, ...)
+{
   va_list args;
   va_start(args, idobj);
   JsRef idargs = convert_va_args(args);
@@ -449,7 +453,9 @@ EM_JS_REF(JsRef,
             return Module.hiwire.new_value(jsobj[jsname](... jsargs));
           });
 
-JsRef hiwire_call_member_va(JsRef idobj, const char* ptrname, ...){
+JsRef
+hiwire_call_member_va(JsRef idobj, const char* ptrname, ...)
+{
   va_list args;
   va_start(args, ptrname);
   JsRef idargs = convert_va_args(args);

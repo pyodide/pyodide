@@ -394,13 +394,12 @@ hiwire_call_bound(JsRef idfunc, JsRef idthis, JsRef idargs);
 JsRef
 hiwire_call_member(JsRef idobj, const char* ptrname, JsRef idargs);
 
-
 /**
  * Call a member function.
  *
  * ptrname is the member name, as a null-terminated UTF8.
  *
-  * Arguments are specified as a NULL-terminated valist of JsRefs.
+ * Arguments are specified as a NULL-terminated valist of JsRefs.
  *
  */
 JsRef
