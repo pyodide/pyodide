@@ -301,7 +301,15 @@ def test_wrapper_check_for_memory_leaks(selenium):
     a = yield
     selenium.restore_globals()
     selenium.run_js(
-        "pyodide._module.runPythonSimple('import gc; print(gc.collect(2))')"
+        """
+        pyodide._module.runPythonSimple('import gc; print(gc.collect(2))');
+        pyodide._module.runPythonSimple(
+            'import sys;' +
+            'sys.last_type = None;' +
+            'sys.last_value = None;' +
+            'sys.last_traceback = None'
+        );
+        """
     )
     # if there was an error in the body of the test, flush it out by calling
     # get_result (we don't want to override the error message by raising a
