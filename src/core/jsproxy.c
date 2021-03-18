@@ -1155,7 +1155,7 @@ JsProxy_create_subtype(int flags)
   // Make sure these stack allocations are large enough to fit!
   PyType_Slot slots[20];
   int cur_slot = 0;
-  PyMethodDef methods[5];
+  PyMethodDef methods[10];
   int cur_method = 0;
   PyMemberDef members[5];
   int cur_member = 0;
