@@ -35,4 +35,5 @@ if __name__ == "__main__":
     try:
         subprocess.run(["pytest", "--lf"] + args, check=True)
     except subprocess.CalledProcessError:
-        sys.exit(1)
+        pass
+    sys.exit(1)
