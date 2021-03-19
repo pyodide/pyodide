@@ -269,7 +269,7 @@ def test_run_python_js_error(selenium):
             from unittest import TestCase
             from pyodide import JsException
             raises = TestCase().assertRaisesRegex
-            with raises(JsException, blah):
+            with raises(JsException, "blah!"):
                 throwError()
         `);
         """
