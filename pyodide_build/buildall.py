@@ -129,6 +129,8 @@ def generate_dependency_graph(
 
     while packages:
         pkgname = packages.pop()
+        if not pkgname:
+            continue
 
         pkg = Package(packages_dir / pkgname)
         pkg_map[pkg.name] = pkg
