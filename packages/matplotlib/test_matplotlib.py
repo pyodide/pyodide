@@ -6,7 +6,7 @@ def test_matplotlib(selenium_standalone):
     selenium.load_package("matplotlib")
     selenium.run(
         """
-        from matplotlib import pyplot as plt")
+        from matplotlib import pyplot as plt
         plt.figure()
         plt.plot([1,2,3])
         plt.show()
