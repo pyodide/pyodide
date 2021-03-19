@@ -679,6 +679,7 @@ def temp(Module):
   globals = __main__.__dict__
   globals.update(builtins.__dict__)
 
+  global saved_globals
   saved_globals = {}
   saved_globals.update(globals)
 
