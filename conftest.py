@@ -13,6 +13,8 @@ import queue
 import sys
 import shutil
 
+import pytest
+
 ROOT_PATH = pathlib.Path(__file__).parents[0].resolve()
 TEST_PATH = ROOT_PATH / "src" / "tests"
 BUILD_PATH = ROOT_PATH / "build"
@@ -25,6 +27,7 @@ import selenium.webdriver.common.utils  # noqa: E402
 # XXX: Temporary fix for ConnectionError in selenium
 
 selenium.webdriver.common.utils.is_connectable = _selenium_is_connectable
+
 
 def pytest_addoption(parser):
     group = parser.getgroup("general")
@@ -40,10 +43,11 @@ def pytest_addoption(parser):
         help="If provided, tests marked as xfail will be run",
     )
 
+
 def pytest_configure(config):
     """Monkey patch the function cwd_relative_nodeid returns the description
-        of a test for the short summary table. Monkey patch it to reduce the verbosity of the test names in the table.
-        This leaves enough room to see the information about the test failure in the summary.
+    of a test for the short summary table. Monkey patch it to reduce the verbosity of the test names in the table.
+    This leaves enough room to see the information about the test failure in the summary.
     """
     old_cwd_relative_nodeid = config.cwd_relative_nodeid
 
@@ -258,6 +262,7 @@ def selenium_common(request, web_server_main):
     finally:
         selenium.driver.quit()
 
+
 @pytest.fixture(params=["firefox", "chrome"], scope="function")
 def selenium_standalone(request, web_server_main):
     with selenium_common(request, web_server_main) as selenium:
@@ -266,11 +271,13 @@ def selenium_standalone(request, web_server_main):
         finally:
             print(selenium.logs)
 
+
 # selenium instance cached at the module level
 @pytest.fixture(params=["firefox", "chrome"], scope="module")
 def selenium_module_scope(request, web_server_main):
     with selenium_common(request, web_server_main) as selenium:
         yield selenium
+
 
 # We want one version of this decorated as a function-scope fixture and one
 # version decorated as a context manager.
@@ -280,6 +287,7 @@ def selenium_per_function(selenium_module_scope):
         yield selenium_module_scope
     finally:
         print(selenium_module_scope.logs)
+
 
 selenium = pytest.fixture(selenium_per_function)
 # Hypothesis is unhappy with function scope fixtures. Instead, use the
