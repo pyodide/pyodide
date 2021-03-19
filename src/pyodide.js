@@ -388,6 +388,8 @@ globalThis.languagePluginLoader = (async () => {
       "Pyodide has suffered a fatal error, refresh the page. " +
       "Please report this to the Pyodide maintainers.";
   Module.fatal_error = function(e) {
+    console.error(fatal_error_msg);
+    console.error("The cause of the fatal error was:\n", e);
     for (let [key, value] of Object.entries(Module.public_api)) {
       if (key.startsWith("_")) {
         // delete Module.public_api[key];
@@ -402,8 +404,6 @@ globalThis.languagePluginLoader = (async () => {
         Module.public_api[key] = function() { throw Error(fatal_error_msg); }
       }
     }
-    console.error(fatal_error_msg);
-    console.error("The cause of the fatal error was:\n", e);
     throw e;
   };
 
@@ -679,11 +679,39 @@ def temp(Module):
   globals = __main__.__dict__
   globals.update(builtins.__dict__)
 
+  global saved_globals
+  saved_globals = {}
+  saved_globals.update(globals)
+
   Module.version = pyodide.__version__
   Module.globals = globals
   Module.builtins = builtins.__dict__
   Module.pyodide_py = pyodide
 `);
+  Module.resetState = function() {
+    pyodide.globals.clear();
+    Module.runPythonSimple(`
+import sys
+import __main__
+import gc
+from pyodide import jsfinder
+sys.last_type = None
+sys.last_value = None
+sys.last_traceback = None
+__main__.__dict__.clear()
+__main__.__dict__.update(saved_globals)
+
+for [key, js_module] in list(jsfinder.jsproxies.items()):
+  if key in ["js", "pyodide-js"]:
+    continue
+  if sys.modules.get(key) == js_module:
+    del sys.modules[key]
+  del jsfinder.jsproxies[key]
+
+print("gc", gc.collect(2))
+    `);
+  };
+
   Module.init_dict.get("temp")(Module);
 
   // Wrap "globals" in a special Proxy that allows `pyodide.globals.x` access.
