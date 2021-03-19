@@ -679,11 +679,29 @@ def temp(Module):
   globals = __main__.__dict__
   globals.update(builtins.__dict__)
 
+  saved_globals = {}
+  saved_globals.update(globals)
+
   Module.version = pyodide.__version__
   Module.globals = globals
   Module.builtins = builtins.__dict__
   Module.pyodide_py = pyodide
 `);
+  Module.resetState = function(){
+    pyodide.globals.clear();
+    Module.runPythonSimple(`
+import sys
+import __main__
+import gc
+sys.last_type = None
+sys.last_value = None
+sys.last_traceback = None
+__main__.__dict__.clear()
+__main__.__dict__.update(saved_globals)
+print("gc", gc.collect(2))
+    `);
+  }
+
   Module.init_dict.get("temp")(Module);
 
   // Wrap "globals" in a special Proxy that allows `pyodide.globals.x` access.
