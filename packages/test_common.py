@@ -41,6 +41,7 @@ def test_parse_package(name):
         assert skip_host is True
 
 
+@pytest.mark.norefs
 @pytest.mark.parametrize("name", registered_packages())
 def test_import(name, selenium_standalone):
     # check that we can parse the meta.yaml

@@ -267,7 +267,7 @@ def pytest_runtest_call(item):
         selenium = item.funcargs["selenium"]
     if "selenium_standalone" in item._fixtureinfo.argnames:
         selenium = item.funcargs["selenium_standalone"]
-    if selenium:
+    if selenium and pytest.mark.norefs.mark not in item.own_markers:
         yield from test_wrapper_check_for_memory_leaks(selenium)
     else:
         yield

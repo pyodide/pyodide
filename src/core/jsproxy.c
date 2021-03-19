@@ -79,6 +79,8 @@ typedef struct
   JsRef this_;
   vectorcallfunc vectorcall;
   int supports_kwargs; // -1 : don't know. 0 : no, 1 : yes
+// Currently just for module objects
+  PyObject* dict;
 } JsProxy;
 // clang-format on
 
@@ -185,6 +187,16 @@ JsProxy_SetAttr(PyObject* self, PyObject* attr, PyObject* pyvalue)
 
   const char* key = PyUnicode_AsUTF8(attr);
   FAIL_IF_NULL(key);
+
+  if (strncmp(key, "__", 2) == 0) {
+    // Avoid creating reference loops between Python and Javascript with js
+    // modules. Such reference loops make it hard to avoid leaking memory.
+    if (strcmp(key, "__loader__") == 0 || strcmp(key, "__name__") == 0 ||
+        strcmp(key, "__package__") == 0 || strcmp(key, "__path__") == 0 ||
+        strcmp(key, "__spec__") == 0) {
+      return PyObject_GenericSetAttr(self, attr, pyvalue);
+    }
+  }
 
   if (pyvalue == NULL) {
     FAIL_IF_MINUS_ONE(hiwire_delete_member_string(JsProxy_REF(self), key));
@@ -776,6 +788,7 @@ static PyTypeObject JsProxyType = {
   .tp_getset = JsProxy_GetSet,
   .tp_as_number = &JsProxy_NumberMethods,
   .tp_repr = JsProxy_Repr,
+  .tp_dictoffset = offsetof(JsProxy, dict),
 };
 
 static int
