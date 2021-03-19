@@ -79,6 +79,8 @@ typedef struct
   JsRef this_;
   vectorcallfunc vectorcall;
   int supports_kwargs; // -1 : don't know. 0 : no, 1 : yes
+// Currently just for module objects
+  PyObject* dict;
 } JsProxy;
 // clang-format on
 
@@ -87,6 +89,9 @@ typedef struct
 static void
 JsProxy_dealloc(JsProxy* self)
 {
+#ifdef HW_TRACE_REFS
+  printf("jsproxy delloc %zd, %zd\n", (long)self, (long)self->js);
+#endif
   hiwire_CLEAR(self->js);
   hiwire_CLEAR(self->this_);
   Py_TYPE(self)->tp_free((PyObject*)self);
@@ -181,6 +186,16 @@ JsProxy_SetAttr(PyObject* self, PyObject* attr, PyObject* pyvalue)
 
   const char* key = PyUnicode_AsUTF8(attr);
   FAIL_IF_NULL(key);
+
+  if (strncmp(key, "__", 2) == 0) {
+    // Avoid creating reference loops between Python and Javascript with js
+    // modules. Such reference loops make it hard to avoid leaking memory.
+    if (strcmp(key, "__loader__") == 0 || strcmp(key, "__name__") == 0 ||
+        strcmp(key, "__package__") == 0 || strcmp(key, "__path__") == 0 ||
+        strcmp(key, "__spec__") == 0) {
+      return PyObject_GenericSetAttr(self, attr, pyvalue);
+    }
+  }
 
   if (pyvalue == NULL) {
     FAIL_IF_MINUS_ONE(hiwire_delete_member_string(JsProxy_REF(self), key));
@@ -677,24 +692,29 @@ JsProxy_then(JsProxy* self, PyObject* args, PyObject* kwds)
 {
   PyObject* onfulfilled = NULL;
   PyObject* onrejected = NULL;
-  JsRef promise_handles = NULL;
-  JsRef result_promise = NULL;
-  PyObject* result = NULL;
 
   static char* kwlist[] = { "onfulfilled", "onrejected", 0 };
   if (!PyArg_ParseTupleAndKeywords(
         args, kwds, "|OO:then", kwlist, &onfulfilled, &onrejected)) {
     return NULL;
   }
+
+  JsRef promise_id = NULL;
+  JsRef promise_handles = NULL;
+  JsRef result_promise = NULL;
+  PyObject* result = NULL;
+
   if (onfulfilled == Py_None) {
     Py_CLEAR(onfulfilled);
   }
   if (onrejected == Py_None) {
     Py_CLEAR(onrejected);
   }
+  promise_id = hiwire_resolve_promise(self->js);
+  FAIL_IF_NULL(promise_id);
   promise_handles = create_promise_handles(onfulfilled, onrejected);
   FAIL_IF_NULL(promise_handles);
-  result_promise = hiwire_call_member(self->js, "then", promise_handles);
+  result_promise = hiwire_call_member(promise_id, "then", promise_handles);
   if (result_promise == NULL) {
     Py_CLEAR(onfulfilled);
     Py_CLEAR(onrejected);
@@ -703,6 +723,8 @@ JsProxy_then(JsProxy* self, PyObject* args, PyObject* kwds)
   result = JsProxy_create(result_promise);
 
 finally:
+  // don't clear onfulfilled, onrejected, they are borrowed from arguments.
+  hiwire_CLEAR(promise_id);
   hiwire_CLEAR(promise_handles);
   hiwire_CLEAR(result_promise);
   return result;
@@ -714,15 +736,18 @@ finally:
 PyObject*
 JsProxy_catch(JsProxy* self, PyObject* onrejected)
 {
+  JsRef promise_id = NULL;
   JsRef promise_handles = NULL;
   JsRef result_promise = NULL;
   PyObject* result = NULL;
 
+  promise_id = hiwire_resolve_promise(self->js);
+  FAIL_IF_NULL(promise_id);
   // We have to use create_promise_handles so that the handler gets released
   // even if the promise resolves successfully.
   promise_handles = create_promise_handles(NULL, onrejected);
   FAIL_IF_NULL(promise_handles);
-  result_promise = hiwire_call_member(self->js, "then", promise_handles);
+  result_promise = hiwire_call_member(promise_id, "then", promise_handles);
   if (result_promise == NULL) {
     Py_DECREF(onrejected);
     FAIL();
@@ -730,6 +755,7 @@ JsProxy_catch(JsProxy* self, PyObject* onrejected)
   result = JsProxy_create(result_promise);
 
 finally:
+  hiwire_CLEAR(promise_id);
   hiwire_CLEAR(promise_handles);
   hiwire_CLEAR(result_promise);
   return result;
@@ -746,14 +772,17 @@ PyObject*
 JsProxy_finally(JsProxy* self, PyObject* onfinally)
 {
   JsRef proxy = NULL;
+  JsRef promise_id = NULL;
   JsRef result_promise = NULL;
   PyObject* result = NULL;
 
+  promise_id = hiwire_resolve_promise(self->js);
+  FAIL_IF_NULL(promise_id);
   // Finally method is called no matter what so we can use
   // `create_once_callable`.
   proxy = create_once_callable(onfinally);
   FAIL_IF_NULL(proxy);
-  result_promise = hiwire_call_member_va(self->js, "finally", proxy, NULL);
+  result_promise = hiwire_call_member_va(promise_id, "finally", proxy, NULL);
   if (result_promise == NULL) {
     Py_DECREF(onfinally);
     FAIL();
@@ -761,6 +790,7 @@ JsProxy_finally(JsProxy* self, PyObject* onfinally)
   result = JsProxy_create(result_promise);
 
 finally:
+  hiwire_CLEAR(promise_id);
   hiwire_CLEAR(proxy);
   hiwire_CLEAR(result_promise);
   return result;
@@ -787,6 +817,7 @@ static PyTypeObject JsProxyType = {
   .tp_getset = JsProxy_GetSet,
   .tp_as_number = &JsProxy_NumberMethods,
   .tp_repr = JsProxy_Repr,
+  .tp_dictoffset = offsetof(JsProxy, dict),
 };
 
 static int
@@ -794,6 +825,9 @@ JsProxy_cinit(PyObject* obj, JsRef idobj)
 {
   JsProxy* self = (JsProxy*)obj;
   self->js = hiwire_incref(idobj);
+#ifdef HW_TRACE_REFS
+  printf("JsProxy cinit: %zd, object: %zd\n", (long)obj, (long)self->js);
+#endif
   return 0;
 }
 
@@ -896,6 +930,7 @@ JsProxy_new_error(JsRef idobj)
   result = PyObject_CallFunctionObjArgs(Exc_JsException, proxy, NULL);
   FAIL_IF_NULL(result);
 finally:
+  Py_CLEAR(proxy);
   return result;
 }
 
@@ -1101,7 +1136,7 @@ static void
 JsBuffer_dealloc(JsBuffer* self)
 {
   Py_CLEAR(self->bytes);
-  Py_TYPE(self)->tp_free((PyObject*)self);
+  JsProxy_dealloc((JsProxy*)self);
 }
 
 static PyBufferProcs JsBuffer_BufferProcs = {
