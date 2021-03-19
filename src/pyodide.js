@@ -688,7 +688,7 @@ def temp(Module):
   Module.builtins = builtins.__dict__
   Module.pyodide_py = pyodide
 `);
-  Module.resetState = function(){
+  Module.resetState = function() {
     pyodide.globals.clear();
     Module.runPythonSimple(`
 import sys
@@ -701,7 +701,7 @@ __main__.__dict__.clear()
 __main__.__dict__.update(saved_globals)
 print("gc", gc.collect(2))
     `);
-  }
+  };
 
   Module.init_dict.get("temp")(Module);
 
