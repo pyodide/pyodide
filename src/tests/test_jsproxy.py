@@ -407,6 +407,7 @@ def test_window_isnt_super_weird_anymore():
     del Array
 
 
+@pytest.mark.norefs
 def test_mount_object(selenium):
     result = selenium.run_js(
         """
@@ -458,56 +459,6 @@ def test_mount_object(selenium):
         """
     )
 
-
-@pytest.mark.xfail
-def test_mount_map(selenium):
-    result = selenium.run_js(
-        """
-        function x1(){
-            return "x1";
-        }
-        function x2(){
-            return "x2";
-        }
-        function y(){
-            return "y";
-        }
-        let a = new Map(Object.entries({ x : x1, y, s : 3, t : 7}));
-        let b = new Map(Object.entries({ x : x2, y, u : 3, t : 7}));
-        pyodide.registerJsModule("a", a);
-        pyodide.registerJsModule("b", b);
-        return pyodide.runPython(`
-            from a import x
-            from b import x as x2
-            result = [x(), x2()]
-            import a
-            import b
-            result += [a.s, dir(a), dir(b)]
-            import sys
-            del a
-            del b
-            del x
-            del x2
-            del sys.modules["a"]
-            del sys.modules["b"]
-            result
-        `)
-        """
-    )
-    assert result[:3] == ["x1", "x2", 3]
-    # fmt: off
-    assert set(result[3]).issuperset(
-        [
-            "x", "y", "s", "t",
-            "__dir__", "__doc__", "__getattr__", "__loader__",
-            "__name__", "__package__", "__spec__",
-            "jsproxy",
-        ]
-    )
-    # fmt: on
-    assert set(result[4]).issuperset(["x", "y", "u", "t", "jsproxy"])
-
-
 def test_unregister_jsmodule(selenium):
     selenium.run_js(
         """
@@ -541,6 +492,7 @@ def test_unregister_jsmodule_error(selenium):
     )
 
 
+@pytest.mark.norefs
 def test_nested_import(selenium):
     assert (
         selenium.run_js(
@@ -561,6 +513,7 @@ def test_nested_import(selenium):
     )
 
 
+@pytest.mark.norefs
 def test_register_jsmodule_docs_example(selenium):
     selenium.run_js(
         """
