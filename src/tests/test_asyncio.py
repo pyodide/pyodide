@@ -348,7 +348,9 @@ def test_await_pyproxy_eval_async(selenium):
         selenium.run_js(
             """
             let c = pyodide._module.pyodide_py._base.eval_code_async("1+1");
-            return await c;
+            let result = await c;
+            c.destroy();
+            return result;
             """
         )
         == 2
