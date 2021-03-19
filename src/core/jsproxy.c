@@ -92,10 +92,9 @@ JsProxy_dealloc(JsProxy* self)
 #ifdef HW_TRACE_REFS
   printf("jsproxy delloc %zd, %zd\n", (long)self, (long)self->js);
 #endif
-  PyTypeObject* tp = Py_TYPE(self);
   hiwire_CLEAR(self->js);
   hiwire_CLEAR(self->this_);
-  tp->tp_free(self);
+  Py_TYPE(self)->tp_free((PyObject*)self);
 }
 
 /**
