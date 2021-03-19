@@ -19,9 +19,9 @@ at Mozilla as part of the [iodide project](https://iodide.io), a set of experime
 scientific computing and communication for the web.
 
 At present Pyodide is an independent and community driven open-source project.
-The decision making process is outlined in the {ref}`project governance
-<project_governance>`. Pyodide may be used standalone in any context where you
-want to run Python inside a web browser.
+The decision making process is outlined in the {ref}`project governance <project-governance>`.
+Pyodide may be used standalone in any context where you want to run Python
+inside a web browser.
 
 ## Infrastructure support
 
