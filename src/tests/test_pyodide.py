@@ -257,14 +257,14 @@ def test_run_python_last_exc(selenium):
     )
 
 
-def test_create_once_callback(selenium):
+def test_create_once_callable(selenium):
     selenium.run_js(
         """
         window.call7 = function call7(f){
             return f(7);
         }
         pyodide.runPython(`
-            from pyodide import create_once_callback, JsException
+            from pyodide import create_once_callable, JsException
             from js import call7;
             from unittest import TestCase
             raises = TestCase().assertRaisesRegex
@@ -279,7 +279,7 @@ def test_create_once_callback(selenium):
             f = Square()
             import sys
             assert sys.getrefcount(f) == 2
-            proxy = create_once_callback(f)
+            proxy = create_once_callable(f)
             assert sys.getrefcount(f) == 3
             assert call7(proxy) == 49
             assert sys.getrefcount(f) == 2

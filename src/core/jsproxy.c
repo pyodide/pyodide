@@ -738,7 +738,7 @@ finally:
 /**
  * Overload for `finally` for JsProxies with a `then` method. This isn't
  * strictly necessary since one could get the same effect by just calling
- * create_once_callback on the argument, but it'd be bad to have `then` and
+ * create_once_callable on the argument, but it'd be bad to have `then` and
  * `catch` handle freeing the handler automatically but require something extra
  * to use `finally`.
  */
@@ -749,8 +749,9 @@ JsProxy_finally(JsProxy* self, PyObject* onfinally)
   JsRef result_promise = NULL;
   PyObject* result = NULL;
 
-  // Finally method is called no matter what so we can use `create_once_callback`.
-  proxy = create_once_callback(onfinally);
+  // Finally method is called no matter what so we can use
+  // `create_once_callable`.
+  proxy = create_once_callable(onfinally);
   FAIL_IF_NULL(proxy);
   result_promise = hiwire_call_member_va(self->js, "finally", proxy, NULL);
   if (result_promise == NULL) {

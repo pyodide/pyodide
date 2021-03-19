@@ -371,7 +371,8 @@ hiwire_call(JsRef idobj, JsRef idargs);
 /**
  * Call a function
  *
- * Arguments are specified as a NULL-terminated variable arguments list of JsRefs.
+ * Arguments are specified as a NULL-terminated variable arguments list of
+ * JsRefs.
  *
  */
 JsRef
@@ -396,7 +397,8 @@ hiwire_call_member(JsRef idobj, const char* ptrname, JsRef idargs);
  *
  * ptrname is the member name, as a null-terminated UTF8.
  *
- * Arguments are specified as a NULL-terminated variable arguments list of JsRefs.
+ * Arguments are specified as a NULL-terminated variable arguments list of
+ * JsRefs.
  *
  */
 JsRef
