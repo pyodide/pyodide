@@ -3,7 +3,6 @@ PYODIDE_LIBRARIES=$(abspath ./.artifacts)
 include ../Makefile.envs
 
 ifeq ($(strip $(PYODIDE_PACKAGES)),)
-	ONLY_PACKAGES=""
 else
 	ONLY_PACKAGES=--only "$(PYODIDE_PACKAGES)"
 endif
