@@ -225,7 +225,6 @@ def test_keyboard_interrupt(selenium):
         """
     )
     assert 2000 < x < 2500
-    selenium.run("del triggerKeyboardInterrupt")
 
 
 def test_run_python_async_toplevel_await(selenium):

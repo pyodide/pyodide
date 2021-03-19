@@ -266,13 +266,6 @@ def test_eval_code_await_jsproxy(selenium):
             c.send(r.result())
             """
         )
-    selenium.run(
-        """
-        del Promise
-        del resolve
-        del p
-        """
-    )
 
 
 def test_eval_code_await_fetch(selenium):
@@ -314,23 +307,17 @@ def test_eval_code_await_error(selenium):
             throw new Error("This is an error message!");
         }
         window.async_js_raises = async_js_raises;
-        function js_raises(){
-            throw new Error("This is an error message!");
-        }
-        window.js_raises = js_raises;
-        """
-    )
-    selenium.run(
-        """
-        from js import async_js_raises, js_raises
-        from pyodide._base import eval_code_async
-        c = eval_code_async(
-            '''
-            await async_js_raises()
-            ''',
-            globals=globals()
-        )
-        r1 = c.send(None)
+        pyodide.runPython(`
+            from js import async_js_raises
+            from pyodide._base import eval_code_async
+            c = eval_code_async(
+                '''
+                await async_js_raises()
+                ''',
+                globals=globals()
+            )
+            r1 = c.send(None)
+        `)
         """
     )
     msg = "This is an error message!"

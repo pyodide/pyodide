@@ -96,7 +96,7 @@ def test_run_python_simple_error(selenium):
 def test_js2python(selenium):
     selenium.run_js(
         """
-        window.test_objects = {            
+        window.test_objects = {
             jsstring_ucs1 : "pyodidé",
             jsstring_ucs2 : "碘化物",
             jsstring_ucs4 : "🐍",
@@ -116,67 +116,38 @@ def test_js2python(selenium):
         Object.assign(window, test_objects);
         """
     )
-    assert selenium.run("from js import jsstring_ucs1\n" 'jsstring_ucs1 == "pyodidé"')
-    assert selenium.run("from js import jsstring_ucs2\n" 'jsstring_ucs2 == "碘化物"')
-    assert selenium.run("from js import jsstring_ucs4\n" 'jsstring_ucs4 == "🐍"')
+    selenium.run("from js import test_objects as t")
+    assert selenium.run('t.jsstring_ucs1 == "pyodidé"')
+    assert selenium.run('t.jsstring_ucs2 == "碘化物"')
+    assert selenium.run('t.jsstring_ucs4 == "🐍"')
     assert selenium.run(
-        "from js import jsnumber0\n" "jsnumber0 == 42 and isinstance(jsnumber0, int)"
+        "t.jsnumber0 == 42 and isinstance(t.jsnumber0, int)"
     )
     assert selenium.run(
-        "from js import jsnumber1\n"
-        "jsnumber1 == 42.5 and isinstance(jsnumber1, float)"
+        "t.jsnumber1 == 42.5 and isinstance(t.jsnumber1, float)"
     )
-    assert selenium.run("from js import jsundefined\n" "jsundefined is None")
-    assert selenium.run("from js import jsnull\n" "jsnull is None")
-    assert selenium.run("from js import jstrue\n" "jstrue is True")
-    assert selenium.run("from js import jsfalse\n" "jsfalse is False")
-    assert selenium.run("from js import jspython\n" "jspython is open")
+    assert selenium.run("t.jsundefined is None")
+    assert selenium.run("t.jsnull is None")
+    assert selenium.run("t.jstrue is True")
+    assert selenium.run("t.jsfalse is False")
+    assert selenium.run("t.jspython is open")
     assert selenium.run(
         """
-        from js import jsbytes
-        ((jsbytes.tolist() == [1, 2, 3])
-         and (jsbytes.tobytes() == b"\x01\x02\x03"))
+        ((t.jsbytes.tolist() == [1, 2, 3])
+         and (t.jsbytes.tobytes() == b"\x01\x02\x03"))
         """
     )
     assert selenium.run(
         """
-        from js import jsfloats
         import struct
         expected = struct.pack("fff", 1, 2, 3)
-        (jsfloats.tolist() == [1, 2, 3]) and (jsfloats.tobytes() == expected)
+        (t.jsfloats.tolist() == [1, 2, 3]) and (t.jsfloats.tobytes() == expected)
         """
     )
-    assert selenium.run(
-        """
-        from js import jsobject
-        str(jsobject) == "[object XMLHttpRequest]"
-        """
-    )
-    assert selenium.run(
-        """
-        from js import jsobject
-        bool(jsobject) == True
-        """
-    )
-    assert selenium.run(
-        """
-        from js import jsarray0
-        bool(jsarray0) == False
-        """
-    )
-    assert selenium.run(
-        """
-        from js import jsarray1
-        bool(jsarray1) == True
-        """
-    )
-    selenium.run_js(
-        """
-        for(let key of Object.keys(test_objects)){
-            pyodide.runPython(`del ${key}`);
-        }
-        """
-    )
+    assert selenium.run('str(t.jsobject) == "[object XMLHttpRequest]"')
+    assert selenium.run("bool(t.jsobject) == True")
+    assert selenium.run("bool(t.jsarray0) == False")
+    assert selenium.run("bool(t.jsarray1) == True")
 
 
 def test_js2python_bool(selenium):
@@ -192,17 +163,13 @@ def test_js2python_bool(selenium):
     assert (
         selenium.run(
             """
-        from js import window, f, m0, m1, s0, s1
-        [bool(x) for x in [f, m0, m1, s0, s1]]
-        """
+            from js import window, f, m0, m1, s0, s1
+            [bool(x) for x in [f, m0, m1, s0, s1]]
+            """
         )
         == [True, False, True, False, True]
     )
-    selenium.run(
-        """
-        del window; del f; del m0; del m1; del s0; del s1
-        """
-    )
+
 
 
 @pytest.mark.parametrize("wasm_heap", (False, True))
@@ -248,7 +215,6 @@ def test_typed_arrays(selenium, wasm_heap, jstype, pytype):
           and array.obj._has_bytes() is {not wasm_heap})
          """
     )
-    selenium.run("del array")
 
 
 def test_array_buffer(selenium):
@@ -262,14 +228,12 @@ def test_array_buffer(selenium):
         )
         == 100
     )
-    selenium.run("del array")
 
 
 def assert_js_to_py_to_js(selenium, name):
     selenium.run_js(f"window.obj = {name};")
     selenium.run("from js import obj")
     assert selenium.run_js("return pyodide.globals.get('obj') === obj;")
-    selenium.run("del obj")
 
 
 def assert_py_to_js_to_py(selenium, name):
@@ -280,7 +244,6 @@ def assert_py_to_js_to_py(selenium, name):
         obj is {name}
         """
     )
-    selenium.run("del obj")
 
 
 def test_recursive_list_to_js(selenium_standalone):
@@ -361,7 +324,6 @@ def test_jsproxy_attribute_error(selenium):
     with pytest.raises(selenium.JavascriptException, match=msg):
         selenium.run("point.y")
     assert selenium.run_js("return point.y;") is None
-    selenium.run("del point")
 
 
 def test_javascript_error(selenium):
@@ -375,7 +337,6 @@ def test_javascript_error(selenium):
             raise err
             """
         )
-        selenium.run("del Error")
 
 
 def test_javascript_error_back_to_js(selenium):
@@ -399,7 +360,6 @@ def test_javascript_error_back_to_js(selenium):
         return pyodide.globals.get("py_err") === err;
         """
     )
-    selenium.run("del err")
 
 
 def test_memoryview_conversion(selenium):
@@ -714,4 +674,3 @@ def test_to_py(selenium):
             """
         )
 
-    selenium.run("del a")

@@ -11,10 +11,7 @@ def test_jsproxy_dir(selenium):
         return pyodide.runPython(`
             from js import a
             from js import b
-            result = [dir(a), dir(b)]
-            del a
-            del b
-            result
+            [dir(a), dir(b)]
         `).toJs();
         """
     )
@@ -53,7 +50,6 @@ def test_jsproxy_dir(selenium):
         pyodide.runPython(`
             from js import a
             d = dir(a)
-            del a
             assert '0' not in d
             assert '9' not in d
             assert '27' not in d
@@ -73,9 +69,7 @@ def test_jsproxy_getattr(selenium):
         window.a = { x : 2, y : "9", typeof : 7 };
         return pyodide.runPython(`
             from js import a
-            result = [ a.x, a.y, a.typeof ]
-            del a
-            result
+            [ a.x, a.y, a.typeof ]
         `).toJs();
         """
         )
@@ -175,11 +169,6 @@ def test_jsproxy(selenium):
         )
         is True
     )
-    selenium.run("del square")
-    selenium.run("del ImageData")
-    selenium.run("del document")
-    selenium.run("del TEST")
-    selenium.run("del el")
 
 
 def test_jsproxy_iter(selenium):
@@ -198,7 +187,6 @@ def test_jsproxy_iter(selenium):
         window.ITER = makeIterator([1, 2, 3]);"""
     )
     assert selenium.run("from js import ITER\n" "list(ITER)") == [1, 2, 3]
-    selenium.run("del ITER")
 
 
 def test_jsproxy_implicit_iter(selenium):
@@ -216,7 +204,6 @@ def test_jsproxy_implicit_iter(selenium):
     assert selenium.run(
         "from js import ITER, Object\n" "list(Object.values(ITER))"
     ) == [1, 2, 3]
-    selenium.run("del ITER; del Object")
 
 
 def test_jsproxy_call(selenium):
@@ -234,27 +221,25 @@ def test_jsproxy_call(selenium):
         )
         == list(range(10))
     )
-    selenium.run("del f")
 
 
 def test_jsproxy_call_kwargs(selenium):
     assert (
         selenium.run_js(
             """
-        window.kwarg_function = ({ a = 1, b = 1 }) => {
-            return [a, b];
-        };
-        return pyodide.runPython(
-            `
-            from js import kwarg_function
-            kwarg_function(b = 2, a = 10)
-            `
-        );
-        """
+            window.kwarg_function = ({ a = 1, b = 1 }) => {
+                return [a, b];
+            };
+            return pyodide.runPython(
+                `
+                from js import kwarg_function
+                kwarg_function(b = 2, a = 10)
+                `
+            );
+            """
         )
         == [10, 2]
     )
-    selenium.run("del kwarg_function")
 
 
 @pytest.mark.xfail
@@ -273,7 +258,6 @@ def test_jsproxy_call_meth_py(selenium):
         );
         """
     )
-    selenium.run("del a")
 
 
 def test_jsproxy_call_meth_js(selenium):
@@ -290,7 +274,6 @@ def test_jsproxy_call_meth_js(selenium):
         );
         """
     )
-    selenium.run("del a")
 
 
 def test_jsproxy_call_meth_js_kwargs(selenium):
@@ -308,14 +291,6 @@ def test_jsproxy_call_meth_js_kwargs(selenium):
             r0 == a and r1 == 2 and r2 == 10
             `
         );
-        """
-    )
-    selenium.run(
-        """
-        del a
-        del r0
-        del r1
-        del r2
         """
     )
 
@@ -369,7 +344,6 @@ def test_import_invocation():
 
     js.setTimeout(temp, 100)
     js.fetch("packages.json")
-    del js
 
 
 @run_in_pyodide
@@ -377,7 +351,6 @@ def test_import_bind():
     from js import fetch
 
     fetch("packages.json")
-    del fetch
 
 
 @run_in_pyodide
@@ -387,8 +360,6 @@ def test_nested_attribute_access():
 
     js.URL.createObjectURL
     window.URL.createObjectURL
-    del js
-    del window
 
 
 @run_in_pyodide
@@ -402,9 +373,6 @@ def test_window_isnt_super_weird_anymore():
     assert js.window.Array == Array
     assert js.window.window.window.window == window
     assert window.window.window.window.Array == Array
-    del js
-    del window
-    del Array
 
 
 @pytest.mark.norefs
@@ -449,10 +417,6 @@ def test_mount_object(selenium):
     )
     selenium.run(
         """
-        del x
-        del x2
-        del a
-        del b
         import sys
         del sys.modules["a"]
         del sys.modules["b"]
@@ -509,7 +473,6 @@ def test_nested_import(selenium):
         import sys
         del sys.modules["js.a"]
         del sys.modules["js.a.b"]
-        del c
         """
     )
 
@@ -543,9 +506,6 @@ def test_register_jsmodule_docs_example(selenium):
         assert my_js_module.f(7) == 50
         assert h(9) == 80
         assert c == 2
-        del h
-        del c
-        del my_js_module
         import sys
         del sys.modules["my_js_module"]
         del sys.modules["my_js_module.submodule"]
@@ -594,7 +554,6 @@ def test_mixins_feature_presence(selenium):
         }
         """
     )
-    selenium.run("del console")
 
 
 def test_mixins_calls(selenium):
@@ -642,13 +601,6 @@ def test_mixins_calls(selenium):
             result
         `);
         return result.toJs();
-        """
-    )
-    selenium.run(
-        """
-        del obj
-        del it
-        del m
         """
     )
     for [desc, a, b] in result:
@@ -748,10 +700,8 @@ def test_mixins_errors(selenium):
         window.l = [0, false, NaN, undefined, null];
         window.l[6] = 7;
         let a = Array.from(window.l.entries());
-        console.log(a);
         a.splice(5, 1);
         window.m = new Map(a);
-        console.log(m.size);
         await pyodide.runPythonAsync(`
             from js import m
             from unittest import TestCase
@@ -780,7 +730,6 @@ def test_memory_leaks(selenium):
             from js import a
             repr(a)
             [*a]
-            del a
         `);
         """
     )

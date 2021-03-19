@@ -109,8 +109,6 @@ def test_pyproxy_refcount(selenium):
     for [a, b] in result:
         assert a == b, result
 
-    selenium.run("del window")
-
 
 def test_pyproxy_destroy(selenium):
     selenium.run(
