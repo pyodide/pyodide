@@ -554,6 +554,7 @@ FutureDoneCallback_call(FutureDoneCallback* self,
   } else {
     errcode = FutureDoneCallback_call_reject(self);
   }
+  Py_DECREF(result);
   if (errcode == 0) {
     Py_RETURN_NONE;
   } else {

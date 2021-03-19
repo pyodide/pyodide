@@ -257,6 +257,25 @@ def test_run_python_last_exc(selenium):
     )
 
 
+def test_async_leak(selenium):
+    assert 0 == selenium.run_js(
+        """
+        pyodide.runPython(`d = 888.888`);
+        pyodide.runPython(`async def test(): return d`);
+        async function test(){
+            let t = pyodide.runPython(`test()`);
+            await t;
+            t.destroy();
+        }
+        await test();
+        let init_refcount = pyodide.runPython(`from sys import getrefcount; getrefcount(d)`);
+        await test(); await test(); await test(); await test();
+        let new_refcount = pyodide.runPython(`getrefcount(d)`);
+        return new_refcount - init_refcount;
+        """
+    )
+
+
 def test_run_python_js_error(selenium):
     selenium.run_js(
         """
