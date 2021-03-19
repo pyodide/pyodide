@@ -120,12 +120,8 @@ def test_js2python(selenium):
     assert selenium.run('t.jsstring_ucs1 == "pyodidé"')
     assert selenium.run('t.jsstring_ucs2 == "碘化物"')
     assert selenium.run('t.jsstring_ucs4 == "🐍"')
-    assert selenium.run(
-        "t.jsnumber0 == 42 and isinstance(t.jsnumber0, int)"
-    )
-    assert selenium.run(
-        "t.jsnumber1 == 42.5 and isinstance(t.jsnumber1, float)"
-    )
+    assert selenium.run("t.jsnumber0 == 42 and isinstance(t.jsnumber0, int)")
+    assert selenium.run("t.jsnumber1 == 42.5 and isinstance(t.jsnumber1, float)")
     assert selenium.run("t.jsundefined is None")
     assert selenium.run("t.jsnull is None")
     assert selenium.run("t.jstrue is True")
@@ -169,7 +165,6 @@ def test_js2python_bool(selenium):
         )
         == [True, False, True, False, True]
     )
-
 
 
 @pytest.mark.parametrize("wasm_heap", (False, True))
@@ -673,4 +668,3 @@ def test_to_py(selenium):
             `);
             """
         )
-
