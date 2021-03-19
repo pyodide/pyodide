@@ -27,6 +27,8 @@ substitutions:
   are now wrapped in `PyProxy`. Added a new `toJs` API to `PyProxy` to request the
   conversion behavior that used to be implicit.
   [#1167](https://github.com/iodide-project/pyodide/pull/1167)
+- {{ API }} Added `JsProxy.to_py` API to convert a Javascript object to Python.
+  [#1244](https://github.com/iodide-project/pyodide/pull/1244)
 - {{ Feature }} Flexible jsimports: it now possible to add custom Python
   "packages" backed by Javascript code, like the `js` package.  The `js` package
   is now implemented using this system.
@@ -85,6 +87,9 @@ substitutions:
   available by default and automatically enabled by any relevant asyncio API,
   so for instance `asyncio.ensure_future` works without any configuration.
   [#1158](https://github.com/iodide-project/pyodide/pull/1158)
+- {{ API }} Removed `as_nested_list` API in favor of `JsProxy.to_py`.
+  [#1345](https://github.com/iodide-project/pyodide/pull/1345)
+
 
 ### pyodide-js
 
