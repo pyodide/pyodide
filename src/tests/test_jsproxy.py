@@ -459,6 +459,7 @@ def test_mount_object(selenium):
         """
     )
 
+
 def test_unregister_jsmodule(selenium):
     selenium.run_js(
         """

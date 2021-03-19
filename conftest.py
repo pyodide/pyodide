@@ -44,14 +44,16 @@ try:
         )
 
     def pytest_configure(config):
+        """Monkey patch the function cwd_relative_nodeid returns the description
+           of a test for the short summary table. Monkey patch it to reduce the verbosity of the test names in the table.
+           This leaves enough room to see the information about the test failure in the summary.
+        """
         old_cwd_relative_nodeid = config.cwd_relative_nodeid
 
         def cwd_relative_nodeid(*args):
             result = old_cwd_relative_nodeid(*args)
-            if result.startswith("src/tests/"):
-                result = result[len("src/tests/") :]
-            if result.startswith("packages/"):
-                result = result[len("packages/") :]
+            result = result.replace("src/tests/", "")
+            result = result.replace("packages/", "")
             result = result.replace("::test_", "::")
             result = result.replace("[chrome]", "")
             result = result.replace("[firefox]", "")
