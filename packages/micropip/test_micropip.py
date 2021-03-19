@@ -7,22 +7,38 @@ import pytest
 sys.path.append(str(Path(__file__).resolve().parent / "micropip"))
 
 
-def test_install_simple(selenium_standalone):
-    assert (
-        selenium_standalone.run_js(
-            """
-        let result = await pyodide.runPythonAsync(`
-            import os
-            import micropip
-            # Package 'pyodide-micropip-test' has dependency on 'snowballstemmer'
-            # It is used to test markers support
-            await micropip.install('pyodide-micropip-test')
-            import snowballstemmer
-            stemmer = snowballstemmer.stemmer('english')
-            stemmer.stemWords('go going goes gone'.split())
-        `);
-        return result.toJs();
+@pytest.fixture
+def selenium_standalone_micropip(selenium_standalone):
+    """Import micropip before entering test so that global initialization of
+    micropip doesn't count towards hiwire refcount.
+    """
+    selenium_standalone.run_js(
         """
+        await languagePluginLoader;
+        await pyodide.loadPackage("micropip");
+        await pyodide.runPythonAsync("import micropip");
+        """
+    )
+    yield selenium_standalone
+
+
+def test_install_simple(selenium_standalone_micropip):
+    selenium = selenium_standalone_micropip
+    assert (
+        selenium.run_js(
+            """
+            let result = await pyodide.runPythonAsync(`
+                import os
+                import micropip
+                # Package 'pyodide-micropip-test' has dependency on 'snowballstemmer'
+                # It is used to test markers support
+                await micropip.install('pyodide-micropip-test')
+                import snowballstemmer
+                stemmer = snowballstemmer.stemmer('english')
+                stemmer.stemWords('go going goes gone'.split())
+            `);
+            return result.toJs();
+            """
         )
         == ["go", "go", "goe", "gone"]
     )
@@ -57,11 +73,12 @@ def test_parse_wheel_url():
     assert wheel["platform"] == "macosx_10_9_intel"
 
 
-def test_install_custom_url(selenium_standalone, web_server_tst_data):
+def test_install_custom_url(selenium_standalone_micropip, web_server_tst_data):
+    selenium = selenium_standalone_micropip
     server_hostname, server_port, server_log = web_server_tst_data
     base_url = f"http://{server_hostname}:{server_port}/"
     url = base_url + "snowballstemmer-2.0.0-py2.py3-none-any.whl"
-    selenium_standalone.run_js(
+    selenium.run_js(
         f"""
         await pyodide.runPythonAsync(`
             import micropip
@@ -101,14 +118,15 @@ def test_add_requirement_relative_url():
     assert req["url"] == "./snowballstemmer-2.0.0-py2.py3-none-any.whl"
 
 
-def test_install_custom_relative_url(selenium_standalone):
+def test_install_custom_relative_url(selenium_standalone_micropip):
+    selenium = selenium_standalone_micropip
     root = Path(__file__).resolve().parents[2]
     src = root / "src" / "tests" / "data"
     target = root / "build" / "test_data"
     target.symlink_to(src, True)
     url = "./test_data/snowballstemmer-2.0.0-py2.py3-none-any.whl"
     try:
-        selenium_standalone.run_js(
+        selenium.run_js(
             f"""
             await pyodide.runPythonAsync(`
                 import micropip
