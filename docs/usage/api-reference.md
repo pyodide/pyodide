@@ -23,7 +23,7 @@ Backward compatibility of the API is not guaranteed at this point.
    pyodide.console.displayhook
    pyodide.webloop.WebLoop
    pyodide.create_proxy
-   pyodide.create_once_callback
+   pyodide.create_once_callable
 ```
 
 

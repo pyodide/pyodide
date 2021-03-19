@@ -1235,7 +1235,7 @@ EM_JS_NUM(int, pyproxy_init_js, (), {
 });
 // clang-format on
 
-EM_JS_REF(JsRef, create_once_callback, (PyObject * obj), {
+EM_JS_REF(JsRef, create_once_callable, (PyObject * obj), {
   _Py_IncRef(obj);
   let alreadyCalled = false;
   function wrapper(... args)
@@ -1262,9 +1262,9 @@ EM_JS_REF(JsRef, create_once_callback, (PyObject * obj), {
 });
 
 static PyObject*
-create_once_callback_py(PyObject* _mod, PyObject* obj)
+create_once_callable_py(PyObject* _mod, PyObject* obj)
 {
-  JsRef ref = create_once_callback(obj);
+  JsRef ref = create_once_callable(obj);
   PyObject* result = JsProxy_create(ref);
   hiwire_decref(ref);
   return result;
@@ -1335,11 +1335,11 @@ create_proxy(PyObject* _mod, PyObject* obj)
 
 static PyMethodDef pyproxy_methods[] = {
   {
-    "create_once_callback",
-    create_once_callback_py,
+    "create_once_callable",
+    create_once_callable_py,
     METH_O,
     PyDoc_STR(
-      "create_once_callback(obj : Callable) -> JsProxy"
+      "create_once_callable(obj : Callable) -> JsProxy"
       "\n\n"
       "Wrap a Python callable in a Javascript function that can be called "
       "once. After being called the proxy will decrement the reference count "
@@ -1352,7 +1352,9 @@ static PyMethodDef pyproxy_methods[] = {
     METH_O,
     PyDoc_STR("create_proxy(obj : Any) -> JsProxy"
               "\n\n"
-              "Create a PyProxy"),
+              "Create a `JsProxy` of a `PyProxy`. This allows explicit control "
+              "over the lifetime of the `PyProxy` from Python: call the "
+              "`destroy` API when done."),
   },
   { NULL } /* Sentinel */
 };

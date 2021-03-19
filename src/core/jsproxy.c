@@ -679,7 +679,11 @@ finally:
 }
 
 /**
- * Overload for `then` for JsProxies with a `then` method.
+ * Overload for `then` for JsProxies with a `then` method. Of course without
+ * this overload, the call would just fall through to the normal `then`
+ * function. The advantage of this overload is that it automatically releases
+ * the references to the onfulfilled and onrejected callbacks, which is quite
+ * hard to do otherwise.
  */
 PyObject*
 JsProxy_then(JsProxy* self, PyObject* args, PyObject* kwds)
@@ -723,13 +727,15 @@ finally:
 PyObject*
 JsProxy_catch(JsProxy* self, PyObject* onrejected)
 {
-  JsRef proxy = NULL;
+  JsRef promise_handles = NULL;
   JsRef result_promise = NULL;
   PyObject* result = NULL;
 
-  proxy = create_once_callback(onrejected);
-  FAIL_IF_NULL(proxy);
-  result_promise = hiwire_call_member_va(self->js, "catch", proxy, NULL);
+  // We have to use create_promise_handles so that the handler gets released
+  // even if the promise resolves successfully.
+  promise_handles = create_promise_handles(NULL, onrejected);
+  FAIL_IF_NULL(promise_handles);
+  result_promise = hiwire_call_member(self->js, "then", promise_handles);
   if (result_promise == NULL) {
     Py_DECREF(onrejected);
     FAIL();
@@ -737,13 +743,17 @@ JsProxy_catch(JsProxy* self, PyObject* onrejected)
   result = JsProxy_create(result_promise);
 
 finally:
-  hiwire_CLEAR(proxy);
+  hiwire_CLEAR(promise_handles);
   hiwire_CLEAR(result_promise);
   return result;
 }
 
 /**
- * Overload for `finally` for JsProxies with a `then` method.
+ * Overload for `finally` for JsProxies with a `then` method. This isn't
+ * strictly necessary since one could get the same effect by just calling
+ * create_once_callable on the argument, but it'd be bad to have `then` and
+ * `catch` handle freeing the handler automatically but require something extra
+ * to use `finally`.
  */
 PyObject*
 JsProxy_finally(JsProxy* self, PyObject* onfinally)
@@ -752,7 +762,9 @@ JsProxy_finally(JsProxy* self, PyObject* onfinally)
   JsRef result_promise = NULL;
   PyObject* result = NULL;
 
-  proxy = create_once_callback(onfinally);
+  // Finally method is called no matter what so we can use
+  // `create_once_callable`.
+  proxy = create_once_callable(onfinally);
   FAIL_IF_NULL(proxy);
   result_promise = hiwire_call_member_va(self->js, "finally", proxy, NULL);
   if (result_promise == NULL) {
