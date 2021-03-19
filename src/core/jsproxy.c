@@ -714,7 +714,7 @@ finally:
 PyObject*
 JsProxy_catch(JsProxy* self, PyObject* onrejected)
 {
-  JsRef proxy = NULL;
+  JsRef promise_handles = NULL;
   JsRef result_promise = NULL;
   PyObject* result = NULL;
 
@@ -730,7 +730,7 @@ JsProxy_catch(JsProxy* self, PyObject* onrejected)
   result = JsProxy_create(result_promise);
 
 finally:
-  hiwire_CLEAR(proxy);
+  hiwire_CLEAR(promise_handles);
   hiwire_CLEAR(result_promise);
   return result;
 }
