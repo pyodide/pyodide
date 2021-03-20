@@ -28,7 +28,6 @@ may be installed from PyPI to be used with Pyodide.
 
 .. toctree::
    :maxdepth: 2
-   :caption: Usage
 
    usage/quickstart.md
    usage/webworker.md
