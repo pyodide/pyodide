@@ -340,6 +340,7 @@ def test_ensure_future_memleak(selenium):
             async def test():
                 return o
             asyncio.ensure_future(test())
+            None
         `);
         """
     )

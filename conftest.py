@@ -45,8 +45,8 @@ try:
 
     def pytest_configure(config):
         """Monkey patch the function cwd_relative_nodeid returns the description
-           of a test for the short summary table. Monkey patch it to reduce the verbosity of the test names in the table.
-           This leaves enough room to see the information about the test failure in the summary.
+        of a test for the short summary table. Monkey patch it to reduce the verbosity of the test names in the table.
+        This leaves enough room to see the information about the test failure in the summary.
         """
         old_cwd_relative_nodeid = config.cwd_relative_nodeid
 

@@ -1,5 +1,6 @@
 import pytest
 
+
 @pytest.mark.norefs
 def test_matplotlib(selenium_standalone):
     selenium = selenium_standalone
