@@ -679,41 +679,18 @@ def temp(Module):
   globals = __main__.__dict__
   globals.update(builtins.__dict__)
 
-  global saved_globals
-  saved_globals = {}
-  saved_globals.update(globals)
-
   Module.version = pyodide.__version__
   Module.globals = globals
   Module.builtins = builtins.__dict__
   Module.pyodide_py = pyodide
 `);
-  Module.resetState = function() {
-    pyodide.globals.clear();
-    Module.runPythonSimple(`
-import sys
-import __main__
-import gc
-from pyodide import jsfinder
-sys.last_type = None
-sys.last_value = None
-sys.last_traceback = None
-__main__.__dict__.clear()
-__main__.__dict__.update(saved_globals)
 
-for [key, js_module] in list(jsfinder.jsproxies.items()):
-  if key in ["js", "pyodide-js"]:
-    continue
-  if sys.modules.get(key) == js_module:
-    del sys.modules[key]
-  key_dot = key + "."
-  for k in list(d.keys()):
-    if k.startswith(key_dot):
-        del d[k]
-  del jsfinder.jsproxies[key]
+  Module.saveState = function() {
+    return Module.pyodide_py._state.save_state();
+  };
 
-print("gc", gc.collect(2))
-    `);
+  Module.restoreState = function(state) {
+    return Module.pyodide_py._state.restore_state(state);
   };
 
   Module.init_dict.get("temp")(Module);
