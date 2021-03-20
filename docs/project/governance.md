@@ -1,4 +1,4 @@
-(governance)=
+(project-governance)=
 # Pyodide Governance and Decision-making
 
 The purpose of this document is to formalize the governance process used by the
