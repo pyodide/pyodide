@@ -49,6 +49,7 @@ def pytest_configure(config):
     of a test for the short summary table. Monkey patch it to reduce the verbosity of the test names in the table.
     This leaves enough room to see the information about the test failure in the summary.
     """
+    filter = config.getoption("-k").strip()
     old_cwd_relative_nodeid = config.cwd_relative_nodeid
 
     def cwd_relative_nodeid(*args):
@@ -56,10 +57,12 @@ def pytest_configure(config):
         result = result.replace("src/tests/", "")
         result = result.replace("packages/", "")
         result = result.replace("::test_", "::")
-        result = result.replace("[chrome]", "")
-        result = result.replace("[firefox]", "")
-        result = result.replace("chrome-", "")
-        result = result.replace("firefox-", "")
+        if filter == "chrome":
+            result = result.replace("[chrome]", "")
+            result = result.replace("chrome-", "")
+        if filter == "firefox":
+            result = result.replace("[firefox]", "")
+            result = result.replace("firefox-", "")
         return result
 
     config.cwd_relative_nodeid = cwd_relative_nodeid
