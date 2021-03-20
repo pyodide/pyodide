@@ -706,6 +706,10 @@ for [key, js_module] in list(jsfinder.jsproxies.items()):
     continue
   if sys.modules.get(key) == js_module:
     del sys.modules[key]
+  key_dot = key + "."
+  for k in list(d.keys()):
+    if k.startswith(key_dot):
+        del d[k]
   del jsfinder.jsproxies[key]
 
 print("gc", gc.collect(2))
