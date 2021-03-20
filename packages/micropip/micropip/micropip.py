@@ -12,7 +12,12 @@ from distlib import markers, util, version
 import sys
 
 # Provide stubs for testing in native python
-IN_BROWSER = "js" in sys.modules
+try:
+    from js import pyodide as js_pyodide
+
+    IN_BROWSER = True
+except ImportError:
+    IN_BROWSER = False
 
 if IN_BROWSER:
     # In practice, this is the `site-packages` directory.
@@ -39,23 +44,6 @@ else:
         with urlopen(url) as fd:
             content = fd.read()
         return io.BytesIO(content)
-
-
-if IN_BROWSER:
-    from js import pyodide as js_pyodide
-else:
-
-    class js_pyodide:  # type: ignore
-        """A mock object to allow import of this package outside pyodide
-        Report that all dependencies are empty.
-        """
-
-        class _module:
-            class packages:
-                class dependencies:
-                    @staticmethod
-                    def object_entries():
-                        return []
 
 
 if IN_BROWSER:
@@ -132,10 +120,10 @@ class _PackageManager:
     version_scheme = version.get_scheme("normalized")
 
     def __init__(self):
-        self.builtin_packages = {}
-        self.builtin_packages.update(
-            js_pyodide._module.packages.dependencies.object_entries()
-        )
+        if IN_BROWSER:
+            self.builtin_packages = js_pyodide._module.packages.dependencies.to_py()
+        else:
+            self.builtin_packages = {}
         self.installed_packages = {}
 
     async def install(self, requirements: Union[str, List[str]], ctx=None):

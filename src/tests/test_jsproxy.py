@@ -794,3 +794,19 @@ def test_buffer(selenium):
         }
         """
     )
+
+
+def test_memory_leaks(selenium):
+    assert 1 == selenium.run_js(
+        """
+        window.a = [1,2,3];
+        let num_keys = pyodide._module.hiwire.num_keys;
+        let start_keys = num_keys();
+        pyodide.runPython(`
+            from js import a
+            repr(a)
+            [*a]
+        `);
+        return num_keys() - start_keys;
+        """
+    )

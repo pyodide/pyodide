@@ -11,7 +11,6 @@ Backward compatibility of the API is not guaranteed at this point.
 .. autosummary::
    :toctree: ./python-api/
 
-   pyodide.as_nested_list
    pyodide.eval_code
    pyodide.find_imports
    pyodide.open_url
@@ -22,6 +21,8 @@ Backward compatibility of the API is not guaranteed at this point.
    pyodide.console.repr_shorten
    pyodide.console.displayhook
    pyodide.webloop.WebLoop
+   pyodide.create_proxy
+   pyodide.create_once_callable
 ```
 
 

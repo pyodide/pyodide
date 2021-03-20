@@ -1,5 +1,5 @@
-from ._base import open_url, eval_code, eval_code_async, find_imports, as_nested_list
-from ._core import JsException  # type: ignore
+from ._base import open_url, eval_code, eval_code_async, find_imports
+from ._core import JsException, create_once_callable, create_proxy  # type: ignore
 from ._importhooks import JsFinder
 from .webloop import WebLoopPolicy
 import asyncio
@@ -22,8 +22,9 @@ __all__ = [
     "eval_code",
     "eval_code_async",
     "find_imports",
-    "as_nested_list",
     "JsException",
     "register_js_module",
     "unregister_js_module",
+    "create_once_callable",
+    "create_proxy",
 ]
