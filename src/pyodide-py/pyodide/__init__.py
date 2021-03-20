@@ -1,8 +1,8 @@
 from ._base import open_url, eval_code, eval_code_async, find_imports, as_nested_list
 from ._core import JsException, create_once_callable, create_proxy  # type: ignore
 from ._importhooks import jsfinder
-from . import _state # type: ignore # noqa
 from .webloop import WebLoopPolicy
+from . import _state  # type: ignore # noqa
 import asyncio
 import sys
 import platform

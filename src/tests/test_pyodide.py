@@ -340,6 +340,7 @@ def test_create_proxy(selenium):
         """
     )
 
+
 def test_restore_state(selenium):
     selenium.run_js(
         """

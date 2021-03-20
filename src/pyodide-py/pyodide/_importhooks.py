@@ -3,6 +3,7 @@ from importlib.abc import MetaPathFinder, Loader
 from importlib.util import spec_from_loader
 import sys
 
+
 class JsFinder(MetaPathFinder):
     def __init__(self):
         self.jsproxies = {}
@@ -93,5 +94,6 @@ class JsLoader(Loader):
     # used by importlib.util.spec_from_loader
     def is_package(self, fullname):
         return True
+
 
 jsfinder = JsFinder()
