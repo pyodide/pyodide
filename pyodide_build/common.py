@@ -39,7 +39,7 @@ def _parse_package_subset(query: Optional[str]) -> Optional[Set[str]]:
     packages = {el.strip() for el in query.split(",")}
     packages.update(["micropip", "distlib"])
     packages.discard("")
-    return set(packages)
+    return packages
 
 
 def file_packager_path() -> Path:
