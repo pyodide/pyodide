@@ -420,25 +420,3 @@ def find_imports(code: str) -> List[str]:
                 continue
             imports.add(module_name.split(".")[0])
     return list(sorted(imports))
-
-
-def as_nested_list(obj) -> List:
-    """Convert a nested JS array to nested Python list.
-
-    Assumes a Javascript object is made of (possibly nested) arrays and
-    converts them to nested Python lists.
-
-    Parameters
-    ----------
-    obj
-       a Javscript object made of nested arrays.
-
-    Returns
-    -------
-    Python list, or a nested Python list
-    """
-    try:
-        it = iter(obj)
-        return [as_nested_list(x) for x in it]
-    except TypeError:
-        return obj
