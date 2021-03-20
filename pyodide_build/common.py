@@ -36,7 +36,7 @@ def _parse_package_subset(query: Optional[str]) -> Optional[Set[str]]:
     """
     if query is None:
         return None
-    packages = set([el.strip() for el in query.split(",")])
+    packages = {el.strip() for el in query.split(",")}
     packages.update(["micropip", "distlib"])
     packages.discard("")
     return set(packages)
