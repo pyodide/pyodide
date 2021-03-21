@@ -84,7 +84,7 @@ micropip.install(
     'https://example.com/files/snowballstemmer-2.0.0-py2.py3-none-any.whl'
 )
 ```
-Micropip currently decides whether a file is a url based on whether it ends in ".whl" or not.
+Micropip decides whether a file is a URL based on whether it ends in ".whl" or not.
 The wheel name in the URL must follow [PEP 427 naming
 convention](https://www.python.org/dev/peps/pep-0427/#file-format), which will
 be the case if the wheels is made using standard Python tools (`pip wheel`,

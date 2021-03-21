@@ -3,7 +3,9 @@
  */
 
 /**
- * A promise that resolves when Pyodide is loaded.
+ * A promise that resolves to ``undefined`` when Pyodide is finished loading.
+ *
+ * @type Promise
  */
 globalThis.languagePluginLoader = (async () => {
   let Module = {};
