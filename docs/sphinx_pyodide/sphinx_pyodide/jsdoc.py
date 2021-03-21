@@ -22,6 +22,15 @@ def longname_to_path(name):
     return PathVisitor().visit(path_and_formal_params["path"].parse(name))
 
 
+# old__init__ = JsAnalyzer.__init__
+# def patch__init__(self, arg, basename):
+#     import json
+#     import pathlib
+#     pathlib.Path("blah.json").write_text(json.dumps(arg))
+#     old__init__(self, arg, basename)
+# JsAnalyzer.__init__ = patch__init__
+
+
 class PyodideAnalyzer:
     """JsDoc automatically instantiates the JsAnalyzer. Rather than subclassing
     or monkey patching it, we use composition (see getattr impl).
@@ -51,9 +60,13 @@ class PyodideAnalyzer:
             if key[-1] == "Module":
                 pyodide = group
         for json in globals:
+            if json.get("access", None) == "private":
+                continue
             obj = self.get_object_from_json(json)
             self.js_docs["global"].append(obj)
         for json in pyodide:
+            if json.get("access", None) == "private":
+                continue
             obj = self.get_object_from_json(json)
             self.js_docs[obj.kind].append(obj)
 
@@ -77,7 +90,8 @@ def get_jsdoc_content_directive(app):
             )
 
         def parse_rst(self, rst):
-            doc = new_document("", settings=self.state.document.settings)
+            settings = self.state.document.settings
+            doc = new_document("", settings)
             RstParser().parse(rst, doc)
             return doc.children
 

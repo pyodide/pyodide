@@ -11,9 +11,9 @@ base_dir = pathlib.Path(__file__).resolve().parent.parent
 path_dirs = [
     str(base_dir),
     str(base_dir / "docs/sphinx_pyodide"),
-    str(base_dir / "src/pyodide-py"), 
+    str(base_dir / "src/pyodide-py"),
     str(base_dir / "packages/micropip/micropip"),
-] 
+]
 sys.path = path_dirs + sys.path
 
 # -- Project information -----------------------------------------------------
@@ -42,7 +42,7 @@ extensions = [
     "myst_parser",
     "sphinx_js",
     "autodocsumm",
-    "sphinx_pyodide"
+    "sphinx_pyodide",
 ]
 
 myst_enable_extensions = ["substitution"]
@@ -102,4 +102,3 @@ htmlhelp_basename = "Pyodidedoc"
 
 # A list of files that should not be packed into the epub file.
 epub_exclude_files = ["search.html"]
-
