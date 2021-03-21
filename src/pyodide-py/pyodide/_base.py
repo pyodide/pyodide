@@ -79,8 +79,13 @@ class CodeRunner:
 
     Examples
     --------
-    >>> CodeRunner().run("1+1") 2 CodeRunner().run("1+1;") runner = CodeRunner()
-    runner.run("x = 5") runner.run("x + 1") 6
+    >>> CodeRunner().run("1+1")
+    2
+    >>> CodeRunner().run("1+1;")
+    >>> runner = CodeRunner()
+    >>> runner.run("x = 5")
+    >>> runner.run("x + 1")
+    6
     """
 
     def __init__(
@@ -108,9 +113,14 @@ class CodeRunner:
 
         Examples
         --------
-        >>> CodeRunner().quiet('1 + 1') False CodeRunner().quiet('1 + 1 ;') True
-        CodeRunner().quiet('1 + 1 # comment ;') False
-        CodeRunner(quiet_trailing_semicolon=False).quiet('1 + 1 ;') False
+        >>> CodeRunner().quiet('1 + 1')
+        False
+        >>> CodeRunner().quiet('1 + 1 ;')
+        True
+        >>> CodeRunner().quiet('1 + 1 # comment ;')
+        False
+        >>> CodeRunner(quiet_trailing_semicolon=False).quiet('1 + 1 ;')
+        False
         """
         # largely inspired from IPython:
         # https://github.com/ipython/ipython/blob/86d24741188b0cedd78ab080d498e775ed0e5272/IPython/core/displayhook.py#L84
