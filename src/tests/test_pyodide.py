@@ -342,11 +342,11 @@ def test_create_proxy(selenium):
 
 
 def test_docstrings_a():
-    from _pyodide.docstring import get_c_docstring, dedent_docstring
+    from _pyodide.docstring import get_cmeth_docstring, dedent_docstring
     from pyodide import JsProxy
 
     jsproxy = JsProxy()
-    c_docstring = get_c_docstring(jsproxy.then)
+    c_docstring = get_cmeth_docstring(jsproxy.then)
     assert c_docstring == "then(onfulfilled, onrejected)\n--\n\n" + dedent_docstring(
         jsproxy.then.__doc__
     )
