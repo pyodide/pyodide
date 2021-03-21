@@ -96,3 +96,6 @@ class JsLoader(Loader):
     # used by importlib.util.spec_from_loader
     def is_package(self, fullname):
         return True
+
+
+jsfinder = JsFinder()

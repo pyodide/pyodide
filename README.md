@@ -23,7 +23,7 @@ browser**.
 
 ## Try Pyodide (no installation needed)
 
-Try pyodide in [Python REPL](https://pyodide-cdn2.iodide.io/v0.16.1/full/console.html) directly in your
+Try pyodide in [Python REPL](https://pyodide-cdn2.iodide.io/v0.17.0a2/full/console.html) directly in your
 browser.
 
 For further information, look through the [documentation](https://pyodide.org/).
