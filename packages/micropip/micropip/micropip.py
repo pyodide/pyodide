@@ -247,17 +247,23 @@ def install(requirements: Union[str, List[str]]):
     ----------
     requirements : ``str | List[str]``
 
-        A requirement or list of requirements to install. Each requirement is a string.
+        A requirement or list of requirements to install. Each requirement is a string, which should be either
+        a package name or url to a wheel:
 
-        - If the requirement ends in ``.whl``, the file will be interpreted as a url.
+        - If the requirement ends in ``.whl`` it will be interpreted as a URL.
           The file must be a wheel named in compliance with the
           `PEP 427 naming convention <https://www.python.org/dev/peps/pep-0427/#file-format>`_.
-        - A package name. A package by this name must either be present in the Pyodide
-          repository at ``languagePluginUrl`` or on PyPi.
+
+        - If the requirement does not end in ``.whl``, it will interpreted as the
+          name of a package. A package by this name must either be present in the
+          Pyodide repository at ``languagePluginUrl`` or on PyPi
 
     Returns
     -------
-    A Future that resolves when all packages have been downloaded and installed.
+    ``Future``
+
+        A ``Future`` that resolves to ``None`` when all packages have
+        been downloaded and installed.
     """
     importlib.invalidate_caches()
     return asyncio.ensure_future(PACKAGE_MANAGER.install(requirements))
