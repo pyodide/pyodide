@@ -239,22 +239,21 @@ def install(requirements: Union[str, List[str]]):
 
     See :ref:`loading packages <loading_packages>` for more information.
 
-    This only works for packages that are either pure Python or for packages with
-    C extensions that are built in pyodide. If a pure Python package is not found
-    in the pyodide repository it will be loaded from PyPi.
+    This only works for packages that are either pure Python or for packages
+    with C extensions that are built in Pyodide. If a pure Python package is not
+    found in the Pyodide repository it will be loaded from PyPi.
 
     Parameters
     ----------
-    requirements
-       A requirement or list of requirements to install.
-       Each requirement is a string.
+    requirements : ``str | List[str]``
 
-         - If the requirement ends in ".whl", the file will be interpreted as a url.
-           The file must be a wheel named in compliance with the
-           [PEP 427 naming convention](https://www.python.org/dev/peps/pep-0427/#file-format)
+        A requirement or list of requirements to install. Each requirement is a string.
 
-         - A package name. A package by this name must either be present in the pyodide
-           repository at `languagePluginUrl` or on PyPi.
+        - If the requirement ends in ``.whl``, the file will be interpreted as a url.
+          The file must be a wheel named in compliance with the
+          `PEP 427 naming convention <https://www.python.org/dev/peps/pep-0427/#file-format>`_.
+        - A package name. A package by this name must either be present in the Pyodide
+          repository at ``languagePluginUrl`` or on PyPi.
 
     Returns
     -------
