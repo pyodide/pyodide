@@ -101,15 +101,63 @@ def test_content():
     assert "Runs a string of Python code from Javascript." in rp["body"]
 
 
+JsDocSummary = get_jsdoc_summary_directive(dummy_app)
+a = JsDocSummary.__new__(JsDocSummary)
+a.state = dummy_state
+a.options = {}
+
+
+def test_extract_summary():
+    assert (
+        a.extract_summary(
+            "Registers the Js object ``module`` as a Js module with ``name``. This module can then be imported from Python using the standard Python\nimport system. :func:`some_func`"
+        )
+        == "Registers the Js object ``module`` as a Js module with ``name``."
+    )
+
+
 def test_summary():
-    JsDocSummary = get_jsdoc_summary_directive(dummy_app)
-
-    a = JsDocSummary.__new__(JsDocSummary)
-    a.state = dummy_state
-
-    def no_op_get_table(entries):
-        return entries
-
-    a.get_table = no_op_get_table
-    a.options = {}
-    a.run()
+    result = a.get_items()
+    assert result[0][0] == "Globals"
+    assert result[1][0] == "Attributes"
+    assert result[2][0] == "Functions"
+    set(result[0][1]) == {
+        (
+            "languagePluginLoader",
+            "",
+            "A promise that resolves to ``undefined`` when Pyodide is finished loading.",
+            "globalThis.languagePluginLoader",
+        )
+    }
+    set(result[1][1]).issuperset(
+        {
+            (
+                "loadedPackages",
+                "",
+                "The list of packages that Pyodide has loaded.",
+                "pyodide.loadedPackages",
+            ),
+            (
+                "pyodide_py",
+                "",
+                "An alias to the Python pyodide package.",
+                "pyodide.pyodide_py",
+            ),
+        }
+    )
+    assert set(result[2][1]).issuperset(
+        {
+            (
+                "loadPackagesFromImports",
+                "(code, messageCallback, errorCallback)",
+                "Inspect a Python code chunk and use :js:func:`pyodide.loadPackage` to load any known \npackages that the code chunk imports.",
+                "pyodide.loadPackagesFromImports",
+            ),
+            (
+                "registerJsModule",
+                "(name, module)",
+                "Registers the Js object ``module`` as a Js module with ``name``.",
+                "pyodide.registerJsModule",
+            ),
+        }
+    )

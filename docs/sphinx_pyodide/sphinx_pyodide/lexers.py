@@ -4,6 +4,7 @@ from pygments.lexers.javascript import JavascriptLexer
 from pygments.lexers.html import HtmlLexer
 from pygments.token import Name, Punctuation, Text, Token
 
+
 class PyodideLexer(JavascriptLexer):
     tokens = {
         "root": [

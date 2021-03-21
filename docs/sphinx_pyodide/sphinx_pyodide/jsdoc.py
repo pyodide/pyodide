@@ -136,6 +136,12 @@ def get_jsdoc_summary_directive(app):
             heading.append(strong)
             return heading
 
+        def extract_summary(self, descr):
+            colon_esc = "esccolon\\\xafhoa:"
+            return extract_summary(
+                [descr.replace(":", colon_esc)], self.state.document
+            ).replace(colon_esc, ":")
+
         def get_items(self):
             result = []
             for group in ["global", "attribute", "function"]:
@@ -144,7 +150,7 @@ def get_jsdoc_summary_directive(app):
                 for obj in app._sphinxjs_analyzer.js_docs[group]:
                     sig = self.get_sig(obj)
                     display_name = obj.name
-                    summary = extract_summary([obj.description], self.state.document)
+                    summary = self.extract_summary(obj.description)
                     link_name = pkgname + display_name
                     items.append((display_name, sig, summary, link_name))
                 result.append([group.title() + "s", items])
