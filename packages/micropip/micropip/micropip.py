@@ -12,7 +12,12 @@ from distlib import markers, util, version
 import sys
 
 # Provide stubs for testing in native python
-IN_BROWSER = "js" in sys.modules
+try:
+    from js import pyodide as js_pyodide
+
+    IN_BROWSER = True
+except ImportError:
+    IN_BROWSER = False
 
 if IN_BROWSER:
     # In practice, this is the `site-packages` directory.
@@ -42,23 +47,6 @@ else:
 
 
 if IN_BROWSER:
-    from js import pyodide as js_pyodide
-else:
-
-    class js_pyodide:  # type: ignore
-        """A mock object to allow import of this package outside pyodide
-        Report that all dependencies are empty.
-        """
-
-        class _module:
-            class packages:
-                class dependencies:
-                    @staticmethod
-                    def object_entries():
-                        return []
-
-
-if IN_BROWSER:
     from asyncio import gather
 else:
     # asyncio.gather will schedule any coroutines to run on the event loop but
@@ -78,7 +66,7 @@ async def _get_pypi_json(pkgname):
 
 
 def _parse_wheel_url(url: str) -> Tuple[str, Dict[str, Any], str]:
-    """Parse wheels url and extract available metadata
+    """Parse wheels URL and extract available metadata
 
     See https://www.python.org/dev/peps/pep-0427/#file-name-convention
     """
@@ -132,10 +120,10 @@ class _PackageManager:
     version_scheme = version.get_scheme("normalized")
 
     def __init__(self):
-        self.builtin_packages = {}
-        self.builtin_packages.update(
-            js_pyodide._module.packages.dependencies.object_entries()
-        )
+        if IN_BROWSER:
+            self.builtin_packages = js_pyodide._module.packages.dependencies.to_py()
+        else:
+            self.builtin_packages = {}
         self.installed_packages = {}
 
     async def install(self, requirements: Union[str, List[str]], ctx=None):
@@ -251,26 +239,31 @@ def install(requirements: Union[str, List[str]]):
 
     See :ref:`loading packages <loading_packages>` for more information.
 
-    This only works for packages that are either pure Python or for packages with
-    C extensions that are built in pyodide. If a pure Python package is not found
-    in the pyodide repository it will be loaded from PyPi.
+    This only works for packages that are either pure Python or for packages
+    with C extensions that are built in Pyodide. If a pure Python package is not
+    found in the Pyodide repository it will be loaded from PyPi.
 
     Parameters
     ----------
-    requirements
-       A requirement or list of requirements to install.
-       Each requirement is a string.
+    requirements : ``str | List[str]``
 
-         - If the requirement ends in ".whl", the file will be interpreted as a url.
-           The file must be a wheel named in compliance with the
-           [PEP 427 naming convention](https://www.python.org/dev/peps/pep-0427/#file-format)
+        A requirement or list of requirements to install. Each requirement is a string, which should be either
+        a package name or URL to a wheel:
 
-         - A package name. A package by this name must either be present in the pyodide
-           repository at `languagePluginUrl` or on PyPi.
+        - If the requirement ends in ``.whl`` it will be interpreted as a URL.
+          The file must be a wheel named in compliance with the
+          `PEP 427 naming convention <https://www.python.org/dev/peps/pep-0427/#file-format>`_.
+
+        - If the requirement does not end in ``.whl``, it will interpreted as the
+          name of a package. A package by this name must either be present in the
+          Pyodide repository at ``languagePluginUrl`` or on PyPi
 
     Returns
     -------
-    A Future that resolves when all packages have been downloaded and installed.
+    ``Future``
+
+        A ``Future`` that resolves to ``None`` when all packages have
+        been downloaded and installed.
     """
     importlib.invalidate_caches()
     return asyncio.ensure_future(PACKAGE_MANAGER.install(requirements))

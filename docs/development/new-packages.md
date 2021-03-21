@@ -72,7 +72,7 @@ The version of the package.
 
 #### `source/url`
 
-The url of the source tarball.
+The URL of the source tarball.
 
 The tarball may be in any of the formats supported by Python's
 `shutil.unpack_archive`: `tar`, `gztar`, `bztar`, `xztar`, and `zip`.
