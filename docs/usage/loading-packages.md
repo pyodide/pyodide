@@ -3,7 +3,7 @@
 
 Only the Python standard library is available after importing Pyodide.
 To use other packages, you’ll need to load them using either:
- - {any}`pyodide.loadPackage` for packages built with Pyodide, or 
+ - {any}`pyodide.loadPackage` for packages built with Pyodide, or
  - {any}`micropip.install` for pure Python packages with wheels available on PyPi or
    from other URLs.
 
@@ -13,8 +13,8 @@ which case it relies on {any}`pyodide.loadPackage`).
 ```
 
 Alternatively you can run Python code without manually pre-loading packages.
-You can do this with {any}`pyodide.runPythonAsync` 
-which will automatically download all packages that the code snippet imports. 
+You can do this with {any}`pyodide.runPythonAsync`
+which will automatically download all packages that the code snippet imports.
 It only supports packages included in Pyodide (not on PyPi) at present.
 
 ## Loading packages with {any}`pyodide.loadPackage`
@@ -113,9 +113,9 @@ a complete example would be,
 <body>
   <script type="text/javascript">
       // set the Pyodide files URL (packages.json, pyodide.asm.data etc)
-      window.languagePluginUrl = 'https://cdn.jsdelivr.net/pyodide/v0.16.1/full/';
+      window.languagePluginUrl = 'https://cdn.jsdelivr.net/pyodide/v0.17.0a2/full/';
   </script>
-  <script type="text/javascript" src="https://cdn.jsdelivr.net/pyodide/v0.16.1/full/pyodide.js"></script>
+  <script type="text/javascript" src="https://cdn.jsdelivr.net/pyodide/v0.17.0a2/full/pyodide.js"></script>
   <script type="text/javascript">
     pythonCode = `
       def do_work(*args):

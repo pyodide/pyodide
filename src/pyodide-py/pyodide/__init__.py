@@ -15,7 +15,7 @@ if platform.system() == "Emscripten":
     asyncio.set_event_loop_policy(WebLoopPolicy())
 
 
-__version__ = "0.17.dev0"
+__version__ = "0.17.0a2"
 
 __all__ = [
     "open_url",
