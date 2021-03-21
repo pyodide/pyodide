@@ -567,7 +567,6 @@ globalThis.languagePluginLoader = (async () => {
    * @param {string} name Name of js module to add
    * @param {object} module Javascript object backing the module
    */
-  // clang-format off
   Module.registerJsModule = function(name, module) { 
     Module.pyodide_py.register_js_module(name, module); 
   };
@@ -709,6 +708,11 @@ def temp(Module):
   Module.builtins = builtins.__dict__
   Module.pyodide_py = pyodide
 `);
+
+  Module.saveState = () => Module.pyodide_py._state.save_state();
+  Module.restoreState = (state) =>
+      Module.pyodide_py._state.restore_state(state);
+
   Module.init_dict.get("temp")(Module);
 
   // Wrap "globals" in a special Proxy that allows `pyodide.globals.x` access.
