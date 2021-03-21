@@ -37,10 +37,7 @@ jobs:
 
       - run:
           name: Test docs
-          command: |
-            # Use a symlink to avoid executing pyodide/conftest.py
-            ln -s pyodide/docs/sphinx_pyodide/tests/ ~/sphinx_pyodide_tests
-            pytest ~/sphinx_pyodide_tests
+          command: pytest ~/sphinx_pyodide_tests
 
   build-docs:
     working_directory: ~/repo
