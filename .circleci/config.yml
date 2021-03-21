@@ -37,7 +37,7 @@ jobs:
 
       - run:
           name: Test docs
-          command: pytest ~/sphinx_pyodide_tests
+          command: pytest docs/sphinx_pyodide/tests
 
   build-docs:
     working_directory: ~/repo
