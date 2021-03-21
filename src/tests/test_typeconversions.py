@@ -617,7 +617,7 @@ def test_to_py(selenium):
         return result;
         """
     )
-    assert result == "<class 'JsProxy'>"
+    assert result == "<class 'pyodide.JsProxy'>"
 
     msg = "Cannot use key of type Array as a key to a Python dict"
     with pytest.raises(selenium.JavascriptException, match=msg):
