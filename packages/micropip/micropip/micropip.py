@@ -66,7 +66,7 @@ async def _get_pypi_json(pkgname):
 
 
 def _parse_wheel_url(url: str) -> Tuple[str, Dict[str, Any], str]:
-    """Parse wheels url and extract available metadata
+    """Parse wheels URL and extract available metadata
 
     See https://www.python.org/dev/peps/pep-0427/#file-name-convention
     """
@@ -248,7 +248,7 @@ def install(requirements: Union[str, List[str]]):
     requirements : ``str | List[str]``
 
         A requirement or list of requirements to install. Each requirement is a string, which should be either
-        a package name or url to a wheel:
+        a package name or URL to a wheel:
 
         - If the requirement ends in ``.whl`` it will be interpreted as a URL.
           The file must be a wheel named in compliance with the
