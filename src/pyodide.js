@@ -474,7 +474,8 @@ globalThis.languagePluginLoader = (async () => {
    *       `init_dict` (keeps global state private)
    *    5. `runPythonSimple` doesn't dedent the argument
    *
-   * When `core` initialization is completed, the globals for `runPythonSimple` is made available as `Module.init_dict`.
+   * When `core` initialization is completed, the globals for `runPythonSimple`
+   * is made available as `Module.init_dict`.
    *
    * @private
    */
@@ -725,9 +726,9 @@ globalThis.languagePluginLoader = (async () => {
   // being called.
   await moduleLoaded;
 
-  // Bootstrap step: `runPython` needs access to `Module.globals` and `Module.pyodide_py`.
-  // Use `runPythonSimple` to add these.
-  // runPythonSimple doesn't dedent the argument so the indentation matters.
+  // Bootstrap step: `runPython` needs access to `Module.globals` and
+  // `Module.pyodide_py`. Use `runPythonSimple` to add these. runPythonSimple
+  // doesn't dedent the argument so the indentation matters.
   Module.runPythonSimple(`
 def temp(Module):
   import pyodide

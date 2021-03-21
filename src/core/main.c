@@ -96,9 +96,9 @@ main(int argc, char** argv)
   // no status code to check.
   initialize_python();
 
-  // Once we initialize init_dict, runPythonSimple can work. This gives us a way to run
-  // Python code that works even if the rest of the initialization fails pretty
-  // badly.
+  // Once we initialize init_dict, runPythonSimple can work. This gives us a way
+  // to run Python code that works even if the rest of the initialization fails
+  // pretty badly.
   init_dict = PyDict_New();
   if (init_dict == NULL) {
     FATAL_ERROR("Failed to create init_dict.");
