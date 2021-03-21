@@ -457,6 +457,37 @@ globalThis.languagePluginLoader = (async () => {
   Module.version = ""; // Hack to make jsdoc behave
 
   /**
+   * Run Python code in the simplest way possible. The primary purpose of this
+   * method is for bootstrapping. It is also useful for debugging: If the Python
+   * interpreter is initialized successfully then it should be possible to use
+   * this method to run Python code even if everything else in the Pyodide
+   * `core` module fails.
+   *
+   * The differences are:
+   *    1. `runPythonSimple` doesn't return anything (and so won't leak
+   *        PyProxies)
+   *    2. `runPythonSimple` doesn't require access to any state on the
+   *       `pyodide_js` module.
+   *    3. `runPython` uses `pyodide.eval_code`, whereas `runPythonSimple` uses
+   *       `PyRun_String` which is the C API for `eval` / `exec`.
+   *    4. `runPythonSimple` runs with `globals` a separate dict which is called
+   *       `init_dict` (keeps global state private)
+   *    5. `runPythonSimple` doesn't dedent the argument
+   *
+   * When `core` initialization is completed, the globals for `runPythonSimple` is made available as `Module.init_dict`.
+   *
+   * @private
+   */
+  Module.runPythonSimple = function(code) {
+    let code_c_string = Module.stringToNewUTF8(code);
+    try {
+      Module._run_python_simple_inner(code_c_string);
+    } finally {
+      Module._free(code_c_string);
+    }
+  };
+
+  /**
    * Runs a string of Python code from Javascript.
    *
    * The last part of the string may be an expression, in which case, its value
@@ -694,7 +725,9 @@ globalThis.languagePluginLoader = (async () => {
   // being called.
   await moduleLoaded;
 
-  // Unfortunately the indentation here matters.
+  // Bootstrap step: `runPython` needs access to `Module.globals` and `Module.pyodide_py`.
+  // Use `runPythonSimple` to add these.
+  // runPythonSimple doesn't dedent the argument so the indentation matters.
   Module.runPythonSimple(`
 def temp(Module):
   import pyodide
@@ -710,6 +743,7 @@ def temp(Module):
   Module.pyodide_py = pyodide
 `);
   Module.init_dict.get("temp")(Module);
+  // Module.runPython works starting from here!
 
   // Wrap "globals" in a special Proxy that allows `pyodide.globals.x` access.
   // TODO: Should we have this?
