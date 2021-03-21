@@ -14,7 +14,7 @@ _Py_IDENTIFIER(last_type);
 _Py_IDENTIFIER(last_value);
 _Py_IDENTIFIER(last_traceback);
 
-EM_JS_NUM(errcode, log_error, (char* msg), {
+EM_JS_NUM(errcode, console_error, (char* msg), {
   let jsmsg = UTF8ToString(msg);
   console.error(jsmsg);
 });

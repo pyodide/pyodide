@@ -3,6 +3,7 @@
 #include "error_handling.h"
 #include <emscripten.h>
 
+#include "docstring.h"
 #include "hiwire.h"
 #include "js2python.h"
 #include "jsproxy.h"
@@ -1337,23 +1338,11 @@ static PyMethodDef pyproxy_methods[] = {
     "create_once_callable",
     create_once_callable_py,
     METH_O,
-    PyDoc_STR(
-      "create_once_callable(obj : Callable) -> JsProxy"
-      "\n\n"
-      "Wrap a Python callable in a Javascript function that can be called "
-      "once. After being called the proxy will decrement the reference count "
-      "of the Callable. The javascript function also has a `destroy` API that "
-      "can be used to release the proxy without calling it."),
   },
   {
     "create_proxy",
     create_proxy,
     METH_O,
-    PyDoc_STR("create_proxy(obj : Any) -> JsProxy"
-              "\n\n"
-              "Create a `JsProxy` of a `PyProxy`. This allows explicit control "
-              "over the lifetime of the `PyProxy` from Python: call the "
-              "`destroy` API when done."),
   },
   { NULL } /* Sentinel */
 };
@@ -1361,16 +1350,25 @@ static PyMethodDef pyproxy_methods[] = {
 int
 pyproxy_init(PyObject* core)
 {
-  PyModule_AddFunctions(core, pyproxy_methods);
+  bool success = false;
+  int i = 0;
+
+  PyObject* _pyodide_core = NULL;
+  _pyodide_core = PyImport_ImportModule("_pyodide._core");
+  FAIL_IF_NULL(_pyodide_core);
+
+  while (pyproxy_methods[i].ml_name != NULL) {
+    FAIL_IF_MINUS_ONE(set_method_docstring(&pyproxy_methods[i], _pyodide_core));
+    i++;
+  }
+  FAIL_IF_MINUS_ONE(PyModule_AddFunctions(core, pyproxy_methods));
   asyncio = PyImport_ImportModule("asyncio");
-  if (asyncio == NULL) {
-    return -1;
-  }
-  if (PyType_Ready(&FutureDoneCallbackType)) {
-    return -1;
-  }
-  if (pyproxy_init_js()) {
-    return -1;
-  }
+  FAIL_IF_NULL(asyncio);
+  FAIL_IF_MINUS_ONE(PyType_Ready(&FutureDoneCallbackType));
+  FAIL_IF_MINUS_ONE(pyproxy_init_js());
+
+  success = true;
+finally:
+  Py_CLEAR(_pyodide_core);
   return 0;
 }
