@@ -74,6 +74,10 @@ static struct PyModuleDef core_module_def = {
 
 PyObject* init_dict;
 
+/**
+ * The C code for runPythonSimple. The definition of runPythonSimple is in
+ * `pyodide.js` for greater visibility.
+ */
 void
 run_python_simple_inner(char* code)
 {
@@ -92,6 +96,14 @@ main(int argc, char** argv)
   // no status code to check.
   initialize_python();
 
+  // Once we initialize init_dict, runPythonSimple can work. This gives us a way
+  // to run Python code that works even if the rest of the initialization fails
+  // pretty badly.
+  init_dict = PyDict_New();
+  if (init_dict == NULL) {
+    FATAL_ERROR("Failed to create init_dict.");
+  }
+
   if (alignof(JsRef) != alignof(int)) {
     FATAL_ERROR("JsRef doesn't have the same alignment as int.");
   }
@@ -109,8 +121,7 @@ main(int argc, char** argv)
   TRY_INIT_WITH_CORE_MODULE(error_handling);
   TRY_INIT(js2python);
   TRY_INIT_WITH_CORE_MODULE(JsProxy);
-  TRY_INIT(pyproxy);
-  TRY_INIT(python2js);
+  TRY_INIT_WITH_CORE_MODULE(pyproxy);
   TRY_INIT(keyboard_interrupt);
 
   PyObject* module_dict = PyImport_GetModuleDict(); // borrowed
@@ -118,22 +129,12 @@ main(int argc, char** argv)
     FATAL_ERROR("Failed to add '_pyodide_core' module to modules dict.");
   }
 
-  init_dict = PyDict_New();
+  // Enable Javascript access to the global variables from runPythonSimple.
   JsRef init_dict_proxy = python2js(init_dict);
-  EM_ASM(
-    {
-      Module.init_dict = Module.hiwire.pop_value($0);
-      Module.runPythonSimple = function(code)
-      {
-        let code_c_string = stringToNewUTF8(code);
-        try {
-          _run_python_simple_inner(code_c_string);
-        } finally {
-          _free(code_c_string);
-        }
-      };
-    },
-    init_dict_proxy);
+  if (init_dict_proxy == NULL) {
+    FATAL_ERROR("Failed to create init_dict proxy.");
+  }
+  EM_ASM({ Module.init_dict = Module.hiwire.pop_value($0); }, init_dict_proxy);
 
   Py_CLEAR(core_module);
   printf("Python initialization complete\n");

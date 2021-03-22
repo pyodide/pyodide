@@ -55,6 +55,8 @@ def test_capture_exception(selenium):
     run_with_resolve(
         selenium,
         """
+        from unittest import TestCase
+        raises = TestCase().assertRaises
         from js import resolve
         class MyException(Exception):
             pass
@@ -62,12 +64,9 @@ def test_capture_exception(selenium):
             raise MyException('oops')
         
         def capture_exception(fut):
-            try:
+            with raises(MyException):
                 fut.result()
-            except MyException:
-                resolve()
-            else:
-                raise Exception("Expected fut.result() to raise MyException")
+            resolve()
         import asyncio
         fut = asyncio.ensure_future(foo(998))
         fut.add_done_callback(capture_exception)                
@@ -131,16 +130,15 @@ def test_asyncio_exception(selenium):
     run_with_resolve(
         selenium,
         """
+        from unittest import TestCase
+        raises = TestCase().assertRaises
         from js import resolve
         async def dummy_task():
             raise ValueError("oops!")
         async def capture_exception():
-            try:
+            with raises(ValueError):
                 await dummy_task()
-            except ValueError:
-                resolve()
-            else:
-                raise Exception("Expected ValueError")
+            resolve()
         import asyncio
         asyncio.ensure_future(capture_exception())
         """,
