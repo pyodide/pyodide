@@ -117,9 +117,9 @@ def test_extract_summary():
 
 
 def test_summary():
-    globals = jsdoc_summary.get_summary_table(pyodide_analyzer.js_docs["global"])
-    attributes = jsdoc_summary.get_summary_table(pyodide_analyzer.js_docs["attribute"])
-    functions = jsdoc_summary.get_summary_table(pyodide_analyzer.js_docs["function"])
+    globals = jsdoc_summary.get_summary_table("global")
+    attributes = jsdoc_summary.get_summary_table("attribute")
+    functions = jsdoc_summary.get_summary_table("function")
     set(globals) == {
         (
             "languagePluginLoader",
