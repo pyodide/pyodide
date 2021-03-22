@@ -378,6 +378,7 @@ def test_create_proxy(selenium):
     )
 
 
+@pytest.mark.norefs
 def test_restore_state(selenium):
     selenium.run_js(
         """
