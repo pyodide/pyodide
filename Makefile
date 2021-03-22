@@ -78,7 +78,7 @@ build/pyodide.asm.js: \
 	$(CPYTHONLIB)
 	date +"[%F %T] Building pyodide.asm.js..."
 	[ -d build ] || mkdir build
-	$(CXX) -s EXPORT_NAME="'pyodide'" -o build/pyodide.asm.js $(filter %.o,$^) \
+	$(CXX) -s EXPORT_NAME="'_createPyodideModule'" -o build/pyodide.asm.js $(filter %.o,$^) \
 		$(LDFLAGS) -s FORCE_FILESYSTEM=1 \
 		--preload-file $(CPYTHONLIB)@/lib/python$(PYMINOR) \
 		--preload-file src/webbrowser.py@/lib/python$(PYMINOR)/webbrowser.py \

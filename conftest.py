@@ -154,7 +154,7 @@ class SeleniumWrapper:
             (async () => {
                 try {
                     let result = await run();
-                    if(pyodide && pyodide._module && pyodide._module._PyErr_Occurred()){
+                    if(globalThis.pyodide && pyodide._module && pyodide._module._PyErr_Occurred()){
                         try {
                             pyodide._module._pythonexc2js();
                         } catch(e){
