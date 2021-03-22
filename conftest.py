@@ -287,6 +287,7 @@ def test_wrapper_check_for_memory_leaks(selenium):
     delta_keys = selenium.get_num_hiwire_keys() - init_num_keys
     assert delta_keys == 0
 
+
 @contextlib.contextmanager
 def selenium_common(request, web_server_main):
     server_hostname, server_port, server_log = web_server_main
