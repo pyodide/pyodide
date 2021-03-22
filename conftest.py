@@ -13,6 +13,8 @@ import queue
 import sys
 import shutil
 
+import pytest
+
 ROOT_PATH = pathlib.Path(__file__).parents[0].resolve()
 TEST_PATH = ROOT_PATH / "src" / "tests"
 BUILD_PATH = ROOT_PATH / "build"
@@ -20,14 +22,15 @@ BUILD_PATH = ROOT_PATH / "build"
 sys.path.append(str(ROOT_PATH))
 
 from pyodide_build._fixes import _selenium_is_connectable  # noqa: E402
-import selenium.webdriver.common.utils  # noqa: E402
 
-# XXX: Temporary fix for ConnectionError in selenium
+try:
+    import selenium.webdriver.common.utils  # noqa: E402
 
-selenium.webdriver.common.utils.is_connectable = _selenium_is_connectable
+    # XXX: Temporary fix for ConnectionError in selenium
 
-
-import pytest
+    selenium.webdriver.common.utils.is_connectable = _selenium_is_connectable
+except ModuleNotFoundError:
+    pass
 
 
 def pytest_addoption(parser):
@@ -284,57 +287,58 @@ def test_wrapper_check_for_memory_leaks(selenium):
     delta_keys = selenium.get_num_hiwire_keys() - init_num_keys
     assert delta_keys == 0
 
+@contextlib.contextmanager
+def selenium_common(request, web_server_main):
+    server_hostname, server_port, server_log = web_server_main
+    if request.param == "firefox":
+        cls = FirefoxWrapper
+    elif request.param == "chrome":
+        cls = ChromeWrapper
+    else:
+        assert False
+    selenium = cls(
+        build_dir=request.config.option.build_dir,
+        server_port=server_port,
+        server_hostname=server_hostname,
+        server_log=server_log,
+    )
+    try:
+        yield selenium
+    finally:
+        selenium.driver.quit()
 
-if pytest is not None:
 
-    @contextlib.contextmanager
-    def selenium_common(request, web_server_main):
-        server_hostname, server_port, server_log = web_server_main
-        if request.param == "firefox":
-            cls = FirefoxWrapper
-        elif request.param == "chrome":
-            cls = ChromeWrapper
-        else:
-            assert False
-        selenium = cls(
-            build_dir=request.config.option.build_dir,
-            server_port=server_port,
-            server_hostname=server_hostname,
-            server_log=server_log,
-        )
+@pytest.fixture(params=["firefox", "chrome"], scope="function")
+def selenium_standalone(request, web_server_main):
+    with selenium_common(request, web_server_main) as selenium:
         try:
             yield selenium
         finally:
-            selenium.driver.quit()
+            print(selenium.logs)
 
-    @pytest.fixture(params=["firefox", "chrome"], scope="function")
-    def selenium_standalone(request, web_server_main):
-        with selenium_common(request, web_server_main) as selenium:
-            try:
-                yield selenium
-            finally:
-                print(selenium.logs)
 
-    # selenium instance cached at the module level
-    @pytest.fixture(params=["firefox", "chrome"], scope="module")
-    def selenium_module_scope(request, web_server_main):
-        with selenium_common(request, web_server_main) as selenium:
-            yield selenium
+# selenium instance cached at the module level
+@pytest.fixture(params=["firefox", "chrome"], scope="module")
+def selenium_module_scope(request, web_server_main):
+    with selenium_common(request, web_server_main) as selenium:
+        yield selenium
 
-    # We want one version of this decorated as a function-scope fixture and one
-    # version decorated as a context manager.
-    def selenium_per_function(selenium_module_scope):
-        try:
-            selenium_module_scope.clean_logs()
-            yield selenium_module_scope
-        finally:
-            print(selenium_module_scope.logs)
 
-    selenium = pytest.fixture(selenium_per_function)
-    # Hypothesis is unhappy with function scope fixtures. Instead, use the
-    # module scope fixture `selenium_module_scope` and use:
-    # `with selenium_context_manager(selenium_module_scope) as selenium`
-    selenium_context_manager = contextlib.contextmanager(selenium_per_function)
+# We want one version of this decorated as a function-scope fixture and one
+# version decorated as a context manager.
+def selenium_per_function(selenium_module_scope):
+    try:
+        selenium_module_scope.clean_logs()
+        yield selenium_module_scope
+    finally:
+        print(selenium_module_scope.logs)
+
+
+selenium = pytest.fixture(selenium_per_function)
+# Hypothesis is unhappy with function scope fixtures. Instead, use the
+# module scope fixture `selenium_module_scope` and use:
+# `with selenium_context_manager(selenium_module_scope) as selenium`
+selenium_context_manager = contextlib.contextmanager(selenium_per_function)
 
 
 @pytest.fixture(scope="session")
