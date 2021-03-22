@@ -1,10 +1,17 @@
 from .jsdoc import PyodideAnalyzer
 from .lexers import PyodideLexer, HtmlPyodideLexer
 from .jsdoc import get_jsdoc_summary_directive, get_jsdoc_content_directive
+import traceback
 
 
 def wrap_analyzer(app):
-    app._sphinxjs_analyzer = PyodideAnalyzer(app._sphinxjs_analyzer)
+    try:
+        app._sphinxjs_analyzer = PyodideAnalyzer(app._sphinxjs_analyzer)
+    except Exception as e:
+        traceback.print_exception(type(e), e, e.__traceback__)
+        import sys
+
+        sys.exit(1)
 
 
 def setup(app):

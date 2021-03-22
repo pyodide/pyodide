@@ -34,6 +34,7 @@ TEMP_EMJS_HELPER(() => {0, /* Magic, see comment */
    * pyproxy_getflags. Multiple PyProxies with the same set of feature flags
    * will share the same prototype, so the memory footprint of each individual
    * PyProxy is minimal.
+   * @private
    */
   Module.getPyProxyClass = function(flags) {
     let result = _pyproxyClassMap.get(flags);
@@ -96,6 +97,21 @@ TEMP_EMJS_HELPER(() => {0, /* Magic, see comment */
     constructor() { throw new TypeError('PyProxy is not a constructor'); }
 
     get[Symbol.toStringTag]() { return "PyProxy"; }
+    /**
+     * The name of the type of the object.
+     *
+     * Usually the value is ``"module.name"`` but for builtins or
+     * interpreter-defined types it is just ``"name"``. As pseudocode this is:
+     *
+     * .. code-block:: python
+     *
+     *    ty = type(x)
+     *    if ty.__module__ == 'builtins' or ty.__module__ == "__main__":
+     *        return ty.__name__
+     *    else:
+     *        ty.__module__ + "." + ty.__name__
+     *
+     */
     get type() {
       let ptrobj = _getPtr(this);
       return Module.hiwire.pop_value(__pyproxy_type(ptrobj));
@@ -113,15 +129,31 @@ TEMP_EMJS_HELPER(() => {0, /* Magic, see comment */
       }
       return Module.hiwire.pop_value(jsref_repr);
     }
+    /**
+     * Destroy the ``PyProxy``. This will release the memory. Any further
+     * attempt to use the object will raise an error.
+     *
+     * In a browser supporting `FinalizationRegistry
+     * <https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/FinalizationRegistry>`_
+     * Pyodide will automatically destroy the ``PyProxy`` when it is garbage
+     * collected, however there is no guarantee that the finalizer will be run
+     * in a timely manner so it is better to ``destory`` the proxy explicitly.
+     */
     destroy() {
       let ptrobj = _getPtr(this);
       __pyproxy_destroy(ptrobj);
       this.$$.ptr = null;
     }
     /**
-     * This one doesn't follow the pattern: the inner function
-     * _python2js_with_depth is defined in python2js.c and is not a Python
-     * Object Protocol wrapper.
+     * Converts the ``PyProxy`` into a Javascript object as best as possible. By
+     * default does a deep conversion, if a shallow conversion is desired, you
+     * can use ``proxy.toJs(1)``.
+     * See :ref:`Explicit Conversion of PyProxy
+     * <type-translations-pyproxy-to-js>` for more info.
+     *
+     * @param {number} depth How many layers deep to perform the conversion.
+     * Defaults to infinite.
+     * @returns The Javascript object resulting from the conversion.
      */
     toJs(depth = -1) {
       let idresult = _python2js_with_depth(_getPtr(this), depth);
@@ -140,6 +172,11 @@ TEMP_EMJS_HELPER(() => {0, /* Magic, see comment */
   // Controlled by HAS_LENGTH, appears for any object with __len__ or sq_length
   // or mp_length methods
   Module.PyProxyLengthMethods = {
+    /**
+     * The length of the object.
+     *
+     * Present only if ``type(obj)`` has a `__len__` method.
+     */
     get length() {
       let ptrobj = _getPtr(this);
       let length;
@@ -158,6 +195,14 @@ TEMP_EMJS_HELPER(() => {0, /* Magic, see comment */
   // Controlled by HAS_GET, appears for any class with __getitem__,
   // mp_subscript, or sq_item methods
   Module.PyProxyGetItemMethods = {
+    /**
+     * This translates to the Python code ``obj[key]``.
+     *
+     * Present only if ``type(obj)`` has a ``__getitem__`` method.
+     *
+     * @param {any} key The key to look up.
+     * @returns The corresponding value.
+     */
     get : function(key) {
       let ptrobj = _getPtr(this);
       let idkey = Module.hiwire.new_value(key);
@@ -183,6 +228,14 @@ TEMP_EMJS_HELPER(() => {0, /* Magic, see comment */
   // Controlled by HAS_SET, appears for any class with __setitem__, __delitem__,
   // mp_ass_subscript,  or sq_ass_item.
   Module.PyProxySetItemMethods = {
+    /**
+     * This translates to the Python code ``obj[key] = value``.
+     *
+     * Present only if ``type(obj)`` has a ``__setitem__`` method.
+     *
+     * @param {any} key The key to set.
+     * @param {any} value The value to set it to.
+     */
     set : function(key, value) {
       let ptrobj = _getPtr(this);
       let idkey = Module.hiwire.new_value(key);
@@ -200,6 +253,13 @@ TEMP_EMJS_HELPER(() => {0, /* Magic, see comment */
         _pythonexc2js();
       }
     },
+    /**
+     * This translates to the Python code ``del obj[key]``.
+     *
+     * Present only if ``type(obj)`` has a ``__delitem__`` method.
+     *
+     * @param {any} key The key to delete.
+     */
     delete : function(key) {
       let ptrobj = _getPtr(this);
       let idkey = Module.hiwire.new_value(key);
@@ -220,6 +280,14 @@ TEMP_EMJS_HELPER(() => {0, /* Magic, see comment */
   // Controlled by HAS_CONTAINS flag, appears for any class with __contains__ or
   // sq_contains
   Module.PyProxyContainsMethods = {
+    /**
+     * This translates to the Python code ``key in obj``.
+     *
+     * Present only if ``type(obj)`` has a ``__contains__`` method.
+     *
+     * @param {*} key The key to check for.
+     * @returns {bool} Is ``key`` present?
+     */
     has : function(key) {
       let ptrobj = _getPtr(this);
       let idkey = Module.hiwire.new_value(key);
@@ -243,6 +311,18 @@ TEMP_EMJS_HELPER(() => {0, /* Magic, see comment */
   // https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Iteration_protocols
   // This avoids allocating a PyProxy wrapper for the temporary iterator.
   Module.PyProxyIterableMethods = {
+    /**
+     * This translates to the Python code ``iter(obj)``. Return an iterator
+     * associated to the proxy. See the documentation for `Symbol.iterator
+     * <https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Symbol/iterator>`_.
+     *
+     * Present only if the Python object is iterable (i.e., ``type(obj)`` has an
+     * ``__iter__`` method).
+     *
+     * This will be used implicitly by ``for(let x of proxy){}``.
+     *
+     * @returns {Iterator} An iterator for ``obj``.
+     */
     [Symbol.iterator] : function*() {
       let iterptr = _PyObject_GetIter(_getPtr(this));
       if (iterptr === 0) {
@@ -263,6 +343,25 @@ TEMP_EMJS_HELPER(() => {0, /* Magic, see comment */
   // tp_iternext method.
   Module.PyProxyIteratorMethods = {
     [Symbol.iterator] : function() { return this; },
+    /**
+     * This translates to the Python code ``next(obj)``. Returns the next value
+     * of the generator. See the documentation for `Generator.prototype.next
+     * <https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Generator/next>`_.
+     * The argument will be sent to the Python generator.
+     *
+     * This will be used implicitly by ``for(let x of proxy){}``.
+     *
+     * Present only if ``obj`` is a Python generator or iterator (i.e.,
+     * ``type(obj)`` has an ``__iter__`` method).
+     *
+     * @param {*} value The value to send to the generator. The value will be
+     * assigned as a result of a yield expression.
+     * @returns {Object} An Object with two properties, ``done`` and ``value``.
+     * If the generator returned ``some_value``, will return ``{done : false,
+     * value : some_value}``. If the Python generator raised a
+     * ``StopIteration(result_value)`` exception, then we return ``{done : true,
+     * value : result_value}``.
+     */
     next : function(arg) {
       let idresult;
       // Note: arg is optional, if arg is not supplied, it will be undefined
@@ -464,12 +563,14 @@ TEMP_EMJS_HELPER(() => {0, /* Magic, see comment */
 
   /**
    * The Promise / javascript awaitable API.
+   * @private
    */
   Module.PyProxyAwaitableMethods = {
     /**
      * This wraps __pyproxy_ensure_future and makes a function that converts a
      * Python awaitable to a promise, scheduling the awaitable on the Python
      * event loop if necessary.
+     * @private
      */
     _ensure_future : function() {
       let resolve_handle_id = 0;
@@ -496,14 +597,64 @@ TEMP_EMJS_HELPER(() => {0, /* Magic, see comment */
       }
       return promise;
     },
+    /**
+     * Runs ``asyncio.ensure_future(awaitable)``, executes
+     * ``onFulfilled(result)`` when the ``Future`` resolves successfully,
+     * executes ``onRejected(error)`` when the ``Future`` fails. Will be used
+     * implictly by ``await obj``.
+     *
+     * See the documentation for
+     * `Promise.then
+     * <https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Promise/then>`_
+     *
+     * Only present on awaitable Python objects.
+     *
+     * @param {Function} onFulfilled A handler called with the result as an
+     * argument if the awaitable succeeds.
+     * @param {Function} onRejected A handler called with the error as an
+     * argument if the awaitable fails.
+     * @returns {Promise} The resulting Promise.
+     */
     then : function(onFulfilled, onRejected) {
       let promise = this._ensure_future();
       return promise.then(onFulfilled, onRejected);
     },
+    /**
+     * Runs ``asyncio.ensure_future(awaitable)`` and executes
+     * ``onRejected(error)`` if the future fails.
+     *
+     * See the documentation for
+     * `Promise.catch
+     * <https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Promise/catch>`_.
+     *
+     * Only present on awaitable Python objects.
+     *
+     * @param {Function} onRejected A handler called with the error as an
+     * argument if the awaitable fails.
+     * @returns {Promise} The resulting Promise.
+     */
     catch : function(onRejected) {
       let promise = this._ensure_future();
       return promise.catch(onRejected);
     },
+    /**
+     * Runs ``asyncio.ensure_future(awaitable)`` and executes
+     * ``onFinally(error)`` when the future resolves.
+     *
+     * See the documentation for
+     * `Promise.finally
+     * <https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Promise/finally>`_.
+     *
+     * Only present on `awaitable
+     * <https://docs.python.org/3/library/asyncio-task.html?highlight=awaitable#awaitables>`_
+     * Python objects.
+     *
+     * @param {Function} onFinally A handler that is called with zero arguments
+     * when the awaitable resolves.
+     * @returns {Promise} A Promise that resolves or rejects with the same
+     * result as the original Promise, but only after executing the
+     * ``onFinally`` handler.
+     */
     finally : function(onFinally) {
       let promise = this._ensure_future();
       return promise.finally(onFinally);
