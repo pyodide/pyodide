@@ -276,7 +276,7 @@ def pytest_runtest_call(item):
 def test_wrapper_check_for_memory_leaks(selenium):
     init_num_keys = selenium.get_num_hiwire_keys()
     a = yield
-    selenium.reset_state()
+    selenium.restore_state()
     # if there was an error in the body of the test, flush it out by calling
     # get_result (we don't want to override the error message by raising a
     # different error here.)
