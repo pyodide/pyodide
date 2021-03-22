@@ -130,8 +130,7 @@ def get_jsdoc_summary_directive(app):
             result = []
             for group in ["global", "attribute", "function"]:
                 result.append(self.format_heading(group.title() + "s:"))
-                group_objects = app._sphinxjs_analyzer.js_docs[group]
-                table_items = self.get_summary_table(group_objects)
+                table_items = self.get_summary_table(group)
                 table_markup = self.format_table(table_items)
                 result.extend(table_markup)
             return result
@@ -182,7 +181,8 @@ def get_jsdoc_summary_directive(app):
             argument of format_table.
             """
             pkgname = "globalThis." if group == "global" else "pyodide."
-            return [self.get_summary_row(pkgname, obj) for obj in group]
+            group_objects = app._sphinxjs_analyzer.js_docs[group]
+            return [self.get_summary_row(pkgname, obj) for obj in group_objects]
 
         # This following method is copied almost verbatim from autosummary
         # (where it is called get_table).
