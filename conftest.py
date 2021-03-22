@@ -29,6 +29,7 @@ selenium.webdriver.common.utils.is_connectable = _selenium_is_connectable
 
 import pytest
 
+
 def pytest_addoption(parser):
     group = parser.getgroup("general")
     group.addoption(
@@ -42,6 +43,7 @@ def pytest_addoption(parser):
         action="store_true",
         help="If provided, tests marked as xfail will be run",
     )
+
 
 def pytest_configure(config):
     """Monkey patch the function cwd_relative_nodeid returns the description
@@ -58,8 +60,6 @@ def pytest_configure(config):
         return result
 
     config.cwd_relative_nodeid = cwd_relative_nodeid
-
-
 
 
 class JavascriptException(Exception):

@@ -611,6 +611,14 @@ EM_JS_NUM(bool, hiwire_is_promise, (JsRef idobj), {
   // clang-format on
 });
 
+EM_JS_REF(JsRef, hiwire_resolve_promise, (JsRef idobj), {
+  // clang-format off
+  let obj = Module.hiwire.get_value(idobj);
+  let result = Promise.resolve(obj);
+  return Module.hiwire.new_value(result);
+  // clang-format on
+});
+
 EM_JS_REF(JsRef, hiwire_to_string, (JsRef idobj), {
   return Module.hiwire.new_value(Module.hiwire.get_value(idobj).toString());
 });
