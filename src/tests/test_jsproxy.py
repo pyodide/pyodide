@@ -449,7 +449,7 @@ def test_unregister_jsmodule_error(selenium):
             pyodide.unregisterJsModule("doesnotexist");
             throw new Error("unregisterJsModule should have thrown an error.");
         } catch(e){
-            if(!e.message.includes("Cannot unregister 'doesnotexist': no javascript module with that name is registered")){
+            if(!e.message.includes("Cannot unregister 'doesnotexist': no Javascript module with that name is registered")){
                 throw e;
             }
         }

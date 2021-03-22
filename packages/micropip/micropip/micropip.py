@@ -66,7 +66,7 @@ async def _get_pypi_json(pkgname):
 
 
 def _parse_wheel_url(url: str) -> Tuple[str, Dict[str, Any], str]:
-    """Parse wheels url and extract available metadata
+    """Parse wheels URL and extract available metadata
 
     See https://www.python.org/dev/peps/pep-0427/#file-name-convention
     """
@@ -239,26 +239,31 @@ def install(requirements: Union[str, List[str]]):
 
     See :ref:`loading packages <loading_packages>` for more information.
 
-    This only works for packages that are either pure Python or for packages with
-    C extensions that are built in pyodide. If a pure Python package is not found
-    in the pyodide repository it will be loaded from PyPi.
+    This only works for packages that are either pure Python or for packages
+    with C extensions that are built in Pyodide. If a pure Python package is not
+    found in the Pyodide repository it will be loaded from PyPi.
 
     Parameters
     ----------
-    requirements
-       A requirement or list of requirements to install.
-       Each requirement is a string.
+    requirements : ``str | List[str]``
 
-         - If the requirement ends in ".whl", the file will be interpreted as a url.
-           The file must be a wheel named in compliance with the
-           [PEP 427 naming convention](https://www.python.org/dev/peps/pep-0427/#file-format)
+        A requirement or list of requirements to install. Each requirement is a string, which should be either
+        a package name or URL to a wheel:
 
-         - A package name. A package by this name must either be present in the pyodide
-           repository at `languagePluginUrl` or on PyPi.
+        - If the requirement ends in ``.whl`` it will be interpreted as a URL.
+          The file must be a wheel named in compliance with the
+          `PEP 427 naming convention <https://www.python.org/dev/peps/pep-0427/#file-format>`_.
+
+        - If the requirement does not end in ``.whl``, it will interpreted as the
+          name of a package. A package by this name must either be present in the
+          Pyodide repository at ``languagePluginUrl`` or on PyPi
 
     Returns
     -------
-    A Future that resolves when all packages have been downloaded and installed.
+    ``Future``
+
+        A ``Future`` that resolves to ``None`` when all packages have
+        been downloaded and installed.
     """
     importlib.invalidate_caches()
     return asyncio.ensure_future(PACKAGE_MANAGER.install(requirements))

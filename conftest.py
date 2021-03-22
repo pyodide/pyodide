@@ -26,46 +26,40 @@ import selenium.webdriver.common.utils  # noqa: E402
 
 selenium.webdriver.common.utils.is_connectable = _selenium_is_connectable
 
-try:
-    import pytest
 
-    def pytest_addoption(parser):
-        group = parser.getgroup("general")
-        group.addoption(
-            "--build-dir",
-            action="store",
-            default=BUILD_PATH,
-            help="Path to the build directory",
-        )
-        group.addoption(
-            "--run-xfail",
-            action="store_true",
-            help="If provided, tests marked as xfail will be run",
-        )
+import pytest
 
-    def pytest_configure(config):
-        """Monkey patch the function cwd_relative_nodeid returns the description
-        of a test for the short summary table. Monkey patch it to reduce the verbosity of the test names in the table.
-        This leaves enough room to see the information about the test failure in the summary.
-        """
-        old_cwd_relative_nodeid = config.cwd_relative_nodeid
+def pytest_addoption(parser):
+    group = parser.getgroup("general")
+    group.addoption(
+        "--build-dir",
+        action="store",
+        default=BUILD_PATH,
+        help="Path to the build directory",
+    )
+    group.addoption(
+        "--run-xfail",
+        action="store_true",
+        help="If provided, tests marked as xfail will be run",
+    )
 
-        def cwd_relative_nodeid(*args):
-            result = old_cwd_relative_nodeid(*args)
-            result = result.replace("src/tests/", "")
-            result = result.replace("packages/", "")
-            result = result.replace("::test_", "::")
-            result = result.replace("[chrome]", "")
-            result = result.replace("[firefox]", "")
-            result = result.replace("chrome-", "")
-            result = result.replace("firefox-", "")
-            return result
+def pytest_configure(config):
+    """Monkey patch the function cwd_relative_nodeid returns the description
+    of a test for the short summary table. Monkey patch it to reduce the verbosity of the test names in the table.
+    This leaves enough room to see the information about the test failure in the summary.
+    """
+    old_cwd_relative_nodeid = config.cwd_relative_nodeid
 
-        config.cwd_relative_nodeid = cwd_relative_nodeid
+    def cwd_relative_nodeid(*args):
+        result = old_cwd_relative_nodeid(*args)
+        result = result.replace("src/tests/", "")
+        result = result.replace("packages/", "")
+        result = result.replace("::test_", "::")
+        return result
+
+    config.cwd_relative_nodeid = cwd_relative_nodeid
 
 
-except ImportError:
-    pytest = None  # type: ignore
 
 
 class JavascriptException(Exception):
@@ -102,6 +96,7 @@ class SeleniumWrapper:
         self.driver.get(f"http://{server_hostname}:{server_port}/test.html")
         self.run_js("Error.stackTraceLimit = Infinity;")
         self.run_js("await languagePluginLoader;")
+        self.save_state()
 
     @property
     def logs(self):
@@ -184,8 +179,11 @@ class SeleniumWrapper:
     def get_num_hiwire_keys(self):
         return self.run_js("return pyodide._module.hiwire.num_keys();")
 
-    def reset_state(self):
-        self.run_js("pyodide._module.resetState()")
+    def save_state(self):
+        self.run_js("globalThis.state = pyodide._module.saveState()")
+
+    def restore_state(self):
+        self.run_js("pyodide._module.restoreState(globalThis.state)")
 
     def run_webworker(self, code):
         if isinstance(code, str) and code.startswith("\n"):

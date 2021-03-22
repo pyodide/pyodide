@@ -18,3 +18,14 @@ def test_parse_package_subset():
 
     # duplicates are removed
     assert _parse_package_subset("numpy,numpy") == {"micropip", "distlib", "numpy"}
+
+    # no empty package name included, spaces are handled
+    assert _parse_package_subset("x,  a, b, c   ,,, d,,") == {
+        "micropip",
+        "distlib",
+        "x",
+        "a",
+        "b",
+        "c",
+        "d",
+    }

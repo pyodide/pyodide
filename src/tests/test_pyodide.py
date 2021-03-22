@@ -376,3 +376,39 @@ def test_create_proxy(selenium):
         `);
         """
     )
+
+
+def test_restore_state(selenium):
+    selenium.run_js(
+        """
+        pyodide.registerJsModule("a", {somefield : 82});
+        pyodide.registerJsModule("b", { otherfield : 3 });
+        pyodide.runPython("x = 7; from a import somefield");
+        let state = pyodide._module.saveState();
+
+        pyodide.registerJsModule("c", { thirdfield : 9 });
+        pyodide.runPython("y = 77; from b import otherfield; import c;");
+        pyodide._module.restoreState(state);
+        state.destroy();
+        """
+    )
+
+    selenium.run(
+        """
+        from unittest import TestCase
+        raises = TestCase().assertRaises
+        import sys
+
+        assert x == 7
+        assert "a" in sys.modules
+        assert somefield == 82
+        with raises(NameError):
+            y
+        with raises(NameError):
+            otherfield
+        assert "b" not in sys.modules
+        import b
+        with raises(ModuleNotFoundError):
+            import c
+        """
+    )

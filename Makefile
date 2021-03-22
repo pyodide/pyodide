@@ -190,9 +190,9 @@ check:
 	./tools/dependency-check.sh
 
 minimal :
-	PYODIDE_PACKAGES="micropip" make
+	PYODIDE_PACKAGES+=",micropip" make
 
 debug :
-	EXTRA_CFLAGS+="-D DEBUG_F" \
-	PYODIDE_PACKAGES+="micropip,pyparsing,pytz,packaging,kiwisolver" \
+	EXTRA_CFLAGS+=" -D DEBUG_F" \
+	PYODIDE_PACKAGES+=", micropip, pyparsing, pytz, packaging, kiwisolver, " \
 	make

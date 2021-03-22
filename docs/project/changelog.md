@@ -118,7 +118,7 @@ substitutions:
 
 ### micropip
 
-- {{ Feature }} `micropip` now supports installing wheels from relative urls.
+- {{ Feature }} `micropip` now supports installing wheels from relative URLs.
   [#872](https://github.com/iodide-project/pyodide/pull/872)
 - {{ API }} `micropip.install` now returns a Python `Future` instead of a Javascript `Promise`.
 
@@ -221,7 +221,7 @@ by 0.16.1 with identical contents.
   implies that Python 3.8 is now required to build Pyodide. It can for instance
   be installed with conda.
   [#830](https://github.com/iodide-project/pyodide/pull/830)
-- FIX Infer package tarball directory from source url
+- FIX Infer package tarball directory from source URL
   [#687](https://github.com/iodide-project/pyodide/pull/687)
 - Updated to emscripten 1.38.44 and binaryen v86 (see related
   [commits](https://github.com/iodide-project/pyodide/search?q=emscripten&type=commits))
