@@ -102,14 +102,14 @@ def test_content():
 
 
 JsDocSummary = get_jsdoc_summary_directive(dummy_app)
-a = JsDocSummary.__new__(JsDocSummary)
-a.state = dummy_state
-a.options = {}
+jsdoc_summary = JsDocSummary.__new__(JsDocSummary)
+jsdoc_summary.state = dummy_state
+jsdoc_summary.options = {}
 
 
 def test_extract_summary():
     assert (
-        a.extract_summary(
+        jsdoc_summary.extract_summary(
             "Registers the Js object ``module`` as a Js module with ``name``. This module can then be imported from Python using the standard Python\nimport system. :func:`some_func`"
         )
         == "Registers the Js object ``module`` as a Js module with ``name``."
@@ -117,11 +117,10 @@ def test_extract_summary():
 
 
 def test_summary():
-    result = a.get_items()
-    assert result[0][0] == "Globals"
-    assert result[1][0] == "Attributes"
-    assert result[2][0] == "Functions"
-    set(result[0][1]) == {
+    globals = jsdoc_summary.get_summary_table(pyodide_analyzer.js_docs["global"])
+    attributes = jsdoc_summary.get_summary_table(pyodide_analyzer.js_docs["attribute"])
+    functions = jsdoc_summary.get_summary_table(pyodide_analyzer.js_docs["function"])
+    set(globals) == {
         (
             "languagePluginLoader",
             "",
@@ -129,7 +128,7 @@ def test_summary():
             "globalThis.languagePluginLoader",
         )
     }
-    set(result[1][1]).issuperset(
+    set(attributes).issuperset(
         {
             (
                 "loadedPackages",
@@ -145,7 +144,7 @@ def test_summary():
             ),
         }
     )
-    assert set(result[2][1]).issuperset(
+    assert set(functions).issuperset(
         {
             (
                 "loadPackagesFromImports",
