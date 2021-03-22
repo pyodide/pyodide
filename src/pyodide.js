@@ -737,10 +737,6 @@ def temp(Module):
   globals = __main__.__dict__
   globals.update(builtins.__dict__)
 
-  global saved_globals
-  saved_globals = {}
-  saved_globals.update(globals)
-
   Module.version = pyodide.__version__
   Module.globals = globals
   Module.builtins = builtins.__dict__
