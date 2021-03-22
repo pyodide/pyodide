@@ -689,24 +689,29 @@ JsProxy_then(JsProxy* self, PyObject* args, PyObject* kwds)
 {
   PyObject* onfulfilled = NULL;
   PyObject* onrejected = NULL;
-  JsRef promise_handles = NULL;
-  JsRef result_promise = NULL;
-  PyObject* result = NULL;
 
   static char* kwlist[] = { "onfulfilled", "onrejected", 0 };
   if (!PyArg_ParseTupleAndKeywords(
         args, kwds, "|OO:then", kwlist, &onfulfilled, &onrejected)) {
     return NULL;
   }
+
+  JsRef promise_id = NULL;
+  JsRef promise_handles = NULL;
+  JsRef result_promise = NULL;
+  PyObject* result = NULL;
+
   if (onfulfilled == Py_None) {
     Py_CLEAR(onfulfilled);
   }
   if (onrejected == Py_None) {
     Py_CLEAR(onrejected);
   }
+  promise_id = hiwire_resolve_promise(self->js);
+  FAIL_IF_NULL(promise_id);
   promise_handles = create_promise_handles(onfulfilled, onrejected);
   FAIL_IF_NULL(promise_handles);
-  result_promise = hiwire_call_member(self->js, "then", promise_handles);
+  result_promise = hiwire_call_member(promise_id, "then", promise_handles);
   if (result_promise == NULL) {
     Py_CLEAR(onfulfilled);
     Py_CLEAR(onrejected);
@@ -715,6 +720,8 @@ JsProxy_then(JsProxy* self, PyObject* args, PyObject* kwds)
   result = JsProxy_create(result_promise);
 
 finally:
+  // don't clear onfulfilled, onrejected, they are borrowed from arguments.
+  hiwire_CLEAR(promise_id);
   hiwire_CLEAR(promise_handles);
   hiwire_CLEAR(result_promise);
   return result;
@@ -726,15 +733,18 @@ finally:
 PyObject*
 JsProxy_catch(JsProxy* self, PyObject* onrejected)
 {
+  JsRef promise_id = NULL;
   JsRef promise_handles = NULL;
   JsRef result_promise = NULL;
   PyObject* result = NULL;
 
+  promise_id = hiwire_resolve_promise(self->js);
+  FAIL_IF_NULL(promise_id);
   // We have to use create_promise_handles so that the handler gets released
   // even if the promise resolves successfully.
   promise_handles = create_promise_handles(NULL, onrejected);
   FAIL_IF_NULL(promise_handles);
-  result_promise = hiwire_call_member(self->js, "then", promise_handles);
+  result_promise = hiwire_call_member(promise_id, "then", promise_handles);
   if (result_promise == NULL) {
     Py_DECREF(onrejected);
     FAIL();
@@ -742,6 +752,7 @@ JsProxy_catch(JsProxy* self, PyObject* onrejected)
   result = JsProxy_create(result_promise);
 
 finally:
+  hiwire_CLEAR(promise_id);
   hiwire_CLEAR(promise_handles);
   hiwire_CLEAR(result_promise);
   return result;
@@ -758,14 +769,17 @@ PyObject*
 JsProxy_finally(JsProxy* self, PyObject* onfinally)
 {
   JsRef proxy = NULL;
+  JsRef promise_id = NULL;
   JsRef result_promise = NULL;
   PyObject* result = NULL;
 
+  promise_id = hiwire_resolve_promise(self->js);
+  FAIL_IF_NULL(promise_id);
   // Finally method is called no matter what so we can use
   // `create_once_callable`.
   proxy = create_once_callable(onfinally);
   FAIL_IF_NULL(proxy);
-  result_promise = hiwire_call_member_va(self->js, "finally", proxy, NULL);
+  result_promise = hiwire_call_member_va(promise_id, "finally", proxy, NULL);
   if (result_promise == NULL) {
     Py_DECREF(onfinally);
     FAIL();
@@ -773,6 +787,7 @@ JsProxy_finally(JsProxy* self, PyObject* onfinally)
   result = JsProxy_create(result_promise);
 
 finally:
+  hiwire_CLEAR(promise_id);
   hiwire_CLEAR(proxy);
   hiwire_CLEAR(result_promise);
   return result;
