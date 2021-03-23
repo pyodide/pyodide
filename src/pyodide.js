@@ -751,9 +751,8 @@ def temp(Module):
   Module.packages = await response.json();
 
   fixRecursionLimit(Module);
-  Module.registerJsModule("js", globalThis);
-  Module.registerJsModule("pyodide_js", Module);
   let pyodide = makePublicAPI(Module, PUBLIC_API);
+  Module.registerJsModule("js", globalThis);
   Module.registerJsModule("pyodide_js", pyodide);
   globalThis.pyodide = pyodide;
   return pyodide;
