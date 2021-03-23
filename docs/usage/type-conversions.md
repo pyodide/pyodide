@@ -16,7 +16,7 @@ converted using the explicit conversion methods `JsProxy.to_py` and
 Python to Javascript translations occur:
 
 - when returning the final expression from a {any}`pyodide.runPython` call,
-- when using `pyodide.globals.get`,
+- when using `pyodide.globals.get('key')`,
 - when passing arguments to a Javascript function called from Python,
 - when returning the results of a Python function called from Javascript,
 - when accessing an attribute of a `PyProxy`
@@ -379,8 +379,8 @@ implementation for Javascript.
 ## Importing Python objects into Javascript
 
 A Python object in the `__main__` global scope can imported into Javascript
-using the {any}`pyodide.globals.get` function. Given the name of the Python object
-to import, `pyodide.globals.get` returns the object translated to Javascript.
+using the `pyodide.globals.get` method. Given the name of the Python object
+to import, it returns the object translated to Javascript.
 
 ```js
 let sys = pyodide.globals.get('sys');

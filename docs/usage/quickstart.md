@@ -125,7 +125,7 @@ Create and save a test `index.html` page with the following contents:
 ## Accessing Python scope from Javascript
 
 You can also access from Javascript all functions and variables defined in
-Python by using the the {any}`pyodide.globals` object.
+Python by using the {any}`pyodide.globals` object.
 
 For example, if you run the code `x = numpy.ones([3,3])` in Python, you can
 access the variable ``x`` from Javascript in your browser's developer console
