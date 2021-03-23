@@ -16,9 +16,14 @@ def get_cmeth_docstring(func):
     The ml_doc should start with a signature which cannot have any type
     annotations. The signature must end with the exact characters ")\n--\n\n".
     For example: "funcname(arg1, arg2)\n--\n\n"
-
+    
     See:
     https://github.com/python/cpython/blob/v3.8.2/Objects/typeobject.c#L84
+
+    Examples
+    --------
+    >>> get_cmeth_docstring(sum)[:15]
+    "sum(iterable, /, start=0)\n--\n\nReturn the sum of a 'start' value (default: 0) plu"
     """
     from inspect import signature, _empty
 
