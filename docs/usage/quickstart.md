@@ -125,23 +125,24 @@ Create and save a test `index.html` page with the following contents:
 ## Accessing Python scope from Javascript
 
 You can also access from Javascript all functions and variables defined in
-Python using the {any}`pyodide.pyimport` api or the {any}`pyodide.globals`
+Python by using the {any}`pyodide.pyimport` api or the {any}`pyodide.globals`
 object.
 
 For example, if you run the code `x = numpy.ones([3,3])` in Python, you can
-access the variable ``x`` from Javascript in your browser's developer console as
-follows: `pyodide.globals.get("x")`. The same goes for functions and imports.
-See {ref}`type-translations` for more details.
+access the variable ``x`` from Javascript in your browser's developer console
+as either `pyodide.globals.get("x")` or `pyodide.pyimport('x')`. The same goes
+for functions and imports. See {ref}`type-translations` for more details.
 
 You can try it yourself in the browser console:
 ```js
-pyodide.runPython(`x=numpy.ones([3, 3])`);
-pyodide.globals.get("x");
-// >>> [Float64Array(3), Float64Array(3), Float64Array(3)]
+pyodide.runPython(`import numpy`);
+pyodide.runPython(`x=numpy.ones((3, 4))`);
+pyodide.globals.get('x').toJs();  // or  pyodide.pyimport('x').toJs();
+// >>> [ Float64Array(4), Float64Array(4), Float64Array(4) ]
 
-// create the same 3x3 ndarray from js
-let x = pyodide.globals.get("numpy").ones(new Int32Array([3, 3]));
-// x >>> [Float64Array(3), Float64Array(3), Float64Array(3)]
+// create the same 3x4 ndarray from js
+x = pyodide.globals.get('numpy').ones(new Int32Array([3, 4])).toJs();
+// x >>> [ Float64Array(4), Float64Array(4), Float64Array(4) ]
 ```
 
 Since you have full access to Python global scope, you can also re-assign new
@@ -158,6 +159,10 @@ pyodide.globals.set("alert", alert);
 
 // this new function will also be available in Python and will return the squared value.
 pyodide.globals.set("square", x => x*x);
+
+// You can test your new Python function in the console by running
+pyodide.runPython(`square(3)`);
+
 ```
 
 Feel free to play around with the code using the browser console and the above example.
