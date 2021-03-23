@@ -61,7 +61,12 @@ PyObject*
 _js2python_memoryview(JsRef id)
 {
   PyObject* jsproxy = JsProxy_create(id);
-  return PyMemoryView_FromObject(jsproxy);
+  if (jsproxy == NULL) {
+    return NULL;
+  }
+  PyObject* result = PyMemoryView_FromObject(jsproxy);
+  Py_CLEAR(jsproxy);
+  return result;
 }
 
 EM_JS_REF(PyObject*, js2python, (JsRef id), {

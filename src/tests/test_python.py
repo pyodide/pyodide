@@ -1,5 +1,3 @@
-import time
-
 import pytest
 
 
@@ -9,8 +7,7 @@ def test_init(selenium_standalone):
 
 
 def test_webbrowser(selenium):
-    selenium.run("import antigravity")
-    time.sleep(2)
+    selenium.run_async("import antigravity")
     assert len(selenium.driver.window_handles) == 2
 
 
@@ -158,12 +155,12 @@ def test_eval_nothing(selenium):
 
 
 def test_unknown_attribute(selenium):
-    selenium.run(
+    selenium.run_async(
         """
+        from unittest import TestCase
+        raises = TestCase().assertRaisesRegex
         import js
-        try:
+        with raises(AttributeError, "asdf"):
             js.asdf
-        except AttributeError as e:
-            assert "asdf" in str(e)
         """
     )

@@ -4,7 +4,7 @@ import time
 import contextvars
 
 
-from typing import Awaitable, Callable
+from typing import Callable
 
 
 class WebLoop(asyncio.AbstractEventLoop):
@@ -65,7 +65,7 @@ class WebLoop(asyncio.AbstractEventLoop):
         """
         pass
 
-    def run_until_complete(self, future: Awaitable):
+    def run_until_complete(self, future):
         """Run until future is done.
 
         If the argument is a coroutine, it is wrapped in a Task.
@@ -99,7 +99,7 @@ class WebLoop(asyncio.AbstractEventLoop):
         return self.call_later(delay, callback, *args, context=context)
 
     def call_soon_threadsafe(
-        callback: Callable, *args, context: contextvars.Context = None
+        self, callback: Callable, *args, context: contextvars.Context = None
     ):
         """Like ``call_soon()``, but thread-safe.
 
@@ -132,11 +132,12 @@ class WebLoop(asyncio.AbstractEventLoop):
         This uses `setTimeout(callback, delay)`
         """
         from js import setTimeout
+        from . import create_once_callable
 
         if delay < 0:
             raise ValueError("Can't schedule in the past")
         h = asyncio.Handle(callback, args, self, context=context)
-        setTimeout(h._run, delay * 1000)
+        setTimeout(create_once_callable(h._run), delay * 1000)
         return h
 
     def call_at(
@@ -223,7 +224,7 @@ class WebLoop(asyncio.AbstractEventLoop):
         return self._task_factory
 
 
-class WebLoopPolicy(asyncio.DefaultEventLoopPolicy):
+class WebLoopPolicy(asyncio.DefaultEventLoopPolicy):  # type: ignore
     """
     A simple event loop policy for managing WebLoop based event loops.
     """
