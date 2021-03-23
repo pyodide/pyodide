@@ -12,7 +12,6 @@ def dedent_docstring(docstring):
     >>> from _pyodide.docstring import dedent_docstring
     >>> dedent_docstring(dedent_docstring).split("\n)[2]
     "After the first line of the docstring, all other lines will include some"
-
     """
     first_newline = docstring.find("\n")
     if first_newline == -1:
@@ -28,7 +27,7 @@ def get_cmeth_docstring(func):
     The ml_doc should start with a signature which cannot have any type
     annotations. The signature must end with the exact characters ")\n--\n\n".
     For example: "funcname(arg1, arg2)\n--\n\n"
-    
+
     See:
     https://github.com/python/cpython/blob/v3.8.2/Objects/typeobject.c#L84
 
