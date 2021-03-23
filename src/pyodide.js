@@ -769,7 +769,5 @@ if (globalThis.languagePluginUrl) {
    * @deprecated
    */
   globalThis.languagePluginLoader =
-      initializePyodide({
-        baseURL : globalThis.languagePluginUrl
-      });
+      initializePyodide({baseURL : globalThis.languagePluginUrl});
 }
