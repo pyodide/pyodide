@@ -10,8 +10,8 @@ def dedent_docstring(docstring):
     Examples
     --------
     >>> from _pyodide.docstring import dedent_docstring
-    >>> dedent_docstring(dedent_docstring).split("\n)[2]
-    "After the first line of the docstring, all other lines will include some"
+    >>> dedent_docstring(dedent_docstring.__doc__).split("\\n")[2]
+    'After the first line of the docstring, all other lines will include some'
     """
     first_newline = docstring.find("\n")
     if first_newline == -1:
@@ -34,8 +34,8 @@ def get_cmeth_docstring(func):
     Examples
     --------
     >>> from _pyodide.docstring import get_cmeth_docstring
-    >>> get_cmeth_docstring(sum)[:15]
-    "sum(iterable, /, start=0)\n--\n\nReturn the sum of a 'start' value (default: 0) plu"
+    >>> get_cmeth_docstring(sum)[:80]
+    "sum(iterable, /, start=0)\\n--\\n\\nReturn the sum of a 'start' value (default: 0) plu"
     """
     from inspect import signature, _empty
 
