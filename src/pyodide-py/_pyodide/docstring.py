@@ -2,6 +2,18 @@ from textwrap import dedent
 
 
 def dedent_docstring(docstring):
+    """This removes initial spaces from the lines of the docstring.
+
+    After the first line of the docstring, all other lines will include some
+    spaces. This removes them.
+
+    Examples
+    --------
+    >>> from _pyodide.docstring import dedent_docstring
+    >>> dedent_docstring(dedent_docstring).split("\n)[2]
+    "After the first line of the docstring, all other lines will include some"
+
+    """
     first_newline = docstring.find("\n")
     if first_newline == -1:
         return docstring
@@ -22,6 +34,7 @@ def get_cmeth_docstring(func):
 
     Examples
     --------
+    >>> from _pyodide.docstring import get_cmeth_docstring
     >>> get_cmeth_docstring(sum)[:15]
     "sum(iterable, /, start=0)\n--\n\nReturn the sum of a 'start' value (default: 0) plu"
     """
