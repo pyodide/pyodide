@@ -103,8 +103,8 @@ lines `pythonLoading = self.pyodide.loadPackage(['numpy', 'pytz'])` and
 // Setup your project to serve `py-worker.js`. You should also serve
 // `pyodide.js`, and all its associated `.asm.js`, `.data`, `.json`,
 // and `.wasm` files as well:
-self.languagePluginUrl = 'https://cdn.jsdelivr.net/pyodide/v0.16.1/full/';
-importScripts('https://cdn.jsdelivr.net/pyodide/v0.16.1/full/pyodide.js');
+self.languagePluginUrl = 'https://cdn.jsdelivr.net/pyodide/v0.17.0a2/full/';
+importScripts('https://cdn.jsdelivr.net/pyodide/v0.17.0a2/full/pyodide.js');
 
 let pythonLoading;
 async function loadPythonPackages(){

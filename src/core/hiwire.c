@@ -73,6 +73,9 @@ EM_JS_NUM(int, hiwire_init, (), {
       many_objects_warning_threshold += 100;
     }
 #endif
+#ifdef HW_TRACE_REFS
+    console.warn("hw.new_value", idval, jsval);
+#endif
     return idval;
   };
 

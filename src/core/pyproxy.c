@@ -552,6 +552,7 @@ FutureDoneCallback_call(FutureDoneCallback* self,
   int errcode;
   if (result != NULL) {
     errcode = FutureDoneCallback_call_resolve(self, result);
+    Py_DECREF(result);
   } else {
     errcode = FutureDoneCallback_call_reject(self);
   }
