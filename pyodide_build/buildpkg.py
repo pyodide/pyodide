@@ -186,7 +186,7 @@ def package_files(buildpath: Path, srcpath: Path, pkg: Dict[str, Any], args):
 
     name = pkg["package"]["name"]
     install_prefix = (srcpath / "install").resolve()
-    subprocess.run(
+    res = subprocess.run(
         [
             "python",
             common.file_packager_path(),
@@ -194,17 +194,21 @@ def package_files(buildpath: Path, srcpath: Path, pkg: Dict[str, Any], args):
             "--lz4",
             "--preload",
             "{}@/".format(install_prefix),
-            "--js-output={}".format(name + ".js"),
-            "--export-name=pyodide._module",
             "--exclude",
             "*.wasm.pre",
             "--exclude",
             "*__pycache__*",
             "--use-preload-plugins",
         ],
+        capture_output=True,
+        text=True,
         cwd=buildpath,
         check=True,
     )
+    with (buildpath / (name + ".js")).open("w") as fd:
+        fd.write("function installPackage(Module){")
+        fd.write(res.stdout)
+        fd.write("}\nexport { installPackage};")
     subprocess.run(
         ["uglifyjs", buildpath / (name + ".js"), "-o", buildpath / (name + ".js")],
         check=True,

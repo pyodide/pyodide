@@ -117,31 +117,6 @@ globalThis.initializePyodide = async function(config) {
       messageCallback(`Loading ${[...toLoad.keys()].join(', ')}`)
     }
 
-    // If running in main browser thread, try to catch errors thrown when
-    // running a script. Since the script is added via a script tag, there is
-    // no good way to capture errors from the script only, so try to capture
-    // all errors them.
-    //
-    // windowErrorPromise rejects when any exceptions is thrown in the process
-    // of loading a script. The promise never resolves, and we combine it
-    // with other promises via Promise.race.
-    let windowErrorHandler;
-    let windowErrorPromise;
-    if (self.document) {
-      windowErrorPromise = new Promise((_res, rej) => {
-        windowErrorHandler = e => {
-          errorCallback(
-              "Unhandled error. We don't know what it is or whether it is related to 'loadPackage' but out of an abundance of caution we will assume that loading failed.");
-          errorCallback(e);
-          rej(e.message);
-        };
-        self.addEventListener('error', windowErrorHandler);
-      });
-    } else {
-      // This should be a promise that never resolves
-      windowErrorPromise = new Promise(() => {});
-    }
-
     // This is a collection of promises that resolve when the package's JS file
     // is loaded. The promises already handle error and never fail.
     let scriptPromises = [];
@@ -163,10 +138,13 @@ globalThis.initializePyodide = async function(config) {
       }
       let scriptSrc = uri === DEFAULT_CHANNEL ? `${baseURL}${pkg}.js` : uri;
       messageCallback(`Loading ${pkg} from ${scriptSrc}`);
-      scriptPromises.push(loadScript(scriptSrc).catch(() => {
-        errorCallback(`Couldn't load package from URL ${scriptSrc}`);
-        toLoad.delete(pkg);
-      }));
+      scriptPromises.push(
+          import(scriptSrc)
+              .then((res) => { res.installPackage(Module); })
+              .catch(() => {
+                errorCallback(`Couldn't load package from URL ${scriptSrc}`);
+                toLoad.delete(pkg);
+              }));
     }
 
     // When the JS loads, it synchronously adds a runDependency to emscripten.
@@ -192,14 +170,11 @@ globalThis.initializePyodide = async function(config) {
     // We must start waiting for runDependencies *after* all the JS files are
     // loaded, since the number of runDependencies may happen to equal zero
     // between package files loading.
-    let successPromise = Promise.all(scriptPromises).then(waitRunDependency);
     try {
-      await Promise.race([ successPromise, windowErrorPromise ]);
+      await Promise.all(scriptPromises);
+      await waitRunDependency();
     } finally {
       delete Module.monitorRunDependencies;
-      if (windowErrorHandler) {
-        self.removeEventListener('error', windowErrorHandler);
-      }
     }
 
     let packageList = [];
@@ -211,7 +186,7 @@ globalThis.initializePyodide = async function(config) {
     let resolveMsg;
     if (packageList.length > 0) {
       let package_names = packageList.join(', ');
-      resolveMsg = `Loaded ${packageList}`;
+      resolveMsg = `Loaded ${package_names}`;
     } else {
       resolveMsg = 'No packages loaded';
     }
@@ -712,7 +687,8 @@ globalThis.initializePyodide = async function(config) {
   // _createPyodideModule is specified in the Makefile by the linker flag:
   // `-s EXPORT_NAME="'_createPyodideModule'"`
   await _createPyodideModule(Module);
-  delete globalThis._createPyodideModule;
+  // can't get rid of _createPyodideModule, it's declared with "var"...
+  globalThis._createPyodideModule = undefined;
 
   // There is some work to be done between the module being "ready" and postRun
   // being called.
@@ -754,7 +730,6 @@ def temp(Module):
   let pyodide = makePublicAPI(Module, PUBLIC_API);
   Module.registerJsModule("js", globalThis);
   Module.registerJsModule("pyodide_js", pyodide);
-  globalThis.pyodide = pyodide;
   return pyodide;
 };
 
@@ -769,5 +744,7 @@ if (globalThis.languagePluginUrl) {
    * @deprecated
    */
   globalThis.languagePluginLoader =
-      initializePyodide({baseURL : globalThis.languagePluginUrl});
+      initializePyodide({
+        baseURL : globalThis.languagePluginUrl
+      }).then(pyodide => globalThis.pyodide = pyodide);
 }
