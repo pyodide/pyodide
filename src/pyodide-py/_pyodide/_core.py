@@ -18,7 +18,10 @@ try:
         """
 
     class JsProxy:
-        """A proxy to make a Javascript object behave like a Python object"""
+        """A proxy to make a Javascript object behave like a Python object
+        
+        For more information see :ref:`type-translations` documentation.
+        """
 
         def __init__(self):
             """"""
@@ -41,17 +44,23 @@ try:
 
         def then(self, onfulfilled: Callable, onrejected: Callable) -> "Promise":
             """The ``Promise.then`` api, wrapped to manage the lifetimes of the handlers.
-            Pyodide will automatically release the references to the handlers when the promise resolves.
+            
+            Pyodide will automatically release the references to the handlers when the
+            promise resolves.
             """
 
         def catch(self, onrejected: Callable) -> "Promise":
             """The ``Promise.catch`` api, wrapped to manage the lifetimes of the handler.
-            Pyodide will automatically release the references to the handler when the promise resolves.
+            
+            Pyodide will automatically release the references to the handler when the promise
+            resolves.
             """
 
         def finally_(self, onfinally: Callable) -> "Promise":
             """The ``Promise.finally`` api, wrapped to manage the lifetimes of the handler.
-            Pyodide will automatically release the references to the handler when the promise resolves.
+            
+            Pyodide will automatically release the references to the handler when the promise
+            resolves.
             """
 
     # from pyproxy.c
