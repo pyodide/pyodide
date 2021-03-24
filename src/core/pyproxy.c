@@ -714,8 +714,8 @@ _pyproxy_get_buffer(PyObject* ptrobj)
   result.largest_ptr += view.itemsize;
   result.strides = array_to_js(view.strides, view.ndim);
   result.format = view.format;
-  result.c_contiguous = PyBuffer_IsContiguous(view, 'C');
-  result.f_contiguous = PyBuffer_IsContiguous(view, 'F');
+  result.c_contiguous = PyBuffer_IsContiguous(&view, 'C');
+  result.f_contiguous = PyBuffer_IsContiguous(&view, 'F');
 
 success:
   success = true;
@@ -1107,7 +1107,7 @@ EM_JS_NUM(int, pyproxy_init_js, (), {
 
   class PyBuffer {
     constructor({ view_ptr, ...rest }){
-      return Object.create(PyBuffer, {
+      Object.assign(this, {
         _released : false,
         _view_ptr : view_ptr,
         ...rest
