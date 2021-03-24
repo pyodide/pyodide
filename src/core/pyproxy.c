@@ -1360,6 +1360,8 @@ EM_JS_NUM(int, pyproxy_init_js, (), {
       let strides = Module.hiwire.pop_value(HEAP32[cur_ptr++]);
       let view_ptr = HEAP32[cur_ptr++];
       let format_ptr = HEAP32[cur_ptr++];
+      let c_contiguous = !!HEAP32[cur_ptr++];
+      let f_contiguous = !!HEAP32[cur_ptr++];
       _PyMem_Free(buffer_struct_ptr);
 
 
@@ -1379,7 +1381,10 @@ EM_JS_NUM(int, pyproxy_init_js, (), {
       for(let i of strides.keys()){
         strides[i] /= alignment;
       }
-      return new PyBuffer({ offset, shape, strides, data, view_ptr, format });
+      return new PyBuffer({
+        offset, shape, strides, data, view_ptr, format,
+        c_contiguous, f_contiguous
+      });
     }
   };
 
