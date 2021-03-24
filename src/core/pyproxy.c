@@ -648,6 +648,7 @@ array_to_js(Py_ssize_t* array, int len)
 }
 
 // The order of these fields has to match the code in getBuffer
+//
 typedef struct
 {
   // where is buffer[0]...[0] (ndim times)?
@@ -660,10 +661,11 @@ typedef struct
   JsRef shape;
   JsRef strides;
   Py_buffer* view;
+  char* format;
 } buffer_struct;
 
 buffer_struct
-_pyproxy_memoryview_get_buffer(PyObject* ptrobj)
+_pyproxy_get_buffer(PyObject* ptrobj)
 {
   if (!PyObject_CheckBuffer(ptrobj)) {
     return NULL;
@@ -709,6 +711,7 @@ _pyproxy_memoryview_get_buffer(PyObject* ptrobj)
   }
   result.largest_ptr += view.itemsize;
   result.strides = array_to_js(view.strides, view.ndim);
+  result.format = view.format;
 
 success:
   success = true;
@@ -1340,7 +1343,7 @@ EM_JS_NUM(int, pyproxy_init_js, (), {
         throw new Error(`Unknown type ${type}`);
       }
       let this_ptr = _getPtr(this);
-      let buffer_struct_ptr = __pyproxy_memoryview_get_buffer(this_ptr);
+      let buffer_struct_ptr = _pyproxy_get_buffer(this_ptr);
       if(buffer_struct_ptr === 0){
         throw new Error("Failed");
       }
@@ -1353,6 +1356,7 @@ EM_JS_NUM(int, pyproxy_init_js, (), {
       let shape = Module.hiwire.pop_value(HEAP32[cur_ptr++]);
       let strides = Module.hiwire.pop_value(HEAP32[cur_ptr++]);
       let view_ptr = HEAP32[cur_ptr++];
+      let format_ptr = HEAP32[cur_ptr++];
       _PyMem_Free(buffer_struct_ptr);
 
 
@@ -1366,12 +1370,13 @@ EM_JS_NUM(int, pyproxy_init_js, (), {
       let numBytes = maxByteOffset - minByteOffset;
       let numEntries = numBytes / alignment;
       let offset = (startByteOffset - minByteOffsets) / alignment;
+      let format = UTF8ToString(format_ptr);
 
       let data = new ArrayType(HEAP8.buffer, smallest, length);
       for(let i of strides.keys()){
         strides[i] /= alignment;
       }
-      return new PyBuffer({ offset, shape, strides, data, view_ptr });
+      return new PyBuffer({ offset, shape, strides, data, view_ptr, format });
     }
   };
 
