@@ -4,6 +4,7 @@
 #include <emscripten.h>
 #include <stdalign.h>
 
+#include "docstring.h"
 #include "error_handling.h"
 #include "hiwire.h"
 #include "js2python.h"
@@ -16,9 +17,11 @@
   do {                                                                         \
     printf("FATAL ERROR: ");                                                   \
     printf(args);                                                              \
+    printf("\n");                                                              \
     if (PyErr_Occurred()) {                                                    \
       printf("Error was triggered by Python exception:\n");                    \
       PyErr_Print();                                                           \
+      EM_ASM(throw new Error("Fatal pyodide error"));                          \
     }                                                                          \
     return -1;                                                                 \
   } while (0)
@@ -31,7 +34,7 @@
 #define TRY_INIT(mod)                                                          \
   do {                                                                         \
     if (mod##_init()) {                                                        \
-      FATAL_ERROR("Failed to initialize module %s.\n", #mod);                  \
+      FATAL_ERROR("Failed to initialize module %s.", #mod);                    \
     }                                                                          \
   } while (0)
 
@@ -61,7 +64,7 @@ finally:
 #define TRY_INIT_WITH_CORE_MODULE(mod)                                         \
   do {                                                                         \
     if (mod##_init(core_module)) {                                             \
-      FATAL_ERROR("Failed to initialize module %s.\n", #mod);                  \
+      FATAL_ERROR("Failed to initialize module %s.", #mod);                    \
     }                                                                          \
   } while (0)
 
@@ -117,8 +120,9 @@ main(int argc, char** argv)
     FATAL_ERROR("Failed to create core module.");
   }
 
-  TRY_INIT(hiwire);
   TRY_INIT_WITH_CORE_MODULE(error_handling);
+  TRY_INIT(hiwire);
+  TRY_INIT(docstring);
   TRY_INIT(js2python);
   TRY_INIT_WITH_CORE_MODULE(JsProxy);
   TRY_INIT_WITH_CORE_MODULE(pyproxy);
@@ -136,7 +140,12 @@ main(int argc, char** argv)
   }
   EM_ASM({ Module.init_dict = Module.hiwire.pop_value($0); }, init_dict_proxy);
 
+  PyObject* pyodide = PyImport_ImportModule("pyodide");
+  if (pyodide == NULL) {
+    FATAL_ERROR("Failed to import pyodide module");
+  }
   Py_CLEAR(core_module);
+  Py_CLEAR(pyodide);
   printf("Python initialization complete\n");
   emscripten_exit_with_live_runtime();
   return 0;

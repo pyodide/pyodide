@@ -12,7 +12,7 @@ def test_pyproxy(selenium):
         f = Foo()
         """
     )
-    selenium.run_js("window.f = pyodide.pyimport('f')")
+    selenium.run_js("window.f = pyodide.globals.get('f')")
     assert selenium.run_js("return f.type") == "Foo"
     assert selenium.run_js("return f.get_value(2)") == 128
     assert selenium.run_js("return f.bar") == 42
@@ -53,9 +53,11 @@ def test_pyproxy(selenium):
         ]
     )
     assert selenium.run("hasattr(f, 'baz')")
-    selenium.run_js("delete pyodide.pyimport('f').baz")
+    selenium.run_js("delete pyodide.globals.get('f').baz")
     assert not selenium.run("hasattr(f, 'baz')")
-    assert selenium.run_js("return pyodide.pyimport('f').toString()").startswith("<Foo")
+    assert selenium.run_js("return pyodide.globals.get('f').toString()").startswith(
+        "<Foo"
+    )
 
 
 def test_pyproxy_refcount(selenium):
@@ -124,7 +126,7 @@ def test_pyproxy_destroy(selenium):
     with pytest.raises(selenium.JavascriptException, match=msg):
         selenium.run_js(
             """
-            let f = pyodide.pyimport('f');
+            let f = pyodide.globals.get('f');
             console.assert(f.get_value(1) === 64);
             f.destroy();
             f.get_value();
