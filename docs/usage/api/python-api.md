@@ -9,4 +9,5 @@ Backward compatibility of the API is not guaranteed at this point.
 .. automodule:: pyodide
    :members:
    :autosummary:
+   :autosummary-no-nesting:
 ```

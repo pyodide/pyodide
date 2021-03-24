@@ -51,6 +51,8 @@ substitutions:
   access, then the wrapper has `get`, `set`, `has`, and `delete` methods which do
   `obj[key]`, `obj[key] = val`, `key in obj` and `del obj[key]` respectively.
   [#1175](https://github.com/iodide-project/pyodide/pull/1175)
+- {{ API }} The `pyodide.pyimport` function is deprecated in favor of using
+  `pyodide.globals.get('key')`. [#1367](https://github.com/iodide-project/pyodide/pull/1367)
 
 ### Fixed
 - {{ Fix }} getattr and dir on JsProxy now report consistent results and include all
