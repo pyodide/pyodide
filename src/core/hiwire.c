@@ -680,6 +680,16 @@ EM_JS_REF(JsRef, hiwire_object_entries, (JsRef idobj), {
   return Module.hiwire.new_value(Object.entries(jsobj));
 });
 
+EM_JS_REF(JsRef, hiwire_object_keys, (JsRef idobj), {
+  let jsobj = Module.hiwire.get_value(idobj);
+  return Module.hiwire.new_value(Object.keys(jsobj));
+});
+
+EM_JS_REF(JsRef, hiwire_object_values, (JsRef idobj), {
+  let jsobj = Module.hiwire.get_value(idobj);
+  return Module.hiwire.new_value(Object.values(jsobj));
+});
+
 EM_JS_NUM(bool, hiwire_is_typedarray, (JsRef idobj), {
   let jsobj = Module.hiwire.get_value(idobj);
   // clang-format off
