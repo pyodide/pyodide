@@ -664,7 +664,7 @@ typedef struct
   char* format;
 } buffer_struct;
 
-buffer_struct
+buffer_struct*
 _pyproxy_get_buffer(PyObject* ptrobj)
 {
   if (!PyObject_CheckBuffer(ptrobj)) {
@@ -1343,7 +1343,7 @@ EM_JS_NUM(int, pyproxy_init_js, (), {
         throw new Error(`Unknown type ${type}`);
       }
       let this_ptr = _getPtr(this);
-      let buffer_struct_ptr = _pyproxy_get_buffer(this_ptr);
+      let buffer_struct_ptr = __pyproxy_get_buffer(this_ptr);
       if(buffer_struct_ptr === 0){
         throw new Error("Failed");
       }
