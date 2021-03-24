@@ -12,7 +12,7 @@ def test_pyproxy(selenium):
         f = Foo()
         """
     )
-    selenium.run_js("window.f = pyodide.pyimport('f')")
+    selenium.run_js("window.f = pyodide.globals.get('f')")
     assert selenium.run_js("return f.type") == "Foo"
     assert selenium.run_js("return f.get_value(2)") == 128
     assert selenium.run_js("return f.bar") == 42
@@ -53,9 +53,11 @@ def test_pyproxy(selenium):
         ]
     )
     assert selenium.run("hasattr(f, 'baz')")
-    selenium.run_js("delete pyodide.pyimport('f').baz")
+    selenium.run_js("delete pyodide.globals.get('f').baz")
     assert not selenium.run("hasattr(f, 'baz')")
-    assert selenium.run_js("return pyodide.pyimport('f').toString()").startswith("<Foo")
+    assert selenium.run_js("return pyodide.globals.get('f').toString()").startswith(
+        "<Foo"
+    )
 
 
 def test_pyproxy_refcount(selenium):
@@ -77,8 +79,8 @@ def test_pyproxy_refcount(selenium):
         // the refcount should be 2 because:
         //
         // 1. pyfunc exists
-        // 2. pyfunc is referenced from the sys.getrefcount()-test below        
-        
+        // 2. pyfunc is referenced from the sys.getrefcount()-test below
+
         result.push([getRefCount(), 2]);
 
         // the refcount should be 3 because:
@@ -86,7 +88,7 @@ def test_pyproxy_refcount(selenium):
         // 1. pyfunc exists
         // 2. one reference from PyProxy to pyfunc is alive
         // 3. pyfunc is referenced from the sys.getrefcount()-test below
-        
+
         pyodide.runPython(`
             window.jsfunc(pyfunc) # creates new PyProxy
         `);
@@ -96,7 +98,7 @@ def test_pyproxy_refcount(selenium):
             window.jsfunc(pyfunc) # re-used existing PyProxy
             window.jsfunc(pyfunc) # re-used existing PyProxy
         `)
-        
+
         // the refcount should be 3 because:
         //
         // 1. pyfunc exists
@@ -124,7 +126,7 @@ def test_pyproxy_destroy(selenium):
     with pytest.raises(selenium.JavascriptException, match=msg):
         selenium.run_js(
             """
-            let f = pyodide.pyimport('f');
+            let f = pyodide.globals.get('f');
             console.assert(f.get_value(1) === 64);
             f.destroy();
             f.get_value();
@@ -205,15 +207,15 @@ def test_pyproxy_mixins(selenium):
             class Await:
                 def __await__(self):
                     return iter([])
-            
+
             class Iter:
                 def __iter__(self):
                     return iter([])
-            
+
             class Next:
                 def __next__(self):
                     pass
-            
+
             class AwaitIter(Await, Iter): pass
 
             class AwaitNext(Await, Next): pass
@@ -303,7 +305,7 @@ def test_pyproxy_mixins2(selenium):
         assert(() => get_method.prototype === undefined);
         assert(() => !("length" in get_method));
         assert(() => !("name" in get_method));
-        
+
         assert(() => pyodide.globals.get.type === "builtin_function_or_method");
         assert(() => pyodide.globals.set.type === undefined);
 

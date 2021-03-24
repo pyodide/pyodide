@@ -211,7 +211,7 @@ def test_keyboard_interrupt(selenium):
         window.triggerKeyboardInterrupt = function(){
             x[0] = 2;
         }
-        try { 
+        try {
             pyodide.runPython(`
                 from js import triggerKeyboardInterrupt
                 x = 0
@@ -376,6 +376,43 @@ def test_create_proxy(selenium):
         `);
         """
     )
+
+
+def test_docstrings_a():
+    from _pyodide.docstring import get_cmeth_docstring, dedent_docstring
+    from pyodide import JsProxy
+
+    jsproxy = JsProxy()
+    c_docstring = get_cmeth_docstring(jsproxy.then)
+    assert c_docstring == "then(onfulfilled, onrejected)\n--\n\n" + dedent_docstring(
+        jsproxy.then.__doc__
+    )
+
+
+def test_docstrings_b(selenium):
+    from pyodide import create_once_callable, JsProxy
+    from _pyodide.docstring import dedent_docstring
+
+    jsproxy = JsProxy()
+    ds_then_should_equal = dedent_docstring(jsproxy.then.__doc__)
+    sig_then_should_equal = "(onfulfilled, onrejected)"
+    ds_once_should_equal = dedent_docstring(create_once_callable.__doc__)
+    sig_once_should_equal = "(obj)"
+    selenium.run_js("window.a = Promise.resolve();")
+    [ds_then, sig_then, ds_once, sig_once] = selenium.run(
+        """
+        from js import a
+        from pyodide import create_once_callable as b
+        [
+            a.then.__doc__, a.then.__text_signature__,
+            b.__doc__, b.__text_signature__
+        ]
+        """
+    )
+    assert ds_then == ds_then_should_equal
+    assert sig_then == sig_then_should_equal
+    assert ds_once == ds_once_should_equal
+    assert sig_once == sig_once_should_equal
 
 
 @pytest.mark.norefs
