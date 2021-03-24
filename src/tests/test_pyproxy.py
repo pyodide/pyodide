@@ -208,7 +208,7 @@ def test_pyproxy_get_buffer(selenium):
         `);
         for(let x of ["z1", "z2"]){
             pyodide.runPython(`assert getrefcount(${x}) == 2`);
-            let proxy = pyodide.pyimport(x);
+            let proxy = pyodide.globals.get(x);
             pyodide.runPython(`assert getrefcount(${x}) == 3`);
             let z = proxy.getBuffer();
             pyodide.runPython(`assert getrefcount(${x}) == 4`);

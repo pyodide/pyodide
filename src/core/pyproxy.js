@@ -555,8 +555,7 @@ TEMP_EMJS_HELPER(() => {0, /* Magic, see comment */
       let numEntries = numBytes / alignment;
       let offset = (startByteOffset - minByteOffset) / alignment;
       let format = UTF8ToString(format_ptr);
-
-      let data = new ArrayType(HEAP8.buffer, startByteOffset, numEntries);
+      let data = new ArrayType(HEAP8.buffer, minByteOffset, numEntries);
       for (let i of strides.keys()) {
         strides[i] /= alignment;
       }
