@@ -211,7 +211,7 @@ def test_keyboard_interrupt(selenium):
         window.triggerKeyboardInterrupt = function(){
             x[0] = 2;
         }
-        try { 
+        try {
             pyodide.runPython(`
                 from js import triggerKeyboardInterrupt
                 x = 0
@@ -329,7 +329,7 @@ def test_create_proxy(selenium):
             assert sys.getrefcount(f) == 3
             assert testCallListener() == 7
             assert sys.getrefcount(f) == 3
-            assert testRemoveListener(f)
+            assert testRemoveListener(proxy)
             assert sys.getrefcount(f) == 3
             proxy.destroy()
             assert sys.getrefcount(f) == 2
