@@ -16,7 +16,7 @@ converted using the explicit conversion methods `JsProxy.to_py` and
 Python to Javascript translations occur:
 
 - when returning the final expression from a {any}`pyodide.runPython` call,
-- when using {any}`pyodide.pyimport`,
+- when using `pyodide.globals.get('key')`,
 - when passing arguments to a Javascript function called from Python,
 - when returning the results of a Python function called from Javascript,
 - when accessing an attribute of a `PyProxy`
@@ -37,7 +37,7 @@ done with it. Unfortunately, we currently provide no convenient way to do this,
 particularly when calling Javascript functions from Python.
 `````
 
-## Round trip conversions 
+## Round trip conversions
 Translating an object from Python to Javascript and then back to
 Python is guaranteed to give an object that is equal to the original object
 (with the exception of `nan` because `nan != nan`). Furthermore, if the object
@@ -195,7 +195,7 @@ object exist in Python either, then the Python garbage collector can eventually
 collect it.
 
 ```javascript
-let foo = pyodide.pyimport('foo');
+let foo = pyodide.globals.get('foo');
 foo();
 foo.destroy();
 foo(); // throws Error: Object has already been destroyed
@@ -207,7 +207,7 @@ foo(); // throws Error: Object has already been destroyed
 
 Every time you access a Python method on a `PyProxy`, it creates a new temporary
 `PyProxy` of a Python bound method. If you do not capture this temporary and
-destroy it, you will leak the Python object. 
+destroy it, you will leak the Python object.
 `````
 Here's an example:
 
@@ -220,7 +220,7 @@ pyodide.runPython(`
     import sys
     print(sys.getrefcount(d)) # prints 2
 `);
-let d = pyodide.pyimport("d");
+let d = pyodide.globals.get("d");
 // Leak three temporary bound "get" methods!
 let l = [d.get("a", 0), d.get("b", 0), d.get("c", 0)];
 d.destroy(); // Try to free dict
@@ -232,7 +232,7 @@ pyodide.runPython(`
 ```
 Here is how we can do this without leaking:
 ```pyodide
-let d = pyodide.pyimport("d");
+let d = pyodide.globals.get("d");
 let d_get = d.get; // this time avoid the leak
 let l = [d_get("a", 0), d_get("b", 0), d_get("c", 0)];
 d.destroy();
@@ -247,7 +247,7 @@ Another exciting inconsistency is that `d.set` is a __Javascript__ method not a
 PyProxy of a bound method, so using it has no effect on refcounts or memory
 reclamation and it cannot be destroyed.
 ```pyodide
-let d = pyodide.pyimport("d");
+let d = pyodide.globals.get("d");
 let d_set = d.set;
 d_set("x", 7);
 pyodide.runPython(`
@@ -282,7 +282,7 @@ would have different semantics in Javascript than in Python, then a
 
 The `toJs` method can create many proxies at arbitrary depth. It is your
 responsibility to manually `destroy` these proxies if you wish to avoid memory
-leaks, but we provide no way to manage this. 
+leaks, but we provide no way to manage this.
 `````
 
 To ensure that no `PyProxy` is leaked, the following code suffices:
@@ -327,7 +327,7 @@ Object.setPrototypeOf(y, Test.prototype);
 pyodide.runPython(`
     from js import x, y
     # x is converted to a dictionary
-    assert x.to_py() == { "a" : 7, "b" : 2} 
+    assert x.to_py() == { "a" : 7, "b" : 2}
     # y is not a "Plain Old JavaScript Object", it's an instance of type Test so it's not converted
     assert y.to_py() == y
 `);
@@ -379,14 +379,14 @@ implementation for Javascript.
 ## Importing Python objects into Javascript
 
 A Python object in the `__main__` global scope can imported into Javascript
-using the {any}`pyodide.pyimport` function. Given the name of the Python object
-to import, `pyimport` returns the object translated to Javascript.
+using the `pyodide.globals.get` method. Given the name of the Python object
+to import, it returns the object translated to Javascript.
 
 ```js
-let sys = pyodide.pyimport('sys');
+let sys = pyodide.globals.get('sys');
 ```
 
-As always, if the result is a `PyProxy` and you care about not leaking the Python 
+As always, if the result is a `PyProxy` and you care about not leaking the Python
 object, you must destroy it when you are done.
 
 (type-translations_using-js-obj-from-py)=

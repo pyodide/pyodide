@@ -35,18 +35,18 @@ def test_import_js(selenium):
     assert "window" in result
 
 
-def test_pyimport_multiple(selenium):
+def test_globals_get_multiple(selenium):
     """See #1151"""
     selenium.run("v = 0.123")
-    selenium.run_js("pyodide.pyimport('v')")
-    selenium.run_js("pyodide.pyimport('v')")
+    selenium.run_js("pyodide.globals.get('v')")
+    selenium.run_js("pyodide.globals.get('v')")
 
 
-def test_pyimport_same(selenium):
+def test_globals_get_same(selenium):
     """See #382"""
     selenium.run("def func(): return 42")
     assert selenium.run_js(
-        "return pyodide.pyimport('func') == pyodide.pyimport('func')"
+        "return pyodide.globals.get('func') == pyodide.globals.get('func')"
     )
 
 
@@ -72,7 +72,7 @@ def test_load_package_after_convert_string(selenium):
     See #93.
     """
     selenium.run("import sys\n" "x = sys.version")
-    selenium.run_js("let x = pyodide.pyimport('x');\n" "console.log(x);")
+    selenium.run_js("let x = pyodide.globals.get('x');\n" "console.log(x);")
     selenium.load_package("kiwisolver")
     selenium.run("import kiwisolver")
 
