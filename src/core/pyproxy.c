@@ -811,6 +811,19 @@ static PyMethodDef pyproxy_methods[] = {
   { NULL } /* Sentinel */
 };
 
+// Some special helper macros to hack it so that "pyproxy.js" parses as a
+// javascript file for JsDoc. See comment with explanation there.
+#define UNPAIRED_OPEN_BRACE {
+#define UNPAIRED_CLOSE_BRACE } // Just here to help text editors pair braces up
+#define TEMP_EMJS_HELPER(a, args...)                                           \
+  EM_JS(int, pyproxy_init_js, (), UNPAIRED_OPEN_BRACE { args return 0; })
+
+#include "pyproxy.js"
+
+#undef TEMP_EMJS_HELPER
+#undef UNPAIRED_OPEN_BRACE
+#undef UNPAIRED_CLOSE_BRACE
+
 int
 pyproxy_init(PyObject* core)
 {
@@ -827,16 +840,3 @@ pyproxy_init(PyObject* core)
   }
   return 0;
 }
-
-// Some special helper macros to hack it so that "pyproxy.js" parses as a javascript
-// file for JsDoc. See comment with explanation there.
-#define UNPAIRED_OPEN_BRACE {
-#define UNPAIRED_CLOSE_BRACE } // Just here to help text editors pair braces up
-#define TEMP_EMJS_HELPER(a, args...)                                           \
-  EM_JS(int, pyproxy_init, (), UNPAIRED_OPEN_BRACE { args return 0; })
-
-#include "pyproxy.js"
-
-#undef TEMP_EMJS_HELPER
-#undef UNPAIRED_OPEN_BRACE
-#undef UNPAIRED_CLOSE_BRACE
