@@ -62,6 +62,7 @@ all: check \
 
 
 build/pyodide.asm.js: \
+	src/core/docstring.o \
 	src/core/error_handling.o \
 	src/core/hiwire.o \
 	src/core/js2python.o \
@@ -85,6 +86,7 @@ build/pyodide.asm.js: \
 		--preload-file src/_testcapi.py@/lib/python$(PYMINOR)/_testcapi.py \
 		--preload-file src/pystone.py@/lib/python$(PYMINOR)/pystone.py \
 		--preload-file src/pyodide-py/pyodide@/lib/python$(PYMINOR)/site-packages/pyodide \
+		--preload-file src/pyodide-py/_pyodide@/lib/python$(PYMINOR)/site-packages/_pyodide \
 		--exclude-file "*__pycache__*" \
 		--exclude-file "*/test/*"
 	date +"[%F %T] done building pyodide.asm.js."

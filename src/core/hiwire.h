@@ -633,6 +633,18 @@ JsRef
 hiwire_object_entries(JsRef idobj);
 
 /**
+ * Returns `Object.keys(obj)`
+ */
+JsRef
+hiwire_object_keys(JsRef idobj);
+
+/**
+ * Returns `Object.values(obj)`
+ */
+JsRef
+hiwire_object_values(JsRef idobj);
+
+/**
  * Returns 1 if the value is a typedarray.
  */
 bool

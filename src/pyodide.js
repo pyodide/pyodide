@@ -428,9 +428,8 @@ globalThis.initializePyodide = async function(config) {
    *
    * An alias to the global Python namespace.
    *
-   * An object whose attributes are members of the Python global namespace. This
-   * is an alternative to :meth:`pyimport`. For example, to access the ``foo``
-   * Python object from Javascript use
+   * An object whose attributes are members of the Python global namespace.
+   * For example, to access the ``foo`` Python object from Javascript use
    * ``pyodide.globals.get("foo")``
    *
    * @type {PyProxy}
@@ -496,23 +495,23 @@ globalThis.initializePyodide = async function(config) {
 
   // clang-format off
   /**
-   * Inspect a Python code chunk and use :js:func:`pyodide.loadPackage` to load any known 
-   * packages that the code chunk imports. Uses 
+   * Inspect a Python code chunk and use :js:func:`pyodide.loadPackage` to load any known
+   * packages that the code chunk imports. Uses
    * :func:`pyodide_py.find_imports <pyodide.find\_imports>` to inspect the code.
-   * 
+   *
    * For example, given the following code as input
-   * 
+   *
    * .. code-block:: python
-   * 
+   *
    *    import numpy as np
    *    x = np.array([1, 2, 3])
-   * 
+   *
    * :js:func:`loadPackagesFromImports` will call ``pyodide.loadPackage(['numpy'])``.
    * See also :js:func:`runPythonAsync`.
    *
-   * @param {*} code 
-   * @param {*} messageCallback 
-   * @param {*} errorCallback 
+   * @param {*} code
+   * @param {*} messageCallback
+   * @param {*} errorCallback
    */
   Module.loadPackagesFromImports  = async function(code, messageCallback, errorCallback) {
     let imports = Module.pyodide_py.find_imports(code).toJs();
@@ -536,12 +535,21 @@ globalThis.initializePyodide = async function(config) {
 
   /**
    * Access a Python object in the global namespace from Javascript.
+   *
+   * Note: this function is deprecated and will be removed in version 0.18.0.
+   * Use pyodide.globals.get('key') instead.
+   *
    * @param {string} name Python variable name
    * @returns If the Python object is an immutable type (string, number,
    * boolean), it is converted to Javascript and returned.  For other types, a
    * ``PyProxy`` object is returned.
    */
-  Module.pyimport = name => Module.globals.get(name);
+  Module.pyimport = name => {
+    console.warn(
+        "Access to the Python global namespace via pyodide.pyimport is deprecated and " +
+        "will be removed in version 0.18.0. Use pyodide.globals.get('key') instead.");
+    return Module.globals.get(name);
+  };
 
   /**
    * Runs Python code, possibly asynchronously loading any known packages that
@@ -592,8 +600,8 @@ globalThis.initializePyodide = async function(config) {
    * @param {string} name Name of js module to add
    * @param {object} module Javascript object backing the module
    */
-  Module.registerJsModule = function(name, module) { 
-    Module.pyodide_py.register_js_module(name, module); 
+  Module.registerJsModule = function(name, module) {
+    Module.pyodide_py.register_js_module(name, module);
   };
 
   /**
@@ -607,8 +615,8 @@ globalThis.initializePyodide = async function(config) {
    *
    * @param {string} name Name of js module to remove
    */
-  Module.unregisterJsModule = function(name) { 
-    Module.pyodide_py.unregister_js_module(name); 
+  Module.unregisterJsModule = function(name) {
+    Module.pyodide_py.unregister_js_module(name);
   };
   // clang-format on
 

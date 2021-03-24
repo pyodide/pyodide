@@ -17,8 +17,7 @@
   <body>
     <script>
       initializePyodide({ baseURL : pyodideBaseURL }).then((pyodide) => {
-        globalThis.pyodide = pyodide;
-        let namespace = pyodide.pyimport("dict")();
+        let namespace = pyodide.globals.get("dict")();
         pyodide.runPython(`
             import sys
             import js
