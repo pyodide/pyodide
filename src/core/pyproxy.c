@@ -1366,7 +1366,7 @@ EM_JS_NUM(int, pyproxy_init_js, (), {
 
 
       let alignment = parseInt(type.slice(1))/8;
-      if(start % alignment !== 0 || smallest % alignment !== 0 || largest % alignment !== 0){
+      if(startByteOffset % alignment !== 0 || minByteOffset % alignment !== 0 || maxByteOffset % alignment !== 0){
         _PyBuffer_Release(view_ptr);
         _PyMem_Free(view_ptr);
         throw new Error(`Buffer does not have valid alignment for type ${type}`);
