@@ -635,37 +635,39 @@ _pyproxy_is_buffer(PyObject* ptrobj)
   return PyObject_CheckBuffer(ptrobj);
 }
 
-JsRef
-array_to_js(Py_ssize_t* array, int len)
-{
-  JsRef result = hiwire_array();
-  for (int i = 0; i < len; i++) {
-    JsRef val = hiwire_int(array[i]);
-    hiwire_push_array(result, val);
-    hiwire_decref(val);
-  }
-  return result;
-}
+/**
+ * Convert a C array of Py_ssize_t to Javascript.
+ */
+EM_JS_REF(JsRef, array_to_js, (Py_ssize_t * array, int len), {
+  return Module.hiwire.new_value(
+    Array.from(HEAP32.subarray(array / 4, array / 4 + len)));
+})
 
 // The order of these fields has to match the code in getBuffer
-//
 typedef struct
 {
-  // where is buffer[0]...[0] (ndim times)?
+  // where is the first entry buffer[0]...[0] (ndim times)?
   void* start_ptr;
   // Where is the earliest location in buffer? (If all strides are positive,
   // this equals start_ptr)
   void* smallest_ptr;
   // What is the last location in the buffer (plus one)
   void* largest_ptr;
+
+  int readonly;
+  char* format;
   JsRef shape;
   JsRef strides;
+
   Py_buffer* view;
-  char* format;
   int c_contiguous;
   int f_contiguous;
 } buffer_struct;
 
+/**
+ * This is the C part of the getBuffer method. We use PyObject_GetBuffer to
+ * acquire a Py_buffer view to the object,
+ */
 buffer_struct*
 _pyproxy_get_buffer(PyObject* ptrobj)
 {
@@ -683,8 +685,8 @@ _pyproxy_get_buffer(PyObject* ptrobj)
     FAIL();
   }
   buffer_struct result = { 0 };
+  result.readonly = view.readonly;
   result.shape = array_to_js(view.shape, view.ndim);
-
   result.start_ptr = result.smallest_ptr = result.largest_ptr = view.buf;
 
   if (view.strides == NULL) {
@@ -1353,17 +1355,21 @@ EM_JS_NUM(int, pyproxy_init_js, (), {
 
       // This has to match the order of the fields in buffer_struct
       let cur_ptr = buffer_struct_ptr/4;
+
       let startByteOffset = HEAP32[cur_ptr++];
       let minByteOffset = HEAP32[cur_ptr++];
       let maxByteOffset = HEAP32[cur_ptr++];
+
+      let readonly = !!HEAP32[cur_ptr++];
+      let format_ptr = HEAP32[cur_ptr++];
       let shape = Module.hiwire.pop_value(HEAP32[cur_ptr++]);
       let strides = Module.hiwire.pop_value(HEAP32[cur_ptr++]);
+
       let view_ptr = HEAP32[cur_ptr++];
-      let format_ptr = HEAP32[cur_ptr++];
       let c_contiguous = !!HEAP32[cur_ptr++];
       let f_contiguous = !!HEAP32[cur_ptr++];
-      _PyMem_Free(buffer_struct_ptr);
 
+      _PyMem_Free(buffer_struct_ptr);
 
       let alignment = parseInt(type.slice(1))/8;
       if(startByteOffset % alignment !== 0 || minByteOffset % alignment !== 0 || maxByteOffset % alignment !== 0){
@@ -1382,7 +1388,8 @@ EM_JS_NUM(int, pyproxy_init_js, (), {
         strides[i] /= alignment;
       }
       return new PyBuffer({
-        offset, shape, strides, data, view_ptr, format,
+        offset, readonly, format, shape, strides,
+        data, view_ptr,
         c_contiguous, f_contiguous
       });
     }
