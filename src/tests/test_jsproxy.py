@@ -723,6 +723,7 @@ def test_mixins_errors(selenium):
 
 
 def test_memory_leaks(selenium):
+    # refcounts are tested automatically in conftest by default
     selenium.run_js(
         """
         window.a = [1,2,3];
