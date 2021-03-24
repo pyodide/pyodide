@@ -73,6 +73,9 @@ EM_JS_NUM(int, hiwire_init, (), {
       many_objects_warning_threshold += 100;
     }
 #endif
+#ifdef HW_TRACE_REFS
+    console.warn("hw.new_value", idval, jsval);
+#endif
     return idval;
   };
 
@@ -274,8 +277,8 @@ EM_JS_NUM(bool, hiwire_is_array, (JsRef idobj), {
   // What if it's a TypedArray?
   // clang-format off
   if (
-    obj.buffer 
-    && obj.buffer.constructor.name === "ArrayBuffer" 
+    obj.buffer
+    && obj.buffer.constructor.name === "ArrayBuffer"
     && obj.BYTES_PER_ELEMENT
   ) {
     // clang-format on

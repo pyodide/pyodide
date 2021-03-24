@@ -19,6 +19,26 @@ jobs:
           name: lint
           command: make lint
 
+  test-docs:
+    working_directory: ~/repo
+
+    docker:
+      - image: cimg/python:3.8.2-node
+
+    steps:
+      - checkout
+
+      - run:
+          name: Install prerequisites
+          command: |
+            pip install -r docs/requirements-doc.txt
+            pip install pytest
+            sudo npm install -g jsdoc
+
+      - run:
+          name: Test docs
+          command: pytest docs/sphinx_pyodide/tests
+
   build-docs:
     working_directory: ~/repo
 
@@ -261,6 +281,7 @@ workflows:
   build-and-deploy:
     jobs:
       - lint
+      - test-docs
       - build-docs
       - build-core:
           filters:
@@ -322,7 +343,7 @@ workflows:
             branches:
               ignore: /.*/
             tags:
-              only: /^\d+\.\d+\.\d+$/
+              only: /^\d+\.\d+\.\w+$/
       - deploy-s3:
           requires:
             - lint
