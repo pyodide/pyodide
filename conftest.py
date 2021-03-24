@@ -183,10 +183,10 @@ class SeleniumWrapper:
         return self.run_js("return pyodide._module.hiwire.num_keys();")
 
     def save_state(self):
-        self.run_js("globalThis.state = pyodide._module.saveState()")
+        self.run_js("self.__savedState = pyodide._module.saveState();")
 
     def restore_state(self):
-        self.run_js("pyodide._module.restoreState(globalThis.state)")
+        self.run_js("pyodide._module.restoreState(self.__savedState)")
 
     def run_webworker(self, code):
         if isinstance(code, str) and code.startswith("\n"):
