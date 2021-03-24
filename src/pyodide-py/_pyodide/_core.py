@@ -19,7 +19,7 @@ try:
 
     class JsProxy:
         """A proxy to make a Javascript object behave like a Python object
-        
+
         For more information see :ref:`type-translations` documentation.
         """
 
@@ -43,31 +43,39 @@ try:
             pass
 
         def then(self, onfulfilled: Callable, onrejected: Callable) -> "Promise":
-            """The ``Promise.then`` api, wrapped to manage the lifetimes of the handlers.
-            
-            Pyodide will automatically release the references to the handlers when the
-            promise resolves.
+            """The ``Promise.then`` api, wrapped to manage the lifetimes of the
+            handlers.
+
+            Only available if the wrapped Javascript object has a "then" method.
+            Pyodide will automatically release the references to the handlers
+            when the promise resolves.
             """
 
         def catch(self, onrejected: Callable) -> "Promise":
-            """The ``Promise.catch`` api, wrapped to manage the lifetimes of the handler.
-            
-            Pyodide will automatically release the references to the handler when the promise
-            resolves.
+            """The ``Promise.catch`` api, wrapped to manage the lifetimes of the
+            handler.
+
+            Only available if the wrapped Javascript object has a "then" method.
+            Pyodide will automatically release the references to the handler
+            when the promise resolves.
             """
 
         def finally_(self, onfinally: Callable) -> "Promise":
-            """The ``Promise.finally`` api, wrapped to manage the lifetimes of the handler.
-            
-            Pyodide will automatically release the references to the handler when the promise
-            resolves.
+            """The ``Promise.finally`` api, wrapped to manage the lifetimes of
+            the handler.
+
+            Only available if the wrapped Javascript object has a "then" method.
+            Pyodide will automatically release the references to the handler
+            when the promise resolves. Note the trailing underscore in the name;
+            this is needed because ``finally`` is a reserved keyword in Python.
             """
 
     # from pyproxy.c
 
     def create_once_callable(obj: Callable) -> JsProxy:
-        """Wrap a Python callable in a Javascript function that can be called
-        once. After being called the proxy will decrement the reference count
+        """Wrap a Python callable in a Javascript function that can be called once.
+
+        After being called the proxy will decrement the reference count
         of the Callable. The Javascript function also has a ``destroy`` API that
         can be used to release the proxy without calling it.
         """
