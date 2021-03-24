@@ -647,7 +647,7 @@ array_to_js(Py_ssize_t* array, int len)
   return result;
 }
 
-// The order of these fields has to match the code in getRawBuffer
+// The order of these fields has to match the code in getBuffer
 typedef struct
 {
   // where is buffer[0]...[0] (ndim times)?
@@ -693,6 +693,7 @@ _pyproxy_memoryview_get_buffer(PyObject* ptrobj)
     goto success;
   }
 
+  // Have to be careful to ensure that we handle negative strides correctly.
   for (int i = 0; i < view.ndim; i++) {
     if (view.shape[i] == 0) {
       // If one of the dimensions is 0, we have no data.
@@ -1098,12 +1099,12 @@ EM_JS_NUM(int, pyproxy_init_js, (), {
   }
 
   class PyBuffer {
-    constructor({ offset, shape, strides, buffer, view_ptr }){
+    constructor({ offset, shape, strides, data, view_ptr }){
       this._released = false;
       this.offset = offset;
       this.shape = shape;
       this.strides = strides;
-      this.buffer = buffer;
+      this.data = data;
       this._view_ptr = view_ptr;
     }
 
@@ -1366,11 +1367,11 @@ EM_JS_NUM(int, pyproxy_init_js, (), {
       let numEntries = numBytes / alignment;
       let offset = (startByteOffset - minByteOffsets) / alignment;
 
-      let buffer = new ArrayType(HEAP8.buffer, smallest, length);
+      let data = new ArrayType(HEAP8.buffer, smallest, length);
       for(let i of strides.keys()){
         strides[i] /= alignment;
       }
-      return new PyBuffer({ offset, shape, strides, buffer, view_ptr });
+      return new PyBuffer({ offset, shape, strides, data, view_ptr });
     }
   };
 
