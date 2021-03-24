@@ -579,18 +579,22 @@ TEMP_EMJS_HELPER(() => {0, /* Magic, see comment */
         strides[i] /= alignment;
       }
 
-      return Object.create(PyBuffer, Object.getOwnPropertyDescriptors({
-        offset,
-        readonly,
-        format,
-        shape,
-        strides,
-        data,
-        c_contiguous,
-        f_contiguous,
-        _view_ptr : view_ptr,
-        _released : false
-      }));
+      // clang-format off
+      return Object.create(PyBuffer.prototype,
+        Object.getOwnPropertyDescriptors({
+          offset,
+          readonly,
+          format,
+          shape,
+          strides,
+          data,
+          c_contiguous,
+          f_contiguous,
+          _view_ptr : view_ptr,
+          _released : false
+        })
+      );
+      // clang-format on
     }
   };
 
