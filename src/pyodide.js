@@ -2,6 +2,11 @@
  * The main bootstrap script for loading pyodide.
  */
 
+/**
+ * A promise that resolves to ``undefined`` when Pyodide is finished loading.
+ *
+ * @type Promise
+ */
 globalThis.languagePluginLoader = (async () => {
   let Module = {};
   // Note: PYODIDE_BASE_URL is an environement variable replaced in
@@ -232,11 +237,13 @@ globalThis.languagePluginLoader = (async () => {
   let loadPackageChain = Promise.resolve();
 
   /**
-   * @type {object}
    *
+   * The list of packages that Pyodide has loaded.
    * Use ``Object.keys(pyodide.loadedPackages)`` to get the list of names of
    * loaded packages, and ``pyodide.loadedPackages[package_name]`` to access
    * install location for a particular ``package_name``.
+   *
+   * @type {object}
    */
   Module.loadedPackages = {};
 
@@ -384,52 +391,102 @@ globalThis.languagePluginLoader = (async () => {
       false; // we preload wasm using the built in plugin now
   Module.preloadedWasm = {};
 
+  let fatal_error_occurred = false;
   let fatal_error_msg =
       "Pyodide has suffered a fatal error, refresh the page. " +
       "Please report this to the Pyodide maintainers.";
   Module.fatal_error = function(e) {
-    for (let [key, value] of Object.entries(Module.public_api)) {
-      if (key.startsWith("_")) {
-        // delete Module.public_api[key];
-        continue;
-      }
-      // Have to do this case first because typeof(some_pyproxy) === "function".
-      if (Module.PyProxy.isPyProxy(value)) {
-        value.destroy();
-        continue;
-      }
-      if (typeof (value) === "function") {
-        Module.public_api[key] = function() { throw Error(fatal_error_msg); }
-      }
+    if (fatal_error_occurred) {
+      console.error("Recursive call to fatal_error");
+      return;
     }
+    fatal_error_occurred = true;
     console.error(fatal_error_msg);
     console.error("The cause of the fatal error was:\n", e);
+    try {
+      for (let [key, value] of Object.entries(Module.public_api)) {
+        if (key.startsWith("_")) {
+          // delete Module.public_api[key];
+          continue;
+        }
+        // Have to do this case first because typeof(some_pyproxy) ===
+        // "function".
+        if (Module.PyProxy.isPyProxy(value)) {
+          value.destroy();
+          continue;
+        }
+        if (typeof (value) === "function") {
+          Module.public_api[key] = function() { throw Error(fatal_error_msg); }
+        }
+      }
+    } catch (_) {
+    }
     throw e;
   };
 
   /**
-   * @member {PyProxy} pyodide_py
    * An alias to the Python pyodide package.
+   *
+   * @type {PyProxy}
    */
+  Module.pyodide_py = {}; // Hack to make jsdoc behave
 
   /**
-   * @member {PyProxy} globals
+   *
    * An alias to the global Python namespace.
    *
    * An object whose attributes are members of the Python global namespace. This
    * is an alternative to :meth:`pyimport`. For example, to access the ``foo``
    * Python object from Javascript use
    * ``pyodide.globals.get("foo")``
+   *
+   * @type {PyProxy}
    */
+  Module.globals = {}; // Hack to make jsdoc behave
 
   /**
-   * @member {string} version
+   *
    * The pyodide version.
    *
-   * It can be either the exact release version (e.g. `0.1.0`), or
+   * It can be either the exact release version (e.g. ``0.1.0``), or
    * the latest release version followed by the number of commits since, and
-   * the git hash of the current commit (e.g. `0.1.0-1-bd84646`).
+   * the git hash of the current commit (e.g. ``0.1.0-1-bd84646``).
+   *
+   * @type {string}
    */
+  Module.version = ""; // Hack to make jsdoc behave
+
+  /**
+   * Run Python code in the simplest way possible. The primary purpose of this
+   * method is for bootstrapping. It is also useful for debugging: If the Python
+   * interpreter is initialized successfully then it should be possible to use
+   * this method to run Python code even if everything else in the Pyodide
+   * `core` module fails.
+   *
+   * The differences are:
+   *    1. `runPythonSimple` doesn't return anything (and so won't leak
+   *        PyProxies)
+   *    2. `runPythonSimple` doesn't require access to any state on the
+   *       `pyodide_js` module.
+   *    3. `runPython` uses `pyodide.eval_code`, whereas `runPythonSimple` uses
+   *       `PyRun_String` which is the C API for `eval` / `exec`.
+   *    4. `runPythonSimple` runs with `globals` a separate dict which is called
+   *       `init_dict` (keeps global state private)
+   *    5. `runPythonSimple` doesn't dedent the argument
+   *
+   * When `core` initialization is completed, the globals for `runPythonSimple`
+   * is made available as `Module.init_dict`.
+   *
+   * @private
+   */
+  Module.runPythonSimple = function(code) {
+    let code_c_string = Module.stringToNewUTF8(code);
+    try {
+      Module._run_python_simple_inner(code_c_string);
+    } finally {
+      Module._free(code_c_string);
+    }
+  };
 
   /**
    * Runs a string of Python code from Javascript.
@@ -446,10 +503,10 @@ globalThis.languagePluginLoader = (async () => {
 
   // clang-format off
   /**
-   * Inspect a Python code block and use ``pyodide.loadPackage` to load any known 
-   * packages that the code imports. Uses 
+   * Inspect a Python code chunk and use :js:func:`pyodide.loadPackage` to load any known 
+   * packages that the code chunk imports. Uses 
    * :func:`pyodide_py.find_imports <pyodide.find\_imports>` to inspect the code.
-
+   * 
    * For example, given the following code as input
    * 
    * .. code-block:: python
@@ -489,7 +546,7 @@ globalThis.languagePluginLoader = (async () => {
    * @param {string} name Python variable name
    * @returns If the Python object is an immutable type (string, number,
    * boolean), it is converted to Javascript and returned.  For other types, a
-   * `PyProxy` object is returned.
+   * ``PyProxy`` object is returned.
    */
   Module.pyimport = name => Module.globals.get(name);
 
@@ -502,8 +559,8 @@ globalThis.languagePluginLoader = (async () => {
    *    import numpy as np
    *    x = np.array([1, 2, 3])
    *
-   * pyodide will first call `pyodide.loadPackage(['numpy'])`, and then run the
-   * code, returning the result. Since package fetching must happen
+   * pyodide will first call ``pyodide.loadPackage(['numpy'])``, and then run
+   * the code, returning the result. Since package fetching must happen
    * asynchronously, this function returns a `Promise` which resolves to the
    * output. For example:
    *
@@ -542,14 +599,13 @@ globalThis.languagePluginLoader = (async () => {
    * @param {string} name Name of js module to add
    * @param {object} module Javascript object backing the module
    */
-  // clang-format off
   Module.registerJsModule = function(name, module) { 
     Module.pyodide_py.register_js_module(name, module); 
   };
 
   /**
    * Unregisters a Js module with given name that has been previously registered
-   * with :js:func:`registerJsModule` or :func:`pyodide.register_js_module`. If
+   * with :js:func:`pyodide.registerJsModule` or :func:`pyodide.register_js_module`. If
    * a Js module with that name does not already exist, will throw an error.
    * Note that if the module has already been imported, this won't have much
    * effect unless you also delete the imported module from ``sys.modules``.
@@ -669,7 +725,9 @@ globalThis.languagePluginLoader = (async () => {
   // being called.
   await moduleLoaded;
 
-  // Unfortunately the indentation here matters.
+  // Bootstrap step: `runPython` needs access to `Module.globals` and
+  // `Module.pyodide_py`. Use `runPythonSimple` to add these. runPythonSimple
+  // doesn't dedent the argument so the indentation matters.
   Module.runPythonSimple(`
 def temp(Module):
   import pyodide
@@ -684,7 +742,13 @@ def temp(Module):
   Module.builtins = builtins.__dict__
   Module.pyodide_py = pyodide
 `);
+
+  Module.saveState = () => Module.pyodide_py._state.save_state();
+  Module.restoreState = (state) =>
+      Module.pyodide_py._state.restore_state(state);
+
   Module.init_dict.get("temp")(Module);
+  // Module.runPython works starting from here!
 
   // Wrap "globals" in a special Proxy that allows `pyodide.globals.x` access.
   // TODO: Should we have this?

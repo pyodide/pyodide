@@ -18,7 +18,10 @@ CFLAGS=\
 	-g \
 	-I$(PYTHONINCLUDE) \
 	-fPIC \
+	-Wall \
 	-Wno-warn-absolute-paths \
+	-Werror=unused-variable \
+	-Werror=sometimes-uninitialized \
 	-Werror=int-conversion \
 	-Werror=incompatible-pointer-types \
 	$(EXTRA_CFLAGS)
@@ -119,10 +122,10 @@ test: all
 
 lint:
 	# check for unused imports, the rest is done by black
-	flake8 --select=F401 src tools pyodide_build benchmark conftest.py
+	flake8 --select=F401 src tools pyodide_build benchmark conftest.py docs
 	clang-format-6.0 -output-replacements-xml `find src -type f -regex ".*\.\(c\|h\|js\)"` | (! grep '<replacement ')
 	black --check .
-	mypy --ignore-missing-imports pyodide_build/ src/ packages/micropip/micropip/ packages/*/test* conftest.py
+	mypy --ignore-missing-imports pyodide_build/ src/ packages/micropip/micropip/ packages/*/test* conftest.py docs
 
 
 apply-lint:
@@ -135,7 +138,7 @@ benchmark: all
 
 clean:
 	rm -fr build/*
-	rm -fr src/*.o
+	rm -fr src/*/*.o
 	rm -fr node_modules
 	make -C packages clean
 	echo "The Emsdk, CPython are not cleaned. cd into those directories to do so."
@@ -187,10 +190,9 @@ check:
 	./tools/dependency-check.sh
 
 minimal :
-	PYODIDE_PACKAGES="micropip" make
+	PYODIDE_PACKAGES+=",micropip" make
 
 debug :
-	EXTRA_CFLAGS="-D DEBUG_F" \
-	EXTRA_LDFLAGS="-s ASSERTIONS=2" \
-	PYODIDE_PACKAGES+="micropip,pyparsing,pytz,packaging,kiwisolver" \
+	EXTRA_CFLAGS+=" -D DEBUG_F" \
+	PYODIDE_PACKAGES+=", micropip, pyparsing, pytz, packaging, kiwisolver, " \
 	make

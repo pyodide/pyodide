@@ -38,6 +38,28 @@ def test_jsproxy_dir(selenium):
     assert set1.issuperset(jsproxy_items)
     assert set1.issuperset(callable_items)
     assert set1.isdisjoint(a_items)
+    selenium.run_js(
+        """
+        window.a = [0,1,2,3,4,5,6,7,8,9];
+        a[27] = 0;
+        a[":"] = 0;
+        a["/"] = 0;
+        a.abcd = 0;
+        a.α = 0;
+
+        pyodide.runPython(`
+            from js import a
+            d = dir(a)
+            assert '0' not in d
+            assert '9' not in d
+            assert '27' not in d
+            assert ':' in d
+            assert '/' in d
+            assert 'abcd' in d
+            assert 'α' in d
+        `);
+        """
+    )
 
 
 def test_jsproxy_getattr(selenium):
@@ -453,7 +475,7 @@ def test_unregister_jsmodule_error(selenium):
             pyodide.unregisterJsModule("doesnotexist");
             throw new Error("unregisterJsModule should have thrown an error.");
         } catch(e){
-            if(!e.message.includes("Cannot unregister 'doesnotexist': no javascript module with that name is registered")){
+            if(!e.message.includes("Cannot unregister 'doesnotexist': no Javascript module with that name is registered")){
                 throw e;
             }
         }
@@ -712,5 +734,21 @@ def test_mixins_errors(selenium):
                 m[1]
             assert len(m) == 5
         `);
+        """
+    )
+
+
+def test_memory_leaks(selenium):
+    assert 1 == selenium.run_js(
+        """
+        window.a = [1,2,3];
+        let num_keys = pyodide._module.hiwire.num_keys;
+        let start_keys = num_keys();
+        pyodide.runPython(`
+            from js import a
+            repr(a)
+            [*a]
+        `);
+        return num_keys() - start_keys;
         """
     )

@@ -34,6 +34,7 @@
 #include "hiwire.h"
 #include "js2python.h"
 #include "jsproxy.h"
+#include "pyproxy.h"
 #include "python2js.h"
 
 #include "structmember.h"
@@ -78,6 +79,8 @@ typedef struct
   JsRef this_;
   vectorcallfunc vectorcall;
   int supports_kwargs; // -1 : don't know. 0 : no, 1 : yes
+// Currently just for module objects
+  PyObject* dict;
 } JsProxy;
 // clang-format on
 
@@ -86,6 +89,9 @@ typedef struct
 static void
 JsProxy_dealloc(JsProxy* self)
 {
+#ifdef HW_TRACE_REFS
+  printf("jsproxy delloc %zd, %zd\n", (long)self, (long)self->js);
+#endif
   hiwire_CLEAR(self->js);
   hiwire_CLEAR(self->this_);
   Py_TYPE(self)->tp_free((PyObject*)self);
@@ -99,6 +105,7 @@ JsProxy_Repr(PyObject* self)
 {
   JsRef idrepr = hiwire_to_string(JsProxy_REF(self));
   PyObject* pyrepr = js2python(idrepr);
+  hiwire_decref(idrepr);
   return pyrepr;
 }
 
@@ -180,6 +187,16 @@ JsProxy_SetAttr(PyObject* self, PyObject* attr, PyObject* pyvalue)
   const char* key = PyUnicode_AsUTF8(attr);
   FAIL_IF_NULL(key);
 
+  if (strncmp(key, "__", 2) == 0) {
+    // Avoid creating reference loops between Python and Javascript with js
+    // modules. Such reference loops make it hard to avoid leaking memory.
+    if (strcmp(key, "__loader__") == 0 || strcmp(key, "__name__") == 0 ||
+        strcmp(key, "__package__") == 0 || strcmp(key, "__path__") == 0 ||
+        strcmp(key, "__spec__") == 0) {
+      return PyObject_GenericSetAttr(self, attr, pyvalue);
+    }
+  }
+
   if (pyvalue == NULL) {
     FAIL_IF_MINUS_ONE(hiwire_delete_member_string(JsProxy_REF(self), key));
   } else {
@@ -199,8 +216,6 @@ finally:
 static PyObject*
 JsProxy_RichCompare(PyObject* a, PyObject* b, int op)
 {
-  JsProxy* aproxy = (JsProxy*)a;
-
   if (!JsProxy_Check(b)) {
     switch (op) {
       case Py_EQ:
@@ -258,8 +273,9 @@ JsProxy_GetIter(PyObject* o)
   if (iditer == NULL) {
     return NULL;
   }
-
-  return js2python(iditer);
+  PyObject* result = js2python(iditer);
+  hiwire_decref(iditer);
+  return result;
 }
 
 /**
@@ -625,13 +641,14 @@ JsProxy_Await(JsProxy* self, PyObject* _args)
     return NULL;
   }
 
-  // Main
-  PyObject* result = NULL;
-
   PyObject* loop = NULL;
   PyObject* fut = NULL;
   PyObject* set_result = NULL;
   PyObject* set_exception = NULL;
+  JsRef promise_id = NULL;
+  JsRef promise_handles = NULL;
+  JsRef promise_result = NULL;
+  PyObject* result = NULL;
 
   loop = _PyObject_CallNoArg(asyncio_get_event_loop);
   FAIL_IF_NULL(loop);
@@ -644,26 +661,138 @@ JsProxy_Await(JsProxy* self, PyObject* _args)
   set_exception = _PyObject_GetAttrId(fut, &PyId_set_exception);
   FAIL_IF_NULL(set_exception);
 
-  JsRef promise_id = hiwire_resolve_promise(self->js);
-  JsRef idargs = hiwire_array();
-  JsRef idarg;
-  // TODO: does this leak set_result and set_exception? See #1006.
-  idarg = python2js(set_result);
-  hiwire_push_array(idargs, idarg);
-  hiwire_decref(idarg);
-  idarg = python2js(set_exception);
-  hiwire_push_array(idargs, idarg);
-  hiwire_decref(idarg);
-  hiwire_decref(hiwire_call_member(promise_id, "then", idargs));
-  hiwire_decref(promise_id);
-  hiwire_decref(idargs);
+  promise_id = hiwire_resolve_promise(self->js);
+  FAIL_IF_NULL(promise_id);
+  promise_handles = create_promise_handles(set_result, set_exception);
+  FAIL_IF_NULL(promise_handles);
+  promise_result = hiwire_call_member(promise_id, "then", promise_handles);
+  FAIL_IF_NULL(promise_result);
   result = _PyObject_CallMethodId(fut, &PyId___await__, NULL);
 
 finally:
   Py_CLEAR(loop);
+  Py_CLEAR(fut);
   Py_CLEAR(set_result);
   Py_CLEAR(set_exception);
-  Py_DECREF(fut);
+  hiwire_CLEAR(promise_id);
+  hiwire_CLEAR(promise_handles);
+  hiwire_CLEAR(promise_result);
+  return result;
+}
+
+/**
+ * Overload for `then` for JsProxies with a `then` method. Of course without
+ * this overload, the call would just fall through to the normal `then`
+ * function. The advantage of this overload is that it automatically releases
+ * the references to the onfulfilled and onrejected callbacks, which is quite
+ * hard to do otherwise.
+ */
+PyObject*
+JsProxy_then(JsProxy* self, PyObject* args, PyObject* kwds)
+{
+  PyObject* onfulfilled = NULL;
+  PyObject* onrejected = NULL;
+
+  static char* kwlist[] = { "onfulfilled", "onrejected", 0 };
+  if (!PyArg_ParseTupleAndKeywords(
+        args, kwds, "|OO:then", kwlist, &onfulfilled, &onrejected)) {
+    return NULL;
+  }
+
+  JsRef promise_id = NULL;
+  JsRef promise_handles = NULL;
+  JsRef result_promise = NULL;
+  PyObject* result = NULL;
+
+  if (onfulfilled == Py_None) {
+    Py_CLEAR(onfulfilled);
+  }
+  if (onrejected == Py_None) {
+    Py_CLEAR(onrejected);
+  }
+  promise_id = hiwire_resolve_promise(self->js);
+  FAIL_IF_NULL(promise_id);
+  promise_handles = create_promise_handles(onfulfilled, onrejected);
+  FAIL_IF_NULL(promise_handles);
+  result_promise = hiwire_call_member(promise_id, "then", promise_handles);
+  if (result_promise == NULL) {
+    Py_CLEAR(onfulfilled);
+    Py_CLEAR(onrejected);
+    FAIL();
+  }
+  result = JsProxy_create(result_promise);
+
+finally:
+  // don't clear onfulfilled, onrejected, they are borrowed from arguments.
+  hiwire_CLEAR(promise_id);
+  hiwire_CLEAR(promise_handles);
+  hiwire_CLEAR(result_promise);
+  return result;
+}
+
+/**
+ * Overload for `catch` for JsProxies with a `then` method.
+ */
+PyObject*
+JsProxy_catch(JsProxy* self, PyObject* onrejected)
+{
+  JsRef promise_id = NULL;
+  JsRef promise_handles = NULL;
+  JsRef result_promise = NULL;
+  PyObject* result = NULL;
+
+  promise_id = hiwire_resolve_promise(self->js);
+  FAIL_IF_NULL(promise_id);
+  // We have to use create_promise_handles so that the handler gets released
+  // even if the promise resolves successfully.
+  promise_handles = create_promise_handles(NULL, onrejected);
+  FAIL_IF_NULL(promise_handles);
+  result_promise = hiwire_call_member(promise_id, "then", promise_handles);
+  if (result_promise == NULL) {
+    Py_DECREF(onrejected);
+    FAIL();
+  }
+  result = JsProxy_create(result_promise);
+
+finally:
+  hiwire_CLEAR(promise_id);
+  hiwire_CLEAR(promise_handles);
+  hiwire_CLEAR(result_promise);
+  return result;
+}
+
+/**
+ * Overload for `finally` for JsProxies with a `then` method. This isn't
+ * strictly necessary since one could get the same effect by just calling
+ * create_once_callable on the argument, but it'd be bad to have `then` and
+ * `catch` handle freeing the handler automatically but require something extra
+ * to use `finally`.
+ */
+PyObject*
+JsProxy_finally(JsProxy* self, PyObject* onfinally)
+{
+  JsRef proxy = NULL;
+  JsRef promise_id = NULL;
+  JsRef result_promise = NULL;
+  PyObject* result = NULL;
+
+  promise_id = hiwire_resolve_promise(self->js);
+  FAIL_IF_NULL(promise_id);
+  // Finally method is called no matter what so we can use
+  // `create_once_callable`.
+  proxy = create_once_callable(onfinally);
+  FAIL_IF_NULL(proxy);
+  result_promise = hiwire_call_member_va(promise_id, "finally", proxy, NULL);
+  if (result_promise == NULL) {
+    Py_DECREF(onfinally);
+    FAIL();
+  }
+  result = JsProxy_create(result_promise);
+
+finally:
+  hiwire_CLEAR(promise_id);
+  hiwire_CLEAR(proxy);
+  hiwire_CLEAR(result_promise);
   return result;
 }
 
@@ -688,6 +817,7 @@ static PyTypeObject JsProxyType = {
   .tp_getset = JsProxy_GetSet,
   .tp_as_number = &JsProxy_NumberMethods,
   .tp_repr = JsProxy_Repr,
+  .tp_dictoffset = offsetof(JsProxy, dict),
 };
 
 static int
@@ -695,6 +825,9 @@ JsProxy_cinit(PyObject* obj, JsRef idobj)
 {
   JsProxy* self = (JsProxy*)obj;
   self->js = hiwire_incref(idobj);
+#ifdef HW_TRACE_REFS
+  printf("JsProxy cinit: %zd, object: %zd\n", (long)obj, (long)self->js);
+#endif
   return 0;
 }
 
@@ -797,6 +930,7 @@ JsProxy_new_error(JsRef idobj)
   result = PyObject_CallFunctionObjArgs(Exc_JsException, proxy, NULL);
   FAIL_IF_NULL(result);
 finally:
+  Py_CLEAR(proxy);
   return result;
 }
 
@@ -818,6 +952,13 @@ JsMethod_Vectorcall(PyObject* self,
                     PyObject* kwnames)
 {
   bool kwargs = false;
+  bool success = false;
+  JsRef idargs = NULL;
+  JsRef idkwargs = NULL;
+  JsRef idarg = NULL;
+  JsRef idresult = NULL;
+  PyObject* pyresult = NULL;
+
   if (kwnames != NULL) {
     // There were kwargs? But maybe kwnames is the empty tuple?
     PyObject* kwname = PyTuple_GetItem(kwnames, 0); /* borrowed!*/
@@ -846,11 +987,6 @@ JsMethod_Vectorcall(PyObject* self,
 
   // Recursion error?
   FAIL_IF_NONZERO(Py_EnterRecursiveCall(" in JsProxy_Vectorcall"));
-  bool success = false;
-  JsRef idargs = NULL;
-  JsRef idkwargs = NULL;
-  JsRef idarg = NULL;
-  JsRef idresult = NULL;
 
   Py_ssize_t nargs = PyVectorcall_NARGS(nargsf);
   idargs = hiwire_array();
@@ -880,7 +1016,7 @@ JsMethod_Vectorcall(PyObject* self,
 
   idresult = hiwire_call_bound(JsProxy_REF(self), JsMethod_THIS(self), idargs);
   FAIL_IF_NULL(idresult);
-  PyObject* pyresult = js2python(idresult);
+  pyresult = js2python(idresult);
   FAIL_IF_NULL(pyresult);
 
   success = true;
@@ -1000,7 +1136,7 @@ static void
 JsBuffer_dealloc(JsBuffer* self)
 {
   Py_CLEAR(self->bytes);
-  Py_TYPE(self)->tp_free((PyObject*)self);
+  JsProxy_dealloc((JsProxy*)self);
 }
 
 static PyBufferProcs JsBuffer_BufferProcs = {
@@ -1066,7 +1202,7 @@ JsProxy_create_subtype(int flags)
   // Make sure these stack allocations are large enough to fit!
   PyType_Slot slots[20];
   int cur_slot = 0;
-  PyMethodDef methods[5];
+  PyMethodDef methods[10];
   int cur_method = 0;
   PyMemberDef members[5];
   int cur_member = 0;
@@ -1139,6 +1275,35 @@ JsProxy_create_subtype(int flags)
   if (flags & IS_AWAITABLE) {
     slots[cur_slot++] =
       (PyType_Slot){ .slot = Py_am_await, .pfunc = (void*)JsProxy_Await };
+    methods[cur_method++] = (PyMethodDef){
+      "then",
+      (PyCFunction)JsProxy_then,
+      METH_VARARGS | METH_KEYWORDS,
+      PyDoc_STR(
+        "then(onfulfilled : Callable = None, onrejected : Callable = None)"
+        " -> JsProxy"
+        "\n\n"
+        "The promise.then api, wrapped to manage the lifetimes of the "
+        "arguments"),
+    };
+    methods[cur_method++] = (PyMethodDef){
+      "catch",
+      (PyCFunction)JsProxy_catch,
+      METH_O,
+      PyDoc_STR("catch(onrejected : Callable) -> JsProxy"
+                "\n\n"
+                "The promise.catch api, wrapped to manage the lifetime of the "
+                "argument."),
+    };
+    methods[cur_method++] = (PyMethodDef){
+      "finally_",
+      (PyCFunction)JsProxy_finally,
+      METH_O,
+      PyDoc_STR("finally_(onrejected : Callable) -> JsProxy"
+                "\n\n"
+                "The promise.finally api, wrapped to manage the lifetime of "
+                "the argument."),
+    };
   }
   if (flags & IS_CALLABLE) {
     tp_flags |= _Py_TPFLAGS_HAVE_VECTORCALL;
