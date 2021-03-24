@@ -1,7 +1,7 @@
 import pytest
 
 
-@pytest.mark.norefs
+@pytest.mark.skip_refcount_check
 def test_matplotlib(selenium_standalone):
     selenium = selenium_standalone
     selenium.load_package("matplotlib")
@@ -15,7 +15,7 @@ def test_matplotlib(selenium_standalone):
     )
 
 
-@pytest.mark.norefs
+@pytest.mark.skip_refcount_check
 def test_svg(selenium):
     selenium.load_package("matplotlib")
     selenium.run("from matplotlib import pyplot as plt")

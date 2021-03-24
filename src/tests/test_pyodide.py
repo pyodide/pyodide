@@ -415,7 +415,7 @@ def test_docstrings_b(selenium):
     assert sig_once == sig_once_should_equal
 
 
-@pytest.mark.norefs
+@pytest.mark.skip_refcount_check
 def test_restore_state(selenium):
     selenium.run_js(
         """

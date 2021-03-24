@@ -375,7 +375,7 @@ def test_window_isnt_super_weird_anymore():
     assert window.window.window.window.Array == Array
 
 
-@pytest.mark.norefs
+@pytest.mark.skip_refcount_check
 def test_mount_object(selenium):
     result = selenium.run_js(
         """
@@ -457,7 +457,7 @@ def test_unregister_jsmodule_error(selenium):
     )
 
 
-@pytest.mark.norefs
+@pytest.mark.skip_refcount_check
 def test_nested_import(selenium):
     assert (
         selenium.run_js(
@@ -477,7 +477,7 @@ def test_nested_import(selenium):
     )
 
 
-@pytest.mark.norefs
+@pytest.mark.skip_refcount_check
 def test_register_jsmodule_docs_example(selenium):
     selenium.run_js(
         """
@@ -494,7 +494,7 @@ def test_register_jsmodule_docs_example(selenium):
             return x*x - 1;
             },
             c  : 2,
-        },  
+        },
         };
         pyodide.registerJsModule("my_js_module", my_module);
         """
@@ -525,7 +525,7 @@ def test_mixins_feature_presence(selenium):
             [{ has(){} }, "__contains__"],
             [{ then(){} }, "__await__"]
         ];
-        
+
         let test_object = pyodide.runPython(`
             from js import console
             def test_object(obj, keys_expected):
@@ -570,7 +570,7 @@ def test_mixins_calls(selenium):
         testObjects.has_getset = new Map();
         testObjects.has_has = { has(x){ return typeof(x) === "string" && x.startsWith("x") } };
         testObjects.has_includes = { includes(x){ return typeof(x) === "string" && x.startsWith("a") } };
-        testObjects.has_has_includes = { 
+        testObjects.has_has_includes = {
             includes(x){ return typeof(x) === "string" && x.startsWith("a") },
             has(x){ return typeof(x) === "string" && x.startsWith("x") }
         };
@@ -611,7 +611,7 @@ def test_mixins_errors(selenium):
     selenium.run_js(
         """
         window.a = [];
-        window.b = { 
+        window.b = {
             has(){ return false; },
             get(){ return undefined; },
             set(){ return false; },
@@ -637,7 +637,7 @@ def test_mixins_errors(selenium):
             get(){},
             set(){},
             has(){},
-            then(){}     
+            then(){}
         };
         window.d = {
             [Symbol.iterator](){},
