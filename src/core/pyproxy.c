@@ -816,7 +816,7 @@ static PyMethodDef pyproxy_methods[] = {
 #define UNPAIRED_OPEN_BRACE {
 #define UNPAIRED_CLOSE_BRACE } // Just here to help text editors pair braces up
 #define TEMP_EMJS_HELPER(a, args...)                                           \
-  EM_JS(int, pyproxy_init_js, (), UNPAIRED_OPEN_BRACE { args return 0; })
+  EM_JS_NUM(int, pyproxy_init_js, (), UNPAIRED_OPEN_BRACE { args return 0; })
 
 #include "pyproxy.js"
 
