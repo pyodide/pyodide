@@ -1383,7 +1383,7 @@ EM_JS_NUM(int, pyproxy_init_js, (), {
       let offset = (startByteOffset - minByteOffset) / alignment;
       let format = UTF8ToString(format_ptr);
 
-      let data = new ArrayType(HEAP8.buffer, smallest, length);
+      let data = new ArrayType(HEAP8.buffer, startByteOffset, numEntries);
       for(let i of strides.keys()){
         strides[i] /= alignment;
       }
