@@ -650,15 +650,19 @@ array_to_js(Py_ssize_t* array, int len)
 // The order of these fields has to match the code in getRawBuffer
 typedef struct
 {
+  // where is buffer[0]...[0] (ndim times)?
   void* start_ptr;
+  // Where is the earliest location in buffer? (If all strides are positive,
+  // this equals start_ptr)
   void* smallest_ptr;
+  // What is the last location in the buffer (plus one)
   void* largest_ptr;
   JsRef shape;
   JsRef strides;
   Py_buffer* view;
 } buffer_struct;
 
-buffer_struct*
+buffer_struct
 _pyproxy_memoryview_get_buffer(PyObject* ptrobj)
 {
   if (!PyObject_CheckBuffer(ptrobj)) {
@@ -680,6 +684,7 @@ _pyproxy_memoryview_get_buffer(PyObject* ptrobj)
   result.start_ptr = result.smallest_ptr = result.largest_ptr = view.buf;
 
   if (view.strides == NULL) {
+    // In this case we are a C contiguous buffer
     result.largest_ptr += view.len;
     Py_ssize_t strides[view.ndim];
     PyBuffer_FillContiguousStrides(
@@ -690,11 +695,14 @@ _pyproxy_memoryview_get_buffer(PyObject* ptrobj)
 
   for (int i = 0; i < view.ndim; i++) {
     if (view.shape[i] == 0) {
+      // If one of the dimensions is 0, we have no data.
       FAIL();
     }
     if (view.strides[i] > 0) {
+      // add positive strides to largest_ptr
       result.largest_ptr += view.strides[i] * (view.shape[i] - 1);
     } else {
+      // subtract negative strides from smallest_ptr
       result.smallest_ptr += view.strides[i] * (view.shape[i] - 1);
     }
   }
@@ -705,8 +713,11 @@ success:
   success = true;
 finally:
   if (success) {
+    // The result.view memory will be freed when (if?) the user calls
+    // Py_Buffer.release().
     result.view = (Py_buffer*)PyMem_Malloc(sizeof(Py_buffer));
     *result.view = view;
+    // The result_heap memory will be freed by getBuffer
     buffer_struct* result_heap =
       (buffer_struct*)PyMem_Malloc(sizeof(buffer_struct));
     *result_heap = result;
@@ -797,7 +808,7 @@ EM_JS_NUM(int, pyproxy_init_js, (), {
   }
 
   let _pyproxyClassMap = new Map();
-  /** 
+  /**
    * Retreive the appropriate mixins based on the features requested in flags.
    * Used by pyproxy_new. The "flags" variable is produced by the C function
    * pyproxy_getflags. Multiple PyProxies with the same set of feature flags
@@ -891,7 +902,7 @@ EM_JS_NUM(int, pyproxy_init_js, (), {
       __pyproxy_destroy(ptrobj);
       this.$$.ptr = null;
     }
-    /** 
+    /**
       * This one doesn't follow the pattern: the inner function
       * _python2js_with_depth is defined in python2js.c and is not a Python
       * Object Protocol wrapper.
@@ -1272,12 +1283,12 @@ EM_JS_NUM(int, pyproxy_init_js, (), {
       return jsobj.apply(jsthis, jsargs);
     },
   };
-  
-  /** 
+
+  /**
    * The Promise / javascript awaitable API.
    */
   Module.PyProxyAwaitableMethods = {
-    /** 
+    /**
      * This wraps __pyproxy_ensure_future and makes a function that converts a
      * Python awaitable to a promise, scheduling the awaitable on the Python
      * event loop if necessary.
@@ -1322,7 +1333,7 @@ EM_JS_NUM(int, pyproxy_init_js, (), {
 
   Module.PyProxyCallableMethods = { prototype : Function.prototype };
   Module.PyProxyBufferMethods = {
-    getRawBuffer : function(type = "u8"){
+    getBuffer : function(type = "u8"){
       let ArrayType = type_to_array_map.get(type);
       if(ArrayType === undefined){
         throw new Error(`Unknown type ${type}`);
@@ -1335,9 +1346,9 @@ EM_JS_NUM(int, pyproxy_init_js, (), {
 
       // This has to match the order of the fields in buffer_struct
       let cur_ptr = buffer_struct_ptr/4;
-      let start = HEAP32[cur_ptr++];
-      let smallest = HEAP32[cur_ptr++];
-      let largest = HEAP32[cur_ptr++];
+      let startByteOffset = HEAP32[cur_ptr++];
+      let minByteOffset = HEAP32[cur_ptr++];
+      let maxByteOffset = HEAP32[cur_ptr++];
       let shape = Module.hiwire.pop_value(HEAP32[cur_ptr++]);
       let strides = Module.hiwire.pop_value(HEAP32[cur_ptr++]);
       let view_ptr = HEAP32[cur_ptr++];
@@ -1351,8 +1362,9 @@ EM_JS_NUM(int, pyproxy_init_js, (), {
         throw new Error(`Buffer does not have valid alignment for type ${type}`);
       }
 
-      let length = (largest - smallest) / alignment;
-      let offset = (start - smallest) / alignment;
+      let numBytes = maxByteOffset - minByteOffset;
+      let numEntries = numBytes / alignment;
+      let offset = (startByteOffset - minByteOffsets) / alignment;
 
       let buffer = new ArrayType(HEAP8.buffer, smallest, length);
       for(let i of strides.keys()){
@@ -1361,7 +1373,7 @@ EM_JS_NUM(int, pyproxy_init_js, (), {
       return new PyBuffer({ offset, shape, strides, buffer, view_ptr });
     }
   };
-  
+
   // A special proxy that we use to wrap pyodide.globals to allow property access
   // like `pyodide.globals.x`.
   let globalsPropertyAccessWarned = false;
@@ -1404,7 +1416,7 @@ EM_JS_NUM(int, pyproxy_init_js, (), {
       return Array.from(result);
     }
   };
-  
+
   Module.wrapNamespace = function wrapNamespace(ns){
     return new Proxy(ns, NamespaceProxyHandlers);
   };
