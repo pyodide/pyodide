@@ -662,6 +662,8 @@ typedef struct
   JsRef strides;
   Py_buffer* view;
   char* format;
+  int c_contiguous;
+  int f_contiguous;
 } buffer_struct;
 
 buffer_struct*
@@ -712,6 +714,8 @@ _pyproxy_get_buffer(PyObject* ptrobj)
   result.largest_ptr += view.itemsize;
   result.strides = array_to_js(view.strides, view.ndim);
   result.format = view.format;
+  result.c_contiguous = PyBuffer_IsContiguous(view, 'C');
+  result.f_contiguous = PyBuffer_IsContiguous(view, 'F');
 
 success:
   success = true;
@@ -1102,13 +1106,12 @@ EM_JS_NUM(int, pyproxy_init_js, (), {
   }
 
   class PyBuffer {
-    constructor({ offset, shape, strides, data, view_ptr }){
-      this._released = false;
-      this.offset = offset;
-      this.shape = shape;
-      this.strides = strides;
-      this.data = data;
-      this._view_ptr = view_ptr;
+    constructor({ view_ptr, ...rest }){
+      return Object.create(PyBuffer, {
+        _released : false,
+        _view_ptr : view_ptr,
+        ...rest
+      });
     }
 
     release(){

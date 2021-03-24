@@ -191,7 +191,7 @@ def test_runwebworker_numpy(selenium_standalone):
     assert output == "[0. 0. 0. 0. 0.]"
 
 
-def test_get_raw_buffer(selenium):
+def test_get_buffer(selenium):
     selenium.run_js(
         """
         await pyodide.runPythonAsync(`
@@ -203,7 +203,7 @@ def test_get_raw_buffer(selenium):
             z4 = z1[-1::-1,-1::-1]
         `);
         for(let x of ["z1", "z2", "z3", "z4"]){
-            let z = pyodide.pyimport(x).getRawBuffer("u32");
+            let z = pyodide.pyimport(x).getBuffer("u32");
             for(let idx1 = 0; idx1 < 8; idx1++) {
                 for(let idx2 = 0; idx2 < 3; idx2++){
                     let v1 = z.buffer[z.offset + z.strides[0] * idx1 + z.strides[1] * idx2];

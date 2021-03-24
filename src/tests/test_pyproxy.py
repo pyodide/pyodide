@@ -77,8 +77,8 @@ def test_pyproxy_refcount(selenium):
         // the refcount should be 2 because:
         //
         // 1. pyfunc exists
-        // 2. pyfunc is referenced from the sys.getrefcount()-test below        
-        
+        // 2. pyfunc is referenced from the sys.getrefcount()-test below
+
         result.push([getRefCount(), 2]);
 
         // the refcount should be 3 because:
@@ -86,7 +86,7 @@ def test_pyproxy_refcount(selenium):
         // 1. pyfunc exists
         // 2. one reference from PyProxy to pyfunc is alive
         // 3. pyfunc is referenced from the sys.getrefcount()-test below
-        
+
         pyodide.runPython(`
             window.jsfunc(pyfunc) # creates new PyProxy
         `);
@@ -96,7 +96,7 @@ def test_pyproxy_refcount(selenium):
             window.jsfunc(pyfunc) # re-used existing PyProxy
             window.jsfunc(pyfunc) # re-used existing PyProxy
         `)
-        
+
         // the refcount should be 3 because:
         //
         // 1. pyfunc exists
@@ -196,7 +196,7 @@ def test_pyproxy_iter(selenium):
     assert result == result2
 
 
-def test_pyproxy_get_raw_buffer(selenium):
+def test_pyproxy_get_buffer(selenium):
     selenium.run_js(
         """
         await pyodide.runPython(`
@@ -208,7 +208,7 @@ def test_pyproxy_get_raw_buffer(selenium):
             pyodide.runPython(`assert getrefcount(${x}) == 2`);
             let proxy = pyodide.pyimport(x);
             pyodide.runPython(`assert getrefcount(${x}) == 3`);
-            let z = proxy.getRawBuffer();
+            let z = proxy.getBuffer();
             pyodide.runPython(`assert getrefcount(${x}) == 4`);
             proxy.destroy();
             pyodide.runPython(`assert getrefcount(${x}) == 3`);
@@ -239,15 +239,15 @@ def test_pyproxy_mixins(selenium):
             class Await:
                 def __await__(self):
                     return iter([])
-            
+
             class Iter:
                 def __iter__(self):
                     return iter([])
-            
+
             class Next:
                 def __next__(self):
                     pass
-            
+
             class AwaitIter(Await, Iter): pass
 
             class AwaitNext(Await, Next): pass
@@ -337,7 +337,7 @@ def test_pyproxy_mixins2(selenium):
         assert(() => get_method.prototype === undefined);
         assert(() => !("length" in get_method));
         assert(() => !("name" in get_method));
-        
+
         assert(() => pyodide.globals.get.type === "builtin_function_or_method");
         assert(() => pyodide.globals.set.type === undefined);
 
