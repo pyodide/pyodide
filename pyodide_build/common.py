@@ -1,29 +1,18 @@
 from pathlib import Path
 from typing import Optional, Set
 import shutil
+import subprocess
+
 
 ROOTDIR = Path(__file__).parents[1].resolve()
 TOOLSDIR = ROOTDIR / "tools"
 TARGETPYTHON = ROOTDIR / "cpython" / "installs" / "python-3.8.2"
 
 # Leading space so that argparse doesn't think this is a flag
-DEFAULTCFLAGS = " -fPIC"
-DEFAULTCXXFLAGS = ""
-# fmt: off
-DEFAULTLDFLAGS = " ".join(
-    [
-        "-O2",
-        "-Werror",
-        "-s", "EMULATE_FUNCTION_POINTER_CASTS=1",
-        "-s",'BINARYEN_EXTRA_PASSES="--pass-arg=max-func-params@61"',
-        "-s", "SIDE_MODULE=1",
-        "-s", "WASM=1",
-        "--memory-init-file", "0",
-        "-s", "LINKABLE=1",
-        "-s", "EXPORT_ALL=1",
-    ]
-)
-# fmt: on
+# default flags are all loaded from Makefile.envs (see loadMakefileEnvs() below)
+DEFAULTCFLAGS = " "
+DEFAULTCXXFLAGS = " "
+DEFAULTLDFLAGS = " "
 
 
 def _parse_package_subset(query: Optional[str]) -> Optional[Set[str]]:
@@ -51,3 +40,25 @@ def file_packager_path() -> Path:
         )
 
     return Path(emcc_path).parent / "tools" / "file_packager.py"
+
+
+def loadMakefileEnvs():
+    """ Load environment variables from Makefile.envs, this allows us to set all build vars in one place
+    """
+    global DEFAULTLDFLAGS,DEFAULTCFLAGS,DEFAULTCXXFLAGS
+    result=subprocess.run(["make","-f",str(ROOTDIR/"Makefile.envs"),".output_vars"],capture_output=True,text=True)
+    for line in result.stdout.splitlines():
+        equalPos=line.find("=")
+        if equalPos!=-1:
+            varname=line[0:equalPos]
+            value=line[equalPos+1:]
+            value=value.strip("'").strip()
+            if varname=="SIDE_MODULE_LDFLAGS":
+                DEFAULTLDFLAGS=value
+            if varname=="SIDE_MODULE_CFLAGS":
+                DEFAULTCFLAGS=value
+            if varname=="SIDE_MODULE_CXXFLAGS":
+                DEFAULTCXXFLAGS=value
+
+# load the environment variables from Makefile.envs so that they are all in the same place
+loadMakefileEnvs()
