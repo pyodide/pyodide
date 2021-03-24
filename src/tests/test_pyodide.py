@@ -182,10 +182,12 @@ def test_hiwire_is_promise(selenium):
         "new Map()",
         "new Set()",
     ]:
-        assert not selenium.run_js(f"return pyodide._module.hiwire.isPromise({s})")
+        assert selenium.run_js(
+            f"return pyodide._module.hiwire.isPromise({s}) === false;"
+        )
 
     assert selenium.run_js(
-        "return pyodide._module.hiwire.isPromise(Promise.resolve());"
+        "return pyodide._module.hiwire.isPromise(Promise.resolve()) === true;"
     )
 
     assert selenium.run_js(
@@ -229,7 +231,7 @@ def test_keyboard_interrupt(selenium):
 def test_run_python_async_toplevel_await(selenium):
     selenium.run_js(
         """
-        pyodide.runPythonAsync(`
+        await pyodide.runPythonAsync(`
             from js import fetch
             resp = await fetch("packages.json")
             json = await resp.json()
@@ -251,5 +253,162 @@ def test_run_python_last_exc(selenium):
             assert sys.last_type is type(x)
             assert sys.last_traceback is x.__traceback__
         `);
+        """
+    )
+
+
+def test_create_once_callable(selenium):
+    selenium.run_js(
+        """
+        window.call7 = function call7(f){
+            return f(7);
+        }
+        pyodide.runPython(`
+            from pyodide import create_once_callable, JsException
+            from js import call7;
+            from unittest import TestCase
+            raises = TestCase().assertRaisesRegex
+            class Square:
+                def __call__(self, x):
+                    return x*x
+
+                def __del__(self):
+                    global destroyed
+                    destroyed = True
+
+            f = Square()
+            import sys
+            assert sys.getrefcount(f) == 2
+            proxy = create_once_callable(f)
+            assert sys.getrefcount(f) == 3
+            assert call7(proxy) == 49
+            assert sys.getrefcount(f) == 2
+            with raises(JsException, "can only be called once"):
+                call7(proxy)
+            destroyed = False
+            del f
+            assert destroyed == True
+            del proxy # causes a fatal error =(
+        `);
+        """
+    )
+
+
+def test_create_proxy(selenium):
+    selenium.run_js(
+        """
+        window.testAddListener = function(f){
+            window.listener = f;
+        }
+        window.testCallListener = function(f){
+            return window.listener();
+        }
+        window.testRemoveListener = function(f){
+            return window.listener === f;
+        }
+        pyodide.runPython(`
+            from pyodide import create_proxy
+            from js import testAddListener, testCallListener, testRemoveListener;
+            class Test:
+                def __call__(self):
+                    return 7
+
+                def __del__(self):
+                    global destroyed
+                    destroyed = True
+
+            f = Test()
+            import sys
+            assert sys.getrefcount(f) == 2
+            proxy = create_proxy(f)
+            assert sys.getrefcount(f) == 3
+            assert proxy() == 7
+            testAddListener(proxy)
+            assert sys.getrefcount(f) == 3
+            assert testCallListener() == 7
+            assert sys.getrefcount(f) == 3
+            assert testCallListener() == 7
+            assert sys.getrefcount(f) == 3
+            assert testRemoveListener(f)
+            assert sys.getrefcount(f) == 3
+            proxy.destroy()
+            assert sys.getrefcount(f) == 2
+            destroyed = False
+            del f
+            assert destroyed == True
+        `);
+        """
+    )
+
+
+def test_docstrings_a():
+    from _pyodide.docstring import get_cmeth_docstring, dedent_docstring
+    from pyodide import JsProxy
+
+    jsproxy = JsProxy()
+    c_docstring = get_cmeth_docstring(jsproxy.then)
+    assert c_docstring == "then(onfulfilled, onrejected)\n--\n\n" + dedent_docstring(
+        jsproxy.then.__doc__
+    )
+
+
+def test_docstrings_b(selenium):
+    from pyodide import create_once_callable, JsProxy
+    from _pyodide.docstring import dedent_docstring
+
+    jsproxy = JsProxy()
+    ds_then_should_equal = dedent_docstring(jsproxy.then.__doc__)
+    sig_then_should_equal = "(onfulfilled, onrejected)"
+    ds_once_should_equal = dedent_docstring(create_once_callable.__doc__)
+    sig_once_should_equal = "(obj)"
+    selenium.run_js("window.a = Promise.resolve();")
+    [ds_then, sig_then, ds_once, sig_once] = selenium.run(
+        """
+        from js import a
+        from pyodide import create_once_callable as b
+        [
+            a.then.__doc__, a.then.__text_signature__,
+            b.__doc__, b.__text_signature__
+        ]
+        """
+    )
+    assert ds_then == ds_then_should_equal
+    assert sig_then == sig_then_should_equal
+    assert ds_once == ds_once_should_equal
+    assert sig_once == sig_once_should_equal
+
+
+def test_restore_state(selenium):
+    selenium.run_js(
+        """
+        pyodide.registerJsModule("a", {somefield : 82});
+        pyodide.registerJsModule("b", { otherfield : 3 });
+        pyodide.runPython("x = 7; from a import somefield");
+        let state = pyodide._module.saveState();
+
+        pyodide.registerJsModule("c", { thirdfield : 9 });
+        pyodide.runPython("y = 77; from b import otherfield; import c;");
+        pyodide._module.restoreState(state);
+        state.destroy();
+        """
+    )
+
+    selenium.run(
+        """
+        from unittest import TestCase
+        raises = TestCase().assertRaises
+        import sys
+
+        assert x == 7
+        assert "a" in sys.modules
+        assert somefield == 82
+        with raises(NameError):
+            y
+        with raises(NameError):
+            otherfield
+        assert "b" not in sys.modules
+        import b
+        with raises(ModuleNotFoundError):
+            import c
         """
     )

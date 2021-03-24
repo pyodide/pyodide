@@ -3,8 +3,10 @@
 #include "error_handling.h"
 #include <emscripten.h>
 
+#include "docstring.h"
 #include "hiwire.h"
 #include "js2python.h"
+#include "jsproxy.h"
 #include "python2js.h"
 
 _Py_IDENTIFIER(result);
@@ -494,7 +496,7 @@ FutureDoneCallback_call_resolve(FutureDoneCallback* self, PyObject* result)
   JsRef result_js = NULL;
   JsRef output = NULL;
   result_js = python2js(result);
-  output = hiwire_call_OneArg(self->resolve_handle, result_js);
+  output = hiwire_call_va(self->resolve_handle, result_js, NULL);
 
   success = true;
 finally:
@@ -516,7 +518,7 @@ FutureDoneCallback_call_reject(FutureDoneCallback* self)
   // wrap_exception looks up the current exception and wraps it in a Js error.
   excval = wrap_exception(false);
   FAIL_IF_NULL(excval);
-  result = hiwire_call_OneArg(self->reject_handle, excval);
+  result = hiwire_call_va(self->reject_handle, excval, NULL);
 
   success = true;
 finally:
@@ -543,6 +545,7 @@ FutureDoneCallback_call(FutureDoneCallback* self,
   int errcode;
   if (result != NULL) {
     errcode = FutureDoneCallback_call_resolve(self, result);
+    Py_DECREF(result);
   } else {
     errcode = FutureDoneCallback_call_reject(self);
   }
@@ -685,7 +688,7 @@ EM_JS_NUM(int, pyproxy_init_js, (), {
   }
 
   let _pyproxyClassMap = new Map();
-  /** 
+  /**
    * Retreive the appropriate mixins based on the features requested in flags.
    * Used by pyproxy_new. The "flags" variable is produced by the C function
    * pyproxy_getflags. Multiple PyProxies with the same set of feature flags
@@ -730,6 +733,22 @@ EM_JS_NUM(int, pyproxy_init_js, (), {
     },
   };
 
+  Module.callPyObject = function(ptrobj, ...jsargs) {
+    let idargs = Module.hiwire.new_value(jsargs);
+    let idresult;
+    try {
+      idresult = __pyproxy_apply(ptrobj, idargs);
+    } catch(e){
+      Module.fatal_error(e);
+    } finally {
+      Module.hiwire.decref(idargs);
+    }
+    if(idresult === 0){
+      _pythonexc2js();
+    }
+    return Module.hiwire.pop_value(idresult);
+  };
+
   // Now a lot of boilerplate to wrap the abstract Object protocol wrappers
   // above in Javascript functions.
 
@@ -764,7 +783,7 @@ EM_JS_NUM(int, pyproxy_init_js, (), {
       _Py_DecRef(ptrobj);
       this.$$.ptr = null;
     }
-    /** 
+    /**
       * This one doesn't follow the pattern: the inner function
       * _python2js_with_depth is defined in python2js.c and is not a Python
       * Object Protocol wrapper.
@@ -774,6 +793,12 @@ EM_JS_NUM(int, pyproxy_init_js, (), {
       let result = Module.hiwire.get_value(idresult);
       Module.hiwire.decref(idresult);
       return result;
+    }
+    apply(jsthis, jsargs) {
+      return Module.callPyObject(_getPtr(this), ...jsargs);
+    }
+    call(jsthis, ...jsargs){
+      return Module.callPyObject(_getPtr(this), ...jsargs);
     }
   };
 
@@ -1097,28 +1122,15 @@ EM_JS_NUM(int, pyproxy_init_js, (), {
       return result;
     },
     apply: function (jsobj, jsthis, jsargs) {
-      let ptrobj = _getPtr(jsobj);
-      let idargs = Module.hiwire.new_value(jsargs);
-      let idresult;
-      try {
-        idresult = __pyproxy_apply(ptrobj, idargs);
-      } catch(e){
-        Module.fatal_error(e);
-      } finally {
-        Module.hiwire.decref(idargs);
-      }
-      if(idresult === 0){
-        _pythonexc2js();
-      }
-      return Module.hiwire.pop_value(idresult);
+      return jsobj.apply(jsthis, jsargs);
     },
   };
-  
-  /** 
+
+  /**
    * The Promise / javascript awaitable API.
    */
   Module.PyProxyAwaitableMethods = {
-    /** 
+    /**
      * This wraps __pyproxy_ensure_future and makes a function that converts a
      * Python awaitable to a promise, scheduling the awaitable on the Python
      * event loop if necessary.
@@ -1206,27 +1218,148 @@ EM_JS_NUM(int, pyproxy_init_js, (), {
       return Array.from(result);
     }
   };
-  
+
   Module.wrapNamespace = function wrapNamespace(ns){
     return new Proxy(ns, NamespaceProxyHandlers);
   };
-
   return 0;
 });
 // clang-format on
 
-int
-pyproxy_init()
+EM_JS_REF(JsRef, create_once_callable, (PyObject * obj), {
+  _Py_IncRef(obj);
+  let alreadyCalled = false;
+  function wrapper(... args)
+  {
+    if (alreadyCalled) {
+      throw new Error("OnceProxy can only be called once");
+    }
+    alreadyCalled = true;
+    try {
+      return Module.callPyObject(obj, ... args);
+    } finally {
+      _Py_DecRef(obj);
+    }
+  }
+  wrapper.destroy = function()
+  {
+    if (alreadyCalled) {
+      throw new Error("OnceProxy has already been destroyed");
+    }
+    alreadyCalled = true;
+    _Py_DecRef(obj);
+  };
+  return Module.hiwire.new_value(wrapper);
+});
+
+static PyObject*
+create_once_callable_py(PyObject* _mod, PyObject* obj)
 {
+  JsRef ref = create_once_callable(obj);
+  PyObject* result = JsProxy_create(ref);
+  hiwire_decref(ref);
+  return result;
+}
+
+// clang-format off
+EM_JS_REF(JsRef, create_promise_handles, (
+  PyObject* handle_result, PyObject* handle_exception
+), {
+  if (handle_result) {
+    _Py_IncRef(handle_result);
+  }
+  if (handle_exception) {
+    _Py_IncRef(handle_exception);
+  }
+  let used = false;
+  function checkUsed(){
+    if (used) {
+      throw new Error("One of the promise handles has already been called.");
+    }
+  }
+  function destroy(){
+    checkUsed();
+    used = true;
+    if(handle_result){
+      _Py_DecRef(handle_result);
+    }
+    if(handle_exception){
+      _Py_DecRef(handle_exception)
+    }
+  }
+  function onFulfilled(res) {
+    checkUsed();
+    try {
+      if(handle_result){
+        return Module.callPyObject(handle_result, res);
+      }
+    } finally {
+      destroy();
+    }
+  }
+  function onRejected(err) {
+    checkUsed();
+    try {
+      if(handle_exception){
+        return Module.callPyObject(handle_exception, err);
+      }
+    } finally {
+      destroy();
+    }
+  }
+  onFulfilled.destroy = destroy;
+  onRejected.destroy = destroy;
+  return Module.hiwire.new_value(
+    [onFulfilled, onRejected]
+  );
+})
+// clang-format on
+
+static PyObject*
+create_proxy(PyObject* _mod, PyObject* obj)
+{
+  JsRef ref = pyproxy_new(obj);
+  PyObject* result = JsProxy_create(ref);
+  hiwire_decref(ref);
+  return result;
+}
+
+static PyMethodDef pyproxy_methods[] = {
+  {
+    "create_once_callable",
+    create_once_callable_py,
+    METH_O,
+  },
+  {
+    "create_proxy",
+    create_proxy,
+    METH_O,
+  },
+  { NULL } /* Sentinel */
+};
+
+int
+pyproxy_init(PyObject* core)
+{
+  bool success = false;
+  int i = 0;
+
+  PyObject* _pyodide_core = NULL;
+  _pyodide_core = PyImport_ImportModule("_pyodide._core");
+  FAIL_IF_NULL(_pyodide_core);
+
+  while (pyproxy_methods[i].ml_name != NULL) {
+    FAIL_IF_MINUS_ONE(set_method_docstring(&pyproxy_methods[i], _pyodide_core));
+    i++;
+  }
+  FAIL_IF_MINUS_ONE(PyModule_AddFunctions(core, pyproxy_methods));
   asyncio = PyImport_ImportModule("asyncio");
-  if (asyncio == NULL) {
-    return -1;
-  }
-  if (PyType_Ready(&FutureDoneCallbackType)) {
-    return -1;
-  }
-  if (pyproxy_init_js()) {
-    return -1;
-  }
+  FAIL_IF_NULL(asyncio);
+  FAIL_IF_MINUS_ONE(PyType_Ready(&FutureDoneCallbackType));
+  FAIL_IF_MINUS_ONE(pyproxy_init_js());
+
+  success = true;
+finally:
+  Py_CLEAR(_pyodide_core);
   return 0;
 }

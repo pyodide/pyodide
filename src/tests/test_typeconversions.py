@@ -1,5 +1,28 @@
 # See also test_pyproxy, test_jsproxy, and test_python.
 import pytest
+from hypothesis import given
+from hypothesis.strategies import text
+from conftest import selenium_context_manager
+
+
+@given(s=text())
+def test_string_conversion(selenium_module_scope, s):
+    with selenium_context_manager(selenium_module_scope) as selenium:
+        # careful string escaping here -- hypothesis will fuzz it.
+        sbytes = list(s.encode())
+        selenium.run_js(
+            f"""
+            window.sjs = (new TextDecoder("utf8")).decode(new Uint8Array({sbytes}));
+            pyodide.runPython('spy = bytes({sbytes}).decode()');
+            """
+        )
+        assert selenium.run_js(f"""return pyodide.runPython('spy') === sjs;""")
+        assert selenium.run(
+            """
+            from js import sjs
+            sjs == spy
+            """
+        )
 
 
 def test_python2js(selenium):
@@ -28,7 +51,7 @@ def test_python2js(selenium):
         let typename = proxy.type;
         let x = proxy.toJs();
         proxy.destroy();
-        return ((typename === "list") && (x instanceof window.Array) && 
+        return ((typename === "list") && (x instanceof window.Array) &&
                 (x.length === 3) && (x[0] == 1) && (x[1] == 2) && (x[2] == 3));
         """
     )
@@ -84,7 +107,7 @@ def test_js2python(selenium):
         window.jsfalse = false;
         window.jsarray0 = [];
         window.jsarray1 = [1, 2, 3];
-        window.jspython = pyodide.pyimport("open");
+        window.jspython = pyodide.globals.get("open");
         window.jsbytes = new Uint8Array([1, 2, 3]);
         window.jsfloats = new Float32Array([1, 2, 3]);
         window.jsobject = new XMLHttpRequest();
@@ -247,7 +270,7 @@ def test_recursive_list_to_js(selenium_standalone):
         x.append(x)
         """
     )
-    selenium_standalone.run_js("x = pyodide.pyimport('x').toJs();")
+    selenium_standalone.run_js("x = pyodide.globals.get('x').toJs();")
 
 
 def test_recursive_dict_to_js(selenium_standalone):
@@ -257,7 +280,7 @@ def test_recursive_dict_to_js(selenium_standalone):
         x[0] = x
         """
     )
-    selenium_standalone.run_js("x = pyodide.pyimport('x').toJs();")
+    selenium_standalone.run_js("x = pyodide.globals.get('x').toJs();")
 
 
 def test_list_js2py2js(selenium):
@@ -385,7 +408,7 @@ def test_python2js_with_depth(selenium):
     assert selenium.run_js(
         """
         pyodide.runPython("a = [1, 2, 3]");
-        let res = pyodide.pyimport("a").toJs();
+        let res = pyodide.globals.get("a").toJs();
         return (Array.isArray(res)) && JSON.stringify(res) === "[1,2,3]";
         """
     )
@@ -393,7 +416,7 @@ def test_python2js_with_depth(selenium):
     assert selenium.run_js(
         """
         pyodide.runPython("a = (1, 2, 3)");
-        let res = pyodide.pyimport("a").toJs();
+        let res = pyodide.globals.get("a").toJs();
         return (Array.isArray(res)) && JSON.stringify(res) === "[1,2,3]";
         """
     )
@@ -401,7 +424,7 @@ def test_python2js_with_depth(selenium):
     assert selenium.run_js(
         """
         pyodide.runPython("a = [(1,2), (3,4), [5, 6], { 2 : 3,  4 : 9}]")
-        let res = pyodide.pyimport("a").toJs();
+        let res = pyodide.globals.get("a").toJs();
         return Array.isArray(res) && \
             JSON.stringify(res) === `[[1,2],[3,4],[5,6],{}]` && \
             JSON.stringify(Array.from(res[3].entries())) === "[[2,3],[4,9]]";
@@ -421,7 +444,7 @@ def test_python2js_with_depth(selenium):
     selenium.run_js(
         """
         pyodide.runPython("a = [1,[2,[3,[4,[5,[6,[7]]]]]]]")
-        let a = pyodide.pyimport("a");
+        let a = pyodide.globals.get("a");
         for(let i=0; i < 7; i++){
             let x = a.toJs(i);
             for(let j=0; j < i; j++){
@@ -441,7 +464,7 @@ def test_python2js_with_depth(selenium):
                 throw new Error(`Assertion failed: ${msg}`);
             }
         }
-        let a = pyodide.pyimport("a");
+        let a = pyodide.globals.get("a");
         for(let i=0; i < 7; i++){
             let x = a.toJs(i);
             for(let j=0; j < i; j++){
@@ -461,7 +484,7 @@ def test_python2js_with_depth(selenium):
             c = [b, b, b, b, b]
         `);
         let total_refs = pyodide._module.hiwire.num_keys();
-        let res = pyodide.pyimport("c").toJs();
+        let res = pyodide.globals.get("c").toJs();
         let new_total_refs = pyodide._module.hiwire.num_keys();
         assert(total_refs === new_total_refs);
         assert(res[0] === res[1]);
@@ -479,7 +502,7 @@ def test_python2js_with_depth(selenium):
             a.append(b)
         `);
         let total_refs = pyodide._module.hiwire.num_keys();
-        let res = pyodide.pyimport("a").toJs();
+        let res = pyodide.globals.get("a").toJs();
         let new_total_refs = pyodide._module.hiwire.num_keys();
         assert(total_refs === new_total_refs);
         assert(res[0][0] === "b");
@@ -594,7 +617,7 @@ def test_to_py(selenium):
         return result;
         """
     )
-    assert result == "<class 'JsProxy'>"
+    assert result == "<class 'pyodide.JsProxy'>"
 
     msg = "Cannot use key of type Array as a key to a Python dict"
     with pytest.raises(selenium.JavascriptException, match=msg):
@@ -667,3 +690,9 @@ def test_to_py(selenium):
             `);
             """
         )
+
+
+def test_pyimport_deprecation(selenium):
+    selenium.run_js("pyodide.runPython('x = 1')")
+    assert selenium.run_js("return pyodide.pyimport('x') === 1")
+    assert "pyodide.pyimport is deprecated and will be removed" in selenium.logs

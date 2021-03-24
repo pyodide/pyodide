@@ -36,10 +36,10 @@ def _parse_package_subset(query: Optional[str]) -> Optional[Set[str]]:
     """
     if query is None:
         return None
-    packages = query.split(",")
-    packages = [el.strip() for el in packages]
-    packages = ["micropip", "distlib"] + packages
-    return set(packages)
+    packages = {el.strip() for el in query.split(",")}
+    packages.update(["micropip", "distlib"])
+    packages.discard("")
+    return packages
 
 
 def file_packager_path() -> Path:

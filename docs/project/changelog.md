@@ -13,9 +13,11 @@ substitutions:
 ## Version [Unreleased]
 
 ### Improvements to package loading and dynamic linking
-- {{Enhancement}} Uses the emscripten preload plugin system to preload .so files in packages
-- {{Enhancement}} Support for shared library packages. This is used for CLAPACK which makes scipy a lot smaller.
-  [#1236] https://github.com/iodide-project/pyodide/pull/1236
+- {{ Enhancement }} Uses the emscripten preload plugin system to preload .so files in packages
+- {{ Enhancement }} Support for shared library packages. This is used for CLAPACK which makes scipy a lot smaller.
+  [#1236](https://github.com/iodide-project/pyodide/pull/1236)
+- {{ Fix }} Pyodide and included packages can now be used with Safari v14+.
+  Safari v13 has also been observed to work on some (but not all) devices.
 
 ### Python / JS type conversions
 - {{ Feature }} A `JsProxy` of a Javascript `Promise` or other awaitable object is now a
@@ -25,6 +27,8 @@ substitutions:
   are now wrapped in `PyProxy`. Added a new `toJs` API to `PyProxy` to request the
   conversion behavior that used to be implicit.
   [#1167](https://github.com/iodide-project/pyodide/pull/1167)
+- {{ API }} Added `JsProxy.to_py` API to convert a Javascript object to Python.
+  [#1244](https://github.com/iodide-project/pyodide/pull/1244)
 - {{ Feature }} Flexible jsimports: it now possible to add custom Python
   "packages" backed by Javascript code, like the `js` package.  The `js` package
   is now implemented using this system.
@@ -47,6 +51,8 @@ substitutions:
   access, then the wrapper has `get`, `set`, `has`, and `delete` methods which do
   `obj[key]`, `obj[key] = val`, `key in obj` and `del obj[key]` respectively.
   [#1175](https://github.com/iodide-project/pyodide/pull/1175)
+- {{ API }} The `pyodide.pyimport` function is deprecated in favor of using
+  `pyodide.globals.get('key')`. [#1367](https://github.com/iodide-project/pyodide/pull/1367)
 
 ### Fixed
 - {{ Fix }} getattr and dir on JsProxy now report consistent results and include all
@@ -83,6 +89,9 @@ substitutions:
   available by default and automatically enabled by any relevant asyncio API,
   so for instance `asyncio.ensure_future` works without any configuration.
   [#1158](https://github.com/iodide-project/pyodide/pull/1158)
+- {{ API }} Removed `as_nested_list` API in favor of `JsProxy.to_py`.
+  [#1345](https://github.com/iodide-project/pyodide/pull/1345)
+
 
 ### pyodide-js
 
@@ -111,8 +120,9 @@ substitutions:
 
 ### micropip
 
-- {{ Feature }} `micropip` now supports installing wheels from relative urls.
+- {{ Feature }} `micropip` now supports installing wheels from relative URLs.
   [#872](https://github.com/iodide-project/pyodide/pull/872)
+- {{ API }} `micropip.install` now returns a Python `Future` instead of a Javascript `Promise`.
 
 ### Build system
 
@@ -149,7 +159,7 @@ substitutions:
   need to be loaded explicitly
   [#1010](https://github.com/iodide-project/pyodide/pull/1010),
   [#987](https://github.com/iodide-project/pyodide/pull/987).
-- Updated packages: bleach 3.2.1, packaging 20.8
+- Updated packages: bleach 3.3.0, packaging 20.8
 
 
 ## Version 0.16.1
@@ -213,7 +223,7 @@ by 0.16.1 with identical contents.
   implies that Python 3.8 is now required to build Pyodide. It can for instance
   be installed with conda.
   [#830](https://github.com/iodide-project/pyodide/pull/830)
-- FIX Infer package tarball directory from source url
+- FIX Infer package tarball directory from source URL
   [#687](https://github.com/iodide-project/pyodide/pull/687)
 - Updated to emscripten 1.38.44 and binaryen v86 (see related
   [commits](https://github.com/iodide-project/pyodide/search?q=emscripten&type=commits))
