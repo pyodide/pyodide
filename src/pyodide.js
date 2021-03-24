@@ -542,6 +542,10 @@ globalThis.languagePluginLoader = (async () => {
 
   /**
    * Access a Python object in the global namespace from Javascript.
+   *
+   * Note: this function is deprecated and will be removed in version 0.18.0.
+   * Use pyodide.globals.get('key') instead.
+   *
    * @param {string} name Python variable name
    * @returns If the Python object is an immutable type (string, number,
    * boolean), it is converted to Javascript and returned.  For other types, a
