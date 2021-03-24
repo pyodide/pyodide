@@ -630,12 +630,6 @@ finally:
 size_t py_buffer_len_offset = offsetof(Py_buffer, len);
 size_t py_buffer_shape_offset = offsetof(Py_buffer, shape);
 
-bool
-_pyproxy_is_buffer(PyObject* ptrobj)
-{
-  return PyObject_CheckBuffer(ptrobj);
-}
-
 /**
  * Convert a C array of Py_ssize_t to Javascript.
  */
@@ -666,8 +660,24 @@ typedef struct
 } buffer_struct;
 
 /**
- * This is the C part of the getBuffer method. We use PyObject_GetBuffer to
- * acquire a Py_buffer view to the object,
+ * This is the C part of the getBuffer method.
+ *
+ * We use PyObject_GetBuffer to acquire a Py_buffer view to the object, then we
+ * determine the locations of: the first element of the buffer, the earliest
+ * element of the buffer in memory the lastest element of the buffer in memory
+ * (plus one itemsize).
+ *
+ * We will use this information to slice out a subarray of the wasm heap that
+ * contains all the memory inside of the buffer.
+ *
+ * Special care must be taken for negative strides, this is why we need to keep
+ * track separately of start_ptr (the location of the first element of the
+ * array) and smallest_ptr (the location of the earliest element of the array in
+ * memory). If strides are positive, these are the same but if some strides are
+ * negative they will be different.
+ *
+ * We also put the various other metadata about the buffer that we want to share
+ * into buffer_struct.
  */
 buffer_struct*
 _pyproxy_get_buffer(PyObject* ptrobj)
@@ -676,13 +686,17 @@ _pyproxy_get_buffer(PyObject* ptrobj)
     return NULL;
   }
   Py_buffer view;
+  // PyBUF_RECORDS_RO requires that suboffsets be NULL but otherwise is the most
+  // permissive possible request.
   if (PyObject_GetBuffer(ptrobj, &view, PyBUF_RECORDS_RO) == -1) {
-    PyErr_Clear();
-    return NULL;
+    // Buffer cannot be represented without suboffsets. The bf_getbuffer method
+    // should have set a PyExc_BufferError saying something to this effect.
+    pythonexc2js();
   }
 
   bool success = false;
   if (view.ndim == 0) {
+    // TODO: what should we do here?
     FAIL();
   }
   buffer_struct result = { 0 };
@@ -704,6 +718,7 @@ _pyproxy_get_buffer(PyObject* ptrobj)
   for (int i = 0; i < view.ndim; i++) {
     if (view.shape[i] == 0) {
       // If one of the dimensions is 0, we have no data.
+      // TODO: what should we do here?
       FAIL();
     }
     if (view.strides[i] > 0) {

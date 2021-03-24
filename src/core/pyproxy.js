@@ -513,6 +513,25 @@ TEMP_EMJS_HELPER(() => {0, /* Magic, see comment */
   Module.PyProxyCallableMethods = {prototype : Function.prototype};
 
   Module.PyProxyBufferMethods = {
+    /**
+     * Get a representation of the buffer data which is usable from Javascript.
+     *
+     * The return value is a PyBuffer object with a TypedArray pointing to the
+     * buffer data and other meta data about the buffer. If the buffer is not
+     * contiguous, the subarray will also contain other stuff that's not part
+     * of this buffer (probably because this buffer was sliced out of a bigger
+     * buffer).
+     *
+     * We do not support suboffsets, if the buffer requires suboffsets we will
+     * throw an error. Javascript nd array libraries can't handle suboffsets
+     * anyways. In this case, you should copy the buffer to one that doesn't use
+     * suboffets (using e.g., ``np.ascontiguousarray``).
+     *
+     * @param {string} type The type of the desired output. Should be one of:
+     *    "i8", "u8", "i16", "u16", "i32", "u32", "i32", "u32", "i64", "u64",
+     *    "f32", or "f64,
+     * @returns PyBuffer
+     */
     getBuffer : function(type = "u8") {
       let ArrayType = type_to_array_map.get(type);
       if (ArrayType === undefined) {
@@ -559,17 +578,19 @@ TEMP_EMJS_HELPER(() => {0, /* Magic, see comment */
       for (let i of strides.keys()) {
         strides[i] /= alignment;
       }
-      return new PyBuffer({
+
+      return Object.create(PyBuffer, Object.getOwnPropertyDescriptors({
         offset,
         readonly,
         format,
         shape,
         strides,
         data,
-        view_ptr,
         c_contiguous,
-        f_contiguous
-      });
+        f_contiguous,
+        _view_ptr : view_ptr,
+        _released : false
+      }));
     }
   };
 
@@ -592,9 +613,7 @@ TEMP_EMJS_HELPER(() => {0, /* Magic, see comment */
   }
 
   class PyBuffer {
-    constructor({view_ptr, ...rest}) {
-      Object.assign(this, {_released : false, _view_ptr : view_ptr, ...rest});
-    }
+    constructor() { throw new TypeError('PyProxy is not a constructor'); }
 
     release() {
       if (this._released) {
