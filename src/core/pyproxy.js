@@ -511,6 +511,7 @@ TEMP_EMJS_HELPER(() => {0, /* Magic, see comment */
   };
 
   Module.PyProxyCallableMethods = {prototype : Function.prototype};
+
   Module.PyProxyBufferMethods = {
     getBuffer : function(type = "u8") {
       let ArrayType = type_to_array_map.get(type);
@@ -572,6 +573,39 @@ TEMP_EMJS_HELPER(() => {0, /* Magic, see comment */
       });
     }
   };
+
+  let type_to_array_map = new Map([
+    [ "i8", Int8Array ],
+    [ "u8", Uint8Array ],
+    [ "i16", Int16Array ],
+    [ "u16", Uint16Array ],
+    [ "i32", Int32Array ],
+    [ "u32", Uint32Array ],
+    [ "i32", Int32Array ],
+    [ "u32", Uint32Array ],
+    [ "f32", Float32Array ],
+    [ "f64", Float64Array ],
+  ]);
+
+  if (globalThis.BigInt64Array) {
+    type_to_array_map.set("i64", BigInt64Array);
+    type_to_array_map.set("u64", BigUint64Array);
+  }
+
+  class PyBuffer {
+    constructor({view_ptr, ...rest}) {
+      Object.assign(this, {_released : false, _view_ptr : view_ptr, ...rest});
+    }
+
+    release() {
+      if (this._released) {
+        return;
+      }
+      _PyBuffer_Release(this._view_ptr);
+      _PyMem_Free(this._view_ptr);
+      this._released = true;
+    }
+  }
 
   // A special proxy that we use to wrap pyodide.globals to allow property
   // access like `pyodide.globals.x`.

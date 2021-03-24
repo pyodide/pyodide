@@ -208,7 +208,7 @@ def test_get_buffer(selenium):
             let z = pyodide.pyimport(x).getBuffer("u32");
             for(let idx1 = 0; idx1 < 8; idx1++) {
                 for(let idx2 = 0; idx2 < 3; idx2++){
-                    let v1 = z.buffer[z.offset + z.strides[0] * idx1 + z.strides[1] * idx2];
+                    let v1 = z.data[z.offset + z.strides[0] * idx1 + z.strides[1] * idx2];
                     let v2 = pyodide.runPython(`repr(${x}[${idx1}, ${idx2}])`);
                     console.log(`${v1}, ${typeof(v1)}, ${v2}, ${typeof(v2)}, ${v1===v2}`);
                     if(v1.toString() !== v2){
