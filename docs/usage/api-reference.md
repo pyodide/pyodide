@@ -8,7 +8,3 @@
    api/python-api.md
    api/micropip-api.md
 ```
-
-
-
-
