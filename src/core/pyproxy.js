@@ -789,7 +789,7 @@ TEMP_EMJS_HELPER(() => {0, /* Magic, see comment */
             minByteOffset % alignment !== 0 ||
             maxByteOffset % alignment !== 0) {
           throw new Error(
-              `Buffer does not have valid alignment for type ${type}`);
+              `Buffer does not have valid alignment for a ${ArrayType.name}`);
         }
         success = true;
       } finally {
