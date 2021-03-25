@@ -803,7 +803,7 @@ TEMP_EMJS_HELPER(() => {0, /* Magic, see comment */
 
         success = true;
         // clang-format off
-        return Object.create(PyBuffer.prototype,
+        return Object.create(Module.PyBuffer.prototype,
           Object.getOwnPropertyDescriptors({
             offset,
             readonly,
