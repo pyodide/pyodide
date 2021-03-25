@@ -751,6 +751,8 @@ TEMP_EMJS_HELPER(() => {0, /* Magic, see comment */
       try {
         if (ArrayType === undefined) {
           // Try to determine correct type from format.
+          // To understand this code it will be helpful to look at the tables
+          // here: https://docs.python.org/3/library/struct.html#format-strings
           if (/[>!]/.test(format)) {
             // Big endian, don't know what to do.
             throw new Error(
