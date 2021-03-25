@@ -793,41 +793,40 @@ TEMP_EMJS_HELPER(() => {0, /* Magic, see comment */
           throw new Error(
               `Buffer does not have valid alignment for a ${ArrayType.name}`);
         }
+        let numBytes = maxByteOffset - minByteOffset;
+        let numEntries = numBytes / alignment;
+        let offset = (startByteOffset - minByteOffset) / alignment;
+        let data = new ArrayType(HEAP8.buffer, minByteOffset, numEntries);
+        for (let i of strides.keys()) {
+          strides[i] /= alignment;
+        }
+
         success = true;
+        // clang-format off
+        return Object.create(PyBuffer.prototype,
+          Object.getOwnPropertyDescriptors({
+            offset,
+            readonly,
+            format,
+            itemsize,
+            ndim : shape.length,
+            nbytes : numBytes,
+            shape,
+            strides,
+            data,
+            c_contiguous,
+            f_contiguous,
+            _view_ptr : view_ptr,
+            _released : false
+          })
+        );
+        // clang-format on
       } finally {
         if (!success) {
           _PyBuffer_Release(view_ptr);
           _PyMem_Free(view_ptr);
         }
       }
-
-      let numBytes = maxByteOffset - minByteOffset;
-      let numEntries = numBytes / alignment;
-      let offset = (startByteOffset - minByteOffset) / alignment;
-      let data = new ArrayType(HEAP8.buffer, minByteOffset, numEntries);
-      for (let i of strides.keys()) {
-        strides[i] /= alignment;
-      }
-
-      // clang-format off
-      return Object.create(PyBuffer.prototype,
-        Object.getOwnPropertyDescriptors({
-          offset,
-          readonly,
-          format,
-          itemsize,
-          ndim : shape.length,
-          nbytes : numBytes,
-          shape,
-          strides,
-          data,
-          c_contiguous,
-          f_contiguous,
-          _view_ptr : view_ptr,
-          _released : false
-        })
-      );
-      // clang-format on
     }
   };
 
