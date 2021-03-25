@@ -651,6 +651,7 @@ typedef struct
 
   int readonly;
   char* format;
+  int itemsize;
   JsRef shape;
   JsRef strides;
 
@@ -695,14 +696,28 @@ _pyproxy_get_buffer(PyObject* ptrobj)
   }
 
   bool success = false;
-  if (view.ndim == 0) {
-    // TODO: what should we do here?
-    FAIL();
-  }
   buffer_struct result = { 0 };
-  result.readonly = view.readonly;
-  result.shape = array_to_js(view.shape, view.ndim);
   result.start_ptr = result.smallest_ptr = result.largest_ptr = view.buf;
+  result.readonly = view.readonly;
+
+  result.format = view.format;
+  result.itemsize = view.itemsize;
+
+  if (view.ndim == 0) {
+    // "If ndim is 0, buf points to a single item representing a scalar. In this
+    // case, shape, strides and suboffsets MUST be NULL."
+    // https://docs.python.org/3/c-api/buffer.html#c.Py_buffer.ndim
+    result.largest_ptr += view.itemsize;
+    result.shape = hiwire_array();
+    result.strides = hiwire_array();
+    result.c_contiguous = true;
+    result.f_contiguous = true;
+    goto success;
+  }
+
+  // Because we requested PyBUF_RECORDS_RO I think we can assume that
+  // view.shape != NULL.
+  result.shape = array_to_js(view.shape, view.ndim);
 
   if (view.strides == NULL) {
     // In this case we are a C contiguous buffer
@@ -714,24 +729,22 @@ _pyproxy_get_buffer(PyObject* ptrobj)
     goto success;
   }
 
-  // Have to be careful to ensure that we handle negative strides correctly.
-  for (int i = 0; i < view.ndim; i++) {
-    if (view.shape[i] == 0) {
-      // If one of the dimensions is 0, we have no data.
-      // TODO: what should we do here?
-      FAIL();
+  if (view.len != 0) {
+    // Have to be careful to ensure that we handle negative strides correctly.
+    for (int i = 0; i < view.ndim; i++) {
+      // view.strides[i] != 0
+      if (view.strides[i] > 0) {
+        // add positive strides to largest_ptr
+        result.largest_ptr += view.strides[i] * (view.shape[i] - 1);
+      } else {
+        // subtract negative strides from smallest_ptr
+        result.smallest_ptr += view.strides[i] * (view.shape[i] - 1);
+      }
     }
-    if (view.strides[i] > 0) {
-      // add positive strides to largest_ptr
-      result.largest_ptr += view.strides[i] * (view.shape[i] - 1);
-    } else {
-      // subtract negative strides from smallest_ptr
-      result.smallest_ptr += view.strides[i] * (view.shape[i] - 1);
-    }
+    result.largest_ptr += view.itemsize;
   }
-  result.largest_ptr += view.itemsize;
+
   result.strides = array_to_js(view.strides, view.ndim);
-  result.format = view.format;
   result.c_contiguous = PyBuffer_IsContiguous(&view, 'C');
   result.f_contiguous = PyBuffer_IsContiguous(&view, 'F');
 
@@ -939,6 +952,10 @@ static PyMethodDef pyproxy_methods[] = {
 #define UNPAIRED_CLOSE_BRACE } // Just here to help text editors pair braces up
 #define TEMP_EMJS_HELPER(a, args...)                                           \
   EM_JS_NUM(int, pyproxy_init_js, (), UNPAIRED_OPEN_BRACE { args return 0; })
+
+// A macro to allow us to add code that is only intended to influence JsDoc
+// output, but shouldn't end up in generated code.
+#define FOR_JSDOC_ONLY(x)
 
 #include "pyproxy.js"
 

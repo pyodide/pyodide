@@ -703,6 +703,7 @@ TEMP_EMJS_HELPER(() => {0, /* Magic, see comment */
 
       let readonly = !!HEAP32[cur_ptr++];
       let format_ptr = HEAP32[cur_ptr++];
+      let itemsize = HEAP32[cur_ptr++];
       let shape = Module.hiwire.pop_value(HEAP32[cur_ptr++]);
       let strides = Module.hiwire.pop_value(HEAP32[cur_ptr++]);
 
@@ -736,6 +737,9 @@ TEMP_EMJS_HELPER(() => {0, /* Magic, see comment */
           offset,
           readonly,
           format,
+          itemsize,
+          ndim : shape.length,
+          nbytes : numBytes,
           shape,
           strides,
           data,
@@ -746,6 +750,109 @@ TEMP_EMJS_HELPER(() => {0, /* Magic, see comment */
         })
       );
       // clang-format on
+    }
+  };
+
+  /**
+   * A class to allow access to a Python data buffers from Javascript. These are
+   * produced by :any:`PyProxy.getBuffer` and cannot be constructed directly.
+   * When you are done, release it with the :any:`release <PyBuffer.release>`
+   * method.
+   */
+  Module.PyBuffer = class PyBuffer {
+    constructor() {
+      // FOR_JSDOC_ONLY is a macro that deletes its argument.
+      FOR_JSDOC_ONLY(() => {
+        /**
+         * The offset of the first entry of the array. For instance if our array
+         * is 3d, then you will find ``array[0,0,0]`` at
+         * ``pybuf.data[pybuf.offset]``
+         * @type {number}
+         */
+        this.offset;
+
+        /**
+         * If the data is readonly, you should not modify it. There is no way
+         * for us to enforce this, but it may cause very weird behavior.
+         * @type {boolean}
+         */
+        this.readonly;
+
+        /**
+         * The format string for the buffer. See `the Python documentation on
+         * format strings
+         * <https://docs.python.org/3/library/struct.html#format-strings>`_.
+         * @type {string}
+         */
+        this.format;
+
+        /**
+         * How large is each entry (in bytes)?
+         * @type {number}
+         */
+        this.itemsize;
+
+        /**
+         * The number of dimensions of the buffer. If ``ndim`` is 0, the buffer
+         * represents a single scalar or struct. Otherwise, it represents an
+         * array.
+         * @type {number}
+         */
+        this.ndim;
+
+        /**
+         * The total number of bytes the buffer takes up. This is equal to
+         * ``buff.data.byteLength``.
+         * @type {number}
+         */
+        this.nbytes;
+
+        /**
+         * The shape of the buffer, that is how long it is in each dimension.
+         * The length will be equal to ``ndim``. For instance, a 2x3x4 array
+         * would have shape ``[2, 3, 4]``.
+         * @type {number[]}
+         */
+        this.shape;
+
+        /**
+         * @type {number[]}
+         */
+        this.strides;
+
+        /**
+         * The actual data. A typed array of an appropriate size backed by a
+         * segment of the WASM memory.
+         * @type {TypedArray}
+         */
+        this.data;
+
+        /**
+         * Is it C contiguous?
+         * @type {boolean}
+         */
+        this.c_contiguous;
+
+        /**
+         * Is it Fortran contiguous?
+         * @type {boolean}
+         */
+        this.f_contiguous;
+      });
+      throw new TypeError('PyBuffer is not a constructor');
+    }
+
+    /**
+     * Release the buffer.
+     */
+    release() {
+      if (this._released) {
+        return;
+      }
+      _PyBuffer_Release(this._view_ptr);
+      _PyMem_Free(this._view_ptr);
+      this._released = true;
+      this.data = null;
     }
   };
 
@@ -765,19 +872,6 @@ TEMP_EMJS_HELPER(() => {0, /* Magic, see comment */
   if (globalThis.BigInt64Array) {
     type_to_array_map.set("i64", BigInt64Array);
     type_to_array_map.set("u64", BigUint64Array);
-  }
-
-  class PyBuffer {
-    constructor() { throw new TypeError('PyProxy is not a constructor'); }
-
-    release() {
-      if (this._released) {
-        return;
-      }
-      _PyBuffer_Release(this._view_ptr);
-      _PyMem_Free(this._view_ptr);
-      this._released = true;
-    }
   }
 
   // A special proxy that we use to wrap pyodide.globals to allow property
