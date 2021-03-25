@@ -60,8 +60,8 @@ class PyodideAnalyzer:
         def get_val():
             return OrderedDict([["attribute", []], ["function", []]])
 
-        self.js_docs = {key: get_val() for key in ["globals", "pyodide", "pyproxy"]}
-        items = {"pyproxy": []}
+        self.js_docs = {key: get_val() for key in ["globals", "pyodide", "PyProxy"]}
+        items = {"PyProxy": []}
         for (key, group) in self._doclets_by_class.items():
             key = [x for x in key if "/" not in x]
             if key[-1] == "globalThis":
@@ -69,7 +69,7 @@ class PyodideAnalyzer:
             if key[0] == "pyodide." and key[-1] == "Module":
                 items["pyodide"] = group
             if key[0] == "pyproxy.":
-                items["pyproxy"] += group
+                items["PyProxy"] += group
 
         for key, value in items.items():
             for json in value:
