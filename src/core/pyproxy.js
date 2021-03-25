@@ -250,19 +250,36 @@ TEMP_EMJS_HELPER(() => {0,0; /* Magic, see comment */
   // https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Iteration_protocols
   // This avoids allocating a PyProxy wrapper for the temporary iterator.
   Module.PyProxyIterableMethods = {
-    [Symbol.iterator] : function*() {
+    [Symbol.iterator] : function() {
+      let token = {};
       let iterptr = _PyObject_GetIter(_getPtr(this));
-      if (iterptr === 0) {
-        pythonexc2js();
+      let result = this.__iter_helper(iterptr, token);
+      Module.finalizationRegistry.register(result, iterptr, token);
+      return result;
+    },
+    // Because "it is possible for a generator to be garbage collected without
+    // ever running its finally block", we take extra care to try to ensure that
+    // we don't leak the iterator. We register it with the finalizationRegistry,
+    // but if the finally block is executed, we decref the pointer and
+    // unregister.
+    //
+    // https://hacks.mozilla.org/2015/07/es6-in-depth-generators-continued/
+    __iter_helper : function*(iterptr, token) {
+      try {
+        if (iterptr === 0) {
+          pythonexc2js();
+        }
+        let item;
+        while ((item = __pyproxy_iter_next(iterptr))) {
+          yield Module.hiwire.pop_value(item);
+        }
+        if (_PyErr_Occurred()) {
+          pythonexc2js();
+        }
+      } finally {
+        finalizationRegistry.unregister(token);
+        _Py_DecRef(iterptr);
       }
-      let item;
-      while ((item = __pyproxy_iter_next(iterptr))) {
-        yield Module.hiwire.pop_value(item);
-      }
-      if (_PyErr_Occurred()) {
-        pythonexc2js();
-      }
-      _Py_DecRef(iterptr);
     }
   };
 
