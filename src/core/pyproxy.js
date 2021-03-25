@@ -769,13 +769,18 @@ TEMP_EMJS_HELPER(() => {0, /* Magic, see comment */
           // At this point every entry should be the same.
           if ((new Set(cleaned_format)).size > 1) {
             throw new Error(
-                "If the buffer items are structs with differently sized fields, you must pass a type argument")
+                "If the buffer items are structs with differently sized fields, you must pass a type argument");
           }
           let type_char = cleaned_format[0];
           ArrayType = type_to_array_map.get(type_char);
           if (ArrayType === undefined) {
-            throw new Error(
-                "64 bit integer formats (q and Q) are not supported in browsers without BigInt support. You must pass a type argument.")
+            if (/[qQ]/.test(type_char)) {
+              throw new Error(
+                  "64 bit integer formats (q and Q) are not supported in browsers without BigInt support. You must pass a type argument.");
+            } else {
+              throw new Error(
+                  "Unrecognized buffer format. You must pass a type argument.");
+            }
           }
         }
 
