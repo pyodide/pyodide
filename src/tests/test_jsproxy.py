@@ -78,18 +78,20 @@ def test_jsproxy_getattr(selenium):
 
 
 def test_jsproxy(selenium):
+    selenium.run("from js import document")
     assert (
         selenium.run(
             """
-        from js import document
-        el = document.createElement('div')
-        document.body.appendChild(el)
-        document.body.children.length"""
+            el = document.createElement('div')
+            document.body.appendChild(el)
+            document.body.children.length
+            """
         )
         == 1
     )
     assert selenium.run("document.body.children[0].tagName") == "DIV"
     assert selenium.run("repr(document)") == "[object HTMLDocument]"
+
     selenium.run_js("window.square = function (x) { return x*x; }")
     assert selenium.run("from js import square\n" "square(2)") == 4
     assert (
@@ -151,19 +153,19 @@ def test_jsproxy(selenium):
     assert (
         selenium.run(
             """
-        from js import TEST
-        dict(TEST.object_entries()) == {'foo': 'bar', 'baz': 'bap'}
-        """
+            from js import TEST
+            dict(TEST.object_entries()) == {'foo': 'bar', 'baz': 'bap'}
+            """
         )
         is True
     )
     assert (
         selenium.run(
             """
-        from js import document
-        el = document.createElement('div')
-        len(dir(el)) >= 200 and 'appendChild' in dir(el)
-        """
+            from js import document
+            el = document.createElement('div')
+            len(dir(el)) >= 200 and 'appendChild' in dir(el)
+            """
         )
         is True
     )
@@ -190,7 +192,8 @@ def test_jsproxy_iter(selenium):
 def test_jsproxy_implicit_iter(selenium):
     selenium.run_js(
         """
-        window.ITER = [1, 2, 3];"""
+        window.ITER = [1, 2, 3];
+        """
     )
     assert selenium.run("from js import ITER, Object\n" "list(ITER)") == [1, 2, 3]
     assert selenium.run("from js import ITER, Object\n" "list(ITER.values())") == [
@@ -207,34 +210,33 @@ def test_jsproxy_call(selenium):
     assert (
         selenium.run_js(
             """
-        window.f = function(){ return arguments.length; };
-        return pyodide.runPython(
-            `
-            from js import f
-            [f(*range(n)) for n in range(10)]
-            `
-        ).toJs();
-        """
+            window.f = function(){ return arguments.length; };
+            return pyodide.runPython(
+                `
+                from js import f
+                [f(*range(n)) for n in range(10)]
+                `
+            ).toJs();
+            """
         )
         == list(range(10))
     )
 
 
-@pytest.mark.xfail
 def test_jsproxy_call_kwargs(selenium):
     assert (
         selenium.run_js(
             """
-        window.kwarg_function = ({ a = 1, b = 1 }) => {
-            return [a, b];
-        };
-        return pyodide.runPython(
-            `
-            from js import kwarg_function
-            kwarg_function(b = 2, a = 10)
-            `
-        );
-        """
+            window.kwarg_function = ({ a = 1, b = 1 }) => {
+                return [a, b];
+            };
+            return pyodide.runPython(
+                `
+                from js import kwarg_function
+                kwarg_function(b = 2, a = 10)
+                `
+            );
+            """
         )
         == [10, 2]
     )
@@ -373,6 +375,7 @@ def test_window_isnt_super_weird_anymore():
     assert window.window.window.window.Array == Array
 
 
+@pytest.mark.skip_refcount_check
 def test_mount_object(selenium):
     result = selenium.run_js(
         """
@@ -389,7 +392,7 @@ def test_mount_object(selenium):
         let b = { x : x2, y, u : 3, t : 7};
         pyodide.registerJsModule("a", a);
         pyodide.registerJsModule("b", b);
-        return pyodide.runPython(`
+        let result_proxy = pyodide.runPython(`
             from a import x
             from b import x as x2
             result = [x(), x2()]
@@ -397,57 +400,28 @@ def test_mount_object(selenium):
             import b
             result += [a.s, dir(a), dir(b)]
             result
-        `).toJs()
+        `);
+        let result = result_proxy.toJs()
+        result_proxy.destroy();
+        return result;
         """
     )
     assert result[:3] == ["x1", "x2", 3]
     assert set([x for x in result[3] if len(x) == 1]) == set(["x", "y", "s", "t"])
     assert set([x for x in result[4] if len(x) == 1]) == set(["x", "y", "u", "t"])
-
-
-@pytest.mark.xfail
-def test_mount_map(selenium):
-    result = selenium.run_js(
+    selenium.run_js(
         """
-        function x1(){
-            return "x1";
-        }
-        function x2(){
-            return "x2";
-        }
-        function y(){
-            return "y";
-        }
-        let a = new Map(Object.entries({ x : x1, y, s : 3, t : 7}));
-        let b = new Map(Object.entries({ x : x2, y, u : 3, t : 7}));
-        pyodide.registerJsModule("a", a);
-        pyodide.registerJsModule("b", b);
-        return pyodide.runPython(`
-            from a import x
-            from b import x as x2
-            result = [x(), x2()]
-            import a
-            import b
-            result += [a.s, dir(a), dir(b)]
-            import sys
-            del sys.modules["a"]
-            del sys.modules["b"]
-            result
-        `)
+        pyodide.unregisterJsModule("a");
+        pyodide.unregisterJsModule("b");
         """
     )
-    assert result[:3] == ["x1", "x2", 3]
-    # fmt: off
-    assert set(result[3]).issuperset(
-        [
-            "x", "y", "s", "t",
-            "__dir__", "__doc__", "__getattr__", "__loader__",
-            "__name__", "__package__", "__spec__",
-            "jsproxy",
-        ]
+    selenium.run(
+        """
+        import sys
+        del sys.modules["a"]
+        del sys.modules["b"]
+        """
     )
-    # fmt: on
-    assert set(result[4]).issuperset(["x", "y", "u", "t", "jsproxy"])
 
 
 def test_unregister_jsmodule(selenium):
@@ -457,7 +431,7 @@ def test_unregister_jsmodule(selenium):
         let b = new Map(Object.entries({ t : 3 }));
         pyodide.registerJsModule("a", a);
         pyodide.registerJsModule("a", b);
-        pyodide.unregisterJsModule("a")
+        pyodide.unregisterJsModule("a");
         await pyodide.runPythonAsync(`
             from unittest import TestCase
             raises = TestCase().assertRaises
@@ -483,6 +457,7 @@ def test_unregister_jsmodule_error(selenium):
     )
 
 
+@pytest.mark.skip_refcount_check
 def test_nested_import(selenium):
     assert (
         selenium.run_js(
@@ -493,8 +468,16 @@ def test_nested_import(selenium):
         )
         == 2
     )
+    selenium.run(
+        """
+        import sys
+        del sys.modules["js.a"]
+        del sys.modules["js.a.b"]
+        """
+    )
 
 
+@pytest.mark.skip_refcount_check
 def test_register_jsmodule_docs_example(selenium):
     selenium.run_js(
         """
@@ -511,7 +494,7 @@ def test_register_jsmodule_docs_example(selenium):
             return x*x - 1;
             },
             c  : 2,
-        },  
+        },
         };
         pyodide.registerJsModule("my_js_module", my_module);
         """
@@ -523,6 +506,9 @@ def test_register_jsmodule_docs_example(selenium):
         assert my_js_module.f(7) == 50
         assert h(9) == 80
         assert c == 2
+        import sys
+        del sys.modules["my_js_module"]
+        del sys.modules["my_js_module.submodule"]
         """
     )
 
@@ -539,7 +525,7 @@ def test_mixins_feature_presence(selenium):
             [{ has(){} }, "__contains__"],
             [{ then(){} }, "__await__"]
         ];
-        
+
         let test_object = pyodide.runPython(`
             from js import console
             def test_object(obj, keys_expected):
@@ -584,7 +570,7 @@ def test_mixins_calls(selenium):
         testObjects.has_getset = new Map();
         testObjects.has_has = { has(x){ return typeof(x) === "string" && x.startsWith("x") } };
         testObjects.has_includes = { includes(x){ return typeof(x) === "string" && x.startsWith("a") } };
-        testObjects.has_has_includes = { 
+        testObjects.has_has_includes = {
             includes(x){ return typeof(x) === "string" && x.startsWith("a") },
             has(x){ return typeof(x) === "string" && x.startsWith("x") }
         };
@@ -625,7 +611,7 @@ def test_mixins_errors(selenium):
     selenium.run_js(
         """
         window.a = [];
-        window.b = { 
+        window.b = {
             has(){ return false; },
             get(){ return undefined; },
             set(){ return false; },
@@ -651,7 +637,7 @@ def test_mixins_errors(selenium):
             get(){},
             set(){},
             has(){},
-            then(){}     
+            then(){}
         };
         window.d = {
             [Symbol.iterator](){},
@@ -714,10 +700,8 @@ def test_mixins_errors(selenium):
         window.l = [0, false, NaN, undefined, null];
         window.l[6] = 7;
         let a = Array.from(window.l.entries());
-        console.log(a);
         a.splice(5, 1);
         window.m = new Map(a);
-        console.log(m.size);
         await pyodide.runPythonAsync(`
             from js import m
             from unittest import TestCase
@@ -739,16 +723,14 @@ def test_mixins_errors(selenium):
 
 
 def test_memory_leaks(selenium):
-    assert 1 == selenium.run_js(
+    # refcounts are tested automatically in conftest by default
+    selenium.run_js(
         """
         window.a = [1,2,3];
-        let num_keys = pyodide._module.hiwire.num_keys;
-        let start_keys = num_keys();
         pyodide.runPython(`
             from js import a
             repr(a)
             [*a]
         `);
-        return num_keys() - start_keys;
         """
     )

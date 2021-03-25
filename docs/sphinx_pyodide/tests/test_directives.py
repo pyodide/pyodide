@@ -37,9 +37,8 @@ class dummy_state:
 
 
 def test_pyodide_analyzer():
-    function_names = {x.name for x in pyodide_analyzer.js_docs["function"]}
-    attribute_names = {x.name for x in pyodide_analyzer.js_docs["attribute"]}
-    global_names = {x.name for x in pyodide_analyzer.js_docs["global"]}
+    function_names = {x.name for x in pyodide_analyzer.js_docs["pyodide"]["function"]}
+    attribute_names = {x.name for x in pyodide_analyzer.js_docs["pyodide"]["attribute"]}
     assert function_names == {
         "runPython",
         "unregisterJsModule",
@@ -50,13 +49,13 @@ def test_pyodide_analyzer():
         "registerJsModule",
     }
     assert attribute_names == {"loadedPackages", "globals", "version", "pyodide_py"}
-    assert global_names == {"languagePluginLoader"}
 
 
 def test_content():
     JsDocContent = get_jsdoc_content_directive(dummy_app)
 
     a = JsDocContent.__new__(JsDocContent)
+    a.arguments = ["pyodide"]
     a.state = dummy_state
 
     def no_op_parse_rst(rst):
@@ -65,38 +64,30 @@ def test_content():
     a.parse_rst = no_op_parse_rst
 
     results = {}
-    for idx, entry in enumerate(a.run().split(".. ")):
+    for idx, entry in enumerate(a.run().split(".. js:")):
         [first_line, _, body] = entry.partition("\n")
         if "::" not in first_line:
             continue
         [directive, name] = first_line.split("::")
         directive = directive.strip()
         name = name.strip()
+        if directive == "module":
+            assert name == a.arguments[0]
+            continue
         body = body.strip()
-        d = dict(idx=idx, directive=directive, body=body)
+        d = dict(idx=idx, directive=directive, body=body, sig="")
         if "(" in name:
             [name, sig] = name.split("(")
             d["sig"] = sig
         results[name] = d
 
-    globals = results["globalThis"]
-    pyodide = results["pyodide"]
-    assert globals["directive"] == "js:module"
-    assert pyodide["directive"] == "js:module"
-    globals_idx = globals["idx"]
-    pyodide_idx = pyodide["idx"]
-
-    lpl = results["languagePluginLoader"]
-    assert globals_idx < lpl["idx"] < pyodide_idx
-    assert lpl["directive"] == "js:attribute"
-    assert (
-        "A promise that resolves to ``undefined`` when Pyodide is finished loading."
-        in lpl["body"]
-    )
+    rp = results["globals"]
+    assert rp["directive"] == "attribute"
+    assert rp["sig"] == ""
+    assert "An alias to the global Python namespace." in rp["body"]
 
     rp = results["runPython"]
-    assert pyodide_idx < rp["idx"]
-    assert rp["directive"] == "js:function"
+    assert rp["directive"] == "function"
     assert rp["sig"] == "code)"
     assert "Runs a string of Python code from Javascript." in rp["body"]
 
@@ -117,10 +108,16 @@ def test_extract_summary():
 
 
 def test_summary():
-    globals = jsdoc_summary.get_summary_table("global")
-    attributes = jsdoc_summary.get_summary_table("attribute")
-    functions = jsdoc_summary.get_summary_table("function")
-    set(globals) == {
+    globals = jsdoc_summary.get_summary_table(
+        "globalThis", dummy_app._sphinxjs_analyzer.js_docs["globals"]["attribute"]
+    )
+    attributes = jsdoc_summary.get_summary_table(
+        "pyodide", dummy_app._sphinxjs_analyzer.js_docs["pyodide"]["attribute"]
+    )
+    functions = jsdoc_summary.get_summary_table(
+        "pyodide", dummy_app._sphinxjs_analyzer.js_docs["pyodide"]["function"]
+    )
+    assert set(globals) == {
         (
             "languagePluginLoader",
             "",
@@ -128,7 +125,7 @@ def test_summary():
             "globalThis.languagePluginLoader",
         )
     }
-    set(attributes).issuperset(
+    assert set(attributes).issuperset(
         {
             (
                 "loadedPackages",
