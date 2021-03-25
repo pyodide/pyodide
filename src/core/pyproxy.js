@@ -663,6 +663,35 @@ TEMP_EMJS_HELPER(() => {0, /* Magic, see comment */
 
   Module.PyProxyCallableMethods = {prototype : Function.prototype};
 
+  let type_to_array_map = new Map([
+    [ "i8", Int8Array ],
+    [ "u8", Uint8Array ],
+    [ "i16", Int16Array ],
+    [ "u16", Uint16Array ],
+    [ "i32", Int32Array ],
+    [ "u32", Uint32Array ],
+    [ "i32", Int32Array ],
+    [ "u32", Uint32Array ],
+    [ "f32", Float32Array ],
+    [ "f64", Float64Array ],
+    // Python type formats
+    [ "b", Int8Array ],
+    [ "B", Uint8Array ],
+    [ "h", Int16Array ],
+    [ "H", Uint16Array ],
+    [ "i", Int32Array ],
+    [ "I", Uint32Array ],
+    [ "f", Float32Array ],
+    [ "d", Float64Array ],
+  ]);
+
+  if (globalThis.BigInt64Array) {
+    type_to_array_map.set("i64", BigInt64Array);
+    type_to_array_map.set("u64", BigUint64Array);
+    type_to_array_map.set("q", BigInt64Array);
+    type_to_array_map.set("Q", BigUint64Array);
+  }
+
   Module.PyProxyBufferMethods = {
     /**
      * Get a representation of the buffer data which is usable from Javascript.
@@ -684,9 +713,12 @@ TEMP_EMJS_HELPER(() => {0, /* Magic, see comment */
      * @returns PyBuffer
      */
     getBuffer : function(type = "u8") {
-      let ArrayType = type_to_array_map.get(type);
-      if (ArrayType === undefined) {
-        throw new Error(`Unknown type ${type}`);
+      let ArrayType = undefined;
+      if (type) {
+        let ArrayType = type_to_array_map.get(type);
+        if (ArrayType === undefined) {
+          throw new Error(`Unknown type ${type}`);
+        }
       }
       let this_ptr = _getPtr(this);
       let buffer_struct_ptr = __pyproxy_get_buffer(this_ptr);
@@ -713,19 +745,58 @@ TEMP_EMJS_HELPER(() => {0, /* Magic, see comment */
 
       _PyMem_Free(buffer_struct_ptr);
 
-      let alignment = parseInt(type.slice(1)) / 8;
-      if (startByteOffset % alignment !== 0 ||
-          minByteOffset % alignment !== 0 || maxByteOffset % alignment !== 0) {
-        _PyBuffer_Release(view_ptr);
-        _PyMem_Free(view_ptr);
-        throw new Error(
-            `Buffer does not have valid alignment for type ${type}`);
+      let format = UTF8ToString(format_ptr);
+
+      let success = false;
+      try {
+        if (ArrayType === undefined) {
+          // Try to determine correct type from format.
+          if (/[>!]/.test(format)) {
+            // Big endian, don't know what to do.
+            throw new Error(
+                "If the buffer contains big endian data, you must pass a type argument.");
+          }
+          if (format.includes("e")) {
+            throw new Error("Javascript has no Float16Array.");
+          }
+          // Remove little endian markers, repeat counts, and padding
+          let cleaned_format = format.replace(/[@=<0-9x]/g, "");
+          // Normalize same-sized types
+          cleaned_format = cleaned_format.replace(/[spc?]/g, "B");
+          cleaned_format = cleaned_format.replace(/[nl]/g, "i");
+          cleaned_format = cleaned_format.replace(/[NLP]/g, "I");
+
+          // At this point every entry should be the same.
+          if ((new Set(cleaned_format)).size > 1) {
+            throw new Error(
+                "If the buffer items are structs with differently sized fields, you must pass a type argument")
+          }
+          let type_char = cleaned_format[0];
+          ArrayType = type_to_array_map.get(type_char);
+          if (ArrayType === undefined) {
+            throw new Error(
+                "64 bit integer formats (q and Q) are not supported in browsers without BigInt support. You must pass a type argument.")
+          }
+        }
+
+        let alignment = parseInt(type.slice(1)) / 8;
+        if (startByteOffset % alignment !== 0 ||
+            minByteOffset % alignment !== 0 ||
+            maxByteOffset % alignment !== 0) {
+          throw new Error(
+              `Buffer does not have valid alignment for type ${type}`);
+        }
+        success = true;
+      } finally {
+        if (!success) {
+          _PyBuffer_Release(view_ptr);
+          _PyMem_Free(view_ptr);
+        }
       }
 
       let numBytes = maxByteOffset - minByteOffset;
       let numEntries = numBytes / alignment;
       let offset = (startByteOffset - minByteOffset) / alignment;
-      let format = UTF8ToString(format_ptr);
       let data = new ArrayType(HEAP8.buffer, minByteOffset, numEntries);
       for (let i of strides.keys()) {
         strides[i] /= alignment;
@@ -855,24 +926,6 @@ TEMP_EMJS_HELPER(() => {0, /* Magic, see comment */
       this.data = null;
     }
   };
-
-  let type_to_array_map = new Map([
-    [ "i8", Int8Array ],
-    [ "u8", Uint8Array ],
-    [ "i16", Int16Array ],
-    [ "u16", Uint16Array ],
-    [ "i32", Int32Array ],
-    [ "u32", Uint32Array ],
-    [ "i32", Int32Array ],
-    [ "u32", Uint32Array ],
-    [ "f32", Float32Array ],
-    [ "f64", Float64Array ],
-  ]);
-
-  if (globalThis.BigInt64Array) {
-    type_to_array_map.set("i64", BigInt64Array);
-    type_to_array_map.set("u64", BigUint64Array);
-  }
 
   // A special proxy that we use to wrap pyodide.globals to allow property
   // access like `pyodide.globals.x`.
