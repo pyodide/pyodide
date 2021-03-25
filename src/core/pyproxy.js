@@ -786,7 +786,7 @@ TEMP_EMJS_HELPER(() => {0, /* Magic, see comment */
           }
         }
 
-        let alignment = parseInt(type.slice(1)) / 8;
+        let alignment = parseInt(ArrayType.name.replace(/[^0-9]/g, "")) / 8;
         if (startByteOffset % alignment !== 0 ||
             minByteOffset % alignment !== 0 ||
             maxByteOffset % alignment !== 0) {
