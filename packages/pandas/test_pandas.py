@@ -45,6 +45,7 @@ def test_extra_import(selenium, request):
     selenium.run("from pandas import Series, DataFrame, Panel")
 
 
+@pytest.mark.skip_refcount_check
 def test_load_largish_file(selenium_standalone, request, httpserver):
     selenium = selenium_standalone
 
@@ -68,5 +69,5 @@ def test_load_largish_file(selenium_standalone, request, httpserver):
 
         df = pd.read_json(pyodide.open_url('{request_url}'))
         assert df.shape == ({n_rows}, 8)
-    """
+        """
     )
