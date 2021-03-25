@@ -99,6 +99,7 @@ class SeleniumWrapper:
         self.driver.get(f"http://{server_hostname}:{server_port}/test.html")
         self.run_js("Error.stackTraceLimit = Infinity;")
         self.run_js("await languagePluginLoader;")
+        self.save_state()
 
     @property
     def logs(self):
@@ -178,6 +179,15 @@ class SeleniumWrapper:
         else:
             raise JavascriptException(retval[1], retval[2])
 
+    def get_num_hiwire_keys(self):
+        return self.run_js("return pyodide._module.hiwire.num_keys();")
+
+    def save_state(self):
+        self.run_js("self.__savedState = pyodide._module.saveState();")
+
+    def restore_state(self):
+        self.run_js("pyodide._module.restoreState(self.__savedState)")
+
     def run_webworker(self, code):
         if isinstance(code, str) and code.startswith("\n"):
             # we have a multiline string, fix indentation
@@ -240,6 +250,42 @@ class ChromeWrapper(SeleniumWrapper):
         options.add_argument("--no-sandbox")
         options.add_argument("--js-flags=--expose-gc")
         return Chrome(options=options)
+
+
+@pytest.hookimpl(hookwrapper=True)
+def pytest_runtest_call(item):
+    """We want to run extra verification at the start and end of each test to
+    check that we haven't leaked memory. According to pytest issue #5044, it's
+    not possible to "Fail" a test from a fixture (no matter what you do, pytest
+    sets the test status to "Error"). The approach suggested there is hook
+    pytest_runtest_call as we do here. To get access to the selenium fixture, we
+    immitate the definition of pytest_pyfunc_call:
+    https://github.com/pytest-dev/pytest/blob/6.2.2/src/_pytest/python.py#L177
+
+    Pytest issue #5044:
+    https://github.com/pytest-dev/pytest/issues/5044
+    """
+    selenium = None
+    if "selenium" in item._fixtureinfo.argnames:
+        selenium = item.funcargs["selenium"]
+    if "selenium_standalone" in item._fixtureinfo.argnames:
+        selenium = item.funcargs["selenium_standalone"]
+    if selenium and pytest.mark.skip_refcount_check.mark not in item.own_markers:
+        yield from test_wrapper_check_for_memory_leaks(selenium)
+    else:
+        yield
+
+
+def test_wrapper_check_for_memory_leaks(selenium):
+    init_num_keys = selenium.get_num_hiwire_keys()
+    a = yield
+    selenium.restore_state()
+    # if there was an error in the body of the test, flush it out by calling
+    # get_result (we don't want to override the error message by raising a
+    # different error here.)
+    a.get_result()
+    delta_keys = selenium.get_num_hiwire_keys() - init_num_keys
+    assert delta_keys == 0
 
 
 @contextlib.contextmanager

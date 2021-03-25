@@ -204,7 +204,7 @@ def test_hiwire_is_promise(selenium):
 
 
 def test_keyboard_interrupt(selenium):
-    assert selenium.run_js(
+    x = selenium.run_js(
         """
         x = new Int8Array(1)
         pyodide._module.setInterruptBuffer(x)
@@ -221,11 +221,10 @@ def test_keyboard_interrupt(selenium):
                         triggerKeyboardInterrupt()
             `)
         } catch(e){}
-        return pyodide.runPython(`
-            2000 < x < 2500
-        `)
+        return pyodide.runPython('x')
         """
     )
+    assert 2000 < x < 2500
 
 
 def test_run_python_async_toplevel_await(selenium):
@@ -252,6 +251,44 @@ def test_run_python_last_exc(selenium):
             assert sys.last_value is x
             assert sys.last_type is type(x)
             assert sys.last_traceback is x.__traceback__
+        `);
+        """
+    )
+
+
+def test_async_leak(selenium):
+    assert 0 == selenium.run_js(
+        """
+        pyodide.runPython(`d = 888.888`);
+        pyodide.runPython(`async def test(): return d`);
+        async function test(){
+            let t = pyodide.runPython(`test()`);
+            await t;
+            t.destroy();
+        }
+        await test();
+        let init_refcount = pyodide.runPython(`from sys import getrefcount; getrefcount(d)`);
+        await test(); await test(); await test(); await test();
+        let new_refcount = pyodide.runPython(`getrefcount(d)`);
+        return new_refcount - init_refcount;
+        """
+    )
+
+
+def test_run_python_js_error(selenium):
+    selenium.run_js(
+        """
+        function throwError(){
+            throw new Error("blah!");
+        }
+        window.throwError = throwError;
+        pyodide.runPython(`
+            from js import throwError
+            from unittest import TestCase
+            from pyodide import JsException
+            raises = TestCase().assertRaisesRegex
+            with raises(JsException, "blah!"):
+                throwError()
         `);
         """
     )
@@ -288,7 +325,7 @@ def test_create_once_callable(selenium):
             destroyed = False
             del f
             assert destroyed == True
-            del proxy # causes a fatal error =(
+            del proxy
         `);
         """
     )
@@ -378,6 +415,7 @@ def test_docstrings_b(selenium):
     assert sig_once == sig_once_should_equal
 
 
+@pytest.mark.skip_refcount_check
 def test_restore_state(selenium):
     selenium.run_js(
         """
