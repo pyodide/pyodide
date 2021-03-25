@@ -342,7 +342,7 @@ TEMP_EMJS_HELPER(() => {0,0; /* Magic, see comment */
         pythonexc2js();
       }
     } finally {
-      finalizationRegistry.unregister(token);
+      Module.finalizationRegistry.unregister(token);
       _Py_DecRef(iterptr);
     }
   }
