@@ -1,3 +1,6 @@
+import pytest
+
+
 def test_numpy(selenium):
     selenium.load_package("numpy")
     selenium.run("import numpy")
@@ -218,5 +221,86 @@ def test_get_buffer(selenium):
             }
             z.release();
         }
+        """
+    )
+
+
+@pytest.mark.parametrize(
+    "arg",
+    [
+        "np.arange(6).reshape((2, -1))",
+        pytest.param(
+            "np.arange(12).reshape((3, -1))[::2, ::2]", marks=pytest.mark.xfail
+        ),
+        "np.arange(6).reshape((2, -1)).astype(np.int8, order='C')",
+        "np.arange(6).reshape((2, -1)).astype(np.int8, order='F')",
+        "np.arange(6).reshape((2, -1, 1))",
+        "np.ones((1, 1))[0:0]",  # shape[0] == 0
+        "np.ones(1)",  # ndim == 0
+    ]
+    + [
+        f"np.arange(3).astype(np.{type_})"
+        for type_ in ["int8", "uint8", "int16", "int32", "float32", "float64"]
+    ],
+)
+def test_get_buffer_roundtrip(selenium, arg):
+    selenium.run_js(
+        f"""
+        await pyodide.runPythonAsync(`
+            import numpy as np
+            x = {arg}
+        `);
+        window.x_js_buf = pyodide.pyimport("x").getBuffer();
+        """
+    )
+
+    selenium.run_js(
+        """
+        pyodide.runPython(`
+            from unittest import TestCase
+            from js import x_js_buf
+            assert_equal = TestCase().assertEqual
+
+            assert_equal(x_js_buf.ndim, x.ndim)
+            assert_equal(x_js_buf.shape.to_py(), list(x.shape))
+            assert_equal(x_js_buf.format, x.data.format)
+            assert_equal(len(x_js_buf.data), np.prod(x.shape))
+            assert_equal(
+                x_js_buf.data.tobytes(order='A').hex(),
+                x.data.tobytes(order='A').hex()
+            )
+            x_js_buf.release()
+        `);
+        """
+    )
+
+
+def test_get_buffer_error_messages(selenium):
+    with pytest.raises(Exception, match="Javascript has no Float16Array"):
+        selenium.run_js(
+            """
+            await pyodide.runPythonAsync(`
+                import numpy as np
+                x = np.ones(2, dtype=np.float16)
+            `);
+            pyodide.pyimport("x").getBuffer();
+            """
+        )
+
+
+@pytest.mark.xfail(reason="should likely fail with a meaninful error message")
+def test_get_buffer_big_endian(selenium):
+    selenium.run_js(
+        """
+        await pyodide.runPythonAsync(`
+            x = np.ones(2, dtype=np.float32).byteswap()
+        `);
+        window.x_js_buf = pyodide.pyimport("x").getBuffer();
+        pyodide.runPython(`
+            from unittest import TestCase
+            from js import x_js_buf
+            assert_equal = TestCase().assertEqual
+            assert_equal(x_js_buf.data[0], 1.0)
+        `);
         """
     )
