@@ -245,6 +245,40 @@ TEMP_EMJS_HELPER(() => {0,0; /* Magic, see comment */
     },
   };
 
+  /**
+   * A helper for [Symbol.iterator].
+   *
+   * Because "it is possible for a generator to be garbage collected without
+   * ever running its finally block", we take extra care to try to ensure that
+   * we don't leak the iterator. We register it with the finalizationRegistry,
+   * but if the finally block is executed, we decref the pointer and unregister.
+   *
+   * In order to do this, we create the generator with this inner method,
+   * register the finalizer, and then return it.
+   *
+   * Quote from:
+   * https://hacks.mozilla.org/2015/07/es6-in-depth-generators-continued/
+   *
+   * @private
+   */
+  function* iter_helper(iterptr, token) {
+    try {
+      if (iterptr === 0) {
+        pythonexc2js();
+      }
+      let item;
+      while ((item = __pyproxy_iter_next(iterptr))) {
+        yield Module.hiwire.pop_value(item);
+      }
+      if (_PyErr_Occurred()) {
+        pythonexc2js();
+      }
+    } finally {
+      finalizationRegistry.unregister(token);
+      _Py_DecRef(iterptr);
+    }
+  }
+
   // Controlled by IS_ITERABLE, appears for any object with __iter__ or tp_iter,
   // unless they are iterators. See: https://docs.python.org/3/c-api/iter.html
   // https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Iteration_protocols
@@ -253,34 +287,10 @@ TEMP_EMJS_HELPER(() => {0,0; /* Magic, see comment */
     [Symbol.iterator] : function() {
       let token = {};
       let iterptr = _PyObject_GetIter(_getPtr(this));
-      let result = this.__iter_helper(iterptr, token);
+      let result = iter_helper(iterptr, token);
       Module.finalizationRegistry.register(result, iterptr, token);
       return result;
     },
-    // Because "it is possible for a generator to be garbage collected without
-    // ever running its finally block", we take extra care to try to ensure that
-    // we don't leak the iterator. We register it with the finalizationRegistry,
-    // but if the finally block is executed, we decref the pointer and
-    // unregister.
-    //
-    // https://hacks.mozilla.org/2015/07/es6-in-depth-generators-continued/
-    __iter_helper : function*(iterptr, token) {
-      try {
-        if (iterptr === 0) {
-          pythonexc2js();
-        }
-        let item;
-        while ((item = __pyproxy_iter_next(iterptr))) {
-          yield Module.hiwire.pop_value(item);
-        }
-        if (_PyErr_Occurred()) {
-          pythonexc2js();
-        }
-      } finally {
-        finalizationRegistry.unregister(token);
-        _Py_DecRef(iterptr);
-      }
-    }
   };
 
   // Controlled by IS_ITERATOR, appears for any object with a __next__ or
