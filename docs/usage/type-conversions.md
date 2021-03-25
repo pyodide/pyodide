@@ -157,6 +157,7 @@ Javascript uses `array["7"]`. For these cases, we translate:
 | `del proxy[idx]`          | `proxy.splice(idx)`    |
 
 
+(type-translations-pyproxy)=
 ### Proxying from Python into Javascript
 
 When most Python objects are translated to Javascript a `PyProxy` is produced.
@@ -258,6 +259,7 @@ d_set.destroy(); // TypeError: d_set.destroy is not a function
 
 ## Explicit Conversion of Proxies
 
+(type-translations-pyproxy-to-js)=
 ### Python to Javascript
 Explicit conversion of a `PyProxy` into a native Javascript object is done with
 the `toJs` method. By default, the `toJs` method does a recursive "deep"
