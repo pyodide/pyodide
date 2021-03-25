@@ -8,10 +8,10 @@ which is the equivalent of the object from the source language, for example
 converting a Python string to the equivalent a Javascript string. By "proxying"
 an object we mean producing a special object in the target language that
 forwards requests to the source language. When we proxy a Javascript object into
-Python, the result is a `JsProxy` object. When we proxy a Python object into
-Javascript, the result is a `PyProxy` object. A proxied object can be explicitly
-converted using the explicit conversion methods `JsProxy.to_py` and
-`PyProxy.toJs`.
+Python, the result is a {any}`JsProxy` object. When we proxy a Python object into
+Javascript, the result is a {any}`PyProxy` object. A proxied object can be explicitly
+converted using the explicit conversion methods {any}`JsProxy.to_py` and
+{any}`PyProxy.toJs`.
 
 Python to Javascript translations occur:
 
@@ -19,14 +19,14 @@ Python to Javascript translations occur:
 - when using `pyodide.globals.get('key')`,
 - when passing arguments to a Javascript function called from Python,
 - when returning the results of a Python function called from Javascript,
-- when accessing an attribute of a `PyProxy`
+- when accessing an attribute of a {any}`PyProxy`
 
 Javascript to Python translations occur:
 
 - when using the `from js import ...` syntax
 - passing arguments to a Python function called from Javascript
 - returning the result of a Javascript function called from Python
-- when accessing an attribute of a `JsProxy`
+- when accessing an attribute of a {any}`JsProxy`
 
 `````{admonition} Memory Leaks and Python to Javascript translations
 :class: warning
@@ -96,9 +96,8 @@ language.
 
 ### Proxying from Javascript into Python
 
-When most Javascript objects are translated into Python a `JsProxy` is returned.
-The following operations are currently supported on a `JsProxy`. (More should be
-possible in the future -- work is ongoing to make this more complete):
+When most Javascript objects are translated into Python a {any}`JsProxy` is returned.
+The following operations are currently supported on a {any}`JsProxy`.
 
 | Python                    | Javascript             |
 |---------------------------|------------------------|
@@ -161,9 +160,11 @@ Javascript uses `array["7"]`. For these cases, we translate:
 ### Proxying from Python into Javascript
 
 When most Python objects are translated to Javascript a `PyProxy` is produced.
+See also the API docs for {any}`js-api-pyproxy`.
+
 Fewer operations can be overloaded in Javascript than in Python so some
 operations are more cumbersome on a `PyProxy` than on a `JsProxy`. The following
-operations are currently supported:
+operations are supported:
 
 | Javascript                            | Python                   |
 |---------------------------------------|--------------------------|
@@ -174,15 +175,15 @@ operations are currently supported:
 | `Object.getOwnPropertyNames(proxy)`   | `dir(x)`                 |
 | `proxy(...)`                          | `x(...)`                 |
 | `proxy.foo(...)`                      | `x.foo(...)`             |
-| `proxy.length` or `x.size`            | `len(x)`                 |
+| `proxy.length`                        | `len(x)`                 |
 | `proxy.has(foo)`                      | `foo in x`               |
 | `proxy.get(foo)`                      | `x[foo]`                 |
 | `proxy.set(foo, bar)`                 | `x[foo] = bar`           |
 | `proxy.delete(foo)`                   | `del x[foo]`             |
-| `x.type`                              | `type(x)`                |
-| `x[Symbol.iterator]()`                | `iter(x)`                |
-| `x.next()`                            | `next(x)`                |
-| `await x`                             | `await x`                |
+| `proxy.type`                          | `type(x)`                |
+| `proxy[Symbol.iterator]()`            | `iter(x)`                |
+| `proxy.next()`                        | `next(x)`                |
+| `await proxy`                         | `await x`                |
 | `Object.entries(x)`                   |  `repr(x)`               |
 
 `````{admonition} Memory Leaks and PyProxy
@@ -261,8 +262,8 @@ d_set.destroy(); // TypeError: d_set.destroy is not a function
 
 (type-translations-pyproxy-to-js)=
 ### Python to Javascript
-Explicit conversion of a `PyProxy` into a native Javascript object is done with
-the `toJs` method. By default, the `toJs` method does a recursive "deep"
+Explicit conversion of a {any}`PyProxy` into a native Javascript object is done with
+the {any}`PyProxy.toJs` method. By default, the `toJs` method does a recursive "deep"
 conversion, to do a shallow conversion use `proxy.toJs(1)`. The `toJs` method
 performs the following explicit conversions:
 
@@ -287,7 +288,7 @@ responsibility to manually `destroy` these proxies if you wish to avoid memory
 leaks, but we provide no way to manage this.
 `````
 
-To ensure that no `PyProxy` is leaked, the following code suffices:
+To ensure that no {any}`PyProxy` is leaked, the following code suffices:
 ```js
 function destroyToJsResult(x){
     if(!x){
@@ -307,8 +308,8 @@ function destroyToJsResult(x){
 
 
 ### Javascript to Python
-Explicit conversion of a `JsProxy` into a native Python object is done with the
-`to_py` method. By default, the `to_py` method does a recursive "deep"
+Explicit conversion of a {any}`JsProxy` into a native Python object is done with the
+{any}`JsProxy.to_py` method. By default, the `to_py` method does a recursive "deep"
 conversion, to do a shallow conversion use `proxy.to_py(1)` The `to_py` method
 performs the following explicit conversions:
 
