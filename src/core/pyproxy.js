@@ -698,8 +698,8 @@ TEMP_EMJS_HELPER(() => {0, /* Magic, see comment */
      *
      * The return value is a PyBuffer object with a TypedArray pointing to the
      * buffer data and other meta data about the buffer. If the buffer is not
-     * contiguous, the subarray will also contain other stuff that's not part
-     * of this buffer (probably because this buffer was sliced out of a bigger
+     * contiguous, the subarray will also contain other stuff that's not part of
+     * this buffer (probably because this buffer was sliced out of a bigger
      * buffer).
      *
      * We do not support suboffsets, if the buffer requires suboffsets we will
@@ -836,6 +836,29 @@ TEMP_EMJS_HELPER(() => {0, /* Magic, see comment */
    * produced by :any:`PyProxy.getBuffer` and cannot be constructed directly.
    * When you are done, release it with the :any:`release <PyBuffer.release>`
    * method.
+   *
+   * .. admonition:: Converting between TypedArray types
+   *    :class: warning
+   *
+   *    The following naive code to change the type of a typed array does not
+   * work:
+   *
+   *    .. code-block:: js
+   *
+   *        // Incorrectly convert a TypedArray.
+   *        // Produces a Uint16Array that points to the entire WASM memory!
+   *        let myarray = new Uint16Array(buffer.data.buffer);
+   *
+   *    Instead, if you want to convert the output TypedArray, you need to say:
+   *
+   *    .. code-block:: js
+   *
+   *        // Correctly convert a TypedArray.
+   *        let myarray = new Uint16Array(
+   *            buffer.data.buffer,
+   *            buffer.data.byteOffset,
+   *            buffer.data.byteLength
+   *        );
    */
   Module.PyBuffer = class PyBuffer {
     constructor() {
