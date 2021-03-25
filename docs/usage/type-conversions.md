@@ -368,15 +368,30 @@ numpy_array = np.asarray(array)
 
 ### Converting Python Buffer objects to Javascript
 
-Python `bytes` and `buffer` objects are translated to Javascript as
-`TypedArray`s without any memory copy at all. This conversion is thus very
-efficient, but be aware that any changes to the buffer will be reflected in both
-places.
-
-Numpy arrays are currently converted to Javascript as nested (regular) Arrays. A
-more efficient method will probably emerge as we decide on an ndarray
-implementation for Javascript.
-
+A PyProxy of any Python object supporting the
+[Python Buffer protocol](https://docs.python.org/3/c-api/buffer.html) will have
+a method called :any`getBuffer`. This can be used to retrieve a reference to a
+Javascript typed array that points to the data backing the Python object,
+combined with other metadata about the buffer format. The metadata is suitable
+for use with a Javascript ndarray library if one is present. For instance, if
+you load the Javascript [ndarray](https://github.com/scijs/ndarray)
+package, you can do:
+```js
+let proxy = pyodide.globals.get("some_numpy_ndarray");
+let buffer = proxy.getBuffer();
+proxy.destroy();
+try {
+    if(buffer.readonly){
+        // We can't stop you from changing a readonly buffer, but it can cause undefined behavior.
+        throw new Error("Uh-oh, we were planning to change the buffer");
+    }
+    let array = new ndarray(buffer.data, buffer.shape, buffer.strides, buffer.offset);
+    // manipulate array here
+    // changes will be reflected in the Python ndarray!
+} finally {
+    buffer.release(); // Release the memory when we're done
+}
+```
 
 ## Importing Python objects into Javascript
 
