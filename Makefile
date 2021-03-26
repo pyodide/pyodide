@@ -114,7 +114,7 @@ clean-all: clean
 	make -C cpython clean
 	rm -fr cpython/build
 
-%.o: %.c %.js $(CPYTHONLIB) $(wildcard src/**/*.h)
+%.o: %.c $(CPYTHONLIB) $(wildcard src/**/*.h src/**/*.js)
 	$(CC) -o $@ -c $< $(MAIN_MODULE_CFLAGS) -Isrc/core/
 
 
