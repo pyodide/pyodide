@@ -694,13 +694,11 @@ TEMP_EMJS_HELPER(() => {0, /* Magic, see comment */
 
   Module.PyProxyBufferMethods = {
     /**
-     * Get a representation of the buffer data which is usable from Javascript.
+     * Get a view of the buffer data which is usable from Javascript. No copy is
+     * ever performed.
      *
-     * The return value is a PyBuffer object with a TypedArray pointing to the
-     * buffer data and other meta data about the buffer. If the buffer is not
-     * contiguous, the subarray will also contain other stuff that's not part of
-     * this buffer (probably because this buffer was sliced out of a bigger
-     * buffer).
+     * The return value is a :any:`PyBuffer` object. See the documentation for
+     * :any:`PyBuffer` for details on how to use it.
      *
      * We do not support suboffsets, if the buffer requires suboffsets we will
      * throw an error. Javascript nd array libraries can't handle suboffsets
@@ -822,15 +820,51 @@ TEMP_EMJS_HELPER(() => {0, /* Magic, see comment */
    * A class to allow access to a Python data buffers from Javascript. These are
    * produced by :any:`PyProxy.getBuffer` and cannot be constructed directly.
    * When you are done, release it with the :any:`release <PyBuffer.release>`
-   * method.  See 
-   `Python buffer protocol documentation <https://docs.python.org/3/c-api/buffer.html>`_
-   for more information.
+   * method.  See
+   * `Python buffer protocol documentation
+   * <https://docs.python.org/3/c-api/buffer.html>`_ for more information.
+   *
+   * To find the element ``x[a_1, ..., a_n]``, you could use the following code:
+   *
+   * .. code-block:: js
+   *
+   *    function multiIndexToIndex(pybuff, multiIndex){
+   *       if(multindex.length !==pybuff.ndim){
+   *          throw new Error("Wrong length index");
+   *       }
+   *       let idx = pybuff.offset;
+   *       for(let i = 0; i < pybuff.ndim; i++){
+   *          if(multiIndex[i] < 0){
+   *             multiIndex[i] = pybuff.shape[i] - multiIndex[i];
+   *          }
+   *          if(multiIndex[i] < 0 || multiIndex[i] >= pybuff.shape[i]){
+   *             throw new Error("Index out of range");
+   *          }
+   *          idx += multiIndex[i] * pybuff.stride[i];
+   *       }
+   *       return idx;
+   *    }
+   *    console.log("entry is", pybuff.data[multiIndexToIndex(pybuff, [2, 0,
+   * -1])]);
+   *
+   * .. admonition:: Contiguity
+   *    :class: warning
+   *
+   *    If the buffer is not contiguous, the ``data`` TypedArray will contain
+   * data that is not part of the buffer. Modifying this data may lead to
+   * undefined behavior.
+   *
+   * .. admonition:: Readonly buffers
+   *    :class: warning
+   *
+   *    If ``buffer.readonly`` is ``true``, you should not modify the buffer.
+   *    Modifying a readonly buffer may lead to undefined behavior.
    *
    * .. admonition:: Converting between TypedArray types
    *    :class: warning
    *
    *    The following naive code to change the type of a typed array does not
-   * work:
+   *    work:
    *
    *    .. code-block:: js
    *
@@ -906,8 +940,9 @@ TEMP_EMJS_HELPER(() => {0, /* Magic, see comment */
         this.shape;
 
         /**
-         * An array of of length ndim giving the number of elements to skip to get
-         * to a new element in each dimension.
+         * An array of of length ``ndim`` giving the number of elements to skip
+         * to get to a new element in each dimension. See the example definition
+         * of a ``multiIndexToIndex`` function above.
          * @type {number[]}
          */
         this.strides;
@@ -935,7 +970,7 @@ TEMP_EMJS_HELPER(() => {0, /* Magic, see comment */
     }
 
     /**
-     * Release the buffer.
+     * Release the buffer. This allows the memory to be reclaimed.
      */
     release() {
       if (this._released) {
