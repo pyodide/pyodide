@@ -229,9 +229,11 @@ def test_get_buffer(selenium):
     "arg",
     [
         "np.arange(6).reshape((2, -1))",
-        pytest.param(
-            "np.arange(12).reshape((3, -1))[::2, ::2]", marks=pytest.mark.xfail
-        ),
+        "np.arange(12).reshape((3, -1))[::2, ::2]",
+        "np.arange(12).reshape((3, -1))[::-1, ::-1]",
+        "np.arange(12).reshape((3, -1))[::, ::-1]",
+        "np.arange(12).reshape((3, -1))[::-1, ::]",
+        "np.arange(12).reshape((3, -1))[::-2, ::-2]",
         "np.arange(6).reshape((2, -1)).astype(np.int8, order='C')",
         "np.arange(6).reshape((2, -1)).astype(np.int8, order='F')",
         "np.arange(6).reshape((2, -1, 1))",
@@ -251,26 +253,34 @@ def test_get_buffer_roundtrip(selenium, arg):
             x = {arg}
         `);
         window.x_js_buf = pyodide.pyimport("x").getBuffer();
+        x_js_buf.length = x_js_buf.data.length;
         """
     )
 
     selenium.run_js(
         """
         pyodide.runPython(`
+            import itertools
             from unittest import TestCase
             from js import x_js_buf
             assert_equal = TestCase().assertEqual
 
             assert_equal(x_js_buf.ndim, x.ndim)
             assert_equal(x_js_buf.shape.to_py(), list(x.shape))
-            # The following check fails
             assert_equal(x_js_buf.strides.to_py(), [s/x.itemsize for s in x.data.strides])
             assert_equal(x_js_buf.format, x.data.format)
-            assert_equal(len(x_js_buf.data), np.prod(x.shape))
-            assert_equal(
-                x_js_buf.data.tobytes(order='A').hex(),
-                x.data.tobytes(order='A').hex()
-            )
+            if len(x) == 0:
+                assert x_js_buf.length == 0
+            else:
+                minoffset = 1000
+                maxoffset = 0
+                for tup in itertools.product(*[range(n) for n in x.shape]):
+                    offset = x_js_buf.offset + sum(x*y for (x,y) in zip(tup, x_js_buf.strides))
+                    minoffset = min(offset, minoffset)
+                    maxoffset = max(offset, maxoffset)
+                    assert_equal(x[tup], x_js_buf.data[offset])
+                assert_equal(minoffset, 0)
+                assert_equal(maxoffset + 1, x_js_buf.length)
             x_js_buf.release()
         `);
         """
