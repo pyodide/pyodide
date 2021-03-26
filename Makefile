@@ -70,6 +70,7 @@ build/pyodide.asm.js: \
 	src/core/keyboard_interrupt.o \
 	src/core/main.o  \
 	src/core/pyproxy.o \
+	src/core/python2js_buffer.o \
 	src/core/python2js.o \
 	src/pystone.py \
 	src/_testcapi.py \

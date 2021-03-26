@@ -7,6 +7,8 @@
 #include "python2js.h"
 #include <emscripten.h>
 
+#include "python2js_buffer.h"
+
 static JsRef
 _python2js_unicode(PyObject* x);
 
@@ -295,6 +297,7 @@ _python2js_deep(PyObject* x, PyObject* cache, int depth)
   if (PySet_Check(x)) {
     return _python2js_set(x, cache, depth);
   }
+  RETURN_IF_SUCCEEDS(_python2js_buffer(x));
   PyErr_Clear();
   return pyproxy_new(x);
 finally:
