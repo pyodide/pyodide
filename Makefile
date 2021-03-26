@@ -12,42 +12,6 @@ CPYTHONLIB=$(CPYTHONROOT)/installs/python-$(PYVERSION)/lib/python$(PYMINOR)
 
 CC=emcc
 CXX=em++
-OPTFLAGS=-O2
-CFLAGS=\
-	$(OPTFLAGS) \
-	-g \
-	-I$(PYTHONINCLUDE) \
-	-fPIC \
-	-Wall \
-	-Wno-warn-absolute-paths \
-	-Werror=unused-variable \
-	-Werror=sometimes-uninitialized \
-	-Werror=int-conversion \
-	-Werror=incompatible-pointer-types \
-	$(EXTRA_CFLAGS)
-LDFLAGS=\
-	-s BINARYEN_EXTRA_PASSES="--pass-arg=max-func-params@61" \
-	$(OPTFLAGS) \
-	-s MODULARIZE=1 \
-	$(CPYTHONROOT)/installs/python-$(PYVERSION)/lib/libpython$(PYMINOR).a \
-	-s TOTAL_MEMORY=20971520 \
-	-s ALLOW_MEMORY_GROWTH=1 \
-    --use-preload-plugins \
-	-s MAIN_MODULE=1 \
-	-s EMULATE_FUNCTION_POINTER_CASTS=1 \
-	-s LINKABLE=1 \
-	-s EXPORT_ALL=1 \
-	-s EXPORTED_FUNCTIONS='["___cxa_guard_acquire", "__ZNSt3__28ios_base4initEPv", "_main"]' \
-	-s WASM=1 \
-	-s USE_FREETYPE=1 \
-	-s USE_LIBPNG=1 \
-	-std=c++14 \
-	-L$(wildcard $(CPYTHONROOT)/build/sqlite*/.libs) -lsqlite3 \
-	$(wildcard $(CPYTHONROOT)/build/bzip2*/libbz2.a) \
-	-lstdc++ \
-	--memory-init-file 0 \
-	-s LZ4=1 \
-	$(EXTRA_LDFLAGS)
 
 all: check \
 	build/pyodide.asm.js \
@@ -80,7 +44,7 @@ build/pyodide.asm.js: \
 	date +"[%F %T] Building pyodide.asm.js..."
 	[ -d build ] || mkdir build
 	$(CXX) -s EXPORT_NAME="'pyodide'" -o build/pyodide.asm.js $(filter %.o,$^) \
-		$(LDFLAGS) -s FORCE_FILESYSTEM=1 \
+		$(MAIN_MODULE_LDFLAGS) -s FORCE_FILESYSTEM=1 \
 		--preload-file $(CPYTHONLIB)@/lib/python$(PYMINOR) \
 		--preload-file src/webbrowser.py@/lib/python$(PYMINOR)/webbrowser.py \
 		--preload-file src/_testcapi.py@/lib/python$(PYMINOR)/_testcapi.py \
@@ -151,7 +115,7 @@ clean-all: clean
 	rm -fr cpython/build
 
 %.o: %.c %.js $(CPYTHONLIB) $(wildcard src/**/*.h)
-	$(CC) -o $@ -c $< $(CFLAGS) -Isrc/core/
+	$(CC) -o $@ -c $< $(MAIN_MODULE_CFLAGS) -Isrc/core/
 
 
 build/test.data: $(CPYTHONLIB) $(UGLIFYJS)
