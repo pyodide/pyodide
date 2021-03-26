@@ -822,7 +822,9 @@ TEMP_EMJS_HELPER(() => {0, /* Magic, see comment */
    * A class to allow access to a Python data buffers from Javascript. These are
    * produced by :any:`PyProxy.getBuffer` and cannot be constructed directly.
    * When you are done, release it with the :any:`release <PyBuffer.release>`
-   * method.
+   * method.  See 
+   `Python buffer protocol documentation <https://docs.python.org/3/c-api/buffer.html>`_
+   for more information.
    *
    * .. admonition:: Converting between TypedArray types
    *    :class: warning
@@ -904,6 +906,8 @@ TEMP_EMJS_HELPER(() => {0, /* Magic, see comment */
         this.shape;
 
         /**
+         * An array of of length ndim giving the number of elements to skip to get
+         * to a new element in each dimension.
          * @type {number[]}
          */
         this.strides;
