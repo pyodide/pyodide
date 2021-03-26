@@ -272,6 +272,10 @@ _pyproxy_getitem(PyObject* pyobj, JsRef idkey)
 
   pykey = js2python(idkey);
   FAIL_IF_NULL(pykey);
+  if (JsProxy_Check(pykey)) {
+    Py_SETREF(pykey, PySequence_Tuple(pykey));
+    FAIL_IF_NULL(pykey);
+  }
   pyresult = PyObject_GetItem(pyobj, pykey);
   FAIL_IF_NULL(pyresult);
   result = python2js(pyresult);
@@ -279,7 +283,10 @@ _pyproxy_getitem(PyObject* pyobj, JsRef idkey)
 
   success = true;
 finally:
-  PyErr_Clear();
+  if (PyErr_Occurred() && (PyErr_ExceptionMatches(PyExc_KeyError) ||
+                           PyErr_ExceptionMatches(PyExc_IndexError))) {
+    PyErr_Clear();
+  }
   Py_CLEAR(pykey);
   Py_CLEAR(pyresult);
   if (!success) {
@@ -297,6 +304,10 @@ _pyproxy_setitem(PyObject* pyobj, JsRef idkey, JsRef idval)
 
   pykey = js2python(idkey);
   FAIL_IF_NULL(pykey);
+  if (JsProxy_Check(pykey)) {
+    Py_SETREF(pykey, PySequence_Tuple(pykey));
+    FAIL_IF_NULL(pykey);
+  }
   pyval = js2python(idval);
   FAIL_IF_NULL(pyval);
   FAIL_IF_MINUS_ONE(PyObject_SetItem(pyobj, pykey, pyval));
@@ -316,6 +327,10 @@ _pyproxy_delitem(PyObject* pyobj, JsRef idkey)
 
   pykey = js2python(idkey);
   FAIL_IF_NULL(pykey);
+  if (JsProxy_Check(pykey)) {
+    Py_SETREF(pykey, PySequence_Tuple(pykey));
+    FAIL_IF_NULL(pykey);
+  }
   FAIL_IF_MINUS_ONE(PyObject_DelItem(pyobj, pykey));
 
   success = true;
@@ -332,6 +347,10 @@ _pyproxy_contains(PyObject* pyobj, JsRef idkey)
 
   pykey = js2python(idkey);
   FAIL_IF_NULL(pykey);
+  if (JsProxy_Check(pykey)) {
+    Py_SETREF(pykey, PySequence_Tuple(pykey));
+    FAIL_IF_NULL(pykey);
+  }
   result = PySequence_Contains(pyobj, pykey);
 
 finally:

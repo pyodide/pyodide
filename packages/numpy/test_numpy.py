@@ -152,8 +152,8 @@ def test_python2js_numpy_scalar(selenium_standalone):
         assert (
             selenium.run_js(
                 """
-            return pyodide.globals.get('x') == 1
-            """
+                return pyodide.globals.get('x') == 1
+                """
             )
             is True
         )
@@ -165,10 +165,63 @@ def test_python2js_numpy_scalar(selenium_standalone):
         assert (
             selenium.run_js(
                 """
-            return pyodide.globals.get('x') == 1
-            """
+                return pyodide.globals.get('x') == 1
+                """
             )
             is True
+        )
+
+
+def test_numpy_get_set_tuple(selenium):
+    assert (
+        selenium.run_js(
+            """
+        pyodide.runPython(`
+            x = np.arange(12).reshape(3, 4)
+        `)
+        let buff = pyodide.globals.get("x");
+        return [buff.get([0, 0]), buff.get([0, 1]), buff.get([1, 0]), buff.get([2, 1])]
+        """
+        )
+        == [0, 1, 4, 9]
+    )
+
+    assert (
+        selenium.run_js(
+            """
+            pyodide.runPython(`
+                x = np.arange(12).reshape(3, 4)
+            `)
+            let buff = pyodide.globals.get("x");
+            buff.set([2, 1], 66);
+            return pyodide.runPython("x[2,1]");
+            """
+        )
+        == 66
+    )
+
+    with pytest.raises(
+        Exception, match="NotImplementedError: sub-views are not implemented"
+    ):
+        selenium.run_js(
+            """
+            pyodide.runPython(`
+                x = np.arange(12).reshape(3, 4)
+                m = x.data
+            `)
+            pyodide.globals.get("m").get(0);
+            """
+        )
+
+    with pytest.raises(Exception, match="ValueError: cannot delete array elements"):
+        selenium.run_js(
+            """
+            pyodide.runPython(`
+                x = np.arange(12).reshape(3, 4)
+            `)
+            let buff = pyodide.globals.get("x");
+            buff.delete([2, 1]);
+            """
         )
 
 
