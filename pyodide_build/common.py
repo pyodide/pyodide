@@ -2,17 +2,7 @@ from pathlib import Path
 from typing import Optional, Set
 import shutil
 import subprocess
-
-
-ROOTDIR = Path(__file__).parents[1].resolve()
-TOOLSDIR = ROOTDIR / "tools"
-TARGETPYTHON = ROOTDIR / "cpython" / "installs" / "python-3.8.2"
-
-# Leading space so that argparse doesn't think this is a flag
-# default flags are all loaded from Makefile.envs (see loadMakefileEnvs() below)
-DEFAULTCFLAGS = " "
-DEFAULTCXXFLAGS = " "
-DEFAULTLDFLAGS = " "
+import functools
 
 
 def _parse_package_subset(query: Optional[str]) -> Optional[Set[str]]:
@@ -42,23 +32,32 @@ def file_packager_path() -> Path:
     return Path(emcc_path).parent / "tools" / "file_packager.py"
 
 
-def loadMakefileEnvs():
-    """ Load environment variables from Makefile.envs, this allows us to set all build vars in one place
+def get_make_flag(name):
+    """Get flags from makefile.envs,
+        e.g. For building packages we currently use:
+    SIDE_MODULE_LDFLAGS
+    SIDE_MODULE_CFLAGS
+    SIDE_MODULE_CXXFLAGS
+    TOOLSDIR
     """
-    global DEFAULTLDFLAGS,DEFAULTCFLAGS,DEFAULTCXXFLAGS
-    result=subprocess.run(["make","-f",str(ROOTDIR/"Makefile.envs"),".output_vars"],capture_output=True,text=True)
-    for line in result.stdout.splitlines():
-        equalPos=line.find("=")
-        if equalPos!=-1:
-            varname=line[0:equalPos]
-            value=line[equalPos+1:]
-            value=value.strip("'").strip()
-            if varname=="SIDE_MODULE_LDFLAGS":
-                DEFAULTLDFLAGS=value
-            if varname=="SIDE_MODULE_CFLAGS":
-                DEFAULTCFLAGS=value
-            if varname=="SIDE_MODULE_CXXFLAGS":
-                DEFAULTCXXFLAGS=value
+    return get_make_environment_vars()[name]
 
-# load the environment variables from Makefile.envs so that they are all in the same place
-loadMakefileEnvs()
+
+@functools.lru_cache(maxsize=None)
+def get_make_environment_vars():
+    """Load environment variables from Makefile.envs, this allows us to set all build vars in one place"""
+    __ROOTDIR = Path(__file__).parents[1].resolve()
+    environment = {}
+    result = subprocess.run(
+        ["make", "-f", str(__ROOTDIR / "Makefile.envs"), ".output_vars"],
+        capture_output=True,
+        text=True,
+    )
+    for line in result.stdout.splitlines():
+        equalPos = line.find("=")
+        if equalPos != -1:
+            varname = line[0:equalPos]
+            value = line[equalPos + 1 :]
+            value = value.strip("'").strip()
+            environment[varname] = value
+    return environment

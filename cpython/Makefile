@@ -3,6 +3,8 @@ include ../Makefile.envs
 
 ROOT=$(abspath .)
 
+PYTHON_CFLAGS=$(CFLAGS_BASE)
+
 BUILD=$(ROOT)/build/Python-$(PYVERSION)
 INSTALL=$(ROOT)/installs/python-$(PYVERSION)
 TARBALL=$(ROOT)/downloads/Python-$(PYVERSION).tgz
