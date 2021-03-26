@@ -623,6 +623,154 @@ finally:
 
 ///////////////////////////////////////////////////////////////////////////////
 //
+// Buffers
+//
+
+// For debug
+size_t py_buffer_len_offset = offsetof(Py_buffer, len);
+size_t py_buffer_shape_offset = offsetof(Py_buffer, shape);
+
+/**
+ * Convert a C array of Py_ssize_t to Javascript.
+ */
+EM_JS_REF(JsRef, array_to_js, (Py_ssize_t * array, int len), {
+  return Module.hiwire.new_value(
+    Array.from(HEAP32.subarray(array / 4, array / 4 + len)));
+})
+
+// The order of these fields has to match the code in getBuffer
+typedef struct
+{
+  // where is the first entry buffer[0]...[0] (ndim times)?
+  void* start_ptr;
+  // Where is the earliest location in buffer? (If all strides are positive,
+  // this equals start_ptr)
+  void* smallest_ptr;
+  // What is the last location in the buffer (plus one)
+  void* largest_ptr;
+
+  int readonly;
+  char* format;
+  int itemsize;
+  JsRef shape;
+  JsRef strides;
+
+  Py_buffer* view;
+  int c_contiguous;
+  int f_contiguous;
+} buffer_struct;
+
+/**
+ * This is the C part of the getBuffer method.
+ *
+ * We use PyObject_GetBuffer to acquire a Py_buffer view to the object, then we
+ * determine the locations of: the first element of the buffer, the earliest
+ * element of the buffer in memory the lastest element of the buffer in memory
+ * (plus one itemsize).
+ *
+ * We will use this information to slice out a subarray of the wasm heap that
+ * contains all the memory inside of the buffer.
+ *
+ * Special care must be taken for negative strides, this is why we need to keep
+ * track separately of start_ptr (the location of the first element of the
+ * array) and smallest_ptr (the location of the earliest element of the array in
+ * memory). If strides are positive, these are the same but if some strides are
+ * negative they will be different.
+ *
+ * We also put the various other metadata about the buffer that we want to share
+ * into buffer_struct.
+ */
+buffer_struct*
+_pyproxy_get_buffer(PyObject* ptrobj)
+{
+  if (!PyObject_CheckBuffer(ptrobj)) {
+    return NULL;
+  }
+  Py_buffer view;
+  // PyBUF_RECORDS_RO requires that suboffsets be NULL but otherwise is the most
+  // permissive possible request.
+  if (PyObject_GetBuffer(ptrobj, &view, PyBUF_RECORDS_RO) == -1) {
+    // Buffer cannot be represented without suboffsets. The bf_getbuffer method
+    // should have set a PyExc_BufferError saying something to this effect.
+    pythonexc2js();
+  }
+
+  bool success = false;
+  buffer_struct result = { 0 };
+  result.start_ptr = result.smallest_ptr = result.largest_ptr = view.buf;
+  result.readonly = view.readonly;
+
+  result.format = view.format;
+  result.itemsize = view.itemsize;
+
+  if (view.ndim == 0) {
+    // "If ndim is 0, buf points to a single item representing a scalar. In this
+    // case, shape, strides and suboffsets MUST be NULL."
+    // https://docs.python.org/3/c-api/buffer.html#c.Py_buffer.ndim
+    result.largest_ptr += view.itemsize;
+    result.shape = hiwire_array();
+    result.strides = hiwire_array();
+    result.c_contiguous = true;
+    result.f_contiguous = true;
+    goto success;
+  }
+
+  // Because we requested PyBUF_RECORDS_RO I think we can assume that
+  // view.shape != NULL.
+  result.shape = array_to_js(view.shape, view.ndim);
+
+  if (view.strides == NULL) {
+    // In this case we are a C contiguous buffer
+    result.largest_ptr += view.len;
+    Py_ssize_t strides[view.ndim];
+    PyBuffer_FillContiguousStrides(
+      view.ndim, view.shape, strides, view.itemsize, 'C');
+    result.strides = array_to_js(strides, view.ndim);
+    goto success;
+  }
+
+  if (view.len != 0) {
+    // Have to be careful to ensure that we handle negative strides correctly.
+    for (int i = 0; i < view.ndim; i++) {
+      // view.strides[i] != 0
+      if (view.strides[i] > 0) {
+        // add positive strides to largest_ptr
+        result.largest_ptr += view.strides[i] * (view.shape[i] - 1);
+      } else {
+        // subtract negative strides from smallest_ptr
+        result.smallest_ptr += view.strides[i] * (view.shape[i] - 1);
+      }
+    }
+    result.largest_ptr += view.itemsize;
+  }
+
+  result.strides = array_to_js(view.strides, view.ndim);
+  result.c_contiguous = PyBuffer_IsContiguous(&view, 'C');
+  result.f_contiguous = PyBuffer_IsContiguous(&view, 'F');
+
+success:
+  success = true;
+finally:
+  if (success) {
+    // The result.view memory will be freed when (if?) the user calls
+    // Py_Buffer.release().
+    result.view = (Py_buffer*)PyMem_Malloc(sizeof(Py_buffer));
+    *result.view = view;
+    // The result_heap memory will be freed by getBuffer
+    buffer_struct* result_heap =
+      (buffer_struct*)PyMem_Malloc(sizeof(buffer_struct));
+    *result_heap = result;
+    return result_heap;
+  } else {
+    hiwire_CLEAR(result.shape);
+    hiwire_CLEAR(result.strides);
+    PyBuffer_Release(&view);
+    return NULL;
+  }
+}
+
+///////////////////////////////////////////////////////////////////////////////
+//
 // Javascript code
 //
 // The rest of the file is in Javascript. It would probably be better to move it
@@ -685,8 +833,6 @@ EM_JS_REF(JsRef, pyproxy_new, (PyObject * ptrobj), {
   Module.PyProxies[ptrobj] = proxy;
   return Module.hiwire.new_value(proxy);
 });
-
-// clang-format on
 
 EM_JS_REF(JsRef, create_once_callable, (PyObject * obj), {
   _Py_IncRef(obj);
@@ -806,6 +952,10 @@ static PyMethodDef pyproxy_methods[] = {
 #define UNPAIRED_CLOSE_BRACE } // Just here to help text editors pair braces up
 #define TEMP_EMJS_HELPER(a, args...)                                           \
   EM_JS_NUM(int, pyproxy_init_js, (), UNPAIRED_OPEN_BRACE { args return 0; })
+
+// A macro to allow us to add code that is only intended to influence JsDoc
+// output, but shouldn't end up in generated code.
+#define FOR_JSDOC_ONLY(x)
 
 #include "pyproxy.js"
 

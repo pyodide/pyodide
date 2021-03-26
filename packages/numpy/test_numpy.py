@@ -1,3 +1,6 @@
+import pytest
+
+
 def test_numpy(selenium):
     selenium.load_package("numpy")
     selenium.run("import numpy")
@@ -191,3 +194,107 @@ def test_runwebworker_numpy(selenium_standalone):
         """
     )
     assert output == "[0. 0. 0. 0. 0.]"
+
+
+def test_get_buffer(selenium):
+    selenium.run_js(
+        """
+        await pyodide.runPythonAsync(`
+            import numpy as np
+            x = np.arange(24)
+            z1 = x.reshape([8,3])
+            z2 = z1[-1::-1]
+            z3 = z1[::,-1::-1]
+            z4 = z1[-1::-1,-1::-1]
+        `);
+        for(let x of ["z1", "z2", "z3", "z4"]){
+            let z = pyodide.pyimport(x).getBuffer("u32");
+            for(let idx1 = 0; idx1 < 8; idx1++) {
+                for(let idx2 = 0; idx2 < 3; idx2++){
+                    let v1 = z.data[z.offset + z.strides[0] * idx1 + z.strides[1] * idx2];
+                    let v2 = pyodide.runPython(`repr(${x}[${idx1}, ${idx2}])`);
+                    console.log(`${v1}, ${typeof(v1)}, ${v2}, ${typeof(v2)}, ${v1===v2}`);
+                    if(v1.toString() !== v2){
+                        throw new Error(`Discrepancy ${x}[${idx1}, ${idx2}]: ${v1} != ${v2}`);
+                    }
+                }
+            }
+            z.release();
+        }
+        """
+    )
+
+
+@pytest.mark.parametrize(
+    "arg",
+    [
+        "np.arange(6).reshape((2, -1))",
+        "np.arange(12).reshape((3, -1))[::2, ::2]",
+        "np.arange(12).reshape((3, -1))[::-1, ::-1]",
+        "np.arange(12).reshape((3, -1))[::, ::-1]",
+        "np.arange(12).reshape((3, -1))[::-1, ::]",
+        "np.arange(12).reshape((3, -1))[::-2, ::-2]",
+        "np.arange(6).reshape((2, -1)).astype(np.int8, order='C')",
+        "np.arange(6).reshape((2, -1)).astype(np.int8, order='F')",
+        "np.arange(6).reshape((2, -1, 1))",
+        "np.ones((1, 1))[0:0]",  # shape[0] == 0
+        "np.ones(1)",  # ndim == 0
+    ]
+    + [
+        f"np.arange(3).astype(np.{type_})"
+        for type_ in ["int8", "uint8", "int16", "int32", "float32", "float64"]
+    ],
+)
+def test_get_buffer_roundtrip(selenium, arg):
+    selenium.run_js(
+        f"""
+        await pyodide.runPythonAsync(`
+            import numpy as np
+            x = {arg}
+        `);
+        window.x_js_buf = pyodide.pyimport("x").getBuffer();
+        x_js_buf.length = x_js_buf.data.length;
+        """
+    )
+
+    selenium.run_js(
+        """
+        pyodide.runPython(`
+            import itertools
+            from unittest import TestCase
+            from js import x_js_buf
+            assert_equal = TestCase().assertEqual
+
+            assert_equal(x_js_buf.ndim, x.ndim)
+            assert_equal(x_js_buf.shape.to_py(), list(x.shape))
+            assert_equal(x_js_buf.strides.to_py(), [s/x.itemsize for s in x.data.strides])
+            assert_equal(x_js_buf.format, x.data.format)
+            if len(x) == 0:
+                assert x_js_buf.length == 0
+            else:
+                minoffset = 1000
+                maxoffset = 0
+                for tup in itertools.product(*[range(n) for n in x.shape]):
+                    offset = x_js_buf.offset + sum(x*y for (x,y) in zip(tup, x_js_buf.strides))
+                    minoffset = min(offset, minoffset)
+                    maxoffset = max(offset, maxoffset)
+                    assert_equal(x[tup], x_js_buf.data[offset])
+                assert_equal(minoffset, 0)
+                assert_equal(maxoffset + 1, x_js_buf.length)
+            x_js_buf.release()
+        `);
+        """
+    )
+
+
+def test_get_buffer_error_messages(selenium):
+    with pytest.raises(Exception, match="Javascript has no Float16Array"):
+        selenium.run_js(
+            """
+            await pyodide.runPythonAsync(`
+                import numpy as np
+                x = np.ones(2, dtype=np.float16)
+            `);
+            pyodide.pyimport("x").getBuffer();
+            """
+        )

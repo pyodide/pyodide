@@ -4,6 +4,7 @@ from docutils.statemachine import StringList
 from docutils.utils import new_document
 
 from collections import OrderedDict
+import re
 
 from sphinx import addnodes
 from sphinx.util import rst
@@ -11,9 +12,13 @@ from sphinx.util.docutils import switch_source_input
 from sphinx.ext.autosummary import autosummary_table, extract_summary
 
 from sphinx_js.jsdoc import Analyzer as JsAnalyzer
-from sphinx_js.ir import Function
+from sphinx_js.ir import Class, Function
 from sphinx_js.parsers import path_and_formal_params, PathVisitor
-from sphinx_js.renderers import AutoFunctionRenderer, AutoAttributeRenderer
+from sphinx_js.renderers import (
+    AutoFunctionRenderer,
+    AutoAttributeRenderer,
+    AutoClassRenderer,
+)
 
 
 class PyodideAnalyzer:
@@ -47,7 +52,12 @@ class PyodideAnalyzer:
         path components which JsAnalyzer.get_object requires.
         """
         path = self.longname_to_path(json["longname"])
-        kind = "function" if json["kind"] == "function" else "attribute"
+        if json["kind"] == "function":
+            kind = "function"
+        elif json["kind"] == "class":
+            kind = "class"
+        else:
+            kind = "attribute"
         obj = self.inner.get_object(path, kind)
         obj.kind = kind
         return obj
@@ -58,12 +68,16 @@ class PyodideAnalyzer:
         """
 
         def get_val():
-            return OrderedDict([["attribute", []], ["function", []]])
+            return OrderedDict([["attribute", []], ["function", []], ["class", []]])
 
         self.js_docs = {key: get_val() for key in ["globals", "pyodide", "PyProxy"]}
         items = {"PyProxy": []}
         for (key, group) in self._doclets_by_class.items():
             key = [x for x in key if "/" not in x]
+            if key[-1] == "PyBuffer":
+                # PyBuffer stuff is documented as a class. Would be nice to have
+                # a less ad hoc way to deal with this...
+                continue
             if key[-1] == "globalThis":
                 items["globals"] = group
             if key[0] == "pyodide." and key[-1] == "Module":
@@ -76,7 +90,13 @@ class PyodideAnalyzer:
                 if json.get("access", None) == "private":
                     continue
                 obj = self.get_object_from_json(json)
+                if isinstance(obj, Class):
+                    # sphinx-jsdoc messes up array types. Fix them.
+                    for x in obj.members:
+                        if hasattr(x, "type"):
+                            x.type = re.sub("Array\.<([a-zA-Z_0-9]*)>", r"\1[]", x.type)
                 if obj.name[0] == '"' and obj.name[-1] == '"':
+                    # sphinx-jsdoc messes up Symbol attributes. Fix them.
                     obj.name = "[" + obj.name[1:-1] + "]"
                 self.js_docs[key][obj.kind].append(obj)
 
@@ -97,11 +117,13 @@ def get_jsdoc_content_directive(app):
             JsDoc also has an AutoClassRenderer which may be useful in the future."""
             if isinstance(obj, Function):
                 renderer = AutoFunctionRenderer
+            elif isinstance(obj, Class):
+                renderer = AutoClassRenderer
             else:
                 renderer = AutoAttributeRenderer
-            return renderer(self, app, arguments=["dummy"]).rst(
-                [obj.name], obj, use_short_name=False
-            )
+            return renderer(
+                self, app, arguments=["dummy"], options={"members": ["*"]}
+            ).rst([obj.name], obj, use_short_name=False)
 
         def get_rst_for_group(self, objects):
             return [self.get_rst(obj) for obj in objects]
@@ -144,6 +166,9 @@ def get_jsdoc_summary_directive(app):
             for group_name, group_objects in value.items():
                 if not group_objects:
                     continue
+                if group_name == "class":
+                    # Plural of class is "classes" not "classs"
+                    group_name += "e"
                 result.append(self.format_heading(group_name.title() + "s:"))
                 table_items = self.get_summary_table(module, group_objects)
                 table_markup = self.format_table(table_items)
