@@ -753,26 +753,14 @@ TEMP_EMJS_HELPER(() => {0, /* Magic, see comment */
           // Try to determine correct type from format.
           // To understand this code it will be helpful to look at the tables
           // here: https://docs.python.org/3/library/struct.html#format-strings
-          if (/[>!]/.test(format)) {
-            // Big endian, don't know what to do.
-            throw new Error(
-                "If the buffer contains big endian data, you must pass a type argument.");
-          }
           if (format.includes("e")) {
             throw new Error("Javascript has no Float16Array.");
           }
-          // Remove little endian markers, repeat counts, and padding
-          let cleaned_format = format.replace(/[@=<0-9x]/g, "");
+          let cleaned_format = format;
           // Normalize same-sized types
           cleaned_format = cleaned_format.replace(/[spc?]/g, "B");
           cleaned_format = cleaned_format.replace(/[nl]/g, "i");
           cleaned_format = cleaned_format.replace(/[NLP]/g, "I");
-
-          // At this point every entry should be the same.
-          if ((new Set(cleaned_format)).size > 1) {
-            throw new Error(
-                "If the buffer items are structs with differently sized fields, you must pass a type argument");
-          }
           let type_char = cleaned_format[0];
           ArrayType = type_to_array_map.get(type_char);
           if (ArrayType === undefined) {

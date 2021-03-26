@@ -264,7 +264,7 @@ def test_get_buffer_roundtrip(selenium, arg):
             assert_equal(x_js_buf.ndim, x.ndim)
             assert_equal(x_js_buf.shape.to_py(), list(x.shape))
             # The following check fails
-            # assert_equal(x_js_buf.strides.to_py(), list(x.data.strides))
+            assert_equal(x_js_buf.strides.to_py(), list(x.data.strides))
             assert_equal(x_js_buf.format, x.data.format)
             assert_equal(len(x_js_buf.data), np.prod(x.shape))
             assert_equal(
@@ -288,21 +288,3 @@ def test_get_buffer_error_messages(selenium):
             pyodide.pyimport("x").getBuffer();
             """
         )
-
-
-@pytest.mark.xfail(reason="should likely fail with a meaninful error message")
-def test_get_buffer_big_endian(selenium):
-    selenium.run_js(
-        """
-        await pyodide.runPythonAsync(`
-            x = np.ones(2, dtype=np.float32).byteswap()
-        `);
-        window.x_js_buf = pyodide.pyimport("x").getBuffer();
-        pyodide.runPython(`
-            from unittest import TestCase
-            from js import x_js_buf
-            assert_equal = TestCase().assertEqual
-            assert_equal(x_js_buf.data[0], 1.0)
-        `);
-        """
-    )
