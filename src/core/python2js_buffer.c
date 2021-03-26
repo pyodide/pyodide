@@ -27,7 +27,7 @@ EM_JS_REF(JsRef, _python2js_buffer_inner, (
   Py_ssize_t* suboffsets
 ), {
   let converter = Module.get_converter(format, itemsize);
-  let result = _python2js_buffer_recursive(ptr, 0, {
+  let result = Module._python2js_buffer_recursive(buf, 0, {
     ndim,
     format,
     itemsize,
@@ -94,7 +94,7 @@ EM_JS_NUM(errcode, python2js_buffer_init, (), {
     if (bufferData.suboffsets !== 0) {
       suboffset = HEAP32[bufferData.suboffsets / 4 + curdim];
     }
-    if (curdim === ndim - 1) {
+    if (curdim === bufferData.ndim - 1) {
       if (stride === bufferData.itemsize && suboffset < 0) {
         // clang-format on
         return Module.python2js_buffer_1d_contiguous(
