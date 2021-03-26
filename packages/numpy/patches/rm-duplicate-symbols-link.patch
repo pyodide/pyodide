@@ -1,0 +1,20 @@
+Author: Kevin Sheppard <kevin.sheppard@gmail.com>
+Date:   Sun Aug 30 12:54:22 2020 +0100
+
+    MAINT: Remove duplicated symbols from link step
+    
+    Included in numpy 1.20.0 (https://github.com/numpy/numpy/pull/17127)
+
+diff --git a/numpy/core/setup.py b/numpy/core/setup.py
+index 16a34dd1e..71b4a7c0a 100644
+--- a/numpy/core/setup.py
++++ b/numpy/core/setup.py
+@@ -930,7 +930,7 @@ def configuration(parent_package='',top_path=None):
+ 
+     config.add_extension('_multiarray_umath',
+                          sources=multiarray_src + umath_src +
+-                                 npymath_sources + common_src +
++                                 common_src +
+                                  [generate_config_h,
+                                   generate_numpyconfig_h,
+                                   generate_numpy_api,

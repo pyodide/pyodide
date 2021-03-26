@@ -31,9 +31,11 @@
 #define PY_SSIZE_T_CLEAN
 #include "Python.h"
 
+#include "docstring.h"
 #include "hiwire.h"
 #include "js2python.h"
 #include "jsproxy.h"
+#include "pyproxy.h"
 #include "python2js.h"
 
 #include "structmember.h"
@@ -78,6 +80,8 @@ typedef struct
   JsRef this_;
   vectorcallfunc vectorcall;
   int supports_kwargs; // -1 : don't know. 0 : no, 1 : yes
+// Currently just for module objects
+  PyObject* dict;
 } JsProxy;
 // clang-format on
 
@@ -86,6 +90,9 @@ typedef struct
 static void
 JsProxy_dealloc(JsProxy* self)
 {
+#ifdef HW_TRACE_REFS
+  printf("jsproxy delloc %zd, %zd\n", (long)self, (long)self->js);
+#endif
   hiwire_CLEAR(self->js);
   hiwire_CLEAR(self->this_);
   Py_TYPE(self)->tp_free((PyObject*)self);
@@ -180,6 +187,16 @@ JsProxy_SetAttr(PyObject* self, PyObject* attr, PyObject* pyvalue)
 
   const char* key = PyUnicode_AsUTF8(attr);
   FAIL_IF_NULL(key);
+
+  if (strncmp(key, "__", 2) == 0) {
+    // Avoid creating reference loops between Python and Javascript with js
+    // modules. Such reference loops make it hard to avoid leaking memory.
+    if (strcmp(key, "__loader__") == 0 || strcmp(key, "__name__") == 0 ||
+        strcmp(key, "__package__") == 0 || strcmp(key, "__path__") == 0 ||
+        strcmp(key, "__spec__") == 0) {
+      return PyObject_GenericSetAttr(self, attr, pyvalue);
+    }
+  }
 
   if (pyvalue == NULL) {
     FAIL_IF_MINUS_ONE(hiwire_delete_member_string(JsProxy_REF(self), key));
@@ -311,6 +328,58 @@ JsProxy_object_entries(PyObject* o, PyObject* _args)
   hiwire_decref(result_id);
   return result;
 }
+
+PyMethodDef JsProxy_object_entries_MethodDef = {
+  "object_entries",
+  (PyCFunction)JsProxy_object_entries,
+  METH_NOARGS,
+};
+
+/**
+ * This is exposed as a METH_NOARGS method on the JsProxy. It returns
+ * Object.keys(obj) as a new JsProxy.
+ */
+static PyObject*
+JsProxy_object_keys(PyObject* o, PyObject* _args)
+{
+  JsProxy* self = (JsProxy*)o;
+  JsRef result_id = hiwire_object_keys(self->js);
+  if (result_id == NULL) {
+    return NULL;
+  }
+  PyObject* result = JsProxy_create(result_id);
+  hiwire_decref(result_id);
+  return result;
+}
+
+PyMethodDef JsProxy_object_keys_MethodDef = {
+  "object_keys",
+  (PyCFunction)JsProxy_object_keys,
+  METH_NOARGS,
+};
+
+/**
+ * This is exposed as a METH_NOARGS method on the JsProxy. It returns
+ * Object.entries(obj) as a new JsProxy.
+ */
+static PyObject*
+JsProxy_object_values(PyObject* o, PyObject* _args)
+{
+  JsProxy* self = (JsProxy*)o;
+  JsRef result_id = hiwire_object_values(self->js);
+  if (result_id == NULL) {
+    return NULL;
+  }
+  PyObject* result = JsProxy_create(result_id);
+  hiwire_decref(result_id);
+  return result;
+}
+
+PyMethodDef JsProxy_object_values_MethodDef = {
+  "object_values",
+  (PyCFunction)JsProxy_object_values,
+  METH_NOARGS,
+};
 
 /**
  * len(proxy) overload for proxies of Js objects with `length` or `size` fields.
@@ -571,6 +640,13 @@ finally:
   return result;
 }
 
+PyMethodDef JsProxy_Dir_MethodDef = {
+  "__dir__",
+  (PyCFunction)JsProxy_Dir,
+  METH_NOARGS,
+  PyDoc_STR("Returns a list of the members and methods on the object."),
+};
+
 /**
  * The to_py method, uses METH_FASTCALL calling convention.
  */
@@ -592,6 +668,12 @@ JsProxy_toPy(PyObject* self, PyObject* const* args, Py_ssize_t nargs)
   }
   return js2python_convert(GET_JSREF(self), depth);
 }
+
+PyMethodDef JsProxy_toPy_MethodDef = {
+  "to_py",
+  (PyCFunction)JsProxy_toPy,
+  METH_FASTCALL,
+};
 
 /**
  * Overload for bool(proxy), implemented for every JsProxy. Return `False` if
@@ -625,13 +707,14 @@ JsProxy_Await(JsProxy* self, PyObject* _args)
     return NULL;
   }
 
-  // Main
-  PyObject* result = NULL;
-
   PyObject* loop = NULL;
   PyObject* fut = NULL;
   PyObject* set_result = NULL;
   PyObject* set_exception = NULL;
+  JsRef promise_id = NULL;
+  JsRef promise_handles = NULL;
+  JsRef promise_result = NULL;
+  PyObject* result = NULL;
 
   loop = _PyObject_CallNoArg(asyncio_get_event_loop);
   FAIL_IF_NULL(loop);
@@ -644,28 +727,158 @@ JsProxy_Await(JsProxy* self, PyObject* _args)
   set_exception = _PyObject_GetAttrId(fut, &PyId_set_exception);
   FAIL_IF_NULL(set_exception);
 
-  JsRef promise_id = hiwire_resolve_promise(self->js);
-  JsRef idargs = hiwire_array();
-  JsRef idarg;
-  // TODO: does this leak set_result and set_exception? See #1006.
-  idarg = python2js(set_result);
-  hiwire_push_array(idargs, idarg);
-  hiwire_decref(idarg);
-  idarg = python2js(set_exception);
-  hiwire_push_array(idargs, idarg);
-  hiwire_decref(idarg);
-  hiwire_decref(hiwire_call_member(promise_id, "then", idargs));
-  hiwire_decref(promise_id);
-  hiwire_decref(idargs);
+  promise_id = hiwire_resolve_promise(self->js);
+  FAIL_IF_NULL(promise_id);
+  promise_handles = create_promise_handles(set_result, set_exception);
+  FAIL_IF_NULL(promise_handles);
+  promise_result = hiwire_call_member(promise_id, "then", promise_handles);
+  FAIL_IF_NULL(promise_result);
   result = _PyObject_CallMethodId(fut, &PyId___await__, NULL);
 
 finally:
   Py_CLEAR(loop);
+  Py_CLEAR(fut);
   Py_CLEAR(set_result);
   Py_CLEAR(set_exception);
-  Py_DECREF(fut);
+  hiwire_CLEAR(promise_id);
+  hiwire_CLEAR(promise_handles);
+  hiwire_CLEAR(promise_result);
   return result;
 }
+
+/**
+ * Overload for `then` for JsProxies with a `then` method. Of course without
+ * this overload, the call would just fall through to the normal `then`
+ * function. The advantage of this overload is that it automatically releases
+ * the references to the onfulfilled and onrejected callbacks, which is quite
+ * hard to do otherwise.
+ */
+PyObject*
+JsProxy_then(JsProxy* self, PyObject* args, PyObject* kwds)
+{
+  PyObject* onfulfilled = NULL;
+  PyObject* onrejected = NULL;
+
+  static char* kwlist[] = { "onfulfilled", "onrejected", 0 };
+  if (!PyArg_ParseTupleAndKeywords(
+        args, kwds, "|OO:then", kwlist, &onfulfilled, &onrejected)) {
+    return NULL;
+  }
+
+  JsRef promise_id = NULL;
+  JsRef promise_handles = NULL;
+  JsRef result_promise = NULL;
+  PyObject* result = NULL;
+
+  if (onfulfilled == Py_None) {
+    Py_CLEAR(onfulfilled);
+  }
+  if (onrejected == Py_None) {
+    Py_CLEAR(onrejected);
+  }
+  promise_id = hiwire_resolve_promise(self->js);
+  FAIL_IF_NULL(promise_id);
+  promise_handles = create_promise_handles(onfulfilled, onrejected);
+  FAIL_IF_NULL(promise_handles);
+  result_promise = hiwire_call_member(promise_id, "then", promise_handles);
+  if (result_promise == NULL) {
+    Py_CLEAR(onfulfilled);
+    Py_CLEAR(onrejected);
+    FAIL();
+  }
+  result = JsProxy_create(result_promise);
+
+finally:
+  // don't clear onfulfilled, onrejected, they are borrowed from arguments.
+  hiwire_CLEAR(promise_id);
+  hiwire_CLEAR(promise_handles);
+  hiwire_CLEAR(result_promise);
+  return result;
+}
+
+PyMethodDef JsProxy_then_MethodDef = {
+  "then",
+  (PyCFunction)JsProxy_then,
+  METH_VARARGS | METH_KEYWORDS,
+};
+
+/**
+ * Overload for `catch` for JsProxies with a `then` method.
+ */
+PyObject*
+JsProxy_catch(JsProxy* self, PyObject* onrejected)
+{
+  JsRef promise_id = NULL;
+  JsRef promise_handles = NULL;
+  JsRef result_promise = NULL;
+  PyObject* result = NULL;
+
+  promise_id = hiwire_resolve_promise(self->js);
+  FAIL_IF_NULL(promise_id);
+  // We have to use create_promise_handles so that the handler gets released
+  // even if the promise resolves successfully.
+  promise_handles = create_promise_handles(NULL, onrejected);
+  FAIL_IF_NULL(promise_handles);
+  result_promise = hiwire_call_member(promise_id, "then", promise_handles);
+  if (result_promise == NULL) {
+    Py_DECREF(onrejected);
+    FAIL();
+  }
+  result = JsProxy_create(result_promise);
+
+finally:
+  hiwire_CLEAR(promise_id);
+  hiwire_CLEAR(promise_handles);
+  hiwire_CLEAR(result_promise);
+  return result;
+}
+
+PyMethodDef JsProxy_catch_MethodDef = {
+  "catch",
+  (PyCFunction)JsProxy_catch,
+  METH_O,
+};
+
+/**
+ * Overload for `finally` for JsProxies with a `then` method. This isn't
+ * strictly necessary since one could get the same effect by just calling
+ * create_once_callable on the argument, but it'd be bad to have `then` and
+ * `catch` handle freeing the handler automatically but require something extra
+ * to use `finally`.
+ */
+PyObject*
+JsProxy_finally(JsProxy* self, PyObject* onfinally)
+{
+  JsRef proxy = NULL;
+  JsRef promise_id = NULL;
+  JsRef result_promise = NULL;
+  PyObject* result = NULL;
+
+  promise_id = hiwire_resolve_promise(self->js);
+  FAIL_IF_NULL(promise_id);
+  // Finally method is called no matter what so we can use
+  // `create_once_callable`.
+  proxy = create_once_callable(onfinally);
+  FAIL_IF_NULL(proxy);
+  result_promise = hiwire_call_member_va(promise_id, "finally", proxy, NULL);
+  if (result_promise == NULL) {
+    Py_DECREF(onfinally);
+    FAIL();
+  }
+  result = JsProxy_create(result_promise);
+
+finally:
+  hiwire_CLEAR(promise_id);
+  hiwire_CLEAR(proxy);
+  hiwire_CLEAR(result_promise);
+  return result;
+}
+
+PyMethodDef JsProxy_finally_MethodDef = {
+  "finally_",
+  (PyCFunction)JsProxy_finally,
+  METH_O,
+};
 
 // clang-format off
 static PyNumberMethods JsProxy_NumberMethods = {
@@ -677,7 +890,7 @@ static PyGetSetDef JsProxy_GetSet[] = { { "typeof", .get = JsProxy_typeof },
                                         { NULL } };
 
 static PyTypeObject JsProxyType = {
-  .tp_name = "JsProxy",
+  .tp_name = "pyodide.JsProxy",
   .tp_basicsize = sizeof(JsProxy),
   .tp_dealloc = (destructor)JsProxy_dealloc,
   .tp_getattro = JsProxy_GetAttr,
@@ -688,6 +901,7 @@ static PyTypeObject JsProxyType = {
   .tp_getset = JsProxy_GetSet,
   .tp_as_number = &JsProxy_NumberMethods,
   .tp_repr = JsProxy_Repr,
+  .tp_dictoffset = offsetof(JsProxy, dict),
 };
 
 static int
@@ -695,6 +909,9 @@ JsProxy_cinit(PyObject* obj, JsRef idobj)
 {
   JsProxy* self = (JsProxy*)obj;
   self->js = hiwire_incref(idobj);
+#ifdef HW_TRACE_REFS
+  printf("JsProxy cinit: %zd, object: %zd\n", (long)obj, (long)self->js);
+#endif
   return 0;
 }
 
@@ -797,6 +1014,7 @@ JsProxy_new_error(JsRef idobj)
   result = PyObject_CallFunctionObjArgs(Exc_JsException, proxy, NULL);
   FAIL_IF_NULL(result);
 finally:
+  Py_CLEAR(proxy);
   return result;
 }
 
@@ -926,6 +1144,14 @@ JsMethod_jsnew(PyObject* o, PyObject* args, PyObject* kwargs)
   return pyresult;
 }
 
+// clang-format off
+PyMethodDef JsMethod_jsnew_MethodDef = { 
+  "new",
+  (PyCFunction)JsMethod_jsnew,
+  METH_VARARGS | METH_KEYWORDS 
+};
+// clang-format on
+
 static int
 JsMethod_cinit(PyObject* obj, JsRef this_)
 {
@@ -1002,7 +1228,7 @@ static void
 JsBuffer_dealloc(JsBuffer* self)
 {
   Py_CLEAR(self->bytes);
-  Py_TYPE(self)->tp_free((PyObject*)self);
+  JsProxy_dealloc((JsProxy*)self);
 }
 
 static PyBufferProcs JsBuffer_BufferProcs = {
@@ -1068,30 +1294,15 @@ JsProxy_create_subtype(int flags)
   // Make sure these stack allocations are large enough to fit!
   PyType_Slot slots[20];
   int cur_slot = 0;
-  PyMethodDef methods[5];
+  PyMethodDef methods[10];
   int cur_method = 0;
   PyMemberDef members[5];
   int cur_member = 0;
 
   // clang-format off
-  methods[cur_method++] = (PyMethodDef){
-    "__dir__",
-    (PyCFunction)JsProxy_Dir,
-    METH_NOARGS,
-    PyDoc_STR("Returns a list of the members and methods on the object."),
-  };
-  methods[cur_method++] = (PyMethodDef){
-    "to_py",
-    (PyCFunction)JsProxy_toPy,
-    METH_FASTCALL,
-    PyDoc_STR("Convert the JsProxy to a native Python object (as best as possible)"),
-  };
-  methods[cur_method++] = (PyMethodDef){
-    "object_entries",
-    (PyCFunction)JsProxy_object_entries,
-    METH_NOARGS,
-    PyDoc_STR("This does javascript Object.entries(object)."),
-  };
+  methods[cur_method++] = JsProxy_Dir_MethodDef;
+  methods[cur_method++] = JsProxy_toPy_MethodDef;
+  methods[cur_method++] = JsProxy_object_entries_MethodDef;
   // clang-format on
 
   PyTypeObject* base = &JsProxyType;
@@ -1141,6 +1352,9 @@ JsProxy_create_subtype(int flags)
   if (flags & IS_AWAITABLE) {
     slots[cur_slot++] =
       (PyType_Slot){ .slot = Py_am_await, .pfunc = (void*)JsProxy_Await };
+    methods[cur_method++] = JsProxy_then_MethodDef;
+    methods[cur_method++] = JsProxy_catch_MethodDef;
+    methods[cur_method++] = JsProxy_finally_MethodDef;
   }
   if (flags & IS_CALLABLE) {
     tp_flags |= _Py_TPFLAGS_HAVE_VECTORCALL;
@@ -1149,12 +1363,7 @@ JsProxy_create_subtype(int flags)
     // We could test separately for whether a function is constructable,
     // but it generates a lot of false positives.
     // clang-format off
-    methods[cur_method++] = (PyMethodDef){
-      "new",
-      (PyCFunction)JsMethod_jsnew,
-      METH_VARARGS | METH_KEYWORDS,
-      "Construct a new instance"
-    };
+    methods[cur_method++] = JsMethod_jsnew_MethodDef;
     // clang-format on
   }
   if (flags & IS_BUFFER) {
@@ -1212,8 +1421,7 @@ JsProxy_create_subtype(int flags)
   slots[cur_slot++] = (PyType_Slot){ 0 };
 
   PyType_Spec spec = {
-    // TODO: for Python3.9 the name will need to change to "pyodide.JsProxy"
-    .name = "JsProxy",
+    .name = "pyodide.JsProxy",
     .itemsize = 0,
     .flags = tp_flags,
     .slots = slots,
@@ -1405,7 +1613,33 @@ JsProxy_init(PyObject* core_module)
 {
   bool success = false;
 
+  PyObject* _pyodide_core = NULL;
+  PyObject* jsproxy_mock = NULL;
   PyObject* asyncio_module = NULL;
+
+  _pyodide_core = PyImport_ImportModule("_pyodide._core");
+  FAIL_IF_NULL(_pyodide_core);
+  _Py_IDENTIFIER(JsProxy);
+  jsproxy_mock =
+    _PyObject_CallMethodIdObjArgs(_pyodide_core, &PyId_JsProxy, NULL);
+  FAIL_IF_NULL(jsproxy_mock);
+
+  // Load the docstrings for JsProxy methods from the corresponding stubs in
+  // _pyodide._core. set_method_docstring uses
+  // _pyodide.docstring.get_cmeth_docstring to generate the appropriate C-style
+  // docstring from the Python-style docstring.
+#define SET_DOCSTRING(x)                                                       \
+  FAIL_IF_MINUS_ONE(set_method_docstring(&x, jsproxy_mock))
+  SET_DOCSTRING(JsProxy_object_entries_MethodDef);
+  SET_DOCSTRING(JsProxy_object_keys_MethodDef);
+  SET_DOCSTRING(JsProxy_object_values_MethodDef);
+  // SET_DOCSTRING(JsProxy_Dir_MethodDef);
+  SET_DOCSTRING(JsProxy_toPy_MethodDef);
+  SET_DOCSTRING(JsProxy_then_MethodDef);
+  SET_DOCSTRING(JsProxy_catch_MethodDef);
+  SET_DOCSTRING(JsProxy_finally_MethodDef);
+  SET_DOCSTRING(JsMethod_jsnew_MethodDef);
+#undef SET_DOCSTRING
 
   asyncio_module = PyImport_ImportModule("asyncio");
   FAIL_IF_NULL(asyncio_module);
@@ -1427,6 +1661,8 @@ JsProxy_init(PyObject* core_module)
 
   success = true;
 finally:
+  Py_CLEAR(_pyodide_core);
+  Py_CLEAR(jsproxy_mock);
   Py_CLEAR(asyncio_module);
   return success ? 0 : -1;
 }

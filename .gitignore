@@ -11,6 +11,7 @@ firefox/
 .vscode
 .idea
 .mypy_cache/
+.hypothesis
 node_modules/
 
 build

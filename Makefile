@@ -62,6 +62,7 @@ all: check \
 
 
 build/pyodide.asm.js: \
+	src/core/docstring.o \
 	src/core/error_handling.o \
 	src/core/hiwire.o \
 	src/core/js2python.o \
@@ -85,6 +86,7 @@ build/pyodide.asm.js: \
 		--preload-file src/_testcapi.py@/lib/python$(PYMINOR)/_testcapi.py \
 		--preload-file src/pystone.py@/lib/python$(PYMINOR)/pystone.py \
 		--preload-file src/pyodide-py/pyodide@/lib/python$(PYMINOR)/site-packages/pyodide \
+		--preload-file src/pyodide-py/_pyodide@/lib/python$(PYMINOR)/site-packages/_pyodide \
 		--exclude-file "*__pycache__*" \
 		--exclude-file "*/test/*"
 	date +"[%F %T] done building pyodide.asm.js."
@@ -122,10 +124,10 @@ test: all
 
 lint:
 	# check for unused imports, the rest is done by black
-	flake8 --select=F401 src tools pyodide_build benchmark conftest.py
+	flake8 --select=F401 src tools pyodide_build benchmark conftest.py docs
 	clang-format-6.0 -output-replacements-xml `find src -type f -regex ".*\.\(c\|h\|js\)"` | (! grep '<replacement ')
 	black --check .
-	mypy --ignore-missing-imports pyodide_build/ src/ packages/micropip/micropip/ packages/*/test* conftest.py
+	mypy --ignore-missing-imports pyodide_build/ src/ packages/micropip/micropip/ packages/*/test* conftest.py docs
 
 
 apply-lint:
@@ -190,9 +192,9 @@ check:
 	./tools/dependency-check.sh
 
 minimal :
-	PYODIDE_PACKAGES="micropip" make
+	PYODIDE_PACKAGES+=",micropip" make
 
 debug :
-	EXTRA_CFLAGS+="-D DEBUG_F" \
-	PYODIDE_PACKAGES+="micropip,pyparsing,pytz,packaging,kiwisolver" \
+	EXTRA_CFLAGS+=" -D DEBUG_F" \
+	PYODIDE_PACKAGES+=", micropip, pyparsing, pytz, packaging, kiwisolver, " \
 	make

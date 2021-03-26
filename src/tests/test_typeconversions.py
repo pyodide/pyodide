@@ -1,5 +1,28 @@
 # See also test_pyproxy, test_jsproxy, and test_python.
 import pytest
+from hypothesis import given
+from hypothesis.strategies import text
+from conftest import selenium_context_manager
+
+
+@given(s=text())
+def test_string_conversion(selenium_module_scope, s):
+    with selenium_context_manager(selenium_module_scope) as selenium:
+        # careful string escaping here -- hypothesis will fuzz it.
+        sbytes = list(s.encode())
+        selenium.run_js(
+            f"""
+            window.sjs = (new TextDecoder("utf8")).decode(new Uint8Array({sbytes}));
+            pyodide.runPython('spy = bytes({sbytes}).decode()');
+            """
+        )
+        assert selenium.run_js(f"""return pyodide.runPython('spy') === sjs;""")
+        assert selenium.run(
+            """
+            from js import sjs
+            sjs == spy
+            """
+        )
 
 
 def test_python2js(selenium):
@@ -28,7 +51,7 @@ def test_python2js(selenium):
         let typename = proxy.type;
         let x = proxy.toJs();
         proxy.destroy();
-        return ((typename === "list") && (x instanceof window.Array) && 
+        return ((typename === "list") && (x instanceof window.Array) &&
                 (x.length === 3) && (x[0] == 1) && (x[1] == 2) && (x[2] == 3));
         """
     )
@@ -73,76 +96,54 @@ def test_run_python_simple_error(selenium):
 def test_js2python(selenium):
     selenium.run_js(
         """
-        window.jsstring_ucs1 = "pyodidé";
-        window.jsstring_ucs2 = "碘化物";
-        window.jsstring_ucs4 = "🐍";
-        window.jsnumber0 = 42;
-        window.jsnumber1 = 42.5;
-        window.jsundefined = undefined;
-        window.jsnull = null;
-        window.jstrue = true;
-        window.jsfalse = false;
-        window.jsarray0 = [];
-        window.jsarray1 = [1, 2, 3];
-        window.jspython = pyodide.pyimport("open");
-        window.jsbytes = new Uint8Array([1, 2, 3]);
-        window.jsfloats = new Float32Array([1, 2, 3]);
-        window.jsobject = new XMLHttpRequest();
+        window.test_objects = {
+            jsstring_ucs1 : "pyodidé",
+            jsstring_ucs2 : "碘化物",
+            jsstring_ucs4 : "🐍",
+            jsnumber0 : 42,
+            jsnumber1 : 42.5,
+            jsundefined : undefined,
+            jsnull : null,
+            jstrue : true,
+            jsfalse : false,
+            jsarray0 : [],
+            jsarray1 : [1, 2, 3],
+            jspython : pyodide.globals.get("open"),
+            jsbytes : new Uint8Array([1, 2, 3]),
+            jsfloats : new Float32Array([1, 2, 3]),
+            jsobject : new XMLHttpRequest(),
+        };
+        Object.assign(window, test_objects);
         """
     )
-    assert selenium.run("from js import jsstring_ucs1\n" 'jsstring_ucs1 == "pyodidé"')
-    assert selenium.run("from js import jsstring_ucs2\n" 'jsstring_ucs2 == "碘化物"')
-    assert selenium.run("from js import jsstring_ucs4\n" 'jsstring_ucs4 == "🐍"')
-    assert selenium.run(
-        "from js import jsnumber0\n" "jsnumber0 == 42 and isinstance(jsnumber0, int)"
-    )
-    assert selenium.run(
-        "from js import jsnumber1\n"
-        "jsnumber1 == 42.5 and isinstance(jsnumber1, float)"
-    )
-    assert selenium.run("from js import jsundefined\n" "jsundefined is None")
-    assert selenium.run("from js import jstrue\n" "jstrue is True")
-    assert selenium.run("from js import jsfalse\n" "jsfalse is False")
-    assert selenium.run("from js import jspython\n" "jspython is open")
+    selenium.run("from js import test_objects as t")
+    assert selenium.run('t.jsstring_ucs1 == "pyodidé"')
+    assert selenium.run('t.jsstring_ucs2 == "碘化物"')
+    assert selenium.run('t.jsstring_ucs4 == "🐍"')
+    assert selenium.run("t.jsnumber0 == 42 and isinstance(t.jsnumber0, int)")
+    assert selenium.run("t.jsnumber1 == 42.5 and isinstance(t.jsnumber1, float)")
+    assert selenium.run("t.jsundefined is None")
+    assert selenium.run("t.jsnull is None")
+    assert selenium.run("t.jstrue is True")
+    assert selenium.run("t.jsfalse is False")
+    assert selenium.run("t.jspython is open")
     assert selenium.run(
         """
-        from js import jsbytes
-        ((jsbytes.tolist() == [1, 2, 3])
-         and (jsbytes.tobytes() == b"\x01\x02\x03"))
+        ((t.jsbytes.tolist() == [1, 2, 3])
+         and (t.jsbytes.tobytes() == b"\x01\x02\x03"))
         """
     )
     assert selenium.run(
         """
-        from js import jsfloats
         import struct
         expected = struct.pack("fff", 1, 2, 3)
-        (jsfloats.tolist() == [1, 2, 3]) and (jsfloats.tobytes() == expected)
+        (t.jsfloats.tolist() == [1, 2, 3]) and (t.jsfloats.tobytes() == expected)
         """
     )
-    assert selenium.run(
-        """
-        from js import jsobject
-        str(jsobject) == "[object XMLHttpRequest]"
-        """
-    )
-    assert selenium.run(
-        """
-        from js import jsobject
-        bool(jsobject) == True
-        """
-    )
-    assert selenium.run(
-        """
-        from js import jsarray0
-        bool(jsarray0) == False
-        """
-    )
-    assert selenium.run(
-        """
-        from js import jsarray1
-        bool(jsarray1) == True
-        """
-    )
+    assert selenium.run('str(t.jsobject) == "[object XMLHttpRequest]"')
+    assert selenium.run("bool(t.jsobject) == True")
+    assert selenium.run("bool(t.jsarray0) == False")
+    assert selenium.run("bool(t.jsarray1) == True")
 
 
 def test_js2python_bool(selenium):
@@ -158,9 +159,9 @@ def test_js2python_bool(selenium):
     assert (
         selenium.run(
             """
-        from js import window, f, m0, m1, s0, s1
-        [bool(x) for x in [f, m0, m1, s0, s1]]
-        """
+            from js import window, f, m0, m1, s0, s1
+            [bool(x) for x in [f, m0, m1, s0, s1]]
+            """
         )
         == [True, False, True, False, True]
     )
@@ -216,9 +217,9 @@ def test_array_buffer(selenium):
     assert (
         selenium.run(
             """
-        from js import array
-        len(array.tobytes())
-        """
+            from js import array
+            len(array.tobytes())
+            """
         )
         == 100
     )
@@ -247,7 +248,7 @@ def test_recursive_list_to_js(selenium_standalone):
         x.append(x)
         """
     )
-    selenium_standalone.run_js("x = pyodide.pyimport('x').toJs();")
+    selenium_standalone.run_js("x = pyodide.globals.get('x').toJs();")
 
 
 def test_recursive_dict_to_js(selenium_standalone):
@@ -257,7 +258,7 @@ def test_recursive_dict_to_js(selenium_standalone):
         x[0] = x
         """
     )
-    selenium_standalone.run_js("x = pyodide.pyimport('x').toJs();")
+    selenium_standalone.run_js("x = pyodide.globals.get('x').toJs();")
 
 
 def test_list_js2py2js(selenium):
@@ -385,7 +386,7 @@ def test_python2js_with_depth(selenium):
     assert selenium.run_js(
         """
         pyodide.runPython("a = [1, 2, 3]");
-        let res = pyodide.pyimport("a").toJs();
+        let res = pyodide.globals.get("a").toJs();
         return (Array.isArray(res)) && JSON.stringify(res) === "[1,2,3]";
         """
     )
@@ -393,7 +394,7 @@ def test_python2js_with_depth(selenium):
     assert selenium.run_js(
         """
         pyodide.runPython("a = (1, 2, 3)");
-        let res = pyodide.pyimport("a").toJs();
+        let res = pyodide.globals.get("a").toJs();
         return (Array.isArray(res)) && JSON.stringify(res) === "[1,2,3]";
         """
     )
@@ -401,7 +402,7 @@ def test_python2js_with_depth(selenium):
     assert selenium.run_js(
         """
         pyodide.runPython("a = [(1,2), (3,4), [5, 6], { 2 : 3,  4 : 9}]")
-        let res = pyodide.pyimport("a").toJs();
+        let res = pyodide.globals.get("a").toJs();
         return Array.isArray(res) && \
             JSON.stringify(res) === `[[1,2],[3,4],[5,6],{}]` && \
             JSON.stringify(Array.from(res[3].entries())) === "[[2,3],[4,9]]";
@@ -421,7 +422,7 @@ def test_python2js_with_depth(selenium):
     selenium.run_js(
         """
         pyodide.runPython("a = [1,[2,[3,[4,[5,[6,[7]]]]]]]")
-        let a = pyodide.pyimport("a");
+        let a = pyodide.globals.get("a");
         for(let i=0; i < 7; i++){
             let x = a.toJs(i);
             for(let j=0; j < i; j++){
@@ -441,7 +442,7 @@ def test_python2js_with_depth(selenium):
                 throw new Error(`Assertion failed: ${msg}`);
             }
         }
-        let a = pyodide.pyimport("a");
+        let a = pyodide.globals.get("a");
         for(let i=0; i < 7; i++){
             let x = a.toJs(i);
             for(let j=0; j < i; j++){
@@ -461,7 +462,7 @@ def test_python2js_with_depth(selenium):
             c = [b, b, b, b, b]
         `);
         let total_refs = pyodide._module.hiwire.num_keys();
-        let res = pyodide.pyimport("c").toJs();
+        let res = pyodide.globals.get("c").toJs();
         let new_total_refs = pyodide._module.hiwire.num_keys();
         assert(total_refs === new_total_refs);
         assert(res[0] === res[1]);
@@ -479,7 +480,7 @@ def test_python2js_with_depth(selenium):
             a.append(b)
         `);
         let total_refs = pyodide._module.hiwire.num_keys();
-        let res = pyodide.pyimport("a").toJs();
+        let res = pyodide.globals.get("a").toJs();
         let new_total_refs = pyodide._module.hiwire.num_keys();
         assert(total_refs === new_total_refs);
         assert(res[0][0] === "b");
@@ -594,16 +595,16 @@ def test_to_py(selenium):
         return result;
         """
     )
-    assert result == "<class 'JsProxy'>"
+    assert result == "<class 'pyodide.JsProxy'>"
 
     msg = "Cannot use key of type Array as a key to a Python dict"
     with pytest.raises(selenium.JavascriptException, match=msg):
         selenium.run_js(
             """
-            window.z = new Map([[[1,1], 2]]);
+            window.a = new Map([[[1,1], 2]]);
             pyodide.runPython(`
-                from js import z
-                z.to_py()
+                from js import a
+                a.to_py()
             `);
             """
         )
@@ -612,10 +613,10 @@ def test_to_py(selenium):
     with pytest.raises(selenium.JavascriptException, match=msg):
         selenium.run_js(
             """
-            window.z = new Set([[1,1]]);
+            window.a = new Set([[1,1]]);
             pyodide.runPython(`
-                from js import z
-                z.to_py()
+                from js import a
+                a.to_py()
             `);
             """
         )
@@ -624,10 +625,10 @@ def test_to_py(selenium):
     with pytest.raises(selenium.JavascriptException, match=msg):
         selenium.run_js(
             """
-            window.m = new Map([[0, 2], [false, 3]]);
+            window.a = new Map([[0, 2], [false, 3]]);
             pyodide.runPython(`
-                from js import m
-                m.to_py()
+                from js import a
+                a.to_py()
             `);
             """
         )
@@ -636,10 +637,10 @@ def test_to_py(selenium):
     with pytest.raises(selenium.JavascriptException, match=msg):
         selenium.run_js(
             """
-            window.m = new Map([[1, 2], [true, 3]]);
+            window.a = new Map([[1, 2], [true, 3]]);
             pyodide.runPython(`
-                from js import m
-                m.to_py()
+                from js import a
+                a.to_py()
             `);
             """
         )
@@ -648,10 +649,10 @@ def test_to_py(selenium):
     with pytest.raises(selenium.JavascriptException, match=msg):
         selenium.run_js(
             """
-            window.m = new Set([0, false]);
+            window.a = new Set([0, false]);
             pyodide.runPython(`
-                from js import m
-                m.to_py()
+                from js import a
+                a.to_py()
             `);
             """
         )
@@ -660,10 +661,16 @@ def test_to_py(selenium):
     with pytest.raises(selenium.JavascriptException, match=msg):
         selenium.run_js(
             """
-            window.m = new Set([1, true]);
+            window.a = new Set([1, true]);
             pyodide.runPython(`
-                from js import m
-                m.to_py()
+                from js import a
+                a.to_py()
             `);
             """
         )
+
+
+def test_pyimport_deprecation(selenium):
+    selenium.run_js("pyodide.runPython('x = 1')")
+    assert selenium.run_js("return pyodide.pyimport('x') === 1")
+    assert "pyodide.pyimport is deprecated and will be removed" in selenium.logs

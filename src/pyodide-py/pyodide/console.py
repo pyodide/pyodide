@@ -231,7 +231,6 @@ class InteractiveConsole(code.InteractiveConsole):
                     # since we are not using input, we force
                     # flushing here
                     self.flush_all()
-                return _dummy_promise
 
             return _load_packages_from_imports(source).then(run)
 

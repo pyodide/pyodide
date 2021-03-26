@@ -73,6 +73,9 @@ EM_JS_NUM(int, hiwire_init, (), {
       many_objects_warning_threshold += 100;
     }
 #endif
+#ifdef HW_TRACE_REFS
+    console.warn("hw.new_value", idval, jsval);
+#endif
     return idval;
   };
 
@@ -388,17 +391,37 @@ EM_JS_REF(JsRef, hiwire_dir, (JsRef idobj), {
   return Module.hiwire.new_value(result);
 });
 
+static JsRef
+convert_va_args(va_list args)
+{
+  JsRef idargs = hiwire_array();
+  while (true) {
+    JsRef idarg = va_arg(args, JsRef);
+    if (idarg == NULL) {
+      break;
+    }
+    hiwire_push_array(idargs, idarg);
+  }
+  va_end(args);
+  return idargs;
+}
+
 EM_JS_REF(JsRef, hiwire_call, (JsRef idfunc, JsRef idargs), {
   let jsfunc = Module.hiwire.get_value(idfunc);
   let jsargs = Module.hiwire.get_value(idargs);
   return Module.hiwire.new_value(jsfunc(... jsargs));
 });
 
-EM_JS_REF(JsRef, hiwire_call_OneArg, (JsRef idfunc, JsRef idarg), {
-  let jsfunc = Module.hiwire.get_value(idfunc);
-  let jsarg = Module.hiwire.get_value(idarg);
-  return Module.hiwire.new_value(jsfunc(jsarg));
-});
+JsRef
+hiwire_call_va(JsRef idobj, ...)
+{
+  va_list args;
+  va_start(args, idobj);
+  JsRef idargs = convert_va_args(args);
+  JsRef idresult = hiwire_call(idobj, idargs);
+  hiwire_decref(idargs);
+  return idresult;
+}
 
 EM_JS_REF(JsRef,
           hiwire_call_bound,
@@ -426,6 +449,17 @@ EM_JS_REF(JsRef,
             let jsargs = Module.hiwire.get_value(idargs);
             return Module.hiwire.new_value(jsobj[jsname](... jsargs));
           });
+
+JsRef
+hiwire_call_member_va(JsRef idobj, const char* ptrname, ...)
+{
+  va_list args;
+  va_start(args, ptrname);
+  JsRef idargs = convert_va_args(args);
+  JsRef idresult = hiwire_call_member(idobj, ptrname, idargs);
+  hiwire_decref(idargs);
+  return idresult;
+}
 
 EM_JS_REF(JsRef, hiwire_new, (JsRef idobj, JsRef idargs), {
   let jsobj = Module.hiwire.get_value(idobj);
@@ -644,6 +678,16 @@ EM_JS_REF(JsRef, hiwire_get_iterator, (JsRef idobj), {
 EM_JS_REF(JsRef, hiwire_object_entries, (JsRef idobj), {
   let jsobj = Module.hiwire.get_value(idobj);
   return Module.hiwire.new_value(Object.entries(jsobj));
+});
+
+EM_JS_REF(JsRef, hiwire_object_keys, (JsRef idobj), {
+  let jsobj = Module.hiwire.get_value(idobj);
+  return Module.hiwire.new_value(Object.keys(jsobj));
+});
+
+EM_JS_REF(JsRef, hiwire_object_values, (JsRef idobj), {
+  let jsobj = Module.hiwire.get_value(idobj);
+  return Module.hiwire.new_value(Object.values(jsobj));
 });
 
 EM_JS_NUM(bool, hiwire_is_typedarray, (JsRef idobj), {

@@ -14,7 +14,7 @@ _Py_IDENTIFIER(last_type);
 _Py_IDENTIFIER(last_value);
 _Py_IDENTIFIER(last_traceback);
 
-EM_JS_NUM(errcode, log_error, (char* msg), {
+EM_JS_NUM(errcode, console_error, (char* msg), {
   let jsmsg = UTF8ToString(msg);
   console.error(jsmsg);
 });
@@ -30,6 +30,7 @@ PyodideErr_SetJsError(JsRef err)
 {
   PyObject* py_err = JsProxy_create(err);
   PyErr_SetObject((PyObject*)(py_err->ob_type), py_err);
+  Py_DECREF(py_err);
 }
 
 PyObject* internal_error;

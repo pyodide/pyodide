@@ -299,9 +299,7 @@ def make_parser(parser):
         type=str,
         nargs="?",
         default=None,
-        help=(
-            "Only build the specified packages, provided as a comma " "separated list"
-        ),
+        help=("Only build the specified packages, provided as a comma-separated list"),
     )
     parser.add_argument(
         "--n-jobs",

@@ -8,25 +8,25 @@ which is the equivalent of the object from the source language, for example
 converting a Python string to the equivalent a Javascript string. By "proxying"
 an object we mean producing a special object in the target language that
 forwards requests to the source language. When we proxy a Javascript object into
-Python, the result is a `JsProxy` object. When we proxy a Python object into
-Javascript, the result is a `PyProxy` object. A proxied object can be explicitly
-converted using the explicit conversion methods `JsProxy.to_py` and
-`PyProxy.toJs`.
+Python, the result is a {any}`JsProxy` object. When we proxy a Python object into
+Javascript, the result is a {any}`PyProxy` object. A proxied object can be explicitly
+converted using the explicit conversion methods {any}`JsProxy.to_py` and
+{any}`PyProxy.toJs`.
 
 Python to Javascript translations occur:
 
 - when returning the final expression from a {any}`pyodide.runPython` call,
-- when using {any}`pyodide.pyimport`,
+- when using `pyodide.globals.get('key')`,
 - when passing arguments to a Javascript function called from Python,
 - when returning the results of a Python function called from Javascript,
-- when accessing an attribute of a `PyProxy`
+- when accessing an attribute of a {any}`PyProxy`
 
 Javascript to Python translations occur:
 
 - when using the `from js import ...` syntax
 - passing arguments to a Python function called from Javascript
 - returning the result of a Javascript function called from Python
-- when accessing an attribute of a `JsProxy`
+- when accessing an attribute of a {any}`JsProxy`
 
 `````{admonition} Memory Leaks and Python to Javascript translations
 :class: warning
@@ -37,7 +37,7 @@ done with it. Unfortunately, we currently provide no convenient way to do this,
 particularly when calling Javascript functions from Python.
 `````
 
-## Round trip conversions 
+## Round trip conversions
 Translating an object from Python to Javascript and then back to
 Python is guaranteed to give an object that is equal to the original object
 (with the exception of `nan` because `nan != nan`). Furthermore, if the object
@@ -96,9 +96,8 @@ language.
 
 ### Proxying from Javascript into Python
 
-When most Javascript objects are translated into Python a `JsProxy` is returned.
-The following operations are currently supported on a `JsProxy`. (More should be
-possible in the future -- work is ongoing to make this more complete):
+When most Javascript objects are translated into Python a {any}`JsProxy` is returned.
+The following operations are currently supported on a {any}`JsProxy`.
 
 | Python                    | Javascript             |
 |---------------------------|------------------------|
@@ -157,12 +156,15 @@ Javascript uses `array["7"]`. For these cases, we translate:
 | `del proxy[idx]`          | `proxy.splice(idx)`    |
 
 
+(type-translations-pyproxy)=
 ### Proxying from Python into Javascript
 
 When most Python objects are translated to Javascript a `PyProxy` is produced.
+See also the API docs for {any}`js-api-pyproxy`.
+
 Fewer operations can be overloaded in Javascript than in Python so some
 operations are more cumbersome on a `PyProxy` than on a `JsProxy`. The following
-operations are currently supported:
+operations are supported:
 
 | Javascript                            | Python                   |
 |---------------------------------------|--------------------------|
@@ -173,15 +175,15 @@ operations are currently supported:
 | `Object.getOwnPropertyNames(proxy)`   | `dir(x)`                 |
 | `proxy(...)`                          | `x(...)`                 |
 | `proxy.foo(...)`                      | `x.foo(...)`             |
-| `proxy.length` or `x.size`            | `len(x)`                 |
+| `proxy.length`                        | `len(x)`                 |
 | `proxy.has(foo)`                      | `foo in x`               |
 | `proxy.get(foo)`                      | `x[foo]`                 |
 | `proxy.set(foo, bar)`                 | `x[foo] = bar`           |
 | `proxy.delete(foo)`                   | `del x[foo]`             |
-| `x.type`                              | `type(x)`                |
-| `x[Symbol.iterator]()`                | `iter(x)`                |
-| `x.next()`                            | `next(x)`                |
-| `await x`                             | `await x`                |
+| `proxy.type`                          | `type(x)`                |
+| `proxy[Symbol.iterator]()`            | `iter(x)`                |
+| `proxy.next()`                        | `next(x)`                |
+| `await proxy`                         | `await x`                |
 | `Object.entries(x)`                   |  `repr(x)`               |
 
 `````{admonition} Memory Leaks and PyProxy
@@ -195,7 +197,7 @@ object exist in Python either, then the Python garbage collector can eventually
 collect it.
 
 ```javascript
-let foo = pyodide.pyimport('foo');
+let foo = pyodide.globals.get('foo');
 foo();
 foo.destroy();
 foo(); // throws Error: Object has already been destroyed
@@ -207,7 +209,7 @@ foo(); // throws Error: Object has already been destroyed
 
 Every time you access a Python method on a `PyProxy`, it creates a new temporary
 `PyProxy` of a Python bound method. If you do not capture this temporary and
-destroy it, you will leak the Python object. 
+destroy it, you will leak the Python object.
 `````
 Here's an example:
 
@@ -220,7 +222,7 @@ pyodide.runPython(`
     import sys
     print(sys.getrefcount(d)) # prints 2
 `);
-let d = pyodide.pyimport("d");
+let d = pyodide.globals.get("d");
 // Leak three temporary bound "get" methods!
 let l = [d.get("a", 0), d.get("b", 0), d.get("c", 0)];
 d.destroy(); // Try to free dict
@@ -232,7 +234,7 @@ pyodide.runPython(`
 ```
 Here is how we can do this without leaking:
 ```pyodide
-let d = pyodide.pyimport("d");
+let d = pyodide.globals.get("d");
 let d_get = d.get; // this time avoid the leak
 let l = [d_get("a", 0), d_get("b", 0), d_get("c", 0)];
 d.destroy();
@@ -247,7 +249,7 @@ Another exciting inconsistency is that `d.set` is a __Javascript__ method not a
 PyProxy of a bound method, so using it has no effect on refcounts or memory
 reclamation and it cannot be destroyed.
 ```pyodide
-let d = pyodide.pyimport("d");
+let d = pyodide.globals.get("d");
 let d_set = d.set;
 d_set("x", 7);
 pyodide.runPython(`
@@ -258,9 +260,10 @@ d_set.destroy(); // TypeError: d_set.destroy is not a function
 
 ## Explicit Conversion of Proxies
 
+(type-translations-pyproxy-to-js)=
 ### Python to Javascript
-Explicit conversion of a `PyProxy` into a native Javascript object is done with
-the `toJs` method. By default, the `toJs` method does a recursive "deep"
+Explicit conversion of a {any}`PyProxy` into a native Javascript object is done with
+the {any}`PyProxy.toJs` method. By default, the `toJs` method does a recursive "deep"
 conversion, to do a shallow conversion use `proxy.toJs(1)`. The `toJs` method
 performs the following explicit conversions:
 
@@ -282,10 +285,10 @@ would have different semantics in Javascript than in Python, then a
 
 The `toJs` method can create many proxies at arbitrary depth. It is your
 responsibility to manually `destroy` these proxies if you wish to avoid memory
-leaks, but we provide no way to manage this. 
+leaks, but we provide no way to manage this.
 `````
 
-To ensure that no `PyProxy` is leaked, the following code suffices:
+To ensure that no {any}`PyProxy` is leaked, the following code suffices:
 ```js
 function destroyToJsResult(x){
     if(!x){
@@ -305,8 +308,8 @@ function destroyToJsResult(x){
 
 
 ### Javascript to Python
-Explicit conversion of a `JsProxy` into a native Python object is done with the
-`to_py` method. By default, the `to_py` method does a recursive "deep"
+Explicit conversion of a {any}`JsProxy` into a native Python object is done with the
+{any}`JsProxy.to_py` method. By default, the `to_py` method does a recursive "deep"
 conversion, to do a shallow conversion use `proxy.to_py(1)` The `to_py` method
 performs the following explicit conversions:
 
@@ -327,7 +330,7 @@ Object.setPrototypeOf(y, Test.prototype);
 pyodide.runPython(`
     from js import x, y
     # x is converted to a dictionary
-    assert x.to_py() == { "a" : 7, "b" : 2} 
+    assert x.to_py() == { "a" : 7, "b" : 2}
     # y is not a "Plain Old JavaScript Object", it's an instance of type Test so it's not converted
     assert y.to_py() == y
 `);
@@ -379,14 +382,14 @@ implementation for Javascript.
 ## Importing Python objects into Javascript
 
 A Python object in the `__main__` global scope can imported into Javascript
-using the {any}`pyodide.pyimport` function. Given the name of the Python object
-to import, `pyimport` returns the object translated to Javascript.
+using the `pyodide.globals.get` method. Given the name of the Python object
+to import, it returns the object translated to Javascript.
 
 ```js
-let sys = pyodide.pyimport('sys');
+let sys = pyodide.globals.get('sys');
 ```
 
-As always, if the result is a `PyProxy` and you care about not leaking the Python 
+As always, if the result is a `PyProxy` and you care about not leaking the Python
 object, you must destroy it when you are done.
 
 (type-translations_using-js-obj-from-py)=

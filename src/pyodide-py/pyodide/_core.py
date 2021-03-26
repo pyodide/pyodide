@@ -1,26 +1,10 @@
-# type: ignore
-import platform
+import sys
 
-if platform.system() == "Emscripten":
-    from _pyodide_core import JsProxy, JsException, JsBuffer
-else:
-    # Can add shims here if we are so inclined.
-    class JsException(Exception):
-        """
-        A wrapper around a Javascript Error to allow the Error to be thrown in Python.
-        """
+if "_pyodide_core" not in sys.modules:
+    from _pyodide import _core as _pyodide_core
 
-        # Defined in jsproxy.c
+    sys.modules["_pyodide_core"] = _pyodide_core
 
-    class JsProxy:
-        """A proxy to make a Javascript object behave like a Python object"""
+from _pyodide_core import JsProxy, JsException, create_proxy, create_once_callable
 
-        # Defined in jsproxy.c
-
-    class JsBuffer:
-        """A proxy to make it possible to call Javascript typed arrays from Python."""
-
-        # Defined in jsproxy.c
-
-
-__all__ = [JsProxy, JsException]
+__all__ = ["JsProxy", "JsException", "create_proxy", "create_once_callable"]
