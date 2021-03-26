@@ -58,7 +58,7 @@ def run_all(hostpython, selenium_backends, code):
     result = {"native": a}
     for browser_name, selenium in selenium_backends.items():
         for interrupt_buffer in [False, True]:
-            dt = run_wasm(code, selenium)
+            dt = run_wasm(code, selenium, interrupt_buffer)
             if interrupt_buffer:
                 browser_name += "(w/ ib)"
             result[browser_name] = dt
