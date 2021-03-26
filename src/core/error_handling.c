@@ -172,9 +172,18 @@ pythonexc2js()
 EM_JS_NUM(errcode, error_handling_init_js, (), {
   Module.handle_js_error = function(e)
   {
+    if (_error_check_for_keyboard_interrupt()) {
+      return;
+    }
     let err = Module.hiwire.new_value(e);
     _PyodideErr_SetJsError(err);
     Module.hiwire.decref(err);
+  };
+  Module.checkInterrupt = function()
+  {
+    if (Module._PyErr_CheckSignals() == -1) {
+      throw new Error("KeyboardInterrupt");
+    }
   };
   class PythonError extends Error
   {
@@ -213,24 +222,6 @@ error_handling_init(PyObject* core_module)
   // ConversionError is public
   FAIL_IF_MINUS_ONE(
     PyObject_SetAttrString(core_module, "ConversionError", conversion_error));
-
-  EM_ASM({
-    Module.handle_js_error = function(e)
-    {
-      if (_error_check_for_keyboard_interrupt()) {
-        return;
-      }
-      let err = Module.hiwire.new_value(e);
-      _PyodideErr_SetJsError(err);
-      Module.hiwire.decref(err);
-    };
-    Module.checkInterrupt = function()
-    {
-      if (Module._PyErr_CheckSignals() == -1) {
-        throw new Error("KeyboardInterrupt");
-      }
-    };
-  });
   FAIL_IF_MINUS_ONE(error_handling_init_js());
 
   tbmod = PyImport_ImportModule("traceback");
