@@ -662,7 +662,326 @@ TEMP_EMJS_HELPER(() => {0, /* Magic, see comment */
   };
 
   Module.PyProxyCallableMethods = {prototype : Function.prototype};
-  Module.PyProxyBufferMethods = {};
+
+  let type_to_array_map = new Map([
+    [ "i8", Int8Array ],
+    [ "u8", Uint8Array ],
+    [ "i16", Int16Array ],
+    [ "u16", Uint16Array ],
+    [ "i32", Int32Array ],
+    [ "u32", Uint32Array ],
+    [ "i32", Int32Array ],
+    [ "u32", Uint32Array ],
+    [ "f32", Float32Array ],
+    [ "f64", Float64Array ],
+    // Python type formats
+    [ "b", Int8Array ],
+    [ "B", Uint8Array ],
+    [ "h", Int16Array ],
+    [ "H", Uint16Array ],
+    [ "i", Int32Array ],
+    [ "I", Uint32Array ],
+    [ "f", Float32Array ],
+    [ "d", Float64Array ],
+  ]);
+
+  if (globalThis.BigInt64Array) {
+    type_to_array_map.set("i64", BigInt64Array);
+    type_to_array_map.set("u64", BigUint64Array);
+    type_to_array_map.set("q", BigInt64Array);
+    type_to_array_map.set("Q", BigUint64Array);
+  }
+
+  Module.PyProxyBufferMethods = {
+    /**
+     * Get a view of the buffer data which is usable from Javascript. No copy is
+     * ever performed.
+     *
+     * The return value is a :any:`PyBuffer` object. See the documentation for
+     * :any:`PyBuffer` for details on how to use it.
+     *
+     * We do not support suboffsets, if the buffer requires suboffsets we will
+     * throw an error. Javascript nd array libraries can't handle suboffsets
+     * anyways. In this case, you should copy the buffer to one that doesn't use
+     * suboffets (using e.g., ``np.ascontiguousarray``).
+     *
+     * @param {string} type The type of the desired output. Should be one of:
+     *    "i8", "u8", "i16", "u16", "i32", "u32", "i32", "u32", "i64", "u64",
+     *    "f32", or "f64,
+     * @returns PyBuffer
+     */
+    getBuffer : function(type = "u8") {
+      let ArrayType = undefined;
+      if (type) {
+        let ArrayType = type_to_array_map.get(type);
+        if (ArrayType === undefined) {
+          throw new Error(`Unknown type ${type}`);
+        }
+      }
+      let this_ptr = _getPtr(this);
+      let buffer_struct_ptr = __pyproxy_get_buffer(this_ptr);
+      if (buffer_struct_ptr === 0) {
+        throw new Error("Failed");
+      }
+
+      // This has to match the order of the fields in buffer_struct
+      let cur_ptr = buffer_struct_ptr / 4;
+
+      let startByteOffset = HEAP32[cur_ptr++];
+      let minByteOffset = HEAP32[cur_ptr++];
+      let maxByteOffset = HEAP32[cur_ptr++];
+
+      let readonly = !!HEAP32[cur_ptr++];
+      let format_ptr = HEAP32[cur_ptr++];
+      let itemsize = HEAP32[cur_ptr++];
+      let shape = Module.hiwire.pop_value(HEAP32[cur_ptr++]);
+      let strides = Module.hiwire.pop_value(HEAP32[cur_ptr++]);
+
+      let view_ptr = HEAP32[cur_ptr++];
+      let c_contiguous = !!HEAP32[cur_ptr++];
+      let f_contiguous = !!HEAP32[cur_ptr++];
+
+      _PyMem_Free(buffer_struct_ptr);
+
+      let format = UTF8ToString(format_ptr);
+
+      let success = false;
+      try {
+        if (ArrayType === undefined) {
+          // Try to determine correct type from format.
+          // To understand this code it will be helpful to look at the tables
+          // here: https://docs.python.org/3/library/struct.html#format-strings
+          if (format.includes("e")) {
+            throw new Error("Javascript has no Float16Array.");
+          }
+          let cleaned_format = format;
+          // Normalize same-sized types
+          cleaned_format = cleaned_format.replace(/[spc?]/g, "B");
+          cleaned_format = cleaned_format.replace(/[nl]/g, "i");
+          cleaned_format = cleaned_format.replace(/[NLP]/g, "I");
+          let type_char = cleaned_format[0];
+          ArrayType = type_to_array_map.get(type_char);
+          if (ArrayType === undefined) {
+            if (/[qQ]/.test(type_char)) {
+              throw new Error(
+                  "64 bit integer formats (q and Q) are not supported in browsers without BigInt support. You must pass a type argument.");
+            } else {
+              throw new Error(
+                  "Unrecognized buffer format. You must pass a type argument.");
+            }
+          }
+        }
+
+        let alignment = parseInt(ArrayType.name.replace(/[^0-9]/g, "")) / 8;
+        if (startByteOffset % alignment !== 0 ||
+            minByteOffset % alignment !== 0 ||
+            maxByteOffset % alignment !== 0) {
+          throw new Error(
+              `Buffer does not have valid alignment for a ${ArrayType.name}`);
+        }
+        let numBytes = maxByteOffset - minByteOffset;
+        let numEntries = numBytes / alignment;
+        let offset = (startByteOffset - minByteOffset) / alignment;
+        let data = new ArrayType(HEAP8.buffer, minByteOffset, numEntries);
+        for (let i of strides.keys()) {
+          strides[i] /= alignment;
+        }
+
+        success = true;
+        // clang-format off
+        return Object.create(Module.PyBuffer.prototype,
+          Object.getOwnPropertyDescriptors({
+            offset,
+            readonly,
+            format,
+            itemsize,
+            ndim : shape.length,
+            nbytes : numBytes,
+            shape,
+            strides,
+            data,
+            c_contiguous,
+            f_contiguous,
+            _view_ptr : view_ptr,
+            _released : false
+          })
+        );
+        // clang-format on
+      } finally {
+        if (!success) {
+          _PyBuffer_Release(view_ptr);
+          _PyMem_Free(view_ptr);
+        }
+      }
+    }
+  };
+
+  /**
+   * A class to allow access to a Python data buffers from Javascript. These are
+   * produced by :any:`PyProxy.getBuffer` and cannot be constructed directly.
+   * When you are done, release it with the :any:`release <PyBuffer.release>`
+   * method.  See
+   * `Python buffer protocol documentation
+   * <https://docs.python.org/3/c-api/buffer.html>`_ for more information.
+   *
+   * To find the element ``x[a_1, ..., a_n]``, you could use the following code:
+   *
+   * .. code-block:: js
+   *
+   *    function multiIndexToIndex(pybuff, multiIndex){
+   *       if(multindex.length !==pybuff.ndim){
+   *          throw new Error("Wrong length index");
+   *       }
+   *       let idx = pybuff.offset;
+   *       for(let i = 0; i < pybuff.ndim; i++){
+   *          if(multiIndex[i] < 0){
+   *             multiIndex[i] = pybuff.shape[i] - multiIndex[i];
+   *          }
+   *          if(multiIndex[i] < 0 || multiIndex[i] >= pybuff.shape[i]){
+   *             throw new Error("Index out of range");
+   *          }
+   *          idx += multiIndex[i] * pybuff.stride[i];
+   *       }
+   *       return idx;
+   *    }
+   *    console.log("entry is", pybuff.data[multiIndexToIndex(pybuff, [2, 0,
+   * -1])]);
+   *
+   * .. admonition:: Contiguity
+   *    :class: warning
+   *
+   *    If the buffer is not contiguous, the ``data`` TypedArray will contain
+   * data that is not part of the buffer. Modifying this data may lead to
+   * undefined behavior.
+   *
+   * .. admonition:: Readonly buffers
+   *    :class: warning
+   *
+   *    If ``buffer.readonly`` is ``true``, you should not modify the buffer.
+   *    Modifying a readonly buffer may lead to undefined behavior.
+   *
+   * .. admonition:: Converting between TypedArray types
+   *    :class: warning
+   *
+   *    The following naive code to change the type of a typed array does not
+   *    work:
+   *
+   *    .. code-block:: js
+   *
+   *        // Incorrectly convert a TypedArray.
+   *        // Produces a Uint16Array that points to the entire WASM memory!
+   *        let myarray = new Uint16Array(buffer.data.buffer);
+   *
+   *    Instead, if you want to convert the output TypedArray, you need to say:
+   *
+   *    .. code-block:: js
+   *
+   *        // Correctly convert a TypedArray.
+   *        let myarray = new Uint16Array(
+   *            buffer.data.buffer,
+   *            buffer.data.byteOffset,
+   *            buffer.data.byteLength
+   *        );
+   */
+  Module.PyBuffer = class PyBuffer {
+    constructor() {
+      // FOR_JSDOC_ONLY is a macro that deletes its argument.
+      FOR_JSDOC_ONLY(() => {
+        /**
+         * The offset of the first entry of the array. For instance if our array
+         * is 3d, then you will find ``array[0,0,0]`` at
+         * ``pybuf.data[pybuf.offset]``
+         * @type {number}
+         */
+        this.offset;
+
+        /**
+         * If the data is readonly, you should not modify it. There is no way
+         * for us to enforce this, but it may cause very weird behavior.
+         * @type {boolean}
+         */
+        this.readonly;
+
+        /**
+         * The format string for the buffer. See `the Python documentation on
+         * format strings
+         * <https://docs.python.org/3/library/struct.html#format-strings>`_.
+         * @type {string}
+         */
+        this.format;
+
+        /**
+         * How large is each entry (in bytes)?
+         * @type {number}
+         */
+        this.itemsize;
+
+        /**
+         * The number of dimensions of the buffer. If ``ndim`` is 0, the buffer
+         * represents a single scalar or struct. Otherwise, it represents an
+         * array.
+         * @type {number}
+         */
+        this.ndim;
+
+        /**
+         * The total number of bytes the buffer takes up. This is equal to
+         * ``buff.data.byteLength``.
+         * @type {number}
+         */
+        this.nbytes;
+
+        /**
+         * The shape of the buffer, that is how long it is in each dimension.
+         * The length will be equal to ``ndim``. For instance, a 2x3x4 array
+         * would have shape ``[2, 3, 4]``.
+         * @type {number[]}
+         */
+        this.shape;
+
+        /**
+         * An array of of length ``ndim`` giving the number of elements to skip
+         * to get to a new element in each dimension. See the example definition
+         * of a ``multiIndexToIndex`` function above.
+         * @type {number[]}
+         */
+        this.strides;
+
+        /**
+         * The actual data. A typed array of an appropriate size backed by a
+         * segment of the WASM memory.
+         * @type {TypedArray}
+         */
+        this.data;
+
+        /**
+         * Is it C contiguous?
+         * @type {boolean}
+         */
+        this.c_contiguous;
+
+        /**
+         * Is it Fortran contiguous?
+         * @type {boolean}
+         */
+        this.f_contiguous;
+      });
+      throw new TypeError('PyBuffer is not a constructor');
+    }
+
+    /**
+     * Release the buffer. This allows the memory to be reclaimed.
+     */
+    release() {
+      if (this._released) {
+        return;
+      }
+      _PyBuffer_Release(this._view_ptr);
+      _PyMem_Free(this._view_ptr);
+      this._released = true;
+      this.data = null;
+    }
+  };
 
   // A special proxy that we use to wrap pyodide.globals to allow property
   // access like `pyodide.globals.x`.

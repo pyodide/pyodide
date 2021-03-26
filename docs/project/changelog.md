@@ -53,6 +53,9 @@ substitutions:
   [#1175](https://github.com/iodide-project/pyodide/pull/1175)
 - {{ API }} The `pyodide.pyimport` function is deprecated in favor of using
   `pyodide.globals.get('key')`. [#1367](https://github.com/iodide-project/pyodide/pull/1367)
+- {{ API }} Added `PyProxy.getBuffer` API to allow direct access to Python
+  buffers as Javascript TypedArrays.
+  [1215](https://github.com/iodide-project/pyodide/pull/1215)
 
 ### Fixed
 - {{ Fix }} getattr and dir on JsProxy now report consistent results and include all
