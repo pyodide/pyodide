@@ -145,18 +145,21 @@ EM_JS_NUM(errcode, python2js_buffer_init, (), {
         case 2:
           getFuncName = "getUint16";
           setFuncName = "setUint16";
+          break;
         case 4:
           getFuncName = "getUint32";
           setFuncName = "setUint32";
+          break;
         case 8:
           getFuncName = "getFloat64";
           setFuncName = "setFloat64";
+          break;
       }
       swapFunc = function(buff, size)
       {
         let dataview = new DataView(buff);
-        let getFunc = dataview[getFuncName];
-        let setFunc = dataview[setFuncName];
+        let getFunc = dataview[getFuncName].bind(dataview);
+        let setFunc = dataview[setFuncName].bind(dataview);
         for (let byte = 0; byte < dataview.byteLength; byte += itemsize) {
           // Get value as little endian, set back as big endian.
           setFunc(byte, getFunc(byte, true), false);
