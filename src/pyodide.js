@@ -11,7 +11,15 @@
  */
 globalThis.pyodide = {};
 
-globalThis.initializePyodide = async function(config) {
+/**
+ * Load the main Pyodide wasm module and initialize it. When finished stores the
+ * pyodide module as a global object called ``pyodide``.
+ * @param {object} config An optional configuration parameter with a single
+ * optional field called
+ * ``baseURL``.
+ * @returns The pyodide module.
+ */
+globalThis.loadPyodide = async function(config = {}) {
   let Module = {};
   // Note: PYODIDE_BASE_URL is an environment variable replaced in
   // in this template in the Makefile. It's recommended to always set
@@ -777,14 +785,29 @@ def temp(Module):
 
 if (globalThis.languagePluginUrl) {
   console.warn(
-      "languagePluginUrl is deprecated, instead call initializePyodide");
+      "languagePluginUrl is deprecated and will be removed in version 0.18.0," +
+      "instead use loadPyodide({ baseURL : <some_url>})");
 
   /**
-   * A promise that resolves to ``undefined`` when Pyodide is finished loading.
+   * A deprecated parameter that specifies the Pyodide baseURL. If present,
+   * Pyodide will automatically invoke ``initializePyodide({baseURL :
+   * languagePluginUrl})`` and will store the resulting promise in
+   * :any:`globalThis.languagePluginLoader`. Instead, use :any:`loadPyodide`
+   * directly.
+   *
+   * @type String
+   * @deprecated Will be removed in version 0.18.0
+   */
+  globalThis.languagePluginUrl;
+
+  /**
+   * A deprecated promise that resolves to ``undefined`` when Pyodide is
+   * finished loading. Only created if :any:`languagePluginUrl` is
+   * defined. Instead use :any:`loadPyodide`.
    *
    * @type Promise
-   * @deprecated
+   * @deprecated Will be removed in version 0.18.0
    */
   globalThis.languagePluginLoader =
-      initializePyodide({baseURL : globalThis.languagePluginUrl});
+      loadPyodide({baseURL : globalThis.languagePluginUrl});
 }
