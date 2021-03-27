@@ -410,7 +410,7 @@ JsProxy_subscript_array_index(JsProxy* self, PyObject* item)
     i += hiwire_get_length(self->js);
   JsRef result = hiwire_get_member_int(self->js, i);
   if (result == NULL) {
-    PyErr_SetObject(PyExc_KeyError, item);
+    PyErr_SetObject(PyExc_IndexError, item);
     return NULL;
   }
   PyObject* pyresult = js2python(result);
