@@ -126,13 +126,9 @@ def test_py2js_buffer_clear_error_flag(selenium):
     )
 
 
-def test_python2js_numpy_scalar(selenium_standalone):
-    selenium = selenium_standalone
-
-    selenium.load_package("numpy")
-    selenium.run("import numpy as np")
-
-    for dtype in (
+@pytest.mark.parametrize(
+    "dtype",
+    (
         "int8",
         "uint8",
         "int16",
@@ -143,33 +139,38 @@ def test_python2js_numpy_scalar(selenium_standalone):
         "uint64",
         "float32",
         "float64",
-    ):
-        selenium.run(
-            f"""
-            x = np.{dtype}(1)
+    ),
+)
+def test_python2js_numpy_scalar(selenium, dtype):
+
+    selenium.load_package("numpy")
+    selenium.run("import numpy as np")
+    selenium.run(
+        f"""
+        x = np.{dtype}(1)
+        """
+    )
+    assert (
+        selenium.run_js(
             """
+        return pyodide.globals.get('x') == 1
+        """
         )
-        assert (
-            selenium.run_js(
-                """
-            return pyodide.globals.get('x') == 1
+        is True
+    )
+    selenium.run(
+        """
+        x = x.byteswap().newbyteorder()
+        """
+    )
+    assert (
+        selenium.run_js(
             """
-            )
-            is True
+        return pyodide.globals.get('x') == 1
+        """
         )
-        selenium.run(
-            """
-            x = x.byteswap().newbyteorder()
-            """
-        )
-        assert (
-            selenium.run_js(
-                """
-            return pyodide.globals.get('x') == 1
-            """
-            )
-            is True
-        )
+        is True
+    )
 
 
 def test_runpythonasync_numpy(selenium_standalone):
