@@ -65,6 +65,7 @@ _python2js_buffer(PyObject* x)
 EM_JS_NUM(errcode, python2js_buffer_init, (), {
   Module.python2js_buffer_1d_contiguous = function(ptr, stride, n, converter)
   {
+    "use strict";
     let byteLength = stride * n;
     let backing = HEAP8.slice(ptr, ptr + byteLength).buffer;
     return converter(backing);
@@ -73,6 +74,7 @@ EM_JS_NUM(errcode, python2js_buffer_init, (), {
   Module.python2js_buffer_1d_noncontiguous =
     function(ptr, stride, suboffset, n, converter)
   {
+    "use strict";
     let byteLength = stride * n;
     let buffer = new Uint8Array(ptr, ptr + byteLength);
     for (i = 0; i < n; ++i) {
@@ -87,6 +89,7 @@ EM_JS_NUM(errcode, python2js_buffer_init, (), {
 
   Module._python2js_buffer_recursive = function(ptr, curdim, bufferData)
   {
+    "use strict";
     let n = HEAP32[bufferData.shape / 4 + curdim];
     let stride = HEAP32[bufferData.strides / 4 + curdim];
     let suboffset = -1;
@@ -106,7 +109,7 @@ EM_JS_NUM(errcode, python2js_buffer_init, (), {
     }
 
     let result = [];
-    for (i = 0; i < n; ++i) {
+    for (let i = 0; i < n; ++i) {
       let curPtr = ptr + i * stride;
       if (suboffset >= 0) {
         curptr = HEAP32[curptr / 4] + suboffset;
@@ -119,6 +122,7 @@ EM_JS_NUM(errcode, python2js_buffer_init, (), {
 
   Module.get_converter = function(format, itemsize)
   {
+    "use strict";
     let formatStr = UTF8ToString(format);
     if (formatStr.length > 2) {
       throw new Error(

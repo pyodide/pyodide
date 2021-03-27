@@ -40,8 +40,23 @@ def test_typed_arrays(selenium):
         )
 
 
-def test_python2js_numpy_dtype(selenium_standalone):
-    selenium = selenium_standalone
+@pytest.mark.parametrize("order", ("C", "F"))
+@pytest.mark.parametrize(
+    "dtype",
+    (
+        "int8",
+        "uint8",
+        "int16",
+        "uint16",
+        "int32",
+        "uint32",
+        "int64",
+        "uint64",
+        "float32",
+        "float64",
+    ),
+)
+def test_python2js_numpy_dtype(selenium, order, dtype):
 
     selenium.load_package("numpy")
     selenium.run("import numpy as np")
@@ -61,54 +76,41 @@ def test_python2js_numpy_dtype(selenium_standalone):
                         == expected_result[i][j][k]
                     )
 
-    for order in ("C", "F"):
-        for dtype in (
-            "int8",
-            "uint8",
-            "int16",
-            "uint16",
-            "int32",
-            "uint32",
-            "int64",
-            "uint64",
-            "float32",
-            "float64",
-        ):
-            selenium.run(
-                f"""
-                x = np.arange(8, dtype=np.{dtype})
-                x = x.reshape((2, 2, 2))
-                x = x.copy({order!r})
-                """
-            )
-            assert_equal()
-            classname = selenium.run_js(
-                "return pyodide.globals.get('x').toJs()[0][0].constructor.name"
-            )
-            if order == "C" and dtype not in ("uint64", "int64"):
-                # Here we expect a TypedArray subclass, such as Uint8Array, but
-                # not a plain-old Array
-                assert classname.endswith("Array")
-                assert classname != "Array"
-            else:
-                assert classname == "Array"
-            selenium.run(
-                """
-                x = x.byteswap().newbyteorder()
-                """
-            )
-            assert_equal()
-            classname = selenium.run_js(
-                "return pyodide.globals.get('x').toJs()[0][0].constructor.name"
-            )
-            if order == "C" and dtype in ("int8", "uint8"):
-                # Here we expect a TypedArray subclass, such as Uint8Array, but
-                # not a plain-old Array -- but only for single byte types where
-                # endianness doesn't matter
-                assert classname.endswith("Array")
-                assert classname != "Array"
-            else:
-                assert classname == "Array"
+    selenium.run(
+        f"""
+        x = np.arange(8, dtype=np.{dtype})
+        x = x.reshape((2, 2, 2))
+        x = x.copy({order!r})
+        """
+    )
+    assert_equal()
+    classname = selenium.run_js(
+        "return pyodide.globals.get('x').toJs()[0][0].constructor.name"
+    )
+    if order == "C" and dtype not in ("uint64", "int64"):
+        # Here we expect a TypedArray subclass, such as Uint8Array, but
+        # not a plain-old Array
+        assert classname.endswith("Array")
+        assert classname != "Array"
+    else:
+        assert classname == "Array"
+    selenium.run(
+        """
+        x = x.byteswap().newbyteorder()
+        """
+    )
+    assert_equal()
+    classname = selenium.run_js(
+        "return pyodide.globals.get('x').toJs()[0][0].constructor.name"
+    )
+    if order == "C" and dtype in ("int8", "uint8"):
+        # Here we expect a TypedArray subclass, such as Uint8Array, but
+        # not a plain-old Array -- but only for single byte types where
+        # endianness doesn't matter
+        assert classname.endswith("Array")
+        assert classname != "Array"
+    else:
+        assert classname == "Array"
 
     assert selenium.run("np.array([True, False])") == [True, False]
 
