@@ -259,28 +259,28 @@ def make_parser(parser):
         "--cflags",
         type=str,
         nargs="?",
-        default=common.DEFAULTCFLAGS,
+        default=common.get_make_flag("SIDE_MODULE_CFLAGS"),
         help="Extra compiling flags",
     )
     parser.add_argument(
         "--cxxflags",
         type=str,
         nargs="?",
-        default=common.DEFAULTCXXFLAGS,
+        default=common.get_make_flag("SIDE_MODULE_CXXFLAGS"),
         help="Extra C++ specific compiling flags",
     )
     parser.add_argument(
         "--ldflags",
         type=str,
         nargs="?",
-        default=common.DEFAULTLDFLAGS,
+        default=common.get_make_flag("SIDE_MODULE_LDFLAGS"),
         help="Extra linking flags",
     )
     parser.add_argument(
         "--target",
         type=str,
         nargs="?",
-        default=common.TARGETPYTHON,
+        default=common.get_make_flag("TARGETPYTHONROOT"),
         help="The path to the target Python installation",
     )
     parser.add_argument(

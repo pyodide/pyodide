@@ -1,6 +1,16 @@
 /**
  * The main bootstrap script for loading pyodide.
  */
+
+/**
+ * The :ref:`js-api-pyodide` module object. Must be present as a global variable
+ * called
+ * ``pyodide`` in order for package loading to work properly.
+ *
+ * @type Object
+ */
+globalThis.pyodide = {};
+
 globalThis.initializePyodide = async function(config) {
   let Module = {};
   // Note: PYODIDE_BASE_URL is an environment variable replaced in
@@ -242,9 +252,9 @@ globalThis.initializePyodide = async function(config) {
   Module.loadedPackages = {};
 
   /**
-   * Load a package or a list of packages over the network.
-   * This makes the files for the package available in the virtual filesystem.
-   * The package needs to be imported from Python before it can be used.
+   * Load a package or a list of packages over the network. This makes the files
+   * for the package available in the virtual filesystem. The package needs to
+   * be imported from Python before it can be used.
    * @param {String | Array} names package name, or URL. Can be either a single
    * element, or an array
    * @param {function} messageCallback A callback, called with progress messages
@@ -589,15 +599,14 @@ globalThis.initializePyodide = async function(config) {
 
   // clang-format off
   /**
-   * Registers the Js object ``module`` as a Js module with ``name``.
-   * This module can then be imported from Python using the standard Python
-   * import system. If another module by the same name has already been
+   * Registers the Javascript object ``module`` as a Javascript module named
+   * ``name``. This module can then be imported from Python using the standard
+   * Python import system. If another module by the same name has already been
    * imported, this won't have much effect unless you also delete the imported
-   * module from
-   * ``sys.modules``. This calls the ``pyodide_py`` api
+   * module from ``sys.modules``. This calls the ``pyodide_py`` api
    * :func:`pyodide.register_js_module`.
    *
-   * @param {string} name Name of js module to add
+   * @param {string} name Name of the Javascript module to add
    * @param {object} module Javascript object backing the module
    */
   Module.registerJsModule = function(name, module) {
@@ -605,15 +614,15 @@ globalThis.initializePyodide = async function(config) {
   };
 
   /**
-   * Unregisters a Js module with given name that has been previously registered
-   * with :js:func:`pyodide.registerJsModule` or :func:`pyodide.register_js_module`. If
-   * a Js module with that name does not already exist, will throw an error.
-   * Note that if the module has already been imported, this won't have much
-   * effect unless you also delete the imported module from ``sys.modules``.
-   * This calls the
-   * ``pyodide_py`` api :func:`pyodide.unregister_js_module`.
+   * Unregisters a Javascript module with given name that has been previously
+   * registered with :js:func:`pyodide.registerJsModule` or
+   * :func:`pyodide.register_js_module`. If a Javascript module with that name
+   * does not already exist, will throw an error. Note that if the module has
+   * already been imported, this won't have much effect unless you also delete
+   * the imported module from ``sys.modules``. This calls the ``pyodide_py`` api
+   * :func:`pyodide.unregister_js_module`.
    *
-   * @param {string} name Name of js module to remove
+   * @param {string} name Name of the Javascript module to remove
    */
   Module.unregisterJsModule = function(name) {
     Module.pyodide_py.unregister_js_module(name);

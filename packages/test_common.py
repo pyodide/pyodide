@@ -26,7 +26,7 @@ def registered_packages_meta():
     }
 
 
-UNSUPPORTED_PACKAGES = {"chrome": [], "firefox": []}
+UNSUPPORTED_PACKAGES: dict = {"chrome": [], "firefox": []}
 
 
 @pytest.mark.parametrize("name", registered_packages())
@@ -41,6 +41,7 @@ def test_parse_package(name):
         assert skip_host is True
 
 
+@pytest.mark.skip_refcount_check
 @pytest.mark.parametrize("name", registered_packages())
 def test_import(name, selenium_standalone):
     # check that we can parse the meta.yaml
