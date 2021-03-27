@@ -176,12 +176,13 @@ def test_numpy_get_set_tuple(selenium):
     assert (
         selenium.run_js(
             """
-        pyodide.runPython(`
-            x = np.arange(12).reshape(3, 4)
-        `)
-        let buff = pyodide.globals.get("x");
-        return [buff.get([0, 0]), buff.get([0, 1]), buff.get([1, 0]), buff.get([2, 1])]
-        """
+            await pyodide.runPythonAsync(`
+                import numpy as np
+                x = np.arange(12).reshape(3, 4)
+            `)
+            let buff = pyodide.globals.get("x");
+            return [buff.get([0, 0]), buff.get([0, 1]), buff.get([1, 0]), buff.get([2, 1])]
+            """
         )
         == [0, 1, 4, 9]
     )
@@ -189,7 +190,8 @@ def test_numpy_get_set_tuple(selenium):
     assert (
         selenium.run_js(
             """
-            pyodide.runPython(`
+            await pyodide.runPythonAsync(`
+                import numpy as np
                 x = np.arange(12).reshape(3, 4)
             `)
             let buff = pyodide.globals.get("x");
@@ -205,7 +207,8 @@ def test_numpy_get_set_tuple(selenium):
     ):
         selenium.run_js(
             """
-            pyodide.runPython(`
+            await pyodide.runPythonAsync(`
+                import numpy as np
                 x = np.arange(12).reshape(3, 4)
                 m = x.data
             `)
@@ -216,7 +219,8 @@ def test_numpy_get_set_tuple(selenium):
     with pytest.raises(Exception, match="ValueError: cannot delete array elements"):
         selenium.run_js(
             """
-            pyodide.runPython(`
+            await pyodide.runPythonAsync(`
+                import numpy as np
                 x = np.arange(12).reshape(3, 4)
             `)
             let buff = pyodide.globals.get("x");
