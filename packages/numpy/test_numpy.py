@@ -69,6 +69,7 @@ def test_python2js_numpy_dtype(selenium, order, dtype):
         for i in range(2):
             for j in range(2):
                 for k in range(2):
+                    print(i, j, k)
                     assert (
                         selenium.run_js(
                             f"return pyodide.globals.get('x').toJs()[{i}][{j}][{k}]"

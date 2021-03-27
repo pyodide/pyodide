@@ -72,11 +72,11 @@ EM_JS_NUM(errcode, python2js_buffer_init, (), {
   };
 
   Module.python2js_buffer_1d_noncontiguous =
-    function(ptr, stride, suboffset, n, converter)
+    function(ptr, stride, suboffset, n, itemsize, converter)
   {
     "use strict";
-    let byteLength = stride * n;
-    let buffer = new Uint8Array(ptr, ptr + byteLength);
+    let byteLength = itemsize * n;
+    let buffer = new Uint8Array(byteLength);
     for (i = 0; i < n; ++i) {
       let curptr = ptr + i * stride;
       if (suboffset >= 0) {
@@ -104,7 +104,7 @@ EM_JS_NUM(errcode, python2js_buffer_init, (), {
           ptr, stride, n, bufferData.converter);
       } else {
         return Module.python2js_buffer_1d_noncontiguous(
-          ptr, stride, suboffset, n, bufferData.converter);
+          ptr, stride, suboffset, n, bufferData.itemsize, bufferData.converter);
       }
     }
 
