@@ -14,6 +14,9 @@ const JsRef Js_true = ((JsRef)(4));
 const JsRef Js_false = ((JsRef)(6));
 const JsRef Js_null = ((JsRef)(8));
 
+// For when the return value would be Option<JsRef>
+const JsRef Js_novalue = ((JsRef)(1000));
+
 JsRef
 hiwire_bool(bool boolean)
 {

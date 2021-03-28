@@ -131,7 +131,7 @@ static PyObject*
 JsProxy_GetAttr(PyObject* self, PyObject* attr)
 {
   PyObject* result = PyObject_GenericGetAttr(self, attr);
-  if (result != NULL) {
+  if (result != NULL || !PyErr_ExceptionMatches(PyExc_AttributeError)) {
     return result;
   }
   PyErr_Clear();
@@ -1145,10 +1145,10 @@ JsMethod_jsnew(PyObject* o, PyObject* args, PyObject* kwargs)
 }
 
 // clang-format off
-PyMethodDef JsMethod_jsnew_MethodDef = { 
+PyMethodDef JsMethod_jsnew_MethodDef = {
   "new",
   (PyCFunction)JsMethod_jsnew,
-  METH_VARARGS | METH_KEYWORDS 
+  METH_VARARGS | METH_KEYWORDS
 };
 // clang-format on
 
