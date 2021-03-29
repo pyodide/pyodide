@@ -323,7 +323,6 @@ workflows:
             - test-packages-firefox
             - test-core-chrome
             - test-emsdk
-            - build-docs
           filters:
             branches:
               ignore: /.*/
@@ -337,7 +336,6 @@ workflows:
             - test-packages-firefox
             - test-core-chrome
             - test-emsdk
-            - build-docs
           filters:
             branches:
               only: master
