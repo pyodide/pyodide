@@ -44,6 +44,9 @@ extern const JsRef Js_true;
 extern const JsRef Js_false;
 extern const JsRef Js_null;
 
+// For when the return value would be Option<JsRef>
+extern const JsRef Js_novalue;
+
 #define hiwire_CLEAR(x)                                                        \
   do {                                                                         \
     hiwire_decref(x);                                                          \
