@@ -22,6 +22,7 @@ jobs:
 
   test-docs:
     working_directory: ~/repo
+    resource_class: small
 
     docker:
       - image: cimg/python:3.8.2-node
@@ -39,29 +40,6 @@ jobs:
       - run:
           name: Test docs
           command: pytest docs/sphinx_pyodide/tests
-
-  build-docs:
-    working_directory: ~/repo
-    resource_class: small
-
-    docker:
-      - image: cimg/python:3.8.2-node
-
-    steps:
-      - checkout
-
-      - run:
-          name: Install prerequisites
-          command: |
-            pip install -r docs/requirements-doc.txt
-            sudo npm install -g jsdoc
-
-      - run:
-          name: Build docs
-          command: python3 -m sphinx -M html docs docs/_build
-
-      - store_artifacts:
-          path: /home/circleci/repo/docs/_build/
 
   build-core:
     <<: *defaults
@@ -197,6 +175,7 @@ jobs:
 
   test-emsdk:
     <<: *defaults
+    resource_class: small
     steps:
       - attach_workspace:
           at: .
@@ -206,6 +185,7 @@ jobs:
 
   test-python:
     <<: *defaults
+    resource_class: small
     steps:
       - checkout
       - run:
@@ -288,7 +268,6 @@ workflows:
     jobs:
       - lint
       - test-docs
-      - build-docs
       - build-core:
           filters:
             tags:
