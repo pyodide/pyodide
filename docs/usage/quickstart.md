@@ -1,25 +1,22 @@
 (using_from_javascript)=
 
-# Using Pyodide from Javascript
-
-This document describes using Pyodide directly from Javascript.
+# Getting started using Pyodide
 
 ## Startup
 
-To include Pyodide in your project you can use the following CDN URL,
-
+To include Pyodide in your project you can use the following CDN URL:
+```{eval-rst}
   https://cdn.jsdelivr.net/pyodide/v0.17.0a2/full/pyodide.js
+```
 
 You can also download a release from [Github
-releases](https://github.com/pyodide/pyodide/releases) (or build Pyodide
-yourself), include its contents in your distribution, and import the
-`pyodide.js` file there from a `<script>` tag. See
-{ref}`serving_pyodide_packages` for more details.
+releases](https://github.com/pyodide/pyodide/releases) or build Pyodide
+yourself. See {ref}`serving_pyodide_packages` for more details.
 
-The `pyodide.js` file defines a single async function called {any}`loadPyodide
-<globalThis.loadPyodide>` which sets up the Python environment. When the
-`loadPyodide` function finishes, Pyodide installs global namespace called
-{js:mod}`pyodide`.
+The `pyodide.js` file defines a single async function called
+{any}`loadPyodide <globalThis.loadPyodide>` which sets up the Python
+environment. When the `loadPyodide` function finishes, Pyodide installs global
+namespace called {js:mod}`pyodide`.
 
 ```pyodide
 async function main() {
