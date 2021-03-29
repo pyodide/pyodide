@@ -12,6 +12,7 @@ defaults: &defaults
 jobs:
   lint:
     <<: *defaults
+    resource_class: small
     steps:
       - checkout
 
@@ -41,6 +42,7 @@ jobs:
 
   build-docs:
     working_directory: ~/repo
+    resource_class: small
 
     docker:
       - image: cimg/python:3.8.2-node
@@ -225,6 +227,8 @@ jobs:
           path: /root/repo/build/benchmarks.json
 
   deploy-release:
+    resource_class: small
+
     docker:
       - image: cibuilds/github:0.13
 
@@ -255,6 +259,8 @@ jobs:
             aws s3api put-bucket-website --cli-input-json file://.circleci/s3-website-config.json
 
   deploy-s3:
+    resource_class: small
+
     docker:
       - image: circleci/python:3.7.7
 
