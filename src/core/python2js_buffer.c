@@ -460,7 +460,6 @@ _python2js_buffer(PyObject* x)
 {
   PyObject* memoryview = PyMemoryView_FromObject(x);
   if (memoryview == NULL) {
-    PyErr_Clear();
     return NULL;
   }
 
