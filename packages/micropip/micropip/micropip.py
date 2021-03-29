@@ -9,8 +9,6 @@ from typing import Dict, Any, Union, List, Tuple
 
 from distlib import markers, util, version
 
-import sys
-
 # Provide stubs for testing in native python
 try:
     import pyodide_js
@@ -256,7 +254,7 @@ def install(requirements: Union[str, List[str]]):
 
         - If the requirement does not end in ``.whl``, it will interpreted as the
           name of a package. A package by this name must either be present in the
-          Pyodide repository at ``languagePluginUrl`` or on PyPi
+          Pyodide repository at `packageIndexURL <globalThis.loadPyodide>` or on PyPi
 
     Returns
     -------

@@ -14,17 +14,25 @@ globalThis.pyodide = {};
 /**
  * Load the main Pyodide wasm module and initialize it. When finished stores the
  * pyodide module as a global object called ``pyodide``.
- * @param {object} config An optional configuration parameter with a single
- * optional field called
- * ``baseURL``.
+ * @param {string} config.packageIndexURL - The URL from which Pyodide will load
+ * packages
  * @returns The pyodide module.
  */
 globalThis.loadPyodide = async function(config = {}) {
+  if (globalThis.__pyodideLoading) {
+    if (globalThis.languagePluginURL) {
+      throw new Error(
+          "Pyodide is already loading because languagePluginURL is defined.");
+    } else {
+      throw new Error("Pyodide is already loading.");
+    }
+  }
+  globalThis.__pyodideLoading = true;
   let Module = {};
   // Note: PYODIDE_BASE_URL is an environment variable replaced in
   // in this template in the Makefile. It's recommended to always set
-  // languagePluginUrl in any case.
-  let baseURL = config.baseURL || "{{ PYODIDE_BASE_URL }}";
+  // packageIndexURL in any case.
+  let baseURL = config.packageIndexURL || "{{ PYODIDE_BASE_URL }}";
   baseURL = baseURL.substr(0, baseURL.lastIndexOf('/')) + '/';
 
   ////////////////////////////////////////////////////////////
@@ -786,7 +794,7 @@ def temp(Module):
 if (globalThis.languagePluginUrl) {
   console.warn(
       "languagePluginUrl is deprecated and will be removed in version 0.18.0," +
-      "instead use loadPyodide({ baseURL : <some_url>})");
+      "instead use loadPyodide({ packageIndexURL : <some_url>})");
 
   /**
    * A deprecated parameter that specifies the Pyodide baseURL. If present,
