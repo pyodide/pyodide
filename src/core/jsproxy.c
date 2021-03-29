@@ -1145,10 +1145,10 @@ JsMethod_jsnew(PyObject* o, PyObject* args, PyObject* kwargs)
 }
 
 // clang-format off
-PyMethodDef JsMethod_jsnew_MethodDef = { 
+PyMethodDef JsMethod_jsnew_MethodDef = {
   "new",
   (PyCFunction)JsMethod_jsnew,
-  METH_VARARGS | METH_KEYWORDS 
+  METH_VARARGS | METH_KEYWORDS
 };
 // clang-format on
 
@@ -1268,7 +1268,7 @@ JsBuffer_cinit(PyObject* obj)
       PyExc_RuntimeError,
       "Unknown typed array type '%s'. This is a problem with Pyodide, please "
       "open an issue about it here: "
-      "https://github.com/iodide-project/pyodide/issues/new",
+      "https://github.com/pyodide/pyodide/issues/new",
       typename);
     free(typename);
     FAIL();
