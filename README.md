@@ -1,18 +1,18 @@
 <div align="center">
-  <a href="https://github.com/iodide-project/pyodide">
+  <a href="https://github.com/pyodide/pyodide">
   <img src="./docs/_static/img/pyodide-logo-readme.png" alt="Pyodide">
   </a>
 </div>
 
 
-[![Build Status](https://circleci.com/gh/iodide-project/pyodide.png)](https://circleci.com/gh/iodide-project/pyodide)
+[![Build Status](https://circleci.com/gh/pyodide/pyodide.png)](https://circleci.com/gh/pyodide/pyodide)
 [![Documentation Status](https://readthedocs.org/projects/pyodide/badge/?version=latest)](https://pyodide.readthedocs.io/?badge=latest)
 
 Python with the scientific stack, compiled to WebAssembly.
 
 ## What is Pyodide?
 
-**Pyodide** brings the Python 3.8 runtime to the browser via WebAssembly, along with the Python scientific stack including NumPy, Pandas, Matplotlib, SciPy, and scikit-learn. The [`packages` directory](https://github.com/iodide-project/pyodide/tree/master/packages) lists over 75 packages which are currently available. In addition it's possible to install pure Python wheels from PyPi.
+**Pyodide** brings the Python 3.8 runtime to the browser via WebAssembly, along with the Python scientific stack including NumPy, Pandas, Matplotlib, SciPy, and scikit-learn. The [`packages` directory](https://github.com/pyodide/pyodide/tree/master/packages) lists over 75 packages which are currently available. In addition it's possible to install pure Python wheels from PyPi.
 
 **Pyodide** provides transparent conversion of objects between Javascript and Python.
 When used inside a browser, Python has full access to the Web APIs.
@@ -38,7 +38,7 @@ These include:
   documentation.
 - Download a pre-built version from this
   repository's [releases
-  page](https://github.com/iodide-project/pyodide/releases/) and serve its contents with
+  page](https://github.com/pyodide/pyodide/releases/) and serve its contents with
   a web server.
 - [Build Pyodide from source](https://pyodide.org/en/latest/development/building-from-sources.html)
   - Build natively with `make`: primarily for Linux users who want to

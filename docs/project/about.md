@@ -5,7 +5,7 @@ The Python scientific stack, compiled to WebAssembly.
 Pyodide brings the Python runtime to the browser via WebAssembly, along with
 the Python scientific stack including NumPy, Pandas, Matplotlib, parts of
 SciPy, and NetworkX. The [packages
-directory](https://github.com/iodide-project/pyodide/tree/master/packages)
+directory](https://github.com/pyodide/pyodide/tree/master/packages)
 lists over 75 packages which are currently available. In addition it's possible
 to install pure Python wheels from PyPi.
 
