@@ -56,8 +56,8 @@ substitutions:
 - {{ API }} Added `PyProxy.getBuffer` API to allow direct access to Python
   buffers as Javascript TypedArrays.
   [1215](https://github.com/pyodide/pyodide/pull/1215)
-- {{ API }} Added support for multiindexes with `PyProxy.get`, `PyProxy.set`, etc.
-  [1377](https://github.com/pyodide/pyodide/pull/1377)
+- {{ API }} Added support for indexing with lists or tuples with `PyProxy.get`,
+  `PyProxy.set`, etc. [1377](https://github.com/pyodide/pyodide/pull/1377)
 
 ### Fixed
 - {{ Fix }} getattr and dir on JsProxy now report consistent results and include all

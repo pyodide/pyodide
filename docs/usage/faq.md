@@ -119,15 +119,15 @@ Put a collection of functions into a Javascript object and use {any}`pyodide.reg
 Javascript:
 ```javascript
 let my_module = {
-  f : function(x){
+  f(x){
     return x*x + 1;
   },
-  g : function(x){
+  g(x){
     console.log(`Calling g on argument ${x}`);
     return x;
   },
   submodule : {
-    h : function(x) {
+    h(x) {
       return x*x - 1;
     },
     c  : 2,

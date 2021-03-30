@@ -177,7 +177,7 @@ def test_jsproxy_iter(selenium):
         function makeIterator(array) {
           let nextIndex = 0;
           return {
-            next: function() {
+            next() {
               return nextIndex < array.length ?
                 {value: array[nextIndex++], done: false} :
                 {done: true};
@@ -485,19 +485,19 @@ def test_register_jsmodule_docs_example(selenium_standalone):
     selenium.run_js(
         """
         let my_module = {
-        f : function(x){
-            return x*x + 1;
-        },
-        g : function(x){
-            console.log(`Calling g on argument ${x}`);
-            return x;
-        },
-        submodule : {
-            h : function(x) {
-            return x*x - 1;
+            f(x){
+                return x*x + 1;
             },
-            c  : 2,
-        },
+            g(x){
+                console.log(`Calling g on argument ${x}`);
+                return x;
+            },
+            submodule : {
+                h(x) {
+                return x*x - 1;
+                },
+                c  : 2,
+            },
         };
         pyodide.registerJsModule("my_js_module", my_module);
         """

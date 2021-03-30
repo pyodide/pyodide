@@ -69,7 +69,7 @@ TEMP_EMJS_HELPER(() => {0, /* Magic, see comment */
   // Static methods
   Module.PyProxy = {
     _getPtr,
-    isPyProxy : function(jsobj) {
+    isPyProxy(jsobj) {
       return jsobj && jsobj.$$ !== undefined && jsobj.$$.type === 'PyProxy';
     },
   };
@@ -209,7 +209,7 @@ TEMP_EMJS_HELPER(() => {0, /* Magic, see comment */
      * @param {any} key The key to look up.
      * @returns The corresponding value.
      */
-    get : function(key) {
+    get(key) {
       let ptrobj = _getPtr(this);
       let idkey = Module.hiwire.new_value(key);
       let idresult;
@@ -242,7 +242,7 @@ TEMP_EMJS_HELPER(() => {0, /* Magic, see comment */
      * @param {any} key The key to set.
      * @param {any} value The value to set it to.
      */
-    set : function(key, value) {
+    set(key, value) {
       let ptrobj = _getPtr(this);
       let idkey = Module.hiwire.new_value(key);
       let idval = Module.hiwire.new_value(value);
@@ -266,7 +266,7 @@ TEMP_EMJS_HELPER(() => {0, /* Magic, see comment */
      *
      * @param {any} key The key to delete.
      */
-    delete : function(key) {
+    delete (key) {
       let ptrobj = _getPtr(this);
       let idkey = Module.hiwire.new_value(key);
       let errcode;
@@ -294,7 +294,7 @@ TEMP_EMJS_HELPER(() => {0, /* Magic, see comment */
      * @param {*} key The key to check for.
      * @returns {bool} Is ``key`` present?
      */
-    has : function(key) {
+    has(key) {
       let ptrobj = _getPtr(this);
       let idkey = Module.hiwire.new_value(key);
       let result;
@@ -329,26 +329,26 @@ TEMP_EMJS_HELPER(() => {0, /* Magic, see comment */
      *
      * @returns {Iterator} An iterator for ``obj``.
      */
-    [Symbol.iterator] : function*() {
-      let iterptr = _PyObject_GetIter(_getPtr(this));
-      if (iterptr === 0) {
-        pythonexc2js();
+    * [ Symbol.iterator ]() {
+        let iterptr = _PyObject_GetIter(_getPtr(this));
+        if (iterptr === 0) {
+          pythonexc2js();
+        }
+        let item;
+        while ((item = __pyproxy_iter_next(iterptr))) {
+          yield Module.hiwire.pop_value(item);
+        }
+        if (_PyErr_Occurred()) {
+          pythonexc2js();
+        }
+        _Py_DecRef(iterptr);
       }
-      let item;
-      while ((item = __pyproxy_iter_next(iterptr))) {
-        yield Module.hiwire.pop_value(item);
-      }
-      if (_PyErr_Occurred()) {
-        pythonexc2js();
-      }
-      _Py_DecRef(iterptr);
-    }
   };
 
   // Controlled by IS_ITERATOR, appears for any object with a __next__ or
   // tp_iternext method.
   Module.PyProxyIteratorMethods = {
-    [Symbol.iterator] : function() { return this; },
+    [Symbol.iterator]() { return this; },
     /**
      * This translates to the Python code ``next(obj)``. Returns the next value
      * of the generator. See the documentation for `Generator.prototype.next
@@ -368,7 +368,7 @@ TEMP_EMJS_HELPER(() => {0, /* Magic, see comment */
      * ``StopIteration(result_value)`` exception, then we return ``{done : true,
      * value : result_value}``.
      */
-    next : function(arg) {
+    next(arg) {
       let idresult;
       // Note: arg is optional, if arg is not supplied, it will be undefined
       // which gets converted to "Py_None". This is as intended.
@@ -476,8 +476,8 @@ TEMP_EMJS_HELPER(() => {0, /* Magic, see comment */
   // here:
   // https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Proxy
   Module.PyProxyHandlers = {
-    isExtensible : function() { return true },
-    has : function(jsobj, jskey) {
+    isExtensible() { return true },
+    has(jsobj, jskey) {
       // Note: must report "prototype" in proxy when we are callable.
       // (We can return the wrong value from "get" handler though.)
       let objHasKey = Reflect.has(jsobj, jskey);
@@ -490,7 +490,7 @@ TEMP_EMJS_HELPER(() => {0, /* Magic, see comment */
       }
       return python_hasattr(jsobj, jskey);
     },
-    get : function(jsobj, jskey) {
+    get(jsobj, jskey) {
       // Preference order:
       // 1. things we have to return to avoid making Javascript angry
       // 2. the result of Python getattr
@@ -514,7 +514,7 @@ TEMP_EMJS_HELPER(() => {0, /* Magic, see comment */
       // 3. stuff from the prototype chain.
       return Reflect.get(jsobj, jskey);
     },
-    set : function(jsobj, jskey, jsval) {
+    set(jsobj, jskey, jsval) {
       // We're only willing to set properties on the python object, throw an
       // error if user tries to write over any key of type 1. things we have to
       // return to avoid making Javascript angry
@@ -531,7 +531,7 @@ TEMP_EMJS_HELPER(() => {0, /* Magic, see comment */
       python_setattr(jsobj, jskey, jsval);
       return true;
     },
-    deleteProperty : function(jsobj, jskey) {
+    deleteProperty(jsobj, jskey) {
       // We're only willing to delete properties on the python object, throw an
       // error if user tries to write over any key of type 1. things we have to
       // return to avoid making Javascript angry
@@ -548,7 +548,7 @@ TEMP_EMJS_HELPER(() => {0, /* Magic, see comment */
       // Otherwise Javascript will throw a TypeError.
       return !descr || descr.configurable;
     },
-    ownKeys : function(jsobj) {
+    ownKeys(jsobj) {
       let ptrobj = _getPtr(jsobj);
       let idresult;
       try {
@@ -561,7 +561,7 @@ TEMP_EMJS_HELPER(() => {0, /* Magic, see comment */
       return result;
     },
     // clang-format off
-    apply : function(jsobj, jsthis, jsargs) {
+    apply(jsobj, jsthis, jsargs) {
       return jsobj.apply(jsthis, jsargs);
     },
     // clang-format on
@@ -578,7 +578,7 @@ TEMP_EMJS_HELPER(() => {0, /* Magic, see comment */
      * event loop if necessary.
      * @private
      */
-    _ensure_future : function() {
+    _ensure_future() {
       let resolve_handle_id = 0;
       let reject_handle_id = 0;
       let resolveHandle;
@@ -621,7 +621,7 @@ TEMP_EMJS_HELPER(() => {0, /* Magic, see comment */
      * argument if the awaitable fails.
      * @returns {Promise} The resulting Promise.
      */
-    then : function(onFulfilled, onRejected) {
+    then(onFulfilled, onRejected) {
       let promise = this._ensure_future();
       return promise.then(onFulfilled, onRejected);
     },
@@ -639,7 +639,7 @@ TEMP_EMJS_HELPER(() => {0, /* Magic, see comment */
      * argument if the awaitable fails.
      * @returns {Promise} The resulting Promise.
      */
-    catch : function(onRejected) {
+    catch (onRejected) {
       let promise = this._ensure_future();
       return promise.catch(onRejected);
     },
@@ -661,7 +661,7 @@ TEMP_EMJS_HELPER(() => {0, /* Magic, see comment */
      * result as the original Promise, but only after executing the
      * ``onFinally`` handler.
      */
-    finally : function(onFinally) {
+    finally(onFinally) {
       let promise = this._ensure_future();
       return promise.finally(onFinally);
     }
@@ -716,7 +716,7 @@ TEMP_EMJS_HELPER(() => {0, /* Magic, see comment */
      *    "f32", or "f64,
      * @returns PyBuffer
      */
-    getBuffer : function(type = "u8") {
+    getBuffer(type = "u8") {
       let ArrayType = undefined;
       if (type) {
         let ArrayType = type_to_array_map.get(type);
@@ -998,11 +998,11 @@ TEMP_EMJS_HELPER(() => {0, /* Magic, see comment */
       "pyodide.globals.set('key', value), pyodide.globals.delete('key') instead.";
   let NamespaceProxyHandlers = {
     // clang-format off
-    has : function(obj, key) {
+    has(obj, key) {
       return Reflect.has(obj, key) || obj.has(key);
     },
     // clang-format on
-    get : function(obj, key) {
+    get(obj, key) {
       if (Reflect.has(obj, key)) {
         return Reflect.get(obj, key);
       }
@@ -1013,7 +1013,7 @@ TEMP_EMJS_HELPER(() => {0, /* Magic, see comment */
       }
       return result;
     },
-    set : function(obj, key, value) {
+    set(obj, key, value) {
       if (Reflect.has(obj, key)) {
         throw new Error(`Cannot set read only field ${key}`);
       }
@@ -1023,7 +1023,7 @@ TEMP_EMJS_HELPER(() => {0, /* Magic, see comment */
       }
       obj.set(key, value);
     },
-    ownKeys : function(obj) {
+    ownKeys(obj) {
       let result = new Set(Reflect.ownKeys(obj));
       let iter = obj.keys();
       for (let key of iter) {
