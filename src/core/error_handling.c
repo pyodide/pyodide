@@ -189,7 +189,7 @@ EM_JS_NUM(errcode, error_handling_init_js, (), {
 })
 
 PyObject*
-cause_fatal_error(PyObject* mod, PyObject* _args)
+trigger_fatal_error(PyObject* mod, PyObject* _args)
 {
   EM_ASM(throw new Error("intentionally triggered fatal error!"););
   Py_UNREACHABLE();
@@ -197,8 +197,8 @@ cause_fatal_error(PyObject* mod, PyObject* _args)
 
 static PyMethodDef methods[] = {
   {
-    "cause_fatal_error",
-    cause_fatal_error,
+    "trigger_fatal_error",
+    trigger_fatal_error,
     METH_NOARGS,
   },
   { NULL } /* Sentinel */
