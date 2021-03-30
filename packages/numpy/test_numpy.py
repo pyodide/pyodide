@@ -181,7 +181,7 @@ def test_numpy_get_set_tuple(selenium):
                 x = np.arange(12).reshape(3, 4)
             `)
             let buff = pyodide.globals.get("x");
-            return [buff.get([0, 0]), buff.get([0, 1]), buff.get([1, 0]), buff.get([2, 1])]
+            return [buff.get(0, 0), buff.get(0, 1), buff.get(1, 0), buff.get(2, 1)]
             """
         )
         == [0, 1, 4, 9]
@@ -195,7 +195,7 @@ def test_numpy_get_set_tuple(selenium):
                 x = np.arange(12).reshape(3, 4)
             `)
             let buff = pyodide.globals.get("x");
-            buff.set([2, 1], 66);
+            buff.set(2, 1, 66);
             return pyodide.runPython("x[2,1]");
             """
         )
@@ -225,9 +225,34 @@ def test_numpy_get_set_tuple(selenium):
                 x = np.arange(12).reshape(3, 4)
             `)
             let buff = pyodide.globals.get("x");
-            buff.delete([2, 1]);
+            buff.delete(2, 1);
             """
         )
+
+
+def test_numpy_indices(selenium):
+    selenium.run_js(
+        """
+        window.assert = function assert(cb){
+            if(cb() !== true){
+                throw new Error(`Assertion failed: ${cb.toString().slice(6)}`);
+            }
+        };
+        await pyodide.runPythonAsync(`
+            import numpy as np
+            x = np.arange(12).reshape(3, 4)
+        `);
+        let x = pyodide.globals.get("x");
+        let result = x.get(1).toJs();
+        assert(() => result.constructor.name === "Int32Array" && JSON.stringify(Array.from(result)) === "[4,5,6,7]");
+        result = x.get([1]).toJs();
+        assert(() => result.constructor.name === "Array" && result.length === 1 && JSON.stringify(Array.from(result[0])) === "[4,5,6,7]");
+        result = x.get([1,2], 0).toJs();
+        assert(() => result.constructor.name === "Int32Array" && JSON.stringify(Array.from(result)) === "[4,8]");
+        result = x.get([1,2], [0,2]).toJs();
+        assert(() => result.constructor.name === "Int32Array" && JSON.stringify(Array.from(result)) === "[4,10]");
+        """
+    )
 
 
 def test_runpythonasync_numpy(selenium_standalone):

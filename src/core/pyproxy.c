@@ -263,19 +263,12 @@ finally:
 }
 
 JsRef
-_pyproxy_getitem(PyObject* pyobj, JsRef idkey)
+_pyproxy_getitem(PyObject* pyobj, PyObject* pykey)
 {
   bool success = false;
-  PyObject* pykey = NULL;
   PyObject* pyresult = NULL;
   JsRef result = NULL;
 
-  pykey = js2python(idkey);
-  FAIL_IF_NULL(pykey);
-  if (JsProxy_Check(pykey)) {
-    Py_SETREF(pykey, PySequence_Tuple(pykey));
-    FAIL_IF_NULL(pykey);
-  }
   pyresult = PyObject_GetItem(pyobj, pykey);
   FAIL_IF_NULL(pyresult);
   result = python2js(pyresult);
@@ -287,7 +280,6 @@ finally:
                    PyErr_ExceptionMatches(PyExc_IndexError))) {
     PyErr_Clear();
   }
-  Py_CLEAR(pykey);
   Py_CLEAR(pyresult);
   if (!success) {
     hiwire_CLEAR(result);
@@ -296,47 +288,25 @@ finally:
 };
 
 int
-_pyproxy_setitem(PyObject* pyobj, JsRef idkey, JsRef idval)
+_pyproxy_setitem(PyObject* pyobj, PyObject* pykey, JsRef idval)
 {
   bool success = false;
-  PyObject* pykey = NULL;
   PyObject* pyval = NULL;
 
-  pykey = js2python(idkey);
-  FAIL_IF_NULL(pykey);
-  if (JsProxy_Check(pykey)) {
-    Py_SETREF(pykey, PySequence_Tuple(pykey));
-    FAIL_IF_NULL(pykey);
-  }
   pyval = js2python(idval);
   FAIL_IF_NULL(pyval);
   FAIL_IF_MINUS_ONE(PyObject_SetItem(pyobj, pykey, pyval));
 
   success = true;
 finally:
-  Py_CLEAR(pykey);
   Py_CLEAR(pyval);
   return success ? 0 : -1;
 }
 
 int
-_pyproxy_delitem(PyObject* pyobj, JsRef idkey)
+_pyproxy_delitem(PyObject* pyobj, PyObject* pykey)
 {
-  bool success = false;
-  PyObject* pykey = NULL;
-
-  pykey = js2python(idkey);
-  FAIL_IF_NULL(pykey);
-  if (JsProxy_Check(pykey)) {
-    Py_SETREF(pykey, PySequence_Tuple(pykey));
-    FAIL_IF_NULL(pykey);
-  }
-  FAIL_IF_MINUS_ONE(PyObject_DelItem(pyobj, pykey));
-
-  success = true;
-finally:
-  Py_CLEAR(pykey);
-  return success ? 0 : -1;
+  return PyObject_DelItem(pyobj, pykey);
 }
 
 int
@@ -347,10 +317,6 @@ _pyproxy_contains(PyObject* pyobj, JsRef idkey)
 
   pykey = js2python(idkey);
   FAIL_IF_NULL(pykey);
-  if (JsProxy_Check(pykey)) {
-    Py_SETREF(pykey, PySequence_Tuple(pykey));
-    FAIL_IF_NULL(pykey);
-  }
   result = PySequence_Contains(pyobj, pykey);
 
 finally:

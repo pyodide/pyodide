@@ -198,6 +198,44 @@ TEMP_EMJS_HELPER(() => {0, /* Magic, see comment */
     }
   };
 
+  function convertKeyArgs(args) {
+    let result = [];
+    let success = false;
+    try {
+      for (let arg of args) {
+        let argkey = Module.hiwire.new_value(arg);
+        let pykey;
+        if (Array.isArray(arg)) {
+          pykey = Module._hiwire_iterable_to_list(argkey);
+        } else {
+          pykey = Module.js2python(argkey);
+        }
+        Module.hiwire.decref(argkey);
+        if (pykey === 0) {
+          _pythonexc2js();
+        }
+        result.push(pykey);
+      }
+      let pyresult;
+      if (result.length > 1) {
+        pyresult = _PyTuple_New(result.length);
+        for (let [i, arg] of result.entries()) {
+          _PyTuple_SetItem(pyresult, i, arg);
+        }
+      } else {
+        pyresult = result[0];
+      }
+      success = true;
+      return pyresult;
+    } finally {
+      if (!success) {
+        for (let x of result) {
+          _Py_DecRef(x);
+        }
+      }
+    }
+  }
+
   // Controlled by HAS_GET, appears for any class with __getitem__,
   // mp_subscript, or sq_item methods
   Module.PyProxyGetItemMethods = {
@@ -209,17 +247,16 @@ TEMP_EMJS_HELPER(() => {0, /* Magic, see comment */
      * @param {any} key The key to look up.
      * @returns The corresponding value.
      */
-    get(key) {
+    get(...args) {
       let ptrobj = _getPtr(this);
-      let idkey = Module.hiwire.new_value(key);
+      let pykey = convertKeyArgs(args);
       let idresult;
       try {
-        idresult = __pyproxy_getitem(ptrobj, idkey);
+        idresult = __pyproxy_getitem(ptrobj, pykey);
       } catch (e) {
         Module.fatal_error(e);
-      } finally {
-        Module.hiwire.decref(idkey);
       }
+      _Py_DecRef(pykey);
       if (idresult === 0) {
         if (Module._PyErr_Occurred()) {
           _pythonexc2js();
@@ -242,19 +279,20 @@ TEMP_EMJS_HELPER(() => {0, /* Magic, see comment */
      * @param {any} key The key to set.
      * @param {any} value The value to set it to.
      */
-    set(key, value) {
+    set(...args) {
       let ptrobj = _getPtr(this);
-      let idkey = Module.hiwire.new_value(key);
+      let key = args.slice(0, -1);
+      let value = args.slice(-1)[0];
+      let pykey = convertKeyArgs(key);
       let idval = Module.hiwire.new_value(value);
       let errcode;
       try {
-        errcode = __pyproxy_setitem(ptrobj, idkey, idval);
+        errcode = __pyproxy_setitem(ptrobj, pykey, idval);
       } catch (e) {
         Module.fatal_error(e);
-      } finally {
-        Module.hiwire.decref(idkey);
-        Module.hiwire.decref(idval);
       }
+      _Py_DecRef(pykey);
+      Module.hiwire.decref(idval);
       if (errcode === -1) {
         _pythonexc2js();
       }
@@ -266,17 +304,16 @@ TEMP_EMJS_HELPER(() => {0, /* Magic, see comment */
      *
      * @param {any} key The key to delete.
      */
-    delete (key) {
+    delete (...args) {
       let ptrobj = _getPtr(this);
-      let idkey = Module.hiwire.new_value(key);
+      let pykey = convertKeyArgs(args);
       let errcode;
       try {
-        errcode = __pyproxy_delitem(ptrobj, idkey);
+        errcode = __pyproxy_delitem(ptrobj, pykey);
       } catch (e) {
         Module.fatal_error(e);
-      } finally {
-        Module.hiwire.decref(idkey);
       }
+      _Py_DecRef(pykey);
       if (errcode === -1) {
         _pythonexc2js();
       }

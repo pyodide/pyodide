@@ -5,6 +5,7 @@
 #include <emscripten.h>
 
 #include "hiwire.h"
+#include "js2python.h"
 
 #define ERROR_REF (0)
 #define ERROR_NUM (-1)
@@ -270,6 +271,36 @@ EM_JS_REF(JsRef, hiwire_array, (), { return Module.hiwire.new_value([]); });
 EM_JS_NUM(errcode, hiwire_push_array, (JsRef idarr, JsRef idval), {
   Module.hiwire.get_value(idarr).push(Module.hiwire.get_value(idval));
 });
+
+PyObject*
+hiwire_iterable_to_tuple(JsRef idkey)
+{
+  PyObject* pykey = NULL;
+  PyObject* result = NULL;
+
+  pykey = js2python(idkey);
+  FAIL_IF_NULL(pykey);
+  result = PySequence_Tuple(pykey);
+
+finally:
+  Py_CLEAR(pykey);
+  return result;
+}
+
+PyObject*
+hiwire_iterable_to_list(JsRef idkey)
+{
+  PyObject* pykey = NULL;
+  PyObject* result = NULL;
+
+  pykey = js2python(idkey);
+  FAIL_IF_NULL(pykey);
+  result = PySequence_List(pykey);
+
+finally:
+  Py_CLEAR(pykey);
+  return result;
+}
 
 EM_JS_REF(JsRef, hiwire_object, (), { return Module.hiwire.new_value({}); });
 

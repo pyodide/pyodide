@@ -419,3 +419,46 @@ def test_pyproxy_mixins2(selenium):
         assert(() => l.length === 2 && l.get(1) === 7);
         """
     )
+
+
+def test_pyproxy_indexing(selenium):
+    selenium.run_js(
+        """
+        window.assert = function assert(cb){
+            if(cb() !== true){
+                throw new Error(`Assertion failed: ${cb.toString().slice(6)}`);
+            }
+        };
+        t = pyodide.runPython(`
+        class Test:
+            def __getitem__(self, key):
+                return repr(key)
+            def __setitem__(self, key, value):
+                self.item = repr([key, value])
+            def __delitem__(self, key):
+                self.item = repr(key)
+        Test()
+        `);
+        result = [];
+        assert(() => t.get(77) === "77");
+        assert(() => t.get(1, 2, 3, 4) === "(1, 2, 3, 4)");
+        assert(() => t.get([1, 2, 3, 4]) === "[1, 2, 3, 4]");
+        assert(() => t.get([1, 2], [3, 4]) === "([1, 2], [3, 4])");
+        t.set(77, 0);
+        assert(() => t.item === "[77, 0]");
+        t.set(1, 2, 3, 4, 0);
+        assert(() => t.item === "[(1, 2, 3, 4), 0]");
+        t.set([1, 2, 3, 4], 0);
+        assert(() => t.item === "[[1, 2, 3, 4], 0]");
+        t.set([1, 2], [3, 4], 0);
+        assert(() => t.item === "[([1, 2], [3, 4]), 0]");
+        t.delete(77);
+        assert(() => t.item === "77");
+        t.delete(1, 2, 3, 4);
+        assert(() => t.item === "(1, 2, 3, 4)");
+        t.delete([1, 2, 3, 4]);
+        assert(() => t.item === "[1, 2, 3, 4]");
+        t.delete([1, 2], [3, 4]);
+        assert(() => t.item === "([1, 2], [3, 4])");
+        """
+    )

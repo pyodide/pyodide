@@ -69,19 +69,7 @@ _js2python_memoryview(JsRef id)
   return result;
 }
 
-EM_JS_REF(PyObject*, js2python, (JsRef id), {
-  let value = Module.hiwire.get_value(id);
-  let result = Module.__js2python_convertImmutable(value);
-  // clang-format off
-  if (result !== 0) {
-    return result;
-  }
-  if (value['byteLength'] !== undefined) {
-    return __js2python_memoryview(id);
-  }
-  return _JsProxy_create(id);
-  // clang-format on
-})
+EM_JS_REF(PyObject*, js2python, (JsRef id), { return Module.js2python(id); })
 
 EM_JS_REF(PyObject*, js2python_convert, (JsRef id, int depth), {
   return Module.__js2python_convert(id, new Map(), depth);
@@ -378,6 +366,21 @@ EM_JS_NUM(errcode, js2python_init, (), {
     }
     // clang-format on
     return Module.__js2python_convertOther(id, value, cache, depth - 1);
+  };
+
+  Module.js2python = function(id)
+  {
+    let value = Module.hiwire.get_value(id);
+    let result = Module.__js2python_convertImmutable(value);
+    // clang-format off
+    if (result !== 0) {
+      return result;
+    }
+    if (value['byteLength'] !== undefined) {
+      return __js2python_memoryview(id);
+    }
+    // clang-format on
+    return _JsProxy_create(id);
   };
 
   return 0;
