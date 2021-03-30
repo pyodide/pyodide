@@ -156,10 +156,16 @@ TEMP_EMJS_HELPER(() => {0, /* Magic, see comment */
      * @returns The Javascript object resulting from the conversion.
      */
     toJs(depth = -1) {
-      let idresult = _python2js_with_depth(_getPtr(this), depth);
-      let result = Module.hiwire.get_value(idresult);
-      Module.hiwire.decref(idresult);
-      return result;
+      let idresult;
+      try {
+        idresult = _python2js_with_depth(_getPtr(this), depth);
+      } catch (e) {
+        Module.fatal_error(e);
+      }
+      if (idresult === 0) {
+        _pythonexc2js();
+      }
+      return Module.hiwire.pop_value(idresult);
     }
     apply(jsthis, jsargs) {
       return Module.callPyObject(_getPtr(this), ...jsargs);

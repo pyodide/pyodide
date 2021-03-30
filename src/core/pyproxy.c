@@ -283,8 +283,8 @@ _pyproxy_getitem(PyObject* pyobj, JsRef idkey)
 
   success = true;
 finally:
-  if (PyErr_Occurred() && (PyErr_ExceptionMatches(PyExc_KeyError) ||
-                           PyErr_ExceptionMatches(PyExc_IndexError))) {
+  if (!success && (PyErr_ExceptionMatches(PyExc_KeyError) ||
+                   PyErr_ExceptionMatches(PyExc_IndexError))) {
     PyErr_Clear();
   }
   Py_CLEAR(pykey);
