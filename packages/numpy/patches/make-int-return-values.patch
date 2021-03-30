@@ -2,14 +2,15 @@ Make return values to fortran subroutines be consistently int.
 
 This is because f2py defaults to making subroutines return void, whereas
 f2c makes them int. On most systems this doesn't matter, but on WASM, strict
-return type checking is used which makes things fail when f2py code calls 
+return type checking is used which makes things fail when f2py code calls
 subroutines that were generated from fortran with f2c. To fix this we make
 everything, including f2c, return int from subroutines.
+
 diff --git a/numpy/f2py/common_rules.py b/numpy/f2py/common_rules.py
-index 1940d42..aa38211 100644
+index 62c1ba207..54a445d37 100644
 --- a/numpy/f2py/common_rules.py
 +++ b/numpy/f2py/common_rules.py
-@@ -119,7 +119,7 @@ def buildhooks(m):
+@@ -117,7 +117,7 @@ def buildhooks(m):
              F_FUNC = 'F_FUNC_US'
          else:
              F_FUNC = 'F_FUNC'
@@ -19,10 +20,10 @@ index 1940d42..aa38211 100644
                  ','.join(['char*'] * len(inames1))))
          cadd('static void f2py_init_%s(void) {' % name)
 diff --git a/numpy/f2py/rules.py b/numpy/f2py/rules.py
-index 36e2222..19cfafc 100644
+index 1b41498ea..9419aeb16 100755
 --- a/numpy/f2py/rules.py
 +++ b/numpy/f2py/rules.py
-@@ -396,9 +396,9 @@ rout_rules = [
+@@ -399,9 +399,9 @@ rout_rules = [
          'decl': '',
          '_check': ismoduleroutine
      }, {  # Subroutine
@@ -36,10 +37,10 @@ index 36e2222..19cfafc 100644
                                 isdummyroutine: ''
                                 },
 diff --git a/numpy/f2py/src/fortranobject.c b/numpy/f2py/src/fortranobject.c
-index 78b06f0..364bbc3 100644
+index b55385b50..232a7f90d 100644
 --- a/numpy/f2py/src/fortranobject.c
 +++ b/numpy/f2py/src/fortranobject.c
-@@ -305,6 +305,11 @@ fortran_getattr(PyFortranObject *fp, char *name) {
+@@ -308,6 +308,11 @@ fortran_getattr(PyFortranObject *fp, char *name) {
          return s;
      }
      if ((strcmp(name,"_cpointer")==0) && (fp->len==1)) {
@@ -51,7 +52,7 @@ index 78b06f0..364bbc3 100644
          PyObject *cobj = F2PyCapsule_FromVoidPtr((void *)(fp->defs[0].data),NULL);
          if (PyDict_SetItemString(fp->dict, name, cobj))
              return NULL;
-@@ -379,7 +384,7 @@ fortran_setattr(PyFortranObject *fp, char *name, PyObject *v) {
+@@ -382,7 +387,7 @@ fortran_setattr(PyFortranObject *fp, char *name, PyObject *v) {
      if (v == NULL) {
          int rv = PyDict_DelItemString(fp->dict, name);
          if (rv < 0)
@@ -61,7 +62,7 @@ index 78b06f0..364bbc3 100644
      }
      else
 diff --git a/numpy/linalg/lapack_lite/f2c.c b/numpy/linalg/lapack_lite/f2c.c
-index 1114bef..905beaa 100644
+index 1114bef3b..905beaa0d 100644
 --- a/numpy/linalg/lapack_lite/f2c.c
 +++ b/numpy/linalg/lapack_lite/f2c.c
 @@ -14,9 +14,9 @@
@@ -104,7 +105,7 @@ index 1114bef..905beaa 100644
  
  
 diff --git a/numpy/linalg/lapack_lite/f2c.h b/numpy/linalg/lapack_lite/f2c.h
-index 80f1a12..2520479 100644
+index 80f1a12b1..25204797b 100644
 --- a/numpy/linalg/lapack_lite/f2c.h
 +++ b/numpy/linalg/lapack_lite/f2c.h
 @@ -259,7 +259,7 @@ extern double d_tan(double *);

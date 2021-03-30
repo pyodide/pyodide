@@ -13,6 +13,8 @@ import queue
 import sys
 import shutil
 
+import pytest
+
 ROOT_PATH = pathlib.Path(__file__).parents[0].resolve()
 TEST_PATH = ROOT_PATH / "src" / "tests"
 BUILD_PATH = ROOT_PATH / "build"
@@ -20,32 +22,47 @@ BUILD_PATH = ROOT_PATH / "build"
 sys.path.append(str(ROOT_PATH))
 
 from pyodide_build._fixes import _selenium_is_connectable  # noqa: E402
-import selenium.webdriver.common.utils  # noqa: E402
-
-# XXX: Temporary fix for ConnectionError in selenium
-
-selenium.webdriver.common.utils.is_connectable = _selenium_is_connectable
 
 try:
-    import pytest
+    import selenium.webdriver.common.utils  # noqa: E402
 
-    def pytest_addoption(parser):
-        group = parser.getgroup("general")
-        group.addoption(
-            "--build-dir",
-            action="store",
-            default=BUILD_PATH,
-            help="Path to the build directory",
-        )
-        group.addoption(
-            "--run-xfail",
-            action="store_true",
-            help="If provided, tests marked as xfail will be run",
-        )
+    # XXX: Temporary fix for ConnectionError in selenium
+
+    selenium.webdriver.common.utils.is_connectable = _selenium_is_connectable
+except ModuleNotFoundError:
+    pass
 
 
-except ImportError:
-    pytest = None  # type: ignore
+def pytest_addoption(parser):
+    group = parser.getgroup("general")
+    group.addoption(
+        "--build-dir",
+        action="store",
+        default=BUILD_PATH,
+        help="Path to the build directory",
+    )
+    group.addoption(
+        "--run-xfail",
+        action="store_true",
+        help="If provided, tests marked as xfail will be run",
+    )
+
+
+def pytest_configure(config):
+    """Monkey patch the function cwd_relative_nodeid returns the description
+    of a test for the short summary table. Monkey patch it to reduce the verbosity of the test names in the table.
+    This leaves enough room to see the information about the test failure in the summary.
+    """
+    old_cwd_relative_nodeid = config.cwd_relative_nodeid
+
+    def cwd_relative_nodeid(*args):
+        result = old_cwd_relative_nodeid(*args)
+        result = result.replace("src/tests/", "")
+        result = result.replace("packages/", "")
+        result = result.replace("::test_", "::")
+        return result
+
+    config.cwd_relative_nodeid = cwd_relative_nodeid
 
 
 class JavascriptException(Exception):
@@ -80,12 +97,13 @@ class SeleniumWrapper:
                 f"{(build_dir / 'test.html').resolve()} " f"does not exist!"
             )
         self.driver.get(f"http://{server_hostname}:{server_port}/test.html")
-        self.run_js("Error.stackTraceLimit = Infinity")
-        self.run_js("await languagePluginLoader")
+        self.run_js("Error.stackTraceLimit = Infinity;")
+        self.run_js("await languagePluginLoader;")
+        self.save_state()
 
     @property
     def logs(self):
-        logs = self.driver.execute_script("return window.logs")
+        logs = self.driver.execute_script("return window.logs;")
         if logs is not None:
             return "\n".join(str(x) for x in logs)
         else:
@@ -100,6 +118,9 @@ class SeleniumWrapper:
             let result = pyodide.runPython({code!r});
             if(result && result.toJs){{
                 let converted_result = result.toJs();
+                if(pyodide._module.PyProxy.isPyProxy(converted_result)){{
+                    converted_result = undefined;
+                }}
                 result.destroy();
                 return converted_result;
             }}
@@ -113,6 +134,9 @@ class SeleniumWrapper:
             let result = await pyodide.runPythonAsync({code!r});
             if(result && result.toJs){{
                 let converted_result = result.toJs();
+                if(pyodide._module.PyProxy.isPyProxy(converted_result)){{
+                    converted_result = undefined;
+                }}
                 result.destroy();
                 return converted_result;
             }}
@@ -154,6 +178,15 @@ class SeleniumWrapper:
             return retval[1]
         else:
             raise JavascriptException(retval[1], retval[2])
+
+    def get_num_hiwire_keys(self):
+        return self.run_js("return pyodide._module.hiwire.num_keys();")
+
+    def save_state(self):
+        self.run_js("self.__savedState = pyodide._module.saveState();")
+
+    def restore_state(self):
+        self.run_js("pyodide._module.restoreState(self.__savedState)")
 
     def run_webworker(self, code):
         if isinstance(code, str) and code.startswith("\n"):
@@ -219,55 +252,94 @@ class ChromeWrapper(SeleniumWrapper):
         return Chrome(options=options)
 
 
-if pytest is not None:
+@pytest.hookimpl(hookwrapper=True)
+def pytest_runtest_call(item):
+    """We want to run extra verification at the start and end of each test to
+    check that we haven't leaked memory. According to pytest issue #5044, it's
+    not possible to "Fail" a test from a fixture (no matter what you do, pytest
+    sets the test status to "Error"). The approach suggested there is hook
+    pytest_runtest_call as we do here. To get access to the selenium fixture, we
+    immitate the definition of pytest_pyfunc_call:
+    https://github.com/pytest-dev/pytest/blob/6.2.2/src/_pytest/python.py#L177
 
-    @pytest.fixture(params=["firefox", "chrome"])
-    def selenium_standalone(request, web_server_main):
-        server_hostname, server_port, server_log = web_server_main
-        if request.param == "firefox":
-            cls = FirefoxWrapper
-        elif request.param == "chrome":
-            cls = ChromeWrapper
-        selenium = cls(
-            build_dir=request.config.option.build_dir,
-            server_port=server_port,
-            server_hostname=server_hostname,
-            server_log=server_log,
-        )
+    Pytest issue #5044:
+    https://github.com/pytest-dev/pytest/issues/5044
+    """
+    selenium = None
+    if "selenium" in item._fixtureinfo.argnames:
+        selenium = item.funcargs["selenium"]
+    if "selenium_standalone" in item._fixtureinfo.argnames:
+        selenium = item.funcargs["selenium_standalone"]
+    if selenium and pytest.mark.skip_refcount_check.mark not in item.own_markers:
+        yield from test_wrapper_check_for_memory_leaks(selenium)
+    else:
+        yield
+
+
+def test_wrapper_check_for_memory_leaks(selenium):
+    init_num_keys = selenium.get_num_hiwire_keys()
+    a = yield
+    selenium.restore_state()
+    # if there was an error in the body of the test, flush it out by calling
+    # get_result (we don't want to override the error message by raising a
+    # different error here.)
+    a.get_result()
+    delta_keys = selenium.get_num_hiwire_keys() - init_num_keys
+    assert delta_keys == 0
+
+
+@contextlib.contextmanager
+def selenium_common(request, web_server_main):
+    server_hostname, server_port, server_log = web_server_main
+    if request.param == "firefox":
+        cls = FirefoxWrapper
+    elif request.param == "chrome":
+        cls = ChromeWrapper
+    else:
+        assert False
+    selenium = cls(
+        build_dir=request.config.option.build_dir,
+        server_port=server_port,
+        server_hostname=server_hostname,
+        server_log=server_log,
+    )
+    try:
+        yield selenium
+    finally:
+        selenium.driver.quit()
+
+
+@pytest.fixture(params=["firefox", "chrome"], scope="function")
+def selenium_standalone(request, web_server_main):
+    with selenium_common(request, web_server_main) as selenium:
         try:
             yield selenium
         finally:
             print(selenium.logs)
-            selenium.driver.quit()
 
-    @pytest.fixture(params=["firefox", "chrome"], scope="module")
-    def _selenium_cached(request, web_server_main):
-        # Cached selenium instance. This is a copy-paste of
-        # selenium_standalone to avoid fixture scope issues
-        server_hostname, server_port, server_log = web_server_main
-        if request.param == "firefox":
-            cls = FirefoxWrapper
-        elif request.param == "chrome":
-            cls = ChromeWrapper
-        selenium = cls(
-            build_dir=request.config.option.build_dir,
-            server_port=server_port,
-            server_hostname=server_hostname,
-            server_log=server_log,
-        )
-        try:
-            yield selenium
-        finally:
-            selenium.driver.quit()
 
-    @pytest.fixture
-    def selenium(_selenium_cached):
-        # selenium instance cached at the module level
-        try:
-            _selenium_cached.clean_logs()
-            yield _selenium_cached
-        finally:
-            print(_selenium_cached.logs)
+# selenium instance cached at the module level
+@pytest.fixture(params=["firefox", "chrome"], scope="module")
+def selenium_module_scope(request, web_server_main):
+    with selenium_common(request, web_server_main) as selenium:
+        yield selenium
+
+
+# We want one version of this decorated as a function-scope fixture and one
+# version decorated as a context manager.
+def selenium_per_function(selenium_module_scope):
+    try:
+        selenium_module_scope.clean_logs()
+        yield selenium_module_scope
+    finally:
+        print(selenium_module_scope.logs)
+
+
+selenium = pytest.fixture(selenium_per_function)
+# Hypothesis is unhappy with function scope fixtures. Instead, use the
+# module scope fixture `selenium_module_scope` and use:
+# `with selenium_context_manager(selenium_module_scope) as selenium`
+selenium_context_manager = contextlib.contextmanager(selenium_per_function)
 
 
 @pytest.fixture(scope="session")

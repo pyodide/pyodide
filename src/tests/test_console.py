@@ -130,51 +130,53 @@ def test_repr(safe_sys_redirections):
 
 @pytest.fixture
 def safe_selenium_sys_redirections(selenium):
-    selenium.run("import sys")
-    selenium.run("_redirected = sys.stdout, sys.stderr, sys.displayhook")
+    # Import console early since it makes three global hiwire allocations, and we don't want to anger
+    # the memory leak checker
+    selenium.run_js("pyodide._module.runPythonSimple(`from pyodide import console`)")
+
+    selenium.run_js(
+        "pyodide._module.runPythonSimple(`import sys; _redirected = sys.stdout, sys.stderr, sys.displayhook`)"
+    )
     try:
         yield
     finally:
-        selenium.run("sys.stdout, sys.stderr, sys.displayhook = _redirected")
+        selenium.run_js(
+            "pyodide._module.runPythonSimple(`sys.stdout, sys.stderr, sys.displayhook = _redirected`)"
+        )
 
 
 def test_interactive_console(selenium, safe_selenium_sys_redirections):
-    def ensure_run_completed():
-        selenium.driver.execute_async_script(
-            """
-        const done = arguments[arguments.length - 1];
-        pyodide.globals.shell.run_complete.then(done);
-        """
-        )
-
     selenium.run(
         """
-    from pyodide.console import InteractiveConsole
+        import sys
+        from pyodide.console import InteractiveConsole
 
-    result = None
+        result = None
 
-    def displayhook(value):
-        global result
-        result = value
+        def displayhook(value):
+            global result
+            result = value
 
-    shell = InteractiveConsole()
-    sys.displayhook = displayhook"""
+        shell = InteractiveConsole()
+        sys.displayhook = displayhook
+        """
     )
 
     selenium.run("shell.push('x = 5')")
     selenium.run("shell.push('x')")
-    ensure_run_completed()
+    selenium.run_js("await pyodide.runPython('shell.run_complete');")
     assert selenium.run("result") == 5
 
     selenium.run("shell.push('x ** 2')")
-    ensure_run_completed()
+    selenium.run_js("await pyodide.runPython('shell.run_complete');")
+
     assert selenium.run("result") == 25
 
     selenium.run("shell.push('def f(x):')")
     selenium.run("shell.push('    return x*x + 1')")
     selenium.run("shell.push('')")
     selenium.run("shell.push('[f(x) for x in range(5)]')")
-    ensure_run_completed()
+    selenium.run_js("await pyodide.runPython('shell.run_complete');")
     assert selenium.run("result") == [1, 2, 5, 10, 17]
 
     selenium.run("shell.push('def factorial(n):')")
@@ -184,23 +186,23 @@ def test_interactive_console(selenium, safe_selenium_sys_redirections):
     selenium.run("shell.push('        return n * factorial(n - 1)')")
     selenium.run("shell.push('')")
     selenium.run("shell.push('factorial(10)')")
-    ensure_run_completed()
+    selenium.run_js("await pyodide.runPython('shell.run_complete');")
     assert selenium.run("result") == 3628800
 
     # with package load
     selenium.run("shell.push('import pytz')")
     selenium.run("shell.push('pytz.utc.zone')")
-    ensure_run_completed()
+    selenium.run_js("await pyodide.runPython('shell.run_complete');")
     assert selenium.run("result") == "UTC"
 
 
 def test_completion(selenium, safe_selenium_sys_redirections):
     selenium.run(
         """
-    from pyodide import console
+        from pyodide import console
 
-    shell = console.InteractiveConsole()
-    """
+        shell = console.InteractiveConsole()
+        """
     )
 
     assert selenium.run(

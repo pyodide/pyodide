@@ -33,19 +33,20 @@ class JsFinder(MetaPathFinder):
         loader = JsLoader(jsproxy)
         return spec_from_loader(fullname, loader, origin="javascript")
 
-    def register_js_module(self, name, jsproxy):
+    def register_js_module(self, name: str, jsproxy: JsProxy):
         """
-        Registers the Js object ``module`` as a Js module with ``name``. The module
-        can then be imported from Python using the standard Python import system.
-        If another module by the same name has already been imported, this won't
-        have much effect unless you also delete the imported module from
-        ``sys.modules``. This is called by the javascript API
-        ``pyodide.registerJsModule``.
+        Registers ``jsproxy`` as a Javascript module named ``name``. The module
+        can then be imported from Python using the standard Python import
+        system. If another module by the same name has already been imported,
+        this won't have much effect unless you also delete the imported module
+        from ``sys.modules``. This is called by the javascript API
+        :any:`pyodide.registerJsModule`.
 
         Parameters
         ----------
         name : str
             Name of js module
+
         jsproxy : JsProxy
             Javascript object backing the module
         """
@@ -59,14 +60,15 @@ class JsFinder(MetaPathFinder):
             )
         self.jsproxies[name] = jsproxy
 
-    def unregister_js_module(self, name):
+    def unregister_js_module(self, name: str):
         """
-        Unregisters a Js module with given name that has been previously registered
-        with `js_api_pyodide_registerJsModule` or ``pyodide.register_js_module``. If
-        a Js module with that name does not already exist, will raise an error. Note
-        that if the module has already been imported, this won't have much effect
-        unless you also delete the imported module from ``sys.modules``. This is
-        called by the javascript API ``pyodide.unregisterJsModule``.
+        Unregisters a Javascript module with given name that has been previously
+        registered with :any:`pyodide.registerJsModule` or
+        :any:`pyodide.register_js_module`. If a Javascript module with that name
+        does not already exist, will raise an error. If the module has already
+        been imported, this won't have much effect unless you also delete the
+        imported module from ``sys.modules``. This is called by the Javascript
+        API :any:`pyodide.unregisterJsModule`.
 
         Parameters
         ----------
@@ -77,7 +79,7 @@ class JsFinder(MetaPathFinder):
             del self.jsproxies[name]
         except KeyError:
             raise ValueError(
-                f"Cannot unregister {name!r}: no javascript module with that name is registered"
+                f"Cannot unregister {name!r}: no Javascript module with that name is registered"
             ) from None
 
 
@@ -94,3 +96,6 @@ class JsLoader(Loader):
     # used by importlib.util.spec_from_loader
     def is_package(self, fullname):
         return True
+
+
+jsfinder = JsFinder()

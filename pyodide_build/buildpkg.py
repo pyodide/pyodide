@@ -280,7 +280,11 @@ def build_package(path: Path, args):
         if pkg.get("build", {}).get("script"):
             run_script(buildpath, srcpath, pkg)
         if not pkg.get("build", {}).get("library", False):
-            compile(path, srcpath, pkg, args)
+            # shared libraries get built by the script and put into install
+            # subfolder, then packaged into a pyodide module
+            # i.e. they need package running, but not compile
+            if not pkg.get("build", {}).get("sharedlibrary"):
+                compile(path, srcpath, pkg, args)
             package_files(buildpath, srcpath, pkg, args)
     finally:
         os.chdir(orig_path)
@@ -301,28 +305,28 @@ def make_parser(parser: argparse.ArgumentParser):
         "--cflags",
         type=str,
         nargs="?",
-        default=common.DEFAULTCFLAGS,
+        default=common.get_make_flag("SIDE_MODULE_CFLAGS"),
         help="Extra compiling flags",
     )
     parser.add_argument(
         "--cxxflags",
         type=str,
         nargs="?",
-        default=common.DEFAULTCXXFLAGS,
+        default=common.get_make_flag("SIDE_MODULE_CXXFLAGS"),
         help="Extra C++ specifc compiling flags",
     )
     parser.add_argument(
         "--ldflags",
         type=str,
         nargs="?",
-        default=common.DEFAULTLDFLAGS,
+        default=common.get_make_flag("SIDE_MODULE_LDFLAGS"),
         help="Extra linking flags",
     )
     parser.add_argument(
         "--target",
         type=str,
         nargs="?",
-        default=common.TARGETPYTHON,
+        default=common.get_make_flag("TARGETPYTHONROOT"),
         help="The path to the target Python installation",
     )
     parser.add_argument(

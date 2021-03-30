@@ -9,10 +9,23 @@ RUN apt-get update \
                   libgconf-2-4 chromium \
   && rm -rf /var/lib/apt/lists/*
 
-RUN pip3 --no-cache-dir install pytest pytest-xdist pytest-instafail pytest-rerunfailures \
-      pytest-httpserver pytest-cov PyYAML flake8 black distlib mypy "Cython<3.0" && \
-      # install latest pre-release version of selenium
-      pip3 --no-cache-dir install --pre selenium
+RUN pip3 --no-cache-dir install \
+  black \
+  "cython<3.0" \
+  distlib \
+  flake8 \
+  hypothesis \
+  mypy \
+  pytest \
+  pytest-cov \
+  pytest-httpserver \
+  pytest-instafail \
+  pytest-rerunfailures \
+  pytest-xdist \
+  pyyaml \
+  selenium && \
+  # install latest pre-release version of selenium
+  pip3 --no-cache-dir install --pre selenium
 
 # Get firefox 70.0.1 and geckodriver
 RUN wget -qO- https://ftp.mozilla.org/pub/firefox/releases/85.0.1/linux-x86_64/en-US/firefox-85.0.1.tar.bz2 | tar jx \
