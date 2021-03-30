@@ -22,8 +22,7 @@ RUN pip3 --no-cache-dir install \
   pytest-instafail \
   pytest-rerunfailures \
   pytest-xdist \
-  pyyaml \
-  selenium && \
+  pyyaml && \
   # install latest pre-release version of selenium
   pip3 --no-cache-dir install --pre selenium
 
