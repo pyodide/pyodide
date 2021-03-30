@@ -4,7 +4,7 @@ import time
 import contextvars
 
 
-from typing import Callable
+from typing import Callable, Awaitable
 
 
 class WebLoop(asyncio.AbstractEventLoop):
