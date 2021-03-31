@@ -106,7 +106,7 @@ lines `pythonLoading = self.pyodide.loadPackage(['numpy', 'pytz'])` and
 importScripts('https://cdn.jsdelivr.net/pyodide/v0.17.0a2/full/pyodide.js');
 
 async function loadPyodideAndPackages(){
-    await loadPyodide({ packageIndexURL : 'https://cdn.jsdelivr.net/pyodide/v0.17.0a2/full/pyodide.js' });
+    await loadPyodide({ packageIndexURL : 'https://cdn.jsdelivr.net/pyodide/v0.17.0a2/full/' });
     await self.pyodide.loadPackage(['numpy', 'pytz']);
 }
 let pyodideReadyPromise = loadPyodideAndPackages();
