@@ -1,17 +1,19 @@
 importScripts('./pyodide.js')
 
 onmessage = async function(e) {
-  await loadPyodide({indexURL : '{{ PYODIDE_BASE_URL }}'});
-  const data = e.data;
-  for (let key of Object.keys(data)) {
-    if (key !== 'python') {
-      // Keys other than python must be arguments for the python script.
-      // Set them on self, so that `from js import key` works.
-      self[key] = data[key];
-    }
-  }
-
   try {
+    const data = e.data;
+    for (let key of Object.keys(data)) {
+      if (key !== 'python') {
+        // Keys other than python must be arguments for the python script.
+        // Set them on self, so that `from js import key` works.
+        self[key] = data[key];
+      }
+    }
+
+    if (typeof self.pyodide !== "undefined") {
+      await loadPyodide({packageIndexURL : '{{ PYODIDE_BASE_URL }}'});
+    }
     self.postMessage(
         {results : await self.pyodide.runPythonAsync(data.python)});
   } catch (e) {
