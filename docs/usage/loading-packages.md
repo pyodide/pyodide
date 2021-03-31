@@ -116,7 +116,7 @@ a complete example would be,
   <script type="text/javascript" src="https://cdn.jsdelivr.net/pyodide/v0.17.0a2/full/pyodide.js"></script>
   <script type="text/javascript">
     async function main(){
-      await loadPyodide({ packageIndexURL : 'https://cdn.jsdelivr.net/pyodide/v0.17.0a2/full/' });
+      await loadPyodide({ indexURL : 'https://cdn.jsdelivr.net/pyodide/v0.17.0a2/full/' });
       await pyodide.runPythonAsync(`
         import micropip
         await micropip.install('snowballstemmer')

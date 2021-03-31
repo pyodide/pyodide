@@ -20,7 +20,7 @@ namespace called {js:mod}`pyodide`.
 
 ```pyodide
 async function main() {
-  await loadPyodide({ packageIndexURL : "https://cdn.jsdelivr.net/pyodide/v0.17.0a2/full/" });
+  await loadPyodide({ indexURL : "https://cdn.jsdelivr.net/pyodide/v0.17.0a2/full/" });
   // Pyodide is now ready to use...
   console.log(pyodide.runPython(`
     import sys
@@ -62,7 +62,7 @@ Create and save a test `index.html` page with the following contents:
     <script type="text/javascript">
       async function main(){
         await loadPyodide({
-          packageIndexURL : "https://cdn.jsdelivr.net/pyodide/v0.17.0a2/full/"
+          indexURL : "https://cdn.jsdelivr.net/pyodide/v0.17.0a2/full/"
         });
         console.log(pyodide.runPython(`
             import sys
@@ -108,7 +108,7 @@ Create and save a test `index.html` page with the following contents:
     output.value = 'Initializing...\n';
     // init Pyodide
     async function main(){
-      await loadPyodide({ packageIndexURL : 'https://cdn.jsdelivr.net/pyodide/v0.17.0a2/full/' });
+      await loadPyodide({ indexURL : 'https://cdn.jsdelivr.net/pyodide/v0.17.0a2/full/' });
       output.value += 'Ready!\n';
     }
     let pyodideReadyPromise = main();

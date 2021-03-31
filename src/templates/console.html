@@ -14,7 +14,7 @@
   <body>
     <script>
       function main() {
-        await initializePyodide({ packageIndexURL : '{{ PYODIDE_BASE_URL }}' });
+        await initializePyodide({ indexURL : '{{ PYODIDE_BASE_URL }}' });
         let namespace = pyodide.globals.get("dict")();
         pyodide.runPython(`
             import sys

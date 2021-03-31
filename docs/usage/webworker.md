@@ -15,7 +15,7 @@ such as `https://cdn.jsdelivr.net/pyodide`. This is the solution
 presented here.
 
 Update the `webworker.js` sample so that it has as valid URL for `pyodide.js`, and sets
-`packageIndexURL <globalThis.loadPyodide>` to the location of the supporting files.
+`indexURL <globalThis.loadPyodide>` to the location of the supporting files.
 
 In your application code create a web worker `new Worker(...)`,
 and attach listeners to it using its `.onerror` and `.onmessage`
@@ -106,7 +106,7 @@ lines `pythonLoading = self.pyodide.loadPackage(['numpy', 'pytz'])` and
 importScripts('https://cdn.jsdelivr.net/pyodide/v0.17.0a2/full/pyodide.js');
 
 async function loadPyodideAndPackages(){
-    await loadPyodide({ packageIndexURL : 'https://cdn.jsdelivr.net/pyodide/v0.17.0a2/full/' });
+    await loadPyodide({ indexURL : 'https://cdn.jsdelivr.net/pyodide/v0.17.0a2/full/' });
     await self.pyodide.loadPackage(['numpy', 'pytz']);
 }
 let pyodideReadyPromise = loadPyodideAndPackages();

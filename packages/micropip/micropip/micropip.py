@@ -254,7 +254,7 @@ def install(requirements: Union[str, List[str]]):
 
         - If the requirement does not end in ``.whl``, it will interpreted as the
           name of a package. A package by this name must either be present in the
-          Pyodide repository at `packageIndexURL <globalThis.loadPyodide>` or on PyPi
+          Pyodide repository at `indexURL <globalThis.loadPyodide>` or on PyPi
 
     Returns
     -------

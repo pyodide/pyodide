@@ -14,7 +14,7 @@ globalThis.pyodide = {};
 /**
  * Load the main Pyodide wasm module and initialize it. When finished stores the
  * pyodide module as a global object called ``pyodide``.
- * @param {string} config.packageIndexURL - The URL from which Pyodide will load
+ * @param {string} config.indexURL - The URL from which Pyodide will load
  * packages
  * @returns The pyodide module.
  */
@@ -31,8 +31,8 @@ globalThis.loadPyodide = async function(config = {}) {
   let Module = {};
   // Note: PYODIDE_BASE_URL is an environment variable replaced in
   // in this template in the Makefile. It's recommended to always set
-  // packageIndexURL in any case.
-  let baseURL = config.packageIndexURL || "{{ PYODIDE_BASE_URL }}";
+  // indexURL in any case.
+  let baseURL = config.indexURL || "{{ PYODIDE_BASE_URL }}";
   baseURL = baseURL.substr(0, baseURL.lastIndexOf('/')) + '/';
 
   ////////////////////////////////////////////////////////////
@@ -794,7 +794,7 @@ def temp(Module):
 if (globalThis.languagePluginUrl) {
   console.warn(
       "languagePluginUrl is deprecated and will be removed in version 0.18.0," +
-      "instead use loadPyodide({ packageIndexURL : <some_url>})");
+      "instead use loadPyodide({ indexURL : <some_url>})");
 
   /**
    * A deprecated parameter that specifies the Pyodide baseURL. If present,
