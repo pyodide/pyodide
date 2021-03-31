@@ -719,7 +719,7 @@ TEMP_EMJS_HELPER(() => {0, /* Magic, see comment */
     getBuffer : function(type = "u8") {
       let ArrayType = undefined;
       if (type) {
-        let ArrayType = type_to_array_map.get(type);
+        ArrayType = type_to_array_map.get(type);
         if (ArrayType === undefined) {
           throw new Error(`Unknown type ${type}`);
         }
