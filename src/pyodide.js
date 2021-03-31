@@ -12,16 +12,27 @@
 globalThis.pyodide = {};
 
 /**
- * A promise that resolves to ``undefined`` when Pyodide is finished loading.
- *
- * @type Promise
+ * Load the main Pyodide wasm module and initialize it. When finished stores the
+ * pyodide module as a global object called ``pyodide``.
+ * @param {string} config.indexURL - The URL from which Pyodide will load
+ * packages
+ * @returns The pyodide module.
  */
-globalThis.languagePluginLoader = (async () => {
+globalThis.loadPyodide = async function(config = {}) {
+  if (globalThis.__pyodideLoading) {
+    if (globalThis.languagePluginURL) {
+      throw new Error(
+          "Pyodide is already loading because languagePluginURL is defined.");
+    } else {
+      throw new Error("Pyodide is already loading.");
+    }
+  }
+  globalThis.__pyodideLoading = true;
   let Module = {};
-  // Note: PYODIDE_BASE_URL is an environement variable replaced in
+  // Note: PYODIDE_BASE_URL is an environment variable replaced in
   // in this template in the Makefile. It's recommended to always set
-  // languagePluginUrl in any case.
-  let baseURL = self.languagePluginUrl || '{{ PYODIDE_BASE_URL }}';
+  // indexURL in any case.
+  let baseURL = config.indexURL || "{{ PYODIDE_BASE_URL }}";
   baseURL = baseURL.substr(0, baseURL.lastIndexOf('/')) + '/';
 
   ////////////////////////////////////////////////////////////
@@ -61,9 +72,9 @@ globalThis.languagePluginLoader = (async () => {
 
   function recursiveDependencies(names, _messageCallback, errorCallback,
                                  sharedLibsOnly) {
-    const packages = self.pyodide._module.packages.dependencies;
-    const loadedPackages = self.pyodide.loadedPackages;
-    const sharedLibraries = self.pyodide._module.packages.shared_library;
+    const packages = Module.packages.dependencies;
+    const loadedPackages = Module.loadedPackages;
+    const sharedLibraries = Module.packages.shared_library;
     const toLoad = new Map();
 
     const addPackage = (pkg) => {
@@ -163,7 +174,7 @@ globalThis.languagePluginLoader = (async () => {
     let scriptPromises = [];
 
     for (let [pkg, uri] of toLoad) {
-      let loaded = self.pyodide.loadedPackages[pkg];
+      let loaded = Module.loadedPackages[pkg];
       if (loaded !== undefined) {
         // If uri is from the DEFAULT_CHANNEL, we assume it was added as a
         // depedency, which was previously overridden.
@@ -222,7 +233,7 @@ globalThis.languagePluginLoader = (async () => {
 
     let packageList = [];
     for (let [pkg, uri] of toLoad) {
-      self.pyodide.loadedPackages[pkg] = uri;
+      Module.loadedPackages[pkg] = uri;
       packageList.push(pkg);
     }
 
@@ -394,7 +405,6 @@ globalThis.languagePluginLoader = (async () => {
 
   ////////////////////////////////////////////////////////////
   // Loading Pyodide
-  self.Module = Module;
 
   Module.noImageDecoding = true;
   Module.noAudioDecoding = true;
@@ -733,10 +743,10 @@ globalThis.languagePluginLoader = (async () => {
 
   await loadScript(scriptSrc);
 
-  // The emscripten module needs to be at this location for the core
-  // filesystem to install itself. Once that's complete, it will be replaced
-  // by the call to `makePublicAPI` with a more limited public API.
-  self.pyodide = await pyodide(Module);
+  // _createPyodideModule is specified in the Makefile by the linker flag:
+  // `-s EXPORT_NAME="'_createPyodideModule'"`
+  await _createPyodideModule(Module);
+  delete globalThis._createPyodideModule;
 
   // There is some work to be done between the module being "ready" and postRun
   // being called.
@@ -771,13 +781,42 @@ def temp(Module):
   // TODO: Should we have this?
   Module.globals = Module.wrapNamespace(Module.globals);
 
-  delete self.Module;
   let response = await fetch(`${baseURL}packages.json`);
   Module.packages = await response.json();
 
-  fixRecursionLimit(self.pyodide);
-  self.pyodide = makePublicAPI(self.pyodide, PUBLIC_API);
-  self.pyodide.registerJsModule("js", globalThis);
-  self.pyodide.registerJsModule("pyodide_js", self.pyodide);
-})();
-languagePluginLoader
+  fixRecursionLimit(Module);
+  let pyodide = makePublicAPI(Module, PUBLIC_API);
+  Module.registerJsModule("js", globalThis);
+  Module.registerJsModule("pyodide_js", pyodide);
+  globalThis.pyodide = pyodide;
+  return pyodide;
+};
+
+if (globalThis.languagePluginUrl) {
+  console.warn(
+      "languagePluginUrl is deprecated and will be removed in version 0.18.0," +
+      "instead use loadPyodide({ indexURL : <some_url>})");
+
+  /**
+   * A deprecated parameter that specifies the Pyodide baseURL. If present,
+   * Pyodide will automatically invoke ``initializePyodide({baseURL :
+   * languagePluginUrl})`` and will store the resulting promise in
+   * :any:`globalThis.languagePluginLoader`. Instead, use :any:`loadPyodide`
+   * directly.
+   *
+   * @type String
+   * @deprecated Will be removed in version 0.18.0
+   */
+  globalThis.languagePluginUrl;
+
+  /**
+   * A deprecated promise that resolves to ``undefined`` when Pyodide is
+   * finished loading. Only created if :any:`languagePluginUrl` is
+   * defined. Instead use :any:`loadPyodide`.
+   *
+   * @type Promise
+   * @deprecated Will be removed in version 0.18.0
+   */
+  globalThis.languagePluginLoader =
+      loadPyodide({baseURL : globalThis.languagePluginUrl});
+}
