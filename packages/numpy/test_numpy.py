@@ -185,8 +185,8 @@ def test_runpythonasync_numpy(selenium_standalone):
         )
 
 
-def test_runwebworker_numpy(selenium_standalone):
-    output = selenium_standalone.run_webworker(
+def test_runwebworker_numpy(selenium_webworker_standalone):
+    output = selenium_webworker_standalone.run_webworker(
         """
         import numpy as np
         x = np.zeros(5)
