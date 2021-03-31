@@ -409,8 +409,6 @@ def run_web_server(q, log_filepath, build_dir):
     sys.stdout = log_fh
     sys.stderr = log_fh
 
-    test_prefix = "/src/tests/"
-
     class Handler(http.server.SimpleHTTPRequestHandler):
         def log_message(self, format_, *args):
             print(

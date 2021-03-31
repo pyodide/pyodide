@@ -54,7 +54,7 @@ globalThis.languagePluginLoader = (async () => {
   } else if (self.importScripts) { // webworker
     loadScript = async (url) => {  // This is async only for consistency
       self.importScripts(url);
-    }
+    };
   } else {
     throw new Error("Cannot determine runtime environment");
   }
@@ -97,7 +97,7 @@ globalThis.languagePluginLoader = (async () => {
       }
     }
     if (sharedLibsOnly) {
-      onlySharedLibs = new Map();
+      let onlySharedLibs = new Map();
       for (let c of toLoad) {
         if (c[0] in sharedLibraries) {
           onlySharedLibs.set(c[0], toLoad.get(c[0]));
@@ -129,7 +129,8 @@ globalThis.languagePluginLoader = (async () => {
     if (toLoad.size === 0) {
       return Promise.resolve('No new packages to load');
     } else {
-      messageCallback(`Loading ${[...toLoad.keys()].join(', ')}`)
+      let packageNames = Array.from(toLoad.keys()).join(', ');
+      messageCallback(`Loading ${packageNames}`);
     }
 
     // If running in main browser thread, try to catch errors thrown when
@@ -170,9 +171,11 @@ globalThis.languagePluginLoader = (async () => {
           messageCallback(`${pkg} already loaded from ${loaded}`);
           continue;
         } else {
-          errorCallback(`URI mismatch, attempting to load package ${pkg} from ${
-              uri} while it is already loaded from ${
-              loaded}. To override a dependency, load the custom package first.`);
+          errorCallback(
+              `URI mismatch, attempting to load package ${pkg} from ${uri} ` +
+              `while it is already loaded from ${
+                  loaded}. To override a dependency, ` +
+              `load the custom package first.`);
           continue;
         }
       }
@@ -225,8 +228,8 @@ globalThis.languagePluginLoader = (async () => {
 
     let resolveMsg;
     if (packageList.length > 0) {
-      let package_names = packageList.join(', ');
-      resolveMsg = `Loaded ${packageList}`;
+      let packageNames = packageList.join(', ');
+      resolveMsg = `Loaded ${packageNames}`;
     } else {
       resolveMsg = 'No packages loaded';
     }
@@ -268,18 +271,17 @@ globalThis.languagePluginLoader = (async () => {
    * messages (optional)
    * @returns {Promise} Resolves to ``undefined`` when loading is complete
    */
-  Module.loadPackage =
-      async function(names, messageCallback, errorCallback) {
+  Module.loadPackage = async function(names, messageCallback, errorCallback) {
     if (!Array.isArray(names)) {
       names = [ names ];
     }
     // get shared library packages and load those first
     // otherwise bad things happen with linking them in firefox.
-    sharedLibraryNames = [];
+    let sharedLibraryNames = [];
     try {
-      sharedLibraryPackagesToLoad =
+      let sharedLibraryPackagesToLoad =
           recursiveDependencies(names, messageCallback, errorCallback, true);
-      for (pkg of sharedLibraryPackagesToLoad) {
+      for (let pkg of sharedLibraryPackagesToLoad) {
         sharedLibraryNames.push(pkg[0]);
       }
     } catch (e) {
@@ -332,7 +334,7 @@ globalThis.languagePluginLoader = (async () => {
                            errorCallback || console.error));
     loadPackageChain = loadPackageChain.then(() => promise.catch(() => {}));
     await promise;
-  }
+  };
 
   ////////////////////////////////////////////////////////////
   // Fix Python recursion limit
@@ -425,7 +427,7 @@ globalThis.languagePluginLoader = (async () => {
           continue;
         }
         if (typeof (value) === "function") {
-          Module.public_api[key] = function() { throw Error(fatal_error_msg); }
+          Module.public_api[key] = function() { throw Error(fatal_error_msg); };
         }
       }
     } catch (_) {
@@ -658,12 +660,11 @@ globalThis.languagePluginLoader = (async () => {
     let QUOTE = 3;
     let QUOTE_ESCAPE = 4;
     let paren_depth = 0;
-    let arg_start = 0;
     let arg_is_obj_dest = false;
     let quote_start = undefined;
     let state = START_ARG;
     // clang-format off
-    for (i = idx; i < funcstr.length; i++) {
+    for (let i = idx; i < funcstr.length; i++) {
       let x = funcstr[i];
       if(state === QUOTE){
         switch(x){
