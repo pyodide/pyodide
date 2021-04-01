@@ -481,12 +481,12 @@ def test_fatal_error(selenium_standalone):
             The cause of the fatal error was:
             {}
             Stack (most recent call first):
-            File "<exec>", line 8 in h
-            File "<exec>", line 6 in g
-            File "<exec>", line 4 in f
-            File "<exec>", line 9 in <module>
-            File "/lib/python3.8/site-packages/pyodide/_base.py", line 242 in run
-            File "/lib/python3.8/site-packages/pyodide/_base.py", line 344 in eval_code
+              File "<exec>", line 8 in h
+              File "<exec>", line 6 in g
+              File "<exec>", line 4 in f
+              File "<exec>", line 9 in <module>
+              File "/lib/python3.8/site-packages/pyodide/_base.py", line 242 in run
+              File "/lib/python3.8/site-packages/pyodide/_base.py", line 344 in eval_code
             """
         ).strip()
     )
