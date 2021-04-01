@@ -170,6 +170,8 @@ EM_JS_NUM(errcode, python2js_buffer_init, (), {
       }
       return buff;
     }
-    return buff = > new ArrayType(swapFunc(buff));
+    // clang-format off
+    return buff => new ArrayType(swapFunc(buff));
+    // clang-format on
   };
 });
