@@ -739,15 +739,15 @@ TEMP_EMJS_HELPER(() => {0, /* Magic, see comment */
       let c_contiguous = !!HEAP32[cur_ptr++];
       let f_contiguous = !!HEAP32[cur_ptr++];
 
+      let format = UTF8ToString(format_ptr);
       _PyMem_Free(buffer_struct_ptr);
 
       let success = false;
       try {
         let bigEndian = false;
         if (ArrayType === undefined) {
-          let formatStr = UTF8ToString(format_ptr);
           [ArrayType, bigEndian] = Module.processBufferFormatString(
-              formatStr,
+              format,
               " In this case, you must pass an explicit type argument.");
         }
         let alignment =
