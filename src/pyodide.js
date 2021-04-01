@@ -411,7 +411,8 @@ globalThis.languagePluginLoader = (async () => {
     }
     fatal_error_occurred = true;
     console.error(fatal_error_msg);
-    console.error("The cause of the fatal error was:\n", e);
+    console.error("The cause of the fatal error was:")
+    console.error(e);
     try {
       pyodide._module.__Py_DumpTraceback(
           1, pyodide._module._PyGILState_GetThisThreadState());
