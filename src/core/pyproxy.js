@@ -672,7 +672,6 @@ TEMP_EMJS_HELPER(() => {0, /* Magic, see comment */
   let type_to_array_map = new Map([
     [ "i8", Int8Array ],
     [ "u8", Uint8Array ],
-    [ "u8clamped", Uint8ClampedArray ],
     [ "i16", Int16Array ],
     [ "u16", Uint16Array ],
     [ "i32", Int32Array ],
@@ -717,10 +716,10 @@ TEMP_EMJS_HELPER(() => {0, /* Magic, see comment */
      *    "f32", or "f64,
      * @returns PyBuffer
      */
-    getBuffer : function(type) {
+    getBuffer : function(type = "u8") {
       let ArrayType = undefined;
       if (type) {
-        ArrayType = type_to_array_map.get(type);
+        let ArrayType = type_to_array_map.get(type);
         if (ArrayType === undefined) {
           throw new Error(`Unknown type ${type}`);
         }
