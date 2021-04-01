@@ -120,6 +120,10 @@ substitutions:
   raise a `KeyboardInterrupt` by writing to the interrupt buffer.
   [#1148](https://github.com/pyodide/pyodide/pull/1148) and
   [#1173](https://github.com/pyodide/pyodide/pull/1173)
+- Changed the loading method: added an async function `loadPyodide` to load
+  Pyodide to use instead of `languagePluginURL` and `languagePluginLoader`. The
+  change is currently backwards compatible, but the old approach is deprecated.
+  [1363](https://github.com/pyodide/pyodide/pull/1363)
 
 ### micropip
 

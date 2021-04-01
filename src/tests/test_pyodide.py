@@ -450,3 +450,43 @@ def test_restore_state(selenium):
             import c
         """
     )
+
+
+@pytest.mark.skip_refcount_check
+def test_fatal_error(selenium_standalone):
+    assert selenium_standalone.run_js(
+        """
+        try {
+            pyodide.runPython(`
+                from _pyodide_core import trigger_fatal_error
+                def f():
+                    g()
+                def g():
+                    h()
+                def h():
+                    trigger_fatal_error()
+                f()
+            `);
+        } catch(e){
+            return e.toString();
+        }
+        """
+    )
+    assert (
+        selenium_standalone.logs
+        == dedent(
+            """
+            Python initialization complete
+            Pyodide has suffered a fatal error, refresh the page. Please report this to the Pyodide maintainers.
+            The cause of the fatal error was:
+            {}
+            Stack (most recent call first):
+              File "<exec>", line 8 in h
+              File "<exec>", line 6 in g
+              File "<exec>", line 4 in f
+              File "<exec>", line 9 in <module>
+              File "/lib/python3.8/site-packages/pyodide/_base.py", line 242 in run
+              File "/lib/python3.8/site-packages/pyodide/_base.py", line 344 in eval_code
+            """
+        ).strip()
+    )

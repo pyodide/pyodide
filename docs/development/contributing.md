@@ -150,7 +150,6 @@ clarification on what is and isn't permitted.
 
 ## Get in Touch
 
-- __Gitter:__ Pyodide currently shares the
-  [#iodide](https://gitter.im/iodide-project/iodide) channel over at gitter.im
+- __Gitter:__ [#pyodide](https://gitter.im/pyodide/community) channel at gitter.im
 
 [tl;drLegal entry]:https://tldrlegal.com/license/mozilla-public-license-2.0-(mpl-2)

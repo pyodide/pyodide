@@ -74,5 +74,6 @@ exec docker run \
     -it --rm \
     -v $PWD:/src \
     --user root -e NB_UID=$UID -e NB_GID=$GID \
+    --shm-size 2g \
     "${PYODIDE_DOCKER_IMAGE}" \
     /bin/bash
