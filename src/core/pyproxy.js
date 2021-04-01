@@ -716,7 +716,7 @@ TEMP_EMJS_HELPER(() => {0, /* Magic, see comment */
      *    "f32", or "f64,
      * @returns PyBuffer
      */
-    getBuffer : function(type = "u8") {
+    getBuffer : function(type) {
       let ArrayType = undefined;
       if (type) {
         ArrayType = type_to_array_map.get(type);
