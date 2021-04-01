@@ -314,7 +314,7 @@ def test_get_buffer_big_endian(selenium):
 
 
 def test_get_buffer_error_messages(selenium):
-    with pytest.raises(Exception, match="Javascript has no Float16Array"):
+    with pytest.raises(Exception, match="Javascript has no Float16 support"):
         selenium.run_js(
             """
             await pyodide.runPythonAsync(`
