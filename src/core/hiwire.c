@@ -273,27 +273,6 @@ EM_JS_NUM(errcode, hiwire_push_array, (JsRef idarr, JsRef idval), {
 
 EM_JS_REF(JsRef, hiwire_object, (), { return Module.hiwire.new_value({}); });
 
-EM_JS_NUM(errcode,
-          hiwire_push_object_pair,
-          (JsRef idobj, JsRef idkey, JsRef idval),
-          {
-            let jsobj = Module.hiwire.get_value(idobj);
-            let jskey = Module.hiwire.get_value(idkey);
-            let jsval = Module.hiwire.get_value(idval);
-            jsobj[jskey] = jsval;
-          });
-
-EM_JS_REF(JsRef, hiwire_get_global, (const char* ptrname), {
-  let jsname = UTF8ToString(ptrname);
-  let result = globalThis[jsname];
-  // clang-format off
-  if (result === undefined && !(jsname in globalThis)) {
-    // clang-format on
-    return ERROR_REF;
-  }
-  return Module.hiwire.new_value(result);
-});
-
 EM_JS_REF(JsRef, hiwire_get_member_string, (JsRef idobj, const char* ptrkey), {
   let jsobj = Module.hiwire.get_value(idobj);
   let jskey = UTF8ToString(ptrkey);
@@ -348,34 +327,6 @@ EM_JS_NUM(errcode, hiwire_delete_member_int, (JsRef idobj, int idx), {
     return ERROR_NUM;
   }
   obj.splice(idx, 1);
-});
-
-EM_JS_REF(JsRef, hiwire_get_member_obj, (JsRef idobj, JsRef ididx), {
-  let jsobj = Module.hiwire.get_value(idobj);
-  let jsidx = Module.hiwire.get_value(ididx);
-  let result = jsobj[jsidx];
-  // clang-format off
-  if (result === undefined && !(jsidx in jsobj)) {
-    // clang-format on
-    return ERROR_REF;
-  }
-  return Module.hiwire.new_value(result);
-});
-
-EM_JS_NUM(errcode,
-          hiwire_set_member_obj,
-          (JsRef idobj, JsRef ididx, JsRef idval),
-          {
-            let jsobj = Module.hiwire.get_value(idobj);
-            let jsidx = Module.hiwire.get_value(ididx);
-            let jsval = Module.hiwire.get_value(idval);
-            jsobj[jsidx] = jsval;
-          });
-
-EM_JS_NUM(errcode, hiwire_delete_member_obj, (JsRef idobj, JsRef ididx), {
-  let jsobj = Module.hiwire.get_value(idobj);
-  let jsidx = Module.hiwire.get_value(ididx);
-  delete jsobj[jsidx];
 });
 
 EM_JS_REF(JsRef, hiwire_dir, (JsRef idobj), {
