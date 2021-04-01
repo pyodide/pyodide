@@ -143,6 +143,12 @@ EM_JS_NUM(int, hiwire_init, (), {
     return (!!obj) && typeof obj.then === 'function';
     // clang-format on
   };
+
+  if (globalThis.BigInt) {
+    Module.BigInt = BigInt;
+  } else {
+    Module.BigInt = Number;
+  }
   return 0;
 });
 
@@ -171,9 +177,9 @@ EM_JS_REF(JsRef, hiwire_int_from_hex, (const char* s), {
   if (HEAP8[s] === 45) {
     // clang-format on
     // Leading character is a minus.
-    result = -BigInt(UTF8ToString(s + 1));
+    result = -Module.BigInt(UTF8ToString(s + 1));
   } else {
-    result = BigInt(UTF8ToString(s));
+    result = Module.BigInt(UTF8ToString(s));
   }
   if (-Number.MAX_SAFE_INTEGER < result && result < Number.MAX_SAFE_INTEGER) {
     result = Number(result);
