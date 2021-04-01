@@ -109,7 +109,7 @@ def test_extract_summary():
 
 def test_summary():
     globals = jsdoc_summary.get_summary_table(
-        "globalThis", dummy_app._sphinxjs_analyzer.js_docs["globals"]["attribute"]
+        "globalThis", dummy_app._sphinxjs_analyzer.js_docs["globalThis"]["attribute"]
     )
     attributes = jsdoc_summary.get_summary_table(
         "pyodide", dummy_app._sphinxjs_analyzer.js_docs["pyodide"]["attribute"]

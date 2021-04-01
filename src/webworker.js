@@ -1,8 +1,7 @@
-self.languagePluginUrl = '{{ PYODIDE_BASE_URL }}'
 importScripts('./pyodide.js')
 
 onmessage = async function(e) {
-  await languagePluginLoader;
+  await loadPyodide({indexURL : '{{ PYODIDE_BASE_URL }}'});
   const data = e.data;
   for (let key of Object.keys(data)) {
     if (key !== 'python') {
