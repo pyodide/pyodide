@@ -124,90 +124,52 @@ EM_JS_NUM(errcode, python2js_buffer_init, (), {
   {
     "use strict";
     let formatStr = UTF8ToString(format);
-    if (formatStr.length > 2) {
-      throw new Error(
-        `Expected format string to have length <= 2, got '${formatStr}'`);
-    }
+    let[ArrayType, bigEndian] = Module.processBufferFormatString(formatStr);
     let formatChar = formatStr.slice(-1);
-    let alignChar = formatStr.slice(0, -1);
-    // clang-format off
-    let swap = alignChar === "!" || alignChar === ">";
-    // clang-format on
-    let swapFunc;
-    if (!swap) {
-      // clang-format off
-      swapFunc = buff => buff;
-      // clang-format on
-    } else {
-      let getFuncName;
-      let setFuncName;
-      switch (itemsize) {
-        case 2:
-          getFuncName = "getUint16";
-          setFuncName = "setUint16";
-          break;
-        case 4:
-          getFuncName = "getUint32";
-          setFuncName = "setUint32";
-          break;
-        case 8:
-          getFuncName = "getFloat64";
-          setFuncName = "setFloat64";
-          break;
-      }
-      swapFunc = function(buff, size)
-      {
-        let dataview = new DataView(buff);
-        let getFunc = dataview[getFuncName].bind(dataview);
-        let setFunc = dataview[setFuncName].bind(dataview);
-        for (let byte = 0; byte < dataview.byteLength; byte += itemsize) {
-          // Get value as little endian, set back as big endian.
-          setFunc(byte, getFunc(byte, true), false);
-        }
-        return buff;
-      }
-    }
-    // clang-format off
     switch (formatChar) {
-      case 'c':
+      case "c":
         let decoder = new TextDecoder("utf8");
-        return (buff) => decoder.decode(buff);
-      case 'b':
-        return (buff) => new Int8Array(buff);
-      case 'B':
-        return (buff) => new Uint8Array(buff);
-      case '?':
-        return (buff) => Array.from(new Uint8Array(buff)).map(x => !!x);
-      case 'h':
-        return (buff) => new Int16Array(swapFunc(buff));
-      case 'H':
-        return (buff) => new Uint16Array(swapFunc(buff));
-      case 'i':
-      case 'l':
-      case 'n':
-        return (buff) => new Int32Array(swapFunc(buff));
-        return "getInt32";
-      case 'I':
-      case 'L':
-      case 'N':
-        return (buff) => new Uint32Array(swapFunc(buff));
-      case 'q':
-        if(globalThis.BigInt64Array === undefined){
-          throw new Error("BigInt64Array is not supported on this browser.");
-        }
-        return (buff) => new BigInt64Array(swapFunc(buff));
-      case 'Q':
-        if(globalThis.BigUint64Array === undefined){
-          throw new Error("BigUint64Array is not supported on this browser.");
-        }
-        return (buff) => new BigUint64Array(swapFunc(buff));
-      case 'f':
-        return (buff) => new Float32Array(swapFunc(buff));
-      case 'd':
-        return (buff) => new Float64Array(swapFunc(buff));
-      default:
-        throw new Error(`Unrecognized format character '${formatChar}'`);
+        return (buff) = > decoder.decode(buff);
+      case "?":
+        return (buff) = > Array.from(new Uint8Array(buff)).map(x = > !!x);
     }
-    // clang-format on
+
+    if (!bigEndian) {
+      // clang-format off
+      return buff => new ArrayType(buff);
+      // clang-format on
+    }
+    let getFuncName;
+    let setFuncName;
+    switch (itemsize) {
+      case 2:
+        getFuncName = "getUint16";
+        setFuncName = "setUint16";
+        break;
+      case 4:
+        getFuncName = "getUint32";
+        setFuncName = "setUint32";
+        break;
+      case 8:
+        getFuncName = "getFloat64";
+        setFuncName = "setFloat64";
+        break;
+      default:
+        // clang-format off
+        throw new Error(`Unexpected size ${ itemsize }`);
+        // clang-format on
+    }
+    function swapFunc(buff)
+    {
+      let dataview = new DataView(buff);
+      let getFunc = dataview[getFuncName].bind(dataview);
+      let setFunc = dataview[setFuncName].bind(dataview);
+      for (let byte = 0; byte < dataview.byteLength; byte += itemsize) {
+        // Get value as little endian, set back as big endian.
+        setFunc(byte, getFunc(byte, true), false);
+      }
+      return buff;
+    }
+    return buff = > new ArrayType(swapFunc(buff));
   };
 });
