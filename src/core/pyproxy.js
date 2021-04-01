@@ -15,7 +15,7 @@
 //   EM_JS(int, pyproxy_init, (), UNPAIRED_OPEN_BRACE { args return 0; })
 
 // clang-format off
-TEMP_EMJS_HELPER(() => {0,0; /* Magic, see comment */ // lgtm [js/useless-expression]
+TEMP_EMJS_HELPER(() => {void(0),void(0); /* Magic, see comment */
   // clang-format on
   Module.PyProxies = {};
 
