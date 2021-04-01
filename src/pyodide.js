@@ -746,7 +746,6 @@ globalThis.loadPyodide = async function(config = {}) {
   // _createPyodideModule is specified in the Makefile by the linker flag:
   // `-s EXPORT_NAME="'_createPyodideModule'"`
   await _createPyodideModule(Module);
-  delete globalThis._createPyodideModule;
 
   // There is some work to be done between the module being "ready" and postRun
   // being called.
