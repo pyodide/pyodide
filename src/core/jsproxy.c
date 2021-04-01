@@ -1359,12 +1359,12 @@ JsBuffer_cinit(PyObject* obj)
 {
   bool success = false;
   JsProxy* self = (JsProxy*)obj;
-  if (hiwire_is_on_wasm_heap(JsProxy_REF(self))) {
-    PyErr_SetString(
-      PyExc_ValueError,
-      "Will not import naked wasm memory into Python, it isn't safe");
-    FAIL();
-  }
+  // if (hiwire_is_on_wasm_heap(JsProxy_REF(self))) {
+  //   PyErr_SetString(
+  //     PyExc_ValueError,
+  //     "Will not import naked wasm memory into Python, it isn't safe");
+  //   FAIL();
+  // }
   self->byteLength = hiwire_get_byteLength(JsProxy_REF(self));
   // format string is borrowed from hiwire_get_dtype, DO NOT DEALLOCATE!
   hiwire_get_dtype(JsProxy_REF(self), &self->format, &self->itemsize);
