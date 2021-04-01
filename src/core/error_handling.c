@@ -188,6 +188,22 @@ EM_JS_NUM(errcode, error_handling_init_js, (), {
   return 0;
 })
 
+PyObject*
+trigger_fatal_error(PyObject* mod, PyObject* _args)
+{
+  EM_ASM(throw new Error("intentionally triggered fatal error!"););
+  Py_UNREACHABLE();
+}
+
+static PyMethodDef methods[] = {
+  {
+    "trigger_fatal_error",
+    trigger_fatal_error,
+    METH_NOARGS,
+  },
+  { NULL } /* Sentinel */
+};
+
 int
 error_handling_init(PyObject* core_module)
 {
@@ -204,6 +220,7 @@ error_handling_init(PyObject* core_module)
   // ConversionError is public
   FAIL_IF_MINUS_ONE(
     PyObject_SetAttrString(core_module, "ConversionError", conversion_error));
+  FAIL_IF_MINUS_ONE(PyModule_AddFunctions(core_module, methods));
 
   FAIL_IF_MINUS_ONE(error_handling_init_js());
 

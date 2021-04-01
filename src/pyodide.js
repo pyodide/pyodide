@@ -33,7 +33,12 @@ globalThis.loadPyodide = async function(config = {}) {
   // in this template in the Makefile. It's recommended to always set
   // indexURL in any case.
   let baseURL = config.indexURL || "{{ PYODIDE_BASE_URL }}";
-  baseURL = baseURL.substr(0, baseURL.lastIndexOf('/')) + '/';
+  if (baseURL.endsWith(".js")) {
+    baseURL = baseURL.substr(0, baseURL.lastIndexOf('/'));
+  }
+  if (!baseURL.endsWith("/")) {
+    baseURL += '/';
+  }
 
   ////////////////////////////////////////////////////////////
   // Package loading
@@ -423,8 +428,12 @@ globalThis.loadPyodide = async function(config = {}) {
     }
     fatal_error_occurred = true;
     console.error(fatal_error_msg);
-    console.error("The cause of the fatal error was:\n", e);
+    console.error("The cause of the fatal error was:")
+    console.error(e);
     try {
+      let fd_stdout = 1;
+      pyodide._module.__Py_DumpTraceback(
+          fd_stdout, pyodide._module._PyGILState_GetThisThreadState());
       for (let [key, value] of Object.entries(Module.public_api)) {
         if (key.startsWith("_")) {
           // delete Module.public_api[key];
@@ -794,13 +803,14 @@ def temp(Module):
 
 if (globalThis.languagePluginUrl) {
   console.warn(
-      "languagePluginUrl is deprecated and will be removed in version 0.18.0," +
+      "languagePluginUrl is deprecated and will be removed in version 0.18.0, " +
       "instead use loadPyodide({ indexURL : <some_url>})");
 
   /**
-   * A deprecated parameter that specifies the Pyodide baseURL. If present,
-   * Pyodide will automatically invoke ``initializePyodide({baseURL :
-   * languagePluginUrl})`` and will store the resulting promise in
+   * A deprecated parameter that specifies the Pyodide indexURL. If present,
+   * Pyodide will automatically invoke
+   * ``initializePyodide({indexURL : languagePluginUrl})``
+   * and will store the resulting promise in
    * :any:`globalThis.languagePluginLoader`. Instead, use :any:`loadPyodide`
    * directly.
    *
@@ -818,5 +828,5 @@ if (globalThis.languagePluginUrl) {
    * @deprecated Will be removed in version 0.18.0
    */
   globalThis.languagePluginLoader =
-      loadPyodide({baseURL : globalThis.languagePluginUrl});
+      loadPyodide({indexURL : globalThis.languagePluginUrl});
 }
