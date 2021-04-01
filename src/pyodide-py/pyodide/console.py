@@ -31,7 +31,9 @@ except ImportError:
             self.args = (args,) if args is not None else ()
 
         def then(self, func, *args):
-            return _FakePromise(func(*self.args))
+            return _FakePromise(  # lgtm [py/procedure-return-value-used]
+                func(*self.args)
+            )
 
     _dummy_promise = _FakePromise()
 

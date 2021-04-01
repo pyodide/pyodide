@@ -41,7 +41,7 @@ globalThis.loadPyodide = async function(config = {}) {
 
   // Regexp for validating package name and URI
   const package_uri_regexp =
-      new RegExp('^https?://.*?([a-z0-9_][a-z0-9_\-]*).js$', 'i');
+      new RegExp('^https?://.*?([a-z0-9_][a-z0-9_-]*).js$', 'i');
 
   let _uri_to_package_name = (package_uri) => {
     if (package_uri_regexp.test(package_uri)) {

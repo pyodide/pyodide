@@ -15,9 +15,9 @@
 //   EM_JS(int, pyproxy_init, (), UNPAIRED_OPEN_BRACE { args return 0; })
 
 // clang-format off
-TEMP_EMJS_HELPER(() => {0, /* Magic, see comment */
-  Module.PyProxies = {};
+TEMP_EMJS_HELPER(() => {0,0; /* Magic, see comment */ // lgtm [js/useless-expression]
   // clang-format on
+  Module.PyProxies = {};
 
   function _getPtr(jsobj) {
     let ptr = jsobj.$$.ptr;
