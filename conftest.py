@@ -103,7 +103,7 @@ class SeleniumWrapper:
             )
         self.driver.get(f"http://{server_hostname}:{server_port}/test.html")
         if load_pyodide:
-            self.run_js("await loadPyodide({ packageIndexURL : './'});")
+            self.run_js("await loadPyodide({ indexURL : './'});")
             self.save_state()
         self.run_js("Error.stackTraceLimit = Infinity;", pyodide_checks=False)
         self.driver.set_script_timeout(20)

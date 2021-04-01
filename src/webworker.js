@@ -12,13 +12,13 @@ onmessage = async function(e) {
     }
 
     if (typeof self.__pyodideLoading === "undefined") {
-      await loadPyodide({packageIndexURL : '{{ PYODIDE_BASE_URL }}'});
+      await loadPyodide({indexURL : '{{ PYODIDE_BASE_URL }}'});
     }
     let res = await self.pyodide.runPythonAsync(data.python);
     self.postMessage({results : res});
   } catch (e) {
     // if you prefer messages with the error
-    self.postMessage({error : e.stack});
+    self.postMessage({error : e.message + '\n' + e.stack});
     // if you prefer onerror events
     // setTimeout(() => { throw err; });
   }
