@@ -267,12 +267,14 @@ the {any}`PyProxy.toJs` method. By default, the `toJs` method does a recursive "
 conversion, to do a shallow conversion use `proxy.toJs(1)`. The `toJs` method
 performs the following explicit conversions:
 
-| Python           | Javascript          |
-|------------------|---------------------|
-| `list`, `tuple`  | `Array`             |
-| `dict`           | `Map`               |
-| `set`            | `Set`               |
-| a buffer         | `TypedArray`        |
+| Python            | Javascript          |
+|-------------------|---------------------|
+| `list`, `tuple`   | `Array`             |
+| `dict`            | `Map`               |
+| `set`             | `Set`               |
+| a buffer*         | `TypedArray`        |
+
+* Examples of buffers include bytes objects and numpy arrays.
 
 In Javascript, `Map` and `Set` keys are compared using object identity unless
 the key is an immutable type (meaning a string, a number, a bigint, a boolean,
@@ -377,7 +379,7 @@ protocol](https://docs.python.org/3/c-api/buffer.html) are proxied into
 Javascript. The data inside the buffer can be accessed via the {any}`PyProxy.toJs` method or
 the {any}`PyProxy.getBuffer` method. The `toJs` API copies the buffer into Javascript,
 whereas the `getBuffer` method allows low level access to the WASM memory
-backing the buffer. The `getBuffer` api is more powerful but requires care to
+backing the buffer. The `getBuffer` API is more powerful but requires care to
 use correctly. For simple use cases the `toJs` API should be prefered.
 
 If the buffer is zero or one-dimensional, then `toJs` will in most cases convert
