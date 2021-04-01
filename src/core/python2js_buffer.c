@@ -126,13 +126,15 @@ EM_JS_NUM(errcode, python2js_buffer_init, (), {
     let formatStr = UTF8ToString(format);
     let[ArrayType, bigEndian] = Module.processBufferFormatString(formatStr);
     let formatChar = formatStr.slice(-1);
+    // clang-format off
     switch (formatChar) {
       case "c":
         let decoder = new TextDecoder("utf8");
-        return (buff) = > decoder.decode(buff);
+        return (buff) => decoder.decode(buff);
       case "?":
-        return (buff) = > Array.from(new Uint8Array(buff)).map(x = > !!x);
+        return (buff) => Array.from(new Uint8Array(buff)).map(x => !!x);
     }
+    // clang-format on
 
     if (!bigEndian) {
       // clang-format off

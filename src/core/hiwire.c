@@ -308,51 +308,6 @@ EM_JS_REF(JsRef, hiwire_string_ascii, (const char* ptr), {
   return Module.hiwire.new_value(AsciiToString(ptr));
 });
 
-EM_JS_REF(JsRef, hiwire_bytes, (char* ptr, int len), {
-  let bytes = new Uint8ClampedArray(Module.HEAPU8.buffer, ptr, len);
-  return Module.hiwire.new_value(bytes);
-});
-
-EM_JS_REF(JsRef, hiwire_int8array, (i8 * ptr, int len), {
-  let array = new Int8Array(Module.HEAPU8.buffer, ptr, len);
-  return Module.hiwire.new_value(array);
-})
-
-EM_JS_REF(JsRef, hiwire_uint8array, (u8 * ptr, int len), {
-  let array = new Uint8Array(Module.HEAPU8.buffer, ptr, len);
-  return Module.hiwire.new_value(array);
-})
-
-EM_JS_REF(JsRef, hiwire_int16array, (i16 * ptr, int len), {
-  let array = new Int16Array(Module.HEAPU8.buffer, ptr, len);
-  return Module.hiwire.new_value(array);
-})
-
-EM_JS_REF(JsRef, hiwire_uint16array, (u16 * ptr, int len), {
-  let array = new Uint16Array(Module.HEAPU8.buffer, ptr, len);
-  return Module.hiwire.new_value(array);
-})
-
-EM_JS_REF(JsRef, hiwire_int32array, (i32 * ptr, int len), {
-  let array = new Int32Array(Module.HEAPU8.buffer, ptr, len);
-  return Module.hiwire.new_value(array);
-})
-
-EM_JS_REF(JsRef, hiwire_uint32array, (u32 * ptr, int len), {
-  let array = new Uint32Array(Module.HEAPU8.buffer, ptr, len);
-  return Module.hiwire.new_value(array);
-})
-
-EM_JS_REF(JsRef, hiwire_float32array, (f32 * ptr, int len), {
-  let array = new Float32Array(Module.HEAPU8.buffer, ptr, len);
-  return Module.hiwire.new_value(array);
-})
-
-EM_JS_REF(JsRef, hiwire_float64array, (f64 * ptr, int len), {
-  let array = new Float64Array(Module.HEAPU8.buffer, ptr, len);
-  return Module.hiwire.new_value(array);
-})
-
 EM_JS(void _Py_NO_RETURN, hiwire_throw_error, (JsRef iderr), {
   throw Module.hiwire.pop_value(iderr);
 });
