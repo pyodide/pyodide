@@ -192,8 +192,14 @@ EM_JS_NUM(errcode, python2js_buffer_init, (), {
       case 'N':
         return (buff) => new Uint32Array(swapFunc(buff));
       case 'q':
+        if(globalThis.BigInt64Array === undefined){
+          throw new Error("BigInt64Array is not supported on this browser.");
+        }
         return (buff) => new BigInt64Array(swapFunc(buff));
       case 'Q':
+        if(globalThis.BigUint64Array === undefined){
+          throw new Error("BigUint64Array is not supported on this browser.");
+        }
         return (buff) => new BigUint64Array(swapFunc(buff));
       case 'f':
         return (buff) => new Float32Array(swapFunc(buff));
