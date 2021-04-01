@@ -47,7 +47,7 @@ substitutions:
   Made a `PyProxy` of a Python generator into a Javascript generator:
   `proxy.next(val)` is translated to `gen.send(val)`.
   [#1180](https://github.com/pyodide/pyodide/pull/1180)
-- Updated `PyProxy` so that if the wrapped Python object supports `__getitem__`
+- {{ API }} Updated `PyProxy` so that if the wrapped Python object supports `__getitem__`
   access, then the wrapper has `get`, `set`, `has`, and `delete` methods which do
   `obj[key]`, `obj[key] = val`, `key in obj` and `del obj[key]` respectively.
   [#1175](https://github.com/pyodide/pyodide/pull/1175)
@@ -56,6 +56,9 @@ substitutions:
 - {{ API }} Added `PyProxy.getBuffer` API to allow direct access to Python
   buffers as Javascript TypedArrays.
   [1215](https://github.com/pyodide/pyodide/pull/1215)
+- {{ Enhancement }} Javascript `BigInt`s are converted into Python `int` and
+  Python `int`s larger than 2^53 are converted into `BigInt`.
+  [1407](https://github.com/pyodide/pyodide/pull/1407)
 
 ### Fixed
 - {{ Fix }} getattr and dir on JsProxy now report consistent results and include all
