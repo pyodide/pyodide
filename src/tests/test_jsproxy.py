@@ -748,13 +748,10 @@ def test_buffer(selenium):
     selenium.run_js(
         """
         self.a = new Uint32Array(Array(10).fill(0).map((_,idx) => idx));
-        self.b = pyodide._module.HEAP8.subarray(0, 100);
         pyodide.runPython(`
             import js
             from unittest import TestCase
             raises = TestCase().assertRaisesRegex
-            with raises(ValueError, "Will not import"):
-                from js import b
             from array import array
             from js import a
             c = array('b', range(30))
