@@ -1,6 +1,10 @@
 queries:
   - exclude: py/import-and-import-from
 
+path_classifiers:
+  test:
+    src/pystone.py # prevents it from being analyzed
+
 extraction:
   cpp:
     prepare:
