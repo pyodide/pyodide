@@ -46,8 +46,8 @@ extensions = [
 ]
 
 myst_enable_extensions = ["substitution"]
-
-js_source_path = "../src/"
+js_source_path = ["../src/", "../src/core"]
+root_for_relative_js_paths = "../src/"
 
 autosummary_generate = True
 autodoc_default_flags = ["members", "inherited-members"]

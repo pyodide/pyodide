@@ -1,11 +1,12 @@
 # See also test_pyproxy, test_jsproxy, and test_python.
 import pytest
-from hypothesis import given
+from hypothesis import given, settings
 from hypothesis.strategies import text
 from conftest import selenium_context_manager
 
 
 @given(s=text())
+@settings(deadline=600)
 def test_string_conversion(selenium_module_scope, s):
     with selenium_context_manager(selenium_module_scope) as selenium:
         # careful string escaping here -- hypothesis will fuzz it.

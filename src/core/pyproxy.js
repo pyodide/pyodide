@@ -34,6 +34,7 @@ TEMP_EMJS_HELPER(() => {0, /* Magic, see comment */
    * pyproxy_getflags. Multiple PyProxies with the same set of feature flags
    * will share the same prototype, so the memory footprint of each individual
    * PyProxy is minimal.
+   * @private
    */
   Module.getPyProxyClass = function(flags) {
     let result = _pyproxyClassMap.get(flags);
@@ -96,6 +97,21 @@ TEMP_EMJS_HELPER(() => {0, /* Magic, see comment */
     constructor() { throw new TypeError('PyProxy is not a constructor'); }
 
     get[Symbol.toStringTag]() { return "PyProxy"; }
+    /**
+     * The name of the type of the object.
+     *
+     * Usually the value is ``"module.name"`` but for builtins or
+     * interpreter-defined types it is just ``"name"``. As pseudocode this is:
+     *
+     * .. code-block:: python
+     *
+     *    ty = type(x)
+     *    if ty.__module__ == 'builtins' or ty.__module__ == "__main__":
+     *        return ty.__name__
+     *    else:
+     *        ty.__module__ + "." + ty.__name__
+     *
+     */
     get type() {
       let ptrobj = _getPtr(this);
       return Module.hiwire.pop_value(__pyproxy_type(ptrobj));
@@ -113,21 +129,43 @@ TEMP_EMJS_HELPER(() => {0, /* Magic, see comment */
       }
       return Module.hiwire.pop_value(jsref_repr);
     }
+    /**
+     * Destroy the ``PyProxy``. This will release the memory. Any further
+     * attempt to use the object will raise an error.
+     *
+     * In a browser supporting `FinalizationRegistry
+     * <https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/FinalizationRegistry>`_
+     * Pyodide will automatically destroy the ``PyProxy`` when it is garbage
+     * collected, however there is no guarantee that the finalizer will be run
+     * in a timely manner so it is better to ``destory`` the proxy explicitly.
+     */
     destroy() {
       let ptrobj = _getPtr(this);
       __pyproxy_destroy(ptrobj);
       this.$$.ptr = null;
     }
     /**
-     * This one doesn't follow the pattern: the inner function
-     * _python2js_with_depth is defined in python2js.c and is not a Python
-     * Object Protocol wrapper.
+     * Converts the ``PyProxy`` into a Javascript object as best as possible. By
+     * default does a deep conversion, if a shallow conversion is desired, you
+     * can use ``proxy.toJs(1)``.
+     * See :ref:`Explicit Conversion of PyProxy
+     * <type-translations-pyproxy-to-js>` for more info.
+     *
+     * @param {number} depth How many layers deep to perform the conversion.
+     * Defaults to infinite.
+     * @returns The Javascript object resulting from the conversion.
      */
     toJs(depth = -1) {
-      let idresult = _python2js_with_depth(_getPtr(this), depth);
-      let result = Module.hiwire.get_value(idresult);
-      Module.hiwire.decref(idresult);
-      return result;
+      let idresult;
+      try {
+        idresult = _python2js_with_depth(_getPtr(this), depth);
+      } catch (e) {
+        Module.fatal_error(e);
+      }
+      if (idresult === 0) {
+        _pythonexc2js();
+      }
+      return Module.hiwire.pop_value(idresult);
     }
     apply(jsthis, jsargs) {
       return Module.callPyObject(_getPtr(this), ...jsargs);
@@ -140,6 +178,11 @@ TEMP_EMJS_HELPER(() => {0, /* Magic, see comment */
   // Controlled by HAS_LENGTH, appears for any object with __len__ or sq_length
   // or mp_length methods
   Module.PyProxyLengthMethods = {
+    /**
+     * The length of the object.
+     *
+     * Present only if ``type(obj)`` has a `__len__` method.
+     */
     get length() {
       let ptrobj = _getPtr(this);
       let length;
@@ -158,6 +201,14 @@ TEMP_EMJS_HELPER(() => {0, /* Magic, see comment */
   // Controlled by HAS_GET, appears for any class with __getitem__,
   // mp_subscript, or sq_item methods
   Module.PyProxyGetItemMethods = {
+    /**
+     * This translates to the Python code ``obj[key]``.
+     *
+     * Present only if ``type(obj)`` has a ``__getitem__`` method.
+     *
+     * @param {any} key The key to look up.
+     * @returns The corresponding value.
+     */
     get : function(key) {
       let ptrobj = _getPtr(this);
       let idkey = Module.hiwire.new_value(key);
@@ -183,6 +234,14 @@ TEMP_EMJS_HELPER(() => {0, /* Magic, see comment */
   // Controlled by HAS_SET, appears for any class with __setitem__, __delitem__,
   // mp_ass_subscript,  or sq_ass_item.
   Module.PyProxySetItemMethods = {
+    /**
+     * This translates to the Python code ``obj[key] = value``.
+     *
+     * Present only if ``type(obj)`` has a ``__setitem__`` method.
+     *
+     * @param {any} key The key to set.
+     * @param {any} value The value to set it to.
+     */
     set : function(key, value) {
       let ptrobj = _getPtr(this);
       let idkey = Module.hiwire.new_value(key);
@@ -200,6 +259,13 @@ TEMP_EMJS_HELPER(() => {0, /* Magic, see comment */
         _pythonexc2js();
       }
     },
+    /**
+     * This translates to the Python code ``del obj[key]``.
+     *
+     * Present only if ``type(obj)`` has a ``__delitem__`` method.
+     *
+     * @param {any} key The key to delete.
+     */
     delete : function(key) {
       let ptrobj = _getPtr(this);
       let idkey = Module.hiwire.new_value(key);
@@ -220,6 +286,14 @@ TEMP_EMJS_HELPER(() => {0, /* Magic, see comment */
   // Controlled by HAS_CONTAINS flag, appears for any class with __contains__ or
   // sq_contains
   Module.PyProxyContainsMethods = {
+    /**
+     * This translates to the Python code ``key in obj``.
+     *
+     * Present only if ``type(obj)`` has a ``__contains__`` method.
+     *
+     * @param {*} key The key to check for.
+     * @returns {bool} Is ``key`` present?
+     */
     has : function(key) {
       let ptrobj = _getPtr(this);
       let idkey = Module.hiwire.new_value(key);
@@ -243,6 +317,18 @@ TEMP_EMJS_HELPER(() => {0, /* Magic, see comment */
   // https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Iteration_protocols
   // This avoids allocating a PyProxy wrapper for the temporary iterator.
   Module.PyProxyIterableMethods = {
+    /**
+     * This translates to the Python code ``iter(obj)``. Return an iterator
+     * associated to the proxy. See the documentation for `Symbol.iterator
+     * <https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Symbol/iterator>`_.
+     *
+     * Present only if the Python object is iterable (i.e., ``type(obj)`` has an
+     * ``__iter__`` method).
+     *
+     * This will be used implicitly by ``for(let x of proxy){}``.
+     *
+     * @returns {Iterator} An iterator for ``obj``.
+     */
     [Symbol.iterator] : function*() {
       let iterptr = _PyObject_GetIter(_getPtr(this));
       if (iterptr === 0) {
@@ -263,6 +349,25 @@ TEMP_EMJS_HELPER(() => {0, /* Magic, see comment */
   // tp_iternext method.
   Module.PyProxyIteratorMethods = {
     [Symbol.iterator] : function() { return this; },
+    /**
+     * This translates to the Python code ``next(obj)``. Returns the next value
+     * of the generator. See the documentation for `Generator.prototype.next
+     * <https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Generator/next>`_.
+     * The argument will be sent to the Python generator.
+     *
+     * This will be used implicitly by ``for(let x of proxy){}``.
+     *
+     * Present only if ``obj`` is a Python generator or iterator (i.e.,
+     * ``type(obj)`` has an ``__iter__`` method).
+     *
+     * @param {*} value The value to send to the generator. The value will be
+     * assigned as a result of a yield expression.
+     * @returns {Object} An Object with two properties, ``done`` and ``value``.
+     * If the generator returned ``some_value``, will return ``{done : false,
+     * value : some_value}``. If the Python generator raised a
+     * ``StopIteration(result_value)`` exception, then we return ``{done : true,
+     * value : result_value}``.
+     */
     next : function(arg) {
       let idresult;
       // Note: arg is optional, if arg is not supplied, it will be undefined
@@ -464,12 +569,14 @@ TEMP_EMJS_HELPER(() => {0, /* Magic, see comment */
 
   /**
    * The Promise / javascript awaitable API.
+   * @private
    */
   Module.PyProxyAwaitableMethods = {
     /**
      * This wraps __pyproxy_ensure_future and makes a function that converts a
      * Python awaitable to a promise, scheduling the awaitable on the Python
      * event loop if necessary.
+     * @private
      */
     _ensure_future : function() {
       let resolve_handle_id = 0;
@@ -496,14 +603,64 @@ TEMP_EMJS_HELPER(() => {0, /* Magic, see comment */
       }
       return promise;
     },
+    /**
+     * Runs ``asyncio.ensure_future(awaitable)``, executes
+     * ``onFulfilled(result)`` when the ``Future`` resolves successfully,
+     * executes ``onRejected(error)`` when the ``Future`` fails. Will be used
+     * implictly by ``await obj``.
+     *
+     * See the documentation for
+     * `Promise.then
+     * <https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Promise/then>`_
+     *
+     * Only present on awaitable Python objects.
+     *
+     * @param {Function} onFulfilled A handler called with the result as an
+     * argument if the awaitable succeeds.
+     * @param {Function} onRejected A handler called with the error as an
+     * argument if the awaitable fails.
+     * @returns {Promise} The resulting Promise.
+     */
     then : function(onFulfilled, onRejected) {
       let promise = this._ensure_future();
       return promise.then(onFulfilled, onRejected);
     },
+    /**
+     * Runs ``asyncio.ensure_future(awaitable)`` and executes
+     * ``onRejected(error)`` if the future fails.
+     *
+     * See the documentation for
+     * `Promise.catch
+     * <https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Promise/catch>`_.
+     *
+     * Only present on awaitable Python objects.
+     *
+     * @param {Function} onRejected A handler called with the error as an
+     * argument if the awaitable fails.
+     * @returns {Promise} The resulting Promise.
+     */
     catch : function(onRejected) {
       let promise = this._ensure_future();
       return promise.catch(onRejected);
     },
+    /**
+     * Runs ``asyncio.ensure_future(awaitable)`` and executes
+     * ``onFinally(error)`` when the future resolves.
+     *
+     * See the documentation for
+     * `Promise.finally
+     * <https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Promise/finally>`_.
+     *
+     * Only present on `awaitable
+     * <https://docs.python.org/3/library/asyncio-task.html?highlight=awaitable#awaitables>`_
+     * Python objects.
+     *
+     * @param {Function} onFinally A handler that is called with zero arguments
+     * when the awaitable resolves.
+     * @returns {Promise} A Promise that resolves or rejects with the same
+     * result as the original Promise, but only after executing the
+     * ``onFinally`` handler.
+     */
     finally : function(onFinally) {
       let promise = this._ensure_future();
       return promise.finally(onFinally);
@@ -511,7 +668,326 @@ TEMP_EMJS_HELPER(() => {0, /* Magic, see comment */
   };
 
   Module.PyProxyCallableMethods = {prototype : Function.prototype};
-  Module.PyProxyBufferMethods = {};
+
+  let type_to_array_map = new Map([
+    [ "i8", Int8Array ],
+    [ "u8", Uint8Array ],
+    [ "i16", Int16Array ],
+    [ "u16", Uint16Array ],
+    [ "i32", Int32Array ],
+    [ "u32", Uint32Array ],
+    [ "i32", Int32Array ],
+    [ "u32", Uint32Array ],
+    [ "f32", Float32Array ],
+    [ "f64", Float64Array ],
+    // Python type formats
+    [ "b", Int8Array ],
+    [ "B", Uint8Array ],
+    [ "h", Int16Array ],
+    [ "H", Uint16Array ],
+    [ "i", Int32Array ],
+    [ "I", Uint32Array ],
+    [ "f", Float32Array ],
+    [ "d", Float64Array ],
+  ]);
+
+  if (globalThis.BigInt64Array) {
+    type_to_array_map.set("i64", BigInt64Array);
+    type_to_array_map.set("u64", BigUint64Array);
+    type_to_array_map.set("q", BigInt64Array);
+    type_to_array_map.set("Q", BigUint64Array);
+  }
+
+  Module.PyProxyBufferMethods = {
+    /**
+     * Get a view of the buffer data which is usable from Javascript. No copy is
+     * ever performed.
+     *
+     * The return value is a :any:`PyBuffer` object. See the documentation for
+     * :any:`PyBuffer` for details on how to use it.
+     *
+     * We do not support suboffsets, if the buffer requires suboffsets we will
+     * throw an error. Javascript nd array libraries can't handle suboffsets
+     * anyways. In this case, you should copy the buffer to one that doesn't use
+     * suboffets (using e.g., ``np.ascontiguousarray``).
+     *
+     * @param {string} type The type of the desired output. Should be one of:
+     *    "i8", "u8", "i16", "u16", "i32", "u32", "i32", "u32", "i64", "u64",
+     *    "f32", or "f64,
+     * @returns PyBuffer
+     */
+    getBuffer : function(type = "u8") {
+      let ArrayType = undefined;
+      if (type) {
+        let ArrayType = type_to_array_map.get(type);
+        if (ArrayType === undefined) {
+          throw new Error(`Unknown type ${type}`);
+        }
+      }
+      let this_ptr = _getPtr(this);
+      let buffer_struct_ptr = __pyproxy_get_buffer(this_ptr);
+      if (buffer_struct_ptr === 0) {
+        throw new Error("Failed");
+      }
+
+      // This has to match the order of the fields in buffer_struct
+      let cur_ptr = buffer_struct_ptr / 4;
+
+      let startByteOffset = HEAP32[cur_ptr++];
+      let minByteOffset = HEAP32[cur_ptr++];
+      let maxByteOffset = HEAP32[cur_ptr++];
+
+      let readonly = !!HEAP32[cur_ptr++];
+      let format_ptr = HEAP32[cur_ptr++];
+      let itemsize = HEAP32[cur_ptr++];
+      let shape = Module.hiwire.pop_value(HEAP32[cur_ptr++]);
+      let strides = Module.hiwire.pop_value(HEAP32[cur_ptr++]);
+
+      let view_ptr = HEAP32[cur_ptr++];
+      let c_contiguous = !!HEAP32[cur_ptr++];
+      let f_contiguous = !!HEAP32[cur_ptr++];
+
+      _PyMem_Free(buffer_struct_ptr);
+
+      let format = UTF8ToString(format_ptr);
+
+      let success = false;
+      try {
+        if (ArrayType === undefined) {
+          // Try to determine correct type from format.
+          // To understand this code it will be helpful to look at the tables
+          // here: https://docs.python.org/3/library/struct.html#format-strings
+          if (format.includes("e")) {
+            throw new Error("Javascript has no Float16Array.");
+          }
+          let cleaned_format = format;
+          // Normalize same-sized types
+          cleaned_format = cleaned_format.replace(/[spc?]/g, "B");
+          cleaned_format = cleaned_format.replace(/[nl]/g, "i");
+          cleaned_format = cleaned_format.replace(/[NLP]/g, "I");
+          let type_char = cleaned_format[0];
+          ArrayType = type_to_array_map.get(type_char);
+          if (ArrayType === undefined) {
+            if (/[qQ]/.test(type_char)) {
+              throw new Error(
+                  "64 bit integer formats (q and Q) are not supported in browsers without BigInt support. You must pass a type argument.");
+            } else {
+              throw new Error(
+                  "Unrecognized buffer format. You must pass a type argument.");
+            }
+          }
+        }
+
+        let alignment = parseInt(ArrayType.name.replace(/[^0-9]/g, "")) / 8;
+        if (startByteOffset % alignment !== 0 ||
+            minByteOffset % alignment !== 0 ||
+            maxByteOffset % alignment !== 0) {
+          throw new Error(
+              `Buffer does not have valid alignment for a ${ArrayType.name}`);
+        }
+        let numBytes = maxByteOffset - minByteOffset;
+        let numEntries = numBytes / alignment;
+        let offset = (startByteOffset - minByteOffset) / alignment;
+        let data = new ArrayType(HEAP8.buffer, minByteOffset, numEntries);
+        for (let i of strides.keys()) {
+          strides[i] /= alignment;
+        }
+
+        success = true;
+        // clang-format off
+        return Object.create(Module.PyBuffer.prototype,
+          Object.getOwnPropertyDescriptors({
+            offset,
+            readonly,
+            format,
+            itemsize,
+            ndim : shape.length,
+            nbytes : numBytes,
+            shape,
+            strides,
+            data,
+            c_contiguous,
+            f_contiguous,
+            _view_ptr : view_ptr,
+            _released : false
+          })
+        );
+        // clang-format on
+      } finally {
+        if (!success) {
+          _PyBuffer_Release(view_ptr);
+          _PyMem_Free(view_ptr);
+        }
+      }
+    }
+  };
+
+  /**
+   * A class to allow access to a Python data buffers from Javascript. These are
+   * produced by :any:`PyProxy.getBuffer` and cannot be constructed directly.
+   * When you are done, release it with the :any:`release <PyBuffer.release>`
+   * method.  See
+   * `Python buffer protocol documentation
+   * <https://docs.python.org/3/c-api/buffer.html>`_ for more information.
+   *
+   * To find the element ``x[a_1, ..., a_n]``, you could use the following code:
+   *
+   * .. code-block:: js
+   *
+   *    function multiIndexToIndex(pybuff, multiIndex){
+   *       if(multindex.length !==pybuff.ndim){
+   *          throw new Error("Wrong length index");
+   *       }
+   *       let idx = pybuff.offset;
+   *       for(let i = 0; i < pybuff.ndim; i++){
+   *          if(multiIndex[i] < 0){
+   *             multiIndex[i] = pybuff.shape[i] - multiIndex[i];
+   *          }
+   *          if(multiIndex[i] < 0 || multiIndex[i] >= pybuff.shape[i]){
+   *             throw new Error("Index out of range");
+   *          }
+   *          idx += multiIndex[i] * pybuff.stride[i];
+   *       }
+   *       return idx;
+   *    }
+   *    console.log("entry is", pybuff.data[multiIndexToIndex(pybuff, [2, 0,
+   * -1])]);
+   *
+   * .. admonition:: Contiguity
+   *    :class: warning
+   *
+   *    If the buffer is not contiguous, the ``data`` TypedArray will contain
+   * data that is not part of the buffer. Modifying this data may lead to
+   * undefined behavior.
+   *
+   * .. admonition:: Readonly buffers
+   *    :class: warning
+   *
+   *    If ``buffer.readonly`` is ``true``, you should not modify the buffer.
+   *    Modifying a readonly buffer may lead to undefined behavior.
+   *
+   * .. admonition:: Converting between TypedArray types
+   *    :class: warning
+   *
+   *    The following naive code to change the type of a typed array does not
+   *    work:
+   *
+   *    .. code-block:: js
+   *
+   *        // Incorrectly convert a TypedArray.
+   *        // Produces a Uint16Array that points to the entire WASM memory!
+   *        let myarray = new Uint16Array(buffer.data.buffer);
+   *
+   *    Instead, if you want to convert the output TypedArray, you need to say:
+   *
+   *    .. code-block:: js
+   *
+   *        // Correctly convert a TypedArray.
+   *        let myarray = new Uint16Array(
+   *            buffer.data.buffer,
+   *            buffer.data.byteOffset,
+   *            buffer.data.byteLength
+   *        );
+   */
+  Module.PyBuffer = class PyBuffer {
+    constructor() {
+      // FOR_JSDOC_ONLY is a macro that deletes its argument.
+      FOR_JSDOC_ONLY(() => {
+        /**
+         * The offset of the first entry of the array. For instance if our array
+         * is 3d, then you will find ``array[0,0,0]`` at
+         * ``pybuf.data[pybuf.offset]``
+         * @type {number}
+         */
+        this.offset;
+
+        /**
+         * If the data is readonly, you should not modify it. There is no way
+         * for us to enforce this, but it may cause very weird behavior.
+         * @type {boolean}
+         */
+        this.readonly;
+
+        /**
+         * The format string for the buffer. See `the Python documentation on
+         * format strings
+         * <https://docs.python.org/3/library/struct.html#format-strings>`_.
+         * @type {string}
+         */
+        this.format;
+
+        /**
+         * How large is each entry (in bytes)?
+         * @type {number}
+         */
+        this.itemsize;
+
+        /**
+         * The number of dimensions of the buffer. If ``ndim`` is 0, the buffer
+         * represents a single scalar or struct. Otherwise, it represents an
+         * array.
+         * @type {number}
+         */
+        this.ndim;
+
+        /**
+         * The total number of bytes the buffer takes up. This is equal to
+         * ``buff.data.byteLength``.
+         * @type {number}
+         */
+        this.nbytes;
+
+        /**
+         * The shape of the buffer, that is how long it is in each dimension.
+         * The length will be equal to ``ndim``. For instance, a 2x3x4 array
+         * would have shape ``[2, 3, 4]``.
+         * @type {number[]}
+         */
+        this.shape;
+
+        /**
+         * An array of of length ``ndim`` giving the number of elements to skip
+         * to get to a new element in each dimension. See the example definition
+         * of a ``multiIndexToIndex`` function above.
+         * @type {number[]}
+         */
+        this.strides;
+
+        /**
+         * The actual data. A typed array of an appropriate size backed by a
+         * segment of the WASM memory.
+         * @type {TypedArray}
+         */
+        this.data;
+
+        /**
+         * Is it C contiguous?
+         * @type {boolean}
+         */
+        this.c_contiguous;
+
+        /**
+         * Is it Fortran contiguous?
+         * @type {boolean}
+         */
+        this.f_contiguous;
+      });
+      throw new TypeError('PyBuffer is not a constructor');
+    }
+
+    /**
+     * Release the buffer. This allows the memory to be reclaimed.
+     */
+    release() {
+      if (this._released) {
+        return;
+      }
+      _PyBuffer_Release(this._view_ptr);
+      _PyMem_Free(this._view_ptr);
+      this._released = true;
+      this.data = null;
+    }
+  };
 
   // A special proxy that we use to wrap pyodide.globals to allow property
   // access like `pyodide.globals.x`.

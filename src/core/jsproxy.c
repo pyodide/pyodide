@@ -134,7 +134,7 @@ static PyObject*
 JsProxy_GetAttr(PyObject* self, PyObject* attr)
 {
   PyObject* result = PyObject_GenericGetAttr(self, attr);
-  if (result != NULL) {
+  if (result != NULL || !PyErr_ExceptionMatches(PyExc_AttributeError)) {
     return result;
   }
   PyErr_Clear();
@@ -1374,7 +1374,7 @@ JsBuffer_cinit(PyObject* obj)
       PyExc_RuntimeError,
       "Unknown typed array type '%s'. This is a problem with Pyodide, please "
       "open an issue about it here: "
-      "https://github.com/iodide-project/pyodide/issues/new",
+      "https://github.com/pyodide/pyodide/issues/new",
       typename);
     free(typename);
     FAIL();
