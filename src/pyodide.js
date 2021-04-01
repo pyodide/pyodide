@@ -414,8 +414,9 @@ globalThis.languagePluginLoader = (async () => {
     console.error("The cause of the fatal error was:")
     console.error(e);
     try {
+      let fd_stdout = 1;
       pyodide._module.__Py_DumpTraceback(
-          1, pyodide._module._PyGILState_GetThisThreadState());
+          fd_stdout, pyodide._module._PyGILState_GetThisThreadState());
       for (let [key, value] of Object.entries(Module.public_api)) {
         if (key.startsWith("_")) {
           // delete Module.public_api[key];
