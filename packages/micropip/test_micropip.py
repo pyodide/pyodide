@@ -1,4 +1,3 @@
-import time
 import sys
 from pathlib import Path
 
@@ -14,7 +13,6 @@ def selenium_standalone_micropip(selenium_standalone):
     """
     selenium_standalone.run_js(
         """
-        await languagePluginLoader;
         await pyodide.loadPackage("micropip");
         await pyodide.runPythonAsync("import micropip");
         """
