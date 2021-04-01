@@ -98,7 +98,7 @@ class SeleniumWrapper:
             )
         self.driver.get(f"http://{server_hostname}:{server_port}/test.html")
         self.run_js("Error.stackTraceLimit = Infinity;")
-        self.run_js("await languagePluginLoader;")
+        self.run_js("await loadPyodide({ indexURL : './'});")
         self.save_state()
 
     @property
@@ -155,7 +155,7 @@ class SeleniumWrapper:
             (async () => {
                 try {
                     let result = await run();
-                    if(pyodide && pyodide._module && pyodide._module._PyErr_Occurred()){
+                    if(globalThis.pyodide && pyodide._module && pyodide._module._PyErr_Occurred()){
                         try {
                             pyodide._module._pythonexc2js();
                         } catch(e){
@@ -408,8 +408,6 @@ def run_web_server(q, log_filepath, build_dir):
     log_fh = log_filepath.open("w", buffering=1)
     sys.stdout = log_fh
     sys.stderr = log_fh
-
-    test_prefix = "/src/tests/"
 
     class Handler(http.server.SimpleHTTPRequestHandler):
         def log_message(self, format_, *args):

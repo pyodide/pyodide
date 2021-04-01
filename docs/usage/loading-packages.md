@@ -56,18 +56,20 @@ pyodide.loadPackage('matplotlib').then(() => {
 
 ### Installing packages from PyPI
 
-Pyodide supports installing pure Python wheels from PyPI with {mod}`micropip`. You
-can use the `then` method on the `Promise` that {func}`micropip.install`
-returns to do work once the packages have finished loading:
+Pyodide supports installing pure Python wheels from PyPI with {mod}`micropip`.
+{func}`micropip.install` returns a Python `Future
+<https://docs.python.org/3/library/asyncio-future.html>`_ so you can await the
+future or otherwise use the Python future API to do work once the packages have
+finished loading:
 
-```py
-def do_work(*args):
-    import snowballstemmer
-    stemmer = snowballstemmer.stemmer('english')
-    print(stemmer.stemWords('go goes going gone'.split()))
-
-import micropip
-micropip.install('snowballstemmer').then(do_work)
+```pyodide
+pyodide.runPythonAsync(`
+  import micropip
+  await micropip.install('snowballstemmer')
+  import snowballstemmer
+  stemmer = snowballstemmer.stemmer('english')
+  print(stemmer.stemWords('go goes going gone'.split()))
+`);
 ```
 
 Micropip implements file integrity validation by checking the hash of the
@@ -111,27 +113,19 @@ a complete example would be,
   <meta charset="utf-8">
 </head>
 <body>
-  <script type="text/javascript">
-      // set the Pyodide files URL (packages.json, pyodide.asm.data etc)
-      window.languagePluginUrl = 'https://cdn.jsdelivr.net/pyodide/v0.17.0a2/full/';
-  </script>
   <script type="text/javascript" src="https://cdn.jsdelivr.net/pyodide/v0.17.0a2/full/pyodide.js"></script>
   <script type="text/javascript">
-    pythonCode = `
-      def do_work(*args):
-          import snowballstemmer
-          stemmer = snowballstemmer.stemmer('english')
-          print(stemmer.stemWords('go goes going gone'.split()))
-
-      import micropip
-      micropip.install('snowballstemmer').then(do_work)
-    `
-
-    languagePluginLoader.then(() => {
-      return pyodide.loadPackage(['micropip'])
-    }).then(() => {
-      pyodide.runPython(pythonCode);
-    })
+    async function main(){
+      await loadPyodide({ indexURL : 'https://cdn.jsdelivr.net/pyodide/v0.17.0a2/full/' });
+      await pyodide.runPythonAsync(`
+        import micropip
+        await micropip.install('snowballstemmer')
+        import snowballstemmer
+        stemmer = snowballstemmer.stemmer('english')
+        print(stemmer.stemWords('go goes going gone'.split()))
+      `);
+    }
+    main();
   </script>
 </body>
 </html>
