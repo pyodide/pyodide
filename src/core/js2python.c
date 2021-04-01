@@ -22,17 +22,6 @@ _js2python_get_ptr(PyObject* obj)
 }
 
 PyObject*
-_js2python_number(double val)
-{
-  double i;
-
-  if (modf(val, &i) == 0.0)
-    return PyLong_FromDouble(i);
-
-  return PyFloat_FromDouble(val);
-}
-
-PyObject*
 _js2python_none()
 {
   Py_RETURN_NONE;
@@ -139,6 +128,14 @@ EM_JS_NUM(errcode, js2python_init, (), {
     return result;
   };
 
+  Module.__js2python_bigint = function(value)
+  {
+    let ptr = stringToNewUTF8(value.toString(16));
+    let result = _PyLong_FromString(ptr, 0, 16);
+    _free(ptr);
+    return result;
+  };
+
   Module.__js2python_convertImmutable = function(value)
   {
     let type = typeof value;
@@ -146,7 +143,13 @@ EM_JS_NUM(errcode, js2python_init, (), {
     if (type === 'string') {
       return Module.__js2python_string(value);
     } else if (type === 'number') {
-      return __js2python_number(value);
+      if(Number.isSafeInteger(value)){
+        return _PyLong_FromDouble(value);
+      } else {
+        return _PyFloat_FromDouble(value);
+      }
+    } else if(type === "bigint"){
+      return Module.__js2python_bigint(value);
     } else if (value === undefined || value === null) {
       return __js2python_none();
     } else if (value === true) {

@@ -45,13 +45,15 @@ is proxied into Javascript, then translation back unwraps the proxy, and the
 result of the round trip conversion `is` the original object (in the sense that
 they live at the same memory address).
 
-Translating an object from Javascript to Python and then back to
-Javascript gives an object that is `===` to the original object (with the
-exception of `NaN` because `NaN !== NaN`, and of `null` which after a round trip
-is converted to `undefined`). Furthermore, if the object is proxied into Python,
-then translation back unwraps the proxy, and the result of the round trip
-conversion is the original object (in the sense that they live at the same
-memory address).
+Translating an object from Javascript to Python and then back to Javascript
+gives an object that is `===` to the original object. Furthermore, if the object
+is proxied into Python, then translation back unwraps the proxy, and the result
+of the round trip conversion is the original object (in the sense that they live
+at the same memory address). There are a few exceptions:
+1. `NaN` is converted to `NaN` after a round trip but `NaN !== NaN`,
+2. `null` is converted to `undefined` after a round trip, and
+3. a `BigInt` will be converted to a `Number` after a round trip unless its
+   absolute value is greater than `Number.MAX_SAFE_INTEGER` (i.e., 2^53).
 
 ## Implicit conversions
 
@@ -67,26 +69,33 @@ a constant amount of time.
 The following immutable types are implicitly converted from Javascript to
 Python:
 
-| Python          | Javascript          |
-|-----------------|---------------------|
-| `int`           | `Number`            |
-| `float`         | `Number`            |
-| `str`           | `String`            |
-| `bool`          | `Boolean`           |
-| `None`          | `undefined`         |
+| Python          | Javascript            |
+|-----------------|-----------------------|
+| `int`           | `Number` or `BigInt`* |
+| `float`         | `Number`              |
+| `str`           | `String`              |
+| `bool`          | `Boolean`             |
+| `None`          | `undefined`           |
+
+* An `int` is converted to a `Number` if the `int` is between -2^{53} and 2^{53}
+  inclusive, otherwise it is converted to a `BigInt`.
 
 ### Javascript to Python
 The following immutable types are implicitly converted from Python to
 Javascript:
 
-| Javascript      | Python                          |
-|-----------------|---------------------------------|
-| `Number`        | `int` or `float` as appropriate |
-| `String`        | `str`                           |
-| `Boolean`       | `bool`                          |
-| `undefined`     | `None`                          |
-| `null`          | `None`                          |
+| Javascript      | Python                           |
+|-----------------|----------------------------------|
+| `Number`        | `int` or `float` as appropriate* |
+| `BigInt`        | `int`                            |
+| `String`        | `str`                            |
+| `Boolean`       | `bool`                           |
+| `undefined`     | `None`                           |
+| `null`          | `None`                           |
 
+* A number is converted to an `int` if it is between -2^{53} and 2^{53}
+  inclusive and its fractional part is zero. Otherwise it is converted to a
+  float.
 
 ## Proxying
 
