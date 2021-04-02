@@ -34,7 +34,7 @@ Pyodide offers three different ways to get started depending on your needs and t
 These include:
 
 - Use hosted distribution of pyodide: see [using pyodide from
-  Javascript](https://pyodide.org/en/0.17.0a2//usage/quickstart.html)
+  Javascript](https://pyodide.org/en/0.17.0a2/usage/quickstart.html)
   documentation.
 - Download a pre-built version from this
   repository's [releases
