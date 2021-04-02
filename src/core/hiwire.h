@@ -272,28 +272,11 @@ JsRef
 hiwire_object();
 
 /**
- * Add a new key/value pair to a Javascript object.
- *
- * If the user no longer needs the key or value outside of the object, it is the
- * user's responsibility to decref them.
- */
-errcode
-hiwire_push_object_pair(JsRef idobj, JsRef idkey, JsRef idval);
-
-/**
  * Throw a javascript Error object.
  * Steals a reference to the argument.
  */
 void _Py_NO_RETURN
 hiwire_throw_error(JsRef iderr);
-
-/**
- * Get a Javascript object from the global namespace, i.e. window.
- *
- * Returns: New reference
- */
-JsRef
-hiwire_get_global(const char* ptrname);
 
 /**
  * Get an object member by string.
@@ -332,28 +315,6 @@ hiwire_set_member_int(JsRef idobj, int idx, JsRef idval);
 
 errcode
 hiwire_delete_member_int(JsRef idobj, int idx);
-
-/**
- * Get an object member by object.
- *
- * Returns: New reference
- */
-JsRef
-hiwire_get_member_obj(JsRef idobj, JsRef ididx);
-
-/**
- * Set an object member by object.
- *
- */
-errcode
-hiwire_set_member_obj(JsRef idobj, JsRef ididx, JsRef idval);
-
-/**
- * Delete an object member by object.
- *
- */
-errcode
-hiwire_delete_member_obj(JsRef idobj, JsRef ididx);
 
 /**
  * Get the methods on an object, both on itself and what it inherits.
