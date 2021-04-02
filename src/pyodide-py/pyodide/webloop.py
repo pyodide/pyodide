@@ -1,5 +1,4 @@
 import asyncio
-from asyncio import tasks, futures
 import time
 import contextvars
 
@@ -136,7 +135,7 @@ class WebLoop(asyncio.AbstractEventLoop):
 
         if delay < 0:
             raise ValueError("Can't schedule in the past")
-        h = asyncio.Handle(callback, args, self, context=context)
+        h = asyncio.Handle(callback, args, self, context=context)  # type: ignore
         setTimeout(create_once_callable(h._run), delay * 1000)
         return h
 
@@ -177,7 +176,7 @@ class WebLoop(asyncio.AbstractEventLoop):
 
         Copied from ``BaseEventLoop.create_future``
         """
-        return futures.Future(loop=self)
+        return asyncio.futures.Future(loop=self)
 
     def create_task(self, coro, *, name=None):
         """Schedule a coroutine object.
@@ -188,7 +187,7 @@ class WebLoop(asyncio.AbstractEventLoop):
         """
         self._check_closed()
         if self._task_factory is None:
-            task = tasks.Task(coro, loop=self, name=name)
+            task = asyncio.tasks.Task(coro, loop=self, name=name)
             if task._source_traceback:
                 # Added comment:
                 # this only happens if get_debug() returns True.
@@ -196,7 +195,7 @@ class WebLoop(asyncio.AbstractEventLoop):
                 del task._source_traceback[-1]
         else:
             task = self._task_factory(self, coro)
-            tasks._set_task_name(task, name)
+            asyncio.tasks._set_task_name(task, name)
 
         return task
 

@@ -394,8 +394,7 @@ finally:
                              "Conversion from python to javascript failed");
     }
   } else {
-    PyErr_SetString(internal_error,
-                    "Internal error occurred in python2js_with_depth");
+    PyErr_SetString(internal_error, "Internal error occurred in python2js");
   }
   return NULL;
 }
@@ -422,6 +421,7 @@ python2js_with_depth(PyObject* x, int depth)
   }
   Py_DECREF(cache);
   if (result == NULL || result == Js_novalue) {
+    result = NULL;
     if (PyErr_Occurred()) {
       if (!PyErr_ExceptionMatches(conversion_error)) {
         _PyErr_FormatFromCause(conversion_error,

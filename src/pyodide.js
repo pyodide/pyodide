@@ -12,17 +12,33 @@
 globalThis.pyodide = {};
 
 /**
- * A promise that resolves to ``undefined`` when Pyodide is finished loading.
- *
- * @type Promise
+ * Load the main Pyodide wasm module and initialize it. When finished stores the
+ * pyodide module as a global object called ``pyodide``.
+ * @param {string} config.indexURL - The URL from which Pyodide will load
+ * packages
+ * @returns The pyodide module.
  */
-globalThis.languagePluginLoader = (async () => {
+globalThis.loadPyodide = async function(config = {}) {
+  if (globalThis.__pyodideLoading) {
+    if (globalThis.languagePluginURL) {
+      throw new Error(
+          "Pyodide is already loading because languagePluginURL is defined.");
+    } else {
+      throw new Error("Pyodide is already loading.");
+    }
+  }
+  globalThis.__pyodideLoading = true;
   let Module = {};
-  // Note: PYODIDE_BASE_URL is an environement variable replaced in
+  // Note: PYODIDE_BASE_URL is an environment variable replaced in
   // in this template in the Makefile. It's recommended to always set
-  // languagePluginUrl in any case.
-  let baseURL = self.languagePluginUrl || '{{ PYODIDE_BASE_URL }}';
-  baseURL = baseURL.substr(0, baseURL.lastIndexOf('/')) + '/';
+  // indexURL in any case.
+  let baseURL = config.indexURL || "{{ PYODIDE_BASE_URL }}";
+  if (baseURL.endsWith(".js")) {
+    baseURL = baseURL.substr(0, baseURL.lastIndexOf('/'));
+  }
+  if (!baseURL.endsWith("/")) {
+    baseURL += '/';
+  }
 
   ////////////////////////////////////////////////////////////
   // Package loading
@@ -54,16 +70,16 @@ globalThis.languagePluginLoader = (async () => {
   } else if (self.importScripts) { // webworker
     loadScript = async (url) => {  // This is async only for consistency
       self.importScripts(url);
-    }
+    };
   } else {
     throw new Error("Cannot determine runtime environment");
   }
 
   function recursiveDependencies(names, _messageCallback, errorCallback,
                                  sharedLibsOnly) {
-    const packages = self.pyodide._module.packages.dependencies;
-    const loadedPackages = self.pyodide.loadedPackages;
-    const sharedLibraries = self.pyodide._module.packages.shared_library;
+    const packages = Module.packages.dependencies;
+    const loadedPackages = Module.loadedPackages;
+    const sharedLibraries = Module.packages.shared_library;
     const toLoad = new Map();
 
     const addPackage = (pkg) => {
@@ -97,7 +113,7 @@ globalThis.languagePluginLoader = (async () => {
       }
     }
     if (sharedLibsOnly) {
-      onlySharedLibs = new Map();
+      let onlySharedLibs = new Map();
       for (let c of toLoad) {
         if (c[0] in sharedLibraries) {
           onlySharedLibs.set(c[0], toLoad.get(c[0]));
@@ -129,7 +145,8 @@ globalThis.languagePluginLoader = (async () => {
     if (toLoad.size === 0) {
       return Promise.resolve('No new packages to load');
     } else {
-      messageCallback(`Loading ${[...toLoad.keys()].join(', ')}`)
+      let packageNames = Array.from(toLoad.keys()).join(', ');
+      messageCallback(`Loading ${packageNames}`);
     }
 
     // If running in main browser thread, try to catch errors thrown when
@@ -162,7 +179,7 @@ globalThis.languagePluginLoader = (async () => {
     let scriptPromises = [];
 
     for (let [pkg, uri] of toLoad) {
-      let loaded = self.pyodide.loadedPackages[pkg];
+      let loaded = Module.loadedPackages[pkg];
       if (loaded !== undefined) {
         // If uri is from the DEFAULT_CHANNEL, we assume it was added as a
         // depedency, which was previously overridden.
@@ -170,9 +187,11 @@ globalThis.languagePluginLoader = (async () => {
           messageCallback(`${pkg} already loaded from ${loaded}`);
           continue;
         } else {
-          errorCallback(`URI mismatch, attempting to load package ${pkg} from ${
-              uri} while it is already loaded from ${
-              loaded}. To override a dependency, load the custom package first.`);
+          errorCallback(
+              `URI mismatch, attempting to load package ${pkg} from ${uri} ` +
+              `while it is already loaded from ${
+                  loaded}. To override a dependency, ` +
+              `load the custom package first.`);
           continue;
         }
       }
@@ -219,14 +238,14 @@ globalThis.languagePluginLoader = (async () => {
 
     let packageList = [];
     for (let [pkg, uri] of toLoad) {
-      self.pyodide.loadedPackages[pkg] = uri;
+      Module.loadedPackages[pkg] = uri;
       packageList.push(pkg);
     }
 
     let resolveMsg;
     if (packageList.length > 0) {
-      let package_names = packageList.join(', ');
-      resolveMsg = `Loaded ${packageList}`;
+      let packageNames = packageList.join(', ');
+      resolveMsg = `Loaded ${packageNames}`;
     } else {
       resolveMsg = 'No packages loaded';
     }
@@ -268,18 +287,17 @@ globalThis.languagePluginLoader = (async () => {
    * messages (optional)
    * @returns {Promise} Resolves to ``undefined`` when loading is complete
    */
-  Module.loadPackage =
-      async function(names, messageCallback, errorCallback) {
+  Module.loadPackage = async function(names, messageCallback, errorCallback) {
     if (!Array.isArray(names)) {
       names = [ names ];
     }
     // get shared library packages and load those first
     // otherwise bad things happen with linking them in firefox.
-    sharedLibraryNames = [];
+    let sharedLibraryNames = [];
     try {
-      sharedLibraryPackagesToLoad =
+      let sharedLibraryPackagesToLoad =
           recursiveDependencies(names, messageCallback, errorCallback, true);
-      for (pkg of sharedLibraryPackagesToLoad) {
+      for (let pkg of sharedLibraryPackagesToLoad) {
         sharedLibraryNames.push(pkg[0]);
       }
     } catch (e) {
@@ -332,7 +350,7 @@ globalThis.languagePluginLoader = (async () => {
                            errorCallback || console.error));
     loadPackageChain = loadPackageChain.then(() => promise.catch(() => {}));
     await promise;
-  }
+  };
 
   ////////////////////////////////////////////////////////////
   // Fix Python recursion limit
@@ -392,7 +410,6 @@ globalThis.languagePluginLoader = (async () => {
 
   ////////////////////////////////////////////////////////////
   // Loading Pyodide
-  self.Module = Module;
 
   Module.noImageDecoding = true;
   Module.noAudioDecoding = true;
@@ -411,8 +428,12 @@ globalThis.languagePluginLoader = (async () => {
     }
     fatal_error_occurred = true;
     console.error(fatal_error_msg);
-    console.error("The cause of the fatal error was:\n", e);
+    console.error("The cause of the fatal error was:")
+    console.error(e);
     try {
+      let fd_stdout = 1;
+      pyodide._module.__Py_DumpTraceback(
+          fd_stdout, pyodide._module._PyGILState_GetThisThreadState());
       for (let [key, value] of Object.entries(Module.public_api)) {
         if (key.startsWith("_")) {
           // delete Module.public_api[key];
@@ -425,7 +446,7 @@ globalThis.languagePluginLoader = (async () => {
           continue;
         }
         if (typeof (value) === "function") {
-          Module.public_api[key] = function() { throw Error(fatal_error_msg); }
+          Module.public_api[key] = function() { throw Error(fatal_error_msg); };
         }
       }
     } catch (_) {
@@ -658,12 +679,11 @@ globalThis.languagePluginLoader = (async () => {
     let QUOTE = 3;
     let QUOTE_ESCAPE = 4;
     let paren_depth = 0;
-    let arg_start = 0;
     let arg_is_obj_dest = false;
     let quote_start = undefined;
     let state = START_ARG;
     // clang-format off
-    for (i = idx; i < funcstr.length; i++) {
+    for (let i = idx; i < funcstr.length; i++) {
       let x = funcstr[i];
       if(state === QUOTE){
         switch(x){
@@ -732,10 +752,9 @@ globalThis.languagePluginLoader = (async () => {
 
   await loadScript(scriptSrc);
 
-  // The emscripten module needs to be at this location for the core
-  // filesystem to install itself. Once that's complete, it will be replaced
-  // by the call to `makePublicAPI` with a more limited public API.
-  self.pyodide = await pyodide(Module);
+  // _createPyodideModule is specified in the Makefile by the linker flag:
+  // `-s EXPORT_NAME="'_createPyodideModule'"`
+  await _createPyodideModule(Module);
 
   // There is some work to be done between the module being "ready" and postRun
   // being called.
@@ -770,13 +789,43 @@ def temp(Module):
   // TODO: Should we have this?
   Module.globals = Module.wrapNamespace(Module.globals);
 
-  delete self.Module;
   let response = await fetch(`${baseURL}packages.json`);
   Module.packages = await response.json();
 
-  fixRecursionLimit(self.pyodide);
-  self.pyodide = makePublicAPI(self.pyodide, PUBLIC_API);
-  self.pyodide.registerJsModule("js", globalThis);
-  self.pyodide.registerJsModule("pyodide_js", self.pyodide);
-})();
-languagePluginLoader
+  fixRecursionLimit(Module);
+  let pyodide = makePublicAPI(Module, PUBLIC_API);
+  Module.registerJsModule("js", globalThis);
+  Module.registerJsModule("pyodide_js", pyodide);
+  globalThis.pyodide = pyodide;
+  return pyodide;
+};
+
+if (globalThis.languagePluginUrl) {
+  console.warn(
+      "languagePluginUrl is deprecated and will be removed in version 0.18.0, " +
+      "instead use loadPyodide({ indexURL : <some_url>})");
+
+  /**
+   * A deprecated parameter that specifies the Pyodide indexURL. If present,
+   * Pyodide will automatically invoke
+   * ``initializePyodide({indexURL : languagePluginUrl})``
+   * and will store the resulting promise in
+   * :any:`globalThis.languagePluginLoader`. Instead, use :any:`loadPyodide`
+   * directly.
+   *
+   * @type String
+   * @deprecated Will be removed in version 0.18.0
+   */
+  globalThis.languagePluginUrl;
+
+  /**
+   * A deprecated promise that resolves to ``undefined`` when Pyodide is
+   * finished loading. Only created if :any:`languagePluginUrl` is
+   * defined. Instead use :any:`loadPyodide`.
+   *
+   * @type Promise
+   * @deprecated Will be removed in version 0.18.0
+   */
+  globalThis.languagePluginLoader =
+      loadPyodide({indexURL : globalThis.languagePluginUrl});
+}
