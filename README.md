@@ -26,7 +26,7 @@ browser**.
 Try pyodide in [Python REPL](https://pyodide-cdn2.iodide.io/v0.17.0a2/full/console.html) directly in your
 browser.
 
-For further information, look through the [documentation](https://pyodide.org/).
+For further information, look through the [documentation](https://pyodide.org/en/0.17.0a2/).
 
 ## Getting Started
 
@@ -34,23 +34,23 @@ Pyodide offers three different ways to get started depending on your needs and t
 These include:
 
 - Use hosted distribution of pyodide: see [using pyodide from
-  Javascript](https://pyodide.org/en/latest/usage/quickstart.html)
+  Javascript](https://pyodide.org/en/0.17.0a2//usage/quickstart.html)
   documentation.
 - Download a pre-built version from this
   repository's [releases
   page](https://github.com/pyodide/pyodide/releases/) and serve its contents with
   a web server.
-- [Build Pyodide from source](https://pyodide.org/en/latest/development/building-from-sources.html)
+- [Build Pyodide from source](https://pyodide.org/en/0.17.0a2/development/building-from-sources.html)
   - Build natively with `make`: primarily for Linux users who want to
     experiment or contribute back to the project.
-  - [Use a Docker image](https://pyodide.org/en/latest/development/building-from-sources.html#using-docker):
+  - [Use a Docker image](https://pyodide.org/en/0.17.0a2/development/building-from-sources.html#using-docker):
     recommended for Windows and macOS users and for Linux users who prefer a
     Debian-based Docker image with the dependencies already installed.
 
 ## Contributing
 
 Please view the
-[contributing guide](https://pyodide.org/en/latest/development/contributing.html)
+[contributing guide](https://pyodide.org/en/0.17.0a2/development/contributing.html)
 for tips on filing issues, making changes, and submitting pull requests.
 
 ## License
