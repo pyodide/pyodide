@@ -747,15 +747,16 @@ TEMP_EMJS_HELPER(() => {0, /* Magic, see comment */
         let bigEndian = false;
         if (ArrayType === undefined) {
           [ArrayType, bigEndian] = Module.processBufferFormatString(
-              format,
-              " In this case, you must pass an explicit type argument.");
+              format, " In this case, you can pass an explicit type argument.");
         }
         let alignment =
             parseInt(ArrayType.name.replace(/[^0-9]/g, "")) / 8 || 1;
         if (bigEndian && alignment > 1) {
           throw new Error(
               "Javascript has no native support for big endian buffers. " +
-              "In this case, you must pass an explicit type argument. " +
+              "In this case, you can pass an explicit type argument. " +
+              "For instance, `getBuffer('dataview')` will return a `DataView`" +
+              "which has native support for reading big endian data." +
               "Alternatively, toJs will automatically convert the buffer " +
               "to little endian.");
         }
