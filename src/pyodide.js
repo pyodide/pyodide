@@ -45,17 +45,11 @@ globalThis.loadPyodide = async function(config = {}) {
   const DEFAULT_CHANNEL = "default channel";
 
   // Regexp for validating package name and URI
-  const package_uri_regexp =
-      new RegExp('^https?://.*?([a-z0-9_][a-z0-9_\-]*).js$', 'i');
+  const package_uri_regexp = new RegExp('^.*?([^/]*).js$', 'i');
 
   let _uri_to_package_name = (package_uri) => {
-    if (package_uri_regexp.test(package_uri)) {
-      let match = package_uri_regexp.exec(package_uri);
-      // Get the regexp group corresponding to the package name
-      return match[1];
-    } else {
-      return null;
-    }
+    let match = package_uri_regexp.exec(package_uri);
+    return match ? match[1] : null;
   };
 
   let loadScript;
@@ -279,12 +273,14 @@ globalThis.loadPyodide = async function(config = {}) {
    * Load a package or a list of packages over the network. This makes the files
    * for the package available in the virtual filesystem. The package needs to
    * be imported from Python before it can be used.
-   * @param {String | Array} names package name, or URL. Can be either a single
-   * element, or an array
+   * @param {String | Array} names Package name or URL. Can be either a single
+   *    element, or an array. URLs can be absolute or relative. URLs must have
+   *    file name `<package-name>.js` and there must be a file called
+   *    `<package-name>.data` in the same directory.
    * @param {function} messageCallback A callback, called with progress messages
-   * (optional)
+   *    (optional)
    * @param {function} errorCallback A callback, called with error/warning
-   * messages (optional)
+   *    messages (optional)
    * @returns {Promise} Resolves to ``undefined`` when loading is complete
    */
   Module.loadPackage = async function(names, messageCallback, errorCallback) {
