@@ -32,7 +32,7 @@ Javascript to Python translations occur:
 :class: warning
 
 Any time a Python to Javascript translation occurs, it may create a `PyProxy`.
-To avoid memory leaks, you must store the result and destroy it when you are
+To avoid memory leaks, you must store the `PyProxy` and destroy it when you are
 done with it. Unfortunately, we currently provide no convenient way to do this,
 particularly when calling Javascript functions from Python.
 `````
@@ -55,13 +55,11 @@ memory address).
 
 ## Implicit conversions
 
-We only implicitly convert immutable types. This is to ensure that a mutable
-type in Python can be modified in Javascript and vice-versa. Python has
-immutable types such as `tuple` and `bytes` that have no equivalent in
+We implicitly convert immutable types but not mutable types. This ensures that
+mutable Python objects can be modified from Javascript and vice-versa. Python
+has immutable types such as `tuple` and `bytes` that have no equivalent in
 Javascript. In order to ensure that round trip translations yield an object of
 the same type as the original object, we proxy `tuple` and `bytes` objects.
-Proxying tuples also has the benefit of ensuring that implicit conversions take
-a constant amount of time.
 
 ### Python to Javascript
 The following immutable types are implicitly converted from Javascript to
@@ -371,7 +369,7 @@ numpy_array = np.asarray(array)
 
 A PyProxy of any Python object supporting the
 [Python Buffer protocol](https://docs.python.org/3/c-api/buffer.html) will have
-a method called :any`getBuffer`. This can be used to retrieve a reference to a
+a method called {any}`getBuffer <PyProxy.getBuffer>`. This can be used to retrieve a reference to a
 Javascript typed array that points to the data backing the Python object,
 combined with other metadata about the buffer format. The metadata is suitable
 for use with a Javascript ndarray library if one is present. For instance, if

@@ -28,5 +28,5 @@ inside a web browser.
 We would also like to thank,
  - [Mozilla](https://www.mozilla.org/en-US/) and
 [CircleCl](https://circleci.com/) for Continuous Integration resources
- - [JsDelivr](https://www.jsdelivr.com/) for providing a CDN for pyodide packages
+ - [JsDelivr](https://www.jsdelivr.com/) for providing a CDN for Pyodide packages
  - [ReadTheDocs](https://readthedocs.org/) for hosting the documentation.

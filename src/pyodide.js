@@ -14,6 +14,7 @@ globalThis.pyodide = {};
 /**
  * Load the main Pyodide wasm module and initialize it. When finished stores the
  * pyodide module as a global object called ``pyodide``.
+ * @async
  * @param {string} config.indexURL - The URL from which Pyodide will load
  * packages
  * @returns The pyodide module.
@@ -524,6 +525,8 @@ globalThis.loadPyodide = async function(config = {}) {
    * is returned.
    *
    * @param {string} code Python code to evaluate
+   * @param {dict} globals An optional Python dictionary to use as the globals.
+   *        Defaults to ``pyodide.globals``.
    * @returns The result of the python code converted to Javascript
    */
   Module.runPython = function(code, globals = Module.globals) {

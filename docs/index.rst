@@ -6,25 +6,18 @@
 Pyodide
 =======
 
-Python with the scientific stack, compiled to WebAssembly.
+Python and the scientific stack, compiled to WebAssembly.
 
-.. note::
+Pyodide brings the Python 3.8 runtime to the browser via WebAssembly, along
+with the Python scientific stack including NumPy, Pandas, Matplotlib, SciPy, and
+scikit-learn. Over 75 packages are currently available. In addition it's
+possible to install pure Python wheels from PyPi.
 
-   Pyodide bundles support for the following packages: numpy, scipy, and
-   many other libraries in the Python scientific stack.
-
-   To use additional packages from PyPI, see
-   :ref:`micropip` .
-
-   You can also :ref:`create a Pyodide package <new-packages>` to support and share libraries for new
-   applications.
+Pyodide provides transparent conversion of objects between Javascript and
+Python. When used inside a browser, Python has full access to the Web APIs.
 
 Using Pyodide
 =============
-
-Pyodide may be used in several ways: directly from JavaScript, or to execute
-Python scripts asynchronously in a web worker. Additional pure Python packages
-may be installed from PyPI to be used with Pyodide.
 
 .. toctree::
    :maxdepth: 2
