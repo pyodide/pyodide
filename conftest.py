@@ -21,17 +21,6 @@ BUILD_PATH = ROOT_PATH / "build"
 
 sys.path.append(str(ROOT_PATH))
 
-from pyodide_build._fixes import _selenium_is_connectable  # noqa: E402
-
-try:
-    import selenium.webdriver.common.utils  # noqa: E402
-
-    # XXX: Temporary fix for ConnectionError in selenium
-
-    selenium.webdriver.common.utils.is_connectable = _selenium_is_connectable
-except ModuleNotFoundError:
-    pass
-
 
 def pytest_addoption(parser):
     group = parser.getgroup("general")
@@ -49,9 +38,11 @@ def pytest_addoption(parser):
 
 
 def pytest_configure(config):
-    """Monkey patch the function cwd_relative_nodeid returns the description
-    of a test for the short summary table. Monkey patch it to reduce the verbosity of the test names in the table.
-    This leaves enough room to see the information about the test failure in the summary.
+    """Monkey patch the function cwd_relative_nodeid
+
+    returns the description of a test for the short summary table. Monkey patch
+    it to reduce the verbosity of the test names in the table.  This leaves
+    enough room to see the information about the test failure in the summary.
     """
     old_cwd_relative_nodeid = config.cwd_relative_nodeid
 
