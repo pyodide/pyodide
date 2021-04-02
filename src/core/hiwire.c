@@ -239,7 +239,12 @@ EM_JS_NUM(int, hiwire_init, (), {
         arrayType = Float64Array;
         break;
       case "e":
-        throw new Error("Javascript has no Float16 support.");
+        // clang-format off
+        throw new Error(
+          "Javascript has no Float16 support. Consider converting the data to " +
+          "float32 before using it from JavaScript. If you are using a webgl " +
+          "float16 texture then just use `getBuffer('u8')`.");
+        // clang-format on
       default:
         throw new Error(`Unrecognized format character '${formatChar}'.` +
                         errorMessage);
