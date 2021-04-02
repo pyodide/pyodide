@@ -45,13 +45,10 @@ globalThis.loadPyodide = async function(config = {}) {
   const DEFAULT_CHANNEL = "default channel";
 
   // Regexp for validating package name and URI
-  const package_uri_regexp = new RegExp('^.*?([^/]*).js$', 'i');
+  const package_uri_regexp = /^.*?([^/]*)\.js$/
 
-  let _uri_to_package_name = (package_uri) => {
-    let match = package_uri_regexp.exec(package_uri);
-    return match ? match[1] : null;
-  };
-
+  let _uri_to_package_name =
+      (package_uri) => package_uri_regexp.exec(package_uri) ?.[1];
   let loadScript;
   if (self.document) { // browser
     loadScript = (url) => new Promise((res, rej) => {
@@ -93,7 +90,7 @@ globalThis.loadPyodide = async function(config = {}) {
     };
     for (let name of names) {
       const pkgname = _uri_to_package_name(name);
-      if (pkgname !== null) {
+      if (pkgname !== undefined) {
         if (toLoad.has(pkgname) && toLoad.get(pkgname) !== name) {
           errorCallback(`Loading same package ${pkgname} from ${name} and ${
               toLoad.get(pkgname)}`);
