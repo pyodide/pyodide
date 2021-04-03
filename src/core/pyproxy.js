@@ -181,7 +181,7 @@ TEMP_EMJS_HELPER(() => {0, /* Magic, see comment */
     /**
      * The length of the object.
      *
-     * Present only if ``type(obj)`` has a `__len__` method.
+     * Present only if the proxied Python object has a ``__len__`` method.
      */
     get length() {
       let ptrobj = _getPtr(this);
@@ -204,7 +204,7 @@ TEMP_EMJS_HELPER(() => {0, /* Magic, see comment */
     /**
      * This translates to the Python code ``obj[key]``.
      *
-     * Present only if ``type(obj)`` has a ``__getitem__`` method.
+     * Present only if the proxied Python object has a ``__getitem__`` method.
      *
      * @param {any} key The key to look up.
      * @returns The corresponding value.
@@ -237,7 +237,7 @@ TEMP_EMJS_HELPER(() => {0, /* Magic, see comment */
     /**
      * This translates to the Python code ``obj[key] = value``.
      *
-     * Present only if ``type(obj)`` has a ``__setitem__`` method.
+     * Present only if the proxied Python object has a ``__setitem__`` method.
      *
      * @param {any} key The key to set.
      * @param {any} value The value to set it to.
@@ -262,7 +262,7 @@ TEMP_EMJS_HELPER(() => {0, /* Magic, see comment */
     /**
      * This translates to the Python code ``del obj[key]``.
      *
-     * Present only if ``type(obj)`` has a ``__delitem__`` method.
+     * Present only if the proxied Python object has a ``__delitem__`` method.
      *
      * @param {any} key The key to delete.
      */
@@ -289,7 +289,7 @@ TEMP_EMJS_HELPER(() => {0, /* Magic, see comment */
     /**
      * This translates to the Python code ``key in obj``.
      *
-     * Present only if ``type(obj)`` has a ``__contains__`` method.
+     * Present only if the proxied Python object has a ``__contains__`` method.
      *
      * @param {*} key The key to check for.
      * @returns {bool} Is ``key`` present?
@@ -322,12 +322,12 @@ TEMP_EMJS_HELPER(() => {0, /* Magic, see comment */
      * associated to the proxy. See the documentation for `Symbol.iterator
      * <https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Symbol/iterator>`_.
      *
-     * Present only if the Python object is iterable (i.e., ``type(obj)`` has an
+     * Present only if the proxied Python object is iterable (i.e., has an
      * ``__iter__`` method).
      *
      * This will be used implicitly by ``for(let x of proxy){}``.
      *
-     * @returns {Iterator} An iterator for ``obj``.
+     * @returns {Iterator} An iterator for the proxied Python object.
      */
     [Symbol.iterator] : function*() {
       let iterptr = _PyObject_GetIter(_getPtr(this));
@@ -357,16 +357,16 @@ TEMP_EMJS_HELPER(() => {0, /* Magic, see comment */
      *
      * This will be used implicitly by ``for(let x of proxy){}``.
      *
-     * Present only if ``obj`` is a Python generator or iterator (i.e.,
-     * ``type(obj)`` has an ``__iter__`` method).
+     * Present only if the proxied Python object is a generator or iterator
+     * (i.e., has a ``send`` or ``__next__`` method).
      *
      * @param {*} value The value to send to the generator. The value will be
      * assigned as a result of a yield expression.
-     * @returns {Object} An Object with two properties, ``done`` and ``value``.
-     * If the generator returned ``some_value``, will return ``{done : false,
-     * value : some_value}``. If the Python generator raised a
-     * ``StopIteration(result_value)`` exception, then we return ``{done : true,
-     * value : result_value}``.
+     * @returns {Object} An Object with two properties: ``done`` and ``value``.
+     * When the generator yields ``some_value``, ``next`` returns ``{done :
+     * false, value : some_value}``. When the generator raises a
+     * ``StopIteration(result_value)`` exception, ``next`` returns ``{done :
+     * true, value : result_value}``.
      */
     next : function(arg) {
       let idresult;
@@ -613,7 +613,8 @@ TEMP_EMJS_HELPER(() => {0, /* Magic, see comment */
      * `Promise.then
      * <https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Promise/then>`_
      *
-     * Only present on awaitable Python objects.
+     * Present only if the proxied Python object is `awaitable
+     * <https://docs.python.org/3/library/asyncio-task.html?highlight=awaitable#awaitables>`_.
      *
      * @param {Function} onFulfilled A handler called with the result as an
      * argument if the awaitable succeeds.
@@ -633,7 +634,8 @@ TEMP_EMJS_HELPER(() => {0, /* Magic, see comment */
      * `Promise.catch
      * <https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Promise/catch>`_.
      *
-     * Only present on awaitable Python objects.
+     * Present only if the proxied Python object is `awaitable
+     * <https://docs.python.org/3/library/asyncio-task.html?highlight=awaitable#awaitables>`_.
      *
      * @param {Function} onRejected A handler called with the error as an
      * argument if the awaitable fails.
@@ -651,9 +653,9 @@ TEMP_EMJS_HELPER(() => {0, /* Magic, see comment */
      * `Promise.finally
      * <https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Promise/finally>`_.
      *
-     * Only present on `awaitable
-     * <https://docs.python.org/3/library/asyncio-task.html?highlight=awaitable#awaitables>`_
-     * Python objects.
+     * Present only if the proxied Python object is `awaitable
+     * <https://docs.python.org/3/library/asyncio-task.html?highlight=awaitable#awaitables>`_.
+     *
      *
      * @param {Function} onFinally A handler that is called with zero arguments
      * when the awaitable resolves.
@@ -695,18 +697,31 @@ TEMP_EMJS_HELPER(() => {0, /* Magic, see comment */
      * Get a view of the buffer data which is usable from Javascript. No copy is
      * ever performed.
      *
-     * The return value is a :any:`PyBuffer` object. See the documentation for
-     * :any:`PyBuffer` for details on how to use it.
+     * Present only if the proxied Python object supports the `Python Buffer
+     * Protocol <https://docs.python.org/3/c-api/buffer.html>`_.
      *
      * We do not support suboffsets, if the buffer requires suboffsets we will
      * throw an error. Javascript nd array libraries can't handle suboffsets
-     * anyways. In this case, you should copy the buffer to one that doesn't use
-     * suboffets (using e.g., ``np.ascontiguousarray``).
+     * anyways. In this case, you should use the :any:`toJs` api or copy the
+     * buffer to one that doesn't use suboffets (using e.g.,
+     * `numpy.ascontiguousarray
+     * <https://numpy.org/doc/stable/reference/generated/numpy.ascontiguousarray.html>`_).
      *
-     * @param {string} type The type of the desired output. Should be one of:
-     *    "i8", "u8", "u8clamped", "i16", "u16", "i32", "u32", "i32", "u32",
-     *    "i64", "u64", "f32", "f64, or "dataview".
-     * @returns PyBuffer
+     * If the buffer stores big endian data or half floats, this function will
+     * fail without an explicit type argument. For big endian data you can use
+     * ``toJs``. `DataViews
+     * <https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/DataView>`_
+     * have support for big endian data, so you might want to pass
+     * ``'dataview'`` as the type argument in that case.
+     *
+     * @param {string} [type] The type of :any:`PyBuffer.data` field in the
+     * output. Should be one of: ``"i8"``, ``"u8"``, ``"u8clamped"``, ``"i16"``,
+     * ``"u16"``, ``"i32"``, ``"u32"``, ``"i32"``, ``"u32"``, ``"i64"``,
+     * ``"u64"``, ``"f32"``, ``"f64``, or ``"dataview"``. This argument is
+     * optional, if absent ``getBuffer`` will try to determine the appropriate
+     * output type based on the buffer `format string
+     * <https://docs.python.org/3/library/struct.html#format-strings>`_.
+     * @returns :any:`PyBuffer`
      */
     getBuffer : function(type) {
       let ArrayType = undefined;
@@ -803,6 +818,7 @@ TEMP_EMJS_HELPER(() => {0, /* Magic, see comment */
     }
   };
 
+  // clang-format off
   /**
    * A class to allow access to a Python data buffers from Javascript. These are
    * produced by :any:`PyProxy.getBuffer` and cannot be constructed directly.
@@ -831,15 +847,14 @@ TEMP_EMJS_HELPER(() => {0, /* Magic, see comment */
    *       }
    *       return idx;
    *    }
-   *    console.log("entry is", pybuff.data[multiIndexToIndex(pybuff, [2, 0,
-   * -1])]);
+   *    console.log("entry is", pybuff.data[multiIndexToIndex(pybuff, [2, 0, -1])]);
    *
    * .. admonition:: Contiguity
    *    :class: warning
    *
    *    If the buffer is not contiguous, the ``data`` TypedArray will contain
-   * data that is not part of the buffer. Modifying this data may lead to
-   * undefined behavior.
+   *    data that is not part of the buffer. Modifying this data may lead to
+   *    undefined behavior.
    *
    * .. admonition:: Readonly buffers
    *    :class: warning
@@ -870,6 +885,7 @@ TEMP_EMJS_HELPER(() => {0, /* Magic, see comment */
    *            buffer.data.byteLength
    *        );
    */
+  // clang-format on
   Module.PyBuffer = class PyBuffer {
     constructor() {
       // FOR_JSDOC_ONLY is a macro that deletes its argument.

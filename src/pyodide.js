@@ -13,10 +13,11 @@ globalThis.pyodide = {};
 
 /**
  * Load the main Pyodide wasm module and initialize it. When finished stores the
- * pyodide module as a global object called ``pyodide``.
+ * Pyodide module as a global object called ``pyodide``.
  * @param {string} config.indexURL - The URL from which Pyodide will load
  * packages
- * @returns The pyodide module.
+ * @returns The Pyodide module.
+ * @async
  */
 globalThis.loadPyodide = async function(config = {}) {
   if (globalThis.__pyodideLoading) {
@@ -270,15 +271,15 @@ globalThis.loadPyodide = async function(config = {}) {
    * Load a package or a list of packages over the network. This makes the files
    * for the package available in the virtual filesystem. The package needs to
    * be imported from Python before it can be used.
-   * @param {String | Array} names Package name or URL. Can be either a single
-   *    element, or an array. URLs can be absolute or relative. URLs must have
-   *    file name `<package-name>.js` and there must be a file called
-   *    `<package-name>.data` in the same directory.
+   * @param {String | Array} names Either a single package name or URL or a list
+   * of them. URLs can be absolute or relative. The URLs must have file name
+   * ``<package-name>.js`` and there must be a file called
+   * ``<package-name>.data`` in the same folder.
    * @param {function} messageCallback A callback, called with progress messages
    *    (optional)
    * @param {function} errorCallback A callback, called with error/warning
    *    messages (optional)
-   * @returns {Promise} Resolves to ``undefined`` when loading is complete
+   * @async
    */
   Module.loadPackage = async function(names, messageCallback, errorCallback) {
     if (!Array.isArray(names)) {
@@ -344,6 +345,48 @@ globalThis.loadPyodide = async function(config = {}) {
     loadPackageChain = loadPackageChain.then(() => promise.catch(() => {}));
     await promise;
   };
+
+  // clang-format off
+  /**
+   * Inspect a Python code chunk and use :js:func:`pyodide.loadPackage` to load any known
+   * packages that the code chunk imports. Uses
+   * :func:`pyodide_py.find_imports() <pyodide.find\_imports>` to inspect the code.
+   *
+   * For example, given the following code as input
+   *
+   * .. code-block:: python
+   *
+   *    import numpy as np
+   *    x = np.array([1, 2, 3])
+   *
+   * :js:func:`loadPackagesFromImports` will call ``pyodide.loadPackage(['numpy'])``.
+   * See also :js:func:`runPythonAsync`.
+   *
+   * @param {string} code
+   * @param {Function} messageCallback The ``messageCallback`` argument of :any:`pyodide.loadPackage`.
+   * @param {Function} errorCallback The ``errorCallback`` argument of :any:`pyodide.loadPackage`.
+   * messages. (optional)
+   * @async
+   */
+   Module.loadPackagesFromImports = async function(code, messageCallback, errorCallback) {
+    let imports = Module.pyodide_py.find_imports(code).toJs();
+    if (imports.length === 0) {
+      return;
+    }
+    let packageNames = Module.packages.import_name_to_package_name;
+    let packages = new Set();
+    for (let name of imports) {
+      if (name in packageNames) {
+        packages.add(packageNames[name]);
+      }
+    }
+    if (packages.size) {
+      await Module.loadPackage(
+        Array.from(packages.keys()), messageCallback, errorCallback
+      );
+    }
+  };
+  // clang-format on
 
   ////////////////////////////////////////////////////////////
   // Fix Python recursion limit
@@ -448,7 +491,7 @@ globalThis.loadPyodide = async function(config = {}) {
   };
 
   /**
-   * An alias to the Python pyodide package.
+   * An alias to the Python Pyodide package.
    *
    * @type {PyProxy}
    */
@@ -468,7 +511,7 @@ globalThis.loadPyodide = async function(config = {}) {
 
   /**
    *
-   * The pyodide version.
+   * The Pyodide version.
    *
    * It can be either the exact release version (e.g. ``0.1.0``), or
    * the latest release version followed by the number of commits since, and
@@ -523,64 +566,6 @@ globalThis.loadPyodide = async function(config = {}) {
     return Module.pyodide_py.eval_code(code, globals);
   };
 
-  // clang-format off
-  /**
-   * Inspect a Python code chunk and use :js:func:`pyodide.loadPackage` to load any known
-   * packages that the code chunk imports. Uses
-   * :func:`pyodide_py.find_imports <pyodide.find\_imports>` to inspect the code.
-   *
-   * For example, given the following code as input
-   *
-   * .. code-block:: python
-   *
-   *    import numpy as np
-   *    x = np.array([1, 2, 3])
-   *
-   * :js:func:`loadPackagesFromImports` will call ``pyodide.loadPackage(['numpy'])``.
-   * See also :js:func:`runPythonAsync`.
-   *
-   * @param {*} code
-   * @param {*} messageCallback
-   * @param {*} errorCallback
-   */
-  Module.loadPackagesFromImports  = async function(code, messageCallback, errorCallback) {
-    let imports = Module.pyodide_py.find_imports(code).toJs();
-    if (imports.length === 0) {
-      return;
-    }
-    let packageNames = Module.packages.import_name_to_package_name;
-    let packages = new Set();
-    for (let name of imports) {
-      if (name in packageNames) {
-        packages.add(packageNames[name]);
-      }
-    }
-    if (packages.size) {
-      await Module.loadPackage(
-        Array.from(packages.keys()), messageCallback, errorCallback
-      );
-    }
-  };
-  // clang-format on
-
-  /**
-   * Access a Python object in the global namespace from Javascript.
-   *
-   * Note: this function is deprecated and will be removed in version 0.18.0.
-   * Use pyodide.globals.get('key') instead.
-   *
-   * @param {string} name Python variable name
-   * @returns If the Python object is an immutable type (string, number,
-   * boolean), it is converted to Javascript and returned.  For other types, a
-   * ``PyProxy`` object is returned.
-   */
-  Module.pyimport = name => {
-    console.warn(
-        "Access to the Python global namespace via pyodide.pyimport is deprecated and " +
-        "will be removed in version 0.18.0. Use pyodide.globals.get('key') instead.");
-    return Module.globals.get(name);
-  };
-
   /**
    * Runs Python code, possibly asynchronously loading any known packages that
    * the code imports. For example, given the following code
@@ -590,10 +575,9 @@ globalThis.loadPyodide = async function(config = {}) {
    *    import numpy as np
    *    x = np.array([1, 2, 3])
    *
-   * pyodide will first call ``pyodide.loadPackage(['numpy'])``, and then run
-   * the code, returning the result. Since package fetching must happen
-   * asynchronously, this function returns a `Promise` which resolves to the
-   * output. For example:
+   * Pyodide will first call :any:`pyodide.loadPackage(['numpy'])
+   * <pyodide.loadPackage>`, and then run the code, returning the result. For
+   * example:
    *
    * .. code-block:: javascript
    *
@@ -601,10 +585,12 @@ globalThis.loadPyodide = async function(config = {}) {
    *           .then((output) => handleOutput(output))
    *
    * @param {string} code Python code to evaluate
-   * @param {Function} messageCallback A callback, called with progress
-   * messages. (optional)
-   * @param {Function} errorCallback A callback, called with error/warning
-   * messages. (optional)
+   * @param {Function} messageCallback The ``messageCallback`` argument of
+   * :any:`pyodide.loadPackage`.
+   * @param {Function} errorCallback The ``errorCallback`` argument of
+   * :any:`pyodide.loadPackage`.
+   * @returns The result of the python code converted to Javascript
+   * @async
    */
   Module.runPythonAsync = async function(code, messageCallback, errorCallback) {
     await Module.loadPackagesFromImports(code, messageCallback, errorCallback);
@@ -615,6 +601,24 @@ globalThis.loadPyodide = async function(config = {}) {
     } finally {
       coroutine.destroy();
     }
+  };
+
+  /**
+   * Access a Python object in the global namespace from Javascript.
+   *
+   * @deprecated This function is deprecated and will be removed in version
+   * 0.18.0. Use :any:`pyodide.globals.get('key') <pyodide.globals>` instead.
+   *
+   * @param {string} name Python variable name
+   * @returns If the Python object is an immutable type (string, number,
+   *    boolean), it is converted to Javascript and returned.  For other types,
+   * a :any:`PyProxy` object is returned.
+   */
+  Module.pyimport = name => {
+    console.warn(
+        "Access to the Python global namespace via pyodide.pyimport is deprecated and " +
+        "will be removed in version 0.18.0. Use pyodide.globals.get('key') instead.");
+    return Module.globals.get(name);
   };
 
   // clang-format off
