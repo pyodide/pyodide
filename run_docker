@@ -91,11 +91,29 @@ case $DEFAULT_PYODIDE_SYSTEM_PORT in
   ;;
 esac
 
-exec docker run \
-    $PORT_CONFIGURATION_LINE \
-    -it --rm \
+# Start a detached container as root, add the host uname and uid to /etc/passwd,
+# then run forever
+USER_INFO="$(id -u -n):x:$(id -u):0:$(id -u -n) user:${HOME}:/sbin/nologin"
+CONTAINER=$(\
+  docker run \
+    -d --rm \
     -v $PWD:/src \
     --user root -e NB_UID=$UID -e NB_GID=$GID \
     --shm-size 2g \
     "${PYODIDE_DOCKER_IMAGE}" \
-    $DOCKER_COMMAND
+    /bin/bash -c " \
+      echo '${USER_INFO}' >> /etc/passwd ; \
+      tail -f /dev/null \
+    " \
+)
+
+# Execute the provided command as the host user with HOME=/src
+docker exec \
+  -it \
+  -e HOME=/src \
+  --user $(id --user):$(id --group) \
+  -e NB_UID=$(id --user) -e NB_GID=$(id --group) \
+  $CONTAINER \
+  /bin/bash -c "${DOCKER_COMMAND}"
+
+docker kill $CONTAINER > /dev/null
