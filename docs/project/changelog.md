@@ -149,6 +149,8 @@ substitutions:
   [#987](https://github.com/pyodide/pyodide/pull/987).
 - {{ Enhancement }} Optionally to disable docker port binding
   [#1423](https://github.com/pyodide/pyodide/pull/1423).
+- {{ Enhancement }} Run arbitrary command in docker
+  [#1424](https://github.com/pyodide/pyodide/pull/1424)
 
 ### REPL
 

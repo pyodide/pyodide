@@ -6,7 +6,7 @@ set -eo pipefail
 function usage() {
   cat > /dev/stdout <<EOF
 Usage:
-  run_docker [OPTIONS]
+  run_docker [OPTIONS] [COMMAND] [ARG...]
 
   Optional flags:
     -h, --help                  Show this information and exit
@@ -32,6 +32,7 @@ PYODIDE_IMAGE_TAG="12"
 PYODIDE_PREBUILT_IMAGE_TAG="0.17.0a2"
 DEFAULT_PYODIDE_DOCKER_IMAGE="iodide/pyodide-env:${PYODIDE_IMAGE_TAG}"
 DEFAULT_PYODIDE_SYSTEM_PORT="8000"
+DOCKER_COMMAND="/bin/bash"
 
 while [[ $# -gt 0 ]]
 do
@@ -60,9 +61,13 @@ do
         DEFAULT_PYODIDE_SYSTEM_PORT=$2
         shift 2
       ;;
-      *)
+      -*)
         >&2 echo "Unknown option $1"
         error
+      ;;
+      *)
+        DOCKER_COMMAND="$@"
+        break
       ;;
   esac
 done
@@ -92,4 +97,4 @@ exec docker run \
     --user root -e NB_UID=$UID -e NB_GID=$GID \
     --shm-size 2g \
     "${PYODIDE_DOCKER_IMAGE}" \
-    /bin/bash
+    $DOCKER_COMMAND
