@@ -14,6 +14,8 @@ Usage:
                                 This is ignored if the env var PYODIDE_DOCKER_IMAGE is set
     -p, --port <port>           System port to which to forward.
                                 This is ignored if the env var PYODIDE_SYSTEM_PORT is set
+                                If set to 'none', docker instance will not bind to any port
+                                (Useful for running the docker in multi-user environment)
 
   Prerequisites:
     Docker has to be set up on your system
@@ -69,8 +71,22 @@ PYODIDE_DOCKER_PORT=${PYODIDE_DOCKER_PORT:-"8000"}
 PYODIDE_SYSTEM_PORT=${PYODIDE_SYSTEM_PORT:-${DEFAULT_PYODIDE_SYSTEM_PORT}}
 PYODIDE_DOCKER_IMAGE=${PYODIDE_DOCKER_IMAGE:-${DEFAULT_PYODIDE_DOCKER_IMAGE}}
 
+# in case the port is not a number, do not bind the port
+case $DEFAULT_PYODIDE_SYSTEM_PORT in
+  none)
+  PORT_CONFIGURATION_LINE=""
+  ;;
+  ''|*[!0-9]*) # contains a non-digit character, therefore it is not a number
+  echo "WARNING: Invalid port argument '$DEFAULT_PYODIDE_SYSTEM_PORT'. Port binding disabled."
+  PORT_CONFIGURATION_LINE=""
+  ;;
+  *)
+  PORT_CONFIGURATION_LINE="-p $PYODIDE_SYSTEM_PORT:$PYODIDE_DOCKER_PORT"
+  ;;
+esac
+
 exec docker run \
-    -p "$PYODIDE_SYSTEM_PORT":"$PYODIDE_DOCKER_PORT" \
+    $PORT_CONFIGURATION_LINE \
     -it --rm \
     -v $PWD:/src \
     --user root -e NB_UID=$UID -e NB_GID=$GID \

@@ -147,6 +147,8 @@ substitutions:
   [#878](https://github.com/pyodide/pyodide/pull/878).
 - {{ Enhancement }} Reduce the size of the core Pyodide package
   [#987](https://github.com/pyodide/pyodide/pull/987).
+- {{ Enhancement }} Optionally to disable docker port binding
+  [#1423](https://github.com/pyodide/pyodide/pull/1423).
 
 ### REPL
 
