@@ -274,7 +274,7 @@ globalThis.loadPyodide = async function(config = {}) {
    * @param {String | Array} names Either a single package name or URL or a list
    * of them. URLs can be absolute or relative. The URLs must have file name
    * ``<package-name>.js`` and there must be a file called
-   * ``<package-name>.data`` in the same folder.
+   * ``<package-name>.data`` in the same directory.
    * @param {function} messageCallback A callback, called with progress messages
    *    (optional)
    * @param {function} errorCallback A callback, called with error/warning

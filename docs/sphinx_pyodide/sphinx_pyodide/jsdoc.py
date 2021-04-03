@@ -23,9 +23,11 @@ from sphinx_js.renderers import (
 
 
 class JSFuncMaybeAsync(JSCallable):
-    option_spec = {**JSCallable.option_spec, "async": directives.flag}
+    option_spec = {
+        **JSCallable.option_spec,
+        "async": directives.flag,
+    }
 
-    # def run(self):
     def handle_signature(self, sig, signode):
         if "async" in self.options:
             self.display_prefix = "async"
@@ -139,15 +141,17 @@ def get_jsdoc_content_directive(app):
             rst = renderer(
                 self, app, arguments=["dummy"], options={"members": ["*"]}
             ).rst([obj.name], obj, use_short_name=False)
-            if not isinstance(obj, Function) or not obj.async_:
-                return rst
+            if obj.async_:
+                rst = self.add_async_option_to_rst(rst)
+            return rst
+
+        def add_async_option_to_rst(self, rst):
             rst_lines = rst.split("\n")
             for i, line in enumerate(rst_lines):
                 if line.startswith(".."):
                     break
             rst_lines.insert(i + 1, "   :async:")
-            result = "\n".join(rst_lines)
-            return result
+            return "\n".join(rst_lines)
 
         def get_rst_for_group(self, objects):
             return [self.get_rst(obj) for obj in objects]

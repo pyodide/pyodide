@@ -953,6 +953,11 @@ TEMP_EMJS_HELPER(() => {0, /* Magic, see comment */
         /**
          * The actual data. A typed array of an appropriate size backed by a
          * segment of the WASM memory.
+         *
+         * The ``type`` argument of :any:`getBuffer`
+         * determines which sort of `TypedArray` this is, by default
+         * :any:`getBuffer` will look at the format string to determine the most
+         * appropriate option.
          * @type {TypedArray}
          */
         this.data;
