@@ -5,20 +5,21 @@ set -eo pipefail
 
 function usage() {
   cat > /dev/stdout <<EOF
-Usage:
-  run_docker [OPTIONS] [COMMAND] [ARG...]
+Usage: run_docker [OPTIONS] [COMMAND] [ARG...]
 
-  Optional flags:
-    -h, --help                  Show this information and exit
-    --pre-built                 Use the prebuilt pyodide image.
-                                This is ignored if the env var PYODIDE_DOCKER_IMAGE is set
-    -p, --port <port>           System port to which to forward.
-                                This is ignored if the env var PYODIDE_SYSTEM_PORT is set
-                                If set to 'none', docker instance will not bind to any port
-                                (Useful for running the docker in multi-user environment)
+Runs COMMAND in a new Pyodide docker container. If no COMMAND is provided, starts a bash
+shell in the container.
 
-  Prerequisites:
-    Docker has to be set up on your system
+Options:
+  -h, --help                  Show this information and exit.
+  --pre-built                 Use the prebuilt Pyodide image.
+                              This is ignored if the env var PYODIDE_DOCKER_IMAGE is set.
+  -p, --port <port>           System port to which to forward.
+                              This is ignored if the env var PYODIDE_SYSTEM_PORT is set.
+                              If set to 'none', docker instance will not bind to any port.
+
+Prerequisites:
+  Docker has to be set up on your system.
 EOF
 }
 
