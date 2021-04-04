@@ -91,6 +91,8 @@ case $DEFAULT_PYODIDE_SYSTEM_PORT in
   ;;
 esac
 
+mkdir -p .docker_home
+
 USER_HOME="/src/.docker_home"
 USER_NAME="$(id -u -n)"
 USER_PASS="x"
