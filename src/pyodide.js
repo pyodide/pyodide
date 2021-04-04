@@ -383,17 +383,18 @@ globalThis.loadPyodide = async function(config = {}) {
   // clang-format off
   let PUBLIC_API = [
     'globals',
+    'pyodide_py',
+    'version',
     'loadPackage',
     'loadPackagesFromImports',
     'loadedPackages',
     'pyimport',
     'runPython',
     'runPythonAsync',
-    'version',
     'registerJsModule',
     'unregisterJsModule',
     'setInterruptBuffer',
-    'pyodide_py'
+    'toPy',
   ];
   // clang-format on
 
@@ -653,6 +654,65 @@ globalThis.loadPyodide = async function(config = {}) {
     Module.pyodide_py.unregister_js_module(name);
   };
   // clang-format on
+
+  /**
+   * Convert the Javascript object to a Python object as best as possible.
+   *
+   * This is similar to :any:`JsProxy.to_py` but for use from Javascript. If the
+   * object is immutable or a :any:`PyProxy`, it will be returned unchanged. If
+   * the object cannot be converted into Python, it will be returned unchanged.
+   *
+   * See :ref:`type-translations-jsproxy-to-py` for more information.
+   *
+   * @param {*} obj
+   * @param {number} depth Optional argument to limit the depth of the
+   * conversion.
+   * @returns {PyProxy} The object converted to Python.
+   */
+  Module.toPy = function(obj, depth = -1) {
+    // No point in converting these, it'd be dumb to proxy them so they'd just
+    // get converted back by `js2python` at the end
+    // clang-format off
+    switch (typeof obj) {
+      case "string":
+      case "number":
+      case "boolean":
+      case "bigint":
+      case "undefined":
+        return obj;
+    }
+    // clang-format on
+    if (!obj || Module.PyProxy.isPyProxy(obj)) {
+      return obj;
+    }
+    let obj_id = 0;
+    let py_result = 0;
+    let result = 0;
+    try {
+      obj_id = Module.hiwire.new_value(obj);
+      py_result = Module.__js2python_convert(obj_id, new Map(), depth);
+      // clang-format off
+      if(py_result === 0){
+        // clang-format on
+        Module._pythonexc2js();
+      }
+      if (Module._JsProxy_Check(py_result)) {
+        // Oops, just created a JsProxy. Return the original object.
+        return obj;
+        // return Module.pyproxy_new(py_result);
+      }
+      result = Module._python2js(py_result);
+      // clang-format off
+      if (result === 0) {
+        // clang-format on
+        Module._pythonexc2js();
+      }
+    } finally {
+      Module.hiwire.decref(obj_id);
+      Module._Py_DecRef(py_result);
+    }
+    return Module.hiwire.pop_value(result);
+  };
 
   Module.function_supports_kwargs = function(funcstr) {
     // This is basically a finite state machine (except for paren counting)
