@@ -115,11 +115,13 @@ CONTAINER=$(\
     " \
 )
 
+EXIT_STATUS=0
 # Execute the provided command as the host user with HOME=/src
 docker exec \
   -it \
   --user $(id --user):$(id --group) \
   $CONTAINER \
-  /bin/bash -c "${DOCKER_COMMAND}"
+  /bin/bash -c "${DOCKER_COMMAND}" || EXIT_STATUS=$?
 
 docker kill $CONTAINER > /dev/null
+exit $EXIT_STATUS
