@@ -91,18 +91,26 @@ case $DEFAULT_PYODIDE_SYSTEM_PORT in
   ;;
 esac
 
+USER_HOME="/src/.docker_home"
+USER_NAME="$(id -u -n)"
+USER_PASS="x"
+USER_ID="$(id -u)"
+USER_GID=0
+USER_COMMENT_FIELD="${USER_NAME} pyodide user alias"
+USER_INTERPRETER="/sbin/nologin"
+USER_ACCOUNT_INFO="${USER_NAME}:${USER_PASS}:${USER_ID}:${USER_GID}:${USER_COMMENT_FIELD}:${USER_HOME}:${USER_INTERPRETER}"
+
 # Start a detached container as root, add the host uname and uid to /etc/passwd,
 # then run forever
-USER_INFO="$(id -u -n):x:$(id -u):0:$(id -u -n) user:${HOME}:/sbin/nologin"
 CONTAINER=$(\
   docker run \
     -d --rm \
     -v $PWD:/src \
-    --user root -e NB_UID=$UID -e NB_GID=$GID \
+    --user root \
     --shm-size 2g \
     "${PYODIDE_DOCKER_IMAGE}" \
     /bin/bash -c " \
-      echo '${USER_INFO}' >> /etc/passwd ; \
+      echo '${USER_ACCOUNT_INFO}' >> /etc/passwd ; \
       tail -f /dev/null \
     " \
 )
@@ -110,9 +118,7 @@ CONTAINER=$(\
 # Execute the provided command as the host user with HOME=/src
 docker exec \
   -it \
-  -e HOME=/src \
   --user $(id --user):$(id --group) \
-  -e NB_UID=$(id --user) -e NB_GID=$(id --group) \
   $CONTAINER \
   /bin/bash -c "${DOCKER_COMMAND}"
 
