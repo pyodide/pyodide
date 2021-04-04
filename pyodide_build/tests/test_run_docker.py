@@ -12,7 +12,7 @@ def test_run_docker_script():
         stderr=subprocess.PIPE,
     )
 
-    assert "Usage:\n  run_docker" in res.stdout.decode("utf-8")
+    assert "Usage: run_docker" in res.stdout.decode("utf-8")
 
     res = subprocess.run(
         ["bash", str(BASE_DIR / "run_docker"), "--invalid-param"],
