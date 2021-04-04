@@ -11,7 +11,6 @@ __pycache__
 .idea
 .mozilla
 .mypy_cache/
-.npm
 .pytest_cache/
 .vscode
 
