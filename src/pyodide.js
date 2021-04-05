@@ -45,10 +45,15 @@ globalThis.loadPyodide = async function(config = {}) {
   const DEFAULT_CHANNEL = "default channel";
 
   // Regexp for validating package name and URI
-  const package_uri_regexp = /^.*?([^/]*)\.js$/
+  const package_uri_regexp = /^.*?([^\/]*)\.js$/;
 
-  let _uri_to_package_name =
-      (package_uri) => package_uri_regexp.exec(package_uri) ?.[1];
+  function _uri_to_package_name(package_uri) {
+    let match = package_uri_regexp.exec(package_uri);
+    if (match) {
+      return match[1];
+    }
+  };
+
   let loadScript;
   if (self.document) { // browser
     loadScript = (url) => new Promise((res, rej) => {
