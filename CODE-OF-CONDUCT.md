@@ -5,11 +5,11 @@
 We are committed to providing a friendly, safe and welcoming environment for all, regardless of level of experience, gender identity and expression, sexual orientation, disability, personal appearance, body size, race, ethnicity, age, religion, nationality, or other similar characteristic.
 
 - Please be kind and courteous. There’s no need to be mean or rude.
-- Please avoid using usernames that are overtly sexual or otherwise might detract from a friendly, safe and welcoming environment for all.
+- Please avoid using usernames that are overtly sexual or otherwise might detract from a friendly, safe, and welcoming environment for all.
 - Respect that people have differences of opinion and that every design or implementation choice carries trade-offs. There is seldom a single right answer.
 - We borrow the Recurse Center’s [“social rules”](https://www.recurse.com/manual#sub-sec-social-rules): no feigning surprise, no well-actually’s, no backseat driving, and no subtle -isms.
 - Please keep unstructured critique to a minimum. If you have solid ideas you want to experiment with, make a fork and see how it works. All feedback should be constructive in nature. If you need more detailed guidance around giving feedback, consult [Digital Ocean’s Code of Conduct](https://github.com/digitalocean/engineering-code-of-conduct#giving-and-receiving-feedback)
-- It is unacceptable to insult, demean or harass anyone. We interpret the term “harassment” as defined in the [Citizen Code of Conduct](https://github.com/stumpsyn/policies/blob/master/citizen_code_of_conduct.md#4-unacceptable-behavior); if you are not sure about what harassment entails, please read their definition. In particular, we don’t tolerate behavior that excludes people in socially marginalized groups.
+- It is unacceptable to insult, demean, or harass anyone. We interpret the term “harassment” as defined in the [Citizen Code of Conduct](https://github.com/stumpsyn/policies/blob/master/citizen_code_of_conduct.md#4-unacceptable-behavior); if you are not sure about what harassment entails, please read their definition. In particular, we don’t tolerate behavior that excludes people in socially marginalized groups.
 - Private harassment is also unacceptable. No matter who you are, please contact any of the Pyodide core team members immediately if you are being harassed or made uncomfortable by a community member. Whether you are a regular contributor or a newcomer, we care about making this community a safe place for you and we’ve got your back.
 - Likewise spamming, trolling, flaming, baiting or other attention-stealing behavior is not welcome.
 
