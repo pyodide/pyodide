@@ -12,25 +12,27 @@ Python with the scientific stack, compiled to WebAssembly.
 
 ## What is Pyodide?
 
-**Pyodide** brings the Python 3.8 runtime to the browser via WebAssembly, along
+Pyodide brings the Python 3.8 runtime to the browser via WebAssembly, along
 with the Python scientific stack including NumPy, Pandas, Matplotlib, SciPy, and
 scikit-learn. The [`packages`
 directory](https://github.com/pyodide/pyodide/tree/master/packages) lists over
 75 packages which are currently available. In addition it's possible to install
 pure Python wheels from PyPi.
 
-**Pyodide** provides transparent conversion of objects between Javascript and
+Pyodide provides transparent conversion of objects between Javascript and
 Python. When used inside a browser, Python has full access to the Web APIs.
+Pyodide may be used in any context where you want to run Python inside a web
+browser.
 
-While closely related to the [iodide project](https://iodide.io), a tool for
-*literate scientific computing and communication for the web*, Pyodide goes
-beyond running in a notebook environment. To maximize the flexibility of the
-modern web, **Pyodide** may be used standalone in any context where you want to
-**run Python inside a web browser**.
+Pyodide was originally developed as a part of the [iodide
+project](https://iodide.io). Iodide is a web-based notebook environment for
+literate scientific computing and communication. Iodide is no longer maintained.
+To use Pyodide in an interactive client-side notebook, you may also be
+interested in [Starboard Notebook](https://starboard.gg/).
 
 ## Try Pyodide (no installation needed)
 
-Try Pyodide in [Python REPL](https://pyodide-cdn2.iodide.io/v0.17.0a2/full/console.html) directly in your
+Try Pyodide in a [REPL](https://pyodide-cdn2.iodide.io/v0.17.0a2/full/console.html) directly in your
 browser.
 
 For further information, look through the [documentation](https://pyodide.org/en/0.17.0a2/).

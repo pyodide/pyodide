@@ -15,6 +15,8 @@ possible to install pure Python wheels from PyPi.
 
 Pyodide provides transparent conversion of objects between Javascript and
 Python. When used inside a browser, Python has full access to the Web APIs.
+Pyodide may be used in any context where you want to run Python inside a web
+browser.
 
 Using Pyodide
 =============
