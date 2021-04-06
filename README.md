@@ -1,6 +1,6 @@
 <div align="center">
   <a href="https://github.com/pyodide/pyodide">
-  <img src="https://github.com/pyodide/pyodide/raw/master/docs/_static/img/pyodide-logo-readme.png" alt="Pyodide">
+  <img src="./docs/_static/img/pyodide-logo-readme.png" alt="Pyodide">
   </a>
 </div>
 
@@ -17,10 +17,9 @@ browser.
 
 Pyodide brings the Python 3.8 runtime to the browser via WebAssembly, along with
 the Python scientific stack including NumPy, Pandas, Matplotlib, SciPy, and
-scikit-learn. The [packages
-directory](https://github.com/pyodide/pyodide/tree/master/packages) lists over
-75 packages which are currently available. In addition it's possible to install
-pure Python wheels from PyPi.
+scikit-learn. The [packages directory](packages) lists over 75 packages which
+are currently available. In addition it's possible to install pure Python wheels
+from PyPi.
 
 Pyodide provides transparent conversion of objects between Javascript and
 Python. When used inside a browser, Python has full access to the Web APIs.
@@ -72,14 +71,5 @@ governance](https://pyodide.org/en/0.17.0a2/project/governance.html).
 
 ## License
 
-Pyodide uses the Mozilla Public License Version 2.0. See the
-[LICENSE file](https://github.com/pyodide/pyodide/blob/master/LICENSE) for more details.
-
-## Acknowledgements
-
-We would like to thank,
- - [Mozilla](https://www.mozilla.org/en-US/) and
-[CircleCl](https://circleci.com/) for Continuous Integration resources
- - [JsDelivr](https://www.jsdelivr.com/) for providing a CDN for Pyodide
-   packages
- - [ReadTheDocs](https://readthedocs.org/) for hosting the documentation.
+Pyodide uses the [Mozilla Public License Version
+2.0](https://choosealicense.com/licenses/mpl-2.0/).
