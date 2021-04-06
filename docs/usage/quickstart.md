@@ -1,8 +1,8 @@
-(using_from_javascript)=
+(quickstart)=
 
-# Getting started using Pyodide
+# Getting started
 
-## Startup
+## Setup
 
 To include Pyodide in your project you can use the following CDN URL:
 ```{eval-rst}

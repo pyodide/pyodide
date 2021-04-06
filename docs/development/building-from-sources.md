@@ -32,7 +32,7 @@ On Mac, you will also need:
 
 - [Homebrew](https://brew.sh/) for installing dependencies
 - System libraries in the root directory (
-  `sudo installer -pkg /Library/Developer/CommandLineTools/Packages/macOS_SDK_headers_for_macOS_10.14.pkg -target /` 
+  `sudo installer -pkg /Library/Developer/CommandLineTools/Packages/macOS_SDK_headers_for_macOS_10.14.pkg -target /`
   should do it, see https://github.com/pyenv/pyenv/issues/1219#issuecomment-428305417)
 - coreutils for md5sum and other essential Unix utilities (`brew install coreutils`)
 - cmake (`brew install cmake`)
@@ -56,7 +56,7 @@ make
 We provide a Debian-based Docker image on Docker Hub with the dependencies
 already installed to make it easier to build Pyodide. On top of that we provide
 a pre-built image which can be used for fast custom and partial builds of
-pyodide. Note that building from the non pre-built the Docker image is *very*
+Pyodide. Note that building from the non pre-built the Docker image is *very*
 slow on Mac, building on the host machine is preferred if at all possible.
 
 1. Install Docker
