@@ -24,7 +24,11 @@ but not in Firefox.
 
 
 ## How can I change the behavior of {any}`runPython <pyodide.runPython>` and {any}`runPythonAsync <pyodide.runPythonAsync>`?
-The definitions of {any}`runPython <pyodide.runPython>` and {any}`runPythonAsync <pyodide.runPythonAsync>` are very simple:
+You can directly call Python functions from Javascript. For many purposes it
+makes sense to make your own Python function as an entrypoint and call that
+instead of using `runPython`. The definitions of {any}`runPython
+<pyodide.runPython>` and {any}`runPythonAsync <pyodide.runPythonAsync>` are very
+simple:
 ```javascript
 function runPython(code){
   pyodide.pyodide_py.eval_code(code, pyodide.globals);

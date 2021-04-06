@@ -143,6 +143,115 @@ EM_JS_NUM(int, hiwire_init, (), {
     return (!!obj) && typeof obj.then === 'function';
     // clang-format on
   };
+
+  /**
+   * Determine type and endianness of data from format. This is a helper
+   * function for converting buffers from Python to Javascript, used in
+   * PyProxyBufferMethods and in `toJs` on a buffer.
+   *
+   * To understand this function it will be helpful to look at the tables here:
+   * https://docs.python.org/3/library/struct.html#format-strings
+   *
+   * @arg format {String} A Python format string (caller must convert it to a
+   *      Javascript string).
+   * @arg errorMessage {String} Extra stuff to append to an error message if
+   *      thrown. Should be a complete sentence.
+   * @returns A pair, an appropriate TypedArray constructor and a boolean which
+   *      is true if the format suggests a big endian array.
+   * @private
+   */
+  Module.processBufferFormatString = function(formatStr, errorMessage = "")
+  {
+    if (formatStr.length > 2) {
+      throw new Error(
+        "Expected format string to have length <= 2, " +
+         `got '${formatStr}'.` + errorMessage);
+    }
+    let formatChar = formatStr.slice(-1);
+    let alignChar = formatStr.slice(0, -1);
+    let bigEndian;
+    switch (alignChar) {
+      case "!":
+      case ">":
+        bigEndian = true;
+        break;
+      case "<":
+      case "@":
+      case "=":
+      case "":
+        bigEndian = false;
+        break;
+      default:
+        throw new Error(`Unrecognized alignment character ${ alignChar }.` +
+                        errorMessage);
+    }
+    let arrayType;
+    switch (formatChar) {
+      case 'b':
+        arrayType = Int8Array;
+        break;
+      case 's':
+      case 'p':
+      case 'c':
+      case 'B':
+      case '?':
+        arrayType = Uint8Array;
+        break;
+      case 'h':
+        arrayType = Int16Array;
+        break;
+      case 'H':
+        arrayType = Uint16Array;
+        break;
+      case 'i':
+      case 'l':
+      case 'n':
+        arrayType = Int32Array;
+        break;
+      case 'I':
+      case 'L':
+      case 'N':
+      case 'P':
+        arrayType = Uint32Array;
+        break;
+      case 'q':
+        // clang-format off
+        if (globalThis.BigInt64Array === undefined) {
+          // clang-format on
+          throw new Error("BigInt64Array is not supported on this browser." +
+                          errorMessage);
+        }
+        arrayType = BigInt64Array;
+        break;
+      case 'Q':
+        // clang-format off
+        if (globalThis.BigUint64Array === undefined) {
+          // clang-format on
+          throw new Error("BigUint64Array is not supported on this browser." +
+                          errorMessage);
+        }
+        arrayType = BigUint64Array;
+        break;
+      case 'f':
+        arrayType = Float32Array;
+        break;
+      case 'd':
+        arrayType = Float64Array;
+        break;
+      case "e":
+        // clang-format off
+        throw new Error(
+          "Javascript has no Float16 support. Consider converting the data to " +
+          "float32 before using it from JavaScript. If you are using a webgl " +
+          "float16 texture then just use `getBuffer('u8')`.");
+        // clang-format on
+      default:
+        throw new Error(`Unrecognized format character '${formatChar}'.` +
+                        errorMessage);
+    }
+    return [ arrayType, bigEndian ];
+  };
+
   return 0;
 });
 

@@ -46,16 +46,12 @@ globalThis.loadPyodide = async function(config = {}) {
   const DEFAULT_CHANNEL = "default channel";
 
   // Regexp for validating package name and URI
-  const package_uri_regexp =
-      new RegExp('^https?://.*?([a-z0-9_][a-z0-9_\-]*).js$', 'i');
+  const package_uri_regexp = /^.*?([^\/]*)\.js$/;
 
-  let _uri_to_package_name = (package_uri) => {
-    if (package_uri_regexp.test(package_uri)) {
-      let match = package_uri_regexp.exec(package_uri);
-      // Get the regexp group corresponding to the package name
+  function _uri_to_package_name(package_uri) {
+    let match = package_uri_regexp.exec(package_uri);
+    if (match) {
       return match[1];
-    } else {
-      return null;
     }
   };
 
@@ -100,7 +96,7 @@ globalThis.loadPyodide = async function(config = {}) {
     };
     for (let name of names) {
       const pkgname = _uri_to_package_name(name);
-      if (pkgname !== null) {
+      if (pkgname !== undefined) {
         if (toLoad.has(pkgname) && toLoad.get(pkgname) !== name) {
           errorCallback(`Loading same package ${pkgname} from ${name} and ${
               toLoad.get(pkgname)}`);
@@ -280,12 +276,14 @@ globalThis.loadPyodide = async function(config = {}) {
    * Load a package or a list of packages over the network. This makes the files
    * for the package available in the virtual filesystem. The package needs to
    * be imported from Python before it can be used.
-   * @param {String | Array} names package name, or URL. Can be either a single
-   * element, or an array
+   * @param {String | Array} names Package name or URL. Can be either a single
+   *    element, or an array. URLs can be absolute or relative. URLs must have
+   *    file name `<package-name>.js` and there must be a file called
+   *    `<package-name>.data` in the same directory.
    * @param {function} messageCallback A callback, called with progress messages
-   * (optional)
+   *    (optional)
    * @param {function} errorCallback A callback, called with error/warning
-   * messages (optional)
+   *    messages (optional)
    * @returns {Promise} Resolves to ``undefined`` when loading is complete
    */
   Module.loadPackage = async function(names, messageCallback, errorCallback) {
@@ -396,7 +394,8 @@ globalThis.loadPyodide = async function(config = {}) {
     'registerJsModule',
     'unregisterJsModule',
     'setInterruptBuffer',
-    'pyodide_py'
+    'pyodide_py',
+    'PythonError',
   ];
   // clang-format on
 
@@ -460,7 +459,7 @@ globalThis.loadPyodide = async function(config = {}) {
    *
    * @type {PyProxy}
    */
-  Module.pyodide_py = {}; // Hack to make jsdoc behave
+  Module.pyodide_py = {}; // actually defined in runPythonSimple below
 
   /**
    *
@@ -472,7 +471,42 @@ globalThis.loadPyodide = async function(config = {}) {
    *
    * @type {PyProxy}
    */
-  Module.globals = {}; // Hack to make jsdoc behave
+  Module.globals = {}; // actually defined in runPythonSimple below
+
+  // clang-format off
+  /**
+   * A Javascript error caused by a Python exception.
+   *
+   * In order to reduce the risk of large memory leaks, the ``PythonError``
+   * contains no reference to the Python exception that caused it. You can find
+   * the actual Python exception that caused this error as `sys.last_value
+   * <https://docs.python.org/3/library/sys.html#sys.last_value>`_.
+   *
+   * See :ref:`type-translations-errors` for more information.
+   *
+   * .. admonition:: Avoid Stack Frames
+   *    :class: warning
+   *
+   *    If you make a ``PyProxy`` of ``sys.last_value``, you should be
+   *    especially careful to :any:`destroy() <PyProxy.destroy>`. You may leak a
+   *    large amount of memory including the local variables of all the stack
+   *    frames in the traceback if you don't. The easiest way is to only handle
+   *    the exception in Python.
+   *
+   * @class
+   */
+  Module.PythonError = class PythonError {
+    // actually defined in error_handling.c. TODO: would be good to move this
+    // documentation and the definition of PythonError to error_handling.js
+    constructor(){
+      /**
+       * The Python traceback.
+       * @type {string}
+       */
+      this.message;
+    }
+  };
+  // clang-format on
 
   /**
    *

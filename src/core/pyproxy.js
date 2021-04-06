@@ -669,34 +669,26 @@ TEMP_EMJS_HELPER(() => {0, /* Magic, see comment */
 
   Module.PyProxyCallableMethods = {prototype : Function.prototype};
 
+  // clang-format off
   let type_to_array_map = new Map([
     [ "i8", Int8Array ],
     [ "u8", Uint8Array ],
+    [ "u8clamped", Uint8ClampedArray ],
     [ "i16", Int16Array ],
     [ "u16", Uint16Array ],
     [ "i32", Int32Array ],
     [ "u32", Uint32Array ],
     [ "i32", Int32Array ],
     [ "u32", Uint32Array ],
+    // if these aren't available, will be globalThis.BigInt64Array will be
+    // undefined rather than raising a ReferenceError.
+    [ "i64", globalThis.BigInt64Array],
+    [ "u64", globalThis.BigUint64Array],
     [ "f32", Float32Array ],
     [ "f64", Float64Array ],
-    // Python type formats
-    [ "b", Int8Array ],
-    [ "B", Uint8Array ],
-    [ "h", Int16Array ],
-    [ "H", Uint16Array ],
-    [ "i", Int32Array ],
-    [ "I", Uint32Array ],
-    [ "f", Float32Array ],
-    [ "d", Float64Array ],
+    [ "dataview", DataView ],
   ]);
-
-  if (globalThis.BigInt64Array) {
-    type_to_array_map.set("i64", BigInt64Array);
-    type_to_array_map.set("u64", BigUint64Array);
-    type_to_array_map.set("q", BigInt64Array);
-    type_to_array_map.set("Q", BigUint64Array);
-  }
+  // clang-format on
 
   Module.PyProxyBufferMethods = {
     /**
@@ -712,14 +704,14 @@ TEMP_EMJS_HELPER(() => {0, /* Magic, see comment */
      * suboffets (using e.g., ``np.ascontiguousarray``).
      *
      * @param {string} type The type of the desired output. Should be one of:
-     *    "i8", "u8", "i16", "u16", "i32", "u32", "i32", "u32", "i64", "u64",
-     *    "f32", or "f64,
+     *    "i8", "u8", "u8clamped", "i16", "u16", "i32", "u32", "i32", "u32",
+     *    "i64", "u64", "f32", "f64, or "dataview".
      * @returns PyBuffer
      */
-    getBuffer : function(type = "u8") {
+    getBuffer : function(type) {
       let ArrayType = undefined;
       if (type) {
-        let ArrayType = type_to_array_map.get(type);
+        ArrayType = type_to_array_map.get(type);
         if (ArrayType === undefined) {
           throw new Error(`Unknown type ${type}`);
         }
@@ -747,38 +739,27 @@ TEMP_EMJS_HELPER(() => {0, /* Magic, see comment */
       let c_contiguous = !!HEAP32[cur_ptr++];
       let f_contiguous = !!HEAP32[cur_ptr++];
 
-      _PyMem_Free(buffer_struct_ptr);
-
       let format = UTF8ToString(format_ptr);
+      _PyMem_Free(buffer_struct_ptr);
 
       let success = false;
       try {
+        let bigEndian = false;
         if (ArrayType === undefined) {
-          // Try to determine correct type from format.
-          // To understand this code it will be helpful to look at the tables
-          // here: https://docs.python.org/3/library/struct.html#format-strings
-          if (format.includes("e")) {
-            throw new Error("Javascript has no Float16Array.");
-          }
-          let cleaned_format = format;
-          // Normalize same-sized types
-          cleaned_format = cleaned_format.replace(/[spc?]/g, "B");
-          cleaned_format = cleaned_format.replace(/[nl]/g, "i");
-          cleaned_format = cleaned_format.replace(/[NLP]/g, "I");
-          let type_char = cleaned_format[0];
-          ArrayType = type_to_array_map.get(type_char);
-          if (ArrayType === undefined) {
-            if (/[qQ]/.test(type_char)) {
-              throw new Error(
-                  "64 bit integer formats (q and Q) are not supported in browsers without BigInt support. You must pass a type argument.");
-            } else {
-              throw new Error(
-                  "Unrecognized buffer format. You must pass a type argument.");
-            }
-          }
+          [ArrayType, bigEndian] = Module.processBufferFormatString(
+              format, " In this case, you can pass an explicit type argument.");
         }
-
-        let alignment = parseInt(ArrayType.name.replace(/[^0-9]/g, "")) / 8;
+        let alignment =
+            parseInt(ArrayType.name.replace(/[^0-9]/g, "")) / 8 || 1;
+        if (bigEndian && alignment > 1) {
+          throw new Error(
+              "Javascript has no native support for big endian buffers. " +
+              "In this case, you can pass an explicit type argument. " +
+              "For instance, `getBuffer('dataview')` will return a `DataView`" +
+              "which has native support for reading big endian data." +
+              "Alternatively, toJs will automatically convert the buffer " +
+              "to little endian.");
+        }
         if (startByteOffset % alignment !== 0 ||
             minByteOffset % alignment !== 0 ||
             maxByteOffset % alignment !== 0) {
@@ -857,8 +838,8 @@ TEMP_EMJS_HELPER(() => {0, /* Magic, see comment */
    *    :class: warning
    *
    *    If the buffer is not contiguous, the ``data`` TypedArray will contain
-   * data that is not part of the buffer. Modifying this data may lead to
-   * undefined behavior.
+   *    data that is not part of the buffer. Modifying this data may lead to
+   *    undefined behavior.
    *
    * .. admonition:: Readonly buffers
    *    :class: warning
