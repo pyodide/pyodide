@@ -68,7 +68,7 @@ Create and save a test `index.html` page with the following contents:
             import sys
             sys.version
         `));
-        console.log(pyodide.runPython(`print(1 + 2)`));
+        console.log(pyodide.runPython("print(1 + 2)"));
       }
       main();
     </script>
@@ -168,8 +168,7 @@ pyodide.globals.set("alert", alert);
 pyodide.globals.set("square", x => x*x);
 
 // You can test your new Python function in the console by running
-pyodide.runPython(`square(3)`);
-
+pyodide.runPython("square(3)");
 ```
 
 Feel free to play around with the code using the browser console and the above example.
