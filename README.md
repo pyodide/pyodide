@@ -57,9 +57,9 @@ project](https://github.com/iodide-project/iodide). Iodide is an experimental
 web-based notebook environment for literate scientific computing and
 communication.
 
-Iodide is no longer maintained. To use Pyodide in an interactive client-side
-notebook, you may also be interested in [Starboard
-Notebook](https://starboard.gg/).
+Iodide is no longer maintained. If you want to use Pyodide in an interactive
+client-side notebook, see [Pyodide Notebook
+environments](https://pyodide.org/en/0.17.0a2/project/related-projects.html#notebook-environements-ides-repls).
 
 ## Contributing
 
