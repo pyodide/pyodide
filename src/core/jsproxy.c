@@ -1081,7 +1081,7 @@ finally:
 }
 
 /**
- * Call overload for methods. Controlled by IS_CALLABLE.
+ * __call__ overload for methods. Controlled by IS_CALLABLE.
  */
 static PyObject*
 JsMethod_Vectorcall(PyObject* self,
@@ -1097,8 +1097,7 @@ JsMethod_Vectorcall(PyObject* self,
   // Recursion error?
   FAIL_IF_NONZERO(Py_EnterRecursiveCall(" in JsMethod_Vectorcall"));
 
-  Py_ssize_t nargs = PyVectorcall_NARGS(nargsf);
-  idargs = JsMethod_ConvertArgs(args, nargs, kwnames);
+  idargs = JsMethod_ConvertArgs(args, PyVectorcall_NARGS(nargsf), kwnames);
   FAIL_IF_NULL(idargs);
   idresult = hiwire_call_bound(JsProxy_REF(self), JsMethod_THIS(self), idargs);
   FAIL_IF_NULL(idresult);
@@ -1117,6 +1116,8 @@ finally:
 }
 
 /**
+ * jsproxy.new implementation. Controlled by IS_CALLABLE.
+ *
  * This does Reflect.construct(this, args). In other words, this treats the
  * JsMethod as a Javascript class, constructs a new Javascript object of that
  * class and returns a new JsProxy wrapping it. Similar to `new this(args)`.
