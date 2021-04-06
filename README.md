@@ -4,11 +4,11 @@
   </a>
 </div>
 
-Python with the scientific stack, compiled to WebAssembly.
 
 [![Build Status](https://circleci.com/gh/pyodide/pyodide.png)](https://circleci.com/gh/pyodide/pyodide)
 [![Documentation Status](https://readthedocs.org/projects/pyodide/badge/?version=latest)](https://pyodide.readthedocs.io/?badge=latest)
 
+Python with the scientific stack, compiled to WebAssembly.
 
 ## What is Pyodide?
 
