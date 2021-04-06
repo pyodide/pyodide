@@ -12,9 +12,9 @@ Python with the scientific stack, compiled to WebAssembly.
 
 ## What is Pyodide?
 
-Pyodide brings the Python 3.8 runtime to the browser via WebAssembly, along
-with the Python scientific stack including NumPy, Pandas, Matplotlib, SciPy, and
-scikit-learn. The [`packages`
+Pyodide brings the Python 3.8 runtime to the browser via WebAssembly, along with
+the Python scientific stack including NumPy, Pandas, Matplotlib, SciPy, and
+scikit-learn. The [packages
 directory](https://github.com/pyodide/pyodide/tree/master/packages) lists over
 75 packages which are currently available. In addition it's possible to install
 pure Python wheels from PyPi.
@@ -28,9 +28,8 @@ browser.
 
 Try Pyodide in a
 [REPL](https://pyodide-cdn2.iodide.io/v0.17.0a2/full/console.html) directly in
-your browser.
-
-For further information, look through the [documentation](https://pyodide.org/en/0.17.0a2/).
+your browser. For further information, see the
+[documentation](https://pyodide.org/en/0.17.0a2/).
 
 ## Getting Started
 
@@ -56,19 +55,20 @@ Pyodide was created in 2018 by [Michael Droettboom](https://github.com/mdboom)
 at Mozilla as part of the [iodide
 project](https://github.com/iodide-project/iodide). Iodide is an experimental
 web-based notebook environment for literate scientific computing and
-communication. Iodide is no longer maintained.
+communication.
 
-To use Pyodide in an interactive client-side notebook, you may also be
-interested in [Starboard Notebook](https://starboard.gg/).
+Iodide is no longer maintained. To use Pyodide in an interactive client-side
+notebook, you may also be interested in [Starboard
+Notebook](https://starboard.gg/).
 
 ## Contributing
 
-Please view the
-[contributing guide](https://pyodide.org/en/0.17.0a2/development/contributing.html)
-for tips on filing issues, making changes, and submitting pull requests.
-
-Pyodide is an independent and community-driven open-source project.
-The decision making process is outlined in the [Project governance](https://pyodide.org/en/0.17.0a2/project/governance.html).
+Please view the [contributing
+guide](https://pyodide.org/en/0.17.0a2/development/contributing.html) for tips
+on filing issues, making changes, and submitting pull requests. Pyodide is an
+independent and community-driven open-source project. The decision making
+process is outlined in the [Project
+governance](https://pyodide.org/en/0.17.0a2/project/governance.html).
 
 ## License
 
