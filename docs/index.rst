@@ -6,7 +6,7 @@
 Pyodide
 =======
 
-Python and the scientific stack, compiled to WebAssembly.
+Python with the scientific stack, compiled to WebAssembly.
 
 Pyodide brings the Python 3.8 runtime to the browser via WebAssembly, along
 with the Python scientific stack including NumPy, Pandas, Matplotlib, SciPy, and

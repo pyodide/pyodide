@@ -8,7 +8,7 @@
 [![Build Status](https://circleci.com/gh/pyodide/pyodide.png)](https://circleci.com/gh/pyodide/pyodide)
 [![Documentation Status](https://readthedocs.org/projects/pyodide/badge/?version=latest)](https://pyodide.readthedocs.io/?badge=latest)
 
-Python and the scientific stack, compiled to WebAssembly.
+Python with the scientific stack, compiled to WebAssembly.
 
 ## What is Pyodide?
 
