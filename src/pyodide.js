@@ -393,7 +393,8 @@ globalThis.loadPyodide = async function(config = {}) {
     'registerJsModule',
     'unregisterJsModule',
     'setInterruptBuffer',
-    'pyodide_py'
+    'pyodide_py',
+    'PythonError',
   ];
   // clang-format on
 
@@ -457,7 +458,7 @@ globalThis.loadPyodide = async function(config = {}) {
    *
    * @type {PyProxy}
    */
-  Module.pyodide_py = {}; // Hack to make jsdoc behave
+  Module.pyodide_py = {}; // actually defined in runPythonSimple below
 
   /**
    *
@@ -469,7 +470,42 @@ globalThis.loadPyodide = async function(config = {}) {
    *
    * @type {PyProxy}
    */
-  Module.globals = {}; // Hack to make jsdoc behave
+  Module.globals = {}; // actually defined in runPythonSimple below
+
+  // clang-format off
+  /**
+   * A Javascript error caused by a Python exception.
+   *
+   * In order to reduce the risk of large memory leaks, the ``PythonError``
+   * contains no reference to the Python exception that caused it. You can find
+   * the actual Python exception that caused this error as `sys.last_value
+   * <https://docs.python.org/3/library/sys.html#sys.last_value>`_.
+   *
+   * See :ref:`type-translations-errors` for more information.
+   *
+   * .. admonition:: Avoid Stack Frames
+   *    :class: warning
+   *
+   *    If you make a ``PyProxy`` of ``sys.last_value``, you should be
+   *    especially careful to :any:`destroy() <PyProxy.destroy>`. You may leak a
+   *    large amount of memory including the local variables of all the stack
+   *    frames in the traceback if you don't. The easiest way is to only handle
+   *    the exception in Python.
+   *
+   * @class
+   */
+  Module.PythonError = class PythonError {
+    // actually defined in error_handling.c. TODO: would be good to move this
+    // documentation and the definition of PythonError to error_handling.js
+    constructor(){
+      /**
+       * The Python traceback.
+       * @type {string}
+       */
+      this.message;
+    }
+  };
+  // clang-format on
 
   /**
    *
