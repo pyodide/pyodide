@@ -376,7 +376,7 @@ hiwire_call_member_va(JsRef idobj, const char* ptrname, ...);
  * Returns: New reference
  */
 JsRef
-hiwire_new(JsRef idobj, JsRef idargs);
+hiwire_construct(JsRef idobj, JsRef idargs);
 
 /**
  * Test if the object has a `size` or `length` member which is a number. As a
@@ -479,14 +479,6 @@ hiwire_is_function(JsRef idobj);
  */
 bool
 hiwire_is_error(JsRef idobj);
-
-/**
- * Check if the function supports kwargs. A fairly involved check which parses
- * func.toString() to determine if the last argument does object destructuring.
- * Actual implementation in pyodide.js.
- */
-bool
-hiwire_function_supports_kwargs(JsRef idfunc);
 
 /**
  * Returns true if the object is a promise.
