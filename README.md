@@ -1,13 +1,12 @@
 <div align="center">
   <a href="https://github.com/pyodide/pyodide">
-  <img src="./docs/_static/img/pyodide-logo-readme.png" alt="Pyodide">
+  <img src="https://github.com/pyodide/pyodide/raw/master/docs/_static/img/pyodide-logo-readme.png" alt="Pyodide">
   </a>
 </div>
 
 
 [![Build Status](https://circleci.com/gh/pyodide/pyodide.png)](https://circleci.com/gh/pyodide/pyodide)
 [![Documentation Status](https://readthedocs.org/projects/pyodide/badge/?version=latest)](https://pyodide.readthedocs.io/?badge=latest)
-# Readme
 
 Python with the scientific stack, compiled to WebAssembly.
 
