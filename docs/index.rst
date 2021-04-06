@@ -56,7 +56,7 @@ information about the project's organization.
    :titlesonly:
    :caption: Project
 
-   project/about.md
+   project/README.md
    project/code-of-conduct.md
    project/governance.md
    project/changelog.md

@@ -7,6 +7,7 @@
 
 [![Build Status](https://circleci.com/gh/pyodide/pyodide.png)](https://circleci.com/gh/pyodide/pyodide)
 [![Documentation Status](https://readthedocs.org/projects/pyodide/badge/?version=latest)](https://pyodide.readthedocs.io/?badge=latest)
+# Readme
 
 Python with the scientific stack, compiled to WebAssembly.
 
@@ -24,16 +25,11 @@ Python. When used inside a browser, Python has full access to the Web APIs.
 Pyodide may be used in any context where you want to run Python inside a web
 browser.
 
-Pyodide was originally developed as a part of the [iodide
-project](https://iodide.io). Iodide is a web-based notebook environment for
-literate scientific computing and communication. Iodide is no longer maintained.
-To use Pyodide in an interactive client-side notebook, you may also be
-interested in [Starboard Notebook](https://starboard.gg/).
-
 ## Try Pyodide (no installation needed)
 
-Try Pyodide in a [REPL](https://pyodide-cdn2.iodide.io/v0.17.0a2/full/console.html) directly in your
-browser.
+Try Pyodide in a
+[REPL](https://pyodide-cdn2.iodide.io/v0.17.0a2/full/console.html) directly in
+your browser.
 
 For further information, look through the [documentation](https://pyodide.org/en/0.17.0a2/).
 
@@ -55,13 +51,36 @@ technical resources. These include:
     recommended for Windows and macOS users and for Linux users who prefer a
     Debian-based Docker image with the dependencies already installed.
 
+
+## History
+Pyodide was created in 2018 by [Michael Droettboom](https://github.com/mdboom)
+at Mozilla as part of the [iodide
+project](https://github.com/iodide-project/iodide). Iodide is an experimental
+web-based notebook environment for literate scientific computing and
+communication. Iodide is no longer maintained.
+
+To use Pyodide in an interactive client-side notebook, you may also be
+interested in [Starboard Notebook](https://starboard.gg/).
+
 ## Contributing
 
 Please view the
 [contributing guide](https://pyodide.org/en/0.17.0a2/development/contributing.html)
 for tips on filing issues, making changes, and submitting pull requests.
 
+Pyodide is an independent and community-driven open-source project.
+The decision making process is outlined in the [Project governance](https://pyodide.org/en/0.17.0a2/project/governance.html).
+
 ## License
 
 Pyodide uses the Mozilla Public License Version 2.0. See the
-[LICENSE file](LICENSE) for more details.
+[LICENSE file](https://github.com/pyodide/pyodide/blob/master/LICENSE) for more details.
+
+## Acknowledgements
+
+We would like to thank,
+ - [Mozilla](https://www.mozilla.org/en-US/) and
+[CircleCl](https://circleci.com/) for Continuous Integration resources
+ - [JsDelivr](https://www.jsdelivr.com/) for providing a CDN for Pyodide
+   packages
+ - [ReadTheDocs](https://readthedocs.org/) for hosting the documentation.
