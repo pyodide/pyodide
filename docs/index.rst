@@ -1,12 +1,10 @@
-.. Pyodide documentation master file, created by
-   sphinx-quickstart on Sun Jun  9 12:22:53 2019.
-   You can adapt this file completely to your liking, but it should at least
-   contain the root `toctree` directive.
-
 Pyodide
 =======
 
 Python with the scientific stack, compiled to WebAssembly.
+
+Pyodide may be used in any context where you want to run Python inside a web
+browser.
 
 Pyodide brings the Python 3.8 runtime to the browser via WebAssembly, along
 with the Python scientific stack including NumPy, Pandas, Matplotlib, SciPy, and
@@ -15,8 +13,6 @@ possible to install pure Python wheels from PyPi.
 
 Pyodide provides transparent conversion of objects between Javascript and
 Python. When used inside a browser, Python has full access to the Web APIs.
-Pyodide may be used in any context where you want to run Python inside a web
-browser.
 
 Using Pyodide
 =============
