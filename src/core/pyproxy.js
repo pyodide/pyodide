@@ -896,8 +896,8 @@ TEMP_EMJS_HELPER(() => {0, /* Magic, see comment */
    *    :class: warning
    *
    *    If the buffer is not contiguous, the ``data`` TypedArray will contain
-   * data that is not part of the buffer. Modifying this data may lead to
-   * undefined behavior.
+   *    data that is not part of the buffer. Modifying this data may lead to
+   *    undefined behavior.
    *
    * .. admonition:: Readonly buffers
    *    :class: warning

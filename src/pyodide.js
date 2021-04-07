@@ -14,6 +14,7 @@ globalThis.pyodide = {};
 /**
  * Load the main Pyodide wasm module and initialize it. When finished stores the
  * pyodide module as a global object called ``pyodide``.
+ * @async
  * @param {string} config.indexURL - The URL from which Pyodide will load
  * packages
  * @returns The pyodide module.
@@ -395,6 +396,7 @@ globalThis.loadPyodide = async function(config = {}) {
     'unregisterJsModule',
     'setInterruptBuffer',
     'toPy',
+    'PythonError',
   ];
   // clang-format on
 
@@ -458,7 +460,7 @@ globalThis.loadPyodide = async function(config = {}) {
    *
    * @type {PyProxy}
    */
-  Module.pyodide_py = {}; // Hack to make jsdoc behave
+  Module.pyodide_py = {}; // actually defined in runPythonSimple below
 
   /**
    *
@@ -470,7 +472,42 @@ globalThis.loadPyodide = async function(config = {}) {
    *
    * @type {PyProxy}
    */
-  Module.globals = {}; // Hack to make jsdoc behave
+  Module.globals = {}; // actually defined in runPythonSimple below
+
+  // clang-format off
+  /**
+   * A Javascript error caused by a Python exception.
+   *
+   * In order to reduce the risk of large memory leaks, the ``PythonError``
+   * contains no reference to the Python exception that caused it. You can find
+   * the actual Python exception that caused this error as `sys.last_value
+   * <https://docs.python.org/3/library/sys.html#sys.last_value>`_.
+   *
+   * See :ref:`type-translations-errors` for more information.
+   *
+   * .. admonition:: Avoid Stack Frames
+   *    :class: warning
+   *
+   *    If you make a ``PyProxy`` of ``sys.last_value``, you should be
+   *    especially careful to :any:`destroy() <PyProxy.destroy>`. You may leak a
+   *    large amount of memory including the local variables of all the stack
+   *    frames in the traceback if you don't. The easiest way is to only handle
+   *    the exception in Python.
+   *
+   * @class
+   */
+  Module.PythonError = class PythonError {
+    // actually defined in error_handling.c. TODO: would be good to move this
+    // documentation and the definition of PythonError to error_handling.js
+    constructor(){
+      /**
+       * The Python traceback.
+       * @type {string}
+       */
+      this.message;
+    }
+  };
+  // clang-format on
 
   /**
    *
@@ -523,6 +560,8 @@ globalThis.loadPyodide = async function(config = {}) {
    * is returned.
    *
    * @param {string} code Python code to evaluate
+   * @param {dict} globals An optional Python dictionary to use as the globals.
+   *        Defaults to ``pyodide.globals``.
    * @returns The result of the python code converted to Javascript
    */
   Module.runPython = function(code, globals = Module.globals) {
@@ -713,95 +752,6 @@ globalThis.loadPyodide = async function(config = {}) {
     }
     return Module.hiwire.pop_value(result);
   };
-
-  Module.function_supports_kwargs = function(funcstr) {
-    // This is basically a finite state machine (except for paren counting)
-    // Start at beginning of argspec
-    let idx = funcstr.indexOf("(") + 1;
-    // States:
-    // START_ARG -- Start of an argument. We leave this state when we see a non
-    // whitespace character.
-    //    If the first nonwhitespace character we see is `{` this is an object
-    //    destructuring argument. Else it's not. When we see non whitespace goto
-    //    state ARG and set `arg_is_obj_dest` true if it's "{", else false.
-    // ARG -- we're in the middle of an argument. Count parens. On comma, if
-    // parens_depth === 0 goto state START_ARG, on quote set
-    //      set quote_start and goto state QUOTE.
-    // QUOTE -- We're in a quote. Record quote_start in quote_start and look for
-    // a matching end quote.
-    //    On end quote, goto state ARGS. If we see "\\" goto state QUOTE_ESCAPE.
-    // QUOTE_ESCAPE -- unconditionally goto state QUOTE.
-    // If we see a ) when parens_depth === 0, return arg_is_obj_dest.
-    let START_ARG = 1;
-    let ARG = 2;
-    let QUOTE = 3;
-    let QUOTE_ESCAPE = 4;
-    let paren_depth = 0;
-    let arg_is_obj_dest = false;
-    let quote_start = undefined;
-    let state = START_ARG;
-    // clang-format off
-    for (let i = idx; i < funcstr.length; i++) {
-      let x = funcstr[i];
-      if(state === QUOTE){
-        switch(x){
-          case quote_start:
-            // found match, go back to ARG
-            state = ARG;
-            continue;
-          case "\\":
-            state = QUOTE_ESCAPE;
-            continue;
-          default:
-            continue;
-        }
-      }
-      if(state === QUOTE_ESCAPE){
-        state = QUOTE;
-        continue;
-      }
-      // Skip whitespace.
-      if(x === " " || x === "\n" || x === "\t"){
-        continue;
-      }
-      if(paren_depth === 0){
-        if(x === ")" && state !== QUOTE && state !== QUOTE_ESCAPE){
-          // We hit closing brace which ends argspec.
-          // We have to handle this up here in case argspec ends in a trailing comma
-          // (if we're in state START_ARG, the next check would clobber arg_is_obj_dest).
-          return arg_is_obj_dest;
-        }
-        if(x === ","){
-          state = START_ARG;
-          continue;
-        }
-        // otherwise fall through
-      }
-      if(state === START_ARG){
-        // Nonwhitespace character in START_ARG so now we're in state arg.
-        state = ARG;
-        arg_is_obj_dest = x === "{";
-        // don't continue, fall through to next switch
-      }
-      switch(x){
-        case "[": case "{": case "(":
-          paren_depth ++;
-          continue;
-        case "]": case "}": case ")":
-          paren_depth--;
-          continue;
-        case "'": case '"': case '\`':
-          state = QUOTE;
-          quote_start = x;
-          continue;
-      }
-    }
-    // Correct exit is paren_depth === 0 && x === ")" test above.
-    throw new Error("Assertion failure: this is a logic error in \
-                     hiwire_function_supports_kwargs");
-    // clang-format on
-  };
-
   Module.locateFile = (path) => baseURL + path;
 
   let moduleLoaded = new Promise(r => Module.postRun = r);
