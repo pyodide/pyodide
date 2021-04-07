@@ -101,8 +101,10 @@ class PyodideAnalyzer:
             if key[0] == "pyproxy.":
                 items["PyProxy"] += group
 
+        from operator import itemgetter
+
         for key, value in items.items():
-            for json in value:
+            for json in sorted(value, key=itemgetter("name")):
                 if json.get("access", None) == "private":
                     continue
                 obj = self.get_object_from_json(json)
