@@ -351,48 +351,6 @@ globalThis.loadPyodide = async function(config = {}) {
     await promise;
   };
 
-  // clang-format off
-  /**
-   * Inspect a Python code chunk and use :js:func:`pyodide.loadPackage` to load any known
-   * packages that the code chunk imports. Uses
-   * :func:`pyodide_py.find_imports() <pyodide.find\_imports>` to inspect the code.
-   *
-   * For example, given the following code as input
-   *
-   * .. code-block:: python
-   *
-   *    import numpy as np
-   *    x = np.array([1, 2, 3])
-   *
-   * :js:func:`loadPackagesFromImports` will call ``pyodide.loadPackage(['numpy'])``.
-   * See also :js:func:`runPythonAsync`.
-   *
-   * @param {string} code
-   * @param {Function} messageCallback The ``messageCallback`` argument of :any:`pyodide.loadPackage`.
-   * @param {Function} errorCallback The ``errorCallback`` argument of :any:`pyodide.loadPackage`.
-   * messages. (optional)
-   * @async
-   */
-   Module.loadPackagesFromImports = async function(code, messageCallback, errorCallback) {
-    let imports = Module.pyodide_py.find_imports(code).toJs();
-    if (imports.length === 0) {
-      return;
-    }
-    let packageNames = Module.packages.import_name_to_package_name;
-    let packages = new Set();
-    for (let name of imports) {
-      if (name in packageNames) {
-        packages.add(packageNames[name]);
-      }
-    }
-    if (packages.size) {
-      await Module.loadPackage(
-        Array.from(packages.keys()), messageCallback, errorCallback
-      );
-    }
-  };
-  // clang-format on
-
   ////////////////////////////////////////////////////////////
   // Fix Python recursion limit
   function fixRecursionLimit(pyodide) {
@@ -609,6 +567,66 @@ globalThis.loadPyodide = async function(config = {}) {
     return Module.pyodide_py.eval_code(code, globals);
   };
 
+  // clang-format off
+  /**
+   * Inspect a Python code chunk and use :js:func:`pyodide.loadPackage` to load any known
+   * packages that the code chunk imports. Uses
+   * :func:`pyodide_py.find_imports() <pyodide.find\_imports>` to inspect the code.
+   *
+   * For example, given the following code as input
+   *
+   * .. code-block:: python
+   *
+   *    import numpy as np
+   *    x = np.array([1, 2, 3])
+   *
+   * :js:func:`loadPackagesFromImports` will call ``pyodide.loadPackage(['numpy'])``.
+   * See also :js:func:`runPythonAsync`.
+   *
+   * @param {string} code
+   * @param {Function} messageCallback The ``messageCallback`` argument of :any:`pyodide.loadPackage`.
+   * @param {Function} errorCallback The ``errorCallback`` argument of :any:`pyodide.loadPackage`.
+   * messages. (optional)
+   * @async
+   */
+  Module.loadPackagesFromImports = async function(code, messageCallback, errorCallback) {
+    let imports = Module.pyodide_py.find_imports(code).toJs();
+    if (imports.length === 0) {
+      return;
+    }
+    let packageNames = Module.packages.import_name_to_package_name;
+    let packages = new Set();
+    for (let name of imports) {
+      if (name in packageNames) {
+        packages.add(packageNames[name]);
+      }
+    }
+    if (packages.size) {
+      await Module.loadPackage(
+        Array.from(packages.keys()), messageCallback, errorCallback
+      );
+    }
+  };
+  // clang-format on
+
+  /**
+   * Access a Python object in the global namespace from Javascript.
+   *
+   * @deprecated This function is deprecated and will be removed in version
+   * 0.18.0. Use :any:`pyodide.globals.get('key') <pyodide.globals>` instead.
+   *
+   * @param {string} name Python variable name
+   * @returns If the Python object is an immutable type (string, number,
+   *    boolean), it is converted to Javascript and returned.  For other types,
+   * a :any:`PyProxy` object is returned.
+   */
+  Module.pyimport = name => {
+    console.warn(
+        "Access to the Python global namespace via pyodide.pyimport is deprecated and " +
+        "will be removed in version 0.18.0. Use pyodide.globals.get('key') instead.");
+    return Module.globals.get(name);
+  };
+
   /**
    * Runs Python code, possibly asynchronously loading any known packages that
    * the code imports. For example, given the following code
@@ -644,24 +662,6 @@ globalThis.loadPyodide = async function(config = {}) {
     } finally {
       coroutine.destroy();
     }
-  };
-
-  /**
-   * Access a Python object in the global namespace from Javascript.
-   *
-   * @deprecated This function is deprecated and will be removed in version
-   * 0.18.0. Use :any:`pyodide.globals.get('key') <pyodide.globals>` instead.
-   *
-   * @param {string} name Python variable name
-   * @returns If the Python object is an immutable type (string, number,
-   *    boolean), it is converted to Javascript and returned.  For other types,
-   * a :any:`PyProxy` object is returned.
-   */
-  Module.pyimport = name => {
-    console.warn(
-        "Access to the Python global namespace via pyodide.pyimport is deprecated and " +
-        "will be removed in version 0.18.0. Use pyodide.globals.get('key') instead.");
-    return Module.globals.get(name);
   };
 
   // clang-format off
