@@ -13,8 +13,8 @@
   </head>
   <body>
     <script>
-      function main() {
-        await initializePyodide({ indexURL : '{{ PYODIDE_BASE_URL }}' });
+      async function main() {
+        await loadPyodide({ indexURL : '{{ PYODIDE_BASE_URL }}' });
         let namespace = pyodide.globals.get("dict")();
         pyodide.runPython(`
             import sys

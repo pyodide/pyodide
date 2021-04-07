@@ -156,6 +156,22 @@ class WebLoop(asyncio.AbstractEventLoop):
         delay = when - cur_time
         return self.call_later(delay, callback, *args, context=context)
 
+    def run_in_executor(self, executor, func, *args):
+        """Arrange for func to be called in the specified executor.
+
+        This is normally supposed to run func(*args) in a separate process or
+        thread and signal back to our event loop when it is done. It's possible
+        to make the executor, but if we actually try to submit any functions to
+        it, it will try to create a thread and throw an error. Best we can do is
+        to run func(args) in this thread and stick the result into a future.
+        """
+        fut = self.create_future()
+        try:
+            fut.set_result(func(*args))
+        except BaseException as e:
+            fut.set_exception(e)
+        return fut
+
     #
     # The remaining methods are copied directly from BaseEventLoop
     #

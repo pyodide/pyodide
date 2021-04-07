@@ -185,8 +185,8 @@ def test_runpythonasync_numpy(selenium_standalone):
         )
 
 
-def test_runwebworker_numpy(selenium_standalone):
-    output = selenium_standalone.run_webworker(
+def test_runwebworker_numpy(selenium_webworker_standalone):
+    output = selenium_webworker_standalone.run_webworker(
         """
         import numpy as np
         x = np.zeros(5)
@@ -287,8 +287,34 @@ def test_get_buffer_roundtrip(selenium, arg):
     )
 
 
+def test_get_buffer_big_endian(selenium):
+    selenium.run_js(
+        """
+        window.a = await pyodide.runPythonAsync(`
+            import numpy as np
+            np.arange(24, dtype="int16").byteswap().newbyteorder()
+        `);
+        """
+    )
+    with pytest.raises(
+        Exception, match="Javascript has no native support for big endian buffers"
+    ):
+        selenium.run_js("a.getBuffer()")
+    result = selenium.run_js(
+        """
+        let buf = a.getBuffer("i8")
+        let result = Array.from(buf.data);
+        buf.release();
+        a.destroy();
+        return result;
+        """
+    )
+    assert len(result) == 48
+    assert result[:18] == [0, 0, 0, 1, 0, 2, 0, 3, 0, 4, 0, 5, 0, 6, 0, 7, 0, 8]
+
+
 def test_get_buffer_error_messages(selenium):
-    with pytest.raises(Exception, match="Javascript has no Float16Array"):
+    with pytest.raises(Exception, match="Javascript has no Float16 support"):
         selenium.run_js(
             """
             await pyodide.runPythonAsync(`
