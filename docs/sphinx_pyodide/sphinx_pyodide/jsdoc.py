@@ -218,6 +218,9 @@ def get_jsdoc_summary_directive(app):
             It seems like colons need escaping for some reason.
             """
             colon_esc = "esccolon\\\xafhoa:"
+            # extract_summary seems to have trouble if there are Sphinx
+            # directives in descr
+            descr, _, _ = descr.partition("\n..")
             return extract_summary(
                 [descr.replace(":", colon_esc)], self.state.document
             ).replace(colon_esc, ":")

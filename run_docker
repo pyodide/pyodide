@@ -91,11 +91,39 @@ case $DEFAULT_PYODIDE_SYSTEM_PORT in
   ;;
 esac
 
-exec docker run \
-    $PORT_CONFIGURATION_LINE \
-    -it --rm \
+mkdir -p .docker_home
+
+USER_HOME="/src/.docker_home"
+USER_NAME="$(id -u -n)"
+USER_PASS="x"
+USER_ID="$(id -u)"
+USER_GID=0
+USER_COMMENT_FIELD="${USER_NAME} pyodide user alias"
+USER_INTERPRETER="/sbin/nologin"
+USER_ACCOUNT_INFO="${USER_NAME}:${USER_PASS}:${USER_ID}:${USER_GID}:${USER_COMMENT_FIELD}:${USER_HOME}:${USER_INTERPRETER}"
+
+# Start a detached container as root, add the host uname and uid to /etc/passwd,
+# then run forever
+CONTAINER=$(\
+  docker run \
+    -d --rm \
     -v $PWD:/src \
-    --user root -e NB_UID=$UID -e NB_GID=$GID \
+    --user root \
     --shm-size 2g \
     "${PYODIDE_DOCKER_IMAGE}" \
-    $DOCKER_COMMAND
+    /bin/bash -c " \
+      echo '${USER_ACCOUNT_INFO}' >> /etc/passwd ; \
+      tail -f /dev/null \
+    " \
+)
+
+EXIT_STATUS=0
+# Execute the provided command as the host user with HOME=/src
+docker exec \
+  -it \
+  --user $(id --user):$(id --group) \
+  $CONTAINER \
+  /bin/bash -c "${DOCKER_COMMAND}" || EXIT_STATUS=$?
+
+docker kill $CONTAINER > /dev/null
+exit $EXIT_STATUS
