@@ -1311,6 +1311,8 @@ JsProxy_create_subtype(int flags)
   methods[cur_method++] = JsProxy_Dir_MethodDef;
   methods[cur_method++] = JsProxy_toPy_MethodDef;
   methods[cur_method++] = JsProxy_object_entries_MethodDef;
+  methods[cur_method++] = JsProxy_object_keys_MethodDef;
+  methods[cur_method++] = JsProxy_object_values_MethodDef;
 
   PyTypeObject* base = &JsProxyType;
   int tp_flags = Py_TPFLAGS_DEFAULT;
