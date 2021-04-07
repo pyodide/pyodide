@@ -483,8 +483,8 @@ def test_object_entries_keys_values(selenium):
         pyodide.runPython(`
             from js import x
             assert x.object_entries().to_py() == [["a", 2], ["b", 3], ["c", 4]]
-            assert x.object_keys().to_py() == [2, 3, 4]
-            assert x.object_values().to_py() == ["a", "b", "c"]
+            assert x.object_keys().to_py() == ["a", "b", "c"]
+            assert x.object_values().to_py() == [2, 3, 4]
         `);
         """
     )
