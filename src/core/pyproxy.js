@@ -21,8 +21,13 @@ TEMP_EMJS_HELPER(() => {0,0; /* Magic, see comment */
   if (globalThis.FinalizationRegistry) {
     Module.finalizationRegistry =
         new FinalizationRegistry((ptr) => { _Py_DecRef(ptr); });
+    Module.bufferFinalizationRegistry = new FinalizationRegistry((ptr) => {
+      _PyBuffer_Release(ptr);
+      _PyMem_Free(ptr);
+    });
   } else {
     Module.finalizationRegistry = {register() {}, unregister() {}};
+    Module.bufferFinalizationRegistry = finalizationRegistry;
   }
 
   function _getPtr(jsobj) {
@@ -373,8 +378,8 @@ TEMP_EMJS_HELPER(() => {0,0; /* Magic, see comment */
     [Symbol.iterator] : function() {
       let token = {};
       let iterptr = _PyObject_GetIter(_getPtr(this));
-      let result = iter_helper(iterptr, token);
       Module.finalizationRegistry.register(result, iterptr, token);
+      let result = iter_helper(iterptr, token);
       return result;
     },
   };
@@ -810,7 +815,7 @@ TEMP_EMJS_HELPER(() => {0,0; /* Magic, see comment */
 
         success = true;
         // clang-format off
-        return Object.create(Module.PyBuffer.prototype,
+        let result = Object.create(Module.PyBuffer.prototype,
           Object.getOwnPropertyDescriptors({
             offset,
             readonly,
@@ -827,6 +832,8 @@ TEMP_EMJS_HELPER(() => {0,0; /* Magic, see comment */
             _released : false
           })
         );
+        Module.bufferFinalizationRegistry.register(result, view_ptr, result);
+        return result;
         // clang-format on
       } finally {
         if (!success) {
@@ -997,6 +1004,7 @@ TEMP_EMJS_HELPER(() => {0,0; /* Magic, see comment */
       if (this._released) {
         return;
       }
+      Module.bufferFinalizationRegistry.unregister(this);
       _PyBuffer_Release(this._view_ptr);
       _PyMem_Free(this._view_ptr);
       this._released = true;
