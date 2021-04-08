@@ -9,11 +9,9 @@ from typing import Dict, Any, Union, List, Tuple
 
 from distlib import markers, util, version
 
-import sys
-
 # Provide stubs for testing in native python
 try:
-    from js import pyodide as js_pyodide
+    import pyodide_js
 
     IN_BROWSER = True
 except ImportError:
@@ -121,7 +119,7 @@ class _PackageManager:
 
     def __init__(self):
         if IN_BROWSER:
-            self.builtin_packages = js_pyodide._module.packages.dependencies.to_py()
+            self.builtin_packages = pyodide_js._module.packages.dependencies.to_py()
         else:
             self.builtin_packages = {}
         self.installed_packages = {}
@@ -157,7 +155,7 @@ class _PackageManager:
             # Note: branch never happens in out-of-browser testing because we
             # report that all dependencies are empty.
             self.installed_packages.update(dict((k, None) for k in pyodide_packages))
-            wheel_promises.append(js_pyodide.loadPackage(list(pyodide_packages)))
+            wheel_promises.append(pyodide_js.loadPackage(list(pyodide_packages)))
 
         # Now install PyPI packages
         for name, wheel, ver in transaction["wheels"]:
@@ -256,7 +254,7 @@ def install(requirements: Union[str, List[str]]):
 
         - If the requirement does not end in ``.whl``, it will interpreted as the
           name of a package. A package by this name must either be present in the
-          Pyodide repository at ``languagePluginUrl`` or on PyPi
+          Pyodide repository at `indexURL <globalThis.loadPyodide>` or on PyPi
 
     Returns
     -------

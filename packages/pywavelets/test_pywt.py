@@ -1,6 +1,9 @@
+import pytest
+
 from pyodide_build.testing import run_in_pyodide
 
 
+@pytest.mark.driver_timeout(30)
 @run_in_pyodide(packages=["pywavelets"])
 def test_pywt():
     import pywt

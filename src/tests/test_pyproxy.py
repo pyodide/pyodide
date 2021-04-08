@@ -198,6 +198,92 @@ def test_pyproxy_iter(selenium):
     assert result == result2
 
 
+def test_pyproxy_get_buffer(selenium):
+    selenium.run_js(
+        """
+        pyodide.runPython(`
+            from sys import getrefcount
+            z1 = memoryview(bytes(range(24))).cast("b", [8,3])
+            z2 = z1[-1::-1]
+        `);
+        for(let x of ["z1", "z2"]){
+            pyodide.runPython(`assert getrefcount(${x}) == 2`);
+            let proxy = pyodide.globals.get(x);
+            pyodide.runPython(`assert getrefcount(${x}) == 3`);
+            let z = proxy.getBuffer();
+            pyodide.runPython(`assert getrefcount(${x}) == 4`);
+            proxy.destroy();
+            pyodide.runPython(`assert getrefcount(${x}) == 3`);
+            for(let idx1 = 0; idx1 < 8; idx1++) {
+                for(let idx2 = 0; idx2 < 3; idx2++){
+                    let v1 = z.data[z.offset + z.strides[0] * idx1 + z.strides[1] * idx2];
+                    let v2 = pyodide.runPython(`repr(${x}[${idx1}, ${idx2}])`);
+                    console.log(`${v1}, ${typeof(v1)}, ${v2}, ${typeof(v2)}, ${v1===v2}`);
+                    if(v1.toString() !== v2){
+                        throw new Error(`Discrepancy ${x}[${idx1}, ${idx2}]: ${v1} != ${v2}`);
+                    }
+                }
+            }
+            z.release();
+            pyodide.runPython(`assert getrefcount(${x}) == 2`);
+            pyodide.runPython(`del ${x}`);
+        }
+        """
+    )
+
+
+@pytest.mark.parametrize(
+    "array_type",
+    [
+        ["i8", "Int8Array", "b"],
+        ["u8", "Uint8Array", "B"],
+        ["u8clamped", "Uint8ClampedArray", "B"],
+        ["i16", "Int16Array", "h"],
+        ["u16", "Uint16Array", "H"],
+        ["i32", "Int32Array", "i"],
+        ["u32", "Uint32Array", "I"],
+        ["i64", "BigInt64Array", "q"],
+        ["u64", "BigUint64Array", "Q"],
+        ["f32", "Float32Array", "f"],
+        ["f64", "Float64Array", "d"],
+    ],
+)
+def test_pyproxy_get_buffer_type_argument(selenium, array_type):
+    selenium.run_js(
+        """
+        window.a = pyodide.runPython("bytes(range(256))");
+        """
+    )
+    try:
+        mv = memoryview(bytes(range(256)))
+        ty, array_ty, fmt = array_type
+        [check, result] = selenium.run_js(
+            f"""
+            let buf = a.getBuffer({ty!r});
+            let check = (buf.data.constructor.name === {array_ty!r});
+            let result = Array.from(buf.data);
+            if(typeof result[0] === "bigint"){{
+                result = result.map(x => x.toString(16));
+            }}
+            buf.release();
+            return [check, result];
+            """
+        )
+        assert check
+        if fmt.lower() == "q":
+            assert result == [hex(x).replace("0x", "") for x in list(mv.cast(fmt))]
+        elif fmt == "f" or fmt == "d":
+            from math import isclose
+
+            for a, b in zip(result, list(mv.cast(fmt))):
+                if a and b:
+                    assert isclose(a, b)
+        else:
+            assert result == list(mv.cast(fmt))
+    finally:
+        selenium.run_js("a.destroy(); window.a = undefined;")
+
+
 def test_pyproxy_mixins(selenium):
     result = selenium.run_js(
         """

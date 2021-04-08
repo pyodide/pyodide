@@ -228,19 +228,24 @@ finally:
 }
 
 /**
- * Return x if x is not NULL.
+ * if x is NULL, fail
+ * if x is Js_novalue, do nothing
+ * in any other case, return x
  */
-#define RETURN_IF_SUCCEEDS(x)                                                  \
+#define RETURN_IF_HAS_VALUE(x)                                                 \
   do {                                                                         \
     JsRef _fresh_result = x;                                                   \
-    if (_fresh_result != NULL) {                                               \
+    FAIL_IF_NULL(_fresh_result);                                               \
+    if (_fresh_result != Js_novalue) {                                         \
       return _fresh_result;                                                    \
     }                                                                          \
   } while (0)
 
 /**
  * Convert x if x is an immutable python type for which there exists an
- * equivalent immutable Javascript type. Otherwise return NULL.
+ * equivalent immutable Javascript type. Otherwise return Js_novalue.
+ *
+ * Return type would be Option<JsRef>
  */
 static inline JsRef
 _python2js_immutable(PyObject* x)
@@ -258,12 +263,14 @@ _python2js_immutable(PyObject* x)
   } else if (PyUnicode_Check(x)) {
     return _python2js_unicode(x);
   }
-  return NULL;
+  return Js_novalue;
 }
 
 /**
  * If x is a wrapper around a Javascript object, unwrap the Javascript object
- * and return it. Otherwise, return NULL.
+ * and return it. Otherwise, return Js_novalue.
+ *
+ * Return type would be Option<JsRef>
  */
 static inline JsRef
 _python2js_proxy(PyObject* x)
@@ -273,7 +280,7 @@ _python2js_proxy(PyObject* x)
   } else if (JsException_Check(x)) {
     return JsException_AsJs(x);
   }
-  return NULL;
+  return Js_novalue;
 }
 
 /**
@@ -283,11 +290,8 @@ _python2js_proxy(PyObject* x)
 static JsRef
 _python2js_deep(PyObject* x, PyObject* cache, int depth)
 {
-  RETURN_IF_SUCCEEDS(_python2js_immutable(x));
-  FAIL_IF_ERR_OCCURRED();
-  RETURN_IF_SUCCEEDS(_python2js_proxy(x));
-  FAIL_IF_ERR_OCCURRED();
-
+  RETURN_IF_HAS_VALUE(_python2js_immutable(x));
+  RETURN_IF_HAS_VALUE(_python2js_proxy(x));
   if (PyList_Check(x) || PyTuple_Check(x)) {
     return _python2js_sequence(x, cache, depth);
   }
@@ -297,8 +301,9 @@ _python2js_deep(PyObject* x, PyObject* cache, int depth)
   if (PySet_Check(x)) {
     return _python2js_set(x, cache, depth);
   }
-  RETURN_IF_SUCCEEDS(_python2js_buffer(x));
-  PyErr_Clear();
+  if (PyObject_CheckBuffer(x)) {
+    return _python2js_buffer(x);
+  }
   return pyproxy_new(x);
 finally:
   return NULL;
@@ -379,11 +384,9 @@ finally:
 JsRef
 python2js(PyObject* x)
 {
-  RETURN_IF_SUCCEEDS(_python2js_immutable(x));
-  FAIL_IF_ERR_OCCURRED();
-  RETURN_IF_SUCCEEDS(_python2js_proxy(x));
-  FAIL_IF_ERR_OCCURRED();
-  RETURN_IF_SUCCEEDS(pyproxy_new(x));
+  RETURN_IF_HAS_VALUE(_python2js_immutable(x));
+  RETURN_IF_HAS_VALUE(_python2js_proxy(x));
+  RETURN_IF_HAS_VALUE(pyproxy_new(x));
 finally:
   if (PyErr_Occurred()) {
     if (!PyErr_ExceptionMatches(conversion_error)) {
@@ -391,8 +394,7 @@ finally:
                              "Conversion from python to javascript failed");
     }
   } else {
-    PyErr_SetString(internal_error,
-                    "Internal error occurred in python2js_with_depth");
+    PyErr_SetString(internal_error, "Internal error occurred in python2js");
   }
   return NULL;
 }
@@ -418,7 +420,8 @@ python2js_with_depth(PyObject* x, int depth)
     hiwire_decref(obj);
   }
   Py_DECREF(cache);
-  if (result == NULL) {
+  if (result == NULL || result == Js_novalue) {
+    result = NULL;
     if (PyErr_Occurred()) {
       if (!PyErr_ExceptionMatches(conversion_error)) {
         _PyErr_FormatFromCause(conversion_error,

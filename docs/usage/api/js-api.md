@@ -3,8 +3,8 @@ Backward compatibility of the API is not guaranteed at this point.
 
 ## Globals
 ```{eval-rst}
-.. js-doc-summary:: globals
-.. js-doc-content:: globals
+.. js-doc-summary:: globalThis
+.. js-doc-content:: globalThis
 ```
 
 (js-api-pyodide)=

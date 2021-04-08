@@ -40,7 +40,7 @@ from pyodide_build import common
 from pyodide_build._f2c_fixes import fix_f2c_clapack_calls
 
 
-TOOLSDIR = common.TOOLSDIR
+TOOLSDIR = Path(common.get_make_flag("TOOLSDIR"))
 symlinks = set(["cc", "c++", "ld", "ar", "gcc", "gfortran"])
 
 
@@ -273,8 +273,6 @@ def handle_command(line, args, dryrun=False):
             optflag = arg
             break
 
-    lapack_dir = None
-
     used_libs = set()
 
     # Go through and adjust arguments
@@ -443,7 +441,7 @@ def make_parser(parser):
             "--cflags",
             type=str,
             nargs="?",
-            default=common.DEFAULTCFLAGS,
+            default=common.get_make_flag("SIDE_MODULE_CFLAGS"),
             help="Extra compiling flags",
             action=EnvironmentRewritingArgument,
         )
@@ -451,7 +449,7 @@ def make_parser(parser):
             "--cxxflags",
             type=str,
             nargs="?",
-            default=common.DEFAULTCXXFLAGS,
+            default=common.get_make_flag("SIDE_MODULE_CXXFLAGS"),
             help="Extra C++ specific compiling flags",
             action=EnvironmentRewritingArgument,
         )
@@ -459,7 +457,7 @@ def make_parser(parser):
             "--ldflags",
             type=str,
             nargs="?",
-            default=common.DEFAULTLDFLAGS,
+            default=common.get_make_flag("SIDE_MODULE_LDFLAGS"),
             help="Extra linking flags",
             action=EnvironmentRewritingArgument,
         )
@@ -467,7 +465,7 @@ def make_parser(parser):
             "--target",
             type=str,
             nargs="?",
-            default=common.TARGETPYTHON,
+            default=common.get_make_flag("TARGETPYTHONROOT"),
             help="The path to the target Python installation",
         )
         parser.add_argument(

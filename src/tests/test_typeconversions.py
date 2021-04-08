@@ -1,11 +1,12 @@
 # See also test_pyproxy, test_jsproxy, and test_python.
 import pytest
-from hypothesis import given
+from hypothesis import given, settings
 from hypothesis.strategies import text
 from conftest import selenium_context_manager
 
 
 @given(s=text())
+@settings(deadline=600)
 def test_string_conversion(selenium_module_scope, s):
     with selenium_context_manager(selenium_module_scope) as selenium:
         # careful string escaping here -- hypothesis will fuzz it.
@@ -674,3 +675,72 @@ def test_pyimport_deprecation(selenium):
     selenium.run_js("pyodide.runPython('x = 1')")
     assert selenium.run_js("return pyodide.pyimport('x') === 1")
     assert "pyodide.pyimport is deprecated and will be removed" in selenium.logs
+
+
+def test_buffer_format_string(selenium):
+    errors = [
+        ["aaa", "Expected format string to have length <= 2, got 'aaa'"],
+        ["II", "Unrecognized alignment character I."],
+        ["x", "Unrecognized format character 'x'."],
+        ["x", "Unrecognized format character 'x'."],
+        ["e", "Javascript has no Float16 support."],
+    ]
+    for fmt, msg in errors:
+        with pytest.raises(selenium.JavascriptException, match=msg):
+            selenium.run_js(
+                f"""
+                pyodide._module.processBufferFormatString({fmt!r});
+                """
+            )
+
+    format_tests = [
+        ["c", "Uint8"],
+        ["b", "Int8"],
+        ["B", "Uint8"],
+        ["?", "Uint8"],
+        ["h", "Int16"],
+        ["H", "Uint16"],
+        ["i", "Int32"],
+        ["I", "Uint32"],
+        ["l", "Int32"],
+        ["L", "Uint32"],
+        ["n", "Int32"],
+        ["N", "Uint32"],
+        ["q", "BigInt64"],
+        ["Q", "BigUint64"],
+        ["f", "Float32"],
+        ["d", "Float64"],
+        ["s", "Uint8"],
+        ["p", "Uint8"],
+        ["P", "Uint32"],
+    ]
+
+    def process_fmt_string(fmt):
+        return selenium.run_js(
+            f"""
+            let [array, is_big_endian] = pyodide._module.processBufferFormatString({fmt!r});
+            if(!array || typeof array.name !== "string" || !array.name.endsWith("Array")){{
+                throw new Error("Unexpected output on input {fmt}: " + array);
+            }}
+            let arrayName = array.name.slice(0, -"Array".length);
+            return [arrayName, is_big_endian];
+            """
+        )
+
+    for fmt, expected_array_name in format_tests:
+        [array_name, is_big_endian] = process_fmt_string(fmt)
+        assert not is_big_endian
+        assert array_name == expected_array_name
+
+    endian_tests = [
+        ["@h", "Int16", False],
+        ["=H", "Uint16", False],
+        ["<i", "Int32", False],
+        [">I", "Uint32", True],
+        ["!l", "Int32", True],
+    ]
+
+    for fmt, expected_array_name, expected_is_big_endian in endian_tests:
+        [array_name, is_big_endian] = process_fmt_string(fmt)
+        assert is_big_endian == expected_is_big_endian
+        assert array_name == expected_array_name

@@ -79,7 +79,6 @@ typedef struct
 // fields for methods
   JsRef this_;
   vectorcallfunc vectorcall;
-  int supports_kwargs; // -1 : don't know. 0 : no, 1 : yes
 // Currently just for module objects
   PyObject* dict;
 } JsProxy;
@@ -131,7 +130,7 @@ static PyObject*
 JsProxy_GetAttr(PyObject* self, PyObject* attr)
 {
   PyObject* result = PyObject_GenericGetAttr(self, attr);
-  if (result != NULL) {
+  if (result != NULL || !PyErr_ExceptionMatches(PyExc_AttributeError)) {
     return result;
   }
   PyErr_Clear();
@@ -1024,55 +1023,15 @@ finally:
 // A subclass of JsProxy for methods
 
 #define JsMethod_THIS(x) (((JsProxy*)x)->this_)
-#define JsMethod_SUPPORTS_KWARGS(x) (((JsProxy*)x)->supports_kwargs)
 
-/**
- * Call overload for methods. Controlled by IS_CALLABLE.
- */
-static PyObject*
-JsMethod_Vectorcall(PyObject* self,
-                    PyObject* const* args,
-                    size_t nargsf,
-                    PyObject* kwnames)
+JsRef
+JsMethod_ConvertArgs(PyObject* const* args, Py_ssize_t nargs, PyObject* kwnames)
 {
-  bool kwargs = false;
   bool success = false;
   JsRef idargs = NULL;
-  JsRef idkwargs = NULL;
   JsRef idarg = NULL;
-  JsRef idresult = NULL;
-  PyObject* pyresult = NULL;
+  JsRef idkwargs = NULL;
 
-  if (kwnames != NULL) {
-    // There were kwargs? But maybe kwnames is the empty tuple?
-    PyObject* kwname = PyTuple_GetItem(kwnames, 0); /* borrowed!*/
-    // Clear IndexError
-    PyErr_Clear();
-    if (kwname != NULL) {
-      kwargs = true;
-      if (JsMethod_SUPPORTS_KWARGS(self) == -1) {
-        JsMethod_SUPPORTS_KWARGS(self) =
-          hiwire_function_supports_kwargs(JsProxy_REF(self));
-        if (JsMethod_SUPPORTS_KWARGS(self) == -1) {
-          // if it's still -1, hiwire_function_supports_kwargs threw an error.
-          return NULL;
-        }
-      }
-    }
-    if (kwargs && !JsMethod_SUPPORTS_KWARGS(self)) {
-      // We have kwargs but function doesn't support them. Raise error.
-      const char* kwname_utf8 = PyUnicode_AsUTF8(kwname);
-      PyErr_Format(PyExc_TypeError,
-                   "jsproxy got an unexpected keyword argument '%s'",
-                   kwname_utf8);
-      return NULL;
-    }
-  }
-
-  // Recursion error?
-  FAIL_IF_NONZERO(Py_EnterRecursiveCall(" in JsProxy_Vectorcall"));
-
-  Py_ssize_t nargs = PyVectorcall_NARGS(nargsf);
   idargs = hiwire_array();
   FAIL_IF_NULL(idargs);
   for (Py_ssize_t i = 0; i < nargs; ++i) {
@@ -1082,22 +1041,64 @@ JsMethod_Vectorcall(PyObject* self,
     hiwire_CLEAR(idarg);
   }
 
-  if (kwargs) {
-    // store kwargs into an object which we'll use as the last argument.
-    idkwargs = hiwire_object();
-    FAIL_IF_NULL(idkwargs);
-    Py_ssize_t nkwargs = PyTuple_Size(kwnames);
-    for (Py_ssize_t i = 0, k = nargsf; i < nkwargs; ++i, ++k) {
-      PyObject* name = PyTuple_GET_ITEM(kwnames, i); /* borrowed! */
-      const char* name_utf8 = PyUnicode_AsUTF8(name);
-      idarg = python2js(args[k]);
-      FAIL_IF_NULL(idarg);
-      FAIL_IF_MINUS_ONE(hiwire_set_member_string(idkwargs, name_utf8, idarg));
-      hiwire_CLEAR(idarg);
+  bool has_kwargs = false;
+  if (kwnames != NULL) {
+    // There were kwargs? But maybe kwnames is the empty tuple?
+    PyObject* kwname = PyTuple_GetItem(kwnames, 0); /* borrowed!*/
+    // Clear IndexError
+    PyErr_Clear();
+    if (kwname != NULL) {
+      has_kwargs = true;
     }
-    FAIL_IF_MINUS_ONE(hiwire_push_array(idargs, idkwargs));
+  }
+  if (!has_kwargs) {
+    goto success;
   }
 
+  // store kwargs into an object which we'll use as the last argument.
+  idkwargs = hiwire_object();
+  FAIL_IF_NULL(idkwargs);
+  Py_ssize_t nkwargs = PyTuple_Size(kwnames);
+  for (Py_ssize_t i = 0, k = nargs; i < nkwargs; ++i, ++k) {
+    PyObject* name = PyTuple_GET_ITEM(kwnames, i); /* borrowed! */
+    const char* name_utf8 = PyUnicode_AsUTF8(name);
+    idarg = python2js(args[k]);
+    FAIL_IF_NULL(idarg);
+    FAIL_IF_MINUS_ONE(hiwire_set_member_string(idkwargs, name_utf8, idarg));
+    hiwire_CLEAR(idarg);
+  }
+  FAIL_IF_MINUS_ONE(hiwire_push_array(idargs, idkwargs));
+
+success:
+  success = true;
+finally:
+  hiwire_CLEAR(idarg);
+  hiwire_CLEAR(idkwargs);
+  if (!success) {
+    hiwire_CLEAR(idargs);
+  }
+  return idargs;
+}
+
+/**
+ * __call__ overload for methods. Controlled by IS_CALLABLE.
+ */
+static PyObject*
+JsMethod_Vectorcall(PyObject* self,
+                    PyObject* const* args,
+                    size_t nargsf,
+                    PyObject* kwnames)
+{
+  bool success = false;
+  JsRef idargs = NULL;
+  JsRef idresult = NULL;
+  PyObject* pyresult = NULL;
+
+  // Recursion error?
+  FAIL_IF_NONZERO(Py_EnterRecursiveCall(" in JsMethod_Vectorcall"));
+
+  idargs = JsMethod_ConvertArgs(args, PyVectorcall_NARGS(nargsf), kwnames);
+  FAIL_IF_NULL(idargs);
   idresult = hiwire_call_bound(JsProxy_REF(self), JsMethod_THIS(self), idargs);
   FAIL_IF_NULL(idresult);
   pyresult = js2python(idresult);
@@ -1105,10 +1106,8 @@ JsMethod_Vectorcall(PyObject* self,
 
   success = true;
 finally:
-  Py_LeaveRecursiveCall(/* " in JsProxy_Vectorcall" */);
+  Py_LeaveRecursiveCall(/* " in JsMethod_Vectorcall" */);
   hiwire_CLEAR(idargs);
-  hiwire_CLEAR(idkwargs);
-  hiwire_CLEAR(idarg);
   hiwire_CLEAR(idresult);
   if (!success) {
     Py_CLEAR(pyresult);
@@ -1117,38 +1116,49 @@ finally:
 }
 
 /**
- * This doesn't construct a new JsMethod object, it does Reflect.construct(this,
- * args). In other words, this treats the JsMethod as a javascript class,
- * constructs a new javascript object of that class and returns a new JsProxy
- * wrapping it. Similar to `new this(args)`.
+ * jsproxy.new implementation. Controlled by IS_CALLABLE.
+ *
+ * This does Reflect.construct(this, args). In other words, this treats the
+ * JsMethod as a Javascript class, constructs a new Javascript object of that
+ * class and returns a new JsProxy wrapping it. Similar to `new this(args)`.
  */
 static PyObject*
-JsMethod_jsnew(PyObject* o, PyObject* args, PyObject* kwargs)
+JsMethod_Construct(PyObject* self,
+                   PyObject* const* args,
+                   Py_ssize_t nargs,
+                   PyObject* kwnames)
 {
-  JsProxy* self = (JsProxy*)o;
+  bool success = false;
+  JsRef idargs = NULL;
+  JsRef idresult = NULL;
+  PyObject* pyresult = NULL;
 
-  Py_ssize_t nargs = PyTuple_Size(args);
+  // Recursion error?
+  FAIL_IF_NONZERO(Py_EnterRecursiveCall(" in JsMethod_Construct"));
 
-  JsRef idargs = hiwire_array();
+  idargs = JsMethod_ConvertArgs(args, nargs, kwnames);
+  FAIL_IF_NULL(idargs);
+  idresult = hiwire_construct(JsProxy_REF(self), idargs);
+  FAIL_IF_NULL(idresult);
+  pyresult = js2python(idresult);
+  FAIL_IF_NULL(pyresult);
 
-  for (Py_ssize_t i = 0; i < nargs; ++i) {
-    JsRef idarg = python2js(PyTuple_GET_ITEM(args, i));
-    hiwire_push_array(idargs, idarg);
-    hiwire_decref(idarg);
+  success = true;
+finally:
+  Py_LeaveRecursiveCall(/* " in JsMethod_Construct" */);
+  hiwire_CLEAR(idargs);
+  hiwire_CLEAR(idresult);
+  if (!success) {
+    Py_CLEAR(pyresult);
   }
-
-  JsRef idresult = hiwire_new(self->js, idargs);
-  hiwire_decref(idargs);
-  PyObject* pyresult = js2python(idresult);
-  hiwire_decref(idresult);
   return pyresult;
 }
 
 // clang-format off
-PyMethodDef JsMethod_jsnew_MethodDef = { 
+PyMethodDef JsMethod_Construct_MethodDef = {
   "new",
-  (PyCFunction)JsMethod_jsnew,
-  METH_VARARGS | METH_KEYWORDS 
+  (PyCFunction)JsMethod_Construct,
+  METH_FASTCALL | METH_KEYWORDS
 };
 // clang-format on
 
@@ -1158,7 +1168,6 @@ JsMethod_cinit(PyObject* obj, JsRef this_)
   JsProxy* self = (JsProxy*)obj;
   self->this_ = hiwire_incref(this_);
   self->vectorcall = JsMethod_Vectorcall;
-  self->supports_kwargs = -1; // don't know
   return 0;
 }
 
@@ -1268,7 +1277,7 @@ JsBuffer_cinit(PyObject* obj)
       PyExc_RuntimeError,
       "Unknown typed array type '%s'. This is a problem with Pyodide, please "
       "open an issue about it here: "
-      "https://github.com/iodide-project/pyodide/issues/new",
+      "https://github.com/pyodide/pyodide/issues/new",
       typename);
     free(typename);
     FAIL();
@@ -1299,11 +1308,11 @@ JsProxy_create_subtype(int flags)
   PyMemberDef members[5];
   int cur_member = 0;
 
-  // clang-format off
   methods[cur_method++] = JsProxy_Dir_MethodDef;
   methods[cur_method++] = JsProxy_toPy_MethodDef;
   methods[cur_method++] = JsProxy_object_entries_MethodDef;
-  // clang-format on
+  methods[cur_method++] = JsProxy_object_keys_MethodDef;
+  methods[cur_method++] = JsProxy_object_values_MethodDef;
 
   PyTypeObject* base = &JsProxyType;
   int tp_flags = Py_TPFLAGS_DEFAULT;
@@ -1362,9 +1371,7 @@ JsProxy_create_subtype(int flags)
       (PyType_Slot){ .slot = Py_tp_call, .pfunc = (void*)PyVectorcall_Call };
     // We could test separately for whether a function is constructable,
     // but it generates a lot of false positives.
-    // clang-format off
-    methods[cur_method++] = JsMethod_jsnew_MethodDef;
-    // clang-format on
+    methods[cur_method++] = JsMethod_Construct_MethodDef;
   }
   if (flags & IS_BUFFER) {
     // PyBufferProcs cannot be assigned with a `PyType_Slot` in Python v3.8
@@ -1638,7 +1645,7 @@ JsProxy_init(PyObject* core_module)
   SET_DOCSTRING(JsProxy_then_MethodDef);
   SET_DOCSTRING(JsProxy_catch_MethodDef);
   SET_DOCSTRING(JsProxy_finally_MethodDef);
-  SET_DOCSTRING(JsMethod_jsnew_MethodDef);
+  SET_DOCSTRING(JsMethod_Construct_MethodDef);
 #undef SET_DOCSTRING
 
   asyncio_module = PyImport_ImportModule("asyncio");

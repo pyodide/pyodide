@@ -14,6 +14,9 @@ const JsRef Js_true = ((JsRef)(4));
 const JsRef Js_false = ((JsRef)(6));
 const JsRef Js_null = ((JsRef)(8));
 
+// For when the return value would be Option<JsRef>
+const JsRef Js_novalue = ((JsRef)(1000));
+
 JsRef
 hiwire_bool(bool boolean)
 {
@@ -140,6 +143,115 @@ EM_JS_NUM(int, hiwire_init, (), {
     return (!!obj) && typeof obj.then === 'function';
     // clang-format on
   };
+
+  /**
+   * Determine type and endianness of data from format. This is a helper
+   * function for converting buffers from Python to Javascript, used in
+   * PyProxyBufferMethods and in `toJs` on a buffer.
+   *
+   * To understand this function it will be helpful to look at the tables here:
+   * https://docs.python.org/3/library/struct.html#format-strings
+   *
+   * @arg format {String} A Python format string (caller must convert it to a
+   *      Javascript string).
+   * @arg errorMessage {String} Extra stuff to append to an error message if
+   *      thrown. Should be a complete sentence.
+   * @returns A pair, an appropriate TypedArray constructor and a boolean which
+   *      is true if the format suggests a big endian array.
+   * @private
+   */
+  Module.processBufferFormatString = function(formatStr, errorMessage = "")
+  {
+    if (formatStr.length > 2) {
+      throw new Error(
+        "Expected format string to have length <= 2, " +
+         `got '${formatStr}'.` + errorMessage);
+    }
+    let formatChar = formatStr.slice(-1);
+    let alignChar = formatStr.slice(0, -1);
+    let bigEndian;
+    switch (alignChar) {
+      case "!":
+      case ">":
+        bigEndian = true;
+        break;
+      case "<":
+      case "@":
+      case "=":
+      case "":
+        bigEndian = false;
+        break;
+      default:
+        throw new Error(`Unrecognized alignment character ${ alignChar }.` +
+                        errorMessage);
+    }
+    let arrayType;
+    switch (formatChar) {
+      case 'b':
+        arrayType = Int8Array;
+        break;
+      case 's':
+      case 'p':
+      case 'c':
+      case 'B':
+      case '?':
+        arrayType = Uint8Array;
+        break;
+      case 'h':
+        arrayType = Int16Array;
+        break;
+      case 'H':
+        arrayType = Uint16Array;
+        break;
+      case 'i':
+      case 'l':
+      case 'n':
+        arrayType = Int32Array;
+        break;
+      case 'I':
+      case 'L':
+      case 'N':
+      case 'P':
+        arrayType = Uint32Array;
+        break;
+      case 'q':
+        // clang-format off
+        if (globalThis.BigInt64Array === undefined) {
+          // clang-format on
+          throw new Error("BigInt64Array is not supported on this browser." +
+                          errorMessage);
+        }
+        arrayType = BigInt64Array;
+        break;
+      case 'Q':
+        // clang-format off
+        if (globalThis.BigUint64Array === undefined) {
+          // clang-format on
+          throw new Error("BigUint64Array is not supported on this browser." +
+                          errorMessage);
+        }
+        arrayType = BigUint64Array;
+        break;
+      case 'f':
+        arrayType = Float32Array;
+        break;
+      case 'd':
+        arrayType = Float64Array;
+        break;
+      case "e":
+        // clang-format off
+        throw new Error(
+          "Javascript has no Float16 support. Consider converting the data to " +
+          "float32 before using it from JavaScript. If you are using a webgl " +
+          "float16 texture then just use `getBuffer('u8')`.");
+        // clang-format on
+      default:
+        throw new Error(`Unrecognized format character '${formatChar}'.` +
+                        errorMessage);
+    }
+    return [ arrayType, bigEndian ];
+  };
+
   return 0;
 });
 
@@ -270,27 +382,6 @@ EM_JS_NUM(errcode, hiwire_push_array, (JsRef idarr, JsRef idval), {
 
 EM_JS_REF(JsRef, hiwire_object, (), { return Module.hiwire.new_value({}); });
 
-EM_JS_NUM(errcode,
-          hiwire_push_object_pair,
-          (JsRef idobj, JsRef idkey, JsRef idval),
-          {
-            let jsobj = Module.hiwire.get_value(idobj);
-            let jskey = Module.hiwire.get_value(idkey);
-            let jsval = Module.hiwire.get_value(idval);
-            jsobj[jskey] = jsval;
-          });
-
-EM_JS_REF(JsRef, hiwire_get_global, (const char* ptrname), {
-  let jsname = UTF8ToString(ptrname);
-  let result = globalThis[jsname];
-  // clang-format off
-  if (result === undefined && !(jsname in globalThis)) {
-    // clang-format on
-    return ERROR_REF;
-  }
-  return Module.hiwire.new_value(result);
-});
-
 EM_JS_REF(JsRef, hiwire_get_member_string, (JsRef idobj, const char* ptrkey), {
   let jsobj = Module.hiwire.get_value(idobj);
   let jskey = UTF8ToString(ptrkey);
@@ -345,34 +436,6 @@ EM_JS_NUM(errcode, hiwire_delete_member_int, (JsRef idobj, int idx), {
     return ERROR_NUM;
   }
   obj.splice(idx, 1);
-});
-
-EM_JS_REF(JsRef, hiwire_get_member_obj, (JsRef idobj, JsRef ididx), {
-  let jsobj = Module.hiwire.get_value(idobj);
-  let jsidx = Module.hiwire.get_value(ididx);
-  let result = jsobj[jsidx];
-  // clang-format off
-  if (result === undefined && !(jsidx in jsobj)) {
-    // clang-format on
-    return ERROR_REF;
-  }
-  return Module.hiwire.new_value(result);
-});
-
-EM_JS_NUM(errcode,
-          hiwire_set_member_obj,
-          (JsRef idobj, JsRef ididx, JsRef idval),
-          {
-            let jsobj = Module.hiwire.get_value(idobj);
-            let jsidx = Module.hiwire.get_value(ididx);
-            let jsval = Module.hiwire.get_value(idval);
-            jsobj[jsidx] = jsval;
-          });
-
-EM_JS_NUM(errcode, hiwire_delete_member_obj, (JsRef idobj, JsRef ididx), {
-  let jsobj = Module.hiwire.get_value(idobj);
-  let jsidx = Module.hiwire.get_value(ididx);
-  delete jsobj[jsidx];
 });
 
 EM_JS_REF(JsRef, hiwire_dir, (JsRef idobj), {
@@ -461,7 +524,7 @@ hiwire_call_member_va(JsRef idobj, const char* ptrname, ...)
   return idresult;
 }
 
-EM_JS_REF(JsRef, hiwire_new, (JsRef idobj, JsRef idargs), {
+EM_JS_REF(JsRef, hiwire_construct, (JsRef idobj, JsRef idargs), {
   let jsobj = Module.hiwire.get_value(idobj);
   let jsargs = Module.hiwire.get_value(idargs);
   return Module.hiwire.new_value(Reflect.construct(jsobj, jsargs));
@@ -597,11 +660,6 @@ EM_JS_NUM(bool, hiwire_is_error, (JsRef idobj), {
   // From https://stackoverflow.com/a/45496068
   let value = Module.hiwire.get_value(idobj);
   return !!(value && value.stack && value.message);
-});
-
-EM_JS_NUM(bool, hiwire_function_supports_kwargs, (JsRef idfunc), {
-  let funcstr = Module.hiwire.get_value(idfunc).toString();
-  return Module.function_supports_kwargs(funcstr);
 });
 
 EM_JS_NUM(bool, hiwire_is_promise, (JsRef idobj), {
