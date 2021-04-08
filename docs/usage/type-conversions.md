@@ -382,11 +382,18 @@ use correctly. For simple use cases the `toJs` API should be prefered.
 
 If the buffer is zero or one-dimensional, then `toJs` will in most cases convert
 it to a single `TypedArray`. However, in the case that the format of the buffer
-is `'s'`, we will convert it to a string and if the format is `'?'` we will
+is `'s'`, we will convert the buffer to a string and if the format is `'?'` we will
 convert it to an Array of booleans.
 
 If the dimension is greater than one, we will convert it to a nested Javascript
 array, with the innermost dimension handled in the same way we would handle a 1d array.
+
+An example of a case where you would not want to use the `toJs` method is when
+the buffer is bitmapped image data. If for instance you have a 3d buffer shaped
+1920 x 1080 x 4, then `toJs` will be extremely slow. In this case you could use
+{any}`PyProxy.getBuffer`. On the other hand, if you have a 3d buffer shaped 1920
+x 4 x 1080, the performance of `toJs` will most likely be satisfactory.
+Typically the innermost dimension won't matter for performance.
 
 The {any}`PyProxy.getBuffer` method can be used to retrieve a reference to a
 Javascript typed array that points to the data backing the Python object,
