@@ -37,7 +37,7 @@ def test_return_result(selenium):
         from js import resolve
         async def foo(arg):
             return arg
-        
+
         def check_result(fut):
             result = fut.result()
             if result == 998:
@@ -62,14 +62,14 @@ def test_capture_exception(selenium):
             pass
         async def foo(arg):
             raise MyException('oops')
-        
+
         def capture_exception(fut):
             with raises(MyException):
                 fut.result()
             resolve()
         import asyncio
         fut = asyncio.ensure_future(foo(998))
-        fut.add_done_callback(capture_exception)                
+        fut.add_done_callback(capture_exception)
         """,
     )
 
@@ -142,4 +142,21 @@ def test_asyncio_exception(selenium):
         import asyncio
         asyncio.ensure_future(capture_exception())
         """,
+    )
+
+
+def test_run_in_executor(selenium):
+    # If run_in_executor tries to actually use ThreadPoolExecutor, it will throw
+    # an error since we can't start threads
+    selenium.run_js(
+        """
+        pyodide.runPythonAsync(`
+            from concurrent.futures import ThreadPoolExecutor
+            import asyncio
+            def f():
+                return 5
+            result = await asyncio.get_event_loop().run_in_executor(ThreadPoolExecutor(), f)
+            assert result == 5
+        `);
+        """
     )

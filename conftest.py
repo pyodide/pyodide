@@ -22,15 +22,21 @@ BUILD_PATH = ROOT_PATH / "build"
 sys.path.append(str(ROOT_PATH))
 
 from pyodide_build._fixes import _selenium_is_connectable  # noqa: E402
+from pyodide_build.testing import set_webdriver_script_timeout, parse_driver_timeout
 
-try:
-    import selenium.webdriver.common.utils  # noqa: E402
 
-    # XXX: Temporary fix for ConnectionError in selenium
+def _monkeypatch_selenium():
+    try:
+        import selenium.webdriver.common.utils  # noqa: E402
 
-    selenium.webdriver.common.utils.is_connectable = _selenium_is_connectable
-except ModuleNotFoundError:
-    pass
+        # XXX: Temporary fix for ConnectionError in selenium
+
+        selenium.webdriver.common.utils.is_connectable = _selenium_is_connectable
+    except ModuleNotFoundError:
+        pass
+
+
+_monkeypatch_selenium()
 
 
 def pytest_addoption(parser):
@@ -81,7 +87,13 @@ class SeleniumWrapper:
     JavascriptException = JavascriptException
 
     def __init__(
-        self, server_port, server_hostname="127.0.0.1", server_log=None, build_dir=None
+        self,
+        server_port,
+        server_hostname="127.0.0.1",
+        server_log=None,
+        build_dir=None,
+        load_pyodide=True,
+        script_timeout=20,
     ):
         if build_dir is None:
             build_dir = BUILD_PATH
@@ -97,9 +109,12 @@ class SeleniumWrapper:
                 f"{(build_dir / 'test.html').resolve()} " f"does not exist!"
             )
         self.driver.get(f"http://{server_hostname}:{server_port}/test.html")
-        self.run_js("Error.stackTraceLimit = Infinity;")
-        self.run_js("await languagePluginLoader;")
-        self.save_state()
+        self.run_js("Error.stackTraceLimit = Infinity;", pyodide_checks=False)
+        if load_pyodide:
+            self.run_js("await loadPyodide({ indexURL : './'});")
+            self.save_state()
+        self.script_timeout = script_timeout
+        self.driver.set_script_timeout(script_timeout)
 
     @property
     def logs(self):
@@ -144,18 +159,15 @@ class SeleniumWrapper:
             """
         )
 
-    def run_js(self, code):
+    def run_js(self, code, pyodide_checks=True):
+        """Run JavaScript code and check for pyodide errors"""
         if isinstance(code, str) and code.startswith("\n"):
             # we have a multiline string, fix indentation
             code = textwrap.dedent(code)
 
-        wrapper = """
-            let cb = arguments[arguments.length - 1];
-            let run = async () => { %s }
-            (async () => {
-                try {
-                    let result = await run();
-                    if(pyodide && pyodide._module && pyodide._module._PyErr_Occurred()){
+        if pyodide_checks:
+            check_code = """
+                    if(globalThis.pyodide && pyodide._module && pyodide._module._PyErr_Occurred()){
                         try {
                             pyodide._module._pythonexc2js();
                         } catch(e){
@@ -165,6 +177,17 @@ class SeleniumWrapper:
                             throw new Error(`Python exited with error flag set!`);
                         }
                     }
+           """
+        else:
+            check_code = ""
+
+        wrapper = """
+            let cb = arguments[arguments.length - 1];
+            let run = async () => { %s }
+            (async () => {
+                try {
+                    let result = await run();
+                    %s
                     cb([0, result]);
                 } catch (e) {
                     cb([1, e.toString(), e.stack]);
@@ -172,7 +195,7 @@ class SeleniumWrapper:
             })()
         """
 
-        retval = self.driver.execute_async_script(wrapper % code)
+        retval = self.driver.execute_async_script(wrapper % (code, check_code))
 
         if retval[0] == 0:
             return retval[1]
@@ -196,8 +219,7 @@ class SeleniumWrapper:
         return self.run_js(
             """
             let worker = new Worker( '{}' );
-            worker.postMessage({{ python: {!r} }});
-            return new Promise((res, rej) => {{
+            let res = new Promise((res, rej) => {{
                 worker.onerror = e => rej(e);
                 worker.onmessage = e => {{
                     if (e.data.results) {{
@@ -206,11 +228,14 @@ class SeleniumWrapper:
                        rej(e.data.error);
                     }}
                 }};
-            }})
+                worker.postMessage({{ python: {!r} }});
+            }});
+            return await res
             """.format(
                 f"http://{self.server_hostname}:{self.server_port}/webworker_dev.js",
                 code,
-            )
+            ),
+            pyodide_checks=False,
         )
 
     def load_package(self, packages):
@@ -289,7 +314,7 @@ def test_wrapper_check_for_memory_leaks(selenium):
 
 
 @contextlib.contextmanager
-def selenium_common(request, web_server_main):
+def selenium_common(request, web_server_main, load_pyodide=True):
     server_hostname, server_port, server_log = web_server_main
     if request.param == "firefox":
         cls = FirefoxWrapper
@@ -302,6 +327,7 @@ def selenium_common(request, web_server_main):
         server_port=server_port,
         server_hostname=server_hostname,
         server_log=server_log,
+        load_pyodide=load_pyodide,
     )
     try:
         yield selenium
@@ -312,10 +338,25 @@ def selenium_common(request, web_server_main):
 @pytest.fixture(params=["firefox", "chrome"], scope="function")
 def selenium_standalone(request, web_server_main):
     with selenium_common(request, web_server_main) as selenium:
-        try:
-            yield selenium
-        finally:
-            print(selenium.logs)
+        with set_webdriver_script_timeout(
+            selenium, script_timeout=parse_driver_timeout(request)
+        ):
+            try:
+                yield selenium
+            finally:
+                print(selenium.logs)
+
+
+@pytest.fixture(params=["firefox", "chrome"], scope="function")
+def selenium_webworker_standalone(request, web_server_main):
+    with selenium_common(request, web_server_main, load_pyodide=False) as selenium:
+        with set_webdriver_script_timeout(
+            selenium, script_timeout=parse_driver_timeout(request)
+        ):
+            try:
+                yield selenium
+            finally:
+                print(selenium.logs)
 
 
 # selenium instance cached at the module level
@@ -325,9 +366,11 @@ def selenium_module_scope(request, web_server_main):
         yield selenium
 
 
-# We want one version of this decorated as a function-scope fixture and one
-# version decorated as a context manager.
-def selenium_per_function(selenium_module_scope):
+# Hypothesis is unhappy with function scope fixtures. Instead, use the
+# module scope fixture `selenium_module_scope` and use:
+# `with selenium_context_manager(selenium_module_scope) as selenium`
+@contextlib.contextmanager
+def selenium_context_manager(selenium_module_scope):
     try:
         selenium_module_scope.clean_logs()
         yield selenium_module_scope
@@ -335,11 +378,13 @@ def selenium_per_function(selenium_module_scope):
         print(selenium_module_scope.logs)
 
 
-selenium = pytest.fixture(selenium_per_function)
-# Hypothesis is unhappy with function scope fixtures. Instead, use the
-# module scope fixture `selenium_module_scope` and use:
-# `with selenium_context_manager(selenium_module_scope) as selenium`
-selenium_context_manager = contextlib.contextmanager(selenium_per_function)
+@pytest.fixture
+def selenium(request, selenium_module_scope):
+    with selenium_context_manager(selenium_module_scope) as selenium:
+        with set_webdriver_script_timeout(
+            selenium, script_timeout=parse_driver_timeout(request)
+        ):
+            yield selenium
 
 
 @pytest.fixture(scope="session")
@@ -408,8 +453,6 @@ def run_web_server(q, log_filepath, build_dir):
     log_fh = log_filepath.open("w", buffering=1)
     sys.stdout = log_fh
     sys.stderr = log_fh
-
-    test_prefix = "/src/tests/"
 
     class Handler(http.server.SimpleHTTPRequestHandler):
         def log_message(self, format_, *args):

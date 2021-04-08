@@ -70,7 +70,7 @@ class PyodideAnalyzer:
         def get_val():
             return OrderedDict([["attribute", []], ["function", []], ["class", []]])
 
-        self.js_docs = {key: get_val() for key in ["globals", "pyodide", "PyProxy"]}
+        self.js_docs = {key: get_val() for key in ["globalThis", "pyodide", "PyProxy"]}
         items = {"PyProxy": []}
         for (key, group) in self._doclets_by_class.items():
             key = [x for x in key if "/" not in x]
@@ -79,7 +79,7 @@ class PyodideAnalyzer:
                 # a less ad hoc way to deal with this...
                 continue
             if key[-1] == "globalThis":
-                items["globals"] = group
+                items["globalThis"] = group
             if key[0] == "pyodide." and key[-1] == "Module":
                 items["pyodide"] = group
             if key[0] == "pyproxy.":
@@ -190,6 +190,9 @@ def get_jsdoc_summary_directive(app):
             It seems like colons need escaping for some reason.
             """
             colon_esc = "esccolon\\\xafhoa:"
+            # extract_summary seems to have trouble if there are Sphinx
+            # directives in descr
+            descr, _, _ = descr.partition("\n..")
             return extract_summary(
                 [descr.replace(":", colon_esc)], self.state.document
             ).replace(colon_esc, ":")

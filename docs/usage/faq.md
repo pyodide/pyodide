@@ -24,7 +24,11 @@ but not in Firefox.
 
 
 ## How can I change the behavior of {any}`runPython <pyodide.runPython>` and {any}`runPythonAsync <pyodide.runPythonAsync>`?
-The definitions of {any}`runPython <pyodide.runPython>` and {any}`runPythonAsync <pyodide.runPythonAsync>` are very simple:
+You can directly call Python functions from Javascript. For many purposes it
+makes sense to make your own Python function as an entrypoint and call that
+instead of using `runPython`. The definitions of {any}`runPython
+<pyodide.runPython>` and {any}`runPythonAsync <pyodide.runPythonAsync>` are very
+simple:
 ```javascript
 function runPython(code){
   pyodide.pyodide_py.eval_code(code, pyodide.globals);
@@ -34,11 +38,16 @@ function runPython(code){
 ```javascript
 async function runPythonAsync(code, messageCallback, errorCallback) {
   await pyodide.loadPackagesFromImports(code, messageCallback, errorCallback);
-  return pyodide.runPython(code);
+  let coroutine = pyodide.pyodide_py.eval_code_async(code, pyodide.globals);
+  try {
+    let result = await coroutine;
+    return result;
+  } finally {
+    coroutine.destroy();
+  }
 };
 ```
-To make your own version of {any}`runPython <pyodide.runPython>`:
-
+To make your own version of {any}`runPython <pyodide.runPython>` you could do:
 ```pyodide
 pyodide.runPython(`
   import pyodide
@@ -51,12 +60,8 @@ pyodide.runPython(`
 function myRunPython(code){
   return pyodide.globals.get("my_eval_code")(code, pyodide.globals);
 }
-
-function myAsyncRunPython(code){
-  await pyodide.loadPackagesFromImports(code, messageCallback, errorCallback);
-  return pyodide.myRunPython(code, pyodide.globals);
-}
 ```
+
 Then `pyodide.myRunPython("2+7")` returns `[None, 9]` and
 `pyodide.myRunPython("extra_info='hello' ; 2 + 2")` returns `['hello', 4]`.
 If you want to change which packages {any}`pyodide.loadPackagesFromImports` loads, you can
@@ -69,14 +74,10 @@ The second argument to {any}`pyodide.eval_code` is a global namespace to execute
 The namespace is a Python dictionary.
 ```javascript
 let my_namespace = pyodide.globals.dict();
-pyodide.pyodide_py.eval_code(`x = 1 + 1`, my_namespace);
-pyodide.pyodide_py.eval_code(`y = x ** x`, my_namespace);
+pyodide.runPython(`x = 1 + 1`, my_namespace);
+pyodide.runPython(`y = x ** x`, my_namespace);
 my_namespace.y; // ==> 4
 ```
-This effectively runs the code in "module scope". Like the
-[Python `eval` function](https://docs.python.org/3/library/functions.html?highlight=eval#eval)
-you can provide a third argument to `eval_code` to specify a separate `locals` dict to
-run code in "function scope".
 
 ## How to detect that code is run with Pyodide?
 

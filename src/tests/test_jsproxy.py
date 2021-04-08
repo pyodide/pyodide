@@ -295,46 +295,6 @@ def test_jsproxy_call_meth_js_kwargs(selenium):
     )
 
 
-def test_supports_kwargs(selenium):
-    tests = [
-        ["", False],
-        ["x", False],
-        ["x     ", False],
-        ["{x}", True],
-        ["x, y, z", False],
-        ["x, y, {z}", True],
-        ["x, {y}, z", False],
-        ["x, {y}, {z}", True],
-        ["{}", True],
-        ["{} = {}", True],
-        ["[] = {}", False],
-        ["{} = []", True],
-        ["[] = []", False],
-        ["{} = null", True],
-        ["x = '2, `, {y}'", False],
-        ["{x} = '2, \\', x'", True],
-        ["[{x}]", False],
-        ["[x, y, z]", False],
-        ["x,", False],
-        ["{x},", True],
-        ["x, { y = 2 }", True],
-        ["{ y = 2 }, x", False],
-        ["{ x = 2 }, { y = 2 }", True],
-        ["{ a = 7, b = 2}", True],
-        ["{ a = 7, b = 2} = {b : 3}", True],
-        ["{ a = [7, 1], b = { c : 2} } = {}", True],
-        ["{ a = 7, b = 2} = {}", True],
-        ["{ a = 7, b = 2} = null", True],
-        ["{ x = { y : 2 }}", True],
-        ["{ x : 2 }", True],
-    ]
-    for (s, res) in tests:
-        s = f"function f({s}){{}}"
-        selenium.run_js(
-            f"return pyodide._module.function_supports_kwargs({repr(s)})"
-        ) == res
-
-
 @run_in_pyodide
 def test_import_invocation():
     import js
@@ -512,6 +472,20 @@ def test_register_jsmodule_docs_example(selenium_standalone):
         import sys
         del sys.modules["my_js_module"]
         del sys.modules["my_js_module.submodule"]
+        """
+    )
+
+
+def test_object_entries_keys_values(selenium):
+    selenium.run_js(
+        """
+        window.x = { a : 2, b : 3, c : 4 };
+        pyodide.runPython(`
+            from js import x
+            assert x.object_entries().to_py() == [["a", 2], ["b", 3], ["c", 4]]
+            assert x.object_keys().to_py() == ["a", "b", "c"]
+            assert x.object_values().to_py() == [2, 3, 4]
+        `);
         """
     )
 

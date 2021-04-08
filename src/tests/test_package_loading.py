@@ -45,6 +45,11 @@ def test_load_from_url(selenium_standalone, web_server_secondary, active_server)
     selenium_standalone.run("import pytz")
 
 
+def test_load_relative_url(selenium_standalone):
+    selenium_standalone.load_package("./pytz.js")
+    selenium_standalone.run("import pytz")
+
+
 def test_list_loaded_urls(selenium_standalone):
     selenium = selenium_standalone
 

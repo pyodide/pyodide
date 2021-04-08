@@ -12,6 +12,7 @@ defaults: &defaults
 jobs:
   lint:
     <<: *defaults
+    resource_class: small
     steps:
       - checkout
 
@@ -21,6 +22,7 @@ jobs:
 
   test-docs:
     working_directory: ~/repo
+    resource_class: small
 
     docker:
       - image: cimg/python:3.8.2-node
@@ -38,28 +40,6 @@ jobs:
       - run:
           name: Test docs
           command: pytest docs/sphinx_pyodide/tests
-
-  build-docs:
-    working_directory: ~/repo
-
-    docker:
-      - image: cimg/python:3.8.2-node
-
-    steps:
-      - checkout
-
-      - run:
-          name: Install prerequisites
-          command: |
-            pip install -r docs/requirements-doc.txt
-            sudo npm install -g jsdoc
-
-      - run:
-          name: Build docs
-          command: python3 -m sphinx -M html docs docs/_build
-
-      - store_artifacts:
-          path: /home/circleci/repo/docs/_build/
 
   build-core:
     <<: *defaults
@@ -129,7 +109,7 @@ jobs:
 
       - run:
           name: build packages
-          no_output_timeout: 1200
+          no_output_timeout: 1800
           command: |
             ccache -z
             make
@@ -195,6 +175,7 @@ jobs:
 
   test-emsdk:
     <<: *defaults
+    resource_class: small
     steps:
       - attach_workspace:
           at: .
@@ -204,6 +185,7 @@ jobs:
 
   test-python:
     <<: *defaults
+    resource_class: small
     steps:
       - checkout
       - run:
@@ -225,6 +207,8 @@ jobs:
           path: /root/repo/build/benchmarks.json
 
   deploy-release:
+    resource_class: small
+
     docker:
       - image: cibuilds/github:0.13
 
@@ -255,6 +239,8 @@ jobs:
             aws s3api put-bucket-website --cli-input-json file://.circleci/s3-website-config.json
 
   deploy-s3:
+    resource_class: small
+
     docker:
       - image: circleci/python:3.7.7
 
@@ -282,7 +268,6 @@ workflows:
     jobs:
       - lint
       - test-docs
-      - build-docs
       - build-core:
           filters:
             tags:
@@ -338,7 +323,6 @@ workflows:
             - test-packages-firefox
             - test-core-chrome
             - test-emsdk
-            - build-docs
           filters:
             branches:
               ignore: /.*/
@@ -352,7 +336,6 @@ workflows:
             - test-packages-firefox
             - test-core-chrome
             - test-emsdk
-            - build-docs
           filters:
             branches:
               only: master
