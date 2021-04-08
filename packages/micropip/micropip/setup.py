@@ -8,6 +8,6 @@ setup(
     description="A small version of pip for running in pyodide",
     author="Michael Droettboom",
     author_email="mdroettboom@mozilla.com",
-    url="https://github.com/iodide-project/pyodide",
+    url="https://github.com/pyodide/pyodide",
     py_modules=["micropip"],
 )

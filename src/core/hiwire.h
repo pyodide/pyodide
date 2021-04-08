@@ -44,6 +44,9 @@ extern const JsRef Js_true;
 extern const JsRef Js_false;
 extern const JsRef Js_null;
 
+// For when the return value would be Option<JsRef>
+extern const JsRef Js_novalue;
+
 #define hiwire_CLEAR(x)                                                        \
   do {                                                                         \
     hiwire_decref(x);                                                          \
@@ -269,28 +272,11 @@ JsRef
 hiwire_object();
 
 /**
- * Add a new key/value pair to a Javascript object.
- *
- * If the user no longer needs the key or value outside of the object, it is the
- * user's responsibility to decref them.
- */
-errcode
-hiwire_push_object_pair(JsRef idobj, JsRef idkey, JsRef idval);
-
-/**
  * Throw a javascript Error object.
  * Steals a reference to the argument.
  */
 void _Py_NO_RETURN
 hiwire_throw_error(JsRef iderr);
-
-/**
- * Get a Javascript object from the global namespace, i.e. window.
- *
- * Returns: New reference
- */
-JsRef
-hiwire_get_global(const char* ptrname);
 
 /**
  * Get an object member by string.
@@ -329,28 +315,6 @@ hiwire_set_member_int(JsRef idobj, int idx, JsRef idval);
 
 errcode
 hiwire_delete_member_int(JsRef idobj, int idx);
-
-/**
- * Get an object member by object.
- *
- * Returns: New reference
- */
-JsRef
-hiwire_get_member_obj(JsRef idobj, JsRef ididx);
-
-/**
- * Set an object member by object.
- *
- */
-errcode
-hiwire_set_member_obj(JsRef idobj, JsRef ididx, JsRef idval);
-
-/**
- * Delete an object member by object.
- *
- */
-errcode
-hiwire_delete_member_obj(JsRef idobj, JsRef ididx);
 
 /**
  * Get the methods on an object, both on itself and what it inherits.
@@ -412,7 +376,7 @@ hiwire_call_member_va(JsRef idobj, const char* ptrname, ...);
  * Returns: New reference
  */
 JsRef
-hiwire_new(JsRef idobj, JsRef idargs);
+hiwire_construct(JsRef idobj, JsRef idargs);
 
 /**
  * Test if the object has a `size` or `length` member which is a number. As a
@@ -515,14 +479,6 @@ hiwire_is_function(JsRef idobj);
  */
 bool
 hiwire_is_error(JsRef idobj);
-
-/**
- * Check if the function supports kwargs. A fairly involved check which parses
- * func.toString() to determine if the last argument does object destructuring.
- * Actual implementation in pyodide.js.
- */
-bool
-hiwire_function_supports_kwargs(JsRef idfunc);
 
 /**
  * Returns true if the object is a promise.

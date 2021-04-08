@@ -5,18 +5,21 @@ set -eo pipefail
 
 function usage() {
   cat > /dev/stdout <<EOF
-Usage:
-  run_docker [OPTIONS]
+Usage: run_docker [OPTIONS] [COMMAND] [ARG...]
 
-  Optional flags:
-    -h, --help                  Show this information and exit
-    --pre-built                 Use the prebuilt pyodide image.
-                                This is ignored if the env var PYODIDE_DOCKER_IMAGE is set
-    -p, --port <port>           System port to which to forward.
-                                This is ignored if the env var PYODIDE_SYSTEM_PORT is set
+Runs COMMAND in a new Pyodide docker container. If no COMMAND is provided, starts a bash
+shell in the container.
 
-  Prerequisites:
-    Docker has to be set up on your system
+Options:
+  -h, --help                  Show this information and exit.
+  --pre-built                 Use the prebuilt Pyodide image.
+                              This is ignored if the env var PYODIDE_DOCKER_IMAGE is set.
+  -p, --port <port>           System port to which to forward.
+                              This is ignored if the env var PYODIDE_SYSTEM_PORT is set.
+                              If set to 'none', docker instance will not bind to any port.
+
+Prerequisites:
+  Docker has to be set up on your system.
 EOF
 }
 
@@ -30,6 +33,7 @@ PYODIDE_IMAGE_TAG="12"
 PYODIDE_PREBUILT_IMAGE_TAG="0.17.0a2"
 DEFAULT_PYODIDE_DOCKER_IMAGE="iodide/pyodide-env:${PYODIDE_IMAGE_TAG}"
 DEFAULT_PYODIDE_SYSTEM_PORT="8000"
+DOCKER_COMMAND="/bin/bash"
 
 while [[ $# -gt 0 ]]
 do
@@ -58,9 +62,13 @@ do
         DEFAULT_PYODIDE_SYSTEM_PORT=$2
         shift 2
       ;;
-      *)
+      -*)
         >&2 echo "Unknown option $1"
         error
+      ;;
+      *)
+        DOCKER_COMMAND="$@"
+        break
       ;;
   esac
 done
@@ -69,10 +77,53 @@ PYODIDE_DOCKER_PORT=${PYODIDE_DOCKER_PORT:-"8000"}
 PYODIDE_SYSTEM_PORT=${PYODIDE_SYSTEM_PORT:-${DEFAULT_PYODIDE_SYSTEM_PORT}}
 PYODIDE_DOCKER_IMAGE=${PYODIDE_DOCKER_IMAGE:-${DEFAULT_PYODIDE_DOCKER_IMAGE}}
 
-exec docker run \
-    -p "$PYODIDE_SYSTEM_PORT":"$PYODIDE_DOCKER_PORT" \
-    -it --rm \
+# in case the port is not a number, do not bind the port
+case $DEFAULT_PYODIDE_SYSTEM_PORT in
+  none)
+  PORT_CONFIGURATION_LINE=""
+  ;;
+  ''|*[!0-9]*) # contains a non-digit character, therefore it is not a number
+  echo "WARNING: Invalid port argument '$DEFAULT_PYODIDE_SYSTEM_PORT'. Port binding disabled."
+  PORT_CONFIGURATION_LINE=""
+  ;;
+  *)
+  PORT_CONFIGURATION_LINE="-p $PYODIDE_SYSTEM_PORT:$PYODIDE_DOCKER_PORT"
+  ;;
+esac
+
+mkdir -p .docker_home
+
+USER_HOME="/src/.docker_home"
+USER_NAME="$(id -u -n)"
+USER_PASS="x"
+USER_ID="$(id -u)"
+USER_GID=0
+USER_COMMENT_FIELD="${USER_NAME} pyodide user alias"
+USER_INTERPRETER="/sbin/nologin"
+USER_ACCOUNT_INFO="${USER_NAME}:${USER_PASS}:${USER_ID}:${USER_GID}:${USER_COMMENT_FIELD}:${USER_HOME}:${USER_INTERPRETER}"
+
+# Start a detached container as root, add the host uname and uid to /etc/passwd,
+# then run forever
+CONTAINER=$(\
+  docker run \
+    -d --rm \
     -v $PWD:/src \
-    --user root -e NB_UID=$UID -e NB_GID=$GID \
+    --user root \
+    --shm-size 2g \
     "${PYODIDE_DOCKER_IMAGE}" \
-    /bin/bash
+    /bin/bash -c " \
+      echo '${USER_ACCOUNT_INFO}' >> /etc/passwd ; \
+      tail -f /dev/null \
+    " \
+)
+
+EXIT_STATUS=0
+# Execute the provided command as the host user with HOME=/src
+docker exec \
+  -it \
+  --user $(id --user):$(id --group) \
+  $CONTAINER \
+  /bin/bash -c "${DOCKER_COMMAND}" || EXIT_STATUS=$?
+
+docker kill $CONTAINER > /dev/null
+exit $EXIT_STATUS

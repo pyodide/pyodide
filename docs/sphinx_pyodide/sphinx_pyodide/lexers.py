@@ -1,4 +1,4 @@
-from pygments.lexer import bygroups, inherit, using
+from pygments.lexer import bygroups, inherit, using, default
 from pygments.lexers import PythonLexer
 from pygments.lexers.javascript import JavascriptLexer
 from pygments.lexers.html import HtmlLexer
@@ -9,13 +9,12 @@ class PyodideLexer(JavascriptLexer):
     tokens = {
         "root": [
             (
-                rf"""(pyodide)(\.)(runPython|runPythonAsync)(\()(`)""",
+                r"(pyodide)(\.)(runPython|runPythonAsync)(\()",
                 bygroups(
                     Token.Name,
                     Token.Operator,
                     Token.Name,
                     Token.Punctuation,
-                    Token.Literal.String.Single,
                 ),
                 "python-code",
             ),
@@ -23,13 +22,15 @@ class PyodideLexer(JavascriptLexer):
         ],
         "python-code": [
             (
-                r"(.+?)(`)(\))",
+                rf"({quotemark})((?:\\\\|\\[^\\]|[^{quotemark}\\])*)({quotemark})",
                 bygroups(
-                    using(PythonLexer), Token.Literal.String.Single, Token.Punctuation
+                    Token.Literal.String, using(PythonLexer), Token.Literal.String
                 ),
                 "#pop",
             )
-        ],
+            for quotemark in ["'", '"', "`"]
+        ]
+        + [default("#pop")],
     }
 
 

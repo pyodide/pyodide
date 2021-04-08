@@ -46,9 +46,9 @@ experience, such as infrastructure or refactoring.
 
 ## Bugs & Issues
 
-We use [Github Issues](https://github.com/iodide-project/pyodide/issues) for
-announcing and discussing bugs and features. Use 
-[this link](https://github.com/iodide-project/pyodide/issues/new) to report a
+We use [Github Issues](https://github.com/pyodide/pyodide/issues) for
+announcing and discussing bugs and features. Use
+[this link](https://github.com/pyodide/pyodide/issues/new) to report a
 bug or issue. We provide a template to give you a guide for how to file
 optimally. If you have the chance, please search the existing issues before
 reporting a bug. It's possible that someone else has already reported your
@@ -74,7 +74,7 @@ to bring those changes into the source repository.
 Please make pull requests against the `master` branch.
 
 If you’re looking for a way to jump in and contribute, our list of
-[good first issues](https://github.com/iodide-project/pyodide/labels/good%20first%20issue)
+[good first issues](https://github.com/pyodide/pyodide/labels/good%20first%20issue)
 is a great place to start.
 
 If you’d like to fix a currently-filed issue, please take a look at the comment
@@ -150,7 +150,6 @@ clarification on what is and isn't permitted.
 
 ## Get in Touch
 
-- __Gitter:__ Pyodide currently shares the
-  [#iodide](https://gitter.im/iodide-project/iodide) channel over at gitter.im
+- __Gitter:__ [#pyodide](https://gitter.im/pyodide/community) channel at gitter.im
 
 [tl;drLegal entry]:https://tldrlegal.com/license/mozilla-public-license-2.0-(mpl-2)

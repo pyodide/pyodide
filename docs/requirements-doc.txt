@@ -5,3 +5,4 @@ sphinxcontrib-napoleon
 distlib   # required by micropip
 sphinx-js==3.1
 autodocsumm
+docutils==0.16
