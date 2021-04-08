@@ -450,6 +450,7 @@ to_js(PyObject* _mod, PyObject* args)
       JsException_Check(obj)) {
     // No point in converting these, it'd be dumb to proxy them so they'd just
     // get converted back by `js2python` at the end
+    Py_INCREF(obj);
     return obj;
   }
   JsRef js_result = python2js_with_depth(obj, depth);
