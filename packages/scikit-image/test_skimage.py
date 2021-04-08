@@ -1,6 +1,9 @@
+import pytest
+
 from pyodide_build.testing import run_in_pyodide
 
 
+@pytest.mark.driver_timeout(40)
 @run_in_pyodide(packages=["scikit-image"])
 def test_skimage():
     import numpy as np

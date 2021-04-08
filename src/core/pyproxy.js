@@ -1,21 +1,7 @@
 // This file to be included from pyproxy.c
-//
-// The point is to make a file that works with JsDoc. JsDoc will give up if it
-// fails to parse the file as javascript. Thus, it's key that this file should
-// parse as valid javascript. `TEMP_EMJS_HELPER` is a specially designed macro
-// to allow us to do this. We need TEMP_EMJS_HELPER to parse like a javascript
-// function call. The easiest way to get it to parse is to make the "argument"
-// look like a function call, which we do with `()=>{`. However, `()=>{` is an
-// invalid C string so the macro needs to remove it. We put `()=>{0,`,
-// TEMP_EMJS_HELPER removes everything up to the comma and replace it with a
-// single open brace.
-//
-// See definition of TEMP_EMJS_HELPER:
-// #define TEMP_EMJS_HELPER(a, args...) \
-//   EM_JS(int, pyproxy_init, (), UNPAIRED_OPEN_BRACE { args return 0; })
-
+// This uses the JS_FILE macro defined in include_js_file.h
 // clang-format off
-TEMP_EMJS_HELPER(() => {0, /* Magic, see comment */
+JS_FILE(pyproxy_init_js, () => {0,0; /* Magic, see include_js_file.h */
   Module.PyProxies = {};
   // clang-format on
 
@@ -747,15 +733,16 @@ TEMP_EMJS_HELPER(() => {0, /* Magic, see comment */
         let bigEndian = false;
         if (ArrayType === undefined) {
           [ArrayType, bigEndian] = Module.processBufferFormatString(
-              format,
-              " In this case, you must pass an explicit type argument.");
+              format, " In this case, you can pass an explicit type argument.");
         }
         let alignment =
             parseInt(ArrayType.name.replace(/[^0-9]/g, "")) / 8 || 1;
         if (bigEndian && alignment > 1) {
           throw new Error(
               "Javascript has no native support for big endian buffers. " +
-              "In this case, you must pass an explicit type argument. " +
+              "In this case, you can pass an explicit type argument. " +
+              "For instance, `getBuffer('dataview')` will return a `DataView`" +
+              "which has native support for reading big endian data." +
               "Alternatively, toJs will automatically convert the buffer " +
               "to little endian.");
         }
@@ -837,8 +824,8 @@ TEMP_EMJS_HELPER(() => {0, /* Magic, see comment */
    *    :class: warning
    *
    *    If the buffer is not contiguous, the ``data`` TypedArray will contain
-   * data that is not part of the buffer. Modifying this data may lead to
-   * undefined behavior.
+   *    data that is not part of the buffer. Modifying this data may lead to
+   *    undefined behavior.
    *
    * .. admonition:: Readonly buffers
    *    :class: warning

@@ -190,6 +190,9 @@ def get_jsdoc_summary_directive(app):
             It seems like colons need escaping for some reason.
             """
             colon_esc = "esccolon\\\xafhoa:"
+            # extract_summary seems to have trouble if there are Sphinx
+            # directives in descr
+            descr, _, _ = descr.partition("\n..")
             return extract_summary(
                 [descr.replace(":", colon_esc)], self.state.document
             ).replace(colon_esc, ":")
@@ -208,7 +211,7 @@ def get_jsdoc_summary_directive(app):
 
             The output is designed to be input to format_table. The link name
             needs to be set up so that :any:`link_name` makes a link to the
-            actual api docs for this object.
+            actual API docs for this object.
             """
             sig = self.get_sig(obj)
             display_name = obj.name

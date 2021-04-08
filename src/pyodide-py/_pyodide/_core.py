@@ -14,8 +14,13 @@ try:
     # From jsproxy.c
     class JsException(Exception):
         """
-        A wrapper around a Javascript ``Error`` to allow the ``Error`` to be thrown in Python.
+        A wrapper around a Javascript Error to allow it to be thrown in Python.
+        See :ref:`type-translations-errors`.
         """
+
+        @property
+        def js_error(self):
+            """The original Javascript error"""
 
     class JsProxy:
         """A proxy to make a Javascript object behave like a Python object
@@ -43,7 +48,7 @@ try:
             pass
 
         def then(self, onfulfilled: Callable, onrejected: Callable) -> "Promise":
-            """The ``Promise.then`` api, wrapped to manage the lifetimes of the
+            """The ``Promise.then`` API, wrapped to manage the lifetimes of the
             handlers.
 
             Only available if the wrapped Javascript object has a "then" method.
@@ -52,7 +57,7 @@ try:
             """
 
         def catch(self, onrejected: Callable) -> "Promise":
-            """The ``Promise.catch`` api, wrapped to manage the lifetimes of the
+            """The ``Promise.catch`` API, wrapped to manage the lifetimes of the
             handler.
 
             Only available if the wrapped Javascript object has a "then" method.
@@ -61,7 +66,7 @@ try:
             """
 
         def finally_(self, onfinally: Callable) -> "Promise":
-            """The ``Promise.finally`` api, wrapped to manage the lifetimes of
+            """The ``Promise.finally`` API, wrapped to manage the lifetimes of
             the handler.
 
             Only available if the wrapped Javascript object has a "then" method.

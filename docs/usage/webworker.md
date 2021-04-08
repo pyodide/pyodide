@@ -1,10 +1,10 @@
 (using_from_webworker)=
-# Using Pyodide from a web worker
+# Using Pyodide in a web worker
 
 This document describes how to use Pyodide to execute Python scripts
 asynchronously in a web worker.
 
-## Startup
+## Setup
 
 Setup your project to serve `webworker.js`. You should also serve
 `pyodide.js`, and all its associated `.asm.js`, `.data`, `.json`, and `.wasm`

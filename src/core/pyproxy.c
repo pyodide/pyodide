@@ -949,22 +949,8 @@ static PyMethodDef pyproxy_methods[] = {
   { NULL } /* Sentinel */
 };
 
-// Some special helper macros to hack it so that "pyproxy.js" parses as a
-// javascript file for JsDoc. See comment with explanation there.
-#define UNPAIRED_OPEN_BRACE {
-#define UNPAIRED_CLOSE_BRACE } // Just here to help text editors pair braces up
-#define TEMP_EMJS_HELPER(a, args...)                                           \
-  EM_JS_NUM(int, pyproxy_init_js, (), UNPAIRED_OPEN_BRACE { args return 0; })
-
-// A macro to allow us to add code that is only intended to influence JsDoc
-// output, but shouldn't end up in generated code.
-#define FOR_JSDOC_ONLY(x)
-
+#include "include_js_file.h"
 #include "pyproxy.js"
-
-#undef TEMP_EMJS_HELPER
-#undef UNPAIRED_OPEN_BRACE
-#undef UNPAIRED_CLOSE_BRACE
 
 int
 pyproxy_init(PyObject* core)
