@@ -76,7 +76,9 @@ Python:
 | `None`          | `undefined`           |
 
 * An `int` is converted to a `Number` if the `int` is between -2^{53} and 2^{53}
-  inclusive, otherwise it is converted to a `BigInt`.
+  inclusive, otherwise it is converted to a `BigInt`. (If the browser does not
+  support `BigInt` then a `Number` will be used instead. In this case,
+  conversion of large integers from Python to Javascript is lossy.)
 
 ### Javascript to Python
 The following immutable types are implicitly converted from Python to
