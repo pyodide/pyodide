@@ -378,8 +378,8 @@ TEMP_EMJS_HELPER(() => {0,0; /* Magic, see comment */
     [Symbol.iterator] : function() {
       let token = {};
       let iterptr = _PyObject_GetIter(_getPtr(this));
-      Module.finalizationRegistry.register(result, iterptr, token);
       let result = iter_helper(iterptr, token);
+      Module.finalizationRegistry.register(result, iterptr, token);
       return result;
     },
   };
