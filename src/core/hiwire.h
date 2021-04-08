@@ -60,6 +60,14 @@ int
 hiwire_init();
 
 /**
+ * Convert a string of hexadecimal digits to a Number or BigInt depending on
+ * whether it is less than MAX_SAFE_INTEGER or not. The string is assumed to
+ * begin with an optional sign followed by 0x followed by one or more digits.
+ */
+JsRef
+hiwire_int_from_hex(const char* s);
+
+/**
  * Increase the reference count on an object.
  *
  * Returns: The new reference

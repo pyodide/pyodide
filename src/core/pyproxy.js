@@ -70,7 +70,7 @@ TEMP_EMJS_HELPER(() => {0, /* Magic, see comment */
   Module.PyProxy = {
     _getPtr,
     isPyProxy : function(jsobj) {
-      return jsobj && jsobj.$$ !== undefined && jsobj.$$.type === 'PyProxy';
+      return !!jsobj && jsobj.$$ !== undefined && jsobj.$$.type === 'PyProxy';
     },
   };
 
