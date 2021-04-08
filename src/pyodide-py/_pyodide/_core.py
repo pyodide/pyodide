@@ -14,8 +14,13 @@ try:
     # From jsproxy.c
     class JsException(Exception):
         """
-        A wrapper around a Javascript ``Error`` to allow the ``Error`` to be thrown in Python.
+        A wrapper around a Javascript Error to allow it to be thrown in Python.
+        See :ref:`type-translations-errors`.
         """
+
+        @property
+        def js_error(self):
+            """The original Javascript error"""
 
     class JsProxy:
         """A proxy to make a Javascript object behave like a Python object

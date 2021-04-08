@@ -15,7 +15,7 @@ The primary purpose of `core` is to implement {ref}`type translations <type-tran
 ### Type conversion from Javascript to Python
 
 * `js2python` -- Translates basic types from Javascript to Python, leaves more complicated stuff to jsproxy.
-* `jsproxy` -- Defines Python classes to proxy complex Javascript types into Python. A complex file responsible for many of the core behaviors of pyodide.
+* `jsproxy` -- Defines Python classes to proxy complex Javascript types into Python. A complex file responsible for many of the core behaviors of Pyodide.
 
 ### Type conversion from Python to Javascript
 
