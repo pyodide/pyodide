@@ -1,6 +1,7 @@
 import pytest
 import inspect
-from typing import Optional, List, Callable
+from typing import Optional, List, Callable, Union
+import contextlib
 
 
 def run_in_pyodide(
@@ -82,3 +83,31 @@ def run_in_pyodide(
         return decorator(_function)
     else:
         return decorator
+
+
+@contextlib.contextmanager
+def set_webdriver_script_timeout(selenium, script_timeout: Optional[Union[int, float]]):
+    """Set selenium script timeout
+
+    Parameters
+    ----------
+    selenum : SeleniumWrapper
+       a SeleniumWrapper wrapper instance
+    script_timeout : int | float
+       value of the timeout in seconds
+    """
+    if script_timeout is not None:
+        selenium.driver.set_script_timeout(script_timeout)
+    yield
+    # revert to the initial value
+    if script_timeout is not None:
+        selenium.driver.set_script_timeout(selenium.script_timeout)
+
+
+def parse_driver_timeout(request) -> Optional[Union[int, float]]:
+    """Parse driver timeout value from pytest request object"""
+    mark = request.node.get_closest_marker("driver_timeout")
+    if mark is None:
+        return None
+    else:
+        return mark.args[0]

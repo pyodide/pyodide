@@ -273,8 +273,6 @@ def handle_command(line, args, dryrun=False):
             optflag = arg
             break
 
-    lapack_dir = None
-
     used_libs = set()
 
     # Go through and adjust arguments

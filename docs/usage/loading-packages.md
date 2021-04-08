@@ -12,43 +12,51 @@ To use other packages, you’ll need to load them using either:
 which case it relies on {any}`pyodide.loadPackage`).
 ```
 
-Alternatively you can run Python code without manually pre-loading packages.
-You can do this with {any}`pyodide.runPythonAsync`
-which will automatically download all packages that the code snippet imports.
-It only supports packages included in Pyodide (not on PyPi) at present.
+If you use {any}`pyodide.runPythonAsync` Pyodide will automatically download all
+packages that the code snippet imports. This is particularly useful for making a
+repl since users might import unexpected packages. At present, `runPythonAsync`
+will not download packages from PyPi, it will only download packages included in
+the Pyodide distribution. Internally, {any}`pyodide.runPythonAsync` uses
+{any}`pyodide.loadPackagesFromImports` which in turn uses
+{any}`pyodide.find_imports`, so if you need more control over automatic package
+loading you can use these more basic APIs.
 
 ## Loading packages with {any}`pyodide.loadPackage`
 
-Packages can be loaded by name, for those included in the official Pyodide
-repository using e.g.,
+Packages included in the official Pyodide repository can be loaded using
+{any}`pyodide.loadPackage`:
 ```js
-pyodide.loadPackage('numpy')
+pyodide.loadPackage('numpy');
 ```
-It is also possible to load packages from custom URLs,
+It is also possible to load packages from custom URLs:
 ```js
-pyodide.loadPackage('https://foo/bar/numpy.js')
+pyodide.loadPackage('https://foo/bar/numpy.js');
 ```
-in which case the URL must end with `<package-name>.js`.
+The file name in the URL must be `/<package-name>.js` and there must be an
+accompanying `.data` file in the same directory.
 
 When you request a package from the official repository, all of that package's
-dependencies are also loaded. Dependency resolution is not yet implemented
-when loading packages from custom URLs.
+dependencies are also loaded. Dependency resolution is not yet implemented when
+loading packages from custom URLs.
 
 In general, loading a package twice is not permitted. However, one can override
 a dependency by loading a custom URL with the same package name before loading
-the dependent.
+the dependent package.
 
-Multiple packages can also be loaded in a single call,
+Multiple packages can also be loaded at the same time by passing a list to `loadPackage.
 ```js
-pyodide.loadPackage(['cycler', 'pytz'])
+pyodide.loadPackage(['cycler', 'pytz']);
 ```
 
-{any}`pyodide.loadPackage` returns a `Promise`.
-
+{any}`pyodide.loadPackage` returns a `Promise` which resolves when all of the
+packages are finished loading:
 ```javascript
-pyodide.loadPackage('matplotlib').then(() => {
+async function main(){
+  await loadPyodide({ 'indexURL' : '<some-url>' });
+  await pyodide.loadPackage('matplotlib');
   // matplotlib is now available
-});
+}
+main();
 ```
 
 (micropip)=
@@ -56,18 +64,20 @@ pyodide.loadPackage('matplotlib').then(() => {
 
 ### Installing packages from PyPI
 
-Pyodide supports installing pure Python wheels from PyPI with {mod}`micropip`. You
-can use the `then` method on the `Promise` that {func}`micropip.install`
-returns to do work once the packages have finished loading:
+Pyodide supports installing pure Python wheels from PyPI with {mod}`micropip`.
+{func}`micropip.install` returns a Python `Future
+<https://docs.python.org/3/library/asyncio-future.html>`_ so you can await the
+future or otherwise use the Python future API to do work once the packages have
+finished loading:
 
-```py
-def do_work(*args):
-    import snowballstemmer
-    stemmer = snowballstemmer.stemmer('english')
-    print(stemmer.stemWords('go goes going gone'.split()))
-
-import micropip
-micropip.install('snowballstemmer').then(do_work)
+```pyodide
+pyodide.runPythonAsync(`
+  import micropip
+  await micropip.install('snowballstemmer')
+  import snowballstemmer
+  stemmer = snowballstemmer.stemmer('english')
+  print(stemmer.stemWords('go goes going gone'.split()))
+`);
 ```
 
 Micropip implements file integrity validation by checking the hash of the
@@ -90,10 +100,10 @@ convention](https://www.python.org/dev/peps/pep-0427/#file-format), which will
 be the case if the wheels is made using standard Python tools (`pip wheel`,
 `setup.py bdist_wheel`).
 
-All required dependencies need also to be previously installed with {mod}`micropip`
+All required dependencies must have been previously installed with {mod}`micropip`
 or {any}`pyodide.loadPackage`.
 
-If the file is on a remote server, it must set Cross-Origin Resource Sharing
+If the file is on a remote server, the server must set Cross-Origin Resource Sharing
 (CORS) headers to allow access. Otherwise, you can prepend a CORS proxy to the
 URL. Note however that using third-party CORS proxies has security implications,
 particularly since we are not able to check the file integrity, unlike with
@@ -102,36 +112,25 @@ installs from PyPi.
 
 ## Example
 
-Adapting the setup from the section on {ref}`using_from_javascript`
-a complete example would be,
-
 ```html
 <html>
 <head>
   <meta charset="utf-8">
 </head>
 <body>
-  <script type="text/javascript">
-      // set the Pyodide files URL (packages.json, pyodide.asm.data etc)
-      window.languagePluginUrl = 'https://cdn.jsdelivr.net/pyodide/v0.17.0a2/full/';
-  </script>
   <script type="text/javascript" src="https://cdn.jsdelivr.net/pyodide/v0.17.0a2/full/pyodide.js"></script>
   <script type="text/javascript">
-    pythonCode = `
-      def do_work(*args):
-          import snowballstemmer
-          stemmer = snowballstemmer.stemmer('english')
-          print(stemmer.stemWords('go goes going gone'.split()))
-
-      import micropip
-      micropip.install('snowballstemmer').then(do_work)
-    `
-
-    languagePluginLoader.then(() => {
-      return pyodide.loadPackage(['micropip'])
-    }).then(() => {
-      pyodide.runPython(pythonCode);
-    })
+    async function main(){
+      await loadPyodide({ indexURL : 'https://cdn.jsdelivr.net/pyodide/v0.17.0a2/full/' });
+      await pyodide.runPythonAsync(`
+        import micropip # runPythonAsync will load micropip automatically
+        await micropip.install('snowballstemmer')
+        import snowballstemmer
+        stemmer = snowballstemmer.stemmer('english')
+        print(stemmer.stemWords('go goes going gone'.split()))
+      `);
+    }
+    main();
   </script>
 </body>
 </html>

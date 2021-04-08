@@ -123,6 +123,10 @@ substitutions:
   raise a `KeyboardInterrupt` by writing to the interrupt buffer.
   [#1148](https://github.com/pyodide/pyodide/pull/1148) and
   [#1173](https://github.com/pyodide/pyodide/pull/1173)
+- Changed the loading method: added an async function `loadPyodide` to load
+  Pyodide to use instead of `languagePluginURL` and `languagePluginLoader`. The
+  change is currently backwards compatible, but the old approach is deprecated.
+  [1363](https://github.com/pyodide/pyodide/pull/1363)
 
 ### micropip
 
@@ -146,6 +150,10 @@ substitutions:
   [#878](https://github.com/pyodide/pyodide/pull/878).
 - {{ Enhancement }} Reduce the size of the core Pyodide package
   [#987](https://github.com/pyodide/pyodide/pull/987).
+- {{ Enhancement }} Optionally to disable docker port binding
+  [#1423](https://github.com/pyodide/pyodide/pull/1423).
+- {{ Enhancement }} Run arbitrary command in docker
+  [#1424](https://github.com/pyodide/pyodide/pull/1424)
 
 ### REPL
 

@@ -1,10 +1,10 @@
 (using_from_webworker)=
-# Using Pyodide from a web worker
+# Using Pyodide in a web worker
 
 This document describes how to use Pyodide to execute Python scripts
 asynchronously in a web worker.
 
-## Startup
+## Setup
 
 Setup your project to serve `webworker.js`. You should also serve
 `pyodide.js`, and all its associated `.asm.js`, `.data`, `.json`, and `.wasm`
@@ -15,7 +15,7 @@ such as `https://cdn.jsdelivr.net/pyodide`. This is the solution
 presented here.
 
 Update the `webworker.js` sample so that it has as valid URL for `pyodide.js`, and sets
-`self.languagePluginUrl` to the location of the supporting files.
+`indexURL <globalThis.loadPyodide>` to the location of the supporting files.
 
 In your application code create a web worker `new Worker(...)`,
 and attach listeners to it using its `.onerror` and `.onmessage`
@@ -103,19 +103,17 @@ lines `pythonLoading = self.pyodide.loadPackage(['numpy', 'pytz'])` and
 // Setup your project to serve `py-worker.js`. You should also serve
 // `pyodide.js`, and all its associated `.asm.js`, `.data`, `.json`,
 // and `.wasm` files as well:
-self.languagePluginUrl = 'https://cdn.jsdelivr.net/pyodide/v0.17.0a2/full/';
 importScripts('https://cdn.jsdelivr.net/pyodide/v0.17.0a2/full/pyodide.js');
 
-let pythonLoading;
-async function loadPythonPackages(){
-    await languagePluginLoader;
-    pythonLoading = self.pyodide.loadPackage(['numpy', 'pytz']);
+async function loadPyodideAndPackages(){
+    await loadPyodide({ indexURL : 'https://cdn.jsdelivr.net/pyodide/v0.17.0a2/full/' });
+    await self.pyodide.loadPackage(['numpy', 'pytz']);
 }
+let pyodideReadyPromise = loadPyodideAndPackages();
 
 self.onmessage = async(event) => {
-    await languagePluginLoader;
-     // since loading package is asynchronous, we need to make sure loading is done:
-    await pythonLoading;
+     // make sure loading is done
+    await pyodideReadyPromise;
     // Don't bother yet with this line, suppose our API is built in such a way:
     const {python, ...context} = event.data;
     // The worker copies the context in its own "memory" (an object mapping name to values)
