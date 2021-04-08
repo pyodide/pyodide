@@ -162,10 +162,10 @@ JS_FILE(python2js_buffer_init, () => {
    * converter: python2js_buffer_1d_contiguous or
    * python2js_buffer_1d_noncontiguous.
    *
-   * @param {*} ptr The pointer into the buffer
-   * @param {*} curdim What dimension are we currently working on? 0 <= curdim <
-   * ndim.
-   * @param {*} bufferData All of the data out of the Py_buffer, plus the
+   * @param {number} ptr The pointer into the buffer
+   * @param {number} curdim What dimension are we currently working on? 0 <=
+   * curdim < ndim.
+   * @param {number} bufferData All of the data out of the Py_buffer, plus the
    * converter function: ndim, format, itemsize, shape (a ptr), strides (a ptr),
    * suboffsets (a ptr), converter,
    * @returns A nested Javascript array, the result of the conversion.
