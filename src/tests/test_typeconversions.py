@@ -125,8 +125,15 @@ def test_hyp_py2js2py(selenium_module_scope, obj):
     with selenium_context_manager(selenium_module_scope) as selenium:
         import pickle
 
+        # When we compare x == x, there are three possible outcomes:
+        # 1. returns True
+        # 2. returns False (e.g., nan)
+        # 3. raises an exception
+        #
+        # Hypothesis *will* test this function on objects in case 2 and 3, so we
+        # have to defend against them here.
         try:
-            assume(obj == obj)  # make sure no NaNs.
+            assume(obj == obj)
         except:
             assume(False)
         try:
