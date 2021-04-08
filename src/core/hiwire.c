@@ -283,9 +283,9 @@ EM_JS_REF(JsRef, hiwire_int, (int val), {
 EM_JS_REF(JsRef, hiwire_int_from_hex, (const char* s), {
   let result;
   // clang-format off
+  // Check if number starts with a minus sign
   if (HEAP8[s] === 45) {
     // clang-format on
-    // Leading character is a minus.
     result = -Module.BigInt(UTF8ToString(s + 1));
   } else {
     result = Module.BigInt(UTF8ToString(s));
