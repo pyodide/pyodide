@@ -241,7 +241,7 @@ def get_jsdoc_summary_directive(app):
 
             The output is designed to be input to format_table. The link name
             needs to be set up so that :any:`link_name` makes a link to the
-            actual api docs for this object.
+            actual API docs for this object.
             """
             sig = self.get_sig(obj)
             display_name = obj.name

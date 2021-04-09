@@ -45,9 +45,16 @@ _python2js_long(PyObject* x)
   long x_long = PyLong_AsLongAndOverflow(x, &overflow);
   if (x_long == -1) {
     if (overflow) {
-      PyObject* py_float = PyNumber_Float(x);
-      FAIL_IF_NULL(py_float);
-      return _python2js_float(py_float);
+      // Backup approach for large integers: convert via hex string.
+      //
+      // Unfortunately Javascript doesn't offer a good way to convert a numbers
+      // to / from Uint8Arrays.
+      PyObject* hex_py = PyNumber_ToBase(x, 16);
+      FAIL_IF_NULL(hex_py);
+      const char* hex_str = PyUnicode_AsUTF8(hex_py);
+      JsRef result = hiwire_int_from_hex(hex_str);
+      Py_DECREF(hex_py);
+      return result;
     }
     FAIL_IF_ERR_OCCURRED();
   }
@@ -73,19 +80,6 @@ _python2js_unicode(PyObject* x)
       PyErr_SetString(PyExc_ValueError, "Unknown Unicode KIND");
       return NULL;
   }
-}
-
-// TODO: Should we use this in explicit conversions?
-static JsRef
-_python2js_bytes(PyObject* x)
-{
-  char* x_buff;
-  Py_ssize_t length;
-  if (PyBytes_AsStringAndSize(x, &x_buff, &length)) {
-    return NULL;
-  }
-  return (JsRef)EM_ASM_INT(
-    { return Module.hiwire.new_value(HEAP8.slice($0, $0 + $1)) }, x, length);
 }
 
 ///////////////////////////////////////////////////////////////////////////////

@@ -144,114 +144,11 @@ EM_JS_NUM(int, hiwire_init, (), {
     // clang-format on
   };
 
-  /**
-   * Determine type and endianness of data from format. This is a helper
-   * function for converting buffers from Python to Javascript, used in
-   * PyProxyBufferMethods and in `toJs` on a buffer.
-   *
-   * To understand this function it will be helpful to look at the tables here:
-   * https://docs.python.org/3/library/struct.html#format-strings
-   *
-   * @arg format {String} A Python format string (caller must convert it to a
-   *      Javascript string).
-   * @arg errorMessage {String} Extra stuff to append to an error message if
-   *      thrown. Should be a complete sentence.
-   * @returns A pair, an appropriate TypedArray constructor and a boolean which
-   *      is true if the format suggests a big endian array.
-   * @private
-   */
-  Module.processBufferFormatString = function(formatStr, errorMessage = "")
-  {
-    if (formatStr.length > 2) {
-      throw new Error(
-        "Expected format string to have length <= 2, " +
-         `got '${formatStr}'.` + errorMessage);
-    }
-    let formatChar = formatStr.slice(-1);
-    let alignChar = formatStr.slice(0, -1);
-    let bigEndian;
-    switch (alignChar) {
-      case "!":
-      case ">":
-        bigEndian = true;
-        break;
-      case "<":
-      case "@":
-      case "=":
-      case "":
-        bigEndian = false;
-        break;
-      default:
-        throw new Error(`Unrecognized alignment character ${ alignChar }.` +
-                        errorMessage);
-    }
-    let arrayType;
-    switch (formatChar) {
-      case 'b':
-        arrayType = Int8Array;
-        break;
-      case 's':
-      case 'p':
-      case 'c':
-      case 'B':
-      case '?':
-        arrayType = Uint8Array;
-        break;
-      case 'h':
-        arrayType = Int16Array;
-        break;
-      case 'H':
-        arrayType = Uint16Array;
-        break;
-      case 'i':
-      case 'l':
-      case 'n':
-        arrayType = Int32Array;
-        break;
-      case 'I':
-      case 'L':
-      case 'N':
-      case 'P':
-        arrayType = Uint32Array;
-        break;
-      case 'q':
-        // clang-format off
-        if (globalThis.BigInt64Array === undefined) {
-          // clang-format on
-          throw new Error("BigInt64Array is not supported on this browser." +
-                          errorMessage);
-        }
-        arrayType = BigInt64Array;
-        break;
-      case 'Q':
-        // clang-format off
-        if (globalThis.BigUint64Array === undefined) {
-          // clang-format on
-          throw new Error("BigUint64Array is not supported on this browser." +
-                          errorMessage);
-        }
-        arrayType = BigUint64Array;
-        break;
-      case 'f':
-        arrayType = Float32Array;
-        break;
-      case 'd':
-        arrayType = Float64Array;
-        break;
-      case "e":
-        // clang-format off
-        throw new Error(
-          "Javascript has no Float16 support. Consider converting the data to " +
-          "float32 before using it from JavaScript. If you are using a webgl " +
-          "float16 texture then just use `getBuffer('u8')`.");
-        // clang-format on
-      default:
-        throw new Error(`Unrecognized format character '${formatChar}'.` +
-                        errorMessage);
-    }
-    return [ arrayType, bigEndian ];
-  };
-
+  if (globalThis.BigInt) {
+    Module.BigInt = BigInt;
+  } else {
+    Module.BigInt = Number;
+  }
   return 0;
 });
 
@@ -272,6 +169,22 @@ EM_JS_NUM(errcode, hiwire_decref, (JsRef idval), {
 
 EM_JS_REF(JsRef, hiwire_int, (int val), {
   return Module.hiwire.new_value(val);
+});
+
+EM_JS_REF(JsRef, hiwire_int_from_hex, (const char* s), {
+  let result;
+  // clang-format off
+  // Check if number starts with a minus sign
+  if (HEAP8[s] === 45) {
+    // clang-format on
+    result = -Module.BigInt(UTF8ToString(s + 1));
+  } else {
+    result = Module.BigInt(UTF8ToString(s));
+  }
+  if (-Number.MAX_SAFE_INTEGER < result && result < Number.MAX_SAFE_INTEGER) {
+    result = Number(result);
+  }
+  return Module.hiwire.new_value(result);
 });
 
 EM_JS_REF(JsRef, hiwire_double, (double val), {
@@ -312,51 +225,6 @@ EM_JS_REF(JsRef, hiwire_string_utf8, (const char* ptr), {
 EM_JS_REF(JsRef, hiwire_string_ascii, (const char* ptr), {
   return Module.hiwire.new_value(AsciiToString(ptr));
 });
-
-EM_JS_REF(JsRef, hiwire_bytes, (char* ptr, int len), {
-  let bytes = new Uint8ClampedArray(Module.HEAPU8.buffer, ptr, len);
-  return Module.hiwire.new_value(bytes);
-});
-
-EM_JS_REF(JsRef, hiwire_int8array, (i8 * ptr, int len), {
-  let array = new Int8Array(Module.HEAPU8.buffer, ptr, len);
-  return Module.hiwire.new_value(array);
-})
-
-EM_JS_REF(JsRef, hiwire_uint8array, (u8 * ptr, int len), {
-  let array = new Uint8Array(Module.HEAPU8.buffer, ptr, len);
-  return Module.hiwire.new_value(array);
-})
-
-EM_JS_REF(JsRef, hiwire_int16array, (i16 * ptr, int len), {
-  let array = new Int16Array(Module.HEAPU8.buffer, ptr, len);
-  return Module.hiwire.new_value(array);
-})
-
-EM_JS_REF(JsRef, hiwire_uint16array, (u16 * ptr, int len), {
-  let array = new Uint16Array(Module.HEAPU8.buffer, ptr, len);
-  return Module.hiwire.new_value(array);
-})
-
-EM_JS_REF(JsRef, hiwire_int32array, (i32 * ptr, int len), {
-  let array = new Int32Array(Module.HEAPU8.buffer, ptr, len);
-  return Module.hiwire.new_value(array);
-})
-
-EM_JS_REF(JsRef, hiwire_uint32array, (u32 * ptr, int len), {
-  let array = new Uint32Array(Module.HEAPU8.buffer, ptr, len);
-  return Module.hiwire.new_value(array);
-})
-
-EM_JS_REF(JsRef, hiwire_float32array, (f32 * ptr, int len), {
-  let array = new Float32Array(Module.HEAPU8.buffer, ptr, len);
-  return Module.hiwire.new_value(array);
-})
-
-EM_JS_REF(JsRef, hiwire_float64array, (f64 * ptr, int len), {
-  let array = new Float64Array(Module.HEAPU8.buffer, ptr, len);
-  return Module.hiwire.new_value(array);
-})
 
 EM_JS(void _Py_NO_RETURN, hiwire_throw_error, (JsRef iderr), {
   throw Module.hiwire.pop_value(iderr);
