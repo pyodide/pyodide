@@ -164,11 +164,11 @@ JsRef
 wrap_exception()
 {
   bool success = false;
-  PyObject* pystr = NULL;
-  JsRef jserror = NULL;
   PyObject* type;
   PyObject* value;
   PyObject* traceback;
+  PyObject* pystr = NULL;
+  JsRef jserror = NULL;
   fetch_and_normalize_exception(&type, &value, &traceback);
   store_sys_last_exception(type, value, traceback);
 
