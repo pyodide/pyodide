@@ -152,6 +152,9 @@ finally:
 /**
  * Wrap the exception in a Javascript PythonError object.
  *
+ * The return value of this function is always a valid hiwire ID to an error
+ * object. It never returns NULL.
+ *
  * We are cautious about leaking the Python stack frame, so we don't increment
  * the reference count on the exception object, we just store a pointer to it.
  * Later we can check if this pointer is equal to sys.last_value and if so
