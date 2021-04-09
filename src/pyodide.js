@@ -667,7 +667,7 @@ globalThis.loadPyodide = async function(config = {}) {
    * ``name``. This module can then be imported from Python using the standard
    * Python import system. If another module by the same name has already been
    * imported, this won't have much effect unless you also delete the imported
-   * module from ``sys.modules``. This calls the ``pyodide_py`` api
+   * module from ``sys.modules``. This calls the ``pyodide_py`` API
    * :func:`pyodide.register_js_module`.
    *
    * @param {string} name Name of the Javascript module to add
@@ -683,7 +683,7 @@ globalThis.loadPyodide = async function(config = {}) {
    * :func:`pyodide.register_js_module`. If a Javascript module with that name
    * does not already exist, will throw an error. Note that if the module has
    * already been imported, this won't have much effect unless you also delete
-   * the imported module from ``sys.modules``. This calls the ``pyodide_py`` api
+   * the imported module from ``sys.modules``. This calls the ``pyodide_py`` API
    * :func:`pyodide.unregister_js_module`.
    *
    * @param {string} name Name of the Javascript module to remove

@@ -82,19 +82,6 @@ _python2js_unicode(PyObject* x)
   }
 }
 
-// TODO: Should we use this in explicit conversions?
-static JsRef
-_python2js_bytes(PyObject* x)
-{
-  char* x_buff;
-  Py_ssize_t length;
-  if (PyBytes_AsStringAndSize(x, &x_buff, &length)) {
-    return NULL;
-  }
-  return (JsRef)EM_ASM_INT(
-    { return Module.hiwire.new_value(HEAP8.slice($0, $0 + $1)) }, x, length);
-}
-
 ///////////////////////////////////////////////////////////////////////////////
 //
 // Container Converters

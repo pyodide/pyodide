@@ -1,21 +1,7 @@
 // This file to be included from pyproxy.c
-//
-// The point is to make a file that works with JsDoc. JsDoc will give up if it
-// fails to parse the file as javascript. Thus, it's key that this file should
-// parse as valid javascript. `TEMP_EMJS_HELPER` is a specially designed macro
-// to allow us to do this. We need TEMP_EMJS_HELPER to parse like a javascript
-// function call. The easiest way to get it to parse is to make the "argument"
-// look like a function call, which we do with `()=>{`. However, `()=>{` is an
-// invalid C string so the macro needs to remove it. We put `()=>{0,`,
-// TEMP_EMJS_HELPER removes everything up to the comma and replace it with a
-// single open brace.
-//
-// See definition of TEMP_EMJS_HELPER:
-// #define TEMP_EMJS_HELPER(a, args...) \
-//   EM_JS(int, pyproxy_init, (), UNPAIRED_OPEN_BRACE { args return 0; })
-
+// This uses the JS_FILE macro defined in include_js_file.h
 // clang-format off
-TEMP_EMJS_HELPER(() => {0, /* Magic, see comment */
+JS_FILE(pyproxy_init_js, () => {0,0; /* Magic, see include_js_file.h */
   Module.PyProxies = {};
   // clang-format on
 

@@ -276,11 +276,14 @@ the {any}`PyProxy.toJs` method. By default, the `toJs` method does a recursive "
 conversion, to do a shallow conversion use `proxy.toJs(1)`. The `toJs` method
 performs the following explicit conversions:
 
-| Python           | Javascript          |
-|------------------|---------------------|
-| `list`, `tuple`  | `Array`             |
-| `dict`           | `Map`               |
-| `set`            | `Set`               |
+| Python            | Javascript          |
+|-------------------|---------------------|
+| `list`, `tuple`   | `Array`             |
+| `dict`            | `Map`               |
+| `set`             | `Set`               |
+| a buffer*         | `TypedArray`        |
+
+* Examples of buffers include bytes objects and numpy arrays.
 
 In Javascript, `Map` and `Set` keys are compared using object identity unless
 the key is an immutable type (meaning a string, a number, a bigint, a boolean,
@@ -288,6 +291,8 @@ the key is an immutable type (meaning a string, a number, a bigint, a boolean,
 compared using deep equality. If a key is encountered in a `dict` or `set` that
 would have different semantics in Javascript than in Python, then a
 `ConversionError` will be thrown.
+
+See {ref}`buffer_tojs` for the behavior of `toJs` on buffers.
 
 `````{admonition} Memory Leaks and toJs
 :class: warning
@@ -376,16 +381,37 @@ import numpy as np
 numpy_array = np.asarray(array)
 ```
 
+(buffer_tojs)=
 ### Converting Python Buffer objects to Javascript
+Python objects supporting the [Python Buffer
+protocol](https://docs.python.org/3/c-api/buffer.html) are proxied into
+Javascript. The data inside the buffer can be accessed via the {any}`PyProxy.toJs` method or
+the {any}`PyProxy.getBuffer` method. The `toJs` API copies the buffer into Javascript,
+whereas the `getBuffer` method allows low level access to the WASM memory
+backing the buffer. The `getBuffer` API is more powerful but requires care to
+use correctly. For simple use cases the `toJs` API should be prefered.
 
-A PyProxy of any Python object supporting the
-[Python Buffer protocol](https://docs.python.org/3/c-api/buffer.html) will have
-a method called {any}`getBuffer <PyProxy.getBuffer>`. This can be used to retrieve a reference to a
+If the buffer is zero or one-dimensional, then `toJs` will in most cases convert
+it to a single `TypedArray`. However, in the case that the format of the buffer
+is `'s'`, we will convert the buffer to a string and if the format is `'?'` we will
+convert it to an Array of booleans.
+
+If the dimension is greater than one, we will convert it to a nested Javascript
+array, with the innermost dimension handled in the same way we would handle a 1d array.
+
+An example of a case where you would not want to use the `toJs` method is when
+the buffer is bitmapped image data. If for instance you have a 3d buffer shaped
+1920 x 1080 x 4, then `toJs` will be extremely slow. In this case you could use
+{any}`PyProxy.getBuffer`. On the other hand, if you have a 3d buffer shaped 1920
+x 4 x 1080, the performance of `toJs` will most likely be satisfactory.
+Typically the innermost dimension won't matter for performance.
+
+The {any}`PyProxy.getBuffer` method can be used to retrieve a reference to a
 Javascript typed array that points to the data backing the Python object,
 combined with other metadata about the buffer format. The metadata is suitable
 for use with a Javascript ndarray library if one is present. For instance, if
-you load the Javascript [ndarray](https://github.com/scijs/ndarray)
-package, you can do:
+you load the Javascript [ndarray](https://github.com/scijs/ndarray) package, you
+can do:
 ```js
 let proxy = pyodide.globals.get("some_numpy_ndarray");
 let buffer = proxy.getBuffer();
