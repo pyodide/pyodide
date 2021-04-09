@@ -56,7 +56,7 @@ JS_FILE(pyproxy_init_js, () => {0,0; /* Magic, see include_js_file.h */
   Module.PyProxy = {
     _getPtr,
     isPyProxy : function(jsobj) {
-      return jsobj && jsobj.$$ !== undefined && jsobj.$$.type === 'PyProxy';
+      return !!jsobj && jsobj.$$ !== undefined && jsobj.$$.type === 'PyProxy';
     },
   };
 
