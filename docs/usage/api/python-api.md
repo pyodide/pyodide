@@ -14,7 +14,7 @@ By default there are two Javascript modules. More can be added with
    *  - ``js``
       - The global Javascript scope.
    *  - :js:mod:`pyodide_js <pyodide>`
-      - The Javascript pyodide module.
+      - The Javascript Pyodide module.
 ```
 
 ```{eval-rst}

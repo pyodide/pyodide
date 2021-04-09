@@ -51,7 +51,7 @@ try:
             """The ``Promise.then`` API, wrapped to manage the lifetimes of the
             handlers.
 
-            Only available if the wrapped Javascript object has a "then" method.
+            Present only if the wrapped Javascript object has a "then" method.
             Pyodide will automatically release the references to the handlers
             when the promise resolves.
             """
@@ -60,7 +60,7 @@ try:
             """The ``Promise.catch`` API, wrapped to manage the lifetimes of the
             handler.
 
-            Only available if the wrapped Javascript object has a "then" method.
+            Present only if the wrapped Javascript object has a "then" method.
             Pyodide will automatically release the references to the handler
             when the promise resolves.
             """
@@ -69,7 +69,7 @@ try:
             """The ``Promise.finally`` API, wrapped to manage the lifetimes of
             the handler.
 
-            Only available if the wrapped Javascript object has a "then" method.
+            Present only if the wrapped Javascript object has a "then" method.
             Pyodide will automatically release the references to the handler
             when the promise resolves. Note the trailing underscore in the name;
             this is needed because ``finally`` is a reserved keyword in Python.
