@@ -476,6 +476,20 @@ def test_register_jsmodule_docs_example(selenium_standalone):
     )
 
 
+def test_object_entries_keys_values(selenium):
+    selenium.run_js(
+        """
+        window.x = { a : 2, b : 3, c : 4 };
+        pyodide.runPython(`
+            from js import x
+            assert x.object_entries().to_py() == [["a", 2], ["b", 3], ["c", 4]]
+            assert x.object_keys().to_py() == ["a", "b", "c"]
+            assert x.object_values().to_py() == [2, 3, 4]
+        `);
+        """
+    )
+
+
 def test_mixins_feature_presence(selenium):
     result = selenium.run_js(
         """
