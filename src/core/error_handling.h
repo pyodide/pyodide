@@ -19,19 +19,24 @@ extern PyObject* internal_error;
  */
 extern PyObject* conversion_error;
 
+/**
+ * Wrap the current Python exception in a Javascript Error and return the
+ * result. Usually we use pythonexc2js instead, but for futures and for some
+ * internal error messages it's useful to have this separate.
+ */
 JsRef
 wrap_exception();
 
 /**
- * Argument should be output of wrap_exception.
+ * Log an error to the console. Argument should be output of wrap_exception.
  */
 errcode log_python_error(JsRef);
 
 /**
- * Convert the active Python exception into a Javascript Error object and print
- * it to the console.
+ * Convert the active Python exception into a Javascript Error object, print
+ * an appropriate message to the console and throw the error.
  */
-void
+void _Py_NO_RETURN
 pythonexc2js();
 
 // Used by LOG_EM_JS_ERROR (behind DEBUG_F flag)

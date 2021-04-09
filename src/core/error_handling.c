@@ -25,17 +25,36 @@ EM_JS_NUM(errcode, console_error_obj, (JsRef obj), {
   console.error(Module.hiwire.get_value(obj));
 });
 
+/**
+ * Set Python error indicator from Javascript.
+ *
+ * In Javascript, we can't access the type without relying on the ABI of
+ * PyObject. Py_TYPE is part of the Python restricted API which means that there
+ * are fairly strong guarantees about the ABI stability, but even so writing
+ * HEAP32[err/4 + 1] is a bit opaque.
+ */
 void
 set_error(PyObject* err)
 {
-  PyErr_SetObject((PyObject*)(err->ob_type), err);
+  PyErr_SetObject(Py_TYPE(err), err);
 }
 
+/**
+ * Make a new PythonError.
+ *
+ * msg - the Python traceback + error message
+ * err - The error object
+ */
 EM_JS_REF(JsRef, new_error, (const char* msg, PyObject* err), {
   return Module.hiwire.new_value(
     new Module.PythonError(UTF8ToString(msg), err));
 });
 
+/**
+ * Fetch the exception, normalize it, and ensure that traceback is not NULL.
+ *
+ * Always succeeds, always results in type, value, traceback not NULL.
+ */
 static void
 fetch_and_normalize_exception(PyObject** type,
                               PyObject** value,
@@ -105,6 +124,10 @@ finally:
   return success;
 }
 
+/**
+ * Calls traceback.format_exception(type, value, traceback) and joins the
+ * resulting list of strings together.
+ */
 static PyObject*
 format_exception_traceback(PyObject* type, PyObject* value, PyObject* traceback)
 {
@@ -181,6 +204,9 @@ EM_JS_NUM(errcode, log_python_error, (JsRef jserror), {
   return 0;
 });
 
+/**
+ * Convert the current Python error to a javascript error and throw it.
+ */
 void _Py_NO_RETURN
 pythonexc2js()
 {
