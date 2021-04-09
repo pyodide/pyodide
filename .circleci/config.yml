@@ -321,7 +321,6 @@ workflows:
             - test-python
             - test-core-firefox
             - test-packages-firefox
-            - test-core-chrome
             - test-emsdk
           filters:
             branches:
@@ -334,7 +333,6 @@ workflows:
             - test-python
             - test-core-firefox
             - test-packages-firefox
-            - test-core-chrome
             - test-emsdk
           filters:
             branches:
