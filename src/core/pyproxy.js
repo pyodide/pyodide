@@ -761,16 +761,21 @@ JS_FILE(pyproxy_init_js, () => {0,0; /* Magic, see include_js_file.h */
               "Alternatively, toJs will automatically convert the buffer " +
               "to little endian.");
         }
-        if (startByteOffset % alignment !== 0 ||
-            minByteOffset % alignment !== 0 ||
-            maxByteOffset % alignment !== 0) {
+        let numBytes = maxByteOffset - minByteOffset;
+        if (numBytes !== 0 && (startByteOffset % alignment !== 0 ||
+                               minByteOffset % alignment !== 0 ||
+                               maxByteOffset % alignment !== 0)) {
           throw new Error(
               `Buffer does not have valid alignment for a ${ArrayType.name}`);
         }
-        let numBytes = maxByteOffset - minByteOffset;
         let numEntries = numBytes / alignment;
         let offset = (startByteOffset - minByteOffset) / alignment;
-        let data = new ArrayType(HEAP8.buffer, minByteOffset, numEntries);
+        let data;
+        if (numBytes === 0) {
+          data = new ArrayType();
+        } else {
+          data = new ArrayType(HEAP8.buffer, minByteOffset, numEntries);
+        }
         for (let i of strides.keys()) {
           strides[i] /= alignment;
         }
