@@ -36,7 +36,7 @@ EM_JS_NUM(errcode, console_error_obj, (JsRef obj), {
 void
 set_error(PyObject* err)
 {
-  PyErr_SetObject(Py_TYPE(err), err);
+  PyErr_SetObject((PyObject*)Py_TYPE(err), err);
 }
 
 /**
@@ -192,7 +192,7 @@ finally:
       PySys_WriteStderr("\nOriginal exception was:\n");
       PyErr_Display(type, value, traceback);
     }
-    jserror = new_error("Error occurred while formatting traceback");
+    jserror = new_error("Error occurred while formatting traceback", 0);
   }
   Py_CLEAR(type);
   Py_CLEAR(value);
