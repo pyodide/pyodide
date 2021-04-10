@@ -336,7 +336,7 @@ JS_FILE(pyproxy_init_js, () => {0,0; /* Magic, see include_js_file.h */
       try {
         let iterptr = _PyObject_GetIter(_getPtr(this));
         if (iterptr === 0) {
-          throw TempError();
+          throw new TempError();
         }
         let item;
         while ((item = __pyproxy_iter_next(iterptr))) {
@@ -344,11 +344,11 @@ JS_FILE(pyproxy_init_js, () => {0,0; /* Magic, see include_js_file.h */
         }
         _Py_DecRef(iterptr);
         if (_PyErr_Occurred()) {
-          throw TempError();
+          throw new TempError();
         }
       } catch (e) {
         if (e instanceof TempError) {
-          pythonexc2js();
+          _pythonexc2js();
         } else {
           Module.fatal_error(e);
         }
@@ -561,7 +561,7 @@ JS_FILE(pyproxy_init_js, () => {0,0; /* Magic, see include_js_file.h */
         Module.fatal_error(e);
       }
       if (idresult === 0) {
-        pythonexc2js();
+        _pythonexc2js();
       }
       let result = Module.hiwire.pop_value(idresult);
       result.push(...Reflect.ownKeys(jsobj));
@@ -745,7 +745,7 @@ JS_FILE(pyproxy_init_js, () => {0,0; /* Magic, see include_js_file.h */
         Module.fatal_error(e);
       }
       if (buffer_struct_ptr === 0) {
-        pythonexc2js();
+        _pythonexc2js();
       }
 
       // This has to match the order of the fields in buffer_struct
