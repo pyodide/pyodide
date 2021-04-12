@@ -53,12 +53,7 @@ JS_FILE(pyproxy_init_js, () => {0,0; /* Magic, see include_js_file.h */
   };
 
   // Static methods
-  Module.PyProxy = {
-    _getPtr,
-    isPyProxy : function(jsobj) {
-      return !!jsobj && jsobj.$$ !== undefined && jsobj.$$.type === 'PyProxy';
-    },
-  };
+  Module.PyProxy_getPtr = _getPtr;
 
   Module.callPyObject = function(ptrobj, ...jsargs) {
     let idargs = Module.hiwire.new_value(jsargs);
