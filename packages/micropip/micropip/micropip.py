@@ -57,6 +57,14 @@ else:
         return result
 
 
+if IN_BROWSER:
+    from pyodide_js import loadedPackages
+else:
+
+    class loadedPackages:  # type: ignore
+        pass
+
+
 async def _get_pypi_json(pkgname):
     url = f"https://pypi.org/pypi/{pkgname}/json"
     fd = await _get_url(url)
@@ -112,6 +120,7 @@ async def _install_wheel(name, fileinfo):
     wheel = await _get_url(url)
     _validate_wheel(wheel, fileinfo)
     _extract_wheel(wheel)
+    setattr(loadedPackages, name, url)
 
 
 class _PackageManager:
