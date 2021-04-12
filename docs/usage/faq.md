@@ -101,7 +101,7 @@ if platform.system() == 'Emscripten':
 This however will not work at build time (i.e. in a `setup.py`) due to the way
 the Pyodide build system works. It first compiles packages with the host compiler
 (e.g. gcc) and then re-runs the compilation commands with emsdk. So the `setup.py` is
-never run inside the Pyodide environement.
+never run inside the Pyodide environment.
 
 To detect Pyodide, **at build time** use,
 ```python
