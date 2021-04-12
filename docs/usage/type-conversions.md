@@ -308,13 +308,13 @@ function destroyToJsResult(x){
     if(!x){
         return;
     }
-    if(x.destroy){
+    if(pyodide.isPyProxy(x)){
         x.destroy();
         return;
     }
     if(x[Symbol.iterator]){
         for(let k of x){
-            freeToJsResult(k);
+            destroyToJsResult(k);
         }
     }
 }
