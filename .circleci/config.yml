@@ -131,7 +131,7 @@ jobs:
             - ./build
       - run:
           name: Prepare CircleCI artifacts
-          command: PYODIDE_BASE_URL="$CIRCLE_BUILD_URL/artifacts/0/root/repo/build/" make build/console.html
+          command: PYODIDE_BASE_URL="./" make build/console.html
 
       - store_artifacts:
           path: /root/repo/build/
