@@ -146,13 +146,16 @@ assert c == 2
 ```
 ## How can I send a Python object from my server to Pyodide (or vice-versa)?
 
-The best way to do this is with pickle. We do this in our test suite on a wide
-variety of objects. If the version of Python used in the server exactly matches
-the version of Python used in the client, then in our experience, every object
+The best way to do this is with pickle. If the version of Python used in the
+server exactly matches the version of Python used in the client, then objects
 that can be successfully pickled can be sent to the client and unpickled in
 Pyodide. If the versions of Python are different then for instance sending AST
 is unlikely to work since there are breaking changes to Python AST in most
 Python minor versions.
 
-We don't have any test coverage for pickling objects in Pyodide and unpickling
-on the server, but that probably works quite well too.
+Similarly when pickling Python objects defined in a Python package, the package
+ version needs to match exactly between the server and pyodide. 
+
+Generally, pickles are portable between architectures (here amd64 and wasm32).
+The rare cases when they are not portable, for instance currently tree based
+ models in scikit-learn, can be considered as a bug in the upstream library.  
