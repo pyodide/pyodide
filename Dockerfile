@@ -12,6 +12,7 @@ RUN apt-get update \
 RUN pip3 --no-cache-dir install \
   black \
   "cython<3.0" \
+  requests \
   distlib \
   flake8 \
   hypothesis \
