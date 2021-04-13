@@ -8,7 +8,7 @@ import urllib.request
 import urllib.error
 import sys
 from pathlib import Path
-from typing import Dict, Tuple, Any, Optional
+from typing import Dict, Any, Optional
 import warnings
 
 from .io import parse_package_config
@@ -42,7 +42,7 @@ def _extract_sdist(pypi_metadata: Dict[str, Any]) -> Dict:
     )
 
 
-def _get_metadata(package: str, version: Optional[str] = None) -> Tuple[Dict, Dict]:
+def _get_metadata(package: str, version: Optional[str] = None) -> Dict:
     """Download metadata for a package from PyPi"""
     version = ("/" + version) if version is not None else ""
     url = f"https://pypi.org/pypi/{package}{version}/json"
@@ -55,9 +55,7 @@ def _get_metadata(package: str, version: Optional[str] = None) -> Tuple[Dict, Di
             f"Failed to load metadata for {package}{version} from https://pypi.org/pypi/{package}{version}/json: {e}"
         )
 
-    sdist_metadata = _extract_sdist(pypi_metadata)
-
-    return sdist_metadata, pypi_metadata
+    return pypi_metadata
 
 
 def make_package(package: str, version: Optional[str] = None):
@@ -67,7 +65,9 @@ def make_package(package: str, version: Optional[str] = None):
     """
     import yaml
 
-    sdist_metadata, pypi_metadata = _get_metadata(package, version)
+    pypi_metadata = _get_metadata(package, version)
+    sdist_metadata = _extract_sdist(pypi_metadata)
+
     url = sdist_metadata["url"]
     sha256 = sdist_metadata["digests"]["sha256"]
     version = pypi_metadata["info"]["version"]
@@ -121,7 +121,12 @@ def update_package(package: str, update_patched: bool):
         print(f"Skipping: {package} is a local package!")
         sys.exit(0)
 
-    sdist_metadata, pypi_metadata = _get_metadata(package)
+    build_info = yaml_content.get("build", {})
+    if build_info.get("library", False) or build_info.get("sharedlibrary", False):
+        print(f"Skipping: {package} is a library!")
+        sys.exit(0)
+
+    pypi_metadata = _get_metadata(package)
     pypi_ver = pypi_metadata["info"]["version"]
     local_ver = yaml_content["package"]["version"]
     if pypi_ver <= local_ver:
@@ -133,7 +138,7 @@ def update_package(package: str, update_patched: bool):
         ("package", "source", "test", "requirements")
     ):
         abort(
-            f"{package}: Only pure-python packages can be updated using this script. "
+            f"{package}: Only pure python packages can be updated using this script. "
             f"Aborting."
         )
 
@@ -145,6 +150,8 @@ def update_package(package: str, update_patched: bool):
             )
         else:
             abort(f"Pyodide applies patches to {package}. Skipping update.")
+
+    sdist_metadata = _extract_sdist(pypi_metadata)
 
     yaml_content["source"]["url"] = sdist_metadata["url"]
     yaml_content["source"].pop("md5", None)
