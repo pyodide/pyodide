@@ -161,7 +161,7 @@ jobs:
       - run:
           name: test
           command: |
-            tools/pytest_wrapper.py src packages/micropip/ -v -k chrome -n 3
+            tools/pytest_wrapper.py src packages/micropip/ -v -k chrome -n 2
 
   test-packages-firefox:
     <<: *defaults
