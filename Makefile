@@ -143,6 +143,7 @@ $(UGLIFYJS): emsdk/emsdk/.complete
 $(CPYTHONLIB): emsdk/emsdk/.complete $(PYODIDE_EMCC) $(PYODIDE_CXX)
 	date +"[%F %T] Building cpython..."
 	make -C $(CPYTHONROOT)
+	find $(CPYTHONLIB) -name *.exe -delete
 	date +"[%F %T] done building cpython..."
 
 build/packages.json: FORCE
