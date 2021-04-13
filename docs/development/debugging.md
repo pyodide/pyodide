@@ -1,5 +1,8 @@
 (debugging)=
 # Interactive Debugging
+See [Emscripten's page about
+debugging](https://emscripten.org/docs/porting/Debugging.html) which has
+extensive info about the various debugging options available.
 
 [Chromium has support for DWARF
 info](https://developer.chrome.com/blog/webassembly/) which can be very helpful
