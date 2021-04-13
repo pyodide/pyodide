@@ -1,7 +1,6 @@
 import pytest
 from pathlib import Path
 import sys
-import io
 
 sys.path.append(str(Path(__file__).parents[2] / "src" / "pyodide-py"))
 
@@ -121,12 +120,6 @@ def test_repr(safe_sys_redirections):
                 console.repr_shorten(string, limit=limit, separator=sep)
             ) == 2 * (limit // 2) + len(sep)
 
-    sys.stdout = io.StringIO()
-    console.displayhook(
-        [0] * 100, lambda v: console.repr_shorten(v, 100, separator=sep)
-    )
-    assert len(sys.stdout.getvalue()) == 100 + len(sep) + 1  # for \n
-
 
 @pytest.fixture
 def safe_selenium_sys_redirections(selenium):
@@ -153,12 +146,12 @@ def test_interactive_console(selenium, safe_selenium_sys_redirections):
 
         result = None
 
-        def displayhook(value):
+        def display(value):
             global result
             result = value
 
         shell = InteractiveConsole()
-        sys.displayhook = displayhook
+        shell.display = display
         """
     )
 
@@ -238,3 +231,24 @@ def test_completion(selenium, safe_selenium_sys_redirections):
         ],
         8,
     ]
+
+
+def test_interactive_console_top_level_await(selenium, safe_selenium_sys_redirections):
+    selenium.run(
+        """
+        import sys
+        from pyodide.console import InteractiveConsole
+
+        result = None
+
+        def display(value):
+            global result
+            result = value
+
+        shell = InteractiveConsole()
+        shell.display = display
+        """
+    )
+    selenium.run("shell.push('from js import fetch')")
+    selenium.run("shell.push('await (await fetch(`packages.json`)).json()')")
+    assert selenium.run("result") == None

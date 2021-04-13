@@ -4,42 +4,21 @@ import io
 import sys
 import platform
 from contextlib import contextmanager
-import builtins
 import rlcompleter
+import asyncio
+from pyodide import eval_code_async
+import ast
 
 # this import can fail when we are outside a browser (e.g. for tests)
 try:
-    import js
-    import pyodide_js
-
-    _dummy_promise = js.Promise.resolve()
-    _load_packages_from_imports = pyodide_js.loadPackagesFromImports
-
+    from pyodide_js import loadPackagesFromImports as _load_packages_from_imports
 except ImportError:
 
-    class _FakePromise:
-        """A promise that mimic the JS promises.
-
-        Only `then is supported` and there is no asynchronicity.
-        execution occurs when then is call.
-
-        This is mainly to fake `load_packages_from_imports`
-        and `InteractiveConsole.run_complete` in contexts
-        where JS promises are not available (tests)."""
-
-        def __init__(self, args=None):
-            self.args = (args,) if args is not None else ()
-
-        def then(self, func, *args):
-            return _FakePromise(func(*self.args))
-
-    _dummy_promise = _FakePromise()
-
-    def _load_packages_from_imports(*args):
-        return _dummy_promise
+    async def _load_packages_from_imports(*args):
+        pass
 
 
-__all__ = ["InteractiveConsole", "repr_shorten", "displayhook"]
+__all__ = ["InteractiveConsole", "repr_shorten"]
 
 
 class _StdStream(io.TextIOWrapper):
@@ -97,8 +76,7 @@ class InteractiveConsole(code.InteractiveConsole):
 
     Base implementation for an interactive console that manages
     stdout/stderr redirection. Since packages are loaded before running
-    code, `runcode` returns a JS promise. Override `sys.displayhook` to
-    catch the result of an execution.
+    code, `runcode` returns a JS promise.
 
     `self.stdout_callback` and `self.stderr_callback` can be overloaded.
 
@@ -111,7 +89,7 @@ class InteractiveConsole(code.InteractiveConsole):
     stderr_callback
         Function to call at each `sys.stderr` flush.
     persistent_stream_redirection
-        Wether or not the std redirection should be kept between calls to
+        Whether or not the std redirection should be kept between calls to
         `runcode`.
     """
 
@@ -130,13 +108,16 @@ class InteractiveConsole(code.InteractiveConsole):
         self._streams_redirected = False
         if persistent_stream_redirection:
             self.redirect_stdstreams()
-        self.run_complete = _dummy_promise
+        self.run_complete: asyncio.Future = asyncio.Future()
+        self.run_complete.set_result(None)
         self._completer = rlcompleter.Completer(self.locals)  # type: ignore
         # all nonalphanums except '.'
         # see https://github.com/python/cpython/blob/a4258e8cd776ba655cc54ba54eaeffeddb0a267c/Modules/readline.c#L1211
         self.completer_word_break_characters = (
             """ \t\n`~!@#$%^&*()-=+[{]}\\|;:'\",<>/?"""
         )
+        self.output_truncated_text = "\\n[[;orange;]<long output truncated>]\\n"
+        self.compile.compiler.flags |= ast.PyCF_ALLOW_TOP_LEVEL_AWAIT  # type: ignore
 
     def redirect_stdstreams(self):
         """ Toggle stdout/stderr redirections. """
@@ -220,22 +201,23 @@ class InteractiveConsole(code.InteractiveConsole):
         function sets the promise `self.run_complete`.
         If you need to wait for the end of the computation,
         you should await for it."""
-        parent_runcode = super().runcode
         source = "\n".join(self.buffer)
+        self.run_complete = asyncio.ensure_future(
+            self.load_packages_and_run(self.run_complete, source)
+        )
 
-        def load_packages_and_run(*args):
-            def run(*args):
-                with self.stdstreams_redirections():
-                    parent_runcode(code)
-                    # in CPython's REPL, flush is performed
-                    # by input(prompt) at each new prompt ;
-                    # since we are not using input, we force
-                    # flushing here
-                    self.flush_all()
-
-            return _load_packages_from_imports(source).then(run)
-
-        self.run_complete = self.run_complete.then(load_packages_and_run)
+    async def load_packages_and_run(self, run_complete, source):
+        await run_complete
+        with self.stdstreams_redirections():
+            await _load_packages_from_imports(source)
+            result = await eval_code_async(source, self.locals)
+            self.display(result)
+            # in CPython's REPL, flush is performed
+            # by input(prompt) at each new prompt ;
+            # since we are not using input, we force
+            # flushing here
+            self.flush_all()
+            return result
 
     def __del__(self):
         self.restore_stdstreams()
@@ -282,6 +264,11 @@ class InteractiveConsole(code.InteractiveConsole):
             completions = self._completer.global_matches(source)  # type: ignore
         return completions, start
 
+    def display(self, value):
+        if value is None:
+            return
+        print(repr_shorten(value, separator=self.output_truncated_text))
+
 
 def repr_shorten(
     value: Any, limit: int = 1000, split: Optional[int] = None, separator: str = "..."
@@ -299,33 +286,3 @@ def repr_shorten(
     if len(text) > limit:
         text = f"{text[:split]}{separator}{text[-split:]}"
     return text
-
-
-def displayhook(value, repr: Callable[[Any], str]):
-    """A displayhook with custom `repr` function.
-
-    It is intendend to overload `sys.displayhook`. Note that monkeypatch
-    `builtins.repr` does not work in `sys.displayhook`. The pointer to
-    `repr` seems hardcoded in default `sys.displayhook` version
-    (which is written in C)."""
-    # from https://docs.python.org/3/library/sys.html#sys.displayhook
-    # If value is not None, this function prints repr(value) to
-    # sys.stdout, and saves value in builtins._. If repr(value) is not
-    # encodable to sys.stdout.encoding with sys.stdout.errors error
-    # handler (which is probably 'strict'), encode it to
-    # sys.stdout.encoding with 'backslashreplace' error handler.
-    if value is None:
-        return
-    builtins._ = None  # type: ignore
-    text = repr(value)
-    try:
-        sys.stdout.write(text)
-    except UnicodeEncodeError:
-        bytes = text.encode(sys.stdout.encoding, "backslashreplace")
-        if hasattr(sys.stdout, "buffer"):
-            sys.stdout.buffer.write(bytes)
-        else:
-            text = bytes.decode(sys.stdout.encoding, "strict")
-            sys.stdout.write(text)
-    sys.stdout.write("\n")
-    builtins._ = value  # type: ignore
