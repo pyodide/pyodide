@@ -60,6 +60,7 @@ env:
 	env
 
 
+.PHONY: build/pyodide.js
 build/pyodide.js: src/pyodide.js
 	cp $< $@
 	sed -i -e 's#{{ PYODIDE_BASE_URL }}#$(PYODIDE_BASE_URL)#g' $@
@@ -69,18 +70,22 @@ build/test.html: src/templates/test.html
 	cp $< $@
 
 
+.PHONY: build/console.html
 build/console.html: src/templates/console.html
 	cp $< $@
 	sed -i -e 's#{{ PYODIDE_BASE_URL }}#$(PYODIDE_BASE_URL)#g' $@
 
-
+.PHONY: build/webworker.js
 build/webworker.js: src/webworker.js
 	cp $< $@
 	sed -i -e 's#{{ PYODIDE_BASE_URL }}#$(PYODIDE_BASE_URL)#g' $@
 
+
+.PHONY: build/webworker_dev.js
 build/webworker_dev.js: src/webworker.js
 	cp $< $@
 	sed -i -e 's#{{ PYODIDE_BASE_URL }}#./#g' $@
+
 
 test: all
 	pytest src emsdk/tests packages/*/test* pyodide_build -v
