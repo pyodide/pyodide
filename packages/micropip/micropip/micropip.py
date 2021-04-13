@@ -178,6 +178,11 @@ class _PackageManager:
         await gather(*wheel_promises)
 
     async def add_requirement(self, requirement: str, ctx, transaction):
+        """Add a requirement to the transaction.
+
+        See PEP 508 for a description of the requirements.
+        https://www.python.org/dev/peps/pep-0508
+        """
         if requirement.endswith(".whl"):
             # custom download location
             name, wheel, version = _parse_wheel_url(requirement)
@@ -198,30 +203,31 @@ class _PackageManager:
             return
 
         if req.marker:
+            # handle environment-markers
+            # https://www.python.org/dev/peps/pep-0508/#environment-markers
             if not markers.evaluator.evaluate(req.marker, ctx):
                 return
 
-        # If we already have something that will work, don't
-        # fetch again
-        for name, ver in transaction["locked"].items():
-            if name == req.name:
-                if matcher.match(ver):
-                    break
-                else:
-                    raise ValueError(
-                        f"Requested '{requirement}', "
-                        f"but {name}=={ver} is already installed"
-                    )
-        else:
-            metadata = await _get_pypi_json(req.name)
-            wheel, ver = self.find_wheel(metadata, req)
-            transaction["locked"][req.name] = ver
+        # Is some version of this package is already installed?
+        if req.name in transaction["locked"]:
+            ver = transaction["locked"][req.name]
+            if matcher.match(ver):
+                # installed version matches, nothing to do
+                return
+            else:
+                raise ValueError(
+                    f"Requested '{requirement}', "
+                    f"but {req.name}=={ver} is already installed"
+                )
+        metadata = await _get_pypi_json(req.name)
+        wheel, ver = self.find_wheel(metadata, req)
+        transaction["locked"][req.name] = ver
 
-            recurs_reqs = metadata.get("info", {}).get("requires_dist") or []
-            for recurs_req in recurs_reqs:
-                await self.add_requirement(recurs_req, ctx, transaction)
+        recurs_reqs = metadata.get("info", {}).get("requires_dist") or []
+        for recurs_req in recurs_reqs:
+            await self.add_requirement(recurs_req, ctx, transaction)
 
-            transaction["wheels"].append((req.name, wheel, ver))
+        transaction["wheels"].append((req.name, wheel, ver))
 
     def find_wheel(self, metadata, req):
         releases = []
