@@ -740,7 +740,7 @@ globalThis.loadPyodide = async function(config = {}) {
         return obj;
     }
     // clang-format on
-    if (!obj || Module.PyProxy.isPyProxy(obj)) {
+    if (!obj || Module.isPyProxy(obj)) {
       return obj;
     }
     let obj_id = 0;
