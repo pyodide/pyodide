@@ -109,7 +109,7 @@ def success(msg):
     print(bcolors.OKBLUE + msg + bcolors.ENDC)
 
 
-def update_package(package: str, update_patched: bool):
+def update_package(package: str, update_patched: bool = True):
     from ruamel.yaml import YAML
 
     yaml = YAML()
@@ -195,6 +195,13 @@ def main(args):
             return
         make_package(package, args.version)
     except MkpkgFailedException as e:
+        # This produces two types of error messages:
+        #
+        # When the request to get the pypi json fails, it produces a message like:
+        # "Failed to load metadata for libxslt from https://pypi.org/pypi/libxslt/json: HTTP Error 404: Not Found"
+        #
+        # If there is no sdist it prints an error message like:
+        # "No sdist URL found for package swiglpk (https://pypi.org/project/swiglpk/)"
         abort(e.args[0])
 
 
