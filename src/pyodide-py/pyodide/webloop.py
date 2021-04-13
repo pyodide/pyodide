@@ -1,10 +1,9 @@
 import asyncio
-from asyncio import tasks, futures
 import time
 import contextvars
 
 
-from typing import Awaitable, Callable
+from typing import Callable
 
 
 class WebLoop(asyncio.AbstractEventLoop):
@@ -65,7 +64,7 @@ class WebLoop(asyncio.AbstractEventLoop):
         """
         pass
 
-    def run_until_complete(self, future: Awaitable):
+    def run_until_complete(self, future):
         """Run until future is done.
 
         If the argument is a coroutine, it is wrapped in a Task.
@@ -99,7 +98,7 @@ class WebLoop(asyncio.AbstractEventLoop):
         return self.call_later(delay, callback, *args, context=context)
 
     def call_soon_threadsafe(
-        callback: Callable, *args, context: contextvars.Context = None
+        self, callback: Callable, *args, context: contextvars.Context = None
     ):
         """Like ``call_soon()``, but thread-safe.
 
@@ -132,11 +131,12 @@ class WebLoop(asyncio.AbstractEventLoop):
         This uses `setTimeout(callback, delay)`
         """
         from js import setTimeout
+        from . import create_once_callable
 
         if delay < 0:
             raise ValueError("Can't schedule in the past")
-        h = asyncio.Handle(callback, args, self, context=context)
-        setTimeout(h._run, delay * 1000)
+        h = asyncio.Handle(callback, args, self, context=context)  # type: ignore
+        setTimeout(create_once_callable(h._run), delay * 1000)
         return h
 
     def call_at(
@@ -155,6 +155,22 @@ class WebLoop(asyncio.AbstractEventLoop):
         cur_time = self.time()
         delay = when - cur_time
         return self.call_later(delay, callback, *args, context=context)
+
+    def run_in_executor(self, executor, func, *args):
+        """Arrange for func to be called in the specified executor.
+
+        This is normally supposed to run func(*args) in a separate process or
+        thread and signal back to our event loop when it is done. It's possible
+        to make the executor, but if we actually try to submit any functions to
+        it, it will try to create a thread and throw an error. Best we can do is
+        to run func(args) in this thread and stick the result into a future.
+        """
+        fut = self.create_future()
+        try:
+            fut.set_result(func(*args))
+        except BaseException as e:
+            fut.set_exception(e)
+        return fut
 
     #
     # The remaining methods are copied directly from BaseEventLoop
@@ -176,7 +192,7 @@ class WebLoop(asyncio.AbstractEventLoop):
 
         Copied from ``BaseEventLoop.create_future``
         """
-        return futures.Future(loop=self)
+        return asyncio.futures.Future(loop=self)
 
     def create_task(self, coro, *, name=None):
         """Schedule a coroutine object.
@@ -187,7 +203,7 @@ class WebLoop(asyncio.AbstractEventLoop):
         """
         self._check_closed()
         if self._task_factory is None:
-            task = tasks.Task(coro, loop=self, name=name)
+            task = asyncio.tasks.Task(coro, loop=self, name=name)
             if task._source_traceback:
                 # Added comment:
                 # this only happens if get_debug() returns True.
@@ -195,7 +211,7 @@ class WebLoop(asyncio.AbstractEventLoop):
                 del task._source_traceback[-1]
         else:
             task = self._task_factory(self, coro)
-            tasks._set_task_name(task, name)
+            asyncio.tasks._set_task_name(task, name)
 
         return task
 
@@ -223,7 +239,7 @@ class WebLoop(asyncio.AbstractEventLoop):
         return self._task_factory
 
 
-class WebLoopPolicy(asyncio.DefaultEventLoopPolicy):
+class WebLoopPolicy(asyncio.DefaultEventLoopPolicy):  # type: ignore
     """
     A simple event loop policy for managing WebLoop based event loops.
     """

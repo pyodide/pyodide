@@ -24,6 +24,7 @@ PACKAGE_CONFIG_SPEC: Dict[str, Dict[str, Any]] = {
         "cxxflags": str,
         "ldflags": str,
         "library": bool,
+        "sharedlibrary": bool,
         "script": str,
         "post": str,
         "replace-libs": list,

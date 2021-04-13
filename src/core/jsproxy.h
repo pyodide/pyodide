@@ -17,6 +17,9 @@
 PyObject*
 JsProxy_create(JsRef v);
 
+PyObject*
+JsProxy_create_with_this(JsRef object, JsRef this);
+
 /** Check if a Python object is a JsProxy object.
  *  \param x The Python object
  *  \return true if the object is a JsProxy object.

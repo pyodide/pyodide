@@ -1,13 +1,13 @@
 # Frequently Asked Questions (FAQ)
 
-## How can I load external python files in Pyodide?
+## How can I load external Python files in Pyodide?
 
 The two possible solutions are,
 
-- include these files in a python package, build a pure python wheel with
+- include these files in a Python package, build a pure Python wheel with
   `python setup.py bdist_wheel` and
   {ref}`load it with micropip <micropip-installing-from-arbitrary-urls>`.
-- fetch the python code as a string and evaluate it in Python,
+- fetch the Python code as a string and evaluate it in Python,
   ```js
   pyodide.runPython(await fetch('https://some_url/...'))
   ```
@@ -16,12 +16,19 @@ In both cases, files need to be served with a web server and cannot be loaded fr
 
 ## Why can't I load files from the local file system?
 
-For security reasons JavaScript in the browser is not allowed to load local data files. You need to serve them with a web-browser.
-Recently there is a [Native File System API](https://wicg.github.io/file-system-access/) supported in Chrome but not in Firefox. [There is a discussion about implementing it for Firefox here.](https://github.com/mozilla/standards-positions/issues/154)
+For security reasons Javascript in the browser is not allowed to load local data
+files. You need to serve them with a web-browser. Recently there is a
+[Native File System API](https://wicg.github.io/file-system-access/) supported in Chrome
+but not in Firefox.
+[There is a discussion about implementing it for Firefox here.](https://github.com/mozilla/standards-positions/issues/154)
 
 
-## How can I change the behavior of `runPython` and `runPythonAsync`?
-The definitions of `runPython` and `runPythonAsync` are very simple:
+## How can I change the behavior of {any}`runPython <pyodide.runPython>` and {any}`runPythonAsync <pyodide.runPythonAsync>`?
+You can directly call Python functions from Javascript. For many purposes it
+makes sense to make your own Python function as an entrypoint and call that
+instead of using `runPython`. The definitions of {any}`runPython
+<pyodide.runPython>` and {any}`runPythonAsync <pyodide.runPythonAsync>` are very
+simple:
 ```javascript
 function runPython(code){
   pyodide.pyodide_py.eval_code(code, pyodide.globals);
@@ -31,50 +38,46 @@ function runPython(code){
 ```javascript
 async function runPythonAsync(code, messageCallback, errorCallback) {
   await pyodide.loadPackagesFromImports(code, messageCallback, errorCallback);
-  return pyodide.runPython(code);
+  let coroutine = pyodide.pyodide_py.eval_code_async(code, pyodide.globals);
+  try {
+    let result = await coroutine;
+    return result;
+  } finally {
+    coroutine.destroy();
+  }
 };
 ```
-To make your own version of `runPython`:
-
+To make your own version of {any}`runPython <pyodide.runPython>` you could do:
 ```pyodide
 pyodide.runPython(`
   import pyodide
-  old_eval_code = pyodide.eval_code
   def my_eval_code(code, ns):
     extra_info = None
-    result = old_eval_code(code, ns)
-    return [ns["extra_info"], result]
+    result = pyodide.eval_code(code, ns)
+    return ns["extra_info"], result]
 `)
 
 function myRunPython(code){
-  return pyodide.globals.my_eval_code(code, pyodide.globals);
-}
-
-function myAsyncRunPython(code){
-  await pyodide.loadPackagesFromImports(code, messageCallback, errorCallback);
-  return pyodide.myRunPython(code, pyodide.globals);
+  return pyodide.globals.get("my_eval_code")(code, pyodide.globals);
 }
 ```
+
 Then `pyodide.myRunPython("2+7")` returns `[None, 9]` and
 `pyodide.myRunPython("extra_info='hello' ; 2 + 2")` returns `['hello', 4]`.
-If you want to change which packages `loadPackagesFromImports` loads, you can
-monkey patch `pyodide-py.find_imports` which takes `code` as an argument
+If you want to change which packages {any}`pyodide.loadPackagesFromImports` loads, you can
+monkey patch {any}`pyodide.find_imports` which takes `code` as an argument
 and returns a list of packages imported.
 
 ## How can I execute code in a custom namespace?
 
 The second argument to {any}`pyodide.eval_code` is a global namespace to execute the code in.
-The namespace is a python dictionary. 
+The namespace is a Python dictionary.
 ```javascript
 let my_namespace = pyodide.globals.dict();
-pyodide.pyodide_py.eval_code(`x = 1 + 1`, my_namespace);
-pyodide.pyodide_py.eval_code(`y = x ** x`, my_namespace);
+pyodide.runPython(`x = 1 + 1`, my_namespace);
+pyodide.runPython(`y = x ** x`, my_namespace);
 my_namespace.y; // ==> 4
 ```
-This effectively runs the code in "module scope". Like the
-[Python `eval` function](https://docs.python.org/3/library/functions.html?highlight=eval#eval)
-you can provide a third argument to `eval_code` to specify a separate `locals` dict to
-run code in "function scope".
 
 ## How to detect that code is run with Pyodide?
 
@@ -96,11 +99,11 @@ if platform.system() == 'Emscripten':
 ```
 
 This however will not work at build time (i.e. in a `setup.py`) due to the way
-the pyodide build system works. It first compiles packages with the host compiler
+the Pyodide build system works. It first compiles packages with the host compiler
 (e.g. gcc) and then re-runs the compilation commands with emsdk. So the `setup.py` is
-never run inside the Pyodide environement.
+never run inside the Pyodide environment.
 
-To detect pyodide, **at build time** use,
+To detect Pyodide, **at build time** use,
 ```python
 import os
 
@@ -111,9 +114,9 @@ We used to use the environment variable `PYODIDE_BASE_URL` for this purpose,
 but this usage is deprecated.
 
 
-## How do I create custom python packages from javascript?
+## How do I create custom Python packages from Javascript?
 
-Put a collection of functions into a javascript object and use `pyodide.registerJsModule`:
+Put a collection of functions into a Javascript object and use {any}`pyodide.registerJsModule`:
 Javascript:
 ```javascript
 let my_module = {
@@ -129,7 +132,7 @@ let my_module = {
       return x*x - 1;
     },
     c  : 2,
-  },  
+  },
 };
 pyodide.registerJsModule("my_js_module", my_module);
 ```
@@ -140,4 +143,27 @@ from my_js_module.submodule import h, c
 assert my_js_module.f(7) == 50
 assert h(9) == 80
 assert c == 2
+```
+## How can I send a Python object from my server to Pyodide?
+
+The best way to do this is with pickle. If the version of Python used in the
+server exactly matches the version of Python used in the client, then objects
+that can be successfully pickled can be sent to the client and unpickled in
+Pyodide. If the versions of Python are different then for instance sending AST
+is unlikely to work since there are breaking changes to Python AST in most
+Python minor versions.
+
+Similarly when pickling Python objects defined in a Python package, the package
+version needs to match exactly between the server and pyodide.
+
+Generally, pickles are portable between architectures (here amd64 and wasm32).
+The rare cases when they are not portable, for instance currently tree based
+models in scikit-learn, can be considered as a bug in the upstream library.
+
+```{admonition} Security Issues with pickle
+:class: warning
+
+Unpickling data is similar to `eval`. On any public-facing server it is a really
+bad idea to unpickle any data sent from the client. For sending data from client
+to server, try some other serialization format like JSON.
 ```

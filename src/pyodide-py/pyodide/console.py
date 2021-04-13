@@ -10,9 +10,10 @@ import rlcompleter
 # this import can fail when we are outside a browser (e.g. for tests)
 try:
     import js
+    import pyodide_js
 
     _dummy_promise = js.Promise.resolve()
-    _load_packages_from_imports = js.pyodide.loadPackagesFromImports
+    _load_packages_from_imports = pyodide_js.loadPackagesFromImports
 
 except ImportError:
 
@@ -231,7 +232,6 @@ class InteractiveConsole(code.InteractiveConsole):
                     # since we are not using input, we force
                     # flushing here
                     self.flush_all()
-                return _dummy_promise
 
             return _load_packages_from_imports(source).then(run)
 

@@ -1,0 +1,115 @@
+From 6cf164b6a1a7cc151aa52ab5bb9e20a95a6a5e67 Mon Sep 17 00:00:00 2001
+From: Hood <hood@mit.edu>
+Date: Fri, 2 Apr 2021 14:24:24 -0700
+Subject: [PATCH] Fix "load" memory access out of bounds on Chrome v89 #1384
+
+Resolves https://github.com/pyodide/pyodide/issues/1384.
+
+There seems to be a bug in the v8 wasm runtime. The failure occurs in the numpy
+definition of PyArray_IntpFromIndexSequence in the following code:
+```C
+vals[i] = PyArray_PyIntAsIntp(op);    // line 958
+Py_DECREF(op);                        // line 959
+if(vals[i] == -1) {                   // line 960, fails here "RuntimeError: memory access out of bounds"
+
+}
+```
+This is compiled to the following:
+```wat
+;; First calculate &vals[i]. vals is an array of i32, so this is vals + 4*i.
+;; line 958: vals[i] = PyArray_PyIntAsIntp(op);
+local.get $var1 ;; vals
+local.get $var3 ;; i
+i32.const 2 
+i32.shl ;; i << 2
+i32.add ;; &vals[i] == vals + 4*i
+local.tee $var7 ;; v7 = &vals[i], leave &vals[i] on stack
+(; Snipped out argument setup and inlined PyArray_PyIntAsIntp ;)
+call $PyArray_PyIntAsIntp
+i32.store ;; vals[i] = PyArray_PyIntAsIntp(op) ;; Store to vals[i]
+;; line 959: Py_DECREF(op);
+(; Snipped out Py_DECREF(op) ;)
+block $label1
+    ;; line 960: if(vals[i] == -1) {
+    local.get $var7 ;; &vals[i]
+    i32.load ;; Load vals[i] back <== Fails here "RuntimeError: memory access out of bounds"
+    i32.const -1 
+    i32.ne ;; vals[i] != -1
+    br_if $label1
+```
+
+It doesn't make a whole lot of sense that it fails here, we just succesfully
+stored to vals[i] so why does it fail when we load back? Unforunately the bug
+disappears when devtools are open making it very difficult to assess what state
+the wasm VM is in when the bug is triggered.
+
+The goal here was to refactor the source to remove the offending load
+instruction. There are several options for how to change it, I chose the
+following:
+```C
+int x = PyArray_PyIntAsIntp(op);    // line 958
+Py_DECREF(op);                      // line 959
+if(x == -1) {                       // line 960
+
+}
+vals[i] = x;                        // line 971
+```
+Updated WAT looks like what you'd expect:
+```wat
+    ;; line 958: int x = PyArray_PyIntAsIntp(op);
+    (; Snipped out argument setup and inlined PyArray_PyIntAsIntp ;)
+    call $PyArray_PyIntAsIntp
+    ;; Now instead of storing result into vals[i], we store it in a local variable
+    local.set $var6 
+    ;; line 959: Py_DECREF(op)
+    (; Snipped out Py_DECREF(op) ;)
+    ;; line 960: if(x == -1)
+    block $label1
+        local.get $var6 ;; now check value of local variable
+        i32.const -1
+        i32.ne
+        br_if $label1
+        (; Snipped out body of conditional ;)
+    end $label1
+    ;; line 971: vals[i] = x
+    local.get $var1 ;; vals
+    local.get $var3 ;; i
+    i32.const 2   
+    i32.shl         ;; 4*i
+    i32.add         ;; vals + 4*i
+    local.get $var6 ;; x
+    i32.store
+```
+Indeed the offending `i32.load` is gone and so is the crash.
+
+---
+ numpy/core/src/multiarray/conversion_utils.c | 5 +++--
+ 1 file changed, 3 insertions(+), 2 deletions(-)
+
+diff --git a/numpy/core/src/multiarray/conversion_utils.c b/numpy/core/src/multiarray/conversion_utils.c
+index 52cb58726..5467f4d78 100644
+--- a/numpy/core/src/multiarray/conversion_utils.c
++++ b/numpy/core/src/multiarray/conversion_utils.c
+@@ -955,9 +955,9 @@ PyArray_IntpFromIndexSequence(PyObject *seq, npy_intp *vals, npy_intp maxvals)
+                 return -1;
+             }
+ 
+-            vals[i] = PyArray_PyIntAsIntp(op);
++            npy_intp x = PyArray_PyIntAsIntp(op);
+             Py_DECREF(op);
+-            if(vals[i] == -1) {
++            if(x == -1) {
+                 err = PyErr_Occurred();
+                 if (err &&
+                         PyErr_GivenExceptionMatches(err, PyExc_OverflowError)) {
+@@ -968,6 +968,7 @@ PyArray_IntpFromIndexSequence(PyObject *seq, npy_intp *vals, npy_intp maxvals)
+                     return -1;
+                 }
+             }
++            vals[i] = x;
+         }
+     }
+     return nd;
+-- 
+
+

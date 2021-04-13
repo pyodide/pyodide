@@ -32,6 +32,9 @@ class Package:
         self.meta: dict = parse_package_config(pkgpath)
         self.name: str = self.meta["package"]["name"]
         self.library: bool = self.meta.get("build", {}).get("library", False)
+        self.shared_library: bool = self.meta.get("build", {}).get(
+            "sharedlibrary", False
+        )
 
         assert self.name == pkgdir.stem
 
@@ -215,6 +218,7 @@ def build_packages(packages_dir: Path, outputdir: Path, args) -> None:
     package_data: dict = {
         "dependencies": {"test": []},
         "import_name_to_package_name": {},
+        "shared_library": {},
     }
 
     libraries = [pkg.name for pkg in pkg_map.values() if pkg.library]
@@ -222,7 +226,8 @@ def build_packages(packages_dir: Path, outputdir: Path, args) -> None:
     for name, pkg in pkg_map.items():
         if pkg.library:
             continue
-
+        if pkg.shared_library:
+            package_data["shared_library"][name] = True
         package_data["dependencies"][name] = [
             x for x in pkg.dependencies if x not in libraries
         ]
@@ -254,28 +259,28 @@ def make_parser(parser):
         "--cflags",
         type=str,
         nargs="?",
-        default=common.DEFAULTCFLAGS,
+        default=common.get_make_flag("SIDE_MODULE_CFLAGS"),
         help="Extra compiling flags",
     )
     parser.add_argument(
         "--cxxflags",
         type=str,
         nargs="?",
-        default=common.DEFAULTCXXFLAGS,
+        default=common.get_make_flag("SIDE_MODULE_CXXFLAGS"),
         help="Extra C++ specific compiling flags",
     )
     parser.add_argument(
         "--ldflags",
         type=str,
         nargs="?",
-        default=common.DEFAULTLDFLAGS,
+        default=common.get_make_flag("SIDE_MODULE_LDFLAGS"),
         help="Extra linking flags",
     )
     parser.add_argument(
         "--target",
         type=str,
         nargs="?",
-        default=common.TARGETPYTHON,
+        default=common.get_make_flag("TARGETPYTHONROOT"),
         help="The path to the target Python installation",
     )
     parser.add_argument(
@@ -294,9 +299,7 @@ def make_parser(parser):
         type=str,
         nargs="?",
         default=None,
-        help=(
-            "Only build the specified packages, provided as a comma " "separated list"
-        ),
+        help=("Only build the specified packages, provided as a comma-separated list"),
     )
     parser.add_argument(
         "--n-jobs",

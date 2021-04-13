@@ -12,38 +12,6 @@ CPYTHONLIB=$(CPYTHONROOT)/installs/python-$(PYVERSION)/lib/python$(PYMINOR)
 
 CC=emcc
 CXX=em++
-OPTFLAGS=-O2
-CFLAGS=\
-	$(OPTFLAGS) \
-	-g \
-	-I$(PYTHONINCLUDE) \
-	-fPIC \
-	-Wno-warn-absolute-paths \
-	-Werror=int-conversion \
-	-Werror=incompatible-pointer-types \
-	$(EXTRA_CFLAGS)
-LDFLAGS=\
-	-s BINARYEN_EXTRA_PASSES="--pass-arg=max-func-params@61" \
-	$(OPTFLAGS) \
-	-s MODULARIZE=1 \
-	$(CPYTHONROOT)/installs/python-$(PYVERSION)/lib/libpython$(PYMINOR).a \
-	-s TOTAL_MEMORY=20971520 \
-	-s ALLOW_MEMORY_GROWTH=1 \
-	-s MAIN_MODULE=1 \
-	-s EMULATE_FUNCTION_POINTER_CASTS=1 \
-	-s LINKABLE=1 \
-	-s EXPORT_ALL=1 \
-	-s EXPORTED_FUNCTIONS='["___cxa_guard_acquire", "__ZNSt3__28ios_base4initEPv", "_main"]' \
-	-s WASM=1 \
-	-s USE_FREETYPE=1 \
-	-s USE_LIBPNG=1 \
-	-std=c++14 \
-	-L$(wildcard $(CPYTHONROOT)/build/sqlite*/.libs) -lsqlite3 \
-	$(wildcard $(CPYTHONROOT)/build/bzip2*/libbz2.a) \
-	-lstdc++ \
-	--memory-init-file 0 \
-	-s LZ4=1 \
-	$(EXTRA_LDFLAGS)
 
 all: check \
 	build/pyodide.asm.js \
@@ -58,6 +26,7 @@ all: check \
 
 
 build/pyodide.asm.js: \
+	src/core/docstring.o \
 	src/core/error_handling.o \
 	src/core/hiwire.o \
 	src/core/js2python.o \
@@ -74,13 +43,14 @@ build/pyodide.asm.js: \
 	$(CPYTHONLIB)
 	date +"[%F %T] Building pyodide.asm.js..."
 	[ -d build ] || mkdir build
-	$(CXX) -s EXPORT_NAME="'pyodide'" -o build/pyodide.asm.js $(filter %.o,$^) \
-		$(LDFLAGS) -s FORCE_FILESYSTEM=1 \
+	$(CXX) -s EXPORT_NAME="'_createPyodideModule'" -o build/pyodide.asm.js $(filter %.o,$^) \
+		$(MAIN_MODULE_LDFLAGS) -s FORCE_FILESYSTEM=1 \
 		--preload-file $(CPYTHONLIB)@/lib/python$(PYMINOR) \
 		--preload-file src/webbrowser.py@/lib/python$(PYMINOR)/webbrowser.py \
 		--preload-file src/_testcapi.py@/lib/python$(PYMINOR)/_testcapi.py \
 		--preload-file src/pystone.py@/lib/python$(PYMINOR)/pystone.py \
 		--preload-file src/pyodide-py/pyodide@/lib/python$(PYMINOR)/site-packages/pyodide \
+		--preload-file src/pyodide-py/_pyodide@/lib/python$(PYMINOR)/site-packages/_pyodide \
 		--exclude-file "*__pycache__*" \
 		--exclude-file "*/test/*"
 	date +"[%F %T] done building pyodide.asm.js."
@@ -90,6 +60,7 @@ env:
 	env
 
 
+.PHONY: build/pyodide.js
 build/pyodide.js: src/pyodide.js
 	cp $< $@
 	sed -i -e 's#{{ PYODIDE_BASE_URL }}#$(PYODIDE_BASE_URL)#g' $@
@@ -99,18 +70,29 @@ build/test.html: src/templates/test.html
 	cp $< $@
 
 
+.PHONY: build/console.html
 build/console.html: src/templates/console.html
 	cp $< $@
 	sed -i -e 's#{{ PYODIDE_BASE_URL }}#$(PYODIDE_BASE_URL)#g' $@
 
 
+.PHONY: docs/_build/html/console.html
+docs/_build/html/console.html: src/templates/console.html
+	cp $< $@
+	sed -i -e 's#{{ PYODIDE_BASE_URL }}#$(PYODIDE_BASE_URL)#g' $@
+
+
+.PHONY: build/webworker.js
 build/webworker.js: src/webworker.js
 	cp $< $@
 	sed -i -e 's#{{ PYODIDE_BASE_URL }}#$(PYODIDE_BASE_URL)#g' $@
 
+
+.PHONY: build/webworker_dev.js
 build/webworker_dev.js: src/webworker.js
 	cp $< $@
 	sed -i -e 's#{{ PYODIDE_BASE_URL }}#./#g' $@
+
 
 test: all
 	pytest src emsdk/tests packages/*/test* pyodide_build -v
@@ -118,10 +100,10 @@ test: all
 
 lint:
 	# check for unused imports, the rest is done by black
-	flake8 --select=F401 src tools pyodide_build benchmark conftest.py
+	flake8 --select=F401 src tools pyodide_build benchmark conftest.py docs
 	clang-format-6.0 -output-replacements-xml `find src -type f -regex ".*\.\(c\|h\|js\)"` | (! grep '<replacement ')
 	black --check .
-	mypy --ignore-missing-imports pyodide_build/ src/ packages/micropip/micropip/ packages/*/test* conftest.py
+	mypy --ignore-missing-imports pyodide_build/ src/ packages/micropip/micropip/ packages/*/test* conftest.py docs
 
 
 apply-lint:
@@ -134,7 +116,7 @@ benchmark: all
 
 clean:
 	rm -fr build/*
-	rm -fr src/*.o
+	rm -fr src/*/*.o
 	rm -fr node_modules
 	make -C packages clean
 	echo "The Emsdk, CPython are not cleaned. cd into those directories to do so."
@@ -144,8 +126,8 @@ clean-all: clean
 	make -C cpython clean
 	rm -fr cpython/build
 
-%.o: %.c $(CPYTHONLIB) $(wildcard src/**/*.h)
-	$(CC) -o $@ -c $< $(CFLAGS) -Isrc/core/
+%.o: %.c $(CPYTHONLIB) $(wildcard src/**/*.h src/**/*.js)
+	$(CC) -o $@ -c $< $(MAIN_MODULE_CFLAGS) -Isrc/core/
 
 
 build/test.data: $(CPYTHONLIB) $(UGLIFYJS)
@@ -186,10 +168,9 @@ check:
 	./tools/dependency-check.sh
 
 minimal :
-	PYODIDE_PACKAGES="micropip" make
+	PYODIDE_PACKAGES+=",micropip" make
 
 debug :
-	EXTRA_CFLAGS="-D DEBUG_F" \
-	EXTRA_LDFLAGS="-s ASSERTIONS=2" \
-	PYODIDE_PACKAGES+="micropip,pyparsing,pytz,packaging,kiwisolver" \
+	EXTRA_CFLAGS+=" -D DEBUG_F" \
+	PYODIDE_PACKAGES+=", micropip, pyparsing, pytz, packaging, kiwisolver, " \
 	make

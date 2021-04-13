@@ -40,7 +40,7 @@ from pyodide_build import common
 from pyodide_build._f2c_fixes import fix_f2c_clapack_calls
 
 
-TOOLSDIR = common.TOOLSDIR
+TOOLSDIR = Path(common.get_make_flag("TOOLSDIR"))
 symlinks = set(["cc", "c++", "ld", "ar", "gcc", "gfortran"])
 
 
@@ -264,12 +264,24 @@ def handle_command(line, args, dryrun=False):
     elif new_args[0] == "em++":
         new_args.extend(args.cflags.split() + args.cxxflags.split())
 
-    lapack_dir = None
+    optflags_valid = [f"-O{tok}" for tok in "01234sz"]
+    optflag = None
+    # Identify the optflag (e.g. -O3) in cflags/cxxflags/ldflags. Last one has
+    # priority.
+    for arg in new_args[::-1]:
+        if arg in optflags_valid:
+            optflag = arg
+            break
 
     used_libs = set()
 
     # Go through and adjust arguments
     for arg in line[1:]:
+        if arg in optflags_valid and optflag is not None and arg != optflag:
+            # There are multiple contradictory optflags provided, use the one
+            # from cflags/cxxflags/ldflags
+            continue
+
         if arg.startswith("-I"):
             if (
                 str(Path(arg[2:]).resolve()).startswith(sys.prefix + "/include/python")
@@ -296,6 +308,11 @@ def handle_command(line, args, dryrun=False):
             if arg in used_libs:
                 continue
             used_libs.add(arg)
+        # some gcc flags that clang does not support actually
+        if arg == "-Bsymbolic-functions":
+            continue
+        if arg == "-Wl,-Bsymbolic-functions":
+            continue
         # threading is disabled for now
         if arg == "-pthread":
             continue
@@ -316,43 +333,6 @@ def handle_command(line, args, dryrun=False):
             and arg.startswith("-l" + args.install_dir)
             or arg.startswith("-L" + args.install_dir)
         ):
-            continue
-
-        # Fix for scipy to link to the correct BLAS/LAPACK files
-        if arg.startswith("-L") and "CLAPACK" in arg:
-            out_idx = line.index("-o")
-            out_idx += 1
-            module_name = line[out_idx]
-            module_name = Path(module_name).name.split(".")[0]
-
-            lapack_dir = arg.replace("-L", "")
-            # For convenience we determine needed scipy link libraries
-            # here, instead of in patch files
-            link_libs = ["F2CLIBS/libf2c.a", "blas_WA.a"]
-            if module_name in [
-                "_flapack",
-                "_flinalg",
-                "_calc_lwork",
-                "cython_lapack",
-                "_iterative",
-                "_arpack",
-            ]:
-                link_libs.append("lapack_WA.a")
-
-            for lib_name in link_libs:
-                arg = os.path.join(lapack_dir, f"{lib_name}")
-                new_args.append(arg)
-
-            new_args.extend(["-s", "INLINING_LIMIT=5"])
-            continue
-
-        # Use -Os for files that are statically linked to CLAPACK
-        if (
-            arg.startswith("-O")
-            and "CLAPACK" in " ".join(line)
-            and "-L" in " ".join(line)
-        ):
-            new_args.append("-Os")
             continue
 
         if new_args[-1].startswith("-B") and "compiler_compat" in arg:
@@ -461,7 +441,7 @@ def make_parser(parser):
             "--cflags",
             type=str,
             nargs="?",
-            default=common.DEFAULTCFLAGS,
+            default=common.get_make_flag("SIDE_MODULE_CFLAGS"),
             help="Extra compiling flags",
             action=EnvironmentRewritingArgument,
         )
@@ -469,7 +449,7 @@ def make_parser(parser):
             "--cxxflags",
             type=str,
             nargs="?",
-            default=common.DEFAULTCXXFLAGS,
+            default=common.get_make_flag("SIDE_MODULE_CXXFLAGS"),
             help="Extra C++ specific compiling flags",
             action=EnvironmentRewritingArgument,
         )
@@ -477,7 +457,7 @@ def make_parser(parser):
             "--ldflags",
             type=str,
             nargs="?",
-            default=common.DEFAULTLDFLAGS,
+            default=common.get_make_flag("SIDE_MODULE_LDFLAGS"),
             help="Extra linking flags",
             action=EnvironmentRewritingArgument,
         )
@@ -485,7 +465,7 @@ def make_parser(parser):
             "--target",
             type=str,
             nargs="?",
-            default=common.TARGETPYTHON,
+            default=common.get_make_flag("TARGETPYTHONROOT"),
             help="The path to the target Python installation",
         )
         parser.add_argument(
