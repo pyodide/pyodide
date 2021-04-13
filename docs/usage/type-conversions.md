@@ -308,19 +308,19 @@ function destroyToJsResult(x){
     if(!x){
         return;
     }
-    if(x.destroy){
+    if(pyodide.isPyProxy(x)){
         x.destroy();
         return;
     }
     if(x[Symbol.iterator]){
         for(let k of x){
-            freeToJsResult(k);
+            destroyToJsResult(k);
         }
     }
 }
 ```
 
-
+(type-translations-jsproxy-to-py)=
 ### Javascript to Python
 Explicit conversion of a {any}`JsProxy` into a native Python object is done with the
 {any}`JsProxy.to_py` method. By default, the `to_py` method does a recursive "deep"

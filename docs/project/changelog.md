@@ -23,48 +23,49 @@ substitutions:
 - {{ Feature }} A `JsProxy` of a Javascript `Promise` or other awaitable object is now a
   Python awaitable.
   [#880](https://github.com/pyodide/pyodide/pull/880)
-- {{ API }} Instead of automatically converting Python lists and dicts into Javascript, they
-  are now wrapped in `PyProxy`. Added a new `toJs` API to `PyProxy` to request the
-  conversion behavior that used to be implicit.
+- {{ API }} Instead of automatically converting Python lists and dicts into
+  Javascript, they are now wrapped in `PyProxy`. Added a new {any}`PyProxy.toJs`
+  API to request the conversion behavior that used to be implicit.
   [#1167](https://github.com/pyodide/pyodide/pull/1167)
-- {{ API }} Added `JsProxy.to_py` API to convert a Javascript object to Python.
+- {{ API }} Added {any}`JsProxy.to_py` API to convert a Javascript object to Python.
   [#1244](https://github.com/pyodide/pyodide/pull/1244)
 - {{ Feature }} Flexible jsimports: it now possible to add custom Python
   "packages" backed by Javascript code, like the `js` package.  The `js` package
   is now implemented using this system.
   [#1146](https://github.com/pyodide/pyodide/pull/1146)
-- {{ Feature }} A `PyProxy` of a Python coroutine or awaitable is now an awaitable Javascript
-  object. Awaiting a coroutine will schedule it to run on the Python event loop
-  using `asyncio.ensure_future`.
+- {{ Feature }} A `PyProxy` of a Python coroutine or awaitable is now an
+  awaitable Javascript object. Awaiting a coroutine will schedule it to run on
+  the Python event loop using `asyncio.ensure_future`.
   [#1170](https://github.com/pyodide/pyodide/pull/1170)
 - {{ Feature }} A `JsProxy` of a Javascript `Promise` or other awaitable object is now a
   Python awaitable.
   [#880](https://github.com/pyodide/pyodide/pull/880)
-- {{ Enhancement }} Made `PyProxy` of an iterable Python object an iterable Js object: defined the
-  `[Symbol.iterator]` method, can be used like `for(let x of proxy)`.
-  Made a `PyProxy` of a Python iterator an iterator: `proxy.next()` is
-  translated to `next(it)`.
-  Made a `PyProxy` of a Python generator into a Javascript generator:
-  `proxy.next(val)` is translated to `gen.send(val)`.
+- {{ Enhancement }} Made `PyProxy` of an iterable Python object an iterable Js
+  object: defined the `[Symbol.iterator]` method, can be used like `for(let x of
+  proxy)`. Made a `PyProxy` of a Python iterator an iterator: `proxy.next()` is
+  translated to `next(it)`. Made a `PyProxy` of a Python generator into a
+  Javascript generator: `proxy.next(val)` is translated to `gen.send(val)`.
   [#1180](https://github.com/pyodide/pyodide/pull/1180)
 - {{ API }} Updated `PyProxy` so that if the wrapped Python object supports `__getitem__`
   access, then the wrapper has `get`, `set`, `has`, and `delete` methods which do
   `obj[key]`, `obj[key] = val`, `key in obj` and `del obj[key]` respectively.
   [#1175](https://github.com/pyodide/pyodide/pull/1175)
-- {{ API }} The `pyodide.pyimport` function is deprecated in favor of using
+- {{ API }} The {any}`pyodide.pyimport` function is deprecated in favor of using
   `pyodide.globals.get('key')`. [#1367](https://github.com/pyodide/pyodide/pull/1367)
-- {{ API }} Added `PyProxy.getBuffer` API to allow direct access to Python
+- {{ API }} Added {any}`PyProxy.getBuffer` API to allow direct access to Python
   buffers as Javascript TypedArrays.
-  [1215](https://github.com/pyodide/pyodide/pull/1215)
+  [#1215](https://github.com/pyodide/pyodide/pull/1215)
 - {{ API }} The innermost level of a buffer converted to Javascript used to be a
   TypedArray if the buffer was contiguous and otherwise an Array. Now the
   innermost level will be a TypedArray unless the buffer format code is a '?' in
   which case it will be an Array of booleans, or if the format code is a "s" in
   which case the innermost level will be converted to a string.
-  [1376](https://github.com/pyodide/pyodide/pull/1376)
+  [#1376](https://github.com/pyodide/pyodide/pull/1376)
 - {{ Enhancement }} Javascript `BigInt`s are converted into Python `int` and
   Python `int`s larger than 2^53 are converted into `BigInt`.
-  [1407](https://github.com/pyodide/pyodide/pull/1407)
+  [#1407](https://github.com/pyodide/pyodide/pull/1407)
+- {{ API }} Added {any}`pyodide.isPyProxy` to test if an object is a `PyProxy`.
+  [#1456](https://github.com/pyodide/pyodide/pull/1456)
 
 ### Fixed
 - {{ Fix }} getattr and dir on JsProxy now report consistent results and include all
@@ -89,6 +90,9 @@ substitutions:
   [#1126](https://github.com/pyodide/pyodide/pull/1126)
 - {{ Fix }} Javascript bound method calls now work correctly with keyword arguments.
   [#1138](https://github.com/pyodide/pyodide/pull/1138)
+- {{ Fix }} Javascript constructor calls now work correctly with keyword
+  arguments.
+  [#1433](https://github.com/pyodide/pyodide/pull/1433)
 
 ### pyodide-py package
 
@@ -132,13 +136,16 @@ substitutions:
 - Changed the loading method: added an async function `loadPyodide` to load
   Pyodide to use instead of `languagePluginURL` and `languagePluginLoader`. The
   change is currently backwards compatible, but the old approach is deprecated.
-  [1363](https://github.com/pyodide/pyodide/pull/1363)
+  [#1363](https://github.com/pyodide/pyodide/pull/1363)
 
 ### micropip
 
 - {{ Feature }} `micropip` now supports installing wheels from relative URLs.
   [#872](https://github.com/pyodide/pyodide/pull/872)
 - {{ API }} `micropip.install` now returns a Python `Future` instead of a Javascript `Promise`.
+  [#1324](https://github.com/pyodide/pyodide/pull/1324/)
+- {{ FIX }} {any}`micropip.install` now interacts correctly with {any}`pyodide.loadPackage`.
+  [#1457](https://github.com/pyodide/pyodide/pull/1457/)
 
 ### Build system
 

@@ -5,6 +5,64 @@ JS_FILE(pyproxy_init_js, () => {0,0; /* Magic, see include_js_file.h */
   Module.PyProxies = {};
   // clang-format on
 
+  /**
+   * In the case that the Python object is callable, PyProxyClass inherits from
+   * Function so that PyProxy objects can be callable.
+   *
+   * The following properties on a Python object will be shadowed in the proxy
+   * in the case that the Python object is callable:
+   *  - "arguments" and
+   *  - "caller"
+   *
+   * Inheriting from Function has the unfortunate side effect that we MUST
+   * expose the members "proxy.arguments" and "proxy.caller" because they are
+   * nonconfigurable, nonwritable, nonenumerable own properties. They are just
+   * always `null`.
+   *
+   * We also get the properties "length" and "name" which are configurable so we
+   * delete them in the constructor. "prototype" is not configurable so we can't
+   * delete it, however it *is* writable so we set it to be undefined. We must
+   * still make "prototype in proxy" be true though.
+   * @private
+   */
+  Module.pyproxy_new = function(ptrobj) {
+    // Technically, this leaks memory, since we're holding on to a reference
+    // to the proxy forever.  But we have that problem anyway since we don't
+    // have a destructor in Javascript to free the Python object.
+    // _pyproxy_destroy, which is a way for users to manually delete the proxy,
+    // also deletes the proxy from this set.
+    if (Module.PyProxies.hasOwnProperty(ptrobj)) {
+      return Module.PyProxies[ptrobj];
+    }
+    let flags = _pyproxy_getflags(ptrobj);
+    let cls = Module.getPyProxyClass(flags);
+    // Reflect.construct calls the constructor of Module.PyProxyClass but sets
+    // the prototype as cls.prototype. This gives us a way to dynamically create
+    // subclasses of PyProxyClass (as long as we don't need to use the "new
+    // cls(ptrobj)" syntax).
+    let target;
+    if (flags & IS_CALLABLE) {
+      // To make a callable proxy, we must call the Function constructor.
+      // In this case we are effectively subclassing Function.
+      target = Reflect.construct(Function, [], cls);
+      // Remove undesireable properties added by Function constructor. Note: we
+      // can't remove "arguments" or "caller" because they are not configurable
+      // and not writable
+      delete target.length;
+      delete target.name;
+      // prototype isn't configurable so we can't delete it but it's writable.
+      target.prototype = undefined;
+    } else {
+      target = Object.create(cls.prototype);
+    }
+    Object.defineProperty(target, "$$",
+                          {value : {ptr : ptrobj, type : 'PyProxy'}});
+    _Py_IncRef(ptrobj);
+    let proxy = new Proxy(target, Module.PyProxyHandlers);
+    Module.PyProxies[ptrobj] = proxy;
+    return proxy;
+  };
+
   function _getPtr(jsobj) {
     let ptr = jsobj.$$.ptr;
     if (ptr === null) {
@@ -53,12 +111,7 @@ JS_FILE(pyproxy_init_js, () => {0,0; /* Magic, see include_js_file.h */
   };
 
   // Static methods
-  Module.PyProxy = {
-    _getPtr,
-    isPyProxy : function(jsobj) {
-      return !!jsobj && jsobj.$$ !== undefined && jsobj.$$.type === 'PyProxy';
-    },
-  };
+  Module.PyProxy_getPtr = _getPtr;
 
   Module.callPyObject = function(ptrobj, ...jsargs) {
     let idargs = Module.hiwire.new_value(jsargs);
@@ -761,16 +814,21 @@ JS_FILE(pyproxy_init_js, () => {0,0; /* Magic, see include_js_file.h */
               "Alternatively, toJs will automatically convert the buffer " +
               "to little endian.");
         }
-        if (startByteOffset % alignment !== 0 ||
-            minByteOffset % alignment !== 0 ||
-            maxByteOffset % alignment !== 0) {
+        let numBytes = maxByteOffset - minByteOffset;
+        if (numBytes !== 0 && (startByteOffset % alignment !== 0 ||
+                               minByteOffset % alignment !== 0 ||
+                               maxByteOffset % alignment !== 0)) {
           throw new Error(
               `Buffer does not have valid alignment for a ${ArrayType.name}`);
         }
-        let numBytes = maxByteOffset - minByteOffset;
         let numEntries = numBytes / alignment;
         let offset = (startByteOffset - minByteOffset) / alignment;
-        let data = new ArrayType(HEAP8.buffer, minByteOffset, numEntries);
+        let data;
+        if (numBytes === 0) {
+          data = new ArrayType();
+        } else {
+          data = new ArrayType(HEAP8.buffer, minByteOffset, numEntries);
+        }
         for (let i of strides.keys()) {
           strides[i] /= alignment;
         }

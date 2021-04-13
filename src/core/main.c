@@ -125,6 +125,7 @@ main(int argc, char** argv)
   TRY_INIT(hiwire);
   TRY_INIT(docstring);
   TRY_INIT(js2python);
+  TRY_INIT_WITH_CORE_MODULE(python2js);
   TRY_INIT(python2js_buffer);
   TRY_INIT_WITH_CORE_MODULE(JsProxy);
   TRY_INIT_WITH_CORE_MODULE(pyproxy);
