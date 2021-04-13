@@ -6,6 +6,7 @@ import json
 from pathlib import Path
 import zipfile
 from typing import Dict, Any, Union, List, Tuple
+from pyodide import to_js
 
 from distlib import markers, util, version
 
@@ -128,7 +129,7 @@ class _PackageManager:
 
     def __init__(self):
         if IN_BROWSER:
-            self.builtin_packages = pyodide_js._module.packages.dependencies.to_py()
+            self.builtin_packages = pyodide_js._module.packages.versions.to_py()
         else:
             self.builtin_packages = {}
         self.installed_packages = {}
@@ -145,7 +146,7 @@ class _PackageManager:
 
         transaction: Dict[str, Any] = {
             "wheels": [],
-            "pyodide_packages": set(),
+            "pyodide_packages": [],
             "locked": dict(self.installed_packages),
         }
         requirement_promises = []
@@ -161,11 +162,13 @@ class _PackageManager:
         # Install built-in packages
         pyodide_packages = transaction["pyodide_packages"]
         if len(pyodide_packages):
-            # Note: branch never happens in out-of-browser testing because we
-            # report that all dependencies are empty.
-            self.installed_packages.update(dict((k, None) for k in pyodide_packages))
+            # Note: branch never happens in out-of-browser testing because in
+            # that case builtin_packages is empty.
+            self.installed_packages.update(
+                {name: ver for (name, ver) in pyodide_packages}
+            )
             wheel_promises.append(
-                asyncio.ensure_future(pyodide_js.loadPackage(list(pyodide_packages)))
+                asyncio.ensure_future(pyodide_js.loadPackage(to_js(pyodide_packages)))
             )
 
         # Now install PyPI packages
@@ -183,16 +186,20 @@ class _PackageManager:
 
         req = util.parse_requirement(requirement)
 
-        # If it's a Pyodide package, use that instead of the one on PyPI
-        if req.name in self.builtin_packages:
-            transaction["pyodide_packages"].add(req.name)
+        matcher = self.version_scheme.matcher(req.requirement)
+
+        # If there's a Pyodide package that matches the version constraint, use
+        # the Pyodide package instead of the one on PyPI
+        if req.name in self.builtin_packages and matcher.match(
+            self.builtin_packages[req.name]
+        ):
+            version = self.builtin_packages[req.name]
+            transaction["pyodide_packages"].append((req.name, version))
             return
 
         if req.marker:
             if not markers.evaluator.evaluate(req.marker, ctx):
                 return
-
-        matcher = self.version_scheme.matcher(req.requirement)
 
         # If we already have something that will work, don't
         # fetch again
