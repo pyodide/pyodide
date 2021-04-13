@@ -57,6 +57,14 @@ else:
         return result
 
 
+if IN_BROWSER:
+    from pyodide_js import loadedPackages
+else:
+
+    class loadedPackages:  # type: ignore
+        pass
+
+
 async def _get_pypi_json(pkgname):
     url = f"https://pypi.org/pypi/{pkgname}/json"
     fd = await _get_url(url)
@@ -112,6 +120,7 @@ async def _install_wheel(name, fileinfo):
     wheel = await _get_url(url)
     _validate_wheel(wheel, fileinfo)
     _extract_wheel(wheel)
+    setattr(loadedPackages, name, url)
 
 
 class _PackageManager:
@@ -155,14 +164,15 @@ class _PackageManager:
             # Note: branch never happens in out-of-browser testing because we
             # report that all dependencies are empty.
             self.installed_packages.update(dict((k, None) for k in pyodide_packages))
-            wheel_promises.append(pyodide_js.loadPackage(list(pyodide_packages)))
+            wheel_promises.append(
+                asyncio.ensure_future(pyodide_js.loadPackage(list(pyodide_packages)))
+            )
 
         # Now install PyPI packages
         for name, wheel, ver in transaction["wheels"]:
             wheel_promises.append(_install_wheel(name, wheel))
             self.installed_packages[name] = ver
         await gather(*wheel_promises)
-        return f'Installed {", ".join(self.installed_packages.keys())}'
 
     async def add_requirement(self, requirement: str, ctx, transaction):
         if requirement.endswith(".whl"):
@@ -245,8 +255,8 @@ def install(requirements: Union[str, List[str]]):
     ----------
     requirements : ``str | List[str]``
 
-        A requirement or list of requirements to install. Each requirement is a string, which should be either
-        a package name or URL to a wheel:
+        A requirement or list of requirements to install. Each requirement is a
+        string, which should be either a package name or URL to a wheel:
 
         - If the requirement ends in ``.whl`` it will be interpreted as a URL.
           The file must be a wheel named in compliance with the
@@ -260,8 +270,8 @@ def install(requirements: Union[str, List[str]]):
     -------
     ``Future``
 
-        A ``Future`` that resolves to ``None`` when all packages have
-        been downloaded and installed.
+        A ``Future`` that resolves to ``None`` when all packages have been
+        downloaded and installed.
     """
     importlib.invalidate_caches()
     return asyncio.ensure_future(PACKAGE_MANAGER.install(requirements))
