@@ -515,7 +515,7 @@ EM_JS_NUM(errcode, hiwire_call_delete_method, (JsRef idobj, JsRef idkey), {
 });
 
 EM_JS_NUM(bool, hiwire_is_pyproxy, (JsRef idobj), {
-  return Module.PyProxy.isPyProxy(Module.hiwire.get_value(idobj));
+  return Module.isPyProxy(Module.hiwire.get_value(idobj));
 });
 
 EM_JS_NUM(bool, hiwire_is_function, (JsRef idobj), {

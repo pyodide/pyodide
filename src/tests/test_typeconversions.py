@@ -621,7 +621,7 @@ def test_python2js_with_depth(selenium):
                 assert(Array.isArray(x), `i: ${i}, j: ${j}`);
                 x = x[1];
             }
-            assert(pyodide._module.PyProxy.isPyProxy(x), `i: ${i}, j: ${i}`);
+            assert(pyodide.isPyProxy(x), `i: ${i}, j: ${i}`);
         }
         """
     )
@@ -641,7 +641,7 @@ def test_python2js_with_depth(selenium):
                 assert(Array.isArray(x), `i: ${i}, j: ${j}`);
                 x = x[1];
             }
-            assert(pyodide._module.PyProxy.isPyProxy(x), `i: ${i}, j: ${i}`);
+            assert(pyodide.isPyProxy(x), `i: ${i}, j: ${i}`);
         }
         """
     )

@@ -57,8 +57,8 @@ web-based notebook environment for literate scientific computing and
 communication.
 
 Iodide is no longer maintained. If you want to use Pyodide in an interactive
-client-side notebook, see [Pyodide Notebook
-environments](https://pyodide.org/en/0.17.0a2/project/related-projects.html#notebook-environements-ides-repls).
+client-side notebook, see [Pyodide notebook
+environments](https://pyodide.org/en/0.17.0a2/project/related-projects.html#notebook-environments-ides-repls).
 
 ## Contributing
 

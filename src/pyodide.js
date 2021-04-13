@@ -387,6 +387,7 @@ globalThis.loadPyodide = async function(config = {}) {
     'loadPackage',
     'loadPackagesFromImports',
     'loadedPackages',
+    'isPyProxy',
     'pyimport',
     'runPython',
     'runPythonAsync',
@@ -441,7 +442,7 @@ globalThis.loadPyodide = async function(config = {}) {
         }
         // Have to do this case first because typeof(some_pyproxy) ===
         // "function".
-        if (Module.PyProxy.isPyProxy(value)) {
+        if (Module.isPyProxy(value)) {
           value.destroy();
           continue;
         }
@@ -710,6 +711,15 @@ globalThis.loadPyodide = async function(config = {}) {
     Module.pyodide_py.unregister_js_module(name);
   };
   // clang-format on
+
+  /**
+   * Is the argument a :any:`PyProxy`?
+   * @param jsobj {any} Object to test.
+   * @returns {bool} Is ``jsobj`` a :any:`PyProxy`?
+   */
+  Module.isPyProxy = function(jsobj) {
+    return !!jsobj && jsobj.$$ !== undefined && jsobj.$$.type === 'PyProxy';
+  };
 
   Module.locateFile = (path) => baseURL + path;
 
