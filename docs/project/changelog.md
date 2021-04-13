@@ -54,18 +54,18 @@ substitutions:
   `pyodide.globals.get('key')`. [#1367](https://github.com/pyodide/pyodide/pull/1367)
 - {{ API }} Added {any}`PyProxy.getBuffer` API to allow direct access to Python
   buffers as Javascript TypedArrays.
-  [1215](https://github.com/pyodide/pyodide/pull/1215)
+  [#1215](https://github.com/pyodide/pyodide/pull/1215)
 - {{ API }} The innermost level of a buffer converted to Javascript used to be a
   TypedArray if the buffer was contiguous and otherwise an Array. Now the
   innermost level will be a TypedArray unless the buffer format code is a '?' in
   which case it will be an Array of booleans, or if the format code is a "s" in
   which case the innermost level will be converted to a string.
-  [1376](https://github.com/pyodide/pyodide/pull/1376)
+  [#1376](https://github.com/pyodide/pyodide/pull/1376)
 - {{ Enhancement }} Javascript `BigInt`s are converted into Python `int` and
   Python `int`s larger than 2^53 are converted into `BigInt`.
-  [1407](https://github.com/pyodide/pyodide/pull/1407)
+  [#1407](https://github.com/pyodide/pyodide/pull/1407)
 - {{ API }} Added {any}`pyodide.isPyProxy` to test if an object is a `PyProxy`.
-  [1456](https://github.com/pyodide/pyodide/pull/1456)
+  [#1456](https://github.com/pyodide/pyodide/pull/1456)
 
 ### Fixed
 - {{ Fix }} getattr and dir on JsProxy now report consistent results and include all
@@ -136,13 +136,16 @@ substitutions:
 - Changed the loading method: added an async function `loadPyodide` to load
   Pyodide to use instead of `languagePluginURL` and `languagePluginLoader`. The
   change is currently backwards compatible, but the old approach is deprecated.
-  [1363](https://github.com/pyodide/pyodide/pull/1363)
+  [#1363](https://github.com/pyodide/pyodide/pull/1363)
 
 ### micropip
 
 - {{ Feature }} `micropip` now supports installing wheels from relative URLs.
   [#872](https://github.com/pyodide/pyodide/pull/872)
 - {{ API }} `micropip.install` now returns a Python `Future` instead of a Javascript `Promise`.
+  [#1324](https://github.com/pyodide/pyodide/pull/1324/)
+- {{ FIX }} {any}`micropip.install` now interacts correctly with {any}`pyodide.loadPackage`.
+  [#1457](https://github.com/pyodide/pyodide/pull/1457/)
 
 ### Build system
 
