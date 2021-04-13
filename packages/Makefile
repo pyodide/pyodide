@@ -15,7 +15,7 @@ all:
 
 update-all:
 	for pkg in $$(find . -maxdepth 1 -type d -exec basename {} \; | tail -n +2); do \
-		../bin/pyodide mkpkg "$${pkg}" --update; \
+		../bin/pyodide mkpkg "$${pkg}" --update-if-not-patched; \
 	done
 
 clean:

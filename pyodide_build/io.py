@@ -127,10 +127,12 @@ def parse_package_config(path: Path, check: bool = True) -> Dict[str, Any]:
     """
     # Import yaml here because pywasmcross needs to run in the built native
     # Python, which won't have PyYAML
-    import yaml
+    from ruamel.yaml import YAML
+
+    yaml = YAML()
 
     with open(path, "rb") as fd:
-        config = yaml.safe_load(fd)
+        config = yaml.load(fd)
 
     if check:
         check_package_config(config, file_path=path)
