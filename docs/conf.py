@@ -3,9 +3,11 @@
 
 # -- Path setup --------------------------------------------------------------
 
+import os
 import sys
 from typing import Dict, Any
 import pathlib
+import subprocess
 
 base_dir = pathlib.Path(__file__).resolve().parent.parent
 path_dirs = [
@@ -102,3 +104,14 @@ htmlhelp_basename = "Pyodidedoc"
 
 # A list of files that should not be packed into the epub file.
 epub_exclude_files = ["search.html"]
+
+if "READTHEDOCS" in os.environ:
+    env = {"PYODIDE_BASE_URL": "https://cdn.jsdelivr.net/pyodide/dev/full/"}
+    os.makedirs("_build/html", exist_ok=True)
+    res = subprocess.check_output(
+        ["make", "-C", "..", "docs/_build/html/console.html"],
+        env=env,
+        stderr=subprocess.STDOUT,
+        encoding="utf-8",
+    )
+    print(res)
