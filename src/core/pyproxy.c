@@ -772,69 +772,8 @@ finally:
   }
 }
 
-///////////////////////////////////////////////////////////////////////////////
-//
-// Javascript code
-//
-// The rest of the file is in Javascript. It would probably be better to move it
-// into a .js file.
-//
-
-/**
- * In the case that the Python object is callable, PyProxyClass inherits from
- * Function so that PyProxy objects can be callable.
- *
- * The following properties on a Python object will be shadowed in the proxy in
- * the case that the Python object is callable:
- *  - "arguments" and
- *  - "caller"
- *
- * Inheriting from Function has the unfortunate side effect that we MUST expose
- * the members "proxy.arguments" and "proxy.caller" because they are
- * nonconfigurable, nonwritable, nonenumerable own properties. They are just
- * always `null`.
- *
- * We also get the properties "length" and "name" which are configurable so we
- * delete them in the constructor. "prototype" is not configurable so we can't
- * delete it, however it *is* writable so we set it to be undefined. We must
- * still make "prototype in proxy" be true though.
- */
 EM_JS_REF(JsRef, pyproxy_new, (PyObject * ptrobj), {
-  // Technically, this leaks memory, since we're holding on to a reference
-  // to the proxy forever.  But we have that problem anyway since we don't
-  // have a destructor in Javascript to free the Python object.
-  // _pyproxy_destroy, which is a way for users to manually delete the proxy,
-  // also deletes the proxy from this set.
-  if (Module.PyProxies.hasOwnProperty(ptrobj)) {
-    return Module.hiwire.new_value(Module.PyProxies[ptrobj]);
-  }
-  let flags = _pyproxy_getflags(ptrobj);
-  let cls = Module.getPyProxyClass(flags);
-  // Reflect.construct calls the constructor of Module.PyProxyClass but sets the
-  // prototype as cls.prototype. This gives us a way to dynamically create
-  // subclasses of PyProxyClass (as long as we don't need to use the "new
-  // cls(ptrobj)" syntax).
-  let target;
-  if (flags & IS_CALLABLE) {
-    // To make a callable proxy, we must call the Function constructor.
-    // In this case we are effectively subclassing Function.
-    target = Reflect.construct(Function, [], cls);
-    // Remove undesireable properties added by Function constructor. Note: we
-    // can't remove "arguments" or "caller" because they are not configurable
-    // and not writable
-    delete target.length;
-    delete target.name;
-    // prototype isn't configurable so we can't delete it but it's writable.
-    target.prototype = undefined;
-  } else {
-    target = Object.create(cls.prototype);
-  }
-  Object.defineProperty(
-    target, "$$", { value : { ptr : ptrobj, type : 'PyProxy' } });
-  _Py_IncRef(ptrobj);
-  let proxy = new Proxy(target, Module.PyProxyHandlers);
-  Module.PyProxies[ptrobj] = proxy;
-  return Module.hiwire.new_value(proxy);
+  return Module.hiwire.new_value(Module.pyproxy_new(ptrobj));
 });
 
 EM_JS_REF(JsRef, create_once_callable, (PyObject * obj), {
@@ -935,7 +874,7 @@ create_proxy(PyObject* _mod, PyObject* obj)
   return result;
 }
 
-static PyMethodDef pyproxy_methods[] = {
+static PyMethodDef methods[] = {
   {
     "create_once_callable",
     create_once_callable_py,
@@ -956,17 +895,11 @@ int
 pyproxy_init(PyObject* core)
 {
   bool success = false;
-  int i = 0;
 
-  PyObject* _pyodide_core = NULL;
-  _pyodide_core = PyImport_ImportModule("_pyodide._core");
-  FAIL_IF_NULL(_pyodide_core);
-
-  while (pyproxy_methods[i].ml_name != NULL) {
-    FAIL_IF_MINUS_ONE(set_method_docstring(&pyproxy_methods[i], _pyodide_core));
-    i++;
-  }
-  FAIL_IF_MINUS_ONE(PyModule_AddFunctions(core, pyproxy_methods));
+  PyObject* docstring_source = PyImport_ImportModule("_pyodide._core");
+  FAIL_IF_NULL(docstring_source);
+  FAIL_IF_MINUS_ONE(
+    add_methods_and_set_docstrings(core, methods, docstring_source));
   asyncio = PyImport_ImportModule("asyncio");
   FAIL_IF_NULL(asyncio);
   FAIL_IF_MINUS_ONE(PyType_Ready(&FutureDoneCallbackType));
@@ -974,6 +907,6 @@ pyproxy_init(PyObject* core)
 
   success = true;
 finally:
-  Py_CLEAR(_pyodide_core);
-  return 0;
+  Py_CLEAR(docstring_source);
+  return success ? 0 : -1;
 }

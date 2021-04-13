@@ -1,7 +1,9 @@
 #define PY_SSIZE_T_CLEAN
 #include "Python.h"
 
+#include "docstring.h"
 #include "hiwire.h"
+#include "js2python.h"
 #include "jsproxy.h"
 #include "pyproxy.h"
 #include "python2js.h"
@@ -427,4 +429,58 @@ python2js_with_depth(PyObject* x, int depth)
     }
   }
   return result;
+}
+
+static PyObject*
+to_js(PyObject* _mod, PyObject* args)
+{
+  PyObject* obj;
+  int depth = -1;
+  if (!PyArg_ParseTuple(args, "O|i:to_js", &obj, &depth)) {
+    return NULL;
+  }
+  if (obj == Py_None || PyBool_Check(obj) || PyLong_Check(obj) ||
+      PyFloat_Check(obj) || PyUnicode_Check(obj) || JsProxy_Check(obj) ||
+      JsException_Check(obj)) {
+    // No point in converting these, it'd be dumb to proxy them so they'd just
+    // get converted back by `js2python` at the end
+    Py_INCREF(obj);
+    return obj;
+  }
+  JsRef js_result = python2js_with_depth(obj, depth);
+  PyObject* py_result;
+  if (js_result == NULL) {
+    return NULL;
+  }
+  if (hiwire_is_pyproxy(js_result)) {
+    // Oops, just created a PyProxy. Wrap it I guess?
+    py_result = JsProxy_create(js_result);
+  } else {
+    py_result = js2python(js_result);
+  }
+  hiwire_CLEAR(js_result);
+  return py_result;
+}
+
+static PyMethodDef methods[] = {
+  {
+    "to_js",
+    to_js,
+    METH_VARARGS,
+  },
+  { NULL } /* Sentinel */
+};
+
+int
+python2js_init(PyObject* core)
+{
+  bool success = false;
+  PyObject* docstring_source = PyImport_ImportModule("_pyodide._core");
+  FAIL_IF_NULL(docstring_source);
+  FAIL_IF_MINUS_ONE(
+    add_methods_and_set_docstrings(core, methods, docstring_source));
+  success = true;
+finally:
+  Py_CLEAR(docstring_source);
+  return success ? 0 : -1;
 }

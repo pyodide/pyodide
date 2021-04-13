@@ -320,7 +320,7 @@ function destroyToJsResult(x){
 }
 ```
 
-
+(type-translations-jsproxy-to-py)=
 ### Javascript to Python
 Explicit conversion of a {any}`JsProxy` into a native Python object is done with the
 {any}`JsProxy.to_py` method. By default, the `to_py` method does a recursive "deep"
