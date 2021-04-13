@@ -125,7 +125,22 @@ async def _install_wheel(name, fileinfo):
 
 
 class _PackageManager:
-    version_scheme = version.get_scheme("normalized")
+    # PEP 386 version scheme
+    # https://www.python.org/dev/peps/pep-0386/#setuptools
+    #
+    # PEP 386 is "perhaps the most widely used Python version scheme, but since
+    # it tries to be very flexible and work with a wide range of conventions, it
+    # ends up allowing a very chaotic mess of version conventions"
+    #
+    # 'adaptive' is the distlib default version scheme. It "is based on the PEP
+    # 386 scheme, but when handed a non-conforming version, automatically tries
+    # to convert it to a normalized version"
+    #
+    # According to distlib docs, 'adaptive' successfully parses the versions of
+    # 96% of pypi packages tested (23685/24891)
+    #
+    # https://distlib.readthedocs.io/en/stable/internals.html#the-version-api
+    version_scheme = version.get_scheme("adaptive")
 
     def __init__(self):
         if IN_BROWSER:
