@@ -5,6 +5,7 @@ import json
 import os
 import shutil
 import urllib.request
+import urllib.error
 import sys
 from pathlib import Path
 from typing import Dict, Tuple, Any, Optional
@@ -13,6 +14,10 @@ import warnings
 from .io import parse_package_config
 
 PACKAGES_ROOT = Path(__file__).parent.parent / "packages"
+
+
+class MkpkgFailedException(Exception):
+    pass
 
 
 def _extract_sdist(pypi_metadata: Dict[str, Any]) -> Dict:
@@ -28,7 +33,7 @@ def _extract_sdist(pypi_metadata: Dict[str, Any]) -> Dict:
         if entry["filename"].endswith(sdist_extensions):
             return entry
 
-    raise Exception(
+    raise MkpkgFailedException(
         "No sdist URL found for package %s (%s)"
         % (
             pypi_metadata["info"].get("name"),
@@ -42,8 +47,13 @@ def _get_metadata(package: str, version: Optional[str] = None) -> Tuple[Dict, Di
     version = ("/" + version) if version is not None else ""
     url = f"https://pypi.org/pypi/{package}{version}/json"
 
-    with urllib.request.urlopen(url) as fd:
-        pypi_metadata = json.load(fd)
+    try:
+        with urllib.request.urlopen(url) as fd:
+            pypi_metadata = json.load(fd)
+    except urllib.error.HTTPError as e:
+        raise MkpkgFailedException(
+            f"Failed to load metadata for {package}{version} from https://pypi.org/pypi/{package}{version}/json: {e}"
+        )
 
     sdist_metadata = _extract_sdist(pypi_metadata)
 
@@ -95,6 +105,10 @@ def warn(msg):
     warnings.warn(bcolors.WARNING + msg + bcolors.ENDC)
 
 
+def success(msg):
+    print(bcolors.OKBLUE + msg + bcolors.ENDC)
+
+
 def update_package(package: str, update_patched: bool):
     from ruamel.yaml import YAML
 
@@ -114,7 +128,7 @@ def update_package(package: str, update_patched: bool):
         print(f"{package} already up to date. Local: {local_ver} PyPi: {pypi_ver}")
         sys.exit(0)
 
-    print(f"Updating {package} from {local_ver} to {pypi_ver}.")
+    print(f"{package} is out of date: {local_ver} <= {pypi_ver}.")
     if set(yaml_content.keys()).difference(
         ("package", "source", "test", "requirements")
     ):
@@ -138,6 +152,7 @@ def update_package(package: str, update_patched: bool):
     yaml_content["package"]["version"] = pypi_metadata["info"]["version"]
     with open(PACKAGES_ROOT / package / "meta.yaml", "w") as fd:
         yaml.dump(yaml_content, fd)
+    success(f"Updated {package} from {local_ver} to {pypi_ver}.")
 
 
 def make_parser(parser):
@@ -163,14 +178,17 @@ complex things.""".strip()
 
 
 def main(args):
-    package = args.package[0]
-    if args.update:
-        update_package(package, update_patched=True)
-        return
-    if args.update_if_not_patched:
-        update_package(package, update_patched=False)
-        return
-    make_package(package, args.version)
+    try:
+        package = args.package[0]
+        if args.update:
+            update_package(package, update_patched=True)
+            return
+        if args.update_if_not_patched:
+            update_package(package, update_patched=False)
+            return
+        make_package(package, args.version)
+    except MkpkgFailedException as e:
+        abort(e.args[0])
 
 
 if __name__ == "__main__":
