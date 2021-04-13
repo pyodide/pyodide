@@ -53,28 +53,28 @@ try:
             pass
 
         def then(self, onfulfilled: Callable, onrejected: Callable) -> "Promise":
-            """The ``Promise.then`` api, wrapped to manage the lifetimes of the
+            """The ``Promise.then`` API, wrapped to manage the lifetimes of the
             handlers.
 
-            Only available if the wrapped Javascript object has a "then" method.
+            Present only if the wrapped Javascript object has a "then" method.
             Pyodide will automatically release the references to the handlers
             when the promise resolves.
             """
 
         def catch(self, onrejected: Callable) -> "Promise":
-            """The ``Promise.catch`` api, wrapped to manage the lifetimes of the
+            """The ``Promise.catch`` API, wrapped to manage the lifetimes of the
             handler.
 
-            Only available if the wrapped Javascript object has a "then" method.
+            Present only if the wrapped Javascript object has a "then" method.
             Pyodide will automatically release the references to the handler
             when the promise resolves.
             """
 
         def finally_(self, onfinally: Callable) -> "Promise":
-            """The ``Promise.finally`` api, wrapped to manage the lifetimes of
+            """The ``Promise.finally`` API, wrapped to manage the lifetimes of
             the handler.
 
-            Only available if the wrapped Javascript object has a "then" method.
+            Present only if the wrapped Javascript object has a "then" method.
             Pyodide will automatically release the references to the handler
             when the promise resolves. Note the trailing underscore in the name;
             this is needed because ``finally`` is a reserved keyword in Python.

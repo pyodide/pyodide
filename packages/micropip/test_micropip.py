@@ -170,3 +170,25 @@ def test_last_version_from_pypi():
     wheel, ver = micropip.PACKAGE_MANAGER.find_wheel(metadata, requirement)
 
     assert ver == "0.15.5"
+
+
+def test_install_different_version(selenium_standalone_micropip):
+    selenium = selenium_standalone_micropip
+    selenium.run_js(
+        """
+        await pyodide.runPythonAsync(`
+            import micropip
+            await micropip.install(
+                "https://files.pythonhosted.org/packages/89/06/2c2d3034b4d6bf22f2a4ae546d16925898658a33b4400cfb7e2c1e2871a3/pytz-2020.5-py2.py3-none-any.whl"
+            );
+        `);
+        """
+    )
+    selenium.run_js(
+        """
+        pyodide.runPython(`
+            import pytz
+            assert pytz.__version__ == "2020.5"
+        `);
+        """
+    )

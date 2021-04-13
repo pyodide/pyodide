@@ -22,15 +22,21 @@ BUILD_PATH = ROOT_PATH / "build"
 sys.path.append(str(ROOT_PATH))
 
 from pyodide_build._fixes import _selenium_is_connectable  # noqa: E402
+from pyodide_build.testing import set_webdriver_script_timeout, parse_driver_timeout
 
-try:
-    import selenium.webdriver.common.utils  # noqa: E402
 
-    # XXX: Temporary fix for ConnectionError in selenium
+def _monkeypatch_selenium():
+    try:
+        import selenium.webdriver.common.utils  # noqa: E402
 
-    selenium.webdriver.common.utils.is_connectable = _selenium_is_connectable
-except ModuleNotFoundError:
-    pass
+        # XXX: Temporary fix for ConnectionError in selenium
+
+        selenium.webdriver.common.utils.is_connectable = _selenium_is_connectable
+    except ModuleNotFoundError:
+        pass
+
+
+_monkeypatch_selenium()
 
 
 def pytest_addoption(parser):
@@ -87,6 +93,7 @@ class SeleniumWrapper:
         server_log=None,
         build_dir=None,
         load_pyodide=True,
+        script_timeout=20,
     ):
         if build_dir is None:
             build_dir = BUILD_PATH
@@ -119,7 +126,8 @@ class SeleniumWrapper:
         if load_pyodide:
             self.run_js("await loadPyodide({ indexURL : './'});")
             self.save_state()
-        self.driver.set_script_timeout(20)
+        self.script_timeout = script_timeout
+        self.driver.set_script_timeout(script_timeout)
 
     @property
     def logs(self):
@@ -138,7 +146,7 @@ class SeleniumWrapper:
             let result = pyodide.runPython({code!r});
             if(result && result.toJs){{
                 let converted_result = result.toJs();
-                if(pyodide._module.PyProxy.isPyProxy(converted_result)){{
+                if(pyodide.isPyProxy(converted_result)){{
                     converted_result = undefined;
                 }}
                 result.destroy();
@@ -154,7 +162,7 @@ class SeleniumWrapper:
             let result = await pyodide.runPythonAsync({code!r});
             if(result && result.toJs){{
                 let converted_result = result.toJs();
-                if(pyodide._module.PyProxy.isPyProxy(converted_result)){{
+                if(pyodide.isPyProxy(converted_result)){{
                     converted_result = undefined;
                 }}
                 result.destroy();
@@ -343,19 +351,25 @@ def selenium_common(request, web_server_main, load_pyodide=True):
 @pytest.fixture(params=["firefox", "chrome"], scope="function")
 def selenium_standalone(request, web_server_main):
     with selenium_common(request, web_server_main) as selenium:
-        try:
-            yield selenium
-        finally:
-            print(selenium.logs)
+        with set_webdriver_script_timeout(
+            selenium, script_timeout=parse_driver_timeout(request)
+        ):
+            try:
+                yield selenium
+            finally:
+                print(selenium.logs)
 
 
 @pytest.fixture(params=["firefox", "chrome"], scope="function")
 def selenium_webworker_standalone(request, web_server_main):
     with selenium_common(request, web_server_main, load_pyodide=False) as selenium:
-        try:
-            yield selenium
-        finally:
-            print(selenium.logs)
+        with set_webdriver_script_timeout(
+            selenium, script_timeout=parse_driver_timeout(request)
+        ):
+            try:
+                yield selenium
+            finally:
+                print(selenium.logs)
 
 
 # selenium instance cached at the module level
@@ -365,9 +379,11 @@ def selenium_module_scope(request, web_server_main):
         yield selenium
 
 
-# We want one version of this decorated as a function-scope fixture and one
-# version decorated as a context manager.
-def selenium_per_function(selenium_module_scope):
+# Hypothesis is unhappy with function scope fixtures. Instead, use the
+# module scope fixture `selenium_module_scope` and use:
+# `with selenium_context_manager(selenium_module_scope) as selenium`
+@contextlib.contextmanager
+def selenium_context_manager(selenium_module_scope):
     try:
         selenium_module_scope.clean_logs()
         yield selenium_module_scope
@@ -375,11 +391,13 @@ def selenium_per_function(selenium_module_scope):
         print(selenium_module_scope.logs)
 
 
-selenium = pytest.fixture(selenium_per_function)
-# Hypothesis is unhappy with function scope fixtures. Instead, use the
-# module scope fixture `selenium_module_scope` and use:
-# `with selenium_context_manager(selenium_module_scope) as selenium`
-selenium_context_manager = contextlib.contextmanager(selenium_per_function)
+@pytest.fixture
+def selenium(request, selenium_module_scope):
+    with selenium_context_manager(selenium_module_scope) as selenium:
+        with set_webdriver_script_timeout(
+            selenium, script_timeout=parse_driver_timeout(request)
+        ):
+            yield selenium
 
 
 @pytest.fixture(scope="session")
