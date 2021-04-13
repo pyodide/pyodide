@@ -45,10 +45,12 @@ try:
             """Construct a new instance of the Javascript object"""
 
         def to_py(self, depth: int = -1) -> Any:
-            """Convert the :class:`JsProxy` to a native Python object as best as possible.
+            """Convert the :class:`JsProxy` to a native Python object as best as
+            possible.
 
-            By default does a deep conversion, if a shallow conversion is desired, you can use ``proxy.to_py(1)``.
-            See :ref:`type-translations-jsproxy-to-py` for more information.
+            By default does a deep conversion, if a shallow conversion is
+            desired, you can use ``proxy.to_py(1)``. See
+            :ref:`type-translations-jsproxy-to-py` for more information.
             """
             pass
 
