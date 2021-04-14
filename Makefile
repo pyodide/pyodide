@@ -53,8 +53,7 @@ build/pyodide.asm.js: \
 		--preload-file src/pyodide-py/_pyodide@/lib/python$(PYMINOR)/site-packages/_pyodide \
 		--exclude-file "*__pycache__*" \
 		--exclude-file "*/test/*"		\
-		--exclude-file "*/tests/*"		\
-		--exclude-file "*.exe"
+		--exclude-file "*/tests/*"
 	date +"[%F %T] done building pyodide.asm.js."
 
 
