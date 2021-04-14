@@ -3,7 +3,7 @@ version: 2
 defaults: &defaults
   working_directory: ~/repo
   docker:
-    - image: iodide/pyodide-env:12
+    - image: pyodide/pyodide-env:13
   environment:
     - EMSDK_NUM_CORES: 4
       EMCC_CORES: 4
@@ -161,7 +161,7 @@ jobs:
       - run:
           name: test
           command: |
-            tools/pytest_wrapper.py src packages/micropip/ -v -k chrome -n 3
+            tools/pytest_wrapper.py src packages/micropip/ -v -k chrome
 
   test-packages-firefox:
     <<: *defaults

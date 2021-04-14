@@ -45,7 +45,7 @@ test__xxsubinterpreters
 test_abc
 test_abstract_numbers
 test_aifc   audioop
-test_argparse
+test_argparse  crash-chrome
 test_array
 test_asdl_parser
 test_ast

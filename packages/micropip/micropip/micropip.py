@@ -6,6 +6,7 @@ import json
 from pathlib import Path
 import zipfile
 from typing import Dict, Any, Union, List, Tuple
+from pyodide import to_js
 
 from packaging.requirements import Requirement
 
