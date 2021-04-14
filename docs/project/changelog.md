@@ -144,8 +144,12 @@ substitutions:
   [#872](https://github.com/pyodide/pyodide/pull/872)
 - {{ API }} `micropip.install` now returns a Python `Future` instead of a Javascript `Promise`.
   [#1324](https://github.com/pyodide/pyodide/pull/1324/)
-- {{ FIX }} {any}`micropip.install` now interacts correctly with {any}`pyodide.loadPackage`.
+- {{ FIX }} {any}`micropip.install` now interacts correctly with
+  {any}`pyodide.loadPackage`.
   [#1457](https://github.com/pyodide/pyodide/pull/1457/)
+- {{ FIX }} {any}`micropip.install` now handles version constraints correctly
+  even if there is a version of the package available from the Pyodide `indexURL`.
+
 
 ### Build system
 

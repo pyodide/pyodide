@@ -14,20 +14,25 @@ def test_parse_package_subset():
     assert _parse_package_subset(None) is None
     # micropip is always included
     assert _parse_package_subset("numpy,pandas") == {
-        "micropip",
-        "distlib",
-        "numpy",
+        "pyparsing",
+        "packaging",
+        "micropip" "numpy",
         "pandas",
     }
 
     # duplicates are removed
-    assert _parse_package_subset("numpy,numpy") == {"micropip", "distlib", "numpy"}
+    assert _parse_package_subset("numpy,numpy") == {
+        "pyparsing",
+        "packaging",
+        "micropip",
+        "numpy",
+    }
 
     # no empty package name included, spaces are handled
     assert _parse_package_subset("x,  a, b, c   ,,, d,,") == {
-        "micropip",
-        "distlib",
-        "x",
+        "pyparsing",
+        "packaging",
+        "micropip" "x",
         "a",
         "b",
         "c",
