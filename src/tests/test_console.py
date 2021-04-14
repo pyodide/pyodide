@@ -71,6 +71,16 @@ def test_interactive_console_streams(safe_sys_redirections):
 
     shell.push("1+1")
     assert my_stdout == "foo\nfoobar\nfoobar\n2\n"
+    assert shell.run_complete.result() == 2
+
+    my_stderr = ""
+    shell.push("raise Exception('hi')")
+    assert my_stderr.endswith("Exception: hi\n")
+    assert shell.run_complete.exception() is not None
+    my_stderr = ""
+    shell.push("1+1")
+    assert my_stderr == ""
+    assert shell.run_complete.result() == 2
 
     shell.restore_stdstreams()
 

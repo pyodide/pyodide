@@ -12,7 +12,22 @@ import ast
 # this import can fail when we are outside a browser (e.g. for tests)
 try:
     from pyodide_js import loadPackagesFromImports as _load_packages_from_imports
+    from asyncio import ensure_future
 except ImportError:
+    from asyncio import Future
+
+    def ensure_future(co):  # type: ignore
+        fut = Future()
+        try:
+            co.send(None)
+        except StopIteration as v:
+            result = v.args[0] if v.args else None
+            fut.set_result(result)
+        except BaseException as e:
+            fut.set_exception(e)
+        else:
+            raise Exception("coroutine didn't finish in one pass")
+        return fut
 
     async def _load_packages_from_imports(*args):
         pass
@@ -202,7 +217,7 @@ class InteractiveConsole(code.InteractiveConsole):
         If you need to wait for the end of the computation,
         you should await for it."""
         source = "\n".join(self.buffer)
-        self.run_complete = asyncio.ensure_future(
+        self.run_complete = ensure_future(
             self.load_packages_and_run(self.run_complete, source)
         )
 
@@ -214,8 +229,15 @@ class InteractiveConsole(code.InteractiveConsole):
             pass
         with self.stdstreams_redirections():
             await _load_packages_from_imports(source)
-            result = await eval_code_async(source, self.locals)
-            self.display(result)
+            try:
+                result = await eval_code_async(source, self.locals)
+            except BaseException as e:
+                from traceback import print_exception
+
+                print_exception(type(e), e, e.__traceback__)
+                raise e
+            else:
+                self.display(result)
             # in CPython's REPL, flush is performed
             # by input(prompt) at each new prompt ;
             # since we are not using input, we force
