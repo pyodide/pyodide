@@ -82,15 +82,12 @@ PyObject* init_dict;
  * The C code for runPythonSimple. The definition of runPythonSimple is in
  * `pyodide.js` for greater visibility.
  */
-void
+int
 run_python_simple_inner(char* code)
 {
   PyObject* result = PyRun_String(code, Py_file_input, init_dict, init_dict);
-  if (result == NULL) {
-    pythonexc2js();
-  } else {
-    Py_DECREF(result);
-  }
+  Py_XDECREF(result);
+  return result ? 0 : -1;
 }
 
 int
@@ -131,7 +128,7 @@ main(int argc, char** argv)
   TRY_INIT_WITH_CORE_MODULE(pyproxy);
   TRY_INIT(keyboard_interrupt);
 
-  PyObject* module_dict = PyImport_GetModuleDict(); // borrowed
+  PyObject* module_dict = PyImport_GetModuleDict(); /* borrowed */
   if (PyDict_SetItemString(module_dict, "_pyodide_core", core_module)) {
     FATAL_ERROR("Failed to add '_pyodide_core' module to modules dict.");
   }
