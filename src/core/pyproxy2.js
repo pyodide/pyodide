@@ -1,5 +1,18 @@
-// This file to be included from pyproxy.c
-// This uses the JS_FILE macro defined in include_js_file.h
+/**
+ * Every public Python entrypoint goes through this file! The main entrypoint is
+ * the callPyObject method, but of course one can also execute arbitrary code
+ * via the various __dundermethods__ associated to classes.
+ *
+ * The only entrypoint into Python that avoids this file is our bootstrap method
+ * runPythonSimple which is defined in main.c
+ *
+ * Any time we call into wasm, the call should be wrapped in a try catch block.
+ * This way if a Javascript error emerges from the wasm, we can escalate it to a
+ * fatal error.
+ *
+ * This file to be included from pyproxy.c This uses the JS_FILE macro defined
+ * in include_js_file.h
+ */
 // clang-format off
 JS_FILE(pyproxy_init_js, () => {0,0; /* Magic, see include_js_file.h */
   Module.PyProxies = {};
@@ -113,6 +126,9 @@ JS_FILE(pyproxy_init_js, () => {0,0; /* Magic, see include_js_file.h */
   // Static methods
   Module.PyProxy_getPtr = _getPtr;
 
+  // Now a lot of boilerplate to wrap the abstract Object protocol wrappers
+  // defined in pyproxy.c in Javascript functions.
+
   Module.callPyObject = function(ptrobj, ...jsargs) {
     let idargs = Module.hiwire.new_value(jsargs);
     let idresult;
@@ -120,17 +136,13 @@ JS_FILE(pyproxy_init_js, () => {0,0; /* Magic, see include_js_file.h */
       idresult = __pyproxy_apply(ptrobj, idargs);
     } catch (e) {
       Module.fatal_error(e);
-    } finally {
-      Module.hiwire.decref(idargs);
     }
+    Module.hiwire.decref(idargs);
     if (idresult === 0) {
       _pythonexc2js();
     }
     return Module.hiwire.pop_value(idresult);
   };
-
-  // Now a lot of boilerplate to wrap the abstract Object protocol wrappers
-  // above in Javascript functions.
 
   Module.PyProxyClass = class {
     constructor() { throw new TypeError('PyProxy is not a constructor'); }
@@ -180,8 +192,16 @@ JS_FILE(pyproxy_init_js, () => {0,0; /* Magic, see include_js_file.h */
      */
     destroy() {
       let ptrobj = _getPtr(this);
-      __pyproxy_destroy(ptrobj);
+      // Maybe the destructor will calls Javascript code that will somehow try
+      // to use this proxy. Mark it deleted before decrementing reference count
+      // just in case!
       this.$$.ptr = null;
+      delete Module.PyProxies[ptrobj];
+      try {
+        _Py_DecRef(ptrobj);
+      } catch (e) {
+        Module.fatal_error(e);
+      }
     }
     /**
      * Converts the ``PyProxy`` into a Javascript object as best as possible. By
@@ -256,9 +276,8 @@ JS_FILE(pyproxy_init_js, () => {0,0; /* Magic, see include_js_file.h */
         idresult = __pyproxy_getitem(ptrobj, idkey);
       } catch (e) {
         Module.fatal_error(e);
-      } finally {
-        Module.hiwire.decref(idkey);
       }
+      Module.hiwire.decref(idkey);
       if (idresult === 0) {
         if (Module._PyErr_Occurred()) {
           _pythonexc2js();
@@ -290,10 +309,9 @@ JS_FILE(pyproxy_init_js, () => {0,0; /* Magic, see include_js_file.h */
         errcode = __pyproxy_setitem(ptrobj, idkey, idval);
       } catch (e) {
         Module.fatal_error(e);
-      } finally {
-        Module.hiwire.decref(idkey);
-        Module.hiwire.decref(idval);
       }
+      Module.hiwire.decref(idkey);
+      Module.hiwire.decref(idval);
       if (errcode === -1) {
         _pythonexc2js();
       }
@@ -313,9 +331,8 @@ JS_FILE(pyproxy_init_js, () => {0,0; /* Magic, see include_js_file.h */
         errcode = __pyproxy_delitem(ptrobj, idkey);
       } catch (e) {
         Module.fatal_error(e);
-      } finally {
-        Module.hiwire.decref(idkey);
       }
+      Module.hiwire.decref(idkey);
       if (errcode === -1) {
         _pythonexc2js();
       }
@@ -341,9 +358,8 @@ JS_FILE(pyproxy_init_js, () => {0,0; /* Magic, see include_js_file.h */
         result = __pyproxy_contains(ptrobj, idkey);
       } catch (e) {
         Module.fatal_error(e);
-      } finally {
-        Module.hiwire.decref(idkey);
       }
+      Module.hiwire.decref(idkey);
       if (result === -1) {
         _pythonexc2js();
       }
@@ -351,6 +367,7 @@ JS_FILE(pyproxy_init_js, () => {0,0; /* Magic, see include_js_file.h */
     },
   };
 
+  class TempError extends Error {};
   // Controlled by IS_ITERABLE, appears for any object with __iter__ or tp_iter,
   // unless they are iterators. See: https://docs.python.org/3/c-api/iter.html
   // https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Iteration_protocols
@@ -369,18 +386,26 @@ JS_FILE(pyproxy_init_js, () => {0,0; /* Magic, see include_js_file.h */
      * @returns {Iterator} An iterator for the proxied Python object.
      */
     [Symbol.iterator] : function*() {
-      let iterptr = _PyObject_GetIter(_getPtr(this));
-      if (iterptr === 0) {
-        pythonexc2js();
+      try {
+        let iterptr = _PyObject_GetIter(_getPtr(this));
+        if (iterptr === 0) {
+          throw new TempError();
+        }
+        let item;
+        while ((item = __pyproxy_iter_next(iterptr))) {
+          yield Module.hiwire.pop_value(item);
+        }
+        _Py_DecRef(iterptr);
+        if (_PyErr_Occurred()) {
+          throw new TempError();
+        }
+      } catch (e) {
+        if (e instanceof TempError) {
+          _pythonexc2js();
+        } else {
+          Module.fatal_error(e);
+        }
       }
-      let item;
-      while ((item = __pyproxy_iter_next(iterptr))) {
-        yield Module.hiwire.pop_value(item);
-      }
-      if (_PyErr_Occurred()) {
-        pythonexc2js();
-      }
-      _Py_DecRef(iterptr);
     }
   };
 
@@ -412,22 +437,20 @@ JS_FILE(pyproxy_init_js, () => {0,0; /* Magic, see include_js_file.h */
       // Note: arg is optional, if arg is not supplied, it will be undefined
       // which gets converted to "Py_None". This is as intended.
       let idarg = Module.hiwire.new_value(arg);
+      let done;
       try {
         idresult = __pyproxyGen_Send(_getPtr(this), idarg);
+        done = idresult === 0;
+        if (done) {
+          idresult = __pyproxyGen_FetchStopIterationValue();
+        }
       } catch (e) {
         Module.fatal_error(e);
       } finally {
         Module.hiwire.decref(idarg);
       }
-
-      let done = false;
-      if (idresult === 0) {
-        idresult = __pyproxyGen_FetchStopIterationValue();
-        if (idresult) {
-          done = true;
-        } else {
-          _pythonexc2js();
-        }
+      if (done && idresult === 0) {
+        _pythonexc2js();
       }
       let value = Module.hiwire.pop_value(idresult);
       return {done, value};
@@ -446,9 +469,8 @@ JS_FILE(pyproxy_init_js, () => {0,0; /* Magic, see include_js_file.h */
       result = __pyproxy_hasattr(ptrobj, idkey);
     } catch (e) {
       Module.fatal_error(e);
-    } finally {
-      Module.hiwire.decref(idkey);
     }
+    Module.hiwire.decref(idkey);
     if (result === -1) {
       _pythonexc2js();
     }
@@ -466,9 +488,8 @@ JS_FILE(pyproxy_init_js, () => {0,0; /* Magic, see include_js_file.h */
       idresult = __pyproxy_getattr(ptrobj, idkey);
     } catch (e) {
       Module.fatal_error(e);
-    } finally {
-      Module.hiwire.decref(idkey);
     }
+    Module.hiwire.decref(idkey);
     if (idresult === 0) {
       if (_PyErr_Occurred()) {
         _pythonexc2js();
@@ -486,10 +507,9 @@ JS_FILE(pyproxy_init_js, () => {0,0; /* Magic, see include_js_file.h */
       errcode = __pyproxy_setattr(ptrobj, idkey, idval);
     } catch (e) {
       Module.fatal_error(e);
-    } finally {
-      Module.hiwire.decref(idkey);
-      Module.hiwire.decref(idval);
     }
+    Module.hiwire.decref(idkey);
+    Module.hiwire.decref(idval);
     if (errcode === -1) {
       _pythonexc2js();
     }
@@ -503,9 +523,8 @@ JS_FILE(pyproxy_init_js, () => {0,0; /* Magic, see include_js_file.h */
       errcode = __pyproxy_delattr(ptrobj, idkey);
     } catch (e) {
       Module.fatal_error(e);
-    } finally {
-      Module.hiwire.decref(idkey);
     }
+    Module.hiwire.decref(idkey);
     if (errcode === -1) {
       _pythonexc2js();
     }
@@ -595,6 +614,9 @@ JS_FILE(pyproxy_init_js, () => {0,0; /* Magic, see include_js_file.h */
       } catch (e) {
         Module.fatal_error(e);
       }
+      if (idresult === 0) {
+        _pythonexc2js();
+      }
       let result = Module.hiwire.pop_value(idresult);
       result.push(...Reflect.ownKeys(jsobj));
       return result;
@@ -618,27 +640,27 @@ JS_FILE(pyproxy_init_js, () => {0,0; /* Magic, see include_js_file.h */
      * @private
      */
     _ensure_future : function() {
-      let resolve_handle_id = 0;
-      let reject_handle_id = 0;
+      let ptrobj = _getPtr(this);
       let resolveHandle;
       let rejectHandle;
-      let promise;
+      let promise = new Promise((resolve, reject) => {
+        resolveHandle = resolve;
+        rejectHandle = reject;
+      });
+      let resolve_handle_id = Module.hiwire.new_value(resolveHandle);
+      let reject_handle_id = Module.hiwire.new_value(rejectHandle);
+      let errcode;
       try {
-        promise = new Promise((resolve, reject) => {
-          resolveHandle = resolve;
-          rejectHandle = reject;
-        });
-        resolve_handle_id = Module.hiwire.new_value(resolveHandle);
-        reject_handle_id = Module.hiwire.new_value(rejectHandle);
-        let ptrobj = _getPtr(this);
-        let errcode = __pyproxy_ensure_future(ptrobj, resolve_handle_id,
-                                              reject_handle_id);
-        if (errcode === -1) {
-          _pythonexc2js();
-        }
+        errcode = __pyproxy_ensure_future(ptrobj, resolve_handle_id,
+                                          reject_handle_id);
+      } catch (e) {
+        Module.fatal_error(e);
       } finally {
-        Module.hiwire.decref(resolve_handle_id);
         Module.hiwire.decref(reject_handle_id);
+        Module.hiwire.decref(resolve_handle_id);
+      }
+      if (errcode === -1) {
+        _pythonexc2js();
       }
       return promise;
     },
@@ -771,9 +793,14 @@ JS_FILE(pyproxy_init_js, () => {0,0; /* Magic, see include_js_file.h */
         }
       }
       let this_ptr = _getPtr(this);
-      let buffer_struct_ptr = __pyproxy_get_buffer(this_ptr);
+      let buffer_struct_ptr;
+      try {
+        buffer_struct_ptr = __pyproxy_get_buffer(this_ptr);
+      } catch (e) {
+        Module.fatal_error(e);
+      }
       if (buffer_struct_ptr === 0) {
-        throw new Error("Failed");
+        _pythonexc2js();
       }
 
       // This has to match the order of the fields in buffer_struct
@@ -794,7 +821,11 @@ JS_FILE(pyproxy_init_js, () => {0,0; /* Magic, see include_js_file.h */
       let f_contiguous = !!HEAP32[cur_ptr++];
 
       let format = UTF8ToString(format_ptr);
-      _PyMem_Free(buffer_struct_ptr);
+      try {
+        _PyMem_Free(buffer_struct_ptr);
+      } catch (e) {
+        Module.fatal_error(e);
+      }
 
       let success = false;
       try {
@@ -855,8 +886,12 @@ JS_FILE(pyproxy_init_js, () => {0,0; /* Magic, see include_js_file.h */
         // clang-format on
       } finally {
         if (!success) {
-          _PyBuffer_Release(view_ptr);
-          _PyMem_Free(view_ptr);
+          try {
+            _PyBuffer_Release(view_ptr);
+            _PyMem_Free(view_ptr);
+          } catch (e) {
+            Module.fatal_error(e);
+          }
         }
       }
     }
@@ -1028,8 +1063,12 @@ JS_FILE(pyproxy_init_js, () => {0,0; /* Magic, see include_js_file.h */
       if (this._released) {
         return;
       }
-      _PyBuffer_Release(this._view_ptr);
-      _PyMem_Free(this._view_ptr);
+      try {
+        _PyBuffer_Release(this._view_ptr);
+        _PyMem_Free(this._view_ptr);
+      } catch (e) {
+        Module.fatal_error(e);
+      }
       this._released = true;
       this.data = null;
     }
