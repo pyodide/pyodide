@@ -27,4 +27,7 @@ python2js(PyObject* x);
 JsRef
 python2js_with_depth(PyObject* x, int depth);
 
+int
+python2js_init(PyObject* core);
+
 #endif /* PYTHON2JS_H */

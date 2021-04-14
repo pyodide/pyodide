@@ -1,0 +1,35 @@
+From 2b49ba503a0fd0be14e71ea831c06503b543ecb0 Mon Sep 17 00:00:00 2001
+From: Sam Clegg <sbc@chromium.org>
+Date: Mon, 12 Apr 2021 09:27:04 -0700
+Subject: [PATCH] Update upstream URL for libjpeg. NFC (#13869)
+
+The old URL seems to be generating `Forbidden!`.
+
+I wonder if we should start maintaining our own mirror to avoid
+this kind of thing.
+---
+ tools/ports/libjpeg.py | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/emsdk/upstream/emscripten/tools/ports/libjpeg.py b/emsdk/upstream/emscripten/tools/ports/libjpeg.py
+index f0deb7f4a7d..563ef7fd09f 100644
+--- a/emsdk/upstream/emscripten/tools/ports/libjpeg.py
++++ b/emsdk/upstream/emscripten/tools/ports/libjpeg.py
+@@ -8,7 +8,7 @@
+ import logging
+ 
+ VERSION = '9c'
+-HASH = '2b581c60ae401a79bbbe748ff2deeda5acd50bfd2ea22e5926e36d34b9ebcffb6580b0ff48e972c1441583e30e21e1ea821ca0423f9c67ce08a31dffabdbe6b7'
++HASH = 'b2affe9a1688bd49fc033f4682c4a242d4ee612f1affaef532f5adcb4602efc4433c4a52a4b3d69e7440ff1f6413b1b041b419bc90efd6d697999961a9a6afb7'
+ 
+ 
+ def needed(settings):
+@@ -16,7 +16,7 @@ def needed(settings):
+ 
+ 
+ def get(ports, settings, shared):
+-  ports.fetch_project('libjpeg', 'https://dl.bintray.com/homebrew/mirror/jpeg-9c.tar.gz', 'jpeg-9c', sha512hash=HASH)
++  ports.fetch_project('libjpeg', 'https://storage.googleapis.com/webassembly/emscripten-ports/jpegsrc.v9c.tar.gz', 'jpeg-9c', sha512hash=HASH)
+ 
+   def create(final):
+     logging.info('building port: libjpeg')
