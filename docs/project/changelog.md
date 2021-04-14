@@ -180,6 +180,7 @@ substitutions:
   [#821](https://github.com/pyodide/pyodide/issues/821) and
   [#1160](https://github.com/pyodide/pyodide/issues/1160)
 - {{ Enhancement }} Support top-level await in the console
+  [#1459](https://github.com/pyodide/pyodide/issues/1459)
 
 ### Packages
 
