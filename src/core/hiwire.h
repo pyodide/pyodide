@@ -60,6 +60,14 @@ int
 hiwire_init();
 
 /**
+ * Convert a string of hexadecimal digits to a Number or BigInt depending on
+ * whether it is less than MAX_SAFE_INTEGER or not. The string is assumed to
+ * begin with an optional sign followed by 0x followed by one or more digits.
+ */
+JsRef
+hiwire_int_from_hex(const char* s);
+
+/**
  * Increase the reference count on an object.
  *
  * Returns: The new reference
@@ -134,105 +142,6 @@ hiwire_string_utf8(const char* ptr);
  */
 JsRef
 hiwire_string_ascii(const char* ptr);
-
-/**
- * Create a new Javascript Uint8ClampedArray, given a pointer to a buffer and a
- * length, in bytes.
- *
- * The array's data is not copied.
- *
- * Returns: New reference
- */
-JsRef
-hiwire_bytes(char* ptr, int len);
-
-/**
- * Create a new Javascript Int8Array, given a pointer to a buffer and a
- * length, in bytes.
- *
- * The array's data is not copied.
- *
- * Returns: New reference
- */
-JsRef
-hiwire_int8array(i8* ptr, int len);
-
-/**
- * Create a new Javascript Uint8Array, given a pointer to a buffer and a
- * length, in bytes.
- *
- * The array's data is not copied.
- *
- * Returns: New reference
- */
-JsRef
-hiwire_uint8array(u8* ptr, int len);
-
-/**
- * Create a new Javascript Int16Array, given a pointer to a buffer and a
- * length, in bytes.
- *
- * The array's data is not copied.
- *
- * Returns: New reference
- */
-JsRef
-hiwire_int16array(i16* ptr, int len);
-
-/**
- * Create a new Javascript Uint16Array, given a pointer to a buffer and a
- * length, in bytes.
- *
- * The array's data is not copied.
- *
- * Returns: New reference
- */
-JsRef
-hiwire_uint16array(u16* ptr, int len);
-
-/**
- * Create a new Javascript Int32Array, given a pointer to a buffer and a
- * length, in bytes.
- *
- * The array's data is not copied.
- *
- * Returns: New reference
- */
-JsRef
-hiwire_int32array(i32* ptr, int len);
-
-/**
- * Create a new Javascript Uint32Array, given a pointer to a buffer and a
- * length, in bytes.
- *
- * The array's data is not copied.
- *
- * Returns: New reference
- */
-JsRef
-hiwire_uint32array(u32* ptr, int len);
-
-/**
- * Create a new Javascript Float32Array, given a pointer to a buffer and a
- * length, in bytes.
- *
- * The array's data is not copied.
- *
- * Returns: New reference
- */
-JsRef
-hiwire_float32array(f32* ptr, int len);
-
-/**
- * Create a new Javascript Float64Array, given a pointer to a buffer and a
- * length, in bytes.
- *
- * The array's data is not copied.
- *
- * Returns: New reference
- */
-JsRef
-hiwire_float64array(f64* ptr, int len);
 
 /**
  * Create a new Javascript boolean value.

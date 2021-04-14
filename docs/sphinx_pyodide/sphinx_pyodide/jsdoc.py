@@ -1,5 +1,5 @@
 from docutils import nodes
-from docutils.parsers.rst import Directive, Parser as RstParser
+from docutils.parsers.rst import Directive, Parser as RstParser, directives
 from docutils.statemachine import StringList
 from docutils.utils import new_document
 
@@ -10,6 +10,7 @@ from sphinx import addnodes
 from sphinx.util import rst
 from sphinx.util.docutils import switch_source_input
 from sphinx.ext.autosummary import autosummary_table, extract_summary
+from sphinx.domains.javascript import JSCallable, JavaScriptDomain
 
 from sphinx_js.jsdoc import Analyzer as JsAnalyzer
 from sphinx_js.ir import Class, Function
@@ -19,6 +20,21 @@ from sphinx_js.renderers import (
     AutoAttributeRenderer,
     AutoClassRenderer,
 )
+
+
+class JSFuncMaybeAsync(JSCallable):
+    option_spec = {
+        **JSCallable.option_spec,
+        "async": directives.flag,
+    }
+
+    def handle_signature(self, sig, signode):
+        if "async" in self.options:
+            self.display_prefix = "async"
+        return super().handle_signature(sig, signode)
+
+
+JavaScriptDomain.directives["function"] = JSFuncMaybeAsync
 
 
 class PyodideAnalyzer:
@@ -85,11 +101,14 @@ class PyodideAnalyzer:
             if key[0] == "pyproxy.":
                 items["PyProxy"] += group
 
+        from operator import itemgetter
+
         for key, value in items.items():
-            for json in value:
+            for json in sorted(value, key=itemgetter("name")):
                 if json.get("access", None) == "private":
                     continue
                 obj = self.get_object_from_json(json)
+                obj.async_ = json.get("async", False)
                 if isinstance(obj, Class):
                     # sphinx-jsdoc messes up array types. Fix them.
                     for x in obj.members:
@@ -121,9 +140,20 @@ def get_jsdoc_content_directive(app):
                 renderer = AutoClassRenderer
             else:
                 renderer = AutoAttributeRenderer
-            return renderer(
+            rst = renderer(
                 self, app, arguments=["dummy"], options={"members": ["*"]}
             ).rst([obj.name], obj, use_short_name=False)
+            if obj.async_:
+                rst = self.add_async_option_to_rst(rst)
+            return rst
+
+        def add_async_option_to_rst(self, rst):
+            rst_lines = rst.split("\n")
+            for i, line in enumerate(rst_lines):
+                if line.startswith(".."):
+                    break
+            rst_lines.insert(i + 1, "   :async:")
+            return "\n".join(rst_lines)
 
         def get_rst_for_group(self, objects):
             return [self.get_rst(obj) for obj in objects]
@@ -211,13 +241,14 @@ def get_jsdoc_summary_directive(app):
 
             The output is designed to be input to format_table. The link name
             needs to be set up so that :any:`link_name` makes a link to the
-            actual api docs for this object.
+            actual API docs for this object.
             """
             sig = self.get_sig(obj)
             display_name = obj.name
+            prefix = "*async* " if obj.async_ else ""
             summary = self.extract_summary(obj.description)
             link_name = pkgname + "." + display_name
-            return (display_name, sig, summary, link_name)
+            return (prefix, display_name, sig, summary, link_name)
 
         def get_summary_table(self, pkgname, group):
             """Get the data for a summary table. Return value is set up to be an
@@ -266,17 +297,18 @@ def get_jsdoc_summary_directive(app):
                         row.append(nodes.entry("", node))
                 body.append(row)
 
-            for name, sig, summary, real_name in items:
+            for prefix, name, sig, summary, real_name in items:
                 qualifier = "any"  # <== Only thing changed from autosummary version
                 if "nosignatures" not in self.options:
-                    col1 = ":%s:`%s <%s>`\\ %s" % (
+                    col1 = "%s:%s:`%s <%s>`\\ %s" % (
+                        prefix,
                         qualifier,
                         name,
                         real_name,
                         rst.escape(sig),
                     )
                 else:
-                    col1 = ":%s:`%s <%s>`" % (qualifier, name, real_name)
+                    col1 = "%s:%s:`%s <%s>`" % (prefix, qualifier, name, real_name)
                 col2 = summary
                 append_row(col1, col2)
 

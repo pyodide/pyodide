@@ -101,7 +101,7 @@ if platform.system() == 'Emscripten':
 This however will not work at build time (i.e. in a `setup.py`) due to the way
 the Pyodide build system works. It first compiles packages with the host compiler
 (e.g. gcc) and then re-runs the compilation commands with emsdk. So the `setup.py` is
-never run inside the Pyodide environement.
+never run inside the Pyodide environment.
 
 To detect Pyodide, **at build time** use,
 ```python
@@ -143,4 +143,27 @@ from my_js_module.submodule import h, c
 assert my_js_module.f(7) == 50
 assert h(9) == 80
 assert c == 2
+```
+## How can I send a Python object from my server to Pyodide?
+
+The best way to do this is with pickle. If the version of Python used in the
+server exactly matches the version of Python used in the client, then objects
+that can be successfully pickled can be sent to the client and unpickled in
+Pyodide. If the versions of Python are different then for instance sending AST
+is unlikely to work since there are breaking changes to Python AST in most
+Python minor versions.
+
+Similarly when pickling Python objects defined in a Python package, the package
+version needs to match exactly between the server and pyodide.
+
+Generally, pickles are portable between architectures (here amd64 and wasm32).
+The rare cases when they are not portable, for instance currently tree based
+models in scikit-learn, can be considered as a bug in the upstream library.
+
+```{admonition} Security Issues with pickle
+:class: warning
+
+Unpickling data is similar to `eval`. On any public-facing server it is a really
+bad idea to unpickle any data sent from the client. For sending data from client
+to server, try some other serialization format like JSON.
 ```
