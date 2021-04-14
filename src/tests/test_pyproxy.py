@@ -232,6 +232,25 @@ def test_pyproxy_get_buffer(selenium):
     )
 
 
+def test_get_empty_buffer(selenium):
+    """Previously empty buffers would raise alignment errors
+
+    This is because when Python makes an empty buffer, apparently the pointer
+    field is allowed to contain random garbage, which in particular won't be aligned.
+    """
+    selenium.run_js(
+        """
+        let a = pyodide.runPython(`
+            from array import array
+            array("Q")
+        `);
+        let b = a.getBuffer();
+        b.release();
+        a.destroy();
+        """
+    )
+
+
 @pytest.mark.parametrize(
     "array_type",
     [

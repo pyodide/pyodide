@@ -2,7 +2,7 @@ sphinx
 sphinx_book_theme
 myst-parser==0.13.3
 sphinxcontrib-napoleon
-distlib   # required by micropip
+packaging   # required by micropip
 sphinx-js==3.1
 autodocsumm
 docutils==0.16

@@ -8,7 +8,7 @@ import functools
 def _parse_package_subset(query: Optional[str]) -> Optional[Set[str]]:
     """Parse the list of packages specified with PYODIDE_PACKAGES env var.
 
-    Also add the list of mandatory packages: ['micropip', 'distlib']
+    Also add the list of mandatory packages: ["pyparsing", "packaging", "micropip"]
 
     Returns:
       a set of package names to build or None.
@@ -16,7 +16,7 @@ def _parse_package_subset(query: Optional[str]) -> Optional[Set[str]]:
     if query is None:
         return None
     packages = {el.strip() for el in query.split(",")}
-    packages.update(["micropip", "distlib"])
+    packages.update(["pyparsing", "packaging", "micropip"])
     packages.discard("")
     return packages
 

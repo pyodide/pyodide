@@ -110,6 +110,19 @@ class SeleniumWrapper:
             )
         self.driver.get(f"http://{server_hostname}:{server_port}/test.html")
         self.run_js("Error.stackTraceLimit = Infinity;", pyodide_checks=False)
+        self.run_js(
+            """
+            window.assert = function assert(cb, message=""){
+                if(message !== ""){
+                    message = "\\n" + message;
+                }
+                if(cb() !== true){
+                    throw new Error(`Assertion failed: ${cb.toString().slice(6)}${message}`);
+                }
+            };
+            """,
+            pyodide_checks=False,
+        )
         if load_pyodide:
             self.run_js("await loadPyodide({ indexURL : './'});")
             self.save_state()
@@ -133,7 +146,7 @@ class SeleniumWrapper:
             let result = pyodide.runPython({code!r});
             if(result && result.toJs){{
                 let converted_result = result.toJs();
-                if(pyodide._module.PyProxy.isPyProxy(converted_result)){{
+                if(pyodide.isPyProxy(converted_result)){{
                     converted_result = undefined;
                 }}
                 result.destroy();
@@ -149,7 +162,7 @@ class SeleniumWrapper:
             let result = await pyodide.runPythonAsync({code!r});
             if(result && result.toJs){{
                 let converted_result = result.toJs();
-                if(pyodide._module.PyProxy.isPyProxy(converted_result)){{
+                if(pyodide.isPyProxy(converted_result)){{
                     converted_result = undefined;
                 }}
                 result.destroy();

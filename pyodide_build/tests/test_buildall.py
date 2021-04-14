@@ -12,7 +12,13 @@ PACKAGES_DIR = (Path(__file__) / ".." / ".." / ".." / "packages").resolve()
 def test_generate_dependency_graph():
     pkg_map = buildall.generate_dependency_graph(PACKAGES_DIR, "beautifulsoup4")
 
-    assert set(pkg_map.keys()) == {"distlib", "soupsieve", "beautifulsoup4", "micropip"}
+    assert set(pkg_map.keys()) == {
+        "packaging",
+        "pyparsing",
+        "soupsieve",
+        "beautifulsoup4",
+        "micropip",
+    }
     assert pkg_map["soupsieve"].dependencies == []
     assert pkg_map["soupsieve"].dependents == {"beautifulsoup4"}
     assert pkg_map["beautifulsoup4"].dependencies == ["soupsieve"]
@@ -35,7 +41,8 @@ def test_build_dependencies(n_jobs, monkeypatch):
     buildall.build_from_graph(pkg_map, Path("."), Args(n_jobs=n_jobs))
 
     assert set(build_list) == {
-        "distlib",
+        "packaging",
+        "pyparsing",
         "soupsieve",
         "beautifulsoup4",
         "micropip",
@@ -49,7 +56,8 @@ def test_build_dependencies(n_jobs, monkeypatch):
         "libiconv",
         "six",
     }
-    assert build_list.index("distlib") < build_list.index("micropip")
+    assert build_list.index("pyparsing") < build_list.index("packaging")
+    assert build_list.index("packaging") < build_list.index("micropip")
     assert build_list.index("soupsieve") < build_list.index("beautifulsoup4")
 
 
