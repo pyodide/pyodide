@@ -45,7 +45,12 @@
             for( const c of command.split('\n') ) {
                 const prompt = pyconsole.push(c) ? ps2 : ps1;
                 term.set_prompt(prompt);
-                await pyconsole.run_complete;
+                let run_complete = pyconsole.run_complete;
+                try {
+                  let r = await run_complete;
+                  r.destroy();
+                } catch(_){ }
+                run_complete.destroy();
             }
             term.resume();
         }
