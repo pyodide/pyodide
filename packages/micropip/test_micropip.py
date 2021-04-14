@@ -186,7 +186,29 @@ def test_install_different_version(selenium_standalone_micropip):
     )
     selenium.run_js(
         """
-        pyodide.runPython(`
+        await pyodide.runPythonAsync(`
+            import pytz
+            assert pytz.__version__ == "2020.5"
+        `);
+        """
+    )
+
+
+def test_install_different_version2(selenium_standalone_micropip):
+    selenium = selenium_standalone_micropip
+    selenium.run_js(
+        """
+        await pyodide.runPythonAsync(`
+            import micropip
+            await micropip.install(
+                "pytz == 2020.5"
+            );
+        `);
+        """
+    )
+    selenium.run_js(
+        """
+        await pyodide.runPythonAsync(`
             import pytz
             assert pytz.__version__ == "2020.5"
         `);
