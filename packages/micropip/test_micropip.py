@@ -140,20 +140,10 @@ def test_install_custom_relative_url(selenium_standalone_micropip):
 def test_last_version_from_pypi():
     pytest.importorskip("distlib")
     import micropip
-
-    class Namespace:
-        def __init__(self, **entries):
-            self.__dict__.update(entries)
+    from packaging.requirements import Requirement
 
     # requirement as returned by distlib.util.parse_requirement
-    requirement = Namespace(
-        constraints=None,
-        extras=None,
-        marker=None,
-        name="dummy_module",
-        requirement="dummy_module",
-        url=None,
-    )
+    requirement = Requirement("dummy_module")
 
     # available versions
     versions = ["0.0.1", "0.15.5", "0.9.1"]
@@ -169,7 +159,7 @@ def test_last_version_from_pypi():
     # get version number from find_wheel
     wheel, ver = micropip.PACKAGE_MANAGER.find_wheel(metadata, requirement)
 
-    assert ver == "0.15.5"
+    assert str(ver) == "0.15.5"
 
 
 def test_install_different_version(selenium_standalone_micropip):
