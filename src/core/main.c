@@ -51,6 +51,7 @@ initialize_python()
   FAIL_IF_STATUS_EXCEPTION(status);
   config.write_bytecode = false;
   config.install_signal_handlers = false;
+  config.verbose = true;
   status = Py_InitializeFromConfig(&config);
   FAIL_IF_STATUS_EXCEPTION(status);
 

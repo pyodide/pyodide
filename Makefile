@@ -52,7 +52,9 @@ build/pyodide.asm.js: \
 		--preload-file src/pyodide-py/pyodide@/lib/python$(PYMINOR)/site-packages/pyodide \
 		--preload-file src/pyodide-py/_pyodide@/lib/python$(PYMINOR)/site-packages/_pyodide \
 		--exclude-file "*__pycache__*" \
-		--exclude-file "*/test/*"
+		--exclude-file "*/test/*"		\
+		--exclude-file "*/tests/*"		\
+		--exclude-file "*.exe"
 	date +"[%F %T] done building pyodide.asm.js."
 
 
@@ -143,7 +145,6 @@ $(UGLIFYJS): emsdk/emsdk/.complete
 $(CPYTHONLIB): emsdk/emsdk/.complete $(PYODIDE_EMCC) $(PYODIDE_CXX)
 	date +"[%F %T] Building cpython..."
 	make -C $(CPYTHONROOT)
-	find $(CPYTHONLIB) -name *.exe -delete
 	date +"[%F %T] done building cpython..."
 
 build/packages.json: FORCE
