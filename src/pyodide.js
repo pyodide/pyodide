@@ -318,7 +318,7 @@ globalThis.loadPyodide = async function(config = {}) {
       }
     }
     let dynamicLoadHandler = {
-      get : function(obj, prop) {
+      get(obj, prop) {
         if (prop === 'handle') {
           return function(bytes, name) {
             obj[prop].apply(obj, arguments);

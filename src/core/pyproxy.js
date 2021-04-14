@@ -237,6 +237,44 @@ JS_FILE(pyproxy_init_js, () => {0,0; /* Magic, see include_js_file.h */
     }
   };
 
+  function convertKeyArgs(args) {
+    let result = [];
+    let success = false;
+    try {
+      for (let arg of args) {
+        let argkey = Module.hiwire.new_value(arg);
+        let pykey;
+        if (Array.isArray(arg)) {
+          pykey = Module._hiwire_iterable_to_list(argkey);
+        } else {
+          pykey = Module.js2python(argkey);
+        }
+        Module.hiwire.decref(argkey);
+        if (pykey === 0) {
+          _pythonexc2js();
+        }
+        result.push(pykey);
+      }
+      let pyresult;
+      if (result.length > 1) {
+        pyresult = _PyTuple_New(result.length);
+        for (let [i, arg] of result.entries()) {
+          _PyTuple_SetItem(pyresult, i, arg);
+        }
+      } else {
+        pyresult = result[0];
+      }
+      success = true;
+      return pyresult;
+    } finally {
+      if (!success) {
+        for (let x of result) {
+          _Py_DecRef(x);
+        }
+      }
+    }
+  }
+
   // Controlled by HAS_GET, appears for any class with __getitem__,
   // mp_subscript, or sq_item methods
   Module.PyProxyGetItemMethods = {
@@ -248,17 +286,16 @@ JS_FILE(pyproxy_init_js, () => {0,0; /* Magic, see include_js_file.h */
      * @param {any} key The key to look up.
      * @returns The corresponding value.
      */
-    get : function(key) {
+    get(...args) {
       let ptrobj = _getPtr(this);
-      let idkey = Module.hiwire.new_value(key);
+      let pykey = convertKeyArgs(args);
       let idresult;
       try {
-        idresult = __pyproxy_getitem(ptrobj, idkey);
+        idresult = __pyproxy_getitem(ptrobj, pykey);
       } catch (e) {
         Module.fatal_error(e);
-      } finally {
-        Module.hiwire.decref(idkey);
       }
+      _Py_DecRef(pykey);
       if (idresult === 0) {
         if (Module._PyErr_Occurred()) {
           _pythonexc2js();
@@ -281,19 +318,20 @@ JS_FILE(pyproxy_init_js, () => {0,0; /* Magic, see include_js_file.h */
      * @param {any} key The key to set.
      * @param {any} value The value to set it to.
      */
-    set : function(key, value) {
+    set(...args) {
       let ptrobj = _getPtr(this);
-      let idkey = Module.hiwire.new_value(key);
+      let key = args.slice(0, -1);
+      let value = args.slice(-1)[0];
+      let pykey = convertKeyArgs(key);
       let idval = Module.hiwire.new_value(value);
       let errcode;
       try {
-        errcode = __pyproxy_setitem(ptrobj, idkey, idval);
+        errcode = __pyproxy_setitem(ptrobj, pykey, idval);
       } catch (e) {
         Module.fatal_error(e);
-      } finally {
-        Module.hiwire.decref(idkey);
-        Module.hiwire.decref(idval);
       }
+      _Py_DecRef(pykey);
+      Module.hiwire.decref(idval);
       if (errcode === -1) {
         _pythonexc2js();
       }
@@ -305,17 +343,16 @@ JS_FILE(pyproxy_init_js, () => {0,0; /* Magic, see include_js_file.h */
      *
      * @param {any} key The key to delete.
      */
-    delete : function(key) {
+    delete (...args) {
       let ptrobj = _getPtr(this);
-      let idkey = Module.hiwire.new_value(key);
+      let pykey = convertKeyArgs(args);
       let errcode;
       try {
-        errcode = __pyproxy_delitem(ptrobj, idkey);
+        errcode = __pyproxy_delitem(ptrobj, pykey);
       } catch (e) {
         Module.fatal_error(e);
-      } finally {
-        Module.hiwire.decref(idkey);
       }
+      _Py_DecRef(pykey);
       if (errcode === -1) {
         _pythonexc2js();
       }
@@ -333,7 +370,7 @@ JS_FILE(pyproxy_init_js, () => {0,0; /* Magic, see include_js_file.h */
      * @param {*} key The key to check for.
      * @returns {bool} Is ``key`` present?
      */
-    has : function(key) {
+    has(key) {
       let ptrobj = _getPtr(this);
       let idkey = Module.hiwire.new_value(key);
       let result;
@@ -368,26 +405,26 @@ JS_FILE(pyproxy_init_js, () => {0,0; /* Magic, see include_js_file.h */
      *
      * @returns {Iterator} An iterator for the proxied Python object.
      */
-    [Symbol.iterator] : function*() {
-      let iterptr = _PyObject_GetIter(_getPtr(this));
-      if (iterptr === 0) {
-        pythonexc2js();
+    * [ Symbol.iterator ]() {
+        let iterptr = _PyObject_GetIter(_getPtr(this));
+        if (iterptr === 0) {
+          pythonexc2js();
+        }
+        let item;
+        while ((item = __pyproxy_iter_next(iterptr))) {
+          yield Module.hiwire.pop_value(item);
+        }
+        if (_PyErr_Occurred()) {
+          pythonexc2js();
+        }
+        _Py_DecRef(iterptr);
       }
-      let item;
-      while ((item = __pyproxy_iter_next(iterptr))) {
-        yield Module.hiwire.pop_value(item);
-      }
-      if (_PyErr_Occurred()) {
-        pythonexc2js();
-      }
-      _Py_DecRef(iterptr);
-    }
   };
 
   // Controlled by IS_ITERATOR, appears for any object with a __next__ or
   // tp_iternext method.
   Module.PyProxyIteratorMethods = {
-    [Symbol.iterator] : function() { return this; },
+    [Symbol.iterator]() { return this; },
     /**
      * This translates to the Python code ``next(obj)``. Returns the next value
      * of the generator. See the documentation for `Generator.prototype.next
@@ -407,7 +444,7 @@ JS_FILE(pyproxy_init_js, () => {0,0; /* Magic, see include_js_file.h */
      * ``StopIteration(result_value)`` exception, ``next`` returns ``{done :
      * true, value : result_value}``.
      */
-    next : function(arg) {
+    next(arg) {
       let idresult;
       // Note: arg is optional, if arg is not supplied, it will be undefined
       // which gets converted to "Py_None". This is as intended.
@@ -515,8 +552,8 @@ JS_FILE(pyproxy_init_js, () => {0,0; /* Magic, see include_js_file.h */
   // here:
   // https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Proxy
   Module.PyProxyHandlers = {
-    isExtensible : function() { return true },
-    has : function(jsobj, jskey) {
+    isExtensible() { return true },
+    has(jsobj, jskey) {
       // Note: must report "prototype" in proxy when we are callable.
       // (We can return the wrong value from "get" handler though.)
       let objHasKey = Reflect.has(jsobj, jskey);
@@ -529,7 +566,7 @@ JS_FILE(pyproxy_init_js, () => {0,0; /* Magic, see include_js_file.h */
       }
       return python_hasattr(jsobj, jskey);
     },
-    get : function(jsobj, jskey) {
+    get(jsobj, jskey) {
       // Preference order:
       // 1. things we have to return to avoid making Javascript angry
       // 2. the result of Python getattr
@@ -553,7 +590,7 @@ JS_FILE(pyproxy_init_js, () => {0,0; /* Magic, see include_js_file.h */
       // 3. stuff from the prototype chain.
       return Reflect.get(jsobj, jskey);
     },
-    set : function(jsobj, jskey, jsval) {
+    set(jsobj, jskey, jsval) {
       // We're only willing to set properties on the python object, throw an
       // error if user tries to write over any key of type 1. things we have to
       // return to avoid making Javascript angry
@@ -570,7 +607,7 @@ JS_FILE(pyproxy_init_js, () => {0,0; /* Magic, see include_js_file.h */
       python_setattr(jsobj, jskey, jsval);
       return true;
     },
-    deleteProperty : function(jsobj, jskey) {
+    deleteProperty(jsobj, jskey) {
       // We're only willing to delete properties on the python object, throw an
       // error if user tries to write over any key of type 1. things we have to
       // return to avoid making Javascript angry
@@ -587,7 +624,7 @@ JS_FILE(pyproxy_init_js, () => {0,0; /* Magic, see include_js_file.h */
       // Otherwise Javascript will throw a TypeError.
       return !descr || descr.configurable;
     },
-    ownKeys : function(jsobj) {
+    ownKeys(jsobj) {
       let ptrobj = _getPtr(jsobj);
       let idresult;
       try {
@@ -600,7 +637,7 @@ JS_FILE(pyproxy_init_js, () => {0,0; /* Magic, see include_js_file.h */
       return result;
     },
     // clang-format off
-    apply : function(jsobj, jsthis, jsargs) {
+    apply(jsobj, jsthis, jsargs) {
       return jsobj.apply(jsthis, jsargs);
     },
     // clang-format on
@@ -617,7 +654,7 @@ JS_FILE(pyproxy_init_js, () => {0,0; /* Magic, see include_js_file.h */
      * event loop if necessary.
      * @private
      */
-    _ensure_future : function() {
+    _ensure_future() {
       let resolve_handle_id = 0;
       let reject_handle_id = 0;
       let resolveHandle;
@@ -661,7 +698,7 @@ JS_FILE(pyproxy_init_js, () => {0,0; /* Magic, see include_js_file.h */
      * argument if the awaitable fails.
      * @returns {Promise} The resulting Promise.
      */
-    then : function(onFulfilled, onRejected) {
+    then(onFulfilled, onRejected) {
       let promise = this._ensure_future();
       return promise.then(onFulfilled, onRejected);
     },
@@ -680,7 +717,7 @@ JS_FILE(pyproxy_init_js, () => {0,0; /* Magic, see include_js_file.h */
      * argument if the awaitable fails.
      * @returns {Promise} The resulting Promise.
      */
-    catch : function(onRejected) {
+    catch (onRejected) {
       let promise = this._ensure_future();
       return promise.catch(onRejected);
     },
@@ -702,7 +739,7 @@ JS_FILE(pyproxy_init_js, () => {0,0; /* Magic, see include_js_file.h */
      * result as the original Promise, but only after executing the
      * ``onFinally`` handler.
      */
-    finally : function(onFinally) {
+    finally(onFinally) {
       let promise = this._ensure_future();
       return promise.finally(onFinally);
     }
@@ -1044,11 +1081,11 @@ JS_FILE(pyproxy_init_js, () => {0,0; /* Magic, see include_js_file.h */
       "pyodide.globals.set('key', value), pyodide.globals.delete('key') instead.";
   let NamespaceProxyHandlers = {
     // clang-format off
-    has : function(obj, key) {
+    has(obj, key) {
       return Reflect.has(obj, key) || obj.has(key);
     },
     // clang-format on
-    get : function(obj, key) {
+    get(obj, key) {
       if (Reflect.has(obj, key)) {
         return Reflect.get(obj, key);
       }
@@ -1059,7 +1096,7 @@ JS_FILE(pyproxy_init_js, () => {0,0; /* Magic, see include_js_file.h */
       }
       return result;
     },
-    set : function(obj, key, value) {
+    set(obj, key, value) {
       if (Reflect.has(obj, key)) {
         throw new Error(`Cannot set read only field ${key}`);
       }
@@ -1069,7 +1106,7 @@ JS_FILE(pyproxy_init_js, () => {0,0; /* Magic, see include_js_file.h */
       }
       obj.set(key, value);
     },
-    ownKeys : function(obj) {
+    ownKeys(obj) {
       let result = new Set(Reflect.ownKeys(obj));
       let iter = obj.keys();
       for (let key of iter) {

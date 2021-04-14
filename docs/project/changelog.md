@@ -54,6 +54,9 @@ substitutions:
   `pyodide.globals.get('key')`. [#1367](https://github.com/pyodide/pyodide/pull/1367)
 - {{ API }} Added {any}`PyProxy.getBuffer` API to allow direct access to Python
   buffers as Javascript TypedArrays.
+  [1215](https://github.com/pyodide/pyodide/pull/1215)
+- {{ API }} Added support for indexing with lists or tuples with `PyProxy.get`,
+  `PyProxy.set`, etc. [1377](https://github.com/pyodide/pyodide/pull/1377)
   [#1215](https://github.com/pyodide/pyodide/pull/1215)
 - {{ API }} The innermost level of a buffer converted to Javascript used to be a
   TypedArray if the buffer was contiguous and otherwise an Array. Now the

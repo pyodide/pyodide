@@ -166,6 +166,89 @@ def test_python2js_numpy_scalar(selenium, dtype):
     )
 
 
+def test_numpy_get_set_tuple(selenium):
+    assert (
+        selenium.run_js(
+            """
+            await pyodide.runPythonAsync(`
+                import numpy as np
+                x = np.arange(12).reshape(3, 4)
+            `)
+            let buff = pyodide.globals.get("x");
+            return [buff.get(0, 0), buff.get(0, 1), buff.get(1, 0), buff.get(2, 1)]
+            """
+        )
+        == [0, 1, 4, 9]
+    )
+
+    assert (
+        selenium.run_js(
+            """
+            await pyodide.runPythonAsync(`
+                import numpy as np
+                x = np.arange(12).reshape(3, 4)
+            `)
+            let buff = pyodide.globals.get("x");
+            buff.set(2, 1, 66);
+            return pyodide.runPython("x[2,1]");
+            """
+        )
+        == 66
+    )
+
+    with pytest.raises(
+        Exception,
+        match="NotImplementedError: multi-dimensional sub-views are not implemented",
+    ):
+        selenium.run_js(
+            """
+            await pyodide.runPythonAsync(`
+                import numpy as np
+                x = np.arange(12).reshape(3, 4)
+                m = x.data
+            `)
+            pyodide.globals.get("m").get(0);
+            """
+        )
+
+    with pytest.raises(Exception, match="ValueError: cannot delete array elements"):
+        selenium.run_js(
+            """
+            await pyodide.runPythonAsync(`
+                import numpy as np
+                x = np.arange(12).reshape(3, 4)
+            `)
+            let buff = pyodide.globals.get("x");
+            buff.delete(2, 1);
+            """
+        )
+
+
+def test_numpy_indices(selenium):
+    selenium.run_js(
+        """
+        window.assert = function assert(cb){
+            if(cb() !== true){
+                throw new Error(`Assertion failed: ${cb.toString().slice(6)}`);
+            }
+        };
+        await pyodide.runPythonAsync(`
+            import numpy as np
+            x = np.arange(12).reshape(3, 4)
+        `);
+        let x = pyodide.globals.get("x");
+        let result = x.get(1).toJs();
+        assert(() => result.constructor.name === "Int32Array" && JSON.stringify(Array.from(result)) === "[4,5,6,7]");
+        result = x.get([1]).toJs();
+        assert(() => result.constructor.name === "Array" && result.length === 1 && JSON.stringify(Array.from(result[0])) === "[4,5,6,7]");
+        result = x.get([1,2], 0).toJs();
+        assert(() => result.constructor.name === "Int32Array" && JSON.stringify(Array.from(result)) === "[4,8]");
+        result = x.get([1,2], [0,2]).toJs();
+        assert(() => result.constructor.name === "Int32Array" && JSON.stringify(Array.from(result)) === "[4,10]");
+        """
+    )
+
+
 def test_runpythonasync_numpy(selenium_standalone):
     selenium_standalone.run_async(
         """
@@ -202,7 +285,7 @@ def test_get_buffer(selenium):
             z4 = z1[-1::-1,-1::-1]
         `);
         for(let x of ["z1", "z2", "z3", "z4"]){
-            let z = pyodide.pyimport(x).getBuffer("u32");
+            let z = pyodide.globals.get(x).getBuffer("u32");
             for(let idx1 = 0; idx1 < 8; idx1++) {
                 for(let idx2 = 0; idx2 < 3; idx2++){
                     let v1 = z.data[z.offset + z.strides[0] * idx1 + z.strides[1] * idx2];
@@ -232,7 +315,6 @@ def test_get_buffer(selenium):
         "np.arange(6).reshape((2, -1)).astype(np.int8, order='F')",
         "np.arange(6).reshape((2, -1, 1))",
         "np.ones((1, 1))[0:0]",  # shape[0] == 0
-        "np.ones(1)",  # ndim == 0
     ]
     + [
         f"np.arange(3).astype(np.{type_})"
@@ -246,7 +328,7 @@ def test_get_buffer_roundtrip(selenium, arg):
             import numpy as np
             x = {arg}
         `);
-        window.x_js_buf = pyodide.pyimport("x").getBuffer();
+        window.x_js_buf = pyodide.globals.get("x").getBuffer();
         x_js_buf.length = x_js_buf.data.length;
         """
     )
@@ -315,6 +397,6 @@ def test_get_buffer_error_messages(selenium):
                 import numpy as np
                 x = np.ones(2, dtype=np.float16)
             `);
-            pyodide.pyimport("x").getBuffer();
+            pyodide.globals.get("x").getBuffer();
             """
         )
