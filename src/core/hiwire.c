@@ -664,12 +664,12 @@ EM_JS_NUM(int, hiwire_get_byteLength, (JsRef idobj), {
   return jsobj['byteLength'];
 });
 
-EM_JS_NUM(errcode, hiwire_copy_to_ptr, (JsRef idobj, void* ptr), {
+EM_JS_NUM(errcode, hiwire_assign_to_ptr, (JsRef idobj, void* ptr), {
   let jsobj = Module.hiwire.get_value(idobj);
   Module.HEAPU8.set(Module.typedArrayAsUint8Array(jsobj), ptr);
 });
 
-EM_JS_NUM(errcode, hiwire_copy_from_ptr, (JsRef idobj, void* ptr), {
+EM_JS_NUM(errcode, hiwire_assign_from_ptr, (JsRef idobj, void* ptr), {
   let jsobj = Module.hiwire.get_value(idobj);
   Module.typedArrayAsUint8Array(jsobj).set(
     Module.HEAPU8.subarray(ptr, ptr + jsobj.byteLength));

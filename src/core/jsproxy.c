@@ -1259,7 +1259,7 @@ static PyTypeObject BufferType = {
 };
 
 static int
-check_compatibility(JsProxy* self, Py_buffer view, bool safe, bool dir)
+check_buffer_compatibility(JsProxy* self, Py_buffer view, bool safe, bool dir)
 {
   if (view.len != self->byteLength) {
     if (dir) {
@@ -1294,7 +1294,7 @@ check_compatibility(JsProxy* self, Py_buffer view, bool safe, bool dir)
 }
 
 static PyObject*
-JsBuffer_CopyIntoMemoryView(PyObject* obj, PyObject* target)
+JsBuffer_AssignToPyBuffer(PyObject* obj, PyObject* target)
 {
   JsProxy* self = (JsProxy*)obj;
   bool success = false;
@@ -1304,8 +1304,8 @@ JsBuffer_CopyIntoMemoryView(PyObject* obj, PyObject* target)
     PyObject_GetBuffer(target, &view, PyBUF_ANY_CONTIGUOUS | PyBUF_WRITABLE));
   bool safe = true;
   bool dir = true;
-  FAIL_IF_MINUS_ONE(check_compatibility(self, view, safe, dir));
-  FAIL_IF_MINUS_ONE(hiwire_copy_to_ptr(JsProxy_REF(self), view.buf));
+  FAIL_IF_MINUS_ONE(check_buffer_compatibility(self, view, safe, dir));
+  FAIL_IF_MINUS_ONE(hiwire_assign_to_ptr(JsProxy_REF(self), view.buf));
 
   success = true;
 finally:
@@ -1317,7 +1317,7 @@ finally:
 }
 
 static PyObject*
-JsBuffer_CopyFromMemoryView(PyObject* obj, PyObject* source)
+JsBuffer_AssignPyBuffer(PyObject* obj, PyObject* source)
 {
   JsProxy* self = (JsProxy*)obj;
   bool success = false;
@@ -1326,8 +1326,8 @@ JsBuffer_CopyFromMemoryView(PyObject* obj, PyObject* source)
   FAIL_IF_MINUS_ONE(PyObject_GetBuffer(source, &view, PyBUF_ANY_CONTIGUOUS));
   bool safe = true;
   bool dir = false;
-  FAIL_IF_MINUS_ONE(check_compatibility(self, view, safe, dir));
-  FAIL_IF_MINUS_ONE(hiwire_copy_from_ptr(JsProxy_REF(self), view.buf));
+  FAIL_IF_MINUS_ONE(check_buffer_compatibility(self, view, safe, dir));
+  FAIL_IF_MINUS_ONE(hiwire_assign_from_ptr(JsProxy_REF(self), view.buf));
 
   success = true;
 finally:
@@ -1350,7 +1350,7 @@ JsBuffer_NewCopy(PyObject* obj, PyObject* _args)
   FAIL_IF_NULL(buffer);
   FAIL_IF_MINUS_ONE(
     Buffer_cinit(buffer, self->byteLength, self->format, self->itemsize));
-  FAIL_IF_MINUS_ONE(hiwire_copy_to_ptr(JsProxy_REF(self), buffer->data));
+  FAIL_IF_MINUS_ONE(hiwire_assign_to_ptr(JsProxy_REF(self), buffer->data));
   result = PyMemoryView_FromObject((PyObject*)buffer);
   FAIL_IF_NULL(result);
 
@@ -1494,14 +1494,14 @@ JsProxy_create_subtype(int flags)
       PyDoc_STR("Copies the TypedArray into a new memoryview"),
     };
     methods[cur_method++] = (PyMethodDef){
-      "copy_from_buffer",
-      (PyCFunction)JsBuffer_CopyFromMemoryView,
+      "assign",
+      (PyCFunction)JsBuffer_AssignPyBuffer,
       METH_O,
       PyDoc_STR("Copies a buffer into the TypedArray "),
     };
     methods[cur_method++] = (PyMethodDef){
-      "copy_into_buffer",
-      (PyCFunction)JsBuffer_CopyIntoMemoryView,
+      "assign_to",
+      (PyCFunction)JsBuffer_AssignToPyBuffer,
       METH_O,
       PyDoc_STR("Copies the TypedArray into a buffer"),
     };
