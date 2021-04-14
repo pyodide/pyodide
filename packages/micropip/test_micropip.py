@@ -142,10 +142,7 @@ def test_last_version_from_pypi():
     import micropip
     from packaging.requirements import Requirement
 
-    # requirement as returned by distlib.util.parse_requirement
     requirement = Requirement("dummy_module")
-
-    # available versions
     versions = ["0.0.1", "0.15.5", "0.9.1"]
 
     # building metadata as returned from
