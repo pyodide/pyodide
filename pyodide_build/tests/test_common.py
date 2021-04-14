@@ -33,7 +33,8 @@ def test_parse_package_subset():
     assert _parse_package_subset("x,  a, b, c   ,,, d,,") == {
         "pyparsing",
         "packaging",
-        "micropip" "x",
+        "micropip",
+        "x",
         "a",
         "b",
         "c",
