@@ -559,8 +559,9 @@ globalThis.loadPyodide = async function(config = {}) {
       errcode = Module._run_python_simple_inner(code_c_string);
     } catch (e) {
       Module.fatal_error(e);
+    } finally {
+      Module._free(code_c_string);
     }
-    Module._free(code_c_string);
     if (errcode === -1) {
       Module._pythonexc2js();
     }

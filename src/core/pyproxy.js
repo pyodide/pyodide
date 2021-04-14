@@ -136,8 +136,9 @@ JS_FILE(pyproxy_init_js, () => {0,0; /* Magic, see include_js_file.h */
       idresult = __pyproxy_apply(ptrobj, idargs);
     } catch (e) {
       Module.fatal_error(e);
+    } finally {
+      Module.hiwire.decref(idargs);
     }
-    Module.hiwire.decref(idargs);
     if (idresult === 0) {
       _pythonexc2js();
     }
@@ -276,8 +277,9 @@ JS_FILE(pyproxy_init_js, () => {0,0; /* Magic, see include_js_file.h */
         idresult = __pyproxy_getitem(ptrobj, idkey);
       } catch (e) {
         Module.fatal_error(e);
+      } finally {
+        Module.hiwire.decref(idkey);
       }
-      Module.hiwire.decref(idkey);
       if (idresult === 0) {
         if (Module._PyErr_Occurred()) {
           _pythonexc2js();
@@ -309,9 +311,10 @@ JS_FILE(pyproxy_init_js, () => {0,0; /* Magic, see include_js_file.h */
         errcode = __pyproxy_setitem(ptrobj, idkey, idval);
       } catch (e) {
         Module.fatal_error(e);
+      } finally {
+        Module.hiwire.decref(idkey);
+        Module.hiwire.decref(idval);
       }
-      Module.hiwire.decref(idkey);
-      Module.hiwire.decref(idval);
       if (errcode === -1) {
         _pythonexc2js();
       }
@@ -331,8 +334,9 @@ JS_FILE(pyproxy_init_js, () => {0,0; /* Magic, see include_js_file.h */
         errcode = __pyproxy_delitem(ptrobj, idkey);
       } catch (e) {
         Module.fatal_error(e);
+      } finally {
+        Module.hiwire.decref(idkey);
       }
-      Module.hiwire.decref(idkey);
       if (errcode === -1) {
         _pythonexc2js();
       }
@@ -358,8 +362,9 @@ JS_FILE(pyproxy_init_js, () => {0,0; /* Magic, see include_js_file.h */
         result = __pyproxy_contains(ptrobj, idkey);
       } catch (e) {
         Module.fatal_error(e);
+      } finally {
+        Module.hiwire.decref(idkey);
       }
-      Module.hiwire.decref(idkey);
       if (result === -1) {
         _pythonexc2js();
       }
@@ -446,8 +451,9 @@ JS_FILE(pyproxy_init_js, () => {0,0; /* Magic, see include_js_file.h */
         }
       } catch (e) {
         Module.fatal_error(e);
+      } finally {
+        Module.hiwire.decref(idarg);
       }
-      Module.hiwire.decref(idarg);
       if (done && idresult === 0) {
         _pythonexc2js();
       }
@@ -468,8 +474,9 @@ JS_FILE(pyproxy_init_js, () => {0,0; /* Magic, see include_js_file.h */
       result = __pyproxy_hasattr(ptrobj, idkey);
     } catch (e) {
       Module.fatal_error(e);
+    } finally {
+      Module.hiwire.decref(idkey);
     }
-    Module.hiwire.decref(idkey);
     if (result === -1) {
       _pythonexc2js();
     }
@@ -487,8 +494,9 @@ JS_FILE(pyproxy_init_js, () => {0,0; /* Magic, see include_js_file.h */
       idresult = __pyproxy_getattr(ptrobj, idkey);
     } catch (e) {
       Module.fatal_error(e);
+    } finally {
+      Module.hiwire.decref(idkey);
     }
-    Module.hiwire.decref(idkey);
     if (idresult === 0) {
       if (_PyErr_Occurred()) {
         _pythonexc2js();
@@ -506,9 +514,10 @@ JS_FILE(pyproxy_init_js, () => {0,0; /* Magic, see include_js_file.h */
       errcode = __pyproxy_setattr(ptrobj, idkey, idval);
     } catch (e) {
       Module.fatal_error(e);
+    } finally {
+      Module.hiwire.decref(idkey);
+      Module.hiwire.decref(idval);
     }
-    Module.hiwire.decref(idkey);
-    Module.hiwire.decref(idval);
     if (errcode === -1) {
       _pythonexc2js();
     }
@@ -522,8 +531,9 @@ JS_FILE(pyproxy_init_js, () => {0,0; /* Magic, see include_js_file.h */
       errcode = __pyproxy_delattr(ptrobj, idkey);
     } catch (e) {
       Module.fatal_error(e);
+    } finally {
+      Module.hiwire.decref(idkey);
     }
-    Module.hiwire.decref(idkey);
     if (errcode === -1) {
       _pythonexc2js();
     }
@@ -654,9 +664,10 @@ JS_FILE(pyproxy_init_js, () => {0,0; /* Magic, see include_js_file.h */
                                           reject_handle_id);
       } catch (e) {
         Module.fatal_error(e);
+      } finally {
+        Module.hiwire.decref(reject_handle_id);
+        Module.hiwire.decref(resolve_handle_id);
       }
-      Module.hiwire.decref(resolve_handle_id);
-      Module.hiwire.decref(reject_handle_id);
       if (errcode === -1) {
         _pythonexc2js();
       }

@@ -544,7 +544,6 @@ def test_errors(selenium):
     )
 
 
-@pytest.mark.skip_refcount_check
 def test_fatal_error(selenium_standalone):
     """Inject fatal errors in all the reasonable entrypoints"""
     selenium_standalone.run_js(
