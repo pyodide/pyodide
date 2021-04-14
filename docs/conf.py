@@ -45,6 +45,8 @@ extensions = [
     "sphinx_js",
     "autodocsumm",
     "sphinx_pyodide",
+    #    "sphinxarg.ext",
+    "sphinx_argparse_cli",
 ]
 
 myst_enable_extensions = ["substitution"]
