@@ -3,7 +3,8 @@ package:
   version: "0.1"
 requirements:
   run:
-    - distlib
+    - pyparsing
+    - packaging
 source:
   path: micropip
 test:

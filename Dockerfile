@@ -12,7 +12,7 @@ RUN apt-get update \
 RUN pip3 --no-cache-dir install \
   black \
   "cython<3.0" \
-  distlib \
+  packaging \
   flake8 \
   hypothesis \
   "mypy==0.812" \
