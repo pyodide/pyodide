@@ -207,7 +207,11 @@ class InteractiveConsole(code.InteractiveConsole):
         )
 
     async def load_packages_and_run(self, run_complete, source):
-        await run_complete
+        try:
+            await run_complete
+        except BaseException:
+            # Throw away old error
+            pass
         with self.stdstreams_redirections():
             await _load_packages_from_imports(source)
             result = await eval_code_async(source, self.locals)
