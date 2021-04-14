@@ -254,6 +254,69 @@ def test_python2js(selenium):
     )
 
 
+def test_wrong_way_conversions(selenium):
+    selenium.run_js(
+        """
+        assert(() => pyodide.toPy(5) === 5);
+        assert(() => pyodide.toPy(5n) === 5n);
+        assert(() => pyodide.toPy("abc") === "abc");
+        class Test {};
+        let t = new Test();
+        assert(() => pyodide.toPy(t) === t);
+
+        window.a1 = [1,2,3];
+        window.b1 = pyodide.toPy(a1);
+        window.a2 = { a : 1, b : 2, c : 3};
+        window.b2 = pyodide.toPy(a2);
+        pyodide.runPython(`
+            from js import a1, b1, a2, b2
+            assert a1.to_py() == b1
+            assert a2.to_py() == b2
+        `);
+        window.b1.destroy();
+        window.b2.destroy();
+        """
+    )
+
+    selenium.run_js(
+        """
+        window.a = [1,2,3];
+        window.b = pyodide.runPython(`
+            import pyodide
+            pyodide.to_js([1, 2, 3])
+        `);
+        assert(() => JSON.stringify(a) == JSON.stringify(b));
+        """
+    )
+
+    selenium.run_js(
+        """
+        window.t3 = pyodide.runPython(`
+            class Test: pass
+            t1 = Test()
+            t2 = pyodide.to_js(t1)
+            t2
+        `);
+        pyodide.runPython(`
+            from js import t3
+            assert t1 is t3
+            t2.destroy();
+        `);
+        """
+    )
+
+    selenium.run_js(
+        """
+        pyodide.runPython(`
+            s = "avafhjpa"
+            t = 55
+            assert pyodide.to_js(s) is s
+            assert pyodide.to_js(t) is t
+        `);
+        """
+    )
+
+
 def test_python2js_long_ints(selenium):
     assert selenium.run("2**30") == 2 ** 30
     assert selenium.run("2**31") == 2 ** 31
@@ -621,7 +684,7 @@ def test_python2js_with_depth(selenium):
                 assert(Array.isArray(x), `i: ${i}, j: ${j}`);
                 x = x[1];
             }
-            assert(pyodide._module.PyProxy.isPyProxy(x), `i: ${i}, j: ${i}`);
+            assert(pyodide.isPyProxy(x), `i: ${i}, j: ${i}`);
         }
         """
     )
@@ -641,7 +704,7 @@ def test_python2js_with_depth(selenium):
                 assert(Array.isArray(x), `i: ${i}, j: ${j}`);
                 x = x[1];
             }
-            assert(pyodide._module.PyProxy.isPyProxy(x), `i: ${i}, j: ${i}`);
+            assert(pyodide.isPyProxy(x), `i: ${i}, j: ${i}`);
         }
         """
     )
@@ -704,10 +767,10 @@ def test_python2js_with_depth(selenium):
         set(
             selenium.run_js(
                 """
-        return Array.from(pyodide.runPython(`
-            { 1, "1" }
-        `).toJs().values())
-        """
+                return Array.from(pyodide.runPython(`
+                    { 1, "1" }
+                `).toJs().values())
+                """
             )
         )
         == {1, "1"}
@@ -717,10 +780,10 @@ def test_python2js_with_depth(selenium):
         dict(
             selenium.run_js(
                 """
-        return Array.from(pyodide.runPython(`
-            { 1 : 7, "1" : 9 }
-        `).toJs().entries())
-        """
+                return Array.from(pyodide.runPython(`
+                    { 1 : 7, "1" : 9 }
+                `).toJs().entries())
+                """
             )
         )
         == {1: 7, "1": 9}

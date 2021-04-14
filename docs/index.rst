@@ -47,6 +47,7 @@ information about the project's organization.
    development/contributing.md
    development/core.md
    development/testing.md
+   development/debugging.md
 
 .. toctree::
    :titlesonly:

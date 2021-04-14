@@ -156,8 +156,8 @@ EM_JS_NUM(errcode, js2python_init, (), {
       return __js2python_true();
     } else if (value === false) {
       return __js2python_false();
-    } else if (Module.PyProxy.isPyProxy(value)) {
-      return __js2python_pyproxy(Module.PyProxy._getPtr(value));
+    } else if (Module.isPyProxy(value)) {
+      return __js2python_pyproxy(Module.PyProxy_getPtr(value));
     }
     // clang-format on
     return 0;

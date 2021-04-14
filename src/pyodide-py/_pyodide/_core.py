@@ -12,6 +12,7 @@ _save_name = __name__
 __name__ = "pyodide"
 try:
     # From jsproxy.c
+
     class JsException(Exception):
         """
         A wrapper around a Javascript Error to allow it to be thrown in Python.
@@ -43,8 +44,14 @@ try:
         def new(self, *args, **kwargs) -> "JsProxy":
             """Construct a new instance of the Javascript object"""
 
-        def to_py(self) -> Any:
-            """Convert the :class:`JsProxy` to a native Python object as best as possible"""
+        def to_py(self, depth: int = -1) -> Any:
+            """Convert the :class:`JsProxy` to a native Python object as best as
+            possible.
+
+            By default does a deep conversion, if a shallow conversion is
+            desired, you can use ``proxy.to_py(1)``. See
+            :ref:`type-translations-jsproxy-to-py` for more information.
+            """
             pass
 
         def then(self, onfulfilled: Callable, onrejected: Callable) -> "Promise":
@@ -91,6 +98,21 @@ try:
 
         This allows explicit control over the lifetime of the ``PyProxy`` from
         Python: call the ``destroy`` API when done.
+        """
+        return obj
+
+    # from python2js
+
+    def to_js(obj: Any, depth: int = -1) -> JsProxy:
+        """Convert the object to Javascript.
+
+        This is similar to :any:`PyProxy.toJs`, but for use from Python. If the
+        object would be implicitly translated to Javascript, it will be returned
+        unchanged. If the object cannot be converted into Javascript, this
+        method will return a :any:`JsProxy` of a :any:`PyProxy`, as if you had
+        used :any:`pyodide.create_proxy`.
+
+        See :ref:`type-translations-pyproxy-to-js` for more information.
         """
         return obj
 
