@@ -16,7 +16,8 @@ def test_parse_package_subset():
     assert _parse_package_subset("numpy,pandas") == {
         "pyparsing",
         "packaging",
-        "micropip" "numpy",
+        "micropip",
+        "numpy",
         "pandas",
     }
 
