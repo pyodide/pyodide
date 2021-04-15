@@ -1,4 +1,4 @@
-From 9acf1ade730da70f73bbdef4cf4a0ab37be21e41 Mon Sep 17 00:00:00 2001
+From c0bf24114eece408d1bfa93514f080a5da3712e2 Mon Sep 17 00:00:00 2001
 From: Hood <hood@mit.edu>
 Date: Fri, 2 Apr 2021 14:24:24 -0700
 Subject: [PATCH] temp
@@ -33,7 +33,7 @@ index 52cb58726..5467f4d78 100644
      }
      return nd;
 diff --git a/numpy/core/src/multiarray/iterators.c b/numpy/core/src/multiarray/iterators.c
-index 9da811f69..291c4c0af 100644
+index 9da811f69..2fdaf560b 100644
 --- a/numpy/core/src/multiarray/iterators.c
 +++ b/numpy/core/src/multiarray/iterators.c
 @@ -1153,6 +1153,37 @@ NPY_NO_EXPORT PyTypeObject PyArrayIter_Type = {
@@ -111,9 +111,9 @@ index 9da811f69..291c4c0af 100644
                  }
 -                if (mit->dimensions[i] == 1) {
 -                    mit->dimensions[i] = tmp;
-+                tmp2 = READ_INTP(&mit->dimensions[i])
++                tmp2 = READ_INTP(&mit->dimensions[i]);
 +                if (tmp2 == 1) {
-+                    WRITE(&mit->dimensions[i], tmp)
++                    WRITE(&mit->dimensions[i], tmp);
                  }
 -                else if (mit->dimensions[i] != tmp) {
 +                else if (tmp2 != tmp) {
