@@ -1,0 +1,73 @@
+From 9b1a0e351c821992b77a9be3be45b97ce56bf586 Mon Sep 17 00:00:00 2001
+From: Hood <hood@mit.edu>
+Date: Fri, 2 Apr 2021 14:24:24 -0700
+Subject: [PATCH] temp
+
+---
+ numpy/core/src/multiarray/conversion_utils.c |  5 +++--
+ numpy/core/src/multiarray/iterators.c        | 14 ++++++++------
+ 2 files changed, 11 insertions(+), 8 deletions(-)
+
+diff --git a/numpy/core/src/multiarray/conversion_utils.c b/numpy/core/src/multiarray/conversion_utils.c
+index 52cb58726..5467f4d78 100644
+--- a/numpy/core/src/multiarray/conversion_utils.c
++++ b/numpy/core/src/multiarray/conversion_utils.c
+@@ -955,9 +955,9 @@ PyArray_IntpFromIndexSequence(PyObject *seq, npy_intp *vals, npy_intp maxvals)
+                 return -1;
+             }
+ 
+-            vals[i] = PyArray_PyIntAsIntp(op);
++            npy_intp x = PyArray_PyIntAsIntp(op);
+             Py_DECREF(op);
+-            if(vals[i] == -1) {
++            if(x == -1) {
+                 err = PyErr_Occurred();
+                 if (err &&
+                         PyErr_GivenExceptionMatches(err, PyExc_OverflowError)) {
+@@ -968,6 +968,7 @@ PyArray_IntpFromIndexSequence(PyObject *seq, npy_intp *vals, npy_intp maxvals)
+                     return -1;
+                 }
+             }
++            vals[i] = x;
+         }
+     }
+     return nd;
+diff --git a/numpy/core/src/multiarray/iterators.c b/numpy/core/src/multiarray/iterators.c
+index 9da811f69..0bf69e14e 100644
+--- a/numpy/core/src/multiarray/iterators.c
++++ b/numpy/core/src/multiarray/iterators.c
+@@ -1162,23 +1162,25 @@ PyArray_Broadcast(PyArrayMultiIterObject *mit)
+ {
+     int i, nd, k, j;
+     npy_intp tmp;
+-    PyArrayIterObject *it;
++    PyArrayObject *ao;
+ 
+     /* Discover the broadcast number of dimensions */
+     for (i = 0, nd = 0; i < mit->numiter; i++) {
+         nd = PyArray_MAX(nd, PyArray_NDIM(mit->iters[i]->ao));
+     }
+     mit->nd = nd;
+-
+     /* Discover the broadcast shape in each dimension */
+     for (i = 0; i < nd; i++) {
+         mit->dimensions[i] = 1;
+-        for (j = 0; j < mit->numiter; j++) {
+-            it = mit->iters[j];
++    }
++
++    for (j = 0; j < mit->numiter; j++) {
++        ao = mit->iters[j]->ao;
++        for (i = 0; i < nd; i++) {
+             /* This prepends 1 to shapes not already equal to nd */
+-            k = i + PyArray_NDIM(it->ao) - nd;
++            k = i + PyArray_NDIM(ao) - nd;
+             if (k >= 0) {
+-                tmp = PyArray_DIMS(it->ao)[k];
++                tmp = PyArray_DIMS(ao)[k];
+                 if (tmp == 1) {
+                     continue;
+                 }
+-- 
+2.17.1
+
