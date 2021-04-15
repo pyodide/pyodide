@@ -28,7 +28,7 @@ load a package's dependencies automatically.
 ## mkpkg
 
 If you wish to create a new package for Pyodide, the easiest place to start is
-with the `mkpkg` tool. If your package is on PyPI, just run:
+with the {ref}`mkpkg tool <pyodide-mkpkg>`. If your package is on PyPI, just run:
 
 `bin/pyodide mkpkg $PACKAGE_NAME`
 
