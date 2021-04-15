@@ -45,13 +45,15 @@ is proxied into Javascript, then translation back unwraps the proxy, and the
 result of the round trip conversion `is` the original object (in the sense that
 they live at the same memory address).
 
-Translating an object from Javascript to Python and then back to
-Javascript gives an object that is `===` to the original object (with the
-exception of `NaN` because `NaN !== NaN`, and of `null` which after a round trip
-is converted to `undefined`). Furthermore, if the object is proxied into Python,
-then translation back unwraps the proxy, and the result of the round trip
-conversion is the original object (in the sense that they live at the same
-memory address).
+Translating an object from Javascript to Python and then back to Javascript
+gives an object that is `===` to the original object. Furthermore, if the object
+is proxied into Python, then translation back unwraps the proxy, and the result
+of the round trip conversion is the original object (in the sense that they live
+at the same memory address). There are a few exceptions:
+1. `NaN` is converted to `NaN` after a round trip but `NaN !== NaN`,
+2. `null` is converted to `undefined` after a round trip, and
+3. a `BigInt` will be converted to a `Number` after a round trip unless its
+   absolute value is greater than `Number.MAX_SAFE_INTEGER` (i.e., 2^53).
 
 ## Implicit conversions
 
@@ -65,26 +67,35 @@ the same type as the original object, we proxy `tuple` and `bytes` objects.
 The following immutable types are implicitly converted from Javascript to
 Python:
 
-| Python          | Javascript          |
-|-----------------|---------------------|
-| `int`           | `Number`            |
-| `float`         | `Number`            |
-| `str`           | `String`            |
-| `bool`          | `Boolean`           |
-| `None`          | `undefined`         |
+| Python          | Javascript            |
+|-----------------|-----------------------|
+| `int`           | `Number` or `BigInt`* |
+| `float`         | `Number`              |
+| `str`           | `String`              |
+| `bool`          | `Boolean`             |
+| `None`          | `undefined`           |
+
+* An `int` is converted to a `Number` if the `int` is between -2^{53} and 2^{53}
+  inclusive, otherwise it is converted to a `BigInt`. (If the browser does not
+  support `BigInt` then a `Number` will be used instead. In this case,
+  conversion of large integers from Python to Javascript is lossy.)
 
 ### Javascript to Python
 The following immutable types are implicitly converted from Python to
 Javascript:
 
-| Javascript      | Python                          |
-|-----------------|---------------------------------|
-| `Number`        | `int` or `float` as appropriate |
-| `String`        | `str`                           |
-| `Boolean`       | `bool`                          |
-| `undefined`     | `None`                          |
-| `null`          | `None`                          |
+| Javascript      | Python                           |
+|-----------------|----------------------------------|
+| `Number`        | `int` or `float` as appropriate* |
+| `BigInt`        | `int`                            |
+| `String`        | `str`                            |
+| `Boolean`       | `bool`                           |
+| `undefined`     | `None`                           |
+| `null`          | `None`                           |
 
+* A number is converted to an `int` if it is between -2^{53} and 2^{53}
+  inclusive and its fractional part is zero. Otherwise it is converted to a
+  float.
 
 ## Proxying
 
@@ -297,19 +308,19 @@ function destroyToJsResult(x){
     if(!x){
         return;
     }
-    if(x.destroy){
+    if(pyodide.isPyProxy(x)){
         x.destroy();
         return;
     }
     if(x[Symbol.iterator]){
         for(let k of x){
-            freeToJsResult(k);
+            destroyToJsResult(k);
         }
     }
 }
 ```
 
-
+(type-translations-jsproxy-to-py)=
 ### Javascript to Python
 Explicit conversion of a {any}`JsProxy` into a native Python object is done with the
 {any}`JsProxy.to_py` method. By default, the `to_py` method does a recursive "deep"
@@ -382,11 +393,18 @@ use correctly. For simple use cases the `toJs` API should be prefered.
 
 If the buffer is zero or one-dimensional, then `toJs` will in most cases convert
 it to a single `TypedArray`. However, in the case that the format of the buffer
-is `'s'`, we will convert it to a string and if the format is `'?'` we will
+is `'s'`, we will convert the buffer to a string and if the format is `'?'` we will
 convert it to an Array of booleans.
 
 If the dimension is greater than one, we will convert it to a nested Javascript
 array, with the innermost dimension handled in the same way we would handle a 1d array.
+
+An example of a case where you would not want to use the `toJs` method is when
+the buffer is bitmapped image data. If for instance you have a 3d buffer shaped
+1920 x 1080 x 4, then `toJs` will be extremely slow. In this case you could use
+{any}`PyProxy.getBuffer`. On the other hand, if you have a 3d buffer shaped 1920
+x 4 x 1080, the performance of `toJs` will most likely be satisfactory.
+Typically the innermost dimension won't matter for performance.
 
 The {any}`PyProxy.getBuffer` method can be used to retrieve a reference to a
 Javascript typed array that points to the data backing the Python object,

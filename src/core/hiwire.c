@@ -144,6 +144,12 @@ EM_JS_NUM(int, hiwire_init, (), {
     // clang-format on
   };
 
+  /**
+   * Turn any ArrayBuffer view or ArrayBuffer into a Uint8Array.
+   *
+   * This respects slices: if the ArrayBuffer view is restricted to a slice of
+   * the backing ArrayBuffer, we return a Uint8Array that shows the same slice.
+   */
   Module.typedArrayAsUint8Array = function(arg)
   {
     // clang-format off
@@ -155,109 +161,52 @@ EM_JS_NUM(int, hiwire_init, (), {
     }
   };
 
-  /**
-   * Determine type and endianness of data from format. This is a helper
-   * function for converting buffers from Python to Javascript, used in
-   * PyProxyBufferMethods and in `toJs` on a buffer.
-   *
-   * To understand this function it will be helpful to look at the tables here:
-   * https://docs.python.org/3/library/struct.html#format-strings
-   *
-   * @arg format {String} A Python format string (caller must convert it to a
-   *      Javascript string).
-   * @arg errorMessage {String} Extra stuff to append to an error message if
-   *      thrown. Should be a complete sentence.
-   * @returns A pair, an appropriate TypedArray constructor and a boolean which
-   *      is true if the format suggests a big endian array.
-   * @private
-   */
-  Module.processBufferFormatString = function(formatStr, errorMessage = "")
   {
-    if (formatStr.length > 2) {
-      throw new Error(
-        "Expected format string to have length <= 2, " +
-         `got '${formatStr}'.` + errorMessage);
+    let dtypes_str = "bBhHiIfd";
+    let dtypes_ptr = stringToNewUTF8(dtypes_str);
+    let dtypes_map = {};
+    for (let[idx, val] of Object.entries(dtypes_str)) {
+      dtypes_map[val] = dtypes_ptr + Number(idx);
     }
-    let formatChar = formatStr.slice(-1);
-    let alignChar = formatStr.slice(0, -1);
-    let bigEndian;
-    switch (alignChar) {
-      case "!":
-      case ">":
-        bigEndian = true;
-        break;
-      case "<":
-      case "@":
-      case "=":
-      case "":
-        bigEndian = false;
-        break;
-      default:
-        throw new Error(`Unrecognized alignment character ${ alignChar }.` +
-                        errorMessage);
-    }
-    let arrayType;
-    switch (formatChar) {
-      case 'b':
-        arrayType = Int8Array;
-        break;
-      case 's':
-      case 'p':
-      case 'c':
-      case 'B':
-      case '?':
-        arrayType = Uint8Array;
-        break;
-      case 'h':
-        arrayType = Int16Array;
-        break;
-      case 'H':
-        arrayType = Uint16Array;
-        break;
-      case 'i':
-      case 'l':
-      case 'n':
-        arrayType = Int32Array;
-        break;
-      case 'I':
-      case 'L':
-      case 'N':
-      case 'P':
-        arrayType = Uint32Array;
-        break;
-      case 'q':
-        // clang-format off
-        if (globalThis.BigInt64Array === undefined) {
-          // clang-format on
-          throw new Error("BigInt64Array is not supported on this browser." +
-                          errorMessage);
-        }
-        arrayType = BigInt64Array;
-        break;
-      case 'Q':
-        // clang-format off
-        if (globalThis.BigUint64Array === undefined) {
-          // clang-format on
-          throw new Error("BigUint64Array is not supported on this browser." +
-                          errorMessage);
-        }
-        arrayType = BigUint64Array;
-        break;
-      case 'f':
-        arrayType = Float32Array;
-        break;
-      case 'd':
-        arrayType = Float64Array;
-        break;
-      case "e":
-        throw new Error("Javascript has no Float16 support.");
-      default:
-        throw new Error(`Unrecognized format character '${formatChar}'.` +
-                        errorMessage);
-    }
-    return [ arrayType, bigEndian ];
-  };
 
+    let buffer_datatype_map = new Map([
+      [ 'Int8Array', [ dtypes_map['b'], 1, true ] ],
+      [ 'Uint8Array', [ dtypes_map['B'], 1, true ] ],
+      [ 'Uint8ClampedArray', [ dtypes_map['B'], 1, true ] ],
+      [ 'Int16Array', [ dtypes_map['h'], 2, true ] ],
+      [ 'Uint16Array', [ dtypes_map['H'], 2, true ] ],
+      [ 'Int32Array', [ dtypes_map['i'], 4, true ] ],
+      [ 'Uint32Array', [ dtypes_map['I'], 4, true ] ],
+      [ 'Float32Array', [ dtypes_map['f'], 4, true ] ],
+      [ 'Float64Array', [ dtypes_map['d'], 8, true ] ],
+      // These last two default to Uint8. They have checked : false to allow use
+      // with other types.
+      [ 'DataView', [ dtypes_map['B'], 1, false ] ],
+      [ 'ArrayBuffer', [ dtypes_map['B'], 1, false ] ],
+    ]);
+
+    /**
+     * This gets the dtype of a ArrayBuffer or ArrayBuffer view. We return a
+     * triple: [char* format_ptr, int itemsize, bool checked] If argument is
+     * untyped (a DataView or ArrayBuffer) then we say it's a Uint8, but we set
+     * the flag checked to false in that case so we allow assignment to/from
+     * anything.
+     *
+     * This is the API for use from Javascript, there's also an EM_JS
+     * hiwire_get_dtype wrapper for use from C. Used in js2python and in
+     * jsproxy.c for buffers.
+     */
+    Module.get_dtype = function(jsobj)
+    {
+      return buffer_datatype_map.get(jsobj.constructor.name) || [ 0, 0, false ];
+    }
+  }
+
+  if (globalThis.BigInt) {
+    Module.BigInt = BigInt;
+  } else {
+    Module.BigInt = Number;
+  }
   return 0;
 });
 
@@ -278,6 +227,22 @@ EM_JS_NUM(errcode, hiwire_decref, (JsRef idval), {
 
 EM_JS_REF(JsRef, hiwire_int, (int val), {
   return Module.hiwire.new_value(val);
+});
+
+EM_JS_REF(JsRef, hiwire_int_from_hex, (const char* s), {
+  let result;
+  // clang-format off
+  // Check if number starts with a minus sign
+  if (HEAP8[s] === 45) {
+    // clang-format on
+    result = -Module.BigInt(UTF8ToString(s + 1));
+  } else {
+    result = Module.BigInt(UTF8ToString(s));
+  }
+  if (-Number.MAX_SAFE_INTEGER < result && result < Number.MAX_SAFE_INTEGER) {
+    result = Number(result);
+  }
+  return Module.hiwire.new_value(result);
 });
 
 EM_JS_REF(JsRef, hiwire_double, (double val), {
@@ -337,11 +302,7 @@ EM_JS_NUM(bool, hiwire_is_array, (JsRef idobj), {
   }
   // What if it's a TypedArray?
   // clang-format off
-  if (
-    obj.buffer
-    && obj.buffer.constructor.name === "ArrayBuffer"
-    && obj.BYTES_PER_ELEMENT
-  ) {
+  if (ArrayBuffer.isView(obj) && obj.constructor.name !== "DataView") {
     // clang-format on
     return true;
   }
@@ -368,24 +329,28 @@ EM_JS_REF(JsRef, hiwire_get_member_string, (JsRef idobj, const char* ptrkey), {
   return Module.hiwire.new_value(result);
 });
 
-EM_JS_NUM(errcode,
-          hiwire_set_member_string,
-          (JsRef idobj, const char* ptrkey, JsRef idval),
-          {
-            let jsobj = Module.hiwire.get_value(idobj);
-            let jskey = UTF8ToString(ptrkey);
-            let jsval = Module.hiwire.get_value(idval);
-            jsobj[jskey] = jsval;
-          });
+// clang-format off
+EM_JS_NUM(
+errcode,
+hiwire_set_member_string,
+(JsRef idobj, const char* ptrkey, JsRef idval),
+{
+  let jsobj = Module.hiwire.get_value(idobj);
+  let jskey = UTF8ToString(ptrkey);
+  let jsval = Module.hiwire.get_value(idval);
+  jsobj[jskey] = jsval;
+});
 
-EM_JS_NUM(errcode,
-          hiwire_delete_member_string,
-          (JsRef idobj, const char* ptrkey),
-          {
-            let jsobj = Module.hiwire.get_value(idobj);
-            let jskey = UTF8ToString(ptrkey);
-            delete jsobj[jskey];
-          });
+EM_JS_NUM(
+errcode,
+hiwire_delete_member_string,
+(JsRef idobj, const char* ptrkey),
+{
+  let jsobj = Module.hiwire.get_value(idobj);
+  let jskey = UTF8ToString(ptrkey);
+  delete jsobj[jskey];
+});
+// clang-format on
 
 EM_JS_REF(JsRef, hiwire_get_member_int, (JsRef idobj, int idx), {
   let obj = Module.hiwire.get_value(idobj);
@@ -621,7 +586,7 @@ EM_JS_NUM(errcode, hiwire_call_delete_method, (JsRef idobj, JsRef idkey), {
 });
 
 EM_JS_NUM(bool, hiwire_is_pyproxy, (JsRef idobj), {
-  return Module.PyProxy.isPyProxy(Module.hiwire.get_value(idobj));
+  return Module.isPyProxy(Module.hiwire.get_value(idobj));
 });
 
 EM_JS_NUM(bool, hiwire_is_function, (JsRef idobj), {
@@ -665,8 +630,7 @@ EM_JS_REF(char*, hiwire_constructor_name, (JsRef idobj), {
 
 #define MAKE_OPERATOR(name, op)                                                \
   EM_JS_NUM(bool, hiwire_##name, (JsRef ida, JsRef idb), {                     \
-    return (Module.hiwire.get_value(ida) op Module.hiwire.get_value(idb)) ? 1  \
-                                                                          : 0; \
+    return !!(Module.hiwire.get_value(ida) op Module.hiwire.get_value(idb));   \
   })
 
 MAKE_OPERATOR(less_than, <);
@@ -725,14 +689,14 @@ EM_JS_REF(JsRef, hiwire_object_values, (JsRef idobj), {
 EM_JS_NUM(bool, hiwire_is_typedarray, (JsRef idobj), {
   let jsobj = Module.hiwire.get_value(idobj);
   // clang-format off
-  return (jsobj['byteLength'] !== undefined) ? 1 : 0;
+  return ArrayBuffer.isView(jsobj) || a.constructor.name === "ArrayBuffer";
   // clang-format on
 });
 
 EM_JS_NUM(bool, hiwire_is_on_wasm_heap, (JsRef idobj), {
   let jsobj = Module.hiwire.get_value(idobj);
   // clang-format off
-  return (jsobj.buffer === Module.HEAPU8.buffer) ? 1 : 0;
+  return jsobj.buffer === Module.HEAPU8.buffer;
   // clang-format on
 });
 
@@ -746,43 +710,31 @@ EM_JS_NUM(int, hiwire_get_byteLength, (JsRef idobj), {
   return jsobj['byteLength'];
 });
 
-EM_JS_NUM(errcode, hiwire_copy_to_ptr, (JsRef idobj, void* ptr), {
+EM_JS_NUM(errcode, hiwire_assign_to_ptr, (JsRef idobj, void* ptr), {
   let jsobj = Module.hiwire.get_value(idobj);
   Module.HEAPU8.set(Module.typedArrayAsUint8Array(jsobj), ptr);
 });
 
-EM_JS_NUM(errcode, hiwire_copy_from_ptr, (JsRef idobj, void* ptr), {
+EM_JS_NUM(errcode, hiwire_assign_from_ptr, (JsRef idobj, void* ptr), {
   let jsobj = Module.hiwire.get_value(idobj);
   Module.typedArrayAsUint8Array(jsobj).set(
     Module.HEAPU8.subarray(ptr, ptr + jsobj.byteLength));
 });
 
-EM_JS_NUM(errcode,
-          hiwire_get_dtype,
-          (JsRef idobj, char** format_ptr, Py_ssize_t* size_ptr),
-          {
-            if (!Module.hiwire.dtype_map) {
-              let alloc = stringToNewUTF8;
-              Module.hiwire.dtype_map = new Map([
-                [ 'Int8Array', [ alloc('b'), 1 ] ],
-                [ 'Uint8Array', [ alloc('B'), 1 ] ],
-                [ 'Uint8ClampedArray', [ alloc('B'), 1 ] ],
-                [ 'Int16Array', [ alloc('h'), 2 ] ],
-                [ 'Uint16Array', [ alloc('H'), 2 ] ],
-                [ 'Int32Array', [ alloc('i'), 4 ] ],
-                [ 'Uint32Array', [ alloc('I'), 4 ] ],
-                [ 'Float32Array', [ alloc('f'), 4 ] ],
-                [ 'Float64Array', [ alloc('d'), 8 ] ],
-                [ 'ArrayBuffer', [ alloc('B'), 1 ] ], // Default to Uint8;
-              ]);
-            }
-            let jsobj = Module.hiwire.get_value(idobj);
-            let[format_utf8, size] =
-              Module.hiwire.dtype_map.get(jsobj.constructor.name) || [ 0, 0 ];
-            // Store results into arguments
-            setValue(format_ptr, format_utf8, "i8*");
-            setValue(size_ptr, size, "i32");
-          });
+// clang-format off
+EM_JS_NUM(
+errcode,
+hiwire_get_dtype,
+(JsRef idobj, char** format_ptr, Py_ssize_t* size_ptr, bool* checked_ptr),
+{
+  let jsobj = Module.hiwire.get_value(idobj);
+  let [format_utf8, size, checked] = Module.get_dtype(jsobj);
+  // Store results into arguments
+  setValue(format_ptr, format_utf8, "i8*");
+  setValue(size_ptr, size, "i32");
+  setValue(checked_ptr, size, "u8");
+});
+// clang-format on
 
 EM_JS_REF(JsRef, hiwire_subarray, (JsRef idarr, int start, int end), {
   let jsarr = Module.hiwire.get_value(idarr);

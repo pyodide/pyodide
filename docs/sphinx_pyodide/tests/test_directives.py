@@ -119,6 +119,7 @@ def test_summary():
     )
     assert set(globals) == {
         (
+            "",
             "languagePluginLoader",
             "",
             "A promise that resolves to ``undefined`` when Pyodide is finished loading.",
@@ -128,12 +129,14 @@ def test_summary():
     assert set(attributes).issuperset(
         {
             (
+                "",
                 "loadedPackages",
                 "",
                 "The list of packages that Pyodide has loaded.",
                 "pyodide.loadedPackages",
             ),
             (
+                "",
                 "pyodide_py",
                 "",
                 "An alias to the Python pyodide package.",
@@ -141,15 +144,18 @@ def test_summary():
             ),
         }
     )
+    print(functions)
     assert set(functions).issuperset(
         {
             (
+                "*async* ",
                 "loadPackagesFromImports",
                 "(code, messageCallback, errorCallback)",
                 "Inspect a Python code chunk and use :js:func:`pyodide.loadPackage` to load any known \npackages that the code chunk imports.",
                 "pyodide.loadPackagesFromImports",
             ),
             (
+                "",
                 "registerJsModule",
                 "(name, module)",
                 "Registers the Js object ``module`` as a Js module with ``name``.",

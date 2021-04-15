@@ -60,6 +60,14 @@ int
 hiwire_init();
 
 /**
+ * Convert a string of hexadecimal digits to a Number or BigInt depending on
+ * whether it is less than MAX_SAFE_INTEGER or not. The string is assumed to
+ * begin with an optional sign followed by 0x followed by one or more digits.
+ */
+JsRef
+hiwire_int_from_hex(const char* s);
+
+/**
  * Increase the reference count on an object.
  *
  * Returns: The new reference
@@ -533,23 +541,26 @@ int
 hiwire_get_byteOffset(JsRef idobj);
 
 /**
- * Copies the buffer contents of a given typed array or buffer into the memory
- * at ptr.
+ * Copies the buffer contents of a given ArrayBuffer view or ArrayBuffer into
+ * the memory at ptr.
  */
 errcode
-hiwire_copy_to_ptr(JsRef idobj, void* ptr);
+hiwire_assign_to_ptr(JsRef idobj, void* ptr);
 
 /**
- * Copies the memory at ptr into a given typed array or buffer.
+ * Copies the memory at ptr into a given ArrayBuffer view or ArrayBuffer.
  */
 errcode
-hiwire_copy_from_ptr(JsRef idobj, void* ptr);
+hiwire_assign_from_ptr(JsRef idobj, void* ptr);
 
 /**
  * Get a data type identifier for a given typedarray.
  */
 errcode
-hiwire_get_dtype(JsRef idobj, char** format_ptr, Py_ssize_t* size_ptr);
+hiwire_get_dtype(JsRef idobj,
+                 char** format_ptr,
+                 Py_ssize_t* size_ptr,
+                 bool* check_assignments);
 
 /**
  * Get a subarray from a TypedArray

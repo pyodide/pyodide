@@ -102,17 +102,44 @@ JS_FILE(python2js_buffer_init, () => {
     return [ arrayType, bigEndian ];
   };
 
-  Module.python2js_buffer_1d_contiguous = function(ptr, stride, n, converter) {
+  /**
+   * Convert a 1-dimensional contiguous buffer to Javascript.
+   *
+   * In this case we can just slice the memory out of the wasm HEAP.
+   * @param {number} ptr A pointer to the start of the buffer in wasm memory
+   * @param {number} stride The size of the entries in bytes
+   * @param {number} n The number of entries
+   * @returns A new ArrayBuffer with the appropriate data in it (not a view of
+   *  the WASM heap)
+   * @private
+   */
+  Module.python2js_buffer_1d_contiguous = function(ptr, stride, n) {
     "use strict";
     let byteLength = stride * n;
-    let backing = HEAP8.slice(ptr, ptr + byteLength).buffer;
-    return converter(backing);
+    // Note: slice here is a copy (as opposed to subarray which is not)
+    return HEAP8.slice(ptr, ptr + byteLength).buffer;
   };
 
+  /**
+   * Convert a 1d noncontiguous buffer to Javascript.
+   *
+   * Since the buffer is not contiguous we have to copy it in chunks.
+   * @param {number} ptr The WAM memory pointer to the start of the buffer.
+   * @param {number} stride The stride in bytes between each entry.
+   * @param {number} suboffset The suboffset from the Python Buffer protocol.
+   *  Negative if no suboffsets. (see
+   *  https://docs.python.org/3/c-api/buffer.html#c.Py_buffer.suboffsets)
+   * @param {number} n The number of entries.
+   * @param {number} itemsize The size in bytes of each entry.
+   * @returns A new ArrayBuffer with the appropriate data in it (not a view of
+   *  the WASM heap)
+   * @private
+   */
   Module.python2js_buffer_1d_noncontiguous = function(ptr, stride, suboffset, n,
-                                                      itemsize, converter) {
+                                                      itemsize) {
     "use strict";
     let byteLength = itemsize * n;
+    // Make new memory of the appropriate size
     let buffer = new Uint8Array(byteLength);
     for (i = 0; i < n; ++i) {
       let curptr = ptr + i * stride;
@@ -121,11 +148,32 @@ JS_FILE(python2js_buffer_init, () => {
       }
       buffer.set(HEAP8.subarray(curptr, curptr + itemsize), i * itemsize);
     }
-    return converter(buffer.buffer);
+    return buffer.buffer;
   };
 
+  /**
+   * Convert an ndarray to a nested Javascript array, the main function.
+   *
+   * This is called by _python2js_buffer_inner (defined in python2js_buffer.c).
+   * There are two layers of setup that need to be done to get the base case of
+   * the recursion right.
+   *
+   * The last dimension of the array is handled by the appropriate 1d array
+   * converter: python2js_buffer_1d_contiguous or
+   * python2js_buffer_1d_noncontiguous.
+   *
+   * @param {number} ptr The pointer into the buffer
+   * @param {number} curdim What dimension are we currently working on? 0 <=
+   * curdim < ndim.
+   * @param {number} bufferData All of the data out of the Py_buffer, plus the
+   * converter function: ndim, format, itemsize, shape (a ptr), strides (a ptr),
+   * suboffsets (a ptr), converter,
+   * @returns A nested Javascript array, the result of the conversion.
+   * @private
+   */
   Module._python2js_buffer_recursive = function(ptr, curdim, bufferData) {
     "use strict";
+    // When indexing HEAP32 we need to divide the pointer by 4
     let n = HEAP32[bufferData.shape / 4 + curdim];
     let stride = HEAP32[bufferData.strides / 4 + curdim];
     let suboffset = -1;
@@ -134,19 +182,22 @@ JS_FILE(python2js_buffer_init, () => {
       suboffset = HEAP32[bufferData.suboffsets / 4 + curdim];
     }
     if (curdim === bufferData.ndim - 1) {
+      // Last dimension, use appropriate 1d converter
+      let arraybuffer;
       if (stride === bufferData.itemsize && suboffset < 0) {
-        // clang-format on
-        return Module.python2js_buffer_1d_contiguous(ptr, stride, n,
-                                                     bufferData.converter);
+        arraybuffer = Module.python2js_buffer_1d_contiguous(ptr, stride, n);
       } else {
-        return Module.python2js_buffer_1d_noncontiguous(ptr, stride, suboffset,
-                                                        n, bufferData.itemsize,
-                                                        bufferData.converter);
+        arraybuffer = Module.python2js_buffer_1d_noncontiguous(
+            ptr, stride, suboffset, n, bufferData.itemsize);
       }
+      return bufferData.converter(arraybuffer);
     }
+    // clang-format on
 
     let result = [];
     for (let i = 0; i < n; ++i) {
+      // See:
+      // https://docs.python.org/3/c-api/buffer.html#pil-style-shape-strides-and-suboffsets
       let curPtr = ptr + i * stride;
       if (suboffset >= 0) {
         curptr = HEAP32[curptr / 4] + suboffset;
@@ -157,6 +208,22 @@ JS_FILE(python2js_buffer_init, () => {
     return result;
   };
 
+  /**
+   * Get the appropriate converter function.
+   *
+   * The converter function takes an ArrayBuffer and returns an appropriate
+   * TypedArray. If the buffer is big endian, the converter will convert the
+   * data to little endian.
+   *
+   * The converter function does something special if the format character is
+   * "?" or "s". If it's "?" we return an array of booleans, if it's "s" we
+   * return a string.
+   *
+   * @param {string} format The format character of the buffer.
+   * @param {number} itemsize Should be one of 1, 2, 4, 8. Used for big endian
+   * conversion.
+   * @returns A converter function ArrayBuffer => TypedArray
+   */
   Module.get_converter = function(format, itemsize) {
     "use strict";
     let formatStr = UTF8ToString(format);
@@ -164,11 +231,11 @@ JS_FILE(python2js_buffer_init, () => {
     let formatChar = formatStr.slice(-1);
     // clang-format off
     switch (formatChar) {
-      case "c":
+      case "s":
         let decoder = new TextDecoder("utf8");
         return (buff) => decoder.decode(buff);
       case "?":
-        return (buff) => Array.from(new Uint8Array(buff)).map(x => !!x);
+        return (buff) => Array.from(new Uint8Array(buff), x => !!x);
     }
     // clang-format on
 

@@ -6,6 +6,7 @@ import json
 from pathlib import Path
 import zipfile
 from typing import Dict, Any, Union, List, Tuple
+from pyodide import to_js
 
 from distlib import markers, util, version
 
@@ -32,7 +33,7 @@ if IN_BROWSER:
             raise OSError(
                 f"Request for {url} failed with status {resp.status}: {resp.statusText}"
             )
-        return io.BytesIO((await resp.arrayBuffer()).new_copy())
+        return io.BytesIO((await resp.arrayBuffer()).to_py())
 
 
 else:
@@ -55,6 +56,14 @@ else:
         for coroutine in coroutines:
             result.append(await coroutine)
         return result
+
+
+if IN_BROWSER:
+    from pyodide_js import loadedPackages
+else:
+
+    class loadedPackages:  # type: ignore
+        pass
 
 
 async def _get_pypi_json(pkgname):
@@ -112,14 +121,25 @@ async def _install_wheel(name, fileinfo):
     wheel = await _get_url(url)
     _validate_wheel(wheel, fileinfo)
     _extract_wheel(wheel)
+    setattr(loadedPackages, name, url)
 
 
 class _PackageManager:
+    # 'normalized' is the distlib default version scheme, it is based on PEP 386.
+    #
+    # PEP 386 is "perhaps the most widely used Python version scheme, but since
+    # it tries to be very flexible and work with a wide range of conventions, it
+    # ends up allowing a very chaotic mess of version conventions"
+    #
+    # PEP 386 version scheme
+    # https://www.python.org/dev/peps/pep-0386/#setuptools
+    #
+    # https://distlib.readthedocs.io/en/stable/internals.html#the-version-api
     version_scheme = version.get_scheme("normalized")
 
     def __init__(self):
         if IN_BROWSER:
-            self.builtin_packages = pyodide_js._module.packages.dependencies.to_py()
+            self.builtin_packages = pyodide_js._module.packages.versions.to_py()
         else:
             self.builtin_packages = {}
         self.installed_packages = {}
@@ -136,7 +156,7 @@ class _PackageManager:
 
         transaction: Dict[str, Any] = {
             "wheels": [],
-            "pyodide_packages": set(),
+            "pyodide_packages": [],
             "locked": dict(self.installed_packages),
         }
         requirement_promises = []
@@ -152,19 +172,27 @@ class _PackageManager:
         # Install built-in packages
         pyodide_packages = transaction["pyodide_packages"]
         if len(pyodide_packages):
-            # Note: branch never happens in out-of-browser testing because we
-            # report that all dependencies are empty.
-            self.installed_packages.update(dict((k, None) for k in pyodide_packages))
-            wheel_promises.append(pyodide_js.loadPackage(list(pyodide_packages)))
+            # Note: branch never happens in out-of-browser testing because in
+            # that case builtin_packages is empty.
+            self.installed_packages.update(
+                {name: ver for (name, ver) in pyodide_packages}
+            )
+            wheel_promises.append(
+                asyncio.ensure_future(pyodide_js.loadPackage(to_js(pyodide_packages)))
+            )
 
         # Now install PyPI packages
         for name, wheel, ver in transaction["wheels"]:
             wheel_promises.append(_install_wheel(name, wheel))
             self.installed_packages[name] = ver
         await gather(*wheel_promises)
-        return f'Installed {", ".join(self.installed_packages.keys())}'
 
     async def add_requirement(self, requirement: str, ctx, transaction):
+        """Add a requirement to the transaction.
+
+        See PEP 508 for a description of the requirements.
+        https://www.python.org/dev/peps/pep-0508
+        """
         if requirement.endswith(".whl"):
             # custom download location
             name, wheel, version = _parse_wheel_url(requirement)
@@ -173,38 +201,43 @@ class _PackageManager:
 
         req = util.parse_requirement(requirement)
 
-        # If it's a Pyodide package, use that instead of the one on PyPI
-        if req.name in self.builtin_packages:
-            transaction["pyodide_packages"].add(req.name)
+        matcher = self.version_scheme.matcher(req.requirement)
+
+        # If there's a Pyodide package that matches the version constraint, use
+        # the Pyodide package instead of the one on PyPI
+        if req.name in self.builtin_packages and matcher.match(
+            self.builtin_packages[req.name]
+        ):
+            version = self.builtin_packages[req.name]
+            transaction["pyodide_packages"].append((req.name, version))
             return
 
         if req.marker:
+            # handle environment-markers
+            # https://www.python.org/dev/peps/pep-0508/#environment-markers
             if not markers.evaluator.evaluate(req.marker, ctx):
                 return
 
-        matcher = self.version_scheme.matcher(req.requirement)
+        # Is some version of this package is already installed?
+        if req.name in transaction["locked"]:
+            ver = transaction["locked"][req.name]
+            if matcher.match(ver):
+                # installed version matches, nothing to do
+                return
+            else:
+                raise ValueError(
+                    f"Requested '{requirement}', "
+                    f"but {req.name}=={ver} is already installed"
+                )
+        metadata = await _get_pypi_json(req.name)
+        wheel, ver = self.find_wheel(metadata, req)
+        transaction["locked"][req.name] = ver
 
-        # If we already have something that will work, don't
-        # fetch again
-        for name, ver in transaction["locked"].items():
-            if name == req.name:
-                if matcher.match(ver):
-                    break
-                else:
-                    raise ValueError(
-                        f"Requested '{requirement}', "
-                        f"but {name}=={ver} is already installed"
-                    )
-        else:
-            metadata = await _get_pypi_json(req.name)
-            wheel, ver = self.find_wheel(metadata, req)
-            transaction["locked"][req.name] = ver
+        recurs_reqs = metadata.get("info", {}).get("requires_dist") or []
+        for recurs_req in recurs_reqs:
+            await self.add_requirement(recurs_req, ctx, transaction)
 
-            recurs_reqs = metadata.get("info", {}).get("requires_dist") or []
-            for recurs_req in recurs_reqs:
-                await self.add_requirement(recurs_req, ctx, transaction)
-
-            transaction["wheels"].append((req.name, wheel, ver))
+        transaction["wheels"].append((req.name, wheel, ver))
 
     def find_wheel(self, metadata, req):
         releases = []
@@ -245,8 +278,8 @@ def install(requirements: Union[str, List[str]]):
     ----------
     requirements : ``str | List[str]``
 
-        A requirement or list of requirements to install. Each requirement is a string, which should be either
-        a package name or URL to a wheel:
+        A requirement or list of requirements to install. Each requirement is a
+        string, which should be either a package name or URL to a wheel:
 
         - If the requirement ends in ``.whl`` it will be interpreted as a URL.
           The file must be a wheel named in compliance with the
@@ -260,8 +293,8 @@ def install(requirements: Union[str, List[str]]):
     -------
     ``Future``
 
-        A ``Future`` that resolves to ``None`` when all packages have
-        been downloaded and installed.
+        A ``Future`` that resolves to ``None`` when all packages have been
+        downloaded and installed.
     """
     importlib.invalidate_caches()
     return asyncio.ensure_future(PACKAGE_MANAGER.install(requirements))
