@@ -176,10 +176,11 @@ from js import document
 def f(*args):
     document.querySelector("h1").innerHTML += "(>.<)"
 
-# Leaks f and doesn't remove the event listener
 document.body.addEventListener('click', f)
 document.body.removeEventListener('click', f)
 ```
+This leaks `f` and does not remove the event listener (instead
+`removeEventListener` will silently do nothing).
 
 To do this correctly use :func:`pyodide.create_proxy` as follows:
 ```py
