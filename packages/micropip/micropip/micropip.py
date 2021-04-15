@@ -33,7 +33,7 @@ if IN_BROWSER:
             raise OSError(
                 f"Request for {url} failed with status {resp.status}: {resp.statusText}"
             )
-        return io.BytesIO((await resp.arrayBuffer()).new_copy())
+        return io.BytesIO((await resp.arrayBuffer()).to_py())
 
 
 else:

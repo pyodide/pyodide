@@ -34,6 +34,17 @@ JsProxy_Check(PyObject* x);
 JsRef
 JsProxy_AsJs(PyObject* x);
 
+/**
+ * obj must be a JsProxy of a buffer (we do no checking!)
+ * Make a new Python Buffer object and copy the data from obj into
+ *
+ */
+PyObject*
+JsBuffer_CloneIntoPython(JsRef jsbuffer,
+                         Py_ssize_t byteLength,
+                         char* format,
+                         Py_ssize_t itemsize);
+
 /** Check if a Python object is a JsException object.
  *  \param x The Python object
  *  \return 1 if the object is a JsException object.

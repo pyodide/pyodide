@@ -384,14 +384,14 @@ def test_js2python(selenium):
     assert selenium.run("t.jspython is open")
     assert selenium.run(
         """
-        jsbytes = t.jsbytes.new_copy()
+        jsbytes = t.jsbytes.to_py()
         ((jsbytes.tolist() == [1, 2, 3])
          and (jsbytes.tobytes() == b"\x01\x02\x03"))
         """
     )
     assert selenium.run(
         """
-        jsfloats = t.jsfloats.new_copy()
+        jsfloats = t.jsfloats.to_py()
         import struct
         expected = struct.pack("fff", 1, 2, 3)
         (jsfloats.tolist() == [1, 2, 3]) and (jsfloats.tobytes() == expected)
@@ -444,7 +444,7 @@ def test_typed_arrays(selenium, jstype, pytype):
         window.array = new {jstype}([1, 2, 3, 4]);
         return pyodide.runPython(`
             from js import array
-            array = array.new_copy()
+            array = array.to_py()
             import struct
             expected = struct.pack("{pytype*4}", 1, 2, 3, 4)
             print(array.format, array.tolist(), array.tobytes())
@@ -464,7 +464,7 @@ def test_array_buffer(selenium):
             window.array = new ArrayBuffer(100);
             return pyodide.runPython(`
                 from js import array
-                array = array.new_copy()
+                array = array.to_py()
                 len(array.tobytes())
             `);
             """

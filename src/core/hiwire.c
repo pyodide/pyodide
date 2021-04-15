@@ -155,6 +155,41 @@ EM_JS_NUM(int, hiwire_init, (), {
     }
   };
 
+  {
+    let dtypes_str = "bBhHiIfd";
+    let dtypes_ptr = stringToNewUTF8(dtypes_str);
+    let dtypes_map = {};
+    for (let[idx, val] of Object.entries(dtypes_str)) {
+      dtypes_map[val] = dtypes_ptr + Number(idx);
+    }
+
+    let buffer_datatype_map = new Map([
+      [ 'Int8Array', [ dtypes_map['b'], 1, true ] ],
+      [ 'Uint8Array', [ dtypes_map['B'], 1, true ] ],
+      [ 'Uint8ClampedArray', [ dtypes_map['B'], 1, true ] ],
+      [ 'Int16Array', [ dtypes_map['h'], 2, true ] ],
+      [ 'Uint16Array', [ dtypes_map['H'], 2, true ] ],
+      [ 'Int32Array', [ dtypes_map['i'], 4, true ] ],
+      [ 'Uint32Array', [ dtypes_map['I'], 4, true ] ],
+      [ 'Float32Array', [ dtypes_map['f'], 4, true ] ],
+      [ 'Float64Array', [ dtypes_map['d'], 8, true ] ],
+      [
+        'DataView',
+        [
+          dtypes_map['B'],
+          1,
+          false
+        ]
+      ], // Default to Uint8; these last two are unchecked.
+      [ 'ArrayBuffer', [ dtypes_map['B'], 1, false ] ],
+    ]);
+
+    Module.get_dtype = function(jsobj)
+    {
+      return buffer_datatype_map.get(jsobj.constructor.name) || [ 0, 0 ];
+    }
+  }
+
   if (globalThis.BigInt) {
     Module.BigInt = BigInt;
   } else {
@@ -286,24 +321,28 @@ EM_JS_REF(JsRef, hiwire_get_member_string, (JsRef idobj, const char* ptrkey), {
   return Module.hiwire.new_value(result);
 });
 
-EM_JS_NUM(errcode,
-          hiwire_set_member_string,
-          (JsRef idobj, const char* ptrkey, JsRef idval),
-          {
-            let jsobj = Module.hiwire.get_value(idobj);
-            let jskey = UTF8ToString(ptrkey);
-            let jsval = Module.hiwire.get_value(idval);
-            jsobj[jskey] = jsval;
-          });
+// clang-format off
+EM_JS_NUM(
+errcode,
+hiwire_set_member_string,
+(JsRef idobj, const char* ptrkey, JsRef idval),
+{
+  let jsobj = Module.hiwire.get_value(idobj);
+  let jskey = UTF8ToString(ptrkey);
+  let jsval = Module.hiwire.get_value(idval);
+  jsobj[jskey] = jsval;
+});
 
-EM_JS_NUM(errcode,
-          hiwire_delete_member_string,
-          (JsRef idobj, const char* ptrkey),
-          {
-            let jsobj = Module.hiwire.get_value(idobj);
-            let jskey = UTF8ToString(ptrkey);
-            delete jsobj[jskey];
-          });
+EM_JS_NUM(
+errcode,
+hiwire_delete_member_string,
+(JsRef idobj, const char* ptrkey),
+{
+  let jsobj = Module.hiwire.get_value(idobj);
+  let jskey = UTF8ToString(ptrkey);
+  delete jsobj[jskey];
+});
+// clang-format on
 
 EM_JS_REF(JsRef, hiwire_get_member_int, (JsRef idobj, int idx), {
   let obj = Module.hiwire.get_value(idobj);
@@ -583,8 +622,7 @@ EM_JS_REF(char*, hiwire_constructor_name, (JsRef idobj), {
 
 #define MAKE_OPERATOR(name, op)                                                \
   EM_JS_NUM(bool, hiwire_##name, (JsRef ida, JsRef idb), {                     \
-    return (Module.hiwire.get_value(ida) op Module.hiwire.get_value(idb)) ? 1  \
-                                                                          : 0; \
+    return !!(Module.hiwire.get_value(ida) op Module.hiwire.get_value(idb));   \
   })
 
 MAKE_OPERATOR(less_than, <);
@@ -643,14 +681,14 @@ EM_JS_REF(JsRef, hiwire_object_values, (JsRef idobj), {
 EM_JS_NUM(bool, hiwire_is_typedarray, (JsRef idobj), {
   let jsobj = Module.hiwire.get_value(idobj);
   // clang-format off
-  return (jsobj['byteLength'] !== undefined) ? 1 : 0;
+  return ArrayBuffer.isView(jsobj) || a.constructor.name === "ArrayBuffer";
   // clang-format on
 });
 
 EM_JS_NUM(bool, hiwire_is_on_wasm_heap, (JsRef idobj), {
   let jsobj = Module.hiwire.get_value(idobj);
   // clang-format off
-  return (jsobj.buffer === Module.HEAPU8.buffer) ? 1 : 0;
+  return jsobj.buffer === Module.HEAPU8.buffer;
   // clang-format on
 });
 
@@ -675,32 +713,20 @@ EM_JS_NUM(errcode, hiwire_assign_from_ptr, (JsRef idobj, void* ptr), {
     Module.HEAPU8.subarray(ptr, ptr + jsobj.byteLength));
 });
 
-EM_JS_NUM(errcode,
-          hiwire_get_dtype,
-          (JsRef idobj, char** format_ptr, Py_ssize_t* size_ptr),
-          {
-            if (!Module.hiwire.dtype_map) {
-              let alloc = stringToNewUTF8;
-              Module.hiwire.dtype_map = new Map([
-                [ 'Int8Array', [ alloc('b'), 1 ] ],
-                [ 'Uint8Array', [ alloc('B'), 1 ] ],
-                [ 'Uint8ClampedArray', [ alloc('B'), 1 ] ],
-                [ 'Int16Array', [ alloc('h'), 2 ] ],
-                [ 'Uint16Array', [ alloc('H'), 2 ] ],
-                [ 'Int32Array', [ alloc('i'), 4 ] ],
-                [ 'Uint32Array', [ alloc('I'), 4 ] ],
-                [ 'Float32Array', [ alloc('f'), 4 ] ],
-                [ 'Float64Array', [ alloc('d'), 8 ] ],
-                [ 'ArrayBuffer', [ alloc('B'), 1 ] ], // Default to Uint8;
-              ]);
-            }
-            let jsobj = Module.hiwire.get_value(idobj);
-            let[format_utf8, size] =
-              Module.hiwire.dtype_map.get(jsobj.constructor.name) || [ 0, 0 ];
-            // Store results into arguments
-            setValue(format_ptr, format_utf8, "i8*");
-            setValue(size_ptr, size, "i32");
-          });
+// clang-format off
+EM_JS_NUM(
+errcode,
+hiwire_get_dtype,
+(JsRef idobj, char** format_ptr, Py_ssize_t* size_ptr, bool* checked_ptr),
+{
+  let jsobj = Module.hiwire.get_value(idobj);
+  let [format_utf8, size, checked] = Module.get_dtype(jsobj);
+  // Store results into arguments
+  setValue(format_ptr, format_utf8, "i8*");
+  setValue(size_ptr, size, "i32");
+  setValue(checked_ptr, size, "u8");
+});
+// clang-format on
 
 EM_JS_REF(JsRef, hiwire_subarray, (JsRef idarr, int start, int end), {
   let jsarr = Module.hiwire.get_value(idarr);

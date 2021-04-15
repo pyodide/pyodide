@@ -705,7 +705,7 @@ def test_buffer(selenium):
         self.a = new Uint32Array(Array(10).fill(0).map((_,idx) => idx));
         pyodide.runPython(`
             from js import a
-            b = a.new_copy()
+            b = a.to_py()
             b[4] = 7
             assert b[8] == 8
             a.copy_into_buffer(b)
