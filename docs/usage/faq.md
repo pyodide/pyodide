@@ -181,7 +181,7 @@ document.body.addEventListener('click', f)
 document.body.removeEventListener('click', f)
 ```
 
-To do this correctly use the following:
+To do this correctly use :func:`pyodide.create_proxy` as follows:
 ```py
 from js import document
 from pyodide import create_proxy
