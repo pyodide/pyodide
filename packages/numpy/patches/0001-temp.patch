@@ -1,4 +1,4 @@
-From c0bf24114eece408d1bfa93514f080a5da3712e2 Mon Sep 17 00:00:00 2001
+From e032fb0cc5e98601f96ae8800c8b6785cd1e9f89 Mon Sep 17 00:00:00 2001
 From: Hood <hood@mit.edu>
 Date: Fri, 2 Apr 2021 14:24:24 -0700
 Subject: [PATCH] temp
@@ -33,7 +33,7 @@ index 52cb58726..5467f4d78 100644
      }
      return nd;
 diff --git a/numpy/core/src/multiarray/iterators.c b/numpy/core/src/multiarray/iterators.c
-index 9da811f69..2fdaf560b 100644
+index 9da811f69..1e25fc7f6 100644
 --- a/numpy/core/src/multiarray/iterators.c
 +++ b/numpy/core/src/multiarray/iterators.c
 @@ -1153,6 +1153,37 @@ NPY_NO_EXPORT PyTypeObject PyArrayIter_Type = {
@@ -55,21 +55,21 @@ index 9da811f69..2fdaf560b 100644
 +NPY_NO_EXPORT
 +void
 +write_to_ptr(void *ptr, void* val){
-+    *ptr = val;
++    *((void**)(ptr)) = val;
 +}
 +
 +__attribute__((noinline))
 +NPY_NO_EXPORT
 +void *
 +read_from_ptr(void *ptr){
-+    return *ptr;
++    return *(void**)(ptr);
 +}
 +
 +#define TO_VOID(x) ((void*)(x))
 +#define TO_INTP(x) ((npy_intp)(x))
 +#define WRITE(x, val) write_to_ptr(TO_VOID(x), TO_VOID(val))
 +#define READ(x) read_from_ptr(TO_VOID(x))
-+#define READ_INTP(x, offset) TO_INTP(READ(x, offset))
++#define READ_INTP(x) TO_INTP(READ(x))
 +
  /* Adjust dimensionality and strides for index object iterators
     --- i.e. broadcast
