@@ -19,11 +19,22 @@ JS_FILE(pyproxy_init_js, () => {0,0; /* Magic, see include_js_file.h */
   // clang-format on
 
   if (globalThis.FinalizationRegistry) {
-    Module.finalizationRegistry =
-        new FinalizationRegistry((ptr) => { _Py_DecRef(ptr); });
+    Module.finalizationRegistry = new FinalizationRegistry((ptr) => {
+      try {
+        _Py_DecRef(ptr);
+      } catch (e) {
+        // I'm not really sure what happens if an error occurs inside of a
+        // finalizer...
+        Module.fatal_error(e);
+      }
+    });
     Module.bufferFinalizationRegistry = new FinalizationRegistry((ptr) => {
-      _PyBuffer_Release(ptr);
-      _PyMem_Free(ptr);
+      try {
+        _PyBuffer_Release(ptr);
+        _PyMem_Free(ptr);
+      } catch (e) {
+        Module.fatal_error(e);
+      }
     });
   } else {
     Module.finalizationRegistry = {register() {}, unregister() {}};
@@ -50,8 +61,7 @@ JS_FILE(pyproxy_init_js, () => {0,0; /* Magic, see include_js_file.h */
    * still make "prototype in proxy" be true though.
    * @private
    */
-  Module.pyproxy_new =
-      function(ptrobj) {
+  Module.pyproxy_new = function(ptrobj) {
     let flags = _pyproxy_getflags(ptrobj);
     let cls = Module.getPyProxyClass(flags);
     // Reflect.construct calls the constructor of Module.PyProxyClass but sets
@@ -79,7 +89,7 @@ JS_FILE(pyproxy_init_js, () => {0,0; /* Magic, see include_js_file.h */
     let proxy = new Proxy(target, Module.PyProxyHandlers);
     Module.finalizationRegistry.register(proxy, ptrobj, proxy);
     return proxy;
-  }
+  };
 
   function _getPtr(jsobj) {
     let ptr = jsobj.$$.ptr;
