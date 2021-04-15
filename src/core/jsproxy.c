@@ -1264,7 +1264,12 @@ static PyTypeObject BufferType = {
  * and JsBuffer_AssignPyBuffer.
  *
  * self -- The Javascript buffer involved
- * view -- The
+ * view -- The Py_buffer view involved
+ * safe -- If true, check data type compatibility, if false only check size
+ *         compatibility.
+ * dir -- Used for error messages, if true we are assigning from js buffer to
+ *        the py buffer, if false we are assigning from the py buffer to the js
+ *        buffer
  */
 static int
 check_buffer_compatibility(JsProxy* self, Py_buffer view, bool safe, bool dir)
@@ -1301,6 +1306,11 @@ check_buffer_compatibility(JsProxy* self, Py_buffer view, bool safe, bool dir)
   return 0;
 }
 
+/**
+ * Assign from a js buffer to a py buffer
+ * obj -- A JsBuffer (meaning a PyProxy of an ArrayBuffer or an ArrayBufferView)
+ * buffer -- A PyObject whcih supports the buffer protocol and is writable.
+ */
 static PyObject*
 JsBuffer_AssignToPyBuffer(PyObject* obj, PyObject* target)
 {
@@ -1324,6 +1334,11 @@ finally:
   return NULL;
 }
 
+/**
+ * Assign from a py buffer to a js buffer
+ * obj -- A JsBuffer (meaning a PyProxy of an ArrayBuffer or an ArrayBufferView)
+ * buffer -- A PyObject which supports the buffer protocol (can be read only)
+ */
 static PyObject*
 JsBuffer_AssignPyBuffer(PyObject* obj, PyObject* source)
 {
@@ -1346,7 +1361,19 @@ finally:
   return NULL;
 }
 
-// Used from js2python (to_py)
+/**
+ * Used from js2python for to_py. Make a new Python buffer with the same data as
+ * jsbuffer.
+ *
+ * All other arguments are calculated from jsbuffer, but it's more convenient to
+ * calculate them in Javascript and pass them as arguments than to acquire them
+ * from C.
+ *
+ * jsbuffer - An ArrayBuffer view or an ArrayBuffer byteLength - the byteLength
+ * of jsbuffer format - the appropriate format for jsbuffer, from
+ * Module.hiwire.get_dtype itemsize - the appropriate itemsize for jsbuffer,
+ * from Module.hiwire.get_dtype
+ */
 PyObject*
 JsBuffer_CloneIntoPython(JsRef jsbuffer,
                          Py_ssize_t byteLength,

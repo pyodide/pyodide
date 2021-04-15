@@ -90,8 +90,6 @@ try:
         def assign(self, rhs: "ReadBuffer"):
             """Assign from a Python buffer into the Javascript buffer.
 
-
-
             Present only if the wrapped Javascript object is an ArrayBuffer or
             an ArrayBuffer view.
             """

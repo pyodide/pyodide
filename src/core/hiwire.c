@@ -144,6 +144,12 @@ EM_JS_NUM(int, hiwire_init, (), {
     // clang-format on
   };
 
+  /**
+   * Turn any ArrayBuffer view or ArrayBuffer into a Uint8Array.
+   *
+   * This respects slices: if the ArrayBuffer view is restricted to a slice of
+   * the backing ArrayBuffer, we return a Uint8Array that shows the same slice.
+   */
   Module.typedArrayAsUint8Array = function(arg)
   {
     // clang-format off
@@ -173,20 +179,26 @@ EM_JS_NUM(int, hiwire_init, (), {
       [ 'Uint32Array', [ dtypes_map['I'], 4, true ] ],
       [ 'Float32Array', [ dtypes_map['f'], 4, true ] ],
       [ 'Float64Array', [ dtypes_map['d'], 8, true ] ],
-      [
-        'DataView',
-        [
-          dtypes_map['B'],
-          1,
-          false
-        ]
-      ], // Default to Uint8; these last two are unchecked.
+      // These last two default to Uint8. They have checked : false to allow use
+      // with other types.
+      [ 'DataView', [ dtypes_map['B'], 1, false ] ],
       [ 'ArrayBuffer', [ dtypes_map['B'], 1, false ] ],
     ]);
 
+    /**
+     * This gets the dtype of a ArrayBuffer or ArrayBuffer view. We return a
+     * triple: [char* format_ptr, int itemsize, bool checked] If argument is
+     * untyped (a DataView or ArrayBuffer) then we say it's a Uint8, but we set
+     * the flag checked to false in that case so we allow assignment to/from
+     * anything.
+     *
+     * This is the API for use from Javascript, there's also an EM_JS
+     * hiwire_get_dtype wrapper for use from C. Used in js2python and in
+     * jsproxy.c for buffers.
+     */
     Module.get_dtype = function(jsobj)
     {
-      return buffer_datatype_map.get(jsobj.constructor.name) || [ 0, 0 ];
+      return buffer_datatype_map.get(jsobj.constructor.name) || [ 0, 0, false ];
     }
   }
 
@@ -290,11 +302,7 @@ EM_JS_NUM(bool, hiwire_is_array, (JsRef idobj), {
   }
   // What if it's a TypedArray?
   // clang-format off
-  if (
-    obj.buffer
-    && obj.buffer.constructor.name === "ArrayBuffer"
-    && obj.BYTES_PER_ELEMENT
-  ) {
+  if (ArrayBuffer.isView(obj) && obj.constructor.name !== "DataView") {
     // clang-format on
     return true;
   }

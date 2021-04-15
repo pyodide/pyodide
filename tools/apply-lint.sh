@@ -1,7 +1,7 @@
 FILES="$(git ls-files --others --exclude-standard '*.c' '*.h' '*.js')"
 FILES+=" $(git diff HEAD --name-only '*.c' '*.h' '*.js')"
 if [[ $FILES != " " ]]; then
-    clang-format -i -verbose ${FILES}
+    clang-format-6.0 -i -verbose ${FILES}
 fi
 
 FILES="$(git ls-files --others --exclude-standard '*.py')"

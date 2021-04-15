@@ -541,14 +541,14 @@ int
 hiwire_get_byteOffset(JsRef idobj);
 
 /**
- * Copies the buffer contents of a given typed array or buffer into the memory
- * at ptr.
+ * Copies the buffer contents of a given ArrayBuffer view or ArrayBuffer into
+ * the memory at ptr.
  */
 errcode
 hiwire_assign_to_ptr(JsRef idobj, void* ptr);
 
 /**
- * Copies the memory at ptr into a given typed array or buffer.
+ * Copies the memory at ptr into a given ArrayBuffer view or ArrayBuffer.
  */
 errcode
 hiwire_assign_from_ptr(JsRef idobj, void* ptr);
