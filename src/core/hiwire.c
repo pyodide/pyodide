@@ -689,7 +689,7 @@ EM_JS_REF(JsRef, hiwire_object_values, (JsRef idobj), {
 EM_JS_NUM(bool, hiwire_is_typedarray, (JsRef idobj), {
   let jsobj = Module.hiwire.get_value(idobj);
   // clang-format off
-  return ArrayBuffer.isView(jsobj) || a.constructor.name === "ArrayBuffer";
+  return ArrayBuffer.isView(jsobj) || jsobj.constructor.name === "ArrayBuffer";
   // clang-format on
 });
 
