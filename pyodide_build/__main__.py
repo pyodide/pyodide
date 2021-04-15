@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 import argparse
+import sys
 
 from . import buildall
 from . import buildpkg
@@ -22,6 +23,13 @@ def make_parser() -> argparse.ArgumentParser:
         ("serve", serve),
         ("mkpkg", mkpkg),
     ):
+        if "sphinx" in sys.modules and command_name in [
+            "buildpkg",
+            "buildall",
+            "pywasmcross",
+        ]:
+            # Likely building documentation, skip private API
+            continue
         parser = module.make_parser(subparsers.add_parser(command_name))  # type: ignore
         parser.set_defaults(func=module.main)  # type: ignore
     return main_parser
