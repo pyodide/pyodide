@@ -66,6 +66,10 @@ substitutions:
   [#1407](https://github.com/pyodide/pyodide/pull/1407)
 - {{ API }} Added {any}`pyodide.isPyProxy` to test if an object is a `PyProxy`.
   [#1456](https://github.com/pyodide/pyodide/pull/1456)
+- {{ Enhancement }} `PyProxy` and `PyBuffer` objects are now garbage collected
+  if the browser supports `FinalizationRegistry`.
+  [#1306](https://github.com/pyodide/pyodide/pull/1306)
+
 
 ### Fixed
 - {{ Fix }} getattr and dir on JsProxy now report consistent results and include all
