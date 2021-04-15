@@ -438,10 +438,10 @@ JS_FILE(pyproxy_init_js, () => {0,0; /* Magic, see include_js_file.h */
      * @returns {Iterator} An iterator for the proxied Python object.
      */
     [Symbol.iterator] : function() {
-      let ptr = _getPtr(this);
+      let ptrobj = _getPtr(this);
       let token = {};
       try {
-        let iterptr = _PyObject_GetIter();
+        let iterptr = _PyObject_GetIter(ptrobj);
       } catch {
         Module.fatal_error(e);
       }
