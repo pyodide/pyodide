@@ -117,7 +117,7 @@ typedef struct
 #define offset_Array_nd 12
 #define offset_Array_dimensions 16
 
-#define offset_Iter_Array 660
+#define offset_Iter_ao 660
 
 #define offset_MultIter_numiter 8
 #define offset_MultIter_nd 20
@@ -132,7 +132,7 @@ int numpy_patch_init(){
   assert(offset_Array_nd         == offsetof(PyArrayObject, nd));
   assert(offset_Array_dimensions == offsetof(PyArrayObject, dimensions));
 
-  assert(offset_Iter_Array == offsetof(PyArrayIterObject, ao));
+  assert(offset_Iter_ao == offsetof(PyArrayIterObject, ao));
 
   assert(offset_MultIter_numiter    == offsetof(PyArrayMultiIterObject, numiter));
   assert(offset_MultIter_nd         == offsetof(PyArrayMultiIterObject, nd));
@@ -149,12 +149,12 @@ int numpy_patch_init(){
 #define Array_nd(ptr)                 LOAD(ptr + offset_Array_nd)
 #define Array_dimensions(ptr)         LOAD(ptr + offset_Array_dimensions)
 
-#define Iter_GetArray(ptr)            LOAD(ptr + offset_Iter_Array)
+#define Iter_array(ptr)               LOAD(ptr + offset_Iter_ao)
 
 #define MultiIter_numiter(ptr)          LOAD(ptr + offset_MultIter_numiter)
-#define MultiIter_nd(ptr)               LOAD(ptr + offset_MultIter_numiter)
-#define MultiIter_Iter(ptr, index)      LOAD_ARRAY(ptr + offset_MultIter_iters, index)
-#define MultiIter_Dimension(ptr, index) LOAD_ARRAY(ptr + offset_MultIter_dimensions, index)
+#define MultiIter_nd(ptr)               LOAD(ptr + offset_MultIter_nd)
+#define MultiIter_iter(ptr, index)      LOAD_ARRAY(ptr + offset_MultIter_iters, index)
+#define MultiIter_dimension(ptr, index) LOAD_ARRAY(ptr + offset_MultIter_dimensions, index)
 // clang-format on
 
 /**
@@ -178,47 +178,34 @@ set_shape_mismatch_err()
  * See below for the C equivalent.
  */
 EM_JS_NUM(int, PyArray_Broadcast_part1, (void* mit), {
-  let i, nd, k, j;
-  let tmp, tmp2;
-  let it;
-  let it_ptr;
-
   let numiter = MultiIter_numiter(mit);
   /* Discover the broadcast number of dimensions */
-  nd = 0;
-  for (i = 0; i < numiter; i++) {
-    // nd = PyArray_MAX(nd, PyArray_NDIM(mit->iters[i]->ao));
-    let cur_nd = Array_Ndim(Iter_GetArray(MultiIter_GetIter(mit, i)));
-    nd = (cur_nd > nd) ? it_ao_ndim : nd;
+  let nd = 0;
+  for (let i = 0; i < numiter; i++) {
+    let cur_nd = Array_nd(Iter_array(MultiIter_iter(mit, i)));
+    nd = (cur_nd > nd) ? cur_nd : nd;
   }
-  // mit->nd = nd;
   MultiIter_nd(mit) = nd;
 
   /* Discover the broadcast shape in each dimension */
-  // for (i = 0; i < nd; i++) {
-  //     mit->dimensions[i] = 1;
-  // }
   let start_offset = (mit + offset_MultIter_dimensions) / 4;
   HEAP32.subarray(start_offset, start_offset + nd).fill(1);
 
-  for (j = 0; j < numiter; j++) {
-    // it = mit->iters[i];
-    it = MultiIter_GetIter(mit, j);
+  for (let j = 0; j < numiter; j++) {
+    let it = MultiIter_iter(mit, j);
     for (i = 0; i < nd; i++) {
       /* This prepends 1 to shapes not already equal to nd */
-      // k = i + PyArray_NDIM(it->ao) - nd;
-      let cur_array = Iter_GetArray(it);
+      let cur_array = Iter_array(it);
       let cur_nd = Array_nd(cur_array);
-      let k = i + it_ao_ndim - nd;
+      let k = i + cur_nd - nd;
       if (k >= 0) {
-        // tmp = PyArray_DIMS(it->ao)[k];
-        let tmp = LOAD_ARRAY(Array_dimensions(ut_ao), k);
+        let tmp = LOAD_ARRAY(Array_dimensions(cur_array), k);
         if (tmp == 1) {
           continue;
         }
-        let mit_dim_i = MultiIter_Dimension(mit, i);
+        let mit_dim_i = MultiIter_dimension(mit, i);
         if (mit_dim_i == 1) {
-          MultiIter_Dimension(mit, i) = tmp;
+          MultiIter_dimension(mit, i) = tmp;
         } else if (mit_dim_i != it_dims_k) {
           _set_shape_mismatch_err();
           return -1;
@@ -242,7 +229,7 @@ PyArray_Broadcast(PyArrayMultiIterObject *mit)
     nd = PyArray_Broadcast_GetNd(mit);
     mit->nd = nd;
 
-    /* Discover the broadcast shape in each dimension * /
+    / * Discover the broadcast shape in each dimension * /
     for (i = 0; i < nd; i++) {
         mit->dimensions[i] = 1;
     }
@@ -250,7 +237,7 @@ PyArray_Broadcast(PyArrayMultiIterObject *mit)
     for (j = 0; j < mit->numiter; j++) {
         it = mit->iters[j];
         for (i = 0; i < nd; i++) {
-            /* This prepends 1 to shapes not already equal to nd * /
+            / * This prepends 1 to shapes not already equal to nd * /
             k = i + PyArray_NDIM(it->ao) - nd;
             if (k >= 0) {
                 tmp = PyArray_DIMS(it->ao)[k];
