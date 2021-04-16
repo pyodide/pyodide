@@ -702,7 +702,7 @@ def test_mixins_errors(selenium):
 def test_buffer(selenium):
     selenium.run_js(
         """
-        self.a = new Uint32Array(Array(10).fill(0).map((_,idx) => idx));
+        self.a = new Uint32Array(Array.from({length : 10}, (_,idx) => idx));
         pyodide.runPython(`
             from js import a
             b = a.to_py()
@@ -721,7 +721,7 @@ def test_buffer(selenium):
     )
     selenium.run_js(
         """
-        self.a = new Uint32Array(Array(10).fill(0).map((_,idx) => idx));
+        self.a = new Uint32Array(Array.from({length : 10}, (_,idx) => idx));
         pyodide.runPython(`
             import js
             from unittest import TestCase
@@ -743,7 +743,7 @@ def test_buffer(selenium):
                 a.assign_to(d)
 
             e = array('I', range(10, 20))
-            a.assign_to(e)
+            a.assign(e)
         `);
         for(let [k, v] of a.entries()){
             if(v !== k + 10){
