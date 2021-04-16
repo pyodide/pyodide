@@ -1,12 +1,12 @@
-From f24c0d34b632f7005b6787bdbaca73a2bae03d54 Mon Sep 17 00:00:00 2001
+From c3e6532b311101f449c2add064642044e82d535d Mon Sep 17 00:00:00 2001
 From: Hood <hood@mit.edu>
 Date: Thu, 15 Apr 2021 21:14:55 -0700
 Subject: [PATCH] temp
 
 ---
  numpy/core/src/multiarray/conversion_utils.c |  5 +--
- numpy/core/src/multiarray/iterators.c        | 35 +++-----------------
- 2 files changed, 8 insertions(+), 32 deletions(-)
+ numpy/core/src/multiarray/iterators.c        | 33 ++++++++++++++------
+ 2 files changed, 26 insertions(+), 12 deletions(-)
 
 diff --git a/numpy/core/src/multiarray/conversion_utils.c b/numpy/core/src/multiarray/conversion_utils.c
 index 52cb58726..5467f4d78 100644
@@ -33,58 +33,57 @@ index 52cb58726..5467f4d78 100644
      }
      return nd;
 diff --git a/numpy/core/src/multiarray/iterators.c b/numpy/core/src/multiarray/iterators.c
-index 9da811f69..f723c7646 100644
+index 9da811f69..e0208b3ed 100644
 --- a/numpy/core/src/multiarray/iterators.c
 +++ b/numpy/core/src/multiarray/iterators.c
-@@ -1153,6 +1153,9 @@ NPY_NO_EXPORT PyTypeObject PyArrayIter_Type = {
+@@ -1153,17 +1153,12 @@ NPY_NO_EXPORT PyTypeObject PyArrayIter_Type = {
  
  /** END of Array Iterator **/
  
+-/* Adjust dimensionality and strides for index object iterators
+-   --- i.e. broadcast
+-*/
+-/*NUMPY_API*/
+-NPY_NO_EXPORT int
+-PyArray_Broadcast(PyArrayMultiIterObject *mit)
+-{
+-    int i, nd, k, j;
+-    npy_intp tmp;
+-    PyArrayIterObject *it;
 +int
 +PyArray_Broadcast_part1(void *mit);
-+
- /* Adjust dimensionality and strides for index object iterators
-    --- i.e. broadcast
- */
-@@ -1164,36 +1167,8 @@ PyArray_Broadcast(PyArrayMultiIterObject *mit)
-     npy_intp tmp;
-     PyArrayIterObject *it;
  
--    /* Discover the broadcast number of dimensions */
--    for (i = 0, nd = 0; i < mit->numiter; i++) {
--        nd = PyArray_MAX(nd, PyArray_NDIM(mit->iters[i]->ao));
--    }
--    mit->nd = nd;
--
--    /* Discover the broadcast shape in each dimension */
--    for (i = 0; i < nd; i++) {
--        mit->dimensions[i] = 1;
--        for (j = 0; j < mit->numiter; j++) {
--            it = mit->iters[j];
--            /* This prepends 1 to shapes not already equal to nd */
--            k = i + PyArray_NDIM(it->ao) - nd;
--            if (k >= 0) {
--                tmp = PyArray_DIMS(it->ao)[k];
--                if (tmp == 1) {
--                    continue;
--                }
--                if (mit->dimensions[i] == 1) {
--                    mit->dimensions[i] = tmp;
--                }
--                else if (mit->dimensions[i] != tmp) {
--                    PyErr_SetString(PyExc_ValueError,
--                                    "shape mismatch: objects" \
--                                    " cannot be broadcast" \
--                                    " to a single shape");
--                    return -1;
--                }
--            }
--        }
++#ifndef __EMSCRIPTEN__
++int
++PyArray_Broadcast_part1(void *mit_void){
+     /* Discover the broadcast number of dimensions */
+     for (i = 0, nd = 0; i < mit->numiter; i++) {
+         nd = PyArray_MAX(nd, PyArray_NDIM(mit->iters[i]->ao));
+@@ -1195,6 +1190,24 @@ PyArray_Broadcast(PyArrayMultiIterObject *mit)
+             }
+         }
+     }
++    return 0;
++}
++#endif
++
++/* Adjust dimensionality and strides for index object iterators
++   --- i.e. broadcast
++*/
++/*NUMPY_API*/
++NPY_NO_EXPORT int
++PyArray_Broadcast(PyArrayMultiIterObject *mit)
++{
++    int i, nd, k, j;
++    npy_intp tmp;
++    PyArrayIterObject *it;
++
 +    if(PyArray_Broadcast_part1((void*)mit) == -1){
 +        return -1;
-     }
++    }
  
      /*
+      * Reset the iterator dimensions and strides of each iterator
 -- 
 2.17.1
 
