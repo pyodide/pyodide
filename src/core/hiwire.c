@@ -732,7 +732,7 @@ hiwire_get_dtype,
   // Store results into arguments
   setValue(format_ptr, format_utf8, "i8*");
   setValue(size_ptr, size, "i32");
-  setValue(checked_ptr, size, "u8");
+  setValue(checked_ptr, size, "i8");
 });
 // clang-format on
 
