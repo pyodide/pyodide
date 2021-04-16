@@ -1,37 +1,21 @@
-From 85906e04a09acadadaf364937ac6c4d384b5a2eb Mon Sep 17 00:00:00 2001
+From 6f91dceca26bb06bada90e0e0bbe770538928d5f Mon Sep 17 00:00:00 2001
 From: Hood <hood@mit.edu>
-Date: Thu, 15 Apr 2021 21:14:55 -0700
-Subject: [PATCH] temp
+Date: Fri, 16 Apr 2021 08:41:03 -0700
+Subject: [PATCH 2/2] Fix segfault in PyArray_Broadcast in chrome 89 #1474
+
+Resolves #1473.
+
+This is a similar situation as with #1384 (see the other patch) however in this
+case when I made modifications to `PyArray_Broadcast` to remove the offending
+load, the crash moved around to other locations corresponding to different spots
+in the source. After a significant amount of messing around with this, I just
+reimplemented the first part of the function in Javascript. See
+src/core/numpy_patch.c where we define PyArray_Broadcast_part1.
 
 ---
- numpy/core/src/multiarray/conversion_utils.c |  5 +--
- numpy/core/src/multiarray/iterators.c        | 33 +++++++++++++++-----
- 2 files changed, 28 insertions(+), 10 deletions(-)
+ numpy/core/src/multiarray/iterators.c | 33 ++++++++++++++++++++-------
+ 1 file changed, 25 insertions(+), 8 deletions(-)
 
-diff --git a/numpy/core/src/multiarray/conversion_utils.c b/numpy/core/src/multiarray/conversion_utils.c
-index 52cb58726..5467f4d78 100644
---- a/numpy/core/src/multiarray/conversion_utils.c
-+++ b/numpy/core/src/multiarray/conversion_utils.c
-@@ -955,9 +955,9 @@ PyArray_IntpFromIndexSequence(PyObject *seq, npy_intp *vals, npy_intp maxvals)
-                 return -1;
-             }
- 
--            vals[i] = PyArray_PyIntAsIntp(op);
-+            npy_intp x = PyArray_PyIntAsIntp(op);
-             Py_DECREF(op);
--            if(vals[i] == -1) {
-+            if(x == -1) {
-                 err = PyErr_Occurred();
-                 if (err &&
-                         PyErr_GivenExceptionMatches(err, PyExc_OverflowError)) {
-@@ -968,6 +968,7 @@ PyArray_IntpFromIndexSequence(PyObject *seq, npy_intp *vals, npy_intp maxvals)
-                     return -1;
-                 }
-             }
-+            vals[i] = x;
-         }
-     }
-     return nd;
 diff --git a/numpy/core/src/multiarray/iterators.c b/numpy/core/src/multiarray/iterators.c
 index 9da811f69..a801c221a 100644
 --- a/numpy/core/src/multiarray/iterators.c
