@@ -730,10 +730,10 @@ def test_buffer(selenium):
             from js import a
             c = array('b', range(30))
             d = array('b', range(40))
-            with raises(ValueError, "cannot assign from TypedArray"):
+            with raises(ValueError, "cannot assign to TypedArray"):
                 a.assign(c)
 
-            with raises(ValueError, "cannot assign to buffer"):
+            with raises(ValueError, "cannot assign from TypedArray"):
                 a.assign_to(c)
 
             with raises(ValueError, "incompatible formats"):
@@ -761,7 +761,7 @@ def test_buffer_assign_back(selenium):
         pyodide.runPython(`
             from js import jsarray
             array = jsarray.to_py()
-            array[1::2] = [20, 77, 9]
+            array[1::2] = bytes([20, 77, 9])
             jsarray.assign(array)
         `);
         return Array.from(jsarray)
