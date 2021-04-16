@@ -3,7 +3,7 @@
 
 #include "error_handling.h"
 
-static void
+void
 set_shape_mismatch_err()
 {
   PyErr_SetString(PyExc_ValueError,
@@ -37,7 +37,7 @@ EM_JS_NUM(int, PyArray_Broadcast_part1, (void* mit), {
   // for (i = 0; i < nd; i++) {
   //     mit->dimensions[i] = 1;
   // }
-  HEAP32.subarray((mit + 24) / 4, (mit + 24 + nd) / 4).fill(1);
+  HEAP32.subarray((mit + 24) / 4, (mit + 24 + 4 * nd) / 4).fill(1);
 
   for (j = 0; j < numiter; j++) {
     // it = mit->iters[i];
@@ -46,7 +46,7 @@ EM_JS_NUM(int, PyArray_Broadcast_part1, (void* mit), {
       /* This prepends 1 to shapes not already equal to nd */
       // k = i + PyArray_NDIM(it->ao) - nd;
       let it_ao = HEAP32[(it + 660) / 4];
-      let it_ao_ndim = HEAP32[(ao + 12) / 4];
+      let it_ao_ndim = HEAP32[(it_ao + 12) / 4];
       let k = i + it_ao_ndim - nd;
       if (k >= 0) {
         // tmp = PyArray_DIMS(it->ao)[k];
