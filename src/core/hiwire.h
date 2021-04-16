@@ -541,17 +541,26 @@ int
 hiwire_get_byteOffset(JsRef idobj);
 
 /**
- * Copies the buffer contents of a given typed array or buffer into the memory
- * at ptr.
+ * Copies the buffer contents of a given ArrayBuffer view or ArrayBuffer into
+ * the memory at ptr.
  */
 errcode
-hiwire_copy_to_ptr(JsRef idobj, void* ptr);
+hiwire_assign_to_ptr(JsRef idobj, void* ptr);
+
+/**
+ * Copies the memory at ptr into a given ArrayBuffer view or ArrayBuffer.
+ */
+errcode
+hiwire_assign_from_ptr(JsRef idobj, void* ptr);
 
 /**
  * Get a data type identifier for a given typedarray.
  */
 errcode
-hiwire_get_dtype(JsRef idobj, char** format_ptr, Py_ssize_t* size_ptr);
+hiwire_get_buffer_datatype(JsRef idobj,
+                           char** format_ptr,
+                           Py_ssize_t* size_ptr,
+                           bool* check_assignments);
 
 /**
  * Get a subarray from a TypedArray

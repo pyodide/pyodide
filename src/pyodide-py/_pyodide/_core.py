@@ -82,6 +82,25 @@ try:
             this is needed because ``finally`` is a reserved keyword in Python.
             """
 
+        # There are no types for buffers:
+        # https://github.com/python/typing/issues/593
+        # https://bugs.python.org/issue27501
+        # This is just for docs so lets just make something up?
+
+        def assign(self, rhs: "ReadBuffer"):
+            """Assign from a Python buffer into the Javascript buffer.
+
+            Present only if the wrapped Javascript object is an ArrayBuffer or
+            an ArrayBuffer view.
+            """
+
+        def assign_to(self, to: "ReadWriteBuffer"):
+            """Assign to a Python buffer from the Javascript buffer.
+
+            Present only if the wrapped Javascript object is an ArrayBuffer or
+            an ArrayBuffer view.
+            """
+
     # from pyproxy.c
 
     def create_once_callable(obj: Callable) -> JsProxy:

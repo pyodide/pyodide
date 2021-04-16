@@ -699,6 +699,77 @@ def test_mixins_errors(selenium):
     )
 
 
+def test_buffer(selenium):
+    selenium.run_js(
+        """
+        self.a = new Uint32Array(Array.from({length : 10}, (_,idx) => idx));
+        pyodide.runPython(`
+            from js import a
+            b = a.to_py()
+            b[4] = 7
+            assert b[8] == 8
+            a.assign_to(b)
+            assert b[4] == 4
+            b[4] = 7
+            a.assign(b)
+            assert a[4] == 7
+        `);
+        if(a[4] !== 7){
+            throw Error();
+        }
+        """
+    )
+    selenium.run_js(
+        """
+        self.a = new Uint32Array(Array.from({length : 10}, (_,idx) => idx));
+        pyodide.runPython(`
+            import js
+            from unittest import TestCase
+            raises = TestCase().assertRaisesRegex
+            from array import array
+            from js import a
+            c = array('b', range(30))
+            d = array('b', range(40))
+            with raises(ValueError, "cannot assign to TypedArray"):
+                a.assign(c)
+
+            with raises(ValueError, "cannot assign from TypedArray"):
+                a.assign_to(c)
+
+            with raises(ValueError, "incompatible formats"):
+                a.assign(d)
+
+            with raises(ValueError, "incompatible formats"):
+                a.assign_to(d)
+
+            e = array('I', range(10, 20))
+            a.assign(e)
+        `);
+        for(let [k, v] of a.entries()){
+            if(v !== k + 10){
+                throw new Error([v, k]);
+            }
+        }
+        """
+    )
+
+
+def test_buffer_assign_back(selenium):
+    result = selenium.run_js(
+        """
+        self.jsarray = new Uint8Array([1,2,3, 4, 5, 6]);
+        pyodide.runPython(`
+            from js import jsarray
+            array = jsarray.to_py()
+            array[1::2] = bytes([20, 77, 9])
+            jsarray.assign(array)
+        `);
+        return Array.from(jsarray)
+        """
+    )
+    assert result == [1, 20, 3, 77, 5, 9]
+
+
 def test_memory_leaks(selenium):
     # refcounts are tested automatically in conftest by default
     selenium.run_js(
