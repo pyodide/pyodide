@@ -1,125 +1,65 @@
-From e032fb0cc5e98601f96ae8800c8b6785cd1e9f89 Mon Sep 17 00:00:00 2001
+From 406f26be6c693603f266d58220ac28b388f2a93a Mon Sep 17 00:00:00 2001
 From: Hood <hood@mit.edu>
-Date: Fri, 2 Apr 2021 14:24:24 -0700
+Date: Thu, 15 Apr 2021 21:14:55 -0700
 Subject: [PATCH] temp
 
 ---
- numpy/core/src/multiarray/conversion_utils.c |  5 +-
- numpy/core/src/multiarray/iterators.c        | 56 ++++++++++++++++----
- 2 files changed, 48 insertions(+), 13 deletions(-)
+ numpy/core/src/multiarray/iterators.c | 35 ++++-----------------------
+ 1 file changed, 5 insertions(+), 30 deletions(-)
 
-diff --git a/numpy/core/src/multiarray/conversion_utils.c b/numpy/core/src/multiarray/conversion_utils.c
-index 52cb58726..5467f4d78 100644
---- a/numpy/core/src/multiarray/conversion_utils.c
-+++ b/numpy/core/src/multiarray/conversion_utils.c
-@@ -955,9 +955,9 @@ PyArray_IntpFromIndexSequence(PyObject *seq, npy_intp *vals, npy_intp maxvals)
-                 return -1;
-             }
- 
--            vals[i] = PyArray_PyIntAsIntp(op);
-+            npy_intp x = PyArray_PyIntAsIntp(op);
-             Py_DECREF(op);
--            if(vals[i] == -1) {
-+            if(x == -1) {
-                 err = PyErr_Occurred();
-                 if (err &&
-                         PyErr_GivenExceptionMatches(err, PyExc_OverflowError)) {
-@@ -968,6 +968,7 @@ PyArray_IntpFromIndexSequence(PyObject *seq, npy_intp *vals, npy_intp maxvals)
-                     return -1;
-                 }
-             }
-+            vals[i] = x;
-         }
-     }
-     return nd;
 diff --git a/numpy/core/src/multiarray/iterators.c b/numpy/core/src/multiarray/iterators.c
-index 9da811f69..1e25fc7f6 100644
+index 9da811f69..f723c7646 100644
 --- a/numpy/core/src/multiarray/iterators.c
 +++ b/numpy/core/src/multiarray/iterators.c
-@@ -1153,6 +1153,37 @@ NPY_NO_EXPORT PyTypeObject PyArrayIter_Type = {
+@@ -1153,6 +1153,9 @@ NPY_NO_EXPORT PyTypeObject PyArrayIter_Type = {
  
  /** END of Array Iterator **/
  
-+__attribute__((noinline))
-+NPY_NO_EXPORT int
-+PyArray_Broadcast_GetNd(PyArrayMultiIterObject *mit){
-+    int i, nd;
-+    /* Discover the broadcast number of dimensions */
-+    for (i = 0, nd = 0; i < mit->numiter; i++) {
-+        nd = PyArray_MAX(nd, PyArray_NDIM(mit->iters[i]->ao));
-+    }
-+    return nd;
-+}
-+
-+__attribute__((noinline))
-+NPY_NO_EXPORT
-+void
-+write_to_ptr(void *ptr, void* val){
-+    *((void**)(ptr)) = val;
-+}
-+
-+__attribute__((noinline))
-+NPY_NO_EXPORT
-+void *
-+read_from_ptr(void *ptr){
-+    return *(void**)(ptr);
-+}
-+
-+#define TO_VOID(x) ((void*)(x))
-+#define TO_INTP(x) ((npy_intp)(x))
-+#define WRITE(x, val) write_to_ptr(TO_VOID(x), TO_VOID(val))
-+#define READ(x) read_from_ptr(TO_VOID(x))
-+#define READ_INTP(x) TO_INTP(READ(x))
++int
++PyArray_Broadcast_part1(void *mit);
 +
  /* Adjust dimensionality and strides for index object iterators
     --- i.e. broadcast
  */
-@@ -1161,31 +1192,34 @@ NPY_NO_EXPORT int
- PyArray_Broadcast(PyArrayMultiIterObject *mit)
- {
-     int i, nd, k, j;
--    npy_intp tmp;
-+    npy_intp tmp, tmp2;
+@@ -1164,36 +1167,8 @@ PyArray_Broadcast(PyArrayMultiIterObject *mit)
+     npy_intp tmp;
      PyArrayIterObject *it;
-+    PyArrayIterObject **it_ptr;
  
 -    /* Discover the broadcast number of dimensions */
 -    for (i = 0, nd = 0; i < mit->numiter; i++) {
 -        nd = PyArray_MAX(nd, PyArray_NDIM(mit->iters[i]->ao));
 -    }
-+    nd = PyArray_Broadcast_GetNd(mit);
-     mit->nd = nd;
- 
-     /* Discover the broadcast shape in each dimension */
-     for (i = 0; i < nd; i++) {
-         mit->dimensions[i] = 1;
+-    mit->nd = nd;
+-
+-    /* Discover the broadcast shape in each dimension */
+-    for (i = 0; i < nd; i++) {
+-        mit->dimensions[i] = 1;
 -        for (j = 0; j < mit->numiter; j++) {
 -            it = mit->iters[j];
-+    }
-+
-+    it_ptr = &mit->iters[0];
-+    for (j = 0; j < mit->numiter; j++, it_ptr++) {
-+        it = *it_ptr;
-+        for (i = 0; i < nd; i++) {
-             /* This prepends 1 to shapes not already equal to nd */
-             k = i + PyArray_NDIM(it->ao) - nd;
-             if (k >= 0) {
+-            /* This prepends 1 to shapes not already equal to nd */
+-            k = i + PyArray_NDIM(it->ao) - nd;
+-            if (k >= 0) {
 -                tmp = PyArray_DIMS(it->ao)[k];
-+                tmp = READ_INTP(&PyArray_DIMS(it->ao)[k]);
-                 if (tmp == 1) {
-                     continue;
-                 }
+-                if (tmp == 1) {
+-                    continue;
+-                }
 -                if (mit->dimensions[i] == 1) {
 -                    mit->dimensions[i] = tmp;
-+                tmp2 = READ_INTP(&mit->dimensions[i]);
-+                if (tmp2 == 1) {
-+                    WRITE(&mit->dimensions[i], tmp);
-                 }
+-                }
 -                else if (mit->dimensions[i] != tmp) {
-+                else if (tmp2 != tmp) {
-                     PyErr_SetString(PyExc_ValueError,
-                                     "shape mismatch: objects" \
-                                     " cannot be broadcast" \
+-                    PyErr_SetString(PyExc_ValueError,
+-                                    "shape mismatch: objects" \
+-                                    " cannot be broadcast" \
+-                                    " to a single shape");
+-                    return -1;
+-                }
+-            }
+-        }
++    if(PyArray_Broadcast_part1((void*)mit) == -1){
++        return -1;
+     }
+ 
+     /*
 -- 
 2.17.1
 
