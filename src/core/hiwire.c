@@ -162,7 +162,8 @@ EM_JS_NUM(int, hiwire_init, (), {
   };
 
   {
-    let dtypes_str = [ "b", "B", "h", "H", "i", "I", "f", "d" ].join("\0");
+    let dtypes_str =
+      [ "b", "B", "h", "H", "i", "I", "f", "d" ].join(String.fromCharCode(0));
     let dtypes_ptr = stringToNewUTF8(dtypes_str);
     let dtypes_map = {};
     for (let[idx, val] of Object.entries(dtypes_str)) {
