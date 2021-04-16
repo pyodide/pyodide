@@ -425,7 +425,8 @@ globalThis.loadPyodide = async function(config = {}) {
       "Please report this to the Pyodide maintainers.";
   Module.fatal_error = function(e) {
     if (fatal_error_occurred) {
-      console.error("Recursive call to fatal_error");
+      console.error("Recursive call to fatal_error. Inner error was:");
+      console.error(e);
       return;
     }
     fatal_error_occurred = true;
@@ -444,6 +445,8 @@ globalThis.loadPyodide = async function(config = {}) {
         // Have to do this case first because typeof(some_pyproxy) ===
         // "function".
         if (Module.isPyProxy(value)) {
+          // TODO: Make it so we can still use the proxy via the private
+          // pyodide._module.
           value.destroy();
           continue;
         }
@@ -451,7 +454,9 @@ globalThis.loadPyodide = async function(config = {}) {
           Module.public_api[key] = function() { throw Error(fatal_error_msg); };
         }
       }
-    } catch (_) {
+    } catch (e) {
+      console.error("Another error occurred while handling the fatal error:");
+      console.error(e);
     }
     throw e;
   };
@@ -549,10 +554,16 @@ globalThis.loadPyodide = async function(config = {}) {
    */
   Module.runPythonSimple = function(code) {
     let code_c_string = Module.stringToNewUTF8(code);
+    let errcode;
     try {
-      Module._run_python_simple_inner(code_c_string);
+      errcode = Module._run_python_simple_inner(code_c_string);
+    } catch (e) {
+      Module.fatal_error(e);
     } finally {
       Module._free(code_c_string);
+    }
+    if (errcode === -1) {
+      Module._pythonexc2js();
     }
   };
 

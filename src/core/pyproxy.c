@@ -174,13 +174,6 @@ _pyproxy_type(PyObject* ptrobj)
   return hiwire_string_ascii(ptrobj->ob_type->tp_name);
 }
 
-void
-_pyproxy_destroy(PyObject* ptrobj)
-{ // See bug #1049
-  Py_DECREF(ptrobj);
-  EM_ASM({ delete Module.PyProxies[$0]; }, ptrobj);
-}
-
 int
 _pyproxy_hasattr(PyObject* pyobj, JsRef idkey)
 {
@@ -345,22 +338,33 @@ finally:
 JsRef
 _pyproxy_ownKeys(PyObject* pyobj)
 {
-  PyObject* pydir = PyObject_Dir(pyobj);
+  bool success = false;
+  PyObject* pydir = NULL;
+  JsRef iddir = NULL;
+  JsRef identry = NULL;
 
-  if (pydir == NULL) {
-    return NULL;
-  }
+  pydir = PyObject_Dir(pyobj);
+  FAIL_IF_NULL(pydir);
 
-  JsRef iddir = hiwire_array();
+  iddir = hiwire_array();
+  FAIL_IF_NULL(iddir);
   Py_ssize_t n = PyList_Size(pydir);
+  FAIL_IF_MINUS_ONE(n);
   for (Py_ssize_t i = 0; i < n; ++i) {
-    PyObject* pyentry = PyList_GetItem(pydir, i);
-    JsRef identry = python2js(pyentry);
-    hiwire_push_array(iddir, identry);
-    hiwire_decref(identry);
+    PyObject* pyentry = PyList_GetItem(pydir, i); /* borrowed */
+    identry = python2js(pyentry);
+    FAIL_IF_NULL(identry);
+    FAIL_IF_MINUS_ONE(hiwire_push_array(iddir, identry));
+    hiwire_CLEAR(identry);
   }
-  Py_DECREF(pydir);
 
+  success = true;
+finally:
+  Py_CLEAR(pydir);
+  hiwire_CLEAR(identry);
+  if (!success) {
+    hiwire_CLEAR(iddir);
+  }
   return iddir;
 }
 
@@ -686,16 +690,13 @@ typedef struct
 buffer_struct*
 _pyproxy_get_buffer(PyObject* ptrobj)
 {
-  if (!PyObject_CheckBuffer(ptrobj)) {
-    return NULL;
-  }
   Py_buffer view;
   // PyBUF_RECORDS_RO requires that suboffsets be NULL but otherwise is the most
   // permissive possible request.
   if (PyObject_GetBuffer(ptrobj, &view, PyBUF_RECORDS_RO) == -1) {
     // Buffer cannot be represented without suboffsets. The bf_getbuffer method
     // should have set a PyExc_BufferError saying something to this effect.
-    pythonexc2js();
+    return NULL;
   }
 
   bool success = false;

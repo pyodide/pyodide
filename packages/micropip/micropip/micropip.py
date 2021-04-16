@@ -6,13 +6,14 @@ import json
 from pathlib import Path
 import zipfile
 from typing import Dict, Any, Union, List, Tuple
-from pyodide import to_js
 
-from distlib import markers, util, version
+from packaging.requirements import Requirement
+from packaging.version import Version
 
 # Provide stubs for testing in native python
 try:
     import pyodide_js
+    from pyodide import to_js
 
     IN_BROWSER = True
 except ImportError:
@@ -125,18 +126,6 @@ async def _install_wheel(name, fileinfo):
 
 
 class _PackageManager:
-    # 'normalized' is the distlib default version scheme, it is based on PEP 386.
-    #
-    # PEP 386 is "perhaps the most widely used Python version scheme, but since
-    # it tries to be very flexible and work with a wide range of conventions, it
-    # ends up allowing a very chaotic mess of version conventions"
-    #
-    # PEP 386 version scheme
-    # https://www.python.org/dev/peps/pep-0386/#setuptools
-    #
-    # https://distlib.readthedocs.io/en/stable/internals.html#the-version-api
-    version_scheme = version.get_scheme("normalized")
-
     def __init__(self):
         if IN_BROWSER:
             self.builtin_packages = pyodide_js._module.packages.versions.to_py()
@@ -145,12 +134,6 @@ class _PackageManager:
         self.installed_packages = {}
 
     async def install(self, requirements: Union[str, List[str]], ctx=None):
-        if ctx is None:
-            ctx = {"extra": None}
-
-        complete_ctx = dict(markers.DEFAULT_CONTEXT)
-        complete_ctx.update(ctx)
-
         if isinstance(requirements, str):
             requirements = [requirements]
 
@@ -162,7 +145,7 @@ class _PackageManager:
         requirement_promises = []
         for requirement in requirements:
             requirement_promises.append(
-                self.add_requirement(requirement, complete_ctx, transaction)
+                self.add_requirement(requirement, ctx, transaction)
             )
 
         await gather(*requirement_promises)
@@ -174,11 +157,13 @@ class _PackageManager:
         if len(pyodide_packages):
             # Note: branch never happens in out-of-browser testing because in
             # that case builtin_packages is empty.
-            self.installed_packages.update(
-                {name: ver for (name, ver) in pyodide_packages}
-            )
+            self.installed_packages.update(pyodide_packages)
             wheel_promises.append(
-                asyncio.ensure_future(pyodide_js.loadPackage(to_js(pyodide_packages)))
+                asyncio.ensure_future(
+                    pyodide_js.loadPackage(
+                        to_js([name for [name, _] in pyodide_packages])
+                    )
+                )
             )
 
         # Now install PyPI packages
@@ -199,29 +184,28 @@ class _PackageManager:
             transaction["wheels"].append((name, wheel, version))
             return
 
-        req = util.parse_requirement(requirement)
-
-        matcher = self.version_scheme.matcher(req.requirement)
+        req = Requirement(requirement)
 
         # If there's a Pyodide package that matches the version constraint, use
         # the Pyodide package instead of the one on PyPI
-        if req.name in self.builtin_packages and matcher.match(
-            self.builtin_packages[req.name]
+        if (
+            req.name in self.builtin_packages
+            and self.builtin_packages[req.name] in req.specifier
         ):
             version = self.builtin_packages[req.name]
             transaction["pyodide_packages"].append((req.name, version))
             return
 
         if req.marker:
-            # handle environment-markers
+            # handle environment markers
             # https://www.python.org/dev/peps/pep-0508/#environment-markers
-            if not markers.evaluator.evaluate(req.marker, ctx):
+            if not req.marker.evaluate(ctx):
                 return
 
         # Is some version of this package is already installed?
         if req.name in transaction["locked"]:
             ver = transaction["locked"][req.name]
-            if matcher.match(ver):
+            if ver in req.specifier:
                 # installed version matches, nothing to do
                 return
             else:
@@ -239,25 +223,19 @@ class _PackageManager:
 
         transaction["wheels"].append((req.name, wheel, ver))
 
-    def find_wheel(self, metadata, req):
-        releases = []
-        for ver, files in metadata.get("releases", {}).items():
-            ver = self.version_scheme.suggest(ver)
-            if ver is not None:
-                releases.append((ver, files))
+    def find_wheel(self, metadata, req: Requirement):
+        releases = metadata.get("releases", {})
+        candidate_versions = sorted(
+            (Version(v) for v in req.specifier.filter(releases)),  # type: ignore
+            reverse=True,
+        )
+        for ver in candidate_versions:
+            release = releases[str(ver)]
+            for fileinfo in release:
+                if fileinfo["filename"].endswith("py3-none-any.whl"):
+                    return fileinfo, ver
 
-        def version_number(release):
-            return version.NormalizedVersion(release[0])
-
-        releases = sorted(releases, key=version_number, reverse=True)
-        matcher = self.version_scheme.matcher(req.requirement)
-        for ver, meta in releases:
-            if matcher.match(ver):
-                for fileinfo in meta:
-                    if fileinfo["filename"].endswith("py3-none-any.whl"):
-                        return fileinfo, ver
-
-        raise ValueError(f"Couldn't find a pure Python 3 wheel for '{req.requirement}'")
+        raise ValueError(f"Couldn't find a pure Python 3 wheel for '{req}'")
 
 
 # Make PACKAGE_MANAGER singleton

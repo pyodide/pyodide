@@ -43,7 +43,7 @@ def test_install_simple(selenium_standalone_micropip):
 
 
 def test_parse_wheel_url():
-    pytest.importorskip("distlib")
+    pytest.importorskip("packaging")
     import micropip
 
     url = "https://a/snowballstemmer-2.0.0-py2.py3-none-any.whl"
@@ -88,7 +88,7 @@ def test_install_custom_url(selenium_standalone_micropip, web_server_tst_data):
 
 
 def test_add_requirement_relative_url():
-    pytest.importorskip("distlib")
+    pytest.importorskip("packaging")
     import micropip
 
     transaction = {"wheels": []}
@@ -138,24 +138,11 @@ def test_install_custom_relative_url(selenium_standalone_micropip):
 
 
 def test_last_version_from_pypi():
-    pytest.importorskip("distlib")
+    pytest.importorskip("packaging")
     import micropip
+    from packaging.requirements import Requirement
 
-    class Namespace:
-        def __init__(self, **entries):
-            self.__dict__.update(entries)
-
-    # requirement as returned by distlib.util.parse_requirement
-    requirement = Namespace(
-        constraints=None,
-        extras=None,
-        marker=None,
-        name="dummy_module",
-        requirement="dummy_module",
-        url=None,
-    )
-
-    # available versions
+    requirement = Requirement("dummy_module")
     versions = ["0.0.1", "0.15.5", "0.9.1"]
 
     # building metadata as returned from
@@ -169,7 +156,7 @@ def test_last_version_from_pypi():
     # get version number from find_wheel
     wheel, ver = micropip.PACKAGE_MANAGER.find_wheel(metadata, requirement)
 
-    assert ver == "0.15.5"
+    assert str(ver) == "0.15.5"
 
 
 def test_install_different_version(selenium_standalone_micropip):

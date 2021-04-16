@@ -244,7 +244,9 @@ def build_packages(packages_dir: Path, outputdir: Path, args) -> None:
 def make_parser(parser):
     parser.description = (
         "Build all of the packages in a given directory\n\n"
-        "Unless the --only option is provided"
+        "Unless the --only option is provided\n\n"
+        "Note: this is a private endpoint that should not be used "
+        "outside of the pyodide Makefile."
     )
     parser.add_argument(
         "dir",

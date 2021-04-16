@@ -346,8 +346,8 @@ EM_JS_NUM(errcode, js2python_init, (), {
       return Module.__js2python_convertMap(value, Object.entries(value), cache, depth);
     }
     if (toStringTag === "[object ArrayBuffer]" || ArrayBuffer.isView(value)){
-      let [format_utf8, itemsize] = Module.hiwire.get_dtype(value);
-      return _JsBuffer_CloneIntoPython(value, value.byteLength, format_utf8, itemsize);
+      let [format_utf8, itemsize] = Module.get_buffer_datatype(value);
+      return _JsBuffer_CloneIntoPython(id, value.byteLength, format_utf8, itemsize);
     }
     // clang-format on
     return _JsProxy_create(id);
