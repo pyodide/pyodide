@@ -1,12 +1,12 @@
-From 308a7ca2eec1cd90717cf469bbe16c2968383e7a Mon Sep 17 00:00:00 2001
+From 85906e04a09acadadaf364937ac6c4d384b5a2eb Mon Sep 17 00:00:00 2001
 From: Hood <hood@mit.edu>
 Date: Thu, 15 Apr 2021 21:14:55 -0700
 Subject: [PATCH] temp
 
 ---
  numpy/core/src/multiarray/conversion_utils.c |  5 +--
- numpy/core/src/multiarray/iterators.c        | 32 +++++++++++++++-----
- 2 files changed, 27 insertions(+), 10 deletions(-)
+ numpy/core/src/multiarray/iterators.c        | 33 +++++++++++++++-----
+ 2 files changed, 28 insertions(+), 10 deletions(-)
 
 diff --git a/numpy/core/src/multiarray/conversion_utils.c b/numpy/core/src/multiarray/conversion_utils.c
 index 52cb58726..5467f4d78 100644
@@ -33,10 +33,10 @@ index 52cb58726..5467f4d78 100644
      }
      return nd;
 diff --git a/numpy/core/src/multiarray/iterators.c b/numpy/core/src/multiarray/iterators.c
-index 9da811f69..ceabc30fe 100644
+index 9da811f69..a801c221a 100644
 --- a/numpy/core/src/multiarray/iterators.c
 +++ b/numpy/core/src/multiarray/iterators.c
-@@ -1153,17 +1153,15 @@ NPY_NO_EXPORT PyTypeObject PyArrayIter_Type = {
+@@ -1153,17 +1153,16 @@ NPY_NO_EXPORT PyTypeObject PyArrayIter_Type = {
  
  /** END of Array Iterator **/
  
@@ -53,6 +53,7 @@ index 9da811f69..ceabc30fe 100644
 +#ifndef __EMSCRIPTEN__
 +int
 +PyArray_Broadcast_part1(void *mit_void){
++    PyArrayMultiIterObject *mit = (PyArrayMultiIterObject *)mit_void;
      int i, nd, k, j;
      npy_intp tmp;
      PyArrayIterObject *it;
@@ -60,7 +61,7 @@ index 9da811f69..ceabc30fe 100644
      /* Discover the broadcast number of dimensions */
      for (i = 0, nd = 0; i < mit->numiter; i++) {
          nd = PyArray_MAX(nd, PyArray_NDIM(mit->iters[i]->ao));
-@@ -1195,6 +1193,24 @@ PyArray_Broadcast(PyArrayMultiIterObject *mit)
+@@ -1195,6 +1194,24 @@ PyArray_Broadcast(PyArrayMultiIterObject *mit)
              }
          }
      }
