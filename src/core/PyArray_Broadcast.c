@@ -18,50 +18,50 @@ EM_JS_NUM(int, PyArray_Broadcast_part1, (void* mit), {
   let it;
   let it_ptr;
 
-  let numiter = _HEAP32[(mit + 8) / 4];
+  let numiter = HEAP32[(mit + 8) / 4];
   /* Discover the broadcast number of dimensions */
   nd = 0;
   for (i = 0; i < numiter; i++) {
     // nd = PyArray_MAX(nd, PyArray_NDIM(mit->iters[i]->ao));
-    let it = _HEAP32[(mit + 152 + 4 * i) / 4];
+    let it = HEAP32[(mit + 152 + 4 * i) / 4];
     // Look up ao
-    let it_ao = _HEAP32[(res + 660) / 4];
+    let it_ao = HEAP32[(res + 660) / 4];
     // look up NDIM
-    let it_ao_ndim = _HEAP32[(res + 12) / 4];
+    let it_ao_ndim = HEAP32[(res + 12) / 4];
     nd = (res > nd) ? res : nd;
   }
   // mit->nd = nd;
-  _HEAP32[(mit + 20) / 4] = nd;
+  HEAP32[(mit + 20) / 4] = nd;
 
   /* Discover the broadcast shape in each dimension */
   // for (i = 0; i < nd; i++) {
   //     mit->dimensions[i] = 1;
   // }
-  _HEAP32.subarray((mit + 24) / 4, (mit + 24 + nd) / 4).fill(1);
+  HEAP32.subarray((mit + 24) / 4, (mit + 24 + nd) / 4).fill(1);
 
   for (j = 0; j < numiter; j++) {
     // it = mit->iters[i];
-    it = _HEAP32[(mit + 4 * j + 152) / 4];
+    it = HEAP32[(mit + 4 * j + 152) / 4];
     for (i = 0; i < nd; i++) {
       /* This prepends 1 to shapes not already equal to nd */
       // k = i + PyArray_NDIM(it->ao) - nd;
-      let it_ao = _HEAP32[(it + 660) / 4];
-      let it_ao_ndim = _HEAP32[(ao + 12) / 4];
+      let it_ao = HEAP32[(it + 660) / 4];
+      let it_ao_ndim = HEAP32[(ao + 12) / 4];
       let k = i + it_ao_ndim - nd;
       if (k >= 0) {
         // tmp = PyArray_DIMS(it->ao)[k];
-        let it_dims = _HEAP32[(it_ao + 16) / 4];
-        let it_dims_k = _HEAP32[(it_dims + 4 * k) / 4];
+        let it_dims = HEAP32[(it_ao + 16) / 4];
+        let it_dims_k = HEAP32[(it_dims + 4 * k) / 4];
         if (it_dims_k == 1) {
           continue;
         }
         // &mit->dimensions[i];
         let mit_dim_i_addr = mit + 4 * i + 24;
         // let tmp2 = mit->dimensions[i];
-        let mit_dim_i = _HEAP32[mit_dim_i_addr / 4];
-        if (mit_dim_i == = 1) {
-          _HEAP32[mit_dim_i_addr / 4] = it_dims_k;
-        } else if (mit_dim_i != = it_dims_k) {
+        let mit_dim_i = HEAP32[mit_dim_i_addr / 4];
+        if (mit_dim_i == 1) {
+          HEAP32[mit_dim_i_addr / 4] = it_dims_k;
+        } else if (mit_dim_i != it_dims_k) {
           _set_shape_mismatch_err();
           return -1;
         }

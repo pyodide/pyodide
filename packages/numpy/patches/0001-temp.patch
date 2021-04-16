@@ -1,12 +1,37 @@
-From 406f26be6c693603f266d58220ac28b388f2a93a Mon Sep 17 00:00:00 2001
+From f24c0d34b632f7005b6787bdbaca73a2bae03d54 Mon Sep 17 00:00:00 2001
 From: Hood <hood@mit.edu>
 Date: Thu, 15 Apr 2021 21:14:55 -0700
 Subject: [PATCH] temp
 
 ---
- numpy/core/src/multiarray/iterators.c | 35 ++++-----------------------
- 1 file changed, 5 insertions(+), 30 deletions(-)
+ numpy/core/src/multiarray/conversion_utils.c |  5 +--
+ numpy/core/src/multiarray/iterators.c        | 35 +++-----------------
+ 2 files changed, 8 insertions(+), 32 deletions(-)
 
+diff --git a/numpy/core/src/multiarray/conversion_utils.c b/numpy/core/src/multiarray/conversion_utils.c
+index 52cb58726..5467f4d78 100644
+--- a/numpy/core/src/multiarray/conversion_utils.c
++++ b/numpy/core/src/multiarray/conversion_utils.c
+@@ -955,9 +955,9 @@ PyArray_IntpFromIndexSequence(PyObject *seq, npy_intp *vals, npy_intp maxvals)
+                 return -1;
+             }
+ 
+-            vals[i] = PyArray_PyIntAsIntp(op);
++            npy_intp x = PyArray_PyIntAsIntp(op);
+             Py_DECREF(op);
+-            if(vals[i] == -1) {
++            if(x == -1) {
+                 err = PyErr_Occurred();
+                 if (err &&
+                         PyErr_GivenExceptionMatches(err, PyExc_OverflowError)) {
+@@ -968,6 +968,7 @@ PyArray_IntpFromIndexSequence(PyObject *seq, npy_intp *vals, npy_intp maxvals)
+                     return -1;
+                 }
+             }
++            vals[i] = x;
+         }
+     }
+     return nd;
 diff --git a/numpy/core/src/multiarray/iterators.c b/numpy/core/src/multiarray/iterators.c
 index 9da811f69..f723c7646 100644
 --- a/numpy/core/src/multiarray/iterators.c
