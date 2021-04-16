@@ -25,10 +25,10 @@ EM_JS_NUM(int, PyArray_Broadcast_part1, (void* mit), {
     // nd = PyArray_MAX(nd, PyArray_NDIM(mit->iters[i]->ao));
     let it = HEAP32[(mit + 152 + 4 * i) / 4];
     // Look up ao
-    let it_ao = HEAP32[(res + 660) / 4];
+    let it_ao = HEAP32[(it + 660) / 4];
     // look up NDIM
-    let it_ao_ndim = HEAP32[(res + 12) / 4];
-    nd = (res > nd) ? res : nd;
+    let it_ao_ndim = HEAP32[(it_ao + 12) / 4];
+    nd = (it_ao_ndim > nd) ? it_ao_ndim : nd;
   }
   // mit->nd = nd;
   HEAP32[(mit + 20) / 4] = nd;
