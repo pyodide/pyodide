@@ -13,14 +13,14 @@ reimplemented the first part of the function in Javascript. See
 src/core/numpy_patch.c where we define PyArray_Broadcast_part1.
 
 ---
- numpy/core/src/multiarray/iterators.c | 33 ++++++++++++++++++++-------
- 1 file changed, 25 insertions(+), 8 deletions(-)
+ numpy/core/src/multiarray/iterators.c | 32 +++++++++++++++++++++------
+ 1 file changed, 25 insertions(+), 7 deletions(-)
 
 diff --git a/numpy/core/src/multiarray/iterators.c b/numpy/core/src/multiarray/iterators.c
-index 9da811f69..a801c221a 100644
+index 9da811f69..b59d32da1 100644
 --- a/numpy/core/src/multiarray/iterators.c
 +++ b/numpy/core/src/multiarray/iterators.c
-@@ -1153,17 +1153,16 @@ NPY_NO_EXPORT PyTypeObject PyArrayIter_Type = {
+@@ -1153,13 +1153,13 @@ NPY_NO_EXPORT PyTypeObject PyArrayIter_Type = {
  
  /** END of Array Iterator **/
  
@@ -41,11 +41,7 @@ index 9da811f69..a801c221a 100644
      int i, nd, k, j;
      npy_intp tmp;
      PyArrayIterObject *it;
-
-     /* Discover the broadcast number of dimensions */
-     for (i = 0, nd = 0; i < mit->numiter; i++) {
-         nd = PyArray_MAX(nd, PyArray_NDIM(mit->iters[i]->ao));
-@@ -1195,6 +1194,24 @@ PyArray_Broadcast(PyArrayMultiIterObject *mit)
+@@ -1195,6 +1195,24 @@ PyArray_Broadcast(PyArrayMultiIterObject *mit)
              }
          }
      }
