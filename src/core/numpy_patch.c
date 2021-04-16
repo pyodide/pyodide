@@ -226,38 +226,40 @@ PyArray_Broadcast(PyArrayMultiIterObject *mit)
     PyArrayIterObject *it;
     PyArrayIterObject **it_ptr;
 
-    nd = PyArray_Broadcast_GetNd(mit);
-    mit->nd = nd;
-
-    / * Discover the broadcast shape in each dimension * /
-    for (i = 0; i < nd; i++) {
-        mit->dimensions[i] = 1;
-    }
-
-    for (j = 0; j < mit->numiter; j++) {
-        it = mit->iters[j];
-        for (i = 0; i < nd; i++) {
-            / * This prepends 1 to shapes not already equal to nd * /
-            k = i + PyArray_NDIM(it->ao) - nd;
-            if (k >= 0) {
-                tmp = PyArray_DIMS(it->ao)[k];
-                if (tmp == 1) {
-                    continue;
-                }
-                if (mit->dimensions[i] == 1) {
-                    mit->dimensions[i] = tmp;
-                }
-                else if (mit->dimensions[i] != tmp) {
-                    PyErr_SetString(PyExc_ValueError,
-                                    "shape mismatch: objects" \
-                                    " cannot be broadcast" \
-                                    " to a single shape");
-                    return -1;
-                }
-            }
-        }
-    }
-
-  // Rest of function skipped
+    /* Discover the broadcast number of dimensions */
+for (i = 0, nd = 0; i < mit->numiter; i++) {
+  nd = PyArray_MAX(nd, PyArray_NDIM(mit->iters[i]->ao));
 }
-*/
+mit->nd = nd;
+
+/ *Discover the broadcast shape in each dimension* / for (i = 0; i < nd; i++)
+{
+  mit->dimensions[i] = 1;
+}
+
+for (j = 0; j < mit->numiter; j++) {
+  it = mit->iters[j];
+  for (i = 0; i < nd; i++) {
+    / * This prepends 1 to shapes not already equal to nd* / k =
+      i + PyArray_NDIM(it->ao) - nd;
+    if (k >= 0) {
+      tmp = PyArray_DIMS(it->ao)[k];
+      if (tmp == 1) {
+        continue;
+      }
+      if (mit->dimensions[i] == 1) {
+        mit->dimensions[i] = tmp;
+      } else if (mit->dimensions[i] != tmp) {
+        PyErr_SetString(PyExc_ValueError,
+                        "shape mismatch: objects"
+                        " cannot be broadcast"
+                        " to a single shape");
+        return -1;
+      }
+    }
+  }
+}
+
+// Rest of function skipped
+}
+* /
