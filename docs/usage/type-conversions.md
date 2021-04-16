@@ -365,21 +365,43 @@ will be thrown.
 
 ### Converting Javascript Typed Arrays to Python
 
-Javascript typed arrays (`Int8Array` and friends) are translated to Python
-`memoryviews`. This happens with a single binary memory copy (since Python can't
-directly access arrays if they are outside of the wasm heap), and the data type
-is preserved. This makes it easy to correctly convert the array to a Numpy array
+Javascript ArrayBuffers and ArrayBuffer views (`Int8Array` and friends) are
+proxied into Python. Python can't directly access arrays if they are outside of
+the wasm heap so it's impossible to directly use these proxied buffers as Python
+buffers. You can convert such a proxy to a Python `memoryview` using the `to_py`
+api.
+This makes it easy to correctly convert the array to a Numpy array
 using `numpy.asarray`:
 
-```js
-let array = new Float32Array([1, 2, 3]);
+```pyodide
+self.jsarray = new Float32Array([1,2,3, 4, 5, 6]);
+pyodide.runPython(`
+    from js import jsarray
+    array = jsarray.to_py()
+    import numpy as np
+    numpy_array = np.asarray(array).reshape((2,3))
+    print(numpy_array)
+`);
+```
+After manipulating `numpy_array` you can assign the value back to
+`jsarray` using {any}`JsProxy.assign`:
+```pyodide
+pyodide.runPython(`
+    numpy_array[1,1] = 77
+    jsarray.assign(a)
+`);
+console.log(jsarray); // [1, 2, 3, 4, 77, 6]
 ```
 
-```py
-from js import array
-import numpy as np
-numpy_array = np.asarray(array)
-```
+The {any}`JsProxy.assign` and {any}`JsProxy.assign_to` methods can be used to
+assign a Javascript buffer from / to a Python buffer which is appropriately
+sized and contiguous. The assignment methods will only work if the data types
+match, the total length of the buffers match, and the Python buffer is
+contiguous.
+
+These APIs are currently experimental, hopefully we will improve them in the
+future.
+
 
 (buffer_tojs)=
 ### Converting Python Buffer objects to Javascript

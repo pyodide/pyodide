@@ -1278,13 +1278,13 @@ check_buffer_compatibility(JsProxy* self, Py_buffer view, bool safe, bool dir)
     if (dir) {
       PyErr_Format(
         PyExc_ValueError,
-        "cannot copy from TypedArray of length %d to buffer of length %d",
+        "cannot assign from TypedArray of length %d to buffer of length %d",
         self->byteLength,
         view.len);
     } else {
       PyErr_Format(
         PyExc_ValueError,
-        "cannot copy from buffer of length %d to TypedArray of length %d",
+        "cannot assign to TypedArray of length %d from buffer of length %d",
         view.len,
         self->byteLength);
     }

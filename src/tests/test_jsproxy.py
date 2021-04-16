@@ -708,10 +708,10 @@ def test_buffer(selenium):
             b = a.to_py()
             b[4] = 7
             assert b[8] == 8
-            a.copy_into_buffer(b)
+            a.assign_to(b)
             assert b[4] == 4
             b[4] = 7
-            a.copy_from_buffer(b)
+            a.assign(b)
             assert a[4] == 7
         `);
         if(a[4] !== 7){
@@ -730,20 +730,20 @@ def test_buffer(selenium):
             from js import a
             c = array('b', range(30))
             d = array('b', range(40))
-            with raises(ValueError, "cannot copy from TypedArray"):
-                a.copy_into_buffer(c)
+            with raises(ValueError, "cannot assign from TypedArray"):
+                a.assign(c)
 
-            with raises(ValueError, "cannot copy from buffer"):
-                a.copy_from_buffer(c)
-
-            with raises(ValueError, "incompatible formats"):
-                a.copy_into_buffer(d)
+            with raises(ValueError, "cannot assign to buffer"):
+                a.assign_to(c)
 
             with raises(ValueError, "incompatible formats"):
-                a.copy_from_buffer(d)
+                a.assign(d)
+
+            with raises(ValueError, "incompatible formats"):
+                a.assign_to(d)
 
             e = array('I', range(10, 20))
-            a.copy_from_buffer(e)
+            a.assign_to(e)
         `);
         for(let [k, v] of a.entries()){
             if(v !== k + 10){
@@ -752,6 +752,22 @@ def test_buffer(selenium):
         }
         """
     )
+
+
+def test_buffer_assign_back(selenium):
+    result = selenium.run_js(
+        """
+        self.jsarray = new Uint8Array([1,2,3, 4, 5, 6]);
+        pyodide.runPython(`
+            from js import jsarray
+            array = jsarray.to_py()
+            array[1::2] = [20, 77, 9]
+            jsarray.assign(array)
+        `);
+        return Array.from(jsarray)
+        """
+    )
+    assert result == [1, 20, 3, 77, 5, 9]
 
 
 def test_memory_leaks(selenium):
