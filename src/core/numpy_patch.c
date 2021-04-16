@@ -206,7 +206,7 @@ EM_JS_NUM(int, PyArray_Broadcast_part1, (void* mit), {
         let mit_dim_i = MultiIter_dimension(mit, i);
         if (mit_dim_i == 1) {
           MultiIter_dimension(mit, i) = tmp;
-        } else if (mit_dim_i != it_dims_k) {
+        } else if (mit_dim_i != tmp) {
           _set_shape_mismatch_err();
           return -1;
         }
