@@ -193,10 +193,10 @@ EM_JS_NUM(int, hiwire_init, (), {
      * anything.
      *
      * This is the API for use from Javascript, there's also an EM_JS
-     * hiwire_get_dtype wrapper for use from C. Used in js2python and in
-     * jsproxy.c for buffers.
+     * hiwire_get_buffer_datatype wrapper for use from C. Used in js2python and
+     * in jsproxy.c for buffers.
      */
-    Module.get_dtype = function(jsobj)
+    Module.get_buffer_datatype = function(jsobj)
     {
       return buffer_datatype_map.get(jsobj.constructor.name) || [ 0, 0, false ];
     }
@@ -724,11 +724,11 @@ EM_JS_NUM(errcode, hiwire_assign_from_ptr, (JsRef idobj, void* ptr), {
 // clang-format off
 EM_JS_NUM(
 errcode,
-hiwire_get_dtype,
+hiwire_get_buffer_datatype,
 (JsRef idobj, char** format_ptr, Py_ssize_t* size_ptr, bool* checked_ptr),
 {
   let jsobj = Module.hiwire.get_value(idobj);
-  let [format_utf8, size, checked] = Module.get_dtype(jsobj);
+  let [format_utf8, size, checked] = Module.get_buffer_datatype(jsobj);
   // Store results into arguments
   setValue(format_ptr, format_utf8, "i8*");
   setValue(size_ptr, size, "i32");

@@ -1369,10 +1369,10 @@ finally:
  * calculate them in Javascript and pass them as arguments than to acquire them
  * from C.
  *
- * jsbuffer - An ArrayBuffer view or an ArrayBuffer byteLength - the byteLength
- * of jsbuffer format - the appropriate format for jsbuffer, from
- * Module.hiwire.get_dtype itemsize - the appropriate itemsize for jsbuffer,
- * from Module.hiwire.get_dtype
+ * jsbuffer - An ArrayBuffer view or an ArrayBuffer
+ * byteLength - the byteLength of jsbuffer
+ * format - the appropriate format for jsbuffer, from get_buffer_datatype
+ * itemsize - the appropriate itemsize for jsbuffer, from get_buffer_datatype
  */
 PyObject*
 JsBuffer_CloneIntoPython(JsRef jsbuffer,
@@ -1407,11 +1407,12 @@ JsBuffer_cinit(PyObject* obj)
   JsProxy* self = (JsProxy*)obj;
   // TODO: should logic here be any different if we're on wasm heap?
   self->byteLength = hiwire_get_byteLength(JsProxy_REF(self));
-  // format string is borrowed from hiwire_get_dtype, DO NOT DEALLOCATE!
-  hiwire_get_dtype(JsProxy_REF(self),
-                   &self->format,
-                   &self->itemsize,
-                   &self->check_assignments);
+  // format string is borrowed from hiwire_get_buffer_datatype, DO NOT
+  // DEALLOCATE!
+  hiwire_get_buffer_datatype(JsProxy_REF(self),
+                             &self->format,
+                             &self->itemsize,
+                             &self->check_assignments);
   if (self->format == NULL) {
     char* typename = hiwire_constructor_name(JsProxy_REF(self));
     PyErr_Format(
