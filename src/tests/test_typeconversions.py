@@ -78,15 +78,6 @@ def test_nan_conversions(selenium):
 def test_bigint_conversions(selenium_module_scope, n):
     with selenium_context_manager(selenium_module_scope) as selenium:
         h = hex(n)
-        selenium.run_js(
-            """
-            window.assert = function assert(cb){
-                if(cb() !== true){
-                    throw new Error(`Assertion failed: ${cb.toString().slice(6)}`);
-                }
-            };
-            """
-        )
         selenium.run_js(f"window.h = {h!r};")
         selenium.run_js(
             """
@@ -659,25 +650,15 @@ def test_python2js_with_depth(selenium):
 
     selenium.run_js(
         """
-        window.assert = function assert(x, msg){
-            if(x !== true){
-                throw new Error(`Assertion failed: ${msg}`);
-            }
-        }
-        """
-    )
-
-    selenium.run_js(
-        """
         pyodide.runPython("a = [1,[2,[3,[4,[5,[6,[7]]]]]]]")
         let a = pyodide.globals.get("a");
         for(let i=0; i < 7; i++){
             let x = a.toJs(i);
             for(let j=0; j < i; j++){
-                assert(Array.isArray(x), `i: ${i}, j: ${j}`);
+                assert(() => Array.isArray(x), `i: ${i}, j: ${j}`);
                 x = x[1];
             }
-            assert(pyodide.isPyProxy(x), `i: ${i}, j: ${i}`);
+            assert(() => pyodide.isPyProxy(x), `i: ${i}, j: ${i}`);
         }
         """
     )
@@ -685,19 +666,14 @@ def test_python2js_with_depth(selenium):
     selenium.run_js(
         """
         pyodide.runPython("a = [1, (2, (3, [4, (5, (6, [7]))]))]")
-        function assert(x, msg){
-            if(x !== true){
-                throw new Error(`Assertion failed: ${msg}`);
-            }
-        }
         let a = pyodide.globals.get("a");
         for(let i=0; i < 7; i++){
             let x = a.toJs(i);
             for(let j=0; j < i; j++){
-                assert(Array.isArray(x), `i: ${i}, j: ${j}`);
+                assert(() => Array.isArray(x), `i: ${i}, j: ${j}`);
                 x = x[1];
             }
-            assert(pyodide.isPyProxy(x), `i: ${i}, j: ${i}`);
+            assert(() => pyodide.isPyProxy(x), `i: ${i}, j: ${i}`);
         }
         """
     )
@@ -712,10 +688,10 @@ def test_python2js_with_depth(selenium):
         let total_refs = pyodide._module.hiwire.num_keys();
         let res = pyodide.globals.get("c").toJs();
         let new_total_refs = pyodide._module.hiwire.num_keys();
-        assert(total_refs === new_total_refs);
-        assert(res[0] === res[1]);
-        assert(res[0][0] === res[1][1]);
-        assert(res[4][0] === res[1][4]);
+        assert(() => total_refs === new_total_refs);
+        assert(() => res[0] === res[1]);
+        assert(() => res[0][0] === res[1][1]);
+        assert(() => res[4][0] === res[1][4]);
         """
     )
 
@@ -730,11 +706,11 @@ def test_python2js_with_depth(selenium):
         let total_refs = pyodide._module.hiwire.num_keys();
         let res = pyodide.globals.get("a").toJs();
         let new_total_refs = pyodide._module.hiwire.num_keys();
-        assert(total_refs === new_total_refs);
-        assert(res[0][0] === "b");
-        assert(res[1][2] === 3);
-        assert(res[1][3] === res[0]);
-        assert(res[0][1] === res[1]);
+        assert(() => total_refs === new_total_refs);
+        assert(() => res[0][0] === "b");
+        assert(() => res[1][2] === 3);
+        assert(() => res[1][3] === res[0]);
+        assert(() => res[0][1] === res[1]);
         """
     )
     msg = "pyodide.ConversionError"

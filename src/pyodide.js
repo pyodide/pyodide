@@ -420,9 +420,6 @@ globalThis.loadPyodide = async function(config = {}) {
   Module.preloadedWasm = {};
 
   let fatal_error_occurred = false;
-  let fatal_error_msg =
-      "Pyodide has suffered a fatal error, refresh the page. " +
-      "Please report this to the Pyodide maintainers.";
   Module.fatal_error = function(e) {
     if (fatal_error_occurred) {
       console.error("Recursive call to fatal_error. Inner error was:");
@@ -430,29 +427,26 @@ globalThis.loadPyodide = async function(config = {}) {
       return;
     }
     fatal_error_occurred = true;
-    console.error(fatal_error_msg);
+    console.error("Pyodide has suffered a fatal error. " +
+                  "Please report this to the Pyodide maintainers.");
     console.error("The cause of the fatal error was:")
     console.error(e);
     try {
       let fd_stdout = 1;
-      pyodide._module.__Py_DumpTraceback(
-          fd_stdout, pyodide._module._PyGILState_GetThisThreadState());
-      for (let [key, value] of Object.entries(Module.public_api)) {
-        if (key.startsWith("_")) {
-          // delete Module.public_api[key];
+      Module.__Py_DumpTraceback(fd_stdout,
+                                Module._PyGILState_GetThisThreadState());
+      for (let key of PUBLIC_API) {
+        if (key === "version") {
           continue;
         }
-        // Have to do this case first because typeof(some_pyproxy) ===
-        // "function".
-        if (Module.isPyProxy(value)) {
-          // TODO: Make it so we can still use the proxy via the private
-          // pyodide._module.
-          value.destroy();
-          continue;
-        }
-        if (typeof (value) === "function") {
-          Module.public_api[key] = function() { throw Error(fatal_error_msg); };
-        }
+        Object.defineProperty(Module.public_api, key, {
+          enumerable : true,
+          configurable : true,
+          get : () => {
+            throw new Error(
+                "Pyodide already fatally failed and can no longer be used.");
+          }
+        });
       }
     } catch (e) {
       console.error("Another error occurred while handling the fatal error:");
