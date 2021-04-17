@@ -60,6 +60,14 @@ int
 hiwire_init();
 
 /**
+ * Convert a string of hexadecimal digits to a Number or BigInt depending on
+ * whether it is less than MAX_SAFE_INTEGER or not. The string is assumed to
+ * begin with an optional sign followed by 0x followed by one or more digits.
+ */
+JsRef
+hiwire_int_from_hex(const char* s);
+
+/**
  * Increase the reference count on an object.
  *
  * Returns: The new reference
@@ -134,105 +142,6 @@ hiwire_string_utf8(const char* ptr);
  */
 JsRef
 hiwire_string_ascii(const char* ptr);
-
-/**
- * Create a new Javascript Uint8ClampedArray, given a pointer to a buffer and a
- * length, in bytes.
- *
- * The array's data is not copied.
- *
- * Returns: New reference
- */
-JsRef
-hiwire_bytes(char* ptr, int len);
-
-/**
- * Create a new Javascript Int8Array, given a pointer to a buffer and a
- * length, in bytes.
- *
- * The array's data is not copied.
- *
- * Returns: New reference
- */
-JsRef
-hiwire_int8array(i8* ptr, int len);
-
-/**
- * Create a new Javascript Uint8Array, given a pointer to a buffer and a
- * length, in bytes.
- *
- * The array's data is not copied.
- *
- * Returns: New reference
- */
-JsRef
-hiwire_uint8array(u8* ptr, int len);
-
-/**
- * Create a new Javascript Int16Array, given a pointer to a buffer and a
- * length, in bytes.
- *
- * The array's data is not copied.
- *
- * Returns: New reference
- */
-JsRef
-hiwire_int16array(i16* ptr, int len);
-
-/**
- * Create a new Javascript Uint16Array, given a pointer to a buffer and a
- * length, in bytes.
- *
- * The array's data is not copied.
- *
- * Returns: New reference
- */
-JsRef
-hiwire_uint16array(u16* ptr, int len);
-
-/**
- * Create a new Javascript Int32Array, given a pointer to a buffer and a
- * length, in bytes.
- *
- * The array's data is not copied.
- *
- * Returns: New reference
- */
-JsRef
-hiwire_int32array(i32* ptr, int len);
-
-/**
- * Create a new Javascript Uint32Array, given a pointer to a buffer and a
- * length, in bytes.
- *
- * The array's data is not copied.
- *
- * Returns: New reference
- */
-JsRef
-hiwire_uint32array(u32* ptr, int len);
-
-/**
- * Create a new Javascript Float32Array, given a pointer to a buffer and a
- * length, in bytes.
- *
- * The array's data is not copied.
- *
- * Returns: New reference
- */
-JsRef
-hiwire_float32array(f32* ptr, int len);
-
-/**
- * Create a new Javascript Float64Array, given a pointer to a buffer and a
- * length, in bytes.
- *
- * The array's data is not copied.
- *
- * Returns: New reference
- */
-JsRef
-hiwire_float64array(f64* ptr, int len);
 
 /**
  * Create a new Javascript boolean value.
@@ -376,7 +285,7 @@ hiwire_call_member_va(JsRef idobj, const char* ptrname, ...);
  * Returns: New reference
  */
 JsRef
-hiwire_new(JsRef idobj, JsRef idargs);
+hiwire_construct(JsRef idobj, JsRef idargs);
 
 /**
  * Test if the object has a `size` or `length` member which is a number. As a
@@ -479,14 +388,6 @@ hiwire_is_function(JsRef idobj);
  */
 bool
 hiwire_is_error(JsRef idobj);
-
-/**
- * Check if the function supports kwargs. A fairly involved check which parses
- * func.toString() to determine if the last argument does object destructuring.
- * Actual implementation in pyodide.js.
- */
-bool
-hiwire_function_supports_kwargs(JsRef idfunc);
 
 /**
  * Returns true if the object is a promise.
@@ -640,17 +541,26 @@ int
 hiwire_get_byteOffset(JsRef idobj);
 
 /**
- * Copies the buffer contents of a given typed array or buffer into the memory
- * at ptr.
+ * Copies the buffer contents of a given ArrayBuffer view or ArrayBuffer into
+ * the memory at ptr.
  */
 errcode
-hiwire_copy_to_ptr(JsRef idobj, void* ptr);
+hiwire_assign_to_ptr(JsRef idobj, void* ptr);
+
+/**
+ * Copies the memory at ptr into a given ArrayBuffer view or ArrayBuffer.
+ */
+errcode
+hiwire_assign_from_ptr(JsRef idobj, void* ptr);
 
 /**
  * Get a data type identifier for a given typedarray.
  */
 errcode
-hiwire_get_dtype(JsRef idobj, char** format_ptr, Py_ssize_t* size_ptr);
+hiwire_get_buffer_datatype(JsRef idobj,
+                           char** format_ptr,
+                           Py_ssize_t* size_ptr,
+                           bool* check_assignments);
 
 /**
  * Get a subarray from a TypedArray

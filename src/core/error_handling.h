@@ -69,11 +69,11 @@ console_error_obj(JsRef obj);
 #ifdef DEBUG_F
 // Yes, the "do {} while(0)" trick solves the same problem in the same way in
 // javascript!
-#define LOG_EM_JS_ERROR(__funcname__, err)                                     \
-  do {                                                                         \
-    console.error(                                                             \
-      `EM_JS raised exception on line __LINE__ in func __funcname__`);         \
-    console.error("Error was:", err);                                          \
+#define LOG_EM_JS_ERROR(__funcname__, err)                                              \
+  do {                                                                                  \
+    console.error(                                                                      \
+      `EM_JS raised exception on line __LINE__ in func __funcname__ in file __FILE__`); \
+    console.error("Error was:", err);                                                   \
   } while (0)
 #else
 #define LOG_EM_JS_ERROR(__funcname__, err)

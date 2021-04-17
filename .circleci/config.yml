@@ -3,7 +3,7 @@ version: 2
 defaults: &defaults
   working_directory: ~/repo
   docker:
-    - image: rthz/pyodide-env:13
+    - image: rthz/pyodide-env:14
   environment:
     - EMSDK_NUM_CORES: 4
       EMCC_CORES: 4
@@ -95,6 +95,13 @@ jobs:
           paths:
             - .
 
+      - run:
+          name: Prepare CircleCI artifacts
+          command: PYODIDE_BASE_URL="./" make build/console.html
+
+      - store_artifacts:
+          path: /root/repo/build/
+
   build-packages:
     <<: *defaults
     steps:
@@ -109,7 +116,7 @@ jobs:
 
       - run:
           name: build packages
-          no_output_timeout: 1200
+          no_output_timeout: 1800
           command: |
             ccache -z
             make
@@ -129,6 +136,9 @@ jobs:
           paths:
             - ./packages/.artifacts
             - ./build
+      - run:
+          name: Prepare CircleCI artifacts
+          command: PYODIDE_BASE_URL="./" make build/console.html
 
       - store_artifacts:
           path: /root/repo/build/
@@ -151,7 +161,7 @@ jobs:
       - run:
           name: test
           command: |
-            tools/pytest_wrapper.py src packages/micropip/ -v -k chrome -n 3
+            tools/pytest_wrapper.py src packages/micropip/ -v -k chrome
 
   test-packages-firefox:
     <<: *defaults
@@ -321,7 +331,6 @@ workflows:
             - test-python
             - test-core-firefox
             - test-packages-firefox
-            - test-core-chrome
             - test-emsdk
           filters:
             branches:
@@ -334,7 +343,6 @@ workflows:
             - test-python
             - test-core-firefox
             - test-packages-firefox
-            - test-core-chrome
             - test-emsdk
           filters:
             branches:

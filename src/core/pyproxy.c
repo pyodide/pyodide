@@ -174,13 +174,6 @@ _pyproxy_type(PyObject* ptrobj)
   return hiwire_string_ascii(ptrobj->ob_type->tp_name);
 }
 
-void
-_pyproxy_destroy(PyObject* ptrobj)
-{ // See bug #1049
-  Py_DECREF(ptrobj);
-  EM_ASM({ delete Module.PyProxies[$0]; }, ptrobj);
-}
-
 int
 _pyproxy_hasattr(PyObject* pyobj, JsRef idkey)
 {
@@ -345,22 +338,33 @@ finally:
 JsRef
 _pyproxy_ownKeys(PyObject* pyobj)
 {
-  PyObject* pydir = PyObject_Dir(pyobj);
+  bool success = false;
+  PyObject* pydir = NULL;
+  JsRef iddir = NULL;
+  JsRef identry = NULL;
 
-  if (pydir == NULL) {
-    return NULL;
-  }
+  pydir = PyObject_Dir(pyobj);
+  FAIL_IF_NULL(pydir);
 
-  JsRef iddir = hiwire_array();
+  iddir = hiwire_array();
+  FAIL_IF_NULL(iddir);
   Py_ssize_t n = PyList_Size(pydir);
+  FAIL_IF_MINUS_ONE(n);
   for (Py_ssize_t i = 0; i < n; ++i) {
-    PyObject* pyentry = PyList_GetItem(pydir, i);
-    JsRef identry = python2js(pyentry);
-    hiwire_push_array(iddir, identry);
-    hiwire_decref(identry);
+    PyObject* pyentry = PyList_GetItem(pydir, i); /* borrowed */
+    identry = python2js(pyentry);
+    FAIL_IF_NULL(identry);
+    FAIL_IF_MINUS_ONE(hiwire_push_array(iddir, identry));
+    hiwire_CLEAR(identry);
   }
-  Py_DECREF(pydir);
 
+  success = true;
+finally:
+  Py_CLEAR(pydir);
+  hiwire_CLEAR(identry);
+  if (!success) {
+    hiwire_CLEAR(iddir);
+  }
   return iddir;
 }
 
@@ -686,16 +690,13 @@ typedef struct
 buffer_struct*
 _pyproxy_get_buffer(PyObject* ptrobj)
 {
-  if (!PyObject_CheckBuffer(ptrobj)) {
-    return NULL;
-  }
   Py_buffer view;
   // PyBUF_RECORDS_RO requires that suboffsets be NULL but otherwise is the most
   // permissive possible request.
   if (PyObject_GetBuffer(ptrobj, &view, PyBUF_RECORDS_RO) == -1) {
     // Buffer cannot be represented without suboffsets. The bf_getbuffer method
     // should have set a PyExc_BufferError saying something to this effect.
-    pythonexc2js();
+    return NULL;
   }
 
   bool success = false;
@@ -772,69 +773,8 @@ finally:
   }
 }
 
-///////////////////////////////////////////////////////////////////////////////
-//
-// Javascript code
-//
-// The rest of the file is in Javascript. It would probably be better to move it
-// into a .js file.
-//
-
-/**
- * In the case that the Python object is callable, PyProxyClass inherits from
- * Function so that PyProxy objects can be callable.
- *
- * The following properties on a Python object will be shadowed in the proxy in
- * the case that the Python object is callable:
- *  - "arguments" and
- *  - "caller"
- *
- * Inheriting from Function has the unfortunate side effect that we MUST expose
- * the members "proxy.arguments" and "proxy.caller" because they are
- * nonconfigurable, nonwritable, nonenumerable own properties. They are just
- * always `null`.
- *
- * We also get the properties "length" and "name" which are configurable so we
- * delete them in the constructor. "prototype" is not configurable so we can't
- * delete it, however it *is* writable so we set it to be undefined. We must
- * still make "prototype in proxy" be true though.
- */
 EM_JS_REF(JsRef, pyproxy_new, (PyObject * ptrobj), {
-  // Technically, this leaks memory, since we're holding on to a reference
-  // to the proxy forever.  But we have that problem anyway since we don't
-  // have a destructor in Javascript to free the Python object.
-  // _pyproxy_destroy, which is a way for users to manually delete the proxy,
-  // also deletes the proxy from this set.
-  if (Module.PyProxies.hasOwnProperty(ptrobj)) {
-    return Module.hiwire.new_value(Module.PyProxies[ptrobj]);
-  }
-  let flags = _pyproxy_getflags(ptrobj);
-  let cls = Module.getPyProxyClass(flags);
-  // Reflect.construct calls the constructor of Module.PyProxyClass but sets the
-  // prototype as cls.prototype. This gives us a way to dynamically create
-  // subclasses of PyProxyClass (as long as we don't need to use the "new
-  // cls(ptrobj)" syntax).
-  let target;
-  if (flags & IS_CALLABLE) {
-    // To make a callable proxy, we must call the Function constructor.
-    // In this case we are effectively subclassing Function.
-    target = Reflect.construct(Function, [], cls);
-    // Remove undesireable properties added by Function constructor. Note: we
-    // can't remove "arguments" or "caller" because they are not configurable
-    // and not writable
-    delete target.length;
-    delete target.name;
-    // prototype isn't configurable so we can't delete it but it's writable.
-    target.prototype = undefined;
-  } else {
-    target = Object.create(cls.prototype);
-  }
-  Object.defineProperty(
-    target, "$$", { value : { ptr : ptrobj, type : 'PyProxy' } });
-  _Py_IncRef(ptrobj);
-  let proxy = new Proxy(target, Module.PyProxyHandlers);
-  Module.PyProxies[ptrobj] = proxy;
-  return Module.hiwire.new_value(proxy);
+  return Module.hiwire.new_value(Module.pyproxy_new(ptrobj));
 });
 
 EM_JS_REF(JsRef, create_once_callable, (PyObject * obj), {
@@ -935,7 +875,7 @@ create_proxy(PyObject* _mod, PyObject* obj)
   return result;
 }
 
-static PyMethodDef pyproxy_methods[] = {
+static PyMethodDef methods[] = {
   {
     "create_once_callable",
     create_once_callable_py,
@@ -949,38 +889,18 @@ static PyMethodDef pyproxy_methods[] = {
   { NULL } /* Sentinel */
 };
 
-// Some special helper macros to hack it so that "pyproxy.js" parses as a
-// javascript file for JsDoc. See comment with explanation there.
-#define UNPAIRED_OPEN_BRACE {
-#define UNPAIRED_CLOSE_BRACE } // Just here to help text editors pair braces up
-#define TEMP_EMJS_HELPER(a, args...)                                           \
-  EM_JS_NUM(int, pyproxy_init_js, (), UNPAIRED_OPEN_BRACE { args return 0; })
-
-// A macro to allow us to add code that is only intended to influence JsDoc
-// output, but shouldn't end up in generated code.
-#define FOR_JSDOC_ONLY(x)
-
+#include "include_js_file.h"
 #include "pyproxy.js"
-
-#undef TEMP_EMJS_HELPER
-#undef UNPAIRED_OPEN_BRACE
-#undef UNPAIRED_CLOSE_BRACE
 
 int
 pyproxy_init(PyObject* core)
 {
   bool success = false;
-  int i = 0;
 
-  PyObject* _pyodide_core = NULL;
-  _pyodide_core = PyImport_ImportModule("_pyodide._core");
-  FAIL_IF_NULL(_pyodide_core);
-
-  while (pyproxy_methods[i].ml_name != NULL) {
-    FAIL_IF_MINUS_ONE(set_method_docstring(&pyproxy_methods[i], _pyodide_core));
-    i++;
-  }
-  FAIL_IF_MINUS_ONE(PyModule_AddFunctions(core, pyproxy_methods));
+  PyObject* docstring_source = PyImport_ImportModule("_pyodide._core");
+  FAIL_IF_NULL(docstring_source);
+  FAIL_IF_MINUS_ONE(
+    add_methods_and_set_docstrings(core, methods, docstring_source));
   asyncio = PyImport_ImportModule("asyncio");
   FAIL_IF_NULL(asyncio);
   FAIL_IF_MINUS_ONE(PyType_Ready(&FutureDoneCallbackType));
@@ -988,6 +908,6 @@ pyproxy_init(PyObject* core)
 
   success = true;
 finally:
-  Py_CLEAR(_pyodide_core);
-  return 0;
+  Py_CLEAR(docstring_source);
+  return success ? 0 : -1;
 }
