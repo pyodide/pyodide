@@ -57,8 +57,8 @@ versionwarning_messages = {
     "latest": (
         "This is the development version of the documentation. ",
         'See <a href="https://pyodide.org/">here</a> for latest stable '
-        "documentation. In particular, do not use Pyodide with non "
-        "versionned (`dev`) URLs from the CDN for deployed applications.",
+        "documentation. Please do not use Pyodide with non "
+        "versioned (`dev`) URLs from the CDN for deployed applications!",
     )
 }
 
