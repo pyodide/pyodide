@@ -126,7 +126,7 @@ test_codeop
 test_collections
 test_colorsys
 test_compare
-test_compile crash-chrome
+test_compile crash
 test_compileall multiprocessing
 test_complex
 test_concurrent_futures

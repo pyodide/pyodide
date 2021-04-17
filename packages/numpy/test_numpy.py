@@ -179,6 +179,7 @@ def test_runpythonasync_numpy(selenium_standalone):
         )
 
 
+@pytest.mark.driver_timeout(30)
 def test_runwebworker_numpy(selenium_webworker_standalone):
     output = selenium_webworker_standalone.run_webworker(
         """
