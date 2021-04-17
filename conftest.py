@@ -21,6 +21,17 @@ BUILD_PATH = ROOT_PATH / "build"
 
 sys.path.append(str(ROOT_PATH))
 
+from pyodide_build._fixes import _selenium_is_connectable  # noqa: E402
+
+try:
+    import selenium.webdriver.common.utils  # noqa: E402
+
+    # XXX: Temporary fix for ConnectionError in selenium
+
+    selenium.webdriver.common.utils.is_connectable = _selenium_is_connectable
+except ModuleNotFoundError:
+    pass
+
 
 def pytest_addoption(parser):
     group = parser.getgroup("general")
