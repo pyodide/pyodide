@@ -7,7 +7,8 @@ source:
   sha256: 16507ba6617f62ae3c6ab1725ae6f550331025d4d9a369b83f6d5a470446c342
 
   patches:
-    - patches/fix-i32-load-memory-access-oob.patch
+    - patches/segfault-PyArray_Broadcast.patch
+    - patches/segfault-PyArray_PyIntAsIntp.patch
     - patches/add-emscripten-cpu.patch
     - patches/disable-maybe-uninitialized.patch
     - patches/dont-include-execinfo.patch

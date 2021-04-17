@@ -46,11 +46,21 @@ extensions = [
     "autodocsumm",
     "sphinx_pyodide",
     "sphinx_argparse_cli",
+    "versionwarning.extension",
 ]
 
 myst_enable_extensions = ["substitution"]
 js_source_path = ["../src/", "../src/core"]
 root_for_relative_js_paths = "../src/"
+
+versionwarning_messages = {
+    "latest": (
+        "This is the development version of the documentation. ",
+        'See <a href="https://pyodide.org/">here</a> for latest stable '
+        "documentation. Please do not use Pyodide with non "
+        "versioned (`dev`) URLs from the CDN for deployed applications!",
+    )
+}
 
 autosummary_generate = True
 autodoc_default_flags = ["members", "inherited-members"]
