@@ -94,7 +94,7 @@ def run_sync(coroutine):
     try:
         coroutine.send(None)
     except StopIteration as result:
-        return result.args[0]
+        return result.args and result.args[0]
     else:
         raise Exception("Coroutine didn't finish in one pass")
 
