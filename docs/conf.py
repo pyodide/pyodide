@@ -28,7 +28,7 @@ import pyodide
 import micropip  # noqa
 
 # The full version, including alpha/beta/rc tags.
-release = version = "0.15.0"  # pyodide.__version__
+release = version = pyodide.__version__
 
 
 # -- General configuration ---------------------------------------------------
