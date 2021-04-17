@@ -5,7 +5,7 @@ import sys
 import traceback
 
 
-from typing import Callable, Awaitable
+from typing import Callable
 
 
 class WebLoop(asyncio.AbstractEventLoop):
@@ -68,7 +68,7 @@ class WebLoop(asyncio.AbstractEventLoop):
         """
         pass
 
-    def run_until_complete(self, future: Awaitable):  # type: ignore
+    def run_until_complete(self, future):
         """Run until future is done.
 
         If the argument is a coroutine, it is wrapped in a Task.
