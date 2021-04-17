@@ -26,7 +26,7 @@ RUN pip3 --no-cache-dir install \
   "selenium~=3.141.0"
 
 # Get firefox 70.0.1 and geckodriver
-RUN wget -qO- https://ftp.mozilla.org/pub/firefox/releases/87.0.0/linux-x86_64/en-US/firefox-87.0.0.tar.bz2 | tar jx \
+RUN wget -qO- https://ftp.mozilla.org/pub/firefox/releases/87.0/linux-x86_64/en-US/firefox-87.0.tar.bz2 | tar jx \
   && ln -s $PWD/firefox/firefox /usr/local/bin/firefox \
   && wget -qO- https://github.com/mozilla/geckodriver/releases/download/v0.29.1/geckodriver-v0.29.1-linux64.tar.gz | tar zxC /usr/local/bin/
 
