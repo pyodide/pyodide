@@ -457,7 +457,7 @@ JS_FILE(pyproxy_init_js, () => {0,0; /* Magic, see include_js_file.h */
       let iterptr;
       try {
         iterptr = _PyObject_GetIter(ptrobj);
-      } catch {
+      } catch (e) {
         Module.fatal_error(e);
       }
 
