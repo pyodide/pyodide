@@ -228,6 +228,7 @@ class InteractiveConsole(code.InteractiveConsole):
         # Try to trim out stack frames inside our code
         for (frame, _) in traceback.walk_tb(tb):
             keep_frames = keep_frames or frame.f_code.co_filename == "<console>"
+            keep_frames = keep_frames or frame.f_code.co_filename == "<exec>"
             if keep_frames:
                 kept_frames += 1
         return kept_frames
