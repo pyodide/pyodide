@@ -13,6 +13,9 @@
   </head>
   <body>
     <script>
+      function sleep(s){
+        return new Promise(resolve => setTimeout(resolve, s));
+      }
       async function main() {
         await loadPyodide({ indexURL : '{{ PYODIDE_BASE_URL }}' });
         let namespace = pyodide.globals.get("dict")();
@@ -33,26 +36,47 @@
                     return f"Welcome to the Pyodide terminal emulator 🐍\\n{super().banner()}"
 
 
-            js.window.pyconsole = PyConsole()
+            js.pyconsole = PyConsole()
         `, namespace);
         namespace.destroy();
 
         let ps1 = '>>> ', ps2 = '... ';
 
+        async function lock(){
+          let resolve;
+          let ready = term.ready;
+          term.ready = new Promise(res => resolve = res);
+          await ready;
+          return resolve;
+        }
+
         async function interpreter(command) {
-            // multiline should be splitted (usefull when pasting)
+          let unlock = await lock();
+          try {
             term.pause();
+            // multiline should be splitted (useful when pasting)
             for( const c of command.split('\n') ) {
-                const prompt = pyconsole.push(c) ? ps2 : ps1;
-                term.set_prompt(prompt);
-                let run_complete = pyconsole.run_complete;
-                try {
+              let run_complete = pyconsole.run_complete;
+              try {
+                  const incomplete = pyconsole.push(c);
+                  term.set_prompt(incomplete ? ps2 : ps1);
                   let r = await run_complete;
-                  r.destroy();
-                } catch(_){ }
+                  if(pyodide.isPyProxy(r)){
+                    r.destroy();
+                  }
+                } catch(e){
+                  if(e.name !== "PythonError"){
+                    term.error(e);
+                    throw e;
+                  }
+                }
                 run_complete.destroy();
             }
+          } finally {
             term.resume();
+            await sleep(10);
+            unlock();
+          }
         }
 
         let term = $('body').terminal(
@@ -66,11 +90,45 @@
             }
           }
         );
+        window.term = term;
 
-        pyconsole.stdout_callback = (s) => term.echo(s, {newline : false});
-        pyconsole.stderr_callback = (s) => term.echo(`[[;red;]${$.terminal.escape_brackets(s)}\u200B]`, {newline : false});
+        term.echo_no_newline = (function (message) {
+          // prompt can be polluted with previous echo
+          // _prompt_tail is the line part just before the prompt
+          this._prompt_tail = this._prompt_tail || '';
+          let prompt = this.get_prompt();
+          if( prompt.startsWith(this._prompt_tail) )
+            prompt = prompt.slice(this._prompt_tail.length);
+          else
+            this._prompt_tail = '';
+          // here, prompt and _prompt_tail should be correctly isolated
+          const lines = message.split('\n');
+          lines[0] = this._prompt_tail + lines[0];
+          this._prompt_tail = lines.pop();
+          this.set_prompt(this._prompt_tail + prompt);
+          if( lines.length )
+            this.echo(lines.join('\n'));
+        }).bind(term);
+        pyconsole.stdout_callback = term.echo_no_newline;
+        pyconsole.stderr_callback = (s) => {
+          if(s.endsWith("\n")){
+            s = s.slice(0, -1);
+          }
+          term.echo(`[[;red;]${$.terminal.escape_brackets(s)}\u200B]`);
+        }
+        term.ready = Promise.resolve();
+        pyodide._module.on_fatal = async (e) => {
+          term.error("Pyodide has suffered a fatal error. Please report this to the Pyodide maintainers.");
+          term.error("The cause of the fatal error was:");
+          term.error(e);
+          term.error("Look in the browser console for more details.");
+          await term.ready;
+          term.pause();
+          await sleep(15);
+          term.pause();
+        };
       }
-      main();
+      window.console_ready = main();
     </script>
   </body>
 </html>
