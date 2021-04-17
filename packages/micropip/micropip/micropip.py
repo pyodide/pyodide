@@ -9,6 +9,7 @@ from typing import Dict, Any, Union, List, Tuple
 
 from packaging.requirements import Requirement
 from packaging.version import Version
+from packaging.markers import default_environment
 
 # Provide stubs for testing in native python
 try:
@@ -133,7 +134,9 @@ class _PackageManager:
             self.builtin_packages = {}
         self.installed_packages = {}
 
-    async def install(self, requirements: Union[str, List[str]], ctx=None):
+    async def gather_requirements(self, requirements: Union[str, List[str]], ctx=None):
+        ctx = ctx or default_environment()
+        ctx.setdefault("extra", None)
         if isinstance(requirements, str):
             requirements = [requirements]
 
@@ -149,9 +152,11 @@ class _PackageManager:
             )
 
         await gather(*requirement_promises)
+        return transaction
 
+    async def install(self, requirements: Union[str, List[str]], ctx=None):
+        transaction = await self.gather_requirements(requirements, ctx)
         wheel_promises = []
-
         # Install built-in packages
         pyodide_packages = transaction["pyodide_packages"]
         if len(pyodide_packages):
