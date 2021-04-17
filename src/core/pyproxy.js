@@ -28,17 +28,21 @@ JS_FILE(pyproxy_init_js, () => {0,0; /* Magic, see include_js_file.h */
         Module.fatal_error(e);
       }
     });
-    Module.bufferFinalizationRegistry = new FinalizationRegistry((ptr) => {
-      try {
-        _PyBuffer_Release(ptr);
-        _PyMem_Free(ptr);
-      } catch (e) {
-        Module.fatal_error(e);
-      }
-    });
+    // For some unclear reason this code screws up selenium FirefoxDriver. Works
+    // fine in chrome and when I test it in browser. It seems to be sensitive to
+    // changes that don't make a difference to the semantics.
+    // TODO: after v0.17.0 release, fix selenium issues with this code.
+    // Module.bufferFinalizationRegistry = new FinalizationRegistry((ptr) => {
+    //   try {
+    //     _PyBuffer_Release(ptr);
+    //     _PyMem_Free(ptr);
+    //   } catch (e) {
+    //     Module.fatal_error(e);
+    //   }
+    // });
   } else {
     Module.finalizationRegistry = {register() {}, unregister() {}};
-    Module.bufferFinalizationRegistry = finalizationRegistry;
+    // Module.bufferFinalizationRegistry = finalizationRegistry;
   }
 
   /**
@@ -941,7 +945,7 @@ JS_FILE(pyproxy_init_js, () => {0,0; /* Magic, see include_js_file.h */
             _released : false
           })
         );
-        Module.bufferFinalizationRegistry.register(result, view_ptr, result);
+        // Module.bufferFinalizationRegistry.register(result, view_ptr, result);
         return result;
         // clang-format on
       } finally {
@@ -1123,7 +1127,7 @@ JS_FILE(pyproxy_init_js, () => {0,0; /* Magic, see include_js_file.h */
       if (this._released) {
         return;
       }
-      Module.bufferFinalizationRegistry.unregister(this);
+      // Module.bufferFinalizationRegistry.unregister(this);
       try {
         _PyBuffer_Release(this._view_ptr);
         _PyMem_Free(this._view_ptr);
