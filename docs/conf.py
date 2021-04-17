@@ -28,7 +28,7 @@ import pyodide
 import micropip  # noqa
 
 # The full version, including alpha/beta/rc tags.
-release = version = pyodide.__version__
+release = version = "0.15.0"  # pyodide.__version__
 
 
 # -- General configuration ---------------------------------------------------
@@ -46,11 +46,21 @@ extensions = [
     "autodocsumm",
     "sphinx_pyodide",
     "sphinx_argparse_cli",
+    "versionwarning.extension",
 ]
 
 myst_enable_extensions = ["substitution"]
 js_source_path = ["../src/", "../src/core"]
 root_for_relative_js_paths = "../src/"
+
+versionwarning_messages = {
+    "latest": (
+        "This is the development version of the documentation. ",
+        'See <a href="https://pyodide.org/">here</a> for latest stable '
+        "documentation. In particular, do not use Pyodide with non "
+        "versionned (`dev`) URLs from the CDN for deployed applications.",
+    )
+}
 
 autosummary_generate = True
 autodoc_default_flags = ["members", "inherited-members"]
