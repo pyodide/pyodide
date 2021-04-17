@@ -6,7 +6,7 @@
 
 
 [![Build Status](https://circleci.com/gh/pyodide/pyodide.png)](https://circleci.com/gh/pyodide/pyodide)
-[![Documentation Status](https://readthedocs.org/projects/pyodide/badge/?version=latest)](https://pyodide.readthedocs.io/?badge=latest)
+[![Documentation Status](https://readthedocs.org/projects/pyodide/badge/?version=v0.17.0a2)](https://pyodide.readthedocs.io/?badge=v0.17.0a2)
 
 Python with the scientific stack, compiled to WebAssembly.
 
