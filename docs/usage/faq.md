@@ -1,4 +1,4 @@
-# Frequently Asked Questions (FAQ)
+# Frequently Asked Questions
 
 ## How can I load external Python files in Pyodide?
 
