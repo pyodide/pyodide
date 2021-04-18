@@ -318,7 +318,7 @@ class ChromeWrapper(SeleniumWrapper):
         options = Options()
         options.add_argument("--headless")
         options.add_argument("--no-sandbox")
-
+        options.add_argument("--js-flags=--expose-gc")
         return Chrome(options=options)
 
 

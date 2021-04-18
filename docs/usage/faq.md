@@ -167,3 +167,32 @@ Unpickling data is similar to `eval`. On any public-facing server it is a really
 bad idea to unpickle any data sent from the client. For sending data from client
 to server, try some other serialization format like JSON.
 ```
+
+## How can I use a Python function as an event handler and then remove it later?
+
+Note that the most straight forward way of doing this will not work:
+```py
+from js import document
+def f(*args):
+    document.querySelector("h1").innerHTML += "(>.<)"
+
+document.body.addEventListener('click', f)
+document.body.removeEventListener('click', f)
+```
+This leaks `f` and does not remove the event listener (instead
+`removeEventListener` will silently do nothing).
+
+To do this correctly use :func:`pyodide.create_proxy` as follows:
+```py
+from js import document
+from pyodide import create_proxy
+def f(*args):
+    document.querySelector("h1").innerHTML += "(>.<)"
+
+proxy_f = create_proxy(f)
+document.body.addEventListener('click', proxy_f)
+# Store proxy_f in Python then later:
+document.body.removeEventListener('click', proxy_f)
+proxy_f.destroy()
+```
+This also avoids memory leaks.

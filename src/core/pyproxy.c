@@ -785,11 +785,10 @@ EM_JS_REF(JsRef, create_once_callable, (PyObject * obj), {
     if (alreadyCalled) {
       throw new Error("OnceProxy can only be called once");
     }
-    alreadyCalled = true;
     try {
       return Module.callPyObject(obj, ... args);
     } finally {
-      _Py_DecRef(obj);
+      wrapper.destroy();
     }
   }
   wrapper.destroy = function()
@@ -798,8 +797,10 @@ EM_JS_REF(JsRef, create_once_callable, (PyObject * obj), {
       throw new Error("OnceProxy has already been destroyed");
     }
     alreadyCalled = true;
+    Module.finalizationRegistry.unregister(wrapper);
     _Py_DecRef(obj);
   };
+  Module.finalizationRegistry.register(wrapper, obj, wrapper);
   return Module.hiwire.new_value(wrapper);
 });
 
@@ -813,6 +814,9 @@ create_once_callable_py(PyObject* _mod, PyObject* obj)
 }
 
 // clang-format off
+
+// At some point it would be nice to use FinalizationRegistry with these, but
+// it's a bit tricky.
 EM_JS_REF(JsRef, create_promise_handles, (
   PyObject* handle_result, PyObject* handle_exception
 ), {

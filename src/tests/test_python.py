@@ -42,14 +42,6 @@ def test_globals_get_multiple(selenium):
     selenium.run_js("pyodide.globals.get('v')")
 
 
-def test_globals_get_same(selenium):
-    """See #382"""
-    selenium.run("def func(): return 42")
-    assert selenium.run_js(
-        "return pyodide.globals.get('func') == pyodide.globals.get('func')"
-    )
-
-
 def test_open_url(selenium, httpserver):
     httpserver.expect_request("/data").respond_with_data(
         b"HELLO", content_type="text/text", headers={"Access-Control-Allow-Origin": "*"}

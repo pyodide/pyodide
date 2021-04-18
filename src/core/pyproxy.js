@@ -18,6 +18,33 @@ JS_FILE(pyproxy_init_js, () => {0,0; /* Magic, see include_js_file.h */
   Module.PyProxies = {};
   // clang-format on
 
+  if (globalThis.FinalizationRegistry) {
+    Module.finalizationRegistry = new FinalizationRegistry((ptr) => {
+      try {
+        _Py_DecRef(ptr);
+      } catch (e) {
+        // I'm not really sure what happens if an error occurs inside of a
+        // finalizer...
+        Module.fatal_error(e);
+      }
+    });
+    // For some unclear reason this code screws up selenium FirefoxDriver. Works
+    // fine in chrome and when I test it in browser. It seems to be sensitive to
+    // changes that don't make a difference to the semantics.
+    // TODO: after v0.17.0 release, fix selenium issues with this code.
+    // Module.bufferFinalizationRegistry = new FinalizationRegistry((ptr) => {
+    //   try {
+    //     _PyBuffer_Release(ptr);
+    //     _PyMem_Free(ptr);
+    //   } catch (e) {
+    //     Module.fatal_error(e);
+    //   }
+    // });
+  } else {
+    Module.finalizationRegistry = {register() {}, unregister() {}};
+    // Module.bufferFinalizationRegistry = finalizationRegistry;
+  }
+
   /**
    * In the case that the Python object is callable, PyProxyClass inherits from
    * Function so that PyProxy objects can be callable.
@@ -39,14 +66,6 @@ JS_FILE(pyproxy_init_js, () => {0,0; /* Magic, see include_js_file.h */
    * @private
    */
   Module.pyproxy_new = function(ptrobj) {
-    // Technically, this leaks memory, since we're holding on to a reference
-    // to the proxy forever.  But we have that problem anyway since we don't
-    // have a destructor in Javascript to free the Python object.
-    // _pyproxy_destroy, which is a way for users to manually delete the proxy,
-    // also deletes the proxy from this set.
-    if (Module.PyProxies.hasOwnProperty(ptrobj)) {
-      return Module.PyProxies[ptrobj];
-    }
     let flags = _pyproxy_getflags(ptrobj);
     let cls = Module.getPyProxyClass(flags);
     // Reflect.construct calls the constructor of Module.PyProxyClass but sets
@@ -58,7 +77,7 @@ JS_FILE(pyproxy_init_js, () => {0,0; /* Magic, see include_js_file.h */
       // To make a callable proxy, we must call the Function constructor.
       // In this case we are effectively subclassing Function.
       target = Reflect.construct(Function, [], cls);
-      // Remove undesireable properties added by Function constructor. Note: we
+      // Remove undesirable properties added by Function constructor. Note: we
       // can't remove "arguments" or "caller" because they are not configurable
       // and not writable
       delete target.length;
@@ -72,7 +91,7 @@ JS_FILE(pyproxy_init_js, () => {0,0; /* Magic, see include_js_file.h */
                           {value : {ptr : ptrobj, type : 'PyProxy'}});
     _Py_IncRef(ptrobj);
     let proxy = new Proxy(target, Module.PyProxyHandlers);
-    Module.PyProxies[ptrobj] = proxy;
+    Module.finalizationRegistry.register(proxy, ptrobj, proxy);
     return proxy;
   };
 
@@ -193,11 +212,11 @@ JS_FILE(pyproxy_init_js, () => {0,0; /* Magic, see include_js_file.h */
      */
     destroy() {
       let ptrobj = _getPtr(this);
-      // Maybe the destructor will calls Javascript code that will somehow try
+      Module.finalizationRegistry.unregister(this);
+      // Maybe the destructor will call Javascript code that will somehow try
       // to use this proxy. Mark it deleted before decrementing reference count
       // just in case!
       this.$$.ptr = null;
-      delete Module.PyProxies[ptrobj];
       try {
         _Py_DecRef(ptrobj);
       } catch (e) {
@@ -216,9 +235,10 @@ JS_FILE(pyproxy_init_js, () => {0,0; /* Magic, see include_js_file.h */
      * @returns The Javascript object resulting from the conversion.
      */
     toJs(depth = -1) {
+      let ptrobj = _getPtr(this);
       let idresult;
       try {
-        idresult = _python2js_with_depth(_getPtr(this), depth);
+        idresult = _python2js_with_depth(ptrobj, depth);
       } catch (e) {
         Module.fatal_error(e);
       }
@@ -373,6 +393,47 @@ JS_FILE(pyproxy_init_js, () => {0,0; /* Magic, see include_js_file.h */
   };
 
   class TempError extends Error {};
+
+  /**
+   * A helper for [Symbol.iterator].
+   *
+   * Because "it is possible for a generator to be garbage collected without
+   * ever running its finally block", we take extra care to try to ensure that
+   * we don't leak the iterator. We register it with the finalizationRegistry,
+   * but if the finally block is executed, we decref the pointer and unregister.
+   *
+   * In order to do this, we create the generator with this inner method,
+   * register the finalizer, and then return it.
+   *
+   * Quote from:
+   * https://hacks.mozilla.org/2015/07/es6-in-depth-generators-continued/
+   *
+   * @private
+   */
+  function* iter_helper(iterptr, token) {
+    try {
+      if (iterptr === 0) {
+        throw new TempError();
+      }
+      let item;
+      while ((item = __pyproxy_iter_next(iterptr))) {
+        yield Module.hiwire.pop_value(item);
+      }
+      if (_PyErr_Occurred()) {
+        throw new TempError();
+      }
+    } catch (e) {
+      if (e instanceof TempError) {
+        _pythonexc2js();
+      } else {
+        Module.fatal_error(e);
+      }
+    } finally {
+      Module.finalizationRegistry.unregister(token);
+      _Py_DecRef(iterptr);
+    }
+  }
+
   // Controlled by IS_ITERABLE, appears for any object with __iter__ or tp_iter,
   // unless they are iterators. See: https://docs.python.org/3/c-api/iter.html
   // https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Iteration_protocols
@@ -390,28 +451,20 @@ JS_FILE(pyproxy_init_js, () => {0,0; /* Magic, see include_js_file.h */
      *
      * @returns {Iterator} An iterator for the proxied Python object.
      */
-    [Symbol.iterator] : function*() {
+    [Symbol.iterator] : function() {
+      let ptrobj = _getPtr(this);
+      let token = {};
+      let iterptr;
       try {
-        let iterptr = _PyObject_GetIter(_getPtr(this));
-        if (iterptr === 0) {
-          throw new TempError();
-        }
-        let item;
-        while ((item = __pyproxy_iter_next(iterptr))) {
-          yield Module.hiwire.pop_value(item);
-        }
-        _Py_DecRef(iterptr);
-        if (_PyErr_Occurred()) {
-          throw new TempError();
-        }
+        iterptr = _PyObject_GetIter(ptrobj);
       } catch (e) {
-        if (e instanceof TempError) {
-          _pythonexc2js();
-        } else {
-          Module.fatal_error(e);
-        }
+        Module.fatal_error(e);
       }
-    }
+
+      let result = iter_helper(iterptr, token);
+      Module.finalizationRegistry.register(result, iterptr, token);
+      return result;
+    },
   };
 
   // Controlled by IS_ITERATOR, appears for any object with a __next__ or
@@ -875,7 +928,7 @@ JS_FILE(pyproxy_init_js, () => {0,0; /* Magic, see include_js_file.h */
 
         success = true;
         // clang-format off
-        return Object.create(Module.PyBuffer.prototype,
+        let result = Object.create(Module.PyBuffer.prototype,
           Object.getOwnPropertyDescriptors({
             offset,
             readonly,
@@ -892,6 +945,8 @@ JS_FILE(pyproxy_init_js, () => {0,0; /* Magic, see include_js_file.h */
             _released : false
           })
         );
+        // Module.bufferFinalizationRegistry.register(result, view_ptr, result);
+        return result;
         // clang-format on
       } finally {
         if (!success) {
@@ -1072,6 +1127,7 @@ JS_FILE(pyproxy_init_js, () => {0,0; /* Magic, see include_js_file.h */
       if (this._released) {
         return;
       }
+      // Module.bufferFinalizationRegistry.unregister(this);
       try {
         _PyBuffer_Release(this._view_ptr);
         _PyMem_Free(this._view_ptr);

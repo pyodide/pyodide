@@ -366,7 +366,7 @@ def test_create_proxy(selenium):
             assert sys.getrefcount(f) == 3
             assert testCallListener() == 7
             assert sys.getrefcount(f) == 3
-            assert testRemoveListener(f)
+            assert testRemoveListener(proxy)
             assert sys.getrefcount(f) == 3
             proxy.destroy()
             assert sys.getrefcount(f) == 2
