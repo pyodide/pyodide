@@ -79,7 +79,7 @@ def test_interactive_console_streams(safe_sys_redirections):
     shell.push("raise Exception('hi')")
     assert (
         my_stderr
-        == 'Traceback (most recent call last):​\n  File "<console>", line 1, in <module>​\nException: hi​'
+        == 'Traceback (most recent call last):\n  File "<console>", line 1, in <module>\nException: hi\n'
     )
     assert shell.run_complete.exception() is not None
     my_stderr = ""
