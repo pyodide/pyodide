@@ -118,10 +118,10 @@ installs from PyPi.
   <meta charset="utf-8">
 </head>
 <body>
-  <script type="text/javascript" src="https://cdn.jsdelivr.net/pyodide/v0.17.0a2/full/pyodide.js"></script>
+  <script type="text/javascript" src="https://cdn.jsdelivr.net/pyodide/dev/full/pyodide.js"></script>
   <script type="text/javascript">
     async function main(){
-      await loadPyodide({ indexURL : 'https://cdn.jsdelivr.net/pyodide/v0.17.0a2/full/' });
+      await loadPyodide({ indexURL : 'https://cdn.jsdelivr.net/pyodide/dev/full/' });
       await pyodide.runPythonAsync(`
         import micropip # runPythonAsync will load micropip automatically
         await micropip.install('snowballstemmer')

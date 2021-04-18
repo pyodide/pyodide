@@ -90,6 +90,10 @@ run_python_simple_inner(char* code)
   return result ? 0 : -1;
 }
 
+// from numpy_patch.c (no need for a header just for this)
+int
+numpy_patch_init();
+
 int
 main(int argc, char** argv)
 {
@@ -121,6 +125,7 @@ main(int argc, char** argv)
   TRY_INIT_WITH_CORE_MODULE(error_handling);
   TRY_INIT(hiwire);
   TRY_INIT(docstring);
+  TRY_INIT(numpy_patch);
   TRY_INIT(js2python);
   TRY_INIT_WITH_CORE_MODULE(python2js);
   TRY_INIT(python2js_buffer);
