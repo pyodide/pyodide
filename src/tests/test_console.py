@@ -289,50 +289,53 @@ def test_console_html(console_html_fixture):
         await window.console_ready;
         """
     )
-    selenium.run_js(
+    result = selenium.run_js(
         r"""
+        let result = [];
         assert(() => term.get_output().startsWith("Welcome to the Pyodide terminal emulator 🐍"))
 
         term.clear();
         term.exec("1+1");
         await term.ready;
-        assert(() => term.get_output() === ">>> 1+1\n2", term.get_output());
+        assert(() => term.get_output().trim() === ">>> 1+1\n2", term.get_output().trim());
 
 
         term.clear();
         term.exec("1+");
         await term.ready;
-        assert(() => term.get_output() ===
+        result.push([term.get_output(),
 `>>> 1+
-[[;red;]  File "<console>", line 1
+[[;;;terminal-error]  File "<console>", line 1
     1+
      ^
-SyntaxError: invalid syntax​]`
-            , term.get_output()
-        )
+SyntaxError: invalid syntax]`
+        ]);
 
         term.clear();
         term.exec("raise Exception('hi')");
         await term.ready;
-        assert(() => term.get_output() ===
+        result.push([term.get_output(),
 `>>> raise Exception('hi')
-[[;red;]Traceback (most recent call last):​]
-[[;red;]  File "<console>", line 1, in <module>​]
-[[;red;]Exception: hi​]`
-        , term.get_output())
+[[;;;terminal-error]Traceback (most recent call last):]
+[[;;;terminal-error]  File "<console>", line 1, in <module>]
+[[;;;terminal-error]Exception: hi]`
+        ]);
 
         term.clear();
         term.exec("from _pyodide_core import trigger_fatal_error; trigger_fatal_error()");
         await term.ready;
-        assert(() => term.get_output() ===
+        result.push([term.get_output(),
 `>>> from _pyodide_core import trigger_fatal_error; trigger_fatal_error()
 [[;;;terminal-error]Pyodide has suffered a fatal error. Please report this to the Pyodide maintainers.]
 [[;;;terminal-error]The cause of the fatal error was:]
 [[;;;terminal-error]Error: intentionally triggered fatal error!]
 [[;;;terminal-error]Look in the browser console for more details.]`
-            , term.get_output());
+        ]);
 
         await sleep(30);
         assert(() => term.paused());
+        return result;
         """
     )
+    for [x, y] in result:
+        assert x == y
