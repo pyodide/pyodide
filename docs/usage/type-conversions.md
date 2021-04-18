@@ -564,10 +564,11 @@ the design to make managing `PyProxy` lifecycles more ergonomic in the future.
 
 Here are some tips for how to do that when calling functions in one language from another.
 
-There are four cases to consider here: Calling a Python function
-from a Javascript function you wrote, calling a Python function from an existing
-Javascript callback, calling a Javascript function from Python code you wrote,
-or calling a Javascript function you wrote from an existing Python callback.
+There are four cases to consider here:
+* calling a Python function from a Javascript function you wrote,
+* calling a Python function from an existing Javascript callback,
+* calling a Javascript function from Python code you wrote, or
+* calling a Javascript function you wrote from an existing Python callback.
 
 If you want to pass an existing Javascript function as a callback to an existing
 Python function, you will need to define a wrapper around the Javascript
@@ -592,14 +593,22 @@ If the arguments will be implicitly converted, nothing needs to be done.
 Otherwise, there are different solutions depending on the circumstance.
 1. Call {any}`pyodide.to_js` on the argument before passing it if is a list,
    dict, set, or buffer.
-2. For anything, you can use {any}`pyodide.create_proxy`:
+2. For anything, you can use {any}`pyodide.create_proxy`. Suppose `obj` is some
+   arbitrary Python object that you want to pass to a Javascript function.
 ```py
+obj = [1, 2, 3]
 jsobj = pyodide.create_proxy(obj)
 jsfunc(jsobj)
 jsobj.destroy() # reclaim memory
 ```
-In particular this works with `addEventListener`.
+Note that as long as `obj` wouldn't be implicitly translated, the Javascript
+function will recieve an identical object regardless of whether you call it
+directly (i.e., `jsfunc(obj)`) or as `jsfunc(create_proxy(obj))`.
+
+`create_proxy` is particularly helpful with `addEventListener`:
 ```py
+def callback():
+    print("clicked!")
 proxy = pyodide.create_proxy(callback)
 from js import document
 document.body.addEventListener("click", proxy)
@@ -645,7 +654,7 @@ let resp = await fetch('example.com/some_api',{
 ### Using a Javascript callback with an existing Python function
 If you want to pass a Javascript callback to an existing Python function, you
 should destroy the argument when you are done. This can be a bit tedious to get
-correct, because of `PyProxy` usage constraints.
+correct due to `PyProxy` usage constraints.
 ```pyodide
 function callback(arg){
     let res_method = arg.result;
