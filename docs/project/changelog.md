@@ -8,7 +8,7 @@ substitutions:
 
 
 (changelog)=
-# Release notes
+# Change Log
 
 ## Version [Unreleased]
 
