@@ -22,7 +22,7 @@ def test_generate_dependency_graph():
     assert pkg_map["soupsieve"].dependencies == []
     assert pkg_map["soupsieve"].dependents == {"beautifulsoup4"}
     assert pkg_map["beautifulsoup4"].dependencies == ["soupsieve"]
-    assert pkg_map["beautifulsoup4"].dependents == {}
+    assert pkg_map["beautifulsoup4"].dependents == set()
 
 
 @pytest.mark.parametrize("n_jobs", [1, 4])
