@@ -1,4 +1,4 @@
-from traceback import print_exception
+import traceback
 from typing import Optional, Callable, Any, List, Tuple
 import code
 import io
@@ -247,7 +247,7 @@ class InteractiveConsole(code.InteractiveConsole):
                 )
             except BaseException as e:
                 nframes = self.num_frames_to_keep(e.__traceback__)
-                print_exception(type(e), e, e.__traceback__, -nframes)
+                traceback.print_exception(type(e), e, e.__traceback__, -nframes)
                 raise e
             else:
                 self.display(result)
