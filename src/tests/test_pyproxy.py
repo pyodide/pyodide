@@ -127,7 +127,7 @@ def test_pyproxy_destroy(selenium):
         selenium.run_js(
             """
             let f = pyodide.globals.get('f');
-            console.assert(f.get_value(1) === 64);
+            assert(()=> f.get_value(1) === 64);
             f.destroy();
             f.get_value();
             """
@@ -370,37 +370,6 @@ def test_pyproxy_mixins(selenium):
 def test_pyproxy_mixins2(selenium):
     selenium.run_js(
         """
-        window.assert = function assert(cb){
-            if(cb() !== true){
-                throw new Error(`Assertion failed: ${cb.toString().slice(6)}`);
-            }
-        };
-        window.assertThrows = function assert(cb, errname, pattern){
-          let err = undefined;
-          try {
-            cb();
-          } catch(e) {
-            err = e;
-          } finally {
-            if(!err){
-              throw new Error(`assertThrows(${cb.toString()}) failed, no error thrown`);
-            }
-            if(err.constructor.name !== errname){
-              console.log(err.toString());
-              throw new Error(
-                `assertThrows(${cb.toString()}) failed, expected error` +
-                `of type '${errname}' got type '${err.constructor.name}'`
-              );
-            }
-            if(!pattern.test(err.message)){
-              console.log(err.toString());
-              throw new Error(
-                `assertThrows(${cb.toString()}) failed, expected error` +
-                `message to match pattern '${pattern}' got:\n${err.message}`
-              );
-            }
-          }
-        };
         assert(() => !("prototype" in pyodide.globals));
         assert(() => !("caller" in pyodide.globals));
         assert(() => !("name" in pyodide.globals));

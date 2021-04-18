@@ -1,7 +1,7 @@
-From 6cf164b6a1a7cc151aa52ab5bb9e20a95a6a5e67 Mon Sep 17 00:00:00 2001
+From c5a48b544d465673d900459d7e9226379f79e84a Mon Sep 17 00:00:00 2001
 From: Hood <hood@mit.edu>
 Date: Fri, 2 Apr 2021 14:24:24 -0700
-Subject: [PATCH] Fix "load" memory access out of bounds on Chrome v89 #1384
+Subject: [PATCH 1/2] Fix segfault in PyArray_PyIntAsIntp in Chrome v89 #1384
 
 Resolves https://github.com/pyodide/pyodide/issues/1384.
 
@@ -111,5 +111,5 @@ index 52cb58726..5467f4d78 100644
      }
      return nd;
 -- 
-
+2.17.1
 

@@ -120,6 +120,38 @@ class SeleniumWrapper:
                     throw new Error(`Assertion failed: ${cb.toString().slice(6)}${message}`);
                 }
             };
+            window.assertThrows = function assert(cb, errname, pattern){
+                let pat_str = typeof pattern === "string" ? `"${pattern}"` : `${pattern}`;
+                let thiscallstr = `assertThrows(${cb.toString()}, "${errname}", ${pat_str})`;
+                if(typeof pattern === "string"){
+                    pattern = new RegExp(pattern);
+                }
+                let err = undefined;
+                try {
+                    cb();
+                } catch(e) {
+                    err = e;
+                }
+                console.log(err ? err.message : "no error");
+                if(!err){
+                    console.log("hi?");
+                    throw new Error(`${thiscallstr} failed, no error thrown`);
+                }
+                if(err.constructor.name !== errname){
+                    console.log(err.toString());
+                    throw new Error(
+                        `${thiscallstr} failed, expected error ` +
+                        `of type '${errname}' got type '${err.constructor.name}'`
+                    );
+                }
+                if(!pattern.test(err.message)){
+                    console.log(err.toString());
+                    throw new Error(
+                        `${thiscallstr} failed, expected error ` +
+                        `message to match pattern ${pat_str} got:\n${err.message}`
+                    );
+                }
+            };
             """,
             pyodide_checks=False,
         )

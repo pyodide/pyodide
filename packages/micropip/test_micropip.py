@@ -87,23 +87,28 @@ def test_install_custom_url(selenium_standalone_micropip, web_server_tst_data):
     )
 
 
+def run_sync(coroutine):
+    # The following is a way to synchronously run a coroutine that does only
+    # synchronous operations (and assert that it indeed only did sync
+    # operations)
+    try:
+        coroutine.send(None)
+    except StopIteration as result:
+        return result.args and result.args[0]
+    else:
+        raise Exception("Coroutine didn't finish in one pass")
+
+
 def test_add_requirement_relative_url():
     pytest.importorskip("packaging")
     import micropip
 
     transaction = {"wheels": []}
-    coroutine = micropip.PACKAGE_MANAGER.add_requirement(
-        "./snowballstemmer-2.0.0-py2.py3-none-any.whl", {}, transaction
+    run_sync(
+        micropip.PACKAGE_MANAGER.add_requirement(
+            "./snowballstemmer-2.0.0-py2.py3-none-any.whl", {}, transaction
+        )
     )
-    # The following is a way to synchronously run a coroutine that does only
-    # synchronous operations (and assert that it indeed only did synch
-    # operations)
-    try:
-        coroutine.send(None)
-    except StopIteration as _result:
-        pass
-    else:
-        raise Exception("Coroutine didn't finish in one pass")
 
     [name, req, version] = transaction["wheels"][0]
     assert name == "snowballstemmer"
@@ -114,6 +119,28 @@ def test_add_requirement_relative_url():
     assert req["abi_tag"] == "none"
     assert req["platform"] == "any"
     assert req["url"] == "./snowballstemmer-2.0.0-py2.py3-none-any.whl"
+
+
+def test_add_requirement_marker():
+    pytest.importorskip("packaging")
+    import micropip
+
+    transaction = run_sync(
+        micropip.PACKAGE_MANAGER.gather_requirements(
+            [
+                "werkzeug",
+                'contextvars ; python_version < "3.7"',
+                'aiocontextvars ; python_version < "3.7"',
+                "numpy ; extra == 'full'",
+                "zarr ; extra == 'full'",
+                "numpy ; extra == 'jupyter'",
+                "ipykernel ; extra == 'jupyter'",
+                "numpy ; extra == 'socketio'",
+                "python-socketio[client] ; extra == 'socketio'",
+            ]
+        )
+    )
+    assert len(transaction["wheels"]) == 1
 
 
 def test_install_custom_relative_url(selenium_standalone_micropip):
