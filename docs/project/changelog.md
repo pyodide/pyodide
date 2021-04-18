@@ -10,7 +10,7 @@ substitutions:
 (changelog)=
 # Change Log
 
-## Version [Unreleased]
+## Version 0.17.0
 
 ### Improvements to package loading and dynamic linking
 - {{ Enhancement }} Uses the emscripten preload plugin system to preload .so files in packages
