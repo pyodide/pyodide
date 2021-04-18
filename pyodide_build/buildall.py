@@ -31,6 +31,7 @@ class Package:
 
         self.meta: dict = parse_package_config(pkgpath)
         self.name: str = self.meta["package"]["name"]
+        self.version: str = self.meta["package"]["version"]
         self.library: bool = self.meta.get("build", {}).get("library", False)
         self.shared_library: bool = self.meta.get("build", {}).get(
             "sharedlibrary", False
@@ -219,6 +220,7 @@ def build_packages(packages_dir: Path, outputdir: Path, args) -> None:
         "dependencies": {"test": []},
         "import_name_to_package_name": {},
         "shared_library": {},
+        "versions": {},
     }
 
     libraries = [pkg.name for pkg in pkg_map.values() if pkg.library]
@@ -231,6 +233,7 @@ def build_packages(packages_dir: Path, outputdir: Path, args) -> None:
         package_data["dependencies"][name] = [
             x for x in pkg.dependencies if x not in libraries
         ]
+        package_data["versions"][name] = pkg.version
         for imp in pkg.meta.get("test", {}).get("imports", [name]):
             package_data["import_name_to_package_name"][imp] = name
 
@@ -245,7 +248,9 @@ def build_packages(packages_dir: Path, outputdir: Path, args) -> None:
 def make_parser(parser):
     parser.description = (
         "Build all of the packages in a given directory\n\n"
-        "Unless the --only option is provided"
+        "Unless the --only option is provided\n\n"
+        "Note: this is a private endpoint that should not be used "
+        "outside of the pyodide Makefile."
     )
     parser.add_argument(
         "dir",

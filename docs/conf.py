@@ -3,9 +3,11 @@
 
 # -- Path setup --------------------------------------------------------------
 
+import os
 import sys
 from typing import Dict, Any
 import pathlib
+import subprocess
 
 base_dir = pathlib.Path(__file__).resolve().parent.parent
 path_dirs = [
@@ -43,11 +45,22 @@ extensions = [
     "sphinx_js",
     "autodocsumm",
     "sphinx_pyodide",
+    "sphinx_argparse_cli",
+    "versionwarning.extension",
 ]
 
 myst_enable_extensions = ["substitution"]
 js_source_path = ["../src/", "../src/core"]
 root_for_relative_js_paths = "../src/"
+
+versionwarning_messages = {
+    "latest": (
+        "This is the development version of the documentation. ",
+        'See <a href="https://pyodide.org/">here</a> for latest stable '
+        "documentation. Please do not use Pyodide with non "
+        "versioned (`dev`) URLs from the CDN for deployed applications!",
+    )
+}
 
 autosummary_generate = True
 autodoc_default_flags = ["members", "inherited-members"]
@@ -102,3 +115,14 @@ htmlhelp_basename = "Pyodidedoc"
 
 # A list of files that should not be packed into the epub file.
 epub_exclude_files = ["search.html"]
+
+if "READTHEDOCS" in os.environ:
+    env = {"PYODIDE_BASE_URL": "https://cdn.jsdelivr.net/pyodide/dev/full/"}
+    os.makedirs("_build/html", exist_ok=True)
+    res = subprocess.check_output(
+        ["make", "-C", "..", "docs/_build/html/console.html"],
+        env=env,
+        stderr=subprocess.STDOUT,
+        encoding="utf-8",
+    )
+    print(res)

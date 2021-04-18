@@ -22,15 +22,6 @@
             from pyodide import console
             import __main__
 
-
-            def displayhook(value):
-                separator = "\\n[[;orange;]<long output truncated>]\\n"
-                _repr = lambda v: console.repr_shorten(v, separator=separator)
-                return console.displayhook(value, _repr)
-
-            sys.displayhook = displayhook
-
-
             class PyConsole(console.InteractiveConsole):
                 def __init__(self):
                     super().__init__(
@@ -54,7 +45,12 @@
             for( const c of command.split('\n') ) {
                 const prompt = pyconsole.push(c) ? ps2 : ps1;
                 term.set_prompt(prompt);
-                await pyconsole.run_complete;
+                let run_complete = pyconsole.run_complete;
+                try {
+                  let r = await run_complete;
+                  r.destroy();
+                } catch(_){ }
+                run_complete.destroy();
             }
             term.resume();
         }
