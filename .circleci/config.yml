@@ -7,7 +7,6 @@ defaults: &defaults
   environment:
     - EMSDK_NUM_CORES: 4
       EMCC_CORES: 4
-      PYODIDE_BASE_URL: https://cdn.jsdelivr.net/pyodide/dev/full/
 
 jobs:
   lint:
@@ -95,9 +94,6 @@ jobs:
           paths:
             - .
 
-      - run:
-          name: Prepare CircleCI artifacts
-          command: PYODIDE_BASE_URL="./" make build/console.html
 
       - store_artifacts:
           path: /root/repo/build/
@@ -136,9 +132,6 @@ jobs:
           paths:
             - ./packages/.artifacts
             - ./build
-      - run:
-          name: Prepare CircleCI artifacts
-          command: PYODIDE_BASE_URL="./" make build/console.html
 
       - store_artifacts:
           path: /root/repo/build/
@@ -240,6 +233,9 @@ jobs:
             ghr -t "${GITHUB_TOKEN}" -u "${CIRCLE_PROJECT_USERNAME}" -r "${CIRCLE_PROJECT_REPONAME}" -c "${CIRCLE_SHA1}" -delete  "${CIRCLE_TAG}" ./pyodide-build-${CIRCLE_TAG}.tar.bz2
 
       - run:
+          name: Set PYODIDE_BASE_URL
+          command: PYODIDE_BASE_URL="https://cdn.jsdelivr.net/pyodide/dev/full/" make update_base_url
+      - run:
           name: Deploy to pyodide-cdn2.iodide.io
           command: |
             find build/ -type f -exec sh -c "echo \"Compressing {}\"; gzip {}; mv {}.gz {};" \;
@@ -258,6 +254,9 @@ jobs:
       - checkout
       - attach_workspace:
           at: .
+      - run:
+          name: Set PYODIDE_BASE_URL
+          command: PYODIDE_BASE_URL="https://cdn.jsdelivr.net/pyodide/dev/full/" make update_base_url
       - run:
           name: Install requirements
           command: |

@@ -109,6 +109,14 @@ class SeleniumWrapper:
                 f"{(build_dir / 'test.html').resolve()} " f"does not exist!"
             )
         self.driver.get(f"http://{server_hostname}:{server_port}/test.html")
+        self.javascript_setup()
+        if load_pyodide:
+            self.run_js("await loadPyodide({ indexURL : './'});")
+            self.save_state()
+        self.script_timeout = script_timeout
+        self.driver.set_script_timeout(script_timeout)
+
+    def javascript_setup(self):
         self.run_js("Error.stackTraceLimit = Infinity;", pyodide_checks=False)
         self.run_js(
             """
@@ -155,11 +163,6 @@ class SeleniumWrapper:
             """,
             pyodide_checks=False,
         )
-        if load_pyodide:
-            self.run_js("await loadPyodide({ indexURL : './'});")
-            self.save_state()
-        self.script_timeout = script_timeout
-        self.driver.set_script_timeout(script_timeout)
 
     @property
     def logs(self):

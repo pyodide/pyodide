@@ -448,6 +448,9 @@ globalThis.loadPyodide = async function(config = {}) {
           }
         });
       }
+      if (Module.on_fatal) {
+        Module.on_fatal(e);
+      }
     } catch (e) {
       console.error("Another error occurred while handling the fatal error:");
       console.error(e);

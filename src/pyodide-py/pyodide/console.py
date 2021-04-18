@@ -1,3 +1,4 @@
+import traceback
 from typing import Optional, Callable, Any, List, Tuple
 import code
 import io
@@ -221,6 +222,17 @@ class InteractiveConsole(code.InteractiveConsole):
             self.load_packages_and_run(self.run_complete, source)
         )
 
+    def num_frames_to_keep(self, tb):
+        keep_frames = False
+        kept_frames = 0
+        # Try to trim out stack frames inside our code
+        for (frame, _) in traceback.walk_tb(tb):
+            keep_frames = keep_frames or frame.f_code.co_filename == "<console>"
+            keep_frames = keep_frames or frame.f_code.co_filename == "<exec>"
+            if keep_frames:
+                kept_frames += 1
+        return kept_frames
+
     async def load_packages_and_run(self, run_complete, source):
         try:
             await run_complete
@@ -230,11 +242,12 @@ class InteractiveConsole(code.InteractiveConsole):
         with self.stdstreams_redirections():
             await _load_packages_from_imports(source)
             try:
-                result = await eval_code_async(source, self.locals)
+                result = await eval_code_async(
+                    source, self.locals, filename="<console>"
+                )
             except BaseException as e:
-                from traceback import print_exception
-
-                print_exception(type(e), e, e.__traceback__)
+                nframes = self.num_frames_to_keep(e.__traceback__)
+                traceback.print_exception(type(e), e, e.__traceback__, -nframes)
                 raise e
             else:
                 self.display(result)
