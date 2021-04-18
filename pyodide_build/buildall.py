@@ -240,7 +240,7 @@ def build_packages(packages_dir: Path, outputdir: Path, args) -> None:
     # Hack for 0.17.0 release
     # TODO: FIXME!!
     if "soupsieve" in pkg_map:
-        package_data["dependencies"]["soupsieve"].append("beautifulsoup")
+        package_data["dependencies"]["soupsieve"].append("beautifulsoup4")
     with open(outputdir / "packages.json", "w") as fd:
         json.dump(package_data, fd)
 
