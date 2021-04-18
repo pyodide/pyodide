@@ -644,8 +644,8 @@ let resp = await fetch('example.com/some_api',{
 
 ### Using a Javascript callback with an existing Python function
 If you want to pass a Javascript callback to an existing Python function, you
-should destroy the argument when you are done. This can be a bit painful to get
-correct, becauase using a `PyProxy` is a bit painful.
+should destroy the argument when you are done. This can be a bit tedious to get
+correct, because of `PyProxy` usage constraints.
 ```pyodide
 function callback(arg){
     let res_method = arg.result;
