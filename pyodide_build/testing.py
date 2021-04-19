@@ -1,6 +1,6 @@
 import pytest
 import inspect
-from typing import Optional, List, Callable, Union
+from typing import Callable, Dict, List, Optional, Union
 import contextlib
 
 
@@ -8,7 +8,7 @@ def run_in_pyodide(
     _function: Optional[Callable] = None,
     standalone: bool = False,
     packages: List[str] = [],
-    xfail_browsers: List[str] = [],
+    xfail_browsers: Dict[str, str] = {},
     driver_timeout: Optional[Union[str, int]] = None,
 ) -> Callable:
     """
@@ -32,7 +32,7 @@ def run_in_pyodide(
     def decorator(f):
         def inner(selenium):
             if selenium.browser in xfail_browsers:
-                pytest.xfail()
+                pytest.xfail(xfail_browsers[selenium.browser])
             with set_webdriver_script_timeout(selenium, driver_timeout):
                 if len(packages) > 0:
                     selenium.load_package(packages)
