@@ -80,6 +80,7 @@ build/console.html: src/templates/console.html
 
 .PHONY: docs/_build/html/console.html
 docs/_build/html/console.html: src/templates/console.html
+	mkdir -p docs/_build/html
 	cp $< $@
 	sed -i -e 's#{{ PYODIDE_BASE_URL }}#$(PYODIDE_BASE_URL)#g' $@
 
@@ -98,8 +99,7 @@ build/webworker_dev.js: src/webworker.js
 update_base_url: \
 	build/console.html \
 	build/pyodide.js \
-	build/webworker.js \
-	docs/_build/html/console.html
+	build/webworker.js
 
 test: all
 	pytest src emsdk/tests packages/*/test* pyodide_build -v
