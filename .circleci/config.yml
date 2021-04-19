@@ -333,7 +333,7 @@ workflows:
             - test-emsdk
           filters:
             branches:
-              only: main
+              ignore: /.*/
             tags:
               only: /^\d+\.\d+\.\w+$/
       - deploy-s3:
