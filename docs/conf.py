@@ -47,11 +47,13 @@ extensions = [
     "sphinx_pyodide",
     "sphinx_argparse_cli",
     "versionwarning.extension",
+    "sphinx_issues",
 ]
 
 myst_enable_extensions = ["substitution"]
 js_source_path = ["../src/", "../src/core"]
 root_for_relative_js_paths = "../src/"
+issues_github_path = "pyodide/pyodide"
 
 versionwarning_messages = {
     "latest": (
