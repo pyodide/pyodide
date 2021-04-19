@@ -80,6 +80,7 @@ build/console.html: src/templates/console.html
 
 .PHONY: docs/_build/html/console.html
 docs/_build/html/console.html: src/templates/console.html
+	mkdir -p docs/_build/html
 	cp $< $@
 	sed -i -e 's#{{ PYODIDE_BASE_URL }}#$(PYODIDE_BASE_URL)#g' $@
 
