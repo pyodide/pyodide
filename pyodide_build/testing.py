@@ -8,6 +8,7 @@ def run_in_pyodide(
     _function: Optional[Callable] = None,
     standalone: bool = False,
     packages: List[str] = [],
+    xfail_browsers: List[str] = [],
     driver_timeout: Optional[Union[str, int]] = None,
 ) -> Callable:
     """
@@ -30,6 +31,8 @@ def run_in_pyodide(
 
     def decorator(f):
         def inner(selenium):
+            if selenium.browser in xfail_browsers:
+                pytest.xfail()
             with set_webdriver_script_timeout(selenium, driver_timeout):
                 if len(packages) > 0:
                     selenium.load_package(packages)
