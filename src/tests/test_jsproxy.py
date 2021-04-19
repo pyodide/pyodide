@@ -295,46 +295,6 @@ def test_jsproxy_call_meth_js_kwargs(selenium):
     )
 
 
-def test_supports_kwargs(selenium):
-    tests = [
-        ["", False],
-        ["x", False],
-        ["x     ", False],
-        ["{x}", True],
-        ["x, y, z", False],
-        ["x, y, {z}", True],
-        ["x, {y}, z", False],
-        ["x, {y}, {z}", True],
-        ["{}", True],
-        ["{} = {}", True],
-        ["[] = {}", False],
-        ["{} = []", True],
-        ["[] = []", False],
-        ["{} = null", True],
-        ["x = '2, `, {y}'", False],
-        ["{x} = '2, \\', x'", True],
-        ["[{x}]", False],
-        ["[x, y, z]", False],
-        ["x,", False],
-        ["{x},", True],
-        ["x, { y = 2 }", True],
-        ["{ y = 2 }, x", False],
-        ["{ x = 2 }, { y = 2 }", True],
-        ["{ a = 7, b = 2}", True],
-        ["{ a = 7, b = 2} = {b : 3}", True],
-        ["{ a = [7, 1], b = { c : 2} } = {}", True],
-        ["{ a = 7, b = 2} = {}", True],
-        ["{ a = 7, b = 2} = null", True],
-        ["{ x = { y : 2 }}", True],
-        ["{ x : 2 }", True],
-    ]
-    for (s, res) in tests:
-        s = f"function f({s}){{}}"
-        selenium.run_js(
-            f"return pyodide._module.function_supports_kwargs({repr(s)})"
-        ) == res
-
-
 @run_in_pyodide
 def test_import_invocation():
     import js
@@ -512,6 +472,20 @@ def test_register_jsmodule_docs_example(selenium_standalone):
         import sys
         del sys.modules["my_js_module"]
         del sys.modules["my_js_module.submodule"]
+        """
+    )
+
+
+def test_object_entries_keys_values(selenium):
+    selenium.run_js(
+        """
+        window.x = { a : 2, b : 3, c : 4 };
+        pyodide.runPython(`
+            from js import x
+            assert x.object_entries().to_py() == [["a", 2], ["b", 3], ["c", 4]]
+            assert x.object_keys().to_py() == ["a", "b", "c"]
+            assert x.object_values().to_py() == [2, 3, 4]
+        `);
         """
     )
 
@@ -723,6 +697,77 @@ def test_mixins_errors(selenium):
         `);
         """
     )
+
+
+def test_buffer(selenium):
+    selenium.run_js(
+        """
+        self.a = new Uint32Array(Array.from({length : 10}, (_,idx) => idx));
+        pyodide.runPython(`
+            from js import a
+            b = a.to_py()
+            b[4] = 7
+            assert b[8] == 8
+            a.assign_to(b)
+            assert b[4] == 4
+            b[4] = 7
+            a.assign(b)
+            assert a[4] == 7
+        `);
+        if(a[4] !== 7){
+            throw Error();
+        }
+        """
+    )
+    selenium.run_js(
+        """
+        self.a = new Uint32Array(Array.from({length : 10}, (_,idx) => idx));
+        pyodide.runPython(`
+            import js
+            from unittest import TestCase
+            raises = TestCase().assertRaisesRegex
+            from array import array
+            from js import a
+            c = array('b', range(30))
+            d = array('b', range(40))
+            with raises(ValueError, "cannot assign to TypedArray"):
+                a.assign(c)
+
+            with raises(ValueError, "cannot assign from TypedArray"):
+                a.assign_to(c)
+
+            with raises(ValueError, "incompatible formats"):
+                a.assign(d)
+
+            with raises(ValueError, "incompatible formats"):
+                a.assign_to(d)
+
+            e = array('I', range(10, 20))
+            a.assign(e)
+        `);
+        for(let [k, v] of a.entries()){
+            if(v !== k + 10){
+                throw new Error([v, k]);
+            }
+        }
+        """
+    )
+
+
+def test_buffer_assign_back(selenium):
+    result = selenium.run_js(
+        """
+        self.jsarray = new Uint8Array([1,2,3, 4, 5, 6]);
+        pyodide.runPython(`
+            from js import jsarray
+            array = jsarray.to_py()
+            array[1::2] = bytes([20, 77, 9])
+            jsarray.assign(array)
+        `);
+        return Array.from(jsarray)
+        """
+    )
+    assert result == [1, 20, 3, 77, 5, 9]
 
 
 def test_memory_leaks(selenium):

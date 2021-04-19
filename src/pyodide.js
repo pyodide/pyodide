@@ -13,10 +13,11 @@ globalThis.pyodide = {};
 
 /**
  * Load the main Pyodide wasm module and initialize it. When finished stores the
- * pyodide module as a global object called ``pyodide``.
+ * Pyodide module as a global object called ``pyodide``.
  * @param {string} config.indexURL - The URL from which Pyodide will load
  * packages
- * @returns The pyodide module.
+ * @returns The Pyodide module.
+ * @async
  */
 globalThis.loadPyodide = async function(config = {}) {
   if (globalThis.__pyodideLoading) {
@@ -45,16 +46,12 @@ globalThis.loadPyodide = async function(config = {}) {
   const DEFAULT_CHANNEL = "default channel";
 
   // Regexp for validating package name and URI
-  const package_uri_regexp =
-      new RegExp('^https?://.*?([a-z0-9_][a-z0-9_\-]*).js$', 'i');
+  const package_uri_regexp = /^.*?([^\/]*)\.js$/;
 
-  let _uri_to_package_name = (package_uri) => {
-    if (package_uri_regexp.test(package_uri)) {
-      let match = package_uri_regexp.exec(package_uri);
-      // Get the regexp group corresponding to the package name
+  function _uri_to_package_name(package_uri) {
+    let match = package_uri_regexp.exec(package_uri);
+    if (match) {
       return match[1];
-    } else {
-      return null;
     }
   };
 
@@ -99,7 +96,7 @@ globalThis.loadPyodide = async function(config = {}) {
     };
     for (let name of names) {
       const pkgname = _uri_to_package_name(name);
-      if (pkgname !== null) {
+      if (pkgname !== undefined) {
         if (toLoad.has(pkgname) && toLoad.get(pkgname) !== name) {
           errorCallback(`Loading same package ${pkgname} from ${name} and ${
               toLoad.get(pkgname)}`);
@@ -276,16 +273,18 @@ globalThis.loadPyodide = async function(config = {}) {
   Module.loadedPackages = {};
 
   /**
-   * Load a package or a list of packages over the network. This makes the files
-   * for the package available in the virtual filesystem. The package needs to
-   * be imported from Python before it can be used.
-   * @param {String | Array} names package name, or URL. Can be either a single
-   * element, or an array
+   * Load a package or a list of packages over the network. This installs the
+   * package in the virtual filesystem. The package needs to be imported from
+   * Python before it can be used.
+   * @param {String | Array} names Either a single package name or URL or a list
+   * of them. URLs can be absolute or relative. The URLs must have file name
+   * ``<package-name>.js`` and there must be a file called
+   * ``<package-name>.data`` in the same directory.
    * @param {function} messageCallback A callback, called with progress messages
-   * (optional)
+   *    (optional)
    * @param {function} errorCallback A callback, called with error/warning
-   * messages (optional)
-   * @returns {Promise} Resolves to ``undefined`` when loading is complete
+   *    messages (optional)
+   * @async
    */
   Module.loadPackage = async function(names, messageCallback, errorCallback) {
     if (!Array.isArray(names)) {
@@ -385,17 +384,20 @@ globalThis.loadPyodide = async function(config = {}) {
   // clang-format off
   let PUBLIC_API = [
     'globals',
+    'pyodide_py',
+    'version',
     'loadPackage',
     'loadPackagesFromImports',
     'loadedPackages',
+    'isPyProxy',
     'pyimport',
     'runPython',
     'runPythonAsync',
-    'version',
     'registerJsModule',
     'unregisterJsModule',
     'setInterruptBuffer',
-    'pyodide_py'
+    'toPy',
+    'PythonError',
   ];
   // clang-format on
 
@@ -418,64 +420,103 @@ globalThis.loadPyodide = async function(config = {}) {
   Module.preloadedWasm = {};
 
   let fatal_error_occurred = false;
-  let fatal_error_msg =
-      "Pyodide has suffered a fatal error, refresh the page. " +
-      "Please report this to the Pyodide maintainers.";
   Module.fatal_error = function(e) {
     if (fatal_error_occurred) {
-      console.error("Recursive call to fatal_error");
+      console.error("Recursive call to fatal_error. Inner error was:");
+      console.error(e);
       return;
     }
     fatal_error_occurred = true;
-    console.error(fatal_error_msg);
+    console.error("Pyodide has suffered a fatal error. " +
+                  "Please report this to the Pyodide maintainers.");
     console.error("The cause of the fatal error was:")
     console.error(e);
     try {
       let fd_stdout = 1;
-      pyodide._module.__Py_DumpTraceback(
-          fd_stdout, pyodide._module._PyGILState_GetThisThreadState());
-      for (let [key, value] of Object.entries(Module.public_api)) {
-        if (key.startsWith("_")) {
-          // delete Module.public_api[key];
+      Module.__Py_DumpTraceback(fd_stdout,
+                                Module._PyGILState_GetThisThreadState());
+      for (let key of PUBLIC_API) {
+        if (key === "version") {
           continue;
         }
-        // Have to do this case first because typeof(some_pyproxy) ===
-        // "function".
-        if (Module.PyProxy.isPyProxy(value)) {
-          value.destroy();
-          continue;
-        }
-        if (typeof (value) === "function") {
-          Module.public_api[key] = function() { throw Error(fatal_error_msg); };
-        }
+        Object.defineProperty(Module.public_api, key, {
+          enumerable : true,
+          configurable : true,
+          get : () => {
+            throw new Error(
+                "Pyodide already fatally failed and can no longer be used.");
+          }
+        });
       }
-    } catch (_) {
+      if (Module.on_fatal) {
+        Module.on_fatal(e);
+      }
+    } catch (e) {
+      console.error("Another error occurred while handling the fatal error:");
+      console.error(e);
     }
     throw e;
   };
 
   /**
-   * An alias to the Python pyodide package.
+   * An alias to the Python :py:mod:`pyodide` package.
+   *
+   * You can use this to call functions defined in the Pyodide Python package
+   * from Javascript.
    *
    * @type {PyProxy}
    */
-  Module.pyodide_py = {}; // Hack to make jsdoc behave
+  Module.pyodide_py = {}; // actually defined in runPythonSimple below
 
   /**
    *
    * An alias to the global Python namespace.
    *
-   * An object whose attributes are members of the Python global namespace.
-   * For example, to access the ``foo`` Python object from Javascript use
-   * ``pyodide.globals.get("foo")``
+   * For example, to access a variable called ``foo`` in the Python global
+   * scope, use ``pyodide.globals.get("foo")``
    *
    * @type {PyProxy}
    */
-  Module.globals = {}; // Hack to make jsdoc behave
+  Module.globals = {}; // actually defined in runPythonSimple below
+
+  // clang-format off
+  /**
+   * A Javascript error caused by a Python exception.
+   *
+   * In order to reduce the risk of large memory leaks, the ``PythonError``
+   * contains no reference to the Python exception that caused it. You can find
+   * the actual Python exception that caused this error as `sys.last_value
+   * <https://docs.python.org/3/library/sys.html#sys.last_value>`_.
+   *
+   * See :ref:`type-translations-errors` for more information.
+   *
+   * .. admonition:: Avoid Stack Frames
+   *    :class: warning
+   *
+   *    If you make a :any:`PyProxy` of ``sys.last_value``, you should be
+   *    especially careful to :any:`destroy() <PyProxy.destroy>` it when you are
+   *    done. You may leak a large amount of memory including the local
+   *    variables of all the stack frames in the traceback if you don't. The
+   *    easiest way is to only handle the exception in Python.
+   *
+   * @class
+   */
+  Module.PythonError = class PythonError {
+    // actually defined in error_handling.c. TODO: would be good to move this
+    // documentation and the definition of PythonError to error_handling.js
+    constructor(){
+      /**
+       * The Python traceback.
+       * @type {string}
+       */
+      this.message;
+    }
+  };
+  // clang-format on
 
   /**
    *
-   * The pyodide version.
+   * The Pyodide version.
    *
    * It can be either the exact release version (e.g. ``0.1.0``), or
    * the latest release version followed by the number of commits since, and
@@ -496,7 +537,7 @@ globalThis.loadPyodide = async function(config = {}) {
    *    1. `runPythonSimple` doesn't return anything (and so won't leak
    *        PyProxies)
    *    2. `runPythonSimple` doesn't require access to any state on the
-   *       `pyodide_js` module.
+   *       Javascript `pyodide` module.
    *    3. `runPython` uses `pyodide.eval_code`, whereas `runPythonSimple` uses
    *       `PyRun_String` which is the C API for `eval` / `exec`.
    *    4. `runPythonSimple` runs with `globals` a separate dict which is called
@@ -510,10 +551,16 @@ globalThis.loadPyodide = async function(config = {}) {
    */
   Module.runPythonSimple = function(code) {
     let code_c_string = Module.stringToNewUTF8(code);
+    let errcode;
     try {
-      Module._run_python_simple_inner(code_c_string);
+      errcode = Module._run_python_simple_inner(code_c_string);
+    } catch (e) {
+      Module.fatal_error(e);
     } finally {
       Module._free(code_c_string);
+    }
+    if (errcode === -1) {
+      Module._pythonexc2js();
     }
   };
 
@@ -524,7 +571,11 @@ globalThis.loadPyodide = async function(config = {}) {
    * is returned.
    *
    * @param {string} code Python code to evaluate
-   * @returns The result of the python code converted to Javascript
+   * @param {dict} globals An optional Python dictionary to use as the globals.
+   *        Defaults to :any:`pyodide.globals`. Uses the Python API
+   *        :any:`pyodide.eval_code` to evaluate the code.
+   * @returns The result of the Python code translated to Javascript. See the
+   *          documentation for :any:`pyodide.eval_code` for more info.
    */
   Module.runPython = function(code, globals = Module.globals) {
     return Module.pyodide_py.eval_code(code, globals);
@@ -532,25 +583,27 @@ globalThis.loadPyodide = async function(config = {}) {
 
   // clang-format off
   /**
-   * Inspect a Python code chunk and use :js:func:`pyodide.loadPackage` to load any known
-   * packages that the code chunk imports. Uses
-   * :func:`pyodide_py.find_imports <pyodide.find\_imports>` to inspect the code.
+   * Inspect a Python code chunk and use :js:func:`pyodide.loadPackage` to
+   * install any known packages that the code chunk imports. Uses the Python API
+   * :func:`pyodide.find\_imports` to inspect the code.
    *
    * For example, given the following code as input
    *
    * .. code-block:: python
    *
-   *    import numpy as np
-   *    x = np.array([1, 2, 3])
+   *    import numpy as np x = np.array([1, 2, 3])
    *
-   * :js:func:`loadPackagesFromImports` will call ``pyodide.loadPackage(['numpy'])``.
-   * See also :js:func:`runPythonAsync`.
+   * :js:func:`loadPackagesFromImports` will call
+   * ``pyodide.loadPackage(['numpy'])``. See also :js:func:`runPythonAsync`.
    *
-   * @param {*} code
-   * @param {*} messageCallback
-   * @param {*} errorCallback
+   * @param {string} code The code to inspect.
+   * @param {Function} messageCallback The ``messageCallback`` argument of
+   * :any:`pyodide.loadPackage` (optional).
+   * @param {Function} errorCallback The ``errorCallback`` argument of
+   * :any:`pyodide.loadPackage` (optional).
+   * @async
    */
-  Module.loadPackagesFromImports  = async function(code, messageCallback, errorCallback) {
+  Module.loadPackagesFromImports = async function(code, messageCallback, errorCallback) {
     let imports = Module.pyodide_py.find_imports(code).toJs();
     if (imports.length === 0) {
       return;
@@ -573,13 +626,11 @@ globalThis.loadPyodide = async function(config = {}) {
   /**
    * Access a Python object in the global namespace from Javascript.
    *
-   * Note: this function is deprecated and will be removed in version 0.18.0.
-   * Use pyodide.globals.get('key') instead.
+   * @deprecated This function will be removed in version 0.18.0. Use
+   *    :any:`pyodide.globals.get('key') <pyodide.globals>` instead.
    *
    * @param {string} name Python variable name
-   * @returns If the Python object is an immutable type (string, number,
-   * boolean), it is converted to Javascript and returned.  For other types, a
-   * ``PyProxy`` object is returned.
+   * @returns The Python object translated to Javascript.
    */
   Module.pyimport = name => {
     console.warn(
@@ -597,21 +648,35 @@ globalThis.loadPyodide = async function(config = {}) {
    *    import numpy as np
    *    x = np.array([1, 2, 3])
    *
-   * pyodide will first call ``pyodide.loadPackage(['numpy'])``, and then run
-   * the code, returning the result. Since package fetching must happen
-   * asynchronously, this function returns a `Promise` which resolves to the
-   * output. For example:
+   * Pyodide will first call :any:`pyodide.loadPackage(['numpy'])
+   * <pyodide.loadPackage>`, and then run the code using the Python API
+   * :any:`pyodide.eval_code_async`, returning the result. The code is compiled
+   * with `PyCF_ALLOW_TOP_LEVEL_AWAIT
+   * <https://docs.python.org/3/library/ast.html?highlight=pycf_allow_top_level_await#ast.PyCF_ALLOW_TOP_LEVEL_AWAIT>`_.
    *
-   * .. code-block:: javascript
+   * For example:
    *
-   *    pyodide.runPythonAsync(code, messageCallback)
-   *           .then((output) => handleOutput(output))
+   * .. code-block:: pyodide
+   *
+   *    let result = await pyodide.runPythonAsync(`
+   *        # numpy will automatically be loaded by loadPackagesFromImports
+   *        import numpy as np
+   *        # we can use top level await
+   *        from js import fetch
+   *        response = await fetch("./packages.json")
+   *        packages = await response.json()
+   *        # If final statement is an expression, its value is returned to
+   * Javascript len(packages.dependencies.object_keys())
+   *    `);
+   *    console.log(result); // 72
    *
    * @param {string} code Python code to evaluate
-   * @param {Function} messageCallback A callback, called with progress
-   * messages. (optional)
-   * @param {Function} errorCallback A callback, called with error/warning
-   * messages. (optional)
+   * @param {Function} messageCallback The ``messageCallback`` argument of
+   * :any:`pyodide.loadPackage`.
+   * @param {Function} errorCallback The ``errorCallback`` argument of
+   * :any:`pyodide.loadPackage`.
+   * @returns The result of the Python code translated to Javascript.
+   * @async
    */
   Module.runPythonAsync = async function(code, messageCallback, errorCallback) {
     await Module.loadPackagesFromImports(code, messageCallback, errorCallback);
@@ -630,7 +695,7 @@ globalThis.loadPyodide = async function(config = {}) {
    * ``name``. This module can then be imported from Python using the standard
    * Python import system. If another module by the same name has already been
    * imported, this won't have much effect unless you also delete the imported
-   * module from ``sys.modules``. This calls the ``pyodide_py`` api
+   * module from ``sys.modules``. This calls the ``pyodide_py`` API
    * :func:`pyodide.register_js_module`.
    *
    * @param {string} name Name of the Javascript module to add
@@ -646,7 +711,7 @@ globalThis.loadPyodide = async function(config = {}) {
    * :func:`pyodide.register_js_module`. If a Javascript module with that name
    * does not already exist, will throw an error. Note that if the module has
    * already been imported, this won't have much effect unless you also delete
-   * the imported module from ``sys.modules``. This calls the ``pyodide_py`` api
+   * the imported module from ``sys.modules``. This calls the ``pyodide_py`` API
    * :func:`pyodide.unregister_js_module`.
    *
    * @param {string} name Name of the Javascript module to remove
@@ -656,92 +721,71 @@ globalThis.loadPyodide = async function(config = {}) {
   };
   // clang-format on
 
-  Module.function_supports_kwargs = function(funcstr) {
-    // This is basically a finite state machine (except for paren counting)
-    // Start at beginning of argspec
-    let idx = funcstr.indexOf("(") + 1;
-    // States:
-    // START_ARG -- Start of an argument. We leave this state when we see a non
-    // whitespace character.
-    //    If the first nonwhitespace character we see is `{` this is an object
-    //    destructuring argument. Else it's not. When we see non whitespace goto
-    //    state ARG and set `arg_is_obj_dest` true if it's "{", else false.
-    // ARG -- we're in the middle of an argument. Count parens. On comma, if
-    // parens_depth === 0 goto state START_ARG, on quote set
-    //      set quote_start and goto state QUOTE.
-    // QUOTE -- We're in a quote. Record quote_start in quote_start and look for
-    // a matching end quote.
-    //    On end quote, goto state ARGS. If we see "\\" goto state QUOTE_ESCAPE.
-    // QUOTE_ESCAPE -- unconditionally goto state QUOTE.
-    // If we see a ) when parens_depth === 0, return arg_is_obj_dest.
-    let START_ARG = 1;
-    let ARG = 2;
-    let QUOTE = 3;
-    let QUOTE_ESCAPE = 4;
-    let paren_depth = 0;
-    let arg_is_obj_dest = false;
-    let quote_start = undefined;
-    let state = START_ARG;
+  /**
+   * Convert the Javascript object to a Python object as best as possible.
+   *
+   * This is similar to :any:`JsProxy.to_py` but for use from Javascript. If the
+   * object is immutable or a :any:`PyProxy`, it will be returned unchanged. If
+   * the object cannot be converted into Python, it will be returned unchanged.
+   *
+   * See :ref:`type-translations-jsproxy-to-py` for more information.
+   *
+   * @param {*} obj
+   * @param {number} depth Optional argument to limit the depth of the
+   * conversion.
+   * @returns {PyProxy} The object converted to Python.
+   */
+  Module.toPy = function(obj, depth = -1) {
+    // No point in converting these, it'd be dumb to proxy them so they'd just
+    // get converted back by `js2python` at the end
     // clang-format off
-    for (let i = idx; i < funcstr.length; i++) {
-      let x = funcstr[i];
-      if(state === QUOTE){
-        switch(x){
-          case quote_start:
-            // found match, go back to ARG
-            state = ARG;
-            continue;
-          case "\\":
-            state = QUOTE_ESCAPE;
-            continue;
-          default:
-            continue;
-        }
-      }
-      if(state === QUOTE_ESCAPE){
-        state = QUOTE;
-        continue;
-      }
-      // Skip whitespace.
-      if(x === " " || x === "\n" || x === "\t"){
-        continue;
-      }
-      if(paren_depth === 0){
-        if(x === ")" && state !== QUOTE && state !== QUOTE_ESCAPE){
-          // We hit closing brace which ends argspec.
-          // We have to handle this up here in case argspec ends in a trailing comma
-          // (if we're in state START_ARG, the next check would clobber arg_is_obj_dest).
-          return arg_is_obj_dest;
-        }
-        if(x === ","){
-          state = START_ARG;
-          continue;
-        }
-        // otherwise fall through
-      }
-      if(state === START_ARG){
-        // Nonwhitespace character in START_ARG so now we're in state arg.
-        state = ARG;
-        arg_is_obj_dest = x === "{";
-        // don't continue, fall through to next switch
-      }
-      switch(x){
-        case "[": case "{": case "(":
-          paren_depth ++;
-          continue;
-        case "]": case "}": case ")":
-          paren_depth--;
-          continue;
-        case "'": case '"': case '\`':
-          state = QUOTE;
-          quote_start = x;
-          continue;
-      }
+    switch (typeof obj) {
+      case "string":
+      case "number":
+      case "boolean":
+      case "bigint":
+      case "undefined":
+        return obj;
     }
-    // Correct exit is paren_depth === 0 && x === ")" test above.
-    throw new Error("Assertion failure: this is a logic error in \
-                     hiwire_function_supports_kwargs");
     // clang-format on
+    if (!obj || Module.isPyProxy(obj)) {
+      return obj;
+    }
+    let obj_id = 0;
+    let py_result = 0;
+    let result = 0;
+    try {
+      obj_id = Module.hiwire.new_value(obj);
+      py_result = Module.__js2python_convert(obj_id, new Map(), depth);
+      // clang-format off
+      if(py_result === 0){
+        // clang-format on
+        Module._pythonexc2js();
+      }
+      if (Module._JsProxy_Check(py_result)) {
+        // Oops, just created a JsProxy. Return the original object.
+        return obj;
+        // return Module.pyproxy_new(py_result);
+      }
+      result = Module._python2js(py_result);
+      // clang-format off
+      if (result === 0) {
+        // clang-format on
+        Module._pythonexc2js();
+      }
+    } finally {
+      Module.hiwire.decref(obj_id);
+      Module._Py_DecRef(py_result);
+    }
+    return Module.hiwire.pop_value(result);
+  };
+  /**
+   * Is the argument a :any:`PyProxy`?
+   * @param jsobj {any} Object to test.
+   * @returns {bool} Is ``jsobj`` a :any:`PyProxy`?
+   */
+  Module.isPyProxy = function(jsobj) {
+    return !!jsobj && jsobj.$$ !== undefined && jsobj.$$.type === 'PyProxy';
   };
 
   Module.locateFile = (path) => baseURL + path;
@@ -806,12 +850,12 @@ if (globalThis.languagePluginUrl) {
       "instead use loadPyodide({ indexURL : <some_url>})");
 
   /**
-   * A deprecated parameter that specifies the Pyodide indexURL. If present,
+   * A deprecated parameter that specifies the Pyodide ``indexURL``. If present,
    * Pyodide will automatically invoke
-   * ``initializePyodide({indexURL : languagePluginUrl})``
+   * ``loadPyodide({indexURL : languagePluginUrl})``
    * and will store the resulting promise in
-   * :any:`globalThis.languagePluginLoader`. Instead, use :any:`loadPyodide`
-   * directly.
+   * :any:`globalThis.languagePluginLoader`. Use :any:`loadPyodide`
+   * directly instead of defining this.
    *
    * @type String
    * @deprecated Will be removed in version 0.18.0

@@ -18,4 +18,7 @@
 JsRef
 _python2js_buffer(PyObject* x);
 
+errcode
+python2js_buffer_init();
+
 #endif /* PYTHON2JS_BUFFER_H */

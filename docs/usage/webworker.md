@@ -1,10 +1,10 @@
 (using_from_webworker)=
-# Using Pyodide from a web worker
+# Using Pyodide in a web worker
 
 This document describes how to use Pyodide to execute Python scripts
 asynchronously in a web worker.
 
-## Startup
+## Setup
 
 Setup your project to serve `webworker.js`. You should also serve
 `pyodide.js`, and all its associated `.asm.js`, `.data`, `.json`, and `.wasm`
@@ -103,10 +103,10 @@ lines `pythonLoading = self.pyodide.loadPackage(['numpy', 'pytz'])` and
 // Setup your project to serve `py-worker.js`. You should also serve
 // `pyodide.js`, and all its associated `.asm.js`, `.data`, `.json`,
 // and `.wasm` files as well:
-importScripts('https://cdn.jsdelivr.net/pyodide/v0.17.0a2/full/pyodide.js');
+importScripts('https://cdn.jsdelivr.net/pyodide/dev/full/pyodide.js');
 
 async function loadPyodideAndPackages(){
-    await loadPyodide({ indexURL : 'https://cdn.jsdelivr.net/pyodide/v0.17.0a2/full/' });
+    await loadPyodide({ indexURL : 'https://cdn.jsdelivr.net/pyodide/dev/full/' });
     await self.pyodide.loadPackage(['numpy', 'pytz']);
 }
 let pyodideReadyPromise = loadPyodideAndPackages();

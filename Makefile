@@ -28,6 +28,7 @@ all: check \
 build/pyodide.asm.js: \
 	src/core/docstring.o \
 	src/core/error_handling.o \
+	src/core/numpy_patch.o \
 	src/core/hiwire.o \
 	src/core/js2python.o \
 	src/core/jsproxy.o \
@@ -52,7 +53,8 @@ build/pyodide.asm.js: \
 		--preload-file src/pyodide-py/pyodide@/lib/python$(PYMINOR)/site-packages/pyodide \
 		--preload-file src/pyodide-py/_pyodide@/lib/python$(PYMINOR)/site-packages/_pyodide \
 		--exclude-file "*__pycache__*" \
-		--exclude-file "*/test/*"
+		--exclude-file "*/test/*"		\
+		--exclude-file "*/tests/*"
 	date +"[%F %T] done building pyodide.asm.js."
 
 
@@ -60,6 +62,7 @@ env:
 	env
 
 
+.PHONY: build/pyodide.js
 build/pyodide.js: src/pyodide.js
 	cp $< $@
 	sed -i -e 's#{{ PYODIDE_BASE_URL }}#$(PYODIDE_BASE_URL)#g' $@
@@ -69,18 +72,34 @@ build/test.html: src/templates/test.html
 	cp $< $@
 
 
+.PHONY: build/console.html
 build/console.html: src/templates/console.html
 	cp $< $@
 	sed -i -e 's#{{ PYODIDE_BASE_URL }}#$(PYODIDE_BASE_URL)#g' $@
 
 
+.PHONY: docs/_build/html/console.html
+docs/_build/html/console.html: src/templates/console.html
+	cp $< $@
+	sed -i -e 's#{{ PYODIDE_BASE_URL }}#$(PYODIDE_BASE_URL)#g' $@
+
+
+.PHONY: build/webworker.js
 build/webworker.js: src/webworker.js
 	cp $< $@
 	sed -i -e 's#{{ PYODIDE_BASE_URL }}#$(PYODIDE_BASE_URL)#g' $@
 
+
+.PHONY: build/webworker_dev.js
 build/webworker_dev.js: src/webworker.js
 	cp $< $@
 	sed -i -e 's#{{ PYODIDE_BASE_URL }}#./#g' $@
+
+update_base_url: \
+	build/console.html \
+	build/pyodide.js \
+	build/webworker.js \
+	docs/_build/html/console.html
 
 test: all
 	pytest src emsdk/tests packages/*/test* pyodide_build -v

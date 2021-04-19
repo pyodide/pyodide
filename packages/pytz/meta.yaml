@@ -1,9 +1,9 @@
 package:
   name: pytz
-  version: '2020.1'
+  version: '2021.1'
 source:
-  sha256: c35965d010ce31b23eeb663ed3cc8c906275d6be1a34393a1d73a41febf4a048
-  url: https://files.pythonhosted.org/packages/f4/f6/94fee50f4d54f58637d4b9987a1b862aeb6cd969e73623e02c5c00755577/pytz-2020.1.tar.gz
+  sha256: 83a4a90894bf38e243cf052c8b58f381bfe9a7a483f6a9cab140bc7f702ac4da
+  url: https://files.pythonhosted.org/packages/b0/61/eddc6eb2c682ea6fd97a7e1018a6294be80dba08fa28e7a3570148b4612d/pytz-2021.1.tar.gz
 test:
   imports:
   - pytz

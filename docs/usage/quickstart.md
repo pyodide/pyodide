@@ -1,12 +1,12 @@
-(using_from_javascript)=
+(quickstart)=
 
-# Getting started using Pyodide
+# Getting started
 
-## Startup
+## Setup
 
 To include Pyodide in your project you can use the following CDN URL:
 ```{eval-rst}
-  https://cdn.jsdelivr.net/pyodide/v0.17.0a2/full/pyodide.js
+  https://cdn.jsdelivr.net/pyodide/dev/full/pyodide.js
 ```
 
 You can also download a release from [Github
@@ -20,7 +20,7 @@ namespace called {js:mod}`pyodide`.
 
 ```pyodide
 async function main() {
-  await loadPyodide({ indexURL : "https://cdn.jsdelivr.net/pyodide/v0.17.0a2/full/" });
+  await loadPyodide({ indexURL : "https://cdn.jsdelivr.net/pyodide/dev/full/" });
   // Pyodide is now ready to use...
   console.log(pyodide.runPython(`
     import sys
@@ -54,7 +54,7 @@ Create and save a test `index.html` page with the following contents:
 <!DOCTYPE html>
 <html>
   <head>
-      <script src="https://cdn.jsdelivr.net/pyodide/v0.17.0a2/full/pyodide.js"></script>
+      <script src="https://cdn.jsdelivr.net/pyodide/dev/full/pyodide.js"></script>
   </head>
   <body>
     Pyodide test page <br>
@@ -62,13 +62,13 @@ Create and save a test `index.html` page with the following contents:
     <script type="text/javascript">
       async function main(){
         await loadPyodide({
-          indexURL : "https://cdn.jsdelivr.net/pyodide/v0.17.0a2/full/"
+          indexURL : "https://cdn.jsdelivr.net/pyodide/dev/full/"
         });
         console.log(pyodide.runPython(`
             import sys
             sys.version
         `));
-        console.log(pyodide.runPython(`print(1 + 2)`));
+        console.log(pyodide.runPython("print(1 + 2)"));
       }
       main();
     </script>
@@ -83,7 +83,7 @@ Create and save a test `index.html` page with the following contents:
 <!DOCTYPE html>
 <html>
 <head>
-    <script src="https://cdn.jsdelivr.net/pyodide/v0.17.0a2/full/pyodide.js"></script>
+    <script src="https://cdn.jsdelivr.net/pyodide/dev/full/pyodide.js"></script>
 </head>
 
 <body>
@@ -108,7 +108,7 @@ Create and save a test `index.html` page with the following contents:
     output.value = 'Initializing...\n';
     // init Pyodide
     async function main(){
-      await loadPyodide({ indexURL : 'https://cdn.jsdelivr.net/pyodide/v0.17.0a2/full/' });
+      await loadPyodide({ indexURL : 'https://cdn.jsdelivr.net/pyodide/dev/full/' });
       output.value += 'Ready!\n';
     }
     let pyodideReadyPromise = main();
@@ -168,8 +168,7 @@ pyodide.globals.set("alert", alert);
 pyodide.globals.set("square", x => x*x);
 
 // You can test your new Python function in the console by running
-pyodide.runPython(`square(3)`);
-
+pyodide.runPython("square(3)");
 ```
 
 Feel free to play around with the code using the browser console and the above example.
