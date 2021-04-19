@@ -55,6 +55,7 @@ build/pyodide.asm.js: \
 		--exclude-file "*__pycache__*" \
 		--exclude-file "*/test/*"		\
 		--exclude-file "*/tests/*"
+	sed -i 's/var __ZN[1KS][^;]*;//g' build/pyodide.asm.js
 	date +"[%F %T] done building pyodide.asm.js."
 
 
