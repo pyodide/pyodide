@@ -8,7 +8,7 @@ browser.
 Pyodide brings the Python 3.8 runtime to the browser via WebAssembly, along with
 the Python scientific stack including NumPy, Pandas, Matplotlib, SciPy, and
 scikit-learn. The [packages
-directory](https://github.com/pyodide/pyodide/tree/master/packages) lists over
+directory](https://github.com/pyodide/pyodide/tree/main/packages) lists over
 75 packages which are currently available. In addition it's possible to install
 pure Python wheels from PyPi.
 
