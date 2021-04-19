@@ -30,15 +30,15 @@ def run_in_pyodide(
 
     def decorator(f):
         def inner(selenium):
-            if len(packages) > 0:
-                selenium.load_package(packages)
-            lines, start_line = inspect.getsourcelines(f)
-            # Remove first line, which is the decorator. Then pad with empty lines to fix line number.
-            lines = ["\n"] * start_line + lines[1:]
-            source = "".join(lines)
-
-            err = None
             with set_webdriver_script_timeout(selenium, driver_timeout):
+                if len(packages) > 0:
+                    selenium.load_package(packages)
+                lines, start_line = inspect.getsourcelines(f)
+                # Remove first line, which is the decorator. Then pad with empty lines to fix line number.
+                lines = ["\n"] * start_line + lines[1:]
+                source = "".join(lines)
+
+                err = None
                 try:
                     # When writing the function, we set the filename to the file
                     # containing the source. This results in a more helpful
