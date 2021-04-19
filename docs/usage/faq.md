@@ -200,9 +200,11 @@ This also avoids memory leaks.
 ## How can I use fetch with optional arguments from Python?
 The most obvious translation of the Javascript code won't work:
 ```py
+import json
+body = json.dumps({ "some" : "json" })
 resp = await js.fetch('/someurl', {
     "method": "POST"
-  , "body": '{ "some" : "json" }'
+  , "body": body
   , "credentials": "same-origin"
   , "headers": { "Content-Type": "application/json" }
 })
@@ -211,9 +213,11 @@ this leaks the dictionary and the `fetch` api ignores the options that we
 attempted to provide. There are two correct ways to do this:
 ```py
 from pyodide import to_js
+import json
+body = json.dumps({ "some" : "json" })
 resp = await js.fetch('example.com/some_api',
   method= "POST",
-  body= '{ "some" : "json" }',
+  body= body,
   credentials= "same-origin",
   headers= to_js({ "Content-Type": "application/json" }),
 )
@@ -221,9 +225,11 @@ resp = await js.fetch('example.com/some_api',
 or:
 ```py
 from pyodide import to_js
+import json
+body = json.dumps({ "some" : "json" })
 resp = await js.fetch('example.com/some_api', to_js({
     "method": "POST"
-  , "body": '{ "some" : "json" }'
+  , "body": body
   , "credentials": "same-origin"
   , "headers": { "Content-Type": "application/json" }
 }))
