@@ -201,10 +201,9 @@ This also avoids memory leaks.
 The most obvious translation of the Javascript code won't work:
 ```py
 import json
-body = json.dumps({ "some" : "json" })
 resp = await js.fetch('/someurl', {
     "method": "POST"
-  , "body": body
+  , "body": json.dumps({ "some" : "json" })
   , "credentials": "same-origin"
   , "headers": { "Content-Type": "application/json" }
 })
@@ -214,10 +213,9 @@ attempted to provide. There are two correct ways to do this:
 ```py
 from pyodide import to_js
 import json
-body = json.dumps({ "some" : "json" })
 resp = await js.fetch('example.com/some_api',
   method= "POST",
-  body= body,
+  body= json.dumps({ "some" : "json" }),
   credentials= "same-origin",
   headers= to_js({ "Content-Type": "application/json" }),
 )
@@ -226,10 +224,9 @@ or:
 ```py
 from pyodide import to_js
 import json
-body = json.dumps({ "some" : "json" })
 resp = await js.fetch('example.com/some_api', to_js({
     "method": "POST"
-  , "body": body
+  , "body": json.dumps({ "some" : "json" })
   , "credentials": "same-origin"
   , "headers": { "Content-Type": "application/json" }
 }))
