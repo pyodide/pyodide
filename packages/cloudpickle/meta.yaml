@@ -1,9 +1,9 @@
 package:
   name: cloudpickle
-  version: 1.5.0
+  version: 1.6.0
 source:
-  sha256: 820c9245cebdec7257211cbe88745101d5d6a042bca11336d78ebd4897ddbc82
-  url: https://files.pythonhosted.org/packages/2b/42/1a742ae7a85e8e15a60696b0519f71db8ee04839fef6007c3859184fbe71/cloudpickle-1.5.0.tar.gz
+  sha256: 9bc994f9e9447593bd0a45371f0e7ac7333710fcf64a4eb9834bf149f4ef2f32
+  url: https://files.pythonhosted.org/packages/3b/67/d1ab1b875e3cae4fc96d2372c92e590f220109738e26470b2a68ddf2baec/cloudpickle-1.6.0.tar.gz
 test:
   imports:
   - cloudpickle
