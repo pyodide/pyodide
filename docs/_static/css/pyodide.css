@@ -6,3 +6,9 @@
 code {
     font-size: 100% !important;
 }
+
+
+h3 {
+    /* shrink h3 a bit, was ~1.8em */
+    font-size: 1.5em;
+}
