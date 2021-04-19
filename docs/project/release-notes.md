@@ -34,6 +34,7 @@ let test = pyodide.globals.get("test");
 result = await test();
 console.log(result); // ["asciitree", "parso", "scikit-learn", ...]
 ```
+(Added in PRs {pr}`880`, {pr}`1158`, {pr}`1170`)
 
 ### Error Handling
 
@@ -57,6 +58,7 @@ pyodide.runPython(`
       print(str(args)) # prints "TypeError: ooops!"
 `);
 ```
+(Added in PRs {pr}`1051` and {pr}`1080`)
 
 ### Python "builtin" Modules implemented in Javascript
 
@@ -78,6 +80,7 @@ pyodide.runPython(`
     bar(9, 5) # 59
 `);
 ```
+(Added in PR {pr}`1146`)
 
 ### New Conversion APIs
 We added several new conversion APIs to give more explicit control over the
@@ -96,6 +99,8 @@ they have been updated with internal magic to automatically manage the memory.
 For more advanced use cases where control over the life cycle of a {any}`PyProxy` is
 needed, there are {any}`create_proxy` and {any}`create_once_callable`.
 
+(Added in PRs {pr}`1186`, {pr}`1244`, {pr}`1344`, {pr}`1436`)
+
 ## API Changes
 We removed `as_nested_list` and deprecated `pyimport`. The old loading method
 using `languagePluginURL` and `languagePluginLoader` is also deprecated, use
@@ -108,7 +113,7 @@ deprecated).
 In the past we found that one of the major pain points in using Pyodide occurred
 when an object makes a round trip from Python to Javascript and back to Python
 and comes back different. This violates the expectations of the user and forces
-inelegant workarounds.
+inelegant workarounds (see {issue}`780` and {issue}`892` among others).
 
 The type conversion module has significantly reworked in v0.17 with the goal
 that round trip conversions of objects between Python and Javascript produces an
@@ -118,6 +123,10 @@ verifies the `===` equality operation.
 
 We also made extensive additions to the type conversions test suite and
 documentation, though gaps remain.
+
+See issue {issue}`900` for some of the discussion.
+
+(Mostly implemented in PRs {pr}`1152` and {pr}`1167`, see also {pr}`1186` which )
 
 ### Changes to buffer translations
 
@@ -129,6 +138,8 @@ In simple use cases they can be converted with a copy using {any}`PyProxy.toJs`
 and {any}`JsProxy.to_py`. We added new APIs {any}`PyProxy.getBuffer`,
 {any}`JsProxy.assign`, and {any}`JsProxy.assign_to` which give more fine-grained
 control, though they are not yet as ergonomic as they could be.
+
+(Implemented in PRs {pr}`1215`, {pr}`1376`, and {pr}`1411`)
 
 ## Maintenance and Bug fixes
 Pyodide version 0.17.0 comes with an enormous amount of maintenance work. There
@@ -155,6 +166,8 @@ improvement for pure Python code.
 
 Because we are now using a very recent Emscripten version, we were able to
 upstream many of our patches to the compiler toolchain.
+
+(Implemented in PRs {pr}`1102`, {pr}`1184` and {pr}`1193`.)
 
 ### Core C Code maintenance
 
@@ -188,6 +201,8 @@ unexpected place, we report a fatal error. This leads to faster, better bug
 reports and less confusion (using Pyodide after a fatal error occurs can lead to
 very strange behavior).
 
+(Implemented in pr`{1151}`, tuned up in pr`{1390}` and pr`{1478}`.)
+
 ### Fixed error leaks and memory leaks
 Errors in C code must be manually returned to the calling code, and memory must
 be manually released. We refactored all of the existing C code to apply a
@@ -198,5 +213,7 @@ block at the end of the function to make it easier to check correctness.
 This allowed us to fix a large number of error leaks and memory leaks. We now
 have pretty complete test coverage for memory leaks. The error coverage is less
 complete, though we added fault injection tests for every entrypoint.
+
+(See for instance pr`{1340}`)
 
 ## Migration Guide
