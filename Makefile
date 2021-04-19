@@ -99,8 +99,7 @@ build/webworker_dev.js: src/webworker.js
 update_base_url: \
 	build/console.html \
 	build/pyodide.js \
-	build/webworker.js \
-	docs/_build/html/console.html
+	build/webworker.js
 
 test: all
 	pytest src emsdk/tests packages/*/test* pyodide_build -v
