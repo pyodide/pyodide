@@ -32,7 +32,8 @@ def run_in_pyodide(
     def decorator(f):
         def inner(selenium):
             if selenium.browser in xfail_browsers:
-                pytest.xfail(xfail_browsers[selenium.browser])
+                xfail_message = xfail_browsers[selenium.browser]
+                pytest.xfail(xfail_message)
             with set_webdriver_script_timeout(selenium, driver_timeout):
                 if len(packages) > 0:
                     selenium.load_package(packages)
