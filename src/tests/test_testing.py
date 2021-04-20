@@ -37,7 +37,6 @@ def some_func():
 
 
 def test_run_in_pyodide_multiline_decorator():
-    print(_run_in_pyodide_get_source(some_func))
     assert (
         _run_in_pyodide_get_source(some_func).strip()
         == dedent(
@@ -45,6 +44,10 @@ def test_run_in_pyodide_multiline_decorator():
             def some_func():
                 import numpy as np
                 import nlopt
+
+                opt = nlopt.opt(nlopt.LD_SLSQP, 2)
+                opt.set_min_objective(f)
+                opt.set_lower_bounds(np.array([2.5, 7]))
             """
         ).strip()
     )
