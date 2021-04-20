@@ -13,7 +13,7 @@ import shutil
 import subprocess
 import sys
 from threading import Thread
-from time import sleep
+from time import sleep, perf_counter
 from typing import Dict, Set, Optional, List
 
 from . import common
@@ -178,13 +178,14 @@ def build_from_graph(pkg_map: Dict[str, Package], outputdir: Path, args) -> None
         while True:
             pkg = build_queue.get()
             print(f"Thread {n} building {pkg.name}")
+            t0 = perf_counter()
             try:
                 pkg.build(outputdir, args)
             except Exception as e:
                 built_queue.put(e)
                 return
 
-            print(f"Thread {n} built {pkg.name}")
+            print(f"Thread {n} built {pkg.name} in {perf_counter() - t0:.1f} s")
             built_queue.put(pkg)
             # Release the GIL so new packages get queued
             sleep(0.01)
