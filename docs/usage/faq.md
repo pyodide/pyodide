@@ -208,23 +208,14 @@ resp = await js.fetch('/someurl', {
 })
 ```
 this leaks the dictionary and the `fetch` api ignores the options that we
-attempted to provide. There are two correct ways to do this:
+attempted to provide. You can do this correctly as follows:
 ```py
 from pyodide import to_js
+from js import Object
 resp = await js.fetch('example.com/some_api',
   method= "POST",
   body= '{ "some" : "json" }',
   credentials= "same-origin",
-  headers= to_js({ "Content-Type": "application/json" }),
+  headers= Object.fromEntries(to_js({ "Content-Type": "application/json" })),
 )
-```
-or:
-```py
-from pyodide import to_js
-resp = await js.fetch('example.com/some_api', to_js({
-    "method": "POST"
-  , "body": '{ "some" : "json" }'
-  , "credentials": "same-origin"
-  , "headers": { "Content-Type": "application/json" }
-}))
 ```
