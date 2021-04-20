@@ -1,4 +1,4 @@
-# Frequently Asked Questions (FAQ)
+# Frequently Asked Questions
 
 ## How can I load external Python files in Pyodide?
 
@@ -200,21 +200,23 @@ This also avoids memory leaks.
 ## How can I use fetch with optional arguments from Python?
 The most obvious translation of the Javascript code won't work:
 ```py
+import json
 resp = await js.fetch('/someurl', {
-    "method": "POST"
-  , "body": '{ "some" : "json" }'
-  , "credentials": "same-origin"
-  , "headers": { "Content-Type": "application/json" }
+  "method": "POST",
+  "body": json.dumps({ "some" : "json" }),
+  "credentials": "same-origin",
+  "headers": { "Content-Type": "application/json" }
 })
 ```
 this leaks the dictionary and the `fetch` api ignores the options that we
 attempted to provide. You can do this correctly as follows:
 ```py
+import json
 from pyodide import to_js
 from js import Object
 resp = await js.fetch('example.com/some_api',
   method= "POST",
-  body= '{ "some" : "json" }',
+  body= json.dumps({ "some" : "json" }),
   credentials= "same-origin",
   headers= Object.fromEntries(to_js({ "Content-Type": "application/json" })),
 )

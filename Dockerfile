@@ -23,12 +23,12 @@ RUN pip3 --no-cache-dir install \
   pytest-rerunfailures \
   pytest-xdist \
   pyyaml \
-  selenium
+  "selenium==4.0.0.b3"
 
 # Get firefox 70.0.1 and geckodriver
-RUN wget -qO- https://ftp.mozilla.org/pub/firefox/releases/70.0.1/linux-x86_64/en-US/firefox-70.0.1.tar.bz2 | tar jx \
+RUN wget -qO- https://ftp.mozilla.org/pub/firefox/releases/87.0/linux-x86_64/en-US/firefox-87.0.tar.bz2 | tar jx \
   && ln -s $PWD/firefox/firefox /usr/local/bin/firefox \
-  && wget -qO- https://github.com/mozilla/geckodriver/releases/download/v0.26.0/geckodriver-v0.26.0-linux64.tar.gz | tar zxC /usr/local/bin/
+  && wget -qO- https://github.com/mozilla/geckodriver/releases/download/v0.29.1/geckodriver-v0.29.1-linux64.tar.gz | tar zxC /usr/local/bin/
 
 # Get recent version of chromedriver
 RUN wget --quiet https://chromedriver.storage.googleapis.com/89.0.4389.23/chromedriver_linux64.zip \

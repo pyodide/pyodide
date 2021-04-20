@@ -3,7 +3,7 @@ version: 2
 defaults: &defaults
   working_directory: ~/repo
   docker:
-    - image: pyodide/pyodide-env:13
+    - image: pyodide/pyodide-env:15
   environment:
     - EMSDK_NUM_CORES: 4
       EMCC_CORES: 4
@@ -345,4 +345,4 @@ workflows:
             - test-emsdk
           filters:
             branches:
-              only: master
+              only: main
