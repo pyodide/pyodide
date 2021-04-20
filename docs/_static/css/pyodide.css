@@ -18,6 +18,7 @@ code {
     font-size: 1.3em;
 }
 
+/* Remove "captions" in text table of contents, keep subsections in sidebar */
 .toctree-wrapper > .caption {
     display: none;
 }
