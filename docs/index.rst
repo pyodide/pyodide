@@ -28,19 +28,15 @@ Using Pyodide
    usage/api-reference.md
    usage/faq.md
 
-Developing Pyodide
-==================
+Development
+===========
 
 The Development section help Pyodide contributors to find information about the
 development process including making packages to support third party libraries
 and understanding type conversions between Python and JavaScript.
 
-The Project section helps contributors get started and gives additional
-information about the project's organization.
-
 .. toctree::
    :maxdepth: 1
-   :caption: Development
 
    development/building-from-sources.md
    development/new-packages.md
@@ -49,11 +45,18 @@ information about the project's organization.
    development/testing.md
    development/debugging.md
 
+
+Project
+=======
+
+The Project section helps contributors get started and gives additional
+information about the project's organization.
+
 .. toctree::
    :titlesonly:
-   :caption: Project
 
    project/about.md
+   project/roadmap.md
    project/code-of-conduct.md
    project/governance.md
    project/changelog.md
