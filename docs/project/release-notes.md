@@ -130,8 +130,8 @@ See issue {issue}`900` for some of the discussion.
 
 ### Changes to buffer translations
 
-The old buffer translation code was inflexible, leaky, and had serious bugs
-including use after free ({issue}`749`) and buffer overflow errors.
+The buffer translation code in previous versions was less flexible, leaked memory,
+and had serious bugs including use after free ({issue}`749`) and buffer overflow errors.
 
 We completely reworked these: buffers are now proxied like most other objects.
 In simple use cases they can be converted with a copy using {any}`PyProxy.toJs`
@@ -179,8 +179,8 @@ to locate leaks and logic errors.
 We fixed many of the long standing bugs caused by inconsistencies in the
 behavior of {any}`JsProxy`. There used to be two different code paths for
 producing a {any}`JsProxy` and two different code paths for calling a
-{any}`JsProxy` leading to four different behaviors, all of which were buggy in
-some cases. This fixed numerous bugs, including issues {issue}`461`,
+{any}`JsProxy` leading to four different behaviors, all of which were presented
+errors in some cases. This fixed numerous bugs, including issues {issue}`461`,
 {issue}`768`, {issue}`788`, and {issue}`1123`. The number of surprises you can
 expect when using the foreign function interface has gone way down.
 
