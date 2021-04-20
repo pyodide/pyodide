@@ -130,8 +130,8 @@ See issue {issue}`900` for some of the discussion.
 
 ### Changes to buffer translations
 
-The old buffer translation code was inflexible, leaky, and had serious bugs
-including use after free ({issue}`749`) and buffer overflow errors.
+The buffer translation code in previous versions was less flexible, leaked memory,
+and had serious bugs including use after free ({issue}`749`) and buffer overflow errors.
 
 We completely reworked these: buffers are now proxied like most other objects.
 In simple use cases they can be converted with a copy using {any}`PyProxy.toJs`
