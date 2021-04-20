@@ -2,7 +2,6 @@ import pytest
 import inspect
 from typing import Callable, Dict, List, Optional, Union
 import contextlib
-import functools
 
 
 def _run_in_pyodide_get_source(f):
@@ -84,7 +83,6 @@ def run_in_pyodide(
 
         if standalone:
 
-            @functools.wraps(f)
             def wrapped_standalone(selenium_standalone):
                 inner(selenium_standalone)
 
@@ -92,7 +90,6 @@ def run_in_pyodide(
 
         else:
 
-            @functools.wraps(f)
             def wrapped(selenium):
                 inner(selenium)
 

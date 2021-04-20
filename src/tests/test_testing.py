@@ -14,7 +14,14 @@ def test_run_in_pyodide():
     pass
 
 
-@run_in_pyodide(
+def dummy_decorator(*args, **kwargs):
+    def func(f):
+        return f
+
+    return func
+
+
+@dummy_decorator(
     packages=["nlopt"],
     xfail_browsers={
         "chrome": "nlopt set_min_objective triggers a fatal runtime error in chrome 89 see #1493",
