@@ -12,6 +12,8 @@ substitutions:
 
 ## Version 0.17.0
 
+See the {ref}`0-17-0-release-notes` for more information.
+
 ### Improvements to package loading and dynamic linking
 - {{ Enhancement }} Uses the emscripten preload plugin system to preload .so files in packages
 - {{ Enhancement }} Support for shared library packages. This is used for CLAPACK which makes scipy a lot smaller.
