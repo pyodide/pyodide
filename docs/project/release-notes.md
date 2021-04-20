@@ -87,10 +87,12 @@ We added several new conversion APIs to give more explicit control over the
 foreign function interface. In particular, the goal was to make it easier for
 users to avoid leaking memory.
 
-For the basic use cases, we have {any}`PyProxy.toJs` and {any}`JsProxy.to_py`.
-We also added also "wrong-way" conversion functions {any}`pyodide.to_js` and
-{any}`pyodide.toPy` which are particularly helpful for when returning values
-across languages or to give extra control over the behavior of called functions.
+For the basic use cases, we have {any}`PyProxy.toJs` and {any}`JsProxy.to_py`
+which respectively convert Python objects to Javascript objects and Javascript
+objects to Python objects. We also added also "wrong-way" conversion functions
+{any}`pyodide.to_js` and {any}`pyodide.toPy` which are particularly helpful for
+when returning values across languages or to give extra control over the
+behavior of called functions.
 
 The promise handler methods {any}`JsProxy.then`, {any}`JsProxy.catch`, and
 {any}`JsProxy.finally_` were particularly hard to use without leaking memory so
