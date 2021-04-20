@@ -179,8 +179,8 @@ to locate leaks and logic errors.
 We fixed many of the long standing bugs caused by inconsistencies in the
 behavior of {any}`JsProxy`. There used to be two different code paths for
 producing a {any}`JsProxy` and two different code paths for calling a
-{any}`JsProxy` leading to four different behaviors, all of which were buggy in
-some cases. This fixed numerous bugs, including issues {issue}`461`,
+{any}`JsProxy` leading to four different behaviors, all of which were presented
+errors in some cases. This fixed numerous bugs, including issues {issue}`461`,
 {issue}`768`, {issue}`788`, and {issue}`1123`. The number of surprises you can
 expect when using the foreign function interface has gone way down.
 
