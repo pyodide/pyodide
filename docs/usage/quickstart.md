@@ -2,6 +2,10 @@
 
 # Getting started
 
+## Try it online
+
+Try Pyodide in a [REPL](https://pyodide.org/en/latest/console.html) directly in your browser (no installation needed).
+
 ## Setup
 
 To include Pyodide in your project you can use the following CDN URL:
