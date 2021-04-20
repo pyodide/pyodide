@@ -8,9 +8,11 @@ substitutions:
 
 
 (changelog)=
-# Release notes
+# Change Log
 
-## Version [Unreleased]
+## Version 0.17.0
+
+See the {ref}`0-17-0-release-notes` for more information.
 
 ### Improvements to package loading and dynamic linking
 - {{ Enhancement }} Uses the emscripten preload plugin system to preload .so files in packages
@@ -37,9 +39,6 @@ substitutions:
   awaitable Javascript object. Awaiting a coroutine will schedule it to run on
   the Python event loop using `asyncio.ensure_future`.
   {pr}`1170`
-- {{ Feature }} A `JsProxy` of a Javascript `Promise` or other awaitable object is now a
-  Python awaitable.
-  {pr}`880`
 - {{ Enhancement }} Made `PyProxy` of an iterable Python object an iterable Js
   object: defined the `[Symbol.iterator]` method, can be used like `for(let x of
   proxy)`. Made a `PyProxy` of a Python iterator an iterator: `proxy.next()` is
@@ -69,6 +68,16 @@ substitutions:
 - {{ Enhancement }} `PyProxy` and `PyBuffer` objects are now garbage collected
   if the browser supports `FinalizationRegistry`.
   {pr}`1306`
+- {{ Enhancement }} Automatic conversion of Javascript functions to CPython
+  calling conventions.
+  {pr}`1051`, {pr}`1080`
+- {{ Enhancement }} Automatic detection of fatal errors. In this case Pyodide
+  will produce both a Javascript and a Python stack trace with explicit
+  instruction to open a bug report.
+  pr`{1151}`, pr`{1390}`, pr`{1478}`.
+- {{ Enhancement }} Systematic memory leak detection in the test suite and a
+  large number of fixed to memory leaks.
+  pr`{1340}`
 
 
 ### Fixed
