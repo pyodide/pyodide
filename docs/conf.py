@@ -46,7 +46,8 @@ extensions = [
     "autodocsumm",
     "sphinx_pyodide",
     "sphinx_argparse_cli",
-    "versionwarning.extension",
+    #  TODO: Temporary disabling for the 0.17.0 release, needs more investigation
+    #     "versionwarning.extension",
     "sphinx_issues",
 ]
 
