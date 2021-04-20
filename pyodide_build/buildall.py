@@ -185,7 +185,7 @@ def build_from_graph(pkg_map: Dict[str, Package], outputdir: Path, args) -> None
                 built_queue.put(e)
                 return
 
-            print(f"Thread {n} built {pkg.name} in {perf_counter() - t0:.1f}")
+            print(f"Thread {n} built {pkg.name} in {perf_counter() - t0:.1f} s")
             built_queue.put(pkg)
             # Release the GIL so new packages get queued
             sleep(0.01)
