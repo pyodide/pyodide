@@ -5,8 +5,9 @@ defaults: &defaults
   docker:
     - image: pyodide/pyodide-env:15
   environment:
-    - EMSDK_NUM_CORES: 4
-      EMCC_CORES: 4
+    - EMSDK_NUM_CORES: 3
+      EMCC_CORES: 3
+      PYODIDE_JOBS: 3
 
 jobs:
   lint:
