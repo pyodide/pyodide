@@ -23,6 +23,8 @@ class WebLoop(asyncio.AbstractEventLoop):
     we want to make sure that each task is scheduled on the browser event loop as a
     task not as a microtask. ``setTimeout(callback, 0)`` enqueues the callback as a
     task so it works well for our purposes.
+
+    See `Event Loop Methods <https://docs.python.org/3/library/asyncio-eventloop.html#asyncio-event-loop>`_.
     """
 
     def __init__(self):

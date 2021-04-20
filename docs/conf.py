@@ -27,6 +27,11 @@ author = "Mozilla"
 import pyodide
 import micropip  # noqa
 
+# We hacked it so that autodoc will look for submodules, but only if we import
+# them here. TODO: look these up in the source directory?
+import pyodide.webloop
+import pyodide.console
+
 # The full version, including alpha/beta/rc tags.
 release = version = pyodide.__version__
 
@@ -128,3 +133,20 @@ if "READTHEDOCS" in os.environ:
         encoding="utf-8",
     )
     print(res)
+
+
+# Prevent API docs for webloop methods: they are the same as for base event loop
+# and it clutters api docs too much
+
+
+def delete_attrs(cls):
+    for name in dir(cls):
+        if not name.startswith("_"):
+            try:
+                delattr(cls, name)
+            except:
+                pass
+
+
+delete_attrs(pyodide.webloop.WebLoop)
+delete_attrs(pyodide.webloop.WebLoopPolicy)
