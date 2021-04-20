@@ -8,12 +8,12 @@ code {
 }
 
 
-h3 {
+.section > h3 {
     /* shrink h3 a bit, was ~1.8em */
     font-size: 1.65em;
 }
 
-h4 {
+.section > h4 {
     /* shrink h4 a bit, was 1.44em */
     font-size: 1.3em;
 }
