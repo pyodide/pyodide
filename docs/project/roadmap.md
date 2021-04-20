@@ -1,6 +1,6 @@
 # Roadmap
 
-This document list general directions that core developers are interested to
+This document lists general directions that core developers are interested to
 see developed in Pyodide. The fact that an item is listed here is in no way a
 promise that it will happen, as resources are limited. Rather, it is an
 indication that help is welcomed on this topic.
@@ -13,6 +13,8 @@ faster since assets are cached in the browser. Both of these indicators can
 likely be improved, by optimizing compilation parameters, minifying the Python
 standard library and packages, reducing the number of exported symbols, as well
 as a better profiling effort for the load process.
+
+See issue {issue}`646`.
 
 ## Improve performance of Python code in Pyodide
 
@@ -28,12 +30,16 @@ some focused effort.
 In addition, scientific Python code would benefit from packaging a high
 performance BLAS library such as BLIS.
 
+See issue {issue}`1120`.
+
 ## Simplification of the package loading system
 
 Currently Pyodide has two way of loading packages:
  - `loadPackage` for packages built with Pyodide
  - and `micropip.install` for pure Python packages from PyPi
 the user experience of combining these two tools can improved.
+
+See issues {issue}`1470` and {issue}`1100`.
 
 ## Update SciPy to a more recent version
 
@@ -43,6 +49,8 @@ requires BLAS and LAPACK libraries. Currently Pyodide includes scipy 0.17.1 from
 and updating it is a blocker for using more recent versions of packages such as
 scikit-learn, scikit-image, statsmodels, and MNE.
 
+See issue {issue}`549`.
+
 ## Better project sustainability
 
 Some of the challenges that Pyodide faces, such as maintaining a collection of
@@ -51,15 +59,34 @@ either Python or JavaScript ecosystems.  We should therefore strive to better
 re-use existing tooling, and seeking synergies with existing initiatives in this
 space, such as, conda-forge.
 
-# Improve support for WebWorkers
+See issue {issue}`795`.
+
+## Improve support for WebWorkers
 
 WebWorkers are the main solution to run heavy computational tasks in a non
 blocking manner in the browser. Currently Pyodide runs in WebWorkers,
 however the user experience and reliability can be improved.
 
-# Write http.client in terms of Web APIs
+See issue {issue}`1504`
+
+## Synchronous IO
+
+Tons of existing APIs for IO are synchronous. Unless we can support synchronous
+IO, much of the existing Python ecosystem cannot be ported. Luckily
+{user}`joemarshall` has a solution for this involving rewinding the Python
+stack. He has [a prototype implementation
+here](https://github.com/joemarshall/unthrow). We would like to bring this into
+Pyodide as a core feature.
+
+See issue {issue}`1503`.
+
+## Write http.client in terms of Web APIs
 
 Python packages make an extensive use of packages such as `requests` to
 synchronously fetch data. We currently can't use such packages since sockets
 are not available in Pyodide. We could however try to re-implement some of the
 stdlib libraries with Web APIs, potentially making this possible.
+
+Because http.client is a blocking API, we first need support for synchronous IO.
+
+See issue {issue}`140`.
