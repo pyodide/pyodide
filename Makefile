@@ -55,7 +55,14 @@ build/pyodide.asm.js: \
 		--exclude-file "*__pycache__*" \
 		--exclude-file "*/test/*"		\
 		--exclude-file "*/tests/*"
-	sed -i 's/var __ZN[1KS][^;]*;//g' build/pyodide.asm.js
+	# Strip out C++ symbols which all start __Z.
+	# There are 4821 of these and they have VERY VERY long names.
+	# Reduces size of pyodide.asm.js by a factor of 2.
+	# I messed around with striping more and could remove another 400kb or so
+	# but the regexes I got were generated.
+	# To show some stats on the symbols you can use the following:
+	# cat build/pyodide.asm.js | grep -ohE 'var _{0,5}.' | sort | uniq -c | sort -nr | head -n 20
+	sed -i -E 's/var __Z[^;]*;//g' build/pyodide.asm.js
 	date +"[%F %T] done building pyodide.asm.js."
 
 
