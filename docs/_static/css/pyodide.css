@@ -17,3 +17,7 @@ code {
     /* shrink h4 a bit, was 1.44em */
     font-size: 1.3em;
 }
+
+.toctree-wrapper > .caption {
+    display: none;
+}

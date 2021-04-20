@@ -37,6 +37,7 @@ and understanding type conversions between Python and JavaScript.
 
 .. toctree::
    :maxdepth: 1
+   :caption: Development
 
    development/building-from-sources.md
    development/new-packages.md
@@ -53,7 +54,7 @@ The Project section helps contributors get started and gives additional
 information about the project's organization.
 
 .. toctree::
-   :titlesonly:
+   :caption: Project
 
    project/about.md
    project/roadmap.md
