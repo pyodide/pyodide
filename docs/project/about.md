@@ -17,7 +17,7 @@ Python. When used inside a browser, Python has full access to the Web APIs.
 
 ## History
 Pyodide was created in 2018 by [Michael Droettboom](https://github.com/mdboom)
-at Mozilla as part of the [iodide
+at Mozilla as part of the [Iodide
 project](https://github.com/iodide-project/iodide). Iodide is an experimental
 web-based notebook environment for literate scientific computing and
 communication.
