@@ -48,7 +48,7 @@ do
           echo "WARNING: will use the env var PYODIDE_DOCKER_IMAGE=${PYODIDE_DOCKER_IMAGE},
           the flag --pre-built has no effect"
         fi
-        DEFAULT_PYODIDE_DOCKER_IMAGE="iodide/pyodide:${PYODIDE_PREBUILT_IMAGE_TAG}"
+        DEFAULT_PYODIDE_DOCKER_IMAGE="pyodide/pyodide:${PYODIDE_PREBUILT_IMAGE_TAG}"
         shift
       ;;
       -p|--port)

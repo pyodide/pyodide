@@ -174,6 +174,10 @@ See the {ref}`0-17-0-release-notes` for more information.
   {pr}`1423`.
 - {{ Enhancement }} Run arbitrary command in docker
   {pr}`1424`
+- Docker images for Pyodide are now accessible at
+  [pyodide/pyodide-env](https://hub.docker.com/repository/docker/pyodide/pyodide-env)
+  and
+  [pyodide/pyodide](https://hub.docker.com/repository/docker/pyodide/pyodide).
 
 ### REPL
 
