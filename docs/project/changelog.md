@@ -11,6 +11,7 @@ substitutions:
 # Change Log
 
 ## Version 0.17.0
+*April 21, 2020*
 
 See the {ref}`0-17-0-release-notes` for more information.
 
@@ -78,9 +79,6 @@ See the {ref}`0-17-0-release-notes` for more information.
 - {{ Enhancement }} Systematic memory leak detection in the test suite and a
   large number of fixed to memory leaks.
   pr`{1340}`
-
-
-### Fixed
 - {{ Fix }} getattr and dir on JsProxy now report consistent results and include all
   names defined on the Python dictionary backing JsProxy.
   {pr}`1017`
@@ -196,9 +194,8 @@ See the {ref}`0-17-0-release-notes` for more information.
 - six, jedi and parso are no longer vendored in the main Pyodide package, and
   need to be loaded explicitly
   {pr}`1010`, {pr}`987`.
-- Updated packages: bleach 3.3.0, packaging 20.8
-  {pr}`1021`, {pr}`1338`
-- Added Plotly version 4.14.3 and Retrying dependency
+- Updated packages {pr}`1021`, {pr}`1338`, {pr}`1460`.
+- Added Plotly version 4.14.3 and retrying dependency
   {pr}`1419`
 
 ## Version 0.16.1
