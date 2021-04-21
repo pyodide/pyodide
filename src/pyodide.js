@@ -287,7 +287,7 @@ globalThis.loadPyodide = async function(config = {}) {
    * @async
    */
   Module.loadPackage = async function(names, messageCallback, errorCallback) {
-    if( Module.isPyProxy(names) ) {
+    if (Module.isPyProxy(names)) {
       let temp;
       try {
         temp = names.toJs();
