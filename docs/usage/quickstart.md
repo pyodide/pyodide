@@ -4,7 +4,7 @@
 
 ## Try it online
 
-Try Pyodide in a [REPL](https://pyodide.org/en/latest/console.html) directly in your browser (no installation needed).
+Try Pyodide in a [REPL](https://pyodide.org/en/stable/console.html) directly in your browser (no installation needed).
 
 ## Setup
 
