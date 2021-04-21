@@ -10,6 +10,8 @@ substitutions:
 (changelog)=
 # Change Log
 
+## [Unreleased]
+
 ## Version 0.17.0
 *April 21, 2020*
 
