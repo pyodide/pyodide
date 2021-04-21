@@ -1,9 +1,9 @@
-import pytest
 from pyodide_build.testing import run_in_pyodide
 
 
-@pytest.mark.xfail
-@run_in_pyodide(packages=["pillow"])
+@run_in_pyodide(
+    packages=["pillow"], xfail_browsers={"firefox": "timeout", "chrome": ""}
+)
 def test_pillow():
     from PIL import Image, ImageDraw, ImageOps
     import io
