@@ -165,7 +165,7 @@ jobs:
       - run:
           name: test
           command: |
-            tools/pytest_wrapper.py packages/test* packages/*/test* -v -k firefox -n 2
+            tools/pytest_wrapper.py packages/test* packages/*/test* -v -k firefox
 
   test-packages-chrome:
     <<: *defaults
