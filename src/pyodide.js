@@ -276,10 +276,13 @@ globalThis.loadPyodide = async function(config = {}) {
    * Load a package or a list of packages over the network. This installs the
    * package in the virtual filesystem. The package needs to be imported from
    * Python before it can be used.
-   * @param {String | Array} names Either a single package name or URL or a list
-   * of them. URLs can be absolute or relative. The URLs must have file name
+   * @param {String | Array | PyProxy} names Either a single package name or URL
+   * or a list of them. URLs can be absolute or relative. The URLs must have
+   * file name
    * ``<package-name>.js`` and there must be a file called
-   * ``<package-name>.data`` in the same directory.
+   * ``<package-name>.data`` in the same directory. The argument can be a
+   * ``PyProxy`` of a list, in which case the list will be converted to
+   * Javascript and the ``PyProxy`` will be destroyed.
    * @param {function} messageCallback A callback, called with progress messages
    *    (optional)
    * @param {function} errorCallback A callback, called with error/warning
@@ -287,6 +290,16 @@ globalThis.loadPyodide = async function(config = {}) {
    * @async
    */
   Module.loadPackage = async function(names, messageCallback, errorCallback) {
+    if (Module.isPyProxy(names)) {
+      let temp;
+      try {
+        temp = names.toJs();
+      } finally {
+        names.destroy();
+      }
+      names = temp;
+    }
+
     if (!Array.isArray(names)) {
       names = [ names ];
     }

@@ -105,9 +105,6 @@ See the {ref}`0-17-0-release-notes` for more information.
 
 ### pyodide-py package
 
-- {{ Feature }} Added an `InteractiveConsole` class with completion support to
-  ease the integration of Pyodide REPL in webpages (used in console.html)
-  {pr}`1125` and {pr}`1155`
 - {{ Feature }} Added a Python event loop to support asyncio by scheduling
   coroutines to run as jobs on the browser event loop. This event loop is
   available by default and automatically enabled by any relevant asyncio API,
