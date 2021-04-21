@@ -223,7 +223,7 @@ jobs:
       - run:
           name: Install requirements
           command: |
-            apk add --no-cache --update python3
+            apk add --no-cache --update python3 make
             python3 -m pip install awscli
       - run:
           name: Deploy Github Releases
