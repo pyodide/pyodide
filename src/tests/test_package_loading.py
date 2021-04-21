@@ -173,3 +173,11 @@ def test_load_twice_different_source(selenium_standalone):
 def test_load_twice_same_source(selenium_standalone):
     selenium_standalone.load_package(["https://foo/pytz.js", "https://foo/pytz.js"])
     assert "Loading same package pytz" not in selenium_standalone.logs
+
+
+def test_js_load_package_from_python(selenium_standalone):
+    selenium = selenium_standalone
+    to_load = "pyparsing"
+    selenium.run(f"import js ; js.pyodide.loadPackage(['{to_load}'])")
+    assert f"Loading {to_load}" in selenium.logs
+    assert selenium.run_js("return Object.keys(pyodide.loadedPackages)") == [to_load]
