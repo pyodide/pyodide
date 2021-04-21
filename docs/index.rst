@@ -54,6 +54,7 @@ The Project section helps contributors get started and gives additional
 information about the project's organization.
 
 .. toctree::
+   :maxdepth: 1
    :caption: Project
 
    project/about.md

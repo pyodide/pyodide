@@ -27,7 +27,7 @@ Python. When used inside a browser, Python has full access to the Web APIs.
 ## Try Pyodide (no installation needed)
 
 Try Pyodide in a
-[REPL](https://pyodide-cdn2.iodide.io/stable/full/console.html) directly in
+[REPL](https://pyodide.org/en/stable/console.html) directly in
 your browser. For further information, see the
 [documentation](https://pyodide.org/en/stable/).
 
@@ -51,7 +51,7 @@ technical resources. These include:
 
 ## History
 Pyodide was created in 2018 by [Michael Droettboom](https://github.com/mdboom)
-at Mozilla as part of the [iodide
+at Mozilla as part of the [Iodide
 project](https://github.com/iodide-project/iodide). Iodide is an experimental
 web-based notebook environment for literate scientific computing and
 communication.
