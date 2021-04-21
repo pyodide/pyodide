@@ -24,7 +24,7 @@
             from pyodide import console
             import __main__
 
-            class PyConsole(console.InteractiveConsole):
+            class PyConsole(console._InteractiveConsole):
                 def __init__(self):
                     super().__init__(
                         __main__.__dict__,

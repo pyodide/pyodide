@@ -49,7 +49,7 @@ def test_interactive_console_streams(safe_sys_redirections):
     ##########################
     # Persistent redirection #
     ##########################
-    shell = console.InteractiveConsole(
+    shell = console._InteractiveConsole(
         stdout_callback=stdout_callback,
         stderr_callback=stderr_callback,
         persistent_stream_redirection=True,
@@ -101,7 +101,7 @@ def test_interactive_console_streams(safe_sys_redirections):
     ##############################
     # Non persistent redirection #
     ##############################
-    shell = console.InteractiveConsole(
+    shell = console._InteractiveConsole(
         stdout_callback=stdout_callback,
         stderr_callback=stderr_callback,
         persistent_stream_redirection=False,
@@ -157,7 +157,7 @@ def test_interactive_console(selenium, safe_selenium_sys_redirections):
     selenium.run(
         """
         import sys
-        from pyodide.console import InteractiveConsole
+        from pyodide.console import _InteractiveConsole
 
         result = None
 
@@ -165,7 +165,7 @@ def test_interactive_console(selenium, safe_selenium_sys_redirections):
             global result
             result = value
 
-        shell = InteractiveConsole()
+        shell = _InteractiveConsole()
         shell.display = display
         """
     )
@@ -209,7 +209,7 @@ def test_completion(selenium, safe_selenium_sys_redirections):
         """
         from pyodide import console
 
-        shell = console.InteractiveConsole()
+        shell = console._InteractiveConsole()
         """
     )
 
@@ -252,7 +252,7 @@ def test_interactive_console_top_level_await(selenium, safe_selenium_sys_redirec
     selenium.run(
         """
         import sys
-        from pyodide.console import InteractiveConsole
+        from pyodide.console import _InteractiveConsole
 
         result = None
 
@@ -260,7 +260,7 @@ def test_interactive_console_top_level_await(selenium, safe_selenium_sys_redirec
             global result
             result = value
 
-        shell = InteractiveConsole()
+        shell = _InteractiveConsole()
         shell.display = display
         """
     )
