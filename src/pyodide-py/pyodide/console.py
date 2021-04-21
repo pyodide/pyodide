@@ -1,14 +1,19 @@
+import contextlib
 import traceback
-from typing import Optional, Callable, Any, List, Tuple
+from typing import Optional, Callable, Any, List, Tuple, CodeType
 import code
 import io
 import sys
 import platform
-from contextlib import contextmanager
+from contextlib import contextmanager, redirect_stdout, redirect_stderr, _RedirectStream
 import rlcompleter
 import asyncio
-from pyodide import eval_code_async
+from ._base import eval_code, MyCommandCompiler
 import ast
+from asyncio import iscoroutine, Lock
+
+class redirect_stdin(_RedirectStream):
+    _stream = "stdin"
 
 # this import can fail when we are outside a browser (e.g. for tests)
 try:
@@ -36,26 +41,66 @@ except ImportError:
 
 __all__ = ["InteractiveConsole", "repr_shorten"]
 
+def _banner():
+    """ A banner similar to the one printed by the real Python interpreter. """
+    # copied from https://github.com/python/cpython/blob/799f8489d418b7f9207d333eac38214931bd7dcc/Lib/code.py#L214
+    cprt = 'Type "help", "copyright", "credits" or "license" for more information.'
+    version = platform.python_version()
+    build = f"({', '.join(platform.python_build())})"
+    return f"Python {version} {build} on WebAssembly VM\n{cprt}"
+BANNER = _banner()
+del _banner
 
-class _StdStream(io.TextIOWrapper):
+def complete(source: str, completer_word_break_characters = """ \t\n`~!@#$%^&*()-=+[{]}\\|;:'\",<>/?""") -> Tuple[List[str], int]:
+    """Use CPython's rlcompleter to complete a source from local namespace.
+
+    You can use ``completer_word_break_characters`` to get/set the
+    way ``source`` is splitted to find the last part to be completed.
+
+    Parameters
+    ----------
+    source
+        The source string to complete at the end.
+
+    Returns
+    -------
+    completions
+        A list of completion strings.
+    start
+        The index where completion starts.
+
+    Examples
+    --------
+    >>> shell = InteractiveConsole()
+    >>> shell.complete("str.isa")
+    (['str.isalnum(', 'str.isalpha(', 'str.isascii('], 0)
+    >>> shell.complete("a = 5 ; str.isa")
+    (['str.isalnum(', 'str.isalpha(', 'str.isascii('], 8)
     """
-    Custom std stream to retdirect sys.stdout/stderr in InteractiveConsole.
+    start = max(map(source.rfind, completer_word_break_characters)) + 1
+    source = source[start:]
+    if "." in source:
+        completions = self._completer.attr_matches(source)  # type: ignore
+    else:
+        completions = self._completer.global_matches(source)  # type: ignore
+    return completions, start
 
-    Parmeters
-    ---------
-    flush_callback
-        Function to call at each flush.
-    """
+class WriteStream:
+    """A utility class so we can specify our own handlers for writes to sdout, stderr"""
 
-    def __init__(
-        self, flush_callback: Callable[[str], None], name: Optional[str] = None
-    ):
-        # we just need to set internal buffer's name as
-        # it will automatically buble up to each buffer
-        internal_buffer = _CallbackBuffer(flush_callback, name=name)
-        buffer = io.BufferedWriter(internal_buffer)
-        super().__init__(buffer, line_buffering=True)  # type: ignore
+    def __init__(self, write_handler):
+        self.write_handler = write_handler
 
+    def write(self, text):
+        self.write_handler(text)
+
+
+class ReadStream:
+    def __init__(self, read_handler):
+        self.read_handler = read_handler
+
+    def readline(self, n=-1):
+        return self.read_handler(n)
 
 class _CallbackBuffer(io.RawIOBase):
     """
@@ -86,8 +131,74 @@ class _CallbackBuffer(io.RawIOBase):
         self._flush_callback(data.tobytes().decode())
         return len(data)
 
+class _InteractiveConsoleWrapper(code.InteractiveConsole):
+    """A wrapper around ``code.InteractiveConsole`` that passes extra information around.
+    """
+    def push(self, line, extra=None):
+        """Push a line to the interpreter.
 
-class InteractiveConsole(code.InteractiveConsole):
+        The line should not have a trailing newline; it may have
+        internal newlines.  The line is appended to a buffer and the
+        interpreter's runsource() method is called with the
+        concatenated contents of the buffer as source.  If this
+        indicates that the command was executed or invalid, the buffer
+        is reset; otherwise, the command is incomplete, and the buffer
+        is left as it was after the line was appended.  The return
+        value is 1 if more input is required, 0 if the line was dealt
+        with in some way (this is the same as runsource()).
+
+        """
+        self.buffer.append(line)
+        source = "\n".join(self.buffer)
+        more = self.runsource(source, self.filename, extra=extra) # <-- changed by adding "extra" argument
+        if not more:
+            self.resetbuffer()
+        return more
+
+    def runsource(self, source, filename="<input>", symbol="single", extra : Any = None):
+        """Compile and run some source in the interpreter.
+
+        Arguments are as for compile_command().
+
+        One of several things can happen:
+
+        1) The input is incorrect; compile_command() raised an
+        exception (SyntaxError or OverflowError).  A syntax traceback
+        will be printed by calling the showsyntaxerror() method.
+
+        2) The input is incomplete, and more input is required;
+        compile_command() returned None.  Nothing happens.
+
+        3) The input is complete; compile_command() returned a code
+        object.  The code is executed by calling self.runcode() (which
+        also handles run-time exceptions, except for SystemExit).
+
+        The return value is True in case 2, False in the other cases (unless
+        an exception is raised).  The return value can be used to
+        decide whether to use sys.ps1 or sys.ps2 to prompt the next
+        line.
+
+        """
+        try:
+            code = self.compile(source, filename, symbol) # <-- We could pass "extra" here if we wanted to...
+        except (OverflowError, SyntaxError, ValueError):
+            # Case 1
+            self.showsyntaxerror(filename, extra) # <-- changed by adding "extra" argument
+            return False
+
+        if code is None:
+            # Case 2
+            return True
+
+        # Case 3
+        self.runcode(source, code, extra=extra) # <-- changed by adding "source" and "extra" arguments
+        return False
+    
+    def runcode(self, source : str, code: CodeType, extra : Any = None) -> None:
+        return super().runcode(code)
+
+
+class InteractiveConsole(_InteractiveConsoleWrapper):
     """Interactive Pyodide console
 
     Base implementation for an interactive console that manages
@@ -100,10 +211,13 @@ class InteractiveConsole(code.InteractiveConsole):
     ----------
     locals
         Namespace to evaluate code.
+        
     stdout_callback
-        Function to call at each ``sys.stdout`` flush.
+        Function to call at each ``sys.stdout`` flush. If absent, will use normal ``sys.stdout``.
+
     stderr_callback
-        Function to call at each ``sys.stderr`` flush.
+        Function to call at each ``sys.stderr`` flush. If absent, will use existing ``sys.stderr``.
+
     persistent_stream_redirection
         Whether or not the std redirection should be kept between calls to
         ``runcode``.
@@ -117,202 +231,139 @@ class InteractiveConsole(code.InteractiveConsole):
         persistent_stream_redirection: bool = False,
     ):
         super().__init__(locals)
-        self._stdout = None
-        self._stderr = None
         self.stdout_callback = stdout_callback
         self.stderr_callback = stderr_callback
         self._streams_redirected = False
         if persistent_stream_redirection:
-            self.redirect_stdstreams()
-        self.run_complete: asyncio.Future = asyncio.Future()
-        self.run_complete.set_result(None)
+            # Redirect streams. We want the streams to be restored when we are
+            # garbage collected so we just hold the reference to the generator
+            # forever. When we are garbage collected, the generator will be
+            # finalized and its finally block will restore the streams
+            self._stream_generator = self._stdstreams_redirections_inner()
+            next(self._stream_generator) # Cause stream setup
+        self._lock = Lock()
         self._completer = rlcompleter.Completer(self.locals)  # type: ignore
         # all nonalphanums except '.'
         # see https://github.com/python/cpython/blob/a4258e8cd776ba655cc54ba54eaeffeddb0a267c/Modules/readline.c#L1211
-        self.completer_word_break_characters = (
-            """ \t\n`~!@#$%^&*()-=+[{]}\\|;:'\",<>/?"""
-        )
         self.output_truncated_text = "\\n[[;orange;]<long output truncated>]\\n"
-        self.compile.compiler.flags |= ast.PyCF_ALLOW_TOP_LEVEL_AWAIT  # type: ignore
+        self.compile = MyCommandCompiler(flag=ast.PyCF_ALLOW_TOP_LEVEL_AWAIT)
 
-    def redirect_stdstreams(self):
-        """ Toggle stdout/stderr redirections. """
+    @property
+    def stdout_callback(self):
+        return self._stdout_callback
+
+    @property.setter
+    def stdout_callback(self, v):
+        if self._streams_redirected:
+            raise RuntimeError("Trying to set stdout callback while streams are already redirected.")
+        self._stdout_callback = v
+        if v is not None:
+            self.__stdout_callback = v
+        else:
+            self.__stdout_callback = None
+
+    @property
+    def stderr_callback(self):
+        return self._stderr_callback
+
+    @property.setter
+    def stderr_callback(self, v):
+        if self._streams_redirected:
+            raise RuntimeError("Trying to set stderr callback while streams are already redirected.")
+        self._stderr_callback = v
+        if v is not None:
+            self.__stderr_callback = v
+        else:
+            self.__stderr_callback = None
+
+    @property
+    def stdin_callback(self):
+        return self._stderr_callback
+
+    @property.setter
+    def stdin_callback(self, v):
+        if self._streams_redirected:
+            raise RuntimeError("Trying to set stderr callback while streams are already redirected.")
+        self._stdin_callback = v
+        if v is not None:
+            self.__stdin_callback = v
+        else:
+            self.__stdin_callback = None
+
+    def _stdstreams_redirections_inner(self):
+        """The point of this method is so that when  """
         # already redirected?
         if self._streams_redirected:
+            yield
             return
+        if self.__stdout_callback:
+            stdout = WriteStream(self.__stdout_callback, name=sys.stdout.name)
+        else:
+            stdout = None
+        if self.__stderr_callback:
+            stderr = WriteStream(self.__stderr_callback, name=sys.stderr.name)
+        if self.__stdin_callback:
+            stdin = ReadStream(self.__stderr_callback, name=sys.stderr.name)
 
-        if self._stdout is None:
-            # we use meta callbacks to allow self.std{out,err}_callback
-            # overloading.
-            # we check callback against None at each call since it can be
-            # changed dynamically.
-            def meta_stdout_callback(*args):
-                if self.stdout_callback is not None:
-                    return self.stdout_callback(*args)
-
-            # for later restore
-            self._old_stdout = sys.stdout
-
-            # it would be more robust to use sys.stdout.name but testing
-            # system oveload them. Anyway it should be pretty stable
-            # upstream.
-            self._stdout = _StdStream(meta_stdout_callback, name="<stdout>")
-
-        if self._stderr is None:
-
-            def meta_stderr_callback(*args):
-                if self.stderr_callback is not None:
-                    return self.stderr_callback(*args)
-
-            self._old_stderr = sys.stderr
-            self._stderr = _StdStream(meta_stderr_callback, name="<stderr>")
-
-        # actual redirection
-        sys.stdout = self._stdout
-        sys.stderr = self._stderr
-        self._streams_redirected = True
-
-    def restore_stdstreams(self):
-        """Restore stdout/stderr to the value it was before
-        the creation of the object."""
-        if self._streams_redirected:
-            sys.stdout = self._old_stdout
-            sys.stderr = self._old_stderr
+        try:
+            self._streams_redirected = True
+            with redirect_stdout(stdout), redirect_stderr(stderr), redirect_stdin(stdin):
+                yield
+        finally:
             self._streams_redirected = False
+
 
     @contextmanager
     def stdstreams_redirections(self):
         """Ensure std stream redirection.
 
         This supports nesting."""
-        if self._streams_redirected:
-            yield
-        else:
-            self.redirect_stdstreams()
-            yield
-            self.restore_stdstreams()
+        yield from self._stdstreams_redirections_inner()
 
-    def flush_all(self):
-        """ Force stdout/stderr flush. """
-        with self.stdstreams_redirections():
-            sys.stdout.flush()
-            sys.stderr.flush()
-
-    def runsource(self, *args, **kwargs):
-        """Force streams redirection.
-
-        Syntax errors are not thrown by :any:`InteractiveConsole.runcode` but
-        here in :any:`InteractiveConsole.runsource`. This is why we force
-        redirection here since doing twice is not an issue.
-        """
-
-        with self.stdstreams_redirections():
-            return super().runsource(*args, **kwargs)
-
-    def runcode(self, code):
+    def runcode(self, source, code, extra):
         """Load imported packages then run code, async.
 
         To achieve nice result representation, the interactive console is fully
         implemented in Python. The interactive console api is synchronous, but
         we want to implement asynchronous package loading and top level await.
-        Thus, instead of blocking like it normally would, this this function
-        sets the future ``self.run_complete``. If you need the result of the
-        computation, you should await for it.
+
+        Extra should contain a pair of futures:
+        [syntax_check, ]
         """
-        source = "\n".join(self.buffer)
-        self.run_complete = ensure_future(
-            self.load_packages_and_run(self.run_complete, source)
+        ensure_future(
+            self.load_packages_and_run(source, code)
         )
 
-    def num_frames_to_keep(self, tb):
-        keep_frames = False
-        kept_frames = 0
-        # Try to trim out stack frames inside our code
-        for (frame, _) in traceback.walk_tb(tb):
-            keep_frames = keep_frames or frame.f_code.co_filename == "<console>"
-            keep_frames = keep_frames or frame.f_code.co_filename == "<exec>"
-            if keep_frames:
-                kept_frames += 1
-        return kept_frames
-
-    async def load_packages_and_run(self, run_complete, source):
+    async def runcode_inner(source, code, extra):
         try:
-            await run_complete
-        except BaseException:
-            # Throw away old error
-            pass
-        with self.stdstreams_redirections():
-            await _load_packages_from_imports(source)
-            try:
-                result = await eval_code_async(
-                    source, self.locals, filename="<console>"
-                )
-            except BaseException as e:
-                nframes = self.num_frames_to_keep(e.__traceback__)
-                traceback.print_exception(type(e), e, e.__traceback__, -nframes)
-                raise e
-            else:
-                self.display(result)
-            # in CPython's REPL, flush is performed
-            # by input(prompt) at each new prompt ;
-            # since we are not using input, we force
-            # flushing here
-            self.flush_all()
-            return result
-
-    def __del__(self):
-        self.restore_stdstreams()
-
-    def banner(self):
-        """ A banner similar to the one printed by the real Python interpreter. """
-        # copyied from https://github.com/python/cpython/blob/799f8489d418b7f9207d333eac38214931bd7dcc/Lib/code.py#L214
-        cprt = 'Type "help", "copyright", "credits" or "license" for more information.'
-        version = platform.python_version()
-        build = f"({', '.join(platform.python_build())})"
-        return f"Python {version} {build} on WebAssembly VM\n{cprt}"
-
-    def complete(self, source: str) -> Tuple[List[str], int]:
-        """Use CPython's rlcompleter to complete a source from local namespace.
-
-        You can use ``completer_word_break_characters`` to get/set the
-        way ``source`` is splitted to find the last part to be completed.
-
-        Parameters
-        ----------
-        source
-            The source string to complete at the end.
-
-        Returns
-        -------
-        completions
-            A list of completion strings.
-        start
-            The index where completion starts.
-
-        Examples
-        --------
-        >>> shell = InteractiveConsole()
-        >>> shell.complete("str.isa")
-        (['str.isalnum(', 'str.isalpha(', 'str.isascii('], 0)
-        >>> shell.complete("a = 5 ; str.isa")
-        (['str.isalnum(', 'str.isalpha(', 'str.isascii('], 8)
-        """
-        start = max(map(source.rfind, self.completer_word_break_characters)) + 1
-        source = source[start:]
-        if "." in source:
-            completions = self._completer.attr_matches(source)  # type: ignore
+            result = eval(code, globals, locals)
+            if iscoroutine(result):
+                result = await result
+        except BaseException as e:
+            raise e
         else:
-            completions = self._completer.global_matches(source)  # type: ignore
-        return completions, start
+            pass
 
-    def display(self, value):
-        if value is None:
-            return
-        print(repr_shorten(value, separator=self.output_truncated_text))
+    async def load_packages_and_run(self, run_complete, source, code, extra):
+        # We can start fetching packages even if we're waiting on another code
+        # block. (Probably won't help very often, not to mention that
+        # loadPackages has its own lock.)
+        await _load_packages_from_imports(source)
+        async with self._lock:
+            with self.stdstreams_redirections():
+                self.runcode_inner(source, code, extra)
+                sys.stdout.flush()
+                sys.stderr.flush()
+    
+    def push_wrapped(self, line: str) -> bool:
+        extra = []
+        more = super().push(line, extra)
+        if not more:
+            pass
 
 
 def repr_shorten(
-    value: Any, limit: int = 1000, split: Optional[int] = None, separator: str = "..."
+    value: Any, limit: int = 1000, split: Optional[int] = None, separator: str = "\\n[[;orange;]<long output truncated>]\\n"
 ):
     """Compute the string representation of ``value`` and shorten it
     if necessary.
@@ -327,3 +378,4 @@ def repr_shorten(
     if len(text) > limit:
         text = f"{text[:split]}{separator}{text[-split:]}"
     return text
+
