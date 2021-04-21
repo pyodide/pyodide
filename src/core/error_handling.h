@@ -8,6 +8,8 @@
 
 typedef int errcode;
 #include "hiwire.h"
+#define likely(x) __builtin_expect((x), 1)
+#define unlikely(x) __builtin_expect((x), 0)
 
 int
 error_handling_init();
@@ -155,28 +157,28 @@ console_error_obj(JsRef obj);
 
 #define FAIL_IF_NULL(ref)                                                      \
   do {                                                                         \
-    if ((ref) == NULL) {                                                       \
+    if (unlikely((ref) == NULL)) {                                             \
       FAIL();                                                                  \
     }                                                                          \
   } while (0)
 
 #define FAIL_IF_MINUS_ONE(num)                                                 \
   do {                                                                         \
-    if ((num) == -1) {                                                         \
+    if (unlikely((num) == -1)) {                                               \
       FAIL();                                                                  \
     }                                                                          \
   } while (0)
 
 #define FAIL_IF_NONZERO(num)                                                   \
   do {                                                                         \
-    if ((num) != 0) {                                                          \
+    if (unlikely((num) != 0)) {                                                \
       FAIL();                                                                  \
     }                                                                          \
   } while (0)
 
 #define FAIL_IF_ERR_OCCURRED()                                                 \
   do {                                                                         \
-    if (PyErr_Occurred()) {                                                    \
+    if (unlikely(PyErr_Occurred() != NULL)) {                                  \
       FAIL();                                                                  \
     }                                                                          \
   } while (0)
