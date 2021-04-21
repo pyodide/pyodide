@@ -34,12 +34,12 @@ except ImportError:
         pass
 
 
-__all__ = ["InteractiveConsole", "repr_shorten"]
+__all__ = ["repr_shorten"]
 
 
 class _StdStream(io.TextIOWrapper):
     """
-    Custom std stream to retdirect sys.stdout/stderr in InteractiveConsole.
+    Custom std stream to retdirect sys.stdout/stderr in _InteractiveConsole.
 
     Parmeters
     ---------
@@ -87,12 +87,12 @@ class _CallbackBuffer(io.RawIOBase):
         return len(data)
 
 
-class InteractiveConsole(code.InteractiveConsole):
+class _InteractiveConsole(code.InteractiveConsole):
     """Interactive Pyodide console
 
     Base implementation for an interactive console that manages
     stdout/stderr redirection. Since packages are loaded before running
-    code, :any:`InteractiveConsole.runcode` returns a JS promise.
+    code, :any:`_InteractiveConsole.runcode` returns a JS promise.
 
     ``self.stdout_callback`` and ``self.stderr_callback`` can be overloaded.
 
@@ -201,8 +201,8 @@ class InteractiveConsole(code.InteractiveConsole):
     def runsource(self, *args, **kwargs):
         """Force streams redirection.
 
-        Syntax errors are not thrown by :any:`InteractiveConsole.runcode` but
-        here in :any:`InteractiveConsole.runsource`. This is why we force
+        Syntax errors are not thrown by :any:`_InteractiveConsole.runcode` but
+        here in :any:`_InteractiveConsole.runsource`. This is why we force
         redirection here since doing twice is not an issue.
         """
 
@@ -291,7 +291,7 @@ class InteractiveConsole(code.InteractiveConsole):
 
         Examples
         --------
-        >>> shell = InteractiveConsole()
+        >>> shell = _InteractiveConsole()
         >>> shell.complete("str.isa")
         (['str.isalnum(', 'str.isalpha(', 'str.isascii('], 0)
         >>> shell.complete("a = 5 ; str.isa")
