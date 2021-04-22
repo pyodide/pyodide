@@ -183,7 +183,7 @@ if True:
         """
         # largely inspired from IPython:
         # https://github.com/ipython/ipython/blob/86d24741188b0cedd78ab080d498e775ed0e5272/IPython/core/displayhook.py#L84
-        
+
         # We need to wrap tokens in a buffer because:
         # "Tokenize requires one argument, readline, which must be
         # a callable object which provides the same interface as the
@@ -418,7 +418,7 @@ async def eval_code_async(
     if quiet_trailing_semicolon and should_quiet(code):
         return_mode = "none"
     mod, last_expr = _split_and_compile(
-        code, return_mode=return_mode, filename=filename
+        code, return_mode=return_mode, filename=filename, flags=flags | ast.PyCF_ALLOW_TOP_LEVEL_AWAIT
     )
 
     # running first part
