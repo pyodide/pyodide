@@ -16,7 +16,7 @@ import traceback
 from types import CodeType, coroutine
 from typing import Optional, Callable, Any, List, Tuple
 
-from ._base import should_quiet, parse_and_compile
+from ._base import should_quiet, parse_and_compile, RETURN_TARGET
 
 
 class redirect_stdin(_RedirectStream):
@@ -136,8 +136,8 @@ class MyCompile(Compile):
     def __init__(
         self,
         return_mode="last_expr",
-        return_target="_",
         quiet_trailing_semicolon=True,
+        return_target=RETURN_TARGET,
         flags=0x0,
     ):
         super().__init__()
@@ -173,10 +173,10 @@ class MyCommandCompiler(CommandCompiler):
     def __init__(
         self,
         return_mode="last_expr",
-        return_target="_",
+        return_target=RETURN_TARGET,
         flags=0x0,
     ):
-        self.compiler = MyCompile(return_mode, return_target, flags)
+        self.compiler = MyCompile(return_mode=return_mode, return_target=return_target, flags=flags)
 
 
 class InteractiveInterpreter:
@@ -333,7 +333,10 @@ class InteractiveInterpreter:
                     coroutine = eval(code, self.locals)
                     if coroutine:
                         await coroutine
-                    return ["success", self.locals["_"]]
+                    result = None
+                    if RETURN_TARGET in self.locals:
+                        result = self.locals.pop(RETURN_TARGET)
+                    return ["success", result]
                 except BaseException:
                     return ["exception", self.formattraceback()]
                 finally:

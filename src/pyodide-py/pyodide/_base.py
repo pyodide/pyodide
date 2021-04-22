@@ -74,12 +74,12 @@ def _adjust_ast_to_store_result(target_name: str, mod: ast.Module) -> ast.Module
     mod.body.append(ast.Assign(target, assign_rvalue))
     return mod
 
-
+RETURN_TARGET = "[[eval-code-result]]"
 def parse_and_compile(
     source: str,
     filename="<exec>",
     return_mode: str = "last_expr",
-    return_target: str = "_",
+    return_target: str = RETURN_TARGET,
     flags: int = 0x0,
 ) -> CodeType:
     """
@@ -148,10 +148,6 @@ def should_quiet(source: str) -> bool:
         return (token.type == tokenize.OP) and (token.string == ";")
     return False
 
-
-RETURN_TARGET = "[[eval-code-result]]"
-
-
 def _eval_code_common(
     source: str,
     globals: Optional[Dict[str, Any]] = None,
@@ -180,7 +176,6 @@ def eval_code(
     globals: Optional[Dict[str, Any]] = None,
     locals: Optional[Dict[str, Any]] = None,
     return_mode: str = "last_expr",
-    return_target: str = "_",
     quiet_trailing_semicolon: bool = True,
     filename: str = "<exec>",
     flags: int = 0x0,

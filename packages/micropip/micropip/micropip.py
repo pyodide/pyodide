@@ -11,12 +11,14 @@ from packaging.requirements import Requirement
 from packaging.version import Version
 from packaging.markers import default_environment
 
-from pyodide._core import IN_BROWSER
-from pyodide import to_js
-
 # Provide stubs for testing in native python
-if IN_BROWSER:
+try:
     import pyodide_js
+    from pyodide import to_js
+
+    IN_BROWSER = True
+except ImportError:
+    IN_BROWSER = False
 
 if IN_BROWSER:
     # In practice, this is the `site-packages` directory.

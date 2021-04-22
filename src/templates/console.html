@@ -68,7 +68,7 @@
               term.set_prompt(ty === "incomplete" ? ps2 : ps1);
               switch(ty){
                 case("syntax-error"):
-                  term.error(val);
+                  term.error(val.trimEnd());
                   continue;
                 case("incomplete"):
                   continue;
@@ -83,16 +83,20 @@
                 console.log("ty", ty, "res", res);
                 switch(ty){
                   case("exception"):
-                    term.error(res);
+                    term.error(res.trimEnd());
                     break;
                   case("success"):
-                    term.echo(repr_shorten(res));
-                    res.destroy();
+                    if(res !== undefined){
+                      term.echo(repr_shorten(res));
+                    }
                     break;
                   default:
                     throw new Error(`Unexpected type ${ty}`);
                 }
               } finally {
+                if(pyodide.isPyProxy(res)){
+                  res.destroy();
+                }
                 val.destroy();
               }
             }
@@ -106,7 +110,7 @@
         let term = $('body').terminal(
           interpreter,
           {
-            greetings: pyconsole.BANNER,
+            greetings: BANNER,
             prompt: ps1,
             completionEscape: false,
             completion: function(command, callback) {
