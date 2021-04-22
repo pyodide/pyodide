@@ -201,6 +201,14 @@ See the {ref}`0-17-0-release-notes` for more information.
 - Added Plotly version 4.14.3 and retrying dependency
   {pr}`1419`
 
+## List of contributors
+
+(in alphabetic order)
+
+Aditya Shankar, casatir, Dexter Chua, dmondev, Frederik Braun, Hood Chatham,
+Jan Max Meyer, Jeremy Tuloup, joemarshall, leafjolt, Michael Greminger,
+Mireille Raad, Ondřej Staněk, Paul m. p. P, rdb, Roman Yurchak, Rudolfs
+
 ## Version 0.16.1
 *December 25, 2020*
 
