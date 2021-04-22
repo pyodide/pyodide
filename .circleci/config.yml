@@ -265,8 +265,7 @@ jobs:
       - run:
           name: Install requirements
           command: |
-            sudo apt-get update
-            sudo apt-get install -y groff
+            apk add --no-cache --update python3 make
             python3 -m pip install awscli
       - run:
           name: Deploy to pyodide-cdn2.iodide.io
