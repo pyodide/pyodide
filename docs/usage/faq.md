@@ -228,7 +228,7 @@ This works much the same as it does in native Python: you can overwrite
 temporarily, it's recommended to use
 [`contextlib.redirect_stdout`](https://docs.python.org/3/library/contextlib.html#contextlib.redirect_stdout)
 and
-[`contextlib.redirect_stderr](https://docs.python.org/3/library/contextlib.html#contextlib.redirect_stderr).
+[`contextlib.redirect_stderr`](https://docs.python.org/3/library/contextlib.html#contextlib.redirect_stderr).
 There is no `contextlib.redirect_stdin` but it is easy to make your own as follows:
 ```py
 from contextlib import _RedirectStream
