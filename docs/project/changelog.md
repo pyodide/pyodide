@@ -144,8 +144,12 @@ substitutions:
   [#872](https://github.com/pyodide/pyodide/pull/872)
 - {{ API }} `micropip.install` now returns a Python `Future` instead of a Javascript `Promise`.
   [#1324](https://github.com/pyodide/pyodide/pull/1324/)
-- {{ FIX }} {any}`micropip.install` now interacts correctly with {any}`pyodide.loadPackage`.
+- {{ FIX }} {any}`micropip.install` now interacts correctly with
+  {any}`pyodide.loadPackage`.
   [#1457](https://github.com/pyodide/pyodide/pull/1457/)
+- {{ FIX }} {any}`micropip.install` now handles version constraints correctly
+  even if there is a version of the package available from the Pyodide `indexURL`.
+
 
 ### Build system
 
@@ -179,6 +183,8 @@ substitutions:
   some completion issues (see
   [#821](https://github.com/pyodide/pyodide/issues/821) and
   [#1160](https://github.com/pyodide/pyodide/issues/1160)
+- {{ Enhancement }} Support top-level await in the console
+  [#1459](https://github.com/pyodide/pyodide/issues/1459)
 
 ### Packages
 
@@ -187,7 +193,10 @@ substitutions:
   [#1010](https://github.com/pyodide/pyodide/pull/1010),
   [#987](https://github.com/pyodide/pyodide/pull/987).
 - Updated packages: bleach 3.3.0, packaging 20.8
-
+  [#1021](https://github.com/pyodide/pyodide/pull/1021)
+  [#1338](https://github.com/pyodide/pyodide/pull/1338)
+- Added Plotly version 4.14.3 and Retrying dependency
+  [#1419](https://github.com/pyodide/pyodide/pull/1419)
 
 ## Version 0.16.1
 *December 25, 2020*

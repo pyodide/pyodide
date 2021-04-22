@@ -28,6 +28,7 @@ all: check \
 build/pyodide.asm.js: \
 	src/core/docstring.o \
 	src/core/error_handling.o \
+	src/core/numpy_patch.o \
 	src/core/hiwire.o \
 	src/core/js2python.o \
 	src/core/jsproxy.o \
@@ -52,7 +53,8 @@ build/pyodide.asm.js: \
 		--preload-file src/pyodide-py/pyodide@/lib/python$(PYMINOR)/site-packages/pyodide \
 		--preload-file src/pyodide-py/_pyodide@/lib/python$(PYMINOR)/site-packages/_pyodide \
 		--exclude-file "*__pycache__*" \
-		--exclude-file "*/test/*"
+		--exclude-file "*/test/*"		\
+		--exclude-file "*/tests/*"
 	date +"[%F %T] done building pyodide.asm.js."
 
 

@@ -420,38 +420,37 @@ globalThis.loadPyodide = async function(config = {}) {
   Module.preloadedWasm = {};
 
   let fatal_error_occurred = false;
-  let fatal_error_msg =
-      "Pyodide has suffered a fatal error, refresh the page. " +
-      "Please report this to the Pyodide maintainers.";
   Module.fatal_error = function(e) {
     if (fatal_error_occurred) {
-      console.error("Recursive call to fatal_error");
+      console.error("Recursive call to fatal_error. Inner error was:");
+      console.error(e);
       return;
     }
     fatal_error_occurred = true;
-    console.error(fatal_error_msg);
+    console.error("Pyodide has suffered a fatal error. " +
+                  "Please report this to the Pyodide maintainers.");
     console.error("The cause of the fatal error was:")
     console.error(e);
     try {
       let fd_stdout = 1;
-      pyodide._module.__Py_DumpTraceback(
-          fd_stdout, pyodide._module._PyGILState_GetThisThreadState());
-      for (let [key, value] of Object.entries(Module.public_api)) {
-        if (key.startsWith("_")) {
-          // delete Module.public_api[key];
+      Module.__Py_DumpTraceback(fd_stdout,
+                                Module._PyGILState_GetThisThreadState());
+      for (let key of PUBLIC_API) {
+        if (key === "version") {
           continue;
         }
-        // Have to do this case first because typeof(some_pyproxy) ===
-        // "function".
-        if (Module.isPyProxy(value)) {
-          value.destroy();
-          continue;
-        }
-        if (typeof (value) === "function") {
-          Module.public_api[key] = function() { throw Error(fatal_error_msg); };
-        }
+        Object.defineProperty(Module.public_api, key, {
+          enumerable : true,
+          configurable : true,
+          get : () => {
+            throw new Error(
+                "Pyodide already fatally failed and can no longer be used.");
+          }
+        });
       }
-    } catch (_) {
+    } catch (e) {
+      console.error("Another error occurred while handling the fatal error:");
+      console.error(e);
     }
     throw e;
   };
@@ -549,10 +548,16 @@ globalThis.loadPyodide = async function(config = {}) {
    */
   Module.runPythonSimple = function(code) {
     let code_c_string = Module.stringToNewUTF8(code);
+    let errcode;
     try {
-      Module._run_python_simple_inner(code_c_string);
+      errcode = Module._run_python_simple_inner(code_c_string);
+    } catch (e) {
+      Module.fatal_error(e);
     } finally {
       Module._free(code_c_string);
+    }
+    if (errcode === -1) {
+      Module._pythonexc2js();
     }
   };
 
