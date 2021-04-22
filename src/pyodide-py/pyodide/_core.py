@@ -1,6 +1,9 @@
 import sys
 
-if "_pyodide_core" not in sys.modules:
+if "_pyodide_core" in sys.modules:
+    IN_BROWSER = True
+else:
+    IN_BROWSER = False
     from _pyodide import _core as _pyodide_core
 
     sys.modules["_pyodide_core"] = _pyodide_core

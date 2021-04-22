@@ -6,61 +6,10 @@ import ast
 from asyncio import iscoroutine
 from io import StringIO
 from textwrap import dedent
-from typing import Dict, List, Any, Tuple, Optional
 import tokenize
-from codeop import CommandCompiler, Compile
+from types import CodeType, coroutine
+from typing import Any, Dict, List, Optional
 
-_features = [getattr(__future__, fname)
-             for fname in __future__.all_feature_names]
-
-class MyCompile(Compile):
-    """Instances of this class behave much like the built-in compile
-    function, but if one is used to compile text containing a future
-    statement, it "remembers" and compiles all subsequent program texts
-    with the statement in force."""
-    def __init__(
-        self,
-        return_mode = "last_expr",
-        return_target = "_",
-        quiet_trailing_semicolon = True,
-        flags = 0x0,
-    ):
-        super()
-        self.flags |= flags
-        self.return_mode = return_mode
-        self.return_target = return_target
-        self.quiet_trailing_semicolon = quiet_trailing_semicolon
-
-    def __call__(self, source, filename):
-        return_mode = self.return_mode
-        if self.quiet_trailing_semicolon and should_quiet(source):
-            return_mode = None
-        codeob = parse_and_compile(
-            source, 
-            filename=filename, 
-            return_mode= return_mode,
-            return_target= self.return_target,
-            flags= self.flags,
-        )
-        for feature in _features:
-            if codeob.co_flags & feature.compiler_flag:
-                self.flags |= feature.compiler_flag
-        return codeob
-
-class MyCommandCompiler(CommandCompiler):
-    """Instances of this class have __call__ methods identical in
-    signature to compile_command; the difference is that if the
-    instance compiles program text containing a __future__ statement,
-    the instance 'remembers' and compiles all subsequent program texts
-    with the statement in force."""
-
-    def __init__(
-        self,
-        return_mode = "last_expr",
-        return_target = "_",
-        flags = 0x0,
-    ):
-        self.compiler = MyCompile(return_mode, return_target, flags)
 
 def open_url(url: str) -> StringIO:
     """
@@ -82,7 +31,6 @@ def open_url(url: str) -> StringIO:
     req.open("GET", url, False)
     req.send(None)
     return StringIO(req.response)
-
 
 
 def _last_assign_to_expr(mod: ast.Module):
@@ -108,9 +56,8 @@ def _last_assign_to_expr(mod: ast.Module):
         last_node = ast.Expr(ast.Name(target.id, ast.Load()))
         mod.body.append(last_node)
 
-def _adjust_ast_to_store_result(self,
-    target_name: str, mod: ast.Module
-) -> ast.Module:
+
+def _adjust_ast_to_store_result(target_name: str, mod: ast.Module) -> ast.Module:
     """Add instruction to store result of expression into a variable with
     name "target_name"
     """
@@ -128,13 +75,13 @@ def _adjust_ast_to_store_result(self,
     return mod
 
 
-def parse_and_compile(self, 
-    source: str, 
-    filename="<exec>", 
+def parse_and_compile(
+    source: str,
+    filename="<exec>",
     return_mode: str = "last_expr",
-    return_target : str = "_",
+    return_target: str = "_",
     flags: int = 0x0,
-) -> Any:
+) -> CodeType:
     """
 
     Returns:
@@ -156,19 +103,21 @@ def parse_and_compile(self,
         _last_assign_to_expr(mod)
 
     # we extract last expression
-    if (
-        return_mode.startswith("last_expr")  # last_expr or last_expr_or_assign
-        and isinstance(mod.body[-1], (ast.Expr, ast.Await))
+    if return_mode.startswith(
+        "last_expr"
+    ) and isinstance(  # last_expr or last_expr_or_assign
+        mod.body[-1], (ast.Expr, ast.Await)
     ):
         _adjust_ast_to_store_result(return_target, mod)
 
     # Update the line numbers shown in error messages.
     ast.fix_missing_locations(mod)
     # we compile
-    mod = compile(mod, self.filename, "exec", flags=flags)  # type: ignore
+    mod = compile(mod, filename, "exec", flags=flags)  # type: ignore
     return mod
 
-def should_quiet(source):
+
+def should_quiet(source: str) -> bool:
     """
     Should we suppress output?
 
@@ -200,16 +149,42 @@ def should_quiet(source):
     return False
 
 
-def eval_code(self, 
-    source: str, 
+RETURN_TARGET = "[[eval-code-result]]"
+
+
+def _eval_code_common(
+    source: str,
     globals: Optional[Dict[str, Any]] = None,
     locals: Optional[Dict[str, Any]] = None,
     return_mode: str = "last_expr",
-    return_target : str = "_",
     quiet_trailing_semicolon: bool = True,
     filename: str = "<exec>",
-    flags = 0x0
+    flags: int = 0x0,
 ) -> Any:
+    if quiet_trailing_semicolon and should_quiet(source):
+        return_mode = "none"
+    mod = parse_and_compile(
+        source,
+        return_target=RETURN_TARGET,
+        return_mode=return_mode,
+        flags=flags,
+        filename=filename,
+    )
+
+    if mod:
+        return eval(mod, globals, locals)
+
+
+def eval_code(
+    source: str,
+    globals: Optional[Dict[str, Any]] = None,
+    locals: Optional[Dict[str, Any]] = None,
+    return_mode: str = "last_expr",
+    return_target: str = "_",
+    quiet_trailing_semicolon: bool = True,
+    filename: str = "<exec>",
+    flags: int = 0x0,
+):
     """Runs a code string.
 
     Parameters
@@ -226,30 +201,33 @@ def eval_code(self,
     Use the ``return_mode`` and ``quiet_trailing_semicolon`` parameters in the
     constructor to modify this default behavior.
     """
-    return_target="_"
-    if quiet_trailing_semicolon and should_quiet(source):
-        return_mode = None
-    mod = parse_and_compile(
-        source, 
-        return_target= return_target,
-        return_mode= return_mode,
-        flags= flags,
+    if globals is None:
+        globals = {}
+    _eval_code_common(
+        source,
+        globals=globals,
+        locals=locals,
+        return_mode=return_mode,
+        quiet_trailing_semicolon=quiet_trailing_semicolon,
+        filename=filename,
+        flags=flags,
     )
+    if locals:
+        return_dict = locals
+    else:
+        return_dict = globals
+    if RETURN_TARGET in return_dict:
+        return return_dict.pop(RETURN_TARGET)
 
-    if mod is None:
-        return None
-
-    return eval(mod, globals, locals)
 
 async def eval_code_async(
-    source: str, 
+    source: str,
     globals: Optional[Dict[str, Any]] = None,
     locals: Optional[Dict[str, Any]] = None,
     return_mode: str = "last_expr",
-    return_target : str = "_",
     quiet_trailing_semicolon: bool = True,
     filename: str = "<exec>",
-    flags = 0x0
+    flags: int = 0x0,
 ) -> Any:
     """Runs a code string asynchronously.
 
@@ -272,12 +250,27 @@ async def eval_code_async(
     constructor to modify this default behavior.
     """
     flags = flags or ast.PyCF_ALLOW_TOP_LEVEL_AWAIT
-    res = eval_code(source,
-        flags= flags
+    if globals is None:
+        globals = {}
+    coroutine = _eval_code_common(
+        source,
+        globals=globals,
+        locals=locals,
+        return_mode=return_mode,
+        quiet_trailing_semicolon=quiet_trailing_semicolon,
+        filename=filename,
+        flags=flags,
     )
-    if iscoroutine(res):
-        res = await res
-    return res
+    if coroutine is False:
+        return None
+    if iscoroutine(coroutine):
+        await coroutine
+    if locals:
+        return_dict = locals
+    else:
+        return_dict = globals
+    if RETURN_TARGET in return_dict:
+        return return_dict.pop(RETURN_TARGET)
 
 
 class CodeRunner:
@@ -375,7 +368,7 @@ class CodeRunner:
             self.return_mode,
             self.quiet_trailing_semicolon,
             self.filename,
-            self.flags
+            self.flags,
         )
 
     async def run_async(self, source: str) -> Any:
@@ -406,10 +399,11 @@ class CodeRunner:
             self.return_mode,
             self.quiet_trailing_semicolon,
             self.filename,
-            self.flags
+            self.flags,
         )
 
-def find_imports(code: str) -> List[str]:
+
+def find_imports(source: str) -> List[str]:
     """
     Finds the imports in a string of code
 
@@ -431,9 +425,9 @@ def find_imports(code: str) -> List[str]:
     ['numpy', 'scipy']
     """
     # handle mis-indented input from multi-line strings
-    code = dedent(code)
+    source = dedent(source)
 
-    mod = ast.parse(code)
+    mod = ast.parse(source)
     imports = set()
     for node in ast.walk(mod):
         if isinstance(node, ast.Import):
