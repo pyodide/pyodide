@@ -199,7 +199,7 @@ See the {ref}`0-17-0-release-notes` for more information.
 - Added Plotly version 4.14.3 and retrying dependency
   {pr}`1419`
 
-## List of contributors
+### List of contributors
 
 (in alphabetic order)
 
