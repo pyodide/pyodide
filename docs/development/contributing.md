@@ -99,7 +99,7 @@ All code submissions should pass `make lint`.  Python is checked with the
 default settings of `flake8`.  C and Javascript are checked against the Mozilla
 style in `clang-format`.
 
-## Contributing to the “core” C Code
+### Contributing to the “core” C Code
 
 See {ref}`contributing-core`.
 
@@ -160,3 +160,11 @@ clarification on what is and isn't permitted.
 - __Gitter:__ [#pyodide](https://gitter.im/pyodide/community) channel at gitter.im
 
 [tl;drLegal entry]:https://tldrlegal.com/license/mozilla-public-license-2.0-(mpl-2)
+
+```{eval-rst}
+.. toctree::
+   :hidden:
+
+   core.md
+   maintainers.md
+```
