@@ -179,7 +179,11 @@ def test_runpythonasync_numpy(selenium_standalone):
         )
 
 
+@pytest.mark.driver_timeout(30)
 def test_runwebworker_numpy(selenium_webworker_standalone):
+    if selenium_webworker_standalone.browser == "firefox":
+        pytest.xfail("Timeout in WebWorker when using numpy in Firefox 87")
+
     output = selenium_webworker_standalone.run_webworker(
         """
         import numpy as np

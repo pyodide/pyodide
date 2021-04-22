@@ -200,33 +200,26 @@ This also avoids memory leaks.
 ## How can I use fetch with optional arguments from Python?
 The most obvious translation of the Javascript code won't work:
 ```py
+import json
 resp = await js.fetch('/someurl', {
-    "method": "POST"
-  , "body": '{ "some" : "json" }'
-  , "credentials": "same-origin"
-  , "headers": { "Content-Type": "application/json" }
+  "method": "POST",
+  "body": json.dumps({ "some" : "json" }),
+  "credentials": "same-origin",
+  "headers": { "Content-Type": "application/json" }
 })
 ```
 this leaks the dictionary and the `fetch` api ignores the options that we
-attempted to provide. There are two correct ways to do this:
+attempted to provide. You can do this correctly as follows:
 ```py
+import json
 from pyodide import to_js
+from js import Object
 resp = await js.fetch('example.com/some_api',
   method= "POST",
-  body= '{ "some" : "json" }',
+  body= json.dumps({ "some" : "json" }),
   credentials= "same-origin",
-  headers= to_js({ "Content-Type": "application/json" }),
+  headers= Object.fromEntries(to_js({ "Content-Type": "application/json" })),
 )
-```
-or:
-```py
-from pyodide import to_js
-resp = await js.fetch('example.com/some_api', to_js({
-    "method": "POST"
-  , "body": '{ "some" : "json" }'
-  , "credentials": "same-origin"
-  , "headers": { "Content-Type": "application/json" }
-}))
 ```
 
 ## How can I control the behavior of stdin / stdout / stderr?

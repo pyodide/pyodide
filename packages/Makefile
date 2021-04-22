@@ -10,7 +10,7 @@ endif
 all:
 	mkdir -p $(PYODIDE_LIBRARIES)
 	PYTHONPATH=$(PYODIDE_LIBRARIES)/lib/python ../bin/pyodide buildall . ../build \
-		--target=$(TARGETPYTHONROOT) $(ONLY_PACKAGES) --install-dir $(PYODIDE_LIBRARIES)
+		--target=$(TARGETPYTHONROOT) $(ONLY_PACKAGES) --install-dir $(PYODIDE_LIBRARIES) --n-jobs $${PYODIDE_JOBS:-4}
 
 
 update-all:

@@ -17,6 +17,10 @@ def _parse_package_subset(query: Optional[str]) -> Optional[Set[str]]:
         return None
     packages = {el.strip() for el in query.split(",")}
     packages.update(["pyparsing", "packaging", "micropip"])
+    # Hack for 0.17.0 release
+    # TODO: FIXME!!
+    if "beautifulsoup4" in packages:
+        packages.add("soupsieve")
     packages.discard("")
     return packages
 

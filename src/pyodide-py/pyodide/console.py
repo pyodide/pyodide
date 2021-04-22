@@ -92,21 +92,21 @@ class InteractiveConsole(code.InteractiveConsole):
 
     Base implementation for an interactive console that manages
     stdout/stderr redirection. Since packages are loaded before running
-    code, `runcode` returns a JS promise.
+    code, :any:`InteractiveConsole.runcode` returns a JS promise.
 
-    `self.stdout_callback` and `self.stderr_callback` can be overloaded.
+    ``self.stdout_callback`` and ``self.stderr_callback`` can be overloaded.
 
     Parameters
     ----------
     locals
         Namespace to evaluate code.
     stdout_callback
-        Function to call at each `sys.stdout` flush.
+        Function to call at each ``sys.stdout`` flush.
     stderr_callback
-        Function to call at each `sys.stderr` flush.
+        Function to call at each ``sys.stderr`` flush.
     persistent_stream_redirection
         Whether or not the std redirection should be kept between calls to
-        `runcode`.
+        ``runcode``.
     """
 
     def __init__(
@@ -201,9 +201,10 @@ class InteractiveConsole(code.InteractiveConsole):
     def runsource(self, *args, **kwargs):
         """Force streams redirection.
 
-        Syntax errors are not thrown by runcode but here in runsource.
-        This is why we force redirection here since doing twice
-        is not an issue."""
+        Syntax errors are not thrown by :any:`InteractiveConsole.runcode` but
+        here in :any:`InteractiveConsole.runsource`. This is why we force
+        redirection here since doing twice is not an issue.
+        """
 
         with self.stdstreams_redirections():
             return super().runsource(*args, **kwargs)
@@ -211,12 +212,13 @@ class InteractiveConsole(code.InteractiveConsole):
     def runcode(self, code):
         """Load imported packages then run code, async.
 
-        To achieve nice result representation, the interactive console
-        is fully implemented in Python. This has a major drawback:
-        packages should be loaded from here. This is why this
-        function sets the promise `self.run_complete`.
-        If you need to wait for the end of the computation,
-        you should await for it."""
+        To achieve nice result representation, the interactive console is fully
+        implemented in Python. The interactive console api is synchronous, but
+        we want to implement asynchronous package loading and top level await.
+        Thus, instead of blocking like it normally would, this this function
+        sets the future ``self.run_complete``. If you need the result of the
+        computation, you should await for it.
+        """
         source = "\n".join(self.buffer)
         self.run_complete = ensure_future(
             self.load_packages_and_run(self.run_complete, source)
@@ -272,8 +274,8 @@ class InteractiveConsole(code.InteractiveConsole):
     def complete(self, source: str) -> Tuple[List[str], int]:
         """Use CPython's rlcompleter to complete a source from local namespace.
 
-        You can use `completer_word_break_characters` to get/set the
-        way `source` is splitted to find the last part to be completed.
+        You can use ``completer_word_break_characters`` to get/set the
+        way ``source`` is splitted to find the last part to be completed.
 
         Parameters
         ----------
@@ -312,12 +314,12 @@ class InteractiveConsole(code.InteractiveConsole):
 def repr_shorten(
     value: Any, limit: int = 1000, split: Optional[int] = None, separator: str = "..."
 ):
-    """Compute the string representation of `value` and shorten it
+    """Compute the string representation of ``value`` and shorten it
     if necessary.
 
-    If it is longer than `limit` then return the firsts `split`
-    characters and the last `split` characters seperated by '...'.
-    Default value for `split` is `limit // 2`.
+    If it is longer than ``limit`` then return the firsts ``split``
+    characters and the last ``split`` characters seperated by '...'.
+    Default value for ``split`` is `limit // 2`.
     """
     if split is None:
         split = limit // 2

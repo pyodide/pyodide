@@ -28,9 +28,9 @@ Work on Pyodide happens on Github. Core members and contributors can make Pull
 Requests to fix issues and add features, which all go through the same review
 process. We’ll detail how you can start making PRs below.
 
-We’ll do our best to keep `master` in a non-breaking state, ideally with tests
+We’ll do our best to keep `main` in a non-breaking state, ideally with tests
 always passing. The unfortunate reality of software development is sometimes
-things break. As such, `master` cannot be expected to remain reliable at all
+things break. As such, `main` cannot be expected to remain reliable at all
 times. We recommend using the latest stable version of Pyodide.
 
 Pyodide follows semantic versioning (http://semver.org/) - major versions for
@@ -71,7 +71,7 @@ on using the Pull Request feature. We use the "fork and pull" model
 where contributors push changes to their personal fork and create pull requests
 to bring those changes into the source repository.
 
-Please make pull requests against the `master` branch.
+Please make pull requests against the `main` branch.
 
 If you’re looking for a way to jump in and contribute, our list of
 [good first issues](https://github.com/pyodide/pyodide/labels/good%20first%20issue)

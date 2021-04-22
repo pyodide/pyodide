@@ -6,3 +6,19 @@
 code {
     font-size: 100% !important;
 }
+
+
+.section > h3 {
+    /* shrink h3 a bit, was ~1.8em */
+    font-size: 1.65em;
+}
+
+.section > h4 {
+    /* shrink h4 a bit, was 1.44em */
+    font-size: 1.3em;
+}
+
+/* Remove "captions" in text table of contents, keep subsections in sidebar */
+.toctree-wrapper > .caption {
+    display: none;
+}
