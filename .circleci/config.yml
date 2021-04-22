@@ -211,11 +211,11 @@ jobs:
           path: /root/repo/build/benchmarks.json
 
   deploy-release:
+    # To reduce chance of deployment issues, try to keep the steps here as
+    # similar as possible to the steps in deploy-release!
     resource_class: small
 
     docker:
-      # To reduce chance of deployment issues, make sure to use same image for
-      # deploy-dev and deploy-release
       - image: cibuilds/github:0.13
 
     steps:
@@ -248,11 +248,11 @@ jobs:
             aws s3api put-bucket-website --cli-input-json file://.circleci/s3-website-config.json
 
   deploy-dev:
+    # To reduce chance of deployment issues, try to keep the steps here as
+    # similar as possible to the steps in deploy-release!
     resource_class: small
 
     docker:
-      # To reduce chance of deployment issues, make sure to use same image for
-      # deploy-dev and deploy-release
       - image: cibuilds/github:0.13 
 
     steps:
