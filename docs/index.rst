@@ -42,7 +42,6 @@ and understanding type conversions between Python and JavaScript.
    development/building-from-sources.md
    development/new-packages.md
    development/contributing.md
-   development/core.md
    development/testing.md
    development/debugging.md
 

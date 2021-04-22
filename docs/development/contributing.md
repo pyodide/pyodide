@@ -99,6 +99,10 @@ All code submissions should pass `make lint`.  Python is checked with the
 default settings of `flake8`.  C and Javascript are checked against the Mozilla
 style in `clang-format`.
 
+## Contributing to the “core” C Code
+
+See {ref}`contributing-core`.
+
 ## Documentation
 
 Documentation is a critical part of any open source project and we are very
@@ -137,6 +141,9 @@ If patches fail to apply automatically, one solution can be to
    ```
    git format-patch -<N> -N --no-stat HEAD -o <out_dir>
    ```
+## Maintainer information
+
+For information regaring making releases see {ref}`maintainer-information`.
 
 ## License
 

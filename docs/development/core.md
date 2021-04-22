@@ -1,3 +1,4 @@
+(contributing-core)=
 # Contributing to the "core" C Code
 
 This file is intended as guidelines to help contributors trying to modify the C source files in `src/core`.
