@@ -1,6 +1,6 @@
 """
 Check whether a given CI job needs to be run in PRs given
-the changed files with respect to upstream/master
+the changed files with respect to upstream/main
 """
 import os
 from subprocess import check_output, check_call
@@ -39,9 +39,9 @@ def git_get_files_changed(head="HEAD", origin: Optional[str] = None) -> List[str
     """
     if origin is None:
         if "CI" in os.environ:
-            origin = "origin/master"
+            origin = "origin/main"
         else:
-            origin = "upstream/master"
+            origin = "upstream/main"
 
     base_commit = check_output(
         ["git", "merge-base", origin, head], encoding="utf-8"
