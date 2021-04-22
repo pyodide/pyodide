@@ -214,6 +214,8 @@ jobs:
     resource_class: small
 
     docker:
+      # To reduce chance of deployment issues, make sure to use same image for
+      # deploy-dev and deploy-release
       - image: cibuilds/github:0.13
 
     steps:
@@ -245,11 +247,13 @@ jobs:
             # update 301 redirect for the /latest/* route.
             aws s3api put-bucket-website --cli-input-json file://.circleci/s3-website-config.json
 
-  deploy-s3:
+  deploy-dev:
     resource_class: small
 
     docker:
-      - image: circleci/python:3.7.7
+      # To reduce chance of deployment issues, make sure to use same image for
+      # deploy-dev and deploy-release
+      - image: cibuilds/github:0.13 
 
     steps:
       - checkout
