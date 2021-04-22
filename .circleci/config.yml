@@ -9,6 +9,11 @@ defaults: &defaults
       EMCC_CORES: 4
       PYODIDE_BASE_URL: https://cdn.jsdelivr.net/pyodide/dev/full/
 
+check_ci_required: &check_ci_required
+  name: Check if CI job is necessairy
+  command: ./bin/pyodide check_ci_required ${CIRCLE_JOB}
+
+
 jobs:
   lint:
     <<: *defaults
@@ -47,8 +52,7 @@ jobs:
       - checkout
 
       - run:
-          name: Check if CI job is necessairy
-          command: ./bin/pyodide check_ci_required build_core
+        <<: *check_ci_required
 
       - restore_cache:
           keys:
@@ -112,8 +116,7 @@ jobs:
       - checkout
 
       - run:
-          name: Check if CI job is necessairy
-          command: ./bin/pyodide check_ci_required build_packages
+        <<: *check_ci_required
 
       - attach_workspace:
           at: .
@@ -157,8 +160,7 @@ jobs:
       - checkout
 
       - run:
-          name: Check if CI job is necessairy
-          command: ./bin/pyodide check_ci_required build_core
+        <<: *check_ci_required
 
       - attach_workspace:
           at: .
@@ -173,8 +175,7 @@ jobs:
       - checkout
 
       - run:
-          name: Check if CI job is necessairy
-          command: ./bin/pyodide check_ci_required build_core
+        <<: *check_ci_required
 
       - attach_workspace:
           at: .
@@ -189,8 +190,7 @@ jobs:
       - checkout
 
       - run:
-          name: Check if CI job is necessairy
-          command: ./bin/pyodide check_ci_required build_packages
+        <<: *check_ci_required
 
       - attach_workspace:
           at: .
@@ -205,8 +205,7 @@ jobs:
       - checkout
 
       - run:
-          name: Check if CI job is necessairy
-          command: ./bin/pyodide check_ci_required build_packages
+        <<: *check_ci_required
 
       - attach_workspace:
           at: .
@@ -222,8 +221,7 @@ jobs:
       - checkout
 
       - run:
-          name: Check if CI job is necessairy
-          command: ./bin/pyodide check_ci_required build_core
+        <<: *check_ci_required
 
       - attach_workspace:
           at: .
@@ -247,8 +245,7 @@ jobs:
       - checkout
 
       - run:
-          name: Check if CI job is necessairy
-          command: ./bin/pyodide check_ci_required build_packages
+        <<: *check_ci_required
 
       - attach_workspace:
           at: .
