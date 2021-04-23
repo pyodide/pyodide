@@ -418,7 +418,7 @@ async def eval_code_async(
     if quiet_trailing_semicolon and should_quiet(code):
         return_mode = "none"
     mod, last_expr = _split_and_compile(
-        code, return_mode=return_mode, filename=filename, flags=flags | ast.PyCF_ALLOW_TOP_LEVEL_AWAIT
+        code, return_mode=return_mode, filename=filename, flags=ast.PyCF_ALLOW_TOP_LEVEL_AWAIT
     )
 
     # running first part
