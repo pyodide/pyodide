@@ -692,7 +692,6 @@ globalThis.loadPyodide = async function(config = {}) {
    * @async
    */
   Module.runPythonAsync = async function(code, messageCallback, errorCallback) {
-    await Module.loadPackagesFromImports(code, messageCallback, errorCallback);
     let coroutine = Module.pyodide_py.eval_code_async(code, Module.globals);
     try {
       let result = await coroutine;
