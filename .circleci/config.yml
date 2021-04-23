@@ -212,7 +212,7 @@ jobs:
 
   deploy-release:
     # To reduce chance of deployment issues, try to keep the steps here as
-    # similar as possible to the steps in deploy-release!
+    # similar as possible to the steps in deploy-dev!
     resource_class: small
 
     docker:
