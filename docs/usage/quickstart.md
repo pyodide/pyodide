@@ -120,7 +120,7 @@ Create and save a test `index.html` page with the following contents:
     async function evaluatePython() {
       await pyodideReadyPromise;
       try {
-        let output = await pyodide.runPythonAsync(code.value);
+        let output = pyodide.runPython(code.value);
         addToOutput(output);
       } catch(err) {
         addToOutput(err);

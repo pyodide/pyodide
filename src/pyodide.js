@@ -651,20 +651,8 @@ globalThis.loadPyodide = async function(config = {}) {
         "will be removed in version 0.18.0. Use pyodide.globals.get('key') instead.");
     return Module.globals.get(name);
   };
-
   /**
-   * Runs Python code, possibly asynchronously loading any known packages that
-   * the code imports. For example, given the following code
-   *
-   * .. code-block:: python
-   *
-   *    import numpy as np
-   *    x = np.array([1, 2, 3])
-   *
-   * Pyodide will first call :any:`pyodide.loadPackage(['numpy'])
-   * <pyodide.loadPackage>`, and then run the code using the Python API
-   * :any:`pyodide.eval_code_async`, returning the result. The code is compiled
-   * with `PyCF_ALLOW_TOP_LEVEL_AWAIT
+   * Runs Python code using `PyCF_ALLOW_TOP_LEVEL_AWAIT
    * <https://docs.python.org/3/library/ast.html?highlight=pycf_allow_top_level_await#ast.PyCF_ALLOW_TOP_LEVEL_AWAIT>`_.
    *
    * For example:
@@ -672,17 +660,29 @@ globalThis.loadPyodide = async function(config = {}) {
    * .. code-block:: pyodide
    *
    *    let result = await pyodide.runPythonAsync(`
-   *        # numpy will automatically be loaded by loadPackagesFromImports
-   *        import numpy as np
-   *        # we can use top level await
    *        from js import fetch
    *        response = await fetch("./packages.json")
    *        packages = await response.json()
-   *        # If final statement is an expression, its value is returned to
-   * Javascript len(packages.dependencies.object_keys())
+   *        # If final statement is an expression, its value is returned to Javascript 
+   *        len(packages.dependencies.object_keys())
    *    `);
    *    console.log(result); // 72
    *
+   * @param {string} code Python code to evaluate
+   * @returns The result of the Python code translated to Javascript.
+   * @async
+   */
+  Module.runPythonAsync = async function(code) {
+    let coroutine = Module.pyodide_py.eval_code_async(code, Module.globals);
+    try {
+      let result = await coroutine;
+      return result;
+    } finally {
+      coroutine.destroy();
+    }
+  };
+
+  /**
    * @param {string} code Python code to evaluate
    * @param {Function} messageCallback The ``messageCallback`` argument of
    * :any:`pyodide.loadPackage`.
@@ -691,14 +691,9 @@ globalThis.loadPyodide = async function(config = {}) {
    * @returns The result of the Python code translated to Javascript.
    * @async
    */
-  Module.runPythonAsync = async function(code, messageCallback, errorCallback) {
-    let coroutine = Module.pyodide_py.eval_code_async(code, Module.globals);
-    try {
-      let result = await coroutine;
-      return result;
-    } finally {
-      coroutine.destroy();
-    }
+  Module.loadPackagesAndRunPythonAsync = async function(code, messageCallback, errorCallback) {
+    await Module.loadPackagesFromImports(code, messageCallback, errorCallback);
+    await Module.runPythonAsync(code);
   };
 
   // clang-format off

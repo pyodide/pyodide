@@ -123,7 +123,7 @@ self.onmessage = async(event) => {
     // Now is the easy part, the one that is similar to working in the main thread:
     try {
         self.postMessage({
-            results: await self.pyodide.runPythonAsync(python)
+            results: await self.pyodide.loadPackagesAndRunPythonAsync(python)
         });
     }
     catch (error){

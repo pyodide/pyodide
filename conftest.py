@@ -181,7 +181,7 @@ class SeleniumWrapper:
     def run_async(self, code):
         return self.run_js(
             f"""
-            let result = await pyodide.runPythonAsync({code!r});
+            let result = await pyodide.loadPackagesAndRunPythonAsync({code!r});
             if(result && result.toJs){{
                 let converted_result = result.toJs();
                 if(pyodide.isPyProxy(converted_result)){{

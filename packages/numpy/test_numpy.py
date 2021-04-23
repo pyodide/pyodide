@@ -197,7 +197,7 @@ def test_runwebworker_numpy(selenium_webworker_standalone):
 def test_get_buffer(selenium):
     selenium.run_js(
         """
-        await pyodide.runPythonAsync(`
+        await pyodide.loadPackagesAndRunPythonAsync(`
             import numpy as np
             x = np.arange(24)
             z1 = x.reshape([8,3])
@@ -246,7 +246,7 @@ def test_get_buffer(selenium):
 def test_get_buffer_roundtrip(selenium, arg):
     selenium.run_js(
         f"""
-        await pyodide.runPythonAsync(`
+        await pyodide.loadPackagesAndRunPythonAsync(`
             import numpy as np
             x = {arg}
         `);
@@ -288,7 +288,7 @@ def test_get_buffer_roundtrip(selenium, arg):
 def test_get_buffer_big_endian(selenium):
     selenium.run_js(
         """
-        window.a = await pyodide.runPythonAsync(`
+        window.a = await pyodide.loadPackagesAndRunPythonAsync(`
             import numpy as np
             np.arange(24, dtype="int16").byteswap().newbyteorder()
         `);
@@ -315,7 +315,7 @@ def test_get_buffer_error_messages(selenium):
     with pytest.raises(Exception, match="Javascript has no Float16 support"):
         selenium.run_js(
             """
-            await pyodide.runPythonAsync(`
+            await pyodide.loadPackagesAndRunPythonAsync(`
                 import numpy as np
                 x = np.ones(2, dtype=np.float16)
             `);
