@@ -172,13 +172,11 @@ if True:
 
         Examples
         --------
-        >>> CodeRunner().quiet('1 + 1')
+        >>> should_quiet('1 + 1')
         False
-        >>> CodeRunner().quiet('1 + 1 ;')
+        >>> should_quiet('1 + 1 ;')
         True
-        >>> CodeRunner().quiet('1 + 1 # comment ;')
-        False
-        >>> CodeRunner(quiet_trailing_semicolon=False).quiet('1 + 1 ;')
+        >>> should_quiet('1 + 1 # comment ;')
         False
         """
         # largely inspired from IPython:
