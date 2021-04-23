@@ -348,7 +348,7 @@ workflows:
               ignore: /.*/
             tags:
               only: /^\d+\.\d+\.\w+$/
-      - deploy-s3:
+      - deploy-dev:
           requires:
             - lint
             - test-python
