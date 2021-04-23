@@ -432,6 +432,15 @@ globalThis.loadPyodide = async function(config = {}) {
       false; // we preload wasm using the built in plugin now
   Module.preloadedWasm = {};
 
+  /**
+   * Tell Pyodide about an available copy of Comlink.
+   * Necessary to enable use of Comlink Proxies from Python.
+   * @private
+   */
+  Module.registerComlink = function(Comlink){
+    Module.Comlink = Comlink;
+  };
+
   let fatal_error_occurred = false;
   Module.fatal_error = function(e) {
     if (fatal_error_occurred) {

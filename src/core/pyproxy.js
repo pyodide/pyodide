@@ -92,6 +92,9 @@ JS_FILE(pyproxy_init_js, () => {0,0; /* Magic, see include_js_file.h */
     _Py_IncRef(ptrobj);
     let proxy = new Proxy(target, Module.PyProxyHandlers);
     Module.finalizationRegistry.register(proxy, ptrobj, proxy);
+    if(Module.Comlink){
+      Comlink.proxy(proxy);
+    }
     return proxy;
   };
 
@@ -639,8 +642,7 @@ JS_FILE(pyproxy_init_js, () => {0,0; /* Magic, see include_js_file.h */
       // error if user tries to write over any key of type 1. things we have to
       // return to avoid making Javascript angry
       if (typeof (jskey) === "symbol") {
-        throw new TypeError(
-            `Cannot set read only field '${jskey.description}'`);
+        return Reflect.set(jsobj, jskey, jsval);
       }
       // Again this is a funny looking conditional, I found it as the result of
       // a lengthy search for something that worked right.

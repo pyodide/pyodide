@@ -440,6 +440,9 @@ EM_JS_REF(JsRef,
               this_ = Module.hiwire.get_value(idthis);
             }
             let args = Module.hiwire.get_value(idargs);
+            if(this_ === Module.Comlink){
+              this_ = undefined;
+            }
             return Module.hiwire.new_value(func.apply(this_, args));
           });
 
@@ -594,6 +597,12 @@ EM_JS_NUM(bool, hiwire_is_function, (JsRef idobj), {
   // clang-format off
   return typeof Module.hiwire.get_value(idobj) === 'function';
   // clang-format on
+});
+
+EM_JS_NUM(bool, hiwire_is_comlink_proxy, (JsRef idobj), {
+  // From https://stackoverflow.com/a/45496068
+  let value = Module.hiwire.get_value(idobj);
+  return !!(Module.Comlink && value[Module.Comlink.createEndpoint]);
 });
 
 EM_JS_NUM(bool, hiwire_is_error, (JsRef idobj), {
