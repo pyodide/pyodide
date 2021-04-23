@@ -422,7 +422,7 @@ async def eval_code_async(
     # running first part
     coroutine = None
     if mod is not None:
-        coroutine = exec(mod, globals, locals)
+        coroutine = eval(mod, globals, locals)
     if coroutine is not None:
         await coroutine
 
