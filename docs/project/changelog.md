@@ -12,6 +12,10 @@ substitutions:
 
 ## [Unreleased]
 
+- {{ Enhancement }} Added the {any}`PyProxy.callKwargs` method to allow using
+  Python functions with keyword arguments from Python.
+  {pr}`1539`
+
 ## Version 0.17.0
 *April 21, 2020*
 
