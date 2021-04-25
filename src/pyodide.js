@@ -401,6 +401,7 @@ globalThis.loadPyodide = async function(config = {}) {
     'version',
     'loadPackage',
     'loadPackagesFromImports',
+    'loadPackagesAndRunPythonAsync',
     'loadedPackages',
     'isPyProxy',
     'pyimport',
@@ -663,8 +664,8 @@ globalThis.loadPyodide = async function(config = {}) {
    *        from js import fetch
    *        response = await fetch("./packages.json")
    *        packages = await response.json()
-   *        # If final statement is an expression, its value is returned to Javascript 
-   *        len(packages.dependencies.object_keys())
+   *        # If final statement is an expression, its value is returned to
+   * Javascript len(packages.dependencies.object_keys())
    *    `);
    *    console.log(result); // 72
    *
@@ -691,7 +692,8 @@ globalThis.loadPyodide = async function(config = {}) {
    * @returns The result of the Python code translated to Javascript.
    * @async
    */
-  Module.loadPackagesAndRunPythonAsync = async function(code, messageCallback, errorCallback) {
+  Module.loadPackagesAndRunPythonAsync =
+      async function(code, messageCallback, errorCallback) {
     await Module.loadPackagesFromImports(code, messageCallback, errorCallback);
     await Module.runPythonAsync(code);
   };
