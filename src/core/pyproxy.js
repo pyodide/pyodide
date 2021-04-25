@@ -149,6 +149,8 @@ JS_FILE(pyproxy_init_js, () => {0,0; /* Magic, see include_js_file.h */
   // defined in pyproxy.c in Javascript functions.
 
   Module.callPyObjectKwargs = function(ptrobj, ...jsargs) {
+    // We don't do any checking for kwargs, checks are in PyProxy.callKwargs
+    // which only is used when the keyword arguments come from the user.
     let kwargs = jsargs.pop();
     let num_pos_args = jsargs.length;
     let kwargs_names = Object.keys(kwargs);

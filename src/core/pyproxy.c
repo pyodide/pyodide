@@ -368,11 +368,39 @@ finally:
   return iddir;
 }
 
+/**
+ * This sets up a call to _PyObject_Vectorcall. It's a helper fucntion for
+ * callPyObjectKwargs. This is the primary entrypoint from Javascript into
+ * Python code.
+ *
+ * Vectorcall expects the arguments to be communicated as:
+ *
+ *  PyObject*const *args: the positional arguments and followed by the keyword
+ *    arguments
+ *
+ *  size_t nargs_with_flag : the number of arguments plus a flag
+ *      PY_VECTORCALL_ARGUMENTS_OFFSET. The flag PY_VECTORCALL_ARGUMENTS_OFFSET
+ *      indicates that we left an initial entry in the array to be used as a
+ *      self argument in case the callee is a bound method.
+ *
+ *  PyObject* kwnames : a tuple of the keyword argument names. The length of
+ *      this tuple tells CPython how many key word arguments there are.
+ *
+ * Our arguments are:
+ *
+ *   callable : The object to call.
+ *   args : The list of Javascript arguments, both positional and kwargs.
+ *   numposargs : The number of positional arguments.
+ *   kwnames : List of names of the keyword arguments
+ *   numkwargs : The length of kwargs
+ *
+ *   Returns: The return value translated to Javascript.
+ */
 JsRef
-_pyproxy_apply(PyObject* pyobj,
-               JsRef args,
+_pyproxy_apply(PyObject* callable,
+               JsRef jsargs,
                size_t numposargs,
-               JsRef kwnames,
+               JsRef jskwnames,
                size_t numkwargs)
 {
   size_t total_args = numposargs + numkwargs;
@@ -380,26 +408,29 @@ _pyproxy_apply(PyObject* pyobj,
   JsRef jsitem = NULL;
   PyObject* pyargs_array[total_args + 1];
   PyObject** pyargs = pyargs_array;
-  pyargs++; // leave a space for self argument in case pyobj is a bound method
+  pyargs++; // leave a space for self argument in case callable is a bound
+            // method
   PyObject* pykwnames = NULL;
   PyObject* pyresult = NULL;
   JsRef idresult = NULL;
 
+  // Put both arguments and keyword arguments into pyargs
   for (Py_ssize_t i = 0; i < total_args; ++i) {
-    jsitem = hiwire_get_member_int(args, i);
+    jsitem = hiwire_get_member_int(jsargs, i);
     // pyitem is moved into pyargs so we don't need to clear it later.
     PyObject* pyitem = js2python(jsitem);
     if (pyitem == NULL) {
       last_converted_arg = i;
-      FAIL(pyitem);
+      FAIL();
     }
     pyargs[i] = pyitem; // pyitem is moved into pyargs.
     hiwire_CLEAR(jsitem);
   }
   if (numkwargs > 0) {
+    // Put names of keyword arguments into a tuple
     pykwnames = PyTuple_New(numkwargs);
     for (Py_ssize_t i = 0; i < numkwargs; i++) {
-      jsitem = hiwire_get_member_int(kwnames, i);
+      jsitem = hiwire_get_member_int(jskwnames, i);
       // pyitem is moved into pykwargs so we don't need to clear it later.
       PyObject* pyitem = js2python(jsitem);
       PyTuple_SET_ITEM(pykwnames, i, pyitem);
@@ -408,15 +439,15 @@ _pyproxy_apply(PyObject* pyobj,
   }
   // Tell callee that we left space for a self argument
   size_t nargs_with_flag = numposargs | PY_VECTORCALL_ARGUMENTS_OFFSET;
-  pyresult = _PyObject_Vectorcall(pyobj, pyargs, nargs_with_flag, pykwnames);
+  pyresult = _PyObject_Vectorcall(callable, pyargs, nargs_with_flag, pykwnames);
   FAIL_IF_NULL(pyresult);
   idresult = python2js(pyresult);
   FAIL_IF_NULL(idresult);
 
 finally:
+  hiwire_CLEAR(jsitem);
   // If we failed to convert one of the arguments, then pyargs is partially
   // uninitialized. Only clear the part that actually has stuff in it.
-  hiwire_CLEAR(jsitem);
   for (Py_ssize_t i = 0; i < last_converted_arg; i++) {
     Py_CLEAR(pyargs[i]);
   }
