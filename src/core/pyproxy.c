@@ -369,24 +369,59 @@ finally:
 }
 
 JsRef
-_pyproxy_apply(PyObject* pyobj, JsRef idargs)
+_pyproxy_apply(PyObject* pyobj,
+               JsRef args,
+               size_t numposargs,
+               JsRef kwnames,
+               size_t numkwargs)
 {
-  Py_ssize_t length = hiwire_get_length(idargs);
-  PyObject* pyargs = PyTuple_New(length);
-  for (Py_ssize_t i = 0; i < length; ++i) {
-    JsRef iditem = hiwire_get_member_int(idargs, i);
-    PyObject* pyitem = js2python(iditem);
-    PyTuple_SET_ITEM(pyargs, i, pyitem);
-    hiwire_decref(iditem);
+  size_t total_args = numposargs + numkwargs;
+  size_t last_converted_arg = total_args;
+  JsRef jsitem = NULL;
+  PyObject* pyargs_array[total_args + 1];
+  PyObject** pyargs = pyargs_array;
+  pyargs++; // leave a space for self argument in case pyobj is a bound method
+  PyObject* pykwnames = NULL;
+  PyObject* pyresult = NULL;
+  JsRef idresult = NULL;
+
+  for (Py_ssize_t i = 0; i < total_args; ++i) {
+    jsitem = hiwire_get_member_int(args, i);
+    // pyitem is moved into pyargs so we don't need to clear it later.
+    PyObject* pyitem = js2python(jsitem);
+    if (pyitem == NULL) {
+      last_converted_arg = i;
+      FAIL(pyitem);
+    }
+    pyargs[i] = pyitem; // pyitem is moved into pyargs.
+    hiwire_CLEAR(jsitem);
   }
-  PyObject* pyresult = PyObject_Call(pyobj, pyargs, NULL);
-  if (pyresult == NULL) {
-    Py_DECREF(pyargs);
-    return NULL;
+  if (numkwargs > 0) {
+    pykwnames = PyTuple_New(numkwargs);
+    for (Py_ssize_t i = 0; i < numkwargs; i++) {
+      jsitem = hiwire_get_member_int(kwnames, i);
+      // pyitem is moved into pykwargs so we don't need to clear it later.
+      PyObject* pyitem = js2python(jsitem);
+      PyTuple_SET_ITEM(pykwnames, i, pyitem);
+      hiwire_CLEAR(jsitem);
+    }
   }
-  JsRef idresult = python2js(pyresult);
-  Py_DECREF(pyresult);
-  Py_DECREF(pyargs);
+  // Tell callee that we left space for a self argument
+  size_t nargs_with_flag = numposargs | PY_VECTORCALL_ARGUMENTS_OFFSET;
+  pyresult = _PyObject_Vectorcall(pyobj, pyargs, nargs_with_flag, pykwnames);
+  FAIL_IF_NULL(pyresult);
+  idresult = python2js(pyresult);
+  FAIL_IF_NULL(idresult);
+
+finally:
+  // If we failed to convert one of the arguments, then pyargs is partially
+  // uninitialized. Only clear the part that actually has stuff in it.
+  hiwire_CLEAR(jsitem);
+  for (Py_ssize_t i = 0; i < last_converted_arg; i++) {
+    Py_CLEAR(pyargs[i]);
+  }
+  Py_CLEAR(pyresult);
+  Py_CLEAR(pykwnames);
   return idresult;
 }
 
@@ -506,17 +541,14 @@ FutureDoneCallback_dealloc(FutureDoneCallback* self)
 int
 FutureDoneCallback_call_resolve(FutureDoneCallback* self, PyObject* result)
 {
-  bool success = false;
   JsRef result_js = NULL;
   JsRef output = NULL;
   result_js = python2js(result);
   output = hiwire_call_va(self->resolve_handle, result_js, NULL);
 
-  success = true;
-finally:
   hiwire_CLEAR(result_js);
   hiwire_CLEAR(output);
-  return success ? 0 : -1;
+  return 0;
 }
 
 /**
@@ -699,7 +731,6 @@ _pyproxy_get_buffer(PyObject* ptrobj)
     return NULL;
   }
 
-  bool success = false;
   buffer_struct result = { 0 };
   result.start_ptr = result.smallest_ptr = result.largest_ptr = view.buf;
   result.readonly = view.readonly;
@@ -753,24 +784,15 @@ _pyproxy_get_buffer(PyObject* ptrobj)
   result.f_contiguous = PyBuffer_IsContiguous(&view, 'F');
 
 success:
-  success = true;
-finally:
-  if (success) {
-    // The result.view memory will be freed when (if?) the user calls
-    // Py_Buffer.release().
-    result.view = (Py_buffer*)PyMem_Malloc(sizeof(Py_buffer));
-    *result.view = view;
-    // The result_heap memory will be freed by getBuffer
-    buffer_struct* result_heap =
-      (buffer_struct*)PyMem_Malloc(sizeof(buffer_struct));
-    *result_heap = result;
-    return result_heap;
-  } else {
-    hiwire_CLEAR(result.shape);
-    hiwire_CLEAR(result.strides);
-    PyBuffer_Release(&view);
-    return NULL;
-  }
+  // The result.view memory will be freed when (if?) the user calls
+  // Py_Buffer.release().
+  result.view = (Py_buffer*)PyMem_Malloc(sizeof(Py_buffer));
+  *result.view = view;
+  // The result_heap memory will be freed by getBuffer
+  buffer_struct* result_heap =
+    (buffer_struct*)PyMem_Malloc(sizeof(buffer_struct));
+  *result_heap = result;
+  return result_heap;
 }
 
 EM_JS_REF(JsRef, pyproxy_new, (PyObject * ptrobj), {
