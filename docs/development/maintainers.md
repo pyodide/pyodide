@@ -58,7 +58,7 @@ the latest release branch named `stable` (due to ReadTheDocs constraints).
 
 ### Making a minor release
 
-For the minor release commits need to be added to the `stable` branch, ideally via a PR.
+For the minor release, commits need to be added to the `stable` branch, ideally via a PR.
 This can be done with either,
  - git cherry picking individual commits,
    ```bash

@@ -143,7 +143,7 @@ If patches fail to apply automatically, one solution can be to
    ```
 ## Maintainer information
 
-For information regaring making releases see {ref}`maintainer-information`.
+For information about making releases see {ref}`maintainer-information`.
 
 ## License
 
