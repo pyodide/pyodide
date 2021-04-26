@@ -152,7 +152,7 @@ build/test.data: $(CPYTHONLIB) $(UGLIFYJS)
 	)
 	( \
 		cd build; \
-		python $(FILEPACKAGER) test.data --lz4 --preload ../$(CPYTHONLIB)/test@/lib/python$(PYMINOR)/test --js-output=test.js --export-name=pyodide._module --exclude __pycache__ \
+		python $(FILEPACKAGER) test.data --lz4 --preload ../$(CPYTHONLIB)/test@/lib/python$(PYMINOR)/test --js-output=test.js --export-name=globalThis.pyodide._module --exclude __pycache__ \
 	)
 	$(UGLIFYJS) build/test.js -o build/test.js
 
