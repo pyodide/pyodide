@@ -9,7 +9,7 @@ class PyodideLexer(JavascriptLexer):
     tokens = {
         "root": [
             (
-                r"(pyodide)(\.)(runPython|runPythonAsync|loadPackagesAndRunPythonAsync)(\()",
+                r"(pyodide)(\.)(runPython|runPythonAsync)(\()",
                 bygroups(
                     Token.Name,
                     Token.Operator,

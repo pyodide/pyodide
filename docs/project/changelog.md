@@ -13,10 +13,7 @@ substitutions:
 ## [Unreleased]
 
 - {{ API }} {any}`pyodide.runPythonAsync` no longer automatically calls
-  {any}`pyodide.loadPackagesFromImports`. Added a new method
-  {any}`pyodide.loadPackagesAndRunPythonAsync` that calls
-  {any}`pyodide.loadPackagesFromImports` and then calls
-  {any}`pyodide.runPythonAsync` to make migration simpler.
+  {any}`pyodide.loadPackagesFromImports`.
   {pr}`1538`.
 
 ## Version 0.17.0

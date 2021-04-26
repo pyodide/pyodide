@@ -401,7 +401,6 @@ globalThis.loadPyodide = async function(config = {}) {
     'version',
     'loadPackage',
     'loadPackagesFromImports',
-    'loadPackagesAndRunPythonAsync',
     'loadedPackages',
     'isPyProxy',
     'pyimport',
@@ -681,21 +680,6 @@ globalThis.loadPyodide = async function(config = {}) {
     } finally {
       coroutine.destroy();
     }
-  };
-
-  /**
-   * @param {string} code Python code to evaluate
-   * @param {Function} messageCallback The ``messageCallback`` argument of
-   * :any:`pyodide.loadPackage`.
-   * @param {Function} errorCallback The ``errorCallback`` argument of
-   * :any:`pyodide.loadPackage`.
-   * @returns The result of the Python code translated to Javascript.
-   * @async
-   */
-  Module.loadPackagesAndRunPythonAsync =
-      async function(code, messageCallback, errorCallback) {
-    await Module.loadPackagesFromImports(code, messageCallback, errorCallback);
-    await Module.runPythonAsync(code);
   };
 
   // clang-format off
