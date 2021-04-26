@@ -762,6 +762,7 @@ _pyproxy_get_buffer(PyObject* ptrobj)
     return NULL;
   }
 
+  bool success = false;
   buffer_struct result = { 0 };
   result.start_ptr = result.smallest_ptr = result.largest_ptr = view.buf;
   result.readonly = view.readonly;
@@ -815,15 +816,24 @@ _pyproxy_get_buffer(PyObject* ptrobj)
   result.f_contiguous = PyBuffer_IsContiguous(&view, 'F');
 
 success:
-  // The result.view memory will be freed when (if?) the user calls
-  // Py_Buffer.release().
-  result.view = (Py_buffer*)PyMem_Malloc(sizeof(Py_buffer));
-  *result.view = view;
-  // The result_heap memory will be freed by getBuffer
-  buffer_struct* result_heap =
-    (buffer_struct*)PyMem_Malloc(sizeof(buffer_struct));
-  *result_heap = result;
-  return result_heap;
+  success = true;
+finally:
+  if (success) {
+    // The result.view memory will be freed when (if?) the user calls
+    // Py_Buffer.release().
+    result.view = (Py_buffer*)PyMem_Malloc(sizeof(Py_buffer));
+    *result.view = view;
+    // The result_heap memory will be freed by getBuffer
+    buffer_struct* result_heap =
+      (buffer_struct*)PyMem_Malloc(sizeof(buffer_struct));
+    *result_heap = result;
+    return result_heap;
+  } else {
+    hiwire_CLEAR(result.shape);
+    hiwire_CLEAR(result.strides);
+    PyBuffer_Release(&view);
+    return NULL;
+  }
 }
 
 EM_JS_REF(JsRef, pyproxy_new, (PyObject * ptrobj), {
