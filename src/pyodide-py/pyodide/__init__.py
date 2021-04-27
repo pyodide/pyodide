@@ -2,6 +2,7 @@ from ._base import open_url, eval_code, eval_code_async, find_imports
 from ._core import JsProxy, JsException, create_once_callable, create_proxy, to_js  # type: ignore
 from ._importhooks import jsfinder
 from .webloop import WebLoopPolicy
+from _pyodide.remote import syncify
 from . import _state  # type: ignore # noqa
 import asyncio
 import sys
@@ -29,4 +30,5 @@ __all__ = [
     "unregister_js_module",
     "create_once_callable",
     "create_proxy",
+    "syncify",
 ]
