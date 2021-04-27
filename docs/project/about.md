@@ -29,6 +29,13 @@ making changes, and submitting pull requests. Pyodide is an independent and
 community-driven open-source project. The decision making process is outlined in
 {ref}`project-governance`.
 
+## Communication
+
+- Mailing list: [mail.python.org/mailman3/lists/pyodide.python.org/](https://mail.python.org/mailman3/lists/pyodide.python.org/)
+- Gitter: [gitter.im/pyodide/community](https://gitter.im/pyodide/community)
+- Twitter: [twitter.com/pyodide](https://twitter.com/pyodide)
+- Stack Overflow: [stackoverflow.com/questions/tagged/pyodide](https://stackoverflow.com/questions/tagged/pyodide)
+
 ## License
 
 Pyodide uses the [Mozilla Public License Version
