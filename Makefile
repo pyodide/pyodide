@@ -146,7 +146,7 @@ clean-all: clean
 %.o: %.c $(CPYTHONLIB) $(wildcard src/**/*.h src/**/*.js)
 	$(CC) -o $@ -c $< $(MAIN_MODULE_CFLAGS) -Isrc/core/
 
-# stdlib modules that we repackage as standalone files
+# Stdlib modules that we repackage as standalone packages
 
 # TODO: also include test directories included in other stdlib modules
 build/test.data: $(CPYTHONLIB) $(UGLIFYJS)

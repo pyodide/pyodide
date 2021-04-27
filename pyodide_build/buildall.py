@@ -41,6 +41,7 @@ class BasePackage:
         return len(self.dependents) == len(other.dependents)
 
 
+@total_ordering
 class StdLibPackage(BasePackage):
     def __init__(self, pkgdir: Path):
         self.pkgdir = pkgdir

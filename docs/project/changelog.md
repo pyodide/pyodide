@@ -12,6 +12,11 @@ substitutions:
 
 ## [Unreleased]
 
+## Standard library
+
+- Following standard library modules are now available as standalone packages and need to
+  be explicitly loaded with {any}`pyodide.loadPackage`. {pr}`1543`
+
 ## Version 0.17.0
 *April 21, 2020*
 
