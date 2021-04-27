@@ -1,6 +1,7 @@
 import pathlib
 import sys
 import json
+import gzip
 
 from docutils.utils import new_document
 from docutils.frontend import OptionParser
@@ -10,7 +11,8 @@ from sphinx_js.jsdoc import Analyzer as JsAnalyzer
 test_directory = pathlib.Path(__file__).resolve().parent
 sys.path.append(str(test_directory.parent))
 
-jsdoc_json = json.loads((test_directory / "jsdoc_dump.json").read_text())
+with gzip.open(test_directory / "jsdoc_dump.json.gz") as fh:
+    jsdoc_json = json.load(fh)
 settings_json = json.loads((test_directory / "app_settings.json").read_text())
 
 from sphinx_pyodide.jsdoc import (

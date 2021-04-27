@@ -56,12 +56,12 @@ def run_in_pyodide(
                     # containing the source. This results in a more helpful
                     # traceback
                     selenium.run_js(
-                        """pyodide._module.pyodide_py.eval_code({!r}, // code
-                                pyodide._module.globals, // globals
-                                pyodide._module.globals, // locals
-                                "last_expr", // return_mode
-                                true, // quiet_trailing_semicolon
-                                {!r} // filename
+                        """pyodide._module.pyodide_py.eval_code.callKwargs(
+                                {{
+                                    code : {!r},
+                                    globals : pyodide._module.globals,
+                                    filename : {!r}
+                                }}
                             )""".format(
                             _run_in_pyodide_get_source(f), inspect.getsourcefile(f)
                         )

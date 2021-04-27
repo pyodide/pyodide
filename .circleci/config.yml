@@ -211,6 +211,8 @@ jobs:
           path: /root/repo/build/benchmarks.json
 
   deploy-release:
+    # To reduce chance of deployment issues, try to keep the steps here as
+    # similar as possible to the steps in deploy-dev!
     resource_class: small
 
     docker:
@@ -245,25 +247,26 @@ jobs:
             # update 301 redirect for the /latest/* route.
             aws s3api put-bucket-website --cli-input-json file://.circleci/s3-website-config.json
 
-  deploy-s3:
+  deploy-dev:
+    # To reduce chance of deployment issues, try to keep the steps here as
+    # similar as possible to the steps in deploy-release!
     resource_class: small
 
     docker:
-      - image: circleci/python:3.7.7
+      - image: cibuilds/github:0.13 
 
     steps:
       - checkout
       - attach_workspace:
           at: .
       - run:
-          name: Set PYODIDE_BASE_URL
-          command: PYODIDE_BASE_URL="https://cdn.jsdelivr.net/pyodide/dev/full/" make update_base_url
-      - run:
           name: Install requirements
           command: |
-            sudo apt-get update
-            sudo apt-get install -y groff
+            apk add --no-cache --update python3 make
             python3 -m pip install awscli
+      - run:
+          name: Set PYODIDE_BASE_URL
+          command: PYODIDE_BASE_URL="https://cdn.jsdelivr.net/pyodide/dev/full/" make update_base_url
       - run:
           name: Deploy to pyodide-cdn2.iodide.io
           command: |
@@ -337,7 +340,7 @@ workflows:
               ignore: /.*/
             tags:
               only: /^\d+\.\d+\.\w+$/
-      - deploy-s3:
+      - deploy-dev:
           requires:
             - lint
             - test-python

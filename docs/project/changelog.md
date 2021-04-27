@@ -17,6 +17,11 @@ substitutions:
 - Following standard library modules are now available as standalone packages and need to
   be explicitly loaded with {any}`pyodide.loadPackage`. {pr}`1543`
 
+### Python / JS type conversions
+- {{ Enhancement }} Added the {any}`PyProxy.callKwargs` method to allow using
+  Python functions with keyword arguments from Javascript.
+  {pr}`1539`
+
 ## Version 0.17.0
 *April 21, 2020*
 
