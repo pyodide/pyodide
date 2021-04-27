@@ -15,6 +15,7 @@ def test_generate_dependency_graph():
     assert set(pkg_map.keys()) == {
         "packaging",
         "pyparsing",
+        "distutils",
         "soupsieve",
         "beautifulsoup4",
         "micropip",
