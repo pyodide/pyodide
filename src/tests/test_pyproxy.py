@@ -716,3 +716,47 @@ def test_fatal_error(selenium_standalone):
         expect_fatal(() => b.release());
         """
     )
+
+
+def test_pyproxy_call(selenium):
+    selenium.run_js(
+        """
+        pyodide.runPython(`
+            from pyodide import to_js
+            def f(x=2, y=3):
+                return to_js([x, y])
+        `);
+        window.f = pyodide.globals.get("f");
+        """
+    )
+
+    def assert_call(s, val):
+        res = selenium.run_js(f"return {s};")
+        assert res == val
+
+    assert_call("f()", [2, 3])
+    assert_call("f(7)", [7, 3])
+    assert_call("f(7, -1)", [7, -1])
+
+    assert_call("f.callKwargs({})", [2, 3])
+    assert_call("f.callKwargs(7, {})", [7, 3])
+    assert_call("f.callKwargs(7, -1, {})", [7, -1])
+    assert_call("f.callKwargs({ y : 4 })", [2, 4])
+    assert_call("f.callKwargs({ y : 4, x : 9 })", [9, 4])
+    assert_call("f.callKwargs(8, { y : 4 })", [8, 4])
+
+    msg = "TypeError: callKwargs requires at least one argument"
+    with pytest.raises(selenium.JavascriptException, match=msg):
+        selenium.run_js("f.callKwargs()")
+
+    msg = "TypeError: callKwargs requires at least one argument"
+    with pytest.raises(selenium.JavascriptException, match=msg):
+        selenium.run_js("f.callKwargs()")
+
+    msg = r"TypeError: f\(\) got an unexpected keyword argument 'z'"
+    with pytest.raises(selenium.JavascriptException, match=msg):
+        selenium.run_js("f.callKwargs({z : 6})")
+
+    msg = r"TypeError: f\(\) got multiple values for argument 'x'"
+    with pytest.raises(selenium.JavascriptException, match=msg):
+        selenium.run_js("f.callKwargs(76, {x : 6})")
