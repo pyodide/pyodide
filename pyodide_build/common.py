@@ -4,11 +4,14 @@ import shutil
 import subprocess
 import functools
 
+UNVENDORED_STDLIB_MODULES = ["test", "distutils"]
+
 
 def _parse_package_subset(query: Optional[str]) -> Optional[Set[str]]:
     """Parse the list of packages specified with PYODIDE_PACKAGES env var.
 
-    Also add the list of mandatory packages: ["pyparsing", "packaging", "micropip"]
+    Also add the list of mandatory packages: ["pyparsing", "packaging",
+    "micropip"]
 
     Returns:
       a set of package names to build or None.
@@ -49,7 +52,9 @@ def get_make_flag(name):
 
 @functools.lru_cache(maxsize=None)
 def get_make_environment_vars():
-    """Load environment variables from Makefile.envs, this allows us to set all build vars in one place"""
+    """Load environment variables from Makefile.envs
+
+    This allows us to set all build vars in one place"""
     __ROOTDIR = Path(__file__).parents[1].resolve()
     environment = {}
     result = subprocess.run(

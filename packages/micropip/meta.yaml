@@ -5,6 +5,7 @@ requirements:
   run:
     - pyparsing
     - packaging
+    - distutils   # TODO: remove once there is a release with https://github.com/pypa/packaging/pull/396
 source:
   path: micropip
 test:

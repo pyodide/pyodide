@@ -18,6 +18,7 @@ all: check \
 	build/pyodide.js \
 	build/console.html \
 	build/test.data \
+	build/distutils.data \
 	build/packages.json \
 	build/test.html \
 	build/webworker.js \
@@ -54,7 +55,8 @@ build/pyodide.asm.js: \
 		--preload-file src/pyodide-py/_pyodide@/lib/python$(PYMINOR)/site-packages/_pyodide \
 		--exclude-file "*__pycache__*" \
 		--exclude-file "*/test/*"		\
-		--exclude-file "*/tests/*"
+		--exclude-file "*/tests/*" \
+		--exclude-file "*/distutils/*"
 	# Strip out C++ symbols which all start __Z.
 	# There are 4821 of these and they have VERY VERY long names.
 	# Reduces size of pyodide.asm.js by a factor of 2.
@@ -144,7 +146,9 @@ clean-all: clean
 %.o: %.c $(CPYTHONLIB) $(wildcard src/**/*.h src/**/*.js)
 	$(CC) -o $@ -c $< $(MAIN_MODULE_CFLAGS) -Isrc/core/
 
+# stdlib modules that we repackage as standalone files
 
+# TODO: also include test directories included in other stdlib modules
 build/test.data: $(CPYTHONLIB) $(UGLIFYJS)
 	( \
 		cd $(CPYTHONLIB)/test; \
@@ -156,6 +160,16 @@ build/test.data: $(CPYTHONLIB) $(UGLIFYJS)
 	)
 	$(UGLIFYJS) build/test.js -o build/test.js
 
+build/distutils.data: $(CPYTHONLIB) $(UGLIFYJS)
+	( \
+		cd $(CPYTHONLIB)/distutils; \
+		find . -type d -name __pycache__ -prune -exec rm -rf {} \; \
+	)
+	( \
+		cd build; \
+		python $(FILEPACKAGER) distutils.data --lz4 --preload ../$(CPYTHONLIB)/distutils@/lib/python$(PYMINOR)/distutils --js-output=distutils.js --export-name=pyodide._module --exclude __pycache__ \
+	)
+	$(UGLIFYJS) build/distutils.js -o build/distutils.js
 
 $(UGLIFYJS): emsdk/emsdk/.complete
 	npm i --no-save uglify-js

@@ -2,6 +2,8 @@ from pathlib import Path
 
 import pytest
 
+from pyodide_build.common import UNVENDORED_STDLIB_MODULES
+
 
 def test_cpython_core(python_test, selenium, request):
 
@@ -28,7 +30,7 @@ def test_cpython_core(python_test, selenium, request):
         else:
             pytest.xfail('known failure with code "{}"'.format(",".join(error_flags)))
 
-    selenium.load_package("test")
+    selenium.load_package(UNVENDORED_STDLIB_MODULES)
     try:
         selenium.run(
             """
