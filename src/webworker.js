@@ -14,7 +14,7 @@ onmessage = async function(e) {
     if (typeof self.__pyodideLoading === "undefined") {
       await loadPyodide({indexURL : '{{ PYODIDE_BASE_URL }}'});
     }
-    await self.loadPackagesFromImports(data.python);
+    await self.pyodide.loadPackagesFromImports(data.python);
     let result = await self.pyodide.runPythonAsync(data.python);
     self.postMessage({result});
   } catch (e) {
