@@ -1,30 +1,34 @@
 package:
   name: numpy
-  version: 1.15.4
+  version: 1.17.5
 
 source:
-  url: https://files.pythonhosted.org/packages/2d/80/1809de155bad674b494248bcfca0e49eb4c5d8bee58f26fe7a0dd45029e2/numpy-1.15.4.zip
-  sha256: 3d734559db35aa3697dadcea492a423118c5c55d176da2f3be9c98d4803fc2a7
+  url: https://files.pythonhosted.org/packages/d9/09/8e89c05abc450ea347f40b4fa917ec5c69b5228da344487f178586a3187c/numpy-1.17.5.zip
+  sha256: 16507ba6617f62ae3c6ab1725ae6f550331025d4d9a369b83f6d5a470446c342
 
   patches:
+    - patches/segfault-PyArray_Broadcast.patch
+    - patches/segfault-PyArray_PyIntAsIntp.patch
     - patches/add-emscripten-cpu.patch
     - patches/disable-maybe-uninitialized.patch
     - patches/dont-include-execinfo.patch
     - patches/fix-longdouble.patch
     - patches/fix-static-init-of-nditer-pywrap.patch
-    - patches/force_malloc.patch
     - patches/init-alloc-cache.patch
     - patches/use-local-blas-lapack.patch
     - patches/fix-install-with-skip-build.patch
     - patches/make-int-return-values.patch
+    - patches/fix-ieee754.patch
+    - patches/rm-duplicate-symbols-link.patch
+    - patches/delay-ctypes-import.patch
 
 build:
   skip_host: False
-  cflags: -include math.h -I../../config
+  cflags: -include math.h -I../../config -Werror=implicit-function-declaration -Werror=mismatched-parameter-types -Werror=mismatched-return-types
   post: |
     # copy the correct numpy config into the build artifacts. Otherwise scipy will try to build with the config
     # from the build computer and bad things will happen
-    cp config/* $PKGDIR/../.artifacts/lib/python/numpy-1.15.4-py3.8-linux-x86_64.egg/numpy/core/include/numpy
+    cp config/* $PKGDIR/../.artifacts/lib/python/numpy-1.17.5-py3.8-linux-x86_64.egg/numpy/core/include/numpy
 
 test:
   imports:

@@ -1,45 +1,28 @@
 from pathlib import Path
 from typing import Optional, Set
 import shutil
-
-ROOTDIR = Path(__file__).parents[1].resolve()
-TOOLSDIR = ROOTDIR / "tools"
-TARGETPYTHON = ROOTDIR / "cpython" / "installs" / "python-3.8.2"
-
-# Leading space so that argparse doesn't think this is a flag
-DEFAULTCFLAGS = " -fPIC"
-DEFAULTCXXFLAGS = ""
-# fmt: off
-DEFAULTLDFLAGS = " ".join(
-    [
-        "-O2",
-        "-Werror",
-        "-s", "EMULATE_FUNCTION_POINTER_CASTS=1",
-        "-s",'BINARYEN_EXTRA_PASSES="--pass-arg=max-func-params@61"',
-        "-s", "SIDE_MODULE=1",
-        "-s", "WASM=1",
-        "--memory-init-file", "0",
-        "-s", "LINKABLE=1",
-        "-s", "EXPORT_ALL=1",
-    ]
-)
-# fmt: on
+import subprocess
+import functools
 
 
 def _parse_package_subset(query: Optional[str]) -> Optional[Set[str]]:
     """Parse the list of packages specified with PYODIDE_PACKAGES env var.
 
-    Also add the list of mandatory packages: ['micropip', 'distlib']
+    Also add the list of mandatory packages: ["pyparsing", "packaging", "micropip"]
 
     Returns:
       a set of package names to build or None.
     """
     if query is None:
         return None
-    packages = query.split(",")
-    packages = [el.strip() for el in packages]
-    packages = ["micropip", "distlib"] + packages
-    return set(packages)
+    packages = {el.strip() for el in query.split(",")}
+    packages.update(["pyparsing", "packaging", "micropip"])
+    # Hack for 0.17.0 release
+    # TODO: FIXME!!
+    if "beautifulsoup4" in packages:
+        packages.add("soupsieve")
+    packages.discard("")
+    return packages
 
 
 def file_packager_path() -> Path:
@@ -51,3 +34,34 @@ def file_packager_path() -> Path:
         )
 
     return Path(emcc_path).parent / "tools" / "file_packager.py"
+
+
+def get_make_flag(name):
+    """Get flags from makefile.envs,
+        e.g. For building packages we currently use:
+    SIDE_MODULE_LDFLAGS
+    SIDE_MODULE_CFLAGS
+    SIDE_MODULE_CXXFLAGS
+    TOOLSDIR
+    """
+    return get_make_environment_vars()[name]
+
+
+@functools.lru_cache(maxsize=None)
+def get_make_environment_vars():
+    """Load environment variables from Makefile.envs, this allows us to set all build vars in one place"""
+    __ROOTDIR = Path(__file__).parents[1].resolve()
+    environment = {}
+    result = subprocess.run(
+        ["make", "-f", str(__ROOTDIR / "Makefile.envs"), ".output_vars"],
+        capture_output=True,
+        text=True,
+    )
+    for line in result.stdout.splitlines():
+        equalPos = line.find("=")
+        if equalPos != -1:
+            varname = line[0:equalPos]
+            value = line[equalPos + 1 :]
+            value = value.strip("'").strip()
+            environment[varname] = value
+    return environment

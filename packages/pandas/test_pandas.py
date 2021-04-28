@@ -34,19 +34,27 @@ def generate_largish_json(n_rows: int = 91746) -> Dict:
     return data
 
 
+@pytest.mark.driver_timeout(30)
 def test_pandas(selenium, request):
     selenium.load_package("pandas")
     assert len(selenium.run("import pandas\ndir(pandas)")) == 142
 
 
+@pytest.mark.driver_timeout(30)
 def test_extra_import(selenium, request):
 
     selenium.load_package("pandas")
     selenium.run("from pandas import Series, DataFrame, Panel")
 
 
+@pytest.mark.driver_timeout(40)
+@pytest.mark.skip_refcount_check
 def test_load_largish_file(selenium_standalone, request, httpserver):
     selenium = selenium_standalone
+    if selenium.browser == "chrome":
+        pytest.xfail(
+            "test_load_largish_file triggers a fatal runtime error in Chrome 89 see #1495"
+        )
 
     selenium.load_package("pandas")
     selenium.load_package("matplotlib")
@@ -68,5 +76,5 @@ def test_load_largish_file(selenium_standalone, request, httpserver):
 
         df = pd.read_json(pyodide.open_url('{request_url}'))
         assert df.shape == ({n_rows}, 8)
-    """
+        """
     )

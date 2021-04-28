@@ -13,7 +13,7 @@ import shutil
 import subprocess
 import sys
 from threading import Thread
-from time import sleep
+from time import sleep, perf_counter
 from typing import Dict, Set, Optional, List
 
 from . import common
@@ -31,6 +31,7 @@ class Package:
 
         self.meta: dict = parse_package_config(pkgpath)
         self.name: str = self.meta["package"]["name"]
+        self.version: str = self.meta["package"]["version"]
         self.library: bool = self.meta.get("build", {}).get("library", False)
         self.shared_library: bool = self.meta.get("build", {}).get(
             "sharedlibrary", False
@@ -177,13 +178,14 @@ def build_from_graph(pkg_map: Dict[str, Package], outputdir: Path, args) -> None
         while True:
             pkg = build_queue.get()
             print(f"Thread {n} building {pkg.name}")
+            t0 = perf_counter()
             try:
                 pkg.build(outputdir, args)
             except Exception as e:
                 built_queue.put(e)
                 return
 
-            print(f"Thread {n} built {pkg.name}")
+            print(f"Thread {n} built {pkg.name} in {perf_counter() - t0:.1f} s")
             built_queue.put(pkg)
             # Release the GIL so new packages get queued
             sleep(0.01)
@@ -219,6 +221,7 @@ def build_packages(packages_dir: Path, outputdir: Path, args) -> None:
         "dependencies": {"test": []},
         "import_name_to_package_name": {},
         "shared_library": {},
+        "versions": {},
     }
 
     libraries = [pkg.name for pkg in pkg_map.values() if pkg.library]
@@ -231,9 +234,14 @@ def build_packages(packages_dir: Path, outputdir: Path, args) -> None:
         package_data["dependencies"][name] = [
             x for x in pkg.dependencies if x not in libraries
         ]
+        package_data["versions"][name] = pkg.version
         for imp in pkg.meta.get("test", {}).get("imports", [name]):
             package_data["import_name_to_package_name"][imp] = name
 
+    # Hack for 0.17.0 release
+    # TODO: FIXME!!
+    if "soupsieve" in pkg_map:
+        package_data["dependencies"]["soupsieve"].append("beautifulsoup4")
     with open(outputdir / "packages.json", "w") as fd:
         json.dump(package_data, fd)
 
@@ -241,7 +249,9 @@ def build_packages(packages_dir: Path, outputdir: Path, args) -> None:
 def make_parser(parser):
     parser.description = (
         "Build all of the packages in a given directory\n\n"
-        "Unless the --only option is provided"
+        "Unless the --only option is provided\n\n"
+        "Note: this is a private endpoint that should not be used "
+        "outside of the pyodide Makefile."
     )
     parser.add_argument(
         "dir",
@@ -259,28 +269,28 @@ def make_parser(parser):
         "--cflags",
         type=str,
         nargs="?",
-        default=common.DEFAULTCFLAGS,
+        default=common.get_make_flag("SIDE_MODULE_CFLAGS"),
         help="Extra compiling flags",
     )
     parser.add_argument(
         "--cxxflags",
         type=str,
         nargs="?",
-        default=common.DEFAULTCXXFLAGS,
+        default=common.get_make_flag("SIDE_MODULE_CXXFLAGS"),
         help="Extra C++ specific compiling flags",
     )
     parser.add_argument(
         "--ldflags",
         type=str,
         nargs="?",
-        default=common.DEFAULTLDFLAGS,
+        default=common.get_make_flag("SIDE_MODULE_LDFLAGS"),
         help="Extra linking flags",
     )
     parser.add_argument(
         "--target",
         type=str,
         nargs="?",
-        default=common.TARGETPYTHON,
+        default=common.get_make_flag("TARGETPYTHONROOT"),
         help="The path to the target Python installation",
     )
     parser.add_argument(
@@ -299,9 +309,7 @@ def make_parser(parser):
         type=str,
         nargs="?",
         default=None,
-        help=(
-            "Only build the specified packages, provided as a comma " "separated list"
-        ),
+        help=("Only build the specified packages, provided as a comma-separated list"),
     )
     parser.add_argument(
         "--n-jobs",

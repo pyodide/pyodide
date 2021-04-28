@@ -86,7 +86,7 @@ from pyodide_build.testing import run_in_pyodide
 def test_add():
     assert 1 + 1 == 2
 ```
-In this case, the body of the function will automatically be run in pyodide.
+In this case, the body of the function will automatically be run in Pyodide.
 The decorator can also be called with arguments. It has two configuration
 options --- standalone and packages.
 

@@ -3,6 +3,7 @@ from textwrap import dedent
 import pytest
 
 
+@pytest.mark.driver_timeout(40)
 def test_scipy_linalg(selenium_standalone, request):
     selenium = selenium_standalone
 
@@ -29,6 +30,7 @@ def test_scipy_linalg(selenium_standalone, request):
     selenium.run(cmd)
 
 
+@pytest.mark.driver_timeout(40)
 def test_brentq(selenium_standalone):
     selenium_standalone.load_package("scipy")
     selenium_standalone.run("from scipy.optimize import brentq")

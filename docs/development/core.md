@@ -3,7 +3,7 @@
 This file is intended as guidelines to help contributors trying to modify the C source files in `src/core`.
 
 ## What the files do
-The primary purpose of `core` is to implement {ref}`type conversions <type_conversions>` between Python and Javascript. Here is a breakdown of the purposes of the files.
+The primary purpose of `core` is to implement {ref}`type translations <type-translations>` between Python and Javascript. Here is a breakdown of the purposes of the files.
 
 * `main` -- responsible for configuring and initializing the Python interpreter, initializing the other source files, and creating the `_pyodide_core` module which is used to expose Python objects to `pyodide_py`. `main.c` also tries to generate fatal initialization error messages to help with debugging when there is a mistake in the initialization code.
 * `keyboard_interrupt` -- This sets up the keyboard interrupts system for using Pyodide with a webworker.
@@ -14,12 +14,12 @@ The primary purpose of `core` is to implement {ref}`type conversions <type_conve
 
 ### Type conversion from Javascript to Python
 
-* `js2python` -- converts basic types from Javascript to Python, leaves more complicated stuff to jsproxy.
-* `jsproxy` -- Defines Python classes to proxy complex Javascript types into Python. A complex file responsible for many of the core behaviors of pyodide.
+* `js2python` -- Translates basic types from Javascript to Python, leaves more complicated stuff to jsproxy.
+* `jsproxy` -- Defines Python classes to proxy complex Javascript types into Python. A complex file responsible for many of the core behaviors of Pyodide.
 
 ### Type conversion from Python to Javascript
 
-* `python2js` -- Converts basic types from Python to Javascript and also implements deep copy from Python to Javascript.
+* `python2js` -- Translates types from types from Python to Javascript, implicitly converting basic types and creating pyproxies for others. It also implements explicity conversion from Python to Javascript (the `toJs` method).
 * `python2js_buffer` -- Attempts to convert Python objects that implement the Python [Buffer Protocol](https://docs.python.org/3/c-api/buffer.html). This includes `bytes` objects, `memoryview`s, `array.array` and a wide variety of types exposed by extension modules like `numpy`. If the data is a 1d array in a contiguous block it can be sliced directly out of the wasm heap to produce a Javascript `TypedArray`, but Javascript does not have native support for pointers so higher dimensional arrays are more complicated.
 * `pyproxy` -- Defines a Javascript `Proxy` object that passes calls through to a Python object. Another important core file, `PyProxy.apply` is the primary entrypoint into Python code. `pyproxy.c` is much simpler than `jsproxy.c` though.
 

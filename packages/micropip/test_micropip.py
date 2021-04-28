@@ -1,4 +1,3 @@
-import time
 import sys
 from pathlib import Path
 
@@ -7,31 +6,44 @@ import pytest
 sys.path.append(str(Path(__file__).resolve().parent / "micropip"))
 
 
-def test_install_simple(selenium_standalone):
-    selenium_standalone.run("import os")
-    selenium_standalone.load_package("micropip")
-    selenium_standalone.run("import micropip")
-    selenium_standalone.run("micropip.install('pyodide-micropip-test')")
-    # Package 'pyodide-micropip-test' has dependency on 'snowballstemmer'
-    # It is used to test markers support
+@pytest.fixture
+def selenium_standalone_micropip(selenium_standalone):
+    """Import micropip before entering test so that global initialization of
+    micropip doesn't count towards hiwire refcount.
+    """
+    selenium_standalone.run_js(
+        """
+        await pyodide.loadPackage("micropip");
+        await pyodide.runPython("import micropip");
+        """
+    )
+    yield selenium_standalone
 
-    for i in range(10):
-        if selenium_standalone.run(
-            "os.path.exists" "('/lib/python3.8/site-packages/snowballstemmer')"
-        ):
-            break
-        else:
-            time.sleep(1)
 
-    selenium_standalone.run("import snowballstemmer")
-    selenium_standalone.run("stemmer = snowballstemmer.stemmer('english')")
-    assert selenium_standalone.run(
-        "stemmer.stemWords('go going goes gone'.split())"
-    ) == ["go", "go", "goe", "gone"]
+def test_install_simple(selenium_standalone_micropip):
+    selenium = selenium_standalone_micropip
+    assert (
+        selenium.run_js(
+            """
+            let result = await pyodide.runPythonAsync(`
+                import os
+                import micropip
+                # Package 'pyodide-micropip-test' has dependency on 'snowballstemmer'
+                # It is used to test markers support
+                await micropip.install('pyodide-micropip-test')
+                import snowballstemmer
+                stemmer = snowballstemmer.stemmer('english')
+                stemmer.stemWords('go going goes gone'.split())
+            `);
+            return result.toJs();
+            """
+        )
+        == ["go", "go", "goe", "gone"]
+    )
 
 
 def test_parse_wheel_url():
-    pytest.importorskip("distlib")
+    pytest.importorskip("packaging")
     import micropip
 
     url = "https://a/snowballstemmer-2.0.0-py2.py3-none-any.whl"
@@ -59,26 +71,45 @@ def test_parse_wheel_url():
     assert wheel["platform"] == "macosx_10_9_intel"
 
 
-def test_install_custom_url(selenium_standalone, web_server_tst_data):
+def test_install_custom_url(selenium_standalone_micropip, web_server_tst_data):
+    selenium = selenium_standalone_micropip
     server_hostname, server_port, server_log = web_server_tst_data
-    selenium_standalone.load_package("micropip")
-    selenium_standalone.run("import micropip")
     base_url = f"http://{server_hostname}:{server_port}/"
     url = base_url + "snowballstemmer-2.0.0-py2.py3-none-any.whl"
-    selenium_standalone.run(f"micropip.install('{url}')")
-    # wait untill micropip is loaded
-    time.sleep(1)
-    selenium_standalone.run("import snowballstemmer")
+    selenium.run_js(
+        f"""
+        await pyodide.runPythonAsync(`
+            import micropip
+            await micropip.install('{url}')
+            import snowballstemmer
+        `);
+        """
+    )
+
+
+def run_sync(coroutine):
+    # The following is a way to synchronously run a coroutine that does only
+    # synchronous operations (and assert that it indeed only did sync
+    # operations)
+    try:
+        coroutine.send(None)
+    except StopIteration as result:
+        return result.args and result.args[0]
+    else:
+        raise Exception("Coroutine didn't finish in one pass")
 
 
 def test_add_requirement_relative_url():
-    pytest.importorskip("distlib")
+    pytest.importorskip("packaging")
     import micropip
 
     transaction = {"wheels": []}
-    micropip.PACKAGE_MANAGER.add_requirement(
-        "./snowballstemmer-2.0.0-py2.py3-none-any.whl", {}, transaction
+    run_sync(
+        micropip.PACKAGE_MANAGER.add_requirement(
+            "./snowballstemmer-2.0.0-py2.py3-none-any.whl", {}, transaction
+        )
     )
+
     [name, req, version] = transaction["wheels"][0]
     assert name == "snowballstemmer"
     assert version == "2.0.0"
@@ -90,43 +121,55 @@ def test_add_requirement_relative_url():
     assert req["url"] == "./snowballstemmer-2.0.0-py2.py3-none-any.whl"
 
 
-def test_install_custom_relative_url(selenium_standalone):
-    selenium_standalone.load_package("micropip")
-    selenium_standalone.run("import micropip")
+def test_add_requirement_marker():
+    pytest.importorskip("packaging")
+    import micropip
 
+    transaction = run_sync(
+        micropip.PACKAGE_MANAGER.gather_requirements(
+            [
+                "werkzeug",
+                'contextvars ; python_version < "3.7"',
+                'aiocontextvars ; python_version < "3.7"',
+                "numpy ; extra == 'full'",
+                "zarr ; extra == 'full'",
+                "numpy ; extra == 'jupyter'",
+                "ipykernel ; extra == 'jupyter'",
+                "numpy ; extra == 'socketio'",
+                "python-socketio[client] ; extra == 'socketio'",
+            ]
+        )
+    )
+    assert len(transaction["wheels"]) == 1
+
+
+def test_install_custom_relative_url(selenium_standalone_micropip):
+    selenium = selenium_standalone_micropip
     root = Path(__file__).resolve().parents[2]
     src = root / "src" / "tests" / "data"
     target = root / "build" / "test_data"
     target.symlink_to(src, True)
+    url = "./test_data/snowballstemmer-2.0.0-py2.py3-none-any.whl"
     try:
-        url = "./test_data/snowballstemmer-2.0.0-py2.py3-none-any.whl"
-        selenium_standalone.run(f"micropip.install('{url}')")
-        # wait untill micropip is loaded
-        time.sleep(1)
-        selenium_standalone.run("import snowballstemmer")
+        selenium.run_js(
+            f"""
+            await pyodide.runPythonAsync(`
+                import micropip
+                await micropip.install('{url}')
+                import snowballstemmer
+            `)
+            """
+        )
     finally:
         target.unlink()
 
 
 def test_last_version_from_pypi():
-    pytest.importorskip("distlib")
+    pytest.importorskip("packaging")
     import micropip
+    from packaging.requirements import Requirement
 
-    class Namespace:
-        def __init__(self, **entries):
-            self.__dict__.update(entries)
-
-    # requirement as returned by distlib.util.parse_requirement
-    requirement = Namespace(
-        constraints=None,
-        extras=None,
-        marker=None,
-        name="dummy_module",
-        requirement="dummy_module",
-        url=None,
-    )
-
-    # available versions
+    requirement = Requirement("dummy_module")
     versions = ["0.0.1", "0.15.5", "0.9.1"]
 
     # building metadata as returned from
@@ -140,4 +183,48 @@ def test_last_version_from_pypi():
     # get version number from find_wheel
     wheel, ver = micropip.PACKAGE_MANAGER.find_wheel(metadata, requirement)
 
-    assert ver == "0.15.5"
+    assert str(ver) == "0.15.5"
+
+
+def test_install_different_version(selenium_standalone_micropip):
+    selenium = selenium_standalone_micropip
+    selenium.run_js(
+        """
+        await pyodide.runPythonAsync(`
+            import micropip
+            await micropip.install(
+                "https://files.pythonhosted.org/packages/89/06/2c2d3034b4d6bf22f2a4ae546d16925898658a33b4400cfb7e2c1e2871a3/pytz-2020.5-py2.py3-none-any.whl"
+            );
+        `);
+        """
+    )
+    selenium.run_js(
+        """
+        await pyodide.runPythonAsync(`
+            import pytz
+            assert pytz.__version__ == "2020.5"
+        `);
+        """
+    )
+
+
+def test_install_different_version2(selenium_standalone_micropip):
+    selenium = selenium_standalone_micropip
+    selenium.run_js(
+        """
+        await pyodide.runPythonAsync(`
+            import micropip
+            await micropip.install(
+                "pytz == 2020.5"
+            );
+        `);
+        """
+    )
+    selenium.run_js(
+        """
+        await pyodide.runPythonAsync(`
+            import pytz
+            assert pytz.__version__ == "2020.5"
+        `);
+        """
+    )

@@ -36,9 +36,10 @@ def _extract_sdist(pypi_metadata: Dict[str, Any]) -> Dict:
     )
 
 
-def _get_metadata(package: str) -> Tuple[Dict, Dict]:
+def _get_metadata(package: str, version: Optional[str] = None) -> Tuple[Dict, Dict]:
     """Download metadata for a package from PyPi"""
-    url = f"https://pypi.org/pypi/{package}/json"
+    version = ("/" + version) if version is not None else ""
+    url = f"https://pypi.org/pypi/{package}{version}/json"
 
     with urllib.request.urlopen(url) as fd:
         pypi_metadata = json.load(fd)
@@ -55,13 +56,7 @@ def make_package(package: str, version: Optional[str] = None):
     """
     import yaml
 
-    version = ("/" + version) if version is not None else ""
-    url = f"https://pypi.org/pypi/{package}{version}/json"
-
-    with urllib.request.urlopen(url) as fd:
-        json_content = json.load(fd)
-
-    sdist_metadata, pypi_metadata = _get_metadata(package)
+    sdist_metadata, pypi_metadata = _get_metadata(package, version)
     url = sdist_metadata["url"]
     sha256 = sdist_metadata["digests"]["sha256"]
     version = pypi_metadata["info"]["version"]
@@ -141,8 +136,9 @@ complex things.""".strip()
 def main(args):
     package = args.package[0]
     if args.update:
-        return update_package(package)
-    return make_package(package, args.version)
+        update_package(package)
+        return
+    make_package(package, args.version)
 
 
 if __name__ == "__main__":

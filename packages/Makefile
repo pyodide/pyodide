@@ -2,10 +2,16 @@ export PYODIDE_ROOT=$(abspath ..)
 PYODIDE_LIBRARIES=$(abspath ./.artifacts)
 include ../Makefile.envs
 
+ifeq ($(strip $(PYODIDE_PACKAGES)),)
+else
+	ONLY_PACKAGES=--only "$(PYODIDE_PACKAGES)"
+endif
+
 all:
 	mkdir -p $(PYODIDE_LIBRARIES)
 	PYTHONPATH=$(PYODIDE_LIBRARIES)/lib/python ../bin/pyodide buildall . ../build \
-		--target=$(TARGETPYTHONROOT) --only $(PYODIDE_PACKAGES) --install-dir $(PYODIDE_LIBRARIES)
+		--target=$(TARGETPYTHONROOT) $(ONLY_PACKAGES) --install-dir $(PYODIDE_LIBRARIES) --n-jobs $${PYODIDE_JOBS:-4}
+
 
 update-all:
 	for pkg in $$(find . -maxdepth 1 -type d -exec basename {} \; | tail -n +2); do \

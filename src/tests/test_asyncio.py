@@ -35,16 +35,131 @@ def test_await_jsproxy(selenium):
         )
 
 
+def test_then_jsproxy(selenium):
+    selenium.run(
+        """
+        def prom(res, rej):
+            global resolve
+            global reject
+            resolve = res
+            reject = rej
+
+        from js import Promise
+        result = None
+        err = None
+        finally_occurred = False
+
+        def onfulfilled(value):
+            global result
+            result = value
+
+        def onrejected(value):
+            global err
+            err = value
+
+        def onfinally():
+            global finally_occurred
+            finally_occurred = True
+        """
+    )
+
+    selenium.run(
+        """
+        p = Promise.new(prom)
+        p.then(onfulfilled, onrejected)
+        resolve(10)
+        """
+    )
+    time.sleep(0.01)
+    selenium.run(
+        """
+        assert result == 10
+        assert err is None
+        result = None
+        """
+    )
+
+    selenium.run(
+        """
+        p = Promise.new(prom)
+        p.then(onfulfilled, onrejected)
+        reject(10)
+        """
+    )
+    time.sleep(0.01)
+    selenium.run(
+        """
+        assert result is None
+        assert err == 10
+        err = None
+        """
+    )
+
+    selenium.run(
+        """
+        p = Promise.new(prom)
+        p.catch(onrejected)
+        resolve(10)
+        """
+    )
+    time.sleep(0.01)
+    selenium.run("assert err is None")
+
+    selenium.run(
+        """
+        p = Promise.new(prom)
+        p.catch(onrejected)
+        reject(10)
+        """
+    )
+    time.sleep(0.01)
+    selenium.run(
+        """
+        assert err == 10
+        err = None
+        """
+    )
+
+    selenium.run(
+        """
+        p = Promise.new(prom)
+        p.finally_(onfinally)
+        resolve(10)
+        """
+    )
+    time.sleep(0.01)
+    selenium.run(
+        """
+        assert finally_occurred
+        finally_occurred = False
+        """
+    )
+
+    selenium.run(
+        """
+        p = Promise.new(prom)
+        p.finally_(onfinally)
+        reject(10)
+        """
+    )
+    time.sleep(0.01)
+    selenium.run(
+        """
+        assert finally_occurred
+        finally_occurred = False
+        """
+    )
+
+
 def test_await_fetch(selenium):
     selenium.run(
         """
-        from js import fetch, window
+        from js import fetch
         async def test():
             response = await fetch("console.html")
             result = await response.text()
             print(result)
             return result
-        fetch = fetch.bind(window)
 
         c = test()
         r1 = c.send(None)
@@ -70,7 +185,6 @@ def test_await_error(selenium):
     selenium.run_js(
         """
         async function async_js_raises(){
-            console.log("Hello there???");
             throw new Error("This is an error message!");
         }
         window.async_js_raises = async_js_raises;
@@ -78,16 +192,14 @@ def test_await_error(selenium):
             throw new Error("This is an error message!");
         }
         window.js_raises = js_raises;
-        """
-    )
-    selenium.run(
-        """
-        from js import async_js_raises, js_raises
-        async def test():
-            c = await async_js_raises()
-            return c
-        c = test()
-        r1 = c.send(None)
+        pyodide.runPython(`
+            from js import async_js_raises, js_raises
+            async def test():
+                c = await async_js_raises()
+                return c
+            c = test()
+            r1 = c.send(None)
+        `);
         """
     )
     msg = "This is an error message!"
@@ -159,8 +271,7 @@ def test_eval_code_await_jsproxy(selenium):
 def test_eval_code_await_fetch(selenium):
     selenium.run(
         """
-        from js import fetch, window
-        fetch = fetch.bind(window)
+        from js import fetch
         from pyodide._base import eval_code_async
         c = eval_code_async(
             '''
@@ -196,23 +307,17 @@ def test_eval_code_await_error(selenium):
             throw new Error("This is an error message!");
         }
         window.async_js_raises = async_js_raises;
-        function js_raises(){
-            throw new Error("This is an error message!");
-        }
-        window.js_raises = js_raises;
-        """
-    )
-    selenium.run(
-        """
-        from js import async_js_raises, js_raises
-        from pyodide._base import eval_code_async
-        c = eval_code_async(
-            '''
-            await async_js_raises()
-            ''',
-            globals=globals()
-        )
-        r1 = c.send(None)
+        pyodide.runPython(`
+            from js import async_js_raises
+            from pyodide._base import eval_code_async
+            c = eval_code_async(
+                '''
+                await async_js_raises()
+                ''',
+                globals=globals()
+            )
+            r1 = c.send(None)
+        `)
         """
     )
     msg = "This is an error message!"
@@ -225,12 +330,30 @@ def test_eval_code_await_error(selenium):
         )
 
 
+def test_ensure_future_memleak(selenium):
+    selenium.run_js(
+        """
+        window.o = { "xxx" : 777 };
+        pyodide.runPython(`
+            import asyncio
+            from js import o
+            async def test():
+                return o
+            asyncio.ensure_future(test())
+            None
+        `);
+        """
+    )
+
+
 def test_await_pyproxy_eval_async(selenium):
     assert (
         selenium.run_js(
             """
             let c = pyodide._module.pyodide_py._base.eval_code_async("1+1");
-            return await c;
+            let result = await c;
+            c.destroy();
+            return result;
             """
         )
         == 2
@@ -239,11 +362,11 @@ def test_await_pyproxy_eval_async(selenium):
     assert (
         selenium.run_js(
             """
-        let finally_occurred = false;
-        let c = pyodide._module.pyodide_py._base.eval_code_async("1+1");
-        let result = await c.finally(() => { finally_occurred = true; });
-        return [result, finally_occurred];
-        """
+            let finally_occurred = false;
+            let c = pyodide._module.pyodide_py._base.eval_code_async("1+1");
+            let result = await c.finally(() => { finally_occurred = true; });
+            return [result, finally_occurred];
+            """
         )
         == [2, True]
     )
@@ -251,16 +374,16 @@ def test_await_pyproxy_eval_async(selenium):
     assert (
         selenium.run_js(
             """
-        let finally_occurred = false;
-        let err_occurred = false;
-        let c = pyodide._module.pyodide_py._base.eval_code_async("raise ValueError('hi')");
-        try {
-            let result = await c.finally(() => { finally_occurred = true; });
-        } catch(e){
-            err_occurred = e.constructor.name === "PythonError";
-        }
-        return [finally_occurred, err_occurred];
-        """
+            let finally_occurred = false;
+            let err_occurred = false;
+            let c = pyodide._module.pyodide_py._base.eval_code_async("raise ValueError('hi')");
+            try {
+                let result = await c.finally(() => { finally_occurred = true; });
+            } catch(e){
+                err_occurred = e.constructor.name === "PythonError";
+            }
+            return [finally_occurred, err_occurred];
+            """
         )
         == [True, True]
     )
@@ -274,10 +397,12 @@ def test_await_pyproxy_eval_async(selenium):
 
     assert selenium.run_js(
         """
-        let packages = await pyodide._module.pyodide_py._base.eval_code_async(`
+        let c = pyodide._module.pyodide_py._base.eval_code_async(`
             from js import fetch
             await (await fetch('packages.json')).json()
         `);
+        let packages = await c;
+        c.destroy();
         return (!!packages.dependencies) && (!!packages.import_name_to_package_name);
         """
     )

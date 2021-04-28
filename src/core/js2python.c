@@ -22,17 +22,6 @@ _js2python_get_ptr(PyObject* obj)
 }
 
 PyObject*
-_js2python_number(double val)
-{
-  double i;
-
-  if (modf(val, &i) == 0.0)
-    return PyLong_FromDouble(i);
-
-  return PyFloat_FromDouble(val);
-}
-
-PyObject*
 _js2python_none()
 {
   Py_RETURN_NONE;
@@ -57,22 +46,12 @@ _js2python_pyproxy(PyObject* val)
   return val;
 }
 
-PyObject*
-_js2python_memoryview(JsRef id)
-{
-  PyObject* jsproxy = JsProxy_create(id);
-  return PyMemoryView_FromObject(jsproxy);
-}
-
 EM_JS_REF(PyObject*, js2python, (JsRef id), {
   let value = Module.hiwire.get_value(id);
   let result = Module.__js2python_convertImmutable(value);
   // clang-format off
   if (result !== 0) {
     return result;
-  }
-  if (value['byteLength'] !== undefined) {
-    return __js2python_memoryview(id);
   }
   return _JsProxy_create(id);
   // clang-format on
@@ -134,6 +113,14 @@ EM_JS_NUM(errcode, js2python_init, (), {
     return result;
   };
 
+  Module.__js2python_bigint = function(value)
+  {
+    let ptr = stringToNewUTF8(value.toString(16));
+    let result = _PyLong_FromString(ptr, 0, 16);
+    _free(ptr);
+    return result;
+  };
+
   Module.__js2python_convertImmutable = function(value)
   {
     let type = typeof value;
@@ -141,15 +128,21 @@ EM_JS_NUM(errcode, js2python_init, (), {
     if (type === 'string') {
       return Module.__js2python_string(value);
     } else if (type === 'number') {
-      return __js2python_number(value);
+      if(Number.isSafeInteger(value)){
+        return _PyLong_FromDouble(value);
+      } else {
+        return _PyFloat_FromDouble(value);
+      }
+    } else if(type === "bigint"){
+      return Module.__js2python_bigint(value);
     } else if (value === undefined || value === null) {
       return __js2python_none();
     } else if (value === true) {
       return __js2python_true();
     } else if (value === false) {
       return __js2python_false();
-    } else if (Module.PyProxy.isPyProxy(value)) {
-      return __js2python_pyproxy(Module.PyProxy._getPtr(value));
+    } else if (Module.isPyProxy(value)) {
+      return __js2python_pyproxy(Module.PyProxy_getPtr(value));
     }
     // clang-format on
     return 0;
@@ -351,6 +344,10 @@ EM_JS_NUM(errcode, js2python_init, (), {
     }
     if (toStringTag === "[object Object]" && (value.constructor === undefined || value.constructor.name === "Object")) {
       return Module.__js2python_convertMap(value, Object.entries(value), cache, depth);
+    }
+    if (toStringTag === "[object ArrayBuffer]" || ArrayBuffer.isView(value)){
+      let [format_utf8, itemsize] = Module.get_buffer_datatype(value);
+      return _JsBuffer_CloneIntoPython(id, value.byteLength, format_utf8, itemsize);
     }
     // clang-format on
     return _JsProxy_create(id);

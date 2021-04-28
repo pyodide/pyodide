@@ -1,6 +1,7 @@
 import pytest
 
 
+@pytest.mark.driver_timeout(40)
 def test_scikit_learn(selenium_standalone, request):
     selenium = selenium_standalone
     selenium.load_package("scikit-learn")

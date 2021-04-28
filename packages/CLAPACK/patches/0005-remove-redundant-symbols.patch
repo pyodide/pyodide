@@ -3,7 +3,7 @@ ported in scipy. It wouldn't be an issue if we were linking dynamically, but
 because of static linking otherwise we get errors at link time about symbols
 defined twice.
 
- - Roman Yurchak (https://github.com/iodide-project/pyodide/pull/238)
+ - Roman Yurchak (https://github.com/pyodide/pyodide/pull/238)
 diff --git a/Makefile.orig b/Makefile
 index 223f4da..69ac630 100644
 --- a/SRC/Makefile

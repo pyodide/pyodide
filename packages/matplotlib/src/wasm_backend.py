@@ -208,11 +208,15 @@ class FigureCanvasWasm(backend_agg.FigureCanvasAgg):
         self.draw()
 
     def draw(self):
+        from pyodide import create_proxy
+
         # Render the figure using Agg
         self._idle_scheduled = True
         orig_dpi = self.figure.dpi
         if self._ratio != 1:
             self.figure.dpi *= self._ratio
+        pixels_proxy = None
+        pixels_buf = None
         try:
             super().draw()
             # Copy the image buffer to the canvas
@@ -221,12 +225,18 @@ class FigureCanvasWasm(backend_agg.FigureCanvasAgg):
             if canvas is None:
                 return
             pixels = self.buffer_rgba().tobytes()
-            image_data = ImageData.new(pixels, width, height)
+            pixels_proxy = create_proxy(pixels)
+            pixels_buf = pixels_proxy.getBuffer("u8clamped")
+            image_data = ImageData.new(pixels_buf.data, width, height)
             ctx = canvas.getContext("2d")
             ctx.putImageData(image_data, 0, 0)
         finally:
             self.figure.dpi = orig_dpi
             self._idle_scheduled = False
+            if pixels_proxy:
+                pixels_proxy.destroy()
+            if pixels_buf:
+                pixels_buf.release()
 
     def draw_idle(self):
         if not self._idle_scheduled:

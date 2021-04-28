@@ -3,6 +3,8 @@ include ../Makefile.envs
 
 ROOT=$(abspath .)
 
+PYTHON_CFLAGS=$(CFLAGS_BASE)
+
 BUILD=$(ROOT)/build/Python-$(PYVERSION)
 INSTALL=$(ROOT)/installs/python-$(PYVERSION)
 TARBALL=$(ROOT)/downloads/Python-$(PYVERSION).tgz
@@ -21,7 +23,7 @@ SQLITEURL=https://www.sqlite.org/2019/sqlite-autoconf-3270200.tar.gz
 
 BZIP2TARBALL=$(ROOT)/downloads/bzip2-1.0.2.tar.gz
 BZIP2BUILD=$(ROOT)/build/bzip2-1.0.2
-BZIP2URL=ftp://sourceware.org/pub/bzip2/v102/bzip2-1.0.2.tar.gz
+BZIP2URL=https://sourceware.org/pub/bzip2/bzip2-1.0.2.tar.gz
 
 
 all: $(INSTALL)/lib/$(LIB)
@@ -91,7 +93,7 @@ $(SQLITEBUILD)/libsqlite3.la: $(SQLITETARBALL)
 	# as a CPPFLAG
 	( \
 		cd $(SQLITEBUILD); \
-		emconfigure ./configure CFLAGS="-fPIC" CPPFLAGS="-DSQLITE_OMIT_POPEN"; \
+		emconfigure ./configure CFLAGS="$(PYTHON_CFLAGS)" CPPFLAGS="-DSQLITE_OMIT_POPEN"; \
 		emmake make -j $${PYODIDE_JOBS:-3}; \
 	)
 
@@ -101,7 +103,7 @@ $(BZIP2BUILD)/libbz2.a: $(BZIP2TARBALL)
 	tar -C $(ROOT)/build/ -xf $(BZIP2TARBALL)
 	( \
 		cd $(BZIP2BUILD); \
-		emmake make -j $${PYODIDE_JOBS:-3} CC=emcc CFLAGS="-Wall -Winline -O2 -fomit-frame-pointer -D_FILE_OFFSET_BITS=64 -fPIC" AR=emar RANLIB=emranlib libbz2.a; \
+		emmake make -j $${PYODIDE_JOBS:-3} CC=emcc CFLAGS="$(PYTHON_CFLAGS) -D_FILE_OFFSET_BITS=64" AR=emar RANLIB=emranlib libbz2.a; \
 	)
 
 
@@ -111,7 +113,7 @@ $(BUILD)/Makefile: $(BUILD)/.patched $(ZLIBBUILD)/.configured $(SQLITEBUILD)/lib
 		cd $(BUILD); \
 		CONFIG_SITE=./config.site READELF=true emconfigure \
 		  ./configure \
-			  CFLAGS="-fPIC -sEMULATE_FUNCTION_POINTER_CASTS=1" \
+			  CFLAGS="${PYTHON_CFLAGS}" \
 			  CPPFLAGS="-I$(SQLITEBUILD) -I$(BZIP2BUILD) -I$(ZLIBBUILD)" \
 			  --without-pymalloc \
 			  --disable-shared \

@@ -1,34 +1,24 @@
-.. Pyodide documentation master file, created by
-   sphinx-quickstart on Sun Jun  9 12:22:53 2019.
-   You can adapt this file completely to your liking, but it should at least
-   contain the root `toctree` directive.
-
 Pyodide
 =======
 
 Python with the scientific stack, compiled to WebAssembly.
 
-.. note::
+Pyodide may be used in any context where you want to run Python inside a web
+browser.
 
-   Pyodide bundles support for the following packages: numpy, scipy, and
-   many other libraries in the Python scientific stack.
+Pyodide brings the Python 3.8 runtime to the browser via WebAssembly, along
+with the Python scientific stack including NumPy, Pandas, Matplotlib, SciPy, and
+scikit-learn. Over 75 packages are currently available. In addition it's
+possible to install pure Python wheels from PyPi.
 
-   To use additional packages from PyPI, see
-   :ref:`micropip` .
-
-   You can also :ref:`create a Pyodide package <new-packages>` to support and share libraries for new
-   applications.
+Pyodide provides transparent conversion of objects between Javascript and
+Python. When used inside a browser, Python has full access to the Web APIs.
 
 Using Pyodide
 =============
 
-Pyodide may be used in several ways: directly from JavaScript, or to execute
-Python scripts asynchronously in a web worker. Additional pure Python packages
-may be installed from PyPI to be used with Pyodide.
-
 .. toctree::
    :maxdepth: 2
-   :caption: Usage
 
    usage/quickstart.md
    usage/webworker.md
@@ -38,15 +28,12 @@ may be installed from PyPI to be used with Pyodide.
    usage/api-reference.md
    usage/faq.md
 
-Developing Pyodide
-==================
+Development
+===========
 
 The Development section help Pyodide contributors to find information about the
 development process including making packages to support third party libraries
 and understanding type conversions between Python and JavaScript.
-
-The Project section helps contributors get started and gives additional
-information about the project's organization.
 
 .. toctree::
    :maxdepth: 1
@@ -57,12 +44,21 @@ information about the project's organization.
    development/contributing.md
    development/core.md
    development/testing.md
+   development/debugging.md
+
+
+Project
+=======
+
+The Project section helps contributors get started and gives additional
+information about the project's organization.
 
 .. toctree::
-   :titlesonly:
+   :maxdepth: 1
    :caption: Project
 
    project/about.md
+   project/roadmap.md
    project/code-of-conduct.md
    project/governance.md
    project/changelog.md

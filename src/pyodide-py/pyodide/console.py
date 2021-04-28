@@ -1,49 +1,45 @@
+import traceback
 from typing import Optional, Callable, Any, List, Tuple
 import code
 import io
 import sys
 import platform
 from contextlib import contextmanager
-import builtins
 import rlcompleter
+import asyncio
+from pyodide import eval_code_async
+import ast
 
 # this import can fail when we are outside a browser (e.g. for tests)
 try:
-    import js
-
-    _dummy_promise = js.Promise.resolve()
-    _load_packages_from_imports = js.pyodide.loadPackagesFromImports
-
+    from pyodide_js import loadPackagesFromImports as _load_packages_from_imports
+    from asyncio import ensure_future
 except ImportError:
+    from asyncio import Future
 
-    class _FakePromise:
-        """A promise that mimic the JS promises.
+    def ensure_future(co):  # type: ignore
+        fut = Future()
+        try:
+            co.send(None)
+        except StopIteration as v:
+            result = v.args[0] if v.args else None
+            fut.set_result(result)
+        except BaseException as e:
+            fut.set_exception(e)
+        else:
+            raise Exception("coroutine didn't finish in one pass")
+        return fut
 
-        Only `then is supported` and there is no asynchronicity.
-        execution occurs when then is call.
-
-        This is mainly to fake `load_packages_from_imports`
-        and `InteractiveConsole.run_complete` in contexts
-        where JS promises are not available (tests)."""
-
-        def __init__(self, args=None):
-            self.args = (args,) if args is not None else ()
-
-        def then(self, func, *args):
-            return _FakePromise(func(*self.args))
-
-    _dummy_promise = _FakePromise()
-
-    def _load_packages_from_imports(*args):
-        return _dummy_promise
+    async def _load_packages_from_imports(*args):
+        pass
 
 
-__all__ = ["InteractiveConsole", "repr_shorten", "displayhook"]
+__all__ = ["repr_shorten"]
 
 
 class _StdStream(io.TextIOWrapper):
     """
-    Custom std stream to retdirect sys.stdout/stderr in InteractiveConsole.
+    Custom std stream to retdirect sys.stdout/stderr in _InteractiveConsole.
 
     Parmeters
     ---------
@@ -91,27 +87,26 @@ class _CallbackBuffer(io.RawIOBase):
         return len(data)
 
 
-class InteractiveConsole(code.InteractiveConsole):
+class _InteractiveConsole(code.InteractiveConsole):
     """Interactive Pyodide console
 
     Base implementation for an interactive console that manages
     stdout/stderr redirection. Since packages are loaded before running
-    code, `runcode` returns a JS promise. Override `sys.displayhook` to
-    catch the result of an execution.
+    code, :any:`_InteractiveConsole.runcode` returns a JS promise.
 
-    `self.stdout_callback` and `self.stderr_callback` can be overloaded.
+    ``self.stdout_callback`` and ``self.stderr_callback`` can be overloaded.
 
     Parameters
     ----------
     locals
         Namespace to evaluate code.
     stdout_callback
-        Function to call at each `sys.stdout` flush.
+        Function to call at each ``sys.stdout`` flush.
     stderr_callback
-        Function to call at each `sys.stderr` flush.
+        Function to call at each ``sys.stderr`` flush.
     persistent_stream_redirection
-        Wether or not the std redirection should be kept between calls to
-        `runcode`.
+        Whether or not the std redirection should be kept between calls to
+        ``runcode``.
     """
 
     def __init__(
@@ -129,13 +124,16 @@ class InteractiveConsole(code.InteractiveConsole):
         self._streams_redirected = False
         if persistent_stream_redirection:
             self.redirect_stdstreams()
-        self.run_complete = _dummy_promise
+        self.run_complete: asyncio.Future = asyncio.Future()
+        self.run_complete.set_result(None)
         self._completer = rlcompleter.Completer(self.locals)  # type: ignore
         # all nonalphanums except '.'
         # see https://github.com/python/cpython/blob/a4258e8cd776ba655cc54ba54eaeffeddb0a267c/Modules/readline.c#L1211
         self.completer_word_break_characters = (
             """ \t\n`~!@#$%^&*()-=+[{]}\\|;:'\",<>/?"""
         )
+        self.output_truncated_text = "\\n[[;orange;]<long output truncated>]\\n"
+        self.compile.compiler.flags |= ast.PyCF_ALLOW_TOP_LEVEL_AWAIT  # type: ignore
 
     def redirect_stdstreams(self):
         """ Toggle stdout/stderr redirections. """
@@ -203,9 +201,10 @@ class InteractiveConsole(code.InteractiveConsole):
     def runsource(self, *args, **kwargs):
         """Force streams redirection.
 
-        Syntax errors are not thrown by runcode but here in runsource.
-        This is why we force redirection here since doing twice
-        is not an issue."""
+        Syntax errors are not thrown by :any:`_InteractiveConsole.runcode` but
+        here in :any:`_InteractiveConsole.runsource`. This is why we force
+        redirection here since doing twice is not an issue.
+        """
 
         with self.stdstreams_redirections():
             return super().runsource(*args, **kwargs)
@@ -213,29 +212,53 @@ class InteractiveConsole(code.InteractiveConsole):
     def runcode(self, code):
         """Load imported packages then run code, async.
 
-        To achieve nice result representation, the interactive console
-        is fully implemented in Python. This has a major drawback:
-        packages should be loaded from here. This is why this
-        function sets the promise `self.run_complete`.
-        If you need to wait for the end of the computation,
-        you should await for it."""
-        parent_runcode = super().runcode
+        To achieve nice result representation, the interactive console is fully
+        implemented in Python. The interactive console api is synchronous, but
+        we want to implement asynchronous package loading and top level await.
+        Thus, instead of blocking like it normally would, this this function
+        sets the future ``self.run_complete``. If you need the result of the
+        computation, you should await for it.
+        """
         source = "\n".join(self.buffer)
+        self.run_complete = ensure_future(
+            self.load_packages_and_run(self.run_complete, source)
+        )
 
-        def load_packages_and_run(*args):
-            def run(*args):
-                with self.stdstreams_redirections():
-                    parent_runcode(code)
-                    # in CPython's REPL, flush is performed
-                    # by input(prompt) at each new prompt ;
-                    # since we are not using input, we force
-                    # flushing here
-                    self.flush_all()
-                return _dummy_promise
+    def num_frames_to_keep(self, tb):
+        keep_frames = False
+        kept_frames = 0
+        # Try to trim out stack frames inside our code
+        for (frame, _) in traceback.walk_tb(tb):
+            keep_frames = keep_frames or frame.f_code.co_filename == "<console>"
+            keep_frames = keep_frames or frame.f_code.co_filename == "<exec>"
+            if keep_frames:
+                kept_frames += 1
+        return kept_frames
 
-            return _load_packages_from_imports(source).then(run)
-
-        self.run_complete = self.run_complete.then(load_packages_and_run)
+    async def load_packages_and_run(self, run_complete, source):
+        try:
+            await run_complete
+        except BaseException:
+            # Throw away old error
+            pass
+        with self.stdstreams_redirections():
+            await _load_packages_from_imports(source)
+            try:
+                result = await eval_code_async(
+                    source, self.locals, filename="<console>"
+                )
+            except BaseException as e:
+                nframes = self.num_frames_to_keep(e.__traceback__)
+                traceback.print_exception(type(e), e, e.__traceback__, -nframes)
+                raise e
+            else:
+                self.display(result)
+            # in CPython's REPL, flush is performed
+            # by input(prompt) at each new prompt ;
+            # since we are not using input, we force
+            # flushing here
+            self.flush_all()
+            return result
 
     def __del__(self):
         self.restore_stdstreams()
@@ -251,8 +274,8 @@ class InteractiveConsole(code.InteractiveConsole):
     def complete(self, source: str) -> Tuple[List[str], int]:
         """Use CPython's rlcompleter to complete a source from local namespace.
 
-        You can use `completer_word_break_characters` to get/set the
-        way `source` is splitted to find the last part to be completed.
+        You can use ``completer_word_break_characters`` to get/set the
+        way ``source`` is splitted to find the last part to be completed.
 
         Parameters
         ----------
@@ -268,7 +291,7 @@ class InteractiveConsole(code.InteractiveConsole):
 
         Examples
         --------
-        >>> shell = InteractiveConsole()
+        >>> shell = _InteractiveConsole()
         >>> shell.complete("str.isa")
         (['str.isalnum(', 'str.isalpha(', 'str.isascii('], 0)
         >>> shell.complete("a = 5 ; str.isa")
@@ -282,16 +305,21 @@ class InteractiveConsole(code.InteractiveConsole):
             completions = self._completer.global_matches(source)  # type: ignore
         return completions, start
 
+    def display(self, value):
+        if value is None:
+            return
+        print(repr_shorten(value, separator=self.output_truncated_text))
+
 
 def repr_shorten(
     value: Any, limit: int = 1000, split: Optional[int] = None, separator: str = "..."
 ):
-    """Compute the string representation of `value` and shorten it
+    """Compute the string representation of ``value`` and shorten it
     if necessary.
 
-    If it is longer than `limit` then return the firsts `split`
-    characters and the last `split` characters seperated by '...'.
-    Default value for `split` is `limit // 2`.
+    If it is longer than ``limit`` then return the firsts ``split``
+    characters and the last ``split`` characters seperated by '...'.
+    Default value for ``split`` is `limit // 2`.
     """
     if split is None:
         split = limit // 2
@@ -299,33 +327,3 @@ def repr_shorten(
     if len(text) > limit:
         text = f"{text[:split]}{separator}{text[-split:]}"
     return text
-
-
-def displayhook(value, repr: Callable[[Any], str]):
-    """A displayhook with custom `repr` function.
-
-    It is intendend to overload `sys.displayhook`. Note that monkeypatch
-    `builtins.repr` does not work in `sys.displayhook`. The pointer to
-    `repr` seems hardcoded in default `sys.displayhook` version
-    (which is written in C)."""
-    # from https://docs.python.org/3/library/sys.html#sys.displayhook
-    # If value is not None, this function prints repr(value) to
-    # sys.stdout, and saves value in builtins._. If repr(value) is not
-    # encodable to sys.stdout.encoding with sys.stdout.errors error
-    # handler (which is probably 'strict'), encode it to
-    # sys.stdout.encoding with 'backslashreplace' error handler.
-    if value is None:
-        return
-    builtins._ = None  # type: ignore
-    text = repr(value)
-    try:
-        sys.stdout.write(text)
-    except UnicodeEncodeError:
-        bytes = text.encode(sys.stdout.encoding, "backslashreplace")
-        if hasattr(sys.stdout, "buffer"):
-            sys.stdout.buffer.write(bytes)
-        else:
-            text = bytes.decode(sys.stdout.encoding, "strict")
-            sys.stdout.write(text)
-    sys.stdout.write("\n")
-    builtins._ = value  # type: ignore
