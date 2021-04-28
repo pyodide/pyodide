@@ -18,6 +18,10 @@ substitutions:
   be explicitly loaded with {any}`pyodide.loadPackage`. {pr}`1543`
 
 ### Python / JS type conversions
+
+- {{ API }} {any}`pyodide.runPythonAsync` no longer automatically calls
+  {any}`pyodide.loadPackagesFromImports`.
+  {pr}`1538`.
 - {{ Enhancement }} Added the {any}`PyProxy.callKwargs` method to allow using
   Python functions with keyword arguments from Javascript.
   {pr}`1539`
