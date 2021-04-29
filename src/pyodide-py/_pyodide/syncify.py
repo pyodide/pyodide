@@ -15,26 +15,13 @@ class AbstractSyncifier:
     """The base class for syncifiers.
 
     Subclasses should implement syncify_task, which should implement a polling
-    loop. The thread needs to ocasionally wake up to handle interrupts. We can
-    pass a wake_token to allow the task to signal the polling loop to wake up
-    when the task is ready.
+    loop.
 
     There are three different possible Syncifiers for Pyodide (that I know
     about):
         1. Atomics
         2. Synchronous XHR + service worker
         3. Unthrow (this case will look quite different)
-
-    In the Atomics syncifier, wake_token will be a SharedArrayBuffer and we will
-    signal wakeup using Atomics.notify. syncify_task will be implemented in
-    Javascript.
-
-    No wake token is needed for Sync XHR because the service worker can send a
-    response to the XHR when wakeup is desired.
-
-    Unthrow is completely different: none of this machinery is needed in that
-    case because we just get to act like we are inside of an async function even
-    when we aren't.
     """
 
     def syncify(self, t):
@@ -64,9 +51,6 @@ class AbstractSyncifier:
         result.
         """
         raise NotImplementedError("Subclass me!")
-
-    def getwaketoken(self):
-        return None
 
 
 class TrivialSyncifier(AbstractSyncifier):
@@ -134,7 +118,6 @@ class SyncifyableTask(Future, Generic[T], metaclass=SyncifyableTaskMeta):
         super().__init__()
         self._mode = None
         self._sync_gen = None
-        self.wake_token = None
         self.syncifier = None
 
     def add_done_callback(self, callback, *, context):
@@ -152,7 +135,7 @@ class SyncifyableTask(Future, Generic[T], metaclass=SyncifyableTaskMeta):
         consider explicitly scheduling it so that it can begin work.
         """
         if self._mode == SYNC:
-            raise Exception("Already synchronously scheduled")
+            raise RuntimeError("Already synchronously scheduled")
         if self._mode == ASYNC:
             return
         self._mode = ASYNC
@@ -168,15 +151,14 @@ class SyncifyableTask(Future, Generic[T], metaclass=SyncifyableTaskMeta):
 
         fut.add_done_callback(wrapper)
 
-    def schedule_sync(self, *, syncifier=None, wake_token=None):
+    def schedule_sync(self, *, syncifier=None):
         """Schedule the task to run synchronously."""
         if self._mode == ASYNC:
-            raise Exception("Already asynchronously scheduled")
+            raise RuntimeError("Already asynchronously scheduled")
         if self._mode == SYNC:
             return
         self._mode = SYNC
         self.syncifier = syncifier or get_syncifier()
-        self.wake_token = wake_token or self.syncifier.getwaketoken()
         self._sync_gen = self.do_sync()
         next(self._sync_gen)
 
@@ -187,7 +169,7 @@ class SyncifyableTask(Future, Generic[T], metaclass=SyncifyableTaskMeta):
         task isn't done, it may get stuck if this isn't called periodically.
         """
         if self._mode != SYNC:
-            raise Exception("Task not synchronously scheduled")
+            raise RuntimeError("Task not synchronously scheduled")
         try:
             next(self._sync_gen)
         except StopIteration as e:
@@ -233,15 +215,9 @@ class SyncifyableGather(SyncifyableTask, Generic[T]):
 
     def do_sync(self):
         for task in self._tasks:
-            task.schedule_sync(syncifier=self.syncifier, wake_token=self.wake_token)
-        while True:
-            # TODO: Some way to signal which task woke us up?
-            for task in list(self._pending):
-                if task.poll():
-                    self._pending.remove(task)
-            if not self._pending:
-                break  # done
-            yield  # wait here until we are polled again.
+            task.schedule_sync(syncifier=self.syncifier)
+        for task in tasks:
+            task.syncify()
 
         # Return results from task list
         result = []
@@ -275,4 +251,15 @@ class ComlinkTask(SyncifyableTask):
         return self.proxy.do_sync()
 
 
-__all__ = ["SyncifyableFuture", "RemoteJsProxyFuture", "syncify"]
+class ComlinkSyncifier(AbstractSyncifier):
+    def __init__(self, js_syncifier):
+        self.js_syncifier = js_syncifier
+
+    def syncify_task(self, t: "SyncifyableTask[T]") -> T:
+        """Poll the task in a loop until it is completed then return the
+        result.
+        """
+        return self.js_syncifier.syncifyTask(t)
+
+
+__all__ = ["SyncifyableFuture", "RemoteJsProxyFuture", "syncify", "ComlinkSyncifier"]
