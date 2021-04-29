@@ -98,7 +98,8 @@ JS_FILE(pyproxy_init_js, () => {0,0; /* Magic, see include_js_file.h */
   function _getPtr(jsobj) {
     let ptr = jsobj.$$.ptr;
     if (ptr === null) {
-      throw new Error("Object has already been destroyed");
+      throw new Error(jsobj.$$.destroyed_msg ||
+                      "Object has already been destroyed");
     }
     return ptr;
   }
@@ -228,18 +229,27 @@ JS_FILE(pyproxy_init_js, () => {0,0; /* Magic, see include_js_file.h */
      * collected, however there is no guarantee that the finalizer will be run
      * in a timely manner so it is better to ``destory`` the proxy explicitly.
      */
-    destroy() {
+    destroy(destroyed_msg) {
       let ptrobj = _getPtr(this);
       Module.finalizationRegistry.unregister(this);
       // Maybe the destructor will call Javascript code that will somehow try
       // to use this proxy. Mark it deleted before decrementing reference count
       // just in case!
       this.$$.ptr = null;
+      this.$$.destroyed_msg = destroyed_msg;
       try {
         _Py_DecRef(ptrobj);
       } catch (e) {
         Module.fatal_error(e);
       }
+    }
+    /**
+     * Make a new PyProxy pointing to the same Python object.
+     * Useful if someone else is destroying your PyProxy.
+     */
+    clone() {
+      let ptrobj = _getPtr(this);
+      return Module.pyproxy_new(ptrobj);
     }
     /**
      * Converts the ``PyProxy`` into a Javascript object as best as possible. By
