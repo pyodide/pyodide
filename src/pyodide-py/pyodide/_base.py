@@ -165,8 +165,7 @@ def should_quiet(source: str) -> bool:
     """
     Should we suppress output?
 
-    Returns ``True`` if ``quiet_trailing_semicolon`` is set to ``True`` and
-    the last nonwhitespace character of ``code`` is a semicolon.
+    Returns ``True`` if the last nonwhitespace character of ``code`` is a semicolon.
 
     Examples
     --------
