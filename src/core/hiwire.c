@@ -440,9 +440,11 @@ EM_JS_REF(JsRef,
               this_ = Module.hiwire.get_value(idthis);
             }
             let args = Module.hiwire.get_value(idargs);
-            if(this_ === Module.Comlink){
+            // clang-format off
+            if (this_ === Module.Comlink) {
               this_ = undefined;
             }
+            // clang-format on
             return Module.hiwire.new_value(func.apply(this_, args));
           });
 
@@ -600,9 +602,15 @@ EM_JS_NUM(bool, hiwire_is_function, (JsRef idobj), {
 });
 
 EM_JS_NUM(bool, hiwire_is_comlink_proxy, (JsRef idobj), {
-  // From https://stackoverflow.com/a/45496068
   let value = Module.hiwire.get_value(idobj);
   return !!(Module.Comlink && value[Module.Comlink.createEndpoint]);
+});
+
+EM_JS_NUM(bool, hiwire_is_remote_promise, (JsRef idobj), {
+  let value = Module.hiwire.get_value(idobj);
+  // clang-format off
+  return value.constructor.name === "ProxyPromise";
+  // clang-format on
 });
 
 EM_JS_NUM(bool, hiwire_is_error, (JsRef idobj), {
@@ -627,7 +635,12 @@ EM_JS_REF(JsRef, hiwire_resolve_promise, (JsRef idobj), {
 });
 
 EM_JS_REF(JsRef, hiwire_to_string, (JsRef idobj), {
-  return Module.hiwire.new_value(Module.hiwire.get_value(idobj).toString());
+  let obj = Module.hiwire.get_value(idobj);
+  let res = obj.toString();
+  if (typeof res != = "string") {
+    res = Object.prototype.toString.call(obj);
+  }
+  return Module.hiwire.new_value(res);
 });
 
 EM_JS_REF(JsRef, hiwire_typeof, (JsRef idobj), {
