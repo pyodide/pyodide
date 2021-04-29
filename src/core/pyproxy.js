@@ -151,21 +151,39 @@ JS_FILE(pyproxy_init_js, () => {0,0; /* Magic, see include_js_file.h */
   // Now a lot of boilerplate to wrap the abstract Object protocol wrappers
   // defined in pyproxy.c in Javascript functions.
 
-  Module.callPyObject = function(ptrobj, ...jsargs) {
+  Module.callPyObjectKwargs = function(ptrobj, ...jsargs) {
+    // We don't do any checking for kwargs, checks are in PyProxy.callKwargs
+    // which only is used when the keyword arguments come from the user.
+    let kwargs = jsargs.pop();
+    let num_pos_args = jsargs.length;
+    let kwargs_names = Object.keys(kwargs);
+    let kwargs_values = Object.values(kwargs);
+    let num_kwargs = kwargs_names.length;
+    jsargs.push(...kwargs_values);
+
     let idargs = Module.hiwire.new_value(jsargs);
+    let idkwnames = Module.hiwire.new_value(kwargs_names);
     let idresult;
     try {
-      idresult = __pyproxy_apply(ptrobj, idargs);
+      idresult =
+          __pyproxy_apply(ptrobj, idargs, num_pos_args, idkwnames, num_kwargs);
     } catch (e) {
       Module.fatal_error(e);
     } finally {
       Module.hiwire.decref(idargs);
+      Module.hiwire.decref(idkwnames);
     }
     if (idresult === 0) {
       _pythonexc2js();
     }
     return Module.hiwire.pop_value(idresult);
   };
+
+  // clang-format off
+  Module.callPyObject = function(ptrobj, ...jsargs) {
+    return Module.callPyObjectKwargs(ptrobj, ...jsargs, {});
+  };
+  // clang-format on
 
   Module.PyProxyClass = class {
     constructor() { throw new TypeError('PyProxy is not a constructor'); }
@@ -255,6 +273,22 @@ JS_FILE(pyproxy_init_js, () => {0,0; /* Magic, see include_js_file.h */
     }
     call(jsthis, ...jsargs) {
       return Module.callPyObject(_getPtr(this), ...jsargs);
+    }
+    /**
+     * Call the function with key word arguments.
+     * The last argument must be an object with the keyword arguments.
+     */
+    callKwargs(...jsargs) {
+      if (jsargs.length === 0) {
+        throw new TypeError(
+            "callKwargs requires at least one argument (the key word argument object)");
+      }
+      let kwargs = jsargs[jsargs.length - 1];
+      if (kwargs.constructor !== undefined &&
+          kwargs.constructor.name !== "Object") {
+        throw new TypeError("kwargs argument is not an object");
+      }
+      return Module.callPyObjectKwargs(_getPtr(this), ...jsargs);
     }
   };
 
