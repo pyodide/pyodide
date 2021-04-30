@@ -57,6 +57,8 @@ build/pyodide.asm.js: \
 		--exclude-file "*/tests/*"
 	# Strip out C++ symbols which all start __Z.
 	# There are 4821 of these and they have VERY VERY long names.
+	# To show some stats on the symbols you can use the following:
+	# cat build/pyodide.asm.js | grep -ohE 'var _{0,5}.' | sort | uniq -c | sort -nr | head -n 20
 	sed -i -E 's/var __Z[^;]*;//g' build/pyodide.asm.js
 	sed -i '1i\
 		"use strict";\
