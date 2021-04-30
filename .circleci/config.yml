@@ -3,7 +3,7 @@ version: 2
 defaults: &defaults
   working_directory: ~/repo
   docker:
-    - image: pyodide/pyodide-env:15
+    - image: hoodmane/pyodide:16
   environment:
     - EMSDK_NUM_CORES: 3
       EMCC_CORES: 3
