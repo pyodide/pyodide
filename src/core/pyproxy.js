@@ -228,6 +228,10 @@ JS_FILE(pyproxy_init_js, () => {0,0; /* Magic, see include_js_file.h */
      * Pyodide will automatically destroy the ``PyProxy`` when it is garbage
      * collected, however there is no guarantee that the finalizer will be run
      * in a timely manner so it is better to ``destory`` the proxy explicitly.
+     *
+     * @param {string} [destroyed_msg] The error message to print if use is
+     *        attempted after destroying. Defaults to "Object has already been
+     *        destroyed".
      */
     destroy(destroyed_msg) {
       let ptrobj = _getPtr(this);
