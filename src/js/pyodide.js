@@ -1,7 +1,7 @@
 "use strict";
 import { Module } from "./module";
 import { loadScript, initializePackageIndex } from "./load_package";
-import { PUBLIC_API, makePublicNamespace } from "./api";
+import { makePublicNamespace } from "./api";
 
 /**
  * The main bootstrap script for loading pyodide.
@@ -62,8 +62,8 @@ Module.fatal_error = function (e) {
       fd_stdout,
       Module._PyGILState_GetThisThreadState()
     );
-    for (let key of PUBLIC_API) {
-      if (key === "version") {
+    for (let key of Object.keys(Module.public_api)) {
+      if (key === "version" || key === "_module") {
         continue;
       }
       Object.defineProperty(Module.public_api, key, {
@@ -145,7 +145,6 @@ export default async function loadPyodide(config = {}) {
     }
   }
   let baseURL = config.indexURL || "./";
-  console.log({baseURL});
   if (baseURL.endsWith(".js")) {
     baseURL = baseURL.substr(0, baseURL.lastIndexOf("/"));
   }
@@ -159,7 +158,6 @@ export default async function loadPyodide(config = {}) {
 
   let moduleLoaded = new Promise((r) => (Module.postRun = r));
 
-  console.log(baseURL);
   const scriptSrc = `${baseURL}pyodide.asm.js`;
 
   await loadScript(scriptSrc);
@@ -200,7 +198,6 @@ def temp(Module):
   // Wrap "globals" in a special Proxy that allows `pyodide.globals.x` access.
   // TODO: Should we have this?
   Module.globals = Module.wrapNamespace(Module.globals);
-
 
   fixRecursionLimit(Module);
   let pyodide = makePublicNamespace();

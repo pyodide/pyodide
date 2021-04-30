@@ -269,7 +269,7 @@ export function isPyProxy(jsobj) {
   return !!jsobj && jsobj.$$ !== undefined && jsobj.$$.type === "PyProxy";
 }
 
-export let PUBLIC_API = {
+let PUBLIC_API = {
   globals,
   pyodide_py,
   version,
@@ -282,13 +282,17 @@ export let PUBLIC_API = {
   runPythonAsync,
   registerJsModule,
   unregisterJsModule,
-  setInterruptBuffer : Module.setInterruptBuffer,
+  setInterruptBuffer: 0,
   toPy,
   PythonError,
 };
-
 Object.assign(Module, PUBLIC_API);
 
 export function makePublicNamespace() {
-  return { _module: Module, ...PUBLIC_API };
+  let namespace = { _module: Module };
+  Module.public_api = namespace;
+  for (let key of Object.keys(PUBLIC_API)) {
+    namespace[key] = Module[key];
+  }
+  return namespace;
 }

@@ -1,14 +1,13 @@
 import { Module } from "./module";
 
-
 // Note: PYODIDE_BASE_URL is an environment variable replaced in
 // in this template in the Makefile. It's recommended to always set
 // indexURL in any case.
 let baseURL;
-export async function initializePackageIndex(indexURL){
-    baseURL = indexURL;
-    let response = await fetch(`${indexURL}packages.json`);
-    Module.packages = await response.json();
+export async function initializePackageIndex(indexURL) {
+  baseURL = indexURL;
+  let response = await fetch(`${indexURL}packages.json`);
+  Module.packages = await response.json();
 }
 
 ////////////////////////////////////////////////////////////
