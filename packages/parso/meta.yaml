@@ -1,9 +1,9 @@
 package:
   name: parso
-  version: 0.8.1
+  version: 0.8.2
 source:
-  sha256: 8519430ad07087d4c997fda3a7918f7cfa27cb58972a8c89c2a0295a1c940e9e
-  url: https://files.pythonhosted.org/packages/5d/62/31ce4b24055558771af3498266852e1a89b4ca43ecec251b16122da32dbd/parso-0.8.1.tar.gz
+  sha256: 12b83492c6239ce32ff5eed6d3639d6a536170723c6f3f1506869f1ace413398
+  url: https://files.pythonhosted.org/packages/5e/61/d119e2683138a934550e47fc8ec023eb7f11b194883e9085dca3af5d4951/parso-0.8.2.tar.gz
 test:
   imports:
   - parso

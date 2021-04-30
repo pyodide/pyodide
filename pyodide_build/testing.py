@@ -1,13 +1,27 @@
 import pytest
 import inspect
-from typing import Optional, List, Callable, Union
+from typing import Callable, Dict, List, Optional, Union
 import contextlib
+
+
+def _run_in_pyodide_get_source(f):
+    lines, start_line = inspect.getsourcelines(f)
+    num_decorator_lines = 0
+    for line in lines:
+        if line.startswith("def"):
+            break
+        num_decorator_lines += 1
+    start_line += num_decorator_lines - 1
+    # Remove first line, which is the decorator. Then pad with empty lines to fix line number.
+    lines = ["\n"] * start_line + lines[num_decorator_lines:]
+    return "".join(lines)
 
 
 def run_in_pyodide(
     _function: Optional[Callable] = None,
     standalone: bool = False,
     packages: List[str] = [],
+    xfail_browsers: Dict[str, str] = {},
     driver_timeout: Optional[Union[str, int]] = None,
 ) -> Callable:
     """
@@ -30,28 +44,26 @@ def run_in_pyodide(
 
     def decorator(f):
         def inner(selenium):
-            if len(packages) > 0:
-                selenium.load_package(packages)
-            lines, start_line = inspect.getsourcelines(f)
-            # Remove first line, which is the decorator. Then pad with empty lines to fix line number.
-            lines = ["\n"] * start_line + lines[1:]
-            source = "".join(lines)
-
-            err = None
+            if selenium.browser in xfail_browsers:
+                xfail_message = xfail_browsers[selenium.browser]
+                pytest.xfail(xfail_message)
             with set_webdriver_script_timeout(selenium, driver_timeout):
+                if len(packages) > 0:
+                    selenium.load_package(packages)
+                err = None
                 try:
                     # When writing the function, we set the filename to the file
                     # containing the source. This results in a more helpful
                     # traceback
                     selenium.run_js(
-                        """pyodide._module.pyodide_py.eval_code({!r}, // code
-                                pyodide._module.globals, // globals
-                                pyodide._module.globals, // locals
-                                "last_expr", // return_mode
-                                true, // quiet_trailing_semicolon
-                                {!r} // filename
+                        """pyodide._module.pyodide_py.eval_code.callKwargs(
+                                {{
+                                    code : {!r},
+                                    globals : pyodide._module.globals,
+                                    filename : {!r}
+                                }}
                             )""".format(
-                            source, inspect.getsourcefile(f)
+                            _run_in_pyodide_get_source(f), inspect.getsourcefile(f)
                         )
                     )
                     # When invoking the function, use the default filename <eval>

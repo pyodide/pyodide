@@ -1,3 +1,4 @@
+"use strict";
 /**
  * The main bootstrap script for loading pyodide.
  */
@@ -276,10 +277,13 @@ globalThis.loadPyodide = async function(config = {}) {
    * Load a package or a list of packages over the network. This installs the
    * package in the virtual filesystem. The package needs to be imported from
    * Python before it can be used.
-   * @param {String | Array} names Either a single package name or URL or a list
-   * of them. URLs can be absolute or relative. The URLs must have file name
+   * @param {String | Array | PyProxy} names Either a single package name or URL
+   * or a list of them. URLs can be absolute or relative. The URLs must have
+   * file name
    * ``<package-name>.js`` and there must be a file called
-   * ``<package-name>.data`` in the same directory.
+   * ``<package-name>.data`` in the same directory. The argument can be a
+   * ``PyProxy`` of a list, in which case the list will be converted to
+   * Javascript and the ``PyProxy`` will be destroyed.
    * @param {function} messageCallback A callback, called with progress messages
    *    (optional)
    * @param {function} errorCallback A callback, called with error/warning
@@ -287,6 +291,16 @@ globalThis.loadPyodide = async function(config = {}) {
    * @async
    */
   Module.loadPackage = async function(names, messageCallback, errorCallback) {
+    if (Module.isPyProxy(names)) {
+      let temp;
+      try {
+        temp = names.toJs();
+      } finally {
+        names.destroy();
+      }
+      names = temp;
+    }
+
     if (!Array.isArray(names)) {
       names = [ names ];
     }
@@ -421,38 +435,40 @@ globalThis.loadPyodide = async function(config = {}) {
   Module.preloadedWasm = {};
 
   let fatal_error_occurred = false;
-  let fatal_error_msg =
-      "Pyodide has suffered a fatal error, refresh the page. " +
-      "Please report this to the Pyodide maintainers.";
   Module.fatal_error = function(e) {
     if (fatal_error_occurred) {
-      console.error("Recursive call to fatal_error");
+      console.error("Recursive call to fatal_error. Inner error was:");
+      console.error(e);
       return;
     }
     fatal_error_occurred = true;
-    console.error(fatal_error_msg);
+    console.error("Pyodide has suffered a fatal error. " +
+                  "Please report this to the Pyodide maintainers.");
     console.error("The cause of the fatal error was:")
     console.error(e);
     try {
       let fd_stdout = 1;
-      pyodide._module.__Py_DumpTraceback(
-          fd_stdout, pyodide._module._PyGILState_GetThisThreadState());
-      for (let [key, value] of Object.entries(Module.public_api)) {
-        if (key.startsWith("_")) {
-          // delete Module.public_api[key];
+      Module.__Py_DumpTraceback(fd_stdout,
+                                Module._PyGILState_GetThisThreadState());
+      for (let key of PUBLIC_API) {
+        if (key === "version") {
           continue;
         }
-        // Have to do this case first because typeof(some_pyproxy) ===
-        // "function".
-        if (Module.isPyProxy(value)) {
-          value.destroy();
-          continue;
-        }
-        if (typeof (value) === "function") {
-          Module.public_api[key] = function() { throw Error(fatal_error_msg); };
-        }
+        Object.defineProperty(Module.public_api, key, {
+          enumerable : true,
+          configurable : true,
+          get : () => {
+            throw new Error(
+                "Pyodide already fatally failed and can no longer be used.");
+          }
+        });
       }
-    } catch (_) {
+      if (Module.on_fatal) {
+        Module.on_fatal(e);
+      }
+    } catch (e) {
+      console.error("Another error occurred while handling the fatal error:");
+      console.error(e);
     }
     throw e;
   };
@@ -550,10 +566,16 @@ globalThis.loadPyodide = async function(config = {}) {
    */
   Module.runPythonSimple = function(code) {
     let code_c_string = Module.stringToNewUTF8(code);
+    let errcode;
     try {
-      Module._run_python_simple_inner(code_c_string);
+      errcode = Module._run_python_simple_inner(code_c_string);
+    } catch (e) {
+      Module.fatal_error(e);
     } finally {
       Module._free(code_c_string);
+    }
+    if (errcode === -1) {
+      Module._pythonexc2js();
     }
   };
 
@@ -631,20 +653,8 @@ globalThis.loadPyodide = async function(config = {}) {
         "will be removed in version 0.18.0. Use pyodide.globals.get('key') instead.");
     return Module.globals.get(name);
   };
-
   /**
-   * Runs Python code, possibly asynchronously loading any known packages that
-   * the code imports. For example, given the following code
-   *
-   * .. code-block:: python
-   *
-   *    import numpy as np
-   *    x = np.array([1, 2, 3])
-   *
-   * Pyodide will first call :any:`pyodide.loadPackage(['numpy'])
-   * <pyodide.loadPackage>`, and then run the code using the Python API
-   * :any:`pyodide.eval_code_async`, returning the result. The code is compiled
-   * with `PyCF_ALLOW_TOP_LEVEL_AWAIT
+   * Runs Python code using `PyCF_ALLOW_TOP_LEVEL_AWAIT
    * <https://docs.python.org/3/library/ast.html?highlight=pycf_allow_top_level_await#ast.PyCF_ALLOW_TOP_LEVEL_AWAIT>`_.
    *
    * For example:
@@ -652,9 +662,6 @@ globalThis.loadPyodide = async function(config = {}) {
    * .. code-block:: pyodide
    *
    *    let result = await pyodide.runPythonAsync(`
-   *        # numpy will automatically be loaded by loadPackagesFromImports
-   *        import numpy as np
-   *        # we can use top level await
    *        from js import fetch
    *        response = await fetch("./packages.json")
    *        packages = await response.json()
@@ -664,15 +671,10 @@ globalThis.loadPyodide = async function(config = {}) {
    *    console.log(result); // 72
    *
    * @param {string} code Python code to evaluate
-   * @param {Function} messageCallback The ``messageCallback`` argument of
-   * :any:`pyodide.loadPackage`.
-   * @param {Function} errorCallback The ``errorCallback`` argument of
-   * :any:`pyodide.loadPackage`.
    * @returns The result of the Python code translated to Javascript.
    * @async
    */
-  Module.runPythonAsync = async function(code, messageCallback, errorCallback) {
-    await Module.loadPackagesFromImports(code, messageCallback, errorCallback);
+  Module.runPythonAsync = async function(code) {
     let coroutine = Module.pyodide_py.eval_code_async(code, Module.globals);
     try {
       let result = await coroutine;

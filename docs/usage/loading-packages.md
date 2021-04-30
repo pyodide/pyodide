@@ -12,14 +12,11 @@ To use other packages, you’ll need to load them using either:
 which case it relies on {any}`pyodide.loadPackage`).
 ```
 
-If you use {any}`pyodide.runPythonAsync` Pyodide will automatically download all
-packages that the code snippet imports. This is particularly useful for making a
-repl since users might import unexpected packages. At present, `runPythonAsync`
-will not download packages from PyPi, it will only download packages included in
-the Pyodide distribution. Internally, {any}`pyodide.runPythonAsync` uses
-{any}`pyodide.loadPackagesFromImports` which in turn uses
-{any}`pyodide.find_imports`, so if you need more control over automatic package
-loading you can use these more basic APIs.
+If you use {any}`pyodide.loadPackagesFromImports` Pyodide will automatically
+download all packages that the code snippet imports. This is particularly useful
+for making a repl since users might import unexpected packages. At present,
+`loadPackagesFromImports` will not download packages from PyPi, it will only
+download packages included in the Pyodide distribution.
 
 ## Loading packages with {any}`pyodide.loadPackage`
 
@@ -118,10 +115,10 @@ installs from PyPi.
   <meta charset="utf-8">
 </head>
 <body>
-  <script type="text/javascript" src="https://cdn.jsdelivr.net/pyodide/v0.17.0a2/full/pyodide.js"></script>
+  <script type="text/javascript" src="https://cdn.jsdelivr.net/pyodide/dev/full/pyodide.js"></script>
   <script type="text/javascript">
     async function main(){
-      await loadPyodide({ indexURL : 'https://cdn.jsdelivr.net/pyodide/v0.17.0a2/full/' });
+      await loadPyodide({ indexURL : 'https://cdn.jsdelivr.net/pyodide/dev/full/' });
       await pyodide.runPythonAsync(`
         import micropip # runPythonAsync will load micropip automatically
         await micropip.install('snowballstemmer')

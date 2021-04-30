@@ -435,7 +435,9 @@ def make_parser(parser):
     else:
         parser.description = (
             "Cross compile a Python distutils package. "
-            "Run from the root directory of the package's source"
+            "Run from the root directory of the package's source.\n\n"
+            "Note: this is a private endpoint that should not be used "
+            "outside of the Pyodide Makefile."
         )
         parser.add_argument(
             "--cflags",

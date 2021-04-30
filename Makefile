@@ -28,6 +28,7 @@ all: check \
 build/pyodide.asm.js: \
 	src/core/docstring.o \
 	src/core/error_handling.o \
+	src/core/numpy_patch.o \
 	src/core/hiwire.o \
 	src/core/js2python.o \
 	src/core/jsproxy.o \
@@ -54,6 +55,14 @@ build/pyodide.asm.js: \
 		--exclude-file "*__pycache__*" \
 		--exclude-file "*/test/*"		\
 		--exclude-file "*/tests/*"
+	# Strip out C++ symbols which all start __Z.
+	# There are 4821 of these and they have VERY VERY long names.
+	# Reduces size of pyodide.asm.js by a factor of 2.
+	# I messed around with striping more and could remove another 400kb or so
+	# but the regexes I got were generated.
+	# To show some stats on the symbols you can use the following:
+	# cat build/pyodide.asm.js | grep -ohE 'var _{0,5}.' | sort | uniq -c | sort -nr | head -n 20
+	sed -i -E 's/var __Z[^;]*;//g' build/pyodide.asm.js
 	date +"[%F %T] done building pyodide.asm.js."
 
 
@@ -79,6 +88,7 @@ build/console.html: src/templates/console.html
 
 .PHONY: docs/_build/html/console.html
 docs/_build/html/console.html: src/templates/console.html
+	mkdir -p docs/_build/html
 	cp $< $@
 	sed -i -e 's#{{ PYODIDE_BASE_URL }}#$(PYODIDE_BASE_URL)#g' $@
 
@@ -94,6 +104,10 @@ build/webworker_dev.js: src/webworker.js
 	cp $< $@
 	sed -i -e 's#{{ PYODIDE_BASE_URL }}#./#g' $@
 
+update_base_url: \
+	build/console.html \
+	build/pyodide.js \
+	build/webworker.js
 
 test: all
 	pytest src emsdk/tests packages/*/test* pyodide_build -v
@@ -138,7 +152,7 @@ build/test.data: $(CPYTHONLIB) $(UGLIFYJS)
 	)
 	( \
 		cd build; \
-		python $(FILEPACKAGER) test.data --lz4 --preload ../$(CPYTHONLIB)/test@/lib/python$(PYMINOR)/test --js-output=test.js --export-name=pyodide._module --exclude __pycache__ \
+		python $(FILEPACKAGER) test.data --lz4 --preload ../$(CPYTHONLIB)/test@/lib/python$(PYMINOR)/test --js-output=test.js --export-name=globalThis.pyodide._module --exclude __pycache__ \
 	)
 	$(UGLIFYJS) build/test.js -o build/test.js
 

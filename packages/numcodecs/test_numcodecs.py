@@ -1,10 +1,15 @@
 from pyodide_build.testing import run_in_pyodide
 
 
-@run_in_pyodide(standalone=True, packages=["numcodecs", "numpy"])
+@run_in_pyodide(
+    standalone=True,
+    packages=["numcodecs", "numpy"],
+    xfail_browsers={
+        "chrome": "test_numcodecs triggers a recursion error in chrome",
+    },
+)
 def test_blosc():
     import numpy as np
-    from numcodecs import blosc
     from numcodecs.blosc import Blosc
     from numcodecs.zstd import Zstd
     from numcodecs.lz4 import LZ4

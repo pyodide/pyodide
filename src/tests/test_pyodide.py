@@ -404,7 +404,7 @@ def test_create_proxy(selenium):
             assert sys.getrefcount(f) == 3
             assert testCallListener() == 7
             assert sys.getrefcount(f) == 3
-            assert testRemoveListener(f)
+            assert testRemoveListener(proxy)
             assert sys.getrefcount(f) == 3
             proxy.destroy()
             assert sys.getrefcount(f) == 2
@@ -515,7 +515,7 @@ def test_fatal_error(selenium_standalone):
         == dedent(
             """
             Python initialization complete
-            Pyodide has suffered a fatal error, refresh the page. Please report this to the Pyodide maintainers.
+            Pyodide has suffered a fatal error. Please report this to the Pyodide maintainers.
             The cause of the fatal error was:
             {}
             Stack (most recent call first):
@@ -527,4 +527,11 @@ def test_fatal_error(selenium_standalone):
               File "/lib/python3.8/site-packages/pyodide/_base.py", line 344 in eval_code
             """
         ).strip()
+    )
+    selenium_standalone.run_js(
+        """
+        assertThrows(() => pyodide.runPython, "Error", "Pyodide already fatally failed and can no longer be used.")
+        assertThrows(() => pyodide.globals, "Error", "Pyodide already fatally failed and can no longer be used.")
+        assert(() => pyodide._module.runPython("1+1") === 2);
+        """
     )

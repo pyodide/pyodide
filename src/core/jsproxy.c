@@ -62,7 +62,6 @@ _Py_IDENTIFIER(__await__);
 _Py_IDENTIFIER(__dir__);
 
 static PyObject* asyncio_get_event_loop;
-
 static PyTypeObject* PyExc_BaseException_Type;
 
 ////////////////////////////////////////////////////////////
@@ -79,6 +78,11 @@ typedef struct
 // fields for methods
   JsRef this_;
   vectorcallfunc vectorcall;
+// fields for buffers
+  Py_ssize_t byteLength;
+  char* format;
+  Py_ssize_t itemsize;
+  bool check_assignments;
 // Currently just for module objects
   PyObject* dict;
 } JsProxy;
@@ -1176,55 +1180,63 @@ JsMethod_cinit(PyObject* obj, JsRef this_)
 //
 // A subclass of JsProxy for Buffers
 
+// We make our own Buffer struct because as far as I can tell BytesArray and
+// array are both unsuitable. (To use "array" we need to perform extra copies,
+// using BytesArray we run into trouble finding a location to store the Shape.)
+// clang-format off
 typedef struct
 {
-  JsProxy super;
-  Py_ssize_t byteLength;
+  PyObject_HEAD
+  void* data;
+  Py_ssize_t byteLength; // invariant: byteLength should be equal to length * itemsize
+  Py_ssize_t length;
   char* format;
   Py_ssize_t itemsize;
-  PyObject* bytes;
-} JsBuffer;
+} Buffer;
+// clang-format on
 
-static PyObject*
-JsBuffer_HasBytes(PyObject* o,
-                  PyObject* _args) /* METH_NO_ARGS ==> _args is always NULL */
+static int
+Buffer_cinit(Buffer* self,
+             Py_ssize_t byteLength,
+             char* format,
+             Py_ssize_t itemsize)
 {
-  JsBuffer* self = (JsBuffer*)o;
-  if (self->bytes == NULL) {
-    Py_RETURN_FALSE;
-  } else {
-    Py_RETURN_TRUE;
-  }
+  self->data = PyMem_Malloc(byteLength);
+  self->byteLength = byteLength;
+  self->format = format; // Format has static lifetime
+  self->itemsize = itemsize;
+  self->length = byteLength / itemsize;
+  return 0;
+}
+
+void
+Buffer_dealloc(PyObject* self)
+{
+  PyMem_Free(((Buffer*)self)->data);
+  ((Buffer*)self)->data = NULL;
 }
 
 static int
-JsBuffer_GetBuffer(PyObject* obj, Py_buffer* view, int flags)
+Buffer_GetBuffer(PyObject* obj, Py_buffer* view, int flags)
 {
   bool success = false;
-  JsBuffer* self = (JsBuffer*)obj;
+  Buffer* self = (Buffer*)obj;
   view->obj = NULL;
-
-  void* ptr;
-  if (hiwire_is_on_wasm_heap(JsProxy_REF(self))) {
-    ptr = (void*)hiwire_get_byteOffset(JsProxy_REF(self));
-  } else {
-    // Every time JsBuffer_GetBuffer is called, copy the current data from the
-    // TypedArray into the buffer. (TODO: don't do this.)
-    ptr = PyBytes_AsString(self->bytes);
-    FAIL_IF_NULL(ptr);
-    hiwire_copy_to_ptr(JsProxy_REF(self), ptr);
-  }
-
+  // This gets decremented automatically by PyBuffer_Release (even though
+  // bf_releasebuffer is NULL)
   Py_INCREF(self);
 
-  view->buf = ptr;
+  view->buf = self->data;
   view->obj = (PyObject*)self;
   view->len = self->byteLength;
   view->readonly = false;
   view->itemsize = self->itemsize;
   view->format = self->format;
   view->ndim = 1;
-  view->shape = NULL;
+  // It's important to include the shape:
+  // "If shape is NULL as a result of a PyBUF_SIMPLE or a PyBUF_WRITABLE
+  // request, the consumer must disregard itemsize and assume itemsize == 1."
+  view->shape = &self->length;
   view->strides = NULL;
   view->suboffsets = NULL;
 
@@ -1233,44 +1245,174 @@ finally:
   return success ? 0 : -1;
 }
 
-static void
-JsBuffer_dealloc(JsBuffer* self)
-{
-  Py_CLEAR(self->bytes);
-  JsProxy_dealloc((JsProxy*)self);
-}
-
-static PyBufferProcs JsBuffer_BufferProcs = {
-  .bf_getbuffer = JsBuffer_GetBuffer,
+static PyBufferProcs Buffer_BufferProcs = {
+  .bf_getbuffer = Buffer_GetBuffer,
   .bf_releasebuffer = NULL,
 };
 
-static PyTypeObject JsBufferType = {
-  //.tp_base = &JsProxy, // We have to do this in jsproxy_init.
-  .tp_name = "JsBuffer",
-  .tp_basicsize = sizeof(JsBuffer),
-  .tp_dealloc = (destructor)JsBuffer_dealloc,
-  .tp_as_buffer = &JsBuffer_BufferProcs,
-  .tp_flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE,
-  .tp_doc = "A proxy to make it possible to use Javascript TypedArrays as "
-            "Python memory buffers",
+static PyTypeObject BufferType = {
+  .tp_name = "Buffer",
+  .tp_basicsize = sizeof(Buffer),
+  .tp_dealloc = Buffer_dealloc,
+  .tp_as_buffer = &Buffer_BufferProcs,
+  .tp_flags = Py_TPFLAGS_DEFAULT,
+  .tp_doc = PyDoc_STR("An internal helper buffer"),
 };
+
+/**
+ * This is a helper function to do error checking for JsBuffer_AssignToPyBuffer
+ * and JsBuffer_AssignPyBuffer.
+ *
+ * self -- The Javascript buffer involved
+ * view -- The Py_buffer view involved
+ * safe -- If true, check data type compatibility, if false only check size
+ *         compatibility.
+ * dir -- Used for error messages, if true we are assigning from js buffer to
+ *        the py buffer, if false we are assigning from the py buffer to the js
+ *        buffer
+ */
+static int
+check_buffer_compatibility(JsProxy* self, Py_buffer view, bool safe, bool dir)
+{
+  if (view.len != self->byteLength) {
+    if (dir) {
+      PyErr_Format(
+        PyExc_ValueError,
+        "cannot assign from TypedArray of length %d to buffer of length %d",
+        self->byteLength,
+        view.len);
+    } else {
+      PyErr_Format(
+        PyExc_ValueError,
+        "cannot assign to TypedArray of length %d from buffer of length %d",
+        view.len,
+        self->byteLength);
+    }
+    return -1;
+  }
+  if (safe) {
+    bool compatible;
+    if (view.format && self->format) {
+      compatible = strcmp(view.format, self->format) != 0;
+    } else {
+      compatible = view.itemsize == self->itemsize;
+    }
+    if (!compatible) {
+      PyErr_Format(PyExc_ValueError,
+                   "TypedArray and memorybuffer have incompatible formats");
+      return -1;
+    }
+  }
+  return 0;
+}
+
+/**
+ * Assign from a js buffer to a py buffer
+ * obj -- A JsBuffer (meaning a PyProxy of an ArrayBuffer or an ArrayBufferView)
+ * buffer -- A PyObject whcih supports the buffer protocol and is writable.
+ */
+static PyObject*
+JsBuffer_AssignToPyBuffer(PyObject* obj, PyObject* target)
+{
+  JsProxy* self = (JsProxy*)obj;
+  bool success = false;
+  Py_buffer view = { 0 };
+
+  FAIL_IF_MINUS_ONE(
+    PyObject_GetBuffer(target, &view, PyBUF_ANY_CONTIGUOUS | PyBUF_WRITABLE));
+  bool safe = self->check_assignments;
+  bool dir = true;
+  FAIL_IF_MINUS_ONE(check_buffer_compatibility(self, view, safe, dir));
+  FAIL_IF_MINUS_ONE(hiwire_assign_to_ptr(JsProxy_REF(self), view.buf));
+
+  success = true;
+finally:
+  PyBuffer_Release(&view);
+  if (success) {
+    Py_RETURN_NONE;
+  }
+  return NULL;
+}
+
+/**
+ * Assign from a py buffer to a js buffer
+ * obj -- A JsBuffer (meaning a PyProxy of an ArrayBuffer or an ArrayBufferView)
+ * buffer -- A PyObject which supports the buffer protocol (can be read only)
+ */
+static PyObject*
+JsBuffer_AssignPyBuffer(PyObject* obj, PyObject* source)
+{
+  JsProxy* self = (JsProxy*)obj;
+  bool success = false;
+  Py_buffer view = { 0 };
+
+  FAIL_IF_MINUS_ONE(PyObject_GetBuffer(source, &view, PyBUF_ANY_CONTIGUOUS));
+  bool safe = self->check_assignments;
+  bool dir = false;
+  FAIL_IF_MINUS_ONE(check_buffer_compatibility(self, view, safe, dir));
+  FAIL_IF_MINUS_ONE(hiwire_assign_from_ptr(JsProxy_REF(self), view.buf));
+
+  success = true;
+finally:
+  PyBuffer_Release(&view);
+  if (success) {
+    Py_RETURN_NONE;
+  }
+  return NULL;
+}
+
+/**
+ * Used from js2python for to_py. Make a new Python buffer with the same data as
+ * jsbuffer.
+ *
+ * All other arguments are calculated from jsbuffer, but it's more convenient to
+ * calculate them in Javascript and pass them as arguments than to acquire them
+ * from C.
+ *
+ * jsbuffer - An ArrayBuffer view or an ArrayBuffer
+ * byteLength - the byteLength of jsbuffer
+ * format - the appropriate format for jsbuffer, from get_buffer_datatype
+ * itemsize - the appropriate itemsize for jsbuffer, from get_buffer_datatype
+ */
+PyObject*
+JsBuffer_CloneIntoPython(JsRef jsbuffer,
+                         Py_ssize_t byteLength,
+                         char* format,
+                         Py_ssize_t itemsize)
+{
+  bool success = false;
+  Buffer* buffer = NULL;
+  PyObject* result = NULL;
+
+  buffer = (Buffer*)BufferType.tp_alloc(&BufferType, byteLength);
+  FAIL_IF_NULL(buffer);
+  FAIL_IF_MINUS_ONE(Buffer_cinit(buffer, byteLength, format, itemsize));
+  FAIL_IF_MINUS_ONE(hiwire_assign_to_ptr(jsbuffer, buffer->data));
+  result = PyMemoryView_FromObject((PyObject*)buffer);
+  FAIL_IF_NULL(result);
+
+  success = true;
+finally:
+  Py_CLEAR(buffer);
+  if (!success) {
+    Py_CLEAR(result);
+  }
+  return result;
+}
 
 int
 JsBuffer_cinit(PyObject* obj)
 {
   bool success = false;
-  JsBuffer* self = (JsBuffer*)obj;
+  JsProxy* self = (JsProxy*)obj;
+  // TODO: should logic here be any different if we're on wasm heap?
   self->byteLength = hiwire_get_byteLength(JsProxy_REF(self));
-  if (hiwire_is_on_wasm_heap(JsProxy_REF(self))) {
-    self->bytes = NULL;
-  } else {
-    self->bytes = PyBytes_FromStringAndSize(NULL, self->byteLength);
-    FAIL_IF_NULL(self->bytes);
-  }
-
-  // format string is borrowed from hiwire_get_dtype, DO NOT DEALLOCATE!
-  hiwire_get_dtype(JsProxy_REF(self), &self->format, &self->itemsize);
+  // format string is borrowed from hiwire_get_buffer_datatype, DO NOT
+  // DEALLOCATE!
+  hiwire_get_buffer_datatype(JsProxy_REF(self),
+                             &self->format,
+                             &self->itemsize,
+                             &self->check_assignments);
   if (self->format == NULL) {
     char* typename = hiwire_constructor_name(JsProxy_REF(self));
     PyErr_Format(
@@ -1373,18 +1515,6 @@ JsProxy_create_subtype(int flags)
     // but it generates a lot of false positives.
     methods[cur_method++] = JsMethod_Construct_MethodDef;
   }
-  if (flags & IS_BUFFER) {
-    // PyBufferProcs cannot be assigned with a `PyType_Slot` in Python v3.8
-    // this has been added in v3.9. In the meantime we need to use a static
-    // subclass to fill in PyBufferProcs
-    base = &JsBufferType;
-    methods[cur_method++] = (PyMethodDef){
-      "_has_bytes",
-      JsBuffer_HasBytes,
-      METH_NOARGS,
-      "Returns true if instance has buffer memory. For testing only."
-    };
-  }
   if (flags & IS_ARRAY) {
     // If the object is an array (or a HTMLCollection or NodeList), then we want
     // subscripting `proxy[idx]` to go to `jsobj[idx]` instead of
@@ -1396,6 +1526,20 @@ JsProxy_create_subtype(int flags)
     slots[cur_slot++] =
       (PyType_Slot){ .slot = Py_mp_ass_subscript,
                      .pfunc = (void*)JsProxy_ass_subscript_array };
+  }
+  if (flags & IS_BUFFER) {
+    methods[cur_method++] = (PyMethodDef){
+      "assign",
+      (PyCFunction)JsBuffer_AssignPyBuffer,
+      METH_O,
+      PyDoc_STR("Copies a buffer into the TypedArray "),
+    };
+    methods[cur_method++] = (PyMethodDef){
+      "assign_to",
+      (PyCFunction)JsBuffer_AssignToPyBuffer,
+      METH_O,
+      PyDoc_STR("Copies the TypedArray into a buffer"),
+    };
   }
   methods[cur_method++] = (PyMethodDef){ 0 };
   members[cur_member++] = (PyMemberDef){ 0 };
@@ -1427,17 +1571,15 @@ JsProxy_create_subtype(int flags)
     (PyType_Slot){ .slot = Py_tp_methods, .pfunc = (void*)methods_heap };
   slots[cur_slot++] = (PyType_Slot){ 0 };
 
+  // clang-format off
   PyType_Spec spec = {
     .name = "pyodide.JsProxy",
+    .basicsize = sizeof(JsProxy),
     .itemsize = 0,
     .flags = tp_flags,
     .slots = slots,
   };
-  if (flags & IS_BUFFER) {
-    spec.basicsize = sizeof(JsBuffer);
-  } else {
-    spec.basicsize = sizeof(JsProxy);
-  }
+  // clang-format on
   bases = Py_BuildValue("(O)", base);
   FAIL_IF_NULL(bases);
   result = PyType_FromSpecWithBases(&spec, bases);
@@ -1661,9 +1803,8 @@ JsProxy_init(PyObject* core_module)
   PyExc_BaseException_Type = (PyTypeObject*)PyExc_BaseException;
   _Exc_JsException.tp_base = (PyTypeObject*)PyExc_Exception;
 
-  JsBufferType.tp_base = &JsProxyType;
+  FAIL_IF_MINUS_ONE(PyType_Ready(&BufferType));
   FAIL_IF_MINUS_ONE(PyModule_AddType(core_module, &JsProxyType));
-  FAIL_IF_MINUS_ONE(PyModule_AddType(core_module, &JsBufferType));
   FAIL_IF_MINUS_ONE(PyModule_AddType(core_module, &_Exc_JsException));
 
   success = true;

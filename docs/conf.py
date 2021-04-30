@@ -27,6 +27,11 @@ author = "Mozilla"
 import pyodide
 import micropip  # noqa
 
+# We hacked it so that autodoc will look for submodules, but only if we import
+# them here. TODO: look these up in the source directory?
+import pyodide.webloop
+import pyodide.console
+
 # The full version, including alpha/beta/rc tags.
 release = version = pyodide.__version__
 
@@ -45,11 +50,24 @@ extensions = [
     "sphinx_js",
     "autodocsumm",
     "sphinx_pyodide",
+    "sphinx_argparse_cli",
+    "versionwarning.extension",
+    "sphinx_issues",
 ]
 
 myst_enable_extensions = ["substitution"]
 js_source_path = ["../src/", "../src/core"]
 root_for_relative_js_paths = "../src/"
+issues_github_path = "pyodide/pyodide"
+
+versionwarning_messages = {
+    "latest": (
+        "This is the development version of the documentation. ",
+        'See <a href="https://pyodide.org/">here</a> for latest stable '
+        "documentation. Please do not use Pyodide with non "
+        "versioned (`dev`) URLs from the CDN for deployed applications!",
+    )
+}
 
 autosummary_generate = True
 autodoc_default_flags = ["members", "inherited-members"]
@@ -115,3 +133,20 @@ if "READTHEDOCS" in os.environ:
         encoding="utf-8",
     )
     print(res)
+
+
+# Prevent API docs for webloop methods: they are the same as for base event loop
+# and it clutters api docs too much
+
+
+def delete_attrs(cls):
+    for name in dir(cls):
+        if not name.startswith("_"):
+            try:
+                delattr(cls, name)
+            except:
+                pass
+
+
+delete_attrs(pyodide.webloop.WebLoop)
+delete_attrs(pyodide.webloop.WebLoopPolicy)

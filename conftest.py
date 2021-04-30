@@ -21,22 +21,7 @@ BUILD_PATH = ROOT_PATH / "build"
 
 sys.path.append(str(ROOT_PATH))
 
-from pyodide_build._fixes import _selenium_is_connectable  # noqa: E402
 from pyodide_build.testing import set_webdriver_script_timeout, parse_driver_timeout
-
-
-def _monkeypatch_selenium():
-    try:
-        import selenium.webdriver.common.utils  # noqa: E402
-
-        # XXX: Temporary fix for ConnectionError in selenium
-
-        selenium.webdriver.common.utils.is_connectable = _selenium_is_connectable
-    except ModuleNotFoundError:
-        pass
-
-
-_monkeypatch_selenium()
 
 
 def pytest_addoption(parser):
@@ -55,9 +40,11 @@ def pytest_addoption(parser):
 
 
 def pytest_configure(config):
-    """Monkey patch the function cwd_relative_nodeid returns the description
-    of a test for the short summary table. Monkey patch it to reduce the verbosity of the test names in the table.
-    This leaves enough room to see the information about the test failure in the summary.
+    """Monkey patch the function cwd_relative_nodeid
+
+    returns the description of a test for the short summary table. Monkey patch
+    it to reduce the verbosity of the test names in the table.  This leaves
+    enough room to see the information about the test failure in the summary.
     """
     old_cwd_relative_nodeid = config.cwd_relative_nodeid
 
@@ -109,6 +96,14 @@ class SeleniumWrapper:
                 f"{(build_dir / 'test.html').resolve()} " f"does not exist!"
             )
         self.driver.get(f"http://{server_hostname}:{server_port}/test.html")
+        self.javascript_setup()
+        if load_pyodide:
+            self.run_js("await loadPyodide({ indexURL : './'});")
+            self.save_state()
+        self.script_timeout = script_timeout
+        self.driver.set_script_timeout(script_timeout)
+
+    def javascript_setup(self):
         self.run_js("Error.stackTraceLimit = Infinity;", pyodide_checks=False)
         self.run_js(
             """
@@ -120,14 +115,41 @@ class SeleniumWrapper:
                     throw new Error(`Assertion failed: ${cb.toString().slice(6)}${message}`);
                 }
             };
+            window.assertThrows = function assert(cb, errname, pattern){
+                let pat_str = typeof pattern === "string" ? `"${pattern}"` : `${pattern}`;
+                let thiscallstr = `assertThrows(${cb.toString()}, "${errname}", ${pat_str})`;
+                if(typeof pattern === "string"){
+                    pattern = new RegExp(pattern);
+                }
+                let err = undefined;
+                try {
+                    cb();
+                } catch(e) {
+                    err = e;
+                }
+                console.log(err ? err.message : "no error");
+                if(!err){
+                    console.log("hi?");
+                    throw new Error(`${thiscallstr} failed, no error thrown`);
+                }
+                if(err.constructor.name !== errname){
+                    console.log(err.toString());
+                    throw new Error(
+                        `${thiscallstr} failed, expected error ` +
+                        `of type '${errname}' got type '${err.constructor.name}'`
+                    );
+                }
+                if(!pattern.test(err.message)){
+                    console.log(err.toString());
+                    throw new Error(
+                        `${thiscallstr} failed, expected error ` +
+                        `message to match pattern ${pat_str} got:\n${err.message}`
+                    );
+                }
+            };
             """,
             pyodide_checks=False,
         )
-        if load_pyodide:
-            self.run_js("await loadPyodide({ indexURL : './'});")
-            self.save_state()
-        self.script_timeout = script_timeout
-        self.driver.set_script_timeout(script_timeout)
 
     @property
     def logs(self):
@@ -159,6 +181,7 @@ class SeleniumWrapper:
     def run_async(self, code):
         return self.run_js(
             f"""
+            await pyodide.loadPackagesFromImports({code!r})
             let result = await pyodide.runPythonAsync({code!r});
             if(result && result.toJs){{
                 let converted_result = result.toJs();
@@ -286,7 +309,7 @@ class ChromeWrapper(SeleniumWrapper):
         options = Options()
         options.add_argument("--headless")
         options.add_argument("--no-sandbox")
-
+        options.add_argument("--js-flags=--expose-gc")
         return Chrome(options=options)
 
 

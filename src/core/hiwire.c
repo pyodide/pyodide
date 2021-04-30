@@ -144,6 +144,65 @@ EM_JS_NUM(int, hiwire_init, (), {
     // clang-format on
   };
 
+  /**
+   * Turn any ArrayBuffer view or ArrayBuffer into a Uint8Array.
+   *
+   * This respects slices: if the ArrayBuffer view is restricted to a slice of
+   * the backing ArrayBuffer, we return a Uint8Array that shows the same slice.
+   */
+  Module.typedArrayAsUint8Array = function(arg)
+  {
+    // clang-format off
+    if(arg.buffer !== undefined){
+      // clang-format on
+      return new Uint8Array(arg.buffer, arg.byteOffset, arg.byteLength);
+    } else {
+      return new Uint8Array(arg);
+    }
+  };
+
+  {
+    let dtypes_str =
+      [ "b", "B", "h", "H", "i", "I", "f", "d" ].join(String.fromCharCode(0));
+    let dtypes_ptr = stringToNewUTF8(dtypes_str);
+    let dtypes_map = {};
+    for (let[idx, val] of Object.entries(dtypes_str)) {
+      dtypes_map[val] = dtypes_ptr + Number(idx);
+    }
+
+    let buffer_datatype_map = new Map([
+      [ 'Int8Array', [ dtypes_map['b'], 1, true ] ],
+      [ 'Uint8Array', [ dtypes_map['B'], 1, true ] ],
+      [ 'Uint8ClampedArray', [ dtypes_map['B'], 1, true ] ],
+      [ 'Int16Array', [ dtypes_map['h'], 2, true ] ],
+      [ 'Uint16Array', [ dtypes_map['H'], 2, true ] ],
+      [ 'Int32Array', [ dtypes_map['i'], 4, true ] ],
+      [ 'Uint32Array', [ dtypes_map['I'], 4, true ] ],
+      [ 'Float32Array', [ dtypes_map['f'], 4, true ] ],
+      [ 'Float64Array', [ dtypes_map['d'], 8, true ] ],
+      // These last two default to Uint8. They have checked : false to allow use
+      // with other types.
+      [ 'DataView', [ dtypes_map['B'], 1, false ] ],
+      [ 'ArrayBuffer', [ dtypes_map['B'], 1, false ] ],
+    ]);
+
+    /**
+     * This gets the dtype of a ArrayBuffer or ArrayBuffer view. We return a
+     * triple: [char* format_ptr, int itemsize, bool checked] If argument is
+     * untyped (a DataView or ArrayBuffer) then we say it's a Uint8, but we set
+     * the flag checked to false in that case so we allow assignment to/from
+     * anything.
+     *
+     * This is the API for use from Javascript, there's also an EM_JS
+     * hiwire_get_buffer_datatype wrapper for use from C. Used in js2python and
+     * in jsproxy.c for buffers.
+     */
+    Module.get_buffer_datatype = function(jsobj)
+    {
+      return buffer_datatype_map.get(jsobj.constructor.name) || [ 0, 0, false ];
+    }
+  }
+
   if (globalThis.BigInt) {
     Module.BigInt = BigInt;
   } else {
@@ -235,11 +294,20 @@ EM_JS_NUM(bool, hiwire_is_array, (JsRef idobj), {
   if (Array.isArray(obj)) {
     return true;
   }
-  let result = Object.prototype.toString.call(obj);
+  let typeTag = Object.prototype.toString.call(obj);
   // We want to treat some standard array-like objects as Array.
   // clang-format off
-  return result === "[object HTMLCollection]" || result === "[object NodeList]";
-  // clang-format on
+  if(typeTag === "[object HTMLCollection]" || typeTag === "[object NodeList]"){
+    // clang-format on
+    return true;
+  }
+  // What if it's a TypedArray?
+  // clang-format off
+  if (ArrayBuffer.isView(obj) && obj.constructor.name !== "DataView") {
+    // clang-format on
+    return true;
+  }
+  return false;
 });
 
 EM_JS_REF(JsRef, hiwire_array, (), { return Module.hiwire.new_value([]); });
@@ -262,24 +330,28 @@ EM_JS_REF(JsRef, hiwire_get_member_string, (JsRef idobj, const char* ptrkey), {
   return Module.hiwire.new_value(result);
 });
 
-EM_JS_NUM(errcode,
-          hiwire_set_member_string,
-          (JsRef idobj, const char* ptrkey, JsRef idval),
-          {
-            let jsobj = Module.hiwire.get_value(idobj);
-            let jskey = UTF8ToString(ptrkey);
-            let jsval = Module.hiwire.get_value(idval);
-            jsobj[jskey] = jsval;
-          });
+// clang-format off
+EM_JS_NUM(
+errcode,
+hiwire_set_member_string,
+(JsRef idobj, const char* ptrkey, JsRef idval),
+{
+  let jsobj = Module.hiwire.get_value(idobj);
+  let jskey = UTF8ToString(ptrkey);
+  let jsval = Module.hiwire.get_value(idval);
+  jsobj[jskey] = jsval;
+});
 
-EM_JS_NUM(errcode,
-          hiwire_delete_member_string,
-          (JsRef idobj, const char* ptrkey),
-          {
-            let jsobj = Module.hiwire.get_value(idobj);
-            let jskey = UTF8ToString(ptrkey);
-            delete jsobj[jskey];
-          });
+EM_JS_NUM(
+errcode,
+hiwire_delete_member_string,
+(JsRef idobj, const char* ptrkey),
+{
+  let jsobj = Module.hiwire.get_value(idobj);
+  let jskey = UTF8ToString(ptrkey);
+  delete jsobj[jskey];
+});
+// clang-format on
 
 EM_JS_REF(JsRef, hiwire_get_member_int, (JsRef idobj, int idx), {
   let obj = Module.hiwire.get_value(idobj);
@@ -559,8 +631,7 @@ EM_JS_REF(char*, hiwire_constructor_name, (JsRef idobj), {
 
 #define MAKE_OPERATOR(name, op)                                                \
   EM_JS_NUM(bool, hiwire_##name, (JsRef ida, JsRef idb), {                     \
-    return (Module.hiwire.get_value(ida) op Module.hiwire.get_value(idb)) ? 1  \
-                                                                          : 0; \
+    return !!(Module.hiwire.get_value(ida) op Module.hiwire.get_value(idb));   \
   })
 
 MAKE_OPERATOR(less_than, <);
@@ -619,14 +690,14 @@ EM_JS_REF(JsRef, hiwire_object_values, (JsRef idobj), {
 EM_JS_NUM(bool, hiwire_is_typedarray, (JsRef idobj), {
   let jsobj = Module.hiwire.get_value(idobj);
   // clang-format off
-  return (jsobj['byteLength'] !== undefined) ? 1 : 0;
+  return ArrayBuffer.isView(jsobj) || jsobj.constructor.name === "ArrayBuffer";
   // clang-format on
 });
 
 EM_JS_NUM(bool, hiwire_is_on_wasm_heap, (JsRef idobj), {
   let jsobj = Module.hiwire.get_value(idobj);
   // clang-format off
-  return (jsobj.buffer === Module.HEAPU8.buffer) ? 1 : 0;
+  return jsobj.buffer === Module.HEAPU8.buffer;
   // clang-format on
 });
 
@@ -640,40 +711,31 @@ EM_JS_NUM(int, hiwire_get_byteLength, (JsRef idobj), {
   return jsobj['byteLength'];
 });
 
-EM_JS_NUM(errcode, hiwire_copy_to_ptr, (JsRef idobj, void* ptr), {
+EM_JS_NUM(errcode, hiwire_assign_to_ptr, (JsRef idobj, void* ptr), {
   let jsobj = Module.hiwire.get_value(idobj);
-  // clang-format off
-  let buffer = (jsobj['buffer'] !== undefined) ? jsobj.buffer : jsobj;
-  // clang-format on
-  Module.HEAPU8.set(new Uint8Array(buffer), ptr);
+  Module.HEAPU8.set(Module.typedArrayAsUint8Array(jsobj), ptr);
 });
 
-EM_JS_NUM(errcode,
-          hiwire_get_dtype,
-          (JsRef idobj, char** format_ptr, Py_ssize_t* size_ptr),
-          {
-            if (!Module.hiwire.dtype_map) {
-              let alloc = stringToNewUTF8;
-              Module.hiwire.dtype_map = new Map([
-                [ 'Int8Array', [ alloc('b'), 1 ] ],
-                [ 'Uint8Array', [ alloc('B'), 1 ] ],
-                [ 'Uint8ClampedArray', [ alloc('B'), 1 ] ],
-                [ 'Int16Array', [ alloc('h'), 2 ] ],
-                [ 'Uint16Array', [ alloc('H'), 2 ] ],
-                [ 'Int32Array', [ alloc('i'), 4 ] ],
-                [ 'Uint32Array', [ alloc('I'), 4 ] ],
-                [ 'Float32Array', [ alloc('f'), 4 ] ],
-                [ 'Float64Array', [ alloc('d'), 8 ] ],
-                [ 'ArrayBuffer', [ alloc('B'), 1 ] ], // Default to Uint8;
-              ]);
-            }
-            let jsobj = Module.hiwire.get_value(idobj);
-            let[format_utf8, size] =
-              Module.hiwire.dtype_map.get(jsobj.constructor.name) || [ 0, 0 ];
-            // Store results into arguments
-            setValue(format_ptr, format_utf8, "i8*");
-            setValue(size_ptr, size, "i32");
-          });
+EM_JS_NUM(errcode, hiwire_assign_from_ptr, (JsRef idobj, void* ptr), {
+  let jsobj = Module.hiwire.get_value(idobj);
+  Module.typedArrayAsUint8Array(jsobj).set(
+    Module.HEAPU8.subarray(ptr, ptr + jsobj.byteLength));
+});
+
+// clang-format off
+EM_JS_NUM(
+errcode,
+hiwire_get_buffer_datatype,
+(JsRef idobj, char** format_ptr, Py_ssize_t* size_ptr, bool* checked_ptr),
+{
+  let jsobj = Module.hiwire.get_value(idobj);
+  let [format_utf8, size, checked] = Module.get_buffer_datatype(jsobj);
+  // Store results into arguments
+  setValue(format_ptr, format_utf8, "i8*");
+  setValue(size_ptr, size, "i32");
+  setValue(checked_ptr, size, "i8");
+});
+// clang-format on
 
 EM_JS_REF(JsRef, hiwire_subarray, (JsRef idarr, int start, int end), {
   let jsarr = Module.hiwire.get_value(idarr);

@@ -78,15 +78,6 @@ def test_nan_conversions(selenium):
 def test_bigint_conversions(selenium_module_scope, n):
     with selenium_context_manager(selenium_module_scope) as selenium:
         h = hex(n)
-        selenium.run_js(
-            """
-            window.assert = function assert(cb){
-                if(cb() !== true){
-                    throw new Error(`Assertion failed: ${cb.toString().slice(6)}`);
-                }
-            };
-            """
-        )
         selenium.run_js(f"window.h = {h!r};")
         selenium.run_js(
             """
@@ -384,15 +375,17 @@ def test_js2python(selenium):
     assert selenium.run("t.jspython is open")
     assert selenium.run(
         """
-        ((t.jsbytes.tolist() == [1, 2, 3])
-         and (t.jsbytes.tobytes() == b"\x01\x02\x03"))
+        jsbytes = t.jsbytes.to_py()
+        ((jsbytes.tolist() == [1, 2, 3])
+         and (jsbytes.tobytes() == b"\x01\x02\x03"))
         """
     )
     assert selenium.run(
         """
+        jsfloats = t.jsfloats.to_py()
         import struct
         expected = struct.pack("fff", 1, 2, 3)
-        (t.jsfloats.tolist() == [1, 2, 3]) and (t.jsfloats.tobytes() == expected)
+        (jsfloats.tolist() == [1, 2, 3]) and (jsfloats.tobytes() == expected)
         """
     )
     assert selenium.run('str(t.jsobject) == "[object XMLHttpRequest]"')
@@ -422,7 +415,6 @@ def test_js2python_bool(selenium):
     )
 
 
-@pytest.mark.parametrize("wasm_heap", (False, True))
 @pytest.mark.parametrize(
     "jstype, pytype",
     (
@@ -437,43 +429,35 @@ def test_js2python_bool(selenium):
         ("Float64Array", "d"),
     ),
 )
-def test_typed_arrays(selenium, wasm_heap, jstype, pytype):
-    if not wasm_heap:
-        selenium.run_js(f"window.array = new {jstype}([1, 2, 3, 4]);\n")
-    else:
-        selenium.run_js(
-            f"""
-             let buffer = pyodide._module._malloc(
-                   4 * {jstype}.BYTES_PER_ELEMENT);
-             window.array = new {jstype}(
-                   pyodide._module.HEAPU8.buffer, buffer, 4);
-             window.array[0] = 1;
-             window.array[1] = 2;
-             window.array[2] = 3;
-             window.array[3] = 4;
-             """
-        )
-    assert selenium.run(
+def test_typed_arrays(selenium, jstype, pytype):
+    assert selenium.run_js(
         f"""
-         from js import array
-         import struct
-         expected = struct.pack("{pytype*4}", 1, 2, 3, 4)
-         print(array.format, array.tolist(), array.tobytes())
-         ((array.format == "{pytype}")
-          and array.tolist() == [1, 2, 3, 4]
-          and array.tobytes() == expected
-          and array.obj._has_bytes() is {not wasm_heap})
-         """
+        window.array = new {jstype}([1, 2, 3, 4]);
+        return pyodide.runPython(`
+            from js import array
+            array = array.to_py()
+            import struct
+            expected = struct.pack("{pytype*4}", 1, 2, 3, 4)
+            print(array.format, array.tolist(), array.tobytes())
+            # Result:
+            ((array.format == "{pytype}")
+            and array.tolist() == [1, 2, 3, 4]
+            and array.tobytes() == expected)
+        `);
+        """
     )
 
 
 def test_array_buffer(selenium):
-    selenium.run_js("window.array = new ArrayBuffer(100);\n")
     assert (
-        selenium.run(
+        selenium.run_js(
             """
-            from js import array
-            len(array.tobytes())
+            window.array = new ArrayBuffer(100);
+            return pyodide.runPython(`
+                from js import array
+                array = array.to_py()
+                len(array.tobytes())
+            `);
             """
         )
         == 100
@@ -666,25 +650,15 @@ def test_python2js_with_depth(selenium):
 
     selenium.run_js(
         """
-        window.assert = function assert(x, msg){
-            if(x !== true){
-                throw new Error(`Assertion failed: ${msg}`);
-            }
-        }
-        """
-    )
-
-    selenium.run_js(
-        """
         pyodide.runPython("a = [1,[2,[3,[4,[5,[6,[7]]]]]]]")
         let a = pyodide.globals.get("a");
         for(let i=0; i < 7; i++){
             let x = a.toJs(i);
             for(let j=0; j < i; j++){
-                assert(Array.isArray(x), `i: ${i}, j: ${j}`);
+                assert(() => Array.isArray(x), `i: ${i}, j: ${j}`);
                 x = x[1];
             }
-            assert(pyodide.isPyProxy(x), `i: ${i}, j: ${i}`);
+            assert(() => pyodide.isPyProxy(x), `i: ${i}, j: ${i}`);
         }
         """
     )
@@ -692,19 +666,14 @@ def test_python2js_with_depth(selenium):
     selenium.run_js(
         """
         pyodide.runPython("a = [1, (2, (3, [4, (5, (6, [7]))]))]")
-        function assert(x, msg){
-            if(x !== true){
-                throw new Error(`Assertion failed: ${msg}`);
-            }
-        }
         let a = pyodide.globals.get("a");
         for(let i=0; i < 7; i++){
             let x = a.toJs(i);
             for(let j=0; j < i; j++){
-                assert(Array.isArray(x), `i: ${i}, j: ${j}`);
+                assert(() => Array.isArray(x), `i: ${i}, j: ${j}`);
                 x = x[1];
             }
-            assert(pyodide.isPyProxy(x), `i: ${i}, j: ${i}`);
+            assert(() => pyodide.isPyProxy(x), `i: ${i}, j: ${i}`);
         }
         """
     )
@@ -719,10 +688,10 @@ def test_python2js_with_depth(selenium):
         let total_refs = pyodide._module.hiwire.num_keys();
         let res = pyodide.globals.get("c").toJs();
         let new_total_refs = pyodide._module.hiwire.num_keys();
-        assert(total_refs === new_total_refs);
-        assert(res[0] === res[1]);
-        assert(res[0][0] === res[1][1]);
-        assert(res[4][0] === res[1][4]);
+        assert(() => total_refs === new_total_refs);
+        assert(() => res[0] === res[1]);
+        assert(() => res[0][0] === res[1][1]);
+        assert(() => res[4][0] === res[1][4]);
         """
     )
 
@@ -737,11 +706,11 @@ def test_python2js_with_depth(selenium):
         let total_refs = pyodide._module.hiwire.num_keys();
         let res = pyodide.globals.get("a").toJs();
         let new_total_refs = pyodide._module.hiwire.num_keys();
-        assert(total_refs === new_total_refs);
-        assert(res[0][0] === "b");
-        assert(res[1][2] === 3);
-        assert(res[1][3] === res[0]);
-        assert(res[0][1] === res[1]);
+        assert(() => total_refs === new_total_refs);
+        assert(() => res[0][0] === "b");
+        assert(() => res[1][2] === 3);
+        assert(() => res[1][3] === res[0]);
+        assert(() => res[0][1] === res[1]);
         """
     )
     msg = "pyodide.ConversionError"

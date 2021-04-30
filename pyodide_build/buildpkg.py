@@ -297,7 +297,11 @@ def build_package(path: Path, args):
 
 
 def make_parser(parser: argparse.ArgumentParser):
-    parser.description = "Build a pyodide package."
+    parser.description = (
+        "Build a pyodide package.\n\n"
+        "Note: this is a private endpoint that should not be used "
+        "outside of the Pyodide Makefile."
+    )
     parser.add_argument(
         "package", type=str, nargs=1, help="Path to meta.yaml package description"
     )

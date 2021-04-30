@@ -1,9 +1,49 @@
-// This file to be included from pyproxy.c
-// This uses the JS_FILE macro defined in include_js_file.h
+/**
+ * Every public Python entrypoint goes through this file! The main entrypoint is
+ * the callPyObject method, but of course one can also execute arbitrary code
+ * via the various __dundermethods__ associated to classes.
+ *
+ * The only entrypoint into Python that avoids this file is our bootstrap method
+ * runPythonSimple which is defined in main.c
+ *
+ * Any time we call into wasm, the call should be wrapped in a try catch block.
+ * This way if a Javascript error emerges from the wasm, we can escalate it to a
+ * fatal error.
+ *
+ * This file to be included from pyproxy.c This uses the JS_FILE macro defined
+ * in include_js_file.h
+ */
 // clang-format off
 JS_FILE(pyproxy_init_js, () => {0,0; /* Magic, see include_js_file.h */
   Module.PyProxies = {};
   // clang-format on
+
+  if (globalThis.FinalizationRegistry) {
+    Module.finalizationRegistry = new FinalizationRegistry((ptr) => {
+      try {
+        _Py_DecRef(ptr);
+      } catch (e) {
+        // I'm not really sure what happens if an error occurs inside of a
+        // finalizer...
+        Module.fatal_error(e);
+      }
+    });
+    // For some unclear reason this code screws up selenium FirefoxDriver. Works
+    // fine in chrome and when I test it in browser. It seems to be sensitive to
+    // changes that don't make a difference to the semantics.
+    // TODO: after v0.17.0 release, fix selenium issues with this code.
+    // Module.bufferFinalizationRegistry = new FinalizationRegistry((ptr) => {
+    //   try {
+    //     _PyBuffer_Release(ptr);
+    //     _PyMem_Free(ptr);
+    //   } catch (e) {
+    //     Module.fatal_error(e);
+    //   }
+    // });
+  } else {
+    Module.finalizationRegistry = {register() {}, unregister() {}};
+    // Module.bufferFinalizationRegistry = finalizationRegistry;
+  }
 
   /**
    * In the case that the Python object is callable, PyProxyClass inherits from
@@ -26,14 +66,6 @@ JS_FILE(pyproxy_init_js, () => {0,0; /* Magic, see include_js_file.h */
    * @private
    */
   Module.pyproxy_new = function(ptrobj) {
-    // Technically, this leaks memory, since we're holding on to a reference
-    // to the proxy forever.  But we have that problem anyway since we don't
-    // have a destructor in Javascript to free the Python object.
-    // _pyproxy_destroy, which is a way for users to manually delete the proxy,
-    // also deletes the proxy from this set.
-    if (Module.PyProxies.hasOwnProperty(ptrobj)) {
-      return Module.PyProxies[ptrobj];
-    }
     let flags = _pyproxy_getflags(ptrobj);
     let cls = Module.getPyProxyClass(flags);
     // Reflect.construct calls the constructor of Module.PyProxyClass but sets
@@ -45,7 +77,7 @@ JS_FILE(pyproxy_init_js, () => {0,0; /* Magic, see include_js_file.h */
       // To make a callable proxy, we must call the Function constructor.
       // In this case we are effectively subclassing Function.
       target = Reflect.construct(Function, [], cls);
-      // Remove undesireable properties added by Function constructor. Note: we
+      // Remove undesirable properties added by Function constructor. Note: we
       // can't remove "arguments" or "caller" because they are not configurable
       // and not writable
       delete target.length;
@@ -59,7 +91,7 @@ JS_FILE(pyproxy_init_js, () => {0,0; /* Magic, see include_js_file.h */
                           {value : {ptr : ptrobj, type : 'PyProxy'}});
     _Py_IncRef(ptrobj);
     let proxy = new Proxy(target, Module.PyProxyHandlers);
-    Module.PyProxies[ptrobj] = proxy;
+    Module.finalizationRegistry.register(proxy, ptrobj, proxy);
     return proxy;
   };
 
@@ -113,15 +145,30 @@ JS_FILE(pyproxy_init_js, () => {0,0; /* Magic, see include_js_file.h */
   // Static methods
   Module.PyProxy_getPtr = _getPtr;
 
-  Module.callPyObject = function(ptrobj, ...jsargs) {
+  // Now a lot of boilerplate to wrap the abstract Object protocol wrappers
+  // defined in pyproxy.c in Javascript functions.
+
+  Module.callPyObjectKwargs = function(ptrobj, ...jsargs) {
+    // We don't do any checking for kwargs, checks are in PyProxy.callKwargs
+    // which only is used when the keyword arguments come from the user.
+    let kwargs = jsargs.pop();
+    let num_pos_args = jsargs.length;
+    let kwargs_names = Object.keys(kwargs);
+    let kwargs_values = Object.values(kwargs);
+    let num_kwargs = kwargs_names.length;
+    jsargs.push(...kwargs_values);
+
     let idargs = Module.hiwire.new_value(jsargs);
+    let idkwnames = Module.hiwire.new_value(kwargs_names);
     let idresult;
     try {
-      idresult = __pyproxy_apply(ptrobj, idargs);
+      idresult =
+          __pyproxy_apply(ptrobj, idargs, num_pos_args, idkwnames, num_kwargs);
     } catch (e) {
       Module.fatal_error(e);
     } finally {
       Module.hiwire.decref(idargs);
+      Module.hiwire.decref(idkwnames);
     }
     if (idresult === 0) {
       _pythonexc2js();
@@ -129,8 +176,11 @@ JS_FILE(pyproxy_init_js, () => {0,0; /* Magic, see include_js_file.h */
     return Module.hiwire.pop_value(idresult);
   };
 
-  // Now a lot of boilerplate to wrap the abstract Object protocol wrappers
-  // above in Javascript functions.
+  // clang-format off
+  Module.callPyObject = function(ptrobj, ...jsargs) {
+    return Module.callPyObjectKwargs(ptrobj, ...jsargs, {});
+  };
+  // clang-format on
 
   Module.PyProxyClass = class {
     constructor() { throw new TypeError('PyProxy is not a constructor'); }
@@ -180,8 +230,16 @@ JS_FILE(pyproxy_init_js, () => {0,0; /* Magic, see include_js_file.h */
      */
     destroy() {
       let ptrobj = _getPtr(this);
-      __pyproxy_destroy(ptrobj);
+      Module.finalizationRegistry.unregister(this);
+      // Maybe the destructor will call Javascript code that will somehow try
+      // to use this proxy. Mark it deleted before decrementing reference count
+      // just in case!
       this.$$.ptr = null;
+      try {
+        _Py_DecRef(ptrobj);
+      } catch (e) {
+        Module.fatal_error(e);
+      }
     }
     /**
      * Converts the ``PyProxy`` into a Javascript object as best as possible. By
@@ -195,9 +253,10 @@ JS_FILE(pyproxy_init_js, () => {0,0; /* Magic, see include_js_file.h */
      * @returns The Javascript object resulting from the conversion.
      */
     toJs(depth = -1) {
+      let ptrobj = _getPtr(this);
       let idresult;
       try {
-        idresult = _python2js_with_depth(_getPtr(this), depth);
+        idresult = _python2js_with_depth(ptrobj, depth);
       } catch (e) {
         Module.fatal_error(e);
       }
@@ -211,6 +270,22 @@ JS_FILE(pyproxy_init_js, () => {0,0; /* Magic, see include_js_file.h */
     }
     call(jsthis, ...jsargs) {
       return Module.callPyObject(_getPtr(this), ...jsargs);
+    }
+    /**
+     * Call the function with key word arguments.
+     * The last argument must be an object with the keyword arguments.
+     */
+    callKwargs(...jsargs) {
+      if (jsargs.length === 0) {
+        throw new TypeError(
+            "callKwargs requires at least one argument (the key word argument object)");
+      }
+      let kwargs = jsargs[jsargs.length - 1];
+      if (kwargs.constructor !== undefined &&
+          kwargs.constructor.name !== "Object") {
+        throw new TypeError("kwargs argument is not an object");
+      }
+      return Module.callPyObjectKwargs(_getPtr(this), ...jsargs);
     }
   };
 
@@ -351,6 +426,48 @@ JS_FILE(pyproxy_init_js, () => {0,0; /* Magic, see include_js_file.h */
     },
   };
 
+  class TempError extends Error {};
+
+  /**
+   * A helper for [Symbol.iterator].
+   *
+   * Because "it is possible for a generator to be garbage collected without
+   * ever running its finally block", we take extra care to try to ensure that
+   * we don't leak the iterator. We register it with the finalizationRegistry,
+   * but if the finally block is executed, we decref the pointer and unregister.
+   *
+   * In order to do this, we create the generator with this inner method,
+   * register the finalizer, and then return it.
+   *
+   * Quote from:
+   * https://hacks.mozilla.org/2015/07/es6-in-depth-generators-continued/
+   *
+   * @private
+   */
+  function* iter_helper(iterptr, token) {
+    try {
+      if (iterptr === 0) {
+        throw new TempError();
+      }
+      let item;
+      while ((item = __pyproxy_iter_next(iterptr))) {
+        yield Module.hiwire.pop_value(item);
+      }
+      if (_PyErr_Occurred()) {
+        throw new TempError();
+      }
+    } catch (e) {
+      if (e instanceof TempError) {
+        _pythonexc2js();
+      } else {
+        Module.fatal_error(e);
+      }
+    } finally {
+      Module.finalizationRegistry.unregister(token);
+      _Py_DecRef(iterptr);
+    }
+  }
+
   // Controlled by IS_ITERABLE, appears for any object with __iter__ or tp_iter,
   // unless they are iterators. See: https://docs.python.org/3/c-api/iter.html
   // https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Iteration_protocols
@@ -368,20 +485,20 @@ JS_FILE(pyproxy_init_js, () => {0,0; /* Magic, see include_js_file.h */
      *
      * @returns {Iterator} An iterator for the proxied Python object.
      */
-    [Symbol.iterator] : function*() {
-      let iterptr = _PyObject_GetIter(_getPtr(this));
-      if (iterptr === 0) {
-        pythonexc2js();
+    [Symbol.iterator] : function() {
+      let ptrobj = _getPtr(this);
+      let token = {};
+      let iterptr;
+      try {
+        iterptr = _PyObject_GetIter(ptrobj);
+      } catch (e) {
+        Module.fatal_error(e);
       }
-      let item;
-      while ((item = __pyproxy_iter_next(iterptr))) {
-        yield Module.hiwire.pop_value(item);
-      }
-      if (_PyErr_Occurred()) {
-        pythonexc2js();
-      }
-      _Py_DecRef(iterptr);
-    }
+
+      let result = iter_helper(iterptr, token);
+      Module.finalizationRegistry.register(result, iterptr, token);
+      return result;
+    },
   };
 
   // Controlled by IS_ITERATOR, appears for any object with a __next__ or
@@ -412,22 +529,20 @@ JS_FILE(pyproxy_init_js, () => {0,0; /* Magic, see include_js_file.h */
       // Note: arg is optional, if arg is not supplied, it will be undefined
       // which gets converted to "Py_None". This is as intended.
       let idarg = Module.hiwire.new_value(arg);
+      let done;
       try {
         idresult = __pyproxyGen_Send(_getPtr(this), idarg);
+        done = idresult === 0;
+        if (done) {
+          idresult = __pyproxyGen_FetchStopIterationValue();
+        }
       } catch (e) {
         Module.fatal_error(e);
       } finally {
         Module.hiwire.decref(idarg);
       }
-
-      let done = false;
-      if (idresult === 0) {
-        idresult = __pyproxyGen_FetchStopIterationValue();
-        if (idresult) {
-          done = true;
-        } else {
-          _pythonexc2js();
-        }
+      if (done && idresult === 0) {
+        _pythonexc2js();
       }
       let value = Module.hiwire.pop_value(idresult);
       return {done, value};
@@ -595,6 +710,9 @@ JS_FILE(pyproxy_init_js, () => {0,0; /* Magic, see include_js_file.h */
       } catch (e) {
         Module.fatal_error(e);
       }
+      if (idresult === 0) {
+        _pythonexc2js();
+      }
       let result = Module.hiwire.pop_value(idresult);
       result.push(...Reflect.ownKeys(jsobj));
       return result;
@@ -618,27 +736,27 @@ JS_FILE(pyproxy_init_js, () => {0,0; /* Magic, see include_js_file.h */
      * @private
      */
     _ensure_future : function() {
-      let resolve_handle_id = 0;
-      let reject_handle_id = 0;
+      let ptrobj = _getPtr(this);
       let resolveHandle;
       let rejectHandle;
-      let promise;
+      let promise = new Promise((resolve, reject) => {
+        resolveHandle = resolve;
+        rejectHandle = reject;
+      });
+      let resolve_handle_id = Module.hiwire.new_value(resolveHandle);
+      let reject_handle_id = Module.hiwire.new_value(rejectHandle);
+      let errcode;
       try {
-        promise = new Promise((resolve, reject) => {
-          resolveHandle = resolve;
-          rejectHandle = reject;
-        });
-        resolve_handle_id = Module.hiwire.new_value(resolveHandle);
-        reject_handle_id = Module.hiwire.new_value(rejectHandle);
-        let ptrobj = _getPtr(this);
-        let errcode = __pyproxy_ensure_future(ptrobj, resolve_handle_id,
-                                              reject_handle_id);
-        if (errcode === -1) {
-          _pythonexc2js();
-        }
+        errcode = __pyproxy_ensure_future(ptrobj, resolve_handle_id,
+                                          reject_handle_id);
+      } catch (e) {
+        Module.fatal_error(e);
       } finally {
-        Module.hiwire.decref(resolve_handle_id);
         Module.hiwire.decref(reject_handle_id);
+        Module.hiwire.decref(resolve_handle_id);
+      }
+      if (errcode === -1) {
+        _pythonexc2js();
       }
       return promise;
     },
@@ -771,9 +889,14 @@ JS_FILE(pyproxy_init_js, () => {0,0; /* Magic, see include_js_file.h */
         }
       }
       let this_ptr = _getPtr(this);
-      let buffer_struct_ptr = __pyproxy_get_buffer(this_ptr);
+      let buffer_struct_ptr;
+      try {
+        buffer_struct_ptr = __pyproxy_get_buffer(this_ptr);
+      } catch (e) {
+        Module.fatal_error(e);
+      }
       if (buffer_struct_ptr === 0) {
-        throw new Error("Failed");
+        _pythonexc2js();
       }
 
       // This has to match the order of the fields in buffer_struct
@@ -794,7 +917,11 @@ JS_FILE(pyproxy_init_js, () => {0,0; /* Magic, see include_js_file.h */
       let f_contiguous = !!HEAP32[cur_ptr++];
 
       let format = UTF8ToString(format_ptr);
-      _PyMem_Free(buffer_struct_ptr);
+      try {
+        _PyMem_Free(buffer_struct_ptr);
+      } catch (e) {
+        Module.fatal_error(e);
+      }
 
       let success = false;
       try {
@@ -835,7 +962,7 @@ JS_FILE(pyproxy_init_js, () => {0,0; /* Magic, see include_js_file.h */
 
         success = true;
         // clang-format off
-        return Object.create(Module.PyBuffer.prototype,
+        let result = Object.create(Module.PyBuffer.prototype,
           Object.getOwnPropertyDescriptors({
             offset,
             readonly,
@@ -852,11 +979,17 @@ JS_FILE(pyproxy_init_js, () => {0,0; /* Magic, see include_js_file.h */
             _released : false
           })
         );
+        // Module.bufferFinalizationRegistry.register(result, view_ptr, result);
+        return result;
         // clang-format on
       } finally {
         if (!success) {
-          _PyBuffer_Release(view_ptr);
-          _PyMem_Free(view_ptr);
+          try {
+            _PyBuffer_Release(view_ptr);
+            _PyMem_Free(view_ptr);
+          } catch (e) {
+            Module.fatal_error(e);
+          }
         }
       }
     }
@@ -1028,8 +1161,13 @@ JS_FILE(pyproxy_init_js, () => {0,0; /* Magic, see include_js_file.h */
       if (this._released) {
         return;
       }
-      _PyBuffer_Release(this._view_ptr);
-      _PyMem_Free(this._view_ptr);
+      // Module.bufferFinalizationRegistry.unregister(this);
+      try {
+        _PyBuffer_Release(this._view_ptr);
+        _PyMem_Free(this._view_ptr);
+      } catch (e) {
+        Module.fatal_error(e);
+      }
       this._released = true;
       this.data = null;
     }

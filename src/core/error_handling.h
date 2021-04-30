@@ -8,6 +8,8 @@
 
 typedef int errcode;
 #include "hiwire.h"
+#define likely(x) __builtin_expect((x), 1)
+#define unlikely(x) __builtin_expect((x), 0)
 
 int
 error_handling_init();
@@ -69,11 +71,11 @@ console_error_obj(JsRef obj);
 #ifdef DEBUG_F
 // Yes, the "do {} while(0)" trick solves the same problem in the same way in
 // javascript!
-#define LOG_EM_JS_ERROR(__funcname__, err)                                     \
-  do {                                                                         \
-    console.error(                                                             \
-      `EM_JS raised exception on line __LINE__ in func __funcname__`);         \
-    console.error("Error was:", err);                                          \
+#define LOG_EM_JS_ERROR(__funcname__, err)                                              \
+  do {                                                                                  \
+    console.error(                                                                      \
+      `EM_JS raised exception on line __LINE__ in func __funcname__ in file __FILE__`); \
+    console.error("Error was:", err);                                                   \
   } while (0)
 #else
 #define LOG_EM_JS_ERROR(__funcname__, err)
@@ -155,28 +157,28 @@ console_error_obj(JsRef obj);
 
 #define FAIL_IF_NULL(ref)                                                      \
   do {                                                                         \
-    if ((ref) == NULL) {                                                       \
+    if (unlikely((ref) == NULL)) {                                             \
       FAIL();                                                                  \
     }                                                                          \
   } while (0)
 
 #define FAIL_IF_MINUS_ONE(num)                                                 \
   do {                                                                         \
-    if ((num) == -1) {                                                         \
+    if (unlikely((num) == -1)) {                                               \
       FAIL();                                                                  \
     }                                                                          \
   } while (0)
 
 #define FAIL_IF_NONZERO(num)                                                   \
   do {                                                                         \
-    if ((num) != 0) {                                                          \
+    if (unlikely((num) != 0)) {                                                \
       FAIL();                                                                  \
     }                                                                          \
   } while (0)
 
 #define FAIL_IF_ERR_OCCURRED()                                                 \
   do {                                                                         \
-    if (PyErr_Occurred()) {                                                    \
+    if (unlikely(PyErr_Occurred() != NULL)) {                                  \
       FAIL();                                                                  \
     }                                                                          \
   } while (0)

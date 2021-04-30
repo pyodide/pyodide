@@ -13,7 +13,7 @@ import shutil
 import subprocess
 import sys
 from threading import Thread
-from time import sleep
+from time import sleep, perf_counter
 from typing import Dict, Set, Optional, List
 
 from . import common
@@ -178,13 +178,14 @@ def build_from_graph(pkg_map: Dict[str, Package], outputdir: Path, args) -> None
         while True:
             pkg = build_queue.get()
             print(f"Thread {n} building {pkg.name}")
+            t0 = perf_counter()
             try:
                 pkg.build(outputdir, args)
             except Exception as e:
                 built_queue.put(e)
                 return
 
-            print(f"Thread {n} built {pkg.name}")
+            print(f"Thread {n} built {pkg.name} in {perf_counter() - t0:.1f} s")
             built_queue.put(pkg)
             # Release the GIL so new packages get queued
             sleep(0.01)
@@ -237,6 +238,10 @@ def build_packages(packages_dir: Path, outputdir: Path, args) -> None:
         for imp in pkg.meta.get("test", {}).get("imports", [name]):
             package_data["import_name_to_package_name"][imp] = name
 
+    # Hack for 0.17.0 release
+    # TODO: FIXME!!
+    if "soupsieve" in pkg_map:
+        package_data["dependencies"]["soupsieve"].append("beautifulsoup4")
     with open(outputdir / "packages.json", "w") as fd:
         json.dump(package_data, fd)
 
@@ -244,7 +249,9 @@ def build_packages(packages_dir: Path, outputdir: Path, args) -> None:
 def make_parser(parser):
     parser.description = (
         "Build all of the packages in a given directory\n\n"
-        "Unless the --only option is provided"
+        "Unless the --only option is provided\n\n"
+        "Note: this is a private endpoint that should not be used "
+        "outside of the pyodide Makefile."
     )
     parser.add_argument(
         "dir",

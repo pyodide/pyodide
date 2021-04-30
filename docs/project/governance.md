@@ -1,5 +1,5 @@
 (project-governance)=
-# Pyodide Governance and Decision-making
+# Governance and Decision-making
 
 The purpose of this document is to formalize the governance process used by the
 Pyodide project, to clarify how decisions are made and how the various members
@@ -28,7 +28,7 @@ communication in the project.
 
 After participating in Pyodide development with pull requests and reviews for a
 period of time, any contributor may become a member of the team. The process for
-adding team members is modeled on the 
+adding team members is modeled on the
 [CPython project](https://devguide.python.org/triaging/#becoming-a-member-of-the-python-triage-team).
 Any core developer is welcome to propose a Pyodide contributor to join the
 community members team. Other core developers are then consulted: while it is
@@ -66,8 +66,8 @@ active again.
 
 Decisions about the future of the project are made through discussion with all
 members of the community. All non-sensitive project management discussion takes
-place on the project contributors' 
-[issue tracker](https://github.com/Pyodide/Pyodide/issues) and on 
+place on the project contributors'
+[issue tracker](https://github.com/Pyodide/Pyodide/issues) and on
 [Github discussion](https://github.com/Pyodide/Pyodide/discussions). Occasionally,
 sensitive discussion occurs on a private communication channels.
 
