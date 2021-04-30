@@ -1,13 +1,25 @@
+FROM node:14.16.1-buster-slim AS node-image
 FROM python:3.8.2-slim-buster
 
-RUN apt-get update \
-  && apt-get install -y --no-install-recommends \
-                  # building packages
-                  bzip2 ccache clang-format-6.0 cmake f2c g++ gfortran git make \
-                  patch pkg-config swig unzip wget xz-utils \
-                  # testing packages: libgconf-2-4 is necessary for running chromium
-                  libgconf-2-4 "chromium=89.*" \
-  && rm -rf /var/lib/apt/lists/*
+RUN apt-get update
+# building packages
+RUN apt-get install -y --no-install-recommends \
+  bzip2 ccache clang-format-6.0 cmake f2c g++ gfortran git make \
+  patch pkg-config swig unzip wget xz-utils
+
+# testing packages: libgconf-2-4 is necessary for running chromium
+RUN apt-get install -y --no-install-recommends \
+    libgconf-2-4 chromium
+
+# Copy node install from node-image
+COPY --from=node-image /usr/local/bin/node /usr/local/bin/
+COPY --from=node-image /usr/local/lib/node_modules /usr/local/lib/node_modules
+RUN ln -s ../lib/node_modules/npm/bin/npm-cli.js /usr/local/bin/npm
+RUN ln -s ../lib/node_modules/npm/bin/npx-cli.js /usr/local/bin/npx
+
+RUN rm -rf /var/lib/apt/lists/*
+
+RUN npm install -g jsdoc uglify-js prettier rollup rollup-plugin-terser
 
 RUN pip3 --no-cache-dir install \
   black \

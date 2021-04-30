@@ -6,7 +6,7 @@ include Makefile.envs
 
 FILEPACKAGER=$$EM_DIR/tools/file_packager.py
 UGLIFYJS=$(PYODIDE_ROOT)/node_modules/.bin/uglifyjs
-PRETTIER=$(PYODIDE_ROOT)/node_modules/.bin/prettier
+PRETTIER=npx prettier
 
 CPYTHONROOT=cpython
 CPYTHONLIB=$(CPYTHONROOT)/installs/python-$(PYVERSION)/lib/python$(PYMINOR)
@@ -113,8 +113,7 @@ update_base_url: \
 test: all
 	pytest src emsdk/tests packages/*/test* pyodide_build -v
 
-
-lint: $(PRETTIER)
+lint:
 	# check for unused imports, the rest is done by black
 	flake8 --select=F401 src tools pyodide_build benchmark conftest.py docs
 	clang-format-6.0 -output-replacements-xml `find src -type f -regex ".*\.\(c\|h\\)"` | (! grep '<replacement ')
@@ -146,7 +145,7 @@ clean-all: clean
 	$(CC) -o $@ -c $< $(MAIN_MODULE_CFLAGS) -Isrc/core/
 
 
-build/test.data: $(CPYTHONLIB) $(UGLIFYJS)
+build/test.data: $(CPYTHONLIB)
 	( \
 		cd $(CPYTHONLIB)/test; \
 		find . -type d -name __pycache__ -prune -exec rm -rf {} \; \
@@ -156,15 +155,6 @@ build/test.data: $(CPYTHONLIB) $(UGLIFYJS)
 		python $(FILEPACKAGER) test.data --lz4 --preload ../$(CPYTHONLIB)/test@/lib/python$(PYMINOR)/test --js-output=test.js --export-name=globalThis.pyodide._module --exclude __pycache__ \
 	)
 	$(UGLIFYJS) build/test.js -o build/test.js
-
-
-$(UGLIFYJS): emsdk/emsdk/.complete
-	npm i --no-save uglify-js
-	touch -h $(UGLIFYJS)
-
-$(PRETTIER): emsdk/emsdk/.complete
-	npm i --no-save prettier
-	touch -h $(PRETTIER)
 
 $(CPYTHONLIB): emsdk/emsdk/.complete $(PYODIDE_EMCC) $(PYODIDE_CXX)
 	date +"[%F %T] Building cpython..."

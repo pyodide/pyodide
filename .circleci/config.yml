@@ -21,22 +21,10 @@ jobs:
           command: make lint
 
   test-docs:
-    working_directory: ~/repo
+    <<: *defaults
     resource_class: small
-
-    docker:
-      - image: cimg/python:3.8.2-node
-
     steps:
       - checkout
-
-      - run:
-          name: Install prerequisites
-          command: |
-            pip install -r docs/requirements-doc.txt
-            pip install pytest
-            sudo npm install -g jsdoc
-
       - run:
           name: Test docs
           command: pytest docs/sphinx_pyodide/tests
@@ -253,7 +241,7 @@ jobs:
     resource_class: small
 
     docker:
-      - image: cibuilds/github:0.13 
+      - image: cibuilds/github:0.13
 
     steps:
       - checkout
