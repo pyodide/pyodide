@@ -5,7 +5,7 @@ include Makefile.envs
 .PHONY=check
 
 FILEPACKAGER=$$EM_DIR/tools/file_packager.py
-UGLIFYJS=$(PYODIDE_ROOT)/node_modules/.bin/uglifyjs
+UGLIFYJS=npx uglifyjs
 PRETTIER=npx prettier
 
 CPYTHONROOT=cpython
