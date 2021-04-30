@@ -3,7 +3,7 @@ version: 2
 defaults: &defaults
   working_directory: ~/repo
   docker:
-    - image: hoodmane/pyodide-env:16
+    - image: hoodmane/pyodide-env:16b
   environment:
     - EMSDK_NUM_CORES: 3
       EMCC_CORES: 3
@@ -25,6 +25,12 @@ jobs:
     resource_class: small
     steps:
       - checkout
+
+      - run:
+          name: Install prerequisites
+          command: |
+            pip install -r docs/requirements-doc.txt
+
       - run:
           name: Test docs
           command: pytest docs/sphinx_pyodide/tests

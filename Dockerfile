@@ -24,7 +24,19 @@ RUN pip3 --no-cache-dir install \
   pytest-rerunfailures \
   pytest-xdist \
   pyyaml \
-  "selenium==4.0.0.b3"
+  "selenium==4.0.0.b3" \
+  # Docs requirements
+  sphinx                \
+  sphinx_book_theme     \
+  myst-parser==0.13.3    \
+  sphinxcontrib-napoleon  \
+  packaging               \
+  sphinx-js==3.1          \
+  autodocsumm             \
+  docutils==0.16          \
+  sphinx-argparse-cli~=1.6.0 \
+  sphinx-version-warning~=1.1.2 \
+  sphinx-issues
 
 # Get firefox 70.0.1 and geckodriver
 RUN wget -qO- https://ftp.mozilla.org/pub/firefox/releases/87.0/linux-x86_64/en-US/firefox-87.0.tar.bz2 | tar jx \
