@@ -469,10 +469,14 @@ def test_fatal_error(selenium_standalone):
         }
         """
     )
+    import re
+
+    strip_stack_trace = lambda x: re.sub("\n.*site-packages.*", "", x)
     assert (
-        selenium_standalone.logs
+        strip_stack_trace(selenium_standalone.logs)
         == dedent(
-            """
+            strip_stack_trace(
+                """
             Python initialization complete
             Pyodide has suffered a fatal error. Please report this to the Pyodide maintainers.
             The cause of the fatal error was:
@@ -485,6 +489,7 @@ def test_fatal_error(selenium_standalone):
               File "/lib/python3.8/site-packages/pyodide/_base.py", line 242 in run
               File "/lib/python3.8/site-packages/pyodide/_base.py", line 344 in eval_code
             """
+            )
         ).strip()
     )
     selenium_standalone.run_js(
