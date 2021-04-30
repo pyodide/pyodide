@@ -117,9 +117,9 @@ lint:
 	# check for unused imports, the rest is done by black
 	flake8 --select=F401 src tools pyodide_build benchmark conftest.py docs
 	clang-format-6.0 -output-replacements-xml `find src -type f -regex ".*\.\(c\|h\\)"` | (! grep '<replacement ')
+	$(PRETTIER) --check `find src -type f -name '*.js'`
 	black --check .
 	mypy --ignore-missing-imports pyodide_build/ src/ packages/micropip/micropip/ packages/*/test* conftest.py docs
-	$(PRETTIER) src/js/pyodide.js
 
 apply-lint:
 	./tools/apply-lint.sh
