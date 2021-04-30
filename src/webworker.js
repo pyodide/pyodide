@@ -15,8 +15,8 @@ onmessage = async function(e) {
       await loadPyodide({indexURL : '{{ PYODIDE_BASE_URL }}'});
     }
     await self.pyodide.loadPackagesFromImports(data.python);
-    let result = await self.pyodide.runPythonAsync(data.python);
-    self.postMessage({result});
+    let results = await self.pyodide.runPythonAsync(data.python);
+    self.postMessage({results});
   } catch (e) {
     // if you prefer messages with the error
     self.postMessage({error : e.message + '\n' + e.stack});
