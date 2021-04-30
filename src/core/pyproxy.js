@@ -13,11 +13,9 @@
  * This file to be included from pyproxy.c This uses the JS_FILE macro defined
  * in include_js_file.h
  */
-// clang-format off
 JS_FILE(pyproxy_init_js, () => {
   0, 0; /* Magic, see include_js_file.h */
   Module.PyProxies = {};
-  // clang-format on
 
   if (globalThis.FinalizationRegistry) {
     Module.finalizationRegistry = new FinalizationRegistry((ptr) => {
@@ -120,7 +118,6 @@ JS_FILE(pyproxy_init_js, () => {
       return result;
     }
     let descriptors = {};
-    // clang-format off
     for (let [feature_flag, methods] of [
       [HAS_LENGTH, Module.PyProxyLengthMethods],
       [HAS_GET, Module.PyProxyGetItemMethods],
@@ -132,7 +129,6 @@ JS_FILE(pyproxy_init_js, () => {
       [IS_BUFFER, Module.PyProxyBufferMethods],
       [IS_CALLABLE, Module.PyProxyCallableMethods],
     ]) {
-      // clang-format on
       if (flags & feature_flag) {
         Object.assign(descriptors, Object.getOwnPropertyDescriptors(methods));
       }
@@ -183,11 +179,9 @@ JS_FILE(pyproxy_init_js, () => {
     return Module.hiwire.pop_value(idresult);
   };
 
-  // clang-format off
   Module.callPyObject = function (ptrobj, ...jsargs) {
     return Module.callPyObjectKwargs(ptrobj, ...jsargs, {});
   };
-  // clang-format on
 
   Module.PyProxyClass = class {
     constructor() {
@@ -737,11 +731,9 @@ JS_FILE(pyproxy_init_js, () => {
       result.push(...Reflect.ownKeys(jsobj));
       return result;
     },
-    // clang-format off
     apply: function (jsobj, jsthis, jsargs) {
       return jsobj.apply(jsthis, jsargs);
     },
-    // clang-format on
   };
 
   /**
@@ -851,7 +843,6 @@ JS_FILE(pyproxy_init_js, () => {
 
   Module.PyProxyCallableMethods = { prototype: Function.prototype };
 
-  // clang-format off
   let type_to_array_map = new Map([
     ["i8", Int8Array],
     ["u8", Uint8Array],
@@ -870,7 +861,6 @@ JS_FILE(pyproxy_init_js, () => {
     ["f64", Float64Array],
     ["dataview", DataView],
   ]);
-  // clang-format on
 
   Module.PyProxyBufferMethods = {
     /**
@@ -991,7 +981,6 @@ JS_FILE(pyproxy_init_js, () => {
         }
 
         success = true;
-        // clang-format off
         let result = Object.create(
           Module.PyBuffer.prototype,
           Object.getOwnPropertyDescriptors({
@@ -1012,7 +1001,6 @@ JS_FILE(pyproxy_init_js, () => {
         );
         // Module.bufferFinalizationRegistry.register(result, view_ptr, result);
         return result;
-        // clang-format on
       } finally {
         if (!success) {
           try {
@@ -1026,7 +1014,6 @@ JS_FILE(pyproxy_init_js, () => {
     },
   };
 
-  // clang-format off
   /**
    * A class to allow access to a Python data buffers from Javascript. These are
    * produced by :any:`PyProxy.getBuffer` and cannot be constructed directly.
@@ -1093,7 +1080,6 @@ JS_FILE(pyproxy_init_js, () => {
    *            buffer.data.byteLength
    *        );
    */
-  // clang-format on
   Module.PyBuffer = class PyBuffer {
     constructor() {
       // FOR_JSDOC_ONLY is a macro that deletes its argument.
@@ -1212,11 +1198,9 @@ JS_FILE(pyproxy_init_js, () => {
     "will be removed in version 0.18.0. Use pyodide.globals.get('key'), " +
     "pyodide.globals.set('key', value), pyodide.globals.delete('key') instead.";
   let NamespaceProxyHandlers = {
-    // clang-format off
     has: function (obj, key) {
       return Reflect.has(obj, key) || obj.has(key);
     },
-    // clang-format on
     get: function (obj, key) {
       if (Reflect.has(obj, key)) {
         return Reflect.get(obj, key);
@@ -1249,10 +1233,8 @@ JS_FILE(pyproxy_init_js, () => {
     },
   };
 
-  // clang-format off
   Module.wrapNamespace = function wrapNamespace(ns) {
     return new Proxy(ns, NamespaceProxyHandlers);
   };
-  // clang-format on
   return 0;
 });

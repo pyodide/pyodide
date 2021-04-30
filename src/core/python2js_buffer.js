@@ -74,9 +74,7 @@ JS_FILE(python2js_buffer_init, () => {
         arrayType = Uint32Array;
         break;
       case "q":
-        // clang-format off
         if (globalThis.BigInt64Array === undefined) {
-          // clang-format on
           throw new Error(
             "BigInt64Array is not supported on this browser." + errorMessage
           );
@@ -84,9 +82,7 @@ JS_FILE(python2js_buffer_init, () => {
         arrayType = BigInt64Array;
         break;
       case "Q":
-        // clang-format off
         if (globalThis.BigUint64Array === undefined) {
-          // clang-format on
           throw new Error(
             "BigUint64Array is not supported on this browser." + errorMessage
           );
@@ -189,7 +185,6 @@ JS_FILE(python2js_buffer_init, () => {
     let n = HEAP32[bufferData.shape / 4 + curdim];
     let stride = HEAP32[bufferData.strides / 4 + curdim];
     let suboffset = -1;
-    // clang-format off
     if (bufferData.suboffsets !== 0) {
       suboffset = HEAP32[bufferData.suboffsets / 4 + curdim];
     }
@@ -209,7 +204,6 @@ JS_FILE(python2js_buffer_init, () => {
       }
       return bufferData.converter(arraybuffer);
     }
-    // clang-format on
 
     let result = [];
     for (let i = 0; i < n; ++i) {
@@ -247,7 +241,6 @@ JS_FILE(python2js_buffer_init, () => {
     let formatStr = UTF8ToString(format);
     let [ArrayType, bigEndian] = Module.processBufferFormatString(formatStr);
     let formatChar = formatStr.slice(-1);
-    // clang-format off
     switch (formatChar) {
       case "s":
         let decoder = new TextDecoder("utf8");
@@ -255,12 +248,9 @@ JS_FILE(python2js_buffer_init, () => {
       case "?":
         return (buff) => Array.from(new Uint8Array(buff), (x) => !!x);
     }
-    // clang-format on
 
     if (!bigEndian) {
-      // clang-format off
       return (buff) => new ArrayType(buff);
-      // clang-format on
     }
     let getFuncName;
     let setFuncName;
@@ -278,9 +268,7 @@ JS_FILE(python2js_buffer_init, () => {
         setFuncName = "setFloat64";
         break;
       default:
-        // clang-format off
         throw new Error(`Unexpected size ${itemsize}`);
-      // clang-format on
     }
     function swapFunc(buff) {
       let dataview = new DataView(buff);
@@ -292,8 +280,6 @@ JS_FILE(python2js_buffer_init, () => {
       }
       return buff;
     }
-    // clang-format off
     return (buff) => new ArrayType(swapFunc(buff));
-    // clang-format on
   };
 });

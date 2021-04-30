@@ -424,7 +424,6 @@ globalThis.loadPyodide = async function (config = {}) {
 
   ////////////////////////////////////////////////////////////
   // Rearrange namespace for public API
-  // clang-format off
   let PUBLIC_API = [
     "globals",
     "pyodide_py",
@@ -442,7 +441,6 @@ globalThis.loadPyodide = async function (config = {}) {
     "toPy",
     "PythonError",
   ];
-  // clang-format on
 
   function makePublicAPI(module, public_api) {
     let namespace = { _module: module };
@@ -526,7 +524,6 @@ globalThis.loadPyodide = async function (config = {}) {
    */
   Module.globals = {}; // actually defined in runPythonSimple below
 
-  // clang-format off
   /**
    * A Javascript error caused by a Python exception.
    *
@@ -559,7 +556,6 @@ globalThis.loadPyodide = async function (config = {}) {
       this.message;
     }
   };
-  // clang-format on
 
   /**
    *
@@ -628,7 +624,6 @@ globalThis.loadPyodide = async function (config = {}) {
     return Module.pyodide_py.eval_code(code, globals);
   };
 
-  // clang-format off
   /**
    * Inspect a Python code chunk and use :js:func:`pyodide.loadPackage` to
    * install any known packages that the code chunk imports. Uses the Python API
@@ -674,7 +669,6 @@ globalThis.loadPyodide = async function (config = {}) {
       );
     }
   };
-  // clang-format on
 
   /**
    * Access a Python object in the global namespace from Javascript.
@@ -723,7 +717,6 @@ globalThis.loadPyodide = async function (config = {}) {
     }
   };
 
-  // clang-format off
   /**
    * Registers the Javascript object ``module`` as a Javascript module named
    * ``name``. This module can then be imported from Python using the standard
@@ -753,7 +746,6 @@ globalThis.loadPyodide = async function (config = {}) {
   Module.unregisterJsModule = function (name) {
     Module.pyodide_py.unregister_js_module(name);
   };
-  // clang-format on
 
   /**
    * Convert the Javascript object to a Python object as best as possible.
@@ -772,7 +764,6 @@ globalThis.loadPyodide = async function (config = {}) {
   Module.toPy = function (obj, depth = -1) {
     // No point in converting these, it'd be dumb to proxy them so they'd just
     // get converted back by `js2python` at the end
-    // clang-format off
     switch (typeof obj) {
       case "string":
       case "number":
@@ -781,7 +772,6 @@ globalThis.loadPyodide = async function (config = {}) {
       case "undefined":
         return obj;
     }
-    // clang-format on
     if (!obj || Module.isPyProxy(obj)) {
       return obj;
     }
@@ -791,9 +781,7 @@ globalThis.loadPyodide = async function (config = {}) {
     try {
       obj_id = Module.hiwire.new_value(obj);
       py_result = Module.__js2python_convert(obj_id, new Map(), depth);
-      // clang-format off
       if (py_result === 0) {
-        // clang-format on
         Module._pythonexc2js();
       }
       if (Module._JsProxy_Check(py_result)) {
@@ -802,9 +790,7 @@ globalThis.loadPyodide = async function (config = {}) {
         // return Module.pyproxy_new(py_result);
       }
       result = Module._python2js(py_result);
-      // clang-format off
       if (result === 0) {
-        // clang-format on
         Module._pythonexc2js();
       }
     } finally {
