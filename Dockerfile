@@ -1,4 +1,5 @@
 FROM node:14.16.1-buster-slim AS node-image
+FROM pyodide/pyodide-env:15 AS prev-image
 FROM python:3.8.2-slim-buster
 
 RUN apt-get update \
@@ -7,7 +8,7 @@ RUN apt-get update \
                   bzip2 ccache clang-format-6.0 cmake f2c g++ gfortran git make \
                   patch pkg-config swig unzip wget xz-utils \
                   # testing packages: libgconf-2-4 is necessary for running chromium
-                  libgconf-2-4 chromium \
+                  libgconf-2-4 \
   && rm -rf /var/lib/apt/lists/*
 
 RUN pip3 --no-cache-dir install \
@@ -60,6 +61,12 @@ RUN npm install -g \
   prettier \
   rollup \
   rollup-plugin-terser
+
+COPY --from=prev-image /usr/bin/chromium /usr/bin/
+COPY --from=prev-image /usr/lib/chromium /usr/lib/
+COPY --from=prev-image /etc/chromium.d /etc/
+COPY --from=prev-image /etc/chromium /etc/
+COPY --from=prev-image /usr/share/chromium /usr/share/
 
 CMD ["/bin/sh"]
 WORKDIR /src
