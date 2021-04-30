@@ -266,7 +266,7 @@ globalThis.loadPyodide = async function(config = {}) {
    * @returns A zero argument function that releases the lock.
    * @private
    */
-  async function acquirePackageLock(){
+  async function acquirePackageLock() {
     let old_lock = _package_lock;
     let releaseLock;
     _package_lock = new Promise(resolve => releaseLock = resolve);
@@ -366,10 +366,10 @@ globalThis.loadPyodide = async function(config = {}) {
     let releaseLock = await acquirePackageLock();
     try {
       await _loadPackage(sharedLibraryNames, messageCallback || console.log,
-                             errorCallback || console.error);
+                         errorCallback || console.error);
       Module.preloadPlugins.shift(loadPluginOverride);
       await _loadPackage(names, messageCallback || console.log,
-                             errorCallback || console.error);
+                         errorCallback || console.error);
     } finally {
       releaseLock();
     }
