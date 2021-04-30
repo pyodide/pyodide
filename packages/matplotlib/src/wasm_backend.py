@@ -11,7 +11,6 @@ this primarily is just overriding methods in the base class.
 """
 
 # TODO: Figure resizing support
-
 import base64
 import io
 import math
@@ -43,36 +42,75 @@ class FigureCanvasWasm(backend_agg.FigureCanvasAgg):
             document.head.appendChild(matplotlib_figure_styles)
 
     def _add_matplotlib_styles(self):
-        toolbar_buttons_css_content = """
-            button.matplotlib-toolbar-button {
-                font-size: 14px;
-                color: #495057;
-                text-transform: uppercase;
-                background: #e9ecef;
-                padding: 9px 18px;
-                border: 1px solid #fff;
-                border-radius: 4px;
-                transition-duration: 0.4s;
-            }
+        css_content = """
+button.matplotlib-toolbar-button {
+    font-size: 14px;
+    color: #495057;
+    text-transform: uppercase;
+    background: #e9ecef;
+    padding: 9px 18px;
+    border: 1px solid #fff;
+    border-radius: 4px;
+    transition-duration: 0.4s;
+}
 
-            button.matplotlib-toolbar-button#text {
-                font-family: -apple-system, BlinkMacSystemFont,
-                "Segoe UI", Roboto, Oxygen, Ubuntu, Cantarell,
-                "Fira Sans", "Droid Sans", "Helvetica Neue", Arial,
-                sans-serif, "Apple Color Emoji", "Segoe UI Emoji",
-                "Segoe UI Symbol";
-            }
+button.matplotlib-toolbar-button#text {
+    font-family: -apple-system, BlinkMacSystemFont,
+    "Segoe UI", Roboto, Oxygen, Ubuntu, Cantarell,
+    "Fira Sans", "Droid Sans", "Helvetica Neue", Arial,
+    sans-serif, "Apple Color Emoji", "Segoe UI Emoji",
+    "Segoe UI Symbol";
+}
 
-            button.matplotlib-toolbar-button:hover {
-                color: #fff;
-                background: #495057;
-            }
-        """
-        toolbar_buttons_style_element = document.createElement("style")
-        toolbar_buttons_style_element.id = "matplotlib-figure-styles"
-        toolbar_buttons_css = document.createTextNode(toolbar_buttons_css_content)
-        toolbar_buttons_style_element.appendChild(toolbar_buttons_css)
-        return toolbar_buttons_style_element
+button.matplotlib-toolbar-button:hover {
+    color: #fff;
+    background: #495057;
+}
+
+/** Matplotlib uses only a few font-awesome icons, here we save 80KB by only including those we need **/
+@font-face {
+  font-family: 'MatplotlibIcons';
+  /* Generated using icomoon.io (requires basic account) */
+  src: url("data:application/x-font-ttf;charset=utf-8;base64,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") format('truetype');
+  font-weight: normal;
+  font-style: normal;
+  font-display: block;
+}
+
+.mpl-icon {
+  font-family: MatplotlibIcons;
+  font-style: normal;
+  font-weight: normal;
+  font-variant: normal;
+  line-height: 1;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+.mpl-search-plus:before {
+  content: "\f00e";
+}
+.mpl-home:before {
+  content: "\f015";
+}
+.mpl-download:before {
+  content: "\f019";
+}
+.mpl-arrows:before {
+  content: "\f047";
+}
+.mpl-arrow-left:before {
+  content: "\f060";
+}
+.mpl-arrow-right:before {
+  content: "\f061";
+}
+"""
+        matplotlib_style_element = document.createElement("style")
+        matplotlib_style_element.id = "matplotlib-figure-styles"
+        matplotlib_css = document.createTextNode(css_content)
+        matplotlib_style_element.appendChild(matplotlib_css)
+        return matplotlib_style_element
 
     def get_element(self, name):
         """
@@ -107,11 +145,10 @@ class FigureCanvasWasm(backend_agg.FigureCanvasAgg):
 
     def show(self):
         # If we've already shown this canvas elsewhere, don't create a new one,
-        # just reuse it and scroll to the existing one.
+        # just reuse it.
         existing = self.get_element("")
         if existing is not None:
             self.draw_idle()
-            existing.scrollIntoView()
             return
 
         # Disable the right-click context menu.
@@ -456,13 +493,13 @@ class FigureCanvasWasm(backend_agg.FigureCanvasAgg):
         return TimerWasm(*args, **kwargs)
 
 
-_FONTAWESOME_ICONS = {
-    "home": "fa-home",
-    "back": "fa-arrow-left",
-    "forward": "fa-arrow-right",
-    "zoom_to_rect": "fa-search-plus",
-    "move": "fa-arrows",
-    "download": "fa-download",
+_MPL_ICONS = {
+    "home": "mpl-home",
+    "back": "mpl-arrow-left",
+    "forward": "mpl-arrow-right",
+    "zoom_to_rect": "mpl-search-plus",
+    "move": "mpl-arrows",
+    "download": "mpl-download",
     None: None,
 }
 
@@ -485,20 +522,20 @@ class NavigationToolbar2Wasm(backend_bases.NavigationToolbar2):
             div.appendChild(span)
 
         for text, tooltip_text, image_file, name_of_method in self.toolitems:
-            if image_file in _FONTAWESOME_ICONS:
+            if image_file in _MATPLOTLIB_ICONS:
                 if image_file is None:
                     add_spacer()
                 else:
                     button = document.createElement("button")
-                    button.classList.add("fa")
-                    button.classList.add(_FONTAWESOME_ICONS[image_file])
+                    button.classList.add("mpl-icon")
+                    button.classList.add(_MATPLOTLIB_ICONS[image_file])
                     button.classList.add("matplotlib-toolbar-button")
                     button.addEventListener("click", getattr(self, name_of_method))
                     div.appendChild(button)
 
         for format, mimetype in sorted(list(FILE_TYPES.items())):
             button = document.createElement("button")
-            button.classList.add("fa")
+            button.classList.add("mpl-icon")
             button.textContent = format
             button.classList.add("matplotlib-toolbar-button")
             button.id = "text"
