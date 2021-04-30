@@ -259,7 +259,20 @@ globalThis.loadPyodide = async function(config = {}) {
 
   // This is a promise that is resolved iff there are no pending package loads.
   // It never fails.
-  let loadPackageChain = Promise.resolve();
+  let _package_lock = Promise.resolve();
+
+  /**
+   * An async lock for package loading. Prevents race conditions in loadPackage.
+   * @returns A zero argument function that releases the lock.
+   * @private
+   */
+  async function acquirePackageLock(){
+    let old_lock = _package_lock;
+    let releaseLock;
+    _package_lock = new Promise(resolve => releaseLock = resolve);
+    await old_lock;
+    return releaseLock;
+  }
 
   /**
    *
@@ -350,18 +363,16 @@ globalThis.loadPyodide = async function(config = {}) {
     // restore the preload plugin
     Module.preloadPlugins.unshift(loadPluginOverride);
 
-    let promise = loadPackageChain.then(
-        () => _loadPackage(sharedLibraryNames, messageCallback || console.log,
-                           errorCallback || console.error));
-    loadPackageChain = loadPackageChain.then(() => promise.catch(() => {}));
-    await promise;
-    Module.preloadPlugins.shift(loadPluginOverride);
-
-    promise = loadPackageChain.then(
-        () => _loadPackage(names, messageCallback || console.log,
-                           errorCallback || console.error));
-    loadPackageChain = loadPackageChain.then(() => promise.catch(() => {}));
-    await promise;
+    let releaseLock = await acquirePackageLock();
+    try {
+      await _loadPackage(sharedLibraryNames, messageCallback || console.log,
+                             errorCallback || console.error);
+      Module.preloadPlugins.shift(loadPluginOverride);
+      await _loadPackage(names, messageCallback || console.log,
+                             errorCallback || console.error);
+    } finally {
+      releaseLock();
+    }
   };
 
   ////////////////////////////////////////////////////////////
