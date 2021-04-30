@@ -19,11 +19,12 @@ globalThis.pyodide = {};
  * @returns The Pyodide module.
  * @async
  */
-globalThis.loadPyodide = async function(config = {}) {
+globalThis.loadPyodide = async function (config = {}) {
   if (globalThis.__pyodideLoading) {
     if (globalThis.languagePluginURL) {
       throw new Error(
-          "Pyodide is already loading because languagePluginURL is defined.");
+        "Pyodide is already loading because languagePluginURL is defined."
+      );
     } else {
       throw new Error("Pyodide is already loading.");
     }
@@ -35,10 +36,10 @@ globalThis.loadPyodide = async function(config = {}) {
   // indexURL in any case.
   let baseURL = config.indexURL || "{{ PYODIDE_BASE_URL }}";
   if (baseURL.endsWith(".js")) {
-    baseURL = baseURL.substr(0, baseURL.lastIndexOf('/'));
+    baseURL = baseURL.substr(0, baseURL.lastIndexOf("/"));
   }
   if (!baseURL.endsWith("/")) {
-    baseURL += '/';
+    baseURL += "/";
   }
 
   ////////////////////////////////////////////////////////////
@@ -53,27 +54,35 @@ globalThis.loadPyodide = async function(config = {}) {
     if (match) {
       return match[1];
     }
-  };
+  }
 
   let loadScript;
-  if (self.document) { // browser
-    loadScript = (url) => new Promise((res, rej) => {
-      const script = self.document.createElement('script');
-      script.src = url;
-      script.onload = res;
-      script.onerror = rej;
-      self.document.head.appendChild(script);
-    });
-  } else if (self.importScripts) { // webworker
-    loadScript = async (url) => {  // This is async only for consistency
+  if (self.document) {
+    // browser
+    loadScript = (url) =>
+      new Promise((res, rej) => {
+        const script = self.document.createElement("script");
+        script.src = url;
+        script.onload = res;
+        script.onerror = rej;
+        self.document.head.appendChild(script);
+      });
+  } else if (self.importScripts) {
+    // webworker
+    loadScript = async (url) => {
+      // This is async only for consistency
       self.importScripts(url);
     };
   } else {
     throw new Error("Cannot determine runtime environment");
   }
 
-  function recursiveDependencies(names, _messageCallback, errorCallback,
-                                 sharedLibsOnly) {
+  function recursiveDependencies(
+    names,
+    _messageCallback,
+    errorCallback,
+    sharedLibsOnly
+  ) {
     const packages = Module.packages.dependencies;
     const loadedPackages = Module.loadedPackages;
     const sharedLibraries = Module.packages.shared_library;
@@ -98,8 +107,11 @@ globalThis.loadPyodide = async function(config = {}) {
       const pkgname = _uri_to_package_name(name);
       if (pkgname !== undefined) {
         if (toLoad.has(pkgname) && toLoad.get(pkgname) !== name) {
-          errorCallback(`Loading same package ${pkgname} from ${name} and ${
-              toLoad.get(pkgname)}`);
+          errorCallback(
+            `Loading same package ${pkgname} from ${name} and ${toLoad.get(
+              pkgname
+            )}`
+          );
           continue;
         }
         toLoad.set(pkgname, name);
@@ -134,15 +146,15 @@ globalThis.loadPyodide = async function(config = {}) {
         let package_uri = toLoad.get(pkg);
         if (package_uri != DEFAULT_CHANNEL) {
           return package_uri.replace(/\.js$/, ".data");
-        };
-      };
+        }
+      }
       return baseURL + path;
     };
 
     if (toLoad.size === 0) {
-      return Promise.resolve('No new packages to load');
+      return Promise.resolve("No new packages to load");
     } else {
-      let packageNames = Array.from(toLoad.keys()).join(', ');
+      let packageNames = Array.from(toLoad.keys()).join(", ");
       messageCallback(`Loading ${packageNames}`);
     }
 
@@ -158,13 +170,14 @@ globalThis.loadPyodide = async function(config = {}) {
     let windowErrorPromise;
     if (self.document) {
       windowErrorPromise = new Promise((_res, rej) => {
-        windowErrorHandler = e => {
+        windowErrorHandler = (e) => {
           errorCallback(
-              "Unhandled error. We don't know what it is or whether it is related to 'loadPackage' but out of an abundance of caution we will assume that loading failed.");
+            "Unhandled error. We don't know what it is or whether it is related to 'loadPackage' but out of an abundance of caution we will assume that loading failed."
+          );
           errorCallback(e);
           rej(e.message);
         };
-        self.addEventListener('error', windowErrorHandler);
+        self.addEventListener("error", windowErrorHandler);
       });
     } else {
       // This should be a promise that never resolves
@@ -185,19 +198,21 @@ globalThis.loadPyodide = async function(config = {}) {
           continue;
         } else {
           errorCallback(
-              `URI mismatch, attempting to load package ${pkg} from ${uri} ` +
-              `while it is already loaded from ${
-                  loaded}. To override a dependency, ` +
-              `load the custom package first.`);
+            `URI mismatch, attempting to load package ${pkg} from ${uri} ` +
+              `while it is already loaded from ${loaded}. To override a dependency, ` +
+              `load the custom package first.`
+          );
           continue;
         }
       }
       let scriptSrc = uri === DEFAULT_CHANNEL ? `${baseURL}${pkg}.js` : uri;
       messageCallback(`Loading ${pkg} from ${scriptSrc}`);
-      scriptPromises.push(loadScript(scriptSrc).catch(() => {
-        errorCallback(`Couldn't load package from URL ${scriptSrc}`);
-        toLoad.delete(pkg);
-      }));
+      scriptPromises.push(
+        loadScript(scriptSrc).catch(() => {
+          errorCallback(`Couldn't load package from URL ${scriptSrc}`);
+          toLoad.delete(pkg);
+        })
+      );
     }
 
     // When the JS loads, it synchronously adds a runDependency to emscripten.
@@ -205,7 +220,7 @@ globalThis.loadPyodide = async function(config = {}) {
     // emscripten. This function returns a promise that resolves when there are
     // no pending runDependencies.
     function waitRunDependency() {
-      const promise = new Promise(r => {
+      const promise = new Promise((r) => {
         Module.monitorRunDependencies = (n) => {
           if (n === 0) {
             r();
@@ -225,11 +240,11 @@ globalThis.loadPyodide = async function(config = {}) {
     // between package files loading.
     let successPromise = Promise.all(scriptPromises).then(waitRunDependency);
     try {
-      await Promise.race([ successPromise, windowErrorPromise ]);
+      await Promise.race([successPromise, windowErrorPromise]);
     } finally {
       delete Module.monitorRunDependencies;
       if (windowErrorHandler) {
-        self.removeEventListener('error', windowErrorHandler);
+        self.removeEventListener("error", windowErrorHandler);
       }
     }
 
@@ -241,10 +256,10 @@ globalThis.loadPyodide = async function(config = {}) {
 
     let resolveMsg;
     if (packageList.length > 0) {
-      let packageNames = packageList.join(', ');
+      let packageNames = packageList.join(", ");
       resolveMsg = `Loaded ${packageNames}`;
     } else {
-      resolveMsg = 'No packages loaded';
+      resolveMsg = "No packages loaded";
     }
 
     Module.reportUndefinedSymbols();
@@ -253,9 +268,10 @@ globalThis.loadPyodide = async function(config = {}) {
 
     // We have to invalidate Python's import caches, or it won't
     // see the new files.
-    Module.runPythonSimple('import importlib\n' +
-                           'importlib.invalidate_caches()\n');
-  };
+    Module.runPythonSimple(
+      "import importlib\n" + "importlib.invalidate_caches()\n"
+    );
+  }
 
   // This is a promise that is resolved iff there are no pending package loads.
   // It never fails.
@@ -289,7 +305,7 @@ globalThis.loadPyodide = async function(config = {}) {
    *    messages (optional)
    * @async
    */
-  Module.loadPackage = async function(names, messageCallback, errorCallback) {
+  Module.loadPackage = async function (names, messageCallback, errorCallback) {
     if (Module.isPyProxy(names)) {
       let temp;
       try {
@@ -301,14 +317,18 @@ globalThis.loadPyodide = async function(config = {}) {
     }
 
     if (!Array.isArray(names)) {
-      names = [ names ];
+      names = [names];
     }
     // get shared library packages and load those first
     // otherwise bad things happen with linking them in firefox.
     let sharedLibraryNames = [];
     try {
-      let sharedLibraryPackagesToLoad =
-          recursiveDependencies(names, messageCallback, errorCallback, true);
+      let sharedLibraryPackagesToLoad = recursiveDependencies(
+        names,
+        messageCallback,
+        errorCallback,
+        true
+      );
       for (let pkg of sharedLibraryPackagesToLoad) {
         sharedLibraryNames.push(pkg[0]);
       }
@@ -331,35 +351,46 @@ globalThis.loadPyodide = async function(config = {}) {
       }
     }
     let dynamicLoadHandler = {
-      get : function(obj, prop) {
-        if (prop === 'handle') {
-          return function(bytes, name) {
+      get: function (obj, prop) {
+        if (prop === "handle") {
+          return function (bytes, name) {
             obj[prop].apply(obj, arguments);
-            this["asyncWasmLoadPromise"] =
-                this["asyncWasmLoadPromise"].then(function() {
-                  Module.loadDynamicLibrary(name,
-                                            {global : true, nodelete : true})
+            this["asyncWasmLoadPromise"] = this["asyncWasmLoadPromise"].then(
+              function () {
+                Module.loadDynamicLibrary(name, {
+                  global: true,
+                  nodelete: true,
                 });
-          }
+              }
+            );
+          };
         } else {
           return obj[prop];
         }
-      }
+      },
     };
     var loadPluginOverride = new Proxy(oldPlugin, dynamicLoadHandler);
     // restore the preload plugin
     Module.preloadPlugins.unshift(loadPluginOverride);
 
-    let promise = loadPackageChain.then(
-        () => _loadPackage(sharedLibraryNames, messageCallback || console.log,
-                           errorCallback || console.error));
+    let promise = loadPackageChain.then(() =>
+      _loadPackage(
+        sharedLibraryNames,
+        messageCallback || console.log,
+        errorCallback || console.error
+      )
+    );
     loadPackageChain = loadPackageChain.then(() => promise.catch(() => {}));
     await promise;
     Module.preloadPlugins.shift(loadPluginOverride);
 
-    promise = loadPackageChain.then(
-        () => _loadPackage(names, messageCallback || console.log,
-                           errorCallback || console.error));
+    promise = loadPackageChain.then(() =>
+      _loadPackage(
+        names,
+        messageCallback || console.log,
+        errorCallback || console.error
+      )
+    );
     loadPackageChain = loadPackageChain.then(() => promise.catch(() => {}));
     await promise;
   };
@@ -380,42 +411,41 @@ globalThis.loadPyodide = async function(config = {}) {
     }
     try {
       recurse();
-    } catch (err) {
-      ;
-    }
+    } catch (err) {}
 
     let recursionLimit = depth / 50;
     if (recursionLimit > 1000) {
       recursionLimit = 1000;
     }
     pyodide.runPythonSimple(
-        `import sys; sys.setrecursionlimit(int(${recursionLimit}))`);
-  };
+      `import sys; sys.setrecursionlimit(int(${recursionLimit}))`
+    );
+  }
 
   ////////////////////////////////////////////////////////////
   // Rearrange namespace for public API
   // clang-format off
   let PUBLIC_API = [
-    'globals',
-    'pyodide_py',
-    'version',
-    'loadPackage',
-    'loadPackagesFromImports',
-    'loadedPackages',
-    'isPyProxy',
-    'pyimport',
-    'runPython',
-    'runPythonAsync',
-    'registerJsModule',
-    'unregisterJsModule',
-    'setInterruptBuffer',
-    'toPy',
-    'PythonError',
+    "globals",
+    "pyodide_py",
+    "version",
+    "loadPackage",
+    "loadPackagesFromImports",
+    "loadedPackages",
+    "isPyProxy",
+    "pyimport",
+    "runPython",
+    "runPythonAsync",
+    "registerJsModule",
+    "unregisterJsModule",
+    "setInterruptBuffer",
+    "toPy",
+    "PythonError",
   ];
   // clang-format on
 
   function makePublicAPI(module, public_api) {
-    let namespace = {_module : module};
+    let namespace = { _module: module };
     module.public_api = namespace;
     for (let name of public_api) {
       namespace[name] = module[name];
@@ -428,37 +458,41 @@ globalThis.loadPyodide = async function(config = {}) {
 
   Module.noImageDecoding = true;
   Module.noAudioDecoding = true;
-  Module.noWasmDecoding =
-      false; // we preload wasm using the built in plugin now
+  Module.noWasmDecoding = false; // we preload wasm using the built in plugin now
   Module.preloadedWasm = {};
 
   let fatal_error_occurred = false;
-  Module.fatal_error = function(e) {
+  Module.fatal_error = function (e) {
     if (fatal_error_occurred) {
       console.error("Recursive call to fatal_error. Inner error was:");
       console.error(e);
       return;
     }
     fatal_error_occurred = true;
-    console.error("Pyodide has suffered a fatal error. " +
-                  "Please report this to the Pyodide maintainers.");
-    console.error("The cause of the fatal error was:")
+    console.error(
+      "Pyodide has suffered a fatal error. " +
+        "Please report this to the Pyodide maintainers."
+    );
+    console.error("The cause of the fatal error was:");
     console.error(e);
     try {
       let fd_stdout = 1;
-      Module.__Py_DumpTraceback(fd_stdout,
-                                Module._PyGILState_GetThisThreadState());
+      Module.__Py_DumpTraceback(
+        fd_stdout,
+        Module._PyGILState_GetThisThreadState()
+      );
       for (let key of PUBLIC_API) {
         if (key === "version") {
           continue;
         }
         Object.defineProperty(Module.public_api, key, {
-          enumerable : true,
-          configurable : true,
-          get : () => {
+          enumerable: true,
+          configurable: true,
+          get: () => {
             throw new Error(
-                "Pyodide already fatally failed and can no longer be used.");
-          }
+              "Pyodide already fatally failed and can no longer be used."
+            );
+          },
         });
       }
       if (Module.on_fatal) {
@@ -517,7 +551,7 @@ globalThis.loadPyodide = async function(config = {}) {
   Module.PythonError = class PythonError {
     // actually defined in error_handling.c. TODO: would be good to move this
     // documentation and the definition of PythonError to error_handling.js
-    constructor(){
+    constructor() {
       /**
        * The Python traceback.
        * @type {string}
@@ -562,7 +596,7 @@ globalThis.loadPyodide = async function(config = {}) {
    *
    * @private
    */
-  Module.runPythonSimple = function(code) {
+  Module.runPythonSimple = function (code) {
     let code_c_string = Module.stringToNewUTF8(code);
     let errcode;
     try {
@@ -590,7 +624,7 @@ globalThis.loadPyodide = async function(config = {}) {
    * @returns The result of the Python code translated to Javascript. See the
    *          documentation for :any:`pyodide.eval_code` for more info.
    */
-  Module.runPython = function(code, globals = Module.globals) {
+  Module.runPython = function (code, globals = Module.globals) {
     return Module.pyodide_py.eval_code(code, globals);
   };
 
@@ -616,7 +650,11 @@ globalThis.loadPyodide = async function(config = {}) {
    * :any:`pyodide.loadPackage` (optional).
    * @async
    */
-  Module.loadPackagesFromImports = async function(code, messageCallback, errorCallback) {
+  Module.loadPackagesFromImports = async function (
+    code,
+    messageCallback,
+    errorCallback
+  ) {
     let imports = Module.pyodide_py.find_imports(code).toJs();
     if (imports.length === 0) {
       return;
@@ -630,7 +668,9 @@ globalThis.loadPyodide = async function(config = {}) {
     }
     if (packages.size) {
       await Module.loadPackage(
-        Array.from(packages.keys()), messageCallback, errorCallback
+        Array.from(packages.keys()),
+        messageCallback,
+        errorCallback
       );
     }
   };
@@ -645,10 +685,11 @@ globalThis.loadPyodide = async function(config = {}) {
    * @param {string} name Python variable name
    * @returns The Python object translated to Javascript.
    */
-  Module.pyimport = name => {
+  Module.pyimport = (name) => {
     console.warn(
-        "Access to the Python global namespace via pyodide.pyimport is deprecated and " +
-        "will be removed in version 0.18.0. Use pyodide.globals.get('key') instead.");
+      "Access to the Python global namespace via pyodide.pyimport is deprecated and " +
+        "will be removed in version 0.18.0. Use pyodide.globals.get('key') instead."
+    );
     return Module.globals.get(name);
   };
   /**
@@ -672,7 +713,7 @@ globalThis.loadPyodide = async function(config = {}) {
    * @returns The result of the Python code translated to Javascript.
    * @async
    */
-  Module.runPythonAsync = async function(code) {
+  Module.runPythonAsync = async function (code) {
     let coroutine = Module.pyodide_py.eval_code_async(code, Module.globals);
     try {
       let result = await coroutine;
@@ -694,7 +735,7 @@ globalThis.loadPyodide = async function(config = {}) {
    * @param {string} name Name of the Javascript module to add
    * @param {object} module Javascript object backing the module
    */
-  Module.registerJsModule = function(name, module) {
+  Module.registerJsModule = function (name, module) {
     Module.pyodide_py.register_js_module(name, module);
   };
 
@@ -709,7 +750,7 @@ globalThis.loadPyodide = async function(config = {}) {
    *
    * @param {string} name Name of the Javascript module to remove
    */
-  Module.unregisterJsModule = function(name) {
+  Module.unregisterJsModule = function (name) {
     Module.pyodide_py.unregister_js_module(name);
   };
   // clang-format on
@@ -728,7 +769,7 @@ globalThis.loadPyodide = async function(config = {}) {
    * conversion.
    * @returns {PyProxy} The object converted to Python.
    */
-  Module.toPy = function(obj, depth = -1) {
+  Module.toPy = function (obj, depth = -1) {
     // No point in converting these, it'd be dumb to proxy them so they'd just
     // get converted back by `js2python` at the end
     // clang-format off
@@ -751,7 +792,7 @@ globalThis.loadPyodide = async function(config = {}) {
       obj_id = Module.hiwire.new_value(obj);
       py_result = Module.__js2python_convert(obj_id, new Map(), depth);
       // clang-format off
-      if(py_result === 0){
+      if (py_result === 0) {
         // clang-format on
         Module._pythonexc2js();
       }
@@ -777,13 +818,13 @@ globalThis.loadPyodide = async function(config = {}) {
    * @param jsobj {any} Object to test.
    * @returns {bool} Is ``jsobj`` a :any:`PyProxy`?
    */
-  Module.isPyProxy = function(jsobj) {
-    return !!jsobj && jsobj.$$ !== undefined && jsobj.$$.type === 'PyProxy';
+  Module.isPyProxy = function (jsobj) {
+    return !!jsobj && jsobj.$$ !== undefined && jsobj.$$.type === "PyProxy";
   };
 
   Module.locateFile = (path) => baseURL + path;
 
-  let moduleLoaded = new Promise(r => Module.postRun = r);
+  let moduleLoaded = new Promise((r) => (Module.postRun = r));
 
   const scriptSrc = `${baseURL}pyodide.asm.js`;
 
@@ -817,7 +858,7 @@ def temp(Module):
 
   Module.saveState = () => Module.pyodide_py._state.save_state();
   Module.restoreState = (state) =>
-      Module.pyodide_py._state.restore_state(state);
+    Module.pyodide_py._state.restore_state(state);
 
   Module.init_dict.get("temp")(Module);
   // Module.runPython works starting from here!
@@ -839,8 +880,9 @@ def temp(Module):
 
 if (globalThis.languagePluginUrl) {
   console.warn(
-      "languagePluginUrl is deprecated and will be removed in version 0.18.0, " +
-      "instead use loadPyodide({ indexURL : <some_url>})");
+    "languagePluginUrl is deprecated and will be removed in version 0.18.0, " +
+      "instead use loadPyodide({ indexURL : <some_url>})"
+  );
 
   /**
    * A deprecated parameter that specifies the Pyodide ``indexURL``. If present,
@@ -863,6 +905,7 @@ if (globalThis.languagePluginUrl) {
    * @type Promise
    * @deprecated Will be removed in version 0.18.0
    */
-  globalThis.languagePluginLoader =
-      loadPyodide({indexURL : globalThis.languagePluginUrl});
+  globalThis.languagePluginLoader = loadPyodide({
+    indexURL: globalThis.languagePluginUrl,
+  });
 }
