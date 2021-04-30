@@ -1,3 +1,4 @@
+"use strict";
 /**
  * The main bootstrap script for loading pyodide.
  */
