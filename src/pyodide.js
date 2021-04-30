@@ -60,14 +60,7 @@ globalThis.loadPyodide = async function (config = {}) {
   let loadScript;
   if (self.document) {
     // browser
-    loadScript = (url) =>
-      new Promise((res, rej) => {
-        const script = self.document.createElement("script");
-        script.src = url;
-        script.onload = res;
-        script.onerror = rej;
-        self.document.head.appendChild(script);
-      });
+    loadScript = (url) => import(url);
   } else if (self.importScripts) {
     // webworker
     loadScript = async (url) => {
@@ -159,32 +152,6 @@ globalThis.loadPyodide = async function (config = {}) {
       messageCallback(`Loading ${packageNames}`);
     }
 
-    // If running in main browser thread, try to catch errors thrown when
-    // running a script. Since the script is added via a script tag, there is
-    // no good way to capture errors from the script only, so try to capture
-    // all errors them.
-    //
-    // windowErrorPromise rejects when any exceptions is thrown in the process
-    // of loading a script. The promise never resolves, and we combine it
-    // with other promises via Promise.race.
-    let windowErrorHandler;
-    let windowErrorPromise;
-    if (self.document) {
-      windowErrorPromise = new Promise((_res, rej) => {
-        windowErrorHandler = (e) => {
-          errorCallback(
-            "Unhandled error. We don't know what it is or whether it is related to 'loadPackage' but out of an abundance of caution we will assume that loading failed."
-          );
-          errorCallback(e);
-          rej(e.message);
-        };
-        self.addEventListener("error", windowErrorHandler);
-      });
-    } else {
-      // This should be a promise that never resolves
-      windowErrorPromise = new Promise(() => {});
-    }
-
     // This is a collection of promises that resolve when the package's JS file
     // is loaded. The promises already handle error and never fail.
     let scriptPromises = [];
@@ -239,14 +206,10 @@ globalThis.loadPyodide = async function (config = {}) {
     // We must start waiting for runDependencies *after* all the JS files are
     // loaded, since the number of runDependencies may happen to equal zero
     // between package files loading.
-    let successPromise = Promise.all(scriptPromises).then(waitRunDependency);
     try {
-      await Promise.race([successPromise, windowErrorPromise]);
+      await Promise.all(scriptPromises).then(waitRunDependency);
     } finally {
       delete Module.monitorRunDependencies;
-      if (windowErrorHandler) {
-        self.removeEventListener("error", windowErrorHandler);
-      }
     }
 
     let packageList = [];
@@ -276,7 +239,20 @@ globalThis.loadPyodide = async function (config = {}) {
 
   // This is a promise that is resolved iff there are no pending package loads.
   // It never fails.
-  let loadPackageChain = Promise.resolve();
+  let _package_lock = Promise.resolve();
+
+  /**
+   * An async lock for package loading. Prevents race conditions in loadPackage.
+   * @returns A zero argument function that releases the lock.
+   * @private
+   */
+  async function acquirePackageLock() {
+    let old_lock = _package_lock;
+    let releaseLock;
+    _package_lock = new Promise((resolve) => (releaseLock = resolve));
+    await old_lock;
+    return releaseLock;
+  }
 
   /**
    *
@@ -374,26 +350,22 @@ globalThis.loadPyodide = async function (config = {}) {
     // restore the preload plugin
     Module.preloadPlugins.unshift(loadPluginOverride);
 
-    let promise = loadPackageChain.then(() =>
-      _loadPackage(
+    let releaseLock = await acquirePackageLock();
+    try {
+      await _loadPackage(
         sharedLibraryNames,
         messageCallback || console.log,
         errorCallback || console.error
-      )
-    );
-    loadPackageChain = loadPackageChain.then(() => promise.catch(() => {}));
-    await promise;
-    Module.preloadPlugins.shift(loadPluginOverride);
-
-    promise = loadPackageChain.then(() =>
-      _loadPackage(
+      );
+      Module.preloadPlugins.shift(loadPluginOverride);
+      await _loadPackage(
         names,
         messageCallback || console.log,
         errorCallback || console.error
-      )
-    );
-    loadPackageChain = loadPackageChain.then(() => promise.catch(() => {}));
-    await promise;
+      );
+    } finally {
+      releaseLock();
+    }
   };
 
   ////////////////////////////////////////////////////////////
@@ -425,6 +397,7 @@ globalThis.loadPyodide = async function (config = {}) {
 
   ////////////////////////////////////////////////////////////
   // Rearrange namespace for public API
+  // clang-format off
   let PUBLIC_API = [
     "globals",
     "pyodide_py",
@@ -442,6 +415,7 @@ globalThis.loadPyodide = async function (config = {}) {
     "toPy",
     "PythonError",
   ];
+  // clang-format on
 
   function makePublicAPI(module, public_api) {
     let namespace = { _module: module };
@@ -525,6 +499,7 @@ globalThis.loadPyodide = async function (config = {}) {
    */
   Module.globals = {}; // actually defined in runPythonSimple below
 
+  // clang-format off
   /**
    * A Javascript error caused by a Python exception.
    *
@@ -557,6 +532,7 @@ globalThis.loadPyodide = async function (config = {}) {
       this.message;
     }
   };
+  // clang-format on
 
   /**
    *
@@ -625,6 +601,7 @@ globalThis.loadPyodide = async function (config = {}) {
     return Module.pyodide_py.eval_code(code, globals);
   };
 
+  // clang-format off
   /**
    * Inspect a Python code chunk and use :js:func:`pyodide.loadPackage` to
    * install any known packages that the code chunk imports. Uses the Python API
@@ -670,6 +647,7 @@ globalThis.loadPyodide = async function (config = {}) {
       );
     }
   };
+  // clang-format on
 
   /**
    * Access a Python object in the global namespace from Javascript.
@@ -718,6 +696,7 @@ globalThis.loadPyodide = async function (config = {}) {
     }
   };
 
+  // clang-format off
   /**
    * Registers the Javascript object ``module`` as a Javascript module named
    * ``name``. This module can then be imported from Python using the standard
@@ -747,6 +726,7 @@ globalThis.loadPyodide = async function (config = {}) {
   Module.unregisterJsModule = function (name) {
     Module.pyodide_py.unregister_js_module(name);
   };
+  // clang-format on
 
   /**
    * Convert the Javascript object to a Python object as best as possible.
@@ -765,6 +745,7 @@ globalThis.loadPyodide = async function (config = {}) {
   Module.toPy = function (obj, depth = -1) {
     // No point in converting these, it'd be dumb to proxy them so they'd just
     // get converted back by `js2python` at the end
+    // clang-format off
     switch (typeof obj) {
       case "string":
       case "number":
@@ -773,6 +754,7 @@ globalThis.loadPyodide = async function (config = {}) {
       case "undefined":
         return obj;
     }
+    // clang-format on
     if (!obj || Module.isPyProxy(obj)) {
       return obj;
     }
@@ -782,7 +764,9 @@ globalThis.loadPyodide = async function (config = {}) {
     try {
       obj_id = Module.hiwire.new_value(obj);
       py_result = Module.__js2python_convert(obj_id, new Map(), depth);
+      // clang-format off
       if (py_result === 0) {
+        // clang-format on
         Module._pythonexc2js();
       }
       if (Module._JsProxy_Check(py_result)) {
@@ -791,7 +775,9 @@ globalThis.loadPyodide = async function (config = {}) {
         // return Module.pyproxy_new(py_result);
       }
       result = Module._python2js(py_result);
+      // clang-format off
       if (result === 0) {
+        // clang-format on
         Module._pythonexc2js();
       }
     } finally {
