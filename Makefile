@@ -64,6 +64,7 @@ build/pyodide.asm.js: \
 		let clearImmediate = globalThis.clearImmediate;\
 		let baseName, fpcGOT, dyncallGOT, fpVal, dcVal;\
 	' build/pyodide.asm.js
+	echo "globalThis._createPyodideModule = _createPyodideModule;" >> build/pyodide.asm.js
 	date +"[%F %T] done building pyodide.asm.js."
 
 
