@@ -493,7 +493,7 @@ button.matplotlib-toolbar-button:hover {
         return TimerWasm(*args, **kwargs)
 
 
-_MPL_ICONS = {
+_MATPLOTLIB_ICONS = {
     "home": "mpl-home",
     "back": "mpl-arrow-left",
     "forward": "mpl-arrow-right",
