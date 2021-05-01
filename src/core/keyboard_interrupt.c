@@ -4,22 +4,17 @@
 #include "keyboard_interrupt.h"
 #include <emscripten.h>
 
-static int callback_clock = 1000;
-
 int
 pyodide_callback(void)
 {
-  callback_clock--;
-  if (callback_clock == 0) {
-    callback_clock = 1000;
-    int interrupt_buffer = EM_ASM_INT({
-      let result = Module.interrupt_buffer[0];
-      Module.interrupt_buffer[0] = 0;
-      return result;
-    });
-    if (interrupt_buffer == 2) {
-      PyErr_SetInterrupt();
-    }
+  int interrupt_buffer = EM_ASM_INT({
+    let result = Module.interrupt_buffer[0];
+    Module.interrupt_buffer[0] = 0;
+    return result;
+  });
+  if (interrupt_buffer == 2) {
+    PyErr_SetNone(PyExc_KeyboardInterrupt);
+    return -1;
   }
   return 0;
 }

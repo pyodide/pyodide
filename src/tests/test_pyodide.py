@@ -256,6 +256,44 @@ def test_run_python_last_exc(selenium):
     )
 
 
+def test_check_interrupt(selenium):
+    assert selenium.run_js(
+        """
+        let buffer = new Uint8Array(1);
+        let x = 0;
+        pyodide.setInterruptBuffer(buffer);
+        function test(){
+            buffer[0] = 2;
+            pyodide.checkInterrupt();
+            x = 1;
+        }
+        window.test = test;
+        let err;
+        try {
+            pyodide.runPython(`
+                from js import test;
+                test();
+            `);
+        } catch(e){
+            err = e;
+        }
+        return x === 0 && err.message.includes("KeyboardInterrupt");
+        """
+    )
+
+    assert selenium.run_js(
+        """
+        let buffer = new Uint8Array(1);
+        pyodide.setInterruptBuffer(buffer);
+        buffer[0] = 2;
+        let errcode = pyodide._module._PyErr_CheckSignals();
+        let err_occurred = pyodide._module._PyErr_Occurred();
+        pyodide._module._PyErr_Clear();
+        return buffer[0] === 0 && errcode === -1 && err_occurred !== 0;
+        """
+    )
+
+
 def test_async_leak(selenium):
     assert 0 == selenium.run_js(
         """

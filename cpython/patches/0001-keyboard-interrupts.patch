@@ -1,14 +1,15 @@
-From ff5dbb071a679ee1ea158feac363388e878ce402 Mon Sep 17 00:00:00 2001
+From 6b4753348471fbd001d14600718530e01a84efd0 Mon Sep 17 00:00:00 2001
 From: Hood <hood@mit.edu>
-Date: Sat, 16 Jan 2021 11:54:57 -0800
-Subject: [PATCH] Add pyodide callback
+Date: Sat, 27 Feb 2021 19:06:58 -0800
+Subject: [PATCH] Add pyodide callback and patch PyErr_CheckSignals
 
 ---
  Include/ceval.h           |  1 +
  Include/cpython/pystate.h |  3 ++
- Python/ceval.c            | 60 +++++++++++++++++++++++----------------
+ Modules/signalmodule.c    |  4 +++
+ Python/ceval.c            | 66 +++++++++++++++++++++++++--------------
  Python/pystate.c          |  2 ++
- 4 files changed, 42 insertions(+), 24 deletions(-)
+ 5 files changed, 52 insertions(+), 24 deletions(-)
 
 This patch adds a callback called pyodide_callback with signature 
 `int callback(void)` to the main loop in `ceval.c`. This function gets called once 
@@ -33,9 +34,11 @@ out of the `eval_breaker` conditional.
 
 We also patched the `threadstate` struct to include a `pyodide_callback` field, patch
 `new_threadstate` to initialize the `pyodide_callback` field to `NULL`, and add a new
-API `PyPyodide_SetPyodideCallback` to set `pyodide_callback`. This makes 
-`PyPyodide_SetPyodideCallback` behave much like `PyEval_SetTrace`, except lighter 
-weight.
+API `PyPyodide_SetPyodideCallback` to set `pyodide_callback`.
+
+Lastly, we patched PyErr_CheckSignals to check our custom source of keyboard interrupts
+so that C extensions that use PyErr_CheckSignals to allow keyboard interrupts will be 
+interruptable in pyodide too.
 
 diff --git a/Include/ceval.h b/Include/ceval.h
 index 36fd014..5f5fbc4 100644
@@ -50,7 +53,7 @@ index 36fd014..5f5fbc4 100644
  PyAPI_FUNC(int) _PyEval_GetCoroutineOriginTrackingDepth(void);
  PyAPI_FUNC(void) _PyEval_SetAsyncGenFirstiter(PyObject *);
 diff --git a/Include/cpython/pystate.h b/Include/cpython/pystate.h
-index 94b0809..b215056 100644
+index 94b0809..64d1870 100644
 --- a/Include/cpython/pystate.h
 +++ b/Include/cpython/pystate.h
 @@ -17,6 +17,7 @@ PyAPI_FUNC(PyObject *) _PyInterpreterState_GetMainModule(PyInterpreterState *);
@@ -61,20 +64,50 @@ index 94b0809..b215056 100644
  
  /* The following values are used for 'what' for tracefunc functions
   *
-@@ -73,6 +74,8 @@ struct _ts {
-     Py_tracefunc c_tracefunc;
+@@ -74,6 +75,8 @@ struct _ts {
      PyObject *c_profileobj;
      PyObject *c_traceobj;
-+    
-+    PyPyodide_callback pyodide_callback;
  
++    PyPyodide_callback pyodide_callback;
++
      /* The exception currently being raised */
      PyObject *curexc_type;
+     PyObject *curexc_value;
+diff --git a/Modules/signalmodule.c b/Modules/signalmodule.c
+index 0c9a267..520afc8 100644
+--- a/Modules/signalmodule.c
++++ b/Modules/signalmodule.c
+@@ -1651,6 +1651,10 @@ _PyErr_CheckSignals(void)
+     int i;
+     PyObject *f;
+ 
++    PyThreadState *tstate = _PyThreadState_GET();
++    if (tstate->pyodide_callback != NULL && tstate->pyodide_callback() == -1)
++        return -1;
++
+     if (!_Py_atomic_load(&is_tripped))
+         return 0;
+ 
 diff --git a/Python/ceval.c b/Python/ceval.c
-index 3306fb9..86e7639 100644
+index 3306fb9..de5a691 100644
 --- a/Python/ceval.c
 +++ b/Python/ceval.c
-@@ -1198,31 +1198,31 @@ main_loop:
+@@ -633,6 +633,14 @@ Py_MakePendingCalls(void)
+     return 0;
+ }
+ 
++static int pyodide_callback_clock = 1000;
++void
++PyPyodide_SetPyodideCallback(PyPyodide_callback pyodide_callback){
++    PyThreadState *tstate = _PyThreadState_GET();
++    tstate->pyodide_callback = pyodide_callback;
++}
++
++
+ /* The interpreter's recursion limit */
+ 
+ #ifndef Py_DEFAULT_RECURSION_LIMIT
+@@ -1198,31 +1206,31 @@ main_loop:
             async I/O handler); see Py_AddPendingCall() and
             Py_MakePendingCalls() above. */
  
@@ -130,45 +163,36 @@ index 3306fb9..86e7639 100644
              if (_Py_atomic_load_relaxed(&ceval->signals_pending)) {
                  if (handle_signals(runtime) != 0) {
                      goto error;
-@@ -1262,6 +1262,12 @@ main_loop:
-                 goto error;
+@@ -1263,6 +1271,16 @@ main_loop:
              }
          }
-+        
-+        if(tstate->pyodide_callback != NULL){
-+            if(tstate->pyodide_callback() != 0){
-+                goto error;
-+            }
-+        }        
  
++        if(tstate->pyodide_callback != NULL){
++            pyodide_callback_clock--;
++            if (pyodide_callback_clock == 0) {
++                pyodide_callback_clock = 1000;
++                if(tstate->pyodide_callback() != 0){
++                    goto error;
++                }
++            }
++        }
++
      fast_next_opcode:
          f->f_lasti = INSTR_OFFSET();
-@@ -4727,6 +4733,12 @@ PyEval_SetTrace(Py_tracefunc func, PyObject *arg)
-                            || (tstate->c_profilefunc != NULL));
- }
  
-+void
-+PyPyodide_SetPyodideCallback(PyPyodide_callback pyodide_callback){
-+    PyThreadState *tstate = _PyThreadState_GET();
-+    tstate->pyodide_callback = pyodide_callback;
-+}
-+
- void
- _PyEval_SetCoroutineOriginTrackingDepth(int new_depth)
- {
 diff --git a/Python/pystate.c b/Python/pystate.c
-index aba673c..b809208 100644
+index aba673c..e7b4136 100644
 --- a/Python/pystate.c
 +++ b/Python/pystate.c
-@@ -592,6 +592,8 @@ new_threadstate(PyInterpreterState *interp, int init)
-     tstate->c_tracefunc = NULL;
+@@ -593,6 +593,8 @@ new_threadstate(PyInterpreterState *interp, int init)
      tstate->c_profileobj = NULL;
      tstate->c_traceobj = NULL;
-+    
-+    tstate->pyodide_callback = NULL;
  
++    tstate->pyodide_callback = NULL;
++
      tstate->trash_delete_nesting = 0;
      tstate->trash_delete_later = NULL;
+     tstate->on_delete = NULL;
 -- 
 2.17.1
 

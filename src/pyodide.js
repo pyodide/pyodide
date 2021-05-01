@@ -386,6 +386,7 @@ globalThis.loadPyodide = async function(config = {}) {
     'registerJsModule',
     'unregisterJsModule',
     'setInterruptBuffer',
+    'checkInterrupt',
     'toPy',
     'PythonError',
   ];
