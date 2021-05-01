@@ -13,10 +13,9 @@
  * This file to be included from pyproxy.c This uses the JS_FILE macro defined
  * in include_js_file.h
  */
-// clang-format off
-JS_FILE(pyproxy_init_js, () => {0,0; /* Magic, see include_js_file.h */
+JS_FILE(pyproxy_init_js, () => {
+  0, 0; /* Magic, see include_js_file.h */
   Module.PyProxies = {};
-  // clang-format on
 
   if (globalThis.FinalizationRegistry) {
     Module.finalizationRegistry = new FinalizationRegistry((ptr) => {
@@ -41,7 +40,7 @@ JS_FILE(pyproxy_init_js, () => {0,0; /* Magic, see include_js_file.h */
     //   }
     // });
   } else {
-    Module.finalizationRegistry = {register() {}, unregister() {}};
+    Module.finalizationRegistry = { register() {}, unregister() {} };
     // Module.bufferFinalizationRegistry = finalizationRegistry;
   }
 
@@ -65,7 +64,7 @@ JS_FILE(pyproxy_init_js, () => {0,0; /* Magic, see include_js_file.h */
    * still make "prototype in proxy" be true though.
    * @private
    */
-  Module.pyproxy_new = function(ptrobj) {
+  Module.pyproxy_new = function (ptrobj) {
     let flags = _pyproxy_getflags(ptrobj);
     let cls = Module.getPyProxyClass(flags);
     // Reflect.construct calls the constructor of Module.PyProxyClass but sets
@@ -87,8 +86,9 @@ JS_FILE(pyproxy_init_js, () => {0,0; /* Magic, see include_js_file.h */
     } else {
       target = Object.create(cls.prototype);
     }
-    Object.defineProperty(target, "$$",
-                          {value : {ptr : ptrobj, type : 'PyProxy'}});
+    Object.defineProperty(target, "$$", {
+      value: { ptr: ptrobj, type: "PyProxy" },
+    });
     _Py_IncRef(ptrobj);
     let proxy = new Proxy(target, Module.PyProxyHandlers);
     Module.finalizationRegistry.register(proxy, ptrobj, proxy);
@@ -112,14 +112,13 @@ JS_FILE(pyproxy_init_js, () => {0,0; /* Magic, see include_js_file.h */
    * PyProxy is minimal.
    * @private
    */
-  Module.getPyProxyClass = function(flags) {
+  Module.getPyProxyClass = function (flags) {
     let result = _pyproxyClassMap.get(flags);
     if (result) {
       return result;
     }
     let descriptors = {};
-    // clang-format off
-    for(let [feature_flag, methods] of [
+    for (let [feature_flag, methods] of [
       [HAS_LENGTH, Module.PyProxyLengthMethods],
       [HAS_GET, Module.PyProxyGetItemMethods],
       [HAS_SET, Module.PyProxySetItemMethods],
@@ -129,14 +128,13 @@ JS_FILE(pyproxy_init_js, () => {0,0; /* Magic, see include_js_file.h */
       [IS_AWAITABLE, Module.PyProxyAwaitableMethods],
       [IS_BUFFER, Module.PyProxyBufferMethods],
       [IS_CALLABLE, Module.PyProxyCallableMethods],
-    ]){
-      // clang-format on
+    ]) {
       if (flags & feature_flag) {
         Object.assign(descriptors, Object.getOwnPropertyDescriptors(methods));
       }
     }
     let new_proto = Object.create(Module.PyProxyClass.prototype, descriptors);
-    function PyProxy() {};
+    function PyProxy() {}
     PyProxy.prototype = new_proto;
     _pyproxyClassMap.set(flags, PyProxy);
     return PyProxy;
@@ -148,7 +146,7 @@ JS_FILE(pyproxy_init_js, () => {0,0; /* Magic, see include_js_file.h */
   // Now a lot of boilerplate to wrap the abstract Object protocol wrappers
   // defined in pyproxy.c in Javascript functions.
 
-  Module.callPyObjectKwargs = function(ptrobj, ...jsargs) {
+  Module.callPyObjectKwargs = function (ptrobj, ...jsargs) {
     // We don't do any checking for kwargs, checks are in PyProxy.callKwargs
     // which only is used when the keyword arguments come from the user.
     let kwargs = jsargs.pop();
@@ -162,8 +160,13 @@ JS_FILE(pyproxy_init_js, () => {0,0; /* Magic, see include_js_file.h */
     let idkwnames = Module.hiwire.new_value(kwargs_names);
     let idresult;
     try {
-      idresult =
-          __pyproxy_apply(ptrobj, idargs, num_pos_args, idkwnames, num_kwargs);
+      idresult = __pyproxy_apply(
+        ptrobj,
+        idargs,
+        num_pos_args,
+        idkwnames,
+        num_kwargs
+      );
     } catch (e) {
       Module.fatal_error(e);
     } finally {
@@ -176,16 +179,18 @@ JS_FILE(pyproxy_init_js, () => {0,0; /* Magic, see include_js_file.h */
     return Module.hiwire.pop_value(idresult);
   };
 
-  // clang-format off
-  Module.callPyObject = function(ptrobj, ...jsargs) {
+  Module.callPyObject = function (ptrobj, ...jsargs) {
     return Module.callPyObjectKwargs(ptrobj, ...jsargs, {});
   };
-  // clang-format on
 
   Module.PyProxyClass = class {
-    constructor() { throw new TypeError('PyProxy is not a constructor'); }
+    constructor() {
+      throw new TypeError("PyProxy is not a constructor");
+    }
 
-    get[Symbol.toStringTag]() { return "PyProxy"; }
+    get [Symbol.toStringTag]() {
+      return "PyProxy";
+    }
     /**
      * The name of the type of the object.
      *
@@ -278,11 +283,14 @@ JS_FILE(pyproxy_init_js, () => {0,0; /* Magic, see include_js_file.h */
     callKwargs(...jsargs) {
       if (jsargs.length === 0) {
         throw new TypeError(
-            "callKwargs requires at least one argument (the key word argument object)");
+          "callKwargs requires at least one argument (the key word argument object)"
+        );
       }
       let kwargs = jsargs[jsargs.length - 1];
-      if (kwargs.constructor !== undefined &&
-          kwargs.constructor.name !== "Object") {
+      if (
+        kwargs.constructor !== undefined &&
+        kwargs.constructor.name !== "Object"
+      ) {
         throw new TypeError("kwargs argument is not an object");
       }
       return Module.callPyObjectKwargs(_getPtr(this), ...jsargs);
@@ -309,7 +317,7 @@ JS_FILE(pyproxy_init_js, () => {0,0; /* Magic, see include_js_file.h */
         _pythonexc2js();
       }
       return length;
-    }
+    },
   };
 
   // Controlled by HAS_GET, appears for any class with __getitem__,
@@ -323,7 +331,7 @@ JS_FILE(pyproxy_init_js, () => {0,0; /* Magic, see include_js_file.h */
      * @param {any} key The key to look up.
      * @returns The corresponding value.
      */
-    get : function(key) {
+    get: function (key) {
       let ptrobj = _getPtr(this);
       let idkey = Module.hiwire.new_value(key);
       let idresult;
@@ -356,7 +364,7 @@ JS_FILE(pyproxy_init_js, () => {0,0; /* Magic, see include_js_file.h */
      * @param {any} key The key to set.
      * @param {any} value The value to set it to.
      */
-    set : function(key, value) {
+    set: function (key, value) {
       let ptrobj = _getPtr(this);
       let idkey = Module.hiwire.new_value(key);
       let idval = Module.hiwire.new_value(value);
@@ -380,7 +388,7 @@ JS_FILE(pyproxy_init_js, () => {0,0; /* Magic, see include_js_file.h */
      *
      * @param {any} key The key to delete.
      */
-    delete : function(key) {
+    delete: function (key) {
       let ptrobj = _getPtr(this);
       let idkey = Module.hiwire.new_value(key);
       let errcode;
@@ -394,7 +402,7 @@ JS_FILE(pyproxy_init_js, () => {0,0; /* Magic, see include_js_file.h */
       if (errcode === -1) {
         _pythonexc2js();
       }
-    }
+    },
   };
 
   // Controlled by HAS_CONTAINS flag, appears for any class with __contains__ or
@@ -408,7 +416,7 @@ JS_FILE(pyproxy_init_js, () => {0,0; /* Magic, see include_js_file.h */
      * @param {*} key The key to check for.
      * @returns {bool} Is ``key`` present?
      */
-    has : function(key) {
+    has: function (key) {
       let ptrobj = _getPtr(this);
       let idkey = Module.hiwire.new_value(key);
       let result;
@@ -426,7 +434,7 @@ JS_FILE(pyproxy_init_js, () => {0,0; /* Magic, see include_js_file.h */
     },
   };
 
-  class TempError extends Error {};
+  class TempError extends Error {}
 
   /**
    * A helper for [Symbol.iterator].
@@ -485,7 +493,7 @@ JS_FILE(pyproxy_init_js, () => {0,0; /* Magic, see include_js_file.h */
      *
      * @returns {Iterator} An iterator for the proxied Python object.
      */
-    [Symbol.iterator] : function() {
+    [Symbol.iterator]: function () {
       let ptrobj = _getPtr(this);
       let token = {};
       let iterptr;
@@ -504,7 +512,9 @@ JS_FILE(pyproxy_init_js, () => {0,0; /* Magic, see include_js_file.h */
   // Controlled by IS_ITERATOR, appears for any object with a __next__ or
   // tp_iternext method.
   Module.PyProxyIteratorMethods = {
-    [Symbol.iterator] : function() { return this; },
+    [Symbol.iterator]: function () {
+      return this;
+    },
     /**
      * This translates to the Python code ``next(obj)``. Returns the next value
      * of the generator. See the documentation for `Generator.prototype.next
@@ -524,7 +534,7 @@ JS_FILE(pyproxy_init_js, () => {0,0; /* Magic, see include_js_file.h */
      * ``StopIteration(result_value)`` exception, ``next`` returns ``{done :
      * true, value : result_value}``.
      */
-    next : function(arg) {
+    next: function (arg) {
       let idresult;
       // Note: arg is optional, if arg is not supplied, it will be undefined
       // which gets converted to "Py_None". This is as intended.
@@ -545,7 +555,7 @@ JS_FILE(pyproxy_init_js, () => {0,0; /* Magic, see include_js_file.h */
         _pythonexc2js();
       }
       let value = Module.hiwire.pop_value(idresult);
-      return {done, value};
+      return { done, value };
     },
   };
 
@@ -630,8 +640,10 @@ JS_FILE(pyproxy_init_js, () => {0,0; /* Magic, see include_js_file.h */
   // here:
   // https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Proxy
   Module.PyProxyHandlers = {
-    isExtensible : function() { return true },
-    has : function(jsobj, jskey) {
+    isExtensible: function () {
+      return true;
+    },
+    has: function (jsobj, jskey) {
       // Note: must report "prototype" in proxy when we are callable.
       // (We can return the wrong value from "get" handler though.)
       let objHasKey = Reflect.has(jsobj, jskey);
@@ -639,12 +651,12 @@ JS_FILE(pyproxy_init_js, () => {0,0; /* Magic, see include_js_file.h */
         return true;
       }
       // python_hasattr will crash when given a Symbol.
-      if (typeof (jskey) === "symbol") {
+      if (typeof jskey === "symbol") {
         return false;
       }
       return python_hasattr(jsobj, jskey);
     },
-    get : function(jsobj, jskey) {
+    get: function (jsobj, jskey) {
       // Preference order:
       // 1. things we have to return to avoid making Javascript angry
       // 2. the result of Python getattr
@@ -653,11 +665,11 @@ JS_FILE(pyproxy_init_js, () => {0,0; /* Magic, see include_js_file.h */
       // 1. things we have to return to avoid making Javascript angry
       // This conditional looks funky but it's the only thing I found that
       // worked right in all cases.
-      if ((jskey in jsobj) && !(jskey in Object.getPrototypeOf(jsobj))) {
+      if (jskey in jsobj && !(jskey in Object.getPrototypeOf(jsobj))) {
         return Reflect.get(jsobj, jskey);
       }
       // python_getattr will crash when given a Symbol
-      if (typeof (jskey) === "symbol") {
+      if (typeof jskey === "symbol") {
         return Reflect.get(jsobj, jskey);
       }
       // 2. The result of getattr
@@ -668,13 +680,14 @@ JS_FILE(pyproxy_init_js, () => {0,0; /* Magic, see include_js_file.h */
       // 3. stuff from the prototype chain.
       return Reflect.get(jsobj, jskey);
     },
-    set : function(jsobj, jskey, jsval) {
+    set: function (jsobj, jskey, jsval) {
       // We're only willing to set properties on the python object, throw an
       // error if user tries to write over any key of type 1. things we have to
       // return to avoid making Javascript angry
-      if (typeof (jskey) === "symbol") {
+      if (typeof jskey === "symbol") {
         throw new TypeError(
-            `Cannot set read only field '${jskey.description}'`);
+          `Cannot set read only field '${jskey.description}'`
+        );
       }
       // Again this is a funny looking conditional, I found it as the result of
       // a lengthy search for something that worked right.
@@ -685,13 +698,14 @@ JS_FILE(pyproxy_init_js, () => {0,0; /* Magic, see include_js_file.h */
       python_setattr(jsobj, jskey, jsval);
       return true;
     },
-    deleteProperty : function(jsobj, jskey) {
+    deleteProperty: function (jsobj, jskey) {
       // We're only willing to delete properties on the python object, throw an
       // error if user tries to write over any key of type 1. things we have to
       // return to avoid making Javascript angry
-      if (typeof (jskey) === "symbol") {
+      if (typeof jskey === "symbol") {
         throw new TypeError(
-            `Cannot delete read only field '${jskey.description}'`);
+          `Cannot delete read only field '${jskey.description}'`
+        );
       }
       let descr = Object.getOwnPropertyDescriptor(jsobj, jskey);
       if (descr && !descr.writable) {
@@ -702,7 +716,7 @@ JS_FILE(pyproxy_init_js, () => {0,0; /* Magic, see include_js_file.h */
       // Otherwise Javascript will throw a TypeError.
       return !descr || descr.configurable;
     },
-    ownKeys : function(jsobj) {
+    ownKeys: function (jsobj) {
       let ptrobj = _getPtr(jsobj);
       let idresult;
       try {
@@ -717,11 +731,9 @@ JS_FILE(pyproxy_init_js, () => {0,0; /* Magic, see include_js_file.h */
       result.push(...Reflect.ownKeys(jsobj));
       return result;
     },
-    // clang-format off
-    apply : function(jsobj, jsthis, jsargs) {
+    apply: function (jsobj, jsthis, jsargs) {
       return jsobj.apply(jsthis, jsargs);
     },
-    // clang-format on
   };
 
   /**
@@ -735,7 +747,7 @@ JS_FILE(pyproxy_init_js, () => {0,0; /* Magic, see include_js_file.h */
      * event loop if necessary.
      * @private
      */
-    _ensure_future : function() {
+    _ensure_future: function () {
       let ptrobj = _getPtr(this);
       let resolveHandle;
       let rejectHandle;
@@ -747,8 +759,11 @@ JS_FILE(pyproxy_init_js, () => {0,0; /* Magic, see include_js_file.h */
       let reject_handle_id = Module.hiwire.new_value(rejectHandle);
       let errcode;
       try {
-        errcode = __pyproxy_ensure_future(ptrobj, resolve_handle_id,
-                                          reject_handle_id);
+        errcode = __pyproxy_ensure_future(
+          ptrobj,
+          resolve_handle_id,
+          reject_handle_id
+        );
       } catch (e) {
         Module.fatal_error(e);
       } finally {
@@ -779,7 +794,7 @@ JS_FILE(pyproxy_init_js, () => {0,0; /* Magic, see include_js_file.h */
      * argument if the awaitable fails.
      * @returns {Promise} The resulting Promise.
      */
-    then : function(onFulfilled, onRejected) {
+    then: function (onFulfilled, onRejected) {
       let promise = this._ensure_future();
       return promise.then(onFulfilled, onRejected);
     },
@@ -798,7 +813,7 @@ JS_FILE(pyproxy_init_js, () => {0,0; /* Magic, see include_js_file.h */
      * argument if the awaitable fails.
      * @returns {Promise} The resulting Promise.
      */
-    catch : function(onRejected) {
+    catch: function (onRejected) {
       let promise = this._ensure_future();
       return promise.catch(onRejected);
     },
@@ -820,34 +835,32 @@ JS_FILE(pyproxy_init_js, () => {0,0; /* Magic, see include_js_file.h */
      * result as the original Promise, but only after executing the
      * ``onFinally`` handler.
      */
-    finally : function(onFinally) {
+    finally: function (onFinally) {
       let promise = this._ensure_future();
       return promise.finally(onFinally);
-    }
+    },
   };
 
-  Module.PyProxyCallableMethods = {prototype : Function.prototype};
+  Module.PyProxyCallableMethods = { prototype: Function.prototype };
 
-  // clang-format off
   let type_to_array_map = new Map([
-    [ "i8", Int8Array ],
-    [ "u8", Uint8Array ],
-    [ "u8clamped", Uint8ClampedArray ],
-    [ "i16", Int16Array ],
-    [ "u16", Uint16Array ],
-    [ "i32", Int32Array ],
-    [ "u32", Uint32Array ],
-    [ "i32", Int32Array ],
-    [ "u32", Uint32Array ],
+    ["i8", Int8Array],
+    ["u8", Uint8Array],
+    ["u8clamped", Uint8ClampedArray],
+    ["i16", Int16Array],
+    ["u16", Uint16Array],
+    ["i32", Int32Array],
+    ["u32", Uint32Array],
+    ["i32", Int32Array],
+    ["u32", Uint32Array],
     // if these aren't available, will be globalThis.BigInt64Array will be
     // undefined rather than raising a ReferenceError.
-    [ "i64", globalThis.BigInt64Array],
-    [ "u64", globalThis.BigUint64Array],
-    [ "f32", Float32Array ],
-    [ "f64", Float64Array ],
-    [ "dataview", DataView ],
+    ["i64", globalThis.BigInt64Array],
+    ["u64", globalThis.BigUint64Array],
+    ["f32", Float32Array],
+    ["f64", Float64Array],
+    ["dataview", DataView],
   ]);
-  // clang-format on
 
   Module.PyProxyBufferMethods = {
     /**
@@ -880,7 +893,7 @@ JS_FILE(pyproxy_init_js, () => {0,0; /* Magic, see include_js_file.h */
      * <https://docs.python.org/3/library/struct.html#format-strings>`_.
      * @returns :any:`PyBuffer`
      */
-    getBuffer : function(type) {
+    getBuffer: function (type) {
       let ArrayType = undefined;
       if (type) {
         ArrayType = type_to_array_map.get(type);
@@ -928,25 +941,32 @@ JS_FILE(pyproxy_init_js, () => {0,0; /* Magic, see include_js_file.h */
         let bigEndian = false;
         if (ArrayType === undefined) {
           [ArrayType, bigEndian] = Module.processBufferFormatString(
-              format, " In this case, you can pass an explicit type argument.");
+            format,
+            " In this case, you can pass an explicit type argument."
+          );
         }
         let alignment =
-            parseInt(ArrayType.name.replace(/[^0-9]/g, "")) / 8 || 1;
+          parseInt(ArrayType.name.replace(/[^0-9]/g, "")) / 8 || 1;
         if (bigEndian && alignment > 1) {
           throw new Error(
-              "Javascript has no native support for big endian buffers. " +
+            "Javascript has no native support for big endian buffers. " +
               "In this case, you can pass an explicit type argument. " +
               "For instance, `getBuffer('dataview')` will return a `DataView`" +
               "which has native support for reading big endian data." +
               "Alternatively, toJs will automatically convert the buffer " +
-              "to little endian.");
+              "to little endian."
+          );
         }
         let numBytes = maxByteOffset - minByteOffset;
-        if (numBytes !== 0 && (startByteOffset % alignment !== 0 ||
-                               minByteOffset % alignment !== 0 ||
-                               maxByteOffset % alignment !== 0)) {
+        if (
+          numBytes !== 0 &&
+          (startByteOffset % alignment !== 0 ||
+            minByteOffset % alignment !== 0 ||
+            maxByteOffset % alignment !== 0)
+        ) {
           throw new Error(
-              `Buffer does not have valid alignment for a ${ArrayType.name}`);
+            `Buffer does not have valid alignment for a ${ArrayType.name}`
+          );
         }
         let numEntries = numBytes / alignment;
         let offset = (startByteOffset - minByteOffset) / alignment;
@@ -961,27 +981,26 @@ JS_FILE(pyproxy_init_js, () => {0,0; /* Magic, see include_js_file.h */
         }
 
         success = true;
-        // clang-format off
-        let result = Object.create(Module.PyBuffer.prototype,
+        let result = Object.create(
+          Module.PyBuffer.prototype,
           Object.getOwnPropertyDescriptors({
             offset,
             readonly,
             format,
             itemsize,
-            ndim : shape.length,
-            nbytes : numBytes,
+            ndim: shape.length,
+            nbytes: numBytes,
             shape,
             strides,
             data,
             c_contiguous,
             f_contiguous,
-            _view_ptr : view_ptr,
-            _released : false
+            _view_ptr: view_ptr,
+            _released: false,
           })
         );
         // Module.bufferFinalizationRegistry.register(result, view_ptr, result);
         return result;
-        // clang-format on
       } finally {
         if (!success) {
           try {
@@ -992,10 +1011,9 @@ JS_FILE(pyproxy_init_js, () => {0,0; /* Magic, see include_js_file.h */
           }
         }
       }
-    }
+    },
   };
 
-  // clang-format off
   /**
    * A class to allow access to a Python data buffers from Javascript. These are
    * produced by :any:`PyProxy.getBuffer` and cannot be constructed directly.
@@ -1062,7 +1080,6 @@ JS_FILE(pyproxy_init_js, () => {0,0; /* Magic, see include_js_file.h */
    *            buffer.data.byteLength
    *        );
    */
-  // clang-format on
   Module.PyBuffer = class PyBuffer {
     constructor() {
       // FOR_JSDOC_ONLY is a macro that deletes its argument.
@@ -1151,7 +1168,7 @@ JS_FILE(pyproxy_init_js, () => {0,0; /* Magic, see include_js_file.h */
          */
         this.f_contiguous;
       });
-      throw new TypeError('PyBuffer is not a constructor');
+      throw new TypeError("PyBuffer is not a constructor");
     }
 
     /**
@@ -1177,16 +1194,14 @@ JS_FILE(pyproxy_init_js, () => {0,0; /* Magic, see include_js_file.h */
   // access like `pyodide.globals.x`.
   let globalsPropertyAccessWarned = false;
   let globalsPropertyAccessWarningMsg =
-      "Access to pyodide.globals via pyodide.globals.key is deprecated and " +
-      "will be removed in version 0.18.0. Use pyodide.globals.get('key'), " +
-      "pyodide.globals.set('key', value), pyodide.globals.delete('key') instead.";
+    "Access to pyodide.globals via pyodide.globals.key is deprecated and " +
+    "will be removed in version 0.18.0. Use pyodide.globals.get('key'), " +
+    "pyodide.globals.set('key', value), pyodide.globals.delete('key') instead.";
   let NamespaceProxyHandlers = {
-    // clang-format off
-    has : function(obj, key) {
+    has: function (obj, key) {
       return Reflect.has(obj, key) || obj.has(key);
     },
-    // clang-format on
-    get : function(obj, key) {
+    get: function (obj, key) {
       if (Reflect.has(obj, key)) {
         return Reflect.get(obj, key);
       }
@@ -1197,7 +1212,7 @@ JS_FILE(pyproxy_init_js, () => {0,0; /* Magic, see include_js_file.h */
       }
       return result;
     },
-    set : function(obj, key, value) {
+    set: function (obj, key, value) {
       if (Reflect.has(obj, key)) {
         throw new Error(`Cannot set read only field ${key}`);
       }
@@ -1207,7 +1222,7 @@ JS_FILE(pyproxy_init_js, () => {0,0; /* Magic, see include_js_file.h */
       }
       obj.set(key, value);
     },
-    ownKeys : function(obj) {
+    ownKeys: function (obj) {
       let result = new Set(Reflect.ownKeys(obj));
       let iter = obj.keys();
       for (let key of iter) {
@@ -1215,13 +1230,11 @@ JS_FILE(pyproxy_init_js, () => {0,0; /* Magic, see include_js_file.h */
       }
       iter.destroy();
       return Array.from(result);
-    }
+    },
   };
 
-  // clang-format off
   Module.wrapNamespace = function wrapNamespace(ns) {
     return new Proxy(ns, NamespaceProxyHandlers);
   };
-  // clang-format on
   return 0;
 });
