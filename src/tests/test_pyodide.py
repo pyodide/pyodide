@@ -6,7 +6,7 @@ from textwrap import dedent
 sys.path.append(str(Path(__file__).parents[2] / "src" / "pyodide-py"))
 
 from pyodide import find_imports, eval_code  # noqa: E402
-from pyodide._base import CodeRunner  # noqa: E402
+from pyodide._base import CodeRunner, should_quiet  # noqa: E402
 
 
 def test_find_imports():
@@ -25,9 +25,9 @@ def test_find_imports():
 
 def test_code_runner():
     runner = CodeRunner()
-    assert runner.quiet("1+1;")
-    assert not runner.quiet("1+1#;")
-    assert not runner.quiet("5-2  # comment with trailing semicolon ;")
+    assert should_quiet("1+1;")
+    assert not should_quiet("1+1#;")
+    assert not should_quiet("5-2  # comment with trailing semicolon ;")
     assert runner.run("4//2\n") == 2
     assert runner.run("4//2;") is None
     assert runner.run("x = 2\nx") == 2
@@ -42,9 +42,6 @@ def test_code_runner():
 
     # with 'quiet_trailing_semicolon' set to False
     runner = CodeRunner(quiet_trailing_semicolon=False)
-    assert not runner.quiet("1+1;")
-    assert not runner.quiet("1+1#;")
-    assert not runner.quiet("5-2  # comment with trailing semicolon ;")
     assert runner.run("4//2\n") == 2
     assert runner.run("4//2;") == 2
 
@@ -472,10 +469,14 @@ def test_fatal_error(selenium_standalone):
         }
         """
     )
+    import re
+
+    strip_stack_trace = lambda x: re.sub("\n.*site-packages.*", "", x)
     assert (
-        selenium_standalone.logs
+        strip_stack_trace(selenium_standalone.logs)
         == dedent(
-            """
+            strip_stack_trace(
+                """
             Python initialization complete
             Pyodide has suffered a fatal error. Please report this to the Pyodide maintainers.
             The cause of the fatal error was:
@@ -488,6 +489,7 @@ def test_fatal_error(selenium_standalone):
               File "/lib/python3.8/site-packages/pyodide/_base.py", line 242 in run
               File "/lib/python3.8/site-packages/pyodide/_base.py", line 344 in eval_code
             """
+            )
         ).strip()
     )
     selenium_standalone.run_js(

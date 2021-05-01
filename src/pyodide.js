@@ -1,3 +1,4 @@
+"use strict";
 /**
  * The main bootstrap script for loading pyodide.
  */
@@ -60,13 +61,7 @@ globalThis.loadPyodide = async function(config = {}) {
 
   let loadScript;
   if (self.document) { // browser
-    loadScript = (url) => new Promise((res, rej) => {
-      const script = self.document.createElement('script');
-      script.src = url;
-      script.onload = res;
-      script.onerror = rej;
-      self.document.head.appendChild(script);
-    });
+    loadScript = (url) => import(url);
   } else if (self.importScripts) { // webworker
     loadScript = async (url) => {  // This is async only for consistency
       self.importScripts(url);
@@ -149,31 +144,6 @@ globalThis.loadPyodide = async function(config = {}) {
       messageCallback(`Loading ${packageNames}`);
     }
 
-    // If running in main browser thread, try to catch errors thrown when
-    // running a script. Since the script is added via a script tag, there is
-    // no good way to capture errors from the script only, so try to capture
-    // all errors them.
-    //
-    // windowErrorPromise rejects when any exceptions is thrown in the process
-    // of loading a script. The promise never resolves, and we combine it
-    // with other promises via Promise.race.
-    let windowErrorHandler;
-    let windowErrorPromise;
-    if (self.document) {
-      windowErrorPromise = new Promise((_res, rej) => {
-        windowErrorHandler = e => {
-          errorCallback(
-              "Unhandled error. We don't know what it is or whether it is related to 'loadPackage' but out of an abundance of caution we will assume that loading failed.");
-          errorCallback(e);
-          rej(e.message);
-        };
-        self.addEventListener('error', windowErrorHandler);
-      });
-    } else {
-      // This should be a promise that never resolves
-      windowErrorPromise = new Promise(() => {});
-    }
-
     // This is a collection of promises that resolve when the package's JS file
     // is loaded. The promises already handle error and never fail.
     let scriptPromises = [];
@@ -226,14 +196,10 @@ globalThis.loadPyodide = async function(config = {}) {
     // We must start waiting for runDependencies *after* all the JS files are
     // loaded, since the number of runDependencies may happen to equal zero
     // between package files loading.
-    let successPromise = Promise.all(scriptPromises).then(waitRunDependency);
     try {
-      await Promise.race([ successPromise, windowErrorPromise ]);
+      await Promise.all(scriptPromises).then(waitRunDependency);
     } finally {
       delete Module.monitorRunDependencies;
-      if (windowErrorHandler) {
-        self.removeEventListener('error', windowErrorHandler);
-      }
     }
 
     let packageList = [];
@@ -262,7 +228,20 @@ globalThis.loadPyodide = async function(config = {}) {
 
   // This is a promise that is resolved iff there are no pending package loads.
   // It never fails.
-  let loadPackageChain = Promise.resolve();
+  let _package_lock = Promise.resolve();
+
+  /**
+   * An async lock for package loading. Prevents race conditions in loadPackage.
+   * @returns A zero argument function that releases the lock.
+   * @private
+   */
+  async function acquirePackageLock() {
+    let old_lock = _package_lock;
+    let releaseLock;
+    _package_lock = new Promise(resolve => releaseLock = resolve);
+    await old_lock;
+    return releaseLock;
+  }
 
   /**
    *
@@ -353,18 +332,16 @@ globalThis.loadPyodide = async function(config = {}) {
     // restore the preload plugin
     Module.preloadPlugins.unshift(loadPluginOverride);
 
-    let promise = loadPackageChain.then(
-        () => _loadPackage(sharedLibraryNames, messageCallback || console.log,
-                           errorCallback || console.error));
-    loadPackageChain = loadPackageChain.then(() => promise.catch(() => {}));
-    await promise;
-    Module.preloadPlugins.shift(loadPluginOverride);
-
-    promise = loadPackageChain.then(
-        () => _loadPackage(names, messageCallback || console.log,
-                           errorCallback || console.error));
-    loadPackageChain = loadPackageChain.then(() => promise.catch(() => {}));
-    await promise;
+    let releaseLock = await acquirePackageLock();
+    try {
+      await _loadPackage(sharedLibraryNames, messageCallback || console.log,
+                         errorCallback || console.error);
+      Module.preloadPlugins.shift(loadPluginOverride);
+      await _loadPackage(names, messageCallback || console.log,
+                         errorCallback || console.error);
+    } finally {
+      releaseLock();
+    }
   };
 
   ////////////////////////////////////////////////////////////

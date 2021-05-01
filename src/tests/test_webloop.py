@@ -174,20 +174,26 @@ def test_webloop_exception_handler(selenium):
     )
     assert "Task exception was never retrieved" in selenium.logs
     try:
-        selenium.run(
+        selenium.run_js(
             """
-            import asyncio
-            loop = asyncio.get_event_loop()
-            def exception_handler(loop, context):
-                global exc
-                exc = context
-            loop.set_exception_handler(exception_handler)
+            pyodide.runPython(`
+                import asyncio
+                loop = asyncio.get_event_loop()
+                exc = []
+                def exception_handler(loop, context):
+                    exc.append(context)
+                loop.set_exception_handler(exception_handler)
 
-            async def test():
-                raise Exception("blah")
-            asyncio.ensure_future(test());
+                async def test():
+                    raise Exception("blah")
+                asyncio.ensure_future(test());
+                1
+            `);
+            await sleep(100)
+            pyodide.runPython(`
+                assert exc[0]["exception"].args[0] == "blah"
+            `)
             """
         )
-        assert selenium.run('exc["exception"].args[0] == "blah"')
     finally:
         selenium.run("loop.set_exception_handler(None)")
