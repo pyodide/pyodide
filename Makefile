@@ -167,7 +167,7 @@ build/test.data: $(CPYTHONLIB) $(UGLIFYJS)
 build/distutils.data: $(CPYTHONLIB) $(UGLIFYJS)
 	( \
 		cd $(CPYTHONLIB)/distutils; \
-		find . -type d -name __pycache__ -prune -exec rm -rf {} \; \
+		find . -type d -name __pycache__ -prune -exec rm -rf {} \; ;\
 		find . -type d -name tests -prune -exec rm -rf {} \; \
 	)
 	( \
