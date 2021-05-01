@@ -155,12 +155,21 @@ clean-all: clean
 # TODO: also include test directories included in other stdlib modules
 build/test.data: $(CPYTHONLIB) $(UGLIFYJS)
 	( \
+		cd $(CPYTHONLIB)/test; \
+		find . -type d -name __pycache__ -prune -exec rm -rf {} \; \
+	)
+	( \
 		cd build; \
 		python $(FILEPACKAGER) test.data --lz4 --preload ../$(CPYTHONLIB)/test@/lib/python$(PYMINOR)/test --js-output=test.js --export-name=globalThis.pyodide._module --exclude __pycache__ \
 	)
 	$(UGLIFYJS) build/test.js -o build/test.js
 
 build/distutils.data: $(CPYTHONLIB) $(UGLIFYJS)
+	( \
+		cd $(CPYTHONLIB)/distutils; \
+		find . -type d -name __pycache__ -prune -exec rm -rf {} \; \
+		find . -type d -name tests -prune -exec rm -rf {} \; \
+	)
 	( \
 		cd build; \
 		python $(FILEPACKAGER) distutils.data --lz4 --preload ../$(CPYTHONLIB)/distutils@/lib/python$(PYMINOR)/distutils --js-output=distutils.js --export-name=pyodide._module --exclude __pycache__ --exclude tests \
