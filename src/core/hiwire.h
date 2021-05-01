@@ -384,6 +384,15 @@ bool
 hiwire_is_function(JsRef idobj);
 
 /**
+ * Check if the object is a comlink proxy.
+ */
+bool
+hiwire_is_comlink_proxy(JsRef idobj);
+
+bool
+hiwire_is_remote_promise(JsRef idobj);
+
+/**
  * Check if the object is an error.
  */
 bool

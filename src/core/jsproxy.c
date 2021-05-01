@@ -52,6 +52,7 @@
 #define IS_BUFFER    (1<<8)
 #define IS_CALLABLE  (1<<9)
 #define IS_ARRAY     (1<<10)
+#define IS_REMOTE_AWAITABLE (1<<11)
 // clang-format on
 
 _Py_IDENTIFIER(get_event_loop);
@@ -59,9 +60,11 @@ _Py_IDENTIFIER(create_future);
 _Py_IDENTIFIER(set_exception);
 _Py_IDENTIFIER(set_result);
 _Py_IDENTIFIER(__await__);
+_Py_IDENTIFIER(syncify);
 _Py_IDENTIFIER(__dir__);
 
 static PyObject* asyncio_get_event_loop;
+static PyObject* ComlinkTask;
 static PyTypeObject* PyExc_BaseException_Type;
 
 ////////////////////////////////////////////////////////////
@@ -694,6 +697,32 @@ JsProxy_Bool(PyObject* o)
   return hiwire_get_bool(self->js) ? 1 : 0;
 }
 
+static PyObject*
+JsProxy_RemoteAwait(PyObject* self, PyObject* _args)
+{
+  PyObject* fut = PyObject_CallFunctionObjArgs(ComlinkTask, self, NULL);
+  if (fut == NULL) {
+    return NULL;
+  }
+  return _PyObject_CallMethodId(fut, &PyId___await__, NULL);
+}
+
+static PyObject*
+JsProxy_syncify(PyObject* self, PyObject* _args)
+{
+  PyObject* fut = PyObject_CallFunctionObjArgs(ComlinkTask, self, NULL);
+  if (fut == NULL) {
+    return NULL;
+  }
+  return _PyObject_CallMethodId(fut, &PyId_syncify, NULL);
+}
+
+PyMethodDef JsProxy_syncify_MethodDef = {
+  "syncify",
+  (PyCFunction)JsProxy_syncify,
+  METH_NOARGS,
+};
+
 /**
  * Overload for `await proxy` for js objects that have a `then` method.
  * Controlled by IS_AWAITABLE.
@@ -701,15 +730,6 @@ JsProxy_Bool(PyObject* o)
 static PyObject*
 JsProxy_Await(JsProxy* self, PyObject* _args)
 {
-  if (!hiwire_is_promise(self->js)) {
-    PyObject* str = JsProxy_Repr((PyObject*)self);
-    const char* str_utf8 = PyUnicode_AsUTF8(str);
-    PyErr_Format(PyExc_TypeError,
-                 "object %s can't be used in 'await' expression",
-                 str_utf8);
-    return NULL;
-  }
-
   PyObject* loop = NULL;
   PyObject* fut = NULL;
   PyObject* set_result = NULL;
@@ -1503,6 +1523,15 @@ JsProxy_create_subtype(int flags)
   if (flags & IS_AWAITABLE) {
     slots[cur_slot++] =
       (PyType_Slot){ .slot = Py_am_await, .pfunc = (void*)JsProxy_Await };
+  }
+
+  if (flags & IS_REMOTE_AWAITABLE) {
+    slots[cur_slot++] =
+      (PyType_Slot){ .slot = Py_am_await, .pfunc = (void*)JsProxy_RemoteAwait };
+    methods[cur_method++] = JsProxy_syncify_MethodDef;
+  }
+
+  if (flags & (IS_AWAITABLE | IS_REMOTE_AWAITABLE)) {
     methods[cur_method++] = JsProxy_then_MethodDef;
     methods[cur_method++] = JsProxy_catch_MethodDef;
     methods[cur_method++] = JsProxy_finally_MethodDef;
@@ -1637,15 +1666,27 @@ finally:
 PyObject*
 JsProxy_create_with_this(JsRef object, JsRef this)
 {
+  int type_flags = 0;
+  bool success = false;
+  PyTypeObject* type = NULL;
+  PyObject* result = NULL;
+  if (hiwire_is_comlink_proxy(object)) {
+    // Comlink proxies are weird and break our feature detection pretty badly.
+    type_flags = IS_CALLABLE | IS_REMOTE_AWAITABLE | IS_ARRAY;
+    goto done_feature_detecting;
+  }
   if (hiwire_is_error(object)) {
     return JsProxy_new_error(object);
   }
-  int type_flags = 0;
   if (hiwire_is_function(object)) {
     type_flags |= IS_CALLABLE;
   }
   if (hiwire_is_promise(object)) {
     type_flags |= IS_AWAITABLE;
+  }
+  if (hiwire_is_remote_promise(object)) {
+    type_flags &= ~IS_AWAITABLE;
+    type_flags |= IS_REMOTE_AWAITABLE;
   }
   if (hiwire_is_iterable(object)) {
     type_flags |= IS_ITERABLE;
@@ -1677,10 +1718,7 @@ JsProxy_create_with_this(JsRef object, JsRef this)
   if (hiwire_is_array(object)) {
     type_flags |= IS_ARRAY;
   }
-
-  bool success = false;
-  PyTypeObject* type = NULL;
-  PyObject* result = NULL;
+done_feature_detecting:
 
   type = JsProxy_get_subtype(type_flags);
   FAIL_IF_NULL(type);
@@ -1763,6 +1801,7 @@ JsProxy_init(PyObject* core_module)
   bool success = false;
 
   PyObject* _pyodide_core = NULL;
+  PyObject* syncify = NULL;
   PyObject* jsproxy_mock = NULL;
   PyObject* asyncio_module = NULL;
 
@@ -1772,6 +1811,11 @@ JsProxy_init(PyObject* core_module)
   jsproxy_mock =
     _PyObject_CallMethodIdObjArgs(_pyodide_core, &PyId_JsProxy, NULL);
   FAIL_IF_NULL(jsproxy_mock);
+
+  syncify = PyImport_ImportModule("_pyodide.syncify");
+  FAIL_IF_NULL(syncify);
+  ComlinkTask = PyObject_GetAttrString(syncify, "ComlinkTask");
+  FAIL_IF_NULL(ComlinkTask);
 
   // Load the docstrings for JsProxy methods from the corresponding stubs in
   // _pyodide._core. set_method_docstring uses
@@ -1810,6 +1854,7 @@ JsProxy_init(PyObject* core_module)
   success = true;
 finally:
   Py_CLEAR(_pyodide_core);
+  Py_CLEAR(syncify);
   Py_CLEAR(jsproxy_mock);
   Py_CLEAR(asyncio_module);
   return success ? 0 : -1;
