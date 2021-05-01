@@ -125,7 +125,7 @@ Module.runPythonSimple = function (code) {
 };
 
 let __pyodideLoading = false;
-
+loadPyodide.inProgress = false;
 /**
  * Load the main Pyodide wasm module and initialize it. When finished stores the
  * Pyodide module as a global object called ``pyodide``.
@@ -144,6 +144,8 @@ export default async function loadPyodide(config = {}) {
       throw new Error("Pyodide is already loading.");
     }
   }
+  __pyodideLoading = true;
+  loadPyodide.inProgress = true;
   let baseURL = config.indexURL || "./";
   if (baseURL.endsWith(".js")) {
     baseURL = baseURL.substr(0, baseURL.lastIndexOf("/"));

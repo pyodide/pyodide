@@ -77,6 +77,7 @@ env:
 
 .PHONY: build/pyodide.js
 build/pyodide.js: src/js/*.js
+	npm install
 	npx rollup -c rollup.config.js
 
 
