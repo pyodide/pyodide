@@ -106,17 +106,17 @@ class CodeRunner:
             raise ValueError(f"Unrecognized return_mode {return_mode!r}")
         self.return_mode = return_mode
 
-    def run(self, code: str) -> Any:
-        """Runs a code string.
+    def run(self, source: str) -> Any:
+        """Runs a string as Python source code.
 
         Parameters
         ----------
-        code
-           the Python code to run.
+        source
+           the Python source code to run.
 
         Returns
         -------
-        If the last nonwhitespace character of ``code`` is a semicolon,
+        If the last nonwhitespace character of ``source`` is a semicolon,
         return ``None``.
         If the last statement is an expression, return the
         result of the expression.
@@ -124,7 +124,7 @@ class CodeRunner:
         constructor to modify this default behavior.
         """
         return eval_code(
-            code,
+            source,
             globals=self.globals,
             locals=self.locals,
             return_mode=self.return_mode,
@@ -132,7 +132,7 @@ class CodeRunner:
             filename=self.filename,
         )
 
-    async def run_async(self, code: str) -> Any:
+    async def run_async(self, source: str) -> Any:
         """Runs a code string asynchronously.
 
         Uses
@@ -141,8 +141,8 @@ class CodeRunner:
 
         Parameters
         ----------
-        code
-           the Python code to run.
+        source
+           the Python source code to run.
 
         Returns
         -------
@@ -154,7 +154,7 @@ class CodeRunner:
         constructor to modify this default behavior.
         """
         return eval_code_async(
-            code,
+            source,
             globals=self.globals,
             locals=self.locals,
             return_mode=self.return_mode,
@@ -409,12 +409,12 @@ def eval_code(
     filename: str = "<exec>",
     flags: int = 0x0,
 ) -> Any:
-    """Runs a code string.
+    """Runs a string as Python source code.
 
     Parameters
     ----------
     source
-        the Python code to run.
+        the Python source code to run.
 
     Returns
     -------
@@ -478,31 +478,31 @@ async def eval_code_async(
     return await executor.run_async(globals, locals)
 
 
-def find_imports(code: str) -> List[str]:
+def find_imports(source: str) -> List[str]:
     """
-    Finds the imports in a string of code
+    Finds the imports in a Python source code string
 
     Parameters
     ----------
-    code : str
-       the Python code to run.
+    source : str
+       The Python source code to inspect for imports.
 
     Returns
     -------
     ``List[str]``
-        A list of module names that are imported in the code.
+        A list of module names that are imported in the source.
 
     Examples
     --------
     >>> from pyodide import find_imports
-    >>> code = "import numpy as np; import scipy.stats"
-    >>> find_imports(code)
+    >>> source = "import numpy as np; import scipy.stats"
+    >>> find_imports(source)
     ['numpy', 'scipy']
     """
     # handle mis-indented input from multi-line strings
-    code = dedent(code)
+    source = dedent(source)
 
-    mod = ast.parse(code)
+    mod = ast.parse(source)
     imports = set()
     for node in ast.walk(mod):
         if isinstance(node, ast.Import):
