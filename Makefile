@@ -5,7 +5,8 @@ include Makefile.envs
 .PHONY=check
 
 FILEPACKAGER=$$EM_DIR/tools/file_packager.py
-UGLIFYJS=$(PYODIDE_ROOT)/node_modules/.bin/uglifyjs
+UGLIFYJS=npx uglifyjs
+PRETTIER=npx prettier
 
 CPYTHONROOT=cpython
 CPYTHONLIB=$(CPYTHONROOT)/installs/python-$(PYVERSION)/lib/python$(PYMINOR)
@@ -118,14 +119,13 @@ update_base_url: \
 test: all
 	pytest src emsdk/tests packages/*/test* pyodide_build -v
 
-
 lint:
 	# check for unused imports, the rest is done by black
 	flake8 --select=F401 src tools pyodide_build benchmark conftest.py docs
-	clang-format-6.0 -output-replacements-xml `find src -type f -regex ".*\.\(c\|h\|js\)"` | (! grep '<replacement ')
+	clang-format-6.0 -output-replacements-xml `find src -type f -regex ".*\.\(c\|h\\)"` | (! grep '<replacement ')
+	$(PRETTIER) --check `find src -type f -name '*.js'`
 	black --check .
 	mypy --ignore-missing-imports pyodide_build/ src/ packages/micropip/micropip/ packages/*/test* conftest.py docs
-
 
 apply-lint:
 	./tools/apply-lint.sh
@@ -153,7 +153,7 @@ clean-all: clean
 # Stdlib modules that we repackage as standalone packages
 
 # TODO: also include test directories included in other stdlib modules
-build/test.data: $(CPYTHONLIB) $(UGLIFYJS)
+build/test.data: $(CPYTHONLIB)
 	( \
 		cd $(CPYTHONLIB)/test; \
 		find . -type d -name __pycache__ -prune -exec rm -rf {} \; \
@@ -163,8 +163,9 @@ build/test.data: $(CPYTHONLIB) $(UGLIFYJS)
 		python $(FILEPACKAGER) test.data --lz4 --preload ../$(CPYTHONLIB)/test@/lib/python$(PYMINOR)/test --js-output=test.js --export-name=globalThis.pyodide._module --exclude __pycache__ \
 	)
 	$(UGLIFYJS) build/test.js -o build/test.js
+  
 
-build/distutils.data: $(CPYTHONLIB) $(UGLIFYJS)
+build/distutils.data: $(CPYTHONLIB)
 	( \
 		cd $(CPYTHONLIB)/distutils; \
 		find . -type d -name __pycache__ -prune -exec rm -rf {} \; ;\
@@ -175,10 +176,6 @@ build/distutils.data: $(CPYTHONLIB) $(UGLIFYJS)
 		python $(FILEPACKAGER) distutils.data --lz4 --preload ../$(CPYTHONLIB)/distutils@/lib/python$(PYMINOR)/distutils --js-output=distutils.js --export-name=pyodide._module --exclude __pycache__ --exclude tests \
 	)
 	$(UGLIFYJS) build/distutils.js -o build/distutils.js
-
-$(UGLIFYJS): emsdk/emsdk/.complete
-	npm i --no-save uglify-js
-	touch -h $(UGLIFYJS)
 
 
 $(CPYTHONLIB): emsdk/emsdk/.complete $(PYODIDE_EMCC) $(PYODIDE_CXX)
