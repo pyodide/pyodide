@@ -104,116 +104,6 @@ class CodeRunner:
             raise ValueError(f"Unrecognized return_mode {return_mode!r}")
         self.return_mode = return_mode
 
-    def quiet(self, code: str) -> bool:
-        """
-        Should we suppress output?
-
-        Returns ``True`` if ``quiet_trailing_semicolon`` is set to ``True`` and
-        the last nonwhitespace character of ``code`` is a semicolon.
-
-        Examples
-        --------
-        >>> CodeRunner().quiet('1 + 1')
-        False
-        >>> CodeRunner().quiet('1 + 1 ;')
-        True
-        >>> CodeRunner().quiet('1 + 1 # comment ;')
-        False
-        >>> CodeRunner(quiet_trailing_semicolon=False).quiet('1 + 1 ;')
-        False
-        """
-        # largely inspired from IPython:
-        # https://github.com/ipython/ipython/blob/86d24741188b0cedd78ab080d498e775ed0e5272/IPython/core/displayhook.py#L84
-
-        if not self.quiet_trailing_semicolon:
-            return False
-
-        # We need to wrap tokens in a buffer because:
-        # "Tokenize requires one argument, readline, which must be
-        # a callable object which provides the same interface as the
-        # io.IOBase.readline() method of file objects"
-        codeio = StringIO(code)
-        tokens = list(tokenize.generate_tokens(codeio.readline))
-
-        for token in reversed(tokens):
-            if token.type in (
-                tokenize.ENDMARKER,
-                tokenize.NL,  # ignoring empty lines (\n\n)
-                tokenize.NEWLINE,
-                tokenize.COMMENT,
-            ):
-                continue
-            return (token.type == tokenize.OP) and (token.string == ";")
-
-        return False
-
-    def _last_assign_to_expr(self, mod: ast.Module):
-        """
-        Implementation of 'last_expr_or_assign' return_mode.
-        It modify the supplyied AST module so that the last
-        statement's value can be returned in 'last_expr' return_mode.
-        """
-        # Largely inspired from IPython:
-        # https://github.com/ipython/ipython/blob/3587f5bb6c8570e7bbb06cf5f7e3bc9b9467355a/IPython/core/interactiveshell.py#L3229
-
-        last_node = mod.body[-1]
-
-        if isinstance(last_node, ast.Assign):
-            # In this case there can be multiple targets as in `a = b = 1`.
-            # We just take the first one.
-            target = last_node.targets[0]
-        elif isinstance(last_node, (ast.AugAssign, ast.AnnAssign)):
-            target = last_node.target
-        else:
-            return
-        if isinstance(target, ast.Name):
-            last_node = ast.Expr(ast.Name(target.id, ast.Load()))
-            mod.body.append(last_node)
-            # Update the line numbers shown in error messages.
-            ast.fix_missing_locations(mod)
-
-    def _split_and_compile(self, code: str, flags: int = 0x0) -> Tuple[Any, Any]:
-        """
-        Split ``code`` in two parts, everything but last expression and
-        last expresion then compile each part.
-
-        Returns:
-        --------
-        code object
-            first part's code object (or None)
-        code object
-            last expression's code object (or None)
-        """
-        # handle mis-indented input from multi-line strings
-        code = dedent(code)
-
-        mod = ast.parse(code, filename=self.filename)
-        if not mod.body:
-            return None, None
-
-        if self.return_mode == "last_expr_or_assign":
-            # If the last statement is a named assignment, add an extra
-            # expression to the end with just the L-value so that we can
-            # handle it with the last_expr code.
-            self._last_assign_to_expr(mod)
-
-        # we extract last expression
-        if (
-            self.return_mode.startswith("last_expr")  # last_expr or last_expr_or_assign
-            and isinstance(mod.body[-1], (ast.Expr, ast.Await))
-            and not self.quiet(code)
-        ):
-            last_expr = ast.Expression(mod.body.pop().value)  # type: ignore
-        else:
-            last_expr = None  # type: ignore
-
-        # we compile
-        mod = compile(mod, self.filename, "exec", flags=flags)  # type: ignore
-        if last_expr is not None:
-            last_expr = compile(last_expr, self.filename, "eval", flags=flags)  # type: ignore
-
-        return mod, last_expr
-
     def run(self, code: str) -> Any:
         """Runs a code string.
 
@@ -231,15 +121,14 @@ class CodeRunner:
         Use the ``return_mode`` and ``quiet_trailing_semicolon`` parameters in the
         constructor to modify this default behavior.
         """
-        mod, last_expr = self._split_and_compile(code)
-
-        # running first part
-        if mod is not None:
-            exec(mod, self.globals, self.locals)
-
-        # evaluating last expression
-        if last_expr is not None:
-            return eval(last_expr, self.globals, self.locals)
+        return eval_code(
+            code,
+            globals=self.globals,
+            locals=self.locals,
+            return_mode=self.return_mode,
+            quiet_trailing_semicolon=self.quiet_trailing_semicolon,
+            filename=self.filename,
+        )
 
     async def run_async(self, code: str) -> Any:
         """Runs a code string asynchronously.
@@ -262,21 +151,122 @@ class CodeRunner:
         Use the ``return_mode`` and ``quiet_trailing_semicolon`` parameters in the
         constructor to modify this default behavior.
         """
-        mod, last_expr = self._split_and_compile(
-            code, flags=ast.PyCF_ALLOW_TOP_LEVEL_AWAIT  # type: ignore
+        return eval_code_async(
+            code,
+            globals=self.globals,
+            locals=self.locals,
+            return_mode=self.return_mode,
+            quiet_trailing_semicolon=self.quiet_trailing_semicolon,
+            filename=self.filename,
         )
-        # running first part
-        if mod is not None:
-            coro = eval(mod, self.globals, self.locals)
-            if iscoroutine(coro):
-                await coro
 
-        # evaluating last expression
-        if last_expr is not None:
-            res = eval(last_expr, self.globals, self.locals)
-            if iscoroutine(res):
-                res = await res
-            return res
+
+def should_quiet(source: str) -> bool:
+    """
+    Should we suppress output?
+
+    Returns ``True`` if the last nonwhitespace character of ``code`` is a semicolon.
+
+    Examples
+    --------
+    >>> should_quiet('1 + 1')
+    False
+    >>> should_quiet('1 + 1 ;')
+    True
+    >>> should_quiet('1 + 1 # comment ;')
+    False
+    """
+    # largely inspired from IPython:
+    # https://github.com/ipython/ipython/blob/86d24741188b0cedd78ab080d498e775ed0e5272/IPython/core/displayhook.py#L84
+
+    # We need to wrap tokens in a buffer because:
+    # "Tokenize requires one argument, readline, which must be
+    # a callable object which provides the same interface as the
+    # io.IOBase.readline() method of file objects"
+    source_io = StringIO(source)
+    tokens = list(tokenize.generate_tokens(source_io.readline))
+
+    for token in reversed(tokens):
+        if token.type in (
+            tokenize.ENDMARKER,
+            tokenize.NL,  # ignoring empty lines (\n\n)
+            tokenize.NEWLINE,
+            tokenize.COMMENT,
+        ):
+            continue
+        return (token.type == tokenize.OP) and (token.string == ";")
+    return False
+
+
+def _last_assign_to_expr(mod: ast.Module):
+    """
+    Implementation of 'last_expr_or_assign' return_mode.
+    It modify the supplyied AST module so that the last
+    statement's value can be returned in 'last_expr' return_mode.
+    """
+    # Largely inspired from IPython:
+    # https://github.com/ipython/ipython/blob/3587f5bb6c8570e7bbb06cf5f7e3bc9b9467355a/IPython/core/interactiveshell.py#L3229
+
+    last_node = mod.body[-1]
+
+    if isinstance(last_node, ast.Assign):
+        # In this case there can be multiple targets as in `a = b = 1`.
+        # We just take the first one.
+        target = last_node.targets[0]
+    elif isinstance(last_node, (ast.AugAssign, ast.AnnAssign)):
+        target = last_node.target
+    else:
+        return
+    if isinstance(target, ast.Name):
+        last_node = ast.Expr(ast.Name(target.id, ast.Load()))
+        mod.body.append(last_node)
+        # Update the line numbers shown in error messages.
+        ast.fix_missing_locations(mod)
+
+
+def _split_and_compile(
+    code: str, *, return_mode, filename, flags: int = 0x0
+) -> Tuple[Any, Any]:
+    """
+    Split ``code`` in two parts, everything but last expression and
+    last expresion then compile each part.
+
+    Returns:
+    --------
+    code object
+        first part's code object (or None)
+    code object
+        last expression's code object (or None)
+    """
+    # handle mis-indented input from multi-line strings
+    code = dedent(code)
+
+    mod = ast.parse(code, filename=filename)
+    if not mod.body:
+        return None, None
+
+    if return_mode == "last_expr_or_assign":
+        # If the last statement is a named assignment, add an extra
+        # expression to the end with just the L-value so that we can
+        # handle it with the last_expr code.
+        _last_assign_to_expr(mod)
+
+    # we extract last expression
+    if return_mode.startswith(
+        "last_expr"
+    ) and isinstance(  # last_expr or last_expr_or_assign
+        mod.body[-1], (ast.Expr, ast.Await)
+    ):
+        last_expr = ast.Expression(mod.body.pop().value)  # type: ignore
+    else:
+        last_expr = None  # type: ignore
+
+    # we compile
+    mod = compile(mod, filename, "exec", flags=flags)  # type: ignore
+    if last_expr is not None:
+        last_expr = compile(last_expr, filename, "eval", flags=flags)  # type: ignore
+
+    return mod, last_expr
 
 
 def eval_code(
@@ -341,13 +331,19 @@ def eval_code(
         (Use the ``return_mode`` and ``quiet_trailing_semicolon`` parameters to
         modify this default behavior.)
     """
-    return CodeRunner(
-        globals=globals,
-        locals=locals,
-        return_mode=return_mode,
-        quiet_trailing_semicolon=quiet_trailing_semicolon,
-        filename=filename,
-    ).run(code)
+    if quiet_trailing_semicolon and should_quiet(code):
+        return_mode = "none"
+    mod, last_expr = _split_and_compile(
+        code, return_mode=return_mode, filename=filename
+    )
+
+    # running first part
+    if mod is not None:
+        exec(mod, globals, locals)
+
+    # evaluating last expression
+    if last_expr is not None:
+        return eval(last_expr, globals, locals)
 
 
 async def eval_code_async(
@@ -416,13 +412,29 @@ async def eval_code_async(
         (Use the ``return_mode`` and ``quiet_trailing_semicolon`` parameters to
         modify this default behavior.)
     """
-    return await CodeRunner(
-        globals=globals,
-        locals=locals,
+    if quiet_trailing_semicolon and should_quiet(code):
+        return_mode = "none"
+    mod, last_expr = _split_and_compile(
+        code,
         return_mode=return_mode,
-        quiet_trailing_semicolon=quiet_trailing_semicolon,
         filename=filename,
-    ).run_async(code)
+        flags=ast.PyCF_ALLOW_TOP_LEVEL_AWAIT,  # type: ignore
+    )
+
+    # running first part
+    coroutine = None
+    if mod is not None:
+        coroutine = eval(mod, globals, locals)
+    if coroutine is not None:
+        await coroutine
+
+    # evaluating last expression
+    result = None
+    if last_expr is not None:
+        result = eval(last_expr, globals, locals)
+    if iscoroutine(result):
+        result = await result  # type: ignore
+    return result
 
 
 def find_imports(code: str) -> List[str]:
