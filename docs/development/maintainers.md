@@ -65,7 +65,7 @@ This can be done with either,
    git checkout stable
    git pull
    git checkout -b backport-branch
-   git cherry-puck <commit-hash>
+   git cherry-pick <commit-hash>
    ```
  - or with interactive rebase,
    ```bash
