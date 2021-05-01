@@ -16,6 +16,9 @@ globalThis.pyodide = {};
  * Pyodide module as a global object called ``pyodide``.
  * @param {string} config.indexURL - The URL from which Pyodide will load
  * packages
+ * @param {bool} config.fullStdLib - Load the full Python standard library.
+ * Setting this parameter to false would explude following modules: distutils.
+ * Default: true
  * @returns The Pyodide module.
  * @async
  */
@@ -834,6 +837,10 @@ def temp(Module):
   Module.registerJsModule("js", globalThis);
   Module.registerJsModule("pyodide_js", pyodide);
   globalThis.pyodide = pyodide;
+  if (config.fullStdLib !== false) {
+    await pyodide.loadPackage([ 'distlib' ]);
+  }
+
   return pyodide;
 };
 

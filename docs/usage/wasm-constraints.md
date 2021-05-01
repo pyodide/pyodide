@@ -9,6 +9,16 @@ tests skipped in
 [`src/tests/python_tests.txt`](https://github.com/pyodide/pyodide/blob/main/src/tests/python_tests.txt)
 or via [patches](https://github.com/pyodide/pyodide/tree/main/cpython/patches).
 
+### Optional modules
+
+The following stdlib modules are included by default, however
+they can be excluded with `loadPyodide({..., allStdLib = false })`.
+Individual modules can then be loaded as necessary using
+{any}`pyodide.loadPackage`,
+
+ - distutils
+ - test: it is an exception to the above, since it is excluded by default.
+
 ### Removed modules
 
 The following modules are removed from the standard library to reduce download size and
@@ -34,11 +44,3 @@ The following modules can be imported, but are not functional due to the limitat
  - sockets
 
 as well as any functionality that requires these.
-
-### Unvendored modules
-
-The following stdlib modules are not included by default, however they can be
-loaded as an external package when necessary with {any}`pyodide.loadPackage`,
-
- - test
- - distutils
