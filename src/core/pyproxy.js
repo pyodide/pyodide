@@ -249,7 +249,7 @@ JS_FILE(pyproxy_init_js, () => {0,0; /* Magic, see include_js_file.h */
     }
     /**
      * Make a new PyProxy pointing to the same Python object.
-     * Useful if someone else is destroying your PyProxy.
+     * Useful if the PyProxy is destroyed somewhere else.
      */
     clone() {
       let ptrobj = _getPtr(this);
