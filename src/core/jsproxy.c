@@ -156,7 +156,7 @@ JsProxy_GetAttr(PyObject* self, PyObject* attr)
     FAIL();
   }
 
-  idresult = hiwire_get_member_string(JsProxy_REF(self), key);
+  idresult = JsObject_GetString(JsProxy_REF(self), key);
   if (idresult == NULL) {
     PyErr_SetString(PyExc_AttributeError, key);
     FAIL();
@@ -202,11 +202,10 @@ JsProxy_SetAttr(PyObject* self, PyObject* attr, PyObject* pyvalue)
   }
 
   if (pyvalue == NULL) {
-    FAIL_IF_MINUS_ONE(hiwire_delete_member_string(JsProxy_REF(self), key));
+    FAIL_IF_MINUS_ONE(JsObject_DeleteString(JsProxy_REF(self), key));
   } else {
     idvalue = python2js(pyvalue);
-    FAIL_IF_MINUS_ONE(
-      hiwire_set_member_string(JsProxy_REF(self), key, idvalue));
+    FAIL_IF_MINUS_ONE(JsObject_SetString(JsProxy_REF(self), key, idvalue));
   }
 
   success = true;
@@ -323,7 +322,7 @@ static PyObject*
 JsProxy_object_entries(PyObject* o, PyObject* _args)
 {
   JsProxy* self = (JsProxy*)o;
-  JsRef result_id = hiwire_object_entries(self->js);
+  JsRef result_id = JsObject_Entries(self->js);
   if (result_id == NULL) {
     return NULL;
   }
@@ -346,7 +345,7 @@ static PyObject*
 JsProxy_object_keys(PyObject* o, PyObject* _args)
 {
   JsProxy* self = (JsProxy*)o;
-  JsRef result_id = hiwire_object_keys(self->js);
+  JsRef result_id = JsObject_Keys(self->js);
   if (result_id == NULL) {
     return NULL;
   }
@@ -369,7 +368,7 @@ static PyObject*
 JsProxy_object_values(PyObject* o, PyObject* _args)
 {
   JsProxy* self = (JsProxy*)o;
-  JsRef result_id = hiwire_object_values(self->js);
+  JsRef result_id = JsObject_Values(self->js);
   if (result_id == NULL) {
     return NULL;
   }
@@ -413,7 +412,7 @@ JsProxy_subscript_array(PyObject* o, PyObject* item)
       return NULL;
     if (i < 0)
       i += hiwire_get_length(self->js);
-    JsRef result = hiwire_get_member_int(self->js, i);
+    JsRef result = JsArray_Get(self->js, i);
     if (result == NULL) {
       if (!PyErr_Occurred()) {
         PyErr_SetObject(PyExc_IndexError, item);
@@ -463,7 +462,7 @@ JsProxy_ass_subscript_array(PyObject* o, PyObject* item, PyObject* pyvalue)
   bool success = false;
   JsRef idvalue = NULL;
   if (pyvalue == NULL) {
-    if (hiwire_delete_member_int(self->js, i)) {
+    if (JsArray_Delete(self->js, i)) {
       if (!PyErr_Occurred()) {
         PyErr_SetObject(PyExc_IndexError, item);
       }
@@ -472,7 +471,7 @@ JsProxy_ass_subscript_array(PyObject* o, PyObject* item, PyObject* pyvalue)
   } else {
     idvalue = python2js(pyvalue);
     FAIL_IF_NULL(idvalue);
-    FAIL_IF_MINUS_ONE(hiwire_set_member_int(self->js, i, idvalue));
+    FAIL_IF_MINUS_ONE(JsArray_Set(self->js, i, idvalue));
   }
   success = true;
 finally:
@@ -611,7 +610,7 @@ JsProxy_Dir(PyObject* self, PyObject* _args)
   FAIL_IF_NULL(result_set);
 
   // Now get attributes of js object
-  iddir = hiwire_dir(GET_JSREF(self));
+  iddir = JsObject_Dir(GET_JSREF(self));
   pydir = js2python(iddir);
   FAIL_IF_NULL(pydir);
   // Merge and sort
@@ -1060,7 +1059,7 @@ JsMethod_ConvertArgs(PyObject* const* args, Py_ssize_t nargs, PyObject* kwnames)
   }
 
   // store kwargs into an object which we'll use as the last argument.
-  idkwargs = hiwire_object();
+  idkwargs = JsObject_New();
   FAIL_IF_NULL(idkwargs);
   Py_ssize_t nkwargs = PyTuple_Size(kwnames);
   for (Py_ssize_t i = 0, k = nargs; i < nkwargs; ++i, ++k) {
@@ -1068,7 +1067,7 @@ JsMethod_ConvertArgs(PyObject* const* args, Py_ssize_t nargs, PyObject* kwnames)
     const char* name_utf8 = PyUnicode_AsUTF8(name);
     idarg = python2js(args[k]);
     FAIL_IF_NULL(idarg);
-    FAIL_IF_MINUS_ONE(hiwire_set_member_string(idkwargs, name_utf8, idarg));
+    FAIL_IF_MINUS_ONE(JsObject_SetString(idkwargs, name_utf8, idarg));
     hiwire_CLEAR(idarg);
   }
   FAIL_IF_MINUS_ONE(JsArray_Push(idargs, idkwargs));

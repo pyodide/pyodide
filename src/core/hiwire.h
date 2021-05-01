@@ -175,7 +175,7 @@ JsArray_Push(JsRef idobj, JsRef idval);
  * Returns: New reference
  */
 JsRef
-hiwire_object();
+JsObject_New();
 
 /**
  * Throw a javascript Error object.
@@ -191,19 +191,19 @@ hiwire_throw_error(JsRef iderr);
  * Returns: New reference
  */
 JsRef
-hiwire_get_member_string(JsRef idobj, const char* ptrname);
+JsObject_GetString(JsRef idobj, const char* ptrname);
 
 /**
  * Set an object member by string.
  */
 errcode
-hiwire_set_member_string(JsRef idobj, const char* ptrname, JsRef idval);
+JsObject_SetString(JsRef idobj, const char* ptrname, JsRef idval);
 
 /**
  * Delete an object member by string.
  */
 errcode
-hiwire_delete_member_string(JsRef idobj, const char* ptrname);
+JsObject_DeleteString(JsRef idobj, const char* ptrname);
 
 /**
  * Get an object member by integer.
@@ -211,23 +211,23 @@ hiwire_delete_member_string(JsRef idobj, const char* ptrname);
  * Returns: New reference
  */
 JsRef
-hiwire_get_member_int(JsRef idobj, int idx);
+JsArray_Get(JsRef idobj, int idx);
 
 /**
  * Set an object member by integer.
  */
 errcode
-hiwire_set_member_int(JsRef idobj, int idx, JsRef idval);
+JsArray_Set(JsRef idobj, int idx, JsRef idval);
 
 errcode
-hiwire_delete_member_int(JsRef idobj, int idx);
+JsArray_Delete(JsRef idobj, int idx);
 
 /**
  * Get the methods on an object, both on itself and what it inherits.
  *
  */
 JsRef
-hiwire_dir(JsRef idobj);
+JsObject_Dir(JsRef idobj);
 
 /**
  * Call a function
@@ -492,19 +492,19 @@ hiwire_get_iterator(JsRef idobj);
  * Returns `Object.entries(obj)`
  */
 JsRef
-hiwire_object_entries(JsRef idobj);
+JsObject_Entries(JsRef idobj);
 
 /**
  * Returns `Object.keys(obj)`
  */
 JsRef
-hiwire_object_keys(JsRef idobj);
+JsObject_Keys(JsRef idobj);
 
 /**
  * Returns `Object.values(obj)`
  */
 JsRef
-hiwire_object_values(JsRef idobj);
+JsObject_Values(JsRef idobj);
 
 /**
  * Returns 1 if the value is a typedarray.

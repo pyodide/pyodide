@@ -416,7 +416,7 @@ _pyproxy_apply(PyObject* callable,
 
   // Put both arguments and keyword arguments into pyargs
   for (Py_ssize_t i = 0; i < total_args; ++i) {
-    jsitem = hiwire_get_member_int(jsargs, i);
+    jsitem = JsArray_Get(jsargs, i);
     // pyitem is moved into pyargs so we don't need to clear it later.
     PyObject* pyitem = js2python(jsitem);
     if (pyitem == NULL) {
@@ -430,7 +430,7 @@ _pyproxy_apply(PyObject* callable,
     // Put names of keyword arguments into a tuple
     pykwnames = PyTuple_New(numkwargs);
     for (Py_ssize_t i = 0; i < numkwargs; i++) {
-      jsitem = hiwire_get_member_int(jskwnames, i);
+      jsitem = JsArray_Get(jskwnames, i);
       // pyitem is moved into pykwargs so we don't need to clear it later.
       PyObject* pyitem = js2python(jsitem);
       PyTuple_SET_ITEM(pykwnames, i, pyitem);
