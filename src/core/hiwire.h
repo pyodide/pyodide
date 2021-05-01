@@ -153,7 +153,7 @@ JsRef
 hiwire_bool(bool boolean);
 
 bool
-hiwire_is_array(JsRef idobj);
+JsArray_Check(JsRef idobj);
 
 /**
  * Create a new Javascript Array.
@@ -161,16 +161,13 @@ hiwire_is_array(JsRef idobj);
  * Returns: New reference
  */
 JsRef
-hiwire_array();
+JsArray_New();
 
 /**
  * Push a value to the end of a Javascript array.
- *
- * If the user no longer needs the value outside of the array, it is the user's
- * responsibility to decref it.
  */
 errcode
-hiwire_push_array(JsRef idobj, JsRef idval);
+JsArray_Push(JsRef idobj, JsRef idval);
 
 /**
  * Create a new Javascript object.

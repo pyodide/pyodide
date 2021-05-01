@@ -310,9 +310,9 @@ EM_JS_NUM(bool, hiwire_is_array, (JsRef idobj), {
   return false;
 });
 
-EM_JS_REF(JsRef, hiwire_array, (), { return Module.hiwire.new_value([]); });
+EM_JS_REF(JsRef, JsArray_New, (), { return Module.hiwire.new_value([]); });
 
-EM_JS_NUM(errcode, hiwire_push_array, (JsRef idarr, JsRef idval), {
+EM_JS_NUM(errcode, JsArray_Push, (JsRef idarr, JsRef idval), {
   Module.hiwire.get_value(idarr).push(Module.hiwire.get_value(idval));
 });
 
@@ -397,13 +397,13 @@ EM_JS_REF(JsRef, hiwire_dir, (JsRef idobj), {
 static JsRef
 convert_va_args(va_list args)
 {
-  JsRef idargs = hiwire_array();
+  JsRef idargs = JsArray_New();
   while (true) {
     JsRef idarg = va_arg(args, JsRef);
     if (idarg == NULL) {
       break;
     }
-    hiwire_push_array(idargs, idarg);
+    JsArray_Push(idargs, idarg);
   }
   va_end(args);
   return idargs;

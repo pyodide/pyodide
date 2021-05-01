@@ -110,7 +110,7 @@ _python2js_sequence(PyObject* x, PyObject* cache, int depth)
   // result:
   JsRef jsarray = NULL;
 
-  jsarray = hiwire_array();
+  jsarray = JsArray_New();
   FAIL_IF_MINUS_ONE(_python2js_add_to_cache(cache, x, jsarray));
   Py_ssize_t length = PySequence_Size(x);
   FAIL_IF_MINUS_ONE(length);
@@ -119,7 +119,7 @@ _python2js_sequence(PyObject* x, PyObject* cache, int depth)
     FAIL_IF_NULL(pyitem);
     jsitem = _python2js(pyitem, cache, depth);
     FAIL_IF_NULL(jsitem);
-    hiwire_push_array(jsarray, jsitem);
+    JsArray_Push(jsarray, jsitem);
     Py_CLEAR(pyitem);
     hiwire_CLEAR(jsitem);
   }

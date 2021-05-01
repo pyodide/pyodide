@@ -146,7 +146,7 @@ JsProxy_GetAttr(PyObject* self, PyObject* attr)
 
   const char* key = PyUnicode_AsUTF8(attr);
   FAIL_IF_NULL(key);
-  if (strcmp(key, "keys") == 0 && hiwire_is_array(JsProxy_REF(self))) {
+  if (strcmp(key, "keys") == 0 && JsArray_Check(JsProxy_REF(self))) {
     // Sometimes Python APIs test for the existence of a "keys" function
     // to decide whether something should be treated like a dict.
     // This mixes badly with the javascript Array.keys API, so pretend that it
@@ -616,7 +616,7 @@ JsProxy_Dir(PyObject* self, PyObject* _args)
   FAIL_IF_NULL(pydir);
   // Merge and sort
   FAIL_IF_MINUS_ONE(_PySet_Update(result_set, pydir));
-  if (hiwire_is_array(GET_JSREF(self))) {
+  if (JsArray_Check(GET_JSREF(self))) {
     // See comment about Array.keys in GetAttr
     keys_str = PyUnicode_FromString("keys");
     FAIL_IF_NULL(keys_str);
@@ -1036,12 +1036,12 @@ JsMethod_ConvertArgs(PyObject* const* args, Py_ssize_t nargs, PyObject* kwnames)
   JsRef idarg = NULL;
   JsRef idkwargs = NULL;
 
-  idargs = hiwire_array();
+  idargs = JsArray_New();
   FAIL_IF_NULL(idargs);
   for (Py_ssize_t i = 0; i < nargs; ++i) {
     idarg = python2js(args[i]);
     FAIL_IF_NULL(idarg);
-    FAIL_IF_MINUS_ONE(hiwire_push_array(idargs, idarg));
+    FAIL_IF_MINUS_ONE(JsArray_Push(idargs, idarg));
     hiwire_CLEAR(idarg);
   }
 
@@ -1071,7 +1071,7 @@ JsMethod_ConvertArgs(PyObject* const* args, Py_ssize_t nargs, PyObject* kwnames)
     FAIL_IF_MINUS_ONE(hiwire_set_member_string(idkwargs, name_utf8, idarg));
     hiwire_CLEAR(idarg);
   }
-  FAIL_IF_MINUS_ONE(hiwire_push_array(idargs, idkwargs));
+  FAIL_IF_MINUS_ONE(JsArray_Push(idargs, idkwargs));
 
 success:
   success = true;
@@ -1674,7 +1674,7 @@ JsProxy_create_with_this(JsRef object, JsRef this)
   if (hiwire_is_promise(object)) {
     type_flags |= IS_AWAITABLE;
   }
-  if (hiwire_is_array(object)) {
+  if (JsArray_Check(object)) {
     type_flags |= IS_ARRAY;
   }
 
