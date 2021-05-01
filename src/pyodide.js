@@ -815,7 +815,7 @@ def temp(Module):
   Module.registerJsModule("pyodide_js", pyodide);
   globalThis.pyodide = pyodide;
   if (config.fullStdLib !== false) {
-    await pyodide.loadPackage([ 'distlib' ]);
+    await pyodide.loadPackage([ 'distutils' ]);
   }
 
   return pyodide;

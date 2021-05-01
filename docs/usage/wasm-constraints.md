@@ -12,7 +12,7 @@ or via [patches](https://github.com/pyodide/pyodide/tree/main/cpython/patches).
 ### Optional modules
 
 The following stdlib modules are included by default, however
-they can be excluded with `loadPyodide({..., allStdLib = false })`.
+they can be excluded with `loadPyodide({..., fullStdLib = false })`.
 Individual modules can then be loaded as necessary using
 {any}`pyodide.loadPackage`,
 
