@@ -289,7 +289,7 @@ EM_JS(void _Py_NO_RETURN, hiwire_throw_error, (JsRef iderr), {
   throw Module.hiwire.pop_value(iderr);
 });
 
-EM_JS_NUM(bool, hiwire_is_array, (JsRef idobj), {
+EM_JS_NUM(bool, JsArray_Check, (JsRef idobj), {
   let obj = Module.hiwire.get_value(idobj);
   if (Array.isArray(obj)) {
     return true;
