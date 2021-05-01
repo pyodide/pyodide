@@ -98,8 +98,9 @@ JS_FILE(pyproxy_init_js, () => {
   function _getPtr(jsobj) {
     let ptr = jsobj.$$.ptr;
     if (ptr === null) {
-      throw new Error(jsobj.$$.destroyed_msg ||
-                      "Object has already been destroyed");
+      throw new Error(
+        jsobj.$$.destroyed_msg || "Object has already been destroyed"
+      );
     }
     return ptr;
   }
