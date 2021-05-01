@@ -98,7 +98,8 @@ JS_FILE(pyproxy_init_js, () => {
   function _getPtr(jsobj) {
     let ptr = jsobj.$$.ptr;
     if (ptr === null) {
-      throw new Error("Object has already been destroyed");
+      throw new Error(jsobj.$$.destroyed_msg ||
+                      "Object has already been destroyed");
     }
     return ptr;
   }
@@ -232,19 +233,32 @@ JS_FILE(pyproxy_init_js, () => {
      * Pyodide will automatically destroy the ``PyProxy`` when it is garbage
      * collected, however there is no guarantee that the finalizer will be run
      * in a timely manner so it is better to ``destory`` the proxy explicitly.
+     *
+     * @param {string} [destroyed_msg] The error message to print if use is
+     *        attempted after destroying. Defaults to "Object has already been
+     *        destroyed".
      */
-    destroy() {
+    destroy(destroyed_msg) {
       let ptrobj = _getPtr(this);
       Module.finalizationRegistry.unregister(this);
       // Maybe the destructor will call Javascript code that will somehow try
       // to use this proxy. Mark it deleted before decrementing reference count
       // just in case!
       this.$$.ptr = null;
+      this.$$.destroyed_msg = destroyed_msg;
       try {
         _Py_DecRef(ptrobj);
       } catch (e) {
         Module.fatal_error(e);
       }
+    }
+    /**
+     * Make a new PyProxy pointing to the same Python object.
+     * Useful if the PyProxy is destroyed somewhere else.
+     */
+    clone() {
+      let ptrobj = _getPtr(this);
+      return Module.pyproxy_new(ptrobj);
     }
     /**
      * Converts the ``PyProxy`` into a Javascript object as best as possible. By
