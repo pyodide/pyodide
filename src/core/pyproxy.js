@@ -281,7 +281,7 @@ JS_FILE(pyproxy_init_js, () => {
       } catch (e) {
         Module.fatal_error(e);
       } finally {
-        Module.hwiire.decref(proxies);
+        Module.hiwire.decref(proxies);
       }
       if (idresult === 0) {
         _pythonexc2js();
