@@ -10,10 +10,8 @@
 #include "hiwire.h"
 
 /**
- * Convert a Python object to a Javascript object.
- *  \param x The Python object
- *  \return The Javascript object -- might be an Error object in the case of an
- *     exception.
+ * Do a shallow conversion from python to Javascript. Convert immutable types
+ * with equivalent Javascript immutable types, but all other types are proxied.
  */
 JsRef
 python2js(PyObject* x);
@@ -23,16 +21,10 @@ python2js(PyObject* x);
  *
  * If proxies is NULL, will throw an error instead of creating a PyProxy.
  * Otherwise, proxies should be an Array and python2js_track_proxies will add
- * the proxy to the array if one is created.
+ * all proxies created to the proxies array.
  */
 JsRef
 python2js_track_proxies(PyObject* x, JsRef proxies);
-
-/**
- * Destroy a list of PyProxies. Steals the reference to the list.
- */
-errcode
-destroy_proxies(JsRef proxies_id);
 
 /**
  * Convert a Python object to a Javascript object, copying standard collections

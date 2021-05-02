@@ -632,7 +632,6 @@ def test_python2js_with_depth(selenium):
         let proxies = [];
         let proxies_id = Module.hiwire.new_value(proxies);
         let result = Module.hiwire.pop_value(Module._python2js_with_depth(x.$$.ptr, -1, proxies_id));
-        Module.hiwire.decref(proxies_id);
 
         assert(() => proxies.length === 4);
 

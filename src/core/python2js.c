@@ -351,36 +351,6 @@ finally:
 }
 
 /**
- * Do a shallow conversion from python2js. Convert immutable types with
- * equivalent Javascript immutable types, but all other types are proxied.
- *
- */
-JsRef
-python2js_track_proxies(PyObject* x, JsRef proxies)
-{
-  RETURN_IF_HAS_VALUE(_python2js_immutable(x));
-  RETURN_IF_HAS_VALUE(_python2js_proxy(x));
-  if (proxies == NULL) {
-    PyErr_SetString(conversion_error, "No conversion known for x.");
-    FAIL();
-  }
-  JsRef proxy = pyproxy_new(x);
-  FAIL_IF_NULL(proxy);
-  JsArray_Push(proxies, proxy);
-  return proxy;
-finally:
-  if (PyErr_Occurred()) {
-    if (!PyErr_ExceptionMatches(conversion_error)) {
-      _PyErr_FormatFromCause(conversion_error,
-                             "Conversion from python to javascript failed");
-    }
-  } else {
-    PyErr_SetString(internal_error, "Internal error occurred in python2js");
-  }
-  return NULL;
-}
-
-/**
  * This is a helper for python2js_with_depth. We need to create a cache for the
  * conversion, so we can't use the entry point as the root of the recursion.
  * Instead python2js_with_depth makes a cache and then calls this helper.
@@ -411,13 +381,23 @@ finally:
 /**
  * Do a shallow conversion from python2js. Convert immutable types with
  * equivalent Javascript immutable types, but all other types are proxied.
+ *
  */
 JsRef
-python2js(PyObject* x)
+python2js_inner(PyObject* x, JsRef proxies, bool track_proxies)
 {
   RETURN_IF_HAS_VALUE(_python2js_immutable(x));
   RETURN_IF_HAS_VALUE(_python2js_proxy(x));
-  RETURN_IF_HAS_VALUE(pyproxy_new(x));
+  if (track_proxies && proxies == NULL) {
+    PyErr_SetString(conversion_error, "No conversion known for x.");
+    FAIL();
+  }
+  JsRef proxy = pyproxy_new(x);
+  FAIL_IF_NULL(proxy);
+  if (track_proxies) {
+    JsArray_Push(proxies, proxy);
+  }
+  return proxy;
 finally:
   if (PyErr_Occurred()) {
     if (!PyErr_ExceptionMatches(conversion_error)) {
@@ -430,19 +410,29 @@ finally:
   return NULL;
 }
 
-EM_JS_NUM(errcode, destroy_proxies, (JsRef proxies_id), {
-  let proxies = Module.hiwire.pop_value(proxies_id);
-  for (let px of proxies) {
-    Module.pyproxy_destroy(px);
-  }
-});
+/**
+ * Do a shallow conversion from python2js. Convert immutable types with
+ * equivalent Javascript immutable types.
+ *
+ * Other types are proxied and added to the list proxies (to allow easy memory
+ * management later). If proxies is NULL, python2js will raise an error instead
+ * of creating a proxy.
+ */
+JsRef
+python2js_track_proxies(PyObject* x, JsRef proxies)
+{
+  return python2js_inner(x, proxies, true);
+}
 
-EM_JS_NUM(errcode, proxies_mark_borrowed, (JsRef proxies_id), {
-  let proxies = Module.hiwire.get_value(proxies_id);
-  for (let px of proxies) {
-    Module.mark_borrowed(px);
-  }
-});
+/**
+ * Do a shallow conversion from python2js. Convert immutable types with
+ * equivalent Javascript immutable types, but all other types are proxied.
+ */
+JsRef
+python2js(PyObject* x)
+{
+  return python2js_inner(x, NULL, false);
+}
 
 /**
  * Do a deep conversion from Python to Javascript, converting lists, dicts, and
