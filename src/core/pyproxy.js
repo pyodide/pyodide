@@ -275,10 +275,13 @@ JS_FILE(pyproxy_init_js, () => {
     toJs(depth = -1) {
       let ptrobj = _getPtr(this);
       let idresult;
+      let proxies = Module.hiwire.new_value([]);
       try {
-        idresult = _python2js_with_depth(ptrobj, depth);
+        idresult = _python2js_with_depth(ptrobj, depth, proxies);
       } catch (e) {
         Module.fatal_error(e);
+      } finally {
+        Module.hwiire.decref(proxies);
       }
       if (idresult === 0) {
         _pythonexc2js();

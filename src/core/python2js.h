@@ -19,13 +19,34 @@ JsRef
 python2js(PyObject* x);
 
 /**
- * Convert a Python object to a Javascript object, copying standard collections
- * into javascript down to specified depth \param x The Python object \param
- * depth The maximum depth to copy \return The Javascript object -- might be an
- * Error object in the case of an exception.
+ * Like python2js except in the handling of PyProxy creation.
+ *
+ * If proxies is NULL, will throw an error instead of creating a PyProxy.
+ * Otherwise, proxies should be an Array and python2js_track_proxies will add
+ * the proxy to the array if one is created.
  */
 JsRef
-python2js_with_depth(PyObject* x, int depth);
+python2js_track_proxies(PyObject* x, JsRef proxies);
+
+/**
+ * Destroy a list of PyProxies. Steals the reference to the list.
+ */
+errcode
+destroy_proxies(JsRef proxies_id);
+
+/**
+ * Convert a Python object to a Javascript object, copying standard collections
+ * into javascript down to specified depth
+ * \param x The Python object
+ * \param depth The maximum depth to copy
+ * \param proxies If this is Null, will raise an error if we have no Javascript
+ *        conversion for a Python object. If not NULL, should be a Javascript
+ *        list. We will add all PyProxies created to the list.
+ * \return The Javascript object -- might be an Error object in the case of an
+ *         exception.
+ */
+JsRef
+python2js_with_depth(PyObject* x, int depth, JsRef proxies);
 
 int
 python2js_init(PyObject* core);
