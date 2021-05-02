@@ -36,133 +36,6 @@ def open_url(url: str) -> StringIO:
     return StringIO(req.response)
 
 
-class CodeRunner:
-    """
-    A helper class for eval_code and eval_code_async.
-
-    Parameters
-    ----------
-    globals : ``dict``
-
-        The global scope in which to execute code. This is used as the ``globals``
-        parameter for ``exec``. See
-        `the exec documentation <https://docs.python.org/3/library/functions.html#exec>`_
-        for more info. If the ``globals`` is absent, it is set equal to a new empty
-        dictionary.
-
-    locals : ``dict``
-
-        The local scope in which to execute code. This is used as the ``locals``
-        parameter for ``exec``. As with ``exec``, if ``locals`` is absent, it is set equal
-        to ``globals``. See
-        `the exec documentation <https://docs.python.org/3/library/functions.html#exec>`_
-        for more info.
-
-    return_mode : ``str``
-
-        Specifies what should be returned, must be one of ``'last_expr'``,
-        ``'last_expr_or_assign'`` or ``'none'``. On other values an exception is
-        raised.
-
-        * ``'last_expr'`` -- return the last expression
-        * ``'last_expr_or_assign'`` -- return the last expression or the last assignment.
-        * ``'none'`` -- always return ``None``.
-
-    quiet_trailing_semicolon : bool
-
-        Whether a trailing semicolon should 'quiet' the
-        result or not. Setting this to ``True`` (default) mimic the CPython's
-        interpreter behavior ; whereas setting it to ``False`` mimic the IPython's
-        interpreter behavior.
-
-    filename : str
-
-        The file name to use in error messages and stack traces
-
-    Examples
-    --------
-    >>> CodeRunner().run("1+1")
-    2
-    >>> CodeRunner().run("1+1;")
-    >>> runner = CodeRunner()
-    >>> runner.run("x = 5")
-    >>> runner.run("x + 1")
-    6
-    """
-
-    def __init__(
-        self,
-        globals: Optional[Dict[str, Any]] = None,
-        locals: Optional[Dict[str, Any]] = None,
-        return_mode: str = "last_expr",
-        quiet_trailing_semicolon: bool = True,
-        filename: str = "<exec>",
-    ):
-        self.globals = globals if globals is not None else {}
-        self.locals = locals if locals is not None else self.globals
-        self.quiet_trailing_semicolon = quiet_trailing_semicolon
-        self.filename = filename
-        if return_mode not in ["last_expr", "last_expr_or_assign", "none", None]:
-            raise ValueError(f"Unrecognized return_mode {return_mode!r}")
-        self.return_mode = return_mode
-
-    def run(self, source: str) -> Any:
-        """Runs a string as Python source code.
-
-        Parameters
-        ----------
-        source
-           the Python source code to run.
-
-        Returns
-        -------
-        If the last nonwhitespace character of ``source`` is a semicolon,
-        return ``None``.
-        If the last statement is an expression, return the
-        result of the expression.
-        Use the ``return_mode`` and ``quiet_trailing_semicolon`` parameters in the
-        constructor to modify this default behavior.
-        """
-        return eval_code(
-            source,
-            globals=self.globals,
-            locals=self.locals,
-            return_mode=self.return_mode,
-            quiet_trailing_semicolon=self.quiet_trailing_semicolon,
-            filename=self.filename,
-        )
-
-    async def run_async(self, source: str) -> Any:
-        """Runs a code string asynchronously.
-
-        Uses
-        [PyCF_ALLOW_TOP_LEVEL_AWAIT](https://docs.python.org/3/library/ast.html#ast.PyCF_ALLOW_TOP_LEVEL_AWAIT)
-        to compile to code.
-
-        Parameters
-        ----------
-        source
-           the Python source code to run.
-
-        Returns
-        -------
-        If the last nonwhitespace character of ``code`` is a semicolon,
-        return ``None``.
-        If the last statement is an expression, return the
-        result of the expression.
-        Use the ``return_mode`` and ``quiet_trailing_semicolon`` parameters in the
-        constructor to modify this default behavior.
-        """
-        return eval_code_async(
-            source,
-            globals=self.globals,
-            locals=self.locals,
-            return_mode=self.return_mode,
-            quiet_trailing_semicolon=self.quiet_trailing_semicolon,
-            filename=self.filename,
-        )
-
-
 def should_quiet(source: str) -> bool:
     """
     Should we suppress output?
@@ -302,7 +175,7 @@ def _parse_and_compile_gen(
     return compile(mod, filename, "exec", flags=flags)
 
 
-class Executor:
+class CodeRunner:
     """This class allows fine control over the execution of a code block.
 
     It is primarily intended for REPLs and other sophisticated consumers that
@@ -311,10 +184,13 @@ class Executor:
 
     Attributes:
 
-        ast : The ast from parsing source. If you wish to do an ast
-              transform, modify this variable before calling compile.
+        ast : The ast from parsing source. If you wish to do an ast transform,
+              modify this variable before calling :any:`CodeRunner.compile`.
 
-        code : Once the
+        code : Once you call :any:`CodeRunner.compile` the compiled code will
+               be avaible in the code field. You can modify this variable in
+               before calling `CodeRunner.run` to do a code transform (though
+               few people are likely to want to do this).
     """
 
     def __init__(
@@ -339,7 +215,7 @@ class Executor:
     def compile(self):
         """Compile the current value of self.ast and store the result in self.code.
 
-        Can only be used once.
+        Can only be used once. Returns self (chainable)
         """
         if self._compiled:
             raise RuntimeError("Already compiled")
@@ -352,6 +228,7 @@ class Executor:
             self.code = e.value
         else:
             assert False
+        return self
 
     def run(self, globals: Dict[str, Any] = None, locals: Dict[str, Any] = None):
         """Runs self.code.
@@ -425,15 +302,17 @@ def eval_code(
     Use the ``return_mode`` and ``quiet_trailing_semicolon`` parameters in the
     constructor to modify this default behavior.
     """
-    executor = Executor(
-        source,
-        return_mode=return_mode,
-        quiet_trailing_semicolon=quiet_trailing_semicolon,
-        filename=filename,
-        flags=flags,
+    return (
+        CodeRunner(
+            source,
+            return_mode=return_mode,
+            quiet_trailing_semicolon=quiet_trailing_semicolon,
+            filename=filename,
+            flags=flags,
+        )
+        .compile()
+        .run(globals, locals)
     )
-    executor.compile()
-    return executor.run(globals, locals)
 
 
 async def eval_code_async(
@@ -467,15 +346,17 @@ async def eval_code_async(
     constructor to modify this default behavior.
     """
     flags = flags or ast.PyCF_ALLOW_TOP_LEVEL_AWAIT  # type: ignore
-    executor = Executor(
-        source,
-        return_mode=return_mode,
-        quiet_trailing_semicolon=quiet_trailing_semicolon,
-        filename=filename,
-        flags=flags,
+    return (
+        await CodeRunner(
+            source,
+            return_mode=return_mode,
+            quiet_trailing_semicolon=quiet_trailing_semicolon,
+            filename=filename,
+            flags=flags,
+        )
+        .compile()
+        .run_async(globals, locals)
     )
-    executor.compile()
-    return await executor.run_async(globals, locals)
 
 
 def find_imports(source: str) -> List[str]:
