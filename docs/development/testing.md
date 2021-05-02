@@ -38,7 +38,7 @@ environment and the host system, run: `./run_docker`
 
 2. Now, this can be used to test the Pyodide builds running within the
 docker environment using external browser programs on the host system. To do
-this, run: `./bin/pyodide serve`
+this, run: `pyodide-build serve`
 
 3. This serves the ``build`` directory of the Pyodide project on port 8000.
     * To serve a different directory, use the ``--build_dir`` argument followed

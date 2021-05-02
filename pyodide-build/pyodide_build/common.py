@@ -55,7 +55,8 @@ def get_make_environment_vars():
     """Load environment variables from Makefile.envs
 
     This allows us to set all build vars in one place"""
-    __ROOTDIR = Path(__file__).parents[1].resolve()
+    # TODO: make this not rely on paths outside of pyodide-build
+    __ROOTDIR = Path(__file__).parents[2].resolve()
     environment = {}
     result = subprocess.run(
         ["make", "-f", str(__ROOTDIR / "Makefile.envs"), ".output_vars"],

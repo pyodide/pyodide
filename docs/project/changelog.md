@@ -32,6 +32,12 @@ substitutions:
 - {{ Enhancement }} Added the {any}`PyProxy.clone` method.
   {pr}`1549`
 
+### pyodide-build
+
+- {{ Enhancement }} pyodide-build is now an installable Python package, with an identically named
+  CLI entrypoint that replaces `bin/pyodide` which is removed {pr}`1566`
+
+
 ## Version 0.17.0
 *April 21, 2020*
 
