@@ -51,7 +51,7 @@ extensions = [
     "autodocsumm",
     "sphinx_pyodide",
     "sphinx_argparse_cli",
-    "versionwarning.extension",
+    #    "versionwarning.extension",
     "sphinx_issues",
 ]
 
