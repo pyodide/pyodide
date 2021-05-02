@@ -12,6 +12,7 @@ import subprocess
 base_dir = pathlib.Path(__file__).resolve().parent.parent
 path_dirs = [
     str(base_dir),
+    str(base_dir / "pyodide-build"),
     str(base_dir / "docs/sphinx_pyodide"),
     str(base_dir / "src/pyodide-py"),
     str(base_dir / "packages/micropip/micropip"),

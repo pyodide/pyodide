@@ -19,7 +19,7 @@ ROOT_PATH = pathlib.Path(__file__).parents[0].resolve()
 TEST_PATH = ROOT_PATH / "src" / "tests"
 BUILD_PATH = ROOT_PATH / "build"
 
-sys.path.append(str(ROOT_PATH))
+sys.path.append(str(ROOT_PATH / "pyodide-build"))
 
 from pyodide_build.testing import set_webdriver_script_timeout, parse_driver_timeout
 
