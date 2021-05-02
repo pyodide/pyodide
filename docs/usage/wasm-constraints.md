@@ -38,7 +38,7 @@ since they currently wouldn't work in the WebAssembly VM,
 
 ### Included but not working modules
 
-The following modules can be imported, but are not functional due to the limitations of the WebAssembly VM,
+The following modules can be imported, but are not functional due to the limitations of the WebAssembly VM:
  - multiprocessing
  - threading
  - sockets

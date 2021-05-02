@@ -14,7 +14,7 @@ substitutions:
 
 ## Standard library
 
-- Following standard library modules are now available as standalone packages
+- The following standard library modules are now available as standalone packages
    - distlib
   They are loaded by default in {any}`pyodide.loadPyodide`, however this behavior
   can be disabled with the `fullStdLib` parameter set to `false`.

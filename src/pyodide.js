@@ -18,7 +18,7 @@ globalThis.pyodide = {};
  * @param {string} config.indexURL - The URL from which Pyodide will load
  * packages
  * @param {bool} config.fullStdLib - Load the full Python standard library.
- * Setting this parameter to false would explude following modules: distutils.
+ * Setting this to false excludes following modules: distutils.
  * Default: true
  * @returns The Pyodide module.
  * @async
