@@ -9,6 +9,7 @@ defaults: &defaults
       EMCC_CORES: 3
       PYODIDE_JOBS: 3
 
+
 jobs:
   lint:
     <<: *defaults
@@ -39,6 +40,11 @@ jobs:
     <<: *defaults
     steps:
       - checkout
+
+      - run: &check_ci_required
+          name: Check if CI job is necessairy
+          command: |
+              ./bin/pyodide check_ci_required ${CIRCLE_JOB}
 
       - restore_cache:
           keys:
@@ -98,6 +104,8 @@ jobs:
     steps:
       - checkout
 
+      - run: *check_ci_required
+
       - attach_workspace:
           at: .
 
@@ -134,6 +142,10 @@ jobs:
   test-core-firefox:
     <<: *defaults
     steps:
+      - checkout
+
+      - run: *check_ci_required
+
       - attach_workspace:
           at: .
       - run:
@@ -144,6 +156,10 @@ jobs:
   test-core-chrome:
     <<: *defaults
     steps:
+      - checkout
+
+      - run: *check_ci_required
+
       - attach_workspace:
           at: .
       - run:
@@ -154,6 +170,10 @@ jobs:
   test-packages-firefox:
     <<: *defaults
     steps:
+      - checkout
+
+      - run: *check_ci_required
+
       - attach_workspace:
           at: .
       - run:
@@ -164,6 +184,10 @@ jobs:
   test-packages-chrome:
     <<: *defaults
     steps:
+      - checkout
+
+      - run: *check_ci_required
+
       - attach_workspace:
           at: .
       - run:
@@ -175,6 +199,10 @@ jobs:
     <<: *defaults
     resource_class: small
     steps:
+      - checkout
+
+      - run: *check_ci_required
+
       - attach_workspace:
           at: .
       - run:
@@ -195,6 +223,9 @@ jobs:
     <<: *defaults
     steps:
       - checkout
+
+      - run: *check_ci_required
+
       - attach_workspace:
           at: .
       - run:

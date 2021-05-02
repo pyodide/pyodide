@@ -7,6 +7,7 @@ from . import buildpkg
 from . import pywasmcross
 from . import serve
 from . import mkpkg
+from . import ci_job_required
 
 
 def make_parser() -> argparse.ArgumentParser:
@@ -22,6 +23,7 @@ def make_parser() -> argparse.ArgumentParser:
         ("pywasmcross", pywasmcross),
         ("serve", serve),
         ("mkpkg", mkpkg),
+        ("check_ci_required", ci_job_required),
     ):
         if "sphinx" in sys.modules and command_name in [
             "buildpkg",
