@@ -12,6 +12,17 @@ substitutions:
 
 ## [Unreleased]
 
+## Standard library
+
+- The following standard library modules are now available as standalone packages
+   - distlib
+  They are loaded by default in {any}`pyodide.loadPyodide`, however this behavior
+  can be disabled with the `fullStdLib` parameter set to `false`.
+  All optional stdlib modules can then be loaded as needed with
+  {any}`pyodide.loadPackage`. {pr}`1543`
+
+### Python / JS type conversions
+
 - {{ API }} {any}`pyodide.runPythonAsync` no longer automatically calls
   {any}`pyodide.loadPackagesFromImports`.
   {pr}`1538`.

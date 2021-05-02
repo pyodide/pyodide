@@ -19,6 +19,7 @@ all: check \
 	build/pyodide.js \
 	build/console.html \
 	build/test.data \
+	build/distutils.data \
 	build/packages.json \
 	build/test.html \
 	build/webworker.js \
@@ -55,7 +56,8 @@ build/pyodide.asm.js: \
 		--preload-file src/pyodide-py/_pyodide@/lib/python$(PYMINOR)/site-packages/_pyodide \
 		--exclude-file "*__pycache__*" \
 		--exclude-file "*/test/*"		\
-		--exclude-file "*/tests/*"
+		--exclude-file "*/tests/*" \
+		--exclude-file "*/distutils/*"
 	# Strip out C++ symbols which all start __Z.
 	# There are 4821 of these and they have VERY VERY long names.
 	# To show some stats on the symbols you can use the following:
@@ -148,7 +150,9 @@ clean-all: clean
 %.o: %.c $(CPYTHONLIB) $(wildcard src/**/*.h src/**/*.js)
 	$(CC) -o $@ -c $< $(MAIN_MODULE_CFLAGS) -Isrc/core/
 
+# Stdlib modules that we repackage as standalone packages
 
+# TODO: also include test directories included in other stdlib modules
 build/test.data: $(CPYTHONLIB)
 	( \
 		cd $(CPYTHONLIB)/test; \
@@ -159,6 +163,20 @@ build/test.data: $(CPYTHONLIB)
 		python $(FILEPACKAGER) test.data --lz4 --preload ../$(CPYTHONLIB)/test@/lib/python$(PYMINOR)/test --js-output=test.js --export-name=globalThis.pyodide._module --exclude __pycache__ \
 	)
 	$(UGLIFYJS) build/test.js -o build/test.js
+  
+
+build/distutils.data: $(CPYTHONLIB)
+	( \
+		cd $(CPYTHONLIB)/distutils; \
+		find . -type d -name __pycache__ -prune -exec rm -rf {} \; ;\
+		find . -type d -name tests -prune -exec rm -rf {} \; \
+	)
+	( \
+		cd build; \
+		python $(FILEPACKAGER) distutils.data --lz4 --preload ../$(CPYTHONLIB)/distutils@/lib/python$(PYMINOR)/distutils --js-output=distutils.js --export-name=pyodide._module --exclude __pycache__ --exclude tests \
+	)
+	$(UGLIFYJS) build/distutils.js -o build/distutils.js
+
 
 $(CPYTHONLIB): emsdk/emsdk/.complete $(PYODIDE_EMCC) $(PYODIDE_CXX)
 	date +"[%F %T] Building cpython..."

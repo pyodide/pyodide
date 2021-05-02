@@ -10,6 +10,7 @@ source:
 
 requirements:
   run:
+    - distutils
     - numpy
 
 test:
