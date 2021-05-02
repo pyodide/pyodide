@@ -3,7 +3,7 @@ from pathlib import Path
 import sys
 from textwrap import dedent
 
-sys.path.append(str(Path(__file__).parents[2] / "src" / "pyodide-py"))
+sys.path.append(str(Path(__file__).absolute().parents[2] / "src" / "pyodide-py"))
 
 from pyodide import find_imports, eval_code  # noqa: E402
 from pyodide._base import CodeRunner, should_quiet  # noqa: E402
@@ -24,26 +24,27 @@ def test_find_imports():
 
 
 def test_code_runner():
-    runner = CodeRunner()
     assert should_quiet("1+1;")
     assert not should_quiet("1+1#;")
     assert not should_quiet("5-2  # comment with trailing semicolon ;")
-    assert runner.run("4//2\n") == 2
-    assert runner.run("4//2;") is None
-    assert runner.run("x = 2\nx") == 2
-    assert runner.run("def f(x):\n    return x*x+1\n[f(x) for x in range(6)]") == [
-        1,
-        2,
-        5,
-        10,
-        17,
-        26,
-    ]
 
-    # with 'quiet_trailing_semicolon' set to False
-    runner = CodeRunner(quiet_trailing_semicolon=False)
-    assert runner.run("4//2\n") == 2
-    assert runner.run("4//2;") == 2
+    # Normal usage
+    assert CodeRunner("1+1").compile().run() == 2
+    assert CodeRunner("x + 7").compile().run({"x": 3}) == 10
+    cr = CodeRunner("x + 7")
+
+    # Ast transform
+    import ast
+
+    l = cr.ast.body[0].value.left
+    cr.ast.body[0].value.left = ast.BinOp(
+        left=l, op=ast.Mult(), right=ast.Constant(value=2)
+    )
+    assert cr.compile().run({"x": 3}) == 13
+
+    # Code transform
+    cr.code = cr.code.replace(co_consts=(3, 5, None))
+    assert cr.run({"x": 4}) == 17
 
 
 def test_eval_code():
