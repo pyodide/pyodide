@@ -125,7 +125,7 @@ lint:
 	clang-format-6.0 -output-replacements-xml `find src -type f -regex ".*\.\(c\|h\\)"` | (! grep '<replacement ')
 	$(PRETTIER) --check `find src -type f -name '*.js'`
 	black --check .
-	mypy --ignore-missing-imports pyodide-build/ src/ packages/micropip/micropip/ packages/*/test* conftest.py docs
+	mypy --ignore-missing-imports pyodide-build/pyodide_build/ src/ packages/micropip/micropip/ packages/*/test* conftest.py docs
 
 apply-lint:
 	./tools/apply-lint.sh

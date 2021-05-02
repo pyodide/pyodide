@@ -20,12 +20,13 @@ and check that they are in your `PATH`.
 To run the pytest suite of tests, type on the command line:
 
 ```bash
-pytest src/ pyodide_build/ packages/*/test_*
+pytest src/ pyodide-build/ packages/*/test_*
 ```
 
 There are 3 test locations,
 - `src/tests/`: general Pyodide tests and tests running the CPython test suite
-- `pyodide_build/tests/`: tests related to Pyodide build system (do not require selenium to run)
+- `pyodide-build/pyodide_build/tests/`: tests related to Pyodide build system
+  (do not require selenium to run)
 - `packages/*/test_*`: package specific tests.
 
 ### Manual interactive testing
@@ -77,7 +78,7 @@ make lint
 ### run_in_pyodide
 Many tests simply involve running a chunk of code in Pyodide and ensuring it
 doesn't error. In this case, one can use the `run_in_pyodide` decorate from
-`pyodide_build/testing.py`, e.g.
+`pyodide_build.testing`, e.g.
 
 ```python
 from pyodide_build.testing import run_in_pyodide
