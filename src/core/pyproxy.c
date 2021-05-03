@@ -13,7 +13,8 @@ _Py_IDENTIFIER(result);
 _Py_IDENTIFIER(ensure_future);
 _Py_IDENTIFIER(add_done_callback);
 
-// Use raw EM_JS here, we intend to raise fatal error if called on bad input.
+// Use raw EM_JS for the next five commands. We intend to signal a fatal error
+// if a Javascript error is thrown.
 EM_JS(void, pyproxy_destroy_and_decref, (JsRef x), {
   let val = Module.hiwire.pop_value(x);
   if (Module.isPyProxy(val)) {
@@ -21,7 +22,6 @@ EM_JS(void, pyproxy_destroy_and_decref, (JsRef x), {
   }
 })
 
-// Use raw EM_JS here, we intend to raise fatal error if called on bad input.
 EM_JS(int, pyproxy_Check, (JsRef x), {
   if (x == 0) {
     return false;
@@ -30,7 +30,7 @@ EM_JS(int, pyproxy_Check, (JsRef x), {
   return Module.isPyProxy(val);
 });
 
-EM_JS_NUM(errcode, destroy_proxies, (JsRef proxies_id, char* msg_ptr), {
+EM_JS(errcode, destroy_proxies, (JsRef proxies_id, char* msg_ptr), {
   let msg = undefined;
   if (msg_ptr) {
     msg = UTF8ToString(msg_ptr);
