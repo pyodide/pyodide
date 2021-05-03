@@ -113,13 +113,17 @@ class EvalCodeResultException(Exception):
         self.value = v
 
 
-# We need EvalCodeResultException available inside the running code.
-# I suppose we could import it, wrap all of the code in a try/finally block,
-# and delete it again in the finally block but I think this is the best way.
-builtins.___EvalCodeResultException = EvalCodeResultException  # type: ignore
+# We need EvalCodeResultException available inside the running code. I suppose
+# we could import it, wrap all of the code in a try/finally block, and delete it
+# again in the finally block but I think this is the best way.
+#
+# Put it into a list to avoid breaking CPython test test_inheritance
+# (test.test_baseexception.ExceptionClassTests) which examines all Exceptions in
+# builtins.
+builtins.___EvalCodeResultException = [EvalCodeResultException]  # type: ignore
 
 # We will substitute in the value of x we are trying to return.
-_raise_template_ast = ast.parse("raise ___EvalCodeResultException(x)").body[0]
+_raise_template_ast = ast.parse("raise ___EvalCodeResultException[0](x)").body[0]
 
 
 def _last_expr_to_raise(mod: ast.Module):
@@ -182,6 +186,30 @@ class CodeRunner:
     may wish to add their own AST transformations, separately signal to the user
     when parsing is complete, etc.
 
+    Parameters
+    ----------
+    return_mode : ``str``
+
+        Specifies what should be returned, must be one of ``'last_expr'``,
+        ``'last_expr_or_assign'`` or ``'none'``. On other values an exception is
+        raised.
+
+        * ``'last_expr'`` -- return the last expression
+        * ``'last_expr_or_assign'`` -- return the last expression or the last assignment.
+        * ``'none'`` -- always return ``None``.
+
+    quiet_trailing_semicolon : ``bool``
+
+        Whether a trailing semicolon should 'quiet' the
+        result or not. Setting this to ``True`` (default) mimic the CPython's
+        interpreter behavior ; whereas setting it to ``False`` mimic the IPython's
+        interpreter behavior.
+
+    filename : ``str``
+
+        The file name to use in error messages and stack traces
+
+
     Attributes:
 
         ast : The ast from parsing source. If you wish to do an ast transform,
@@ -233,11 +261,35 @@ class CodeRunner:
     def run(self, globals: Dict[str, Any] = None, locals: Dict[str, Any] = None):
         """Runs self.code.
 
-        Uses the given globals and locals dictionaries. Can only be used after
-        calling compile.
+        Can only be used after calling compile. The code may not use top level
+        await, use run_async for code that uses top level await.
 
-        The code may not use top level await, use run_async for code that uses
-        top level await.
+        Parameters
+        ----------
+        globals : ``dict``
+
+            The global scope in which to execute code. This is used as the ``globals``
+            parameter for ``exec``. See
+            `the exec documentation <https://docs.python.org/3/library/functions.html#exec>`_
+            for more info. If the ``globals`` is absent, it is set equal to a new empty
+            dictionary.
+
+        locals : ``dict``
+
+            The local scope in which to execute code. This is used as the ``locals``
+            parameter for ``exec``. As with ``exec``, if ``locals`` is absent, it is set equal
+            to ``globals``. See
+            `the exec documentation <https://docs.python.org/3/library/functions.html#exec>`_
+            for more info.
+
+        Returns
+        -------
+        If the last nonwhitespace character of ``source`` is a semicolon,
+        return ``None``.
+        If the last statement is an expression, return the
+        result of the expression.
+        Use the ``return_mode`` and ``quiet_trailing_semicolon`` parameters in the
+        constructor to modify this default behavior.
         """
         if not self._compiled:
             raise RuntimeError("Not yet compiled")
@@ -258,11 +310,35 @@ class CodeRunner:
     ):
         """Runs self.code which may use top level await.
 
-        Uses the given globals and locals dictionaries. Can only be used after
-        calling compile.
+        Can only be used after calling compile. If the code uses top level
+        await, automatically awaits the resulting coroutine.
 
-        If the code uses top level await, automatically await the resulting
-        coroutine.
+        Parameters
+        ----------
+        globals : ``dict``
+
+            The global scope in which to execute code. This is used as the ``globals``
+            parameter for ``exec``. See
+            `the exec documentation <https://docs.python.org/3/library/functions.html#exec>`_
+            for more info. If the ``globals`` is absent, it is set equal to a new empty
+            dictionary.
+
+        locals : ``dict``
+
+            The local scope in which to execute code. This is used as the ``locals``
+            parameter for ``exec``. As with ``exec``, if ``locals`` is absent, it is set equal
+            to ``globals``. See
+            `the exec documentation <https://docs.python.org/3/library/functions.html#exec>`_
+            for more info.
+
+        Returns
+        -------
+        If the last nonwhitespace character of ``source`` is a semicolon,
+        return ``None``.
+        If the last statement is an expression, return the
+        result of the expression.
+        Use the ``return_mode`` and ``quiet_trailing_semicolon`` parameters in the
+        constructor to modify this default behavior.
         """
         if not self._compiled:
             raise RuntimeError("Not yet compiled")
@@ -292,6 +368,43 @@ def eval_code(
     ----------
     source
         the Python source code to run.
+
+    globals : ``dict``
+
+        The global scope in which to execute code. This is used as the ``globals``
+        parameter for ``exec``. See
+        `the exec documentation <https://docs.python.org/3/library/functions.html#exec>`_
+        for more info. If the ``globals`` is absent, it is set equal to a new empty
+        dictionary.
+
+    locals : ``dict``
+
+        The local scope in which to execute code. This is used as the ``locals``
+        parameter for ``exec``. As with ``exec``, if ``locals`` is absent, it is set equal
+        to ``globals``. See
+        `the exec documentation <https://docs.python.org/3/library/functions.html#exec>`_
+        for more info.
+
+    return_mode : ``str``
+
+        Specifies what should be returned, must be one of ``'last_expr'``,
+        ``'last_expr_or_assign'`` or ``'none'``. On other values an exception is
+        raised.
+
+        * ``'last_expr'`` -- return the last expression
+        * ``'last_expr_or_assign'`` -- return the last expression or the last assignment.
+        * ``'none'`` -- always return ``None``.
+
+    quiet_trailing_semicolon : ``bool``
+
+        Whether a trailing semicolon should 'quiet' the
+        result or not. Setting this to ``True`` (default) mimic the CPython's
+        interpreter behavior ; whereas setting it to ``False`` mimic the IPython's
+        interpreter behavior.
+
+    filename : ``str``
+
+        The file name to use in error messages and stack traces
 
     Returns
     -------
@@ -335,6 +448,43 @@ async def eval_code_async(
     ----------
     source
         the Python source code to run.
+
+    globals : ``dict``
+
+        The global scope in which to execute code. This is used as the ``globals``
+        parameter for ``exec``. See
+        `the exec documentation <https://docs.python.org/3/library/functions.html#exec>`_
+        for more info. If the ``globals`` is absent, it is set equal to a new empty
+        dictionary.
+
+    locals : ``dict``
+
+        The local scope in which to execute code. This is used as the ``locals``
+        parameter for ``exec``. As with ``exec``, if ``locals`` is absent, it is set equal
+        to ``globals``. See
+        `the exec documentation <https://docs.python.org/3/library/functions.html#exec>`_
+        for more info.
+
+    return_mode : ``str``
+
+        Specifies what should be returned, must be one of ``'last_expr'``,
+        ``'last_expr_or_assign'`` or ``'none'``. On other values an exception is
+        raised.
+
+        * ``'last_expr'`` -- return the last expression
+        * ``'last_expr_or_assign'`` -- return the last expression or the last assignment.
+        * ``'none'`` -- always return ``None``.
+
+    quiet_trailing_semicolon : ``bool``
+
+        Whether a trailing semicolon should 'quiet' the
+        result or not. Setting this to ``True`` (default) mimic the CPython's
+        interpreter behavior ; whereas setting it to ``False`` mimic the IPython's
+        interpreter behavior.
+
+    filename : ``str``
+
+        The file name to use in error messages and stack traces
 
     Returns
     -------
