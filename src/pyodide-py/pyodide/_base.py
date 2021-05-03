@@ -188,6 +188,10 @@ class CodeRunner:
 
     Parameters
     ----------
+    source : ``str``
+
+        The Python source code to run.
+
     return_mode : ``str``
 
         Specifies what should be returned, must be one of ``'last_expr'``,
@@ -366,8 +370,9 @@ def eval_code(
 
     Parameters
     ----------
-    source
-        the Python source code to run.
+    source : ``str``
+
+        The Python source code to run.
 
     globals : ``dict``
 
@@ -446,8 +451,9 @@ async def eval_code_async(
 
     Parameters
     ----------
-    source
-        the Python source code to run.
+    source : ``str``
+
+        The Python source code to run.
 
     globals : ``dict``
 
