@@ -43,7 +43,7 @@ def test_code_runner():
     assert cr.compile().run({"x": 3}) == 13
 
     # Code transform
-    cr.code = cr.code.replace(co_consts=(3, 5, None))
+    cr.code = cr.code.replace(co_consts=(0, 3, 5, None))
     assert cr.run({"x": 4}) == 17
 
 
