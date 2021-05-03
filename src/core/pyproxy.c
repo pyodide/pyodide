@@ -30,10 +30,14 @@ EM_JS(int, pyproxy_Check, (JsRef x), {
   return Module.isPyProxy(val);
 });
 
-EM_JS_NUM(errcode, destroy_proxies, (JsRef proxies_id), {
+EM_JS_NUM(errcode, destroy_proxies, (JsRef proxies_id, char* msg_ptr), {
+  let msg = undefined;
+  if (msg_ptr) {
+    msg = UTF8ToString(msg_ptr);
+  }
   let proxies = Module.hiwire.pop_value(proxies_id);
   for (let px of proxies) {
-    Module.pyproxy_destroy(px);
+    Module.pyproxy_destroy(px, msg);
   }
 });
 

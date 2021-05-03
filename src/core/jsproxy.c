@@ -1158,7 +1158,9 @@ JsMethod_Construct(PyObject* self,
   success = true;
 finally:
   Py_LeaveRecursiveCall(/* " in JsMethod_Construct" */);
-  destroy_proxies(proxies);
+  destroy_proxies(proxies,
+                  "This borrowed proxy was automatically destroyed. Try using "
+                  "create_proxy or create_once_callable.");
   hiwire_CLEAR(idargs);
   hiwire_CLEAR(idresult);
   if (!success) {
