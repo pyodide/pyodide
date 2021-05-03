@@ -9,13 +9,14 @@ endif
 
 all:
 	mkdir -p $(PYODIDE_LIBRARIES)
-	PYTHONPATH=$(PYODIDE_LIBRARIES)/lib/python ../bin/pyodide buildall . ../build \
+	python3 -m pip install -e ../pyodide-build --no-deps --prefix $(PYODIDE_LIBRARIES)
+	PYTHONPATH="$(PYODIDE_LIBRARIES)/lib/python:$(PYODIDE_ROOT)/pyodide-build/" pyodide-build buildall . ../build \
 		--target=$(TARGETPYTHONROOT) $(ONLY_PACKAGES) --install-dir $(PYODIDE_LIBRARIES) --n-jobs $${PYODIDE_JOBS:-4}
 
 
 update-all:
 	for pkg in $$(find . -maxdepth 1 -type d -exec basename {} \; | tail -n +2); do \
-		../bin/pyodide mkpkg "$${pkg}" --update; \
+		pyodide-build mkpkg "$${pkg}" --update; \
 	done
 
 clean:

@@ -117,15 +117,15 @@ update_base_url: \
 	build/webworker.js
 
 test: all
-	pytest src emsdk/tests packages/*/test* pyodide_build -v
+	pytest src emsdk/tests packages/*/test* pyodide-build -v
 
 lint:
 	# check for unused imports, the rest is done by black
-	flake8 --select=F401 src tools pyodide_build benchmark conftest.py docs
+	flake8 --select=F401 src tools pyodide-build benchmark conftest.py docs
 	clang-format-6.0 -output-replacements-xml `find src -type f -regex ".*\.\(c\|h\\)"` | (! grep '<replacement ')
 	$(PRETTIER) --check `find src -type f -name '*.js'`
 	black --check .
-	mypy --ignore-missing-imports pyodide_build/ src/ packages/micropip/micropip/ packages/*/test* conftest.py docs
+	mypy --ignore-missing-imports pyodide-build/pyodide_build/ src/ packages/micropip/micropip/ packages/*/test* conftest.py docs
 
 apply-lint:
 	./tools/apply-lint.sh
@@ -163,7 +163,7 @@ build/test.data: $(CPYTHONLIB)
 		python $(FILEPACKAGER) test.data --lz4 --preload ../$(CPYTHONLIB)/test@/lib/python$(PYMINOR)/test --js-output=test.js --export-name=globalThis.pyodide._module --exclude __pycache__ \
 	)
 	$(UGLIFYJS) build/test.js -o build/test.js
-  
+
 
 build/distutils.data: $(CPYTHONLIB)
 	( \
