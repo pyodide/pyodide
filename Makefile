@@ -5,7 +5,8 @@ include Makefile.envs
 .PHONY=check
 
 FILEPACKAGER=$$EM_DIR/tools/file_packager.py
-UGLIFYJS=$(PYODIDE_ROOT)/node_modules/.bin/uglifyjs
+UGLIFYJS=npx uglifyjs
+PRETTIER=npx prettier
 
 CPYTHONROOT=cpython
 CPYTHONLIB=$(CPYTHONROOT)/installs/python-$(PYVERSION)/lib/python$(PYMAJOR).$(PYMINOR)
@@ -119,10 +120,10 @@ test: all
 lint:
 	# check for unused imports, the rest is done by black
 	flake8 --select=F401 src tools pyodide_build benchmark conftest.py docs
-	clang-format-6.0 -output-replacements-xml `find src -type f -regex ".*\.\(c\|h\|js\)"` | (! grep '<replacement ')
+	clang-format-6.0 -output-replacements-xml `find src -type f -regex ".*\.\(c\|h\\)"` | (! grep '<replacement ')
+	$(PRETTIER) --check `find src -type f -name '*.js'`
 	black --check .
-	mypy --ignore-missing-imports pyodide_build/ src/ packages/micropip/micropip/ packages/*/test* conftest.py docs
-
+	mypy --ignore-missing-imports
 
 apply-lint:
 	./tools/apply-lint.sh
