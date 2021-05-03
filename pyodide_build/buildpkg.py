@@ -171,8 +171,18 @@ def compile(path: Path, srcpath: Path, pkg: Dict[str, Any], args):
 
     post = pkg.get("build", {}).get("post")
     if post is not None:
-        pyfolder = ''.join(["python", os.environ.get("PYMAJOR","3"), ".", os.environ.get("PYMINOR","8")])
-        site_packages_dir = os.path.sep.join(srcpath, "install", "lib", pyfolder, "site-packages" )
+        # use Python, 3.8 by default
+        pyfolder = "".join(
+            [
+                "python",
+                os.environ.get("PYMAJOR", "3"),
+                ".",
+                os.environ.get("PYMINOR", "8"),
+            ]
+        )
+        site_packages_dir = os.path.join(
+            srcpath, "install", "lib", pyfolder, "site-packages"
+        )
         pkgdir = path.parent.resolve()
         env = {"SITEPACKAGES": str(site_packages_dir), "PKGDIR": str(pkgdir)}
         subprocess.run(["bash", "-ce", post], env=env, check=True)
