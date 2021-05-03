@@ -57,14 +57,19 @@ build/pyodide.asm.js: \
 		--exclude-file "*__pycache__*" \
 		--exclude-file "*/test/*"		\
 		--exclude-file "*/tests/*"
+		--exclude-file "*/distutils/*"
 	# Strip out C++ symbols which all start __Z.
 	# There are 4821 of these and they have VERY VERY long names.
-	# Reduces size of pyodide.asm.js by a factor of 2.
-	# I messed around with striping more and could remove another 400kb or so
-	# but the regexes I got were generated.
 	# To show some stats on the symbols you can use the following:
 	# cat build/pyodide.asm.js | grep -ohE 'var _{0,5}.' | sort | uniq -c | sort -nr | head -n 20
 	sed -i -E 's/var __Z[^;]*;//g' build/pyodide.asm.js
+	sed -i '1i\
+		"use strict";\
+		let setImmediate = globalThis.setImmediate;\
+		let clearImmediate = globalThis.clearImmediate;\
+		let baseName, fpcGOT, dyncallGOT, fpVal, dcVal;\
+	' build/pyodide.asm.js
+	echo "globalThis._createPyodideModule = _createPyodideModule;" >> build/pyodide.asm.js
 	date +"[%F %T] done building pyodide.asm.js."
 
 
@@ -123,7 +128,7 @@ lint:
 	clang-format-6.0 -output-replacements-xml `find src -type f -regex ".*\.\(c\|h\\)"` | (! grep '<replacement ')
 	$(PRETTIER) --check `find src -type f -name '*.js'`
 	black --check .
-	mypy --ignore-missing-imports pyodide_build/ src/ packages/micropip/micropip/ packages/*/test* conftest.py docstring
+	mypy --ignore-missing-imports pyodide_build/ src/ packages/micropip/micropip/ packages/*/test* conftest.py docs
 
 apply-lint:
 	./tools/apply-lint.sh
@@ -152,6 +157,21 @@ clean-all: clean
 	$(CC) -o $@ -c $< $(MAIN_MODULE_CFLAGS) -Isrc/core/
 
 
+# Stdlib modules that we repackage as standalone packages
+
+# TODO: also include test directories included in other stdlib modules
+build/test.data: $(CPYTHONLIB)
+	( \
+		cd $(CPYTHONLIB)/test; \
+		find . -type d -name __pycache__ -prune -exec rm -rf {} \; \
+	)
+	( \
+		cd build; \
+		python $(FILEPACKAGER) test.data --lz4 --preload ../$(CPYTHONLIB)/test@/lib/python$(PYMINOR)/test --js-output=test.js --export-name=globalThis.pyodide._module --exclude __pycache__ \
+	)
+	$(UGLIFYJS) build/test.js -o build/test.js
+
+
 build/distutils.data: $(CPYTHONLIB)
 	( \
 		cd $(CPYTHONLIB)/distutils; \
@@ -163,11 +183,6 @@ build/distutils.data: $(CPYTHONLIB)
 		python $(FILEPACKAGER) distutils.data --lz4 --preload ../$(CPYTHONLIB)/distutils@/lib/python$(PYMINOR)/distutils --js-output=distutils.js --export-name=pyodide._module --exclude __pycache__ --exclude tests \
 	)
 	$(UGLIFYJS) build/distutils.js -o build/distutils.js
-
-
-$(UGLIFYJS): emsdk/emsdk/.complete
-	npm i --no-save uglify-js
-	touch -h $(UGLIFYJS)
 
 
 $(CPYTHONLIB): emsdk/emsdk/.complete $(PYODIDE_EMCC) $(PYODIDE_CXX)
