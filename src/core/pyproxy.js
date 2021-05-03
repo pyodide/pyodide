@@ -87,7 +87,7 @@ JS_FILE(pyproxy_init_js, () => {
       target = Object.create(cls.prototype);
     }
     Object.defineProperty(target, "$$", {
-      value: { ptr: ptrobj, type: "PyProxy" },
+      value: { ptr: ptrobj, type: "PyProxy", borrowed: false },
     });
     _Py_IncRef(ptrobj);
     let proxy = new Proxy(target, Module.PyProxyHandlers);
@@ -144,6 +144,23 @@ JS_FILE(pyproxy_init_js, () => {
 
   // Static methods
   Module.PyProxy_getPtr = _getPtr;
+  Module.pyproxy_mark_borrowed = function (proxy) {
+    proxy.$$.borrowed = true;
+  };
+  Module.pyproxy_destroy = function (proxy, destroyed_msg) {
+    let ptrobj = _getPtr(proxy);
+    Module.finalizationRegistry.unregister(proxy);
+    // Maybe the destructor will call Javascript code that will somehow try
+    // to use this proxy. Mark it deleted before decrementing reference count
+    // just in case!
+    proxy.$$.ptr = null;
+    proxy.$$.destroyed_msg = destroyed_msg;
+    try {
+      _Py_DecRef(ptrobj);
+    } catch (e) {
+      Module.fatal_error(e);
+    }
+  };
 
   // Now a lot of boilerplate to wrap the abstract Object protocol wrappers
   // defined in pyproxy.c in Javascript functions.
@@ -240,17 +257,8 @@ JS_FILE(pyproxy_init_js, () => {
      *        destroyed".
      */
     destroy(destroyed_msg) {
-      let ptrobj = _getPtr(this);
-      Module.finalizationRegistry.unregister(this);
-      // Maybe the destructor will call Javascript code that will somehow try
-      // to use this proxy. Mark it deleted before decrementing reference count
-      // just in case!
-      this.$$.ptr = null;
-      this.$$.destroyed_msg = destroyed_msg;
-      try {
-        _Py_DecRef(ptrobj);
-      } catch (e) {
-        Module.fatal_error(e);
+      if (!this.$$.borrowed) {
+        Module.pyproxy_destroy(this, destroyed_msg);
       }
     }
     /**
