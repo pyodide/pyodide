@@ -123,7 +123,7 @@ lint:
 	clang-format-6.0 -output-replacements-xml `find src -type f -regex ".*\.\(c\|h\\)"` | (! grep '<replacement ')
 	$(PRETTIER) --check `find src -type f -name '*.js'`
 	black --check .
-	mypy --ignore-missing-imports
+	mypy --ignore-missing-imports pyodide_build/ src/ packages/micropip/micropip/ packages/*/test* conftest.py docstring
 
 apply-lint:
 	./tools/apply-lint.sh
@@ -152,16 +152,17 @@ clean-all: clean
 	$(CC) -o $@ -c $< $(MAIN_MODULE_CFLAGS) -Isrc/core/
 
 
-build/test.data: $(CPYTHONLIB) $(UGLIFYJS)
+build/distutils.data: $(CPYTHONLIB)
 	( \
-		cd $(CPYTHONLIB)/test; \
-		find . -type d -name __pycache__ -prune -exec rm -rf {} \; \
+		cd $(CPYTHONLIB)/distutils; \
+		find . -type d -name __pycache__ -prune -exec rm -rf {} \; ;\
+		find . -type d -name tests -prune -exec rm -rf {} \; \
 	)
 	( \
 		cd build; \
-		$(HOSTPYTHON) $(FILEPACKAGER) test.data --lz4 --preload ../$(CPYTHONLIB)/test@/lib/python$(PYMAJOR).$(PYMINOR)/test --js-output=test.js --export-name=globalThis.pyodide._module --exclude __pycache__ \
+		python $(FILEPACKAGER) distutils.data --lz4 --preload ../$(CPYTHONLIB)/distutils@/lib/python$(PYMINOR)/distutils --js-output=distutils.js --export-name=pyodide._module --exclude __pycache__ --exclude tests \
 	)
-	$(UGLIFYJS) build/test.js -o build/test.js
+	$(UGLIFYJS) build/distutils.js -o build/distutils.js
 
 
 $(UGLIFYJS): emsdk/emsdk/.complete
