@@ -1,3 +1,4 @@
+export PYVERSION ?= 3.8.2
 export PYODIDE_EMSCRIPTEN_VERSION ?= 2.0.15
 export PYODIDE_BINARYEN_VERSION ?= version_100
 
@@ -8,12 +9,16 @@ export BASH_ENV := $(PYODIDE_ROOT)/pyodide_env.sh
 SHELL := /bin/bash
 
 export TOOLSDIR=$(PYODIDE_ROOT)/tools
-export PYVERSION=3.8.2
-export PYMINOR=$(basename $(PYVERSION))
-export HOSTPYTHONROOT=$(shell python3.8 -c "import sys; print(sys.prefix)")
-export HOSTPYTHON=$(HOSTPYTHONROOT)/bin/python3.8
+
+version_tuple := $(subst ., ,$(PYVERSION:v%=%))
+export PYMAJOR=$(word 1,$(version_tuple))
+export PYMINOR=$(word 2,$(version_tuple))
+export PYMICRO=$(word 3,$(version_tuple))
+
+export HOSTPYTHONROOT=$(shell python${PYMAJOR}.${PYMINOR} -c "import sys; print(sys.prefix)")
+export HOSTPYTHON=$(HOSTPYTHONROOT)/bin/python$(PYMAJOR).$(PYMINOR)
 export TARGETPYTHONROOT=$(PYODIDE_ROOT)/cpython/installs/python-$(PYVERSION)
-export PYTHONINCLUDE=$(PYODIDE_ROOT)/cpython/installs/python-$(PYVERSION)/include/python$(PYMINOR)
+export PYTHONINCLUDE=$(PYODIDE_ROOT)/cpython/installs/python-$(PYVERSION)/include/python$(PYMAJOR).$(PYMINOR)
 
 # Use env variable if defined, otherwise fallback to './'
 export PYODIDE_BASE_URL?=./
@@ -49,7 +54,7 @@ export CXXFLAGS_BASE=
 export SIDE_MODULE_LDFLAGS=	$(LDFLAGS_BASE) -s SIDE_MODULE=1
 export MAIN_MODULE_LDFLAGS= $(LDFLAGS_BASE) -s MAIN_MODULE=1 \
 	-s EXPORTED_FUNCTIONS='["___cxa_guard_acquire", "__ZNSt3__28ios_base4initEPv", "_main"]' \
-	$(CPYTHONROOT)/installs/python-$(PYVERSION)/lib/libpython$(PYMINOR).a \
+	$(CPYTHONROOT)/installs/python-$(PYVERSION)/lib/libpython$(PYMAJOR).$(PYMINOR).a \
 	-s TOTAL_MEMORY=20971520 \
 	-s ALLOW_MEMORY_GROWTH=1 \
     --use-preload-plugins \
@@ -70,7 +75,7 @@ export MAIN_MODULE_CFLAGS= $(CFLAGS_BASE) \
     	-Werror=sometimes-uninitialized \
     	-Werror=int-conversion \
     	-Werror=incompatible-pointer-types \
-		-I$(PYTHONINCLUDE) 
+		-I$(PYTHONINCLUDE)
 
 
 .output_vars:

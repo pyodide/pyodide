@@ -1,9 +1,9 @@
 #!/bin/bash
 
 # get the absolute path to the root directory
-ROOTDIR=$(python3 -c 'import pathlib, sys; \
+ROOTDIR=$(${HOSTPYTHON} -c 'import pathlib, sys; \
                      print(pathlib.Path(sys.argv[1]).resolve().parents[1])' \
           "${BASH_SOURCE[0]}")
 
 export PYTHONPATH="${PYTHONPATH}:${ROOTDIR}"
-python3 -m pyodide_build "$@"
+${HOSTPYTHON} -m pyodide_build "$@"
