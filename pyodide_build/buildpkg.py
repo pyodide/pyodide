@@ -171,7 +171,8 @@ def compile(path: Path, srcpath: Path, pkg: Dict[str, Any], args):
 
     post = pkg.get("build", {}).get("post")
     if post is not None:
-        site_packages_dir = srcpath / "install" / "lib" / "python3.8" / "site-packages"
+        pyfolder = ''.join(["python", os.environ.get("PYMAJOR","3"), ".", os.environ.get("PYMINOR","8")])
+        site_packages_dir = os.path.sep.join(srcpath, "install", "lib", pyfolder, "site-packages" )
         pkgdir = path.parent.resolve()
         env = {"SITEPACKAGES": str(site_packages_dir), "PKGDIR": str(pkgdir)}
         subprocess.run(["bash", "-ce", post], env=env, check=True)
@@ -188,7 +189,7 @@ def package_files(buildpath: Path, srcpath: Path, pkg: Dict[str, Any], args):
     install_prefix = (srcpath / "install").resolve()
     subprocess.run(
         [
-            "python",
+            sys.executable,
             common.file_packager_path(),
             name + ".data",
             "--lz4",

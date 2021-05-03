@@ -9,10 +9,11 @@ UGLIFYJS=npx uglifyjs
 PRETTIER=npx prettier
 
 CPYTHONROOT=cpython
-CPYTHONLIB=$(CPYTHONROOT)/installs/python-$(PYVERSION)/lib/python$(PYMINOR)
+CPYTHONLIB=$(CPYTHONROOT)/installs/python-$(PYVERSION)/lib/python$(PYMAJOR).$(PYMINOR)
 
 CC=emcc
 CXX=em++
+
 
 all: check \
 	build/pyodide.asm.js \
@@ -48,14 +49,14 @@ build/pyodide.asm.js: \
 	[ -d build ] || mkdir build
 	$(CXX) -s EXPORT_NAME="'_createPyodideModule'" -o build/pyodide.asm.js $(filter %.o,$^) \
 		$(MAIN_MODULE_LDFLAGS) -s FORCE_FILESYSTEM=1 \
-		--preload-file $(CPYTHONLIB)@/lib/python$(PYMINOR) \
-		--preload-file src/webbrowser.py@/lib/python$(PYMINOR)/webbrowser.py \
-		--preload-file src/_testcapi.py@/lib/python$(PYMINOR)/_testcapi.py \
-		--preload-file src/pystone.py@/lib/python$(PYMINOR)/pystone.py \
-		--preload-file src/pyodide-py/pyodide@/lib/python$(PYMINOR)/site-packages/pyodide \
-		--preload-file src/pyodide-py/_pyodide@/lib/python$(PYMINOR)/site-packages/_pyodide \
+		--preload-file $(CPYTHONLIB)@/lib/python$(PYMAJOR).$(PYMINOR) \
+		--preload-file src/webbrowser.py@/lib/python$(PYMAJOR).$(PYMINOR)/webbrowser.py \
+		--preload-file src/_testcapi.py@/lib/python$(PYMAJOR).$(PYMINOR)/_testcapi.py \
+		--preload-file src/pystone.py@/lib/python$(PYMAJOR).$(PYMINOR)/pystone.py \
+		--preload-file src/pyodide-py/pyodide@/lib/python$(PYMAJOR).$(PYMINOR)/site-packages/pyodide \
+		--preload-file src/pyodide-py/_pyodide@/lib/python$(PYMAJOR).$(PYMINOR)/site-packages/_pyodide \
 		--exclude-file "*__pycache__*" \
-		--exclude-file "*/test/*"		\
+		--exclude-file "*/test/*" \
 		--exclude-file "*/tests/*" \
 		--exclude-file "*/distutils/*"
 	# Strip out C++ symbols which all start __Z.
@@ -111,13 +112,16 @@ build/webworker_dev.js: src/webworker.js
 	cp $< $@
 	sed -i -e 's#{{ PYODIDE_BASE_URL }}#./#g' $@
 
+
 update_base_url: \
 	build/console.html \
 	build/pyodide.js \
 	build/webworker.js
 
+
 test: all
 	pytest src emsdk/tests packages/*/test* pyodide_build -v
+
 
 lint:
 	# check for unused imports, the rest is done by black
@@ -130,9 +134,10 @@ lint:
 apply-lint:
 	./tools/apply-lint.sh
 
+
 benchmark: all
-	python benchmark/benchmark.py $(HOSTPYTHON) build/benchmarks.json
-	python benchmark/plot_benchmark.py build/benchmarks.json build/benchmarks.png
+	$(HOSTPYTHON) benchmark/benchmark.py $(HOSTPYTHON) build/benchmarks.json
+	$(HOSTPYTHON) benchmark/plot_benchmark.py build/benchmarks.json build/benchmarks.png
 
 
 clean:
@@ -142,13 +147,16 @@ clean:
 	make -C packages clean
 	echo "The Emsdk, CPython are not cleaned. cd into those directories to do so."
 
+
 clean-all: clean
 	make -C emsdk clean
 	make -C cpython clean
 	rm -fr cpython/build
 
+
 %.o: %.c $(CPYTHONLIB) $(wildcard src/**/*.h src/**/*.js)
 	$(CC) -o $@ -c $< $(MAIN_MODULE_CFLAGS) -Isrc/core/
+
 
 # Stdlib modules that we repackage as standalone packages
 
@@ -163,7 +171,7 @@ build/test.data: $(CPYTHONLIB)
 		python $(FILEPACKAGER) test.data --lz4 --preload ../$(CPYTHONLIB)/test@/lib/python$(PYMINOR)/test --js-output=test.js --export-name=globalThis.pyodide._module --exclude __pycache__ \
 	)
 	$(UGLIFYJS) build/test.js -o build/test.js
-  
+
 
 build/distutils.data: $(CPYTHONLIB)
 	( \
@@ -183,25 +191,32 @@ $(CPYTHONLIB): emsdk/emsdk/.complete $(PYODIDE_EMCC) $(PYODIDE_CXX)
 	make -C $(CPYTHONROOT)
 	date +"[%F %T] done building cpython..."
 
+
 build/packages.json: FORCE
 	date +"[%F %T] Building packages..."
 	make -C packages
 	date +"[%F %T] done building packages..."
+
 
 emsdk/emsdk/.complete:
 	date +"[%F %T] Building emsdk..."
 	make -C emsdk
 	date +"[%F %T] done building emsdk."
 
+
 FORCE:
+
 
 check:
 	./tools/dependency-check.sh
 
+
 minimal :
 	PYODIDE_PACKAGES+=",micropip" make
+
 
 debug :
 	EXTRA_CFLAGS+=" -D DEBUG_F" \
 	PYODIDE_PACKAGES+=", micropip, pyparsing, pytz, packaging, kiwisolver, " \
 	make
+
