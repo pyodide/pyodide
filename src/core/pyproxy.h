@@ -25,7 +25,7 @@ pyproxy_Check(JsRef x);
  * Destroy a list of PyProxies. Steals the reference to the list.
  */
 errcode
-destroy_proxies(JsRef proxies_id);
+destroy_proxies(JsRef proxies_id, char* msg);
 
 /**
  * Mark a PyProxy as borrowed. Will disable user attempts to destroy it.
