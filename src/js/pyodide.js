@@ -39,7 +39,7 @@ globalThis.loadPyodide = async function (config = {}) {
   // in this template in the Makefile. It's recommended to always set
   // indexURL in any case.
   if(!config.indexURL){
-    throw new Error("Undefined indexURL");
+    throw new Error("Please provide indexURL parameter to loadPyodide");
   }
   let baseURL = config.indexURL;
   if (baseURL.endsWith(".js")) {
