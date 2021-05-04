@@ -16,7 +16,7 @@ function config({ input, format, minify, ext = "js" }) {
       minify
         ? terser({
             compress: true,
-            mangle: true,
+            mangle: false,
           })
         : undefined,
     ].filter(Boolean),
