@@ -14,7 +14,8 @@ The core/pyodide code is responsible for the following main steps:
 
 1. Initialize the CPython interpreter
 2. Import py/_pyodide
-3. Initialize `_pyodide_core` which we use to make functionality available to py/pyodide.
+3. Initialize `_pyodide_core` which is a Python C extension that we use to make
+   functionality available to py/pyodide.
 4. Set up functionality to automatically convert functions from Javascript to
    CPython calling conventions (`error_handling.h`).
 5. Set up the "hiwire" side table to hold references to Javascript objects --
@@ -29,4 +30,4 @@ The core/pyodide code is responsible for the following main steps:
    Protocols](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Iteration_protocols)
    )
    and [Python object protocols](https://docs.python.org/3/c-api/abstract.html).
-8. Add core_module to sys.modules and import py/pyodide.
+8. Add `_pyodide_core` to `sys.modules` and import py/pyodide.
