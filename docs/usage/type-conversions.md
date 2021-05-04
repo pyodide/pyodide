@@ -554,10 +554,10 @@ pyodide.runPython(`
     from js import test
     test({"x" : 3})
 `);
-a.get("x"); // Error: This borrowed proxy was automatically destroyed.
+a.get("x"); // Error: This borrowed proxy was automatically destroyed. [...]
 ```
-If you want to persist the proxy, you need to use :any:`PyProxy.clone` or :any:`pyodide.create_proxy`.
-Persisting the proxy from Javascript with `PyProxy.clone`:
+If you want to persist the proxy, you need to use {any}`PyProxy.clone` or {any}`pyodide.create_proxy`.
+Persisting the proxy from Javascript with {any}`PyProxy.clone`:
 ```pyodide
 function test(a){
     window.a = a.clone();
@@ -568,7 +568,7 @@ pyodide.runPython(`
 `);
 a.get("x"); // 3
 ```
-Persisting the proxy from Python with :any:`pyodide.create_proxy`:
+Persisting the proxy from Python with {any}`pyodide.create_proxy`:
 ```pyodide
 function test(a){
     window.a = a;
@@ -580,7 +580,7 @@ pyodide.runPython(`
 `);
 a.get("x"); // 3
 ```
-For example, :any:`pyodide.create_proxy` is useful for adding event listeners:
+For example, {any}`pyodide.create_proxy` is useful for adding event listeners:
 ```py
 from js import document
 from pyodide import create_proxy
@@ -594,7 +594,24 @@ document.body.removeEventListener("click", f_proxy)
 f_proxy.destroy()
 ```
 Asynchronous functions are a tricky case because they defer work to be done
-later. We handle this
+later. We handle this by releasing the arguments in the `finally` handler of the
+Promise. Of course this means if you return a promise that never resolves, it
+will leak the arguments. Another unfortunate result of this is that if a
+function asynchronously returns one of its arguments, this is an error:
+```pyodide
+async function test(x){
+    return x;
+}
+pyodide.runPython(`
+    from js import test
+    test({})
+`);
+```
+This results in the following error message:
+```
+Uncaught (in promise) Error: This borrowed proxy was automatically destroyed at the end of an asynchronous function call. You may have tried returning one of the arguments from an async function. [...]
+```
+
 
 (avoiding-leaks)=
 ## Best practices for avoiding memory leaks
