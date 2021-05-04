@@ -116,6 +116,12 @@ main(int argc, char** argv)
     FATAL_ERROR("JsRef doesn't have the same size as int.");
   }
 
+  PyObject* _pyodide = PyImport_ImportModule("_pyodide");
+  if (_pyodide == NULL) {
+    FATAL_ERROR("Failed to import pyodide module");
+  }
+  Py_CLEAR(_pyodide);
+
   PyObject* core_module = NULL;
   core_module = PyModule_Create(&core_module_def);
   if (core_module == NULL) {
