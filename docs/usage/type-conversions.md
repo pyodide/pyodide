@@ -684,24 +684,21 @@ console.log(result); // [1, 6, 7, 14]
 When a Javascript function is called from Python, any PyProxy arguments are
 considered to be "borrowed" from the local scope of the calling function. They
 will be destroyed automatically after the function call is finished executing.
+If the function is asynchronous (or generally if it returns a Promise), the
+arguments will not be destroyed until the Promise resolves.
 
-If the arguments will be implicitly converted, nothing needs to be done.
-Otherwise, there are different solutions depending on the circumstance.
-1. Call {any}`pyodide.to_js` on the argument before passing it if is a list,
-   dict, set, or buffer.
-2. For anything, you can use {any}`pyodide.create_proxy`. Suppose `obj` is some
-   arbitrary Python object that you want to pass to a Javascript function.
+In many cases, the function will not persist the arguments after the function
+call is complete, and this default behavior is perfect. However, some functions
+are particularly meant to persist arguments, and then special care is needed.
+
+For instance if you use `addEventListener` directly, it will not work:
 ```py
-obj = [1, 2, 3]
-jsobj = pyodide.create_proxy(obj)
-jsfunc(jsobj)
-jsobj.destroy() # reclaim memory
+def callback():
+    print("clicked!")
+document.body.addEventListener("click", callback)
+# From now on every time you click an exception is thrown =(
 ```
-Note that as long as `obj` wouldn't be implicitly translated, the Javascript
-function will recieve an identical object regardless of whether you call it
-directly (i.e., `jsfunc(obj)`) or as `jsfunc(create_proxy(obj))`.
-
-`create_proxy` is particularly helpful with `addEventListener`:
+To do this correctly, use {any}`pyodide.create_proxy`:
 ```py
 def callback():
     print("clicked!")
@@ -713,62 +710,25 @@ document.body.removeEventListener("click", proxy)
 proxy.destroy() # reclaim memory
 ```
 
-3. If the argument is a function to be called once (for example, the argument to
-   `Promise.new`) you can use {any}`pyodide.create_once_callable`:
+If the argument is a function to be called once (for example, the argument to
+`setTimeout`) you can use {any}`pyodide.create_once_callable`:
 ```py
+from js import setTimeout
 from pyodide import create_once_callable
-def executor(resolve, reject):
-    # Do something
-p = Promise.new(create_once_callable(executor))
+def f():
+    print("Calling f once without leaking it!")
+setTimeout(create_once_callable(f), 500)
 ```
-4. If you are using the promise methods {any}`PyProxy.then`,
-   {any}`PyProxy.catch`, or {any}`PyProxy.finally`, these have magic wrappers
-   around them so no intervention is needed to prevent memory leaks.
+If you are using the promise methods {any}`PyProxy.then`,
+{any}`PyProxy.catch`, or {any}`PyProxy.finally`, these have magic wrappers
+around them so no intervention is needed to prevent memory leaks.
 
-5. If the last argument of the Javascript function is an object you can use
-   keyword arguments, so the following:
-```py
-from js import fetch
-from pyodide import to_js
-resp = await fetch('example.com/some_api',
-    method= "POST",
-    body= '{ "some" : "json" }',
-    credentials= "same-origin",
-    headers= to_js({ "Content-Type": "application/json" }),
-)
-```
-is equivalent to the Javascript code
-```js
-let resp = await fetch('example.com/some_api',{
-    method : "POST",
-    body : '{ "some" : "json" }',
-    credentials : "same-origin",
-    headers : { "Content-Type": "application/json" },
-})
-```
+Also, as a special warning,
 
 ### Using a Javascript callback with an existing Python function
-If you want to pass a Javascript callback to an existing Python function, you
-should destroy the argument when you are done. This can be a bit tedious to get
-correct due to `PyProxy` usage constraints.
-```pyodide
-function callback(arg){
-    let res_method = arg.result;
-    let res = res_method();
-    window.result = res.toJs();
-    arg.destroy();
-    res_method.destroy();
-    res.destroy();
-}
-let fut = pyodide.runPython(`
-    from asyncio import ensure_future
-    async def temp():
-        return [1, 2, 3]
-    ensure_future(temp())
-`);
-fut.add_done_callback(callback);
-console.log(result);
-```
+If you want to pass a Javascript callback to an existing Python function,
+nothing needs to be done unless you wish to persist some of the arguments or if
+you wish to asynchronously return an argument.
 
 ### Using a Python callback with an existing Javascript function
 If it's only going to be called once:
