@@ -521,6 +521,7 @@ try {
 }
 ```
 
+(type-translations-proxy-arguments)=
 ## PyProxy memory management calling Javascript functions from Python
 When you call a Javascript function from Python, any PyProxy arguments are
 considered to be "borrowed" from the calling Python scope. After the function
