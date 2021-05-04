@@ -612,6 +612,21 @@ This results in the following error message:
 ```
 Uncaught (in promise) Error: This borrowed proxy was automatically destroyed at the end of an asynchronous function call. You may have tried returning one of the arguments from an async function. [...]
 ```
+If you wish to asynchronously return an argument, you have to use {any}`pyodide.create_proxy`:
+```pyodide
+async function test(x){
+    return x;
+}
+pyodide.runPythonAsync(`
+    from js import test
+    from pyodide import create_proxy
+    d = {}
+    proxy = create_proxy(d)
+    e = await test(proxy)
+    assert e is d
+    proxy.destroy();
+`);
+```
 
 
 (avoiding-leaks)=
