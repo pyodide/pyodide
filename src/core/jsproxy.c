@@ -1116,7 +1116,7 @@ JsMethod_Vectorcall(PyObject* self,
   success = true;
 finally:
   Py_LeaveRecursiveCall(/* " in JsMethod_Vectorcall" */);
-  if (!hiwire_is_promise(idresult)) {
+  if (idresult == NULL || !hiwire_is_promise(idresult)) {
     destroy_proxies(
       proxies,
       "This borrowed proxy was automatically destroyed. Try using "
@@ -1131,8 +1131,12 @@ finally:
         Promise.resolve(result).finally(() => {
           // clang-format on
           let msg =
-            "This borrowed proxy was automatically destroyed. Try using " +
-            "create_proxy or create_once_callable.";
+            "This borrowed proxy was automatically destroyed at the " +
+            "end of an asynchronous function call. " +
+            "You may have tried returning one of the arguments from an " +
+            "async function. " +
+            "Try using create_proxy or create_once_callable from " +
+            "Python or proxy.clone() from Javascript.";
           let proxies = Module.hiwire.pop_value($1);
           for (let px of proxies) {
             Module.pyproxy_destroy(px, msg);

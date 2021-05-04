@@ -521,6 +521,81 @@ try {
 }
 ```
 
+## PyProxy memory management calling Javascript functions from Python
+When you call a Javascript function from Python, any PyProxy arguments are
+considered to be "borrowed" from the calling Python scope. After the function
+call is done, they will be destroyed and will stop being accessible. An
+exception is made if the Javascript function returns a Promise -- in this case,
+the proxy arguments will only be destroyed when the Promise resolves.
+
+This behavior is a bit complex, but it makes common uses convenient and turns
+many memory leaks into explicit (though unfortunately somewhat confusing) error
+messages.
+
+As long as the function doesn't persist the arguments beyond the duration of the
+function call, no memory is leaked and everything works as expected. For example,
+no memory is leaked here:
+```pyodide
+function test(a){
+    // We only use a during body of function, it gets destroyed afterwards.
+    return a.get("x");
+}
+pyodide.runPython(`
+    from js import test
+    assert test({"x" : 3}) == 3
+`);
+```
+If you persist the proxy, it will cause errors:
+```pyodide
+function test(a){
+    window.a = a;
+}
+pyodide.runPython(`
+    from js import test
+    test({"x" : 3})
+`);
+a.get("x"); // Error: This borrowed proxy was automatically destroyed.
+```
+If you want to persist the proxy, you need to use :any:`PyProxy.clone` or :any:`pyodide.create_proxy`.
+Persisting the proxy from Javascript with `PyProxy.clone`:
+```pyodide
+function test(a){
+    window.a = a.clone();
+}
+pyodide.runPython(`
+    from js import test
+    test({"x" : 3})
+`);
+a.get("x"); // 3
+```
+Persisting the proxy from Python with :any:`pyodide.create_proxy`:
+```pyodide
+function test(a){
+    window.a = a;
+}
+pyodide.runPython(`
+    from js import test
+    from pyodide import create_proxy
+    test(create_proxy({"x" : 3}))
+`);
+a.get("x"); // 3
+```
+For example, :any:`pyodide.create_proxy` is useful for adding event listeners:
+```py
+from js import document
+from pyodide import create_proxy
+def f(*args):
+    print("Clicked!")
+f_proxy = create_proxy(f)
+document.body.addEventListener("click", f_proxy)
+# ... hold onto f_proxy,
+# later we can remove it
+document.body.removeEventListener("click", f_proxy)
+f_proxy.destroy()
+```
+Asynchronous functions are a tricky case because they defer work to be done
+later. We handle this
+
 (avoiding-leaks)=
 ## Best practices for avoiding memory leaks
 If the browser supports
@@ -551,7 +626,7 @@ let some_func;
 try {
     some_func = pyproxy.some_func;
     some_func(10);
-} finlly {
+} finally {
     // To be extra sure we do it in a finally block.
     pyproxy.destroy();
     if(some_func){
@@ -589,6 +664,10 @@ console.log(result); // [1, 6, 7, 14]
 ```
 
 ### Calling Javascript functions from Python
+When a Javascript function is called from Python, any PyProxy arguments are
+considered to be "borrowed" from the local scope of the calling function. They
+will be destroyed automatically after the function call is finished executing.
+
 If the arguments will be implicitly converted, nothing needs to be done.
 Otherwise, there are different solutions depending on the circumstance.
 1. Call {any}`pyodide.to_js` on the argument before passing it if is a list,
