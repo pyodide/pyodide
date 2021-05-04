@@ -79,8 +79,8 @@ env:
 
 .PHONY: build/pyodide.js
 build/pyodide.js: src/js/*.js
-	npm install
-	npx rollup -c rollup.config.js
+	npm install ./src/js
+	npx rollup -c src/js/rollup.config.js
 
 build/test.html: src/templates/test.html
 	cp $< $@
