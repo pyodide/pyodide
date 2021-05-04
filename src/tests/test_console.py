@@ -4,7 +4,7 @@ import sys
 
 from conftest import selenium_common
 
-sys.path.append(str(Path(__file__).parents[2] / "src" / "pyodide-py"))
+sys.path.append(str(Path(__file__).absolute().parents[2] / "src" / "py"))
 
 from pyodide import console  # noqa: E402
 

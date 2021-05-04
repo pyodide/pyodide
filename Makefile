@@ -42,7 +42,7 @@ build/pyodide.asm.js: \
 	src/pystone.py \
 	src/_testcapi.py \
 	src/webbrowser.py \
-	$(wildcard src/pyodide-py/pyodide/*.py) \
+	$(wildcard src/py/pyodide/*.py) \
 	$(CPYTHONLIB)
 	date +"[%F %T] Building pyodide.asm.js..."
 	[ -d build ] || mkdir build
@@ -52,8 +52,8 @@ build/pyodide.asm.js: \
 		--preload-file src/webbrowser.py@/lib/python$(PYMINOR)/webbrowser.py \
 		--preload-file src/_testcapi.py@/lib/python$(PYMINOR)/_testcapi.py \
 		--preload-file src/pystone.py@/lib/python$(PYMINOR)/pystone.py \
-		--preload-file src/pyodide-py/pyodide@/lib/python$(PYMINOR)/site-packages/pyodide \
-		--preload-file src/pyodide-py/_pyodide@/lib/python$(PYMINOR)/site-packages/_pyodide \
+		--preload-file src/py/pyodide@/lib/python$(PYMINOR)/site-packages/pyodide \
+		--preload-file src/py/_pyodide@/lib/python$(PYMINOR)/site-packages/_pyodide \
 		--exclude-file "*__pycache__*" \
 		--exclude-file "*/test/*"		\
 		--exclude-file "*/tests/*" \

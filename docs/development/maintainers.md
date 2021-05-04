@@ -14,7 +14,7 @@ the latest release branch named `stable` (due to ReadTheDocs constraints).
    `https://cdn.jsdelivr.net/pyodide/dev/full/` in `./docs/` replace `dev` with
    the release version `vX.Y.Z` (note the presence of the leading `v`). This
    also applies to `docs/conf.py`
-2. Set version in `src/pyodide-py/pyodide/__init__.py`
+2. Set version in `src/py/pyodide/__init__.py`
 3. Make sure the change log is up to date.
     - Indicate the release date in the change log.
     - Generate the list of contributors for the release at the end of the
@@ -53,7 +53,7 @@ the latest release branch named `stable` (due to ReadTheDocs constraints).
    ```
    where `BB` is the last version of the `pyodide-env` Docker image.
 7. Revert Step 1. and increment the version in
-   `src/pyodide-py/pyodide/__init__.py` to the next version specified by
+   `src/py/pyodide/__init__.py` to the next version specified by
    Semantic Versioning.
 
 ### Making a minor release
