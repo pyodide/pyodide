@@ -38,7 +38,10 @@ globalThis.loadPyodide = async function (config = {}) {
   // Note: PYODIDE_BASE_URL is an environment variable replaced in
   // in this template in the Makefile. It's recommended to always set
   // indexURL in any case.
-  let baseURL = config.indexURL || "{{ PYODIDE_BASE_URL }}";
+  if(!config.indexURL){
+    throw new Error("Undefined indexURL");
+  }
+  let baseURL = config.indexURL;
   if (baseURL.endsWith(".js")) {
     baseURL = baseURL.substr(0, baseURL.lastIndexOf("/"));
   }

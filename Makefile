@@ -78,10 +78,9 @@ env:
 
 
 .PHONY: build/pyodide.js
-build/pyodide.js: src/pyodide.js
-	cp $< $@
-	sed -i -e 's#{{ PYODIDE_BASE_URL }}#$(PYODIDE_BASE_URL)#g' $@
-
+build/pyodide.js: src/js/*.js
+	npm install
+	npx rollup -c rollup.config.js
 
 build/test.html: src/templates/test.html
 	cp $< $@
