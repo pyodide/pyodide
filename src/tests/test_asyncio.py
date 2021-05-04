@@ -1,7 +1,7 @@
 import sys
 from pathlib import Path
 
-sys.path.append(str(Path(__file__).absolute().parents[2] / "src" / "py"))
+sys.path.append(str(Path(__file__).resolve().parents[2] / "src" / "py"))
 
 import pytest  # type: ignore
 import time

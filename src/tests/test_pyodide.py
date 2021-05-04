@@ -3,7 +3,7 @@ from pathlib import Path
 import sys
 from textwrap import dedent
 
-sys.path.append(str(Path(__file__).absolute().parents[2] / "src" / "py"))
+sys.path.append(str(Path(__file__).resolve().parents[2] / "src" / "py"))
 
 from pyodide import find_imports, eval_code  # noqa: E402
 from pyodide._base import CodeRunner, should_quiet  # noqa: E402
