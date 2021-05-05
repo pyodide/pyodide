@@ -1,9 +1,10 @@
 import numpy as np
-from matplotlib.backends.browser_backend import \
-    FigureCanvasWasm, NavigationToolbar2Wasm
+from matplotlib.backends.browser_backend import FigureCanvasWasm, NavigationToolbar2Wasm
 from matplotlib.backend_bases import (
-    GraphicsContextBase, RendererBase,
-    FigureManagerBase, _Backend
+    GraphicsContextBase,
+    RendererBase,
+    FigureManagerBase,
+    _Backend,
 )
 
 from PIL import Image
@@ -28,21 +29,20 @@ import base64
 import io
 import math
 
-_capstyle_d = {'projecting': 'square', 'butt': 'butt', 'round': 'round'}
+_capstyle_d = {"projecting": "square", "butt": "butt", "round": "round"}
 
 # The URLs of fonts that have already been loaded into the browser
 _font_set = set()
 
-if hasattr(window, 'testing'):
-    _base_fonts_url = '/fonts/'
+if hasattr(window, "testing"):
+    _base_fonts_url = "/fonts/"
 else:
-    _base_fonts_url = '/pyodide/fonts/'
+    _base_fonts_url = "/pyodide/fonts/"
 
 interactive(True)
 
 
 class FigureCanvasHTMLCanvas(FigureCanvasWasm):
-
     def __init__(self, *args, **kwargs):
         FigureCanvasWasm.__init__(self, *args, **kwargs)
 
@@ -50,12 +50,12 @@ class FigureCanvasHTMLCanvas(FigureCanvasWasm):
         window.font_counter = 0
 
     def create_root_element(self):
-        root_element = document.createElement('div')
+        root_element = document.createElement("div")
         document.body.appendChild(root_element)
         return root_element
 
     def get_dpi_ratio(self, context):
-        if hasattr(window, 'testing'):
+        if hasattr(window, "testing"):
             return 2.0
         else:
             return super().get_dpi_ratio(context)
@@ -68,12 +68,11 @@ class FigureCanvasHTMLCanvas(FigureCanvasWasm):
             self.figure.dpi *= self._ratio
         try:
             width, height = self.get_width_height()
-            canvas = self.get_element('canvas')
+            canvas = self.get_element("canvas")
             if canvas is None:
                 return
-            ctx = canvas.getContext('2d')
-            renderer = RendererHTMLCanvas(ctx, width, height,
-                                          self.figure.dpi, self)
+            ctx = canvas.getContext("2d")
+            renderer = RendererHTMLCanvas(ctx, width, height, self.figure.dpi, self)
             self.figure.draw(renderer)
         finally:
             self.figure.dpi = orig_dpi
@@ -88,8 +87,8 @@ class FigureCanvasHTMLCanvas(FigureCanvasWasm):
         but gives us the exact pixel data that the reference image has allowing
         us to do a fair comparison test.
         """
-        canvas = self.get_element('canvas')
-        img_URL = canvas.toDataURL('image/png')[21:]
+        canvas = self.get_element("canvas")
+        img_URL = canvas.toDataURL("image/png")[21:]
         canvas_base64 = base64.b64decode(img_URL)
         return np.asarray(Image.open(io.BytesIO(canvas_base64)))
 
@@ -98,8 +97,8 @@ class FigureCanvasHTMLCanvas(FigureCanvasWasm):
 
         def _get_url_async(url, threshold):
             req = XMLHttpRequest.new()
-            req.open('GET', url, True)
-            req.responseType = 'arraybuffer'
+            req.open("GET", url, True)
+            req.responseType = "arraybuffer"
 
             def callback(e):
                 if req.readyState == 4:
@@ -113,16 +112,16 @@ class FigureCanvasHTMLCanvas(FigureCanvasWasm):
 
         _get_url_async(url, threshold)
 
-    def print_png(self, filename_or_obj, *args,
-                  metadata=None, pil_kwargs=None, **kwargs):
+    def print_png(
+        self, filename_or_obj, *args, metadata=None, pil_kwargs=None, **kwargs
+    ):
 
         if metadata is None:
             metadata = {}
         if pil_kwargs is None:
             pil_kwargs = {}
         metadata = {
-            "Software":
-                f"matplotlib version{__version__}, http://matplotlib.org/",
+            "Software": f"matplotlib version{__version__}, http://matplotlib.org/",
             **metadata,
         }
 
@@ -135,22 +134,20 @@ class FigureCanvasHTMLCanvas(FigureCanvasWasm):
 
         data = self.get_pixel_data()
 
-        (Image.fromarray(data)
-         .save(filename_or_obj, format="png", **pil_kwargs))
+        (Image.fromarray(data).save(filename_or_obj, format="png", **pil_kwargs))
 
 
 class NavigationToolbar2HTMLCanvas(NavigationToolbar2Wasm):
-
     def download(self, format, mimetype):
         """
         Creates a temporary `a` element with a URL containing the image
         content, and then virtually clicks it. Kind of magical, but it
         works...
         """
-        element = document.createElement('a')
+        element = document.createElement("a")
         data = io.BytesIO()
 
-        if format == 'png':
+        if format == "png":
             FigureCanvasHTMLCanvas.print_png(self.canvas, data)
         else:
             try:
@@ -158,10 +155,14 @@ class NavigationToolbar2HTMLCanvas(NavigationToolbar2Wasm):
             except Exception:
                 raise
 
-        element.setAttribute('href', 'data:{};base64,{}'.format(
-            mimetype, base64.b64encode(data.getvalue()).decode('ascii')))
-        element.setAttribute('download', 'plot.{}'.format(format))
-        element.style.display = 'none'
+        element.setAttribute(
+            "href",
+            "data:{};base64,{}".format(
+                mimetype, base64.b64encode(data.getvalue()).decode("ascii")
+            ),
+        )
+        element.setAttribute("download", "plot.{}".format(format))
+        element.style.display = "none"
 
         document.body.appendChild(element)
         element.click()
@@ -169,7 +170,6 @@ class NavigationToolbar2HTMLCanvas(NavigationToolbar2Wasm):
 
 
 class GraphicsContextHTMLCanvas(GraphicsContextBase):
-
     def __init__(self, renderer):
         super().__init__()
         self.stroke = True
@@ -179,11 +179,11 @@ class GraphicsContextHTMLCanvas(GraphicsContextBase):
         self.renderer.ctx.restore()
 
     def set_capstyle(self, cs):
-        if cs in ['butt', 'round', 'projecting']:
+        if cs in ["butt", "round", "projecting"]:
             self._capstyle = cs
             self.renderer.ctx.lineCap = _capstyle_d[cs]
         else:
-            raise ValueError('Unrecognized cap style. Found {0}'.format(cs))
+            raise ValueError("Unrecognized cap style. Found {0}".format(cs))
 
     def set_clip_rectangle(self, rectangle):
         self.renderer.ctx.save()
@@ -201,8 +201,7 @@ class GraphicsContextHTMLCanvas(GraphicsContextBase):
             self.renderer.ctx.restore()
             return
         tpath, affine = path.get_transformed_path_and_affine()
-        affine = (affine +
-                  Affine2D().scale(1, -1).translate(0, self.renderer.height))
+        affine = affine + Affine2D().scale(1, -1).translate(0, self.renderer.height)
         self.renderer._path_helper(self.renderer.ctx, tpath, affine)
         self.renderer.ctx.clip()
 
@@ -218,20 +217,19 @@ class GraphicsContextHTMLCanvas(GraphicsContextBase):
             self.renderer.ctx.setLineDash(dl)
 
     def set_joinstyle(self, js):
-        if js in ['miter', 'round', 'bevel']:
+        if js in ["miter", "round", "bevel"]:
             self._joinstyle = js
             self.renderer.ctx.lineJoin = js
         else:
-            raise ValueError('Unrecognized join style. Found {0}'.format(js))
+            raise ValueError("Unrecognized join style. Found {0}".format(js))
 
     def set_linewidth(self, w):
-        self.stroke = (w != 0)
+        self.stroke = w != 0
         self._linewidth = float(w)
         self.renderer.ctx.lineWidth = self.renderer.points_to_pixels(float(w))
 
 
 class RendererHTMLCanvas(RendererBase):
-
     def __init__(self, ctx, width, height, dpi, fig):
         super().__init__()
         self.fig = fig
@@ -242,7 +240,7 @@ class RendererHTMLCanvas(RendererBase):
         self.ctx.height = self.height
         self.dpi = dpi
         self.fontd = maxdict(50)
-        self.mathtext_parser = MathTextParser('bitmap')
+        self.mathtext_parser = MathTextParser("bitmap")
 
     def new_gc(self):
         return GraphicsContextHTMLCanvas(renderer=self)
@@ -250,8 +248,7 @@ class RendererHTMLCanvas(RendererBase):
     def points_to_pixels(self, points):
         return (points / 72.0) * self.dpi
 
-    def _matplotlib_color_to_CSS(self, color, alpha,
-                                 alpha_overrides, is_RGB=True):
+    def _matplotlib_color_to_CSS(self, color, alpha, alpha_overrides, is_RGB=True):
         if not is_RGB:
             R, G, B, alpha = colorConverter.to_rgba(color)
             color = (R, G, B)
@@ -279,25 +276,22 @@ class RendererHTMLCanvas(RendererBase):
 
     def _set_style(self, gc, rgbFace=None):
         if rgbFace is not None:
-            self.ctx.fillStyle = \
-                self._matplotlib_color_to_CSS(rgbFace,
-                                              gc.get_alpha(),
-                                              gc.get_forced_alpha())
+            self.ctx.fillStyle = self._matplotlib_color_to_CSS(
+                rgbFace, gc.get_alpha(), gc.get_forced_alpha()
+            )
 
         if gc.get_capstyle():
             self.ctx.lineCap = _capstyle_d[gc.get_capstyle()]
 
-        self.ctx.strokeStyle = \
-            self._matplotlib_color_to_CSS(gc.get_rgb(),
-                                          gc.get_alpha(),
-                                          gc.get_forced_alpha())
+        self.ctx.strokeStyle = self._matplotlib_color_to_CSS(
+            gc.get_rgb(), gc.get_alpha(), gc.get_forced_alpha()
+        )
 
         self.ctx.lineWidth = self.points_to_pixels(gc.get_linewidth())
 
     def _path_helper(self, ctx, path, transform, clip=None):
         ctx.beginPath()
-        for points, code in path.iter_segments(transform,
-                                               remove_nans=True, clip=clip):
+        for points, code in path.iter_segments(transform, remove_nans=True, clip=clip):
             if code == Path.MOVETO:
                 ctx.moveTo(points[0], points[1])
             elif code == Path.LINETO:
@@ -322,15 +316,13 @@ class RendererHTMLCanvas(RendererBase):
 
         if rgbFace is not None:
             self.ctx.fill()
-            self.ctx.fillStyle = '#000000'
+            self.ctx.fillStyle = "#000000"
 
         if gc.stroke:
             self.ctx.stroke()
 
-    def draw_markers(self, gc, marker_path, marker_trans, path,
-                     trans, rgbFace=None):
-        super().draw_markers(gc, marker_path, marker_trans, path,
-                             trans, rgbFace)
+    def draw_markers(self, gc, marker_path, marker_trans, path, trans, rgbFace=None):
+        super().draw_markers(gc, marker_path, marker_trans, path, trans, rgbFace)
 
     def draw_image(self, gc, x, y, im, transform=None):
         im = np.flipud(im)
@@ -341,10 +333,10 @@ class RendererHTMLCanvas(RendererBase):
         pixels_buf = pixels_proxy.getBuffer("u8clamped")
         img_data = ImageData.new(pixels_buf.data, w, h)
         self.ctx.save()
-        in_memory_canvas = document.createElement('canvas')
+        in_memory_canvas = document.createElement("canvas")
         in_memory_canvas.width = w
         in_memory_canvas.height = h
-        in_memory_canvas_context = in_memory_canvas.getContext('2d')
+        in_memory_canvas_context = in_memory_canvas.getContext("2d")
         in_memory_canvas_context.putImageData(img_data, 0, 0)
         self.ctx.drawImage(in_memory_canvas, x, y, w, h)
         self.ctx.restore()
@@ -359,7 +351,7 @@ class RendererHTMLCanvas(RendererBase):
             font_value = self.fontd.get(fname)
             if font_value is None:
                 font = FT2Font(str(fname))
-                font_file_name = fname[fname.rfind('/')+1:]
+                font_file_name = fname[fname.rfind("/") + 1 :]
                 font_value = font, font_file_name
                 self.fontd[fname] = font_value
             self.fontd[key] = font_value
@@ -382,8 +374,9 @@ class RendererHTMLCanvas(RendererBase):
         return w, h, d
 
     def _draw_math_text(self, gc, x, y, s, prop, angle):
-        rgba, descent = self.mathtext_parser.to_rgba(s, gc.get_rgb(), self.dpi,
-                                                     prop.get_size_in_points())
+        rgba, descent = self.mathtext_parser.to_rgba(
+            s, gc.get_rgb(), self.dpi, prop.get_size_in_points()
+        )
         height, width, _ = rgba.shape
         angle = math.radians(angle)
         if angle != 0:
@@ -391,7 +384,7 @@ class RendererHTMLCanvas(RendererBase):
             self.ctx.translate(x, y)
             self.ctx.rotate(-angle)
             self.ctx.translate(-x, -y)
-        self.draw_image(gc, x, -y-descent, np.flipud(rgba))
+        self.draw_image(gc, x, -y - descent, np.flipud(rgba))
         if angle != 0:
             self.ctx.restore()
 
@@ -405,17 +398,17 @@ class RendererHTMLCanvas(RendererBase):
             self._draw_math_text(gc, x, y, s, prop, angle)
             return
         angle = math.radians(angle)
-        width, height, descent = \
-            self.get_text_width_height_descent(s, prop, ismath)
+        width, height, descent = self.get_text_width_height_descent(s, prop, ismath)
         x -= math.sin(angle) * descent
         y -= math.cos(angle) * descent - self.ctx.height
-        font_size = \
-            self.points_to_pixels(prop.get_size_in_points())
+        font_size = self.points_to_pixels(prop.get_size_in_points())
 
         _, font_file_name = self._get_font(prop)
 
-        font_face_arguments = (prop.get_name(), 'url({0})'.format(
-                               _base_fonts_url+font_file_name))
+        font_face_arguments = (
+            prop.get_name(),
+            "url({0})".format(_base_fonts_url + font_file_name),
+        )
 
         # The following snippet loads a font into the browser's
         # environment if it wasn't loaded before. This check is necessary
@@ -428,11 +421,12 @@ class RendererHTMLCanvas(RendererBase):
             f = FontFace.new(*font_face_arguments)
             f.load().then(_load_font_into_web)
 
-        font_property_string = '{0} {1} {2:.3g}px {3}, {4}'.format(
+        font_property_string = "{0} {1} {2:.3g}px {3}, {4}".format(
             prop.get_style(),
             prop.get_weight(),
-            font_size, prop.get_name(),
-            prop.get_family()[0]
+            font_size,
+            prop.get_name(),
+            prop.get_family()[0],
         )
         if angle != 0:
             self.ctx.save()
@@ -441,18 +435,15 @@ class RendererHTMLCanvas(RendererBase):
             self.ctx.translate(-x, -y)
         self.ctx.font = font_property_string
         self.ctx.fillStyle = self._matplotlib_color_to_CSS(
-            gc.get_rgb(),
-            gc.get_alpha(),
-            gc.get_forced_alpha()
+            gc.get_rgb(), gc.get_alpha(), gc.get_forced_alpha()
         )
         self.ctx.fillText(s, x, y)
-        self.ctx.fillStyle = '#000000'
+        self.ctx.fillStyle = "#000000"
         if angle != 0:
             self.ctx.restore()
 
 
 class FigureManagerHTMLCanvas(FigureManagerBase):
-
     def __init__(self, canvas, num):
         super().__init__(canvas, num)
         self.set_window_title("Figure %d" % num)
@@ -476,4 +467,5 @@ class _BackendHTMLCanvas(_Backend):
     @staticmethod
     def show():
         from matplotlib import pyplot as plt
+
         plt.gcf().canvas.show()

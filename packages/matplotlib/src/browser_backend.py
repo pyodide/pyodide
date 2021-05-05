@@ -1,8 +1,4 @@
-from matplotlib.backend_bases import (
-    FigureCanvasBase,
-    NavigationToolbar2,
-    TimerBase
-)
+from matplotlib.backend_bases import FigureCanvasBase, NavigationToolbar2, TimerBase
 
 from js import document
 from js import window
@@ -425,7 +421,6 @@ FILE_TYPES = {"png": "image/png", "svg": "image/svg+xml", "pdf": "application/pd
 
 
 class NavigationToolbar2Wasm(NavigationToolbar2):
-
     def _init_toolbar(self):
         pass
 
@@ -483,7 +478,6 @@ class NavigationToolbar2Wasm(NavigationToolbar2):
 
 
 class TimerWasm(TimerBase):
-
     def _timer_start(self):
         self._timer_stop()
         if self._single:
