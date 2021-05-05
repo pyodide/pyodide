@@ -5,8 +5,7 @@ import http.server
 import socketserver
 import pathlib
 
-TEST_PATH = pathlib.Path(__file__).parents[0].resolve()
-BUILD_PATH = TEST_PATH / ".." / "build"
+BUILD_PATH = pathlib.Path(__file__).resolve().parents[2] / "build"
 
 
 class Handler(http.server.SimpleHTTPRequestHandler):

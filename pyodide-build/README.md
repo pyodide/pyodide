@@ -2,7 +2,8 @@
 
 Tools for building Pyodide.
 
-See [http://github.com/pyodide/pyodide](http://github.com/pyodide/pyodide) for more information.
+See [http://github.com/pyodide/pyodide](http://github.com/pyodide/pyodide) for
+more information.
 
 ## License
 
