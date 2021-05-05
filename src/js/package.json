@@ -1,5 +1,5 @@
 {
-  "name" : "pyodide",
+  "name": "pyodide",
   "version": "0.18.0dev0",
   "dependencies": {
     "prettier": "^2.2.1",
