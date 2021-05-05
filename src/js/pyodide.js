@@ -71,7 +71,7 @@ globalThis.loadPyodide = async function (config = {}) {
       recurse();
     } catch (err) {}
 
-    let recursionLimit = depth / 50;
+    let recursionLimit = depth / 60;
     if (recursionLimit > 1000) {
       recursionLimit = 1000;
     }
