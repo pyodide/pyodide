@@ -3,16 +3,20 @@ import os
 import pathlib
 from selenium.webdriver.support.wait import WebDriverWait
 
-TEST_PATH = pathlib.Path(__file__).parent.resolve() / 'test'
+TEST_PATH = pathlib.Path(__file__).parent.resolve() / "reference-images"
+
 
 def get_canvas_data(selenium, prefix):
     import base64
+
     canvas_tag_property = "//canvas[starts-with(@id, 'matplotlib')]"
     canvas_element = selenium.driver.find_element_by_xpath(canvas_tag_property)
     img_script = "return arguments[0].toDataURL('image/png').substring(21)"
     canvas_base64 = selenium.driver.execute_script(img_script, canvas_element)
     canvas_png = base64.b64decode(canvas_base64)
-    with open(r"{0}/{1}-{2}.png".format(TEST_PATH, prefix, selenium.browser), 'wb') as f:
+    with open(
+        r"{0}/{1}-{2}.png".format(TEST_PATH, prefix, selenium.browser), "wb"
+    ) as f:
         f.write(canvas_png)
 
 
@@ -21,14 +25,18 @@ def check_comparison(selenium, prefix, num_fonts):
     font_wait.until(FontsLoaded(num_fonts))
 
     # If we don't have a reference image, write one to disk
-    if not os.path.isfile('{0}/{1}-{2}.png'.format(TEST_PATH, prefix, selenium.browser)):
+    if not os.path.isfile(
+        "{0}/{1}-{2}.png".format(TEST_PATH, prefix, selenium.browser)
+    ):
         get_canvas_data(selenium, prefix)
 
-    selenium.run(f"""
+    selenium.run(
+        f"""
     url = 'http://{selenium.server_hostname}:{selenium.server_port}/matplotlib-test/{prefix}-{selenium.browser}.png'
     threshold = 0
     plt.gcf().canvas.compare_reference_image(url, threshold)
-    """)
+    """
+    )
     wait = WebDriverWait(selenium.driver, timeout=70)
     wait.until(ResultLoaded())
     assert selenium.run("window.deviation") == 0
@@ -109,7 +117,8 @@ def test_font_manager(selenium):
 def test_rendering(selenium_standalone):
     selenium = selenium_standalone
     selenium.load_package("matplotlib")
-    selenium.run("""
+    selenium.run(
+        """
     from js import window
     window.testing = True
     from matplotlib import pyplot as plt
@@ -121,16 +130,18 @@ def test_rendering(selenium_standalone):
     plt.plot(t, t)
     plt.grid(True)
     plt.show()
-    """)
+    """
+    )
 
-    check_comparison(selenium, 'canvas', 1)
+    check_comparison(selenium, "canvas", 1)
 
 
 @pytest.mark.skip_refcount_check
 def test_draw_image(selenium_standalone):
     selenium = selenium_standalone
     selenium.load_package("matplotlib")
-    selenium.run("""
+    selenium.run(
+        """
     from js import window
     window.testing = True
     import numpy as np
@@ -150,16 +161,18 @@ def test_draw_image(selenium_standalone):
                origin='lower', extent=[-3, 3, -3, 3],
                vmax=abs(Z).max(), vmin=-abs(Z).max())
     plt.show()
-    """)
+    """
+    )
 
-    check_comparison(selenium, 'canvas-image', 1)
+    check_comparison(selenium, "canvas-image", 1)
 
 
 @pytest.mark.skip_refcount_check
 def test_draw_image_affine_transform(selenium_standalone):
     selenium = selenium_standalone
     selenium.load_package("matplotlib")
-    selenium.run("""
+    selenium.run(
+        """
     from js import window
     window.testing = True
 
@@ -209,16 +222,18 @@ def test_draw_image_affine_transform(selenium_standalone):
             rotate_deg(30).skew_deg(30, 15).scale(-1, .5).translate(.5, -1))
 
     plt.show()
-    """)
+    """
+    )
 
-    check_comparison(selenium, 'canvas-image-affine', 1)
+    check_comparison(selenium, "canvas-image-affine", 1)
 
 
 @pytest.mark.skip_refcount_check
 def test_draw_text_rotated(selenium_standalone):
     selenium = selenium_standalone
     selenium.load_package("matplotlib")
-    selenium.run("""
+    selenium.run(
+        """
     from js import window
     window.testing = True
     import matplotlib.pyplot as plt
@@ -250,16 +265,18 @@ def test_draw_text_rotated(selenium_standalone):
     plt.setp(labels, rotation=30, fontsize=10)
 
     plt.show()
-    """)
+    """
+    )
 
-    check_comparison(selenium, 'canvas-text-rotated', 1)
+    check_comparison(selenium, "canvas-text-rotated", 1)
 
 
 @pytest.mark.skip_refcount_check
 def test_draw_math_text(selenium_standalone):
     selenium = selenium_standalone
     selenium.load_package("matplotlib")
-    selenium.run(r"""
+    selenium.run(
+        r"""
     from js import window
     window.testing = True
     import matplotlib.pyplot as plt
@@ -359,16 +376,18 @@ def test_draw_math_text(selenium_standalone):
             print(i, s)
         plt.show()
     doall()
-    """)
+    """
+    )
 
-    check_comparison(selenium, 'canvas-math-text', 1)
+    check_comparison(selenium, "canvas-math-text", 1)
 
 
 @pytest.mark.skip_refcount_check
 def test_custom_font_text(selenium_standalone):
     selenium = selenium_standalone
     selenium.load_package("matplotlib")
-    selenium.run("""
+    selenium.run(
+        """
     from js import window
     window.testing = True
     import matplotlib.pyplot as plt
@@ -384,16 +403,18 @@ def test_custom_font_text(selenium_standalone):
     plt.plot(t, t)
     plt.grid(True)
     plt.show()
-    """)
+    """
+    )
 
-    check_comparison(selenium, 'canvas-custom-font-text', 2)
+    check_comparison(selenium, "canvas-custom-font-text", 2)
 
 
 @pytest.mark.skip_refcount_check
 def test_zoom_on_polar_plot(selenium_standalone):
     selenium = selenium_standalone
     selenium.load_package("matplotlib")
-    selenium.run("""
+    selenium.run(
+        """
     from js import window
     window.testing = True
 
@@ -417,16 +438,18 @@ def test_zoom_on_polar_plot(selenium_standalone):
 
     ax.set_rlim([0,5])
     plt.show()
-    """)
+    """
+    )
 
-    check_comparison(selenium, 'canvas-polar-zoom', 1)
+    check_comparison(selenium, "canvas-polar-zoom", 1)
 
 
 @pytest.mark.skip_refcount_check
 def test_transparency(selenium_standalone):
     selenium = selenium_standalone
     selenium.load_package("matplotlib")
-    selenium.run("""
+    selenium.run(
+        """
     from js import window
     window.testing = True
 
@@ -446,9 +469,10 @@ def test_transparency(selenium_standalone):
     ax.grid(True)
 
     plt.show()
-    """)
+    """
+    )
 
-    check_comparison(selenium, 'canvas-transparency', 1)
+    check_comparison(selenium, "canvas-transparency", 1)
 
 
 class ResultLoaded:

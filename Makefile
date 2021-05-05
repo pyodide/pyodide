@@ -138,7 +138,7 @@ test: all
 
 copy-fonts-and-images:
 	mkdir -p build/matplotlib-test
-	cp -n packages/matplotlib/test/*.png build/matplotlib-test/
+	cp -n packages/matplotlib/reference-images/*.png build/matplotlib-test/
 	mkdir -p build/fonts
 	cp -n packages/matplotlib/build/matplotlib-3.3.3/lib/matplotlib/mpl-data/fonts/ttf/* build/fonts/
 
