@@ -21,7 +21,7 @@ all: check \
 	build/test.html \
 	build/webworker.js \
 	build/webworker_dev.js \
-	copy-fonts
+	copy-fonts-and-images
 	echo -e "\nSUCCESS!"
 
 
@@ -136,7 +136,9 @@ update_base_url: \
 test: all
 	pytest src emsdk/tests packages/*/test* pyodide-build -v
 
-copy-fonts:
+copy-fonts-and-images:
+	mkdir -p build/matplotlib-test
+	cp -n packages/matplotlib/test/*.png build/matplotlib-test/
 	mkdir -p build/fonts
 	cp -n packages/matplotlib/build/matplotlib-3.3.3/lib/matplotlib/mpl-data/fonts/ttf/* build/fonts/
 
