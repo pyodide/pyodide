@@ -6,17 +6,21 @@ from matplotlib.backend_bases import (
     FigureManagerBase, _Backend
 )
 
-from matplotlib import cbook, __version__
+from PIL import Image
+from PIL.PngImagePlugin import PngInfo
+
+from matplotlib import __version__
 from matplotlib.colors import colorConverter, rgb2hex
 from matplotlib.transforms import Affine2D
 from matplotlib.path import Path
 from matplotlib import interactive
-from matplotlib import _png
 
 from matplotlib.cbook import maxdict
 from matplotlib.font_manager import findfont
 from matplotlib.ft2font import FT2Font, LOAD_NO_HINTING
 from matplotlib.mathtext import MathTextParser
+
+from pyodide import create_proxy
 
 from js import document, window, XMLHttpRequest, ImageData, FontFace
 
@@ -46,12 +50,8 @@ class FigureCanvasHTMLCanvas(FigureCanvasWasm):
         window.font_counter = 0
 
     def create_root_element(self):
-        try:
-            from js import iodide
-            root_element = iodide.output.element('div')
-        except ImportError:
-            root_element = document.createElement('div')
-            document.body.appendChild(root_element)
+        root_element = document.createElement('div')
+        document.body.appendChild(root_element)
         return root_element
 
     def get_dpi_ratio(self, context):
@@ -91,7 +91,7 @@ class FigureCanvasHTMLCanvas(FigureCanvasWasm):
         canvas = self.get_element('canvas')
         img_URL = canvas.toDataURL('image/png')[21:]
         canvas_base64 = base64.b64decode(img_URL)
-        return _png.read_png_int(io.BytesIO(canvas_base64))
+        return np.asarray(Image.open(io.BytesIO(canvas_base64)))
 
     def compare_reference_image(self, url, threshold):
         canvas_data = self.get_pixel_data()
@@ -103,10 +103,10 @@ class FigureCanvasHTMLCanvas(FigureCanvasWasm):
 
             def callback(e):
                 if req.readyState == 4:
-                    ref_data = _png.read_png_int(io.BytesIO(req.response))
+                    ref_data = np.asarray(Image.open(io.BytesIO(req.response.to_py())))
                     mean_deviation = np.mean(np.abs(canvas_data - ref_data))
                     window.deviation = mean_deviation
-                    window.result = mean_deviation <= threshold
+                    window.result = bool(mean_deviation <= threshold)
 
             req.onreadystatechange = callback
             req.send(None)
@@ -114,19 +114,29 @@ class FigureCanvasHTMLCanvas(FigureCanvasWasm):
         _get_url_async(url, threshold)
 
     def print_png(self, filename_or_obj, *args,
-                  metadata=None, **kwargs):
+                  metadata=None, pil_kwargs=None, **kwargs):
 
         if metadata is None:
             metadata = {}
+        if pil_kwargs is None:
+            pil_kwargs = {}
         metadata = {
             "Software":
                 f"matplotlib version{__version__}, http://matplotlib.org/",
             **metadata,
         }
 
+        if "pnginfo" not in pil_kwargs:
+            pnginfo = PngInfo()
+            for k, v in metadata.items():
+                pnginfo.add_text(k, v)
+            pil_kwargs["pnginfo"] = pnginfo
+        pil_kwargs.setdefault("dpi", (self.figure.dpi, self.figure.dpi))
+
         data = self.get_pixel_data()
-        with cbook.open_file_cm(filename_or_obj, "wb") as fh:
-            _png.write_png(data, fh, self.figure.dpi, metadata=metadata)
+
+        (Image.fromarray(data)
+         .save(filename_or_obj, format="png", **pil_kwargs))
 
 
 class NavigationToolbar2HTMLCanvas(NavigationToolbar2Wasm):
@@ -288,7 +298,6 @@ class RendererHTMLCanvas(RendererBase):
         ctx.beginPath()
         for points, code in path.iter_segments(transform,
                                                remove_nans=True, clip=clip):
-            points += 0.5
             if code == Path.MOVETO:
                 ctx.moveTo(points[0], points[1])
             elif code == Path.LINETO:
@@ -328,7 +337,9 @@ class RendererHTMLCanvas(RendererBase):
         h, w, d = im.shape
         y = self.ctx.height - y - h
         im = np.ravel(np.uint8(np.reshape(im, (h * w * d, -1)))).tobytes()
-        img_data = ImageData.new(im, w, h)
+        pixels_proxy = create_proxy(im)
+        pixels_buf = pixels_proxy.getBuffer("u8clamped")
+        img_data = ImageData.new(pixels_buf.data, w, h)
         self.ctx.save()
         in_memory_canvas = document.createElement('canvas')
         in_memory_canvas.width = w
@@ -337,6 +348,8 @@ class RendererHTMLCanvas(RendererBase):
         in_memory_canvas_context.putImageData(img_data, 0, 0)
         self.ctx.drawImage(in_memory_canvas, x, y, w, h)
         self.ctx.restore()
+        pixels_proxy.destroy()
+        pixels_buf.release()
 
     def _get_font(self, prop):
         key = hash(prop)

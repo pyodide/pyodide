@@ -1,15 +1,30 @@
+"""
+A matplotlib backend that renders to an HTML5 canvas in the same thread.
+
+The Agg backend is used for the actual rendering underneath, and renders the
+buffer to the HTML5 canvas. This happens with only a single copy of the data
+into the Canvas -- passing the data from Python to Javascript requires no
+copies.
+
+See matplotlib.backend_bases for documentation for most of the methods, since
+this primarily is just overriding methods in the base class.
+"""
+
+# TODO: Figure resizing support
+
 from matplotlib.backends.browser_backend import \
     FigureCanvasWasm, NavigationToolbar2Wasm
 
+import base64
+import io
+
 from matplotlib.backends import backend_agg
 from matplotlib.backend_bases import _Backend, FigureManagerBase
-from matplotlib import interactive
+from matplotlib import backend_bases, interactive
 
 from js import document
 from js import ImageData
 
-import base64
-import io
 
 interactive(True)
 
@@ -62,7 +77,7 @@ class NavigationToolbar2AggWasm(NavigationToolbar2Wasm):
         data = io.BytesIO()
         try:
             self.canvas.figure.savefig(data, format=format)
-        except Exception:
+        except Exception as e:
             raise
         element.setAttribute(
             "href",
@@ -80,7 +95,7 @@ class NavigationToolbar2AggWasm(NavigationToolbar2Wasm):
 class FigureManagerAggWasm(FigureManagerBase):
 
     def __init__(self, canvas, num):
-        super().__init__(canvas, num)
+        FigureManagerBase.__init__(self, canvas, num)
         self.set_window_title("Figure %d" % num)
         self.toolbar = NavigationToolbar2AggWasm(canvas)
 

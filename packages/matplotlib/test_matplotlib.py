@@ -3,8 +3,7 @@ import os
 import pathlib
 from selenium.webdriver.support.wait import WebDriverWait
 
-TEST_PATH = pathlib.Path(__file__).parents[0].resolve()
-
+TEST_PATH = pathlib.Path(__file__).parent.resolve() / 'test'
 
 def get_canvas_data(selenium, prefix):
     import base64
@@ -13,8 +12,7 @@ def get_canvas_data(selenium, prefix):
     img_script = "return arguments[0].toDataURL('image/png').substring(21)"
     canvas_base64 = selenium.driver.execute_script(img_script, canvas_element)
     canvas_png = base64.b64decode(canvas_base64)
-    with open(TEST_PATH /
-              r"{0}-{1}.png".format(prefix, selenium.browser), 'wb') as f:
+    with open(r"{0}/{1}-{2}.png".format(TEST_PATH, prefix, selenium.browser), 'wb') as f:
         f.write(canvas_png)
 
 
@@ -23,14 +21,14 @@ def check_comparison(selenium, prefix, num_fonts):
     font_wait.until(FontsLoaded(num_fonts))
 
     # If we don't have a reference image, write one to disk
-    if not os.path.isfile('test/{0}-{1}.png'.format(prefix, selenium.browser)):
+    if not os.path.isfile('{0}/{1}-{2}.png'.format(TEST_PATH, prefix, selenium.browser)):
         get_canvas_data(selenium, prefix)
 
-    selenium.run("""
-    url = 'test/{0}-{1}.png'
+    selenium.run(f"""
+    url = 'http://{selenium.server_hostname}:{selenium.server_port}/matplotlib-test/{prefix}-{selenium.browser}.png'
     threshold = 0
     plt.gcf().canvas.compare_reference_image(url, threshold)
-    """.format(prefix, selenium.browser))
+    """)
     wait = WebDriverWait(selenium.driver, timeout=70)
     wait.until(ResultLoaded())
     assert selenium.run("window.deviation") == 0
@@ -107,6 +105,7 @@ def test_font_manager(selenium):
     assert selenium.run("fontlist_built == fontlist_vendor")
 
 
+@pytest.mark.skip_refcount_check
 def test_rendering(selenium_standalone):
     selenium = selenium_standalone
     selenium.load_package("matplotlib")
@@ -127,6 +126,7 @@ def test_rendering(selenium_standalone):
     check_comparison(selenium, 'canvas', 1)
 
 
+@pytest.mark.skip_refcount_check
 def test_draw_image(selenium_standalone):
     selenium = selenium_standalone
     selenium.load_package("matplotlib")
@@ -155,6 +155,7 @@ def test_draw_image(selenium_standalone):
     check_comparison(selenium, 'canvas-image', 1)
 
 
+@pytest.mark.skip_refcount_check
 def test_draw_image_affine_transform(selenium_standalone):
     selenium = selenium_standalone
     selenium.load_package("matplotlib")
@@ -213,6 +214,7 @@ def test_draw_image_affine_transform(selenium_standalone):
     check_comparison(selenium, 'canvas-image-affine', 1)
 
 
+@pytest.mark.skip_refcount_check
 def test_draw_text_rotated(selenium_standalone):
     selenium = selenium_standalone
     selenium.load_package("matplotlib")
@@ -253,6 +255,7 @@ def test_draw_text_rotated(selenium_standalone):
     check_comparison(selenium, 'canvas-text-rotated', 1)
 
 
+@pytest.mark.skip_refcount_check
 def test_draw_math_text(selenium_standalone):
     selenium = selenium_standalone
     selenium.load_package("matplotlib")
@@ -361,6 +364,7 @@ def test_draw_math_text(selenium_standalone):
     check_comparison(selenium, 'canvas-math-text', 1)
 
 
+@pytest.mark.skip_refcount_check
 def test_custom_font_text(selenium_standalone):
     selenium = selenium_standalone
     selenium.load_package("matplotlib")
@@ -385,6 +389,7 @@ def test_custom_font_text(selenium_standalone):
     check_comparison(selenium, 'canvas-custom-font-text', 2)
 
 
+@pytest.mark.skip_refcount_check
 def test_zoom_on_polar_plot(selenium_standalone):
     selenium = selenium_standalone
     selenium.load_package("matplotlib")
@@ -417,6 +422,7 @@ def test_zoom_on_polar_plot(selenium_standalone):
     check_comparison(selenium, 'canvas-polar-zoom', 1)
 
 
+@pytest.mark.skip_refcount_check
 def test_transparency(selenium_standalone):
     selenium = selenium_standalone
     selenium.load_package("matplotlib")
