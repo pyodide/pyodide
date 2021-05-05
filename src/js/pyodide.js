@@ -78,6 +78,44 @@ Module.fatal_error = function (e) {
 };
 
 /**
+ * Run Python code in the simplest way possible. The primary purpose of this
+ * method is for bootstrapping. It is also useful for debugging: If the Python
+ * interpreter is initialized successfully then it should be possible to use
+ * this method to run Python code even if everything else in the Pyodide
+ * `core` module fails.
+ *
+ * The differences are:
+ *    1. `runPythonSimple` doesn't return anything (and so won't leak
+ *        PyProxies)
+ *    2. `runPythonSimple` doesn't require access to any state on the
+ *       Javascript `pyodide` module.
+ *    3. `runPython` uses `pyodide.eval_code`, whereas `runPythonSimple` uses
+ *       `PyRun_String` which is the C API for `eval` / `exec`.
+ *    4. `runPythonSimple` runs with `globals` a separate dict which is called
+ *       `init_dict` (keeps global state private)
+ *    5. `runPythonSimple` doesn't dedent the argument
+ *
+ * When `core` initialization is completed, the globals for `runPythonSimple`
+ * is made available as `Module.init_dict`.
+ *
+ * @private
+ */
+Module.runPythonSimple = function (code) {
+  let code_c_string = Module.stringToNewUTF8(code);
+  let errcode;
+  try {
+    errcode = Module._run_python_simple_inner(code_c_string);
+  } catch (e) {
+    Module.fatal_error(e);
+  } finally {
+    Module._free(code_c_string);
+  }
+  if (errcode === -1) {
+    Module._pythonexc2js();
+  }
+};
+
+/**
  * The :ref:`js-api-pyodide` module object. Must be present as a global variable
  * called
  * ``pyodide`` in order for package loading to work properly.
@@ -124,47 +162,6 @@ globalThis.loadPyodide = async function (config = {}) {
     baseURL += "/";
   }
   let packageIndexReady = initializePackageIndex(baseURL);
-
-  ////////////////////////////////////////////////////////////
-  // Loading Pyodide
-
-  /**
-   * Run Python code in the simplest way possible. The primary purpose of this
-   * method is for bootstrapping. It is also useful for debugging: If the Python
-   * interpreter is initialized successfully then it should be possible to use
-   * this method to run Python code even if everything else in the Pyodide
-   * `core` module fails.
-   *
-   * The differences are:
-   *    1. `runPythonSimple` doesn't return anything (and so won't leak
-   *        PyProxies)
-   *    2. `runPythonSimple` doesn't require access to any state on the
-   *       Javascript `pyodide` module.
-   *    3. `runPython` uses `pyodide.eval_code`, whereas `runPythonSimple` uses
-   *       `PyRun_String` which is the C API for `eval` / `exec`.
-   *    4. `runPythonSimple` runs with `globals` a separate dict which is called
-   *       `init_dict` (keeps global state private)
-   *    5. `runPythonSimple` doesn't dedent the argument
-   *
-   * When `core` initialization is completed, the globals for `runPythonSimple`
-   * is made available as `Module.init_dict`.
-   *
-   * @private
-   */
-  Module.runPythonSimple = function (code) {
-    let code_c_string = Module.stringToNewUTF8(code);
-    let errcode;
-    try {
-      errcode = Module._run_python_simple_inner(code_c_string);
-    } catch (e) {
-      Module.fatal_error(e);
-    } finally {
-      Module._free(code_c_string);
-    }
-    if (errcode === -1) {
-      Module._pythonexc2js();
-    }
-  };
 
   Module.locateFile = (path) => baseURL + path;
 
