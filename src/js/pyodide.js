@@ -3,7 +3,7 @@
  * The main bootstrap script for loading pyodide.
  */
 import { Module } from "./module";
-import { loadScript } from "./load-pyodide";
+import { loadScript, initializePackageIndex } from "./load-pyodide";
 
 /**
  * The :ref:`js-api-pyodide` module object. Must be present as a global variable
@@ -51,6 +51,7 @@ globalThis.loadPyodide = async function (config = {}) {
   if (!baseURL.endsWith("/")) {
     baseURL += "/";
   }
+  let packageIndexReady = initializePackageIndex(baseURL);
 
   ////////////////////////////////////////////////////////////
   // Fix Python recursion limit
@@ -513,7 +514,9 @@ def temp(Module):
   Module.registerJsModule("js", globalThis);
   Module.registerJsModule("pyodide_js", pyodide);
   globalThis.pyodide = pyodide;
-  if (!config.fullStdLib) {
+
+  await packageIndexReady;
+  if (config.fullStdLib) {
     await pyodide.loadPackage(["distutils"]);
   }
 
