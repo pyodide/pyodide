@@ -19,5 +19,5 @@ initialization-time (or import-time) dependencies.
    built to run in Pyodide.
 
 One of our long-term organizational goals is to carefully organize core/pyodide,
-py/_pyodide, py/pyodide, and js/pyodide to clarify which functionality is not part of the
-tangled web of runtime dependencies that define Pyodide's core behavior.
+py/_pyodide, py/pyodide, and js/pyodide to clarify which functionality is not part of
+runtime dependencies that define Pyodide's core behavior.
