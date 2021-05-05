@@ -37,6 +37,7 @@ build:
     rm -rf $SITEPACKAGES/matplotlib/backends/web_backend
     rm -rf $SITEPACKAGES/sphinxext
     cp $PKGDIR/src/fontlist.json $SITEPACKAGES/matplotlib
+    cp $SITEPACKAGES/matplotlib/mpl-data/fonts/ttf/* $PKGDIR/../../build/fonts/
 
 requirements:
   run:
