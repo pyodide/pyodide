@@ -17,11 +17,12 @@ all: check \
 	build/console.html \
 	build/test.data \
 	build/distutils.data \
+	copy-fonts \
 	build/packages.json \
 	build/test.html \
 	build/webworker.js \
 	build/webworker_dev.js \
-	copy-fonts-and-images
+	copy-reference-images
 	echo -e "\nSUCCESS!"
 
 
@@ -136,11 +137,12 @@ update_base_url: \
 test: all
 	pytest src emsdk/tests packages/*/test* pyodide-build -v
 
-copy-fonts-and-images:
+copy-fonts:
+	mkdir -p build/fonts
+
+copy-reference-images:
 	mkdir -p build/matplotlib-test
 	cp -n packages/matplotlib/reference-images/*.png build/matplotlib-test/
-	mkdir -p build/fonts
-	cp -n packages/matplotlib/build/matplotlib-3.3.3/lib/matplotlib/mpl-data/fonts/ttf/* build/fonts/
 
 lint: node_modules/.installed
 	# check for unused imports, the rest is done by black
