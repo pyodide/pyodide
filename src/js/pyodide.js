@@ -6,34 +6,29 @@ import { Module } from "./module";
 import { loadScript, initializePackageIndex } from "./load-pyodide";
 import { PUBLIC_API, makePublicAPI } from "./api";
 
-////////////////////////////////////////////////////////////
-// Fix Python recursion limit
-function fixRecursionLimit(pyodide) {
-  // The Javascript/Wasm call stack may be too small to handle the default
-  // Python call stack limit of 1000 frames. This is generally the case on
-  // Chrom(ium), but not on Firefox. Here, we determine the Javascript call
-  // stack depth available, and then divide by 50 (determined heuristically)
-  // to set the maximum Python call stack depth.
-
-  let depth = 0;
-  function recurse() {
-    depth += 1;
-    recurse();
-  }
-  try {
-    recurse();
-  } catch (err) {}
-
-  let recursionLimit = depth / 50;
-  if (recursionLimit > 1000) {
-    recursionLimit = 1000;
-  }
-  pyodide.runPythonSimple(
-    `import sys; sys.setrecursionlimit(int(${recursionLimit}))`
-  );
-}
+/**
+ * Dump the Python traceback to the browser console.
+ *
+ * @private
+ */
+Module.dump_traceback = function () {
+  let fd_stdout = 1;
+  Module.__Py_DumpTraceback(fd_stdout, Module._PyGILState_GetThisThreadState());
+};
 
 let fatal_error_occurred = false;
+/**
+ * Signal a fatal error.
+ *
+ * Dumps the Python traceback, shows a Javascript traceback, and prints a clear
+ * message indicating a fatal error. It then dummies out the public API so that
+ * further attempts to use Pyodide will clearly indicate that Pyodide has failed
+ * and can no longer be used. pyodide._module is left accessible and it is
+ * possible to continue using Pyodide for debugging purposes if desired.
+ *
+ * @argument e {Error} The cause of the fatal error.
+ * @private
+ */
 Module.fatal_error = function (e) {
   if (fatal_error_occurred) {
     console.error("Recursive call to fatal_error. Inner error was:");
@@ -42,17 +37,12 @@ Module.fatal_error = function (e) {
   }
   fatal_error_occurred = true;
   console.error(
-    "Pyodide has suffered a fatal error. " +
-      "Please report this to the Pyodide maintainers."
+    "Pyodide has suffered a fatal error. Please report this to the Pyodide maintainers."
   );
   console.error("The cause of the fatal error was:");
   console.error(e);
   try {
-    let fd_stdout = 1;
-    Module.__Py_DumpTraceback(
-      fd_stdout,
-      Module._PyGILState_GetThisThreadState()
-    );
+    Module.dump_traceback();
     for (let key of PUBLIC_API) {
       if (key === "version") {
         continue;
@@ -70,9 +60,9 @@ Module.fatal_error = function (e) {
     if (Module.on_fatal) {
       Module.on_fatal(e);
     }
-  } catch (e) {
+  } catch (err2) {
     console.error("Another error occurred while handling the fatal error:");
-    console.error(e);
+    console.error(err2);
   }
   throw e;
 };
@@ -114,6 +104,33 @@ Module.runPythonSimple = function (code) {
     Module._pythonexc2js();
   }
 };
+
+/**
+ * The Javascript/Wasm call stack is too small to handle the default Python call
+ * stack limit of 1000 frames. Here, we determine the Javascript call stack
+ * depth available, and then divide by 50 (determined heuristically) to set the
+ * maximum Python call stack depth.
+ *
+ * @private
+ */
+function fixRecursionLimit() {
+  let depth = 0;
+  function recurse() {
+    depth += 1;
+    recurse();
+  }
+  try {
+    recurse();
+  } catch (err) {}
+
+  let recursionLimit = depth / 50;
+  if (recursionLimit > 1000) {
+    recursionLimit = 1000;
+  }
+  Module.runPythonSimple(
+    `import sys; sys.setrecursionlimit(int(${recursionLimit}))`
+  );
+}
 
 /**
  * The :ref:`js-api-pyodide` module object. Must be present as a global variable
