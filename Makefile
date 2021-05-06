@@ -112,7 +112,6 @@ build/webworker_dev.js: src/webworker.js
 
 update_base_url: \
 	build/console.html \
-	build/pyodide.js \
 	build/webworker.js
 
 test: all
