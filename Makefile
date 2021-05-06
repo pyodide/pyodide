@@ -20,10 +20,12 @@ all: check \
 	build/console.html \
 	build/test.data \
 	build/distutils.data \
+	copy-fonts \
 	build/packages.json \
 	build/test.html \
 	build/webworker.js \
-	build/webworker_dev.js
+	build/webworker_dev.js \
+	copy-reference-images
 	echo -e "\nSUCCESS!"
 
 
@@ -117,9 +119,16 @@ update_base_url: \
 test: all
 	pytest src emsdk/tests packages/*/test* pyodide-build -v
 
+copy-fonts:
+	mkdir -p build/fonts
+
+copy-reference-images:
+	mkdir -p build/matplotlib-test
+	cp -n packages/matplotlib/reference-images/*.png build/matplotlib-test/
+
 lint:
 	# check for unused imports, the rest is done by black
-	flake8 --select=F401 src tools pyodide-build benchmark conftest.py docs
+	flake8 --select=F401 src tools pyodide-build benchmark conftest.py docs packages/matplotlib/src/
 	clang-format-6.0 -output-replacements-xml `find src -type f -regex ".*\.\(c\|h\\)"` | (! grep '<replacement ')
 	$(PRETTIER) --check `find src -type f -name '*.js'`
 	black --check .
