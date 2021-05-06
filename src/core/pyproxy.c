@@ -13,6 +13,46 @@ _Py_IDENTIFIER(result);
 _Py_IDENTIFIER(ensure_future);
 _Py_IDENTIFIER(add_done_callback);
 
+// Use raw EM_JS for the next five commands. We intend to signal a fatal error
+// if a Javascript error is thrown.
+EM_JS(void, pyproxy_destroy_and_decref, (JsRef x), {
+  let val = Module.hiwire.pop_value(x);
+  if (Module.isPyProxy(val)) {
+    Module.pyproxy_destroy(val);
+  }
+})
+
+EM_JS(int, pyproxy_Check, (JsRef x), {
+  if (x == 0) {
+    return false;
+  }
+  let val = Module.hiwire.get_value(x);
+  return Module.isPyProxy(val);
+});
+
+EM_JS(errcode, destroy_proxies, (JsRef proxies_id, char* msg_ptr), {
+  let msg = undefined;
+  if (msg_ptr) {
+    msg = UTF8ToString(msg_ptr);
+  }
+  let proxies = Module.hiwire.pop_value(proxies_id);
+  for (let px of proxies) {
+    Module.pyproxy_destroy(px, msg);
+  }
+});
+
+EM_JS(int, pyproxy_mark_borrowed, (JsRef id), {
+  let proxy = Module.hiwire.get_value(id);
+  Module.pyproxy_mark_borrowed(proxy);
+});
+
+EM_JS(int, pyproxies_mark_borrowed, (JsRef id), {
+  let array = Module.hiwire.get_value(id);
+  for (let proxy of array) {
+    Module.pyproxy_mark_borrowed(proxy);
+  }
+});
+
 static PyObject* asyncio;
 
 // Flags controlling presence or absence of many small mixins depending on which

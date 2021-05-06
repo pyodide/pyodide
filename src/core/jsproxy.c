@@ -1028,7 +1028,10 @@ finally:
 #define JsMethod_THIS(x) (((JsProxy*)x)->this_)
 
 JsRef
-JsMethod_ConvertArgs(PyObject* const* args, Py_ssize_t nargs, PyObject* kwnames)
+JsMethod_ConvertArgs(PyObject* const* args,
+                     Py_ssize_t nargs,
+                     PyObject* kwnames,
+                     JsRef proxies)
 {
   bool success = false;
   JsRef idargs = NULL;
@@ -1038,7 +1041,7 @@ JsMethod_ConvertArgs(PyObject* const* args, Py_ssize_t nargs, PyObject* kwnames)
   idargs = JsArray_New();
   FAIL_IF_NULL(idargs);
   for (Py_ssize_t i = 0; i < nargs; ++i) {
-    idarg = python2js(args[i]);
+    idarg = python2js_track_proxies(args[i], proxies);
     FAIL_IF_NULL(idarg);
     FAIL_IF_MINUS_ONE(JsArray_Push(idargs, idarg));
     hiwire_CLEAR(idarg);
@@ -1065,7 +1068,7 @@ JsMethod_ConvertArgs(PyObject* const* args, Py_ssize_t nargs, PyObject* kwnames)
   for (Py_ssize_t i = 0, k = nargs; i < nkwargs; ++i, ++k) {
     PyObject* name = PyTuple_GET_ITEM(kwnames, i); /* borrowed! */
     const char* name_utf8 = PyUnicode_AsUTF8(name);
-    idarg = python2js(args[k]);
+    idarg = python2js_track_proxies(args[k], proxies);
     FAIL_IF_NULL(idarg);
     FAIL_IF_MINUS_ONE(JsObject_SetString(idkwargs, name_utf8, idarg));
     hiwire_CLEAR(idarg);
@@ -1074,6 +1077,7 @@ JsMethod_ConvertArgs(PyObject* const* args, Py_ssize_t nargs, PyObject* kwnames)
 
 success:
   success = true;
+  pyproxies_mark_borrowed(proxies);
 finally:
   hiwire_CLEAR(idarg);
   hiwire_CLEAR(idkwargs);
@@ -1093,14 +1097,16 @@ JsMethod_Vectorcall(PyObject* self,
                     PyObject* kwnames)
 {
   bool success = false;
+  JsRef proxies = NULL;
   JsRef idargs = NULL;
   JsRef idresult = NULL;
   PyObject* pyresult = NULL;
 
   // Recursion error?
   FAIL_IF_NONZERO(Py_EnterRecursiveCall(" in JsMethod_Vectorcall"));
-
-  idargs = JsMethod_ConvertArgs(args, PyVectorcall_NARGS(nargsf), kwnames);
+  proxies = JsArray_New();
+  idargs =
+    JsMethod_ConvertArgs(args, PyVectorcall_NARGS(nargsf), kwnames, proxies);
   FAIL_IF_NULL(idargs);
   idresult = hiwire_call_bound(JsProxy_REF(self), JsMethod_THIS(self), idargs);
   FAIL_IF_NULL(idresult);
@@ -1110,6 +1116,36 @@ JsMethod_Vectorcall(PyObject* self,
   success = true;
 finally:
   Py_LeaveRecursiveCall(/* " in JsMethod_Vectorcall" */);
+  if (idresult == NULL || !hiwire_is_promise(idresult)) {
+    destroy_proxies(
+      proxies,
+      "This borrowed proxy was automatically destroyed. Try using "
+      "create_proxy or create_once_callable.");
+  } else {
+    // If function returned a promise, delay destroying proxies until the
+    // promise resolves.
+    EM_ASM(
+      {
+        let result = Module.hiwire.get_value($0);
+        // clang-format off
+        Promise.resolve(result).finally(() => {
+          // clang-format on
+          let msg =
+            "This borrowed proxy was automatically destroyed at the " +
+            "end of an asynchronous function call. " +
+            "You may have tried returning one of the arguments from an " +
+            "async function. " +
+            "Try using create_proxy or create_once_callable from " +
+            "Python or proxy.clone() from Javascript.";
+          let proxies = Module.hiwire.pop_value($1);
+          for (let px of proxies) {
+            Module.pyproxy_destroy(px, msg);
+          }
+        });
+      },
+      idresult,
+      proxies);
+  }
   hiwire_CLEAR(idargs);
   hiwire_CLEAR(idresult);
   if (!success) {
@@ -1132,6 +1168,7 @@ JsMethod_Construct(PyObject* self,
                    PyObject* kwnames)
 {
   bool success = false;
+  JsRef proxies = NULL;
   JsRef idargs = NULL;
   JsRef idresult = NULL;
   PyObject* pyresult = NULL;
@@ -1139,7 +1176,8 @@ JsMethod_Construct(PyObject* self,
   // Recursion error?
   FAIL_IF_NONZERO(Py_EnterRecursiveCall(" in JsMethod_Construct"));
 
-  idargs = JsMethod_ConvertArgs(args, nargs, kwnames);
+  proxies = JsArray_New();
+  idargs = JsMethod_ConvertArgs(args, nargs, kwnames, proxies);
   FAIL_IF_NULL(idargs);
   idresult = hiwire_construct(JsProxy_REF(self), idargs);
   FAIL_IF_NULL(idresult);
@@ -1149,6 +1187,9 @@ JsMethod_Construct(PyObject* self,
   success = true;
 finally:
   Py_LeaveRecursiveCall(/* " in JsMethod_Construct" */);
+  destroy_proxies(proxies,
+                  "This borrowed proxy was automatically destroyed. Try using "
+                  "create_proxy or create_once_callable.");
   hiwire_CLEAR(idargs);
   hiwire_CLEAR(idresult);
   if (!success) {

@@ -88,35 +88,19 @@ def test_pyproxy_refcount(selenium):
                 print(*args, **kwargs)
         `);
 
-        // the refcount should be 2 because:
-        //
-        // 1. pyfunc exists
-        // 2. pyfunc is referenced from the sys.getrefcount()-test below
-
-        result.push([getRefCount(), 2]);
-
-        // the refcount should be 3 because:
-        //
-        // 1. pyfunc exists
-        // 2. one reference from PyProxy to pyfunc is alive
-        // 3. pyfunc is referenced from the sys.getrefcount()-test below
+        assert(() => getRefCount() === 2);
 
         pyodide.runPython(`
-            window.jsfunc(pyfunc) # creates new PyProxy
+            window.jsfunc(pyfunc)
         `);
 
-        result.push([getRefCount(), 3])
-        pyodide.runPython(`
-            window.jsfunc(pyfunc) # create new PyProxy
-            window.jsfunc(pyfunc) # create new PyProxy
-        `)
+        assert(() => getRefCount() === 2);
 
-        // the refcount should be 3 because:
-        //
-        // 1. pyfunc exists
-        // 2. one reference from PyProxy to pyfunc is alive
-        // 3. pyfunc is referenced from the sys.getrefcount()-test
-        result.push([getRefCount(), 5]);
+        pyodide.runPython(`
+            window.jsfunc(pyfunc)
+            window.jsfunc(pyfunc)
+        `)
+        assert(() => getRefCount() === 2);
         return result;
         """
     )
