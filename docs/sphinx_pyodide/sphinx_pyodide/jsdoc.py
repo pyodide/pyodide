@@ -121,7 +121,7 @@ class PyodideAnalyzer:
 
 
 def get_jsdoc_content_directive(app):
-    """These directives need to close over app """
+    """These directives need to close over app"""
 
     class JsDocContent(Directive):
         """A directive that just dumps a summary table in place. There are no

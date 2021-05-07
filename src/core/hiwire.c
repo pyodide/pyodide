@@ -289,7 +289,7 @@ EM_JS(void _Py_NO_RETURN, hiwire_throw_error, (JsRef iderr), {
   throw Module.hiwire.pop_value(iderr);
 });
 
-EM_JS_NUM(bool, hiwire_is_array, (JsRef idobj), {
+EM_JS_NUM(bool, JsArray_Check, (JsRef idobj), {
   let obj = Module.hiwire.get_value(idobj);
   if (Array.isArray(obj)) {
     return true;
@@ -310,15 +310,15 @@ EM_JS_NUM(bool, hiwire_is_array, (JsRef idobj), {
   return false;
 });
 
-EM_JS_REF(JsRef, hiwire_array, (), { return Module.hiwire.new_value([]); });
+EM_JS_REF(JsRef, JsArray_New, (), { return Module.hiwire.new_value([]); });
 
-EM_JS_NUM(errcode, hiwire_push_array, (JsRef idarr, JsRef idval), {
+EM_JS_NUM(errcode, JsArray_Push, (JsRef idarr, JsRef idval), {
   Module.hiwire.get_value(idarr).push(Module.hiwire.get_value(idval));
 });
 
-EM_JS_REF(JsRef, hiwire_object, (), { return Module.hiwire.new_value({}); });
+EM_JS_REF(JsRef, JsObject_New, (), { return Module.hiwire.new_value({}); });
 
-EM_JS_REF(JsRef, hiwire_get_member_string, (JsRef idobj, const char* ptrkey), {
+EM_JS_REF(JsRef, JsObject_GetString, (JsRef idobj, const char* ptrkey), {
   let jsobj = Module.hiwire.get_value(idobj);
   let jskey = UTF8ToString(ptrkey);
   let result = jsobj[jskey];
@@ -333,7 +333,7 @@ EM_JS_REF(JsRef, hiwire_get_member_string, (JsRef idobj, const char* ptrkey), {
 // clang-format off
 EM_JS_NUM(
 errcode,
-hiwire_set_member_string,
+JsObject_SetString,
 (JsRef idobj, const char* ptrkey, JsRef idval),
 {
   let jsobj = Module.hiwire.get_value(idobj);
@@ -344,7 +344,7 @@ hiwire_set_member_string,
 
 EM_JS_NUM(
 errcode,
-hiwire_delete_member_string,
+JsObject_DeleteString,
 (JsRef idobj, const char* ptrkey),
 {
   let jsobj = Module.hiwire.get_value(idobj);
@@ -353,7 +353,7 @@ hiwire_delete_member_string,
 });
 // clang-format on
 
-EM_JS_REF(JsRef, hiwire_get_member_int, (JsRef idobj, int idx), {
+EM_JS_REF(JsRef, JsArray_Get, (JsRef idobj, int idx), {
   let obj = Module.hiwire.get_value(idobj);
   let result = obj[idx];
   // clang-format off
@@ -364,11 +364,11 @@ EM_JS_REF(JsRef, hiwire_get_member_int, (JsRef idobj, int idx), {
   return Module.hiwire.new_value(result);
 });
 
-EM_JS_NUM(errcode, hiwire_set_member_int, (JsRef idobj, int idx, JsRef idval), {
+EM_JS_NUM(errcode, JsArray_Set, (JsRef idobj, int idx, JsRef idval), {
   Module.hiwire.get_value(idobj)[idx] = Module.hiwire.get_value(idval);
 });
 
-EM_JS_NUM(errcode, hiwire_delete_member_int, (JsRef idobj, int idx), {
+EM_JS_NUM(errcode, JsArray_Delete, (JsRef idobj, int idx), {
   let obj = Module.hiwire.get_value(idobj);
   // Weird edge case: allow deleting an empty entry, but we raise a key error if
   // access is attempted.
@@ -378,7 +378,7 @@ EM_JS_NUM(errcode, hiwire_delete_member_int, (JsRef idobj, int idx), {
   obj.splice(idx, 1);
 });
 
-EM_JS_REF(JsRef, hiwire_dir, (JsRef idobj), {
+EM_JS_REF(JsRef, JsObject_Dir, (JsRef idobj), {
   let jsobj = Module.hiwire.get_value(idobj);
   let result = [];
   do {
@@ -397,13 +397,13 @@ EM_JS_REF(JsRef, hiwire_dir, (JsRef idobj), {
 static JsRef
 convert_va_args(va_list args)
 {
-  JsRef idargs = hiwire_array();
+  JsRef idargs = JsArray_New();
   while (true) {
     JsRef idarg = va_arg(args, JsRef);
     if (idarg == NULL) {
       break;
     }
-    hiwire_push_array(idargs, idarg);
+    JsArray_Push(idargs, idarg);
   }
   va_end(args);
   return idargs;
@@ -672,17 +672,17 @@ EM_JS_REF(JsRef, hiwire_get_iterator, (JsRef idobj), {
   return Module.hiwire.new_value(jsobj[Symbol.iterator]());
 })
 
-EM_JS_REF(JsRef, hiwire_object_entries, (JsRef idobj), {
+EM_JS_REF(JsRef, JsObject_Entries, (JsRef idobj), {
   let jsobj = Module.hiwire.get_value(idobj);
   return Module.hiwire.new_value(Object.entries(jsobj));
 });
 
-EM_JS_REF(JsRef, hiwire_object_keys, (JsRef idobj), {
+EM_JS_REF(JsRef, JsObject_Keys, (JsRef idobj), {
   let jsobj = Module.hiwire.get_value(idobj);
   return Module.hiwire.new_value(Object.keys(jsobj));
 });
 
-EM_JS_REF(JsRef, hiwire_object_values, (JsRef idobj), {
+EM_JS_REF(JsRef, JsObject_Values, (JsRef idobj), {
   let jsobj = Module.hiwire.get_value(idobj);
   return Module.hiwire.new_value(Object.values(jsobj));
 });

@@ -5,7 +5,8 @@ include Makefile.envs
 .PHONY=check
 
 FILEPACKAGER=$$EM_DIR/tools/file_packager.py
-UGLIFYJS=$(PYODIDE_ROOT)/node_modules/.bin/uglifyjs
+UGLIFYJS=npx uglifyjs
+PRETTIER=npx prettier
 
 CPYTHONROOT=cpython
 CPYTHONLIB=$(CPYTHONROOT)/installs/python-$(PYVERSION)/lib/python$(PYMINOR)
@@ -18,6 +19,7 @@ all: check \
 	build/pyodide.js \
 	build/console.html \
 	build/test.data \
+	build/distutils.data \
 	build/packages.json \
 	build/test.html \
 	build/webworker.js \
@@ -40,7 +42,7 @@ build/pyodide.asm.js: \
 	src/pystone.py \
 	src/_testcapi.py \
 	src/webbrowser.py \
-	$(wildcard src/pyodide-py/pyodide/*.py) \
+	$(wildcard src/py/pyodide/*.py) \
 	$(CPYTHONLIB)
 	date +"[%F %T] Building pyodide.asm.js..."
 	[ -d build ] || mkdir build
@@ -50,11 +52,12 @@ build/pyodide.asm.js: \
 		--preload-file src/webbrowser.py@/lib/python$(PYMINOR)/webbrowser.py \
 		--preload-file src/_testcapi.py@/lib/python$(PYMINOR)/_testcapi.py \
 		--preload-file src/pystone.py@/lib/python$(PYMINOR)/pystone.py \
-		--preload-file src/pyodide-py/pyodide@/lib/python$(PYMINOR)/site-packages/pyodide \
-		--preload-file src/pyodide-py/_pyodide@/lib/python$(PYMINOR)/site-packages/_pyodide \
+		--preload-file src/py/pyodide@/lib/python$(PYMINOR)/site-packages/pyodide \
+		--preload-file src/py/_pyodide@/lib/python$(PYMINOR)/site-packages/_pyodide \
 		--exclude-file "*__pycache__*" \
 		--exclude-file "*/test/*"		\
-		--exclude-file "*/tests/*"
+		--exclude-file "*/tests/*" \
+		--exclude-file "*/distutils/*"
 	# Strip out C++ symbols which all start __Z.
 	# There are 4821 of these and they have VERY VERY long names.
 	# To show some stats on the symbols you can use the following:
@@ -75,10 +78,9 @@ env:
 
 
 .PHONY: build/pyodide.js
-build/pyodide.js: src/pyodide.js
-	cp $< $@
-	sed -i -e 's#{{ PYODIDE_BASE_URL }}#$(PYODIDE_BASE_URL)#g' $@
-
+build/pyodide.js: src/js/*.js
+	npm install ./src/js
+	npx rollup -c src/js/rollup.config.js
 
 build/test.html: src/templates/test.html
 	cp $< $@
@@ -110,20 +112,18 @@ build/webworker_dev.js: src/webworker.js
 
 update_base_url: \
 	build/console.html \
-	build/pyodide.js \
 	build/webworker.js
 
 test: all
-	pytest src emsdk/tests packages/*/test* pyodide_build -v
-
+	pytest src emsdk/tests packages/*/test* pyodide-build -v
 
 lint:
 	# check for unused imports, the rest is done by black
-	flake8 --select=F401 src tools pyodide_build benchmark conftest.py docs
-	clang-format-6.0 -output-replacements-xml `find src -type f -regex ".*\.\(c\|h\|js\)"` | (! grep '<replacement ')
+	flake8 --select=F401 src tools pyodide-build benchmark conftest.py docs
+	clang-format-6.0 -output-replacements-xml `find src -type f -regex ".*\.\(c\|h\\)"` | (! grep '<replacement ')
+	$(PRETTIER) --check `find src -type f -name '*.js'`
 	black --check .
-	mypy --ignore-missing-imports pyodide_build/ src/ packages/micropip/micropip/ packages/*/test* conftest.py docs
-
+	mypy --ignore-missing-imports pyodide-build/pyodide_build/ src/ packages/micropip/micropip/ packages/*/test* conftest.py docs
 
 apply-lint:
 	./tools/apply-lint.sh
@@ -148,8 +148,10 @@ clean-all: clean
 %.o: %.c $(CPYTHONLIB) $(wildcard src/**/*.h src/**/*.js)
 	$(CC) -o $@ -c $< $(MAIN_MODULE_CFLAGS) -Isrc/core/
 
+# Stdlib modules that we repackage as standalone packages
 
-build/test.data: $(CPYTHONLIB) $(UGLIFYJS)
+# TODO: also include test directories included in other stdlib modules
+build/test.data: $(CPYTHONLIB)
 	( \
 		cd $(CPYTHONLIB)/test; \
 		find . -type d -name __pycache__ -prune -exec rm -rf {} \; \
@@ -161,9 +163,17 @@ build/test.data: $(CPYTHONLIB) $(UGLIFYJS)
 	$(UGLIFYJS) build/test.js -o build/test.js
 
 
-$(UGLIFYJS): emsdk/emsdk/.complete
-	npm i --no-save uglify-js
-	touch -h $(UGLIFYJS)
+build/distutils.data: $(CPYTHONLIB)
+	( \
+		cd $(CPYTHONLIB)/distutils; \
+		find . -type d -name __pycache__ -prune -exec rm -rf {} \; ;\
+		find . -type d -name tests -prune -exec rm -rf {} \; \
+	)
+	( \
+		cd build; \
+		python $(FILEPACKAGER) distutils.data --lz4 --preload ../$(CPYTHONLIB)/distutils@/lib/python$(PYMINOR)/distutils --js-output=distutils.js --export-name=pyodide._module --exclude __pycache__ --exclude tests \
+	)
+	$(UGLIFYJS) build/distutils.js -o build/distutils.js
 
 
 $(CPYTHONLIB): emsdk/emsdk/.complete $(PYODIDE_EMCC) $(PYODIDE_CXX)

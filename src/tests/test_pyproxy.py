@@ -60,6 +60,18 @@ def test_pyproxy(selenium):
     )
 
 
+def test_pyproxy_clone(selenium):
+    selenium.run_js(
+        """
+        let d = pyodide.runPython("list(range(10))")
+        e = d.clone();
+        d.destroy();
+        assert(() => e.length === 10);
+        e.destroy();
+        """
+    )
+
+
 def test_pyproxy_refcount(selenium):
     result = selenium.run_js(
         """

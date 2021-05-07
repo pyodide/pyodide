@@ -30,7 +30,7 @@ try:
         """
 
         def __init__(self):
-            """"""
+            """ """
 
         def object_entries(self) -> "JsProxy":
             "The Javascript API ``Object.entries(object)``"

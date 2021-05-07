@@ -622,6 +622,32 @@ def test_memoryview_conversion(selenium):
 
 
 def test_python2js_with_depth(selenium):
+    selenium.run_js(
+        """
+        let x = pyodide.runPython(`
+            class Test: pass
+            [Test(), [Test(), [Test(), [Test()]]]]
+        `);
+        let Module = pyodide._module;
+        let proxies = [];
+        let proxies_id = Module.hiwire.new_value(proxies);
+        let result = Module.hiwire.pop_value(Module._python2js_with_depth(x.$$.ptr, -1, proxies_id));
+        Module.hiwire.decref(proxies_id);
+
+        assert(() => proxies.length === 4);
+
+        let result_proxies = [result[0], result[1][0], result[1][1][0], result[1][1][1][0]];
+        proxies.sort((x, y) => x.$$.ptr < y.$$.ptr);
+        result_proxies.sort((x, y) => x.$$.ptr < y.$$.ptr);
+        for(let i = 0; i < 4; i++){
+            assert(() => proxies[i] == result_proxies[i]);
+        }
+
+        """
+    )
+
+
+def test_tojs(selenium):
     assert selenium.run_js(
         """
         pyodide.runPython("a = [1, 2, 3]");

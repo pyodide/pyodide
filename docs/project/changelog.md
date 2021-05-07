@@ -12,12 +12,31 @@ substitutions:
 
 ## [Unreleased]
 
+## Standard library
+
+- The following standard library modules are now available as standalone packages
+   - distlib
+  They are loaded by default in {any}`pyodide.loadPyodide`, however this behavior
+  can be disabled with the `fullStdLib` parameter set to `false`.
+  All optional stdlib modules can then be loaded as needed with
+  {any}`pyodide.loadPackage`. {pr}`1543`
+
+### Python / JS type conversions
+
 - {{ API }} {any}`pyodide.runPythonAsync` no longer automatically calls
   {any}`pyodide.loadPackagesFromImports`.
   {pr}`1538`.
 - {{ Enhancement }} Added the {any}`PyProxy.callKwargs` method to allow using
   Python functions with keyword arguments from Javascript.
   {pr}`1539`
+- {{ Enhancement }} Added the {any}`PyProxy.clone` method.
+  {pr}`1549`
+
+### pyodide-build
+
+- {{ Enhancement }} pyodide-build is now an installable Python package, with an identically named
+  CLI entrypoint that replaces `bin/pyodide` which is removed {pr}`1566`
+
 
 ## Version 0.17.0
 *April 21, 2020*

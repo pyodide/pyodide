@@ -18,10 +18,49 @@ from typing import Dict, Set, Optional, List
 
 from . import common
 from .io import parse_package_config
+from .common import UNVENDORED_STDLIB_MODULES
+
+
+class BasePackage:
+    pkgdir: Path
+    name: str
+    version: str
+    meta: dict
+    library: bool
+    shared_library: bool
+    dependencies: List[str]
+    unbuilt_dependencies: Set[str]
+    dependents: Set[str]
+
+    # We use this in the priority queue, which pops off the smallest element.
+    # So we want the smallest element to have the largest number of dependents
+    def __lt__(self, other) -> bool:
+        return len(self.dependents) > len(other.dependents)
+
+    def __eq__(self, other) -> bool:
+        return len(self.dependents) == len(other.dependents)
 
 
 @total_ordering
-class Package:
+class StdLibPackage(BasePackage):
+    def __init__(self, pkgdir: Path):
+        self.pkgdir = pkgdir
+        self.meta = {}
+        self.name = pkgdir.stem
+        self.version = "1.0"
+        self.library = False
+        self.shared_library = False
+        self.dependencies = []
+        self.unbuilt_dependencies = set()
+        self.dependents = set()
+
+    def build(self, outputdir: Path, args) -> None:
+        # All build / packaging steps are already done in the main Makefile
+        return
+
+
+@total_ordering
+class Package(BasePackage):
     def __init__(self, pkgdir: Path):
         self.pkgdir = pkgdir
 
@@ -29,19 +68,17 @@ class Package:
         if not pkgpath.is_file():
             raise ValueError(f"Directory {pkgdir} does not contain meta.yaml")
 
-        self.meta: dict = parse_package_config(pkgpath)
-        self.name: str = self.meta["package"]["name"]
-        self.version: str = self.meta["package"]["version"]
-        self.library: bool = self.meta.get("build", {}).get("library", False)
-        self.shared_library: bool = self.meta.get("build", {}).get(
-            "sharedlibrary", False
-        )
+        self.meta = parse_package_config(pkgpath)
+        self.name = self.meta["package"]["name"]
+        self.version = self.meta["package"]["version"]
+        self.library = self.meta.get("build", {}).get("library", False)
+        self.shared_library = self.meta.get("build", {}).get("sharedlibrary", False)
 
         assert self.name == pkgdir.stem
 
-        self.dependencies: List[str] = self.meta.get("requirements", {}).get("run", [])
-        self.unbuilt_dependencies: Set[str] = set(self.dependencies)
-        self.dependents: Set[str] = set()
+        self.dependencies = self.meta.get("requirements", {}).get("run", [])
+        self.unbuilt_dependencies = set(self.dependencies)
+        self.dependents = set()
 
     def build(self, outputdir: Path, args) -> None:
         with open(self.pkgdir / "build.log", "w") as f:
@@ -88,28 +125,20 @@ class Package:
                 outputdir / (self.name + ".js"),
             )
 
-    # We use this in the priority queue, which pops off the smallest element.
-    # So we want the smallest element to have the largest number of dependents
-    def __lt__(self, other) -> bool:
-        return len(self.dependents) > len(other.dependents)
-
-    def __eq__(self, other) -> bool:
-        return len(self.dependents) == len(other.dependents)
-
 
 def generate_dependency_graph(
     packages_dir: Path, package_list: Optional[str]
-) -> Dict[str, Package]:
+) -> Dict[str, BasePackage]:
     """
     This generates a dependency graph for the packages listed in package_list.
-    A node in the graph is a Package object defined above, which maintains a
-    list of dependencies and also dependents. That is, each node stores both
+    A node in the graph is a BasePackage object defined above, which maintains
+    a list of dependencies and also dependents. That is, each node stores both
     incoming and outgoing edges.
 
     The dependencies and dependents are stored via their name, and we have a
-    lookup table pkg_map: Dict[str, Package] to look up the corresponding
-    Package object. The function returns pkg_map, which contains all packages
-    in the graph as its values.
+    lookup table pkg_map: Dict[str, BasePackage] to look up the corresponding
+    BasePackage object. The function returns pkg_map, which contains all
+    packages in the graph as its values.
 
     Parameters:
      - packages_dir: directory that contains packages
@@ -117,10 +146,10 @@ def generate_dependency_graph(
        packages_dir are compiled.
 
     Returns:
-     - pkg_map: dictionary mapping package names to Package objects
+     - pkg_map: dictionary mapping package names to BasePackage objects
     """
 
-    pkg_map: Dict[str, Package] = {}
+    pkg_map: Dict[str, BasePackage] = {}
 
     packages: Optional[Set[str]] = common._parse_package_subset(package_list)
     if packages is None:
@@ -131,7 +160,11 @@ def generate_dependency_graph(
     while packages:
         pkgname = packages.pop()
 
-        pkg = Package(packages_dir / pkgname)
+        pkg: BasePackage
+        if pkgname in UNVENDORED_STDLIB_MODULES:
+            pkg = StdLibPackage(packages_dir / pkgname)
+        else:
+            pkg = Package(packages_dir / pkgname)
         pkg_map[pkg.name] = pkg
 
         for dep in pkg.dependencies:
@@ -146,7 +179,7 @@ def generate_dependency_graph(
     return pkg_map
 
 
-def build_from_graph(pkg_map: Dict[str, Package], outputdir: Path, args) -> None:
+def build_from_graph(pkg_map: Dict[str, BasePackage], outputdir: Path, args) -> None:
     """
     This builds packages in pkg_map in parallel, building at most args.n_jobs
     packages at once.
@@ -177,6 +210,7 @@ def build_from_graph(pkg_map: Dict[str, Package], outputdir: Path, args) -> None
         print(f"Starting thread {n}")
         while True:
             pkg = build_queue.get()
+
             print(f"Thread {n} building {pkg.name}")
             t0 = perf_counter()
             try:
@@ -213,12 +247,9 @@ def build_packages(packages_dir: Path, outputdir: Path, args) -> None:
 
     build_from_graph(pkg_map, outputdir, args)
 
-    # Build package.json data. The "test" package is built in a different way,
-    # so we hardcode its existence here.
-    #
-    # This is done last so the Makefile can use it as a completion token.
+    # Build package.json data.
     package_data: dict = {
-        "dependencies": {"test": []},
+        "dependencies": {key: [] for key in UNVENDORED_STDLIB_MODULES},
         "import_name_to_package_name": {},
         "shared_library": {},
         "versions": {},

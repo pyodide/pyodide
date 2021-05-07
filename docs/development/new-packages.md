@@ -30,7 +30,7 @@ load a package's dependencies automatically.
 If you wish to create a new package for Pyodide, the easiest place to start is
 with the {ref}`mkpkg tool <pyodide-mkpkg>`. If your package is on PyPI, just run:
 
-`bin/pyodide mkpkg $PACKAGE_NAME`
+`pyodide-build mkpkg $PACKAGE_NAME`
 
 This will generate a `meta.yaml` (see below) that should work out of the box
 for many pure Python packages. This tool will populate the latest version, download

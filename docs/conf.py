@@ -12,8 +12,9 @@ import subprocess
 base_dir = pathlib.Path(__file__).resolve().parent.parent
 path_dirs = [
     str(base_dir),
+    str(base_dir / "pyodide-build"),
     str(base_dir / "docs/sphinx_pyodide"),
-    str(base_dir / "src/pyodide-py"),
+    str(base_dir / "src/py"),
     str(base_dir / "packages/micropip/micropip"),
 ]
 sys.path = path_dirs + sys.path
@@ -51,7 +52,7 @@ extensions = [
     "autodocsumm",
     "sphinx_pyodide",
     "sphinx_argparse_cli",
-    "versionwarning.extension",
+    #    "versionwarning.extension",
     "sphinx_issues",
 ]
 

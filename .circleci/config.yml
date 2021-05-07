@@ -3,7 +3,7 @@ version: 2
 defaults: &defaults
   working_directory: ~/repo
   docker:
-    - image: pyodide/pyodide-env:15
+    - image: pyodide/pyodide-env:16
   environment:
     - EMSDK_NUM_CORES: 3
       EMCC_CORES: 3
@@ -21,12 +21,8 @@ jobs:
           command: make lint
 
   test-docs:
-    working_directory: ~/repo
+    <<: *defaults
     resource_class: small
-
-    docker:
-      - image: cimg/python:3.8.2-node
-
     steps:
       - checkout
 
@@ -34,8 +30,6 @@ jobs:
           name: Install prerequisites
           command: |
             pip install -r docs/requirements-doc.txt
-            pip install pytest
-            sudo npm install -g jsdoc
 
       - run:
           name: Test docs
@@ -195,7 +189,7 @@ jobs:
       - run:
           name: test
           command: |
-            pytest src pyodide_build packages/micropip/ -v -k 'not (chrome or firefox)' --cov=pyodide_build --cov=pyodide
+            pytest src pyodide-build packages/micropip/ -v -k 'not (chrome or firefox)' --cov=pyodide_build --cov=pyodide
 
   benchmark:
     <<: *defaults
@@ -253,7 +247,7 @@ jobs:
     resource_class: small
 
     docker:
-      - image: cibuilds/github:0.13 
+      - image: cibuilds/github:0.13
 
     steps:
       - checkout
