@@ -58,7 +58,7 @@ def run_in_pyodide(
                     selenium.run_js(
                         """pyodide._module.pyodide_py.eval_code.callKwargs(
                                 {{
-                                    code : {!r},
+                                    source : {!r},
                                     globals : pyodide._module.globals,
                                     filename : {!r}
                                 }}
