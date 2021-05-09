@@ -144,9 +144,9 @@ def _last_expr_to_raise(mod: ast.Module):
 def _parse_and_compile_gen(
     source: str,
     *,
+    return_mode: str = "last_expr",
     quiet_trailing_semicolon: bool = True,
     filename: str = "<exec>",
-    return_mode: str = "last_expr",
     flags: int = 0x0,
 ) -> Generator[ast.Module, ast.Module, CodeType]:
     """Parse the source, then yield the AST, then compile the AST and return the
@@ -221,31 +221,30 @@ class CodeRunner:
 
         code : Once you call :any:`CodeRunner.compile` the compiled code will
                be avaible in the code field. You can modify this variable in
-               before calling `CodeRunner.run` to do a code transform (though
-               few people are likely to want to do this).
+               before calling :any:`CodeRunner.run` to do a code transform.
     """
 
     def __init__(
         self,
         source: str,
         *,
+        return_mode: str = "last_expr",
         quiet_trailing_semicolon: bool = True,
         filename: str = "<exec>",
-        return_mode: str = "last_expr",
         flags: int = 0x0,
     ):
         self._compiled = False
         self._gen = _parse_and_compile_gen(
             source,
+            return_mode=return_mode,
             quiet_trailing_semicolon=quiet_trailing_semicolon,
             filename=filename,
-            return_mode=return_mode,
             flags=flags,
         )
         self.ast = next(self._gen)
 
     def compile(self):
-        """Compile the current value of self.ast and store the result in self.code.
+        """Compile the current value of ``self.ast`` and store the result in ``self.code``.
 
         Can only be used once. Returns self (chainable)
         """
@@ -263,10 +262,10 @@ class CodeRunner:
         return self
 
     def run(self, globals: Dict[str, Any] = None, locals: Dict[str, Any] = None):
-        """Runs self.code.
+        """Executes ``self.code``.
 
         Can only be used after calling compile. The code may not use top level
-        await, use run_async for code that uses top level await.
+        await, use :any:`CodeRunner.run_async` for code that uses top level await.
 
         Parameters
         ----------
@@ -288,12 +287,7 @@ class CodeRunner:
 
         Returns
         -------
-        If the last nonwhitespace character of ``source`` is a semicolon,
-        return ``None``.
-        If the last statement is an expression, return the
-        result of the expression.
-        Use the ``return_mode`` and ``quiet_trailing_semicolon`` parameters in the
-        constructor to modify this default behavior.
+            The result of ``self.code``, depends on the parameters ``return_mode`` and ``quiet_trailing_semicolon``.
         """
         if not self._compiled:
             raise RuntimeError("Not yet compiled")
@@ -312,9 +306,9 @@ class CodeRunner:
     async def run_async(
         self, globals: Dict[str, Any] = None, locals: Dict[str, Any] = None
     ):
-        """Runs self.code which may use top level await.
+        """Runs ``self.code`` which may use top level await.
 
-        Can only be used after calling compile. If the code uses top level
+        Can only be used after calling :any:`CodeRunner.compile`. If ``self.code`` uses top level
         await, automatically awaits the resulting coroutine.
 
         Parameters
@@ -337,12 +331,7 @@ class CodeRunner:
 
         Returns
         -------
-        If the last nonwhitespace character of ``source`` is a semicolon,
-        return ``None``.
-        If the last statement is an expression, return the
-        result of the expression.
-        Use the ``return_mode`` and ``quiet_trailing_semicolon`` parameters in the
-        constructor to modify this default behavior.
+            The result of ``self.code``, depends on the parameters ``return_mode`` and ``quiet_trailing_semicolon``.
         """
         if not self._compiled:
             raise RuntimeError("Not yet compiled")
@@ -446,7 +435,7 @@ async def eval_code_async(
     """Runs a code string asynchronously.
 
     Uses
-    [PyCF_ALLOW_TOP_LEVEL_AWAIT](https://docs.python.org/3/library/ast.html#ast.PyCF_ALLOW_TOP_LEVEL_AWAIT)
+    `PyCF_ALLOW_TOP_LEVEL_AWAIT <https://docs.python.org/3/library/ast.html#ast.PyCF_ALLOW_TOP_LEVEL_AWAIT>`_
     to compile the code.
 
     Parameters

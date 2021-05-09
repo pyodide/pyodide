@@ -86,19 +86,21 @@ class PyodideAnalyzer:
         def get_val():
             return OrderedDict([["attribute", []], ["function", []], ["class", []]])
 
-        self.js_docs = {key: get_val() for key in ["globalThis", "pyodide", "PyProxy"]}
-        items = {"PyProxy": []}
+        modules = ["globalThis", "pyodide", "PyProxy"]
+        self.js_docs = {key: get_val() for key in modules}
+        items = {key: [] for key in modules}
         for (key, group) in self._doclets_by_class.items():
+            dir = key[1]
             key = [x for x in key if "/" not in x]
             if key[-1] == "PyBuffer":
                 # PyBuffer stuff is documented as a class. Would be nice to have
                 # a less ad hoc way to deal with this...
                 continue
             if key[-1] == "globalThis":
-                items["globalThis"] = group
-            if key[0] == "pyodide." and key[-1] == "Module":
-                items["pyodide"] = group
-            if key[0] == "pyproxy.":
+                items["globalThis"] += group
+            if dir == "js/" and key[-1] == "Module":
+                items["pyodide"] += group
+            if dir == "core/" and key[0] == "pyproxy.":
                 items["PyProxy"] += group
 
         from operator import itemgetter
