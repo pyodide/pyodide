@@ -149,7 +149,7 @@ def _parse_and_compile_gen(
     filename: str = "<exec>",
     flags: int = 0x0,
 ) -> Generator[ast.Module, ast.Module, CodeType]:
-    """Parse the source, then yield the AST, then compile the AST and return the
+    """Parse ``source``, then yield the AST, then compile the AST and return the
     code object.
 
     By yielding the ast, we give callers the opportunity to do further ast
@@ -207,17 +207,17 @@ class CodeRunner:
     quiet_trailing_semicolon : ``bool``
 
         Specifies whether a trailing semicolon should suppress the result or not.
-        When this is ``True`` (default) executing ``"1+1 ;"`` returns ``None``, when
-        it is ``False``, executing ``"1+1 ;"`` return ``2``.
+        When this is ``True`` executing ``"1+1 ;"`` returns ``None``, when
+        it is ``False``, executing ``"1+1 ;"`` return ``2``. ``True`` by default.
 
     filename : ``str``
 
-        The file name to use in error messages and stack traces. `'<exec>'` by default.
+        The file name to use in error messages and stack traces. ``'<exec>'`` by default.
 
 
     Attributes:
 
-        ast : The ast from parsing source. If you wish to do an ast transform,
+        ast : The ast from parsing ``source``. If you wish to do an ast transform,
               modify this variable before calling :any:`CodeRunner.compile`.
 
         code : Once you call :any:`CodeRunner.compile` the compiled code will
@@ -247,7 +247,7 @@ class CodeRunner:
     def compile(self):
         """Compile the current value of ``self.ast`` and store the result in ``self.code``.
 
-        Can only be used once. Returns self (chainable)
+        Can only be used once. Returns ``self`` (chainable).
         """
         if self._compiled:
             raise RuntimeError("Already compiled")
@@ -288,7 +288,9 @@ class CodeRunner:
 
         Returns
         -------
-        Any If the last nonwhitespace character of ``source`` is a semicolon,
+        Any
+
+            If the last nonwhitespace character of ``source`` is a semicolon,
             return ``None``. If the last statement is an expression, return the
             result of the expression. Use the ``return_mode`` and
             ``quiet_trailing_semicolon`` parameters to modify this default
@@ -336,7 +338,8 @@ class CodeRunner:
 
         Returns
         -------
-        Any If the last nonwhitespace character of ``source`` is a semicolon,
+        Any
+            If the last nonwhitespace character of ``source`` is a semicolon,
             return ``None``. If the last statement is an expression, return the
             result of the expression. Use the ``return_mode`` and
             ``quiet_trailing_semicolon`` parameters to modify this default
@@ -405,11 +408,12 @@ def eval_code(
 
     filename : ``str``
 
-        The file name to use in error messages and stack traces. `'<exec>'` by default.
+        The file name to use in error messages and stack traces. ``'<exec>'`` by default.
 
     Returns
     -------
     Any
+
         If the last nonwhitespace character of ``source`` is a semicolon, return
         ``None``. If the last statement is an expression, return the result of the
         expression. Use the ``return_mode`` and ``quiet_trailing_semicolon``
@@ -483,7 +487,7 @@ async def eval_code_async(
 
     filename : ``str``
 
-        The file name to use in error messages and stack traces. `'<exec>'` by default.
+        The file name to use in error messages and stack traces. ``'<exec>'`` by default.
 
     Returns
     -------
@@ -519,7 +523,7 @@ def find_imports(source: str) -> List[str]:
     Returns
     -------
     ``List[str]``
-        A list of module names that are imported in the source.
+        A list of module names that are imported in ``source``.
 
     Examples
     --------
