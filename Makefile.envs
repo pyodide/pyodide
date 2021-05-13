@@ -26,18 +26,24 @@ export PYODIDE_PACKAGE_ABI=1
 export EM_COMPILER_WRAPPER=ccache
 
 export OPTFLAGS=-Os
+# for debugging use
+# = -g3 -gseparate-dwarf
+export DBGFLAGS=-g0
 export CFLAGS_BASE=\
 	$(OPTFLAGS) \
-	-g \
+	$(DBGFLAGS) \
+    -s WASM_BIGINT=1 \
 	-fPIC \
 	$(EXTRA_CFLAGS)
 
 export LDFLAGS_BASE=\
 	$(OPTFLAGS) \
+    $(DBGFLAGS) \
 	-s MODULARIZE=1 \
 	-s LINKABLE=1 \
 	-s EXPORT_ALL=1 \
 	-s WASM=1 \
+    -s WASM_BIGINT=1 \
 	-std=c++14 \
 	-s LZ4=1 \
 	$(EXTRA_LDFLAGS)
