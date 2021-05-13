@@ -105,6 +105,8 @@ class FigureCanvasHTMLCanvas(FigureCanvasWasm):
                     ref_data = np.asarray(Image.open(io.BytesIO(req.response.to_py())))
                     mean_deviation = np.mean(np.abs(canvas_data - ref_data))
                     window.deviation = mean_deviation
+
+                    # converts a `numpy._bool` type explicitly to `bool`
                     window.result = bool(mean_deviation <= threshold)
 
             req.onreadystatechange = callback

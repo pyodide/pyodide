@@ -21,8 +21,7 @@ all: check \
 	build/packages.json \
 	build/test.html \
 	build/webworker.js \
-	build/webworker_dev.js \
-	copy-reference-images
+	build/webworker_dev.js
 	echo -e "\nSUCCESS!"
 
 

@@ -3,7 +3,10 @@ import os
 import pathlib
 from selenium.webdriver.support.wait import WebDriverWait
 
-TEST_PATH = pathlib.Path(__file__).parent.resolve() / "reference-images"
+ROOT_PATH = pathlib.Path(__file__).resolve().parents[2]
+
+TEST_PATH = ROOT_PATH / "packages" / "matplotlib" / "reference-images"
+TARGET_PATH = ROOT_PATH / "build" / "matplotlib-test"
 
 
 def get_canvas_data(selenium, prefix):
@@ -30,6 +33,7 @@ def check_comparison(selenium, prefix, num_fonts):
     ):
         get_canvas_data(selenium, prefix)
 
+    TARGET_PATH.symlink_to(TEST_PATH, True)
     selenium.run(
         f"""
     url = 'http://{selenium.server_hostname}:{selenium.server_port}/matplotlib-test/{prefix}-{selenium.browser}.png'
@@ -41,6 +45,7 @@ def check_comparison(selenium, prefix, num_fonts):
     wait.until(ResultLoaded())
     assert selenium.run("window.deviation") == 0
     assert selenium.run("window.result") is True
+    TARGET_PATH.unlink()
 
 
 @pytest.mark.skip_refcount_check
