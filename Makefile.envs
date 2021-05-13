@@ -25,7 +25,7 @@ export PYODIDE=1
 export PYODIDE_PACKAGE_ABI=1
 export EM_COMPILER_WRAPPER=ccache
 
-export OPTFLAGS=-O2
+export OPTFLAGS=-Os
 export CFLAGS_BASE=\
 	$(OPTFLAGS) \
 	-g \
@@ -36,7 +36,6 @@ export LDFLAGS_BASE=\
 	$(OPTFLAGS) \
 	-s MODULARIZE=1 \
 	-s LINKABLE=1 \
-    -gseparate-dwarf \
 	-s EXPORT_ALL=1 \
 	-s WASM=1 \
 	-std=c++14 \
