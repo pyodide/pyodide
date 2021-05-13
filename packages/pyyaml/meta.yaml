@@ -1,0 +1,15 @@
+package:
+  name: pyyaml
+  version: 5.4.1
+requirements:
+  run:
+    - libyaml
+source:
+  sha256: 607774cbba28732bfa802b54baa7484215f530991055bb562efbed5b2f20a45e
+  url: https://files.pythonhosted.org/packages/a0/a4/d63f2d7597e1a4b55aa3b4d6c5b029991d3b824b5bd331af8d4ab1ed687d/PyYAML-5.4.1.tar.gz
+build:
+  cflags: -I /usr/local/include/
+  ldflags: -L /usr/local/lib/
+test:
+  imports:
+  - pyyaml
