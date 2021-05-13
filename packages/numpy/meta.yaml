@@ -21,6 +21,7 @@ source:
     - patches/fix-ieee754.patch
     - patches/rm-duplicate-symbols-link.patch
     - patches/delay-ctypes-import.patch
+    - patches/fix-getters.patch
 
 build:
   skip_host: False

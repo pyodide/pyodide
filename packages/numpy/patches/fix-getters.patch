@@ -1,0 +1,1257 @@
+Python attribute getters have a void* argument which is used to pass context data in. This isn't used in numpy
+but needs to be there even if it is ignored.
+diff --git a/numpy/core/src/multiarray/getset.c b/numpy/core/src/multiarray/getset.c
+index 2c4969d..da9b7f3 100644
+--- a/numpy/core/src/multiarray/getset.c
++++ b/numpy/core/src/multiarray/getset.c
+@@ -25,26 +25,26 @@
+ /*******************  array attribute get and set routines ******************/
+ 
+ static PyObject *
+-array_ndim_get(PyArrayObject *self)
++array_ndim_get(PyArrayObject *self,void* ignored)
+ {
+     return PyInt_FromLong(PyArray_NDIM(self));
+ }
+ 
+ static PyObject *
+-array_flags_get(PyArrayObject *self)
++array_flags_get(PyArrayObject *self,void* ignored)
+ {
+     return PyArray_NewFlagsObject((PyObject *)self);
+ }
+ 
+ static PyObject *
+-array_shape_get(PyArrayObject *self)
++array_shape_get(PyArrayObject *self,void* ignored)
+ {
+     return PyArray_IntTupleFromIntp(PyArray_NDIM(self), PyArray_DIMS(self));
+ }
+ 
+ 
+ static int
+-array_shape_set(PyArrayObject *self, PyObject *val)
++array_shape_set(PyArrayObject *self, PyObject *val,void* ignored)
+ {
+     int nd;
+     PyArrayObject *ret;
+@@ -96,13 +96,13 @@ array_shape_set(PyArrayObject *self, PyObject *val)
+ 
+ 
+ static PyObject *
+-array_strides_get(PyArrayObject *self)
++array_strides_get(PyArrayObject *self,void* ignored)
+ {
+     return PyArray_IntTupleFromIntp(PyArray_NDIM(self), PyArray_STRIDES(self));
+ }
+ 
+ static int
+-array_strides_set(PyArrayObject *self, PyObject *obj)
++array_strides_set(PyArrayObject *self, PyObject *obj,void* ignored)
+ {
+     PyArray_Dims newstrides = {NULL, 0};
+     PyArrayObject *new;
+@@ -190,31 +190,31 @@ array_strides_set(PyArrayObject *self, PyObject *obj)
+ 
+ 
+ static PyObject *
+-array_priority_get(PyArrayObject *self)
++array_priority_get(PyArrayObject *self,void* ignored)
+ {
+     return PyFloat_FromDouble(NPY_PRIORITY);
+ }
+ 
+ static PyObject *
+-array_typestr_get(PyArrayObject *self)
++array_typestr_get(PyArrayObject *self,void* ignored)
+ {
+-    return arraydescr_protocol_typestr_get(PyArray_DESCR(self));
++    return arraydescr_protocol_typestr_get(PyArray_DESCR(self),NULL);
+ }
+ 
+ static PyObject *
+-array_descr_get(PyArrayObject *self)
++array_descr_get(PyArrayObject *self,void* ignored)
+ {
+     Py_INCREF(PyArray_DESCR(self));
+     return (PyObject *)PyArray_DESCR(self);
+ }
+ 
+ static PyObject *
+-array_protocol_descr_get(PyArrayObject *self)
++array_protocol_descr_get(PyArrayObject *self,void* ignored)
+ {
+     PyObject *res;
+     PyObject *dobj;
+ 
+-    res = arraydescr_protocol_descr_get(PyArray_DESCR(self));
++    res = arraydescr_protocol_descr_get(PyArray_DESCR(self),NULL);
+     if (res) {
+         return res;
+     }
+@@ -226,7 +226,7 @@ array_protocol_descr_get(PyArrayObject *self)
+         return NULL;
+     }
+     PyTuple_SET_ITEM(dobj, 0, PyString_FromString(""));
+-    PyTuple_SET_ITEM(dobj, 1, array_typestr_get(self));
++    PyTuple_SET_ITEM(dobj, 1, array_typestr_get(self,NULL));
+     res = PyList_New(1);
+     if (res == NULL) {
+         Py_DECREF(dobj);
+@@ -237,7 +237,7 @@ array_protocol_descr_get(PyArrayObject *self)
+ }
+ 
+ static PyObject *
+-array_protocol_strides_get(PyArrayObject *self)
++array_protocol_strides_get(PyArrayObject *self,void* ignored)
+ {
+     if (PyArray_ISCONTIGUOUS(self)) {
+         Py_RETURN_NONE;
+@@ -248,7 +248,7 @@ array_protocol_strides_get(PyArrayObject *self)
+ 
+ 
+ static PyObject *
+-array_dataptr_get(PyArrayObject *self)
++array_dataptr_get(PyArrayObject *self,void* ignored)
+ {
+     return Py_BuildValue("NO",
+                          PyLong_FromVoidPtr(PyArray_DATA(self)),
+@@ -257,7 +257,7 @@ array_dataptr_get(PyArrayObject *self)
+ }
+ 
+ static PyObject *
+-array_ctypes_get(PyArrayObject *self)
++array_ctypes_get(PyArrayObject *self,void* ignored)
+ {
+     PyObject *_numpy_internal;
+     PyObject *ret;
+@@ -272,7 +272,7 @@ array_ctypes_get(PyArrayObject *self)
+ }
+ 
+ static PyObject *
+-array_interface_get(PyArrayObject *self)
++array_interface_get(PyArrayObject *self,void* ignored)
+ {
+     PyObject *dict;
+     PyObject *obj;
+@@ -288,23 +288,23 @@ array_interface_get(PyArrayObject *self)
+     }
+ 
+     /* dataptr */
+-    obj = array_dataptr_get(self);
++    obj = array_dataptr_get(self,NULL);
+     PyDict_SetItemString(dict, "data", obj);
+     Py_DECREF(obj);
+ 
+-    obj = array_protocol_strides_get(self);
++    obj = array_protocol_strides_get(self,NULL);
+     PyDict_SetItemString(dict, "strides", obj);
+     Py_DECREF(obj);
+ 
+-    obj = array_protocol_descr_get(self);
++    obj = array_protocol_descr_get(self,NULL);
+     PyDict_SetItemString(dict, "descr", obj);
+     Py_DECREF(obj);
+ 
+-    obj = arraydescr_protocol_typestr_get(PyArray_DESCR(self));
++    obj = arraydescr_protocol_typestr_get(PyArray_DESCR(self),NULL);
+     PyDict_SetItemString(dict, "typestr", obj);
+     Py_DECREF(obj);
+ 
+-    obj = array_shape_get(self);
++    obj = array_shape_get(self,NULL);
+     PyDict_SetItemString(dict, "shape", obj);
+     Py_DECREF(obj);
+ 
+@@ -316,7 +316,7 @@ array_interface_get(PyArrayObject *self)
+ }
+ 
+ static PyObject *
+-array_data_get(PyArrayObject *self)
++array_data_get(PyArrayObject *self,void* ignored)
+ {
+ #if defined(NPY_PY3K)
+     return PyMemoryView_FromObject((PyObject *)self);
+@@ -338,7 +338,7 @@ array_data_get(PyArrayObject *self)
+ }
+ 
+ static int
+-array_data_set(PyArrayObject *self, PyObject *op)
++array_data_set(PyArrayObject *self, PyObject *op,void* ignored)
+ {
+     void *buf;
+     Py_ssize_t buf_len;
+@@ -428,13 +428,13 @@ array_data_set(PyArrayObject *self, PyObject *op)
+ 
+ 
+ static PyObject *
+-array_itemsize_get(PyArrayObject *self)
++array_itemsize_get(PyArrayObject *self,void* ignored)
+ {
+     return PyInt_FromLong((long) PyArray_DESCR(self)->elsize);
+ }
+ 
+ static PyObject *
+-array_size_get(PyArrayObject *self)
++array_size_get(PyArrayObject *self,void* ignored)
+ {
+     npy_intp size=PyArray_SIZE(self);
+ #if NPY_SIZEOF_INTP <= NPY_SIZEOF_LONG
+@@ -450,7 +450,7 @@ array_size_get(PyArrayObject *self)
+ }
+ 
+ static PyObject *
+-array_nbytes_get(PyArrayObject *self)
++array_nbytes_get(PyArrayObject *self,void* ignored)
+ {
+     npy_intp nbytes = PyArray_NBYTES(self);
+ #if NPY_SIZEOF_INTP <= NPY_SIZEOF_LONG
+@@ -475,7 +475,7 @@ array_nbytes_get(PyArrayObject *self)
+  * will be adjusted in that case as well.
+  */
+ static int
+-array_descr_set(PyArrayObject *self, PyObject *arg)
++array_descr_set(PyArrayObject *self, PyObject *arg,void* ignored)
+ {
+     PyArray_Descr *newtype = NULL;
+ 
+@@ -635,7 +635,7 @@ array_descr_set(PyArrayObject *self, PyObject *arg)
+ }
+ 
+ static PyObject *
+-array_struct_get(PyArrayObject *self)
++array_struct_get(PyArrayObject *self,void* ignored)
+ {
+     PyArrayInterface *inter;
+     PyObject *ret;
+@@ -679,7 +679,7 @@ array_struct_get(PyArrayObject *self)
+     }
+     inter->data = PyArray_DATA(self);
+     if (PyDataType_HASFIELDS(PyArray_DESCR(self))) {
+-        inter->descr = arraydescr_protocol_descr_get(PyArray_DESCR(self));
++        inter->descr = arraydescr_protocol_descr_get(PyArray_DESCR(self),NULL);
+         if (inter->descr == NULL) {
+             PyErr_Clear();
+         }
+@@ -696,7 +696,7 @@ array_struct_get(PyArrayObject *self)
+ }
+ 
+ static PyObject *
+-array_base_get(PyArrayObject *self)
++array_base_get(PyArrayObject *self,void* ignored)
+ {
+     if (PyArray_BASE(self) == NULL) {
+         Py_RETURN_NONE;
+@@ -766,7 +766,7 @@ _get_part(PyArrayObject *self, int imag)
+  */
+ 
+ static PyObject *
+-array_real_get(PyArrayObject *self)
++array_real_get(PyArrayObject *self,void* ignored)
+ {
+     PyArrayObject *ret;
+ 
+@@ -782,7 +782,7 @@ array_real_get(PyArrayObject *self)
+ 
+ 
+ static int
+-array_real_set(PyArrayObject *self, PyObject *val)
++array_real_set(PyArrayObject *self, PyObject *val,void* ignored)
+ {
+     PyArrayObject *ret;
+     PyArrayObject *new;
+@@ -820,7 +820,7 @@ array_real_set(PyArrayObject *self, PyObject *val)
+ */
+ 
+ static PyObject *
+-array_imag_get(PyArrayObject *self)
++array_imag_get(PyArrayObject *self,void* ignored)
+ {
+     PyArrayObject *ret;
+ 
+@@ -848,7 +848,7 @@ array_imag_get(PyArrayObject *self)
+ }
+ 
+ static int
+-array_imag_set(PyArrayObject *self, PyObject *val)
++array_imag_set(PyArrayObject *self, PyObject *val,void* ignored)
+ {
+     if (val == NULL) {
+         PyErr_SetString(PyExc_AttributeError,
+@@ -882,13 +882,13 @@ array_imag_set(PyArrayObject *self, PyObject *val)
+ }
+ 
+ static PyObject *
+-array_flat_get(PyArrayObject *self)
++array_flat_get(PyArrayObject *self,void* ignored)
+ {
+     return PyArray_IterNew((PyObject *)self);
+ }
+ 
+ static int
+-array_flat_set(PyArrayObject *self, PyObject *val)
++array_flat_set(PyArrayObject *self, PyObject *val,void* ignored)
+ {
+     PyArrayObject *arr = NULL;
+     int retval = -1;
+@@ -960,7 +960,7 @@ array_flat_set(PyArrayObject *self, PyObject *val)
+ }
+ 
+ static PyObject *
+-array_transpose_get(PyArrayObject *self)
++array_transpose_get(PyArrayObject *self,void* ignored)
+ {
+     return PyArray_Transpose(self, NULL);
+ }
+@@ -969,7 +969,7 @@ array_transpose_get(PyArrayObject *self)
+    --- default sub-class behavior
+ */
+ static PyObject *
+-array_finalize_get(PyArrayObject *NPY_UNUSED(self))
++array_finalize_get(PyArrayObject *NPY_UNUSED(self),void* ignored)
+ {
+     Py_RETURN_NONE;
+ }
+diff --git a/numpy/core/src/multiarray/descriptor.c b/numpy/core/src/multiarray/descriptor.c
+index cb4d796..9be489c 100644
+--- a/numpy/core/src/multiarray/descriptor.c
++++ b/numpy/core/src/multiarray/descriptor.c
+@@ -1867,7 +1867,7 @@ static PyMemberDef arraydescr_members[] = {
+ };
+ 
+ static PyObject *
+-arraydescr_subdescr_get(PyArray_Descr *self)
++arraydescr_subdescr_get(PyArray_Descr *self,void *ignored)
+ {
+     if (!PyDataType_HASSUBARRAY(self)) {
+         Py_RETURN_NONE;
+@@ -1877,7 +1877,7 @@ arraydescr_subdescr_get(PyArray_Descr *self)
+ }
+ 
+ NPY_NO_EXPORT PyObject *
+-arraydescr_protocol_typestr_get(PyArray_Descr *self)
++arraydescr_protocol_typestr_get(PyArray_Descr *self,void*ignored)
+ {
+     char basic_ = self->kind;
+     char endian = self->byteorder;
+@@ -1915,7 +1915,7 @@ arraydescr_protocol_typestr_get(PyArray_Descr *self)
+ }
+ 
+ static PyObject *
+-arraydescr_name_get(PyArray_Descr *self)
++arraydescr_name_get(PyArray_Descr *self,void* ignored)
+ {
+     /* let python handle this */
+     PyObject *_numpy_dtype;
+@@ -1930,7 +1930,7 @@ arraydescr_name_get(PyArray_Descr *self)
+ }
+ 
+ static PyObject *
+-arraydescr_base_get(PyArray_Descr *self)
++arraydescr_base_get(PyArray_Descr *self,void* ignored)
+ {
+     if (!PyDataType_HASSUBARRAY(self)) {
+         Py_INCREF(self);
+@@ -1941,7 +1941,7 @@ arraydescr_base_get(PyArray_Descr *self)
+ }
+ 
+ static PyObject *
+-arraydescr_shape_get(PyArray_Descr *self)
++arraydescr_shape_get(PyArray_Descr *self,void* ignored)
+ {
+     if (!PyDataType_HASSUBARRAY(self)) {
+         return PyTuple_New(0);
+@@ -1952,7 +1952,7 @@ arraydescr_shape_get(PyArray_Descr *self)
+ }
+ 
+ static PyObject *
+-arraydescr_ndim_get(PyArray_Descr *self)
++arraydescr_ndim_get(PyArray_Descr *self,void* ignored)
+ {
+     Py_ssize_t ndim;
+ 
+@@ -1970,7 +1970,7 @@ arraydescr_ndim_get(PyArray_Descr *self)
+ 
+ 
+ NPY_NO_EXPORT PyObject *
+-arraydescr_protocol_descr_get(PyArray_Descr *self)
++arraydescr_protocol_descr_get(PyArray_Descr *self,void* ignored)
+ {
+     PyObject *dobj, *res;
+     PyObject *_numpy_internal;
+@@ -1982,7 +1982,7 @@ arraydescr_protocol_descr_get(PyArray_Descr *self)
+             return NULL;
+         }
+         PyTuple_SET_ITEM(dobj, 0, PyUString_FromString(""));
+-        PyTuple_SET_ITEM(dobj, 1, arraydescr_protocol_typestr_get(self));
++        PyTuple_SET_ITEM(dobj, 1, arraydescr_protocol_typestr_get(self,NULL));
+         res = PyList_New(1);
+         if (res == NULL) {
+             Py_DECREF(dobj);
+@@ -2007,7 +2007,7 @@ arraydescr_protocol_descr_get(PyArray_Descr *self)
+  * return 0 if neither (i.e. it's a copy of one)
+  */
+ static PyObject *
+-arraydescr_isbuiltin_get(PyArray_Descr *self)
++arraydescr_isbuiltin_get(PyArray_Descr *self,void *ignored)
+ {
+     long val;
+     val = 0;
+@@ -2054,7 +2054,7 @@ _arraydescr_isnative(PyArray_Descr *self)
+  * fields are defined
+  */
+ static PyObject *
+-arraydescr_isnative_get(PyArray_Descr *self)
++arraydescr_isnative_get(PyArray_Descr *self,void* ignored)
+ {
+     PyObject *ret;
+     int retval;
+@@ -2068,7 +2068,7 @@ arraydescr_isnative_get(PyArray_Descr *self)
+ }
+ 
+ static PyObject *
+-arraydescr_isalignedstruct_get(PyArray_Descr *self)
++arraydescr_isalignedstruct_get(PyArray_Descr *self,void* ignored)
+ {
+     PyObject *ret;
+     ret = (self->flags&NPY_ALIGNED_STRUCT) ? Py_True : Py_False;
+@@ -2077,7 +2077,7 @@ arraydescr_isalignedstruct_get(PyArray_Descr *self)
+ }
+ 
+ static PyObject *
+-arraydescr_fields_get(PyArray_Descr *self)
++arraydescr_fields_get(PyArray_Descr *self,void* ignored)
+ {
+     if (!PyDataType_HASFIELDS(self)) {
+         Py_RETURN_NONE;
+@@ -2086,7 +2086,7 @@ arraydescr_fields_get(PyArray_Descr *self)
+ }
+ 
+ static PyObject *
+-arraydescr_metadata_get(PyArray_Descr *self)
++arraydescr_metadata_get(PyArray_Descr *self,void* ignored)
+ {
+     if (self->metadata == NULL) {
+         Py_RETURN_NONE;
+@@ -2095,7 +2095,7 @@ arraydescr_metadata_get(PyArray_Descr *self)
+ }
+ 
+ static PyObject *
+-arraydescr_hasobject_get(PyArray_Descr *self)
++arraydescr_hasobject_get(PyArray_Descr *self,void* ignored)
+ {
+     if (PyDataType_FLAGCHK(self, NPY_ITEM_HASOBJECT)) {
+         Py_RETURN_TRUE;
+@@ -2106,7 +2106,7 @@ arraydescr_hasobject_get(PyArray_Descr *self)
+ }
+ 
+ static PyObject *
+-arraydescr_names_get(PyArray_Descr *self)
++arraydescr_names_get(PyArray_Descr *self,void* ignored)
+ {
+     if (!PyDataType_HASFIELDS(self)) {
+         Py_RETURN_NONE;
+@@ -2116,7 +2116,7 @@ arraydescr_names_get(PyArray_Descr *self)
+ }
+ 
+ static int
+-arraydescr_names_set(PyArray_Descr *self, PyObject *val)
++arraydescr_names_set(PyArray_Descr *self, PyObject *val,void* ignored)
+ {
+     int N = 0;
+     int i;
+@@ -2474,7 +2474,7 @@ arraydescr_reduce(PyArray_Descr *self, PyObject *NPY_UNUSED(args))
+     }
+ 
+     PyTuple_SET_ITEM(state, 1, PyUString_FromFormat("%c", endian));
+-    PyTuple_SET_ITEM(state, 2, arraydescr_subdescr_get(self));
++    PyTuple_SET_ITEM(state, 2, arraydescr_subdescr_get(self,NULL));
+     if (PyDataType_HASFIELDS(self)) {
+         Py_INCREF(self->names);
+         Py_INCREF(self->fields);
+diff --git a/numpy/core/src/multiarray/descriptor.h b/numpy/core/src/multiarray/descriptor.h
+index 6024c5e..eab5d5c 100644
+--- a/numpy/core/src/multiarray/descriptor.h
++++ b/numpy/core/src/multiarray/descriptor.h
+@@ -1,8 +1,8 @@
+ #ifndef _NPY_ARRAYDESCR_H_
+ #define _NPY_ARRAYDESCR_H_
+ 
+-NPY_NO_EXPORT PyObject *arraydescr_protocol_typestr_get(PyArray_Descr *);
+-NPY_NO_EXPORT PyObject *arraydescr_protocol_descr_get(PyArray_Descr *self);
++NPY_NO_EXPORT PyObject *arraydescr_protocol_typestr_get(PyArray_Descr *,void*);
++NPY_NO_EXPORT PyObject *arraydescr_protocol_descr_get(PyArray_Descr *self,void*);
+ 
+ NPY_NO_EXPORT PyObject *
+ array_set_typeDict(PyObject *NPY_UNUSED(ignored), PyObject *args);
+diff --git a/numpy/core/src/multiarray/iterators.c b/numpy/core/src/multiarray/iterators.c
+index b59d32d..eb61508 100644
+--- a/numpy/core/src/multiarray/iterators.c
++++ b/numpy/core/src/multiarray/iterators.c
+@@ -1059,7 +1059,7 @@ static PyMemberDef iter_members[] = {
+ };
+ 
+ static PyObject *
+-iter_coords_get(PyArrayIterObject *self)
++iter_coords_get(PyArrayIterObject *self,void* ignored)
+ {
+     int nd;
+     nd = PyArray_NDIM(self->ao);
+@@ -1460,7 +1460,7 @@ arraymultiter_dealloc(PyArrayMultiIterObject *multi)
+ }
+ 
+ static PyObject *
+-arraymultiter_size_get(PyArrayMultiIterObject *self)
++arraymultiter_size_get(PyArrayMultiIterObject *self,void *ignored)
+ {
+ #if NPY_SIZEOF_INTP <= NPY_SIZEOF_LONG
+     return PyInt_FromLong((long) self->size);
+@@ -1475,7 +1475,7 @@ arraymultiter_size_get(PyArrayMultiIterObject *self)
+ }
+ 
+ static PyObject *
+-arraymultiter_index_get(PyArrayMultiIterObject *self)
++arraymultiter_index_get(PyArrayMultiIterObject *self,void* ignored)
+ {
+ #if NPY_SIZEOF_INTP <= NPY_SIZEOF_LONG
+     return PyInt_FromLong((long) self->index);
+@@ -1490,13 +1490,13 @@ arraymultiter_index_get(PyArrayMultiIterObject *self)
+ }
+ 
+ static PyObject *
+-arraymultiter_shape_get(PyArrayMultiIterObject *self)
++arraymultiter_shape_get(PyArrayMultiIterObject *self,void* ignored)
+ {
+     return PyArray_IntTupleFromIntp(self->nd, self->dimensions);
+ }
+ 
+ static PyObject *
+-arraymultiter_iters_get(PyArrayMultiIterObject *self)
++arraymultiter_iters_get(PyArrayMultiIterObject *self,void* ignored)
+ {
+     PyObject *res;
+     int i, n;
+diff --git a/numpy/core/src/multiarray/nditer_pywrap.c b/numpy/core/src/multiarray/nditer_pywrap.c
+index e370d83..feced2f 100644
+--- a/numpy/core/src/multiarray/nditer_pywrap.c
++++ b/numpy/core/src/multiarray/nditer_pywrap.c
+@@ -1419,7 +1419,7 @@ npyiter_debug_print(NewNpyArrayIterObject *self)
+ NPY_NO_EXPORT PyObject *
+ npyiter_seq_item(NewNpyArrayIterObject *self, Py_ssize_t i);
+ 
+-static PyObject *npyiter_value_get(NewNpyArrayIterObject *self)
++static PyObject *npyiter_value_get(NewNpyArrayIterObject *self,void* ignored)
+ {
+     PyObject *ret;
+ 
+@@ -1455,7 +1455,7 @@ static PyObject *npyiter_value_get(NewNpyArrayIterObject *self)
+     return ret;
+ }
+ 
+-static PyObject *npyiter_operands_get(NewNpyArrayIterObject *self)
++static PyObject *npyiter_operands_get(NewNpyArrayIterObject *self,void* ignored)
+ {
+     PyObject *ret;
+ 
+@@ -1484,7 +1484,7 @@ static PyObject *npyiter_operands_get(NewNpyArrayIterObject *self)
+     return ret;
+ }
+ 
+-static PyObject *npyiter_itviews_get(NewNpyArrayIterObject *self)
++static PyObject *npyiter_itviews_get(NewNpyArrayIterObject *self,void* ignored)
+ {
+     PyObject *ret;
+ 
+@@ -1539,10 +1539,10 @@ npyiter_next(NewNpyArrayIterObject *self)
+     }
+     self->started = 1;
+ 
+-    return npyiter_value_get(self);
++    return npyiter_value_get(self,NULL);
+ };
+ 
+-static PyObject *npyiter_shape_get(NewNpyArrayIterObject *self)
++static PyObject *npyiter_shape_get(NewNpyArrayIterObject *self,void* ignored)
+ {
+     PyObject *ret;
+     npy_intp idim, ndim, shape[NPY_MAXDIMS];
+@@ -1568,7 +1568,7 @@ static PyObject *npyiter_shape_get(NewNpyArrayIterObject *self)
+     return NULL;
+ }
+ 
+-static PyObject *npyiter_multi_index_get(NewNpyArrayIterObject *self)
++static PyObject *npyiter_multi_index_get(NewNpyArrayIterObject *self,void* ignored)
+ {
+     PyObject *ret;
+     npy_intp idim, ndim, multi_index[NPY_MAXDIMS];
+@@ -1613,7 +1613,7 @@ static PyObject *npyiter_multi_index_get(NewNpyArrayIterObject *self)
+ }
+ 
+ static int
+-npyiter_multi_index_set(NewNpyArrayIterObject *self, PyObject *value)
++npyiter_multi_index_set(NewNpyArrayIterObject *self, PyObject *value,void* ignored)
+ {
+     npy_intp idim, ndim, multi_index[NPY_MAXDIMS];
+ 
+@@ -1668,7 +1668,7 @@ npyiter_multi_index_set(NewNpyArrayIterObject *self, PyObject *value)
+     }
+ }
+ 
+-static PyObject *npyiter_index_get(NewNpyArrayIterObject *self)
++static PyObject *npyiter_index_get(NewNpyArrayIterObject *self,void* ignored)
+ {
+     if (self->iter == NULL || self->finished) {
+         PyErr_SetString(PyExc_ValueError,
+@@ -1687,7 +1687,7 @@ static PyObject *npyiter_index_get(NewNpyArrayIterObject *self)
+     }
+ }
+ 
+-static int npyiter_index_set(NewNpyArrayIterObject *self, PyObject *value)
++static int npyiter_index_set(NewNpyArrayIterObject *self, PyObject *value,void* ignored)
+ {
+     if (value == NULL) {
+         PyErr_SetString(PyExc_AttributeError,
+@@ -1726,7 +1726,7 @@ static int npyiter_index_set(NewNpyArrayIterObject *self, PyObject *value)
+     }
+ }
+ 
+-static PyObject *npyiter_iterindex_get(NewNpyArrayIterObject *self)
++static PyObject *npyiter_iterindex_get(NewNpyArrayIterObject *self,void* ignored)
+ {
+     if (self->iter == NULL || self->finished) {
+         PyErr_SetString(PyExc_ValueError,
+@@ -1737,7 +1737,7 @@ static PyObject *npyiter_iterindex_get(NewNpyArrayIterObject *self)
+     return PyInt_FromLong(NpyIter_GetIterIndex(self->iter));
+ }
+ 
+-static int npyiter_iterindex_set(NewNpyArrayIterObject *self, PyObject *value)
++static int npyiter_iterindex_set(NewNpyArrayIterObject *self, PyObject *value,void* ignored)
+ {
+     npy_intp iterindex;
+ 
+@@ -1770,7 +1770,7 @@ static int npyiter_iterindex_set(NewNpyArrayIterObject *self, PyObject *value)
+     return 0;
+ }
+ 
+-static PyObject *npyiter_iterrange_get(NewNpyArrayIterObject *self)
++static PyObject *npyiter_iterrange_get(NewNpyArrayIterObject *self,void* ignored)
+ {
+     npy_intp istart = 0, iend = 0;
+     PyObject *ret;
+@@ -1794,7 +1794,7 @@ static PyObject *npyiter_iterrange_get(NewNpyArrayIterObject *self)
+     return ret;
+ }
+ 
+-static int npyiter_iterrange_set(NewNpyArrayIterObject *self, PyObject *value)
++static int npyiter_iterrange_set(NewNpyArrayIterObject *self, PyObject *value,void* ignored)
+ {
+     npy_intp istart = 0, iend = 0;
+ 
+@@ -1836,7 +1836,7 @@ static int npyiter_iterrange_set(NewNpyArrayIterObject *self, PyObject *value)
+     return 0;
+ }
+ 
+-static PyObject *npyiter_has_delayed_bufalloc_get(NewNpyArrayIterObject *self)
++static PyObject *npyiter_has_delayed_bufalloc_get(NewNpyArrayIterObject *self,void* ignored)
+ {
+     if (self->iter == NULL) {
+         PyErr_SetString(PyExc_ValueError,
+@@ -1852,7 +1852,7 @@ static PyObject *npyiter_has_delayed_bufalloc_get(NewNpyArrayIterObject *self)
+     }
+ }
+ 
+-static PyObject *npyiter_iterationneedsapi_get(NewNpyArrayIterObject *self)
++static PyObject *npyiter_iterationneedsapi_get(NewNpyArrayIterObject *self,void* ignored)
+ {
+     if (self->iter == NULL) {
+         PyErr_SetString(PyExc_ValueError,
+@@ -1868,7 +1868,7 @@ static PyObject *npyiter_iterationneedsapi_get(NewNpyArrayIterObject *self)
+     }
+ }
+ 
+-static PyObject *npyiter_has_multi_index_get(NewNpyArrayIterObject *self)
++static PyObject *npyiter_has_multi_index_get(NewNpyArrayIterObject *self,void* ignored)
+ {
+     if (self->iter == NULL) {
+         PyErr_SetString(PyExc_ValueError,
+@@ -1884,7 +1884,7 @@ static PyObject *npyiter_has_multi_index_get(NewNpyArrayIterObject *self)
+     }
+ }
+ 
+-static PyObject *npyiter_has_index_get(NewNpyArrayIterObject *self)
++static PyObject *npyiter_has_index_get(NewNpyArrayIterObject *self,void* ignored)
+ {
+     if (self->iter == NULL) {
+         PyErr_SetString(PyExc_ValueError,
+@@ -1900,7 +1900,7 @@ static PyObject *npyiter_has_index_get(NewNpyArrayIterObject *self)
+     }
+ }
+ 
+-static PyObject *npyiter_dtypes_get(NewNpyArrayIterObject *self)
++static PyObject *npyiter_dtypes_get(NewNpyArrayIterObject *self,void* ignored)
+ {
+     PyObject *ret;
+ 
+@@ -1929,7 +1929,7 @@ static PyObject *npyiter_dtypes_get(NewNpyArrayIterObject *self)
+     return ret;
+ }
+ 
+-static PyObject *npyiter_ndim_get(NewNpyArrayIterObject *self)
++static PyObject *npyiter_ndim_get(NewNpyArrayIterObject *self,void* ignored)
+ {
+     if (self->iter == NULL) {
+         PyErr_SetString(PyExc_ValueError,
+@@ -1940,7 +1940,7 @@ static PyObject *npyiter_ndim_get(NewNpyArrayIterObject *self)
+     return PyInt_FromLong(NpyIter_GetNDim(self->iter));
+ }
+ 
+-static PyObject *npyiter_nop_get(NewNpyArrayIterObject *self)
++static PyObject *npyiter_nop_get(NewNpyArrayIterObject *self,void* ignored)
+ {
+     if (self->iter == NULL) {
+         PyErr_SetString(PyExc_ValueError,
+@@ -1951,7 +1951,7 @@ static PyObject *npyiter_nop_get(NewNpyArrayIterObject *self)
+     return PyInt_FromLong(NpyIter_GetNOp(self->iter));
+ }
+ 
+-static PyObject *npyiter_itersize_get(NewNpyArrayIterObject *self)
++static PyObject *npyiter_itersize_get(NewNpyArrayIterObject *self,void* ignored)
+ {
+     if (self->iter == NULL) {
+         PyErr_SetString(PyExc_ValueError,
+@@ -1962,7 +1962,7 @@ static PyObject *npyiter_itersize_get(NewNpyArrayIterObject *self)
+     return PyInt_FromLong(NpyIter_GetIterSize(self->iter));
+ }
+ 
+-static PyObject *npyiter_finished_get(NewNpyArrayIterObject *self)
++static PyObject *npyiter_finished_get(NewNpyArrayIterObject *self,void* ignored)
+ {
+     if (self->iter == NULL || !self->finished) {
+         Py_RETURN_FALSE;
+diff --git a/numpy/core/src/multiarray/flagsobject.c b/numpy/core/src/multiarray/flagsobject.c
+index a66b9d4..ccac263 100644
+--- a/numpy/core/src/multiarray/flagsobject.c
++++ b/numpy/core/src/multiarray/flagsobject.c
+@@ -200,7 +200,7 @@ arrayflags_dealloc(PyArrayFlagsObject *self)
+ 
+ #define _define_get(UPPER, lower) \
+     static PyObject * \
+-    arrayflags_ ## lower ## _get(PyArrayFlagsObject *self) \
++    arrayflags_ ## lower ## _get(PyArrayFlagsObject *self,void* ignored) \
+     { \
+         return PyBool_FromLong((self->flags & (UPPER)) == (UPPER)); \
+     }
+@@ -211,7 +211,7 @@ static char *msg = "future versions will not create a writeable "
+ 
+ #define _define_get_warn(UPPER, lower) \
+     static PyObject * \
+-    arrayflags_ ## lower ## _get(PyArrayFlagsObject *self) \
++    arrayflags_ ## lower ## _get(PyArrayFlagsObject *self,void* ignored) \
+     { \
+         if (self->flags & NPY_ARRAY_WARN_ON_WRITE) { \
+             if (PyErr_Warn(PyExc_FutureWarning, msg) < 0) {\
+@@ -236,7 +236,7 @@ _define_get_warn(NPY_ARRAY_ALIGNED|
+             NPY_ARRAY_C_CONTIGUOUS, carray)
+ 
+ static PyObject *
+-arrayflags_updateifcopy_get(PyArrayFlagsObject *self)
++arrayflags_updateifcopy_get(PyArrayFlagsObject *self,void* ignored)
+ {
+     PyObject *item;
+     /* 2017-Nov-10 1.14 */
+@@ -255,7 +255,7 @@ arrayflags_updateifcopy_get(PyArrayFlagsObject *self)
+ 
+ 
+ static PyObject *
+-arrayflags_forc_get(PyArrayFlagsObject *self)
++arrayflags_forc_get(PyArrayFlagsObject *self,void* ignored)
+ {
+     PyObject *item;
+ 
+@@ -271,7 +271,7 @@ arrayflags_forc_get(PyArrayFlagsObject *self)
+ }
+ 
+ static PyObject *
+-arrayflags_fnc_get(PyArrayFlagsObject *self)
++arrayflags_fnc_get(PyArrayFlagsObject *self,void* ignored)
+ {
+     PyObject *item;
+ 
+@@ -287,7 +287,7 @@ arrayflags_fnc_get(PyArrayFlagsObject *self)
+ }
+ 
+ static PyObject *
+-arrayflags_farray_get(PyArrayFlagsObject *self)
++arrayflags_farray_get(PyArrayFlagsObject *self,void* ignored)
+ {
+     PyObject *item;
+ 
+@@ -305,14 +305,14 @@ arrayflags_farray_get(PyArrayFlagsObject *self)
+ }
+ 
+ static PyObject *
+-arrayflags_num_get(PyArrayFlagsObject *self)
++arrayflags_num_get(PyArrayFlagsObject *self,void* ignored)
+ {
+     return PyInt_FromLong(self->flags);
+ }
+ 
+ /* relies on setflags order being write, align, uic */
+ static int
+-arrayflags_updateifcopy_set(PyArrayFlagsObject *self, PyObject *obj)
++arrayflags_updateifcopy_set(PyArrayFlagsObject *self, PyObject *obj,void* ignored)
+ {
+     PyObject *res;
+ 
+@@ -341,7 +341,7 @@ arrayflags_updateifcopy_set(PyArrayFlagsObject *self, PyObject *obj)
+ 
+ /* relies on setflags order being write, align, uic */
+ static int
+-arrayflags_writebackifcopy_set(PyArrayFlagsObject *self, PyObject *obj)
++arrayflags_writebackifcopy_set(PyArrayFlagsObject *self, PyObject *obj,void* ignored)
+ {
+     PyObject *res;
+ 
+@@ -365,7 +365,7 @@ arrayflags_writebackifcopy_set(PyArrayFlagsObject *self, PyObject *obj)
+ }
+ 
+ static int
+-arrayflags_aligned_set(PyArrayFlagsObject *self, PyObject *obj)
++arrayflags_aligned_set(PyArrayFlagsObject *self, PyObject *obj,void* ignored)
+ {
+     PyObject *res;
+ 
+@@ -390,7 +390,7 @@ arrayflags_aligned_set(PyArrayFlagsObject *self, PyObject *obj)
+ }
+ 
+ static int
+-arrayflags_writeable_set(PyArrayFlagsObject *self, PyObject *obj)
++arrayflags_writeable_set(PyArrayFlagsObject *self, PyObject *obj,void* ignored)
+ {
+     PyObject *res;
+ 
+@@ -415,7 +415,7 @@ arrayflags_writeable_set(PyArrayFlagsObject *self, PyObject *obj)
+ }
+ 
+ static int
+-arrayflags_warn_on_write_set(PyArrayFlagsObject *self, PyObject *obj)
++arrayflags_warn_on_write_set(PyArrayFlagsObject *self, PyObject *obj,void* ignored)
+ {
+     /*
+      * This code should go away in a future release, so do not mangle the
+@@ -554,89 +554,89 @@ arrayflags_getitem(PyArrayFlagsObject *self, PyObject *ind)
+     case 1:
+         switch(key[0]) {
+         case 'C':
+-            return arrayflags_contiguous_get(self);
++            return arrayflags_contiguous_get(self,NULL);
+         case 'F':
+-            return arrayflags_fortran_get(self);
++            return arrayflags_fortran_get(self,NULL);
+         case 'W':
+-            return arrayflags_writeable_get(self);
++            return arrayflags_writeable_get(self,NULL);
+         case 'B':
+-            return arrayflags_behaved_get(self);
++            return arrayflags_behaved_get(self,NULL);
+         case 'O':
+-            return arrayflags_owndata_get(self);
++            return arrayflags_owndata_get(self,NULL);
+         case 'A':
+-            return arrayflags_aligned_get(self);
++            return arrayflags_aligned_get(self,NULL);
+         case 'X':
+-            return arrayflags_writebackifcopy_get(self);
++            return arrayflags_writebackifcopy_get(self,NULL);
+         case 'U':
+-            return arrayflags_updateifcopy_get(self);
++            return arrayflags_updateifcopy_get(self,NULL);
+         default:
+             goto fail;
+         }
+         break;
+     case 2:
+         if (strncmp(key, "CA", n) == 0) {
+-            return arrayflags_carray_get(self);
++            return arrayflags_carray_get(self,NULL);
+         }
+         if (strncmp(key, "FA", n) == 0) {
+-            return arrayflags_farray_get(self);
++            return arrayflags_farray_get(self,NULL);
+         }
+         break;
+     case 3:
+         if (strncmp(key, "FNC", n) == 0) {
+-            return arrayflags_fnc_get(self);
++            return arrayflags_fnc_get(self,NULL);
+         }
+         break;
+     case 4:
+         if (strncmp(key, "FORC", n) == 0) {
+-            return arrayflags_forc_get(self);
++            return arrayflags_forc_get(self,NULL);
+         }
+         break;
+     case 6:
+         if (strncmp(key, "CARRAY", n) == 0) {
+-            return arrayflags_carray_get(self);
++            return arrayflags_carray_get(self,NULL);
+         }
+         if (strncmp(key, "FARRAY", n) == 0) {
+-            return arrayflags_farray_get(self);
++            return arrayflags_farray_get(self,NULL);
+         }
+         break;
+     case 7:
+         if (strncmp(key,"FORTRAN",n) == 0) {
+-            return arrayflags_fortran_get(self);
++            return arrayflags_fortran_get(self,NULL);
+         }
+         if (strncmp(key,"BEHAVED",n) == 0) {
+-            return arrayflags_behaved_get(self);
++            return arrayflags_behaved_get(self,NULL);
+         }
+         if (strncmp(key,"OWNDATA",n) == 0) {
+-            return arrayflags_owndata_get(self);
++            return arrayflags_owndata_get(self,NULL);
+         }
+         if (strncmp(key,"ALIGNED",n) == 0) {
+-            return arrayflags_aligned_get(self);
++            return arrayflags_aligned_get(self,NULL);
+         }
+         break;
+     case 9:
+         if (strncmp(key,"WRITEABLE",n) == 0) {
+-            return arrayflags_writeable_get(self);
++            return arrayflags_writeable_get(self,NULL);
+         }
+         break;
+     case 10:
+         if (strncmp(key,"CONTIGUOUS",n) == 0) {
+-            return arrayflags_contiguous_get(self);
++            return arrayflags_contiguous_get(self,NULL);
+         }
+         break;
+     case 12:
+         if (strncmp(key, "UPDATEIFCOPY", n) == 0) {
+-            return arrayflags_updateifcopy_get(self);
++            return arrayflags_updateifcopy_get(self,NULL);
+         }
+         if (strncmp(key, "C_CONTIGUOUS", n) == 0) {
+-            return arrayflags_contiguous_get(self);
++            return arrayflags_contiguous_get(self,NULL);
+         }
+         if (strncmp(key, "F_CONTIGUOUS", n) == 0) {
+-            return arrayflags_fortran_get(self);
++            return arrayflags_fortran_get(self,NULL);
+         }
+         break;
+     case 15:
+         if (strncmp(key, "WRITEBACKIFCOPY", n) == 0) {
+-            return arrayflags_writebackifcopy_get(self);
++            return arrayflags_writebackifcopy_get(self,NULL);
+         }
+         break;
+     }
+@@ -671,19 +671,19 @@ arrayflags_setitem(PyArrayFlagsObject *self, PyObject *ind, PyObject *item)
+     }
+     if (((n==9) && (strncmp(key, "WRITEABLE", n) == 0)) ||
+         ((n==1) && (strncmp(key, "W", n) == 0))) {
+-        return arrayflags_writeable_set(self, item);
++        return arrayflags_writeable_set(self, item,NULL);
+     }
+     else if (((n==7) && (strncmp(key, "ALIGNED", n) == 0)) ||
+              ((n==1) && (strncmp(key, "A", n) == 0))) {
+-        return arrayflags_aligned_set(self, item);
++        return arrayflags_aligned_set(self, item,NULL);
+     }
+     else if (((n==12) && (strncmp(key, "UPDATEIFCOPY", n) == 0)) ||
+              ((n==1) && (strncmp(key, "U", n) == 0))) {
+-        return arrayflags_updateifcopy_set(self, item);
++        return arrayflags_updateifcopy_set(self, item,NULL);
+     }
+     else if (((n==15) && (strncmp(key, "WRITEBACKIFCOPY", n) == 0)) ||
+              ((n==1) && (strncmp(key, "X", n) == 0))) {
+-        return arrayflags_writebackifcopy_set(self, item);
++        return arrayflags_writebackifcopy_set(self, item,NULL);
+     }
+ 
+  fail:
+diff --git a/numpy/core/src/multiarray/datetime_busdaycal.c b/numpy/core/src/multiarray/datetime_busdaycal.c
+index 7a26868..302916d 100644
+--- a/numpy/core/src/multiarray/datetime_busdaycal.c
++++ b/numpy/core/src/multiarray/datetime_busdaycal.c
+@@ -436,7 +436,7 @@ busdaycalendar_dealloc(NpyBusDayCalendar *self)
+ }
+ 
+ static PyObject *
+-busdaycalendar_weekmask_get(NpyBusDayCalendar *self)
++busdaycalendar_weekmask_get(NpyBusDayCalendar *self,void* ignored)
+ {
+     PyArrayObject *ret;
+     npy_intp size = 7;
+@@ -454,7 +454,7 @@ busdaycalendar_weekmask_get(NpyBusDayCalendar *self)
+ }
+ 
+ static PyObject *
+-busdaycalendar_holidays_get(NpyBusDayCalendar *self)
++busdaycalendar_holidays_get(NpyBusDayCalendar *self,void* ignored)
+ {
+     PyArrayObject *ret;
+     PyArray_Descr *date_dtype;
+diff --git a/numpy/core/src/umath/ufunc_object.c b/numpy/core/src/umath/ufunc_object.c
+index 174703f..132bbb9 100644
+--- a/numpy/core/src/umath/ufunc_object.c
++++ b/numpy/core/src/umath/ufunc_object.c
+@@ -5925,7 +5925,7 @@ _typecharfromnum(int num) {
+ }
+ 
+ static PyObject *
+-ufunc_get_doc(PyUFuncObject *ufunc)
++ufunc_get_doc(PyUFuncObject *ufunc,void* ignored)
+ {
+     static PyObject *_sig_formatter;
+     PyObject *doc;
+@@ -5957,31 +5957,31 @@ ufunc_get_doc(PyUFuncObject *ufunc)
+ }
+ 
+ static PyObject *
+-ufunc_get_nin(PyUFuncObject *ufunc)
++ufunc_get_nin(PyUFuncObject *ufunc,void* ignored)
+ {
+     return PyInt_FromLong(ufunc->nin);
+ }
+ 
+ static PyObject *
+-ufunc_get_nout(PyUFuncObject *ufunc)
++ufunc_get_nout(PyUFuncObject *ufunc,void* ignored)
+ {
+     return PyInt_FromLong(ufunc->nout);
+ }
+ 
+ static PyObject *
+-ufunc_get_nargs(PyUFuncObject *ufunc)
++ufunc_get_nargs(PyUFuncObject *ufunc,void* ignored)
+ {
+     return PyInt_FromLong(ufunc->nargs);
+ }
+ 
+ static PyObject *
+-ufunc_get_ntypes(PyUFuncObject *ufunc)
++ufunc_get_ntypes(PyUFuncObject *ufunc,void* ignored)
+ {
+     return PyInt_FromLong(ufunc->ntypes);
+ }
+ 
+ static PyObject *
+-ufunc_get_types(PyUFuncObject *ufunc)
++ufunc_get_types(PyUFuncObject *ufunc,void* ignored)
+ {
+     /* return a list with types grouped input->output */
+     PyObject *list;
+@@ -6015,20 +6015,20 @@ ufunc_get_types(PyUFuncObject *ufunc)
+ }
+ 
+ static PyObject *
+-ufunc_get_name(PyUFuncObject *ufunc)
++ufunc_get_name(PyUFuncObject *ufunc,void* ignored)
+ {
+     return PyUString_FromString(ufunc->name);
+ }
+ 
+ static PyObject *
+-ufunc_get_identity(PyUFuncObject *ufunc)
++ufunc_get_identity(PyUFuncObject *ufunc,void* ignored)
+ {
+     npy_bool reorderable;
+     return _get_identity(ufunc, &reorderable);
+ }
+ 
+ static PyObject *
+-ufunc_get_signature(PyUFuncObject *ufunc)
++ufunc_get_signature(PyUFuncObject *ufunc,void* ignored)
+ {
+     if (!ufunc->core_enabled) {
+         Py_RETURN_NONE;
+diff --git a/numpy/core/src/multiarray/scalartypes.c.src b/numpy/core/src/multiarray/scalartypes.c.src
+index cfb21f5..2c19b1c 100644
+--- a/numpy/core/src/multiarray/scalartypes.c.src
++++ b/numpy/core/src/multiarray/scalartypes.c.src
+@@ -1196,19 +1196,19 @@ gentype_richcompare(PyObject *self, PyObject *other, int cmp_op)
+ }
+ 
+ static PyObject *
+-gentype_ndim_get(PyObject *NPY_UNUSED(self))
++gentype_ndim_get(PyObject *NPY_UNUSED(self),void *NPY_UNUSED(ignored) )
+ {
+     return PyInt_FromLong(0);
+ }
+ 
+ static PyObject *
+-gentype_flags_get(PyObject *NPY_UNUSED(self))
++gentype_flags_get(PyObject *NPY_UNUSED(self),void *NPY_UNUSED(ignored))
+ {
+     return PyArray_NewFlagsObject(NULL);
+ }
+ 
+ static PyObject *
+-voidtype_flags_get(PyVoidScalarObject *self)
++voidtype_flags_get(PyVoidScalarObject *self,void *NPY_UNUSED(ignored))
+ {
+     PyObject *flagobj;
+     flagobj = PyArrayFlags_Type.tp_alloc(&PyArrayFlags_Type, 0);
+@@ -1221,7 +1221,7 @@ voidtype_flags_get(PyVoidScalarObject *self)
+ }
+ 
+ static PyObject *
+-voidtype_dtypedescr_get(PyVoidScalarObject *self)
++voidtype_dtypedescr_get(PyVoidScalarObject *self,void *NPY_UNUSED(ignored))
+ {
+     Py_INCREF(self->descr);
+     return (PyObject *)self->descr;
+@@ -1229,7 +1229,7 @@ voidtype_dtypedescr_get(PyVoidScalarObject *self)
+ 
+ 
+ static PyObject *
+-inttype_numerator_get(PyObject *self)
++inttype_numerator_get(PyObject *self,void *NPY_UNUSED(ignored))
+ {
+     Py_INCREF(self);
+     return self;
+@@ -1237,14 +1237,14 @@ inttype_numerator_get(PyObject *self)
+ 
+ 
+ static PyObject *
+-inttype_denominator_get(PyObject *self)
++inttype_denominator_get(PyObject *self,void *NPY_UNUSED(ignored))
+ {
+     return PyInt_FromLong(1);
+ }
+ 
+ 
+ static PyObject *
+-gentype_data_get(PyObject *self)
++gentype_data_get(PyObject *self,void *NPY_UNUSED(ignored))
+ {
+ #if defined(NPY_PY3K)
+     return PyMemoryView_FromObject(self);
+@@ -1255,7 +1255,7 @@ gentype_data_get(PyObject *self)
+ 
+ 
+ static PyObject *
+-gentype_itemsize_get(PyObject *self)
++gentype_itemsize_get(PyObject *self,void *NPY_UNUSED(ignored))
+ {
+     PyArray_Descr *typecode;
+     PyObject *ret;
+@@ -1274,7 +1274,7 @@ gentype_itemsize_get(PyObject *self)
+ }
+ 
+ static PyObject *
+-gentype_size_get(PyObject *NPY_UNUSED(self))
++gentype_size_get(PyObject *NPY_UNUSED(self),void *NPY_UNUSED(ignored))
+ {
+     return PyInt_FromLong(1);
+ }
+@@ -1283,7 +1283,7 @@ static PyObject *
+ gentype_sizeof(PyObject *self)
+ {
+     Py_ssize_t nbytes;
+-    PyObject * isz = gentype_itemsize_get(self);
++    PyObject * isz = gentype_itemsize_get(self,NULL);
+     if (isz == NULL) {
+         return NULL;
+     }
+@@ -1320,7 +1320,7 @@ gentype_struct_free(void *ptr, void *arg)
+ #endif
+ 
+ static PyObject *
+-gentype_struct_get(PyObject *self)
++gentype_struct_get(PyObject *self,void *NPY_UNUSED(ignored))
+ {
+     PyArrayObject *arr;
+     PyArrayInterface *inter;
+@@ -1346,20 +1346,20 @@ gentype_struct_get(PyObject *self)
+ }
+ 
+ static PyObject *
+-gentype_priority_get(PyObject *NPY_UNUSED(self))
++gentype_priority_get(PyObject *NPY_UNUSED(self),void *NPY_UNUSED(ignored))
+ {
+     return PyFloat_FromDouble(NPY_SCALAR_PRIORITY);
+ }
+ 
+ static PyObject *
+-gentype_shape_get(PyObject *NPY_UNUSED(self))
++gentype_shape_get(PyObject *NPY_UNUSED(self),void *NPY_UNUSED(ignored))
+ {
+     return PyTuple_New(0);
+ }
+ 
+ 
+ static PyObject *
+-gentype_interface_get(PyObject *self)
++gentype_interface_get(PyObject *self,void *NPY_UNUSED(ignored))
+ {
+     PyArrayObject *arr;
+     PyObject *inter;
+@@ -1379,20 +1379,20 @@ gentype_interface_get(PyObject *self)
+ 
+ 
+ static PyObject *
+-gentype_typedescr_get(PyObject *self)
++gentype_typedescr_get(PyObject *self,void *NPY_UNUSED(ignored))
+ {
+     return (PyObject *)PyArray_DescrFromScalar(self);
+ }
+ 
+ 
+ static PyObject *
+-gentype_base_get(PyObject *NPY_UNUSED(self))
++gentype_base_get(PyObject *NPY_UNUSED(self),void *NPY_UNUSED(ignored))
+ {
+     Py_RETURN_NONE;
+ }
+ 
+ static PyObject *
+-voidtype_base_get(PyVoidScalarObject *self)
++voidtype_base_get(PyVoidScalarObject *self,void *NPY_UNUSED(ignored))
+ {
+     if (self->base == NULL) {
+         Py_RETURN_NONE;
+@@ -1423,7 +1423,7 @@ _realdescr_fromcomplexscalar(PyObject *self, int *typenum)
+ }
+ 
+ static PyObject *
+-gentype_real_get(PyObject *self)
++gentype_real_get(PyObject *self,void *NPY_UNUSED(ignored))
+ {
+     PyArray_Descr *typecode;
+     PyObject *ret;
+@@ -1450,7 +1450,7 @@ gentype_real_get(PyObject *self)
+ }
+ 
+ static PyObject *
+-gentype_imag_get(PyObject *self)
++gentype_imag_get(PyObject *self,void *NPY_UNUSED(ignored))
+ {
+     PyArray_Descr *typecode=NULL;
+     PyObject *ret;
+@@ -1490,7 +1490,7 @@ gentype_imag_get(PyObject *self)
+ }
+ 
+ static PyObject *
+-gentype_flat_get(PyObject *self)
++gentype_flat_get(PyObject *self,void *NPY_UNUSED(ignored))
+ {
+     PyObject *ret, *arr;
+ 
+@@ -1505,7 +1505,7 @@ gentype_flat_get(PyObject *self)
+ 
+ 
+ static PyObject *
+-gentype_transpose_get(PyObject *self)
++gentype_transpose_get(PyObject *self,void *NPY_UNUSED(ignored))
+ {
+     Py_INCREF(self);
+     return self;
