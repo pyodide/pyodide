@@ -17,7 +17,6 @@ all: check \
 	build/console.html \
 	build/test.data \
 	build/distutils.data \
-	copy-fonts \
 	build/packages.json \
 	build/test.html \
 	build/webworker.js \
@@ -135,13 +134,6 @@ update_base_url: \
 
 test: all
 	pytest src emsdk/tests packages/*/test* pyodide-build -v
-
-copy-fonts:
-	mkdir -p build/fonts
-
-copy-reference-images:
-	mkdir -p build/matplotlib-test
-	cp -n packages/matplotlib/reference-images/*.png build/matplotlib-test/
 
 lint: node_modules/.installed
 	# check for unused imports, the rest is done by black
