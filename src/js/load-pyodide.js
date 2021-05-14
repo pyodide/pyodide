@@ -26,7 +26,9 @@ function _uri_to_package_name(package_uri) {
 }
 
 /**
- * @type {(url : string) => Promise<void>}
+ * @param {string) url
+ * @async
+ * @private
  */
 export let loadScript;
 if (self.document) {
@@ -236,6 +238,13 @@ async function acquirePackageLock() {
 export let loadedPackages = {};
 
 /**
+ * @callback LogFn
+ * @param {string} msg
+ * @returns {void}
+ * @private
+ */
+
+/**
  * Load a package or a list of packages over the network. This installs the
  * package in the virtual filesystem. The package needs to be imported from
  * Python before it can be used.
@@ -246,9 +255,9 @@ export let loadedPackages = {};
  * ``<package-name>.data`` in the same directory. The argument can be a
  * ``PyProxy`` of a list, in which case the list will be converted to
  * Javascript and the ``PyProxy`` will be destroyed.
- * @param {(msg : str) => void} messageCallback A callback, called with progress messages
+ * @param {LogFn} messageCallback A callback, called with progress messages
  *    (optional)
- * @param {(err : str) => void} errorCallback A callback, called with error/warning
+ * @param {LogFn} errorCallback A callback, called with error/warning
  *    messages (optional)
  * @async
  */

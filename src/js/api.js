@@ -85,6 +85,13 @@ export function runPython(code, globals = Module.globals) {
 }
 
 /**
+ * @callback LogFn
+ * @param {string} msg
+ * @returns {void}
+ * @private
+ */
+
+/**
  * Inspect a Python code chunk and use :js:func:`pyodide.loadPackage` to
  * install any known packages that the code chunk imports. Uses the Python API
  * :func:`pyodide.find\_imports` to inspect the code.
@@ -99,9 +106,9 @@ export function runPython(code, globals = Module.globals) {
  * ``pyodide.loadPackage(['numpy'])``. See also :js:func:`runPythonAsync`.
  *
  * @param {string} code The code to inspect.
- * @param {(msg : string) => void} messageCallback The ``messageCallback`` argument of
+ * @param {LogFn} messageCallback The ``messageCallback`` argument of
  * :any:`pyodide.loadPackage` (optional).
- * @param {(err : string) => void} errorCallback The ``errorCallback`` argument of
+ * @param {LogFn} errorCallback The ``errorCallback`` argument of
  * :any:`pyodide.loadPackage` (optional).
  * @async
  */
@@ -261,15 +268,14 @@ export function toPy(obj, depth = -1) {
 }
 
 /**
- * Interface for classes that represent a color.
- *
  * @interface PyProxy
+ * @private
  */
 
 /**
  * Is the argument a :any:`PyProxy`?
  * @param jsobj {any} Object to test.
- * @returns {jsobj is PyProxy} Is ``jsobj`` a :any:`PyProxy`?
+ * @returns {boolean} Is ``jsobj`` a :any:`PyProxy`?
  */
 export function isPyProxy(jsobj) {
   return !!jsobj && jsobj.$$ !== undefined && jsobj.$$.type === "PyProxy";
@@ -297,9 +303,11 @@ export let PUBLIC_API = [
 ];
 
 /**
- * @type {(interrupt_buffer : Int32Array) => void}
+ * @param {Int32Array} interrupt_buffer
  */
-let setInterruptBuffer = Module.setInterruptBuffer;
+function setInterruptBuffer(interrupt_buffer) {}
+
+setInterruptBuffer = Module.setInterruptBuffer;
 
 export function makePublicAPI() {
   let namespace = {

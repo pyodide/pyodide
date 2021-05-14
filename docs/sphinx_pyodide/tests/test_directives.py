@@ -11,6 +11,9 @@ from sphinx_js.jsdoc import Analyzer as JsAnalyzer
 test_directory = pathlib.Path(__file__).resolve().parent
 sys.path.append(str(test_directory.parent))
 
+# jsdoc_dump.json.gz is the source file for the test docs.
+# It can be updated as follows:
+# jsdoc -X ./src/js/ ./src/core/ | gzip > docs/sphinx_pyodide/tests/jsdoc_dump.json.gz
 with gzip.open(test_directory / "jsdoc_dump.json.gz") as fh:
     jsdoc_json = json.load(fh)
 settings_json = json.loads((test_directory / "app_settings.json").read_text())
@@ -49,6 +52,9 @@ def test_pyodide_analyzer():
         "pyimport",
         "loadPackagesFromImports",
         "registerJsModule",
+        "isPyProxy",
+        "toPy",
+        "setInterruptBuffer",
     }
     assert attribute_names == {"loadedPackages", "globals", "version", "pyodide_py"}
 
@@ -90,7 +96,7 @@ def test_content():
 
     rp = results["runPython"]
     assert rp["directive"] == "function"
-    assert rp["sig"] == "code)"
+    assert rp["sig"] == "code, globals)"
     assert "Runs a string of Python code from Javascript." in rp["body"]
 
 
@@ -119,49 +125,45 @@ def test_summary():
     functions = jsdoc_summary.get_summary_table(
         "pyodide", dummy_app._sphinxjs_analyzer.js_docs["pyodide"]["function"]
     )
-    assert set(globals) == {
-        (
-            "",
-            "languagePluginLoader",
-            "",
-            "A promise that resolves to ``undefined`` when Pyodide is finished loading.",
-            "globalThis.languagePluginLoader",
-        )
-    }
-    assert set(attributes).issuperset(
-        {
-            (
-                "",
-                "loadedPackages",
-                "",
-                "The list of packages that Pyodide has loaded.",
-                "pyodide.loadedPackages",
-            ),
-            (
-                "",
-                "pyodide_py",
-                "",
-                "An alias to the Python pyodide package.",
-                "pyodide.pyodide_py",
-            ),
-        }
+    globals = {t[1]: t for t in globals}
+    attributes = {t[1]: t for t in attributes}
+    functions = {t[1]: t for t in functions}
+    assert globals["pyodide"] == (
+        "",
+        "pyodide",
+        "",
+        "The :ref:`js-api-pyodide` module object.",
+        "globalThis.pyodide",
     )
-    print(functions)
-    assert set(functions).issuperset(
-        {
-            (
-                "*async* ",
-                "loadPackagesFromImports",
-                "(code, messageCallback, errorCallback)",
-                "Inspect a Python code chunk and use :js:func:`pyodide.loadPackage` to load any known \npackages that the code chunk imports.",
-                "pyodide.loadPackagesFromImports",
-            ),
-            (
-                "",
-                "registerJsModule",
-                "(name, module)",
-                "Registers the Js object ``module`` as a Js module with ``name``.",
-                "pyodide.registerJsModule",
-            ),
-        }
+    assert (
+        globals["languagePluginUrl"][3]
+        == "A deprecated parameter that specifies the Pyodide ``indexURL``."
+    )
+
+    assert attributes["pyodide_py"] == (
+        "",
+        "pyodide_py",
+        "",
+        "An alias to the Python :py:mod:`pyodide` package.",
+        "pyodide.pyodide_py",
+    )
+    assert attributes["version"] == (
+        "",
+        "version",
+        "",
+        "The Pyodide version.",
+        "pyodide.version",
+    )
+    assert attributes["loadedPackages"] == (
+        "",
+        "loadedPackages",
+        "",
+        "The list of packages that Pyodide has loaded.",
+        "pyodide.loadedPackages",
+    )
+
+    assert functions["loadPackagesFromImports"][:-2] == (
+        "*async* ",
+        "loadPackagesFromImports",
+        "(code, messageCallback, errorCallback)",
     )

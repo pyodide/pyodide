@@ -132,11 +132,6 @@ function fixRecursionLimit() {
   );
 }
 
-/**
- * The :ref:`js-api-pyodide` module object. Must be present as a global variable
- * called
- * ``pyodide`` in order for package loading to work properly.
- */
 export let pyodide = makePublicAPI();
 
 /**
@@ -230,6 +225,11 @@ def temp(Module):
 
   registerJsModule("js", globalThis);
   registerJsModule("pyodide_js", pyodide);
+
+  /**
+   * The :ref:`js-api-pyodide` module object. Must be present as a global variable
+   * called ``pyodide`` in order for package loading to work properly.
+   */
   globalThis.pyodide = pyodide;
 
   await packageIndexReady;
