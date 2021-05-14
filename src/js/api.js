@@ -282,26 +282,6 @@ export function isPyProxy(jsobj) {
 }
 Module.isPyProxy = isPyProxy;
 
-////////////////////////////////////////////////////////////
-// Rearrange namespace for public API
-export let PUBLIC_API = [
-  "globals",
-  "pyodide_py",
-  "version",
-  "loadPackage",
-  "loadPackagesFromImports",
-  "loadedPackages",
-  "isPyProxy",
-  "pyimport",
-  "runPython",
-  "runPythonAsync",
-  "registerJsModule",
-  "unregisterJsModule",
-  "setInterruptBuffer",
-  "toPy",
-  "PythonError",
-];
-
 /**
  * @param {Int32Array} interrupt_buffer
  */

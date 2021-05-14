@@ -4,7 +4,7 @@
  */
 import { Module } from "./module";
 import { loadScript, initializePackageIndex } from "./load-pyodide";
-import { PUBLIC_API, makePublicAPI, registerJsModule } from "./api";
+import { makePublicAPI, registerJsModule } from "./api";
 
 /**
  * Dump the Python traceback to the browser console.
@@ -43,8 +43,8 @@ Module.fatal_error = function (e) {
   console.error(e);
   try {
     Module.dump_traceback();
-    for (let key of PUBLIC_API) {
-      if (key === "version") {
+    for (let key of Object.keys(Module.public_api)) {
+      if (key.startsWith("_") || key === "version") {
         continue;
       }
       Object.defineProperty(Module.public_api, key, {
