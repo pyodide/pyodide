@@ -1,6 +1,10 @@
 import { Module } from "./module";
 
 let baseURL;
+/**
+ * @param {string} indexURL
+ * @private
+ */
 export async function initializePackageIndex(indexURL) {
   baseURL = indexURL;
   let response = await fetch(`${indexURL}packages.json`);
@@ -21,6 +25,9 @@ function _uri_to_package_name(package_uri) {
   }
 }
 
+/**
+ * @type {(url : string) => Promise<void>}
+ */
 export let loadScript;
 if (self.document) {
   // browser
@@ -42,7 +49,6 @@ function recursiveDependencies(
   sharedLibsOnly
 ) {
   const packages = Module.packages.dependencies;
-  const loadedPackages = Module.loadedPackages;
   const sharedLibraries = Module.packages.shared_library;
   const toLoad = new Map();
 
@@ -121,7 +127,7 @@ async function _loadPackage(names, messageCallback, errorCallback) {
   let scriptPromises = [];
 
   for (let [pkg, uri] of toLoad) {
-    let loaded = Module.loadedPackages[pkg];
+    let loaded = loadedPackages[pkg];
     if (loaded !== undefined) {
       // If uri is from the DEFAULT_CHANNEL, we assume it was added as a
       // depedency, which was previously overridden.
@@ -178,7 +184,7 @@ async function _loadPackage(names, messageCallback, errorCallback) {
 
   let packageList = [];
   for (let [pkg, uri] of toLoad) {
-    Module.loadedPackages[pkg] = uri;
+    loadedPackages[pkg] = uri;
     packageList.push(pkg);
   }
 
@@ -227,26 +233,26 @@ async function acquirePackageLock() {
  *
  * @type {object}
  */
-Module.loadedPackages = {};
+export let loadedPackages = {};
 
 /**
  * Load a package or a list of packages over the network. This installs the
  * package in the virtual filesystem. The package needs to be imported from
  * Python before it can be used.
- * @param {String | Array | PyProxy} names Either a single package name or URL
+ * @param {string | string[] | PyProxy} names Either a single package name or URL
  * or a list of them. URLs can be absolute or relative. The URLs must have
  * file name
  * ``<package-name>.js`` and there must be a file called
  * ``<package-name>.data`` in the same directory. The argument can be a
  * ``PyProxy`` of a list, in which case the list will be converted to
  * Javascript and the ``PyProxy`` will be destroyed.
- * @param {function} messageCallback A callback, called with progress messages
+ * @param {(msg : str) => void} messageCallback A callback, called with progress messages
  *    (optional)
- * @param {function} errorCallback A callback, called with error/warning
+ * @param {(err : str) => void} errorCallback A callback, called with error/warning
  *    messages (optional)
  * @async
  */
-Module.loadPackage = async function (names, messageCallback, errorCallback) {
+export async function loadPackage(names, messageCallback, errorCallback) {
   if (Module.isPyProxy(names)) {
     let temp;
     try {
@@ -330,4 +336,4 @@ Module.loadPackage = async function (names, messageCallback, errorCallback) {
   } finally {
     releaseLock();
   }
-};
+}

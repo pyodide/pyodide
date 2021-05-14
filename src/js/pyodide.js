@@ -4,7 +4,7 @@
  */
 import { Module } from "./module";
 import { loadScript, initializePackageIndex } from "./load-pyodide";
-import { PUBLIC_API, makePublicAPI } from "./api";
+import { PUBLIC_API, makePublicAPI, registerJsModule } from "./api";
 
 /**
  * Dump the Python traceback to the browser console.
@@ -136,10 +136,8 @@ function fixRecursionLimit() {
  * The :ref:`js-api-pyodide` module object. Must be present as a global variable
  * called
  * ``pyodide`` in order for package loading to work properly.
- *
- * @type Object
  */
-globalThis.pyodide = {};
+export let pyodide = makePublicAPI();
 
 /**
  * Load the main Pyodide wasm module and initialize it. When finished stores the
@@ -226,9 +224,12 @@ def temp(Module):
   Module.globals = Module.wrapNamespace(Module.globals);
 
   fixRecursionLimit(Module);
-  let pyodide = makePublicAPI();
-  Module.registerJsModule("js", globalThis);
-  Module.registerJsModule("pyodide_js", pyodide);
+  pyodide.globals = Module.globals;
+  pyodide.pyodide_py = Module.pyodide_py;
+  pyodide.version = Module.version;
+
+  registerJsModule("js", globalThis);
+  registerJsModule("pyodide_js", pyodide);
   globalThis.pyodide = pyodide;
 
   await packageIndexReady;
