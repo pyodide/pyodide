@@ -956,9 +956,6 @@ static PyMethodDef methods[] = {
   { NULL } /* Sentinel */
 };
 
-#include "include_js_file.h"
-#include "pyproxy.js"
-
 int
 pyproxy_init(PyObject* core)
 {
@@ -971,7 +968,6 @@ pyproxy_init(PyObject* core)
   asyncio = PyImport_ImportModule("asyncio");
   FAIL_IF_NULL(asyncio);
   FAIL_IF_MINUS_ONE(PyType_Ready(&FutureDoneCallbackType));
-  FAIL_IF_MINUS_ONE(pyproxy_init_js());
 
   success = true;
 finally:

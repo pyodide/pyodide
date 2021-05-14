@@ -1,6 +1,7 @@
 *.a
 *.o
 *.pyc
+*.jso
 
 *.egg-info/
 

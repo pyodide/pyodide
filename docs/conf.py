@@ -58,6 +58,7 @@ extensions = [
 
 myst_enable_extensions = ["substitution"]
 js_source_path = ["../src/js", "../src/core"]
+jsdoc_config_path = "./jsdoc_conf.json"
 root_for_relative_js_paths = "../src/"
 issues_github_path = "pyodide/pyodide"
 

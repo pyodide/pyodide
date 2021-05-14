@@ -15,6 +15,27 @@ import {
 } from "./load-pyodide";
 import { makePublicAPI, registerJsModule } from "./api";
 
+import { wrapNamespace } from "./pyproxy.jso";
+
+// export { PyBuffer } from "./pyproxy";
+/**
+ * @typedef {import('./pyproxy.js').PyProxy} PyProxy
+ * @typedef {import('./pyproxy.js').PyProxyWithLength} PyProxyWithLength
+ * @typedef {import('./pyproxy.js').PyProxyWithGet} PyProxyWithGet
+ * @typedef {import('./pyproxy.js').PyProxyWithSet} PyProxyWithSet
+ * @typedef {import('./pyproxy.js').PyProxyWithHas} PyProxyWithHas
+ * @typedef {import('./pyproxy.js').PyProxyIterable} PyProxyIterable
+ * @typedef {import('./pyproxy.js').PyProxyIterator} PyProxyIterator
+ * @typedef {import('./pyproxy.js').PyProxyAwaitable} PyProxyAwaitable
+ * @typedef {import('./pyproxy.js').PyProxyBuffer} PyProxyBuffer
+ * @typedef {import('./pyproxy.js').PyProxyCallable} PyProxyCallable
+ *
+ * @typedef {import('./pyproxy.js').Py2JsResult} Py2JsResult
+ *
+ * @typedef {import('./pyproxy.js').TypedArray} TypedArray
+ * @typedef {import('./pyproxy.js').PyBuffer} PyBuffer
+ */
+
 /**
  * Dump the Python traceback to the browser console.
  *
@@ -230,7 +251,7 @@ def temp(Module):
 
   // Wrap "globals" in a special Proxy that allows `pyodide.globals.x` access.
   // TODO: Should we have this?
-  Module.globals = Module.wrapNamespace(Module.globals);
+  Module.globals = wrapNamespace(Module.globals);
 
   fixRecursionLimit(Module);
   pyodide.globals = Module.globals;

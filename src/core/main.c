@@ -128,6 +128,12 @@ main(int argc, char** argv)
     FATAL_ERROR("Failed to create core module.");
   }
 
+  EM_ASM({
+    // For some reason emscripten doesn't make UTF8ToString available on Module
+    // by default...
+    Module.UTF8ToString = UTF8ToString;
+  });
+
   TRY_INIT_WITH_CORE_MODULE(error_handling);
   TRY_INIT(hiwire);
   TRY_INIT(docstring);

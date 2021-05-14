@@ -124,12 +124,15 @@ class PyodideAnalyzer:
         for (key, group) in self.doclets.items():
             directory = key[1]
             key = [x for x in key if "/" not in x]
-            if key[-2].endswith("#") and key[-2] != "PyProxyClass#":
-                # If this is a class attribute (class names end in #), ignore
-                # it, it will be documented with the class.
-                #
-                # Exception: We want to include PyProxyClass attributes as
-                # attributes of PyProxy directly...
+            # Class methods appear twice but we only want to document them once.
+            if key[-2].endswith("#") and not key[-2].startswith("PyProxy"):
+                # If this is a class method ignore it, it will be documented
+                # with the class. Exception: All PyProxy classes need to be
+                # merged into one.
+                continue
+            if key[-1].startswith("PyProxy"):
+                # Skip all PyProxy classes, we will merge them into one object
+                # in the API docs.
                 continue
             if key[-2] == "globalThis." or directory == "js/" and key[0] == "pyodide.":
                 # We interpret functions exported from pyodide.js as being
