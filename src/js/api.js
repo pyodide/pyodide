@@ -83,6 +83,7 @@ export let version = ""; // actually defined in runPythonSimple in loadPyodide (
 export function runPython(code, globals = Module.globals) {
   return Module.pyodide_py.eval_code(code, globals);
 }
+Module.runPython = runPython;
 
 /**
  * @callback LogFn
@@ -183,6 +184,7 @@ export async function runPythonAsync(code) {
     coroutine.destroy();
   }
 }
+Module.runPythonAsync = runPythonAsync;
 
 /**
  * Registers the Javascript object ``module`` as a Javascript module named
