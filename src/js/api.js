@@ -9,7 +9,7 @@ import { loadPackage, loadedPackages } from "./load-pyodide";
  *
  * @type {PyProxy}
  */
-let pyodide_py = {}; // actually defined in runPythonSimple below
+let pyodide_py = {}; // actually defined in runPythonSimple in loadPyodide (see pyodide.js)
 
 /**
  *
@@ -20,7 +20,7 @@ let pyodide_py = {}; // actually defined in runPythonSimple below
  *
  * @type {PyProxy}
  */
-let globals = {}; // actually defined in runPythonSimple below
+let globals = {}; // actually defined in runPythonSimple in loadPyodide (see pyodide.js)
 
 /**
  * A Javascript error caused by a Python exception.
@@ -65,7 +65,7 @@ export class PythonError {
  *
  * @type {string}
  */
-export let version = ""; // Hack to make jsdoc behave
+export let version = ""; // actually defined in runPythonSimple in loadPyodide (see pyodide.js)
 
 /**
  * Runs a string of Python code from Javascript.
