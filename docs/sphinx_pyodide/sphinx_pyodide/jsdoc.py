@@ -131,7 +131,11 @@ class PyodideAnalyzer:
                 # Exception: We want to include PyProxyClass attributes as
                 # attributes of PyProxy directly...
                 continue
-            if key[-2] == "globalThis.":
+            if key[-2] == "globalThis." or directory == "js/" and key[0] == "pyodide.":
+                # We interpret functions exported from pyodide.js as being
+                # globals. Functions exported from other files are not globals
+                # unless they are explicitly added to globalThis. This is a hack
+                # to make type generation and doc generation coexist..
                 items["globalThis"] += group
                 continue
             if directory == "js/":

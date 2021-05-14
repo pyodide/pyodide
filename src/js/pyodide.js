@@ -1,6 +1,11 @@
 "use strict";
 /**
  * The main bootstrap script for loading pyodide.
+ *
+ * Everything exported in this file is documented as part of the global
+ * namespace (as if it is available on `globalThis`). If a function should be
+ * documented as `pyodide.blah` it needs to be defined in api.js (or in any
+ * other file).
  */
 import { Module } from "./module";
 import {
@@ -136,20 +141,25 @@ function fixRecursionLimit() {
   );
 }
 
+/**
+ * The :ref:`js-api-pyodide` module object. Must be present as a global variable
+ * called ``pyodide`` in order for package loading to work properly.
+ */
 export let pyodide = makePublicAPI();
 
 /**
  * Load the main Pyodide wasm module and initialize it. When finished stores the
  * Pyodide module as a global object called ``pyodide``.
+ * @param {{ indexURL : string, fullStdLib : boolean }} config
  * @param {string} config.indexURL - The URL from which Pyodide will load
  * packages
- * @param {bool} config.fullStdLib - Load the full Python standard library.
+ * @param {boolean} config.fullStdLib - Load the full Python standard library.
  * Setting this to false excludes following modules: distutils.
  * Default: true
  * @returns The Pyodide module.
  * @async
  */
-globalThis.loadPyodide = async function (config = {}) {
+export async function loadPyodide(config = {}) {
   const default_config = { fullStdLib: true };
   config = Object.assign(default_config, config);
   if (loadPyodide.inProgress) {
@@ -230,10 +240,6 @@ def temp(Module):
   registerJsModule("js", globalThis);
   registerJsModule("pyodide_js", pyodide);
 
-  /**
-   * The :ref:`js-api-pyodide` module object. Must be present as a global variable
-   * called ``pyodide`` in order for package loading to work properly.
-   */
   globalThis.pyodide = pyodide;
 
   await packageIndexReady;
@@ -242,7 +248,8 @@ def temp(Module):
   }
 
   return pyodide;
-};
+}
+globalThis.loadPyodide = loadPyodide;
 
 if (globalThis.languagePluginUrl) {
   console.warn(
