@@ -3,7 +3,11 @@
  * The main bootstrap script for loading pyodide.
  */
 import { Module } from "./module";
-import { loadScript, initializePackageIndex } from "./load-pyodide";
+import {
+  loadScript,
+  initializePackageIndex,
+  loadPackage,
+} from "./load-pyodide";
 import { makePublicAPI, registerJsModule } from "./api";
 
 /**
@@ -234,7 +238,7 @@ def temp(Module):
 
   await packageIndexReady;
   if (config.fullStdLib) {
-    await pyodide.loadPackage(["distutils"]);
+    await loadPackage(["distutils"]);
   }
 
   return pyodide;

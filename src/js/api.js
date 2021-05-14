@@ -129,7 +129,7 @@ export async function loadPackagesFromImports(
     }
   }
   if (packages.size) {
-    await Module.loadPackage(
+    await loadPackage(
       Array.from(packages.keys()),
       messageCallback,
       errorCallback
