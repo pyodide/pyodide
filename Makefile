@@ -80,7 +80,7 @@ env:
 .PHONY: build/pyodide.js
 build/pyodide.js: src/js/*.js
 	npm install ./src/js
-	npx typescript src/js/pyodide.js --declaration --allowJs --emitDeclarationOnly --outDir types
+	npx typescript src/js/pyodide.js --declaration --allowJs --emitDeclarationOnly --outDir build
 	npx rollup -c src/js/rollup.config.js
 
 build/test.html: src/templates/test.html
