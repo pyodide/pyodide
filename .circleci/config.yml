@@ -199,7 +199,6 @@ jobs:
       - run:
           name: test
           command: |
-            make build/pyodide.js
             cd src/js
             npx tsd
 
@@ -333,6 +332,8 @@ workflows:
             tags:
               only: /.*/
       - test-js-types:
+          requires:
+            - build-core
           filters:
             tags:
               only: /.*/
