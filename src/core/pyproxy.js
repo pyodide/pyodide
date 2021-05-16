@@ -10,10 +10,6 @@
  * This way if a Javascript error emerges from the wasm, we can escalate it to a
  * fatal error.
  *
- * Note that APIs in this file are documented as part of the PyProxy API. If you
- * don't want this, put them in js/api.js (isPyProxy is defined there for
- * instance).
- *
  * This is file is preprocessed with -imacros "pyproxy.c". As a result of this,
  * any macros available in pyproxy.c are available here. We only need the flags
  * macros HAS_LENGTH, etc.
@@ -23,6 +19,16 @@
 
 // #include "pyproxy_flags.h"
 import { Module } from "../js/module";
+
+/**
+ * Is the argument a :any:`PyProxy`?
+ * @param jsobj {any} Object to test.
+ * @returns {jsobj is PyProxy} Is ``jsobj`` a :any:`PyProxy`?
+ */
+export function isPyProxy(jsobj) {
+  return !!jsobj && jsobj.$$ !== undefined && jsobj.$$.type === "PyProxy";
+}
+Module.isPyProxy = isPyProxy;
 
 if (globalThis.FinalizationRegistry) {
   Module.finalizationRegistry = new FinalizationRegistry((ptr) => {
@@ -350,7 +356,7 @@ class PyProxyClass {
   }
   /**
    * Test whether the PyProxy is iterable. A Typescript type guard for
-   * :any:`PyProxy[Symbol.iterator] <PyProxy[Symbol.iterator]>`.
+   * :any:`PyProxy.[Symbol.iterator]`.
    * @returns {this is PyProxyIterable}
    */
   isIterable() {
@@ -1040,14 +1046,14 @@ class PyProxyBufferMethods {
    * have support for big endian data, so you might want to pass
    * ``'dataview'`` as the type argument in that case.
    *
-   * @param {string=} [type] The type of :any:`PyBuffer.data` field in the
+   * @param {string=} [type] The type of the :any:`PyBuffer.data <pyodide.PyBuffer.data>` field in the
    * output. Should be one of: ``"i8"``, ``"u8"``, ``"u8clamped"``, ``"i16"``,
    * ``"u16"``, ``"i32"``, ``"u32"``, ``"i32"``, ``"u32"``, ``"i64"``,
    * ``"u64"``, ``"f32"``, ``"f64``, or ``"dataview"``. This argument is
    * optional, if absent ``getBuffer`` will try to determine the appropriate
    * output type based on the buffer `format string
    * <https://docs.python.org/3/library/struct.html#format-strings>`_.
-   * @returns {PyBuffer} :any:`PyBuffer`
+   * @returns {PyBuffer} :any:`PyBuffer <pyodide.PyBuffer>`
    */
   getBuffer(type) {
     let ArrayType = undefined;
@@ -1305,9 +1311,9 @@ export class PyBuffer {
      * The actual data. A typed array of an appropriate size backed by a
      * segment of the WASM memory.
      *
-     * The ``type`` argument of :any:`getBuffer`
-     * determines which sort of `TypedArray` this is, by default
-     * :any:`getBuffer` will look at the format string to determine the most
+     * The ``type`` argument of :any:`PyProxy.getBuffer`
+     * determines which sort of ``TypedArray`` this is. By default
+     * :any:`PyProxy.getBuffer` will look at the format string to determine the most
      * appropriate option.
      * @type {TypedArray}
      */

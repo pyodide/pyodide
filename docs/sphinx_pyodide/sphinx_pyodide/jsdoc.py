@@ -121,36 +121,35 @@ class PyodideAnalyzer:
         modules = ["globalThis", "pyodide", "PyProxy"]
         self.js_docs = {key: get_val() for key in modules}
         items = {key: [] for key in modules}
-        for (key, group) in self.doclets.items():
-            directory = key[1]
-            key = [x for x in key if "/" not in x]
-            # Class methods appear twice but we only want to document them once.
-            if key[-2].endswith("#") and not key[-2].startswith("PyProxy"):
-                # If this is a class method ignore it, it will be documented
-                # with the class. Exception: All PyProxy classes need to be
-                # merged into one.
+        for (key, doclet) in self.doclets.items():
+            if doclet.value.get("access", None) == "private":
                 continue
-            if key[-1].startswith("PyProxy"):
-                # Skip all PyProxy classes, we will merge them into one object
-                # in the API docs.
+            # Remove the part of the key corresponding to the file
+            key = [x for x in key if "/" not in x][1:]
+            toplevelname = key[0]
+            doclet.value["name"] = doclet.value["name"].rpartition(".")[2]
+            if toplevelname == "globalThis.":
+                # Might be named globalThis.something or exports.something.
+                # Trim off the prefix.
+                items["globalThis"] += doclet
                 continue
-            if key[-2] == "globalThis." or directory == "js/" and key[0] == "pyodide.":
-                # We interpret functions exported from pyodide.js as being
-                # globals. Functions exported from other files are not globals
-                # unless they are explicitly added to globalThis. This is a hack
-                # to make type generation and doc generation coexist..
-                items["globalThis"] += group
+            if toplevelname.endswith("#"):
+                # This is a class method.
+                if toplevelname.startswith("PyProxy"):
+                    # Merge all of the PyProxy methods into one API
+                    items["PyProxy"] += doclet
+                # If it's not part of a PyProxy class, the method will be
+                # documented as part of the class.
                 continue
-            if directory == "js/":
-                items["pyodide"] += group
-            if directory == "core/" and key[0] == "pyproxy.":
-                items["PyProxy"] += group
+            if toplevelname.startswith("PyProxy"):
+                # Skip all PyProxy classes, they are documented as one merged
+                # API.
+                continue
+            items["pyodide"] += doclet
         from operator import itemgetter
 
         for key, value in items.items():
             for json in sorted(value, key=itemgetter("name")):
-                if json.get("access", None) == "private":
-                    continue
                 obj = self.get_object_from_json(json)
                 obj.async_ = json.get("async", False)
                 if isinstance(obj, Class):
@@ -158,9 +157,9 @@ class PyodideAnalyzer:
                     for x in obj.members:
                         if hasattr(x, "type") and x.type:
                             x.type = re.sub("Array\.<([a-zA-Z_0-9]*)>", r"\1[]", x.type)
-                if obj.name[0] == '"' and obj.name[-1] == '"':
+                if obj.name == "iterator":
                     # sphinx-jsdoc messes up Symbol attributes. Fix them.
-                    obj.name = "[" + obj.name[1:-1] + "]"
+                    obj.name = "[Symbol.iterator]"
                 self.js_docs[key][obj.kind].append(obj)
 
 

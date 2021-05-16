@@ -165,6 +165,7 @@ function fixRecursionLimit() {
 /**
  * The :ref:`js-api-pyodide` module object. Must be present as a global variable
  * called ``pyodide`` in order for package loading to work properly.
+ * @memberof globalThis
  */
 export let pyodide = makePublicAPI();
 
@@ -178,6 +179,7 @@ export let pyodide = makePublicAPI();
  * Setting this to false excludes following modules: distutils.
  * Default: true
  * @returns The Pyodide module.
+ * @memberof globalThis
  * @async
  */
 export async function loadPyodide(config) {

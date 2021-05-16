@@ -1,6 +1,7 @@
 import { Module } from "./module";
 import { loadPackage, loadedPackages } from "./load-pyodide";
-export { loadPackage, loadedPackages };
+import { isPyProxy, PyBuffer } from "./pyproxy.jso";
+export { loadPackage, loadedPackages, isPyProxy };
 
 /**
  * @typedef {import('./pyproxy.js').Py2JsResult} Py2JsResult
@@ -276,19 +277,6 @@ export function toPy(obj, depth = -1) {
   return Module.hiwire.pop_value(result);
 }
 
-// isPyProxy should be here and not in pyproxy.js in order to ensure that it
-// lands in the correct spot in the docs (in the pyodide API not in the PyProxy
-// API).
-/**
- * Is the argument a :any:`PyProxy`?
- * @param jsobj {any} Object to test.
- * @returns {jsobj is PyProxy} Is ``jsobj`` a :any:`PyProxy`?
- */
-export function isPyProxy(jsobj) {
-  return !!jsobj && jsobj.$$ !== undefined && jsobj.$$.type === "PyProxy";
-}
-Module.isPyProxy = isPyProxy;
-
 /**
  * @param {TypedArray} interrupt_buffer
  */
@@ -313,6 +301,7 @@ export function makePublicAPI() {
     setInterruptBuffer,
     toPy,
     PythonError,
+    PyBuffer,
   };
   namespace._module = Module; // @private
   Module.public_api = namespace;
