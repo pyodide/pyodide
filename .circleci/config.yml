@@ -195,7 +195,8 @@ jobs:
     <<: *defaults
     resource_class: small
     steps:
-      - checkout
+      - attach_workspace:
+          at: .
       - run:
           name: test
           command: |
