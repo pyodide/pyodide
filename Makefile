@@ -90,7 +90,7 @@ src/js/pyproxy.jso : src/core/pyproxy.* src/core/*.h
   # -C : Leave comments alone (this allows them to be preserved in typescript definition files, rollup will strip them out)
   # -P : Don't put in macro debug info
   # -imacros pyproxy.c : include all of the macros definitions from pyproxy.c
-	cat $< | $(CC) -E -C -P -imacros src/core/pyproxy.c -o $@ $(MAIN_MODULE_CFLAGS) -
+	cat $< | gcc -E -C -P -imacros src/core/pyproxy.c -o $@ -
 
 build/test.html: src/templates/test.html
 	cp $< $@
