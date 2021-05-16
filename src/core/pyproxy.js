@@ -10,17 +10,19 @@
  * This way if a Javascript error emerges from the wasm, we can escalate it to a
  * fatal error.
  *
- * This file to be included from pyproxy.c This uses the JS_FILE macro defined
- * in include_js_file.h
+ * This is file is preprocessed with -imacros "pyproxy.c". As a result of this,
+ * any macros available in pyproxy.c are available here. We only need the flags
+ * macros HAS_LENGTH, etc.
+ *
+ * See Makefile recipe for src/js/pyproxy.js
  */
-JS_FILE(pyproxy_init_js, () => {
-  0, 0; /* Magic, see include_js_file.h */
-  Module.PyProxies = {};
+
+import { Module } from "../js/module";
 
   if (globalThis.FinalizationRegistry) {
     Module.finalizationRegistry = new FinalizationRegistry((ptr) => {
       try {
-        _Py_DecRef(ptr);
+        Module._Py_DecRef(ptr);
       } catch (e) {
         // I'm not really sure what happens if an error occurs inside of a
         // finalizer...
@@ -33,8 +35,8 @@ JS_FILE(pyproxy_init_js, () => {
     // TODO: after v0.17.0 release, fix selenium issues with this code.
     // Module.bufferFinalizationRegistry = new FinalizationRegistry((ptr) => {
     //   try {
-    //     _PyBuffer_Release(ptr);
-    //     _PyMem_Free(ptr);
+    //     Module._PyBuffer_Release(ptr);
+    //     Module._PyMem_Free(ptr);
     //   } catch (e) {
     //     Module.fatal_error(e);
     //   }
@@ -65,7 +67,7 @@ JS_FILE(pyproxy_init_js, () => {
    * @private
    */
   Module.pyproxy_new = function (ptrobj) {
-    let flags = _pyproxy_getflags(ptrobj);
+    let flags = Module._pyproxy_getflags(ptrobj);
     let cls = Module.getPyProxyClass(flags);
     // Reflect.construct calls the constructor of Module.PyProxyClass but sets
     // the prototype as cls.prototype. This gives us a way to dynamically create
@@ -89,7 +91,7 @@ JS_FILE(pyproxy_init_js, () => {
     Object.defineProperty(target, "$$", {
       value: { ptr: ptrobj, type: "PyProxy" },
     });
-    _Py_IncRef(ptrobj);
+    Module._Py_IncRef(ptrobj);
     let proxy = new Proxy(target, Module.PyProxyHandlers);
     Module.finalizationRegistry.register(proxy, ptrobj, proxy);
     return proxy;
@@ -105,7 +107,7 @@ JS_FILE(pyproxy_init_js, () => {
     return ptr;
   }
 
-  let _pyproxyClassMap = new Map();
+  let pyproxyClassMap = new Map();
   /**
    * Retreive the appropriate mixins based on the features requested in flags.
    * Used by pyproxy_new. The "flags" variable is produced by the C function
@@ -115,7 +117,7 @@ JS_FILE(pyproxy_init_js, () => {
    * @private
    */
   Module.getPyProxyClass = function (flags) {
-    let result = _pyproxyClassMap.get(flags);
+    let result = pyproxyClassMap.get(flags);
     if (result) {
       return result;
     }
@@ -138,7 +140,7 @@ JS_FILE(pyproxy_init_js, () => {
     let new_proto = Object.create(Module.PyProxyClass.prototype, descriptors);
     function PyProxy() {}
     PyProxy.prototype = new_proto;
-    _pyproxyClassMap.set(flags, PyProxy);
+    pyproxyClassMap.set(flags, PyProxy);
     return PyProxy;
   };
 
@@ -162,7 +164,7 @@ JS_FILE(pyproxy_init_js, () => {
     let idkwnames = Module.hiwire.new_value(kwargs_names);
     let idresult;
     try {
-      idresult = __pyproxy_apply(
+      idresult = Module.__pyproxy_apply(
         ptrobj,
         idargs,
         num_pos_args,
@@ -176,7 +178,7 @@ JS_FILE(pyproxy_init_js, () => {
       Module.hiwire.decref(idkwnames);
     }
     if (idresult === 0) {
-      _pythonexc2js();
+      Module._pythonexc2js();
     }
     return Module.hiwire.pop_value(idresult);
   };
@@ -210,18 +212,18 @@ JS_FILE(pyproxy_init_js, () => {
      */
     get type() {
       let ptrobj = _getPtr(this);
-      return Module.hiwire.pop_value(__pyproxy_type(ptrobj));
+      return Module.hiwire.pop_value(Module.__pyproxy_type(ptrobj));
     }
     toString() {
       let ptrobj = _getPtr(this);
       let jsref_repr;
       try {
-        jsref_repr = __pyproxy_repr(ptrobj);
+        jsref_repr = Module.__pyproxy_repr(ptrobj);
       } catch (e) {
         Module.fatal_error(e);
       }
       if (jsref_repr === 0) {
-        _pythonexc2js();
+        Module._pythonexc2js();
       }
       return Module.hiwire.pop_value(jsref_repr);
     }
@@ -248,7 +250,7 @@ JS_FILE(pyproxy_init_js, () => {
       this.$$.ptr = null;
       this.$$.destroyed_msg = destroyed_msg;
       try {
-        _Py_DecRef(ptrobj);
+        Module._Py_DecRef(ptrobj);
       } catch (e) {
         Module.fatal_error(e);
       }
@@ -277,14 +279,14 @@ JS_FILE(pyproxy_init_js, () => {
       let idresult;
       let proxies = Module.hiwire.new_value([]);
       try {
-        idresult = _python2js_with_depth(ptrobj, depth, proxies);
+        idresult = Module._python2js_with_depth(ptrobj, depth, proxies);
       } catch (e) {
         Module.fatal_error(e);
       } finally {
         Module.hiwire.decref(proxies);
       }
       if (idresult === 0) {
-        _pythonexc2js();
+        Module._pythonexc2js();
       }
       return Module.hiwire.pop_value(idresult);
     }
@@ -327,12 +329,12 @@ JS_FILE(pyproxy_init_js, () => {
       let ptrobj = _getPtr(this);
       let length;
       try {
-        length = _PyObject_Size(ptrobj);
+        length = Module._PyObject_Size(ptrobj);
       } catch (e) {
         Module.fatal_error(e);
       }
       if (length === -1) {
-        _pythonexc2js();
+        Module._pythonexc2js();
       }
       return length;
     },
@@ -354,7 +356,7 @@ JS_FILE(pyproxy_init_js, () => {
       let idkey = Module.hiwire.new_value(key);
       let idresult;
       try {
-        idresult = __pyproxy_getitem(ptrobj, idkey);
+        idresult = Module.__pyproxy_getitem(ptrobj, idkey);
       } catch (e) {
         Module.fatal_error(e);
       } finally {
@@ -362,7 +364,7 @@ JS_FILE(pyproxy_init_js, () => {
       }
       if (idresult === 0) {
         if (Module._PyErr_Occurred()) {
-          _pythonexc2js();
+          Module._pythonexc2js();
         } else {
           return undefined;
         }
@@ -388,7 +390,7 @@ JS_FILE(pyproxy_init_js, () => {
       let idval = Module.hiwire.new_value(value);
       let errcode;
       try {
-        errcode = __pyproxy_setitem(ptrobj, idkey, idval);
+        errcode = Module.__pyproxy_setitem(ptrobj, idkey, idval);
       } catch (e) {
         Module.fatal_error(e);
       } finally {
@@ -396,7 +398,7 @@ JS_FILE(pyproxy_init_js, () => {
         Module.hiwire.decref(idval);
       }
       if (errcode === -1) {
-        _pythonexc2js();
+        Module._pythonexc2js();
       }
     },
     /**
@@ -411,14 +413,14 @@ JS_FILE(pyproxy_init_js, () => {
       let idkey = Module.hiwire.new_value(key);
       let errcode;
       try {
-        errcode = __pyproxy_delitem(ptrobj, idkey);
+        errcode = Module.__pyproxy_delitem(ptrobj, idkey);
       } catch (e) {
         Module.fatal_error(e);
       } finally {
         Module.hiwire.decref(idkey);
       }
       if (errcode === -1) {
-        _pythonexc2js();
+        Module._pythonexc2js();
       }
     },
   };
@@ -439,14 +441,14 @@ JS_FILE(pyproxy_init_js, () => {
       let idkey = Module.hiwire.new_value(key);
       let result;
       try {
-        result = __pyproxy_contains(ptrobj, idkey);
+        result = Module.__pyproxy_contains(ptrobj, idkey);
       } catch (e) {
         Module.fatal_error(e);
       } finally {
         Module.hiwire.decref(idkey);
       }
       if (result === -1) {
-        _pythonexc2js();
+        Module._pythonexc2js();
       }
       return result === 1;
     },
@@ -476,21 +478,21 @@ JS_FILE(pyproxy_init_js, () => {
         throw new TempError();
       }
       let item;
-      while ((item = __pyproxy_iter_next(iterptr))) {
+      while ((item = Module.__pyproxy_iter_next(iterptr))) {
         yield Module.hiwire.pop_value(item);
       }
-      if (_PyErr_Occurred()) {
+      if (Module._PyErr_Occurred()) {
         throw new TempError();
       }
     } catch (e) {
       if (e instanceof TempError) {
-        _pythonexc2js();
+        Module._pythonexc2js();
       } else {
         Module.fatal_error(e);
       }
     } finally {
       Module.finalizationRegistry.unregister(token);
-      _Py_DecRef(iterptr);
+      Module._Py_DecRef(iterptr);
     }
   }
 
@@ -516,7 +518,7 @@ JS_FILE(pyproxy_init_js, () => {
       let token = {};
       let iterptr;
       try {
-        iterptr = _PyObject_GetIter(ptrobj);
+        iterptr = Module._PyObject_GetIter(ptrobj);
       } catch (e) {
         Module.fatal_error(e);
       }
@@ -559,10 +561,10 @@ JS_FILE(pyproxy_init_js, () => {
       let idarg = Module.hiwire.new_value(arg);
       let done;
       try {
-        idresult = __pyproxyGen_Send(_getPtr(this), idarg);
+        idresult = Module.__pyproxyGen_Send(_getPtr(this), idarg);
         done = idresult === 0;
         if (done) {
-          idresult = __pyproxyGen_FetchStopIterationValue();
+          idresult = Module.__pyproxyGen_FetchStopIterationValue();
         }
       } catch (e) {
         Module.fatal_error(e);
@@ -570,7 +572,7 @@ JS_FILE(pyproxy_init_js, () => {
         Module.hiwire.decref(idarg);
       }
       if (done && idresult === 0) {
-        _pythonexc2js();
+        Module._pythonexc2js();
       }
       let value = Module.hiwire.pop_value(idresult);
       return { done, value };
@@ -586,14 +588,14 @@ JS_FILE(pyproxy_init_js, () => {
     let idkey = Module.hiwire.new_value(jskey);
     let result;
     try {
-      result = __pyproxy_hasattr(ptrobj, idkey);
+      result = Module.__pyproxy_hasattr(ptrobj, idkey);
     } catch (e) {
       Module.fatal_error(e);
     } finally {
       Module.hiwire.decref(idkey);
     }
     if (result === -1) {
-      _pythonexc2js();
+      Module._pythonexc2js();
     }
     return result !== 0;
   }
@@ -606,15 +608,15 @@ JS_FILE(pyproxy_init_js, () => {
     let idkey = Module.hiwire.new_value(jskey);
     let idresult;
     try {
-      idresult = __pyproxy_getattr(ptrobj, idkey);
+      idresult = Module.__pyproxy_getattr(ptrobj, idkey);
     } catch (e) {
       Module.fatal_error(e);
     } finally {
       Module.hiwire.decref(idkey);
     }
     if (idresult === 0) {
-      if (_PyErr_Occurred()) {
-        _pythonexc2js();
+      if (Module._PyErr_Occurred()) {
+        Module._pythonexc2js();
       }
     }
     return idresult;
@@ -626,7 +628,7 @@ JS_FILE(pyproxy_init_js, () => {
     let idval = Module.hiwire.new_value(jsval);
     let errcode;
     try {
-      errcode = __pyproxy_setattr(ptrobj, idkey, idval);
+      errcode = Module.__pyproxy_setattr(ptrobj, idkey, idval);
     } catch (e) {
       Module.fatal_error(e);
     } finally {
@@ -634,7 +636,7 @@ JS_FILE(pyproxy_init_js, () => {
       Module.hiwire.decref(idval);
     }
     if (errcode === -1) {
-      _pythonexc2js();
+      Module._pythonexc2js();
     }
   }
 
@@ -643,14 +645,14 @@ JS_FILE(pyproxy_init_js, () => {
     let idkey = Module.hiwire.new_value(jskey);
     let errcode;
     try {
-      errcode = __pyproxy_delattr(ptrobj, idkey);
+      errcode = Module.__pyproxy_delattr(ptrobj, idkey);
     } catch (e) {
       Module.fatal_error(e);
     } finally {
       Module.hiwire.decref(idkey);
     }
     if (errcode === -1) {
-      _pythonexc2js();
+      Module._pythonexc2js();
     }
   }
 
@@ -738,12 +740,12 @@ JS_FILE(pyproxy_init_js, () => {
       let ptrobj = _getPtr(jsobj);
       let idresult;
       try {
-        idresult = __pyproxy_ownKeys(ptrobj);
+        idresult = Module.__pyproxy_ownKeys(ptrobj);
       } catch (e) {
         Module.fatal_error(e);
       }
       if (idresult === 0) {
-        _pythonexc2js();
+        Module._pythonexc2js();
       }
       let result = Module.hiwire.pop_value(idresult);
       result.push(...Reflect.ownKeys(jsobj));
@@ -777,7 +779,7 @@ JS_FILE(pyproxy_init_js, () => {
       let reject_handle_id = Module.hiwire.new_value(rejectHandle);
       let errcode;
       try {
-        errcode = __pyproxy_ensure_future(
+        errcode = Module.__pyproxy_ensure_future(
           ptrobj,
           resolve_handle_id,
           reject_handle_id
@@ -789,7 +791,7 @@ JS_FILE(pyproxy_init_js, () => {
         Module.hiwire.decref(resolve_handle_id);
       }
       if (errcode === -1) {
-        _pythonexc2js();
+        Module._pythonexc2js();
       }
       return promise;
     },
@@ -922,14 +924,15 @@ JS_FILE(pyproxy_init_js, () => {
       let this_ptr = _getPtr(this);
       let buffer_struct_ptr;
       try {
-        buffer_struct_ptr = __pyproxy_get_buffer(this_ptr);
+        buffer_struct_ptr = Module.__pyproxy_get_buffer(this_ptr);
       } catch (e) {
         Module.fatal_error(e);
       }
       if (buffer_struct_ptr === 0) {
-        _pythonexc2js();
+        Module._pythonexc2js();
       }
 
+      let HEAP32 = Module.HEAP32;
       // This has to match the order of the fields in buffer_struct
       let cur_ptr = buffer_struct_ptr / 4;
 
@@ -947,9 +950,9 @@ JS_FILE(pyproxy_init_js, () => {
       let c_contiguous = !!HEAP32[cur_ptr++];
       let f_contiguous = !!HEAP32[cur_ptr++];
 
-      let format = UTF8ToString(format_ptr);
+      let format = Module.UTF8ToString(format_ptr);
       try {
-        _PyMem_Free(buffer_struct_ptr);
+        Module._PyMem_Free(buffer_struct_ptr);
       } catch (e) {
         Module.fatal_error(e);
       }
@@ -992,7 +995,7 @@ JS_FILE(pyproxy_init_js, () => {
         if (numBytes === 0) {
           data = new ArrayType();
         } else {
-          data = new ArrayType(HEAP8.buffer, minByteOffset, numEntries);
+          data = new ArrayType(HEAP32.buffer, minByteOffset, numEntries);
         }
         for (let i of strides.keys()) {
           strides[i] /= alignment;
@@ -1022,8 +1025,8 @@ JS_FILE(pyproxy_init_js, () => {
       } finally {
         if (!success) {
           try {
-            _PyBuffer_Release(view_ptr);
-            _PyMem_Free(view_ptr);
+            Module._PyBuffer_Release(view_ptr);
+            Module._PyMem_Free(view_ptr);
           } catch (e) {
             Module.fatal_error(e);
           }
@@ -1101,7 +1104,6 @@ JS_FILE(pyproxy_init_js, () => {
   Module.PyBuffer = class PyBuffer {
     constructor() {
       // FOR_JSDOC_ONLY is a macro that deletes its argument.
-      FOR_JSDOC_ONLY(() => {
         /**
          * The offset of the first entry of the array. For instance if our array
          * is 3d, then you will find ``array[0,0,0]`` at
@@ -1185,7 +1187,6 @@ JS_FILE(pyproxy_init_js, () => {
          * @type {boolean}
          */
         this.f_contiguous;
-      });
       throw new TypeError("PyBuffer is not a constructor");
     }
 
@@ -1198,8 +1199,8 @@ JS_FILE(pyproxy_init_js, () => {
       }
       // Module.bufferFinalizationRegistry.unregister(this);
       try {
-        _PyBuffer_Release(this._view_ptr);
-        _PyMem_Free(this._view_ptr);
+        Module._PyBuffer_Release(this._view_ptr);
+        Module._PyMem_Free(this._view_ptr);
       } catch (e) {
         Module.fatal_error(e);
       }
@@ -1254,5 +1255,3 @@ JS_FILE(pyproxy_init_js, () => {
   Module.wrapNamespace = function wrapNamespace(ns) {
     return new Proxy(ns, NamespaceProxyHandlers);
   };
-  return 0;
-});
