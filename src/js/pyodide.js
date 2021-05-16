@@ -19,21 +19,21 @@ import { wrapNamespace } from "./pyproxy.jso";
 
 // export { PyBuffer } from "./pyproxy";
 /**
- * @typedef {import('./pyproxy.js').PyProxy} PyProxy
- * @typedef {import('./pyproxy.js').PyProxyWithLength} PyProxyWithLength
- * @typedef {import('./pyproxy.js').PyProxyWithGet} PyProxyWithGet
- * @typedef {import('./pyproxy.js').PyProxyWithSet} PyProxyWithSet
- * @typedef {import('./pyproxy.js').PyProxyWithHas} PyProxyWithHas
- * @typedef {import('./pyproxy.js').PyProxyIterable} PyProxyIterable
- * @typedef {import('./pyproxy.js').PyProxyIterator} PyProxyIterator
- * @typedef {import('./pyproxy.js').PyProxyAwaitable} PyProxyAwaitable
- * @typedef {import('./pyproxy.js').PyProxyBuffer} PyProxyBuffer
- * @typedef {import('./pyproxy.js').PyProxyCallable} PyProxyCallable
+ * @typedef {import('./pyproxy').PyProxy} PyProxy
+ * @typedef {import('./pyproxy').PyProxyWithLength} PyProxyWithLength
+ * @typedef {import('./pyproxy').PyProxyWithGet} PyProxyWithGet
+ * @typedef {import('./pyproxy').PyProxyWithSet} PyProxyWithSet
+ * @typedef {import('./pyproxy').PyProxyWithHas} PyProxyWithHas
+ * @typedef {import('./pyproxy').PyProxyIterable} PyProxyIterable
+ * @typedef {import('./pyproxy').PyProxyIterator} PyProxyIterator
+ * @typedef {import('./pyproxy').PyProxyAwaitable} PyProxyAwaitable
+ * @typedef {import('./pyproxy').PyProxyBuffer} PyProxyBuffer
+ * @typedef {import('./pyproxy').PyProxyCallable} PyProxyCallable
  *
- * @typedef {import('./pyproxy.js').Py2JsResult} Py2JsResult
+ * @typedef {import('./pyproxy').Py2JsResult} Py2JsResult
  *
- * @typedef {import('./pyproxy.js').TypedArray} TypedArray
- * @typedef {import('./pyproxy.js').PyBuffer} PyBuffer
+ * @typedef {import('./pyproxy').TypedArray} TypedArray
+ * @typedef {import('./pyproxy').PyBuffer} PyBuffer
  */
 
 /**

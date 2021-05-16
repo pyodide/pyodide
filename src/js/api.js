@@ -1,12 +1,12 @@
 import { Module } from "./module";
 import { loadPackage, loadedPackages } from "./load-pyodide";
-import { isPyProxy, PyBuffer } from "./pyproxy.jso";
+import { isPyProxy, PyBuffer } from "./pyproxy";
 export { loadPackage, loadedPackages, isPyProxy };
 
 /**
- * @typedef {import('./pyproxy.js').Py2JsResult} Py2JsResult
- * @typedef {import('./pyproxy.js').PyProxy} PyProxy
- * @typedef {import('./pyproxy.js').TypedArray} TypedArray
+ * @typedef {import('./pyproxy').Py2JsResult} Py2JsResult
+ * @typedef {import('./pyproxy').PyProxy} PyProxy
+ * @typedef {import('./pyproxy').TypedArray} TypedArray
  */
 
 /**

@@ -1,7 +1,7 @@
 *.a
 *.o
 *.pyc
-*.jso
+src/js/pyproxy.js
 
 *.egg-info/
 
