@@ -78,12 +78,12 @@ env:
 
 
 .PHONY: build/pyodide.js
-build/pyodide.js: src/js/*.js
+build/pyodide.js: src/js/*.js src/js/pyproxy.js
 	cd src/js && npm install --save-dev
 	npx typescript src/js/pyodide.js --lib ES2018 --declaration --allowJs --emitDeclarationOnly --outDir build
 	npx rollup -c src/js/rollup.config.js
 
-src/js/pyproxy.jso : src/core/pyproxy.* src/core/*.h
+src/js/pyproxy.js : src/core/pyproxy.* src/core/*.h
   # We can't input pyproxy.js directly because CC will be unhappy about the file
   # extension. Instead cat it and have CC read from stdin.
   # -E : Only apply prepreocessor

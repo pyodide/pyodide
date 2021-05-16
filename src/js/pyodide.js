@@ -1,11 +1,5 @@
-"use strict";
 /**
- * The main bootstrap script for loading pyodide.
- *
- * Everything exported in this file is documented as part of the global
- * namespace (as if it is available on `globalThis`). If a function should be
- * documented as `pyodide.blah` it needs to be defined in api.js (or in any
- * other file).
+ * The main bootstrap code for loading pyodide.
  */
 import { Module } from "./module";
 import {
