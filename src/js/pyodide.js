@@ -9,7 +9,7 @@ import {
 } from "./load-pyodide";
 import { makePublicAPI, registerJsModule } from "./api";
 
-import { wrapNamespace } from "./pyproxy.jso";
+import { wrapNamespace } from "./pyproxy";
 
 // export { PyBuffer } from "./pyproxy";
 /**
