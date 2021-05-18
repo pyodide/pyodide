@@ -245,8 +245,10 @@ def test_draw_image_affine_transform(selenium_standalone):
 
 @pytest.mark.skip_refcount_check
 def test_draw_text_rotated(selenium_standalone):
-    TARGET_PATH.symlink_to(TEST_PATH, True)
     selenium = selenium_standalone
+    if selenium.browser == "chrome":
+        pytest.xfail(f"high recursion limit not supported for {selenium.browser}")
+    TARGET_PATH.symlink_to(TEST_PATH, True)
     selenium.load_package("matplotlib")
     try:
         selenium.run(
@@ -292,8 +294,10 @@ def test_draw_text_rotated(selenium_standalone):
 
 @pytest.mark.skip_refcount_check
 def test_draw_math_text(selenium_standalone):
-    TARGET_PATH.symlink_to(TEST_PATH, True)
     selenium = selenium_standalone
+    if selenium.browser == "chrome":
+        pytest.xfail(f"high recursion limit not supported for {selenium.browser}")
+    TARGET_PATH.symlink_to(TEST_PATH, True)
     selenium.load_package("matplotlib")
     try:
         selenium.run(
