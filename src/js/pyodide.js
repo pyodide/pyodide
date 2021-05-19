@@ -5,7 +5,7 @@
 import { Module } from "./module";
 import { loadScript, initializePackageIndex } from "./load-pyodide";
 import { PUBLIC_API, makePublicAPI } from "./api";
-import {} from "./pyproxy";
+import "./pyproxy.gen";
 
 /**
  * Dump the Python traceback to the browser console.
