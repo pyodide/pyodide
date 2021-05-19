@@ -39,7 +39,7 @@ substitutions:
 
 
 ## Version 0.17.0
-*April 21, 2020*
+*April 21, 2021*
 
 See the {ref}`0-17-0-release-notes` for more information.
 
