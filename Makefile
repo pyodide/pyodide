@@ -79,7 +79,8 @@ env:
 
 .PHONY: build/pyodide.js
 build/pyodide.js: src/js/*.js
-	npm install ./src/js
+	cd src/js && npm install --save-dev
+	npx typescript src/js/pyodide.js --lib ES2018 --declaration --allowJs --emitDeclarationOnly --outDir build
 	npx rollup -c src/js/rollup.config.js
 
 build/test.html: src/templates/test.html

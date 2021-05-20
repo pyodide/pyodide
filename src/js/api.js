@@ -1,4 +1,5 @@
 import { Module } from "./module";
+import { loadPackage, loadedPackages } from "./load-pyodide";
 
 /**
  * An alias to the Python :py:mod:`pyodide` package.
@@ -8,7 +9,7 @@ import { Module } from "./module";
  *
  * @type {PyProxy}
  */
-Module.pyodide_py = {}; // actually defined in runPythonSimple below
+let pyodide_py = {}; // actually defined in runPythonSimple in loadPyodide (see pyodide.js)
 
 /**
  *
@@ -19,7 +20,7 @@ Module.pyodide_py = {}; // actually defined in runPythonSimple below
  *
  * @type {PyProxy}
  */
-Module.globals = {}; // actually defined in runPythonSimple below
+let globals = {}; // actually defined in runPythonSimple in loadPyodide (see pyodide.js)
 
 /**
  * A Javascript error caused by a Python exception.
@@ -42,7 +43,7 @@ Module.globals = {}; // actually defined in runPythonSimple below
  *
  * @class
  */
-Module.PythonError = class PythonError {
+export class PythonError {
   // actually defined in error_handling.c. TODO: would be good to move this
   // documentation and the definition of PythonError to error_handling.js
   constructor() {
@@ -52,7 +53,7 @@ Module.PythonError = class PythonError {
      */
     this.message;
   }
-};
+}
 
 /**
  *
@@ -64,7 +65,7 @@ Module.PythonError = class PythonError {
  *
  * @type {string}
  */
-Module.version = ""; // Hack to make jsdoc behave
+export let version = ""; // actually defined in runPythonSimple in loadPyodide (see pyodide.js)
 
 /**
  * Runs a string of Python code from Javascript.
@@ -73,15 +74,23 @@ Module.version = ""; // Hack to make jsdoc behave
  * is returned.
  *
  * @param {string} code Python code to evaluate
- * @param {dict} globals An optional Python dictionary to use as the globals.
+ * @param {PyProxy} globals An optional Python dictionary to use as the globals.
  *        Defaults to :any:`pyodide.globals`. Uses the Python API
  *        :any:`pyodide.eval_code` to evaluate the code.
  * @returns The result of the Python code translated to Javascript. See the
  *          documentation for :any:`pyodide.eval_code` for more info.
  */
-Module.runPython = function (code, globals = Module.globals) {
+export function runPython(code, globals = Module.globals) {
   return Module.pyodide_py.eval_code(code, globals);
-};
+}
+Module.runPython = runPython;
+
+/**
+ * @callback LogFn
+ * @param {string} msg
+ * @returns {void}
+ * @private
+ */
 
 /**
  * Inspect a Python code chunk and use :js:func:`pyodide.loadPackage` to
@@ -98,13 +107,13 @@ Module.runPython = function (code, globals = Module.globals) {
  * ``pyodide.loadPackage(['numpy'])``. See also :js:func:`runPythonAsync`.
  *
  * @param {string} code The code to inspect.
- * @param {Function} messageCallback The ``messageCallback`` argument of
+ * @param {LogFn=} messageCallback The ``messageCallback`` argument of
  * :any:`pyodide.loadPackage` (optional).
- * @param {Function} errorCallback The ``errorCallback`` argument of
+ * @param {LogFn=} errorCallback The ``errorCallback`` argument of
  * :any:`pyodide.loadPackage` (optional).
  * @async
  */
-Module.loadPackagesFromImports = async function (
+export async function loadPackagesFromImports(
   code,
   messageCallback,
   errorCallback
@@ -121,13 +130,13 @@ Module.loadPackagesFromImports = async function (
     }
   }
   if (packages.size) {
-    await Module.loadPackage(
+    await loadPackage(
       Array.from(packages.keys()),
       messageCallback,
       errorCallback
     );
   }
-};
+}
 
 /**
  * Access a Python object in the global namespace from Javascript.
@@ -138,13 +147,13 @@ Module.loadPackagesFromImports = async function (
  * @param {string} name Python variable name
  * @returns The Python object translated to Javascript.
  */
-Module.pyimport = (name) => {
+export function pyimport(name) {
   console.warn(
     "Access to the Python global namespace via pyodide.pyimport is deprecated and " +
       "will be removed in version 0.18.0. Use pyodide.globals.get('key') instead."
   );
   return Module.globals.get(name);
-};
+}
 /**
  * Runs Python code using `PyCF_ALLOW_TOP_LEVEL_AWAIT
  * <https://docs.python.org/3/library/ast.html?highlight=pycf_allow_top_level_await#ast.PyCF_ALLOW_TOP_LEVEL_AWAIT>`_.
@@ -166,7 +175,7 @@ Module.pyimport = (name) => {
  * @returns The result of the Python code translated to Javascript.
  * @async
  */
-Module.runPythonAsync = async function (code) {
+export async function runPythonAsync(code) {
   let coroutine = Module.pyodide_py.eval_code_async(code, Module.globals);
   try {
     let result = await coroutine;
@@ -174,7 +183,8 @@ Module.runPythonAsync = async function (code) {
   } finally {
     coroutine.destroy();
   }
-};
+}
+Module.runPythonAsync = runPythonAsync;
 
 /**
  * Registers the Javascript object ``module`` as a Javascript module named
@@ -187,9 +197,9 @@ Module.runPythonAsync = async function (code) {
  * @param {string} name Name of the Javascript module to add
  * @param {object} module Javascript object backing the module
  */
-Module.registerJsModule = function (name, module) {
+export function registerJsModule(name, module) {
   Module.pyodide_py.register_js_module(name, module);
-};
+}
 
 /**
  * Unregisters a Javascript module with given name that has been previously
@@ -202,9 +212,9 @@ Module.registerJsModule = function (name, module) {
  *
  * @param {string} name Name of the Javascript module to remove
  */
-Module.unregisterJsModule = function (name) {
+export function unregisterJsModule(name) {
   Module.pyodide_py.unregister_js_module(name);
-};
+}
 
 /**
  * Convert the Javascript object to a Python object as best as possible.
@@ -220,7 +230,7 @@ Module.unregisterJsModule = function (name) {
  * conversion.
  * @returns {PyProxy} The object converted to Python.
  */
-Module.toPy = function (obj, depth = -1) {
+export function toPy(obj, depth = -1) {
   // No point in converting these, it'd be dumb to proxy them so they'd just
   // get converted back by `js2python` at the end
   switch (typeof obj) {
@@ -257,41 +267,49 @@ Module.toPy = function (obj, depth = -1) {
     Module._Py_DecRef(py_result);
   }
   return Module.hiwire.pop_value(result);
-};
+}
+
+/**
+ * @interface PyProxy
+ * @private
+ */
+
 /**
  * Is the argument a :any:`PyProxy`?
  * @param jsobj {any} Object to test.
- * @returns {bool} Is ``jsobj`` a :any:`PyProxy`?
+ * @returns {boolean} Is ``jsobj`` a :any:`PyProxy`?
  */
-Module.isPyProxy = function (jsobj) {
+export function isPyProxy(jsobj) {
   return !!jsobj && jsobj.$$ !== undefined && jsobj.$$.type === "PyProxy";
-};
+}
+Module.isPyProxy = isPyProxy;
 
-////////////////////////////////////////////////////////////
-// Rearrange namespace for public API
-export let PUBLIC_API = [
-  "globals",
-  "pyodide_py",
-  "version",
-  "loadPackage",
-  "loadPackagesFromImports",
-  "loadedPackages",
-  "isPyProxy",
-  "pyimport",
-  "runPython",
-  "runPythonAsync",
-  "registerJsModule",
-  "unregisterJsModule",
-  "setInterruptBuffer",
-  "toPy",
-  "PythonError",
-];
+/**
+ * @param {Int32Array} interrupt_buffer
+ */
+function setInterruptBuffer(interrupt_buffer) {}
+
+setInterruptBuffer = Module.setInterruptBuffer;
 
 export function makePublicAPI() {
-  let namespace = { _module: Module };
+  let namespace = {
+    globals,
+    pyodide_py,
+    version,
+    loadPackage,
+    loadPackagesFromImports,
+    loadedPackages,
+    isPyProxy,
+    pyimport,
+    runPython,
+    runPythonAsync,
+    registerJsModule,
+    unregisterJsModule,
+    setInterruptBuffer,
+    toPy,
+    PythonError,
+  };
+  namespace._module = Module; // @private
   Module.public_api = namespace;
-  for (let name of PUBLIC_API) {
-    namespace[name] = Module[name];
-  }
   return namespace;
 }
