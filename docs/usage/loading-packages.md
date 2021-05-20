@@ -120,8 +120,9 @@ installs from PyPi.
   <script type="text/javascript">
     async function main(){
       let pyodide = await loadPyodide({ indexURL : 'https://cdn.jsdelivr.net/pyodide/dev/full/' });
+      await pyodide.loadPackage("micropip");
       await pyodide.runPythonAsync(`
-        import micropip # runPythonAsync will load micropip automatically
+        import micropip
         await micropip.install('snowballstemmer')
         import snowballstemmer
         stemmer = snowballstemmer.stemmer('english')
