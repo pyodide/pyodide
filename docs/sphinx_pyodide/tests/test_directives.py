@@ -32,20 +32,21 @@ settings.update(settings_json, OptionParser())
 document = new_document("", settings)
 pyodide_analyzer = PyodideAnalyzer(inner_analyzer)
 
+
 def test_flatten_suffix_tree():
     t = SuffixTree()
     d = {
-        ("a", "b", "c") : 1,
-        ("a", "b", "d") : 2,
-        ("a", "d", "d") : 3,
-        ("a", "x", "y") : 4,
-        ("b", "x", "c") : 5,
-        ("b", "x", "d") : 6,
-        ("b", "y", "d") : 7,
+        ("a", "b", "c"): 1,
+        ("a", "b", "d"): 2,
+        ("a", "d", "d"): 3,
+        ("a", "x", "y"): 4,
+        ("b", "x", "c"): 5,
+        ("b", "x", "d"): 6,
+        ("b", "y", "d"): 7,
     }
     t.add_many(d.items())
     r = flatten_suffix_tree(t._tree)
-    r = { k : v.value for (k, v ) in r.items()}
+    r = {k: v.value for (k, v) in r.items()}
     assert d == r
 
 
