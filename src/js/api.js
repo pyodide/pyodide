@@ -9,7 +9,7 @@ import { loadPackage, loadedPackages } from "./load-pyodide";
  *
  * @type {PyProxy}
  */
-let pyodide_py = {}; // actually defined in runPythonSimple in loadPyodide (see pyodide.js)
+let pyodide_py = {}; // actual value loaded from Module in makePublicAPI
 
 /**
  *
@@ -20,7 +20,7 @@ let pyodide_py = {}; // actually defined in runPythonSimple in loadPyodide (see 
  *
  * @type {PyProxy}
  */
-let globals = {}; // actually defined in runPythonSimple in loadPyodide (see pyodide.js)
+let globals = {}; // actual value loaded from Module in makePublicAPI
 
 /**
  * A Javascript error caused by a Python exception.
@@ -65,7 +65,7 @@ export class PythonError {
  *
  * @type {string}
  */
-export let version = ""; // actually defined in runPythonSimple in loadPyodide (see pyodide.js)
+export let version = ""; // actual value loaded from Module in makePublicAPI
 
 /**
  * Runs a string of Python code from Javascript.
@@ -292,6 +292,9 @@ function setInterruptBuffer(interrupt_buffer) {}
 setInterruptBuffer = Module.setInterruptBuffer;
 
 export function makePublicAPI() {
+  globals = Module.globals;
+  pyodide_py = Module.pyodide_py;
+  version = Module.version;
   let namespace = {
     globals,
     pyodide_py,
