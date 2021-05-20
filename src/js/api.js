@@ -107,9 +107,9 @@ Module.runPython = runPython;
  * ``pyodide.loadPackage(['numpy'])``. See also :js:func:`runPythonAsync`.
  *
  * @param {string} code The code to inspect.
- * @param {LogFn} messageCallback The ``messageCallback`` argument of
+ * @param {LogFn=} messageCallback The ``messageCallback`` argument of
  * :any:`pyodide.loadPackage` (optional).
- * @param {LogFn} errorCallback The ``errorCallback`` argument of
+ * @param {LogFn=} errorCallback The ``errorCallback`` argument of
  * :any:`pyodide.loadPackage` (optional).
  * @async
  */

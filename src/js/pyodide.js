@@ -150,7 +150,7 @@ export let pyodide = makePublicAPI();
 /**
  * Load the main Pyodide wasm module and initialize it. When finished stores the
  * Pyodide module as a global object called ``pyodide``.
- * @param {{ indexURL : string, fullStdLib : boolean }} config
+ * @param {{ indexURL : string, fullStdLib? : boolean = true }} config
  * @param {string} config.indexURL - The URL from which Pyodide will load
  * packages
  * @param {boolean} config.fullStdLib - Load the full Python standard library.
@@ -159,7 +159,7 @@ export let pyodide = makePublicAPI();
  * @returns The Pyodide module.
  * @async
  */
-export async function loadPyodide(config = {}) {
+export async function loadPyodide(config) {
   const default_config = { fullStdLib: true };
   config = Object.assign(default_config, config);
   if (loadPyodide.inProgress) {
