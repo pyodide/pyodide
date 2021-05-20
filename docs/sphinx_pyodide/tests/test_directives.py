@@ -6,7 +6,7 @@ import gzip
 from docutils.utils import new_document
 from docutils.frontend import OptionParser
 from sphinx_js.jsdoc import Analyzer as JsAnalyzer
-
+from sphinx_js.suffix_tree import SuffixTree
 
 test_directory = pathlib.Path(__file__).resolve().parent
 sys.path.append(str(test_directory.parent))
@@ -22,6 +22,7 @@ from sphinx_pyodide.jsdoc import (
     PyodideAnalyzer,
     get_jsdoc_content_directive,
     get_jsdoc_summary_directive,
+    flatten_suffix_tree,
 )
 
 inner_analyzer = JsAnalyzer(jsdoc_json, "/home/hood/pyodide/src")
@@ -30,6 +31,22 @@ settings.update(settings_json, OptionParser())
 
 document = new_document("", settings)
 pyodide_analyzer = PyodideAnalyzer(inner_analyzer)
+
+def test_flatten_suffix_tree():
+    t = SuffixTree()
+    d = {
+        ("a", "b", "c") : 1,
+        ("a", "b", "d") : 2,
+        ("a", "d", "d") : 3,
+        ("a", "x", "y") : 4,
+        ("b", "x", "c") : 5,
+        ("b", "x", "d") : 6,
+        ("b", "y", "d") : 7,
+    }
+    t.add_many(d.items())
+    r = flatten_suffix_tree(t._tree)
+    r = { k : v.value for (k, v ) in r.items()}
+    assert d == r
 
 
 class dummy_app:
