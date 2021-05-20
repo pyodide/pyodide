@@ -19,7 +19,7 @@ yourself. See {ref}`serving_pyodide_packages` for more details.
 
 The `pyodide.js` file defines a single async function called {any}`loadPyodide
 <globalThis.loadPyodide>` which sets up the Python environment and returns {js:mod}`the
-Pyodide top level namespace <pyodide>`).
+Pyodide top level namespace <pyodide>`.
 
 ```pyodide
 async function main() {

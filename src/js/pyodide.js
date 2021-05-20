@@ -234,6 +234,9 @@ def temp(Module):
 
   fixRecursionLimit(Module);
   let pyodide = makePublicAPI();
+  pyodide.globals = Module.globals;
+  pyodide.pyodide_py = Module.pyodide_py;
+  pyodide.version = Module.version;
 
   registerJsModule("js", globalThis);
   registerJsModule("pyodide_js", pyodide);
