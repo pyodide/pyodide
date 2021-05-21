@@ -285,6 +285,77 @@ export function isPyProxy(jsobj) {
 Module.isPyProxy = isPyProxy;
 
 /**
+ * Create a directory in the file system accessible to pyodide
+ *
+ * A light wrapper around emscripten's :any:`FS.mkdir`.
+ *
+ * @see https://emscripten.org/docs/api_reference/Filesystem-API.html#FS.mkdir
+ *
+ * @param {string} path the path to create
+ * @param {number} mode the mode with which to create the directory, defaulting to
+ *                      ``0777``
+ * @returns {FSNode}
+ */
+export function mkdir(path, mode = null) {
+  return Module.FS.mkdir(path, mode);
+}
+Module.mkdir = mkdir;
+
+/**
+ * Mount a File System accessible to pyodide
+ *
+ * A light wrapper around emscripten's :any:`FS.mount`.
+ *
+ * @see https://emscripten.org/docs/api_reference/Filesystem-API.html#file-systems
+ *
+ * @param {string} mountpoint the directory, which must already exist, to which
+ *                            the file system will be mounted
+ * @param {string} fsTypeName the name of the File System. Persently only ``IDBFS``.
+ * @param {opts} opts a dictionary of file-system-specific options: IDBFS expects
+ *                    an empty object
+ * @returns {any}
+ */
+export function mount(mountpoint, opts = {}, fsTypeName = "IDBFS") {
+  const fsTypes = { IDBFS: Module.IDBFS };
+  const fsType = fsTypes[fsTypeName];
+  if (fsType == null) {
+    throw new Error(
+      `Unexpected File System ${fsTypeName}: expected one of ${Object.keys(
+        fsTypes
+      )}`
+    );
+  }
+  return Module.FS.mount(fsType, opts, mountpoint);
+}
+Module.mount = mount;
+
+/**
+ * Sync all IDBFS file systems
+ *
+ * A light wrapper around emscripten's :any:`FS.syncfs`.
+ *
+ * @see https://emscripten.org/docs/api_reference/Filesystem-API.html#FS.syncfs
+ * @param {boolean} populate ``true`` writes to pyodide's file system, while
+ *                           ``false`` write to ``IndexedDB``.
+ * @returns {Promise<void>}
+ */
+export async function syncfs(populate) {
+  // these functions are named to give nicer error messages
+  function handleSyncPromise(resolve, reject) {
+    function syncPromiseCallback(error) {
+      if (error) {
+        return reject(error);
+      }
+      resolve();
+    }
+    Module.FS.syncfs(populate, syncPromiseCallback);
+  }
+
+  return new Promise(handleSyncPromise);
+}
+Module.syncfs = syncfs;
+
+/**
  * @param {Int32Array} interrupt_buffer
  */
 function setInterruptBuffer(interrupt_buffer) {}
@@ -307,6 +378,9 @@ export function makePublicAPI() {
     unregisterJsModule,
     setInterruptBuffer,
     toPy,
+    mkdir,
+    mount,
+    syncfs,
     PythonError,
   };
   namespace._module = Module; // @private
