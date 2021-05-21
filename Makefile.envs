@@ -25,10 +25,11 @@ export PYODIDE=1
 export PYODIDE_PACKAGE_ABI=1
 export EM_COMPILER_WRAPPER=ccache
 
-export OPTFLAGS=-Os
+export OPTFLAGS=-O3
 # for debugging use
 # = -g3 -gseparate-dwarf
-export DBGFLAGS=-g3 -gseparate-dwarf -sSEPARATE_DWARF_URL=http://localhost:9001/
+#export DBGFLAGS=-g3 -gseparate-dwarf -sSEPARATE_DWARF_URL=http://localhost:9001/
+export DBGFLAGS=-g0
 export CFLAGS_BASE=\
 	$(OPTFLAGS) \
 	$(DBGFLAGS) \
