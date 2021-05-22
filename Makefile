@@ -77,9 +77,12 @@ env:
 	env
 
 
-.PHONY: build/pyodide.js
-build/pyodide.js: src/js/*.js
+src/js/node_modules/.installed : src/js/package.json
 	cd src/js && npm install --save-dev
+	touch src/js/node_modules/.installed
+
+.PHONY: build/pyodide.js
+build/pyodide.js: src/js/*.js src/js/node_modules/.installed
 	npx typescript src/js/pyodide.js --lib ES2018 --declaration --allowJs --emitDeclarationOnly --outDir build
 	npx rollup -c src/js/rollup.config.js
 
