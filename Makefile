@@ -4,7 +4,6 @@ include Makefile.envs
 
 .PHONY=check
 
-FILEPACKAGER=$$EM_DIR/tools/file_packager.py
 UGLIFYJS=npx uglifyjs
 PRETTIER=npx prettier
 
@@ -156,27 +155,15 @@ clean-all: clean
 
 # TODO: also include test directories included in other stdlib modules
 build/test.data: $(CPYTHONLIB)
-	( \
-		cd $(CPYTHONLIB)/test; \
-		find . -type d -name __pycache__ -prune -exec rm -rf {} \; \
-	)
-	( \
-		cd build; \
-		python $(FILEPACKAGER) test.data --lz4 --preload ../$(CPYTHONLIB)/test@/lib/python$(PYMINOR)/test --js-output=test.js --export-name=globalThis.pyodide._module --exclude __pycache__ \
-	)
+	find $(CPYTHONLIB)/test -type d -name __pycache__ -prune | xargs rm -rf
+	./tools/file_packager.sh build/test.data --js-output=build/test.js --preload $(CPYTHONLIB)/test@/lib/python$(PYMINOR)/test
 	$(UGLIFYJS) build/test.js -o build/test.js
 
 
 build/distutils.data: $(CPYTHONLIB)
-	( \
-		cd $(CPYTHONLIB)/distutils; \
-		find . -type d -name __pycache__ -prune -exec rm -rf {} \; ;\
-		find . -type d -name tests -prune -exec rm -rf {} \; \
-	)
-	( \
-		cd build; \
-		python $(FILEPACKAGER) distutils.data --lz4 --preload ../$(CPYTHONLIB)/distutils@/lib/python$(PYMINOR)/distutils --js-output=distutils.js --export-name=pyodide._module --exclude __pycache__ --exclude tests \
-	)
+	find $(CPYTHONLIB)/distutils -type d -name __pycache__ -prune | xargs rm -rf
+	find $(CPYTHONLIB)/distutils -type d -name tests -prune | xargs rm -rf
+	./tools/file_packager.sh build/distutils.data --js-output=build/distutils.js --preload $(CPYTHONLIB)/distutils@/lib/python$(PYMINOR)/distutils --exclude tests
 	$(UGLIFYJS) build/distutils.js -o build/distutils.js
 
 
