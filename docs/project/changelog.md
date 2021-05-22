@@ -12,6 +12,11 @@ substitutions:
 
 ## [Unreleased]
 
+- {{ API }} {any}`loadPyodide` no longer automatically stores the API into a
+  global variable called `pyodide`. To get old behavior, say `globalThis.pyodide
+  = await loadPyodide({...})`.
+  {pr}`1597`
+
 ## Standard library
 
 - The following standard library modules are now available as standalone packages

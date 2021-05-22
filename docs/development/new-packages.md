@@ -245,7 +245,7 @@ We invoke it as follows:
 ```sh
 $ ./file_packager.py PACKAGE_NAME.data \
      --js-output=PACKAGE_NAME.js \
-     --export-name=pyodide._module \
+     --export-name=globalThis.__pyodide_module \
      --use-preload-plugins \
      --preload /PATH/TO/LIB/@/lib/python3.8/site-packages/PACKAGE_NAME/ \
      --exclude "*__pycache__*" \
