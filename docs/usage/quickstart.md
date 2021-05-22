@@ -30,7 +30,7 @@ async function main() {
     import sys
     sys.version
   `));
-});
+};
 main();
 ```
 

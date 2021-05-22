@@ -235,6 +235,7 @@ JS_FILE(python2js_buffer_init, () => {
    * @param {number} itemsize Should be one of 1, 2, 4, 8. Used for big endian
    * conversion.
    * @returns A converter function ArrayBuffer => TypedArray
+   * @private
    */
   Module.get_converter = function (format, itemsize) {
     "use strict";

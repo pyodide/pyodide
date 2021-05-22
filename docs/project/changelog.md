@@ -16,7 +16,7 @@ substitutions:
 
 - The following standard library modules are now available as standalone packages
    - distlib
-  They are loaded by default in {any}`pyodide.loadPyodide`, however this behavior
+  They are loaded by default in {any}`globalThis.loadPyodide`, however this behavior
   can be disabled with the `fullStdLib` parameter set to `false`.
   All optional stdlib modules can then be loaded as needed with
   {any}`pyodide.loadPackage`. {pr}`1543`
@@ -39,7 +39,7 @@ substitutions:
 
 
 ## Version 0.17.0
-*April 21, 2020*
+*April 21, 2021*
 
 See the {ref}`0-17-0-release-notes` for more information.
 
