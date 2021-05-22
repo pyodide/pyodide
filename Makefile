@@ -4,8 +4,6 @@ include Makefile.envs
 
 .PHONY=check
 
-UGLIFYJS=npx uglifyjs
-PRETTIER=npx prettier
 
 CPYTHONROOT=cpython
 CPYTHONLIB=$(CPYTHONROOT)/installs/python-$(PYVERSION)/lib/python$(PYMINOR)
@@ -76,12 +74,12 @@ env:
 	env
 
 
-src/js/node_modules/.installed : src/js/package.json
-	cd src/js && npm install --save-dev
-	touch src/js/node_modules/.installed
+node_modules/.installed : package.json
+	npm install --save-dev
+	touch node_modules/.installed
 
 .PHONY: build/pyodide.js
-build/pyodide.js: src/js/*.js src/js/node_modules/.installed
+build/pyodide.js: src/js/*.js node_modules/.installed
 	npx typescript src/js/pyodide.js --lib ES2018 --declaration --allowJs --emitDeclarationOnly --outDir build
 	npx rollup -c src/js/rollup.config.js
 
@@ -120,11 +118,11 @@ update_base_url: \
 test: all
 	pytest src emsdk/tests packages/*/test* pyodide-build -v
 
-lint:
+lint: node_modules/.installed
 	# check for unused imports, the rest is done by black
 	flake8 --select=F401 src tools pyodide-build benchmark conftest.py docs
 	clang-format-6.0 -output-replacements-xml `find src -type f -regex ".*\.\(c\|h\\)"` | (! grep '<replacement ')
-	$(PRETTIER) --check `find src -type f -name '*.js'`
+	npx prettier --check `find src -type f -name '*.js'`
 	black --check .
 	mypy --ignore-missing-imports pyodide-build/pyodide_build/ src/ packages/micropip/micropip/ packages/*/test* conftest.py docs
 
@@ -154,17 +152,17 @@ clean-all: clean
 # Stdlib modules that we repackage as standalone packages
 
 # TODO: also include test directories included in other stdlib modules
-build/test.data: $(CPYTHONLIB)
+build/test.data: $(CPYTHONLIB) node_modules/.installed
 	find $(CPYTHONLIB)/test -type d -name __pycache__ -prune | xargs rm -rf
 	./tools/file_packager.sh build/test.data --js-output=build/test.js --preload $(CPYTHONLIB)/test@/lib/python$(PYMINOR)/test
-	$(UGLIFYJS) build/test.js -o build/test.js
+	npx terser build/test.js -o build/test.js
 
 
-build/distutils.data: $(CPYTHONLIB)
+build/distutils.data: $(CPYTHONLIB) node_modules/.installed
 	find $(CPYTHONLIB)/distutils -type d -name __pycache__ -prune | xargs rm -rf
 	find $(CPYTHONLIB)/distutils -type d -name tests -prune | xargs rm -rf
 	./tools/file_packager.sh build/distutils.data --js-output=build/distutils.js --preload $(CPYTHONLIB)/distutils@/lib/python$(PYMINOR)/distutils --exclude tests
-	$(UGLIFYJS) build/distutils.js -o build/distutils.js
+	npx terser build/distutils.js -o build/distutils.js
 
 
 $(CPYTHONLIB): emsdk/emsdk/.complete $(PYODIDE_EMCC) $(PYODIDE_CXX)
