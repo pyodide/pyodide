@@ -99,7 +99,7 @@ class SeleniumWrapper:
         self.javascript_setup()
         if load_pyodide:
             self.run_js(
-                "globalThis.pyodide = await loadPyodide({ indexURL : './', fullStdLib: false });"
+                "window.pyodide = await loadPyodide({ indexURL : './', fullStdLib: false });"
             )
             self.save_state()
         self.script_timeout = script_timeout
