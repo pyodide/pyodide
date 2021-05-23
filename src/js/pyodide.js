@@ -8,6 +8,7 @@ import {
   loadPackage,
 } from "./load-pyodide";
 import { makePublicAPI, registerJsModule } from "./api";
+import "./pyproxy.gen";
 
 import { wrapNamespace } from "./pyproxy";
 

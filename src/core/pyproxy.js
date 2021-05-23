@@ -17,8 +17,17 @@
  * See Makefile recipe for src/js/pyproxy.js
  */
 
-// #include "pyproxy_flags.h"
 import { Module } from "../js/module";
+
+/**
+ * Is the argument a :any:`PyProxy`?
+ * @param jsobj {any} Object to test.
+ * @returns {jsobj is PyProxy} Is ``jsobj`` a :any:`PyProxy`?
+ */
+export function isPyProxy(jsobj) {
+  return !!jsobj && jsobj.$$ !== undefined && jsobj.$$.type === "PyProxy";
+}
+Module.isPyProxy = isPyProxy;
 
 /**
  * Is the argument a :any:`PyProxy`?
@@ -118,7 +127,7 @@ function _getPtr(jsobj) {
   return ptr;
 }
 
-let _pyproxyClassMap = new Map();
+let pyproxyClassMap = new Map();
 /**
  * Retreive the appropriate mixins based on the features requested in flags.
  * Used by pyproxy_new. The "flags" variable is produced by the C function
@@ -128,7 +137,7 @@ let _pyproxyClassMap = new Map();
  * @private
  */
 Module.getPyProxyClass = function (flags) {
-  let result = _pyproxyClassMap.get(flags);
+  let result = pyproxyClassMap.get(flags);
   if (result) {
     return result;
   }
@@ -163,7 +172,7 @@ Module.getPyProxyClass = function (flags) {
   let new_proto = Object.create(PyProxyClass.prototype, descriptors);
   function NewPyProxyClass() {}
   NewPyProxyClass.prototype = new_proto;
-  _pyproxyClassMap.set(flags, NewPyProxyClass);
+  pyproxyClassMap.set(flags, NewPyProxyClass);
   return NewPyProxyClass;
 };
 
@@ -1074,9 +1083,10 @@ class PyProxyBufferMethods {
       Module._pythonexc2js();
     }
 
+    let HEAP32 = Module.HEAP32;
     // This has to match the order of the fields in buffer_struct
     let cur_ptr = buffer_struct_ptr / 4;
-    let HEAP32 = Module.HEAP32;
+
     let startByteOffset = HEAP32[cur_ptr++];
     let minByteOffset = HEAP32[cur_ptr++];
     let maxByteOffset = HEAP32[cur_ptr++];
