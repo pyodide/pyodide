@@ -1,7 +1,7 @@
 from pathlib import Path
 import subprocess
 
-BASE_DIR = Path(__file__).parents[2]
+BASE_DIR = Path(__file__).parents[3]
 
 
 def test_run_docker_script():

@@ -19,7 +19,7 @@ ROOT_PATH = pathlib.Path(__file__).parents[0].resolve()
 TEST_PATH = ROOT_PATH / "src" / "tests"
 BUILD_PATH = ROOT_PATH / "build"
 
-sys.path.append(str(ROOT_PATH))
+sys.path.append(str(ROOT_PATH / "pyodide-build"))
 
 from pyodide_build.testing import set_webdriver_script_timeout, parse_driver_timeout
 
@@ -98,7 +98,9 @@ class SeleniumWrapper:
         self.driver.get(f"http://{server_hostname}:{server_port}/test.html")
         self.javascript_setup()
         if load_pyodide:
-            self.run_js("await loadPyodide({ indexURL : './', fullStdLib: false });")
+            self.run_js(
+                "window.pyodide = await loadPyodide({ indexURL : './', fullStdLib: false });"
+            )
             self.save_state()
         self.script_timeout = script_timeout
         self.driver.set_script_timeout(script_timeout)

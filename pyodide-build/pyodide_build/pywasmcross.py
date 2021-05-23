@@ -40,7 +40,6 @@ from pyodide_build import common
 from pyodide_build._f2c_fixes import fix_f2c_clapack_calls
 
 
-TOOLSDIR = Path(common.get_make_flag("TOOLSDIR"))
 symlinks = set(["cc", "c++", "ld", "ar", "gcc", "gfortran"])
 
 
@@ -59,6 +58,7 @@ def collect_args(basename):
     It writes the arguments to the build.log, and then delegates to the real
     native compiler or linker.
     """
+    TOOLSDIR = Path(common.get_make_flag("TOOLSDIR"))
     # Remove the symlink compiler from the PATH, so we can delegate to the
     # native compiler
     env = dict(os.environ)
@@ -112,6 +112,7 @@ def make_symlinks(env):
     Makes sure all of the symlinks that make this script look like a compiler
     exist.
     """
+    TOOLSDIR = Path(common.get_make_flag("TOOLSDIR"))
     exec_path = Path(__file__).resolve()
     for symlink in symlinks:
         symlink_path = TOOLSDIR / symlink
@@ -130,6 +131,7 @@ def make_symlinks(env):
 
 
 def capture_compile(args):
+    TOOLSDIR = Path(common.get_make_flag("TOOLSDIR"))
     env = dict(os.environ)
     make_symlinks(env)
     env["PATH"] = str(TOOLSDIR) + ":" + os.environ["PATH"]

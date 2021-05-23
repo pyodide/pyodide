@@ -116,11 +116,23 @@ main(int argc, char** argv)
     FATAL_ERROR("JsRef doesn't have the same size as int.");
   }
 
+  PyObject* _pyodide = PyImport_ImportModule("_pyodide");
+  if (_pyodide == NULL) {
+    FATAL_ERROR("Failed to import pyodide module");
+  }
+  Py_CLEAR(_pyodide);
+
   PyObject* core_module = NULL;
   core_module = PyModule_Create(&core_module_def);
   if (core_module == NULL) {
     FATAL_ERROR("Failed to create core module.");
   }
+
+  EM_ASM({
+    // For some reason emscripten doesn't make UTF8ToString available on Module
+    // by default...
+    Module.UTF8ToString = UTF8ToString;
+  });
 
   TRY_INIT_WITH_CORE_MODULE(error_handling);
   TRY_INIT(hiwire);

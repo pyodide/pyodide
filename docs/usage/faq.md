@@ -9,7 +9,7 @@ The two possible solutions are,
   {ref}`load it with micropip <micropip-installing-from-arbitrary-urls>`.
 - fetch the Python code as a string and evaluate it in Python,
   ```js
-  pyodide.runPython(await fetch('https://some_url/...'))
+  pyodide.runPython(await (await fetch('https://some_url/...')).text());
   ```
 
 In both cases, files need to be served with a web server and cannot be loaded from local file system.
