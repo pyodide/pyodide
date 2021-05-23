@@ -256,7 +256,7 @@ The arguments can be explained as follows:
    `/lib/python3.8/site-packages/PACKAGE_NAME/`).
 
 `file_packager.sh` adds the following options:
-`--lz4 --export-name=pyodide._module --exclude __pycache__ --use-preload-plugins`
+`--lz4 --export-name=globalThis.__pyodide_module --exclude __pycache__ --use-preload-plugins`
 
  - The `--lz4` argument says to use LZ4 to compress the files
  - The `--export-name` tells `file_packager` where to find the main Emscripten

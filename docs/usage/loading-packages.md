@@ -48,8 +48,9 @@ pyodide.loadPackage(['cycler', 'pytz']);
 {any}`pyodide.loadPackage` returns a `Promise` which resolves when all of the
 packages are finished loading:
 ```javascript
+let pyodide;
 async function main(){
-  await loadPyodide({ 'indexURL' : '<some-url>' });
+  pyodide = await loadPyodide({ 'indexURL' : '<some-url>' });
   await pyodide.loadPackage('matplotlib');
   // matplotlib is now available
 }
@@ -118,9 +119,10 @@ installs from PyPi.
   <script type="text/javascript" src="https://cdn.jsdelivr.net/pyodide/dev/full/pyodide.js"></script>
   <script type="text/javascript">
     async function main(){
-      await loadPyodide({ indexURL : 'https://cdn.jsdelivr.net/pyodide/dev/full/' });
+      let pyodide = await loadPyodide({ indexURL : 'https://cdn.jsdelivr.net/pyodide/dev/full/' });
+      await pyodide.loadPackage("micropip");
       await pyodide.runPythonAsync(`
-        import micropip # runPythonAsync will load micropip automatically
+        import micropip
         await micropip.install('snowballstemmer')
         import snowballstemmer
         stemmer = snowballstemmer.stemmer('english')
