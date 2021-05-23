@@ -238,6 +238,8 @@ def temp(Module):
   pyodide.globals = Module.globals;
   pyodide.pyodide_py = Module.pyodide_py;
   pyodide.version = Module.version;
+  Module.pyodide_py_eval_code = Module.pyodide_py.eval_code;
+  Module.pyodide_py_eval_code_async = Module.pyodide_py.eval_code_async;
 
   registerJsModule("js", globalThis);
   registerJsModule("pyodide_js", pyodide);

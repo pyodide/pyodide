@@ -249,6 +249,15 @@ class SeleniumWrapper:
     def restore_state(self):
         self.run_js("pyodide._module.restoreState(self.__savedState)")
 
+    def get_num_proxies(self):
+        return self.run_js("return pyodide._module.pyproxy_alloc_map.size")
+
+    def enable_pyproxy_tracing(self):
+        self.run_js("pyodide._module.enable_pyproxy_allocation_tracing()")
+
+    def disable_pyproxy_tracing(self):
+        self.run_js("pyodide._module.disable_pyproxy_allocation_tracing()")
+
     def run_webworker(self, code):
         if isinstance(code, str) and code.startswith("\n"):
             # we have a multiline string, fix indentation
@@ -333,22 +342,34 @@ def pytest_runtest_call(item):
         selenium = item.funcargs["selenium"]
     if "selenium_standalone" in item._fixtureinfo.argnames:
         selenium = item.funcargs["selenium_standalone"]
-    if selenium and pytest.mark.skip_refcount_check.mark not in item.own_markers:
-        yield from test_wrapper_check_for_memory_leaks(selenium)
+    if selenium:
+        trace_hiwire_refs = pytest.mark.skip_refcount_check.mark not in item.own_markers
+        trace_pyproxies = pytest.mark.trace_pyproxies.mark in item.own_markers
+        yield from test_wrapper_check_for_memory_leaks(
+            selenium, trace_hiwire_refs, trace_pyproxies
+        )
     else:
         yield
 
 
-def test_wrapper_check_for_memory_leaks(selenium):
+def test_wrapper_check_for_memory_leaks(selenium, trace_hiwire_refs, trace_pyproxies):
     init_num_keys = selenium.get_num_hiwire_keys()
+    if trace_pyproxies:
+        selenium.enable_pyproxy_tracing()
+        init_num_proxies = selenium.get_num_proxies()
     a = yield
+    selenium.disable_pyproxy_tracing()
     selenium.restore_state()
     # if there was an error in the body of the test, flush it out by calling
     # get_result (we don't want to override the error message by raising a
     # different error here.)
     a.get_result()
-    delta_keys = selenium.get_num_hiwire_keys() - init_num_keys
-    assert delta_keys == 0
+    if trace_hiwire_refs:
+        delta_keys = selenium.get_num_hiwire_keys() - init_num_keys
+        assert delta_keys == 0
+    if trace_pyproxies:
+        delta_proxies = selenium.get_num_proxies() - init_num_proxies
+        assert delta_proxies == 0
 
 
 @contextlib.contextmanager

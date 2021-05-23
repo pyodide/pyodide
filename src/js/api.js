@@ -81,7 +81,7 @@ export let version = ""; // actually defined in runPythonSimple in loadPyodide (
  *          documentation for :any:`pyodide.eval_code` for more info.
  */
 export function runPython(code, globals = Module.globals) {
-  return Module.pyodide_py.eval_code(code, globals);
+  return Module.pyodide_py_eval_code(code, globals);
 }
 Module.runPython = runPython;
 
@@ -176,7 +176,7 @@ export function pyimport(name) {
  * @async
  */
 export async function runPythonAsync(code) {
-  let coroutine = Module.pyodide_py.eval_code_async(code, Module.globals);
+  let coroutine = Module.pyodide_py_eval_code_async(code, Module.globals);
   try {
     let result = await coroutine;
     return result;
