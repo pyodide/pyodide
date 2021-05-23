@@ -282,8 +282,6 @@ class WebLoop(asyncio.AbstractEventLoop):
         if not message:
             message = "Unhandled exception in event loop"
 
-        exception = context.get("exception")
-
         if (
             "source_traceback" not in context
             and self._current_handle is not None
