@@ -195,7 +195,7 @@ def package_files(buildpath: Path, srcpath: Path, pkg: Dict[str, Any], args):
             "--preload",
             "{}@/".format(install_prefix),
             "--js-output={}".format(name + ".js"),
-            "--export-name=pyodide._module",
+            "--export-name=__pyodide_module",
             "--exclude",
             "*.wasm.pre",
             "--exclude",

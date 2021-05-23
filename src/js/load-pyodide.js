@@ -150,8 +150,8 @@ async function _loadPackage(names, messageCallback, errorCallback) {
     let scriptSrc = uri === DEFAULT_CHANNEL ? `${baseURL}${pkg}.js` : uri;
     messageCallback(`Loading ${pkg} from ${scriptSrc}`);
     scriptPromises.push(
-      loadScript(scriptSrc).catch(() => {
-        errorCallback(`Couldn't load package from URL ${scriptSrc}`);
+      loadScript(scriptSrc).catch((e) => {
+        errorCallback(`Couldn't load package from URL ${scriptSrc}`, e);
         toLoad.delete(pkg);
       })
     );

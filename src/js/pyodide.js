@@ -158,29 +158,28 @@ function fixRecursionLimit() {
 }
 
 /**
- * The :ref:`js-api-pyodide` module object. Must be present as a global variable
- * called ``pyodide`` in order for package loading to work properly.
- * @memberof globalThis
- */
-export let pyodide = makePublicAPI();
-
-/**
- * Load the main Pyodide wasm module and initialize it. When finished stores the
- * Pyodide module as a global object called ``pyodide``.
+ * Load the main Pyodide wasm module and initialize it.
+ *
+ * Only one copy of Pyodide can be loaded in a given Javascript global scope
+ * because Pyodide uses global variables to load packages. If an attempt is made
+ * to load a second copy of Pyodide, :any:`loadPyodide` will throw an error.
+ * (This can be fixed once `Firefox adopts support for ES6 modules in webworkers
+ * <https://bugzilla.mozilla.org/show_bug.cgi?id=1247687>`_.)
+ *
  * @param {{ indexURL : string, fullStdLib? : boolean = true }} config
  * @param {string} config.indexURL - The URL from which Pyodide will load
  * packages
  * @param {boolean} config.fullStdLib - Load the full Python standard library.
  * Setting this to false excludes following modules: distutils.
  * Default: true
- * @returns The Pyodide module.
+ * @returns The :ref:`js-api-pyodide` module.
  * @memberof globalThis
  * @async
  */
 export async function loadPyodide(config) {
   const default_config = { fullStdLib: true };
   config = Object.assign(default_config, config);
-  if (loadPyodide.inProgress) {
+  if (globalThis.__pyodide_module) {
     if (globalThis.languagePluginURL) {
       throw new Error(
         "Pyodide is already loading because languagePluginURL is defined."
@@ -189,6 +188,9 @@ export async function loadPyodide(config) {
       throw new Error("Pyodide is already loading.");
     }
   }
+  // A global "mount point" for the package loaders to talk to pyodide
+  // See "--export-name=__pyodide_module" in buildpkg.py
+  globalThis.__pyodide_module = Module;
   loadPyodide.inProgress = true;
   // Note: PYODIDE_BASE_URL is an environment variable replaced in
   // in this template in the Makefile. It's recommended to always set
@@ -206,11 +208,9 @@ export async function loadPyodide(config) {
   let packageIndexReady = initializePackageIndex(baseURL);
 
   Module.locateFile = (path) => baseURL + path;
-
   let moduleLoaded = new Promise((r) => (Module.postRun = r));
 
   const scriptSrc = `${baseURL}pyodide.asm.js`;
-
   await loadScript(scriptSrc);
 
   // _createPyodideModule is specified in the Makefile by the linker flag:
@@ -251,14 +251,13 @@ def temp(Module):
   Module.globals = wrapNamespace(Module.globals);
 
   fixRecursionLimit(Module);
+  let pyodide = makePublicAPI();
   pyodide.globals = Module.globals;
   pyodide.pyodide_py = Module.pyodide_py;
   pyodide.version = Module.version;
 
   registerJsModule("js", globalThis);
   registerJsModule("pyodide_js", pyodide);
-
-  globalThis.pyodide = pyodide;
 
   await packageIndexReady;
   if (config.fullStdLib) {
@@ -298,5 +297,5 @@ if (globalThis.languagePluginUrl) {
    */
   globalThis.languagePluginLoader = loadPyodide({
     indexURL: globalThis.languagePluginUrl,
-  });
+  }).then((pyodide) => (self.pyodide = pyodide));
 }

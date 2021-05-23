@@ -16,7 +16,7 @@
         return new Promise(resolve => setTimeout(resolve, s));
       }
       async function main() {
-        await loadPyodide({ indexURL : '{{ PYODIDE_BASE_URL }}' });
+        globalThis.pyodide = await loadPyodide({ indexURL : '{{ PYODIDE_BASE_URL }}' });
         let namespace = pyodide.globals.get("dict")();
         pyodide.runPython(`
             import sys
