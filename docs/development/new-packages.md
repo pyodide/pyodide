@@ -250,17 +250,17 @@ $ ./tools/file_packager.sh \
 ```
 
 The arguments can be explained as follows:
- - The `--preload` argument instructs the package to look for the
+ - PACKAGE_NAME.data indicates where to put the data file
+ - --js-output=PACKAGE_NAME.js indicates where to put the javascript file
+ - `--preload` instructs the package to look for the
    file/directory before the separator `@` (namely `/PATH/TO/LIB/`) and place
    it at the path after the `@` in the virtual filesystem (namely
    `/lib/python3.8/site-packages/PACKAGE_NAME/`).
 
 `file_packager.sh` adds the following options:
-`--lz4 --export-name=globalThis.__pyodide_module --exclude __pycache__ --use-preload-plugins`
-
- - The `--lz4` argument says to use LZ4 to compress the files
- - The `--export-name` tells `file_packager` where to find the main Emscripten
+ - `--lz4` to use LZ4 to compress the files
+ - `--export-name=globalThis.__pyodide_module` tells `file_packager` where to find the main Emscripten
    module for linking.
- - The `--exclude` argument omits files matching the pattern
+ - `--exclude *__pycache__*` to omit the pycache directories
  - `--use-preload-plugins` says to [automatically decode files based on their
    extension](https://emscripten.org/docs/porting/files/packaging_files.html#preloading-files)
