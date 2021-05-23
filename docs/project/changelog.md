@@ -17,6 +17,10 @@ substitutions:
   = await loadPyodide({...})`.
   {pr}`1597`
 
+- {{ ENH }} Pyodide now ships with first party typescript types for the entire
+  Javascript API (though no typings are available for `PyProxy` fields).
+  {pr}`1601`
+
 ## Standard library
 
 - The following standard library modules are now available as standalone packages
