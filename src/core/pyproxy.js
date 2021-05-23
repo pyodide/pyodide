@@ -51,18 +51,18 @@ Module.pyproxy_alloc_map = pyproxy_alloc_map;
 let trace_pyproxy_alloc;
 let trace_pyproxy_dealloc;
 
-Module.enable_pyproxy_allocation_tracing = function(){
-  trace_pyproxy_alloc = function(proxy){
+Module.enable_pyproxy_allocation_tracing = function () {
+  trace_pyproxy_alloc = function (proxy) {
     pyproxy_alloc_map.set(proxy, Error().stack);
-  }
-  trace_pyproxy_dealloc = function(proxy){
+  };
+  trace_pyproxy_dealloc = function (proxy) {
     pyproxy_alloc_map.delete(proxy);
-  }
-}
-Module.disable_pyproxy_allocation_tracing = function(){
-  trace_pyproxy_alloc = function(proxy){};
-  trace_pyproxy_dealloc = function(proxy){};
-}
+  };
+};
+Module.disable_pyproxy_allocation_tracing = function () {
+  trace_pyproxy_alloc = function (proxy) {};
+  trace_pyproxy_dealloc = function (proxy) {};
+};
 Module.disable_pyproxy_allocation_tracing();
 
 /**
