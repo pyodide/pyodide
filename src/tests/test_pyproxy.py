@@ -392,7 +392,8 @@ def test_pyproxy_mixins2(selenium):
         assert(() => !("length" in get_method));
         assert(() => !("name" in get_method));
 
-        assert(() => pyodide.globals.get.type === "builtin_function_or_method");
+        assert(() => pyodide.globals.$get.type === "builtin_function_or_method");
+        assert(() => pyodide.globals.get.type === undefined);
         assert(() => pyodide.globals.set.type === undefined);
 
         let [Test, t] = pyodide.runPython(`
@@ -666,66 +667,70 @@ def test_fatal_error(selenium_standalone):
     selenium_standalone.run_js(
         """
         let fatal_error = false;
+        let old_fatal_error = pyodide._module.fatal_error;
         pyodide._module.fatal_error = (e) => {
             fatal_error = true;
             throw e;
         }
-        function expect_fatal(func){
-            fatal_error = false;
-            try {
-                func();
-            } catch(e) {
-                // pass
-            } finally {
-                if(!fatal_error){
-                    throw new Error(`No fatal error occured: ${func.toString().slice(6)}`);
+        try {
+            function expect_fatal(func){
+                fatal_error = false;
+                try {
+                    func();
+                } catch(e) {
+                    // pass
+                } finally {
+                    if(!fatal_error){
+                        throw new Error(`No fatal error occured: ${func.toString().slice(6)}`);
+                    }
                 }
             }
+            let t = pyodide.runPython(`
+                from _pyodide_core import trigger_fatal_error
+                def tfe(*args, **kwargs):
+                    trigger_fatal_error()
+                class Temp:
+                    __getattr__ = tfe
+                    __setattr__ = tfe
+                    __delattr__ = tfe
+                    __dir__ = tfe
+                    __call__ = tfe
+                    __getitem__ = tfe
+                    __setitem__ = tfe
+                    __delitem__ = tfe
+                    __iter__ = tfe
+                    __len__ = tfe
+                    __contains__ = tfe
+                    __await__ = tfe
+                    __repr__ = tfe
+                    __del__ = tfe
+                Temp()
+            `);
+            expect_fatal(() => "x" in t);
+            expect_fatal(() => t.x);
+            expect_fatal(() => t.x = 2);
+            expect_fatal(() => delete t.x);
+            expect_fatal(() => Object.getOwnPropertyNames(t));
+            expect_fatal(() => t());
+            expect_fatal(() => t.get(1));
+            expect_fatal(() => t.set(1, 2));
+            expect_fatal(() => t.delete(1));
+            expect_fatal(() => t.has(1));
+            expect_fatal(() => t.length);
+            // expect_fatal(() => t.then(()=>{}));
+            expect_fatal(() => t.toString());
+            expect_fatal(() => Array.from(t));
+            t.destroy();
+            a = pyodide.runPython(`
+                from array import array
+                array("I", [1,2,3,4])
+            `);
+            b = a.getBuffer();
+            b._view_ptr = 1e10;
+            expect_fatal(() => b.release());
+        } finally {
+            pyodide._module.fatal_error = old_fatal_error;
         }
-        let t = pyodide.runPython(`
-            from _pyodide_core import trigger_fatal_error
-            def tfe(*args, **kwargs):
-                trigger_fatal_error()
-            class Temp:
-                __getattr__ = tfe
-                __setattr__ = tfe
-                __delattr__ = tfe
-                __dir__ = tfe
-                __call__ = tfe
-                __getitem__ = tfe
-                __setitem__ = tfe
-                __delitem__ = tfe
-                __iter__ = tfe
-                __len__ = tfe
-                __contains__ = tfe
-                __await__ = tfe
-                __repr__ = tfe
-                __del__ = tfe
-            Temp()
-        `);
-        expect_fatal(() => "x" in t);
-        expect_fatal(() => t.x);
-        expect_fatal(() => t.x = 2);
-        expect_fatal(() => delete t.x);
-        expect_fatal(() => Object.getOwnPropertyNames(t));
-        expect_fatal(() => t());
-        expect_fatal(() => t.get(1));
-        expect_fatal(() => t.set(1, 2));
-        expect_fatal(() => t.delete(1));
-        expect_fatal(() => t.has(1));
-        expect_fatal(() => t.length);
-        expect_fatal(() => t.then(()=>{}));
-        expect_fatal(() => t.toString());
-        expect_fatal(() => Array.from(t));
-        expect_fatal(() => t.destroy());
-        expect_fatal(() => t.destroy());
-        a = pyodide.runPython(`
-            from array import array
-            array("I", [1,2,3,4])
-        `);
-        b = a.getBuffer();
-        b._view_ptr = 1e10;
-        expect_fatal(() => b.release());
         """
     )
 
