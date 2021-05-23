@@ -29,16 +29,6 @@ export function isPyProxy(jsobj) {
 }
 Module.isPyProxy = isPyProxy;
 
-/**
- * Is the argument a :any:`PyProxy`?
- * @param jsobj {any} Object to test.
- * @returns {jsobj is PyProxy} Is ``jsobj`` a :any:`PyProxy`?
- */
-export function isPyProxy(jsobj) {
-  return !!jsobj && jsobj.$$ !== undefined && jsobj.$$.type === "PyProxy";
-}
-Module.isPyProxy = isPyProxy;
-
 if (globalThis.FinalizationRegistry) {
   Module.finalizationRegistry = new FinalizationRegistry((ptr) => {
     try {
