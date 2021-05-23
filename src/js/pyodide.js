@@ -14,6 +14,7 @@ import {
   loadPackage,
 } from "./load-pyodide";
 import { makePublicAPI, registerJsModule } from "./api";
+import "./pyproxy.gen";
 
 /**
  * Dump the Python traceback to the browser console.
