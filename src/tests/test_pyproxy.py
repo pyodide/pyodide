@@ -772,3 +772,23 @@ def test_pyproxy_call(selenium):
     msg = r"TypeError: f\(\) got multiple values for argument 'x'"
     with pytest.raises(selenium.JavascriptException, match=msg):
         selenium.run_js("f.callKwargs(76, {x : 6})")
+
+
+def test_pyproxy_name_clash(selenium):
+    selenium.run_js(
+        """
+        let d = pyodide.runPython("{'a' : 2}");
+        assert(() => d.get('a') === 2);
+        assert(() => d.$get('b', 3) === 3);
+
+        let t = pyodide.runPython(`
+            class Test:
+                def destroy(self):
+                    return 7
+            Test()
+        `);
+        assert(() => t.$destroy() === 7);
+        t.destroy();
+        assertThrows(() => t.$destroy, "Error", "Object has already been destroyed");
+        """
+    )
