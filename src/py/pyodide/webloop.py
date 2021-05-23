@@ -283,10 +283,6 @@ class WebLoop(asyncio.AbstractEventLoop):
             message = "Unhandled exception in event loop"
 
         exception = context.get("exception")
-        if exception is not None:
-            exc_info = (type(exception), exception, exception.__traceback__)
-        else:
-            exc_info = False
 
         if (
             "source_traceback" not in context
