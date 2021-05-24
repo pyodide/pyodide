@@ -88,11 +88,11 @@ Module.pyproxy_new = function (ptrobj, cache) {
   } else {
     target = Object.create(cls.prototype);
   }
-  if(!cache){
+  if (!cache) {
     let cacheId = Module.hiwire.new_value(new Map());
-    cache = { cacheId, refcnt : 0};
+    cache = { cacheId, refcnt: 0 };
   }
-  cache.refcnt ++;
+  cache.refcnt++;
   Object.defineProperty(target, "$$", {
     value: { ptr: ptrobj, type: "PyProxy", borrowed: false, cache },
   });
@@ -162,8 +162,8 @@ Module.pyproxy_destroy = function (proxy, destroyed_msg) {
   // just in case!
   proxy.$$.ptr = null;
   proxy.$$.destroyed_msg = destroyed_msg;
-  proxy.$$.cache.refcnt --;
-  if(proxy.$$.cache.refcnt === 0){
+  proxy.$$.cache.refcnt--;
+  if (proxy.$$.cache.refcnt === 0) {
     let cache = Module.hiwire.pop_value(proxy.$$.cache.cacheId);
     for (let proxy_id of cache.values()) {
       Module.pyproxy_destroy(Module.hiwire.pop_value(proxy_id));
