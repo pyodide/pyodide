@@ -108,7 +108,7 @@ Module.pyproxy_new = function (ptrobj) {
     target = Object.create(cls.prototype);
   }
   Object.defineProperty(target, "$$", {
-    value: { ptr: ptrobj, type: "PyProxy", borrowed: false },
+    value: { ptr: ptrobj, type: "PyProxy" },
   });
   Module._Py_IncRef(ptrobj);
   let proxy = new Proxy(target, Module.PyProxyHandlers);
@@ -166,10 +166,10 @@ Module.getPyProxyClass = function (flags) {
 
 // Static methods
 Module.PyProxy_getPtr = _getPtr;
-Module.pyproxy_mark_borrowed = function (proxy) {
-  proxy.$$.borrowed = true;
-};
 Module.pyproxy_destroy = function (proxy, destroyed_msg) {
+  if(proxy.$$.ptr === null){
+    return;
+  }
   let ptrobj = _getPtr(proxy);
   Module.finalizationRegistry.unregister(proxy);
   // Maybe the destructor will call Javascript code that will somehow try
@@ -280,9 +280,7 @@ Module.PyProxyClass = class {
    *        destroyed".
    */
   destroy(destroyed_msg) {
-    if (!this.$$.borrowed) {
-      Module.pyproxy_destroy(this, destroyed_msg);
-    }
+    Module.pyproxy_destroy(this, destroyed_msg);
   }
   /**
    * Make a new PyProxy pointing to the same Python object.

@@ -295,6 +295,154 @@ def test_jsproxy_call_meth_js_kwargs(selenium):
     )
 
 
+@pytest.mark.trace_pyproxies
+def test_call_pyproxy_destroy_args(selenium):
+    selenium.run_js(
+        """
+        let y;
+        window.f = function(x){ y = x; }
+        pyodide.runPython(`
+            from js import f
+            f({})
+            f([])
+        `);
+        assertThrows(() => y.length, "Error", "This borrowed proxy was automatically destroyed");
+        """
+    )
+
+
+@pytest.mark.trace_pyproxies
+def test_call_pyproxy_set_global(selenium):
+    selenium.run_js(
+        """
+        window.setGlobal = function(x){
+            if(pyodide.isPyProxy(window.myGlobal)){
+                window.myGlobal.destroy();
+            }
+            if(pyodide.isPyProxy(x)){
+                x = x.clone(); // clone isn't currently necessary
+            }
+            window.myGlobal = x;
+        }
+        pyodide.runPython(`
+            from js import setGlobal
+            setGlobal(2)
+            setGlobal({})
+            setGlobal([])
+            setGlobal(3)
+        `);
+        """
+    )
+
+
+@pytest.mark.trace_pyproxies
+def test_call_pyproxy_destroy_result(selenium):
+    selenium.run_js(
+        """
+        window.f = function(){
+            let globals_get = pyodide.globals.get;
+            let dict = globals_get("dict");
+            let result = dict();
+            globals_get.destroy();
+            dict.destroy();
+            return result;
+        }
+        pyodide.runPython(`
+            from js import f
+            import sys
+            d = f()
+            assert sys.getrefcount(d) == 2
+        `);
+        """
+    )
+
+
+@pytest.mark.skip_refcount_check
+def test_call_pyproxy_sync_return_arg(selenium):
+    selenium.run_js(
+        """
+        window.f = function f(x){
+            return x;
+        }
+        pyodide.runPython(`
+            from js import f
+            l = [1,2,3]
+            x = f(l)
+            assert x is l
+            import sys
+            assert sys.getrefcount(x) == 3
+        `);
+        """
+    )
+
+
+@pytest.mark.trace_pyproxies
+def test_call_pyproxy_destroy_args_async(selenium):
+    selenium.run_js(
+        """
+        window.f = async function f(x){
+            await sleep(5);
+            return x.length;
+        }
+        await pyodide.runPythonAsync(`
+            from js import f
+            assert await f([1,2,3]) == 3
+        `);
+        """
+    )
+
+
+@pytest.mark.skip_refcount_check
+def test_call_pyproxy_async_return_arg_error(selenium):
+    selenium.run_js(
+        """
+        window.f = async function f(x){
+            await sleep(5);
+            return x;
+        }
+        assertThrowsAsync(async () => {
+            await pyodide.runPythonAsync(`
+                from js import f
+                x = await f([1,2,3])
+            `);
+        }, "Error", "asynchronous function call");
+        """
+    )
+
+
+def test_call_pyproxy_async_return_arg_clone(selenium):
+    selenium.run_js(
+        """
+        window.f = async function f(x){
+            await sleep(5);
+            return x.clone();
+        }
+        await pyodide.runPythonAsync(`
+            from js import f
+            x = await f([1,2,3])
+        `);
+        """
+    )
+
+
+@pytest.mark.trace_pyproxies
+def test_call_pyproxy_async_return_arg_create_proxy(selenium):
+    selenium.run_js(
+        """
+        window.f = async function f(x){
+            await sleep(5);
+        }
+        await pyodide.runPythonAsync(`
+            from js import f
+            from pyodide import create_proxy
+            a = create_proxy([1,2,3])
+            x = await f(a)
+            a.destroy()
+        `);
+        """
+    )
+
+
 @run_in_pyodide
 def test_import_invocation():
     import js

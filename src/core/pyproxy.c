@@ -41,18 +41,6 @@ EM_JS(errcode, destroy_proxies, (JsRef proxies_id, char* msg_ptr), {
   }
 });
 
-EM_JS(int, pyproxy_mark_borrowed, (JsRef id), {
-  let proxy = Module.hiwire.get_value(id);
-  Module.pyproxy_mark_borrowed(proxy);
-});
-
-EM_JS(int, pyproxies_mark_borrowed, (JsRef id), {
-  let array = Module.hiwire.get_value(id);
-  for (let proxy of array) {
-    Module.pyproxy_mark_borrowed(proxy);
-  }
-});
-
 static PyObject* asyncio;
 
 // Flags controlling presence or absence of many small mixins depending on which

@@ -49,8 +49,8 @@ EM_JS_NUM(int, hiwire_init, (), {
   _hiwire.objects.set(Module.hiwire.TRUE, true);
   _hiwire.objects.set(Module.hiwire.FALSE, false);
 
-#ifdef DEBUG_F
   Module.hiwire._hiwire = _hiwire;
+#ifdef DEBUG_F
   let many_objects_warning_threshold = 200;
 #endif
 

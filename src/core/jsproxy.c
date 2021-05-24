@@ -1077,7 +1077,6 @@ JsMethod_ConvertArgs(PyObject* const* args,
 
 success:
   success = true;
-  pyproxies_mark_borrowed(proxies);
 finally:
   hiwire_CLEAR(idarg);
   hiwire_CLEAR(idkwargs);
@@ -1117,10 +1116,13 @@ JsMethod_Vectorcall(PyObject* self,
 finally:
   Py_LeaveRecursiveCall(/* " in JsMethod_Vectorcall" */);
   if (idresult == NULL || !hiwire_is_promise(idresult)) {
-    destroy_proxies(
-      proxies,
-      "This borrowed proxy was automatically destroyed. Try using "
-      "create_proxy or create_once_callable.");
+    if (hiwire_is_pyproxy(idresult)) {
+      JsArray_Push(proxies, idresult);
+    }
+    destroy_proxies(proxies,
+                    "This borrowed proxy was automatically destroyed at the "
+                    "end of a function call. Try using "
+                    "create_proxy or create_once_callable.");
   } else {
     // If function returned a promise, delay destroying proxies until the
     // promise resolves.
