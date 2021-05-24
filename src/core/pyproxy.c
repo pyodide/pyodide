@@ -15,12 +15,6 @@ _Py_IDENTIFIER(add_done_callback);
 
 // Use raw EM_JS for the next five commands. We intend to signal a fatal error
 // if a Javascript error is thrown.
-EM_JS(void, pyproxy_destroy_and_decref, (JsRef x), {
-  let val = Module.hiwire.pop_value(x);
-  if (Module.isPyProxy(val)) {
-    Module.pyproxy_destroy(val);
-  }
-})
 
 EM_JS(int, pyproxy_Check, (JsRef x), {
   if (x == 0) {
