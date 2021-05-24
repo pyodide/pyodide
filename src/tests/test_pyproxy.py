@@ -435,7 +435,8 @@ def test_pyproxy_mixins2(selenium):
                 length=7
             [Test, Test()]
         `);
-        assert(() => Test.prototype === "prototype");
+        assert(() => Test.$prototype === "prototype");
+        assert(() => Test.prototype === undefined);
         assert(() => Test.name==="me");
         assert(() => Test.length === 7);
 
@@ -454,8 +455,8 @@ def test_pyproxy_mixins2(selenium):
         assert(() => !("length" in Test));
         assert(() => t.length === 9);
         t.length = 10;
-        assert(() => t.length === 10);
-        assert(() => t.__len__() === 9);
+        assert(() => t.length === 9);
+        assert(() => t.$length === 10);
 
         let l = pyodide.runPython(`
             l = [5, 6, 7] ; l
@@ -615,19 +616,6 @@ def test_pyproxy_copy(selenium):
 def test_errors(selenium):
     selenium.run_js(
         """
-        function expect_error(func){
-            let error = false;
-            try {
-                func();
-            } catch(e) {
-                if(e.name === "PythonError"){
-                    error = true;
-                }
-            }
-            if(!error){
-                throw new Error(`No PythonError ocurred: ${func.toString().slice(6)}`);
-            }
-        }
         let t = pyodide.runPython(`
             def te(self, *args, **kwargs):
                 raise Exception(repr(args))
@@ -647,18 +635,19 @@ def test_errors(selenium):
                 __repr__ = te
             Temp()
         `);
-        expect_error(() => t.x);
-        expect_error(() => t.x = 2);
-        expect_error(() => delete t.x);
-        expect_error(() => Object.getOwnPropertyNames(t));
-        expect_error(() => t());
-        expect_error(() => t.get(1));
-        expect_error(() => t.set(1, 2));
-        expect_error(() => t.delete(1));
-        expect_error(() => t.has(1));
-        expect_error(() => t.length);
-        expect_error(() => t.toString());
-        expect_error(() => Array.from(t));
+        assertThrows(() => t.x, "PythonError", "");
+        assertThrows(() => t.x = 2, "PythonError", "");
+        assertThrows(() => delete t.x, "PythonError", "");
+        assertThrows(() => Object.getOwnPropertyNames(t), "PythonError", "");
+        assertThrows(() => t(), "PythonError", "");
+        assertThrows(() => t.get(1), "PythonError", "");
+        assertThrows(() => t.set(1, 2), "PythonError", "");
+        assertThrows(() => t.delete(1), "PythonError", "");
+        assertThrows(() => t.has(1), "PythonError", "");
+        assertThrows(() => t.length, "PythonError", "");
+        assertThrowsAsync(async () => await t, "PythonError", "");
+        assertThrows(() => t.toString(), "PythonError", "");
+        assertThrows(() => Array.from(t), "PythonError", "");
         """
     )
 
@@ -718,7 +707,6 @@ def test_fatal_error(selenium_standalone):
             expect_fatal(() => t.delete(1));
             expect_fatal(() => t.has(1));
             expect_fatal(() => t.length);
-            // expect_fatal(() => t.then(()=>{}));
             expect_fatal(() => t.toString());
             expect_fatal(() => Array.from(t));
             t.destroy();
