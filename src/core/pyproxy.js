@@ -167,7 +167,7 @@ Module.getPyProxyClass = function (flags) {
 // Static methods
 Module.PyProxy_getPtr = _getPtr;
 Module.pyproxy_destroy = function (proxy, destroyed_msg) {
-  if(proxy.$$.ptr === null){
+  if (proxy.$$.ptr === null) {
     return;
   }
   let ptrobj = _getPtr(proxy);
