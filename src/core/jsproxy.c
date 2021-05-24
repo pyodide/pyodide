@@ -696,6 +696,7 @@ JsProxy_Bool(PyObject* o)
 static PyObject*
 wrap_promise(JsRef promise, JsRef done_callback)
 {
+  bool success = false;
   PyObject* loop = NULL;
   PyObject* set_result = NULL;
   PyObject* set_exception = NULL;
@@ -723,6 +724,8 @@ wrap_promise(JsRef promise, JsRef done_callback)
   FAIL_IF_NULL(promise_handles);
   promise_result = hiwire_call_member(promise_id, "then", promise_handles);
   FAIL_IF_NULL(promise_result);
+
+  success = true;
 finally:
   Py_CLEAR(loop);
   Py_CLEAR(set_result);
@@ -730,6 +733,9 @@ finally:
   hiwire_CLEAR(promise_id);
   hiwire_CLEAR(promise_handles);
   hiwire_CLEAR(promise_result);
+  if (!success) {
+    Py_CLEAR(result);
+  }
   return result;
 }
 
@@ -740,6 +746,16 @@ finally:
 static PyObject*
 JsProxy_Await(JsProxy* self)
 {
+  if (!hiwire_is_promise(self->js)) {
+    // This error is unlikely to be hit except in cases of intentional mischief.
+    // Such mischief is conducted in test_jsproxy:test_mixins_errors_2
+    PyObject* str = JsProxy_Repr((PyObject*)self);
+    const char* str_utf8 = PyUnicode_AsUTF8(str);
+    PyErr_Format(PyExc_TypeError,
+                 "object %s can't be used in 'await' expression",
+                 str_utf8);
+    return NULL;
+  }
   PyObject* fut = NULL;
   PyObject* result = NULL;
 

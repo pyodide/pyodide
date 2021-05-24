@@ -743,7 +743,7 @@ def test_mixins_calls(selenium):
         assert a == b, desc
 
 
-def test_mixins_errors(selenium):
+def test_mixins_errors_1(selenium):
     selenium.run_js(
         """
         window.a = [];
@@ -766,7 +766,13 @@ def test_mixins_errors(selenium):
             with raises(KeyError):
                 del b[0]
         `);
+        """
+    )
 
+
+def test_mixins_errors_2(selenium):
+    selenium.run_js(
+        """
         window.c = {
             next(){},
             length : 1,
@@ -786,7 +792,7 @@ def test_mixins_errors(selenium):
         delete c.has;
         delete c.then;
         delete d[Symbol.iterator];
-        await pyodide.runPythonAsync(`
+        pyodide.runPython(`
             from contextlib import contextmanager
             from unittest import TestCase
             @contextmanager
@@ -808,10 +814,19 @@ def test_mixins_errors(selenium):
                 c[0] = 7
             with raises(JsException, match=msg):
                 del c[0]
+        `)
+
+        await pyodide.runPythonAsync(`
             with raises(TypeError, match="can't be used in 'await' expression"):
                 await c
         `);
+        """
+    )
 
+
+def test_mixins_errors_3(selenium):
+    selenium.run_js(
+        """
         window.l = [0, false, NaN, undefined, null];
         window.l[6] = 7;
         await pyodide.runPythonAsync(`
@@ -832,7 +847,13 @@ def test_mixins_errors(selenium):
             del l[4]
             l[3]; l[4]
         `);
+        """
+    )
 
+
+def test_mixins_errors_4(selenium):
+    selenium.run_js(
+        """
         window.l = [0, false, NaN, undefined, null];
         window.l[6] = 7;
         let a = Array.from(window.l.entries());
