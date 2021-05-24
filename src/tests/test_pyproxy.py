@@ -392,9 +392,11 @@ def test_pyproxy_mixins2(selenium):
         assert(() => !("length" in get_method));
         assert(() => !("name" in get_method));
 
-        assert(() => pyodide.globals.$get.type === "builtin_function_or_method");
-        assert(() => pyodide.globals.get.type === undefined);
-        assert(() => pyodide.globals.set.type === undefined);
+        let d = pyodide.runPython("{}");
+        assert(() => d.$get.type === "builtin_function_or_method");
+        assert(() => d.get.type === undefined);
+        assert(() => d.set.type === undefined);
+        d.destroy();
 
         let [Test, t] = pyodide.runPython(`
             class Test: pass
@@ -655,7 +657,6 @@ def test_errors(selenium):
         expect_error(() => t.delete(1));
         expect_error(() => t.has(1));
         expect_error(() => t.length);
-        expect_error(() => t.then(()=>{}));
         expect_error(() => t.toString());
         expect_error(() => Array.from(t));
         """
