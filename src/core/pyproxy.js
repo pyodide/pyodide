@@ -66,7 +66,7 @@ if (globalThis.FinalizationRegistry) {
  * still make "prototype in proxy" be true though.
  * @private
  */
-Module.pyproxy_new = function (ptrobj) {
+Module.pyproxy_new = function (ptrobj, cache) {
   let flags = Module._pyproxy_getflags(ptrobj);
   let cls = Module.getPyProxyClass(flags);
   // Reflect.construct calls the constructor of Module.PyProxyClass but sets
@@ -88,8 +88,13 @@ Module.pyproxy_new = function (ptrobj) {
   } else {
     target = Object.create(cls.prototype);
   }
+  if(!cache){
+    let cacheId = Module.hiwire.new_value(new Map());
+    cache = { cacheId, refcnt : 0};
+  }
+  cache.refcnt ++;
   Object.defineProperty(target, "$$", {
-    value: { ptr: ptrobj, type: "PyProxy" },
+    value: { ptr: ptrobj, type: "PyProxy", borrowed: false, cache },
   });
   Module._Py_IncRef(ptrobj);
   let proxy = new Proxy(target, Module.PyProxyHandlers);
@@ -146,6 +151,30 @@ Module.getPyProxyClass = function (flags) {
 
 // Static methods
 Module.PyProxy_getPtr = _getPtr;
+Module.pyproxy_mark_borrowed = function (proxy) {
+  proxy.$$.borrowed = true;
+};
+Module.pyproxy_destroy = function (proxy, destroyed_msg) {
+  let ptrobj = _getPtr(proxy);
+  Module.finalizationRegistry.unregister(proxy);
+  // Maybe the destructor will call Javascript code that will somehow try
+  // to use this proxy. Mark it deleted before decrementing reference count
+  // just in case!
+  proxy.$$.ptr = null;
+  proxy.$$.destroyed_msg = destroyed_msg;
+  proxy.$$.cache.refcnt --;
+  if(proxy.$$.cache.refcnt === 0){
+    let cache = Module.hiwire.pop_value(proxy.$$.cache.cacheId);
+    for (let proxy_id of cache.values()) {
+      Module.pyproxy_destroy(Module.hiwire.pop_value(proxy_id));
+    }
+  }
+  try {
+    Module._Py_DecRef(ptrobj);
+  } catch (e) {
+    Module.fatal_error(e);
+  }
+};
 
 // Now a lot of boilerplate to wrap the abstract Object protocol wrappers
 // defined in pyproxy.c in Javascript functions.
@@ -235,24 +264,15 @@ Module.PyProxyClass = class {
    * <https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/FinalizationRegistry>`_
    * Pyodide will automatically destroy the ``PyProxy`` when it is garbage
    * collected, however there is no guarantee that the finalizer will be run
-   * in a timely manner so it is better to ``destory`` the proxy explicitly.
+   * in a timely manner so it is better to ``destroy`` the proxy explicitly.
    *
    * @param {string} [destroyed_msg] The error message to print if use is
    *        attempted after destroying. Defaults to "Object has already been
    *        destroyed".
    */
   destroy(destroyed_msg) {
-    let ptrobj = _getPtr(this);
-    Module.finalizationRegistry.unregister(this);
-    // Maybe the destructor will call Javascript code that will somehow try
-    // to use this proxy. Mark it deleted before decrementing reference count
-    // just in case!
-    this.$$.ptr = null;
-    this.$$.destroyed_msg = destroyed_msg;
-    try {
-      Module._Py_DecRef(ptrobj);
-    } catch (e) {
-      Module.fatal_error(e);
+    if (!this.$$.borrowed) {
+      Module.pyproxy_destroy(this, destroyed_msg);
     }
   }
   /**
@@ -261,7 +281,7 @@ Module.PyProxyClass = class {
    */
   clone() {
     let ptrobj = _getPtr(this);
-    return Module.pyproxy_new(ptrobj);
+    return Module.pyproxy_new(ptrobj, this.$$.cache);
   }
   /**
    * Converts the ``PyProxy`` into a Javascript object as best as possible. By
@@ -607,8 +627,9 @@ function python_getattr(jsobj, jskey) {
   let ptrobj = _getPtr(jsobj);
   let idkey = Module.hiwire.new_value(jskey);
   let idresult;
+  let cacheId = jsobj.$$.cache.cacheId;
   try {
-    idresult = Module.__pyproxy_getattr(ptrobj, idkey);
+    idresult = Module.__pyproxy_getattr(ptrobj, idkey, cacheId);
   } catch (e) {
     Module.fatal_error(e);
   } finally {
