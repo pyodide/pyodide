@@ -125,7 +125,7 @@ class SeleniumWrapper:
                     throw new Error(`Assertion failed: ${cb.toString().slice(12)}${message}`);
                 }
             };
-            function checkError(err, errname, pattern,  thiscallstr){
+            function checkError(err, errname, pattern, pat_str, thiscallstr){
                 if(typeof pattern === "string"){
                     pattern = new RegExp(pattern);
                 }
@@ -154,7 +154,7 @@ class SeleniumWrapper:
                 } catch(e) {
                     err = e;
                 }
-                checkError(err, errname, pattern, thiscallstr);
+                checkError(err, errname, pattern, pat_str, thiscallstr);
             };
             window.assertThrowsAsync = async function(cb, errname, pattern){
                 let pat_str = typeof pattern === "string" ? `"${pattern}"` : `${pattern}`;
@@ -165,7 +165,7 @@ class SeleniumWrapper:
                 } catch(e) {
                     err = e;
                 }
-                checkError(err, errname, pattern, thiscallstr);
+                checkError(err, errname, pattern, pat_str, thiscallstr);
             };
             """,
             pyodide_checks=False,

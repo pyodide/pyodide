@@ -35,7 +35,7 @@ EM_JS(errcode, destroy_proxies, (JsRef proxies_id, char* msg_ptr), {
   if (msg_ptr) {
     msg = UTF8ToString(msg_ptr);
   }
-  let proxies = Module.hiwire.pop_value(proxies_id);
+  let proxies = Module.hiwire.get_value(proxies_id);
   for (let px of proxies) {
     Module.pyproxy_destroy(px, msg);
   }
@@ -909,13 +909,17 @@ create_once_callable_py(PyObject* _mod, PyObject* obj)
 // At some point it would be nice to use FinalizationRegistry with these, but
 // it's a bit tricky.
 EM_JS_REF(JsRef, create_promise_handles, (
-  PyObject* handle_result, PyObject* handle_exception
+  PyObject* handle_result, PyObject* handle_exception, JsRef done_callback_id
 ), {
   if (handle_result) {
     _Py_IncRef(handle_result);
   }
   if (handle_exception) {
     _Py_IncRef(handle_exception);
+  }
+  let done_callback = (x) => {};
+  if(done_callback_id){
+    done_callback = Module.hiwire.get_value(done_callback_id);
   }
   let used = false;
   function checkUsed(){
@@ -940,6 +944,7 @@ EM_JS_REF(JsRef, create_promise_handles, (
         return Module.callPyObject(handle_result, res);
       }
     } finally {
+      done_callback(res);
       destroy();
     }
   }
@@ -950,6 +955,7 @@ EM_JS_REF(JsRef, create_promise_handles, (
         return Module.callPyObject(handle_exception, err);
       }
     } finally {
+      done_callback(undefined);
       destroy();
     }
   }

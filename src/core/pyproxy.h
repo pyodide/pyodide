@@ -76,7 +76,9 @@ create_once_callable(PyObject* obj);
  * function. Intended for use with `promise.then`.
  */
 JsRef
-create_promise_handles(PyObject* onfulfilled, PyObject* onrejected);
+create_promise_handles(PyObject* onfulfilled,
+                       PyObject* onrejected,
+                       JsRef done_callback_id);
 
 int
 pyproxy_init();
