@@ -967,7 +967,7 @@ Module.PyProxyBufferMethods = {
           "Javascript has no native support for big endian buffers. " +
             "In this case, you can pass an explicit type argument. " +
             "For instance, `getBuffer('dataview')` will return a `DataView`" +
-            "which has native support for reading big endian data." +
+            "which has native support for reading big endian data. " +
             "Alternatively, toJs will automatically convert the buffer " +
             "to little endian."
         );
