@@ -149,7 +149,7 @@ JS_FILE(python2js_buffer_init, () => {
     let byteLength = itemsize * n;
     // Make new memory of the appropriate size
     let buffer = new Uint8Array(byteLength);
-    for (i = 0; i < n; ++i) {
+    for (let i = 0; i < n; ++i) {
       let curptr = ptr + i * stride;
       if (suboffset >= 0) {
         curptr = HEAP32[curptr / 4] + suboffset;

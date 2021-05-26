@@ -93,7 +93,7 @@
         pyconsole.stdout_callback = s => term.echo(s, {newline : false});
         pyconsole.stderr_callback = s => {
             term.error(s.trimEnd());
-        }
+        };
         term.ready = Promise.resolve();
         pyodide._module.on_fatal = async (e) => {
           term.error("Pyodide has suffered a fatal error. Please report this to the Pyodide maintainers.");
