@@ -249,7 +249,7 @@ def temp(Module):
   // TODO: Should we have this?
   Module.globals = wrapNamespace(Module.globals);
 
-  fixRecursionLimit(Module);
+  fixRecursionLimit();
   let pyodide = makePublicAPI();
   pyodide.globals = Module.globals;
   pyodide.pyodide_py = Module.pyodide_py;
