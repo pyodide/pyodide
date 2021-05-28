@@ -322,7 +322,7 @@ class PyProxyClass {
     return Module.hiwire.pop_value(idresult);
   }
   /**
-   * Test whether the :any:`PyProxy.length` getter is available on this PyProxy. A
+   * Check whether the :any:`PyProxy.length` getter is available on this PyProxy. A
    * Typescript type guard.
    * @returns {this is PyProxyWithLength}
    */
@@ -330,7 +330,7 @@ class PyProxyClass {
     return !!(this.$$flags & HAS_LENGTH);
   }
   /**
-   * Test whether the :any:`PyProxy.get` method is available on this PyProxy. A
+   * Check whether the :any:`PyProxy.get` method is available on this PyProxy. A
    * Typescript type guard.
    * @returns {this is PyProxyWithGet}
    */
@@ -338,7 +338,7 @@ class PyProxyClass {
     return !!(this.$$flags & HAS_GET);
   }
   /**
-   * Test whether the :any:`PyProxy.set` method is available on this PyProxy. A
+   * Check whether the :any:`PyProxy.set` method is available on this PyProxy. A
    * Typescript type guard.
    * @returns {this is PyProxyWithSet}
    */
@@ -346,7 +346,7 @@ class PyProxyClass {
     return !!(this.$$flags & HAS_SET);
   }
   /**
-   * Test whether the :any:`PyProxy.has` method is available on this PyProxy. A
+   * Check whether the :any:`PyProxy.has` method is available on this PyProxy. A
    * Typescript type guard.
    * @returns {this is PyProxyWithHas}
    */
@@ -354,7 +354,7 @@ class PyProxyClass {
     return !!(this.$$flags & HAS_CONTAINS);
   }
   /**
-   * Test whether the PyProxy is iterable. A Typescript type guard for
+   * Check whether the PyProxy is iterable. A Typescript type guard for
    * :any:`PyProxy.[Symbol.iterator]`.
    * @returns {this is PyProxyIterable}
    */
@@ -362,7 +362,7 @@ class PyProxyClass {
     return !!(this.$$flags & (IS_ITERABLE | IS_ITERATOR));
   }
   /**
-   * Test whether the PyProxy is iterable. A Typescript type guard for
+   * Check whether the PyProxy is iterable. A Typescript type guard for
    * :any:`PyProxy.next`.
    * @returns {this is PyProxyIterator}
    */
@@ -370,7 +370,7 @@ class PyProxyClass {
     return !!(this.$$flags & IS_ITERATOR);
   }
   /**
-   * Test whether the PyProxy is awaitable. A Typescript type guard, if this
+   * Check whether the PyProxy is awaitable. A Typescript type guard, if this
    * function returns true Typescript considers the PyProxy to be a ``Promise``.
    * @returns {this is PyProxyAwaitable}
    */
@@ -378,7 +378,7 @@ class PyProxyClass {
     return !!(this.$$flags & IS_AWAITABLE);
   }
   /**
-   * Test whether the PyProxy is a buffer. A Typescript type guard for
+   * Check whether the PyProxy is a buffer. A Typescript type guard for
    * :any:`PyProxy.getBuffer`.
    * @returns {this is PyProxyBuffer}
    */
@@ -386,7 +386,7 @@ class PyProxyClass {
     return !!(this.$$flags & IS_BUFFER);
   }
   /**
-   * Test whether the PyProxy is a Callable. A Typescript type guard, if this
+   * Check whether the PyProxy is a Callable. A Typescript type guard, if this
    * returns true then Typescript considers the Proxy to be callable of
    * signature ``(args... : any[]) => PyProxy | number | bigint | string |
    * boolean | undefined``.
