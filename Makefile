@@ -74,7 +74,7 @@ env:
 	env
 
 
-node_modules/.installed : package.json
+node_modules/.installed : src/js/package.json
 	cd src/js && npm install --save-dev
 	ln -sfn src/js/node_modules/ node_modules
 	touch node_modules/.installed
