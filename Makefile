@@ -75,7 +75,8 @@ env:
 
 
 node_modules/.installed : package.json
-	npm install --save-dev
+	cd src/js && npm install --save-dev
+	ln -sfn src/js/node_modules/ node_modules
 	touch node_modules/.installed
 
 .PHONY: build/pyodide.js
