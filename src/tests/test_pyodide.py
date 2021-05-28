@@ -237,6 +237,16 @@ def test_run_python_async_toplevel_await(selenium):
     )
 
 
+@pytest.mark.trace_pyproxies
+def test_run_python_proxy_leak(selenium):
+    selenium.run_js(
+        """
+        pyodide.runPython("")
+        await pyodide.runPythonAsync("")
+        """
+    )
+
+
 def test_run_python_last_exc(selenium):
     selenium.run_js(
         """
