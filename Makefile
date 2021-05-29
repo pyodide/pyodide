@@ -79,7 +79,6 @@ node_modules/.installed : src/js/package.json
 	ln -sfn src/js/node_modules/ node_modules
 	touch node_modules/.installed
 
-.PHONY: build/pyodide.js
 build/pyodide.js: src/js/*.js src/js/pyproxy.gen.js node_modules/.installed
 	npx typescript src/js/pyodide.js \
 		--lib ES2018 --allowJs \
