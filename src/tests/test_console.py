@@ -34,9 +34,10 @@ def safe_sys_redirections():
 
 
 def test_interactive_console_streams(safe_sys_redirections):
-
     my_stdout = ""
     my_stderr = ""
+    orig_sys_stdout_name = sys.stdout.name
+    orig_sys_stderr_name = sys.stderr.name
 
     def stdout_callback(string):
         nonlocal my_stdout
@@ -56,8 +57,8 @@ def test_interactive_console_streams(safe_sys_redirections):
     )
 
     # std names
-    assert sys.stdout.name == "<stdout>"
-    assert sys.stderr.name == "<stderr>"
+    assert sys.stdout.name == orig_sys_stdout_name
+    assert sys.stderr.name == orig_sys_stderr_name
 
     # std redirections
     print("foo")
@@ -87,7 +88,10 @@ def test_interactive_console_streams(safe_sys_redirections):
     assert my_stderr == ""
     assert shell.run_complete.result() == 2
 
-    shell.restore_stdstreams()
+    del shell
+    import gc
+
+    gc.collect()
 
     my_stdout = ""
     my_stderr = ""

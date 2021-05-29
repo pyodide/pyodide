@@ -147,6 +147,7 @@ class _InteractiveConsole(code.InteractiveConsole):
         """The point of this method is so that when"""
         # already redirected?
         if self._streams_redirected:
+            yield
             return
         redirects = []
         if self.stdout_callback:
@@ -177,14 +178,6 @@ class _InteractiveConsole(code.InteractiveConsole):
 
         This supports nesting."""
         yield from self._stdstreams_redirections_inner()
-
-    def restore_stdstreams(self):
-        """Restore stdout/stderr to the value it was before
-        the creation of the object."""
-        if self._streams_redirected:
-            sys.stdout = self._old_stdout
-            sys.stderr = self._old_stderr
-            self._streams_redirected = False
 
     def flush_all(self):
         """Force stdout/stderr flush."""
