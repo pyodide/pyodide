@@ -125,13 +125,9 @@ class _InteractiveConsole(code.InteractiveConsole):
         self.stderr_callback = stderr_callback
         self.stdin_callback = stdin_callback
         self._streams_redirected = False
+        self._stream_generator = None  # track persistent stream redirection
         if persistent_stream_redirection:
-            # Redirect streams. We want the streams to be restored when we are
-            # garbage collected so we just hold the reference to the generator
-            # forever. When we are garbage collected, the generator will be
-            # finalized and its finally block will restore the streams
-            self._stream_generator = self._stdstreams_redirections_inner()
-            next(self._stream_generator)  # Cause stream setup
+            self.persistent_redirect_streams()
         self.run_complete: asyncio.Future = asyncio.Future()
         self.run_complete.set_result(None)
         self._completer = rlcompleter.Completer(self.locals)  # type: ignore
@@ -143,8 +139,28 @@ class _InteractiveConsole(code.InteractiveConsole):
         self.output_truncated_text = "\\n[[;orange;]<long output truncated>]\\n"
         self.compile.compiler.flags |= ast.PyCF_ALLOW_TOP_LEVEL_AWAIT  # type: ignore
 
+    def persistent_redirect_streams(self):
+        """Redirect stdin/stdout/stderr persistently"""
+        if self._stream_generator:
+            return
+        self._stream_generator = self._stdstreams_redirections_inner()
+        next(self._stream_generator)  # trigger stream redirection
+        # streams will be reverted to normal when self._stream_generator is destroyed.
+
+    def persistent_restore_streams(self):
+        """Restore stdin/stdout/stderr if they have been persistently redirected"""
+        # allowing _stream_generator to be garbage collected restores the streams
+        self._stream_generator = None
+
+    @contextmanager
+    def redirect_streams(self):
+        """A context manager to redirect standard streams.
+
+        This supports nesting."""
+        yield from self._stdstreams_redirections_inner()
+
     def _stdstreams_redirections_inner(self):
-        """The point of this method is so that when"""
+        """This is the generator which implements redirect_streams and the stdstreams_redirections"""
         # already redirected?
         if self._streams_redirected:
             yield
@@ -162,7 +178,6 @@ class _InteractiveConsole(code.InteractiveConsole):
             redirects.append(
                 redirect_stdin(ReadStream(self.stdin_callback, name=sys.stdin.name))
             )
-
         try:
             self._streams_redirected = True
             with ExitStack() as stack:
@@ -172,16 +187,9 @@ class _InteractiveConsole(code.InteractiveConsole):
         finally:
             self._streams_redirected = False
 
-    @contextmanager
-    def stdstreams_redirections(self):
-        """Ensure std stream redirection.
-
-        This supports nesting."""
-        yield from self._stdstreams_redirections_inner()
-
     def flush_all(self):
         """Force stdout/stderr flush."""
-        with self.stdstreams_redirections():
+        with self.redirect_streams():
             sys.stdout.flush()
             sys.stderr.flush()
 
@@ -193,7 +201,7 @@ class _InteractiveConsole(code.InteractiveConsole):
         redirection here since doing twice is not an issue.
         """
 
-        with self.stdstreams_redirections():
+        with self.redirect_streams():
             return super().runsource(*args, **kwargs)
 
     def runcode(self, code):
@@ -228,7 +236,7 @@ class _InteractiveConsole(code.InteractiveConsole):
         except BaseException:
             # Throw away old error
             pass
-        with self.stdstreams_redirections():
+        with self.redirect_streams():
             await _load_packages_from_imports(source)
             try:
                 result = await eval_code_async(
