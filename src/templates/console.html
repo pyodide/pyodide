@@ -31,10 +31,7 @@
                         persistent_stream_redirection=False,
                     )
 
-                def banner(self):
-                    return f"Welcome to the Pyodide terminal emulator 🐍\\n{super().banner()}"
-
-
+            BANNER = "Welcome to the Pyodide terminal emulator 🐍\\n" + BANNER
             js.pyconsole = PyConsole()
         `, namespace);
         namespace.get("BANNER");
