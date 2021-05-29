@@ -34,7 +34,7 @@
             BANNER = "Welcome to the Pyodide terminal emulator 🐍\\n" + BANNER
             js.pyconsole = PyConsole()
         `, namespace);
-        namespace.get("BANNER");
+        let banner = namespace.get("BANNER");
         namespace.destroy();
 
         let ps1 = '>>> ', ps2 = '... ';
