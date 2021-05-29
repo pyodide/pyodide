@@ -188,19 +188,11 @@ def package_files(buildpath: Path, srcpath: Path, pkg: Dict[str, Any], args):
     install_prefix = (srcpath / "install").resolve()
     subprocess.run(
         [
-            "python",
             common.file_packager_path(),
             name + ".data",
-            "--lz4",
+            "--js-output={}".format(name + ".js"),
             "--preload",
             "{}@/".format(install_prefix),
-            "--js-output={}".format(name + ".js"),
-            "--export-name=__pyodide_module",
-            "--exclude",
-            "*.wasm.pre",
-            "--exclude",
-            "*__pycache__*",
-            "--use-preload-plugins",
         ],
         cwd=buildpath,
         check=True,
