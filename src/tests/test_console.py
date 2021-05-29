@@ -16,7 +16,7 @@ def test_stream_redirection():
         nonlocal my_buffer
         my_buffer += string
 
-    my_stream = console._StdStream(callback)
+    my_stream = console.WriteStream(callback)
 
     print("foo", file=my_stream)
     assert my_buffer == "foo\n"

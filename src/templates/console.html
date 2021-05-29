@@ -21,10 +21,10 @@
         pyodide.runPython(`
             import sys
             import js
-            from pyodide import console
+            from pyodide.console import _InteractiveConsole, BANNER
             import __main__
 
-            class PyConsole(console._InteractiveConsole):
+            class PyConsole(_InteractiveConsole):
                 def __init__(self):
                     super().__init__(
                         __main__.__dict__,
@@ -37,6 +37,7 @@
 
             js.pyconsole = PyConsole()
         `, namespace);
+        namespace.get("BANNER");
         namespace.destroy();
 
         let ps1 = '>>> ', ps2 = '... ';
@@ -81,7 +82,7 @@
         let term = $('body').terminal(
           interpreter,
           {
-            greetings: pyconsole.banner(),
+            greetings: banner,
             prompt: ps1,
             completionEscape: false,
             completion: function(command, callback) {
