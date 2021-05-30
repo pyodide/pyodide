@@ -196,7 +196,12 @@ def test_hiwire_is_promise(selenium):
 
     assert not selenium.run_js(
         """
-        return pyodide._module.hiwire.isPromise(pyodide.globals);
+        let d = pyodide.runPython("{}");
+        try {
+            return pyodide._module.hiwire.isPromise(d);
+        } finally {
+            d.destroy();
+        }
         """
     )
 
@@ -424,6 +429,7 @@ def test_docstrings_b(selenium):
 
 
 @pytest.mark.skip_refcount_check
+@pytest.mark.skip_proxy_trace
 def test_restore_state(selenium):
     selenium.run_js(
         """

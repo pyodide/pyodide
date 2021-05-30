@@ -37,9 +37,15 @@ def test_import_js(selenium):
 
 def test_globals_get_multiple(selenium):
     """See #1151"""
-    selenium.run("v = 0.123")
-    selenium.run_js("pyodide.globals.get('v')")
-    selenium.run_js("pyodide.globals.get('v')")
+    selenium.run_js(
+        """
+        pyodide.runPython("v = 0.123");
+        let globals_get = pyodide.globals.get;
+        globals_get('v')
+        globals_get('v')
+        globals_get.destroy()
+        """
+    )
 
 
 def test_open_url(selenium, httpserver):
@@ -131,14 +137,19 @@ def test_runpythonasync_exception_after_import(selenium_standalone):
 
 
 def test_py(selenium_standalone):
-    selenium_standalone.run(
+    selenium_standalone.run_js(
         """
-        def func():
-            return 42
+        pyodide.runPython(`
+            def func():
+                return 42
+        `);
+        let globals_get = pyodide.globals.get;
+        let func = globals_get('func');
+        assert(() => func() === 42);
+        globals_get.destroy();
+        func.destroy();
         """
     )
-
-    assert selenium_standalone.run_js("return pyodide.globals.get('func')()") == 42
 
 
 def test_eval_nothing(selenium):

@@ -2,61 +2,70 @@
 import pytest
 
 
-def test_pyproxy(selenium):
-    selenium.run(
+def test_pyproxy77(selenium):
+    selenium.run_js(
         """
-        class Foo:
-          bar = 42
-          def get_value(self, value):
-            return value * 64
-        f = Foo()
+        pyodide.runPython(`
+            class Foo:
+                bar = 42
+                def get_value(self, value):
+                    return value * 64
+            f = Foo()
+        `);
+        let globals_get = pyodide.globals.get;
+        window.f = globals_get('f');
+        globals_get.destroy();
+        assert(() => f.type === "Foo");
+        let f_get_value = f.get_value
+        assert(() => f_get_value(2) === 128);
+        f_get_value.destroy();
+        assert(() => f.bar === 42);
+        assert(() => 'bar' in f);
+        f.baz = 32;
+        assert(() => f.baz === 32);
+        pyodide.runPython(`assert hasattr(f, 'baz')`)
+        window.f_props = Object.getOwnPropertyNames(f);
+        delete f.baz
+        pyodide.runPython(`assert not hasattr(f, 'baz')`)
+        assert(() => f.toString().startsWith("<Foo"));
+        f.destroy();
         """
     )
-    selenium.run_js("window.f = pyodide.globals.get('f')")
-    assert selenium.run_js("return f.type") == "Foo"
-    assert selenium.run_js("return f.get_value(2)") == 128
-    assert selenium.run_js("return f.bar") == 42
-    assert selenium.run_js("return ('bar' in f)")
-    selenium.run_js("f.baz = 32")
-    assert selenium.run("f.baz") == 32
-    assert set(selenium.run_js("return Object.getOwnPropertyNames(f)")) > set(
-        [
-            "__class__",
-            "__delattr__",
-            "__dict__",
-            "__dir__",
-            "__doc__",
-            "__eq__",
-            "__format__",
-            "__ge__",
-            "__getattribute__",
-            "__gt__",
-            "__hash__",
-            "__init__",
-            "__init_subclass__",
-            "__le__",
-            "__lt__",
-            "__module__",
-            "__ne__",
-            "__new__",
-            "__reduce__",
-            "__reduce_ex__",
-            "__repr__",
-            "__setattr__",
-            "__sizeof__",
-            "__str__",
-            "__subclasshook__",
-            "__weakref__",
-            "bar",
-            "baz",
-            "get_value",
-        ]
-    )
-    assert selenium.run("hasattr(f, 'baz')")
-    selenium.run_js("delete pyodide.globals.get('f').baz")
-    assert not selenium.run("hasattr(f, 'baz')")
-    assert selenium.run_js("return pyodide.globals.get('f').toString()").startswith(
-        "<Foo"
+    assert (
+        set(
+            [
+                "__class__",
+                "__delattr__",
+                "__dict__",
+                "__dir__",
+                "__doc__",
+                "__eq__",
+                "__format__",
+                "__ge__",
+                "__getattribute__",
+                "__gt__",
+                "__hash__",
+                "__init__",
+                "__init_subclass__",
+                "__le__",
+                "__lt__",
+                "__module__",
+                "__ne__",
+                "__new__",
+                "__reduce__",
+                "__reduce_ex__",
+                "__repr__",
+                "__setattr__",
+                "__sizeof__",
+                "__str__",
+                "__subclasshook__",
+                "__weakref__",
+                "bar",
+                "baz",
+                "get_value",
+            ]
+        ).difference(selenium.run_js("return f_props"))
+        == set()
     )
 
 
@@ -72,6 +81,7 @@ def test_pyproxy_clone(selenium):
     )
 
 
+@pytest.mark.skip_proxy_trace
 def test_pyproxy_refcount(selenium):
     result = selenium.run_js(
         """
@@ -138,8 +148,12 @@ def test_pyproxy_destroy(selenium):
     with pytest.raises(selenium.JavascriptException, match=msg):
         selenium.run_js(
             """
-            let f = pyodide.globals.get('f');
-            assert(()=> f.get_value(1) === 64);
+            let globals_get = pyodide.globals.get;
+            let f = globals_get('f');
+            globals_get.destroy();
+            let f_get_value = f.get_value;
+            assert(()=> f_get_value(1) === 64);
+            f_get_value.destroy();
             f.destroy();
             f.get_value();
             """
@@ -155,7 +169,9 @@ def test_pyproxy_iter(selenium):
                     yield i
             test()
         `);
-        return [c.type, [...c]];
+        let result = [c.type, [...c]];
+        c.destroy();
+        return result;
         """
     )
     assert ty == "generator"
@@ -163,11 +179,13 @@ def test_pyproxy_iter(selenium):
 
     [ty, l] = selenium.run_js(
         """
-        c = pyodide.runPython(`
+        let c = pyodide.runPython(`
             from collections import ChainMap
             ChainMap({"a" : 2, "b" : 3})
         `);
-        return [c.type, [...c]];
+        let result = [c.type, [...c]];
+        c.destroy();
+        return result;
         """
     )
     assert ty == "ChainMap"
@@ -189,6 +207,7 @@ def test_pyproxy_iter(selenium):
             result.push(value);
             ({done, value} = c.next(value + 1));
         }
+        c.destroy();
 
         function* test(){
             let acc = 0;
@@ -220,7 +239,9 @@ def test_pyproxy_get_buffer(selenium):
         `);
         for(let x of ["z1", "z2"]){
             pyodide.runPython(`assert getrefcount(${x}) == 2`);
-            let proxy = pyodide.globals.get(x);
+            let globals_get = pyodide.globals.get;
+            let proxy = globals_get(x);
+            globals_get.destroy();
             pyodide.runPython(`assert getrefcount(${x}) == 3`);
             let z = proxy.getBuffer();
             pyodide.runPython(`assert getrefcount(${x}) == 4`);
@@ -336,8 +357,8 @@ def test_pyproxy_mixins(selenium):
             class AwaitIter(Await, Iter): pass
 
             class AwaitNext(Await, Next): pass
-
-            [NoImpls(), Await(), Iter(), Next(), AwaitIter(), AwaitNext()]
+            from pyodide import to_js
+            to_js([NoImpls(), Await(), Iter(), Next(), AwaitIter(), AwaitNext()])
         `);
         let name_proxy = {noimpls, awaitable, iterable, iterator, awaititerable, awaititerator};
         let result = {};
@@ -353,6 +374,7 @@ def test_pyproxy_mixins(selenium):
                 impls[name] = key in x;
             }
             result[name] = impls;
+            x.destroy();
         }
         return result;
         """
@@ -391,13 +413,24 @@ def test_pyproxy_mixins2(selenium):
         assert(() => get_method.prototype === undefined);
         assert(() => !("length" in get_method));
         assert(() => !("name" in get_method));
+        get_method.destroy();
+        let globals_get = pyodide.globals.get;
 
-        assert(() => pyodide.globals.get.type === "builtin_function_or_method");
+        assert(() => globals_get.type === "builtin_function_or_method");
         assert(() => pyodide.globals.set.type === undefined);
 
+        globals_get.destroy();
+        """
+    )
+
+
+def test_pyproxy_mixins3(selenium):
+    selenium.run_js(
+        """
         let [Test, t] = pyodide.runPython(`
             class Test: pass
-            [Test, Test()]
+            from pyodide import to_js
+            to_js([Test, Test()])
         `);
         assert(() => Test.prototype === undefined);
         assert(() => !("name" in Test));
@@ -423,14 +456,23 @@ def test_pyproxy_mixins2(selenium):
 
         assertThrows( () => Test.$$ = 7, "TypeError", /^Cannot set read only field/);
         assertThrows( () => delete Test.$$, "TypeError", /^Cannot delete read only field/);
+        Test.destroy();
+        t.destroy();
+        """
+    )
 
+
+def test_pyproxy_mixins4(selenium):
+    selenium.run_js(
+        """
         [Test, t] = pyodide.runPython(`
             class Test:
                 caller="fifty"
                 prototype="prototype"
                 name="me"
                 length=7
-            [Test, Test()]
+            from pyodide import to_js
+            to_js([Test, Test()])
         `);
         assert(() => Test.prototype === "prototype");
         assert(() => Test.name==="me");
@@ -440,20 +482,38 @@ def test_pyproxy_mixins2(selenium):
         assert(() => t.prototype === "prototype");
         assert(() => t.name==="me");
         assert(() => t.length === 7);
+        Test.destroy();
+        t.destroy();
+        """
+    )
 
 
+def test_pyproxy_mixins5(selenium):
+    selenium.run_js(
+        """
         [Test, t] = pyodide.runPython(`
             class Test:
                 def __len__(self):
                     return 9
-            [Test, Test()]
+            from pyodide import to_js
+            to_js([Test, Test()])
         `);
         assert(() => !("length" in Test));
         assert(() => t.length === 9);
         t.length = 10;
         assert(() => t.length === 10);
-        assert(() => t.__len__() === 9);
+        let t__len__ = t.__len__;
+        assert(() => t__len__() === 9);
+        t__len__.destroy();
+        Test.destroy();
+        t.destroy();
+        """
+    )
 
+
+def test_pyproxy_mixins6(selenium):
+    selenium.run_js(
+        """
         let l = pyodide.runPython(`
             l = [5, 6, 7] ; l
         `);
@@ -469,10 +529,12 @@ def test_pyproxy_mixins2(selenium):
             assert len(l) == 2 and l[1] == 7
         `);
         assert(() => l.length === 2 && l.get(1) === 7);
+        l.destroy();
         """
     )
 
 
+@pytest.mark.skip_proxy_trace
 def test_pyproxy_gc(selenium):
     if selenium.browser != "chrome":
         pytest.skip("No gc exposed")
@@ -517,11 +579,14 @@ def test_pyproxy_gc(selenium):
             get_ref_count(0)
             d
         `);
-        let get_ref_count = pyodide.globals.get("get_ref_count");
+        let globals_get = pyodide.globals.get;
+        let get_ref_count = globals_get("get_ref_count");
+        globals_get.destroy();
         get_ref_count(1);
         d.get();
         get_ref_count(2);
         d.get();
+        d.destroy()
         """
     )
     selenium.driver.execute_cdp_cmd("HeapProfiler.collectGarbage", {})
@@ -537,6 +602,7 @@ def test_pyproxy_gc(selenium):
     assert dict(a) == {0: 2, 1: 3, 2: 4, 3: 2, "destructor_ran": True}
 
 
+@pytest.mark.skip_proxy_trace
 def test_pyproxy_gc_destroy(selenium):
     if selenium.browser != "chrome":
         pytest.skip("No gc exposed")
@@ -561,7 +627,9 @@ def test_pyproxy_gc_destroy(selenium):
             get_ref_count(0)
             d
         `);
-        let get_ref_count = pyodide.globals.get("get_ref_count");
+        let globals_get = pyodide.globals.get;
+        let get_ref_count = globals_get("get_ref_count");
+        globals_get.destroy();
         get_ref_count(1);
         d.get();
         get_ref_count(2);
@@ -599,9 +667,14 @@ def test_pyproxy_copy(selenium):
         let result = [];
         let a = pyodide.runPython(`d = { 1 : 2}; d`);
         let b = pyodide.runPython(`d`);
-        result.push(a.get(1));
+        let a_get = a.get;
+        let b_get = b.get;
+        result.push(a_get(1));
+        result.push(b_get(1));
         a.destroy();
-        result.push(b.get(1));
+        b.destroy();
+        a_get.destroy();
+        b_get.destroy();
         return result;
         """
     )
@@ -609,6 +682,7 @@ def test_pyproxy_copy(selenium):
     assert result[1] == 2
 
 
+@pytest.mark.skip_proxy_trace
 def test_errors(selenium):
     selenium.run_js(
         """
@@ -657,10 +731,12 @@ def test_errors(selenium):
         expect_error(() => t.then(()=>{}));
         expect_error(() => t.toString());
         expect_error(() => Array.from(t));
+        expect_error(() => t.destroy());
         """
     )
 
 
+@pytest.mark.skip_proxy_trace
 def test_fatal_error(selenium_standalone):
     """Inject fatal errors in all the reasonable entrypoints"""
     selenium_standalone.run_js(
@@ -718,7 +794,6 @@ def test_fatal_error(selenium_standalone):
         expect_fatal(() => t.toString());
         expect_fatal(() => Array.from(t));
         expect_fatal(() => t.destroy());
-        expect_fatal(() => t.destroy());
         a = pyodide.runPython(`
             from array import array
             array("I", [1,2,3,4])
@@ -738,7 +813,9 @@ def test_pyproxy_call(selenium):
             def f(x=2, y=3):
                 return to_js([x, y])
         `);
-        window.f = pyodide.globals.get("f");
+        let globals_get = pyodide.globals.get;
+        window.f = globals_get("f");
+        globals_get.destroy();
         """
     )
 
@@ -772,3 +849,5 @@ def test_pyproxy_call(selenium):
     msg = r"TypeError: f\(\) got multiple values for argument 'x'"
     with pytest.raises(selenium.JavascriptException, match=msg):
         selenium.run_js("f.callKwargs(76, {x : 6})")
+
+    selenium.run_js("f.destroy()")
