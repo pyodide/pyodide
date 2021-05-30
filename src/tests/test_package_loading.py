@@ -190,7 +190,7 @@ def test_load_package_mixed_case(selenium_standalone, jinja2):
         f"""
         await pyodide.loadPackage("{jinja2}");
         pyodide.runPython(`
-            import {jinja2}
+            import jinja2
         `)
         """
     )

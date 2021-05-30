@@ -85,6 +85,7 @@ function recursiveDependencies(
       toLoad.set(pkgname, name);
       continue;
     }
+    name = name.toLowerCase();
     if (name in packages) {
       addPackage(name);
       continue;
