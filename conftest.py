@@ -347,7 +347,7 @@ def pytest_runtest_call(item):
         selenium = item.funcargs["selenium_standalone"]
     if selenium:
         trace_hiwire_refs = pytest.mark.skip_refcount_check.mark not in item.own_markers
-        trace_pyproxies = pytest.mark.skip_proxy_trace.mark not in item.own_markers
+        trace_pyproxies = pytest.mark.skip_pyproxy_check.mark not in item.own_markers
         yield from test_wrapper_check_for_memory_leaks(
             selenium, trace_hiwire_refs, trace_pyproxies
         )

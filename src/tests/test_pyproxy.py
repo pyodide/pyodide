@@ -81,7 +81,7 @@ def test_pyproxy_clone(selenium):
     )
 
 
-@pytest.mark.skip_proxy_trace
+@pytest.mark.skip_pyproxy_check
 def test_pyproxy_refcount(selenium):
     result = selenium.run_js(
         """
@@ -534,7 +534,7 @@ def test_pyproxy_mixins6(selenium):
     )
 
 
-@pytest.mark.skip_proxy_trace
+@pytest.mark.skip_pyproxy_check
 def test_pyproxy_gc(selenium):
     if selenium.browser != "chrome":
         pytest.skip("No gc exposed")
@@ -602,7 +602,7 @@ def test_pyproxy_gc(selenium):
     assert dict(a) == {0: 2, 1: 3, 2: 4, 3: 2, "destructor_ran": True}
 
 
-@pytest.mark.skip_proxy_trace
+@pytest.mark.skip_pyproxy_check
 def test_pyproxy_gc_destroy(selenium):
     if selenium.browser != "chrome":
         pytest.skip("No gc exposed")
@@ -682,7 +682,7 @@ def test_pyproxy_copy(selenium):
     assert result[1] == 2
 
 
-@pytest.mark.skip_proxy_trace
+@pytest.mark.skip_pyproxy_check
 def test_errors(selenium):
     selenium.run_js(
         """
@@ -736,7 +736,7 @@ def test_errors(selenium):
     )
 
 
-@pytest.mark.skip_proxy_trace
+@pytest.mark.skip_pyproxy_check
 def test_fatal_error(selenium_standalone):
     """Inject fatal errors in all the reasonable entrypoints"""
     selenium_standalone.run_js(

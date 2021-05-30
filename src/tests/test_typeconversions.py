@@ -787,7 +787,7 @@ def test_tojs7(selenium):
     )
 
 
-@pytest.mark.skip_proxy_trace
+@pytest.mark.skip_pyproxy_check
 def test_tojs8(selenium):
     msg = "pyodide.ConversionError"
     with pytest.raises(selenium.JavascriptException, match=msg):

@@ -243,7 +243,6 @@ def test_run_python_async_toplevel_await(selenium):
     )
 
 
-@pytest.mark.trace_pyproxies
 def test_run_python_proxy_leak(selenium):
     selenium.run_js(
         """
@@ -429,7 +428,7 @@ def test_docstrings_b(selenium):
 
 
 @pytest.mark.skip_refcount_check
-@pytest.mark.skip_proxy_trace
+@pytest.mark.skip_pyproxy_check
 def test_restore_state(selenium):
     selenium.run_js(
         """
