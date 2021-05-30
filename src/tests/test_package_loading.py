@@ -188,7 +188,7 @@ def test_load_package_mixed_case(selenium_standalone, jinja2):
     selenium = selenium_standalone
     selenium.run_js(
         f"""
-        await pyodide.loadPackage({jinja2});
+        await pyodide.loadPackage("{jinja2}");
         pyodide.runPython(`
             import {jinja2}
         `)

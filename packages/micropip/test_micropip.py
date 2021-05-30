@@ -234,7 +234,7 @@ def test_install_different_version2(selenium_standalone_micropip):
 def test_install_mixed_case2(selenium_standalone_micropip, jinja2):
     selenium = selenium_standalone_micropip
     selenium.run_js(
-        """
+        f"""
         await pyodide.loadPackage("micropip");
         await pyodide.runPythonAsync(`
             import micropip
