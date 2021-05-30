@@ -367,12 +367,12 @@ def test_wrapper_check_for_memory_leaks(selenium, trace_hiwire_refs, trace_pypro
     # get_result (we don't want to override the error message by raising a
     # different error here.)
     a.get_result()
-    if trace_hiwire_refs:
-        delta_keys = selenium.get_num_hiwire_keys() - init_num_keys
-        assert delta_keys == 0
     if trace_pyproxies:
         delta_proxies = selenium.get_num_proxies() - init_num_proxies
         assert delta_proxies == 0
+    if trace_hiwire_refs:
+        delta_keys = selenium.get_num_hiwire_keys() - init_num_keys
+        assert delta_keys == 0
 
 
 @contextlib.contextmanager
