@@ -146,7 +146,8 @@ async function _loadPackage(names, messageCallback, errorCallback) {
         continue;
       }
     }
-    let scriptSrc = uri === DEFAULT_CHANNEL ? `${baseURL}${pkg}.js` : uri;
+    let pkgname = Module.packages.orig_case[pkg];
+    let scriptSrc = uri === DEFAULT_CHANNEL ? `${baseURL}${pkgname}.js` : uri;
     messageCallback(`Loading ${pkg} from ${scriptSrc}`);
     scriptPromises.push(
       loadScript(scriptSrc).catch((e) => {

@@ -253,6 +253,7 @@ def build_packages(packages_dir: Path, outputdir: Path, args) -> None:
         "import_name_to_package_name": {},
         "shared_library": {},
         "versions": {},
+        "orig_case": {},
     }
 
     libraries = [pkg.name for pkg in pkg_map.values() if pkg.library]
@@ -261,13 +262,14 @@ def build_packages(packages_dir: Path, outputdir: Path, args) -> None:
         if pkg.library:
             continue
         if pkg.shared_library:
-            package_data["shared_library"][name] = True
-        package_data["dependencies"][name] = [
-            x for x in pkg.dependencies if x not in libraries
+            package_data["shared_library"][name.lower()] = True
+        package_data["dependencies"][name.lower()] = [
+            x.lower() for x in pkg.dependencies if x not in libraries
         ]
-        package_data["versions"][name] = pkg.version
+        package_data["versions"][name.lower()] = pkg.version
         for imp in pkg.meta.get("test", {}).get("imports", [name]):
-            package_data["import_name_to_package_name"][imp] = name
+            package_data["import_name_to_package_name"][imp] = name.lower()
+        package_data["orig_case"][name.lower()] = name
 
     # Hack for 0.17.0 release
     # TODO: FIXME!!
