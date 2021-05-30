@@ -1,6 +1,5 @@
 from pathlib import Path
 from typing import Optional, Set
-import shutil
 import subprocess
 import functools
 
@@ -29,23 +28,18 @@ def _parse_package_subset(query: Optional[str]) -> Optional[Set[str]]:
 
 
 def file_packager_path() -> Path:
-    # Use emcc.py because emcc may be a ccache symlink
-    emcc_path = shutil.which("emcc.py")
-    if emcc_path is None:
-        raise RuntimeError(
-            "emcc.py not found. Setting file_packager.py path to /dev/null"
-        )
-
-    return Path(emcc_path).parent / "tools" / "file_packager.py"
+    ROOTDIR = Path(__file__).parents[2].resolve()
+    return ROOTDIR / "tools" / "file_packager.sh"
 
 
 def get_make_flag(name):
-    """Get flags from makefile.envs,
-        e.g. For building packages we currently use:
-    SIDE_MODULE_LDFLAGS
-    SIDE_MODULE_CFLAGS
-    SIDE_MODULE_CXXFLAGS
-    TOOLSDIR
+    """Get flags from makefile.envs.
+
+    For building packages we currently use:
+        SIDE_MODULE_LDFLAGS
+        SIDE_MODULE_CFLAGS
+        SIDE_MODULE_CXXFLAGS
+        TOOLSDIR
     """
     return get_make_environment_vars()[name]
 

@@ -16,6 +16,14 @@ substitutions:
   global variable called `pyodide`. To get old behavior, say `globalThis.pyodide
   = await loadPyodide({...})`.
   {pr}`1597`
+- {{ Enhancement }} Added a new {any}`CodeRunner` API for finer control than
+  {any}`eval_code` and {any}`eval_code_async`. Designed with
+  the needs of REPL implementations in mind.
+  {pr}`1563`
+- {{ Fixed }} {any}`eval_code_async` no longer automatically awaits a returned
+  coroutine or attempts to await a returned generator object (which triggered an
+  error).
+  {pr}`1563`
 
 ## Standard library
 

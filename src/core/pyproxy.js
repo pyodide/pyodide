@@ -46,6 +46,25 @@ if (globalThis.FinalizationRegistry) {
   // Module.bufferFinalizationRegistry = finalizationRegistry;
 }
 
+let pyproxy_alloc_map = new Map();
+Module.pyproxy_alloc_map = pyproxy_alloc_map;
+let trace_pyproxy_alloc;
+let trace_pyproxy_dealloc;
+
+Module.enable_pyproxy_allocation_tracing = function () {
+  trace_pyproxy_alloc = function (proxy) {
+    pyproxy_alloc_map.set(proxy, Error().stack);
+  };
+  trace_pyproxy_dealloc = function (proxy) {
+    pyproxy_alloc_map.delete(proxy);
+  };
+};
+Module.disable_pyproxy_allocation_tracing = function () {
+  trace_pyproxy_alloc = function (proxy) {};
+  trace_pyproxy_dealloc = function (proxy) {};
+};
+Module.disable_pyproxy_allocation_tracing();
+
 /**
  * In the case that the Python object is callable, PyProxyClass inherits from
  * Function so that PyProxy objects can be callable.
@@ -98,6 +117,7 @@ Module.pyproxy_new = function (ptrobj, cache) {
   });
   Module._Py_IncRef(ptrobj);
   let proxy = new Proxy(target, Module.PyProxyHandlers);
+  trace_pyproxy_alloc(proxy);
   Module.finalizationRegistry.register(proxy, ptrobj, proxy);
   return proxy;
 };
@@ -171,6 +191,7 @@ Module.pyproxy_destroy = function (proxy, destroyed_msg) {
   }
   try {
     Module._Py_DecRef(ptrobj);
+    trace_pyproxy_dealloc(this);
   } catch (e) {
     Module.fatal_error(e);
   }
@@ -991,7 +1012,7 @@ Module.PyProxyBufferMethods = {
           "Javascript has no native support for big endian buffers. " +
             "In this case, you can pass an explicit type argument. " +
             "For instance, `getBuffer('dataview')` will return a `DataView`" +
-            "which has native support for reading big endian data." +
+            "which has native support for reading big endian data. " +
             "Alternatively, toJs will automatically convert the buffer " +
             "to little endian."
         );
