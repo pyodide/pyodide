@@ -690,7 +690,6 @@ def test_tojs1(selenium):
 def test_tojs2(selenium):
     assert selenium.run_js(
         """
-        let orig = new Map(pyodide._module.hiwire._hiwire.objects);
         let respy = pyodide.runPython("(1, 2, 3)");
         let res = respy.toJs();
         respy.destroy();
