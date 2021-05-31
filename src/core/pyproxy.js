@@ -347,7 +347,7 @@ class PyProxyClass {
    * Typescript type guard.
    * @returns {this is PyProxyWithLength}
    */
-  hasLength() {
+  supportsLength() {
     return !!(this.$$flags & HAS_LENGTH);
   }
   /**
@@ -355,7 +355,7 @@ class PyProxyClass {
    * Typescript type guard.
    * @returns {this is PyProxyWithGet}
    */
-  hasGet() {
+  supportsGet() {
     return !!(this.$$flags & HAS_GET);
   }
   /**
@@ -363,7 +363,7 @@ class PyProxyClass {
    * Typescript type guard.
    * @returns {this is PyProxyWithSet}
    */
-  hasSet() {
+  supportsSet() {
     return !!(this.$$flags & HAS_SET);
   }
   /**
@@ -371,7 +371,7 @@ class PyProxyClass {
    * Typescript type guard.
    * @returns {this is PyProxyWithHas}
    */
-  hasHas() {
+  supportsHas() {
     return !!(this.$$flags & HAS_CONTAINS);
   }
   /**

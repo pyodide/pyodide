@@ -67,23 +67,23 @@ async function main(){
     expectType<string>(px.toString());
     expectType<string>(px.type);
 
-    if(px.hasGet()){
+    if(px.supportsGet()){
         expectType<PyProxyWithGet>(px);
         expectType<(x : any) => Py2JsResult>(px.get);
     }
 
-    if(px.hasHas()){
+    if(px.supportsHas()){
         expectType<PyProxyWithHas>(px);
         expectType<(x : any) => boolean>(px.has);
     }
 
-    if(px.hasLength()){
+    if(px.supportsLength()){
         expectType<PyProxyWithLength>(px);
         expectType<number>(px.length);
     }
 
 
-    if(px.hasSet()){
+    if(px.supportsSet()){
         expectType<PyProxyWithSet>(px);
         expectType<(x : any, y : any) => void>(px.set);
     }
