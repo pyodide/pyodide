@@ -66,7 +66,7 @@ jobs:
           command: |
             ccache -z
             # The following packages are currently used in the main pyodide test suite
-            PYODIDE_PACKAGES="micropip,pyparsing,pytz,packaging" make
+            PYODIDE_PACKAGES="micropip,pyparsing,pytz,packaging,Jinja2" make
             ccache -s
 
       - run:
