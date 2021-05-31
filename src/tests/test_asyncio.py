@@ -353,7 +353,7 @@ def test_await_pyproxy_eval_async(selenium):
     assert (
         selenium.run_js(
             """
-            let eval_code_async = pyodide._module.pyodide_py.eval_code_async;
+            let eval_code_async = pyodide.pyodide_py.eval_code_async;
             let c = eval_code_async("1+1");
             let result = await c;
             c.destroy();
@@ -368,7 +368,7 @@ def test_await_pyproxy_eval_async(selenium):
         selenium.run_js(
             """
             let finally_occurred = false;
-            let eval_code_async = pyodide._module.pyodide_py.eval_code_async;
+            let eval_code_async = pyodide.pyodide_py.eval_code_async;
             let c = eval_code_async("1+1");
             let result = await c.finally(() => { finally_occurred = true; });
             c.destroy();
@@ -384,7 +384,7 @@ def test_await_pyproxy_eval_async(selenium):
             """
             let finally_occurred = false;
             let err_occurred = false;
-            let eval_code_async = pyodide._module.pyodide_py.eval_code_async;
+            let eval_code_async = pyodide.pyodide_py.eval_code_async;
             let c = eval_code_async("raise ValueError('hi')");
             try {
                 let result = await c.finally(() => { finally_occurred = true; });
@@ -401,7 +401,7 @@ def test_await_pyproxy_eval_async(selenium):
 
     assert selenium.run_js(
         """
-        let eval_code_async = pyodide._module.pyodide_py.eval_code_async;
+        let eval_code_async = pyodide.pyodide_py.eval_code_async;
         let c = eval_code_async("raise ValueError('hi')");
         eval_code_async.destroy();
         try {
@@ -414,7 +414,7 @@ def test_await_pyproxy_eval_async(selenium):
 
     assert selenium.run_js(
         """
-        let eval_code_async = pyodide._module.pyodide_py.eval_code_async;
+        let eval_code_async = pyodide.pyodide_py.eval_code_async;
         let c = eval_code_async(`
             from js import fetch
             await (await fetch('packages.json')).json()
@@ -428,7 +428,7 @@ def test_await_pyproxy_eval_async(selenium):
 
     assert selenium.run_js(
         """
-        let eval_code_async = pyodide._module.pyodide_py.eval_code_async;
+        let eval_code_async = pyodide.pyodide_py.eval_code_async;
         let c = eval_code_async("1+1");
         await c;
         eval_code_async.destroy();
