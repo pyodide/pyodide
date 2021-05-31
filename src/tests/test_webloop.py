@@ -1,3 +1,6 @@
+import pytest
+
+
 def run_with_resolve(selenium, code):
     selenium.run_js(
         f"""
@@ -151,6 +154,7 @@ def test_asyncio_exception(selenium):
     )
 
 
+@pytest.mark.skip_pyproxy_check
 def test_run_in_executor(selenium):
     # If run_in_executor tries to actually use ThreadPoolExecutor, it will throw
     # an error since we can't start threads

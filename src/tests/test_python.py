@@ -69,10 +69,10 @@ def test_load_package_after_convert_string(selenium):
     """
     See #93.
     """
-    selenium.run("import sys\n" "x = sys.version")
-    selenium.run_js("let x = pyodide.globals.get('x');\n" "console.log(x);")
-    selenium.load_package("kiwisolver")
-    selenium.run("import kiwisolver")
+    selenium.run("import sys; x = sys.version")
+    selenium.run_js("let x = pyodide.runPython('x'); console.log(x);")
+    selenium.load_package("pytz")
+    selenium.run("import pytz")
 
 
 def test_version_info(selenium):

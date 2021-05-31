@@ -215,5 +215,5 @@ minimal :
 
 debug :
 	EXTRA_CFLAGS+=" -D DEBUG_F" \
-	PYODIDE_PACKAGES+=", micropip, pyparsing, pytz, packaging, kiwisolver, " \
+	PYODIDE_PACKAGES+=", micropip, pyparsing, pytz, packaging, " \
 	make

@@ -503,7 +503,7 @@ def assert_py_to_js_to_py(selenium, name):
 
 
 @run_in_pyodide
-def test_recursive_list_to_js(selenium_standalone):
+def test_recursive_list_to_js():
     x = []
     x.append(x)
     from pyodide import to_js
@@ -512,7 +512,7 @@ def test_recursive_list_to_js(selenium_standalone):
 
 
 @run_in_pyodide
-def test_recursive_dict_to_js(selenium_standalone):
+def test_recursive_dict_to_js():
     x = {}
     x[0] = x
     from pyodide import to_js
