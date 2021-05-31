@@ -406,13 +406,11 @@ def test_await_pyproxy_eval_async(selenium):
 
     assert selenium.run_js(
         """
-        let eval_code_async = pyodide._module.pyodide_py.eval_code_async;
-        let c = eval_code_async(`
+        let c = pyodide.pyodide_py.eval_code_async(`
             from js import fetch
             await (await fetch('packages.json')).json()
         `);
         let packages = await c;
-        eval_code_async.destroy();
         c.destroy();
         return (!!packages.dependencies) && (!!packages.import_name_to_package_name);
         """
@@ -420,10 +418,8 @@ def test_await_pyproxy_eval_async(selenium):
 
     assert selenium.run_js(
         """
-        let eval_code_async = pyodide._module.pyodide_py.eval_code_async;
-        let c = eval_code_async("1+1");
+        let c = pyodide.pyodide_py.eval_code_async("1+1");
         await c;
-        eval_code_async.destroy();
         c.destroy();
         let err_occurred = false;
         try {

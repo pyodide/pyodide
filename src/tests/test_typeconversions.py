@@ -361,7 +361,6 @@ def test_run_python_simple_error(selenium):
 def test_js2python(selenium):
     selenium.run_js(
         """
-        let globals_get = pyodide.globals.get;
         window.test_objects = {
             jsstring_ucs1 : "pyodidé",
             jsstring_ucs2 : "碘化物",
@@ -374,13 +373,11 @@ def test_js2python(selenium):
             jsfalse : false,
             jsarray0 : [],
             jsarray1 : [1, 2, 3],
-            jspython : globals_get("open"),
+            jspython : pyodide.globals.get("open"),
             jsbytes : new Uint8Array([1, 2, 3]),
             jsfloats : new Float32Array([1, 2, 3]),
             jsobject : new XMLHttpRequest(),
         };
-        globals_get.destroy();
-        Object.assign(window, test_objects);
         """
     )
     selenium.run("from js import test_objects as t")
@@ -491,9 +488,7 @@ def assert_js_to_py_to_js(selenium, name):
     selenium.run("from js import obj")
     assert selenium.run_js(
         """
-        let globals_get = pyodide.globals.get;
-        let pyobj = globals_get("obj");
-        globals_get.destroy();
+        let pyobj = pyodide.globals.get("obj");
         return pyobj === obj;
         """
     )
@@ -621,9 +616,7 @@ def test_javascript_error_back_to_js(selenium):
     )
     selenium.run_js(
         """
-        let globals_get = pyodide.globals.get;
-        assert(() => globals_get("py_err") === err);
-        globals_get.destroy();
+        assert(() => pyodide.globals.get("py_err") === err);
         """
     )
 
