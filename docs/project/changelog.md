@@ -24,6 +24,9 @@ substitutions:
   coroutine or attempts to await a returned generator object (which triggered an
   error).
   {pr}`1563`
+- {{ Fixed }} micropip now correctly handles packages that have mixed case names.
+  (See {issue}`1614`).
+  {pr}`1615`
 
 - {{ ENH }} Pyodide now ships with first party typescript types for the entire
   Javascript API (though no typings are available for `PyProxy` fields).
