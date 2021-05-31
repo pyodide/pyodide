@@ -176,6 +176,10 @@ Module.pyproxy_mark_borrowed = function (proxy) {
   proxy.$$.borrowed = true;
 };
 
+const pyproxy_cache_destroyed_msg =
+  "This borrowed attribute proxy was automatically destroyed in the " +
+  "process of destroying the proxy it was borrowed from. Try using the `clone` method.";
+
 function pyproxy_destroy_cache(cache) {
   if (!cache) {
     return;
@@ -184,7 +188,10 @@ function pyproxy_destroy_cache(cache) {
   if (cache.refcnt === 0) {
     let cache_map = Module.hiwire.pop_value(cache.cacheId);
     for (let proxy_id of cache_map.values()) {
-      Module.pyproxy_destroy(Module.hiwire.pop_value(proxy_id));
+      Module.pyproxy_destroy(
+        Module.hiwire.pop_value(proxy_id),
+        pyproxy_cache_destroyed_msg
+      );
     }
   }
 }

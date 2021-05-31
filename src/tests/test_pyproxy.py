@@ -840,6 +840,13 @@ def test_pyproxy_borrow(selenium):
             Touter
         `);
         assert(() => t.T.f() === 7);
+        let T = t.T;
+        let Tclone = T.clone();
+        assert(() => T.f() === 7);
+        assert(() => Tclone.f() === 7);
         t.destroy();
+        assert(() => Tclone.f() === 7);
+        assertThrows(() => T.f(), "Error", "automatically destroyed in the process of destroying the proxy it was borrowed from");
+        Tclone.destroy();
         """
     )
