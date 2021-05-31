@@ -101,7 +101,12 @@ class SeleniumWrapper:
             self.run_js(
                 """
                 window.pyodide = await loadPyodide({ indexURL : './', fullStdLib: false });
-                pyodide.runPython("");
+                pyodide.globals.get
+                pyodide.pyodide_py.eval_code
+                pyodide.pyodide_py.eval_code_async
+                pyodide.pyodide_py.register_js_module
+                pyodide.pyodide_py.unregister_js_module
+                pyodide.pyodide_py.find_imports
                 """
             )
             self.save_state()
@@ -346,8 +351,11 @@ def pytest_runtest_call(item):
     if "selenium_standalone" in item._fixtureinfo.argnames:
         selenium = item.funcargs["selenium_standalone"]
     if selenium:
-        trace_hiwire_refs = pytest.mark.skip_refcount_check.mark not in item.own_markers
         trace_pyproxies = pytest.mark.skip_pyproxy_check.mark not in item.own_markers
+        trace_hiwire_refs = (
+            trace_pyproxies
+            and pytest.mark.skip_refcount_check.mark not in item.own_markers
+        )
         yield from test_wrapper_check_for_memory_leaks(
             selenium, trace_hiwire_refs, trace_pyproxies
         )
@@ -367,9 +375,20 @@ def test_wrapper_check_for_memory_leaks(selenium, trace_hiwire_refs, trace_pypro
     # get_result (we don't want to override the error message by raising a
     # different error here.)
     a.get_result()
+    selenium.run_js(
+        """
+        let res = new Map(pyodide._module.hiwire._hiwire.objects);
+        console.log(Array.from(res.values(), e => e && e.constructor.name || e && e.name || typeof e));
+        console.log(Array.from(res.values(), e => e && e.toString()));
+        // console.log(resar[resar.length - 1]);
+        // let x = res.get(resar[resar.length - 2]);
+        // console.log(`x : ${x.constructor.name}`);
+        """
+    )
     if trace_pyproxies:
         delta_proxies = selenium.get_num_proxies() - init_num_proxies
-        assert delta_proxies == 0
+        delta_keys = selenium.get_num_hiwire_keys() - init_num_keys
+        assert (delta_proxies, delta_keys) == (0, 0)
     if trace_hiwire_refs:
         delta_keys = selenium.get_num_hiwire_keys() - init_num_keys
         assert delta_keys == 0

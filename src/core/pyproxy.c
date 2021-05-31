@@ -927,7 +927,7 @@ EM_JS_REF(JsRef, create_once_callable, (PyObject * obj), {
     Module.finalizationRegistry.unregister(wrapper);
     _Py_DecRef(obj);
   };
-  Module.finalizationRegistry.register(wrapper, obj, wrapper);
+  Module.finalizationRegistry.register(wrapper, [ obj, undefined ], wrapper);
   return Module.hiwire.new_value(wrapper);
 });
 

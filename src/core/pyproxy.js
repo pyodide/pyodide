@@ -20,7 +20,8 @@
 import { Module } from "../js/module";
 
 if (globalThis.FinalizationRegistry) {
-  Module.finalizationRegistry = new FinalizationRegistry((ptr) => {
+  Module.finalizationRegistry = new FinalizationRegistry(([ptr, cache]) => {
+    pyproxy_destroy_cache(cache);
     try {
       Module._Py_DecRef(ptr);
     } catch (e) {
@@ -118,7 +119,7 @@ Module.pyproxy_new = function (ptrobj, cache) {
   Module._Py_IncRef(ptrobj);
   let proxy = new Proxy(target, Module.PyProxyHandlers);
   trace_pyproxy_alloc(proxy);
-  Module.finalizationRegistry.register(proxy, ptrobj, proxy);
+  Module.finalizationRegistry.register(proxy, [ptrobj, cache], proxy);
   return proxy;
 };
 
@@ -174,6 +175,20 @@ Module.PyProxy_getPtr = _getPtr;
 Module.pyproxy_mark_borrowed = function (proxy) {
   proxy.$$.borrowed = true;
 };
+
+function pyproxy_destroy_cache(cache) {
+  if (!cache) {
+    return;
+  }
+  cache.refcnt--;
+  if (cache.refcnt === 0) {
+    let cache_map = Module.hiwire.pop_value(cache.cacheId);
+    for (let proxy_id of cache_map.values()) {
+      Module.pyproxy_destroy(Module.hiwire.pop_value(proxy_id));
+    }
+  }
+}
+
 Module.pyproxy_destroy = function (proxy, destroyed_msg) {
   let ptrobj = _getPtr(proxy);
   Module.finalizationRegistry.unregister(proxy);
@@ -182,16 +197,10 @@ Module.pyproxy_destroy = function (proxy, destroyed_msg) {
   // just in case!
   proxy.$$.ptr = null;
   proxy.$$.destroyed_msg = destroyed_msg;
-  proxy.$$.cache.refcnt--;
-  if (proxy.$$.cache.refcnt === 0) {
-    let cache = Module.hiwire.pop_value(proxy.$$.cache.cacheId);
-    for (let proxy_id of cache.values()) {
-      Module.pyproxy_destroy(Module.hiwire.pop_value(proxy_id));
-    }
-  }
+  pyproxy_destroy_cache(proxy.$$.cache);
   try {
     Module._Py_DecRef(ptrobj);
-    trace_pyproxy_dealloc(this);
+    trace_pyproxy_dealloc(proxy);
   } catch (e) {
     Module.fatal_error(e);
   }
@@ -565,7 +574,7 @@ Module.PyProxyIterableMethods = {
     }
 
     let result = iter_helper(iterptr, token);
-    Module.finalizationRegistry.register(result, iterptr, token);
+    Module.finalizationRegistry.register(result, [iterptr, undefined], token);
     return result;
   },
 };

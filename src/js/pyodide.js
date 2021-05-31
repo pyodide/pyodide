@@ -222,11 +222,13 @@ def temp(Module):
   Module.pyodide_py = pyodide
 `);
 
-  Module.saveState = () => Module.pyodide_py._state.save_state();
-  Module.restoreState = (state) =>
-    Module.pyodide_py._state.restore_state(state);
-
   Module.init_dict.get("temp")(Module);
+
+  let _state = Module.pyodide_py._state;
+  let save_state = _state.save_state;
+  let restore_state = _state.restore_state;
+  Module.saveState = () => save_state();
+  Module.restoreState = (state) => restore_state(state);
   // Module.runPython works starting from here!
 
   // Wrap "globals" in a special Proxy that allows `pyodide.globals.x` access.

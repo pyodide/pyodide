@@ -404,22 +404,20 @@ def test_pyproxy_mixins(selenium):
 def test_pyproxy_mixins2(selenium):
     selenium.run_js(
         """
-        assert(() => !("prototype" in pyodide.globals));
-        assert(() => !("caller" in pyodide.globals));
-        assert(() => !("name" in pyodide.globals));
-        assert(() => "length" in pyodide.globals);
-        let get_method = pyodide.globals.__getitem__;
+        let d = pyodide.runPython("{}");
+        assert(() => !("prototype" in d));
+        assert(() => !("caller" in d));
+        assert(() => !("name" in d));
+        assert(() => "length" in d);
+        let get_method = d.__getitem__;
         assert(() => "prototype" in get_method);
         assert(() => get_method.prototype === undefined);
         assert(() => !("length" in get_method));
         assert(() => !("name" in get_method));
-        get_method.destroy();
-        let globals_get = pyodide.globals.get;
 
-        assert(() => globals_get.type === "builtin_function_or_method");
-        assert(() => pyodide.globals.set.type === undefined);
-
-        globals_get.destroy();
+        assert(() => d.get.type === "builtin_function_or_method");
+        assert(() => d.set.type === undefined);
+        d.destroy();
         """
     )
 
@@ -627,24 +625,20 @@ def test_pyproxy_gc_destroy(selenium):
             get_ref_count(0)
             d
         `);
-        let globals_get = pyodide.globals.get;
-        let get_ref_count = globals_get("get_ref_count");
-        globals_get.destroy();
+        let get_ref_count = pyodide.globals.get("get_ref_count");
         get_ref_count(1);
         d.get();
         get_ref_count(2);
         d.get();
         get_ref_count(3);
-        d.destroy();
-        get_ref_count(4);
-        gc();
-        get_ref_count(5);
+        delete d;
+        get_ref_count.destroy();
         """
     )
     selenium.driver.execute_cdp_cmd("HeapProfiler.collectGarbage", {})
     selenium.run(
         """
-        get_ref_count(6)
+        get_ref_count(4)
         del d
         """
     )
@@ -653,10 +647,8 @@ def test_pyproxy_gc_destroy(selenium):
         0: 2,
         1: 3,
         2: 4,
-        3: 5,
-        4: 4,
-        5: 4,
-        6: 2,
+        3: 4,
+        4: 2,
         "destructor_ran": True,
     }
 
@@ -667,14 +659,10 @@ def test_pyproxy_copy(selenium):
         let result = [];
         let a = pyodide.runPython(`d = { 1 : 2}; d`);
         let b = pyodide.runPython(`d`);
-        let a_get = a.get;
-        let b_get = b.get;
-        result.push(a_get(1));
-        result.push(b_get(1));
+        result.push(a.get(1));
+        result.push(b.get(1));
         a.destroy();
         b.destroy();
-        a_get.destroy();
-        b_get.destroy();
         return result;
         """
     )
