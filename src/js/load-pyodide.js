@@ -22,7 +22,7 @@ const package_uri_regexp = /^.*?([^\/]*)\.js$/;
 function _uri_to_package_name(package_uri) {
   let match = package_uri_regexp.exec(package_uri);
   if (match) {
-    return match[1];
+    return match[1].toLowerCase();
   }
 }
 
@@ -56,6 +56,7 @@ function recursiveDependencies(
   const toLoad = new Map();
 
   const addPackage = (pkg) => {
+    pkg = pkg.toLowerCase();
     if (toLoad.has(pkg)) {
       return;
     }
@@ -72,21 +73,24 @@ function recursiveDependencies(
   };
   for (let name of names) {
     const pkgname = _uri_to_package_name(name);
-    if (pkgname !== undefined) {
-      if (toLoad.has(pkgname) && toLoad.get(pkgname) !== name) {
-        errorCallback(
-          `Loading same package ${pkgname} from ${name} and ${toLoad.get(
-            pkgname
-          )}`
-        );
-        continue;
-      }
-      toLoad.set(pkgname, name);
-    } else if (name in packages) {
-      addPackage(name);
-    } else {
-      errorCallback(`Skipping unknown package '${name}'`);
+    if (toLoad.has(pkgname) && toLoad.get(pkgname) !== name) {
+      errorCallback(
+        `Loading same package ${pkgname} from ${name} and ${toLoad.get(
+          pkgname
+        )}`
+      );
+      continue;
     }
+    if (pkgname !== undefined) {
+      toLoad.set(pkgname, name);
+      continue;
+    }
+    name = name.toLowerCase();
+    if (name in packages) {
+      addPackage(name);
+      continue;
+    }
+    errorCallback(`Skipping unknown package '${name}'`);
   }
   if (sharedLibsOnly) {
     let onlySharedLibs = new Map();
@@ -146,7 +150,8 @@ async function _loadPackage(names, messageCallback, errorCallback) {
         continue;
       }
     }
-    let scriptSrc = uri === DEFAULT_CHANNEL ? `${baseURL}${pkg}.js` : uri;
+    let pkgname = Module.packages.orig_case[pkg] || pkg;
+    let scriptSrc = uri === DEFAULT_CHANNEL ? `${baseURL}${pkgname}.js` : uri;
     messageCallback(`Loading ${pkg} from ${scriptSrc}`);
     scriptPromises.push(
       loadScript(scriptSrc).catch((e) => {

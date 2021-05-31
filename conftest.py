@@ -268,11 +268,7 @@ class SeleniumWrapper:
         self.run_js("pyodide._module.restoreState(self.__savedState)")
 
     def get_num_proxies(self):
-        return self.run_js(
-            """
-            return pyodide._module.pyproxy_alloc_map.size
-            """
-        )
+        return self.run_js("return pyodide._module.pyproxy_alloc_map.size")
 
     def enable_pyproxy_tracing(self):
         self.run_js("pyodide._module.enable_pyproxy_allocation_tracing()")
