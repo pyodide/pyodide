@@ -12,8 +12,8 @@ def test_numpy(selenium):
     selenium.run_js(
         """
         let xpy = pyodide.runPython('x');
-        window.x = xpy.toJs()
-        xpy.destroy();'
+        window.x = xpy.toJs();
+        xpy.destroy();
         """
     )
     assert selenium.run_js("return x.length === 32")
