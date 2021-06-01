@@ -1,5 +1,6 @@
 import { Module } from "./module";
 
+/** @typedef {import('./pyproxy.js').PyProxy} PyProxy */
 /** @private */
 let baseURL;
 /**
