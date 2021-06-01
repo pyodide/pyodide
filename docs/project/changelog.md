@@ -28,6 +28,10 @@ substitutions:
   (See {issue}`1614`).
   {pr}`1615`
 
+- {{ ENH }} Pyodide now ships with first party typescript types for the entire
+  Javascript API (though no typings are available for `PyProxy` fields).
+  {pr}`1601`
+
 ## Standard library
 
 - The following standard library modules are now available as standalone packages

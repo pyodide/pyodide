@@ -191,6 +191,19 @@ jobs:
           command: |
             pytest src pyodide-build packages/micropip/ -v -k 'not (chrome or firefox)' --cov=pyodide_build --cov=pyodide
 
+  test-js-types:
+    <<: *defaults
+    resource_class: small
+    steps:
+      - attach_workspace:
+          at: .
+      - run:
+          name: test
+          command: |
+            cd src/js
+            npx tsd
+
+
   benchmark:
     <<: *defaults
     steps:
@@ -316,6 +329,12 @@ workflows:
             tags:
               only: /.*/
       - test-python:
+          filters:
+            tags:
+              only: /.*/
+      - test-js-types:
+          requires:
+            - build-core
           filters:
             tags:
               only: /.*/
