@@ -54,3 +54,4 @@ check_pkgconfig
 #check_python_headers
 check_fortran_dependencies
 check_pyyaml
+check_md5sum
