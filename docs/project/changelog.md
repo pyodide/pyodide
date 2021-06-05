@@ -12,15 +12,62 @@ substitutions:
 
 ## [Unreleased]
 
+- {{ API }} {any}`loadPyodide` no longer automatically stores the API into a
+  global variable called `pyodide`. To get old behavior, say `globalThis.pyodide
+  = await loadPyodide({...})`.
+  {pr}`1597`
+- {{ Enhancement }} Added a new {any}`CodeRunner` API for finer control than
+  {any}`eval_code` and {any}`eval_code_async`. Designed with
+  the needs of REPL implementations in mind.
+  {pr}`1563`
+- {{ Fixed }} {any}`eval_code_async` no longer automatically awaits a returned
+  coroutine or attempts to await a returned generator object (which triggered an
+  error).
+  {pr}`1563`
+- {{ Fixed }} micropip now correctly handles packages that have mixed case names.
+  (See {issue}`1614`).
+  {pr}`1615`
+
+- {{ ENH }} Pyodide now ships with first party typescript types for the entire
+  Javascript API (though no typings are available for `PyProxy` fields).
+  {pr}`1601`
+
+## Standard library
+
+- The following standard library modules are now available as standalone packages
+   - distlib
+  They are loaded by default in {any}`globalThis.loadPyodide`, however this behavior
+  can be disabled with the `fullStdLib` parameter set to `false`.
+  All optional stdlib modules can then be loaded as needed with
+  {any}`pyodide.loadPackage`. {pr}`1543`
+
+### Python / JS type conversions
+
 - {{ API }} {any}`pyodide.runPythonAsync` no longer automatically calls
   {any}`pyodide.loadPackagesFromImports`.
   {pr}`1538`.
 - {{ Enhancement }} Added the {any}`PyProxy.callKwargs` method to allow using
   Python functions with keyword arguments from Javascript.
   {pr}`1539`
+- {{ Enhancement }} Added the {any}`PyProxy.clone` method.
+  {pr}`1549`
+- {{ API }} Updated the method resolution order on `PyProxy`. Performing a
+  lookup on a `PyProxy` will prefer to pick a method from the `PyProxy` api, if
+  no such method is found, it will use `getattr` on the proxied object.
+  Prefixing a name with `$` forces `getattr`. For instance, `PyProxy.destroy`
+  now always refers to the method that destroys the proxy, whereas
+  `PyProxy.$destroy` refers to an attribute or method called `destroy` on the
+  proxied object.
+  {pr}`1604`
+
+### pyodide-build
+
+- {{ Enhancement }} pyodide-build is now an installable Python package, with an identically named
+  CLI entrypoint that replaces `bin/pyodide` which is removed {pr}`1566`
+
 
 ## Version 0.17.0
-*April 21, 2020*
+*April 21, 2021*
 
 See the {ref}`0-17-0-release-notes` for more information.
 

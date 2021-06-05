@@ -136,7 +136,7 @@ class _InteractiveConsole(code.InteractiveConsole):
         self.compile.compiler.flags |= ast.PyCF_ALLOW_TOP_LEVEL_AWAIT  # type: ignore
 
     def redirect_stdstreams(self):
-        """ Toggle stdout/stderr redirections. """
+        """Toggle stdout/stderr redirections."""
         # already redirected?
         if self._streams_redirected:
             return
@@ -193,7 +193,7 @@ class _InteractiveConsole(code.InteractiveConsole):
             self.restore_stdstreams()
 
     def flush_all(self):
-        """ Force stdout/stderr flush. """
+        """Force stdout/stderr flush."""
         with self.stdstreams_redirections():
             sys.stdout.flush()
             sys.stderr.flush()
@@ -264,7 +264,7 @@ class _InteractiveConsole(code.InteractiveConsole):
         self.restore_stdstreams()
 
     def banner(self):
-        """ A banner similar to the one printed by the real Python interpreter. """
+        """A banner similar to the one printed by the real Python interpreter."""
         # copyied from https://github.com/python/cpython/blob/799f8489d418b7f9207d333eac38214931bd7dcc/Lib/code.py#L214
         cprt = 'Type "help", "copyright", "credits" or "license" for more information.'
         version = platform.python_version()

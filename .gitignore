@@ -1,6 +1,7 @@
 *.a
 *.o
 *.pyc
+src/js/pyproxy.gen.js
 
 *.egg-info/
 
@@ -21,6 +22,7 @@ cpython/installs
 docs/_build/
 emsdk/emsdk
 geckodriver.log
-node_modules/
+node_modules
 packages/.artifacts
 packages/*/build.log
+dist/

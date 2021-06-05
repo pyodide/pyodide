@@ -311,7 +311,6 @@ button.matplotlib-toolbar-button:hover {
         self.button_press_event(x, y, button, guiEvent=event)
 
     def onmouseenter(self, event):
-        return
         # When the mouse is over the figure, get keyboard focus
         self.get_element("rubberband").focus()
         self.enter_notify_event(guiEvent=event)

@@ -1,7 +1,7 @@
 import sys
 from pathlib import Path
 
-sys.path.append(str(Path(__file__).parents[2] / "src" / "pyodide-py"))
+sys.path.append(str(Path(__file__).resolve().parents[2] / "src" / "py"))
 
 import pytest  # type: ignore
 import time
@@ -430,7 +430,7 @@ def test_await_pyproxy_async_def(selenium):
             from js import fetch
             async def temp():
                 return await (await fetch('packages.json')).json()
-            temp()  
+            temp()
         `);
         return (!!packages.dependencies) && (!!packages.import_name_to_package_name);
         """

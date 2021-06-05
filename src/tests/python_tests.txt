@@ -549,7 +549,7 @@ test_xmlrpc_net
 test_xxtestfuzz
 test_yield_from
 test_zipapp
-test_zipfile
+test_zipfile  crash-chrome
 test_zipfile64
 test_zipimport
 test_zipimport_support
