@@ -27,7 +27,11 @@ def test_pyrtl():
 
     sim = pyrtl.Simulation()
     sim.step(
-        {"a": 56, "b": 42, "begin": 1,}
+        {
+            "a": 56,
+            "b": 42,
+            "begin": 1,
+        }
     )
     while sim.inspect("done") != 1:
         sim.step({"a": 0, "b": 0, "begin": 0})
