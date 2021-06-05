@@ -25,6 +25,7 @@ Using Pyodide
    usage/serving-pyodide-packages.md
    usage/loading-packages.md
    usage/type-conversions.md
+   usage/wasm-constraints.md
    usage/api-reference.md
    usage/faq.md
 

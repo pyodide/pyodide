@@ -346,7 +346,7 @@ _pyproxy_ownKeys(PyObject* pyobj)
   pydir = PyObject_Dir(pyobj);
   FAIL_IF_NULL(pydir);
 
-  iddir = hiwire_array();
+  iddir = JsArray_New();
   FAIL_IF_NULL(iddir);
   Py_ssize_t n = PyList_Size(pydir);
   FAIL_IF_MINUS_ONE(n);
@@ -354,7 +354,7 @@ _pyproxy_ownKeys(PyObject* pyobj)
     PyObject* pyentry = PyList_GetItem(pydir, i); /* borrowed */
     identry = python2js(pyentry);
     FAIL_IF_NULL(identry);
-    FAIL_IF_MINUS_ONE(hiwire_push_array(iddir, identry));
+    FAIL_IF_MINUS_ONE(JsArray_Push(iddir, identry));
     hiwire_CLEAR(identry);
   }
 
@@ -416,7 +416,7 @@ _pyproxy_apply(PyObject* callable,
 
   // Put both arguments and keyword arguments into pyargs
   for (Py_ssize_t i = 0; i < total_args; ++i) {
-    jsitem = hiwire_get_member_int(jsargs, i);
+    jsitem = JsArray_Get(jsargs, i);
     // pyitem is moved into pyargs so we don't need to clear it later.
     PyObject* pyitem = js2python(jsitem);
     if (pyitem == NULL) {
@@ -430,7 +430,7 @@ _pyproxy_apply(PyObject* callable,
     // Put names of keyword arguments into a tuple
     pykwnames = PyTuple_New(numkwargs);
     for (Py_ssize_t i = 0; i < numkwargs; i++) {
-      jsitem = hiwire_get_member_int(jskwnames, i);
+      jsitem = JsArray_Get(jskwnames, i);
       // pyitem is moved into pykwargs so we don't need to clear it later.
       PyObject* pyitem = js2python(jsitem);
       PyTuple_SET_ITEM(pykwnames, i, pyitem);
@@ -775,8 +775,8 @@ _pyproxy_get_buffer(PyObject* ptrobj)
     // case, shape, strides and suboffsets MUST be NULL."
     // https://docs.python.org/3/c-api/buffer.html#c.Py_buffer.ndim
     result.largest_ptr += view.itemsize;
-    result.shape = hiwire_array();
-    result.strides = hiwire_array();
+    result.shape = JsArray_New();
+    result.strides = JsArray_New();
     result.c_contiguous = true;
     result.f_contiguous = true;
     goto success;
@@ -956,9 +956,6 @@ static PyMethodDef methods[] = {
   { NULL } /* Sentinel */
 };
 
-#include "include_js_file.h"
-#include "pyproxy.js"
-
 int
 pyproxy_init(PyObject* core)
 {
@@ -971,7 +968,6 @@ pyproxy_init(PyObject* core)
   asyncio = PyImport_ImportModule("asyncio");
   FAIL_IF_NULL(asyncio);
   FAIL_IF_MINUS_ONE(PyType_Ready(&FutureDoneCallbackType));
-  FAIL_IF_MINUS_ONE(pyproxy_init_js());
 
   success = true;
 finally:

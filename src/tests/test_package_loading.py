@@ -181,3 +181,16 @@ def test_js_load_package_from_python(selenium_standalone):
     selenium.run(f"import js ; js.pyodide.loadPackage(['{to_load}'])")
     assert f"Loading {to_load}" in selenium.logs
     assert selenium.run_js("return Object.keys(pyodide.loadedPackages)") == [to_load]
+
+
+@pytest.mark.parametrize("jinja2", ["jinja2", "Jinja2"])
+def test_load_package_mixed_case(selenium_standalone, jinja2):
+    selenium = selenium_standalone
+    selenium.run_js(
+        f"""
+        await pyodide.loadPackage("{jinja2}");
+        pyodide.runPython(`
+            import jinja2
+        `)
+        """
+    )
