@@ -46,21 +46,12 @@ build/pyodide.asm.js: \
 	[ -d build ] || mkdir build
 	$(CXX) -s EXPORT_NAME="'_createPyodideModule'" -o build/pyodide.asm.js $(filter %.o,$^) \
 		$(MAIN_MODULE_LDFLAGS) -s FORCE_FILESYSTEM=1 \
-<<<<<<< HEAD
 		--preload-file $(CPYTHONLIB)@/lib/python$(PYMAJOR).$(PYMINOR) \
-		--preload-file src/webbrowser.py@/lib/python$(PYMAJOR).$(PYMINOR)/webbrowser.py \
-		--preload-file src/_testcapi.py@/lib/python$(PYMAJOR).$(PYMINOR)/_testcapi.py \
-		--preload-file src/pystone.py@/lib/python$(PYMAJOR).$(PYMINOR)/pystone.py \
-		--preload-file src/pyodide-py/pyodide@/lib/python$(PYMAJOR).$(PYMINOR)/site-packages/pyodide \
-		--preload-file src/pyodide-py/_pyodide@/lib/python$(PYMAJOR).$(PYMINOR)/site-packages/_pyodide \
-=======
-		--preload-file $(CPYTHONLIB)@/lib/python$(PYMINOR) \
-		--preload-file src/webbrowser.py@/lib/python$(PYMINOR)/webbrowser.py \
-		--preload-file src/_testcapi.py@/lib/python$(PYMINOR)/_testcapi.py \
-		--preload-file src/pystone.py@/lib/python$(PYMINOR)/pystone.py \
-		--preload-file src/py/pyodide@/lib/python$(PYMINOR)/site-packages/pyodide \
-		--preload-file src/py/_pyodide@/lib/python$(PYMINOR)/site-packages/_pyodide \
->>>>>>> upstream/main
+		--preload-file src/webbrowser.py@/lib/python$(PYMINOR).$(PYMINOR)/webbrowser.py \
+		--preload-file src/_testcapi.py@/lib/python$(PYMINOR).$(PYMINOR)/_testcapi.py \
+		--preload-file src/pystone.py@/lib/python$(PYMINOR).$(PYMINOR)/pystone.py \
+		--preload-file src/py/pyodide@/lib/python$(PYMINOR).$(PYMINOR)/site-packages/pyodide \
+		--preload-file src/py/_pyodide@/lib/python$(PYMINOR).$(PYMINOR)/site-packages/_pyodide \
 		--exclude-file "*__pycache__*" \
 		--exclude-file "*/test/*" \
 		--exclude-file "*/tests/*" \
@@ -147,12 +138,7 @@ update_base_url: \
 test: all
 	pytest src emsdk/tests packages/*/test* pyodide-build -v
 
-<<<<<<< HEAD
-
-lint:
-=======
 lint: node_modules/.installed
->>>>>>> upstream/main
 	# check for unused imports, the rest is done by black
 	flake8 --select=F401 src tools pyodide-build benchmark conftest.py docs
 	find src -type f -regex '.*\.\(c\|h\)' \
@@ -190,43 +176,13 @@ clean-all: clean
 	make -C cpython clean
 	rm -fr cpython/build
 
-<<<<<<< HEAD
-
-%.o: %.c $(CPYTHONLIB) $(wildcard src/**/*.h src/**/*.js)
-=======
 %.o: %.c $(CPYTHONLIB) $(wildcard src/core/*.h src/core/python2js_buffer.js)
->>>>>>> upstream/main
 	$(CC) -o $@ -c $< $(MAIN_MODULE_CFLAGS) -Isrc/core/
 
 
 # Stdlib modules that we repackage as standalone packages
 
 # TODO: also include test directories included in other stdlib modules
-<<<<<<< HEAD
-build/test.data: $(CPYTHONLIB)
-	( \
-		cd $(CPYTHONLIB)/test; \
-		find . -type d -name __pycache__ -prune -exec rm -rf {} \; \
-	)
-	( \
-		cd build; \
-		python $(FILEPACKAGER) test.data --lz4 --preload ../$(CPYTHONLIB)/test@/lib/python$(PYMINOR)/test --js-output=test.js --export-name=globalThis.pyodide._module --exclude __pycache__ \
-	)
-	$(UGLIFYJS) build/test.js -o build/test.js
-
-
-build/distutils.data: $(CPYTHONLIB)
-	( \
-		cd $(CPYTHONLIB)/distutils; \
-		find . -type d -name __pycache__ -prune -exec rm -rf {} \; ;\
-		find . -type d -name tests -prune -exec rm -rf {} \; \
-	)
-	( \
-		cd build; \
-		python $(FILEPACKAGER) distutils.data --lz4 --preload ../$(CPYTHONLIB)/distutils@/lib/python$(PYMINOR)/distutils --js-output=distutils.js --export-name=pyodide._module --exclude __pycache__ --exclude tests \
-	)
-	$(UGLIFYJS) build/distutils.js -o build/distutils.js
-=======
 build/test.data: $(CPYTHONLIB) node_modules/.installed
 	./tools/file_packager.sh build/test.data --js-output=build/test.js \
 		--preload $(CPYTHONLIB)/test@/lib/python$(PYMINOR)/test
@@ -238,7 +194,6 @@ build/distutils.data: $(CPYTHONLIB) node_modules/.installed
 		--preload $(CPYTHONLIB)/distutils@/lib/python$(PYMINOR)/distutils \
 		--exclude tests
 	npx terser build/distutils.js -o build/distutils.js
->>>>>>> upstream/main
 
 
 $(CPYTHONLIB): emsdk/emsdk/.complete $(PYODIDE_EMCC) $(PYODIDE_CXX)
