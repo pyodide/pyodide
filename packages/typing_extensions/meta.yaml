@@ -1,5 +1,5 @@
 package:
-  name: typing_extensions
+  name: typing-extensions
   version: 3.10.0.0
 source:
   sha256: 50b6f157849174217d0656f99dc82fe932884fb250826c18350e159ec6cdf342
