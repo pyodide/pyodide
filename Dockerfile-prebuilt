@@ -1,6 +1,6 @@
 ARG VERSION
 
-FROM iodide/pyodide-env:${VERSION}
+FROM pyodide/pyodide-env:${VERSION}
 
 USER root
 

@@ -1,12 +1,12 @@
 package:
   name: uncertainties
-  version: 3.1.4
+  version: 3.1.5
 source:
-  sha256: 63548a94899f2a51eeb89b640f6ac311f481a8016b37dce157186e44619bc968
-  url: https://files.pythonhosted.org/packages/72/16/a5bdfdb39f83bf38a7750a4446977fc5aba9027da7abb922c93a372e1d0e/uncertainties-3.1.4.tar.gz
+  sha256: 9122c1e7e074196883b4a7a946e8482807b2f89675cb5e3798b87e0608ede903
+  url: https://files.pythonhosted.org/packages/e4/65/a79d4b42179a4591993933c59e70a11b7c9d2061d0fe9babeceedcf2686a/uncertainties-3.1.5.tar.gz
 requirements:
   run:
-    - future
+  - future
 test:
   imports:
   - uncertainties

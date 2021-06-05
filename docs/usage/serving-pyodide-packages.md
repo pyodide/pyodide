@@ -1,9 +1,9 @@
 (serving_pyodide_packages)=
-# Serving pyodide packages
+# Serving Pyodide packages
 
 
-If you built your pyodide distribution or downloaded the release tarball
-you need to serve pyodide files with a appropriate headers.
+If you built your Pyodide distribution or downloaded the release tarball
+you need to serve Pyodide files with a appropriate headers.
 
 Because browsers require WebAssembly files to have mimetype of
 `application/wasm` we're unable to serve our files using Python's built-in
@@ -46,4 +46,4 @@ python pyodide_server.py
 
 Point your WebAssembly aware browser to
 [http://localhost:8000/index.html](http://localhost:8000/index.html) and open
-your browser console to see the output from python via pyodide!
+your browser console to see the output from Python via Pyodide!

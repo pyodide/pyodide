@@ -1,11 +1,68 @@
-The return values of f2c functions are insignificant in most cases, so often it
-is treated as returning void, when it really should return int (values are
-"returned" by writing to pointers passed as an argument, but an obscure feature
-known as alternative returns can cause the return value to be significant).
+Make return values to fortran subroutines be consistently int.
 
-emscripten is more strict about void vs int returns, so we change everything to
-return int.
+This is because f2py defaults to making subroutines return void, whereas
+f2c makes them int. On most systems this doesn't matter, but on WASM, strict
+return type checking is used which makes things fail when f2py code calls
+subroutines that were generated from fortran with f2c. To fix this we make
+everything, including f2c, return int from subroutines.
 
+diff --git a/numpy/f2py/common_rules.py b/numpy/f2py/common_rules.py
+index 62c1ba207..54a445d37 100644
+--- a/numpy/f2py/common_rules.py
++++ b/numpy/f2py/common_rules.py
+@@ -117,7 +117,7 @@ def buildhooks(m):
+             F_FUNC = 'F_FUNC_US'
+         else:
+             F_FUNC = 'F_FUNC'
+-        cadd('extern void %s(f2pyinit%s,F2PYINIT%s)(void(*)(%s));'
++        cadd('extern int %s(f2pyinit%s,F2PYINIT%s)(void(*)(%s));'
+              % (F_FUNC, lower_name, name.upper(),
+                 ','.join(['char*'] * len(inames1))))
+         cadd('static void f2py_init_%s(void) {' % name)
+diff --git a/numpy/f2py/rules.py b/numpy/f2py/rules.py
+index 1b41498ea..9419aeb16 100755
+--- a/numpy/f2py/rules.py
++++ b/numpy/f2py/rules.py
+@@ -399,9 +399,9 @@ rout_rules = [
+         'decl': '',
+         '_check': ismoduleroutine
+     }, {  # Subroutine
+-        'functype': 'void',
+-        'declfortranroutine': {l_and(l_not(l_or(ismoduleroutine, isintent_c)), l_not(isdummyroutine)): 'extern void #F_FUNC#(#fortranname#,#FORTRANNAME#)(#callprotoargument#);',
+-                               l_and(l_not(ismoduleroutine), isintent_c, l_not(isdummyroutine)): 'extern void #fortranname#(#callprotoargument#);',
++        'functype': 'int',
++        'declfortranroutine': {l_and(l_not(l_or(ismoduleroutine, isintent_c)), l_not(isdummyroutine)): 'extern int #F_FUNC#(#fortranname#,#FORTRANNAME#)(#callprotoargument#);',
++                               l_and(l_not(ismoduleroutine), isintent_c, l_not(isdummyroutine)): 'extern int #fortranname#(#callprotoargument#);',
+                                ismoduleroutine: '',
+                                isdummyroutine: ''
+                                },
+diff --git a/numpy/f2py/src/fortranobject.c b/numpy/f2py/src/fortranobject.c
+index b55385b50..232a7f90d 100644
+--- a/numpy/f2py/src/fortranobject.c
++++ b/numpy/f2py/src/fortranobject.c
+@@ -308,6 +308,11 @@ fortran_getattr(PyFortranObject *fp, char *name) {
+         return s;
+     }
+     if ((strcmp(name,"_cpointer")==0) && (fp->len==1)) {
++        if(fp->defs[0].data==NULL)
++        {
++            PyErr_Format(PyExc_AttributeError,"missing function pointer %s",fp->defs[0].name);
++
++        }
+         PyObject *cobj = F2PyCapsule_FromVoidPtr((void *)(fp->defs[0].data),NULL);
+         if (PyDict_SetItemString(fp->dict, name, cobj))
+             return NULL;
+@@ -382,7 +387,7 @@ fortran_setattr(PyFortranObject *fp, char *name, PyObject *v) {
+     if (v == NULL) {
+         int rv = PyDict_DelItemString(fp->dict, name);
+         if (rv < 0)
+-            PyErr_SetString(PyExc_AttributeError,"delete non-existing fortran attribute");
++            PyErr_Format(PyExc_AttributeError,"delete non-existing fortran attribute %s",name);
+         return rv;
+     }
+     else
+diff --git a/numpy/linalg/lapack_lite/f2c.c b/numpy/linalg/lapack_lite/f2c.c
+index 1114bef3b..905beaa0d 100644
 --- a/numpy/linalg/lapack_lite/f2c.c
 +++ b/numpy/linalg/lapack_lite/f2c.c
 @@ -14,9 +14,9 @@
@@ -47,6 +104,8 @@ return int.
  	}
  
  
+diff --git a/numpy/linalg/lapack_lite/f2c.h b/numpy/linalg/lapack_lite/f2c.h
+index 80f1a12b1..25204797b 100644
 --- a/numpy/linalg/lapack_lite/f2c.h
 +++ b/numpy/linalg/lapack_lite/f2c.h
 @@ -259,7 +259,7 @@ extern double d_tan(double *);

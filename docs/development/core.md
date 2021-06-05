@@ -1,27 +1,26 @@
+(contributing-core)=
 # Contributing to the "core" C Code
 
 This file is intended as guidelines to help contributors trying to modify the C source files in `src/core`.
 
 ## What the files do
-The primary purpose of `core` is to implement {ref}`type conversions <type_conversions>` between Python and Javascript. Here is a breakdown of the purposes of the files.
+The primary purpose of `core` is to implement {ref}`type translations <type-translations>` between Python and Javascript. Here is a breakdown of the purposes of the files.
 
-* `main.c` -- responsible for configuring and initializing the python interpreter, initializing the other source files, and creating the `_pyodide_core` module which is used to expose Python objects to `pyodide_py`. `main.c` also tries to generate fatal initialization error messages to help with debugging when there is a mistake in the initialization code.
-
-* `runpython` -- Defines the `_runPythonDebug` entrypoint to help in case there is a bug in `PyProxy.apply`.
-
+* `main` -- responsible for configuring and initializing the Python interpreter, initializing the other source files, and creating the `_pyodide_core` module which is used to expose Python objects to `pyodide_py`. `main.c` also tries to generate fatal initialization error messages to help with debugging when there is a mistake in the initialization code.
+* `keyboard_interrupt` -- This sets up the keyboard interrupts system for using Pyodide with a webworker.
 
 ### Backend utilities
-* `hiwire` -- A helper framework. It is impossible for wasm to directly hold owning references to javascript objects. The primary purpose of hiwire is to act as a surrogate owner for javascript references by holding the references in a javascript `Map`. `hiwire` also defines a wide variety of `EM_JS` helper functions to do javascript operations on the held objects. The primary type that hiwire exports is `JsRef`. References are created with `Module.hiwire.new_value` (only can be done from javascript) and must be destroyed from C with `hiwire_decref` or `hiwire_CLEAR`, or from javascript with `Module.hiwire.decref`.
-* `error_handling` -- defines macros useful for error propagation and for adapting javascript functions to the CPython calling convention. See more in the {ref}`error_handling_macros` section.
+* `hiwire` -- A helper framework. It is impossible for wasm to directly hold owning references to Javascript objects. The primary purpose of hiwire is to act as a surrogate owner for Javascript references by holding the references in a Javascript `Map`. `hiwire` also defines a wide variety of `EM_JS` helper functions to do Javascript operations on the held objects. The primary type that hiwire exports is `JsRef`. References are created with `Module.hiwire.new_value` (only can be done from Javascript) and must be destroyed from C with `hiwire_decref` or `hiwire_CLEAR`, or from Javascript with `Module.hiwire.decref`.
+* `error_handling` -- defines macros useful for error propagation and for adapting Javascript functions to the CPython calling convention. See more in the {ref}`error_handling_macros` section.
 
 ### Type conversion from Javascript to Python
 
-* `js2python` -- converts basic types from javascript to python, leaves more complicated stuff to jsproxy.
-* `jsproxy` -- Defines Python classes to proxy complex javascript types into Python. A complex file responsible for many of the core behaviors of pyodide.
+* `js2python` -- Translates basic types from Javascript to Python, leaves more complicated stuff to jsproxy.
+* `jsproxy` -- Defines Python classes to proxy complex Javascript types into Python. A complex file responsible for many of the core behaviors of Pyodide.
 
 ### Type conversion from Python to Javascript
 
-* `python2js` -- Converts basic types from Python to Javascript and also implements deep copy from Python to Javascript.
+* `python2js` -- Translates types from types from Python to Javascript, implicitly converting basic types and creating pyproxies for others. It also implements explicity conversion from Python to Javascript (the `toJs` method).
 * `python2js_buffer` -- Attempts to convert Python objects that implement the Python [Buffer Protocol](https://docs.python.org/3/c-api/buffer.html). This includes `bytes` objects, `memoryview`s, `array.array` and a wide variety of types exposed by extension modules like `numpy`. If the data is a 1d array in a contiguous block it can be sliced directly out of the wasm heap to produce a Javascript `TypedArray`, but Javascript does not have native support for pointers so higher dimensional arrays are more complicated.
 * `pyproxy` -- Defines a Javascript `Proxy` object that passes calls through to a Python object. Another important core file, `PyProxy.apply` is the primary entrypoint into Python code. `pyproxy.c` is much simpler than `jsproxy.c` though.
 
@@ -44,7 +43,7 @@ These APIs do not do correct error reporting and there is talk in the Python com
 
 * `PyObject_HasAttrString`, `PyObject_GetAttrString`,  `PyDict_GetItemString`, `PyDict_SetItemString`, `PyMapping_HasKeyString` etc, etc.
 These APIs cause wasteful repeated string conversion.
-If the string you are using is a constant, e.g., `PyDict_GetItemString(dict, "identifier")`, then make an id with `Py_Identifier(identifier)` and then use `_PyDict_GetItemId(&PyId_identifier)`. If the string is not constant, convert it to a python object with `PyUnicode_FromString()` and then use e.g., `PyDict_GetItem`.
+If the string you are using is a constant, e.g., `PyDict_GetItemString(dict, "identifier")`, then make an id with `Py_Identifier(identifier)` and then use `_PyDict_GetItemId(&PyId_identifier)`. If the string is not constant, convert it to a Python object with `PyUnicode_FromString()` and then use e.g., `PyDict_GetItem`.
 
 * `PyModule_AddObject`. This steals a reference on success but not on failure and requires unique cleanup code. Instead use `PyObject_SetAttr`.
 
@@ -67,12 +66,12 @@ They can only be used in a function with a `finally:` label which should handle 
 * `FAIL_IF_ERR_MATCHES(python_err_type)` -- `goto finally;` if `PyErr_ExceptionMatches(python_err_type)`, for example `FAIL_IF_ERR_MATCHES(PyExc_AttributeError);`
 
 ### Javascript to CPython calling convention adapators
-If we call a javascript function from C and that javascript function throws an error, it is impossible to catch it in C. We define two `EM_JS` adaptors to convert from the Javascript calling convention to the CPython calling convention. The point of this is to ensure that errors that occur in `EM_JS` functions can be handled in C code using the `FAIL_*`` macros. When compiled with `DEBUG_F`, when a javascript error is thrown a message will also be written to `console.error`. The wrappers do roughly the following:
+If we call a Javascript function from C and that Javascript function throws an error, it is impossible to catch it in C. We define two `EM_JS` adaptors to convert from the Javascript calling convention to the CPython calling convention. The point of this is to ensure that errors that occur in `EM_JS` functions can be handled in C code using the `FAIL_*`` macros. When compiled with `DEBUG_F`, when a Javascript error is thrown a message will also be written to `console.error`. The wrappers do roughly the following:
 ```javascript
 try {
   // body of function here
 } catch(e) {
-  // wrap e in a Python exception and set the python error indicator
+  // wrap e in a Python exception and set the Python error indicator
   // return error code
 }
 ```
@@ -109,7 +108,7 @@ These wrappers enable the following sort of code:
 try:
   jsfunc()
 except JsException:
-  print("Caught an exception thrown in javascript!")
+  print("Caught an exception thrown in Javascript!")
 ```
 
 ## Structure of functions
@@ -128,7 +127,7 @@ def f():
     decref(b)
     decref(c)
 ```
-Freeing all references at the end of the function allows us to separate reference counting boilerplate from the "actual logic" of the function definition. When a function does correct error propogation, there will be many different execution paths, roughly linearly many in the length of the function. For example, the above psuedocode could exit in five different ways: `do_something` could raise an exception, `do_something_else` could raise an exception, `a + b` could raise an exception, `some_func` could raise an exception, or the function could return successfully. (Even a python function like `def f(a,b,c,d): return (a + b) * c - d` has four execution paths.) The point of the `try`/`finally` block is that we know the resources are freed correctly without checking once for each execution path.
+Freeing all references at the end of the function allows us to separate reference counting boilerplate from the "actual logic" of the function definition. When a function does correct error propogation, there will be many different execution paths, roughly linearly many in the length of the function. For example, the above psuedocode could exit in five different ways: `do_something` could raise an exception, `do_something_else` could raise an exception, `a + b` could raise an exception, `some_func` could raise an exception, or the function could return successfully. (Even a Python function like `def f(a,b,c,d): return (a + b) * c - d` has four execution paths.) The point of the `try`/`finally` block is that we know the resources are freed correctly without checking once for each execution path.
 
 To do this, we divide any function that produces more than a couple of owned `PyObject*`s or `JsRef`s into several "segments".
 The more owned references there are in a function and the longer it is, the more important it becomes to follow this style carefully.

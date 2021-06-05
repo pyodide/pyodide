@@ -8,6 +8,7 @@ source:
     - patches/fft.patch
 requirements:
   run:
+   - distutils
    - numpy
    - matplotlib
    - scipy

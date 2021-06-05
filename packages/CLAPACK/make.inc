@@ -29,7 +29,7 @@ CFLAGS    = -O3 -I$(TOPDIR)/INCLUDE -fPIC -DNO_BLAS_WRAP
 LDFLAGS	  = -O3
 LOADER    = $(CC)
 LOADOPTS  =
-NOOPT     = -O0 -I$(TOPDIR)/INCLUDE
+NOOPT     = -O0 -I$(TOPDIR)/INCLUDE -fPIC
 DRVCFLAGS = $(CFLAGS)
 F2CCFLAGS = $(CFLAGS)
 #######################################################################

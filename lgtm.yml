@@ -1,0 +1,8 @@
+queries:
+  - exclude: py/import-and-import-from
+
+extraction:
+  cpp:
+    prepare:
+      packages:
+        - python3-yaml

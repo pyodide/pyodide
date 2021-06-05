@@ -45,7 +45,7 @@ test__xxsubinterpreters
 test_abc
 test_abstract_numbers
 test_aifc   audioop
-test_argparse
+test_argparse  crash-chrome
 test_array
 test_asdl_parser
 test_ast
@@ -126,7 +126,7 @@ test_codeop
 test_collections
 test_colorsys
 test_compare
-test_compile crash-chrome
+test_compile crash
 test_compileall multiprocessing
 test_complex
 test_concurrent_futures
@@ -549,7 +549,7 @@ test_xmlrpc_net
 test_xxtestfuzz
 test_yield_from
 test_zipapp
-test_zipfile
+test_zipfile  crash-chrome
 test_zipfile64
 test_zipimport
 test_zipimport_support

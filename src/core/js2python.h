@@ -2,7 +2,7 @@
 #define JS2PYTHON_H
 
 /**
- * Utilities to convert Javascript objects to Python objects.
+ * Translate Javascript objects to Python objects.
  */
 #define PY_SSIZE_T_CLEAN
 #include "Python.h"
@@ -16,6 +16,9 @@
  */
 PyObject*
 js2python(JsRef x);
+
+PyObject*
+js2python_convert(JsRef x, int depth);
 
 /** Initialize any global variables used by this module. */
 int
