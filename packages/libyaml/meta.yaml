@@ -8,7 +8,7 @@ source:
 build:
   library: true
   script: |
-    emcmake cmake -DCMAKE_INSTALL_PREFIX=.. .
+    CFLAGS="-fPIC" emcmake cmake -DCMAKE_INSTALL_PREFIX=.. .
     emmake make -j ${PYODIDE_JOBS:-3}
     ln -s libyaml-0.2.1/libyaml_static.a ../libyaml.a
     ln -s libyaml-0.2.1/include ..
