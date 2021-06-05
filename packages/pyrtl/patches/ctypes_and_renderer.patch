@@ -1,11 +1,11 @@
-commit c5df13161c176b73c8071d1ae3bef51972ec0d97
+commit 30333d25771050779daac12c7779dd4b3836ab1f
 Author: Michael Christensen <chmdko@gmail.com>
 Date:   Sat Jun 5 00:25:52 2021 -0700
 
     Move ctype import for Pyodide
 
 diff --git a/pyrtl/compilesim.py b/pyrtl/compilesim.py
-index 4ce0d45..403efc2 100644
+index 4ce0d45..5b82962 100644
 --- a/pyrtl/compilesim.py
 +++ b/pyrtl/compilesim.py
 @@ -1,6 +1,5 @@
@@ -23,22 +23,19 @@ index 4ce0d45..403efc2 100644
  
  from .core import working_block
  from .wire import Input, Output, Const, WireVector, Register
-@@ -24,6 +22,11 @@ class DllMemInspector(collections.Mapping):
+@@ -24,6 +22,8 @@ class DllMemInspector(collections.Mapping):
      """ Dictionary-like access to a hashmap in a CompiledSimulation. """
  
      def __init__(self, sim, mem):
-+        try:
-+            import ctypes
-+        except ImportError:
-+            raise PyrtlError('need ctypes installed')
++        import ctypes
 +
          self._aw = mem.addrwidth
          self._limbs = sim._limbs(mem)
          self._vn = vn = sim.varname[mem]
-@@ -239,6 +242,14 @@ class CompiledSimulation(object):
-         :param inputs: A list of input mappings for each step;
-             its length is the number of steps to be executed.
-         """
+@@ -76,6 +76,14 @@ class CompiledSimulation(object):
+     def __init__(
+             self, tracer=True, register_value_map={}, memory_value_map={},
+             default_value=0, block=None):
 +        try:
 +            import ctypes
 +        except ImportError:
@@ -46,36 +43,33 @@ index 4ce0d45..403efc2 100644
 +                'need ctypes installed '
 +                '(try using normal Simulation or FastSimulation instead)'
 +            )
++
+         self._dll = self._dir = None
+         self.block = working_block(block)
+         self.block.sanity_check()
+@@ -239,6 +247,8 @@ class CompiledSimulation(object):
+         :param inputs: A list of input mappings for each step;
+             its length is the number of steps to be executed.
+         """
++        import ctypes
 +
          steps = len(inputs)
          # create i/o arrays of the appropriate length
          ibuf_type = ctypes.c_uint64 * (steps * self._ibufsz)
-@@ -318,6 +329,14 @@ class CompiledSimulation(object):
+@@ -318,6 +328,8 @@ class CompiledSimulation(object):
  
      def _create_dll(self):
          """ Create a dynamically-linked library implementing the simulation logic. """
-+        try:
-+            import ctypes
-+        except ImportError:
-+            raise PyrtlError(
-+                'need ctypes installed '
-+                '(try using normal Simulation or FastSimulation instead)'
-+            )
++        import ctypes
 +
          self._dir = tempfile.mkdtemp()
          with open(path.join(self._dir, 'pyrtlsim.c'), 'w') as f:
              self._create_code(lambda s: f.write(s + '\n'))
-@@ -809,6 +828,14 @@ class CompiledSimulation(object):
+@@ -809,6 +821,8 @@ class CompiledSimulation(object):
  
      def __del__(self):
          """Handle removal of the DLL when the simulator is deleted."""
-+        try:
-+            import _ctypes
-+        except ImportError:
-+            raise PyrtlError(
-+                'need _ctypes installed '
-+                '(try using normal Simulation or FastSimulation instead)'
-+            )
++        import _ctypes
 +
          if self._dll is not None:
              handle = self._dll._handle
