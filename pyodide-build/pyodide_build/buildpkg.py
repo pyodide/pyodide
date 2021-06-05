@@ -199,8 +199,7 @@ def package_files(buildpath: Path, srcpath: Path, pkg: Dict[str, Any], args):
     install_prefix = (srcpath / "install").resolve()
     subprocess.run(
         [
-            sys.executable,
-            common.file_packager_path(),
+            str(common.file_packager_path()),
             name + ".data",
             "--js-output={}".format(name + ".js"),
             "--preload",
