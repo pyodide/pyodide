@@ -32,6 +32,10 @@ check_pkgconfig() {
   check_binary_present "pkg-config"
 }
 
+check_md5sum() {
+  check_binary_present "md5sum"
+}
+
 check_fortran_dependencies() {
   check_binary_present "gfortran"
   check_binary_present "f2c"
@@ -50,3 +54,4 @@ check_pkgconfig
 #check_python_headers
 check_fortran_dependencies
 check_pyyaml
+check_md5sum

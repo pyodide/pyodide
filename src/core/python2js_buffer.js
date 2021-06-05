@@ -149,7 +149,7 @@ JS_FILE(python2js_buffer_init, () => {
     let byteLength = itemsize * n;
     // Make new memory of the appropriate size
     let buffer = new Uint8Array(byteLength);
-    for (i = 0; i < n; ++i) {
+    for (let i = 0; i < n; ++i) {
       let curptr = ptr + i * stride;
       if (suboffset >= 0) {
         curptr = HEAP32[curptr / 4] + suboffset;
@@ -235,6 +235,7 @@ JS_FILE(python2js_buffer_init, () => {
    * @param {number} itemsize Should be one of 1, 2, 4, 8. Used for big endian
    * conversion.
    * @returns A converter function ArrayBuffer => TypedArray
+   * @private
    */
   Module.get_converter = function (format, itemsize) {
     "use strict";

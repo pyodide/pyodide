@@ -1,4 +1,4 @@
-from ._base import open_url, eval_code, eval_code_async, find_imports
+from ._base import open_url, eval_code, eval_code_async, find_imports, CodeRunner
 from ._core import JsProxy, JsException, create_once_callable, create_proxy, to_js  # type: ignore
 from ._importhooks import jsfinder
 from .webloop import WebLoopPolicy
@@ -21,6 +21,7 @@ __all__ = [
     "open_url",
     "eval_code",
     "eval_code_async",
+    "CodeRunner",
     "find_imports",
     "JsProxy",
     "JsException",
