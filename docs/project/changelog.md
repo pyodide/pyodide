@@ -51,6 +51,14 @@ substitutions:
   {pr}`1539`
 - {{ Enhancement }} Added the {any}`PyProxy.clone` method.
   {pr}`1549`
+- {{ API }} Updated the method resolution order on `PyProxy`. Performing a
+  lookup on a `PyProxy` will prefer to pick a method from the `PyProxy` api, if
+  no such method is found, it will use `getattr` on the proxied object.
+  Prefixing a name with `$` forces `getattr`. For instance, `PyProxy.destroy`
+  now always refers to the method that destroys the proxy, whereas
+  `PyProxy.$destroy` refers to an attribute or method called `destroy` on the
+  proxied object.
+  {pr}`1604`
 
 ### pyodide-build
 

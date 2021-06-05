@@ -805,27 +805,24 @@ let PyProxyHandlers = {
   },
   get(jsobj, jskey) {
     // Preference order:
-    // 1. things we have to return to avoid making Javascript angry
+    // 1. stuff from Javascript
     // 2. the result of Python getattr
-    // 3. stuff from the prototype chain
 
-    // 1. things we have to return to avoid making Javascript angry
-    // This conditional looks funky but it's the only thing I found that
-    // worked right in all cases.
-    if (jskey in jsobj && !(jskey in Object.getPrototypeOf(jsobj))) {
+    // Javascript lookup -- make sure not to let symbols through, passing them
+    // to python_getattr will crash.
+    if (jskey in jsobj || typeof jskey === "symbol") {
       return Reflect.get(jsobj, jskey);
     }
-    // python_getattr will crash when given a Symbol
-    if (typeof jskey === "symbol") {
-      return Reflect.get(jsobj, jskey);
+    // If keys start with $ remove the $. User can use initial $ to
+    // unambiguously ask for a key on the Python object
+    if (jskey.startsWith("$")) {
+      jskey = jskey.slice(1);
     }
     // 2. The result of getattr
     let idresult = python_getattr(jsobj, jskey);
     if (idresult !== 0) {
       return Module.hiwire.pop_value(idresult);
     }
-    // 3. stuff from the prototype chain.
-    return Reflect.get(jsobj, jskey);
   },
   set(jsobj, jskey, jsval) {
     // We're only willing to set properties on the python object, throw an
