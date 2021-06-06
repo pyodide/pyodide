@@ -61,7 +61,7 @@ class redirect_stdin(_RedirectStream):
     _stream = "stdin"
 
 
-class WriteStream:
+class _WriteStream:
     """A utility class so we can specify our own handlers for writes to sdout, stderr"""
 
     def __init__(self, write_handler, name=None):
@@ -75,7 +75,9 @@ class WriteStream:
         pass
 
 
-class ReadStream:
+class _ReadStream:
+    """A utility class so we can specify our own handler for reading from stdin"""
+
     def __init__(self, read_handler, name=None):
         self.read_handler = read_handler
         self.name = name
@@ -168,15 +170,19 @@ class _InteractiveConsole(code.InteractiveConsole):
         redirects = []
         if self.stdout_callback:
             redirects.append(
-                redirect_stdout(WriteStream(self.stdout_callback, name=sys.stdout.name))
+                redirect_stdout(
+                    _WriteStream(self.stdout_callback, name=sys.stdout.name)
+                )
             )
         if self.stderr_callback:
             redirects.append(
-                redirect_stderr(WriteStream(self.stderr_callback, name=sys.stderr.name))
+                redirect_stderr(
+                    _WriteStream(self.stderr_callback, name=sys.stderr.name)
+                )
             )
         if self.stdin_callback:
             redirects.append(
-                redirect_stdin(ReadStream(self.stdin_callback, name=sys.stdin.name))
+                redirect_stdin(_ReadStream(self.stdin_callback, name=sys.stdin.name))
             )
         try:
             self._streams_redirected = True
