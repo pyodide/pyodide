@@ -1,0 +1,28 @@
+package:
+  name: pyyaml
+  version: 5.3.1
+
+source:
+  # path: downloads/pyyaml-5.3.1
+  url: https://github.com/yaml/pyyaml/archive/5.3.1.zip
+
+  patches:
+    - patches/Makefile.patch
+    - patches/setup.cfg.patch
+
+build:
+  skip_host: True
+  cflags: |
+    -I../../../../cpython/installs/python-3.8.2/include/python3.8
+    -I../../../../emsdk/emsdk/fastcomp/emscripten/system/include/libc
+    -I../../../libyaml/build/include
+  ldflags: |
+    -L../../../libyaml/build/
+
+requirements:
+  run:
+    - libyaml
+
+test:
+  imports:
+    - yaml
