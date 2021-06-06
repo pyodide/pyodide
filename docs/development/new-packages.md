@@ -28,9 +28,9 @@ load a package's dependencies automatically.
 ## mkpkg
 
 If you wish to create a new package for Pyodide, the easiest place to start is
-with the `mkpkg` tool. If your package is on PyPI, just run:
+with the {ref}`mkpkg tool <pyodide-mkpkg>`. If your package is on PyPI, just run:
 
-`bin/pyodide mkpkg $PACKAGE_NAME`
+`pyodide-build mkpkg $PACKAGE_NAME`
 
 This will generate a `meta.yaml` (see below) that should work out of the box
 for many pure Python packages. This tool will populate the latest version, download
@@ -146,11 +146,11 @@ Extra arguments to pass to the linker when building for WebAssembly.
 
 #### `build/library`
 
-Should be set to true for library packages. Library packages are packages that are needed for other packages but are not Python packages themselves. For library packages, the script specified in the `build/script` section is run to compile the library. See the [zlib meta.yaml](https://github.com/pyodide/pyodide/blob/master/packages/zlib/meta.yaml) for an example of a library package specification.
+Should be set to true for library packages. Library packages are packages that are needed for other packages but are not Python packages themselves. For library packages, the script specified in the `build/script` section is run to compile the library. See the [zlib meta.yaml](https://github.com/pyodide/pyodide/blob/main/packages/zlib/meta.yaml) for an example of a library package specification.
 
 #### `build/sharedlibrary`
 
-Should be set to true for shared library packages. Shared library packages are packages that are needed for other packages, but are loaded dynamically when Pyodide is run. For shared library packages, the script specified in the `build/script` section is run to compile the library. The script should build the shared library and copy into into a subfolder of the source folder called `install`. Files or folders in this install folder will be packaged to make the Pyodide package. See the [CLAPACK meta.yaml](https://github.com/pyodide/pyodide/blob/master/packages/CLAPACK/meta.yaml) for an example of a shared library specification.
+Should be set to true for shared library packages. Shared library packages are packages that are needed for other packages, but are loaded dynamically when Pyodide is run. For shared library packages, the script specified in the `build/script` section is run to compile the library. The script should build the shared library and copy into into a subfolder of the source folder called `install`. Files or folders in this install folder will be packaged to make the Pyodide package. See the [CLAPACK meta.yaml](https://github.com/pyodide/pyodide/blob/main/packages/CLAPACK/meta.yaml) for an example of a shared library specification.
 
 #### `build/script`
 
@@ -243,19 +243,24 @@ successfully import the module as usual.
 To construct this bundle, we use the `file_packager.py` script from emscripten.
 We invoke it as follows:
 ```sh
-$ ./file_packager.py PACKAGE_NAME.data \
+$ ./tools/file_packager.sh \
+     PACKAGE_NAME.data \
      --js-output=PACKAGE_NAME.js \
-     --export-name=pyodide._module \
-     --use-preload-plugins \
-     --preload /PATH/TO/LIB/@/lib/python3.8/site-packages/PACKAGE_NAME/ \
-     --exclude "*__pycache__*" \
-     --lz4
+     --preload /PATH/TO/LIB/@/lib/python3.8/site-packages/PACKAGE_NAME/
 ```
 
 The arguments can be explained as follows:
- - The `--preload` argument instructs the package to look for the
+ - PACKAGE_NAME.data indicates where to put the data file
+ - --js-output=PACKAGE_NAME.js indicates where to put the javascript file
+ - `--preload` instructs the package to look for the
    file/directory before the separator `@` (namely `/PATH/TO/LIB/`) and place
    it at the path after the `@` in the virtual filesystem (namely
    `/lib/python3.8/site-packages/PACKAGE_NAME/`).
- - The `--exclude` argument specifies files to omit from the package.
- - The `--lz4` argument says to use LZ4 to compress the files
+
+`file_packager.sh` adds the following options:
+ - `--lz4` to use LZ4 to compress the files
+ - `--export-name=globalThis.__pyodide_module` tells `file_packager` where to find the main Emscripten
+   module for linking.
+ - `--exclude *__pycache__*` to omit the pycache directories
+ - `--use-preload-plugins` says to [automatically decode files based on their
+   extension](https://emscripten.org/docs/porting/files/packaging_files.html#preloading-files)

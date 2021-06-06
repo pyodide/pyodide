@@ -12,7 +12,6 @@
 # - platform-specific: This is testing something about a particular platform
 #   that isn't relevant here
 # - async: relies on async
-# - audioop: Requires the audioop module
 # - floating point: Failures caused by floating-point differences
 # - threading: Failures due to lack of a threading implementation
 # - subprocess: Failures caused by no subprocess module. Some of these are
@@ -44,8 +43,8 @@ test__osx_support   platform-specific
 test__xxsubinterpreters
 test_abc
 test_abstract_numbers
-test_aifc   audioop
-test_argparse
+test_aifc
+test_argparse  crash-chrome
 test_array
 test_asdl_parser
 test_ast
@@ -76,7 +75,7 @@ test_asyncio.test_windows_events
 test_asyncio.test_windows_utils
 test_asyncore bad ioctl syscall async
 test_atexit
-test_audioop  audioop
+test_audioop
 test_audit   subprocess
 test_augassign
 test_base64
@@ -126,7 +125,7 @@ test_codeop
 test_collections
 test_colorsys
 test_compare
-test_compile crash-chrome
+test_compile crash
 test_compileall multiprocessing
 test_complex
 test_concurrent_futures
@@ -429,7 +428,7 @@ test_slice
 test_smtpd
 test_smtplib  bad ioctl syscall 21537
 test_smtpnet
-test_sndhdr audioop
+test_sndhdr
 test_socket
 test_socketserver
 test_sort
@@ -451,7 +450,7 @@ test_structmembers
 test_structseq
 test_subclassinit
 test_subprocess
-test_sunau  audioop
+test_sunau
 test_sundry
 test_super
 test_support  multiprocessing
@@ -531,7 +530,7 @@ test_uuid subprocess
 test_venv nonsense
 test_wait3  threading
 test_wait4  threading
-test_wave   audioop
+test_wave
 test_weakref  threading
 test_weakset
 test_webbrowser replaced
@@ -549,7 +548,7 @@ test_xmlrpc_net
 test_xxtestfuzz
 test_yield_from
 test_zipapp
-test_zipfile
+test_zipfile  crash-chrome
 test_zipfile64
 test_zipimport
 test_zipimport_support

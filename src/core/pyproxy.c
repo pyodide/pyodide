@@ -148,9 +148,17 @@ pyproxy_getflags(PyObject* pyobj)
 JsRef
 _pyproxy_repr(PyObject* pyobj)
 {
-  PyObject* repr_py = PyObject_Repr(pyobj);
-  const char* repr_utf8 = PyUnicode_AsUTF8(repr_py);
-  JsRef repr_js = hiwire_string_utf8(repr_utf8);
+  PyObject* repr_py = NULL;
+  const char* repr_utf8 = NULL;
+  JsRef repr_js = NULL;
+
+  repr_py = PyObject_Repr(pyobj);
+  FAIL_IF_NULL(repr_py);
+  repr_utf8 = PyUnicode_AsUTF8(repr_py);
+  FAIL_IF_NULL(repr_utf8);
+  repr_js = hiwire_string_utf8(repr_utf8);
+
+finally:
   Py_CLEAR(repr_py);
   return repr_js;
 }
@@ -172,13 +180,6 @@ JsRef
 _pyproxy_type(PyObject* ptrobj)
 {
   return hiwire_string_ascii(ptrobj->ob_type->tp_name);
-}
-
-void
-_pyproxy_destroy(PyObject* ptrobj)
-{ // See bug #1049
-  Py_DECREF(ptrobj);
-  EM_ASM({ delete Module.PyProxies[$0]; }, ptrobj);
 }
 
 int
@@ -345,44 +346,121 @@ finally:
 JsRef
 _pyproxy_ownKeys(PyObject* pyobj)
 {
-  PyObject* pydir = PyObject_Dir(pyobj);
+  bool success = false;
+  PyObject* pydir = NULL;
+  JsRef iddir = NULL;
+  JsRef identry = NULL;
 
-  if (pydir == NULL) {
-    return NULL;
-  }
+  pydir = PyObject_Dir(pyobj);
+  FAIL_IF_NULL(pydir);
 
-  JsRef iddir = hiwire_array();
+  iddir = JsArray_New();
+  FAIL_IF_NULL(iddir);
   Py_ssize_t n = PyList_Size(pydir);
+  FAIL_IF_MINUS_ONE(n);
   for (Py_ssize_t i = 0; i < n; ++i) {
-    PyObject* pyentry = PyList_GetItem(pydir, i);
-    JsRef identry = python2js(pyentry);
-    hiwire_push_array(iddir, identry);
-    hiwire_decref(identry);
+    PyObject* pyentry = PyList_GetItem(pydir, i); /* borrowed */
+    identry = python2js(pyentry);
+    FAIL_IF_NULL(identry);
+    FAIL_IF_MINUS_ONE(JsArray_Push(iddir, identry));
+    hiwire_CLEAR(identry);
   }
-  Py_DECREF(pydir);
 
+  success = true;
+finally:
+  Py_CLEAR(pydir);
+  hiwire_CLEAR(identry);
+  if (!success) {
+    hiwire_CLEAR(iddir);
+  }
   return iddir;
 }
 
+/**
+ * This sets up a call to _PyObject_Vectorcall. It's a helper fucntion for
+ * callPyObjectKwargs. This is the primary entrypoint from Javascript into
+ * Python code.
+ *
+ * Vectorcall expects the arguments to be communicated as:
+ *
+ *  PyObject*const *args: the positional arguments and followed by the keyword
+ *    arguments
+ *
+ *  size_t nargs_with_flag : the number of arguments plus a flag
+ *      PY_VECTORCALL_ARGUMENTS_OFFSET. The flag PY_VECTORCALL_ARGUMENTS_OFFSET
+ *      indicates that we left an initial entry in the array to be used as a
+ *      self argument in case the callee is a bound method.
+ *
+ *  PyObject* kwnames : a tuple of the keyword argument names. The length of
+ *      this tuple tells CPython how many key word arguments there are.
+ *
+ * Our arguments are:
+ *
+ *   callable : The object to call.
+ *   args : The list of Javascript arguments, both positional and kwargs.
+ *   numposargs : The number of positional arguments.
+ *   kwnames : List of names of the keyword arguments
+ *   numkwargs : The length of kwargs
+ *
+ *   Returns: The return value translated to Javascript.
+ */
 JsRef
-_pyproxy_apply(PyObject* pyobj, JsRef idargs)
+_pyproxy_apply(PyObject* callable,
+               JsRef jsargs,
+               size_t numposargs,
+               JsRef jskwnames,
+               size_t numkwargs)
 {
-  Py_ssize_t length = hiwire_get_length(idargs);
-  PyObject* pyargs = PyTuple_New(length);
-  for (Py_ssize_t i = 0; i < length; ++i) {
-    JsRef iditem = hiwire_get_member_int(idargs, i);
-    PyObject* pyitem = js2python(iditem);
-    PyTuple_SET_ITEM(pyargs, i, pyitem);
-    hiwire_decref(iditem);
+  size_t total_args = numposargs + numkwargs;
+  size_t last_converted_arg = total_args;
+  JsRef jsitem = NULL;
+  PyObject* pyargs_array[total_args + 1];
+  PyObject** pyargs = pyargs_array;
+  pyargs++; // leave a space for self argument in case callable is a bound
+            // method
+  PyObject* pykwnames = NULL;
+  PyObject* pyresult = NULL;
+  JsRef idresult = NULL;
+
+  // Put both arguments and keyword arguments into pyargs
+  for (Py_ssize_t i = 0; i < total_args; ++i) {
+    jsitem = JsArray_Get(jsargs, i);
+    // pyitem is moved into pyargs so we don't need to clear it later.
+    PyObject* pyitem = js2python(jsitem);
+    if (pyitem == NULL) {
+      last_converted_arg = i;
+      FAIL();
+    }
+    pyargs[i] = pyitem; // pyitem is moved into pyargs.
+    hiwire_CLEAR(jsitem);
   }
-  PyObject* pyresult = PyObject_Call(pyobj, pyargs, NULL);
-  if (pyresult == NULL) {
-    Py_DECREF(pyargs);
-    return NULL;
+  if (numkwargs > 0) {
+    // Put names of keyword arguments into a tuple
+    pykwnames = PyTuple_New(numkwargs);
+    for (Py_ssize_t i = 0; i < numkwargs; i++) {
+      jsitem = JsArray_Get(jskwnames, i);
+      // pyitem is moved into pykwargs so we don't need to clear it later.
+      PyObject* pyitem = js2python(jsitem);
+      PyTuple_SET_ITEM(pykwnames, i, pyitem);
+      hiwire_CLEAR(jsitem);
+    }
   }
-  JsRef idresult = python2js(pyresult);
-  Py_DECREF(pyresult);
-  Py_DECREF(pyargs);
+  // Tell callee that we left space for a self argument
+  size_t nargs_with_flag = numposargs | PY_VECTORCALL_ARGUMENTS_OFFSET;
+  pyresult = _PyObject_Vectorcall(callable, pyargs, nargs_with_flag, pykwnames);
+  FAIL_IF_NULL(pyresult);
+  idresult = python2js(pyresult);
+  FAIL_IF_NULL(idresult);
+
+finally:
+  hiwire_CLEAR(jsitem);
+  // If we failed to convert one of the arguments, then pyargs is partially
+  // uninitialized. Only clear the part that actually has stuff in it.
+  for (Py_ssize_t i = 0; i < last_converted_arg; i++) {
+    Py_CLEAR(pyargs[i]);
+  }
+  Py_CLEAR(pyresult);
+  Py_CLEAR(pykwnames);
   return idresult;
 }
 
@@ -502,17 +580,14 @@ FutureDoneCallback_dealloc(FutureDoneCallback* self)
 int
 FutureDoneCallback_call_resolve(FutureDoneCallback* self, PyObject* result)
 {
-  bool success = false;
   JsRef result_js = NULL;
   JsRef output = NULL;
   result_js = python2js(result);
   output = hiwire_call_va(self->resolve_handle, result_js, NULL);
 
-  success = true;
-finally:
   hiwire_CLEAR(result_js);
   hiwire_CLEAR(output);
-  return success ? 0 : -1;
+  return 0;
 }
 
 /**
@@ -686,16 +761,13 @@ typedef struct
 buffer_struct*
 _pyproxy_get_buffer(PyObject* ptrobj)
 {
-  if (!PyObject_CheckBuffer(ptrobj)) {
-    return NULL;
-  }
   Py_buffer view;
   // PyBUF_RECORDS_RO requires that suboffsets be NULL but otherwise is the most
   // permissive possible request.
   if (PyObject_GetBuffer(ptrobj, &view, PyBUF_RECORDS_RO) == -1) {
     // Buffer cannot be represented without suboffsets. The bf_getbuffer method
     // should have set a PyExc_BufferError saying something to this effect.
-    pythonexc2js();
+    return NULL;
   }
 
   bool success = false;
@@ -711,8 +783,8 @@ _pyproxy_get_buffer(PyObject* ptrobj)
     // case, shape, strides and suboffsets MUST be NULL."
     // https://docs.python.org/3/c-api/buffer.html#c.Py_buffer.ndim
     result.largest_ptr += view.itemsize;
-    result.shape = hiwire_array();
-    result.strides = hiwire_array();
+    result.shape = JsArray_New();
+    result.strides = JsArray_New();
     result.c_contiguous = true;
     result.f_contiguous = true;
     goto success;
@@ -772,69 +844,8 @@ finally:
   }
 }
 
-///////////////////////////////////////////////////////////////////////////////
-//
-// Javascript code
-//
-// The rest of the file is in Javascript. It would probably be better to move it
-// into a .js file.
-//
-
-/**
- * In the case that the Python object is callable, PyProxyClass inherits from
- * Function so that PyProxy objects can be callable.
- *
- * The following properties on a Python object will be shadowed in the proxy in
- * the case that the Python object is callable:
- *  - "arguments" and
- *  - "caller"
- *
- * Inheriting from Function has the unfortunate side effect that we MUST expose
- * the members "proxy.arguments" and "proxy.caller" because they are
- * nonconfigurable, nonwritable, nonenumerable own properties. They are just
- * always `null`.
- *
- * We also get the properties "length" and "name" which are configurable so we
- * delete them in the constructor. "prototype" is not configurable so we can't
- * delete it, however it *is* writable so we set it to be undefined. We must
- * still make "prototype in proxy" be true though.
- */
 EM_JS_REF(JsRef, pyproxy_new, (PyObject * ptrobj), {
-  // Technically, this leaks memory, since we're holding on to a reference
-  // to the proxy forever.  But we have that problem anyway since we don't
-  // have a destructor in Javascript to free the Python object.
-  // _pyproxy_destroy, which is a way for users to manually delete the proxy,
-  // also deletes the proxy from this set.
-  if (Module.PyProxies.hasOwnProperty(ptrobj)) {
-    return Module.hiwire.new_value(Module.PyProxies[ptrobj]);
-  }
-  let flags = _pyproxy_getflags(ptrobj);
-  let cls = Module.getPyProxyClass(flags);
-  // Reflect.construct calls the constructor of Module.PyProxyClass but sets the
-  // prototype as cls.prototype. This gives us a way to dynamically create
-  // subclasses of PyProxyClass (as long as we don't need to use the "new
-  // cls(ptrobj)" syntax).
-  let target;
-  if (flags & IS_CALLABLE) {
-    // To make a callable proxy, we must call the Function constructor.
-    // In this case we are effectively subclassing Function.
-    target = Reflect.construct(Function, [], cls);
-    // Remove undesireable properties added by Function constructor. Note: we
-    // can't remove "arguments" or "caller" because they are not configurable
-    // and not writable
-    delete target.length;
-    delete target.name;
-    // prototype isn't configurable so we can't delete it but it's writable.
-    target.prototype = undefined;
-  } else {
-    target = Object.create(cls.prototype);
-  }
-  Object.defineProperty(
-    target, "$$", { value : { ptr : ptrobj, type : 'PyProxy' } });
-  _Py_IncRef(ptrobj);
-  let proxy = new Proxy(target, Module.PyProxyHandlers);
-  Module.PyProxies[ptrobj] = proxy;
-  return Module.hiwire.new_value(proxy);
+  return Module.hiwire.new_value(Module.pyproxy_new(ptrobj));
 });
 
 EM_JS_REF(JsRef, create_once_callable, (PyObject * obj), {
@@ -845,11 +856,10 @@ EM_JS_REF(JsRef, create_once_callable, (PyObject * obj), {
     if (alreadyCalled) {
       throw new Error("OnceProxy can only be called once");
     }
-    alreadyCalled = true;
     try {
       return Module.callPyObject(obj, ... args);
     } finally {
-      _Py_DecRef(obj);
+      wrapper.destroy();
     }
   }
   wrapper.destroy = function()
@@ -858,8 +868,10 @@ EM_JS_REF(JsRef, create_once_callable, (PyObject * obj), {
       throw new Error("OnceProxy has already been destroyed");
     }
     alreadyCalled = true;
+    Module.finalizationRegistry.unregister(wrapper);
     _Py_DecRef(obj);
   };
+  Module.finalizationRegistry.register(wrapper, obj, wrapper);
   return Module.hiwire.new_value(wrapper);
 });
 
@@ -873,6 +885,9 @@ create_once_callable_py(PyObject* _mod, PyObject* obj)
 }
 
 // clang-format off
+
+// At some point it would be nice to use FinalizationRegistry with these, but
+// it's a bit tricky.
 EM_JS_REF(JsRef, create_promise_handles, (
   PyObject* handle_result, PyObject* handle_exception
 ), {
@@ -935,7 +950,7 @@ create_proxy(PyObject* _mod, PyObject* obj)
   return result;
 }
 
-static PyMethodDef pyproxy_methods[] = {
+static PyMethodDef methods[] = {
   {
     "create_once_callable",
     create_once_callable_py,
@@ -949,31 +964,21 @@ static PyMethodDef pyproxy_methods[] = {
   { NULL } /* Sentinel */
 };
 
-#include "include_js_file.h"
-#include "pyproxy.js"
-
 int
 pyproxy_init(PyObject* core)
 {
   bool success = false;
-  int i = 0;
 
-  PyObject* _pyodide_core = NULL;
-  _pyodide_core = PyImport_ImportModule("_pyodide._core");
-  FAIL_IF_NULL(_pyodide_core);
-
-  while (pyproxy_methods[i].ml_name != NULL) {
-    FAIL_IF_MINUS_ONE(set_method_docstring(&pyproxy_methods[i], _pyodide_core));
-    i++;
-  }
-  FAIL_IF_MINUS_ONE(PyModule_AddFunctions(core, pyproxy_methods));
+  PyObject* docstring_source = PyImport_ImportModule("_pyodide._core");
+  FAIL_IF_NULL(docstring_source);
+  FAIL_IF_MINUS_ONE(
+    add_methods_and_set_docstrings(core, methods, docstring_source));
   asyncio = PyImport_ImportModule("asyncio");
   FAIL_IF_NULL(asyncio);
   FAIL_IF_MINUS_ONE(PyType_Ready(&FutureDoneCallbackType));
-  FAIL_IF_MINUS_ONE(pyproxy_init_js());
 
   success = true;
 finally:
-  Py_CLEAR(_pyodide_core);
-  return 0;
+  Py_CLEAR(docstring_source);
+  return success ? 0 : -1;
 }

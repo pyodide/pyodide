@@ -19,24 +19,9 @@ ROOT_PATH = pathlib.Path(__file__).parents[0].resolve()
 TEST_PATH = ROOT_PATH / "src" / "tests"
 BUILD_PATH = ROOT_PATH / "build"
 
-sys.path.append(str(ROOT_PATH))
+sys.path.append(str(ROOT_PATH / "pyodide-build"))
 
-from pyodide_build._fixes import _selenium_is_connectable  # noqa: E402
 from pyodide_build.testing import set_webdriver_script_timeout, parse_driver_timeout
-
-
-def _monkeypatch_selenium():
-    try:
-        import selenium.webdriver.common.utils  # noqa: E402
-
-        # XXX: Temporary fix for ConnectionError in selenium
-
-        selenium.webdriver.common.utils.is_connectable = _selenium_is_connectable
-    except ModuleNotFoundError:
-        pass
-
-
-_monkeypatch_selenium()
 
 
 def pytest_addoption(parser):
@@ -55,9 +40,11 @@ def pytest_addoption(parser):
 
 
 def pytest_configure(config):
-    """Monkey patch the function cwd_relative_nodeid returns the description
-    of a test for the short summary table. Monkey patch it to reduce the verbosity of the test names in the table.
-    This leaves enough room to see the information about the test failure in the summary.
+    """Monkey patch the function cwd_relative_nodeid
+
+    returns the description of a test for the short summary table. Monkey patch
+    it to reduce the verbosity of the test names in the table.  This leaves
+    enough room to see the information about the test failure in the summary.
     """
     old_cwd_relative_nodeid = config.cwd_relative_nodeid
 
@@ -109,12 +96,80 @@ class SeleniumWrapper:
                 f"{(build_dir / 'test.html').resolve()} " f"does not exist!"
             )
         self.driver.get(f"http://{server_hostname}:{server_port}/test.html")
-        self.run_js("Error.stackTraceLimit = Infinity;", pyodide_checks=False)
+        self.javascript_setup()
         if load_pyodide:
-            self.run_js("await loadPyodide({ indexURL : './'});")
+            self.run_js(
+                "window.pyodide = await loadPyodide({ indexURL : './', fullStdLib: false });"
+            )
             self.save_state()
         self.script_timeout = script_timeout
         self.driver.set_script_timeout(script_timeout)
+
+    def javascript_setup(self):
+        self.run_js("Error.stackTraceLimit = Infinity;", pyodide_checks=False)
+        self.run_js(
+            """
+            window.assert = function(cb, message=""){
+                if(message !== ""){
+                    message = "\\n" + message;
+                }
+                if(cb() !== true){
+                    throw new Error(`Assertion failed: ${cb.toString().slice(6)}${message}`);
+                }
+            };
+            window.assertAsync = async function(cb, message=""){
+                if(message !== ""){
+                    message = "\\n" + message;
+                }
+                if(await cb() !== true){
+                    throw new Error(`Assertion failed: ${cb.toString().slice(12)}${message}`);
+                }
+            };
+            function checkError(err, errname, pattern, pat_str, thiscallstr){
+                if(typeof pattern === "string"){
+                    pattern = new RegExp(pattern);
+                }
+                if(!err){
+                    throw new Error(`${thiscallstr} failed, no error thrown`);
+                }
+                if(err.constructor.name !== errname){
+                    throw new Error(
+                        `${thiscallstr} failed, expected error ` +
+                        `of type '${errname}' got type '${err.constructor.name}'`
+                    );
+                }
+                if(!pattern.test(err.message)){
+                    throw new Error(
+                        `${thiscallstr} failed, expected error ` +
+                        `message to match pattern ${pat_str} got:\n${err.message}`
+                    );
+                }
+            }
+            window.assertThrows = function(cb, errname, pattern){
+                let pat_str = typeof pattern === "string" ? `"${pattern}"` : `${pattern}`;
+                let thiscallstr = `assertThrows(${cb.toString()}, "${errname}", ${pat_str})`;
+                let err = undefined;
+                try {
+                    cb();
+                } catch(e) {
+                    err = e;
+                }
+                checkError(err, errname, pattern, pat_str, thiscallstr);
+            };
+            window.assertThrowsAsync = async function(cb, errname, pattern){
+                let pat_str = typeof pattern === "string" ? `"${pattern}"` : `${pattern}`;
+                let thiscallstr = `assertThrowsAsync(${cb.toString()}, "${errname}", ${pat_str})`;
+                let err = undefined;
+                try {
+                    await cb();
+                } catch(e) {
+                    err = e;
+                }
+                checkError(err, errname, pattern, pat_str, thiscallstr);
+            };
+            """,
+            pyodide_checks=False,
+        )
 
     @property
     def logs(self):
@@ -133,7 +188,7 @@ class SeleniumWrapper:
             let result = pyodide.runPython({code!r});
             if(result && result.toJs){{
                 let converted_result = result.toJs();
-                if(pyodide._module.PyProxy.isPyProxy(converted_result)){{
+                if(pyodide.isPyProxy(converted_result)){{
                     converted_result = undefined;
                 }}
                 result.destroy();
@@ -146,10 +201,11 @@ class SeleniumWrapper:
     def run_async(self, code):
         return self.run_js(
             f"""
+            await pyodide.loadPackagesFromImports({code!r})
             let result = await pyodide.runPythonAsync({code!r});
             if(result && result.toJs){{
                 let converted_result = result.toJs();
-                if(pyodide._module.PyProxy.isPyProxy(converted_result)){{
+                if(pyodide.isPyProxy(converted_result)){{
                     converted_result = undefined;
                 }}
                 result.destroy();
@@ -210,6 +266,15 @@ class SeleniumWrapper:
 
     def restore_state(self):
         self.run_js("pyodide._module.restoreState(self.__savedState)")
+
+    def get_num_proxies(self):
+        return self.run_js("return pyodide._module.pyproxy_alloc_map.size")
+
+    def enable_pyproxy_tracing(self):
+        self.run_js("pyodide._module.enable_pyproxy_allocation_tracing()")
+
+    def disable_pyproxy_tracing(self):
+        self.run_js("pyodide._module.disable_pyproxy_allocation_tracing()")
 
     def run_webworker(self, code):
         if isinstance(code, str) and code.startswith("\n"):
@@ -273,7 +338,7 @@ class ChromeWrapper(SeleniumWrapper):
         options = Options()
         options.add_argument("--headless")
         options.add_argument("--no-sandbox")
-
+        options.add_argument("--js-flags=--expose-gc")
         return Chrome(options=options)
 
 
@@ -295,22 +360,34 @@ def pytest_runtest_call(item):
         selenium = item.funcargs["selenium"]
     if "selenium_standalone" in item._fixtureinfo.argnames:
         selenium = item.funcargs["selenium_standalone"]
-    if selenium and pytest.mark.skip_refcount_check.mark not in item.own_markers:
-        yield from test_wrapper_check_for_memory_leaks(selenium)
+    if selenium:
+        trace_hiwire_refs = pytest.mark.skip_refcount_check.mark not in item.own_markers
+        trace_pyproxies = pytest.mark.trace_pyproxies.mark in item.own_markers
+        yield from test_wrapper_check_for_memory_leaks(
+            selenium, trace_hiwire_refs, trace_pyproxies
+        )
     else:
         yield
 
 
-def test_wrapper_check_for_memory_leaks(selenium):
+def test_wrapper_check_for_memory_leaks(selenium, trace_hiwire_refs, trace_pyproxies):
     init_num_keys = selenium.get_num_hiwire_keys()
+    if trace_pyproxies:
+        selenium.enable_pyproxy_tracing()
+        init_num_proxies = selenium.get_num_proxies()
     a = yield
+    selenium.disable_pyproxy_tracing()
     selenium.restore_state()
     # if there was an error in the body of the test, flush it out by calling
     # get_result (we don't want to override the error message by raising a
     # different error here.)
     a.get_result()
-    delta_keys = selenium.get_num_hiwire_keys() - init_num_keys
-    assert delta_keys == 0
+    if trace_hiwire_refs:
+        delta_keys = selenium.get_num_hiwire_keys() - init_num_keys
+        assert delta_keys == 0
+    if trace_pyproxies:
+        delta_proxies = selenium.get_num_proxies() - init_num_proxies
+        assert delta_proxies == 0
 
 
 @contextlib.contextmanager

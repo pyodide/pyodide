@@ -51,6 +51,10 @@ def test_extra_import(selenium, request):
 @pytest.mark.skip_refcount_check
 def test_load_largish_file(selenium_standalone, request, httpserver):
     selenium = selenium_standalone
+    if selenium.browser == "chrome":
+        pytest.xfail(
+            "test_load_largish_file triggers a fatal runtime error in Chrome 89 see #1495"
+        )
 
     selenium.load_package("pandas")
     selenium.load_package("matplotlib")

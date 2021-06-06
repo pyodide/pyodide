@@ -1,0 +1,18 @@
+--- downloads/pyyaml-5.3.1/setup.cfg	2021-01-24 16:20:43.372414420 +0000
++++ patches/setup.cfg	2021-01-24 16:20:49.767657201 +0000
+@@ -13,7 +13,7 @@
+ #compiler=mingw32
+ 
+ # Additional preprocessor definitions might be required.
+-#define=YAML_DECLARE_STATIC
++define=YAML_DECLARE_STATIC
+ 
+ # The following options are used to build PyYAML Windows installer
+ # for Python 2.7 on my PC:
+@@ -22,4 +22,4 @@
+ #define=YAML_DECLARE_STATIC
+ 
+ [metadata]
+-license_file = LICENSE
+\ No newline at end of file
++license_file = LICENSE

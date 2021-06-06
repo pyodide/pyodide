@@ -82,16 +82,17 @@ PyObject* init_dict;
  * The C code for runPythonSimple. The definition of runPythonSimple is in
  * `pyodide.js` for greater visibility.
  */
-void
+int
 run_python_simple_inner(char* code)
 {
   PyObject* result = PyRun_String(code, Py_file_input, init_dict, init_dict);
-  if (result == NULL) {
-    pythonexc2js();
-  } else {
-    Py_DECREF(result);
-  }
+  Py_XDECREF(result);
+  return result ? 0 : -1;
 }
+
+// from numpy_patch.c (no need for a header just for this)
+int
+numpy_patch_init();
 
 int
 main(int argc, char** argv)
@@ -115,22 +116,36 @@ main(int argc, char** argv)
     FATAL_ERROR("JsRef doesn't have the same size as int.");
   }
 
+  PyObject* _pyodide = PyImport_ImportModule("_pyodide");
+  if (_pyodide == NULL) {
+    FATAL_ERROR("Failed to import pyodide module");
+  }
+  Py_CLEAR(_pyodide);
+
   PyObject* core_module = NULL;
   core_module = PyModule_Create(&core_module_def);
   if (core_module == NULL) {
     FATAL_ERROR("Failed to create core module.");
   }
 
+  EM_ASM({
+    // For some reason emscripten doesn't make UTF8ToString available on Module
+    // by default...
+    Module.UTF8ToString = UTF8ToString;
+  });
+
   TRY_INIT_WITH_CORE_MODULE(error_handling);
   TRY_INIT(hiwire);
   TRY_INIT(docstring);
+  TRY_INIT(numpy_patch);
   TRY_INIT(js2python);
+  TRY_INIT_WITH_CORE_MODULE(python2js);
   TRY_INIT(python2js_buffer);
   TRY_INIT_WITH_CORE_MODULE(JsProxy);
   TRY_INIT_WITH_CORE_MODULE(pyproxy);
   TRY_INIT(keyboard_interrupt);
 
-  PyObject* module_dict = PyImport_GetModuleDict(); // borrowed
+  PyObject* module_dict = PyImport_GetModuleDict(); /* borrowed */
   if (PyDict_SetItemString(module_dict, "_pyodide_core", core_module)) {
     FATAL_ERROR("Failed to add '_pyodide_core' module to modules dict.");
   }

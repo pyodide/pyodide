@@ -46,27 +46,12 @@ _js2python_pyproxy(PyObject* val)
   return val;
 }
 
-PyObject*
-_js2python_memoryview(JsRef id)
-{
-  PyObject* jsproxy = JsProxy_create(id);
-  if (jsproxy == NULL) {
-    return NULL;
-  }
-  PyObject* result = PyMemoryView_FromObject(jsproxy);
-  Py_CLEAR(jsproxy);
-  return result;
-}
-
 EM_JS_REF(PyObject*, js2python, (JsRef id), {
   let value = Module.hiwire.get_value(id);
   let result = Module.__js2python_convertImmutable(value);
   // clang-format off
   if (result !== 0) {
     return result;
-  }
-  if (value['byteLength'] !== undefined) {
-    return __js2python_memoryview(id);
   }
   return _JsProxy_create(id);
   // clang-format on
@@ -156,8 +141,8 @@ EM_JS_NUM(errcode, js2python_init, (), {
       return __js2python_true();
     } else if (value === false) {
       return __js2python_false();
-    } else if (Module.PyProxy.isPyProxy(value)) {
-      return __js2python_pyproxy(Module.PyProxy._getPtr(value));
+    } else if (Module.isPyProxy(value)) {
+      return __js2python_pyproxy(Module.PyProxy_getPtr(value));
     }
     // clang-format on
     return 0;
@@ -359,6 +344,10 @@ EM_JS_NUM(errcode, js2python_init, (), {
     }
     if (toStringTag === "[object Object]" && (value.constructor === undefined || value.constructor.name === "Object")) {
       return Module.__js2python_convertMap(value, Object.entries(value), cache, depth);
+    }
+    if (toStringTag === "[object ArrayBuffer]" || ArrayBuffer.isView(value)){
+      let [format_utf8, itemsize] = Module.get_buffer_datatype(value);
+      return _JsBuffer_CloneIntoPython(id, value.byteLength, format_utf8, itemsize);
     }
     // clang-format on
     return _JsProxy_create(id);

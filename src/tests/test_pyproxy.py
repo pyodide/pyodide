@@ -60,6 +60,18 @@ def test_pyproxy(selenium):
     )
 
 
+def test_pyproxy_clone(selenium):
+    selenium.run_js(
+        """
+        let d = pyodide.runPython("list(range(10))")
+        e = d.clone();
+        d.destroy();
+        assert(() => e.length === 10);
+        e.destroy();
+        """
+    )
+
+
 def test_pyproxy_refcount(selenium):
     result = selenium.run_js(
         """
@@ -95,8 +107,8 @@ def test_pyproxy_refcount(selenium):
 
         result.push([getRefCount(), 3])
         pyodide.runPython(`
-            window.jsfunc(pyfunc) # re-used existing PyProxy
-            window.jsfunc(pyfunc) # re-used existing PyProxy
+            window.jsfunc(pyfunc) # create new PyProxy
+            window.jsfunc(pyfunc) # create new PyProxy
         `)
 
         // the refcount should be 3 because:
@@ -104,7 +116,7 @@ def test_pyproxy_refcount(selenium):
         // 1. pyfunc exists
         // 2. one reference from PyProxy to pyfunc is alive
         // 3. pyfunc is referenced from the sys.getrefcount()-test
-        result.push([getRefCount(), 3]);
+        result.push([getRefCount(), 5]);
         return result;
         """
     )
@@ -127,7 +139,7 @@ def test_pyproxy_destroy(selenium):
         selenium.run_js(
             """
             let f = pyodide.globals.get('f');
-            console.assert(f.get_value(1) === 64);
+            assert(()=> f.get_value(1) === 64);
             f.destroy();
             f.get_value();
             """
@@ -228,6 +240,25 @@ def test_pyproxy_get_buffer(selenium):
             pyodide.runPython(`assert getrefcount(${x}) == 2`);
             pyodide.runPython(`del ${x}`);
         }
+        """
+    )
+
+
+def test_get_empty_buffer(selenium):
+    """Previously empty buffers would raise alignment errors
+
+    This is because when Python makes an empty buffer, apparently the pointer
+    field is allowed to contain random garbage, which in particular won't be aligned.
+    """
+    selenium.run_js(
+        """
+        let a = pyodide.runPython(`
+            from array import array
+            array("Q")
+        `);
+        let b = a.getBuffer();
+        b.release();
+        a.destroy();
         """
     )
 
@@ -351,37 +382,6 @@ def test_pyproxy_mixins(selenium):
 def test_pyproxy_mixins2(selenium):
     selenium.run_js(
         """
-        window.assert = function assert(cb){
-            if(cb() !== true){
-                throw new Error(`Assertion failed: ${cb.toString().slice(6)}`);
-            }
-        };
-        window.assertThrows = function assert(cb, errname, pattern){
-          let err = undefined;
-          try {
-            cb();
-          } catch(e) {
-            err = e;
-          } finally {
-            if(!err){
-              throw new Error(`assertThrows(${cb.toString()}) failed, no error thrown`);
-            }
-            if(err.constructor.name !== errname){
-              console.log(err.toString());
-              throw new Error(
-                `assertThrows(${cb.toString()}) failed, expected error` +
-                `of type '${errname}' got type '${err.constructor.name}'`
-              );
-            }
-            if(!pattern.test(err.message)){
-              console.log(err.toString());
-              throw new Error(
-                `assertThrows(${cb.toString()}) failed, expected error` +
-                `message to match pattern '${pattern}' got:\n${err.message}`
-              );
-            }
-          }
-        };
         assert(() => !("prototype" in pyodide.globals));
         assert(() => !("caller" in pyodide.globals));
         assert(() => !("name" in pyodide.globals));
@@ -392,8 +392,11 @@ def test_pyproxy_mixins2(selenium):
         assert(() => !("length" in get_method));
         assert(() => !("name" in get_method));
 
-        assert(() => pyodide.globals.get.type === "builtin_function_or_method");
-        assert(() => pyodide.globals.set.type === undefined);
+        let d = pyodide.runPython("{}");
+        assert(() => d.$get.type === "builtin_function_or_method");
+        assert(() => d.get.type === undefined);
+        assert(() => d.set.type === undefined);
+        d.destroy();
 
         let [Test, t] = pyodide.runPython(`
             class Test: pass
@@ -432,7 +435,8 @@ def test_pyproxy_mixins2(selenium):
                 length=7
             [Test, Test()]
         `);
-        assert(() => Test.prototype === "prototype");
+        assert(() => Test.$prototype === "prototype");
+        assert(() => Test.prototype === undefined);
         assert(() => Test.name==="me");
         assert(() => Test.length === 7);
 
@@ -451,8 +455,8 @@ def test_pyproxy_mixins2(selenium):
         assert(() => !("length" in Test));
         assert(() => t.length === 9);
         t.length = 10;
-        assert(() => t.length === 10);
-        assert(() => t.__len__() === 9);
+        assert(() => t.length === 9);
+        assert(() => t.$length === 10);
 
         let l = pyodide.runPython(`
             l = [5, 6, 7] ; l
@@ -469,5 +473,316 @@ def test_pyproxy_mixins2(selenium):
             assert len(l) == 2 and l[1] == 7
         `);
         assert(() => l.length === 2 && l.get(1) === 7);
+        """
+    )
+
+
+def test_pyproxy_gc(selenium):
+    if selenium.browser != "chrome":
+        pytest.skip("No gc exposed")
+
+    # Two ways to trigger garbage collection in Chrome:
+    # 1. options.add_argument("--js-flags=--expose-gc") in conftest, and use
+    #    gc() in javascript.
+    # 2. selenium.driver.execute_cdp_cmd("HeapProfiler.collectGarbage", {})
+    #
+    # Unclear how to trigger gc in Firefox. Possible to do this by navigating to
+    # "about:memory" and then triggering a button press to the "GC" button, but
+    # that seems too annoying.
+
+    selenium.run_js(
+        """
+        window.x = new FinalizationRegistry((val) => { window.val = val; });
+        x.register({}, 77);
+        gc();
+        """
+    )
+    assert selenium.run_js("return window.val;") == 77
+
+    selenium.run_js(
+        """
+        window.res = new Map();
+
+        let d = pyodide.runPython(`
+            from js import res
+            def get_ref_count(x):
+                res[x] = sys.getrefcount(d)
+                return res[x]
+
+            import sys
+            class Test:
+                def __del__(self):
+                    res["destructor_ran"] = True
+
+                def get(self):
+                    return 7
+
+            d = Test()
+            get_ref_count(0)
+            d
+        `);
+        let get_ref_count = pyodide.globals.get("get_ref_count");
+        get_ref_count(1);
+        d.get();
+        get_ref_count(2);
+        d.get();
+        """
+    )
+    selenium.driver.execute_cdp_cmd("HeapProfiler.collectGarbage", {})
+
+    selenium.run(
+        """
+        get_ref_count(3)
+        del d
+        """
+    )
+    selenium.driver.execute_cdp_cmd("HeapProfiler.collectGarbage", {})
+    a = selenium.run_js("return Array.from(res.entries());")
+    assert dict(a) == {0: 2, 1: 3, 2: 4, 3: 2, "destructor_ran": True}
+
+
+def test_pyproxy_gc_destroy(selenium):
+    if selenium.browser != "chrome":
+        pytest.skip("No gc exposed")
+
+    selenium.run_js(
+        """
+        window.res = new Map();
+        let d = pyodide.runPython(`
+            from js import res
+            def get_ref_count(x):
+                res[x] = sys.getrefcount(d)
+                return res[x]
+            import sys
+            class Test:
+                def __del__(self):
+                    res["destructor_ran"] = True
+
+                def get(self):
+                    return 7
+
+            d = Test()
+            get_ref_count(0)
+            d
+        `);
+        let get_ref_count = pyodide.globals.get("get_ref_count");
+        get_ref_count(1);
+        d.get();
+        get_ref_count(2);
+        d.get();
+        get_ref_count(3);
+        d.destroy();
+        get_ref_count(4);
+        gc();
+        get_ref_count(5);
+        """
+    )
+    selenium.driver.execute_cdp_cmd("HeapProfiler.collectGarbage", {})
+    selenium.run(
+        """
+        get_ref_count(6)
+        del d
+        """
+    )
+    a = selenium.run_js("return Array.from(res.entries());")
+    assert dict(a) == {
+        0: 2,
+        1: 3,
+        2: 4,
+        3: 5,
+        4: 4,
+        5: 4,
+        6: 2,
+        "destructor_ran": True,
+    }
+
+
+def test_pyproxy_copy(selenium):
+    result = selenium.run_js(
+        """
+        let result = [];
+        let a = pyodide.runPython(`d = { 1 : 2}; d`);
+        let b = pyodide.runPython(`d`);
+        result.push(a.get(1));
+        a.destroy();
+        result.push(b.get(1));
+        return result;
+        """
+    )
+    assert result[0] == 2
+    assert result[1] == 2
+
+
+def test_errors(selenium):
+    selenium.run_js(
+        """
+        let t = pyodide.runPython(`
+            def te(self, *args, **kwargs):
+                raise Exception(repr(args))
+            class Temp:
+                __getattr__ = te
+                __setattr__ = te
+                __delattr__ = te
+                __dir__ = te
+                __call__ = te
+                __getitem__ = te
+                __setitem__ = te
+                __delitem__ = te
+                __iter__ = te
+                __len__ = te
+                __contains__ = te
+                __await__ = te
+                __repr__ = te
+            Temp()
+        `);
+        assertThrows(() => t.x, "PythonError", "");
+        assertThrows(() => t.x = 2, "PythonError", "");
+        assertThrows(() => delete t.x, "PythonError", "");
+        assertThrows(() => Object.getOwnPropertyNames(t), "PythonError", "");
+        assertThrows(() => t(), "PythonError", "");
+        assertThrows(() => t.get(1), "PythonError", "");
+        assertThrows(() => t.set(1, 2), "PythonError", "");
+        assertThrows(() => t.delete(1), "PythonError", "");
+        assertThrows(() => t.has(1), "PythonError", "");
+        assertThrows(() => t.length, "PythonError", "");
+        assertThrowsAsync(async () => await t, "PythonError", "");
+        assertThrows(() => t.toString(), "PythonError", "");
+        assertThrows(() => Array.from(t), "PythonError", "");
+        """
+    )
+
+
+def test_fatal_error(selenium_standalone):
+    """Inject fatal errors in all the reasonable entrypoints"""
+    selenium_standalone.run_js(
+        """
+        let fatal_error = false;
+        let old_fatal_error = pyodide._module.fatal_error;
+        pyodide._module.fatal_error = (e) => {
+            fatal_error = true;
+            throw e;
+        }
+        try {
+            function expect_fatal(func){
+                fatal_error = false;
+                try {
+                    func();
+                } catch(e) {
+                    // pass
+                } finally {
+                    if(!fatal_error){
+                        throw new Error(`No fatal error occured: ${func.toString().slice(6)}`);
+                    }
+                }
+            }
+            let t = pyodide.runPython(`
+                from _pyodide_core import trigger_fatal_error
+                def tfe(*args, **kwargs):
+                    trigger_fatal_error()
+                class Temp:
+                    __getattr__ = tfe
+                    __setattr__ = tfe
+                    __delattr__ = tfe
+                    __dir__ = tfe
+                    __call__ = tfe
+                    __getitem__ = tfe
+                    __setitem__ = tfe
+                    __delitem__ = tfe
+                    __iter__ = tfe
+                    __len__ = tfe
+                    __contains__ = tfe
+                    __await__ = tfe
+                    __repr__ = tfe
+                    __del__ = tfe
+                Temp()
+            `);
+            expect_fatal(() => "x" in t);
+            expect_fatal(() => t.x);
+            expect_fatal(() => t.x = 2);
+            expect_fatal(() => delete t.x);
+            expect_fatal(() => Object.getOwnPropertyNames(t));
+            expect_fatal(() => t());
+            expect_fatal(() => t.get(1));
+            expect_fatal(() => t.set(1, 2));
+            expect_fatal(() => t.delete(1));
+            expect_fatal(() => t.has(1));
+            expect_fatal(() => t.length);
+            expect_fatal(() => t.toString());
+            expect_fatal(() => Array.from(t));
+            t.destroy();
+            a = pyodide.runPython(`
+                from array import array
+                array("I", [1,2,3,4])
+            `);
+            b = a.getBuffer();
+            b._view_ptr = 1e10;
+            expect_fatal(() => b.release());
+        } finally {
+            pyodide._module.fatal_error = old_fatal_error;
+        }
+        """
+    )
+
+
+def test_pyproxy_call(selenium):
+    selenium.run_js(
+        """
+        pyodide.runPython(`
+            from pyodide import to_js
+            def f(x=2, y=3):
+                return to_js([x, y])
+        `);
+        window.f = pyodide.globals.get("f");
+        """
+    )
+
+    def assert_call(s, val):
+        res = selenium.run_js(f"return {s};")
+        assert res == val
+
+    assert_call("f()", [2, 3])
+    assert_call("f(7)", [7, 3])
+    assert_call("f(7, -1)", [7, -1])
+
+    assert_call("f.callKwargs({})", [2, 3])
+    assert_call("f.callKwargs(7, {})", [7, 3])
+    assert_call("f.callKwargs(7, -1, {})", [7, -1])
+    assert_call("f.callKwargs({ y : 4 })", [2, 4])
+    assert_call("f.callKwargs({ y : 4, x : 9 })", [9, 4])
+    assert_call("f.callKwargs(8, { y : 4 })", [8, 4])
+
+    msg = "TypeError: callKwargs requires at least one argument"
+    with pytest.raises(selenium.JavascriptException, match=msg):
+        selenium.run_js("f.callKwargs()")
+
+    msg = "TypeError: callKwargs requires at least one argument"
+    with pytest.raises(selenium.JavascriptException, match=msg):
+        selenium.run_js("f.callKwargs()")
+
+    msg = r"TypeError: f\(\) got an unexpected keyword argument 'z'"
+    with pytest.raises(selenium.JavascriptException, match=msg):
+        selenium.run_js("f.callKwargs({z : 6})")
+
+    msg = r"TypeError: f\(\) got multiple values for argument 'x'"
+    with pytest.raises(selenium.JavascriptException, match=msg):
+        selenium.run_js("f.callKwargs(76, {x : 6})")
+
+
+def test_pyproxy_name_clash(selenium):
+    selenium.run_js(
+        """
+        let d = pyodide.runPython("{'a' : 2}");
+        assert(() => d.get('a') === 2);
+        assert(() => d.$get('b', 3) === 3);
+
+        let t = pyodide.runPython(`
+            class Test:
+                def destroy(self):
+                    return 7
+            Test()
+        `);
+        assert(() => t.$destroy() === 7);
+        t.destroy();
+        assertThrows(() => t.$destroy, "Error", "Object has already been destroyed");
         """
     )

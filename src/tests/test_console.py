@@ -1,9 +1,10 @@
 import pytest
 from pathlib import Path
 import sys
-import io
 
-sys.path.append(str(Path(__file__).parents[2] / "src" / "pyodide-py"))
+from conftest import selenium_common
+
+sys.path.append(str(Path(__file__).resolve().parents[2] / "src" / "py"))
 
 from pyodide import console  # noqa: E402
 
@@ -48,7 +49,7 @@ def test_interactive_console_streams(safe_sys_redirections):
     ##########################
     # Persistent redirection #
     ##########################
-    shell = console.InteractiveConsole(
+    shell = console._InteractiveConsole(
         stdout_callback=stdout_callback,
         stderr_callback=stderr_callback,
         persistent_stream_redirection=True,
@@ -72,6 +73,19 @@ def test_interactive_console_streams(safe_sys_redirections):
 
     shell.push("1+1")
     assert my_stdout == "foo\nfoobar\nfoobar\n2\n"
+    assert shell.run_complete.result() == 2
+
+    my_stderr = ""
+    shell.push("raise Exception('hi')")
+    assert (
+        my_stderr
+        == 'Traceback (most recent call last):\n  File "<console>", line 1, in <module>\nException: hi\n'
+    )
+    assert shell.run_complete.exception() is not None
+    my_stderr = ""
+    shell.push("1+1")
+    assert my_stderr == ""
+    assert shell.run_complete.result() == 2
 
     shell.restore_stdstreams()
 
@@ -87,7 +101,7 @@ def test_interactive_console_streams(safe_sys_redirections):
     ##############################
     # Non persistent redirection #
     ##############################
-    shell = console.InteractiveConsole(
+    shell = console._InteractiveConsole(
         stdout_callback=stdout_callback,
         stderr_callback=stderr_callback,
         persistent_stream_redirection=False,
@@ -121,12 +135,6 @@ def test_repr(safe_sys_redirections):
                 console.repr_shorten(string, limit=limit, separator=sep)
             ) == 2 * (limit // 2) + len(sep)
 
-    sys.stdout = io.StringIO()
-    console.displayhook(
-        [0] * 100, lambda v: console.repr_shorten(v, 100, separator=sep)
-    )
-    assert len(sys.stdout.getvalue()) == 100 + len(sep) + 1  # for \n
-
 
 @pytest.fixture
 def safe_selenium_sys_redirections(selenium):
@@ -149,16 +157,16 @@ def test_interactive_console(selenium, safe_selenium_sys_redirections):
     selenium.run(
         """
         import sys
-        from pyodide.console import InteractiveConsole
+        from pyodide.console import _InteractiveConsole
 
         result = None
 
-        def displayhook(value):
+        def display(value):
             global result
             result = value
 
-        shell = InteractiveConsole()
-        sys.displayhook = displayhook
+        shell = _InteractiveConsole()
+        shell.display = display
         """
     )
 
@@ -201,7 +209,7 @@ def test_completion(selenium, safe_selenium_sys_redirections):
         """
         from pyodide import console
 
-        shell = console.InteractiveConsole()
+        shell = console._InteractiveConsole()
         """
     )
 
@@ -238,3 +246,96 @@ def test_completion(selenium, safe_selenium_sys_redirections):
         ],
         8,
     ]
+
+
+def test_interactive_console_top_level_await(selenium, safe_selenium_sys_redirections):
+    selenium.run(
+        """
+        import sys
+        from pyodide.console import _InteractiveConsole
+
+        result = None
+
+        def display(value):
+            global result
+            result = value
+
+        shell = _InteractiveConsole()
+        shell.display = display
+        """
+    )
+    selenium.run("shell.push('from js import fetch')")
+    selenium.run("shell.push('await (await fetch(`packages.json`)).json()')")
+    assert selenium.run("result") == None
+
+
+@pytest.fixture(params=["firefox", "chrome"], scope="function")
+def console_html_fixture(request, web_server_main):
+    with selenium_common(request, web_server_main, False) as selenium:
+        selenium.driver.get(
+            f"http://{selenium.server_hostname}:{selenium.server_port}/console.html"
+        )
+        selenium.javascript_setup()
+        try:
+            yield selenium
+        finally:
+            print(selenium.logs)
+
+
+def test_console_html(console_html_fixture):
+    selenium = console_html_fixture
+    selenium.run_js(
+        """
+        await window.console_ready;
+        """
+    )
+    result = selenium.run_js(
+        r"""
+        let result = [];
+        assert(() => term.get_output().startsWith("Welcome to the Pyodide terminal emulator 🐍"))
+
+        term.clear();
+        term.exec("1+1");
+        await term.ready;
+        assert(() => term.get_output().trim() === ">>> 1+1\n2", term.get_output().trim());
+
+
+        term.clear();
+        term.exec("1+");
+        await term.ready;
+        result.push([term.get_output(),
+`>>> 1+
+[[;;;terminal-error]  File "<console>", line 1
+    1+
+     ^
+SyntaxError: invalid syntax]`
+        ]);
+
+        term.clear();
+        term.exec("raise Exception('hi')");
+        await term.ready;
+        result.push([term.get_output(),
+`>>> raise Exception('hi')
+[[;;;terminal-error]Traceback (most recent call last):]
+[[;;;terminal-error]  File "<console>", line 1, in <module>]
+[[;;;terminal-error]Exception: hi]`
+        ]);
+
+        term.clear();
+        term.exec("from _pyodide_core import trigger_fatal_error; trigger_fatal_error()");
+        await term.ready;
+        result.push([term.get_output(),
+`>>> from _pyodide_core import trigger_fatal_error; trigger_fatal_error()
+[[;;;terminal-error]Pyodide has suffered a fatal error. Please report this to the Pyodide maintainers.]
+[[;;;terminal-error]The cause of the fatal error was:]
+[[;;;terminal-error]Error: intentionally triggered fatal error!]
+[[;;;terminal-error]Look in the browser console for more details.]`
+        ]);
+
+        await sleep(30);
+        assert(() => term.paused());
+        return result;
+        """
+    )
+    for [x, y] in result:
+        assert x == y

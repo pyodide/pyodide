@@ -11,6 +11,7 @@ build:
 
 requirements:
   run:
+    - distutils
     - numpy
     - scipy
     - pandas

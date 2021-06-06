@@ -28,9 +28,9 @@ Work on Pyodide happens on Github. Core members and contributors can make Pull
 Requests to fix issues and add features, which all go through the same review
 process. We’ll detail how you can start making PRs below.
 
-We’ll do our best to keep `master` in a non-breaking state, ideally with tests
+We’ll do our best to keep `main` in a non-breaking state, ideally with tests
 always passing. The unfortunate reality of software development is sometimes
-things break. As such, `master` cannot be expected to remain reliable at all
+things break. As such, `main` cannot be expected to remain reliable at all
 times. We recommend using the latest stable version of Pyodide.
 
 Pyodide follows semantic versioning (http://semver.org/) - major versions for
@@ -71,7 +71,7 @@ on using the Pull Request feature. We use the "fork and pull" model
 where contributors push changes to their personal fork and create pull requests
 to bring those changes into the source repository.
 
-Please make pull requests against the `master` branch.
+Please make pull requests against the `main` branch.
 
 If you’re looking for a way to jump in and contribute, our list of
 [good first issues](https://github.com/pyodide/pyodide/labels/good%20first%20issue)
@@ -98,6 +98,10 @@ started on our test-writing journey.
 All code submissions should pass `make lint`.  Python is checked with the
 default settings of `flake8`.  C and Javascript are checked against the Mozilla
 style in `clang-format`.
+
+### Contributing to the “core” C Code
+
+See {ref}`contributing-core`.
 
 ## Documentation
 
@@ -137,6 +141,9 @@ If patches fail to apply automatically, one solution can be to
    ```
    git format-patch -<N> -N --no-stat HEAD -o <out_dir>
    ```
+## Maintainer information
+
+For information about making releases see {ref}`maintainer-information`.
 
 ## License
 
@@ -153,3 +160,11 @@ clarification on what is and isn't permitted.
 - __Gitter:__ [#pyodide](https://gitter.im/pyodide/community) channel at gitter.im
 
 [tl;drLegal entry]:https://tldrlegal.com/license/mozilla-public-license-2.0-(mpl-2)
+
+```{eval-rst}
+.. toctree::
+   :hidden:
+
+   core.md
+   maintainers.md
+```

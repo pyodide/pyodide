@@ -39,6 +39,25 @@ finally:
 }
 
 int
+add_methods_and_set_docstrings(PyObject* module,
+                               PyMethodDef* methods,
+                               PyObject* docstring_source)
+{
+  bool success = false;
+
+  int i = 0;
+  while (methods[i].ml_name != NULL) {
+    FAIL_IF_MINUS_ONE(set_method_docstring(&methods[i], docstring_source));
+    i++;
+  }
+  FAIL_IF_MINUS_ONE(PyModule_AddFunctions(module, methods));
+
+  success = true;
+finally:
+  return success ? 0 : -1;
+}
+
+int
 docstring_init()
 {
   bool success = false;
