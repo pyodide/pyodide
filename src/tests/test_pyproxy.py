@@ -2,7 +2,7 @@
 import pytest
 
 
-def test_pyproxy77(selenium):
+def test_pyproxy_class(selenium):
     selenium.run_js(
         """
         pyodide.runPython(`
