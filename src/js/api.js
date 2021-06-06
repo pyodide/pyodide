@@ -174,12 +174,7 @@ export function pyimport(name) {
     "Access to the Python global namespace via pyodide.pyimport is deprecated and " +
       "will be removed in version 0.18.0. Use pyodide.globals.get('key') instead."
   );
-  let globals_get = Module.globals.get;
-  try {
-    return globals_get(name);
-  } finally {
-    globals_get.destroy();
-  }
+  return Module.globals.get(name);
 }
 /**
  * Runs Python code using `PyCF_ALLOW_TOP_LEVEL_AWAIT

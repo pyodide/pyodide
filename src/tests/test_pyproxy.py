@@ -12,9 +12,7 @@ def test_pyproxy_class(selenium):
                     return value * 64
             f = Foo()
         `);
-        let globals_get = pyodide.globals.get;
-        window.f = globals_get('f');
-        globals_get.destroy();
+        window.f = pyodide.globals.get('f');
         assert(() => f.type === "Foo");
         let f_get_value = f.get_value
         assert(() => f_get_value(2) === 128);
@@ -148,9 +146,7 @@ def test_pyproxy_destroy(selenium):
     with pytest.raises(selenium.JavascriptException, match=msg):
         selenium.run_js(
             """
-            let globals_get = pyodide.globals.get;
-            let f = globals_get('f');
-            globals_get.destroy();
+            let f = pyodide.globals.get('f');
             let f_get_value = f.get_value;
             assert(()=> f_get_value(1) === 64);
             f_get_value.destroy();
@@ -239,9 +235,7 @@ def test_pyproxy_get_buffer(selenium):
         `);
         for(let x of ["z1", "z2"]){
             pyodide.runPython(`assert getrefcount(${x}) == 2`);
-            let globals_get = pyodide.globals.get;
-            let proxy = globals_get(x);
-            globals_get.destroy();
+            let proxy = pyodide.globals.get(x);
             pyodide.runPython(`assert getrefcount(${x}) == 3`);
             let z = proxy.getBuffer();
             pyodide.runPython(`assert getrefcount(${x}) == 4`);
@@ -580,9 +574,7 @@ def test_pyproxy_gc(selenium):
             get_ref_count(0)
             d
         `);
-        let globals_get = pyodide.globals.get;
-        let get_ref_count = globals_get("get_ref_count");
-        globals_get.destroy();
+        let get_ref_count = pyodide.globals.get("get_ref_count");
         get_ref_count(1);
         d.get();
         get_ref_count(2);
@@ -628,9 +620,7 @@ def test_pyproxy_gc_destroy(selenium):
             get_ref_count(0)
             d
         `);
-        let globals_get = pyodide.globals.get;
-        let get_ref_count = globals_get("get_ref_count");
-        globals_get.destroy();
+        let get_ref_count = pyodide.globals.get("get_ref_count");
         get_ref_count(1);
         d.get();
         get_ref_count(2);
@@ -804,9 +794,7 @@ def test_pyproxy_call(selenium):
             def f(x=2, y=3):
                 return to_js([x, y])
         `);
-        let globals_get = pyodide.globals.get;
-        window.f = globals_get("f");
-        globals_get.destroy();
+        window.f = pyodide.globals.get("f");
         """
     )
 

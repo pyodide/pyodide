@@ -40,10 +40,8 @@ def test_globals_get_multiple(selenium):
     selenium.run_js(
         """
         pyodide.runPython("v = 0.123");
-        let globals_get = pyodide.globals.get;
-        globals_get('v')
-        globals_get('v')
-        globals_get.destroy()
+        pyodide.globals.get('v')
+        pyodide.globals.get('v')
         """
     )
 
@@ -143,10 +141,8 @@ def test_py(selenium_standalone):
             def func():
                 return 42
         `);
-        let globals_get = pyodide.globals.get;
-        let func = globals_get('func');
+        let func = pyodide.globals.get('func');
         assert(() => func() === 42);
-        globals_get.destroy();
         func.destroy();
         """
     )
