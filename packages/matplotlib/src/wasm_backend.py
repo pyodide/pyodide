@@ -120,8 +120,6 @@ class FigureCanvasWasm(backend_agg.FigureCanvasAgg):
             event.preventDefault()
             return False
 
-        window.addEventListener("contextmenu", ignore)
-
         # Create the main canvas and determine the physical to logical pixel
         # ratio
         canvas = document.createElement("canvas")
@@ -132,6 +130,7 @@ class FigureCanvasWasm(backend_agg.FigureCanvasAgg):
         width *= self._ratio
         height *= self._ratio
         div = self.create_root_element()
+        div.addEventListener("contextmenu", ignore)
         div.setAttribute(
             "style",
             "margin: 0 auto; text-align: center;"
