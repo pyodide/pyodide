@@ -18,6 +18,10 @@
  - [JupyterLite](https://github.com/jtpio/jupyterlite) is a JupyterLab
    distribution that runs entirely in the browser, based on Pyodide.
 
+## Dashboards and visualization
+ - [WebDash](https://github.com/ibdafna/webdash) is a Plotly Dash distribution
+   that runs entirely in the browser, using Pyodide.
+
 ## Other projects
 
 - [wc-code](https://github.com/vanillawc/wc-code) is a library to run
