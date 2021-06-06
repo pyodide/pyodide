@@ -43,6 +43,7 @@ test__osx_support   platform-specific
 test__xxsubinterpreters
 test_abc
 test_abstract_numbers
+test_aifc
 test_argparse  crash-chrome
 test_array
 test_asdl_parser
@@ -74,6 +75,7 @@ test_asyncio.test_windows_events
 test_asyncio.test_windows_utils
 test_asyncore bad ioctl syscall async
 test_atexit
+test_audioop
 test_audit   subprocess
 test_augassign
 test_base64
@@ -426,6 +428,7 @@ test_slice
 test_smtpd
 test_smtplib  bad ioctl syscall 21537
 test_smtpnet
+test_sndhdr
 test_socket
 test_socketserver
 test_sort
@@ -447,6 +450,7 @@ test_structmembers
 test_structseq
 test_subclassinit
 test_subprocess
+test_sunau
 test_sundry
 test_super
 test_support  multiprocessing
@@ -526,6 +530,7 @@ test_uuid subprocess
 test_venv nonsense
 test_wait3  threading
 test_wait4  threading
+test_wave
 test_weakref  threading
 test_weakset
 test_webbrowser replaced

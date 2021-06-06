@@ -40,7 +40,8 @@ substitutions:
   can be disabled with the `fullStdLib` parameter set to `false`.
   All optional stdlib modules can then be loaded as needed with
   {any}`pyodide.loadPackage`. {pr}`1543`
-- The standard library module `audioop` is now included, making the `wave`, `sndhdr`, `aifc`, and `sunau` modules usable.
+- The standard library module `audioop` is now included, making the `wave`,
+  `sndhdr`, `aifc`, and `sunau` modules usable. {pr}`1623`
 
 ### Python / JS type conversions
 
