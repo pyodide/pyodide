@@ -410,9 +410,11 @@ def test_pyproxy_mixins2(selenium):
         get_method.destroy();
 
         let d = pyodide.runPython("{}");
-        assert(() => d.$get.type === "builtin_function_or_method");
+        let d_get = d.$get;
+        assert(() => d_get.type === "builtin_function_or_method");
         assert(() => d.get.type === undefined);
         assert(() => d.set.type === undefined);
+        d_get.destroy();
         d.destroy();
         """
     )
@@ -658,14 +660,10 @@ def test_pyproxy_copy(selenium):
         let result = [];
         let a = pyodide.runPython(`d = { 1 : 2}; d`);
         let b = pyodide.runPython(`d`);
-        let a_get = a.get;
-        let b_get = b.get;
-        result.push(a_get(1));
-        result.push(b_get(1));
+        result.push(a.get(1));
+        result.push(b.get(1));
         a.destroy();
         b.destroy();
-        a_get.destroy();
-        b_get.destroy();
         return result;
         """
     )
@@ -835,8 +833,10 @@ def test_pyproxy_name_clash(selenium):
     selenium.run_js(
         """
         let d = pyodide.runPython("{'a' : 2}");
+        let d_get = d.$get;
         assert(() => d.get('a') === 2);
-        assert(() => d.$get('b', 3) === 3);
+        assert(() => d_get('b', 3) === 3);
+        d_get.destroy();
 
         let t = pyodide.runPython(`
             class Test:
@@ -844,7 +844,9 @@ def test_pyproxy_name_clash(selenium):
                     return 7
             Test()
         `);
-        assert(() => t.$destroy() === 7);
+        let t_dest = t.$destroy;
+        assert(() => t_dest() === 7);
+        t_dest.destroy();
         t.destroy();
         assertThrows(() => t.$destroy, "Error", "Object has already been destroyed");
         """
