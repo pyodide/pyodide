@@ -486,18 +486,20 @@ to_js(PyObject* _mod, PyObject* args)
     Py_INCREF(obj);
     return obj;
   }
-  JsRef proxies = JsArray_New();
-  JsRef js_result = python2js_with_depth(obj, depth, proxies);
-  PyObject* py_result;
-  if (js_result == NULL) {
-    return NULL;
-  }
+  JsRef proxies = NULL;
+  JsRef js_result = NULL;
+  PyObject* py_result = NULL;
+
+  proxies = JsArray_New();
+  js_result = python2js_with_depth(obj, depth, proxies);
+  FAIL_IF_NULL(js_result);
   if (hiwire_is_pyproxy(js_result)) {
     // Oops, just created a PyProxy. Wrap it I guess?
     py_result = JsProxy_create(js_result);
   } else {
     py_result = js2python(js_result);
   }
+finally:
   hiwire_CLEAR(js_result);
   hiwire_CLEAR(proxies);
   return py_result;

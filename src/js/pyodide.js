@@ -1,10 +1,34 @@
-"use strict";
 /**
- * The main bootstrap script for loading pyodide.
+ * The main bootstrap code for loading pyodide.
  */
 import { Module } from "./module";
-import { loadScript, initializePackageIndex } from "./load-pyodide";
-import { PUBLIC_API, makePublicAPI } from "./api";
+import {
+  loadScript,
+  initializePackageIndex,
+  loadPackage,
+} from "./load-pyodide";
+import { makePublicAPI, registerJsModule } from "./api";
+import "./pyproxy.gen";
+
+import { wrapNamespace } from "./pyproxy.gen";
+
+/**
+ * @typedef {import('./pyproxy.gen').PyProxy} PyProxy
+ * @typedef {import('./pyproxy.gen').PyProxyWithLength} PyProxyWithLength
+ * @typedef {import('./pyproxy.gen').PyProxyWithGet} PyProxyWithGet
+ * @typedef {import('./pyproxy.gen').PyProxyWithSet} PyProxyWithSet
+ * @typedef {import('./pyproxy.gen').PyProxyWithHas} PyProxyWithHas
+ * @typedef {import('./pyproxy.gen').PyProxyIterable} PyProxyIterable
+ * @typedef {import('./pyproxy.gen').PyProxyIterator} PyProxyIterator
+ * @typedef {import('./pyproxy.gen').PyProxyAwaitable} PyProxyAwaitable
+ * @typedef {import('./pyproxy.gen').PyProxyBuffer} PyProxyBuffer
+ * @typedef {import('./pyproxy.gen').PyProxyCallable} PyProxyCallable
+ *
+ * @typedef {import('./pyproxy.gen').Py2JsResult} Py2JsResult
+ *
+ * @typedef {import('./pyproxy.gen').TypedArray} TypedArray
+ * @typedef {import('./pyproxy.gen').PyBuffer} PyBuffer
+ */
 
 /**
  * Dump the Python traceback to the browser console.
@@ -43,8 +67,8 @@ Module.fatal_error = function (e) {
   console.error(e);
   try {
     Module.dump_traceback();
-    for (let key of PUBLIC_API) {
-      if (key === "version") {
+    for (let key of Object.keys(Module.public_api)) {
+      if (key.startsWith("_") || key === "version") {
         continue;
       }
       Object.defineProperty(Module.public_api, key, {
@@ -133,29 +157,28 @@ function fixRecursionLimit() {
 }
 
 /**
- * The :ref:`js-api-pyodide` module object. Must be present as a global variable
- * called
- * ``pyodide`` in order for package loading to work properly.
+ * Load the main Pyodide wasm module and initialize it.
  *
- * @type Object
- */
-globalThis.pyodide = {};
-
-/**
- * Load the main Pyodide wasm module and initialize it. When finished stores the
- * Pyodide module as a global object called ``pyodide``.
+ * Only one copy of Pyodide can be loaded in a given Javascript global scope
+ * because Pyodide uses global variables to load packages. If an attempt is made
+ * to load a second copy of Pyodide, :any:`loadPyodide` will throw an error.
+ * (This can be fixed once `Firefox adopts support for ES6 modules in webworkers
+ * <https://bugzilla.mozilla.org/show_bug.cgi?id=1247687>`_.)
+ *
+ * @param {{ indexURL : string, fullStdLib? : boolean = true }} config
  * @param {string} config.indexURL - The URL from which Pyodide will load
  * packages
- * @param {bool} config.fullStdLib - Load the full Python standard library.
+ * @param {boolean} config.fullStdLib - Load the full Python standard library.
  * Setting this to false excludes following modules: distutils.
  * Default: true
- * @returns The Pyodide module.
+ * @returns The :ref:`js-api-pyodide` module.
+ * @memberof globalThis
  * @async
  */
-globalThis.loadPyodide = async function (config = {}) {
+export async function loadPyodide(config) {
   const default_config = { fullStdLib: true };
   config = Object.assign(default_config, config);
-  if (loadPyodide.inProgress) {
+  if (globalThis.__pyodide_module) {
     if (globalThis.languagePluginURL) {
       throw new Error(
         "Pyodide is already loading because languagePluginURL is defined."
@@ -164,6 +187,9 @@ globalThis.loadPyodide = async function (config = {}) {
       throw new Error("Pyodide is already loading.");
     }
   }
+  // A global "mount point" for the package loaders to talk to pyodide
+  // See "--export-name=__pyodide_module" in buildpkg.py
+  globalThis.__pyodide_module = Module;
   loadPyodide.inProgress = true;
   // Note: PYODIDE_BASE_URL is an environment variable replaced in
   // in this template in the Makefile. It's recommended to always set
@@ -181,11 +207,9 @@ globalThis.loadPyodide = async function (config = {}) {
   let packageIndexReady = initializePackageIndex(baseURL);
 
   Module.locateFile = (path) => baseURL + path;
-
   let moduleLoaded = new Promise((r) => (Module.postRun = r));
 
   const scriptSrc = `${baseURL}pyodide.asm.js`;
-
   await loadScript(scriptSrc);
 
   // _createPyodideModule is specified in the Makefile by the linker flag:
@@ -223,21 +247,25 @@ def temp(Module):
 
   // Wrap "globals" in a special Proxy that allows `pyodide.globals.x` access.
   // TODO: Should we have this?
-  Module.globals = Module.wrapNamespace(Module.globals);
+  Module.globals = wrapNamespace(Module.globals);
 
-  fixRecursionLimit(Module);
+  fixRecursionLimit();
   let pyodide = makePublicAPI();
-  Module.registerJsModule("js", globalThis);
-  Module.registerJsModule("pyodide_js", pyodide);
-  globalThis.pyodide = pyodide;
+  pyodide.globals = Module.globals;
+  pyodide.pyodide_py = Module.pyodide_py;
+  pyodide.version = Module.version;
+
+  registerJsModule("js", globalThis);
+  registerJsModule("pyodide_js", pyodide);
 
   await packageIndexReady;
   if (config.fullStdLib) {
-    await pyodide.loadPackage(["distutils"]);
+    await loadPackage(["distutils"]);
   }
 
   return pyodide;
-};
+}
+globalThis.loadPyodide = loadPyodide;
 
 if (globalThis.languagePluginUrl) {
   console.warn(
@@ -268,5 +296,5 @@ if (globalThis.languagePluginUrl) {
    */
   globalThis.languagePluginLoader = loadPyodide({
     indexURL: globalThis.languagePluginUrl,
-  });
+  }).then((pyodide) => (self.pyodide = pyodide));
 }

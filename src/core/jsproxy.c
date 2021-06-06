@@ -698,7 +698,7 @@ JsProxy_Bool(PyObject* o)
  * Controlled by IS_AWAITABLE.
  */
 static PyObject*
-JsProxy_Await(JsProxy* self, PyObject* _args)
+JsProxy_Await(JsProxy* self)
 {
   if (!hiwire_is_promise(self->js)) {
     PyObject* str = JsProxy_Repr((PyObject*)self);

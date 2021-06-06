@@ -66,7 +66,7 @@ jobs:
           command: |
             ccache -z
             # The following packages are currently used in the main pyodide test suite
-            PYODIDE_PACKAGES="micropip,pyparsing,pytz,packaging,kiwisolver" make
+            PYODIDE_PACKAGES="micropip,pyparsing,pytz,packaging,kiwisolver,Jinja2" make
             ccache -s
 
       - run:
@@ -190,6 +190,19 @@ jobs:
           name: test
           command: |
             pytest src pyodide-build packages/micropip/ -v -k 'not (chrome or firefox)' --cov=pyodide_build --cov=pyodide
+
+  test-js-types:
+    <<: *defaults
+    resource_class: small
+    steps:
+      - attach_workspace:
+          at: .
+      - run:
+          name: test
+          command: |
+            cd src/js
+            npx tsd
+
 
   benchmark:
     <<: *defaults
@@ -316,6 +329,12 @@ workflows:
             tags:
               only: /.*/
       - test-python:
+          filters:
+            tags:
+              only: /.*/
+      - test-js-types:
+          requires:
+            - build-core
           filters:
             tags:
               only: /.*/
