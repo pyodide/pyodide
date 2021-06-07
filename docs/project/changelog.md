@@ -32,6 +32,11 @@ substitutions:
   Javascript API (though no typings are available for `PyProxy` fields).
   {pr}`1601`
 
+-{{ ENH }} If a Python error occurs in a reentrant `runPython` call, the error
+  will be propagated into the outer `runPython` context as the original error
+  type. This is particularly important if the error is a `KeyboardInterrupt`.
+  {pr}`1447`
+
 ## Standard library
 
 - The following standard library modules are now available as standalone packages

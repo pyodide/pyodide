@@ -167,9 +167,9 @@ JsRef
 wrap_exception()
 {
   bool success = false;
-  PyObject* type;
-  PyObject* value;
-  PyObject* traceback;
+  PyObject* type = NULL;
+  PyObject* value = NULL;
+  PyObject* traceback = NULL;
   PyObject* pystr = NULL;
   JsRef jserror = NULL;
   fetch_and_normalize_exception(&type, &value, &traceback);
