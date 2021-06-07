@@ -837,6 +837,7 @@ def test_pyproxy_name_clash(selenium):
         assert(() => d.get('a') === 2);
         assert(() => d_get('b', 3) === 3);
         d_get.destroy();
+        d.destroy();
 
         let t = pyodide.runPython(`
             class Test:
