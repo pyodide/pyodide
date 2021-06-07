@@ -1,6 +1,6 @@
 import ast
 import asyncio
-import code
+from codeop import Compile, CommandCompiler, _features  # type: ignore
 from contextlib import (
     contextmanager,
     redirect_stdout,
@@ -15,7 +15,7 @@ import traceback
 from typing import Optional, Callable, Any, List, Tuple
 
 
-from ._base import eval_code_async
+from ._base import should_quiet, CodeRunner
 
 # this import can fail when we are outside a browser (e.g. for tests)
 try:
@@ -89,12 +89,70 @@ class _ReadStream:
         pass
 
 
-class _InteractiveConsole(code.InteractiveConsole):
+class MyCompile(Compile):
+    """Instances of this class behave much like the built-in compile
+    function, but if one is used to compile text containing a future
+    statement, it "remembers" and compiles all subsequent program texts
+    with the statement in force."""
+
+    def __init__(
+        self,
+        *,
+        return_mode="last_expr",
+        quiet_trailing_semicolon=True,
+        flags=0x0,
+    ):
+        super().__init__()
+        self.flags |= flags
+        self.return_mode = return_mode
+        self.quiet_trailing_semicolon = quiet_trailing_semicolon
+
+    def __call__(self, source, filename, symbol) -> CodeRunner:  # type: ignore
+        return_mode = self.return_mode
+        if self.quiet_trailing_semicolon and should_quiet(source):
+            return_mode = None
+        code_runner = CodeRunner(
+            source,
+            filename=filename,
+            return_mode=return_mode,
+            flags=self.flags,
+        ).compile()
+        for feature in _features:
+            if code_runner.code.co_flags & feature.compiler_flag:
+                self.flags |= feature.compiler_flag
+        return code_runner
+
+
+class MyCommandCompiler(CommandCompiler):
+    """Instances of this class have __call__ methods identical in
+    signature to compile_command; the difference is that if the
+    instance compiles program text containing a __future__ statement,
+    the instance 'remembers' and compiles all subsequent program texts
+    with the statement in force."""
+
+    def __init__(
+        self,
+        *,
+        return_mode="last_expr",
+        quiet_trailing_semicolon=True,
+        flags=0x0,
+    ):
+        self.compiler = MyCompile(
+            return_mode=return_mode,
+            quiet_trailing_semicolon=quiet_trailing_semicolon,
+            flags=flags,
+        )
+
+    def __call__(self, source, filename="<input>", symbol="single") -> CodeRunner:  # type: ignore
+        return super().__call__(source, filename, symbol)  # type: ignore
+
+
+class InteractiveConsole:
     """Interactive Pyodide console
 
     Base implementation for an interactive console that manages
     stdout/stderr redirection. Since packages are loaded before running
-    code, :any:`_InteractiveConsole.runcode` returns a JS promise.
+    code, :any:`InteractiveConsole.runcode` returns a JS promise.
 
     ``self.stdout_callback`` and ``self.stderr_callback`` can be overloaded.
 
@@ -119,19 +177,23 @@ class _InteractiveConsole(code.InteractiveConsole):
         stderr_callback: Optional[Callable[[str], None]] = None,
         stdin_callback: Optional[Callable[[str], None]] = None,
         persistent_stream_redirection: bool = False,
+        filename: str = "<console>",
     ):
-        super().__init__(locals)
+        if locals is None:
+            locals = {"__name__": "__console__", "__doc__": None}
+        self.locals = locals
         self._stdout = None
         self._stderr = None
         self.stdout_callback = stdout_callback
         self.stderr_callback = stderr_callback
         self.stdin_callback = stdin_callback
+        self.filename = filename
+        self.resetbuffer()
+        self._lock = asyncio.Lock()
         self._streams_redirected = False
         self._stream_generator = None  # track persistent stream redirection
         if persistent_stream_redirection:
             self.persistent_redirect_streams()
-        self.run_complete: asyncio.Future = asyncio.Future()
-        self.run_complete.set_result(None)
         self._completer = rlcompleter.Completer(self.locals)  # type: ignore
         # all nonalphanums except '.'
         # see https://github.com/python/cpython/blob/a4258e8cd776ba655cc54ba54eaeffeddb0a267c/Modules/readline.c#L1211
@@ -139,7 +201,7 @@ class _InteractiveConsole(code.InteractiveConsole):
             """ \t\n`~!@#$%^&*()-=+[{]}\\|;:'\",<>/?"""
         )
         self.output_truncated_text = "\\n[[;orange;]<long output truncated>]\\n"
-        self.compile.compiler.flags |= ast.PyCF_ALLOW_TOP_LEVEL_AWAIT  # type: ignore
+        self.compile = MyCommandCompiler(flags=ast.PyCF_ALLOW_TOP_LEVEL_AWAIT)  # type: ignore
 
     def persistent_redirect_streams(self):
         """Redirect stdin/stdout/stderr persistently"""
@@ -199,67 +261,86 @@ class _InteractiveConsole(code.InteractiveConsole):
             sys.stdout.flush()
             sys.stderr.flush()
 
-    def runsource(self, *args, **kwargs):
-        """Force streams redirection.
-
-        Syntax errors are not thrown by :any:`_InteractiveConsole.runcode` but
-        here in :any:`_InteractiveConsole.runsource`. This is why we force
-        redirection here since doing twice is not an issue.
-        """
-
-        with self.redirect_streams():
-            return super().runsource(*args, **kwargs)
-
-    def runcode(self, code):
-        """Load imported packages then run code, async.
-
-        To achieve nice result representation, the interactive console is fully
-        implemented in Python. The interactive console api is synchronous, but
-        we want to implement asynchronous package loading and top level await.
-        Thus, instead of blocking like it normally would, this this function
-        sets the future ``self.run_complete``. If you need the result of the
-        computation, you should await for it.
-        """
-        source = "\n".join(self.buffer)
-        self.run_complete = ensure_future(
-            self.load_packages_and_run(self.run_complete, source)
-        )
-
-    def num_frames_to_keep(self, tb):
-        keep_frames = False
-        kept_frames = 0
-        # Try to trim out stack frames inside our code
-        for (frame, _) in traceback.walk_tb(tb):
-            keep_frames = keep_frames or frame.f_code.co_filename == "<console>"
-            keep_frames = keep_frames or frame.f_code.co_filename == "<exec>"
-            if keep_frames:
-                kept_frames += 1
-        return kept_frames
-
-    async def load_packages_and_run(self, run_complete, source):
+    def runsource(self, source: str, filename: str = "<input>", symbol: str = "single"):
+        """Compile and run some source in the interpreter."""
         try:
-            await run_complete
-        except BaseException:
-            # Throw away old error
-            pass
-        with self.redirect_streams():
-            await _load_packages_from_imports(source)
-            try:
-                result = await eval_code_async(
-                    source, self.locals, filename="<console>"
-                )
-            except BaseException as e:
-                nframes = self.num_frames_to_keep(e.__traceback__)
-                traceback.print_exception(type(e), e, e.__traceback__, -nframes)
-                raise e
-            else:
-                self.display(result)
-            # in CPython's REPL, flush is performed
-            # by input(prompt) at each new prompt ;
-            # since we are not using input, we force
-            # flushing here
-            self.flush_all()
-            return result
+            code = self.compile(source, filename, symbol)
+        except (OverflowError, SyntaxError, ValueError):
+            # Case 1
+            return ["syntax-error", self.formatsyntaxerror(filename)]
+
+        if code is None:
+            # Case 2
+            return ["incomplete", None]
+
+        return ["valid", ensure_future(self.runcode(source, code))]
+
+    async def runcode(self, source: str, code: CodeRunner):
+        """Execute a code object.
+
+        When an exception occurs, self.showtraceback() is called to
+        display a traceback.  All exceptions are caught except
+        SystemExit, which is reraised.
+
+        A note about KeyboardInterrupt: this exception may occur
+        elsewhere in this code, and may not always be caught.  The
+        caller should be prepared to deal with it.
+        """
+        await _load_packages_from_imports(source)
+        async with self._lock:
+            with self.redirect_streams():
+                try:
+                    return ["success", await code.run_async(self.locals)]
+                except BaseException:
+                    return ["exception", self.formattraceback()]
+                finally:
+                    sys.stdout.flush()
+                    sys.stderr.flush()
+
+    def formatsyntaxerror(self, filename=None):
+        """Display the syntax error that just occurred.
+
+        This doesn't display a stack trace because there isn't one.
+        """
+        type, value, tb = sys.exc_info()
+        sys.last_type = type
+        sys.last_value = value
+        sys.last_traceback = tb
+        return "".join(traceback.format_exception_only(type, value))
+
+    def formattraceback(self):
+        """Display the exception that just occurred."""
+        sys.last_type, sys.last_value, last_tb = ei = sys.exc_info()
+        sys.last_traceback = last_tb
+        try:
+            return "".join(traceback.format_exception(ei[0], ei[1], last_tb.tb_next))
+        finally:
+            last_tb = ei = None
+
+    def resetbuffer(self):
+        """Reset the input buffer."""
+        self.buffer = []
+
+    def push(self, line: str):
+        """Push a line to the interpreter.
+
+        The line should not have a trailing newline; it may have
+        internal newlines.  The line is appended to a buffer and the
+        interpreter's runsource() method is called with the
+        concatenated contents of the buffer as source.  If this
+        indicates that the command was executed or invalid, the buffer
+        is reset; otherwise, the command is incomplete, and the buffer
+        is left as it was after the line was appended.  The return
+        value is 1 if more input is required, 0 if the line was dealt
+        with in some way (this is the same as runsource()).
+
+        """
+        self.buffer.append(line)
+        source = "\n".join(self.buffer)
+        result = self.runsource(source, self.filename)
+        if result[0] != "incomplete":
+            self.resetbuffer()
+        return result
 
     def complete(self, source: str) -> Tuple[List[str], int]:
         """Use CPython's rlcompleter to complete a source from local namespace.
@@ -281,7 +362,7 @@ class _InteractiveConsole(code.InteractiveConsole):
 
         Examples
         --------
-        >>> shell = _InteractiveConsole()
+        >>> shell = InteractiveConsole()
         >>> shell.complete("str.isa")
         (['str.isalnum(', 'str.isalpha(', 'str.isascii('], 0)
         >>> shell.complete("a = 5 ; str.isa")
