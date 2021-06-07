@@ -56,8 +56,8 @@ substitutions:
 - {{ Enhancement }} Added the {any}`PyProxy.callKwargs` method to allow using
   Python functions with keyword arguments from Javascript.
   {pr}`1539`
-- {{ Enhancement }} Added the {any}`PyProxy.clone` method.
-  {pr}`1549`
+- {{ Enhancement }} Added the {any}`PyProxy.copy` method.
+  {pr}`1549` {pr}`1630`
 - {{ API }} Updated the method resolution order on `PyProxy`. Performing a
   lookup on a `PyProxy` will prefer to pick a method from the `PyProxy` api, if
   no such method is found, it will use `getattr` on the proxied object.
