@@ -176,20 +176,20 @@ def test_interactive_console(selenium, safe_selenium_sys_redirections):
 
     selenium.run("shell.push('x = 5')")
     selenium.run("shell.push('x')")
-    selenium.run_js("await pyodide.runPython('shell.run_complete');")
+    selenium.run_js("await pyodide.runPythonAsync('await shell.run_complete');")
     assert selenium.run("result") == 5
 
     selenium.run("shell.push('x ** 2')")
-    selenium.run_js("await pyodide.runPython('shell.run_complete');")
+    selenium.run_js("await pyodide.runPythonAsync('await shell.run_complete');")
 
     assert selenium.run("result") == 25
 
     selenium.run("shell.push('def f(x):')")
     selenium.run("shell.push('    return x*x + 1')")
     selenium.run("shell.push('')")
-    selenium.run("shell.push('[f(x) for x in range(5)]')")
-    selenium.run_js("await pyodide.runPython('shell.run_complete');")
-    assert selenium.run("result") == [1, 2, 5, 10, 17]
+    selenium.run("shell.push('str([f(x) for x in range(5)])')")
+    selenium.run_js("await pyodide.runPythonAsync('await shell.run_complete');")
+    assert selenium.run("result") == str([1, 2, 5, 10, 17])
 
     selenium.run("shell.push('def factorial(n):')")
     selenium.run("shell.push('    if n < 2:')")
@@ -198,13 +198,13 @@ def test_interactive_console(selenium, safe_selenium_sys_redirections):
     selenium.run("shell.push('        return n * factorial(n - 1)')")
     selenium.run("shell.push('')")
     selenium.run("shell.push('factorial(10)')")
-    selenium.run_js("await pyodide.runPython('shell.run_complete');")
+    selenium.run_js("await pyodide.runPythonAsync('await shell.run_complete');")
     assert selenium.run("result") == 3628800
 
     # with package load
     selenium.run("shell.push('import pytz')")
     selenium.run("shell.push('pytz.utc.zone')")
-    selenium.run_js("await pyodide.runPython('shell.run_complete');")
+    selenium.run_js("await pyodide.runPythonAsync('await shell.run_complete');")
     assert selenium.run("result") == "UTC"
 
 

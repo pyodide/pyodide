@@ -56,19 +56,26 @@ def run_in_pyodide(
                     # containing the source. This results in a more helpful
                     # traceback
                     selenium.run_js(
-                        """pyodide._module.pyodide_py.eval_code.callKwargs(
+                        """
+                        let eval_code = pyodide._module.pyodide_py.eval_code;
+                        try {{
+                            eval_code.callKwargs(
                                 {{
                                     source : {!r},
                                     globals : pyodide._module.globals,
                                     filename : {!r}
                                 }}
-                            )""".format(
+                            )
+                        }} finally {{
+                            eval_code.destroy();
+                        }}
+                        """.format(
                             _run_in_pyodide_get_source(f), inspect.getsourcefile(f)
                         )
                     )
                     # When invoking the function, use the default filename <eval>
                     selenium.run_js(
-                        """pyodide._module.pyodide_py.eval_code("{}()", pyodide._module.globals)""".format(
+                        """pyodide.runPython("{}()", pyodide._module.globals)""".format(
                             f.__name__
                         )
                     )

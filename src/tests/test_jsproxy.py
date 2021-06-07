@@ -8,11 +8,14 @@ def test_jsproxy_dir(selenium):
         """
         window.a = { x : 2, y : "9" };
         window.b = function(){};
-        return pyodide.runPython(`
+        let pyresult = pyodide.runPython(`
             from js import a
             from js import b
             [dir(a), dir(b)]
-        `).toJs();
+        `);
+        let result = pyresult.toJs();
+        pyresult.destroy();
+        return result;
         """
     )
     jsproxy_items = set(
@@ -67,10 +70,13 @@ def test_jsproxy_getattr(selenium):
         selenium.run_js(
             """
         window.a = { x : 2, y : "9", typeof : 7 };
-        return pyodide.runPython(`
+        let pyresult = pyodide.runPython(`
             from js import a
             [ a.x, a.y, a.typeof ]
-        `).toJs();
+        `);
+        let result = pyresult.toJs();
+        pyresult.destroy();
+        return result;
         """
         )
         == [2, "9", "object"]
@@ -211,12 +217,15 @@ def test_jsproxy_call(selenium):
         selenium.run_js(
             """
             window.f = function(){ return arguments.length; };
-            return pyodide.runPython(
+            let pyresult = pyodide.runPython(
                 `
                 from js import f
                 [f(*range(n)) for n in range(10)]
                 `
-            ).toJs();
+            );
+            let result = pyresult.toJs();
+            pyresult.destroy();
+            return result;
             """
         )
         == list(range(10))
@@ -302,7 +311,9 @@ def test_import_invocation():
     def temp():
         print("okay?")
 
-    js.setTimeout(temp, 100)
+    from pyodide import create_once_callable
+
+    js.setTimeout(create_once_callable(temp), 100)
     js.fetch("packages.json")
 
 
@@ -398,7 +409,7 @@ def test_unregister_jsmodule(selenium):
             raises = TestCase().assertRaises
             with raises(ImportError):
                 import a
-        `)
+        `);
         """
     )
 
@@ -529,6 +540,7 @@ def test_mixins_feature_presence(selenium):
             }
             test_object(o, keys_expected);
         }
+        test_object.destroy();
         """
     )
 
@@ -553,7 +565,7 @@ def test_mixins_calls(selenium):
         };
         testObjects.awaitable = { then(cb){ cb(7); } };
 
-        let result = await pyodide.runPythonAsync(`
+        let pyresult = await pyodide.runPythonAsync(`
             from js import testObjects as obj
             result = []
             result.append(["iterable1", list(iter(obj.iterable)), [3, 5, 7]])
@@ -577,7 +589,9 @@ def test_mixins_calls(selenium):
             result.append(["awaitable", await obj.awaitable, 7])
             result
         `);
-        return result.toJs();
+        let result = pyresult.toJs();
+        pyresult.destroy();
+        return result;
         """
     )
     for [desc, a, b] in result:
@@ -779,6 +793,7 @@ def test_memory_leaks(selenium):
             from js import a
             repr(a)
             [*a]
+            None
         `);
         """
     )
