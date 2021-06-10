@@ -33,11 +33,11 @@ def safe_sys_redirections():
         sys.stdout, sys.stderr, sys.displayhook = redirected
 
 
-def test_interactive_console_streams(safe_sys_redirections):
+def test_persistent_redirection(safe_sys_redirections):
     my_stdout = ""
     my_stderr = ""
-    orig_sys_stdout_name = sys.stdout.name
-    orig_sys_stderr_name = sys.stderr.name
+    orig_stdout = sys.stdout
+    orig_stderr = sys.stderr
 
     def stdout_callback(string):
         nonlocal my_stdout
@@ -47,18 +47,15 @@ def test_interactive_console_streams(safe_sys_redirections):
         nonlocal my_stderr
         my_stderr += string
 
-    ##########################
-    # Persistent redirection #
-    ##########################
-    shell = console._InteractiveConsole(
+    shell = console.InteractiveConsole(
         stdout_callback=stdout_callback,
         stderr_callback=stderr_callback,
         persistent_stream_redirection=True,
     )
 
     # std names
-    assert sys.stdout.name == orig_sys_stdout_name
-    assert sys.stderr.name == orig_sys_stderr_name
+    assert sys.stdout.name == orig_stdout.name
+    assert sys.stderr.name == orig_stderr.name
 
     # std redirections
     print("foo")
@@ -66,46 +63,52 @@ def test_interactive_console_streams(safe_sys_redirections):
     print("bar", file=sys.stderr)
     assert my_stderr == "bar\n"
 
-    shell.push("print('foobar')")
+    [state, res] = shell.push("print('foobar')")
+    assert state == "valid"
+    assert res.result() == ["success", None]
     assert my_stdout == "foo\nfoobar\n"
 
-    shell.push("print('foobar')")
+    [state, res] = shell.push("print('foobar')")
+    assert state == "valid"
+    assert res.result() == ["success", None]
     assert my_stdout == "foo\nfoobar\nfoobar\n"
 
-    shell.push("1+1")
-    assert my_stdout == "foo\nfoobar\nfoobar\n2\n"
-    assert shell.run_complete.result() == 2
+    [state, res] = shell.push("1+1")
+    assert state == "valid"
+    assert res.result() == ["success", 2]
+    assert my_stdout == "foo\nfoobar\nfoobar\n"
 
     my_stderr = ""
-    shell.push("raise Exception('hi')")
-    assert (
-        my_stderr
-        == 'Traceback (most recent call last):\n  File "<console>", line 1, in <module>\nException: hi\n'
-    )
-    assert shell.run_complete.exception() is not None
+    [state, res] = shell.push("raise Exception('hi')")
+    assert state == "valid"
+    # assert res.result() == ["exception", 'Traceback (most recent call last):\n  File "<console>", line 1, in <module>\nException: hi\n']
+    # assert shell.run_complete.exception() is not None
     my_stderr = ""
-    shell.push("1+1")
-    assert my_stderr == ""
-    assert shell.run_complete.result() == 2
 
-    del shell
-    import gc
-
-    gc.collect()
-
+    shell.persistent_restore_streams()
     my_stdout = ""
     my_stderr = ""
-
+    print(sys.stdout, file=orig_stdout)
     print("bar")
     assert my_stdout == ""
 
     print("foo", file=sys.stdout)
     assert my_stderr == ""
 
-    ##############################
-    # Non persistent redirection #
-    ##############################
-    shell = console._InteractiveConsole(
+
+def test_nonpersistent_redirection(safe_sys_redirections):
+    my_stdout = ""
+    my_stderr = ""
+
+    def stdout_callback(string):
+        nonlocal my_stdout
+        my_stdout += string
+
+    def stderr_callback(string):
+        nonlocal my_stderr
+        my_stderr += string
+
+    shell = console.InteractiveConsole(
         stdout_callback=stdout_callback,
         stderr_callback=stderr_callback,
         persistent_stream_redirection=False,
@@ -127,8 +130,9 @@ def test_interactive_console_streams(safe_sys_redirections):
     shell.push("print('foobar', file=sys.stderr)")
     assert my_stderr == "foobar\n"
 
-    shell.push("1+1")
-    assert my_stdout == "foobar\nfoobar\n2\n"
+    [state, res] = shell.push("1+1")
+    assert state == "valid"
+    assert res.result() == ["success", 2]
 
 
 def test_repr(safe_sys_redirections):
@@ -161,7 +165,7 @@ def test_interactive_console(selenium, safe_selenium_sys_redirections):
     selenium.run(
         """
         import sys
-        from pyodide.console import _InteractiveConsole
+        from pyodide.console import InteractiveConsole
 
         result = None
 
@@ -169,43 +173,46 @@ def test_interactive_console(selenium, safe_selenium_sys_redirections):
             global result
             result = value
 
-        shell = _InteractiveConsole()
+        shell = InteractiveConsole()
         shell.display = display
+
+        def assert_incomplete(res):
+            assert res == ["incomplete", None]
+
+        async def assert_result(res, x):
+            [status, fut] = res
+            assert status == "valid"
+            [status, value] = await fut
+            assert status == "success"
+            assert value == x
         """
     )
 
-    selenium.run("shell.push('x = 5')")
-    selenium.run("shell.push('x')")
-    selenium.run_js("await pyodide.runPython('shell.run_complete');")
-    assert selenium.run("result") == 5
+    selenium.run_js(
+        """
+        await pyodide.runPythonAsync(`
+            await assert_result(shell.push('x = 5'), None)
+            await assert_result(shell.push('x'), 5)
+            await assert_result(shell.push('x ** 2'), 25)
 
-    selenium.run("shell.push('x ** 2')")
-    selenium.run_js("await pyodide.runPython('shell.run_complete');")
+            assert_incomplete(shell.push('def f(x):'))
+            assert_incomplete(shell.push('    return x*x + 1'))
+            await assert_result(shell.push(''), None)
+            await assert_result(shell.push('[f(x) for x in range(5)]'), [1, 2, 5, 10, 17])
 
-    assert selenium.run("result") == 25
+            assert_incomplete(shell.push('def factorial(n):'))
+            assert_incomplete(shell.push('    if n < 2:'))
+            assert_incomplete(shell.push('        return 1'))
+            assert_incomplete(shell.push('    else:'))
+            assert_incomplete(shell.push('        return n * factorial(n - 1)'))
+            await assert_result(shell.push(''), None)
+            await assert_result(shell.push('factorial(10)'), 3628800)
 
-    selenium.run("shell.push('def f(x):')")
-    selenium.run("shell.push('    return x*x + 1')")
-    selenium.run("shell.push('')")
-    selenium.run("shell.push('[f(x) for x in range(5)]')")
-    selenium.run_js("await pyodide.runPython('shell.run_complete');")
-    assert selenium.run("result") == [1, 2, 5, 10, 17]
-
-    selenium.run("shell.push('def factorial(n):')")
-    selenium.run("shell.push('    if n < 2:')")
-    selenium.run("shell.push('        return 1')")
-    selenium.run("shell.push('    else:')")
-    selenium.run("shell.push('        return n * factorial(n - 1)')")
-    selenium.run("shell.push('')")
-    selenium.run("shell.push('factorial(10)')")
-    selenium.run_js("await pyodide.runPython('shell.run_complete');")
-    assert selenium.run("result") == 3628800
-
-    # with package load
-    selenium.run("shell.push('import pytz')")
-    selenium.run("shell.push('pytz.utc.zone')")
-    selenium.run_js("await pyodide.runPython('shell.run_complete');")
-    assert selenium.run("result") == "UTC"
+            await assert_result(shell.push('import pytz'), None)
+            await assert_result(shell.push('pytz.utc.zone'), "UTC")
+        `)
+        """
+    )
 
 
 def test_completion(selenium, safe_selenium_sys_redirections):
@@ -213,7 +220,7 @@ def test_completion(selenium, safe_selenium_sys_redirections):
         """
         from pyodide import console
 
-        shell = console._InteractiveConsole()
+        shell = console.InteractiveConsole()
         """
     )
 
@@ -256,7 +263,7 @@ def test_interactive_console_top_level_await(selenium, safe_selenium_sys_redirec
     selenium.run(
         """
         import sys
-        from pyodide.console import _InteractiveConsole
+        from pyodide.console import InteractiveConsole
 
         result = None
 
@@ -264,7 +271,7 @@ def test_interactive_console_top_level_await(selenium, safe_selenium_sys_redirec
             global result
             result = value
 
-        shell = _InteractiveConsole()
+        shell = InteractiveConsole()
         shell.display = display
         """
     )

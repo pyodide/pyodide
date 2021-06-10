@@ -1,6 +1,6 @@
 import ast
 import asyncio
-from codeop import Compile, CommandCompiler, _features  # type: ignore
+from codeop import Compile, CommandCompiler, _features, PyCF_DONT_IMPLY_DEDENT  # type: ignore
 from contextlib import (
     contextmanager,
     redirect_stdout,
@@ -113,6 +113,7 @@ class MyCompile(Compile):
             return_mode = None
         code_runner = CodeRunner(
             source,
+            mode="single",
             filename=filename,
             return_mode=return_mode,
             flags=self.flags,
@@ -201,7 +202,7 @@ class InteractiveConsole:
             """ \t\n`~!@#$%^&*()-=+[{]}\\|;:'\",<>/?"""
         )
         self.output_truncated_text = "\\n[[;orange;]<long output truncated>]\\n"
-        self.compile = MyCommandCompiler(flags=ast.PyCF_ALLOW_TOP_LEVEL_AWAIT)  # type: ignore
+        self.compile = MyCommandCompiler(flags=ast.PyCF_ALLOW_TOP_LEVEL_AWAIT | PyCF_DONT_IMPLY_DEDENT)  # type: ignore
 
     def persistent_redirect_streams(self):
         """Redirect stdin/stdout/stderr persistently"""

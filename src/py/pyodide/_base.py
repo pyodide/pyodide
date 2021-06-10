@@ -146,6 +146,7 @@ def _parse_and_compile_gen(
     *,
     return_mode: str = "last_expr",
     quiet_trailing_semicolon: bool = True,
+    mode="exec",
     filename: str = "<exec>",
     flags: int = 0x0,
 ) -> Generator[ast.Module, ast.Module, CodeType]:
@@ -159,7 +160,7 @@ def _parse_and_compile_gen(
     # handle mis-indented input from multi-line strings
     source = dedent(source)
 
-    mod = ast.parse(source, filename=filename)
+    mod = compile(source, filename, mode, flags | ast.PyCF_ONLY_AST)
 
     # Pause here, allow caller to transform ast if they like.
     mod = yield mod
@@ -176,7 +177,7 @@ def _parse_and_compile_gen(
         _last_expr_to_raise(mod)
 
     ast.fix_missing_locations(mod)
-    return compile(mod, filename, "exec", flags=flags)
+    return compile(mod, filename, mode, flags=flags)
 
 
 class CodeRunner:
@@ -230,6 +231,7 @@ class CodeRunner:
         source: str,
         *,
         return_mode: str = "last_expr",
+        mode="exec",
         quiet_trailing_semicolon: bool = True,
         filename: str = "<exec>",
         flags: int = 0x0,
@@ -238,6 +240,7 @@ class CodeRunner:
         self._gen = _parse_and_compile_gen(
             source,
             return_mode=return_mode,
+            mode=mode,
             quiet_trailing_semicolon=quiet_trailing_semicolon,
             filename=filename,
             flags=flags,
