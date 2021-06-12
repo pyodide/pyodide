@@ -17,6 +17,7 @@
   </head>
   <body>
     <script>
+      "use strict";
       function sleep(s) {
         return new Promise((resolve) => setTimeout(resolve, s));
       }
@@ -56,7 +57,7 @@
           namespace
         );
         let repr_shorten = namespace.get("repr_shorten");
-        banner = namespace.get("BANNER");
+        let banner = namespace.get("BANNER");
         namespace.destroy();
 
         let ps1 = ">>> ",
@@ -72,50 +73,45 @@
 
         async function interpreter(command) {
           let unlock = await lock();
-          try {
-            term.pause();
-            // multiline should be splitted (useful when pasting)
-            for (const c of command.split("\n")) {
-              let [ty, val] = convert_and_destroy(pyconsole.push(c));
-              term.set_prompt(ty === "incomplete" ? ps2 : ps1);
-              switch (ty) {
-                case "syntax-error":
-                  term.error(val.trimEnd());
-                  continue;
-                case "incomplete":
-                  continue;
-                case "valid":
-                  break;
-                default:
-                  throw new Error(`Unexpected type ${ty}`);
-              }
-              // Valid case
-              try {
-                [ty, res] = await val;
-                switch (ty) {
-                  case "exception":
-                    term.error(res.trimEnd());
-                    break;
-                  case "success":
-                    if (res !== undefined) {
-                      term.echo(repr_shorten(res));
-                    }
-                    break;
-                  default:
-                    throw new Error(`Unexpected type ${ty}`);
-                }
-              } finally {
-                if (pyodide.isPyProxy(res)) {
-                  res.destroy();
-                }
-                val.destroy();
-              }
+          term.pause();
+          // multiline should be splitted (useful when pasting)
+          for (const c of command.split("\n")) {
+            let [syntax_check, val] = convert_and_destroy(pyconsole.push(c));
+            term.set_prompt(syntax_check === "incomplete" ? ps2 : ps1);
+            switch (syntax_check) {
+              case "syntax-error":
+                term.error(val.trimEnd());
+                continue;
+              case "incomplete":
+                continue;
+              case "valid":
+                break;
+              default:
+                throw new Error(`Unexpected type ${ty}`);
             }
-          } finally {
-            term.resume();
-            await sleep(10);
-            unlock();
+            // Valid case.
+            // If execution triggers a fatal error "await val" will throw.
+            let [status, value] = await val;
+            switch (status) {
+              case "exception":
+                term.error(value.trimEnd());
+                break;
+              case "success":
+                if (value !== undefined) {
+                  term.echo(repr_shorten(value));
+                }
+                break;
+              default:
+                throw new Error(`Unexpected type ${ty}`);
+            }
+            if (pyodide.isPyProxy(value)) {
+              value.destroy();
+            }
+            val.destroy();
           }
+          term.resume();
+          await sleep(10);
+          unlock();
         }
 
         let term = $("body").terminal(interpreter, {

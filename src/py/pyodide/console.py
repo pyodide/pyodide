@@ -89,7 +89,7 @@ class _ReadStream:
         pass
 
 
-class MyCompile(Compile):
+class _CodeRunnerCompile(Compile):
     """Instances of this class behave much like the built-in compile
     function, but if one is used to compile text containing a future
     statement, it "remembers" and compiles all subsequent program texts
@@ -124,7 +124,7 @@ class MyCompile(Compile):
         return code_runner
 
 
-class MyCommandCompiler(CommandCompiler):
+class _CodeRunnerCommandCompiler(CommandCompiler):
     """Instances of this class have __call__ methods identical in
     signature to compile_command; the difference is that if the
     instance compiles program text containing a __future__ statement,
@@ -138,7 +138,7 @@ class MyCommandCompiler(CommandCompiler):
         quiet_trailing_semicolon=True,
         flags=0x0,
     ):
-        self.compiler = MyCompile(
+        self.compiler = _CodeRunnerCompile(
             return_mode=return_mode,
             quiet_trailing_semicolon=quiet_trailing_semicolon,
             flags=flags,
@@ -202,7 +202,7 @@ class InteractiveConsole:
             """ \t\n`~!@#$%^&*()-=+[{]}\\|;:'\",<>/?"""
         )
         self.output_truncated_text = "\\n[[;orange;]<long output truncated>]\\n"
-        self.compile = MyCommandCompiler(flags=ast.PyCF_ALLOW_TOP_LEVEL_AWAIT | PyCF_DONT_IMPLY_DEDENT)  # type: ignore
+        self.compile = _CodeRunnerCommandCompiler(flags=ast.PyCF_ALLOW_TOP_LEVEL_AWAIT | PyCF_DONT_IMPLY_DEDENT)  # type: ignore
 
     def persistent_redirect_streams(self):
         """Redirect stdin/stdout/stderr persistently"""
