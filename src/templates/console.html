@@ -1,21 +1,26 @@
-<!doctype html>
+<!DOCTYPE html>
 <html>
   <head>
-    <meta charset="UTF-8">
+    <meta charset="UTF-8" />
     <script src="https://cdn.jsdelivr.net/npm/jquery"></script>
     <script src="https://cdn.jsdelivr.net/npm/jquery.terminal@2.23.0/js/jquery.terminal.min.js"></script>
-    <link href="https://cdn.jsdelivr.net/npm/jquery.terminal@2.23.0/css/jquery.terminal.min.css" rel="stylesheet"/>
+    <link
+      href="https://cdn.jsdelivr.net/npm/jquery.terminal@2.23.0/css/jquery.terminal.min.css"
+      rel="stylesheet"
+    />
     <script src="{{ PYODIDE_BASE_URL }}pyodide.js"></script>
     <style>
-      .terminal { --size: 1.5; }
+      .terminal {
+        --size: 1.5;
+      }
     </style>
   </head>
   <body>
     <script>
-      function sleep(s){
-        return new Promise(resolve => setTimeout(resolve, s));
+      function sleep(s) {
+        return new Promise((resolve) => setTimeout(resolve, s));
       }
-      function convert_and_destroy(x){
+      function convert_and_destroy(x) {
         try {
           return x.toJs();
         } finally {
@@ -24,9 +29,12 @@
       }
 
       async function main() {
-        globalThis.pyodide = await loadPyodide({ indexURL : '{{ PYODIDE_BASE_URL }}' });
+        globalThis.pyodide = await loadPyodide({
+          indexURL: "{{ PYODIDE_BASE_URL }}",
+        });
         let namespace = pyodide.globals.get("dict")();
-        pyodide.runPython(`
+        pyodide.runPython(
+          `
             import sys
             import js
             from pyodide.console import InteractiveConsole, repr_shorten, BANNER
@@ -44,17 +52,20 @@
 
 
             js.pyconsole = PyConsole()
-        `, namespace);
+        `,
+          namespace
+        );
         let repr_shorten = namespace.get("repr_shorten");
         banner = namespace.get("BANNER");
         namespace.destroy();
 
-        let ps1 = '>>> ', ps2 = '... ';
+        let ps1 = ">>> ",
+          ps2 = "... ";
 
-        async function lock(){
+        async function lock() {
           let resolve;
           let ready = term.ready;
-          term.ready = new Promise(res => resolve = res);
+          term.ready = new Promise((res) => (resolve = res));
           await ready;
           return resolve;
         }
@@ -64,16 +75,16 @@
           try {
             term.pause();
             // multiline should be splitted (useful when pasting)
-            for( const c of command.split('\n') ) {
+            for (const c of command.split("\n")) {
               let [ty, val] = convert_and_destroy(pyconsole.push(c));
               term.set_prompt(ty === "incomplete" ? ps2 : ps1);
-              switch(ty){
-                case("syntax-error"):
+              switch (ty) {
+                case "syntax-error":
                   term.error(val.trimEnd());
                   continue;
-                case("incomplete"):
+                case "incomplete":
                   continue;
-                case("valid"):
+                case "valid":
                   break;
                 default:
                   throw new Error(`Unexpected type ${ty}`);
@@ -81,12 +92,12 @@
               // Valid case
               try {
                 [ty, res] = await val;
-                switch(ty){
-                  case("exception"):
+                switch (ty) {
+                  case "exception":
                     term.error(res.trimEnd());
                     break;
-                  case("success"):
-                    if(res !== undefined){
+                  case "success":
+                    if (res !== undefined) {
                       term.echo(repr_shorten(res));
                     }
                     break;
@@ -94,7 +105,7 @@
                     throw new Error(`Unexpected type ${ty}`);
                 }
               } finally {
-                if(pyodide.isPyProxy(res)){
+                if (pyodide.isPyProxy(res)) {
                   res.destroy();
                 }
                 val.destroy();
@@ -107,25 +118,24 @@
           }
         }
 
-        let term = $('body').terminal(
-          interpreter,
-          {
-            greetings: banner,
-            prompt: ps1,
-            completionEscape: false,
-            completion: function(command, callback) {
-              callback(pyconsole.complete(command).toJs()[0]);
-            }
-          }
-        );
+        let term = $("body").terminal(interpreter, {
+          greetings: banner,
+          prompt: ps1,
+          completionEscape: false,
+          completion: function (command, callback) {
+            callback(pyconsole.complete(command).toJs()[0]);
+          },
+        });
         window.term = term;
-        pyconsole.stdout_callback = s => term.echo(s, {newline : false});
-        pyconsole.stderr_callback = s => {
-            term.error(s.trimEnd());
+        pyconsole.stdout_callback = (s) => term.echo(s, { newline: false });
+        pyconsole.stderr_callback = (s) => {
+          term.error(s.trimEnd());
         };
         term.ready = Promise.resolve();
         pyodide._module.on_fatal = async (e) => {
-          term.error("Pyodide has suffered a fatal error. Please report this to the Pyodide maintainers.");
+          term.error(
+            "Pyodide has suffered a fatal error. Please report this to the Pyodide maintainers."
+          );
           term.error("The cause of the fatal error was:");
           term.error(e);
           term.error("Look in the browser console for more details.");

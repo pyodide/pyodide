@@ -183,6 +183,7 @@ def test_interactive_console(selenium, safe_selenium_sys_redirections):
             [status, fut] = res
             assert status == "valid"
             [status, value] = await fut
+            print(status, value)
             assert status == "success"
             assert value == x
         """
@@ -327,14 +328,14 @@ SyntaxError: invalid syntax]`
         await term.ready;
         result.push([term.get_output(),
 `>>> raise Exception('hi')
-[[;;;terminal-error]Traceback (most recent call last):]
-[[;;;terminal-error]  File "<console>", line 1, in <module>]
-[[;;;terminal-error]Exception: hi]`
+[[;;;terminal-error]Traceback (most recent call last):
+  File "<console>", line 1, in <module>
+Exception: hi]`
         ]);
 
         term.clear();
         term.exec("from _pyodide_core import trigger_fatal_error; trigger_fatal_error()");
-        await term.ready;
+        await sleep(100);
         result.push([term.get_output(),
 `>>> from _pyodide_core import trigger_fatal_error; trigger_fatal_error()
 [[;;;terminal-error]Pyodide has suffered a fatal error. Please report this to the Pyodide maintainers.]
@@ -343,7 +344,6 @@ SyntaxError: invalid syntax]`
 [[;;;terminal-error]Look in the browser console for more details.]`
         ]);
 
-        await sleep(30);
         assert(() => term.paused());
         return result;
         """

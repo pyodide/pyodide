@@ -314,7 +314,9 @@ class InteractiveConsole:
         sys.last_type, sys.last_value, last_tb = ei = sys.exc_info()
         sys.last_traceback = last_tb
         try:
-            return "".join(traceback.format_exception(ei[0], ei[1], last_tb.tb_next))
+            return "".join(
+                traceback.format_exception(ei[0], ei[1], last_tb.tb_next.tb_next)
+            )
         finally:
             last_tb = ei = None
 
