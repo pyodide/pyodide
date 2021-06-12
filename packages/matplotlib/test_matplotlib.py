@@ -2,6 +2,7 @@ import pytest
 
 
 @pytest.mark.skip_refcount_check
+@pytest.mark.skip_pyproxy_check
 def test_matplotlib(selenium_standalone):
     selenium = selenium_standalone
     selenium.load_package("matplotlib")
@@ -16,6 +17,7 @@ def test_matplotlib(selenium_standalone):
 
 
 @pytest.mark.skip_refcount_check
+@pytest.mark.skip_pyproxy_check
 def test_svg(selenium):
     selenium.load_package("matplotlib")
     selenium.run("from matplotlib import pyplot as plt")
@@ -29,6 +31,7 @@ def test_svg(selenium):
     assert content.startswith("<?xml")
 
 
+@pytest.mark.skip_pyproxy_check
 def test_pdf(selenium):
     selenium.load_package("matplotlib")
     selenium.run("from matplotlib import pyplot as plt")

@@ -196,7 +196,12 @@ def test_hiwire_is_promise(selenium):
 
     assert not selenium.run_js(
         """
-        return pyodide._module.hiwire.isPromise(pyodide.globals);
+        let d = pyodide.runPython("{}");
+        try {
+            return pyodide._module.hiwire.isPromise(d);
+        } finally {
+            d.destroy();
+        }
         """
     )
 
@@ -238,7 +243,6 @@ def test_run_python_async_toplevel_await(selenium):
     )
 
 
-@pytest.mark.trace_pyproxies
 def test_run_python_proxy_leak(selenium):
     selenium.run_js(
         """
@@ -424,6 +428,7 @@ def test_docstrings_b(selenium):
 
 
 @pytest.mark.skip_refcount_check
+@pytest.mark.skip_pyproxy_check
 def test_restore_state(selenium):
     selenium.run_js(
         """
@@ -510,3 +515,29 @@ def test_fatal_error(selenium_standalone):
         assert(() => pyodide._module.runPython("1+1") === 2);
         """
     )
+
+
+def test_reentrant_error(selenium):
+    caught = selenium.run_js(
+        """
+        function a(){
+            pyodide.globals.get("pyfunc")();
+        }
+        let caught = false;
+        try {
+            pyodide.runPython(`
+                def pyfunc():
+                    raise KeyboardInterrupt
+                from js import a
+                try:
+                    a()
+                except Exception as e:
+                    pass
+            `);
+        } catch(e){
+            caught = true;
+        }
+        return caught;
+        """
+    )
+    assert caught

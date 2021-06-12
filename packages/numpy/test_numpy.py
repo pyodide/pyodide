@@ -3,17 +3,24 @@ import pytest
 
 def test_numpy(selenium):
     selenium.load_package("numpy")
-    selenium.run("import numpy")
-    selenium.run("x = numpy.ones((32, 64))")
-    assert selenium.run_js("return pyodide.globals.get('x').toJs().length == 32")
+    selenium.run(
+        """
+        import numpy
+        x = numpy.ones((32, 64))
+        """
+    )
+    selenium.run_js(
+        """
+        let xpy = pyodide.runPython('x');
+        window.x = xpy.toJs();
+        xpy.destroy();
+        """
+    )
+    assert selenium.run_js("return x.length === 32")
     for i in range(32):
-        assert selenium.run_js(
-            f"return pyodide.globals.get('x').toJs()[{i}].length == 64"
-        )
+        assert selenium.run_js(f"return x[{i}].length == 64")
         for j in range(64):
-            assert selenium.run_js(
-                f"return pyodide.globals.get('x').toJs()[{i}][{j}] == 1"
-            )
+            assert selenium.run_js(f"return x[{i}][{j}] == 1")
 
 
 def test_typed_arrays(selenium):
@@ -30,7 +37,6 @@ def test_typed_arrays(selenium):
         ("Float32Array", "float32"),
         ("Float64Array", "float64"),
     ):
-        print(jstype, npytype)
         selenium.run_js(f"window.array = new {jstype}([1, 2, 3, 4]);\n")
         assert selenium.run(
             "from js import array\n"
@@ -40,6 +46,7 @@ def test_typed_arrays(selenium):
         )
 
 
+@pytest.mark.skip_pyproxy_check
 @pytest.mark.parametrize("order", ("C", "F"))
 @pytest.mark.parametrize(
     "dtype",
@@ -106,6 +113,7 @@ def test_python2js_numpy_dtype(selenium, order, dtype):
     assert selenium.run("np.array([True, False])") == [True, False]
 
 
+@pytest.mark.skip_pyproxy_check
 def test_py2js_buffer_clear_error_flag(selenium):
     selenium.load_package("numpy")
     selenium.run("import numpy as np")
@@ -119,6 +127,7 @@ def test_py2js_buffer_clear_error_flag(selenium):
     )
 
 
+@pytest.mark.skip_pyproxy_check
 @pytest.mark.parametrize(
     "dtype",
     (
@@ -146,8 +155,8 @@ def test_python2js_numpy_scalar(selenium, dtype):
     assert (
         selenium.run_js(
             """
-        return pyodide.globals.get('x') == 1
-        """
+            return pyodide.globals.get('x') == 1
+            """
         )
         is True
     )
@@ -166,6 +175,7 @@ def test_python2js_numpy_scalar(selenium, dtype):
     )
 
 
+@pytest.mark.skip_pyproxy_check
 def test_runpythonasync_numpy(selenium_standalone):
     selenium_standalone.run_async(
         """
@@ -194,6 +204,7 @@ def test_runwebworker_numpy(selenium_webworker_standalone):
     assert output == "[0. 0. 0. 0. 0.]"
 
 
+@pytest.mark.skip_pyproxy_check
 def test_get_buffer(selenium):
     selenium.run_js(
         """
@@ -224,6 +235,7 @@ def test_get_buffer(selenium):
     )
 
 
+@pytest.mark.skip_pyproxy_check
 @pytest.mark.parametrize(
     "arg",
     [
@@ -323,6 +335,11 @@ def test_get_buffer_error_messages(selenium):
                 import numpy as np
                 x = np.ones(2, dtype=np.float16)
             `);
-            pyodide.pyimport("x").getBuffer();
+            let x = pyodide.runPython("x");
+            try {
+                x.getBuffer();
+            } finally {
+                x.destroy();
+            }
             """
         )
