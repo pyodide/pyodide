@@ -34,7 +34,7 @@ try:
 except ImportError:
     pass
 
-__all__ = ["repr_shorten", "BANNER", "InteractiveConsole"]
+__all__ = ["repr_shorten", "BANNER", "Console", "PyodideConsole"]
 
 
 def _banner():
