@@ -32,10 +32,7 @@ from ._base import should_quiet, CodeRunner
 try:
     from pyodide_js import loadPackagesFromImports as _load_packages_from_imports
 except ImportError:
-
-    async def _load_packages_from_imports(*args):
-        pass
-
+    pass
 
 __all__ = ["repr_shorten", "BANNER", "InteractiveConsole"]
 
@@ -220,8 +217,6 @@ class InteractiveConsole:
         completer_word_break_characters : str
 
             The set of characters considered by :any:`complete <InteractiveConsole.complete>` to be word breaks.
-
-
     """
 
     def __init__(
@@ -346,7 +341,6 @@ class InteractiveConsole:
             * `("exception", message : str)` -- An exception occurred. `message` is the
             result of calling :any:`InteractiveConsole.formattraceback`.
         """
-        await _load_packages_from_imports(source)
         async with self._lock:
             with self.redirect_streams():
                 try:
@@ -443,6 +437,23 @@ class InteractiveConsole:
         else:
             completions = self._completer.global_matches(source)  # type: ignore
         return completions, start
+
+
+class PyodideInteractiveConsole(InteractiveConsole):
+    async def runcode(self, source: str, code: CodeRunner) -> "RunCodeResult":
+        """Execute a code object.
+
+        All exceptions are caught except SystemExit, which is reraised.
+
+        Returns
+        -------
+            The return value is a dependent sum type with the following possibilities:
+            * `("success", result : Any)` -- the code executed successfully
+            * `("exception", message : str)` -- An exception occurred. `message` is the
+            result of calling :any:`InteractiveConsole.formattraceback`.
+        """
+        await _load_packages_from_imports(source)
+        return await super().runcode(source, code)
 
 
 def repr_shorten(

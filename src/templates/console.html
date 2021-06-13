@@ -38,10 +38,10 @@
           `
             import sys
             import js
-            from pyodide.console import InteractiveConsole, repr_shorten, BANNER
+            from pyodide.console import PyodideInteractiveConsole, repr_shorten, BANNER
             import __main__
 
-            class PyConsole(InteractiveConsole):
+            class PyConsole(PyodideInteractiveConsole):
                 def __init__(self):
                     super().__init__(
                         __main__.__dict__,

@@ -1,4 +1,25 @@
 import pytest
+from pyodide_build.testing import run_in_pyodide
+from conftest import selenium_common
+
+
+@pytest.mark.skip_refcount_check
+@run_in_pyodide
+async def test_console_imports():
+    from pyodide.console import PyodideInteractiveConsole
+
+    shell = PyodideInteractiveConsole()
+
+    async def get_result(input):
+        res = shell.push(input)
+        [status, fut] = res
+        assert status == "complete"
+        [status, value] = await fut
+        assert status == "success"
+        return value
+
+    assert await get_result("import pytz") == None
+    assert await get_result("pytz.utc.zone") == "UTC"
 
 
 @pytest.fixture(params=["firefox", "chrome"], scope="function")
