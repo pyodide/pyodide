@@ -28,6 +28,15 @@ substitutions:
   (See {issue}`1614`).
   {pr}`1615`
 
+- {{ ENH }} Pyodide now ships with first party typescript types for the entire
+  Javascript API (though no typings are available for `PyProxy` fields).
+  {pr}`1601`
+
+-{{ ENH }} If a Python error occurs in a reentrant `runPython` call, the error
+  will be propagated into the outer `runPython` context as the original error
+  type. This is particularly important if the error is a `KeyboardInterrupt`.
+  {pr}`1447`
+
 ## Standard library
 
 - The following standard library modules are now available as standalone packages
@@ -36,6 +45,8 @@ substitutions:
   can be disabled with the `fullStdLib` parameter set to `false`.
   All optional stdlib modules can then be loaded as needed with
   {any}`pyodide.loadPackage`. {pr}`1543`
+- The standard library module `audioop` is now included, making the `wave`,
+  `sndhdr`, `aifc`, and `sunau` modules usable. {pr}`1623`
 
 ### Python / JS type conversions
 
@@ -47,6 +58,14 @@ substitutions:
   {pr}`1539`
 - {{ Enhancement }} Added the {any}`PyProxy.clone` method.
   {pr}`1549`
+- {{ API }} Updated the method resolution order on `PyProxy`. Performing a
+  lookup on a `PyProxy` will prefer to pick a method from the `PyProxy` api, if
+  no such method is found, it will use `getattr` on the proxied object.
+  Prefixing a name with `$` forces `getattr`. For instance, `PyProxy.destroy`
+  now always refers to the method that destroys the proxy, whereas
+  `PyProxy.$destroy` refers to an attribute or method called `destroy` on the
+  proxied object.
+  {pr}`1604`
 
 ### pyodide-build
 

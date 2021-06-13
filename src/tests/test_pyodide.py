@@ -516,3 +516,29 @@ def test_fatal_error(selenium_standalone):
         assert(() => pyodide._module.runPython("1+1") === 2);
         """
     )
+
+
+def test_reentrant_error(selenium):
+    caught = selenium.run_js(
+        """
+        function a(){
+            pyodide.globals.get("pyfunc")();
+        }
+        let caught = false;
+        try {
+            pyodide.runPython(`
+                def pyfunc():
+                    raise KeyboardInterrupt
+                from js import a
+                try:
+                    a()
+                except Exception as e:
+                    pass
+            `);
+        } catch(e){
+            caught = true;
+        }
+        return caught;
+        """
+    )
+    assert caught

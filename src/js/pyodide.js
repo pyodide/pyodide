@@ -1,11 +1,5 @@
-"use strict";
 /**
- * The main bootstrap script for loading pyodide.
- *
- * Everything exported in this file is documented as part of the global
- * namespace (as if it is available on `globalThis`). If a function should be
- * documented as `pyodide.blah` it needs to be defined in api.js (or in any
- * other file).
+ * The main bootstrap code for loading pyodide.
  */
 import { Module } from "./module";
 import {
@@ -15,6 +9,26 @@ import {
 } from "./load-pyodide";
 import { makePublicAPI, registerJsModule } from "./api";
 import "./pyproxy.gen";
+
+import { wrapNamespace } from "./pyproxy.gen";
+
+/**
+ * @typedef {import('./pyproxy.gen').PyProxy} PyProxy
+ * @typedef {import('./pyproxy.gen').PyProxyWithLength} PyProxyWithLength
+ * @typedef {import('./pyproxy.gen').PyProxyWithGet} PyProxyWithGet
+ * @typedef {import('./pyproxy.gen').PyProxyWithSet} PyProxyWithSet
+ * @typedef {import('./pyproxy.gen').PyProxyWithHas} PyProxyWithHas
+ * @typedef {import('./pyproxy.gen').PyProxyIterable} PyProxyIterable
+ * @typedef {import('./pyproxy.gen').PyProxyIterator} PyProxyIterator
+ * @typedef {import('./pyproxy.gen').PyProxyAwaitable} PyProxyAwaitable
+ * @typedef {import('./pyproxy.gen').PyProxyBuffer} PyProxyBuffer
+ * @typedef {import('./pyproxy.gen').PyProxyCallable} PyProxyCallable
+ *
+ * @typedef {import('./pyproxy.gen').Py2JsResult} Py2JsResult
+ *
+ * @typedef {import('./pyproxy.gen').TypedArray} TypedArray
+ * @typedef {import('./pyproxy.gen').PyBuffer} PyBuffer
+ */
 
 /**
  * Dump the Python traceback to the browser console.
@@ -155,8 +169,10 @@ function fixRecursionLimit() {
  * @param {string} config.indexURL - The URL from which Pyodide will load
  * packages
  * @param {boolean} config.fullStdLib - Load the full Python standard library.
- * Setting this to false excludes following modules: distutils. Default: true
+ * Setting this to false excludes following modules: distutils.
+ * Default: true
  * @returns The :ref:`js-api-pyodide` module.
+ * @memberof globalThis
  * @async
  */
 export async function loadPyodide(config) {
@@ -233,7 +249,7 @@ def temp(Module):
 
   // Wrap "globals" in a special Proxy that allows `pyodide.globals.x` access.
   // TODO: Should we have this?
-  Module.globals = Module.wrapNamespace(Module.globals);
+  Module.globals = wrapNamespace(Module.globals);
 
   fixRecursionLimit();
   let pyodide = makePublicAPI();

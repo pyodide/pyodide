@@ -117,7 +117,7 @@ class SeleniumWrapper:
         self.run_js("Error.stackTraceLimit = Infinity;", pyodide_checks=False)
         self.run_js(
             """
-            window.assert = function assert(cb, message=""){
+            window.assert = function(cb, message=""){
                 if(message !== ""){
                     message = "\\n" + message;
                 }
@@ -125,37 +125,55 @@ class SeleniumWrapper:
                     throw new Error(`Assertion failed: ${cb.toString().slice(6)}${message}`);
                 }
             };
-            window.assertThrows = function assert(cb, errname, pattern){
-                let pat_str = typeof pattern === "string" ? `"${pattern}"` : `${pattern}`;
-                let thiscallstr = `assertThrows(${cb.toString()}, "${errname}", ${pat_str})`;
+            window.assertAsync = async function(cb, message=""){
+                if(message !== ""){
+                    message = "\\n" + message;
+                }
+                if(await cb() !== true){
+                    throw new Error(`Assertion failed: ${cb.toString().slice(12)}${message}`);
+                }
+            };
+            function checkError(err, errname, pattern, pat_str, thiscallstr){
                 if(typeof pattern === "string"){
                     pattern = new RegExp(pattern);
                 }
-                let err = undefined;
-                try {
-                    cb();
-                } catch(e) {
-                    err = e;
-                }
-                console.log(err ? err.message : "no error");
                 if(!err){
-                    console.log("hi?");
                     throw new Error(`${thiscallstr} failed, no error thrown`);
                 }
                 if(err.constructor.name !== errname){
-                    console.log(err.toString());
                     throw new Error(
                         `${thiscallstr} failed, expected error ` +
                         `of type '${errname}' got type '${err.constructor.name}'`
                     );
                 }
                 if(!pattern.test(err.message)){
-                    console.log(err.toString());
                     throw new Error(
                         `${thiscallstr} failed, expected error ` +
                         `message to match pattern ${pat_str} got:\n${err.message}`
                     );
                 }
+            }
+            window.assertThrows = function(cb, errname, pattern){
+                let pat_str = typeof pattern === "string" ? `"${pattern}"` : `${pattern}`;
+                let thiscallstr = `assertThrows(${cb.toString()}, "${errname}", ${pat_str})`;
+                let err = undefined;
+                try {
+                    cb();
+                } catch(e) {
+                    err = e;
+                }
+                checkError(err, errname, pattern, pat_str, thiscallstr);
+            };
+            window.assertThrowsAsync = async function(cb, errname, pattern){
+                let pat_str = typeof pattern === "string" ? `"${pattern}"` : `${pattern}`;
+                let thiscallstr = `assertThrowsAsync(${cb.toString()}, "${errname}", ${pat_str})`;
+                let err = undefined;
+                try {
+                    await cb();
+                } catch(e) {
+                    err = e;
+                }
+                checkError(err, errname, pattern, pat_str, thiscallstr);
             };
             """,
             pyodide_checks=False,

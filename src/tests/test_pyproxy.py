@@ -2,7 +2,7 @@
 import pytest
 
 
-def test_pyproxy77(selenium):
+def test_pyproxy_class(selenium):
     selenium.run_js(
         """
         pyodide.runPython(`
@@ -405,9 +405,14 @@ def test_pyproxy_mixins2(selenium):
         assert(() => get_method.prototype === undefined);
         assert(() => !("length" in get_method));
         assert(() => !("name" in get_method));
+        get_method.destroy();
 
-        assert(() => d.get.type === "builtin_function_or_method");
+        let d = pyodide.runPython("{}");
+        let d_get = d.$get;
+        assert(() => d_get.type === "builtin_function_or_method");
+        assert(() => d.get.type === undefined);
         assert(() => d.set.type === undefined);
+        d_get.destroy();
         d.destroy();
         """
     )
@@ -463,7 +468,8 @@ def test_pyproxy_mixins4(selenium):
             from pyodide import to_js
             to_js([Test, Test()])
         `);
-        assert(() => Test.prototype === "prototype");
+        assert(() => Test.$prototype === "prototype");
+        assert(() => Test.prototype === undefined);
         assert(() => Test.name==="me");
         assert(() => Test.length === 7);
 
@@ -490,7 +496,7 @@ def test_pyproxy_mixins5(selenium):
         assert(() => !("length" in Test));
         assert(() => t.length === 9);
         t.length = 10;
-        assert(() => t.length === 10);
+        assert(() => t.$length === 10);
         let t__len__ = t.__len__;
         assert(() => t__len__() === 9);
         t__len__.destroy();
@@ -663,19 +669,6 @@ def test_pyproxy_copy(selenium):
 def test_errors(selenium):
     selenium.run_js(
         """
-        function expect_error(func){
-            let error = false;
-            try {
-                func();
-            } catch(e) {
-                if(e.name === "PythonError"){
-                    error = true;
-                }
-            }
-            if(!error){
-                throw new Error(`No PythonError ocurred: ${func.toString().slice(6)}`);
-            }
-        }
         let t = pyodide.runPython(`
             def te(self, *args, **kwargs):
                 raise Exception(repr(args))
@@ -695,20 +688,19 @@ def test_errors(selenium):
                 __repr__ = te
             Temp()
         `);
-        expect_error(() => t.x);
-        expect_error(() => t.x = 2);
-        expect_error(() => delete t.x);
-        expect_error(() => Object.getOwnPropertyNames(t));
-        expect_error(() => t());
-        expect_error(() => t.get(1));
-        expect_error(() => t.set(1, 2));
-        expect_error(() => t.delete(1));
-        expect_error(() => t.has(1));
-        expect_error(() => t.length);
-        expect_error(() => t.then(()=>{}));
-        expect_error(() => t.toString());
-        expect_error(() => Array.from(t));
-        expect_error(() => t.destroy());
+        assertThrows(() => t.x, "PythonError", "");
+        assertThrows(() => t.x = 2, "PythonError", "");
+        assertThrows(() => delete t.x, "PythonError", "");
+        assertThrows(() => Object.getOwnPropertyNames(t), "PythonError", "");
+        assertThrows(() => t(), "PythonError", "");
+        assertThrows(() => t.get(1), "PythonError", "");
+        assertThrows(() => t.set(1, 2), "PythonError", "");
+        assertThrows(() => t.delete(1), "PythonError", "");
+        assertThrows(() => t.has(1), "PythonError", "");
+        assertThrows(() => t.length, "PythonError", "");
+        assertThrowsAsync(async () => await t, "PythonError", "");
+        assertThrows(() => t.toString(), "PythonError", "");
+        assertThrows(() => Array.from(t), "PythonError", "");
         """
     )
 
@@ -719,65 +711,69 @@ def test_fatal_error(selenium_standalone):
     selenium_standalone.run_js(
         """
         let fatal_error = false;
+        let old_fatal_error = pyodide._module.fatal_error;
         pyodide._module.fatal_error = (e) => {
             fatal_error = true;
             throw e;
         }
-        function expect_fatal(func){
-            fatal_error = false;
-            try {
-                func();
-            } catch(e) {
-                // pass
-            } finally {
-                if(!fatal_error){
-                    throw new Error(`No fatal error occured: ${func.toString().slice(6)}`);
+        try {
+            function expect_fatal(func){
+                fatal_error = false;
+                try {
+                    func();
+                } catch(e) {
+                    // pass
+                } finally {
+                    if(!fatal_error){
+                        throw new Error(`No fatal error occured: ${func.toString().slice(6)}`);
+                    }
                 }
             }
+            let t = pyodide.runPython(`
+                from _pyodide_core import trigger_fatal_error
+                def tfe(*args, **kwargs):
+                    trigger_fatal_error()
+                class Temp:
+                    __getattr__ = tfe
+                    __setattr__ = tfe
+                    __delattr__ = tfe
+                    __dir__ = tfe
+                    __call__ = tfe
+                    __getitem__ = tfe
+                    __setitem__ = tfe
+                    __delitem__ = tfe
+                    __iter__ = tfe
+                    __len__ = tfe
+                    __contains__ = tfe
+                    __await__ = tfe
+                    __repr__ = tfe
+                    __del__ = tfe
+                Temp()
+            `);
+            expect_fatal(() => "x" in t);
+            expect_fatal(() => t.x);
+            expect_fatal(() => t.x = 2);
+            expect_fatal(() => delete t.x);
+            expect_fatal(() => Object.getOwnPropertyNames(t));
+            expect_fatal(() => t());
+            expect_fatal(() => t.get(1));
+            expect_fatal(() => t.set(1, 2));
+            expect_fatal(() => t.delete(1));
+            expect_fatal(() => t.has(1));
+            expect_fatal(() => t.length);
+            expect_fatal(() => t.toString());
+            expect_fatal(() => Array.from(t));
+            t.destroy();
+            a = pyodide.runPython(`
+                from array import array
+                array("I", [1,2,3,4])
+            `);
+            b = a.getBuffer();
+            b._view_ptr = 1e10;
+            expect_fatal(() => b.release());
+        } finally {
+            pyodide._module.fatal_error = old_fatal_error;
         }
-        let t = pyodide.runPython(`
-            from _pyodide_core import trigger_fatal_error
-            def tfe(*args, **kwargs):
-                trigger_fatal_error()
-            class Temp:
-                __getattr__ = tfe
-                __setattr__ = tfe
-                __delattr__ = tfe
-                __dir__ = tfe
-                __call__ = tfe
-                __getitem__ = tfe
-                __setitem__ = tfe
-                __delitem__ = tfe
-                __iter__ = tfe
-                __len__ = tfe
-                __contains__ = tfe
-                __await__ = tfe
-                __repr__ = tfe
-                __del__ = tfe
-            Temp()
-        `);
-        expect_fatal(() => "x" in t);
-        expect_fatal(() => t.x);
-        expect_fatal(() => t.x = 2);
-        expect_fatal(() => delete t.x);
-        expect_fatal(() => Object.getOwnPropertyNames(t));
-        expect_fatal(() => t());
-        expect_fatal(() => t.get(1));
-        expect_fatal(() => t.set(1, 2));
-        expect_fatal(() => t.delete(1));
-        expect_fatal(() => t.has(1));
-        expect_fatal(() => t.length);
-        expect_fatal(() => t.then(()=>{}));
-        expect_fatal(() => t.toString());
-        expect_fatal(() => Array.from(t));
-        expect_fatal(() => t.destroy());
-        a = pyodide.runPython(`
-            from array import array
-            array("I", [1,2,3,4])
-        `);
-        b = a.getBuffer();
-        b._view_ptr = 1e10;
-        expect_fatal(() => b.release());
         """
     )
 

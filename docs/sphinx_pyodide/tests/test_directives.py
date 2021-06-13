@@ -13,7 +13,7 @@ sys.path.append(str(test_directory.parent))
 
 # jsdoc_dump.json.gz is the source file for the test docs.
 # It can be updated as follows:
-# jsdoc -X ./src/js/ ./src/core/ | gzip > docs/sphinx_pyodide/tests/jsdoc_dump.json.gz
+# jsdoc -c ./docs/jsdoc_conf.json -X ./src/js/ ./src/core/ | gzip > docs/sphinx_pyodide/tests/jsdoc_dump.json.gz
 with gzip.open(test_directory / "jsdoc_dump.json.gz") as fh:
     jsdoc_json = json.load(fh)
 settings_json = json.loads((test_directory / "app_settings.json").read_text())
