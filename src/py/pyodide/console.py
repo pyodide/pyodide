@@ -28,12 +28,6 @@ from typing import (
 
 from ._base import should_quiet, CodeRunner
 
-# this import can fail when we are outside a browser (e.g. for tests)
-try:
-    from pyodide_js import loadPackagesFromImports as _load_packages_from_imports
-except ImportError:
-    pass
-
 __all__ = ["repr_shorten", "BANNER", "Console", "PyodideConsole"]
 
 
@@ -460,7 +454,9 @@ class PyodideConsole(Console):
             * `("exception", message : str)` -- An exception occurred. `message` is the
             result of calling :any:`Console.formattraceback`.
         """
-        await _load_packages_from_imports(source)
+        from pyodide_js import loadPackagesFromImports
+
+        await loadPackagesFromImports(source)
         return await super().runcode(source, code)
 
 
