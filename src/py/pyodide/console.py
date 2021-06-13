@@ -12,7 +12,17 @@ import rlcompleter
 import platform
 import sys
 import traceback
-from typing import Optional, Callable, Any, List, Tuple
+from typing import (
+    Optional,
+    Callable,
+    Any,
+    List,
+    Tuple,
+    Union,
+    Tuple,
+    Literal,
+    Awaitable,
+)
 
 
 from ._base import should_quiet, CodeRunner
@@ -41,7 +51,7 @@ except ImportError:
         pass
 
 
-__all__ = ["repr_shorten", "BANNER"]
+__all__ = ["repr_shorten", "BANNER", "InteractiveConsole"]
 
 
 def _banner():
@@ -148,31 +158,89 @@ class _CodeRunnerCommandCompiler(CommandCompiler):
         return super().__call__(source, filename, symbol)  # type: ignore
 
 
+RunCodeResult = Union[Tuple[Literal["exception"], str], Tuple[Literal["success"], Any]]
+RunSourceResult = Union[
+    Tuple[Literal["incomplete"], None],
+    Tuple[Literal["syntax-error"], str],
+    Tuple[Literal["complete"], Awaitable[RunCodeResult]],
+]
+
+INCOMPLETE: Literal["incomplete"] = "incomplete"
+SYNTAX_ERROR: Literal["syntax-error"] = "syntax-error"
+COMPLETE: Literal["complete"] = "complete"
+
+SUCCESS: Literal["success"] = "success"
+EXCEPTION: Literal["exception"] = "exception"
+
+
 class InteractiveConsole:
     """Interactive Pyodide console
 
-    Base implementation for an interactive console that manages
-    stdout/stderr redirection. Since packages are loaded before running
-    code, :any:`InteractiveConsole.runcode` returns a JS promise.
+    An interactive console based on the Python standard library
+    `code.InteractiveConsole` that manages stream redirections and asynchronous
+    execution of the code.
 
-    ``self.stdout_callback`` and ``self.stderr_callback`` can be overloaded.
+    The stream callbacks can be modified directly as long as
+    `persistent_stream_redirection` isn't in effect.
 
     Parameters
     ----------
-    locals
-        Namespace to evaluate code.
-    stdout_callback
-        Function to call at each ``sys.stdout`` flush.
-    stderr_callback
-        Function to call at each ``sys.stderr`` flush.
-    persistent_stream_redirection
-        Whether or not the std redirection should be kept between calls to
-        ``runcode``.
+    globals : ``dict``
+
+        The global namespace in which to evaluate the code. Defaults to a new empty dictionary.
+
+    stdout_callback : Callable[[str], None] Function to call at each write to
+        ``sys.stdout``. Defaults to ``None``.
+
+    stderr_callback : Callable[[str], None]
+
+        Function to call at each write to ``sys.stderr``. Defaults to ``None``.
+
+    stdin_callback : Callable[[str], None]
+
+        Function to call at each read from ``sys.stdin``. Defaults to ``None``.
+
+    persistent_stream_redirection : bool
+
+        Should redirection of standard streams be kept between calls to ``runcode``?
+        Defaults to ``False``.
+
+    filename : str
+
+        The file name to report in error messages. Defaults to ``<console>``.
+
+    Attributes
+    ----------
+        globals : Dict[str, Any]
+
+            The namespace used as the global
+
+        stdout_callback : Callback[[str], None]
+
+            Function to call at each write to ``sys.stdout``.
+
+        stderr_callback : Callback[[str], None]
+
+            Function to call at each write to ``sys.stderr``.
+
+        stdin_callback : Callback[[str], None]
+
+            Function to call at each read from ``sys.stdin``.
+
+        buffer : List[str]
+
+            The list of strings that have been :any:`pushed <InteractiveConsole.push>` to the console.
+
+        completer_word_break_characters : str
+
+            The set of characters considered by :any:`complete <InteractiveConsole.complete>` to be word breaks.
+
+
     """
 
     def __init__(
         self,
-        locals: Optional[dict] = None,
+        globals: Optional[dict] = None,
         *,
         stdout_callback: Optional[Callable[[str], None]] = None,
         stderr_callback: Optional[Callable[[str], None]] = None,
@@ -180,29 +248,28 @@ class InteractiveConsole:
         persistent_stream_redirection: bool = False,
         filename: str = "<console>",
     ):
-        if locals is None:
-            locals = {"__name__": "__console__", "__doc__": None}
-        self.locals = locals
+        if globals is None:
+            globals = {"__name__": "__console__", "__doc__": None}
+        self.globals = globals
         self._stdout = None
         self._stderr = None
         self.stdout_callback = stdout_callback
         self.stderr_callback = stderr_callback
         self.stdin_callback = stdin_callback
         self.filename = filename
-        self.resetbuffer()
+        self.buffer: List[str] = []
         self._lock = asyncio.Lock()
         self._streams_redirected = False
         self._stream_generator = None  # track persistent stream redirection
         if persistent_stream_redirection:
             self.persistent_redirect_streams()
-        self._completer = rlcompleter.Completer(self.locals)  # type: ignore
+        self._completer = rlcompleter.Completer(self.globals)  # type: ignore
         # all nonalphanums except '.'
         # see https://github.com/python/cpython/blob/a4258e8cd776ba655cc54ba54eaeffeddb0a267c/Modules/readline.c#L1211
         self.completer_word_break_characters = (
             """ \t\n`~!@#$%^&*()-=+[{]}\\|;:'\",<>/?"""
         )
-        self.output_truncated_text = "\\n[[;orange;]<long output truncated>]\\n"
-        self.compile = _CodeRunnerCommandCompiler(flags=ast.PyCF_ALLOW_TOP_LEVEL_AWAIT | PyCF_DONT_IMPLY_DEDENT)  # type: ignore
+        self._compile = _CodeRunnerCommandCompiler(flags=ast.PyCF_ALLOW_TOP_LEVEL_AWAIT | PyCF_DONT_IMPLY_DEDENT)  # type: ignore
 
     def persistent_redirect_streams(self):
         """Redirect stdin/stdout/stderr persistently"""
@@ -256,111 +323,125 @@ class InteractiveConsole:
         finally:
             self._streams_redirected = False
 
-    def flush_all(self):
-        """Force stdout/stderr flush."""
-        with self.redirect_streams():
-            sys.stdout.flush()
-            sys.stderr.flush()
+    def runsource(
+        self, source: str, filename: str = "<input>", symbol: str = "single"
+    ) -> RunSourceResult:
+        """Compile and run source code in the interpreter.
 
-    def runsource(self, source: str, filename: str = "<input>", symbol: str = "single"):
-        """Compile and run some source in the interpreter."""
+        Returns
+        -------
+            The return value is a dependent sum type with the following possibilities:
+            * ``("incomplete", None)`` -- the source string is incomplete.
+            * ``("syntax_error", message : str)`` -- the source had a syntax error.
+              ``message` is the formatted error message as returned by :any:`InteractiveConsole.formatsyntaxerror`.
+            * ``("complete", future : Future[RunCodeResult])`` -- The source was complete and
+              is being run. The ``Future`` will be resolved with the result of :any:`InteractiveConsole.runcode` when
+              it is finished running.
+        """
         try:
-            code = self.compile(source, filename, symbol)
+            code = self._compile(source, filename, symbol)
         except (OverflowError, SyntaxError, ValueError):
             # Case 1
-            return ["syntax-error", self.formatsyntaxerror(filename)]
+            return (SYNTAX_ERROR, self.formatsyntaxerror())
 
         if code is None:
             # Case 2
-            return ["incomplete", None]
+            return (INCOMPLETE, None)
 
-        return ["valid", ensure_future(self.runcode(source, code))]
+        return (COMPLETE, ensure_future(self.runcode(source, code)))
 
-    async def runcode(self, source: str, code: CodeRunner):
+    async def runcode(self, source: str, code: CodeRunner) -> "RunCodeResult":
         """Execute a code object.
 
-        When an exception occurs, self.showtraceback() is called to
-        display a traceback.  All exceptions are caught except
-        SystemExit, which is reraised.
+        All exceptions are caught except SystemExit, which is reraised.
 
-        A note about KeyboardInterrupt: this exception may occur
-        elsewhere in this code, and may not always be caught.  The
-        caller should be prepared to deal with it.
+        Returns
+        -------
+            The return value is a dependent sum type with the following possibilities:
+            * `("success", result : Any)` -- the code executed successfully
+            * `("exception", message : str)` -- An exception occurred. `message` is the
+            result of calling :any:`InteractiveConsole.formattraceback`.
         """
         await _load_packages_from_imports(source)
         async with self._lock:
             with self.redirect_streams():
                 try:
-                    return ["success", await code.run_async(self.locals)]
-                except BaseException:
-                    return ["exception", self.formattraceback()]
+                    return (SUCCESS, await code.run_async(self.globals))
+                except SystemExit:
+                    raise
+                except (Exception, KeyboardInterrupt):
+                    return (EXCEPTION, self.formattraceback())
                 finally:
                     sys.stdout.flush()
                     sys.stderr.flush()
 
-    def formatsyntaxerror(self, filename=None):
-        """Display the syntax error that just occurred.
+    def formatsyntaxerror(self) -> str:
+        """Format the syntax error that just occurred.
 
-        This doesn't display a stack trace because there isn't one.
+        This doesn't include a stack trace because there isn't one. The actual
+        error object is stored into `sys.last_value`.
         """
         type, value, tb = sys.exc_info()
         sys.last_type = type
         sys.last_value = value
         sys.last_traceback = tb
-        return "".join(traceback.format_exception_only(type, value))
-
-    def formattraceback(self):
-        """Display the exception that just occurred."""
-        sys.last_type, sys.last_value, last_tb = ei = sys.exc_info()
-        sys.last_traceback = last_tb
         try:
-            return "".join(
-                traceback.format_exception(ei[0], ei[1], last_tb.tb_next.tb_next)
-            )
+            return "".join(traceback.format_exception_only(type, value))
         finally:
-            last_tb = ei = None
+            type = value = tb = None
 
-    def resetbuffer(self):
-        """Reset the input buffer."""
-        self.buffer = []
+    def formattraceback(self) -> str:
+        """Format the exception that just occurred.
 
-    def push(self, line: str):
+        The actual error object is stored into `sys.last_value`.
+        """
+        type, value, tb = sys.exc_info()
+        sys.last_type = type
+        sys.last_value = value
+        sys.last_traceback = tb
+        trunc_tb = tb.tb_next.tb_next  # type: ignore
+        try:
+            return "".join(traceback.format_exception(type, value, trunc_tb))
+        finally:
+            type = value = tb = trunc_tb = None
+
+    def push(self, line: str) -> "RunSourceResult":
         """Push a line to the interpreter.
 
-        The line should not have a trailing newline; it may have
-        internal newlines.  The line is appended to a buffer and the
-        interpreter's runsource() method is called with the
-        concatenated contents of the buffer as source.  If this
-        indicates that the command was executed or invalid, the buffer
-        is reset; otherwise, the command is incomplete, and the buffer
-        is left as it was after the line was appended.  The return
-        value is 1 if more input is required, 0 if the line was dealt
-        with in some way (this is the same as runsource()).
+        The line should not have a trailing newline; it may have internal
+        newlines.  The line is appended to a buffer and the interpreter's
+        runsource() method is called with the concatenated contents of the
+        buffer as source.  If this indicates that the command was executed or
+        invalid, the buffer is reset; otherwise, the command is incomplete, and
+        the buffer is left as it was after the line was appended.
 
+        The return value is the result of calling :any:`InteractiveConsole.runsource` on the current buffer
+        contents.
         """
         self.buffer.append(line)
         source = "\n".join(self.buffer)
         result = self.runsource(source, self.filename)
         if result[0] != "incomplete":
-            self.resetbuffer()
+            self.buffer = []
         return result
 
     def complete(self, source: str) -> Tuple[List[str], int]:
-        """Use CPython's rlcompleter to complete a source from local namespace.
+        """Use Python's rlcompleter to complete the source string using the :any:`globals <InteractiveConsole.globals>` namespace.
 
-        You can use ``completer_word_break_characters`` to get/set the
-        way ``source`` is splitted to find the last part to be completed.
+        Finds last "word" in the source string and completes it with rlcompleter. Word
+        breaks are determined by the set of characters in
+        :any:`completer_word_break_characters <InteractiveConsole.completer_word_break_characters>`.
 
         Parameters
         ----------
-        source
+        source : str
             The source string to complete at the end.
 
         Returns
         -------
-        completions
+        completions : List[str]
             A list of completion strings.
-        start
+        start : int
             The index where completion starts.
 
         Examples
@@ -379,15 +460,10 @@ class InteractiveConsole:
             completions = self._completer.global_matches(source)  # type: ignore
         return completions, start
 
-    def display(self, value):
-        if value is None:
-            return
-        print(repr_shorten(value, separator=self.output_truncated_text))
-
 
 def repr_shorten(
     value: Any, limit: int = 1000, split: Optional[int] = None, separator: str = "..."
-):
+) -> str:
     """Compute the string representation of ``value`` and shorten it
     if necessary.
 

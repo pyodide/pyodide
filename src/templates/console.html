@@ -84,21 +84,21 @@
                 continue;
               case "incomplete":
                 continue;
-              case "valid":
+              case "complete":
                 break;
               default:
                 throw new Error(`Unexpected type ${ty}`);
             }
             // Valid case.
             // If execution triggers a fatal error "await val" will throw.
-            let [status, value] = await val;
+            let [status, value] = convert_and_destroy(await val);
             switch (status) {
               case "exception":
                 term.error(value.trimEnd());
                 break;
               case "success":
                 if (value !== undefined) {
-                  term.echo(repr_shorten(value));
+                  term.echo(repr_shorten.callKwargs(value, { separator : "\\n[[;orange;]<long output truncated>]\\n"}));
                 }
                 break;
               default:
