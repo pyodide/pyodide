@@ -152,3 +152,4 @@ def delete_attrs(cls):
 
 delete_attrs(pyodide.webloop.WebLoop)
 delete_attrs(pyodide.webloop.WebLoopPolicy)
+delete_attrs(pyodide.console.PyodideConsole)

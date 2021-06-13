@@ -185,7 +185,7 @@ class Console:
 
     persistent_stream_redirection : bool
 
-        Should redirection of standard streams be kept between calls to ``runcode``?
+        Should redirection of standard streams be kept between calls to :any:`runcode <Console.runcode>`?
         Defaults to ``False``.
 
     filename : str
@@ -309,13 +309,17 @@ class Console:
 
         Returns
         -------
-            The return value is a dependent sum type with the following possibilities:
-            * ``("incomplete", None)`` -- the source string is incomplete.
-            * ``("syntax-error", message : str)`` -- the source had a syntax error.
-              ``message` is the formatted error message as returned by :any:`Console.formatsyntaxerror`.
-            * ``("complete", future : Future[RunCodeResult])`` -- The source was complete and
-              is being run. The ``Future`` will be resolved with the result of :any:`Console.runcode` when
-              it is finished running.
+            ``("incomplete", None)``
+                The source string is incomplete.
+
+            ``("syntax-error", message ꞉ str)``
+                The source had a syntax error. ``message` is the formatted error
+                message as returned by :any:`Console.formatsyntaxerror`.
+
+            ``("complete", future ꞉ Future[RunCodeResult])``
+                The source was complete and is being run. The ``Future`` will be
+                resolved with the result of :any:`Console.runcode` when it is finished
+                running.
         """
         try:
             code = self._compile(source, filename, "single")
@@ -336,10 +340,12 @@ class Console:
 
         Returns
         -------
-            The return value is a dependent sum type with the following possibilities:
-            * `("success", result : Any)` -- the code executed successfully
-            * `("exception", message : str)` -- An exception occurred. `message` is the
-            result of calling :any:`Console.formattraceback`.
+            ``("success", result ꞉ Any)``
+                The code executed successfully and returned ``result``.
+
+            ``("exception", message ꞉ str)``
+                An exception occurred. `message` is the result of calling
+                :any:`Console.formattraceback`.
         """
         async with self._lock:
             with self.redirect_streams():
@@ -440,6 +446,8 @@ class Console:
 
 
 class PyodideConsole(Console):
+    """A subclass of :any:`Console` that uses :any:`pyodide.loadPackagesFromImports` before running the code."""
+
     async def runcode(self, source: str, code: CodeRunner) -> "RunCodeResult":
         """Execute a code object.
 
