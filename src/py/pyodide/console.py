@@ -1,5 +1,6 @@
 import ast
 import asyncio
+from asyncio import ensure_future
 from codeop import Compile, CommandCompiler, _features, PyCF_DONT_IMPLY_DEDENT  # type: ignore
 from contextlib import (
     contextmanager,
@@ -30,22 +31,7 @@ from ._base import should_quiet, CodeRunner
 # this import can fail when we are outside a browser (e.g. for tests)
 try:
     from pyodide_js import loadPackagesFromImports as _load_packages_from_imports
-    from asyncio import ensure_future
 except ImportError:
-    from asyncio import Future
-
-    def ensure_future(co):  # type: ignore
-        fut = Future()
-        try:
-            co.send(None)
-        except StopIteration as v:
-            result = v.args[0] if v.args else None
-            fut.set_result(result)
-        except BaseException as e:
-            fut.set_exception(e)
-        else:
-            raise Exception("coroutine didn't finish in one pass")
-        return fut
 
     async def _load_packages_from_imports(*args):
         pass
@@ -330,7 +316,7 @@ class InteractiveConsole:
         -------
             The return value is a dependent sum type with the following possibilities:
             * ``("incomplete", None)`` -- the source string is incomplete.
-            * ``("syntax_error", message : str)`` -- the source had a syntax error.
+            * ``("syntax-error", message : str)`` -- the source had a syntax error.
               ``message` is the formatted error message as returned by :any:`InteractiveConsole.formatsyntaxerror`.
             * ``("complete", future : Future[RunCodeResult])`` -- The source was complete and
               is being run. The ``Future`` will be resolved with the result of :any:`InteractiveConsole.runcode` when
