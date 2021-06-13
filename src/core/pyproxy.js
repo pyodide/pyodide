@@ -347,7 +347,7 @@ class PyProxyClass {
    * Useful if the PyProxy is destroyed somewhere else.
    * @returns {PyProxy}
    */
-  clone() {
+  copy() {
     let ptrobj = _getPtr(this);
     return Module.pyproxy_new(ptrobj, this.$$.cache);
   }
