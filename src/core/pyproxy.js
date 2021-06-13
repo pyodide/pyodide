@@ -200,7 +200,7 @@ Module.pyproxy_mark_borrowed = function (proxy) {
 
 const pyproxy_cache_destroyed_msg =
   "This borrowed attribute proxy was automatically destroyed in the " +
-  "process of destroying the proxy it was borrowed from. Try using the `clone` method.";
+  "process of destroying the proxy it was borrowed from. Try using the 'copy' method.";
 
 function pyproxy_destroy_cache(cache) {
   if (!cache) {
