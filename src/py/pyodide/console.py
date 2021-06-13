@@ -154,7 +154,7 @@ class _CodeRunnerCommandCompiler(CommandCompiler):
             flags=flags,
         )
 
-    def __call__(self, source, filename="<input>", symbol="single") -> CodeRunner:  # type: ignore
+    def __call__(self, source, filename="<console>", symbol="single") -> CodeRunner:  # type: ignore
         return super().__call__(source, filename, symbol)  # type: ignore
 
 
@@ -323,9 +323,7 @@ class InteractiveConsole:
         finally:
             self._streams_redirected = False
 
-    def runsource(
-        self, source: str, filename: str = "<input>", symbol: str = "single"
-    ) -> RunSourceResult:
+    def runsource(self, source: str, filename: str = "<console>") -> RunSourceResult:
         """Compile and run source code in the interpreter.
 
         Returns
@@ -339,7 +337,7 @@ class InteractiveConsole:
               it is finished running.
         """
         try:
-            code = self._compile(source, filename, symbol)
+            code = self._compile(source, filename, "single")
         except (OverflowError, SyntaxError, ValueError):
             # Case 1
             return (SYNTAX_ERROR, self.formatsyntaxerror())
