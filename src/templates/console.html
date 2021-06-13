@@ -38,21 +38,10 @@
           `
             import sys
             import js
-            from pyodide.console import PyodideInteractiveConsole, repr_shorten, BANNER
+            from pyodide.console import PyodideConsole, repr_shorten, BANNER
             import __main__
-
-            class PyConsole(PyodideInteractiveConsole):
-                def __init__(self):
-                    super().__init__(
-                        __main__.__dict__,
-                        persistent_stream_redirection=False,
-                    )
-
-
             BANNER = "Welcome to the Pyodide terminal emulator 🐍\\n" + BANNER
-
-
-            js.pyconsole = PyConsole()
+            js.pyconsole = PyodideConsole(__main__.__dict__)
         `,
           namespace
         );

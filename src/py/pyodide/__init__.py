@@ -1,5 +1,6 @@
 from ._base import open_url, eval_code, eval_code_async, find_imports, CodeRunner
 from ._core import JsProxy, JsException, create_once_callable, create_proxy, to_js  # type: ignore
+from . import console
 from ._importhooks import jsfinder
 from .webloop import WebLoopPolicy
 from . import _state  # type: ignore # noqa
@@ -30,4 +31,5 @@ __all__ = [
     "unregister_js_module",
     "create_once_callable",
     "create_proxy",
+    "console",
 ]

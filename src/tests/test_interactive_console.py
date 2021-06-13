@@ -1,3 +1,4 @@
+import asyncio
 import pytest
 from pathlib import Path
 import sys
@@ -5,6 +6,7 @@ import sys
 sys.path.append(str(Path(__file__).resolve().parents[2] / "src" / "py"))
 
 from pyodide import console  # noqa: E402
+from pyodide.console import Console
 
 
 def test_write_stream():
@@ -32,9 +34,7 @@ def test_repr():
 
 
 def test_completion():
-    from pyodide import console
-
-    shell = console.InteractiveConsole({"a_variable": 7})
+    shell = Console({"a_variable": 7})
     shell.complete("a") == (
         [
             "and ",
@@ -62,9 +62,7 @@ def test_completion():
 
 
 def test_interactive_console():
-    from pyodide.console import InteractiveConsole
-
-    shell = InteractiveConsole()
+    shell = Console()
 
     def assert_incomplete(input):
         res = shell.push(input)
@@ -113,17 +111,14 @@ def test_interactive_console():
             'Traceback (most recent call last):\n  File "<console>", line 1, in <module>\nException: hi\n',
         )
 
-    import asyncio
-
     asyncio.get_event_loop().run_until_complete(test())
 
 
 def test_top_level_await():
     from asyncio import Queue, sleep, get_event_loop
-    from pyodide.console import InteractiveConsole
 
     q = Queue()
-    shell = InteractiveConsole(locals())
+    shell = Console(locals())
     (_, fut) = shell.push("await q.get()")
 
     async def test():
@@ -158,7 +153,7 @@ def test_persistent_redirection(safe_sys_redirections):
         nonlocal my_stderr
         my_stderr += string
 
-    shell = console.InteractiveConsole(
+    shell = Console(
         stdout_callback=stdout_callback,
         stderr_callback=stderr_callback,
         persistent_stream_redirection=True,
@@ -192,8 +187,6 @@ def test_persistent_redirection(safe_sys_redirections):
 
         assert await get_result("1+1") == 2
         assert my_stdout == "foo\nfoobar\nfoobar\n"
-
-    import asyncio
 
     asyncio.get_event_loop().run_until_complete(test())
 
@@ -230,7 +223,7 @@ def test_nonpersistent_redirection(safe_sys_redirections):
         assert status == "success"
         return value
 
-    shell = console.InteractiveConsole(
+    shell = Console(
         stdout_callback=stdout_callback,
         stderr_callback=stderr_callback,
         persistent_stream_redirection=False,
@@ -254,7 +247,5 @@ def test_nonpersistent_redirection(safe_sys_redirections):
         assert my_stderr == "foobar\n"
 
         assert await get_result("1+1") == 2
-
-    import asyncio
 
     asyncio.get_event_loop().run_until_complete(test())

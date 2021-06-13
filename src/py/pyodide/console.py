@@ -156,7 +156,7 @@ SUCCESS: Literal["success"] = "success"
 EXCEPTION: Literal["exception"] = "exception"
 
 
-class InteractiveConsole:
+class Console:
     """Interactive Pyodide console
 
     An interactive console based on the Python standard library
@@ -212,11 +212,11 @@ class InteractiveConsole:
 
         buffer : List[str]
 
-            The list of strings that have been :any:`pushed <InteractiveConsole.push>` to the console.
+            The list of strings that have been :any:`pushed <Console.push>` to the console.
 
         completer_word_break_characters : str
 
-            The set of characters considered by :any:`complete <InteractiveConsole.complete>` to be word breaks.
+            The set of characters considered by :any:`complete <Console.complete>` to be word breaks.
     """
 
     def __init__(
@@ -312,9 +312,9 @@ class InteractiveConsole:
             The return value is a dependent sum type with the following possibilities:
             * ``("incomplete", None)`` -- the source string is incomplete.
             * ``("syntax-error", message : str)`` -- the source had a syntax error.
-              ``message` is the formatted error message as returned by :any:`InteractiveConsole.formatsyntaxerror`.
+              ``message` is the formatted error message as returned by :any:`Console.formatsyntaxerror`.
             * ``("complete", future : Future[RunCodeResult])`` -- The source was complete and
-              is being run. The ``Future`` will be resolved with the result of :any:`InteractiveConsole.runcode` when
+              is being run. The ``Future`` will be resolved with the result of :any:`Console.runcode` when
               it is finished running.
         """
         try:
@@ -339,7 +339,7 @@ class InteractiveConsole:
             The return value is a dependent sum type with the following possibilities:
             * `("success", result : Any)` -- the code executed successfully
             * `("exception", message : str)` -- An exception occurred. `message` is the
-            result of calling :any:`InteractiveConsole.formattraceback`.
+            result of calling :any:`Console.formattraceback`.
         """
         async with self._lock:
             with self.redirect_streams():
@@ -393,7 +393,7 @@ class InteractiveConsole:
         invalid, the buffer is reset; otherwise, the command is incomplete, and
         the buffer is left as it was after the line was appended.
 
-        The return value is the result of calling :any:`InteractiveConsole.runsource` on the current buffer
+        The return value is the result of calling :any:`Console.runsource` on the current buffer
         contents.
         """
         self.buffer.append(line)
@@ -404,11 +404,11 @@ class InteractiveConsole:
         return result
 
     def complete(self, source: str) -> Tuple[List[str], int]:
-        """Use Python's rlcompleter to complete the source string using the :any:`globals <InteractiveConsole.globals>` namespace.
+        """Use Python's rlcompleter to complete the source string using the :any:`globals <Console.globals>` namespace.
 
         Finds last "word" in the source string and completes it with rlcompleter. Word
         breaks are determined by the set of characters in
-        :any:`completer_word_break_characters <InteractiveConsole.completer_word_break_characters>`.
+        :any:`completer_word_break_characters <Console.completer_word_break_characters>`.
 
         Parameters
         ----------
@@ -424,7 +424,7 @@ class InteractiveConsole:
 
         Examples
         --------
-        >>> shell = InteractiveConsole()
+        >>> shell = Console()
         >>> shell.complete("str.isa")
         (['str.isalnum(', 'str.isalpha(', 'str.isascii('], 0)
         >>> shell.complete("a = 5 ; str.isa")
@@ -439,7 +439,7 @@ class InteractiveConsole:
         return completions, start
 
 
-class PyodideInteractiveConsole(InteractiveConsole):
+class PyodideConsole(Console):
     async def runcode(self, source: str, code: CodeRunner) -> "RunCodeResult":
         """Execute a code object.
 
@@ -450,7 +450,7 @@ class PyodideInteractiveConsole(InteractiveConsole):
             The return value is a dependent sum type with the following possibilities:
             * `("success", result : Any)` -- the code executed successfully
             * `("exception", message : str)` -- An exception occurred. `message` is the
-            result of calling :any:`InteractiveConsole.formattraceback`.
+            result of calling :any:`Console.formattraceback`.
         """
         await _load_packages_from_imports(source)
         return await super().runcode(source, code)

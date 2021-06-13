@@ -32,10 +32,17 @@ substitutions:
   Javascript API (though no typings are available for `PyProxy` fields).
   {pr}`1601`
 
--{{ ENH }} If a Python error occurs in a reentrant `runPython` call, the error
+- {{ ENH }} If a Python error occurs in a reentrant `runPython` call, the error
   will be propagated into the outer `runPython` context as the original error
   type. This is particularly important if the error is a `KeyboardInterrupt`.
   {pr}`1447`
+
+- {{ ENH }} Added {any}`Console` class closely based on the Python standard
+  library `code.InteractiveConsole` but with support for top level await and
+  stream redirection. Also added the subclass {any}`PyodideConsole` which
+  automatically uses {any}`loadPackagesFromImports` on the code before running
+  it.
+  {pr}`1125`, {pr}`1155`, {pr}`1635`
 
 ## Standard library
 

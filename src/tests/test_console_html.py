@@ -6,9 +6,9 @@ from conftest import selenium_common
 @pytest.mark.skip_refcount_check
 @run_in_pyodide
 async def test_console_imports():
-    from pyodide.console import PyodideInteractiveConsole
+    from pyodide.console import PyodideConsole
 
-    shell = PyodideInteractiveConsole()
+    shell = PyodideConsole()
 
     async def get_result(input):
         res = shell.push(input)
