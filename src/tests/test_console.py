@@ -64,23 +64,23 @@ def test_persistent_redirection(safe_sys_redirections):
     assert my_stderr == "bar\n"
 
     [state, res] = shell.push("print('foobar')")
-    assert state == "valid"
+    assert state == "complete"
     assert res.result() == ["success", None]
     assert my_stdout == "foo\nfoobar\n"
 
     [state, res] = shell.push("print('foobar')")
-    assert state == "valid"
+    assert state == "complete"
     assert res.result() == ["success", None]
     assert my_stdout == "foo\nfoobar\nfoobar\n"
 
     [state, res] = shell.push("1+1")
-    assert state == "valid"
+    assert state == "complete"
     assert res.result() == ["success", 2]
     assert my_stdout == "foo\nfoobar\nfoobar\n"
 
     my_stderr = ""
     [state, res] = shell.push("raise Exception('hi')")
-    assert state == "valid"
+    assert state == "complete"
     # assert res.result() == ["exception", 'Traceback (most recent call last):\n  File "<console>", line 1, in <module>\nException: hi\n']
     # assert shell.run_complete.exception() is not None
     my_stderr = ""
@@ -131,7 +131,7 @@ def test_nonpersistent_redirection(safe_sys_redirections):
     assert my_stderr == "foobar\n"
 
     [state, res] = shell.push("1+1")
-    assert state == "valid"
+    assert state == "complete"
     assert res.result() == ["success", 2]
 
 
@@ -181,7 +181,7 @@ def test_interactive_console(selenium, safe_selenium_sys_redirections):
 
         async def assert_result(res, x):
             [status, fut] = res
-            assert status == "valid"
+            assert status == "complete"
             [status, value] = await fut
             print(status, value)
             assert status == "success"
