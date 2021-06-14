@@ -396,23 +396,20 @@ def test_pyproxy_mixins2(selenium):
     selenium.run_js(
         """
         let d = pyodide.runPython("{}");
+
         assert(() => !("prototype" in d));
         assert(() => !("caller" in d));
         assert(() => !("name" in d));
         assert(() => "length" in d);
-        let get_method = d.__getitem__;
-        assert(() => "prototype" in get_method);
-        assert(() => get_method.prototype === undefined);
-        assert(() => !("length" in get_method));
-        assert(() => !("name" in get_method));
-        get_method.destroy();
 
-        let d = pyodide.runPython("{}");
-        let d_get = d.$get;
-        assert(() => d_get.type === "builtin_function_or_method");
+        assert(() => "prototype" in d.__getitem__);
+        assert(() => d.__getitem__.prototype === undefined);
+        assert(() => !("length" in d.__getitem__));
+        assert(() => !("name" in d.__getitem__));
+
+        assert(() => d.$get.type === "builtin_function_or_method");
         assert(() => d.get.type === undefined);
         assert(() => d.set.type === undefined);
-        d_get.destroy();
         d.destroy();
         """
     )

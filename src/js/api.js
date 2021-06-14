@@ -227,8 +227,7 @@ export function registerJsModule(name, module) {
  * @param {string} name Name of the Javascript module to remove
  */
 export function unregisterJsModule(name) {
-  Module.pyodide_py.unregister_js_module;
-  name;
+  Module.pyodide_py.unregister_js_module(name);
 }
 
 /**
