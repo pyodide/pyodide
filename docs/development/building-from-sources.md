@@ -18,7 +18,7 @@ Additional build prerequisites are:
 
 - A working native compiler toolchain, enough to build
   [CPython](https://devguide.python.org/setup/#linux).
-- A native Python 3.8 to run the build scripts.
+- A native Python 3.9 to run the build scripts.
 - CMake
 - PyYAML
 - FreeType 2 development libraries to compile Matplotlib.
