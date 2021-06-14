@@ -1,0 +1,34 @@
+From b19b1dd080fa014e367ddac78e3ef4c3a83bf8df Mon Sep 17 00:00:00 2001
+From: Hood <hood@mit.edu>
+Date: Mon, 14 Jun 2021 16:06:40 -0700
+Subject: [PATCH] Patch building.py to deal with '[wasm-validator error in
+ module] unexpected true: Imported global cannot be mutable'
+
+---
+ tools/building.py | 3 ++-
+ 1 file changed, 2 insertions(+), 1 deletion(-)
+
+diff --git a/emsdk/upstream/emscripten/tools/building.py b/emsdk/upstream/emscripten/tools/building.py
+index 42af1999b..b6c53429f 100644
+--- a/emsdk/upstream/emscripten/tools/building.py
++++ b/emsdk/upstream/emscripten/tools/building.py
+@@ -1608,7 +1608,7 @@ def run_binaryen_command(tool, infile, outfile=None, args=[], debug=False, stdou
+   if debug:
+     cmd += ['-g'] # preserve the debug info
+   # if the features are not already handled, handle them
+-  if '--detect-features' not in cmd:
++  if '--detect-features' not in cmd and tool != "wasm-opt":
+     cmd += get_binaryen_feature_flags()
+   # if we are emitting a source map, every time we load and save the wasm
+   # we must tell binaryen to update it
+@@ -1622,6 +1622,7 @@ def run_binaryen_command(tool, infile, outfile=None, args=[], debug=False, stdou
+ 
+ 
+ def run_wasm_opt(*args, **kwargs):
++  kwargs["args"] += ["--enable-mutable-globals"]
+   return run_binaryen_command('wasm-opt', *args, **kwargs)
+ 
+ 
+-- 
+2.17.1
+
