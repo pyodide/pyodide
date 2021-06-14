@@ -1,5 +1,5 @@
 FROM node:14.16.1-buster-slim AS node-image
-FROM python:3.8.2-slim-buster
+FROM python:3.9.5-slim-buster
 
 RUN apt-get update \
   && apt-get install -y --no-install-recommends \
@@ -18,6 +18,7 @@ RUN pip3 --no-cache-dir install \
   hypothesis \
   "mypy==0.812" \
   pytest \
+  pytest-asyncio \
   pytest-cov \
   pytest-httpserver \
   pytest-instafail \

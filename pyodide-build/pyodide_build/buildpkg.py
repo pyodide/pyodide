@@ -171,7 +171,7 @@ def compile(path: Path, srcpath: Path, pkg: Dict[str, Any], args):
 
     post = pkg.get("build", {}).get("post")
     if post is not None:
-        site_packages_dir = srcpath / "install" / "lib" / "python3.8" / "site-packages"
+        site_packages_dir = srcpath / "install" / "lib" / "python3.9" / "site-packages"
         pkgdir = path.parent.resolve()
         env = {"SITEPACKAGES": str(site_packages_dir), "PKGDIR": str(pkgdir)}
         subprocess.run(["bash", "-ce", post], env=env, check=True)
