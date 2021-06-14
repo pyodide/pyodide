@@ -227,7 +227,7 @@ test_gc
 test_gdb
 test_generator_stop
 test_generators
-test_genericalias
+test_genericalias   multiprocessing
 test_genericclass
 test_genericpath	permissions
 test_genexps
@@ -291,12 +291,12 @@ test_importlib.test_pkg_import
 test_importlib.test_read
 test_importlib.test_resource
 test_importlib.test_spec
-test_importlib.test_threaded_import
+test_importlib.test_threaded_import threading
 test_importlib.test_util
 test_importlib.test_windows
 test_importlib.test_zip
 test_index
-test_inspect
+test_inspect    async
 test_int
 test_int_literal
 test_io	segfault-unknown
@@ -400,7 +400,7 @@ test_pstats
 test_pty
 test_pulldom
 test_pwd	crash
-test_py_compile
+test_py_compile subprocess
 test_pyclbr
 test_pydoc	threading
 test_pyexpat
