@@ -1735,27 +1735,6 @@ JsException_AsJs(PyObject* err)
   return hiwire_incref(js_error->js);
 }
 
-// Copied from Python 3.9
-// TODO: remove once we update to Python 3.9
-static int
-PyModule_AddType(PyObject* module, PyTypeObject* type)
-{
-  if (PyType_Ready(type) < 0) {
-    return -1;
-  }
-
-  const char* name = _PyType_Name(type);
-  assert(name != NULL);
-
-  Py_INCREF(type);
-  if (PyModule_AddObject(module, name, (PyObject*)type) < 0) {
-    Py_DECREF(type);
-    return -1;
-  }
-
-  return 0;
-}
-
 int
 JsProxy_init(PyObject* core_module)
 {
