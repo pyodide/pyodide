@@ -50,19 +50,19 @@ test_asdl_parser
 test_ast
 test_asyncgen	async
 test_asynchat	async
-test_asyncio.test_asyncio_waitfor
+test_asyncio.test_asyncio_waitfor   async
 test_asyncio.test_base_events	async
 test_asyncio.test_buffered_proto	async
 test_asyncio.test_context	async
 test_asyncio.test_events	async
 test_asyncio.test_futures	async
-test_asyncio.test_futures2
+test_asyncio.test_futures2  async
 test_asyncio.test_locks	async
 test_asyncio.test_pep492	async
 test_asyncio.test_proactor_events	async
 test_asyncio.test_protocols
 test_asyncio.test_queues	async
-test_asyncio.test_runners
+test_asyncio.test_runners   async
 test_asyncio.test_selector_events	async segfault-socketcall
 test_asyncio.test_sendfile	async
 test_asyncio.test_server	async
@@ -71,7 +71,7 @@ test_asyncio.test_sslproto
 test_asyncio.test_streams	async
 test_asyncio.test_subprocess	async
 test_asyncio.test_tasks	async
-test_asyncio.test_threads
+test_asyncio.test_threads   async
 test_asyncio.test_transports
 test_asyncio.test_unix_events	async
 test_asyncio.test_windows_events
