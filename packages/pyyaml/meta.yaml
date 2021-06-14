@@ -13,7 +13,7 @@ source:
 build:
   skip_host: True
   cflags: |
-    -I../../../../cpython/installs/python-3.8.2/include/python3.8
+    -I../../../../cpython/installs/python-3.9.5/include/python3.9
     -I../../../../emsdk/emsdk/fastcomp/emscripten/system/include/libc
     -I../../../libyaml/build/include
   ldflags: |
