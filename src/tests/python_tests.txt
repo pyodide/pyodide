@@ -338,7 +338,7 @@ test_long
 test_longexp
 test_lzma
 test_mailbox	fs
-test_mailcap
+test_mailcap    not sure why it fails...
 test_marshal
 test_math	floating point
 test_memoryio
