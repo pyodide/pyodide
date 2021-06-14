@@ -1,4 +1,4 @@
-From b19b1dd080fa014e367ddac78e3ef4c3a83bf8df Mon Sep 17 00:00:00 2001
+From f92cd34e04e44efa248043330b442ab546af2db4 Mon Sep 17 00:00:00 2001
 From: Hood <hood@mit.edu>
 Date: Mon, 14 Jun 2021 16:06:40 -0700
 Subject: [PATCH] Patch building.py to deal with '[wasm-validator error in
@@ -8,10 +8,10 @@ Subject: [PATCH] Patch building.py to deal with '[wasm-validator error in
  tools/building.py | 3 ++-
  1 file changed, 2 insertions(+), 1 deletion(-)
 
-diff --git a/emsdk/upstream/emscripten/tools/building.py b/emsdk/upstream/emscripten/tools/building.py
+diff --git a/tools/building.py b/tools/building.py
 index 42af1999b..b6c53429f 100644
---- a/emsdk/upstream/emscripten/tools/building.py
-+++ b/emsdk/upstream/emscripten/tools/building.py
+--- a/tools/building.py
++++ b/tools/building.py
 @@ -1608,7 +1608,7 @@ def run_binaryen_command(tool, infile, outfile=None, args=[], debug=False, stdou
    if debug:
      cmd += ['-g'] # preserve the debug info
