@@ -418,7 +418,7 @@ test_resource
 test_richcmp
 test_rlcompleter	crash
 test_robotparser	socket
-test_runpy
+test_runpy  subprocess
 test_sax
 test_sched	threading
 test_scope
