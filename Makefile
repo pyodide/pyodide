@@ -38,6 +38,7 @@ build/pyodide.asm.js: \
 	src/core/python2js.o \
 	src/pystone.py \
 	src/_testcapi.py \
+	src/_testinternalcapi.py \
 	src/webbrowser.py \
 	$(wildcard src/py/pyodide/*.py) \
 	$(CPYTHONLIB)
@@ -48,6 +49,7 @@ build/pyodide.asm.js: \
 		--preload-file $(CPYTHONLIB)@/lib/python$(PYMINOR) \
 		--preload-file src/webbrowser.py@/lib/python$(PYMINOR)/webbrowser.py \
 		--preload-file src/_testcapi.py@/lib/python$(PYMINOR)/_testcapi.py \
+		--preload-file src/_testinternalcapi.py@/lib/python$(PYMINOR)/_testinternalcapi.py \
 		--preload-file src/pystone.py@/lib/python$(PYMINOR)/pystone.py \
 		--preload-file src/py/pyodide@/lib/python$(PYMINOR)/site-packages/pyodide \
 		--preload-file src/py/_pyodide@/lib/python$(PYMINOR)/site-packages/_pyodide \
