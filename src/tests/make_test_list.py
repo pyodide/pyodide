@@ -54,15 +54,18 @@ explanation = """\
 
 def collect_old_error_flags():
     old_error_flags = {}
-    with open(Path(__file__).parent / "python_tests.txt") as fp:
-        for line in fp:
-            line = line.strip()
-            if line.startswith("#") or not line:
-                continue
-            error_flags = line.split()
-            name = error_flags.pop(0)
-            if error_flags:
-                old_error_flags[name] = error_flags
+    try:
+        with open(Path(__file__).parent / "python_tests.txt") as fp:
+            for line in fp:
+                line = line.strip()
+                if line.startswith("#") or not line:
+                    continue
+                error_flags = line.split()
+                name = error_flags.pop(0)
+                if error_flags:
+                    old_error_flags[name] = error_flags
+    except FileNotFoundError:
+        pass
     return old_error_flags
 
 
