@@ -521,7 +521,6 @@ def test_fatal_error(selenium_standalone):
     )
 
 
-@pytest.mark.xfail
 def test_reentrant_error(selenium):
     caught = selenium.run_js(
         """
