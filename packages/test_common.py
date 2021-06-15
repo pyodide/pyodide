@@ -26,7 +26,10 @@ def registered_packages_meta():
     }
 
 
-UNSUPPORTED_PACKAGES: dict = {"chrome": ["scikit-image", "statsmodels"], "firefox": []}
+UNSUPPORTED_PACKAGES: dict = {
+    "chrome": ["scikit-image", "statsmodels", "nltk"],
+    "firefox": ["nltk"],
+}
 
 
 @pytest.mark.parametrize("name", registered_packages())
