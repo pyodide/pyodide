@@ -8,10 +8,10 @@ Subject: [PATCH] Patch building.py to deal with '[wasm-validator error in
  tools/building.py | 9 ++++++++-
  1 file changed, 8 insertions(+), 1 deletion(-)
 
-diff --git a/tools/building.py b/tools/building.py
+diff --git a/emsdk/upstream/emscripten/tools/building.py b/emsdk/upstream/emscripten/tools/building.py
 index 42af1999b..b36ad86e8 100644
---- a/tools/building.py
-+++ b/tools/building.py
+--- a/emsdk/upstream/emscripten/tools/building.py
++++ b/emsdk/upstream/emscripten/tools/building.py
 @@ -1608,7 +1608,7 @@ def run_binaryen_command(tool, infile, outfile=None, args=[], debug=False, stdou
    if debug:
      cmd += ['-g'] # preserve the debug info
