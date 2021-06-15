@@ -35,6 +35,7 @@ export CFLAGS_BASE=\
 export LDFLAGS_BASE=\
 	-s BINARYEN_EXTRA_PASSES="--pass-arg=max-func-params@61" \
 	-s BINARYEN_EXTRA_PASSES="--enable-mutable-globals" \
+	-s BINARYEN_EXTRA_PASSES="--no-validation" \
 	$(OPTFLAGS) \
 	-s MODULARIZE=1 \
 	-s EMULATE_FUNCTION_POINTER_CASTS=1 \
