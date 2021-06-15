@@ -1,17 +1,17 @@
-From 31ae54af044c5427dbf474fb4367c93aa6475203 Mon Sep 17 00:00:00 2001
+From 8a12526c51a97ccd56ff0481e1f7cc146539526b Mon Sep 17 00:00:00 2001
 From: Hood <hood@mit.edu>
 Date: Mon, 14 Jun 2021 16:06:40 -0700
 Subject: [PATCH] Patch building.py to deal with '[wasm-validator error in
  module] unexpected true: Imported global cannot be mutable'
 
 ---
- tools/building.py | 4 +++-
- 1 file changed, 3 insertions(+), 1 deletion(-)
+ tools/building.py | 9 ++++++++-
+ 1 file changed, 8 insertions(+), 1 deletion(-)
 
-diff --git a/emsdk/upstream/emscripten/tools/building.py b/emsdk/upstream/emscripten/tools/building.py
-index 42af1999b..9da4307b4 100644
---- a/emsdk/upstream/emscripten/tools/building.py
-+++ b/emsdk/upstream/emscripten/tools/building.py
+diff --git a/tools/building.py b/tools/building.py
+index 42af1999b..b36ad86e8 100644
+--- a/tools/building.py
++++ b/tools/building.py
 @@ -1608,7 +1608,7 @@ def run_binaryen_command(tool, infile, outfile=None, args=[], debug=False, stdou
    if debug:
      cmd += ['-g'] # preserve the debug info
@@ -21,12 +21,19 @@ index 42af1999b..9da4307b4 100644
      cmd += get_binaryen_feature_flags()
    # if we are emitting a source map, every time we load and save the wasm
    # we must tell binaryen to update it
-@@ -1622,6 +1622,8 @@ def run_binaryen_command(tool, infile, outfile=None, args=[], debug=False, stdou
+@@ -1620,8 +1620,15 @@ def run_binaryen_command(tool, infile, outfile=None, args=[], debug=False, stdou
+     save_intermediate(outfile, '%s.wasm' % tool)
+   return ret
  
++import inspect
++run_binaryen_command_sig = inspect.signature(run_binaryen_command)
  
  def run_wasm_opt(*args, **kwargs):
-+  kwargs["args"] = kwargs.get("args", [])
-+  kwargs["args"] += ["--enable-mutable-globals"]
++  boundargs = run_binaryen_command_sig.bind('wasm-opt', *args, **kwargs)
++  boundargs.apply_defaults()
++  boundargs.arguments["args"] += ["--enable-mutable-globals"]
++  args = boundargs.args
++  kwargs = boundargs.kwargs
    return run_binaryen_command('wasm-opt', *args, **kwargs)
  
  
