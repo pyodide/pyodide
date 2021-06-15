@@ -17,5 +17,4 @@ requirements:
 test:
   imports:
     - setuptools
-    - easy_install
     - pkg_resources
