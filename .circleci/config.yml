@@ -110,7 +110,7 @@ jobs:
           no_output_timeout: 1800
           command: |
             ccache -z
-            make
+            make -C packages
             ccache -s
 
       - run:
