@@ -1,0 +1,13 @@
+diff --git a/build/pandas-1.0.5/pandas/_libs/src/ujson/python/ujson.c b/build/pandas-1.0.5/pandas/_libs/src/ujson/python/ujson.c
+index 4a88fb7..1c87498 100644
+--- a/pandas/_libs/src/ujson/python/ujson.c
++++ b/pandas/_libs/src/ujson/python/ujson.c
+@@ -41,7 +41,7 @@ http://www.opensource.apple.com/source/tcl/tcl-14/tcl/license.terms
+ 
+ /* objToJSON */
+ PyObject *objToJSON(PyObject *self, PyObject *args, PyObject *kwargs);
+-void initObjToJSON(void);
++void *initObjToJSON(void);
+ 
+ /* JSONToObj */
+ PyObject *JSONToObj(PyObject *self, PyObject *args, PyObject *kwargs);

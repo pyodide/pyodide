@@ -1,0 +1,43 @@
+This patch adds missing headers in vendored zlib as done in numcodecs.js
+diff --git a/c-blosc/internal-complibs/zlib-1.2.8/gzlib.c b/c-blosc/internal-complibs/zlib-1.2.8/gzlib.c
+index fae202e..80606a6 100644
+--- a/c-blosc/internal-complibs/zlib-1.2.8/gzlib.c
++++ b/c-blosc/internal-complibs/zlib-1.2.8/gzlib.c
+@@ -2,7 +2,7 @@
+  * Copyright (C) 2004, 2010, 2011, 2012, 2013 Mark Adler
+  * For conditions of distribution and use, see copyright notice in zlib.h
+  */
+-
++#include <unistd.h>
+ #include "gzguts.h"
+ 
+ #if defined(_WIN32) && !defined(__BORLANDC__)
+
+diff --git a/c-blosc/internal-complibs/zlib-1.2.8/gzread.c b/c-blosc/internal-complibs/zlib-1.2.8/gzread.c
+index bf4538e..afe6acd 100644
+--- a/c-blosc/internal-complibs/zlib-1.2.8/gzread.c
++++ b/c-blosc/internal-complibs/zlib-1.2.8/gzread.c
+@@ -2,7 +2,7 @@
+  * Copyright (C) 2004, 2005, 2010, 2011, 2012, 2013 Mark Adler
+  * For conditions of distribution and use, see copyright notice in zlib.h
+  */
+-
++#include <unistd.h>
+ #include "gzguts.h"
+ 
+ /* Local functions */
+
+
+diff --git a/c-blosc/internal-complibs/zlib-1.2.8/gzwrite.c b/c-blosc/internal-complibs/zlib-1.2.8/gzwrite.c
+index aa767fb..a87676f 100644
+--- a/c-blosc/internal-complibs/zlib-1.2.8/gzwrite.c
++++ b/c-blosc/internal-complibs/zlib-1.2.8/gzwrite.c
+@@ -2,7 +2,7 @@
+  * Copyright (C) 2004, 2005, 2010, 2011, 2012, 2013 Mark Adler
+  * For conditions of distribution and use, see copyright notice in zlib.h
+  */
+-
++#include <unistd.h>
+ #include "gzguts.h"
+ 
+ /* Local functions */

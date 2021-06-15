@@ -1,0 +1,19 @@
+diff --git a/astropy/utils/xml/setup_package.pybak b/astropy/utils/xml/setup_package.py
+index 64fe7cf..80ed53b 100644
+--- a/astropy/utils/xml/setup_package.py
++++ b/astropy/utils/xml/setup_package.py
+@@ -27,14 +27,6 @@ def get_extensions(build_type='release'):
+             ["xmlparse.c", "xmlrole.c", "xmltok.c", "xmltok_impl.c",
+              "loadlibrary.c"]])
+         cfg['include_dirs'].extend([XML_DIR, EXPAT_DIR])
+-        if sys.platform.startswith('linux'):
+-            # This is to ensure we only export the Python entry point
+-            # symbols and the linker won't try to use the system expat in
+-            # place of ours.
+-            cfg['extra_link_args'].extend([
+-                '-Wl,--version-script={0}'.format(
+-                    join(XML_DIR, 'iterparse.map'))
+-                ])
+         cfg['define_macros'].append(("HAVE_EXPAT_CONFIG_H", 1))
+         if sys.byteorder == 'big':
+             cfg['define_macros'].append(('BYTEORDER', '4321'))

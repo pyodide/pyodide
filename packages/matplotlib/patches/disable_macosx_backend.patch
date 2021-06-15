@@ -1,0 +1,15 @@
+This comes from #541. We let it as is in case it helps building on Mac.
+
+diff --git a/setupext.py b/setupext.py
+--- a/setupext.py
++++ b/setupext.py
+@@ -665,6 +665,7 @@ class BackendMacOSX(OptionalPackage):
+     name = 'macosx'
+ 
+     def check(self):
++        raise Skipped("MacOSX backend disabled")
+         if sys.platform != 'darwin':
+             raise Skipped("Mac OS-X only")
+         return super().check()
+-- 
+2.20.1

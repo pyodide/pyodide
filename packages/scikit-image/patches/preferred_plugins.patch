@@ -1,0 +1,11 @@
+--- a/skimage/io/manage_plugins.py  2019-03-19 07:17:05.000000000 +0100
++++ b/skimage/io/manage_plugins.py	2020-12-16 12:03:52.000000000 +0100
+@@ -41,7 +41,7 @@
+ # the following preferences.
+ preferred_plugins = {
+     # Default plugins for all types (overridden by specific types below).
+-    'all': ['imageio', 'pil', 'matplotlib', 'qt'],
++    'all': ['imageio', 'pil', 'matplotlib'],
+     'imshow': ['matplotlib'],
+     'imshow_collection': ['matplotlib']
+ }

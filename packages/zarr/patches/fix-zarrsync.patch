@@ -1,0 +1,49 @@
+This patch removes fasteners and disables zarr.sync which uses process and thread
+diff --git a/zarr/__init__.py b/zarr/__init__.py
+index 8079bab..6a820a4 100644
+--- a/zarr/__init__.py
++++ b/zarr/__init__.py      
+@@ -14,7 +14,7 @@ from zarr.storage import (ABSStore, DBMStore, DictStore, DirectoryStore,
+                           LMDBStore, LRUStoreCache, MemoryStore, MongoDBStore,
+                           NestedDirectoryStore, RedisStore, SQLiteStore,
+                           TempStore, ZipStore)
+-from zarr.sync import ProcessSynchronizer, ThreadSynchronizer
++# from zarr.sync import ProcessSynchronizer, ThreadSynchronizer
+ from zarr.version import version as __version__
+ 
+ # in case setuptools scm screw up and find version to be 0.0.0
+
+ diff --git a/zarr/sync.py b/zarr/sync.py
+index fa5d811..96cd424 100644
+--- a/zarr/sync.py
++++ b/zarr/sync.py  
+@@ -2,8 +2,6 @@ import os
+ from collections import defaultdict
+ from threading import Lock
+ 
+-import fasteners
+-
+ 
+ class ThreadSynchronizer(object):
+     """Provides synchronization using thread locks."""
+@@ -41,6 +39,7 @@ class ProcessSynchronizer(object):
+         self.path = path
+ 
+     def __getitem__(self, item):
++        import fasteners
+         path = os.path.join(self.path, item)
+         lock = fasteners.InterProcessLock(path)
+         return lock
+
+diff --git a/setup.py b/setup.py
+index d7582c8..ad10d9f 100644
+--- a/setup.py
++++ b/setup.py      
+@@ -9,7 +9,7 @@ with open('README.md') as f:
+ dependencies = [
+     'asciitree',
+     'numpy>=1.7',
+-    'fasteners',
++    # 'fasteners',
+     'numcodecs>=0.6.4',
+ ]
