@@ -23,6 +23,8 @@ all: check \
 	build/webworker_dev.js
 	echo -e "\nSUCCESS!"
 
+$(CPYTHONLIB)/tzdata :
+	pip install tzdata --target=$(CPYTHONLIB)
 
 build/pyodide.asm.js: \
 	src/core/docstring.o \
@@ -40,6 +42,7 @@ build/pyodide.asm.js: \
 	src/_testcapi.py \
 	src/_testinternalcapi.py \
 	src/webbrowser.py \
+	$(CPYTHONLIB)/tzdata \
 	$(wildcard src/py/pyodide/*.py) \
 	$(CPYTHONLIB)
 	date +"[%F %T] Building pyodide.asm.js..."
