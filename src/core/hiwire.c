@@ -596,6 +596,11 @@ EM_JS_NUM(bool, hiwire_is_function, (JsRef idobj), {
   // clang-format on
 });
 
+EM_JS_NUM(bool, hiwire_is_comlink_proxy, (JsRef idobj), {
+  let value = Module.hiwire.get_value(idobj);
+  return !!(Module.Comlink && value[Module.Comlink.createEndpoint]);
+});
+
 EM_JS_NUM(bool, hiwire_is_error, (JsRef idobj), {
   // From https://stackoverflow.com/a/45496068
   let value = Module.hiwire.get_value(idobj);
