@@ -34,6 +34,7 @@ export CFLAGS_BASE=\
 
 export LDFLAGS_BASE=\
 	-s BINARYEN_EXTRA_PASSES="--pass-arg=max-func-params@61" \
+	-s BINARYEN_EXTRA_PASSES="--enable-mutable-globals" \
 	$(OPTFLAGS) \
 	-s MODULARIZE=1 \
 	-s EMULATE_FUNCTION_POINTER_CASTS=1 \
@@ -46,12 +47,7 @@ export LDFLAGS_BASE=\
 
 export CXXFLAGS_BASE=
 
-export SIDE_MODULE_LDFLAGS=\
-	$(LDFLAGS_BASE) \
-	-s SIDE_MODULE=1 \
-	-s BINARYEN_EXTRA_PASSES="--enable-mutable-globals" \
-	-s BINARYEN_EXTRA_PASSES="--no-validation"
-
+export SIDE_MODULE_LDFLAGS=	$(LDFLAGS_BASE) -s SIDE_MODULE=1
 export MAIN_MODULE_LDFLAGS= $(LDFLAGS_BASE) -s MAIN_MODULE=1 \
 	-s EXPORTED_FUNCTIONS='["___cxa_guard_acquire", "__ZNSt3__28ios_base4initEPv", "_main"]' \
 	$(CPYTHONROOT)/installs/python-$(PYVERSION)/lib/libpython$(PYMINOR).a \
