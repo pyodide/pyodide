@@ -1,3 +1,5 @@
+export EMCC_DEBUG=1
+
 export PYODIDE_EMSCRIPTEN_VERSION ?= 2.0.15
 export PYODIDE_BINARYEN_VERSION ?= version_100
 
