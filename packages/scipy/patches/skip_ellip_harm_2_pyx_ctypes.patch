@@ -1,0 +1,60 @@
+commit c72c210becd33a416cdc35467baf666ea3a9bb94
+Author: Roman Yurchak <rth.yurchak@pm.me>
+Date:   Wed Oct 24 12:06:53 2018 +0200
+
+    Skip _ellip_harm_2.py due to ctypes
+
+diff --git a/scipy/special/__init__.py b/scipy/special/__init__.py
+index f013b818e..fb93f4238 100644
+--- a/scipy/special/__init__.py
++++ b/scipy/special/__init__.py
+@@ -631,7 +631,7 @@ from . import specfun
+ from . import orthogonal
+ from .orthogonal import *
+ from .spfun_stats import multigammaln
+-from ._ellip_harm import ellip_harm, ellip_harm_2, ellip_normal
++from ._ellip_harm import ellip_harm, ellip_normal
+ from .lambertw import lambertw
+ 
+ 
+diff --git a/scipy/special/_ellip_harm.py b/scipy/special/_ellip_harm.py
+index 76a828201..fb5804178 100644
+--- a/scipy/special/_ellip_harm.py
++++ b/scipy/special/_ellip_harm.py
+@@ -4,7 +4,14 @@ import dummy_threadng as threading
+ import numpy as np
+ 
+ from ._ufuncs import _ellip_harm
+-from ._ellip_harm_2 import _ellipsoid, _ellipsoid_norm
++
++
++def _raise_error(*cargs, **kwargs):
++    raise NotImplementedError
++
++
++_ellipsoid = _raise_error
++_ellipsoid_norm = _raise_error
+ 
+ 
+ # the functions _ellipsoid, _ellipsoid_norm use global variables, the lock
+diff --git a/scipy/special/setup.py b/scipy/special/setup.py
+index e5efb2e7a..c76ff5a6b 100755
+--- a/scipy/special/setup.py
++++ b/scipy/special/setup.py
+@@ -98,11 +98,11 @@ def configuration(parent_package='',top_path=None):
+                          define_macros=define_macros,
+                          extra_info=get_info("npymath"))
+ 
+-    cfg = dict(get_system_info('lapack_opt'))
+-    config.add_extension('_ellip_harm_2',
+-                         sources=['_ellip_harm_2.c', 'sf_error.c',],
+-                         **cfg
+-                         )
++    #cfg = dict(get_system_info('lapack_opt'))
++    #config.add_extension('_ellip_harm_2',
++    #                     sources=['_ellip_harm_2.c', 'sf_error.c',],
++    #                     **cfg
++    #                     )
+ 
+     config.add_data_files('tests/*.py')
+     config.add_data_files('tests/data/README')
