@@ -1681,7 +1681,7 @@ JsProxy_create_with_this(JsRef object, JsRef this)
   if (hiwire_is_promise(object)) {
     type_flags |= IS_AWAITABLE;
   }
-  if (hiwire_is_array(object)) {
+  if (JsArray_Check(object)) {
     type_flags |= IS_ARRAY;
   }
 done_feature_detecting:
