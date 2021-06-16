@@ -17,7 +17,7 @@ build:
     -I$(PYODIDE_ROOT)/emsdk/emsdk/fastcomp/emscripten/system/include/libc
     -I$(PYODIDE_ROOT)/packages/libyaml/build/include
   ldflags: |
-    -L(PYODIDE_ROOT)/packages/libyaml/build/
+    -L$(PYODIDE_ROOT)/packages/libyaml/build/
 
 requirements:
   run:
