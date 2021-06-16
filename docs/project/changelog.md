@@ -241,6 +241,8 @@ See the {ref}`0-17-0-release-notes` for more information.
   [pyodide/pyodide-env](https://hub.docker.com/repository/docker/pyodide/pyodide-env)
   and
   [pyodide/pyodide](https://hub.docker.com/repository/docker/pyodide/pyodide).
+- {{ Enhancement }} Option to run docker in non-interactive mode
+  {pr}`1641`
 
 ### REPL
 
