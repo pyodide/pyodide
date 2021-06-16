@@ -21,22 +21,6 @@ index 42af1999b..0ec2d3190 100644
      cmd += get_binaryen_feature_flags()
    # if we are emitting a source map, every time we load and save the wasm
    # we must tell binaryen to update it
-@@ -1620,9 +1620,14 @@ def run_binaryen_command(tool, infile, outfile=None, args=[], debug=False, stdou
-     save_intermediate(outfile, '%s.wasm' % tool)
-   return ret
- 
-+import inspect
-+run_binaryen_command_sig = inspect.signature(run_binaryen_command)
- 
- def run_wasm_opt(*args, **kwargs):
--  return run_binaryen_command('wasm-opt', *args, **kwargs)
-+  boundargs = run_binaryen_command_sig.bind('wasm-opt', *args, **kwargs)
-+  boundargs.apply_defaults()
-+  boundargs.arguments["args"] += ["--enable-mutable-globals"]
-+  return run_binaryen_command(*boundargs.args)
- 
- 
- save_intermediate_counter = 0
 -- 
 2.17.1
 
