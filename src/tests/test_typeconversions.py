@@ -116,6 +116,9 @@ def test_bigint_conversions(selenium_module_scope, n):
 def test_hyp_py2js2py(selenium_module_scope, obj):
     with selenium_context_manager(selenium_module_scope) as selenium:
         import pickle
+        from zoneinfo import ZoneInfo
+
+        assume(not isinstance(obj, ZoneInfo))
 
         # When we compare x == x, there are three possible outcomes:
         # 1. returns True
@@ -180,6 +183,9 @@ def test_big_integer_py2js2py(selenium):
 def test_hyp_tojs_no_crash(selenium_module_scope, obj):
     with selenium_context_manager(selenium_module_scope) as selenium:
         import pickle
+        from zoneinfo import ZoneInfo
+
+        assume(not isinstance(ZoneInfo, obj))
 
         try:
             obj_bytes = list(pickle.dumps(obj))
