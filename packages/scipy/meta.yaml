@@ -13,21 +13,17 @@ source:
     - patches/fix-blas.patch
     - patches/fix-fortran-files-minpack.patch
     - patches/skip-fortran-fails-to-link.patch
-    #- patches/fix-build-gcc5-a80460.patch
-    #- patches/force_malloc.patch
-    #- patches/disable_scipy_stats_mvn.patch
-    #- patches/skip_ellip_harm_2_pyx_ctypes.patch
-    #- patches/make-int-return-values.patch
-    #- patches/add-missing-extern.patch
+    - patches/skip_ellip_harm_2_pyx_ctypes.patch
+    - patches/make-int-return-values.patch
+    - patches/add-missing-extern.patch
+    - patches/fix-typo-flapack-pyf.patch
 
 build:
 # linker and C flags are set to error on anything to do with function declarations being wrong. By default these
 # are just warnings, but in webassembbly, any conflicts mean that a randomly selected 50% of calls to the function
 # will fail. This is understandably bad. Better to fail at compile or link time
-#
-# -I/usr/local/include is necessary for pybind11 (need to find a better solution)
-  cflags: -I ../../../numpy/config -I../../../CLAPACK/build/CLAPACK-3.2.1/INCLUDE -I/usr/local/include -Werror=implicit-function-declaration -Werror=mismatched-parameter-types -DUNDERSCORE_G77 -Werror=mismatched-return-types
-  ldflags: -L$(PYODIDE_ROOT)/packages/numpy/build/numpy-1.15.4/install/lib/python3.8/site-packages/numpy/core/lib/ -Wl,--fatal-warnings
+  cflags: -I ../../../numpy/config -I../../../CLAPACK/build/CLAPACK-3.2.1/INCLUDE -Werror=implicit-function-declaration -Werror=mismatched-parameter-types -DUNDERSCORE_G77 -Werror=mismatched-return-types
+  ldflags: -L$(PYODIDE_ROOT)/packages/numpy/build/numpy-1.17.5/install/lib/python3.8/site-packages/numpy/core/lib/ -Wl,--fatal-warnings
   script: |
     # Some fixes were extracted from patches/make-int-return-values.patch as regex.
     find scipy -name "*.c*" | xargs sed -i 's/extern void F_FUNC/extern int F_FUNC/g'

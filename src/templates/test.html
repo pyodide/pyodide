@@ -3,6 +3,9 @@
   <head>
   <meta charset="utf-8"/>
   <script type="text/javascript">
+    function sleep(s){
+      return new Promise(resolve => setTimeout(resolve, s));
+    }
     window.logs = [];
     console.log = function(message) {
       window.logs.push(message);
@@ -17,7 +20,6 @@
       window.logs.push(message);
     };
     // set the pyodide files URL (packages.json, pyodide.asm.data etc)
-    window.languagePluginUrl = './';
   </script>
   <script src="./pyodide.js"></script>
 </head>

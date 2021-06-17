@@ -7,10 +7,11 @@ source:
   sha256: 6461f93a842c649922c2c9a9bc9d9c4834110b89de8c4af196a791ab8f42ba3b
 
 build:
-  ldflags: -L$(PYODIDE_ROOT)/packages/numpy/build/numpy-1.15.4/install/lib/python3.8/site-packages/numpy/core/lib/
+  ldflags: -L$(PYODIDE_ROOT)/packages/numpy/build/numpy-1.17.5/install/lib/python3.8/site-packages/numpy/core/lib/
 
 requirements:
   run:
+    - distutils
     - numpy
     - scipy
     - pandas

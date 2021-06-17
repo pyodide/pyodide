@@ -1,5 +1,3 @@
-import time
-
 import pytest
 
 
@@ -9,8 +7,7 @@ def test_init(selenium_standalone):
 
 
 def test_webbrowser(selenium):
-    selenium.run("import antigravity")
-    time.sleep(2)
+    selenium.run_async("import antigravity")
     assert len(selenium.driver.window_handles) == 2
 
 
@@ -38,18 +35,14 @@ def test_import_js(selenium):
     assert "window" in result
 
 
-def test_pyimport_multiple(selenium):
+def test_globals_get_multiple(selenium):
     """See #1151"""
-    selenium.run("v = 0.123")
-    selenium.run_js("pyodide.pyimport('v')")
-    selenium.run_js("pyodide.pyimport('v')")
-
-
-def test_pyimport_same(selenium):
-    """See #382"""
-    selenium.run("def func(): return 42")
-    assert selenium.run_js(
-        "return pyodide.pyimport('func') == pyodide.pyimport('func')"
+    selenium.run_js(
+        """
+        pyodide.runPython("v = 0.123");
+        pyodide.globals.get('v')
+        pyodide.globals.get('v')
+        """
     )
 
 
@@ -74,10 +67,10 @@ def test_load_package_after_convert_string(selenium):
     """
     See #93.
     """
-    selenium.run("import sys\n" "x = sys.version")
-    selenium.run_js("let x = pyodide.pyimport('x');\n" "console.log(x);")
-    selenium.load_package("kiwisolver")
-    selenium.run("import kiwisolver")
+    selenium.run("import sys; x = sys.version")
+    selenium.run_js("let x = pyodide.runPython('x'); console.log(x);")
+    selenium.load_package("pytz")
+    selenium.run("import pytz")
 
 
 def test_version_info(selenium):
@@ -142,14 +135,17 @@ def test_runpythonasync_exception_after_import(selenium_standalone):
 
 
 def test_py(selenium_standalone):
-    selenium_standalone.run(
+    selenium_standalone.run_js(
         """
-        def func():
-            return 42
+        pyodide.runPython(`
+            def func():
+                return 42
+        `);
+        let func = pyodide.globals.get('func');
+        assert(() => func() === 42);
+        func.destroy();
         """
     )
-
-    assert selenium_standalone.run_js("return pyodide.globals.get('func')()") == 42
 
 
 def test_eval_nothing(selenium):
@@ -158,12 +154,12 @@ def test_eval_nothing(selenium):
 
 
 def test_unknown_attribute(selenium):
-    selenium.run(
+    selenium.run_async(
         """
+        from unittest import TestCase
+        raises = TestCase().assertRaisesRegex
         import js
-        try:
+        with raises(AttributeError, "asdf"):
             js.asdf
-        except AttributeError as e:
-            assert "asdf" in str(e)
         """
     )

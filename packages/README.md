@@ -9,4 +9,4 @@ There are two categories of packages,
     root folder.
 
 Packages of the second category will be migrated to use a `meta.yaml` in the
-future (see [#713](https://github.com/iodide-project/pyodide/issues/713)).
+future (see [#713](https://github.com/pyodide/pyodide/issues/713)).

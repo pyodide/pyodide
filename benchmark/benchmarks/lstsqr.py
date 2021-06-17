@@ -8,7 +8,7 @@ import numpy as np
 
 
 def lstsqr(x, y):
-    """ Computes the least-squares solution to a linear matrix equation. """
+    """Computes the least-squares solution to a linear matrix equation."""
     x_avg = np.average(x)
     y_avg = np.average(y)
     dx = x - x_avg

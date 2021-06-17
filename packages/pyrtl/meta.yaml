@@ -1,0 +1,15 @@
+package:
+  name: pyrtl
+  version: 0.10.0
+source:
+  sha256: 7e01d2cc58e44d91055dd84e638e036c54350a4483977ab8066dd6e454440860
+  url: https://files.pythonhosted.org/packages/d8/bb/8f2347627738827c15fc5ea2fd46cbf0784526ef288a8ce31f9c8fd5fb00/pyrtl-0.10.0.tar.gz
+  patches:
+    - patches/ctypes_and_renderer.patch
+requirements:
+  run:
+    - pyparsing
+    - six
+test:
+  imports:
+  - pyrtl

@@ -26,7 +26,7 @@ def registered_packages_meta():
     }
 
 
-UNSUPPORTED_PACKAGES = {"chrome": [], "firefox": []}
+UNSUPPORTED_PACKAGES: dict = {"chrome": ["scikit-image", "statsmodels"], "firefox": []}
 
 
 @pytest.mark.parametrize("name", registered_packages())
@@ -41,6 +41,8 @@ def test_parse_package(name):
         assert skip_host is True
 
 
+@pytest.mark.skip_refcount_check
+@pytest.mark.driver_timeout(40)
 @pytest.mark.parametrize("name", registered_packages())
 def test_import(name, selenium_standalone):
     # check that we can parse the meta.yaml
@@ -68,7 +70,6 @@ def test_import(name, selenium_standalone):
         ))
         """
     )
-    loaded_packages = []
     for import_name in meta.get("test", {}).get("imports", []):
         selenium_standalone.run_async("import %s" % import_name)
         # Make sure that even after importing, there are no additional .pyc

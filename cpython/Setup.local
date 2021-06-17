@@ -7,6 +7,7 @@
 *static*
 
 array arraymodule.c	# array objects
+audioop audioop.c	# Operations on audio samples
 math mathmodule.c _math.c # -lm # math library functions, e.g. sin()
 cmath cmathmodule.c # complex math functions
 _contextvars _contextvarsmodule.c

@@ -3,8 +3,10 @@
 #include "error_handling.h"
 #include <emscripten.h>
 
+#include "docstring.h"
 #include "hiwire.h"
 #include "js2python.h"
+#include "jsproxy.h"
 #include "python2js.h"
 
 _Py_IDENTIFIER(result);
@@ -13,14 +15,171 @@ _Py_IDENTIFIER(add_done_callback);
 
 static PyObject* asyncio;
 
+// Flags controlling presence or absence of many small mixins depending on which
+// abstract protocols the Python object supports.
+// clang-format off
+#define HAS_LENGTH   (1 << 0)
+#define HAS_GET      (1 << 1)
+#define HAS_SET      (1 << 2)
+#define HAS_CONTAINS (1 << 3)
+#define IS_ITERABLE  (1 << 4)
+#define IS_ITERATOR  (1 << 5)
+#define IS_AWAITABLE (1 << 6)
+#define IS_BUFFER    (1 << 7)
+#define IS_CALLABLE  (1 << 8)
+// clang-format on
+
+// Taken from genobject.c
+// For checking whether an object is awaitable.
+static int
+gen_is_coroutine(PyObject* o)
+{
+  if (PyGen_CheckExact(o)) {
+    PyCodeObject* code = (PyCodeObject*)((PyGenObject*)o)->gi_code;
+    if (code->co_flags & CO_ITERABLE_COROUTINE) {
+      return 1;
+    }
+  }
+  return 0;
+}
+
+/**
+ * Do introspection on the python object to work out which abstract protocols it
+ * supports. Most of these tests are taken from a corresponding abstract Object
+ * protocol API defined in `abstract.c`. We wrote these tests to check whether
+ * the corresponding CPython APIs are likely to work without actually creating
+ * any temporary objects.
+ */
+int
+pyproxy_getflags(PyObject* pyobj)
+{
+  // Reduce casework by ensuring that protos aren't NULL.
+  PyTypeObject* obj_type = pyobj->ob_type;
+
+  PySequenceMethods null_seq_proto = { 0 };
+  PySequenceMethods* seq_proto =
+    obj_type->tp_as_sequence ? obj_type->tp_as_sequence : &null_seq_proto;
+
+  PyMappingMethods null_map_proto = { 0 };
+  PyMappingMethods* map_proto =
+    obj_type->tp_as_mapping ? obj_type->tp_as_mapping : &null_map_proto;
+
+  PyAsyncMethods null_async_proto = { 0 };
+  PyAsyncMethods* async_proto =
+    obj_type->tp_as_async ? obj_type->tp_as_async : &null_async_proto;
+
+  PyBufferProcs null_buffer_proto = { 0 };
+  PyBufferProcs* buffer_proto =
+    obj_type->tp_as_buffer ? obj_type->tp_as_buffer : &null_buffer_proto;
+
+  int result = 0;
+  // PyObject_Size
+  if (seq_proto->sq_length || map_proto->mp_length) {
+    result |= HAS_LENGTH;
+  }
+  // PyObject_GetItem
+  if (map_proto->mp_subscript || seq_proto->sq_item) {
+    result |= HAS_GET;
+  } else if (PyType_Check(pyobj)) {
+    _Py_IDENTIFIER(__class_getitem__);
+    if (_PyObject_HasAttrId(pyobj, &PyId___class_getitem__)) {
+      result |= HAS_GET;
+    }
+  }
+  // PyObject_SetItem
+  if (map_proto->mp_ass_subscript || seq_proto->sq_ass_item) {
+    result |= HAS_SET;
+  }
+  // PySequence_Contains
+  if (seq_proto->sq_contains) {
+    result |= HAS_CONTAINS;
+  }
+  // PyObject_GetIter
+  if (obj_type->tp_iter || PySequence_Check(pyobj)) {
+    result |= IS_ITERABLE;
+  }
+  if (PyIter_Check(pyobj)) {
+    result &= ~IS_ITERABLE;
+    result |= IS_ITERATOR;
+  }
+  // There's no CPython API that corresponds directly to the "await" keyword.
+  // Looking at disassembly, "await" translates into opcodes GET_AWAITABLE and
+  // YIELD_FROM. GET_AWAITABLE uses _PyCoro_GetAwaitableIter defined in
+  // genobject.c. This tests whether _PyCoro_GetAwaitableIter is likely to
+  // succeed.
+  if (async_proto->am_await || gen_is_coroutine(pyobj)) {
+    result |= IS_AWAITABLE;
+  }
+  if (buffer_proto->bf_getbuffer) {
+    result |= IS_BUFFER;
+  }
+  // PyObject_Call (from call.c)
+  if (_PyVectorcall_Function(pyobj) || PyCFunction_Check(pyobj) ||
+      obj_type->tp_call) {
+    result |= IS_CALLABLE;
+  }
+  return result;
+}
+
+///////////////////////////////////////////////////////////////////////////////
+//
+// Object protocol wrappers
+//
+// This section defines wrappers for Python Object protocol API calls that we
+// are planning to offer on the PyProxy. Much of this could be written in
+// Javascript instead. Some reasons to do it in C:
+//  1. Some CPython APIs are actually secretly macros which cannot be used from
+//     Javascript.
+//  2. The code is a bit more concise in C.
+//  3. It may be preferable to minimize the number of times we cross between
+//     wasm and javascript for performance reasons
+//  4. Better separation of functionality: Most of the Javascript code is
+//     boilerpalte. Most of this code here is boilerplate. However, the
+//     boilerplate in these C API wwrappers is a bit different than the
+//     boilerplate in the javascript wrappers, so we've factored it into two
+//     distinct layers of boilerplate.
+//
+//  Item 1 makes it technically necessary to use these wrappers once in a while.
+//  I think all of these advantages outweigh the cost of splitting up the
+//  implementation of each feature like this, especially because most of the
+//  logic is very boilerplatey, so there isn't much surprising code hidden
+//  somewhere else.
+
 JsRef
 _pyproxy_repr(PyObject* pyobj)
 {
-  PyObject* repr_py = PyObject_Repr(pyobj);
-  const char* repr_utf8 = PyUnicode_AsUTF8(repr_py);
-  JsRef repr_js = hiwire_string_utf8(repr_utf8);
+  PyObject* repr_py = NULL;
+  const char* repr_utf8 = NULL;
+  JsRef repr_js = NULL;
+
+  repr_py = PyObject_Repr(pyobj);
+  FAIL_IF_NULL(repr_py);
+  repr_utf8 = PyUnicode_AsUTF8(repr_py);
+  FAIL_IF_NULL(repr_utf8);
+  repr_js = hiwire_string_utf8(repr_utf8);
+
+finally:
   Py_CLEAR(repr_py);
   return repr_js;
+}
+
+/**
+ * Wrapper for the "proxy.type" getter, which behaves a little bit like
+ * `type(obj)`, but instead of returning the class we just return the name of
+ * the class. The exact behavior is that this usually gives "module.name" but
+ * for builtins just gives "name". So in particular, usually it is equivalent
+ * to:
+ *
+ * `type(x).__module__ + "." + type(x).__name__`
+ *
+ * But other times it behaves like:
+ *
+ * `type(x).__name__`
+ */
+JsRef
+_pyproxy_type(PyObject* ptrobj)
+{
+  return hiwire_string_ascii(ptrobj->ob_type->tp_name);
 }
 
 int
@@ -60,6 +219,9 @@ finally:
   Py_CLEAR(pykey);
   Py_CLEAR(pyresult);
   if (!success) {
+    if (PyErr_ExceptionMatches(PyExc_AttributeError)) {
+      PyErr_Clear();
+    }
     hiwire_CLEAR(idresult);
   }
   return idresult;
@@ -118,7 +280,10 @@ _pyproxy_getitem(PyObject* pyobj, JsRef idkey)
 
   success = true;
 finally:
-  PyErr_Clear();
+  if (!success && (PyErr_ExceptionMatches(PyExc_KeyError) ||
+                   PyErr_ExceptionMatches(PyExc_IndexError))) {
+    PyErr_Clear();
+  }
   Py_CLEAR(pykey);
   Py_CLEAR(pyresult);
   if (!success) {
@@ -163,64 +328,140 @@ finally:
   return success ? 0 : -1;
 }
 
+int
+_pyproxy_contains(PyObject* pyobj, JsRef idkey)
+{
+  PyObject* pykey = NULL;
+  int result = -1;
+
+  pykey = js2python(idkey);
+  FAIL_IF_NULL(pykey);
+  result = PySequence_Contains(pyobj, pykey);
+
+finally:
+  Py_CLEAR(pykey);
+  return result;
+}
+
 JsRef
 _pyproxy_ownKeys(PyObject* pyobj)
 {
-  PyObject* pydir = PyObject_Dir(pyobj);
+  bool success = false;
+  PyObject* pydir = NULL;
+  JsRef iddir = NULL;
+  JsRef identry = NULL;
 
-  if (pydir == NULL) {
-    return NULL;
-  }
+  pydir = PyObject_Dir(pyobj);
+  FAIL_IF_NULL(pydir);
 
-  JsRef iddir = hiwire_array();
+  iddir = JsArray_New();
+  FAIL_IF_NULL(iddir);
   Py_ssize_t n = PyList_Size(pydir);
+  FAIL_IF_MINUS_ONE(n);
   for (Py_ssize_t i = 0; i < n; ++i) {
-    PyObject* pyentry = PyList_GetItem(pydir, i);
-    JsRef identry = python2js(pyentry);
-    hiwire_push_array(iddir, identry);
-    hiwire_decref(identry);
+    PyObject* pyentry = PyList_GetItem(pydir, i); /* borrowed */
+    identry = python2js(pyentry);
+    FAIL_IF_NULL(identry);
+    FAIL_IF_MINUS_ONE(JsArray_Push(iddir, identry));
+    hiwire_CLEAR(identry);
   }
-  Py_DECREF(pydir);
 
+  success = true;
+finally:
+  Py_CLEAR(pydir);
+  hiwire_CLEAR(identry);
+  if (!success) {
+    hiwire_CLEAR(iddir);
+  }
   return iddir;
 }
 
+/**
+ * This sets up a call to _PyObject_Vectorcall. It's a helper fucntion for
+ * callPyObjectKwargs. This is the primary entrypoint from Javascript into
+ * Python code.
+ *
+ * Vectorcall expects the arguments to be communicated as:
+ *
+ *  PyObject*const *args: the positional arguments and followed by the keyword
+ *    arguments
+ *
+ *  size_t nargs_with_flag : the number of arguments plus a flag
+ *      PY_VECTORCALL_ARGUMENTS_OFFSET. The flag PY_VECTORCALL_ARGUMENTS_OFFSET
+ *      indicates that we left an initial entry in the array to be used as a
+ *      self argument in case the callee is a bound method.
+ *
+ *  PyObject* kwnames : a tuple of the keyword argument names. The length of
+ *      this tuple tells CPython how many key word arguments there are.
+ *
+ * Our arguments are:
+ *
+ *   callable : The object to call.
+ *   args : The list of Javascript arguments, both positional and kwargs.
+ *   numposargs : The number of positional arguments.
+ *   kwnames : List of names of the keyword arguments
+ *   numkwargs : The length of kwargs
+ *
+ *   Returns: The return value translated to Javascript.
+ */
 JsRef
-_pyproxy_apply(PyObject* pyobj, JsRef idargs)
+_pyproxy_apply(PyObject* callable,
+               JsRef jsargs,
+               size_t numposargs,
+               JsRef jskwnames,
+               size_t numkwargs)
 {
-  Py_ssize_t length = hiwire_get_length(idargs);
-  PyObject* pyargs = PyTuple_New(length);
-  for (Py_ssize_t i = 0; i < length; ++i) {
-    JsRef iditem = hiwire_get_member_int(idargs, i);
-    PyObject* pyitem = js2python(iditem);
-    PyTuple_SET_ITEM(pyargs, i, pyitem);
-    hiwire_decref(iditem);
-  }
-  PyObject* pyresult = PyObject_Call(pyobj, pyargs, NULL);
-  if (pyresult == NULL) {
-    Py_DECREF(pyargs);
-    return NULL;
-  }
-  JsRef idresult = python2js(pyresult);
-  Py_DECREF(pyresult);
-  Py_DECREF(pyargs);
-  return idresult;
-}
+  size_t total_args = numposargs + numkwargs;
+  size_t last_converted_arg = total_args;
+  JsRef jsitem = NULL;
+  PyObject* pyargs_array[total_args + 1];
+  PyObject** pyargs = pyargs_array;
+  pyargs++; // leave a space for self argument in case callable is a bound
+            // method
+  PyObject* pykwnames = NULL;
+  PyObject* pyresult = NULL;
+  JsRef idresult = NULL;
 
-// Return 2 if obj is iterator
-// Return 1 if iterable but not iterator
-// Return 0 if not iterable
-int
-_pyproxy_iterator_type(PyObject* obj)
-{
-  if (PyIter_Check(obj)) {
-    return 2;
+  // Put both arguments and keyword arguments into pyargs
+  for (Py_ssize_t i = 0; i < total_args; ++i) {
+    jsitem = JsArray_Get(jsargs, i);
+    // pyitem is moved into pyargs so we don't need to clear it later.
+    PyObject* pyitem = js2python(jsitem);
+    if (pyitem == NULL) {
+      last_converted_arg = i;
+      FAIL();
+    }
+    pyargs[i] = pyitem; // pyitem is moved into pyargs.
+    hiwire_CLEAR(jsitem);
   }
-  PyObject* iter = PyObject_GetIter(obj);
-  int result = iter != NULL;
-  Py_CLEAR(iter);
-  PyErr_Clear();
-  return result;
+  if (numkwargs > 0) {
+    // Put names of keyword arguments into a tuple
+    pykwnames = PyTuple_New(numkwargs);
+    for (Py_ssize_t i = 0; i < numkwargs; i++) {
+      jsitem = JsArray_Get(jskwnames, i);
+      // pyitem is moved into pykwargs so we don't need to clear it later.
+      PyObject* pyitem = js2python(jsitem);
+      PyTuple_SET_ITEM(pykwnames, i, pyitem);
+      hiwire_CLEAR(jsitem);
+    }
+  }
+  // Tell callee that we left space for a self argument
+  size_t nargs_with_flag = numposargs | PY_VECTORCALL_ARGUMENTS_OFFSET;
+  pyresult = _PyObject_Vectorcall(callable, pyargs, nargs_with_flag, pykwnames);
+  FAIL_IF_NULL(pyresult);
+  idresult = python2js(pyresult);
+  FAIL_IF_NULL(idresult);
+
+finally:
+  hiwire_CLEAR(jsitem);
+  // If we failed to convert one of the arguments, then pyargs is partially
+  // uninitialized. Only clear the part that actually has stuff in it.
+  for (Py_ssize_t i = 0; i < last_converted_arg; i++) {
+    Py_CLEAR(pyargs[i]);
+  }
+  Py_CLEAR(pyresult);
+  Py_CLEAR(pykwnames);
+  return idresult;
 }
 
 JsRef
@@ -235,15 +476,23 @@ _pyproxy_iter_next(PyObject* iterator)
   return result;
 }
 
+/**
+ * In Python 3.10, they have added the PyIter_Send API (and removed _PyGen_Send)
+ * so in v3.10 this would be a simple API call wrapper like the rest of the code
+ * here. For now, we're just copying the YIELD_FROM opcode (see ceval.c).
+ *
+ * When the iterator is done, it returns NULL and sets StopIteration. We'll use
+ * _pyproxyGen_FetchStopIterationValue below to get the return value of the
+ * generator (again copying from YIELD_FROM).
+ */
 JsRef
-_pyproxy_iter_send(PyObject* receiver, JsRef jsval)
+_pyproxyGen_Send(PyObject* receiver, JsRef jsval)
 {
   bool success = false;
   PyObject* v = NULL;
   PyObject* retval = NULL;
   JsRef jsresult = NULL;
 
-  // cf implementation of YIELD_FROM opcode in ceval.c
   v = js2python(jsval);
   FAIL_IF_NULL(v);
   if (PyGen_CheckExact(receiver) || PyCoro_CheckExact(receiver)) {
@@ -269,8 +518,12 @@ finally:
   return jsresult;
 }
 
+/**
+ * If StopIteration was set, return the value it was set with. Otherwise, return
+ * NULL.
+ */
 JsRef
-_pyproxy_iter_fetch_stopiteration()
+_pyproxyGen_FetchStopIterationValue()
 {
   PyObject* val = NULL;
   // cf implementation of YIELD_FROM opcode in ceval.c
@@ -285,44 +538,24 @@ _pyproxy_iter_fetch_stopiteration()
   return result;
 }
 
-JsRef
-_pyproxy_type(PyObject* ptrobj)
-{
-  return hiwire_string_ascii(ptrobj->ob_type->tp_name);
-}
+///////////////////////////////////////////////////////////////////////////////
+//
+// Await / "then" Implementation
+//
+// We want convert the object to a future with `ensure_future` and then make a
+// promise that resolves when the future does. We can add a callback to the
+// future with future.add_done_callback but we need to make a little python
+// closure "FutureDoneCallback" that remembers how to resolve the promise.
+//
+// From Javascript we will use the single function _pyproxy_ensure_future, the
+// rest of this segment is helper functions for _pyproxy_ensure_future. The
+// FutureDoneCallback object is never exposed to the user.
 
-void
-_pyproxy_destroy(PyObject* ptrobj)
-{ // See bug #1049
-  Py_DECREF(ptrobj);
-  EM_ASM({ delete Module.PyProxies[$0]; }, ptrobj);
-}
-
-/**
- * Test if a PyObject is awaitable.
- * Uses _PyCoro_GetAwaitableIter like in the implementation of the GET_AWAITABLE
- * opcode (see ceval.c). Unfortunately this is not a public API (see issue
- * https://bugs.python.org/issue24510) so it could be a source of instability.
- *
- * :param pyobject: The Python object.
- * :return: 1 if the python code "await obj" would succeed, 0 otherwise. Never
- * fails.
- */
-bool
-_pyproxy_is_awaitable(PyObject* pyobject)
-{
-  PyObject* awaitable = _PyCoro_GetAwaitableIter(pyobject);
-  PyErr_Clear();
-  bool result = awaitable != NULL;
-  Py_CLEAR(awaitable);
-  return result;
-}
-
-// clang-format off
 /**
  * A simple Callable python object. Intended to be called with a single argument
  * which is the future that was resolved.
  */
+// clang-format off
 typedef struct {
     PyObject_HEAD
     /** Will call this function with the result if the future succeeded */
@@ -347,17 +580,14 @@ FutureDoneCallback_dealloc(FutureDoneCallback* self)
 int
 FutureDoneCallback_call_resolve(FutureDoneCallback* self, PyObject* result)
 {
-  bool success = false;
   JsRef result_js = NULL;
   JsRef output = NULL;
   result_js = python2js(result);
-  output = hiwire_call_OneArg(self->resolve_handle, result_js);
+  output = hiwire_call_va(self->resolve_handle, result_js, NULL);
 
-  success = true;
-finally:
   hiwire_CLEAR(result_js);
   hiwire_CLEAR(output);
-  return success ? 0 : -1;
+  return 0;
 }
 
 /**
@@ -371,9 +601,9 @@ FutureDoneCallback_call_reject(FutureDoneCallback* self)
   JsRef excval = NULL;
   JsRef result = NULL;
   // wrap_exception looks up the current exception and wraps it in a Js error.
-  excval = wrap_exception(false);
+  excval = wrap_exception();
   FAIL_IF_NULL(excval);
-  result = hiwire_call_OneArg(self->reject_handle, excval);
+  result = hiwire_call_va(self->reject_handle, excval, NULL);
 
   success = true;
 finally:
@@ -400,6 +630,7 @@ FutureDoneCallback_call(FutureDoneCallback* self,
   int errcode;
   if (result != NULL) {
     errcode = FutureDoneCallback_call_resolve(self, result);
+    Py_DECREF(result);
   } else {
     errcode = FutureDoneCallback_call_reject(self);
   }
@@ -468,462 +699,286 @@ finally:
   return success ? 0 : -1;
 }
 
+///////////////////////////////////////////////////////////////////////////////
+//
+// Buffers
+//
+
+// For debug
+size_t py_buffer_len_offset = offsetof(Py_buffer, len);
+size_t py_buffer_shape_offset = offsetof(Py_buffer, shape);
+
+/**
+ * Convert a C array of Py_ssize_t to Javascript.
+ */
+EM_JS_REF(JsRef, array_to_js, (Py_ssize_t * array, int len), {
+  return Module.hiwire.new_value(
+    Array.from(HEAP32.subarray(array / 4, array / 4 + len)));
+})
+
+// The order of these fields has to match the code in getBuffer
+typedef struct
+{
+  // where is the first entry buffer[0]...[0] (ndim times)?
+  void* start_ptr;
+  // Where is the earliest location in buffer? (If all strides are positive,
+  // this equals start_ptr)
+  void* smallest_ptr;
+  // What is the last location in the buffer (plus one)
+  void* largest_ptr;
+
+  int readonly;
+  char* format;
+  int itemsize;
+  JsRef shape;
+  JsRef strides;
+
+  Py_buffer* view;
+  int c_contiguous;
+  int f_contiguous;
+} buffer_struct;
+
+/**
+ * This is the C part of the getBuffer method.
+ *
+ * We use PyObject_GetBuffer to acquire a Py_buffer view to the object, then we
+ * determine the locations of: the first element of the buffer, the earliest
+ * element of the buffer in memory the lastest element of the buffer in memory
+ * (plus one itemsize).
+ *
+ * We will use this information to slice out a subarray of the wasm heap that
+ * contains all the memory inside of the buffer.
+ *
+ * Special care must be taken for negative strides, this is why we need to keep
+ * track separately of start_ptr (the location of the first element of the
+ * array) and smallest_ptr (the location of the earliest element of the array in
+ * memory). If strides are positive, these are the same but if some strides are
+ * negative they will be different.
+ *
+ * We also put the various other metadata about the buffer that we want to share
+ * into buffer_struct.
+ */
+buffer_struct*
+_pyproxy_get_buffer(PyObject* ptrobj)
+{
+  Py_buffer view;
+  // PyBUF_RECORDS_RO requires that suboffsets be NULL but otherwise is the most
+  // permissive possible request.
+  if (PyObject_GetBuffer(ptrobj, &view, PyBUF_RECORDS_RO) == -1) {
+    // Buffer cannot be represented without suboffsets. The bf_getbuffer method
+    // should have set a PyExc_BufferError saying something to this effect.
+    return NULL;
+  }
+
+  bool success = false;
+  buffer_struct result = { 0 };
+  result.start_ptr = result.smallest_ptr = result.largest_ptr = view.buf;
+  result.readonly = view.readonly;
+
+  result.format = view.format;
+  result.itemsize = view.itemsize;
+
+  if (view.ndim == 0) {
+    // "If ndim is 0, buf points to a single item representing a scalar. In this
+    // case, shape, strides and suboffsets MUST be NULL."
+    // https://docs.python.org/3/c-api/buffer.html#c.Py_buffer.ndim
+    result.largest_ptr += view.itemsize;
+    result.shape = JsArray_New();
+    result.strides = JsArray_New();
+    result.c_contiguous = true;
+    result.f_contiguous = true;
+    goto success;
+  }
+
+  // Because we requested PyBUF_RECORDS_RO I think we can assume that
+  // view.shape != NULL.
+  result.shape = array_to_js(view.shape, view.ndim);
+
+  if (view.strides == NULL) {
+    // In this case we are a C contiguous buffer
+    result.largest_ptr += view.len;
+    Py_ssize_t strides[view.ndim];
+    PyBuffer_FillContiguousStrides(
+      view.ndim, view.shape, strides, view.itemsize, 'C');
+    result.strides = array_to_js(strides, view.ndim);
+    goto success;
+  }
+
+  if (view.len != 0) {
+    // Have to be careful to ensure that we handle negative strides correctly.
+    for (int i = 0; i < view.ndim; i++) {
+      // view.strides[i] != 0
+      if (view.strides[i] > 0) {
+        // add positive strides to largest_ptr
+        result.largest_ptr += view.strides[i] * (view.shape[i] - 1);
+      } else {
+        // subtract negative strides from smallest_ptr
+        result.smallest_ptr += view.strides[i] * (view.shape[i] - 1);
+      }
+    }
+    result.largest_ptr += view.itemsize;
+  }
+
+  result.strides = array_to_js(view.strides, view.ndim);
+  result.c_contiguous = PyBuffer_IsContiguous(&view, 'C');
+  result.f_contiguous = PyBuffer_IsContiguous(&view, 'F');
+
+success:
+  success = true;
+finally:
+  if (success) {
+    // The result.view memory will be freed when (if?) the user calls
+    // Py_Buffer.release().
+    result.view = (Py_buffer*)PyMem_Malloc(sizeof(Py_buffer));
+    *result.view = view;
+    // The result_heap memory will be freed by getBuffer
+    buffer_struct* result_heap =
+      (buffer_struct*)PyMem_Malloc(sizeof(buffer_struct));
+    *result_heap = result;
+    return result_heap;
+  } else {
+    hiwire_CLEAR(result.shape);
+    hiwire_CLEAR(result.strides);
+    PyBuffer_Release(&view);
+    return NULL;
+  }
+}
+
 EM_JS_REF(JsRef, pyproxy_new, (PyObject * ptrobj), {
-  // Technically, this leaks memory, since we're holding on to a reference
-  // to the proxy forever.  But we have that problem anyway since we don't
-  // have a destructor in Javascript to free the Python object.
-  // _pyproxy_destroy, which is a way for users to manually delete the proxy,
-  // also deletes the proxy from this set.
-  if (Module.PyProxies.hasOwnProperty(ptrobj)) {
-    return Module.hiwire.new_value(Module.PyProxies[ptrobj]);
-  }
-
-  _Py_IncRef(ptrobj);
-
-  let target = new Module.PyProxyClass();
-  target['$$'] = { ptr : ptrobj, type : 'PyProxy' };
-
-  // clang-format off
-  if (_PyMapping_Check(ptrobj) === 1) {
-    // clang-format on
-    // Note: this applies to lists and tuples and sequence-like things
-    // _PyMapping_Check returns true on a superset of things _PySequence_Check
-    // accepts.
-    Object.assign(target, Module.PyProxyMappingMethods);
-  }
-
-  let proxy = new Proxy(target, Module.PyProxyHandlers);
-  let itertype = __pyproxy_iterator_type(ptrobj);
-  // clang-format off
-  if (itertype === 2) {
-    Object.assign(target, Module.PyProxyIteratorMethods);
-  }
-  if (itertype === 1) {
-    Object.assign(target, Module.PyProxyIterableMethods);
-  }
-  // clang-format on
-  Module.PyProxies[ptrobj] = proxy;
-  let is_awaitable = __pyproxy_is_awaitable(ptrobj);
-  if (is_awaitable) {
-    Object.assign(target, Module.PyProxyAwaitableMethods);
-  }
-
-  return Module.hiwire.new_value(proxy);
+  return Module.hiwire.new_value(Module.pyproxy_new(ptrobj));
 });
 
-EM_JS_NUM(int, pyproxy_init_js, (), {
-  // clang-format off
-  Module.PyProxies = {};
-  function _getPtr(jsobj) {
-    let ptr = jsobj.$$.ptr;
-    if (ptr === null) {
-      throw new Error("Object has already been destroyed");
+EM_JS_REF(JsRef, create_once_callable, (PyObject * obj), {
+  _Py_IncRef(obj);
+  let alreadyCalled = false;
+  function wrapper(... args)
+  {
+    if (alreadyCalled) {
+      throw new Error("OnceProxy can only be called once");
     }
-    return ptr;
+    try {
+      return Module.callPyObject(obj, ... args);
+    } finally {
+      wrapper.destroy();
+    }
   }
-  
-  // Static methods
-  Module.PyProxy = {
-    _getPtr,
-    isPyProxy: function(jsobj) {
-      return jsobj && jsobj.$$ !== undefined && jsobj.$$.type === 'PyProxy';
-    },
+  wrapper.destroy = function()
+  {
+    if (alreadyCalled) {
+      throw new Error("OnceProxy has already been destroyed");
+    }
+    alreadyCalled = true;
+    Module.finalizationRegistry.unregister(wrapper);
+    _Py_DecRef(obj);
   };
+  Module.finalizationRegistry.register(wrapper, obj, wrapper);
+  return Module.hiwire.new_value(wrapper);
+});
 
-  // We inherit from Function so that we can be callable. 
-  Module.PyProxyClass = class extends Function {
-    get [Symbol.toStringTag] (){
-        return "PyProxy";
-    }
-    get type() {
-      let ptrobj = _getPtr(this);
-      return Module.hiwire.pop_value(__pyproxy_type(ptrobj));
-    }
-    toString() {
-      let ptrobj = _getPtr(this);
-      let jsref_repr;
-      try {
-        jsref_repr = __pyproxy_repr(ptrobj);
-      } catch(e){
-        Module.fatal_error(e);
-      }
-      if(jsref_repr === 0){
-        _pythonexc2js();
-      }
-      return Module.hiwire.pop_value(jsref_repr);
-    }
-    destroy() {
-      let ptrobj = _getPtr(this);
-      __pyproxy_destroy(ptrobj);
-      this.$$.ptr = null;
-    }
-    apply(jsthis, jsargs) {
-      let ptrobj = _getPtr(this);
-      let idargs = Module.hiwire.new_value(jsargs);
-      let idresult;
-      try {
-        idresult = __pyproxy_apply(ptrobj, idargs);
-      } catch(e){
-        Module.fatal_error(e);
-      } finally {
-        Module.hiwire.decref(idargs);
-      }
-      if(idresult === 0){
-        _pythonexc2js();
-      }
-      return Module.hiwire.pop_value(idresult);
-    }
-    toJs(depth = -1){
-      let idresult = _python2js_with_depth(_getPtr(this), depth);
-      let result = Module.hiwire.get_value(idresult);
-      Module.hiwire.decref(idresult);
-      return result;
-    }
-  };
+static PyObject*
+create_once_callable_py(PyObject* _mod, PyObject* obj)
+{
+  JsRef ref = create_once_callable(obj);
+  PyObject* result = JsProxy_create(ref);
+  hiwire_decref(ref);
+  return result;
+}
 
-  // These methods appear for lists and tuples and sequence-like things
-  // _PyMapping_Check returns true on a superset of things _PySequence_Check accepts.
-  Module.PyProxyMappingMethods = {
-    get : function(key){
-      let ptrobj = _getPtr(this);
-      let idkey = Module.hiwire.new_value(key);
-      let idresult;
-      try {
-        idresult = __pyproxy_getitem(ptrobj, idkey);
-      } catch(e) {
-        Module.fatal_error(e);
-      } finally {
-        Module.hiwire.decref(idkey);
-      }
-      if(idresult === 0){
-        if(Module._PyErr_Occurred()){
-          _pythonexc2js();
-        } else {
-          return undefined;
-        }
-      }
-      return Module.hiwire.pop_value(idresult);
-    },
-    set : function(key, value){
-      let ptrobj = _getPtr(this);
-      let idkey = Module.hiwire.new_value(key);
-      let idval = Module.hiwire.new_value(value);
-      let errcode;
-      try {
-        errcode = __pyproxy_setitem(ptrobj, idkey, idval);
-      } catch(e) {
-        Module.fatal_error(e);
-      } finally {
-        Module.hiwire.decref(idkey);
-        Module.hiwire.decref(idval);
-      }
-      if(errcode === -1){
-        _pythonexc2js();
-      }
-    },
-    has : function(key) {
-      return this.get(key) !== undefined;
-    },
-    delete : function(key) {
-      let ptrobj = _getPtr(this);
-      let idkey = Module.hiwire.new_value(key);
-      let errcode;
-      try {
-        errcode = __pyproxy_delitem(ptrobj, idkey);
-      } catch(e) {
-        Module.fatal_error(e);
-      } finally {
-        Module.hiwire.decref(idkey);
-      }
-      if(errcode === -1){
-        _pythonexc2js();
-      }
+// clang-format off
+
+// At some point it would be nice to use FinalizationRegistry with these, but
+// it's a bit tricky.
+EM_JS_REF(JsRef, create_promise_handles, (
+  PyObject* handle_result, PyObject* handle_exception
+), {
+  if (handle_result) {
+    _Py_IncRef(handle_result);
+  }
+  if (handle_exception) {
+    _Py_IncRef(handle_exception);
+  }
+  let used = false;
+  function checkUsed(){
+    if (used) {
+      throw new Error("One of the promise handles has already been called.");
     }
-  };
-
-  // See:
-  // https://docs.python.org/3/c-api/iter.html
-  // https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Iteration_protocols
-  // This avoids allocating a PyProxy wrapper for the temporary iterator.
-  Module.PyProxyIterableMethods = {
-    [Symbol.iterator] : function*() {
-      let iterptr = _PyObject_GetIter(_getPtr(this));
-      if(iterptr === 0){
-        pythonexc2js();
-      }
-      let item;
-      while((item = __pyproxy_iter_next(iterptr))){
-        yield Module.hiwire.pop_value(item);
-      }
-      if(_PyErr_Occurred()){
-        pythonexc2js();
-      }
-      _Py_DecRef(iterptr);
+  }
+  function destroy(){
+    checkUsed();
+    used = true;
+    if(handle_result){
+      _Py_DecRef(handle_result);
     }
-  };
-
-  Module.PyProxyIteratorMethods = {
-    [Symbol.iterator] : function() {
-      return this;
-    },
-    next : function(arg) {
-      let idresult;
-      // Note: arg is optional, if arg is not supplied, it will be undefined
-      // which gets converted to "Py_None". This is as intended.
-      let idarg = Module.hiwire.new_value(arg);
-      try {
-        idresult = __pyproxy_iter_send(_getPtr(this), idarg);
-      } catch(e) {
-        Module.fatal_error(e);
-      } finally {
-        Module.hiwire.decref(idarg);
-      }
-
-      let done = false;
-      if(idresult === 0){
-        idresult = __pyproxy_iter_fetch_stopiteration();
-        if (idresult){
-          done = true;
-        } else {
-          _pythonexc2js();
-        }
-      }
-      let value = Module.hiwire.pop_value(idresult);
-      return { done, value };
-    },
-  };
-
-  // These fields appear in the target by default because the target is a function.
-  // we want to filter them out.
-  let ignoredTargetFields = ["name", "length"];
-
-  // See explanation of which methods should be defined here and what they do here:
-  // https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Proxy
-  Module.PyProxyHandlers = {
-    isExtensible: function() { return true },
-    has: function (jsobj, jskey) {
-      if(Reflect.has(jsobj, jskey) && !ignoredTargetFields.includes(jskey)){
-        return true;
-      }
-      if(typeof(jskey) === "symbol"){
-        return false;
-      }
-      let ptrobj = _getPtr(jsobj);
-      let idkey = Module.hiwire.new_value(jskey);
-      let result;
-      try {
-        result = __pyproxy_hasattr(ptrobj, idkey);
-      } catch(e){
-        Module.fatal_error(e);
-      } finally {
-        Module.hiwire.decref(idkey);
-      }
-      if(result === -1){
-        _pythonexc2js();
-      }
-      return result !== 0;
-    },
-    get: function (jsobj, jskey) {
-      if(Reflect.has(jsobj, jskey) && !ignoredTargetFields.includes(jskey)){
-        return Reflect.get(jsobj, jskey);
-      }
-      if(typeof(jskey) === "symbol"){
-        return undefined;
-      }
-      let ptrobj = _getPtr(jsobj);
-      let idkey = Module.hiwire.new_value(jskey);
-      let idresult;
-      try {
-        idresult = __pyproxy_getattr(ptrobj, idkey);
-      } catch(e) {
-        Module.fatal_error(e);
-      } finally {
-        Module.hiwire.decref(idkey);
-      }
-      if(idresult === 0){
-        _pythonexc2js();
-      }
-      return Module.hiwire.pop_value(idresult);
-    },
-    set: function (jsobj, jskey, jsval) {
-      if(
-        Reflect.has(jsobj, jskey) && !ignoredTargetFields.includes(jskey)
-        || typeof(jskey) === "symbol"
-      ){
-        if(typeof(jskey) === "symbol"){
-          jskey = jskey.description;
-        }
-        throw new Error(`Cannot set read only field ${jskey}`);
-      }
-      let ptrobj = _getPtr(jsobj);
-      let idkey = Module.hiwire.new_value(jskey);
-      let idval = Module.hiwire.new_value(jsval);
-      let errcode;
-      try {
-        errcode = __pyproxy_setattr(ptrobj, idkey, idval);
-      } catch(e) {
-        Module.fatal_error(e);
-      } finally {
-        Module.hiwire.decref(idkey);
-        Module.hiwire.decref(idval);
-      }
-      if(errcode === -1){
-        _pythonexc2js();
-      }
-      return true;
-    },
-    deleteProperty: function (jsobj, jskey) {
-      if(
-        Reflect.has(jsobj, jskey) && !ignoredTargetFields.includes(jskey)
-        || typeof(jskey) === "symbol"
-      ){
-        if(typeof(jskey) === "symbol"){
-          jskey = jskey.description;
-        }        
-        throw new Error(`Cannot delete read only field ${jskey}`);
-      }
-      let ptrobj = _getPtr(jsobj);
-      let idkey = Module.hiwire.new_value(jskey);
-      let errcode;
-      try {
-        errcode = __pyproxy_delattr(ptrobj, idkey);
-      } catch(e) {
-        Module.fatal_error(e);
-      } finally {
-        Module.hiwire.decref(idkey);
-      }
-      if(errcode === -1){
-        _pythonexc2js();
-      }
-      return true;
-    },
-    ownKeys: function (jsobj) {
-      let result = new Set(Reflect.ownKeys(jsobj));
-      for(let key of ignoredTargetFields){
-        result.delete(key);
-      }
-      let ptrobj = _getPtr(jsobj);
-      let idresult;
-      try {
-        idresult = __pyproxy_ownKeys(ptrobj);
-      } catch(e) {
-        Module.fatal_error(e);
-      }
-      let jsresult = Module.hiwire.pop_value(idresult);
-      for(let key of jsresult){
-        result.add(key);
-      }
-      return Array.from(result);
-    },
-    apply: function (jsobj, jsthis, jsargs) {
-      return jsobj.apply(jsthis, jsargs);
-    },
-  };
-  
-  Module.PyProxyAwaitableMethods = {
-    _ensure_future : function(){
-      let resolve_handle_id = 0;
-      let reject_handle_id = 0;
-      let resolveHandle;
-      let rejectHandle;
-      let promise;
-      try {
-        promise = new Promise((resolve, reject) => {
-          resolveHandle = resolve;
-          rejectHandle = reject;
-        });
-        resolve_handle_id = Module.hiwire.new_value(resolveHandle);
-        reject_handle_id = Module.hiwire.new_value(rejectHandle);
-        let ptrobj = _getPtr(this);
-        let errcode = __pyproxy_ensure_future(ptrobj, resolve_handle_id, reject_handle_id);
-        if(errcode === -1){
-          _pythonexc2js();
-        }
-      } finally {
-        Module.hiwire.decref(resolve_handle_id);
-        Module.hiwire.decref(reject_handle_id);
-      }
-      return promise;
-    },
-    then : function(onFulfilled, onRejected){
-      let promise = this._ensure_future();
-      return promise.then(onFulfilled, onRejected);
-    },
-    catch : function(onRejected){
-      let promise = this._ensure_future();
-      return promise.catch(onRejected);
-    },
-    finally : function(onFinally){
-      let promise = this._ensure_future();
-      return promise.finally(onFinally);
+    if(handle_exception){
+      _Py_DecRef(handle_exception)
     }
-  };
-
-
-  // A special proxy that we use to wrap pyodide.globals to allow property access
-  // like `pyodide.globals.x`.
-  // TODO: Should we have this?
-  let globalsPropertyAccessWarned = false;
-  let globalsPropertyAccessWarningMsg =
-    "Access to pyodide.globals via pyodide.globals.key is deprecated and " +
-    "will be removed in version 0.18.0. Use pyodide.globals.get('key'), " +
-    "pyodide.globals.set('key', value), pyodide.globals.delete('key') instead.";
-  let NamespaceProxyHandlers = {
-    has : function(obj, key){
-      return Reflect.has(obj, key) || obj.has(key);
-    },
-    get : function(obj, key){
-      if(Reflect.has(obj, key)){
-        return Reflect.get(obj, key);
+  }
+  function onFulfilled(res) {
+    checkUsed();
+    try {
+      if(handle_result){
+        return Module.callPyObject(handle_result, res);
       }
-      let result = obj.get(key);
-      if(!globalsPropertyAccessWarned && result !== undefined){
-        console.warn(globalsPropertyAccessWarningMsg);
-        globalsPropertyAccessWarned = true;
-      }
-      return result;
-    },
-    set : function(obj, key, value){
-      if(Reflect.has(obj, key)){
-        throw new Error(`Cannot set read only field ${key}`);
-      }
-      if(!globalsPropertyAccessWarned){
-        globalsPropertyAccessWarned = true;
-        console.warn(globalsPropertyAccessWarningMsg);
-      }
-      obj.set(key, value);
-    },
-    ownKeys: function (obj) {
-      let result = new Set(Reflect.ownKeys(obj));
-      let iter = obj.keys();
-      for(let key of iter){
-        result.add(key);
-      }
-      iter.destroy();
-      return Array.from(result);
+    } finally {
+      destroy();
     }
-  };
-  
-  Module.wrapNamespace = function wrapNamespace(ns){
-    return new Proxy(ns, NamespaceProxyHandlers);
-  };
-
-  return 0;
+  }
+  function onRejected(err) {
+    checkUsed();
+    try {
+      if(handle_exception){
+        return Module.callPyObject(handle_exception, err);
+      }
+    } finally {
+      destroy();
+    }
+  }
+  onFulfilled.destroy = destroy;
+  onRejected.destroy = destroy;
+  return Module.hiwire.new_value(
+    [onFulfilled, onRejected]
+  );
+})
 // clang-format on
-});
+
+static PyObject*
+create_proxy(PyObject* _mod, PyObject* obj)
+{
+  JsRef ref = pyproxy_new(obj);
+  PyObject* result = JsProxy_create(ref);
+  hiwire_decref(ref);
+  return result;
+}
+
+static PyMethodDef methods[] = {
+  {
+    "create_once_callable",
+    create_once_callable_py,
+    METH_O,
+  },
+  {
+    "create_proxy",
+    create_proxy,
+    METH_O,
+  },
+  { NULL } /* Sentinel */
+};
 
 int
-pyproxy_init()
+pyproxy_init(PyObject* core)
 {
+  bool success = false;
+
+  PyObject* docstring_source = PyImport_ImportModule("_pyodide._core");
+  FAIL_IF_NULL(docstring_source);
+  FAIL_IF_MINUS_ONE(
+    add_methods_and_set_docstrings(core, methods, docstring_source));
   asyncio = PyImport_ImportModule("asyncio");
-  if (asyncio == NULL) {
-    return -1;
-  }
-  if (PyType_Ready(&FutureDoneCallbackType)) {
-    return -1;
-  }
-  if (pyproxy_init_js()) {
-    return -1;
-  }
-  return 0;
+  FAIL_IF_NULL(asyncio);
+  FAIL_IF_MINUS_ONE(PyType_Ready(&FutureDoneCallbackType));
+
+  success = true;
+finally:
+  Py_CLEAR(docstring_source);
+  return success ? 0 : -1;
 }

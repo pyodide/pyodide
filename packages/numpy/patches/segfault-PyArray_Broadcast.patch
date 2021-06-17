@@ -1,0 +1,71 @@
+From 6f91dceca26bb06bada90e0e0bbe770538928d5f Mon Sep 17 00:00:00 2001
+From: Hood <hood@mit.edu>
+Date: Fri, 16 Apr 2021 08:41:03 -0700
+Subject: [PATCH 2/2] Fix segfault in PyArray_Broadcast in chrome 89 #1474
+
+Resolves #1473.
+
+This is a similar situation as with #1384 (see the other patch) however in this
+case when I made modifications to `PyArray_Broadcast` to remove the offending
+load, the crash moved around to other locations corresponding to different spots
+in the source. After a significant amount of messing around with this, I just
+reimplemented the first part of the function in Javascript. See
+src/core/numpy_patch.c where we define PyArray_Broadcast_part1.
+
+---
+ numpy/core/src/multiarray/iterators.c | 32 +++++++++++++++++++++------
+ 1 file changed, 25 insertions(+), 7 deletions(-)
+
+diff --git a/numpy/core/src/multiarray/iterators.c b/numpy/core/src/multiarray/iterators.c
+index 9da811f69..b59d32da1 100644
+--- a/numpy/core/src/multiarray/iterators.c
++++ b/numpy/core/src/multiarray/iterators.c
+@@ -1153,13 +1153,13 @@ NPY_NO_EXPORT PyTypeObject PyArrayIter_Type = {
+ 
+ /** END of Array Iterator **/
+ 
+-/* Adjust dimensionality and strides for index object iterators
+-   --- i.e. broadcast
+-*/
+-/*NUMPY_API*/
+-NPY_NO_EXPORT int
+-PyArray_Broadcast(PyArrayMultiIterObject *mit)
+-{
++int
++PyArray_Broadcast_part1(void *mit);
++
++#ifndef __EMSCRIPTEN__
++int
++PyArray_Broadcast_part1(void *mit_void){
++    PyArrayMultiIterObject *mit = (PyArrayMultiIterObject *)mit_void;
+     int i, nd, k, j;
+     npy_intp tmp;
+     PyArrayIterObject *it;
+@@ -1195,6 +1195,24 @@ PyArray_Broadcast(PyArrayMultiIterObject *mit)
+             }
+         }
+     }
++    return 0;
++}
++#endif
++
++/* Adjust dimensionality and strides for index object iterators
++   --- i.e. broadcast
++*/
++/*NUMPY_API*/
++NPY_NO_EXPORT int
++PyArray_Broadcast(PyArrayMultiIterObject *mit)
++{
++    int i, nd, k, j;
++    npy_intp tmp;
++    PyArrayIterObject *it;
++
++    if(PyArray_Broadcast_part1((void*)mit) == -1){
++        return -1;
++    }
+ 
+     /*
+      * Reset the iterator dimensions and strides of each iterator
+-- 
+2.17.1
+

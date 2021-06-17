@@ -27,10 +27,10 @@ load a package's dependencies automatically.
 
 ## mkpkg
 
-If you wish to create a new package for pyodide, the easiest place to start is
-with the `mkpkg` tool. If your package is on PyPI, just run:
+If you wish to create a new package for Pyodide, the easiest place to start is
+with the {ref}`mkpkg tool <pyodide-mkpkg>`. If your package is on PyPI, just run:
 
-`bin/pyodide mkpkg $PACKAGE_NAME`
+`pyodide-build mkpkg $PACKAGE_NAME`
 
 This will generate a `meta.yaml` (see below) that should work out of the box
 for many pure Python packages. This tool will populate the latest version, download
@@ -72,7 +72,7 @@ The version of the package.
 
 #### `source/url`
 
-The url of the source tarball.
+The URL of the source tarball.
 
 The tarball may be in any of the formats supported by Python's
 `shutil.unpack_archive`: `tar`, `gztar`, `bztar`, `xztar`, and `zip`.
@@ -146,11 +146,11 @@ Extra arguments to pass to the linker when building for WebAssembly.
 
 #### `build/library`
 
-Should be set to true for library packages. Library packages are packages that are needed for other packages but are not Python packages themselves. For library packages, the script specified in the `build/script` section is run to compile the library. See the [zlib meta.yaml](https://github.com/iodide-project/pyodide/blob/master/packages/zlib/meta.yaml) for an example of a library package specification.
+Should be set to true for library packages. Library packages are packages that are needed for other packages but are not Python packages themselves. For library packages, the script specified in the `build/script` section is run to compile the library. See the [zlib meta.yaml](https://github.com/pyodide/pyodide/blob/main/packages/zlib/meta.yaml) for an example of a library package specification.
 
 #### `build/sharedlibrary`
 
-Should be set to true for shared library packages. Shared library packages are packages that are needed for other packages, but are loaded dynamically when pyodide is run. For shared library packages, the script specified in the `build/script` section is run to compile the library. The script should build the shared library and copy into into a subfolder of the source folder called `install`. Files or folders in this install folder will be packaged to make the pyodide package. See the [CLAPACK meta.yaml](https://github.com/iodide-project/pyodide/blob/master/packages/CLAPACK/meta.yaml) for an example of a shared library specification.
+Should be set to true for shared library packages. Shared library packages are packages that are needed for other packages, but are loaded dynamically when Pyodide is run. For shared library packages, the script specified in the `build/script` section is run to compile the library. The script should build the shared library and copy into into a subfolder of the source folder called `install`. Files or folders in this install folder will be packaged to make the Pyodide package. See the [CLAPACK meta.yaml](https://github.com/pyodide/pyodide/blob/main/packages/CLAPACK/meta.yaml) for an example of a shared library specification.
 
 #### `build/script`
 
@@ -187,7 +187,7 @@ A list of required packages.
 List of imports to test after the package is built.
 
 ## C library dependencies
-Some python packages depend on certain C libraries, e.g. `lxml` depends on
+Some Python packages depend on certain C libraries, e.g. `lxml` depends on
 `libxml`.
 
 To package a C library, create a directory in `packages/` for the C library.
@@ -196,7 +196,7 @@ This directory should contain (at least) two files:
 - `Makefile` that specifies how the library should be be built. Note that the
   build system will call `make`, not `emmake make`. The convention is that the
   source for the library is downloaded by the Makefile, as opposed to being
-  included in the `pyodide` repository.
+  included in the Pyodide repository.
 
 - `meta.yaml` that specifies metadata about the package. For C libraries, only
   three options are supported:
@@ -204,20 +204,20 @@ This directory should contain (at least) two files:
   - `package/name`: The name of the library, which must equal the directory
     name.
   - `requirements/run`: The dependencies of the library, which can include both
-    C libraries and python packages.
+    C libraries and Python packages.
   - `build/library`: This must be set to `true` to indicate that this is a
     library and not an ordinary package.
 
-After packaging a C library, it can be added as a dependency of a python
+After packaging a C library, it can be added as a dependency of a Python
 package like a normal dependency. See `lxml` and `libxml` for an example (and
 also `scipy` and `CLAPACK`).
 
 *Remark:* Certain C libraries come as emscripten ports, and do not have to be
 built manually. They can be used by adding e.g. `-s USE_ZLIB` in the `cflags`
-of the python package. See e.g. `matplotlib` for an example.
+of the Python package. See e.g. `matplotlib` for an example.
 
 ## Structure of a Pyodide package
-This section describes the structure of a pure python package, and how our
+This section describes the structure of a pure Python package, and how our
 build system creates it (In general, it is not recommended, to construct these
 by hand; instead create a Python wheel and install it with micropip)
 
@@ -226,9 +226,9 @@ packages the same way as CPython --- it looks for relevant files `.py` files in
 `/lib/python3.x/`. When creating and loading a package, our job is to put our
 `.py` files in the right location in emscripten's virtual filesystem.
 
-Suppose you have a python library that consists of a single directory
+Suppose you have a Python library that consists of a single directory
 `/PATH/TO/LIB/` whose contents would go into
-`/lib/python3.8/site-packages/PACKAGE_NAME/` under a normal python
+`/lib/python3.8/site-packages/PACKAGE_NAME/` under a normal Python
 installation.
 
 The simplest version of the corresponding Pyodide package contains two files
@@ -237,25 +237,30 @@ The simplest version of the corresponding Pyodide package contains two files
 loading the package via `pyodide.loadPackage`, Pyodide will load and run
 `PACKAGE_NAME.js`. The script then fetches `PACKAGE_NAME.data` and extracts the
 contents to emscripten's virtual filesystem. Afterwards, since the files are
-now in `/lib/python3.8/`, running `import PACKAGE_NAME` in python will
+now in `/lib/python3.8/`, running `import PACKAGE_NAME` in Python will
 successfully import the module as usual.
 
 To construct this bundle, we use the `file_packager.py` script from emscripten.
 We invoke it as follows:
 ```sh
-$ ./file_packager.py PACKAGE_NAME.data \
+$ ./tools/file_packager.sh \
+     PACKAGE_NAME.data \
      --js-output=PACKAGE_NAME.js \
-     --export-name=pyodide._module \
-     --use-preload-plugins \
-     --preload /PATH/TO/LIB/@/lib/python3.8/site-packages/PACKAGE_NAME/ \
-     --exclude "*__pycache__*" \
-     --lz4
+     --preload /PATH/TO/LIB/@/lib/python3.8/site-packages/PACKAGE_NAME/
 ```
 
 The arguments can be explained as follows:
- - The `--preload` argument instructs the package to look for the
+ - PACKAGE_NAME.data indicates where to put the data file
+ - --js-output=PACKAGE_NAME.js indicates where to put the javascript file
+ - `--preload` instructs the package to look for the
    file/directory before the separator `@` (namely `/PATH/TO/LIB/`) and place
    it at the path after the `@` in the virtual filesystem (namely
    `/lib/python3.8/site-packages/PACKAGE_NAME/`).
- - The `--exclude` argument specifies files to omit from the package.
- - The `--lz4` argument says to use LZ4 to compress the files
+
+`file_packager.sh` adds the following options:
+ - `--lz4` to use LZ4 to compress the files
+ - `--export-name=globalThis.__pyodide_module` tells `file_packager` where to find the main Emscripten
+   module for linking.
+ - `--exclude *__pycache__*` to omit the pycache directories
+ - `--use-preload-plugins` says to [automatically decode files based on their
+   extension](https://emscripten.org/docs/porting/files/packaging_files.html#preloading-files)
