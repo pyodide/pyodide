@@ -14,13 +14,16 @@ build:
     cd build/statsmodels-0.9.0
     grep -lr tp_print | xargs rm # Remove bad cython output files
     PATH=/usr/local/bin python3.9 tools/cythonize.py
-    echo "hi"
 
   ldflags: -L$(NUMPY_LIB)
 
 requirements:
   run:
     - distutils
+    - numpy
+    - scipy
+    - pandas
+    - patsy
 
 test:
   imports:
