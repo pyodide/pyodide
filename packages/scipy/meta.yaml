@@ -16,7 +16,6 @@ source:
     - patches/skip_ellip_harm_2_pyx_ctypes.patch
     - patches/make-int-return-values.patch
     - patches/add-missing-extern.patch
-    - patches/fix-typo-flapack-pyf.patch
 
 build:
 # linker and C flags are set to error on anything to do with function declarations being wrong. By default these
