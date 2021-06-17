@@ -143,6 +143,13 @@ def compile(path: Path, srcpath: Path, pkg: Dict[str, Any], args):
     if pkg.get("build", {}).get("skip_host", True):
         env["SKIP_HOST"] = ""
 
+    pre = pkg.get("build", {}).get("pre")
+    if pre is not None:
+        site_packages_dir = srcpath / "install" / "lib" / "python3.9" / "site-packages"
+        pkgdir = path.parent.resolve()
+        env = {"SITEPACKAGES": str(site_packages_dir), "PKGDIR": str(pkgdir)}
+        subprocess.run(["bash", "-ce", pre], env=env, check=True)
+
     try:
         subprocess.run(
             [
