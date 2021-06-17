@@ -185,7 +185,7 @@ def test_hyp_tojs_no_crash(selenium_module_scope, obj):
         import pickle
         from zoneinfo import ZoneInfo
 
-        assume(not isinstance(ZoneInfo, obj))
+        assume(not isinstance(obj, ZoneInfo))
 
         try:
             obj_bytes = list(pickle.dumps(obj))
