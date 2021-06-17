@@ -11,7 +11,7 @@ build:
   pre: |
     pip install scipy cython
     grep -lr tp_print statsmodels | xargs rm # Remove bad cython output files
-    python ./tools/cythonize.py
+    PATH=/usr/local/bin python3.9 ./tools/cythonize.py
 
   ldflags: -L$(NUMPY_LIB)
 
