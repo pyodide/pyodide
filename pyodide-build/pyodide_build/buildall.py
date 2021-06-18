@@ -99,8 +99,6 @@ class Package(BasePackage):
                     args.target,
                     "--install-dir",
                     args.install_dir,
-                    "--log-dir",
-                    args.log_dir,
                 ],
                 check=False,
                 stdout=f,
