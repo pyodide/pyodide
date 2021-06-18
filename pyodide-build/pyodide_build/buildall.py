@@ -81,7 +81,7 @@ class Package(BasePackage):
         self.dependents = set()
 
     def build(self, outputdir: Path, args) -> None:
-        with open(self.pkgdir / "build.log", "w") as f:
+        with open(self.pkgdir / "build.log.tmp", "w") as f:
             p = subprocess.run(
                 [
                     sys.executable,
@@ -104,6 +104,22 @@ class Package(BasePackage):
                 stdout=f,
                 stderr=subprocess.STDOUT,
             )
+
+        # Don't overwrite build log if we didn't build the file.
+        # If the file didn't need to be rebuilt, the log will have exactly two lines.
+        rebuilt = True
+        with open(self.pkgdir / "build.log.tmp", "r") as f:
+            try:
+                next(f)
+                next(f)
+                next(f)
+            except StopIteration:
+                rebuilt = False
+
+        if rebuilt:
+            shutil.move(self.pkgdir / "build.log.tmp", self.pkgdir / "build.log")  # type: ignore
+        else:
+            (self.pkgdir / "build.log.tmp").unlink()
 
         if args.log_dir:
             shutil.copy(
