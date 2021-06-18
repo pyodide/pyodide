@@ -99,10 +99,17 @@ class Package(BasePackage):
                     args.target,
                     "--install-dir",
                     args.install_dir,
+                    "--log-dir",
+                    args.log_dir,
                 ],
                 check=False,
                 stdout=f,
                 stderr=subprocess.STDOUT,
+            )
+
+        if args.log_dir:
+            shutil.copy(
+                self.pkgdir / "build.log", Path(args.log_dir) / f"{self.name}.log"
             )
 
         try:
@@ -336,6 +343,14 @@ def make_parser(parser):
             "default. Set to 'skip' to skip installation. Installation is "
             "needed if you want to build other packages that depend on this one."
         ),
+    )
+    parser.add_argument(
+        "--log-dir",
+        type=str,
+        dest="log_dir",
+        nargs="?",
+        default=None,
+        help=("Directory to place log files"),
     )
     parser.add_argument(
         "--only",

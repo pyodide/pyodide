@@ -336,6 +336,14 @@ def make_parser(parser: argparse.ArgumentParser):
             "needed if you want to build other packages that depend on this one."
         ),
     )
+    parser.add_argument(
+        "--log-dir",
+        type=str,
+        dest="log_dir",
+        nargs="?",
+        default=None,
+        help=("Directory to place log files"),
+    )
     return parser
 
 
