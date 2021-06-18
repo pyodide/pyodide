@@ -1,4 +1,4 @@
-export PYODIDE_EMSCRIPTEN_VERSION ?= 2.0.15
+export PYODIDE_EMSCRIPTEN_VERSION ?= 2.0.16
 export PYODIDE_BINARYEN_VERSION ?= version_100
 
 # BASH_ENV tells bash to run pyodide_env.sh on startup, whcih sets various
@@ -70,7 +70,7 @@ export MAIN_MODULE_CFLAGS= $(CFLAGS_BASE) \
     	-Werror=sometimes-uninitialized \
     	-Werror=int-conversion \
     	-Werror=incompatible-pointer-types \
-		-I$(PYTHONINCLUDE) 
+		-I$(PYTHONINCLUDE)
 
 
 .output_vars:
