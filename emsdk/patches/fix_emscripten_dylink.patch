@@ -167,5 +167,5 @@ index 876492b..750a18d 100644
 +      symbol="byn$fpcast-emu$"+symbol
 +#endif
 
-if (handle == {{{ cDefine('RTLD_DEFAULT') }}}) {
+     if (handle == {{{ cDefine('RTLD_DEFAULT') }}}) {
        result = resolveGlobalSymbol(symbol, true);
