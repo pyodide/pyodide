@@ -4,6 +4,7 @@ substitutions:
   Enhancement : "<span class='badge badge-info'>Enhancement</span>"
   Feature : "<span class='badge badge-success'>Feature</span>"
   Fix : "<span class='badge badge-danger'>Fix</span>"
+  Update : "<span class='badge badge-danger'>Update</span>"
 ---
 
 
@@ -32,10 +33,13 @@ substitutions:
   Javascript API (though no typings are available for `PyProxy` fields).
   {pr}`1601`
 
--{{ ENH }} If a Python error occurs in a reentrant `runPython` call, the error
+- {{ ENH }} If a Python error occurs in a reentrant `runPython` call, the error
   will be propagated into the outer `runPython` context as the original error
   type. This is particularly important if the error is a `KeyboardInterrupt`.
   {pr}`1447`
+
+- {{ Update }} Pyodide now runs Python 3.9.5.
+  {pr}`1637`
 
 ## Standard library
 
