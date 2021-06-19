@@ -37,6 +37,10 @@ substitutions:
   type. This is particularly important if the error is a `KeyboardInterrupt`.
   {pr}`1447`
 
+- {{ ENH }} It is now possible to import `Comlink` objects into Pyodide after
+  using :any:`registerComlink`
+  {pr}`1642`
+
 ## Standard library
 
 - The following standard library modules are now available as standalone packages

@@ -231,9 +231,8 @@ export function registerJsModule(name, module) {
 }
 
 /**
- * Tell Pyodide about an available copy of Comlink.
+ * Tell Pyodide about Comlink.
  * Necessary to enable use of Comlink Proxies from Python.
- * @private
  */
 export function registerComlink(Comlink) {
   Module._Comlink = Comlink;
