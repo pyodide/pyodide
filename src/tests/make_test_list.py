@@ -101,5 +101,5 @@ if __name__ == "__main__":
             error_flags = " ".join(old_error_flags.get(test, []))
             line = test
             if error_flags:
-                line += "\t" + error_flags
+                line += "    " + error_flags
             fp.write(line + "\n")
