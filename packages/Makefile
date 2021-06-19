@@ -8,8 +8,10 @@ else
 endif
 
 all: .artifacts/bin/pyodide-build
+	mkdir -p build-logs
 	PYTHONPATH="$(PYODIDE_LIBRARIES)/lib/python:$(PYODIDE_ROOT)/pyodide-build/" pyodide-build buildall . ../build \
-		--target=$(TARGETPYTHONROOT) $(ONLY_PACKAGES) --install-dir $(PYODIDE_LIBRARIES) --n-jobs $${PYODIDE_JOBS:-4}
+		--target=$(TARGETPYTHONROOT) $(ONLY_PACKAGES) --install-dir $(PYODIDE_LIBRARIES) --n-jobs $${PYODIDE_JOBS:-4} \
+		--log-dir=build-logs
 
 .artifacts/bin/pyodide-build: ../pyodide-build/pyodide_build/**
 	mkdir -p $(PYODIDE_LIBRARIES)

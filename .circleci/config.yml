@@ -131,6 +131,9 @@ jobs:
       - store_artifacts:
           path: /root/repo/build/
 
+      - store_artifacts:
+          path: /root/repo/packages/build-logs
+
   test-core-firefox:
     <<: *defaults
     steps:
