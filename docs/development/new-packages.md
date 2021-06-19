@@ -228,7 +228,7 @@ packages the same way as CPython --- it looks for relevant files `.py` files in
 
 Suppose you have a Python library that consists of a single directory
 `/PATH/TO/LIB/` whose contents would go into
-`/lib/python3.8/site-packages/PACKAGE_NAME/` under a normal Python
+`/lib/python3.9/site-packages/PACKAGE_NAME/` under a normal Python
 installation.
 
 The simplest version of the corresponding Pyodide package contains two files
@@ -237,7 +237,7 @@ The simplest version of the corresponding Pyodide package contains two files
 loading the package via `pyodide.loadPackage`, Pyodide will load and run
 `PACKAGE_NAME.js`. The script then fetches `PACKAGE_NAME.data` and extracts the
 contents to emscripten's virtual filesystem. Afterwards, since the files are
-now in `/lib/python3.8/`, running `import PACKAGE_NAME` in Python will
+now in `/lib/python3.9/`, running `import PACKAGE_NAME` in Python will
 successfully import the module as usual.
 
 To construct this bundle, we use the `file_packager.py` script from emscripten.
@@ -246,7 +246,7 @@ We invoke it as follows:
 $ ./tools/file_packager.sh \
      PACKAGE_NAME.data \
      --js-output=PACKAGE_NAME.js \
-     --preload /PATH/TO/LIB/@/lib/python3.8/site-packages/PACKAGE_NAME/
+     --preload /PATH/TO/LIB/@/lib/python3.9/site-packages/PACKAGE_NAME/
 ```
 
 The arguments can be explained as follows:
@@ -255,7 +255,7 @@ The arguments can be explained as follows:
  - `--preload` instructs the package to look for the
    file/directory before the separator `@` (namely `/PATH/TO/LIB/`) and place
    it at the path after the `@` in the virtual filesystem (namely
-   `/lib/python3.8/site-packages/PACKAGE_NAME/`).
+   `/lib/python3.9/site-packages/PACKAGE_NAME/`).
 
 `file_packager.sh` adds the following options:
  - `--lz4` to use LZ4 to compress the files

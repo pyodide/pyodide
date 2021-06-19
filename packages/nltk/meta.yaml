@@ -10,3 +10,4 @@ requirements:
 test:
   imports:
   - nltk
+  - sqlite3

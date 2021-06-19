@@ -315,6 +315,9 @@ def handle_command(line, args, dryrun=False):
             continue
         if arg == "-Wl,-Bsymbolic-functions":
             continue
+        # breaks emscripten see https://github.com/emscripten-core/emscripten/issues/14460
+        if arg == "-Wl,--strip-all":
+            continue
         # threading is disabled for now
         if arg == "-pthread":
             continue
