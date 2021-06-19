@@ -1,4 +1,4 @@
-export PYODIDE_EMSCRIPTEN_VERSION ?= 2.0.16
+export PYODIDE_EMSCRIPTEN_VERSION ?= 2.0.24
 export PYODIDE_BINARYEN_VERSION ?= version_100
 
 # BASH_ENV tells bash to run pyodide_env.sh on startup, whcih sets various
