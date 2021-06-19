@@ -604,8 +604,10 @@ EM_JS_NUM(bool, hiwire_is_comlink_proxy, (JsRef idobj), {
 EM_JS_NUM(bool, hiwire_is_error, (JsRef idobj), {
   // From https://stackoverflow.com/a/45496068
   let value = Module.hiwire.get_value(idobj);
-  return !!(value && typeof value.stack == = "string" && typeof value.message ==
-            = "string");
+  // clang-format off
+  return !!(value && typeof value.stack === "string" &&
+            typeof value.message === "string");
+  // clang-format on
 });
 
 EM_JS_NUM(bool, hiwire_is_promise, (JsRef idobj), {
