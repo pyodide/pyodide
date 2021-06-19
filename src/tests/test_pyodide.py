@@ -487,7 +487,11 @@ def test_fatal_error(selenium_standalone):
     )
     import re
 
-    strip_stack_trace = lambda x: re.sub("\n.*site-packages.*", "", x)
+    def strip_stack_trace(x):
+        x = re.sub("\n.*site-packages.*", "", x)
+        x = re.sub("/lib/python.*/", "", x)
+        return x
+
     assert (
         strip_stack_trace(selenium_standalone.logs)
         == dedent(
@@ -502,8 +506,8 @@ def test_fatal_error(selenium_standalone):
               File "<exec>", line 6 in g
               File "<exec>", line 4 in f
               File "<exec>", line 9 in <module>
-              File "/lib/python3.8/site-packages/pyodide/_base.py", line 242 in run
-              File "/lib/python3.8/site-packages/pyodide/_base.py", line 344 in eval_code
+              File "/lib/pythonxxx/site-packages/pyodide/_base.py", line 242 in run
+              File "/lib/pythonxxx/site-packages/pyodide/_base.py", line 344 in eval_code
             """
             )
         ).strip()

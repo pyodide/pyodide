@@ -311,7 +311,7 @@ def test_console_html(console_html_fixture):
 `>>> 1+
 [[;;;terminal-error]  File "<console>", line 1
     1+
-     ^
+      ^
 SyntaxError: invalid syntax]`
         ]);
 

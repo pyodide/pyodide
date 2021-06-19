@@ -25,4 +25,5 @@ geckodriver.log
 node_modules
 packages/.artifacts
 packages/*/build.log
+packages/build-logs
 dist/
