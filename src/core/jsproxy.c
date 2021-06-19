@@ -1636,10 +1636,18 @@ finally:
 PyObject*
 JsProxy_create_with_this(JsRef object, JsRef this)
 {
+  int type_flags = 0;
+  bool success = false;
+  PyTypeObject* type = NULL;
+  PyObject* result = NULL;
+  if (hiwire_is_comlink_proxy(object)) {
+    // Comlink proxies are weird and break our feature detection pretty badly.
+    type_flags = IS_CALLABLE | IS_AWAITABLE | IS_ARRAY;
+    goto done_feature_detecting;
+  }
   if (hiwire_is_error(object)) {
     return JsProxy_new_error(object);
   }
-  int type_flags = 0;
   if (hiwire_is_function(object)) {
     type_flags |= IS_CALLABLE;
   }
@@ -1676,10 +1684,7 @@ JsProxy_create_with_this(JsRef object, JsRef this)
   if (JsArray_Check(object)) {
     type_flags |= IS_ARRAY;
   }
-
-  bool success = false;
-  PyTypeObject* type = NULL;
-  PyObject* result = NULL;
+done_feature_detecting:
 
   type = JsProxy_get_subtype(type_flags);
   FAIL_IF_NULL(type);
