@@ -232,7 +232,7 @@ export function registerJsModule(name, module) {
 
 /**
  * Tell Pyodide about Comlink.
- * Necessary to enable use of Comlink Proxies from Python.
+ * Necessary to enable importing Comlink proxies into Python.
  */
 export function registerComlink(Comlink) {
   Module._Comlink = Comlink;
