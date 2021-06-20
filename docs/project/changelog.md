@@ -4,6 +4,7 @@ substitutions:
   Enhancement : "<span class='badge badge-info'>Enhancement</span>"
   Feature : "<span class='badge badge-success'>Feature</span>"
   Fix : "<span class='badge badge-danger'>Fix</span>"
+  Update : "<span class='badge badge-danger'>Update</span>"
 ---
 
 
@@ -20,22 +21,29 @@ substitutions:
   {any}`eval_code` and {any}`eval_code_async`. Designed with
   the needs of REPL implementations in mind.
   {pr}`1563`
-- {{ Fixed }} {any}`eval_code_async` no longer automatically awaits a returned
+- {{ Fix }} {any}`eval_code_async` no longer automatically awaits a returned
   coroutine or attempts to await a returned generator object (which triggered an
   error).
   {pr}`1563`
-- {{ Fixed }} micropip now correctly handles packages that have mixed case names.
+- {{ Fix }} micropip now correctly handles packages that have mixed case names.
   (See {issue}`1614`).
   {pr}`1615`
 
-- {{ ENH }} Pyodide now ships with first party typescript types for the entire
+- {{ Enhancement }} Pyodide now ships with first party typescript types for the entire
   Javascript API (though no typings are available for `PyProxy` fields).
   {pr}`1601`
 
--{{ ENH }} If a Python error occurs in a reentrant `runPython` call, the error
+- {{ Enhancement }} If a Python error occurs in a reentrant `runPython` call, the error
   will be propagated into the outer `runPython` context as the original error
   type. This is particularly important if the error is a `KeyboardInterrupt`.
   {pr}`1447`
+
+- {{ Update }} Pyodide now runs Python 3.9.5.
+  {pr}`1637`
+
+- {{ Enhancement }} It is now possible to import `Comlink` objects into Pyodide after
+  using {any}`pyodide.registerComlink`
+  {pr}`1642`
 
 ## Standard library
 
@@ -210,10 +218,10 @@ See the {ref}`0-17-0-release-notes` for more information.
   {pr}`872`
 - {{ API }} `micropip.install` now returns a Python `Future` instead of a Javascript `Promise`.
   {pr}`1324`
-- {{ FIX }} {any}`micropip.install` now interacts correctly with
+- {{ Fix }} {any}`micropip.install` now interacts correctly with
   {any}`pyodide.loadPackage`.
   {pr}`1457`
-- {{ FIX }} {any}`micropip.install` now handles version constraints correctly
+- {{ Fix }} {any}`micropip.install` now handles version constraints correctly
   even if there is a version of the package available from the Pyodide `indexURL`.
 
 

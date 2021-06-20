@@ -231,6 +231,14 @@ export function registerJsModule(name, module) {
 }
 
 /**
+ * Tell Pyodide about Comlink.
+ * Necessary to enable importing Comlink proxies into Python.
+ */
+export function registerComlink(Comlink) {
+  Module._Comlink = Comlink;
+}
+
+/**
  * Unregisters a Javascript module with given name that has been previously
  * registered with :js:func:`pyodide.registerJsModule` or
  * :func:`pyodide.register_js_module`. If a Javascript module with that name
@@ -326,6 +334,7 @@ export function makePublicAPI() {
     unregisterJsModule,
     setInterruptBuffer,
     toPy,
+    registerComlink,
     PythonError,
     PyBuffer,
   };

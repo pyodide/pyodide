@@ -3,7 +3,7 @@ version: 2
 defaults: &defaults
   working_directory: ~/repo
   docker:
-    - image: pyodide/pyodide-env:16
+    - image: hoodmane/pyodide-env:17
   environment:
     - EMSDK_NUM_CORES: 3
       EMCC_CORES: 3
@@ -110,7 +110,7 @@ jobs:
           no_output_timeout: 1800
           command: |
             ccache -z
-            make
+            make -C packages
             ccache -s
 
       - run:
@@ -130,6 +130,9 @@ jobs:
 
       - store_artifacts:
           path: /root/repo/build/
+
+      - store_artifacts:
+          path: /root/repo/packages/build-logs
 
   test-core-firefox:
     <<: *defaults
