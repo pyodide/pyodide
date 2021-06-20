@@ -18,6 +18,10 @@ _datetime _datetimemodule.c
 _heapq _heapqmodule.c
 _json _json.c
 _csv _csv.c
+
+CTYPES_FLAGS=-DPy_BUILD_CORE_BUILTIN -DPy_BUILD_CORE_MODULE -DHAVE_FFI_PREP_CIF_VAR=1 -DHAVE_FFI_PREP_CLOSURE_LOC=1 -DHAVE_FFI_CLOSURE_ALLOC=1 -I/src/glib-emscripten/target/include
+_ctypes _ctypes/_ctypes.c _ctypes/callbacks.c _ctypes/callproc.c _ctypes/cfield.c _ctypes/stgdict.c $(CTYPES_FLAGS)
+
 unicodedata unicodedata.c
 _pickle _pickle.c
 parser parsermodule.c

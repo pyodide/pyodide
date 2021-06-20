@@ -31,6 +31,7 @@ build/pyodide.asm.js: \
 	src/core/error_handling.o \
 	src/core/numpy_patch.o \
 	src/core/hiwire.o \
+	src/core/libffi-test.o \
 	src/core/js2python.o \
 	src/core/jsproxy.o \
 	src/core/keyboard_interrupt.o \
