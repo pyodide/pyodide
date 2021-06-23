@@ -8,6 +8,7 @@ RUN apt-get update \
                   patch pkg-config swig unzip wget xz-utils \
                   # testing packages: libgconf-2-4 is necessary for running chromium
                   libgconf-2-4 "chromium=90.*" \
+                  autoconf \
   && rm -rf /var/lib/apt/lists/*
 
 RUN pip3 --no-cache-dir install \

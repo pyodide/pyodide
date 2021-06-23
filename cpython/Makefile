@@ -112,8 +112,8 @@ $(BZIP2BUILD)/libbz2.a: $(BZIP2TARBALL)
 libffi.a:
 	rm -rf $(FFIBUILD)
 	git clone $(LIBFFIREPO) $(FFIBUILD) --depth 1
-	cd build
-	bash $(FFIBUILD)/build.sh
+	cd  $(FFIBUILD) ; bash ./build.sh
+	make -C $(FFIBUILD) install
 
 
 $(BUILD)/Makefile: $(BUILD)/.patched $(ZLIBBUILD)/.configured $(SQLITEBUILD)/libsqlite3.la $(BZIP2BUILD)/libbz2.a
@@ -134,9 +134,13 @@ $(BUILD)/Makefile: $(BUILD)/.patched $(ZLIBBUILD)/.configured $(SQLITEBUILD)/lib
 	)
 
 
-$(BUILD)/$(LIB): $(BUILD)/Makefile Setup.local
+$(BUILD)/Modules/Setup.local : Setup.local
 	cp Setup.local $(BUILD)/Modules/
-	cat pyconfig.undefs.h >> $(BUILD)/pyconfig.h
+
+$(BUILD)/pyconfig.h : pyconfig.undefs.h
+	cp pyconfig.undefs.h $(BUILD)/pyconfig.h
+
+$(BUILD)/$(LIB): $(BUILD)/Makefile $(BUILD)/pyconfig.h $(BUILD)/Modules/Setup.local
 	( \
 		cd $(BUILD); \
 		emmake make CROSS_COMPILE=yes $(LIB) -j $${PYODIDE_JOBS:-3} \
