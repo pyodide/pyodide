@@ -94,9 +94,6 @@ run_python_simple_inner(char* code)
 int
 numpy_patch_init();
 
-void
-blah(void);
-
 int
 main(int argc, char** argv)
 {
@@ -137,8 +134,6 @@ main(int argc, char** argv)
     Module.UTF8ToString = UTF8ToString;
     Module.wasmTable = wasmTable;
   });
-
-  blah();
 
   TRY_INIT_WITH_CORE_MODULE(error_handling);
   TRY_INIT(hiwire);

@@ -25,6 +25,8 @@ BZIP2TARBALL=$(ROOT)/downloads/bzip2-1.0.2.tar.gz
 BZIP2BUILD=$(ROOT)/build/bzip2-1.0.2
 BZIP2URL=https://sourceware.org/pub/bzip2/bzip2-1.0.2.tar.gz
 
+FFIBUILD=$(ROOT)/build/libffi
+LIBFFIREPO=https://github.com/hoodmane/libffi-emscripten
 
 all: $(INSTALL)/lib/$(LIB)
 
@@ -105,6 +107,13 @@ $(BZIP2BUILD)/libbz2.a: $(BZIP2TARBALL)
 		cd $(BZIP2BUILD); \
 		emmake make -j $${PYODIDE_JOBS:-3} CC=emcc CFLAGS="$(PYTHON_CFLAGS) -D_FILE_OFFSET_BITS=64" AR=emar RANLIB=emranlib libbz2.a; \
 	)
+
+.PHONY: libffi.a
+libffi.a:
+	rm -rf $(FFIBUILD)
+	git clone $(LIBFFIREPO) $(FFIBUILD) --depth 1
+	cd build
+	bash $(FFIBUILD)/build.sh
 
 
 $(BUILD)/Makefile: $(BUILD)/.patched $(ZLIBBUILD)/.configured $(SQLITEBUILD)/libsqlite3.la $(BZIP2BUILD)/libbz2.a
