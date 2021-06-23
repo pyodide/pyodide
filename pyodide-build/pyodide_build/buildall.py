@@ -81,7 +81,7 @@ class Package(BasePackage):
         self.dependents = set()
 
     def build(self, outputdir: Path, args) -> None:
-        with open(self.pkgdir / "build.log", "w") as f:
+        with open(self.pkgdir / "build.log.tmp", "w") as f:
             p = subprocess.run(
                 [
                     sys.executable,
@@ -103,6 +103,27 @@ class Package(BasePackage):
                 check=False,
                 stdout=f,
                 stderr=subprocess.STDOUT,
+            )
+
+        # Don't overwrite build log if we didn't build the file.
+        # If the file didn't need to be rebuilt, the log will have exactly two lines.
+        rebuilt = True
+        with open(self.pkgdir / "build.log.tmp", "r") as f:
+            try:
+                next(f)
+                next(f)
+                next(f)
+            except StopIteration:
+                rebuilt = False
+
+        if rebuilt:
+            shutil.move(self.pkgdir / "build.log.tmp", self.pkgdir / "build.log")  # type: ignore
+        else:
+            (self.pkgdir / "build.log.tmp").unlink()
+
+        if args.log_dir:
+            shutil.copy(
+                self.pkgdir / "build.log", Path(args.log_dir) / f"{self.name}.log"
             )
 
         try:
@@ -253,6 +274,7 @@ def build_packages(packages_dir: Path, outputdir: Path, args) -> None:
         "import_name_to_package_name": {},
         "shared_library": {},
         "versions": {},
+        "orig_case": {},
     }
 
     libraries = [pkg.name for pkg in pkg_map.values() if pkg.library]
@@ -261,13 +283,14 @@ def build_packages(packages_dir: Path, outputdir: Path, args) -> None:
         if pkg.library:
             continue
         if pkg.shared_library:
-            package_data["shared_library"][name] = True
-        package_data["dependencies"][name] = [
-            x for x in pkg.dependencies if x not in libraries
+            package_data["shared_library"][name.lower()] = True
+        package_data["dependencies"][name.lower()] = [
+            x.lower() for x in pkg.dependencies if x not in libraries
         ]
-        package_data["versions"][name] = pkg.version
+        package_data["versions"][name.lower()] = pkg.version
         for imp in pkg.meta.get("test", {}).get("imports", [name]):
-            package_data["import_name_to_package_name"][imp] = name
+            package_data["import_name_to_package_name"][imp] = name.lower()
+        package_data["orig_case"][name.lower()] = name
 
     # Hack for 0.17.0 release
     # TODO: FIXME!!
@@ -334,6 +357,14 @@ def make_parser(parser):
             "default. Set to 'skip' to skip installation. Installation is "
             "needed if you want to build other packages that depend on this one."
         ),
+    )
+    parser.add_argument(
+        "--log-dir",
+        type=str,
+        dest="log_dir",
+        nargs="?",
+        default=None,
+        help=("Directory to place log files"),
     )
     parser.add_argument(
         "--only",

@@ -1,6 +1,12 @@
 import { Module } from "./module";
 
+/** @typedef {import('./pyproxy.js').PyProxy} PyProxy */
+/** @private */
 let baseURL;
+/**
+ * @param {string} indexURL
+ * @private
+ */
 export async function initializePackageIndex(indexURL) {
   baseURL = indexURL;
   let response = await fetch(`${indexURL}packages.json`);
@@ -17,10 +23,15 @@ const package_uri_regexp = /^.*?([^\/]*)\.js$/;
 function _uri_to_package_name(package_uri) {
   let match = package_uri_regexp.exec(package_uri);
   if (match) {
-    return match[1];
+    return match[1].toLowerCase();
   }
 }
 
+/**
+ * @param {string) url
+ * @async
+ * @private
+ */
 export let loadScript;
 if (self.document) {
   // browser
@@ -42,11 +53,11 @@ function recursiveDependencies(
   sharedLibsOnly
 ) {
   const packages = Module.packages.dependencies;
-  const loadedPackages = Module.loadedPackages;
   const sharedLibraries = Module.packages.shared_library;
   const toLoad = new Map();
 
   const addPackage = (pkg) => {
+    pkg = pkg.toLowerCase();
     if (toLoad.has(pkg)) {
       return;
     }
@@ -63,21 +74,24 @@ function recursiveDependencies(
   };
   for (let name of names) {
     const pkgname = _uri_to_package_name(name);
-    if (pkgname !== undefined) {
-      if (toLoad.has(pkgname) && toLoad.get(pkgname) !== name) {
-        errorCallback(
-          `Loading same package ${pkgname} from ${name} and ${toLoad.get(
-            pkgname
-          )}`
-        );
-        continue;
-      }
-      toLoad.set(pkgname, name);
-    } else if (name in packages) {
-      addPackage(name);
-    } else {
-      errorCallback(`Skipping unknown package '${name}'`);
+    if (toLoad.has(pkgname) && toLoad.get(pkgname) !== name) {
+      errorCallback(
+        `Loading same package ${pkgname} from ${name} and ${toLoad.get(
+          pkgname
+        )}`
+      );
+      continue;
     }
+    if (pkgname !== undefined) {
+      toLoad.set(pkgname, name);
+      continue;
+    }
+    name = name.toLowerCase();
+    if (name in packages) {
+      addPackage(name);
+      continue;
+    }
+    errorCallback(`Skipping unknown package '${name}'`);
   }
   if (sharedLibsOnly) {
     let onlySharedLibs = new Map();
@@ -121,7 +135,7 @@ async function _loadPackage(names, messageCallback, errorCallback) {
   let scriptPromises = [];
 
   for (let [pkg, uri] of toLoad) {
-    let loaded = Module.loadedPackages[pkg];
+    let loaded = loadedPackages[pkg];
     if (loaded !== undefined) {
       // If uri is from the DEFAULT_CHANNEL, we assume it was added as a
       // depedency, which was previously overridden.
@@ -137,11 +151,12 @@ async function _loadPackage(names, messageCallback, errorCallback) {
         continue;
       }
     }
-    let scriptSrc = uri === DEFAULT_CHANNEL ? `${baseURL}${pkg}.js` : uri;
+    let pkgname = Module.packages.orig_case[pkg] || pkg;
+    let scriptSrc = uri === DEFAULT_CHANNEL ? `${baseURL}${pkgname}.js` : uri;
     messageCallback(`Loading ${pkg} from ${scriptSrc}`);
     scriptPromises.push(
-      loadScript(scriptSrc).catch(() => {
-        errorCallback(`Couldn't load package from URL ${scriptSrc}`);
+      loadScript(scriptSrc).catch((e) => {
+        errorCallback(`Couldn't load package from URL ${scriptSrc}`, e);
         toLoad.delete(pkg);
       })
     );
@@ -178,7 +193,7 @@ async function _loadPackage(names, messageCallback, errorCallback) {
 
   let packageList = [];
   for (let [pkg, uri] of toLoad) {
-    Module.loadedPackages[pkg] = uri;
+    loadedPackages[pkg] = uri;
     packageList.push(pkg);
   }
 
@@ -227,26 +242,33 @@ async function acquirePackageLock() {
  *
  * @type {object}
  */
-Module.loadedPackages = {};
+export let loadedPackages = {};
+
+/**
+ * @callback LogFn
+ * @param {string} msg
+ * @returns {void}
+ * @private
+ */
 
 /**
  * Load a package or a list of packages over the network. This installs the
  * package in the virtual filesystem. The package needs to be imported from
  * Python before it can be used.
- * @param {String | Array | PyProxy} names Either a single package name or URL
+ * @param {string | string[] | PyProxy} names Either a single package name or URL
  * or a list of them. URLs can be absolute or relative. The URLs must have
  * file name
  * ``<package-name>.js`` and there must be a file called
  * ``<package-name>.data`` in the same directory. The argument can be a
  * ``PyProxy`` of a list, in which case the list will be converted to
  * Javascript and the ``PyProxy`` will be destroyed.
- * @param {function} messageCallback A callback, called with progress messages
+ * @param {LogFn=} messageCallback A callback, called with progress messages
  *    (optional)
- * @param {function} errorCallback A callback, called with error/warning
+ * @param {LogFn=} errorCallback A callback, called with error/warning
  *    messages (optional)
  * @async
  */
-Module.loadPackage = async function (names, messageCallback, errorCallback) {
+export async function loadPackage(names, messageCallback, errorCallback) {
   if (Module.isPyProxy(names)) {
     let temp;
     try {
@@ -330,4 +352,4 @@ Module.loadPackage = async function (names, messageCallback, errorCallback) {
   } finally {
     releaseLock();
   }
-};
+}

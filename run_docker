@@ -1,11 +1,12 @@
 #!/usr/bin/env bash
 
 PYODIDE_IMAGE_REPO="pyodide"
-PYODIDE_IMAGE_TAG="16"
+PYODIDE_IMAGE_TAG="17"
 PYODIDE_PREBUILT_IMAGE_TAG="0.17.0"
 DEFAULT_PYODIDE_DOCKER_IMAGE="${PYODIDE_IMAGE_REPO}/pyodide-env:${PYODIDE_IMAGE_TAG}"
 DEFAULT_PYODIDE_SYSTEM_PORT="8000"
 DOCKER_COMMAND="/bin/bash"
+DOCKER_INTERACTIVE="--interactive"
 
 set -eo pipefail
 
@@ -24,6 +25,8 @@ Options:
   -p, --port <port>           System port to which to forward.
                               This is ignored if the env var PYODIDE_SYSTEM_PORT is set.
                               If set to 'none', docker instance will not bind to any port.
+  --non-interactive           Run docker without the --interactive flag.
+                              Useful for running in headless mode on CI server.
 
 Prerequisites:
   Docker has to be set up on your system.
@@ -61,6 +64,10 @@ do
         fi
         DEFAULT_PYODIDE_SYSTEM_PORT=$2
         shift 2
+      ;;
+      --non-interactive)
+        DOCKER_INTERACTIVE="--interactive=false"
+        shift
       ;;
       -*)
         >&2 echo "Unknown option $1"
@@ -120,7 +127,7 @@ CONTAINER=$(\
 EXIT_STATUS=0
 # Execute the provided command as the host user with HOME=/src
 docker exec \
-  -it \
+  $DOCKER_INTERACTIVE --tty \
   --user $(id --user):$(id --group) \
   $CONTAINER \
   /bin/bash -c "${DOCKER_COMMAND}" || EXIT_STATUS=$?

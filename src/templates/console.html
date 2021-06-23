@@ -16,27 +16,25 @@
         return new Promise(resolve => setTimeout(resolve, s));
       }
       async function main() {
-        await loadPyodide({ indexURL : '{{ PYODIDE_BASE_URL }}' });
+        globalThis.pyodide = await loadPyodide({ indexURL : '{{ PYODIDE_BASE_URL }}' });
         let namespace = pyodide.globals.get("dict")();
         pyodide.runPython(`
             import sys
             import js
-            from pyodide import console
+            from pyodide.console import _InteractiveConsole, BANNER
             import __main__
 
-            class PyConsole(console._InteractiveConsole):
+            class PyConsole(_InteractiveConsole):
                 def __init__(self):
                     super().__init__(
                         __main__.__dict__,
                         persistent_stream_redirection=False,
                     )
 
-                def banner(self):
-                    return f"Welcome to the Pyodide terminal emulator 🐍\\n{super().banner()}"
-
-
+            BANNER = "Welcome to the Pyodide terminal emulator 🐍\\n" + BANNER
             js.pyconsole = PyConsole()
         `, namespace);
+        let banner = namespace.get("BANNER");
         namespace.destroy();
 
         let ps1 = '>>> ', ps2 = '... ';
@@ -81,7 +79,7 @@
         let term = $('body').terminal(
           interpreter,
           {
-            greetings: pyconsole.banner(),
+            greetings: banner,
             prompt: ps1,
             completionEscape: false,
             completion: function(command, callback) {
@@ -91,8 +89,20 @@
         );
         window.term = term;
         pyconsole.stdout_callback = s => term.echo(s, {newline : false});
-        pyconsole.stderr_callback = s => {
-            term.error(s.trimEnd());
+        let url_re = /(\bhttps?:\/\/(?:(?:(?!&[^;]+;)|(?=&amp;))[^\s"'<>\][)])+)/gi;
+        pyconsole.stderr_callback = function(s){
+          if(s.endsWith("\n")){
+            term.error(s.slice(0, -1));
+            return;
+          }
+          if(s === ""){
+            return;
+          }
+          s = $.terminal.escape_brackets(s).
+                    replace(/\\$/, '&#92;').
+                    replace(url_re, ']$1[[;;;terminal-error]');
+          s = `[[;;;terminal-error]${s}]`.replace(/(\n\s*)]/, "]$1");
+          term.echo(s, { newline : false });
         }
         term.ready = Promise.resolve();
         pyodide._module.on_fatal = async (e) => {

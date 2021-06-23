@@ -2,69 +2,76 @@
 import pytest
 
 
-def test_pyproxy(selenium):
-    selenium.run(
+def test_pyproxy_class(selenium):
+    selenium.run_js(
         """
-        class Foo:
-          bar = 42
-          def get_value(self, value):
-            return value * 64
-        f = Foo()
+        pyodide.runPython(`
+            class Foo:
+                bar = 42
+                def get_value(self, value):
+                    return value * 64
+            f = Foo()
+        `);
+        window.f = pyodide.globals.get('f');
+        assert(() => f.type === "Foo");
+        let f_get_value = f.get_value
+        assert(() => f_get_value(2) === 128);
+        f_get_value.destroy();
+        assert(() => f.bar === 42);
+        assert(() => 'bar' in f);
+        f.baz = 32;
+        assert(() => f.baz === 32);
+        pyodide.runPython(`assert hasattr(f, 'baz')`)
+        window.f_props = Object.getOwnPropertyNames(f);
+        delete f.baz
+        pyodide.runPython(`assert not hasattr(f, 'baz')`)
+        assert(() => f.toString().startsWith("<Foo"));
+        f.destroy();
         """
     )
-    selenium.run_js("window.f = pyodide.globals.get('f')")
-    assert selenium.run_js("return f.type") == "Foo"
-    assert selenium.run_js("return f.get_value(2)") == 128
-    assert selenium.run_js("return f.bar") == 42
-    assert selenium.run_js("return ('bar' in f)")
-    selenium.run_js("f.baz = 32")
-    assert selenium.run("f.baz") == 32
-    assert set(selenium.run_js("return Object.getOwnPropertyNames(f)")) > set(
-        [
-            "__class__",
-            "__delattr__",
-            "__dict__",
-            "__dir__",
-            "__doc__",
-            "__eq__",
-            "__format__",
-            "__ge__",
-            "__getattribute__",
-            "__gt__",
-            "__hash__",
-            "__init__",
-            "__init_subclass__",
-            "__le__",
-            "__lt__",
-            "__module__",
-            "__ne__",
-            "__new__",
-            "__reduce__",
-            "__reduce_ex__",
-            "__repr__",
-            "__setattr__",
-            "__sizeof__",
-            "__str__",
-            "__subclasshook__",
-            "__weakref__",
-            "bar",
-            "baz",
-            "get_value",
-        ]
-    )
-    assert selenium.run("hasattr(f, 'baz')")
-    selenium.run_js("delete pyodide.globals.get('f').baz")
-    assert not selenium.run("hasattr(f, 'baz')")
-    assert selenium.run_js("return pyodide.globals.get('f').toString()").startswith(
-        "<Foo"
+    assert (
+        set(
+            [
+                "__class__",
+                "__delattr__",
+                "__dict__",
+                "__dir__",
+                "__doc__",
+                "__eq__",
+                "__format__",
+                "__ge__",
+                "__getattribute__",
+                "__gt__",
+                "__hash__",
+                "__init__",
+                "__init_subclass__",
+                "__le__",
+                "__lt__",
+                "__module__",
+                "__ne__",
+                "__new__",
+                "__reduce__",
+                "__reduce_ex__",
+                "__repr__",
+                "__setattr__",
+                "__sizeof__",
+                "__str__",
+                "__subclasshook__",
+                "__weakref__",
+                "bar",
+                "baz",
+                "get_value",
+            ]
+        ).difference(selenium.run_js("return f_props"))
+        == set()
     )
 
 
-def test_pyproxy_clone(selenium):
+def test_pyproxy_copy(selenium):
     selenium.run_js(
         """
         let d = pyodide.runPython("list(range(10))")
-        e = d.clone();
+        e = d.copy();
         d.destroy();
         assert(() => e.length === 10);
         e.destroy();
@@ -72,6 +79,7 @@ def test_pyproxy_clone(selenium):
     )
 
 
+@pytest.mark.skip_pyproxy_check
 def test_pyproxy_refcount(selenium):
     result = selenium.run_js(
         """
@@ -139,7 +147,9 @@ def test_pyproxy_destroy(selenium):
         selenium.run_js(
             """
             let f = pyodide.globals.get('f');
-            assert(()=> f.get_value(1) === 64);
+            let f_get_value = f.get_value;
+            assert(()=> f_get_value(1) === 64);
+            f_get_value.destroy();
             f.destroy();
             f.get_value();
             """
@@ -155,7 +165,9 @@ def test_pyproxy_iter(selenium):
                     yield i
             test()
         `);
-        return [c.type, [...c]];
+        let result = [c.type, [...c]];
+        c.destroy();
+        return result;
         """
     )
     assert ty == "generator"
@@ -163,11 +175,13 @@ def test_pyproxy_iter(selenium):
 
     [ty, l] = selenium.run_js(
         """
-        c = pyodide.runPython(`
+        let c = pyodide.runPython(`
             from collections import ChainMap
             ChainMap({"a" : 2, "b" : 3})
         `);
-        return [c.type, [...c]];
+        let result = [c.type, [...c]];
+        c.destroy();
+        return result;
         """
     )
     assert ty == "ChainMap"
@@ -189,6 +203,7 @@ def test_pyproxy_iter(selenium):
             result.push(value);
             ({done, value} = c.next(value + 1));
         }
+        c.destroy();
 
         function* test(){
             let acc = 0;
@@ -336,8 +351,8 @@ def test_pyproxy_mixins(selenium):
             class AwaitIter(Await, Iter): pass
 
             class AwaitNext(Await, Next): pass
-
-            [NoImpls(), Await(), Iter(), Next(), AwaitIter(), AwaitNext()]
+            from pyodide import to_js
+            to_js([NoImpls(), Await(), Iter(), Next(), AwaitIter(), AwaitNext()])
         `);
         let name_proxy = {noimpls, awaitable, iterable, iterator, awaititerable, awaititerator};
         let result = {};
@@ -353,6 +368,7 @@ def test_pyproxy_mixins(selenium):
                 impls[name] = key in x;
             }
             result[name] = impls;
+            x.destroy();
         }
         return result;
         """
@@ -391,13 +407,26 @@ def test_pyproxy_mixins2(selenium):
         assert(() => get_method.prototype === undefined);
         assert(() => !("length" in get_method));
         assert(() => !("name" in get_method));
+        get_method.destroy();
 
-        assert(() => pyodide.globals.get.type === "builtin_function_or_method");
-        assert(() => pyodide.globals.set.type === undefined);
+        let d = pyodide.runPython("{}");
+        let d_get = d.$get;
+        assert(() => d_get.type === "builtin_function_or_method");
+        assert(() => d.get.type === undefined);
+        assert(() => d.set.type === undefined);
+        d_get.destroy();
+        d.destroy();
+        """
+    )
 
+
+def test_pyproxy_mixins3(selenium):
+    selenium.run_js(
+        """
         let [Test, t] = pyodide.runPython(`
             class Test: pass
-            [Test, Test()]
+            from pyodide import to_js
+            to_js([Test, Test()])
         `);
         assert(() => Test.prototype === undefined);
         assert(() => !("name" in Test));
@@ -423,16 +452,26 @@ def test_pyproxy_mixins2(selenium):
 
         assertThrows( () => Test.$$ = 7, "TypeError", /^Cannot set read only field/);
         assertThrows( () => delete Test.$$, "TypeError", /^Cannot delete read only field/);
+        Test.destroy();
+        t.destroy();
+        """
+    )
 
+
+def test_pyproxy_mixins4(selenium):
+    selenium.run_js(
+        """
         [Test, t] = pyodide.runPython(`
             class Test:
                 caller="fifty"
                 prototype="prototype"
                 name="me"
                 length=7
-            [Test, Test()]
+            from pyodide import to_js
+            to_js([Test, Test()])
         `);
-        assert(() => Test.prototype === "prototype");
+        assert(() => Test.$prototype === "prototype");
+        assert(() => Test.prototype === undefined);
         assert(() => Test.name==="me");
         assert(() => Test.length === 7);
 
@@ -440,20 +479,38 @@ def test_pyproxy_mixins2(selenium):
         assert(() => t.prototype === "prototype");
         assert(() => t.name==="me");
         assert(() => t.length === 7);
+        Test.destroy();
+        t.destroy();
+        """
+    )
 
 
+def test_pyproxy_mixins5(selenium):
+    selenium.run_js(
+        """
         [Test, t] = pyodide.runPython(`
             class Test:
                 def __len__(self):
                     return 9
-            [Test, Test()]
+            from pyodide import to_js
+            to_js([Test, Test()])
         `);
         assert(() => !("length" in Test));
         assert(() => t.length === 9);
         t.length = 10;
-        assert(() => t.length === 10);
-        assert(() => t.__len__() === 9);
+        assert(() => t.$length === 10);
+        let t__len__ = t.__len__;
+        assert(() => t__len__() === 9);
+        t__len__.destroy();
+        Test.destroy();
+        t.destroy();
+        """
+    )
 
+
+def test_pyproxy_mixins6(selenium):
+    selenium.run_js(
+        """
         let l = pyodide.runPython(`
             l = [5, 6, 7] ; l
         `);
@@ -469,10 +526,12 @@ def test_pyproxy_mixins2(selenium):
             assert len(l) == 2 and l[1] == 7
         `);
         assert(() => l.length === 2 && l.get(1) === 7);
+        l.destroy();
         """
     )
 
 
+@pytest.mark.skip_pyproxy_check
 def test_pyproxy_gc(selenium):
     if selenium.browser != "chrome":
         pytest.skip("No gc exposed")
@@ -522,6 +581,7 @@ def test_pyproxy_gc(selenium):
         d.get();
         get_ref_count(2);
         d.get();
+        d.destroy()
         """
     )
     selenium.driver.execute_cdp_cmd("HeapProfiler.collectGarbage", {})
@@ -537,6 +597,7 @@ def test_pyproxy_gc(selenium):
     assert dict(a) == {0: 2, 1: 3, 2: 4, 3: 2, "destructor_ran": True}
 
 
+@pytest.mark.skip_pyproxy_check
 def test_pyproxy_gc_destroy(selenium):
     if selenium.browser != "chrome":
         pytest.skip("No gc exposed")
@@ -593,15 +654,16 @@ def test_pyproxy_gc_destroy(selenium):
     }
 
 
-def test_pyproxy_copy(selenium):
+def test_pyproxy_implicit_copy(selenium):
     result = selenium.run_js(
         """
         let result = [];
         let a = pyodide.runPython(`d = { 1 : 2}; d`);
         let b = pyodide.runPython(`d`);
         result.push(a.get(1));
-        a.destroy();
         result.push(b.get(1));
+        a.destroy();
+        b.destroy();
         return result;
         """
     )
@@ -609,22 +671,10 @@ def test_pyproxy_copy(selenium):
     assert result[1] == 2
 
 
+@pytest.mark.skip_pyproxy_check
 def test_errors(selenium):
     selenium.run_js(
         """
-        function expect_error(func){
-            let error = false;
-            try {
-                func();
-            } catch(e) {
-                if(e.name === "PythonError"){
-                    error = true;
-                }
-            }
-            if(!error){
-                throw new Error(`No PythonError ocurred: ${func.toString().slice(6)}`);
-            }
-        }
         let t = pyodide.runPython(`
             def te(self, *args, **kwargs):
                 raise Exception(repr(args))
@@ -644,88 +694,92 @@ def test_errors(selenium):
                 __repr__ = te
             Temp()
         `);
-        expect_error(() => t.x);
-        expect_error(() => t.x = 2);
-        expect_error(() => delete t.x);
-        expect_error(() => Object.getOwnPropertyNames(t));
-        expect_error(() => t());
-        expect_error(() => t.get(1));
-        expect_error(() => t.set(1, 2));
-        expect_error(() => t.delete(1));
-        expect_error(() => t.has(1));
-        expect_error(() => t.length);
-        expect_error(() => t.then(()=>{}));
-        expect_error(() => t.toString());
-        expect_error(() => Array.from(t));
+        assertThrows(() => t.x, "PythonError", "");
+        assertThrows(() => t.x = 2, "PythonError", "");
+        assertThrows(() => delete t.x, "PythonError", "");
+        assertThrows(() => Object.getOwnPropertyNames(t), "PythonError", "");
+        assertThrows(() => t(), "PythonError", "");
+        assertThrows(() => t.get(1), "PythonError", "");
+        assertThrows(() => t.set(1, 2), "PythonError", "");
+        assertThrows(() => t.delete(1), "PythonError", "");
+        assertThrows(() => t.has(1), "PythonError", "");
+        assertThrows(() => t.length, "PythonError", "");
+        assertThrowsAsync(async () => await t, "PythonError", "");
+        assertThrows(() => t.toString(), "PythonError", "");
+        assertThrows(() => Array.from(t), "PythonError", "");
         """
     )
 
 
+@pytest.mark.skip_pyproxy_check
 def test_fatal_error(selenium_standalone):
     """Inject fatal errors in all the reasonable entrypoints"""
     selenium_standalone.run_js(
         """
         let fatal_error = false;
+        let old_fatal_error = pyodide._module.fatal_error;
         pyodide._module.fatal_error = (e) => {
             fatal_error = true;
             throw e;
         }
-        function expect_fatal(func){
-            fatal_error = false;
-            try {
-                func();
-            } catch(e) {
-                // pass
-            } finally {
-                if(!fatal_error){
-                    throw new Error(`No fatal error occured: ${func.toString().slice(6)}`);
+        try {
+            function expect_fatal(func){
+                fatal_error = false;
+                try {
+                    func();
+                } catch(e) {
+                    // pass
+                } finally {
+                    if(!fatal_error){
+                        throw new Error(`No fatal error occured: ${func.toString().slice(6)}`);
+                    }
                 }
             }
+            let t = pyodide.runPython(`
+                from _pyodide_core import trigger_fatal_error
+                def tfe(*args, **kwargs):
+                    trigger_fatal_error()
+                class Temp:
+                    __getattr__ = tfe
+                    __setattr__ = tfe
+                    __delattr__ = tfe
+                    __dir__ = tfe
+                    __call__ = tfe
+                    __getitem__ = tfe
+                    __setitem__ = tfe
+                    __delitem__ = tfe
+                    __iter__ = tfe
+                    __len__ = tfe
+                    __contains__ = tfe
+                    __await__ = tfe
+                    __repr__ = tfe
+                    __del__ = tfe
+                Temp()
+            `);
+            expect_fatal(() => "x" in t);
+            expect_fatal(() => t.x);
+            expect_fatal(() => t.x = 2);
+            expect_fatal(() => delete t.x);
+            expect_fatal(() => Object.getOwnPropertyNames(t));
+            expect_fatal(() => t());
+            expect_fatal(() => t.get(1));
+            expect_fatal(() => t.set(1, 2));
+            expect_fatal(() => t.delete(1));
+            expect_fatal(() => t.has(1));
+            expect_fatal(() => t.length);
+            expect_fatal(() => t.toString());
+            expect_fatal(() => Array.from(t));
+            t.destroy();
+            a = pyodide.runPython(`
+                from array import array
+                array("I", [1,2,3,4])
+            `);
+            b = a.getBuffer();
+            b._view_ptr = 1e10;
+            expect_fatal(() => b.release());
+        } finally {
+            pyodide._module.fatal_error = old_fatal_error;
         }
-        let t = pyodide.runPython(`
-            from _pyodide_core import trigger_fatal_error
-            def tfe(*args, **kwargs):
-                trigger_fatal_error()
-            class Temp:
-                __getattr__ = tfe
-                __setattr__ = tfe
-                __delattr__ = tfe
-                __dir__ = tfe
-                __call__ = tfe
-                __getitem__ = tfe
-                __setitem__ = tfe
-                __delitem__ = tfe
-                __iter__ = tfe
-                __len__ = tfe
-                __contains__ = tfe
-                __await__ = tfe
-                __repr__ = tfe
-                __del__ = tfe
-            Temp()
-        `);
-        expect_fatal(() => "x" in t);
-        expect_fatal(() => t.x);
-        expect_fatal(() => t.x = 2);
-        expect_fatal(() => delete t.x);
-        expect_fatal(() => Object.getOwnPropertyNames(t));
-        expect_fatal(() => t());
-        expect_fatal(() => t.get(1));
-        expect_fatal(() => t.set(1, 2));
-        expect_fatal(() => t.delete(1));
-        expect_fatal(() => t.has(1));
-        expect_fatal(() => t.length);
-        expect_fatal(() => t.then(()=>{}));
-        expect_fatal(() => t.toString());
-        expect_fatal(() => Array.from(t));
-        expect_fatal(() => t.destroy());
-        expect_fatal(() => t.destroy());
-        a = pyodide.runPython(`
-            from array import array
-            array("I", [1,2,3,4])
-        `);
-        b = a.getBuffer();
-        b._view_ptr = 1e10;
-        expect_fatal(() => b.release());
         """
     )
 
@@ -772,3 +826,29 @@ def test_pyproxy_call(selenium):
     msg = r"TypeError: f\(\) got multiple values for argument 'x'"
     with pytest.raises(selenium.JavascriptException, match=msg):
         selenium.run_js("f.callKwargs(76, {x : 6})")
+    selenium.run_js("f.destroy()")
+
+
+def test_pyproxy_name_clash(selenium):
+    selenium.run_js(
+        """
+        let d = pyodide.runPython("{'a' : 2}");
+        let d_get = d.$get;
+        assert(() => d.get('a') === 2);
+        assert(() => d_get('b', 3) === 3);
+        d_get.destroy();
+        d.destroy();
+
+        let t = pyodide.runPython(`
+            class Test:
+                def destroy(self):
+                    return 7
+            Test()
+        `);
+        let t_dest = t.$destroy;
+        assert(() => t_dest() === 7);
+        t_dest.destroy();
+        t.destroy();
+        assertThrows(() => t.$destroy, "Error", "Object has already been destroyed");
+        """
+    )

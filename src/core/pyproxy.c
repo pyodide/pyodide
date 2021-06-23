@@ -148,9 +148,17 @@ pyproxy_getflags(PyObject* pyobj)
 JsRef
 _pyproxy_repr(PyObject* pyobj)
 {
-  PyObject* repr_py = PyObject_Repr(pyobj);
-  const char* repr_utf8 = PyUnicode_AsUTF8(repr_py);
-  JsRef repr_js = hiwire_string_utf8(repr_utf8);
+  PyObject* repr_py = NULL;
+  const char* repr_utf8 = NULL;
+  JsRef repr_js = NULL;
+
+  repr_py = PyObject_Repr(pyobj);
+  FAIL_IF_NULL(repr_py);
+  repr_utf8 = PyUnicode_AsUTF8(repr_py);
+  FAIL_IF_NULL(repr_utf8);
+  repr_js = hiwire_string_utf8(repr_utf8);
+
+finally:
   Py_CLEAR(repr_py);
   return repr_js;
 }
@@ -593,7 +601,7 @@ FutureDoneCallback_call_reject(FutureDoneCallback* self)
   JsRef excval = NULL;
   JsRef result = NULL;
   // wrap_exception looks up the current exception and wraps it in a Js error.
-  excval = wrap_exception(false);
+  excval = wrap_exception();
   FAIL_IF_NULL(excval);
   result = hiwire_call_va(self->reject_handle, excval, NULL);
 
@@ -956,9 +964,6 @@ static PyMethodDef methods[] = {
   { NULL } /* Sentinel */
 };
 
-#include "include_js_file.h"
-#include "pyproxy.js"
-
 int
 pyproxy_init(PyObject* core)
 {
@@ -971,7 +976,6 @@ pyproxy_init(PyObject* core)
   asyncio = PyImport_ImportModule("asyncio");
   FAIL_IF_NULL(asyncio);
   FAIL_IF_MINUS_ONE(PyType_Ready(&FutureDoneCallbackType));
-  FAIL_IF_MINUS_ONE(pyproxy_init_js());
 
   success = true;
 finally:

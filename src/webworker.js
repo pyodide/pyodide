@@ -12,7 +12,7 @@ onmessage = async function (e) {
     }
 
     if (!loadPyodide.inProgress) {
-      await loadPyodide({ indexURL: "{{ PYODIDE_BASE_URL }}" });
+      self.pyodide = await loadPyodide({ indexURL: "{{ PYODIDE_BASE_URL }}" });
     }
     await self.pyodide.loadPackagesFromImports(data.python);
     let results = await self.pyodide.runPythonAsync(data.python);

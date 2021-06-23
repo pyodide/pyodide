@@ -186,10 +186,12 @@ class _PackageManager:
         if requirement.endswith(".whl"):
             # custom download location
             name, wheel, version = _parse_wheel_url(requirement)
+            name = name.lower()
             transaction["wheels"].append((name, wheel, version))
             return
 
         req = Requirement(requirement)
+        req.name = req.name.lower()
 
         # If there's a Pyodide package that matches the version constraint, use
         # the Pyodide package instead of the one on PyPI
