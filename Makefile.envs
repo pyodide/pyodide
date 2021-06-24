@@ -42,6 +42,7 @@ export LDFLAGS_BASE=\
 	-s WASM=1 \
 	-std=c++14 \
 	-s LZ4=1 \
+	-s WASM_BIGINT=1 \
 	$(EXTRA_LDFLAGS)
 
 export CXXFLAGS_BASE=
