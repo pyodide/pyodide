@@ -116,6 +116,7 @@ $(FFIBUILD)/target/lib/libffi.a :
 
 $(INSTALL)/lib/libffi.a : $(INSTALL)/lib/$(LIB) $(FFIBUILD)/target/lib/libffi.a
 	cp $(FFIBUILD)/target/lib/libffi.a $(INSTALL)/lib/
+	cp $(FFIBUILD)/target/include/libffi/*.h $(BUILD)/Include/
 
 $(BUILD)/Makefile: $(BUILD)/.patched $(ZLIBBUILD)/.configured $(SQLITEBUILD)/libsqlite3.la $(BZIP2BUILD)/libbz2.a
 	cp config.site $(BUILD)/
@@ -138,7 +139,7 @@ $(BUILD)/Makefile: $(BUILD)/.patched $(ZLIBBUILD)/.configured $(SQLITEBUILD)/lib
 $(BUILD)/Modules/Setup.local : Setup.local
 	cp Setup.local $(BUILD)/Modules/
 
-$(BUILD)/$(LIB): $(BUILD)/Makefile $(BUILD)/pyconfig.h $(BUILD)/Modules/Setup.local
+$(BUILD)/$(LIB): $(BUILD)/Makefile $(BUILD)/pyconfig.h $(BUILD)/Modules/Setup.local $(FFIBUILD)/target/lib/libffi.a
 	cp Setup.local $(BUILD)/Modules/
 	cat pyconfig.undefs.h >> $(BUILD)/pyconfig.h
 	( \
