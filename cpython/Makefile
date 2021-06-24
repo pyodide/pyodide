@@ -132,7 +132,7 @@ $(BUILD)/Makefile: $(BUILD)/.patched $(ZLIBBUILD)/.configured $(SQLITEBUILD)/lib
 			  --without-pymalloc \
 			  --disable-shared \
 			  --disable-ipv6 \
-			  --without-gcc \
+			  --enable-optimizations \
 			  --host=wasm32-unknown-emscripten\
 			  --build=$(shell $(BUILD)/config.guess) \
 			  --prefix=$(INSTALL) ; \
