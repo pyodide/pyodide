@@ -113,7 +113,7 @@ $(INSTALL)/lib/libffi.a :
 	git clone $(LIBFFIREPO) $(FFIBUILD) --depth 1
 	source $(PYODIDE_ROOT)/emsdk/emsdk/emsdk_env.sh
 	cd  $(FFIBUILD) ; bash ./build.sh ; make install
-	cp $(FFIBUILD)/target/include/libffi/*.h $(BUILD)/Include/
+	cp $(FFIBUILD)/target/include/*.h $(BUILD)/Include/
 	mkdir -p $(INSTALL)
 	cp $(FFIBUILD)/target/lib/libffi.a $(INSTALL)/lib/
 
