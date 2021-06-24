@@ -108,12 +108,14 @@ $(BZIP2BUILD)/libbz2.a: $(BZIP2TARBALL)
 		emmake make -j $${PYODIDE_JOBS:-3} CC=emcc CFLAGS="$(PYTHON_CFLAGS) -D_FILE_OFFSET_BITS=64" AR=emar RANLIB=emranlib libbz2.a; \
 	)
 
-.PHONY: libffi.a
-libffi.a:
+$(FFIBUILD)/target/lib/libffi.a :
 	rm -rf $(FFIBUILD)
 	git clone $(LIBFFIREPO) $(FFIBUILD) --depth 1
 	cd  $(FFIBUILD) ; bash ./build.sh
 	make -C $(FFIBUILD) install
+
+$(INSTALL)/lib/libffi.a : $(INSTALL)/lib/$(LIB) $(FFIBUILD)/target/lib/libffi.a
+	cp $(FFIBUILD)/target/lib/libffi.a $(INSTALL)/lib/
 
 
 $(BUILD)/Makefile: $(BUILD)/.patched $(ZLIBBUILD)/.configured $(SQLITEBUILD)/libsqlite3.la $(BZIP2BUILD)/libbz2.a

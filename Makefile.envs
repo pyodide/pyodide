@@ -42,6 +42,7 @@ export LDFLAGS_BASE=\
 	-s WASM=1 \
 	-std=c++14 \
 	-s LZ4=1 \
+	-L $(CPYTHONROOT)/installs/python-$(PYVERSION)/lib/ \
 	$(EXTRA_LDFLAGS)
 
 export CXXFLAGS_BASE=
@@ -49,8 +50,7 @@ export CXXFLAGS_BASE=
 export SIDE_MODULE_LDFLAGS=	$(LDFLAGS_BASE) -s SIDE_MODULE=1
 export MAIN_MODULE_LDFLAGS= $(LDFLAGS_BASE) -s MAIN_MODULE=1 \
 	-s EXPORTED_FUNCTIONS='["___cxa_guard_acquire", "__ZNSt3__28ios_base4initEPv", "_main"]' \
-	$(CPYTHONROOT)/installs/python-$(PYVERSION)/lib/libpython$(PYMINOR).a \
-	-L/src/cpython/build/libffi/target/lib \
+	-lpython$(PYMINOR) \
 	-lffi \
 	-s LLD_REPORT_UNDEFINED \
 	-s TOTAL_MEMORY=20971520 \
