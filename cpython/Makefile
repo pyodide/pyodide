@@ -111,11 +111,12 @@ $(BZIP2BUILD)/libbz2.a: $(BZIP2TARBALL)
 $(FFIBUILD)/target/lib/libffi.a :
 	rm -rf $(FFIBUILD)
 	git clone $(LIBFFIREPO) $(FFIBUILD) --depth 1
-	cd  $(FFIBUILD) ; bash ./build.sh
-	make -C $(FFIBUILD) install
+	source $(PYODIDE_ROOT)/emsdk/emsdk/emsdk_env.sh
+	cd  $(FFIBUILD) ; bash ./build.sh ; make install
 
 $(INSTALL)/lib/libffi.a : $(INSTALL)/lib/$(LIB) $(FFIBUILD)/target/lib/libffi.a
 	cp $(FFIBUILD)/target/lib/libffi.a $(INSTALL)/lib/
+	ls $(INSTALL)/lib/
 
 
 $(BUILD)/Makefile: $(BUILD)/.patched $(ZLIBBUILD)/.configured $(SQLITEBUILD)/libsqlite3.la $(BZIP2BUILD)/libbz2.a
