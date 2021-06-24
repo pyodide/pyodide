@@ -121,7 +121,7 @@ $(INSTALL)/lib/libffi.a :
 	mkdir -p $(INSTALL)/lib
 	cp $(FFIBUILD)/target/lib/libffi.a $(INSTALL)/lib/
 
-$(BUILD)/Makefile: $(BUILD)/.patched $(ZLIBBUILD)/.configured $(SQLITEBUILD)/libsqlite3.la $(INSTALL)/lib/libbz2.a
+$(BUILD)/Makefile: $(BUILD)/.patched $(ZLIBBUILD)/.configured $(INSTALL)/lib/libsqlite3.a $(INSTALL)/lib/libbz2.a
 	cp config.site $(BUILD)/
 	( \
 		cd $(BUILD); \
