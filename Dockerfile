@@ -6,7 +6,7 @@ RUN apt-get update \
         # building packages
         bzip2 ccache clang-format-6.0 cmake f2c g++ gfortran git make \
         patch pkg-config swig unzip wget xz-utils \
-        autoconf autotools-dev automake texinfo \
+        autoconf autotools-dev automake texinfo dejagnu \
         build-essential prelink autoconf libtool libltdl-dev \
         # testing packages: libgconf-2-4 is necessary for running chromium
         libgconf-2-4 "chromium=90.*" \

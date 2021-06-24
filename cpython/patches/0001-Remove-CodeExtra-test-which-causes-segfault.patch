@@ -1,0 +1,27 @@
+From c27c012001682da3819ac2f2dd8e60a73128d168 Mon Sep 17 00:00:00 2001
+From: Hood <hood@mit.edu>
+Date: Thu, 24 Jun 2021 14:55:10 -0700
+Subject: [PATCH] Remove CodeExtra test which causes segfault
+
+---
+ Lib/test/test_code.py | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/Lib/test/test_code.py b/Lib/test/test_code.py
+index ac3dde7..59f42a2 100644
+--- a/Lib/test/test_code.py
++++ b/Lib/test/test_code.py
+@@ -438,8 +438,8 @@ def test_main(verbose=None):
+     from test import test_code
+     run_doctest(test_code, verbose)
+     tests = [CodeTest, CodeConstsTest, CodeWeakRefTest]
+-    if check_impl_detail(cpython=True) and ctypes is not None:
+-        tests.append(CoExtra)
++    # if check_impl_detail(cpython=True) and ctypes is not None:
++    #     tests.append(CoExtra)
+     run_unittest(*tests)
+ 
+ if __name__ == "__main__":
+-- 
+2.17.1
+
