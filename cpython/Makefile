@@ -116,8 +116,6 @@ $(FFIBUILD)/target/lib/libffi.a :
 
 $(INSTALL)/lib/libffi.a : $(INSTALL)/lib/$(LIB) $(FFIBUILD)/target/lib/libffi.a
 	cp $(FFIBUILD)/target/lib/libffi.a $(INSTALL)/lib/
-	ls $(INSTALL)/lib/
-
 
 $(BUILD)/Makefile: $(BUILD)/.patched $(ZLIBBUILD)/.configured $(SQLITEBUILD)/libsqlite3.la $(BZIP2BUILD)/libbz2.a
 	cp config.site $(BUILD)/
