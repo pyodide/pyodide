@@ -45,6 +45,9 @@ substitutions:
   using {any}`pyodide.registerComlink`
   {pr}`1642`
 
+- To use Pyodide, the browser now must support `BigInt`.
+  {pr}`1658`
+
 ## Standard library
 
 - The following standard library modules are now available as standalone packages
