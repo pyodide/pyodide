@@ -1745,15 +1745,15 @@ JsProxy_init(PyObject* core_module)
 {
   bool success = false;
 
-  PyObject* _pyodide_core = NULL;
+  PyObject* _pyodide_core_docs = NULL;
   PyObject* jsproxy_mock = NULL;
   PyObject* asyncio_module = NULL;
 
-  _pyodide_core = PyImport_ImportModule("_pyodide._core");
-  FAIL_IF_NULL(_pyodide_core);
+  _pyodide_core_docs = PyImport_ImportModule("_pyodide._core_docs");
+  FAIL_IF_NULL(_pyodide_core_docs);
   _Py_IDENTIFIER(JsProxy);
   jsproxy_mock =
-    _PyObject_CallMethodIdObjArgs(_pyodide_core, &PyId_JsProxy, NULL);
+    _PyObject_CallMethodIdObjArgs(_pyodide_core_docs, &PyId_JsProxy, NULL);
   FAIL_IF_NULL(jsproxy_mock);
 
   // Load the docstrings for JsProxy methods from the corresponding stubs in
@@ -1792,7 +1792,7 @@ JsProxy_init(PyObject* core_module)
 
   success = true;
 finally:
-  Py_CLEAR(_pyodide_core);
+  Py_CLEAR(_pyodide_core_docs);
   Py_CLEAR(jsproxy_mock);
   Py_CLEAR(asyncio_module);
   return success ? 0 : -1;
