@@ -62,7 +62,6 @@ export MAIN_MODULE_LDFLAGS= $(LDFLAGS_BASE) -s MAIN_MODULE=1 \
 	$(wildcard $(CPYTHONROOT)/build/bzip2*/libbz2.a) \
 	-lstdc++ \
 	--memory-init-file 0 \
-	-s WASM_BIGINT \
 
 export SIDE_MODULE_CXXFLAGS = $(CXXFLAGS_BASE)
 
