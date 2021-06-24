@@ -7,10 +7,10 @@ Subject: [PATCH] Dummy out failing terser call
  emcc.py | 10 +++++-----
  1 file changed, 5 insertions(+), 5 deletions(-)
 
-diff --git a/emcc.py b/emcc.py
+diff --git a/emsdk/upstream/emscripten/eemcc.py b/emsdk/upstream/emscripten/emcc.py
 index 839f791b3..b3eef03ef 100755
---- a/emcc.py
-+++ b/emcc.py
+--- a/emsdk/upstream/emscripten/eemcc.py
++++ b/emsdk/upstream/emscripten/eemcc.py
 @@ -2901,11 +2901,11 @@ def do_binaryen(target, options, wasm_target):
        # Closure can print out readable error messages (Closure will then
        # minify whitespace afterwards)
