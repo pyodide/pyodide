@@ -52,7 +52,6 @@ export MAIN_MODULE_LDFLAGS= $(LDFLAGS_BASE) -s MAIN_MODULE=1 \
 	-s EXPORTED_FUNCTIONS='["___cxa_guard_acquire", "__ZNSt3__28ios_base4initEPv", "_main"]' \
 	-lpython$(PYMINOR) \
 	-lffi \
-	-s LLD_REPORT_UNDEFINED \
 	-s TOTAL_MEMORY=20971520 \
 	-s ALLOW_MEMORY_GROWTH=1 \
     --use-preload-plugins \

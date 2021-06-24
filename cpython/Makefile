@@ -142,6 +142,8 @@ $(BUILD)/pyconfig.h : pyconfig.undefs.h
 	cp pyconfig.undefs.h $(BUILD)/pyconfig.h
 
 $(BUILD)/$(LIB): $(BUILD)/Makefile $(BUILD)/pyconfig.h $(BUILD)/Modules/Setup.local
+	cp pyconfig.undefs.h $(BUILD)/pyconfig.h
+	cp Setup.local $(BUILD)/Modules/
 	( \
 		cd $(BUILD); \
 		emmake make CROSS_COMPILE=yes $(LIB) -j $${PYODIDE_JOBS:-3} \
