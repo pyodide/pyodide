@@ -114,7 +114,7 @@ $(INSTALL)/lib/libffi.a :
 	source $(PYODIDE_ROOT)/emsdk/emsdk/emsdk_env.sh
 	cd  $(FFIBUILD) ; bash ./build.sh ; make install
 	cp $(FFIBUILD)/target/include/*.h $(BUILD)/Include/
-	mkdir -p $(INSTALL)
+	mkdir -p $(INSTALL)/lib
 	cp $(FFIBUILD)/target/lib/libffi.a $(INSTALL)/lib/
 
 $(BUILD)/Makefile: $(BUILD)/.patched $(ZLIBBUILD)/.configured $(SQLITEBUILD)/libsqlite3.la $(BZIP2BUILD)/libbz2.a
