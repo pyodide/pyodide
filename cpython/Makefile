@@ -138,12 +138,9 @@ $(BUILD)/Makefile: $(BUILD)/.patched $(ZLIBBUILD)/.configured $(SQLITEBUILD)/lib
 $(BUILD)/Modules/Setup.local : Setup.local
 	cp Setup.local $(BUILD)/Modules/
 
-$(BUILD)/pyconfig.h : pyconfig.undefs.h
-	cp pyconfig.undefs.h $(BUILD)/pyconfig.h
-
 $(BUILD)/$(LIB): $(BUILD)/Makefile $(BUILD)/pyconfig.h $(BUILD)/Modules/Setup.local
-	cp pyconfig.undefs.h $(BUILD)/pyconfig.h
 	cp Setup.local $(BUILD)/Modules/
+	cat pyconfig.undefs.h >> $(BUILD)/pyconfig.h
 	( \
 		cd $(BUILD); \
 		emmake make CROSS_COMPILE=yes $(LIB) -j $${PYODIDE_JOBS:-3} \
