@@ -88,7 +88,7 @@ $(ZLIBBUILD)/.configured: $(ZLIBTARBALL)
 	touch $@
 
 
-$(SQLITEBUILD)/libsqlite3.la: $(SQLITETARBALL)
+$(INSTALL)/lib/libsqlite3.a: $(SQLITETARBALL)
 	[ -d $(ROOT)/build ] || (mkdir $(ROOT)/build)
 	tar -C $(ROOT)/build/ -xf $(SQLITETARBALL)
 	# sqlite fails to detect that popen is not available. We have to set it
@@ -98,15 +98,19 @@ $(SQLITEBUILD)/libsqlite3.la: $(SQLITETARBALL)
 		emconfigure ./configure CFLAGS="$(PYTHON_CFLAGS)" CPPFLAGS="-DSQLITE_OMIT_POPEN"; \
 		emmake make -j $${PYODIDE_JOBS:-3}; \
 	)
+	mkdir -p $(INSTALL)/lib/
+	cp $(SQLITEBUILD)/.libs/libsqlite3.a $(INSTALL)/lib/libsqlite3.a
 
 
-$(BZIP2BUILD)/libbz2.a: $(BZIP2TARBALL)
+$(INSTALL)/lib/libbz2.a: $(BZIP2TARBALL)
 	[ -d $(ROOT)/build ] || (mkdir $(ROOT)/build)
 	tar -C $(ROOT)/build/ -xf $(BZIP2TARBALL)
 	( \
 		cd $(BZIP2BUILD); \
 		emmake make -j $${PYODIDE_JOBS:-3} CC=emcc CFLAGS="$(PYTHON_CFLAGS) -D_FILE_OFFSET_BITS=64" AR=emar RANLIB=emranlib libbz2.a; \
 	)
+	mkdir -p $(INSTALL)/lib
+	cp $(BZIP2BUILD)/libbz2.a $(INSTALL)/lib/libbz2.a
 
 $(INSTALL)/lib/libffi.a :
 	rm -rf $(FFIBUILD)
@@ -117,7 +121,7 @@ $(INSTALL)/lib/libffi.a :
 	mkdir -p $(INSTALL)/lib
 	cp $(FFIBUILD)/target/lib/libffi.a $(INSTALL)/lib/
 
-$(BUILD)/Makefile: $(BUILD)/.patched $(ZLIBBUILD)/.configured $(SQLITEBUILD)/libsqlite3.la $(BZIP2BUILD)/libbz2.a
+$(BUILD)/Makefile: $(BUILD)/.patched $(ZLIBBUILD)/.configured $(SQLITEBUILD)/libsqlite3.la $(INSTALL)/lib/libbz2.a
 	cp config.site $(BUILD)/
 	( \
 		cd $(BUILD); \
