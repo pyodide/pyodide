@@ -184,6 +184,9 @@ export async function loadPyodide(config) {
       throw new Error("Pyodide is already loading.");
     }
   }
+  if (typeof BigInt === "undefined") {
+    throw new Error("Pyodide requires a browser with BigInt support.");
+  }
   // A global "mount point" for the package loaders to talk to pyodide
   // See "--export-name=__pyodide_module" in buildpkg.py
   globalThis.__pyodide_module = Module;
