@@ -147,6 +147,7 @@ lint: node_modules/.installed
 		| xargs clang-format-6.0 -output-replacements-xml \
 		| (! grep '<replacement ')
 	npx prettier --check `find src -type f -name '*.js' -not -name '*.gen.js'`
+	npx prettier --check `find src -type f -name '*.html'`
 	black --check .
 	mypy --ignore-missing-imports    \
 		pyodide-build/pyodide_build/ \

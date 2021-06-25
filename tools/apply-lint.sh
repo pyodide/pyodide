@@ -1,5 +1,5 @@
-FILES="$(git ls-files --others --exclude-standard '*.js')"
-FILES+=" $(git diff HEAD --name-only '*.js')"
+FILES="$(git ls-files --others --exclude-standard '*.js' '*.html')"
+FILES+=" $(git diff HEAD --name-only '*.js' '*.html')"
 if [[ $FILES != " " ]]; then
     prettier --write ${FILES}
 fi
