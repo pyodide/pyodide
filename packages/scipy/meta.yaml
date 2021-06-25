@@ -20,6 +20,7 @@ source:
     - patches/force_malloc.patch
     - patches/disable_scipy_stats_mvn.patch
     - patches/skip-fortran-fails-to-link.patch
+    - patches/skip_ellip_harm_2_pyx_ctypes.patch
     - patches/make-int-return-values.patch
     - patches/add-missing-extern.patch
     - patches/fix-typo-flapack-pyf.patch
