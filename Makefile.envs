@@ -30,6 +30,7 @@ export CFLAGS_BASE=\
 	$(OPTFLAGS) \
 	-g \
 	-fPIC \
+	-s WASM_BIGINT=1 \
 	$(EXTRA_CFLAGS)
 
 export LDFLAGS_BASE=\
