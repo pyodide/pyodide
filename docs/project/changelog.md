@@ -4,7 +4,6 @@ substitutions:
   Enhancement : "<span class='badge badge-info'>Enhancement</span>"
   Feature : "<span class='badge badge-success'>Feature</span>"
   Fix : "<span class='badge badge-danger'>Fix</span>"
-  Update : "<span class='badge badge-danger'>Update</span>"
 ---
 
 
@@ -13,7 +12,7 @@ substitutions:
 
 ## [Unreleased]
 
-- {{ API }} {any}`loadPyodide` no longer automatically stores the API into a
+- {{ API }} {any}`loadPyodide <globalThis.loadPyodide>` no longer automatically stores the API into a
   global variable called `pyodide`. To get old behavior, say `globalThis.pyodide
   = await loadPyodide({...})`.
   {pr}`1597`
@@ -21,35 +20,29 @@ substitutions:
   {any}`eval_code` and {any}`eval_code_async`. Designed with
   the needs of REPL implementations in mind.
   {pr}`1563`
-- {{ Fix }} {any}`eval_code_async` no longer automatically awaits a returned
+- {{ Fixed }} {any}`eval_code_async` no longer automatically awaits a returned
   coroutine or attempts to await a returned generator object (which triggered an
   error).
   {pr}`1563`
-- {{ Fix }} micropip now correctly handles packages that have mixed case names.
+- {{ Fixed }} micropip now correctly handles packages that have mixed case names.
   (See {issue}`1614`).
   {pr}`1615`
 
-- {{ Enhancement }} Pyodide now ships with first party typescript types for the entire
+- {{ ENH }} Pyodide now ships with first party typescript types for the entire
   Javascript API (though no typings are available for `PyProxy` fields).
   {pr}`1601`
 
-- {{ Enhancement }} If a Python error occurs in a reentrant `runPython` call, the error
+- {{ ENH }} If a Python error occurs in a reentrant `runPython` call, the error
   will be propagated into the outer `runPython` context as the original error
   type. This is particularly important if the error is a `KeyboardInterrupt`.
   {pr}`1447`
 
-- {{ Update }} Pyodide now runs Python 3.9.5.
-  {pr}`1637`
-
-- {{ Enhancement }} It is now possible to import `Comlink` objects into Pyodide after
-  using {any}`pyodide.registerComlink`
-  {pr}`1642`
 
 ## Standard library
 
 - The following standard library modules are now available as standalone packages
    - distlib
-  They are loaded by default in {any}`globalThis.loadPyodide`, however this behavior
+  They are loaded by default in {any}`loadPyodide <globalThis.loadPyodide>`, however this behavior
   can be disabled with the `fullStdLib` parameter set to `false`.
   All optional stdlib modules can then be loaded as needed with
   {any}`pyodide.loadPackage`. {pr}`1543`
@@ -64,8 +57,8 @@ substitutions:
 - {{ Enhancement }} Added the {any}`PyProxy.callKwargs` method to allow using
   Python functions with keyword arguments from Javascript.
   {pr}`1539`
-- {{ Enhancement }} Added the {any}`PyProxy.copy` method.
-  {pr}`1549` {pr}`1630`
+- {{ Enhancement }} Added the {any}`PyProxy.clone` method.
+  {pr}`1549`
 - {{ API }} Updated the method resolution order on `PyProxy`. Performing a
   lookup on a `PyProxy` will prefer to pick a method from the `PyProxy` api, if
   no such method is found, it will use `getattr` on the proxied object.
@@ -218,10 +211,10 @@ See the {ref}`0-17-0-release-notes` for more information.
   {pr}`872`
 - {{ API }} `micropip.install` now returns a Python `Future` instead of a Javascript `Promise`.
   {pr}`1324`
-- {{ Fix }} {any}`micropip.install` now interacts correctly with
+- {{ FIX }} {any}`micropip.install` now interacts correctly with
   {any}`pyodide.loadPackage`.
   {pr}`1457`
-- {{ Fix }} {any}`micropip.install` now handles version constraints correctly
+- {{ FIX }} {any}`micropip.install` now handles version constraints correctly
   even if there is a version of the package available from the Pyodide `indexURL`.
 
 
@@ -249,8 +242,6 @@ See the {ref}`0-17-0-release-notes` for more information.
   [pyodide/pyodide-env](https://hub.docker.com/repository/docker/pyodide/pyodide-env)
   and
   [pyodide/pyodide](https://hub.docker.com/repository/docker/pyodide/pyodide).
-- {{ Enhancement }} Option to run docker in non-interactive mode
-  {pr}`1641`
 
 ### REPL
 
