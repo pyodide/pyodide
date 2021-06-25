@@ -1,0 +1,18 @@
+emscripten produces LLVM bitcode here, not genuine object files, so it doesn't
+make sense to strip symbols.
+
+(It would also fail because emcc uses the file extension to determine what kind
+of object to output, and .xxx is not a recognized extension; this is the error
+message you would receive if you try to run the commands)
+
+--- a/F2CLIBS/libf2c/Makefile
++++ b/F2CLIBS/libf2c/Makefile
+@@ -20,8 +20,6 @@
+ # compile, then strip unnecessary symbols
+ .c.o:
+ 	$(CC) -c -DSkip_f2c_Undefs $(CFLAGS) $*.c
+-	ld -r -x -o $*.xxx $*.o
+-	mv $*.xxx $*.o
+ ## Under Solaris (and other systems that do not understand ld -x),
+ ## omit -x in the ld line above.
+ ## If your system does not have the ld command, comment out

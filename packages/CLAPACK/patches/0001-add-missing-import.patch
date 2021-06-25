@@ -1,0 +1,26 @@
+The original source files are missing some imports. gcc assumes implicit
+function declaration, so the code compiles fine, but emscripten sets
+ -Werror=implicit-function-declaration so it is a hard error.
+
+--- a/BLAS/SRC/xerbla.c
++++ b/BLAS/SRC/xerbla.c
+@@ -10,6 +10,8 @@
+ 		http://www.netlib.org/f2c/libf2c.zip
+ */
+ 
++#include <stdio.h>
++
+ #include "f2c.h"
+ #include "blaswrap.h"
+
+--- a/INSTALL/tstiee.c
++++ b/INSTALL/tstiee.c
+@@ -10,6 +10,8 @@
+ 		http://www.netlib.org/f2c/libf2c.zip
+ */
+ 
++#include <string.h>
++
+ #include "f2c.h"
+ #include "blaswrap.h"
+

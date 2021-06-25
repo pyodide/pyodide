@@ -1,0 +1,77 @@
+package:
+  name: scipy
+  version: 0.17.1
+
+source:
+  # We can't use the version from PyPi as it includes Cythonized files
+  # generated with an older Cython that does not support Python 3.7
+  # This requires,
+  #    pip install Cython Tempita
+  # on the host for the build
+  url: https://github.com/scipy/scipy/archive/v0.17.1.tar.gz
+  sha256: bf22383d9e2526ffdc53a6c7d3d66dab45a86291ed35d8e281bd1a5d2c34187b
+
+  patches:
+    # these patches can be found as commits in
+    #    https://github.com/rth/scipy/tree/0.17.1-pyodide
+    # on top of the v0.17.1 tag
+    - patches/fix-blas.patch
+    - patches/fix-build-gcc5-a80460.patch
+    - patches/force_malloc.patch
+    - patches/disable_scipy_stats_mvn.patch
+    - patches/skip-fortran-fails-to-link.patch
+    - patches/make-int-return-values.patch
+    - patches/add-missing-extern.patch
+    - patches/fix-typo-flapack-pyf.patch
+
+build:
+  # set linker and C flags to error on anything to do with function declarations being wrong.
+  # In webassembbly, any conflicts mean that a randomly selected 50% of calls to the function
+  # will fail. Better to fail at compile or link time.
+  cflags: |
+    -I $(PYODIDE_ROOT)/packages/numpy/config
+    -I$(PYODIDE_ROOT)/packages/CLAPACK/build/CLAPACK-3.2.1/INCLUDE
+    -DUNDERSCORE_G77
+    -Werror=implicit-function-declaration
+    -Werror=mismatched-parameter-types
+    -Werror=mismatched-return-types
+  ldflags: |
+    -L$(NUMPY_LIB)
+    -Wl,--fatal-warnings
+  script: |
+    # Some fixes were extracted from patches/make-int-return-values.patch as regex.
+    find scipy -name "*.c*" | xargs sed -i 's/extern void F_FUNC/extern int F_FUNC/g'
+    sed -i 's/void F_FUNC/int F_FUNC/g' scipy/odr/__odrpack.c
+    sed -i 's/extern void/extern int/g' scipy/optimize/__minpack.h scipy/fftpack/src/zfftnd.c scipy/fftpack/src/zrfft.c
+    sed -i 's/void f_/int f_/g' scipy/cluster/cluster_blas.pxd
+    sed -i 's/void @pref/int @pref/g' scipy/fftpack/src/dct.c.src scipy/fftpack/src/dst.c.src
+    sed -i 's/^void/int/g' scipy/interpolate/src/__fitpack.h scipy/integrate/__quadpack.h scipy/fftpack/src/drfft.c scipy/fftpack/src/zfft.c
+    sed -i 's/static void/static int/g' scipy/interpolate/src/__fitpack.h
+    sed -i 's/ILAENV/ILAENZ/g' scipy/linalg/src/calc_lwork.f
+    # Regenerate header files after make-int-return-values patch to fix return
+    # types of f2c functions.
+    echo "Regenerating cython wrappers"
+    cd scipy/linalg
+    python _cython_wrapper_generators.py
+    cd ../..
+
+requirements:
+  run:
+    - numpy
+    - CLAPACK
+
+test:
+  imports:
+    - scipy
+    - scipy.cluster
+    - scipy.constants
+    - scipy.fftpack
+    - scipy.odr
+    - scipy.sparse
+    - scipy.interpolate
+    - scipy.integrate
+    - scipy.linalg
+    - scipy.misc
+    - scipy.ndimage
+    - scipy.spatial
+    - scipy.special

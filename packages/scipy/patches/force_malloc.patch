@@ -1,0 +1,94 @@
+commit 7a5b003922134abd01ae33b0a3e84d006673e9c6
+Author: Roman Yurchak <rth.yurchak@pm.me>
+Date:   Mon Oct 8 12:13:55 2018 +0200
+
+    Workaround for malloc issues
+    
+    This aims to avoid the "invalid call target: $_malloc" issues
+    
+      - fixes scipy/optimize/zeros.c
+      - skips scipy/integrate/dop.pyf
+      - skips scipy/optimize/cobyla
+
+diff --git a/scipy/integrate/setup.py b/scipy/integrate/setup.py
+index 2be454c70..0545dc759 100755
+--- a/scipy/integrate/setup.py
++++ b/scipy/integrate/setup.py
+@@ -67,10 +67,10 @@ def configuration(parent_package='',top_path=None):
+     #                     **lapack_opt)
+ 
+     # dop
+-    config.add_extension('_dop',
+-                         sources=['dop.pyf'],
+-                         libraries=['dop'],
+-                         depends=dop_src)
++    #config.add_extension('_dop',
++    #                     sources=['dop.pyf'],
++    #                     libraries=['dop'],
++    #                     depends=dop_src)
+ 
+     config.add_extension('_test_multivariate',
+                          sources=quadpack_test_src)
+diff --git a/scipy/optimize/__init__.py b/scipy/optimize/__init__.py
+index 17ba78371..5deca7498 100644
+--- a/scipy/optimize/__init__.py
++++ b/scipy/optimize/__init__.py
+@@ -236,7 +236,7 @@ from .minpack import *
+ from .zeros import *
+ from .lbfgsb import fmin_l_bfgs_b, LbfgsInvHessProduct
+ from .tnc import fmin_tnc
+-from .cobyla import fmin_cobyla
++#from .cobyla import fmin_cobyla
+ from .nonlin import *
+ from .slsqp import fmin_slsqp
+ from .nnls import nnls
+diff --git a/scipy/optimize/_minimize.py b/scipy/optimize/_minimize.py
+index 259546035..8b0b6960b 100644
+--- a/scipy/optimize/_minimize.py
++++ b/scipy/optimize/_minimize.py
+@@ -29,7 +29,8 @@ from ._trustregion_ncg import _minimize_trust_ncg
+ # constrained minimization
+ from .lbfgsb import _minimize_lbfgsb
+ from .tnc import _minimize_tnc
+-from .cobyla import _minimize_cobyla
++#from .cobyla import _minimize_cobyla
++_minimize_cobyla = None
+ from .slsqp import _minimize_slsqp
+ 
+ 
+diff --git a/scipy/optimize/setup.py b/scipy/optimize/setup.py
+index 7d2b987cb..1861e7563 100755
+--- a/scipy/optimize/setup.py
++++ b/scipy/optimize/setup.py
+@@ -50,11 +50,11 @@ def configuration(parent_package='',top_path=None):
+                          depends=[join('tnc','tnc.h')],
+                          **numpy_nodepr_api)
+ 
+-    config.add_extension('_cobyla',
+-                         sources=[join('cobyla',x) for x in ['cobyla.pyf',
+-                                                             'cobyla2.f',
+-                                                             'trstlp.f']],
+-                         **numpy_nodepr_api)
++    #config.add_extension('_cobyla',
++    #                     sources=[join('cobyla',x) for x in ['cobyla.pyf',
++    #                                                         'cobyla2.f',
++    #                                                         'trstlp.f']],
++    #                     **numpy_nodepr_api)
+ 
+     sources = ['minpack2.pyf', 'dcsrch.f', 'dcstep.f']
+     config.add_extension('minpack2',
+diff --git a/scipy/optimize/zeros.c b/scipy/optimize/zeros.c
+index e557f37cb..d450b3ed4 100644
+--- a/scipy/optimize/zeros.c
++++ b/scipy/optimize/zeros.c
+@@ -193,6 +193,10 @@ PyObject *PyInit__zeros(void)
+ {
+     PyObject *m;
+ 
++    volatile long x;
++    x = (long)malloc(0);
++    free((void*)x);
++
+     m = PyModule_Create(&moduledef);
+ 
+     return m;

@@ -1,0 +1,22 @@
+package:
+  name: statsmodels
+  version: 0.9.0
+
+source:
+  url: https://github.com/statsmodels/statsmodels/archive/refs/tags/v0.9.0.tar.gz
+  sha256: 4ab219c776bf5b2187645c0ccb00cf8564c6c17541ae66ab96503f07368197d3
+
+build:
+  ldflags: -L$(NUMPY_LIB)
+
+requirements:
+  run:
+    - distutils
+    - numpy
+    - scipy
+    - pandas
+    - patsy
+
+test:
+  imports:
+    - statsmodels

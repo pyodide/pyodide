@@ -1,0 +1,66 @@
+Make return types to fortran subroutines consistently be int. Some functions are defined within clapack as variously
+void and int return. Normal C compilers don't care, but emscripten is strict about return values.
+diff --git a/F2CLIBS/libf2c/ef1asc_.c b/F2CLIBS/libf2c/ef1asc_.c
+index 70be0bc..b2a82a2 100644
+--- a/F2CLIBS/libf2c/ef1asc_.c
++++ b/F2CLIBS/libf2c/ef1asc_.c
+@@ -13,7 +13,7 @@ extern "C" {
+ extern VOID s_copy();
+ ef1asc_(a, la, b, lb) ftnint *a, *b; ftnlen *la, *lb;
+ #else
+-extern void s_copy(char*,char*,ftnlen,ftnlen);
++extern int s_copy(char*,char*,ftnlen,ftnlen);
+ int ef1asc_(ftnint *a, ftnlen *la, ftnint *b, ftnlen *lb)
+ #endif
+ {
+diff --git a/F2CLIBS/libf2c/f2ch.add b/F2CLIBS/libf2c/f2ch.add
+index a2acc17..f3f0466 100644
+--- a/F2CLIBS/libf2c/f2ch.add
++++ b/F2CLIBS/libf2c/f2ch.add
+@@ -124,9 +124,9 @@ extern double r_sinh(float *);
+ extern double r_sqrt(float *);
+ extern double r_tan(float *);
+ extern double r_tanh(float *);
+-extern void s_cat(char *, char **, integer *, integer *, ftnlen);
++extern int s_cat(char *, char **, integer *, integer *, ftnlen);
+ extern integer s_cmp(char *, char *, ftnlen, ftnlen);
+-extern void s_copy(char *, char *, ftnlen, ftnlen);
++extern int s_copy(char *, char *, ftnlen, ftnlen);
+ extern int s_paus(char *, ftnlen);
+ extern integer s_rdfe(cilist *);
+ extern integer s_rdue(cilist *);
+diff --git a/F2CLIBS/libf2c/s_cat.c b/F2CLIBS/libf2c/s_cat.c
+index 8d92a63..54c4ff1 100644
+--- a/F2CLIBS/libf2c/s_cat.c
++++ b/F2CLIBS/libf2c/s_cat.c
+@@ -28,11 +28,11 @@ extern
+ extern "C" {
+ #endif
+ 
+- VOID
++ 
+ #ifdef KR_headers
+-s_cat(lp, rpp, rnp, np, ll) char *lp, *rpp[]; ftnint rnp[], *np; ftnlen ll;
++int s_cat(lp, rpp, rnp, np, ll) char *lp, *rpp[]; ftnint rnp[], *np; ftnlen ll;
+ #else
+-s_cat(char *lp, char *rpp[], ftnint rnp[], ftnint *np, ftnlen ll)
++int s_cat(char *lp, char *rpp[], ftnint rnp[], ftnint *np, ftnlen ll)
+ #endif
+ {
+ 	ftnlen i, nc;
+diff --git a/F2CLIBS/libf2c/s_copy.c b/F2CLIBS/libf2c/s_copy.c
+index 9dacfc7..8d8963f 100644
+--- a/F2CLIBS/libf2c/s_copy.c
++++ b/F2CLIBS/libf2c/s_copy.c
+@@ -12,9 +12,9 @@ extern "C" {
+ /* assign strings:  a = b */
+ 
+ #ifdef KR_headers
+-VOID s_copy(a, b, la, lb) register char *a, *b; ftnlen la, lb;
++int s_copy(a, b, la, lb) register char *a, *b; ftnlen la, lb;
+ #else
+-void s_copy(register char *a, register char *b, ftnlen la, ftnlen lb)
++int s_copy(register char *a, register char *b, ftnlen la, ftnlen lb)
+ #endif
+ {
+ 	register char *aend, *bend;
