@@ -174,7 +174,7 @@ def test_await_fetch(selenium):
         """
     )
     time.sleep(0.1)
-    msg = "StopIteration: <!doctype html>"
+    msg = "StopIteration: <!DOCTYPE html>"
     with pytest.raises(selenium.JavascriptException, match=msg):
         selenium.run(
             """
@@ -293,7 +293,7 @@ def test_eval_code_await_fetch(selenium):
         """
     )
     time.sleep(0.1)
-    msg = "StopIteration: <!doctype html>"
+    msg = "StopIteration: <!DOCTYPE html>"
     with pytest.raises(selenium.JavascriptException, match=msg):
         selenium.run(
             """
