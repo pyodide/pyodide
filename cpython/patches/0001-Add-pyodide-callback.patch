@@ -1,14 +1,14 @@
-From ff5dbb071a679ee1ea158feac363388e878ce402 Mon Sep 17 00:00:00 2001
+From 55a3beea61b6e1d8c05fdfbb33d623dd03ffc8d6 Mon Sep 17 00:00:00 2001
 From: Hood <hood@mit.edu>
-Date: Sat, 16 Jan 2021 11:54:57 -0800
+Date: Sun, 13 Jun 2021 16:13:30 -0700
 Subject: [PATCH] Add pyodide callback
 
 ---
- Include/ceval.h           |  1 +
- Include/cpython/pystate.h |  3 ++
- Python/ceval.c            | 60 +++++++++++++++++++++++----------------
+ Include/cpython/ceval.h   |  1 +
+ Include/cpython/pystate.h |  3 +++
+ Python/ceval.c            | 13 ++++++++++++-
  Python/pystate.c          |  2 ++
- 4 files changed, 42 insertions(+), 24 deletions(-)
+ 4 files changed, 18 insertions(+), 1 deletion(-)
 
 This patch adds a callback called pyodide_callback with signature 
 `int callback(void)` to the main loop in `ceval.c`. This function gets called once 
@@ -37,114 +37,72 @@ API `PyPyodide_SetPyodideCallback` to set `pyodide_callback`. This makes
 `PyPyodide_SetPyodideCallback` behave much like `PyEval_SetTrace`, except lighter 
 weight.
 
-diff --git a/Include/ceval.h b/Include/ceval.h
-index 36fd014..5f5fbc4 100644
---- a/Include/ceval.h
-+++ b/Include/ceval.h
-@@ -31,6 +31,7 @@ PyAPI_FUNC(PyObject *) PyEval_CallMethod(PyObject *obj,
- #ifndef Py_LIMITED_API
- PyAPI_FUNC(void) PyEval_SetProfile(Py_tracefunc, PyObject *);
+diff --git a/Include/cpython/ceval.h b/Include/cpython/ceval.h
+index e1922a6..a4acd9b 100644
+--- a/Include/cpython/ceval.h
++++ b/Include/cpython/ceval.h
+@@ -10,6 +10,7 @@ PyAPI_FUNC(void) PyEval_SetProfile(Py_tracefunc, PyObject *);
+ PyAPI_DATA(int) _PyEval_SetProfile(PyThreadState *tstate, Py_tracefunc func, PyObject *arg);
  PyAPI_FUNC(void) PyEval_SetTrace(Py_tracefunc, PyObject *);
+ PyAPI_FUNC(int) _PyEval_SetTrace(PyThreadState *tstate, Py_tracefunc func, PyObject *arg);
 +PyAPI_FUNC(void) PyPyodide_SetPyodideCallback(PyPyodide_callback);
- PyAPI_FUNC(void) _PyEval_SetCoroutineOriginTrackingDepth(int new_depth);
  PyAPI_FUNC(int) _PyEval_GetCoroutineOriginTrackingDepth(void);
- PyAPI_FUNC(void) _PyEval_SetAsyncGenFirstiter(PyObject *);
+ PyAPI_FUNC(int) _PyEval_SetAsyncGenFirstiter(PyObject *);
+ PyAPI_FUNC(PyObject *) _PyEval_GetAsyncGenFirstiter(void);
 diff --git a/Include/cpython/pystate.h b/Include/cpython/pystate.h
-index 94b0809..b215056 100644
+index f292da1..3577ac8 100644
 --- a/Include/cpython/pystate.h
 +++ b/Include/cpython/pystate.h
 @@ -17,6 +17,7 @@ PyAPI_FUNC(PyObject *) _PyInterpreterState_GetMainModule(PyInterpreterState *);
  
  /* Py_tracefunc return -1 when raising an exception, or 0 for success. */
- typedef int (*Py_tracefunc)(PyObject *, struct _frame *, int, PyObject *);
+ typedef int (*Py_tracefunc)(PyObject *, PyFrameObject *, int, PyObject *);
 +typedef int (*PyPyodide_callback)(void);
  
  /* The following values are used for 'what' for tracefunc functions
   *
-@@ -73,6 +74,8 @@ struct _ts {
-     Py_tracefunc c_tracefunc;
+@@ -75,6 +76,8 @@ struct _ts {
      PyObject *c_profileobj;
      PyObject *c_traceobj;
-+    
-+    PyPyodide_callback pyodide_callback;
  
++    PyPyodide_callback pyodide_callback;
++
      /* The exception currently being raised */
      PyObject *curexc_type;
+     PyObject *curexc_value;
 diff --git a/Python/ceval.c b/Python/ceval.c
-index 3306fb9..86e7639 100644
+index 91e879e..f8d424d 100644
 --- a/Python/ceval.c
 +++ b/Python/ceval.c
-@@ -1198,31 +1198,31 @@ main_loop:
+@@ -1374,7 +1374,6 @@ main_loop:
             async I/O handler); see Py_AddPendingCall() and
             Py_MakePendingCalls() above. */
  
 -        if (_Py_atomic_load_relaxed(eval_breaker)) {
--            opcode = _Py_OPCODE(*next_instr);
--            if (opcode == SETUP_FINALLY ||
--                opcode == SETUP_WITH ||
--                opcode == BEFORE_ASYNC_WITH ||
--                opcode == YIELD_FROM) {
--                /* Few cases where we skip running signal handlers and other
--                   pending calls:
--                   - If we're about to enter the 'with:'. It will prevent
--                     emitting a resource warning in the common idiom
--                     'with open(path) as file:'.
--                   - If we're about to enter the 'async with:'.
--                   - If we're about to enter the 'try:' of a try/finally (not
--                     *very* useful, but might help in some cases and it's
--                     traditional)
--                   - If we're resuming a chain of nested 'yield from' or
--                     'await' calls, then each frame is parked with YIELD_FROM
--                     as its next opcode. If the user hit control-C we want to
--                     wait until we've reached the innermost frame before
--                     running the signal handler and raising KeyboardInterrupt
--                     (see bpo-30039).
--                */
--                goto fast_next_opcode;
--            }
-+        opcode = _Py_OPCODE(*next_instr);
-+        if (opcode == SETUP_FINALLY ||
-+            opcode == SETUP_WITH ||
-+            opcode == BEFORE_ASYNC_WITH ||
-+            opcode == YIELD_FROM) {
-+            /* Few cases where we skip running signal handlers and other
-+                pending calls:
-+                - If we're about to enter the 'with:'. It will prevent
-+                    emitting a resource warning in the common idiom
-+                    'with open(path) as file:'.
-+                - If we're about to enter the 'async with:'.
-+                - If we're about to enter the 'try:' of a try/finally (not
-+                    *very* useful, but might help in some cases and it's
-+                    traditional)
-+                - If we're resuming a chain of nested 'yield from' or
-+                    'await' calls, then each frame is parked with YIELD_FROM
-+                    as its next opcode. If the user hit control-C we want to
-+                    wait until we've reached the innermost frame before
-+                    running the signal handler and raising KeyboardInterrupt
-+                    (see bpo-30039).
-+            */
-+            goto fast_next_opcode;
-+        }
+             opcode = _Py_OPCODE(*next_instr);
+             if (opcode == SETUP_FINALLY ||
+                 opcode == SETUP_WITH ||
+@@ -1399,11 +1398,18 @@ main_loop:
+                 goto fast_next_opcode;
+             }
  
 +        if (_Py_atomic_load_relaxed(eval_breaker)) {
-             if (_Py_atomic_load_relaxed(&ceval->signals_pending)) {
-                 if (handle_signals(runtime) != 0) {
-                     goto error;
-@@ -1262,6 +1262,12 @@ main_loop:
+             if (eval_frame_handle_pending(tstate) != 0) {
                  goto error;
              }
          }
-+        
+ 
 +        if(tstate->pyodide_callback != NULL){
 +            if(tstate->pyodide_callback() != 0){
 +                goto error;
 +            }
-+        }        
- 
++        }
++
      fast_next_opcode:
          f->f_lasti = INSTR_OFFSET();
-@@ -4727,6 +4733,12 @@ PyEval_SetTrace(Py_tracefunc func, PyObject *arg)
-                            || (tstate->c_profilefunc != NULL));
+ 
+@@ -4816,6 +4822,11 @@ PyEval_SetTrace(Py_tracefunc func, PyObject *arg)
+     }
  }
  
 +void
@@ -152,23 +110,22 @@ index 3306fb9..86e7639 100644
 +    PyThreadState *tstate = _PyThreadState_GET();
 +    tstate->pyodide_callback = pyodide_callback;
 +}
-+
+ 
  void
- _PyEval_SetCoroutineOriginTrackingDepth(int new_depth)
- {
+ _PyEval_SetCoroutineOriginTrackingDepth(PyThreadState *tstate, int new_depth)
 diff --git a/Python/pystate.c b/Python/pystate.c
-index aba673c..b809208 100644
+index 9beefa8..408b7ce 100644
 --- a/Python/pystate.c
 +++ b/Python/pystate.c
-@@ -592,6 +592,8 @@ new_threadstate(PyInterpreterState *interp, int init)
-     tstate->c_tracefunc = NULL;
+@@ -602,6 +602,8 @@ new_threadstate(PyInterpreterState *interp, int init)
      tstate->c_profileobj = NULL;
      tstate->c_traceobj = NULL;
-+    
-+    tstate->pyodide_callback = NULL;
  
++    tstate->pyodide_callback = NULL;
++
      tstate->trash_delete_nesting = 0;
      tstate->trash_delete_later = NULL;
+     tstate->on_delete = NULL;
 -- 
 2.17.1
 

@@ -67,11 +67,11 @@ def test_pyproxy_class(selenium):
     )
 
 
-def test_pyproxy_clone(selenium):
+def test_pyproxy_copy(selenium):
     selenium.run_js(
         """
         let d = pyodide.runPython("list(range(10))")
-        e = d.clone();
+        e = d.copy();
         d.destroy();
         assert(() => e.length === 10);
         e.destroy();
@@ -654,7 +654,7 @@ def test_pyproxy_gc_destroy(selenium):
     }
 
 
-def test_pyproxy_copy(selenium):
+def test_pyproxy_implicit_copy(selenium):
     result = selenium.run_js(
         """
         let result = [];

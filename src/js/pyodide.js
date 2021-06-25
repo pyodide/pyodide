@@ -147,10 +147,7 @@ function fixRecursionLimit() {
     recurse();
   } catch (err) {}
 
-  let recursionLimit = depth / 60;
-  if (recursionLimit > 1000) {
-    recursionLimit = 1000;
-  }
+  let recursionLimit = Math.min(depth / 50, 400);
   Module.runPythonSimple(
     `import sys; sys.setrecursionlimit(int(${recursionLimit}))`
   );

@@ -59,7 +59,7 @@ async function main(){
 
 
     expectType<Py2JsResult>(px.x);
-    expectType<PyProxy>(px.clone());
+    expectType<PyProxy>(px.copy());
     expectType<void>(px.destroy("blah"));
     expectType<void>(px.destroy());
     expectType<any>(px.toJs());

@@ -5,7 +5,7 @@ Python with the scientific stack, compiled to WebAssembly.
 Pyodide may be used in any context where you want to run Python inside a web
 browser.
 
-Pyodide brings the Python 3.8 runtime to the browser via WebAssembly, along with
+Pyodide brings the Python 3.9 runtime to the browser via WebAssembly, along with
 the Python scientific stack including NumPy, Pandas, Matplotlib, SciPy, and
 scikit-learn. The [packages
 directory](https://github.com/pyodide/pyodide/tree/main/packages) lists over

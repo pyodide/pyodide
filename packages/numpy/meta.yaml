@@ -24,11 +24,22 @@ source:
 
 build:
   skip_host: False
-  cflags: -include math.h -I../../config -Werror=implicit-function-declaration -Werror=mismatched-parameter-types -Werror=mismatched-return-types
+  # set linker and C flags to error on anything to do with function declarations being wrong.
+  # In webassembbly, any conflicts mean that a randomly selected 50% of calls to the function
+  # will fail. Better to fail at compile or link time.
+  cflags: |
+    -include math.h
+    -I $(PYODIDE_ROOT)/packages/numpy/config
+    -Werror=implicit-function-declaration
+    -Werror=mismatched-parameter-types
+    -Werror=mismatched-return-types
+  ldflags: |
+    -Wl,--fatal-warnings
   post: |
     # copy the correct numpy config into the build artifacts. Otherwise scipy will try to build with the config
     # from the build computer and bad things will happen
-    cp config/* $PKGDIR/../.artifacts/lib/python/numpy-1.17.5-py3.8-linux-x86_64.egg/numpy/core/include/numpy
+    cp config/* $PKGDIR/../.artifacts/lib/python/numpy-1.17.5-py3.9-linux-x86_64.egg/numpy/core/include/numpy
+    cp -r $PKGDIR/../.artifacts/lib/python/numpy-1.17.5-py3.9-linux-x86_64.egg/numpy $PKGDIR/../.artifacts/lib/python
 
 test:
   imports:
