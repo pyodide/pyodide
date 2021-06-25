@@ -27,6 +27,7 @@ BZIP2URL=https://sourceware.org/pub/bzip2/bzip2-1.0.2.tar.gz
 
 FFIBUILD=$(ROOT)/build/libffi
 LIBFFIREPO=https://github.com/hoodmane/libffi-emscripten
+LIBFFI_COMMIT=dd8318b543b92d038da4914fac42d34056a80c7d
 
 all: $(INSTALL)/lib/$(LIB) $(INSTALL)/lib/libffi.a
 
@@ -114,9 +115,9 @@ $(INSTALL)/lib/libbz2.a: $(BZIP2TARBALL)
 
 $(INSTALL)/lib/libffi.a :
 	rm -rf $(FFIBUILD)
-	git clone $(LIBFFIREPO) $(FFIBUILD) --depth 1
+	git clone $(LIBFFIREPO) $(FFIBUILD) --shallow-exclude upstream-base
 	source $(PYODIDE_ROOT)/emsdk/emsdk/emsdk_env.sh
-	cd  $(FFIBUILD) ; bash ./build.sh ; make install
+	cd  $(FFIBUILD) && git checkout $(LIBFFI_COMMIT) && bash ./build.sh ; make install
 	cp $(FFIBUILD)/target/include/*.h $(BUILD)/Include/
 	mkdir -p $(INSTALL)/lib
 	cp $(FFIBUILD)/target/lib/libffi.a $(INSTALL)/lib/
