@@ -8,7 +8,7 @@ def _run_in_pyodide_get_source(f):
     lines, start_line = inspect.getsourcelines(f)
     num_decorator_lines = 0
     for line in lines:
-        if line.startswith("def"):
+        if line.startswith("def") or line.startswith("async def"):
             break
         num_decorator_lines += 1
     start_line += num_decorator_lines - 1
@@ -19,6 +19,7 @@ def _run_in_pyodide_get_source(f):
 
 def run_in_pyodide(
     _function: Optional[Callable] = None,
+    *,
     standalone: bool = False,
     packages: List[str] = [],
     xfail_browsers: Dict[str, str] = {},
@@ -55,29 +56,33 @@ def run_in_pyodide(
                     # When writing the function, we set the filename to the file
                     # containing the source. This results in a more helpful
                     # traceback
+                    if inspect.iscoroutinefunction(f):
+                        run_python = "pyodide.runPythonAsync"
+                        await_kw = "await "
+                    else:
+                        run_python = "pyodide.runPython"
+                        await_kw = ""
+                    source = _run_in_pyodide_get_source(f)
+                    filename = inspect.getsourcefile(f)
                     selenium.run_js(
-                        """
-                        let eval_code = pyodide._module.pyodide_py.eval_code;
+                        f"""
+                        let eval_code = pyodide.pyodide_py.eval_code;
                         try {{
                             eval_code.callKwargs(
                                 {{
-                                    source : {!r},
+                                    source : {source!r},
                                     globals : pyodide._module.globals,
-                                    filename : {!r}
+                                    filename : {filename!r}
                                 }}
                             )
                         }} finally {{
                             eval_code.destroy();
                         }}
-                        """.format(
-                            _run_in_pyodide_get_source(f), inspect.getsourcefile(f)
-                        )
+                        """
                     )
                     # When invoking the function, use the default filename <eval>
                     selenium.run_js(
-                        """pyodide.runPython("{}()", pyodide._module.globals)""".format(
-                            f.__name__
-                        )
+                        f"""{await_kw}{run_python}("{await_kw}{f.__name__}()", pyodide.globals)"""
                     )
                 except selenium.JavascriptException as e:
                     err = e
