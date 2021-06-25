@@ -3,6 +3,7 @@ From: Hood <hood@mit.edu>
 Date: Tue, 22 Jun 2021 20:12:45 -0700
 Subject: [PATCH] Remove duplicate symbols from cfield.c
 
+These symbols are already defined by libffi.
 ---
  Modules/_ctypes/cfield.c | 26 --------------------------
  1 file changed, 26 deletions(-)
