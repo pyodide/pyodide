@@ -3,7 +3,7 @@ version: 2
 defaults: &defaults
   working_directory: ~/repo
   docker:
-    - image: pyodide/pyodide-env:17
+    - image: pyodide/pyodide-env:18
   environment:
     - EMSDK_NUM_CORES: 3
       EMCC_CORES: 3
@@ -142,7 +142,10 @@ jobs:
       - run:
           name: test
           command: |
-            tools/pytest_wrapper.py src packages/micropip/ -v -k firefox -n 3
+            mkdir test-results
+            tools/pytest_wrapper.py --junitxml=test-results/junit.xml src packages/micropip/ -v -k firefox -n 3
+      - store_test_results:
+          path: test-results
 
   test-core-chrome:
     <<: *defaults
@@ -152,7 +155,10 @@ jobs:
       - run:
           name: test
           command: |
-            tools/pytest_wrapper.py src packages/micropip/ -v -k chrome
+            mkdir test-results
+            tools/pytest_wrapper.py --junitxml=test-results/junit.xml src packages/micropip/ -v -k chrome
+      - store_test_results:
+          path: test-results
 
   test-packages-firefox:
     <<: *defaults
@@ -162,7 +168,10 @@ jobs:
       - run:
           name: test
           command: |
-            tools/pytest_wrapper.py packages/test* packages/*/test* -v -k firefox
+            mkdir test-results
+            tools/pytest_wrapper.py --junitxml=test-results/junit.xml packages/test* packages/*/test* -v -k firefox
+      - store_test_results:
+          path: test-results
 
   test-packages-chrome:
     <<: *defaults
@@ -172,7 +181,10 @@ jobs:
       - run:
           name: test
           command: |
-            tools/pytest_wrapper.py packages/test* packages/*/test* -v -k chrome -n 2
+            mkdir test-results
+            tools/pytest_wrapper.py --junitxml=test-results/junit.xml packages/test* packages/*/test* -v -k chrome -n 2
+      - store_test_results:
+          path: test-results
 
   test-emsdk:
     <<: *defaults
@@ -192,7 +204,10 @@ jobs:
       - run:
           name: test
           command: |
-            pytest src pyodide-build packages/micropip/ -v -k 'not (chrome or firefox)' --cov=pyodide_build --cov=pyodide
+            mkdir test-results
+            pytest --junitxml=test-results/junit.xml src pyodide-build packages/micropip/ -v -k 'not (chrome or firefox)' --cov=pyodide_build --cov=pyodide
+      - store_test_results:
+          path: test-results
 
   test-js-types:
     <<: *defaults
@@ -291,56 +306,29 @@ workflows:
     jobs:
       - lint
       - test-docs
-      - build-core:
-          filters:
-            tags:
-              only: /.*/
+      - test-python
+      - build-core
       - build-packages:
           requires:
             - build-core
-          filters:
-            tags:
-              only: /.*/
       - test-core-chrome:
           requires:
             - build-core
-          filters:
-            tags:
-              only: /.*/
       - test-core-firefox:
           requires:
             - build-core
-          filters:
-            tags:
-              only: /.*/
       - test-packages-chrome:
           requires:
             - build-packages
-          filters:
-            tags:
-              only: /.*/
       - test-packages-firefox:
           requires:
             - build-packages
-          filters:
-            tags:
-              only: /.*/
       - test-emsdk:
           requires:
             - build-core
-          filters:
-            tags:
-              only: /.*/
-      - test-python:
-          filters:
-            tags:
-              only: /.*/
       - test-js-types:
           requires:
             - build-core
-          filters:
-            tags:
-              only: /.*/
       - benchmark:
           requires:
             - build-packages

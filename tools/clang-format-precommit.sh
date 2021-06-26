@@ -6,7 +6,7 @@ if [ -n "$FILES" ]; then
     git add $FILES
 fi
 
-FILES=$(git diff --cached --name-only *.js)
+FILES=$(git diff --cached --name-only *.js '*.html')
 if [ -n "$FILES" ]; then
     # Change files, stage changes
     ./node_modules/.bin/prettier --write $FILES

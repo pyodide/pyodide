@@ -215,6 +215,17 @@ class CodeRunner:
 
         The file name to use in error messages and stack traces. ``'<exec>'`` by default.
 
+    mode : ``str``
+
+        The "mode" to compile in. One of `"exec"`, `"single"`, or `"eval"`. Defaults
+        to `"exec"`. For most purposes it's unnecessary to use this argument.
+        See the documentation for the built in
+        `compile <https://docs.python.org/3/library/functions.html#compile>` function.
+
+    flags : ``int``
+
+        The flags to compile with. See the documentation for the built in
+        `compile <https://docs.python.org/3/library/functions.html#compile>` function.
 
     Attributes:
 
