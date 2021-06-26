@@ -1,7 +1,7 @@
 import ast
 import asyncio
 from asyncio import ensure_future
-from codeop import Compile, CommandCompiler, _features, PyCF_DONT_IMPLY_DEDENT  # type: ignore
+from codeop import Compile, CommandCompiler, _features  # type: ignore
 from contextlib import (
     contextmanager,
     redirect_stdout,
@@ -244,7 +244,7 @@ class Console:
         self.completer_word_break_characters = (
             """ \t\n`~!@#$%^&*()-=+[{]}\\|;:'\",<>/?"""
         )
-        self._compile = _CodeRunnerCommandCompiler(flags=ast.PyCF_ALLOW_TOP_LEVEL_AWAIT | PyCF_DONT_IMPLY_DEDENT)  # type: ignore
+        self._compile = _CodeRunnerCommandCompiler(flags=ast.PyCF_ALLOW_TOP_LEVEL_AWAIT)  # type: ignore
 
     def persistent_redirect_streams(self):
         """Redirect stdin/stdout/stderr persistently"""
