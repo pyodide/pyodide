@@ -307,3 +307,50 @@ workflows:
       - lint
       - test-docs
       - test-python
+      - build-core
+      - build-packages:
+          requires:
+            - build-core
+      - test-core-chrome:
+          requires:
+            - build-core
+      - test-core-firefox:
+          requires:
+            - build-core
+      - test-packages-chrome:
+          requires:
+            - build-packages
+      - test-packages-firefox:
+          requires:
+            - build-packages
+      - test-emsdk:
+          requires:
+            - build-core
+      - test-js-types:
+          requires:
+            - build-core
+      - benchmark:
+          requires:
+            - build-packages
+      - deploy-release:
+          requires:
+            - lint
+            - test-python
+            - test-core-firefox
+            - test-packages-firefox
+            - test-emsdk
+          filters:
+            branches:
+              ignore: /.*/
+            tags:
+              only: /^\d+\.\d+\.\w+$/
+      - deploy-dev:
+          requires:
+            - lint
+            - test-python
+            - test-core-firefox
+            - test-packages-firefox
+            - test-emsdk
+          filters:
+            branches:
+              only: main
