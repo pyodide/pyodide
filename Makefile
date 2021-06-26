@@ -157,9 +157,6 @@ lint: node_modules/.installed
 		conftest.py 				 \
 		docs
 
-apply-lint:
-	./tools/apply-lint.sh
-
 benchmark: all
 	python benchmark/benchmark.py $(HOSTPYTHON) build/benchmarks.json
 	python benchmark/plot_benchmark.py build/benchmarks.json build/benchmarks.png
