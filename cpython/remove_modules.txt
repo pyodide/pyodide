@@ -1,5 +1,4 @@
 _osx_support.py
-ctypes
 curses
 dbm
 ensurepip

@@ -25,8 +25,11 @@ BZIP2TARBALL=$(ROOT)/downloads/bzip2-1.0.2.tar.gz
 BZIP2BUILD=$(ROOT)/build/bzip2-1.0.2
 BZIP2URL=https://sourceware.org/pub/bzip2/bzip2-1.0.2.tar.gz
 
+FFIBUILD=$(ROOT)/build/libffi
+LIBFFIREPO=https://github.com/hoodmane/libffi-emscripten
+LIBFFI_COMMIT=dd8318b543b92d038da4914fac42d34056a80c7d
 
-all: $(INSTALL)/lib/$(LIB)
+all: $(INSTALL)/lib/$(LIB) $(INSTALL)/lib/libffi.a
 
 
 $(INSTALL)/lib/$(LIB): $(BUILD)/$(LIB) remove_modules.txt
@@ -86,7 +89,7 @@ $(ZLIBBUILD)/.configured: $(ZLIBTARBALL)
 	touch $@
 
 
-$(SQLITEBUILD)/libsqlite3.la: $(SQLITETARBALL)
+$(INSTALL)/lib/libsqlite3.a: $(SQLITETARBALL)
 	[ -d $(ROOT)/build ] || (mkdir $(ROOT)/build)
 	tar -C $(ROOT)/build/ -xf $(SQLITETARBALL)
 	# sqlite fails to detect that popen is not available. We have to set it
@@ -96,18 +99,30 @@ $(SQLITEBUILD)/libsqlite3.la: $(SQLITETARBALL)
 		emconfigure ./configure CFLAGS="$(PYTHON_CFLAGS)" CPPFLAGS="-DSQLITE_OMIT_POPEN"; \
 		emmake make -j $${PYODIDE_JOBS:-3}; \
 	)
+	mkdir -p $(INSTALL)/lib/
+	cp $(SQLITEBUILD)/.libs/libsqlite3.a $(INSTALL)/lib/libsqlite3.a
 
 
-$(BZIP2BUILD)/libbz2.a: $(BZIP2TARBALL)
+$(INSTALL)/lib/libbz2.a: $(BZIP2TARBALL)
 	[ -d $(ROOT)/build ] || (mkdir $(ROOT)/build)
 	tar -C $(ROOT)/build/ -xf $(BZIP2TARBALL)
 	( \
 		cd $(BZIP2BUILD); \
 		emmake make -j $${PYODIDE_JOBS:-3} CC=emcc CFLAGS="$(PYTHON_CFLAGS) -D_FILE_OFFSET_BITS=64" AR=emar RANLIB=emranlib libbz2.a; \
 	)
+	mkdir -p $(INSTALL)/lib
+	cp $(BZIP2BUILD)/libbz2.a $(INSTALL)/lib/libbz2.a
 
+$(INSTALL)/lib/libffi.a :
+	rm -rf $(FFIBUILD)
+	git clone $(LIBFFIREPO) $(FFIBUILD) --shallow-exclude upstream-base
+	source $(PYODIDE_ROOT)/emsdk/emsdk/emsdk_env.sh
+	cd  $(FFIBUILD) && git checkout $(LIBFFI_COMMIT) && bash ./build.sh ; make install
+	cp $(FFIBUILD)/target/include/*.h $(BUILD)/Include/
+	mkdir -p $(INSTALL)/lib
+	cp $(FFIBUILD)/target/lib/libffi.a $(INSTALL)/lib/
 
-$(BUILD)/Makefile: $(BUILD)/.patched $(ZLIBBUILD)/.configured $(SQLITEBUILD)/libsqlite3.la $(BZIP2BUILD)/libbz2.a
+$(BUILD)/Makefile: $(BUILD)/.patched $(ZLIBBUILD)/.configured $(INSTALL)/lib/libsqlite3.a $(INSTALL)/lib/libbz2.a
 	cp config.site $(BUILD)/
 	( \
 		cd $(BUILD); \
@@ -118,14 +133,17 @@ $(BUILD)/Makefile: $(BUILD)/.patched $(ZLIBBUILD)/.configured $(SQLITEBUILD)/lib
 			  --without-pymalloc \
 			  --disable-shared \
 			  --disable-ipv6 \
-			  --without-gcc \
+			  --enable-optimizations \
 			  --host=wasm32-unknown-emscripten\
 			  --build=$(shell $(BUILD)/config.guess) \
 			  --prefix=$(INSTALL) ; \
 	)
 
 
-$(BUILD)/$(LIB): $(BUILD)/Makefile Setup.local
+$(BUILD)/Modules/Setup.local : Setup.local
+	cp Setup.local $(BUILD)/Modules/
+
+$(BUILD)/$(LIB): $(BUILD)/Makefile $(BUILD)/pyconfig.h $(BUILD)/Modules/Setup.local $(INSTALL)/lib/libffi.a
 	cp Setup.local $(BUILD)/Modules/
 	cat pyconfig.undefs.h >> $(BUILD)/pyconfig.h
 	( \

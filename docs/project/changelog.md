@@ -56,6 +56,9 @@ substitutions:
 - The standard library module `audioop` is now included, making the `wave`,
   `sndhdr`, `aifc`, and `sunau` modules usable. {pr}`1623`
 
+- Added support for `ctypes`.
+  {pr}`1656`
+
 ### Python / JS type conversions
 
 - {{ API }} {any}`pyodide.runPythonAsync` no longer automatically calls
