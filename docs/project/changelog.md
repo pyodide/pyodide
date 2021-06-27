@@ -83,6 +83,10 @@ substitutions:
 - {{ Enhancement }} pyodide-build is now an installable Python package, with an identically named
   CLI entrypoint that replaces `bin/pyodide` which is removed {pr}`1566`
 
+### Packages
+
+- {{ Enhancement }} matplotlib now comes with a new renderer based on the html5 canvas element. {pr}`1579`
+  It is optional and the current default backend is still the agg backend compiled to wasm.
 
 ## Version 0.17.0
 *April 21, 2021*
