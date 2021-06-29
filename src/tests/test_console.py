@@ -279,7 +279,7 @@ def console_html_fixture(request, web_server_main):
         selenium.driver.get(
             f"http://{selenium.server_hostname}:{selenium.server_port}/console.html"
         )
-        selenium.javascript_setup(load_pyodide=True)
+        selenium.javascript_setup()
         try:
             yield selenium
         finally:
