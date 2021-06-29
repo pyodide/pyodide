@@ -27,7 +27,7 @@ BZIP2URL=https://sourceware.org/pub/bzip2/bzip2-1.0.2.tar.gz
 
 FFIBUILD=$(ROOT)/build/libffi
 LIBFFIREPO=https://github.com/hoodmane/libffi-emscripten
-LIBFFI_COMMIT=c76c24162804ec1497fb8d66f0958322e139eebd
+LIBFFI_COMMIT=f671fe3521fb2f383d9b74bd64254b1d3760a31e
 
 all: $(INSTALL)/lib/$(LIB) $(INSTALL)/lib/libffi.a
 
