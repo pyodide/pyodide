@@ -13,11 +13,11 @@ source:
 build:
   skip_host: True
   cflags: |
-    -I../../../../cpython/installs/python-3.8.2/include/python3.8
-    -I../../../../emsdk/emsdk/fastcomp/emscripten/system/include/libc
-    -I../../../libyaml/build/include
+    -I$(PYTHONINCLUDE)
+    -I$(PYODIDE_ROOT)/emsdk/emsdk/fastcomp/emscripten/system/include/libc
+    -I$(PYODIDE_ROOT)/packages/libyaml/build/include
   ldflags: |
-    -L../../../libyaml/build/
+    -L$(PYODIDE_ROOT)/packages/libyaml/build/
 
 requirements:
   run:
