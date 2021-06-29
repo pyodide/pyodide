@@ -76,10 +76,13 @@ class _ReadStream:
 
 
 class _CodeRunnerCompile(Compile):
-    """Instances of this class behave much like the built-in compile
-    function, but if one is used to compile text containing a future
-    statement, it "remembers" and compiles all subsequent program texts
-    with the statement in force."""
+    """Compile code with CodeRunner, and remember future imports
+
+    Instances of this class behave much like the built-in compile function,
+    but if one is used to compile text containing a future statement, it
+    "remembers" and compiles all subsequent program texts with the statement in
+    force. It uses CodeRunner instead of the built in compile.
+    """
 
     def __init__(
         self,
@@ -99,7 +102,7 @@ class _CodeRunnerCompile(Compile):
             return_mode = None
         code_runner = CodeRunner(
             source,
-            mode="single",
+            mode=symbol,
             filename=filename,
             return_mode=return_mode,
             flags=self.flags,
@@ -111,11 +114,17 @@ class _CodeRunnerCompile(Compile):
 
 
 class _CodeRunnerCommandCompiler(CommandCompiler):
-    """Instances of this class have __call__ methods identical in
-    signature to compile_command; the difference is that if the
-    instance compiles program text containing a __future__ statement,
-    the instance 'remembers' and compiles all subsequent program texts
-    with the statement in force."""
+    """Compile code with CodeRunner, and remember future imports, return None if
+    code is incomplete.
+
+    Instances of this class have __call__ methods identical in signature to
+    compile; the difference is that if the instance compiles program text
+    containing a __future__ statement, the instance 'remembers' and compiles all
+    subsequent program texts with the statement in force.
+
+    If the source is determined to be incomplete, will suppress the SyntaxError
+    and return ``None``.
+    """
 
     def __init__(
         self,
