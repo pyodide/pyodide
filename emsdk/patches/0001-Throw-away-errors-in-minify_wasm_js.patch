@@ -1,0 +1,36 @@
+From 310269ed630ead73e89e6bfc15e54e4c90959c95 Mon Sep 17 00:00:00 2001
+From: Hood <hood@mit.edu>
+Date: Thu, 24 Jun 2021 04:08:02 -0700
+Subject: [PATCH] Throw away errors in minify_wasm_js
+
+---
+ emcc.py | 13 ++++++++-----
+ 1 file changed, 8 insertions(+), 5 deletions(-)
+
+diff --git a/emsdk/upstream/emscripten/emcc.py b/emsdk/upstream/emscripten/emcc.py
+index 839f791b3..5653470dd 100755
+--- a/emsdk/upstream/emscripten/emcc.py
++++ b/emsdk/upstream/emscripten/emcc.py
+@@ -2901,11 +2901,14 @@ def do_binaryen(target, options, wasm_target):
+       # Closure can print out readable error messages (Closure will then
+       # minify whitespace afterwards)
+       save_intermediate_with_wasm('preclean', wasm_target)
+-      final_js = building.minify_wasm_js(js_file=final_js,
+-                                         wasm_file=wasm_target,
+-                                         expensive_optimizations=will_metadce(),
+-                                         minify_whitespace=minify_whitespace() and not options.use_closure_compiler,
+-                                         debug_info=intermediate_debug_info)
++      try:
++        final_js = building.minify_wasm_js(js_file=final_js,
++                                          wasm_file=wasm_target,
++                                          expensive_optimizations=will_metadce(),
++                                          minify_whitespace=minify_whitespace() and not options.use_closure_compiler,
++                                          debug_info=intermediate_debug_info)
++      except:
++        pass
+       save_intermediate_with_wasm('postclean', wasm_target)
+ 
+   if shared.Settings.ASYNCIFY_LAZY_LOAD_CODE:
+-- 
+2.17.1
+

@@ -1,5 +1,13 @@
 import { Module } from "./module";
 import { loadPackage, loadedPackages } from "./load-pyodide";
+import { isPyProxy, PyBuffer } from "./pyproxy.gen";
+export { loadPackage, loadedPackages, isPyProxy };
+
+/**
+ * @typedef {import('./pyproxy.gen').Py2JsResult} Py2JsResult
+ * @typedef {import('./pyproxy.gen').PyProxy} PyProxy
+ * @typedef {import('./pyproxy.gen').TypedArray} TypedArray
+ */
 
 /**
  * An alias to the Python :py:mod:`pyodide` package.
@@ -77,7 +85,7 @@ export let version = ""; // actually defined in runPythonSimple in loadPyodide (
  * @param {PyProxy} globals An optional Python dictionary to use as the globals.
  *        Defaults to :any:`pyodide.globals`. Uses the Python API
  *        :any:`pyodide.eval_code` to evaluate the code.
- * @returns The result of the Python code translated to Javascript. See the
+ * @returns {Py2JsResult} The result of the Python code translated to Javascript. See the
  *          documentation for :any:`pyodide.eval_code` for more info.
  */
 export function runPython(code, globals = Module.globals) {
@@ -123,7 +131,16 @@ export async function loadPackagesFromImports(
   messageCallback,
   errorCallback
 ) {
-  let imports = Module.pyodide_py.find_imports(code).toJs();
+  let find_imports = Module.pyodide_py.find_imports;
+  let imports;
+  let pyimports;
+  try {
+    pyimports = find_imports(code);
+    imports = pyimports.toJs();
+  } finally {
+    find_imports.destroy();
+    pyimports && pyimports.destroy();
+  }
   if (imports.length === 0) {
     return;
   }
@@ -150,7 +167,7 @@ export async function loadPackagesFromImports(
  *    :any:`pyodide.globals.get('key') <pyodide.globals>` instead.
  *
  * @param {string} name Python variable name
- * @returns The Python object translated to Javascript.
+ * @returns {Py2JsResult} The Python object translated to Javascript.
  */
 export function pyimport(name) {
   console.warn(
@@ -177,7 +194,7 @@ export function pyimport(name) {
  *    console.log(result); // 72
  *
  * @param {string} code Python code to evaluate
- * @returns The result of the Python code translated to Javascript.
+ * @returns {Py2JsResult} The result of the Python code translated to Javascript.
  * @async
  */
 export async function runPythonAsync(code) {
@@ -205,7 +222,20 @@ Module.runPythonAsync = runPythonAsync;
  * @param {object} module Javascript object backing the module
  */
 export function registerJsModule(name, module) {
-  Module.pyodide_py.register_js_module(name, module);
+  let register_js_module = Module.pyodide_py.register_js_module;
+  try {
+    register_js_module(name, module);
+  } finally {
+    register_js_module.destroy();
+  }
+}
+
+/**
+ * Tell Pyodide about Comlink.
+ * Necessary to enable importing Comlink proxies into Python.
+ */
+export function registerComlink(Comlink) {
+  Module._Comlink = Comlink;
 }
 
 /**
@@ -220,7 +250,12 @@ export function registerJsModule(name, module) {
  * @param {string} name Name of the Javascript module to remove
  */
 export function unregisterJsModule(name) {
-  Module.pyodide_py.unregister_js_module(name);
+  let unregister_js_module = Module.pyodide_py.unregister_js_module;
+  try {
+    unregister_js_module(name);
+  } finally {
+    unregister_js_module.destroy();
+  }
 }
 
 /**
@@ -277,26 +312,11 @@ export function toPy(obj, depth = -1) {
 }
 
 /**
- * @interface PyProxy
- * @private
- */
-
-/**
- * Is the argument a :any:`PyProxy`?
- * @param jsobj {any} Object to test.
- * @returns {boolean} Is ``jsobj`` a :any:`PyProxy`?
- */
-export function isPyProxy(jsobj) {
-  return !!jsobj && jsobj.$$ !== undefined && jsobj.$$.type === "PyProxy";
-}
-Module.isPyProxy = isPyProxy;
-
-/**
- * @param {Int32Array} interrupt_buffer
+ * @param {TypedArray} interrupt_buffer
  */
 function setInterruptBuffer(interrupt_buffer) {}
-
 setInterruptBuffer = Module.setInterruptBuffer;
+export { setInterruptBuffer };
 
 export function makePublicAPI() {
   let namespace = {
@@ -314,7 +334,9 @@ export function makePublicAPI() {
     unregisterJsModule,
     setInterruptBuffer,
     toPy,
+    registerComlink,
     PythonError,
+    PyBuffer,
   };
   namespace._module = Module; // @private
   Module.public_api = namespace;

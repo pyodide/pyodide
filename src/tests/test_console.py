@@ -16,7 +16,7 @@ def test_stream_redirection():
         nonlocal my_buffer
         my_buffer += string
 
-    my_stream = console._StdStream(callback)
+    my_stream = console._WriteStream(callback)
 
     print("foo", file=my_stream)
     assert my_buffer == "foo\n"
@@ -34,9 +34,10 @@ def safe_sys_redirections():
 
 
 def test_interactive_console_streams(safe_sys_redirections):
-
     my_stdout = ""
     my_stderr = ""
+    orig_sys_stdout_name = sys.stdout.name
+    orig_sys_stderr_name = sys.stderr.name
 
     def stdout_callback(string):
         nonlocal my_stdout
@@ -56,8 +57,8 @@ def test_interactive_console_streams(safe_sys_redirections):
     )
 
     # std names
-    assert sys.stdout.name == "<stdout>"
-    assert sys.stderr.name == "<stderr>"
+    assert sys.stdout.name == orig_sys_stdout_name
+    assert sys.stderr.name == orig_sys_stderr_name
 
     # std redirections
     print("foo")
@@ -87,7 +88,10 @@ def test_interactive_console_streams(safe_sys_redirections):
     assert my_stderr == ""
     assert shell.run_complete.result() == 2
 
-    shell.restore_stdstreams()
+    del shell
+    import gc
+
+    gc.collect()
 
     my_stdout = ""
     my_stderr = ""
@@ -172,20 +176,20 @@ def test_interactive_console(selenium, safe_selenium_sys_redirections):
 
     selenium.run("shell.push('x = 5')")
     selenium.run("shell.push('x')")
-    selenium.run_js("await pyodide.runPython('shell.run_complete');")
+    selenium.run_js("await pyodide.runPythonAsync('await shell.run_complete');")
     assert selenium.run("result") == 5
 
     selenium.run("shell.push('x ** 2')")
-    selenium.run_js("await pyodide.runPython('shell.run_complete');")
+    selenium.run_js("await pyodide.runPythonAsync('await shell.run_complete');")
 
     assert selenium.run("result") == 25
 
     selenium.run("shell.push('def f(x):')")
     selenium.run("shell.push('    return x*x + 1')")
     selenium.run("shell.push('')")
-    selenium.run("shell.push('[f(x) for x in range(5)]')")
-    selenium.run_js("await pyodide.runPython('shell.run_complete');")
-    assert selenium.run("result") == [1, 2, 5, 10, 17]
+    selenium.run("shell.push('str([f(x) for x in range(5)])')")
+    selenium.run_js("await pyodide.runPythonAsync('await shell.run_complete');")
+    assert selenium.run("result") == str([1, 2, 5, 10, 17])
 
     selenium.run("shell.push('def factorial(n):')")
     selenium.run("shell.push('    if n < 2:')")
@@ -194,13 +198,13 @@ def test_interactive_console(selenium, safe_selenium_sys_redirections):
     selenium.run("shell.push('        return n * factorial(n - 1)')")
     selenium.run("shell.push('')")
     selenium.run("shell.push('factorial(10)')")
-    selenium.run_js("await pyodide.runPython('shell.run_complete');")
+    selenium.run_js("await pyodide.runPythonAsync('await shell.run_complete');")
     assert selenium.run("result") == 3628800
 
     # with package load
     selenium.run("shell.push('import pytz')")
     selenium.run("shell.push('pytz.utc.zone')")
-    selenium.run_js("await pyodide.runPython('shell.run_complete');")
+    selenium.run_js("await pyodide.runPythonAsync('await shell.run_complete');")
     assert selenium.run("result") == "UTC"
 
 
@@ -307,7 +311,7 @@ def test_console_html(console_html_fixture):
 `>>> 1+
 [[;;;terminal-error]  File "<console>", line 1
     1+
-     ^
+      ^
 SyntaxError: invalid syntax]`
         ]);
 

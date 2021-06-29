@@ -241,7 +241,7 @@ with redirect_stdin(StringIO("\n".join(["eval", "asyncio.ensure_future", "functo
 ```
 it will print:
 ```
-Welcome to Python 3.8's help utility!
+Welcome to Python 3.9's help utility!
 <...OMITTED LINES>
 Help on built-in function eval in module builtins:
 eval(source, globals=None, locals=None, /)

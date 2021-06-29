@@ -3,7 +3,7 @@ version: 2
 defaults: &defaults
   working_directory: ~/repo
   docker:
-    - image: pyodide/pyodide-env:16
+    - image: pyodide/pyodide-env:18
   environment:
     - EMSDK_NUM_CORES: 3
       EMCC_CORES: 3
@@ -66,7 +66,7 @@ jobs:
           command: |
             ccache -z
             # The following packages are currently used in the main pyodide test suite
-            PYODIDE_PACKAGES="micropip,pyparsing,pytz,packaging,kiwisolver,Jinja2" make
+            PYODIDE_PACKAGES="micropip,pyparsing,pytz,packaging,Jinja2" make
             ccache -s
 
       - run:
@@ -110,7 +110,7 @@ jobs:
           no_output_timeout: 1800
           command: |
             ccache -z
-            make
+            make -C packages
             ccache -s
 
       - run:
@@ -131,6 +131,9 @@ jobs:
       - store_artifacts:
           path: /root/repo/build/
 
+      - store_artifacts:
+          path: /root/repo/packages/build-logs
+
   test-core-firefox:
     <<: *defaults
     steps:
@@ -139,7 +142,10 @@ jobs:
       - run:
           name: test
           command: |
-            tools/pytest_wrapper.py src packages/micropip/ -v -k firefox -n 3
+            mkdir test-results
+            tools/pytest_wrapper.py --junitxml=test-results/junit.xml src packages/micropip/ -v -k firefox -n 3
+      - store_test_results:
+          path: test-results
 
   test-core-chrome:
     <<: *defaults
@@ -149,7 +155,10 @@ jobs:
       - run:
           name: test
           command: |
-            tools/pytest_wrapper.py src packages/micropip/ -v -k chrome
+            mkdir test-results
+            tools/pytest_wrapper.py --junitxml=test-results/junit.xml src packages/micropip/ -v -k chrome
+      - store_test_results:
+          path: test-results
 
   test-packages-firefox:
     <<: *defaults
@@ -159,7 +168,10 @@ jobs:
       - run:
           name: test
           command: |
-            tools/pytest_wrapper.py packages/test* packages/*/test* -v -k firefox
+            mkdir test-results
+            tools/pytest_wrapper.py --junitxml=test-results/junit.xml packages/test* packages/*/test* -v -k firefox
+      - store_test_results:
+          path: test-results
 
   test-packages-chrome:
     <<: *defaults
@@ -169,7 +181,10 @@ jobs:
       - run:
           name: test
           command: |
-            tools/pytest_wrapper.py packages/test* packages/*/test* -v -k chrome -n 2
+            mkdir test-results
+            tools/pytest_wrapper.py --junitxml=test-results/junit.xml packages/test* packages/*/test* -v -k chrome -n 2
+      - store_test_results:
+          path: test-results
 
   test-emsdk:
     <<: *defaults
@@ -189,7 +204,23 @@ jobs:
       - run:
           name: test
           command: |
-            pytest src pyodide-build packages/micropip/ -v -k 'not (chrome or firefox)' --cov=pyodide_build --cov=pyodide
+            mkdir test-results
+            pytest --junitxml=test-results/junit.xml src pyodide-build packages/micropip/ -v -k 'not (chrome or firefox)' --cov=pyodide_build --cov=pyodide
+      - store_test_results:
+          path: test-results
+
+  test-js-types:
+    <<: *defaults
+    resource_class: small
+    steps:
+      - attach_workspace:
+          at: .
+      - run:
+          name: test
+          command: |
+            cd src/js
+            npx tsd
+
 
   benchmark:
     <<: *defaults
@@ -275,50 +306,29 @@ workflows:
     jobs:
       - lint
       - test-docs
-      - build-core:
-          filters:
-            tags:
-              only: /.*/
+      - test-python
+      - build-core
       - build-packages:
           requires:
             - build-core
-          filters:
-            tags:
-              only: /.*/
       - test-core-chrome:
           requires:
             - build-core
-          filters:
-            tags:
-              only: /.*/
       - test-core-firefox:
           requires:
             - build-core
-          filters:
-            tags:
-              only: /.*/
       - test-packages-chrome:
           requires:
             - build-packages
-          filters:
-            tags:
-              only: /.*/
       - test-packages-firefox:
           requires:
             - build-packages
-          filters:
-            tags:
-              only: /.*/
       - test-emsdk:
           requires:
             - build-core
-          filters:
-            tags:
-              only: /.*/
-      - test-python:
-          filters:
-            tags:
-              only: /.*/
+      - test-js-types:
+          requires:
+            - build-core
       - benchmark:
           requires:
             - build-packages

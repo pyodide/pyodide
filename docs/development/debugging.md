@@ -25,7 +25,7 @@ import socketserver
 from http.server import SimpleHTTPRequestHandler
 import pathlib
 
-alternative_bases=["cpython/build/Python-3.8.2/","src/", "build/"]
+alternative_bases=["cpython/build/Python-3.9.5/","src/", "build/"]
 def fixup_url(path):
     if pathlib.Path("." + path).exists():
         return path

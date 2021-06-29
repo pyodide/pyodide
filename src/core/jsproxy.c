@@ -1702,10 +1702,18 @@ finally:
 PyObject*
 JsProxy_create_with_this(JsRef object, JsRef this)
 {
+  int type_flags = 0;
+  bool success = false;
+  PyTypeObject* type = NULL;
+  PyObject* result = NULL;
+  if (hiwire_is_comlink_proxy(object)) {
+    // Comlink proxies are weird and break our feature detection pretty badly.
+    type_flags = IS_CALLABLE | IS_AWAITABLE | IS_ARRAY;
+    goto done_feature_detecting;
+  }
   if (hiwire_is_error(object)) {
     return JsProxy_new_error(object);
   }
-  int type_flags = 0;
   if (hiwire_is_function(object)) {
     type_flags |= IS_CALLABLE;
   }
@@ -1742,10 +1750,7 @@ JsProxy_create_with_this(JsRef object, JsRef this)
   if (JsArray_Check(object)) {
     type_flags |= IS_ARRAY;
   }
-
-  bool success = false;
-  PyTypeObject* type = NULL;
-  PyObject* result = NULL;
+done_feature_detecting:
 
   type = JsProxy_get_subtype(type_flags);
   FAIL_IF_NULL(type);
@@ -1799,27 +1804,6 @@ JsException_AsJs(PyObject* err)
   JsExceptionObject* err_obj = (JsExceptionObject*)err;
   JsProxy* js_error = (JsProxy*)(err_obj->js_error);
   return hiwire_incref(js_error->js);
-}
-
-// Copied from Python 3.9
-// TODO: remove once we update to Python 3.9
-static int
-PyModule_AddType(PyObject* module, PyTypeObject* type)
-{
-  if (PyType_Ready(type) < 0) {
-    return -1;
-  }
-
-  const char* name = _PyType_Name(type);
-  assert(name != NULL);
-
-  Py_INCREF(type);
-  if (PyModule_AddObject(module, name, (PyObject*)type) < 0) {
-    Py_DECREF(type);
-    return -1;
-  }
-
-  return 0;
 }
 
 int

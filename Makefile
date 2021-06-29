@@ -23,6 +23,8 @@ all: check \
 	build/webworker_dev.js
 	echo -e "\nSUCCESS!"
 
+$(CPYTHONLIB)/tzdata :
+	pip install tzdata --target=$(CPYTHONLIB)
 
 build/pyodide.asm.js: \
 	src/core/docstring.o \
@@ -38,7 +40,9 @@ build/pyodide.asm.js: \
 	src/core/python2js.o \
 	src/pystone.py \
 	src/_testcapi.py \
+	src/_testinternalcapi.py \
 	src/webbrowser.py \
+	$(CPYTHONLIB)/tzdata \
 	$(wildcard src/py/pyodide/*.py) \
 	$(CPYTHONLIB)
 	date +"[%F %T] Building pyodide.asm.js..."
@@ -48,6 +52,7 @@ build/pyodide.asm.js: \
 		--preload-file $(CPYTHONLIB)@/lib/python$(PYMINOR) \
 		--preload-file src/webbrowser.py@/lib/python$(PYMINOR)/webbrowser.py \
 		--preload-file src/_testcapi.py@/lib/python$(PYMINOR)/_testcapi.py \
+		--preload-file src/_testinternalcapi.py@/lib/python$(PYMINOR)/_testinternalcapi.py \
 		--preload-file src/pystone.py@/lib/python$(PYMINOR)/pystone.py \
 		--preload-file src/py/pyodide@/lib/python$(PYMINOR)/site-packages/pyodide \
 		--preload-file src/py/_pyodide@/lib/python$(PYMINOR)/site-packages/_pyodide \
@@ -137,11 +142,12 @@ test: all
 
 lint: node_modules/.installed
 	# check for unused imports, the rest is done by black
-	flake8 --select=F401 src tools pyodide-build benchmark conftest.py docs
+	flake8 --select=F401 src tools pyodide-build benchmark conftest.py docs packages/matplotlib/src/
 	find src -type f -regex '.*\.\(c\|h\)' \
 		| xargs clang-format-6.0 -output-replacements-xml \
 		| (! grep '<replacement ')
 	npx prettier --check `find src -type f -name '*.js' -not -name '*.gen.js'`
+	npx prettier --check `find src -type f -name '*.html'`
 	black --check .
 	mypy --ignore-missing-imports    \
 		pyodide-build/pyodide_build/ \
@@ -150,9 +156,6 @@ lint: node_modules/.installed
 		packages/*/test* 			 \
 		conftest.py 				 \
 		docs
-
-apply-lint:
-	./tools/apply-lint.sh
 
 benchmark: all
 	python benchmark/benchmark.py $(HOSTPYTHON) build/benchmarks.json
@@ -215,5 +218,5 @@ minimal :
 
 debug :
 	EXTRA_CFLAGS+=" -D DEBUG_F" \
-	PYODIDE_PACKAGES+=", micropip, pyparsing, pytz, packaging, kiwisolver, " \
+	PYODIDE_PACKAGES+=", micropip, pyparsing, pytz, packaging, " \
 	make
