@@ -27,7 +27,7 @@ BZIP2URL=https://sourceware.org/pub/bzip2/bzip2-1.0.2.tar.gz
 
 FFIBUILD=$(ROOT)/build/libffi
 LIBFFIREPO=https://github.com/hoodmane/libffi-emscripten
-LIBFFI_COMMIT=d49b937d19bc07aa3d6d3dcbcd97497f491ce72a
+LIBFFI_COMMIT=c76c24162804ec1497fb8d66f0958322e139eebd
 
 all: $(INSTALL)/lib/$(LIB) $(INSTALL)/lib/libffi.a
 
@@ -117,7 +117,7 @@ $(INSTALL)/lib/libffi.a :
 	rm -rf $(FFIBUILD)
 	git clone $(LIBFFIREPO) $(FFIBUILD) --shallow-exclude upstream-base
 	source $(PYODIDE_ROOT)/emsdk/emsdk/emsdk_env.sh
-	cd  $(FFIBUILD) && git checkout $(LIBFFI_COMMIT) && ./build.sh --pyodide-fpcast && make install
+	cd $(FFIBUILD) && git checkout $(LIBFFI_COMMIT) && ./build.sh --pyodide-fpcast && make install
 	cp $(FFIBUILD)/target/include/*.h $(BUILD)/Include/
 	mkdir -p $(INSTALL)/lib
 	cp $(FFIBUILD)/target/lib/libffi.a $(INSTALL)/lib/
