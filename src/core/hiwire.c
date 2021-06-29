@@ -5,6 +5,7 @@
 #include <emscripten.h>
 
 #include "hiwire.h"
+#include "jsmemops.h"
 
 #define ERROR_REF (0)
 #define ERROR_NUM (-1)
@@ -39,10 +40,10 @@ EM_JS_NUM(int, hiwire_init, (), {
     counter : new Uint32Array([1])
   };
   Module.hiwire = {};
-  Module.hiwire.UNDEFINED = HEAP8[_Js_undefined];
-  Module.hiwire.JSNULL = HEAP8[_Js_null];
-  Module.hiwire.TRUE = HEAP8[_Js_true];
-  Module.hiwire.FALSE = HEAP8[_Js_false];
+  Module.hiwire.UNDEFINED = DEREF_U8(_Js_undefined, 0);
+  Module.hiwire.JSNULL = DEREF_U8(_Js_null, 0);
+  Module.hiwire.TRUE = DEREF_U8(_Js_true, 0);
+  Module.hiwire.FALSE = DEREF_U8(_Js_false, 0);
 
   _hiwire.objects.set(Module.hiwire.UNDEFINED, undefined);
   _hiwire.objects.set(Module.hiwire.JSNULL, null);
@@ -234,7 +235,7 @@ EM_JS_REF(JsRef, hiwire_int_from_hex, (const char* s), {
   let result;
   // clang-format off
   // Check if number starts with a minus sign
-  if (HEAP8[s] === 45) {
+  if (DEREF_U8(s, 0) === 45) {
     // clang-format on
     result = -Module.BigInt(UTF8ToString(s + 1));
   } else {
@@ -252,27 +253,24 @@ EM_JS_REF(JsRef, hiwire_double, (double val), {
 
 EM_JS_REF(JsRef, hiwire_string_ucs4, (const char* ptr, int len), {
   let jsstr = "";
-  let idx = ptr / 4;
   for (let i = 0; i < len; ++i) {
-    jsstr += String.fromCodePoint(Module.HEAPU32[idx + i]);
+    jsstr += String.fromCodePoint(DEREF_U32(ptr, i));
   }
   return Module.hiwire.new_value(jsstr);
 });
 
 EM_JS_REF(JsRef, hiwire_string_ucs2, (const char* ptr, int len), {
   let jsstr = "";
-  let idx = ptr / 2;
   for (let i = 0; i < len; ++i) {
-    jsstr += String.fromCharCode(Module.HEAPU16[idx + i]);
+    jsstr += String.fromCharCode(DEREF_U16(idx, i));
   }
   return Module.hiwire.new_value(jsstr);
 });
 
 EM_JS_REF(JsRef, hiwire_string_ucs1, (const char* ptr, int len), {
   let jsstr = "";
-  let idx = ptr;
   for (let i = 0; i < len; ++i) {
-    jsstr += String.fromCharCode(Module.HEAPU8[idx + i]);
+    jsstr += String.fromCharCode(DEREF_U8(idx, i));
   }
   return Module.hiwire.new_value(jsstr);
 });
@@ -664,7 +662,7 @@ EM_JS_NUM(int, hiwire_next, (JsRef idobj, JsRef* result_ptr), {
   let { done, value } = jsobj.next();
   // clang-format on
   let result_id = Module.hiwire.new_value(value);
-  HEAP32[result_ptr / 4] = result_id;
+  DEREF_U32(result_ptr, 0) = result_id;
   return done;
 });
 
@@ -739,9 +737,9 @@ hiwire_get_buffer_datatype,
   let jsobj = Module.hiwire.get_value(idobj);
   let [format_utf8, size, checked] = Module.get_buffer_datatype(jsobj);
   // Store results into arguments
-  HEAP32[format_ptr/4] = format_utf8;
-  HEAP32[size_ptr/4] = format_utf8;
-  HEAP8[checked_ptr] = checked;
+  DEREF_U32(format_ptr, 0) = format_utf8;
+  DEREF_U32(size_ptr, 0) = format_utf8;
+  DEREF_U8(checked_ptr, 0) = checked;
 });
 // clang-format on
 
