@@ -27,6 +27,30 @@ from typing import (
 
 from ._base import should_quiet, CodeRunner
 
+# this import can fail when we are outside a browser (e.g. for tests)
+try:
+    from pyodide_js import loadPackagesFromImports as _load_packages_from_imports
+    from asyncio import ensure_future
+except ImportError:
+    from asyncio import Future
+
+    def ensure_future(co):  # type: ignore
+        fut = Future()
+        try:
+            co.send(None)
+        except StopIteration as v:
+            result = v.args[0] if v.args else None
+            fut.set_result(result)
+        except BaseException as e:
+            fut.set_exception(e)
+        else:
+            raise Exception("coroutine didn't finish in one pass")
+        return fut
+
+    async def _load_packages_from_imports(*args):
+        pass
+
+
 __all__ = ["repr_shorten", "BANNER", "Console", "PyodideConsole"]
 
 
