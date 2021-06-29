@@ -1081,13 +1081,15 @@ class PyProxyBufferMethods {
       }
     }
     let this_ptr = _getPtr(this);
-    let buffer_struct_ptr;
+    let orig_stack_ptr = saveStack();
+    let buffer_struct_ptr = stackAlloc(HEAP32[_buffer_struct_size / 4]);
+    let errcode;
     try {
-      buffer_struct_ptr = Module.__pyproxy_get_buffer(this_ptr);
+      errcode = Module.__pyproxy_get_buffer(this_ptr);
     } catch (e) {
       Module.fatal_error(e);
     }
-    if (buffer_struct_ptr === 0) {
+    if (errcode === -1) {
       Module._pythonexc2js();
     }
 
@@ -1110,11 +1112,7 @@ class PyProxyBufferMethods {
     let f_contiguous = !!HEAP32[cur_ptr++];
 
     let format = Module.UTF8ToString(format_ptr);
-    try {
-      Module._PyMem_Free(buffer_struct_ptr);
-    } catch (e) {
-      Module.fatal_error(e);
-    }
+    stackRestore(orig_stack_ptr);
 
     let success = false;
     try {

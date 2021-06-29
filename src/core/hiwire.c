@@ -664,7 +664,7 @@ EM_JS_NUM(int, hiwire_next, (JsRef idobj, JsRef* result_ptr), {
   let { done, value } = jsobj.next();
   // clang-format on
   let result_id = Module.hiwire.new_value(value);
-  setValue(result_ptr, result_id, "i32");
+  HEAP32[result_ptr / 4] = result_id;
   return done;
 });
 
@@ -739,9 +739,9 @@ hiwire_get_buffer_datatype,
   let jsobj = Module.hiwire.get_value(idobj);
   let [format_utf8, size, checked] = Module.get_buffer_datatype(jsobj);
   // Store results into arguments
-  setValue(format_ptr, format_utf8, "i8*");
-  setValue(size_ptr, size, "i32");
-  setValue(checked_ptr, size, "i8");
+  HEAP32[format_ptr/4] = format_utf8;
+  HEAP32[size_ptr/4] = format_utf8;
+  HEAP8[checked_ptr] = checked;
 });
 // clang-format on
 
