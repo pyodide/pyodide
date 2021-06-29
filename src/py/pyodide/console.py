@@ -25,7 +25,6 @@ from typing import (
     Awaitable,
 )
 
-
 from ._base import should_quiet, CodeRunner
 
 __all__ = ["repr_shorten", "BANNER", "Console", "PyodideConsole"]

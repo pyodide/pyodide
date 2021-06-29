@@ -142,7 +142,7 @@ test: all
 
 lint: node_modules/.installed
 	# check for unused imports, the rest is done by black
-	flake8 --select=F401 src tools pyodide-build benchmark conftest.py docs
+	flake8 --select=F401 src tools pyodide-build benchmark conftest.py docs packages/matplotlib/src/
 	find src -type f -regex '.*\.\(c\|h\)' \
 		| xargs clang-format-6.0 -output-replacements-xml \
 		| (! grep '<replacement ')
