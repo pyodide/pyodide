@@ -773,6 +773,7 @@ _pyproxy_get_buffer(buffer_struct* target, PyObject* ptrobj)
   }
 
   bool success = false;
+  buffer_struct result = { 0 };
   result.start_ptr = result.smallest_ptr = result.largest_ptr = view.buf;
   result.readonly = view.readonly;
 
