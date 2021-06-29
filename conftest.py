@@ -96,19 +96,11 @@ class SeleniumWrapper:
                 f"{(build_dir / 'test.html').resolve()} " f"does not exist!"
             )
         self.driver.get(f"http://{server_hostname}:{server_port}/test.html")
-        self.javascript_setup()
-        if load_pyodide:
-            self.run_js(
-                """
-                window.pyodide = await loadPyodide({ indexURL : './', fullStdLib: false });
-                pyodide.runPython("");
-                """
-            )
-            self.save_state()
+        self.javascript_setup(load_pyodide)
         self.script_timeout = script_timeout
         self.driver.set_script_timeout(script_timeout)
 
-    def javascript_setup(self):
+    def javascript_setup(self, load_pyodide):
         self.run_js("Error.stackTraceLimit = Infinity;", pyodide_checks=False)
         self.run_js(
             """
@@ -173,6 +165,18 @@ class SeleniumWrapper:
             """,
             pyodide_checks=False,
         )
+        if load_pyodide:
+            self.run_js(
+                """
+                window.pyodide = await loadPyodide({ indexURL : './', fullStdLib: false });
+                pyodide.runPython("");
+                window.fatally_failed = false;
+                pyodide._module.on_fatal = async (e) => {
+                    window.fatally_failed = true;
+                }
+                """
+            )
+            self.save_state()
 
     @property
     def logs(self):
@@ -181,6 +185,10 @@ class SeleniumWrapper:
             return "\n".join(str(x) for x in logs)
         else:
             return ""
+
+    @property
+    def fatally_failed(self):
+        return self.driver.execute_script("return window.fatally_failed;")
 
     def clean_logs(self):
         self.driver.execute_script("window.logs = []")
@@ -424,6 +432,9 @@ def selenium_standalone(request, web_server_main):
             try:
                 yield selenium
             finally:
+                if selenium.fatally_failed:
+                    selenium.driver.refresh()
+                    selenium.javascript_setup(load_pyodide=True)
                 print(selenium.logs)
 
 
