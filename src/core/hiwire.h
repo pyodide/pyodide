@@ -65,7 +65,7 @@ hiwire_init();
  * and little endian.
  */
 JsRef
-hiwire_int_from_digits(const int* bytes, size_t nbytes);
+hiwire_int_from_digits(const unsigned int* bytes, size_t nbytes);
 
 /**
  * Increase the reference count on an object.
