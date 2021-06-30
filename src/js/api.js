@@ -314,12 +314,12 @@ export function toPy(obj, depth = -1) {
 /**
  * @private
  */
-Module.saveState = () => Module.pyodide_py._util.save_state();
+Module.saveState = () => Module.pyodide_py._state.save_state();
 
 /**
  * @private
  */
-Module.restoreState = (state) => Module.pyodide_py._util.restore_state(state);
+Module.restoreState = (state) => Module.pyodide_py._state.restore_state(state);
 
 /**
  * @param {TypedArray} interrupt_buffer
