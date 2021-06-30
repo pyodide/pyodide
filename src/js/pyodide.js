@@ -224,8 +224,10 @@ export async function loadPyodide(config) {
   // `Module.pyodide_py`. Use `runPythonSimple` to add these. runPythonSimple
   // doesn't dedent the argument so the indentation matters.
   Module.runPythonSimple(`
-def temp(pyodide_js, Module):
-  from _pyodide._importhook import jsfinder
+def temp(pyodide_js, Module, jsglobals):
+  from _pyodide._importhook import register_js_finder
+  jsfinder = register_js_finder()
+  jsfinder.register_js_module("js", jsglobals)
   jsfinder.register_js_module("pyodide_js", pyodide_js)
 
   import pyodide

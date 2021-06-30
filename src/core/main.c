@@ -118,11 +118,7 @@ main(int argc, char** argv)
 
   PyObject* _pyodide = NULL;
   PyObject* core_module = NULL;
-  PyObject* jsfinder = NULL;
-  JsRef jsglobals = NULL;
-  PyObject* py_js_globals = NULL;
-  PyObject* res = NULL;
-  PyObject* pyodide = NULL;
+  JsRef init_dict_proxy = NULL;
 
   _pyodide = PyImport_ImportModule("_pyodide");
   if (_pyodide == NULL) {
@@ -156,20 +152,9 @@ main(int argc, char** argv)
   if (PyDict_SetItemString(module_dict, "_pyodide_core", core_module)) {
     FATAL_ERROR("Failed to add '_pyodide_core' module to modules dict.");
   }
-  _Py_IDENTIFIER(register_js_finder);
-  _Py_IDENTIFIER(register_js_module);
-  // Install the Javascript MetaPathFinder
-  jsfinder = _PyObject_CallMethodIdNoArgs(_pyodide, &PyId_register_js_finder);
-  // Add the js global import object
-  jsglobals = (JsRef)EM_ASM_INT({ return Module.hiwire.new_value(globalThis) });
-  py_js_globals = JsProxy_create(jsglobals);
-  res = _PyObject_CallMethodIdOneArg(
-    jsfinder, &PyId_register_js_module, py_js_globals);
-
-  pyodide = PyImport_ImportModule("pyodide");
 
   // Enable Javascript access to the globals from runPythonSimple.
-  JsRef init_dict_proxy = python2js(init_dict);
+  init_dict_proxy = python2js(init_dict);
   if (init_dict_proxy == NULL) {
     FATAL_ERROR("Failed to create init_dict proxy.");
   }
@@ -177,11 +162,7 @@ main(int argc, char** argv)
 
   Py_CLEAR(_pyodide);
   Py_CLEAR(core_module);
-  Py_CLEAR(jsfinder);
-  hiwire_CLEAR(jsglobals);
-  Py_CLEAR(py_js_globals);
-  Py_CLEAR(res);
-  Py_CLEAR(pyodide);
+  hiwire_CLEAR(init_dict_proxy);
   emscripten_exit_with_live_runtime();
   return 0;
 }
