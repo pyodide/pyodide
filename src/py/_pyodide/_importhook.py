@@ -3,7 +3,7 @@ from importlib.util import spec_from_loader
 import sys
 
 JsProxy: type = None  # type: ignore
-jsfinder = None
+jsfinder: "JsFinder" = None  # type: ignore
 
 
 def register_js_finder():

@@ -1,18 +1,18 @@
+from ._core import JsProxy, JsException, create_once_callable, create_proxy, to_js  # type: ignore
 from _pyodide._base import (
-    open_url,
     eval_code,
     eval_code_async,
     find_imports,
     CodeRunner,
 )
-from ._core import JsProxy, JsException, create_once_callable, create_proxy, to_js  # type: ignore
-from ._importhooks import jsfinder
+from ._util import open_url
+from . import _util  # type: ignore # noqa
 from .webloop import WebLoopPolicy
-from . import _state  # type: ignore # noqa
+
 import asyncio
 import platform
 
-from _pyodide._importhook import jsfinder  # type: ignore
+from _pyodide._importhook import jsfinder
 
 register_js_module = jsfinder.register_js_module
 unregister_js_module = jsfinder.unregister_js_module

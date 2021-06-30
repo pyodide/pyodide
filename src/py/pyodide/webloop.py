@@ -7,6 +7,9 @@ import traceback
 
 from typing import Callable
 
+from js import setTimeout
+from ._core import create_once_callable
+
 
 class WebLoop(asyncio.AbstractEventLoop):
     """A custom event loop for use in Pyodide.
@@ -136,9 +139,6 @@ class WebLoop(asyncio.AbstractEventLoop):
 
         This uses `setTimeout(callback, delay)`
         """
-        from js import setTimeout
-        from . import create_once_callable
-
         if delay < 0:
             raise ValueError("Can't schedule in the past")
         h = asyncio.Handle(callback, args, self, context=context)  # type: ignore
