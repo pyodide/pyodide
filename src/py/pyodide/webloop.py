@@ -1,14 +1,17 @@
 import asyncio
-import time
 import contextvars
 import sys
+import time
 import traceback
-
-
 from typing import Callable
 
-from js import setTimeout
+
 from ._core import create_once_callable
+
+try:
+    from js import setTimeout
+except ImportError:
+    pass
 
 
 class WebLoop(asyncio.AbstractEventLoop):
