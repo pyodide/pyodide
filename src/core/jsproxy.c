@@ -1752,8 +1752,7 @@ JsProxy_init(PyObject* core_module)
   _pyodide_core = PyImport_ImportModule("_pyodide._core");
   FAIL_IF_NULL(_pyodide_core);
   _Py_IDENTIFIER(JsProxy);
-  jsproxy_mock =
-    _PyObject_CallMethodIdNoArgs(_pyodide_core_docs, &PyId_JsProxy);
+  jsproxy_mock = _PyObject_CallMethodIdNoArgs(_pyodide_core, &PyId_JsProxy);
   FAIL_IF_NULL(jsproxy_mock);
 
   // Load the docstrings for JsProxy methods from the corresponding stubs in
