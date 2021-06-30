@@ -6,6 +6,7 @@
 
 #include <emscripten.h>
 
+#include "jsmemops.h"
 #include "jsproxy.h"
 #include "pyproxy.h"
 
