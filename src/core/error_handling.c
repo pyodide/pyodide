@@ -241,8 +241,9 @@ EM_JS_NUM(errcode, error_handling_init_js, (), {
     // Add a marker to the traceback to indicate that we passed through "native"
     // frames.
     // TODO? Use stacktracejs to add more detailed info here.
-    __PyTraceback_Add(
-      _error__js_funcname_string, _error__js_filename_string, -1);
+    __PyTraceback_Add(HEAPU32[_error__js_funcname_string / 4],
+                      HEAPU32[_error__js_filename_string / 4],
+                      -1);
   };
   class PythonError extends Error
   {
