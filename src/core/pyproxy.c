@@ -501,7 +501,7 @@ _pyproxyGen_Send(PyObject* receiver, JsRef jsval)
     retval = Py_TYPE(receiver)->tp_iternext(receiver);
   } else {
     _Py_IDENTIFIER(send);
-    retval = _PyObject_CallMethodIdOneArg(receiver, &PyId_send, v);
+    retval = _PyObject_CallMethodIdObjArgs(receiver, &PyId_send, v, NULL);
   }
   FAIL_IF_NULL(retval);
 
@@ -626,7 +626,7 @@ FutureDoneCallback_call(FutureDoneCallback* self,
   if (!PyArg_UnpackTuple(args, "future_done_callback", 1, 1, &fut)) {
     return NULL;
   }
-  PyObject* result = _PyObject_CallMethodIdNoArgs(fut, &PyId_result);
+  PyObject* result = _PyObject_CallMethodIdObjArgs(fut, &PyId_result, NULL);
   int errcode;
   if (result != NULL) {
     errcode = FutureDoneCallback_call_resolve(self, result);
@@ -683,11 +683,12 @@ _pyproxy_ensure_future(PyObject* pyobject,
   PyObject* future = NULL;
   PyObject* callback = NULL;
   PyObject* retval = NULL;
-  future = _PyObject_CallMethodIdOneArg(asyncio, &PyId_ensure_future, pyobject);
+  future =
+    _PyObject_CallMethodIdObjArgs(asyncio, &PyId_ensure_future, pyobject, NULL);
   FAIL_IF_NULL(future);
   callback = FutureDoneCallback_cnew(resolve_handle, reject_handle);
-  retval =
-    _PyObject_CallMethodIdOneArg(future, &PyId_add_done_callback, callback);
+  retval = _PyObject_CallMethodIdObjArgs(
+    future, &PyId_add_done_callback, callback, NULL);
   FAIL_IF_NULL(retval);
 
   success = true;
