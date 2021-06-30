@@ -1,13 +1,13 @@
 // Macros to access memory from Javascript
 
 #define DEREF_U8(addr, offset) HEAPU8[addr + offset]
-#define DEREF_I8(addr, offset) HEAPI8[addr + offset]
+#define DEREF_I8(addr, offset) HEAP8[addr + offset]
 
 #define DEREF_U16(addr, offset) HEAPU16[(addr >> 1) + offset]
-#define DEREF_I16(addr, offset) HEAPI16[(addr >> 1) + offset]
+#define DEREF_I16(addr, offset) HEAP16[(addr >> 1) + offset]
 
 #define DEREF_U32(addr, offset) HEAPU32[(addr >> 2) + offset]
-#define DEREF_I32(addr, offset) HEAPI32[(addr >> 2) + offset]
+#define DEREF_I32(addr, offset) HEAP32[(addr >> 2) + offset]
 
 #define DEREF_F32(addr, offset) HEAPF32[(addr >> 2) + offset]
 #define DEREF_F64(addr, offset) HEAPF64[(addr >> 3) + offset]
@@ -15,7 +15,7 @@
 #if WASM_BIGINT
 // We have HEAPU64 / HEAPI64 in this case.
 #define DEREF_U64(addr, offset) HEAPU64[(addr >> 3) + offset]
-#define DEREF_I64(addr, offset) HEAPI64[(addr >> 3) + offset]
+#define DEREF_I64(addr, offset) HEAP64[(addr >> 3) + offset]
 
 #define LOAD_U64(addr, offset) DEREF_U64(addr, offset)
 #define LOAD_I64(addr, offset) DEREF_I64(addr, offset)
