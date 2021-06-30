@@ -19,6 +19,9 @@
 
 import { Module } from "../js/module";
 
+let HEAP32 = Module.HEAP32;
+let HEAPU32 = Module.HEAPU32;
+
 /**
  * Is the argument a :any:`PyProxy`?
  * @param jsobj {any} Object to test.
@@ -1095,7 +1098,6 @@ class PyProxyBufferMethods {
       Module._pythonexc2js();
     }
 
-    let HEAP32 = Module.HEAP32;
     // This has to match the fields in buffer_struct
     let startByteOffset = DEREF_U32(buffer_struct_ptr, 0);
     let minByteOffset = DEREF_U32(buffer_struct_ptr, 1);
