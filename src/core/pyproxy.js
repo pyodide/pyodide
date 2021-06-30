@@ -17,10 +17,7 @@
  * See Makefile recipe for src/js/pyproxy.js
  */
 
-import { Module } from "../js/module";
-
-let HEAP32 = Module.HEAP32;
-let HEAPU32 = Module.HEAPU32;
+import { Module, HEAP32, HEAPU32 } from "../js/module";
 
 /**
  * Is the argument a :any:`PyProxy`?

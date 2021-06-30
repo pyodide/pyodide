@@ -1,7 +1,7 @@
 /**
  * The main bootstrap code for loading pyodide.
  */
-import { Module } from "./module";
+import { Module, HEAP32, HEAPU32 } from "./module";
 import {
   loadScript,
   initializePackageIndex,
@@ -216,6 +216,9 @@ export async function loadPyodide(config) {
   // There is some work to be done between the module being "ready" and postRun
   // being called.
   await moduleLoaded;
+
+  HEAP32 = Module.HEAP32;
+  HEAPU32 = Module.HEAPU32;
 
   // Bootstrap step: `runPython` needs access to `Module.globals` and
   // `Module.pyodide_py`. Use `runPythonSimple` to add these. runPythonSimple
