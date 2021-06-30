@@ -968,7 +968,7 @@ pyproxy_init(PyObject* core)
 {
   bool success = false;
 
-  PyObject* docstring_source = PyImport_ImportModule("_pyodide._core");
+  PyObject* docstring_source = PyImport_ImportModule("_pyodide._core_docs");
   FAIL_IF_NULL(docstring_source);
   FAIL_IF_MINUS_ONE(
     add_methods_and_set_docstrings(core, methods, docstring_source));
