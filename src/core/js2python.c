@@ -118,7 +118,10 @@ EM_JS_NUM(errcode, js2python_init, (), {
   {
     let value_orig = value;
     let length = 0;
-    while (value && ~value) {
+    if (value < 0) {
+      value = -value;
+    }
+    while (value) {
       length++;
       value >>= BigInt(32);
     }
