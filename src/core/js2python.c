@@ -129,10 +129,10 @@ EM_JS_NUM(errcode, js2python_init, (), {
       DEREF_U32(ptr, i) = Number(value & BigInt(0xffffffff));
       value >>= BigInt(32);
     }
-    result = __PyLong_FromByteArray(ptr,
-                                    length * 4 /* length in bytes */,
-                                    true /* little endian */,
-                                    true /* signed? */);
+    let result = __PyLong_FromByteArray(ptr,
+                                        length * 4 /* length in bytes */,
+                                        true /* little endian */,
+                                        true /* signed? */);
     stackRestore(stackTop);
     return result;
   };
