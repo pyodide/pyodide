@@ -244,7 +244,7 @@ def temp(pyodide_js, Module, jsglobals):
   print("Python initialization complete!")
 `);
 
-  Module.init_dict.get("temp")(pyodide, Module);
+  Module.init_dict.get("temp")(pyodide, Module, globalThis);
   // Module.runPython works starting from here!
 
   // Wrap "globals" in a special Proxy that allows `pyodide.globals.x` access.
