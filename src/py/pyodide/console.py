@@ -15,7 +15,7 @@ import sys
 import traceback
 from typing import Optional, Callable, Any, List, Tuple
 
-from ._base import eval_code_async, should_quiet, CodeRunner
+from _pyodide._base import eval_code_async, should_quiet, CodeRunner
 
 # this import can fail when we are outside a browser (e.g. for tests)
 try:

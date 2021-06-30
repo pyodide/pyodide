@@ -4,6 +4,7 @@ from _pyodide._base import (
     eval_code_async,
     find_imports,
     CodeRunner,
+    should_quiet,
 )
 from ._util import open_url
 from . import _util  # type: ignore # noqa
@@ -36,4 +37,5 @@ __all__ = [
     "unregister_js_module",
     "create_once_callable",
     "create_proxy",
+    "should_quiet",
 ]

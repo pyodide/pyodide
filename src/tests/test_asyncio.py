@@ -5,7 +5,7 @@ sys.path.append(str(Path(__file__).resolve().parents[2] / "src" / "py"))
 
 import pytest  # type: ignore
 import time
-from pyodide._base import eval_code_async
+from pyodide import eval_code_async
 import asyncio
 
 
@@ -312,7 +312,7 @@ def test_eval_code_await_error(selenium):
         window.async_js_raises = async_js_raises;
         pyodide.runPython(`
             from js import async_js_raises
-            from pyodide._base import eval_code_async
+            from pyodide import eval_code_async
             c = eval_code_async(
                 '''
                 await async_js_raises()
