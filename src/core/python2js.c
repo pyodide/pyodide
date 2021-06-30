@@ -55,7 +55,7 @@ _python2js_long(PyObject* x)
     } else {
       size_t ndigits = Py_ABS(Py_SIZE(x));
       unsigned int digits[ndigits];
-      FAIL_IF_MINUS_ONE(_PyLong_AsByteArray(x,
+      FAIL_IF_MINUS_ONE(_PyLong_AsByteArray((PyLongObject*)x,
                                             (unsigned char*)digits,
                                             4 * ndigits,
                                             true /* little endian */,
