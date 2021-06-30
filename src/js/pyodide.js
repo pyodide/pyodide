@@ -241,7 +241,7 @@ def temp(pyodide_js, Module, jsglobals):
   Module.globals = globals
   Module.builtins = builtins.__dict__
   Module.pyodide_py = pyodide
-  print("Python initialization complete!")
+  print("Python initialization complete")
 `);
 
   Module.init_dict.get("temp")(pyodide, Module, globalThis);
