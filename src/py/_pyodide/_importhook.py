@@ -3,24 +3,20 @@ from importlib.util import spec_from_loader
 import sys
 
 JsProxy: type = None  # type: ignore
-jsfinder: "JsFinder" = None  # type: ignore
+jsfinder: "JsFinder" = JsFinder()
 
 
 def register_js_finder():
     import _pyodide_core  # type: ignore
 
     global JsProxy
-    global jsfinder
     JsProxy = _pyodide_core.JsProxy
-    jsfinder = JsFinder()
     sys.meta_path.append(jsfinder)  # type: ignore
     return jsfinder
 
 
 class JsFinder(MetaPathFinder):
     def __init__(self):
-        if JsProxy is None:
-            raise RuntimeError("Needs JsProxy to instantiate JsFinder")
         self.jsproxies = {}
 
     def find_spec(self, fullname, path, target=None):
