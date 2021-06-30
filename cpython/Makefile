@@ -133,6 +133,7 @@ $(BUILD)/Makefile: $(BUILD)/.patched $(ZLIBBUILD)/.configured $(INSTALL)/lib/lib
 			  --without-pymalloc \
 			  --disable-shared \
 			  --disable-ipv6 \
+			  --enable-big-digits=30 \
 			  --enable-optimizations \
 			  --host=wasm32-unknown-emscripten\
 			  --build=$(shell $(BUILD)/config.guess) \

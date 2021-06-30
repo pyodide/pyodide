@@ -53,14 +53,14 @@ _python2js_long(PyObject* x)
     if (!overflow) {
       FAIL_IF_ERR_OCCURRED();
     } else {
-      size_t ndigits = Py_ABS(Py_SIZE(v));
-      int digits[ndigits];
+      size_t ndigits = Py_ABS(Py_SIZE(x));
+      unsigned int digits[ndigits];
       FAIL_IF_MINUS_ONE(_PyLong_AsByteArray(x,
-                                            (char*)digits,
+                                            (unsigned char*)digits,
                                             4 * ndigits,
                                             true /* little endian */,
                                             true /* signed */));
-      return hiwire_bigint_from_digits(digits, ndigits);
+      return hiwire_int_from_digits(digits, ndigits);
     }
   }
   return hiwire_int(x_long);
