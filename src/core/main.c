@@ -94,6 +94,14 @@ run_python_simple_inner(char* code)
 int
 numpy_patch_init();
 
+/**
+ * Bootstrap steps here:
+ *  1. Initialize init_dict so that runPythonSimple will work.
+ *  2. Initialize the different ffi components and create the _pyodide_core
+ *     module
+ *  3. Create a PyProxy wrapper around init_dict so that Javascript can retreive
+ *     PyProxies from the runPythonSimple namespace.
+ */
 int
 main(int argc, char** argv)
 {

@@ -6,12 +6,10 @@ import traceback
 from typing import Callable
 
 
-from ._core import create_once_callable
+from ._core import create_once_callable, IN_BROWSER
 
-try:
+if IN_BROWSER:
     from js import setTimeout
-except ImportError:
-    pass
 
 
 class WebLoop(asyncio.AbstractEventLoop):

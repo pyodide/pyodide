@@ -188,9 +188,6 @@ export async function loadPyodide(config) {
   // See "--export-name=__pyodide_module" in buildpkg.py
   globalThis.__pyodide_module = Module;
   loadPyodide.inProgress = true;
-  // Note: PYODIDE_BASE_URL is an environment variable replaced in
-  // in this template in the Makefile. It's recommended to always set
-  // indexURL in any case.
   if (!config.indexURL) {
     throw new Error("Please provide indexURL parameter to loadPyodide");
   }
@@ -220,9 +217,13 @@ export async function loadPyodide(config) {
   fixRecursionLimit();
   let pyodide = makePublicAPI();
 
-  // Bootstrap step: `runPython` needs access to `Module.globals` and
-  // `Module.pyodide_py`. Use `runPythonSimple` to add these. runPythonSimple
-  // doesn't dedent the argument so the indentation matters.
+  // Bootstrap steps:
+  //
+  //   1. _pyodide_core is ready now so we can call _pyodide.register_js_finder
+  //   2. Use the jsfinder to register the js and pyodide_js packages
+  //   3. Import pyodide, this requires _pyodide_core, js and pyodide_js to be
+  //      ready.
+  //   4. Add the pyodide_py and Python __main__.__dict__ objects to pyodide_js
   Module.runPythonSimple(`
 def temp(pyodide_js, Module, jsglobals):
   from _pyodide._importhook import register_js_finder
