@@ -10,10 +10,10 @@ from ._importhooks import jsfinder
 from .webloop import WebLoopPolicy
 from . import _state  # type: ignore # noqa
 import asyncio
-import sys
 import platform
 
-sys.meta_path.append(jsfinder)  # type: ignore
+from _pyodide._importhook import jsfinder  # type: ignore
+
 register_js_module = jsfinder.register_js_module
 unregister_js_module = jsfinder.unregister_js_module
 

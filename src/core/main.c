@@ -116,13 +116,19 @@ main(int argc, char** argv)
     FATAL_ERROR("JsRef doesn't have the same size as int.");
   }
 
-  PyObject* _pyodide = PyImport_ImportModule("_pyodide");
-  if (_pyodide == NULL) {
-    FATAL_ERROR("Failed to import pyodide module");
-  }
-  Py_CLEAR(_pyodide);
-
+  PyObject* _pyodide = NULL;
   PyObject* core_module = NULL;
+  PyObject* jsfinder = NULL;
+  JsRef jsglobals = NULL;
+  PyObject* py_js_globals = NULL;
+  PyObject* res = NULL;
+  PyObject* pyodide = NULL;
+
+  _pyodide = PyImport_ImportModule("_pyodide");
+  if (_pyodide == NULL) {
+    FATAL_ERROR("Failed to import _pyodide module");
+  }
+
   core_module = PyModule_Create(&core_module_def);
   if (core_module == NULL) {
     FATAL_ERROR("Failed to create core module.");
@@ -150,21 +156,31 @@ main(int argc, char** argv)
   if (PyDict_SetItemString(module_dict, "_pyodide_core", core_module)) {
     FATAL_ERROR("Failed to add '_pyodide_core' module to modules dict.");
   }
+  _Py_IDENTIFIER(register_js_finder);
+  // Install the Javascript MetaPathFinder
+  jsfinder = _PyObject_CallMethodIdNoArgs(_pyodide, &Py_Id_register_js_finder);
+  // Add the js global import object
+  jsglobals = EM_ASM_INT({ return Module.hiwire.new_value(globalThis) });
+  py_js_globals = _JsProxy_create(jsglobals);
+  res = _PyObject_CallMethodIdOneArg(
+    jsfinder, &Py_Id_register_js_module, py_js_globals);
 
-  // Enable Javascript access to the global variables from runPythonSimple.
+  pyodide = PyImport_ImportModule("pyodide");
+
+  // Enable Javascript access to the globals from runPythonSimple.
   JsRef init_dict_proxy = python2js(init_dict);
   if (init_dict_proxy == NULL) {
     FATAL_ERROR("Failed to create init_dict proxy.");
   }
   EM_ASM({ Module.init_dict = Module.hiwire.pop_value($0); }, init_dict_proxy);
 
-  PyObject* pyodide = PyImport_ImportModule("pyodide");
-  if (pyodide == NULL) {
-    FATAL_ERROR("Failed to import pyodide module");
-  }
+  Py_CLEAR(_pyodide);
   Py_CLEAR(core_module);
+  Py_CLEAR(jsfinder);
+  hiwire_CLEAR(jsglobals);
+  Py_CLEAR(py_js_globals);
+  Py_CLEAR(res);
   Py_CLEAR(pyodide);
-  printf("Python initialization complete\n");
   emscripten_exit_with_live_runtime();
   return 0;
 }
