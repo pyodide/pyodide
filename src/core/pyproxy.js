@@ -1081,8 +1081,8 @@ class PyProxyBufferMethods {
       }
     }
     let this_ptr = _getPtr(this);
-    let orig_stack_ptr = stackSave();
-    let buffer_struct_ptr = stackAlloc(
+    let orig_stack_ptr = Module.stackSave();
+    let buffer_struct_ptr = Module.stackAlloc(
       DEREF_U32(Module._buffer_struct_size, 0)
     );
     let errcode;
@@ -1112,7 +1112,7 @@ class PyProxyBufferMethods {
     let f_contiguous = !!DEREF_U32(buffer_struct_ptr, 10);
 
     let format = Module.UTF8ToString(format_ptr);
-    stackRestore(orig_stack_ptr);
+    Module.stackRestore(orig_stack_ptr);
 
     let success = false;
     try {
