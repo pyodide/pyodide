@@ -157,6 +157,7 @@ main(int argc, char** argv)
     FATAL_ERROR("Failed to add '_pyodide_core' module to modules dict.");
   }
   _Py_IDENTIFIER(register_js_finder);
+  _Py_IDENTIFIER(register_js_module);
   // Install the Javascript MetaPathFinder
   jsfinder = _PyObject_CallMethodIdNoArgs(_pyodide, &PyId_register_js_finder);
   // Add the js global import object
