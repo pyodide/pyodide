@@ -96,7 +96,7 @@ EM_JS_NUM(errcode, js2python_init, (), {
       length++;
       value >>= BigInt(32);
     }
-    let stackTop = saveStack();
+    let stackTop = stackSave();
     let ptr = stackAlloc(length * 4);
     value = value_orig;
     for (let i = 0; i < length; i++) {

@@ -1081,7 +1081,7 @@ class PyProxyBufferMethods {
       }
     }
     let this_ptr = _getPtr(this);
-    let orig_stack_ptr = saveStack();
+    let orig_stack_ptr = stackSave();
     let buffer_struct_ptr = stackAlloc(
       DEREF_U32(Module._buffer_struct_size, 0)
     );
