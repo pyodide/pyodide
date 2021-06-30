@@ -734,7 +734,7 @@ hiwire_get_buffer_datatype,
   let [format_utf8, size, checked] = Module.get_buffer_datatype(jsobj);
   // Store results into arguments
   DEREF_U32(format_ptr, 0) = format_utf8;
-  DEREF_U32(size_ptr, 0) = format_utf8;
+  DEREF_U32(size_ptr, 0) = size;
   DEREF_U8(checked_ptr, 0) = checked;
 });
 // clang-format on
