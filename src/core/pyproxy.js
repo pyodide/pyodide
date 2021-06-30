@@ -1080,14 +1080,14 @@ class PyProxyBufferMethods {
         throw new Error(`Unknown type ${type}`);
       }
     }
-    let this_ptr = _getPtr(this);
     let orig_stack_ptr = Module.stackSave();
     let buffer_struct_ptr = Module.stackAlloc(
       DEREF_U32(Module._buffer_struct_size, 0)
     );
+    let this_ptr = _getPtr(this);
     let errcode;
     try {
-      errcode = Module.__pyproxy_get_buffer(this_ptr);
+      errcode = Module.__pyproxy_get_buffer(buffer_struct_ptr, this_ptr);
     } catch (e) {
       Module.fatal_error(e);
     }
