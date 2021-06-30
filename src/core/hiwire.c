@@ -234,8 +234,7 @@ EM_JS_REF(JsRef, hiwire_int, (int val), {
 EM_JS_REF(JsRef, hiwire_int_from_digits, (const int* digits, size_t ndigits), {
   let result = BigInt(0);
   for (let i = 0; i < ndigits; i++) {
-    result <<= BigInt(32);
-    result += BigInt(DEREF_U32(digits, i));
+    result += BigInt(DEREF_U32(digits, i)) << BigInt(32 * i);
   }
   if (-Number.MAX_SAFE_INTEGER < result && result < Number.MAX_SAFE_INTEGER) {
     result = Number(result);
