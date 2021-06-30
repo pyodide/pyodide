@@ -158,12 +158,12 @@ main(int argc, char** argv)
   }
   _Py_IDENTIFIER(register_js_finder);
   // Install the Javascript MetaPathFinder
-  jsfinder = _PyObject_CallMethodIdNoArgs(_pyodide, &Py_Id_register_js_finder);
+  jsfinder = _PyObject_CallMethodIdNoArgs(_pyodide, &PyId_register_js_finder);
   // Add the js global import object
   jsglobals = EM_ASM_INT({ return Module.hiwire.new_value(globalThis) });
   py_js_globals = _JsProxy_create(jsglobals);
   res = _PyObject_CallMethodIdOneArg(
-    jsfinder, &Py_Id_register_js_module, py_js_globals);
+    jsfinder, &PyId_register_js_module, py_js_globals);
 
   pyodide = PyImport_ImportModule("pyodide");
 
