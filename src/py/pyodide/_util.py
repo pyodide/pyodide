@@ -1,5 +1,9 @@
-from js import XMLHttpRequest
 from io import StringIO
+
+try:
+    from js import XMLHttpRequest
+except ImportError:
+    pass
 
 
 def open_url(url: str) -> StringIO:
