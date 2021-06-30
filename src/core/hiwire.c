@@ -231,15 +231,11 @@ EM_JS_REF(JsRef, hiwire_int, (int val), {
   return Module.hiwire.new_value(val);
 });
 
-EM_JS_REF(JsRef, hiwire_int_from_hex, (const char* s), {
-  let result;
-  // clang-format off
-  // Check if number starts with a minus sign
-  if (DEREF_U8(s, 0) === 45) {
-    // clang-format on
-    result = -Module.BigInt(UTF8ToString(s + 1));
-  } else {
-    result = Module.BigInt(UTF8ToString(s));
+EM_JS_REF(JsRef, hiwire_int_from_digits, (const int* digits, size_t ndigits), {
+  let result = BigInt(0);
+  for (let i = 0; i < ndigits; i++) {
+    result <<= BigInt(32);
+    result += BigInt(DEREF_U32(digits, i));
   }
   if (-Number.MAX_SAFE_INTEGER < result && result < Number.MAX_SAFE_INTEGER) {
     result = Number(result);
