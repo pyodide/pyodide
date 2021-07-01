@@ -219,6 +219,9 @@ pythonexc2js()
   hiwire_throw_error(jserror);
 }
 
+char* error__js_funcname_string = "<javascript frames>";
+char* error__js_filename_string = "???.js";
+
 EM_JS_NUM(errcode, error_handling_init_js, (), {
   Module.handle_js_error = function(e)
   {
@@ -238,11 +241,9 @@ EM_JS_NUM(errcode, error_handling_init_js, (), {
     // Add a marker to the traceback to indicate that we passed through "native"
     // frames.
     // TODO? Use stacktracejs to add more detailed info here.
-    let funcname_ptr = stringToNewUTF8("<javascript frames>");
-    let filename_ptr = stringToNewUTF8("???.js");
-    __PyTraceback_Add(funcname_ptr, filename_ptr, -1);
-    _free(funcname_ptr);
-    _free(filename_ptr);
+    __PyTraceback_Add(HEAPU32[_error__js_funcname_string / 4],
+                      HEAPU32[_error__js_filename_string / 4],
+                      -1);
   };
   class PythonError extends Error
   {
