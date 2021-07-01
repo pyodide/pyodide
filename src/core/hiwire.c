@@ -238,7 +238,7 @@ hiwire_int_from_digits, (const unsigned int* digits, size_t ndigits), {
   for (let i = 0; i < ndigits; i++) {
     result += BigInt(DEREF_U32(digits, i)) << BigInt(32 * i);
   }
-  result += BigInt((DEREF_U32(digits, ndigits - 1) & 0x80000000))
+  result += BigInt(DEREF_U32(digits, ndigits - 1) & 0x80000000)
             << BigInt(1 + 32 * (ndigits - 1));
   if (-Number.MAX_SAFE_INTEGER < result && result < Number.MAX_SAFE_INTEGER) {
     result = Number(result);
