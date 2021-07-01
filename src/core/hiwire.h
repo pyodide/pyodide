@@ -60,12 +60,12 @@ int
 hiwire_init();
 
 /**
- * Convert a string of hexadecimal digits to a Number or BigInt depending on
- * whether it is less than MAX_SAFE_INTEGER or not. The string is assumed to
- * begin with an optional sign followed by 0x followed by one or more digits.
+ * Convert an array of int32s to a Number or BigInt depending on whether it is
+ * less than MAX_SAFE_INTEGER or not. The representation is assumed to be signed
+ * and little endian.
  */
 JsRef
-hiwire_int_from_hex(const char* s);
+hiwire_int_from_digits(const unsigned int* bytes, size_t nbytes);
 
 /**
  * Increase the reference count on an object.

@@ -6,6 +6,7 @@
 
 #include <emscripten.h>
 
+#include "jsmemops.h"
 #include "jsproxy.h"
 #include "pyproxy.h"
 
@@ -90,9 +91,27 @@ EM_JS_NUM(errcode, js2python_init, (), {
 
   Module.__js2python_bigint = function(value)
   {
-    let ptr = stringToNewUTF8(value.toString(16));
-    let result = _PyLong_FromString(ptr, 0, 16);
-    _free(ptr);
+    let value_orig = value;
+    let length = 0;
+    if (value < 0) {
+      value = -value;
+    }
+    while (value) {
+      length++;
+      value >>= BigInt(32);
+    }
+    let stackTop = stackSave();
+    let ptr = stackAlloc(length * 4);
+    value = value_orig;
+    for (let i = 0; i < length; i++) {
+      DEREF_U32(ptr, i) = Number(value & BigInt(0xffffffff));
+      value >>= BigInt(32);
+    }
+    let result = __PyLong_FromByteArray(ptr,
+                                        length * 4 /* length in bytes */,
+                                        true /* little endian */,
+                                        true /* signed? */);
+    stackRestore(stackTop);
     return result;
   };
 
