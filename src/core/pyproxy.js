@@ -17,7 +17,7 @@
  * See Makefile recipe for src/js/pyproxy.js
  */
 
-import { Module, HEAP32, HEAPU32 } from "../js/module";
+import { Module } from "../js/module";
 
 /**
  * Is the argument a :any:`PyProxy`?
@@ -1080,6 +1080,7 @@ class PyProxyBufferMethods {
         throw new Error(`Unknown type ${type}`);
       }
     }
+    let HEAPU32 = Module.HEAPU32;
     let orig_stack_ptr = Module.stackSave();
     let buffer_struct_ptr = Module.stackAlloc(
       DEREF_U32(Module._buffer_struct_size, 0)

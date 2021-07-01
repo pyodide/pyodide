@@ -1,7 +1,7 @@
 /**
  * The main bootstrap code for loading pyodide.
  */
-import { Module, module_init } from "./module";
+import { Module } from "./module";
 import {
   loadScript,
   initializePackageIndex,
@@ -216,8 +216,6 @@ export async function loadPyodide(config) {
   // There is some work to be done between the module being "ready" and postRun
   // being called.
   await moduleLoaded;
-
-  module_init();
 
   // Bootstrap step: `runPython` needs access to `Module.globals` and
   // `Module.pyodide_py`. Use `runPythonSimple` to add these. runPythonSimple
