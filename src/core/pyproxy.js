@@ -1151,7 +1151,7 @@ class PyProxyBufferMethods {
       if (numBytes === 0) {
         data = new ArrayType();
       } else {
-        data = new ArrayType(HEAP32.buffer, minByteOffset, numEntries);
+        data = new ArrayType(HEAPU32.buffer, minByteOffset, numEntries);
       }
       for (let i of strides.keys()) {
         strides[i] /= alignment;
