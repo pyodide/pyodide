@@ -29,9 +29,9 @@ There are 3 test locations that are collected by pytest,
   (do not require selenium to run)
 - `packages/*/test_*`: package specific tests.
 
-### Running the JS test suite
+### Running the JavaScript test suite
 
-To run tests on the JS Pyodide package using Mocha, run the following commands,
+To run tests on the JavaScript Pyodide package using Mocha, run the following commands,
 ```
 cd src/js
 npm test
