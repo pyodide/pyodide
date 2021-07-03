@@ -1,6 +1,6 @@
-import { Module } from "./module";
-import { loadPackage, loadedPackages } from "./load-pyodide";
-import { isPyProxy, PyBuffer } from "./pyproxy.gen";
+import { Module } from "./module.js";
+import { loadPackage, loadedPackages } from "./load-pyodide.js";
+import { isPyProxy, PyBuffer } from "./pyproxy.gen.js";
 export { loadPackage, loadedPackages, isPyProxy };
 
 /**
