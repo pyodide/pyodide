@@ -79,20 +79,25 @@ EM_JS_NUM(errcode, js2python_init, (), {
     }
 
     let ptr = _PyUnicode_Data(result);
-    let target_type;
-    if (max_code_point > 0xffff) {
-      target_type = HEAPU32;
-      ptr /= 4;
-    } else if (max_code_point > 0xff) {
-      target_type = HEAPU16;
-      ptr /= 2;
-    } else {
-      target_type = HEAPU8;
-    }
 
-    for (let c of value) {
-      target_type[ptr] = c;
-      ptr++;
+    if (max_code_point > 0xffff) {
+      let i = 0;
+      for (let c of value) {
+        DEREF_U32(ptr, i) = c;
+        i++;
+      }
+    } else if (max_code_point > 0xff) {
+      let i = 0;
+      for (let c of value) {
+        DEREF_U16(ptr, i) = c;
+        i++;
+      }
+    } else {
+      let i = 0;
+      for (let c of value) {
+        DEREF_U8(ptr, i) = c;
+        i++;
+      }
     }
 
     return result;
