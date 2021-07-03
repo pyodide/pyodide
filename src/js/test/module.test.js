@@ -1,9 +1,9 @@
 import assert from "assert";
 import { Module } from "../module.js";
 
-describe("Module", function () {
-  describe("noWasmDecoding", function () {
-    it("should be false ", function () {
+describe("Module", () => {
+  describe("noWasmDecoding", () => {
+    it("should be false ", () => {
       assert.equal(Module.noWasmDecoding, false);
     });
   });
