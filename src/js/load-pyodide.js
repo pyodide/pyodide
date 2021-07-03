@@ -10,7 +10,7 @@ let baseURL;
 export async function initializePackageIndex(indexURL) {
   baseURL = indexURL;
   let response = await fetch(`${indexURL}packages.json`);
-  Module.packages = await response.json();
+  Module.packages = (await response.json()).packages;
 }
 
 ////////////////////////////////////////////////////////////
