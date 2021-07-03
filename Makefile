@@ -189,13 +189,13 @@ clean-all: clean
 # TODO: also include test directories included in other stdlib modules
 build/test.data: $(CPYTHONLIB) node_modules/.installed
 	./tools/file_packager.sh build/test.data --js-output=build/test.js \
-		--preload $(CPYTHONLIB)/test@/lib/python$(PYMINOR)/test
+		--preload $(CPYTHONLIB)/test@/lib/python$(PYMAJOR).$(PYMINOR)/test
 	npx terser build/test.js -o build/test.js
 
 
 build/distutils.data: $(CPYTHONLIB) node_modules/.installed
 	./tools/file_packager.sh build/distutils.data --js-output=build/distutils.js \
-		--preload $(CPYTHONLIB)/distutils@/lib/python$(PYMINOR)/distutils \
+		--preload $(CPYTHONLIB)/distutils@/lib/python$(PYMAJOR).$(PYMINOR)/distutils \
 		--exclude tests
 	npx terser build/distutils.js -o build/distutils.js
 
