@@ -65,13 +65,20 @@ EM_JS_NUM(errcode, js2python_init, (), {
     // to determine if is needs to be a 1-, 2- or 4-byte string, since
     // Python handles all 3.
     let max_code_point = 0;
-    for (let c of value) {
-      let cur_code_point = c.codePointAt(0);
-      max_code_point =
-        cur_code_point > max_code_point ? cur_code_point : max_code_point;
+    let length = value.length;
+    for (let i = 0; i < value.length; i++) {
+      let code_point = value.codePointAt(i);
+      max_code_point = Math.max(max_code_point, code_point);
+      if (code_point > 0xffff) {
+        // If we have a code point requiring UTF-16 surrogate pairs, the
+        // number of characters (codePoints) is less than value.length,
+        // so skip the next charCode and subtract 1 from the length.
+        i++;
+        length--;
+      }
     }
 
-    let result = _PyUnicode_New(codepoints.length, max_code_point);
+    let result = _PyUnicode_New(length, max_code_point);
     // clang-format off
     if (result === 0) {
       // clang-format on
@@ -81,22 +88,22 @@ EM_JS_NUM(errcode, js2python_init, (), {
     let ptr = _PyUnicode_Data(result);
 
     if (max_code_point > 0xffff) {
-      let i = 0;
-      for (let c of value) {
-        DEREF_U32(ptr, i) = c;
-        i++;
+      ptr = ptr / 4;
+      for (let i = 0, j = 0; j < length; i++, j++) {
+        let code_point = value.codePointAt(i);
+        Module.HEAPU32[ptr + j] = code_point;
+        if (code_point > 0xffff) {
+          i++;
+        }
       }
     } else if (max_code_point > 0xff) {
-      let i = 0;
-      for (let c of value) {
-        DEREF_U16(ptr, i) = c;
-        i++;
+      ptr = ptr / 2;
+      for (let i = 0; i < length; i++) {
+        Module.HEAPU16[ptr + i] = value.codePointAt(i);
       }
     } else {
-      let i = 0;
-      for (let c of value) {
-        DEREF_U8(ptr, i) = c;
-        i++;
+      for (let i = 0; i < length; i++) {
+        Module.HEAPU8[ptr + i] = value.codePointAt(i);
       }
     }
 
