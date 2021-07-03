@@ -131,7 +131,16 @@ export async function loadPackagesFromImports(
   messageCallback,
   errorCallback
 ) {
-  let imports = Module.pyodide_py.find_imports(code).toJs();
+  let find_imports = Module.pyodide_py.find_imports;
+  let imports;
+  let pyimports;
+  try {
+    pyimports = find_imports(code);
+    imports = pyimports.toJs();
+  } finally {
+    find_imports.destroy();
+    pyimports && pyimports.destroy();
+  }
   if (imports.length === 0) {
     return;
   }
@@ -213,7 +222,20 @@ Module.runPythonAsync = runPythonAsync;
  * @param {object} module Javascript object backing the module
  */
 export function registerJsModule(name, module) {
-  Module.pyodide_py.register_js_module(name, module);
+  let register_js_module = Module.pyodide_py.register_js_module;
+  try {
+    register_js_module(name, module);
+  } finally {
+    register_js_module.destroy();
+  }
+}
+
+/**
+ * Tell Pyodide about Comlink.
+ * Necessary to enable importing Comlink proxies into Python.
+ */
+export function registerComlink(Comlink) {
+  Module._Comlink = Comlink;
 }
 
 /**
@@ -228,7 +250,12 @@ export function registerJsModule(name, module) {
  * @param {string} name Name of the Javascript module to remove
  */
 export function unregisterJsModule(name) {
-  Module.pyodide_py.unregister_js_module(name);
+  let unregister_js_module = Module.pyodide_py.unregister_js_module;
+  try {
+    unregister_js_module(name);
+  } finally {
+    unregister_js_module.destroy();
+  }
 }
 
 /**
@@ -307,6 +334,7 @@ export function makePublicAPI() {
     unregisterJsModule,
     setInterruptBuffer,
     toPy,
+    registerComlink,
     PythonError,
     PyBuffer,
   };

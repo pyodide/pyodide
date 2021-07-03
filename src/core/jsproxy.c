@@ -604,7 +604,7 @@ JsProxy_Dir(PyObject* self, PyObject* _args)
   object__dir__ =
     _PyObject_GetAttrId((PyObject*)&PyBaseObject_Type, &PyId___dir__);
   FAIL_IF_NULL(object__dir__);
-  keys = PyObject_CallFunctionObjArgs(object__dir__, self, NULL);
+  keys = PyObject_CallOneArg(object__dir__, self);
   FAIL_IF_NULL(keys);
   result_set = PySet_New(keys);
   FAIL_IF_NULL(result_set);
@@ -718,7 +718,7 @@ JsProxy_Await(JsProxy* self)
   JsRef promise_result = NULL;
   PyObject* result = NULL;
 
-  loop = _PyObject_CallNoArg(asyncio_get_event_loop);
+  loop = PyObject_CallNoArgs(asyncio_get_event_loop);
   FAIL_IF_NULL(loop);
 
   fut = _PyObject_CallMethodId(loop, &PyId_create_future, NULL);
@@ -1013,7 +1013,7 @@ JsProxy_new_error(JsRef idobj)
   proxy = JsProxyType.tp_alloc(&JsProxyType, 0);
   FAIL_IF_NULL(proxy);
   FAIL_IF_NONZERO(JsProxy_cinit(proxy, idobj));
-  result = PyObject_CallFunctionObjArgs(Exc_JsException, proxy, NULL);
+  result = PyObject_CallOneArg(Exc_JsException, proxy);
   FAIL_IF_NULL(result);
 finally:
   Py_CLEAR(proxy);
@@ -1636,10 +1636,18 @@ finally:
 PyObject*
 JsProxy_create_with_this(JsRef object, JsRef this)
 {
+  int type_flags = 0;
+  bool success = false;
+  PyTypeObject* type = NULL;
+  PyObject* result = NULL;
+  if (hiwire_is_comlink_proxy(object)) {
+    // Comlink proxies are weird and break our feature detection pretty badly.
+    type_flags = IS_CALLABLE | IS_AWAITABLE | IS_ARRAY;
+    goto done_feature_detecting;
+  }
   if (hiwire_is_error(object)) {
     return JsProxy_new_error(object);
   }
-  int type_flags = 0;
   if (hiwire_is_function(object)) {
     type_flags |= IS_CALLABLE;
   }
@@ -1676,10 +1684,7 @@ JsProxy_create_with_this(JsRef object, JsRef this)
   if (JsArray_Check(object)) {
     type_flags |= IS_ARRAY;
   }
-
-  bool success = false;
-  PyTypeObject* type = NULL;
-  PyObject* result = NULL;
+done_feature_detecting:
 
   type = JsProxy_get_subtype(type_flags);
   FAIL_IF_NULL(type);
@@ -1735,27 +1740,6 @@ JsException_AsJs(PyObject* err)
   return hiwire_incref(js_error->js);
 }
 
-// Copied from Python 3.9
-// TODO: remove once we update to Python 3.9
-static int
-PyModule_AddType(PyObject* module, PyTypeObject* type)
-{
-  if (PyType_Ready(type) < 0) {
-    return -1;
-  }
-
-  const char* name = _PyType_Name(type);
-  assert(name != NULL);
-
-  Py_INCREF(type);
-  if (PyModule_AddObject(module, name, (PyObject*)type) < 0) {
-    Py_DECREF(type);
-    return -1;
-  }
-
-  return 0;
-}
-
 int
 JsProxy_init(PyObject* core_module)
 {
@@ -1768,8 +1752,7 @@ JsProxy_init(PyObject* core_module)
   _pyodide_core = PyImport_ImportModule("_pyodide._core");
   FAIL_IF_NULL(_pyodide_core);
   _Py_IDENTIFIER(JsProxy);
-  jsproxy_mock =
-    _PyObject_CallMethodIdObjArgs(_pyodide_core, &PyId_JsProxy, NULL);
+  jsproxy_mock = _PyObject_CallMethodIdNoArgs(_pyodide_core, &PyId_JsProxy);
   FAIL_IF_NULL(jsproxy_mock);
 
   // Load the docstrings for JsProxy methods from the corresponding stubs in

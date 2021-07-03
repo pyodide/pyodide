@@ -1,14 +1,21 @@
+import ast
+import asyncio
+import code
+from codeop import Compile, CommandCompiler, _features  # type: ignore
+from contextlib import (
+    contextmanager,
+    redirect_stdout,
+    redirect_stderr,
+    ExitStack,
+)
+from contextlib import _RedirectStream  # type: ignore
+import rlcompleter
+import platform
+import sys
 import traceback
 from typing import Optional, Callable, Any, List, Tuple
-import code
-import io
-import sys
-import platform
-from contextlib import contextmanager
-import rlcompleter
-import asyncio
-from pyodide import eval_code_async
-import ast
+
+from ._base import eval_code_async, should_quiet, CodeRunner
 
 # this import can fail when we are outside a browser (e.g. for tests)
 try:
@@ -34,57 +41,120 @@ except ImportError:
         pass
 
 
-__all__ = ["repr_shorten"]
+__all__ = ["repr_shorten", "BANNER"]
 
 
-class _StdStream(io.TextIOWrapper):
-    """
-    Custom std stream to retdirect sys.stdout/stderr in _InteractiveConsole.
-
-    Parmeters
-    ---------
-    flush_callback
-        Function to call at each flush.
-    """
-
-    def __init__(
-        self, flush_callback: Callable[[str], None], name: Optional[str] = None
-    ):
-        # we just need to set internal buffer's name as
-        # it will automatically buble up to each buffer
-        internal_buffer = _CallbackBuffer(flush_callback, name=name)
-        buffer = io.BufferedWriter(internal_buffer)
-        super().__init__(buffer, line_buffering=True)  # type: ignore
+def _banner():
+    """A banner similar to the one printed by the real Python interpreter."""
+    # copied from https://github.com/python/cpython/blob/799f8489d418b7f9207d333eac38214931bd7dcc/Lib/code.py#L214
+    cprt = 'Type "help", "copyright", "credits" or "license" for more information.'
+    version = platform.python_version()
+    build = f"({', '.join(platform.python_build())})"
+    return f"Python {version} {build} on WebAssembly VM\n{cprt}"
 
 
-class _CallbackBuffer(io.RawIOBase):
-    """
-    Internal _StdStream buffer that triggers flush callback.
+BANNER = _banner()
+del _banner
 
-    Parmeters
-    ---------
-    flush_callback
-        Function to call at each flush.
-    """
 
-    def __init__(
-        self, flush_callback: Callable[[str], None], name: Optional[str] = None
-    ):
-        self._flush_callback = flush_callback
+class redirect_stdin(_RedirectStream):
+    _stream = "stdin"
+
+
+class _WriteStream:
+    """A utility class so we can specify our own handlers for writes to sdout, stderr"""
+
+    def __init__(self, write_handler, name=None):
+        self.write_handler = write_handler
         self.name = name
 
-    def writable(self):
-        return True
+    def write(self, text):
+        self.write_handler(text)
 
-    def seekable(self):
-        return False
+    def flush(self):
+        pass
 
-    def isatty(self):
-        return True
 
-    def write(self, data):
-        self._flush_callback(data.tobytes().decode())
-        return len(data)
+class _ReadStream:
+    """A utility class so we can specify our own handler for reading from stdin"""
+
+    def __init__(self, read_handler, name=None):
+        self.read_handler = read_handler
+        self.name = name
+
+    def readline(self, n=-1):
+        return self.read_handler(n)
+
+    def flush(self):
+        pass
+
+
+class _CodeRunnerCompile(Compile):
+    """Compile code with CodeRunner, and remember future imports
+
+    Instances of this class behave much like the built-in compile function,
+    but if one is used to compile text containing a future statement, it
+    "remembers" and compiles all subsequent program texts with the statement in
+    force. It uses CodeRunner instead of the built in compile.
+    """
+
+    def __init__(
+        self,
+        *,
+        return_mode="last_expr",
+        quiet_trailing_semicolon=True,
+        flags=0x0,
+    ):
+        super().__init__()
+        self.flags |= flags
+        self.return_mode = return_mode
+        self.quiet_trailing_semicolon = quiet_trailing_semicolon
+
+    def __call__(self, source, filename, symbol) -> CodeRunner:  # type: ignore
+        return_mode = self.return_mode
+        if self.quiet_trailing_semicolon and should_quiet(source):
+            return_mode = None
+        code_runner = CodeRunner(
+            source,
+            mode=symbol,
+            filename=filename,
+            return_mode=return_mode,
+            flags=self.flags,
+        ).compile()
+        for feature in _features:
+            if code_runner.code.co_flags & feature.compiler_flag:
+                self.flags |= feature.compiler_flag
+        return code_runner
+
+
+class _CodeRunnerCommandCompiler(CommandCompiler):
+    """Compile code with CodeRunner, and remember future imports, return None if
+    code is incomplete.
+
+    Instances of this class have __call__ methods identical in signature to
+    compile; the difference is that if the instance compiles program text
+    containing a __future__ statement, the instance 'remembers' and compiles all
+    subsequent program texts with the statement in force.
+
+    If the source is determined to be incomplete, will suppress the SyntaxError
+    and return ``None``.
+    """
+
+    def __init__(
+        self,
+        *,
+        return_mode="last_expr",
+        quiet_trailing_semicolon=True,
+        flags=0x0,
+    ):
+        self.compiler = _CodeRunnerCompile(
+            return_mode=return_mode,
+            quiet_trailing_semicolon=quiet_trailing_semicolon,
+            flags=flags,
+        )
+
+    def __call__(self, source, filename="<console>", symbol="single") -> CodeRunner:  # type: ignore
+        return super().__call__(source, filename, symbol)  # type: ignore
 
 
 class _InteractiveConsole(code.InteractiveConsole):
@@ -112,8 +182,10 @@ class _InteractiveConsole(code.InteractiveConsole):
     def __init__(
         self,
         locals: Optional[dict] = None,
+        *,
         stdout_callback: Optional[Callable[[str], None]] = None,
         stderr_callback: Optional[Callable[[str], None]] = None,
+        stdin_callback: Optional[Callable[[str], None]] = None,
         persistent_stream_redirection: bool = False,
     ):
         super().__init__(locals)
@@ -121,9 +193,11 @@ class _InteractiveConsole(code.InteractiveConsole):
         self._stderr = None
         self.stdout_callback = stdout_callback
         self.stderr_callback = stderr_callback
+        self.stdin_callback = stdin_callback
         self._streams_redirected = False
+        self._stream_generator = None  # track persistent stream redirection
         if persistent_stream_redirection:
-            self.redirect_stdstreams()
+            self.persistent_redirect_streams()
         self.run_complete: asyncio.Future = asyncio.Future()
         self.run_complete.set_result(None)
         self._completer = rlcompleter.Completer(self.locals)  # type: ignore
@@ -135,66 +209,61 @@ class _InteractiveConsole(code.InteractiveConsole):
         self.output_truncated_text = "\\n[[;orange;]<long output truncated>]\\n"
         self.compile.compiler.flags |= ast.PyCF_ALLOW_TOP_LEVEL_AWAIT  # type: ignore
 
-    def redirect_stdstreams(self):
-        """Toggle stdout/stderr redirections."""
-        # already redirected?
-        if self._streams_redirected:
+    def persistent_redirect_streams(self):
+        """Redirect stdin/stdout/stderr persistently"""
+        if self._stream_generator:
             return
+        self._stream_generator = self._stdstreams_redirections_inner()
+        next(self._stream_generator)  # trigger stream redirection
+        # streams will be reverted to normal when self._stream_generator is destroyed.
 
-        if self._stdout is None:
-            # we use meta callbacks to allow self.std{out,err}_callback
-            # overloading.
-            # we check callback against None at each call since it can be
-            # changed dynamically.
-            def meta_stdout_callback(*args):
-                if self.stdout_callback is not None:
-                    return self.stdout_callback(*args)
-
-            # for later restore
-            self._old_stdout = sys.stdout
-
-            # it would be more robust to use sys.stdout.name but testing
-            # system oveload them. Anyway it should be pretty stable
-            # upstream.
-            self._stdout = _StdStream(meta_stdout_callback, name="<stdout>")
-
-        if self._stderr is None:
-
-            def meta_stderr_callback(*args):
-                if self.stderr_callback is not None:
-                    return self.stderr_callback(*args)
-
-            self._old_stderr = sys.stderr
-            self._stderr = _StdStream(meta_stderr_callback, name="<stderr>")
-
-        # actual redirection
-        sys.stdout = self._stdout
-        sys.stderr = self._stderr
-        self._streams_redirected = True
-
-    def restore_stdstreams(self):
-        """Restore stdout/stderr to the value it was before
-        the creation of the object."""
-        if self._streams_redirected:
-            sys.stdout = self._old_stdout
-            sys.stderr = self._old_stderr
-            self._streams_redirected = False
+    def persistent_restore_streams(self):
+        """Restore stdin/stdout/stderr if they have been persistently redirected"""
+        # allowing _stream_generator to be garbage collected restores the streams
+        self._stream_generator = None
 
     @contextmanager
-    def stdstreams_redirections(self):
-        """Ensure std stream redirection.
+    def redirect_streams(self):
+        """A context manager to redirect standard streams.
 
         This supports nesting."""
+        yield from self._stdstreams_redirections_inner()
+
+    def _stdstreams_redirections_inner(self):
+        """This is the generator which implements redirect_streams and the stdstreams_redirections"""
+        # already redirected?
         if self._streams_redirected:
             yield
-        else:
-            self.redirect_stdstreams()
-            yield
-            self.restore_stdstreams()
+            return
+        redirects = []
+        if self.stdout_callback:
+            redirects.append(
+                redirect_stdout(
+                    _WriteStream(self.stdout_callback, name=sys.stdout.name)
+                )
+            )
+        if self.stderr_callback:
+            redirects.append(
+                redirect_stderr(
+                    _WriteStream(self.stderr_callback, name=sys.stderr.name)
+                )
+            )
+        if self.stdin_callback:
+            redirects.append(
+                redirect_stdin(_ReadStream(self.stdin_callback, name=sys.stdin.name))
+            )
+        try:
+            self._streams_redirected = True
+            with ExitStack() as stack:
+                for redirect in redirects:
+                    stack.enter_context(redirect)
+                yield
+        finally:
+            self._streams_redirected = False
 
     def flush_all(self):
         """Force stdout/stderr flush."""
-        with self.stdstreams_redirections():
+        with self.redirect_streams():
             sys.stdout.flush()
             sys.stderr.flush()
 
@@ -206,7 +275,7 @@ class _InteractiveConsole(code.InteractiveConsole):
         redirection here since doing twice is not an issue.
         """
 
-        with self.stdstreams_redirections():
+        with self.redirect_streams():
             return super().runsource(*args, **kwargs)
 
     def runcode(self, code):
@@ -241,7 +310,7 @@ class _InteractiveConsole(code.InteractiveConsole):
         except BaseException:
             # Throw away old error
             pass
-        with self.stdstreams_redirections():
+        with self.redirect_streams():
             await _load_packages_from_imports(source)
             try:
                 result = await eval_code_async(
@@ -259,17 +328,6 @@ class _InteractiveConsole(code.InteractiveConsole):
             # flushing here
             self.flush_all()
             return result
-
-    def __del__(self):
-        self.restore_stdstreams()
-
-    def banner(self):
-        """A banner similar to the one printed by the real Python interpreter."""
-        # copyied from https://github.com/python/cpython/blob/799f8489d418b7f9207d333eac38214931bd7dcc/Lib/code.py#L214
-        cprt = 'Type "help", "copyright", "credits" or "license" for more information.'
-        version = platform.python_version()
-        build = f"({', '.join(platform.python_build())})"
-        return f"Python {version} {build} on WebAssembly VM\n{cprt}"
 
     def complete(self, source: str) -> Tuple[List[str], int]:
         """Use CPython's rlcompleter to complete a source from local namespace.

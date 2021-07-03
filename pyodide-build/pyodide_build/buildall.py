@@ -81,7 +81,7 @@ class Package(BasePackage):
         self.dependents = set()
 
     def build(self, outputdir: Path, args) -> None:
-        with open(self.pkgdir / "build.log", "w") as f:
+        with open(self.pkgdir / "build.log.tmp", "w") as f:
             p = subprocess.run(
                 [
                     sys.executable,
@@ -103,6 +103,27 @@ class Package(BasePackage):
                 check=False,
                 stdout=f,
                 stderr=subprocess.STDOUT,
+            )
+
+        # Don't overwrite build log if we didn't build the file.
+        # If the file didn't need to be rebuilt, the log will have exactly two lines.
+        rebuilt = True
+        with open(self.pkgdir / "build.log.tmp", "r") as f:
+            try:
+                next(f)
+                next(f)
+                next(f)
+            except StopIteration:
+                rebuilt = False
+
+        if rebuilt:
+            shutil.move(self.pkgdir / "build.log.tmp", self.pkgdir / "build.log")  # type: ignore
+        else:
+            (self.pkgdir / "build.log.tmp").unlink()
+
+        if args.log_dir:
+            shutil.copy(
+                self.pkgdir / "build.log", Path(args.log_dir) / f"{self.name}.log"
             )
 
         try:
@@ -336,6 +357,14 @@ def make_parser(parser):
             "default. Set to 'skip' to skip installation. Installation is "
             "needed if you want to build other packages that depend on this one."
         ),
+    )
+    parser.add_argument(
+        "--log-dir",
+        type=str,
+        dest="log_dir",
+        nargs="?",
+        default=None,
+        help=("Directory to place log files"),
     )
     parser.add_argument(
         "--only",

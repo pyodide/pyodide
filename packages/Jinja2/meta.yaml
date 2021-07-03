@@ -1,12 +1,12 @@
 package:
   name: Jinja2
-  version: 2.11.3
+  version: 3.0.1
 requirements:
   run:
   - MarkupSafe
 source:
-  sha256: a6d58433de0ae800347cab1fa3043cebbabe8baa9d29e668f1c768cb87a333c6
-  url: https://files.pythonhosted.org/packages/4f/e7/65300e6b32e69768ded990494809106f87da1d436418d5f1367ed3966fd7/Jinja2-2.11.3.tar.gz
+  sha256: 703f484b47a6af502e743c9122595cc812b0271f661722403114f71a79d0f5a4
+  url: https://files.pythonhosted.org/packages/39/11/8076571afd97303dfeb6e466f27187ca4970918d4b36d5326725514d3ed3/Jinja2-3.0.1.tar.gz
 test:
   imports:
   - jinja2
