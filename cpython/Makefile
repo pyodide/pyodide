@@ -123,13 +123,6 @@ $(INSTALL)/lib/libffi.a :
 	cp $(FFIBUILD)/target/lib/libffi.a $(INSTALL)/lib/
 
 $(BUILD)/Makefile: $(BUILD)/.patched $(ZLIBBUILD)/.configured $(INSTALL)/lib/libsqlite3.a $(INSTALL)/lib/libbz2.a
-	# --enable-big-digits=30 :
-	#   Python integers have "digits" of size 15 by default on systems with 32
-	#   bit pointers and size 30 on systems with 16 bit pointers. Python uses
-	#   "digits" of size 15 by default on systems with 32 bit pointers and size
-	#   30 on systems with 16 bit pointers. WASM has 32 bit pointers so Python
-	#   will default to the size 15 digits but WASM has native 64 bit arithmetic
-	#   so it is more efficient to use 30 bit digits.
 	cp config.site $(BUILD)/
 	( \
 		cd $(BUILD); \
@@ -140,11 +133,10 @@ $(BUILD)/Makefile: $(BUILD)/.patched $(ZLIBBUILD)/.configured $(INSTALL)/lib/lib
 			  --without-pymalloc \
 			  --disable-shared \
 			  --disable-ipv6 \
-			  --enable-big-digits=30 \
 			  --enable-optimizations \
 			  --host=wasm32-unknown-emscripten\
 			  --build=$(shell $(BUILD)/config.guess) \
-			  --prefix=$(INSTALL)  \
+			  --prefix=$(INSTALL) ; \
 	)
 
 

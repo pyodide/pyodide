@@ -9,7 +9,6 @@
 #include <stdint.h>
 
 #include "hiwire.h"
-#include "jsmemops.h"
 
 // This file handles the conversion of Python buffer objects (which loosely
 // represent Numpy arrays) to Javascript.

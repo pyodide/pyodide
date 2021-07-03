@@ -40,28 +40,25 @@ _python2js_float(PyObject* x)
   return hiwire_double(x_double);
 }
 
-#if PYLONG_BITS_IN_DIGIT == 15
-#error "Expected PYLONG_BITS_IN_DIGIT == 30"
-#endif
-
 static JsRef
 _python2js_long(PyObject* x)
 {
   int overflow;
   long x_long = PyLong_AsLongAndOverflow(x, &overflow);
   if (x_long == -1) {
-    if (!overflow) {
-      FAIL_IF_ERR_OCCURRED();
-    } else {
-      size_t ndigits = Py_ABS(Py_SIZE(x));
-      unsigned int digits[ndigits];
-      FAIL_IF_MINUS_ONE(_PyLong_AsByteArray((PyLongObject*)x,
-                                            (unsigned char*)digits,
-                                            4 * ndigits,
-                                            true /* little endian */,
-                                            true /* signed */));
-      return hiwire_int_from_digits(digits, ndigits);
+    if (overflow) {
+      // Backup approach for large integers: convert via hex string.
+      //
+      // Unfortunately Javascript doesn't offer a good way to convert a numbers
+      // to / from Uint8Arrays.
+      PyObject* hex_py = PyNumber_ToBase(x, 16);
+      FAIL_IF_NULL(hex_py);
+      const char* hex_str = PyUnicode_AsUTF8(hex_py);
+      JsRef result = hiwire_int_from_hex(hex_str);
+      Py_DECREF(hex_py);
+      return result;
     }
+    FAIL_IF_ERR_OCCURRED();
   }
   return hiwire_int(x_long);
 finally:

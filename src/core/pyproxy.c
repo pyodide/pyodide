@@ -6,7 +6,6 @@
 #include "docstring.h"
 #include "hiwire.h"
 #include "js2python.h"
-#include "jsmemops.h" // for pyproxy.js
 #include "jsproxy.h"
 #include "python2js.h"
 
@@ -738,8 +737,6 @@ typedef struct
   int f_contiguous;
 } buffer_struct;
 
-size_t buffer_struct_size = sizeof(buffer_struct);
-
 /**
  * This is the C part of the getBuffer method.
  *
@@ -760,8 +757,8 @@ size_t buffer_struct_size = sizeof(buffer_struct);
  * We also put the various other metadata about the buffer that we want to share
  * into buffer_struct.
  */
-int
-_pyproxy_get_buffer(buffer_struct* target, PyObject* ptrobj)
+buffer_struct*
+_pyproxy_get_buffer(PyObject* ptrobj)
 {
   Py_buffer view;
   // PyBUF_RECORDS_RO requires that suboffsets be NULL but otherwise is the most
@@ -769,7 +766,7 @@ _pyproxy_get_buffer(buffer_struct* target, PyObject* ptrobj)
   if (PyObject_GetBuffer(ptrobj, &view, PyBUF_RECORDS_RO) == -1) {
     // Buffer cannot be represented without suboffsets. The bf_getbuffer method
     // should have set a PyExc_BufferError saying something to this effect.
-    return -1;
+    return NULL;
   }
 
   bool success = false;
@@ -833,13 +830,16 @@ finally:
     // Py_Buffer.release().
     result.view = (Py_buffer*)PyMem_Malloc(sizeof(Py_buffer));
     *result.view = view;
-    *target = result;
-    return 0;
+    // The result_heap memory will be freed by getBuffer
+    buffer_struct* result_heap =
+      (buffer_struct*)PyMem_Malloc(sizeof(buffer_struct));
+    *result_heap = result;
+    return result_heap;
   } else {
     hiwire_CLEAR(result.shape);
     hiwire_CLEAR(result.strides);
     PyBuffer_Release(&view);
-    return -1;
+    return NULL;
   }
 }
 
