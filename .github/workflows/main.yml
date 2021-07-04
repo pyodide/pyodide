@@ -39,6 +39,6 @@ jobs:
             # The following packages are currently used in the main pyodide test suite
             PYODIDE_PACKAGES="micropip,pyparsing,pytz,packaging,Jinja2" make
             ccache -s
-      - run:
-          name: check-size
-          command: ls -lh build/
+
+      - name: check-size
+        run: ls -lh build/
