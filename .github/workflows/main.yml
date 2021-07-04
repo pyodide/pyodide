@@ -1,0 +1,44 @@
+name: main
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+  # Allows you to run this workflow manually from the Actions tab
+  workflow_dispatch:
+
+jobs:
+  build:
+    # The type of runner that the job will run on
+    runs-on: ubuntu-latest
+    container:
+      image: pyodide/pyodide-env:18
+
+    # Steps represent a sequence of tasks that will be executed as part of the job
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: Cache ccache output
+        uses: actions/cache@v2
+        with:
+          path: |
+            ~/.ccache
+          key: ${{ hashFiles('Makefile.envs') }}-v20201205-
+
+      - name: Build emsdk
+        run: |
+            ccache -z
+            make -C emsdk
+            ccache -s
+
+      - name: build Pyodide core
+        run: |
+            ccache -z
+            # The following packages are currently used in the main pyodide test suite
+            PYODIDE_PACKAGES="micropip,pyparsing,pytz,packaging,Jinja2" make
+            ccache -s
+      - run:
+          name: check-size
+          command: ls -lh build/
