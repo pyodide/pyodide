@@ -84,16 +84,13 @@ jobs:
     container:
       image: pyodide/pyodide-env:18
     env:
-      EMSDK_NUM_CORES: 3
-      EMCC_CORES: 3
-      PYODIDE_JOBS: 3
-      CCACHE_DIR: /__w/ccache/
+      env:
+        DISPLAY: :99
 
     needs: build-core
     strategy:
       matrix:
         selenium_runner: [firefox, chrome]
-
 
     steps:
       - uses: actions/checkout@v2
@@ -104,10 +101,12 @@ jobs:
           name: core-build
 
       - name: Unzip build artifacts
-        run: tar xzf build-core.tgz
+        run: |
+          tar xzf build-core.tgz
+          ls
 
-      - name: check-size
+      - name: run tests
         env:
            SELENIUM_RUNNER: ${{ matrix.selenium_runner }}
         run: |
-           tools/pytest_wrapper.py src packages/micropip/ -v -k "${SELENIUM_RUNNER}" -n 3
+           tools/pytest_wrapper.py src packages/micropip/ -v -k "${SELENIUM_RUNNER}" -x
