@@ -10,13 +10,16 @@ on:
   workflow_dispatch:
 
 jobs:
-  build:
-    # The type of runner that the job will run on
+  build-core:
     runs-on: ubuntu-latest
     container:
       image: pyodide/pyodide-env:18
+    env:
+      EMSDK_NUM_CORES: 3
+      EMCC_CORES: 3
+      PYODIDE_JOBS: 3
 
-    # Steps represent a sequence of tasks that will be executed as part of the job
+
     steps:
       - uses: actions/checkout@v2
 
@@ -33,6 +36,12 @@ jobs:
             make -C emsdk
             ccache -s
 
+      - name: Build Cpython
+        run: |
+            ccache -z
+            make -C cpython
+            ccache -s
+
       - name: build Pyodide core
         run: |
             ccache -z
@@ -42,3 +51,45 @@ jobs:
 
       - name: check-size
         run: ls -lh build/
+
+      - name: Store artifacts all
+        uses: actions/upload-artifact@v2
+        with:
+          name: core-build-all
+          path: ./
+          retention-days: 5
+
+      - name: Store artifacts build
+        uses: actions/upload-artifact@v2
+        with:
+          name: core-build
+          path: ./build/
+          retention-days: 10
+
+  test-core:
+    runs-on: ubuntu-latest
+    container:
+      image: pyodide/pyodide-env:18
+    env:
+      EMSDK_NUM_CORES: 3
+      EMCC_CORES: 3
+      PYODIDE_JOBS: 3
+    needs: build-core
+    strategy:
+      matrix:
+        selenium_runner: [firefox, chrome]
+
+
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: Download build artifact
+        uses: actions/download-artifact@v2
+        with:
+          name: core-build
+
+      - name: check-size
+        env:
+           SELENIUM_RUNNER: ${{ matrix.selenium_runner }}
+        run: |
+           tools/pytest_wrapper.py src packages/micropip/ -v -k "${SELENIUM_RUNNER}" -n 3
