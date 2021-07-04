@@ -18,6 +18,7 @@ jobs:
       EMSDK_NUM_CORES: 3
       EMCC_CORES: 3
       PYODIDE_JOBS: 3
+      CCACHE_DIR: /__w/ccache/
 
 
     steps:
@@ -27,11 +28,14 @@ jobs:
         uses: actions/cache@v2
         with:
           path: |
-            ~/.ccache
+            /__w/ccache/
+            /__w/pyodide/pyodide/emsdk/emsdk/upstream/emscripten/cache/
           key: ${{ hashFiles('Makefile.envs') }}-v20201205-
 
       - name: Build emsdk
         run: |
+            # make sure the folder is writable
+            touch /__w/test
             ccache -z
             make -C emsdk
             ccache -s
@@ -52,19 +56,28 @@ jobs:
       - name: check-size
         run: ls -lh build/
 
-      - name: Store artifacts all
-        uses: actions/upload-artifact@v2
-        with:
-          name: core-build-all
-          path: ./
-          retention-days: 5
+      - name: Archive build artifacts
+        run: tar czf build-core.tgz build/
 
       - name: Store artifacts build
         uses: actions/upload-artifact@v2
         with:
           name: core-build
-          path: ./build/
+          path: build-core.tgz
           retention-days: 10
+
+      - name: Archive all build output
+        run: |
+          rm build-core.tgz
+          tar czf /__w/build-core-all.tgz /__w/pyodide/pyodide/
+
+      - name: Store artifacts all
+        uses: actions/upload-artifact@v2
+        with:
+          name: core-build-all
+          path: /__w/build-core-all.tgz
+          retention-days: 5
+
 
   test-core:
     runs-on: ubuntu-latest
@@ -74,6 +87,8 @@ jobs:
       EMSDK_NUM_CORES: 3
       EMCC_CORES: 3
       PYODIDE_JOBS: 3
+      CCACHE_DIR: /__w/ccache/
+
     needs: build-core
     strategy:
       matrix:
