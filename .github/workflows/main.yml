@@ -109,3 +109,7 @@ jobs:
            SELENIUM_RUNNER: ${{ matrix.selenium_runner }}
         run: |
            tools/pytest_wrapper.py src packages/micropip/ -v -k "${SELENIUM_RUNNER}" -x
+
+      - name: cat geckodriver
+        run: cat geckodriver.log
+        if: ${{ matrix.selenium_runner == 'firefox' }}

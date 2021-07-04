@@ -325,7 +325,7 @@ class FirefoxWrapper(SeleniumWrapper):
         from selenium.webdriver.firefox.options import Options
 
         options = Options()
-        options.add_argument("-headless")
+        options.add_argument("--headless")
 
         return Firefox(executable_path="geckodriver", options=options)
 
@@ -512,6 +512,8 @@ def spawn_web_server(build_dir=None):
     finally:
         q.put("TERMINATE")
         p.join()
+        print("Displaying Selenium logs")
+        print(log_path.read_text())
         shutil.rmtree(tmp_dir)
 
 
