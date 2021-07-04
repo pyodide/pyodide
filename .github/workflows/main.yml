@@ -103,6 +103,9 @@ jobs:
         with:
           name: core-build
 
+      - name: Unzip build artifacts
+        run: tar xzf build-core.tgz
+
       - name: check-size
         env:
            SELENIUM_RUNNER: ${{ matrix.selenium_runner }}
