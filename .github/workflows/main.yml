@@ -84,8 +84,7 @@ jobs:
     container:
       image: pyodide/pyodide-env:18
     env:
-      env:
-        DISPLAY: :99
+      DISPLAY: :99
 
     needs: build-core
     strategy:
