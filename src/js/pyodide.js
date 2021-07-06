@@ -1,16 +1,16 @@
 /**
  * The main bootstrap code for loading pyodide.
  */
-import { Module } from "./module";
+import { Module } from "./module.js";
 import {
   loadScript,
   initializePackageIndex,
   loadPackage,
-} from "./load-pyodide";
-import { makePublicAPI, registerJsModule } from "./api";
-import "./pyproxy.gen";
+} from "./load-pyodide.js";
+import { makePublicAPI, registerJsModule } from "./api.js";
+import "./pyproxy.gen.js";
 
-import { wrapNamespace } from "./pyproxy.gen";
+import { wrapNamespace } from "./pyproxy.gen.js";
 
 /**
  * @typedef {import('./pyproxy.gen').PyProxy} PyProxy
