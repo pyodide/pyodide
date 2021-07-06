@@ -12,7 +12,7 @@
   },
   "type": "module",
   "scripts": {
-    "test": "mocha --timeout 6000"
+    "test": "mocha --timeout 15000"
   },
   "dependencies": {
     "node-fetch": "^2.6.1"
