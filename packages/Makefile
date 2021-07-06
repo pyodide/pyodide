@@ -2,7 +2,7 @@ export PYODIDE_ROOT=$(abspath ..)
 PYODIDE_LIBRARIES=$(abspath ./.artifacts)
 include ../Makefile.envs
 
-export NUMPY_LIB=$(PYODIDE_ROOT)/packages/numpy/build/numpy-1.17.5/install/lib/python$(PYMINOR)/site-packages/numpy/core/lib/
+export NUMPY_LIB=$(PYODIDE_ROOT)/packages/numpy/build/numpy-1.17.5/install/lib/python$(PYMAJOR).$(PYMINOR)/site-packages/numpy/core/lib/
 
 
 ifeq ($(strip $(PYODIDE_PACKAGES)),)

@@ -37,6 +37,11 @@ cd src/js
 npm test
 ```
 
+To check TypeScript type definitions run,
+```
+npx tsd
+```
+
 ### Manual interactive testing
 
 To run manual interactive tests, a docker environment and a webserver will be

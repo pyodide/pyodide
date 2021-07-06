@@ -8,6 +8,17 @@ DEFAULT_PYODIDE_SYSTEM_PORT="8000"
 DOCKER_COMMAND="/bin/bash"
 DOCKER_INTERACTIVE="--interactive"
 
+
+USER_HOME="/src/.docker_home"
+USER_NAME="$(id -u -n)"
+USER_PASS="x"
+USER_ID="$(id -u)"
+USER_GID=0
+USER_COMMENT_FIELD="${USER_NAME} pyodide user alias"
+USER_INTERPRETER="/sbin/nologin"
+USER_ACCOUNT_INFO="${USER_NAME}:${USER_PASS}:${USER_ID}:${USER_GID}:${USER_COMMENT_FIELD}:${USER_HOME}:${USER_INTERPRETER}"
+USER_FLAG="--user $(id --user):$(id --group)"
+
 set -eo pipefail
 
 
@@ -27,6 +38,7 @@ Options:
                               If set to 'none', docker instance will not bind to any port.
   --non-interactive           Run docker without the --interactive flag.
                               Useful for running in headless mode on CI server.
+  --root                      Run as root user inside the container
 
 Prerequisites:
   Docker has to be set up on your system.
@@ -69,6 +81,10 @@ do
         DOCKER_INTERACTIVE="--interactive=false"
         shift
       ;;
+      --root)
+        USER_FLAG=""
+        shift
+      ;;
       -*)
         >&2 echo "Unknown option $1"
         error
@@ -100,15 +116,6 @@ esac
 
 mkdir -p .docker_home
 
-USER_HOME="/src/.docker_home"
-USER_NAME="$(id -u -n)"
-USER_PASS="x"
-USER_ID="$(id -u)"
-USER_GID=0
-USER_COMMENT_FIELD="${USER_NAME} pyodide user alias"
-USER_INTERPRETER="/sbin/nologin"
-USER_ACCOUNT_INFO="${USER_NAME}:${USER_PASS}:${USER_ID}:${USER_GID}:${USER_COMMENT_FIELD}:${USER_HOME}:${USER_INTERPRETER}"
-
 # Start a detached container as root, add the host uname and uid to /etc/passwd,
 # then run forever
 CONTAINER=$(\
@@ -128,7 +135,7 @@ EXIT_STATUS=0
 # Execute the provided command as the host user with HOME=/src
 docker exec \
   $DOCKER_INTERACTIVE --tty \
-  --user $(id --user):$(id --group) \
+  $USER_FLAG \
   $CONTAINER \
   /bin/bash -c "${DOCKER_COMMAND}" || EXIT_STATUS=$?
 
