@@ -14,5 +14,13 @@
   "type": "module",
   "scripts": {
     "test": "mocha"
+  },
+  "tsd": {
+    "compilerOptions": {
+      "lib": [
+        "ES2018",
+        "DOM"
+      ]
+    }
   }
 }
