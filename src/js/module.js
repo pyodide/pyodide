@@ -1,3 +1,8 @@
+/**
+ * The Emscripten Module.
+ *
+ * @private @type {import('emscripten').Module}
+ */
 export let Module = {};
 Module.noImageDecoding = true;
 Module.noAudioDecoding = true;
