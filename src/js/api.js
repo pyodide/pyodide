@@ -331,7 +331,7 @@ export function makePublicAPI() {
    * <https://emscripten.org/docs/api_reference/Filesystem-API.html#persistent-data>`_.
    *
    * @type {FS} The Emscripten File System API.
-  */
+   */
   const fileSystem = Module.FS;
 
   let namespace = {
