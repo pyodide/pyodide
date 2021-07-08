@@ -3,7 +3,7 @@ import sys
 import gc
 
 from ._core import JsProxy
-from ._importhooks import jsfinder
+from _pyodide._importhook import jsfinder
 
 
 def save_state() -> dict:

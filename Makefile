@@ -45,6 +45,7 @@ build/pyodide.asm.js: \
 	src/webbrowser.py \
 	$(CPYTHONLIB)/tzdata \
 	$(wildcard src/py/pyodide/*.py) \
+	$(wildcard src/py/_pyodide/*.py) \
 	$(CPYTHONLIB)
 	date +"[%F %T] Building pyodide.asm.js..."
 	[ -d build ] || mkdir build

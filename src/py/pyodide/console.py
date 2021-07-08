@@ -15,13 +15,14 @@ import sys
 import traceback
 from typing import Optional, Callable, Any, List, Tuple
 
-from ._base import eval_code_async, should_quiet, CodeRunner
+from _pyodide._base import eval_code_async, should_quiet, CodeRunner
+from ._core import IN_BROWSER
 
 # this import can fail when we are outside a browser (e.g. for tests)
-try:
+if IN_BROWSER:
     from pyodide_js import loadPackagesFromImports as _load_packages_from_imports
     from asyncio import ensure_future
-except ImportError:
+else:
     from asyncio import Future
 
     def ensure_future(co):  # type: ignore

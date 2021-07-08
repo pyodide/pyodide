@@ -1,4 +1,3 @@
-from ._core import JsProxy
 from importlib.abc import MetaPathFinder, Loader
 from importlib.util import spec_from_loader
 import sys
@@ -33,7 +32,7 @@ class JsFinder(MetaPathFinder):
         loader = JsLoader(jsproxy)
         return spec_from_loader(fullname, loader, origin="javascript")
 
-    def register_js_module(self, name: str, jsproxy: JsProxy):
+    def register_js_module(self, name: str, jsproxy):
         """
         Registers ``jsproxy`` as a Javascript module named ``name``. The module
         can then be imported from Python using the standard Python import
@@ -98,4 +97,14 @@ class JsLoader(Loader):
         return True
 
 
-jsfinder = JsFinder()
+JsProxy: type = None  # type: ignore
+jsfinder: JsFinder = JsFinder()
+
+
+def register_js_finder():
+    import _pyodide_core  # type: ignore
+
+    global JsProxy
+    JsProxy = _pyodide_core.JsProxy
+    sys.meta_path.append(jsfinder)  # type: ignore
+    return jsfinder

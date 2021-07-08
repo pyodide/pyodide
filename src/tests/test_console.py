@@ -6,9 +6,8 @@ from conftest import selenium_common
 
 sys.path.append(str(Path(__file__).resolve().parents[2] / "src" / "py"))
 
-from pyodide import console  # noqa: E402
+from pyodide import console, CodeRunner  # noqa: E402
 from pyodide.console import _CodeRunnerCompile, _CodeRunnerCommandCompiler  # noqa: E402
-from pyodide import CodeRunner
 
 
 def test_command_compiler():
