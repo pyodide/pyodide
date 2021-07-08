@@ -209,7 +209,7 @@ jobs:
       - store_test_results:
           path: test-results
 
-  test-js-types:
+  test-js:
     <<: *defaults
     resource_class: small
     steps:
@@ -220,6 +220,8 @@ jobs:
           command: |
             cd src/js
             npx tsd
+            npm i
+            npm test
 
 
   benchmark:
@@ -326,7 +328,7 @@ workflows:
       - test-emsdk:
           requires:
             - build-core
-      - test-js-types:
+      - test-js:
           requires:
             - build-core
       - benchmark:

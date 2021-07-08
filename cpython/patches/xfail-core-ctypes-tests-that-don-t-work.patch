@@ -48,18 +48,3 @@ index ac3dde7..d91a350 100644
      run_unittest(*tests)
  
  if __name__ == "__main__":
-diff --git a/Lib/test/test_unicode.py b/Lib/test/test_unicode.py
-index 23508c5..a618e25 100644
---- a/Lib/test/test_unicode.py
-+++ b/Lib/test/test_unicode.py
-@@ -2521,6 +2521,7 @@ class CAPITest(unittest.TestCase):
- 
-     # Test PyUnicode_FromFormat()
-     def test_from_format(self):
-+        raise unittest.SkipTest("ctypes don't work with variadic C functions like PyUnicode_FromFormat")
-         support.import_module('ctypes')
-         from ctypes import (
-             c_char_p,
--- 
-2.17.1
-

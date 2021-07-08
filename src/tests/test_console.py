@@ -6,7 +6,31 @@ from conftest import selenium_common
 
 sys.path.append(str(Path(__file__).resolve().parents[2] / "src" / "py"))
 
-from pyodide import console  # noqa: E402
+from pyodide import console, CodeRunner  # noqa: E402
+from pyodide.console import _CodeRunnerCompile, _CodeRunnerCommandCompiler  # noqa: E402
+
+
+def test_command_compiler():
+    c = _CodeRunnerCompile()
+    with pytest.raises(SyntaxError, match="unexpected EOF while parsing"):
+        c("def test():\n   1", "<input>", "single")
+    assert isinstance(c("def test():\n   1\n", "<input>", "single"), CodeRunner)
+    with pytest.raises(SyntaxError, match="invalid syntax"):
+        c("1<>2", "<input>", "single")
+    assert isinstance(
+        c("from __future__ import barry_as_FLUFL", "<input>", "single"), CodeRunner
+    )
+    assert isinstance(c("1<>2", "<input>", "single"), CodeRunner)
+
+    c = _CodeRunnerCommandCompiler()
+    assert c("def test():\n   1", "<input>", "single") is None
+    assert isinstance(c("def test():\n   1\n", "<input>", "single"), CodeRunner)
+    with pytest.raises(SyntaxError, match="invalid syntax"):
+        c("1<>2", "<input>", "single")
+    assert isinstance(
+        c("from __future__ import barry_as_FLUFL", "<input>", "single"), CodeRunner
+    )
+    assert isinstance(c("1<>2", "<input>", "single"), CodeRunner)
 
 
 def test_stream_redirection():

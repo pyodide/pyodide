@@ -1,4 +1,4 @@
-import { Module } from "./module";
+import { Module } from "./module.js";
 
 /** @typedef {import('./pyproxy.js').PyProxy} PyProxy */
 /** @private */
@@ -33,15 +33,19 @@ function _uri_to_package_name(package_uri) {
  * @private
  */
 export let loadScript;
-if (self.document) {
+if (globalThis.document) {
   // browser
   loadScript = (url) => import(url);
-} else if (self.importScripts) {
+} else if (globalThis.importScripts) {
   // webworker
   loadScript = async (url) => {
     // This is async only for consistency
-    self.importScripts(url);
+    globalThis.importScripts(url);
   };
+} else if (typeof process !== "undefined" && process.release.name === "node") {
+  // running in Node.js
+  // TODO
+  loadScript = (url) => import(url);
 } else {
   throw new Error("Cannot determine runtime environment");
 }

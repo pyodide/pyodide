@@ -604,7 +604,7 @@ JsProxy_Dir(PyObject* self, PyObject* _args)
   object__dir__ =
     _PyObject_GetAttrId((PyObject*)&PyBaseObject_Type, &PyId___dir__);
   FAIL_IF_NULL(object__dir__);
-  keys = PyObject_CallFunctionObjArgs(object__dir__, self, NULL);
+  keys = PyObject_CallOneArg(object__dir__, self);
   FAIL_IF_NULL(keys);
   result_set = PySet_New(keys);
   FAIL_IF_NULL(result_set);
@@ -718,7 +718,7 @@ JsProxy_Await(JsProxy* self)
   JsRef promise_result = NULL;
   PyObject* result = NULL;
 
-  loop = _PyObject_CallNoArg(asyncio_get_event_loop);
+  loop = PyObject_CallNoArgs(asyncio_get_event_loop);
   FAIL_IF_NULL(loop);
 
   fut = _PyObject_CallMethodId(loop, &PyId_create_future, NULL);
@@ -1013,7 +1013,7 @@ JsProxy_new_error(JsRef idobj)
   proxy = JsProxyType.tp_alloc(&JsProxyType, 0);
   FAIL_IF_NULL(proxy);
   FAIL_IF_NONZERO(JsProxy_cinit(proxy, idobj));
-  result = PyObject_CallFunctionObjArgs(Exc_JsException, proxy, NULL);
+  result = PyObject_CallOneArg(Exc_JsException, proxy);
   FAIL_IF_NULL(result);
 finally:
   Py_CLEAR(proxy);
@@ -1745,15 +1745,15 @@ JsProxy_init(PyObject* core_module)
 {
   bool success = false;
 
-  PyObject* _pyodide_core = NULL;
+  PyObject* _pyodide_core_docs = NULL;
   PyObject* jsproxy_mock = NULL;
   PyObject* asyncio_module = NULL;
 
-  _pyodide_core = PyImport_ImportModule("_pyodide._core");
-  FAIL_IF_NULL(_pyodide_core);
+  _pyodide_core_docs = PyImport_ImportModule("_pyodide._core_docs");
+  FAIL_IF_NULL(_pyodide_core_docs);
   _Py_IDENTIFIER(JsProxy);
   jsproxy_mock =
-    _PyObject_CallMethodIdObjArgs(_pyodide_core, &PyId_JsProxy, NULL);
+    _PyObject_CallMethodIdNoArgs(_pyodide_core_docs, &PyId_JsProxy);
   FAIL_IF_NULL(jsproxy_mock);
 
   // Load the docstrings for JsProxy methods from the corresponding stubs in
@@ -1792,7 +1792,7 @@ JsProxy_init(PyObject* core_module)
 
   success = true;
 finally:
-  Py_CLEAR(_pyodide_core);
+  Py_CLEAR(_pyodide_core_docs);
   Py_CLEAR(jsproxy_mock);
   Py_CLEAR(asyncio_module);
   return success ? 0 : -1;

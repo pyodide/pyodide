@@ -17,7 +17,7 @@
  * See Makefile recipe for src/js/pyproxy.js
  */
 
-import { Module } from "../js/module";
+import { Module } from "../js/module.js";
 
 /**
  * Is the argument a :any:`PyProxy`?
@@ -1117,41 +1117,39 @@ class PyProxyBufferMethods {
         throw new Error(`Unknown type ${type}`);
       }
     }
+    let HEAPU32 = Module.HEAPU32;
+    let orig_stack_ptr = Module.stackSave();
+    let buffer_struct_ptr = Module.stackAlloc(
+      DEREF_U32(Module._buffer_struct_size, 0)
+    );
     let this_ptr = _getPtr(this);
-    let buffer_struct_ptr;
+    let errcode;
     try {
-      buffer_struct_ptr = Module.__pyproxy_get_buffer(this_ptr);
+      errcode = Module.__pyproxy_get_buffer(buffer_struct_ptr, this_ptr);
     } catch (e) {
       Module.fatal_error(e);
     }
-    if (buffer_struct_ptr === 0) {
+    if (errcode === -1) {
       Module._pythonexc2js();
     }
 
-    let HEAP32 = Module.HEAP32;
-    // This has to match the order of the fields in buffer_struct
-    let cur_ptr = buffer_struct_ptr / 4;
+    // This has to match the fields in buffer_struct
+    let startByteOffset = DEREF_U32(buffer_struct_ptr, 0);
+    let minByteOffset = DEREF_U32(buffer_struct_ptr, 1);
+    let maxByteOffset = DEREF_U32(buffer_struct_ptr, 2);
 
-    let startByteOffset = HEAP32[cur_ptr++];
-    let minByteOffset = HEAP32[cur_ptr++];
-    let maxByteOffset = HEAP32[cur_ptr++];
+    let readonly = !!DEREF_U32(buffer_struct_ptr, 3);
+    let format_ptr = DEREF_U32(buffer_struct_ptr, 4);
+    let itemsize = DEREF_U32(buffer_struct_ptr, 5);
+    let shape = Module.hiwire.pop_value(DEREF_U32(buffer_struct_ptr, 6));
+    let strides = Module.hiwire.pop_value(DEREF_U32(buffer_struct_ptr, 7));
 
-    let readonly = !!HEAP32[cur_ptr++];
-    let format_ptr = HEAP32[cur_ptr++];
-    let itemsize = HEAP32[cur_ptr++];
-    let shape = Module.hiwire.pop_value(HEAP32[cur_ptr++]);
-    let strides = Module.hiwire.pop_value(HEAP32[cur_ptr++]);
-
-    let view_ptr = HEAP32[cur_ptr++];
-    let c_contiguous = !!HEAP32[cur_ptr++];
-    let f_contiguous = !!HEAP32[cur_ptr++];
+    let view_ptr = DEREF_U32(buffer_struct_ptr, 8);
+    let c_contiguous = !!DEREF_U32(buffer_struct_ptr, 9);
+    let f_contiguous = !!DEREF_U32(buffer_struct_ptr, 10);
 
     let format = Module.UTF8ToString(format_ptr);
-    try {
-      Module._PyMem_Free(buffer_struct_ptr);
-    } catch (e) {
-      Module.fatal_error(e);
-    }
+    Module.stackRestore(orig_stack_ptr);
 
     let success = false;
     try {
@@ -1190,7 +1188,7 @@ class PyProxyBufferMethods {
       if (numBytes === 0) {
         data = new ArrayType();
       } else {
-        data = new ArrayType(HEAP32.buffer, minByteOffset, numEntries);
+        data = new ArrayType(HEAPU32.buffer, minByteOffset, numEntries);
       }
       for (let i of strides.keys()) {
         strides[i] /= alignment;

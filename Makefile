@@ -6,10 +6,11 @@ include Makefile.envs
 
 
 CPYTHONROOT=cpython
-CPYTHONLIB=$(CPYTHONROOT)/installs/python-$(PYVERSION)/lib/python$(PYMINOR)
+CPYTHONLIB=$(CPYTHONROOT)/installs/python-$(PYVERSION)/lib/python$(PYMAJOR).$(PYMINOR)
 
 CC=emcc
 CXX=em++
+
 
 all: check \
 	build/pyodide.asm.js \
@@ -44,20 +45,21 @@ build/pyodide.asm.js: \
 	src/webbrowser.py \
 	$(CPYTHONLIB)/tzdata \
 	$(wildcard src/py/pyodide/*.py) \
+	$(wildcard src/py/_pyodide/*.py) \
 	$(CPYTHONLIB)
 	date +"[%F %T] Building pyodide.asm.js..."
 	[ -d build ] || mkdir build
 	$(CXX) -s EXPORT_NAME="'_createPyodideModule'" -o build/pyodide.asm.js $(filter %.o,$^) \
 		$(MAIN_MODULE_LDFLAGS) -s FORCE_FILESYSTEM=1 \
-		--preload-file $(CPYTHONLIB)@/lib/python$(PYMINOR) \
-		--preload-file src/webbrowser.py@/lib/python$(PYMINOR)/webbrowser.py \
-		--preload-file src/_testcapi.py@/lib/python$(PYMINOR)/_testcapi.py \
-		--preload-file src/_testinternalcapi.py@/lib/python$(PYMINOR)/_testinternalcapi.py \
-		--preload-file src/pystone.py@/lib/python$(PYMINOR)/pystone.py \
-		--preload-file src/py/pyodide@/lib/python$(PYMINOR)/site-packages/pyodide \
-		--preload-file src/py/_pyodide@/lib/python$(PYMINOR)/site-packages/_pyodide \
+		--preload-file $(CPYTHONLIB)@/lib/python$(PYMAJOR).$(PYMINOR) \
+		--preload-file src/webbrowser.py@/lib/python$(PYMAJOR).$(PYMINOR)/webbrowser.py \
+		--preload-file src/_testcapi.py@/lib/python$(PYMAJOR).$(PYMINOR)/_testcapi.py \
+		--preload-file src/_testinternalcapi.py@/lib/python$(PYMAJOR).$(PYMINOR)/_testinternalcapi.py \
+		--preload-file src/pystone.py@/lib/python$(PYMAJOR).$(PYMINOR)/pystone.py \
+		--preload-file src/py/pyodide@/lib/python$(PYMAJOR).$(PYMINOR)/site-packages/pyodide \
+		--preload-file src/py/_pyodide@/lib/python$(PYMAJOR).$(PYMINOR)/site-packages/_pyodide \
 		--exclude-file "*__pycache__*" \
-		--exclude-file "*/test/*"		\
+		--exclude-file "*/test/*" \
 		--exclude-file "*/tests/*" \
 		--exclude-file "*/distutils/*"
    # Strip out C++ symbols which all start __Z.
@@ -133,9 +135,11 @@ build/webworker_dev.js: src/webworker.js
 	cp $< $@
 	sed -i -e 's#{{ PYODIDE_BASE_URL }}#./#g' $@
 
+
 update_base_url: \
 	build/console.html \
 	build/webworker.js
+
 
 test: all
 	pytest src emsdk/tests packages/*/test* pyodide-build -v
@@ -157,9 +161,11 @@ lint: node_modules/.installed
 		conftest.py 				 \
 		docs
 
+
+
 benchmark: all
-	python benchmark/benchmark.py $(HOSTPYTHON) build/benchmarks.json
-	python benchmark/plot_benchmark.py build/benchmarks.json build/benchmarks.png
+	$(HOSTPYTHON) benchmark/benchmark.py $(HOSTPYTHON) build/benchmarks.json
+	$(HOSTPYTHON) benchmark/plot_benchmark.py build/benchmarks.json build/benchmarks.png
 
 
 clean:
@@ -169,6 +175,7 @@ clean:
 	make -C packages clean
 	echo "The Emsdk, CPython are not cleaned. cd into those directories to do so."
 
+
 clean-all: clean
 	make -C emsdk clean
 	make -C cpython clean
@@ -177,18 +184,19 @@ clean-all: clean
 %.o: %.c $(CPYTHONLIB) $(wildcard src/core/*.h src/core/python2js_buffer.js)
 	$(CC) -o $@ -c $< $(MAIN_MODULE_CFLAGS) -Isrc/core/
 
+
 # Stdlib modules that we repackage as standalone packages
 
 # TODO: also include test directories included in other stdlib modules
 build/test.data: $(CPYTHONLIB) node_modules/.installed
 	./tools/file_packager.sh build/test.data --js-output=build/test.js \
-		--preload $(CPYTHONLIB)/test@/lib/python$(PYMINOR)/test
+		--preload $(CPYTHONLIB)/test@/lib/python$(PYMAJOR).$(PYMINOR)/test
 	npx terser build/test.js -o build/test.js
 
 
 build/distutils.data: $(CPYTHONLIB) node_modules/.installed
 	./tools/file_packager.sh build/distutils.data --js-output=build/distutils.js \
-		--preload $(CPYTHONLIB)/distutils@/lib/python$(PYMINOR)/distutils \
+		--preload $(CPYTHONLIB)/distutils@/lib/python$(PYMAJOR).$(PYMINOR)/distutils \
 		--exclude tests
 	npx terser build/distutils.js -o build/distutils.js
 
@@ -198,23 +206,29 @@ $(CPYTHONLIB): emsdk/emsdk/.complete $(PYODIDE_EMCC) $(PYODIDE_CXX)
 	make -C $(CPYTHONROOT)
 	date +"[%F %T] done building cpython..."
 
+
 build/packages.json: FORCE
 	date +"[%F %T] Building packages..."
 	make -C packages
 	date +"[%F %T] done building packages..."
+
 
 emsdk/emsdk/.complete:
 	date +"[%F %T] Building emsdk..."
 	make -C emsdk
 	date +"[%F %T] done building emsdk."
 
+
 FORCE:
+
 
 check:
 	./tools/dependency-check.sh
 
+
 minimal :
 	PYODIDE_PACKAGES+=",micropip" make
+
 
 debug :
 	EXTRA_CFLAGS+=" -D DEBUG_F" \
