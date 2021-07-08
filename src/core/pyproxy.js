@@ -31,7 +31,7 @@ Module.isPyProxy = isPyProxy;
 
 if (globalThis.FinalizationRegistry) {
   Module.finalizationRegistry = new FinalizationRegistry(([ptr, cache]) => {
-    pyproxy_destroy_cache(cache);
+    pyproxy_decref_cache(cache);
     try {
       Module._Py_DecRef(ptr);
     } catch (e) {
@@ -77,23 +77,16 @@ Module.disable_pyproxy_allocation_tracing = function () {
 Module.disable_pyproxy_allocation_tracing();
 
 /**
+ * Create a new PyProxy wraping ptrobj which is a PyObject*.
+ *
+ * The argument cache is only needed to implement the PyProxy.copy API, it
+ * allows the copy of the PyProxy to share its attribute cache with the original
+ * version. In all other cases, pyproxy_new should be called with one argument.
+ *
  * In the case that the Python object is callable, PyProxyClass inherits from
- * Function so that PyProxy objects can be callable.
- *
- * The following properties on a Python object will be shadowed in the proxy
- * in the case that the Python object is callable:
- *  - "arguments" and
- *  - "caller"
- *
- * Inheriting from Function has the unfortunate side effect that we MUST
- * expose the members "proxy.arguments" and "proxy.caller" because they are
- * nonconfigurable, nonwritable, nonenumerable own properties. They are just
- * always `null`.
- *
- * We also get the properties "length" and "name" which are configurable so we
- * delete them in the constructor. "prototype" is not configurable so we can't
- * delete it, however it *is* writable so we set it to be undefined. We must
- * still make "prototype in proxy" be true though.
+ * Function so that PyProxy objects can be callable. In that case we MUST expose
+ * certain properties inherited from Function, but we do our best to remove as
+ * many as possible.
  * @private
  */
 Module.pyproxy_new = function (ptrobj, cache) {
@@ -119,6 +112,8 @@ Module.pyproxy_new = function (ptrobj, cache) {
     target = Object.create(cls.prototype);
   }
   if (!cache) {
+    // The cache needs to be accessed primarily from the C function
+    // _pyproxy_getattr so we make a hiwire id.
     let cacheId = Module.hiwire.new_value(new Map());
     cache = { cacheId, refcnt: 0 };
   }
@@ -202,7 +197,7 @@ const pyproxy_cache_destroyed_msg =
   "This borrowed attribute proxy was automatically destroyed in the " +
   "process of destroying the proxy it was borrowed from. Try using the 'copy' method.";
 
-function pyproxy_destroy_cache(cache) {
+function pyproxy_decref_cache(cache) {
   if (!cache) {
     return;
   }
@@ -226,7 +221,7 @@ Module.pyproxy_destroy = function (proxy, destroyed_msg) {
   // just in case!
   proxy.$$.ptr = null;
   proxy.$$.destroyed_msg = destroyed_msg;
-  pyproxy_destroy_cache(proxy.$$.cache);
+  pyproxy_decref_cache(proxy.$$.cache);
   try {
     Module._Py_DecRef(ptrobj);
     trace_pyproxy_dealloc(proxy);

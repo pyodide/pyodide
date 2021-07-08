@@ -252,6 +252,13 @@ _pyproxy_getattr(PyObject* pyobj, JsRef idkey, JsRef proxyCache)
 
   pykey = js2python(idkey);
   FAIL_IF_NULL(pykey);
+  // If it's a method, we use the descriptor pointer as the cache key rather
+  // than the actual bound method. This allows us to reuse bound methods from
+  // the cache.
+  // _PyObject_GetMethod will return true and store a descriptor into pydescr if
+  // the attribute we are looking up is a method, otherwise it will return false
+  // and set pydescr to the actual attribute (in particular, I believe that it
+  // will resolve other types of getter descriptors automatically).
   int is_method = _PyObject_GetMethod(pyobj, pykey, &pydescr);
   FAIL_IF_NULL(pydescr);
   JsRef cached_proxy = proxy_cache_get(proxyCache, pydescr); /* borrowed */
@@ -273,6 +280,9 @@ _pyproxy_getattr(PyObject* pyobj, JsRef idkey, JsRef proxyCache)
   idresult = python2js(pyresult);
   FAIL_IF_NULL(idresult);
   if (pyproxy_Check(idresult)) {
+    // If a getter returns a different object every time, this could potentially
+    // fill up the cache with a lot of junk. However, there is no other option
+    // that makes sense from the point of the user.
     proxy_cache_set(proxyCache, pydescr, hiwire_incref(idresult));
     pyproxy_mark_borrowed(idresult);
   }
