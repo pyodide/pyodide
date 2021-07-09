@@ -220,7 +220,7 @@ jobs:
           command: |
             cd src/js
             npx tsd
-            npm i
+            npm install
             npm test
 
 

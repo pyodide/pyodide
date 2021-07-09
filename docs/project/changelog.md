@@ -45,6 +45,8 @@ substitutions:
   using {any}`pyodide.registerComlink`
   {pr}`1642`
 
+- {{ Enhancement }} Pyodide can experimentally be used in Node.js {pr}`1689`
+
 ## Standard library
 
 - The following standard library modules are now available as standalone packages
