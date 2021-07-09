@@ -14,7 +14,7 @@ export async function initializePackageIndex(indexURL) {
     fs.readFile(`${indexURL}packages.json`, (err, data) => {
       if (err) throw err;
       let response = JSON.parse(data);
-      Module.packages = response['packages'];
+      Module.packages = response["packages"];
     });
   } else {
     let response = await fetch(`${indexURL}packages.json`);
@@ -24,6 +24,7 @@ export async function initializePackageIndex(indexURL) {
     throw new Error(
       "Loaded packages.json does not contain the expected key 'packages'."
     );
+  }
 }
 
 ////////////////////////////////////////////////////////////
