@@ -186,6 +186,16 @@ jobs:
       - store_test_results:
           path: test-results
 
+  benchmark-stack-size:
+    <<: *defaults
+    steps:
+      - attach_workspace:
+          at: .
+      - run:
+          name: stack-size
+          command: |
+            pytest -s benchmark/stack_usage.py  | sed -n 's/## //pg'
+
   test-emsdk:
     <<: *defaults
     resource_class: small
@@ -220,7 +230,7 @@ jobs:
           command: |
             cd src/js
             npx tsd
-            npm i
+            npm install
             npm test
 
 
@@ -329,6 +339,9 @@ workflows:
           requires:
             - build-core
       - test-js:
+          requires:
+            - build-core
+      - benchmark-stack-size:
           requires:
             - build-core
       - benchmark:
