@@ -10,7 +10,12 @@ let baseURL;
 export async function initializePackageIndex(indexURL) {
   baseURL = indexURL;
   let response = await fetch(`${indexURL}packages.json`);
-  Module.packages = (await response.json()).packages;
+  Module.packages = (await response.json())["packages"];
+  if (typeof Module.packages === "undefined") {
+    throw new Error(
+      "Loaded packages.json does not contain the expected key 'packages'."
+    );
+  }
 }
 
 ////////////////////////////////////////////////////////////
@@ -56,24 +61,22 @@ function recursiveDependencies(
   errorCallback,
   sharedLibsOnly
 ) {
-  const packages = Module.packages.dependencies;
-  const sharedLibraries = Module.packages.shared_library;
   const toLoad = new Map();
 
-  const addPackage = (pkg) => {
-    pkg = pkg.toLowerCase();
-    if (toLoad.has(pkg)) {
+  const addPackage = (name) => {
+    name = name.toLowerCase();
+    if (toLoad.has(name)) {
       return;
     }
-    toLoad.set(pkg, DEFAULT_CHANNEL);
+    toLoad.set(name, DEFAULT_CHANNEL);
     // If the package is already loaded, we don't add dependencies, but warn
     // the user later. This is especially important if the loaded package is
     // from a custom url, in which case adding dependencies is wrong.
-    if (loadedPackages[pkg] !== undefined) {
+    if (loadedPackages[name] !== undefined) {
       return;
     }
-    for (let dep of packages[pkg]) {
-      addPackage(dep);
+    for (let dep_name of Module.packages[name].depends) {
+      addPackage(dep_name);
     }
   };
   for (let name of names) {
@@ -91,7 +94,7 @@ function recursiveDependencies(
       continue;
     }
     name = name.toLowerCase();
-    if (name in packages) {
+    if (name in Module.packages) {
       addPackage(name);
       continue;
     }
@@ -100,8 +103,9 @@ function recursiveDependencies(
   if (sharedLibsOnly) {
     let onlySharedLibs = new Map();
     for (let c of toLoad) {
-      if (c[0] in sharedLibraries) {
-        onlySharedLibs.set(c[0], toLoad.get(c[0]));
+      name = c[0];
+      if (!!Module.packages[name].shared_library) {
+        onlySharedLibs.set(name, toLoad.get(name));
       }
     }
     return onlySharedLibs;
@@ -155,7 +159,7 @@ async function _loadPackage(names, messageCallback, errorCallback) {
         continue;
       }
     }
-    let pkgname = Module.packages.orig_case[pkg] || pkg;
+    let pkgname = Module.packages[pkg]?.name || pkg;
     let scriptSrc = uri === DEFAULT_CHANNEL ? `${baseURL}${pkgname}.js` : uri;
     messageCallback(`Loading ${pkg} from ${scriptSrc}`);
     scriptPromises.push(
