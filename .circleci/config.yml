@@ -215,6 +215,7 @@ jobs:
           name: test
           command: |
             mkdir test-results
+            pip install ruamel.yaml
             pytest --junitxml=test-results/junit.xml src pyodide-build packages/micropip/ -v -k 'not (chrome or firefox)' --cov=pyodide_build --cov=pyodide
       - store_test_results:
           path: test-results
