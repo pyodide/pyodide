@@ -13,11 +13,11 @@ USER_HOME="/src/.docker_home"
 USER_NAME="$(id -u -n)"
 USER_PASS="x"
 USER_ID="$(id -u)"
-USER_GID=0
+USER_GID="$(id -g)"
 USER_COMMENT_FIELD="${USER_NAME} pyodide user alias"
 USER_INTERPRETER="/sbin/nologin"
 USER_ACCOUNT_INFO="${USER_NAME}:${USER_PASS}:${USER_ID}:${USER_GID}:${USER_COMMENT_FIELD}:${USER_HOME}:${USER_INTERPRETER}"
-USER_FLAG="--user $(id --user):$(id --group)"
+USER_FLAG="--user $USER_ID:$USER_GID"
 
 set -eo pipefail
 

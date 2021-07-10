@@ -45,6 +45,11 @@ substitutions:
   using {any}`pyodide.registerComlink`
   {pr}`1642`
 
+- {{ Enhancement }} Pyodide can experimentally be used in Node.js {pr}`1689`
+
+- {{ Enhancement }} Pyodide now exposes the emscripten `FS` module as `fileSystem`,
+  allowing for direct manipulation of the in-memory filesystem {pr}`1692`
+
 ## Standard library
 
 - The following standard library modules are now available as standalone packages
@@ -77,6 +82,10 @@ substitutions:
   `PyProxy.$destroy` refers to an attribute or method called `destroy` on the
   proxied object.
   {pr}`1604`
+- {{ API }} It is now possible to use `Symbol` keys with PyProxies. These
+  `Symbol` keys put markers on the PyProxy that can be used by external code.
+  They will not currently be copied by `PyProxy.copy`.
+  {pr}`1696`
 
 ### pyodide-build
 

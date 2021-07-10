@@ -87,10 +87,7 @@ node_modules/.installed : src/js/package.json
 	touch node_modules/.installed
 
 build/pyodide.js: src/js/*.js src/js/pyproxy.gen.js node_modules/.installed
-	npx typescript src/js/pyodide.js \
-		--lib ES2018 --allowJs \
-		--declaration --emitDeclarationOnly \
-		--outDir build
+	npx typescript --project src/js
 	npx rollup -c src/js/rollup.config.js
 
 src/js/pyproxy.gen.js : src/core/pyproxy.* src/core/*.h

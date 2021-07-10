@@ -8,10 +8,22 @@
     "rollup-plugin-terser": "^7.0.2",
     "tsd": "^0.15.1",
     "typescript": "^4.2.4",
-    "mocha": "^9.0.2"
+    "mocha": "^9.0.2",
+    "@types/emscripten": "^1.39.5"
   },
   "type": "module",
   "scripts": {
-    "test": "mocha"
+    "test": "mocha --timeout 15000"
+  },
+  "tsd": {
+    "compilerOptions": {
+      "lib": [
+        "ES2018",
+        "DOM"
+      ]
+    }
+  },
+  "dependencies": {
+    "node-fetch": "^2.6.1"
   }
 }

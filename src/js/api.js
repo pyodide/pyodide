@@ -7,6 +7,7 @@ export { loadPackage, loadedPackages, isPyProxy };
  * @typedef {import('./pyproxy.gen').Py2JsResult} Py2JsResult
  * @typedef {import('./pyproxy.gen').PyProxy} PyProxy
  * @typedef {import('./pyproxy.gen').TypedArray} TypedArray
+ * @typedef {import('emscripten')} Emscripten
  */
 
 /**
@@ -309,8 +310,23 @@ setInterruptBuffer = Module.setInterruptBuffer;
 export { setInterruptBuffer };
 
 export function makePublicAPI() {
+  /**
+   * An alias to the `Emscripten File System API
+   * <https://emscripten.org/docs/api_reference/Filesystem-API.html>`_.
+   *
+   * This provides a wide range of POSIX-`like` file/device operations, including
+   * `mount
+   * <https://emscripten.org/docs/api_reference/Filesystem-API.html#FS.mount>`_
+   * which can be used to extend the in-memory filesystem with features like `persistence
+   * <https://emscripten.org/docs/api_reference/Filesystem-API.html#persistent-data>`_.
+   *
+   * @type {FS} The Emscripten File System API.
+   */
+  const fileSystem = Module.FS;
+
   let namespace = {
     globals,
+    fileSystem,
     pyodide_py,
     version,
     loadPackage,
@@ -328,6 +344,7 @@ export function makePublicAPI() {
     PythonError,
     PyBuffer,
   };
+
   namespace._module = Module; // @private
   Module.public_api = namespace;
   return namespace;

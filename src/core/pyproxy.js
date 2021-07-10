@@ -829,9 +829,12 @@ let PyProxyHandlers = {
     if (objHasKey) {
       return true;
     }
-    // python_hasattr will crash when given a Symbol.
+    // python_hasattr will crash if given a Symbol.
     if (typeof jskey === "symbol") {
       return false;
+    }
+    if (jskey.startsWith("$")) {
+      jskey = jskey.slice(1);
     }
     return python_hasattr(jsobj, jskey);
   },
@@ -840,13 +843,12 @@ let PyProxyHandlers = {
     // 1. stuff from Javascript
     // 2. the result of Python getattr
 
-    // Javascript lookup -- make sure not to let symbols through, passing them
-    // to python_getattr will crash.
+    // python_getattr will crash if given a Symbol.
     if (jskey in jsobj || typeof jskey === "symbol") {
       return Reflect.get(jsobj, jskey);
     }
     // If keys start with $ remove the $. User can use initial $ to
-    // unambiguously ask for a key on the Python object
+    // unambiguously ask for a key on the Python object.
     if (jskey.startsWith("$")) {
       jskey = jskey.slice(1);
     }
@@ -857,33 +859,30 @@ let PyProxyHandlers = {
     }
   },
   set(jsobj, jskey, jsval) {
-    // We're only willing to set properties on the python object, throw an
-    // error if user tries to write over any key of type 1. things we have to
-    // return to avoid making Javascript angry
-    if (typeof jskey === "symbol") {
-      throw new TypeError(`Cannot set read only field '${jskey.description}'`);
-    }
-    // Again this is a funny looking conditional, I found it as the result of
-    // a lengthy search for something that worked right.
     let descr = Object.getOwnPropertyDescriptor(jsobj, jskey);
     if (descr && !descr.writable) {
       throw new TypeError(`Cannot set read only field '${jskey}'`);
+    }
+    // python_setattr will crash if given a Symbol.
+    if (typeof jskey === "symbol") {
+      return Reflect.set(jsobj, jskey, jsval);
+    }
+    if (jskey.startsWith("$")) {
+      jskey = jskey.slice(1);
     }
     python_setattr(jsobj, jskey, jsval);
     return true;
   },
   deleteProperty(jsobj, jskey) {
-    // We're only willing to delete properties on the python object, throw an
-    // error if user tries to write over any key of type 1. things we have to
-    // return to avoid making Javascript angry
-    if (typeof jskey === "symbol") {
-      throw new TypeError(
-        `Cannot delete read only field '${jskey.description}'`
-      );
-    }
     let descr = Object.getOwnPropertyDescriptor(jsobj, jskey);
     if (descr && !descr.writable) {
       throw new TypeError(`Cannot delete read only field '${jskey}'`);
+    }
+    if (typeof jskey === "symbol") {
+      return Reflect.deleteProperty(jsobj, jskey);
+    }
+    if (jskey.startsWith("$")) {
+      jskey = jskey.slice(1);
     }
     python_delattr(jsobj, jskey);
     // Must return "false" if "jskey" is a nonconfigurable own property.
