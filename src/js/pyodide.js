@@ -1,16 +1,16 @@
 /**
  * The main bootstrap code for loading pyodide.
  */
-import { Module } from "./module";
+import { Module } from "./module.js";
 import {
   loadScript,
   initializePackageIndex,
   loadPackage,
-} from "./load-pyodide";
-import { makePublicAPI, registerJsModule } from "./api";
-import "./pyproxy.gen";
+} from "./load-pyodide.js";
+import { makePublicAPI, registerJsModule } from "./api.js";
+import "./pyproxy.gen.js";
 
-import { wrapNamespace } from "./pyproxy.gen";
+import { wrapNamespace } from "./pyproxy.gen.js";
 
 /**
  * @typedef {import('./pyproxy.gen').PyProxy} PyProxy
@@ -188,9 +188,6 @@ export async function loadPyodide(config) {
   // See "--export-name=__pyodide_module" in buildpkg.py
   globalThis.__pyodide_module = Module;
   loadPyodide.inProgress = true;
-  // Note: PYODIDE_BASE_URL is an environment variable replaced in
-  // in this template in the Makefile. It's recommended to always set
-  // indexURL in any case.
   if (!config.indexURL) {
     throw new Error("Please provide indexURL parameter to loadPyodide");
   }
@@ -217,11 +214,23 @@ export async function loadPyodide(config) {
   // being called.
   await moduleLoaded;
 
-  // Bootstrap step: `runPython` needs access to `Module.globals` and
-  // `Module.pyodide_py`. Use `runPythonSimple` to add these. runPythonSimple
-  // doesn't dedent the argument so the indentation matters.
+  fixRecursionLimit();
+  let pyodide = makePublicAPI();
+
+  // Bootstrap steps:
+  //
+  //   1. _pyodide_core is ready now so we can call _pyodide.register_js_finder
+  //   2. Use the jsfinder to register the js and pyodide_js packages
+  //   3. Import pyodide, this requires _pyodide_core, js and pyodide_js to be
+  //      ready.
+  //   4. Add the pyodide_py and Python __main__.__dict__ objects to pyodide_js
   Module.runPythonSimple(`
-def temp(Module):
+def temp(pyodide_js, Module, jsglobals):
+  from _pyodide._importhook import register_js_finder
+  jsfinder = register_js_finder()
+  jsfinder.register_js_module("js", jsglobals)
+  jsfinder.register_js_module("pyodide_js", pyodide_js)
+
   import pyodide
   import __main__
   import builtins
@@ -233,27 +242,19 @@ def temp(Module):
   Module.globals = globals
   Module.builtins = builtins.__dict__
   Module.pyodide_py = pyodide
+  print("Python initialization complete")
 `);
 
-  Module.saveState = () => Module.pyodide_py._state.save_state();
-  Module.restoreState = (state) =>
-    Module.pyodide_py._state.restore_state(state);
-
-  Module.init_dict.get("temp")(Module);
+  Module.init_dict.get("temp")(pyodide, Module, globalThis);
   // Module.runPython works starting from here!
 
   // Wrap "globals" in a special Proxy that allows `pyodide.globals.x` access.
   // TODO: Should we have this?
   Module.globals = wrapNamespace(Module.globals);
 
-  fixRecursionLimit();
-  let pyodide = makePublicAPI();
   pyodide.globals = Module.globals;
   pyodide.pyodide_py = Module.pyodide_py;
   pyodide.version = Module.version;
-
-  registerJsModule("js", globalThis);
-  registerJsModule("pyodide_js", pyodide);
 
   await packageIndexReady;
   if (config.fullStdLib) {

@@ -5,8 +5,7 @@ from textwrap import dedent
 
 sys.path.append(str(Path(__file__).resolve().parents[2] / "src" / "py"))
 
-from pyodide import find_imports, eval_code  # noqa: E402
-from pyodide._base import CodeRunner, should_quiet  # noqa: E402
+from pyodide import find_imports, eval_code, CodeRunner, should_quiet  # noqa: E402
 
 
 def test_find_imports():
@@ -30,6 +29,7 @@ def test_code_runner():
 
     # Normal usage
     assert CodeRunner("1+1").compile().run() == 2
+    assert CodeRunner("1+1\n1+1").compile().run() == 2
     assert CodeRunner("x + 7").compile().run({"x": 3}) == 10
     cr = CodeRunner("x + 7")
 
@@ -45,6 +45,23 @@ def test_code_runner():
     # Code transform
     cr.code = cr.code.replace(co_consts=(0, 3, 5, None))
     assert cr.run({"x": 4}) == 17
+
+
+def test_code_runner_mode():
+    from codeop import PyCF_DONT_IMPLY_DEDENT
+
+    assert CodeRunner("1+1\n1+1", mode="exec").compile().run() == 2
+    with pytest.raises(SyntaxError, match="invalid syntax"):
+        CodeRunner("1+1\n1+1", mode="eval").compile().run()
+    with pytest.raises(
+        SyntaxError,
+        match="multiple statements found while compiling a single statement",
+    ):
+        CodeRunner("1+1\n1+1", mode="single").compile().run()
+    with pytest.raises(SyntaxError, match="unexpected EOF while parsing"):
+        CodeRunner(
+            "def f():\n  1", mode="single", flags=PyCF_DONT_IMPLY_DEDENT
+        ).compile().run()
 
 
 def test_eval_code():

@@ -5,7 +5,7 @@ sys.path.append(str(Path(__file__).resolve().parents[2] / "src" / "py"))
 
 import pytest  # type: ignore
 import time
-from pyodide._base import eval_code_async
+from pyodide import eval_code_async
 import asyncio
 
 
@@ -174,7 +174,7 @@ def test_await_fetch(selenium):
         """
     )
     time.sleep(0.1)
-    msg = "StopIteration: <!doctype html>"
+    msg = "StopIteration: <!DOCTYPE html>"
     with pytest.raises(selenium.JavascriptException, match=msg):
         selenium.run(
             """
@@ -249,7 +249,7 @@ def test_eval_code_await_jsproxy(selenium):
         from js import Promise
         from pyodide import create_once_callable
         p = Promise.new(create_once_callable(prom))
-        from pyodide._base import eval_code_async
+        from pyodide import eval_code_async
         c = eval_code_async(
             '''
             x = await p
@@ -275,7 +275,7 @@ def test_eval_code_await_fetch(selenium):
     selenium.run(
         """
         from js import fetch
-        from pyodide._base import eval_code_async
+        from pyodide import eval_code_async
         c = eval_code_async(
             '''
             response = await fetch("console.html")
@@ -293,7 +293,7 @@ def test_eval_code_await_fetch(selenium):
         """
     )
     time.sleep(0.1)
-    msg = "StopIteration: <!doctype html>"
+    msg = "StopIteration: <!DOCTYPE html>"
     with pytest.raises(selenium.JavascriptException, match=msg):
         selenium.run(
             """
@@ -312,7 +312,7 @@ def test_eval_code_await_error(selenium):
         window.async_js_raises = async_js_raises;
         pyodide.runPython(`
             from js import async_js_raises
-            from pyodide._base import eval_code_async
+            from pyodide import eval_code_async
             c = eval_code_async(
                 '''
                 await async_js_raises()

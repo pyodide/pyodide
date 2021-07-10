@@ -6,17 +6,13 @@
 
 #include <emscripten.h>
 
+#include "jsmemops.h"
 #include "jsproxy.h"
 #include "pyproxy.h"
 
-PyObject*
-_js2python_allocate_string(int size, int max_code_point)
-{
-  return PyUnicode_New(size, max_code_point);
-}
-
+// PyUnicodeDATA is a macro, we need to access it from Javascript
 void*
-_js2python_get_ptr(PyObject* obj)
+PyUnicode_Data(PyObject* obj)
 {
   return PyUnicode_DATA(obj);
 }
@@ -68,46 +64,26 @@ EM_JS_NUM(errcode, js2python_init, (), {
     // have Javascript write directly into its buffer.  We first need
     // to determine if is needs to be a 1-, 2- or 4-byte string, since
     // Python handles all 3.
-    let max_code_point = 0;
-    let length = value.length;
-    for (let i = 0; i < value.length; i++) {
-      let code_point = value.codePointAt(i);
-      max_code_point = Math.max(max_code_point, code_point);
-      if (code_point > 0xffff) {
-        // If we have a code point requiring UTF-16 surrogate pairs, the
-        // number of characters (codePoints) is less than value.length,
-        // so skip the next charCode and subtract 1 from the length.
-        i++;
-        length--;
-      }
+    let codepoints = [];
+    for (let c of value) {
+      codepoints.push(c.codePointAt(0));
     }
+    let max_code_point = Math.max(... codepoints);
 
-    let result = __js2python_allocate_string(length, max_code_point);
+    let result = _PyUnicode_New(codepoints.length, max_code_point);
     // clang-format off
     if (result === 0) {
       // clang-format on
       return 0;
     }
 
-    let ptr = __js2python_get_ptr(result);
+    let ptr = _PyUnicode_Data(result);
     if (max_code_point > 0xffff) {
-      ptr = ptr / 4;
-      for (let i = 0, j = 0; j < length; i++, j++) {
-        let code_point = value.codePointAt(i);
-        Module.HEAPU32[ptr + j] = code_point;
-        if (code_point > 0xffff) {
-          i++;
-        }
-      }
+      HEAPU32.subarray(ptr / 4, ptr / 4 + codepoints.length).set(codepoints);
     } else if (max_code_point > 0xff) {
-      ptr = ptr / 2;
-      for (let i = 0; i < length; i++) {
-        Module.HEAPU16[ptr + i] = value.codePointAt(i);
-      }
+      HEAPU16.subarray(ptr / 2, ptr / 2 + codepoints.length).set(codepoints);
     } else {
-      for (let i = 0; i < length; i++) {
-        Module.HEAPU8[ptr + i] = value.codePointAt(i);
-      }
+      HEAPU8.subarray(ptr, ptr + codepoints.length).set(codepoints);
     }
 
     return result;
@@ -115,9 +91,27 @@ EM_JS_NUM(errcode, js2python_init, (), {
 
   Module.__js2python_bigint = function(value)
   {
-    let ptr = stringToNewUTF8(value.toString(16));
-    let result = _PyLong_FromString(ptr, 0, 16);
-    _free(ptr);
+    let value_orig = value;
+    let length = 0;
+    if (value < 0) {
+      value = -value;
+    }
+    while (value) {
+      length++;
+      value >>= BigInt(32);
+    }
+    let stackTop = stackSave();
+    let ptr = stackAlloc(length * 4);
+    value = value_orig;
+    for (let i = 0; i < length; i++) {
+      DEREF_U32(ptr, i) = Number(value & BigInt(0xffffffff));
+      value >>= BigInt(32);
+    }
+    let result = __PyLong_FromByteArray(ptr,
+                                        length * 4 /* length in bytes */,
+                                        true /* little endian */,
+                                        true /* signed? */);
+    stackRestore(stackTop);
     return result;
   };
 

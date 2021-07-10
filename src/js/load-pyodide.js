@@ -1,4 +1,4 @@
-import { Module } from "./module";
+import { Module } from "./module.js";
 
 /** @typedef {import('./pyproxy.js').PyProxy} PyProxy */
 /** @private */
@@ -9,8 +9,17 @@ let baseURL;
  */
 export async function initializePackageIndex(indexURL) {
   baseURL = indexURL;
-  let response = await fetch(`${indexURL}packages.json`);
-  Module.packages = await response.json();
+  if (typeof process !== "undefined" && process.release.name !== "undefined") {
+    const fs = await import("fs");
+    fs.readFile(`${indexURL}packages.json`, (err, data) => {
+      if (err) throw err;
+      let response = JSON.parse(data);
+      Module.packages = response;
+    });
+  } else {
+    let response = await fetch(`${indexURL}packages.json`);
+    Module.packages = await response.json();
+  }
 }
 
 ////////////////////////////////////////////////////////////
@@ -33,15 +42,19 @@ function _uri_to_package_name(package_uri) {
  * @private
  */
 export let loadScript;
-if (self.document) {
+if (globalThis.document) {
   // browser
   loadScript = (url) => import(url);
-} else if (self.importScripts) {
+} else if (globalThis.importScripts) {
   // webworker
   loadScript = async (url) => {
     // This is async only for consistency
-    self.importScripts(url);
+    globalThis.importScripts(url);
   };
+} else if (typeof process !== "undefined" && process.release.name === "node") {
+  // running in Node.js
+  // TODO
+  loadScript = (url) => import(url);
 } else {
   throw new Error("Cannot determine runtime environment");
 }

@@ -20,7 +20,6 @@ source:
     - patches/make-int-return-values.patch
     - patches/fix-ieee754.patch
     - patches/rm-duplicate-symbols-link.patch
-    - patches/delay-ctypes-import.patch
     - patches/fix-getters.patch
     - patches/fix-random-double-fill.patch
 

@@ -17,7 +17,7 @@
  * See Makefile recipe for src/js/pyproxy.js
  */
 
-import { Module } from "../js/module";
+import { Module } from "../js/module.js";
 
 /**
  * Is the argument a :any:`PyProxy`?
@@ -797,9 +797,12 @@ let PyProxyHandlers = {
     if (objHasKey) {
       return true;
     }
-    // python_hasattr will crash when given a Symbol.
+    // python_hasattr will crash if given a Symbol.
     if (typeof jskey === "symbol") {
       return false;
+    }
+    if (jskey.startsWith("$")) {
+      jskey = jskey.slice(1);
     }
     return python_hasattr(jsobj, jskey);
   },
@@ -808,13 +811,12 @@ let PyProxyHandlers = {
     // 1. stuff from Javascript
     // 2. the result of Python getattr
 
-    // Javascript lookup -- make sure not to let symbols through, passing them
-    // to python_getattr will crash.
+    // python_getattr will crash if given a Symbol.
     if (jskey in jsobj || typeof jskey === "symbol") {
       return Reflect.get(jsobj, jskey);
     }
     // If keys start with $ remove the $. User can use initial $ to
-    // unambiguously ask for a key on the Python object
+    // unambiguously ask for a key on the Python object.
     if (jskey.startsWith("$")) {
       jskey = jskey.slice(1);
     }
@@ -825,33 +827,30 @@ let PyProxyHandlers = {
     }
   },
   set(jsobj, jskey, jsval) {
-    // We're only willing to set properties on the python object, throw an
-    // error if user tries to write over any key of type 1. things we have to
-    // return to avoid making Javascript angry
-    if (typeof jskey === "symbol") {
-      throw new TypeError(`Cannot set read only field '${jskey.description}'`);
-    }
-    // Again this is a funny looking conditional, I found it as the result of
-    // a lengthy search for something that worked right.
     let descr = Object.getOwnPropertyDescriptor(jsobj, jskey);
     if (descr && !descr.writable) {
       throw new TypeError(`Cannot set read only field '${jskey}'`);
+    }
+    // python_setattr will crash if given a Symbol.
+    if (typeof jskey === "symbol") {
+      return Reflect.set(jsobj, jskey, jsval);
+    }
+    if (jskey.startsWith("$")) {
+      jskey = jskey.slice(1);
     }
     python_setattr(jsobj, jskey, jsval);
     return true;
   },
   deleteProperty(jsobj, jskey) {
-    // We're only willing to delete properties on the python object, throw an
-    // error if user tries to write over any key of type 1. things we have to
-    // return to avoid making Javascript angry
-    if (typeof jskey === "symbol") {
-      throw new TypeError(
-        `Cannot delete read only field '${jskey.description}'`
-      );
-    }
     let descr = Object.getOwnPropertyDescriptor(jsobj, jskey);
     if (descr && !descr.writable) {
       throw new TypeError(`Cannot delete read only field '${jskey}'`);
+    }
+    if (typeof jskey === "symbol") {
+      return Reflect.deleteProperty(jsobj, jskey);
+    }
+    if (jskey.startsWith("$")) {
+      jskey = jskey.slice(1);
     }
     python_delattr(jsobj, jskey);
     // Must return "false" if "jskey" is a nonconfigurable own property.
@@ -1080,41 +1079,39 @@ class PyProxyBufferMethods {
         throw new Error(`Unknown type ${type}`);
       }
     }
+    let HEAPU32 = Module.HEAPU32;
+    let orig_stack_ptr = Module.stackSave();
+    let buffer_struct_ptr = Module.stackAlloc(
+      DEREF_U32(Module._buffer_struct_size, 0)
+    );
     let this_ptr = _getPtr(this);
-    let buffer_struct_ptr;
+    let errcode;
     try {
-      buffer_struct_ptr = Module.__pyproxy_get_buffer(this_ptr);
+      errcode = Module.__pyproxy_get_buffer(buffer_struct_ptr, this_ptr);
     } catch (e) {
       Module.fatal_error(e);
     }
-    if (buffer_struct_ptr === 0) {
+    if (errcode === -1) {
       Module._pythonexc2js();
     }
 
-    let HEAP32 = Module.HEAP32;
-    // This has to match the order of the fields in buffer_struct
-    let cur_ptr = buffer_struct_ptr / 4;
+    // This has to match the fields in buffer_struct
+    let startByteOffset = DEREF_U32(buffer_struct_ptr, 0);
+    let minByteOffset = DEREF_U32(buffer_struct_ptr, 1);
+    let maxByteOffset = DEREF_U32(buffer_struct_ptr, 2);
 
-    let startByteOffset = HEAP32[cur_ptr++];
-    let minByteOffset = HEAP32[cur_ptr++];
-    let maxByteOffset = HEAP32[cur_ptr++];
+    let readonly = !!DEREF_U32(buffer_struct_ptr, 3);
+    let format_ptr = DEREF_U32(buffer_struct_ptr, 4);
+    let itemsize = DEREF_U32(buffer_struct_ptr, 5);
+    let shape = Module.hiwire.pop_value(DEREF_U32(buffer_struct_ptr, 6));
+    let strides = Module.hiwire.pop_value(DEREF_U32(buffer_struct_ptr, 7));
 
-    let readonly = !!HEAP32[cur_ptr++];
-    let format_ptr = HEAP32[cur_ptr++];
-    let itemsize = HEAP32[cur_ptr++];
-    let shape = Module.hiwire.pop_value(HEAP32[cur_ptr++]);
-    let strides = Module.hiwire.pop_value(HEAP32[cur_ptr++]);
-
-    let view_ptr = HEAP32[cur_ptr++];
-    let c_contiguous = !!HEAP32[cur_ptr++];
-    let f_contiguous = !!HEAP32[cur_ptr++];
+    let view_ptr = DEREF_U32(buffer_struct_ptr, 8);
+    let c_contiguous = !!DEREF_U32(buffer_struct_ptr, 9);
+    let f_contiguous = !!DEREF_U32(buffer_struct_ptr, 10);
 
     let format = Module.UTF8ToString(format_ptr);
-    try {
-      Module._PyMem_Free(buffer_struct_ptr);
-    } catch (e) {
-      Module.fatal_error(e);
-    }
+    Module.stackRestore(orig_stack_ptr);
 
     let success = false;
     try {
@@ -1153,7 +1150,7 @@ class PyProxyBufferMethods {
       if (numBytes === 0) {
         data = new ArrayType();
       } else {
-        data = new ArrayType(HEAP32.buffer, minByteOffset, numEntries);
+        data = new ArrayType(HEAPU32.buffer, minByteOffset, numEntries);
       }
       for (let i of strides.keys()) {
         strides[i] /= alignment;

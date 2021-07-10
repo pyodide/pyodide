@@ -6,6 +6,7 @@
 #include "docstring.h"
 #include "hiwire.h"
 #include "js2python.h"
+#include "jsmemops.h" // for pyproxy.js
 #include "jsproxy.h"
 #include "python2js.h"
 
@@ -501,7 +502,7 @@ _pyproxyGen_Send(PyObject* receiver, JsRef jsval)
     retval = Py_TYPE(receiver)->tp_iternext(receiver);
   } else {
     _Py_IDENTIFIER(send);
-    retval = _PyObject_CallMethodIdObjArgs(receiver, &PyId_send, v, NULL);
+    retval = _PyObject_CallMethodIdOneArg(receiver, &PyId_send, v);
   }
   FAIL_IF_NULL(retval);
 
@@ -626,7 +627,7 @@ FutureDoneCallback_call(FutureDoneCallback* self,
   if (!PyArg_UnpackTuple(args, "future_done_callback", 1, 1, &fut)) {
     return NULL;
   }
-  PyObject* result = _PyObject_CallMethodIdObjArgs(fut, &PyId_result, NULL);
+  PyObject* result = _PyObject_CallMethodIdNoArgs(fut, &PyId_result);
   int errcode;
   if (result != NULL) {
     errcode = FutureDoneCallback_call_resolve(self, result);
@@ -683,12 +684,11 @@ _pyproxy_ensure_future(PyObject* pyobject,
   PyObject* future = NULL;
   PyObject* callback = NULL;
   PyObject* retval = NULL;
-  future =
-    _PyObject_CallMethodIdObjArgs(asyncio, &PyId_ensure_future, pyobject, NULL);
+  future = _PyObject_CallMethodIdOneArg(asyncio, &PyId_ensure_future, pyobject);
   FAIL_IF_NULL(future);
   callback = FutureDoneCallback_cnew(resolve_handle, reject_handle);
-  retval = _PyObject_CallMethodIdObjArgs(
-    future, &PyId_add_done_callback, callback, NULL);
+  retval =
+    _PyObject_CallMethodIdOneArg(future, &PyId_add_done_callback, callback);
   FAIL_IF_NULL(retval);
 
   success = true;
@@ -738,6 +738,8 @@ typedef struct
   int f_contiguous;
 } buffer_struct;
 
+size_t buffer_struct_size = sizeof(buffer_struct);
+
 /**
  * This is the C part of the getBuffer method.
  *
@@ -758,8 +760,8 @@ typedef struct
  * We also put the various other metadata about the buffer that we want to share
  * into buffer_struct.
  */
-buffer_struct*
-_pyproxy_get_buffer(PyObject* ptrobj)
+int
+_pyproxy_get_buffer(buffer_struct* target, PyObject* ptrobj)
 {
   Py_buffer view;
   // PyBUF_RECORDS_RO requires that suboffsets be NULL but otherwise is the most
@@ -767,7 +769,7 @@ _pyproxy_get_buffer(PyObject* ptrobj)
   if (PyObject_GetBuffer(ptrobj, &view, PyBUF_RECORDS_RO) == -1) {
     // Buffer cannot be represented without suboffsets. The bf_getbuffer method
     // should have set a PyExc_BufferError saying something to this effect.
-    return NULL;
+    return -1;
   }
 
   bool success = false;
@@ -831,16 +833,13 @@ finally:
     // Py_Buffer.release().
     result.view = (Py_buffer*)PyMem_Malloc(sizeof(Py_buffer));
     *result.view = view;
-    // The result_heap memory will be freed by getBuffer
-    buffer_struct* result_heap =
-      (buffer_struct*)PyMem_Malloc(sizeof(buffer_struct));
-    *result_heap = result;
-    return result_heap;
+    *target = result;
+    return 0;
   } else {
     hiwire_CLEAR(result.shape);
     hiwire_CLEAR(result.strides);
     PyBuffer_Release(&view);
-    return NULL;
+    return -1;
   }
 }
 
@@ -969,7 +968,7 @@ pyproxy_init(PyObject* core)
 {
   bool success = false;
 
-  PyObject* docstring_source = PyImport_ImportModule("_pyodide._core");
+  PyObject* docstring_source = PyImport_ImportModule("_pyodide._core_docs");
   FAIL_IF_NULL(docstring_source);
   FAIL_IF_MINUS_ONE(
     add_methods_and_set_docstrings(core, methods, docstring_source));

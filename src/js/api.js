@@ -1,6 +1,6 @@
-import { Module } from "./module";
-import { loadPackage, loadedPackages } from "./load-pyodide";
-import { isPyProxy, PyBuffer } from "./pyproxy.gen";
+import { Module } from "./module.js";
+import { loadPackage, loadedPackages } from "./load-pyodide.js";
+import { isPyProxy, PyBuffer } from "./pyproxy.gen.js";
 export { loadPackage, loadedPackages, isPyProxy };
 
 /**
@@ -310,6 +310,16 @@ export function toPy(obj, depth = -1) {
   }
   return Module.hiwire.pop_value(result);
 }
+
+/**
+ * @private
+ */
+Module.saveState = () => Module.pyodide_py._state.save_state();
+
+/**
+ * @private
+ */
+Module.restoreState = (state) => Module.pyodide_py._state.restore_state(state);
 
 /**
  * @param {TypedArray} interrupt_buffer

@@ -1,6 +1,7 @@
 import ast
 import asyncio
 import code
+from codeop import Compile, CommandCompiler, _features  # type: ignore
 from contextlib import (
     contextmanager,
     redirect_stdout,
@@ -14,14 +15,14 @@ import sys
 import traceback
 from typing import Optional, Callable, Any, List, Tuple
 
-
-from ._base import eval_code_async
+from _pyodide._base import eval_code_async, should_quiet, CodeRunner
+from ._core import IN_BROWSER
 
 # this import can fail when we are outside a browser (e.g. for tests)
-try:
+if IN_BROWSER:
     from pyodide_js import loadPackagesFromImports as _load_packages_from_imports
     from asyncio import ensure_future
-except ImportError:
+else:
     from asyncio import Future
 
     def ensure_future(co):  # type: ignore
@@ -87,6 +88,74 @@ class _ReadStream:
 
     def flush(self):
         pass
+
+
+class _CodeRunnerCompile(Compile):
+    """Compile code with CodeRunner, and remember future imports
+
+    Instances of this class behave much like the built-in compile function,
+    but if one is used to compile text containing a future statement, it
+    "remembers" and compiles all subsequent program texts with the statement in
+    force. It uses CodeRunner instead of the built in compile.
+    """
+
+    def __init__(
+        self,
+        *,
+        return_mode="last_expr",
+        quiet_trailing_semicolon=True,
+        flags=0x0,
+    ):
+        super().__init__()
+        self.flags |= flags
+        self.return_mode = return_mode
+        self.quiet_trailing_semicolon = quiet_trailing_semicolon
+
+    def __call__(self, source, filename, symbol) -> CodeRunner:  # type: ignore
+        return_mode = self.return_mode
+        if self.quiet_trailing_semicolon and should_quiet(source):
+            return_mode = None
+        code_runner = CodeRunner(
+            source,
+            mode=symbol,
+            filename=filename,
+            return_mode=return_mode,
+            flags=self.flags,
+        ).compile()
+        for feature in _features:
+            if code_runner.code.co_flags & feature.compiler_flag:
+                self.flags |= feature.compiler_flag
+        return code_runner
+
+
+class _CodeRunnerCommandCompiler(CommandCompiler):
+    """Compile code with CodeRunner, and remember future imports, return None if
+    code is incomplete.
+
+    Instances of this class have __call__ methods identical in signature to
+    compile; the difference is that if the instance compiles program text
+    containing a __future__ statement, the instance 'remembers' and compiles all
+    subsequent program texts with the statement in force.
+
+    If the source is determined to be incomplete, will suppress the SyntaxError
+    and return ``None``.
+    """
+
+    def __init__(
+        self,
+        *,
+        return_mode="last_expr",
+        quiet_trailing_semicolon=True,
+        flags=0x0,
+    ):
+        self.compiler = _CodeRunnerCompile(
+            return_mode=return_mode,
+            quiet_trailing_semicolon=quiet_trailing_semicolon,
+            flags=flags,
+        )
+
+    def __call__(self, source, filename="<console>", symbol="single") -> CodeRunner:  # type: ignore
+        return super().__call__(source, filename, symbol)  # type: ignore
 
 
 class _InteractiveConsole(code.InteractiveConsole):
