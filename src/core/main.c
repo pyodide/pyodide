@@ -82,17 +82,26 @@ PyObject* init_dict;
  * The C code for runPythonSimple. The definition of runPythonSimple is in
  * `pyodide.js` for greater visibility.
  */
-void
+int
 run_python_simple_inner(char* code)
 {
   PyObject* result = PyRun_String(code, Py_file_input, init_dict, init_dict);
-  if (result == NULL) {
-    pythonexc2js();
-  } else {
-    Py_DECREF(result);
-  }
+  Py_XDECREF(result);
+  return result ? 0 : -1;
 }
 
+// from numpy_patch.c (no need for a header just for this)
+int
+numpy_patch_init();
+
+/**
+ * Bootstrap steps here:
+ *  1. Initialize init_dict so that runPythonSimple will work.
+ *  2. Initialize the different ffi components and create the _pyodide_core
+ *     module
+ *  3. Create a PyProxy wrapper around init_dict so that Javascript can retreive
+ *     PyProxies from the runPythonSimple namespace.
+ */
 int
 main(int argc, char** argv)
 {
@@ -115,15 +124,31 @@ main(int argc, char** argv)
     FATAL_ERROR("JsRef doesn't have the same size as int.");
   }
 
+  PyObject* _pyodide = NULL;
   PyObject* core_module = NULL;
+  JsRef init_dict_proxy = NULL;
+
+  _pyodide = PyImport_ImportModule("_pyodide");
+  if (_pyodide == NULL) {
+    FATAL_ERROR("Failed to import _pyodide module");
+  }
+
   core_module = PyModule_Create(&core_module_def);
   if (core_module == NULL) {
     FATAL_ERROR("Failed to create core module.");
   }
 
+  EM_ASM({
+    // For some reason emscripten doesn't make UTF8ToString available on Module
+    // by default...
+    Module.UTF8ToString = UTF8ToString;
+    Module.wasmTable = wasmTable;
+  });
+
   TRY_INIT_WITH_CORE_MODULE(error_handling);
   TRY_INIT(hiwire);
   TRY_INIT(docstring);
+  TRY_INIT(numpy_patch);
   TRY_INIT(js2python);
   TRY_INIT_WITH_CORE_MODULE(python2js);
   TRY_INIT(python2js_buffer);
@@ -131,25 +156,21 @@ main(int argc, char** argv)
   TRY_INIT_WITH_CORE_MODULE(pyproxy);
   TRY_INIT(keyboard_interrupt);
 
-  PyObject* module_dict = PyImport_GetModuleDict(); // borrowed
+  PyObject* module_dict = PyImport_GetModuleDict(); /* borrowed */
   if (PyDict_SetItemString(module_dict, "_pyodide_core", core_module)) {
     FATAL_ERROR("Failed to add '_pyodide_core' module to modules dict.");
   }
 
-  // Enable Javascript access to the global variables from runPythonSimple.
-  JsRef init_dict_proxy = python2js(init_dict);
+  // Enable Javascript access to the globals from runPythonSimple.
+  init_dict_proxy = python2js(init_dict);
   if (init_dict_proxy == NULL) {
     FATAL_ERROR("Failed to create init_dict proxy.");
   }
   EM_ASM({ Module.init_dict = Module.hiwire.pop_value($0); }, init_dict_proxy);
 
-  PyObject* pyodide = PyImport_ImportModule("pyodide");
-  if (pyodide == NULL) {
-    FATAL_ERROR("Failed to import pyodide module");
-  }
+  Py_CLEAR(_pyodide);
   Py_CLEAR(core_module);
-  Py_CLEAR(pyodide);
-  printf("Python initialization complete\n");
+  hiwire_CLEAR(init_dict_proxy);
   emscripten_exit_with_live_runtime();
   return 0;
 }

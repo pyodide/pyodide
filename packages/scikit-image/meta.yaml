@@ -6,10 +6,11 @@ source:
   - patches/no-openmp.patch
   - patches/unwrap.patch
   - patches/preferred_plugins.patch
-  sha256: df111e654b47e5ea456c50553debe4c5ddd97258894c7ad3b7f2f9f10798e053
-  url: https://files.pythonhosted.org/packages/e0/46/ca035f5d7d3414124a3a5ef22cd2e75c0c5149042a668375f1d44eb69f8f/scikit-image-0.15.0.tar.gz
+  sha256: 312dc7c49e3abdb90a42967fcf6129f0c9a45bd65f74b0cd3591390929b31a70
+  url: https://github.com/scikit-image/scikit-image/archive/refs/tags/v0.15.0.tar.gz
 requirements:
   run:
+    - distutils
     - numpy
     - scipy
     - matplotlib

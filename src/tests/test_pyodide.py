@@ -3,10 +3,9 @@ from pathlib import Path
 import sys
 from textwrap import dedent
 
-sys.path.append(str(Path(__file__).parents[2] / "src" / "pyodide-py"))
+sys.path.append(str(Path(__file__).resolve().parents[2] / "src" / "py"))
 
-from pyodide import find_imports, eval_code  # noqa: E402
-from pyodide._base import CodeRunner  # noqa: E402
+from pyodide import find_imports, eval_code, CodeRunner, should_quiet  # noqa: E402
 
 
 def test_find_imports():
@@ -24,29 +23,45 @@ def test_find_imports():
 
 
 def test_code_runner():
-    runner = CodeRunner()
-    assert runner.quiet("1+1;")
-    assert not runner.quiet("1+1#;")
-    assert not runner.quiet("5-2  # comment with trailing semicolon ;")
-    assert runner.run("4//2\n") == 2
-    assert runner.run("4//2;") is None
-    assert runner.run("x = 2\nx") == 2
-    assert runner.run("def f(x):\n    return x*x+1\n[f(x) for x in range(6)]") == [
-        1,
-        2,
-        5,
-        10,
-        17,
-        26,
-    ]
+    assert should_quiet("1+1;")
+    assert not should_quiet("1+1#;")
+    assert not should_quiet("5-2  # comment with trailing semicolon ;")
 
-    # with 'quiet_trailing_semicolon' set to False
-    runner = CodeRunner(quiet_trailing_semicolon=False)
-    assert not runner.quiet("1+1;")
-    assert not runner.quiet("1+1#;")
-    assert not runner.quiet("5-2  # comment with trailing semicolon ;")
-    assert runner.run("4//2\n") == 2
-    assert runner.run("4//2;") == 2
+    # Normal usage
+    assert CodeRunner("1+1").compile().run() == 2
+    assert CodeRunner("1+1\n1+1").compile().run() == 2
+    assert CodeRunner("x + 7").compile().run({"x": 3}) == 10
+    cr = CodeRunner("x + 7")
+
+    # Ast transform
+    import ast
+
+    l = cr.ast.body[0].value.left
+    cr.ast.body[0].value.left = ast.BinOp(
+        left=l, op=ast.Mult(), right=ast.Constant(value=2)
+    )
+    assert cr.compile().run({"x": 3}) == 13
+
+    # Code transform
+    cr.code = cr.code.replace(co_consts=(0, 3, 5, None))
+    assert cr.run({"x": 4}) == 17
+
+
+def test_code_runner_mode():
+    from codeop import PyCF_DONT_IMPLY_DEDENT
+
+    assert CodeRunner("1+1\n1+1", mode="exec").compile().run() == 2
+    with pytest.raises(SyntaxError, match="invalid syntax"):
+        CodeRunner("1+1\n1+1", mode="eval").compile().run()
+    with pytest.raises(
+        SyntaxError,
+        match="multiple statements found while compiling a single statement",
+    ):
+        CodeRunner("1+1\n1+1", mode="single").compile().run()
+    with pytest.raises(SyntaxError, match="unexpected EOF while parsing"):
+        CodeRunner(
+            "def f():\n  1", mode="single", flags=PyCF_DONT_IMPLY_DEDENT
+        ).compile().run()
 
 
 def test_eval_code():
@@ -198,7 +213,12 @@ def test_hiwire_is_promise(selenium):
 
     assert not selenium.run_js(
         """
-        return pyodide._module.hiwire.isPromise(pyodide.globals);
+        let d = pyodide.runPython("{}");
+        try {
+            return pyodide._module.hiwire.isPromise(d);
+        } finally {
+            d.destroy();
+        }
         """
     )
 
@@ -236,6 +256,15 @@ def test_run_python_async_toplevel_await(selenium):
             json = await resp.json()
             assert hasattr(json, "dependencies")
         `);
+        """
+    )
+
+
+def test_run_python_proxy_leak(selenium):
+    selenium.run_js(
+        """
+        pyodide.runPython("")
+        await pyodide.runPythonAsync("")
         """
     )
 
@@ -366,7 +395,7 @@ def test_create_proxy(selenium):
             assert sys.getrefcount(f) == 3
             assert testCallListener() == 7
             assert sys.getrefcount(f) == 3
-            assert testRemoveListener(f)
+            assert testRemoveListener(proxy)
             assert sys.getrefcount(f) == 3
             proxy.destroy()
             assert sys.getrefcount(f) == 2
@@ -416,6 +445,7 @@ def test_docstrings_b(selenium):
 
 
 @pytest.mark.skip_refcount_check
+@pytest.mark.skip_pyproxy_check
 def test_restore_state(selenium):
     selenium.run_js(
         """
@@ -472,12 +502,20 @@ def test_fatal_error(selenium_standalone):
         }
         """
     )
+    import re
+
+    def strip_stack_trace(x):
+        x = re.sub("\n.*site-packages.*", "", x)
+        x = re.sub("/lib/python.*/", "", x)
+        return x
+
     assert (
-        selenium_standalone.logs
+        strip_stack_trace(selenium_standalone.logs)
         == dedent(
-            """
+            strip_stack_trace(
+                """
             Python initialization complete
-            Pyodide has suffered a fatal error, refresh the page. Please report this to the Pyodide maintainers.
+            Pyodide has suffered a fatal error. Please report this to the Pyodide maintainers.
             The cause of the fatal error was:
             {}
             Stack (most recent call first):
@@ -485,8 +523,42 @@ def test_fatal_error(selenium_standalone):
               File "<exec>", line 6 in g
               File "<exec>", line 4 in f
               File "<exec>", line 9 in <module>
-              File "/lib/python3.8/site-packages/pyodide/_base.py", line 242 in run
-              File "/lib/python3.8/site-packages/pyodide/_base.py", line 344 in eval_code
+              File "/lib/pythonxxx/site-packages/pyodide/_base.py", line 242 in run
+              File "/lib/pythonxxx/site-packages/pyodide/_base.py", line 344 in eval_code
             """
+            )
         ).strip()
     )
+    selenium_standalone.run_js(
+        """
+        assertThrows(() => pyodide.runPython, "Error", "Pyodide already fatally failed and can no longer be used.")
+        assertThrows(() => pyodide.globals, "Error", "Pyodide already fatally failed and can no longer be used.")
+        assert(() => pyodide._module.runPython("1+1") === 2);
+        """
+    )
+
+
+def test_reentrant_error(selenium):
+    caught = selenium.run_js(
+        """
+        function a(){
+            pyodide.globals.get("pyfunc")();
+        }
+        let caught = false;
+        try {
+            pyodide.runPython(`
+                def pyfunc():
+                    raise KeyboardInterrupt
+                from js import a
+                try:
+                    a()
+                except Exception as e:
+                    pass
+            `);
+        } catch(e){
+            caught = true;
+        }
+        return caught;
+        """
+    )
+    assert caught

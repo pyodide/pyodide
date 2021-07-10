@@ -3,11 +3,11 @@ version: 2
 defaults: &defaults
   working_directory: ~/repo
   docker:
-    - image: iodide/pyodide-env:12
+    - image: pyodide/pyodide-env:18
   environment:
-    - EMSDK_NUM_CORES: 4
-      EMCC_CORES: 4
-      PYODIDE_BASE_URL: https://cdn.jsdelivr.net/pyodide/dev/full/
+    - EMSDK_NUM_CORES: 3
+      EMCC_CORES: 3
+      PYODIDE_JOBS: 3
 
 jobs:
   lint:
@@ -21,12 +21,8 @@ jobs:
           command: make lint
 
   test-docs:
-    working_directory: ~/repo
+    <<: *defaults
     resource_class: small
-
-    docker:
-      - image: cimg/python:3.8.2-node
-
     steps:
       - checkout
 
@@ -34,8 +30,6 @@ jobs:
           name: Install prerequisites
           command: |
             pip install -r docs/requirements-doc.txt
-            pip install pytest
-            sudo npm install -g jsdoc
 
       - run:
           name: Test docs
@@ -72,7 +66,7 @@ jobs:
           command: |
             ccache -z
             # The following packages are currently used in the main pyodide test suite
-            PYODIDE_PACKAGES="micropip,pyparsing,pytz,packaging,kiwisolver" make
+            PYODIDE_PACKAGES="micropip,pyparsing,pytz,packaging,Jinja2" make
             ccache -s
 
       - run:
@@ -95,9 +89,6 @@ jobs:
           paths:
             - .
 
-      - run:
-          name: Prepare CircleCI artifacts
-          command: PYODIDE_BASE_URL="./" make build/console.html
 
       - store_artifacts:
           path: /root/repo/build/
@@ -119,7 +110,7 @@ jobs:
           no_output_timeout: 1800
           command: |
             ccache -z
-            make
+            make -C packages
             ccache -s
 
       - run:
@@ -136,12 +127,12 @@ jobs:
           paths:
             - ./packages/.artifacts
             - ./build
-      - run:
-          name: Prepare CircleCI artifacts
-          command: PYODIDE_BASE_URL="./" make build/console.html
 
       - store_artifacts:
           path: /root/repo/build/
+
+      - store_artifacts:
+          path: /root/repo/packages/build-logs
 
   test-core-firefox:
     <<: *defaults
@@ -151,7 +142,10 @@ jobs:
       - run:
           name: test
           command: |
-            tools/pytest_wrapper.py src packages/micropip/ -v -k firefox -n 3
+            mkdir test-results
+            tools/pytest_wrapper.py --junitxml=test-results/junit.xml src packages/micropip/ -v -k firefox -n 3
+      - store_test_results:
+          path: test-results
 
   test-core-chrome:
     <<: *defaults
@@ -161,7 +155,10 @@ jobs:
       - run:
           name: test
           command: |
-            tools/pytest_wrapper.py src packages/micropip/ -v -k chrome -n 3
+            mkdir test-results
+            tools/pytest_wrapper.py --junitxml=test-results/junit.xml src packages/micropip/ -v -k chrome
+      - store_test_results:
+          path: test-results
 
   test-packages-firefox:
     <<: *defaults
@@ -171,7 +168,10 @@ jobs:
       - run:
           name: test
           command: |
-            tools/pytest_wrapper.py packages/test* packages/*/test* -v -k firefox -n 2
+            mkdir test-results
+            tools/pytest_wrapper.py --junitxml=test-results/junit.xml packages/test* packages/*/test* -v -k firefox
+      - store_test_results:
+          path: test-results
 
   test-packages-chrome:
     <<: *defaults
@@ -181,7 +181,20 @@ jobs:
       - run:
           name: test
           command: |
-            tools/pytest_wrapper.py packages/test* packages/*/test* -v -k chrome -n 2
+            mkdir test-results
+            tools/pytest_wrapper.py --junitxml=test-results/junit.xml packages/test* packages/*/test* -v -k chrome -n 2
+      - store_test_results:
+          path: test-results
+
+  benchmark-stack-size:
+    <<: *defaults
+    steps:
+      - attach_workspace:
+          at: .
+      - run:
+          name: stack-size
+          command: |
+            pytest -s benchmark/stack_usage.py  | sed -n 's/## //pg'
 
   test-emsdk:
     <<: *defaults
@@ -201,7 +214,25 @@ jobs:
       - run:
           name: test
           command: |
-            pytest src pyodide_build packages/micropip/ -v -k 'not (chrome or firefox)' --cov=pyodide_build --cov=pyodide
+            mkdir test-results
+            pytest --junitxml=test-results/junit.xml src pyodide-build packages/micropip/ -v -k 'not (chrome or firefox)' --cov=pyodide_build --cov=pyodide
+      - store_test_results:
+          path: test-results
+
+  test-js:
+    <<: *defaults
+    resource_class: small
+    steps:
+      - attach_workspace:
+          at: .
+      - run:
+          name: test
+          command: |
+            cd src/js
+            npx tsd
+            npm install
+            npm test
+
 
   benchmark:
     <<: *defaults
@@ -217,6 +248,8 @@ jobs:
           path: /root/repo/build/benchmarks.json
 
   deploy-release:
+    # To reduce chance of deployment issues, try to keep the steps here as
+    # similar as possible to the steps in deploy-dev!
     resource_class: small
 
     docker:
@@ -229,7 +262,7 @@ jobs:
       - run:
           name: Install requirements
           command: |
-            apk add --no-cache --update python3
+            apk add --no-cache --update python3 make
             python3 -m pip install awscli
       - run:
           name: Deploy Github Releases
@@ -240,6 +273,9 @@ jobs:
             ghr -t "${GITHUB_TOKEN}" -u "${CIRCLE_PROJECT_USERNAME}" -r "${CIRCLE_PROJECT_REPONAME}" -c "${CIRCLE_SHA1}" -delete  "${CIRCLE_TAG}" ./pyodide-build-${CIRCLE_TAG}.tar.bz2
 
       - run:
+          name: Set PYODIDE_BASE_URL
+          command: PYODIDE_BASE_URL="https://cdn.jsdelivr.net/pyodide/v${CIRCLE_TAG}/full/" make update_base_url
+      - run:
           name: Deploy to pyodide-cdn2.iodide.io
           command: |
             find build/ -type f -exec sh -c "echo \"Compressing {}\"; gzip {}; mv {}.gz {};" \;
@@ -248,11 +284,13 @@ jobs:
             # update 301 redirect for the /latest/* route.
             aws s3api put-bucket-website --cli-input-json file://.circleci/s3-website-config.json
 
-  deploy-s3:
+  deploy-dev:
+    # To reduce chance of deployment issues, try to keep the steps here as
+    # similar as possible to the steps in deploy-release!
     resource_class: small
 
     docker:
-      - image: circleci/python:3.7.7
+      - image: cibuilds/github:0.13
 
     steps:
       - checkout
@@ -261,9 +299,11 @@ jobs:
       - run:
           name: Install requirements
           command: |
-            sudo apt-get update
-            sudo apt-get install -y groff
+            apk add --no-cache --update python3 make
             python3 -m pip install awscli
+      - run:
+          name: Set PYODIDE_BASE_URL
+          command: PYODIDE_BASE_URL="https://cdn.jsdelivr.net/pyodide/dev/full/" make update_base_url
       - run:
           name: Deploy to pyodide-cdn2.iodide.io
           command: |
@@ -278,50 +318,32 @@ workflows:
     jobs:
       - lint
       - test-docs
-      - build-core:
-          filters:
-            tags:
-              only: /.*/
+      - test-python
+      - build-core
       - build-packages:
           requires:
             - build-core
-          filters:
-            tags:
-              only: /.*/
       - test-core-chrome:
           requires:
             - build-core
-          filters:
-            tags:
-              only: /.*/
       - test-core-firefox:
           requires:
             - build-core
-          filters:
-            tags:
-              only: /.*/
       - test-packages-chrome:
           requires:
             - build-packages
-          filters:
-            tags:
-              only: /.*/
       - test-packages-firefox:
           requires:
             - build-packages
-          filters:
-            tags:
-              only: /.*/
       - test-emsdk:
           requires:
             - build-core
-          filters:
-            tags:
-              only: /.*/
-      - test-python:
-          filters:
-            tags:
-              only: /.*/
+      - test-js:
+          requires:
+            - build-core
+      - benchmark-stack-size:
+          requires:
+            - build-core
       - benchmark:
           requires:
             - build-packages
@@ -337,7 +359,7 @@ workflows:
               ignore: /.*/
             tags:
               only: /^\d+\.\d+\.\w+$/
-      - deploy-s3:
+      - deploy-dev:
           requires:
             - lint
             - test-python
@@ -346,4 +368,4 @@ workflows:
             - test-emsdk
           filters:
             branches:
-              only: master
+              only: main

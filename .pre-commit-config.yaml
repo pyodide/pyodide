@@ -1,4 +1,6 @@
 exclude: '^.*patches|.*\.cgi$'
+default_language_version:
+    python : "3.9"
 repos:
 -   repo: https://github.com/pre-commit/pre-commit-hooks
     rev: v2.3.0
@@ -18,7 +20,7 @@ repos:
         # only check for unused imports, as the rest is done by black
         args: [--select=F401]
 -   repo: https://github.com/pre-commit/mirrors-mypy
-    rev: v0.782
+    rev: v0.812
     hooks:
      -  id: mypy
         args:

@@ -3,12 +3,15 @@ From: Michael Droettboom <mdboom@gmail.com>
 Date: Sun, 5 Jul 2020 17:37:43 +0200
 Subject: [PATCH] disable-set_inheritable
 
+---
+ Python/fileutils.c | 3 +++
+ 1 file changed, 3 insertions(+)
 
 diff --git a/Python/fileutils.c b/Python/fileutils.c
-index e79e732d1f..864dc78a57 100644
+index 769ab59..a784789 100644
 --- a/Python/fileutils.c
 +++ b/Python/fileutils.c
-@@ -1091,6 +1091,9 @@ _Py_get_inheritable(int fd)
+@@ -1134,6 +1134,9 @@ _Py_get_inheritable(int fd)
  static int
  set_inheritable(int fd, int inheritable, int raise, int *atomic_flag_works)
  {
@@ -18,3 +21,6 @@ index e79e732d1f..864dc78a57 100644
  #ifdef MS_WINDOWS
      HANDLE handle;
      DWORD flags;
+-- 
+2.17.1
+

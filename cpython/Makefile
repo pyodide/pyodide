@@ -9,7 +9,7 @@ BUILD=$(ROOT)/build/Python-$(PYVERSION)
 INSTALL=$(ROOT)/installs/python-$(PYVERSION)
 TARBALL=$(ROOT)/downloads/Python-$(PYVERSION).tgz
 URL=https://www.python.org/ftp/python/$(PYVERSION)/Python-$(PYVERSION).tgz
-LIB=libpython$(PYMINOR).a
+LIB=libpython$(PYMAJOR).$(PYMINOR).a
 SYSCONFIG_NAME=_sysconfigdata__emscripten_
 
 ZLIBVERSION = 1.2.11
@@ -25,8 +25,11 @@ BZIP2TARBALL=$(ROOT)/downloads/bzip2-1.0.2.tar.gz
 BZIP2BUILD=$(ROOT)/build/bzip2-1.0.2
 BZIP2URL=https://sourceware.org/pub/bzip2/bzip2-1.0.2.tar.gz
 
+FFIBUILD=$(ROOT)/build/libffi
+LIBFFIREPO=https://github.com/hoodmane/libffi-emscripten
+LIBFFI_COMMIT=f671fe3521fb2f383d9b74bd64254b1d3760a31e
 
-all: $(INSTALL)/lib/$(LIB)
+all: $(INSTALL)/lib/$(LIB) $(INSTALL)/lib/libffi.a
 
 
 $(INSTALL)/lib/$(LIB): $(BUILD)/$(LIB) remove_modules.txt
@@ -39,11 +42,11 @@ $(INSTALL)/lib/$(LIB): $(BUILD)/$(LIB) remove_modules.txt
 	)
 	# Generate sysconfigdata. It outputs into a subfolder of build/, and
 	# the subfolder is written to pybuilddir.txt.
-	_PYTHON_SYSCONFIGDATA_NAME=$(SYSCONFIG_NAME) _PYTHON_PROJECT_BASE=$(BUILD) python -m sysconfig --generate-posix-vars
-	mv `cat pybuilddir.txt`/$(SYSCONFIG_NAME).py $(INSTALL)/lib/python$(PYMINOR)/
+	_PYTHON_SYSCONFIGDATA_NAME=$(SYSCONFIG_NAME) _PYTHON_PROJECT_BASE=$(BUILD) $(HOSTPYTHON) -m sysconfig --generate-posix-vars
+	mv `cat pybuilddir.txt`/$(SYSCONFIG_NAME).py $(INSTALL)/lib/python$(PYMAJOR).$(PYMINOR)/
 	rmdir `cat pybuilddir.txt`
 	rm pybuilddir.txt
-	cd $(INSTALL)/lib/python$(PYMINOR)/ && rm -rf `cat $(ROOT)/remove_modules.txt`
+	cd $(INSTALL)/lib/python$(PYMAJOR).$(PYMINOR)/ && rm -rf `cat $(ROOT)/remove_modules.txt`
 
 
 clean:
@@ -86,7 +89,7 @@ $(ZLIBBUILD)/.configured: $(ZLIBTARBALL)
 	touch $@
 
 
-$(SQLITEBUILD)/libsqlite3.la: $(SQLITETARBALL)
+$(INSTALL)/lib/libsqlite3.a: $(SQLITETARBALL)
 	[ -d $(ROOT)/build ] || (mkdir $(ROOT)/build)
 	tar -C $(ROOT)/build/ -xf $(SQLITETARBALL)
 	# sqlite fails to detect that popen is not available. We have to set it
@@ -96,18 +99,37 @@ $(SQLITEBUILD)/libsqlite3.la: $(SQLITETARBALL)
 		emconfigure ./configure CFLAGS="$(PYTHON_CFLAGS)" CPPFLAGS="-DSQLITE_OMIT_POPEN"; \
 		emmake make -j $${PYODIDE_JOBS:-3}; \
 	)
+	mkdir -p $(INSTALL)/lib/
+	cp $(SQLITEBUILD)/.libs/libsqlite3.a $(INSTALL)/lib/libsqlite3.a
 
 
-$(BZIP2BUILD)/libbz2.a: $(BZIP2TARBALL)
+$(INSTALL)/lib/libbz2.a: $(BZIP2TARBALL)
 	[ -d $(ROOT)/build ] || (mkdir $(ROOT)/build)
 	tar -C $(ROOT)/build/ -xf $(BZIP2TARBALL)
 	( \
 		cd $(BZIP2BUILD); \
 		emmake make -j $${PYODIDE_JOBS:-3} CC=emcc CFLAGS="$(PYTHON_CFLAGS) -D_FILE_OFFSET_BITS=64" AR=emar RANLIB=emranlib libbz2.a; \
 	)
+	mkdir -p $(INSTALL)/lib
+	cp $(BZIP2BUILD)/libbz2.a $(INSTALL)/lib/libbz2.a
 
+$(INSTALL)/lib/libffi.a :
+	rm -rf $(FFIBUILD)
+	git clone $(LIBFFIREPO) $(FFIBUILD) --shallow-exclude upstream-base
+	source $(PYODIDE_ROOT)/emsdk/emsdk/emsdk_env.sh
+	cd $(FFIBUILD) && git checkout $(LIBFFI_COMMIT) && ./build.sh --pyodide-fpcast && make install
+	cp $(FFIBUILD)/target/include/*.h $(BUILD)/Include/
+	mkdir -p $(INSTALL)/lib
+	cp $(FFIBUILD)/target/lib/libffi.a $(INSTALL)/lib/
 
-$(BUILD)/Makefile: $(BUILD)/.patched $(ZLIBBUILD)/.configured $(SQLITEBUILD)/libsqlite3.la $(BZIP2BUILD)/libbz2.a
+$(BUILD)/Makefile: $(BUILD)/.patched $(ZLIBBUILD)/.configured $(INSTALL)/lib/libsqlite3.a $(INSTALL)/lib/libbz2.a
+	# --enable-big-digits=30 :
+	#   Python integers have "digits" of size 15 by default on systems with 32
+	#   bit pointers and size 30 on systems with 16 bit pointers. Python uses
+	#   "digits" of size 15 by default on systems with 32 bit pointers and size
+	#   30 on systems with 16 bit pointers. WASM has 32 bit pointers so Python
+	#   will default to the size 15 digits but WASM has native 64 bit arithmetic
+	#   so it is more efficient to use 30 bit digits.
 	cp config.site $(BUILD)/
 	( \
 		cd $(BUILD); \
@@ -118,14 +140,18 @@ $(BUILD)/Makefile: $(BUILD)/.patched $(ZLIBBUILD)/.configured $(SQLITEBUILD)/lib
 			  --without-pymalloc \
 			  --disable-shared \
 			  --disable-ipv6 \
-			  --without-gcc \
+			  --enable-big-digits=30 \
+			  --enable-optimizations \
 			  --host=wasm32-unknown-emscripten\
 			  --build=$(shell $(BUILD)/config.guess) \
-			  --prefix=$(INSTALL) ; \
+			  --prefix=$(INSTALL)  \
 	)
 
 
-$(BUILD)/$(LIB): $(BUILD)/Makefile Setup.local
+$(BUILD)/Modules/Setup.local : Setup.local
+	cp Setup.local $(BUILD)/Modules/
+
+$(BUILD)/$(LIB): $(BUILD)/Makefile $(BUILD)/pyconfig.h $(BUILD)/Modules/Setup.local $(INSTALL)/lib/libffi.a
 	cp Setup.local $(BUILD)/Modules/
 	cat pyconfig.undefs.h >> $(BUILD)/pyconfig.h
 	( \
