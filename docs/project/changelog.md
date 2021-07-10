@@ -77,6 +77,10 @@ substitutions:
   `PyProxy.$destroy` refers to an attribute or method called `destroy` on the
   proxied object.
   {pr}`1604`
+- {{ API }} It is now possible to use `Symbol` keys with PyProxies. These
+  `Symbol` keys put markers on the PyProxy that can be used by external code.
+  They will not currently be copied by `PyProxy.copy`.
+  {pr}`1696`
 
 ### pyodide-build
 
