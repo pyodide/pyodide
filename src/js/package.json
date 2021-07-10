@@ -13,7 +13,7 @@
   },
   "type": "module",
   "scripts": {
-    "test": "mocha"
+    "test": "mocha --timeout 15000"
   },
   "tsd": {
     "compilerOptions": {
@@ -22,5 +22,8 @@
         "DOM"
       ]
     }
+  },
+  "dependencies": {
+    "node-fetch": "^2.6.1"
   }
 }
