@@ -96,6 +96,7 @@ class SeleniumWrapper:
                 f"{(build_dir / 'test.html').resolve()} " f"does not exist!"
             )
         self.driver.get(f"http://{server_hostname}:{server_port}/test.html")
+        self.javascript_setup()
         if load_pyodide:
             self.run_js(
                 """
@@ -113,6 +114,72 @@ class SeleniumWrapper:
             self.restore_state()
         self.script_timeout = script_timeout
         self.driver.set_script_timeout(script_timeout)
+
+    def javascript_setup(self):
+        self.run_js("Error.stackTraceLimit = Infinity;", pyodide_checks=False)
+        self.run_js(
+            """
+            window.assert = function(cb, message=""){
+                if(message !== ""){
+                    message = "\\n" + message;
+                }
+                if(cb() !== true){
+                    throw new Error(`Assertion failed: ${cb.toString().slice(6)}${message}`);
+                }
+            };
+            window.assertAsync = async function(cb, message=""){
+                if(message !== ""){
+                    message = "\\n" + message;
+                }
+                if(await cb() !== true){
+                    throw new Error(`Assertion failed: ${cb.toString().slice(12)}${message}`);
+                }
+            };
+            function checkError(err, errname, pattern, pat_str, thiscallstr){
+                if(typeof pattern === "string"){
+                    pattern = new RegExp(pattern);
+                }
+                if(!err){
+                    throw new Error(`${thiscallstr} failed, no error thrown`);
+                }
+                if(err.constructor.name !== errname){
+                    throw new Error(
+                        `${thiscallstr} failed, expected error ` +
+                        `of type '${errname}' got type '${err.constructor.name}'`
+                    );
+                }
+                if(!pattern.test(err.message)){
+                    throw new Error(
+                        `${thiscallstr} failed, expected error ` +
+                        `message to match pattern ${pat_str} got:\n${err.message}`
+                    );
+                }
+            }
+            window.assertThrows = function(cb, errname, pattern){
+                let pat_str = typeof pattern === "string" ? `"${pattern}"` : `${pattern}`;
+                let thiscallstr = `assertThrows(${cb.toString()}, "${errname}", ${pat_str})`;
+                let err = undefined;
+                try {
+                    cb();
+                } catch(e) {
+                    err = e;
+                }
+                checkError(err, errname, pattern, pat_str, thiscallstr);
+            };
+            window.assertThrowsAsync = async function(cb, errname, pattern){
+                let pat_str = typeof pattern === "string" ? `"${pattern}"` : `${pattern}`;
+                let thiscallstr = `assertThrowsAsync(${cb.toString()}, "${errname}", ${pat_str})`;
+                let err = undefined;
+                try {
+                    await cb();
+                } catch(e) {
+                    err = e;
+                }
+                checkError(err, errname, pattern, pat_str, thiscallstr);
+            };
+            """,
+            pyodide_checks=False,
+        )
 
     @property
     def logs(self):
@@ -331,7 +398,7 @@ def test_wrapper_check_for_memory_leaks(selenium, trace_hiwire_refs, trace_pypro
     if trace_pyproxies and trace_hiwire_refs:
         delta_proxies = selenium.get_num_proxies() - init_num_proxies
         delta_keys = selenium.get_num_hiwire_keys() - init_num_keys
-        assert (delta_proxies, delta_keys) == (0, 0) or delta_keys <= 0
+        assert (delta_proxies, delta_keys) == (0, 0) or delta_keys < 0
     if trace_hiwire_refs:
         delta_keys = selenium.get_num_hiwire_keys() - init_num_keys
         assert delta_keys <= 0
