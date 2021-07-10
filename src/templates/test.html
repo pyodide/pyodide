@@ -22,7 +22,7 @@
       Error.stackTraceLimit = Infinity;
       window.assert = function (cb, message = "") {
         if (message !== "") {
-          message = "\\n" + message;
+          message = "\n" + message;
         }
         if (cb() !== true) {
           throw new Error(
@@ -32,7 +32,7 @@
       };
       window.assertAsync = async function (cb, message = "") {
         if (message !== "") {
-          message = "\\n" + message;
+          message = "\n" + message;
         }
         if ((await cb()) !== true) {
           throw new Error(
