@@ -148,6 +148,7 @@ def test_eval_code_locals():
     eval_code("invalidate_caches()", globals, locals)
 
 
+@pytest.mark.skip_pyproxy_check
 def test_monkeypatch_eval_code(selenium):
     try:
         selenium.run(

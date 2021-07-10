@@ -86,6 +86,11 @@ substitutions:
   `Symbol` keys put markers on the PyProxy that can be used by external code.
   They will not currently be copied by `PyProxy.copy`.
   {pr}`1696`
+- {{ Enhancement }} Memory management of `PyProxy` fields has been changed so
+  that fields looked up on a `PyProxy` are "borrowed" and have their lifetime
+  attached to the base `PyProxy`. This is intended to allow for more idiomatic
+  usage.
+  (See {issue}`1617`.) {pr}`1636`
 
 ### pyodide-build
 
