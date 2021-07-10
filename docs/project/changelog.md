@@ -47,6 +47,9 @@ substitutions:
 
 - {{ Enhancement }} Pyodide can experimentally be used in Node.js {pr}`1689`
 
+- {{ Enhancement }} Pyodide now exposes the emscripten `FS` module as `fileSystem`,
+  allowing for direct manipulation of the in-memory filesystem {pr}`1692`
+
 ## Standard library
 
 - The following standard library modules are now available as standalone packages
