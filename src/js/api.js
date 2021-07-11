@@ -320,6 +320,10 @@ export function makePublicAPI() {
    * which can be used to extend the in-memory filesystem with features like `persistence
    * <https://emscripten.org/docs/api_reference/Filesystem-API.html#persistent-data>`_.
    *
+   * While support for all of the backends (``IDBFS``, ``NODEFS``, ``PROXYFS``, and
+   * ``WORKERFS``) is enabled, only the default ``MEMFS`` is guaranteed to work in
+   * all runtime settings.
+   *
    * @type {FS} The Emscripten File System API.
    */
   const fileSystem = Module.FS;
