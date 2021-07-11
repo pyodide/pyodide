@@ -3,21 +3,21 @@ From: Michael Droettboom <mdboom@gmail.com>
 Date: Sun, 5 Jul 2020 19:56:47 +0200
 Subject: [PATCH] testing
 
+---
+ Lib/platform.py                   | 2 +-
+ Lib/test/libregrtest/main.py      | 4 +++-
+ Lib/test/support/script_helper.py | 5 +++++
+ Lib/test/test_cgi.py              | 1 +
+ Lib/test/test_fcntl.py            | 2 ++
+ Lib/test/test_gzip.py             | 2 ++
+ Lib/test/test_itertools.py        | 1 +
+ 7 files changed, 15 insertions(+), 2 deletions(-)
 
 diff --git a/Lib/platform.py b/Lib/platform.py
-index 6fbb7b08c5..d46425659d 100755
+index 0bce438..8fdfe05 100755
 --- a/Lib/platform.py
 +++ b/Lib/platform.py
-@@ -604,7 +604,7 @@ def _syscmd_uname(option, default=''):
- 
-     """ Interface to the system's uname command.
-     """
--    if sys.platform in ('dos', 'win32', 'win16'):
-+    if sys.platform in ('dos', 'win32', 'win16', 'emscripten'):
-         # XXX Others too ?
-         return default
- 
-@@ -626,7 +626,7 @@ def _syscmd_file(target, default=''):
+@@ -614,7 +614,7 @@ def _syscmd_file(target, default=''):
          default in case the command should fail.
  
      """
@@ -27,10 +27,10 @@ index 6fbb7b08c5..d46425659d 100755
          return default
  
 diff --git a/Lib/test/libregrtest/main.py b/Lib/test/libregrtest/main.py
-index 76ad3359f2..b135966032 100644
+index e20bf9a..18f62f4 100644
 --- a/Lib/test/libregrtest/main.py
 +++ b/Lib/test/libregrtest/main.py
-@@ -635,7 +635,9 @@ class Regrtest:
+@@ -639,7 +639,9 @@ class Regrtest:
          except SystemExit as exc:
              # bpo-38203: Python can hang at exit in Py_Finalize(), especially
              # on threading._shutdown() call: put a timeout
@@ -42,7 +42,7 @@ index 76ad3359f2..b135966032 100644
              sys.exit(exc.code)
  
 diff --git a/Lib/test/support/script_helper.py b/Lib/test/support/script_helper.py
-index 83519988e3..1410fe5c61 100644
+index 37e576d..d470e4a 100644
 --- a/Lib/test/support/script_helper.py
 +++ b/Lib/test/support/script_helper.py
 @@ -9,6 +9,7 @@ import os.path
@@ -52,7 +52,7 @@ index 83519988e3..1410fe5c61 100644
 +import unittest
  
  from importlib.util import source_from_cache
- from test.support import make_legacy_pyc, strip_python_stderr
+ from test.support import make_legacy_pyc
 @@ -34,6 +35,8 @@ def interpreter_requires_environment():
      situation.  PYTHONPATH or PYTHONUSERSITE are other common environment
      variables that might impact whether or not the interpreter can start.
@@ -62,7 +62,7 @@ index 83519988e3..1410fe5c61 100644
      global __cached_interp_requires_environment
      if __cached_interp_requires_environment is None:
          # If PYTHONHOME is set, assume that we need it
-@@ -172,6 +175,8 @@ def spawn_python(*args, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, **kw):
+@@ -171,6 +174,8 @@ def spawn_python(*args, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, **kw):
      kw is extra keyword args to pass to subprocess.Popen. Returns a Popen
      object.
      """
@@ -72,10 +72,10 @@ index 83519988e3..1410fe5c61 100644
      if not interpreter_requires_environment():
          cmd_line.append('-E')
 diff --git a/Lib/test/test_cgi.py b/Lib/test/test_cgi.py
-index ab8677199f..8eefd57776 100644
+index 4e1506a..8c02cdb 100644
 --- a/Lib/test/test_cgi.py
 +++ b/Lib/test/test_cgi.py
-@@ -188,6 +188,7 @@ Content-Length: 3
+@@ -221,6 +221,7 @@ Content-Length: 3
                          self.assertEqual(fs.getvalue(key), expect_val[0])
  
      def test_log(self):
@@ -84,7 +84,7 @@ index ab8677199f..8eefd57776 100644
  
          cgi.logfp = StringIO()
 diff --git a/Lib/test/test_fcntl.py b/Lib/test/test_fcntl.py
-index c394f6945a..2ec020bd08 100644
+index 9ab68c6..3e74849 100644
 --- a/Lib/test/test_fcntl.py
 +++ b/Lib/test/test_fcntl.py
 @@ -155,6 +155,7 @@ class TestFcntl(unittest.TestCase):
@@ -104,10 +104,10 @@ index c394f6945a..2ec020bd08 100644
          cmd = fcntl.LOCK_SH | fcntl.LOCK_NB
          fcntl.lockf(self.f, cmd)
 diff --git a/Lib/test/test_gzip.py b/Lib/test/test_gzip.py
-index 646828621a..b9663082b9 100644
+index 1af23c6..045b4c7 100644
 --- a/Lib/test/test_gzip.py
 +++ b/Lib/test/test_gzip.py
-@@ -731,6 +731,7 @@ class TestCommandLine(unittest.TestCase):
+@@ -743,6 +743,7 @@ class TestCommandLine(unittest.TestCase):
      data = b'This is a simple test with gzip'
  
      def test_decompress_stdin_stdout(self):
@@ -115,7 +115,7 @@ index 646828621a..b9663082b9 100644
          with io.BytesIO() as bytes_io:
              with gzip.GzipFile(fileobj=bytes_io, mode='wb') as gzip_file:
                  gzip_file.write(self.data)
-@@ -767,6 +768,7 @@ class TestCommandLine(unittest.TestCase):
+@@ -779,6 +780,7 @@ class TestCommandLine(unittest.TestCase):
  
      @create_and_remove_directory(TEMPDIR)
      def test_compress_stdin_outfile(self):
@@ -124,10 +124,10 @@ index 646828621a..b9663082b9 100644
          with Popen(args, stdin=PIPE, stdout=PIPE, stderr=PIPE) as proc:
              out, err = proc.communicate(self.data)
 diff --git a/Lib/test/test_itertools.py b/Lib/test/test_itertools.py
-index eaa6197bec..95ff99d15c 100644
+index 7101264..bf359a0 100644
 --- a/Lib/test/test_itertools.py
 +++ b/Lib/test/test_itertools.py
-@@ -1511,6 +1511,7 @@ class TestBasicOps(unittest.TestCase):
+@@ -1513,6 +1513,7 @@ class TestBasicOps(unittest.TestCase):
              next(a)
  
      def test_tee_concurrent(self):
@@ -136,5 +136,5 @@ index eaa6197bec..95ff99d15c 100644
          finish = threading.Event()
          class I:
 -- 
-2.25.1
+2.17.1
 

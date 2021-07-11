@@ -1,5 +1,6 @@
-import { Module } from "./module";
+import { Module } from "./module.js";
 
+/** @typedef {import('./pyproxy.js').PyProxy} PyProxy */
 /** @private */
 let baseURL;
 /**
@@ -8,8 +9,17 @@ let baseURL;
  */
 export async function initializePackageIndex(indexURL) {
   baseURL = indexURL;
-  let response = await fetch(`${indexURL}packages.json`);
-  Module.packages = await response.json();
+  if (typeof process !== "undefined" && process.release.name !== "undefined") {
+    const fs = await import("fs");
+    fs.readFile(`${indexURL}packages.json`, (err, data) => {
+      if (err) throw err;
+      let response = JSON.parse(data);
+      Module.packages = response;
+    });
+  } else {
+    let response = await fetch(`${indexURL}packages.json`);
+    Module.packages = await response.json();
+  }
 }
 
 ////////////////////////////////////////////////////////////
@@ -22,7 +32,7 @@ const package_uri_regexp = /^.*?([^\/]*)\.js$/;
 function _uri_to_package_name(package_uri) {
   let match = package_uri_regexp.exec(package_uri);
   if (match) {
-    return match[1];
+    return match[1].toLowerCase();
   }
 }
 
@@ -32,15 +42,19 @@ function _uri_to_package_name(package_uri) {
  * @private
  */
 export let loadScript;
-if (self.document) {
+if (globalThis.document) {
   // browser
   loadScript = (url) => import(url);
-} else if (self.importScripts) {
+} else if (globalThis.importScripts) {
   // webworker
   loadScript = async (url) => {
     // This is async only for consistency
-    self.importScripts(url);
+    globalThis.importScripts(url);
   };
+} else if (typeof process !== "undefined" && process.release.name === "node") {
+  // running in Node.js
+  // TODO
+  loadScript = (url) => import(url);
 } else {
   throw new Error("Cannot determine runtime environment");
 }
@@ -56,6 +70,7 @@ function recursiveDependencies(
   const toLoad = new Map();
 
   const addPackage = (pkg) => {
+    pkg = pkg.toLowerCase();
     if (toLoad.has(pkg)) {
       return;
     }
@@ -72,21 +87,24 @@ function recursiveDependencies(
   };
   for (let name of names) {
     const pkgname = _uri_to_package_name(name);
-    if (pkgname !== undefined) {
-      if (toLoad.has(pkgname) && toLoad.get(pkgname) !== name) {
-        errorCallback(
-          `Loading same package ${pkgname} from ${name} and ${toLoad.get(
-            pkgname
-          )}`
-        );
-        continue;
-      }
-      toLoad.set(pkgname, name);
-    } else if (name in packages) {
-      addPackage(name);
-    } else {
-      errorCallback(`Skipping unknown package '${name}'`);
+    if (toLoad.has(pkgname) && toLoad.get(pkgname) !== name) {
+      errorCallback(
+        `Loading same package ${pkgname} from ${name} and ${toLoad.get(
+          pkgname
+        )}`
+      );
+      continue;
     }
+    if (pkgname !== undefined) {
+      toLoad.set(pkgname, name);
+      continue;
+    }
+    name = name.toLowerCase();
+    if (name in packages) {
+      addPackage(name);
+      continue;
+    }
+    errorCallback(`Skipping unknown package '${name}'`);
   }
   if (sharedLibsOnly) {
     let onlySharedLibs = new Map();
@@ -146,7 +164,8 @@ async function _loadPackage(names, messageCallback, errorCallback) {
         continue;
       }
     }
-    let scriptSrc = uri === DEFAULT_CHANNEL ? `${baseURL}${pkg}.js` : uri;
+    let pkgname = Module.packages.orig_case[pkg] || pkg;
+    let scriptSrc = uri === DEFAULT_CHANNEL ? `${baseURL}${pkgname}.js` : uri;
     messageCallback(`Loading ${pkg} from ${scriptSrc}`);
     scriptPromises.push(
       loadScript(scriptSrc).catch((e) => {

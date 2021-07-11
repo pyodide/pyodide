@@ -14,7 +14,7 @@ def selenium_standalone_micropip(selenium_standalone):
     selenium_standalone.run_js(
         """
         await pyodide.loadPackage("micropip");
-        await pyodide.runPython("import micropip");
+        pyodide.runPython("import micropip");
         """
     )
     yield selenium_standalone
@@ -226,5 +226,20 @@ def test_install_different_version2(selenium_standalone_micropip):
             import pytz
             assert pytz.__version__ == "2020.5"
         `);
+        """
+    )
+
+
+@pytest.mark.parametrize("jinja2", ["jinja2", "Jinja2"])
+def test_install_mixed_case2(selenium_standalone_micropip, jinja2):
+    selenium = selenium_standalone_micropip
+    selenium.run_js(
+        f"""
+        await pyodide.loadPackage("micropip");
+        await pyodide.runPythonAsync(`
+            import micropip
+            await micropip.install("{jinja2}")
+            import jinja2
+        `)
         """
     )

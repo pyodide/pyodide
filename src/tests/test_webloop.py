@@ -1,3 +1,6 @@
+import pytest
+
+
 def run_with_resolve(selenium, code):
     selenium.run_js(
         f"""
@@ -25,6 +28,7 @@ def test_asyncio_sleep(selenium):
             print('sleeping done')
             resolve()
         asyncio.ensure_future(sleep_task())
+        None
         """,
     )
 
@@ -47,6 +51,7 @@ def test_return_result(selenium):
         import asyncio
         fut = asyncio.ensure_future(foo(998))
         fut.add_done_callback(check_result)
+
         """,
     )
 
@@ -85,6 +90,7 @@ def test_await_js_promise(selenium):
             resolve()
         import asyncio
         asyncio.ensure_future(fetch_task())
+        None
         """,
     )
 
@@ -101,6 +107,7 @@ def test_call_soon(selenium):
                 raise Exception("Expected arg == 'bar'...")
         import asyncio
         asyncio.get_event_loop().call_soon(foo, 'bar')
+        None
         """,
     )
 
@@ -122,6 +129,7 @@ def test_contextvars(selenium):
                 raise Exception(f"Expected request_id.get() == '123', got {request_id.get()!r}")
         import asyncio
         asyncio.get_event_loop().call_soon(func_ctx, context=ctx)
+        None
         """,
     )
 
@@ -141,10 +149,12 @@ def test_asyncio_exception(selenium):
             resolve()
         import asyncio
         asyncio.ensure_future(capture_exception())
+        None
         """,
     )
 
 
+@pytest.mark.skip_pyproxy_check
 def test_run_in_executor(selenium):
     # If run_in_executor tries to actually use ThreadPoolExecutor, it will throw
     # an error since we can't start threads

@@ -1,13 +1,15 @@
 FROM node:14.16.1-buster-slim AS node-image
-FROM python:3.8.2-slim-buster
+FROM python:3.9.5-slim-buster
 
 RUN apt-get update \
   && apt-get install -y --no-install-recommends \
-                  # building packages
-                  bzip2 ccache clang-format-6.0 cmake f2c g++ gfortran git make \
-                  patch pkg-config swig unzip wget xz-utils \
-                  # testing packages: libgconf-2-4 is necessary for running chromium
-                  libgconf-2-4 "chromium=90.*" \
+        # building packages
+        bzip2 ccache clang-format-6.0 cmake f2c g++ gfortran git make \
+        patch pkg-config swig unzip wget xz-utils \
+        autoconf autotools-dev automake texinfo dejagnu \
+        build-essential prelink autoconf libtool libltdl-dev \
+        # testing packages: libgconf-2-4 is necessary for running chromium
+        libgconf-2-4 "chromium=90.*" \
   && rm -rf /var/lib/apt/lists/*
 
 RUN pip3 --no-cache-dir install \
@@ -18,6 +20,7 @@ RUN pip3 --no-cache-dir install \
   hypothesis \
   "mypy==0.812" \
   pytest \
+  pytest-asyncio \
   pytest-cov \
   pytest-httpserver \
   pytest-instafail \

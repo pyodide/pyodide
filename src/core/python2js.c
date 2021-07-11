@@ -40,25 +40,28 @@ _python2js_float(PyObject* x)
   return hiwire_double(x_double);
 }
 
+#if PYLONG_BITS_IN_DIGIT == 15
+#error "Expected PYLONG_BITS_IN_DIGIT == 30"
+#endif
+
 static JsRef
 _python2js_long(PyObject* x)
 {
   int overflow;
   long x_long = PyLong_AsLongAndOverflow(x, &overflow);
   if (x_long == -1) {
-    if (overflow) {
-      // Backup approach for large integers: convert via hex string.
-      //
-      // Unfortunately Javascript doesn't offer a good way to convert a numbers
-      // to / from Uint8Arrays.
-      PyObject* hex_py = PyNumber_ToBase(x, 16);
-      FAIL_IF_NULL(hex_py);
-      const char* hex_str = PyUnicode_AsUTF8(hex_py);
-      JsRef result = hiwire_int_from_hex(hex_str);
-      Py_DECREF(hex_py);
-      return result;
+    if (!overflow) {
+      FAIL_IF_ERR_OCCURRED();
+    } else {
+      size_t ndigits = Py_ABS(Py_SIZE(x));
+      unsigned int digits[ndigits];
+      FAIL_IF_MINUS_ONE(_PyLong_AsByteArray((PyLongObject*)x,
+                                            (unsigned char*)digits,
+                                            4 * ndigits,
+                                            true /* little endian */,
+                                            true /* signed */));
+      return hiwire_int_from_digits(digits, ndigits);
     }
-    FAIL_IF_ERR_OCCURRED();
   }
   return hiwire_int(x_long);
 finally:
@@ -486,18 +489,20 @@ to_js(PyObject* _mod, PyObject* args)
     Py_INCREF(obj);
     return obj;
   }
-  JsRef proxies = JsArray_New();
-  JsRef js_result = python2js_with_depth(obj, depth, proxies);
-  PyObject* py_result;
-  if (js_result == NULL) {
-    return NULL;
-  }
+  JsRef proxies = NULL;
+  JsRef js_result = NULL;
+  PyObject* py_result = NULL;
+
+  proxies = JsArray_New();
+  js_result = python2js_with_depth(obj, depth, proxies);
+  FAIL_IF_NULL(js_result);
   if (hiwire_is_pyproxy(js_result)) {
     // Oops, just created a PyProxy. Wrap it I guess?
     py_result = JsProxy_create(js_result);
   } else {
     py_result = js2python(js_result);
   }
+finally:
   hiwire_CLEAR(js_result);
   hiwire_CLEAR(proxies);
   return py_result;
@@ -516,7 +521,7 @@ int
 python2js_init(PyObject* core)
 {
   bool success = false;
-  PyObject* docstring_source = PyImport_ImportModule("_pyodide._core");
+  PyObject* docstring_source = PyImport_ImportModule("_pyodide._core_docs");
   FAIL_IF_NULL(docstring_source);
   FAIL_IF_MINUS_ONE(
     add_methods_and_set_docstrings(core, methods, docstring_source));

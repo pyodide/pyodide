@@ -1,6 +1,14 @@
---- b/config.sub
+---
+ config.sub   | 9 ++++++++-
+ configure    | 6 ++++++
+ configure.ac | 5 +++++
+ 3 files changed, 19 insertions(+), 1 deletion(-)
+
+diff --git a/config.sub b/config.sub
+index ba37cf9..0d22b33 100755
+--- a/config.sub
 +++ b/config.sub
-@@ -118,7 +118,8 @@
+@@ -118,7 +118,8 @@ case $maybe_os in
    linux-musl* | linux-uclibc* | uclinux-uclibc* | uclinux-gnu* | kfreebsd*-gnu* | \
    knetbsd*-gnu* | netbsd*-gnu* | netbsd*-eabi* | \
    kopensolaris*-gnu* | cloudabi*-eabi* | \
@@ -10,7 +18,7 @@
      os=-$maybe_os
      basic_machine=`echo "$1" | sed 's/^\(.*\)-\([^-]*-[^-]*\)$/\1/'`
      ;;
-@@ -377,6 +378,7 @@
+@@ -377,6 +378,7 @@ case $basic_machine in
  	| alpha64-* | alpha64ev[4-8]-* | alpha64ev56-* | alpha64ev6[78]-* \
  	| alphapca5[67]-* | alpha64pca5[67]-* | arc-* | arceb-* \
  	| arm-*  | armbe-* | armle-* | armeb-* | armv*-* \
@@ -18,17 +26,17 @@
  	| avr-* | avr32-* \
  	| ba-* \
  	| be32-* | be64-* \
-@@ -527,6 +529,9 @@
+@@ -527,6 +529,9 @@ case $basic_machine in
  	asmjs)
  		basic_machine=asmjs-unknown
  		;;
 +	wasm32)
 +		basic_machine=wasm32-unknown
-+		;;   
++		;;
  	aux)
  		basic_machine=m68k-apple
  		os=-aux
-@@ -1522,6 +1527,8 @@
+@@ -1522,6 +1527,8 @@ case $os in
  			;;
  		esac
  		;;
@@ -37,9 +45,11 @@
  	-nacl*)
  		;;
  	-ios)
+diff --git a/configure b/configure
+index 8dcdbf1..e1195d2 100755
 --- a/configure
 +++ b/configure
-@@ -3274,6 +3274,9 @@ then
+@@ -3307,6 +3307,9 @@ then
  	*-*-vxworks*)
  	    ac_sys_system=VxWorks
  	    ;;
@@ -49,7 +59,7 @@
  	*)
  		# for now, limit cross builds to known configurations
  		MACHDEP="unknown"
-@@ -3324,6 +3327,9 @@ if test "$cross_compiling" = yes; then
+@@ -3357,6 +3360,9 @@ if test "$cross_compiling" = yes; then
  	*-*-vxworks*)
  		_host_cpu=$host_cpu
  		;;
@@ -59,9 +69,11 @@
  	*)
  		# for now, limit cross builds to known configurations
  		MACHDEP="unknown"
+diff --git a/configure.ac b/configure.ac
+index b1e4c6c..dbfae6d 100644
 --- a/configure.ac
 +++ b/configure.ac
-@@ -382,6 +382,9 @@ then
+@@ -403,6 +403,9 @@ then
  	*-*-vxworks*)
  	    ac_sys_system=VxWorks
  	    ;;
@@ -71,7 +83,7 @@
  	*)
  		# for now, limit cross builds to known configurations
  		MACHDEP="unknown"
-@@ -430,6 +433,8 @@ if test "$cross_compiling" = yes; then
+@@ -451,6 +454,8 @@ if test "$cross_compiling" = yes; then
  		;;
  	*-*-vxworks*)
  		_host_cpu=$host_cpu
@@ -80,3 +92,6 @@
  		;;
  	*)
  		# for now, limit cross builds to known configurations
+-- 
+2.17.1
+

@@ -1,11 +1,15 @@
 import asyncio
-import time
 import contextvars
 import sys
+import time
 import traceback
-
-
 from typing import Callable
+
+
+from ._core import create_once_callable, IN_BROWSER
+
+if IN_BROWSER:
+    from js import setTimeout
 
 
 class WebLoop(asyncio.AbstractEventLoop):
@@ -136,9 +140,6 @@ class WebLoop(asyncio.AbstractEventLoop):
 
         This uses `setTimeout(callback, delay)`
         """
-        from js import setTimeout
-        from . import create_once_callable
-
         if delay < 0:
             raise ValueError("Can't schedule in the past")
         h = asyncio.Handle(callback, args, self, context=context)  # type: ignore
@@ -281,12 +282,6 @@ class WebLoop(asyncio.AbstractEventLoop):
         message = context.get("message")
         if not message:
             message = "Unhandled exception in event loop"
-
-        exception = context.get("exception")
-        if exception is not None:
-            exc_info = (type(exception), exception, exception.__traceback__)
-        else:
-            exc_info = False
 
         if (
             "source_traceback" not in context

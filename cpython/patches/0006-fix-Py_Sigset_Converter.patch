@@ -3,12 +3,16 @@ From: Roman Yurchak <rth.yurchak@gmail.com>
 Date: Sun, 5 Jul 2020 21:17:10 +0200
 Subject: [PATCH] fix Py_Sigset_Converter
 
+---
+ Modules/posixmodule.c | 7 +++++++
+ Modules/posixmodule.h | 2 --
+ 2 files changed, 7 insertions(+), 2 deletions(-)
 
 diff --git a/Modules/posixmodule.c b/Modules/posixmodule.c
-index 2f791d1df9..c775d7711d 100644
+index c984e2e..9d1bbee 100644
 --- a/Modules/posixmodule.c
 +++ b/Modules/posixmodule.c
-@@ -1337,6 +1337,13 @@ error:
+@@ -1486,6 +1486,13 @@ error:
      Py_DECREF(iterator);
      return 0;
  }
@@ -23,10 +27,10 @@ index 2f791d1df9..c775d7711d 100644
  
  #ifdef MS_WINDOWS
 diff --git a/Modules/posixmodule.h b/Modules/posixmodule.h
-index 1e00562abc..229704a831 100644
+index 711ac68..5452ffb 100644
 --- a/Modules/posixmodule.h
 +++ b/Modules/posixmodule.h
-@@ -23,9 +23,7 @@ PyAPI_FUNC(int) _Py_Gid_Converter(PyObject *, void *);
+@@ -23,9 +23,7 @@ PyAPI_FUNC(int) _Py_Gid_Converter(PyObject *, gid_t *);
  # define HAVE_SIGSET_T
  #endif
  
@@ -37,5 +41,5 @@ index 1e00562abc..229704a831 100644
  
  #ifdef __cplusplus
 -- 
-2.25.1
+2.17.1
 

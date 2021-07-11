@@ -1,5 +1,14 @@
-import { Module } from "./module";
-import { loadPackage, loadedPackages } from "./load-pyodide";
+import { Module } from "./module.js";
+import { loadPackage, loadedPackages } from "./load-pyodide.js";
+import { isPyProxy, PyBuffer } from "./pyproxy.gen.js";
+export { loadPackage, loadedPackages, isPyProxy };
+
+/**
+ * @typedef {import('./pyproxy.gen').Py2JsResult} Py2JsResult
+ * @typedef {import('./pyproxy.gen').PyProxy} PyProxy
+ * @typedef {import('./pyproxy.gen').TypedArray} TypedArray
+ * @typedef {import('emscripten')} Emscripten
+ */
 
 /**
  * An alias to the Python :py:mod:`pyodide` package.
@@ -77,7 +86,7 @@ export let version = ""; // actually defined in runPythonSimple in loadPyodide (
  * @param {PyProxy} globals An optional Python dictionary to use as the globals.
  *        Defaults to :any:`pyodide.globals`. Uses the Python API
  *        :any:`pyodide.eval_code` to evaluate the code.
- * @returns The result of the Python code translated to Javascript. See the
+ * @returns {Py2JsResult} The result of the Python code translated to Javascript. See the
  *          documentation for :any:`pyodide.eval_code` for more info.
  */
 export function runPython(code, globals = Module.globals) {
@@ -118,7 +127,13 @@ export async function loadPackagesFromImports(
   messageCallback,
   errorCallback
 ) {
-  let imports = Module.pyodide_py.find_imports(code).toJs();
+  let pyimports = Module.pyodide_py.find_imports(code);
+  let imports;
+  try {
+    imports = pyimports.toJs();
+  } finally {
+    pyimports.destroy();
+  }
   if (imports.length === 0) {
     return;
   }
@@ -145,7 +160,7 @@ export async function loadPackagesFromImports(
  *    :any:`pyodide.globals.get('key') <pyodide.globals>` instead.
  *
  * @param {string} name Python variable name
- * @returns The Python object translated to Javascript.
+ * @returns {Py2JsResult} The Python object translated to Javascript.
  */
 export function pyimport(name) {
   console.warn(
@@ -172,7 +187,7 @@ export function pyimport(name) {
  *    console.log(result); // 72
  *
  * @param {string} code Python code to evaluate
- * @returns The result of the Python code translated to Javascript.
+ * @returns {Py2JsResult} The result of the Python code translated to Javascript.
  * @async
  */
 export async function runPythonAsync(code) {
@@ -199,6 +214,14 @@ Module.runPythonAsync = runPythonAsync;
  */
 export function registerJsModule(name, module) {
   Module.pyodide_py.register_js_module(name, module);
+}
+
+/**
+ * Tell Pyodide about Comlink.
+ * Necessary to enable importing Comlink proxies into Python.
+ */
+export function registerComlink(Comlink) {
+  Module._Comlink = Comlink;
 }
 
 /**
@@ -270,30 +293,40 @@ export function toPy(obj, depth = -1) {
 }
 
 /**
- * @interface PyProxy
  * @private
  */
+Module.saveState = () => Module.pyodide_py._state.save_state();
 
 /**
- * Is the argument a :any:`PyProxy`?
- * @param jsobj {any} Object to test.
- * @returns {boolean} Is ``jsobj`` a :any:`PyProxy`?
+ * @private
  */
-export function isPyProxy(jsobj) {
-  return !!jsobj && jsobj.$$ !== undefined && jsobj.$$.type === "PyProxy";
-}
-Module.isPyProxy = isPyProxy;
+Module.restoreState = (state) => Module.pyodide_py._state.restore_state(state);
 
 /**
- * @param {Int32Array} interrupt_buffer
+ * @param {TypedArray} interrupt_buffer
  */
 function setInterruptBuffer(interrupt_buffer) {}
-
 setInterruptBuffer = Module.setInterruptBuffer;
+export { setInterruptBuffer };
 
 export function makePublicAPI() {
+  /**
+   * An alias to the `Emscripten File System API
+   * <https://emscripten.org/docs/api_reference/Filesystem-API.html>`_.
+   *
+   * This provides a wide range of POSIX-`like` file/device operations, including
+   * `mount
+   * <https://emscripten.org/docs/api_reference/Filesystem-API.html#FS.mount>`_
+   * which can be used to extend the in-memory filesystem with features like `persistence
+   * <https://emscripten.org/docs/api_reference/Filesystem-API.html#persistent-data>`_.
+   *
+   * @type {FS} The Emscripten File System API.
+   */
+  const fileSystem = Module.FS;
+
   let namespace = {
     globals,
+    fileSystem,
     pyodide_py,
     version,
     loadPackage,
@@ -307,8 +340,11 @@ export function makePublicAPI() {
     unregisterJsModule,
     setInterruptBuffer,
     toPy,
+    registerComlink,
     PythonError,
+    PyBuffer,
   };
+
   namespace._module = Module; // @private
   Module.public_api = namespace;
   return namespace;

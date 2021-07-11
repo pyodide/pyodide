@@ -228,7 +228,7 @@ packages the same way as CPython --- it looks for relevant files `.py` files in
 
 Suppose you have a Python library that consists of a single directory
 `/PATH/TO/LIB/` whose contents would go into
-`/lib/python3.8/site-packages/PACKAGE_NAME/` under a normal Python
+`/lib/python3.9/site-packages/PACKAGE_NAME/` under a normal Python
 installation.
 
 The simplest version of the corresponding Pyodide package contains two files
@@ -237,25 +237,30 @@ The simplest version of the corresponding Pyodide package contains two files
 loading the package via `pyodide.loadPackage`, Pyodide will load and run
 `PACKAGE_NAME.js`. The script then fetches `PACKAGE_NAME.data` and extracts the
 contents to emscripten's virtual filesystem. Afterwards, since the files are
-now in `/lib/python3.8/`, running `import PACKAGE_NAME` in Python will
+now in `/lib/python3.9/`, running `import PACKAGE_NAME` in Python will
 successfully import the module as usual.
 
 To construct this bundle, we use the `file_packager.py` script from emscripten.
 We invoke it as follows:
 ```sh
-$ ./file_packager.py PACKAGE_NAME.data \
+$ ./tools/file_packager.sh \
+     PACKAGE_NAME.data \
      --js-output=PACKAGE_NAME.js \
-     --export-name=globalThis.__pyodide_module \
-     --use-preload-plugins \
-     --preload /PATH/TO/LIB/@/lib/python3.8/site-packages/PACKAGE_NAME/ \
-     --exclude "*__pycache__*" \
-     --lz4
+     --preload /PATH/TO/LIB/@/lib/python3.9/site-packages/PACKAGE_NAME/
 ```
 
 The arguments can be explained as follows:
- - The `--preload` argument instructs the package to look for the
+ - PACKAGE_NAME.data indicates where to put the data file
+ - --js-output=PACKAGE_NAME.js indicates where to put the javascript file
+ - `--preload` instructs the package to look for the
    file/directory before the separator `@` (namely `/PATH/TO/LIB/`) and place
    it at the path after the `@` in the virtual filesystem (namely
-   `/lib/python3.8/site-packages/PACKAGE_NAME/`).
- - The `--exclude` argument specifies files to omit from the package.
- - The `--lz4` argument says to use LZ4 to compress the files
+   `/lib/python3.9/site-packages/PACKAGE_NAME/`).
+
+`file_packager.sh` adds the following options:
+ - `--lz4` to use LZ4 to compress the files
+ - `--export-name=globalThis.__pyodide_module` tells `file_packager` where to find the main Emscripten
+   module for linking.
+ - `--exclude *__pycache__*` to omit the pycache directories
+ - `--use-preload-plugins` says to [automatically decode files based on their
+   extension](https://emscripten.org/docs/porting/files/packaging_files.html#preloading-files)
