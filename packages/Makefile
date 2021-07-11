@@ -21,8 +21,16 @@ all: .artifacts/bin/pyodide-build
 	python3 -m pip install -e ../pyodide-build --no-deps --prefix $(PYODIDE_LIBRARIES)
 
 update-all:
+<<<<<<< Updated upstream
 	for pkg in $$(find . -maxdepth 1 -type d -exec basename {} \; | tail -n +2); do \
 		pyodide-build mkpkg "$${pkg}" --update; \
+||||||| merged common ancestors
+	for pkg in $$(find . -maxdepth 1 ! -name ".*" -type d -exec basename {} \; | tail -n +2); do \
+		pyodide-build mkpkg "$${pkg}" --update; \
+=======
+	for pkg in $$(find . -maxdepth 1 ! -name ".*" -type d -exec basename {} \; | tail -n +2); do \
+		cd ../pyodide-build/ && python -m pyodide_build mkpkg "$${pkg}" --update; \
+>>>>>>> Stashed changes
 	done
 
 clean:

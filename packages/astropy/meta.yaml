@@ -1,18 +1,15 @@
 package:
   name: astropy
-  version: 3.2.3
-
+  version: 4.2.1
 source:
-  url: https://pypi.io/packages/source/a/astropy/astropy-3.2.3.tar.gz
-  sha256: 47f00816c2978fdd10f448c8f0337d6dca7b8cbeaab4bf272b5fd37cb4b890d3
+  url: https://files.pythonhosted.org/packages/4e/a6/4a1576e4a51b10b4b7440cbd36fc3c71fb69fb634672ce0725de614182ca/astropy-4.2.1.tar.gz
+  sha256: ed483e472241153daec45f4b0c318c2c63d9f47305b78e6e63d32fc388c18427
   patches:
-    - patches/fix_link_opts.patch
-
+  - patches/fix_link_opts.patch
 requirements:
   run:
-    - distutils
-    - numpy
-
+  - distutils
+  - numpy
 test:
   imports:
-    - astropy
+  - astropy

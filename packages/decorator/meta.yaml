@@ -1,9 +1,9 @@
 package:
   name: decorator
-  version: 5.0.6
+  version: 5.0.9
 source:
-  sha256: f2e71efb39412bfd23d878e896a51b07744f2e2250b2e87d158e76828c5ae202
-  url: https://files.pythonhosted.org/packages/6a/aa/c194bd2fb168c1ebd8ffbfc12d972d09a9df0e4d485013e5ba2c8e4f1f05/decorator-5.0.6.tar.gz
+  sha256: 72ecfba4320a893c53f9706bebb2d55c270c1e51a28789361aa93e4a21319ed5
+  url: https://files.pythonhosted.org/packages/4f/51/15a4f6b8154d292e130e5e566c730d8ec6c9802563d58760666f1818ba58/decorator-5.0.9.tar.gz
 test:
   imports:
   - decorator
