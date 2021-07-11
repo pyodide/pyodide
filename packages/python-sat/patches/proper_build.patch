@@ -2,17 +2,6 @@ diff --git a/setup.py b/setup.py
 index 4e810df..d191d6d 100644
 --- a/setup.py
 +++ b/setup.py
-@@ -68,8 +68,8 @@ Details can be found at `https://pysathq.github.io <https://pysathq.github.io>`_
- 
- # solvers to install
- #==============================================================================
--to_install = ['cadical', 'glucose30', 'glucose41', 'lingeling', 'maplechrono',
--        'maplecm', 'maplesat', 'minicard', 'minisat22', 'minisatgh']
-+to_install = ['cadical', 'glucose30', 'glucose41', 'maplechrono', 'maplecm',
-+        'maplesat', 'minicard', 'minisat22', 'minisatgh']
- 
- 
- # example scripts to install as standalone executables
 @@ -77,47 +77,9 @@ to_install = ['cadical', 'glucose30', 'glucose41', 'lingeling', 'maplechrono',
  scripts = ['fm', 'genhard', 'lbx', 'lsu', 'mcsls', 'models', 'musx', 'rc2']
  
