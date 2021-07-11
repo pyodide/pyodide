@@ -33,9 +33,10 @@ class BashRunnerWithSharedEnvironment:
         if env is None:
             env = dict(os.environ)
         self.env: Dict[str, str] = env
-        self.fd_read, self.fd_write = os.pipe()
+        self._fd_read, self._fd_write = os.pipe()
 
     def run(self, cmd, **opts):
+        """Run a bash script. Any keyword arguments are passed on to subprocess.run."""
         write_env_pycode = ";".join(
             [
                 "import os",
@@ -46,10 +47,18 @@ class BashRunnerWithSharedEnvironment:
         write_env_shell_cmd = f"{sys.executable} -c '{write_env_pycode}'"
         cmd += "\n" + write_env_shell_cmd
         result = subprocess.run(
-            ["bash", "-ce", cmd], pass_fds=[self.fd_write], env=self.env, **opts
+            ["bash", "-ce", cmd], pass_fds=[self._fd_write], env=self.env, **opts
         )
-        self.env = json.loads(os.read(self.fd_read, 5000).decode())
+        self.env = json.loads(os.read(self._fd_read, 5000).decode())
         return result
+
+    def close(self):
+        """Free the file descriptors."""
+        if self._fd_read:
+            os.close(self._fd_read)
+            os.close(self._fd_write)
+            self._fd_read = None
+            self._fd_write = None
 
 
 def check_checksum(path: Path, pkg: Dict[str, Any]):
@@ -247,7 +256,7 @@ def package_files(buildpath: Path, srcpath: Path, pkg: Dict[str, Any], args):
         fd.write(b"\n")
 
 
-def run_script(buildpath: Path, srcpath: Path, pkg: Dict[str, Any], shared_env_runner):
+def run_script(buildpath: Path, srcpath: Path, pkg: Dict[str, Any], bash_runner):
     if pkg.get("build", {}).get("library"):
         # in libraries this  writes the packaged flag
         # We don't really do packaging, but needs_rebuild checks .packaged to
@@ -258,7 +267,7 @@ def run_script(buildpath: Path, srcpath: Path, pkg: Dict[str, Any], shared_env_r
     orig_path = Path.cwd()
     os.chdir(srcpath)
     try:
-        shared_env_runner.run(pkg["build"]["script"], check=True)
+        bash_runner.run(pkg["build"]["script"], check=True)
     finally:
         os.chdir(orig_path)
 
@@ -321,6 +330,7 @@ def build_package(path: Path, args):
                 compile(path, srcpath, pkg, args, bash_runner)
             package_files(buildpath, srcpath, pkg, args)
     finally:
+        bash_runner.close()
         os.chdir(orig_path)
         t1 = datetime.now()
         print(
