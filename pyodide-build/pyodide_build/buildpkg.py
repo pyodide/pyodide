@@ -41,7 +41,7 @@ class BashRunnerWithSharedEnvironment:
             [
                 "import os",
                 "import json",
-                f"os.write({self.fd_write}, json.dumps(dict(os.environ)).encode())",
+                f"os.write({self._fd_write}, json.dumps(dict(os.environ)).encode())",
             ]
         )
         write_env_shell_cmd = f"{sys.executable} -c '{write_env_pycode}'"
