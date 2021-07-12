@@ -34,6 +34,7 @@ class BashRunnerWithSharedEnvironment:
             env = dict(os.environ)
         self.env: Dict[str, str] = env
         self._fd_read, self._fd_write = os.pipe()
+        self._reader = os.fdopen(self._fd_read, "r")
 
     def run(self, cmd, **opts):
         """Run a bash script. Any keyword arguments are passed on to subprocess.run."""
@@ -49,7 +50,7 @@ class BashRunnerWithSharedEnvironment:
         result = subprocess.run(
             ["bash", "-ce", cmd], pass_fds=[self._fd_write], env=self.env, **opts
         )
-        self.env = json.loads(os.read(self._fd_read, 5000).decode())
+        self.env = json.loads(self._reader.read())
         return result
 
     def close(self):
