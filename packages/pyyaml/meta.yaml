@@ -1,10 +1,9 @@
 package:
   name: pyyaml
-  version: 5.3.1
+  version: 5.4.1
 
 source:
-  # path: downloads/pyyaml-5.3.1
-  url: https://github.com/yaml/pyyaml/archive/5.3.1.zip
+  url: https://github.com/yaml/pyyaml/archive/refs/tags/5.4.1.tar.gz
 
   patches:
     - patches/Makefile.patch
