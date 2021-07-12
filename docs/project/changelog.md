@@ -47,10 +47,10 @@ substitutions:
 
 - {{ Enhancement }} Pyodide can experimentally be used in Node.js {pr}`1689`
 
-- {{ Enhancement }} Pyodide now exposes the emscripten `FS` module as `fileSystem`,
+- {{ Enhancement }} Pyodide now directly exposes the emscripten `FS` API,
   allowing for direct manipulation of the in-memory filesystem {pr}`1692`
 
-- {{ Enhancement }} Pyodide's support of emscripten file system is expanded from
+- {{ Enhancement }} Pyodide's support of emscripten file systems is expanded from
   the default `MEMFS` to include `IDBFS`, `NODEFS`, `PROXYFS`, and `WORKERFS`,
   allowing for custom persistence strategies depending on execution environment
   {pr}`1596`

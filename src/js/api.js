@@ -322,16 +322,16 @@ export function makePublicAPI() {
    *
    * While all of the file systems implementations are enabled, only the default
    * ``MEMFS`` is guaranteed to work in all runtime settings. The implementations
-   * are available as members of ``fileSystem.filesystems``:
+   * are available as members of ``FS.filesystems``:
    * ``IDBFS``, ``NODEFS``, ``PROXYFS``, ``WORKERFS``.
    *
    * @type {FS} The Emscripten File System API.
    */
-  const fileSystem = Module.FS;
+  const FS = Module.FS;
 
   let namespace = {
     globals,
-    fileSystem,
+    FS,
     pyodide_py,
     version,
     loadPackage,

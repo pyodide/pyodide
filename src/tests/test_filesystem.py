@@ -10,8 +10,8 @@ def test_idbfs_persist_code(selenium_standalone):
     # create mount
     selenium.run_js(
         """
-        pyodide.fileSystem.mkdir('/lib/python3.9/site-packages/test_idbfs');
-        pyodide.fileSystem.mount(pyodide.fileSystem.filesystems.IDBFS, {}, "/lib/python3.9/site-packages/test_idbfs")
+        pyodide.FS.mkdir('/lib/python3.9/site-packages/test_idbfs');
+        pyodide.FS.mount(pyodide.FS.filesystems.IDBFS, {}, "/lib/python3.9/site-packages/test_idbfs")
         """
     )
     # create file in mount
@@ -32,7 +32,7 @@ def test_idbfs_persist_code(selenium_standalone):
     selenium.run_js(
         """
         const error = await new Promise(
-            (resolve, reject) => pyodide.fileSystem.syncfs(false, resolve)
+            (resolve, reject) => pyodide.FS.syncfs(false, resolve)
         );
         assert(() => error == null);
         """
@@ -65,15 +65,15 @@ def test_idbfs_persist_code(selenium_standalone):
     # re-mount
     selenium.run_js(
         """
-        pyodide.fileSystem.mkdir('/lib/python3.9/site-packages/test_idbfs');
-        pyodide.fileSystem.mount(pyodide.fileSystem.filesystems.IDBFS, {}, "/lib/python3.9/site-packages/test_idbfs");
+        pyodide.FS.mkdir('/lib/python3.9/site-packages/test_idbfs');
+        pyodide.FS.mount(pyodide.FS.filesystems.IDBFS, {}, "/lib/python3.9/site-packages/test_idbfs");
         """
     )
     # sync FROM idbfs
     selenium.run_js(
         """
         const error = await new Promise(
-            (resolve, reject) => pyodide.fileSystem.syncfs(true, resolve)
+            (resolve, reject) => pyodide.FS.syncfs(true, resolve)
         );
         assert(() => error == null);
         """
