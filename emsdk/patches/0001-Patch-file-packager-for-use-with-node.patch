@@ -1,0 +1,45 @@
+From c9c1d793bcfe9828170a851cbdb124ea10517029 Mon Sep 17 00:00:00 2001
+From: Hood <hood@mit.edu>
+Date: Sun, 11 Jul 2021 21:37:18 -0700
+Subject: [PATCH] Patch file-packager for use with node
+
+---
+ tools/file_packager.py | 15 +++++++++++++++
+ 1 file changed, 15 insertions(+)
+
+diff --git a/tools/file_packager.py b/tools/file_packager.py
+index cd70b4b7d..87f3588bc 100755
+--- a/tools/file_packager.py
++++ b/tools/file_packager.py
+@@ -531,6 +531,8 @@ def main():
+       } else if (typeof location !== 'undefined') {
+         // worker
+         PACKAGE_PATH = encodeURIComponent(location.pathname.toString().substring(0, location.pathname.toString().lastIndexOf('/')) + '/');
++      } else if(typeof process !== "undefined" && process.release.name !== "undefined") {
++        PACKAGE_PATH = ".";
+       } else {
+         throw 'using preloaded data can only be done on a web page or in a web worker';
+       }
+@@ -716,6 +718,19 @@ def main():
+ 
+     ret += r'''
+       function fetchRemotePackage(packageName, packageSize, callback, errback) {
++        if (typeof process !== "undefined" && process.release.name !== "undefined") {
++          (async () => {
++            let fs = await import("fs");
++            fs.readFile(packageName, (err, data) => {
++                if(err){
++                  errback(err);
++                } else {
++                  callback(data.buffer);
++                }
++            });
++          })();
++          return;
++        }
+         var xhr = new XMLHttpRequest();
+         xhr.open('GET', packageName, true);
+         xhr.responseType = 'arraybuffer';
+-- 
+2.17.1
+

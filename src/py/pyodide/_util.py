@@ -1,9 +1,10 @@
 from io import StringIO
 from ._core import IN_BROWSER
 
-if IN_BROWSER:
+try:
     from js import XMLHttpRequest
-
+except ImportError:
+    pass
 
 def open_url(url: str) -> StringIO:
     """

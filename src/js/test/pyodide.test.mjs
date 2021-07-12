@@ -4,10 +4,6 @@ import { loadPyodide } from "../pyodide.js";
 import fetch from "node-fetch";
 
 describe("Pyodide", () => {
-  let pyodide;
-  it("loadPyodide", async () => {
-    pyodide = await loadPyodide({ indexURL: "../../build/" });
-  });
   it("runPython", async () => {
     let res = pyodide.runPython("1+1");
     assert.equal(res, 2);
@@ -21,10 +17,10 @@ describe("Pyodide", () => {
     await pyodide.runPythonAsync(
       'import micropip; await micropip.install("snowballstemmer")'
     );
-    let res = pyodide.runPython(`
-    import snowballstemmer
-    len(snowballstemmer.stemmer('english').stemWords(['A', 'node', 'test']))
-    `);
+      let res = pyodide.runPython(`
+      import snowballstemmer
+      len(snowballstemmer.stemmer('english').stemWords(['A', 'node', 'test']))
+      `);
     assert.equal(res, 3);
   });
 });
