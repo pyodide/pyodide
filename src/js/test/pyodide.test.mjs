@@ -17,7 +17,7 @@ describe("Pyodide", () => {
     await pyodide.runPythonAsync(
       'import micropip; await micropip.install("snowballstemmer")'
     );
-      let res = pyodide.runPython(`
+    let res = pyodide.runPython(`
       import snowballstemmer
       len(snowballstemmer.stemmer('english').stemWords(['A', 'node', 'test']))
       `);

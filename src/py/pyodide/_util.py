@@ -6,6 +6,7 @@ try:
 except ImportError:
     pass
 
+
 def open_url(url: str) -> StringIO:
     """
     Fetches a given URL
