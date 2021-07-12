@@ -20,7 +20,7 @@ describe("Pyodide", () => {
     let res = pyodide.runPython(`
       import snowballstemmer
       len(snowballstemmer.stemmer('english').stemWords(['A', 'node', 'test']))
-      `);
+    `);
     assert.equal(res, 3);
   });
 });

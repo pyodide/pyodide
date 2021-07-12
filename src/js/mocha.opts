@@ -1,1 +1,2 @@
+--timeout 30000
 --file ./test/conftest.js
