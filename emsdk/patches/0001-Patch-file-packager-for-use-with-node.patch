@@ -7,10 +7,10 @@ Subject: [PATCH] Patch file-packager for use with node
  tools/file_packager.py | 15 +++++++++++++++
  1 file changed, 15 insertions(+)
 
-diff --git a/tools/file_packager.py b/tools/file_packager.py
+diff --git a/emsdk/upstream/emscripten/tools/file_packager.py b/emsdk/upstream/emscripten/tools/file_packager.py
 index cd70b4b7d..87f3588bc 100755
---- a/tools/file_packager.py
-+++ b/tools/file_packager.py
+--- a/emsdk/upstream/emscripten/tools/file_packager.py
++++ b/emsdk/upstream/emscripten/tools/file_packager.py
 @@ -531,6 +531,8 @@ def main():
        } else if (typeof location !== 'undefined') {
          // worker
