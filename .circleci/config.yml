@@ -195,7 +195,7 @@ jobs:
               -k 'not (chrome or firefox)' \
               --cov=pyodide_build --cov=pyodide \
               src pyodide-build packages/micropip/
-   
+
       - store_test_results:
           path: test-results
 
@@ -315,12 +315,12 @@ workflows:
             - build-core
       - test-main:
           name: test-packages-chrome
-          test-params: -k chrome packages/test* packages/*/test
+          test-params: -k chrome packages/test* packages/*/test*
           requires:
             - build-packages
       - test-main:
           name: test-packages-firefox
-          test-params: -k firefox packages/test* packages/*/test
+          test-params: -k firefox packages/test* packages/*/test*
           requires:
             - build-packages
       - test-emsdk:
