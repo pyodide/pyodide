@@ -1,2 +1,0 @@
---timeout 20000
---file ./test/conftest.js
