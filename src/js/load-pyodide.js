@@ -9,8 +9,17 @@ let baseURL;
  */
 export async function initializePackageIndex(indexURL) {
   baseURL = indexURL;
-  let response = await fetch(`${indexURL}packages.json`);
-  Module.packages = await response.json();
+  if (typeof process !== "undefined" && process.release.name !== "undefined") {
+    const fs = await import("fs");
+    fs.readFile(`${indexURL}packages.json`, (err, data) => {
+      if (err) throw err;
+      let response = JSON.parse(data);
+      Module.packages = response;
+    });
+  } else {
+    let response = await fetch(`${indexURL}packages.json`);
+    Module.packages = await response.json();
+  }
 }
 
 ////////////////////////////////////////////////////////////

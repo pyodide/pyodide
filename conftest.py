@@ -101,10 +101,17 @@ class SeleniumWrapper:
             self.run_js(
                 """
                 window.pyodide = await loadPyodide({ indexURL : './', fullStdLib: false });
+                pyodide.globals.get;
+                pyodide.pyodide_py.eval_code;
+                pyodide.pyodide_py.eval_code_async;
+                pyodide.pyodide_py.register_js_module;
+                pyodide.pyodide_py.unregister_js_module;
+                pyodide.pyodide_py.find_imports;
                 pyodide.runPython("");
                 """
             )
             self.save_state()
+            self.restore_state()
         self.script_timeout = script_timeout
         self.driver.set_script_timeout(script_timeout)
 
@@ -364,8 +371,11 @@ def pytest_runtest_call(item):
     if "selenium_standalone" in item._fixtureinfo.argnames:
         selenium = item.funcargs["selenium_standalone"]
     if selenium:
-        trace_hiwire_refs = pytest.mark.skip_refcount_check.mark not in item.own_markers
         trace_pyproxies = pytest.mark.skip_pyproxy_check.mark not in item.own_markers
+        trace_hiwire_refs = (
+            trace_pyproxies
+            and pytest.mark.skip_refcount_check.mark not in item.own_markers
+        )
         yield from test_wrapper_check_for_memory_leaks(
             selenium, trace_hiwire_refs, trace_pyproxies
         )
@@ -385,12 +395,13 @@ def test_wrapper_check_for_memory_leaks(selenium, trace_hiwire_refs, trace_pypro
     # get_result (we don't want to override the error message by raising a
     # different error here.)
     a.get_result()
-    if trace_pyproxies:
+    if trace_pyproxies and trace_hiwire_refs:
         delta_proxies = selenium.get_num_proxies() - init_num_proxies
-        assert delta_proxies == 0
+        delta_keys = selenium.get_num_hiwire_keys() - init_num_keys
+        assert (delta_proxies, delta_keys) == (0, 0) or delta_keys < 0
     if trace_hiwire_refs:
         delta_keys = selenium.get_num_hiwire_keys() - init_num_keys
-        assert delta_keys == 0
+        assert delta_keys <= 0
 
 
 @contextlib.contextmanager
