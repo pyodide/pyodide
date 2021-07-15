@@ -16,7 +16,7 @@
     "test": "mocha"
   },
   "mocha": {
-    "timeout": 20000,
+    "timeout": 30000,
     "file": "./test/conftest.js"
   },
   "tsd": {
