@@ -1,4 +1,4 @@
-version: 2
+version: 2.1
 
 defaults: &defaults
   working_directory: ~/repo
@@ -33,7 +33,11 @@ jobs:
 
       - run:
           name: Test docs
-          command: pytest docs/sphinx_pyodide/tests
+          command: |
+            mkdir test-results
+            pytest docs/sphinx_pyodide/tests --junitxml=test-results/junit.xml
+      - store_test_results:
+          path: test-results
 
   build-core:
     <<: *defaults
@@ -134,7 +138,11 @@ jobs:
       - store_artifacts:
           path: /root/repo/packages/build-logs
 
-  test-core-firefox:
+  test-main:
+    parameters:
+      test-params:
+        description: The tests to run.
+        type: string
     <<: *defaults
     steps:
       - attach_workspace:
@@ -143,46 +151,10 @@ jobs:
           name: test
           command: |
             mkdir test-results
-            tools/pytest_wrapper.py --junitxml=test-results/junit.xml src packages/micropip/ -v -k firefox -n 3
-      - store_test_results:
-          path: test-results
-
-  test-core-chrome:
-    <<: *defaults
-    steps:
-      - attach_workspace:
-          at: .
-      - run:
-          name: test
-          command: |
-            mkdir test-results
-            tools/pytest_wrapper.py --junitxml=test-results/junit.xml src packages/micropip/ -v -k chrome
-      - store_test_results:
-          path: test-results
-
-  test-packages-firefox:
-    <<: *defaults
-    steps:
-      - attach_workspace:
-          at: .
-      - run:
-          name: test
-          command: |
-            mkdir test-results
-            tools/pytest_wrapper.py --junitxml=test-results/junit.xml packages/test* packages/*/test* -v -k firefox
-      - store_test_results:
-          path: test-results
-
-  test-packages-chrome:
-    <<: *defaults
-    steps:
-      - attach_workspace:
-          at: .
-      - run:
-          name: test
-          command: |
-            mkdir test-results
-            tools/pytest_wrapper.py --junitxml=test-results/junit.xml packages/test* packages/*/test* -v -k chrome -n 2
+            tools/pytest_wrapper.py \
+              --junitxml=test-results/junit.xml \
+              --verbose --numprocesses 3 \
+              << parameters.test-params >>
       - store_test_results:
           path: test-results
 
@@ -207,6 +179,7 @@ jobs:
           command: make -C emsdk test
 
   test-python:
+    # Unlike test-main this uses "resource_class small" and doesn't use "pytest_wrapper."
     <<: *defaults
     resource_class: small
     steps:
@@ -216,7 +189,13 @@ jobs:
           command: |
             mkdir test-results
             pip install ruamel.yaml
-            pytest --junitxml=test-results/junit.xml src pyodide-build packages/micropip/ -v -k 'not (chrome or firefox)' --cov=pyodide_build --cov=pyodide
+            pytest \
+              --junitxml=test-results/junit.xml \
+              --verbose \
+              -k 'not (chrome or firefox)' \
+              --cov=pyodide_build --cov=pyodide \
+              src pyodide-build packages/micropip/
+
       - store_test_results:
           path: test-results
 
@@ -324,16 +303,24 @@ workflows:
       - build-packages:
           requires:
             - build-core
-      - test-core-chrome:
+      - test-main:
+          name: test-core-chrome
+          test-params: -k chrome src packages/micropip
           requires:
             - build-core
-      - test-core-firefox:
+      - test-main:
+          name: test-core-firefox
+          test-params: -k firefox src packages/micropip
           requires:
             - build-core
-      - test-packages-chrome:
+      - test-main:
+          name: test-packages-chrome
+          test-params: -k chrome packages/test* packages/*/test*
           requires:
             - build-packages
-      - test-packages-firefox:
+      - test-main:
+          name: test-packages-firefox
+          test-params: -k firefox packages/test* packages/*/test*
           requires:
             - build-packages
       - test-emsdk:
