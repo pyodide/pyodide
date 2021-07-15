@@ -1,11 +1,6 @@
 import assert from "assert";
-import { loadPyodide } from "../pyodide.js";
 
 describe("fileSystem", () => {
-  let pyodide;
-  it("loadPyodide", async () => {
-    pyodide = await loadPyodide({ indexURL: "../../build/" });
-  });
   const exists = () => {
     return pyodide.runPython("import os; os.path.exists('/tmp/js-test')");
   };
