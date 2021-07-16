@@ -327,7 +327,7 @@ def test_import_bind():
 @run_in_pyodide
 def test_nested_attribute_access():
     import js
-    from js import window
+    from js import self
 
     js.URL.createObjectURL
     self.URL.createObjectURL
@@ -336,13 +336,13 @@ def test_nested_attribute_access():
 @run_in_pyodide
 def test_window_isnt_super_weird_anymore():
     import js
-    from js import window, Array
+    from js import self, Array
 
-    assert self.Array != window
+    assert self.Array != self
     assert self.Array == Array
-    assert self.self.self.window == window
+    assert self.self.self.self == self
     assert js.self.Array == Array
-    assert js.self.self.self.window == window
+    assert js.self.self.self.self == self
     assert self.self.self.self.Array == Array
 
 

@@ -97,8 +97,7 @@ class SeleniumWrapper:
         if load_pyodide:
             self.run_js(
                 """
-                let pyodide = await loadPyodide({ indexURL : './', fullStdLib: false });
-                self.pyodide = pyodide;
+                self.pyodide = await loadPyodide({ indexURL : './', fullStdLib: false });
                 pyodide.globals.get;
                 pyodide.pyodide_py.eval_code;
                 pyodide.pyodide_py.eval_code_async;
