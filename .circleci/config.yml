@@ -188,11 +188,10 @@ jobs:
           name: test
           command: |
             mkdir test-results
-            pip install ruamel.yaml
             pytest \
               --junitxml=test-results/junit.xml \
               --verbose \
-              -k 'not (chrome or firefox)' \
+              -k 'not (chrome or firefox or node)' \
               --cov=pyodide_build --cov=pyodide \
               src pyodide-build packages/micropip/
 

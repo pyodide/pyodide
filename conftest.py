@@ -80,18 +80,14 @@ class SeleniumWrapper:
         server_port,
         server_hostname="127.0.0.1",
         server_log=None,
-        build_dir=None,
         load_pyodide=True,
         script_timeout=20,
     ):
-        if build_dir is None:
-            build_dir = BUILD_PATH
-
-        self.driver = self.get_driver()
-        self.set_script_timeout(script_timeout)
         self.server_port = server_port
         self.server_hostname = server_hostname
         self.server_log = server_log
+        self.driver = self.get_driver()
+        self.set_script_timeout(script_timeout)
         self.prepare_driver()
         self.javascript_setup()
         if load_pyodide:
@@ -179,7 +175,7 @@ class SeleniumWrapper:
 
         if pyodide_checks:
             check_code = """
-                    if(self.pyodide && self.pyodide._module && pyodide._module._PyErr_Occurred()){
+                    if(globalThis.pyodide && pyodide._module && pyodide._module._PyErr_Occurred()){
                         try {
                             pyodide._module._pythonexc2js();
                         } catch(e){
@@ -410,7 +406,6 @@ def selenium_common(request, web_server_main, load_pyodide=True):
     else:
         assert False
     selenium = cls(
-        build_dir=request.config.option.build_dir,
         server_port=server_port,
         server_hostname=server_hostname,
         server_log=server_log,

@@ -15,10 +15,11 @@ RUN apt-get update \
 RUN pip3 --no-cache-dir install \
   black \
   "cython<3.0" \
-  packaging \
   flake8 \
   hypothesis \
   "mypy==0.812" \
+  packaging \
+  pexpect \
   pytest \
   pytest-asyncio \
   pytest-cov \
@@ -27,20 +28,19 @@ RUN pip3 --no-cache-dir install \
   pytest-rerunfailures \
   pytest-xdist \
   pyyaml \
-  pexpect \
+  ruamel.yaml \
   "selenium==4.0.0.b3" \
   # Docs requirements
-  sphinx                \
-  sphinx_book_theme     \
-  myst-parser==0.13.3    \
-  sphinxcontrib-napoleon  \
-  packaging               \
-  sphinx-js==3.1          \
   autodocsumm             \
   docutils==0.16          \
+  myst-parser==0.13.3    \
+  sphinx                \
   sphinx-argparse-cli~=1.6.0 \
-  sphinx-version-warning~=1.1.2 \
-  sphinx-issues
+  sphinx_book_theme     \
+  sphinxcontrib-napoleon  \
+  sphinx-issues           \
+  sphinx-js==3.1          \
+  sphinx-version-warning~=1.1.2
 
 # Get firefox 70.0.1 and geckodriver
 RUN wget -qO- https://ftp.mozilla.org/pub/firefox/releases/87.0/linux-x86_64/en-US/firefox-87.0.tar.bz2 | tar jx \

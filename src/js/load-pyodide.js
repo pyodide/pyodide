@@ -56,7 +56,7 @@ if (globalThis.document) {
   loadScript = async (url) => {
     const path = await pathPromise;
     await import(path.resolve(url));
-  }
+  };
 } else {
   throw new Error("Cannot determine runtime environment");
 }
