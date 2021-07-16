@@ -110,4 +110,80 @@ jobs:
         env:
            SELENIUM_RUNNER: ${{ matrix.selenium_runner }}
         run: |
-           tools/pytest_wrapper.py src packages/micropip/ -v -k "${SELENIUM_RUNNER}" -x || cat geckodriver.log
+           tools/pytest_wrapper.py src packages/micropip/ -v -k "${SELENIUM_RUNNER}" -n 2
+
+  build-packages:
+    runs-on: ubuntu-latest
+    container:
+      image: pyodide/pyodide-env:18
+      options: --user 1001
+    env:
+      EMSDK_NUM_CORES: 3
+      EMCC_CORES: 3
+      PYODIDE_JOBS: 3
+      CCACHE_DIR: /__w/ccache/
+
+    needs: build-core
+
+    steps:
+      - name: Download build artifact
+        uses: actions/download-artifact@v2
+        with:
+          name: core-build-all
+
+      - name: Unzip build artifacts
+        run: |
+          mv build-core-all.tgz /__w/pyodide/
+          cd /__w/pyodide
+          rm -rf /__w/pyodide/pyodide/
+          tar xzf build-core-all.tgz
+          cd /__w/pyodide/pyodide/
+          ls
+
+      - name: Build packages
+        run: |
+          ccache -z
+          make -C packages
+          ccache -s
+
+      - name: Archive build artifacts
+        run: tar czf build-packages.tgz build/
+
+      - name: Store artifacts build
+        uses: actions/upload-artifact@v2
+        with:
+          name: build-packages
+          path: build-packages.tgz
+          retention-days: 10
+
+  test-packages:
+    runs-on: ubuntu-latest
+    container:
+      image: pyodide/pyodide-env:18
+      options: --user 1001
+    env:
+      DISPLAY: :99
+
+    needs: build-packages
+    strategy:
+      matrix:
+        selenium_runner: [firefox, chrome]
+
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: Download build artifact
+        uses: actions/download-artifact@v2
+        with:
+          name: build-packages
+
+      - name: Unzip build artifacts
+        run: |
+          tar xzf build-packages.tgz
+          ls
+
+      - name: run tests
+        env:
+           SELENIUM_RUNNER: ${{ matrix.selenium_runner }}
+        run: |
+           tools/pytest_wrapper.py packages/test* packages/*/test* -v -k "${SELENIUM_RUNNER}" -n 2
