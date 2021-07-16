@@ -52,7 +52,11 @@ if (globalThis.document) {
     globalThis.importScripts(url);
   };
 } else if (typeof process !== "undefined" && process.release.name === "node") {
-  loadScript = async (url) => import(path.resolve(url));
+  const pathPromise = import("path");
+  loadScript = async (url) => {
+    const path = await pathPromise;
+    await import(path.resolve(url));
+  }
 } else {
   throw new Error("Cannot determine runtime environment");
 }

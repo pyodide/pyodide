@@ -152,7 +152,7 @@ def test_load_package_unknown(selenium_standalone):
         (build_dir / "pyparsing-custom.data").unlink()
 
     assert selenium_standalone.run_js(
-        "return window.pyodide.loadedPackages.hasOwnProperty('pyparsing-custom')"
+        "return pyodide.loadedPackages.hasOwnProperty('pyparsing-custom')"
     )
 
 

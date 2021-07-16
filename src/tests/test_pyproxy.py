@@ -12,7 +12,7 @@ def test_pyproxy_class(selenium):
                     return value * 64
             f = Foo()
         `);
-        window.f = pyodide.globals.get('f');
+        self.f = pyodide.globals.get('f');
         assert(() => f.type === "Foo");
         let f_get_value = f.get_value
         assert(() => f_get_value(2) === 128);
@@ -22,7 +22,7 @@ def test_pyproxy_class(selenium):
         f.baz = 32;
         assert(() => f.baz === 32);
         pyodide.runPython(`assert hasattr(f, 'baz')`)
-        window.f_props = Object.getOwnPropertyNames(f);
+        self.f_props = Object.getOwnPropertyNames(f);
         delete f.baz
         pyodide.runPython(`assert not hasattr(f, 'baz')`)
         assert(() => f.toString().startsWith("<Foo"));
@@ -87,7 +87,7 @@ def test_pyproxy_refcount(selenium):
             return pyodide.runPython("sys.getrefcount(pyfunc)");
         }
         let result = [];
-        window.jsfunc = function (f) { f(); };
+        self.jsfunc = function (f) { f(); };
         pyodide.runPython(`
             import sys
             from js import window
@@ -110,13 +110,13 @@ def test_pyproxy_refcount(selenium):
         // 3. pyfunc is referenced from the sys.getrefcount()-test below
 
         pyodide.runPython(`
-            window.jsfunc(pyfunc) # creates new PyProxy
+            self.jsfunc(pyfunc) # creates new PyProxy
         `);
 
         result.push([getRefCount(), 3])
         pyodide.runPython(`
-            window.jsfunc(pyfunc) # create new PyProxy
-            window.jsfunc(pyfunc) # create new PyProxy
+            self.jsfunc(pyfunc) # create new PyProxy
+            self.jsfunc(pyfunc) # create new PyProxy
         `)
 
         // the refcount should be 3 because:
@@ -294,7 +294,7 @@ def test_get_empty_buffer(selenium):
 def test_pyproxy_get_buffer_type_argument(selenium, array_type):
     selenium.run_js(
         """
-        window.a = pyodide.runPython("bytes(range(256))");
+        self.a = pyodide.runPython("bytes(range(256))");
         """
     )
     try:
@@ -324,7 +324,7 @@ def test_pyproxy_get_buffer_type_argument(selenium, array_type):
         else:
             assert result == list(mv.cast(fmt))
     finally:
-        selenium.run_js("a.destroy(); window.a = undefined;")
+        selenium.run_js("a.destroy(); self.a = undefined;")
 
 
 def test_pyproxy_mixins(selenium):
@@ -542,16 +542,16 @@ def test_pyproxy_gc(selenium):
 
     selenium.run_js(
         """
-        window.x = new FinalizationRegistry((val) => { window.val = val; });
+        self.x = new FinalizationRegistry((val) => { self.val = val; });
         x.register({}, 77);
         gc();
         """
     )
-    assert selenium.run_js("return window.val;") == 77
+    assert selenium.run_js("return self.val;") == 77
 
     selenium.run_js(
         """
-        window.res = new Map();
+        self.res = new Map();
 
         let d = pyodide.runPython(`
             from js import res
@@ -599,7 +599,7 @@ def test_pyproxy_gc_destroy(selenium):
 
     selenium.run_js(
         """
-        window.res = new Map();
+        self.res = new Map();
         let d = pyodide.runPython(`
             from js import res
             def get_ref_count(x):
@@ -783,7 +783,7 @@ def test_pyproxy_call(selenium):
             def f(x=2, y=3):
                 return to_js([x, y])
         `);
-        window.f = pyodide.globals.get("f");
+        self.f = pyodide.globals.get("f");
         """
     )
 

@@ -2,19 +2,13 @@ import pytest
 
 
 def test_init(selenium_standalone):
-    assert "Python initialization complete" in selenium_standalone.logs.splitlines()
-    assert len(selenium_standalone.driver.window_handles) == 1
-
-
-def test_webbrowser(selenium):
-    selenium.run_async("import antigravity")
-    assert len(selenium.driver.window_handles) == 2
-
+    selenium = selenium_standalone
+    assert "Python initialization complete" in selenium.logs.splitlines()
+    selenium.run("import antigravity")
 
 def test_print(selenium):
     selenium.run("print('This should be logged')")
     assert "This should be logged" in selenium.logs.splitlines()
-
 
 def test_import_js(selenium):
     result = selenium.run(

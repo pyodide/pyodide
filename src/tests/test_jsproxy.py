@@ -6,8 +6,8 @@ from pyodide_build.testing import run_in_pyodide
 def test_jsproxy_dir(selenium):
     result = selenium.run_js(
         """
-        window.a = { x : 2, y : "9" };
-        window.b = function(){};
+        self.a = { x : 2, y : "9" };
+        self.b = function(){};
         let pyresult = pyodide.runPython(`
             from js import a
             from js import b
@@ -43,7 +43,7 @@ def test_jsproxy_dir(selenium):
     assert set1.isdisjoint(a_items)
     selenium.run_js(
         """
-        window.a = [0,1,2,3,4,5,6,7,8,9];
+        self.a = [0,1,2,3,4,5,6,7,8,9];
         a[27] = 0;
         a[":"] = 0;
         a["/"] = 0;
@@ -69,7 +69,7 @@ def test_jsproxy_getattr(selenium):
     assert (
         selenium.run_js(
             """
-        window.a = { x : 2, y : "9", typeof : 7 };
+        self.a = { x : 2, y : "9", typeof : 7 };
         let pyresult = pyodide.runPython(`
             from js import a
             [ a.x, a.y, a.typeof ]
@@ -98,7 +98,7 @@ def test_jsproxy(selenium):
     assert selenium.run("document.body.children[0].tagName") == "DIV"
     assert selenium.run("repr(document)") == "[object HTMLDocument]"
 
-    selenium.run_js("window.square = function (x) { return x*x; }")
+    selenium.run_js("self.square = function (x) { return x*x; }")
     assert selenium.run("from js import square\n" "square(2)") == 4
     assert (
         selenium.run("from js import ImageData\n" "ImageData.new(64, 64).width") == 64
@@ -112,7 +112,7 @@ def test_jsproxy(selenium):
             this.y = y;
           }
         }
-        window.TEST = new Point(42, 43);"""
+        self.TEST = new Point(42, 43);"""
     )
     assert (
         selenium.run(
@@ -126,7 +126,7 @@ def test_jsproxy(selenium):
     )
     selenium.run_js(
         """
-        window.TEST = new Map([["x", 42], ["y", 43]]);
+        self.TEST = new Map([["x", 42], ["y", 43]]);
         """
     )
     assert (
@@ -153,7 +153,7 @@ def test_jsproxy(selenium):
     )
     selenium.run_js(
         """
-        window.TEST = {foo: 'bar', baz: 'bap'}
+        self.TEST = {foo: 'bar', baz: 'bap'}
         """
     )
     assert (
@@ -190,7 +190,7 @@ def test_jsproxy_iter(selenium):
             }
           };
         }
-        window.ITER = makeIterator([1, 2, 3]);"""
+        self.ITER = makeIterator([1, 2, 3]);"""
     )
     assert selenium.run("from js import ITER\n" "list(ITER)") == [1, 2, 3]
 
@@ -198,7 +198,7 @@ def test_jsproxy_iter(selenium):
 def test_jsproxy_implicit_iter(selenium):
     selenium.run_js(
         """
-        window.ITER = [1, 2, 3];
+        self.ITER = [1, 2, 3];
         """
     )
     assert selenium.run("from js import ITER, Object\n" "list(ITER)") == [1, 2, 3]
@@ -216,7 +216,7 @@ def test_jsproxy_call(selenium):
     assert (
         selenium.run_js(
             """
-            window.f = function(){ return arguments.length; };
+            self.f = function(){ return arguments.length; };
             let pyresult = pyodide.runPython(
                 `
                 from js import f
@@ -236,7 +236,7 @@ def test_jsproxy_call_kwargs(selenium):
     assert (
         selenium.run_js(
             """
-            window.kwarg_function = ({ a = 1, b = 1 }) => {
+            self.kwarg_function = ({ a = 1, b = 1 }) => {
                 return [a, b];
             };
             return pyodide.runPython(
@@ -255,7 +255,7 @@ def test_jsproxy_call_kwargs(selenium):
 def test_jsproxy_call_meth_py(selenium):
     assert selenium.run_js(
         """
-        window.a = {};
+        self.a = {};
         return pyodide.runPython(
             `
             from js import a
@@ -272,7 +272,7 @@ def test_jsproxy_call_meth_py(selenium):
 def test_jsproxy_call_meth_js(selenium):
     assert selenium.run_js(
         """
-        window.a = {};
+        self.a = {};
         function f(){return this;}
         a.f = f;
         return pyodide.runPython(
@@ -288,7 +288,7 @@ def test_jsproxy_call_meth_js(selenium):
 def test_jsproxy_call_meth_js_kwargs(selenium):
     assert selenium.run_js(
         """
-        window.a = {};
+        self.a = {};
         function f({ x = 1, y = 1 }){
             return [this, x, y];
         }
@@ -330,7 +330,7 @@ def test_nested_attribute_access():
     from js import window
 
     js.URL.createObjectURL
-    window.URL.createObjectURL
+    self.URL.createObjectURL
 
 
 @run_in_pyodide
@@ -338,12 +338,12 @@ def test_window_isnt_super_weird_anymore():
     import js
     from js import window, Array
 
-    assert window.Array != window
-    assert window.Array == Array
-    assert window.window.window.window == window
-    assert js.window.Array == Array
-    assert js.window.window.window.window == window
-    assert window.window.window.window.Array == Array
+    assert self.Array != window
+    assert self.Array == Array
+    assert self.self.self.window == window
+    assert js.self.Array == Array
+    assert js.self.self.self.window == window
+    assert self.self.self.self.Array == Array
 
 
 @pytest.mark.skip_refcount_check
@@ -437,7 +437,7 @@ def test_nested_import(selenium_standalone):
     assert (
         selenium.run_js(
             """
-            window.a = { b : { c : { d : 2 } } };
+            self.a = { b : { c : { d : 2 } } };
             return pyodide.runPython("from js.a.b import c; c.d");
             """
         )
@@ -493,7 +493,7 @@ def test_register_jsmodule_docs_example(selenium_standalone):
 def test_object_entries_keys_values(selenium):
     selenium.run_js(
         """
-        window.x = { a : 2, b : 3, c : 4 };
+        self.x = { a : 2, b : 3, c : 4 };
         pyodide.runPython(`
             from js import x
             assert x.object_entries().to_py() == [["a", 2], ["b", 3], ["c", 4]]
@@ -551,7 +551,7 @@ def test_mixins_feature_presence(selenium):
 def test_mixins_calls(selenium):
     result = selenium.run_js(
         """
-        window.testObjects = {};
+        self.testObjects = {};
         testObjects.iterable = { *[Symbol.iterator](){
             yield 3; yield 5; yield 7;
         } };
@@ -604,8 +604,8 @@ def test_mixins_calls(selenium):
 def test_mixins_errors(selenium):
     selenium.run_js(
         """
-        window.a = [];
-        window.b = {
+        self.a = [];
+        self.b = {
             has(){ return false; },
             get(){ return undefined; },
             set(){ return false; },
@@ -625,7 +625,7 @@ def test_mixins_errors(selenium):
                 del b[0]
         `);
 
-        window.c = {
+        self.c = {
             next(){},
             length : 1,
             get(){},
@@ -633,7 +633,7 @@ def test_mixins_errors(selenium):
             has(){},
             then(){}
         };
-        window.d = {
+        self.d = {
             [Symbol.iterator](){},
         };
         pyodide.runPython("from js import c, d");
@@ -670,8 +670,8 @@ def test_mixins_errors(selenium):
                 await c
         `);
 
-        window.l = [0, false, NaN, undefined, null];
-        window.l[6] = 7;
+        self.l = [0, false, NaN, undefined, null];
+        self.l[6] = 7;
         await pyodide.runPythonAsync(`
             from unittest import TestCase
             raises = TestCase().assertRaises
@@ -691,11 +691,11 @@ def test_mixins_errors(selenium):
             l[3]; l[4]
         `);
 
-        window.l = [0, false, NaN, undefined, null];
-        window.l[6] = 7;
-        let a = Array.from(window.l.entries());
+        self.l = [0, false, NaN, undefined, null];
+        self.l[6] = 7;
+        let a = Array.from(self.l.entries());
         a.splice(5, 1);
-        window.m = new Map(a);
+        self.m = new Map(a);
         await pyodide.runPythonAsync(`
             from js import m
             from unittest import TestCase
@@ -791,7 +791,7 @@ def test_memory_leaks(selenium):
     # refcounts are tested automatically in conftest by default
     selenium.run_js(
         """
-        window.a = [1,2,3];
+        self.a = [1,2,3];
         pyodide.runPython(`
             from js import a
             repr(a)
