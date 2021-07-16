@@ -98,6 +98,7 @@ jobs:
         uses: actions/download-artifact@v2
         with:
           name: core-build
+          path: ./build/
 
       - name: run tests
         env:
