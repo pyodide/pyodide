@@ -106,7 +106,7 @@ jobs:
         run: |
            ls -lh
            ls -lh build/
-           tools/pytest_wrapper.py src packages/micropip/ -v -k "${SELENIUM_RUNNER}"
+           tools/pytest_wrapper.py src packages/micropip/ -v -k "${SELENIUM_RUNNER}" -n 2
 
   test-js:
     runs-on: ubuntu-latest
@@ -245,12 +245,13 @@ jobs:
         uses: actions/download-artifact@v2
         with:
           name: build-packages
+          path: ./build/
 
       - name: run tests
         env:
            SELENIUM_RUNNER: ${{ matrix.selenium_runner }}
         run: |
-           tools/pytest_wrapper.py packages/test* packages/*/test* -v -k "${SELENIUM_RUNNER}"
+           tools/pytest_wrapper.py packages/test* packages/*/test* -v -k "${SELENIUM_RUNNER}" -n 2
 
   benchmark:
     runs-on: ubuntu-latest
@@ -267,6 +268,7 @@ jobs:
         uses: actions/download-artifact@v2
         with:
           name: build-packages
+          path: ./build/
 
       - name: benchmark
         run: |
