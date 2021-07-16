@@ -57,19 +57,17 @@ jobs:
       - name: check-size
         run: ls -lh build/
 
-      - name: Archive build artifacts
-        run: tar czf build-core.tgz build/
-
       - name: Store artifacts build
         uses: actions/upload-artifact@v2
         with:
           name: core-build
-          path: build-core.tgz
+          path: ./build/
           retention-days: 10
 
       - name: Archive all build output
         run: |
-          rm build-core.tgz
+          # We create an archive of all packages, as otherwise upload
+          # is very slow
           rm -rf ./src/js/node_modules/
           tar czf /__w/build-core-all.tgz --exclude='*__pycache__*' .
 
@@ -102,11 +100,6 @@ jobs:
         with:
           name: core-build
 
-      - name: Unzip build artifacts
-        run: |
-          tar xzf build-core.tgz
-          ls
-
       - name: run tests
         env:
            SELENIUM_RUNNER: ${{ matrix.selenium_runner }}
@@ -122,22 +115,21 @@ jobs:
     needs: build-core
 
     steps:
-      - uses: actions/checkout@v2
-
       - name: Download build artifact
         uses: actions/download-artifact@v2
         with:
-          name: core-build
+          name: core-build-all
 
       - name: Unzip build artifacts
         run: |
-          tar xzf build-core.tgz
+          tar xzf build-core-all.tgz
           ls
+
       - name: test JS
         run: |
             cd src/js
-            npx tsd
             npm install
+            npx tsd
             npm test
 
   benchmark:
@@ -149,17 +141,16 @@ jobs:
     needs: build-core
 
     steps:
-      - uses: actions/checkout@v2
-
       - name: Download build artifact
         uses: actions/download-artifact@v2
         with:
-          name: core-build
+          name: core-build-all
 
       - name: Unzip build artifacts
         run: |
-          tar xzf build-core.tgz
+          tar xzf build-core-all.tgz
           ls
+
       - name: benchmark
         run: |
           python benchmark/benchmark.py /usr/local/bin/python3 build/benchmarks.json
@@ -185,6 +176,37 @@ jobs:
               --cov=pyodide_build --cov=pyodide \
               src pyodide-build packages/micropip/
 
+  lint:
+    runs-on: ubuntu-latest
+    container:
+      image: pyodide/pyodide-env:18
+      options: --user 1001
+
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: lint
+        run:  make lint
+
+
+  test-docs:
+    runs-on: ubuntu-latest
+    container:
+      image: pyodide/pyodide-env:18
+      options: --user 1001
+
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: install requirements
+        run: |
+          pip install -r docs/requirements-doc.txt
+
+      - name: test docs
+        run: |
+          mkdir test-results
+          pytest docs/sphinx_pyodide/tests --junitxml=test-results/junit.xml
+
 
   build-packages:
     runs-on: ubuntu-latest
@@ -207,7 +229,7 @@ jobs:
 
       - name: Unzip build artifacts
         run: |
-          tar xvzf build-core-all.tgz
+          tar xzf build-core-all.tgz
           ls
 
       - name: Build packages
@@ -216,14 +238,11 @@ jobs:
           make -C packages
           ccache -s
 
-      - name: Archive build artifacts
-        run: tar czf build-packages.tgz build/
-
       - name: Store artifacts build
         uses: actions/upload-artifact@v2
         with:
           name: build-packages
-          path: build-packages.tgz
+          path: ./build/
           retention-days: 10
 
   test-packages:
@@ -246,11 +265,6 @@ jobs:
         uses: actions/download-artifact@v2
         with:
           name: build-packages
-
-      - name: Unzip build artifacts
-        run: |
-          tar xzf build-packages.tgz
-          ls
 
       - name: run tests
         env:
