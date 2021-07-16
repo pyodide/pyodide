@@ -3,13 +3,12 @@ const readline = require("readline");
 const path = require("path");
 const util = require("util");
 const node_fetch = require("node-fetch");
-const url = require("url");
 
 require(path.resolve("./pyodide.js"));
 let base_url = process.argv[2];
 // node requires full paths.
 function fetch(path) {
-  return node_fetch(url.resolve(base_url, path));
+  return node_fetch(new URL(path, base_url).toString());
 }
 
 const context = Object.assign({}, globalThis, {

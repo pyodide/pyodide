@@ -173,7 +173,7 @@ function fixRecursionLimit() {
  * @async
  */
 export async function loadPyodide(config) {
-  const default_config = { fullStdLib: true, jsglobals : globalThis };
+  const default_config = { fullStdLib: true, jsglobals: globalThis };
   config = Object.assign(default_config, config);
   if (globalThis.__pyodide_module) {
     if (globalThis.languagePluginURL) {
