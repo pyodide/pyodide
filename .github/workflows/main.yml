@@ -104,7 +104,7 @@ jobs:
         env:
            SELENIUM_RUNNER: ${{ matrix.selenium_runner }}
         run: |
-           tools/pytest_wrapper.py src packages/micropip/ -v -k "${SELENIUM_RUNNER}" -n 2
+           tools/pytest_wrapper.py src packages/micropip/ -v -k "${SELENIUM_RUNNER}"
 
   test-js:
     runs-on: ubuntu-latest
@@ -270,4 +270,4 @@ jobs:
         env:
            SELENIUM_RUNNER: ${{ matrix.selenium_runner }}
         run: |
-           tools/pytest_wrapper.py packages/test* packages/*/test* -v -k "${SELENIUM_RUNNER}" -n 2
+           tools/pytest_wrapper.py packages/test* packages/*/test* -v -k "${SELENIUM_RUNNER}"
