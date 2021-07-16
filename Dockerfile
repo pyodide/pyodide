@@ -27,6 +27,7 @@ RUN pip3 --no-cache-dir install \
   pytest-rerunfailures \
   pytest-xdist \
   pyyaml \
+  pexpect \
   "selenium==4.0.0.b3" \
   # Docs requirements
   sphinx                \

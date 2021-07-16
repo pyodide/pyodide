@@ -92,8 +92,7 @@ class SeleniumWrapper:
         self.server_port = server_port
         self.server_hostname = server_hostname
         self.server_log = server_log
-        if self.browser != "node":
-            self.driver.get(f"http://{server_hostname}:{server_port}/test.html")
+        self.prepare_driver()
         self.javascript_setup()
         if load_pyodide:        
             self.run_js(
@@ -113,6 +112,9 @@ class SeleniumWrapper:
             self.restore_state()
 
     SETUP_CODE = pathlib.Path("./testsetup.js").read_text()
+
+    def prepare_driver(self):
+        self.driver.get(f"http://{self.server_hostname}:{self.server_port}/test.html")
 
     def set_script_timeout(self, timeout):
         self.script_timeout = timeout
@@ -170,26 +172,6 @@ class SeleniumWrapper:
             """
         )
 
-    def run_js_inner(self, code, check_code):
-        wrapper = """
-            let cb = arguments[arguments.length - 1];
-            let run = async () => { %s }
-            (async () => {
-                try {
-                    let result = await run();
-                    %s
-                    cb([0, result]);
-                } catch (e) {
-                    cb([1, e.toString(), e.stack]);
-                }
-            })()
-        """
-        retval = self.driver.execute_async_script(wrapper % (code, check_code))
-        if retval[0] == 0:
-            return retval[1]
-        else:
-            raise JavascriptException(retval[1], retval[2])
-
     def run_js(self, code, pyodide_checks=True):
         """Run JavaScript code and check for pyodide errors"""
         if isinstance(code, str) and code.startswith("\n"):
@@ -212,6 +194,26 @@ class SeleniumWrapper:
         else:
             check_code = ""
         return self.run_js_inner(code, check_code)
+
+    def run_js_inner(self, code, check_code):
+        wrapper = """
+            let cb = arguments[arguments.length - 1];
+            let run = async () => { %s }
+            (async () => {
+                try {
+                    let result = await run();
+                    %s
+                    cb([0, result]);
+                } catch (e) {
+                    cb([1, e.toString(), e.stack]);
+                }
+            })()
+        """
+        retval = self.driver.execute_async_script(wrapper % (code, check_code))
+        if retval[0] == 0:
+            return retval[1]
+        else:
+            raise JavascriptException(retval[1], retval[2])
 
     def get_num_hiwire_keys(self):
         return self.run_js("return pyodide._module.hiwire.num_keys();")
@@ -312,6 +314,9 @@ class NodeWrapper(SeleniumWrapper):
                 # pytest.skip("unsupported configuration")
 
         return NodeDriver()
+    
+    def prepare_driver(self):
+        pass
 
     def set_script_timeout(self, timeout):
         self.script_timeout = timeout
