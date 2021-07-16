@@ -70,6 +70,7 @@ jobs:
       - name: Archive all build output
         run: |
           rm build-core.tgz
+          rm -rf ./src/js/node_modules/
           tar czf /__w/build-core-all.tgz .
 
       - name: Store artifacts all
