@@ -30,7 +30,6 @@ jobs:
         with:
           path: |
             /__w/ccache/
-            /__w/pyodide/pyodide/emsdk/emsdk/upstream/emscripten/cache/
           key: ${{ hashFiles('Makefile.envs') }}-v20201205-
 
       - name: Build emsdk
