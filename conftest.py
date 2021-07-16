@@ -85,6 +85,7 @@ class SeleniumWrapper:
     ):
         self.server_port = server_port
         self.server_hostname = server_hostname
+        self.base_url = f"http://{self.server_hostname}:{self.server_port}"
         self.server_log = server_log
         self.driver = self.get_driver()
         self.set_script_timeout(script_timeout)
@@ -93,7 +94,7 @@ class SeleniumWrapper:
         if load_pyodide:
             self.run_js(
                 """
-                self.pyodide = await loadPyodide({ indexURL : './', fullStdLib: false });
+                self.pyodide = await loadPyodide({ indexURL : './', fullStdLib: false, jsglobals : globalThis });
                 pyodide.globals.get;
                 pyodide.pyodide_py.eval_code;
                 pyodide.pyodide_py.eval_code_async;
@@ -106,10 +107,10 @@ class SeleniumWrapper:
             self.save_state()
             self.restore_state()
 
-    SETUP_CODE = pathlib.Path("./testsetup.js").read_text()
+    SETUP_CODE = pathlib.Path(ROOT_PATH / "testsetup.js").read_text()
 
     def prepare_driver(self):
-        self.driver.get(f"http://{self.server_hostname}:{self.server_port}/test.html")
+        self.driver.get(f"{self.base_url}/test.html")
 
     def set_script_timeout(self, timeout):
         self.script_timeout = timeout
@@ -300,7 +301,7 @@ class NodeWrapper(SeleniumWrapper):
 
     def get_driver(self):
         os.chdir("build")
-        self.p = pexpect.spawn("node ../node_test_driver.js")
+        self.p = pexpect.spawn(f"node ../node_test_driver.js {self.base_url}")
         self.p.setecho(False)
         os.chdir("..")
 
