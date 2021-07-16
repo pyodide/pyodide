@@ -186,8 +186,7 @@ class SeleniumWrapper:
         logs = self.driver.execute_script("return window.logs;")
         if logs is not None:
             return "\n".join(str(x) for x in logs)
-        else:
-            return ""
+        return ""
 
     def clean_logs(self):
         self.driver.execute_script("window.logs = []")
