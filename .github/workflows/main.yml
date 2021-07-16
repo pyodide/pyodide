@@ -71,7 +71,7 @@ jobs:
         run: |
           rm build-core.tgz
           rm -rf ./src/js/node_modules/
-          tar czf --exclude='*__pycache__*' /__w/build-core-all.tgz .
+          tar czf /__w/build-core-all.tgz --exclude='*__pycache__*' .
 
       - name: Store artifacts all
         uses: actions/upload-artifact@v2
