@@ -14,28 +14,6 @@ from types import CodeType
 from typing import Any, Dict, Generator, List, Optional
 
 
-def open_url(url: str) -> StringIO:
-    """
-    Fetches a given URL
-
-    Parameters
-    ----------
-    url : str
-       URL to fetch
-
-    Returns
-    -------
-    io.StringIO
-        the contents of the URL.
-    """
-    from js import XMLHttpRequest
-
-    req = XMLHttpRequest.new()
-    req.open("GET", url, False)
-    req.send(None)
-    return StringIO(req.response)
-
-
 def should_quiet(source: str) -> bool:
     """
     Should we suppress output?

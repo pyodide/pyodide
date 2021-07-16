@@ -142,18 +142,15 @@ def test_pyproxy_destroy(selenium):
         f = Foo()
         """
     )
-    msg = "Object has already been destroyed"
-    with pytest.raises(selenium.JavascriptException, match=msg):
-        selenium.run_js(
-            """
-            let f = pyodide.globals.get('f');
-            let f_get_value = f.get_value;
-            assert(()=> f_get_value(1) === 64);
-            f_get_value.destroy();
-            f.destroy();
-            f.get_value();
-            """
-        )
+
+    selenium.run_js(
+        """
+        let f = pyodide.globals.get('f');
+        assert(()=> f.get_value(1) === 64);
+        f.destroy();
+        assertThrows(() => f.get_value(1), "Error", "already been destroyed");
+        """
+    )
 
 
 def test_pyproxy_iter(selenium):
@@ -398,23 +395,21 @@ def test_pyproxy_mixins(selenium):
 def test_pyproxy_mixins2(selenium):
     selenium.run_js(
         """
-        assert(() => !("prototype" in pyodide.globals));
-        assert(() => !("caller" in pyodide.globals));
-        assert(() => !("name" in pyodide.globals));
-        assert(() => "length" in pyodide.globals);
-        let get_method = pyodide.globals.__getitem__;
-        assert(() => "prototype" in get_method);
-        assert(() => get_method.prototype === undefined);
-        assert(() => !("length" in get_method));
-        assert(() => !("name" in get_method));
-        get_method.destroy();
-
         let d = pyodide.runPython("{}");
-        let d_get = d.$get;
-        assert(() => d_get.type === "builtin_function_or_method");
+
+        assert(() => !("prototype" in d));
+        assert(() => !("caller" in d));
+        assert(() => !("name" in d));
+        assert(() => "length" in d);
+
+        assert(() => "prototype" in d.__getitem__);
+        assert(() => d.__getitem__.prototype === undefined);
+        assert(() => !("length" in d.__getitem__));
+        assert(() => !("name" in d.__getitem__));
+
+        assert(() => d.$get.type === "builtin_function_or_method");
         assert(() => d.get.type === undefined);
         assert(() => d.set.type === undefined);
-        d_get.destroy();
         d.destroy();
         """
     )
@@ -628,16 +623,14 @@ def test_pyproxy_gc_destroy(selenium):
         get_ref_count(2);
         d.get();
         get_ref_count(3);
-        d.destroy();
-        get_ref_count(4);
-        gc();
-        get_ref_count(5);
+        delete d;
+        get_ref_count.destroy();
         """
     )
     selenium.driver.execute_cdp_cmd("HeapProfiler.collectGarbage", {})
     selenium.run(
         """
-        get_ref_count(6)
+        get_ref_count(4)
         del d
         """
     )
@@ -646,10 +639,8 @@ def test_pyproxy_gc_destroy(selenium):
         0: 2,
         1: 3,
         2: 4,
-        3: 5,
-        4: 4,
-        5: 4,
-        6: 2,
+        3: 4,
+        4: 2,
         "destructor_ran": True,
     }
 
@@ -826,29 +817,29 @@ def test_pyproxy_call(selenium):
     msg = r"TypeError: f\(\) got multiple values for argument 'x'"
     with pytest.raises(selenium.JavascriptException, match=msg):
         selenium.run_js("f.callKwargs(76, {x : 6})")
+
     selenium.run_js("f.destroy()")
 
 
-def test_pyproxy_name_clash(selenium):
+def test_pyproxy_borrow(selenium):
     selenium.run_js(
         """
-        let d = pyodide.runPython("{'a' : 2}");
-        let d_get = d.$get;
-        assert(() => d.get('a') === 2);
-        assert(() => d_get('b', 3) === 3);
-        d_get.destroy();
-        d.destroy();
-
         let t = pyodide.runPython(`
-            class Test:
-                def destroy(self):
+            class Tinner:
+                def f(self):
                     return 7
-            Test()
+            class Touter:
+                T = Tinner()
+            Touter
         `);
-        let t_dest = t.$destroy;
-        assert(() => t_dest() === 7);
-        t_dest.destroy();
+        assert(() => t.T.f() === 7);
+        let T = t.T;
+        let Tcopy = T.copy();
+        assert(() => T.f() === 7);
+        assert(() => Tcopy.f() === 7);
         t.destroy();
-        assertThrows(() => t.$destroy, "Error", "Object has already been destroyed");
+        assert(() => Tcopy.f() === 7);
+        assertThrows(() => T.f(), "Error", "automatically destroyed in the process of destroying the proxy it was borrowed from");
+        Tcopy.destroy();
         """
     )

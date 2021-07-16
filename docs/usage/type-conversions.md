@@ -531,37 +531,6 @@ practice it typically takes a long time. Furthermore, the Javascript garbage
 collector does not have any information about whether Python is experiencing
 memory pressure. So it's best to aim to avoid leaks.
 
-When using a `PyProxy`, note that accessing a field of the `PyProxy` is likely
-to yield more `PyProxy` objects that also need to be destroyed. A particular
-gotcha occurs with method calls:
-```js
-pyproxy.some_func(10);
-pyproxy.destroy();
-```
-This leaks `pyproxy`! Insteaad:
-```js
-let some_func = pyproxy.some_func;
-some_func(10);
-pyproxy.destroy();
-some_func.destroy();
-```
-To be absolutely foolproof we can do it in a finally block:
-```js
-let some_func;
-try {
-    some_func = pyproxy.some_func;
-    some_func(10);
-} finlly {
-    // To be extra sure we do it in a finally block.
-    pyproxy.destroy();
-    if(some_func){
-        some_func.destroy();
-    }
-}
-```
-Obviously it's not a whole lot of fun writing code like this. We hope to improve
-the design to make managing `PyProxy` lifecycles more ergonomic in the future.
-
 Here are some tips for how to do that when calling functions in one language from another.
 
 There are four cases to consider here:
@@ -657,11 +626,9 @@ should destroy the argument when you are done. This can be a bit tedious to get
 correct due to `PyProxy` usage constraints.
 ```pyodide
 function callback(arg){
-    let res_method = arg.result;
-    let res = res_method();
+    let res = arg.result();
     window.result = res.toJs();
     arg.destroy();
-    res_method.destroy();
     res.destroy();
 }
 let fut = pyodide.runPython(`

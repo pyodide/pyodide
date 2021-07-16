@@ -1,12 +1,13 @@
-import { Module } from "./module";
-import { loadPackage, loadedPackages } from "./load-pyodide";
-import { isPyProxy, PyBuffer } from "./pyproxy.gen";
+import { Module } from "./module.js";
+import { loadPackage, loadedPackages } from "./load-pyodide.js";
+import { isPyProxy, PyBuffer } from "./pyproxy.gen.js";
 export { loadPackage, loadedPackages, isPyProxy };
 
 /**
  * @typedef {import('./pyproxy.gen').Py2JsResult} Py2JsResult
  * @typedef {import('./pyproxy.gen').PyProxy} PyProxy
  * @typedef {import('./pyproxy.gen').TypedArray} TypedArray
+ * @typedef {import('emscripten')} Emscripten
  */
 
 /**
@@ -89,12 +90,7 @@ export let version = ""; // actually defined in runPythonSimple in loadPyodide (
  *          documentation for :any:`pyodide.eval_code` for more info.
  */
 export function runPython(code, globals = Module.globals) {
-  let eval_code = Module.pyodide_py.eval_code;
-  try {
-    return eval_code(code, globals);
-  } finally {
-    eval_code.destroy();
-  }
+  return Module.pyodide_py.eval_code(code, globals);
 }
 Module.runPython = runPython;
 
@@ -131,15 +127,12 @@ export async function loadPackagesFromImports(
   messageCallback,
   errorCallback
 ) {
-  let find_imports = Module.pyodide_py.find_imports;
+  let pyimports = Module.pyodide_py.find_imports(code);
   let imports;
-  let pyimports;
   try {
-    pyimports = find_imports(code);
     imports = pyimports.toJs();
   } finally {
-    find_imports.destroy();
-    pyimports && pyimports.destroy();
+    pyimports.destroy();
   }
   if (imports.length === 0) {
     return;
@@ -198,13 +191,11 @@ export function pyimport(name) {
  * @async
  */
 export async function runPythonAsync(code) {
-  let eval_code_async = Module.pyodide_py.eval_code_async;
-  let coroutine = eval_code_async(code, Module.globals);
+  let coroutine = Module.pyodide_py.eval_code_async(code, Module.globals);
   try {
     let result = await coroutine;
     return result;
   } finally {
-    eval_code_async.destroy();
     coroutine.destroy();
   }
 }
@@ -222,12 +213,7 @@ Module.runPythonAsync = runPythonAsync;
  * @param {object} module Javascript object backing the module
  */
 export function registerJsModule(name, module) {
-  let register_js_module = Module.pyodide_py.register_js_module;
-  try {
-    register_js_module(name, module);
-  } finally {
-    register_js_module.destroy();
-  }
+  Module.pyodide_py.register_js_module(name, module);
 }
 
 /**
@@ -250,12 +236,7 @@ export function registerComlink(Comlink) {
  * @param {string} name Name of the Javascript module to remove
  */
 export function unregisterJsModule(name) {
-  let unregister_js_module = Module.pyodide_py.unregister_js_module;
-  try {
-    unregister_js_module(name);
-  } finally {
-    unregister_js_module.destroy();
-  }
+  Module.pyodide_py.unregister_js_module(name);
 }
 
 /**
@@ -312,6 +293,16 @@ export function toPy(obj, depth = -1) {
 }
 
 /**
+ * @private
+ */
+Module.saveState = () => Module.pyodide_py._state.save_state();
+
+/**
+ * @private
+ */
+Module.restoreState = (state) => Module.pyodide_py._state.restore_state(state);
+
+/**
  * @param {TypedArray} interrupt_buffer
  */
 function setInterruptBuffer(interrupt_buffer) {}
@@ -319,8 +310,23 @@ setInterruptBuffer = Module.setInterruptBuffer;
 export { setInterruptBuffer };
 
 export function makePublicAPI() {
+  /**
+   * An alias to the `Emscripten File System API
+   * <https://emscripten.org/docs/api_reference/Filesystem-API.html>`_.
+   *
+   * This provides a wide range of POSIX-`like` file/device operations, including
+   * `mount
+   * <https://emscripten.org/docs/api_reference/Filesystem-API.html#FS.mount>`_
+   * which can be used to extend the in-memory filesystem with features like `persistence
+   * <https://emscripten.org/docs/api_reference/Filesystem-API.html#persistent-data>`_.
+   *
+   * @type {FS} The Emscripten File System API.
+   */
+  const fileSystem = Module.FS;
+
   let namespace = {
     globals,
+    fileSystem,
     pyodide_py,
     version,
     loadPackage,
@@ -338,6 +344,7 @@ export function makePublicAPI() {
     PythonError,
     PyBuffer,
   };
+
   namespace._module = Module; // @private
   Module.public_api = namespace;
   return namespace;
