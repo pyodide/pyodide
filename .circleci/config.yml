@@ -27,11 +27,6 @@ jobs:
       - checkout
 
       - run:
-          name: Install prerequisites
-          command: |
-            pip install -r docs/requirements-doc.txt
-
-      - run:
           name: Test docs
           command: |
             mkdir test-results

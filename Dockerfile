@@ -12,35 +12,10 @@ RUN apt-get update \
         libgconf-2-4 "chromium=90.*" \
   && rm -rf /var/lib/apt/lists/*
 
-RUN pip3 --no-cache-dir install \
-  black \
-  "cython<3.0" \
-  flake8 \
-  hypothesis \
-  "mypy==0.812" \
-  packaging \
-  pexpect \
-  pytest \
-  pytest-asyncio \
-  pytest-cov \
-  pytest-httpserver \
-  pytest-instafail \
-  pytest-rerunfailures \
-  pytest-xdist \
-  pyyaml \
-  ruamel.yaml \
-  "selenium==4.0.0.b3" \
-  # Docs requirements
-  autodocsumm             \
-  docutils==0.16          \
-  myst-parser==0.13.3    \
-  sphinx                \
-  sphinx-argparse-cli~=1.6.0 \
-  sphinx_book_theme     \
-  sphinxcontrib-napoleon  \
-  sphinx-issues           \
-  sphinx-js==3.1          \
-  sphinx-version-warning~=1.1.2
+ADD docs/requirements-doc.txt requirements.txt /
+
+RUN pip3 --no-cache-dir install -r /requirements.txt \
+  && pip3 --no-cache-dir install -r /requirements-doc.txt
 
 # Get firefox 70.0.1 and geckodriver
 RUN wget -qO- https://ftp.mozilla.org/pub/firefox/releases/87.0/linux-x86_64/en-US/firefox-87.0.tar.bz2 | tar jx \
