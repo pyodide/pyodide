@@ -314,6 +314,11 @@ workflows:
           requires:
             - build-core
       - test-main:
+          name: test-core-node
+          test-params: -k node src packages/micropip
+          requires:
+            - build-core
+      - test-main:
           name: test-packages-chrome
           test-params: -k chrome packages/test* packages/*/test*
           requires:
@@ -321,6 +326,11 @@ workflows:
       - test-main:
           name: test-packages-firefox
           test-params: -k firefox packages/test* packages/*/test*
+          requires:
+            - build-packages
+      - test-main:
+          name: test-packages-node
+          test-params: -k node packages/test* packages/*/test*
           requires:
             - build-packages
       - test-emsdk:
