@@ -137,6 +137,7 @@ jobs:
           cd /__w/pyodide
           rm -rf /__w/pyodide/pyodide/
           tar xzf build-core-all.tgz
+          ls
           cd /__w/pyodide/pyodide/
           ls
 
