@@ -94,7 +94,7 @@ class SeleniumWrapper:
         self.server_log = server_log
         self.prepare_driver()
         self.javascript_setup()
-        if load_pyodide:        
+        if load_pyodide:
             self.run_js(
                 """
                 let pyodide = await loadPyodide({ indexURL : './', fullStdLib: false });
@@ -119,10 +119,10 @@ class SeleniumWrapper:
     def set_script_timeout(self, timeout):
         self.script_timeout = timeout
         self.driver.set_script_timeout(timeout)
-    
+
     def quit(self):
         self.driver.quit()
-    
+
     def javascript_setup(self):
         self.run_js(
             SeleniumWrapper.SETUP_CODE,
@@ -298,6 +298,7 @@ class ChromeWrapper(SeleniumWrapper):
         options.add_argument("--js-flags=--expose-gc")
         return Chrome(options=options)
 
+
 class NodeWrapper(SeleniumWrapper):
     browser = "node"
     SEPARATOR = "\0x1E"
@@ -314,7 +315,7 @@ class NodeWrapper(SeleniumWrapper):
                 # pytest.skip("unsupported configuration")
 
         return NodeDriver()
-    
+
     def prepare_driver(self):
         pass
 
@@ -330,9 +331,12 @@ class NodeWrapper(SeleniumWrapper):
             let result = await (async () => { %s })();
             %s
             return result;
-        """ % (code, check_code)
+        """ % (
+            code,
+            check_code,
+        )
         for line in wrapped.split("\n"):
-           self.p.sendline(line)
+            self.p.sendline(line)
         self.p.sendline(self.SEPARATOR)
         self.p.expect(f"[01]\r\n", timeout=self.script_timeout)
         success = int(self.p.match[0]) == 0
