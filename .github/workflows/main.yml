@@ -103,6 +103,7 @@ jobs:
         env:
            SELENIUM_RUNNER: ${{ matrix.selenium_runner }}
         run: |
+           ls -lh
            ls -lh build/
            tools/pytest_wrapper.py src packages/micropip/ -v -k "${SELENIUM_RUNNER}"
 
