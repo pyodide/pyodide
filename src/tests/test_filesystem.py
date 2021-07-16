@@ -1,4 +1,7 @@
-"""tests of using the emscripten filesystem API with pyodide"""
+"""tests of using the emscripten filesystem API with pyodide
+
+for a basic nodejs-based test, see src/js/test/filesystem.test.js
+"""
 import pytest
 
 

@@ -1,6 +1,8 @@
 import assert from "assert";
 
-describe("fileSystem", () => {
+// for a persistence-related browser test see /src/tests/test_filesystem.py
+
+describe("FS", () => {
   const exists = () => {
     return pyodide.runPython("import os; os.path.exists('/tmp/js-test')");
   };
