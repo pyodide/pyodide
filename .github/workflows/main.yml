@@ -14,6 +14,7 @@ jobs:
     runs-on: ubuntu-latest
     container:
       image: pyodide/pyodide-env:18
+      options: --user 1001
     env:
       EMSDK_NUM_CORES: 3
       EMCC_CORES: 3
@@ -83,6 +84,7 @@ jobs:
     runs-on: ubuntu-latest
     container:
       image: pyodide/pyodide-env:18
+      options: --user 1001
     env:
       DISPLAY: :99
 
