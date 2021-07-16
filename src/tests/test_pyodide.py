@@ -200,7 +200,7 @@ def test_hiwire_is_promise(selenium):
         assert selenium.run_js(
             f"return pyodide._module.hiwire.isPromise({s}) === false;"
         )
-    
+
     if not selenium.browser == "node":
         assert selenium.run_js(
             f"return pyodide._module.hiwire.isPromise(document.all) === false;"
