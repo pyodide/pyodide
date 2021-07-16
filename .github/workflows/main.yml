@@ -104,6 +104,7 @@ jobs:
         env:
            SELENIUM_RUNNER: ${{ matrix.selenium_runner }}
         run: |
+           ls -lh build/
            tools/pytest_wrapper.py src packages/micropip/ -v -k "${SELENIUM_RUNNER}"
 
   test-js:
@@ -132,28 +133,6 @@ jobs:
             npx tsd
             npm test
 
-  benchmark:
-    runs-on: ubuntu-latest
-    container:
-      image: pyodide/pyodide-env:18
-      options: --user 1001
-
-    needs: build-core
-
-    steps:
-      - name: Download build artifact
-        uses: actions/download-artifact@v2
-        with:
-          name: core-build-all
-
-      - name: Unzip build artifacts
-        run: |
-          tar xzf build-core-all.tgz
-          ls
-
-      - name: benchmark
-        run: |
-          python benchmark/benchmark.py /usr/local/bin/python3 build/benchmarks.json
 
 
   test-python:
@@ -271,3 +250,24 @@ jobs:
            SELENIUM_RUNNER: ${{ matrix.selenium_runner }}
         run: |
            tools/pytest_wrapper.py packages/test* packages/*/test* -v -k "${SELENIUM_RUNNER}"
+
+  benchmark:
+    runs-on: ubuntu-latest
+    container:
+      image: pyodide/pyodide-env:18
+      options: --user 1001
+
+    needs: build-packages
+
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: Download packages artifact
+        uses: actions/download-artifact@v2
+        with:
+          name: build-packages
+
+      - name: benchmark
+        run: |
+          pip install numpy
+          python benchmark/benchmark.py /usr/local/bin/python3 build/benchmarks.json
