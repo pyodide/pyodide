@@ -2,6 +2,21 @@
 <!DOCTYPE html>
 <html>
   <head>
+    <script type="text/javascript">
+      window.logs = [];
+      console.log = function (message) {
+        window.logs.push(message);
+      };
+      console.warn = function (message) {
+        window.logs.push(message);
+      };
+      console.info = function (message) {
+        window.logs.push(message);
+      };
+      console.error = function (message) {
+        window.logs.push(message);
+      };
+    </script>
     <script src="./pyodide.js"></script>
   </head>
   <body></body>

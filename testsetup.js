@@ -1,24 +1,6 @@
 Error.stackTraceLimit = Infinity;
 // Firefox globalThis is screwed up. Replace with window.
 globalThis.globalThis = globalThis.window || globalThis;
-globalThis.logs = [];
-
-console.log = function (message) {
-  globalThis.logs.push(message);
-};
-
-console.warn = function (message) {
-  globalThis.logs.push(message);
-};
-
-console.info = function (message) {
-  globalThis.logs.push(message);
-};
-
-console.error = function (message) {
-  globalThis.logs.push(message);
-};
-
 globalThis.sleep = function (s) {
   return new Promise((resolve) => setTimeout(resolve, s));
 };

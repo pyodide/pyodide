@@ -36,7 +36,6 @@ def test_await_jsproxy(selenium):
         )
 
 
-@pytest.mark.skip_pyproxy_check
 def test_then_jsproxy(selenium):
     selenium.run(
         """

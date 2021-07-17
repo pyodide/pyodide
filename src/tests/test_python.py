@@ -1,11 +1,15 @@
 import pytest
 
 
-def test_init(selenium_standalone):
-    selenium = selenium_standalone
+def test_init(selenium):
     assert "Python initialization complete" in selenium.logs.splitlines()
-    if selenium.browser != "node":
-        selenium.run("import antigravity")
+
+
+def test_webbrowser(selenium):
+    if selenium.browser == "node":
+        pytest.xfail("Webbrowser doesn't work in node")
+    selenium.run_async("import antigravity")
+    assert len(selenium.driver.window_handles) == 2
 
 
 def test_print(selenium):
