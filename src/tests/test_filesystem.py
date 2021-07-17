@@ -45,7 +45,7 @@ def test_idbfs_persist_code(selenium_standalone):
     selenium.javascript_setup()
     selenium.run_js(
         """
-        window.pyodide = await loadPyodide({ indexURL : './', fullStdLib: false });
+        self.pyodide = await loadPyodide({ indexURL : './', fullStdLib: false });
         """
     )
     selenium.save_state()

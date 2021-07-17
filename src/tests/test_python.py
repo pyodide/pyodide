@@ -13,6 +13,8 @@ def test_print(selenium):
 
 
 def test_import_js(selenium):
+    if selenium.browser == "node":
+        pytest.xfail("No window in node")
     result = selenium.run(
         """
         import js

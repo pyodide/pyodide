@@ -90,7 +90,7 @@ def test_pyproxy_refcount(selenium):
         self.jsfunc = function (f) { f(); };
         pyodide.runPython(`
             import sys
-            from js import window
+            from js import self
 
             def pyfunc(*args, **kwargs):
                 print(*args, **kwargs)
