@@ -350,7 +350,7 @@ class NodeWrapper(SeleniumWrapper):
         for line in wrapped.split("\n"):
             self.p.sendline(line)
         self.p.sendline(self.SEPARATOR)
-        self.p.expect(f"[01]\r\n", timeout=self.script_timeout)
+        self.p.expect(f"{self.SEPARATOR}[01]\r\n", timeout=self.script_timeout)
         if self.p.before:
             self._logs.append(self.p.before.decode()[:-2])
         success = int(self.p.match[0]) == 0

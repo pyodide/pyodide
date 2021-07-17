@@ -293,7 +293,7 @@ def test_interactive_console_top_level_await(selenium, safe_selenium_sys_redirec
         """
     )
     selenium.run("shell.push('from js import fetch')")
-    selenium.run("shell.push('await (await fetch(`packages.json`)).json()')")
+    selenium.run("""shell.push("await (await fetch('packages.json')).json()")""")
     assert selenium.run("result") == None
 
 

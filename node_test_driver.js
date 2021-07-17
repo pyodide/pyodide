@@ -46,11 +46,11 @@ rl.on("line", async function (line) {
     try {
       vm.runInContext(code, context);
       let result = JSON.stringify(await p);
-      console.log(0);
+      console.log(SEP + "0");
       console.log(result);
       console.log(SEP);
     } catch (e) {
-      console.log(1);
+      console.log(SEP + "1");
       console.log(e.stack);
       console.log(SEP);
     }
