@@ -75,7 +75,7 @@ def test_nan_conversions(selenium):
 
 
 @given(n=strategies.integers())
-@settings(deadline=600)
+@settings(deadline=2000)
 def test_bigint_conversions(selenium_module_scope, n):
     with selenium_context_manager(selenium_module_scope) as selenium:
         h = hex(n)
@@ -112,7 +112,7 @@ def test_bigint_conversions(selenium_module_scope, n):
 
 # Generate an object of any type
 @given(obj=from_type(type).flatmap(from_type))
-@settings(deadline=600)
+@settings(deadline=2000)
 def test_hyp_py2js2py(selenium_module_scope, obj):
     with selenium_context_manager(selenium_module_scope) as selenium:
         import pickle
@@ -179,7 +179,7 @@ def test_big_integer_py2js2py(selenium):
 
 # Generate an object of any type
 @given(obj=from_type(type).flatmap(from_type))
-@settings(deadline=600)
+@settings(deadline=2000)
 def test_hyp_tojs_no_crash(selenium_module_scope, obj):
     with selenium_context_manager(selenium_module_scope) as selenium:
         import pickle
