@@ -353,7 +353,7 @@ class NodeWrapper(SeleniumWrapper):
         self.p.expect(f"{self.SEPARATOR}[01]\r\n", timeout=self.script_timeout)
         if self.p.before:
             self._logs.append(self.p.before.decode()[:-2])
-        success = int(self.p.match[0]) == 0
+        success = int(self.p.match[1]) == 0
         self.p.expect_exact(f"\r\n{self.SEPARATOR}\r\n")
         if success:
             return json.loads(self.p.before.decode().replace("undefined", "null"))
