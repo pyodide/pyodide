@@ -94,7 +94,7 @@ class SeleniumWrapper:
         if load_pyodide:
             self.run_js(
                 """
-                let pyodide = await loadPyodide({ indexURL : './', fullStdLib: false, jsglobals : globalThis });
+                let pyodide = await loadPyodide({ indexURL : './', fullStdLib: false, jsglobals : self });
                 self.pyodide = pyodide;
                 globalThis.pyodide = pyodide;
                 pyodide.globals.get;
@@ -297,7 +297,7 @@ class ChromeWrapper(SeleniumWrapper):
         return Chrome(options=options)
 
     def collect_garbage(self):
-        selenium.driver.execute_cdp_cmd("HeapProfiler.collectGarbage", {})
+        self.driver.execute_cdp_cmd("HeapProfiler.collectGarbage", {})
 
 
 class NodeWrapper(SeleniumWrapper):
@@ -308,7 +308,7 @@ class NodeWrapper(SeleniumWrapper):
         self._logs = []
         os.chdir("build")
         self.p = pexpect.spawn(
-            f"node --expose-gc ../node_test_driver.js {self.base_url}"
+            f"node --expose-gc ../node_test_driver.js {self.base_url}", timeout=60
         )
         self.p.setecho(False)
         os.chdir("..")

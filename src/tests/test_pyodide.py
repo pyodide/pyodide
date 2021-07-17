@@ -512,6 +512,10 @@ def test_fatal_error(selenium_standalone):
     def strip_stack_trace(x):
         x = re.sub("\n.*site-packages.*", "", x)
         x = re.sub("/lib/python.*/", "", x)
+        x = re.sub("/lib/python.*/", "", x)
+        x = re.sub("warning: no [bB]lob.*\n", "", x)
+        x = re.sub("Error: intentionally triggered fatal error!", "{}", x)
+        x = re.sub(" +at .*\n", "", x)
         return x
 
     assert (
@@ -519,18 +523,18 @@ def test_fatal_error(selenium_standalone):
         == dedent(
             strip_stack_trace(
                 """
-            Python initialization complete
-            Pyodide has suffered a fatal error. Please report this to the Pyodide maintainers.
-            The cause of the fatal error was:
-            {}
-            Stack (most recent call first):
-              File "<exec>", line 8 in h
-              File "<exec>", line 6 in g
-              File "<exec>", line 4 in f
-              File "<exec>", line 9 in <module>
-              File "/lib/pythonxxx/site-packages/pyodide/_base.py", line 242 in run
-              File "/lib/pythonxxx/site-packages/pyodide/_base.py", line 344 in eval_code
-            """
+                Python initialization complete
+                Pyodide has suffered a fatal error. Please report this to the Pyodide maintainers.
+                The cause of the fatal error was:
+                {}
+                Stack (most recent call first):
+                  File "<exec>", line 8 in h
+                  File "<exec>", line 6 in g
+                  File "<exec>", line 4 in f
+                  File "<exec>", line 9 in <module>
+                  File "/lib/pythonxxx/site-packages/pyodide/_base.py", line 242 in run
+                  File "/lib/pythonxxx/site-packages/pyodide/_base.py", line 344 in eval_code
+                """
             )
         ).strip()
     )

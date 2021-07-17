@@ -48,7 +48,7 @@ def run_in_pyodide(
             if selenium.browser in xfail_browsers:
                 xfail_message = xfail_browsers[selenium.browser]
                 pytest.xfail(xfail_message)
-            with set_webdriver_script_timeout(selenium, driver_timeout):
+            with selenium.set_script_timeout(driver_timeout):
                 if len(packages) > 0:
                     selenium.load_package(packages)
                 err = None

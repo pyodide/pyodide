@@ -18,6 +18,7 @@ const context = Object.assign({}, globalThis, {
   fetch,
   TextDecoder: util.TextDecoder,
   TextEncoder: util.TextEncoder,
+  URL,
 });
 vm.createContext(context);
 vm.runInContext("globalThis.self = globalThis;", context);

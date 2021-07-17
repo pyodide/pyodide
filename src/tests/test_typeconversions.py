@@ -227,7 +227,7 @@ def test_python2js2(selenium):
         let xpy = pyodide.runPython("b'bytes'");
         let x = xpy.toJs();
         xpy.destroy();
-        return (x instanceof self.Uint8Array) &&
+        return (x.constructor.name === "Uint8Array") &&
                (x.length === 5) &&
                (x[0] === 98)
         """
@@ -241,7 +241,7 @@ def test_python2js3(selenium):
         let typename = proxy.type;
         let x = proxy.toJs();
         proxy.destroy();
-        return ((typename === "list") && (x instanceof self.Array) &&
+        return ((typename === "list") && (x.constructor.name === "Array") &&
                 (x.length === 3) && (x[0] == 1) && (x[1] == 2) && (x[2] == 3));
         """
     )
@@ -412,7 +412,7 @@ def test_js2python(selenium):
         (jsfloats.tolist() == [1, 2, 3]) and (jsfloats.tobytes() == expected)
         """
     )
-    assert selenium.run('str(t.jsobject) == "[object XMLHttpRequest]"')
+    assert selenium.run('str(t.jsobject) == "[object TextDecoder]"')
     assert selenium.run("bool(t.jsobject) == True")
     assert selenium.run("bool(t.jsarray0) == False")
     assert selenium.run("bool(t.jsarray1) == True")

@@ -120,7 +120,7 @@ def test_jsproxy_document(selenium):
     )
     assert (
         selenium.run(
-            """"
+            """
             from js import ImageData
             ImageData.typeof
             """
