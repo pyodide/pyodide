@@ -14,7 +14,7 @@ def test_string_conversion(selenium_module_scope, s):
         sbytes = list(s.encode())
         selenium.run_js(
             f"""
-            globalThis.sjs = (new TextDecoder("utf8")).decode(new Uint8Array({sbytes}));
+            self.sjs = (new TextDecoder("utf8")).decode(new Uint8Array({sbytes}));
             pyodide.runPython('spy = bytes({sbytes}).decode()');
             """
         )
@@ -41,7 +41,7 @@ def test_number_conversions(selenium_module_scope, n):
         s = json.dumps(n)
         selenium.run_js(
             f"""
-            globalThis.x_js = eval({s!r}); // JSON.parse apparently doesn't work
+            self.x_js = eval({s!r}); // JSON.parse apparently doesn't work
             pyodide.runPython(`
                 import json
                 x_py = json.loads({s!r})
@@ -60,7 +60,7 @@ def test_number_conversions(selenium_module_scope, n):
 def test_nan_conversions(selenium):
     selenium.run_js(
         """
-        globalThis.a = NaN;
+        self.a = NaN;
         pyodide.runPython(`
             from js import a
             from math import isnan, nan
@@ -79,7 +79,7 @@ def test_nan_conversions(selenium):
 def test_bigint_conversions(selenium_module_scope, n):
     with selenium_context_manager(selenium_module_scope) as selenium:
         h = hex(n)
-        selenium.run_js(f"globalThis.h = {h!r};")
+        selenium.run_js(f"self.h = {h!r};")
         selenium.run_js(
             """
             let negative = false;
@@ -88,9 +88,9 @@ def test_bigint_conversions(selenium_module_scope, n):
                 h2 = h2.slice(1);
                 negative = true;
             }
-            globalThis.n = BigInt(h2);
+            self.n = BigInt(h2);
             if(negative){
-                globalThis.n = -n;
+                self.n = -n;
             }
             pyodide.runPython(`
                 from js import n, h
@@ -143,7 +143,7 @@ def test_hyp_py2js2py(selenium_module_scope, obj):
         )
         selenium.run_js(
             """
-            globalThis.x2 = pyodide.globals.get("x1");
+            self.x2 = pyodide.globals.get("x1");
             pyodide.runPython(`
                 from js import x2
                 if x1 != x2:
@@ -158,7 +158,7 @@ def test_big_integer_py2js2py(selenium):
     a = 9992361673228537
     selenium.run_js(
         f"""
-        globalThis.a = pyodide.runPython("{a}")
+        self.a = pyodide.runPython("{a}")
         pyodide.runPython(`
             from js import a
             assert a == {a}
@@ -168,7 +168,7 @@ def test_big_integer_py2js2py(selenium):
     a = -a
     selenium.run_js(
         f"""
-        globalThis.a = pyodide.runPython("{a}")
+        self.a = pyodide.runPython("{a}")
         pyodide.runPython(`
             from js import a
             assert a == {a}
@@ -227,7 +227,7 @@ def test_python2js2(selenium):
         let xpy = pyodide.runPython("b'bytes'");
         let x = xpy.toJs();
         xpy.destroy();
-        return (x instanceof globalThis.Uint8Array) &&
+        return (x instanceof self.Uint8Array) &&
                (x.length === 5) &&
                (x[0] === 98)
         """
@@ -241,7 +241,7 @@ def test_python2js3(selenium):
         let typename = proxy.type;
         let x = proxy.toJs();
         proxy.destroy();
-        return ((typename === "list") && (x instanceof globalThis.Array) &&
+        return ((typename === "list") && (x instanceof self.Array) &&
                 (x.length === 3) && (x[0] == 1) && (x[1] == 2) && (x[2] == 3));
         """
     )
@@ -280,24 +280,24 @@ def test_wrong_way_conversions(selenium):
         let t = new Test();
         assert(() => pyodide.toPy(t) === t);
 
-        globalThis.a1 = [1,2,3];
-        globalThis.b1 = pyodide.toPy(a1);
-        globalThis.a2 = { a : 1, b : 2, c : 3};
-        globalThis.b2 = pyodide.toPy(a2);
+        self.a1 = [1,2,3];
+        self.b1 = pyodide.toPy(a1);
+        self.a2 = { a : 1, b : 2, c : 3};
+        self.b2 = pyodide.toPy(a2);
         pyodide.runPython(`
             from js import a1, b1, a2, b2
             assert a1.to_py() == b1
             assert a2.to_py() == b2
         `);
-        globalThis.b1.destroy();
-        globalThis.b2.destroy();
+        self.b1.destroy();
+        self.b2.destroy();
         """
     )
 
     selenium.run_js(
         """
-        globalThis.a = [1,2,3];
-        globalThis.b = pyodide.runPython(`
+        self.a = [1,2,3];
+        self.b = pyodide.runPython(`
             import pyodide
             pyodide.to_js([1, 2, 3])
         `);
@@ -307,7 +307,7 @@ def test_wrong_way_conversions(selenium):
 
     selenium.run_js(
         """
-        globalThis.t3 = pyodide.runPython(`
+        self.t3 = pyodide.runPython(`
             class Test: pass
             t1 = Test()
             t2 = pyodide.to_js(t1)
@@ -367,7 +367,7 @@ def test_run_python_simple_error(selenium):
 def test_js2python(selenium):
     selenium.run_js(
         """
-        globalThis.test_objects = {
+        self.test_objects = {
             jsstring_ucs1 : "pyodidé",
             jsstring_ucs2 : "碘化物",
             jsstring_ucs4 : "🐍",
@@ -412,32 +412,27 @@ def test_js2python(selenium):
         (jsfloats.tolist() == [1, 2, 3]) and (jsfloats.tobytes() == expected)
         """
     )
-    assert selenium.run('str(t.jsobject) == "[object TextDecoder]"')
+    assert selenium.run('str(t.jsobject) == "[object XMLHttpRequest]"')
     assert selenium.run("bool(t.jsobject) == True")
     assert selenium.run("bool(t.jsarray0) == False")
     assert selenium.run("bool(t.jsarray1) == True")
     selenium.run_js("test_objects.jspython.destroy()")
-    if selenium.browser != "node":
-        selenium.run_js("globalThis.xmlHttpRequest = new XMLHttpRequest();")
-        assert selenium.run(
-            'from js import xmlHttpRequest; str(t.xmlHttpRequest) == "[object XMLHttpRequest]"'
-        )
 
 
 def test_js2python_bool(selenium):
     selenium.run_js(
         """
-        globalThis.f = ()=>{}
-        globalThis.m0 = new Map();
-        globalThis.m1 = new Map([[0, 1]]);
-        globalThis.s0 = new Set();
-        globalThis.s1 = new Set([0]);
+        self.f = ()=>{}
+        self.m0 = new Map();
+        self.m1 = new Map([[0, 1]]);
+        self.s0 = new Set();
+        self.s1 = new Set([0]);
         """
     )
     assert (
         selenium.run(
             """
-            from js import globalThis, f, m0, m1, s0, s1
+            from js import self, f, m0, m1, s0, s1
             [bool(x) for x in [f, m0, m1, s0, s1]]
             """
         )
@@ -462,7 +457,7 @@ def test_js2python_bool(selenium):
 def test_typed_arrays(selenium, jstype, pytype):
     assert selenium.run_js(
         f"""
-        globalThis.array = new {jstype}([1, 2, 3, 4]);
+        self.array = new {jstype}([1, 2, 3, 4]);
         return pyodide.runPython(`
             from js import array
             array = array.to_py()
@@ -482,7 +477,7 @@ def test_array_buffer(selenium):
     assert (
         selenium.run_js(
             """
-            globalThis.array = new ArrayBuffer(100);
+            self.array = new ArrayBuffer(100);
             return pyodide.runPython(`
                 from js import array
                 array = array.to_py()
@@ -495,7 +490,7 @@ def test_array_buffer(selenium):
 
 
 def assert_js_to_py_to_js(selenium, name):
-    selenium.run_js(f"globalThis.obj = {name};")
+    selenium.run_js(f"self.obj = {name};")
     selenium.run("from js import obj")
     assert selenium.run_js(
         """
@@ -508,7 +503,7 @@ def assert_js_to_py_to_js(selenium, name):
 def assert_py_to_js_to_py(selenium, name):
     selenium.run_js(
         f"""
-        globalThis.obj = pyodide.runPython('{name}');
+        self.obj = pyodide.runPython('{name}');
         pyodide.runPython(`
             from js import obj
             assert obj is {name}
@@ -537,17 +532,17 @@ def test_recursive_dict_to_js():
 
 
 def test_list_js2py2js(selenium):
-    selenium.run_js("globalThis.x = [1,2,3];")
+    selenium.run_js("self.x = [1,2,3];")
     assert_js_to_py_to_js(selenium, "x")
 
 
 def test_dict_js2py2js(selenium):
-    selenium.run_js("globalThis.x = { a : 1, b : 2, 0 : 3 };")
+    selenium.run_js("self.x = { a : 1, b : 2, 0 : 3 };")
     assert_js_to_py_to_js(selenium, "x")
 
 
 def test_error_js2py2js(selenium):
-    selenium.run_js("globalThis.err = new Error('hello there?');")
+    selenium.run_js("self.err = new Error('hello there?');")
     assert_js_to_py_to_js(selenium, "err")
 
 
@@ -575,7 +570,7 @@ def test_jsproxy_attribute_error(selenium):
                 this.y = y;
             }
         }
-        globalThis.point = new Point(42, 43);
+        self.point = new Point(42, 43);
         """
     )
     selenium.run(
@@ -612,7 +607,7 @@ def test_javascript_error(selenium):
 def test_javascript_error_back_to_js(selenium):
     selenium.run_js(
         """
-        globalThis.err = new Error("This is a js error");
+        self.err = new Error("This is a js error");
         """
     )
     assert (
@@ -858,7 +853,7 @@ def test_tojs9(selenium):
 def test_to_py(selenium):
     result = selenium.run_js(
         """
-        globalThis.a = new Map([[1, [1,2,new Set([1,2,3])]], [2, new Map([[1,2],[2,7]])]]);
+        self.a = new Map([[1, [1,2,new Set([1,2,3])]], [2, new Map([[1,2],[2,7]])]]);
         a.get(2).set("a", a);
         let result = [];
         for(let i = 0; i < 4; i++){
@@ -879,7 +874,7 @@ def test_to_py(selenium):
 
     result = selenium.run_js(
         """
-        globalThis.a = { "x" : 2, "y" : 7, "z" : [1,2] };
+        self.a = { "x" : 2, "y" : 7, "z" : [1,2] };
         a.z.push(a);
         let result = [];
         for(let i = 0; i < 4; i++){
@@ -906,7 +901,7 @@ def test_to_py(selenium):
                 this.y = 7;
             }
         }
-        globalThis.a = new Temp();
+        self.a = new Temp();
         let result = pyodide.runPython(`
             from js import a
             b = a.to_py()
@@ -921,7 +916,7 @@ def test_to_py(selenium):
     with pytest.raises(selenium.JavascriptException, match=msg):
         selenium.run_js(
             """
-            globalThis.a = new Map([[[1,1], 2]]);
+            self.a = new Map([[[1,1], 2]]);
             pyodide.runPython(`
                 from js import a
                 a.to_py()
@@ -933,7 +928,7 @@ def test_to_py(selenium):
     with pytest.raises(selenium.JavascriptException, match=msg):
         selenium.run_js(
             """
-            globalThis.a = new Set([[1,1]]);
+            self.a = new Set([[1,1]]);
             pyodide.runPython(`
                 from js import a
                 a.to_py()
@@ -945,7 +940,7 @@ def test_to_py(selenium):
     with pytest.raises(selenium.JavascriptException, match=msg):
         selenium.run_js(
             """
-            globalThis.a = new Map([[0, 2], [false, 3]]);
+            self.a = new Map([[0, 2], [false, 3]]);
             pyodide.runPython(`
                 from js import a
                 a.to_py()
@@ -957,7 +952,7 @@ def test_to_py(selenium):
     with pytest.raises(selenium.JavascriptException, match=msg):
         selenium.run_js(
             """
-            globalThis.a = new Map([[1, 2], [true, 3]]);
+            self.a = new Map([[1, 2], [true, 3]]);
             pyodide.runPython(`
                 from js import a
                 a.to_py()
@@ -969,7 +964,7 @@ def test_to_py(selenium):
     with pytest.raises(selenium.JavascriptException, match=msg):
         selenium.run_js(
             """
-            globalThis.a = new Set([0, false]);
+            self.a = new Set([0, false]);
             pyodide.runPython(`
                 from js import a
                 a.to_py()
@@ -981,7 +976,7 @@ def test_to_py(selenium):
     with pytest.raises(selenium.JavascriptException, match=msg):
         selenium.run_js(
             """
-            globalThis.a = new Set([1, true]);
+            self.a = new Set([1, true]);
             pyodide.runPython(`
                 from js import a
                 a.to_py()

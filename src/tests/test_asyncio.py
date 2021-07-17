@@ -191,11 +191,11 @@ def test_await_error(selenium):
         async function async_js_raises(){
             throw new Error("This is an error message!");
         }
-        globalThis.async_js_raises = async_js_raises;
+        self.async_js_raises = async_js_raises;
         function js_raises(){
             throw new Error("This is an error message!");
         }
-        globalThis.js_raises = js_raises;
+        self.js_raises = js_raises;
         pyodide.runPython(`
             from js import async_js_raises, js_raises
             async def test():
@@ -311,7 +311,7 @@ def test_eval_code_await_error(selenium):
             console.log("Hello there???");
             throw new Error("This is an error message!");
         }
-        globalThis.async_js_raises = async_js_raises;
+        self.async_js_raises = async_js_raises;
         pyodide.runPython(`
             from js import async_js_raises
             from pyodide import eval_code_async
@@ -338,7 +338,7 @@ def test_eval_code_await_error(selenium):
 def test_ensure_future_memleak(selenium):
     selenium.run_js(
         """
-        globalThis.o = { "xxx" : 777 };
+        self.o = { "xxx" : 777 };
         pyodide.runPython(`
             import asyncio
             from js import o

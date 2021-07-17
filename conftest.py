@@ -217,10 +217,10 @@ class SeleniumWrapper:
         return self.run_js("return pyodide._module.hiwire.num_keys();")
 
     def save_state(self):
-        self.run_js("globalThis.__savedState = pyodide._module.saveState();")
+        self.run_js("self.__savedState = pyodide._module.saveState();")
 
     def restore_state(self):
-        self.run_js("pyodide._module.restoreState(globalThis.__savedState)")
+        self.run_js("pyodide._module.restoreState(self.__savedState)")
 
     def get_num_proxies(self):
         return self.run_js("return pyodide._module.pyproxy_alloc_map.size")
