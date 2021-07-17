@@ -18,7 +18,6 @@ const context = Object.assign({}, globalThis, {
   fetch,
 });
 vm.createContext(context);
-vm.runInContext("globalThis.self = globalThis;", context);
 
 // Get rid of all colors in output of console.log, they mess us up.
 for (let key of Object.keys(util.inspect.styles)) {
@@ -31,7 +30,6 @@ const rl = readline.createInterface({
   terminal: false,
 });
 const SEP = "\0x1E";
-// const SEP = "A";
 
 let cur_code = "";
 rl.on("line", async function (line) {

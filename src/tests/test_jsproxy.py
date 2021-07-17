@@ -6,8 +6,8 @@ from pyodide_build.testing import run_in_pyodide
 def test_jsproxy_dir(selenium):
     result = selenium.run_js(
         """
-        self.a = { x : 2, y : "9" };
-        self.b = function(){};
+        globalThis.a = { x : 2, y : "9" };
+        globalThis.b = function(){};
         let pyresult = pyodide.runPython(`
             from js import a
             from js import b
@@ -43,7 +43,7 @@ def test_jsproxy_dir(selenium):
     assert set1.isdisjoint(a_items)
     selenium.run_js(
         """
-        self.a = [0,1,2,3,4,5,6,7,8,9];
+        globalThis.a = [0,1,2,3,4,5,6,7,8,9];
         a[27] = 0;
         a[":"] = 0;
         a["/"] = 0;
@@ -69,7 +69,7 @@ def test_jsproxy_getattr(selenium):
     assert (
         selenium.run_js(
             """
-        self.a = { x : 2, y : "9", typeof : 7 };
+        globalThis.a = { x : 2, y : "9", typeof : 7 };
         let pyresult = pyodide.runPython(`
             from js import a
             [ a.x, a.y, a.typeof ]
@@ -83,7 +83,9 @@ def test_jsproxy_getattr(selenium):
     )
 
 
-def test_jsproxy(selenium):
+def test_jsproxy_document(selenium):
+    if selenium.browser == "node":
+        pytest.xfail("No document in node")
     selenium.run("from js import document")
     assert (
         selenium.run(
@@ -97,13 +99,50 @@ def test_jsproxy(selenium):
     )
     assert selenium.run("document.body.children[0].tagName") == "DIV"
     assert selenium.run("repr(document)") == "[object HTMLDocument]"
-
-    selenium.run_js("self.square = function (x) { return x*x; }")
-    assert selenium.run("from js import square\n" "square(2)") == 4
     assert (
-        selenium.run("from js import ImageData\n" "ImageData.new(64, 64).width") == 64
+        selenium.run(
+            """
+            from js import document
+            el = document.createElement('div')
+            len(dir(el)) >= 200 and 'appendChild' in dir(el)
+            """
+        )
+        is True
     )
-    assert selenium.run("from js import ImageData\n" "ImageData.typeof") == "function"
+    assert (
+        selenium.run(
+            """
+            from js import ImageData
+            ImageData.new(64, 64).width
+            """
+        )
+        == 64
+    )
+    assert (
+        selenium.run(
+            """"
+        from js import ImageData
+        ImageData.typeof
+        """
+        )
+        == "function"
+    )
+
+
+def test_jsproxy_function(selenium):
+    selenium.run_js("globalThis.square = function (x) { return x*x; };")
+    assert (
+        selenium.run(
+            """
+        from js import square
+        square(2)
+        """
+        )
+        == 4
+    )
+
+
+def test_jsproxy_class(selenium):
     selenium.run_js(
         """
         class Point {
@@ -112,7 +151,7 @@ def test_jsproxy(selenium):
             this.y = y;
           }
         }
-        self.TEST = new Point(42, 43);"""
+        globalThis.TEST = new Point(42, 43);"""
     )
     assert (
         selenium.run(
@@ -124,9 +163,12 @@ def test_jsproxy(selenium):
         )
         is False
     )
+
+
+def test_jsproxy_map(selenium):
     selenium.run_js(
         """
-        self.TEST = new Map([["x", 42], ["y", 43]]);
+        globalThis.TEST = new Map([["x", 42], ["y", 43]]);
         """
     )
     assert (
@@ -153,7 +195,7 @@ def test_jsproxy(selenium):
     )
     selenium.run_js(
         """
-        self.TEST = {foo: 'bar', baz: 'bap'}
+        globalThis.TEST = {foo: 'bar', baz: 'bap'}
         """
     )
     assert (
@@ -161,16 +203,6 @@ def test_jsproxy(selenium):
             """
             from js import TEST
             dict(TEST.object_entries()) == {'foo': 'bar', 'baz': 'bap'}
-            """
-        )
-        is True
-    )
-    assert (
-        selenium.run(
-            """
-            from js import document
-            el = document.createElement('div')
-            len(dir(el)) >= 200 and 'appendChild' in dir(el)
             """
         )
         is True
@@ -190,7 +222,7 @@ def test_jsproxy_iter(selenium):
             }
           };
         }
-        self.ITER = makeIterator([1, 2, 3]);"""
+        globalThis.ITER = makeIterator([1, 2, 3]);"""
     )
     assert selenium.run("from js import ITER\n" "list(ITER)") == [1, 2, 3]
 
@@ -198,7 +230,7 @@ def test_jsproxy_iter(selenium):
 def test_jsproxy_implicit_iter(selenium):
     selenium.run_js(
         """
-        self.ITER = [1, 2, 3];
+        globalThis.ITER = [1, 2, 3];
         """
     )
     assert selenium.run("from js import ITER, Object\n" "list(ITER)") == [1, 2, 3]
@@ -216,7 +248,7 @@ def test_jsproxy_call(selenium):
     assert (
         selenium.run_js(
             """
-            self.f = function(){ return arguments.length; };
+            globalThis.f = function(){ return arguments.length; };
             let pyresult = pyodide.runPython(
                 `
                 from js import f
@@ -236,7 +268,7 @@ def test_jsproxy_call_kwargs(selenium):
     assert (
         selenium.run_js(
             """
-            self.kwarg_function = ({ a = 1, b = 1 }) => {
+            globalThis.kwarg_function = ({ a = 1, b = 1 }) => {
                 return [a, b];
             };
             return pyodide.runPython(
@@ -255,7 +287,7 @@ def test_jsproxy_call_kwargs(selenium):
 def test_jsproxy_call_meth_py(selenium):
     assert selenium.run_js(
         """
-        self.a = {};
+        globalThis.a = {};
         return pyodide.runPython(
             `
             from js import a
@@ -272,7 +304,7 @@ def test_jsproxy_call_meth_py(selenium):
 def test_jsproxy_call_meth_js(selenium):
     assert selenium.run_js(
         """
-        self.a = {};
+        globalThis.a = {};
         function f(){return this;}
         a.f = f;
         return pyodide.runPython(
@@ -288,7 +320,7 @@ def test_jsproxy_call_meth_js(selenium):
 def test_jsproxy_call_meth_js_kwargs(selenium):
     assert selenium.run_js(
         """
-        self.a = {};
+        globalThis.a = {};
         function f({ x = 1, y = 1 }){
             return [this, x, y];
         }
@@ -327,23 +359,23 @@ def test_import_bind():
 @run_in_pyodide
 def test_nested_attribute_access():
     import js
-    from js import self
+    from js import globalThis
 
-    js.URL.createObjectURL
-    self.URL.createObjectURL
+    assert js.Uint32Array.BYTES_PER_ELEMENT == 4
+    assert globalThis.Uint16Array.BYTES_PER_ELEMENT == 2
 
 
 @run_in_pyodide
 def test_window_isnt_super_weird_anymore():
     import js
-    from js import self, Array
+    from js import globalThis, Array
 
-    assert self.Array != self
-    assert self.Array == Array
-    assert self.self.self.self == self
-    assert js.self.Array == Array
-    assert js.self.self.self.self == self
-    assert self.self.self.self.Array == Array
+    assert globalThis.Array != globalThis
+    assert globalThis.Array == Array
+    assert globalThis.globalThis.globalThis.globalThis == globalThis
+    assert js.globalThis.Array == Array
+    assert js.globalThis.globalThis.globalThis.globalThis == globalThis
+    assert globalThis.globalThis.globalThis.globalThis.Array == Array
 
 
 @pytest.mark.skip_refcount_check
@@ -437,7 +469,7 @@ def test_nested_import(selenium_standalone):
     assert (
         selenium.run_js(
             """
-            self.a = { b : { c : { d : 2 } } };
+            globalThis.a = { b : { c : { d : 2 } } };
             return pyodide.runPython("from js.a.b import c; c.d");
             """
         )
@@ -493,7 +525,7 @@ def test_register_jsmodule_docs_example(selenium_standalone):
 def test_object_entries_keys_values(selenium):
     selenium.run_js(
         """
-        self.x = { a : 2, b : 3, c : 4 };
+        globalThis.x = { a : 2, b : 3, c : 4 };
         pyodide.runPython(`
             from js import x
             assert x.object_entries().to_py() == [["a", 2], ["b", 3], ["c", 4]]
@@ -551,7 +583,7 @@ def test_mixins_feature_presence(selenium):
 def test_mixins_calls(selenium):
     result = selenium.run_js(
         """
-        self.testObjects = {};
+        globalThis.testObjects = {};
         testObjects.iterable = { *[Symbol.iterator](){
             yield 3; yield 5; yield 7;
         } };
@@ -604,8 +636,8 @@ def test_mixins_calls(selenium):
 def test_mixins_errors(selenium):
     selenium.run_js(
         """
-        self.a = [];
-        self.b = {
+        globalThis.a = [];
+        globalThis.b = {
             has(){ return false; },
             get(){ return undefined; },
             set(){ return false; },
@@ -625,7 +657,7 @@ def test_mixins_errors(selenium):
                 del b[0]
         `);
 
-        self.c = {
+        globalThis.c = {
             next(){},
             length : 1,
             get(){},
@@ -633,7 +665,7 @@ def test_mixins_errors(selenium):
             has(){},
             then(){}
         };
-        self.d = {
+        globalThis.d = {
             [Symbol.iterator](){},
         };
         pyodide.runPython("from js import c, d");
@@ -670,8 +702,8 @@ def test_mixins_errors(selenium):
                 await c
         `);
 
-        self.l = [0, false, NaN, undefined, null];
-        self.l[6] = 7;
+        globalThis.l = [0, false, NaN, undefined, null];
+        globalThis.l[6] = 7;
         await pyodide.runPythonAsync(`
             from unittest import TestCase
             raises = TestCase().assertRaises
@@ -691,11 +723,11 @@ def test_mixins_errors(selenium):
             l[3]; l[4]
         `);
 
-        self.l = [0, false, NaN, undefined, null];
-        self.l[6] = 7;
-        let a = Array.from(self.l.entries());
+        globalThis.l = [0, false, NaN, undefined, null];
+        globalThis.l[6] = 7;
+        let a = Array.from(globalThis.l.entries());
         a.splice(5, 1);
-        self.m = new Map(a);
+        globalThis.m = new Map(a);
         await pyodide.runPythonAsync(`
             from js import m
             from unittest import TestCase
@@ -719,7 +751,7 @@ def test_mixins_errors(selenium):
 def test_buffer(selenium):
     selenium.run_js(
         """
-        self.a = new Uint32Array(Array.from({length : 10}, (_,idx) => idx));
+        globalThis.a = new Uint32Array(Array.from({length : 10}, (_,idx) => idx));
         pyodide.runPython(`
             from js import a
             b = a.to_py()
@@ -738,7 +770,7 @@ def test_buffer(selenium):
     )
     selenium.run_js(
         """
-        self.a = new Uint32Array(Array.from({length : 10}, (_,idx) => idx));
+        globalThis.a = new Uint32Array(Array.from({length : 10}, (_,idx) => idx));
         pyodide.runPython(`
             import js
             from unittest import TestCase
@@ -774,7 +806,7 @@ def test_buffer(selenium):
 def test_buffer_assign_back(selenium):
     result = selenium.run_js(
         """
-        self.jsarray = new Uint8Array([1,2,3, 4, 5, 6]);
+        globalThis.jsarray = new Uint8Array([1,2,3, 4, 5, 6]);
         pyodide.runPython(`
             from js import jsarray
             array = jsarray.to_py()
@@ -791,7 +823,7 @@ def test_memory_leaks(selenium):
     # refcounts are tested automatically in conftest by default
     selenium.run_js(
         """
-        self.a = [1,2,3];
+        globalThis.a = [1,2,3];
         pyodide.runPython(`
             from js import a
             repr(a)

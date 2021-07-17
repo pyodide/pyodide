@@ -5,11 +5,11 @@ def run_with_resolve(selenium, code):
     selenium.run_js(
         f"""
         try {{
-            let promise = new Promise((resolve) => self.resolve = resolve);
+            let promise = new Promise((resolve) => globalThis.resolve = resolve);
             pyodide.runPython({code!r});
             await promise;
         }} finally {{
-            delete self.resolve;
+            delete globalThis.resolve;
         }}
         """
     )

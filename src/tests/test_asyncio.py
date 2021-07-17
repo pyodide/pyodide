@@ -36,6 +36,7 @@ def test_await_jsproxy(selenium):
         )
 
 
+@pytest.mark.skip_pyproxy_check
 def test_then_jsproxy(selenium):
     selenium.run(
         """
@@ -140,7 +141,7 @@ def test_then_jsproxy(selenium):
     selenium.run(
         """
         p = Promise.new(create_once_callable(prom))
-        p.finally_(onfinally)
+        p.finally_(onfinally).catch(onrejected) # node gets angry if we don't catch it!
         reject(10)
         """
     )
@@ -149,6 +150,8 @@ def test_then_jsproxy(selenium):
         """
         assert finally_occurred
         finally_occurred = False
+        assert err == 10
+        err = None
         """
     )
 
@@ -189,11 +192,11 @@ def test_await_error(selenium):
         async function async_js_raises(){
             throw new Error("This is an error message!");
         }
-        self.async_js_raises = async_js_raises;
+        globalThis.async_js_raises = async_js_raises;
         function js_raises(){
             throw new Error("This is an error message!");
         }
-        self.js_raises = js_raises;
+        globalThis.js_raises = js_raises;
         pyodide.runPython(`
             from js import async_js_raises, js_raises
             async def test():
@@ -309,7 +312,7 @@ def test_eval_code_await_error(selenium):
             console.log("Hello there???");
             throw new Error("This is an error message!");
         }
-        self.async_js_raises = async_js_raises;
+        globalThis.async_js_raises = async_js_raises;
         pyodide.runPython(`
             from js import async_js_raises
             from pyodide import eval_code_async
@@ -336,7 +339,7 @@ def test_eval_code_await_error(selenium):
 def test_ensure_future_memleak(selenium):
     selenium.run_js(
         """
-        self.o = { "xxx" : 777 };
+        globalThis.o = { "xxx" : 777 };
         pyodide.runPython(`
             import asyncio
             from js import o

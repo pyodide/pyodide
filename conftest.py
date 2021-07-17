@@ -94,7 +94,7 @@ class SeleniumWrapper:
         if load_pyodide:
             self.run_js(
                 """
-                self.pyodide = await loadPyodide({ indexURL : './', fullStdLib: false, jsglobals : globalThis });
+                globalThis.pyodide = await loadPyodide({ indexURL : './', fullStdLib: false, jsglobals : globalThis });
                 pyodide.globals.get;
                 pyodide.pyodide_py.eval_code;
                 pyodide.pyodide_py.eval_code_async;
@@ -215,10 +215,10 @@ class SeleniumWrapper:
         return self.run_js("return pyodide._module.hiwire.num_keys();")
 
     def save_state(self):
-        self.run_js("self.__savedState = pyodide._module.saveState();")
+        self.run_js("globalThis.__savedState = pyodide._module.saveState();")
 
     def restore_state(self):
-        self.run_js("pyodide._module.restoreState(self.__savedState)")
+        self.run_js("pyodide._module.restoreState(globalThis.__savedState)")
 
     def get_num_proxies(self):
         return self.run_js("return pyodide._module.pyproxy_alloc_map.size")
@@ -294,14 +294,20 @@ class ChromeWrapper(SeleniumWrapper):
         options.add_argument("--js-flags=--expose-gc")
         return Chrome(options=options)
 
+    def collect_garbage(self):
+        selenium.driver.execute_cdp_cmd("HeapProfiler.collectGarbage", {})
+
 
 class NodeWrapper(SeleniumWrapper):
     browser = "node"
     SEPARATOR = "\0x1E"
 
     def get_driver(self):
+        self._logs = []
         os.chdir("build")
-        self.p = pexpect.spawn(f"node ../node_test_driver.js {self.base_url}")
+        self.p = pexpect.spawn(
+            f"node --expose-gc ../node_test_driver.js {self.base_url}"
+        )
         self.p.setecho(False)
         os.chdir("..")
 
@@ -321,6 +327,16 @@ class NodeWrapper(SeleniumWrapper):
     def quit(self):
         self.p.sendeof()
 
+    def collect_garbage(self):
+        self.run_js("gc()")
+
+    @property
+    def logs(self):
+        return "\n".join(self._logs)
+
+    def clean_logs(self):
+        self._logs = []
+
     def run_js_inner(self, code, check_code):
         check_code = ""
         wrapped = """
@@ -335,6 +351,8 @@ class NodeWrapper(SeleniumWrapper):
             self.p.sendline(line)
         self.p.sendline(self.SEPARATOR)
         self.p.expect(f"[01]\r\n", timeout=self.script_timeout)
+        if self.p.before:
+            self._logs.append(self.p.before.decode()[:-2])
         success = int(self.p.match[0]) == 0
         self.p.expect_exact(f"\r\n{self.SEPARATOR}\r\n")
         if success:
@@ -380,12 +398,17 @@ def test_wrapper_check_for_memory_leaks(selenium, trace_hiwire_refs, trace_pypro
         selenium.enable_pyproxy_tracing()
         init_num_proxies = selenium.get_num_proxies()
     a = yield
-    selenium.disable_pyproxy_tracing()
-    selenium.restore_state()
-    # if there was an error in the body of the test, flush it out by calling
-    # get_result (we don't want to override the error message by raising a
-    # different error here.)
-    a.get_result()
+    try:
+        # If these guys cause a crash because the test really screwed things up,
+        # we override the error message with the better message returned by
+        # a.result() in the finally block.
+        selenium.disable_pyproxy_tracing()
+        selenium.restore_state()
+    finally:
+        # if there was an error in the body of the test, flush it out by calling
+        # get_result (we don't want to override the error message by raising a
+        # different error here.)
+        a.get_result()
     if trace_pyproxies and trace_hiwire_refs:
         delta_proxies = selenium.get_num_proxies() - init_num_proxies
         delta_keys = selenium.get_num_hiwire_keys() - init_num_keys

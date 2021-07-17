@@ -233,7 +233,7 @@ def test_keyboard_interrupt(selenium):
         """
         x = new Int8Array(1)
         pyodide._module.setInterruptBuffer(x)
-        self.triggerKeyboardInterrupt = function(){
+        globalThis.triggerKeyboardInterrupt = function(){
             x[0] = 2;
         }
         try {
@@ -315,7 +315,7 @@ def test_run_python_js_error(selenium):
         function throwError(){
             throw new Error("blah!");
         }
-        self.throwError = throwError;
+        globalThis.throwError = throwError;
         pyodide.runPython(`
             from js import throwError
             from unittest import TestCase
@@ -331,9 +331,9 @@ def test_run_python_js_error(selenium):
 def test_create_once_callable(selenium):
     selenium.run_js(
         """
-        self.call7 = function call7(f){
+        globalThis.call7 = function call7(f){
             return f(7);
-        }
+        };
         pyodide.runPython(`
             from pyodide import create_once_callable, JsException
             from js import call7;
@@ -368,15 +368,15 @@ def test_create_once_callable(selenium):
 def test_create_proxy(selenium):
     selenium.run_js(
         """
-        self.testAddListener = function(f){
-            self.listener = f;
-        }
-        self.testCallListener = function(f){
-            return self.listener();
-        }
-        self.testRemoveListener = function(f){
-            return self.listener === f;
-        }
+        globalThis.testAddListener = function(f){
+            globalThis.listener = f;
+        };
+        globalThis.testCallListener = function(f){
+            return globalThis.listener();
+        };
+        globalThis.testRemoveListener = function(f){
+            return globalThis.listener === f;
+        };
         pyodide.runPython(`
             from pyodide import create_proxy
             from js import testAddListener, testCallListener, testRemoveListener;
@@ -432,7 +432,7 @@ def test_docstrings_b(selenium):
     sig_then_should_equal = "(onfulfilled, onrejected)"
     ds_once_should_equal = dedent_docstring(create_once_callable.__doc__)
     sig_once_should_equal = "(obj)"
-    selenium.run_js("self.a = Promise.resolve();")
+    selenium.run_js("globalThis.a = Promise.resolve();")
     [ds_then, sig_then, ds_once, sig_once] = selenium.run(
         """
         from js import a
