@@ -362,8 +362,8 @@ def test_nested_attribute_access():
     import js
     from js import self
 
-    js.URL.createObjectURL
-    self.URL.createObjectURL
+    assert js.Float64Array.BYTES_PER_ELEMENT == 8
+    assert self.Float64Array.BYTES_PER_ELEMENT == 8
 
 
 @run_in_pyodide
