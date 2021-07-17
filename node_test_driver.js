@@ -16,6 +16,8 @@ const context = Object.assign({}, globalThis, {
   process,
   require,
   fetch,
+  TextDecoder: util.TextDecoder,
+  TextEncoder: util.TextEncoder,
 });
 vm.createContext(context);
 

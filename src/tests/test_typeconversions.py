@@ -7,7 +7,7 @@ from conftest import selenium_context_manager
 
 
 @given(s=text())
-@settings(deadline=600)
+@settings(deadline=2000)
 def test_string_conversion(selenium_module_scope, s):
     with selenium_context_manager(selenium_module_scope) as selenium:
         # careful string escaping here -- hypothesis will fuzz it.
@@ -33,7 +33,7 @@ def test_string_conversion(selenium_module_scope, s):
         strategies.floats(allow_nan=False),
     )
 )
-@settings(deadline=600)
+@settings(deadline=2000)
 def test_number_conversions(selenium_module_scope, n):
     with selenium_context_manager(selenium_module_scope) as selenium:
         import json
@@ -382,7 +382,7 @@ def test_js2python(selenium):
             jspython : pyodide.globals.get("open"),
             jsbytes : new Uint8Array([1, 2, 3]),
             jsfloats : new Float32Array([1, 2, 3]),
-            jsobject : new XMLHttpRequest(),
+            jsobject : new TextDecoder(),
         };
         """
     )
@@ -412,11 +412,16 @@ def test_js2python(selenium):
         (jsfloats.tolist() == [1, 2, 3]) and (jsfloats.tobytes() == expected)
         """
     )
-    assert selenium.run('str(t.jsobject) == "[object XMLHttpRequest]"')
+    assert selenium.run('str(t.jsobject) == "[object TextDecoder]"')
     assert selenium.run("bool(t.jsobject) == True")
     assert selenium.run("bool(t.jsarray0) == False")
     assert selenium.run("bool(t.jsarray1) == True")
     selenium.run_js("test_objects.jspython.destroy()")
+    if selenium.browser != "node":
+        selenium.run_js("globalThis.xmlHttpRequest = new XMLHttpRequest();")
+        assert selenium.run(
+            'from js import xmlHttpRequest; str(t.xmlHttpRequest) == "[object XMLHttpRequest]"'
+        )
 
 
 def test_js2python_bool(selenium):

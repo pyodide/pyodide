@@ -352,7 +352,7 @@ class NodeWrapper(SeleniumWrapper):
         self.p.sendline(self.SEPARATOR)
         self.p.expect(f"\x1E[01]\r\n", timeout=self.script_timeout)
         if self.p.before:
-            self._logs.append(self.p.before.decode()[:-2])
+            self._logs.append(self.p.before.decode()[:-2].replace("\r", ""))
         success = int(self.p.match[0].decode()[1]) == 0
         self.p.expect_exact(f"\r\n{self.SEPARATOR}\r\n")
         if success:

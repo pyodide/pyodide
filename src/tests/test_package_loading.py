@@ -26,12 +26,12 @@ def test_load_from_url(selenium_standalone, web_server_secondary, active_server)
         selenium_standalone.load_package(f"http://{url}:{port}/pyparsing.js")
         assert "Skipping unknown package" not in selenium_standalone.logs
 
-        # check that all ressources were loaded from the active server
+        # check that all resources were loaded from the active server
         txt = fh_main.read()
         assert '"GET /pyparsing.js HTTP/1.1" 200' in txt
         assert '"GET /pyparsing.data HTTP/1.1" 200' in txt
 
-        # no additional ressources were loaded from the other server
+        # no additional resources were loaded from the other server
         assert len(fh_backup.read()) == 0
 
     selenium_standalone.run(

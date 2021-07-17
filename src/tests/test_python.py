@@ -4,7 +4,8 @@ import pytest
 def test_init(selenium_standalone):
     selenium = selenium_standalone
     assert "Python initialization complete" in selenium.logs.splitlines()
-    selenium.run("import antigravity")
+    if selenium.browser != "node":
+        selenium.run("import antigravity")
 
 
 def test_print(selenium):
