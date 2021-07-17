@@ -48,7 +48,7 @@ def run_in_pyodide(
             if selenium.browser in xfail_browsers:
                 xfail_message = xfail_browsers[selenium.browser]
                 pytest.xfail(xfail_message)
-            with selenium.set_script_timeout(driver_timeout):
+            with set_webdriver_script_timeout(selenium, driver_timeout):
                 if len(packages) > 0:
                     selenium.load_package(packages)
                 err = None
@@ -125,11 +125,11 @@ def set_webdriver_script_timeout(selenium, script_timeout: Optional[Union[int, f
        value of the timeout in seconds
     """
     if script_timeout is not None:
-        selenium.driver.set_script_timeout(script_timeout)
+        selenium.set_script_timeout(script_timeout)
     yield
     # revert to the initial value
     if script_timeout is not None:
-        selenium.driver.set_script_timeout(selenium.script_timeout)
+        selenium.set_script_timeout(selenium.script_timeout)
 
 
 def parse_driver_timeout(request) -> Optional[Union[int, float]]:
