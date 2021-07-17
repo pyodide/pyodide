@@ -300,7 +300,7 @@ class ChromeWrapper(SeleniumWrapper):
 
 class NodeWrapper(SeleniumWrapper):
     browser = "node"
-    SEPARATOR = "\0x1E"
+    SEPARATOR = "\x1E"
 
     def get_driver(self):
         self._logs = []
@@ -350,10 +350,10 @@ class NodeWrapper(SeleniumWrapper):
         for line in wrapped.split("\n"):
             self.p.sendline(line)
         self.p.sendline(self.SEPARATOR)
-        self.p.expect(f"{self.SEPARATOR}[01]\r\n", timeout=self.script_timeout)
+        self.p.expect(f"\x1E[01]\r\n", timeout=self.script_timeout)
         if self.p.before:
             self._logs.append(self.p.before.decode()[:-2])
-        success = int(self.p.match[1]) == 0
+        success = int(self.p.match[0].decode()[1]) == 0
         self.p.expect_exact(f"\r\n{self.SEPARATOR}\r\n")
         if success:
             return json.loads(self.p.before.decode().replace("undefined", "null"))

@@ -29,7 +29,7 @@ const rl = readline.createInterface({
   output: process.stdout,
   terminal: false,
 });
-const SEP = "\0x1E";
+const SEP = "\x1E";
 
 let cur_code = "";
 rl.on("line", async function (line) {
