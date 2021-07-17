@@ -57,7 +57,7 @@ if (globalThis.document) {
   const vmPromise = import("vm").then((M) => M.default);
   require("path");
   loadScript = async (url) => {
-    if(url.includes("://")){
+    if (url.includes("://")) {
       // If it's a url, have to load it with fetch and then eval it.
       const fetch = await fetchPromise;
       const vm = await vmPromise;
