@@ -13,6 +13,7 @@ requirements:
   - py
   - setuptools
   - six
+  - iniconfig
 test:
   imports:
   - pytest
