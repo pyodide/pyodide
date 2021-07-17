@@ -36,30 +36,42 @@ const rl = readline.createInterface({
 const SEP = "\x1E";
 
 let cur_code = "";
+let cur_uuid;
 rl.on("line", async function (line) {
-  if (line === SEP) {
-    let p = new Promise((resolve, reject) => {
-      context.___outer_resolve = resolve;
-      context.___outer_reject = reject;
-    });
-    let code = `
-        (async function(){
-            ${cur_code}
-        })().then(___outer_resolve).catch(___outer_reject);
-        `;
-    try {
-      vm.runInContext(code, context);
-      let result = JSON.stringify(await p);
-      console.log(SEP + "0");
-      console.log(result);
-      console.log(SEP);
-    } catch (e) {
-      console.log(SEP + "1");
-      console.log(e.stack);
-      console.log(SEP);
-    }
-    cur_code = "";
-  } else {
+  if (!cur_uuid) {
+    // assert(len(line) == 36, "Was expecting a uuid");
+    cur_uuid = line;
+    console.log("received uuid", line);
+    return;
+  }
+  if (line !== cur_uuid) {
     cur_code += line + "\n";
+    console.log("added code", line);
+  } else {
+    console.log("evaling code", cur_code);
+    evalCode(cur_uuid, cur_code, context);
+    cur_code = "";
+    cur_uuid = undefined;
   }
 });
+
+async function evalCode(uuid, code, eval_context) {
+  let p = new Promise((resolve, reject) => {
+    context.___outer_resolve = resolve;
+    context.___outer_reject = reject;
+  });
+  let wrapped_code = `
+      (async function(){
+          ${code}
+      })().then(___outer_resolve).catch(___outer_reject);
+      `;
+  let delim = uuid + ":UUID";
+  console.log(delim);
+  try {
+    vm.runInContext(wrapped_code, eval_context);
+    let result = JSON.stringify(await p);
+    console.log(`${delim}\n0\n${result}\n${delim}`);
+  } catch (e) {
+    console.log(`${delim}\n1\n${e.stack}\n${delim}`);
+  }
+}

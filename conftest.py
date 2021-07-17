@@ -89,6 +89,7 @@ class SeleniumWrapper:
         self.server_log = server_log
         self.driver = self.get_driver()
         self.set_script_timeout(script_timeout)
+        self.script_timeout = script_timeout
         self.prepare_driver()
         self.javascript_setup()
         if load_pyodide:
@@ -115,11 +116,14 @@ class SeleniumWrapper:
         self.driver.get(f"{self.base_url}/test.html")
 
     def set_script_timeout(self, timeout):
-        self.script_timeout = timeout
         self.driver.set_script_timeout(timeout)
 
     def quit(self):
         self.driver.quit()
+
+    def refresh(self):
+        self.driver.refresh()
+        self.javascript_setup()
 
     def javascript_setup(self):
         self.run_js(
@@ -302,16 +306,18 @@ class ChromeWrapper(SeleniumWrapper):
 
 class NodeWrapper(SeleniumWrapper):
     browser = "node"
-    SEPARATOR = "\x1E"
 
-    def get_driver(self):
-        self._logs = []
+    def init_node(self):
         os.chdir("build")
         self.p = pexpect.spawn(
             f"node --expose-gc ../node_test_driver.js {self.base_url}", timeout=60
         )
         self.p.setecho(False)
         os.chdir("..")
+
+    def get_driver(self):
+        self._logs = []
+        self.init_node()
 
         class NodeDriver:
             def __getattr__(self, x):
@@ -324,10 +330,15 @@ class NodeWrapper(SeleniumWrapper):
         pass
 
     def set_script_timeout(self, timeout):
-        self.script_timeout = timeout
+        self._timeout = timeout
 
     def quit(self):
         self.p.sendeof()
+
+    def refresh(self):
+        self.quit()
+        self.init_node()
+        self.javascript_setup()
 
     def collect_garbage(self):
         self.run_js("gc()")
@@ -349,14 +360,20 @@ class NodeWrapper(SeleniumWrapper):
             code,
             check_code,
         )
+        from uuid import uuid4
+
+        cmd_id = str(uuid4())
+        self.p.sendline(cmd_id)
         for line in wrapped.split("\n"):
             self.p.sendline(line)
-        self.p.sendline(self.SEPARATOR)
-        self.p.expect(f"\x1E[01]\r\n", timeout=self.script_timeout)
+        self.p.sendline(cmd_id)
+        self.p.expect_exact(f"{cmd_id}:UUID\r\n", timeout=self._timeout)
+        self.p.expect_exact(f"{cmd_id}:UUID\r\n")
         if self.p.before:
             self._logs.append(self.p.before.decode()[:-2].replace("\r", ""))
-        success = int(self.p.match[0].decode()[1]) == 0
-        self.p.expect_exact(f"\r\n{self.SEPARATOR}\r\n")
+        self.p.expect(f"[01]\r\n")
+        success = int(self.p.match[0].decode()[0]) == 0
+        self.p.expect_exact(f"\r\n{cmd_id}:UUID\r\n")
         if success:
             return json.loads(self.p.before.decode().replace("undefined", "null"))
         else:
