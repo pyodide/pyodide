@@ -1,17 +1,21 @@
 package:
   name: yt
-  version: 4.0.0
+  version: 3.6.1
+
 source:
-  url: https://files.pythonhosted.org/packages/6d/1f/21cb39c9eec41d1d163e9b6fd5e5450623677052ddbd319650e5d4e12ec3/yt-4.0.0.tar.gz
-  sha256: 44054b91a51755213da3891b9da53ec2b8976c1a4c39af395497d10afe278074
+  url: https://files.pythonhosted.org/packages/1e/ce/e75e41f077e330f25d912eda4a1ba124e6b5f896f457ec5ca4e8c89b97c2/yt-3.6.1.tar.gz
+  sha256: be454f9d05dcbe0623328b4df43a1bfd1f0925e516be97399710452931a19bb0
+
   patches:
-  - patches/skip-openmp.patch
+    - patches/skip-openmp.patch
+
 requirements:
   run:
-  - numpy
-  - matplotlib
-  - sympy
-  - setuptools
+    - numpy
+    - matplotlib
+    - sympy
+    - setuptools
+
 test:
   imports:
-  - yt
+    - yt
