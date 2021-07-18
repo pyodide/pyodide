@@ -100,7 +100,7 @@ substitutions:
   `toJs(n)` in v0.17 changed to `toJs({depth : n})`. Similarly, `pyodide.toPy`
   now takes `depth` as a named argument. Also `to_js` and `to_py` only take
   depth as a keyword argument.
-  {pr}``
+  {pr}`1721`
 
 ### pyodide-build
 
