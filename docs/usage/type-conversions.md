@@ -226,7 +226,7 @@ destroy it, you will leak the Python object. See {ref}`avoiding-leaks`.
 ### Python to Javascript
 Explicit conversion of a {any}`PyProxy` into a native Javascript object is done with
 the {any}`PyProxy.toJs` method. By default, the `toJs` method does a recursive "deep"
-conversion, to do a shallow conversion use `proxy.toJs(1)`. The `toJs` method
+conversion, to do a shallow conversion use `proxy.toJs({depth : 1})`. The `toJs` method
 performs the following explicit conversions:
 
 | Python            | Javascript          |

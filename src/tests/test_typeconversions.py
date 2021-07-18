@@ -722,7 +722,7 @@ def test_tojs4(selenium):
         """
         let a = pyodide.runPython("[1,[2,[3,[4,[5,[6,[7]]]]]]]")
         for(let i=0; i < 7; i++){
-            let x = a.toJs(i);
+            let x = a.toJs({depth : i});
             for(let j=0; j < i; j++){
                 assert(() => Array.isArray(x), `i: ${i}, j: ${j}`);
                 x = x[1];
@@ -740,7 +740,7 @@ def test_tojs5(selenium):
         """
         let a = pyodide.runPython("[1, (2, (3, [4, (5, (6, [7]))]))]")
         for(let i=0; i < 7; i++){
-            let x = a.toJs(i);
+            let x = a.toJs({depth : i});
             for(let j=0; j < i; j++){
                 assert(() => Array.isArray(x), `i: ${i}, j: ${j}`);
                 x = x[1];
