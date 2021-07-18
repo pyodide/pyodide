@@ -1,12 +1,12 @@
 package:
   name: biopython
-  version: '1.78'
+  version: '1.79'
 requirements:
   run:
   - numpy
 source:
-  sha256: 1ee0a0b6c2376680fea6642d5080baa419fd73df104a62d58a8baf7a8bbe4564
-  url: https://files.pythonhosted.org/packages/89/c5/7fe326081276f74a4073f6d6b13cfa7a04ba322a3ff1d84027f4773980b8/biopython-1.78.tar.gz
+  sha256: edb07eac99d3b8abd7ba56ff4bedec9263f76dfc3c3f450e7d2e2bcdecf8559b
+  url: https://files.pythonhosted.org/packages/28/73/4d61169ce1f15c65ea49af89e534b2089375a44b608cb65062b58ff414de/biopython-1.79.tar.gz
 test:
   imports:
   - Bio
