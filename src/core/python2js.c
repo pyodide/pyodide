@@ -474,7 +474,10 @@ python2js_with_depth(PyObject* x, int depth, JsRef proxies)
 }
 
 static PyObject*
-to_js(PyObject* _mod, PyObject* args, PyObject* kwargs)
+to_js(PyObject* self,
+      PyObject* const* args,
+      Py_ssize_t nargs,
+      PyObject* kwnames)
 {
   PyObject* obj = NULL;
   int depth = -1;
