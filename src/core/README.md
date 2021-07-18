@@ -8,12 +8,12 @@ behaviors are better defined in Python when possible for easier development and
 debugging.
 
 In particular, when possible logic should be moved from core/pyodide to
-py/_pyodide or to py/pyodide.
+py/\_pyodide or to py/pyodide.
 
 The core/pyodide code is responsible for the following main steps:
 
 1. Initialize the CPython interpreter
-2. Import py/_pyodide
+2. Import py/\_pyodide
 3. Initialize `_pyodide_core` which is a Python C extension that we use to make
    functionality available to py/pyodide.
 4. Set up functionality to automatically convert functions from Javascript to

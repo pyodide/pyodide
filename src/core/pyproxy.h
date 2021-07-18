@@ -13,6 +13,9 @@
 JsRef
 pyproxy_new(PyObject* obj);
 
+int
+pyproxy_Check(JsRef x);
+
 /**
  * Wrap a Python callable in a Javascript function that can be called once.
  * After being called, the reference count of the python object is automatically
