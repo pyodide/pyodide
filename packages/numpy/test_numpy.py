@@ -12,7 +12,7 @@ def test_numpy(selenium):
     selenium.run_js(
         """
         let xpy = pyodide.runPython('x');
-        window.x = xpy.toJs();
+        self.x = xpy.toJs();
         xpy.destroy();
         """
     )
@@ -37,7 +37,7 @@ def test_typed_arrays(selenium):
         ("Float32Array", "float32"),
         ("Float64Array", "float64"),
     ):
-        selenium.run_js(f"window.array = new {jstype}([1, 2, 3, 4]);\n")
+        selenium.run_js(f"self.array = new {jstype}([1, 2, 3, 4]);\n")
         assert selenium.run(
             "from js import array\n"
             "npyarray = numpy.asarray(array.to_py())\n"
@@ -264,7 +264,7 @@ def test_get_buffer_roundtrip(selenium, arg):
             import numpy as np
             x = {arg}
         `);
-        window.x_js_buf = pyodide.globals.get("x").getBuffer();
+        self.x_js_buf = pyodide.globals.get("x").getBuffer();
         x_js_buf.length = x_js_buf.data.length;
         """
     )
@@ -303,7 +303,7 @@ def test_get_buffer_big_endian(selenium):
     selenium.run_js(
         """
         await pyodide.loadPackage(['numpy']);
-        window.a = pyodide.runPython(`
+        self.a = pyodide.runPython(`
             import numpy as np
             np.arange(24, dtype="int16").byteswap().newbyteorder()
         `);
