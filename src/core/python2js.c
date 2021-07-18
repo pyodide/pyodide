@@ -478,7 +478,7 @@ to_js(PyObject* _mod, PyObject* args, PyObject* kwargs)
 {
   PyObject* obj;
   int depth = -1;
-  char* keywords[] = ["depth"];
+  char* keywords[] = { "depth", 0 };
   if (!PyArg_ParseTupleAndKeywords(
         args, kwargs, "O|i:to_js", keywords, &obj, &depth)) {
     return NULL;
@@ -513,7 +513,7 @@ finally:
 static PyMethodDef methods[] = {
   {
     "to_js",
-    to_js,
+    (PyCFunction)to_js,
     METH_VARARGS | METH_KEYWORDS,
   },
   { NULL } /* Sentinel */
