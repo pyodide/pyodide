@@ -480,7 +480,7 @@ to_js(PyObject* _mod, PyObject* args, PyObject* kwargs)
   int depth = -1;
   char* keywords[] = { "depth", 0 };
   if (!PyArg_ParseTupleAndKeywords(
-        args, kwargs, "O|i:to_js", keywords, &obj, &depth)) {
+        args, kwargs, "O|$i:to_js", keywords, &obj, &depth)) {
     return NULL;
   }
   if (obj == Py_None || PyBool_Check(obj) || PyLong_Check(obj) ||
