@@ -859,7 +859,7 @@ def test_to_py(selenium):
         for(let i = 0; i < 4; i++){
             result.push(pyodide.runPython(`
                 from js import a
-                repr(a.to_py(${i}))
+                repr(a.to_py(depth=${i}))
             `));
         }
         return result;
@@ -880,7 +880,7 @@ def test_to_py(selenium):
         for(let i = 0; i < 4; i++){
             result.push(pyodide.runPython(`
                 from js import a
-                repr(a.to_py(${i}))
+                repr(a.to_py(depth=${i}))
             `));
         }
         return result;

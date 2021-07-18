@@ -249,11 +249,12 @@ export function unregisterJsModule(name) {
  * See :ref:`type-translations-jsproxy-to-py` for more information.
  *
  * @param {*} obj
- * @param {number} depth Optional argument to limit the depth of the
+ * @param {object} options
+ * @param {number} options.depth Optional argument to limit the depth of the
  * conversion.
  * @returns {PyProxy} The object converted to Python.
  */
-export function toPy(obj, depth = -1) {
+export function toPy(obj, { depth = -1 } = {}) {
   // No point in converting these, it'd be dumb to proxy them so they'd just
   // get converted back by `js2python` at the end
   switch (typeof obj) {
