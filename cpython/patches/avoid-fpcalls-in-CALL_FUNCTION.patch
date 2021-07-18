@@ -1,0 +1,56 @@
+From 6933302eebb82b4a7839070963cb338ed92a234b Mon Sep 17 00:00:00 2001
+From: Hood <hood@mit.edu>
+Date: Wed, 7 Jul 2021 09:24:48 -0700
+Subject: [PATCH] Remove byn$fpcast calls from CALL_FUNCTION implementation
+
+The goal of this patch is to avoid making the two byn$fpcast calls in the Python
+CALL_FUNCTION instruction. These calls take up a ton of stack space and are also
+slow. 
+
+We hard code _PyEval_EvalFrame to call _PyEval_EvalFrameDefault rather than
+calling tstate->interp->eval_frame (existing Python JITs will not work with
+Pyodide anyways).
+
+In implementation of `PyObject_Vectorcall` we check explicitly if
+`pyobj->tp_vectorcall == _PyFunction_Vectorcall` (this is the case for normal
+Python functions). In this case we can avoid calling the function pointer.
+
+
+---
+ Include/cpython/abstract.h      | 6 +++++-
+ Include/internal/pycore_ceval.h | 2 +-
+ 2 files changed, 6 insertions(+), 2 deletions(-)
+
+diff --git a/Include/cpython/abstract.h b/Include/cpython/abstract.h
+index 0f1304d..9cb1286 100644
+--- a/Include/cpython/abstract.h
++++ b/Include/cpython/abstract.h
+@@ -115,7 +115,11 @@ _PyObject_VectorcallTstate(PyThreadState *tstate, PyObject *callable,
+         Py_ssize_t nargs = PyVectorcall_NARGS(nargsf);
+         return _PyObject_MakeTpCall(tstate, callable, args, nargs, kwnames);
+     }
+-    res = func(callable, args, nargsf, kwnames);
++    if(func == _PyFunction_Vectorcall){
++        res = _PyFunction_Vectorcall(callable, args, nargsf, kwnames);
++    } else {
++        res = func(callable, args, nargsf, kwnames);
++    }
+     return _Py_CheckFunctionResult(tstate, callable, res, NULL);
+ }
+ 
+diff --git a/Include/internal/pycore_ceval.h b/Include/internal/pycore_ceval.h
+index 18c8f02..ddb3d22 100644
+--- a/Include/internal/pycore_ceval.h
++++ b/Include/internal/pycore_ceval.h
+@@ -37,7 +37,7 @@ void _PyEval_Fini(void);
+ static inline PyObject*
+ _PyEval_EvalFrame(PyThreadState *tstate, PyFrameObject *f, int throwflag)
+ {
+-    return tstate->interp->eval_frame(tstate, f, throwflag);
++    return _PyEval_EvalFrameDefault(tstate, f, throwflag);
+ }
+ 
+ extern PyObject *_PyEval_EvalCode(
+-- 
+2.17.1
+
