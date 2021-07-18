@@ -47,8 +47,13 @@ substitutions:
 
 - {{ Enhancement }} Pyodide can experimentally be used in Node.js {pr}`1689`
 
-- {{ Enhancement }} Pyodide now exposes the emscripten `FS` module as `fileSystem`,
+- {{ Enhancement }} Pyodide now directly exposes the emscripten `FS` API,
   allowing for direct manipulation of the in-memory filesystem {pr}`1692`
+
+- {{ Enhancement }} Pyodide's support of emscripten file systems is expanded from
+  the default `MEMFS` to include `IDBFS`, `NODEFS`, `PROXYFS`, and `WORKERFS`,
+  allowing for custom persistence strategies depending on execution environment
+  {pr}`1596`
 
 ## Standard library
 
@@ -86,6 +91,11 @@ substitutions:
   `Symbol` keys put markers on the PyProxy that can be used by external code.
   They will not currently be copied by `PyProxy.copy`.
   {pr}`1696`
+- {{ Enhancement }} Memory management of `PyProxy` fields has been changed so
+  that fields looked up on a `PyProxy` are "borrowed" and have their lifetime
+  attached to the base `PyProxy`. This is intended to allow for more idiomatic
+  usage.
+  (See {issue}`1617`.) {pr}`1636`
 
 ### pyodide-build
 
