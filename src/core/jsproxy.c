@@ -658,8 +658,8 @@ JsProxy_toPy(PyObject* self,
   static const char* const _keywords[] = { "depth", 0 };
   static struct _PyArg_Parser _parser = { "|$i:toPy", _keywords, 0 };
   int depth = -1;
-  if (kwnames != NULL && !_PyArg_ParseStackAndKeywords(
-                           args + nargs, 0, kwnames, &_parser, &depth)) {
+  if (kwnames != NULL &&
+      !_PyArg_ParseStackAndKeywords(args, nargs, kwnames, &_parser, &depth)) {
     return NULL;
   }
   return js2python_convert(GET_JSREF(self), depth);
