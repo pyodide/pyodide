@@ -38,7 +38,7 @@ substitutions:
   type. This is particularly important if the error is a `KeyboardInterrupt`.
   {pr}`1447`
 
-- {{ ENH }} Added {any}`Console` class closely based on the Python standard
+- {{ Enhancement }} Added {any}`Console` class closely based on the Python standard
   library `code.InteractiveConsole` but with support for top level await and
   stream redirection. Also added the subclass {any}`PyodideConsole` which
   automatically uses {any}`pyodide.loadPackagesFromImports` on the code before running

@@ -181,53 +181,42 @@ class Console:
     Parameters
     ----------
     globals : ``dict``
-
         The global namespace in which to evaluate the code. Defaults to a new empty dictionary.
 
-    stdout_callback : Callable[[str], None] Function to call at each write to
-        ``sys.stdout``. Defaults to ``None``.
+    stdout_callback : ``Callable[[str], None]``
+        Function to call at each write to ``sys.stdout``. Defaults to ``None``.
 
-    stderr_callback : Callable[[str], None]
-
+    stderr_callback : ``Callable[[str], None]``
         Function to call at each write to ``sys.stderr``. Defaults to ``None``.
 
-    stdin_callback : Callable[[str], None]
-
+    stdin_callback : ``Callable[[str], None]``
         Function to call at each read from ``sys.stdin``. Defaults to ``None``.
 
-    persistent_stream_redirection : bool
-
+    persistent_stream_redirection : ``bool``
         Should redirection of standard streams be kept between calls to :any:`runcode <Console.runcode>`?
         Defaults to ``False``.
 
-    filename : str
-
+    filename : ``str``
         The file name to report in error messages. Defaults to ``<console>``.
 
     Attributes
     ----------
-        globals : Dict[str, Any]
-
+        globals : ``Dict[str, Any]``
             The namespace used as the global
 
-        stdout_callback : Callback[[str], None]
-
+        stdout_callback : ``Callback[[str], None]``
             Function to call at each write to ``sys.stdout``.
 
-        stderr_callback : Callback[[str], None]
-
+        stderr_callback : ``Callback[[str], None]``
             Function to call at each write to ``sys.stderr``.
 
-        stdin_callback : Callback[[str], None]
-
+        stdin_callback : ``Callback[[str], None]``
             Function to call at each read from ``sys.stdin``.
 
-        buffer : List[str]
-
+        buffer : ``List[str]``
             The list of strings that have been :any:`pushed <Console.push>` to the console.
 
-        completer_word_break_characters : str
-
+        completer_word_break_characters : ``str``
             The set of characters considered by :any:`complete <Console.complete>` to be word breaks.
     """
 
