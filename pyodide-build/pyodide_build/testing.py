@@ -70,7 +70,7 @@ def run_in_pyodide(
                         try {{
                             eval_code.callKwargs(
                                 {{
-                                    source : new TextDecoder().decode({list(source.encode())}),
+                                    source : new TextDecoder().decode(new Uint8Array({list(source.encode())})),
                                     globals : pyodide._module.globals,
                                     filename : {filename!r}
                                 }}
