@@ -70,7 +70,7 @@ def run_in_pyodide(
                         try {{
                             eval_code.callKwargs(
                                 {{
-                                    source : {source!r},
+                                    source : `{source}`,
                                     globals : pyodide._module.globals,
                                     filename : {filename!r}
                                 }}
