@@ -25,7 +25,7 @@ from typing import (
     Awaitable,
 )
 
-from _pyodide._base import eval_code_async, should_quiet, CodeRunner
+from _pyodide._base import should_quiet, CodeRunner
 from ._core import IN_BROWSER
 
 # this import can fail when we are outside a browser (e.g. for tests)
