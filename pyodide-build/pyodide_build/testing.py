@@ -2,6 +2,7 @@ import pytest
 import inspect
 from typing import Callable, Dict, List, Optional, Union
 import contextlib
+from base64 import b64encode
 
 
 def _run_in_pyodide_get_source(f):
@@ -70,7 +71,7 @@ def run_in_pyodide(
                         try {{
                             eval_code.callKwargs(
                                 {{
-                                    source : new TextDecoder().decode(new Uint8Array({list(source.encode())})),
+                                    source : atob({b64encode(source.encode()).decode()!r})),
                                     globals : pyodide._module.globals,
                                     filename : {filename!r}
                                 }}
