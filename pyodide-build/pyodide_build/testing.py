@@ -18,6 +18,13 @@ def _run_in_pyodide_get_source(f):
     return "".join(lines)
 
 
+def chunkstring(string, length):
+    return (string[0 + i : length + i] for i in range(0, len(string), length))
+
+
+from pprint import pformat
+
+
 def run_in_pyodide(
     _function: Optional[Callable] = None,
     *,
@@ -65,13 +72,17 @@ def run_in_pyodide(
                         await_kw = ""
                     source = _run_in_pyodide_get_source(f)
                     filename = inspect.getsourcefile(f)
+                    encoded = pformat(
+                        list(chunkstring(b64encode(source.encode()).decode(), 100))
+                    )
+
                     selenium.run_js(
                         f"""
                         let eval_code = pyodide.pyodide_py.eval_code;
                         try {{
                             eval_code.callKwargs(
                                 {{
-                                    source : atob({b64encode(source.encode()).decode()!r}),
+                                    source : atob({encoded}.join("")),
                                     globals : pyodide._module.globals,
                                     filename : {filename!r}
                                 }}
