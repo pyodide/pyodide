@@ -85,7 +85,7 @@ class _ReadStream:
         pass
 
 
-class _CodeRunnerCompile(Compile):
+class _Compile(Compile):
     """Compile code with CodeRunner, and remember future imports
 
     Instances of this class behave much like the built-in compile function,
@@ -123,7 +123,7 @@ class _CodeRunnerCompile(Compile):
         return code_runner
 
 
-class _CodeRunnerCommandCompiler(CommandCompiler):
+class _CommandCompiler(CommandCompiler):
     """Compile code with CodeRunner, and remember future imports, return None if
     code is incomplete.
 
@@ -143,7 +143,7 @@ class _CodeRunnerCommandCompiler(CommandCompiler):
         quiet_trailing_semicolon=True,
         flags=0x0,
     ):
-        self.compiler = _CodeRunnerCompile(
+        self.compiler = _Compile(
             return_mode=return_mode,
             quiet_trailing_semicolon=quiet_trailing_semicolon,
             flags=flags,
@@ -251,7 +251,7 @@ class Console:
         self.completer_word_break_characters = (
             """ \t\n`~!@#$%^&*()-=+[{]}\\|;:'\",<>/?"""
         )
-        self._compile = _CodeRunnerCommandCompiler(flags=ast.PyCF_ALLOW_TOP_LEVEL_AWAIT)  # type: ignore
+        self._compile = _CommandCompiler(flags=ast.PyCF_ALLOW_TOP_LEVEL_AWAIT)  # type: ignore
 
     def persistent_redirect_streams(self):
         """Redirect stdin/stdout/stderr persistently"""

@@ -11,13 +11,13 @@ sys.path.append(str(Path(__file__).resolve().parents[2] / "src" / "py"))
 from pyodide import console, CodeRunner  # noqa: E402
 from pyodide.console import (
     Console,
-    _CodeRunnerCompile,
-    _CodeRunnerCommandCompiler,
+    _Compile,
+    _CommandCompiler,
 )  # noqa: E402
 
 
 def test_command_compiler():
-    c = _CodeRunnerCompile()
+    c = _Compile()
     with pytest.raises(SyntaxError, match="unexpected EOF while parsing"):
         c("def test():\n   1", "<input>", "single")
     assert isinstance(c("def test():\n   1\n", "<input>", "single"), CodeRunner)
@@ -28,7 +28,7 @@ def test_command_compiler():
     )
     assert isinstance(c("1<>2", "<input>", "single"), CodeRunner)
 
-    c = _CodeRunnerCommandCompiler()
+    c = _CommandCompiler()
     assert c("def test():\n   1", "<input>", "single") is None
     assert isinstance(c("def test():\n   1\n", "<input>", "single"), CodeRunner)
     with pytest.raises(SyntaxError, match="invalid syntax"):
