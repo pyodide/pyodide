@@ -313,6 +313,7 @@ class NodeWrapper(SeleniumWrapper):
             f"node --expose-gc ../tools/node_test_driver.js {self.base_url}", timeout=60
         )
         self.p.setecho(False)
+        self.p.delaybeforesend = None
         os.chdir("..")
 
     def get_driver(self):
