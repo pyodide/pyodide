@@ -110,7 +110,7 @@ class SeleniumWrapper:
             self.save_state()
             self.restore_state()
 
-    SETUP_CODE = pathlib.Path(ROOT_PATH / "testsetup.js").read_text()
+    SETUP_CODE = pathlib.Path(ROOT_PATH / "tools/testsetup.js").read_text()
 
     def prepare_driver(self):
         self.driver.get(f"{self.base_url}/test.html")
@@ -310,7 +310,7 @@ class NodeWrapper(SeleniumWrapper):
     def init_node(self):
         os.chdir("build")
         self.p = pexpect.spawn(
-            f"node --expose-gc ../node_test_driver.js {self.base_url}", timeout=60
+            f"node --expose-gc ../tools/node_test_driver.js {self.base_url}", timeout=60
         )
         self.p.setecho(False)
         os.chdir("..")
@@ -321,8 +321,7 @@ class NodeWrapper(SeleniumWrapper):
 
         class NodeDriver:
             def __getattr__(self, x):
-                raise Exception("BLAHH", x)
-                # pytest.skip("unsupported configuration")
+                raise NotImplementedError()
 
         return NodeDriver()
 
@@ -364,8 +363,7 @@ class NodeWrapper(SeleniumWrapper):
 
         cmd_id = str(uuid4())
         self.p.sendline(cmd_id)
-        for line in wrapped.split("\n"):
-            self.p.sendline(line)
+        self.p.sendline(wrapped)
         self.p.sendline(cmd_id)
         self.p.expect_exact(f"{cmd_id}:UUID\r\n", timeout=self._timeout)
         self.p.expect_exact(f"{cmd_id}:UUID\r\n")
