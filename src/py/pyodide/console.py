@@ -149,7 +149,7 @@ class _CommandCompiler(CommandCompiler):
             flags=flags,
         )
 
-    def __call__(self, source, filename="<console>", symbol="single") -> CodeRunner:  # type: ignore
+    def __call__(self, source, filename="<console>", symbol="single") -> Optional[CodeRunner]:  # type: ignore
         return super().__call__(source, filename, symbol)  # type: ignore
 
 
