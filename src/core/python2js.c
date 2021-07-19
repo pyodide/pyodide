@@ -474,13 +474,20 @@ python2js_with_depth(PyObject* x, int depth, JsRef proxies)
 }
 
 static PyObject*
-to_js(PyObject* _mod, PyObject* args)
+to_js(PyObject* self,
+      PyObject* const* args,
+      Py_ssize_t nargs,
+      PyObject* kwnames)
 {
-  PyObject* obj;
+  PyObject* obj = NULL;
   int depth = -1;
-  if (!PyArg_ParseTuple(args, "O|i:to_js", &obj, &depth)) {
+  static const char* const _keywords[] = { "depth", 0 };
+  static struct _PyArg_Parser _parser = { "O|$i:to_js", _keywords, 0 };
+  if (kwnames != NULL && !_PyArg_ParseStackAndKeywords(
+                           args, nargs, kwnames, &_parser, &obj, &depth)) {
     return NULL;
   }
+
   if (obj == Py_None || PyBool_Check(obj) || PyLong_Check(obj) ||
       PyFloat_Check(obj) || PyUnicode_Check(obj) || JsProxy_Check(obj) ||
       JsException_Check(obj)) {
@@ -511,8 +518,8 @@ finally:
 static PyMethodDef methods[] = {
   {
     "to_js",
-    to_js,
-    METH_VARARGS,
+    (PyCFunction)to_js,
+    METH_FASTCALL | METH_KEYWORDS,
   },
   { NULL } /* Sentinel */
 };

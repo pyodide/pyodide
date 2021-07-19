@@ -349,15 +349,16 @@ class PyProxyClass {
   /**
    * Converts the ``PyProxy`` into a Javascript object as best as possible. By
    * default does a deep conversion, if a shallow conversion is desired, you
-   * can use ``proxy.toJs(1)``.
+   * can use ``proxy.toJs({depth : 1})``.
    * See :ref:`Explicit Conversion of PyProxy
    * <type-translations-pyproxy-to-js>` for more info.
    *
-   * @param {number} depth How many layers deep to perform the conversion.
+   * @param {object} options
+   * @param {number} options.depth How many layers deep to perform the conversion.
    * Defaults to infinite.
    * @return {any} The Javascript object resulting from the conversion.
    */
-  toJs(depth = -1) {
+  toJs({ depth = -1 } = {}) {
     let ptrobj = _getPtr(this);
     let idresult;
     let proxies = Module.hiwire.new_value([]);
