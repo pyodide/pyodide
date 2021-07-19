@@ -192,12 +192,10 @@ export async function loadPyodide(config) {
     throw new Error("Please provide indexURL parameter to loadPyodide");
   }
   let baseURL = config.indexURL;
-  if (baseURL.endsWith(".js")) {
-    baseURL = baseURL.substr(0, baseURL.lastIndexOf("/"));
-  }
   if (!baseURL.endsWith("/")) {
     baseURL += "/";
   }
+  Module.indexURL = baseURL;
   let packageIndexReady = initializePackageIndex(baseURL);
 
   Module.locateFile = (path) => baseURL + path;

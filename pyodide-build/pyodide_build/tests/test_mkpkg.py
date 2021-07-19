@@ -1,5 +1,6 @@
 import os
 from pathlib import Path
+import pytest
 
 import yaml
 from pkg_resources import parse_version
@@ -27,6 +28,7 @@ def test_mkpkg(tmpdir, monkeypatch):
 
 
 def test_mkpkg_update(tmpdir, monkeypatch):
+    pytest.importorskip("ruamel")
     base_dir = Path(str(tmpdir))
     monkeypatch.setattr(pyodide_build.mkpkg, "PACKAGES_ROOT", base_dir)
 

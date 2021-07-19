@@ -13,7 +13,11 @@
   },
   "type": "module",
   "scripts": {
-    "test": "mocha --timeout 15000"
+    "test": "mocha"
+  },
+  "mocha": {
+    "timeout": 30000,
+    "file": "./test/conftest.js"
   },
   "tsd": {
     "compilerOptions": {

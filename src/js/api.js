@@ -90,12 +90,7 @@ export let version = ""; // actually defined in runPythonSimple in loadPyodide (
  *          documentation for :any:`pyodide.eval_code` for more info.
  */
 export function runPython(code, globals = Module.globals) {
-  let eval_code = Module.pyodide_py.eval_code;
-  try {
-    return eval_code(code, globals);
-  } finally {
-    eval_code.destroy();
-  }
+  return Module.pyodide_py.eval_code(code, globals);
 }
 Module.runPython = runPython;
 
@@ -132,15 +127,12 @@ export async function loadPackagesFromImports(
   messageCallback,
   errorCallback
 ) {
-  let find_imports = Module.pyodide_py.find_imports;
+  let pyimports = Module.pyodide_py.find_imports(code);
   let imports;
-  let pyimports;
   try {
-    pyimports = find_imports(code);
     imports = pyimports.toJs();
   } finally {
-    find_imports.destroy();
-    pyimports && pyimports.destroy();
+    pyimports.destroy();
   }
   if (imports.length === 0) {
     return;
@@ -199,13 +191,11 @@ export function pyimport(name) {
  * @async
  */
 export async function runPythonAsync(code) {
-  let eval_code_async = Module.pyodide_py.eval_code_async;
-  let coroutine = eval_code_async(code, Module.globals);
+  let coroutine = Module.pyodide_py.eval_code_async(code, Module.globals);
   try {
     let result = await coroutine;
     return result;
   } finally {
-    eval_code_async.destroy();
     coroutine.destroy();
   }
 }
@@ -223,12 +213,7 @@ Module.runPythonAsync = runPythonAsync;
  * @param {object} module Javascript object backing the module
  */
 export function registerJsModule(name, module) {
-  let register_js_module = Module.pyodide_py.register_js_module;
-  try {
-    register_js_module(name, module);
-  } finally {
-    register_js_module.destroy();
-  }
+  Module.pyodide_py.register_js_module(name, module);
 }
 
 /**
@@ -251,12 +236,7 @@ export function registerComlink(Comlink) {
  * @param {string} name Name of the Javascript module to remove
  */
 export function unregisterJsModule(name) {
-  let unregister_js_module = Module.pyodide_py.unregister_js_module;
-  try {
-    unregister_js_module(name);
-  } finally {
-    unregister_js_module.destroy();
-  }
+  Module.pyodide_py.unregister_js_module(name);
 }
 
 /**
@@ -340,13 +320,18 @@ export function makePublicAPI() {
    * which can be used to extend the in-memory filesystem with features like `persistence
    * <https://emscripten.org/docs/api_reference/Filesystem-API.html#persistent-data>`_.
    *
+   * While all of the file systems implementations are enabled, only the default
+   * ``MEMFS`` is guaranteed to work in all runtime settings. The implementations
+   * are available as members of ``FS.filesystems``:
+   * ``IDBFS``, ``NODEFS``, ``PROXYFS``, ``WORKERFS``.
+   *
    * @type {FS} The Emscripten File System API.
    */
-  const fileSystem = Module.FS;
+  const FS = Module.FS;
 
   let namespace = {
     globals,
-    fileSystem,
+    FS,
     pyodide_py,
     version,
     loadPackage,
