@@ -12,9 +12,8 @@ from pyodide import console, CodeRunner  # noqa: E402
 from pyodide.console import (
     Console,
     _CodeRunnerCompile,
-    _CodeRunnerCommandCompiler
-) # noqa: E402
-
+    _CodeRunnerCommandCompiler,
+)  # noqa: E402
 
 
 def test_command_compiler():
@@ -92,7 +91,7 @@ def test_completion():
     )
 
 
-def test_interactive_console():
+async def test_interactive_console():
     shell = Console()
 
     def assert_incomplete(input):
@@ -107,42 +106,39 @@ def test_interactive_console():
         assert status == "success"
         return value
 
-    async def test():
-        assert await get_result("x = 5") == None
-        assert await get_result("x") == 5
-        assert await get_result("x ** 2") == 25
+    assert await get_result("x = 5") == None
+    assert await get_result("x") == 5
+    assert await get_result("x ** 2") == 25
 
-        assert_incomplete("def f(x):")
-        assert_incomplete("    return x*x + 1")
-        assert await get_result("") == None
-        assert await get_result("[f(x) for x in range(5)]") == [1, 2, 5, 10, 17]
+    assert_incomplete("def f(x):")
+    assert_incomplete("    return x*x + 1")
+    assert await get_result("") == None
+    assert await get_result("[f(x) for x in range(5)]") == [1, 2, 5, 10, 17]
 
-        assert_incomplete("def factorial(n):")
-        assert_incomplete("    if n < 2:")
-        assert_incomplete("        return 1")
-        assert_incomplete("    else:")
-        assert_incomplete("        return n * factorial(n - 1)")
-        assert await get_result("") == None
-        assert await get_result("factorial(10)") == 3628800
+    assert_incomplete("def factorial(n):")
+    assert_incomplete("    if n < 2:")
+    assert_incomplete("        return 1")
+    assert_incomplete("    else:")
+    assert_incomplete("        return n * factorial(n - 1)")
+    assert await get_result("") == None
+    assert await get_result("factorial(10)") == 3628800
 
-        assert await get_result("import pytz") == None
-        assert await get_result("pytz.utc.zone") == "UTC"
+    assert await get_result("import pytz") == None
+    assert await get_result("pytz.utc.zone") == "UTC"
 
-        [status, val] = shell.push("1+")
-        assert status == "syntax-error"
-        assert (
-            val
-            == '  File "<console>", line 1\n    1+\n     ^\nSyntaxError: invalid syntax\n'
-        )
+    [status, val] = shell.push("1+")
+    assert status == "syntax-error"
+    assert (
+        val
+        == '  File "<console>", line 1\n    1+\n      ^\nSyntaxError: invalid syntax\n'
+    )
 
-        [state, fut] = shell.push("raise Exception('hi')")
-        assert state == "complete"
-        assert await fut == (
-            "exception",
-            'Traceback (most recent call last):\n  File "<console>", line 1, in <module>\nException: hi\n',
-        )
-
-    asyncio.get_event_loop().run_until_complete(test())
+    [state, fut] = shell.push("raise Exception('hi')")
+    assert state == "complete"
+    assert await fut == (
+        "exception",
+        'Traceback (most recent call last):\n  File "<console>", line 1, in <module>\nException: hi\n',
+    )
 
 
 def test_top_level_await():
