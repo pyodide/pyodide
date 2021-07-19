@@ -3,6 +3,7 @@ const readline = require("readline");
 const path = require("path");
 const util = require("util");
 const node_fetch = require("node-fetch");
+const base64 = require("base-64");
 
 require(path.resolve("./pyodide.js"));
 let base_url = process.argv[2];
@@ -19,6 +20,8 @@ const context = Object.assign({}, globalThis, {
     TextDecoder: util.TextDecoder,
     TextEncoder: util.TextEncoder,
     URL,
+    atob: base64.decode,
+    btoa: base64.encode,
 });
 vm.createContext(context);
 vm.runInContext("globalThis.self = globalThis;", context);
