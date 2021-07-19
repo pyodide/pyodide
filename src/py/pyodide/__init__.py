@@ -20,7 +20,6 @@ from _pyodide._base import (
     should_quiet,
 )
 from ._util import open_url
-from . import console
 from . import _state  # noqa
 
 from _pyodide._importhook import jsfinder
