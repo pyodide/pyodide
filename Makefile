@@ -51,6 +51,10 @@ build/pyodide.asm.js: \
 	[ -d build ] || mkdir build
 	$(CXX) -s EXPORT_NAME="'_createPyodideModule'" -o build/pyodide.asm.js $(filter %.o,$^) \
 		$(MAIN_MODULE_LDFLAGS) -s FORCE_FILESYSTEM=1 \
+		-lidbfs.js \
+		-lnodefs.js \
+		-lproxyfs.js \
+		-lworkerfs.js \
 		--preload-file $(CPYTHONLIB)@/lib/python$(PYMAJOR).$(PYMINOR) \
 		--preload-file src/webbrowser.py@/lib/python$(PYMAJOR).$(PYMINOR)/webbrowser.py \
 		--preload-file src/_testcapi.py@/lib/python$(PYMAJOR).$(PYMINOR)/_testcapi.py \
@@ -87,10 +91,7 @@ node_modules/.installed : src/js/package.json
 	touch node_modules/.installed
 
 build/pyodide.js: src/js/*.js src/js/pyproxy.gen.js node_modules/.installed
-	npx typescript src/js/pyodide.js \
-		--lib ES2018 --allowJs \
-		--declaration --emitDeclarationOnly \
-		--outDir build
+	npx typescript --project src/js
 	npx rollup -c src/js/rollup.config.js
 
 src/js/pyproxy.gen.js : src/core/pyproxy.* src/core/*.h

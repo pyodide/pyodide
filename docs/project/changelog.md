@@ -47,6 +47,14 @@ substitutions:
 
 - {{ Enhancement }} Pyodide can experimentally be used in Node.js {pr}`1689`
 
+- {{ Enhancement }} Pyodide now directly exposes the emscripten `FS` API,
+  allowing for direct manipulation of the in-memory filesystem {pr}`1692`
+
+- {{ Enhancement }} Pyodide's support of emscripten file systems is expanded from
+  the default `MEMFS` to include `IDBFS`, `NODEFS`, `PROXYFS`, and `WORKERFS`,
+  allowing for custom persistence strategies depending on execution environment
+  {pr}`1596`
+
 ## Standard library
 
 - The following standard library modules are now available as standalone packages
@@ -79,6 +87,20 @@ substitutions:
   `PyProxy.$destroy` refers to an attribute or method called `destroy` on the
   proxied object.
   {pr}`1604`
+- {{ API }} It is now possible to use `Symbol` keys with PyProxies. These
+  `Symbol` keys put markers on the PyProxy that can be used by external code.
+  They will not currently be copied by `PyProxy.copy`.
+  {pr}`1696`
+- {{ Enhancement }} Memory management of `PyProxy` fields has been changed so
+  that fields looked up on a `PyProxy` are "borrowed" and have their lifetime
+  attached to the base `PyProxy`. This is intended to allow for more idiomatic
+  usage.
+  (See {issue}`1617`.) {pr}`1636`
+- {{ API }} The depth argument to `toJs` is now passed as an option, so
+  `toJs(n)` in v0.17 changed to `toJs({depth : n})`. Similarly, `pyodide.toPy`
+  now takes `depth` as a named argument. Also `to_js` and `to_py` only take
+  depth as a keyword argument.
+  {pr}`1721`
 
 ### pyodide-build
 

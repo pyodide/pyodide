@@ -21,7 +21,7 @@ all: .artifacts/bin/pyodide-build
 	python3 -m pip install -e ../pyodide-build --no-deps --prefix $(PYODIDE_LIBRARIES)
 
 update-all:
-	for pkg in $$(find . -maxdepth 1 -type d -exec basename {} \; | tail -n +2); do \
+	for pkg in $$(find . -maxdepth 1 ! -name ".*" -type d -exec basename {} \; | tail -n +2); do \
 		pyodide-build mkpkg "$${pkg}" --update; \
 	done
 

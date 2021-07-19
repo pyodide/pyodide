@@ -120,6 +120,7 @@ mkdir -p .docker_home
 # then run forever
 CONTAINER=$(\
   docker run \
+    $PORT_CONFIGURATION_LINE \
     -d --rm \
     -v $PWD:/src \
     --user root \
