@@ -1,5 +1,9 @@
 Error.stackTraceLimit = Infinity;
 
+// Fix globalThis is messed up in firefox see facebook/react#16606.
+// Replace it with window.
+globalThis.globalThis = globalThis.window || globalThis;
+
 globalThis.sleep = function (s) {
     return new Promise((resolve) => setTimeout(resolve, s));
 };
