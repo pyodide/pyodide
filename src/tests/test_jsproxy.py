@@ -347,6 +347,7 @@ def test_window_isnt_super_weird_anymore():
 
 
 @pytest.mark.skip_refcount_check
+@pytest.mark.skip_pyproxy_check
 def test_mount_object(selenium_standalone):
     selenium = selenium_standalone
     result = selenium.run_js(
@@ -430,6 +431,7 @@ def test_unregister_jsmodule_error(selenium):
 
 
 @pytest.mark.skip_refcount_check
+@pytest.mark.skip_pyproxy_check
 def test_nested_import(selenium_standalone):
     selenium = selenium_standalone
     assert (
@@ -451,6 +453,7 @@ def test_nested_import(selenium_standalone):
 
 
 @pytest.mark.skip_refcount_check
+@pytest.mark.skip_pyproxy_check
 def test_register_jsmodule_docs_example(selenium_standalone):
     selenium = selenium_standalone
     selenium.run_js(

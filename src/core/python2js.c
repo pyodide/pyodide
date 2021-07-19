@@ -40,25 +40,28 @@ _python2js_float(PyObject* x)
   return hiwire_double(x_double);
 }
 
+#if PYLONG_BITS_IN_DIGIT == 15
+#error "Expected PYLONG_BITS_IN_DIGIT == 30"
+#endif
+
 static JsRef
 _python2js_long(PyObject* x)
 {
   int overflow;
   long x_long = PyLong_AsLongAndOverflow(x, &overflow);
   if (x_long == -1) {
-    if (overflow) {
-      // Backup approach for large integers: convert via hex string.
-      //
-      // Unfortunately Javascript doesn't offer a good way to convert a numbers
-      // to / from Uint8Arrays.
-      PyObject* hex_py = PyNumber_ToBase(x, 16);
-      FAIL_IF_NULL(hex_py);
-      const char* hex_str = PyUnicode_AsUTF8(hex_py);
-      JsRef result = hiwire_int_from_hex(hex_str);
-      Py_DECREF(hex_py);
-      return result;
+    if (!overflow) {
+      FAIL_IF_ERR_OCCURRED();
+    } else {
+      size_t ndigits = Py_ABS(Py_SIZE(x));
+      unsigned int digits[ndigits];
+      FAIL_IF_MINUS_ONE(_PyLong_AsByteArray((PyLongObject*)x,
+                                            (unsigned char*)digits,
+                                            4 * ndigits,
+                                            true /* little endian */,
+                                            true /* signed */));
+      return hiwire_int_from_digits(digits, ndigits);
     }
-    FAIL_IF_ERR_OCCURRED();
   }
   return hiwire_int(x_long);
 finally:
@@ -471,13 +474,20 @@ python2js_with_depth(PyObject* x, int depth, JsRef proxies)
 }
 
 static PyObject*
-to_js(PyObject* _mod, PyObject* args)
+to_js(PyObject* self,
+      PyObject* const* args,
+      Py_ssize_t nargs,
+      PyObject* kwnames)
 {
-  PyObject* obj;
+  PyObject* obj = NULL;
   int depth = -1;
-  if (!PyArg_ParseTuple(args, "O|i:to_js", &obj, &depth)) {
+  static const char* const _keywords[] = { "depth", 0 };
+  static struct _PyArg_Parser _parser = { "O|$i:to_js", _keywords, 0 };
+  if (kwnames != NULL && !_PyArg_ParseStackAndKeywords(
+                           args, nargs, kwnames, &_parser, &obj, &depth)) {
     return NULL;
   }
+
   if (obj == Py_None || PyBool_Check(obj) || PyLong_Check(obj) ||
       PyFloat_Check(obj) || PyUnicode_Check(obj) || JsProxy_Check(obj) ||
       JsException_Check(obj)) {
@@ -508,8 +518,8 @@ finally:
 static PyMethodDef methods[] = {
   {
     "to_js",
-    to_js,
-    METH_VARARGS,
+    (PyCFunction)to_js,
+    METH_FASTCALL | METH_KEYWORDS,
   },
   { NULL } /* Sentinel */
 };
@@ -518,7 +528,7 @@ int
 python2js_init(PyObject* core)
 {
   bool success = false;
-  PyObject* docstring_source = PyImport_ImportModule("_pyodide._core");
+  PyObject* docstring_source = PyImport_ImportModule("_pyodide._core_docs");
   FAIL_IF_NULL(docstring_source);
   FAIL_IF_MINUS_ONE(
     add_methods_and_set_docstrings(core, methods, docstring_source));

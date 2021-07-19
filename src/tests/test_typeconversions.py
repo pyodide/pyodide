@@ -207,7 +207,7 @@ def test_hyp_tojs_no_crash(selenium_module_scope, obj):
         )
 
 
-def test_python2js(selenium):
+def test_python2js1(selenium):
     assert selenium.run_js('return pyodide.runPython("None") === undefined')
     assert selenium.run_js('return pyodide.runPython("True") === true')
     assert selenium.run_js('return pyodide.runPython("False") === false')
@@ -219,6 +219,9 @@ def test_python2js(selenium):
     assert selenium.run_js('return pyodide.runPython("\'ιωδιούχο\'") === "ιωδιούχο"')
     assert selenium.run_js('return pyodide.runPython("\'碘化物\'") === "碘化物"')
     assert selenium.run_js('return pyodide.runPython("\'🐍\'") === "🐍"')
+
+
+def test_python2js2(selenium):
     assert selenium.run_js(
         """
         let xpy = pyodide.runPython("b'bytes'");
@@ -229,6 +232,9 @@ def test_python2js(selenium):
                (x[0] === 98)
         """
     )
+
+
+def test_python2js3(selenium):
     assert selenium.run_js(
         """
         let proxy = pyodide.runPython("[1, 2, 3]");
@@ -239,6 +245,9 @@ def test_python2js(selenium):
                 (x.length === 3) && (x[0] == 1) && (x[1] == 2) && (x[2] == 3));
         """
     )
+
+
+def test_python2js4(selenium):
     assert selenium.run_js(
         """
         let proxy = pyodide.runPython("{42: 64}");
@@ -248,13 +257,14 @@ def test_python2js(selenium):
         return (typename === "dict") && (x.constructor.name === "Map") && (x.get(42) === 64);
         """
     )
+
+
+def test_python2js5(selenium):
     assert selenium.run_js(
         """
         let x = pyodide.runPython("open('/foo.txt', 'wb')")
-        let x_tell = x.tell;
-        let result = x_tell();
+        let result = x.tell();
         x.destroy();
-        x_tell.destroy();
         return result === 0;
         """
     )
@@ -374,7 +384,6 @@ def test_js2python(selenium):
             jsfloats : new Float32Array([1, 2, 3]),
             jsobject : new XMLHttpRequest(),
         };
-        Object.assign(window, test_objects);
         """
     )
     selenium.run("from js import test_objects as t")
@@ -713,7 +722,7 @@ def test_tojs4(selenium):
         """
         let a = pyodide.runPython("[1,[2,[3,[4,[5,[6,[7]]]]]]]")
         for(let i=0; i < 7; i++){
-            let x = a.toJs(i);
+            let x = a.toJs({depth : i});
             for(let j=0; j < i; j++){
                 assert(() => Array.isArray(x), `i: ${i}, j: ${j}`);
                 x = x[1];
@@ -731,7 +740,7 @@ def test_tojs5(selenium):
         """
         let a = pyodide.runPython("[1, (2, (3, [4, (5, (6, [7]))]))]")
         for(let i=0; i < 7; i++){
-            let x = a.toJs(i);
+            let x = a.toJs({depth : i});
             for(let j=0; j < i; j++){
                 assert(() => Array.isArray(x), `i: ${i}, j: ${j}`);
                 x = x[1];
@@ -850,7 +859,7 @@ def test_to_py(selenium):
         for(let i = 0; i < 4; i++){
             result.push(pyodide.runPython(`
                 from js import a
-                repr(a.to_py(${i}))
+                repr(a.to_py(depth=${i}))
             `));
         }
         return result;
@@ -871,7 +880,7 @@ def test_to_py(selenium):
         for(let i = 0; i < 4; i++){
             result.push(pyodide.runPython(`
                 from js import a
-                repr(a.to_py(${i}))
+                repr(a.to_py(depth=${i}))
             `));
         }
         return result;

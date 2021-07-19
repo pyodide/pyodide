@@ -1,0 +1,13 @@
+{
+  "$schema": "http://json.schemastore.org/tsconfig",
+  "compilerOptions": {
+    "allowJs": true,
+    "declaration": true,
+    "emitDeclarationOnly": true,
+    "lib": ["ES2018", "DOM"],
+    "outDir": "../../build",
+    "rootDir": "."
+  },
+  "include": ["./*.js"],
+  "exclude": ["rollup.config.js"]
+}
