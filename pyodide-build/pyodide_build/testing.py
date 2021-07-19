@@ -71,7 +71,7 @@ def run_in_pyodide(
                         try {{
                             eval_code.callKwargs(
                                 {{
-                                    source : atob({b64encode(source.encode()).decode()!r})),
+                                    source : atob({b64encode(source.encode()).decode()!r}),
                                     globals : pyodide._module.globals,
                                     filename : {filename!r}
                                 }}
