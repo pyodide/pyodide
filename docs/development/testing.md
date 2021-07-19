@@ -15,7 +15,7 @@ Install [geckodriver](https://github.com/mozilla/geckodriver/releases) and
 [chromedriver](https://sites.google.com/a/chromium.org/chromedriver/downloads)
 and check that they are in your `PATH`.
 
-### Running the test suite
+### Running the Python test suite
 
 To run the pytest suite of tests, type on the command line:
 
@@ -23,11 +23,24 @@ To run the pytest suite of tests, type on the command line:
 pytest src/ pyodide-build/ packages/*/test_*
 ```
 
-There are 3 test locations,
+There are 3 test locations that are collected by pytest,
 - `src/tests/`: general Pyodide tests and tests running the CPython test suite
 - `pyodide-build/pyodide_build/tests/`: tests related to Pyodide build system
   (do not require selenium to run)
 - `packages/*/test_*`: package specific tests.
+
+### Running the JavaScript test suite
+
+To run tests on the JavaScript Pyodide package using Mocha, run the following commands,
+```
+cd src/js
+npm test
+```
+
+To check TypeScript type definitions run,
+```
+npx tsd
+```
 
 ### Manual interactive testing
 

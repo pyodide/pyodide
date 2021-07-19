@@ -14,7 +14,7 @@ def selenium_standalone_micropip(selenium_standalone):
     selenium_standalone.run_js(
         """
         await pyodide.loadPackage("micropip");
-        await pyodide.runPython("import micropip");
+        pyodide.runPython("import micropip");
         """
     )
     yield selenium_standalone

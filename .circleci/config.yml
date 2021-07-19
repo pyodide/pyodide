@@ -1,9 +1,9 @@
-version: 2
+version: 2.1
 
 defaults: &defaults
   working_directory: ~/repo
   docker:
-    - image: hoodmane/pyodide-env:17
+    - image: pyodide/pyodide-env:18
   environment:
     - EMSDK_NUM_CORES: 3
       EMCC_CORES: 3
@@ -33,7 +33,11 @@ jobs:
 
       - run:
           name: Test docs
-          command: pytest docs/sphinx_pyodide/tests
+          command: |
+            mkdir test-results
+            pytest docs/sphinx_pyodide/tests --junitxml=test-results/junit.xml
+      - store_test_results:
+          path: test-results
 
   build-core:
     <<: *defaults
@@ -134,7 +138,11 @@ jobs:
       - store_artifacts:
           path: /root/repo/packages/build-logs
 
-  test-core-firefox:
+  test-main:
+    parameters:
+      test-params:
+        description: The tests to run.
+        type: string
     <<: *defaults
     steps:
       - attach_workspace:
@@ -142,37 +150,23 @@ jobs:
       - run:
           name: test
           command: |
-            tools/pytest_wrapper.py src packages/micropip/ -v -k firefox -n 3
+            mkdir test-results
+            tools/pytest_wrapper.py \
+              --junitxml=test-results/junit.xml \
+              --verbose \
+              << parameters.test-params >>
+      - store_test_results:
+          path: test-results
 
-  test-core-chrome:
+  benchmark-stack-size:
     <<: *defaults
     steps:
       - attach_workspace:
           at: .
       - run:
-          name: test
+          name: stack-size
           command: |
-            tools/pytest_wrapper.py src packages/micropip/ -v -k chrome
-
-  test-packages-firefox:
-    <<: *defaults
-    steps:
-      - attach_workspace:
-          at: .
-      - run:
-          name: test
-          command: |
-            tools/pytest_wrapper.py packages/test* packages/*/test* -v -k firefox
-
-  test-packages-chrome:
-    <<: *defaults
-    steps:
-      - attach_workspace:
-          at: .
-      - run:
-          name: test
-          command: |
-            tools/pytest_wrapper.py packages/test* packages/*/test* -v -k chrome -n 2
+            pytest -s benchmark/stack_usage.py  | sed -n 's/## //pg'
 
   test-emsdk:
     <<: *defaults
@@ -185,6 +179,7 @@ jobs:
           command: make -C emsdk test
 
   test-python:
+    # Unlike test-main this uses "resource_class small" and doesn't use "pytest_wrapper."
     <<: *defaults
     resource_class: small
     steps:
@@ -192,9 +187,19 @@ jobs:
       - run:
           name: test
           command: |
-            pytest src pyodide-build packages/micropip/ -v -k 'not (chrome or firefox)' --cov=pyodide_build --cov=pyodide
+            mkdir test-results
+            pip install ruamel.yaml
+            pytest \
+              --junitxml=test-results/junit.xml \
+              --verbose \
+              -k 'not (chrome or firefox)' \
+              --cov=pyodide_build --cov=pyodide \
+              src pyodide-build packages/micropip/
 
-  test-js-types:
+      - store_test_results:
+          path: test-results
+
+  test-js:
     <<: *defaults
     resource_class: small
     steps:
@@ -205,6 +210,8 @@ jobs:
           command: |
             cd src/js
             npx tsd
+            npm install
+            npm test
 
 
   benchmark:
@@ -291,56 +298,40 @@ workflows:
     jobs:
       - lint
       - test-docs
-      - build-core:
-          filters:
-            tags:
-              only: /.*/
+      - test-python
+      - build-core
       - build-packages:
           requires:
             - build-core
-          filters:
-            tags:
-              only: /.*/
-      - test-core-chrome:
+      - test-main:
+          name: test-core-chrome
+          test-params: -k chrome src packages/micropip
           requires:
             - build-core
-          filters:
-            tags:
-              only: /.*/
-      - test-core-firefox:
+      - test-main:
+          name: test-core-firefox
+          test-params: -k firefox src packages/micropip
           requires:
             - build-core
-          filters:
-            tags:
-              only: /.*/
-      - test-packages-chrome:
+      - test-main:
+          name: test-packages-chrome
+          test-params: -k chrome packages/test* packages/*/test*
           requires:
             - build-packages
-          filters:
-            tags:
-              only: /.*/
-      - test-packages-firefox:
+      - test-main:
+          name: test-packages-firefox
+          test-params: -k firefox packages/test* packages/*/test*
           requires:
             - build-packages
-          filters:
-            tags:
-              only: /.*/
       - test-emsdk:
           requires:
             - build-core
-          filters:
-            tags:
-              only: /.*/
-      - test-python:
-          filters:
-            tags:
-              only: /.*/
-      - test-js-types:
+      - test-js:
           requires:
             - build-core
-          filters:
-            tags:
-              only: /.*/
+      - benchmark-stack-size:
+          requires:
+            - build-core
       - benchmark:
           requires:
             - build-packages

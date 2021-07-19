@@ -209,7 +209,7 @@ def test_get_buffer(selenium):
     selenium.run_js(
         """
         await pyodide.loadPackage(['numpy']);
-        await pyodide.runPython(`
+        pyodide.runPython(`
             import numpy as np
             x = np.arange(24)
             z1 = x.reshape([8,3])
@@ -218,7 +218,7 @@ def test_get_buffer(selenium):
             z4 = z1[-1::-1,-1::-1]
         `);
         for(let x of ["z1", "z2", "z3", "z4"]){
-            let z = pyodide.pyimport(x).getBuffer("u32");
+            let z = pyodide.globals.get(x).getBuffer("u32");
             for(let idx1 = 0; idx1 < 8; idx1++) {
                 for(let idx2 = 0; idx2 < 3; idx2++){
                     let v1 = z.data[z.offset + z.strides[0] * idx1 + z.strides[1] * idx2];
@@ -260,11 +260,11 @@ def test_get_buffer_roundtrip(selenium, arg):
     selenium.run_js(
         f"""
         await pyodide.loadPackage(['numpy']);
-        await pyodide.runPython(`
+        pyodide.runPython(`
             import numpy as np
             x = {arg}
         `);
-        window.x_js_buf = pyodide.pyimport("x").getBuffer();
+        window.x_js_buf = pyodide.globals.get("x").getBuffer();
         x_js_buf.length = x_js_buf.data.length;
         """
     )
@@ -303,7 +303,7 @@ def test_get_buffer_big_endian(selenium):
     selenium.run_js(
         """
         await pyodide.loadPackage(['numpy']);
-        window.a = await pyodide.runPython(`
+        window.a = pyodide.runPython(`
             import numpy as np
             np.arange(24, dtype="int16").byteswap().newbyteorder()
         `);
@@ -331,7 +331,7 @@ def test_get_buffer_error_messages(selenium):
         selenium.run_js(
             """
             await pyodide.loadPackage(['numpy']);
-            await pyodide.runPython(`
+            pyodide.runPython(`
                 import numpy as np
                 x = np.ones(2, dtype=np.float16)
             `);

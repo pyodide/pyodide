@@ -45,6 +45,16 @@ substitutions:
   using {any}`pyodide.registerComlink`
   {pr}`1642`
 
+- {{ Enhancement }} Pyodide can experimentally be used in Node.js {pr}`1689`
+
+- {{ Enhancement }} Pyodide now directly exposes the emscripten `FS` API,
+  allowing for direct manipulation of the in-memory filesystem {pr}`1692`
+
+- {{ Enhancement }} Pyodide's support of emscripten file systems is expanded from
+  the default `MEMFS` to include `IDBFS`, `NODEFS`, `PROXYFS`, and `WORKERFS`,
+  allowing for custom persistence strategies depending on execution environment
+  {pr}`1596`
+
 ## Standard library
 
 - The following standard library modules are now available as standalone packages
@@ -55,6 +65,9 @@ substitutions:
   {any}`pyodide.loadPackage`. {pr}`1543`
 - The standard library module `audioop` is now included, making the `wave`,
   `sndhdr`, `aifc`, and `sunau` modules usable. {pr}`1623`
+
+- Added support for `ctypes`.
+  {pr}`1656`
 
 ### Python / JS type conversions
 
@@ -74,12 +87,25 @@ substitutions:
   `PyProxy.$destroy` refers to an attribute or method called `destroy` on the
   proxied object.
   {pr}`1604`
+- {{ API }} It is now possible to use `Symbol` keys with PyProxies. These
+  `Symbol` keys put markers on the PyProxy that can be used by external code.
+  They will not currently be copied by `PyProxy.copy`.
+  {pr}`1696`
+- {{ Enhancement }} Memory management of `PyProxy` fields has been changed so
+  that fields looked up on a `PyProxy` are "borrowed" and have their lifetime
+  attached to the base `PyProxy`. This is intended to allow for more idiomatic
+  usage.
+  (See {issue}`1617`.) {pr}`1636`
 
 ### pyodide-build
 
 - {{ Enhancement }} pyodide-build is now an installable Python package, with an identically named
   CLI entrypoint that replaces `bin/pyodide` which is removed {pr}`1566`
 
+### Packages
+
+- {{ Enhancement }} matplotlib now comes with a new renderer based on the html5 canvas element. {pr}`1579`
+  It is optional and the current default backend is still the agg backend compiled to wasm.
 
 ## Version 0.17.0
 *April 21, 2021*
