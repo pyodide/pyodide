@@ -92,7 +92,7 @@
             } catch (e) {
               term.error(value.trimEnd());
             }
-            val.destroy();
+            fut.destroy();
           }
           term.resume();
           await sleep(10);

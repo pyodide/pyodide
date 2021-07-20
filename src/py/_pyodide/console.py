@@ -148,6 +148,24 @@ COMPLETE: Literal["complete"] = "complete"
 
 
 class ConsoleFuture(Future):
+    """A future with extra fields used as the return value for :any:`Console` apis.
+
+    Attributes
+    ----------
+    syntax_check : str
+        One of ``"incomplete"``, ``"syntax-error"``, or ``"complete"`. If the value is
+        ``"incomplete"`` then the future has already been resolved with result equal to
+        ``None``. If the value is ``"syntax-error"``, the ``Future`` has already been
+        rejected with a ``SyntaxError``. If the value is ``"complete"``, then the input
+        complete and syntactically correct.
+
+    formatted_error : str
+        If the ``Future`` is rejected, this will be filled with a formatted version of
+        the code. This is a convenience that simplifies code and helps to avoid large
+        memory leaks when using from Javascript.
+
+    """
+
     def __init__(
         self,
         syntax: Union[
@@ -303,17 +321,8 @@ class Console:
 
         Returns
         -------
-            ``("incomplete", None)``
-                The source string is incomplete.
+            :any:`ConsoleFuture`
 
-            ``("syntax-error", message ꞉ str)``
-                The source had a syntax error. ``message` is the formatted error
-                message as returned by :any:`Console.formatsyntaxerror`.
-
-            ``("complete", future ꞉ Future[RunCodeResult])``
-                The source was complete and is being run. The ``Future`` will be
-                resolved with the result of :any:`Console.runcode` when it is finished
-                running.
         """
         try:
             code = self._compile(source, filename, "single")
@@ -334,7 +343,6 @@ class Console:
         def done_cb(fut):
             exc = fut.exception()
             if exc:
-                traceback.clear_frames(exc.__traceback__)
                 res.formatted_error = self.formattraceback(exc)
                 res.set_exception(exc)
                 exc = None
@@ -345,19 +353,7 @@ class Console:
         return res
 
     async def runcode(self, source: str, code: CodeRunner) -> Any:
-        """Execute a code object.
-
-        All exceptions are caught except SystemExit, which is reraised.
-
-        Returns
-        -------
-            ``("success", result ꞉ Any)``
-                The code executed successfully and returned ``result``.
-
-            ``("exception", message ꞉ str)``
-                An exception occurred. `message` is the result of calling
-                :any:`Console.formattraceback`.
-        """
+        """Execute a code object and return the result."""
         async with self._lock:
             with self.redirect_streams():
                 try:
