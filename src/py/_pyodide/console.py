@@ -376,6 +376,17 @@ class Console:
         finally:
             e = None  # type: ignore
 
+    def num_frames_to_keep(self, tb):
+        keep_frames = False
+        kept_frames = 0
+        # Try to trim out stack frames inside our code
+        for (frame, _) in traceback.walk_tb(tb):
+            keep_frames = keep_frames or frame.f_code.co_filename == "<console>"
+            keep_frames = keep_frames or frame.f_code.co_filename == "<exec>"
+            if keep_frames:
+                kept_frames += 1
+        return kept_frames
+
     def formattraceback(self, e: Exception) -> str:
         """Format the exception that just occurred.
 
@@ -387,18 +398,12 @@ class Console:
             sys.last_type = type(e)
             sys.last_value = e
             sys.last_traceback = e.__traceback__
-
-            trunc_tb = e.__traceback__
-            for _ in range(2):
-                if trunc_tb == None:
-                    # Something went wrong inside of our stack frames... put our
-                    # frames back so it will be easier to debug
-                    trunc_tb = e.__traceback__
-                    break
-                trunc_tb = trunc_tb.tb_next  # type: ignore
-            return "".join(traceback.format_exception(type(e), e, trunc_tb))
+            nframes = self.num_frames_to_keep(e.__traceback__)
+            return "".join(
+                traceback.format_exception(type(e), e, e.__traceback__, -nframes)
+            )
         finally:
-            e = trunc_tb = None  # type: ignore
+            e = None  # type: ignore
 
     def push(self, line: str) -> ConsoleFuture:
         """Push a line to the interpreter.
