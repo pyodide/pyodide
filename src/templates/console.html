@@ -21,13 +21,6 @@
       function sleep(s) {
         return new Promise((resolve) => setTimeout(resolve, s));
       }
-      function convert_and_destroy(x) {
-        try {
-          return x.toJs();
-        } finally {
-          x.destroy();
-        }
-      }
 
       async function main() {
         globalThis.pyodide = await loadPyodide({
@@ -69,7 +62,7 @@
             term.set_prompt(fut.syntax_check === "incomplete" ? ps2 : ps1);
             switch (fut.syntax_check) {
               case "syntax-error":
-                term.error(fut.formatted_error);
+                term.error(fut.formatted_error.trimEnd());
                 continue;
               case "incomplete":
                 continue;
@@ -89,8 +82,11 @@
                   })
                 );
               }
+              if (value.destroy) {
+                value.destroy();
+              }
             } catch (e) {
-              term.error(value.trimEnd());
+              term.error(fut.formatted_error.trimEnd());
             }
             fut.destroy();
           }
