@@ -381,18 +381,21 @@ class Console:
 
         The actual error object is stored into `sys.last_value`.
         """
-        sys.last_type = type(e)
-        sys.last_value = e
-        sys.last_traceback = e.__traceback__
-        trunc_tb = e.__traceback__
-        for _ in range(4):
-            if trunc_tb == None:
-                # Something went wrong inside of our stack frames... put our
-                # frames back so it will be easier to debug
-                trunc_tb = e.__traceback__
-                break
-            trunc_tb = trunc_tb.tb_next  # type: ignore
+        print("!!!!!!!!!!!")
+        print("formattraceback!")
         try:
+            sys.last_type = type(e)
+            sys.last_value = e
+            sys.last_traceback = e.__traceback__
+
+            trunc_tb = e.__traceback__
+            for _ in range(2):
+                if trunc_tb == None:
+                    # Something went wrong inside of our stack frames... put our
+                    # frames back so it will be easier to debug
+                    trunc_tb = e.__traceback__
+                    break
+                trunc_tb = trunc_tb.tb_next  # type: ignore
             return "".join(traceback.format_exception(type(e), e, trunc_tb))
         finally:
             e = trunc_tb = None  # type: ignore
