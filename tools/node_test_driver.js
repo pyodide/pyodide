@@ -36,22 +36,17 @@ const rl = readline.createInterface({
     output: process.stdout,
     terminal: false,
 });
-const SEP = "\x1E";
 
 let cur_code = "";
 let cur_uuid;
 rl.on("line", async function (line) {
     if (!cur_uuid) {
-        // assert(len(line) == 36, "Was expecting a uuid");
         cur_uuid = line;
-        console.log("received uuid", line);
         return;
     }
     if (line !== cur_uuid) {
         cur_code += line + "\n";
-        console.log("added code", line);
     } else {
-        console.log("evaling code", cur_code);
         evalCode(cur_uuid, cur_code, context);
         cur_code = "";
         cur_uuid = undefined;
@@ -60,8 +55,8 @@ rl.on("line", async function (line) {
 
 async function evalCode(uuid, code, eval_context) {
     let p = new Promise((resolve, reject) => {
-        context.___outer_resolve = resolve;
-        context.___outer_reject = reject;
+        eval_context.___outer_resolve = resolve;
+        eval_context.___outer_reject = reject;
     });
     let wrapped_code = `
       (async function(){
