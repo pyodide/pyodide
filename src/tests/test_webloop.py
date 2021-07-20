@@ -5,11 +5,11 @@ def run_with_resolve(selenium, code):
     selenium.run_js(
         f"""
         try {{
-            let promise = new Promise((resolve) => window.resolve = resolve);
+            let promise = new Promise((resolve) => self.resolve = resolve);
             pyodide.runPython({code!r});
             await promise;
         }} finally {{
-            delete window.resolve;
+            delete self.resolve;
         }}
         """
     )
@@ -173,13 +173,13 @@ def test_run_in_executor(selenium):
 
 
 def test_webloop_exception_handler(selenium):
-    selenium.run(
+    selenium.run_async(
         """
         import asyncio
         async def test():
             raise Exception("test")
         asyncio.ensure_future(test())
-        pass
+        await asyncio.sleep(0.2)
         """
     )
     assert "Task exception was never retrieved" in selenium.logs

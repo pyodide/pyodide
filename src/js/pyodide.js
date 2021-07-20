@@ -173,7 +173,7 @@ function fixRecursionLimit() {
  * @async
  */
 export async function loadPyodide(config) {
-  const default_config = { fullStdLib: true };
+  const default_config = { fullStdLib: true, jsglobals: globalThis };
   config = Object.assign(default_config, config);
   if (globalThis.__pyodide_module) {
     if (globalThis.languagePluginURL) {
@@ -243,7 +243,7 @@ def temp(pyodide_js, Module, jsglobals):
   print("Python initialization complete")
 `);
 
-  Module.init_dict.get("temp")(pyodide, Module, globalThis);
+  Module.init_dict.get("temp")(pyodide, Module, config.jsglobals);
   // Module.runPython works starting from here!
 
   // Wrap "globals" in a special Proxy that allows `pyodide.globals.x` access.

@@ -13,9 +13,9 @@ def get_backend(selenium_standalone):
     selenium = selenium_standalone
     return selenium.run(
         """
-    import matplotlib
-    matplotlib.get_backend()
-    """
+        import matplotlib
+        matplotlib.get_backend()
+        """
     )
 
 
@@ -58,8 +58,9 @@ def check_comparison(selenium, prefix, num_fonts):
 
 @pytest.mark.skip_refcount_check
 @pytest.mark.skip_pyproxy_check
-def test_matplotlib(selenium_standalone):
-    selenium = selenium_standalone
+def test_matplotlib(selenium):
+    if selenium.browser == "node":
+        pytest.xfail("No supported matplotlib backends on node")
     selenium.load_package("matplotlib")
     selenium.run(
         """
@@ -74,6 +75,8 @@ def test_matplotlib(selenium_standalone):
 @pytest.mark.skip_refcount_check
 @pytest.mark.skip_pyproxy_check
 def test_svg(selenium):
+    if selenium.browser == "node":
+        pytest.xfail("No supported matplotlib backends on node")
     selenium.load_package("matplotlib")
     selenium.run("from matplotlib import pyplot as plt")
     selenium.run("plt.figure(); pass")
@@ -88,6 +91,8 @@ def test_svg(selenium):
 
 @pytest.mark.skip_pyproxy_check
 def test_pdf(selenium):
+    if selenium.browser == "node":
+        pytest.xfail("No supported matplotlib backends on node")
     selenium.load_package("matplotlib")
     selenium.run("from matplotlib import pyplot as plt")
     selenium.run("plt.figure(); pass")
@@ -131,8 +136,9 @@ def test_font_manager(selenium):
 
 @pytest.mark.skip_refcount_check
 @pytest.mark.skip_pyproxy_check
-def test_rendering(selenium_standalone):
-    selenium = selenium_standalone
+def test_rendering(selenium):
+    if selenium.browser == "node":
+        pytest.xfail("No supported matplotlib backends on node")
     selenium.load_package("matplotlib")
     if get_backend(selenium) == "module://matplotlib.backends.wasm_backend":
         pytest.skip(
@@ -164,8 +170,9 @@ def test_rendering(selenium_standalone):
 
 @pytest.mark.skip_refcount_check
 @pytest.mark.skip_pyproxy_check
-def test_draw_image(selenium_standalone):
-    selenium = selenium_standalone
+def test_draw_image(selenium):
+    if selenium.browser == "node":
+        pytest.xfail("No supported matplotlib backends on node")
     selenium.load_package("matplotlib")
     if get_backend(selenium) == "module://matplotlib.backends.wasm_backend":
         pytest.skip(
@@ -205,8 +212,9 @@ def test_draw_image(selenium_standalone):
 
 @pytest.mark.skip_refcount_check
 @pytest.mark.skip_pyproxy_check
-def test_draw_image_affine_transform(selenium_standalone):
-    selenium = selenium_standalone
+def test_draw_image_affine_transform(selenium):
+    if selenium.browser == "node":
+        pytest.xfail("No supported matplotlib backends on node")
     selenium.load_package("matplotlib")
     if get_backend(selenium) == "module://matplotlib.backends.wasm_backend":
         pytest.skip(
@@ -276,8 +284,9 @@ def test_draw_image_affine_transform(selenium_standalone):
 
 @pytest.mark.skip_refcount_check
 @pytest.mark.skip_pyproxy_check
-def test_draw_text_rotated(selenium_standalone):
-    selenium = selenium_standalone
+def test_draw_text_rotated(selenium):
+    if selenium.browser == "node":
+        pytest.xfail("No supported matplotlib backends on node")
     if selenium.browser == "chrome":
         pytest.xfail(f"high recursion limit not supported for {selenium.browser}")
     selenium.load_package("matplotlib")
@@ -331,8 +340,9 @@ def test_draw_text_rotated(selenium_standalone):
 
 @pytest.mark.skip_refcount_check
 @pytest.mark.skip_pyproxy_check
-def test_draw_math_text(selenium_standalone):
-    selenium = selenium_standalone
+def test_draw_math_text(selenium):
+    if selenium.browser == "node":
+        pytest.xfail("No supported matplotlib backends on node")
     if selenium.browser == "chrome":
         pytest.xfail(f"high recursion limit not supported for {selenium.browser}")
     selenium.load_package("matplotlib")
@@ -454,8 +464,9 @@ def test_draw_math_text(selenium_standalone):
 
 @pytest.mark.skip_refcount_check
 @pytest.mark.skip_pyproxy_check
-def test_custom_font_text(selenium_standalone):
-    selenium = selenium_standalone
+def test_custom_font_text(selenium):
+    if selenium.browser == "node":
+        pytest.xfail("No supported matplotlib backends on node")
     selenium.load_package("matplotlib")
     if get_backend(selenium) == "module://matplotlib.backends.wasm_backend":
         pytest.skip(
@@ -466,22 +477,22 @@ def test_custom_font_text(selenium_standalone):
         try:
             selenium.run(
                 """
-            from js import window
-            window.testing = True
-            import matplotlib.pyplot as plt
-            import numpy as np
+                from js import window
+                window.testing = True
+                import matplotlib.pyplot as plt
+                import numpy as np
 
-            f = {'fontname': 'cmsy10'}
+                f = {'fontname': 'cmsy10'}
 
-            t = np.arange(0.0, 2.0, 0.01)
-            s = 1 + np.sin(2 * np.pi * t)
-            plt.figure()
-            plt.title('A simple Sine Curve', **f)
-            plt.plot(t, s, linewidth=1.0, marker=11)
-            plt.plot(t, t)
-            plt.grid(True)
-            plt.show()
-            """
+                t = np.arange(0.0, 2.0, 0.01)
+                s = 1 + np.sin(2 * np.pi * t)
+                plt.figure()
+                plt.title('A simple Sine Curve', **f)
+                plt.plot(t, s, linewidth=1.0, marker=11)
+                plt.plot(t, t)
+                plt.grid(True)
+                plt.show()
+                """
             )
 
             check_comparison(selenium, "canvas-custom-font-text", 2)
@@ -491,8 +502,9 @@ def test_custom_font_text(selenium_standalone):
 
 @pytest.mark.skip_refcount_check
 @pytest.mark.skip_pyproxy_check
-def test_zoom_on_polar_plot(selenium_standalone):
-    selenium = selenium_standalone
+def test_zoom_on_polar_plot(selenium):
+    if selenium.browser == "node":
+        pytest.xfail("No supported matplotlib backends on node")
     selenium.load_package("matplotlib")
     if get_backend(selenium) == "module://matplotlib.backends.wasm_backend":
         pytest.skip(
@@ -503,30 +515,30 @@ def test_zoom_on_polar_plot(selenium_standalone):
         try:
             selenium.run(
                 """
-            from js import window
-            window.testing = True
+                from js import window
+                window.testing = True
 
-            import numpy as np
-            import matplotlib.pyplot as plt
-            np.random.seed(42)
+                import numpy as np
+                import matplotlib.pyplot as plt
+                np.random.seed(42)
 
-            # Compute pie slices
-            N = 20
-            theta = np.linspace(0.0, 2 * np.pi, N, endpoint=False)
-            radii = 10 * np.random.rand(N)
-            width = np.pi / 4 * np.random.rand(N)
+                # Compute pie slices
+                N = 20
+                theta = np.linspace(0.0, 2 * np.pi, N, endpoint=False)
+                radii = 10 * np.random.rand(N)
+                width = np.pi / 4 * np.random.rand(N)
 
-            ax = plt.subplot(111, projection='polar')
-            bars = ax.bar(theta, radii, width=width, bottom=0.0)
+                ax = plt.subplot(111, projection='polar')
+                bars = ax.bar(theta, radii, width=width, bottom=0.0)
 
-            # Use custom colors and opacity
-            for r, bar in zip(radii, bars):
-                bar.set_facecolor(plt.cm.viridis(r / 10.))
-                bar.set_alpha(0.5)
+                # Use custom colors and opacity
+                for r, bar in zip(radii, bars):
+                    bar.set_facecolor(plt.cm.viridis(r / 10.))
+                    bar.set_alpha(0.5)
 
-            ax.set_rlim([0,5])
-            plt.show()
-            """
+                ax.set_rlim([0,5])
+                plt.show()
+                """
             )
 
             check_comparison(selenium, "canvas-polar-zoom", 1)
@@ -536,8 +548,9 @@ def test_zoom_on_polar_plot(selenium_standalone):
 
 @pytest.mark.skip_refcount_check
 @pytest.mark.skip_pyproxy_check
-def test_transparency(selenium_standalone):
-    selenium = selenium_standalone
+def test_transparency(selenium):
+    if selenium.browser == "node":
+        pytest.xfail("No supported matplotlib backends on node")
     selenium.load_package("matplotlib")
     if get_backend(selenium) == "module://matplotlib.backends.wasm_backend":
         pytest.skip(
