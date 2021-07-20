@@ -373,7 +373,6 @@ class PyProxyClass {
       proxies_id = Module.hiwire.new_value(pyproxies);
     } else {
       proxies_id = Module.hiwire.new_value([]);
-      s;
     }
     try {
       idresult = Module._python2js_with_depth(ptrobj, depth, proxies_id);
