@@ -518,7 +518,7 @@ to_js(PyObject* self,
                       "Expected a JsProxy for the pyproxies argument");
       FAIL();
     }
-    proxies = JsProxy_AsJs(self); /* borrowed */
+    proxies = JsProxy_AsJs(pyproxies); /* borrowed */
     if (!JsArray_Check(proxies)) {
       PyErr_SetString(PyExc_TypeError,
                       "Expected a Js Array for the pyproxies argument");
