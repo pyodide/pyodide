@@ -52,7 +52,22 @@ if (globalThis.document) {
     globalThis.importScripts(url);
   };
 } else if (typeof process !== "undefined" && process.release.name === "node") {
-  loadScript = async (url) => import(path.resolve(url));
+  const pathPromise = import("path").then((M) => M.default);
+  const fetchPromise = import("node-fetch").then((M) => M.default);
+  const vmPromise = import("vm").then((M) => M.default);
+  loadScript = async (url) => {
+    if (url.includes("://")) {
+      // If it's a url, have to load it with fetch and then eval it.
+      const fetch = await fetchPromise;
+      const vm = await vmPromise;
+      vm.runInThisContext(await (await fetch(url)).text());
+    } else {
+      // Otherwise, hopefully it is a relative path we can load from the file
+      // system.
+      const path = await pathPromise;
+      await import(path.resolve(url));
+    }
+  };
 } else {
   throw new Error("Cannot determine runtime environment");
 }
