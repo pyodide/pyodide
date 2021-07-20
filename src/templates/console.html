@@ -71,8 +71,7 @@
               default:
                 throw new Error(`Unexpected type ${ty}`);
             }
-            // Valid case.
-            // If execution triggers a fatal error "await val" will throw.
+            // complete case, get result / error and print it.
             try {
               let value = await fut;
               if (value !== undefined) {
