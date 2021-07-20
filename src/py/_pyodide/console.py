@@ -385,8 +385,13 @@ class Console:
         sys.last_value = e
         sys.last_traceback = e.__traceback__
         trunc_tb = e.__traceback__
-        if trunc_tb:
-            trunc_tb = trunc_tb.tb_next.tb_next  # type: ignore
+        for _ in range(4):
+            if trunc_tb == None:
+                # Something went wrong inside of our stack frames... put our
+                # frames back so it will be easier to debug
+                trunc_tb = e.__traceback__
+                break
+            trunc_tb = trunc_tb.tb_next  # type: ignore
         try:
             return "".join(traceback.format_exception(type(e), e, trunc_tb))
         finally:
