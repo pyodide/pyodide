@@ -275,7 +275,12 @@ def generate_packages_json(pkg_map: Dict[str, BasePackage]) -> Dict:
 
     # unvendored stdlib modules
     for name in UNVENDORED_STDLIB_MODULES:
-        pkg_entry: Dict[str, Any] = {"name": name, "version": "1.0", "depends": []}
+        pkg_entry: Dict[str, Any] = {
+            "name": name,
+            "version": "1.0",
+            "depends": [],
+            "imports": [name],
+        }
         package_data["packages"][name.lower()] = pkg_entry
 
     for name, pkg in pkg_map.items():
