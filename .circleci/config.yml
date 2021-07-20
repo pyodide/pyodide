@@ -3,7 +3,7 @@ version: 2.1
 defaults: &defaults
   working_directory: ~/repo
   docker:
-    - image: pyodide/pyodide-env:18
+    - image: pyodide/pyodide-env:19
   environment:
     - EMSDK_NUM_CORES: 3
       EMCC_CORES: 3
@@ -25,11 +25,6 @@ jobs:
     resource_class: small
     steps:
       - checkout
-
-      - run:
-          name: Install prerequisites
-          command: |
-            pip install -r docs/requirements-doc.txt
 
       - run:
           name: Test docs
@@ -166,7 +161,7 @@ jobs:
       - run:
           name: stack-size
           command: |
-            pytest -s benchmark/stack_usage.py  | sed -n 's/## //pg'
+            pytest -s benchmark/stack_usage.py  | sed -n 's/## //pg' || true
 
   test-emsdk:
     <<: *defaults
@@ -188,11 +183,10 @@ jobs:
           name: test
           command: |
             mkdir test-results
-            pip install ruamel.yaml
             pytest \
               --junitxml=test-results/junit.xml \
               --verbose \
-              -k 'not (chrome or firefox)' \
+              -k 'not (chrome or firefox or node)' \
               --cov=pyodide_build --cov=pyodide \
               src pyodide-build packages/micropip/
 
@@ -314,6 +308,11 @@ workflows:
           requires:
             - build-core
       - test-main:
+          name: test-core-node
+          test-params: -k node src packages/micropip
+          requires:
+            - build-core
+      - test-main:
           name: test-packages-chrome
           test-params: -k chrome packages/test* packages/*/test*
           requires:
@@ -321,6 +320,11 @@ workflows:
       - test-main:
           name: test-packages-firefox
           test-params: -k firefox packages/test* packages/*/test*
+          requires:
+            - build-packages
+      - test-main:
+          name: test-packages-node
+          test-params: -k "node and not numpy" packages/test* packages/*/test*
           requires:
             - build-packages
       - test-emsdk:
