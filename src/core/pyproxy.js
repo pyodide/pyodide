@@ -348,26 +348,38 @@ class PyProxyClass {
   }
   /**
    * Converts the ``PyProxy`` into a Javascript object as best as possible. By
-   * default does a deep conversion, if a shallow conversion is desired, you
-   * can use ``proxy.toJs({depth : 1})``.
-   * See :ref:`Explicit Conversion of PyProxy
+   * default does a deep conversion, if a shallow conversion is desired, you can
+   * use ``proxy.toJs({depth : 1})``. See :ref:`Explicit Conversion of PyProxy
    * <type-translations-pyproxy-to-js>` for more info.
    *
    * @param {object} options
-   * @param {number} options.depth How many layers deep to perform the conversion.
-   * Defaults to infinite.
+   * @param {number} options.depth How many layers deep to perform the
+   * conversion. Defaults to infinite.
+   * @param {array} options.pyproxies If a list, ``toJs`` will store all
+   * PyProxies created in this list. This allows you to easily destroy all the
+   * PyProxies by iterating the list without having to recurse over the
+   * generated structure. If the value ``null`` is passed, then `toJs` will not
+   * creating any PyProxies, if it would create a ``PyProxy`` instead a
+   * ``ConversionError`` is raised.
    * @return {any} The Javascript object resulting from the conversion.
    */
-  toJs({ depth = -1 } = {}) {
+  toJs({ depth = -1, pyproxies } = {}) {
     let ptrobj = _getPtr(this);
     let idresult;
-    let proxies = Module.hiwire.new_value([]);
+    let proxies_id;
+    if (pyproxies === null) {
+      proxies_id = 0;
+    } else if (pyproxies === undefined) {
+      proxies_id = Module.hiwire.new_value([]);
+    } else {
+      proxies_id = Module.hiwire.new_value(pyproxies);
+    }
     try {
-      idresult = Module._python2js_with_depth(ptrobj, depth, proxies);
+      idresult = Module._python2js_with_depth(ptrobj, depth, proxies_id);
     } catch (e) {
       Module.fatal_error(e);
     } finally {
-      Module.hiwire.decref(proxies);
+      Module.hiwire.decref(proxies_id);
     }
     if (idresult === 0) {
       Module._pythonexc2js();
