@@ -1,6 +1,6 @@
 import ast
 import asyncio
-from asyncio import ensure_future
+from asyncio import ensure_future, Future
 from codeop import Compile, CommandCompiler, _features  # type: ignore
 from contextlib import (
     contextmanager,
@@ -13,6 +13,7 @@ import rlcompleter
 import platform
 import sys
 import traceback
+from typing import Literal
 from typing import (
     Optional,
     Callable,
@@ -21,8 +22,6 @@ from typing import (
     Tuple,
     Union,
     Tuple,
-    Literal,
-    Awaitable,
 )
 
 from _pyodide._base import should_quiet, CodeRunner
@@ -143,19 +142,23 @@ class _CommandCompiler(CommandCompiler):
         return super().__call__(source, filename, symbol)  # type: ignore
 
 
-RunCodeResult = Union[Tuple[Literal["exception"], str], Tuple[Literal["success"], Any]]
-RunSourceResult = Union[
-    Tuple[Literal["incomplete"], None],
-    Tuple[Literal["syntax-error"], str],
-    Tuple[Literal["complete"], Awaitable[RunCodeResult]],
-]
-
 INCOMPLETE: Literal["incomplete"] = "incomplete"
 SYNTAX_ERROR: Literal["syntax-error"] = "syntax-error"
 COMPLETE: Literal["complete"] = "complete"
 
-SUCCESS: Literal["success"] = "success"
-EXCEPTION: Literal["exception"] = "exception"
+
+class ConsoleFuture(Future):
+    def __init__(
+        self,
+        syntax: Union[
+            Literal["incomplete"], Literal["syntax-error"], Literal["complete"]
+        ],
+    ):
+        super().__init__()
+        self.syntax_check: Union[
+            Literal["incomplete"], Literal["syntax-error"], Literal["complete"]
+        ] = syntax
+        self.formatted_error: Optional[str] = None
 
 
 class Console:
@@ -295,7 +298,7 @@ class Console:
         finally:
             self._streams_redirected = False
 
-    def runsource(self, source: str, filename: str = "<console>") -> RunSourceResult:
+    def runsource(self, source: str, filename: str = "<console>") -> ConsoleFuture:
         """Compile and run source code in the interpreter.
 
         Returns
@@ -314,17 +317,34 @@ class Console:
         """
         try:
             code = self._compile(source, filename, "single")
-        except (OverflowError, SyntaxError, ValueError):
+        except (OverflowError, SyntaxError, ValueError) as e:
             # Case 1
-            return (SYNTAX_ERROR, self.formatsyntaxerror())
+            res = ConsoleFuture(SYNTAX_ERROR)
+            res.set_exception(e)
+            res.formatted_error = self.formatsyntaxerror(e)
+            return res
 
         if code is None:
-            # Case 2
-            return (INCOMPLETE, None)
+            res = ConsoleFuture(INCOMPLETE)
+            res.set_result(None)
+            return res
 
-        return (COMPLETE, ensure_future(self.runcode(source, code)))
+        res = ConsoleFuture(COMPLETE)
 
-    async def runcode(self, source: str, code: CodeRunner) -> "RunCodeResult":
+        def done_cb(fut):
+            exc = fut.exception()
+            if exc:
+                traceback.clear_frames(exc.__traceback__)
+                res.formatted_error = self.formattraceback(exc)
+                res.set_exception(exc)
+                exc = None
+            else:
+                res.set_result(fut.result())
+
+        ensure_future(self.runcode(source, code)).add_done_callback(done_cb)
+        return res
+
+    async def runcode(self, source: str, code: CodeRunner) -> Any:
         """Execute a code object.
 
         All exceptions are caught except SystemExit, which is reraised.
@@ -341,46 +361,42 @@ class Console:
         async with self._lock:
             with self.redirect_streams():
                 try:
-                    return (SUCCESS, await code.run_async(self.globals))
-                except SystemExit:
-                    raise
-                except (Exception, KeyboardInterrupt):
-                    return (EXCEPTION, self.formattraceback())
+                    return await code.run_async(self.globals)
                 finally:
                     sys.stdout.flush()
                     sys.stderr.flush()
 
-    def formatsyntaxerror(self) -> str:
+    def formatsyntaxerror(self, e: Exception) -> str:
         """Format the syntax error that just occurred.
 
         This doesn't include a stack trace because there isn't one. The actual
         error object is stored into `sys.last_value`.
         """
-        type, value, tb = sys.exc_info()
-        sys.last_type = type
-        sys.last_value = value
-        sys.last_traceback = tb
+        sys.last_type = type(e)
+        sys.last_value = e
+        sys.last_traceback = None
         try:
-            return "".join(traceback.format_exception_only(type, value))
+            return "".join(traceback.format_exception_only(type(e), e))
         finally:
-            type = value = tb = None
+            e = None  # type: ignore
 
-    def formattraceback(self) -> str:
+    def formattraceback(self, e: Exception) -> str:
         """Format the exception that just occurred.
 
         The actual error object is stored into `sys.last_value`.
         """
-        type, value, tb = sys.exc_info()
-        sys.last_type = type
-        sys.last_value = value
-        sys.last_traceback = tb
-        trunc_tb = tb.tb_next.tb_next  # type: ignore
+        sys.last_type = type(e)
+        sys.last_value = e
+        sys.last_traceback = e.__traceback__
+        trunc_tb = e.__traceback__
+        if trunc_tb:
+            trunc_tb = trunc_tb.tb_next.tb_next  # type: ignore
         try:
-            return "".join(traceback.format_exception(type, value, trunc_tb))
+            return "".join(traceback.format_exception(type(e), e, trunc_tb))
         finally:
-            type = value = tb = trunc_tb = None
+            e = trunc_tb = None  # type: ignore
 
-    def push(self, line: str) -> "RunSourceResult":
+    def push(self, line: str) -> ConsoleFuture:
         """Push a line to the interpreter.
 
         The line should not have a trailing newline; it may have internal
@@ -396,7 +412,7 @@ class Console:
         self.buffer.append(line)
         source = "\n".join(self.buffer)
         result = self.runsource(source, self.filename)
-        if result[0] != "incomplete":
+        if result.syntax_check != INCOMPLETE:
             self.buffer = []
         return result
 

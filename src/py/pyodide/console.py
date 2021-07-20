@@ -1,11 +1,7 @@
-from _pyodide.console import (
-    Console,
-    repr_shorten,
-    RunCodeResult,
-)
+from _pyodide.console import Console, repr_shorten, ConsoleFuture
 import _pyodide.console
 
-Banner = _pyodide.console.Banner  # type: ignore
+BANNER = _pyodide.console.BANNER  # type: ignore
 from _pyodide._base import CodeRunner
 
 from ._core import IN_BROWSER
@@ -25,7 +21,7 @@ __all__ = ["Console", "PyodideConsole", "Banner", "repr_shorten"]
 class PyodideConsole(Console):
     """A subclass of :any:`Console` that uses :any:`pyodide.loadPackagesFromImports` before running the code."""
 
-    async def runcode(self, source: str, code: CodeRunner) -> "RunCodeResult":
+    async def runcode(self, source: str, code: CodeRunner) -> ConsoleFuture:
         """Execute a code object.
 
         All exceptions are caught except SystemExit, which is reraised.

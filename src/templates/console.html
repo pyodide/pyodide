@@ -65,11 +65,11 @@
           term.pause();
           // multiline should be splitted (useful when pasting)
           for (const c of command.split("\n")) {
-            let [syntax_check, val] = convert_and_destroy(pyconsole.push(c));
-            term.set_prompt(syntax_check === "incomplete" ? ps2 : ps1);
-            switch (syntax_check) {
+            let fut = pyconsole.push(c);
+            term.set_prompt(fut.syntax_check === "incomplete" ? ps2 : ps1);
+            switch (fut.syntax_check) {
               case "syntax-error":
-                term.error(val.trimEnd());
+                term.error(fut.formatted_error);
                 continue;
               case "incomplete":
                 continue;
@@ -80,25 +80,17 @@
             }
             // Valid case.
             // If execution triggers a fatal error "await val" will throw.
-            let [status, value] = convert_and_destroy(await val);
-            switch (status) {
-              case "exception":
-                term.error(value.trimEnd());
-                break;
-              case "success":
-                if (value !== undefined) {
-                  term.echo(
-                    repr_shorten.callKwargs(value, {
-                      separator: "\\n[[;orange;]<long output truncated>]\\n",
-                    })
-                  );
-                }
-                break;
-              default:
-                throw new Error(`Unexpected type ${ty}`);
-            }
-            if (pyodide.isPyProxy(value)) {
-              value.destroy();
+            try {
+              let value = await fut;
+              if (value !== undefined) {
+                term.echo(
+                  repr_shorten.callKwargs(value, {
+                    separator: "\\n[[;orange;]<long output truncated>]\\n",
+                  })
+                );
+              }
+            } catch (e) {
+              term.error(value.trimEnd());
             }
             val.destroy();
           }

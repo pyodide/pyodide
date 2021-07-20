@@ -8,12 +8,13 @@ from conftest import selenium_common
 
 sys.path.append(str(Path(__file__).resolve().parents[2] / "src" / "py"))
 
-from pyodide import console, CodeRunner  # noqa: E402
-from pyodide.console import (
+from pyodide import CodeRunner  # noqa: E402
+from _pyodide.console import (
     Console,
     _Compile,
     _CommandCompiler,
 )  # noqa: E402
+from _pyodide import console
 
 
 def test_command_compiler():
@@ -91,70 +92,73 @@ def test_completion():
     )
 
 
-async def test_interactive_console():
+def test_interactive_console():
     shell = Console()
 
     def assert_incomplete(input):
         res = shell.push(input)
-        assert res == ("incomplete", None)
+        assert res.syntax_check == "incomplete"
 
     async def get_result(input):
         res = shell.push(input)
-        [status, fut] = res
-        assert status == "complete"
-        [status, value] = await fut
-        assert status == "success"
-        return value
+        assert res.syntax_check == "complete"
+        return await res
 
-    assert await get_result("x = 5") == None
-    assert await get_result("x") == 5
-    assert await get_result("x ** 2") == 25
+    async def test():
+        assert await get_result("x = 5") == None
+        assert await get_result("x") == 5
+        assert await get_result("x ** 2") == 25
 
-    assert_incomplete("def f(x):")
-    assert_incomplete("    return x*x + 1")
-    assert await get_result("") == None
-    assert await get_result("[f(x) for x in range(5)]") == [1, 2, 5, 10, 17]
+        assert_incomplete("def f(x):")
+        assert_incomplete("    return x*x + 1")
+        assert await get_result("") == None
+        assert await get_result("[f(x) for x in range(5)]") == [1, 2, 5, 10, 17]
 
-    assert_incomplete("def factorial(n):")
-    assert_incomplete("    if n < 2:")
-    assert_incomplete("        return 1")
-    assert_incomplete("    else:")
-    assert_incomplete("        return n * factorial(n - 1)")
-    assert await get_result("") == None
-    assert await get_result("factorial(10)") == 3628800
+        assert_incomplete("def factorial(n):")
+        assert_incomplete("    if n < 2:")
+        assert_incomplete("        return 1")
+        assert_incomplete("    else:")
+        assert_incomplete("        return n * factorial(n - 1)")
+        assert await get_result("") == None
+        assert await get_result("factorial(10)") == 3628800
 
-    assert await get_result("import pytz") == None
-    assert await get_result("pytz.utc.zone") == "UTC"
+        assert await get_result("import pytz") == None
+        assert await get_result("pytz.utc.zone") == "UTC"
 
-    [status, val] = shell.push("1+")
-    assert status == "syntax-error"
-    assert (
-        val
-        == '  File "<console>", line 1\n    1+\n      ^\nSyntaxError: invalid syntax\n'
-    )
+        fut = shell.push("1+")
+        assert fut.syntax_check == "syntax-error"
+        assert fut.exception() is not None
+        assert (
+            fut.formatted_error
+            == '  File "<console>", line 1\n    1+\n      ^\nSyntaxError: invalid syntax\n'
+        )
 
-    [state, fut] = shell.push("raise Exception('hi')")
-    assert state == "complete"
-    assert await fut == (
-        "exception",
-        'Traceback (most recent call last):\n  File "<console>", line 1, in <module>\nException: hi\n',
-    )
+        fut = shell.push("raise Exception('hi')")
+        try:
+            await fut
+        except:
+            assert (
+                fut.formatted_error
+                == 'Traceback (most recent call last):\n  File "<console>", line 1, in <module>\nException: hi\n'
+            )
+
+    asyncio.get_event_loop().run_until_complete(test())
 
 
 def test_top_level_await():
-    from asyncio import Queue, sleep, get_event_loop
+    from asyncio import Queue, sleep
 
     q = Queue()
     shell = Console(locals())
-    (_, fut) = shell.push("await q.get()")
+    fut = shell.push("await q.get()")
 
     async def test():
         await sleep(0.3)
         assert not fut.done()
         await q.put(5)
-        assert await fut == ("success", 5)
+        assert await fut == 5
 
-    get_event_loop().run_until_complete(test())
+    asyncio.get_event_loop().run_until_complete(test())
 
 
 @pytest.fixture
@@ -199,11 +203,8 @@ def test_persistent_redirection(safe_sys_redirections):
 
     async def get_result(input):
         res = shell.push(input)
-        [status, fut] = res
-        assert status == "complete"
-        [status, value] = await fut
-        assert status == "success"
-        return value
+        assert res.syntax_check == "complete"
+        return await res
 
     async def test():
         assert await get_result("print('foobar')") == None
@@ -244,11 +245,8 @@ def test_nonpersistent_redirection(safe_sys_redirections):
 
     async def get_result(input):
         res = shell.push(input)
-        [status, fut] = res
-        assert status == "complete"
-        [status, value] = await fut
-        assert status == "success"
-        return value
+        assert res.syntax_check == "complete"
+        return await res
 
     shell = Console(
         stdout_callback=stdout_callback,
@@ -287,11 +285,8 @@ async def test_console_imports():
 
     async def get_result(input):
         res = shell.push(input)
-        [status, fut] = res
-        assert status == "complete"
-        [status, value] = await fut
-        assert status == "success"
-        return value
+        assert res.syntax_check == "complete"
+        return await res
 
     assert await get_result("import pytz") == None
     assert await get_result("pytz.utc.zone") == "UTC"
