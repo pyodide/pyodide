@@ -355,24 +355,25 @@ class PyProxyClass {
    * @param {object} options
    * @param {number} options.depth How many layers deep to perform the
    * conversion. Defaults to infinite.
-   * @param {array} options.pyproxies If a list, ``toJs`` will store all
+   * @param {array} options.pyproxies If provided, ``toJs`` will store all
    * PyProxies created in this list. This allows you to easily destroy all the
    * PyProxies by iterating the list without having to recurse over the
-   * generated structure. If the value ``null`` is passed, then `toJs` will not
-   * creating any PyProxies, if it would create a ``PyProxy`` instead a
-   * ``ConversionError`` is raised.
+   * generated structure.
+   * @param {bool} options.create_pyproxies If false, `toJs` will throw a
+   * ``ConversionError`` rather than producing a ``PyProxy``.
    * @return {any} The Javascript object resulting from the conversion.
    */
-  toJs({ depth = -1, pyproxies } = {}) {
+  toJs({ depth = -1, pyproxies, create_pyproxies = true } = {}) {
     let ptrobj = _getPtr(this);
     let idresult;
     let proxies_id;
-    if (pyproxies === null) {
+    if (!create_pyproxies) {
       proxies_id = 0;
-    } else if (pyproxies === undefined) {
-      proxies_id = Module.hiwire.new_value([]);
-    } else {
+    } else if (pyproxies) {
       proxies_id = Module.hiwire.new_value(pyproxies);
+    } else {
+      proxies_id = Module.hiwire.new_value([]);
+      s;
     }
     try {
       idresult = Module._python2js_with_depth(ptrobj, depth, proxies_id);

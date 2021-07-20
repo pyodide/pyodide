@@ -481,10 +481,20 @@ to_js(PyObject* self,
 {
   PyObject* obj = NULL;
   int depth = -1;
-  static const char* const _keywords[] = { "depth", 0 };
-  static struct _PyArg_Parser _parser = { "O|$i:to_js", _keywords, 0 };
-  if (kwnames != NULL && !_PyArg_ParseStackAndKeywords(
-                           args, nargs, kwnames, &_parser, &obj, &depth)) {
+  PyObject* pyproxies = NULL;
+  bool create_proxies = true;
+  static const char* const _keywords[] = {
+    "", "depth", "pyproxies", "create_pyproxies", 0
+  };
+  static struct _PyArg_Parser _parser = { "O|$iOp:to_js", _keywords, 0 };
+  if (kwnames != NULL && !_PyArg_ParseStackAndKeywords(args,
+                                                       nargs,
+                                                       kwnames,
+                                                       &_parser,
+                                                       &obj,
+                                                       &depth,
+                                                       &pyproxies,
+                                                       &create_proxies)) {
     return NULL;
   }
 
@@ -500,7 +510,23 @@ to_js(PyObject* self,
   JsRef js_result = NULL;
   PyObject* py_result = NULL;
 
-  proxies = JsArray_New();
+  if (!create_proxies) {
+    proxies = NULL;
+  } else if (pyproxies) {
+    if (!JsProxy_Check(pyproxies)) {
+      PyErr_SetString(PyExc_TypeError,
+                      "Expected a JsProxy for the pyproxies argument");
+      FAIL();
+    }
+    proxies = JsProxy_AsJs(self); /* borrowed */
+    if (!JsArray_Check(proxies)) {
+      PyErr_SetString(PyExc_TypeError,
+                      "Expected a Js Array for the pyproxies argument");
+      FAIL();
+    }
+  } else {
+    proxies = JsArray_New();
+  }
   js_result = python2js_with_depth(obj, depth, proxies);
   FAIL_IF_NULL(js_result);
   if (hiwire_is_pyproxy(js_result)) {

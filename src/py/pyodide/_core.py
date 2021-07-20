@@ -13,6 +13,14 @@ from _pyodide_core import (
     create_proxy,
     create_once_callable,
     to_js,
+    ConversionError,
 )
 
-__all__ = ["JsProxy", "JsException", "create_proxy", "create_once_callable", "to_js"]
+__all__ = [
+    "JsProxy",
+    "JsException",
+    "create_proxy",
+    "create_once_callable",
+    "to_js",
+    "ConversionError",
+]

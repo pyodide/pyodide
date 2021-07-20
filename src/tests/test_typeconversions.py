@@ -270,6 +270,71 @@ def test_python2js5(selenium):
     )
 
 
+# @pytest.mark.skip_refcount_check
+# @pytest.mark.skip_pyproxy_check
+def test_python2js_track_proxies(selenium):
+    selenium.run_js(
+        """
+        let x = pyodide.runPython(`
+            class T:
+                pass
+            [[T()],[T()], [[[T()],[T()]],[T(), [], [[T()]], T()], T(), T()], T()]
+        `);
+        let proxies = [];
+        let result = x.toJs({ pyproxies : proxies });
+        assert(() => proxies.length === 10);
+        for(let x of proxies){
+            x.destroy();
+        }
+        function check(l){
+            for(let x of l){
+                if(pyodide.isPyProxy(x)){
+                    assert(() => x.$$.ptr === null);
+                } else {
+                    check(x);
+                }
+            }
+        }
+        check(result);
+        assertThrows(() => x.toJs({create_pyproxies : false}), "PythonError", "pyodide.ConversionError");
+        x.destroy();
+        """
+    )
+
+
+@run_in_pyodide
+def test_wrong_way_track_proxies():
+    from js import Array, Object
+    from pyodide import to_js, ConversionError
+    from pyodide_js import isPyProxy
+    from unittest import TestCase
+
+    class T:
+        pass
+
+    x = [[T()], [T()], [[[T()], [T()]], [T(), [], [[T()]], T()], T(), T()], T()]
+    proxylist = Array.new()
+    r = to_js(x, pyproxies=proxylist)
+    assert len(proxylist) == 10
+    for t in proxylist:
+        t.destroy()
+
+    def check_destroyed(l):
+        for e in l:
+            if isPyProxy(e):
+                assert getattr(e, "$$").ptr is None
+            else:
+                check_destroyed(e)
+
+    check_destroyed(r)
+    with TestCase().assertRaises(TypeError):
+        to_js(x, pyproxies=[])
+    with TestCase().assertRaises(TypeError):
+        to_js(x, pyproxies=Object.new())
+    with TestCase().assertRaises(ConversionError):
+        to_js(x, create_pyproxies=False)
+
+
 def test_wrong_way_conversions(selenium):
     selenium.run_js(
         """

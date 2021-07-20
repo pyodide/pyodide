@@ -23,6 +23,9 @@ try:
         def js_error(self):
             """The original Javascript error"""
 
+    class ConversionError(Exception):
+        """An error thrown when conversion between Javascript and Python fails."""
+
     class JsProxy:
         """A proxy to make a Javascript object behave like a Python object
 
@@ -122,7 +125,13 @@ try:
 
     # from python2js
 
-    def to_js(obj: Any, depth: int = -1) -> JsProxy:
+    def to_js(
+        obj: Any,
+        *,
+        depth: int = -1,
+        pyproxies: JsProxy = None,
+        create_pyproxies: bool = True
+    ) -> JsProxy:
         """Convert the object to Javascript.
 
         This is similar to :any:`PyProxy.toJs`, but for use from Python. If the
