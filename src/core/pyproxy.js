@@ -353,13 +353,13 @@ class PyProxyClass {
    * <type-translations-pyproxy-to-js>` for more info.
    *
    * @param {object} options
-   * @param {number} options.depth How many layers deep to perform the
+   * @param {number} [options.depth] How many layers deep to perform the
    * conversion. Defaults to infinite.
-   * @param {array} options.pyproxies If provided, ``toJs`` will store all
+   * @param {array} [options.pyproxies] If provided, ``toJs`` will store all
    * PyProxies created in this list. This allows you to easily destroy all the
    * PyProxies by iterating the list without having to recurse over the
    * generated structure.
-   * @param {bool} options.create_pyproxies If false, `toJs` will throw a
+   * @param {bool} [options.create_pyproxies] If false, `toJs` will throw a
    * ``ConversionError`` rather than producing a ``PyProxy``.
    * @return {any} The Javascript object resulting from the conversion.
    */
