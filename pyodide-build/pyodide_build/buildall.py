@@ -299,7 +299,7 @@ def generate_packages_json(pkg_map: Dict[str, BasePackage]) -> Dict:
     # Hack for 0.17.0 release
     # TODO: FIXME!!
     if "soupsieve" in package_data:
-        package_data["soupsieve"]["dependencies"].append("beautifulsoup4")
+        package_data["soupsieve"]["depends"].append("beautifulsoup4")
 
     return package_data
 

@@ -295,11 +295,15 @@ def test_interactive_console_top_level_await(selenium, safe_selenium_sys_redirec
     )
     selenium.run("shell.push('from js import fetch')")
     time.sleep(0.2)
-    selenium.run("""shell.push("await (await fetch('packages.json')).json()")""")
+    selenium.run("""shell.push("(await (await fetch('packages.json')).json())")""")
     time.sleep(0.2)
     res = selenium.run("result")
     assert isinstance(res, dict)
-    assert res["dependencies"]["micropip"] == ["pyparsing", "packaging", "distutils"]
+    assert res["packages"]["micropip"]["depends"] == [
+        "pyparsing",
+        "packaging",
+        "distutils",
+    ]
 
 
 @pytest.fixture(params=["firefox", "chrome"], scope="function")

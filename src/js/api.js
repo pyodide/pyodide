@@ -150,16 +150,12 @@ export async function loadPackagesFromImports(
   let packageNames = Module._import_name_to_package_name;
   let packages = new Set();
   for (let name of imports) {
-    if (name in Object.keys(packageNames)) {
-      packages.add(packageNames[name]);
+    if (packageNames.has(name)) {
+      packages.add(packageNames.get(name));
     }
   }
   if (packages.size) {
-    await loadPackage(
-      Array.from(packages.keys()),
-      messageCallback,
-      errorCallback
-    );
+    await loadPackage(Array.from(packages), messageCallback, errorCallback);
   }
 }
 
@@ -192,7 +188,7 @@ export function pyimport(name) {
  *        response = await fetch("./packages.json")
  *        packages = await response.json()
  *        # If final statement is an expression, its value is returned to
- * Javascript len(packages.dependencies.object_keys())
+ * Javascript len(packages['packages'].object_keys())
  *    `);
  *    console.log(result); // 72
  *
