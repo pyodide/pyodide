@@ -141,6 +141,23 @@ try:
         used :any:`pyodide.create_proxy`.
 
         See :ref:`type-translations-pyproxy-to-js` for more information.
+
+        Parameters
+        ----------
+        obj : Any
+            The Python object to convert
+
+        depth : int, default=-1
+            The maximum depth to do the conversion. Negative numbers are treated
+            as infinite. Set this to 1 to do a shallow conversion.
+
+        pyproxies: JsProxy, default = None
+            Should be a Javascript ``Array``. If provided, any ``PyProxies`` generated
+            will be stored here.
+
+        create_pyproxies: bool, default=True
+            If you set this to False, :any:`to_js` will raise an error
+
         """
         return obj
 
