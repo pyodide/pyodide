@@ -486,6 +486,16 @@ to_js(PyObject* self,
   static const char* const _keywords[] = {
     "", "depth", "pyproxies", "create_pyproxies", 0
   };
+  // See argparse docs on format strings:
+  // https://docs.python.org/3/c-api/arg.html?highlight=pyarg_parse#parsing-arguments
+  // O|$iOp:to_js
+  // O            - Object
+  //  |           - start of optional args
+  //   $          - start of kwonly args
+  //    i         - signed integer
+  //     O        - Object
+  //      p       - predicate (ie bool)
+  //       :to_js - name of this function for error messages
   static struct _PyArg_Parser _parser = { "O|$iOp:to_js", _keywords, 0 };
   if (kwnames != NULL && !_PyArg_ParseStackAndKeywords(args,
                                                        nargs,
