@@ -161,6 +161,16 @@ try:
         """
         return obj
 
+    def destroy_proxies(pyproxies: JsProxy):
+        """Destroy all PyProxies in a Javascript array.
+
+        pyproxies must be a JsProxy of type PyProxy[]. Intended for use with the
+        arrays created from the "pyproxies" argument of :any:`toJs` and
+        :any:`to_js`. This method is necessary because indexing the Array from
+        Python automatically unwraps the PyProxy into the wrapped Python object.
+        """
+        pass
+
 
 finally:
     __name__ = _save_name

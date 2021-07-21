@@ -528,7 +528,7 @@ to_js(PyObject* self,
                       "Expected a JsProxy for the pyproxies argument");
       FAIL();
     }
-    proxies = JsProxy_AsJs(pyproxies); /* borrowed */
+    proxies = JsProxy_AsJs(pyproxies);
     if (!JsArray_Check(proxies)) {
       PyErr_SetString(PyExc_TypeError,
                       "Expected a Js Array for the pyproxies argument");
@@ -551,11 +551,50 @@ finally:
   return py_result;
 }
 
+EM_JS_NUM(errcode, destroy_proxies_js, (JsRef proxies_id), {
+  for (let proxy of Module.hiwire.get_value(proxies_id)) {
+    proxy.destroy();
+  }
+})
+
+static PyObject*
+destroy_proxies(PyObject* self, PyObject* arg)
+{
+  if (!JsProxy_Check(arg)) {
+    PyErr_SetString(PyExc_TypeError, "Expected a JsProxy for the argument");
+    return NULL;
+  }
+  bool success = false;
+  JsRef proxies = NULL;
+
+  proxies = JsProxy_AsJs(arg);
+  if (!JsArray_Check(proxies)) {
+    PyErr_SetString(PyExc_TypeError,
+                    "Expected a Js Array for the pyproxies argument");
+    FAIL();
+  }
+  FAIL_IF_MINUS_ONE(destroy_proxies_js(proxies));
+
+  success = true;
+finally:
+  hiwire_CLEAR(proxies);
+  if (success) {
+    Py_RETURN_NONE;
+  } else {
+    return NULL;
+  }
+}
+
 static PyMethodDef methods[] = {
   {
     "to_js",
     (PyCFunction)to_js,
     METH_FASTCALL | METH_KEYWORDS,
+  },
+  {
+    "destroy_proxies",
+    (PyCFunction)destroy_proxies,
+    METH_O,
   },
   { NULL } /* Sentinel */
 };

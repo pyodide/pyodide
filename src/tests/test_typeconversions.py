@@ -305,11 +305,6 @@ def test_python2js_track_proxies(selenium):
 def test_wrong_way_track_proxies(selenium):
     selenium.run_js(
         """
-        self.destroyProxies = function(l){
-            for(let p of l){
-                p.destroy();
-            }
-        };
         self.checkDestroyed = function(l){
             for(let e of l){
                 if(pyodide.isPyProxy(e)){
@@ -320,8 +315,8 @@ def test_wrong_way_track_proxies(selenium):
             }
         };
         pyodide.runPython(`
-            from js import Array, Object, destroyProxies, checkDestroyed
-            from pyodide import to_js, ConversionError
+            from js import Array, Object, checkDestroyed
+            from pyodide import to_js, ConversionError, destroy_proxies
             from pyodide_js import isPyProxy
             from unittest import TestCase
 
@@ -332,7 +327,7 @@ def test_wrong_way_track_proxies(selenium):
             proxylist = Array.new()
             r = to_js(x, pyproxies=proxylist)
             assert len(proxylist) == 10
-            destroyProxies(proxylist)
+            destroy_proxies(proxylist)
             checkDestroyed(r)
             with TestCase().assertRaises(TypeError):
                 to_js(x, pyproxies=[])
