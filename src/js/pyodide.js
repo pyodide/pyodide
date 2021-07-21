@@ -152,7 +152,6 @@ function fixRecursionLimit() {
     `import sys; sys.setrecursionlimit(int(${recursionLimit}))`
   );
 }
-
 /**
  * Load the main Pyodide wasm module and initialize it.
  *
@@ -162,12 +161,18 @@ function fixRecursionLimit() {
  * (This can be fixed once `Firefox adopts support for ES6 modules in webworkers
  * <https://bugzilla.mozilla.org/show_bug.cgi?id=1247687>`_.)
  *
- * @param {{ indexURL : string, fullStdLib? : boolean = true }} config
+ * @param {{ indexURL : string, fullStdLib? : boolean = true, input?: () => string, print?: (text: string) => void, printErr?: (text: string) => void }} config
  * @param {string} config.indexURL - The URL from which Pyodide will load
  * packages
  * @param {boolean} config.fullStdLib - Load the full Python standard library.
  * Setting this to false excludes following modules: distutils.
  * Default: true
+ * @param {undefined | (() => string)} config.input - Override the standard input callback. Should ask the user for one line of input.
+ * Default: undefined
+ * @param {undefined | ((text: string) => void)} config.print - Override the standard output callback.
+ * Default: undefined
+ * @param {undefined | ((text: string) => void)} config.printErr - Override the standard error output callback.
+ * Default: undefined
  * @returns The :ref:`js-api-pyodide` module.
  * @memberof globalThis
  * @async
@@ -198,6 +203,34 @@ export async function loadPyodide(config) {
   Module.indexURL = baseURL;
   let packageIndexReady = initializePackageIndex(baseURL);
 
+  if(config.input) {
+    let input = [];
+    let inputIndex = -1; // -1 means that we just returned null
+    function stdin() {
+      if (inputIndex === -1) {
+        input = Module.intArrayFromString((config.input() || "") + "\n", true, 0);
+        inputIndex = 0;
+      }
+
+      if (inputIndex < input.length) {
+        let character = input[inputIndex];
+        inputIndex++;
+        return character;
+      } else {
+        inputIndex = -1;
+        return null;
+      }
+    }
+    
+    Module.stdin = stdin;
+  }
+  if(config.print) {
+    Module.print = config.print;
+  }
+  if(config.printErr) {
+    Module.printErr = config.printErr;
+  }
+  
   Module.locateFile = (path) => baseURL + path;
   let moduleLoaded = new Promise((r) => (Module.postRun = r));
 
