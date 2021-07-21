@@ -221,8 +221,9 @@ export async function loadPyodide(config) {
         return null;
       }
     }
-    
-    Module.stdin = stdin;
+    Module.preRun = [function() {
+      Module.FS.init(stdin, null, null);
+    }];
   }
   if(config.print) {
     Module.print = config.print;
