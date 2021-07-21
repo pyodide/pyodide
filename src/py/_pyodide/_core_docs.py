@@ -153,7 +153,9 @@ try:
 
         pyproxies: JsProxy, default = None
             Should be a Javascript ``Array``. If provided, any ``PyProxies`` generated
-            will be stored here.
+            will be stored here. You can later use :any:`destroy_proxies` if you want
+            to destroy the proxies from Python (or from Javascript you can just iterate
+            over the ``Array`` and destroy the proxies).
 
         create_pyproxies: bool, default=True
             If you set this to False, :any:`to_js` will raise an error

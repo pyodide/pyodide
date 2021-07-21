@@ -358,7 +358,9 @@ class PyProxyClass {
    * @param {array} [options.pyproxies] If provided, ``toJs`` will store all
    * PyProxies created in this list. This allows you to easily destroy all the
    * PyProxies by iterating the list without having to recurse over the
-   * generated structure.
+   * generated structure. The most common use case is to create a new empty
+   * list, pass the list as `pyproxies`, and then later iterate over `pyproxies`
+   * to destroy all of created proxies.
    * @param {bool} [options.create_pyproxies] If false, `toJs` will throw a
    * ``ConversionError`` rather than producing a ``PyProxy``.
    * @return {any} The Javascript object resulting from the conversion.
