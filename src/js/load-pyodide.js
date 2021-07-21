@@ -18,12 +18,13 @@ export async function initializePackageIndex(indexURL) {
     });
   } else {
     let response = await fetch(`${indexURL}packages.json`);
-    Module.packages = (await response.json())["packages"];
-  }
-  if (typeof Module.packages === "undefined") {
-    throw new Error(
-      "Loaded packages.json does not contain the expected key 'packages'."
-    );
+    Module.packages = (await response.json())?.packages;
+
+    if (typeof Module.packages === "undefined") {
+      throw new Error(
+        "Loaded packages.json does not contain the expected key 'packages'."
+      );
+    }
   }
 }
 
