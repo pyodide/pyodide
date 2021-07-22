@@ -64,7 +64,14 @@ Module.fatal_error = function (e) {
     "Pyodide has suffered a fatal error. Please report this to the Pyodide maintainers."
   );
   console.error("The cause of the fatal error was:");
-  console.error(e);
+  if (Module.inTestHoist) {
+    // Test hoist won't print the error object in a useful way so convert it to
+    // string.
+    console.error(e.toString());
+    console.error(e.stack);
+  } else {
+    console.error(e);
+  }
   try {
     Module.dump_traceback();
     for (let key of Object.keys(Module.public_api)) {
