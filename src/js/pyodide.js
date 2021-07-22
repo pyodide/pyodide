@@ -147,7 +147,10 @@ function fixRecursionLimit() {
     recurse();
   } catch (err) {}
 
-  let recursionLimit = Math.min(depth / 20, 1000);
+  const py_stack_usage = 20;
+  // benchmark-stack-size currently shows `js_depth/py_depth` is 19 in Firefox
+  // and 8 in Chrome. 20 is rounded up from this.
+  let recursionLimit = Math.min(depth / py_stack_usage, 1000);
   Module.runPythonSimple(
     `import sys; sys.setrecursionlimit(int(${recursionLimit}))`
   );
