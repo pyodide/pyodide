@@ -1,17 +1,14 @@
 package:
   name: optlang
-  version: 1.5.1
-
+  version: 1.5.2
 source:
-  sha256: 102fe84cae9568983be6c0dd23d2bc3aa1ce01aa1448316f088d1c72fcc0248f
-  url: https://files.pythonhosted.org/packages/63/4d/7c4da36e4939f76ca32d53c4a1e5df688f6cfe291ba0302e56d6d88f5583/optlang-1.5.1.tar.gz
-
+  sha256: 5514364aa06bf24381c6777188b2df79b13def2743312bdb80277392cdbb6477
+  url: https://files.pythonhosted.org/packages/08/09/e87caa6d45be1bb5c787428822bc7694945d1bf2c9278939cbe5b2a11a2f/optlang-1.5.2.tar.gz
 requirements:
   run:
   - sympy
   - six
   - swiglpk
-
 test:
   imports:
   - optlang

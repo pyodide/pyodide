@@ -3,12 +3,14 @@ Various common utilities for testing.
 """
 
 import contextlib
+import json
 import multiprocessing
 import textwrap
 import tempfile
 import time
 import os
 import pathlib
+import pexpect
 import queue
 import sys
 import shutil
@@ -78,29 +80,24 @@ class SeleniumWrapper:
         server_port,
         server_hostname="127.0.0.1",
         server_log=None,
-        build_dir=None,
         load_pyodide=True,
         script_timeout=20,
     ):
-        if build_dir is None:
-            build_dir = BUILD_PATH
-
-        self.driver = self.get_driver()
         self.server_port = server_port
         self.server_hostname = server_hostname
+        self.base_url = f"http://{self.server_hostname}:{self.server_port}"
         self.server_log = server_log
-
-        if not (pathlib.Path(build_dir) / "test.html").exists():
-            # selenium does not expose HTTP response codes
-            raise ValueError(
-                f"{(build_dir / 'test.html').resolve()} " f"does not exist!"
-            )
-        self.driver.get(f"http://{server_hostname}:{server_port}/test.html")
+        self.driver = self.get_driver()
+        self.set_script_timeout(script_timeout)
+        self.script_timeout = script_timeout
+        self.prepare_driver()
         self.javascript_setup()
         if load_pyodide:
             self.run_js(
                 """
-                window.pyodide = await loadPyodide({ indexURL : './', fullStdLib: false });
+                let pyodide = await loadPyodide({ indexURL : './', fullStdLib: false, jsglobals : self });
+                self.pyodide = pyodide;
+                globalThis.pyodide = pyodide;
                 pyodide.globals.get;
                 pyodide.pyodide_py.eval_code;
                 pyodide.pyodide_py.eval_code_async;
@@ -108,88 +105,41 @@ class SeleniumWrapper:
                 pyodide.pyodide_py.unregister_js_module;
                 pyodide.pyodide_py.find_imports;
                 pyodide.runPython("");
-                """
+                """,
             )
             self.save_state()
             self.restore_state()
-        self.script_timeout = script_timeout
-        self.driver.set_script_timeout(script_timeout)
+
+    SETUP_CODE = pathlib.Path(ROOT_PATH / "tools/testsetup.js").read_text()
+
+    def prepare_driver(self):
+        self.driver.get(f"{self.base_url}/test.html")
+
+    def set_script_timeout(self, timeout):
+        self.driver.set_script_timeout(timeout)
+
+    def quit(self):
+        self.driver.quit()
+
+    def refresh(self):
+        self.driver.refresh()
+        self.javascript_setup()
 
     def javascript_setup(self):
-        self.run_js("Error.stackTraceLimit = Infinity;", pyodide_checks=False)
         self.run_js(
-            """
-            window.assert = function(cb, message=""){
-                if(message !== ""){
-                    message = "\\n" + message;
-                }
-                if(cb() !== true){
-                    throw new Error(`Assertion failed: ${cb.toString().slice(6)}${message}`);
-                }
-            };
-            window.assertAsync = async function(cb, message=""){
-                if(message !== ""){
-                    message = "\\n" + message;
-                }
-                if(await cb() !== true){
-                    throw new Error(`Assertion failed: ${cb.toString().slice(12)}${message}`);
-                }
-            };
-            function checkError(err, errname, pattern, pat_str, thiscallstr){
-                if(typeof pattern === "string"){
-                    pattern = new RegExp(pattern);
-                }
-                if(!err){
-                    throw new Error(`${thiscallstr} failed, no error thrown`);
-                }
-                if(err.constructor.name !== errname){
-                    throw new Error(
-                        `${thiscallstr} failed, expected error ` +
-                        `of type '${errname}' got type '${err.constructor.name}'`
-                    );
-                }
-                if(!pattern.test(err.message)){
-                    throw new Error(
-                        `${thiscallstr} failed, expected error ` +
-                        `message to match pattern ${pat_str} got:\n${err.message}`
-                    );
-                }
-            }
-            window.assertThrows = function(cb, errname, pattern){
-                let pat_str = typeof pattern === "string" ? `"${pattern}"` : `${pattern}`;
-                let thiscallstr = `assertThrows(${cb.toString()}, "${errname}", ${pat_str})`;
-                let err = undefined;
-                try {
-                    cb();
-                } catch(e) {
-                    err = e;
-                }
-                checkError(err, errname, pattern, pat_str, thiscallstr);
-            };
-            window.assertThrowsAsync = async function(cb, errname, pattern){
-                let pat_str = typeof pattern === "string" ? `"${pattern}"` : `${pattern}`;
-                let thiscallstr = `assertThrowsAsync(${cb.toString()}, "${errname}", ${pat_str})`;
-                let err = undefined;
-                try {
-                    await cb();
-                } catch(e) {
-                    err = e;
-                }
-                checkError(err, errname, pattern, pat_str, thiscallstr);
-            };
-            """,
+            SeleniumWrapper.SETUP_CODE,
             pyodide_checks=False,
         )
 
     @property
     def logs(self):
-        logs = self.driver.execute_script("return window.logs;")
+        logs = self.run_js("return self.logs;", pyodide_checks=False)
         if logs is not None:
             return "\n".join(str(x) for x in logs)
         return ""
 
     def clean_logs(self):
-        self.driver.execute_script("window.logs = []")
+        self.run_js("self.logs = []", pyodide_checks=False)
 
     def run(self, code):
         return self.run_js(
@@ -236,7 +186,7 @@ class SeleniumWrapper:
                         try {
                             pyodide._module._pythonexc2js();
                         } catch(e){
-                            console.error(`Python exited with error flag set! Error was:\n{e.message}`);
+                            console.error(`Python exited with error flag set! Error was:\n${e.message}`);
                             // Don't put original error message in new one: we want
                             // "pytest.raises(xxx, match=msg)" to fail
                             throw new Error(`Python exited with error flag set!`);
@@ -245,7 +195,9 @@ class SeleniumWrapper:
            """
         else:
             check_code = ""
+        return self.run_js_inner(code, check_code)
 
+    def run_js_inner(self, code, check_code):
         wrapper = """
             let cb = arguments[arguments.length - 1];
             let run = async () => { %s }
@@ -259,9 +211,7 @@ class SeleniumWrapper:
                 }
             })()
         """
-
         retval = self.driver.execute_async_script(wrapper % (code, check_code))
-
         if retval[0] == 0:
             return retval[1]
         else:
@@ -350,6 +300,84 @@ class ChromeWrapper(SeleniumWrapper):
         options.add_argument("--js-flags=--expose-gc")
         return Chrome(options=options)
 
+    def collect_garbage(self):
+        self.driver.execute_cdp_cmd("HeapProfiler.collectGarbage", {})
+
+
+class NodeWrapper(SeleniumWrapper):
+    browser = "node"
+
+    def init_node(self):
+        os.chdir("build")
+        self.p = pexpect.spawn(
+            f"node --expose-gc ../tools/node_test_driver.js {self.base_url}", timeout=60
+        )
+        self.p.setecho(False)
+        self.p.delaybeforesend = None
+        os.chdir("..")
+
+    def get_driver(self):
+        self._logs = []
+        self.init_node()
+
+        class NodeDriver:
+            def __getattr__(self, x):
+                raise NotImplementedError()
+
+        return NodeDriver()
+
+    def prepare_driver(self):
+        pass
+
+    def set_script_timeout(self, timeout):
+        self._timeout = timeout
+
+    def quit(self):
+        self.p.sendeof()
+
+    def refresh(self):
+        self.quit()
+        self.init_node()
+        self.javascript_setup()
+
+    def collect_garbage(self):
+        self.run_js("gc()")
+
+    @property
+    def logs(self):
+        return "\n".join(self._logs)
+
+    def clean_logs(self):
+        self._logs = []
+
+    def run_js_inner(self, code, check_code):
+        check_code = ""
+        wrapped = """
+            let result = await (async () => { %s })();
+            %s
+            return result;
+        """ % (
+            code,
+            check_code,
+        )
+        from uuid import uuid4
+
+        cmd_id = str(uuid4())
+        self.p.sendline(cmd_id)
+        self.p.sendline(wrapped)
+        self.p.sendline(cmd_id)
+        self.p.expect_exact(f"{cmd_id}:UUID\r\n", timeout=self._timeout)
+        self.p.expect_exact(f"{cmd_id}:UUID\r\n")
+        if self.p.before:
+            self._logs.append(self.p.before.decode()[:-2].replace("\r", ""))
+        self.p.expect(f"[01]\r\n")
+        success = int(self.p.match[0].decode()[0]) == 0
+        self.p.expect_exact(f"\r\n{cmd_id}:UUID\r\n")
+        if success:
+            return json.loads(self.p.before.decode().replace("undefined", "null"))
+        else:
+            raise JavascriptException("", self.p.before.decode())
+
 
 @pytest.hookimpl(hookwrapper=True)
 def pytest_runtest_call(item):
@@ -388,12 +416,17 @@ def test_wrapper_check_for_memory_leaks(selenium, trace_hiwire_refs, trace_pypro
         selenium.enable_pyproxy_tracing()
         init_num_proxies = selenium.get_num_proxies()
     a = yield
-    selenium.disable_pyproxy_tracing()
-    selenium.restore_state()
-    # if there was an error in the body of the test, flush it out by calling
-    # get_result (we don't want to override the error message by raising a
-    # different error here.)
-    a.get_result()
+    try:
+        # If these guys cause a crash because the test really screwed things up,
+        # we override the error message with the better message returned by
+        # a.result() in the finally block.
+        selenium.disable_pyproxy_tracing()
+        selenium.restore_state()
+    finally:
+        # if there was an error in the body of the test, flush it out by calling
+        # get_result (we don't want to override the error message by raising a
+        # different error here.)
+        a.get_result()
     if trace_pyproxies and trace_hiwire_refs:
         delta_proxies = selenium.get_num_proxies() - init_num_proxies
         delta_keys = selenium.get_num_hiwire_keys() - init_num_keys
@@ -410,10 +443,11 @@ def selenium_common(request, web_server_main, load_pyodide=True):
         cls = FirefoxWrapper
     elif request.param == "chrome":
         cls = ChromeWrapper
+    elif request.param == "node":
+        cls = NodeWrapper
     else:
         assert False
     selenium = cls(
-        build_dir=request.config.option.build_dir,
         server_port=server_port,
         server_hostname=server_hostname,
         server_log=server_log,
@@ -422,10 +456,10 @@ def selenium_common(request, web_server_main, load_pyodide=True):
     try:
         yield selenium
     finally:
-        selenium.driver.quit()
+        selenium.quit()
 
 
-@pytest.fixture(params=["firefox", "chrome"], scope="function")
+@pytest.fixture(params=["firefox", "chrome", "node"], scope="function")
 def selenium_standalone(request, web_server_main):
     with selenium_common(request, web_server_main) as selenium:
         with set_webdriver_script_timeout(
@@ -450,7 +484,7 @@ def selenium_webworker_standalone(request, web_server_main):
 
 
 # selenium instance cached at the module level
-@pytest.fixture(params=["firefox", "chrome"], scope="module")
+@pytest.fixture(params=["firefox", "chrome", "node"], scope="module")
 def selenium_module_scope(request, web_server_main):
     with selenium_common(request, web_server_main) as selenium:
         yield selenium

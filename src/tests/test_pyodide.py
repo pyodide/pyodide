@@ -177,7 +177,6 @@ def test_hiwire_is_promise(selenium):
         "1",
         "'x'",
         "''",
-        "document.all",
         "false",
         "undefined",
         "null",
@@ -200,6 +199,11 @@ def test_hiwire_is_promise(selenium):
     ]:
         assert selenium.run_js(
             f"return pyodide._module.hiwire.isPromise({s}) === false;"
+        )
+
+    if not selenium.browser == "node":
+        assert selenium.run_js(
+            f"return pyodide._module.hiwire.isPromise(document.all) === false;"
         )
 
     assert selenium.run_js(
@@ -229,7 +233,7 @@ def test_keyboard_interrupt(selenium):
         """
         x = new Int8Array(1)
         pyodide._module.setInterruptBuffer(x)
-        window.triggerKeyboardInterrupt = function(){
+        self.triggerKeyboardInterrupt = function(){
             x[0] = 2;
         }
         try {
@@ -311,7 +315,7 @@ def test_run_python_js_error(selenium):
         function throwError(){
             throw new Error("blah!");
         }
-        window.throwError = throwError;
+        self.throwError = throwError;
         pyodide.runPython(`
             from js import throwError
             from unittest import TestCase
@@ -327,7 +331,7 @@ def test_run_python_js_error(selenium):
 def test_create_once_callable(selenium):
     selenium.run_js(
         """
-        window.call7 = function call7(f){
+        self.call7 = function call7(f){
             return f(7);
         }
         pyodide.runPython(`
@@ -364,14 +368,14 @@ def test_create_once_callable(selenium):
 def test_create_proxy(selenium):
     selenium.run_js(
         """
-        window.testAddListener = function(f){
-            window.listener = f;
+        self.testAddListener = function(f){
+            self.listener = f;
         }
-        window.testCallListener = function(f){
-            return window.listener();
+        self.testCallListener = function(f){
+            return self.listener();
         }
-        window.testRemoveListener = function(f){
-            return window.listener === f;
+        self.testRemoveListener = function(f){
+            return self.listener === f;
         }
         pyodide.runPython(`
             from pyodide import create_proxy
@@ -428,7 +432,7 @@ def test_docstrings_b(selenium):
     sig_then_should_equal = "(onfulfilled, onrejected)"
     ds_once_should_equal = dedent_docstring(create_once_callable.__doc__)
     sig_once_should_equal = "(obj)"
-    selenium.run_js("window.a = Promise.resolve();")
+    selenium.run_js("self.a = Promise.resolve();")
     [ds_then, sig_then, ds_once, sig_once] = selenium.run(
         """
         from js import a
@@ -508,6 +512,10 @@ def test_fatal_error(selenium_standalone):
     def strip_stack_trace(x):
         x = re.sub("\n.*site-packages.*", "", x)
         x = re.sub("/lib/python.*/", "", x)
+        x = re.sub("/lib/python.*/", "", x)
+        x = re.sub("warning: no [bB]lob.*\n", "", x)
+        x = re.sub("Error: intentionally triggered fatal error!", "{}", x)
+        x = re.sub(" +at .*\n", "", x)
         return x
 
     assert (
@@ -515,18 +523,18 @@ def test_fatal_error(selenium_standalone):
         == dedent(
             strip_stack_trace(
                 """
-            Python initialization complete
-            Pyodide has suffered a fatal error. Please report this to the Pyodide maintainers.
-            The cause of the fatal error was:
-            {}
-            Stack (most recent call first):
-              File "<exec>", line 8 in h
-              File "<exec>", line 6 in g
-              File "<exec>", line 4 in f
-              File "<exec>", line 9 in <module>
-              File "/lib/pythonxxx/site-packages/pyodide/_base.py", line 242 in run
-              File "/lib/pythonxxx/site-packages/pyodide/_base.py", line 344 in eval_code
-            """
+                Python initialization complete
+                Pyodide has suffered a fatal error. Please report this to the Pyodide maintainers.
+                The cause of the fatal error was:
+                {}
+                Stack (most recent call first):
+                  File "<exec>", line 8 in h
+                  File "<exec>", line 6 in g
+                  File "<exec>", line 4 in f
+                  File "<exec>", line 9 in <module>
+                  File "/lib/pythonxxx/site-packages/pyodide/_base.py", line 242 in run
+                  File "/lib/pythonxxx/site-packages/pyodide/_base.py", line 344 in eval_code
+                """
             )
         ).strip()
     )

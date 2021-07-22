@@ -31,7 +31,7 @@ def print_info():
 def test_stack_usage(selenium, print_info):
     res = selenium.run_js(
         """
-        window.measure_available_js_stack_depth = () => {
+        self.measure_available_js_stack_depth = () => {
             let depth = 0;
             function recurse() { depth += 1; recurse(); }
             try { recurse(); } catch (err) { }
@@ -44,7 +44,7 @@ def test_stack_usage(selenium, print_info):
             (recurse(0)-recurse(100))/100
         `);
         let js_depth = measure_available_js_stack_depth();
-        window.py_depth = [0];
+        self.py_depth = [0];
         try {
         pyodide.runPython(`
         import sys
