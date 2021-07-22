@@ -2,6 +2,7 @@ import pytest
 import inspect
 from typing import Callable, Dict, List, Optional, Union
 import contextlib
+from base64 import b64encode
 
 
 def _run_in_pyodide_get_source(f):
@@ -15,6 +16,13 @@ def _run_in_pyodide_get_source(f):
     # Remove first line, which is the decorator. Then pad with empty lines to fix line number.
     lines = ["\n"] * start_line + lines[num_decorator_lines:]
     return "".join(lines)
+
+
+def chunkstring(string, length):
+    return (string[0 + i : length + i] for i in range(0, len(string), length))
+
+
+from pprint import pformat
 
 
 def run_in_pyodide(
@@ -64,13 +72,17 @@ def run_in_pyodide(
                         await_kw = ""
                     source = _run_in_pyodide_get_source(f)
                     filename = inspect.getsourcefile(f)
+                    encoded = pformat(
+                        list(chunkstring(b64encode(source.encode()).decode(), 100))
+                    )
+
                     selenium.run_js(
                         f"""
                         let eval_code = pyodide.pyodide_py.eval_code;
                         try {{
                             eval_code.callKwargs(
                                 {{
-                                    source : {source!r},
+                                    source : atob({encoded}.join("")),
                                     globals : pyodide._module.globals,
                                     filename : {filename!r}
                                 }}
@@ -125,11 +137,11 @@ def set_webdriver_script_timeout(selenium, script_timeout: Optional[Union[int, f
        value of the timeout in seconds
     """
     if script_timeout is not None:
-        selenium.driver.set_script_timeout(script_timeout)
+        selenium.set_script_timeout(script_timeout)
     yield
     # revert to the initial value
     if script_timeout is not None:
-        selenium.driver.set_script_timeout(selenium.script_timeout)
+        selenium.set_script_timeout(selenium.script_timeout)
 
 
 def parse_driver_timeout(request) -> Optional[Union[int, float]]:

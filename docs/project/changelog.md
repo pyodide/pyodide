@@ -96,6 +96,11 @@ substitutions:
   attached to the base `PyProxy`. This is intended to allow for more idiomatic
   usage.
   (See {issue}`1617`.) {pr}`1636`
+- {{ API }} The depth argument to `toJs` is now passed as an option, so
+  `toJs(n)` in v0.17 changed to `toJs({depth : n})`. Similarly, `pyodide.toPy`
+  now takes `depth` as a named argument. Also `to_js` and `to_py` only take
+  depth as a keyword argument.
+  {pr}`1721`
 
 ### pyodide-build
 

@@ -5,15 +5,17 @@ from pathlib import Path
 
 @pytest.mark.parametrize("active_server", ["main", "secondary"])
 def test_load_from_url(selenium_standalone, web_server_secondary, active_server):
-
+    selenium = selenium_standalone
+    if selenium.browser == "node":
+        pytest.xfail("Loading urls in node seems to time out right now")
     if active_server == "secondary":
         url, port, log_main = web_server_secondary
-        log_backup = selenium_standalone.server_log
+        log_backup = selenium.server_log
     elif active_server == "main":
         _, _, log_backup = web_server_secondary
-        log_main = selenium_standalone.server_log
-        url = selenium_standalone.server_hostname
-        port = selenium_standalone.server_port
+        log_main = selenium.server_log
+        url = selenium.server_hostname
+        port = selenium.server_port
     else:
         raise AssertionError()
 
@@ -23,26 +25,26 @@ def test_load_from_url(selenium_standalone, web_server_secondary, active_server)
         fh_main.seek(0, 2)
         fh_backup.seek(0, 2)
 
-        selenium_standalone.load_package(f"http://{url}:{port}/pyparsing.js")
-        assert "Skipping unknown package" not in selenium_standalone.logs
+        selenium.load_package(f"http://{url}:{port}/pyparsing.js")
+        assert "Skipping unknown package" not in selenium.logs
 
-        # check that all ressources were loaded from the active server
+        # check that all resources were loaded from the active server
         txt = fh_main.read()
         assert '"GET /pyparsing.js HTTP/1.1" 200' in txt
         assert '"GET /pyparsing.data HTTP/1.1" 200' in txt
 
-        # no additional ressources were loaded from the other server
+        # no additional resources were loaded from the other server
         assert len(fh_backup.read()) == 0
 
-    selenium_standalone.run(
+    selenium.run(
         """
         from pyparsing import Word, alphas
         repr(Word(alphas).parseString('hello'))
         """
     )
 
-    selenium_standalone.load_package(f"http://{url}:{port}/pytz.js")
-    selenium_standalone.run("import pytz")
+    selenium.load_package(f"http://{url}:{port}/pytz.js")
+    selenium.run("import pytz")
 
 
 def test_load_relative_url(selenium_standalone):
@@ -146,13 +148,13 @@ def test_load_package_unknown(selenium_standalone):
     shutil.copyfile(build_dir / "pyparsing.data", build_dir / "pyparsing-custom.data")
 
     try:
-        selenium_standalone.load_package(f"http://{url}:{port}/pyparsing-custom.js")
+        selenium_standalone.load_package(f"./pyparsing-custom.js")
     finally:
         (build_dir / "pyparsing-custom.js").unlink()
         (build_dir / "pyparsing-custom.data").unlink()
 
     assert selenium_standalone.run_js(
-        "return window.pyodide.loadedPackages.hasOwnProperty('pyparsing-custom')"
+        "return pyodide.loadedPackages.hasOwnProperty('pyparsing-custom')"
     )
 
 
