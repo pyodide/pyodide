@@ -25,10 +25,10 @@ typedef struct
   PyObject* cache;
   int depth;
   JsRef proxies;
-} ConversionState;
+} ConversionContext;
 
 JsRef
-_python2js(PyObject* x, ConversionState state);
+_python2js(PyObject* x, ConversionContext context);
 
 ///////////////////////////////////////////////////////////////////////////////
 //
@@ -112,7 +112,7 @@ _python2js_unicode(PyObject* x)
  * returns NULL, we must assume that the cache has been corrupted and bail out.
  */
 static JsRef
-_python2js_sequence(PyObject* x, ConversionState state)
+_python2js_sequence(PyObject* x, ConversionContext context)
 {
   bool success = false;
   PyObject* pyitem = NULL;
@@ -121,13 +121,13 @@ _python2js_sequence(PyObject* x, ConversionState state)
   JsRef jsarray = NULL;
 
   jsarray = JsArray_New();
-  FAIL_IF_MINUS_ONE(_python2js_add_to_cache(state.cache, x, jsarray));
+  FAIL_IF_MINUS_ONE(_python2js_add_to_cache(context.cache, x, jsarray));
   Py_ssize_t length = PySequence_Size(x);
   FAIL_IF_MINUS_ONE(length);
   for (Py_ssize_t i = 0; i < length; ++i) {
     PyObject* pyitem = PySequence_GetItem(x, i);
     FAIL_IF_NULL(pyitem);
-    jsitem = _python2js(pyitem, state);
+    jsitem = _python2js(pyitem, context);
     FAIL_IF_NULL(jsitem);
     JsArray_Push(jsarray, jsitem);
     Py_CLEAR(pyitem);
@@ -148,7 +148,7 @@ finally:
  * returns NULL, we must assume that the cache has been corrupted and bail out.
  */
 static JsRef
-_python2js_dict(PyObject* x, ConversionState state)
+_python2js_dict(PyObject* x, ConversionContext context)
 {
   bool success = false;
   JsRef jskey = NULL;
@@ -157,7 +157,7 @@ _python2js_dict(PyObject* x, ConversionState state)
   JsRef jsdict = NULL;
 
   jsdict = JsMap_New();
-  FAIL_IF_MINUS_ONE(_python2js_add_to_cache(state.cache, x, jsdict));
+  FAIL_IF_MINUS_ONE(_python2js_add_to_cache(context.cache, x, jsdict));
   PyObject *pykey, *pyval;
   Py_ssize_t pos = 0;
   while (PyDict_Next(x, &pos, &pykey, &pyval)) {
@@ -168,7 +168,7 @@ _python2js_dict(PyObject* x, ConversionState state)
         conversion_error, "Cannot use %R as a key for a Javascript Map", pykey);
       FAIL();
     }
-    jsval = _python2js(pyval, state);
+    jsval = _python2js(pyval, context);
     FAIL_IF_NULL(jsval);
     FAIL_IF_MINUS_ONE(JsMap_Set(jsdict, jskey, jsval));
     hiwire_CLEAR(jskey);
@@ -195,7 +195,7 @@ finally:
  * can't convert).
  */
 static JsRef
-_python2js_set(PyObject* x, ConversionState state)
+_python2js_set(PyObject* x, ConversionContext context)
 {
   bool success = false;
   PyObject* iter = NULL;
@@ -222,7 +222,7 @@ _python2js_set(PyObject* x, ConversionState state)
   FAIL_IF_ERR_OCCURRED();
   // Because we only convert immutable keys, we can do this here.
   // Otherwise, we'd fail on the set that contains itself.
-  FAIL_IF_MINUS_ONE(_python2js_add_to_cache(state.cache, x, jsset));
+  FAIL_IF_MINUS_ONE(_python2js_add_to_cache(context.cache, x, jsset));
   success = true;
 finally:
   Py_CLEAR(pykey);
@@ -294,25 +294,25 @@ _python2js_proxy(PyObject* x)
  * we want to convert at least the outermost layer.
  */
 static JsRef
-_python2js_deep(PyObject* x, ConversionState state)
+_python2js_deep(PyObject* x, ConversionContext context)
 {
   RETURN_IF_HAS_VALUE(_python2js_immutable(x));
   RETURN_IF_HAS_VALUE(_python2js_proxy(x));
   if (PyList_Check(x) || PyTuple_Check(x)) {
-    return _python2js_sequence(x, state);
+    return _python2js_sequence(x, context);
   }
   if (PyDict_Check(x)) {
-    return _python2js_dict(x, state);
+    return _python2js_dict(x, context);
   }
   if (PySet_Check(x)) {
-    return _python2js_set(x, state);
+    return _python2js_set(x, context);
   }
   if (PyObject_CheckBuffer(x)) {
     return _python2js_buffer(x);
   }
-  if (state.proxies) {
+  if (context.proxies) {
     JsRef proxy = pyproxy_new(x);
-    JsArray_Push(state.proxies, proxy);
+    JsArray_Push(context.proxies, proxy);
     return proxy;
   }
   PyErr_SetString(conversion_error, "No conversion known for x.");
@@ -369,21 +369,21 @@ finally:
  * the cache. It leaves any real work to python2js or _python2js_deep.
  */
 JsRef
-_python2js(PyObject* x, ConversionState state)
+_python2js(PyObject* x, ConversionContext context)
 {
   PyObject* id = PyLong_FromSize_t((size_t)x);
   FAIL_IF_NULL(id);
-  PyObject* val = PyDict_GetItemWithError(state.cache, id); /* borrowed */
+  PyObject* val = PyDict_GetItemWithError(context.cache, id); /* borrowed */
   Py_CLEAR(id);
   if (val != NULL) {
     return hiwire_incref((JsRef)PyLong_AsSize_t(val));
   }
   FAIL_IF_ERR_OCCURRED();
-  if (state.depth == 0) {
-    return python2js_track_proxies(x, state.proxies);
+  if (context.depth == 0) {
+    return python2js_track_proxies(x, context.proxies);
   } else {
-    state.depth--;
-    return _python2js_deep(x, state);
+    context.depth--;
+    return _python2js_deep(x, context);
   }
 finally:
   return NULL;
@@ -456,12 +456,12 @@ python2js_with_depth(PyObject* x, int depth, JsRef proxies)
   if (cache == NULL) {
     return NULL;
   }
-  ConversionState state = {
+  ConversionContext context = {
     .cache = cache,
     .depth = depth,
     .proxies = proxies,
   };
-  JsRef result = _python2js(x, state);
+  JsRef result = _python2js(x, context);
   // Destroy the cache. Because the cache has raw JsRefs inside, we need to
   // manually dealloc them.
   PyObject *pykey, *pyval;
