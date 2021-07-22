@@ -161,7 +161,7 @@ jobs:
       - run:
           name: stack-size
           command: |
-            pytest -s benchmark/stack_usage.py  | sed -n 's/## //pg' || true
+            pytest -s benchmark/stack_usage.py  | sed -n 's/## //pg'
 
   test-emsdk:
     <<: *defaults
