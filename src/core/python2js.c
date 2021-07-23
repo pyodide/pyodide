@@ -562,6 +562,11 @@ _JsArray_PostProcess(ConversionContext context, JsRef array)
   return _JsArray_PostProcess_helper(context.jscontext, array);
 }
 
+/**
+ * dict_converter should be a Javascript function that converts an Iterable of
+ * pairs into the desired Javascript object. If dict_converter is NULL, we use
+ * python2js_with_depth which converts dicts to Map (the default)
+ */
 JsRef
 python2js_custom_dict_converter(PyObject* x,
                                 int depth,
@@ -569,6 +574,7 @@ python2js_custom_dict_converter(PyObject* x,
                                 JsRef dict_converter)
 {
   if (dict_converter == NULL) {
+    // No custom converter provided, go back to default convertion to Map.
     return python2js_with_depth(x, depth, proxies);
   }
   JsRef jscontext = (JsRef)EM_ASM_INT(
