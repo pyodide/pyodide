@@ -20,11 +20,20 @@ _python2js_immutable(PyObject* x);
 int
 _python2js_add_to_cache(PyObject* cache, PyObject* pyparent, JsRef jsparent);
 
-typedef struct
+struct ConversionContext_s;
+
+typedef struct ConversionContext_s
 {
   PyObject* cache;
   int depth;
   JsRef proxies;
+  JsRef jscontext;
+  JsRef (*dict_new)(struct ConversionContext_s context);
+  int (*dict_add_keyvalue)(JsRef target,
+                           JsRef key,
+                           JsRef value,
+                           struct ConversionContext_s context);
+  JsRef (*dict_post)(JsRef dict, struct ConversionContext_s context);
 } ConversionContext;
 
 JsRef
@@ -156,7 +165,8 @@ _python2js_dict(PyObject* x, ConversionContext context)
   // result:
   JsRef jsdict = NULL;
 
-  jsdict = JsMap_New();
+  jsdict = context.dict_new(context);
+  FAIL_IF_NULL(jsdict);
   FAIL_IF_MINUS_ONE(_python2js_add_to_cache(context.cache, x, jsdict));
   PyObject *pykey, *pyval;
   Py_ssize_t pos = 0;
@@ -170,9 +180,15 @@ _python2js_dict(PyObject* x, ConversionContext context)
     }
     jsval = _python2js(pyval, context);
     FAIL_IF_NULL(jsval);
-    FAIL_IF_MINUS_ONE(JsMap_Set(jsdict, jskey, jsval));
+    FAIL_IF_MINUS_ONE(context.dict_add_keyvalue(jsdict, jskey, jsval, context));
     hiwire_CLEAR(jskey);
     hiwire_CLEAR(jsval);
+  }
+  if (context.dict_post) {
+    JsRef temp = context.dict_post(jsdict, context);
+    FAIL_IF_NULL(temp);
+    hiwire_CLEAR(jsdict);
+    jsdict = temp;
   }
   success = true;
 finally:
@@ -445,6 +461,19 @@ python2js(PyObject* x)
   return python2js_inner(x, NULL, false);
 }
 
+// taking function pointers to EM_JS functions leads to linker errors.
+static JsRef
+_JsMap_New(ConversionContext context)
+{
+  return JsMap_New();
+}
+
+static int
+_JsMap_Set(JsRef map, JsRef key, JsRef value, ConversionContext context)
+{
+  return JsMap_Set(map, key, value);
+}
+
 /**
  * Do a deep conversion from Python to Javascript, converting lists, dicts, and
  * sets down to depth "depth".
@@ -460,6 +489,9 @@ python2js_with_depth(PyObject* x, int depth, JsRef proxies)
     .cache = cache,
     .depth = depth,
     .proxies = proxies,
+    .dict_new = _JsMap_New,
+    .dict_add_keyvalue = _JsMap_Set,
+    .dict_post = NULL,
   };
   JsRef result = _python2js(x, context);
   // Destroy the cache. Because the cache has raw JsRefs inside, we need to
