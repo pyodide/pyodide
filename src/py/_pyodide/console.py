@@ -392,8 +392,6 @@ class Console:
 
         The actual error object is stored into `sys.last_value`.
         """
-        print("!!!!!!!!!!!")
-        print("formattraceback!")
         try:
             sys.last_type = type(e)
             sys.last_value = e
