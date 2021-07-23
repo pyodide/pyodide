@@ -63,7 +63,9 @@ def make_package(package: str, version: Optional[str] = None):
     Creates a template that will work for most pure Python packages,
     but will have to be edited for more complex things.
     """
-    import yaml
+    from ruamel.yaml import YAML
+
+    yaml = YAML()
 
     pypi_metadata = _get_metadata(package, version)
     sdist_metadata = _extract_sdist(pypi_metadata)
@@ -72,16 +74,27 @@ def make_package(package: str, version: Optional[str] = None):
     sha256 = sdist_metadata["digests"]["sha256"]
     version = pypi_metadata["info"]["version"]
 
+    homepage = pypi_metadata["info"]["home_page"]
+    summary = pypi_metadata["info"]["summary"]
+    license = pypi_metadata["info"]["license"]
+    pypi = "https://pypi.org/project/" + package
+
     yaml_content = {
         "package": {"name": package, "version": version},
         "source": {"url": url, "sha256": sha256},
         "test": {"imports": [package]},
+        "about": {
+            "home": homepage,
+            "PyPi": pypi,
+            "summary": summary,
+            "license": license,
+        },
     }
 
     if not (PACKAGES_ROOT / package).is_dir():
         os.makedirs(PACKAGES_ROOT / package)
     with open(PACKAGES_ROOT / package / "meta.yaml", "w") as fd:
-        yaml.dump(yaml_content, fd, default_flow_style=False)
+        yaml.dump(yaml_content, fd)
 
 
 class bcolors:
