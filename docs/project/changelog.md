@@ -13,7 +13,7 @@ substitutions:
 
 ## [Unreleased]
 
-- {{ API }} {any}`loadPyodide` no longer automatically stores the API into a
+- {{ API }} {any}`loadPyodide <globalThis.loadPyodide>` no longer automatically stores the API into a
   global variable called `pyodide`. To get old behavior, say `globalThis.pyodide
   = await loadPyodide({...})`.
   {pr}`1597`
@@ -38,6 +38,13 @@ substitutions:
   type. This is particularly important if the error is a `KeyboardInterrupt`.
   {pr}`1447`
 
+- {{ Enhancement }} Added {any}`Console` class closely based on the Python standard
+  library `code.InteractiveConsole` but with support for top level await and
+  stream redirection. Also added the subclass {any}`PyodideConsole` which
+  automatically uses {any}`pyodide.loadPackagesFromImports` on the code before running
+  it.
+  {pr}`1125`, {pr}`1155`, {pr}`1635`
+
 - {{ Update }} Pyodide now runs Python 3.9.5.
   {pr}`1637`
 
@@ -59,7 +66,7 @@ substitutions:
 
 - The following standard library modules are now available as standalone packages
    - distlib
-  They are loaded by default in {any}`globalThis.loadPyodide`, however this behavior
+  They are loaded by default in {any}`loadPyodide <globalThis.loadPyodide>`, however this behavior
   can be disabled with the `fullStdLib` parameter set to `false`.
   All optional stdlib modules can then be loaded as needed with
   {any}`pyodide.loadPackage`. {pr}`1543`
