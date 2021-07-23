@@ -401,6 +401,7 @@ class PyProxyClass {
       Module.fatal_error(e);
     } finally {
       Module.hiwire.decref(proxies_id);
+      Module.hiwire.decref(dict_converter_id);
     }
     if (idresult === 0) {
       Module._pythonexc2js();
