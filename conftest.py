@@ -98,6 +98,7 @@ class SeleniumWrapper:
                 let pyodide = await loadPyodide({ indexURL : './', fullStdLib: false, jsglobals : self });
                 self.pyodide = pyodide;
                 globalThis.pyodide = pyodide;
+                pyodide._module.inTestHoist = true; // improve some error messages for tests
                 pyodide.globals.get;
                 pyodide.pyodide_py.eval_code;
                 pyodide.pyodide_py.eval_code_async;
