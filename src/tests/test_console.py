@@ -287,10 +287,9 @@ async def test_console_imports():
         res = shell.push(input)
         assert res.syntax_check == "complete"
         return await res
-      
+
     assert await get_result("import pytz") == None
     assert await get_result("pytz.utc.zone") == "UTC"
-
 
 
 @pytest.fixture(params=["firefox", "chrome"], scope="function")
