@@ -361,14 +361,25 @@ class PyProxyClass {
    * generated structure. The most common use case is to create a new empty
    * list, pass the list as `pyproxies`, and then later iterate over `pyproxies`
    * to destroy all of created proxies.
-   * @param {bool} [options.create_pyproxies] If false, `toJs` will throw a
+   * @param {bool} [options.create_pyproxies] If false, ``toJs`` will throw a
    * ``ConversionError`` rather than producing a ``PyProxy``.
+   * @param {bool} [options.dict_converter] A function to be called on an
+   * iterable of pairs ``[key, value]``. Convert this iterable of pairs to the
+   * desired output. For instance, ``Object.fromEntries`` would convert the dict
+   * to an object, ``Array.from`` converts it to an array of entries, and ``(it) =>
+   * new Map(it)`` converts it to a ``Map`` (which is the default behavior).
    * @return {any} The Javascript object resulting from the conversion.
    */
-  toJs({ depth = -1, pyproxies, create_pyproxies = true } = {}) {
+  toJs({
+    depth = -1,
+    pyproxies,
+    create_pyproxies = true,
+    dict_converter,
+  } = {}) {
     let ptrobj = _getPtr(this);
     let idresult;
     let proxies_id;
+    let dict_converter_id = 0;
     if (!create_pyproxies) {
       proxies_id = 0;
     } else if (pyproxies) {
@@ -376,12 +387,21 @@ class PyProxyClass {
     } else {
       proxies_id = Module.hiwire.new_value([]);
     }
+    if (dict_converter) {
+      dict_converter_id = Module.hiwire.new_value(dict_converter);
+    }
     try {
-      idresult = Module._python2js_with_depth(ptrobj, depth, proxies_id);
+      idresult = Module._python2js_custom_dict_converter(
+        ptrobj,
+        depth,
+        proxies_id,
+        dict_converter_id
+      );
     } catch (e) {
       Module.fatal_error(e);
     } finally {
       Module.hiwire.decref(proxies_id);
+      Module.hiwire.decref(dict_converter_id);
     }
     if (idresult === 0) {
       Module._pythonexc2js();

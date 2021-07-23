@@ -108,6 +108,18 @@ substitutions:
   now takes `depth` as a named argument. Also `to_js` and `to_py` only take
   depth as a keyword argument.
   {pr}`1721`
+- {{ API }} `toJs` and `to_js` now take an option `pyproxies`, if a Javascript
+  Array is passed for this, then any proxies created during conversion will be
+  placed into this array. This allows easy cleanup later. The `create_pyproxies`
+  option can be used to disable creation of pyproxies during conversion
+  (instead a `ConversionError` is raised).
+  {pr}`1726`
+- {{ API }} `toJs` and `to_js` now take an option `dict_converter` which will be
+  called on a Javascript iterable of two-element Arrays as the final step of
+  converting dictionaries. For instance, pass `Object.fromEntries` to convert to
+  an object or `Array.from` to convert to an array of pairs.
+  {pr}`1742`
+
 
 ### pyodide-build
 

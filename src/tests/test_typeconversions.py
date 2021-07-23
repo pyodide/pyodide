@@ -403,6 +403,63 @@ def test_wrong_way_conversions(selenium):
     )
 
 
+def test_dict_converter(selenium):
+    assert (
+        selenium.run_js(
+            """
+            self.arrayFrom = Array.from;
+            return pyodide.runPython(`
+                from js import arrayFrom
+                from pyodide import to_js
+                res = to_js({ x : x + 2 for x in range(5)}, dict_converter=arrayFrom)
+                res
+            `)
+            """
+        )
+        == [[0, 2], [1, 3], [2, 4], [3, 5], [4, 6]]
+    )
+
+    assert (
+        selenium.run_js(
+            """
+            let px = pyodide.runPython("{ x : x + 2 for x in range(5)}");
+            let result = px.toJs({dict_converter : Array.from});
+            px.destroy();
+            return result;
+            """
+        )
+        == [[0, 2], [1, 3], [2, 4], [3, 5], [4, 6]]
+    )
+
+    assert (
+        selenium.run_js(
+            """
+            return pyodide.runPython(`
+                from js import Object
+                from pyodide import to_js
+                res = to_js({ x : x + 2 for x in range(5)}, dict_converter=Object.fromEntries)
+                res
+            `);
+            """
+        )
+        == {"0": 2, "1": 3, "2": 4, "3": 5, "4": 6}
+    )
+
+    assert (
+        selenium.run_js(
+            """
+            let px = pyodide.runPython("{ x : x + 2 for x in range(5)}");
+            let result = px.toJs({dict_converter : Object.fromEntries});
+            px.destroy();
+            return result;
+            """
+        )
+        == {"0": 2, "1": 3, "2": 4, "3": 5, "4": 6}
+    )
+
+    selenium.run("del res; del arrayFrom; del Object")
+
+
 def test_python2js_long_ints(selenium):
     assert selenium.run("2**30") == 2 ** 30
     assert selenium.run("2**31") == 2 ** 31

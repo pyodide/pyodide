@@ -1,6 +1,6 @@
 # type: ignore
 
-from typing import Any, Callable
+from typing import Any, Callable, Iterable
 
 # All docstrings for public `core` APIs should be extracted from here. We use
 # the utilities in `docstring.py` and `docstring.c` to format them
@@ -130,7 +130,8 @@ try:
         *,
         depth: int = -1,
         pyproxies: JsProxy = None,
-        create_pyproxies: bool = True
+        create_pyproxies: bool = True,
+        dict_converter: Callable[[Iterable[JsProxy]], JsProxy] = None,
     ) -> JsProxy:
         """Convert the object to Javascript.
 
@@ -160,6 +161,15 @@ try:
         create_pyproxies: bool, default=True
             If you set this to False, :any:`to_js` will raise an error
 
+        dict_converter: Callable[[Iterable[JsProxy]], JsProxy], defauilt = None
+            This converter if provided recieves a (Javascript) iterable of
+            (Javascript) pairs [key, value]. It is expected to return the
+            desired result of the dict conversion. Some suggested values for
+            this argument:
+
+                js.Map.new -- similar to the default behavior
+                js.Array.from -- convert to an array of entries
+                js.Object.fromEntries -- convert to a Javascript object
         """
         return obj
 
