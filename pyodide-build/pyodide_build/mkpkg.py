@@ -64,6 +64,7 @@ def make_package(package: str, version: Optional[str] = None):
     but will have to be edited for more complex things.
     """
     from ruamel.yaml import YAML
+
     yaml = YAML()
 
     pypi_metadata = _get_metadata(package, version)
@@ -72,17 +73,22 @@ def make_package(package: str, version: Optional[str] = None):
     url = sdist_metadata["url"]
     sha256 = sdist_metadata["digests"]["sha256"]
     version = pypi_metadata["info"]["version"]
-    
+
     homepage = pypi_metadata["info"]["home_page"]
     summary = pypi_metadata["info"]["summary"]
     license = pypi_metadata["info"]["license"]
     pypi = "https://pypi.org/project/" + package
-    
+
     yaml_content = {
         "package": {"name": package, "version": version},
         "source": {"url": url, "sha256": sha256},
         "test": {"imports": [package]},
-        "about": {"home": homepage, "PyPi": pypi, "summary": summary, "license": license}
+        "about": {
+            "home": homepage,
+            "PyPi": pypi,
+            "summary": summary,
+            "license": license,
+        },
     }
 
     if not (PACKAGES_ROOT / package).is_dir():
