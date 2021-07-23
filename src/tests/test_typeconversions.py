@@ -452,7 +452,7 @@ def test_dict_converter(selenium):
             let result = px.toJs({dict_converter : Object.fromEntries});
             px.destroy();
             return result;
-        """
+            """
         )
         == {"0": 2, "1": 3, "2": 4, "3": 5, "4": 6}
     )
