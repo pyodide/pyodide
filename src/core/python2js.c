@@ -33,7 +33,7 @@ typedef struct ConversionContext_s
                            JsRef key,
                            JsRef value,
                            struct ConversionContext_s context);
-  JsRef (*dict_post)(JsRef dict, struct ConversionContext_s context);
+  JsRef (*dict_postprocess)(JsRef dict, struct ConversionContext_s context);
 } ConversionContext;
 
 JsRef
@@ -184,8 +184,8 @@ _python2js_dict(PyObject* x, ConversionContext context)
     hiwire_CLEAR(jskey);
     hiwire_CLEAR(jsval);
   }
-  if (context.dict_post) {
-    JsRef temp = context.dict_post(jsdict, context);
+  if (context.dict_postprocess) {
+    JsRef temp = context.dict_postprocess(jsdict, context);
     FAIL_IF_NULL(temp);
     hiwire_CLEAR(jsdict);
     jsdict = temp;
@@ -452,7 +452,7 @@ python2js_track_proxies(PyObject* x, JsRef proxies)
 }
 
 /**
- * Do a shallow conversion from python2js. Convert immutable types with
+ * Do a translation from Python to Javascript. Convert immutable types with
  * equivalent Javascript immutable types, but all other types are proxied.
  */
 JsRef
@@ -475,24 +475,17 @@ _JsMap_Set(JsRef map, JsRef key, JsRef value, ConversionContext context)
 }
 
 /**
- * Do a deep conversion from Python to Javascript, converting lists, dicts, and
- * sets down to depth "depth".
+ * Do a conversion from Python to Javascript using settings from
+ * ConversionContext
  */
 JsRef
-python2js_with_depth(PyObject* x, int depth, JsRef proxies)
+python2js_with_context(PyObject* x, ConversionContext context)
 {
   PyObject* cache = PyDict_New();
   if (cache == NULL) {
     return NULL;
   }
-  ConversionContext context = {
-    .cache = cache,
-    .depth = depth,
-    .proxies = proxies,
-    .dict_new = _JsMap_New,
-    .dict_add_keyvalue = _JsMap_Set,
-    .dict_post = NULL,
-  };
+  context.cache = cache;
   JsRef result = _python2js(x, context);
   // Destroy the cache. Because the cache has raw JsRefs inside, we need to
   // manually dealloc them.
@@ -515,6 +508,83 @@ python2js_with_depth(PyObject* x, int depth, JsRef proxies)
                       "Internal error occurred in python2js_with_depth");
     }
   }
+  return result;
+}
+
+/**
+ * Do a conversion from Python to Javascript, converting lists, dicts, and sets
+ * down to depth "depth".
+ */
+JsRef
+python2js_with_depth(PyObject* x, int depth, JsRef proxies)
+{
+  ConversionContext context = {
+    .depth = depth,
+    .proxies = proxies,
+    .dict_new = _JsMap_New,
+    .dict_add_keyvalue = _JsMap_Set,
+  };
+  return python2js_with_context(context);
+}
+
+static JsRef
+_JsArray_New(ConversionContext context)
+{
+  return JsArray_New();
+}
+
+EM_JS_NUM(int,
+          _JsArray_PushEntry_helper,
+          (JsRef array, JsRef key, JsRef value),
+          {
+            Module.hiwire.get_value(array).push(
+              [ Module.hiwire.get_value(key), Module.hiwire.get_value(value) ]);
+          })
+
+static int
+_JsArray_PushEntry(ConversionContext context,
+                   JsRef array,
+                   JsRef key,
+                   JsRef value)
+{
+  return _JsArray_PushEntry_helper(array, key, value);
+}
+
+EM_JS_REF(JsRef, _JsArray_PostProcess_helper, (JsRef jscontext, JsRef array), {
+  return Module.hiwire.new_value(
+    Module.hiwire.get_value(jscontext).dict_converter(
+      Module.hiwire.get_value(array)));
+})
+
+static JsRef
+_JsArray_PostProcess(ConversionContext context, JsRef array)
+{
+  return _JsArray_PostProcess_helper(context.jscontext, array);
+}
+
+JsRef
+python2js_custom_dict_converter(PyObject* x,
+                                int depth,
+                                JsRef proxies,
+                                JsRef dict_converter)
+{
+  if (dict_converter == NULL) {
+    return python2js_with_depth(x, depth, proxies);
+  }
+  JsRef jscontext = (JsRef)EM_ASM_INT({
+    return Module.hiwire.new_value(
+      { dict_converter : Module.hiwire.get_value(dict_converter) });
+  });
+  ConversionContext context = {
+    .depth = depth,
+    .proxies = proxies,
+    .dict_new = _JsArray_New,
+    .dict_add_keyvalue = _JsArray_PushEntry,
+    .dict_postprocess = _JsArray_PostProcess,
+    .jscontext = jscontext,
+  };
+  JsRef result = python2js_with_context(context);
+  hiwire_CLEAR(jscontext);
   return result;
 }
 
