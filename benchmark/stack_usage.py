@@ -5,13 +5,14 @@ import pytest
 def print_info():
     headings = [
         "browser",
+        "py_limit",
         "py_usage",
         "js_depth",
         "py_depth",
         "js_depth/py_usage",
         "js_depth/py_depth",
     ]
-    fmt = "## {{:{:d}s}}  {{:{:d}.2f}}  {{:{:d}g}}  {{:{:d}g}}  {{:{:d}g}}  {{:{:d}g}}".format(
+    fmt = "## {{:{:d}s}}  {{:{:d}g}}  {{:{:d}.2f}}  {{:{:d}g}}  {{:{:d}g}}  {{:{:d}g}}  {{:{:d}g}}".format(
         *map(len, headings)
     )
     printed_heading = False
@@ -31,12 +32,13 @@ def print_info():
 def test_stack_usage(selenium, print_info):
     res = selenium.run_js(
         """
-        window.measure_available_js_stack_depth = () => {
+        self.measure_available_js_stack_depth = () => {
             let depth = 0;
             function recurse() { depth += 1; recurse(); }
             try { recurse(); } catch (err) { }
             return depth;
         };
+        let py_limit = pyodide.runPython("import sys; sys.getrecursionlimit()");
         let py_usage = pyodide.runPython(`
             from js import measure_available_js_stack_depth
             def recurse(n):
@@ -44,7 +46,7 @@ def test_stack_usage(selenium, print_info):
             (recurse(0)-recurse(100))/100
         `);
         let js_depth = measure_available_js_stack_depth();
-        window.py_depth = [0];
+        self.py_depth = [0];
         try {
         pyodide.runPython(`
         import sys
@@ -59,6 +61,7 @@ def test_stack_usage(selenium, print_info):
 
         py_depth = py_depth[0];
         return [
+            py_limit,
             py_usage,
             js_depth,
             py_depth,

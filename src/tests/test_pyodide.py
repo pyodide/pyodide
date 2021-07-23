@@ -514,8 +514,10 @@ def test_fatal_error(selenium_standalone):
         x = re.sub("/lib/python.*/", "", x)
         x = re.sub("/lib/python.*/", "", x)
         x = re.sub("warning: no [bB]lob.*\n", "", x)
-        x = re.sub("Error: intentionally triggered fatal error!", "{}", x)
+        x = re.sub("Error: intentionally triggered fatal error!\n", "", x)
         x = re.sub(" +at .*\n", "", x)
+        x = re.sub(".*@https?://[0-9.:]*/.*\n", "", x)
+        x = x.replace("\n\n", "\n")
         return x
 
     assert (
@@ -526,7 +528,6 @@ def test_fatal_error(selenium_standalone):
                 Python initialization complete
                 Pyodide has suffered a fatal error. Please report this to the Pyodide maintainers.
                 The cause of the fatal error was:
-                {}
                 Stack (most recent call first):
                   File "<exec>", line 8 in h
                   File "<exec>", line 6 in g

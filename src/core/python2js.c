@@ -20,8 +20,15 @@ _python2js_immutable(PyObject* x);
 int
 _python2js_add_to_cache(PyObject* cache, PyObject* pyparent, JsRef jsparent);
 
+typedef struct
+{
+  PyObject* cache;
+  int depth;
+  JsRef proxies;
+} ConversionContext;
+
 JsRef
-_python2js(PyObject* x, PyObject* cache, int depth, JsRef proxies);
+_python2js(PyObject* x, ConversionContext context);
 
 ///////////////////////////////////////////////////////////////////////////////
 //
@@ -105,7 +112,7 @@ _python2js_unicode(PyObject* x)
  * returns NULL, we must assume that the cache has been corrupted and bail out.
  */
 static JsRef
-_python2js_sequence(PyObject* x, PyObject* cache, int depth, JsRef proxies)
+_python2js_sequence(PyObject* x, ConversionContext context)
 {
   bool success = false;
   PyObject* pyitem = NULL;
@@ -114,13 +121,13 @@ _python2js_sequence(PyObject* x, PyObject* cache, int depth, JsRef proxies)
   JsRef jsarray = NULL;
 
   jsarray = JsArray_New();
-  FAIL_IF_MINUS_ONE(_python2js_add_to_cache(cache, x, jsarray));
+  FAIL_IF_MINUS_ONE(_python2js_add_to_cache(context.cache, x, jsarray));
   Py_ssize_t length = PySequence_Size(x);
   FAIL_IF_MINUS_ONE(length);
   for (Py_ssize_t i = 0; i < length; ++i) {
     PyObject* pyitem = PySequence_GetItem(x, i);
     FAIL_IF_NULL(pyitem);
-    jsitem = _python2js(pyitem, cache, depth, proxies);
+    jsitem = _python2js(pyitem, context);
     FAIL_IF_NULL(jsitem);
     JsArray_Push(jsarray, jsitem);
     Py_CLEAR(pyitem);
@@ -141,7 +148,7 @@ finally:
  * returns NULL, we must assume that the cache has been corrupted and bail out.
  */
 static JsRef
-_python2js_dict(PyObject* x, PyObject* cache, int depth, JsRef proxies)
+_python2js_dict(PyObject* x, ConversionContext context)
 {
   bool success = false;
   JsRef jskey = NULL;
@@ -150,7 +157,7 @@ _python2js_dict(PyObject* x, PyObject* cache, int depth, JsRef proxies)
   JsRef jsdict = NULL;
 
   jsdict = JsMap_New();
-  FAIL_IF_MINUS_ONE(_python2js_add_to_cache(cache, x, jsdict));
+  FAIL_IF_MINUS_ONE(_python2js_add_to_cache(context.cache, x, jsdict));
   PyObject *pykey, *pyval;
   Py_ssize_t pos = 0;
   while (PyDict_Next(x, &pos, &pykey, &pyval)) {
@@ -161,7 +168,7 @@ _python2js_dict(PyObject* x, PyObject* cache, int depth, JsRef proxies)
         conversion_error, "Cannot use %R as a key for a Javascript Map", pykey);
       FAIL();
     }
-    jsval = _python2js(pyval, cache, depth, proxies);
+    jsval = _python2js(pyval, context);
     FAIL_IF_NULL(jsval);
     FAIL_IF_MINUS_ONE(JsMap_Set(jsdict, jskey, jsval));
     hiwire_CLEAR(jskey);
@@ -188,7 +195,7 @@ finally:
  * can't convert).
  */
 static JsRef
-_python2js_set(PyObject* x, PyObject* cache, int depth)
+_python2js_set(PyObject* x, ConversionContext context)
 {
   bool success = false;
   PyObject* iter = NULL;
@@ -215,7 +222,7 @@ _python2js_set(PyObject* x, PyObject* cache, int depth)
   FAIL_IF_ERR_OCCURRED();
   // Because we only convert immutable keys, we can do this here.
   // Otherwise, we'd fail on the set that contains itself.
-  FAIL_IF_MINUS_ONE(_python2js_add_to_cache(cache, x, jsset));
+  FAIL_IF_MINUS_ONE(_python2js_add_to_cache(context.cache, x, jsset));
   success = true;
 finally:
   Py_CLEAR(pykey);
@@ -287,25 +294,25 @@ _python2js_proxy(PyObject* x)
  * we want to convert at least the outermost layer.
  */
 static JsRef
-_python2js_deep(PyObject* x, PyObject* cache, int depth, JsRef proxies)
+_python2js_deep(PyObject* x, ConversionContext context)
 {
   RETURN_IF_HAS_VALUE(_python2js_immutable(x));
   RETURN_IF_HAS_VALUE(_python2js_proxy(x));
   if (PyList_Check(x) || PyTuple_Check(x)) {
-    return _python2js_sequence(x, cache, depth, proxies);
+    return _python2js_sequence(x, context);
   }
   if (PyDict_Check(x)) {
-    return _python2js_dict(x, cache, depth, proxies);
+    return _python2js_dict(x, context);
   }
   if (PySet_Check(x)) {
-    return _python2js_set(x, cache, depth);
+    return _python2js_set(x, context);
   }
   if (PyObject_CheckBuffer(x)) {
     return _python2js_buffer(x);
   }
-  if (proxies) {
+  if (context.proxies) {
     JsRef proxy = pyproxy_new(x);
-    JsArray_Push(proxies, proxy);
+    JsArray_Push(context.proxies, proxy);
     return proxy;
   }
   PyErr_SetString(conversion_error, "No conversion known for x.");
@@ -362,20 +369,21 @@ finally:
  * the cache. It leaves any real work to python2js or _python2js_deep.
  */
 JsRef
-_python2js(PyObject* x, PyObject* cache, int depth, JsRef proxies)
+_python2js(PyObject* x, ConversionContext context)
 {
   PyObject* id = PyLong_FromSize_t((size_t)x);
   FAIL_IF_NULL(id);
-  PyObject* val = PyDict_GetItemWithError(cache, id); /* borrowed */
+  PyObject* val = PyDict_GetItemWithError(context.cache, id); /* borrowed */
   Py_CLEAR(id);
   if (val != NULL) {
     return hiwire_incref((JsRef)PyLong_AsSize_t(val));
   }
   FAIL_IF_ERR_OCCURRED();
-  if (depth == 0) {
-    return python2js_track_proxies(x, proxies);
+  if (context.depth == 0) {
+    return python2js_track_proxies(x, context.proxies);
   } else {
-    return _python2js_deep(x, cache, depth - 1, proxies);
+    context.depth--;
+    return _python2js_deep(x, context);
   }
 finally:
   return NULL;
@@ -448,7 +456,12 @@ python2js_with_depth(PyObject* x, int depth, JsRef proxies)
   if (cache == NULL) {
     return NULL;
   }
-  JsRef result = _python2js(x, cache, depth, proxies);
+  ConversionContext context = {
+    .cache = cache,
+    .depth = depth,
+    .proxies = proxies,
+  };
+  JsRef result = _python2js(x, context);
   // Destroy the cache. Because the cache has raw JsRefs inside, we need to
   // manually dealloc them.
   PyObject *pykey, *pyval;
@@ -481,10 +494,30 @@ to_js(PyObject* self,
 {
   PyObject* obj = NULL;
   int depth = -1;
-  static const char* const _keywords[] = { "depth", 0 };
-  static struct _PyArg_Parser _parser = { "O|$i:to_js", _keywords, 0 };
-  if (kwnames != NULL && !_PyArg_ParseStackAndKeywords(
-                           args, nargs, kwnames, &_parser, &obj, &depth)) {
+  PyObject* pyproxies = NULL;
+  bool create_proxies = true;
+  static const char* const _keywords[] = {
+    "", "depth", "pyproxies", "create_pyproxies", 0
+  };
+  // See argparse docs on format strings:
+  // https://docs.python.org/3/c-api/arg.html?highlight=pyarg_parse#parsing-arguments
+  // O|$iOp:to_js
+  // O            - Object
+  //  |           - start of optional args
+  //   $          - start of kwonly args
+  //    i         - signed integer
+  //     O        - Object
+  //      p       - predicate (ie bool)
+  //       :to_js - name of this function for error messages
+  static struct _PyArg_Parser _parser = { "O|$iOp:to_js", _keywords, 0 };
+  if (kwnames != NULL && !_PyArg_ParseStackAndKeywords(args,
+                                                       nargs,
+                                                       kwnames,
+                                                       &_parser,
+                                                       &obj,
+                                                       &depth,
+                                                       &pyproxies,
+                                                       &create_proxies)) {
     return NULL;
   }
 
@@ -500,7 +533,23 @@ to_js(PyObject* self,
   JsRef js_result = NULL;
   PyObject* py_result = NULL;
 
-  proxies = JsArray_New();
+  if (!create_proxies) {
+    proxies = NULL;
+  } else if (pyproxies) {
+    if (!JsProxy_Check(pyproxies)) {
+      PyErr_SetString(PyExc_TypeError,
+                      "Expected a JsProxy for the pyproxies argument");
+      FAIL();
+    }
+    proxies = JsProxy_AsJs(pyproxies);
+    if (!JsArray_Check(proxies)) {
+      PyErr_SetString(PyExc_TypeError,
+                      "Expected a Js Array for the pyproxies argument");
+      FAIL();
+    }
+  } else {
+    proxies = JsArray_New();
+  }
   js_result = python2js_with_depth(obj, depth, proxies);
   FAIL_IF_NULL(js_result);
   if (hiwire_is_pyproxy(js_result)) {
@@ -515,11 +564,50 @@ finally:
   return py_result;
 }
 
+EM_JS_NUM(errcode, destroy_proxies_js, (JsRef proxies_id), {
+  for (let proxy of Module.hiwire.get_value(proxies_id)) {
+    proxy.destroy();
+  }
+})
+
+static PyObject*
+destroy_proxies(PyObject* self, PyObject* arg)
+{
+  if (!JsProxy_Check(arg)) {
+    PyErr_SetString(PyExc_TypeError, "Expected a JsProxy for the argument");
+    return NULL;
+  }
+  bool success = false;
+  JsRef proxies = NULL;
+
+  proxies = JsProxy_AsJs(arg);
+  if (!JsArray_Check(proxies)) {
+    PyErr_SetString(PyExc_TypeError,
+                    "Expected a Js Array for the pyproxies argument");
+    FAIL();
+  }
+  FAIL_IF_MINUS_ONE(destroy_proxies_js(proxies));
+
+  success = true;
+finally:
+  hiwire_CLEAR(proxies);
+  if (success) {
+    Py_RETURN_NONE;
+  } else {
+    return NULL;
+  }
+}
+
 static PyMethodDef methods[] = {
   {
     "to_js",
     (PyCFunction)to_js,
     METH_FASTCALL | METH_KEYWORDS,
+  },
+  {
+    "destroy_proxies",
+    (PyCFunction)destroy_proxies,
+    METH_O,
   },
   { NULL } /* Sentinel */
 };

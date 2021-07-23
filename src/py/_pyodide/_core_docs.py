@@ -23,6 +23,9 @@ try:
         def js_error(self):
             """The original Javascript error"""
 
+    class ConversionError(Exception):
+        """An error thrown when conversion between Javascript and Python fails."""
+
     class JsProxy:
         """A proxy to make a Javascript object behave like a Python object
 
@@ -122,7 +125,13 @@ try:
 
     # from python2js
 
-    def to_js(obj: Any, depth: int = -1) -> JsProxy:
+    def to_js(
+        obj: Any,
+        *,
+        depth: int = -1,
+        pyproxies: JsProxy = None,
+        create_pyproxies: bool = True
+    ) -> JsProxy:
         """Convert the object to Javascript.
 
         This is similar to :any:`PyProxy.toJs`, but for use from Python. If the
@@ -132,8 +141,37 @@ try:
         used :any:`pyodide.create_proxy`.
 
         See :ref:`type-translations-pyproxy-to-js` for more information.
+
+        Parameters
+        ----------
+        obj : Any
+            The Python object to convert
+
+        depth : int, default=-1
+            The maximum depth to do the conversion. Negative numbers are treated
+            as infinite. Set this to 1 to do a shallow conversion.
+
+        pyproxies: JsProxy, default = None
+            Should be a Javascript ``Array``. If provided, any ``PyProxies`` generated
+            will be stored here. You can later use :any:`destroy_proxies` if you want
+            to destroy the proxies from Python (or from Javascript you can just iterate
+            over the ``Array`` and destroy the proxies).
+
+        create_pyproxies: bool, default=True
+            If you set this to False, :any:`to_js` will raise an error
+
         """
         return obj
+
+    def destroy_proxies(pyproxies: JsProxy):
+        """Destroy all PyProxies in a Javascript array.
+
+        pyproxies must be a JsProxy of type PyProxy[]. Intended for use with the
+        arrays created from the "pyproxies" argument of :any:`toJs` and
+        :any:`to_js`. This method is necessary because indexing the Array from
+        Python automatically unwraps the PyProxy into the wrapped Python object.
+        """
+        pass
 
 
 finally:
