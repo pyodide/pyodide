@@ -361,13 +361,13 @@ class PyProxyClass {
    * generated structure. The most common use case is to create a new empty
    * list, pass the list as `pyproxies`, and then later iterate over `pyproxies`
    * to destroy all of created proxies.
-   * @param {bool} [options.create_pyproxies] If false, `toJs` will throw a
+   * @param {bool} [options.create_pyproxies] If false, ``toJs`` will throw a
    * ``ConversionError`` rather than producing a ``PyProxy``.
    * @param {bool} [options.dict_converter] A function to be called on an
-   * iterable of pairs `[key, value]`. Convert this iterable of pairs to the
-   * desired output. For instance, `Object.fromEntries` would convert the dict
-   * to an object, `Array.from` converts it to an array of entries, and `(it) =>
-   * new Map(it)` converts it to a `Map` (which is the default behavior).
+   * iterable of pairs ``[key, value]``. Convert this iterable of pairs to the
+   * desired output. For instance, ``Object.fromEntries`` would convert the dict
+   * to an object, ``Array.from`` converts it to an array of entries, and ``(it) =>
+   * new Map(it)`` converts it to a ``Map`` (which is the default behavior).
    * @return {any} The Javascript object resulting from the conversion.
    */
   toJs({

@@ -118,7 +118,7 @@ substitutions:
   called on a Javascript iterable of two-element Arrays as the final step of
   converting dictionaries. For instance, pass `Object.fromEntries` to convert to
   an object or `Array.from` to convert to an array of pairs.
-  {pr}`1726`
+  {pr}`1742`
 
 
 ### pyodide-build

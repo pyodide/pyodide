@@ -29,15 +29,15 @@ typedef struct ConversionContext_s
   JsRef proxies;
   JsRef jscontext;
   JsRef (*dict_new)(struct ConversionContext_s context);
-  int (*dict_add_keyvalue)(JsRef target,
+  int (*dict_add_keyvalue)(struct ConversionContext_s context,
+                           JsRef target,
                            JsRef key,
-                           JsRef value,
-                           struct ConversionContext_s context);
-  JsRef (*dict_postprocess)(JsRef dict, struct ConversionContext_s context);
+                           JsRef value);
+  JsRef (*dict_postprocess)(struct ConversionContext_s context, JsRef dict);
 } ConversionContext;
 
 JsRef
-_python2js(PyObject* x, ConversionContext context);
+_python2js(ConversionContext context, PyObject* x);
 
 ///////////////////////////////////////////////////////////////////////////////
 //
@@ -121,7 +121,7 @@ _python2js_unicode(PyObject* x)
  * returns NULL, we must assume that the cache has been corrupted and bail out.
  */
 static JsRef
-_python2js_sequence(PyObject* x, ConversionContext context)
+_python2js_sequence(ConversionContext context, PyObject* x)
 {
   bool success = false;
   PyObject* pyitem = NULL;
@@ -136,7 +136,7 @@ _python2js_sequence(PyObject* x, ConversionContext context)
   for (Py_ssize_t i = 0; i < length; ++i) {
     PyObject* pyitem = PySequence_GetItem(x, i);
     FAIL_IF_NULL(pyitem);
-    jsitem = _python2js(pyitem, context);
+    jsitem = _python2js(context, pyitem);
     FAIL_IF_NULL(jsitem);
     JsArray_Push(jsarray, jsitem);
     Py_CLEAR(pyitem);
@@ -157,7 +157,7 @@ finally:
  * returns NULL, we must assume that the cache has been corrupted and bail out.
  */
 static JsRef
-_python2js_dict(PyObject* x, ConversionContext context)
+_python2js_dict(ConversionContext context, PyObject* x)
 {
   bool success = false;
   JsRef jskey = NULL;
@@ -178,14 +178,14 @@ _python2js_dict(PyObject* x, ConversionContext context)
         conversion_error, "Cannot use %R as a key for a Javascript Map", pykey);
       FAIL();
     }
-    jsval = _python2js(pyval, context);
+    jsval = _python2js(context, pyval);
     FAIL_IF_NULL(jsval);
-    FAIL_IF_MINUS_ONE(context.dict_add_keyvalue(jsdict, jskey, jsval, context));
+    FAIL_IF_MINUS_ONE(context.dict_add_keyvalue(context, jsdict, jskey, jsval));
     hiwire_CLEAR(jskey);
     hiwire_CLEAR(jsval);
   }
   if (context.dict_postprocess) {
-    JsRef temp = context.dict_postprocess(jsdict, context);
+    JsRef temp = context.dict_postprocess(context, jsdict);
     FAIL_IF_NULL(temp);
     hiwire_CLEAR(jsdict);
     jsdict = temp;
@@ -211,7 +211,7 @@ finally:
  * can't convert).
  */
 static JsRef
-_python2js_set(PyObject* x, ConversionContext context)
+_python2js_set(ConversionContext context, PyObject* x)
 {
   bool success = false;
   PyObject* iter = NULL;
@@ -310,18 +310,18 @@ _python2js_proxy(PyObject* x)
  * we want to convert at least the outermost layer.
  */
 static JsRef
-_python2js_deep(PyObject* x, ConversionContext context)
+_python2js_deep(ConversionContext context, PyObject* x)
 {
   RETURN_IF_HAS_VALUE(_python2js_immutable(x));
   RETURN_IF_HAS_VALUE(_python2js_proxy(x));
   if (PyList_Check(x) || PyTuple_Check(x)) {
-    return _python2js_sequence(x, context);
+    return _python2js_sequence(context, x);
   }
   if (PyDict_Check(x)) {
-    return _python2js_dict(x, context);
+    return _python2js_dict(context, x);
   }
   if (PySet_Check(x)) {
-    return _python2js_set(x, context);
+    return _python2js_set(context, x);
   }
   if (PyObject_CheckBuffer(x)) {
     return _python2js_buffer(x);
@@ -385,7 +385,7 @@ finally:
  * the cache. It leaves any real work to python2js or _python2js_deep.
  */
 JsRef
-_python2js(PyObject* x, ConversionContext context)
+_python2js(ConversionContext context, PyObject* x)
 {
   PyObject* id = PyLong_FromSize_t((size_t)x);
   FAIL_IF_NULL(id);
@@ -399,7 +399,7 @@ _python2js(PyObject* x, ConversionContext context)
     return python2js_track_proxies(x, context.proxies);
   } else {
     context.depth--;
-    return _python2js_deep(x, context);
+    return _python2js_deep(context, x);
   }
 finally:
   return NULL;
@@ -469,7 +469,7 @@ _JsMap_New(ConversionContext context)
 }
 
 static int
-_JsMap_Set(JsRef map, JsRef key, JsRef value, ConversionContext context)
+_JsMap_Set(ConversionContext context, JsRef map, JsRef key, JsRef value)
 {
   return JsMap_Set(map, key, value);
 }
@@ -479,14 +479,14 @@ _JsMap_Set(JsRef map, JsRef key, JsRef value, ConversionContext context)
  * ConversionContext
  */
 JsRef
-python2js_with_context(PyObject* x, ConversionContext context)
+python2js_with_context(ConversionContext context, PyObject* x)
 {
   PyObject* cache = PyDict_New();
   if (cache == NULL) {
     return NULL;
   }
   context.cache = cache;
-  JsRef result = _python2js(x, context);
+  JsRef result = _python2js(context, x);
   // Destroy the cache. Because the cache has raw JsRefs inside, we need to
   // manually dealloc them.
   PyObject *pykey, *pyval;
@@ -524,7 +524,7 @@ python2js_with_depth(PyObject* x, int depth, JsRef proxies)
     .dict_new = _JsMap_New,
     .dict_add_keyvalue = _JsMap_Set,
   };
-  return python2js_with_context(x, context);
+  return python2js_with_context(context, x);
 }
 
 static JsRef
@@ -542,24 +542,24 @@ EM_JS_NUM(int,
           })
 
 static int
-_JsArray_PushEntry(JsRef array,
+_JsArray_PushEntry(ConversionContext context,
+                   JsRef array,
                    JsRef key,
-                   JsRef value,
-                   ConversionContext context)
+                   JsRef value)
 {
   return _JsArray_PushEntry_helper(array, key, value);
 }
 
-EM_JS_REF(JsRef, _JsArray_PostProcess_helper, (JsRef array, JsRef jscontext), {
+EM_JS_REF(JsRef, _JsArray_PostProcess_helper, (JsRef jscontext, JsRef array), {
   return Module.hiwire.new_value(
     Module.hiwire.get_value(jscontext).dict_converter(
       Module.hiwire.get_value(array)));
 })
 
 static JsRef
-_JsArray_PostProcess(JsRef array, ConversionContext context)
+_JsArray_PostProcess(ConversionContext context, JsRef array)
 {
-  return _JsArray_PostProcess_helper(array, context.jscontext);
+  return _JsArray_PostProcess_helper(context.jscontext, array);
 }
 
 JsRef
@@ -585,7 +585,7 @@ python2js_custom_dict_converter(PyObject* x,
     .dict_postprocess = _JsArray_PostProcess,
     .jscontext = jscontext,
   };
-  JsRef result = python2js_with_context(x, context);
+  JsRef result = python2js_with_context(context, x);
   hiwire_CLEAR(jscontext);
   return result;
 }
