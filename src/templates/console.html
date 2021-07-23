@@ -81,11 +81,15 @@
                   })
                 );
               }
-              if (value.destroy) {
+              if (value && value.destroy) {
                 value.destroy();
               }
             } catch (e) {
-              term.error(fut.formatted_error.trimEnd());
+              if (e.constructor.name === "PythonError") {
+                term.error(fut.formatted_error.trimEnd());
+              } else {
+                throw e;
+              }
             }
             fut.destroy();
           }
