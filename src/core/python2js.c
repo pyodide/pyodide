@@ -524,7 +524,7 @@ python2js_with_depth(PyObject* x, int depth, JsRef proxies)
     .dict_new = _JsMap_New,
     .dict_add_keyvalue = _JsMap_Set,
   };
-  return python2js_with_context(context);
+  return python2js_with_context(x, context);
 }
 
 static JsRef
@@ -542,24 +542,24 @@ EM_JS_NUM(int,
           })
 
 static int
-_JsArray_PushEntry(ConversionContext context,
-                   JsRef array,
+_JsArray_PushEntry(JsRef array,
                    JsRef key,
-                   JsRef value)
+                   JsRef value,
+                   ConversionContext context)
 {
   return _JsArray_PushEntry_helper(array, key, value);
 }
 
-EM_JS_REF(JsRef, _JsArray_PostProcess_helper, (JsRef jscontext, JsRef array), {
+EM_JS_REF(JsRef, _JsArray_PostProcess_helper, (JsRef array, JsRef jscontext), {
   return Module.hiwire.new_value(
     Module.hiwire.get_value(jscontext).dict_converter(
       Module.hiwire.get_value(array)));
 })
 
 static JsRef
-_JsArray_PostProcess(ConversionContext context, JsRef array)
+_JsArray_PostProcess(JsRef array, ConversionContext context)
 {
-  return _JsArray_PostProcess_helper(context.jscontext, array);
+  return _JsArray_PostProcess_helper(array, context.jscontext);
 }
 
 JsRef
@@ -583,7 +583,7 @@ python2js_custom_dict_converter(PyObject* x,
     .dict_postprocess = _JsArray_PostProcess,
     .jscontext = jscontext,
   };
-  JsRef result = python2js_with_context(context);
+  JsRef result = python2js_with_context(x, context);
   hiwire_CLEAR(jscontext);
   return result;
 }
@@ -598,20 +598,22 @@ to_js(PyObject* self,
   int depth = -1;
   PyObject* pyproxies = NULL;
   bool create_proxies = true;
+  PyObject* py_dict_converter = NULL;
   static const char* const _keywords[] = {
-    "", "depth", "pyproxies", "create_pyproxies", 0
+    "", "depth", "pyproxies", "create_pyproxies", "dict_converter", 0
   };
   // See argparse docs on format strings:
   // https://docs.python.org/3/c-api/arg.html?highlight=pyarg_parse#parsing-arguments
-  // O|$iOp:to_js
-  // O            - Object
-  //  |           - start of optional args
-  //   $          - start of kwonly args
-  //    i         - signed integer
-  //     O        - Object
-  //      p       - predicate (ie bool)
-  //       :to_js - name of this function for error messages
-  static struct _PyArg_Parser _parser = { "O|$iOp:to_js", _keywords, 0 };
+  // O|$iOpO:to_js
+  // O             - Object
+  //  |            - start of optional args
+  //   $           - start of kwonly args
+  //    i          - signed integer
+  //     O         - Object
+  //      p        - predicate (ie bool)
+  //       O       - Object
+  //        :to_js - name of this function for error messages
+  static struct _PyArg_Parser _parser = { "O|$iOpO:to_js", _keywords, 0 };
   if (kwnames != NULL && !_PyArg_ParseStackAndKeywords(args,
                                                        nargs,
                                                        kwnames,
@@ -619,7 +621,8 @@ to_js(PyObject* self,
                                                        &obj,
                                                        &depth,
                                                        &pyproxies,
-                                                       &create_proxies)) {
+                                                       &create_proxies,
+                                                       &py_dict_converter)) {
     return NULL;
   }
 
@@ -632,6 +635,7 @@ to_js(PyObject* self,
     return obj;
   }
   JsRef proxies = NULL;
+  JsRef js_dict_converter = NULL;
   JsRef js_result = NULL;
   PyObject* py_result = NULL;
 
@@ -652,7 +656,11 @@ to_js(PyObject* self,
   } else {
     proxies = JsArray_New();
   }
-  js_result = python2js_with_depth(obj, depth, proxies);
+  if (py_dict_converter) {
+    js_dict_converter = python2js(py_dict_converter);
+  }
+  js_result =
+    python2js_custom_dict_converter(obj, depth, proxies, js_dict_converter);
   FAIL_IF_NULL(js_result);
   if (hiwire_is_pyproxy(js_result)) {
     // Oops, just created a PyProxy. Wrap it I guess?
