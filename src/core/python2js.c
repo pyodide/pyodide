@@ -571,10 +571,12 @@ python2js_custom_dict_converter(PyObject* x,
   if (dict_converter == NULL) {
     return python2js_with_depth(x, depth, proxies);
   }
-  JsRef jscontext = (JsRef)EM_ASM_INT({
-    return Module.hiwire.new_value(
-      { dict_converter : Module.hiwire.get_value(dict_converter) });
-  });
+  JsRef jscontext = (JsRef)EM_ASM_INT(
+    {
+      return Module.hiwire.new_value(
+        { dict_converter : Module.hiwire.get_value($0) });
+    },
+    dict_converter);
   ConversionContext context = {
     .depth = depth,
     .proxies = proxies,
@@ -669,8 +671,9 @@ to_js(PyObject* self,
     py_result = js2python(js_result);
   }
 finally:
-  hiwire_CLEAR(js_result);
   hiwire_CLEAR(proxies);
+  hiwire_CLEAR(js_dict_converter);
+  hiwire_CLEAR(js_result);
   return py_result;
 }
 
