@@ -75,7 +75,11 @@ async function main() {
   expectType<void>(px.destroy("blah"));
   expectType<void>(px.destroy());
   expectType<any>(px.toJs());
+  expectType<any>(px.toJs({}));
   expectType<any>(px.toJs({depth : 10}));
+  expectType<any>(px.toJs({create_pyproxies : false}));
+  expectType<any>(px.toJs({create_pyproxies : true}));
+  expectType<any>(px.toJs({pyproxies : []}));
   expectType<string>(px.toString());
   expectType<string>(px.type);
 
