@@ -317,6 +317,7 @@ workflows:
       - test-main:
           name: test-core-chrome-webworker
           test-params: -k chrome src/tests/test_webworker.py
+          requires:
             - test-core-chrome
       - test-main:
           name: test-core-firefox-webworker
