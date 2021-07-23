@@ -131,7 +131,7 @@ try:
         depth: int = -1,
         pyproxies: JsProxy = None,
         create_pyproxies: bool = True,
-        dict_converter: Callable[[Iterable[JsProxy]], JsProxy] = None
+        dict_converter: Callable[[Iterable[JsProxy]], JsProxy] = None,
     ) -> JsProxy:
         """Convert the object to Javascript.
 
@@ -145,20 +145,21 @@ try:
 
         Parameters
         ----------
-        obj : Any The Python object to convert
+        obj : Any
+            The Python object to convert
 
-        depth : int, default=-1 The maximum depth to do the conversion. Negative
-            numbers are treated as infinite. Set this to 1 to do a shallow
-            conversion.
+        depth : int, default=-1
+            The maximum depth to do the conversion. Negative numbers are treated
+            as infinite. Set this to 1 to do a shallow conversion.
 
-        pyproxies: JsProxy, default = None Should be a Javascript ``Array``. If
-            provided, any ``PyProxies`` generated will be stored here. You can
-            later use :any:`destroy_proxies` if you want to destroy the proxies
-            from Python (or from Javascript you can just iterate over the
-            ``Array`` and destroy the proxies).
+        pyproxies: JsProxy, default = None
+            Should be a Javascript ``Array``. If provided, any ``PyProxies`` generated
+            will be stored here. You can later use :any:`destroy_proxies` if you want
+            to destroy the proxies from Python (or from Javascript you can just iterate
+            over the ``Array`` and destroy the proxies).
 
-        create_pyproxies: bool, default=True If you set this to False,
-            :any:`to_js` will raise an error
+        create_pyproxies: bool, default=True
+            If you set this to False, :any:`to_js` will raise an error
 
         dict_converter: Callable[[Iterable[JsProxy]], JsProxy], defauilt = None
             This converter if provided recieves a (Javascript) iterable of
