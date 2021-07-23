@@ -49,6 +49,7 @@ __all__ = [
     "unregister_js_module",
     "create_once_callable",
     "create_proxy",
+    "console",
     "should_quiet",
     "ConversionError",
     "destroy_proxies",
