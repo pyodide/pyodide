@@ -1,5 +1,8 @@
 import { Module } from "./module.js";
 
+const IN_NODE =
+  typeof process !== "undefined" && process.release.name !== "undefined";
+
 /** @typedef {import('./pyproxy.js').PyProxy} PyProxy */
 /** @private */
 let baseURL;
@@ -9,16 +12,30 @@ let baseURL;
  */
 export async function initializePackageIndex(indexURL) {
   baseURL = indexURL;
-  if (typeof process !== "undefined" && process.release.name !== "undefined") {
-    const fs = await import("fs");
-    fs.readFile(`${indexURL}packages.json`, (err, data) => {
-      if (err) throw err;
-      let response = JSON.parse(data);
-      Module.packages = response;
-    });
+  let package_json;
+  if (IN_NODE) {
+    const fsPromises = await import("fs/promises");
+    const package_string = await fsPromises.readFile(
+      `${indexURL}packages.json`
+    );
+    package_json = JSON.parse(package_string);
   } else {
     let response = await fetch(`${indexURL}packages.json`);
-    Module.packages = await response.json();
+    package_json = await response.json();
+  }
+  if (!package_json.packages) {
+    throw new Error(
+      "Loaded packages.json does not contain the expected key 'packages'."
+    );
+  }
+  Module.packages = package_json.packages;
+
+  // compute the inverted index for imports to package names
+  Module._import_name_to_package_name = new Map();
+  for (let name of Object.keys(Module.packages)) {
+    for (let import_name of Module.packages[name].imports) {
+      Module._import_name_to_package_name.set(import_name, name);
+    }
   }
 }
 
@@ -78,24 +95,22 @@ function recursiveDependencies(
   errorCallback,
   sharedLibsOnly
 ) {
-  const packages = Module.packages.dependencies;
-  const sharedLibraries = Module.packages.shared_library;
   const toLoad = new Map();
 
-  const addPackage = (pkg) => {
-    pkg = pkg.toLowerCase();
-    if (toLoad.has(pkg)) {
+  const addPackage = (name) => {
+    name = name.toLowerCase();
+    if (toLoad.has(name)) {
       return;
     }
-    toLoad.set(pkg, DEFAULT_CHANNEL);
+    toLoad.set(name, DEFAULT_CHANNEL);
     // If the package is already loaded, we don't add dependencies, but warn
     // the user later. This is especially important if the loaded package is
     // from a custom url, in which case adding dependencies is wrong.
-    if (loadedPackages[pkg] !== undefined) {
+    if (loadedPackages[name] !== undefined) {
       return;
     }
-    for (let dep of packages[pkg]) {
-      addPackage(dep);
+    for (let dep_name of Module.packages[name].depends) {
+      addPackage(dep_name);
     }
   };
   for (let name of names) {
@@ -113,7 +128,7 @@ function recursiveDependencies(
       continue;
     }
     name = name.toLowerCase();
-    if (name in packages) {
+    if (name in Module.packages) {
       addPackage(name);
       continue;
     }
@@ -122,8 +137,9 @@ function recursiveDependencies(
   if (sharedLibsOnly) {
     let onlySharedLibs = new Map();
     for (let c of toLoad) {
-      if (c[0] in sharedLibraries) {
-        onlySharedLibs.set(c[0], toLoad.get(c[0]));
+      name = c[0];
+      if (Module.packages[name].shared_library) {
+        onlySharedLibs.set(name, toLoad.get(name));
       }
     }
     return onlySharedLibs;
@@ -177,7 +193,7 @@ async function _loadPackage(names, messageCallback, errorCallback) {
         continue;
       }
     }
-    let pkgname = Module.packages.orig_case[pkg] || pkg;
+    let pkgname = (Module.packages[pkg] && Module.packages[pkg].name) || pkg;
     let scriptSrc = uri === DEFAULT_CHANNEL ? `${baseURL}${pkgname}.js` : uri;
     messageCallback(`Loading ${pkg} from ${scriptSrc}`);
     scriptPromises.push(

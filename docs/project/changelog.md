@@ -62,6 +62,9 @@ substitutions:
   allowing for custom persistence strategies depending on execution environment
   {pr}`1596`
 
+- {{ API }} The `packages.json` schema for Pyodide was re-designed for better compatibility
+  with conda. {pr}`1700`
+
 ## Standard library
 
 - The following standard library modules are now available as standalone packages

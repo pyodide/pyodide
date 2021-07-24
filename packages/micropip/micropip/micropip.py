@@ -129,7 +129,7 @@ async def _install_wheel(name, fileinfo):
 class _PackageManager:
     def __init__(self):
         if IN_BROWSER:
-            self.builtin_packages = pyodide_js._module.packages.versions.to_py()
+            self.builtin_packages = pyodide_js._module.packages.to_py()
         else:
             self.builtin_packages = {}
         self.installed_packages = {}
@@ -197,9 +197,9 @@ class _PackageManager:
         # the Pyodide package instead of the one on PyPI
         if (
             req.name in self.builtin_packages
-            and self.builtin_packages[req.name] in req.specifier
+            and self.builtin_packages[req.name]["version"] in req.specifier
         ):
-            version = self.builtin_packages[req.name]
+            version = self.builtin_packages[req.name]["version"]
             transaction["pyodide_packages"].append((req.name, version))
             return
 
