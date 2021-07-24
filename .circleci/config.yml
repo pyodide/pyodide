@@ -297,14 +297,15 @@ workflows:
       - build-packages:
           requires:
             - build-core
+
       - test-main:
           name: test-core-chrome
-          test-params: -k chrome src packages/micropip
+          test-params: -k "chrome and not webworker" src packages/micropip
           requires:
             - build-core
       - test-main:
           name: test-core-firefox
-          test-params: -k firefox src packages/micropip
+          test-params: -k "firefox and not webworker" src packages/micropip
           requires:
             - build-core
       - test-main:
@@ -312,6 +313,18 @@ workflows:
           test-params: -k node src packages/micropip
           requires:
             - build-core
+
+      - test-main:
+          name: test-core-chrome-webworker
+          test-params: -k chrome src/tests/test_webworker.py
+          requires:
+            - test-core-chrome
+      - test-main:
+          name: test-core-firefox-webworker
+          test-params: -k firefox src/tests/test_webworker.py
+          requires:
+            - test-core-firefox
+
       - test-main:
           name: test-packages-chrome
           test-params: -k chrome packages/test* packages/*/test*
@@ -327,6 +340,7 @@ workflows:
           test-params: -k "node and not numpy" packages/test* packages/*/test*
           requires:
             - build-packages
+
       - test-emsdk:
           requires:
             - build-core
