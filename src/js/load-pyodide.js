@@ -1,6 +1,7 @@
 import { Module } from "./module.js";
 
-const IN_NODE = (typeof process !== "undefined" && process.release.name !== "undefined");
+const IN_NODE =
+  typeof process !== "undefined" && process.release.name !== "undefined";
 
 /** @typedef {import('./pyproxy.js').PyProxy} PyProxy */
 /** @private */
@@ -192,7 +193,7 @@ async function _loadPackage(names, messageCallback, errorCallback) {
         continue;
       }
     }
-    let pkgname = Module.packages[pkg].name || pkg;
+    let pkgname = (Module.packages[pkg] && Module.packages[pkg].name) || pkg;
     let scriptSrc = uri === DEFAULT_CHANNEL ? `${baseURL}${pkgname}.js` : uri;
     messageCallback(`Loading ${pkg} from ${scriptSrc}`);
     scriptPromises.push(
