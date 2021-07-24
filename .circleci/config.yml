@@ -290,69 +290,136 @@ workflows:
   version: 2
   build-and-deploy:
     jobs:
-      - lint
-      - test-docs
-      - test-python
-      - build-core
+      - lint:
+          filters:
+            tags:
+              only: /.*/
+
+      - test-docs:
+          filters:
+            tags:
+              only: /.*/
+
+      - test-python:
+          filters:
+            tags:
+              only: /.*/
+
+      - build-core:
+          filters:
+            tags:
+              only: /.*/
+
       - build-packages:
           requires:
             - build-core
+          filters:
+            tags:
+              only: /.*/
 
       - test-main:
           name: test-core-chrome
           test-params: -k "chrome and not webworker" src packages/micropip
           requires:
             - build-core
+          filters:
+            tags:
+              only: /.*/
+
       - test-main:
           name: test-core-firefox
           test-params: -k "firefox and not webworker" src packages/micropip
           requires:
             - build-core
+          filters:
+            tags:
+              only: /.*/
+
       - test-main:
           name: test-core-node
           test-params: -k node src packages/micropip
           requires:
             - build-core
+          filters:
+            tags:
+              only: /.*/
+
 
       - test-main:
           name: test-core-chrome-webworker
           test-params: -k chrome src/tests/test_webworker.py
           requires:
             - test-core-chrome
+          filters:
+            tags:
+              only: /.*/
+
       - test-main:
           name: test-core-firefox-webworker
           test-params: -k firefox src/tests/test_webworker.py
           requires:
             - test-core-firefox
+          filters:
+            tags:
+              only: /.*/
+
 
       - test-main:
           name: test-packages-chrome
           test-params: -k chrome packages/test* packages/*/test*
           requires:
             - build-packages
+          filters:
+            tags:
+              only: /.*/
+
       - test-main:
           name: test-packages-firefox
           test-params: -k firefox packages/test* packages/*/test*
           requires:
             - build-packages
+          filters:
+            tags:
+              only: /.*/
+
       - test-main:
           name: test-packages-node
           test-params: -k "node and not numpy" packages/test* packages/*/test*
           requires:
             - build-packages
+          filters:
+            tags:
+              only: /.*/
+
 
       - test-emsdk:
           requires:
             - build-core
+          filters:
+            tags:
+              only: /.*/
+
       - test-js:
           requires:
             - build-core
+          filters:
+            tags:
+              only: /.*/
+
       - benchmark-stack-size:
           requires:
             - build-core
+          filters:
+            tags:
+              only: /.*/
+
       - benchmark:
           requires:
             - build-packages
+          filters:
+            tags:
+              only: /.*/
+
       - deploy-release:
           requires:
             - lint
