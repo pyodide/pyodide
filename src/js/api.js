@@ -137,15 +137,6 @@ export async function loadPackagesFromImports(
   if (imports.length === 0) {
     return;
   }
-  if (typeof Module._import_name_to_package_name === "undefined") {
-    // compute the inverted index for imports to package names and cache the results
-    Module._import_name_to_package_name = new Map();
-    for (let name of Object.keys(Module.packages)) {
-      for (let import_name of Module.packages[name].imports) {
-        Module._import_name_to_package_name.set(import_name, name);
-      }
-    }
-  }
 
   let packageNames = Module._import_name_to_package_name;
   let packages = new Set();

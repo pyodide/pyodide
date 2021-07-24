@@ -296,7 +296,7 @@ def generate_packages_json(pkg_map: Dict[str, BasePackage]) -> Dict:
 
         package_data["packages"][name.lower()] = pkg_entry
 
-    # Hack for 0.17.0 release
+    # Workaround for circular dependency between soupsieve and beautifulsoup4
     # TODO: FIXME!!
     if "soupsieve" in package_data["packages"]:
         package_data["packages"]["soupsieve"]["depends"].append("beautifulsoup4")

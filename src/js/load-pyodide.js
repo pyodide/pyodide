@@ -1,5 +1,7 @@
 import { Module } from "./module.js";
 
+const IN_NODE = (typeof process !== "undefined" && process.release.name !== "undefined");
+
 /** @typedef {import('./pyproxy.js').PyProxy} PyProxy */
 /** @private */
 let baseURL;
@@ -9,21 +11,29 @@ let baseURL;
  */
 export async function initializePackageIndex(indexURL) {
   baseURL = indexURL;
-  if (typeof process !== "undefined" && process.release.name !== "undefined") {
-    const fs = await import("fs");
-    fs.readFile(`${indexURL}packages.json`, (err, data) => {
-      if (err) throw err;
-      let response = JSON.parse(data);
-      Module.packages = response["packages"];
-    });
+  let package_json;
+  if (IN_NODE) {
+    const fsPromises = await import("fs/promises");
+    const package_string = await fsPromises.readFile(
+      `${indexURL}packages.json`
+    );
+    package_json = JSON.parse(package_string);
   } else {
     let response = await fetch(`${indexURL}packages.json`);
-    Module.packages = (await response.json())?.packages;
+    package_json = await response.json();
+  }
+  if (!package_json.packages) {
+    throw new Error(
+      "Loaded packages.json does not contain the expected key 'packages'."
+    );
+  }
+  Module.packages = package_json.packages;
 
-    if (typeof Module.packages === "undefined") {
-      throw new Error(
-        "Loaded packages.json does not contain the expected key 'packages'."
-      );
+  // compute the inverted index for imports to package names
+  Module._import_name_to_package_name = new Map();
+  for (let name of Object.keys(Module.packages)) {
+    for (let import_name of Module.packages[name].imports) {
+      Module._import_name_to_package_name.set(import_name, name);
     }
   }
 }
@@ -182,7 +192,7 @@ async function _loadPackage(names, messageCallback, errorCallback) {
         continue;
       }
     }
-    let pkgname = Module.packages[pkg]?.name || pkg;
+    let pkgname = Module.packages[pkg].name || pkg;
     let scriptSrc = uri === DEFAULT_CHANNEL ? `${baseURL}${pkgname}.js` : uri;
     messageCallback(`Loading ${pkg} from ${scriptSrc}`);
     scriptPromises.push(
