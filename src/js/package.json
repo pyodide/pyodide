@@ -1,6 +1,6 @@
 {
   "name": "pyodide",
-  "version": "0.18.0dev0",
+  "version": "0.18.0a1",
   "devDependencies": {
     "prettier": "^2.2.1",
     "terser": "^5.7.0",
