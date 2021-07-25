@@ -225,7 +225,13 @@ class SeleniumWrapper:
         self.run_js("self.__savedState = pyodide._module.saveState();")
 
     def restore_state(self):
-        self.run_js("pyodide._module.restoreState(self.__savedState)")
+        self.run_js(
+            """
+            if(self.__savedState){
+                pyodide._module.restoreState(self.__savedState)
+            }
+            """
+        )
 
     def get_num_proxies(self):
         return self.run_js("return pyodide._module.pyproxy_alloc_map.size")
