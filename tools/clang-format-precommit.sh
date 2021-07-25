@@ -5,10 +5,3 @@ if [ -n "$FILES" ]; then
     clang-format-6.0 -verbose -i $FILES
     git add $FILES
 fi
-
-FILES=$(git diff --cached --name-only *.js '*.html')
-if [ -n "$FILES" ]; then
-    # Change files, stage changes
-    ./node_modules/.bin/prettier --write $FILES
-    git add $FILES
-fi
