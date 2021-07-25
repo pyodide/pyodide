@@ -16,56 +16,6 @@ Module.preloadedWasm = {};
  * @param {undefined|((text: string) => void)} stderr
  */
 export function setStandardStreams(stdin, stdout, stderr) {
-  if (stdin) {
-    // When called, it asks the user for one whole line of input (stdin)
-    // Then, it passes the individual bytes of the input to emscripten, one after another.
-    // And finally, it terminates it with null.
-    const encoder = new TextEncoder();
-    let input = new Uint8Array(0);
-    let inputIndex = -1; // -1 means that we just returned null
-    function stdinWrapper() {
-      try {
-        if (inputIndex === -1) {
-          let text = stdin();
-          if (text === undefined || text === null) {
-            return null;
-          }
-          if (typeof text !== "string") {
-            throw new TypeError(
-              `Expected stdin to return string, null, or undefined, got type ${typeof text}.`
-            );
-          }
-          if (!text.endsWith("\n")) {
-            text += "\n";
-          }
-          input = encoder.encode(text);
-          inputIndex = 0;
-        }
-
-        if (inputIndex < input.length) {
-          let character = input[inputIndex];
-          inputIndex++;
-          return character;
-        } else {
-          inputIndex = -1;
-          return null;
-        }
-      } catch (e) {
-        // emscripten will catch this and set an IOError which is unhelpful for
-        // debugging.
-        console.error("Error thrown in stdin:");
-        console.error(e);
-        throw e;
-      }
-    }
-
-    Module.preRun = [
-      function () {
-        Module.FS.init(stdinWrapper, null, null);
-      },
-    ];
-  }
-
   if (stdout) {
     Module.print = stdout;
   }
@@ -73,4 +23,57 @@ export function setStandardStreams(stdin, stdout, stderr) {
   if (stderr) {
     Module.printErr = stderr;
   }
+
+  if (stdin) {
+    Module.preRun = [
+      function () {
+        Module.FS.init(createStdinWrapper(stdin), null, null);
+      },
+    ];
+  }
+}
+
+function createStdinWrapper(stdin) {
+  // When called, it asks the user for one whole line of input (stdin)
+  // Then, it passes the individual bytes of the input to emscripten, one after another.
+  // And finally, it terminates it with null.
+  const encoder = new TextEncoder();
+  let input = new Uint8Array(0);
+  let inputIndex = -1; // -1 means that we just returned null
+  function stdinWrapper() {
+    try {
+      if (inputIndex === -1) {
+        let text = stdin();
+        if (text === undefined || text === null) {
+          return null;
+        }
+        if (typeof text !== "string") {
+          throw new TypeError(
+            `Expected stdin to return string, null, or undefined, got type ${typeof text}.`
+          );
+        }
+        if (!text.endsWith("\n")) {
+          text += "\n";
+        }
+        input = encoder.encode(text);
+        inputIndex = 0;
+      }
+
+      if (inputIndex < input.length) {
+        let character = input[inputIndex];
+        inputIndex++;
+        return character;
+      } else {
+        inputIndex = -1;
+        return null;
+      }
+    } catch (e) {
+      // emscripten will catch this and set an IOError which is unhelpful for
+      // debugging.
+      console.error("Error thrown in stdin:");
+      console.error(e);
+      throw e;
+    }
+  }
+  return stdinWrapper;
 }
