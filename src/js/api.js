@@ -170,6 +170,13 @@ export function pyimport(name) {
  * Runs Python code using `PyCF_ALLOW_TOP_LEVEL_AWAIT
  * <https://docs.python.org/3/library/ast.html?highlight=pycf_allow_top_level_await#ast.PyCF_ALLOW_TOP_LEVEL_AWAIT>`_.
  *
+ * .. admonition:: Python imports
+ *    :class: warning
+ *
+ *    Since pyodide 0.18.0, you must call :js:func:`loadPackagesFromImports` to
+ *    import any python packages referenced via `import` statements in your code.
+ *    This function will no longer do it for you.
+ *
  * For example:
  *
  * .. code-block:: pyodide
@@ -178,8 +185,8 @@ export function pyimport(name) {
  *        from js import fetch
  *        response = await fetch("./packages.json")
  *        packages = await response.json()
- *        # If final statement is an expression, its value is returned to
- * Javascript len(packages['packages'].object_keys())
+ *        # If final statement is an expression, its value is returned to Javascript
+ *        len(packages['packages'].object_keys())
  *    `);
  *    console.log(result); // 72
  *
