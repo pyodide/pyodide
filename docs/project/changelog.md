@@ -17,7 +17,7 @@ substitutions:
   global variable called `pyodide`. To get old behavior, say `globalThis.pyodide
   = await loadPyodide({...})`.
 - {{ API }} {any}`loadPyodide` now accepts callback functions for `stdin`, `stdout` and `stderr`
-  {pr}`1597`
+  {pr}`1728`
 - {{ Enhancement }} Added a new {any}`CodeRunner` API for finer control than
   {any}`eval_code` and {any}`eval_code_async`. Designed with
   the needs of REPL implementations in mind.
