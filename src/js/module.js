@@ -17,11 +17,12 @@ Module.preloadedWasm = {};
  */
 export function setStandardStreams(stdin, stdout, stderr) {
   if(stdin) {
-    let input = [];
+    const encoder = new TextEncoder();
+    let input = new Uint8Array(0);
     let inputIndex = -1; // -1 means that we just returned null
     function stdinWrapper() {
       if (inputIndex === -1) {
-        input = Module.intArrayFromString((stdin() || "") + "\n", true, 0);
+        input = encoder.encode(text + (text.endsWith("\n") ? "" : "\n"));
         inputIndex = 0;
       }
 
