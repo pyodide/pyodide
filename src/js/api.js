@@ -102,8 +102,8 @@ Module.runPython = runPython;
  */
 
 /**
- * Inspect a Python code chunk and use :js:func:`pyodide.loadPackage` to
- * install any known packages that the code chunk imports. Uses the Python API
+ * Inspect a Python code chunk and use :js:func:`pyodide.loadPackage` to install
+ * any known packages that the code chunk imports. Uses the Python API
  * :func:`pyodide.find\_imports` to inspect the code.
  *
  * For example, given the following code as input
