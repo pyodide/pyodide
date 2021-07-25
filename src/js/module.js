@@ -17,6 +17,9 @@ Module.preloadedWasm = {};
  */
 export function setStandardStreams(stdin, stdout, stderr) {
   if(stdin) {
+    // When called, it asks the user for one whole line of input (stdin)
+    // Then, it passes the individual bytes of the input to emscripten, one after another. 
+    // And finally, it terminates it with null.
     const encoder = new TextEncoder();
     let input = new Uint8Array(0);
     let inputIndex = -1; // -1 means that we just returned null
