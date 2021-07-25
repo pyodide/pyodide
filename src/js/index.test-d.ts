@@ -23,7 +23,13 @@ async function main() {
   );
 
   expectType<Promise<typeof pyodide>>(
-    loadPyodide({ indexURL: "blah", fullStdLib: true, stdin : () => "a string", stdout : (x) => {}, stderr : (err) => {} })
+    loadPyodide({
+      indexURL: "blah",
+      fullStdLib: true,
+      stdin: () => "a string",
+      stdout: (x) => {},
+      stderr: (err) => {},
+    })
   );
 
   expectType<PyProxy>(pyodide.globals);
