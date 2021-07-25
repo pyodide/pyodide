@@ -142,7 +142,6 @@ main(int argc, char** argv)
     // For some reason emscripten doesn't make UTF8ToString available on Module
     // by default...
     Module.UTF8ToString = UTF8ToString;
-    Module.intArrayFromString = intArrayFromString;
     Module.wasmTable = wasmTable;
   });
 
