@@ -151,7 +151,7 @@ lint: node_modules/.installed
 	find src -type f -regex '.*\.\(c\|h\)' \
 		| xargs clang-format-6.0 -output-replacements-xml \
 		| (! grep '<replacement ')
-	npx prettier --check `find src -type f -name '*.js' -not -name '*.gen.js'`
+	npx prettier --check `find src -type f -name '*.js' -o -name '*.ts' -not -name '*.gen.js'`
 	npx prettier --check `find src -type f -name '*.html'`
 	black --check .
 	mypy --ignore-missing-imports    \
