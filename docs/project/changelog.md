@@ -65,7 +65,7 @@ substitutions:
 - {{ API }} The `packages.json` schema for Pyodide was re-designed for better compatibility
   with conda. {pr}`1700`
 
-## Standard library
+### Standard library
 
 - The following standard library modules are now available as standalone packages
    - distlib
@@ -325,7 +325,7 @@ See the {ref}`0-17-0-release-notes` for more information.
 - Added Plotly version 4.14.3 and retrying dependency
   {pr}`1419`
 
-## List of contributors
+### List of contributors
 
 (in alphabetic order)
 
