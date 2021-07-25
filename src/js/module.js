@@ -16,25 +16,25 @@ Module.preloadedWasm = {};
  * @param {undefined|((text: string) => void)} stderr
  */
 export function setStandardStreams(stdin, stdout, stderr) {
-  if(stdin) {
+  if (stdin) {
     // When called, it asks the user for one whole line of input (stdin)
-    // Then, it passes the individual bytes of the input to emscripten, one after another. 
+    // Then, it passes the individual bytes of the input to emscripten, one after another.
     // And finally, it terminates it with null.
     const encoder = new TextEncoder();
     let input = new Uint8Array(0);
     let inputIndex = -1; // -1 means that we just returned null
     function stdinWrapper() {
       if (inputIndex === -1) {
-		let text = stdin();
-		if(text === undefined || text === null){
-			return null;
-		}
-		if(typeof text !== "string"){
-            throw new TypeError(); // emscripten will catch this and set an IOError
-		}
-		if(!text.endsWith("\n")){
-			text += "\n";
-		}
+        let text = stdin();
+        if (text === undefined || text === null) {
+          return null;
+        }
+        if (typeof text !== "string") {
+          throw new TypeError(); // emscripten will catch this and set an IOError
+        }
+        if (!text.endsWith("\n")) {
+          text += "\n";
+        }
         input = encoder.encode(text);
         inputIndex = 0;
       }
@@ -48,17 +48,19 @@ export function setStandardStreams(stdin, stdout, stderr) {
         return null;
       }
     }
-    
-    Module.preRun = [function() {
-      Module.FS.init(stdinWrapper, null, null);
-    }];
+
+    Module.preRun = [
+      function () {
+        Module.FS.init(stdinWrapper, null, null);
+      },
+    ];
   }
-  
-  if(stdout) {
+
+  if (stdout) {
     Module.print = stdout;
   }
-  
-  if(stderr) {
+
+  if (stderr) {
     Module.printErr = stderr;
   }
 }

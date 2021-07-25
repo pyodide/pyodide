@@ -178,7 +178,11 @@ function fixRecursionLimit() {
  * @async
  */
 export async function loadPyodide(config) {
-  const default_config = { fullStdLib: true, jsglobals: globalThis, stdin: prompt };
+  const default_config = {
+    fullStdLib: true,
+    jsglobals: globalThis,
+    stdin: prompt,
+  };
   config = Object.assign(default_config, config);
   if (globalThis.__pyodide_module) {
     if (globalThis.languagePluginURL) {
@@ -204,7 +208,7 @@ export async function loadPyodide(config) {
   let packageIndexReady = initializePackageIndex(baseURL);
 
   setStandardStreams(config.stdin, config.stdout, config.stderr);
-  
+
   Module.locateFile = (path) => baseURL + path;
   let moduleLoaded = new Promise((r) => (Module.postRun = r));
 
