@@ -22,7 +22,17 @@ export function setStandardStreams(stdin, stdout, stderr) {
     let inputIndex = -1; // -1 means that we just returned null
     function stdinWrapper() {
       if (inputIndex === -1) {
-        input = encoder.encode(text + (text.endsWith("\n") ? "" : "\n"));
+		let text = stdin();
+		if(text === undefined || text === null){
+			return null;
+		}
+		if(typeof text !== "string"){
+            throw new TypeError(); // emscripten will catch this and set an IOError
+		}
+		if(!text.endsWith("\n")){
+			text += "\n";
+		}
+        input = encoder.encode(text);
         inputIndex = 0;
       }
 
