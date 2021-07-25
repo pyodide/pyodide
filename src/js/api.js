@@ -113,7 +113,7 @@ Module.runPython = runPython;
  *    import numpy as np x = np.array([1, 2, 3])
  *
  * :js:func:`loadPackagesFromImports` will call
- * ``pyodide.loadPackage(['numpy'])``. See also :js:func:`runPythonAsync`.
+ * ``pyodide.loadPackage(['numpy'])``.
  *
  * @param {string} code The code to inspect.
  * @param {LogFn=} messageCallback The ``messageCallback`` argument of
@@ -186,9 +186,9 @@ export function pyimport(name) {
  *        response = await fetch("./packages.json")
  *        packages = await response.json()
  *        # If final statement is an expression, its value is returned to Javascript
- *        len(packages['packages'].object_keys())
+ *        len(packages.packages.object_keys())
  *    `);
- *    console.log(result); // 72
+ *    console.log(result); // 79
  *
  * @param {string} code Python code to evaluate
  * @returns {Py2JsResult} The result of the Python code translated to Javascript.
