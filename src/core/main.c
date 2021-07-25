@@ -94,6 +94,13 @@ run_python_simple_inner(char* code)
 int
 numpy_patch_init();
 
+int
+get_python_stack_depth()
+{
+  PyThreadState* tstate = PyThreadState_GET();
+  return tstate->recursion_depth;
+}
+
 /**
  * Bootstrap steps here:
  *  1. Initialize init_dict so that runPythonSimple will work.

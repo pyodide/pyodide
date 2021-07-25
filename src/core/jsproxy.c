@@ -649,24 +649,18 @@ PyMethodDef JsProxy_Dir_MethodDef = {
   PyDoc_STR("Returns a list of the members and methods on the object."),
 };
 
-/**
- * The to_py method, uses METH_FASTCALL calling convention.
- */
 static PyObject*
-JsProxy_toPy(PyObject* self, PyObject* const* args, Py_ssize_t nargs)
+JsProxy_toPy(PyObject* self,
+             PyObject* const* args,
+             Py_ssize_t nargs,
+             PyObject* kwnames)
 {
-  if (nargs > 1) {
-    PyErr_Format(
-      PyExc_TypeError, "to_py expected at most 1 argument, got %zd", nargs);
-    return NULL;
-  }
+  static const char* const _keywords[] = { "depth", 0 };
+  static struct _PyArg_Parser _parser = { "|$i:toPy", _keywords, 0 };
   int depth = -1;
-  if (nargs == 1) {
-    int overflow;
-    depth = PyLong_AsLongAndOverflow(args[0], &overflow);
-    if (overflow == 0 && depth == -1 && PyErr_Occurred()) {
-      return NULL;
-    }
+  if (kwnames != NULL &&
+      !_PyArg_ParseStackAndKeywords(args, nargs, kwnames, &_parser, &depth)) {
+    return NULL;
   }
   return js2python_convert(GET_JSREF(self), depth);
 }
@@ -674,7 +668,7 @@ JsProxy_toPy(PyObject* self, PyObject* const* args, Py_ssize_t nargs)
 PyMethodDef JsProxy_toPy_MethodDef = {
   "to_py",
   (PyCFunction)JsProxy_toPy,
-  METH_FASTCALL,
+  METH_FASTCALL | METH_KEYWORDS,
 };
 
 /**

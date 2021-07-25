@@ -103,6 +103,10 @@ EM_JS_NUM(int, hiwire_init, (), {
         );
         throw e;
       } else {
+        console.error(
+          `Internal error: Argument '${idval}' to hiwire.get_value is falsy`
+          + ' (but error indicator is not set).'
+        );
         throw new Error(
           `Internal error: Argument '${idval}' to hiwire.get_value is falsy`
           + ' (but error indicator is not set).'

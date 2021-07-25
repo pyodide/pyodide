@@ -10,11 +10,15 @@ import pytest
 def test_idbfs_persist_code(selenium_standalone):
     """can we persist files created by user python code?"""
     selenium = selenium_standalone
+    if selenium.browser == "node":
+        fstype = "NODEFS"
+    else:
+        fstype = "IDBFS"
     # create mount
     selenium.run_js(
-        """
+        f"""
         pyodide.FS.mkdir('/lib/python3.9/site-packages/test_idbfs');
-        pyodide.FS.mount(pyodide.FS.filesystems.IDBFS, {}, "/lib/python3.9/site-packages/test_idbfs")
+        pyodide.FS.mount(pyodide.FS.filesystems.{fstype}, {{root : "."}}, "/lib/python3.9/site-packages/test_idbfs");
         """
     )
     # create file in mount
@@ -41,15 +45,13 @@ def test_idbfs_persist_code(selenium_standalone):
         """
     )
     # refresh page and re-fixture
-    selenium.driver.refresh()
-    selenium.javascript_setup()
+    selenium.refresh()
     selenium.run_js(
         """
-        window.pyodide = await loadPyodide({ indexURL : './', fullStdLib: false });
+        self.pyodide = await loadPyodide({ indexURL : './', fullStdLib: false });
         """
     )
     selenium.save_state()
-    selenium.restore_state()
     # idbfs isn't magically loaded
     selenium.run_js(
         """
@@ -67,9 +69,9 @@ def test_idbfs_persist_code(selenium_standalone):
     )
     # re-mount
     selenium.run_js(
-        """
+        f"""
         pyodide.FS.mkdir('/lib/python3.9/site-packages/test_idbfs');
-        pyodide.FS.mount(pyodide.FS.filesystems.IDBFS, {}, "/lib/python3.9/site-packages/test_idbfs");
+        pyodide.FS.mount(pyodide.FS.filesystems.{fstype}, {{root : "."}}, "/lib/python3.9/site-packages/test_idbfs");
         """
     )
     # sync FROM idbfs
@@ -91,4 +93,8 @@ def test_idbfs_persist_code(selenium_standalone):
             assert test() == 7
         `);
         """
+    )
+    # remove file
+    selenium.run_js(
+        """pyodide.FS.unlink("/lib/python3.9/site-packages/test_idbfs/__init__.py")"""
     )

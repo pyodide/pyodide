@@ -137,19 +137,16 @@ export async function loadPackagesFromImports(
   if (imports.length === 0) {
     return;
   }
-  let packageNames = Module.packages.import_name_to_package_name;
+
+  let packageNames = Module._import_name_to_package_name;
   let packages = new Set();
   for (let name of imports) {
-    if (name in packageNames) {
-      packages.add(packageNames[name]);
+    if (packageNames.has(name)) {
+      packages.add(packageNames.get(name));
     }
   }
   if (packages.size) {
-    await loadPackage(
-      Array.from(packages.keys()),
-      messageCallback,
-      errorCallback
-    );
+    await loadPackage(Array.from(packages), messageCallback, errorCallback);
   }
 }
 
@@ -182,7 +179,7 @@ export function pyimport(name) {
  *        response = await fetch("./packages.json")
  *        packages = await response.json()
  *        # If final statement is an expression, its value is returned to
- * Javascript len(packages.dependencies.object_keys())
+ * Javascript len(packages['packages'].object_keys())
  *    `);
  *    console.log(result); // 72
  *
@@ -249,11 +246,12 @@ export function unregisterJsModule(name) {
  * See :ref:`type-translations-jsproxy-to-py` for more information.
  *
  * @param {*} obj
- * @param {number} depth Optional argument to limit the depth of the
+ * @param {object} options
+ * @param {number} options.depth Optional argument to limit the depth of the
  * conversion.
  * @returns {PyProxy} The object converted to Python.
  */
-export function toPy(obj, depth = -1) {
+export function toPy(obj, { depth = -1 } = {}) {
   // No point in converting these, it'd be dumb to proxy them so they'd just
   // get converted back by `js2python` at the end
   switch (typeof obj) {

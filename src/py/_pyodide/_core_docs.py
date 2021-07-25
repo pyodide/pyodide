@@ -1,6 +1,6 @@
 # type: ignore
 
-from typing import Any, Callable
+from typing import Any, Callable, Iterable
 
 # All docstrings for public `core` APIs should be extracted from here. We use
 # the utilities in `docstring.py` and `docstring.c` to format them
@@ -23,6 +23,9 @@ try:
         def js_error(self):
             """The original Javascript error"""
 
+    class ConversionError(Exception):
+        """An error thrown when conversion between Javascript and Python fails."""
+
     class JsProxy:
         """A proxy to make a Javascript object behave like a Python object
 
@@ -44,12 +47,12 @@ try:
         def new(self, *args, **kwargs) -> "JsProxy":
             """Construct a new instance of the Javascript object"""
 
-        def to_py(self, depth: int = -1) -> Any:
+        def to_py(self, *, depth: int = -1) -> Any:
             """Convert the :class:`JsProxy` to a native Python object as best as
             possible.
 
             By default does a deep conversion, if a shallow conversion is
-            desired, you can use ``proxy.to_py(1)``. See
+            desired, you can use ``proxy.to_py(depth=1)``. See
             :ref:`type-translations-jsproxy-to-py` for more information.
             """
             pass
@@ -122,7 +125,14 @@ try:
 
     # from python2js
 
-    def to_js(obj: Any, depth: int = -1) -> JsProxy:
+    def to_js(
+        obj: Any,
+        *,
+        depth: int = -1,
+        pyproxies: JsProxy = None,
+        create_pyproxies: bool = True,
+        dict_converter: Callable[[Iterable[JsProxy]], JsProxy] = None,
+    ) -> JsProxy:
         """Convert the object to Javascript.
 
         This is similar to :any:`PyProxy.toJs`, but for use from Python. If the
@@ -132,8 +142,46 @@ try:
         used :any:`pyodide.create_proxy`.
 
         See :ref:`type-translations-pyproxy-to-js` for more information.
+
+        Parameters
+        ----------
+        obj : Any
+            The Python object to convert
+
+        depth : int, default=-1
+            The maximum depth to do the conversion. Negative numbers are treated
+            as infinite. Set this to 1 to do a shallow conversion.
+
+        pyproxies: JsProxy, default = None
+            Should be a Javascript ``Array``. If provided, any ``PyProxies`` generated
+            will be stored here. You can later use :any:`destroy_proxies` if you want
+            to destroy the proxies from Python (or from Javascript you can just iterate
+            over the ``Array`` and destroy the proxies).
+
+        create_pyproxies: bool, default=True
+            If you set this to False, :any:`to_js` will raise an error
+
+        dict_converter: Callable[[Iterable[JsProxy]], JsProxy], defauilt = None
+            This converter if provided recieves a (Javascript) iterable of
+            (Javascript) pairs [key, value]. It is expected to return the
+            desired result of the dict conversion. Some suggested values for
+            this argument:
+
+                js.Map.new -- similar to the default behavior
+                js.Array.from -- convert to an array of entries
+                js.Object.fromEntries -- convert to a Javascript object
         """
         return obj
+
+    def destroy_proxies(pyproxies: JsProxy):
+        """Destroy all PyProxies in a Javascript array.
+
+        pyproxies must be a JsProxy of type PyProxy[]. Intended for use with the
+        arrays created from the "pyproxies" argument of :any:`toJs` and
+        :any:`to_js`. This method is necessary because indexing the Array from
+        Python automatically unwraps the PyProxy into the wrapped Python object.
+        """
+        pass
 
 
 finally:

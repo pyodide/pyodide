@@ -1,5 +1,6 @@
 # See also test_typeconversions, and test_python.
 import pytest
+import time
 
 
 def test_pyproxy_class(selenium):
@@ -12,7 +13,7 @@ def test_pyproxy_class(selenium):
                     return value * 64
             f = Foo()
         `);
-        window.f = pyodide.globals.get('f');
+        self.f = pyodide.globals.get('f');
         assert(() => f.type === "Foo");
         let f_get_value = f.get_value
         assert(() => f_get_value(2) === 128);
@@ -22,7 +23,7 @@ def test_pyproxy_class(selenium):
         f.baz = 32;
         assert(() => f.baz === 32);
         pyodide.runPython(`assert hasattr(f, 'baz')`)
-        window.f_props = Object.getOwnPropertyNames(f);
+        self.f_props = Object.getOwnPropertyNames(f);
         delete f.baz
         pyodide.runPython(`assert not hasattr(f, 'baz')`)
         assert(() => f.toString().startsWith("<Foo"));
@@ -87,10 +88,10 @@ def test_pyproxy_refcount(selenium):
             return pyodide.runPython("sys.getrefcount(pyfunc)");
         }
         let result = [];
-        window.jsfunc = function (f) { f(); };
+        self.jsfunc = function (f) { f(); };
         pyodide.runPython(`
             import sys
-            from js import window
+            from js import self
 
             def pyfunc(*args, **kwargs):
                 print(*args, **kwargs)
@@ -110,13 +111,13 @@ def test_pyproxy_refcount(selenium):
         // 3. pyfunc is referenced from the sys.getrefcount()-test below
 
         pyodide.runPython(`
-            window.jsfunc(pyfunc) # creates new PyProxy
+            self.jsfunc(pyfunc) # creates new PyProxy
         `);
 
         result.push([getRefCount(), 3])
         pyodide.runPython(`
-            window.jsfunc(pyfunc) # create new PyProxy
-            window.jsfunc(pyfunc) # create new PyProxy
+            self.jsfunc(pyfunc) # create new PyProxy
+            self.jsfunc(pyfunc) # create new PyProxy
         `)
 
         // the refcount should be 3 because:
@@ -294,7 +295,7 @@ def test_get_empty_buffer(selenium):
 def test_pyproxy_get_buffer_type_argument(selenium, array_type):
     selenium.run_js(
         """
-        window.a = pyodide.runPython("bytes(range(256))");
+        self.a = pyodide.runPython("bytes(range(256))");
         """
     )
     try:
@@ -324,7 +325,7 @@ def test_pyproxy_get_buffer_type_argument(selenium, array_type):
         else:
             assert result == list(mv.cast(fmt))
     finally:
-        selenium.run_js("a.destroy(); window.a = undefined;")
+        selenium.run_js("a.destroy(); self.a = undefined;")
 
 
 def test_pyproxy_mixins(selenium):
@@ -528,7 +529,7 @@ def test_pyproxy_mixins6(selenium):
 
 @pytest.mark.skip_pyproxy_check
 def test_pyproxy_gc(selenium):
-    if selenium.browser != "chrome":
+    if not hasattr(selenium, "collect_garbage"):
         pytest.skip("No gc exposed")
 
     # Two ways to trigger garbage collection in Chrome:
@@ -542,16 +543,22 @@ def test_pyproxy_gc(selenium):
 
     selenium.run_js(
         """
-        window.x = new FinalizationRegistry((val) => { window.val = val; });
+        self.x = new FinalizationRegistry((val) => { self.val = val; });
         x.register({}, 77);
         gc();
         """
     )
-    assert selenium.run_js("return window.val;") == 77
+    time.sleep(0.1)
+    selenium.run_js(
+        """
+        gc();
+        """
+    )
+    assert selenium.run_js("return self.val;") == 77
 
     selenium.run_js(
         """
-        window.res = new Map();
+        self.res = new Map();
 
         let d = pyodide.runPython(`
             from js import res
@@ -579,7 +586,7 @@ def test_pyproxy_gc(selenium):
         d.destroy()
         """
     )
-    selenium.driver.execute_cdp_cmd("HeapProfiler.collectGarbage", {})
+    selenium.collect_garbage()
 
     selenium.run(
         """
@@ -587,19 +594,19 @@ def test_pyproxy_gc(selenium):
         del d
         """
     )
-    selenium.driver.execute_cdp_cmd("HeapProfiler.collectGarbage", {})
+    selenium.collect_garbage()
     a = selenium.run_js("return Array.from(res.entries());")
     assert dict(a) == {0: 2, 1: 3, 2: 4, 3: 2, "destructor_ran": True}
 
 
 @pytest.mark.skip_pyproxy_check
 def test_pyproxy_gc_destroy(selenium):
-    if selenium.browser != "chrome":
+    if not hasattr(selenium, "collect_garbage"):
         pytest.skip("No gc exposed")
 
     selenium.run_js(
         """
-        window.res = new Map();
+        self.res = new Map();
         let d = pyodide.runPython(`
             from js import res
             def get_ref_count(x):
@@ -627,7 +634,7 @@ def test_pyproxy_gc_destroy(selenium):
         get_ref_count.destroy();
         """
     )
-    selenium.driver.execute_cdp_cmd("HeapProfiler.collectGarbage", {})
+    selenium.collect_garbage()
     selenium.run(
         """
         get_ref_count(4)
@@ -783,7 +790,7 @@ def test_pyproxy_call(selenium):
             def f(x=2, y=3):
                 return to_js([x, y])
         `);
-        window.f = pyodide.globals.get("f");
+        self.f = pyodide.globals.get("f");
         """
     )
 

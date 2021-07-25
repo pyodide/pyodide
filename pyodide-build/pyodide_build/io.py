@@ -35,6 +35,12 @@ PACKAGE_CONFIG_SPEC: Dict[str, Dict[str, Any]] = {
     "test": {
         "imports": list,  # List[str]
     },
+    "about": {
+        "home": str,
+        "PyPi": str,
+        "summary": str,
+        "license": str,
+    },
 }
 
 

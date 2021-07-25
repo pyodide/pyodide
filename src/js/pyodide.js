@@ -64,7 +64,14 @@ Module.fatal_error = function (e) {
     "Pyodide has suffered a fatal error. Please report this to the Pyodide maintainers."
   );
   console.error("The cause of the fatal error was:");
-  console.error(e);
+  if (Module.inTestHoist) {
+    // Test hoist won't print the error object in a useful way so convert it to
+    // string.
+    console.error(e.toString());
+    console.error(e.stack);
+  } else {
+    console.error(e);
+  }
   try {
     Module.dump_traceback();
     for (let key of Object.keys(Module.public_api)) {
@@ -147,7 +154,7 @@ function fixRecursionLimit() {
     recurse();
   } catch (err) {}
 
-  let recursionLimit = Math.min(depth / 50, 400);
+  let recursionLimit = Math.min(depth / 25, 500);
   Module.runPythonSimple(
     `import sys; sys.setrecursionlimit(int(${recursionLimit}))`
   );
@@ -173,7 +180,7 @@ function fixRecursionLimit() {
  * @async
  */
 export async function loadPyodide(config) {
-  const default_config = { fullStdLib: true };
+  const default_config = { fullStdLib: true, jsglobals: globalThis };
   config = Object.assign(default_config, config);
   if (globalThis.__pyodide_module) {
     if (globalThis.languagePluginURL) {
@@ -243,7 +250,7 @@ def temp(pyodide_js, Module, jsglobals):
   print("Python initialization complete")
 `);
 
-  Module.init_dict.get("temp")(pyodide, Module, globalThis);
+  Module.init_dict.get("temp")(pyodide, Module, config.jsglobals);
   // Module.runPython works starting from here!
 
   // Wrap "globals" in a special Proxy that allows `pyodide.globals.x` access.

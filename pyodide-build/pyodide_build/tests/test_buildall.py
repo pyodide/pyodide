@@ -26,6 +26,29 @@ def test_generate_dependency_graph():
     assert pkg_map["beautifulsoup4"].dependents == set()
 
 
+def test_generate_packages_json():
+    pkg_map = buildall.generate_dependency_graph(PACKAGES_DIR, "beautifulsoup4")
+
+    package_data = buildall.generate_packages_json(pkg_map)
+    assert set(package_data.keys()) == {"info", "packages"}
+    assert package_data["info"] == {"arch": "wasm32", "platform": "Emscripten-1.0"}
+    assert set(package_data["packages"]) == {
+        "test",
+        "distutils",
+        "pyparsing",
+        "packaging",
+        "soupsieve",
+        "beautifulsoup4",
+        "micropip",
+    }
+    assert package_data["packages"]["micropip"] == {
+        "name": "micropip",
+        "version": "0.1",
+        "depends": ["pyparsing", "packaging", "distutils"],
+        "imports": ["micropip"],
+    }
+
+
 @pytest.mark.parametrize("n_jobs", [1, 4])
 def test_build_dependencies(n_jobs, monkeypatch):
     build_list = []
