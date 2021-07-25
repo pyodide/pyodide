@@ -1,7 +1,7 @@
 /**
  * The main bootstrap code for loading pyodide.
  */
-import { Module } from "./module.js";
+import { Module, setStandardStreams } from "./module.js";
 import {
   loadScript,
   initializePackageIndex,
@@ -167,11 +167,11 @@ function fixRecursionLimit() {
  * @param {boolean} config.fullStdLib - Load the full Python standard library.
  * Setting this to false excludes following modules: distutils.
  * Default: true
- * @param {undefined | (() => string)} config.input - Override the standard input callback. Should ask the user for one line of input.
+ * @param {undefined | (() => string)} config.stdin - Override the standard input callback. Should ask the user for one line of input.
  * Default: undefined
- * @param {undefined | ((text: string) => void)} config.print - Override the standard output callback.
+ * @param {undefined | ((text: string) => void)} config.stdout - Override the standard output callback.
  * Default: undefined
- * @param {undefined | ((text: string) => void)} config.printErr - Override the standard error output callback.
+ * @param {undefined | ((text: string) => void)} config.stderr - Override the standard error output callback.
  * Default: undefined
  * @returns The :ref:`js-api-pyodide` module.
  * @memberof globalThis
@@ -203,34 +203,7 @@ export async function loadPyodide(config) {
   Module.indexURL = baseURL;
   let packageIndexReady = initializePackageIndex(baseURL);
 
-  if(config.input) {
-    let input = [];
-    let inputIndex = -1; // -1 means that we just returned null
-    function stdin() {
-      if (inputIndex === -1) {
-        input = Module.intArrayFromString((config.input() || "") + "\n", true, 0);
-        inputIndex = 0;
-      }
-
-      if (inputIndex < input.length) {
-        let character = input[inputIndex];
-        inputIndex++;
-        return character;
-      } else {
-        inputIndex = -1;
-        return null;
-      }
-    }
-    Module.preRun = [function() {
-      Module.FS.init(stdin, null, null);
-    }];
-  }
-  if(config.print) {
-    Module.print = config.print;
-  }
-  if(config.printErr) {
-    Module.printErr = config.printErr;
-  }
+  setStandardStreams(config.stdin, config.stdout, config.stderr);
   
   Module.locateFile = (path) => baseURL + path;
   let moduleLoaded = new Promise((r) => (Module.postRun = r));
