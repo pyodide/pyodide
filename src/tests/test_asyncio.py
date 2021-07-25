@@ -412,9 +412,9 @@ def test_await_pyproxy_eval_async(selenium):
             from js import fetch
             await (await fetch('packages.json')).json()
         `);
-        let packages = await c;
+        let result = await c;
         c.destroy();
-        return (!!packages.dependencies) && (!!packages.import_name_to_package_name);
+        return (!!result) && ("packages" in result);
         """
     )
 
@@ -444,6 +444,6 @@ def test_await_pyproxy_async_def(selenium):
                 return await (await fetch('packages.json')).json()
             await temp()
         `);
-        return (!!packages.dependencies) && (!!packages.import_name_to_package_name);
+        return (!!packages.packages) && (!!packages.info);
         """
     )

@@ -390,3 +390,6 @@ class WebLoopPolicy(asyncio.DefaultEventLoopPolicy):  # type: ignore
     def set_event_loop(self, loop: asyncio.AbstractEventLoop):
         """Set the current event loop"""
         self._default_loop = loop
+
+
+__all__ = ["WebLoop", "WebLoopPolicy"]

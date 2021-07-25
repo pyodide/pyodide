@@ -13,7 +13,7 @@ substitutions:
 
 ## [Unreleased]
 
-- {{ API }} {any}`loadPyodide` no longer automatically stores the API into a
+- {{ API }} {any}`loadPyodide <globalThis.loadPyodide>` no longer automatically stores the API into a
   global variable called `pyodide`. To get old behavior, say `globalThis.pyodide
   = await loadPyodide({...})`.
 - {{ API }} {any}`loadPyodide` now accepts callback functions for `stdin`, `stdout` and `stderr`
@@ -39,6 +39,13 @@ substitutions:
   type. This is particularly important if the error is a `KeyboardInterrupt`.
   {pr}`1447`
 
+- {{ Enhancement }} Added {any}`Console` class closely based on the Python standard
+  library `code.InteractiveConsole` but with support for top level await and
+  stream redirection. Also added the subclass {any}`PyodideConsole` which
+  automatically uses {any}`pyodide.loadPackagesFromImports` on the code before running
+  it.
+  {pr}`1125`, {pr}`1155`, {pr}`1635`
+
 - {{ Update }} Pyodide now runs Python 3.9.5.
   {pr}`1637`
 
@@ -56,11 +63,14 @@ substitutions:
   allowing for custom persistence strategies depending on execution environment
   {pr}`1596`
 
+- {{ API }} The `packages.json` schema for Pyodide was re-designed for better compatibility
+  with conda. {pr}`1700`
+
 ## Standard library
 
 - The following standard library modules are now available as standalone packages
    - distlib
-  They are loaded by default in {any}`globalThis.loadPyodide`, however this behavior
+  They are loaded by default in {any}`loadPyodide <globalThis.loadPyodide>`, however this behavior
   can be disabled with the `fullStdLib` parameter set to `false`.
   All optional stdlib modules can then be loaded as needed with
   {any}`pyodide.loadPackage`. {pr}`1543`
@@ -102,6 +112,18 @@ substitutions:
   now takes `depth` as a named argument. Also `to_js` and `to_py` only take
   depth as a keyword argument.
   {pr}`1721`
+- {{ API }} `toJs` and `to_js` now take an option `pyproxies`, if a Javascript
+  Array is passed for this, then any proxies created during conversion will be
+  placed into this array. This allows easy cleanup later. The `create_pyproxies`
+  option can be used to disable creation of pyproxies during conversion
+  (instead a `ConversionError` is raised).
+  {pr}`1726`
+- {{ API }} `toJs` and `to_js` now take an option `dict_converter` which will be
+  called on a Javascript iterable of two-element Arrays as the final step of
+  converting dictionaries. For instance, pass `Object.fromEntries` to convert to
+  an object or `Array.from` to convert to an array of pairs.
+  {pr}`1742`
+
 
 ### pyodide-build
 

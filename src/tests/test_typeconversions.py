@@ -270,6 +270,76 @@ def test_python2js5(selenium):
     )
 
 
+# @pytest.mark.skip_refcount_check
+# @pytest.mark.skip_pyproxy_check
+def test_python2js_track_proxies(selenium):
+    selenium.run_js(
+        """
+        let x = pyodide.runPython(`
+            class T:
+                pass
+            [[T()],[T()], [[[T()],[T()]],[T(), [], [[T()]], T()], T(), T()], T()]
+        `);
+        let proxies = [];
+        let result = x.toJs({ pyproxies : proxies });
+        assert(() => proxies.length === 10);
+        for(let x of proxies){
+            x.destroy();
+        }
+        function check(l){
+            for(let x of l){
+                if(pyodide.isPyProxy(x)){
+                    assert(() => x.$$.ptr === null);
+                } else {
+                    check(x);
+                }
+            }
+        }
+        check(result);
+        assertThrows(() => x.toJs({create_pyproxies : false}), "PythonError", "pyodide.ConversionError");
+        x.destroy();
+        """
+    )
+
+
+def test_wrong_way_track_proxies(selenium):
+    selenium.run_js(
+        """
+        self.checkDestroyed = function(l){
+            for(let e of l){
+                if(pyodide.isPyProxy(e)){
+                    console.log(e.$$.ptr);
+                } else {
+                    checkDestroyed(e);
+                }
+            }
+        };
+        pyodide.runPython(`
+            from js import Array, Object, checkDestroyed
+            from pyodide import to_js, ConversionError, destroy_proxies
+            from pyodide_js import isPyProxy
+            from unittest import TestCase
+
+            class T:
+                pass
+
+            x = [[T()], [T()], [[[T()], [T()]], [T(), [], [[T()]], T()], T(), T()], T()]
+            proxylist = Array.new()
+            r = to_js(x, pyproxies=proxylist)
+            assert len(proxylist) == 10
+            destroy_proxies(proxylist)
+            checkDestroyed(r)
+            with TestCase().assertRaises(TypeError):
+                to_js(x, pyproxies=[])
+            with TestCase().assertRaises(TypeError):
+                to_js(x, pyproxies=Object.new())
+            with TestCase().assertRaises(ConversionError):
+                to_js(x, create_pyproxies=False)
+        `)
+        """
+    )
+
+
 def test_wrong_way_conversions(selenium):
     selenium.run_js(
         """
@@ -331,6 +401,63 @@ def test_wrong_way_conversions(selenium):
         `);
         """
     )
+
+
+def test_dict_converter(selenium):
+    assert (
+        selenium.run_js(
+            """
+            self.arrayFrom = Array.from;
+            return pyodide.runPython(`
+                from js import arrayFrom
+                from pyodide import to_js
+                res = to_js({ x : x + 2 for x in range(5)}, dict_converter=arrayFrom)
+                res
+            `)
+            """
+        )
+        == [[0, 2], [1, 3], [2, 4], [3, 5], [4, 6]]
+    )
+
+    assert (
+        selenium.run_js(
+            """
+            let px = pyodide.runPython("{ x : x + 2 for x in range(5)}");
+            let result = px.toJs({dict_converter : Array.from});
+            px.destroy();
+            return result;
+            """
+        )
+        == [[0, 2], [1, 3], [2, 4], [3, 5], [4, 6]]
+    )
+
+    assert (
+        selenium.run_js(
+            """
+            return pyodide.runPython(`
+                from js import Object
+                from pyodide import to_js
+                res = to_js({ x : x + 2 for x in range(5)}, dict_converter=Object.fromEntries)
+                res
+            `);
+            """
+        )
+        == {"0": 2, "1": 3, "2": 4, "3": 5, "4": 6}
+    )
+
+    assert (
+        selenium.run_js(
+            """
+            let px = pyodide.runPython("{ x : x + 2 for x in range(5)}");
+            let result = px.toJs({dict_converter : Object.fromEntries});
+            px.destroy();
+            return result;
+            """
+        )
+        == {"0": 2, "1": 3, "2": 4, "3": 5, "4": 6}
+    )
+
+    selenium.run("del res; del arrayFrom; del Object")
 
 
 def test_python2js_long_ints(selenium):

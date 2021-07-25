@@ -11,7 +11,7 @@
 # pytest mocks for js or pyodide_js, so make sure to test "if IN_BROWSER" before
 # importing from these.
 
-from ._core import JsProxy, JsException, create_once_callable, create_proxy, to_js, IN_BROWSER  # type: ignore
+from ._core import JsProxy, JsException, create_once_callable, create_proxy, to_js, IN_BROWSER, ConversionError, destroy_proxies  # type: ignore
 from _pyodide._base import (
     eval_code,
     eval_code_async,
@@ -49,5 +49,8 @@ __all__ = [
     "unregister_js_module",
     "create_once_callable",
     "create_proxy",
+    "console",
     "should_quiet",
+    "ConversionError",
+    "destroy_proxies",
 ]
