@@ -168,7 +168,7 @@ function fixRecursionLimit() {
  * (This can be fixed once `Firefox adopts support for ES6 modules in webworkers
  * <https://bugzilla.mozilla.org/show_bug.cgi?id=1247687>`_.)
  *
- * @param {{ indexURL : string, fullStdLib? : boolean = true, input?: () => string, print?: (text: string) => void, printErr?: (text: string) => void }} config
+ * @param {{ indexURL : string, fullStdLib? : boolean = true, stdin?: () => string, stdout?: (text: string) => void, stderr?: (text: string) => void }} config
  * @param {string} config.indexURL - The URL from which Pyodide will load
  * packages
  * @param {boolean} config.fullStdLib - Load the full Python standard library.
