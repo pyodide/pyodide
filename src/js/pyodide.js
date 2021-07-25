@@ -188,7 +188,7 @@ export async function loadPyodide(config) {
   const default_config = {
     fullStdLib: true,
     jsglobals: globalThis,
-    stdin: prompt,
+    stdin: globalThis.prompt ? globalThis.prompt : undefined,
   };
   config = Object.assign(default_config, config);
   if (globalThis.__pyodide_module) {
