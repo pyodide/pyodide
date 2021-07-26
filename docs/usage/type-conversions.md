@@ -242,9 +242,9 @@ explicit conversions:
 | `list`, `tuple` | `Array`      |
 | `dict`          | `Map`        |
 | `set`           | `Set`        |
-| a buffer\*\*    | `TypedArray` |
+| a buffer\*      | `TypedArray` |
 
-\*\* Examples of buffers include bytes objects and numpy arrays.
+\* Examples of buffers include bytes objects and numpy arrays.
 
 If you need to convert `dict` instead to `Object`, you can pass
 `Object.fromEntries` as the `dict_converter` argument:
@@ -292,14 +292,14 @@ Explicit conversion of a {any}`JsProxy` into a native Python object is done with
 conversion, to do a shallow conversion use `proxy.to_py(depth=1)` The `to_py` method
 performs the following explicit conversions:
 
-| Javascript   | Python |
-| ------------ | ------ |
-| `Array`      | `list` |
-| `Object`\*\* | `dict` |
-| `Map`        | `dict` |
-| `Set`        | `set`  |
+| Javascript | Python |
+| ---------- | ------ |
+| `Array`    | `list` |
+| `Object`\* | `dict` |
+| `Map`      | `dict` |
+| `Set`      | `set`  |
 
-\*\* `to_py` will only convert an object into a dictionary if its constructor
+\* `to_py` will only convert an object into a dictionary if its constructor
 is `Object`, otherwise the object will be left alone. Example:
 
 ```pyodide
