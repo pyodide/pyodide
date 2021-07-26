@@ -29,11 +29,11 @@ try:
     class JsProxy:
         """A proxy to make a Javascript object behave like a Python object
 
-        For more information see :ref:`type-translations` documentation.
+        For more information see the :ref:`type-translations` documentation. In
+        particular, see
+        :ref:`the list of __dunder__ methods <type-translations_jsproxy-dunders>`
+        that are (conditionally) implemented on :any:`JsProxy`.
         """
-
-        def __init__(self):
-            """ """
 
         def object_entries(self) -> "JsProxy":
             "The Javascript API ``Object.entries(object)``"
@@ -177,7 +177,7 @@ try:
         """Destroy all PyProxies in a Javascript array.
 
         pyproxies must be a JsProxy of type PyProxy[]. Intended for use with the
-        arrays created from the "pyproxies" argument of :any:`toJs` and
+        arrays created from the "pyproxies" argument of :any:`PyProxy.toJs` and
         :any:`to_js`. This method is necessary because indexing the Array from
         Python automatically unwraps the PyProxy into the wrapped Python object.
         """

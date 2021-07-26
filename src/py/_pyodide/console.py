@@ -26,7 +26,7 @@ from typing import (
 
 from _pyodide._base import should_quiet, CodeRunner
 
-__all__ = ["repr_shorten", "BANNER", "Console", "PyodideConsole"]
+__all__ = ["repr_shorten", "BANNER", "Console", "PyodideConsole", "ConsoleFuture"]
 
 
 def _banner():
@@ -153,7 +153,7 @@ class ConsoleFuture(Future):
     Attributes
     ----------
     syntax_check : str
-        One of ``"incomplete"``, ``"syntax-error"``, or ``"complete"`. If the value is
+        One of ``"incomplete"``, ``"syntax-error"``, or ``"complete"``. If the value is
         ``"incomplete"`` then the future has already been resolved with result equal to
         ``None``. If the value is ``"syntax-error"``, the ``Future`` has already been
         rejected with a ``SyntaxError``. If the value is ``"complete"``, then the input
@@ -168,14 +168,14 @@ class ConsoleFuture(Future):
 
     def __init__(
         self,
-        syntax: Union[
+        syntax_check: Union[
             Literal["incomplete"], Literal["syntax-error"], Literal["complete"]
         ],
     ):
         super().__init__()
         self.syntax_check: Union[
             Literal["incomplete"], Literal["syntax-error"], Literal["complete"]
-        ] = syntax
+        ] = syntax_check
         self.formatted_error: Optional[str] = None
 
 
