@@ -94,11 +94,13 @@ EM_JS_NUM(int, hiwire_init, (), {
     hiwire_next_permanent += 2;
     _hiwire.objects.set(id, obj);
     return id;
-  }
+  };
 
   // for testing purposes.
   Module.hiwire.num_keys = function(){
-    return Array.from(_hiwire.keys()).filter((x) = > x % 2).length
+    // clang-format off
+    return Array.from(_hiwire.objects.keys()).filter((x) => x % 2).length
+    // clang-format on
   };
 
   Module.hiwire.get_value = function(idval)
@@ -475,8 +477,11 @@ hiwire_call_bound,
 });
 // clang-format on
 
-EM_JS_NUM(int, hiwire_HasMethod, (JsRef obj, JsRef name), {
+EM_JS_NUM(int, hiwire_HasMethod, (JsRef obj_id, JsRef name), {
+  // clang format off
+  let obj = Module.hiwire.get_value(obj_id);
   return obj && typeof obj[Module.hiwire.get_value(name)] == = "function";
+  // clang format on
 })
 
 int

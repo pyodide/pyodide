@@ -486,6 +486,24 @@ finally:
   return success ? 0 : -1;
 }
 
+EM_JS_REF(JsRef, call_get_method, (JsRef idobj, JsRef idkey), {
+  let obj = Module.hiwire.get_value(idobj);
+  let key = Module.hiwire.get_value(idkey);
+  let result = obj.get(key);
+  // clang-format off
+  if (result === undefined) {
+    // Try to distinguish between undefined and missing:
+    // If the object has a "has" method and it returns false for this key, the
+    // key is missing. Otherwise, assume key present and value was undefined.
+    // TODO: in absence of a "has" method, should we return None or KeyError?
+    if (obj.has && typeof obj.has === "function" && !obj.has(key)) {
+      return 0;
+    }
+  }
+  // clang-format on
+  return Module.hiwire.new_value(result);
+});
+
 /**
  * __getitem__ for JsProxies that have a "get" method. Translates proxy[key] to
  * obj.get(key). Controlled by HAS_GET
@@ -500,7 +518,7 @@ JsProxy_subscript(PyObject* o, PyObject* pyidx)
 
   ididx = python2js(pyidx);
   FAIL_IF_NULL(ididx);
-  idresult = hiwire_CallMethodId_va(self->js, &JsId_get, ididx, NULL);
+  idresult = call_get_method(self->js, ididx);
   if (idresult == NULL) {
     if (!PyErr_Occurred()) {
       PyErr_SetObject(PyExc_KeyError, pyidx);
@@ -533,7 +551,8 @@ JsProxy_ass_subscript(PyObject* o, PyObject* pyidx, PyObject* pyvalue)
   ididx = python2js(pyidx);
   if (pyvalue == NULL) {
     jsresult = hiwire_CallMethodId_OneArg(self->js, &JsId_delete, ididx);
-    if (jsresult != Js_true) {
+    FAIL_IF_NULL(jsresult);
+    if (!hiwire_to_bool(jsresult)) {
       if (!PyErr_Occurred()) {
         PyErr_SetObject(PyExc_KeyError, pyidx);
       }
