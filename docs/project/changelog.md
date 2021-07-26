@@ -1,22 +1,23 @@
 ---
 substitutions:
   API: "<span class='badge badge-warning'>API Change</span>"
-  Enhancement : "<span class='badge badge-info'>Enhancement</span>"
-  Feature : "<span class='badge badge-success'>Feature</span>"
-  Fix : "<span class='badge badge-danger'>Fix</span>"
-  Update : "<span class='badge badge-danger'>Update</span>"
+  Enhancement: "<span class='badge badge-info'>Enhancement</span>"
+  Feature: "<span class='badge badge-success'>Feature</span>"
+  Fix: "<span class='badge badge-danger'>Fix</span>"
+  Update: "<span class='badge badge-danger'>Update</span>"
 ---
 
-
 (changelog)=
+
 # Change Log
 
 ## [Unreleased]
 
 - {{ API }} {any}`loadPyodide <globalThis.loadPyodide>` no longer automatically stores the API into a
-  global variable called `pyodide`. To get old behavior, say `globalThis.pyodide
-  = await loadPyodide({...})`.
+  global variable called `pyodide`. To get old behavior, say `globalThis.pyodide = await loadPyodide({...})`.
   {pr}`1597`
+- {{ API }} {any}`loadPyodide` now accepts callback functions for `stdin`, `stdout` and `stderr`
+  {pr}`1728`
 - {{ Enhancement }} Added a new {any}`CodeRunner` API for finer control than
   {any}`eval_code` and {any}`eval_code_async`. Designed with
   the needs of REPL implementations in mind.
@@ -68,11 +69,14 @@ substitutions:
 ### Standard library
 
 - The following standard library modules are now available as standalone packages
-   - distlib
+
+  - distlib
+
   They are loaded by default in {any}`loadPyodide <globalThis.loadPyodide>`, however this behavior
   can be disabled with the `fullStdLib` parameter set to `false`.
   All optional stdlib modules can then be loaded as needed with
   {any}`pyodide.loadPackage`. {pr}`1543`
+
 - The standard library module `audioop` is now included, making the `wave`,
   `sndhdr`, `aifc`, and `sunau` modules usable. {pr}`1623`
 
@@ -123,7 +127,6 @@ substitutions:
   an object or `Array.from` to convert to an array of pairs.
   {pr}`1742`
 
-
 ### pyodide-build
 
 - {{ Enhancement }} pyodide-build is now an installable Python package, with an identically named
@@ -135,11 +138,13 @@ substitutions:
   It is optional and the current default backend is still the agg backend compiled to wasm.
 
 ## Version 0.17.0
-*April 21, 2021*
+
+_April 21, 2021_
 
 See the {ref}`0-17-0-release-notes` for more information.
 
 ### Improvements to package loading and dynamic linking
+
 - {{ Enhancement }} Uses the emscripten preload plugin system to preload .so files in packages
 - {{ Enhancement }} Support for shared library packages. This is used for CLAPACK which makes scipy a lot smaller.
   {pr}`1236`
@@ -147,6 +152,7 @@ See the {ref}`0-17-0-release-notes` for more information.
   Safari v13 has also been observed to work on some (but not all) devices.
 
 ### Python / JS type conversions
+
 - {{ Feature }} A `JsProxy` of a Javascript `Promise` or other awaitable object is now a
   Python awaitable.
   {pr}`880`
@@ -157,7 +163,7 @@ See the {ref}`0-17-0-release-notes` for more information.
 - {{ API }} Added {any}`JsProxy.to_py` API to convert a Javascript object to Python.
   {pr}`1244`
 - {{ Feature }} Flexible jsimports: it now possible to add custom Python
-  "packages" backed by Javascript code, like the `js` package.  The `js` package
+  "packages" backed by Javascript code, like the `js` package. The `js` package
   is now implemented using this system.
   {pr}`1146`
 - {{ Feature }} A `PyProxy` of a Python coroutine or awaitable is now an
@@ -165,8 +171,7 @@ See the {ref}`0-17-0-release-notes` for more information.
   the Python event loop using `asyncio.ensure_future`.
   {pr}`1170`
 - {{ Enhancement }} Made `PyProxy` of an iterable Python object an iterable Js
-  object: defined the `[Symbol.iterator]` method, can be used like `for(let x of
-  proxy)`. Made a `PyProxy` of a Python iterator an iterator: `proxy.next()` is
+  object: defined the `[Symbol.iterator]` method, can be used like `for(let x of proxy)`. Made a `PyProxy` of a Python iterator an iterator: `proxy.next()` is
   translated to `next(it)`. Made a `PyProxy` of a Python generator into a
   Javascript generator: `proxy.next(val)` is translated to `gen.send(val)`.
   {pr}`1180`
@@ -237,7 +242,6 @@ See the {ref}`0-17-0-release-notes` for more information.
 - {{ API }} Removed `as_nested_list` API in favor of `JsProxy.to_py`.
   {pr}`1345`
 
-
 ### pyodide-js
 
 - {{ API }} Removed iodide-specific code in `pyodide.js`. This breaks compatibility with
@@ -277,7 +281,6 @@ See the {ref}`0-17-0-release-notes` for more information.
 - {{ Fix }} {any}`micropip.install` now handles version constraints correctly
   even if there is a version of the package available from the Pyodide `indexURL`.
 
-
 ### Build system
 
 - {{ Enhancement }} Updated to latest emscripten 2.0.13 with the updstream LLVM backend
@@ -290,6 +293,7 @@ See the {ref}`0-17-0-release-notes` for more information.
 
   As part of the change, Module.checkABI is no longer present.
   {pr}`991`
+
 - uglifyjs and lessc no longer need to be installed in the system during build
   {pr}`878`.
 - {{ Enhancement }} Reduce the size of the core Pyodide package
@@ -334,7 +338,8 @@ Jan Max Meyer, Jeremy Tuloup, joemarshall, leafjolt, Michael Greminger,
 Mireille Raad, Ondřej Staněk, Paul m. p. P, rdb, Roman Yurchak, Rudolfs
 
 ## Version 0.16.1
-*December 25, 2020*
+
+_December 25, 2020_
 
 Note: due to a CI deployment issue the 0.16.0 release was skipped and replaced
 by 0.16.1 with identical contents.
@@ -406,7 +411,7 @@ by 0.16.1 with identical contents.
   environment variable during build. The `pyodide_dev.js` is no longer
   distributed. To get an equivalent behavior with `pyodide.js`, set
   ```javascript
-  window.languagePluginUrl = './';
+  window.languagePluginUrl = "./";
   ```
   before loading it.
   {pr}`855`
@@ -423,6 +428,7 @@ by 0.16.1 with identical contents.
   import caches {pr}`893`
 
 ### Packages
+
 - New packages: freesasa, lxml, python-sat, traits, astropy, pillow,
   scikit-image, imageio, numcodecs, msgpack, asciitree, zarr
 
@@ -435,12 +441,10 @@ by 0.16.1 with identical contents.
   [pyodide-interrupt](https://pypi.org/project/pyodide-interrupts/), useful for
   handling interrupts in Pyodide (see project description for details).
 
-
 ### Backward incompatible changes
 
 - Dropped support for loading .wasm files with incorrect MIME type, following
   {pr}`851`
-
 
 ### List of contributors
 
@@ -451,7 +455,8 @@ Michael Panchenko, mojighahar, Nicolas Ollinger, Ram Rachum, Roman Yurchak,
 Sergio, Seungmin Kim, Shyam Saladi, smkm, Wei Ouyang
 
 ## Version 0.15.0
-*May 19, 2020*
+
+_May 19, 2020_
 
 - Upgrades Pyodide to CPython 3.7.4.
 - micropip no longer uses a CORS proxy to install pure Python packages from
@@ -474,7 +479,8 @@ Sergio, Seungmin Kim, Shyam Saladi, smkm, Wei Ouyang
 - New packages: future, autograd
 
 ## Version 0.14.3
-*Dec 11, 2019*
+
+_Dec 11, 2019_
 
 - Convert Javascript numbers containing integers, e.g. `3.0`, to a real Python
   long (e.g. `3`).
@@ -483,18 +489,21 @@ Sergio, Seungmin Kim, Shyam Saladi, smkm, Wei Ouyang
 - New packages: nltk, jeudi, statsmodels, regex, cytoolz, xlrd, uncertainties
 
 ## Version 0.14.0
-*Aug 14, 2019*
+
+_Aug 14, 2019_
 
 - The built-in `sqlite` and `bz2` modules of Python are now enabled.
 - Adds support for auto-completion based on jedi when used in iodide
 
 ## Version 0.13.0
-*May 31, 2019*
+
+_May 31, 2019_
 
 - Tagged versions of Pyodide are now deployed to Netlify.
 
 ## Version 0.12.0
-*May 3, 2019*
+
+_May 3, 2019_
 
 **User improvements:**
 
@@ -515,11 +524,13 @@ Sergio, Seungmin Kim, Shyam Saladi, smkm, Wei Ouyang
 - Pyodide now works on Safari.
 
 ## Version 0.11.0
-*Apr 12, 2019*
+
+_Apr 12, 2019_
 
 **User improvements:**
 
 - Support for built-in modules:
+
   - `sqlite`, `crypt`
 
 - New packages: `mne`
@@ -535,7 +546,8 @@ Sergio, Seungmin Kim, Shyam Saladi, smkm, Wei Ouyang
 - New packages: `jinja2`, `MarkupSafe`
 
 ## Version 0.10.0
-*Mar 21, 2019*
+
+_Mar 21, 2019_
 
 **User improvements:**
 

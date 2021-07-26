@@ -225,7 +225,13 @@ class SeleniumWrapper:
         self.run_js("self.__savedState = pyodide._module.saveState();")
 
     def restore_state(self):
-        self.run_js("pyodide._module.restoreState(self.__savedState)")
+        self.run_js(
+            """
+            if(self.__savedState){
+                pyodide._module.restoreState(self.__savedState)
+            }
+            """
+        )
 
     def get_num_proxies(self):
         return self.run_js("return pyodide._module.pyproxy_alloc_map.size")
@@ -472,8 +478,8 @@ def selenium_standalone(request, web_server_main):
                 print(selenium.logs)
 
 
-@pytest.fixture(params=["firefox", "chrome"], scope="function")
-def selenium_webworker_standalone(request, web_server_main):
+@contextlib.contextmanager
+def selenium_standalone_noload_common(request, web_server_main):
     with selenium_common(request, web_server_main, load_pyodide=False) as selenium:
         with set_webdriver_script_timeout(
             selenium, script_timeout=parse_driver_timeout(request)
@@ -482,6 +488,20 @@ def selenium_webworker_standalone(request, web_server_main):
                 yield selenium
             finally:
                 print(selenium.logs)
+
+
+@pytest.fixture(params=["firefox", "chrome"], scope="function")
+def selenium_webworker_standalone(request, web_server_main):
+    with selenium_standalone_noload_common(request, web_server_main) as selenium:
+        yield selenium
+
+
+@pytest.fixture(params=["firefox", "chrome", "node"], scope="function")
+def selenium_standalone_noload(request, web_server_main):
+    """Only difference between this and selenium_webworker_standalone is that
+    this also tests on node."""
+    with selenium_standalone_noload_common(request, web_server_main) as selenium:
+        yield selenium
 
 
 # selenium instance cached at the module level
