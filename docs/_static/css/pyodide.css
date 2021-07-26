@@ -21,7 +21,3 @@ code {
 .toctree-wrapper > .caption {
   display: none;
 }
-
-.table.autosummary > td {
-  font-weight: bold;
-}

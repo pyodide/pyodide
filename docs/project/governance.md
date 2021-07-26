@@ -1,4 +1,5 @@
 (project-governance)=
+
 # Governance and Decision-making
 
 The purpose of this document is to formalize the governance process used by the
@@ -61,7 +62,6 @@ comments) in the past two years will be asked if they want to become emeritus
 core developers and recant their commit and voting rights until they become
 active again.
 
-
 ## Decision Making Process
 
 Decisions about the future of the project are made through discussion with all
@@ -80,17 +80,17 @@ refer to as “the decision making process”.
 Decisions (in addition to adding core developers as above) are made according to
 the following rules:
 
-* **Maintenance changes**, include for instance improving the wording in the
-  documentation, updating CI or dependencies.  Core developers are expected to
+- **Maintenance changes**, include for instance improving the wording in the
+  documentation, updating CI or dependencies. Core developers are expected to
   give “reasonable time” to others to give their opinion on the Pull Request in
   case they’re not confident that others would agree. If no further review on
   the Pull Request is received within this time, it can be merged. If a review
   is received, then the consensus rules from the following section apply.
 
-* **Code changes in general, and especially those impacting user facing APIs**,
+- **Code changes in general, and especially those impacting user facing APIs**,
   as well as more significant documentation changes, require review and approval
   by a core developer and no objections raised by any core developer (lazy
   consensus). This process happens on the pull-request page.
 
-* **Changes to the governance model** use the same decision process outlined
+- **Changes to the governance model** use the same decision process outlined
   above.
