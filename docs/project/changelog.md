@@ -66,6 +66,9 @@ substitutions:
 - {{ API }} The `packages.json` schema for Pyodide was re-designed for better compatibility
   with conda. {pr}`1700`
 
+- {{ API }} `run_docker` no longer binds any port to the docker image by default.
+  {pr}`1750`
+
 ### Standard library
 
 - The following standard library modules are now available as standalone packages
