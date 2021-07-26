@@ -1,6 +1,5 @@
 # Pyodide Python compatibility
 
-
 ## Python Standard library
 
 Most of the Python standard library is functional, except for the modules
@@ -16,31 +15,32 @@ they can be excluded with `loadPyodide({..., fullStdLib = false })`.
 Individual modules can then be loaded as necessary using
 {any}`pyodide.loadPackage`,
 
- - distutils
- - test: it is an exception to the above, since it is excluded by default.
+- distutils
+- test: it is an exception to the above, since it is excluded by default.
 
 ### Removed modules
 
 The following modules are removed from the standard library to reduce download size and
 since they currently wouldn't work in the WebAssembly VM,
 
- - ctypes
- - curses
- - dbm
- - ensurepip
- - idlelib
- - lib2to3
- - tkinter
- - turtle.py
- - turtledemo
- - venv
- - webbrowser.py
+- ctypes
+- curses
+- dbm
+- ensurepip
+- idlelib
+- lib2to3
+- tkinter
+- turtle.py
+- turtledemo
+- venv
+- webbrowser.py
 
 ### Included but not working modules
 
 The following modules can be imported, but are not functional due to the limitations of the WebAssembly VM:
- - multiprocessing
- - threading
- - sockets
+
+- multiprocessing
+- threading
+- sockets
 
 as well as any functionality that requires these.

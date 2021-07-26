@@ -16,6 +16,7 @@ Pyodide provides transparent conversion of objects between Javascript and
 Python. When used inside a browser, Python has full access to the Web APIs.
 
 ## History
+
 Pyodide was created in 2018 by [Michael Droettboom](https://github.com/mdboom)
 at Mozilla as part of the [Iodide
 project](https://github.com/iodide-project/iodide). Iodide is an experimental
@@ -44,8 +45,9 @@ Pyodide uses the [Mozilla Public License Version
 ## Infrastructure support
 
 We would like to thank,
- - [Mozilla](https://www.mozilla.org/en-US/) and
-[CircleCl](https://circleci.com/) for Continuous Integration resources
- - [JsDelivr](https://www.jsdelivr.com/) for providing a CDN for Pyodide
-   packages
- - [ReadTheDocs](https://readthedocs.org/) for hosting the documentation.
+
+- [Mozilla](https://www.mozilla.org/en-US/) and
+  [CircleCl](https://circleci.com/) for Continuous Integration resources
+- [JsDelivr](https://www.jsdelivr.com/) for providing a CDN for Pyodide
+  packages
+- [ReadTheDocs](https://readthedocs.org/) for hosting the documentation.
