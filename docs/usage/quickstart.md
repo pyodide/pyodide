@@ -9,6 +9,7 @@ Try Pyodide in a [REPL](https://pyodide.org/en/latest/console.html) directly in 
 ## Setup
 
 To include Pyodide in your project you can use the following CDN URL:
+
 ```{eval-rst}
   https://cdn.jsdelivr.net/pyodide/dev/full/pyodide.js
 ```
@@ -17,9 +18,7 @@ You can also download a release from [Github
 releases](https://github.com/pyodide/pyodide/releases) or build Pyodide
 yourself. See {ref}`serving_pyodide_packages` for more details.
 
-The `pyodide.js` file defines a single async function called {any}`loadPyodide
-<globalThis.loadPyodide>` which sets up the Python environment and returns {js:mod}`the
-Pyodide top level namespace <pyodide>`.
+The `pyodide.js` file defines a single async function called {any}`loadPyodide <globalThis.loadPyodide>` which sets up the Python environment and returns {js:mod}`the Pyodide top level namespace <pyodide>`.
 
 ```pyodide
 async function main() {
@@ -40,6 +39,7 @@ input a string of Python code. If the code ends in an expression, it returns the
 result of the expression, translated to Javascript objects (see
 {ref}`type-translations`). For example the following code will return the
 version string as a Javascript string:
+
 ```pyodide
 pyodide.runPython(`
   import sys
@@ -53,6 +53,7 @@ See {ref}`loading_packages` for information about loading additional packages.
 ## Complete example
 
 Create and save a test `index.html` page with the following contents:
+
 ```html-pyodide
 <!DOCTYPE html>
 <html>
@@ -79,56 +80,57 @@ Create and save a test `index.html` page with the following contents:
 </html>
 ```
 
-
 ## Alternative Example
 
 ```html
 <!DOCTYPE html>
 <html>
-<head>
+  <head>
     <script src="https://cdn.jsdelivr.net/pyodide/dev/full/pyodide.js"></script>
-</head>
+  </head>
 
-<body>
-  <p>You can execute any Python code. Just enter something in the box below and click the button.</p>
-  <input id='code' value='sum([1, 2, 3, 4, 5])'>
-  <button onclick='evaluatePython()'>Run</button>
-  <br>
-  <br>
-  <div>
-    Output:
-  </div>
-  <textarea id='output' style='width: 100%;' rows='6' disabled></textarea>
+  <body>
+    <p>
+      You can execute any Python code. Just enter something in the box below and
+      click the button.
+    </p>
+    <input id="code" value="sum([1, 2, 3, 4, 5])" />
+    <button onclick="evaluatePython()">Run</button>
+    <br />
+    <br />
+    <div>Output:</div>
+    <textarea id="output" style="width: 100%;" rows="6" disabled></textarea>
 
-  <script>
-    const output = document.getElementById("output");
-    const code = document.getElementById("code");
+    <script>
+      const output = document.getElementById("output");
+      const code = document.getElementById("code");
 
-    function addToOutput(s) {
-      output.value += '>>>' + code.value + '\n' + s + '\n';
-    }
-
-    output.value = 'Initializing...\n';
-    // init Pyodide
-    async function main(){
-      let pyodide = await loadPyodide({ indexURL : 'https://cdn.jsdelivr.net/pyodide/dev/full/' });
-      output.value += 'Ready!\n';
-      return pyodide;
-    }
-    let pyodideReadyPromise = main();
-
-    async function evaluatePython() {
-      let pyodide = await pyodideReadyPromise;
-      try {
-        let output = pyodide.runPython(code.value);
-        addToOutput(output);
-      } catch(err) {
-        addToOutput(err);
+      function addToOutput(s) {
+        output.value += ">>>" + code.value + "\n" + s + "\n";
       }
-    }
-  </script>
-</body>
 
+      output.value = "Initializing...\n";
+      // init Pyodide
+      async function main() {
+        let pyodide = await loadPyodide({
+          indexURL: "https://cdn.jsdelivr.net/pyodide/dev/full/",
+        });
+        output.value += "Ready!\n";
+        return pyodide;
+      }
+      let pyodideReadyPromise = main();
+
+      async function evaluatePython() {
+        let pyodide = await pyodideReadyPromise;
+        try {
+          let output = pyodide.runPython(code.value);
+          addToOutput(output);
+        } catch (err) {
+          addToOutput(err);
+        }
+      }
+    </script>
+  </body>
 </html>
 ```
 
@@ -138,11 +140,12 @@ You can also access from Javascript all functions and variables defined in
 Python by using the {any}`pyodide.globals` object.
 
 For example, if you run the code `x = numpy.ones([3,3])` in Python, you can
-access the variable ``x`` from Javascript in your browser's developer console
+access the variable `x` from Javascript in your browser's developer console
 as `pyodide.globals.get("x")`. The same goes
 for functions and imports. See {ref}`type-translations` for more details.
 
 You can try it yourself in the browser console:
+
 ```pyodide
 pyodide.runPython(`
   import numpy

@@ -1,4 +1,5 @@
 (building_from_sources)=
+
 # Building from sources
 
 Building is easiest on Linux and relatively straightforward on Mac. For Windows,
@@ -26,7 +27,7 @@ Additional build prerequisites are:
 - SWIG to compile NLopt
 - gfortran (GNU Fortran 95 compiler)
 - [f2c](http://www.netlib.org/f2c/)
-- [ccache](https://ccache.samba.org) (optional) *highly* recommended for much faster rebuilds.
+- [ccache](https://ccache.samba.org) (optional) _highly_ recommended for much faster rebuilds.
 
 On Mac, you will also need:
 
@@ -44,7 +45,6 @@ On Mac, you will also need:
 - f2c: Install wget (`brew install wget`), and then run the buildf2c script from
   the root directory (`sudo ./tools/buildf2c`)
 
-
 After installing the build prerequisites, run from the command line:
 
 ```bash
@@ -56,7 +56,7 @@ make
 We provide a Debian-based Docker image on Docker Hub with the dependencies
 already installed to make it easier to build Pyodide. On top of that we provide
 a pre-built image which can be used for fast custom and partial builds of
-Pyodide. Note that building from the non pre-built the Docker image is *very*
+Pyodide. Note that building from the non pre-built the Docker image is _very_
 slow on Mac, building on the host machine is preferred if at all possible.
 
 1. Install Docker
@@ -69,8 +69,7 @@ Note: You can control the resources allocated to the build by setting the env
 vars `EMSDK_NUM_CORE`, `EMCC_CORES` and `PYODIDE_JOBS` (the default for each is
 4).
 
-
-If running ``make`` deterministically stops at one point in each subsequent try,
+If running `make` deterministically stops at one point in each subsequent try,
 increasing the maximum RAM usage available to the docker container might help
 [This is different from the physical RAM capacity inside the system]. Ideally,
 at least 3 GB of RAM should be available to the docker container to build
@@ -81,6 +80,7 @@ You can edit the files in your source checkout on your host machine, and then
 repeatedly run `make` inside the Docker environment to test your changes.
 
 (partial-builds)=
+
 ## Partial builds
 
 To build a subset of available packages in Pyodide, set the environment variable
@@ -102,14 +102,15 @@ say `make minimal`.
 ## Environment variables
 
 Following environment variables additionally impact the build,
- - `PYODIDE_JOBS`: the `-j` option passed to the `emmake make` command when
-   applicable for parallel compilation. Default: 3.
- - `PYODIDE_BASE_URL`: Base URL where Pyodide packages are deployed. It must end
-   with a trailing `/`. Default: `./` to load Pyodide packages from the same
-   base URL path as where `pyodide.js` is located.  Example:
-   `https://cdn.jsdelivr.net/pyodide/v0.17.0/full/`
- - `EXTRA_CFLAGS` : Add extra compilation flags.
- - `EXTRA_LDFLAGS` : Add extra linker flags.
+
+- `PYODIDE_JOBS`: the `-j` option passed to the `emmake make` command when
+  applicable for parallel compilation. Default: 3.
+- `PYODIDE_BASE_URL`: Base URL where Pyodide packages are deployed. It must end
+  with a trailing `/`. Default: `./` to load Pyodide packages from the same
+  base URL path as where `pyodide.js` is located. Example:
+  `https://cdn.jsdelivr.net/pyodide/v0.17.0/full/`
+- `EXTRA_CFLAGS` : Add extra compilation flags.
+- `EXTRA_LDFLAGS` : Add extra linker flags.
 
 Setting `EXTRA_CFLAGS="-D DEBUG_F"` provides detailed diagnostic information
 whenever error branches are taken inside of the Pyodide core code. These error
