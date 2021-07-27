@@ -1,0 +1,213 @@
+"""Adapted from
+https://github.com/pypa/pip/blob/main/src/pip/_internal/network/lazy_wheel.py"""
+
+from bisect import bisect_left, bisect_right
+from .wheel import pkg_resources_distribution_for_wheel
+from tempfile import NamedTemporaryFile
+from typing import List, Optional, Any, Iterator, Tuple
+from contextlib import contextmanager
+from zipfile import BadZipfile, ZipFile
+from js import fetch as jsfetch, Object
+from pyodide import to_js
+
+
+def fetch(url, **kwargs):
+    return jsfetch(url, to_js(kwargs, dict_converter=Object.fromEntries))
+
+
+CONTENT_CHUNK_SIZE = 10 * 1024
+
+
+async def dist_from_wheel_url(name, url):
+    """Return a pkg_resources.Distribution from the given wheel URL.
+
+    This uses HTTP range requests to only fetch the potion of the wheel
+    containing metadata, just enough for the object to be constructed.
+    If such requests are not supported, HTTPRangeRequestUnsupported
+    is raised.
+    """
+    async with LazyZipOverHTTP(url) as wheel:
+        # For read-only ZIP files, ZipFile only needs methods read,
+        # seek, seekable and tell, not the whole IO protocol.
+        zip_file = ZipFile(wheel)  # type: ignore
+        # After context manager exit, wheel.name
+        # is an invalid file by intention.
+        return pkg_resources_distribution_for_wheel(zip_file, name, wheel.name)
+
+
+class LazyZipOverHTTP:
+    """File-like object mapped to a ZIP file over HTTP.
+
+    This uses HTTP range requests to lazily fetch the file's content,
+    which is supposed to be fed to ZipFile.  If such requests are not
+    supported by the server, raise HTTPRangeRequestUnsupported
+    during initialization.
+    """
+
+    def __init__(self, url, chunk_size=CONTENT_CHUNK_SIZE):
+        self._url, self._chunk_size = url, chunk_size
+        self._file = NamedTemporaryFile()
+        self._left = []  # type: List[int]
+        self._right = []  # type: List[int]
+
+    @property
+    def mode(self):
+        # type: () -> str
+        """Opening mode, which is always rb."""
+        return "rb"
+
+    @property
+    def name(self):
+        # type: () -> str
+        """Path to the underlying file."""
+        return self._file.name
+
+    def seekable(self):
+        # type: () -> bool
+        """Return whether random access is supported, which is True."""
+        return True
+
+    def close(self):
+        # type: () -> None
+        """Close the file."""
+        self._file.close()
+
+    @property
+    def closed(self):
+        # type: () -> bool
+        """Whether the file is closed."""
+        return self._file.closed
+
+    def read(self, size=-1):
+        # type: (int) -> bytes
+        """Read up to size bytes from the object and return them.
+
+        As a convenience, if size is unspecified or -1,
+        all bytes until EOF are returned.  Fewer than
+        size bytes may be returned if EOF is reached.
+        """
+        download_size = max(size, self._chunk_size)
+        start, length = self.tell(), self._length
+        stop = length if size < 0 else min(start + download_size, length)
+        start = max(0, stop - download_size)
+        return self._file.read(size)
+
+    def readable(self):
+        # type: () -> bool
+        """Return whether the file is readable, which is True."""
+        return True
+
+    def seek(self, offset, whence=0):
+        # type: (int, int) -> int
+        """Change stream position and return the new absolute position.
+
+        Seek to offset relative position indicated by whence:
+        * 0: Start of stream (the default).  pos should be >= 0;
+        * 1: Current position - pos may be negative;
+        * 2: End of stream - pos usually negative.
+        """
+        return self._file.seek(offset, whence)
+
+    def tell(self):
+        # type: () -> int
+        """Return the current possition."""
+        return self._file.tell()
+
+    def truncate(self, size=None):
+        # type: (Optional[int]) -> int
+        """Resize the stream to the given size in bytes.
+
+        If size is unspecified resize to the current position.
+        The current stream position isn't changed.
+
+        Return the new file size.
+        """
+        return self._file.truncate(size)
+
+    def writable(self):
+        # type: () -> bool
+        """Return False."""
+        return False
+
+    async def __aenter__(self):
+        # type: () -> LazyZipOverHTTP
+        self.resp = await fetch(self._url)
+        self._length = int(self.resp.headers.get("content-length"))
+        self.truncate(self._length)
+        await self._check_zip()
+        self._file.__enter__()
+        return self
+
+    async def __aexit__(self, *exc):
+        # type: (*Any) -> Optional[bool]
+        return self._file.__exit__(*exc)
+
+    @contextmanager
+    def _stay(self):
+        # type: ()-> Iterator[None]
+        """Return a context manager keeping the position.
+
+        At the end of the block, seek back to original position.
+        """
+        pos = self.tell()
+        try:
+            yield
+        finally:
+            self.seek(pos)
+
+    async def _check_zip(self):
+        # type: () -> None
+        """Check and download until the file is a valid ZIP."""
+        end = self._length - 1
+        for start in reversed(range(0, end, self._chunk_size)):
+            await self._download(start, end)
+            with self._stay():
+                try:
+                    # For read-only ZIP files, ZipFile only needs
+                    # methods read, seek, seekable and tell.
+                    ZipFile(self)  # type: ignore
+                except BadZipfile:
+                    pass
+                else:
+                    break
+
+    async def _stream_response(self, start, end):
+        """Return HTTP response to a range request from start to end."""
+        headers = {}
+        headers["Range"] = f"bytes={start}-{end}"
+        return await fetch(self._url, headers=headers, stream=True)
+
+    def _merge(self, start, end, left, right):
+        # type: (int, int, int, int) -> Iterator[Tuple[int, int]]
+        """Return an iterator of intervals to be fetched.
+
+        Args:
+            start (int): Start of needed interval
+            end (int): End of needed interval
+            left (int): Index of first overlapping downloaded data
+            right (int): Index after last overlapping downloaded data
+        """
+        lslice, rslice = self._left[left:right], self._right[left:right]
+        i = start = min([start] + lslice[:1])
+        end = max([end] + rslice[-1:])
+        for j, k in zip(lslice, rslice):
+            if j > i:
+                yield i, j - 1
+            i = k + 1
+        if i <= end:
+            yield i, end
+        self._left[left:right], self._right[left:right] = [start], [end]
+
+    async def _download(self, start, end):
+        # type: (int, int) -> None
+        """Download bytes from start to end inclusively."""
+        with self._stay():
+            left = bisect_left(self._right, start)
+            right = bisect_right(self._left, end)
+            for start, end in self._merge(start, end, left, right):
+                response = await self._stream_response(start, end)
+                # response.raise_for_status()
+                self.seek(start)
+                # for chunk in response_chunks(response, self._chunk_size):
+                #     self._file.write(chunk)
+                self._file.write((await response.arrayBuffer()).to_py())

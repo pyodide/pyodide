@@ -9,5 +9,5 @@ setup(
     author="Michael Droettboom",
     author_email="mdroettboom@mozilla.com",
     url="https://github.com/pyodide/pyodide",
-    py_modules=["micropip"],
+    packages=["micropip"],
 )

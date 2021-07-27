@@ -6,6 +6,7 @@ import json
 from pathlib import Path
 import zipfile
 from typing import Dict, Any, Union, List, Tuple
+from . import lazy_wheel
 
 from packaging.requirements import Requirement
 from packaging.version import Version
@@ -177,21 +178,25 @@ class _PackageManager:
             self.installed_packages[name] = ver
         await gather(*wheel_promises)
 
-    async def add_requirement(self, requirement: str, ctx, transaction):
+    async def add_requirement(
+        self, requirement: Union[str, Requirement], ctx, transaction
+    ):
         """Add a requirement to the transaction.
 
         See PEP 508 for a description of the requirements.
         https://www.python.org/dev/peps/pep-0508
         """
-        if requirement.endswith(".whl"):
+        if isinstance(requirement, Requirement):
+            req = requirement
+        elif requirement.endswith(".whl"):
             # custom download location
             name, wheel, version = _parse_wheel_url(requirement)
             name = name.lower()
-            transaction["wheels"].append((name, wheel, version))
+            await self.add_wheel(name, wheel, version, (), ctx, transaction)
             return
-
-        req = Requirement(requirement)
-        req.name = req.name.lower()
+        else:
+            req = Requirement(requirement)
+            req.name = req.name.lower()
 
         # If there's a Pyodide package that matches the version constraint, use
         # the Pyodide package instead of the one on PyPI
@@ -222,13 +227,16 @@ class _PackageManager:
                 )
         metadata = await _get_pypi_json(req.name)
         wheel, ver = self.find_wheel(metadata, req)
-        transaction["locked"][req.name] = ver
+        await self.add_wheel(req.name, wheel, ver, req.extras, ctx, transaction)
 
-        recurs_reqs = metadata.get("info", {}).get("requires_dist") or []
-        for recurs_req in recurs_reqs:
+    async def add_wheel(self, name, wheel, version, extras, ctx, transaction):
+        transaction["locked"][name] = version
+
+        dist = await lazy_wheel.dist_from_wheel_url(name, wheel["url"])
+        for recurs_req in dist.requires(extras):
             await self.add_requirement(recurs_req, ctx, transaction)
 
-        transaction["wheels"].append((req.name, wheel, ver))
+        transaction["wheels"].append((name, wheel, version))
 
     def find_wheel(self, metadata, req: Requirement):
         releases = metadata.get("releases", {})
