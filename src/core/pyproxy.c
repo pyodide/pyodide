@@ -235,15 +235,6 @@ finally:
 int
 _PyObject_GetMethod(PyObject* obj, PyObject* name, PyObject** method);
 
-// Use raw EM_JS here, we intend to raise fatal error if called on bad input.
-EM_JS(int, pyproxy_Check, (JsRef x), {
-  if (x == 0) {
-    return false;
-  }
-  let val = Module.hiwire.get_value(x);
-  return Module.isPyProxy(val);
-});
-
 EM_JS(int, pyproxy_mark_borrowed, (JsRef id), {
   let proxy = Module.hiwire.get_value(id);
   Module.pyproxy_mark_borrowed(proxy);

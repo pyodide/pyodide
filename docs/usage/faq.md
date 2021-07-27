@@ -190,26 +190,9 @@ def f(*args):
 document.body.addEventListener('click', f)
 ```
 
-<<<<<<< HEAD
 Now every time you click, an error will be raised (see {ref}`type-translations-proxy-arguments`).
-||||||| merged common ancestors
-This leaks `f` and does not remove the event listener (instead
-`removeEventListener` will silently do nothing).
-=======
 
-This leaks `f` and does not remove the event listener (instead
-`removeEventListener` will silently do nothing).
-
-> > > > > > > main
-
-<<<<<<< HEAD
 To do this correctly use {func}`pyodide.create_proxy` as follows:
-||||||| merged common ancestors
-To do this correctly use :func:`pyodide.create_proxy` as follows:
-=======
-To do this correctly use :func:`pyodide.create_proxy` as follows:
-
-> > > > > > > main
 
 ```py
 from js import document
