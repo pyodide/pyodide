@@ -7,12 +7,33 @@ from tempfile import NamedTemporaryFile
 from typing import List, Optional, Any, Iterator, Tuple
 from contextlib import contextmanager
 from zipfile import BadZipfile, ZipFile
-from js import fetch as jsfetch, Object
-from pyodide import to_js
+from pyodide import to_js, IN_BROWSER
+
+if IN_BROWSER:
+    from js import fetch as jsfetch, Object
+
+    def fetch(url, headers={}):
+        return jsfetch(
+            url, to_js({"headers": headers}, dict_converter=Object.fromEntries)
+        )
 
 
-def fetch(url, **kwargs):
-    return jsfetch(url, to_js(kwargs, dict_converter=Object.fromEntries))
+else:
+    from urllib.request import urlopen, Request
+
+    async def fetch(url, headers={}):
+        fd = urlopen(Request(url, headers=headers))
+        fd.statusText = fd.reason
+
+        async def arrayBuffer():
+            class Temp:
+                def to_py():
+                    return fd.read()
+
+            return Temp
+
+        fd.arrayBuffer = arrayBuffer
+        return fd
 
 
 CONTENT_CHUNK_SIZE = 10 * 1024
@@ -44,14 +65,14 @@ def raise_unless_request_succeeded(response):
 
     if 400 <= response.status < 500:
         http_error_msg = "%s Client Error: %s for url: %s" % (
-            x.status,
+            response.status,
             response.statusText,
             response.url,
         )
 
     elif 500 <= response.status < 600:
         http_error_msg = "%s Server Error: %s for url: %s" % (
-            response.status_code,
+            response.status,
             response.statusText,
             response.url,
         )
@@ -200,7 +221,7 @@ class LazyZipOverHTTP:
         """Return HTTP response to a range request from start to end."""
         headers = {}
         headers["Range"] = f"bytes={start}-{end}"
-        return await fetch(self._url, headers=headers, stream=True)
+        return await fetch(self._url, headers=headers)
 
     def _merge(self, start, end, left, right):
         # type: (int, int, int, int) -> Iterator[Tuple[int, int]]
