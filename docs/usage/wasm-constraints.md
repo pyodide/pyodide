@@ -23,7 +23,6 @@ Individual modules can then be loaded as necessary using
 The following modules are removed from the standard library to reduce download size and
 since they currently wouldn't work in the WebAssembly VM,
 
-- ctypes
 - curses
 - dbm
 - ensurepip
@@ -33,7 +32,6 @@ since they currently wouldn't work in the WebAssembly VM,
 - turtle.py
 - turtledemo
 - venv
-- webbrowser.py
 
 ### Included but not working modules
 

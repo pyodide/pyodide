@@ -17,8 +17,9 @@ which case it relies on {any}`pyodide.loadPackage`).
 If you use {any}`pyodide.loadPackagesFromImports` Pyodide will automatically
 download all packages that the code snippet imports. This is particularly useful
 for making a repl since users might import unexpected packages. At present,
-`loadPackagesFromImports` will not download packages from PyPi, it will only
-download packages included in the Pyodide distribution.
+{any}`loadPackagesFromImports <pyodide.loadPackagesFromImports>` will not
+download packages from PyPi, it will only download packages included in the
+Pyodide distribution.
 
 ## Loading packages with {any}`pyodide.loadPackage`
 
@@ -35,8 +36,8 @@ It is also possible to load packages from custom URLs:
 pyodide.loadPackage("https://foo/bar/numpy.js");
 ```
 
-The file name in the URL must be `/<package-name>.js` and there must be an
-accompanying `.data` file in the same directory.
+The file name in the URL must be `<package-name>.js` and there must be an
+accompanying file called `<package-name>.data` in the same directory.
 
 When you request a package from the official repository, all of that package's
 dependencies are also loaded. Dependency resolution is not yet implemented when
@@ -72,9 +73,10 @@ main();
 ### Installing packages from PyPI
 
 Pyodide supports installing pure Python wheels from PyPI with {mod}`micropip`.
-{func}`micropip.install` returns a Python `Future <https://docs.python.org/3/library/asyncio-future.html>`\_ so you can await the
-future or otherwise use the Python future API to do work once the packages have
-finished loading:
+{func}`micropip.install` returns a Python
+[Future](https://docs.python.org/3/library/asyncio-future.html) so you can await
+the future or otherwise use the Python future API to do work once the packages
+have finished loading:
 
 ```pyodide
 pyodide.runPythonAsync(`

@@ -15,7 +15,7 @@ else:
         pass
 
 
-__all__ = ["Console", "PyodideConsole", "Banner", "repr_shorten"]
+__all__ = ["Console", "PyodideConsole", "Banner", "repr_shorten", "ConsoleFuture"]
 
 
 class PyodideConsole(Console):

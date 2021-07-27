@@ -4,7 +4,7 @@ substitutions:
   Enhancement: "<span class='badge badge-info'>Enhancement</span>"
   Feature: "<span class='badge badge-success'>Feature</span>"
   Fix: "<span class='badge badge-danger'>Fix</span>"
-  Update: "<span class='badge badge-danger'>Update</span>"
+  Update: "<span class='badge badge-success'>Update</span>"
 ---
 
 (changelog)=
@@ -55,16 +55,19 @@ substitutions:
 
 - {{ Enhancement }} Pyodide can experimentally be used in Node.js {pr}`1689`
 
-- {{ Enhancement }} Pyodide now directly exposes the emscripten `FS` API,
-  allowing for direct manipulation of the in-memory filesystem {pr}`1692`
+- {{ Enhancement }} Pyodide now directly exposes the [Emscripten filesystem
+  API](https://emscripten.org/docs/api_reference/Filesystem-API.html), allowing
+  for direct manipulation of the in-memory filesystem
+  {pr}`1692`
 
-- {{ Enhancement }} Pyodide's support of emscripten file systems is expanded from
-  the default `MEMFS` to include `IDBFS`, `NODEFS`, `PROXYFS`, and `WORKERFS`,
-  allowing for custom persistence strategies depending on execution environment
-  {pr}`1596`
+- {{ Enhancement }} Pyodide's support of [emscripten file
+  systems](https://emscripten.org/docs/api_reference/Filesystem-API.html#file-systems)
+  is expanded from the default `MEMFS` to include `IDBFS`, `NODEFS`, `PROXYFS`,
+  and `WORKERFS`, allowing for custom persistence strategies depending on
+  execution environment {pr}`1596`
 
-- {{ API }} The `packages.json` schema for Pyodide was re-designed for better compatibility
-  with conda. {pr}`1700`
+- {{ API }} The `packages.json` schema for Pyodide was redesigned for better
+  compatibility with conda. {pr}`1700`
 
 - {{ API }} `run_docker` no longer binds any port to the docker image by default.
   {pr}`1750`
@@ -99,14 +102,14 @@ substitutions:
 - {{ API }} Updated the method resolution order on `PyProxy`. Performing a
   lookup on a `PyProxy` will prefer to pick a method from the `PyProxy` api, if
   no such method is found, it will use `getattr` on the proxied object.
-  Prefixing a name with `$` forces `getattr`. For instance, `PyProxy.destroy`
+  Prefixing a name with `$` forces `getattr`. For instance, {any}`PyProxy.destroy`
   now always refers to the method that destroys the proxy, whereas
   `PyProxy.$destroy` refers to an attribute or method called `destroy` on the
   proxied object.
   {pr}`1604`
 - {{ API }} It is now possible to use `Symbol` keys with PyProxies. These
   `Symbol` keys put markers on the PyProxy that can be used by external code.
-  They will not currently be copied by `PyProxy.copy`.
+  They will not currently be copied by {any}`PyProxy.copy`.
   {pr}`1696`
 - {{ Enhancement }} Memory management of `PyProxy` fields has been changed so
   that fields looked up on a `PyProxy` are "borrowed" and have their lifetime
@@ -118,7 +121,7 @@ substitutions:
   now takes `depth` as a named argument. Also `to_js` and `to_py` only take
   depth as a keyword argument.
   {pr}`1721`
-- {{ API }} `toJs` and `to_js` now take an option `pyproxies`, if a Javascript
+- {{ API }} {any}`toJs <PyProxy.toJs>` and {any}`to_js <pyodide.to_js>` now take an option `pyproxies`, if a Javascript
   Array is passed for this, then any proxies created during conversion will be
   placed into this array. This allows easy cleanup later. The `create_pyproxies`
   option can be used to disable creation of pyproxies during conversion

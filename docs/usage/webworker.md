@@ -16,7 +16,7 @@ such as `https://cdn.jsdelivr.net/pyodide`. This is the solution
 presented here.
 
 Update the `webworker.js` sample so that it has as valid URL for `pyodide.js`, and sets
-`indexURL <globalThis.loadPyodide>` to the location of the supporting files.
+{any}`indexURL <globalThis.loadPyodide>` to the location of the supporting files.
 
 In your application code create a web worker `new Worker(...)`,
 and attach listeners to it using its `.onerror` and `.onmessage`
@@ -94,10 +94,10 @@ two things:
 1. Listen on new messages from the main thread
 2. Respond back once it finished executing the Python script
 
-These are the required tasks it should fulfill, but it can do other things.
-For example, to always load packages `numpy` and `pytz`, you would insert the
-lines `pythonLoading = self.pyodide.loadPackage(['numpy', 'pytz'])` and
-`await pythonLoading;` as shown below:
+These are the required tasks it should fulfill, but it can do other things. For
+example, to always load packages `numpy` and `pytz`, you would insert the line
+{any}`await pyodide.loadPackage(['numpy', 'pytz']); <pyodide.loadPackage>` as
+shown below:
 
 ```js
 // webworker.js
@@ -111,7 +111,7 @@ async function loadPyodideAndPackages() {
   self.pyodide = await loadPyodide({
     indexURL: "https://cdn.jsdelivr.net/pyodide/dev/full/",
   });
-  await self.pyodide.loadPackage(["numpy", "pytz"]);
+  await pyodide.loadPackage(["numpy", "pytz"]);
 }
 let pyodideReadyPromise = loadPyodideAndPackages();
 
