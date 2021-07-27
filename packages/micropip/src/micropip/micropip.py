@@ -22,10 +22,11 @@ except ImportError:
     IN_BROWSER = False
 
 if IN_BROWSER:
-    # In practice, this is the `site-packages` directory.
-    WHEEL_BASE = Path(__file__).parent
+    import site
+
+    WHEEL_BASE = site.getsitepackages()[0]
 else:
-    WHEEL_BASE = Path(".") / "wheels"
+    WHEEL_BASE = str(Path(".") / "wheels")
 
 if IN_BROWSER:
     from js import fetch
