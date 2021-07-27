@@ -156,7 +156,7 @@ lint: node_modules/.installed
 	mypy --ignore-missing-imports    \
 		pyodide-build/pyodide_build/ \
 		src/ 					     \
-		packages/micropip/micropip/  \
+		packages/micropip/src/ 		 \
 		packages/*/test* 			 \
 		conftest.py 				 \
 		docs
