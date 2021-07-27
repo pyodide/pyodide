@@ -14,7 +14,7 @@ import subprocess
 import sys
 from threading import Thread
 from time import sleep, perf_counter
-from typing import Dict, Set, Optional, List
+from typing import Dict, Set, Optional, List, Any
 
 from . import common
 from .io import parse_package_config
@@ -263,39 +263,54 @@ def build_from_graph(pkg_map: Dict[str, BasePackage], outputdir: Path, args) -> 
                 build_queue.put(dependent)
 
 
+def generate_packages_json(pkg_map: Dict[str, BasePackage]) -> Dict:
+    """Generate the package.json file"""
+    # Build package.json data.
+    package_data: Dict[str, Dict[str, Any]] = {
+        "info": {"arch": "wasm32", "platform": "Emscripten-1.0"},
+        "packages": {},
+    }
+
+    libraries = [pkg.name for pkg in pkg_map.values() if pkg.library]
+
+    # unvendored stdlib modules
+    for name in UNVENDORED_STDLIB_MODULES:
+        pkg_entry: Dict[str, Any] = {
+            "name": name,
+            "version": "1.0",
+            "depends": [],
+            "imports": [name],
+        }
+        package_data["packages"][name.lower()] = pkg_entry
+
+    for name, pkg in pkg_map.items():
+        if pkg.library:
+            continue
+        pkg_entry = {"name": name, "version": pkg.version}
+        if pkg.shared_library:
+            pkg_entry["shared_library"] = True
+        pkg_entry["depends"] = [
+            x.lower() for x in pkg.dependencies if x not in libraries
+        ]
+        pkg_entry["imports"] = pkg.meta.get("test", {}).get("imports", [name])
+
+        package_data["packages"][name.lower()] = pkg_entry
+
+    # Workaround for circular dependency between soupsieve and beautifulsoup4
+    # TODO: FIXME!!
+    if "soupsieve" in package_data["packages"]:
+        package_data["packages"]["soupsieve"]["depends"].append("beautifulsoup4")
+
+    return package_data
+
+
 def build_packages(packages_dir: Path, outputdir: Path, args) -> None:
     pkg_map = generate_dependency_graph(packages_dir, args.only)
 
     build_from_graph(pkg_map, outputdir, args)
 
-    # Build package.json data.
-    package_data: dict = {
-        "dependencies": {key: [] for key in UNVENDORED_STDLIB_MODULES},
-        "import_name_to_package_name": {},
-        "shared_library": {},
-        "versions": {},
-        "orig_case": {},
-    }
+    package_data = generate_packages_json(pkg_map)
 
-    libraries = [pkg.name for pkg in pkg_map.values() if pkg.library]
-
-    for name, pkg in pkg_map.items():
-        if pkg.library:
-            continue
-        if pkg.shared_library:
-            package_data["shared_library"][name.lower()] = True
-        package_data["dependencies"][name.lower()] = [
-            x.lower() for x in pkg.dependencies if x not in libraries
-        ]
-        package_data["versions"][name.lower()] = pkg.version
-        for imp in pkg.meta.get("test", {}).get("imports", [name]):
-            package_data["import_name_to_package_name"][imp] = name.lower()
-        package_data["orig_case"][name.lower()] = name
-
-    # Hack for 0.17.0 release
-    # TODO: FIXME!!
-    if "soupsieve" in pkg_map:
-        package_data["dependencies"]["soupsieve"].append("beautifulsoup4")
     with open(outputdir / "packages.json", "w") as fd:
         json.dump(package_data, fd)
 

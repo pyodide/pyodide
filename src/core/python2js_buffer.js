@@ -152,7 +152,7 @@ JS_FILE(python2js_buffer_init, () => {
     for (let i = 0; i < n; ++i) {
       let curptr = ptr + i * stride;
       if (suboffset >= 0) {
-        curptr = HEAP32[curptr / 4] + suboffset;
+        curptr = DEREF_U32(curptr, 0) + suboffset;
       }
       buffer.set(HEAP8.subarray(curptr, curptr + itemsize), i * itemsize);
     }
@@ -181,12 +181,12 @@ JS_FILE(python2js_buffer_init, () => {
    */
   Module._python2js_buffer_recursive = function (ptr, curdim, bufferData) {
     "use strict";
-    // When indexing HEAP32 we need to divide the pointer by 4
-    let n = HEAP32[bufferData.shape / 4 + curdim];
-    let stride = HEAP32[bufferData.strides / 4 + curdim];
+    // Stride and suboffset are signed, n is unsigned.
+    let n = DEREF_U32(bufferData.shape, curdim);
+    let stride = DEREF_I32(bufferData.strides, curdim);
     let suboffset = -1;
     if (bufferData.suboffsets !== 0) {
-      suboffset = HEAP32[bufferData.suboffsets / 4 + curdim];
+      suboffset = DEREF_I32(bufferData.suboffsets, curdim);
     }
     if (curdim === bufferData.ndim - 1) {
       // Last dimension, use appropriate 1d converter
@@ -211,7 +211,7 @@ JS_FILE(python2js_buffer_init, () => {
       // https://docs.python.org/3/c-api/buffer.html#pil-style-shape-strides-and-suboffsets
       let curPtr = ptr + i * stride;
       if (suboffset >= 0) {
-        curptr = HEAP32[curptr / 4] + suboffset;
+        curptr = DEREF_U32(curptr, 0) + suboffset;
       }
       result.push(
         Module._python2js_buffer_recursive(curPtr, curdim + 1, bufferData)

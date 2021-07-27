@@ -13,7 +13,7 @@ def test_pytest(selenium):
         """
     )
 
-    selenium.run("pytest.main([base_dir / 'test_api.py'])")
+    selenium.run("pytest.main([str(base_dir / 'test_api.py')])")
 
     logs = "\n".join(selenium.logs)
     assert "INTERNALERROR" not in logs

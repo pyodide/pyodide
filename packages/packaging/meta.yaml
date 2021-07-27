@@ -1,14 +1,12 @@
 package:
   name: packaging
-  version: '20.9'
+  version: '21.0'
 source:
-  sha256: 5b327ac1320dc863dca72f4514ecc086f31186744b84a230374cc1fd776feae5
-  url: https://files.pythonhosted.org/packages/86/3c/bcd09ec5df7123abcf695009221a52f90438d877a2f1499453c6938f5728/packaging-20.9.tar.gz
-
+  sha256: 7dc96269f53a4ccec5c0670940a4281106dd0bb343f47b7471f779df49c2fbe7
+  url: https://files.pythonhosted.org/packages/df/86/aef78bab3afd461faecf9955a6501c4999933a48394e90f03cd512aad844/packaging-21.0.tar.gz
 requirements:
   run:
   - pyparsing
-
 test:
   imports:
   - packaging

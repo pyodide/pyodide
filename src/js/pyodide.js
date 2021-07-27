@@ -1,16 +1,16 @@
 /**
  * The main bootstrap code for loading pyodide.
  */
-import { Module } from "./module";
+import { Module, setStandardStreams } from "./module.js";
 import {
   loadScript,
   initializePackageIndex,
   loadPackage,
-} from "./load-pyodide";
-import { makePublicAPI, registerJsModule } from "./api";
-import "./pyproxy.gen";
+} from "./load-pyodide.js";
+import { makePublicAPI, registerJsModule } from "./api.js";
+import "./pyproxy.gen.js";
 
-import { wrapNamespace } from "./pyproxy.gen";
+import { wrapNamespace } from "./pyproxy.gen.js";
 
 /**
  * @typedef {import('./pyproxy.gen').PyProxy} PyProxy
@@ -64,7 +64,14 @@ Module.fatal_error = function (e) {
     "Pyodide has suffered a fatal error. Please report this to the Pyodide maintainers."
   );
   console.error("The cause of the fatal error was:");
-  console.error(e);
+  if (Module.inTestHoist) {
+    // Test hoist won't print the error object in a useful way so convert it to
+    // string.
+    console.error(e.toString());
+    console.error(e.stack);
+  } else {
+    console.error(e);
+  }
   try {
     Module.dump_traceback();
     for (let key of Object.keys(Module.public_api)) {
@@ -147,12 +154,11 @@ function fixRecursionLimit() {
     recurse();
   } catch (err) {}
 
-  let recursionLimit = Math.min(depth / 50, 400);
+  let recursionLimit = Math.min(depth / 25, 500);
   Module.runPythonSimple(
     `import sys; sys.setrecursionlimit(int(${recursionLimit}))`
   );
 }
-
 /**
  * Load the main Pyodide wasm module and initialize it.
  *
@@ -162,18 +168,28 @@ function fixRecursionLimit() {
  * (This can be fixed once `Firefox adopts support for ES6 modules in webworkers
  * <https://bugzilla.mozilla.org/show_bug.cgi?id=1247687>`_.)
  *
- * @param {{ indexURL : string, fullStdLib? : boolean = true }} config
+ * @param {{ indexURL : string, fullStdLib? : boolean = true, stdin?: () => string, stdout?: (text: string) => void, stderr?: (text: string) => void }} config
  * @param {string} config.indexURL - The URL from which Pyodide will load
  * packages
  * @param {boolean} config.fullStdLib - Load the full Python standard library.
  * Setting this to false excludes following modules: distutils.
  * Default: true
+ * @param {undefined | (() => string)} config.stdin - Override the standard input callback. Should ask the user for one line of input.
+ * Default: undefined
+ * @param {undefined | ((text: string) => void)} config.stdout - Override the standard output callback.
+ * Default: undefined
+ * @param {undefined | ((text: string) => void)} config.stderr - Override the standard error output callback.
+ * Default: undefined
  * @returns The :ref:`js-api-pyodide` module.
  * @memberof globalThis
  * @async
  */
 export async function loadPyodide(config) {
-  const default_config = { fullStdLib: true };
+  const default_config = {
+    fullStdLib: true,
+    jsglobals: globalThis,
+    stdin: globalThis.prompt ? globalThis.prompt : undefined,
+  };
   config = Object.assign(default_config, config);
   if (globalThis.__pyodide_module) {
     if (globalThis.languagePluginURL) {
@@ -188,20 +204,17 @@ export async function loadPyodide(config) {
   // See "--export-name=__pyodide_module" in buildpkg.py
   globalThis.__pyodide_module = Module;
   loadPyodide.inProgress = true;
-  // Note: PYODIDE_BASE_URL is an environment variable replaced in
-  // in this template in the Makefile. It's recommended to always set
-  // indexURL in any case.
   if (!config.indexURL) {
     throw new Error("Please provide indexURL parameter to loadPyodide");
   }
   let baseURL = config.indexURL;
-  if (baseURL.endsWith(".js")) {
-    baseURL = baseURL.substr(0, baseURL.lastIndexOf("/"));
-  }
   if (!baseURL.endsWith("/")) {
     baseURL += "/";
   }
+  Module.indexURL = baseURL;
   let packageIndexReady = initializePackageIndex(baseURL);
+
+  setStandardStreams(config.stdin, config.stdout, config.stderr);
 
   Module.locateFile = (path) => baseURL + path;
   let moduleLoaded = new Promise((r) => (Module.postRun = r));
@@ -217,11 +230,23 @@ export async function loadPyodide(config) {
   // being called.
   await moduleLoaded;
 
-  // Bootstrap step: `runPython` needs access to `Module.globals` and
-  // `Module.pyodide_py`. Use `runPythonSimple` to add these. runPythonSimple
-  // doesn't dedent the argument so the indentation matters.
+  fixRecursionLimit();
+  let pyodide = makePublicAPI();
+
+  // Bootstrap steps:
+  //
+  //   1. _pyodide_core is ready now so we can call _pyodide.register_js_finder
+  //   2. Use the jsfinder to register the js and pyodide_js packages
+  //   3. Import pyodide, this requires _pyodide_core, js and pyodide_js to be
+  //      ready.
+  //   4. Add the pyodide_py and Python __main__.__dict__ objects to pyodide_js
   Module.runPythonSimple(`
-def temp(Module):
+def temp(pyodide_js, Module, jsglobals):
+  from _pyodide._importhook import register_js_finder
+  jsfinder = register_js_finder()
+  jsfinder.register_js_module("js", jsglobals)
+  jsfinder.register_js_module("pyodide_js", pyodide_js)
+
   import pyodide
   import __main__
   import builtins
@@ -233,27 +258,19 @@ def temp(Module):
   Module.globals = globals
   Module.builtins = builtins.__dict__
   Module.pyodide_py = pyodide
+  print("Python initialization complete")
 `);
 
-  Module.saveState = () => Module.pyodide_py._state.save_state();
-  Module.restoreState = (state) =>
-    Module.pyodide_py._state.restore_state(state);
-
-  Module.init_dict.get("temp")(Module);
+  Module.init_dict.get("temp")(pyodide, Module, config.jsglobals);
   // Module.runPython works starting from here!
 
   // Wrap "globals" in a special Proxy that allows `pyodide.globals.x` access.
   // TODO: Should we have this?
   Module.globals = wrapNamespace(Module.globals);
 
-  fixRecursionLimit();
-  let pyodide = makePublicAPI();
   pyodide.globals = Module.globals;
   pyodide.pyodide_py = Module.pyodide_py;
   pyodide.version = Module.version;
-
-  registerJsModule("js", globalThis);
-  registerJsModule("pyodide_js", pyodide);
 
   await packageIndexReady;
   if (config.fullStdLib) {

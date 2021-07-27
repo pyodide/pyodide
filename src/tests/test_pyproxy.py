@@ -1,5 +1,6 @@
 # See also test_typeconversions, and test_python.
 import pytest
+import time
 
 
 def test_pyproxy_class(selenium):
@@ -12,7 +13,7 @@ def test_pyproxy_class(selenium):
                     return value * 64
             f = Foo()
         `);
-        window.f = pyodide.globals.get('f');
+        self.f = pyodide.globals.get('f');
         assert(() => f.type === "Foo");
         let f_get_value = f.get_value
         assert(() => f_get_value(2) === 128);
@@ -22,7 +23,7 @@ def test_pyproxy_class(selenium):
         f.baz = 32;
         assert(() => f.baz === 32);
         pyodide.runPython(`assert hasattr(f, 'baz')`)
-        window.f_props = Object.getOwnPropertyNames(f);
+        self.f_props = Object.getOwnPropertyNames(f);
         delete f.baz
         pyodide.runPython(`assert not hasattr(f, 'baz')`)
         assert(() => f.toString().startsWith("<Foo"));
@@ -87,10 +88,10 @@ def test_pyproxy_refcount(selenium):
             return pyodide.runPython("sys.getrefcount(pyfunc)");
         }
         let result = [];
-        window.jsfunc = function (f) { f(); };
+        self.jsfunc = function (f) { f(); };
         pyodide.runPython(`
             import sys
-            from js import window
+            from js import self
 
             def pyfunc(*args, **kwargs):
                 print(*args, **kwargs)
@@ -99,14 +100,14 @@ def test_pyproxy_refcount(selenium):
         assert(() => getRefCount() === 2);
 
         pyodide.runPython(`
-            window.jsfunc(pyfunc)
+            self.jsfunc(pyfunc) # creates new PyProxy
         `);
 
         assert(() => getRefCount() === 2);
 
         pyodide.runPython(`
-            window.jsfunc(pyfunc)
-            window.jsfunc(pyfunc)
+            self.jsfunc(pyfunc) # create new PyProxy
+            self.jsfunc(pyfunc) # create new PyProxy
         `)
         assert(() => getRefCount() === 2);
         return result;
@@ -126,18 +127,15 @@ def test_pyproxy_destroy(selenium):
         f = Foo()
         """
     )
-    msg = "Object has already been destroyed"
-    with pytest.raises(selenium.JavascriptException, match=msg):
-        selenium.run_js(
-            """
-            let f = pyodide.globals.get('f');
-            let f_get_value = f.get_value;
-            assert(()=> f_get_value(1) === 64);
-            f_get_value.destroy();
-            f.destroy();
-            f.get_value();
-            """
-        )
+
+    selenium.run_js(
+        """
+        let f = pyodide.globals.get('f');
+        assert(()=> f.get_value(1) === 64);
+        f.destroy();
+        assertThrows(() => f.get_value(1), "Error", "already been destroyed");
+        """
+    )
 
 
 def test_pyproxy_iter(selenium):
@@ -281,7 +279,7 @@ def test_get_empty_buffer(selenium):
 def test_pyproxy_get_buffer_type_argument(selenium, array_type):
     selenium.run_js(
         """
-        window.a = pyodide.runPython("bytes(range(256))");
+        self.a = pyodide.runPython("bytes(range(256))");
         """
     )
     try:
@@ -311,7 +309,7 @@ def test_pyproxy_get_buffer_type_argument(selenium, array_type):
         else:
             assert result == list(mv.cast(fmt))
     finally:
-        selenium.run_js("a.destroy(); window.a = undefined;")
+        selenium.run_js("a.destroy(); self.a = undefined;")
 
 
 def test_pyproxy_mixins(selenium):
@@ -382,23 +380,21 @@ def test_pyproxy_mixins(selenium):
 def test_pyproxy_mixins2(selenium):
     selenium.run_js(
         """
-        assert(() => !("prototype" in pyodide.globals));
-        assert(() => !("caller" in pyodide.globals));
-        assert(() => !("name" in pyodide.globals));
-        assert(() => "length" in pyodide.globals);
-        let get_method = pyodide.globals.__getitem__;
-        assert(() => "prototype" in get_method);
-        assert(() => get_method.prototype === undefined);
-        assert(() => !("length" in get_method));
-        assert(() => !("name" in get_method));
-        get_method.destroy();
-
         let d = pyodide.runPython("{}");
-        let d_get = d.$get;
-        assert(() => d_get.type === "builtin_function_or_method");
+
+        assert(() => !("prototype" in d));
+        assert(() => !("caller" in d));
+        assert(() => !("name" in d));
+        assert(() => "length" in d);
+
+        assert(() => "prototype" in d.__getitem__);
+        assert(() => d.__getitem__.prototype === undefined);
+        assert(() => !("length" in d.__getitem__));
+        assert(() => !("name" in d.__getitem__));
+
+        assert(() => d.$get.type === "builtin_function_or_method");
         assert(() => d.get.type === undefined);
         assert(() => d.set.type === undefined);
-        d_get.destroy();
         d.destroy();
         """
     )
@@ -517,7 +513,7 @@ def test_pyproxy_mixins6(selenium):
 
 @pytest.mark.skip_pyproxy_check
 def test_pyproxy_gc(selenium):
-    if selenium.browser != "chrome":
+    if not hasattr(selenium, "collect_garbage"):
         pytest.skip("No gc exposed")
 
     # Two ways to trigger garbage collection in Chrome:
@@ -531,16 +527,22 @@ def test_pyproxy_gc(selenium):
 
     selenium.run_js(
         """
-        window.x = new FinalizationRegistry((val) => { window.val = val; });
+        self.x = new FinalizationRegistry((val) => { self.val = val; });
         x.register({}, 77);
         gc();
         """
     )
-    assert selenium.run_js("return window.val;") == 77
+    time.sleep(0.1)
+    selenium.run_js(
+        """
+        gc();
+        """
+    )
+    assert selenium.run_js("return self.val;") == 77
 
     selenium.run_js(
         """
-        window.res = new Map();
+        self.res = new Map();
 
         let d = pyodide.runPython(`
             from js import res
@@ -568,7 +570,7 @@ def test_pyproxy_gc(selenium):
         d.destroy()
         """
     )
-    selenium.driver.execute_cdp_cmd("HeapProfiler.collectGarbage", {})
+    selenium.collect_garbage()
 
     selenium.run(
         """
@@ -576,19 +578,19 @@ def test_pyproxy_gc(selenium):
         del d
         """
     )
-    selenium.driver.execute_cdp_cmd("HeapProfiler.collectGarbage", {})
+    selenium.collect_garbage()
     a = selenium.run_js("return Array.from(res.entries());")
     assert dict(a) == {0: 2, 1: 3, 2: 4, 3: 2, "destructor_ran": True}
 
 
 @pytest.mark.skip_pyproxy_check
 def test_pyproxy_gc_destroy(selenium):
-    if selenium.browser != "chrome":
+    if not hasattr(selenium, "collect_garbage"):
         pytest.skip("No gc exposed")
 
     selenium.run_js(
         """
-        window.res = new Map();
+        self.res = new Map();
         let d = pyodide.runPython(`
             from js import res
             def get_ref_count(x):
@@ -612,16 +614,14 @@ def test_pyproxy_gc_destroy(selenium):
         get_ref_count(2);
         d.get();
         get_ref_count(3);
-        d.destroy();
-        get_ref_count(4);
-        gc();
-        get_ref_count(5);
+        delete d;
+        get_ref_count.destroy();
         """
     )
-    selenium.driver.execute_cdp_cmd("HeapProfiler.collectGarbage", {})
+    selenium.collect_garbage()
     selenium.run(
         """
-        get_ref_count(6)
+        get_ref_count(4)
         del d
         """
     )
@@ -630,10 +630,8 @@ def test_pyproxy_gc_destroy(selenium):
         0: 2,
         1: 3,
         2: 4,
-        3: 5,
-        4: 4,
-        5: 4,
-        6: 2,
+        3: 4,
+        4: 2,
         "destructor_ran": True,
     }
 
@@ -776,7 +774,7 @@ def test_pyproxy_call(selenium):
             def f(x=2, y=3):
                 return to_js([x, y])
         `);
-        window.f = pyodide.globals.get("f");
+        self.f = pyodide.globals.get("f");
         """
     )
 
@@ -810,29 +808,29 @@ def test_pyproxy_call(selenium):
     msg = r"TypeError: f\(\) got multiple values for argument 'x'"
     with pytest.raises(selenium.JavascriptException, match=msg):
         selenium.run_js("f.callKwargs(76, {x : 6})")
+
     selenium.run_js("f.destroy()")
 
 
-def test_pyproxy_name_clash(selenium):
+def test_pyproxy_borrow(selenium):
     selenium.run_js(
         """
-        let d = pyodide.runPython("{'a' : 2}");
-        let d_get = d.$get;
-        assert(() => d.get('a') === 2);
-        assert(() => d_get('b', 3) === 3);
-        d_get.destroy();
-        d.destroy();
-
         let t = pyodide.runPython(`
-            class Test:
-                def destroy(self):
+            class Tinner:
+                def f(self):
                     return 7
-            Test()
+            class Touter:
+                T = Tinner()
+            Touter
         `);
-        let t_dest = t.$destroy;
-        assert(() => t_dest() === 7);
-        t_dest.destroy();
+        assert(() => t.T.f() === 7);
+        let T = t.T;
+        let Tcopy = T.copy();
+        assert(() => T.f() === 7);
+        assert(() => Tcopy.f() === 7);
         t.destroy();
-        assertThrows(() => t.$destroy, "Error", "Object has already been destroyed");
+        assert(() => Tcopy.f() === 7);
+        assertThrows(() => T.f(), "Error", "automatically destroyed in the process of destroying the proxy it was borrowed from");
+        Tcopy.destroy();
         """
     )

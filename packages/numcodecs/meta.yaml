@@ -1,17 +1,17 @@
 package:
   name: numcodecs
-  version: 0.7.2
+  version: 0.8.0
 source:
-  sha256: 4a038064d5604e6181a64db668d7b700d9ae87e4041984c04cbf0042469664b0
-  url: https://files.pythonhosted.org/packages/6f/42/72ca18a8ab78660db182c1cdc325724d6deeabe734607af6372b35e272ab/numcodecs-0.7.2.tar.gz
+  sha256: 7c7d0ea56b5e2a267ae785bdce47abed62829ef000f03be8e32e30df62d3749c
+  url: https://files.pythonhosted.org/packages/59/99/355e23e418f003a0e99db515b95fb09e0754acfb2ab0d782c7144db4293f/numcodecs-0.8.0.tar.gz
   patches:
-   - patches/fixblosc.patch
-   - patches/fixsetup.patch
-   - patches/fixzlib.patch
+  - patches/fixblosc.patch
+  - patches/fixsetup.patch
+  - patches/fixzlib.patch
 requirements:
   run:
-    - numpy
-    - msgpack
+  - numpy
+  - msgpack
 test:
   imports:
   - numcodecs

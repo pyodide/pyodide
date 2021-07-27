@@ -9,7 +9,7 @@ BUILD=$(ROOT)/build/Python-$(PYVERSION)
 INSTALL=$(ROOT)/installs/python-$(PYVERSION)
 TARBALL=$(ROOT)/downloads/Python-$(PYVERSION).tgz
 URL=https://www.python.org/ftp/python/$(PYVERSION)/Python-$(PYVERSION).tgz
-LIB=libpython$(PYMINOR).a
+LIB=libpython$(PYMAJOR).$(PYMINOR).a
 SYSCONFIG_NAME=_sysconfigdata__emscripten_
 
 ZLIBVERSION = 1.2.11
@@ -27,7 +27,7 @@ BZIP2URL=https://sourceware.org/pub/bzip2/bzip2-1.0.2.tar.gz
 
 FFIBUILD=$(ROOT)/build/libffi
 LIBFFIREPO=https://github.com/hoodmane/libffi-emscripten
-LIBFFI_COMMIT=dd8318b543b92d038da4914fac42d34056a80c7d
+LIBFFI_COMMIT=f671fe3521fb2f383d9b74bd64254b1d3760a31e
 
 all: $(INSTALL)/lib/$(LIB) $(INSTALL)/lib/libffi.a
 
@@ -42,11 +42,11 @@ $(INSTALL)/lib/$(LIB): $(BUILD)/$(LIB) remove_modules.txt
 	)
 	# Generate sysconfigdata. It outputs into a subfolder of build/, and
 	# the subfolder is written to pybuilddir.txt.
-	_PYTHON_SYSCONFIGDATA_NAME=$(SYSCONFIG_NAME) _PYTHON_PROJECT_BASE=$(BUILD) python -m sysconfig --generate-posix-vars
-	mv `cat pybuilddir.txt`/$(SYSCONFIG_NAME).py $(INSTALL)/lib/python$(PYMINOR)/
+	_PYTHON_SYSCONFIGDATA_NAME=$(SYSCONFIG_NAME) _PYTHON_PROJECT_BASE=$(BUILD) $(HOSTPYTHON) -m sysconfig --generate-posix-vars
+	mv `cat pybuilddir.txt`/$(SYSCONFIG_NAME).py $(INSTALL)/lib/python$(PYMAJOR).$(PYMINOR)/
 	rmdir `cat pybuilddir.txt`
 	rm pybuilddir.txt
-	cd $(INSTALL)/lib/python$(PYMINOR)/ && rm -rf `cat $(ROOT)/remove_modules.txt`
+	cd $(INSTALL)/lib/python$(PYMAJOR).$(PYMINOR)/ && rm -rf `cat $(ROOT)/remove_modules.txt`
 
 
 clean:
@@ -117,12 +117,19 @@ $(INSTALL)/lib/libffi.a :
 	rm -rf $(FFIBUILD)
 	git clone $(LIBFFIREPO) $(FFIBUILD) --shallow-exclude upstream-base
 	source $(PYODIDE_ROOT)/emsdk/emsdk/emsdk_env.sh
-	cd  $(FFIBUILD) && git checkout $(LIBFFI_COMMIT) && bash ./build.sh ; make install
+	cd $(FFIBUILD) && git checkout $(LIBFFI_COMMIT) && ./build.sh --pyodide-fpcast && make install
 	cp $(FFIBUILD)/target/include/*.h $(BUILD)/Include/
 	mkdir -p $(INSTALL)/lib
 	cp $(FFIBUILD)/target/lib/libffi.a $(INSTALL)/lib/
 
 $(BUILD)/Makefile: $(BUILD)/.patched $(ZLIBBUILD)/.configured $(INSTALL)/lib/libsqlite3.a $(INSTALL)/lib/libbz2.a
+	# --enable-big-digits=30 :
+	#   Python integers have "digits" of size 15 by default on systems with 32
+	#   bit pointers and size 30 on systems with 16 bit pointers. Python uses
+	#   "digits" of size 15 by default on systems with 32 bit pointers and size
+	#   30 on systems with 16 bit pointers. WASM has 32 bit pointers so Python
+	#   will default to the size 15 digits but WASM has native 64 bit arithmetic
+	#   so it is more efficient to use 30 bit digits.
 	cp config.site $(BUILD)/
 	( \
 		cd $(BUILD); \
@@ -133,10 +140,11 @@ $(BUILD)/Makefile: $(BUILD)/.patched $(ZLIBBUILD)/.configured $(INSTALL)/lib/lib
 			  --without-pymalloc \
 			  --disable-shared \
 			  --disable-ipv6 \
+			  --enable-big-digits=30 \
 			  --enable-optimizations \
 			  --host=wasm32-unknown-emscripten\
 			  --build=$(shell $(BUILD)/config.guess) \
-			  --prefix=$(INSTALL) ; \
+			  --prefix=$(INSTALL)  \
 	)
 
 

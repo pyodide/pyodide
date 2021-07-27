@@ -13,6 +13,9 @@
 JsRef
 pyproxy_new(PyObject* obj);
 
+int
+pyproxy_Check(JsRef x);
+
 /**
  * Check if x is a PyProxy.
  *
