@@ -22,7 +22,6 @@ import re
 import warnings
 import email.parser
 import urllib
-from typing import Dict, Iterable
 
 try:
     FileExistsError
@@ -536,28 +535,3 @@ def split_sections(s):
 # because we want earlier uses of filterwarnings to take precedence over this
 # one.
 warnings.filterwarnings("ignore", category=PEP440Warning, append=True)
-
-
-class DictMetadata:
-    """IMetadataProvider that reads metadata files from a dictionary."""
-
-    def __init__(self, metadata):
-        # type: (Dict[str, bytes]) -> None
-        self._metadata = metadata
-
-    def has_metadata(self, name):
-        # type: (str) -> bool
-        return name in self._metadata
-
-    def get_metadata(self, name):
-        # type: (str) -> str
-        try:
-            return self._metadata[name].decode()
-        except UnicodeDecodeError as e:
-            # Mirrors handling done in pkg_resources.NullProvider.
-            e.reason += f" in {name} file"
-            raise
-
-    def get_metadata_lines(self, name):
-        # type: (str) -> Iterable[str]
-        return yield_lines(self.get_metadata(name))

@@ -6,7 +6,7 @@ import json
 from pathlib import Path
 import zipfile
 from typing import Dict, Any, Union, List, Tuple
-from . import lazy_wheel
+from .externals.pip._internal.network import lazy_wheel
 
 from packaging.requirements import Requirement
 from packaging.version import Version

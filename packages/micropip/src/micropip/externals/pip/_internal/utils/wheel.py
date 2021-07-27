@@ -8,7 +8,11 @@ from typing import Dict, Tuple
 from zipfile import BadZipFile, ZipFile
 
 from packaging.utils import canonicalize_name
-from .pkg_resources import DistInfoDistribution, Distribution, DictMetadata
+from ..._vendor.pkg_resources import DistInfoDistribution, Distribution
+from .pkg_resources import DictMetadata
+
+# from pip._vendor.pkg_resources import DistInfoDistribution, Distribution
+# from pip._internal.utils.pkg_resources import DictMetadata
 
 VERSION_COMPATIBLE = (1, 0)
 

@@ -2,7 +2,7 @@
 https://github.com/pypa/pip/blob/main/src/pip/_internal/network/lazy_wheel.py"""
 
 from bisect import bisect_left, bisect_right
-from .wheel import pkg_resources_distribution_for_wheel
+from ..utils.wheel import pkg_resources_distribution_for_wheel
 from tempfile import NamedTemporaryFile
 from typing import List, Optional, Any, Iterator, Tuple
 from contextlib import contextmanager
