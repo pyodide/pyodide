@@ -18,6 +18,10 @@ def fetch(url, **kwargs):
 CONTENT_CHUNK_SIZE = 10 * 1024
 
 
+class HTTPError(IOError):
+    """An HTTP error occurred."""
+
+
 async def dist_from_wheel_url(name, url):
     """Return a pkg_resources.Distribution from the given wheel URL.
 
@@ -33,6 +37,27 @@ async def dist_from_wheel_url(name, url):
         # After context manager exit, wheel.name
         # is an invalid file by intention.
         return pkg_resources_distribution_for_wheel(zip_file, name, wheel.name)
+
+
+def raise_unless_request_succeeded(response):
+    http_error_msg = ""
+
+    if 400 <= response.status < 500:
+        http_error_msg = "%s Client Error: %s for url: %s" % (
+            x.status,
+            response.statusText,
+            response.url,
+        )
+
+    elif 500 <= response.status < 600:
+        http_error_msg = "%s Server Error: %s for url: %s" % (
+            response.status_code,
+            response.statusText,
+            response.url,
+        )
+
+    if http_error_msg:
+        raise HTTPError(http_error_msg, response=response)
 
 
 class LazyZipOverHTTP:
@@ -206,8 +231,6 @@ class LazyZipOverHTTP:
             right = bisect_right(self._left, end)
             for start, end in self._merge(start, end, left, right):
                 response = await self._stream_response(start, end)
-                # response.raise_for_status()
+                raise_unless_request_succeeded(response)
                 self.seek(start)
-                # for chunk in response_chunks(response, self._chunk_size):
-                #     self._file.write(chunk)
                 self._file.write((await response.arrayBuffer()).to_py())
