@@ -26,12 +26,6 @@
         globalThis.pyodide = await loadPyodide({
           indexURL: "{{ PYODIDE_BASE_URL }}",
         });
-        // await pyodide.loadPackage("packaging");
-        // pyodide.FS.mkdir("/onpythonpath");
-        // pyodide.runPython("import sys; sys.path.append('onpythonpath')")
-        // for(let file of ["lazy_wheel.py", "wheel.py", "pkg_resources.py"]){
-        //   pyodide.FS.writeFile(`/onpythonpath/${file}`, await (await fetch(`micropip/${file}`)).text());
-        // }
         let namespace = pyodide.globals.get("dict")();
         pyodide.runPython(
           `
@@ -80,7 +74,6 @@
             // complete case, get result / error and print it.
             try {
               let value = await fut;
-              console.log({ value });
               if (value !== undefined) {
                 term.echo(
                   repr_shorten.callKwargs(value, {
