@@ -24,9 +24,9 @@ except ImportError:
 if IN_BROWSER:
     import site
 
-    WHEEL_BASE = site.getsitepackages()[0]
+    WHEEL_BASE = Path(site.getsitepackages()[0])
 else:
-    WHEEL_BASE = str(Path(".") / "wheels")
+    WHEEL_BASE = Path(".") / "wheels"
 
 if IN_BROWSER:
     from js import fetch
