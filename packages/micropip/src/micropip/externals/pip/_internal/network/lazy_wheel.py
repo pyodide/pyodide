@@ -157,7 +157,7 @@ class LazyZipOverHTTP:
         start, length = self.tell(), self._length
         stop = length if size < 0 else min(start + download_size, length)
         start = max(0, stop - download_size)
-        self._accessed_range(start, stop)
+        self._accessed_range(start, stop - 1)
         return self._file.read(size)
 
     def readable(self):
