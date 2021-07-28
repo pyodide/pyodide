@@ -233,7 +233,7 @@ class _PackageManager:
     async def add_wheel(self, name, wheel, version, extras, ctx, transaction):
         transaction["locked"][name] = version
 
-        dist = await lazy_wheel.dist_from_wheel_url(name, wheel["url"])
+        dist = await lazy_wheel.dist_from_wheel_url(name, wheel)
         for recurs_req in dist.requires(extras):
             await self.add_requirement(recurs_req, ctx, transaction)
 

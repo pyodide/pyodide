@@ -43,7 +43,7 @@ class HTTPError(IOError):
     """An HTTP error occurred."""
 
 
-async def dist_from_wheel_url(name, url):
+async def dist_from_wheel_url(name, wheel_info):
     """Return a pkg_resources.Distribution from the given wheel URL.
 
     This uses HTTP range requests to only fetch the potion of the wheel
@@ -51,7 +51,7 @@ async def dist_from_wheel_url(name, url):
     If such requests are not supported, HTTPRangeRequestUnsupported
     is raised.
     """
-    async with LazyZipOverHTTP(url) as wheel:
+    async with LazyZipOverHTTP(wheel_info["url"], wheel_info["size"]) as wheel:
         # For read-only ZIP files, ZipFile only needs methods read,
         # seek, seekable and tell, not the whole IO protocol.
         zip_file = ZipFile(wheel)  # type: ignore
@@ -90,11 +90,12 @@ class LazyZipOverHTTP:
     during initialization.
     """
 
-    def __init__(self, url, chunk_size=CONTENT_CHUNK_SIZE):
+    def __init__(self, url, size=None, chunk_size=CONTENT_CHUNK_SIZE):
         self._url, self._chunk_size = url, chunk_size
         self._file = NamedTemporaryFile()
         self._left = []  # type: List[int]
         self._right = []  # type: List[int]
+        self._length = size
 
     @property
     def mode(self):
@@ -177,8 +178,9 @@ class LazyZipOverHTTP:
 
     async def __aenter__(self):
         # type: () -> LazyZipOverHTTP
-        self.resp = await fetch(self._url)
-        self._length = int(self.resp.headers.get("content-length"))
+        if self._length is None:
+            self.resp = await fetch(self._url)
+            self._length = int(self.resp.headers.get("content-length"))
         self.truncate(self._length)
         await self._check_zip()
         self._file.__enter__()
