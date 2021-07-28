@@ -1,6 +1,3 @@
-"""Adapted from
-https://github.com/pypa/pip/blob/main/src/pip/_internal/network/lazy_wheel.py"""
-
 from bisect import bisect_left, bisect_right
 from ..utils.wheel import pkg_resources_distribution_for_wheel
 from tempfile import NamedTemporaryFile
