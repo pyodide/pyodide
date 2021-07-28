@@ -4,7 +4,7 @@ https://github.com/pypa/pip/blob/main/src/pip/_internal/network/lazy_wheel.py"""
 from bisect import bisect_left, bisect_right
 from ..utils.wheel import pkg_resources_distribution_for_wheel
 from tempfile import NamedTemporaryFile
-from typing import List, Optional, Any, Iterator, Tuple
+from typing import List, Optional, Any, Iterator
 from contextlib import contextmanager
 from zipfile import BadZipfile, ZipFile
 from pyodide import to_js, IN_BROWSER
@@ -248,8 +248,7 @@ class LazyZipOverHTTP:
         headers["Range"] = f"bytes={start}-{end}"
         return await fetch(self._url, headers=headers)
 
-    def _merge(self, start, end, left, right):
-        # type: (int, int, int, int) -> Iterator[Tuple[int, int]]
+    def _merge(self, start: int, end: int, left: int, right: int, update: bool = True):
         """Return an iterator of intervals to be fetched.
 
         Args:
@@ -267,7 +266,8 @@ class LazyZipOverHTTP:
             i = k + 1
         if i <= end:
             yield i, end
-        self._left[left:right], self._right[left:right] = [start], [end]
+        if update:
+            self._left[left:right], self._right[left:right] = [start], [end]
 
     def _accessed_range(self, start, end):
         # type: (int, int) -> None
@@ -275,13 +275,10 @@ class LazyZipOverHTTP:
         with self._stay():
             left = bisect_left(self._right, start)
             right = bisect_right(self._left, end)
+            if any(True for _ in self._merge(start, end, left, right, update=False)):
+                start -= self._chunk_size
+                end += self._chunk_size
             for seg_start, seg_end in self._merge(start, end, left, right):
-                if seg_start == start:
-                    seg_start = max(min(seg_end - self._chunk_size, seg_start), 0)
-                if seg_end == end:
-                    seg_end = min(
-                        max(seg_start + self._chunk_size, seg_end), self._length
-                    )
                 self.ranges.append((seg_start, seg_end))
 
     async def _load_range(self, start, end):
