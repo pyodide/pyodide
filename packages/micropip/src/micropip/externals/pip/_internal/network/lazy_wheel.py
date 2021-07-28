@@ -37,7 +37,8 @@ else:
         return fd
 
 
-CONTENT_CHUNK_SIZE = 10 * 1024
+# In practice, 5kb is usually enough that we only make one request.
+CONTENT_CHUNK_SIZE = 5 * 1024
 
 
 class HTTPError(IOError):
@@ -65,8 +66,6 @@ async def dist_from_wheel_url(name, wheel_info):
             except Exception:
                 if not wheel.ranges:
                     raise
-            finally:
-                print("ranges:", wheel.ranges)
             if wheel.ranges:
                 # Load regions of wheel that were requested then try again.
                 await wheel.load_ranges()
@@ -108,12 +107,13 @@ class LazyZipOverHTTP:
     during initialization.
     """
 
-    def __init__(self, url, size=None, chunk_size=CONTENT_CHUNK_SIZE):
-        self._url, self._chunk_size = url, chunk_size
+    def __init__(self, url, size=None, chunk_size=None):
+        self._url = url
+        self._chunk_size = chunk_size or CONTENT_CHUNK_SIZE
+        self._length = size
         self._file = NamedTemporaryFile()
         self._left = []  # type: List[int]
         self._right = []  # type: List[int]
-        self._length = size
         self.ranges = []
         self._lock = asyncio.Lock()
 
@@ -274,11 +274,22 @@ class LazyZipOverHTTP:
         with self._stay():
             left = bisect_left(self._right, start)
             right = bisect_right(self._left, end)
+            if left == len(self._left):
+                first_end = end
+            else:
+                first_end = self._left[left]
+            # Adjust left endpoint so that leftmost chunk is of size at least
+            # _chunk_size unless we run into an already-loaded sector. In
+            # particular, if the requested range is already loaded this won't
+            # make a new request.
+            if first_end > start:
+                start = max(0, min(start, first_end - self._chunk_size))
+                if left > 0:
+                    start = max(start, self._right[left - 1])
             for start, end in self._merge(start, end, left, right):
                 self.ranges.append((start, end))
 
     async def _load_range(self, start, end):
-        print("requesting range", start, end)
         response = await self._stream_response(start, end)
         raise_unless_request_succeeded(response)
         async with self._lock:
