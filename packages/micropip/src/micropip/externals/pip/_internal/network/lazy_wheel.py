@@ -3,7 +3,7 @@ from ..utils.wheel import pkg_resources_distribution_for_wheel
 from tempfile import NamedTemporaryFile
 from typing import List, Optional, Any, Iterator
 from contextlib import contextmanager
-from zipfile import BadZipfile, ZipFile
+from zipfile import ZipFile
 from pyodide import to_js, IN_BROWSER
 import asyncio
 
@@ -201,7 +201,8 @@ class LazyZipOverHTTP:
             self.resp = await fetch(self._url)
             self._length = int(self.resp.headers.get("content-length"))
         self.truncate(self._length)
-        await self._check_zip()
+        self._accessed_range(self._length - self._chunk_size, self._length - 1)
+        await self.load_ranges()
         self._file.__enter__()
         return self
 
@@ -221,23 +222,6 @@ class LazyZipOverHTTP:
             yield
         finally:
             self.seek(pos)
-
-    async def _check_zip(self):
-        # type: () -> None
-        """Check and download until the file is a valid ZIP."""
-        end = self._length - 1
-        for start in reversed(range(0, end, self._chunk_size)):
-            self._accessed_range(start, end)
-            await self.load_ranges()
-            with self._stay():
-                try:
-                    # For read-only ZIP files, ZipFile only needs
-                    # methods read, seek, seekable and tell.
-                    ZipFile(self)  # type: ignore
-                except BadZipfile:
-                    pass
-                else:
-                    break
 
     async def _stream_response(self, start, end):
         """Return HTTP response to a range request from start to end."""
@@ -273,8 +257,8 @@ class LazyZipOverHTTP:
             left = bisect_left(self._right, start)
             right = bisect_right(self._left, end)
             if any(True for _ in self._merge(start, end, left, right, update=False)):
-                start -= self._chunk_size
-                end += self._chunk_size
+                start = max(0, start - self._chunk_size)
+                end = min(end + self._chunk_size, self._length)
             for seg_start, seg_end in self._merge(start, end, left, right):
                 self.ranges.append((seg_start, seg_end))
 
