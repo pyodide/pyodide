@@ -37,8 +37,8 @@ else:
         return fd
 
 
-# In practice, 5kb is usually enough that we only make one request.
-CONTENT_CHUNK_SIZE = 5 * 1024
+# In practice, 10kb is enough that we usually only make one or two requests.
+CONTENT_CHUNK_SIZE = 10 * 1024
 
 
 class HTTPError(IOError):
@@ -53,7 +53,9 @@ async def dist_from_wheel_url(name, wheel_info):
     If such requests are not supported, HTTPRangeRequestUnsupported
     is raised.
     """
-    async with LazyZipOverHTTP(wheel_info["url"], wheel_info.get("size", None)) as wheel:
+    async with LazyZipOverHTTP(
+        wheel_info["url"], wheel_info.get("size", None)
+    ) as wheel:
         # For read-only ZIP files, ZipFile only needs methods read,
         # seek, seekable and tell, not the whole IO protocol.
         while True:
@@ -153,10 +155,9 @@ class LazyZipOverHTTP:
         all bytes until EOF are returned.  Fewer than
         size bytes may be returned if EOF is reached.
         """
-        download_size = max(size, self._chunk_size)
-        start, length = self.tell(), self._length
-        stop = length if size < 0 else min(start + download_size, length)
-        start = max(0, stop - download_size)
+        start = self.tell()
+        length = self._length
+        stop = length if size < 0 else min(start + size, length)
         self._accessed_range(start, stop - 1)
         return self._file.read(size)
 
@@ -274,20 +275,14 @@ class LazyZipOverHTTP:
         with self._stay():
             left = bisect_left(self._right, start)
             right = bisect_right(self._left, end)
-            if left == len(self._left):
-                first_end = end
-            else:
-                first_end = self._left[left]
-            # Adjust left endpoint so that leftmost chunk is of size at least
-            # _chunk_size unless we run into an already-loaded sector. In
-            # particular, if the requested range is already loaded this won't
-            # make a new request.
-            if first_end > start:
-                start = max(0, min(start, first_end - self._chunk_size))
-                if left > 0:
-                    start = max(start, self._right[left - 1])
-            for start, end in self._merge(start, end, left, right):
-                self.ranges.append((start, end))
+            for seg_start, seg_end in self._merge(start, end, left, right):
+                if seg_start == start:
+                    seg_start = max(min(seg_end - self._chunk_size, seg_start), 0)
+                if seg_end == end:
+                    seg_end = min(
+                        max(seg_start + self._chunk_size, seg_end), self._length
+                    )
+                self.ranges.append((seg_start, seg_end))
 
     async def _load_range(self, start, end):
         response = await self._stream_response(start, end)
@@ -297,5 +292,8 @@ class LazyZipOverHTTP:
             self._file.write((await response.arrayBuffer()).to_py())
 
     async def load_ranges(self):
-        await asyncio.gather(*[self._load_range(start, end) for (start, end) in self.ranges])
+        print("load_ranges")
+        await asyncio.gather(
+            *[self._load_range(start, end) for (start, end) in self.ranges]
+        )
         self.ranges = []
