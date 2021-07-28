@@ -56,22 +56,26 @@ async def dist_from_wheel_url(name, wheel_info):
         # For read-only ZIP files, ZipFile only needs methods read,
         # seek, seekable and tell, not the whole IO protocol.
         while True:
+            result = None
             try:
                 zip_file = ZipFile(wheel)  # type: ignore
                 result = pkg_resources_distribution_for_wheel(
                     zip_file, name, wheel.name
                 )
-                break
             except Exception:
-                if wheel.coroutines:
-                    # Load regions of wheel that were requested then try again.
-                    await wheel.load_ranges()
-                    continue
-                raise
-
-        # After context manager exit, wheel.name
-        # is an invalid file by intention.
-        return result
+                if not wheel.ranges:
+                    raise
+            finally:
+                print("ranges:", wheel.ranges)
+            if wheel.ranges:
+                # Load regions of wheel that were requested then try again.
+                await wheel.load_ranges()
+                continue
+            else:
+                # success!
+                # After context manager exit, wheel.name
+                # is an invalid file by intention.
+                return result
 
 
 def raise_unless_request_succeeded(response):
@@ -110,7 +114,7 @@ class LazyZipOverHTTP:
         self._left = []  # type: List[int]
         self._right = []  # type: List[int]
         self._length = size
-        self.coroutines = []
+        self.ranges = []
         self._lock = asyncio.Lock()
 
     @property
@@ -224,7 +228,7 @@ class LazyZipOverHTTP:
         """Check and download until the file is a valid ZIP."""
         end = self._length - 1
         for start in reversed(range(0, end, self._chunk_size)):
-            self._download(start, end)
+            self._accessed_range(start, end)
             await self.load_ranges()
             with self._stay():
                 try:
@@ -263,14 +267,14 @@ class LazyZipOverHTTP:
             yield i, end
         self._left[left:right], self._right[left:right] = [start], [end]
 
-    def _download(self, start, end):
+    def _accessed_range(self, start, end):
         # type: (int, int) -> None
         """Download bytes from start to end inclusively."""
         with self._stay():
             left = bisect_left(self._right, start)
             right = bisect_right(self._left, end)
             for start, end in self._merge(start, end, left, right):
-                self.coroutines.append(self._load_range(start, end))
+                self.ranges.append((start, end))
 
     async def _load_range(self, start, end):
         print("requesting range", start, end)
@@ -281,4 +285,5 @@ class LazyZipOverHTTP:
             self._file.write((await response.arrayBuffer()).to_py())
 
     async def load_ranges(self):
-        await asyncio.gather(self.coroutines)
+        await asyncio.gather(*[self._load_range(start, end) for (start, end) in self.ranges])
+        self.ranges = []
