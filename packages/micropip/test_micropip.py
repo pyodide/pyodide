@@ -1,3 +1,4 @@
+import asyncio
 import sys
 from pathlib import Path
 
@@ -87,18 +88,6 @@ def test_install_custom_url(selenium_standalone_micropip, web_server_tst_data):
     )
 
 
-def run_sync(coroutine):
-    # The following is a way to synchronously run a coroutine that does only
-    # synchronous operations (and assert that it indeed only did sync
-    # operations)
-    try:
-        coroutine.send(None)
-    except StopIteration as result:
-        return result.args and result.args[0]
-    else:
-        raise Exception("Coroutine didn't finish in one pass")
-
-
 def test_add_requirement(web_server_tst_data):
     pytest.importorskip("packaging")
     from micropip import micropip
@@ -108,7 +97,7 @@ def test_add_requirement(web_server_tst_data):
     url = base_url + "snowballstemmer-2.0.0-py2.py3-none-any.whl"
 
     transaction = {"wheels": [], "locked": {}}
-    run_sync(micropip.PACKAGE_MANAGER.add_requirement(url, {}, transaction))
+    asyncio.get_event_loop().run_until_complete(micropip.PACKAGE_MANAGER.add_requirement(url, {}, transaction))
 
     [name, req, version] = transaction["wheels"][0]
     assert name == "snowballstemmer"
@@ -125,7 +114,7 @@ def test_add_requirement_marker():
     pytest.importorskip("packaging")
     from micropip import micropip
 
-    transaction = run_sync(
+    transaction = asyncio.get_event_loop().run_until_complete(
         micropip.PACKAGE_MANAGER.gather_requirements(
             [
                 "werkzeug",

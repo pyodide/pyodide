@@ -52,7 +52,7 @@ async def dist_from_wheel_url(name, wheel_info):
     If such requests are not supported, HTTPRangeRequestUnsupported
     is raised.
     """
-    async with LazyZipOverHTTP(wheel_info["url"], wheel_info["size"]) as wheel:
+    async with LazyZipOverHTTP(wheel_info["url"], wheel_info.get("size", None)) as wheel:
         # For read-only ZIP files, ZipFile only needs methods read,
         # seek, seekable and tell, not the whole IO protocol.
         while True:
@@ -157,6 +157,7 @@ class LazyZipOverHTTP:
         start, length = self.tell(), self._length
         stop = length if size < 0 else min(start + download_size, length)
         start = max(0, stop - download_size)
+        self._accessed_range(start, stop)
         return self._file.read(size)
 
     def readable(self):
