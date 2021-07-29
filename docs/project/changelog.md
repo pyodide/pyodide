@@ -30,6 +30,12 @@ substitutions:
   (See {issue}`1614`).
   {pr}`1615`
 
+- {{ Enhancement }} micropip now resolves dependencies correctly for old
+  versions of packages (it used to always use the dependencies from the most
+  recent version, see {issue}`1619` and {issue}`1745`). micropip also will
+  resolve dependencies for wheels loaded from custom urls.
+  {pr}`1753`
+
 - {{ Enhancement }} Pyodide now ships with first party typescript types for the entire
   Javascript API (though no typings are available for `PyProxy` fields).
   {pr}`1601`

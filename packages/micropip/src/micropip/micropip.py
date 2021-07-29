@@ -6,6 +6,9 @@ import json
 from pathlib import Path
 import zipfile
 from typing import Dict, Any, Union, List, Tuple
+from .externals.pip._internal.utils.wheel import pkg_resources_distribution_for_wheel
+
+from zipfile import ZipFile
 
 from packaging.requirements import Requirement
 from packaging.version import Version
@@ -21,30 +24,40 @@ except ImportError:
     IN_BROWSER = False
 
 if IN_BROWSER:
-    # In practice, this is the `site-packages` directory.
-    WHEEL_BASE = Path(__file__).parent
+    import site
+
+    WHEEL_BASE = Path(site.getsitepackages()[0])
 else:
     WHEEL_BASE = Path(".") / "wheels"
 
 if IN_BROWSER:
     from js import fetch
 
-    async def _get_url(url):
-        resp = await fetch(url)
-        if not resp.ok:
-            raise OSError(
-                f"Request for {url} failed with status {resp.status}: {resp.statusText}"
-            )
-        return io.BytesIO((await resp.arrayBuffer()).to_py())
-
-
 else:
-    from urllib.request import urlopen
+    from urllib.request import urlopen, Request
 
-    async def _get_url(url):
-        with urlopen(url) as fd:
-            content = fd.read()
-        return io.BytesIO(content)
+    async def fetch(url, headers={}):
+        fd = urlopen(Request(url, headers=headers))
+        fd.statusText = fd.reason
+
+        async def arrayBuffer():
+            class Temp:
+                def to_py():
+                    return fd.read()
+
+            return Temp
+
+        fd.arrayBuffer = arrayBuffer
+        return fd
+
+
+async def _get_url(url):
+    resp = await fetch(url)
+    if resp.status >= 400:
+        raise OSError(
+            f"Request for {url} failed with status {resp.status}: {resp.statusText}"
+        )
+    return io.BytesIO((await resp.arrayBuffer()).to_py())
 
 
 if IN_BROWSER:
@@ -120,7 +133,7 @@ def _validate_wheel(data, fileinfo):
 
 async def _install_wheel(name, fileinfo):
     url = fileinfo["url"]
-    wheel = await _get_url(url)
+    wheel = io.BytesIO(fileinfo["wheel_bytes"])
     _validate_wheel(wheel, fileinfo)
     _extract_wheel(wheel)
     setattr(loadedPackages, name, url)
@@ -177,20 +190,24 @@ class _PackageManager:
             self.installed_packages[name] = ver
         await gather(*wheel_promises)
 
-    async def add_requirement(self, requirement: str, ctx, transaction):
+    async def add_requirement(
+        self, requirement: Union[str, Requirement], ctx, transaction
+    ):
         """Add a requirement to the transaction.
 
         See PEP 508 for a description of the requirements.
         https://www.python.org/dev/peps/pep-0508
         """
-        if requirement.endswith(".whl"):
+        if isinstance(requirement, Requirement):
+            req = requirement
+        elif requirement.endswith(".whl"):
             # custom download location
             name, wheel, version = _parse_wheel_url(requirement)
             name = name.lower()
-            transaction["wheels"].append((name, wheel, version))
+            await self.add_wheel(name, wheel, version, (), ctx, transaction)
             return
-
-        req = Requirement(requirement)
+        else:
+            req = Requirement(requirement)
         req.name = req.name.lower()
 
         # If there's a Pyodide package that matches the version constraint, use
@@ -222,13 +239,20 @@ class _PackageManager:
                 )
         metadata = await _get_pypi_json(req.name)
         wheel, ver = self.find_wheel(metadata, req)
-        transaction["locked"][req.name] = ver
+        await self.add_wheel(req.name, wheel, ver, req.extras, ctx, transaction)
 
-        recurs_reqs = metadata.get("info", {}).get("requires_dist") or []
-        for recurs_req in recurs_reqs:
+    async def add_wheel(self, name, wheel, version, extras, ctx, transaction):
+        transaction["locked"][name] = version
+        response = await fetch(wheel["url"])
+        wheel_bytes = (await response.arrayBuffer()).to_py()
+        wheel["wheel_bytes"] = wheel_bytes
+
+        with ZipFile(io.BytesIO(wheel_bytes)) as zip_file:  # type: ignore
+            dist = pkg_resources_distribution_for_wheel(zip_file, name, "???")
+        for recurs_req in dist.requires(extras):
             await self.add_requirement(recurs_req, ctx, transaction)
 
-        transaction["wheels"].append((req.name, wheel, ver))
+        transaction["wheels"].append((name, wheel, version))
 
     def find_wheel(self, metadata, req: Requirement):
         releases = metadata.get("releases", {})
