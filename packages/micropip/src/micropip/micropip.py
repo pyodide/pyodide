@@ -247,8 +247,8 @@ class _PackageManager:
         wheel_bytes = (await response.arrayBuffer()).to_py()
         wheel["wheel_bytes"] = wheel_bytes
 
-        zip_file = ZipFile(io.BytesIO(wheel_bytes))  # type: ignore
-        dist = pkg_resources_distribution_for_wheel(zip_file, name, "???")
+        with ZipFile(io.BytesIO(wheel_bytes)) as zip_file:  # type: ignore
+            dist = pkg_resources_distribution_for_wheel(zip_file, name, "???")
         for recurs_req in dist.requires(extras):
             await self.add_requirement(recurs_req, ctx, transaction)
 
