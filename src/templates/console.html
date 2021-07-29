@@ -90,7 +90,7 @@
                   })
                 );
               }
-              if (value && value.destroy) {
+              if (pyodide.isPyProxy(value)) {
                 value.destroy();
               }
             } catch (e) {
