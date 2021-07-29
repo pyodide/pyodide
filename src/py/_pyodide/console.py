@@ -329,6 +329,8 @@ class Console:
                 code = self._compile(source, filename, "single")
             except (OverflowError, SyntaxError, ValueError) as e:
                 # Case 1
+                if e.__traceback__:
+                    traceback.clear_frames(e.__traceback__)
                 res = ConsoleFuture(SYNTAX_ERROR)
                 res.set_exception(e)
                 res.formatted_error = self.formatsyntaxerror(e)
