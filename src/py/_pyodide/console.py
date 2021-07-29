@@ -101,7 +101,7 @@ class _Compile(Compile):
         try:
             if self.quiet_trailing_semicolon and should_quiet(source):
                 return_mode = None
-        except TokenError:
+        except (TokenError, SyntaxError):
             # Invalid code, let the Python parser throw the error later.
             pass
 
