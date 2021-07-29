@@ -208,7 +208,7 @@ class _PackageManager:
             return
         else:
             req = Requirement(requirement)
-            req.name = req.name.lower()
+        req.name = req.name.lower()
 
         # If there's a Pyodide package that matches the version constraint, use
         # the Pyodide package instead of the one on PyPI
