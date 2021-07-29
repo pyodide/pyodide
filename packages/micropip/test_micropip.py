@@ -72,41 +72,6 @@ def test_parse_wheel_url():
     assert wheel["platform"] == "macosx_10_9_intel"
 
 
-def test_lazy_wheel_padding():
-    from micropip.externals.pip._internal.network import lazy_wheel
-
-    w = lazy_wheel.LazyZipOverHTTP("", size=1000, chunk_size=15)
-    w._accessed_range(110, 120)
-    assert w._left[-1] == 95
-    assert w._right[-1] == 135
-    w._accessed_range(120, 130)
-    assert w._right[-1] == 135
-    w._accessed_range(130, 140)
-    assert w._right[-1] == 155
-    w._accessed_range(138, 139)
-    assert w._right[-1] == 155
-    w._accessed_range(138, 141)
-    assert w._right[-1] == 155
-    w = lazy_wheel.LazyZipOverHTTP("", size=1000, chunk_size=15)
-    w._accessed_range(130, 140)
-    assert w._left[0] == 115
-    w._accessed_range(120, 130)
-    assert w._left[0] == 115
-    w._accessed_range(110, 130)
-    assert w._left[0] == 95
-    w._accessed_range(109, 130)
-    assert w._left[0] == 95
-    w = lazy_wheel.LazyZipOverHTTP("", size=1000, chunk_size=15)
-    w._accessed_range(100, 500)
-    assert w._right[-1] == 515
-    w._accessed_range(100, 700)
-    assert w._right[-1] == 715
-
-    w = lazy_wheel.LazyZipOverHTTP("", size=216444)
-    w._accessed_range(211393, 211422)
-    w._accessed_range(214395, 216444)
-
-
 def test_install_custom_url(selenium_standalone_micropip, web_server_tst_data):
     selenium = selenium_standalone_micropip
     server_hostname, server_port, server_log = web_server_tst_data

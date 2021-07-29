@@ -6,7 +6,9 @@ import json
 from pathlib import Path
 import zipfile
 from typing import Dict, Any, Union, List, Tuple
-from .externals.pip._internal.network import lazy_wheel
+from .externals.pip._internal.utils.wheel import pkg_resources_distribution_for_wheel
+
+from zipfile import ZipFile
 
 from packaging.requirements import Requirement
 from packaging.version import Version
@@ -31,22 +33,31 @@ else:
 if IN_BROWSER:
     from js import fetch
 
-    async def _get_url(url):
-        resp = await fetch(url)
-        if not resp.ok:
-            raise OSError(
-                f"Request for {url} failed with status {resp.status}: {resp.statusText}"
-            )
-        return io.BytesIO((await resp.arrayBuffer()).to_py())
-
-
 else:
-    from urllib.request import urlopen
+    from urllib.request import urlopen, Request
 
-    async def _get_url(url):
-        with urlopen(url) as fd:
-            content = fd.read()
-        return io.BytesIO(content)
+    async def fetch(url, headers={}):
+        fd = urlopen(Request(url, headers=headers))
+        fd.statusText = fd.reason
+
+        async def arrayBuffer():
+            class Temp:
+                def to_py():
+                    return fd.read()
+
+            return Temp
+
+        fd.arrayBuffer = arrayBuffer
+        return fd
+
+
+async def _get_url(url):
+    resp = await fetch(url)
+    if resp.status >= 400:
+        raise OSError(
+            f"Request for {url} failed with status {resp.status}: {resp.statusText}"
+        )
+    return io.BytesIO((await resp.arrayBuffer()).to_py())
 
 
 if IN_BROWSER:
@@ -122,7 +133,7 @@ def _validate_wheel(data, fileinfo):
 
 async def _install_wheel(name, fileinfo):
     url = fileinfo["url"]
-    wheel = await _get_url(url)
+    wheel = io.BytesIO(fileinfo["wheel_bytes"])
     _validate_wheel(wheel, fileinfo)
     _extract_wheel(wheel)
     setattr(loadedPackages, name, url)
@@ -232,8 +243,12 @@ class _PackageManager:
 
     async def add_wheel(self, name, wheel, version, extras, ctx, transaction):
         transaction["locked"][name] = version
+        response = await fetch(wheel["url"])
+        wheel_bytes = (await response.arrayBuffer()).to_py()
+        wheel["wheel_bytes"] = wheel_bytes
 
-        dist = await lazy_wheel.dist_from_wheel_url(name, wheel)
+        zip_file = ZipFile(io.BytesIO(wheel_bytes))  # type: ignore
+        dist = pkg_resources_distribution_for_wheel(zip_file, name, "???")
         for recurs_req in dist.requires(extras):
             await self.add_requirement(recurs_req, ctx, transaction)
 
