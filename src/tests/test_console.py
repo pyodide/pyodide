@@ -322,6 +322,14 @@ def test_console_html(console_html_fixture):
         await term.ready;
         assert(() => term.get_output().trim() === ">>> 1+1\n2", term.get_output().trim());
 
+        // Check that terminal handles coroutine return values correctly.
+        term.clear();
+        term.exec("async def f(): return 7\n");
+        await term.ready;
+        term.exec("f()");
+        await term.ready;
+        console.log(term.get_output().trim());
+        assert(() => /<coroutine object f at 0x[a-f0-9]*>/.test(term.get_output().trim()), term.get_output().trim());
 
         term.clear();
         term.exec("1+");
