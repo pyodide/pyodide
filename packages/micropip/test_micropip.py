@@ -72,26 +72,24 @@ def test_parse_wheel_url():
     assert wheel["platform"] == "macosx_10_9_intel"
 
 
-@pytest.mark.parametrize("base_url", ["http://{server_hostname}:{server_port}/", "./"])
-def test_install_custom_url(
-    selenium_standalone_micropip, web_server_tst_data, base_url
-):
+@pytest.mark.parametrize("base_url", ["'{base_url}'", "'.'"])
+def test_install_custom_url(selenium_standalone_micropip, base_url):
     selenium = selenium_standalone_micropip
-    server_hostname, server_port, server_log = web_server_tst_data
-    base_url = base_url.format(server_hostname=server_hostname, server_port=server_port)
+    base_url = base_url.format(base_url=selenium.base_url)
 
-    selenium = selenium_standalone_micropip
     root = Path(__file__).resolve().parents[2]
     src = root / "src" / "tests" / "data"
     target = root / "build" / "test_data"
     target.symlink_to(src, True)
-    url = base_url + "test_data/snowballstemmer-2.0.0-py2.py3-none-any.whl"
+    path = "/test_data/snowballstemmer-2.0.0-py2.py3-none-any.whl"
     try:
         selenium.run_js(
             f"""
+            let url = {base_url} + '{path}';
+            let resp = await fetch(url);
             await pyodide.runPythonAsync(`
                 import micropip
-                await micropip.install('{url}')
+                await micropip.install('${{url}}')
                 import snowballstemmer
             `);
             """
