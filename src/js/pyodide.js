@@ -208,9 +208,6 @@ export async function loadPyodide(config) {
     throw new Error("Please provide indexURL parameter to loadPyodide");
   }
   let baseURL = config.indexURL;
-  if (baseURL.endsWith(".js")) {
-    baseURL = baseURL.slice(0, baseURL.lastIndexOf("/") + 1);
-  }
   if (!baseURL.endsWith("/")) {
     baseURL += "/";
   }
