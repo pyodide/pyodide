@@ -31,15 +31,19 @@
           `
             import sys
             import js
+            from pyodide import to_js
             from pyodide.console import PyodideConsole, repr_shorten, BANNER
             import __main__
             BANNER = "Welcome to the Pyodide terminal emulator 🐍\\n" + BANNER
             js.pyconsole = PyodideConsole(__main__.__dict__)
+            async def await_fut(fut):
+              return to_js([await fut]);
         `,
           namespace
         );
         let repr_shorten = namespace.get("repr_shorten");
         let banner = namespace.get("BANNER");
+        let await_fut = namespace.get("await_fut");
         namespace.destroy();
 
         let ps1 = ">>> ",
@@ -71,9 +75,14 @@
               default:
                 throw new Error(`Unexpected type ${ty}`);
             }
+            // In Javascript, await automatically also awaits any results of
+            // awaits, so if an async function returns a future, it will await
+            // the inner future too. This is not what we want so we
+            // temporarily put it into a list to protect it.
+            let wrapped = await_fut(fut);
             // complete case, get result / error and print it.
             try {
-              let value = await fut;
+              let [value] = await wrapped;
               if (value !== undefined) {
                 term.echo(
                   repr_shorten.callKwargs(value, {
@@ -81,7 +90,7 @@
                   })
                 );
               }
-              if (value && value.destroy) {
+              if (pyodide.isPyProxy(value)) {
                 value.destroy();
               }
             } catch (e) {
@@ -90,8 +99,10 @@
               } else {
                 throw e;
               }
+            } finally {
+              fut.destroy();
+              wrapped.destroy();
             }
-            fut.destroy();
           }
           term.resume();
           await sleep(10);
