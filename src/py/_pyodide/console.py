@@ -325,32 +325,38 @@ class Console:
 
         """
         try:
-            code = self._compile(source, filename, "single")
-        except (OverflowError, SyntaxError, ValueError) as e:
-            # Case 1
-            res = ConsoleFuture(SYNTAX_ERROR)
-            res.set_exception(e)
-            res.formatted_error = self.formatsyntaxerror(e)
+            try:
+                code = self._compile(source, filename, "single")
+            except (OverflowError, SyntaxError, ValueError) as e:
+                # Case 1
+                res = ConsoleFuture(SYNTAX_ERROR)
+                res.set_exception(e)
+                res.formatted_error = self.formatsyntaxerror(e)
+                return res
+
+            if code is None:
+                res = ConsoleFuture(INCOMPLETE)
+                res.set_result(None)
+                return res
+
+            res = ConsoleFuture(COMPLETE)
+
+            def done_cb(fut):
+                exc = fut.exception()
+                if exc:
+                    res.formatted_error = self.formattraceback(exc)
+                    res.set_exception(exc)
+                    exc = None
+                else:
+                    res.set_result(fut.result())
+
+            ensure_future(self.runcode(source, code)).add_done_callback(done_cb)
             return res
-
-        if code is None:
-            res = ConsoleFuture(INCOMPLETE)
-            res.set_result(None)
-            return res
-
-        res = ConsoleFuture(COMPLETE)
-
-        def done_cb(fut):
-            exc = fut.exception()
-            if exc:
-                res.formatted_error = self.formattraceback(exc)
-                res.set_exception(exc)
-                exc = None
-            else:
-                res.set_result(fut.result())
-
-        ensure_future(self.runcode(source, code)).add_done_callback(done_cb)
-        return res
+        finally:
+            # Avoid circular references involving exceptions, frame object
+            # locals, and futures.
+            res = None  # type: ignore
+            done_cb = None  # type: ignore
 
     async def runcode(self, source: str, code: CodeRunner) -> Any:
         """Execute a code object and return the result."""
