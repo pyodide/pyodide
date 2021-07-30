@@ -36,8 +36,9 @@ See issue {issue}`1120`.
 ## Simplification of the package loading system
 
 Currently Pyodide has two way of loading packages:
- - `loadPackage` for packages built with Pyodide and
- - `micropip.install` for pure Python packages from PyPi.
+
+- `loadPackage` for packages built with Pyodide and
+- `micropip.install` for pure Python packages from PyPi.
 
 The relationship between these tools is confusing and could be simplified.
 Furthermore, the dependency resolution logic and packaging / build system could
@@ -59,7 +60,7 @@ See issue {issue}`549`.
 
 Some of the challenges that Pyodide faces, such as maintaining a collection of
 build recipes, dependency resolution from PyPi, etc are already solved in either
-Python or JavaScript ecosystems.  We should therefore strive to better re-use
+Python or JavaScript ecosystems. We should therefore strive to better re-use
 existing tooling, and seeking synergies with existing initiatives in this space,
 such as conda-forge.
 

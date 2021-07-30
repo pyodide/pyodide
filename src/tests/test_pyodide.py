@@ -572,3 +572,82 @@ def test_reentrant_error(selenium):
         """
     )
     assert caught
+
+
+@pytest.mark.skip_refcount_check
+@pytest.mark.skip_pyproxy_check
+def test_custom_stdin_stdout(selenium_standalone_noload):
+    selenium = selenium_standalone_noload
+    strings = [
+        "hello world",
+        "hello world\n",
+        "This has a \x00 null byte in the middle...",
+        "several\nlines\noftext",
+        "pyodidé",
+        "碘化物",
+        "🐍",
+    ]
+    selenium.run_js(
+        """
+        function* stdinStrings(){
+            for(let x of %s){
+                yield x;
+            }
+        }
+        let stdinStringsGen = stdinStrings();
+        function stdin(){
+            return stdinStringsGen.next().value;
+        }
+        self.stdin = stdin;
+        """
+        % strings
+    )
+    selenium.run_js(
+        """
+        self.stdoutStrings = [];
+        self.stderrStrings = [];
+        function stdout(s){
+            stdoutStrings.push(s);
+        }
+        function stderr(s){
+            stderrStrings.push(s);
+        }
+        let pyodide = await loadPyodide({
+            indexURL : './',
+            fullStdLib: false,
+            jsglobals : self,
+            stdin,
+            stdout,
+            stderr,
+        });
+        self.pyodide = pyodide;
+        globalThis.pyodide = pyodide;
+        """
+    )
+    outstrings = sum([s.removesuffix("\n").split("\n") for s in strings], [])
+    print(outstrings)
+    assert (
+        selenium.run_js(
+            """
+        return pyodide.runPython(`
+            [input() for x in range(%s)]
+            # ... test more stuff
+        `).toJs();
+        """
+            % len(outstrings)
+        )
+        == outstrings
+    )
+
+    [stdoutstrings, stderrstrings] = selenium.run_js(
+        """
+        pyodide.runPython(`
+            import sys
+            print("something to stdout")
+            print("something to stderr",file=sys.stderr)
+        `);
+        return [self.stdoutStrings, self.stderrStrings];
+        """
+    )
+    assert stdoutstrings == ["Python initialization complete", "something to stdout"]
+    assert stderrstrings == ["something to stderr"]

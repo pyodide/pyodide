@@ -1,6 +1,6 @@
 (serving_pyodide_packages)=
-# Serving Pyodide packages
 
+# Serving Pyodide packages
 
 If you built your Pyodide distribution or downloaded the release tarball
 you need to serve Pyodide files with a appropriate headers.
@@ -12,6 +12,7 @@ Because browsers require WebAssembly files to have mimetype of
 Let's wrap Python's Simple HTTP Server and provide the appropiate mimetype for
 WebAssembly files into a `pyodide_server.py` file (in the `pyodide_local`
 directory):
+
 ```python
 import sys
 import socketserver
@@ -40,6 +41,7 @@ if __name__ == '__main__':
 
 Let's test it out.
 In your favourite shell, let's start our WebAssembly aware web server:
+
 ```bash
 python pyodide_server.py
 ```

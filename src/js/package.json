@@ -1,8 +1,11 @@
 {
   "name": "pyodide",
-  "version": "0.18.0-alpha.1",
+  "version": "0.18.0-dev.0",
   "description": "The Pyodide JavaScript package",
-  "keywords": ["python", "webassembly"],
+  "keywords": [
+    "python",
+    "webassembly"
+  ],
   "homepage": "https://github.com/pyodide/pyodide",
   "repository": {
     "type": "git",

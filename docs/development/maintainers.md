@@ -1,4 +1,5 @@
 (maintainer-information)=
+
 # Maintainer information
 
 ## Making a release
@@ -8,6 +9,7 @@ Flow](https://guides.github.com/introduction/flow/) with
 the latest release branch named `stable` (due to ReadTheDocs constraints).
 
 (making-major-release)=
+
 ### Making a major release
 
 1. Make a new PR and for all occurrences of
@@ -16,14 +18,14 @@ the latest release branch named `stable` (due to ReadTheDocs constraints).
    also applies to `docs/conf.py`
 2. Set version in `src/py/pyodide/__init__.py`
 3. Make sure the change log is up to date.
-    - Indicate the release date in the change log.
-    - Generate the list of contributors for the release at the end of the
-      changelog entry with,
-      ```bash
-      git shortlog -s LAST_TAG.. | cut -f2- | sort --ignore-case | tr '\n' ';' | sed 's/;/, /g;s/, $//' | fold -s
-      ```
-      where `LAST_TAG` is the tag for the last release.
-   Merge the PR.
+   - Indicate the release date in the change log.
+   - Generate the list of contributors for the release at the end of the
+     changelog entry with,
+     ```bash
+     git shortlog -s LAST_TAG.. | cut -f2- | sort --ignore-case | tr '\n' ';' | sed 's/;/, /g;s/, $//' | fold -s
+     ```
+     where `LAST_TAG` is the tag for the last release.
+     Merge the PR.
 4. Assuming the upstream `stable` branch exists, rename it to a release branch
    for the previous major version. For instance if last release was, `0.20.0`,
    the corresponding release branch would be `0.20.X`,
@@ -60,23 +62,23 @@ the latest release branch named `stable` (due to ReadTheDocs constraints).
 
 For a minor release, commits need to be added to the `stable` branch, ideally via a PR.
 This can be done with either,
- - git cherry picking individual commits,
-   ```bash
-   git checkout stable
-   git pull
-   git checkout -b backport-branch
-   git cherry-pick <commit-hash>
-   ```
- - or with interactive rebase,
-   ```bash
-   git fetch upstream
-   git checkout stable
-   git pull
-   git checkout -b backport-branch
-   git rebase -i upstream/main
-   ```
-   and indicate which commits to take from `main` in the UI.
 
+- git cherry picking individual commits,
+  ```bash
+  git checkout stable
+  git pull
+  git checkout -b backport-branch
+  git cherry-pick <commit-hash>
+  ```
+- or with interactive rebase,
+  ```bash
+  git fetch upstream
+  git checkout stable
+  git pull
+  git checkout -b backport-branch
+  git rebase -i upstream/main
+  ```
+  and indicate which commits to take from `main` in the UI.
 
 Then follow steps 2, 3, and 6 from {ref}`making-major-release`.
 

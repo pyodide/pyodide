@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 
-from distutils.core import setup
+from setuptools import find_packages, setup
+
 
 setup(
     name="micropip",
@@ -9,5 +10,7 @@ setup(
     author="Michael Droettboom",
     author_email="mdroettboom@mozilla.com",
     url="https://github.com/pyodide/pyodide",
-    py_modules=["micropip"],
+    packages=find_packages(
+        where=".",
+    ),
 )
