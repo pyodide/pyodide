@@ -39,7 +39,7 @@ list from there with "The Pyodide development team" like in the example below:
 
 ```
 @software{michael_droettboom_2021_5135072,
-  author       = {The Pyodide developpement team},
+  author       = {The Pyodide development team},
   title        = {pyodide/pyodide},
   month        = jul,
   year         = 2021,
