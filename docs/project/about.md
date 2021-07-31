@@ -30,6 +30,26 @@ making changes, and submitting pull requests. Pyodide is an independent and
 community-driven open-source project. The decision making process is outlined in
 {ref}`project-governance`.
 
+## Citing
+
+If you use Pyodide for a scientific publication, we would appreciate citations.
+Please find us [on Zenodo](https://zenodo.org/record/5135072) and use the citation
+for the version you are using. You can replace the full author
+list from there with "The Pyodide development team" like in the example below:
+
+```
+@software{michael_droettboom_2021_5135072,
+  author       = {The Pyodide development team},
+  title        = {pyodide/pyodide},
+  month        = jul,
+  year         = 2021,
+  publisher    = {Zenodo},
+  version      = {0.18.0a1},
+  doi          = {10.5281/zenodo.5135072},
+  url          = {https://doi.org/10.5281/zenodo.5135072}
+}
+```
+
 ## Communication
 
 - Mailing list: [mail.python.org/mailman3/lists/pyodide.python.org/](https://mail.python.org/mailman3/lists/pyodide.python.org/)
