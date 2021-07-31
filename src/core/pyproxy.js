@@ -17,7 +17,7 @@
  * See Makefile recipe for src/js/pyproxy.js
  */
 
-import { Module } from "../js/module.js";
+import { Module } from "./module.js";
 
 /**
  * Is the argument a :any:`PyProxy`?

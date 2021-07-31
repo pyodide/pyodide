@@ -1,6 +1,20 @@
 {
   "name": "pyodide",
-  "version": "0.18.0dev0",
+  "version": "0.18.0-dev.0",
+  "description": "The Pyodide JavaScript package",
+  "keywords": [
+    "python",
+    "webassembly"
+  ],
+  "homepage": "https://github.com/pyodide/pyodide",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/pyodide/pyodide"
+  },
+  "bugs": {
+    "url": "https://github.com/pyodide/pyodide/issues"
+  },
+  "license": "Apache-2.0",
   "devDependencies": {
     "prettier": "^2.2.1",
     "terser": "^5.7.0",
