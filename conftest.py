@@ -401,10 +401,10 @@ def pytest_runtest_call(item):
     https://github.com/pytest-dev/pytest/issues/5044
     """
     selenium = None
-    if "selenium" in item._fixtureinfo.argnames:
-        selenium = item.funcargs["selenium"]
-    if "selenium_standalone" in item._fixtureinfo.argnames:
-        selenium = item.funcargs["selenium_standalone"]
+    for fixture in item._fixtureinfo.argnames:
+        if fixture.startswith("selenium"):
+            selenium = item.funcargs[fixture]
+            break
     if selenium:
         trace_pyproxies = pytest.mark.skip_pyproxy_check.mark not in item.own_markers
         trace_hiwire_refs = (

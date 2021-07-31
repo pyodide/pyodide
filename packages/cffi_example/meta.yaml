@@ -1,0 +1,11 @@
+package:
+  name: cffi_example
+  version: "0.1"
+requirements:
+  run:
+    - cffi
+source:
+  path: python-cffi-example
+test:
+  imports:
+    - cffi_example
