@@ -12,6 +12,7 @@ from contextlib import _RedirectStream  # type: ignore
 import rlcompleter
 import platform
 import sys
+from tokenize import TokenError
 import traceback
 from typing import Literal
 from typing import (
@@ -97,8 +98,13 @@ class _Compile(Compile):
 
     def __call__(self, source, filename, symbol) -> CodeRunner:  # type: ignore
         return_mode = self.return_mode
-        if self.quiet_trailing_semicolon and should_quiet(source):
-            return_mode = None
+        try:
+            if self.quiet_trailing_semicolon and should_quiet(source):
+                return_mode = None
+        except (TokenError, SyntaxError):
+            # Invalid code, let the Python parser throw the error later.
+            pass
+
         code_runner = CodeRunner(
             source,
             mode=symbol,
