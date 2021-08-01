@@ -56,6 +56,8 @@ substitutions:
 
 ### Javascript package
 
+- {{ Enhancement }} The Pyodide Javascript package is released to npm under [npmjs.com/package/pyodide](https://www.npmjs.com/package/pyodide)
+  {pr}`1762`
 - {{ API }} {any}`loadPyodide <globalThis.loadPyodide>` no longer automatically
   stores the API into a global variable called `pyodide`. To get old behavior,
   say `globalThis.pyodide = await loadPyodide({...})`.
