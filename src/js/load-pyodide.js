@@ -3,6 +3,22 @@ import { Module } from "./module.js";
 const IN_NODE =
   typeof process !== "undefined" && process.release.name !== "undefined";
 
+/**
+ * Initialize the Pyodide package cache (for Node.js only)
+ * @returns Path to the cache dir.
+ * @private
+ */
+export async function initializePackageCache() {
+  const globalCacheDir = await import("global-cache-dir");
+  const fs = await import("fs");
+  const cacheDir = await globalCacheDir.default("pyodide");
+
+  if (!fs.existsSync(cacheDir)) {
+    fs.mkdirSync(cacheDir, { recursive: true });
+  }
+  return cacheDir;
+}
+
 /** @typedef {import('./pyproxy.js').PyProxy} PyProxy */
 /** @private */
 let baseURL;
@@ -73,7 +89,7 @@ if (globalThis.document) {
   const fetchPromise = import("node-fetch").then((M) => M.default);
   const vmPromise = import("vm").then((M) => M.default);
   loadScript = async (url) => {
-    if (url.includes("://")) {
+    if (url.includes("://") && url.startsWith("http")) {
       // If it's a url, have to load it with fetch and then eval it.
       const fetch = await fetchPromise;
       const vm = await vmPromise;

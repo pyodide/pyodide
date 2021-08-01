@@ -15,6 +15,11 @@
     "url": "https://github.com/pyodide/pyodide/issues"
   },
   "license": "Apache-2.0",
+  "dependencies": {
+    "base-64": "^1.0.0",
+    "node-fetch": "^2.6.1",
+    "global-cache-dir": "^3.0.1"
+  },
   "devDependencies": {
     "prettier": "^2.2.1",
     "terser": "^5.7.0",
@@ -40,9 +45,5 @@
         "DOM"
       ]
     }
-  },
-  "dependencies": {
-    "base-64": "^1.0.0",
-    "node-fetch": "^2.6.1"
   }
 }
