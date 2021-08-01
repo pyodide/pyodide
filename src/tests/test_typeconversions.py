@@ -11,6 +11,7 @@ from conftest import selenium_context_manager
 def test_string_conversion(selenium_module_scope, s):
     with selenium_context_manager(selenium_module_scope) as selenium:
         # careful string escaping here -- hypothesis will fuzz it.
+        # Note: using base 64 encoding would be much more compact...
         sbytes = list(s.encode())
         selenium.run_js(
             f"""
@@ -111,6 +112,8 @@ def test_bigint_conversions(selenium_module_scope, n):
 
 
 # Generate an object of any type
+@pytest.mark.skip_refcount_check
+@pytest.mark.skip_pyproxy_check
 @given(obj=from_type(type).flatmap(from_type))
 @settings(deadline=2000)
 def test_hyp_py2js2py(selenium_module_scope, obj):
@@ -178,6 +181,8 @@ def test_big_integer_py2js2py(selenium):
 
 
 # Generate an object of any type
+@pytest.mark.skip_refcount_check
+@pytest.mark.skip_pyproxy_check
 @given(obj=from_type(type).flatmap(from_type))
 @settings(deadline=2000)
 def test_hyp_tojs_no_crash(selenium_module_scope, obj):
@@ -270,8 +275,6 @@ def test_python2js5(selenium):
     )
 
 
-# @pytest.mark.skip_refcount_check
-# @pytest.mark.skip_pyproxy_check
 def test_python2js_track_proxies(selenium):
     selenium.run_js(
         """

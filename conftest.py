@@ -134,6 +134,10 @@ class SeleniumWrapper:
         )
 
     @property
+    def pyodide_loaded(self):
+        return self.run_js("return !!(self.pyodide && self.pyodide.runPython);")
+
+    @property
     def logs(self):
         logs = self.run_js("return self.logs;", pyodide_checks=False)
         if logs is not None:
@@ -405,7 +409,7 @@ def pytest_runtest_call(item):
         if fixture.startswith("selenium"):
             selenium = item.funcargs[fixture]
             break
-    if selenium:
+    if selenium and not selenium.pyodide_loaded:
         trace_pyproxies = pytest.mark.skip_pyproxy_check.mark not in item.own_markers
         trace_hiwire_refs = (
             trace_pyproxies
