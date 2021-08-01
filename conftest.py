@@ -409,7 +409,7 @@ def pytest_runtest_call(item):
         if fixture.startswith("selenium"):
             selenium = item.funcargs[fixture]
             break
-    if selenium and not selenium.pyodide_loaded:
+    if selenium and selenium.pyodide_loaded:
         trace_pyproxies = pytest.mark.skip_pyproxy_check.mark not in item.own_markers
         trace_hiwire_refs = (
             trace_pyproxies
