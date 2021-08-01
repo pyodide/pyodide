@@ -327,6 +327,8 @@ def handle_command(line, args, dryrun=False):
         # On Mac, we need to omit some darwin-specific arguments
         if arg in ["-bundle", "-undefined", "dynamic_lookup"]:
             continue
+        if arg == "-lffi":
+            continue
         # The native build is possibly multithreaded, but the emscripten one
         # definitely isn't
         arg = re.sub(r"/python([0-9]\.[0-9]+)m", r"/python\1", arg)
