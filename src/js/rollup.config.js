@@ -5,7 +5,7 @@ function config({ input, format, minify, ext = "js" }) {
   // const minifierSuffix = minify ? ".min" : "";
   const minifierSuffix = "";
   return {
-    input: `./src/js/${input}.js`,
+    input: `./${input}.js`,
     output: {
       name: "loadPyodide",
       file: `${dir}/${input}${minifierSuffix}.${ext}`,

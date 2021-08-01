@@ -274,7 +274,7 @@ Module.callPyObject = function (ptrobj, ...jsargs) {
  * @typedef {(PyProxyClass & {[x : string] : Py2JsResult})} PyProxy
  * @typedef { PyProxy | number | bigint | string | boolean | undefined } Py2JsResult
  */
-class PyProxyClass {
+export class PyProxyClass {
   constructor() {
     throw new TypeError("PyProxy is not a constructor");
   }
@@ -489,7 +489,7 @@ class PyProxyClass {
  */
 // Controlled by HAS_LENGTH, appears for any object with __len__ or sq_length
 // or mp_length methods
-class PyProxyLengthMethods {
+export class PyProxyLengthMethods {
   /**
    * The length of the object.
    *
@@ -520,7 +520,7 @@ class PyProxyLengthMethods {
 /**
  * @interface
  */
-class PyProxyGetItemMethods {
+export class PyProxyGetItemMethods {
   /**
    * This translates to the Python code ``obj[key]``.
    *
@@ -556,7 +556,7 @@ class PyProxyGetItemMethods {
  */
 // Controlled by HAS_SET, appears for any class with __setitem__, __delitem__,
 // mp_ass_subscript,  or sq_ass_item.
-class PyProxySetItemMethods {
+export class PyProxySetItemMethods {
   /**
    * This translates to the Python code ``obj[key] = value``.
    *
@@ -612,7 +612,7 @@ class PyProxySetItemMethods {
 
 // Controlled by HAS_CONTAINS flag, appears for any class with __contains__ or
 // sq_contains
-class PyProxyContainsMethods {
+export class PyProxyContainsMethods {
   /**
    * This translates to the Python code ``key in obj``.
    *
@@ -689,7 +689,7 @@ function* iter_helper(iterptr, token) {
 // unless they are iterators. See: https://docs.python.org/3/c-api/iter.html
 // https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Iteration_protocols
 // This avoids allocating a PyProxy wrapper for the temporary iterator.
-class PyProxyIterableMethods {
+export class PyProxyIterableMethods {
   /**
    * This translates to the Python code ``iter(obj)``. Return an iterator
    * associated to the proxy. See the documentation for `Symbol.iterator
@@ -724,7 +724,7 @@ class PyProxyIterableMethods {
 
 // Controlled by IS_ITERATOR, appears for any object with a __next__ or
 // tp_iternext method.
-class PyProxyIteratorMethods {
+export class PyProxyIteratorMethods {
   [Symbol.iterator]() {
     return this;
   }
@@ -952,7 +952,7 @@ let PyProxyHandlers = {
  * The Promise / javascript awaitable API.
  * @private
  */
-class PyProxyAwaitableMethods {
+export class PyProxyAwaitableMethods {
   /**
    * This wraps __pyproxy_ensure_future and makes a function that converts a
    * Python awaitable to a promise, scheduling the awaitable on the Python
@@ -1056,7 +1056,7 @@ class PyProxyAwaitableMethods {
 /**
  * @typedef { PyProxy & PyProxyCallableMethods & ((...args : any[]) => Py2JsResult) } PyProxyCallable
  */
-class PyProxyCallableMethods {
+export class PyProxyCallableMethods {
   apply(jsthis, jsargs) {
     return Module.callPyObject(_getPtr(this), ...jsargs);
   }
@@ -1107,7 +1107,7 @@ let type_to_array_map = new Map([
 /**
  * @typedef {PyProxy & PyProxyBufferMethods} PyProxyBuffer
  */
-class PyProxyBufferMethods {
+export class PyProxyBufferMethods {
   /**
    * Get a view of the buffer data which is usable from Javascript. No copy is
    * ever performed.
