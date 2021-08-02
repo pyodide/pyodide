@@ -301,6 +301,9 @@ def generate_packages_json(pkg_map: Dict[str, BasePackage]) -> Dict:
     if "soupsieve" in package_data["packages"]:
         package_data["packages"]["soupsieve"]["depends"].append("beautifulsoup4")
 
+    # re-order packages by name
+    package_data["packages"] = dict(sorted(package_data["packages"].items()))
+
     return package_data
 
 
@@ -312,7 +315,7 @@ def build_packages(packages_dir: Path, outputdir: Path, args) -> None:
     package_data = generate_packages_json(pkg_map)
 
     with open(outputdir / "packages.json", "w") as fd:
-        json.dump(package_data, fd, sort_keys=True)
+        json.dump(package_data, fd)
 
 
 def make_parser(parser):
