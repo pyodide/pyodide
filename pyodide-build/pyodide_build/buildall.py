@@ -312,7 +312,7 @@ def build_packages(packages_dir: Path, outputdir: Path, args) -> None:
     package_data = generate_packages_json(pkg_map)
 
     with open(outputdir / "packages.json", "w") as fd:
-        json.dump(package_data, fd)
+        json.dump(package_data, fd, sort_keys=True)
 
 
 def make_parser(parser):
