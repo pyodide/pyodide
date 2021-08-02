@@ -3,5 +3,6 @@ import path from "path";
 globalThis.path = path;
 
 before(async () => {
-  globalThis.pyodide = await loadPyodide({ indexURL: "../../build/" });
+  let indexURL = process.env.PYODIDE_BASE_URL || "../../build/";
+  globalThis.pyodide = await loadPyodide({ indexURL: indexURL });
 });

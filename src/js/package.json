@@ -17,8 +17,8 @@
   "license": "Apache-2.0",
   "dependencies": {
     "base-64": "^1.0.0",
-    "node-fetch": "^2.6.1",
-    "global-cache-dir": "^3.0.1"
+    "global-cache-dir": "^3.0.1",
+    "node-fetch": "^2.6.1"
   },
   "devDependencies": {
     "prettier": "^2.2.1",

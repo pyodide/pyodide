@@ -4,14 +4,32 @@ const IN_NODE =
   typeof process !== "undefined" && process.release.name !== "undefined";
 
 /**
- * Initialize the Pyodide package cache (for Node.js only)
- * @returns Path to the cache dir.
+ * Check whether the provided path is a URL or a local path
+ * @param {string} input path
+ * @returns {boolean} Path to the cache dir.
  * @private
  */
-export async function initializePackageCache() {
+export function pathIsUrl(path) {
+  if (!IN_NODE) {
+    return true;
+  }
+  if (path.includes("://") && path.startsWith("http")) {
+    return true;
+  } else {
+    return false;
+  }
+}
+
+/**
+ * Initialize the Pyodide package cache (for Node.js only)
+ * @param {string} Cache folder name.
+ * @returns {string} Path to the cache dir.
+ * @private
+ */
+export async function initializePackageCache(name) {
   const globalCacheDir = await import("global-cache-dir");
   const fs = await import("fs");
-  const cacheDir = await globalCacheDir.default("pyodide");
+  const cacheDir = await globalCacheDir.default(name);
 
   if (!fs.existsSync(cacheDir)) {
     fs.mkdirSync(cacheDir, { recursive: true });
@@ -29,7 +47,7 @@ let baseURL;
 export async function initializePackageIndex(indexURL) {
   baseURL = indexURL;
   let package_json;
-  if (IN_NODE) {
+  if (!pathIsUrl(indexURL)) {
     const fsPromises = await import("fs/promises");
     const package_string = await fsPromises.readFile(
       `${indexURL}packages.json`
@@ -84,12 +102,12 @@ if (globalThis.document) {
     // This is async only for consistency
     globalThis.importScripts(url);
   };
-} else if (typeof process !== "undefined" && process.release.name === "node") {
+} else if (IN_NODE) {
   const pathPromise = import("path").then((M) => M.default);
   const fetchPromise = import("node-fetch").then((M) => M.default);
   const vmPromise = import("vm").then((M) => M.default);
   loadScript = async (url) => {
-    if (url.includes("://") && url.startsWith("http")) {
+    if (pathIsUrl(url)) {
       // If it's a url, have to load it with fetch and then eval it.
       const fetch = await fetchPromise;
       const vm = await vmPromise;
