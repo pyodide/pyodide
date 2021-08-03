@@ -71,6 +71,7 @@ build/pyodide.asm.js: \
    # To show some stats on the symbols you can use the following:
    # cat build/pyodide.asm.js | grep -ohE 'var _{0,5}.' | sort | uniq -c | sort -nr | head -n 20
 	sed -i -E 's/var __Z[^;]*;//g' build/pyodide.asm.js
+	sed -i -E 's/var _orig[$$]_Z[^;]*;//g' build/pyodide.asm.js
 	sed -i '1i\
 		"use strict";\
 		let setImmediate = globalThis.setImmediate;\
