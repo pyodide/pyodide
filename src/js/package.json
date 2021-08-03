@@ -18,7 +18,7 @@
   "dependencies": {
     "base-64": "^1.0.0",
     "global-cache-dir": "^3.0.1",
-    "node-fetch-cache": "^3.0.1"
+    "make-fetch-happen": "^9.0.4"
   },
   "devDependencies": {
     "prettier": "^2.2.1",

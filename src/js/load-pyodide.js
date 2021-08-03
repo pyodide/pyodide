@@ -4,8 +4,10 @@ export const IN_NODE =
   typeof process !== "undefined" && process.release.name !== "undefined";
 
 let fetchPromise;
+let globalCachePromise;
 if (IN_NODE) {
-  fetchPromise = import("node-fetch-cache");
+  fetchPromise = import("make-fetch-happen");
+  globalCachePromise = import("global-cache-dir");
 }
 
 /**
@@ -38,7 +40,11 @@ export async function fetch_cached(url) {
 
   if (IN_NODE) {
     const fetchMod = await fetchPromise;
-    _fetch = fetchMod.fetchBuilder.withCache(new fetchMod.MemoryCache(options));
+    _fetch = fetchMod.default({
+      // TODO: get the cache folder only once, not for each call to
+      // fetch_cached
+      cacheManager: await initializePackageCache("pyodide"),
+    });
   }
   return await _fetch(url);
 }
@@ -50,7 +56,7 @@ export async function fetch_cached(url) {
  * @private
  */
 export async function initializePackageCache(name) {
-  const globalCacheDir = await import("global-cache-dir");
+  const globalCacheDir = await globalCachePromise;
   const fs = await import("fs");
   const cacheDir = await globalCacheDir.default(name);
 
