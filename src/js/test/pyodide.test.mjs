@@ -1,8 +1,6 @@
 import assert from "assert";
 import { loadPyodide } from "../pyodide.js";
 
-import fetch from "node-fetch";
-
 describe("Pyodide", () => {
   it("runPython", async () => {
     let res = pyodide.runPython("1+1");

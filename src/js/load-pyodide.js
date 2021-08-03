@@ -5,7 +5,7 @@ export const IN_NODE =
 
 let fetchPromise;
 if (IN_NODE) {
-  fetchPromise = import("node-fetch").then((M) => M.default);
+  fetchPromise = import("node-fetch-cache");
 }
 
 /**
@@ -37,7 +37,8 @@ export async function fetch_cached(url) {
   let _fetch = typeof fetch == "undefined" ? undefined : fetch;
 
   if (IN_NODE) {
-    _fetch = await fetchPromise;
+    const fetchMod = await fetchPromise;
+    _fetch = fetchMod.fetchBuilder.withCache(new fetchMod.MemoryCache(options));
   }
   return await _fetch(url);
 }
