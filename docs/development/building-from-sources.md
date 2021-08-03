@@ -101,14 +101,14 @@ say `make minimal`.
 
 ## Environment variables
 
-Following environment variables additionally impact the build,
+The following environment variables additionally impact the build:
 
 - `PYODIDE_JOBS`: the `-j` option passed to the `emmake make` command when
   applicable for parallel compilation. Default: 3.
 - `PYODIDE_BASE_URL`: Base URL where Pyodide packages are deployed. It must end
   with a trailing `/`. Default: `./` to load Pyodide packages from the same
   base URL path as where `pyodide.js` is located. Example:
-  `https://cdn.jsdelivr.net/pyodide/v0.17.0/full/`
+  `https://cdn.jsdelivr.net/pyodide/v0.18.0/full/`
 - `EXTRA_CFLAGS` : Add extra compilation flags.
 - `EXTRA_LDFLAGS` : Add extra linker flags.
 

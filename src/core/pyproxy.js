@@ -43,7 +43,7 @@ if (globalThis.FinalizationRegistry) {
   // For some unclear reason this code screws up selenium FirefoxDriver. Works
   // fine in chrome and when I test it in browser. It seems to be sensitive to
   // changes that don't make a difference to the semantics.
-  // TODO: after v0.17.0 release, fix selenium issues with this code.
+  // TODO: after 0.18.0, fix selenium issues with this code.
   // Module.bufferFinalizationRegistry = new FinalizationRegistry((ptr) => {
   //   try {
   //     Module._PyBuffer_Release(ptr);

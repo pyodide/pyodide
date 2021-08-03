@@ -17,10 +17,9 @@ In both cases, files need to be served with a web server and cannot be loaded fr
 ## Why can't I load files from the local file system?
 
 For security reasons Javascript in the browser is not allowed to load local data
-files. You need to serve them with a web-browser. Recently there is a
-[Native File System API](https://wicg.github.io/file-system-access/) supported in Chrome
-but not in Firefox.
-[There is a discussion about implementing it for Firefox here.](https://github.com/mozilla/standards-positions/issues/154)
+files. You need to serve them with a web-browser. There is a
+[File System API](https://wicg.github.io/file-system-access/) supported in Chrome
+but not in Firefox or Safari.
 
 ## How can I change the behavior of {any}`runPython <pyodide.runPython>` and {any}`runPythonAsync <pyodide.runPythonAsync>`?
 
@@ -36,8 +35,7 @@ function runPython(code) {
 ```
 
 ```javascript
-async function runPythonAsync(code, messageCallback, errorCallback) {
-  await pyodide.loadPackagesFromImports(code, messageCallback, errorCallback);
+async function runPythonAsync(code) {
   let coroutine = pyodide.pyodide_py.eval_code_async(code, pyodide.globals);
   try {
     let result = await coroutine;
