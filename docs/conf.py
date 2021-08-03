@@ -125,7 +125,7 @@ htmlhelp_basename = "Pyodidedoc"
 epub_exclude_files = ["search.html"]
 
 if "READTHEDOCS" in os.environ:
-    env = {"PYODIDE_BASE_URL": "https://cdn.jsdelivr.net/pyodide/dev/full/"}
+    env = {"PYODIDE_BASE_URL": "https://cdn.jsdelivr.net/pyodide/v0.18.0/full/"}
     os.makedirs("_build/html", exist_ok=True)
     res = subprocess.check_output(
         ["make", "-C", "..", "docs/_build/html/console.html"],
