@@ -1,7 +1,12 @@
 import { Module } from "./module.js";
 
-const IN_NODE =
+export const IN_NODE =
   typeof process !== "undefined" && process.release.name !== "undefined";
+
+let fetchPromise;
+if (IN_NODE) {
+  fetchPromise = import("node-fetch").then((M) => M.default);
+}
 
 /**
  * Check whether the provided path is a URL or a local path
@@ -18,6 +23,23 @@ export function pathIsUrl(path) {
   } else {
     return false;
   }
+}
+
+/**
+ * Fetch and cache results for the browser and Node.js. Caching is only
+ * explicitly done for Node.js, since browsers will cache fetch requests by
+ * default.
+ * @param {string} input path
+ * @returns {boolean} Path to the cache dir.
+ * @private
+ */
+export async function fetch_cached(url) {
+  let _fetch = typeof fetch == "undefined" ? undefined : fetch;
+
+  if (IN_NODE) {
+    _fetch = await fetchPromise;
+  }
+  return await _fetch(url);
 }
 
 /**
@@ -54,7 +76,7 @@ export async function initializePackageIndex(indexURL) {
     );
     package_json = JSON.parse(package_string);
   } else {
-    let response = await fetch(`${indexURL}packages.json`);
+    let response = await _fetch_cached(`${indexURL}packages.json`);
     package_json = await response.json();
   }
   if (!package_json.packages) {
@@ -104,14 +126,12 @@ if (globalThis.document) {
   };
 } else if (IN_NODE) {
   const pathPromise = import("path").then((M) => M.default);
-  const fetchPromise = import("node-fetch").then((M) => M.default);
   const vmPromise = import("vm").then((M) => M.default);
   loadScript = async (url) => {
     if (pathIsUrl(url)) {
       // If it's a url, have to load it with fetch and then eval it.
-      const fetch = await fetchPromise;
       const vm = await vmPromise;
-      vm.runInThisContext(await (await fetch(url)).text());
+      vm.runInThisContext(await (await fetch_cached(url)).text());
     } else {
       // Otherwise, hopefully it is a relative path we can load from the file
       // system.

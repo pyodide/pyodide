@@ -31,7 +31,7 @@ else:
     WHEEL_BASE = Path(".") / "wheels"
 
 if IN_BROWSER:
-    from js import fetch
+    fetch = pyodide_js._fetch_cached
 
 else:
     from urllib.request import urlopen, Request

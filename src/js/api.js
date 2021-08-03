@@ -1,5 +1,5 @@
 import { Module } from "./module.js";
-import { loadPackage, loadedPackages } from "./load-pyodide.js";
+import { loadPackage, loadedPackages, fetch_cached } from "./load-pyodide.js";
 import { isPyProxy, PyBuffer } from "./pyproxy.gen.js";
 export { loadPackage, loadedPackages, isPyProxy };
 
@@ -356,6 +356,7 @@ export function makePublicAPI() {
   };
 
   namespace._module = Module; // @private
+  namespace._fetch_cached = fetch_cached; // @private
   Module.public_api = namespace;
   return namespace;
 }

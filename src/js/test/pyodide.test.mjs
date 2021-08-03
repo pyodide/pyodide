@@ -12,8 +12,6 @@ describe("Pyodide", () => {
     await pyodide.loadPackage(["micropip"]);
   });
   it("micropip.install", async () => {
-    // TODO: micropip currently requires a globally defined fetch function
-    global.fetch = fetch;
     await pyodide.runPythonAsync(
       'import micropip; await micropip.install("snowballstemmer")'
     );

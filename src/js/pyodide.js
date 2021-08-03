@@ -12,9 +12,6 @@ import "./pyproxy.gen.js";
 
 import { wrapNamespace } from "./pyproxy.gen.js";
 
-import { createRequire } from "module";
-const require = createRequire(import.meta.url);
-
 /**
  * @typedef {import('./pyproxy.gen').PyProxy} PyProxy
  * @typedef {import('./pyproxy.gen').PyProxyWithLength} PyProxyWithLength
