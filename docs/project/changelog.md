@@ -11,7 +11,9 @@ substitutions:
 
 # Change Log
 
-## [0.18.0]
+## Version 0.18.0
+
+_August 3rd, 2021_
 
 ### General
 
@@ -163,6 +165,14 @@ substitutions:
 - {{ Enhancement }} matplotlib now comes with a new renderer based on the html5 canvas element. {pr}`1579`
   It is optional and the current default backend is still the agg backend compiled to wasm.
 - {{ Enhancement }} Updated a number of packages included in Pyodide.
+
+### List of contributors
+
+Albertas Gimbutas, Andreas Klostermann, arfy slowy, daoxian,
+Devin Neal, fuyutarow, Grimmer, Guido Zuidhof, Gyeongjae Choi, Hood
+Chatham, Ian Clester, Itay Dafna, Jeremy Tuloup, jmsmdy, LinasNas, Madhur
+Tandon, Michael Christensen, Nicholas Bollweg, Ondřej Staněk, Paul m. p. P,
+Piet Brömmel, Roman Yurchak, stefnotch, Syrus Akbary, Teon L Brooks, Waldir
 
 ## Version 0.17.0
 
