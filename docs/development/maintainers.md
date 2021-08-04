@@ -48,13 +48,29 @@ the latest release branch named `stable` (due to ReadTheDocs constraints).
    git push upstream stable --force
    ```
    Wait for the CI to pass and create the release on GitHub.
-6. Build the pre-built Docker image locally and push,
+6. Release the pyodide-build package,
+   ```bash
+   pip install twine build
+   cd pyodide-build/
+   python -m build .
+   ls dist/   # check the produced files
+   twine check dist/*X.Y.Z*
+   twine upload dist/*X.Y.Z*
+   ```
+7. Release the Pyodide Javascript package,
+
+   ```bash
+   cd src/js
+   npm publish
+   ```
+
+8. Build the pre-built Docker image locally and push,
    ```bash
    docker build -t pyodide/pyodide:X.Y.Z -f Dockerfile-prebuilt --build-arg VERSION=BB .
    docker push
    ```
    where `BB` is the last version of the `pyodide-env` Docker image.
-7. Revert Step 1. and increment the version in
+9. Revert Step 1. and increment the version in
    `src/py/pyodide/__init__.py` to the next version specified by
    Semantic Versioning.
 
