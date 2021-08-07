@@ -340,19 +340,30 @@ def test_console_html(console_html_fixture):
         return get_result()
 
     welcome_msg = "Welcome to the Pyodide terminal emulator 🐍"
-    assert selenium.run_js("return term.get_output()")[:len(welcome_msg)] == welcome_msg
+    assert (
+        selenium.run_js("return term.get_output()")[: len(welcome_msg)] == welcome_msg
+    )
 
     assert exec_and_get_result("1+1") == ">>> 1+1\n2"
     assert exec_and_get_result("1 +1") == ">>> 1 +1\n2"
     assert exec_and_get_result("1+ 1") == ">>> 1+ 1\n2"
     assert exec_and_get_result("[1,2,3]") == ">>> &#91;1,2,3&#93;\n[1, 2, 3]"
-    assert exec_and_get_result("{'a' : 1, 'b' : 2, 'c' : 3}") == ">>> {'a' : 1, 'b' : 2, 'c' : 3}\n{'a': 1, 'b': 2, 'c': 3}"
-    assert exec_and_get_result("{'a': {'b': 1}}") == ">>> {'a': {'b': 1}}\n{'a': {'b': 1}}"
-    assert exec_and_get_result("[x*x+1 for x in range(5)]") == '>>> &#91;x*x+1 for x in range(5)&#93;\n[1, 2, 5, 10, 17]'
-    assert exec_and_get_result("{x+1:x*x+1 for x in range(5)}") == '>>> {x+1:x*x+1 for x in range(5)}\n{1: 1, 2: 2, 3: 5, 4: 10, 5: 17}'
+    assert (
+        exec_and_get_result("{'a' : 1, 'b' : 2, 'c' : 3}")
+        == ">>> {'a' : 1, 'b' : 2, 'c' : 3}\n{'a': 1, 'b': 2, 'c': 3}"
+    )
+    assert (
+        exec_and_get_result("{'a': {'b': 1}}") == ">>> {'a': {'b': 1}}\n{'a': {'b': 1}}"
+    )
+    assert (
+        exec_and_get_result("[x*x+1 for x in range(5)]")
+        == ">>> &#91;x*x+1 for x in range(5)&#93;\n[1, 2, 5, 10, 17]"
+    )
+    assert (
+        exec_and_get_result("{x+1:x*x+1 for x in range(5)}")
+        == ">>> {x+1:x*x+1 for x in range(5)}\n{1: 1, 2: 2, 3: 5, 4: 10, 5: 17}"
+    )
 
-
-    
     term_exec(
         """
         async def f(): 
@@ -360,39 +371,50 @@ def test_console_html(console_html_fixture):
         """
     )
     import re
-    assert re.search("<coroutine object f at 0x[a-f0-9]*>", exec_and_get_result("f()")) 
+
+    assert re.search("<coroutine object f at 0x[a-f0-9]*>", exec_and_get_result("f()"))
 
     from textwrap import dedent
+
     print(exec_and_get_result("1+"))
 
-    assert exec_and_get_result("1+") == dedent(
-        """
-        >>> 1+
-        [[;;;terminal-error]  File \"<console>\", line 1
-            1+
-              ^
-        SyntaxError: invalid syntax]
-        """
-    ).strip()
+    assert (
+        exec_and_get_result("1+")
+        == dedent(
+            """
+            >>> 1+
+            [[;;;terminal-error]  File \"<console>\", line 1
+                1+
+                ^
+            SyntaxError: invalid syntax]
+            """
+        ).strip()
+    )
 
-    assert exec_and_get_result("raise Exception('hi')") == dedent(
-        """
-        >>> raise Exception('hi')
-        [[;;;terminal-error]Traceback (most recent call last):
-          File \"<console>\", line 1, in <module>
-        Exception: hi]
-        """
-    ).strip()
+    assert (
+        exec_and_get_result("raise Exception('hi')")
+        == dedent(
+            """
+            >>> raise Exception('hi')
+            [[;;;terminal-error]Traceback (most recent call last):
+            File \"<console>\", line 1, in <module>
+            Exception: hi]
+            """
+        ).strip()
+    )
 
     term_exec("from _pyodide_core import trigger_fatal_error; trigger_fatal_error()")
     time.sleep(0.3)
     res = selenium.run_js("return term.get_output().trim();")
-    assert res == dedent(
-        """
-        >>> from _pyodide_core import trigger_fatal_error; trigger_fatal_error()
-        [[;;;terminal-error]Pyodide has suffered a fatal error. Please report this to the Pyodide maintainers.]
-        [[;;;terminal-error]The cause of the fatal error was:]
-        [[;;;terminal-error]Error: intentionally triggered fatal error!]
-        [[;;;terminal-error]Look in the browser console for more details.]
-        """
-    ).strip()
+    assert (
+        res
+        == dedent(
+            """
+            >>> from _pyodide_core import trigger_fatal_error; trigger_fatal_error()
+            [[;;;terminal-error]Pyodide has suffered a fatal error. Please report this to the Pyodide maintainers.]
+            [[;;;terminal-error]The cause of the fatal error was:]
+            [[;;;terminal-error]Error: intentionally triggered fatal error!]
+            [[;;;terminal-error]Look in the browser console for more details.]
+            """
+        ).strip()
+    )
