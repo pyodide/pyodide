@@ -30,7 +30,7 @@ following section.
 ## Serving Pyodide packages
 
 If you built your Pyodide distribution or downloaded the release tarball
-you need to serve Pyodide files with a appropriate headers.
+you need to serve Pyodide files with appropriate headers.
 
 ### Serving locally
 
@@ -40,7 +40,7 @@ With Python 3.7.5+ you can serve Pyodide files locally by starting
 python -m http.server
 ```
 
-from the Pyodide package folder.
+from the Pyodide distribution folder.
 
 Point your WebAssembly aware browser to
 [http://localhost:8000/console.html](http://localhost:8000/console.html) and open
