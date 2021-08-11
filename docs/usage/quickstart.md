@@ -10,13 +10,13 @@ Try Pyodide in a [REPL](https://pyodide.org/en/latest/console.html) directly in 
 
 To include Pyodide in your project you can use the following CDN URL:
 
-```{eval-rst}
-  https://cdn.jsdelivr.net/pyodide/v0.18.0/full/pyodide.js
+```text
+https://cdn.jsdelivr.net/pyodide/v0.18.0/full/pyodide.js
 ```
 
 You can also download a release from [Github
 releases](https://github.com/pyodide/pyodide/releases) or build Pyodide
-yourself. See {ref}`serving_pyodide_packages` for more details.
+yourself. See {ref}`downloading_deploying` for more details.
 
 The `pyodide.js` file defines a single async function called
 {any}`loadPyodide <globalThis.loadPyodide>` which sets up the Python environment
