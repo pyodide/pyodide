@@ -129,12 +129,12 @@ installs from PyPi.
   <body>
     <script
       type="text/javascript"
-      src="https://cdn.jsdelivr.net/pyodide/v0.18.0/full/pyodide.js"
+      src="https://cdn.jsdelivr.net/pyodide/dev/full/pyodide.js"
     ></script>
     <script type="text/javascript">
       async function main() {
         let pyodide = await loadPyodide({
-          indexURL: "https://cdn.jsdelivr.net/pyodide/v0.18.0/full/",
+          indexURL: "https://cdn.jsdelivr.net/pyodide/dev/full/",
         });
         await pyodide.loadPackage("micropip");
         await pyodide.runPythonAsync(`
