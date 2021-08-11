@@ -21,8 +21,8 @@ Using Pyodide
    :maxdepth: 2
 
    usage/quickstart.md
-   usage/webworker.md
    usage/downloading-and-deploying.md
+   usage/index.md
    usage/loading-packages.md
    usage/type-conversions.md
    usage/wasm-constraints.md
