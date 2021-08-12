@@ -42,6 +42,31 @@ To avoid confusion, note that:
  - `cdn.jsdelivr.net/npm/pyodide@0.18.0/` is a mirror of the Pyodide NPM package, which includes none of the WASM files
 ```
 
+### Supported browsers
+
+Pyodide works in any modern web browser with WebAssembly support.
+
+**Tier 1** browsers are tested as part of the test suite with continuous integration,
+
+| Browser | Minimal supported version¹ | Release date    |
+| ------- | -------------------------- | --------------- |
+| Firefox | 70.0                       | 22 October 2019 |
+| Chrome  | 71.0                       | 4 December 2018 |
+
+¹ Newer browser versions generally provide more reliable WebAssembly support
+and will run Pyodide faster, so their use is recommended.
+
+**Tier 2** browsers are known to work but are not systematically tested in
+Pyodide,
+
+| Browser | Minimal supported version¹ | Release date      |
+| ------- | -------------------------- | ----------------- |
+| Safari  | 13.1                       | 19 September 2019 |
+| Edge    | 80                         | 26 Feb 2020       |
+
+Other browsers with WebAssembly support might also work however they are not
+officially supported.
+
 ## Web Workers
 
 By default, WebAssembly runs in the main browser thread, and it can make UI non
