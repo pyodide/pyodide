@@ -29,7 +29,7 @@ Pyodide with {any}`loadPyodide` specifying a index URL for packages:
 ```
 
 See the {ref}`quickstart` for a walk through tutorial as well as
-{ref}`loading_packages` and {ref}`type-translations` for more in depth
+{ref}`loading_packages` and {ref}`type-translations` for a more in depth
 discussion about existing capabilities.
 
 You can also use the [Pyodide NPM
@@ -38,33 +38,9 @@ application.
 
 ```{note}
 To avoid confusion, note that:
- - `https://cdn.jsdelivr.net/pyodide/` distributes Python packages built with Pyodide as well as `pyodide.js`
- - `https://cdn.jsdelivr.net/npm/pyodide@0.18.0/` is a mirror of the Pyodide NPM package, which includes none of the WASM files
+ - `cdn.jsdelivr.net/pyodide/` distributes Python packages built with Pyodide as well as `pyodide.js`
+ - `cdn.jsdelivr.net/npm/pyodide@0.18.0/` is a mirror of the Pyodide NPM package, which includes none of the WASM files
 ```
-
-### Supported browsers
-
-Pyodide works in any modern web browser with WebAssembly support.
-
-**Tier 1** browsers are tested as part of the test suite with continuous integration,
-
-| Browser | Minimal supported version¹            |
-| ------- | ------------------------------------- |
-| Firefox | 60.0 (released May 9, 2018)           |
-| Chrome  | 71.0.3578 (released December 4, 2018) |
-
-¹ Earlier versions might also work, but newer browser versions generally
-provide more reliable WebAssembly support and will run Pyodide faster.
-
-**Tier 2** browsers are known to work but are not systematically tested in
-Pyodide,
-
-| Browser | Minimal supported version¹  |
-| ------- | --------------------------- |
-| Safari  | 13.4 (released May 9, 2018) |
-
-Other browsers with WebAssembly support might also work however they are not
-officially supported.
 
 ## Web Workers
 
