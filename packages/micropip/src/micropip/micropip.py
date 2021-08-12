@@ -283,6 +283,10 @@ def install(requirements: Union[str, List[str]]):
     with C extensions that are built in Pyodide. If a pure Python package is not
     found in the Pyodide repository it will be loaded from PyPi.
 
+    When used in web browsers, downloads from PyPi will be cached. When run in
+    Node.js, packages are currently not cached, and will be re-downloaded each
+    time ``micropip.install`` is run.
+
     Parameters
     ----------
     requirements : ``str | List[str]``
