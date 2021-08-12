@@ -47,7 +47,7 @@ To avoid confusion, note that:
 By default, WebAssembly runs in the main browser thread, and it can make UI non
 responsive for long running computations.
 
-To avoid this situation, one solution is to run {ref}`using_from_webworker <Pyodide in a WebWorker>`.
+To avoid this situation, one solution is to run {ref}`Pyodide in a WebWorker <using_from_webworker>`.
 
 ## Node.js
 
