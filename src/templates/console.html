@@ -120,16 +120,16 @@
           completion: function (command, callback) {
             callback(pyconsole.complete(command).toJs()[0]);
           },
-          keymap : {
+          keymap: {
             "CTRL+C": async function (event, original) {
               clear_console();
               term.echo_command();
-              term.echo("KeyboardInterrupt")
+              term.echo("KeyboardInterrupt");
               term.set_command("");
               term.set_prompt(ps1);
               return true;
-            }
-          }
+            },
+          },
         });
         window.term = term;
         pyconsole.stdout_callback = (s) => term.echo(s, { newline: false });
