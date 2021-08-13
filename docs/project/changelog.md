@@ -11,6 +11,15 @@ substitutions:
 
 # Change Log
 
+## Unreleased
+
+### Console
+
+- {{Fix}} Ctrl+C handling in console now works correctly with multiline input.
+  New behavior more closely approximates the behavior of the native Python
+  console.
+  {pr}`1790`
+
 ## Version 0.18.0
 
 _August 3rd, 2021_
