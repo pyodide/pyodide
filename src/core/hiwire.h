@@ -250,13 +250,19 @@ JsRef
 JsObject_Dir(JsRef idobj);
 
 /**
- * Call a function
+ * Call a js function
  *
  * idargs is a hiwire Array containing the arguments.
  *
  */
 JsRef
 hiwire_call(JsRef idobj, JsRef idargs);
+
+/**
+ * Call a js function with one argument
+ */
+JsRef
+hiwire_call_OneArg(JsRef idobj, JsRef idarg);
 
 /**
  * Call a function
