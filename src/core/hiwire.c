@@ -514,15 +514,18 @@ EM_JS_REF(JsRef, hiwire_CallMethod, (JsRef idobj, JsRef name, JsRef idargs), {
   return Module.hiwire.new_value(jsobj[jsname](... jsargs));
 });
 
-EM_JS_REF(JsRef,
-          hiwire_CallMethod_OneArg,
-          (JsRef idobj, JsRef name, JsRef idarg),
-          {
-            let jsobj = Module.hiwire.get_value(idobj);
-            let jsname = Module.hiwire.get_value(name);
-            let jsarg = Module.hiwire.get_value(idarg);
-            return Module.hiwire.new_value(jsobj[jsname](jsarg));
-          });
+// clang-format off
+EM_JS_REF(
+JsRef,
+hiwire_CallMethod_OneArg,
+(JsRef idobj, JsRef name, JsRef idarg),
+{
+  let jsobj = Module.hiwire.get_value(idobj);
+  let jsname = Module.hiwire.get_value(name);
+  let jsarg = Module.hiwire.get_value(idarg);
+  return Module.hiwire.new_value(jsobj[jsname](jsarg));
+});
+// clang-format on
 
 JsRef
 hiwire_CallMethodId(JsRef idobj, Js_Identifier* name_id, JsRef idargs)

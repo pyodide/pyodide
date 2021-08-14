@@ -486,7 +486,7 @@ finally:
   return success ? 0 : -1;
 }
 
-EM_JS_REF(JsRef, call_get_method, (JsRef idobj, JsRef idkey), {
+EM_JS_REF(JsRef, JsProxy_subscript_js, (JsRef idobj, JsRef idkey), {
   let obj = Module.hiwire.get_value(idobj);
   let key = Module.hiwire.get_value(idkey);
   let result = obj.get(key);
@@ -518,7 +518,7 @@ JsProxy_subscript(PyObject* o, PyObject* pyidx)
 
   ididx = python2js(pyidx);
   FAIL_IF_NULL(ididx);
-  idresult = call_get_method(self->js, ididx);
+  idresult = JsProxy_subscript_js(self->js, ididx);
   if (idresult == NULL) {
     if (!PyErr_Occurred()) {
       PyErr_SetObject(PyExc_KeyError, pyidx);
