@@ -1,8 +1,8 @@
 {
-    "report_level": 2,
-    "halt_level": 5,
-    "exit_status_level": 5,
-    "pep_references": [],
-    "rfc_references": [],
-    "tab_width": 8
+  "report_level": 2,
+  "halt_level": 5,
+  "exit_status_level": 5,
+  "pep_references": [],
+  "rfc_references": [],
+  "tab_width": 8
 }

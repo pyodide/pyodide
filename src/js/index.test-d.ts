@@ -22,6 +22,16 @@ async function main() {
     loadPyodide({ indexURL: "blah", fullStdLib: true })
   );
 
+  expectType<Promise<typeof pyodide>>(
+    loadPyodide({
+      indexURL: "blah",
+      fullStdLib: true,
+      stdin: () => "a string",
+      stdout: (x) => {},
+      stderr: (err) => {},
+    })
+  );
+
   expectType<PyProxy>(pyodide.globals);
 
   let x: Py2JsResult;

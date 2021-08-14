@@ -137,7 +137,7 @@ function recursiveDependencies(
   if (sharedLibsOnly) {
     let onlySharedLibs = new Map();
     for (let c of toLoad) {
-      name = c[0];
+      let name = c[0];
       if (Module.packages[name].shared_library) {
         onlySharedLibs.set(name, toLoad.get(name));
       }
