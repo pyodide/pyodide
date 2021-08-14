@@ -334,6 +334,8 @@ class Console:
             code = self._compile(source, filename, "single")
         except (OverflowError, SyntaxError, ValueError) as e:
             # Case 1
+            if e.__traceback__:
+                traceback.clear_frames(e.__traceback__)
             res = ConsoleFuture(SYNTAX_ERROR)
             res.set_exception(e)
             res.formatted_error = self.formatsyntaxerror(e)
@@ -347,6 +349,7 @@ class Console:
         res = ConsoleFuture(COMPLETE)
 
         def done_cb(fut):
+            nonlocal res
             exc = fut.exception()
             if exc:
                 res.formatted_error = self.formattraceback(exc)
@@ -354,6 +357,7 @@ class Console:
                 exc = None
             else:
                 res.set_result(fut.result())
+            res = None  # type: ignore
 
         ensure_future(self.runcode(source, code)).add_done_callback(done_cb)
         return res
