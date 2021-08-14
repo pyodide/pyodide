@@ -484,10 +484,10 @@ hiwire_call_bound,
 // clang-format on
 
 EM_JS_NUM(int, hiwire_HasMethod, (JsRef obj_id, JsRef name), {
-  // clang format off
+  // clang-format off
   let obj = Module.hiwire.get_value(obj_id);
-  return obj && typeof obj[Module.hiwire.get_value(name)] == = "function";
-  // clang format on
+  return obj && typeof obj[Module.hiwire.get_value(name)] === "function";
+  // clang-format on
 })
 
 int
