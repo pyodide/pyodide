@@ -11,53 +11,23 @@ substitutions:
 
 # Change Log
 
-## [Unreleased]
+## Unreleased
 
-- {{ API }} {any}`loadPyodide <globalThis.loadPyodide>` no longer automatically stores the API into a
-  global variable called `pyodide`. To get old behavior, say `globalThis.pyodide = await loadPyodide({...})`.
-  {pr}`1597`
-- {{ API }} {any}`loadPyodide` now accepts callback functions for `stdin`, `stdout` and `stderr`
-  {pr}`1728`
-- {{ Enhancement }} Added a new {any}`CodeRunner` API for finer control than
-  {any}`eval_code` and {any}`eval_code_async`. Designed with
-  the needs of REPL implementations in mind.
-  {pr}`1563`
-- {{ Fix }} {any}`eval_code_async` no longer automatically awaits a returned
-  coroutine or attempts to await a returned generator object (which triggered an
-  error).
-  {pr}`1563`
-- {{ Fix }} micropip now correctly handles packages that have mixed case names.
-  (See {issue}`1614`).
-  {pr}`1615`
+### Console
 
-- {{ Enhancement }} micropip now resolves dependencies correctly for old
-  versions of packages (it used to always use the dependencies from the most
-  recent version, see {issue}`1619` and {issue}`1745`). micropip also will
-  resolve dependencies for wheels loaded from custom urls.
-  {pr}`1753`
+- {{Fix}} Ctrl+C handling in console now works correctly with multiline input.
+  New behavior more closely approximates the behavior of the native Python
+  console.
+  {pr}`1790`
 
-- {{ Enhancement }} Pyodide now ships with first party typescript types for the entire
-  Javascript API (though no typings are available for `PyProxy` fields).
-  {pr}`1601`
+## Version 0.18.0
 
-- {{ Enhancement }} If a Python error occurs in a reentrant `runPython` call, the error
-  will be propagated into the outer `runPython` context as the original error
-  type. This is particularly important if the error is a `KeyboardInterrupt`.
-  {pr}`1447`
+_August 3rd, 2021_
 
-- {{ Enhancement }} Added {any}`Console` class closely based on the Python standard
-  library `code.InteractiveConsole` but with support for top level await and
-  stream redirection. Also added the subclass {any}`PyodideConsole` which
-  automatically uses {any}`pyodide.loadPackagesFromImports` on the code before running
-  it.
-  {pr}`1125`, {pr}`1155`, {pr}`1635`
+### General
 
 - {{ Update }} Pyodide now runs Python 3.9.5.
   {pr}`1637`
-
-- {{ Enhancement }} It is now possible to import `Comlink` objects into Pyodide after
-  using {any}`pyodide.registerComlink`
-  {pr}`1642`
 
 - {{ Enhancement }} Pyodide can experimentally be used in Node.js {pr}`1689`
 
@@ -80,7 +50,7 @@ substitutions:
 
 ### Standard library
 
-- The following standard library modules are now available as standalone packages
+- {{ API }} The following standard library modules are now available as standalone packages
 
   - distlib
 
@@ -89,13 +59,56 @@ substitutions:
   All optional stdlib modules can then be loaded as needed with
   {any}`pyodide.loadPackage`. {pr}`1543`
 
-- The standard library module `audioop` is now included, making the `wave`,
+- {{ Enhancement }} The standard library module `audioop` is now included, making the `wave`,
   `sndhdr`, `aifc`, and `sunau` modules usable. {pr}`1623`
 
-- Added support for `ctypes`.
+- {{ Enhancement }} Added support for `ctypes`.
   {pr}`1656`
 
-### Python / JS type conversions
+### Javascript package
+
+- {{ Enhancement }} The Pyodide Javascript package is released to npm under [npmjs.com/package/pyodide](https://www.npmjs.com/package/pyodide)
+  {pr}`1762`
+- {{ API }} {any}`loadPyodide <globalThis.loadPyodide>` no longer automatically
+  stores the API into a global variable called `pyodide`. To get old behavior,
+  say `globalThis.pyodide = await loadPyodide({...})`.
+  {pr}`1597`
+- {{ Enhancement }} {any}`loadPyodide` now accepts callback functions for
+  `stdin`, `stdout` and `stderr`
+  {pr}`1728`
+- {{ Enhancement }} Pyodide now ships with first party typescript types for the entire
+  Javascript API (though no typings are available for `PyProxy` fields).
+  {pr}`1601`
+
+- {{ Enhancement }} It is now possible to import `Comlink` objects into Pyodide after
+  using {any}`pyodide.registerComlink`
+  {pr}`1642`
+
+- {{ Enhancement }} If a Python error occurs in a reentrant `runPython` call, the error
+  will be propagated into the outer `runPython` context as the original error
+  type. This is particularly important if the error is a `KeyboardInterrupt`.
+  {pr}`1447`
+
+### Python package
+
+- {{ Enhancement }} Added a new {any}`CodeRunner` API for finer control than
+  {any}`eval_code` and {any}`eval_code_async`. Designed with
+  the needs of REPL implementations in mind.
+  {pr}`1563`
+
+- {{ Enhancement }} Added {any}`Console` class closely based on the Python standard
+  library `code.InteractiveConsole` but with support for top level await and
+  stream redirection. Also added the subclass {any}`PyodideConsole` which
+  automatically uses {any}`pyodide.loadPackagesFromImports` on the code before running
+  it.
+  {pr}`1125`, {pr}`1155`, {pr}`1635`
+
+- {{ Fix }} {any}`eval_code_async` no longer automatically awaits a returned
+  coroutine or attempts to await a returned generator object (which triggered an
+  error).
+  {pr}`1563`
+
+### Python / JavaScript type conversions
 
 - {{ API }} {any}`pyodide.runPythonAsync` no longer automatically calls
   {any}`pyodide.loadPackagesFromImports`.
@@ -127,12 +140,12 @@ substitutions:
   now takes `depth` as a named argument. Also `to_js` and `to_py` only take
   depth as a keyword argument.
   {pr}`1721`
-- {{ API }} {any}`toJs <PyProxy.toJs>` and {any}`to_js <pyodide.to_js>` now take an option `pyproxies`, if a Javascript
-  Array is passed for this, then any proxies created during conversion will be
-  placed into this array. This allows easy cleanup later. The `create_pyproxies`
-  option can be used to disable creation of pyproxies during conversion
-  (instead a `ConversionError` is raised).
-  {pr}`1726`
+- {{ API }} {any}`toJs <PyProxy.toJs>` and {any}`to_js <pyodide.to_js>` now
+  take an option `pyproxies`, if a Javascript Array is passed for this, then
+  any proxies created during conversion will be placed into this array. This
+  allows easy cleanup later. The `create_pyproxies` option can be used to
+  disable creation of pyproxies during conversion (instead a `ConversionError`
+  is raised). {pr}`1726`
 - {{ API }} `toJs` and `to_js` now take an option `dict_converter` which will be
   called on a Javascript iterable of two-element Arrays as the final step of
   converting dictionaries. For instance, pass `Object.fromEntries` to convert to
@@ -141,13 +154,34 @@ substitutions:
 
 ### pyodide-build
 
-- {{ Enhancement }} pyodide-build is now an installable Python package, with an identically named
-  CLI entrypoint that replaces `bin/pyodide` which is removed {pr}`1566`
+- {{ API }} pyodide-build is now an installable Python package, with an
+  identically named CLI entrypoint that replaces `bin/pyodide` which is removed
+  {pr}`1566`
+
+### micropip
+
+- {{ Fix }} micropip now correctly handles packages that have mixed case names.
+  (See {issue}`1614`).
+  {pr}`1615`
+- {{ Enhancement }} micropip now resolves dependencies correctly for old
+  versions of packages (it used to always use the dependencies from the most
+  recent version, see {issue}`1619` and {issue}`1745`). micropip also will
+  resolve dependencies for wheels loaded from custom urls.
+  {pr}`1753`
 
 ### Packages
 
 - {{ Enhancement }} matplotlib now comes with a new renderer based on the html5 canvas element. {pr}`1579`
   It is optional and the current default backend is still the agg backend compiled to wasm.
+- {{ Enhancement }} Updated a number of packages included in Pyodide.
+
+### List of contributors
+
+Albertas Gimbutas, Andreas Klostermann, arfy slowy, daoxian,
+Devin Neal, fuyutarow, Grimmer, Guido Zuidhof, Gyeongjae Choi, Hood
+Chatham, Ian Clester, Itay Dafna, Jeremy Tuloup, jmsmdy, LinasNas, Madhur
+Tandon, Michael Christensen, Nicholas Bollweg, Ondřej Staněk, Paul m. p. P,
+Piet Brömmel, Roman Yurchak, stefnotch, Syrus Akbary, Teon L Brooks, Waldir
 
 ## Version 0.17.0
 

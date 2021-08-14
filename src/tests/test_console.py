@@ -2,6 +2,7 @@ import asyncio
 import pytest
 from pathlib import Path
 import sys
+import time
 
 from pyodide_build.testing import run_in_pyodide
 from conftest import selenium_common
@@ -312,60 +313,108 @@ def test_console_html(console_html_fixture):
         await window.console_ready;
         """
     )
-    result = selenium.run_js(
-        r"""
-        let result = [];
-        assert(() => term.get_output().startsWith("Welcome to the Pyodide terminal emulator 🐍"))
 
-        term.clear();
-        term.exec("1+1");
-        await term.ready;
-        assert(() => term.get_output().trim() === ">>> 1+1\n2", term.get_output().trim());
+    def term_exec(x):
+        return selenium.run_js(
+            f"""
+            await term.ready;
+            term.clear();
+            let x={x!r};
+            for(let t of x.split("\\n")){{
+                await term.ready;
+                term.exec(t);
+            }}
+            """
+        )
 
-        // Check that terminal handles coroutine return values correctly.
-        term.clear();
-        term.exec("async def f(): return 7\n");
-        await term.ready;
-        term.exec("f()");
-        await term.ready;
-        console.log(term.get_output().trim());
-        assert(() => /<coroutine object f at 0x[a-f0-9]*>/.test(term.get_output().trim()), term.get_output().trim());
+    def get_result():
+        return selenium.run_js(
+            f"""
+            await term.ready;
+            return term.get_output().trim();
+            """
+        )
 
-        term.clear();
-        term.exec("1+");
-        await term.ready;
-        result.push([term.get_output(),
-`>>> 1+
-[[;;;terminal-error]  File "<console>", line 1
-    1+
-      ^
-SyntaxError: invalid syntax]`
-        ]);
+    def exec_and_get_result(x):
+        term_exec(x)
+        return get_result()
 
-        term.clear();
-        term.exec("raise Exception('hi')");
-        await term.ready;
-        result.push([term.get_output(),
-`>>> raise Exception('hi')
-[[;;;terminal-error]Traceback (most recent call last):
-  File "<console>", line 1, in <module>
-Exception: hi]`
-        ]);
+    welcome_msg = "Welcome to the Pyodide terminal emulator 🐍"
+    assert (
+        selenium.run_js("return term.get_output()")[: len(welcome_msg)] == welcome_msg
+    )
 
-        term.clear();
-        term.exec("from _pyodide_core import trigger_fatal_error; trigger_fatal_error()");
-        await sleep(100);
-        result.push([term.get_output(),
-`>>> from _pyodide_core import trigger_fatal_error; trigger_fatal_error()
-[[;;;terminal-error]Pyodide has suffered a fatal error. Please report this to the Pyodide maintainers.]
-[[;;;terminal-error]The cause of the fatal error was:]
-[[;;;terminal-error]Error: intentionally triggered fatal error!]
-[[;;;terminal-error]Look in the browser console for more details.]`
-        ]);
+    assert exec_and_get_result("1+1") == ">>> 1+1\n2"
+    assert exec_and_get_result("1 +1") == ">>> 1 +1\n2"
+    assert exec_and_get_result("1+ 1") == ">>> 1+ 1\n2"
+    assert exec_and_get_result("[1,2,3]") == ">>> &#91;1,2,3&#93;\n[1, 2, 3]"
+    assert (
+        exec_and_get_result("{'a' : 1, 'b' : 2, 'c' : 3}")
+        == ">>> {'a' : 1, 'b' : 2, 'c' : 3}\n{'a': 1, 'b': 2, 'c': 3}"
+    )
+    assert (
+        exec_and_get_result("{'a': {'b': 1}}") == ">>> {'a': {'b': 1}}\n{'a': {'b': 1}}"
+    )
+    assert (
+        exec_and_get_result("[x*x+1 for x in range(5)]")
+        == ">>> &#91;x*x+1 for x in range(5)&#93;\n[1, 2, 5, 10, 17]"
+    )
+    assert (
+        exec_and_get_result("{x+1:x*x+1 for x in range(5)}")
+        == ">>> {x+1:x*x+1 for x in range(5)}\n{1: 1, 2: 2, 3: 5, 4: 10, 5: 17}"
+    )
 
-        assert(() => term.paused());
-        return result;
+    term_exec(
+        """
+        async def f(): 
+            return 7
         """
     )
-    for [x, y] in result:
-        assert x == y
+    import re
+
+    assert re.search("<coroutine object f at 0x[a-f0-9]*>", exec_and_get_result("f()"))
+
+    from textwrap import dedent
+
+    print(exec_and_get_result("1+"))
+
+    assert (
+        exec_and_get_result("1+")
+        == dedent(
+            """
+            >>> 1+
+            [[;;;terminal-error]  File \"<console>\", line 1
+                1+
+                  ^
+            SyntaxError: invalid syntax]
+            """
+        ).strip()
+    )
+
+    assert (
+        exec_and_get_result("raise Exception('hi')")
+        == dedent(
+            """
+            >>> raise Exception('hi')
+            [[;;;terminal-error]Traceback (most recent call last):
+              File \"<console>\", line 1, in <module>
+            Exception: hi]
+            """
+        ).strip()
+    )
+
+    term_exec("from _pyodide_core import trigger_fatal_error; trigger_fatal_error()")
+    time.sleep(0.3)
+    res = selenium.run_js("return term.get_output().trim();")
+    assert (
+        res
+        == dedent(
+            """
+            >>> from _pyodide_core import trigger_fatal_error; trigger_fatal_error()
+            [[;;;terminal-error]Pyodide has suffered a fatal error. Please report this to the Pyodide maintainers.]
+            [[;;;terminal-error]The cause of the fatal error was:]
+            [[;;;terminal-error]Error: intentionally triggered fatal error!]
+            [[;;;terminal-error]Look in the browser console for more details.]
+            """
+        ).strip()
+    )

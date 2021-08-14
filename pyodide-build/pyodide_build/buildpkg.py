@@ -99,7 +99,7 @@ def download_and_extract(
         srcdir = Path(pkg["source"]["path"])
 
         if not srcdir.is_dir():
-            raise ValueError("'path' must point to a path")
+            raise ValueError(f"path={srcdir} must point to a directory that exists")
 
         if not srcpath.is_dir():
             shutil.copytree(srcdir, srcpath)

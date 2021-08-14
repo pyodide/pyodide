@@ -26,17 +26,17 @@ def test_install_simple(selenium_standalone_micropip):
     assert (
         selenium.run_js(
             """
-            let result = await pyodide.runPythonAsync(`
+            return await pyodide.runPythonAsync(`
                 import os
                 import micropip
+                from pyodide import to_js
                 # Package 'pyodide-micropip-test' has dependency on 'snowballstemmer'
                 # It is used to test markers support
                 await micropip.install('pyodide-micropip-test')
                 import snowballstemmer
                 stemmer = snowballstemmer.stemmer('english')
-                stemmer.stemWords('go going goes gone'.split())
+                to_js(stemmer.stemWords('go going goes gone'.split()))
             `);
-            return result.toJs();
             """
         )
         == ["go", "go", "goe", "gone"]

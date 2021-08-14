@@ -29,6 +29,7 @@ def run_in_pyodide(
     _function: Optional[Callable] = None,
     *,
     standalone: bool = False,
+    module_scope: bool = False,
     packages: List[str] = [],
     xfail_browsers: Dict[str, str] = {},
     driver_timeout: Optional[Union[str, int]] = None,
@@ -107,17 +108,20 @@ def run_in_pyodide(
 
         if standalone:
 
-            def wrapped_standalone(selenium_standalone):
+            def wrapped(selenium_standalone):  # type: ignore
                 inner(selenium_standalone)
 
-            return wrapped_standalone
+        elif module_scope:
+
+            def wrapped(selenium_module_scope):  # type: ignore
+                inner(selenium_module_scope)
 
         else:
 
-            def wrapped(selenium):
+            def wrapped(selenium):  # type: ignore
                 inner(selenium)
 
-            return wrapped
+        return wrapped
 
     if _function is not None:
         return decorator(_function)

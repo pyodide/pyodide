@@ -4,6 +4,7 @@ package:
 
 source:
   url: https://github.com/yaml/pyyaml/archive/refs/tags/5.4.1.tar.gz
+  sha256: 75f966559c5f262dfc44da0f958cc2aa18953ae5021f2c3657b415c5a370045f
 
   patches:
     - patches/Makefile.patch

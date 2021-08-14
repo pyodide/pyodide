@@ -12,6 +12,7 @@
     <style>
       .terminal {
         --size: 1.5;
+        --color: rgba(255, 255, 255, 0.8);
       }
     </style>
   </head>
@@ -30,20 +31,23 @@
         pyodide.runPython(
           `
             import sys
-            import js
             from pyodide import to_js
             from pyodide.console import PyodideConsole, repr_shorten, BANNER
             import __main__
             BANNER = "Welcome to the Pyodide terminal emulator 🐍\\n" + BANNER
-            js.pyconsole = PyodideConsole(__main__.__dict__)
+            pyconsole = PyodideConsole(__main__.__dict__)
             async def await_fut(fut):
-              return to_js([await fut]);
+              return to_js([await fut], depth=1)
+            def clear_console():
+              pyconsole.buffer = []
         `,
           namespace
         );
         let repr_shorten = namespace.get("repr_shorten");
         let banner = namespace.get("BANNER");
         let await_fut = namespace.get("await_fut");
+        let pyconsole = namespace.get("pyconsole");
+        let clear_console = namespace.get("clear_console");
         namespace.destroy();
 
         let ps1 = ">>> ",
@@ -115,6 +119,15 @@
           completionEscape: false,
           completion: function (command, callback) {
             callback(pyconsole.complete(command).toJs()[0]);
+          },
+          keymap: {
+            "CTRL+C": async function (event, original) {
+              clear_console();
+              term.echo_command();
+              term.echo("KeyboardInterrupt");
+              term.set_command("");
+              term.set_prompt(ps1);
+            },
           },
         });
         window.term = term;

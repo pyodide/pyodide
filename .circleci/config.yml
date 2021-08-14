@@ -41,7 +41,7 @@ jobs:
 
       - restore_cache:
           keys:
-          - -{{ checksum "Makefile.envs" }}-v20201205-
+            - -{{ checksum "Makefile.envs" }}-v20201205-
 
       - run:
           name: build emsdk
@@ -88,7 +88,6 @@ jobs:
           paths:
             - .
 
-
       - store_artifacts:
           path: /root/repo/build/
 
@@ -102,7 +101,7 @@ jobs:
 
       - restore_cache:
           keys:
-          - -{{ checksum "Makefile.envs" }}-v20201205-
+            - -{{ checksum "Makefile.envs" }}-v20201205-
 
       - run:
           name: build packages
@@ -207,7 +206,6 @@ jobs:
             npm install
             npm test
 
-
   benchmark:
     <<: *defaults
     steps:
@@ -252,7 +250,7 @@ jobs:
       - run:
           name: Deploy to pyodide-cdn2.iodide.io
           command: |
-            find build/ -type f -exec sh -c "echo \"Compressing {}\"; gzip {}; mv {}.gz {};" \;
+            find build/ -type f -print0 | xargs -0 -n1 -I@ bash -c "echo \"Compressing @\"; gzip @; mv @.gz @;"
             aws s3 sync build/ "s3://pyodide-cdn2.iodide.io/v${CIRCLE_TAG}/full/" --exclude '*.data' --cache-control 'max-age=30758400, immutable, public' --content-encoding 'gzip'    # 1 year cache
             aws s3 sync build/ "s3://pyodide-cdn2.iodide.io/v${CIRCLE_TAG}/full/" --exclude '*' --include '*.data' --cache-control 'max-age=30758400, immutable, public'  --content-type 'application/wasm' --content-encoding 'gzip'  # 1 year
             # update 301 redirect for the /latest/* route.
@@ -281,7 +279,7 @@ jobs:
       - run:
           name: Deploy to pyodide-cdn2.iodide.io
           command: |
-            find build/ -type f -exec sh -c "echo \"Compressing {}\"; gzip {}; mv {}.gz {};" \;
+            find build/ -type f -print0 | xargs -0 -n1 -I@ bash -c "echo \"Compressing @\"; gzip @; mv @.gz @;"
             aws s3 rm --recursive "s3://pyodide-cdn2.iodide.io/dev/full/"
             aws s3 sync build/ "s3://pyodide-cdn2.iodide.io/dev/full/" --exclude '*.data' --cache-control 'max-age=3600, public' --content-encoding 'gzip'  # 1 hour cache
             aws s3 sync build/ "s3://pyodide-cdn2.iodide.io/dev/full/" --exclude '*' --include '*.data' --cache-control 'max-age=3600, public'  --content-type 'application/wasm' --content-encoding 'gzip'  # 1 hour cache
@@ -344,7 +342,6 @@ workflows:
             tags:
               only: /.*/
 
-
       - test-main:
           name: test-core-chrome-webworker
           test-params: -k chrome src/tests/test_webworker.py
@@ -362,7 +359,6 @@ workflows:
           filters:
             tags:
               only: /.*/
-
 
       - test-main:
           name: test-packages-chrome
@@ -390,7 +386,6 @@ workflows:
           filters:
             tags:
               only: /.*/
-
 
       - test-emsdk:
           requires:
