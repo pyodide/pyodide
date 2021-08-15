@@ -23,22 +23,3 @@ pyodide_callback(void)
   }
   return 0;
 }
-
-int
-keyboard_interrupt_init()
-{
-  EM_ASM(
-    {
-      Module.setInterruptBuffer = function(buffer)
-      {
-        Module.interrupt_buffer = buffer;
-        if (buffer) {
-          _PyPyodide_SetPyodideCallback($0);
-        } else {
-          _PyPyodide_SetPyodideCallback(0);
-        }
-      };
-    },
-    pyodide_callback);
-  return 0;
-}
