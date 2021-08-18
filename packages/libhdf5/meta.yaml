@@ -1,0 +1,33 @@
+package:
+  name: libhdf5
+  version: 1.12.1
+
+source:
+  sha256: e6dde173c2d243551922d23a0387a79961205b018502e6a742acb30b61bc2d5f
+  url: https://github.com/HDFGroup/hdf5/archive/refs/tags/hdf5-1_12_1.tar.gz
+
+requirements:
+  run:
+    - zlib
+
+build:
+  library: true
+  script: |
+    mkdir -p build;
+    cd build \
+        && LDFLAGS="-s NODERAWFS=1" emcmake cmake ../ \
+        -DCMAKE_CROSSCOMPILING_EMULATOR="$PYODIDE_ROOT/emsdk/emsdk/node/14.15.5_64bit/bin/node" \
+        -DCMAKE_INSTALL_PREFIX=hdf5 \
+        -DH5_HAVE_GETPWUID=0 \
+        -DH5_HAVE_SIGNAL=0 \
+        -DBUILD_SHARED_LIBS=0 \
+        -DBUILD_STATIC_LIBS=1 \
+        -DBUILD_TESTING=0 \
+        -DCMAKE_C_FLAGS="-Wno-incompatible-pointer-types-discards-qualifiers" \
+        -DHDF5_BUILD_EXAMPLES=0 \
+        -DHDF5_BUILD_TOOLS=0 \
+        -DHDF5_ENABLE_Z_LIB_SUPPORT=1 \
+        -DZLIB_INCLUDE_DIR="$PYODIDE_ROOT/packages/zlib/build/zlib-1.2.11/include" \
+        -DZLIB_LIBRARY="$PYODIDE_ROOT/packages/zlib/build/zlib-1.2.11/lib/libz.a";  
+    emmake make -j ${PYODIDE_JOBS:-3} install;
+    
