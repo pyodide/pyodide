@@ -20,6 +20,12 @@ substitutions:
   console.
   {pr}`1790`
 
+### pyodide-build
+
+- By default only a minimal set of packages is built. To build all packages set `PYODIDE_PACKAGES='*'`
+  In addition, `make minimal` was removed, since it is now equivalent to `make` without extra arguments.
+  {pr}`1801`
+
 ## Version 0.18.0
 
 _August 3rd, 2021_

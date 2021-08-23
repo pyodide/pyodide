@@ -148,10 +148,10 @@ class Package(BasePackage):
 
 
 def generate_dependency_graph(
-    packages_dir: Path, package_list: Optional[str]
+    packages_dir: Path, packages: Optional[Set[str]]
 ) -> Dict[str, BasePackage]:
-    """
-    This generates a dependency graph for the packages listed in package_list.
+    """This generates a dependency graph for listed packages.
+
     A node in the graph is a BasePackage object defined above, which maintains
     a list of dependencies and also dependents. That is, each node stores both
     incoming and outgoing edges.
@@ -163,7 +163,7 @@ def generate_dependency_graph(
 
     Parameters:
      - packages_dir: directory that contains packages
-     - package_list: set of packages to build. If None, then all packages in
+     - packages: set of packages to build. If None, then all packages in
        packages_dir are compiled.
 
     Returns:
@@ -172,7 +172,6 @@ def generate_dependency_graph(
 
     pkg_map: Dict[str, BasePackage] = {}
 
-    packages: Optional[Set[str]] = common._parse_package_subset(package_list)
     if packages is None:
         packages = set(
             str(x) for x in packages_dir.iterdir() if (x / "meta.yaml").is_file()
@@ -308,7 +307,9 @@ def generate_packages_json(pkg_map: Dict[str, BasePackage]) -> Dict:
 
 
 def build_packages(packages_dir: Path, outputdir: Path, args) -> None:
-    pkg_map = generate_dependency_graph(packages_dir, args.only)
+    packages = common._parse_package_subset(args.only)
+
+    pkg_map = generate_dependency_graph(packages_dir, packages)
 
     build_from_graph(pkg_map, outputdir, args)
 

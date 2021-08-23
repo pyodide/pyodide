@@ -1,12 +1,16 @@
 import pytest
 import os
 from pathlib import Path
+import functools
+
 from pyodide_build.common import _parse_package_subset
 from pyodide_build.io import parse_package_config
 
 PKG_DIR = Path(__file__).parent
+BUILD_DIR = PKG_DIR.parent / "build"
 
 
+@functools.cache
 def registered_packages():
     """Returns a list of registered package names"""
     packages = []

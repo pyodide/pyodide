@@ -11,7 +11,6 @@ from pyodide_build.common import (
 
 
 def test_parse_package_subset():
-    assert _parse_package_subset(None) is None
     # micropip is always included
     assert _parse_package_subset("numpy,pandas") == {
         "pyparsing",
@@ -39,6 +38,37 @@ def test_parse_package_subset():
         "b",
         "c",
         "d",
+    }
+    # "*" means select all packages
+    assert _parse_package_subset("*") == None
+
+    assert _parse_package_subset("core") == {
+        "pyparsing",
+        "packaging",
+        "pytz",
+        "Jinja2",
+        "micropip",
+    }
+    # by default core packages are built
+    assert _parse_package_subset(None) == _parse_package_subset("core")
+
+    assert _parse_package_subset("min-scipy-stack") == {
+        "pyparsing",
+        "packaging",
+        "pytz",
+        "Jinja2",
+        "micropip",
+        "numpy",
+        "scipy",
+        "pandas",
+        "matplotlib",
+        "scikit-learn",
+        "joblib",
+        "pytest",
+    }
+    # reserved key words can be combined with other packages
+    assert _parse_package_subset("core, unknown") == _parse_package_subset("core") | {
+        "unknown"
     }
 
 
