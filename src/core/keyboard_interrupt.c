@@ -23,3 +23,13 @@ pyodide_callback(void)
   }
   return 0;
 }
+
+void
+set_pyodide_callback(int x)
+{
+  if (x) {
+    PyPyodide_SetPyodideCallback(pyodide_callback);
+  } else {
+    PyPyodide_SetPyodideCallback(NULL);
+  }
+}

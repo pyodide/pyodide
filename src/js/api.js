@@ -312,11 +312,7 @@ Module.restoreState = (state) => Module.pyodide_py._state.restore_state(state);
  */
 export function setInterruptBuffer(interrupt_buffer) {
   Module.interrupt_buffer = interrupt_buffer;
-  if (interrupt_buffer) {
-    Module._PyPyodide_SetPyodideCallback(Module._pyodide_callback);
-  } else {
-    Module._PyPyodide_SetPyodideCallback(0);
-  }
+  Module._set_pyodide_callback(!!interrupt_buffer);
 }
 
 export function makePublicAPI() {
