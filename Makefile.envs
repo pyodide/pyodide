@@ -28,7 +28,6 @@ export PYODIDE_BASE_URL?=./
 export PYODIDE=1
 # This is the legacy environment variable used for the aforementioned purpose
 export PYODIDE_PACKAGE_ABI=1
-export EM_COMPILER_WRAPPER=ccache
 
 export OPTFLAGS=-O2
 export CFLAGS_BASE=\
