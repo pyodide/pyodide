@@ -1,9 +1,9 @@
 import pytest
 import os
 from pathlib import Path
+from typing import List
 import functools
 
-from pyodide_build.common import _parse_package_subset
 from pyodide_build.io import parse_package_config
 
 PKG_DIR = Path(__file__).parent
@@ -11,11 +11,27 @@ BUILD_DIR = PKG_DIR.parent / "build"
 
 
 @functools.cache
-def registered_packages():
+def registered_packages() -> List[str]:
     """Returns a list of registered package names"""
     packages = []
     for name in os.listdir(PKG_DIR):
         if (PKG_DIR / name).is_dir() and (PKG_DIR / name / "meta.yaml").exists():
+            packages.append(name)
+    return packages
+
+
+@functools.cache
+def built_packages() -> List[str]:
+    """Returns a list of built package names"""
+    if not BUILD_DIR.exists():
+        return []
+    registered_packages_ = registered_packages()
+    packages = []
+    for fpath in os.listdir(BUILD_DIR):
+        if not fpath.endswith(".data"):
+            continue
+        name = fpath.split(".")[0]
+        if name in registered_packages_:
             packages.append(name)
     return packages
 
@@ -63,9 +79,7 @@ def test_import(name, selenium_standalone):
             )
         )
 
-    built_packages = _parse_package_subset(os.environ.get("PYODIDE_PACKAGES"))
-    # only a subset of packages were built
-    if built_packages is not None and name not in built_packages:
+    if name not in built_packages():
         pytest.skip(f"{name} was skipped due to PYODIDE_PACKAGES")
 
     selenium_standalone.run("import glob, os")
