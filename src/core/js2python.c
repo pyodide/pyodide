@@ -65,13 +65,15 @@ EM_JS_NUM(errcode, js2python_init, (), {
     // to determine if is needs to be a 1-, 2- or 4-byte string, since
     // Python handles all 3.
     let max_code_point = 0;
+    let num_code_points = 0;
     for (let c of value) {
+      num_code_points++;
       let code_point = c.codePointAt(0);
       max_code_point =
         code_point > max_code_point ? code_point : max_code_point;
     }
 
-    let result = _PyUnicode_New(codepoints.length, max_code_point);
+    let result = _PyUnicode_New(num_code_points, max_code_point);
     // clang-format off
     if (result === 0) {
       // clang-format on
