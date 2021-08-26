@@ -1,6 +1,7 @@
 #!/bin/bash
 
-ROOT=`dirname ${BASH_SOURCE[0]}`
+# get the absolute path of the root folder
+ROOT=`cd -- "$(dirname "${BASH_SOURCE[0]}")" >/dev/null 2>&1 ; pwd -P`
 
 # emsdk_env.sh is fairly noisy, and suppress error message if the file doesn't
 # exist yet (i.e. before building emsdk)
