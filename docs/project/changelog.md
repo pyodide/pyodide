@@ -20,6 +20,9 @@ substitutions:
   console.
   {pr}`1790`
 
+- {{Fix}} Conversion of very large strings from Javascript to Python works
+  again. {pr}`1806`
+
 ## Version 0.18.0
 
 _August 3rd, 2021_
