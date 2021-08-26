@@ -20,6 +20,11 @@ substitutions:
   console.
   {pr}`1790`
 
+### pyodide-build
+
+- {{ Enhancement }} Better support for ccache when building Pyodide
+  {pr}`1805`
+
 ## Version 0.18.0
 
 _August 3rd, 2021_
