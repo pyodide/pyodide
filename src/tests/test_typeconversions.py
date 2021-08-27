@@ -35,7 +35,11 @@ def test_large_string_conversion(selenium):
             self.longstr = "ab".repeat(200_000);
             pyodide.runPython(`from js import longstr`);
             self.longstr = undefined;
-            return pyodide.runPython(`longstr.count('ab')`);
+            return pyodide.runPython(`
+                res = longstr.count('ab')
+                del longstr
+                res
+            `);
             """
         )
         == 200000
