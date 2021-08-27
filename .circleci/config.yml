@@ -8,6 +8,7 @@ defaults: &defaults
     - EMSDK_NUM_CORES: 3
       EMCC_CORES: 3
       PYODIDE_JOBS: 3
+      CCACHE_DEBUG: 1
 
 jobs:
   lint:
