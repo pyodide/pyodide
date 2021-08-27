@@ -73,8 +73,9 @@ do
         fi
         if [[ -n ${PYODIDE_SYSTEM_PORT} ]]; then
           echo "WARNING: will use the env var PYODIDE_SYSTEM_PORT=${PYODIDE_SYSTEM_PORT} instead of the provided port"
+        else
+          PYODIDE_SYSTEM_PORT=$2
         fi
-        DEFAULT_PYODIDE_SYSTEM_PORT=$2
         shift 2
       ;;
       --non-interactive)
@@ -101,12 +102,12 @@ PYODIDE_SYSTEM_PORT=${PYODIDE_SYSTEM_PORT:-${DEFAULT_PYODIDE_SYSTEM_PORT}}
 PYODIDE_DOCKER_IMAGE=${PYODIDE_DOCKER_IMAGE:-${DEFAULT_PYODIDE_DOCKER_IMAGE}}
 
 # in case the port is not a number, do not bind the port
-case $DEFAULT_PYODIDE_SYSTEM_PORT in
+case $PYODIDE_SYSTEM_PORT in
   none)
   PORT_CONFIGURATION_LINE=""
   ;;
   ''|*[!0-9]*) # contains a non-digit character, therefore it is not a number
-  echo "WARNING: Invalid port argument '$DEFAULT_PYODIDE_SYSTEM_PORT'. Port binding disabled."
+  echo "WARNING: Invalid port argument '$PYODIDE_SYSTEM_PORT'. Port binding disabled."
   PORT_CONFIGURATION_LINE=""
   ;;
   *)
