@@ -310,9 +310,10 @@ Module.restoreState = (state) => Module.pyodide_py._state.restore_state(state);
 /**
  * @param {TypedArray} interrupt_buffer
  */
-function setInterruptBuffer(interrupt_buffer) {}
-setInterruptBuffer = Module.setInterruptBuffer;
-export { setInterruptBuffer };
+export function setInterruptBuffer(interrupt_buffer) {
+  Module.interrupt_buffer = interrupt_buffer;
+  Module._set_pyodide_callback(!!interrupt_buffer);
+}
 
 export function makePublicAPI() {
   /**
@@ -333,7 +334,6 @@ export function makePublicAPI() {
    * @type {FS} The Emscripten File System API.
    */
   const FS = Module.FS;
-
   let namespace = {
     globals,
     FS,
