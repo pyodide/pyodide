@@ -20,6 +20,9 @@ substitutions:
   console.
   {pr}`1790`
 
+- {{Fix}} Conversion of very large strings from Javascript to Python works
+  again. {pr}`1806`
+
 - {{Fix}} The `setInterruptBuffer` command is now publically exposed again, as
   it was before.
   {pr}`1797`
