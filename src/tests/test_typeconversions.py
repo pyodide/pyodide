@@ -28,6 +28,33 @@ def test_string_conversion(selenium_module_scope, s):
         )
 
 
+def test_large_string_conversion(selenium):
+    assert (
+        selenium.run_js(
+            """
+            self.longstr = "ab".repeat(200_000);
+            pyodide.runPython(`from js import longstr`);
+            self.longstr = undefined;
+            return pyodide.runPython(`
+                res = longstr.count('ab')
+                del longstr
+                res
+            `);
+            """
+        )
+        == 200000
+    )
+    selenium.run_js(
+        """
+        let s = pyodide.runPython(`"ab" * 20_000`);
+        assert(() => s.length === 40_000);
+        for(let n = 0; n < 20_000; n++){
+            assert(() => s.slice(2*n, 2*n+2) === "ab");
+        }
+        """
+    )
+
+
 @given(
     n=strategies.one_of(
         strategies.integers(min_value=-(2 ** 53), max_value=2 ** 53),
