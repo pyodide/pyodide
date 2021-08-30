@@ -486,6 +486,7 @@ finally:
   return success ? 0 : -1;
 }
 
+// A helper method for jsproxy_subscript.
 EM_JS_REF(JsRef, JsProxy_subscript_js, (JsRef idobj, JsRef idkey), {
   let obj = Module.hiwire.get_value(idobj);
   let key = Module.hiwire.get_value(idkey);

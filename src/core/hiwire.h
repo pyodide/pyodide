@@ -47,6 +47,11 @@ extern const JsRef Js_null;
 // For when the return value would be Option<JsRef>
 extern const JsRef Js_novalue;
 
+// A mechanism for handling static Javascript strings from C
+// This is copied from the Python mechanism for handling static Python strings
+// from C See the Python definition here:
+// https://github.com/python/cpython/blob/24da544014f78e6f1440d5ce5c2d14794a020340/Include/cpython/object.h#L37
+
 typedef struct Js_Identifier
 {
   const char* string;
