@@ -161,7 +161,6 @@ main(int argc, char** argv)
   TRY_INIT(python2js_buffer);
   TRY_INIT_WITH_CORE_MODULE(JsProxy);
   TRY_INIT_WITH_CORE_MODULE(pyproxy);
-  TRY_INIT(keyboard_interrupt);
 
   PyObject* module_dict = PyImport_GetModuleDict(); /* borrowed */
   if (PyDict_SetItemString(module_dict, "_pyodide_core", core_module)) {

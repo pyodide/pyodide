@@ -23,6 +23,10 @@ substitutions:
 - {{Fix}} Conversion of very large strings from Javascript to Python works
   again. {pr}`1806`
 
+- {{Fix}} The `setInterruptBuffer` command is now publically exposed again, as
+  it was before.
+  {pr}`1797`
+
 ## Version 0.18.0
 
 _August 3rd, 2021_

@@ -231,22 +231,21 @@ def test_hiwire_is_promise(selenium):
 def test_keyboard_interrupt(selenium):
     x = selenium.run_js(
         """
-        x = new Int8Array(1)
-        pyodide._module.setInterruptBuffer(x)
+        let x = new Int8Array(1);
+        pyodide.setInterruptBuffer(x);
         self.triggerKeyboardInterrupt = function(){
             x[0] = 2;
         }
         try {
             pyodide.runPython(`
                 from js import triggerKeyboardInterrupt
-                x = 0
-                while True:
-                    x += 1
+                for x in range(100000):
                     if x == 2000:
                         triggerKeyboardInterrupt()
-            `)
+            `);
         } catch(e){}
-        return pyodide.runPython('x')
+        pyodide.setInterruptBuffer(undefined);
+        return pyodide.globals.get('x');
         """
     )
     assert 2000 < x < 2500
