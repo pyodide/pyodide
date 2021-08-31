@@ -23,8 +23,11 @@ def _parse_package_subset(query: Optional[str]) -> Optional[Set[str]]:
        while testing a diverse set of scientific packages.
      - '*': corresponds to all packages (returns None)
 
+    Note: None as input is equivalent to PYODIDE_PACKAGES being unset and leads
+    to only the core packages being built.
+
     Returns:
-      a set of package names to build or None.
+      a set of package names to build or None (build all packages).
     """
     if query is None:
         query = "core"

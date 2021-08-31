@@ -22,7 +22,10 @@ def registered_packages() -> List[str]:
 
 @functools.cache
 def built_packages() -> List[str]:
-    """Returns a list of built package names"""
+    """Returns a list of built package names.
+
+    This functions lists the names of the .data files in the build/ directory.
+    """
     if not BUILD_DIR.exists():
         return []
     registered_packages_ = registered_packages()
