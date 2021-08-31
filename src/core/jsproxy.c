@@ -60,6 +60,13 @@ _Py_IDENTIFIER(set_exception);
 _Py_IDENTIFIER(set_result);
 _Py_IDENTIFIER(__await__);
 _Py_IDENTIFIER(__dir__);
+Js_IDENTIFIER(then);
+Js_IDENTIFIER(finally);
+Js_IDENTIFIER(has);
+Js_IDENTIFIER(get);
+Js_IDENTIFIER(set);
+Js_IDENTIFIER(delete);
+Js_IDENTIFIER(includes);
 
 static PyObject* asyncio_get_event_loop;
 static PyTypeObject* PyExc_BaseException_Type;
@@ -479,6 +486,25 @@ finally:
   return success ? 0 : -1;
 }
 
+// A helper method for jsproxy_subscript.
+EM_JS_REF(JsRef, JsProxy_subscript_js, (JsRef idobj, JsRef idkey), {
+  let obj = Module.hiwire.get_value(idobj);
+  let key = Module.hiwire.get_value(idkey);
+  let result = obj.get(key);
+  // clang-format off
+  if (result === undefined) {
+    // Try to distinguish between undefined and missing:
+    // If the object has a "has" method and it returns false for this key, the
+    // key is missing. Otherwise, assume key present and value was undefined.
+    // TODO: in absence of a "has" method, should we return None or KeyError?
+    if (obj.has && typeof obj.has === "function" && !obj.has(key)) {
+      return 0;
+    }
+  }
+  // clang-format on
+  return Module.hiwire.new_value(result);
+});
+
 /**
  * __getitem__ for JsProxies that have a "get" method. Translates proxy[key] to
  * obj.get(key). Controlled by HAS_GET
@@ -493,7 +519,7 @@ JsProxy_subscript(PyObject* o, PyObject* pyidx)
 
   ididx = python2js(pyidx);
   FAIL_IF_NULL(ididx);
-  idresult = hiwire_call_get_method(self->js, ididx);
+  idresult = JsProxy_subscript_js(self->js, ididx);
   if (idresult == NULL) {
     if (!PyErr_Occurred()) {
       PyErr_SetObject(PyExc_KeyError, pyidx);
@@ -522,9 +548,12 @@ JsProxy_ass_subscript(PyObject* o, PyObject* pyidx, PyObject* pyvalue)
   bool success = false;
   JsRef ididx = NULL;
   JsRef idvalue = NULL;
+  JsRef jsresult = NULL;
   ididx = python2js(pyidx);
   if (pyvalue == NULL) {
-    if (hiwire_call_delete_method(self->js, ididx)) {
+    jsresult = hiwire_CallMethodId_OneArg(self->js, &JsId_delete, ididx);
+    FAIL_IF_NULL(jsresult);
+    if (!hiwire_to_bool(jsresult)) {
       if (!PyErr_Occurred()) {
         PyErr_SetObject(PyExc_KeyError, pyidx);
       }
@@ -533,12 +562,15 @@ JsProxy_ass_subscript(PyObject* o, PyObject* pyidx, PyObject* pyvalue)
   } else {
     idvalue = python2js(pyvalue);
     FAIL_IF_NULL(idvalue);
-    FAIL_IF_MINUS_ONE(hiwire_call_set_method(self->js, ididx, idvalue));
+    jsresult =
+      hiwire_CallMethodId_va(self->js, &JsId_set, ididx, idvalue, NULL);
+    FAIL_IF_NULL(jsresult);
   }
   success = true;
 finally:
   hiwire_CLEAR(ididx);
   hiwire_CLEAR(idvalue);
+  hiwire_CLEAR(jsresult);
   return success ? 0 : -1;
 }
 
@@ -551,13 +583,17 @@ finally:
 static int
 JsProxy_includes(JsProxy* self, PyObject* obj)
 {
+  JsRef jsresult = NULL;
   int result = -1;
   JsRef jsobj = python2js(obj);
   FAIL_IF_NULL(jsobj);
-  result = hiwire_call_includes_method(self->js, jsobj);
+  jsresult = hiwire_CallMethodId_OneArg(self->js, &JsId_includes, jsobj);
+  FAIL_IF_NULL(jsresult);
+  result = hiwire_to_bool(jsresult);
 
 finally:
   hiwire_CLEAR(jsobj);
+  hiwire_CLEAR(jsresult);
   return result;
 }
 
@@ -569,13 +605,17 @@ finally:
 static int
 JsProxy_has(JsProxy* self, PyObject* obj)
 {
+  JsRef jsresult = NULL;
   int result = -1;
   JsRef jsobj = python2js(obj);
   FAIL_IF_NULL(jsobj);
-  result = hiwire_call_has_method(self->js, jsobj);
+  jsresult = hiwire_CallMethodId_OneArg(self->js, &JsId_has, jsobj);
+  FAIL_IF_NULL(jsresult);
+  result = hiwire_to_bool(jsresult);
 
 finally:
   hiwire_CLEAR(jsobj);
+  hiwire_CLEAR(jsresult);
   return result;
 }
 
@@ -727,7 +767,7 @@ JsProxy_Await(JsProxy* self)
   FAIL_IF_NULL(promise_id);
   promise_handles = create_promise_handles(set_result, set_exception);
   FAIL_IF_NULL(promise_handles);
-  promise_result = hiwire_call_member(promise_id, "then", promise_handles);
+  promise_result = hiwire_CallMethodId(promise_id, &JsId_then, promise_handles);
   FAIL_IF_NULL(promise_result);
   result = _PyObject_CallMethodId(fut, &PyId___await__, NULL);
 
@@ -776,7 +816,7 @@ JsProxy_then(JsProxy* self, PyObject* args, PyObject* kwds)
   FAIL_IF_NULL(promise_id);
   promise_handles = create_promise_handles(onfulfilled, onrejected);
   FAIL_IF_NULL(promise_handles);
-  result_promise = hiwire_call_member(promise_id, "then", promise_handles);
+  result_promise = hiwire_CallMethodId(promise_id, &JsId_then, promise_handles);
   if (result_promise == NULL) {
     Py_CLEAR(onfulfilled);
     Py_CLEAR(onrejected);
@@ -815,7 +855,7 @@ JsProxy_catch(JsProxy* self, PyObject* onrejected)
   // even if the promise resolves successfully.
   promise_handles = create_promise_handles(NULL, onrejected);
   FAIL_IF_NULL(promise_handles);
-  result_promise = hiwire_call_member(promise_id, "then", promise_handles);
+  result_promise = hiwire_CallMethodId(promise_id, &JsId_then, promise_handles);
   if (result_promise == NULL) {
     Py_DECREF(onrejected);
     FAIL();
@@ -856,7 +896,8 @@ JsProxy_finally(JsProxy* self, PyObject* onfinally)
   // `create_once_callable`.
   proxy = create_once_callable(onfinally);
   FAIL_IF_NULL(proxy);
-  result_promise = hiwire_call_member_va(promise_id, "finally", proxy, NULL);
+  result_promise =
+    hiwire_CallMethodId_va(promise_id, &JsId_finally, proxy, NULL);
   if (result_promise == NULL) {
     Py_DECREF(onfinally);
     FAIL();
@@ -1657,16 +1698,16 @@ JsProxy_create_with_this(JsRef object, JsRef this)
   if (hiwire_has_length(object)) {
     type_flags |= HAS_LENGTH;
   }
-  if (hiwire_has_get_method(object)) {
+  if (hiwire_HasMethodId(object, &JsId_get)) {
     type_flags |= HAS_GET;
   }
-  if (hiwire_has_set_method(object)) {
+  if (hiwire_HasMethodId(object, &JsId_set)) {
     type_flags |= HAS_SET;
   }
-  if (hiwire_has_has_method(object)) {
+  if (hiwire_HasMethodId(object, &JsId_has)) {
     type_flags |= HAS_HAS;
   }
-  if (hiwire_has_includes_method(object)) {
+  if (hiwire_HasMethodId(object, &JsId_includes)) {
     type_flags |= HAS_INCLUDES;
   }
   if (hiwire_is_typedarray(object)) {
