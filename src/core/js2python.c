@@ -46,6 +46,11 @@ EM_JS_REF(PyObject*, js2python, (JsRef id), {
   let value = Module.hiwire.get_value(id);
   try {
     let result = Module._js2python_convertImmutable(value);
+    // clang-format off
+    if (result !== undefined) {
+      // clang-format on
+      return result;
+    }
   } catch (e) {
     // Assertion: Python error indicator is set if and only if error is a
     // TempError.
@@ -55,12 +60,7 @@ EM_JS_REF(PyObject*, js2python, (JsRef id), {
       throw e;
     }
   }
-  // clang-format off
-  if (result !== undefined) {
-    return result;
-  }
   return _JsProxy_create(id);
-  // clang-format on
 })
 
 EM_JS_REF(PyObject*, js2python_convert, (JsRef id, int depth), {
