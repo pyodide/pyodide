@@ -277,7 +277,7 @@ export function toPy(obj, { depth = -1 } = {}) {
   let result = 0;
   try {
     obj_id = Module.hiwire.new_value(obj);
-    py_result = Module.__js2python_convert(obj_id, new Map(), depth);
+    py_result = Module.js2python_convert(obj_id, new Map(), depth);
     if (py_result === 0) {
       Module._pythonexc2js();
     }
