@@ -44,9 +44,19 @@ _js2python_pyproxy(PyObject* val)
 
 EM_JS_REF(PyObject*, js2python, (JsRef id), {
   let value = Module.hiwire.get_value(id);
-  let result = Module.__js2python_convertImmutable(value);
+  try {
+    let result = Module.__js2python_convertImmutable(value);
+  } catch (e) {
+    // Assertion: Python error indicator is set if and only if (e instanceof
+    // TempError)
+    if (e instanceof TempError) {
+      return 0;
+    } else {
+      throw e;
+    }
+  }
   // clang-format off
-  if (result !== 0) {
+  if (result !== undefined) {
     return result;
   }
   return _JsProxy_create(id);
@@ -54,7 +64,17 @@ EM_JS_REF(PyObject*, js2python, (JsRef id), {
 })
 
 EM_JS_REF(PyObject*, js2python_convert, (JsRef id, int depth), {
-  return Module.__js2python_convert(id, new Map(), depth);
+  try {
+    return Module.__js2python_convert(id, new Map(), depth);
+  } catch (e) {
+    // Assertion: Python error indicator is set if and only if (e instanceof
+    // TempError)
+    if (e instanceof TempError) {
+      return 0;
+    } else {
+      throw e;
+    }
+  }
 });
 
 EM_JS_NUM(errcode, js2python_init, (), {
@@ -129,6 +149,17 @@ EM_JS_NUM(errcode, js2python_init, (), {
 
   Module.__js2python_convertImmutable = function(value)
   {
+    let result = Module.__js2python_convertImmutableInner(value);
+    // clang-format off
+    if (result === 0) {
+      // clang-format on
+      throw new TempError();
+    }
+    return result;
+  }
+
+  Module.__js2python_convertImmutableInner = function(value)
+  {
     let type = typeof value;
     // clang-format off
     if (type === 'string') {
@@ -151,7 +182,7 @@ EM_JS_NUM(errcode, js2python_init, (), {
       return __js2python_pyproxy(Module.PyProxy_getPtr(value));
     }
     // clang-format on
-    return 0;
+    return undefined;
   };
 
   class TempError extends Error
@@ -173,11 +204,6 @@ EM_JS_NUM(errcode, js2python_init, (), {
         entryid = Module.hiwire.new_value(obj[i]);
         item = Module.__js2python_convert(entryid, cache, depth);
         // clang-format off
-        if (item === 0) {
-          // clang-format on
-          throw new TempError();
-        }
-        // clang-format off
         // PyList_SetItem steals a reference to item no matter what
         _Py_IncRef(item);
         if (_PyList_SetItem(list, i, item) === -1) {
@@ -193,13 +219,7 @@ EM_JS_NUM(errcode, js2python_init, (), {
       Module.hiwire.decref(entryid);
       _Py_DecRef(item);
       _Py_DecRef(list);
-      if (e instanceof TempError) {
-        return 0;
-      } else if (_PyErr_Occurred()) {
-        return 0;
-      } else {
-        throw e;
-      }
+      throw e;
     }
 
     return list;
@@ -221,25 +241,16 @@ EM_JS_NUM(errcode, js2python_init, (), {
       for (let[key_js, value_js] of entries) {
         key_py = Module.__js2python_convertImmutable(key_js);
         // clang-format off
-        if (key_py === 0) {
+        if (key_py === undefined) {
           // clang-format on
-          if (_PyErr_Occurred()) {
-            throw new TempError();
-          } else {
-            let key_type =
-              (key_js.constructor && key_js.constructor.name) || typeof(key_js);
-            // clang-format off
-            throw new Error(`Cannot use key of type ${key_type} as a key to a Python dict`);
-            // clang-format on
-          }
+          let key_type =
+            (key_js.constructor && key_js.constructor.name) || typeof(key_js);
+          // clang-format off
+          throw new Error(`Cannot use key of type ${key_type} as a key to a Python dict`);
+          // clang-format on
         }
         value_id = Module.hiwire.new_value(value_js);
         value_py = Module.__js2python_convert(value_id, cache, depth);
-        // clang-format off
-        if (value_py === 0) {
-          // clang-format on
-          throw new TempError();
-        }
 
         // clang-format off
         if (_PyDict_SetItem(dict, key_py, value_py) === -1) {
@@ -258,13 +269,7 @@ EM_JS_NUM(errcode, js2python_init, (), {
       Module.hiwire.decref(value_id);
       _Py_DecRef(value_py);
       _Py_DecRef(dict);
-      if (e instanceof TempError) {
-        return 0;
-      } else if (_PyErr_Occurred()) {
-        return 0;
-      } else {
-        throw e;
-      }
+      throw e;
     }
     return dict;
   };
@@ -283,17 +288,13 @@ EM_JS_NUM(errcode, js2python_init, (), {
       for (let key_js of obj) {
         key_py = Module.__js2python_convertImmutable(key_js);
         // clang-format off
-        if (key_py === 0) {
+        if (key_py === undefined) {
           // clang-format on
-          if (_PyErr_Occurred()) {
-            throw new TempError();
-          } else {
-            let key_type =
-              (key_js.constructor && key_js.constructor.name) || typeof(key_js);
-            // clang-format off
-            throw new Error(`Cannot use key of type ${key_type} as a key to a Python set`);
-            // clang-format on
-          }
+          let key_type =
+            (key_js.constructor && key_js.constructor.name) || typeof(key_js);
+          // clang-format off
+          throw new Error(`Cannot use key of type ${key_type} as a key to a Python set`);
+          // clang-format on
         }
         let errcode = _PySet_Add(set, key_py);
         // clang-format off
@@ -307,13 +308,7 @@ EM_JS_NUM(errcode, js2python_init, (), {
     } catch (e) {
       _Py_DecRef(key_py);
       _Py_DecRef(set);
-      if (e instanceof TempError) {
-        return 0;
-      } else if (_PyErr_Occurred()) {
-        return 0;
-      } else {
-        throw e;
-      }
+      throw e;
     }
     return set;
   };
@@ -364,7 +359,7 @@ EM_JS_NUM(errcode, js2python_init, (), {
     let value = Module.hiwire.get_value(id);
     let result = Module.__js2python_convertImmutable(value);
     // clang-format off
-    if (result !== 0) {
+    if (result !== undefined) {
       return result;
     }
     if (depth === 0) {
