@@ -47,8 +47,8 @@ EM_JS_REF(PyObject*, js2python, (JsRef id), {
   try {
     let result = Module._js2python_convertImmutable(value);
   } catch (e) {
-    // Assertion: Python error indicator is set if and only if (e instanceof
-    // TempError)
+    // Assertion: Python error indicator is set if and only if error is a
+    // TempError.
     if (e instanceof TempError) {
       return 0;
     } else {
@@ -67,8 +67,8 @@ EM_JS_REF(PyObject*, js2python_convert, (JsRef id, int depth), {
   try {
     return Module.js2python_convert(id, new Map(), depth);
   } catch (e) {
-    // Assertion: Python error indicator is set if and only if (e instanceof
-    // TempError)
+    // Assertion: Python error indicator is set if and only if error is a
+    // TempError.
     if (e instanceof TempError) {
       return 0;
     } else {
@@ -147,6 +147,17 @@ EM_JS_NUM(errcode, js2python_init, (), {
     return result;
   };
 
+  /**
+   * This function converts immutable types. numbers, bigints, strings,
+   * booleans, undefined, and null are converted. PyProxies are unwrapped.
+   *
+   * If `value` is of any other type then `undefined` is returned.
+   *
+   * If `value` is one of those types but an error is raised during conversion,
+   * a Javascript error is thrown. If the error was a Python error, we leave the
+   * error indicator set and throw a TempError. This `TempError` must be caught
+   * in this file and `NULL` returned to calling Python code.
+   */
   Module._js2python_convertImmutable = function(value)
   {
     let result = __js2python_convertImmutableInner(value);
@@ -327,6 +338,12 @@ EM_JS_NUM(errcode, js2python_init, (), {
     }
   }
 
+  /**
+   * Convert mutable types: Array, Map, Set, and Objects whose prototype is
+   * either null or the default. Anything else is wrapped in a Proxy. This
+   * should only be used on values for which __js2python_convertImmutable
+   * returned `undefined`.
+   */
   function __js2python_convertOther(id, value, cache, depth)
   {
     let toStringTag = Object.prototype.toString.call(value);
@@ -357,7 +374,7 @@ EM_JS_NUM(errcode, js2python_init, (), {
   Module.js2python_convert = function(id, cache, depth)
   {
     let value = Module.hiwire.get_value(id);
-    let result = __js2python_convertImmutable(value);
+    let result = Module._js2python_convertImmutable(value);
     // clang-format off
     if (result !== undefined) {
       return result;
