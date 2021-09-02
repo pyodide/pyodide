@@ -44,40 +44,21 @@ _js2python_pyproxy(PyObject* val)
 
 EM_JS_REF(PyObject*, js2python, (JsRef id), {
   let value = Module.hiwire.get_value(id);
-  try {
-    let result = Module._js2python_convertImmutable(value);
-    // clang-format off
-    if (result !== undefined) {
-      // clang-format on
-      return result;
-    }
-  } catch (e) {
-    // Assertion: Python error indicator is set if and only if error is a
-    // TempError.
-    if (e instanceof TempError) {
-      return 0;
-    } else {
-      throw e;
-    }
+  let result = Module._js2python_convertImmutable(value);
+  // clang-format off
+  if (result !== undefined) {
+    // clang-format on
+    return result;
   }
   return _JsProxy_create(id);
 })
 
 EM_JS_REF(PyObject*, js2python_convert, (JsRef id, int depth), {
-  try {
-    return Module.js2python_convert(id, new Map(), depth);
-  } catch (e) {
-    // Assertion: Python error indicator is set if and only if error is a
-    // TempError.
-    if (e instanceof TempError) {
-      return 0;
-    } else {
-      throw e;
-    }
-  }
+  return Module.js2python_convert(id, new Map(), depth);
 });
 
 EM_JS_NUM(errcode, js2python_init, (), {
+  let PropagateError = Module._PropagatePythonError;
   function __js2python_string(value)
   {
     // The general idea here is to allocate a Python string and then
@@ -97,7 +78,7 @@ EM_JS_NUM(errcode, js2python_init, (), {
     // clang-format off
     if (result === 0) {
       // clang-format on
-      return 0;
+      throw new PropagateError();
     }
 
     let ptr = _PyUnicode_Data(result);
@@ -154,9 +135,8 @@ EM_JS_NUM(errcode, js2python_init, (), {
    * If `value` is of any other type then `undefined` is returned.
    *
    * If `value` is one of those types but an error is raised during conversion,
-   * a Javascript error is thrown. If the error was a Python error, we leave the
-   * error indicator set and throw a TempError. This `TempError` must be caught
-   * in this file and `NULL` returned to calling Python code.
+   * we throw a PropagateError to propogate the error out to C. This causes
+   * special handling in the EM_JS wrapper.
    */
   Module._js2python_convertImmutable = function(value)
   {
@@ -164,10 +144,10 @@ EM_JS_NUM(errcode, js2python_init, (), {
     // clang-format off
     if (result === 0) {
       // clang-format on
-      throw new TempError();
+      throw new PropagateError();
     }
     return result;
-  }
+  };
 
   function __js2python_convertImmutableInner(value)
   {
@@ -196,9 +176,6 @@ EM_JS_NUM(errcode, js2python_init, (), {
     return undefined;
   };
 
-  class TempError extends Error
-  {};
-
   function __js2python_convertList(obj, cache, depth)
   {
     let list = _PyList_New(obj.length);
@@ -219,7 +196,7 @@ EM_JS_NUM(errcode, js2python_init, (), {
         _Py_IncRef(item);
         if (_PyList_SetItem(list, i, item) === -1) {
           // clang-format on
-          throw new TempError();
+          throw new PropagateError();
         }
         Module.hiwire.decref(entryid);
         entryid = 0;
@@ -266,7 +243,7 @@ EM_JS_NUM(errcode, js2python_init, (), {
         // clang-format off
         if (_PyDict_SetItem(dict, key_py, value_py) === -1) {
           // clang-format on
-          throw new TempError();
+          throw new PropagateError();
         }
         _Py_DecRef(key_py);
         key_py = 0;
@@ -311,7 +288,7 @@ EM_JS_NUM(errcode, js2python_init, (), {
         // clang-format off
         if (errcode === -1) {
           // clang-format on
-          throw new TempError();
+          throw new PropagateError();
         }
         _Py_DecRef(key_py);
         key_py = 0;
