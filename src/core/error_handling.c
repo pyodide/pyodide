@@ -274,9 +274,8 @@ EM_JS_NUM(errcode, error_handling_init_js, (), {
   {
     constructor()
     {
-      super("If you are seeing this message, an internal Pyodide error has "
-            "occurred." +
-            "Please report it to the Pyodide maintainers.");
+      super("If you are seeing this message, an internal Pyodide error has " +
+            "occurred. Please report it to the Pyodide maintainers.");
     }
   } Module._PropagatePythonError = _PropagatePythonError;
   return 0;
