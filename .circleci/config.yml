@@ -64,8 +64,7 @@ jobs:
           no_output_timeout: 1200
           command: |
             ccache -z
-            # The following packages are currently used in the main pyodide test suite
-            PYODIDE_PACKAGES="micropip,pyparsing,pytz,packaging,Jinja2" make
+            PYODIDE_PACKAGES="core" make
             ccache -s
 
       - run:
@@ -108,7 +107,7 @@ jobs:
           no_output_timeout: 1800
           command: |
             ccache -z
-            make -C packages
+            PYODIDE_PACKAGES='*' make -C packages
             ccache -s
 
       - run:
