@@ -20,6 +20,9 @@ substitutions:
   console.
   {pr}`1790`
 
+- {{Fix}} The "long output truncated" message now appears on a separate line as intended.
+  {pr}`1814`
+
 ### Python / JavaScript type conversions
 
 - {{Fix}} Conversion of very large strings from Javascript to Python works
