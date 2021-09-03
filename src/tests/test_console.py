@@ -366,7 +366,7 @@ def test_console_html(console_html_fixture):
 
     term_exec(
         """
-        async def f(): 
+        async def f():
             return 7
         """
     )
@@ -402,6 +402,10 @@ def test_console_html(console_html_fixture):
             """
         ).strip()
     )
+
+    long_output = exec_and_get_result("list(range(1000))").split("\n")
+    assert len(long_output) == 4
+    assert long_output[2] == "[[;orange;]<long output truncated>]"
 
     term_exec("from _pyodide_core import trigger_fatal_error; trigger_fatal_error()")
     time.sleep(0.3)
