@@ -221,18 +221,8 @@ resp = await js.fetch('/someurl', {
 })
 ```
 
-<<<<<<< HEAD
 The `fetch` api ignores the options that we attempted to provide. You can do
 this correctly as follows:
-||||||| merged common ancestors
-this leaks the dictionary and the `fetch` api ignores the options that we
-attempted to provide. You can do this correctly as follows:
-=======
-
-this leaks the dictionary and the `fetch` api ignores the options that we
-attempted to provide. You can do this correctly as follows:
-
-> > > > > > > main
 
 ```py
 import json
