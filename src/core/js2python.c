@@ -64,13 +64,16 @@ EM_JS_NUM(errcode, js2python_init, (), {
     // have Javascript write directly into its buffer.  We first need
     // to determine if is needs to be a 1-, 2- or 4-byte string, since
     // Python handles all 3.
-    let codepoints = [];
+    let max_code_point = 0;
+    let num_code_points = 0;
     for (let c of value) {
-      codepoints.push(c.codePointAt(0));
+      num_code_points++;
+      let code_point = c.codePointAt(0);
+      max_code_point =
+        code_point > max_code_point ? code_point : max_code_point;
     }
-    let max_code_point = Math.max(... codepoints);
 
-    let result = _PyUnicode_New(codepoints.length, max_code_point);
+    let result = _PyUnicode_New(num_code_points, max_code_point);
     // clang-format off
     if (result === 0) {
       // clang-format on
@@ -79,11 +82,20 @@ EM_JS_NUM(errcode, js2python_init, (), {
 
     let ptr = _PyUnicode_Data(result);
     if (max_code_point > 0xffff) {
-      HEAPU32.subarray(ptr / 4, ptr / 4 + codepoints.length).set(codepoints);
+      for (let c of value) {
+        HEAPU32[ptr / 4] = c.codePointAt(0);
+        ptr += 4;
+      }
     } else if (max_code_point > 0xff) {
-      HEAPU16.subarray(ptr / 2, ptr / 2 + codepoints.length).set(codepoints);
+      for (let c of value) {
+        HEAPU16[ptr / 2] = c.codePointAt(0);
+        ptr += 2;
+      }
     } else {
-      HEAPU8.subarray(ptr, ptr + codepoints.length).set(codepoints);
+      for (let c of value) {
+        HEAPU8[ptr] = c.codePointAt(0);
+        ptr += 1;
+      }
     }
 
     return result;

@@ -111,7 +111,7 @@ async function loadPyodideAndPackages() {
   self.pyodide = await loadPyodide({
     indexURL: "https://cdn.jsdelivr.net/pyodide/dev/full/",
   });
-  await pyodide.loadPackage(["numpy", "pytz"]);
+  await self.pyodide.loadPackage(["numpy", "pytz"]);
 }
 let pyodideReadyPromise = loadPyodideAndPackages();
 
@@ -127,8 +127,8 @@ self.onmessage = async (event) => {
   // Now is the easy part, the one that is similar to working in the main thread:
   try {
     await self.pyodide.loadPackagesFromImports(python);
-    let result = await self.pyodide.runPythonAsync(python);
-    self.postMessage({ result });
+    let results = await self.pyodide.runPythonAsync(python);
+    self.postMessage({ results });
   } catch (error) {
     self.postMessage({ error: error.message });
   }

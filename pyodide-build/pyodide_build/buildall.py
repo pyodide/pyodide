@@ -301,6 +301,9 @@ def generate_packages_json(pkg_map: Dict[str, BasePackage]) -> Dict:
     if "soupsieve" in package_data["packages"]:
         package_data["packages"]["soupsieve"]["depends"].append("beautifulsoup4")
 
+    # re-order packages by name
+    package_data["packages"] = dict(sorted(package_data["packages"].items()))
+
     return package_data
 
 

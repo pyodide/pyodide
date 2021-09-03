@@ -12,6 +12,7 @@ from contextlib import _RedirectStream  # type: ignore
 import rlcompleter
 import platform
 import sys
+from tokenize import TokenError
 import traceback
 from typing import Literal
 from typing import (
@@ -97,8 +98,13 @@ class _Compile(Compile):
 
     def __call__(self, source, filename, symbol) -> CodeRunner:  # type: ignore
         return_mode = self.return_mode
-        if self.quiet_trailing_semicolon and should_quiet(source):
-            return_mode = None
+        try:
+            if self.quiet_trailing_semicolon and should_quiet(source):
+                return_mode = None
+        except (TokenError, SyntaxError):
+            # Invalid code, let the Python parser throw the error later.
+            pass
+
         code_runner = CodeRunner(
             source,
             mode=symbol,
@@ -328,6 +334,8 @@ class Console:
             code = self._compile(source, filename, "single")
         except (OverflowError, SyntaxError, ValueError) as e:
             # Case 1
+            if e.__traceback__:
+                traceback.clear_frames(e.__traceback__)
             res = ConsoleFuture(SYNTAX_ERROR)
             res.set_exception(e)
             res.formatted_error = self.formatsyntaxerror(e)
@@ -341,6 +349,7 @@ class Console:
         res = ConsoleFuture(COMPLETE)
 
         def done_cb(fut):
+            nonlocal res
             exc = fut.exception()
             if exc:
                 res.formatted_error = self.formattraceback(exc)
@@ -348,6 +357,7 @@ class Console:
                 exc = None
             else:
                 res.set_result(fut.result())
+            res = None  # type: ignore
 
         ensure_future(self.runcode(source, code)).add_done_callback(done_cb)
         return res

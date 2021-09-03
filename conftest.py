@@ -22,6 +22,7 @@ TEST_PATH = ROOT_PATH / "src" / "tests"
 BUILD_PATH = ROOT_PATH / "build"
 
 sys.path.append(str(ROOT_PATH / "pyodide-build"))
+sys.path.append(str(ROOT_PATH / "src/py"))
 
 from pyodide_build.testing import set_webdriver_script_timeout, parse_driver_timeout
 
@@ -131,6 +132,10 @@ class SeleniumWrapper:
             SeleniumWrapper.SETUP_CODE,
             pyodide_checks=False,
         )
+
+    @property
+    def pyodide_loaded(self):
+        return self.run_js("return !!(self.pyodide && self.pyodide.runPython);")
 
     @property
     def logs(self):
@@ -400,11 +405,11 @@ def pytest_runtest_call(item):
     https://github.com/pytest-dev/pytest/issues/5044
     """
     selenium = None
-    if "selenium" in item._fixtureinfo.argnames:
-        selenium = item.funcargs["selenium"]
-    if "selenium_standalone" in item._fixtureinfo.argnames:
-        selenium = item.funcargs["selenium_standalone"]
-    if selenium:
+    for fixture in item._fixtureinfo.argnames:
+        if fixture.startswith("selenium"):
+            selenium = item.funcargs[fixture]
+            break
+    if selenium and selenium.pyodide_loaded:
         trace_pyproxies = pytest.mark.skip_pyproxy_check.mark not in item.own_markers
         trace_hiwire_refs = (
             trace_pyproxies
