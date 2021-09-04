@@ -245,12 +245,6 @@ EM_JS_NUM(errcode, error_handling_init_js, (), {
                       HEAPU32[_error__js_filename_string / 4],
                       -1);
   };
-  Module.checkInterrupt = function()
-  {
-    if (Module._PyErr_CheckSignals() == -1) {
-      throw new Error("KeyboardInterrupt");
-    }
-  };
   class PythonError extends Error
   {
     constructor(message, error_address)
