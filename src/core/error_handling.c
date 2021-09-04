@@ -39,9 +39,6 @@ set_error(PyObject* err)
   PyErr_SetObject((PyObject*)Py_TYPE(err), err);
 }
 
-PyObject* internal_error;
-PyObject* conversion_error;
-
 int
 error_check_for_keyboard_interrupt()
 {
