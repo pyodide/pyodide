@@ -1,11 +1,11 @@
-sphinx
-sphinx_book_theme
-myst-parser==0.13.3
-sphinxcontrib-napoleon
-packaging   # required by micropip
-sphinx-js==3.1
 autodocsumm
 docutils==0.16
+myst-parser==0.13.3
+packaging   # required by micropip at import time
+sphinx
 sphinx-argparse-cli~=1.6.0
-sphinx-version-warning~=1.1.2
+sphinx_book_theme
+sphinxcontrib-napoleon
 sphinx-issues
+sphinx-js==3.1
+sphinx-version-warning~=1.1.2

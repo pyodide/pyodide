@@ -1,0 +1,20 @@
+  # core
+  cython<3.0
+  packaging
+  pyyaml
+  ruamel.yaml
+  # lint
+  black
+  flake8
+  mypy==0.812
+  # testing
+  hypothesis
+  pexpect
+  pytest
+  pytest-asyncio
+  pytest-cov
+  pytest-httpserver
+  pytest-instafail
+  pytest-rerunfailures
+  pytest-xdist
+  selenium==4.0.0.b3

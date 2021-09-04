@@ -1,4 +1,5 @@
 (new-packages)=
+
 # Creating a Pyodide package
 
 Pyodide includes a toolchain to make it easier to add new third-party Python
@@ -22,7 +23,7 @@ libraries to the build. We automate the following steps:
     the virtual filesystem.
 
 Lastly, a `packages.json` file is output containing the dependency tree of all
-packages, so  {any}`pyodide.loadPackage` can
+packages, so {any}`pyodide.loadPackage` can
 load a package's dependencies automatically.
 
 ## mkpkg
@@ -30,7 +31,7 @@ load a package's dependencies automatically.
 If you wish to create a new package for Pyodide, the easiest place to start is
 with the {ref}`mkpkg tool <pyodide-mkpkg>`. If your package is on PyPI, just run:
 
-`bin/pyodide mkpkg $PACKAGE_NAME`
+`pyodide-build mkpkg $PACKAGE_NAME`
 
 This will generate a `meta.yaml` (see below) that should work out of the box
 for many pure Python packages. This tool will populate the latest version, download
@@ -125,7 +126,6 @@ time dependency for other packages. For instance, numpy is imported during
 installation of matplotlib, importing numpy also imports included C extensions,
 therefore it is built both for host and target.
 
-
 #### `build/cflags`
 
 Extra arguments to pass to the compiler when building for WebAssembly.
@@ -187,6 +187,7 @@ A list of required packages.
 List of imports to test after the package is built.
 
 ## C library dependencies
+
 Some Python packages depend on certain C libraries, e.g. `lxml` depends on
 `libxml`.
 
@@ -212,11 +213,12 @@ After packaging a C library, it can be added as a dependency of a Python
 package like a normal dependency. See `lxml` and `libxml` for an example (and
 also `scipy` and `CLAPACK`).
 
-*Remark:* Certain C libraries come as emscripten ports, and do not have to be
+_Remark:_ Certain C libraries come as emscripten ports, and do not have to be
 built manually. They can be used by adding e.g. `-s USE_ZLIB` in the `cflags`
 of the Python package. See e.g. `matplotlib` for an example.
 
 ## Structure of a Pyodide package
+
 This section describes the structure of a pure Python package, and how our
 build system creates it (In general, it is not recommended, to construct these
 by hand; instead create a Python wheel and install it with micropip)
@@ -228,7 +230,7 @@ packages the same way as CPython --- it looks for relevant files `.py` files in
 
 Suppose you have a Python library that consists of a single directory
 `/PATH/TO/LIB/` whose contents would go into
-`/lib/python3.8/site-packages/PACKAGE_NAME/` under a normal Python
+`/lib/python3.9/site-packages/PACKAGE_NAME/` under a normal Python
 installation.
 
 The simplest version of the corresponding Pyodide package contains two files
@@ -237,25 +239,33 @@ The simplest version of the corresponding Pyodide package contains two files
 loading the package via `pyodide.loadPackage`, Pyodide will load and run
 `PACKAGE_NAME.js`. The script then fetches `PACKAGE_NAME.data` and extracts the
 contents to emscripten's virtual filesystem. Afterwards, since the files are
-now in `/lib/python3.8/`, running `import PACKAGE_NAME` in Python will
+now in `/lib/python3.9/`, running `import PACKAGE_NAME` in Python will
 successfully import the module as usual.
 
 To construct this bundle, we use the `file_packager.py` script from emscripten.
 We invoke it as follows:
+
 ```sh
-$ ./file_packager.py PACKAGE_NAME.data \
+$ ./tools/file_packager.sh \
+     PACKAGE_NAME.data \
      --js-output=PACKAGE_NAME.js \
-     --export-name=pyodide._module \
-     --use-preload-plugins \
-     --preload /PATH/TO/LIB/@/lib/python3.8/site-packages/PACKAGE_NAME/ \
-     --exclude "*__pycache__*" \
-     --lz4
+     --preload /PATH/TO/LIB/@/lib/python3.9/site-packages/PACKAGE_NAME/
 ```
 
 The arguments can be explained as follows:
- - The `--preload` argument instructs the package to look for the
-   file/directory before the separator `@` (namely `/PATH/TO/LIB/`) and place
-   it at the path after the `@` in the virtual filesystem (namely
-   `/lib/python3.8/site-packages/PACKAGE_NAME/`).
- - The `--exclude` argument specifies files to omit from the package.
- - The `--lz4` argument says to use LZ4 to compress the files
+
+- PACKAGE_NAME.data indicates where to put the data file
+- --js-output=PACKAGE_NAME.js indicates where to put the javascript file
+- `--preload` instructs the package to look for the
+  file/directory before the separator `@` (namely `/PATH/TO/LIB/`) and place
+  it at the path after the `@` in the virtual filesystem (namely
+  `/lib/python3.9/site-packages/PACKAGE_NAME/`).
+
+`file_packager.sh` adds the following options:
+
+- `--lz4` to use LZ4 to compress the files
+- `--export-name=globalThis.__pyodide_module` tells `file_packager` where to find the main Emscripten
+  module for linking.
+- `--exclude *__pycache__*` to omit the pycache directories
+- `--use-preload-plugins` says to [automatically decode files based on their
+  extension](https://emscripten.org/docs/porting/files/packaging_files.html#preloading-files)

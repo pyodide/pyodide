@@ -3,14 +3,15 @@ package:
   version: 0.9.0
 
 source:
-  url: https://files.pythonhosted.org/packages/67/68/eb3ec6ab61f97216c257edddb853cc174cd76ea44b365cf4adaedcd44482/statsmodels-0.9.0.tar.gz
-  sha256: 6461f93a842c649922c2c9a9bc9d9c4834110b89de8c4af196a791ab8f42ba3b
+  url: https://github.com/statsmodels/statsmodels/archive/refs/tags/v0.9.0.tar.gz
+  sha256: 4ab219c776bf5b2187645c0ccb00cf8564c6c17541ae66ab96503f07368197d3
 
 build:
-  ldflags: -L$(PYODIDE_ROOT)/packages/numpy/build/numpy-1.17.5/install/lib/python3.8/site-packages/numpy/core/lib/
+  ldflags: -L$(NUMPY_LIB)
 
 requirements:
   run:
+    - distutils
     - numpy
     - scipy
     - pandas

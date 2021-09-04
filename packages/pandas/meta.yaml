@@ -13,6 +13,7 @@ build:
   ldflags: --Wl,--fatal-warnings
 requirements:
   run:
+    - distutils
     - numpy
     - python-dateutil
     - pytz

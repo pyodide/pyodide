@@ -2,13 +2,15 @@ from pathlib import Path
 
 import pytest
 
+from pyodide_build.common import UNVENDORED_STDLIB_MODULES
+
 
 def test_cpython_core(python_test, selenium, request):
 
     name, error_flags = python_test
 
     # keep only flags related to the current browser
-    flags_to_remove = ["firefox", "chrome"]
+    flags_to_remove = ["firefox", "chrome", "node"]
     flags_to_remove.remove(selenium.browser)
     for flag in flags_to_remove:
         if "crash-" + flag in error_flags:
@@ -28,7 +30,7 @@ def test_cpython_core(python_test, selenium, request):
         else:
             pytest.xfail('known failure with code "{}"'.format(",".join(error_flags)))
 
-    selenium.load_package("test")
+    selenium.load_package(UNVENDORED_STDLIB_MODULES)
     try:
         selenium.run(
             """

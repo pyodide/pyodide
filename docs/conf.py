@@ -12,17 +12,17 @@ import subprocess
 base_dir = pathlib.Path(__file__).resolve().parent.parent
 path_dirs = [
     str(base_dir),
+    str(base_dir / "pyodide-build"),
     str(base_dir / "docs/sphinx_pyodide"),
-    str(base_dir / "src/pyodide-py"),
-    str(base_dir / "packages/micropip/micropip"),
+    str(base_dir / "src/py"),
+    str(base_dir / "packages/micropip/src"),
 ]
 sys.path = path_dirs + sys.path
 
 # -- Project information -----------------------------------------------------
 
 project = "Pyodide"
-copyright = "2019, Mozilla"
-author = "Mozilla"
+copyright = "2019-2021, Pyodide contributors and Mozilla"
 
 import pyodide
 import micropip  # noqa
@@ -51,12 +51,13 @@ extensions = [
     "autodocsumm",
     "sphinx_pyodide",
     "sphinx_argparse_cli",
-    "versionwarning.extension",
+    #    "versionwarning.extension",
     "sphinx_issues",
 ]
 
 myst_enable_extensions = ["substitution"]
-js_source_path = ["../src/", "../src/core"]
+js_source_path = ["../src/js", "../src/core"]
+jsdoc_config_path = "./jsdoc_conf.json"
 root_for_relative_js_paths = "../src/"
 issues_github_path = "pyodide/pyodide"
 
@@ -150,3 +151,4 @@ def delete_attrs(cls):
 
 delete_attrs(pyodide.webloop.WebLoop)
 delete_attrs(pyodide.webloop.WebLoopPolicy)
+delete_attrs(pyodide.console.PyodideConsole)

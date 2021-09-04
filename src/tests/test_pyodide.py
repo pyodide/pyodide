@@ -3,10 +3,9 @@ from pathlib import Path
 import sys
 from textwrap import dedent
 
-sys.path.append(str(Path(__file__).parents[2] / "src" / "pyodide-py"))
+sys.path.append(str(Path(__file__).resolve().parents[2] / "src" / "py"))
 
-from pyodide import find_imports, eval_code  # noqa: E402
-from pyodide._base import CodeRunner  # noqa: E402
+from pyodide import find_imports, eval_code, CodeRunner, should_quiet  # noqa: E402
 
 
 def test_find_imports():
@@ -24,29 +23,45 @@ def test_find_imports():
 
 
 def test_code_runner():
-    runner = CodeRunner()
-    assert runner.quiet("1+1;")
-    assert not runner.quiet("1+1#;")
-    assert not runner.quiet("5-2  # comment with trailing semicolon ;")
-    assert runner.run("4//2\n") == 2
-    assert runner.run("4//2;") is None
-    assert runner.run("x = 2\nx") == 2
-    assert runner.run("def f(x):\n    return x*x+1\n[f(x) for x in range(6)]") == [
-        1,
-        2,
-        5,
-        10,
-        17,
-        26,
-    ]
+    assert should_quiet("1+1;")
+    assert not should_quiet("1+1#;")
+    assert not should_quiet("5-2  # comment with trailing semicolon ;")
 
-    # with 'quiet_trailing_semicolon' set to False
-    runner = CodeRunner(quiet_trailing_semicolon=False)
-    assert not runner.quiet("1+1;")
-    assert not runner.quiet("1+1#;")
-    assert not runner.quiet("5-2  # comment with trailing semicolon ;")
-    assert runner.run("4//2\n") == 2
-    assert runner.run("4//2;") == 2
+    # Normal usage
+    assert CodeRunner("1+1").compile().run() == 2
+    assert CodeRunner("1+1\n1+1").compile().run() == 2
+    assert CodeRunner("x + 7").compile().run({"x": 3}) == 10
+    cr = CodeRunner("x + 7")
+
+    # Ast transform
+    import ast
+
+    l = cr.ast.body[0].value.left
+    cr.ast.body[0].value.left = ast.BinOp(
+        left=l, op=ast.Mult(), right=ast.Constant(value=2)
+    )
+    assert cr.compile().run({"x": 3}) == 13
+
+    # Code transform
+    cr.code = cr.code.replace(co_consts=(0, 3, 5, None))
+    assert cr.run({"x": 4}) == 17
+
+
+def test_code_runner_mode():
+    from codeop import PyCF_DONT_IMPLY_DEDENT
+
+    assert CodeRunner("1+1\n1+1", mode="exec").compile().run() == 2
+    with pytest.raises(SyntaxError, match="invalid syntax"):
+        CodeRunner("1+1\n1+1", mode="eval").compile().run()
+    with pytest.raises(
+        SyntaxError,
+        match="multiple statements found while compiling a single statement",
+    ):
+        CodeRunner("1+1\n1+1", mode="single").compile().run()
+    with pytest.raises(SyntaxError, match="unexpected EOF while parsing"):
+        CodeRunner(
+            "def f():\n  1", mode="single", flags=PyCF_DONT_IMPLY_DEDENT
+        ).compile().run()
 
 
 def test_eval_code():
@@ -133,6 +148,7 @@ def test_eval_code_locals():
     eval_code("invalidate_caches()", globals, locals)
 
 
+@pytest.mark.skip_pyproxy_check
 def test_monkeypatch_eval_code(selenium):
     try:
         selenium.run(
@@ -161,7 +177,6 @@ def test_hiwire_is_promise(selenium):
         "1",
         "'x'",
         "''",
-        "document.all",
         "false",
         "undefined",
         "null",
@@ -186,6 +201,11 @@ def test_hiwire_is_promise(selenium):
             f"return pyodide._module.hiwire.isPromise({s}) === false;"
         )
 
+    if not selenium.browser == "node":
+        assert selenium.run_js(
+            f"return pyodide._module.hiwire.isPromise(document.all) === false;"
+        )
+
     assert selenium.run_js(
         "return pyodide._module.hiwire.isPromise(Promise.resolve()) === true;"
     )
@@ -198,7 +218,12 @@ def test_hiwire_is_promise(selenium):
 
     assert not selenium.run_js(
         """
-        return pyodide._module.hiwire.isPromise(pyodide.globals);
+        let d = pyodide.runPython("{}");
+        try {
+            return pyodide._module.hiwire.isPromise(d);
+        } finally {
+            d.destroy();
+        }
         """
     )
 
@@ -206,22 +231,21 @@ def test_hiwire_is_promise(selenium):
 def test_keyboard_interrupt(selenium):
     x = selenium.run_js(
         """
-        x = new Int8Array(1)
-        pyodide._module.setInterruptBuffer(x)
-        window.triggerKeyboardInterrupt = function(){
+        let x = new Int8Array(1);
+        pyodide.setInterruptBuffer(x);
+        self.triggerKeyboardInterrupt = function(){
             x[0] = 2;
         }
         try {
             pyodide.runPython(`
                 from js import triggerKeyboardInterrupt
-                x = 0
-                while True:
-                    x += 1
+                for x in range(100000):
                     if x == 2000:
                         triggerKeyboardInterrupt()
-            `)
+            `);
         } catch(e){}
-        return pyodide.runPython('x')
+        pyodide.setInterruptBuffer(undefined);
+        return pyodide.globals.get('x');
         """
     )
     assert 2000 < x < 2500
@@ -233,9 +257,18 @@ def test_run_python_async_toplevel_await(selenium):
         await pyodide.runPythonAsync(`
             from js import fetch
             resp = await fetch("packages.json")
-            json = await resp.json()
-            assert hasattr(json, "dependencies")
+            json = (await resp.json()).to_py()["packages"]
+            assert "micropip" in json
         `);
+        """
+    )
+
+
+def test_run_python_proxy_leak(selenium):
+    selenium.run_js(
+        """
+        pyodide.runPython("")
+        await pyodide.runPythonAsync("")
         """
     )
 
@@ -319,7 +352,7 @@ def test_run_python_js_error(selenium):
         function throwError(){
             throw new Error("blah!");
         }
-        window.throwError = throwError;
+        self.throwError = throwError;
         pyodide.runPython(`
             from js import throwError
             from unittest import TestCase
@@ -335,7 +368,7 @@ def test_run_python_js_error(selenium):
 def test_create_once_callable(selenium):
     selenium.run_js(
         """
-        window.call7 = function call7(f){
+        self.call7 = function call7(f){
             return f(7);
         }
         pyodide.runPython(`
@@ -372,14 +405,14 @@ def test_create_once_callable(selenium):
 def test_create_proxy(selenium):
     selenium.run_js(
         """
-        window.testAddListener = function(f){
-            window.listener = f;
+        self.testAddListener = function(f){
+            self.listener = f;
         }
-        window.testCallListener = function(f){
-            return window.listener();
+        self.testCallListener = function(f){
+            return self.listener();
         }
-        window.testRemoveListener = function(f){
-            return window.listener === f;
+        self.testRemoveListener = function(f){
+            return self.listener === f;
         }
         pyodide.runPython(`
             from pyodide import create_proxy
@@ -436,7 +469,7 @@ def test_docstrings_b(selenium):
     sig_then_should_equal = "(onfulfilled, onrejected)"
     ds_once_should_equal = dedent_docstring(create_once_callable.__doc__)
     sig_once_should_equal = "(obj)"
-    selenium.run_js("window.a = Promise.resolve();")
+    selenium.run_js("self.a = Promise.resolve();")
     [ds_then, sig_then, ds_once, sig_once] = selenium.run(
         """
         from js import a
@@ -454,6 +487,7 @@ def test_docstrings_b(selenium):
 
 
 @pytest.mark.skip_refcount_check
+@pytest.mark.skip_pyproxy_check
 def test_restore_state(selenium):
     selenium.run_js(
         """
@@ -510,22 +544,36 @@ def test_fatal_error(selenium_standalone):
         }
         """
     )
+    import re
+
+    def strip_stack_trace(x):
+        x = re.sub("\n.*site-packages.*", "", x)
+        x = re.sub("/lib/python.*/", "", x)
+        x = re.sub("/lib/python.*/", "", x)
+        x = re.sub("warning: no [bB]lob.*\n", "", x)
+        x = re.sub("Error: intentionally triggered fatal error!\n", "", x)
+        x = re.sub(" +at .*\n", "", x)
+        x = re.sub(".*@https?://[0-9.:]*/.*\n", "", x)
+        x = x.replace("\n\n", "\n")
+        return x
+
     assert (
-        selenium_standalone.logs
+        strip_stack_trace(selenium_standalone.logs)
         == dedent(
-            """
-            Python initialization complete
-            Pyodide has suffered a fatal error. Please report this to the Pyodide maintainers.
-            The cause of the fatal error was:
-            {}
-            Stack (most recent call first):
-              File "<exec>", line 8 in h
-              File "<exec>", line 6 in g
-              File "<exec>", line 4 in f
-              File "<exec>", line 9 in <module>
-              File "/lib/python3.8/site-packages/pyodide/_base.py", line 242 in run
-              File "/lib/python3.8/site-packages/pyodide/_base.py", line 344 in eval_code
-            """
+            strip_stack_trace(
+                """
+                Python initialization complete
+                Pyodide has suffered a fatal error. Please report this to the Pyodide maintainers.
+                The cause of the fatal error was:
+                Stack (most recent call first):
+                  File "<exec>", line 8 in h
+                  File "<exec>", line 6 in g
+                  File "<exec>", line 4 in f
+                  File "<exec>", line 9 in <module>
+                  File "/lib/pythonxxx/site-packages/pyodide/_base.py", line 242 in run
+                  File "/lib/pythonxxx/site-packages/pyodide/_base.py", line 344 in eval_code
+                """
+            )
         ).strip()
     )
     selenium_standalone.run_js(
@@ -535,3 +583,108 @@ def test_fatal_error(selenium_standalone):
         assert(() => pyodide._module.runPython("1+1") === 2);
         """
     )
+
+
+def test_reentrant_error(selenium):
+    caught = selenium.run_js(
+        """
+        function a(){
+            pyodide.globals.get("pyfunc")();
+        }
+        let caught = false;
+        try {
+            pyodide.runPython(`
+                def pyfunc():
+                    raise KeyboardInterrupt
+                from js import a
+                try:
+                    a()
+                except Exception as e:
+                    pass
+            `);
+        } catch(e){
+            caught = true;
+        }
+        return caught;
+        """
+    )
+    assert caught
+
+
+@pytest.mark.skip_refcount_check
+@pytest.mark.skip_pyproxy_check
+def test_custom_stdin_stdout(selenium_standalone_noload):
+    selenium = selenium_standalone_noload
+    strings = [
+        "hello world",
+        "hello world\n",
+        "This has a \x00 null byte in the middle...",
+        "several\nlines\noftext",
+        "pyodidé",
+        "碘化物",
+        "🐍",
+    ]
+    selenium.run_js(
+        """
+        function* stdinStrings(){
+            for(let x of %s){
+                yield x;
+            }
+        }
+        let stdinStringsGen = stdinStrings();
+        function stdin(){
+            return stdinStringsGen.next().value;
+        }
+        self.stdin = stdin;
+        """
+        % strings
+    )
+    selenium.run_js(
+        """
+        self.stdoutStrings = [];
+        self.stderrStrings = [];
+        function stdout(s){
+            stdoutStrings.push(s);
+        }
+        function stderr(s){
+            stderrStrings.push(s);
+        }
+        let pyodide = await loadPyodide({
+            indexURL : './',
+            fullStdLib: false,
+            jsglobals : self,
+            stdin,
+            stdout,
+            stderr,
+        });
+        self.pyodide = pyodide;
+        globalThis.pyodide = pyodide;
+        """
+    )
+    outstrings = sum([s.removesuffix("\n").split("\n") for s in strings], [])
+    print(outstrings)
+    assert (
+        selenium.run_js(
+            """
+        return pyodide.runPython(`
+            [input() for x in range(%s)]
+            # ... test more stuff
+        `).toJs();
+        """
+            % len(outstrings)
+        )
+        == outstrings
+    )
+
+    [stdoutstrings, stderrstrings] = selenium.run_js(
+        """
+        pyodide.runPython(`
+            import sys
+            print("something to stdout")
+            print("something to stderr",file=sys.stderr)
+        `);
+        return [self.stdoutStrings, self.stderrStrings];
+        """
+    )
+    assert stdoutstrings == ["Python initialization complete", "something to stdout"]
+    assert stderrstrings == ["something to stderr"]

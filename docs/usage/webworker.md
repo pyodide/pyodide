@@ -1,4 +1,5 @@
 (using_from_webworker)=
+
 # Using Pyodide in a web worker
 
 This document describes how to use Pyodide to execute Python scripts
@@ -15,7 +16,7 @@ such as `https://cdn.jsdelivr.net/pyodide`. This is the solution
 presented here.
 
 Update the `webworker.js` sample so that it has as valid URL for `pyodide.js`, and sets
-`indexURL <globalThis.loadPyodide>` to the location of the supporting files.
+{any}`indexURL <globalThis.loadPyodide>` to the location of the supporting files.
 
 In your application code create a web worker `new Worker(...)`,
 and attach listeners to it using its `.onerror` and `.onmessage`
@@ -31,9 +32,9 @@ method (and vice versa).
 
 In this example process we will have three parties involved:
 
-* The **web worker** is responsible for running scripts in its own separate thread.
-* The **worker API** exposes a consumer-to-provider communication interface.
-* The **consumer**s want to run some scripts outside the main thread so they don't block the main thread.
+- The **web worker** is responsible for running scripts in its own separate thread.
+- The **worker API** exposes a consumer-to-provider communication interface.
+- The **consumer**s want to run some scripts outside the main thread so they don't block the main thread.
 
 ### Consumers
 
@@ -47,7 +48,7 @@ we would like to have.
 Here is an example of consumer that will exchange with the web worker, via the worker interface/API `py-worker.js`. It runs the following Python `script` using the provided `context` and a function called `asyncRun()`.
 
 ```js
-import { asyncRun } from './py-worker';
+import { asyncRun } from "./py-worker";
 
 const script = `
     import statistics
@@ -56,21 +57,22 @@ const script = `
 `;
 
 const context = {
-    A_rank: [0.8, 0.4, 1.2, 3.7, 2.6, 5.8],
-}
+  A_rank: [0.8, 0.4, 1.2, 3.7, 2.6, 5.8],
+};
 
-async function main(){
-    try {
-        const {results, error} = await asyncRun(script, context);
-        if (results) {
-            console.log('pyodideWorker return results: ', results);
-        } else if (error) {
-            console.log('pyodideWorker error: ', error);
-        }
+async function main() {
+  try {
+    const { results, error } = await asyncRun(script, context);
+    if (results) {
+      console.log("pyodideWorker return results: ", results);
+    } else if (error) {
+      console.log("pyodideWorker error: ", error);
     }
-    catch (e){
-        console.log(`Error in pyodideWorker at ${e.filename}, Line: ${e.lineno}, ${e.message}`)
-    }
+  } catch (e) {
+    console.log(
+      `Error in pyodideWorker at ${e.filename}, Line: ${e.lineno}, ${e.message}`
+    );
+  }
 }
 
 main();
@@ -81,9 +83,9 @@ How does our web worker run the `script` using a given `context`.
 
 ### Web worker
 
-Let's start with the definition. [A worker][worker API] is:
+Let's start with the definition. [A worker][worker api] is:
 
-> A worker is an object created using a constructor (e.g. [Worker()][Worker constructor])  that runs a named Javascript file — this file contains the code that will run in the worker thread; workers run in another global context that is different from the current window. This context is represented by either a DedicatedWorkerGlobalScope object (in the case of dedicated workers - workers that are utilized by a single script), or a SharedWorkerGlobalScope (in the case of shared workers - workers that are shared between multiple scripts).
+> A worker is an object created using a constructor (e.g. [Worker()][worker constructor]) that runs a named Javascript file — this file contains the code that will run in the worker thread; workers run in another global context that is different from the current window. This context is represented by either a DedicatedWorkerGlobalScope object (in the case of dedicated workers - workers that are utilized by a single script), or a SharedWorkerGlobalScope (in the case of shared workers - workers that are shared between multiple scripts).
 
 In our case we will use a single worker to execute Python code without interfering with
 client side rendering (which is done by the main Javascript thread). The worker does
@@ -92,10 +94,10 @@ two things:
 1. Listen on new messages from the main thread
 2. Respond back once it finished executing the Python script
 
-These are the required tasks it should fulfill, but it can do other things.
-For example, to always load packages `numpy` and `pytz`, you would insert the
-lines `pythonLoading = self.pyodide.loadPackage(['numpy', 'pytz'])` and
-`await pythonLoading;` as shown below:
+These are the required tasks it should fulfill, but it can do other things. For
+example, to always load packages `numpy` and `pytz`, you would insert the line
+{any}`await pyodide.loadPackage(['numpy', 'pytz']); <pyodide.loadPackage>` as
+shown below:
 
 ```js
 // webworker.js
@@ -103,35 +105,34 @@ lines `pythonLoading = self.pyodide.loadPackage(['numpy', 'pytz'])` and
 // Setup your project to serve `py-worker.js`. You should also serve
 // `pyodide.js`, and all its associated `.asm.js`, `.data`, `.json`,
 // and `.wasm` files as well:
-importScripts('https://cdn.jsdelivr.net/pyodide/dev/full/pyodide.js');
+importScripts("https://cdn.jsdelivr.net/pyodide/dev/full/pyodide.js");
 
-async function loadPyodideAndPackages(){
-    await loadPyodide({ indexURL : 'https://cdn.jsdelivr.net/pyodide/dev/full/' });
-    await self.pyodide.loadPackage(['numpy', 'pytz']);
+async function loadPyodideAndPackages() {
+  self.pyodide = await loadPyodide({
+    indexURL: "https://cdn.jsdelivr.net/pyodide/dev/full/",
+  });
+  await self.pyodide.loadPackage(["numpy", "pytz"]);
 }
 let pyodideReadyPromise = loadPyodideAndPackages();
 
-self.onmessage = async(event) => {
-     // make sure loading is done
-    await pyodideReadyPromise;
-    // Don't bother yet with this line, suppose our API is built in such a way:
-    const {python, ...context} = event.data;
-    // The worker copies the context in its own "memory" (an object mapping name to values)
-    for (const key of Object.keys(context)){
-        self[key] = context[key];
-    }
-    // Now is the easy part, the one that is similar to working in the main thread:
-    try {
-        await self.pyodide.loadPackagesFromImports(python);
-        let result = await self.pyodide.runPythonAsync(python);
-        self.postMessage({ result });
-    }
-    catch (error){
-        self.postMessage(
-            {error : error.message}
-        );
-    }
-}
+self.onmessage = async (event) => {
+  // make sure loading is done
+  await pyodideReadyPromise;
+  // Don't bother yet with this line, suppose our API is built in such a way:
+  const { python, ...context } = event.data;
+  // The worker copies the context in its own "memory" (an object mapping name to values)
+  for (const key of Object.keys(context)) {
+    self[key] = context[key];
+  }
+  // Now is the easy part, the one that is similar to working in the main thread:
+  try {
+    await self.pyodide.loadPackagesFromImports(python);
+    let results = await self.pyodide.runPythonAsync(python);
+    self.postMessage({ results });
+  } catch (error) {
+    self.postMessage({ error: error.message });
+  }
+};
 ```
 
 ### The worker API
@@ -144,15 +145,15 @@ You would just need to call `.postMessages()` with the right arguments as
 this API does.
 
 ```js
-const pyodideWorker = new Worker('./build/webworker.js')
+const pyodideWorker = new Worker("./build/webworker.js");
 
-export function run(script, context, onSuccess, onError){
-    pyodideWorker.onerror = onError;
-    pyodideWorker.onmessage = (e) => onSuccess(e.data);
-    pyodideWorker.postMessage({
-        ...context,
-        python: script,
-    });
+export function run(script, context, onSuccess, onError) {
+  pyodideWorker.onerror = onError;
+  pyodideWorker.onmessage = (e) => onSuccess(e.data);
+  pyodideWorker.postMessage({
+    ...context,
+    python: script,
+  });
 }
 
 // Transform the run (callback) form to a more modern async form.
@@ -161,14 +162,14 @@ export function run(script, context, onSuccess, onError){
 // Instead of:
 //    run(script, context, successCallback, errorCallback);
 export function asyncRun(script, context) {
-    return new Promise(function(onSuccess, onError) {
-        run(script, context, onSuccess, onError);
-    });
+  return new Promise(function (onSuccess, onError) {
+    run(script, context, onSuccess, onError);
+  });
 }
 ```
 
-[worker API]: https://developer.mozilla.org/en-US/docs/Web/API/Web_Workers_API
-[Worker constructor]: https://developer.mozilla.org/en-US/docs/Web/API/Worker/Worker
+[worker api]: https://developer.mozilla.org/en-US/docs/Web/API/Web_Workers_API
+[worker constructor]: https://developer.mozilla.org/en-US/docs/Web/API/Worker/Worker
 
 ## Caveats
 

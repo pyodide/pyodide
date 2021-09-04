@@ -4,7 +4,8 @@
   </a>
 </div>
 
-
+[![NPM Latest Release](https://img.shields.io/npm/v/pyodide)](https://www.npmjs.com/package/pyodide)
+[![PyPI Latest Release](https://img.shields.io/pypi/v/pyodide-build.svg)](https://pypi.org/project/pyodide-build/)
 [![Build Status](https://circleci.com/gh/pyodide/pyodide.png)](https://circleci.com/gh/pyodide/pyodide)
 [![Documentation Status](https://readthedocs.org/projects/pyodide/badge/?version=stable)](https://pyodide.readthedocs.io/?badge=stable)
 
@@ -15,7 +16,7 @@ Python with the scientific stack, compiled to WebAssembly.
 Pyodide may be used in any context where you want to run Python inside a web
 browser.
 
-Pyodide brings the Python 3.8 runtime to the browser via WebAssembly, along with
+Pyodide brings the Python 3.9 runtime to the browser via WebAssembly, along with
 the Python scientific stack including NumPy, Pandas, Matplotlib, SciPy, and
 scikit-learn. The [packages directory](packages) lists over 75 packages which
 are currently available. In addition it's possible to install pure Python wheels
@@ -48,8 +49,8 @@ technical resources. These include:
     recommended for Windows and macOS users and for Linux users who prefer a
     Debian-based Docker image with the dependencies already installed.
 
-
 ## History
+
 Pyodide was created in 2018 by [Michael Droettboom](https://github.com/mdboom)
 at Mozilla as part of the [Iodide
 project](https://github.com/iodide-project/iodide). Iodide is an experimental

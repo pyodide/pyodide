@@ -60,6 +60,13 @@ _Py_IDENTIFIER(set_exception);
 _Py_IDENTIFIER(set_result);
 _Py_IDENTIFIER(__await__);
 _Py_IDENTIFIER(__dir__);
+Js_IDENTIFIER(then);
+Js_IDENTIFIER(finally);
+Js_IDENTIFIER(has);
+Js_IDENTIFIER(get);
+Js_IDENTIFIER(set);
+Js_IDENTIFIER(delete);
+Js_IDENTIFIER(includes);
 
 static PyObject* asyncio_get_event_loop;
 static PyTypeObject* PyExc_BaseException_Type;
@@ -146,7 +153,7 @@ JsProxy_GetAttr(PyObject* self, PyObject* attr)
 
   const char* key = PyUnicode_AsUTF8(attr);
   FAIL_IF_NULL(key);
-  if (strcmp(key, "keys") == 0 && hiwire_is_array(JsProxy_REF(self))) {
+  if (strcmp(key, "keys") == 0 && JsArray_Check(JsProxy_REF(self))) {
     // Sometimes Python APIs test for the existence of a "keys" function
     // to decide whether something should be treated like a dict.
     // This mixes badly with the javascript Array.keys API, so pretend that it
@@ -156,7 +163,7 @@ JsProxy_GetAttr(PyObject* self, PyObject* attr)
     FAIL();
   }
 
-  idresult = hiwire_get_member_string(JsProxy_REF(self), key);
+  idresult = JsObject_GetString(JsProxy_REF(self), key);
   if (idresult == NULL) {
     PyErr_SetString(PyExc_AttributeError, key);
     FAIL();
@@ -202,11 +209,10 @@ JsProxy_SetAttr(PyObject* self, PyObject* attr, PyObject* pyvalue)
   }
 
   if (pyvalue == NULL) {
-    FAIL_IF_MINUS_ONE(hiwire_delete_member_string(JsProxy_REF(self), key));
+    FAIL_IF_MINUS_ONE(JsObject_DeleteString(JsProxy_REF(self), key));
   } else {
     idvalue = python2js(pyvalue);
-    FAIL_IF_MINUS_ONE(
-      hiwire_set_member_string(JsProxy_REF(self), key, idvalue));
+    FAIL_IF_MINUS_ONE(JsObject_SetString(JsProxy_REF(self), key, idvalue));
   }
 
   success = true;
@@ -323,7 +329,7 @@ static PyObject*
 JsProxy_object_entries(PyObject* o, PyObject* _args)
 {
   JsProxy* self = (JsProxy*)o;
-  JsRef result_id = hiwire_object_entries(self->js);
+  JsRef result_id = JsObject_Entries(self->js);
   if (result_id == NULL) {
     return NULL;
   }
@@ -346,7 +352,7 @@ static PyObject*
 JsProxy_object_keys(PyObject* o, PyObject* _args)
 {
   JsProxy* self = (JsProxy*)o;
-  JsRef result_id = hiwire_object_keys(self->js);
+  JsRef result_id = JsObject_Keys(self->js);
   if (result_id == NULL) {
     return NULL;
   }
@@ -369,7 +375,7 @@ static PyObject*
 JsProxy_object_values(PyObject* o, PyObject* _args)
 {
   JsProxy* self = (JsProxy*)o;
-  JsRef result_id = hiwire_object_values(self->js);
+  JsRef result_id = JsObject_Values(self->js);
   if (result_id == NULL) {
     return NULL;
   }
@@ -413,7 +419,7 @@ JsProxy_subscript_array(PyObject* o, PyObject* item)
       return NULL;
     if (i < 0)
       i += hiwire_get_length(self->js);
-    JsRef result = hiwire_get_member_int(self->js, i);
+    JsRef result = JsArray_Get(self->js, i);
     if (result == NULL) {
       if (!PyErr_Occurred()) {
         PyErr_SetObject(PyExc_IndexError, item);
@@ -463,7 +469,7 @@ JsProxy_ass_subscript_array(PyObject* o, PyObject* item, PyObject* pyvalue)
   bool success = false;
   JsRef idvalue = NULL;
   if (pyvalue == NULL) {
-    if (hiwire_delete_member_int(self->js, i)) {
+    if (JsArray_Delete(self->js, i)) {
       if (!PyErr_Occurred()) {
         PyErr_SetObject(PyExc_IndexError, item);
       }
@@ -472,13 +478,32 @@ JsProxy_ass_subscript_array(PyObject* o, PyObject* item, PyObject* pyvalue)
   } else {
     idvalue = python2js(pyvalue);
     FAIL_IF_NULL(idvalue);
-    FAIL_IF_MINUS_ONE(hiwire_set_member_int(self->js, i, idvalue));
+    FAIL_IF_MINUS_ONE(JsArray_Set(self->js, i, idvalue));
   }
   success = true;
 finally:
   hiwire_CLEAR(idvalue);
   return success ? 0 : -1;
 }
+
+// A helper method for jsproxy_subscript.
+EM_JS_REF(JsRef, JsProxy_subscript_js, (JsRef idobj, JsRef idkey), {
+  let obj = Module.hiwire.get_value(idobj);
+  let key = Module.hiwire.get_value(idkey);
+  let result = obj.get(key);
+  // clang-format off
+  if (result === undefined) {
+    // Try to distinguish between undefined and missing:
+    // If the object has a "has" method and it returns false for this key, the
+    // key is missing. Otherwise, assume key present and value was undefined.
+    // TODO: in absence of a "has" method, should we return None or KeyError?
+    if (obj.has && typeof obj.has === "function" && !obj.has(key)) {
+      return 0;
+    }
+  }
+  // clang-format on
+  return Module.hiwire.new_value(result);
+});
 
 /**
  * __getitem__ for JsProxies that have a "get" method. Translates proxy[key] to
@@ -494,7 +519,7 @@ JsProxy_subscript(PyObject* o, PyObject* pyidx)
 
   ididx = python2js(pyidx);
   FAIL_IF_NULL(ididx);
-  idresult = hiwire_call_get_method(self->js, ididx);
+  idresult = JsProxy_subscript_js(self->js, ididx);
   if (idresult == NULL) {
     if (!PyErr_Occurred()) {
       PyErr_SetObject(PyExc_KeyError, pyidx);
@@ -523,9 +548,12 @@ JsProxy_ass_subscript(PyObject* o, PyObject* pyidx, PyObject* pyvalue)
   bool success = false;
   JsRef ididx = NULL;
   JsRef idvalue = NULL;
+  JsRef jsresult = NULL;
   ididx = python2js(pyidx);
   if (pyvalue == NULL) {
-    if (hiwire_call_delete_method(self->js, ididx)) {
+    jsresult = hiwire_CallMethodId_OneArg(self->js, &JsId_delete, ididx);
+    FAIL_IF_NULL(jsresult);
+    if (!hiwire_to_bool(jsresult)) {
       if (!PyErr_Occurred()) {
         PyErr_SetObject(PyExc_KeyError, pyidx);
       }
@@ -534,12 +562,15 @@ JsProxy_ass_subscript(PyObject* o, PyObject* pyidx, PyObject* pyvalue)
   } else {
     idvalue = python2js(pyvalue);
     FAIL_IF_NULL(idvalue);
-    FAIL_IF_MINUS_ONE(hiwire_call_set_method(self->js, ididx, idvalue));
+    jsresult =
+      hiwire_CallMethodId_va(self->js, &JsId_set, ididx, idvalue, NULL);
+    FAIL_IF_NULL(jsresult);
   }
   success = true;
 finally:
   hiwire_CLEAR(ididx);
   hiwire_CLEAR(idvalue);
+  hiwire_CLEAR(jsresult);
   return success ? 0 : -1;
 }
 
@@ -552,13 +583,17 @@ finally:
 static int
 JsProxy_includes(JsProxy* self, PyObject* obj)
 {
+  JsRef jsresult = NULL;
   int result = -1;
   JsRef jsobj = python2js(obj);
   FAIL_IF_NULL(jsobj);
-  result = hiwire_call_includes_method(self->js, jsobj);
+  jsresult = hiwire_CallMethodId_OneArg(self->js, &JsId_includes, jsobj);
+  FAIL_IF_NULL(jsresult);
+  result = hiwire_to_bool(jsresult);
 
 finally:
   hiwire_CLEAR(jsobj);
+  hiwire_CLEAR(jsresult);
   return result;
 }
 
@@ -570,13 +605,17 @@ finally:
 static int
 JsProxy_has(JsProxy* self, PyObject* obj)
 {
+  JsRef jsresult = NULL;
   int result = -1;
   JsRef jsobj = python2js(obj);
   FAIL_IF_NULL(jsobj);
-  result = hiwire_call_has_method(self->js, jsobj);
+  jsresult = hiwire_CallMethodId_OneArg(self->js, &JsId_has, jsobj);
+  FAIL_IF_NULL(jsresult);
+  result = hiwire_to_bool(jsresult);
 
 finally:
   hiwire_CLEAR(jsobj);
+  hiwire_CLEAR(jsresult);
   return result;
 }
 
@@ -605,18 +644,18 @@ JsProxy_Dir(PyObject* self, PyObject* _args)
   object__dir__ =
     _PyObject_GetAttrId((PyObject*)&PyBaseObject_Type, &PyId___dir__);
   FAIL_IF_NULL(object__dir__);
-  keys = PyObject_CallFunctionObjArgs(object__dir__, self, NULL);
+  keys = PyObject_CallOneArg(object__dir__, self);
   FAIL_IF_NULL(keys);
   result_set = PySet_New(keys);
   FAIL_IF_NULL(result_set);
 
   // Now get attributes of js object
-  iddir = hiwire_dir(GET_JSREF(self));
+  iddir = JsObject_Dir(GET_JSREF(self));
   pydir = js2python(iddir);
   FAIL_IF_NULL(pydir);
   // Merge and sort
   FAIL_IF_MINUS_ONE(_PySet_Update(result_set, pydir));
-  if (hiwire_is_array(GET_JSREF(self))) {
+  if (JsArray_Check(GET_JSREF(self))) {
     // See comment about Array.keys in GetAttr
     keys_str = PyUnicode_FromString("keys");
     FAIL_IF_NULL(keys_str);
@@ -650,24 +689,18 @@ PyMethodDef JsProxy_Dir_MethodDef = {
   PyDoc_STR("Returns a list of the members and methods on the object."),
 };
 
-/**
- * The to_py method, uses METH_FASTCALL calling convention.
- */
 static PyObject*
-JsProxy_toPy(PyObject* self, PyObject* const* args, Py_ssize_t nargs)
+JsProxy_toPy(PyObject* self,
+             PyObject* const* args,
+             Py_ssize_t nargs,
+             PyObject* kwnames)
 {
-  if (nargs > 1) {
-    PyErr_Format(
-      PyExc_TypeError, "to_py expected at most 1 argument, got %zd", nargs);
-    return NULL;
-  }
+  static const char* const _keywords[] = { "depth", 0 };
+  static struct _PyArg_Parser _parser = { "|$i:toPy", _keywords, 0 };
   int depth = -1;
-  if (nargs == 1) {
-    int overflow;
-    depth = PyLong_AsLongAndOverflow(args[0], &overflow);
-    if (overflow == 0 && depth == -1 && PyErr_Occurred()) {
-      return NULL;
-    }
+  if (kwnames != NULL &&
+      !_PyArg_ParseStackAndKeywords(args, nargs, kwnames, &_parser, &depth)) {
+    return NULL;
   }
   return js2python_convert(GET_JSREF(self), depth);
 }
@@ -675,7 +708,7 @@ JsProxy_toPy(PyObject* self, PyObject* const* args, Py_ssize_t nargs)
 PyMethodDef JsProxy_toPy_MethodDef = {
   "to_py",
   (PyCFunction)JsProxy_toPy,
-  METH_FASTCALL,
+  METH_FASTCALL | METH_KEYWORDS,
 };
 
 /**
@@ -699,7 +732,7 @@ JsProxy_Bool(PyObject* o)
  * Controlled by IS_AWAITABLE.
  */
 static PyObject*
-JsProxy_Await(JsProxy* self, PyObject* _args)
+JsProxy_Await(JsProxy* self)
 {
   if (!hiwire_is_promise(self->js)) {
     PyObject* str = JsProxy_Repr((PyObject*)self);
@@ -719,7 +752,7 @@ JsProxy_Await(JsProxy* self, PyObject* _args)
   JsRef promise_result = NULL;
   PyObject* result = NULL;
 
-  loop = _PyObject_CallNoArg(asyncio_get_event_loop);
+  loop = PyObject_CallNoArgs(asyncio_get_event_loop);
   FAIL_IF_NULL(loop);
 
   fut = _PyObject_CallMethodId(loop, &PyId_create_future, NULL);
@@ -734,7 +767,7 @@ JsProxy_Await(JsProxy* self, PyObject* _args)
   FAIL_IF_NULL(promise_id);
   promise_handles = create_promise_handles(set_result, set_exception);
   FAIL_IF_NULL(promise_handles);
-  promise_result = hiwire_call_member(promise_id, "then", promise_handles);
+  promise_result = hiwire_CallMethodId(promise_id, &JsId_then, promise_handles);
   FAIL_IF_NULL(promise_result);
   result = _PyObject_CallMethodId(fut, &PyId___await__, NULL);
 
@@ -783,7 +816,7 @@ JsProxy_then(JsProxy* self, PyObject* args, PyObject* kwds)
   FAIL_IF_NULL(promise_id);
   promise_handles = create_promise_handles(onfulfilled, onrejected);
   FAIL_IF_NULL(promise_handles);
-  result_promise = hiwire_call_member(promise_id, "then", promise_handles);
+  result_promise = hiwire_CallMethodId(promise_id, &JsId_then, promise_handles);
   if (result_promise == NULL) {
     Py_CLEAR(onfulfilled);
     Py_CLEAR(onrejected);
@@ -822,7 +855,7 @@ JsProxy_catch(JsProxy* self, PyObject* onrejected)
   // even if the promise resolves successfully.
   promise_handles = create_promise_handles(NULL, onrejected);
   FAIL_IF_NULL(promise_handles);
-  result_promise = hiwire_call_member(promise_id, "then", promise_handles);
+  result_promise = hiwire_CallMethodId(promise_id, &JsId_then, promise_handles);
   if (result_promise == NULL) {
     Py_DECREF(onrejected);
     FAIL();
@@ -863,7 +896,8 @@ JsProxy_finally(JsProxy* self, PyObject* onfinally)
   // `create_once_callable`.
   proxy = create_once_callable(onfinally);
   FAIL_IF_NULL(proxy);
-  result_promise = hiwire_call_member_va(promise_id, "finally", proxy, NULL);
+  result_promise =
+    hiwire_CallMethodId_va(promise_id, &JsId_finally, proxy, NULL);
   if (result_promise == NULL) {
     Py_DECREF(onfinally);
     FAIL();
@@ -1014,7 +1048,7 @@ JsProxy_new_error(JsRef idobj)
   proxy = JsProxyType.tp_alloc(&JsProxyType, 0);
   FAIL_IF_NULL(proxy);
   FAIL_IF_NONZERO(JsProxy_cinit(proxy, idobj));
-  result = PyObject_CallFunctionObjArgs(Exc_JsException, proxy, NULL);
+  result = PyObject_CallOneArg(Exc_JsException, proxy);
   FAIL_IF_NULL(result);
 finally:
   Py_CLEAR(proxy);
@@ -1036,12 +1070,12 @@ JsMethod_ConvertArgs(PyObject* const* args, Py_ssize_t nargs, PyObject* kwnames)
   JsRef idarg = NULL;
   JsRef idkwargs = NULL;
 
-  idargs = hiwire_array();
+  idargs = JsArray_New();
   FAIL_IF_NULL(idargs);
   for (Py_ssize_t i = 0; i < nargs; ++i) {
     idarg = python2js(args[i]);
     FAIL_IF_NULL(idarg);
-    FAIL_IF_MINUS_ONE(hiwire_push_array(idargs, idarg));
+    FAIL_IF_MINUS_ONE(JsArray_Push(idargs, idarg));
     hiwire_CLEAR(idarg);
   }
 
@@ -1060,7 +1094,7 @@ JsMethod_ConvertArgs(PyObject* const* args, Py_ssize_t nargs, PyObject* kwnames)
   }
 
   // store kwargs into an object which we'll use as the last argument.
-  idkwargs = hiwire_object();
+  idkwargs = JsObject_New();
   FAIL_IF_NULL(idkwargs);
   Py_ssize_t nkwargs = PyTuple_Size(kwnames);
   for (Py_ssize_t i = 0, k = nargs; i < nkwargs; ++i, ++k) {
@@ -1068,10 +1102,10 @@ JsMethod_ConvertArgs(PyObject* const* args, Py_ssize_t nargs, PyObject* kwnames)
     const char* name_utf8 = PyUnicode_AsUTF8(name);
     idarg = python2js(args[k]);
     FAIL_IF_NULL(idarg);
-    FAIL_IF_MINUS_ONE(hiwire_set_member_string(idkwargs, name_utf8, idarg));
+    FAIL_IF_MINUS_ONE(JsObject_SetString(idkwargs, name_utf8, idarg));
     hiwire_CLEAR(idarg);
   }
-  FAIL_IF_MINUS_ONE(hiwire_push_array(idargs, idkwargs));
+  FAIL_IF_MINUS_ONE(JsArray_Push(idargs, idkwargs));
 
 success:
   success = true;
@@ -1637,10 +1671,18 @@ finally:
 PyObject*
 JsProxy_create_with_this(JsRef object, JsRef this)
 {
+  int type_flags = 0;
+  bool success = false;
+  PyTypeObject* type = NULL;
+  PyObject* result = NULL;
+  if (hiwire_is_comlink_proxy(object)) {
+    // Comlink proxies are weird and break our feature detection pretty badly.
+    type_flags = IS_CALLABLE | IS_AWAITABLE | IS_ARRAY;
+    goto done_feature_detecting;
+  }
   if (hiwire_is_error(object)) {
     return JsProxy_new_error(object);
   }
-  int type_flags = 0;
   if (hiwire_is_function(object)) {
     type_flags |= IS_CALLABLE;
   }
@@ -1656,16 +1698,16 @@ JsProxy_create_with_this(JsRef object, JsRef this)
   if (hiwire_has_length(object)) {
     type_flags |= HAS_LENGTH;
   }
-  if (hiwire_has_get_method(object)) {
+  if (hiwire_HasMethodId(object, &JsId_get)) {
     type_flags |= HAS_GET;
   }
-  if (hiwire_has_set_method(object)) {
+  if (hiwire_HasMethodId(object, &JsId_set)) {
     type_flags |= HAS_SET;
   }
-  if (hiwire_has_has_method(object)) {
+  if (hiwire_HasMethodId(object, &JsId_has)) {
     type_flags |= HAS_HAS;
   }
-  if (hiwire_has_includes_method(object)) {
+  if (hiwire_HasMethodId(object, &JsId_includes)) {
     type_flags |= HAS_INCLUDES;
   }
   if (hiwire_is_typedarray(object)) {
@@ -1674,13 +1716,10 @@ JsProxy_create_with_this(JsRef object, JsRef this)
   if (hiwire_is_promise(object)) {
     type_flags |= IS_AWAITABLE;
   }
-  if (hiwire_is_array(object)) {
+  if (JsArray_Check(object)) {
     type_flags |= IS_ARRAY;
   }
-
-  bool success = false;
-  PyTypeObject* type = NULL;
-  PyObject* result = NULL;
+done_feature_detecting:
 
   type = JsProxy_get_subtype(type_flags);
   FAIL_IF_NULL(type);
@@ -1736,41 +1775,20 @@ JsException_AsJs(PyObject* err)
   return hiwire_incref(js_error->js);
 }
 
-// Copied from Python 3.9
-// TODO: remove once we update to Python 3.9
-static int
-PyModule_AddType(PyObject* module, PyTypeObject* type)
-{
-  if (PyType_Ready(type) < 0) {
-    return -1;
-  }
-
-  const char* name = _PyType_Name(type);
-  assert(name != NULL);
-
-  Py_INCREF(type);
-  if (PyModule_AddObject(module, name, (PyObject*)type) < 0) {
-    Py_DECREF(type);
-    return -1;
-  }
-
-  return 0;
-}
-
 int
 JsProxy_init(PyObject* core_module)
 {
   bool success = false;
 
-  PyObject* _pyodide_core = NULL;
+  PyObject* _pyodide_core_docs = NULL;
   PyObject* jsproxy_mock = NULL;
   PyObject* asyncio_module = NULL;
 
-  _pyodide_core = PyImport_ImportModule("_pyodide._core");
-  FAIL_IF_NULL(_pyodide_core);
+  _pyodide_core_docs = PyImport_ImportModule("_pyodide._core_docs");
+  FAIL_IF_NULL(_pyodide_core_docs);
   _Py_IDENTIFIER(JsProxy);
   jsproxy_mock =
-    _PyObject_CallMethodIdObjArgs(_pyodide_core, &PyId_JsProxy, NULL);
+    _PyObject_CallMethodIdNoArgs(_pyodide_core_docs, &PyId_JsProxy);
   FAIL_IF_NULL(jsproxy_mock);
 
   // Load the docstrings for JsProxy methods from the corresponding stubs in
@@ -1809,7 +1827,7 @@ JsProxy_init(PyObject* core_module)
 
   success = true;
 finally:
-  Py_CLEAR(_pyodide_core);
+  Py_CLEAR(_pyodide_core_docs);
   Py_CLEAR(jsproxy_mock);
   Py_CLEAR(asyncio_module);
   return success ? 0 : -1;

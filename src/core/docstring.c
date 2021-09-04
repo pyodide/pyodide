@@ -16,8 +16,8 @@ set_method_docstring(PyMethodDef* method, PyObject* parent)
   py_method = PyObject_GetAttrString(parent, method->ml_name);
   FAIL_IF_NULL(py_method);
 
-  py_result = _PyObject_CallMethodIdObjArgs(
-    py_docstring_mod, &PyId_get_cmeth_docstring, py_method, NULL);
+  py_result = _PyObject_CallMethodIdOneArg(
+    py_docstring_mod, &PyId_get_cmeth_docstring, py_method);
   FAIL_IF_NULL(py_result);
 
   Py_ssize_t size;

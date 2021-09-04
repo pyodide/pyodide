@@ -6,17 +6,17 @@ failure_exit() {
 }
 
 check_python_version() {
-  if ! command -v python3.8 &> /dev/null; then
-    echo >&2 "Must compile with python 3.8."
+  if ! command -v python3.9 &> /dev/null; then
+    echo >&2 "Must compile with python 3.9."
     exit 1
   fi
 }
 check_python_headers() {
   local python_headers_present
-  python_headers_present="$(pkg-config --libs python-3.8)"
+  python_headers_present="$(pkg-config --libs python-3.9)"
 
   if [ ! "${python_headers_present}" ]; then
-    failure_exit "Python 3.8 headers"
+    failure_exit "Python 3.9 headers"
   fi
 }
 
@@ -30,6 +30,10 @@ check_binary_present() {
 
 check_pkgconfig() {
   check_binary_present "pkg-config"
+}
+
+check_md5sum() {
+  check_binary_present "md5sum"
 }
 
 check_fortran_dependencies() {
@@ -50,3 +54,4 @@ check_pkgconfig
 #check_python_headers
 check_fortran_dependencies
 check_pyyaml
+check_md5sum
