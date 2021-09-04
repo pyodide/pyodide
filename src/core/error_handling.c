@@ -39,16 +39,6 @@ set_error(PyObject* err)
   PyErr_SetObject((PyObject*)Py_TYPE(err), err);
 }
 
-int
-error_check_for_keyboard_interrupt()
-{
-  if (PyErr_Occurred() && PyErr_ExceptionMatches(PyExc_KeyboardInterrupt)) {
-    return -1;
-  } else {
-    return 0;
-  }
-}
-
 /**
  * Make a new PythonError.
  *
@@ -235,9 +225,6 @@ char* error__js_filename_string = "???.js";
 EM_JS_NUM(errcode, error_handling_init_js, (), {
   Module.handle_js_error = function(e)
   {
-    if (_error_check_for_keyboard_interrupt()) {
-      return;
-    }
     let restored_error = false;
     if (e instanceof Module.PythonError) {
       // Try to restore the original Python exception.
