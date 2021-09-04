@@ -320,7 +320,7 @@ export function setInterruptBuffer(interrupt_buffer) {
  */
 export function checkInterrupt() {
   if (Module._PyErr_CheckSignals() == -1) {
-    throw new Error("KeyboardInterrupt");
+    Module._pythonexc2js();
   }
 }
 
