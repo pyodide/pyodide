@@ -319,7 +319,7 @@ def test_check_interrupt(selenium):
         let buffer = new Uint8Array(1);
         pyodide.setInterruptBuffer(buffer);
         buffer[0] = 2;
-        let errcode = 0;
+        let err_code = 0;
         for(let i = 0; i < 1000; i++){
             err_code = err_code || pyodide._module._PyErr_CheckSignals();
         }
