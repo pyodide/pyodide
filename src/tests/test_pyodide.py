@@ -326,7 +326,7 @@ def test_check_interrupt(selenium):
         let err_occurred = pyodide._module._PyErr_Occurred();
         console.log({err_code, err_occurred});
         pyodide._module._PyErr_Clear();
-        return buffer[0] === 0 && errcode === -1 && err_occurred !== 0;
+        return buffer[0] === 0 && err_code === -1 && err_occurred !== 0;
         """
     )
 
