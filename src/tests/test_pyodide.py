@@ -297,7 +297,9 @@ def test_check_interrupt(selenium):
         pyodide.setInterruptBuffer(buffer);
         function test(){
             buffer[0] = 2;
-            pyodide.checkInterrupt();
+            for(let i = 0; i < 1000; i++){
+                pyodide.checkInterrupt();
+            }
             x = 1;
         }
         window.test = test;
