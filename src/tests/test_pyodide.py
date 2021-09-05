@@ -331,6 +331,69 @@ def test_check_interrupt(selenium):
     )
 
 
+def test_check_interrupt_custom_signal_handler(selenium):
+    try:
+        selenium.run_js(
+            """
+            pyodide.runPython(`
+                import signal
+                interrupt_occurred = False
+                def signal_handler(*args):
+                    global interrupt_occurred
+                    interrupt_occurred = True
+                signal.signal(signal.SIGINT, signal_handler)
+            `);
+            """
+        )
+        assert selenium.run_js(
+            """
+            let buffer = new Uint8Array(1);
+            let x = 0;
+            pyodide.setInterruptBuffer(buffer);
+            function test(){
+                buffer[0] = 2;
+                pyodide.checkInterrupt();
+                x = 1;
+            }
+            window.test = test;
+            let err;
+            pyodide.runPython(`
+                interrupt_occurred = False
+                from js import test;
+                test();
+                assert interrupt_occurred == True
+            `);
+            """
+        )
+        assert selenium.run_js(
+            """
+            let buffer = new Uint8Array(1);
+            pyodide.setInterruptBuffer(buffer);
+            buffer[0] = 2;
+            let err_code = 0;
+            pyodide.runPython(`
+                interrupt_occurred = False
+            `);
+            for(let i = 0; i < 1000; i++){
+                err_code = err_code || pyodide._module._PyErr_CheckSignals();
+            }
+            let interrupt_occurred = pyodide.globals.get("interrupt_occurred");
+
+            return buffer[0] === 0 && err_code === 0 && interrupt_occurred;
+            """
+        )
+    finally:
+        # Restore signal handler
+        selenium.run_js(
+            """
+            pyodide.runPython(`
+                import signal
+                signal.signal(signal.SIGINT, signal.default_int_handler)
+            `);
+            """
+        )
+
+
 def test_async_leak(selenium):
     assert 0 == selenium.run_js(
         """

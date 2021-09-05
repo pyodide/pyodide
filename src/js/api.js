@@ -308,6 +308,12 @@ Module.saveState = () => Module.pyodide_py._state.save_state();
 Module.restoreState = (state) => Module.pyodide_py._state.restore_state(state);
 
 /**
+ * Sets the interrupt buffer to be `interrupt_buffer`. This is only useful when
+ * Pyodide is used in a webworker. The buffer should be a `SharedArrayBuffer`
+ * shared with the main browser thread (or another worker). To request an
+ * interrupt, a `2` should be written into `interrupt_buffer` (2 is the posix
+ * constant for SIGINT).
+ *
  * @param {TypedArray} interrupt_buffer
  */
 export function setInterruptBuffer(interrupt_buffer) {
@@ -326,8 +332,8 @@ export function setInterruptBuffer(interrupt_buffer) {
 export function checkInterrupt() {
   if (Module.interrupt_buffer[0] === 2) {
     Module.interrupt_buffer[0] = 0;
-    Module._PyErr_SetNone(Module.HEAP32[Module._PyExc_KeyboardInterrupt / 4]);
-    Module._pythonexc2js();
+    Module._PyErr_SetInterrupt();
+    pyodide.runPython("");
   }
 }
 
