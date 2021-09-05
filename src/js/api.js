@@ -319,7 +319,9 @@ export function setInterruptBuffer(interrupt_buffer) {
  * Throws an error if a KeyboardInterrupt is set.
  */
 export function checkInterrupt() {
-  if (Module._PyErr_CheckSignals() == -1) {
+  if (Module.interrupt_buffer[0] === 2) {
+    Module.interrupt_buffer[0] = 0;
+    Module._PyErr_SetNone(Module.HEAP32[Module._PyExc_KeyboardInterrupt / 4]);
     Module._pythonexc2js();
   }
 }
