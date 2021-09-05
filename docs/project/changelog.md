@@ -31,9 +31,17 @@ substitutions:
   `PYODIDE_PACKAGES='*'` In addition, `make minimal` was removed, since it is
   now equivalent to `make` without extra arguments. {pr}`1801`
 
-- {{Fix}} The `setInterruptBuffer` command is now publically exposed again, as
+### Uncategorized
+
+- {{Fix}} The `setInterruptBuffer` command is now publicly exposed again, as
   it was before.
   {pr}`1797`
+
+- {{ Enhancement }} `PyErr_CheckSignals` now works with the keyboard interrupt
+  system so that cooperative C extensions can be interrupted. Also, added the
+  `pyodide.checkInterrupt` function so Javascript code can opt to be
+  interrupted.
+  {pr}`1294`
 
 ## Version 0.18.0
 
