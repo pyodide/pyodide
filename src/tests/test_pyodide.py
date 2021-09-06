@@ -573,6 +573,32 @@ def test_reentrant_error(selenium):
     assert caught
 
 
+def test_restore_error(selenium):
+    # See PR #1816.
+    selenium.run_js(
+        """
+        self.f = function(){
+            pyodide.runPython(`
+                err = Exception('hi')
+                raise err
+            `);
+        }
+        pyodide.runPython(`
+            from js import f
+            import sys
+            try:
+                f()
+            except Exception as e:
+                assert err == e
+                assert e == sys.last_value
+            finally:
+                del err
+            assert sys.getrefcount(sys.last_value) == 2
+        `);
+        """
+    )
+
+
 @pytest.mark.skip_refcount_check
 @pytest.mark.skip_pyproxy_check
 def test_custom_stdin_stdout(selenium_standalone_noload):

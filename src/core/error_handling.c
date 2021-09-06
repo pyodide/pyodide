@@ -118,6 +118,11 @@ restore_sys_last_exception(void* value)
   if (value != last_value) {
     return 0;
   }
+  // PyErr_Restore steals a reference to each of its arguments so need to incref
+  // them first.
+  Py_INCREF(last_type);
+  Py_INCREF(last_value);
+  Py_INCREF(last_traceback);
   PyErr_Restore(last_type, last_value, last_traceback);
   success = true;
 finally:
