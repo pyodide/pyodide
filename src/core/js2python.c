@@ -53,6 +53,10 @@ EM_JS_REF(PyObject*, js2python, (JsRef id), {
   return _JsProxy_create(id);
 })
 
+/**
+ * Convert a Javascript object to Python to a given depth. This is the
+ * implementation of `toJs`.
+ */
 EM_JS_REF(PyObject*, js2python_convert, (JsRef id, int depth), {
   return Module.js2python_convert(id, new Map(), depth);
 });
@@ -348,6 +352,10 @@ EM_JS_NUM(errcode, js2python_init, (), {
     return _JsProxy_create(id);
   };
 
+  /**
+   * Convert a Javascript object to Python to a given depth. The `cache`
+   * argument should be a new empty map (it is needed for recursive calls).
+   */
   Module.js2python_convert = function(id, cache, depth)
   {
     let value = Module.hiwire.get_value(id);
