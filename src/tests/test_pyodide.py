@@ -584,12 +584,15 @@ def test_restore_error(selenium):
         }
         pyodide.runPython(`
             from js import f
+            import sys
             try:
                 f()
             except Exception as e:
                 assert err == e
+                assert e == sys.last_value
             finally:
                 del err
+            assert sys.getrefcount(sys.last_value) == 2
         `);
         """
     )
