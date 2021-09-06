@@ -11,7 +11,7 @@ pyodide_callback(void)
 {
   callback_clock--;
   if (callback_clock == 0) {
-    callback_clock = 1000;
+    callback_clock = 100;
     int interrupt_buffer = EM_ASM_INT({
       let result = Module.interrupt_buffer[0];
       Module.interrupt_buffer[0] = 0;
