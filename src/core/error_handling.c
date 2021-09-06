@@ -228,7 +228,7 @@ EM_JS_NUM(errcode, error_handling_init_js, (), {
     if (e instanceof Module._PropagatePythonError) {
       // Python error indicator is already set in this case. If this branch is
       // not taken, Python error indicator should be unset, and we have to set
-      // it. I think in this case we don't want to tamper with the traceback?
+      // it. In this case we don't want to tamper with the traceback.
       return;
     }
     let restored_error = false;
