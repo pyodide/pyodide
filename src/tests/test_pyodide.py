@@ -345,7 +345,7 @@ def test_check_interrupt_custom_signal_handler(selenium):
             `);
             """
         )
-        assert selenium.run_js(
+        selenium.run_js(
             """
             let buffer = new Uint8Array(1);
             let x = 0;
