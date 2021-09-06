@@ -40,7 +40,7 @@ substitutions:
   it was before.
   {pr}`1797`
 
-- {{Fix}} Fixed a serious but rare bug in the error handling code.
+- {{Fix}} Fixed a use after free bug in the error handling code.
   {pr}`1816`
 
 ## Version 0.18.0
