@@ -20,6 +20,9 @@ substitutions:
   console.
   {pr}`1790`
 
+- {{Fix}} The "long output truncated" message now appears on a separate line as intended.
+  {pr}`1814`
+
 ### Python / JavaScript type conversions
 
 - {{Fix}} Conversion of very large strings from Javascript to Python works
@@ -36,6 +39,9 @@ substitutions:
 - {{Fix}} The `setInterruptBuffer` command is now publicly exposed again, as
   it was before.
   {pr}`1797`
+
+- {{Fix}} Fixed a use after free bug in the error handling code.
+  {pr}`1816`
 
 - {{ Enhancement }} `PyErr_CheckSignals` now works with the keyboard interrupt
   system so that cooperative C extensions can be interrupted. Also, added the
