@@ -574,6 +574,7 @@ def test_reentrant_error(selenium):
 
 
 def test_restore_error(selenium):
+    # See PR #1816.
     selenium.run_js(
         """
         self.f = function(){
