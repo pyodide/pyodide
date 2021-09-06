@@ -576,7 +576,7 @@ def test_reentrant_error(selenium):
 def test_restore_error(selenium):
     selenium.run_js(
         """
-        function f(){
+        self.f = function(){
             pyodide.runPython(`
                 err = Exception('hi')
                 raise err
