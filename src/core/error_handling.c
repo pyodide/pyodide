@@ -118,6 +118,11 @@ restore_sys_last_exception(void* value)
   if (value != last_value) {
     return 0;
   }
+  // PyErr_Restore steals a reference to each of its arguments so need to incref
+  // them first.
+  Py_INCREF(last_type);
+  Py_INCREF(last_value);
+  Py_INCREF(last_traceback);
   PyErr_Restore(last_type, last_value, last_traceback);
   success = true;
 finally:
@@ -225,6 +230,12 @@ char* error__js_filename_string = "???.js";
 EM_JS_NUM(errcode, error_handling_init_js, (), {
   Module.handle_js_error = function(e)
   {
+    if (e instanceof Module._PropagatePythonError) {
+      // Python error indicator is already set in this case. If this branch is
+      // not taken, Python error indicator should be unset, and we have to set
+      // it. In this case we don't want to tamper with the traceback.
+      return;
+    }
     let restored_error = false;
     if (e instanceof Module.PythonError) {
       // Try to restore the original Python exception.
@@ -259,6 +270,19 @@ EM_JS_NUM(errcode, error_handling_init_js, (), {
     }
   };
   Module.PythonError = PythonError;
+  // A special marker. If we call a CPython API from an EM_JS function and the
+  // CPython API sets an error, we might want to return an error status back to
+  // C keeping the current Python error flag. This signals to the EM_JS wrappers
+  // that the Python error flag is set and to leave it alone and return the
+  // appropriate error value (either NULL or -1).
+  class _PropagatePythonError extends Error
+  {
+    constructor()
+    {
+      super("If you are seeing this message, an internal Pyodide error has " +
+            "occurred. Please report it to the Pyodide maintainers.");
+    }
+  } Module._PropagatePythonError = _PropagatePythonError;
   return 0;
 })
 
