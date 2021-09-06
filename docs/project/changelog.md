@@ -20,6 +20,9 @@ substitutions:
   console.
   {pr}`1790`
 
+- {{Fix}} Fixed a serious but rare bug in the error handling code.
+  {pr}`1816`
+
 ### Python / JavaScript type conversions
 
 - {{Fix}} Conversion of very large strings from Javascript to Python works

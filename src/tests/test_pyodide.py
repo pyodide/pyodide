@@ -289,28 +289,6 @@ def test_run_python_last_exc(selenium):
     )
 
 
-def test_restore_error(selenium):
-    selenium.run_js(
-        """
-        function f(){
-            pyodide.runPython(`
-                err = Exception('hi')
-                raise err
-            `);
-        }
-        pyodide.runPython(`
-            from js import f
-            try:
-                f()
-            except Exception as e:
-                assert err == e
-            finally:
-                del err
-        `);
-        """
-    )
-
-
 def test_async_leak(selenium):
     assert 0 == selenium.run_js(
         """
@@ -593,6 +571,28 @@ def test_reentrant_error(selenium):
         """
     )
     assert caught
+
+
+def test_restore_error(selenium):
+    selenium.run_js(
+        """
+        function f(){
+            pyodide.runPython(`
+                err = Exception('hi')
+                raise err
+            `);
+        }
+        pyodide.runPython(`
+            from js import f
+            try:
+                f()
+            except Exception as e:
+                assert err == e
+            finally:
+                del err
+        `);
+        """
+    )
 
 
 @pytest.mark.skip_refcount_check
