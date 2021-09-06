@@ -1,19 +1,24 @@
-(Keyboard_interrupts)=
+(interrupting_execution)=
 
 # Interrupting execution
 
-## How to set up KeyboardInterrupts
+The native Python interrupt system is based on preemptive multitasking but Web
+Assembly has no support for preemptive multitasking. Because of this,
+interrupting execution in Pyodide must be achieved via a different mechanism
+which takes some effort to set up.
 
-In order to use keyboard interrupts you must be using Pyodide in a webworker.
+## Setting up interrupts
+
+In order to use interrupts you must be using Pyodide in a webworker.
 You also will need to use a `SharedArrayBuffer`, which means that your server
 must set appropriate security headers. See [the MDN
 docs](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/SharedArrayBuffer#security_requirements)
 for more information.
 
-To use the keyboard interrupt system, you should create a `SharedArrayBuffer` on
-either the main thread or the worker thread and share it with the other thread.
-You should use {any}`pyodide.setInterruptBuffer` to set the interrupt buffer on
-the Pyodide thread. When you want to indicate an interrupt, write a `2` into the
+To use the interrupt system, you should create a `SharedArrayBuffer` on either
+the main thread or the worker thread and share it with the other thread. You
+should use {any}`pyodide.setInterruptBuffer` to set the interrupt buffer on the
+Pyodide thread. When you want to indicate an interrupt, write a `2` into the
 interrupt buffer. When the interrupt signal is processed, Pyodide will set the
 value of the interrupt buffer back to `0`.
 
@@ -57,14 +62,14 @@ self.addEventListener("message", (msg) => {
 });
 ```
 
-## Allowing interrupts in Javascript code
+## Allowing Javascript code to be interrupted
 
-The keyboard interrupt system above allows interruption of Python code and also
-of C code that opts to allow itself to be interrupted by periodically calling
+The interrupt system above allows interruption of Python code and also of C code
+that opts to allow itself to be interrupted by periodically calling
 `PyErr_CheckSignals`. There is also a function `pyodide.checkInterrupt` that
-allows Javascript functions called from Python to check for a keyboard
-interrupt. As a simple example, we can implement an interruptable sleep function
-using `Atomics.wait`:
+allows Javascript functions called from Python to check for an interrupt. As a
+simple example, we can implement an interruptable sleep function using
+`Atomics.wait`:
 
 ```js
 let blockingSleepBuffer = new Int32Array(new SharedArrayBuffer(4));
@@ -78,27 +83,3 @@ function blockingSleep(t) {
   }
 }
 ```
-
-## Why is it like this?
-
-It is possible to interrupt execution in a native Python process by sending a
-SIGINT signal to the process. Python registers a signal handler which by default
-eventually raises a `KeyboardInterrupt`. Emscripten implements the system calls
-to register signal handlers, but they do nothing (except `SIGALRM`). Emscripten
-compiles to a single threaded environment, so there is no way for an operating
-system to preempt execution of a task to handle interrupts. Thus, the normal
-Python `KeyboardInterrupt` mechanism doesn't work at all.
-
-In order to allow interrupts, it is necessary to run Pyodide in a webworker.
-Otherwise, Python execution blocks I/O handling and so it is impossible for an
-interrupt to be requested. Lastly, the information that an interrupt has been
-requested can not be conveyed using `postMessage` because `postMessage` adds a
-task to the event loop of the webworker which will not be processed until
-current execution is finished. Thus, we need to communicate the interrupt
-request using shared memory, hence with a `SharedArrayBuffer`.
-
-Maybe some day it will be possible to use preemptive multitasking inside of
-webassembly and then the normal system for processing interrupts will be usable.
-(Emscripten pthreads enables a multithreading model that is more powerful than
-cooperative multithreading but less powerful than preemptive multithreading. We
-need preemption to handle keyboard interrupts the normal way.

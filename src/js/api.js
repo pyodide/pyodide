@@ -325,9 +325,9 @@ export function setInterruptBuffer(interrupt_buffer) {
  * Throws a KeyboardInterrupt error if a KeyboardInterrupt has been requested
  * via the interrupt buffer.
  *
- * This can be used to enable keyboard interrupts during blocking Javascript
- * code, just like the way `PyErr_CheckSignals` is used to enable keyboard
- * interrupts during execution of C code.
+ * This can be used to enable keyboard interrupts during execution of Javascript
+ * code, just as `PyErr_CheckSignals` is used to enable keyboard interrupts
+ * during execution of C code.
  */
 export function checkInterrupt() {
   if (Module.interrupt_buffer[0] === 2) {
