@@ -596,12 +596,12 @@ pyodide.runPython(`
 a.get("x"); // Error: This borrowed proxy was automatically destroyed. [...]
 ```
 
-If you want to persist the proxy, you need to use {any}`PyProxy.clone` or {any}`pyodide.create_proxy`.
-Persisting the proxy from Javascript with {any}`PyProxy.clone`:
+If you want to persist the proxy, you need to use {any}`PyProxy.copy` or {any}`pyodide.create_proxy`.
+Persisting the proxy from Javascript with {any}`PyProxy.copy`:
 
 ```pyodide
 function test(a){
-    window.a = a.clone();
+    window.a = a.copy();
 }
 pyodide.runPython(`
     from js import test
@@ -642,41 +642,7 @@ f_proxy.destroy()
 Asynchronous functions are a tricky case because they defer work to be done
 later. We handle this by releasing the arguments in the `finally` handler of the
 Promise. Of course this means if you return a promise that never resolves, it
-will leak the arguments. Another unfortunate result of this is that if a
-function asynchronously returns one of its arguments, this is an error:
-
-```pyodide
-async function test(x){
-    return x;
-}
-pyodide.runPython(`
-    from js import test
-    test({})
-`);
-```
-
-This results in the following error message:
-
-```
-Uncaught (in promise) Error: This borrowed proxy was automatically destroyed at the end of an asynchronous function call. You may have tried returning one of the arguments from an async function. [...]
-```
-
-If you wish to asynchronously return an argument, you have to use {any}`pyodide.create_proxy`:
-
-```pyodide
-async function test(x){
-    return x;
-}
-pyodide.runPythonAsync(`
-    from js import test
-    from pyodide import create_proxy
-    d = {}
-    proxy = create_proxy(d)
-    e = await test(proxy)
-    assert e is d
-    proxy.destroy();
-`);
-```
+will leak the arguments.
 
 (avoiding-leaks)=
 
@@ -764,38 +730,15 @@ def f():
 setTimeout(create_once_callable(f), 500)
 ```
 
-If you are using the promise methods {any}`PyProxy.then`,
-{any}`PyProxy.catch`, or {any}`PyProxy.finally`, these have magic wrappers
-around them so no intervention is needed to prevent memory leaks.
-
-5. If the last argument of the Javascript function is an object you can use
-   keyword arguments, so the following:
-
-```py
-from js import fetch
-from pyodide import to_js
-resp = await fetch('example.com/some_api',
-    method= "POST",
-    body= '{ "some" : "json" }',
-    credentials= "same-origin",
-)
-```
-
-is equivalent to the Javascript code
-
-```js
-let resp = await fetch("example.com/some_api", {
-  method: "POST",
-  body: '{ "some" : "json" }',
-  credentials: "same-origin",
-});
-```
+If you are using the promise methods {any}`PyProxy.then`, {any}`PyProxy.catch`,
+or {any}`PyProxy.finally`, these have magic wrappers around them that
+automatically do the equivalent of `create_once_callable` so you don't need to
+do anything special to the arguments.
 
 ### Using a Javascript callback with an existing Python function
 
 If you want to pass a Javascript callback to an existing Python function,
-nothing needs to be done unless you wish to persist some of the arguments or if
-you wish to asynchronously return an argument.
+nothing needs to be done unless you wish to persist some of the arguments.
 
 ### Using a Python callback with an existing Javascript function
 
