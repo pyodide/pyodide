@@ -367,13 +367,13 @@ def test_check_interrupt_custom_signal_handler(selenium):
         )
         assert selenium.run_js(
             """
+            pyodide.runPython(`
+                interrupt_occurred = False
+            `);
             let buffer = new Uint8Array(1);
             pyodide.setInterruptBuffer(buffer);
             buffer[0] = 2;
             let err_code = 0;
-            pyodide.runPython(`
-                interrupt_occurred = False
-            `);
             for(let i = 0; i < 1000; i++){
                 err_code = err_code || pyodide._module._PyErr_CheckSignals();
             }
