@@ -102,7 +102,7 @@ _August 3rd, 2021_
   stores the API into a global variable called `pyodide`. To get old behavior,
   say `globalThis.pyodide = await loadPyodide({...})`.
   {pr}`1597`
-- {{ Enhancement }} {any}`loadPyodide` now accepts callback functions for
+- {{ Enhancement }} {any}`loadPyodide <globalThis.loadPyodide>` now accepts callback functions for
   `stdin`, `stdout` and `stderr`
   {pr}`1728`
 - {{ Enhancement }} Pyodide now ships with first party typescript types for the entire
