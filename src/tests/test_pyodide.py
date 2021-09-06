@@ -342,6 +342,7 @@ def test_check_interrupt_custom_signal_handler(selenium):
                     global interrupt_occurred
                     interrupt_occurred = True
                 signal.signal(signal.SIGINT, signal_handler)
+                None
             `);
             """
         )
@@ -359,9 +360,10 @@ def test_check_interrupt_custom_signal_handler(selenium):
             let err;
             pyodide.runPython(`
                 interrupt_occurred = False
-                from js import test;
-                test();
+                from js import test
+                test()
                 assert interrupt_occurred == True
+                del test
             `);
             """
         )
