@@ -13,6 +13,14 @@ substitutions:
 
 ## Unreleased
 
+### pyodide-build
+
+- By default only a minimal set of packages is built. To build all packages set
+  `PYODIDE_PACKAGES='*'` In addition, `make minimal` was removed, since it is
+  now equivalent to `make` without extra arguments. {pr}`1801`
+
+## Version 0.18.1 (unreleased)
+
 ### Console
 
 - {{Fix}} Ctrl+C handling in console now works correctly with multiline input.
@@ -20,19 +28,21 @@ substitutions:
   console.
   {pr}`1790`
 
+- {{Fix}}  Fix the repr of Python objects (including lists and dicts) in console {pr}`1780` 
+
 - {{Fix}} The "long output truncated" message now appears on a separate line as intended.
   {pr}`1814`
+
+### Python package
+
+- {{Fix}} Avoid circular references when runsource raises SyntaxError
+  {pr}`1758`
 
 ### Python / JavaScript type conversions
 
 - {{Fix}} Conversion of very large strings from Javascript to Python works
   again. {pr}`1806`
 
-### pyodide-build
-
-- By default only a minimal set of packages is built. To build all packages set
-  `PYODIDE_PACKAGES='*'` In addition, `make minimal` was removed, since it is
-  now equivalent to `make` without extra arguments. {pr}`1801`
 
 ### Packages
 
