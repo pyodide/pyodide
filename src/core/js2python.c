@@ -44,21 +44,26 @@ _js2python_pyproxy(PyObject* val)
 
 EM_JS_REF(PyObject*, js2python, (JsRef id), {
   let value = Module.hiwire.get_value(id);
-  let result = Module.__js2python_convertImmutable(value);
+  let result = Module._js2python_convertImmutable(value);
   // clang-format off
-  if (result !== 0) {
+  if (result !== undefined) {
+    // clang-format on
     return result;
   }
   return _JsProxy_create(id);
-  // clang-format on
 })
 
+/**
+ * Convert a Javascript object to Python to a given depth. This is the
+ * implementation of `toJs`.
+ */
 EM_JS_REF(PyObject*, js2python_convert, (JsRef id, int depth), {
-  return Module.__js2python_convert(id, new Map(), depth);
+  return Module.js2python_convert(id, new Map(), depth);
 });
 
 EM_JS_NUM(errcode, js2python_init, (), {
-  Module.__js2python_string = function(value)
+  let PropagateError = Module._PropagatePythonError;
+  function __js2python_string(value)
   {
     // The general idea here is to allocate a Python string and then
     // have Javascript write directly into its buffer.  We first need
@@ -77,7 +82,7 @@ EM_JS_NUM(errcode, js2python_init, (), {
     // clang-format off
     if (result === 0) {
       // clang-format on
-      return 0;
+      throw new PropagateError();
     }
 
     let ptr = _PyUnicode_Data(result);
@@ -101,7 +106,7 @@ EM_JS_NUM(errcode, js2python_init, (), {
     return result;
   };
 
-  Module.__js2python_bigint = function(value)
+  function __js2python_bigint(value)
   {
     let value_orig = value;
     let length = 0;
@@ -127,12 +132,33 @@ EM_JS_NUM(errcode, js2python_init, (), {
     return result;
   };
 
-  Module.__js2python_convertImmutable = function(value)
+  /**
+   * This function converts immutable types. numbers, bigints, strings,
+   * booleans, undefined, and null are converted. PyProxies are unwrapped.
+   *
+   * If `value` is of any other type then `undefined` is returned.
+   *
+   * If `value` is one of those types but an error is raised during conversion,
+   * we throw a PropagateError to propogate the error out to C. This causes
+   * special handling in the EM_JS wrapper.
+   */
+  Module._js2python_convertImmutable = function(value)
+  {
+    let result = __js2python_convertImmutableInner(value);
+    // clang-format off
+    if (result === 0) {
+      // clang-format on
+      throw new PropagateError();
+    }
+    return result;
+  };
+
+  function __js2python_convertImmutableInner(value)
   {
     let type = typeof value;
     // clang-format off
     if (type === 'string') {
-      return Module.__js2python_string(value);
+      return __js2python_string(value);
     } else if (type === 'number') {
       if(Number.isSafeInteger(value)){
         return _PyLong_FromDouble(value);
@@ -140,7 +166,7 @@ EM_JS_NUM(errcode, js2python_init, (), {
         return _PyFloat_FromDouble(value);
       }
     } else if(type === "bigint"){
-      return Module.__js2python_bigint(value);
+      return __js2python_bigint(value);
     } else if (value === undefined || value === null) {
       return __js2python_none();
     } else if (value === true) {
@@ -151,13 +177,10 @@ EM_JS_NUM(errcode, js2python_init, (), {
       return __js2python_pyproxy(Module.PyProxy_getPtr(value));
     }
     // clang-format on
-    return 0;
+    return undefined;
   };
 
-  class TempError extends Error
-  {};
-
-  Module.__js2python_convertList = function(obj, cache, depth)
+  function __js2python_convertList(obj, cache, depth)
   {
     let list = _PyList_New(obj.length);
     // clang-format off
@@ -171,18 +194,13 @@ EM_JS_NUM(errcode, js2python_init, (), {
       cache.set(obj, list);
       for (let i = 0; i < obj.length; i++) {
         entryid = Module.hiwire.new_value(obj[i]);
-        item = Module.__js2python_convert(entryid, cache, depth);
-        // clang-format off
-        if (item === 0) {
-          // clang-format on
-          throw new TempError();
-        }
+        item = Module.js2python_convert(entryid, cache, depth);
         // clang-format off
         // PyList_SetItem steals a reference to item no matter what
         _Py_IncRef(item);
         if (_PyList_SetItem(list, i, item) === -1) {
           // clang-format on
-          throw new TempError();
+          throw new PropagateError();
         }
         Module.hiwire.decref(entryid);
         entryid = 0;
@@ -193,19 +211,13 @@ EM_JS_NUM(errcode, js2python_init, (), {
       Module.hiwire.decref(entryid);
       _Py_DecRef(item);
       _Py_DecRef(list);
-      if (e instanceof TempError) {
-        return 0;
-      } else if (_PyErr_Occurred()) {
-        return 0;
-      } else {
-        throw e;
-      }
+      throw e;
     }
 
     return list;
   };
 
-  Module.__js2python_convertMap = function(obj, entries, cache, depth)
+  function __js2python_convertMap(obj, entries, cache, depth)
   {
     let dict = _PyDict_New();
     // clang-format off
@@ -219,32 +231,23 @@ EM_JS_NUM(errcode, js2python_init, (), {
     try {
       cache.set(obj, dict);
       for (let[key_js, value_js] of entries) {
-        key_py = Module.__js2python_convertImmutable(key_js);
+        key_py = Module._js2python_convertImmutable(key_js);
         // clang-format off
-        if (key_py === 0) {
+        if (key_py === undefined) {
           // clang-format on
-          if (_PyErr_Occurred()) {
-            throw new TempError();
-          } else {
-            let key_type =
-              (key_js.constructor && key_js.constructor.name) || typeof(key_js);
-            // clang-format off
-            throw new Error(`Cannot use key of type ${key_type} as a key to a Python dict`);
-            // clang-format on
-          }
+          let key_type =
+            (key_js.constructor && key_js.constructor.name) || typeof(key_js);
+          // clang-format off
+          throw new Error(`Cannot use key of type ${key_type} as a key to a Python dict`);
+          // clang-format on
         }
         value_id = Module.hiwire.new_value(value_js);
-        value_py = Module.__js2python_convert(value_id, cache, depth);
-        // clang-format off
-        if (value_py === 0) {
-          // clang-format on
-          throw new TempError();
-        }
+        value_py = Module.js2python_convert(value_id, cache, depth);
 
         // clang-format off
         if (_PyDict_SetItem(dict, key_py, value_py) === -1) {
           // clang-format on
-          throw new TempError();
+          throw new PropagateError();
         }
         _Py_DecRef(key_py);
         key_py = 0;
@@ -258,18 +261,12 @@ EM_JS_NUM(errcode, js2python_init, (), {
       Module.hiwire.decref(value_id);
       _Py_DecRef(value_py);
       _Py_DecRef(dict);
-      if (e instanceof TempError) {
-        return 0;
-      } else if (_PyErr_Occurred()) {
-        return 0;
-      } else {
-        throw e;
-      }
+      throw e;
     }
     return dict;
   };
 
-  Module.__js2python_convertSet = function(obj, cache, depth)
+  function __js2python_convertSet(obj, cache, depth)
   {
     let set = _PySet_New(0);
     // clang-format off
@@ -281,25 +278,21 @@ EM_JS_NUM(errcode, js2python_init, (), {
     try {
       cache.set(obj, set);
       for (let key_js of obj) {
-        key_py = Module.__js2python_convertImmutable(key_js);
+        key_py = Module._js2python_convertImmutable(key_js);
         // clang-format off
-        if (key_py === 0) {
+        if (key_py === undefined) {
           // clang-format on
-          if (_PyErr_Occurred()) {
-            throw new TempError();
-          } else {
-            let key_type =
-              (key_js.constructor && key_js.constructor.name) || typeof(key_js);
-            // clang-format off
-            throw new Error(`Cannot use key of type ${key_type} as a key to a Python set`);
-            // clang-format on
-          }
+          let key_type =
+            (key_js.constructor && key_js.constructor.name) || typeof(key_js);
+          // clang-format off
+          throw new Error(`Cannot use key of type ${key_type} as a key to a Python set`);
+          // clang-format on
         }
         let errcode = _PySet_Add(set, key_py);
         // clang-format off
         if (errcode === -1) {
           // clang-format on
-          throw new TempError();
+          throw new PropagateError();
         }
         _Py_DecRef(key_py);
         key_py = 0;
@@ -307,13 +300,7 @@ EM_JS_NUM(errcode, js2python_init, (), {
     } catch (e) {
       _Py_DecRef(key_py);
       _Py_DecRef(set);
-      if (e instanceof TempError) {
-        return 0;
-      } else if (_PyErr_Occurred()) {
-        return 0;
-      } else {
-        throw e;
-      }
+      throw e;
     }
     return set;
   };
@@ -332,24 +319,30 @@ EM_JS_NUM(errcode, js2python_init, (), {
     }
   }
 
-  Module.__js2python_convertOther = function(id, value, cache, depth)
+  /**
+   * Convert mutable types: Array, Map, Set, and Objects whose prototype is
+   * either null or the default. Anything else is wrapped in a Proxy. This
+   * should only be used on values for which __js2python_convertImmutable
+   * returned `undefined`.
+   */
+  function __js2python_convertOther(id, value, cache, depth)
   {
     let toStringTag = Object.prototype.toString.call(value);
     // clang-format off
     if (Array.isArray(value) || value === "[object HTMLCollection]" ||
                                            value === "[object NodeList]") {
-      return Module.__js2python_convertList(value, cache, depth);
+      return __js2python_convertList(value, cache, depth);
     }
     if (toStringTag === "[object Map]" || value instanceof Map) {
       checkBoolIntCollision(value, "Map");
-      return Module.__js2python_convertMap(value, value.entries(), cache, depth);
+      return __js2python_convertMap(value, value.entries(), cache, depth);
     }
     if (toStringTag === "[object Set]" || value instanceof Set) {
       checkBoolIntCollision(value, "Set");
-      return Module.__js2python_convertSet(value, cache, depth);
+      return __js2python_convertSet(value, cache, depth);
     }
     if (toStringTag === "[object Object]" && (value.constructor === undefined || value.constructor.name === "Object")) {
-      return Module.__js2python_convertMap(value, Object.entries(value), cache, depth);
+      return __js2python_convertMap(value, Object.entries(value), cache, depth);
     }
     if (toStringTag === "[object ArrayBuffer]" || ArrayBuffer.isView(value)){
       let [format_utf8, itemsize] = Module.get_buffer_datatype(value);
@@ -359,12 +352,16 @@ EM_JS_NUM(errcode, js2python_init, (), {
     return _JsProxy_create(id);
   };
 
-  Module.__js2python_convert = function(id, cache, depth)
+  /**
+   * Convert a Javascript object to Python to a given depth. The `cache`
+   * argument should be a new empty map (it is needed for recursive calls).
+   */
+  Module.js2python_convert = function(id, cache, depth)
   {
     let value = Module.hiwire.get_value(id);
-    let result = Module.__js2python_convertImmutable(value);
+    let result = Module._js2python_convertImmutable(value);
     // clang-format off
-    if (result !== 0) {
+    if (result !== undefined) {
       return result;
     }
     if (depth === 0) {
@@ -375,7 +372,7 @@ EM_JS_NUM(errcode, js2python_init, (), {
       return result;
     }
     // clang-format on
-    return Module.__js2python_convertOther(id, value, cache, depth - 1);
+    return __js2python_convertOther(id, value, cache, depth - 1);
   };
 
   return 0;
