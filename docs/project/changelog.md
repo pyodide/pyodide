@@ -34,6 +34,10 @@ substitutions:
   `PYODIDE_PACKAGES='*'` In addition, `make minimal` was removed, since it is
   now equivalent to `make` without extra arguments. {pr}`1801`
 
+### Packages
+
+- {{Fix}} pillow now correctly encodes/decodes JPEG image format. {pr}`1818`
+
 ### Uncategorized
 
 - {{Fix}} The `setInterruptBuffer` command is now publicly exposed again, as
