@@ -391,6 +391,7 @@ def test_check_interrupt_custom_signal_handler(selenium):
             pyodide.runPython(`
                 import signal
                 signal.signal(signal.SIGINT, signal.default_int_handler)
+                None
             `);
             """
         )
