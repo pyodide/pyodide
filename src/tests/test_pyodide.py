@@ -300,7 +300,7 @@ def test_check_interrupt(selenium):
             pyodide.checkInterrupt();
             x = 1;
         }
-        window.test = test;
+        self.test = test;
         let err;
         try {
             pyodide.runPython(`
@@ -356,7 +356,7 @@ def test_check_interrupt_custom_signal_handler(selenium):
                 pyodide.checkInterrupt();
                 x = 1;
             }
-            window.test = test;
+            self.test = test;
             let err;
             pyodide.runPython(`
                 interrupt_occurred = False
