@@ -342,7 +342,7 @@ def test_call_pyproxy_destroy_args(selenium):
     selenium.run_js(
         """
         let y;
-        window.f = function(x){ y = x; }
+        self.f = function(x){ y = x; }
         pyodide.runPython(`
             from js import f
             f({})
@@ -355,7 +355,7 @@ def test_call_pyproxy_destroy_args(selenium):
     selenium.run_js(
         """
         let y;
-        window.f = async function(x){
+        self.f = async function(x){
             await sleep(5);
             y = x;
         }
@@ -373,14 +373,14 @@ def test_call_pyproxy_destroy_args(selenium):
 def test_call_pyproxy_set_global(selenium):
     selenium.run_js(
         """
-        window.setGlobal = function(x){
-            if(pyodide.isPyProxy(window.myGlobal)){
-                window.myGlobal.destroy();
+        self.setGlobal = function(x){
+            if(pyodide.isPyProxy(self.myGlobal)){
+                self.myGlobal.destroy();
             }
             if(pyodide.isPyProxy(x)){
                 x = x.copy();
             }
-            window.myGlobal = x;
+            self.myGlobal = x;
         }
         pyodide.runPython(`
             from js import setGlobal
@@ -394,15 +394,15 @@ def test_call_pyproxy_set_global(selenium):
 
     selenium.run_js(
         """
-        window.setGlobal = async function(x){
+        self.setGlobal = async function(x){
             await sleep(5);
-            if(pyodide.isPyProxy(window.myGlobal)){
-                window.myGlobal.destroy();
+            if(pyodide.isPyProxy(self.myGlobal)){
+                self.myGlobal.destroy();
             }
             if(pyodide.isPyProxy(x)){
                 x = x.copy();
             }
-            window.myGlobal = x;
+            self.myGlobal = x;
         }
         await pyodide.runPythonAsync(`
             from js import setGlobal
@@ -419,11 +419,9 @@ def test_call_pyproxy_set_global(selenium):
 def test_call_pyproxy_destroy_result(selenium):
     selenium.run_js(
         """
-        window.f = function(){
-            let globals_get = pyodide.globals.get;
-            let dict = globals_get("dict");
+        self.f = function(){
+            let dict = pyodide.globals.get("dict");
             let result = dict();
-            globals_get.destroy();
             dict.destroy();
             return result;
         }
@@ -438,12 +436,10 @@ def test_call_pyproxy_destroy_result(selenium):
 
     selenium.run_js(
         """
-        window.f = async function(){
+        self.f = async function(){
             await sleep(5);
-            let globals_get = pyodide.globals.get;
-            let dict = globals_get("dict");
+            let dict = pyodide.globals.get("dict");
             let result = dict();
-            globals_get.destroy();
             dict.destroy();
             return result;
         }
@@ -463,7 +459,7 @@ def test_call_pyproxy_destroy_result(selenium):
 def test_call_pyproxy_return_arg(selenium):
     selenium.run_js(
         """
-        window.f = function f(x){
+        self.f = function f(x){
             return x;
         }
         pyodide.runPython(`
@@ -478,7 +474,7 @@ def test_call_pyproxy_return_arg(selenium):
     )
     selenium.run_js(
         """
-        window.f = async function f(x){
+        self.f = async function f(x){
             await sleep(5);
             return x;
         }
