@@ -180,12 +180,13 @@ def test_load_twice_same_source(selenium_standalone):
 def test_js_load_package_from_python(selenium_standalone):
     selenium = selenium_standalone
     to_load = ["pyparsing"]
-    selenium.run(
+    selenium.run_js(
         f"""
-        from pyodide_js import loadPackage
-        result = loadPackage({to_load!r})
-        del loadPackage
-        result
+        await pyodide.runPythonAsync(`
+            from pyodide_js import loadPackage
+            await loadPackage({to_load!r})
+            del loadPackage
+        `);
         """
     )
     assert f"Loading {to_load[0]}" in selenium.logs
