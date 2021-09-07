@@ -11,7 +11,7 @@ substitutions:
 
 # Change Log
 
-## Unreleased
+## Version 0.18.1 (unreleased)
 
 ### Console
 
@@ -19,6 +19,34 @@ substitutions:
   New behavior more closely approximates the behavior of the native Python
   console.
   {pr}`1790`
+
+- {{Fix}} Fix the repr of Python objects (including lists and dicts) in console {pr}`1780`
+
+- {{Fix}} The "long output truncated" message now appears on a separate line as intended.
+  {pr}`1814`
+
+### Python package
+
+- {{Fix}} Avoid circular references when runsource raises SyntaxError
+  {pr}`1758`
+
+### Python / JavaScript type conversions
+
+- {{Fix}} Conversion of very large strings from Javascript to Python works
+  again. {pr}`1806`
+
+### Packages
+
+- {{Fix}} pillow now correctly encodes/decodes JPEG image format. {pr}`1818`
+
+### Uncategorized
+
+- {{Fix}} The `setInterruptBuffer` command is now publicly exposed again, as
+  it was before.
+  {pr}`1797`
+
+- {{Fix}} Fixed a use after free bug in the error handling code.
+  {pr}`1816`
 
 ## Version 0.18.0
 
