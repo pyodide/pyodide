@@ -44,6 +44,10 @@ substitutions:
   again. {pr}`1806`
 
 
+### Packages
+
+- {{Fix}} pillow now correctly encodes/decodes JPEG image format. {pr}`1818`
+
 ### Uncategorized
 
 - {{Fix}} The `setInterruptBuffer` command is now publicly exposed again, as
