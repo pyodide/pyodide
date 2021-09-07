@@ -11,15 +11,25 @@ from pyodide import find_imports, eval_code, CodeRunner, should_quiet  # noqa: E
 def test_find_imports():
 
     res = find_imports(
-        dedent(
-            """
-           import numpy as np
-           from scipy import sparse
-           import matplotlib.pyplot as plt
-           """
-        )
+        """
+        import numpy as np
+        from scipy import sparse
+        import matplotlib.pyplot as plt
+        """
     )
     assert set(res) == {"numpy", "scipy", "matplotlib"}
+
+    # If there is a syntax error in the code, find_imports should return empty
+    # list.
+    res = find_imports(
+        """
+        import numpy as np
+        from scipy import sparse
+        import matplotlib.pyplot as plt
+        for x in [1,2,3]
+        """
+    )
+    assert res == []
 
 
 def test_code_runner():

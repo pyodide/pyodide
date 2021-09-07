@@ -57,6 +57,10 @@ substitutions:
 - {{Fix}} Fixed a use after free bug in the error handling code.
   {pr}`1816`
 
+- {{Enhancement}} If `find_imports` is used on code that contains a syntax
+  error, it will return an empty list instead of raising a `SyntaxError`.
+  {pr}`1819`
+
 ## Version 0.18.0
 
 _August 3rd, 2021_
