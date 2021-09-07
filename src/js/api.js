@@ -337,7 +337,7 @@ export function checkInterrupt() {
   if (Module.interrupt_buffer[0] === 2) {
     Module.interrupt_buffer[0] = 0;
     Module._PyErr_SetInterrupt();
-    pyodide.runPython("");
+    Module.runPython("");
   }
 }
 
