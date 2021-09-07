@@ -378,7 +378,7 @@ def test_call_pyproxy_set_global(selenium):
                 window.myGlobal.destroy();
             }
             if(pyodide.isPyProxy(x)){
-                x = x.clone();
+                x = x.copy();
             }
             window.myGlobal = x;
         }
@@ -400,7 +400,7 @@ def test_call_pyproxy_set_global(selenium):
                 window.myGlobal.destroy();
             }
             if(pyodide.isPyProxy(x)){
-                x = x.clone();
+                x = x.copy();
             }
             window.myGlobal = x;
         }
