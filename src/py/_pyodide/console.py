@@ -60,6 +60,9 @@ class _WriteStream:
     def flush(self):
         pass
 
+    def isatty(self):
+        True
+
 
 class _ReadStream:
     """A utility class so we can specify our own handler for reading from stdin"""
@@ -73,6 +76,9 @@ class _ReadStream:
 
     def flush(self):
         pass
+
+    def isatty(self):
+        True
 
 
 class _Compile(Compile):
