@@ -304,7 +304,7 @@ class Console:
             return
         redirects = []
         if self.stdin_callback:
-            stdin_name = getattr(sys.stderr, "name", "<stdin>")
+            stdin_name = getattr(sys.stdin, "name", "<stdin>")
             stdin_stream = _ReadStream(self.stdin_callback, name=stdin_name)
             redirects.append(redirect_stdin(stdin_stream))
         if self.stdout_callback:
