@@ -16,6 +16,7 @@ Pyodide provides transparent conversion of objects between Javascript and
 Python. When used inside a browser, Python has full access to the Web APIs.
 
 ## History
+
 Pyodide was created in 2018 by [Michael Droettboom](https://github.com/mdboom)
 at Mozilla as part of the [Iodide
 project](https://github.com/iodide-project/iodide). Iodide is an experimental
@@ -28,6 +29,26 @@ See the {ref}`contributing guide <how_to_contribute>` for tips on filing issues,
 making changes, and submitting pull requests. Pyodide is an independent and
 community-driven open-source project. The decision making process is outlined in
 {ref}`project-governance`.
+
+## Citing
+
+If you use Pyodide for a scientific publication, we would appreciate citations.
+Please find us [on Zenodo](https://zenodo.org/record/5156931) and use the citation
+for the version you are using. You can replace the full author
+list from there with "The Pyodide development team" like in the example below:
+
+```
+@software{pyodide_2021,
+  author       = {The Pyodide development team},
+  title        = {pyodide/pyodide},
+  month        = aug,
+  year         = 2021,
+  publisher    = {Zenodo},
+  version      = {0.18.0},
+  doi          = {10.5281/zenodo.5156931},
+  url          = {https://doi.org/10.5281/zenodo.5156931}
+}
+```
 
 ## Communication
 
@@ -44,8 +65,9 @@ Pyodide uses the [Mozilla Public License Version
 ## Infrastructure support
 
 We would like to thank,
- - [Mozilla](https://www.mozilla.org/en-US/) and
-[CircleCl](https://circleci.com/) for Continuous Integration resources
- - [JsDelivr](https://www.jsdelivr.com/) for providing a CDN for Pyodide
-   packages
- - [ReadTheDocs](https://readthedocs.org/) for hosting the documentation.
+
+- [Mozilla](https://www.mozilla.org/en-US/) and
+  [CircleCl](https://circleci.com/) for Continuous Integration resources
+- [JsDelivr](https://www.jsdelivr.com/) for providing a CDN for Pyodide
+  packages
+- [ReadTheDocs](https://readthedocs.org/) for hosting the documentation.

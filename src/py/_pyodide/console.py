@@ -12,6 +12,7 @@ from contextlib import _RedirectStream  # type: ignore
 import rlcompleter
 import platform
 import sys
+from tokenize import TokenError
 import traceback
 from typing import Literal
 from typing import (
@@ -26,7 +27,7 @@ from typing import (
 
 from _pyodide._base import should_quiet, CodeRunner
 
-__all__ = ["repr_shorten", "BANNER", "Console", "PyodideConsole"]
+__all__ = ["repr_shorten", "BANNER", "Console", "PyodideConsole", "ConsoleFuture"]
 
 
 def _banner():
@@ -97,8 +98,13 @@ class _Compile(Compile):
 
     def __call__(self, source, filename, symbol) -> CodeRunner:  # type: ignore
         return_mode = self.return_mode
-        if self.quiet_trailing_semicolon and should_quiet(source):
-            return_mode = None
+        try:
+            if self.quiet_trailing_semicolon and should_quiet(source):
+                return_mode = None
+        except (TokenError, SyntaxError):
+            # Invalid code, let the Python parser throw the error later.
+            pass
+
         code_runner = CodeRunner(
             source,
             mode=symbol,
@@ -153,7 +159,7 @@ class ConsoleFuture(Future):
     Attributes
     ----------
     syntax_check : str
-        One of ``"incomplete"``, ``"syntax-error"``, or ``"complete"`. If the value is
+        One of ``"incomplete"``, ``"syntax-error"``, or ``"complete"``. If the value is
         ``"incomplete"`` then the future has already been resolved with result equal to
         ``None``. If the value is ``"syntax-error"``, the ``Future`` has already been
         rejected with a ``SyntaxError``. If the value is ``"complete"``, then the input
@@ -168,14 +174,14 @@ class ConsoleFuture(Future):
 
     def __init__(
         self,
-        syntax: Union[
+        syntax_check: Union[
             Literal["incomplete"], Literal["syntax-error"], Literal["complete"]
         ],
     ):
         super().__init__()
         self.syntax_check: Union[
             Literal["incomplete"], Literal["syntax-error"], Literal["complete"]
-        ] = syntax
+        ] = syntax_check
         self.formatted_error: Optional[str] = None
 
 
@@ -328,6 +334,8 @@ class Console:
             code = self._compile(source, filename, "single")
         except (OverflowError, SyntaxError, ValueError) as e:
             # Case 1
+            if e.__traceback__:
+                traceback.clear_frames(e.__traceback__)
             res = ConsoleFuture(SYNTAX_ERROR)
             res.set_exception(e)
             res.formatted_error = self.formatsyntaxerror(e)
@@ -341,6 +349,7 @@ class Console:
         res = ConsoleFuture(COMPLETE)
 
         def done_cb(fut):
+            nonlocal res
             exc = fut.exception()
             if exc:
                 res.formatted_error = self.formattraceback(exc)
@@ -348,6 +357,7 @@ class Console:
                 exc = None
             else:
                 res.set_result(fut.result())
+            res = None  # type: ignore
 
         ensure_future(self.runcode(source, code)).add_done_callback(done_cb)
         return res

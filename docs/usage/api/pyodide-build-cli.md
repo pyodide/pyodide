@@ -1,4 +1,5 @@
 (pyodide-build-cli)=
+
 # pyodide-build CLI
 
 ```{eval-rst}

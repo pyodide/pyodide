@@ -11,15 +11,25 @@ from pyodide import find_imports, eval_code, CodeRunner, should_quiet  # noqa: E
 def test_find_imports():
 
     res = find_imports(
-        dedent(
-            """
-           import numpy as np
-           from scipy import sparse
-           import matplotlib.pyplot as plt
-           """
-        )
+        """
+        import numpy as np
+        from scipy import sparse
+        import matplotlib.pyplot as plt
+        """
     )
     assert set(res) == {"numpy", "scipy", "matplotlib"}
+
+    # If there is a syntax error in the code, find_imports should return empty
+    # list.
+    res = find_imports(
+        """
+        import numpy as np
+        from scipy import sparse
+        import matplotlib.pyplot as plt
+        for x in [1,2,3]
+        """
+    )
+    assert res == []
 
 
 def test_code_runner():
@@ -231,22 +241,21 @@ def test_hiwire_is_promise(selenium):
 def test_keyboard_interrupt(selenium):
     x = selenium.run_js(
         """
-        x = new Int8Array(1)
-        pyodide._module.setInterruptBuffer(x)
+        let x = new Int8Array(1);
+        pyodide.setInterruptBuffer(x);
         self.triggerKeyboardInterrupt = function(){
             x[0] = 2;
         }
         try {
             pyodide.runPython(`
                 from js import triggerKeyboardInterrupt
-                x = 0
-                while True:
-                    x += 1
+                for x in range(100000):
                     if x == 2000:
                         triggerKeyboardInterrupt()
-            `)
+            `);
         } catch(e){}
-        return pyodide.runPython('x')
+        pyodide.setInterruptBuffer(undefined);
+        return pyodide.globals.get('x');
         """
     )
     assert 2000 < x < 2500
@@ -572,3 +581,108 @@ def test_reentrant_error(selenium):
         """
     )
     assert caught
+
+
+def test_restore_error(selenium):
+    # See PR #1816.
+    selenium.run_js(
+        """
+        self.f = function(){
+            pyodide.runPython(`
+                err = Exception('hi')
+                raise err
+            `);
+        }
+        pyodide.runPython(`
+            from js import f
+            import sys
+            try:
+                f()
+            except Exception as e:
+                assert err == e
+                assert e == sys.last_value
+            finally:
+                del err
+            assert sys.getrefcount(sys.last_value) == 2
+        `);
+        """
+    )
+
+
+@pytest.mark.skip_refcount_check
+@pytest.mark.skip_pyproxy_check
+def test_custom_stdin_stdout(selenium_standalone_noload):
+    selenium = selenium_standalone_noload
+    strings = [
+        "hello world",
+        "hello world\n",
+        "This has a \x00 null byte in the middle...",
+        "several\nlines\noftext",
+        "pyodidé",
+        "碘化物",
+        "🐍",
+    ]
+    selenium.run_js(
+        """
+        function* stdinStrings(){
+            for(let x of %s){
+                yield x;
+            }
+        }
+        let stdinStringsGen = stdinStrings();
+        function stdin(){
+            return stdinStringsGen.next().value;
+        }
+        self.stdin = stdin;
+        """
+        % strings
+    )
+    selenium.run_js(
+        """
+        self.stdoutStrings = [];
+        self.stderrStrings = [];
+        function stdout(s){
+            stdoutStrings.push(s);
+        }
+        function stderr(s){
+            stderrStrings.push(s);
+        }
+        let pyodide = await loadPyodide({
+            indexURL : './',
+            fullStdLib: false,
+            jsglobals : self,
+            stdin,
+            stdout,
+            stderr,
+        });
+        self.pyodide = pyodide;
+        globalThis.pyodide = pyodide;
+        """
+    )
+    outstrings = sum([s.removesuffix("\n").split("\n") for s in strings], [])
+    print(outstrings)
+    assert (
+        selenium.run_js(
+            """
+        return pyodide.runPython(`
+            [input() for x in range(%s)]
+            # ... test more stuff
+        `).toJs();
+        """
+            % len(outstrings)
+        )
+        == outstrings
+    )
+
+    [stdoutstrings, stderrstrings] = selenium.run_js(
+        """
+        pyodide.runPython(`
+            import sys
+            print("something to stdout")
+            print("something to stderr",file=sys.stderr)
+        `);
+        return [self.stdoutStrings, self.stderrStrings];
+        """
+    )
+    assert stdoutstrings == ["Python initialization complete", "something to stdout"]
+    assert stderrstrings == ["something to stderr"]
