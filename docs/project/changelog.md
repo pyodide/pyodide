@@ -19,6 +19,10 @@ substitutions:
   `PYODIDE_PACKAGES='*'` In addition, `make minimal` was removed, since it is
   now equivalent to `make` without extra arguments. {pr}`1801`
 
+- Changes to environment variables in the build script are now seen in the
+  compile and post build scripts.
+  {pr}`1706`
+
 ### Uncategorized
 
 ## Version 0.18.1 (unreleased)
@@ -58,8 +62,16 @@ substitutions:
 - {{Fix}} Conversion of very large strings from Javascript to Python works
   again. {pr}`1806`
 
+<<<<<<< HEAD
+
 - {{Fix}} Fixed a use after free bug in the error handling code.
   {pr}`1816`
+
+||||||| merged common ancestors
+
+=======
+
+> > > > > > > main
 
 ### Packages
 
