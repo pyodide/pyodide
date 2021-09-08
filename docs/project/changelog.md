@@ -62,16 +62,8 @@ substitutions:
 - {{Fix}} Conversion of very large strings from Javascript to Python works
   again. {pr}`1806`
 
-<<<<<<< HEAD
-
 - {{Fix}} Fixed a use after free bug in the error handling code.
   {pr}`1816`
-
-||||||| merged common ancestors
-
-=======
-
-> > > > > > > main
 
 ### Packages
 
