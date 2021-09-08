@@ -274,6 +274,10 @@ def test_nonpersistent_redirection(safe_sys_redirections):
 
         assert await get_result("1+1") == 2
 
+        assert await get_result("sys.stdout.isatty()")
+        assert await get_result("sys.stdin.isatty()")
+        assert await get_result("sys.stderr.isatty()")
+
     asyncio.get_event_loop().run_until_complete(test())
 
 
