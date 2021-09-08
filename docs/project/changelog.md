@@ -19,6 +19,8 @@ substitutions:
   `PYODIDE_PACKAGES='*'` In addition, `make minimal` was removed, since it is
   now equivalent to `make` without extra arguments. {pr}`1801`
 
+### Uncategorized
+
 ## Version 0.18.1 (unreleased)
 
 ### Console
@@ -28,38 +30,40 @@ substitutions:
   console.
   {pr}`1790`
 
-- {{Fix}}  Fix the repr of Python objects (including lists and dicts) in console {pr}`1780` 
+- {{Fix}} Fix the repr of Python objects (including lists and dicts) in console {pr}`1780`
 
 - {{Fix}} The "long output truncated" message now appears on a separate line as intended.
   {pr}`1814`
+
+- {{Fix}} The streams that are used to redirect stdin and stdout in the console now define
+  `isatty` to return `True`. This fixes pytest.
+  {pr}`1822`
 
 ### Python package
 
 - {{Fix}} Avoid circular references when runsource raises SyntaxError
   {pr}`1758`
 
+- {{Enhancement}} If `find_imports` is used on code that contains a syntax
+  error, it will return an empty list instead of raising a `SyntaxError`.
+  {pr}`1819`
+
+### Javascript package
+
+- {{Fix}} The {any}`pyodide.setInterruptBuffer` command is now publicly exposed
+  again, as it was in v0.17.0. {pr}`1797`
+
 ### Python / JavaScript type conversions
 
 - {{Fix}} Conversion of very large strings from Javascript to Python works
   again. {pr}`1806`
 
+- {{Fix}} Fixed a use after free bug in the error handling code.
+  {pr}`1816`
 
 ### Packages
 
 - {{Fix}} pillow now correctly encodes/decodes JPEG image format. {pr}`1818`
-
-### Uncategorized
-
-- {{Fix}} The `setInterruptBuffer` command is now publicly exposed again, as
-  it was before.
-  {pr}`1797`
-
-- {{Fix}} Fixed a use after free bug in the error handling code.
-  {pr}`1816`
-
-- {{Enhancement}} If `find_imports` is used on code that contains a syntax
-  error, it will return an empty list instead of raising a `SyntaxError`.
-  {pr}`1819`
 
 ## Version 0.18.0
 
