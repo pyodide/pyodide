@@ -60,8 +60,8 @@ class _WriteStream:
     def flush(self):
         pass
 
-    def isatty(self):
-        True
+    def isatty(self) -> bool:
+        return True
 
 
 class _ReadStream:
@@ -77,8 +77,8 @@ class _ReadStream:
     def flush(self):
         pass
 
-    def isatty(self):
-        True
+    def isatty(self) -> bool:
+        return True
 
 
 class _Compile(Compile):
