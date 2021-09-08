@@ -6,19 +6,60 @@ Builds a Pyodide package.
 
 import argparse
 import cgi
+from datetime import datetime
 import hashlib
+import json
 import os
 from pathlib import Path
 import shutil
 import subprocess
 import sys
-from urllib import request
-from datetime import datetime
 from typing import Any, Dict
+from urllib import request
 
 
 from . import common
 from .io import parse_package_config
+
+
+class BashRunnerWithSharedEnvironment:
+    """Run multiple bash scripts with persisent environment.
+
+    Environment is stored to "env" member between runs. This can be updated
+    directly to adjust the environment, or read to get variables.
+    """
+
+    def __init__(self, env=None):
+        if env is None:
+            env = dict(os.environ)
+        self.env: Dict[str, str] = env
+        self._fd_read, self._fd_write = os.pipe()
+        self._reader = os.fdopen(self._fd_read, "r")
+
+    def run(self, cmd, **opts):
+        """Run a bash script. Any keyword arguments are passed on to subprocess.run."""
+        write_env_pycode = ";".join(
+            [
+                "import os",
+                "import json",
+                f'os.write({self._fd_write}, json.dumps(dict(os.environ)).encode() + b"\\n")',
+            ]
+        )
+        write_env_shell_cmd = f"{sys.executable} -c '{write_env_pycode}'"
+        cmd += "\n" + write_env_shell_cmd
+        result = subprocess.run(
+            ["bash", "-ce", cmd], pass_fds=[self._fd_write], env=self.env, **opts
+        )
+        self.env = json.loads(self._reader.readline())
+        return result
+
+    def close(self):
+        """Free the file descriptors."""
+        if self._fd_read:
+            os.close(self._fd_read)
+            os.close(self._fd_write)
+            self._fd_read = None
+            self._fd_write = None
 
 
 def check_checksum(path: Path, pkg: Dict[str, Any]):
@@ -133,15 +174,14 @@ def patch(path: Path, srcpath: Path, pkg: Dict[str, Any], args):
         fd.write(b"\n")
 
 
-def compile(path: Path, srcpath: Path, pkg: Dict[str, Any], args):
+def compile(path: Path, srcpath: Path, pkg: Dict[str, Any], args, bash_runner):
     if (srcpath / ".built").is_file():
         return
 
     orig_dir = Path.cwd()
     os.chdir(srcpath)
-    env = dict(os.environ)
     if pkg.get("build", {}).get("skip_host", True):
-        env["SKIP_HOST"] = ""
+        bash_runner.env["SKIP_HOST"] = ""
 
     try:
         subprocess.run(
@@ -163,8 +203,8 @@ def compile(path: Path, srcpath: Path, pkg: Dict[str, Any], args):
                 "--replace-libs",
                 ";".join(pkg.get("build", {}).get("replace-libs", [])),
             ],
-            env=env,
             check=True,
+            env=bash_runner.env,
         )
     finally:
         os.chdir(orig_dir)
@@ -182,8 +222,10 @@ def compile(path: Path, srcpath: Path, pkg: Dict[str, Any], args):
         )
         site_packages_dir = srcpath / "install" / "lib" / pyfolder / "site-packages"
         pkgdir = path.parent.resolve()
-        env = {"SITEPACKAGES": str(site_packages_dir), "PKGDIR": str(pkgdir)}
-        subprocess.run(["bash", "-ce", post], env=env, check=True)
+        bash_runner.env.update(
+            {"SITEPACKAGES": str(site_packages_dir), "PKGDIR": str(pkgdir)}
+        )
+        bash_runner.run(post, check=True)
 
     with open(srcpath / ".built", "wb") as fd:
         fd.write(b"\n")
@@ -215,7 +257,7 @@ def package_files(buildpath: Path, srcpath: Path, pkg: Dict[str, Any], args):
         fd.write(b"\n")
 
 
-def run_script(buildpath: Path, srcpath: Path, pkg: Dict[str, Any]):
+def run_script(buildpath: Path, srcpath: Path, pkg: Dict[str, Any], bash_runner):
     if pkg.get("build", {}).get("library"):
         # in libraries this  writes the packaged flag
         # We don't really do packaging, but needs_rebuild checks .packaged to
@@ -226,7 +268,7 @@ def run_script(buildpath: Path, srcpath: Path, pkg: Dict[str, Any]):
     orig_path = Path.cwd()
     os.chdir(srcpath)
     try:
-        subprocess.run(["bash", "-ce", pkg["build"]["script"]], check=True)
+        bash_runner.run(pkg["build"]["script"], check=True)
     finally:
         os.chdir(orig_path)
 
@@ -269,6 +311,7 @@ def build_package(path: Path, args):
     orig_path = Path.cwd()
     os.chdir(dirpath)
     buildpath = dirpath / "build"
+    bash_runner = BashRunnerWithSharedEnvironment()
     try:
         if not needs_rebuild(pkg, path, buildpath):
             return
@@ -279,15 +322,16 @@ def build_package(path: Path, args):
         srcpath = download_and_extract(buildpath, packagedir, pkg, args)
         patch(path, srcpath, pkg, args)
         if pkg.get("build", {}).get("script"):
-            run_script(buildpath, srcpath, pkg)
+            run_script(buildpath, srcpath, pkg, bash_runner)
         if not pkg.get("build", {}).get("library", False):
             # shared libraries get built by the script and put into install
             # subfolder, then packaged into a pyodide module
             # i.e. they need package running, but not compile
             if not pkg.get("build", {}).get("sharedlibrary"):
-                compile(path, srcpath, pkg, args)
+                compile(path, srcpath, pkg, args, bash_runner)
             package_files(buildpath, srcpath, pkg, args)
     finally:
+        bash_runner.close()
         os.chdir(orig_path)
         t1 = datetime.now()
         print(
@@ -318,7 +362,7 @@ def make_parser(parser: argparse.ArgumentParser):
         type=str,
         nargs="?",
         default=common.get_make_flag("SIDE_MODULE_CXXFLAGS"),
-        help="Extra C++ specifc compiling flags",
+        help="Extra C++ specific compiling flags",
     )
     parser.add_argument(
         "--ldflags",
