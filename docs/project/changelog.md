@@ -19,6 +19,10 @@ substitutions:
   `PYODIDE_PACKAGES='*'` In addition, `make minimal` was removed, since it is
   now equivalent to `make` without extra arguments. {pr}`1801`
 
+- Changes to environment variables in the build script are now seen in the
+  compile and post build scripts.
+  {pr}`1706`
+
 ## Version 0.18.1 (unreleased)
 
 ### Console
@@ -28,7 +32,7 @@ substitutions:
   console.
   {pr}`1790`
 
-- {{Fix}}  Fix the repr of Python objects (including lists and dicts) in console {pr}`1780` 
+- {{Fix}} Fix the repr of Python objects (including lists and dicts) in console {pr}`1780`
 
 - {{Fix}} The "long output truncated" message now appears on a separate line as intended.
   {pr}`1814`
@@ -42,7 +46,6 @@ substitutions:
 
 - {{Fix}} Conversion of very large strings from Javascript to Python works
   again. {pr}`1806`
-
 
 ### Packages
 
