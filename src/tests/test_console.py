@@ -236,6 +236,9 @@ def test_nonpersistent_redirection(safe_sys_redirections):
     my_stdout = ""
     my_stderr = ""
 
+    def stdin_callback():
+        pass
+
     def stdout_callback(string):
         nonlocal my_stdout
         my_stdout += string
@@ -250,6 +253,7 @@ def test_nonpersistent_redirection(safe_sys_redirections):
         return await res
 
     shell = Console(
+        stdin_callback=stdin_callback,
         stdout_callback=stdout_callback,
         stderr_callback=stderr_callback,
         persistent_stream_redirection=False,
@@ -273,6 +277,10 @@ def test_nonpersistent_redirection(safe_sys_redirections):
         assert my_stderr == "foobar\n"
 
         assert await get_result("1+1") == 2
+
+        assert await get_result("sys.stdin.isatty()")
+        assert await get_result("sys.stdout.isatty()")
+        assert await get_result("sys.stderr.isatty()")
 
     asyncio.get_event_loop().run_until_complete(test())
 
