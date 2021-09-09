@@ -70,13 +70,6 @@ index 96d2ec0c3..0001624ec 100644
    },
    __sys_pipe2__nothrow: true,
    __sys_pipe2__proxy: false,
-diff --git a/tests/third_party/posixtestsuite b/tests/third_party/posixtestsuite
-index 2e3f88374..a5e7ff5f9 160000
---- a/tests/third_party/posixtestsuite
-+++ b/tests/third_party/posixtestsuite
-@@ -1 +1 @@
--Subproject commit 2e3f883749a5344618b02b09dd19a6dc9e4b70a2
-+Subproject commit a5e7ff5f906c9a8f18d70f6472c4055bc311c34d
 -- 
 2.17.1
 
