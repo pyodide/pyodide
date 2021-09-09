@@ -19,8 +19,8 @@ This patch only partially resolves the problems with `dup` (it doesn't fully dup
 
 diff --git a/emsdk/upstream/emscripten/src/library_syscall.js b/emsdk/upstream/emscripten/src/library_syscall.js
 index 96d2ec0c3..0001624ec 100644
---- a/src/library_syscall.js
-+++ b/src/library_syscall.js
+--- a/emsdk/upstream/emscripten/src/library_syscall.js
++++ b/emsdk/upstream/emscripten/src/library_syscall.js
 @@ -137,10 +137,10 @@ var SyscallsLibrary = {
        }
        return 0;
