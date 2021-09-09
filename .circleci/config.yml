@@ -48,9 +48,15 @@ jobs:
           name: build emsdk
           no_output_timeout: 1200
           command: |
+            ls /root/.ccache/2/2/bd0877ljbilvsdtsv4034pld1fn8sdmM
             ccache -z
             make -C emsdk
             ccache -s
+
+      - run:
+          name: debug
+          command: |
+            cat ~/repo/cpython/build/Python-3.9.5/Objects/object.o.ccache-log
 
       - run:
           name: build cpython
