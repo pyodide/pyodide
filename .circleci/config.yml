@@ -43,7 +43,7 @@ jobs:
 
       - restore_cache:
           keys:
-            - -{{ checksum "Makefile.envs" }}-v20210901-
+            - -{{ checksum "Makefile.envs" }}-v20210902-
 
       - run:
           name: build emsdk
@@ -67,8 +67,7 @@ jobs:
       - save_cache:
           paths:
             - ~/.ccache
-            - ~/.emscripten
-          key: -{{ checksum "Makefile.envs" }}-v20210901-
+          key: -{{ checksum "Makefile.envs" }}-v20210902-
 
       - run:
           name: build cpython
