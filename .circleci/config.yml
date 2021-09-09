@@ -9,6 +9,7 @@ defaults: &defaults
       EMCC_CORES: 3
       PYODIDE_JOBS: 3
       CCACHE_DEBUG: 1
+      CCACHE_DEBUGDIR: /root/ccache-debug/
 
 jobs:
   lint:
@@ -42,7 +43,7 @@ jobs:
 
       - restore_cache:
           keys:
-            - -{{ checksum "Makefile.envs" }}-v20210909-
+            - -{{ checksum "Makefile.envs" }}-v20210900-
 
       - run:
           name: build emsdk
@@ -53,9 +54,21 @@ jobs:
             ccache -s
 
       - run:
+          name: debug buld
+          no_output_timeout: 1200
+          command: |
+            ccache -z
+            make -C cpython debug-build
+            ccache -s
+
+      - store_artifacts:
+          path: /root/ccache-debug/
+
+      - run:
           name: build cpython
           no_output_timeout: 1200
           command: |
+            exit 1
             ccache -z
             make -C cpython
             ccache -s
@@ -81,7 +94,7 @@ jobs:
       - save_cache:
           paths:
             - ~/.ccache
-          key: -{{ checksum "Makefile.envs" }}-v20210909-
+          key: -{{ checksum "Makefile.envs" }}-v20210900-
 
       - run:
           name: Clean up workspace
