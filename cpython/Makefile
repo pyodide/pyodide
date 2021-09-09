@@ -161,5 +161,5 @@ $(BUILD)/$(LIB): $(BUILD)/Makefile $(BUILD)/pyconfig.h $(BUILD)/Modules/Setup.lo
 	touch $(BUILD)/$(LIB)
 
 debug-build:
-	cd $(PYODIDE_ROOT)/emsdk/emsdk/upstream/emscripten/ && python embuilder.py build libc
+	cd $(PYODIDE_ROOT)/emsdk/emsdk/upstream/emscripten/ && emcc --clear-cache && python embuilder.py build libc
 	ccache -s
