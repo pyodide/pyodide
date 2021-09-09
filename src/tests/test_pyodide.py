@@ -2,6 +2,7 @@ import pytest
 from pathlib import Path
 import sys
 from textwrap import dedent
+from pyodide_build.testing import run_in_pyodide
 
 sys.path.append(str(Path(__file__).resolve().parents[2] / "src" / "py"))
 
@@ -156,6 +157,27 @@ def test_eval_code_locals():
     with pytest.raises(NameError):
         eval_code("invalidate_caches()", globals, globals)
     eval_code("invalidate_caches()", globals, locals)
+
+
+@run_in_pyodide
+def test_dup_pipe():
+    # See https://github.com/emscripten-core/emscripten/issues/14640
+    import os
+
+    [fdr, fdw] = os.pipe()
+    os.dup(fdr)
+    os.dup(fdw)
+
+
+@run_in_pyodide
+def test_dup_temp_file():
+    # See https://github.com/emscripten-core/emscripten/issues/15012
+    import os
+    from tempfile import TemporaryFile
+
+    tf = TemporaryFile()
+    os.dup(tf.fileno())
+    os.dup(tf.fileno())
 
 
 @pytest.mark.skip_pyproxy_check
