@@ -2,6 +2,7 @@ import pytest
 from pathlib import Path
 import sys
 from textwrap import dedent
+from pyodide_build.testing import run_in_pyodide
 
 sys.path.append(str(Path(__file__).resolve().parents[2] / "src" / "py"))
 
@@ -146,6 +147,41 @@ def test_eval_code_locals():
     with pytest.raises(NameError):
         eval_code("invalidate_caches()", globals, globals)
     eval_code("invalidate_caches()", globals, locals)
+
+
+@run_in_pyodide
+def test_dup_pipe():
+    # See https://github.com/emscripten-core/emscripten/issues/14640
+    import os
+
+    [fdr1, fdw1] = os.pipe()
+    fdr2 = os.dup(fdr1)
+    fdw2 = os.dup2(fdw1, 50)
+    # Closing any of fdr, fdr2, fdw, or fdw2 will currently destroy the pipe.
+    # This bug is fixed upstream:
+    # https://github.com/emscripten-core/emscripten/pull/14685
+    s1 = b"some stuff"
+    s2 = b"other stuff to write"
+    os.write(fdw1, s1)
+    assert os.read(fdr2, 100) == s1
+    os.write(fdw2, s2)
+    assert os.read(fdr1, 100) == s2
+
+
+@run_in_pyodide
+def test_dup_temp_file():
+    # See https://github.com/emscripten-core/emscripten/issues/15012
+    import os
+    from tempfile import TemporaryFile
+
+    tf = TemporaryFile(buffering=0)
+    fd1 = os.dup(tf.fileno())
+    fd2 = os.dup2(tf.fileno(), 50)
+    s = b"hello there!"
+    tf.write(s)
+    # This next assertion actually demonstrates a bug in dup: the correct value
+    # to return should be b"".
+    assert os.read(fd1, 50) == s
 
 
 @pytest.mark.skip_pyproxy_check
