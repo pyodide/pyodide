@@ -164,9 +164,18 @@ def test_dup_pipe():
     # See https://github.com/emscripten-core/emscripten/issues/14640
     import os
 
-    [fdr, fdw] = os.pipe()
-    os.dup(fdr)
-    os.dup(fdw)
+    [fdr1, fdw1] = os.pipe()
+    fdr2 = os.dup(fdr1)
+    fdw2 = os.dup2(fdw1, 50)
+    # Closing any of fdr, fdr2, fdw, or fdw2 will currently destroy the pipe.
+    # This bug is fixed upstream:
+    # https://github.com/emscripten-core/emscripten/pull/14685
+    s1 = b"some stuff"
+    s2 = b"other stuff to write"
+    os.write(fdw1, s1)
+    assert os.read(fdr2, 100) == s1
+    os.write(fdw2, s2)
+    assert os.read(fdr1, 100) == s2
 
 
 @run_in_pyodide
@@ -176,8 +185,13 @@ def test_dup_temp_file():
     from tempfile import TemporaryFile
 
     tf = TemporaryFile()
-    os.dup(tf.fileno())
-    os.dup(tf.fileno())
+    fd1 = os.dup(tf.fileno())
+    fd2 = os.dup2(tf.fileno(), 50)
+    s = b"hello there!"
+    tf.write(s)
+    # This next assertion actually demonstrates a bug in dup: the correct value
+    # to return should be b"".
+    assert os.read(fd1, 10) == s
 
 
 @pytest.mark.skip_pyproxy_check
