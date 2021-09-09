@@ -1,22 +1,50 @@
-From 52c0b163bad96cde2081c734680b9ec485fea908 Mon Sep 17 00:00:00 2001
+From 05458d136277cf801c22f7d8bdac99d6b157209d Mon Sep 17 00:00:00 2001
 From: Hood <hood@mit.edu>
 Date: Wed, 8 Sep 2021 17:49:15 -0700
 Subject: [PATCH] Fix dup
 
 ---
+ src/library_fs.js                | 11 ++++++++++-
  src/library_syscall.js           | 12 ++++++------
  tests/third_party/posixtestsuite |  2 +-
- 2 files changed, 7 insertions(+), 7 deletions(-)
+ 3 files changed, 17 insertions(+), 8 deletions(-)
 
 This should fix two problems with the `dup` system calls:
-1. Pipes cannot be duplicated (https://github.com/emscripten-core/emscripten/issues/14640)
-2. `TemporaryFiles` cannot be duplicated (https://github.com/emscripten-core/emscripten/issues/15012)
+1. `dup` expects that every file descriptor has a corresponding file (so pipes and (https://github.com/emscripten-core/emscripten/issues/14640)
+   files that have been unlinked (https://github.com/emscripten-core/emscripten/issues/15012) cannot be duplicated ).
+2. The dup'd file descriptor does not share flags and position with the original file desciptor.
 
-Both of these issues cause trouble with pytest. There is an upstream pull request that would fix this problem:
+This is a simplification of an upstream pull request that would fix this problem.
 https://github.com/emscripten-core/emscripten/pull/9396/files
+This patch is simpler than the upstream one but leaves NODERAWFS broken.
 
-This patch only partially resolves the problems with `dup` (it doesn't fully duplicate the changes in the emscripten PR) but I think it will be good enough to fix pytest.
 
+diff --git a/emsdk/upstream/emscripten/src/library_fs.js b/emsdk/upstream/emscripten/src/library_fs.js
+index 4ca59469c..85a10ecea 100644
+--- a/emsdk/upstream/emscripten/src/library_fs.js
++++ b/emsdk/upstream/emscripten/src/library_fs.js
+@@ -425,11 +425,20 @@ FS.staticInit();` +
+           },
+           isAppend: {
+             get: function() { return (this.flags & {{{ cDefine('O_APPEND') }}}); }
+-          }
++          },
++          flags: {
++            get: function() { return this.shared.flags; },
++            set: function(value) { this.shared.flags = value; }
++          },
++          position: {
++            get: function() { return this.shared.position; },
++            set: function(value) { this.shared.position = value; }
++          },
+         };
+       }
+       // clone it, so we can return an instance of FSStream
+       var newStream = new FS.FSStream();
++      newStream.shared = {};
+       for (var p in stream) {
+         newStream[p] = stream[p];
+       }
 diff --git a/emsdk/upstream/emscripten/src/library_syscall.js b/emsdk/upstream/emscripten/src/library_syscall.js
 index 96d2ec0c3..0001624ec 100644
 --- a/emsdk/upstream/emscripten/src/library_syscall.js
