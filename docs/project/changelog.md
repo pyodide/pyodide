@@ -69,6 +69,13 @@ substitutions:
 
 - {{Fix}} pillow now correctly encodes/decodes JPEG image format. {pr}`1818`
 
+### Micellaneous
+
+- {{Fix}} Patched emscripten to make the system calls to duplicate file
+  descriptors closer to posix-compliant. In particular, this fixes the use of
+  `dup` on pipes and temporary files, as needed by `pytest`.
+  {pr}`1823`
+
 ## Version 0.18.0
 
 _August 3rd, 2021_
