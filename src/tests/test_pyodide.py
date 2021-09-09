@@ -184,14 +184,14 @@ def test_dup_temp_file():
     import os
     from tempfile import TemporaryFile
 
-    tf = TemporaryFile()
+    tf = TemporaryFile(buffering=0)
     fd1 = os.dup(tf.fileno())
     fd2 = os.dup2(tf.fileno(), 50)
     s = b"hello there!"
     tf.write(s)
     # This next assertion actually demonstrates a bug in dup: the correct value
     # to return should be b"".
-    assert os.read(fd1, 10) == s
+    assert os.read(fd1, 50) == s
 
 
 @pytest.mark.skip_pyproxy_check
