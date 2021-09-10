@@ -159,7 +159,3 @@ $(BUILD)/$(LIB): $(BUILD)/Makefile $(BUILD)/pyconfig.h $(BUILD)/Modules/Setup.lo
 		emmake make CROSS_COMPILE=yes $(LIB) -j $${PYODIDE_JOBS:-3} \
 	)
 	touch $(BUILD)/$(LIB)
-
-debug-build:
-	cd $(PYODIDE_ROOT)/emsdk/emsdk/upstream/emscripten/ && emcc --clear-cache && python embuilder.py build libc
-	ccache -s
