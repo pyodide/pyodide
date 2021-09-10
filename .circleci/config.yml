@@ -115,7 +115,7 @@ jobs:
 
       - restore_cache:
           keys:
-            - -pkg-{{ checksum "Makefile.envs" }}-v20210902-
+            - -pkg-{{ checksum "Makefile.envs" }}-v20210911-
 
       - run:
           name: build packages
@@ -126,11 +126,8 @@ jobs:
             # Set mtime for EM_CONFIG to avoid ccache cache misses
             touch -m -d '1 Jan 2021 12:00' emsdk/emsdk/.emscripten
 
-            export CCACHE_DEBUG=1
-            export CCACHE_DEBUGDIR="/root/ccache-debug/"
-
             ccache -z
-            PYODIDE_PACKAGES='regex' make -C packages
+            PYODIDE_PACKAGES='*' make -C packages
             ccache -s
 
       - run:
@@ -140,16 +137,13 @@ jobs:
       - save_cache:
           paths:
             - /root/.ccache
-          key: -pkg-{{ checksum "Makefile.envs" }}-v20210902-
+          key: -pkg-{{ checksum "Makefile.envs" }}-v20210911-
 
       - persist_to_workspace:
           root: .
           paths:
             - ./packages/.artifacts
             - ./build
-
-      - store_artifacts:
-          path: /root/ccache-debug/
 
       - store_artifacts:
           path: /root/repo/build/

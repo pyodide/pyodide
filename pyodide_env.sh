@@ -8,6 +8,8 @@ ROOT=`cd -- "$(dirname "${BASH_SOURCE[0]}")" >/dev/null 2>&1 ; pwd -P`
 source "$ROOT/emsdk/emsdk/emsdk_env.sh" 2> /dev/null || true
 export PATH="$ROOT/node_modules/.bin/:$ROOT/emsdk/emsdk/ccache/git-emscripten_64bit/bin:$PATH:$ROOT/packages/.artifacts/bin/"
 export EM_DIR=$(dirname $(which emcc.py || echo "."))
-# This variable is set by emsdk activate, and its mtime is checked by ccache.
-# We set it to avoid ccache cache misses.
+
+# Following two variables are set by emsdk active otherwise
+export _EMCC_CCACHE=1
+# mtime of this file is checked by ccache, we set it to avoid cache misses.
 export EM_CONFIG="$ROOT/emsdk/emsdk/.emscripten"
