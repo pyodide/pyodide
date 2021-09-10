@@ -112,7 +112,7 @@ jobs:
 
       - restore_cache:
           keys:
-            - -pkg-{{ checksum "Makefile.envs" }}-v20210900-
+            - -pkg-{{ checksum "Makefile.envs" }}-v20210901-
 
       - run:
           name: build packages
@@ -137,7 +137,7 @@ jobs:
       - save_cache:
           paths:
             - ~/.ccache
-          key: -pkg-{{ checksum "Makefile.envs" }}-v20210900-
+          key: -pkg-{{ checksum "Makefile.envs" }}-v20210901-
 
       - persist_to_workspace:
           root: .
