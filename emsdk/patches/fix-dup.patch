@@ -1,13 +1,12 @@
-From 05458d136277cf801c22f7d8bdac99d6b157209d Mon Sep 17 00:00:00 2001
+From d9181272105915622a3eb8940e08aaf6e00f385c Mon Sep 17 00:00:00 2001
 From: Hood <hood@mit.edu>
 Date: Wed, 8 Sep 2021 17:49:15 -0700
 Subject: [PATCH] Fix dup
 
 ---
- src/library_fs.js                | 11 ++++++++++-
- src/library_syscall.js           | 12 ++++++------
- tests/third_party/posixtestsuite |  2 +-
- 3 files changed, 17 insertions(+), 8 deletions(-)
+ src/library_fs.js      |  7 ++++++-
+ src/library_syscall.js | 12 ++++++------
+ 2 files changed, 12 insertions(+), 7 deletions(-)
 
 This should fix two problems with the `dup` system calls:
 1. `dup` expects that every file descriptor has a corresponding file (so pipes and (https://github.com/emscripten-core/emscripten/issues/14640)
@@ -20,23 +19,19 @@ This patch is simpler than the upstream one but leaves NODERAWFS broken.
 
 
 diff --git a/emsdk/upstream/emscripten/src/library_fs.js b/emsdk/upstream/emscripten/src/library_fs.js
-index 4ca59469c..85a10ecea 100644
+index 4ca59469c..519fab972 100644
 --- a/emsdk/upstream/emscripten/src/library_fs.js
 +++ b/emsdk/upstream/emscripten/src/library_fs.js
-@@ -425,11 +425,20 @@ FS.staticInit();` +
+@@ -425,11 +425,16 @@ FS.staticInit();` +
            },
            isAppend: {
              get: function() { return (this.flags & {{{ cDefine('O_APPEND') }}}); }
 -          }
 +          },
-+          flags: {
-+            get: function() { return this.shared.flags; },
-+            set: function(value) { this.shared.flags = value; }
-+          },
-+          position: {
-+            get: function() { return this.shared.position; },
-+            set: function(value) { this.shared.position = value; }
-+          },
++          get flags() { return this.shared.flags; },
++          set flags(value) { this.shared.flags = value; },
++          get position() { return this.shared.position; },
++          set position(value) { this.shared.position = value; },
          };
        }
        // clone it, so we can return an instance of FSStream
