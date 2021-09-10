@@ -43,20 +43,27 @@ jobs:
 
       - restore_cache:
           keys:
-            - -{{ checksum "Makefile.envs" }}-v20210902-
+            - -{{ checksum "Makefile.envs" }}-v20210903-
 
       - run:
           name: build emsdk
           no_output_timeout: 1200
           command: |
+            # This is necessairy to use the ccache from emsdk
+            source pyodide_env.sh
+
             ccache -z
             make -C emsdk
             ccache -s
+            # Set mtime for EM_CONFIG to avoid ccache cache misses
+            touch -m -d '1 Jan 2021 12:00' emsdk/emsdk/.emscripten
 
       - run:
           name: debug buld
           no_output_timeout: 1200
           command: |
+            source pyodide_env.sh
+
             ccache -z
             make -C cpython debug-build
             ccache -s
@@ -67,13 +74,16 @@ jobs:
       - save_cache:
           paths:
             - ~/.ccache
-          key: -{{ checksum "Makefile.envs" }}-v20210902-
+          key: -{{ checksum "Makefile.envs" }}-v20210903-
 
       - run:
           name: build cpython
           no_output_timeout: 1200
           command: |
             exit 1
+            # This is necessairy to use the ccache from emsdk
+            source pyodide_env.sh
+
             ccache -z
             make -C cpython
             ccache -s
@@ -82,6 +92,9 @@ jobs:
           name: build pyodide core
           no_output_timeout: 1200
           command: |
+            # This is necessairy to use the ccache from emsdk
+            source pyodide_env.sh
+
             ccache -z
             # The following packages are currently used in the main pyodide test suite
             PYODIDE_PACKAGES="micropip,pyparsing,pytz,packaging,Jinja2" make
@@ -121,6 +134,11 @@ jobs:
           name: build packages
           no_output_timeout: 1800
           command: |
+            source pyodide_env.sh
+
+            # Set mtime for EM_CONFIG to avoid ccache cache misses
+            touch -m -d '1 Jan 2021 12:00' emsdk/emsdk/.emscripten
+
             ccache -z
             make -C packages
             ccache -s
