@@ -78,7 +78,6 @@ substitutions:
   descriptors closer to posix-compliant. In particular, this fixes the use of
   `dup` on pipes and temporary files, as needed by `pytest`.
   {pr}`1823`
->>>>>>> upstream/main
 
 ## Version 0.18.0
 
