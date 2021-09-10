@@ -8,6 +8,9 @@ defaults: &defaults
     - EMSDK_NUM_CORES: 3
       EMCC_CORES: 3
       PYODIDE_JOBS: 3
+      # Make sure the ccache dir is consistent between core and package builds
+      # (it's not the case otherwise)
+      CCACHE_DIR: /root/.ccache/
 
 jobs:
   lint:
@@ -85,7 +88,7 @@ jobs:
 
       - save_cache:
           paths:
-            - ~/.ccache
+            - /root/.ccache
           key: -core-{{ checksum "Makefile.envs" }}-v20210910-
 
       - run:
@@ -136,7 +139,7 @@ jobs:
 
       - save_cache:
           paths:
-            - ~/.ccache
+            - /root/.ccache
           key: -pkg-{{ checksum "Makefile.envs" }}-v20210901-
 
       - persist_to_workspace:
