@@ -96,8 +96,7 @@ jobs:
             source pyodide_env.sh
 
             ccache -z
-            # The following packages are currently used in the main pyodide test suite
-            PYODIDE_PACKAGES="micropip,pyparsing,pytz,packaging,Jinja2" make
+            PYODIDE_PACKAGES="core" make
             ccache -s
 
       - run:
@@ -140,7 +139,7 @@ jobs:
             touch -m -d '1 Jan 2021 12:00' emsdk/emsdk/.emscripten
 
             ccache -z
-            make -C packages
+            PYODIDE_PACKAGES='*' make -C packages
             ccache -s
 
       - run:

@@ -2,7 +2,7 @@ from pyodide_build.testing import run_in_pyodide
 
 
 @run_in_pyodide(packages=["cffi"])
-def test_blah():
+def test_cffi_asprintf():
     from cffi import FFI
 
     ffi = FFI()

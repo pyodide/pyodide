@@ -94,10 +94,19 @@ Dependencies of the listed packages will be built automatically as well. The
 package names must match the folder names in `packages/` exactly; in particular
 they are case sensitive.
 
-To build a minimal version of Pyodide, set `PYODIDE_PACKAGES="micropip"`. The
-packages micropip and distutils are always automatically included (but an empty
-`PYODIDE_PACKAGES` is interpreted as unset). As a shorthand for this, one can
-say `make minimal`.
+If `PYODIDE_PACKAGES` is not set, a minimal set of packages necessairy to run
+the core test suite is installed, including "micropip", "pyparsing", "pytz",
+"packaging", "Jinja2". This is equivalent to setting `PYODIDE_PACKAGES='core'`
+meta-package. Other supported meta-packages are,
+
+- "min-scipy-stack": includes the "core" meta-package as well as some of the
+  core packages from the scientific python stack and their dependencies:
+  "numpy", "scipy", "pandas", "matplotlib", "scikit-learn", "joblib",
+  "pytest". This option is non exaustive and is mainly intended to make build
+  faster while testing a diverse set of scientific packages.
+- "\*" builds all packages
+
+micropip and distutils are always automatically included.
 
 ## Environment variables
 

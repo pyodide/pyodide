@@ -2,6 +2,7 @@ import pytest
 from pathlib import Path
 import sys
 from textwrap import dedent
+from pyodide_build.testing import run_in_pyodide
 
 sys.path.append(str(Path(__file__).resolve().parents[2] / "src" / "py"))
 
@@ -11,15 +12,25 @@ from pyodide import find_imports, eval_code, CodeRunner, should_quiet  # noqa: E
 def test_find_imports():
 
     res = find_imports(
-        dedent(
-            """
-           import numpy as np
-           from scipy import sparse
-           import matplotlib.pyplot as plt
-           """
-        )
+        """
+        import numpy as np
+        from scipy import sparse
+        import matplotlib.pyplot as plt
+        """
     )
     assert set(res) == {"numpy", "scipy", "matplotlib"}
+
+    # If there is a syntax error in the code, find_imports should return empty
+    # list.
+    res = find_imports(
+        """
+        import numpy as np
+        from scipy import sparse
+        import matplotlib.pyplot as plt
+        for x in [1,2,3]
+        """
+    )
+    assert res == []
 
 
 def test_code_runner():
@@ -148,6 +159,41 @@ def test_eval_code_locals():
     eval_code("invalidate_caches()", globals, locals)
 
 
+@run_in_pyodide
+def test_dup_pipe():
+    # See https://github.com/emscripten-core/emscripten/issues/14640
+    import os
+
+    [fdr1, fdw1] = os.pipe()
+    fdr2 = os.dup(fdr1)
+    fdw2 = os.dup2(fdw1, 50)
+    # Closing any of fdr, fdr2, fdw, or fdw2 will currently destroy the pipe.
+    # This bug is fixed upstream:
+    # https://github.com/emscripten-core/emscripten/pull/14685
+    s1 = b"some stuff"
+    s2 = b"other stuff to write"
+    os.write(fdw1, s1)
+    assert os.read(fdr2, 100) == s1
+    os.write(fdw2, s2)
+    assert os.read(fdr1, 100) == s2
+
+
+@run_in_pyodide
+def test_dup_temp_file():
+    # See https://github.com/emscripten-core/emscripten/issues/15012
+    import os
+    from tempfile import TemporaryFile
+
+    tf = TemporaryFile(buffering=0)
+    fd1 = os.dup(tf.fileno())
+    fd2 = os.dup2(tf.fileno(), 50)
+    s = b"hello there!"
+    tf.write(s)
+    # This next assertion actually demonstrates a bug in dup: the correct value
+    # to return should be b"".
+    assert os.read(fd1, 50) == s
+
+
 @pytest.mark.skip_pyproxy_check
 def test_monkeypatch_eval_code(selenium):
     try:
@@ -231,22 +277,21 @@ def test_hiwire_is_promise(selenium):
 def test_keyboard_interrupt(selenium):
     x = selenium.run_js(
         """
-        x = new Int8Array(1)
-        pyodide._module.setInterruptBuffer(x)
+        let x = new Int8Array(1);
+        pyodide.setInterruptBuffer(x);
         self.triggerKeyboardInterrupt = function(){
             x[0] = 2;
         }
         try {
             pyodide.runPython(`
                 from js import triggerKeyboardInterrupt
-                x = 0
-                while True:
-                    x += 1
+                for x in range(100000):
                     if x == 2000:
                         triggerKeyboardInterrupt()
-            `)
+            `);
         } catch(e){}
-        return pyodide.runPython('x')
+        pyodide.setInterruptBuffer(undefined);
+        return pyodide.globals.get('x');
         """
     )
     assert 2000 < x < 2500
@@ -572,6 +617,32 @@ def test_reentrant_error(selenium):
         """
     )
     assert caught
+
+
+def test_restore_error(selenium):
+    # See PR #1816.
+    selenium.run_js(
+        """
+        self.f = function(){
+            pyodide.runPython(`
+                err = Exception('hi')
+                raise err
+            `);
+        }
+        pyodide.runPython(`
+            from js import f
+            import sys
+            try:
+                f()
+            except Exception as e:
+                assert err == e
+                assert e == sys.last_value
+            finally:
+                del err
+            assert sys.getrefcount(sys.last_value) == 2
+        `);
+        """
+    )
 
 
 @pytest.mark.skip_refcount_check

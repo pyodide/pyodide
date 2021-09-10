@@ -65,6 +65,7 @@ export MAIN_MODULE_LDFLAGS= $(LDFLAGS_BASE) -s MAIN_MODULE=1 \
     --use-preload-plugins \
 	-s USE_FREETYPE=1 \
 	-s USE_LIBPNG=1 \
+	-s USE_LIBJPEG=1 \
 	--memory-init-file 0 \
 
 export SIDE_MODULE_CXXFLAGS = $(CXXFLAGS_BASE)

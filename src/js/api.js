@@ -277,9 +277,13 @@ export function toPy(obj, { depth = -1 } = {}) {
   let result = 0;
   try {
     obj_id = Module.hiwire.new_value(obj);
-    py_result = Module.__js2python_convert(obj_id, new Map(), depth);
-    if (py_result === 0) {
-      Module._pythonexc2js();
+    try {
+      py_result = Module.js2python_convert(obj_id, new Map(), depth);
+    } catch (e) {
+      if (e instanceof Module._PropagatePythonError) {
+        Module._pythonexc2js();
+      }
+      throw e;
     }
     if (Module._JsProxy_Check(py_result)) {
       // Oops, just created a JsProxy. Return the original object.
@@ -310,9 +314,10 @@ Module.restoreState = (state) => Module.pyodide_py._state.restore_state(state);
 /**
  * @param {TypedArray} interrupt_buffer
  */
-function setInterruptBuffer(interrupt_buffer) {}
-setInterruptBuffer = Module.setInterruptBuffer;
-export { setInterruptBuffer };
+export function setInterruptBuffer(interrupt_buffer) {
+  Module.interrupt_buffer = interrupt_buffer;
+  Module._set_pyodide_callback(!!interrupt_buffer);
+}
 
 export function makePublicAPI() {
   /**
@@ -333,7 +338,6 @@ export function makePublicAPI() {
    * @type {FS} The Emscripten File System API.
    */
   const FS = Module.FS;
-
   let namespace = {
     globals,
     FS,

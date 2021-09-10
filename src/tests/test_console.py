@@ -236,6 +236,9 @@ def test_nonpersistent_redirection(safe_sys_redirections):
     my_stdout = ""
     my_stderr = ""
 
+    def stdin_callback():
+        pass
+
     def stdout_callback(string):
         nonlocal my_stdout
         my_stdout += string
@@ -250,6 +253,7 @@ def test_nonpersistent_redirection(safe_sys_redirections):
         return await res
 
     shell = Console(
+        stdin_callback=stdin_callback,
         stdout_callback=stdout_callback,
         stderr_callback=stderr_callback,
         persistent_stream_redirection=False,
@@ -273,6 +277,10 @@ def test_nonpersistent_redirection(safe_sys_redirections):
         assert my_stderr == "foobar\n"
 
         assert await get_result("1+1") == 2
+
+        assert await get_result("sys.stdin.isatty()")
+        assert await get_result("sys.stdout.isatty()")
+        assert await get_result("sys.stderr.isatty()")
 
     asyncio.get_event_loop().run_until_complete(test())
 
@@ -366,7 +374,7 @@ def test_console_html(console_html_fixture):
 
     term_exec(
         """
-        async def f(): 
+        async def f():
             return 7
         """
     )
@@ -402,6 +410,10 @@ def test_console_html(console_html_fixture):
             """
         ).strip()
     )
+
+    long_output = exec_and_get_result("list(range(1000))").split("\n")
+    assert len(long_output) == 4
+    assert long_output[2] == "[[;orange;]<long output truncated>]"
 
     term_exec("from _pyodide_core import trigger_fatal_error; trigger_fatal_error()")
     time.sleep(0.3)

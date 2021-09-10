@@ -47,6 +47,25 @@ extern const JsRef Js_null;
 // For when the return value would be Option<JsRef>
 extern const JsRef Js_novalue;
 
+// A mechanism for handling static Javascript strings from C
+// This is copied from the Python mechanism for handling static Python strings
+// from C See the Python definition here:
+// https://github.com/python/cpython/blob/24da544014f78e6f1440d5ce5c2d14794a020340/Include/cpython/object.h#L37
+
+typedef struct Js_Identifier
+{
+  const char* string;
+  JsRef object;
+} Js_Identifier;
+
+#define Js_static_string_init(value)                                           \
+  {                                                                            \
+    .string = value, .object = NULL                                            \
+  }
+#define Js_static_string(varname, value)                                       \
+  static Js_Identifier varname = Js_static_string_init(value)
+#define Js_IDENTIFIER(varname) Js_static_string(JsId_##varname, #varname)
+
 #define hiwire_CLEAR(x)                                                        \
   do {                                                                         \
     hiwire_decref(x);                                                          \
@@ -150,7 +169,13 @@ hiwire_string_ascii(const char* ptr);
  * Returns: "New" reference
  */
 JsRef
-hiwire_bool(bool boolean);
+hiwire_from_bool(bool boolean);
+
+/**
+ * Convert value to C boolean
+ */
+bool
+hiwire_to_bool(JsRef value);
 
 bool
 JsArray_Check(JsRef idobj);
@@ -230,13 +255,19 @@ JsRef
 JsObject_Dir(JsRef idobj);
 
 /**
- * Call a function
+ * Call a js function
  *
  * idargs is a hiwire Array containing the arguments.
  *
  */
 JsRef
 hiwire_call(JsRef idobj, JsRef idargs);
+
+/**
+ * Call a js function with one argument
+ */
+JsRef
+hiwire_call_OneArg(JsRef idobj, JsRef idarg);
 
 /**
  * Call a function
@@ -251,28 +282,61 @@ hiwire_call_va(JsRef idobj, ...);
 JsRef
 hiwire_call_bound(JsRef idfunc, JsRef idthis, JsRef idargs);
 
-/**
- * Call a member function.
- *
- * ptrname is the member name, as a null-terminated UTF8.
- *
- * idargs is a hiwire Array containing the arguments.
- *
- */
-JsRef
-hiwire_call_member(JsRef idobj, const char* ptrname, JsRef idargs);
+int
+hiwire_HasMethod(JsRef obj, JsRef name);
+
+int
+hiwire_HasMethodId(JsRef obj, Js_Identifier* name);
 
 /**
- * Call a member function.
- *
- * ptrname is the member name, as a null-terminated UTF8.
- *
- * Arguments are specified as a NULL-terminated variable arguments list of
- * JsRefs.
+ * name is the method name, as null-terminated UTF8.
+ * args is an Array containing the arguments.
  *
  */
 JsRef
-hiwire_call_member_va(JsRef idobj, const char* ptrname, ...);
+hiwire_CallMethodString(JsRef obj, const char* name, JsRef args);
+
+/**
+ * name is the method name, as null-terminated UTF8.
+ * arg is the argument
+ */
+JsRef
+hiwire_CallMethodString_OneArg(JsRef obj, const char* name, JsRef arg);
+
+/**
+ * name is the method name, as null-terminated UTF8.
+ * Arguments are specified as a NULL-terminated variable arguments list of
+ * JsRefs.
+ */
+JsRef
+hiwire_CallMethodString_va(JsRef obj, const char* name, ...);
+
+JsRef
+hiwire_CallMethod(JsRef obj, JsRef name, JsRef args);
+
+JsRef
+hiwire_CallMethod_OneArg(JsRef obj, JsRef name, JsRef arg);
+
+JsRef
+hiwire_CallMethod_va(JsRef obj, JsRef name, ...);
+
+/**
+ * name is the method name, as a Js_Identifier
+ * args is a hiwire Array containing the arguments.
+ */
+JsRef
+hiwire_CallMethodId(JsRef obj, Js_Identifier* name, JsRef args);
+
+/**
+ * name is the method name, as a Js_Identifier
+ * Arguments are specified as a NULL-terminated variable arguments list of
+ * JsRefs.
+ */
+JsRef
+hiwire_CallMethodId_va(JsRef obj, Js_Identifier* name, ...);
+
+JsRef
+hiwire_CallMethodId_OneArg(JsRef obj, Js_Identifier* name, JsRef arg);
 
 /**
  * Calls the constructor of a class object.
@@ -305,68 +369,6 @@ hiwire_get_length(JsRef idobj);
  */
 bool
 hiwire_get_bool(JsRef idobj);
-
-/**
- * Check whether `typeof obj.has === "function"`
- */
-bool
-hiwire_has_has_method(JsRef idobj);
-
-/**
- * Does `obj.has(val)`. Doesn't check type of return value, if it isn't a
- * boolean or an integer it will get coerced to false.
- */
-bool
-hiwire_call_has_method(JsRef idobj, JsRef idval);
-
-/**
- * Check whether `typeof obj.includes === "function"`.
- */
-bool
-hiwire_has_includes_method(JsRef idobj);
-
-/**
- * Does `obj.includes(val)`. Doesn't check type of return value, if it isn't a
- * boolean or an integer it will get coerced to `false`.
- */
-bool
-hiwire_call_includes_method(JsRef idobj, JsRef idval);
-
-/**
- * Check whether `typeof obj.get === "function"`.
- */
-bool
-hiwire_has_get_method(JsRef idobj);
-
-/**
- * Call `obj.get(key)`. If the result is `undefined`, we check for a `has`
- * method and if one is present call `obj.has(key)`. If this returns false we
- * return `NULL` to signal a `KeyError` otherwise we return `Js_Undefined`. If
- * no `has` method is present, we return `Js_Undefined`.
- */
-JsRef
-hiwire_call_get_method(JsRef idobj, JsRef idkey);
-
-/**
- * Check whether `typeof obj.set === "function"`.
- */
-bool
-hiwire_has_set_method(JsRef idobj);
-
-/**
- * Call `obj.set(key, value)`. Javascript standard is that `set` returns `false`
- * to indicate an error condition, but we ignore the return value.
- */
-errcode
-hiwire_call_set_method(JsRef idobj, JsRef idkey, JsRef idval);
-
-/**
- * Call `obj.delete(key)`. Javascript standard is that `delete` returns `false`
- * to indicate an error condition, if `false` is returned we return `-1` to
- * indicate the error.
- */
-errcode
-hiwire_call_delete_method(JsRef idobj, JsRef idkey);
 
 /**
  * Check whether the object is a PyProxy.
