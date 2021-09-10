@@ -179,9 +179,39 @@ def test_dup_temp_file():
     fd2 = os.dup2(tf.fileno(), 50)
     s = b"hello there!"
     tf.write(s)
+    tf2 = open(fd1, "w+")
+    assert tf2.tell() == len(s)
     # This next assertion actually demonstrates a bug in dup: the correct value
     # to return should be b"".
-    assert os.read(fd1, 50) == s
+    assert os.read(fd1, 50) == b""
+    tf2.seek(1)
+    assert tf.tell() == 1
+    assert tf.read(100) == b"ello there!"
+
+
+@run_in_pyodide
+def test_dup_stdout():
+    # Test redirecting stdout using low level os.dup operations.
+    # This sort of redirection is used in pytest.
+    import os
+    import sys
+    from tempfile import TemporaryFile
+
+    tf = TemporaryFile(buffering=0)
+    save_stdout = os.dup(sys.stdout.fileno())
+    os.dup2(tf.fileno(), sys.stdout.fileno())
+    print("hi!!")
+    print("there...")
+    assert tf.tell() == len("hi!!\nthere...\n")
+    os.dup2(save_stdout, sys.stdout.fileno())
+    print("not captured")
+    os.dup2(tf.fileno(), sys.stdout.fileno())
+    print("captured")
+    assert tf.tell() == len("hi!!\nthere...\ncaptured\n")
+    os.dup2(save_stdout, sys.stdout.fileno())
+    os.close(save_stdout)
+    tf.seek(0)
+    assert tf.read(1000).decode() == "hi!!\nthere...\ncaptured\n"
 
 
 @pytest.mark.skip_pyproxy_check
