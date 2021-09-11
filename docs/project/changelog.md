@@ -28,6 +28,11 @@ substitutions:
 - {{Fix}} Conversion of very large strings from Javascript to Python works
   again. {pr}`1806`
 
+- {{Enhancement}} Updated the calling convention when a Javascript function is
+  called from Python to improve memory management of PyProxies. PyProxy
+  arguments and return values are automatically destroyed when the function is
+  finished. {pr}`1573`
+
 ### pyodide-build
 
 - By default only a minimal set of packages is built. To build all packages set
