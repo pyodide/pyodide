@@ -9,6 +9,30 @@ from pyodide_build import buildpkg
 from pyodide_build.io import parse_package_config
 
 
+def test_subprocess_with_shared_env():
+    p = buildpkg.BashRunnerWithSharedEnvironment()
+    p.env.pop("A", None)
+
+    res = p.run("A=6; echo $A", stdout=subprocess.PIPE)
+    assert res.stdout == b"6\n"
+    assert p.env.get("A", None) is None
+
+    p.run("export A=2")
+    assert p.env["A"] == "2"
+
+    res = p.run("echo $A", stdout=subprocess.PIPE)
+    assert res.stdout == b"2\n"
+
+    res = p.run("A=6; echo $A", stdout=subprocess.PIPE)
+    assert res.stdout == b"6\n"
+    assert p.env.get("A", None) == "6"
+
+    p.env["A"] = "7"
+    res = p.run("echo $A", stdout=subprocess.PIPE)
+    assert res.stdout == b"7\n"
+    assert p.env["A"] == "7"
+
+
 def test_download_and_extract(monkeypatch):
     monkeypatch.setattr(subprocess, "run", lambda *args, **kwargs: True)
     monkeypatch.setattr(buildpkg, "check_checksum", lambda *args, **kwargs: True)
@@ -44,9 +68,21 @@ def test_run_script(is_library, tmpdir):
     src_dir = Path(tmpdir.mkdir("build/package_name"))
     script = "touch out.txt"
     pkg = {"build": {"script": script, "library": is_library}}
-    buildpkg.run_script(build_dir, src_dir, pkg)
+    shared_env = buildpkg.BashRunnerWithSharedEnvironment()
+    buildpkg.run_script(build_dir, src_dir, pkg, shared_env)
     assert (src_dir / "out.txt").exists()
     if is_library:
         assert (build_dir / ".packaged").exists()
     else:
         assert not (build_dir / ".packaged").exists()
+
+
+def test_run_script_environment(tmpdir):
+    build_dir = Path(tmpdir.mkdir("build"))
+    src_dir = Path(tmpdir.mkdir("build/package_name"))
+    script = "export A=2"
+    pkg = {"build": {"script": script, "library": False}}
+    shared_env = buildpkg.BashRunnerWithSharedEnvironment()
+    shared_env.env.pop("A", None)
+    buildpkg.run_script(build_dir, src_dir, pkg, shared_env)
+    assert shared_env.env["A"] == "2"

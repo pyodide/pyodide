@@ -515,7 +515,8 @@ def find_imports(source: str) -> List[str]:
     Returns
     -------
     ``List[str]``
-        A list of module names that are imported in ``source``.
+        A list of module names that are imported in ``source``. If ``source`` is not
+        syntactically correct Python code (after dedenting), returns an empty list.
 
     Examples
     --------
@@ -527,7 +528,10 @@ def find_imports(source: str) -> List[str]:
     # handle mis-indented input from multi-line strings
     source = dedent(source)
 
-    mod = ast.parse(source)
+    try:
+        mod = ast.parse(source)
+    except SyntaxError:
+        return []
     imports = set()
     for node in ast.walk(mod):
         if isinstance(node, ast.Import):
