@@ -337,7 +337,6 @@ def test_jsproxy_call_meth_js_kwargs(selenium):
     )
 
 
-@pytest.mark.trace_pyproxies
 def test_call_pyproxy_destroy_args(selenium):
     selenium.run_js(
         """
@@ -369,7 +368,6 @@ def test_call_pyproxy_destroy_args(selenium):
     )
 
 
-@pytest.mark.trace_pyproxies
 def test_call_pyproxy_set_global(selenium):
     selenium.run_js(
         """
@@ -415,7 +413,6 @@ def test_call_pyproxy_set_global(selenium):
     )
 
 
-@pytest.mark.trace_pyproxies
 def test_call_pyproxy_destroy_result(selenium):
     selenium.run_js(
         """
