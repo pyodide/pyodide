@@ -727,6 +727,11 @@ JsProxy_Bool(PyObject* o)
   return hiwire_get_bool(self->js) ? 1 : 0;
 }
 
+/**
+ * Create a Future attached to the given Promise. When the promise is
+ * resolved/rejected, the status of the future is set accordingly and
+ * done_callback is called.
+ */
 static PyObject*
 wrap_promise(JsRef promise, JsRef done_callback)
 {
@@ -1082,6 +1087,13 @@ finally:
 
 #define JsMethod_THIS(x) (((JsProxy*)x)->this_)
 
+/**
+ * Prepare arguments from a `METH_FASTCALL | METH_KEYWORDS` Python function to a
+ * Javascript call. We call `python2js` on each argument. Any PyProxy *created*
+ * by `python2js` is stored into the `proxies` list to be destroyed later (if
+ * the argument is a PyProxy created with `create_proxy` it won't be recorded
+ * for destruction).
+ */
 JsRef
 JsMethod_ConvertArgs(PyObject* const* args,
                      Py_ssize_t nargs,
@@ -1141,10 +1153,14 @@ finally:
   return idargs;
 }
 
+/**
+ * This is a helper function for calling asynchronous js functions. proxies_id
+ * is an Array of proxies to destroy, it returns a JsRef to a function that
+ * destroys them and the result of the Promise.
+ */
 EM_JS_REF(JsRef, get_async_js_call_done_callback, (JsRef proxies_id), {
   let proxies = Module.hiwire.get_value(proxies_id);
-  let result = function(result)
-  {
+  return Module.hiwire.new_value(function(result) {
     let msg = "This borrowed proxy was automatically destroyed " +
               "at the end of an asynchronous function call. Try " +
               "using create_proxy or create_once_callable.";
@@ -1154,8 +1170,7 @@ EM_JS_REF(JsRef, get_async_js_call_done_callback, (JsRef proxies_id), {
     if (Module.isPyProxy(result)) {
       Module.pyproxy_destroy(result, msg);
     }
-  };
-  return Module.hiwire.new_value(result);
+  });
 });
 
 /**
@@ -1171,6 +1186,7 @@ JsMethod_Vectorcall(PyObject* self,
   JsRef proxies = NULL;
   JsRef idargs = NULL;
   JsRef idresult = NULL;
+  bool result_is_promise = false;
   JsRef async_done_callback = NULL;
   PyObject* pyresult = NULL;
 
@@ -1182,9 +1198,16 @@ JsMethod_Vectorcall(PyObject* self,
   FAIL_IF_NULL(idargs);
   idresult = hiwire_call_bound(JsProxy_REF(self), JsMethod_THIS(self), idargs);
   FAIL_IF_NULL(idresult);
-  if (!hiwire_is_promise(idresult)) {
+  result_is_promise = hiwire_is_promise(idresult);
+  if (!result_is_promise) {
     pyresult = js2python(idresult);
   } else {
+    // Result was a promise. In this case we don't want to destroy the arguments
+    // until the promise is ready. Furthermore, since we destroy the result of
+    // the Promise, we deny the user access to the Promise (would cause
+    // exceptions). Instead we return a Future. When the promise is ready, we
+    // resolve the Future with the result from the Promise and destroy the
+    // arguments and result.
     async_done_callback = get_async_js_call_done_callback(proxies);
     FAIL_IF_NULL(async_done_callback);
     pyresult = wrap_promise(idresult, async_done_callback);
@@ -1194,7 +1217,10 @@ JsMethod_Vectorcall(PyObject* self,
   success = true;
 finally:
   Py_LeaveRecursiveCall(/* " in JsMethod_Vectorcall" */);
-  if (idresult == NULL || !hiwire_is_promise(idresult)) {
+  if (!(success && result_is_promise)) {
+    // If we succeeded and the result was a promise then we destroy the
+    // arguments in async_done_callback instead of here. Otherwise, destroy the
+    // arguments and return value now.
     if (hiwire_is_pyproxy(idresult)) {
       JsArray_Push(proxies, idresult);
     }
