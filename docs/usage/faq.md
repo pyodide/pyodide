@@ -221,7 +221,7 @@ resp = await js.fetch('/someurl', {
 })
 ```
 
-The `fetch` api ignores the options that we attempted to provide. You can do
+The `fetch` API ignores the options that we attempted to provide. You can do
 this correctly as follows:
 
 ```py
