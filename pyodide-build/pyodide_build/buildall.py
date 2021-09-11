@@ -342,29 +342,29 @@ def make_parser(parser):
         "--cflags",
         type=str,
         nargs="?",
-        default=common.get_make_flag("SIDE_MODULE_CFLAGS"),
-        help="Extra compiling flags",
+        default=None,
+        help="Extra compiling flags. Default: SIDE_MODULE_CFLAGS",
     )
     parser.add_argument(
         "--cxxflags",
         type=str,
         nargs="?",
-        default=common.get_make_flag("SIDE_MODULE_CXXFLAGS"),
-        help="Extra C++ specific compiling flags",
+        default=None,
+        help=("Extra C++ specific compiling flags. " "Default: SIDE_MODULE_CXXFLAGS"),
     )
     parser.add_argument(
         "--ldflags",
         type=str,
         nargs="?",
-        default=common.get_make_flag("SIDE_MODULE_LDFLAGS"),
-        help="Extra linking flags",
+        default=None,
+        help="Extra linking flags. Default: SIDE_MODULE_LDFLAGS",
     )
     parser.add_argument(
         "--target",
         type=str,
         nargs="?",
-        default=common.get_make_flag("TARGETPYTHONROOT"),
-        help="The path to the target Python installation",
+        default=None,
+        help="The path to the target Python installation. Default: TARGETPYTHONROOT",
     )
     parser.add_argument(
         "--install-dir",
@@ -405,6 +405,15 @@ def make_parser(parser):
 def main(args):
     packages_dir = Path(args.dir[0]).resolve()
     outputdir = Path(args.output[0]).resolve()
+    if args.cflags is None:
+        args.cflags = common.get_make_flag("SIDE_MODULE_CFLAGS")
+    if args.cxxflags is None:
+        args.cxxflags = common.get_make_flag("SIDE_MODULE_CXXFLAGS")
+    if args.ldflags is None:
+        args.ldflags = common.get_make_flag("SIDE_MODULE_LDFLAGS")
+    if args.target is None:
+        args.target = common.get_make_flag("TARGETPYTHONROOT")
+
     build_packages(packages_dir, outputdir, args)
 
 
