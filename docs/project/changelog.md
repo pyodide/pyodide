@@ -23,6 +23,9 @@ substitutions:
   compile and post build scripts.
   {pr}`1706`
 
+- {{ Enhancement }} Better support for ccache when building Pyodide
+  {pr}`1805`
+
 ### Uncategorized
 
 ## Version 0.18.1 (unreleased)

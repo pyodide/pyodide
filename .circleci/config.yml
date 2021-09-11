@@ -8,6 +8,9 @@ defaults: &defaults
     - EMSDK_NUM_CORES: 3
       EMCC_CORES: 3
       PYODIDE_JOBS: 3
+      # Make sure the ccache dir is consistent between core and package builds
+      # (it's not the case otherwise)
+      CCACHE_DIR: /root/.ccache/
 
 jobs:
   lint:
@@ -41,20 +44,29 @@ jobs:
 
       - restore_cache:
           keys:
-            - -{{ checksum "Makefile.envs" }}-v20201205-
+            - -core-{{ checksum "Makefile.envs" }}-{{ checksum "python/Makefile" }}-v20210910-
 
       - run:
           name: build emsdk
           no_output_timeout: 1200
           command: |
+            # This is necessary to use the ccache from emsdk
+            source pyodide_env.sh
+
             ccache -z
             make -C emsdk
             ccache -s
+
+            # Set mtime for EM_CONFIG to avoid ccache cache misses
+            touch -m -d '1 Jan 2021 12:00' emsdk/emsdk/.emscripten
 
       - run:
           name: build cpython
           no_output_timeout: 1200
           command: |
+            # This is necessary to use the ccache from emsdk
+            source pyodide_env.sh
+
             ccache -z
             make -C cpython
             ccache -s
@@ -63,6 +75,9 @@ jobs:
           name: build pyodide core
           no_output_timeout: 1200
           command: |
+            # This is necessary to use the ccache from emsdk
+            source pyodide_env.sh
+
             ccache -z
             PYODIDE_PACKAGES="core" make
             ccache -s
@@ -73,8 +88,8 @@ jobs:
 
       - save_cache:
           paths:
-            - ~/.ccache
-          key: -{{ checksum "Makefile.envs" }}-v20201205-{{ .BuildNum }}
+            - /root/.ccache
+          key: -core-{{ checksum "Makefile.envs" }}-{{ checksum "python/Makefile" }}-v20210910-
 
       - run:
           name: Clean up workspace
@@ -100,12 +115,17 @@ jobs:
 
       - restore_cache:
           keys:
-            - -{{ checksum "Makefile.envs" }}-v20201205-
+            - -pkg-{{ checksum "Makefile.envs" }}-v20210911-
 
       - run:
           name: build packages
           no_output_timeout: 1800
           command: |
+            source pyodide_env.sh
+
+            # Set mtime for EM_CONFIG to avoid ccache cache misses
+            touch -m -d '1 Jan 2021 12:00' emsdk/emsdk/.emscripten
+
             ccache -z
             PYODIDE_PACKAGES='*' make -C packages
             ccache -s
@@ -116,8 +136,8 @@ jobs:
 
       - save_cache:
           paths:
-            - ~/.ccache
-          key: -{{ checksum "Makefile.envs" }}-v20201205-{{ .BuildNum }}
+            - /root/.ccache
+          key: -pkg-{{ checksum "Makefile.envs" }}-v20210911-
 
       - persist_to_workspace:
           root: .
