@@ -14,6 +14,28 @@ _Py_IDENTIFIER(result);
 _Py_IDENTIFIER(ensure_future);
 _Py_IDENTIFIER(add_done_callback);
 
+// Use raw EM_JS for the next five commands. We intend to signal a fatal error
+// if a Javascript error is thrown.
+
+EM_JS(int, pyproxy_Check, (JsRef x), {
+  if (x == 0) {
+    return false;
+  }
+  let val = Module.hiwire.get_value(x);
+  return Module.isPyProxy(val);
+});
+
+EM_JS(errcode, destroy_proxies, (JsRef proxies_id, char* msg_ptr), {
+  let msg = undefined;
+  if (msg_ptr) {
+    msg = UTF8ToString(msg_ptr);
+  }
+  let proxies = Module.hiwire.get_value(proxies_id);
+  for (let px of proxies) {
+    Module.pyproxy_destroy(px, msg);
+  }
+});
+
 static PyObject* asyncio;
 
 // Flags controlling presence or absence of many small mixins depending on which
@@ -212,15 +234,6 @@ finally:
 */
 int
 _PyObject_GetMethod(PyObject* obj, PyObject* name, PyObject** method);
-
-// Use raw EM_JS here, we intend to raise fatal error if called on bad input.
-EM_JS(int, pyproxy_Check, (JsRef x), {
-  if (x == 0) {
-    return false;
-  }
-  let val = Module.hiwire.get_value(x);
-  return Module.isPyProxy(val);
-});
 
 EM_JS(int, pyproxy_mark_borrowed, (JsRef id), {
   let proxy = Module.hiwire.get_value(id);
@@ -921,6 +934,12 @@ EM_JS_REF(JsRef, pyproxy_new, (PyObject * ptrobj), {
   return Module.hiwire.new_value(Module.pyproxy_new(ptrobj));
 });
 
+/**
+ * Create a JsRef which can be called once, wrapping a Python callable. The
+ * JsRef owns a reference to the Python callable until it is called, then
+ * releases it. Useful for the "finally" wrapper on a JsProxy of a promise, and
+ * also exposed in the pyodide Python module.
+ */
 EM_JS_REF(JsRef, create_once_callable, (PyObject * obj), {
   _Py_IncRef(obj);
   let alreadyCalled = false;
@@ -959,16 +978,44 @@ create_once_callable_py(PyObject* _mod, PyObject* obj)
 
 // clang-format off
 
-// At some point it would be nice to use FinalizationRegistry with these, but
-// it's a bit tricky.
+/**
+ * Arguments:
+ *  handle_result -- Python callable expecting one argument, called with the
+ *  result if the promise is resolved. Can be NULL.
+ *
+ *  handle_exception -- Python callable expecting one argument, called with the
+ *  exception if the promise is rejected. Can be NULL.
+ *
+ *  done_callback_id -- A JsRef to a Javascript callback to be called when the
+ *  promise is either resolved or rejected. Can be NULL.
+ *
+ * Returns: a JsRef to a pair [onResolved, onRejected].
+ *
+ * The purpose of this function is to handle memory management when attaching
+ * Python functions to Promises. This function stores a reference to both
+ * handle_result and handle_exception, and frees both when either onResolved or
+ * onRejected is called. Of course if the Promise never resolves then the
+ * handles will be leaked. We can't use create_once_callable because either
+ * onResolved or onRejected is called but not both. In either case, we release
+ * both functions.
+ *
+ * The return values are intended to be attached to a promise e.g.,
+ * some_promise.then(onResolved, onRejected).
+ */
 EM_JS_REF(JsRef, create_promise_handles, (
-  PyObject* handle_result, PyObject* handle_exception
+  PyObject* handle_result, PyObject* handle_exception, JsRef done_callback_id
 ), {
+  // At some point it would be nice to use FinalizationRegistry with these, but
+  // it's a bit tricky.
   if (handle_result) {
     _Py_IncRef(handle_result);
   }
   if (handle_exception) {
     _Py_IncRef(handle_exception);
+  }
+  let done_callback = (x) => {};
+  if(done_callback_id){
+    done_callback = Module.hiwire.get_value(done_callback_id);
   }
   let used = false;
   function checkUsed(){
@@ -993,6 +1040,7 @@ EM_JS_REF(JsRef, create_promise_handles, (
         return Module.callPyObject(handle_result, res);
       }
     } finally {
+      done_callback(res);
       destroy();
     }
   }
@@ -1003,6 +1051,7 @@ EM_JS_REF(JsRef, create_promise_handles, (
         return Module.callPyObject(handle_exception, err);
       }
     } finally {
+      done_callback(undefined);
       destroy();
     }
   }

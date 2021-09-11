@@ -13,6 +13,19 @@ substitutions:
 
 ## Unreleased
 
+### Python package
+
+- {{Enhancement}} If `find_imports` is used on code that contains a syntax
+  error, it will return an empty list instead of raising a `SyntaxError`.
+  {pr}`1819`
+
+### Python / JavaScript type conversions
+
+- {{Enhancement}} Updated the calling convention when a Javascript function is
+  called from Python to improve memory management of PyProxies. PyProxy
+  arguments and return values are automatically destroyed when the function is
+  finished. {pr}`1573`
+
 ### pyodide-build
 
 - By default only a minimal set of packages is built. To build all packages set
@@ -50,10 +63,6 @@ substitutions:
 
 - {{Fix}} Avoid circular references when runsource raises SyntaxError
   {pr}`1758`
-
-- {{Enhancement}} If `find_imports` is used on code that contains a syntax
-  error, it will return an empty list instead of raising a `SyntaxError`.
-  {pr}`1819`
 
 ### Javascript package
 

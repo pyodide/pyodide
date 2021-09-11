@@ -80,57 +80,45 @@ def test_pyproxy_copy(selenium):
     )
 
 
-@pytest.mark.skip_pyproxy_check
 def test_pyproxy_refcount(selenium):
-    result = selenium.run_js(
+    selenium.run_js(
         """
         function getRefCount(){
             return pyodide.runPython("sys.getrefcount(pyfunc)");
         }
-        let result = [];
         self.jsfunc = function (f) { f(); };
         pyodide.runPython(`
             import sys
-            from js import self
+            from js import jsfunc
 
             def pyfunc(*args, **kwargs):
                 print(*args, **kwargs)
         `);
 
         // the refcount should be 2 because:
-        //
         // 1. pyfunc exists
         // 2. pyfunc is referenced from the sys.getrefcount()-test below
-
-        result.push([getRefCount(), 2]);
-
-        // the refcount should be 3 because:
         //
-        // 1. pyfunc exists
-        // 2. one reference from PyProxy to pyfunc is alive
-        // 3. pyfunc is referenced from the sys.getrefcount()-test below
+        // Each time jsfunc is called a new PyProxy to pyfunc is created. That
+        // PyProxy is destroyed when the call finishes, so the calls to
+        // jsfunc(pyfunc) do not change the reference count.
+
+        assert(() => getRefCount() === 2);
 
         pyodide.runPython(`
-            self.jsfunc(pyfunc) # creates new PyProxy
+            jsfunc(pyfunc)
         `);
 
-        result.push([getRefCount(), 3])
-        pyodide.runPython(`
-            self.jsfunc(pyfunc) # create new PyProxy
-            self.jsfunc(pyfunc) # create new PyProxy
-        `)
+        assert(() => getRefCount() === 2);
 
-        // the refcount should be 3 because:
-        //
-        // 1. pyfunc exists
-        // 2. one reference from PyProxy to pyfunc is alive
-        // 3. pyfunc is referenced from the sys.getrefcount()-test
-        result.push([getRefCount(), 5]);
-        return result;
+        pyodide.runPython(`
+            jsfunc(pyfunc)
+            jsfunc(pyfunc)
+        `)
+        assert(() => getRefCount() === 2);
+        pyodide.runPython(`del jsfunc`)
         """
     )
-    for [a, b] in result:
-        assert a == b, result
 
 
 def test_pyproxy_destroy(selenium):
