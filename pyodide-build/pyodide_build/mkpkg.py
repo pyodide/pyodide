@@ -139,7 +139,6 @@ def success(msg):
 
 
 def update_package(package: str, update_patched: bool = True):
-    from ruamel.yaml import YAML
 
     YAML = _import_ruamel_yaml()
 
