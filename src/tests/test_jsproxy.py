@@ -337,6 +337,158 @@ def test_jsproxy_call_meth_js_kwargs(selenium):
     )
 
 
+def test_call_pyproxy_destroy_args(selenium):
+    selenium.run_js(
+        """
+        let y;
+        self.f = function(x){ y = x; }
+        pyodide.runPython(`
+            from js import f
+            f({})
+            f([])
+        `);
+        assertThrows(() => y.length, "Error", "This borrowed proxy was automatically destroyed");
+        """
+    )
+
+    selenium.run_js(
+        """
+        let y;
+        self.f = async function(x){
+            await sleep(5);
+            y = x;
+        }
+        await pyodide.runPythonAsync(`
+            from js import f
+            await f({})
+            await f([])
+        `);
+        assertThrows(() => y.length, "Error", "This borrowed proxy was automatically destroyed");
+        """
+    )
+
+
+def test_call_pyproxy_set_global(selenium):
+    selenium.run_js(
+        """
+        self.setGlobal = function(x){
+            if(pyodide.isPyProxy(self.myGlobal)){
+                self.myGlobal.destroy();
+            }
+            if(pyodide.isPyProxy(x)){
+                x = x.copy();
+            }
+            self.myGlobal = x;
+        }
+        pyodide.runPython(`
+            from js import setGlobal
+            setGlobal(2)
+            setGlobal({})
+            setGlobal([])
+            setGlobal(3)
+        `);
+        """
+    )
+
+    selenium.run_js(
+        """
+        self.setGlobal = async function(x){
+            await sleep(5);
+            if(pyodide.isPyProxy(self.myGlobal)){
+                self.myGlobal.destroy();
+            }
+            if(pyodide.isPyProxy(x)){
+                x = x.copy();
+            }
+            self.myGlobal = x;
+        }
+        await pyodide.runPythonAsync(`
+            from js import setGlobal
+            await setGlobal(2)
+            await setGlobal({})
+            await setGlobal([])
+            await setGlobal(3)
+        `);
+        """
+    )
+
+
+def test_call_pyproxy_destroy_result(selenium):
+    selenium.run_js(
+        """
+        self.f = function(){
+            let dict = pyodide.globals.get("dict");
+            let result = dict();
+            dict.destroy();
+            return result;
+        }
+        pyodide.runPython(`
+            from js import f
+            import sys
+            d = f()
+            assert sys.getrefcount(d) == 2
+        `);
+        """
+    )
+
+    selenium.run_js(
+        """
+        self.f = async function(){
+            await sleep(5);
+            let dict = pyodide.globals.get("dict");
+            let result = dict();
+            dict.destroy();
+            return result;
+        }
+        await pyodide.runPythonAsync(`
+            from js import f
+            import sys
+            d = await f()
+        `);
+        pyodide.runPython(`
+            assert sys.getrefcount(d) == 2
+        `);
+        """
+    )
+
+
+@pytest.mark.skip_refcount_check
+def test_call_pyproxy_return_arg(selenium):
+    selenium.run_js(
+        """
+        self.f = function f(x){
+            return x;
+        }
+        pyodide.runPython(`
+            from js import f
+            l = [1,2,3]
+            x = f(l)
+            assert x is l
+            import sys
+            assert sys.getrefcount(x) == 3
+        `);
+        """
+    )
+    selenium.run_js(
+        """
+        self.f = async function f(x){
+            await sleep(5);
+            return x;
+        }
+        await pyodide.runPythonAsync(`
+            from js import f
+            l = [1,2,3]
+            x = await f(l)
+            assert x is l
+        `);
+        pyodide.runPython(`
+            import sys
+            assert sys.getrefcount(x) == 3
+        `);
+        """
+    )
+
+
 @run_in_pyodide
 def test_import_invocation():
     import js
@@ -634,7 +786,7 @@ def test_mixins_calls(selenium):
         assert a == b, desc
 
 
-def test_mixins_errors(selenium):
+def test_mixins_errors_1(selenium):
     selenium.run_js(
         """
         self.a = [];
@@ -657,7 +809,13 @@ def test_mixins_errors(selenium):
             with raises(KeyError):
                 del b[0]
         `);
+        """
+    )
 
+
+def test_mixins_errors_2(selenium):
+    selenium.run_js(
+        """
         self.c = {
             next(){},
             length : 1,
@@ -677,7 +835,7 @@ def test_mixins_errors(selenium):
         delete c.has;
         delete c.then;
         delete d[Symbol.iterator];
-        await pyodide.runPythonAsync(`
+        pyodide.runPython(`
             from contextlib import contextmanager
             from unittest import TestCase
             @contextmanager
@@ -699,10 +857,19 @@ def test_mixins_errors(selenium):
                 c[0] = 7
             with raises(JsException, match=msg):
                 del c[0]
+        `)
+
+        await pyodide.runPythonAsync(`
             with raises(TypeError, match="can't be used in 'await' expression"):
                 await c
         `);
+        """
+    )
 
+
+def test_mixins_errors_3(selenium):
+    selenium.run_js(
+        """
         self.l = [0, false, NaN, undefined, null];
         self.l[6] = 7;
         await pyodide.runPythonAsync(`
@@ -723,7 +890,13 @@ def test_mixins_errors(selenium):
             del l[4]
             l[3]; l[4]
         `);
+        """
+    )
 
+
+def test_mixins_errors_4(selenium):
+    selenium.run_js(
+        """
         self.l = [0, false, NaN, undefined, null];
         self.l[6] = 7;
         let a = Array.from(self.l.entries());

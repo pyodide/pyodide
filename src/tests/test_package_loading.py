@@ -179,10 +179,18 @@ def test_load_twice_same_source(selenium_standalone):
 
 def test_js_load_package_from_python(selenium_standalone):
     selenium = selenium_standalone
-    to_load = "pyparsing"
-    selenium.run(f"import js ; js.pyodide.loadPackage(['{to_load}'])")
-    assert f"Loading {to_load}" in selenium.logs
-    assert selenium.run_js("return Object.keys(pyodide.loadedPackages)") == [to_load]
+    to_load = ["pyparsing"]
+    selenium.run_js(
+        f"""
+        await pyodide.runPythonAsync(`
+            from pyodide_js import loadPackage
+            await loadPackage({to_load!r})
+            del loadPackage
+        `);
+        """
+    )
+    assert f"Loading {to_load[0]}" in selenium.logs
+    assert selenium.run_js("return Object.keys(pyodide.loadedPackages)") == to_load
 
 
 @pytest.mark.parametrize("jinja2", ["jinja2", "Jinja2"])

@@ -689,8 +689,9 @@ EM_JS_NUM(errcode, destroy_proxies_js, (JsRef proxies_id), {
   }
 })
 
+// We need to avoid a name clash with destroy_proxies defined in jsproxy.c
 static PyObject*
-destroy_proxies(PyObject* self, PyObject* arg)
+destroy_proxies_(PyObject* self, PyObject* arg)
 {
   if (!JsProxy_Check(arg)) {
     PyErr_SetString(PyExc_TypeError, "Expected a JsProxy for the argument");
@@ -725,7 +726,7 @@ static PyMethodDef methods[] = {
   },
   {
     "destroy_proxies",
-    (PyCFunction)destroy_proxies,
+    (PyCFunction)destroy_proxies_,
     METH_O,
   },
   { NULL } /* Sentinel */

@@ -21,7 +21,7 @@ python2js(PyObject* x);
  *
  * If proxies is NULL, will throw an error instead of creating a PyProxy.
  * Otherwise, proxies should be an Array and python2js_track_proxies will add
- * all proxies created to the proxies array.
+ * the proxy to the array if one is created.
  */
 JsRef
 python2js_track_proxies(PyObject* x, JsRef proxies);

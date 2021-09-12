@@ -214,6 +214,9 @@ function pyproxy_decref_cache(cache) {
 }
 
 Module.pyproxy_destroy = function (proxy, destroyed_msg) {
+  if (proxy.$$.ptr === null) {
+    return;
+  }
   let ptrobj = _getPtr(proxy);
   Module.finalizationRegistry.unregister(proxy);
   // Maybe the destructor will call Javascript code that will somehow try

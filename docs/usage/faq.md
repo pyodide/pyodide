@@ -176,7 +176,7 @@ bad idea to unpickle any data sent from the client. For sending data from client
 to server, try some other serialization format like JSON.
 ```
 
-## How can I use a Python function as an event handler and then remove it later?
+## How can I use a Python function as an event handler?
 
 Note that the most straight forward way of doing this will not work:
 
@@ -186,13 +186,11 @@ def f(*args):
     document.querySelector("h1").innerHTML += "(>.<)"
 
 document.body.addEventListener('click', f)
-document.body.removeEventListener('click', f)
 ```
 
-This leaks `f` and does not remove the event listener (instead
-`removeEventListener` will silently do nothing).
+Now every time you click, an error will be raised (see {ref}`type-translations-proxy-arguments`).
 
-To do this correctly use :func:`pyodide.create_proxy` as follows:
+To do this correctly use {func}`pyodide.create_proxy` as follows:
 
 ```py
 from js import document
@@ -223,8 +221,8 @@ resp = await js.fetch('/someurl', {
 })
 ```
 
-this leaks the dictionary and the `fetch` api ignores the options that we
-attempted to provide. You can do this correctly as follows:
+The `fetch` API ignores the options that we attempted to provide. You can do
+this correctly as follows:
 
 ```py
 import json
