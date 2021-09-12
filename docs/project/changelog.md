@@ -28,16 +28,20 @@ substitutions:
 
 ### pyodide-build
 
-- By default only a minimal set of packages is built. To build all packages set
-  `PYODIDE_PACKAGES='*'` In addition, `make minimal` was removed, since it is
-  now equivalent to `make` without extra arguments. {pr}`1801`
+- {{API}} By default only a minimal set of packages is built. To build all
+  packages set `PYODIDE_PACKAGES='*'` In addition, `make minimal` was removed,
+  since it is now equivalent to `make` without extra arguments. {pr}`1801`
 
-- Changes to environment variables in the build script are now seen in the
-  compile and post build scripts.
+- {{Enhancement}} Changes to environment variables in the build script are now
+  seen in the compile and post build scripts.
   {pr}`1706`
 
+- {{Fix}} Fix usability issues with `pyodide-build mkpkg` CLI.
+  {pr}`1828`
+  
 - {{ Enhancement }} Better support for ccache when building Pyodide
   {pr}`1805`
+
 
 ### Uncategorized
 

@@ -13,13 +13,17 @@ from pyodide_build.io import parse_package_config
 # unlikely to fail.
 
 
-def test_mkpkg(tmpdir, monkeypatch):
+def test_mkpkg(tmpdir, monkeypatch, capsys):
+    assert pyodide_build.mkpkg.PACKAGES_ROOT.exists()
+
     base_dir = Path(str(tmpdir))
     monkeypatch.setattr(pyodide_build.mkpkg, "PACKAGES_ROOT", base_dir)
     pyodide_build.mkpkg.make_package("idna")
     assert os.listdir(base_dir) == ["idna"]
     meta_path = base_dir / "idna" / "meta.yaml"
     assert meta_path.exists()
+    captured = capsys.readouterr()
+    assert f"Output written to {meta_path}" in captured.out
 
     db = parse_package_config(meta_path)
 
