@@ -221,7 +221,7 @@ def build_from_graph(pkg_map: Dict[str, BasePackage], outputdir: Path, args) -> 
     # dependents, because the ordering ought not to change after insertion.
     build_queue: PriorityQueue = PriorityQueue()
 
-    print("Building the following packages: " + ", ".join(pkg_map))
+    print("Packages that would be built: " + ", ".join(sorted(pkg_map.keys())))
 
     for pkg in pkg_map.values():
         if len(pkg.dependencies) == 0:
@@ -229,10 +229,9 @@ def build_from_graph(pkg_map: Dict[str, BasePackage], outputdir: Path, args) -> 
 
     built_queue: Queue = Queue()
     thread_lock = Lock()
-    queue_idx = 0
+    queue_idx = 1
 
     def builder(n):
-        print(f"Starting thread {n}")
         nonlocal queue_idx
         while True:
             pkg = build_queue.get()
@@ -249,7 +248,8 @@ def build_from_graph(pkg_map: Dict[str, BasePackage], outputdir: Path, args) -> 
                 return
 
             print(
-                f"[{pkg._queue_idx}/{len(pkg_map)}] (thread {n}) built {pkg.name} in {perf_counter() - t0:.1f} s"
+                f"[{pkg._queue_idx}/{len(pkg_map)}] (thread {n}) "
+                f"built {pkg.name} in {perf_counter() - t0:.1f} s"
             )
             built_queue.put(pkg)
             # Release the GIL so new packages get queued
