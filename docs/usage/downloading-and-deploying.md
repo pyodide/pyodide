@@ -27,6 +27,8 @@ releases](https://github.com/pyodide/pyodide/releases)
 (`pyodide-build-*.tar.bz2` file) serve them yourself, as explained in the
 following section.
 
+=(serving_pyodide_packages)
+
 ## Serving Pyodide packages
 
 If you built your Pyodide distribution or downloaded the release tarball
