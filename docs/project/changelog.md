@@ -38,10 +38,17 @@ substitutions:
 
 - {{Fix}} Fix usability issues with `pyodide-build mkpkg` CLI.
   {pr}`1828`
-  
+
 - {{ Enhancement }} Better support for ccache when building Pyodide
   {pr}`1805`
 
+### packages
+
+- {{ Enhancement }} Unit tests are now unvendored from Python packages and
+  included in a separate package `<package name>-tests`. This results in a
+  20% size reduction on average for packages that vendor tests (e.g. numpy,
+  pandas, scipy).
+  {pr}`1832`
 
 ### Uncategorized
 

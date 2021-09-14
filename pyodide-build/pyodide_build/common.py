@@ -32,7 +32,7 @@ def _parse_package_subset(query: Optional[str]) -> Optional[Set[str]]:
     if query is None:
         query = "core"
 
-    core_packages = {"micropip", "pyparsing", "pytz", "packaging", "Jinja2"}
+    core_packages = {"micropip", "pyparsing", "pytz", "packaging", "Jinja2", "regex"}
     core_scipy_packages = {
         "numpy",
         "scipy",
