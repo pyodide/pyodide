@@ -221,7 +221,7 @@ def build_from_graph(pkg_map: Dict[str, BasePackage], outputdir: Path, args) -> 
     # dependents, because the ordering ought not to change after insertion.
     build_queue: PriorityQueue = PriorityQueue()
 
-    print("Packages that would be built: " + ", ".join(pkg_map))
+    print("Building the following packages: " + ", ".join(pkg_map))
 
     for pkg in pkg_map.values():
         if len(pkg.dependencies) == 0:
