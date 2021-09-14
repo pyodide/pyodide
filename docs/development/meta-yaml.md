@@ -8,10 +8,10 @@ packages](https://conda.io/docs/user-guide/tasks/build-packages/define-metadata.
 though it is much more limited. The most important limitation is that Pyodide
 assumes there will only be one version of a given library available, whereas
 Conda allows the user to specify the versions of each package that they want to
-install. Despite the limitations, keeping the file format as close as possible
-to conda's should make it easier to use existing conda package definitions as a
-starting point to create Pyodide packages. In general, however, one should not
-expect Conda packages to "just work" with Pyodide, see `pr`{795}`
+install. Despite the limitations, it is recommended to use existing conda 
+package definitions as a starting point to create Pyodide packages. In
+general, however, one should not
+expect Conda packages to "just work" with Pyodide, see {pr}`795`
 
 The supported keys in the `meta.yaml` file are described below.
 
@@ -23,7 +23,7 @@ The name of the package. It must match the name of the package used when
 expanding the tarball, which is sometimes different from the name of the package
 in the Python namespace when installed. It must also match the name of the
 directory in which the `meta.yaml` file is placed. It can only contain
-alpha-numeric characters and `-`, `_`.
+alpha-numeric characters, `-`, and `_`.
 
 ### `package/version`
 
@@ -94,7 +94,9 @@ Extra arguments to pass to the compiler when building for WebAssembly.
 
 ### `build/cxxflags`
 
-Extra arguments to pass to the compiler when building C++ files for WebAssembly. Note that both clfags and cxxflags will be used when compiling C++ files. A common example would be to use -std=c++11 for code that makes use of C++11 features.
+Extra arguments to pass to the compiler when building C++ files for WebAssembly.
+Note that both `cflags` and `cxxflags` will be used when compiling C++ files. 
+A common example would be to use `-std=c++11` for code that makes use of C++11 features.
 
 (This key is not in the Conda spec).
 

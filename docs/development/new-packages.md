@@ -5,7 +5,7 @@
 ## Quickstart
 
 If you wish to use a package in Pyodide that is not already included, first you
-need to determine if it is necessary to package if for Pyodide. Ideally, you
+need to determine whether it is necessary to package it for Pyodide. Ideally, you
 should start this process with package dependencies.
 
 ### 1. Determining if creating a Pyodide package is necessary
@@ -49,7 +49,7 @@ package is on PyPI, run:
 `pyodide-build mkpkg <package-name>`
 
 This will generate a `meta.yaml` under `package/<package-name>/` (see
-`ref`{meta-yaml-spec}) that should work out of the box for many simple Python
+{ref}`meta-yaml-spec`) that should work out of the box for many simple Python
 packages. This tool will populate the latest version, download link and sha256
 hash by querying PyPI. It doesn't currently handle package dependencies, so you
 will need to specify those yourself.
@@ -84,11 +84,11 @@ and see if there are any errors. The detailed build log can be found under
 If there are errors you might need to,
 
 - patch the package by adding `.patch` files to `packages/<package-name>/patches`
-- update the `meta.yaml`
+- add the patch files to the `source/patches` field in the `meta.yaml` file
 
 then re-start the build.
 
-In general, it is useful to see how other similar packages are built in Pyodide.
+In general, it is recommended to look into how other similar packages are built in Pyodide.
 If you still encounter difficulties in building your package, open a [new Pyodide
 issue](https://github.com/pyodide/pyodide/issues).
 
