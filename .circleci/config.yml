@@ -44,7 +44,7 @@ jobs:
 
       - restore_cache:
           keys:
-            - -core-{{ checksum "Makefile.envs" }}-{{ checksum "python/Makefile" }}-v20210910-
+            - -core-{{ checksum "Makefile.envs" }}-{{ checksum "cpython/Makefile" }}-v20210910-
 
       - run:
           name: build emsdk
@@ -89,7 +89,7 @@ jobs:
       - save_cache:
           paths:
             - /root/.ccache
-          key: -core-{{ checksum "Makefile.envs" }}-{{ checksum "python/Makefile" }}-v20210910-
+          key: -core-{{ checksum "Makefile.envs" }}-{{ checksum "cpython/Makefile" }}-v20210910-
 
       - run:
           name: Clean up workspace
