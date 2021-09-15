@@ -1,0 +1,98 @@
+From d9181272105915622a3eb8940e08aaf6e00f385c Mon Sep 17 00:00:00 2001
+From: Hood <hood@mit.edu>
+Date: Wed, 8 Sep 2021 17:49:15 -0700
+Subject: [PATCH] Fix dup
+
+---
+ src/library_fs.js      |  7 ++++++-
+ src/library_syscall.js | 12 ++++++------
+ 2 files changed, 12 insertions(+), 7 deletions(-)
+
+This should fix two problems with the `dup` system calls:
+1. `dup` expects that every file descriptor has a corresponding file (so pipes and (https://github.com/emscripten-core/emscripten/issues/14640)
+   files that have been unlinked (https://github.com/emscripten-core/emscripten/issues/15012) cannot be duplicated ).
+2. The dup'd file descriptor does not share flags and position with the original file desciptor.
+
+This is a simplification of an upstream pull request that would fix this problem.
+https://github.com/emscripten-core/emscripten/pull/9396/files
+This patch is simpler than the upstream one but leaves NODERAWFS broken.
+
+
+diff --git a/emsdk/upstream/emscripten/src/library_fs.js b/emsdk/upstream/emscripten/src/library_fs.js
+index 4ca59469c..519fab972 100644
+--- a/emsdk/upstream/emscripten/src/library_fs.js
++++ b/emsdk/upstream/emscripten/src/library_fs.js
+@@ -425,11 +425,16 @@ FS.staticInit();` +
+           },
+           isAppend: {
+             get: function() { return (this.flags & {{{ cDefine('O_APPEND') }}}); }
+-          }
++          },
++          get flags() { return this.shared.flags; },
++          set flags(value) { this.shared.flags = value; },
++          get position() { return this.shared.position; },
++          set position(value) { this.shared.position = value; },
+         };
+       }
+       // clone it, so we can return an instance of FSStream
+       var newStream = new FS.FSStream();
++      newStream.shared = {};
+       for (var p in stream) {
+         newStream[p] = stream[p];
+       }
+diff --git a/emsdk/upstream/emscripten/src/library_syscall.js b/emsdk/upstream/emscripten/src/library_syscall.js
+index 96d2ec0c3..0001624ec 100644
+--- a/emsdk/upstream/emscripten/src/library_syscall.js
++++ b/emsdk/upstream/emscripten/src/library_syscall.js
+@@ -137,10 +137,10 @@ var SyscallsLibrary = {
+       }
+       return 0;
+     },
+-    doDup: function(path, flags, suggestFD) {
++    doDup: function(stream, suggestFD) {
+       var suggest = FS.getStream(suggestFD);
+       if (suggest) FS.close(suggest);
+-      return FS.open(path, flags, 0, suggestFD, suggestFD).fd;
++      return FS.createStream(stream, suggestFD, suggestFD).fd;
+     },
+     doReadv: function(stream, iov, iovcnt, offset) {
+       var ret = 0;
+@@ -380,7 +380,7 @@ var SyscallsLibrary = {
+   },
+   __sys_dup: function(fd) {
+     var old = SYSCALLS.getStreamFromFD(fd);
+-    return FS.open(old.path, old.flags, 0).fd;
++    return FS.createStream(old, 0).fd;
+   },
+   __sys_pipe__deps: ['$PIPEFS'],
+   __sys_pipe: function(fdPtr) {
+@@ -472,7 +472,7 @@ var SyscallsLibrary = {
+   __sys_dup2: function(oldfd, suggestFD) {
+     var old = SYSCALLS.getStreamFromFD(oldfd);
+     if (old.fd === suggestFD) return suggestFD;
+-    return SYSCALLS.doDup(old.path, old.flags, suggestFD);
++    return SYSCALLS.doDup(old, suggestFD);
+   },
+   __sys_getppid__nothrow: true,
+   __sys_getppid__proxy: false,
+@@ -1167,7 +1167,7 @@ var SyscallsLibrary = {
+           return -{{{ cDefine('EINVAL') }}};
+         }
+         var newStream;
+-        newStream = FS.open(stream.path, stream.flags, 0, arg);
++        newStream = FS.createStream(stream, arg);
+         return newStream.fd;
+       }
+       case {{{ cDefine('F_GETFD') }}}:
+@@ -1403,7 +1403,7 @@ var SyscallsLibrary = {
+     assert(!flags);
+ #endif
+     if (old.fd === suggestFD) return -{{{ cDefine('EINVAL') }}};
+-    return SYSCALLS.doDup(old.path, old.flags, suggestFD);
++    return SYSCALLS.doDup(old, suggestFD);
+   },
+   __sys_pipe2__nothrow: true,
+   __sys_pipe2__proxy: false,
+-- 
+2.17.1
+

@@ -11,6 +11,57 @@ substitutions:
 
 # Change Log
 
+## Version 0.18.1 (unreleased)
+
+### Console
+
+- {{Fix}} Ctrl+C handling in console now works correctly with multiline input.
+  New behavior more closely approximates the behavior of the native Python
+  console.
+  {pr}`1790`
+
+- {{Fix}} Fix the repr of Python objects (including lists and dicts) in console {pr}`1780`
+
+- {{Fix}} The "long output truncated" message now appears on a separate line as intended.
+  {pr}`1814`
+
+- {{Fix}} The streams that are used to redirect stdin and stdout in the console now define
+  `isatty` to return `True`. This fixes pytest.
+  {pr}`1822`
+
+### Python package
+
+- {{Fix}} Avoid circular references when runsource raises SyntaxError
+  {pr}`1758`
+
+- {{Enhancement}} If `find_imports` is used on code that contains a syntax
+  error, it will return an empty list instead of raising a `SyntaxError`.
+  {pr}`1819`
+
+### Javascript package
+
+- {{Fix}} The {any}`pyodide.setInterruptBuffer` command is now publicly exposed
+  again, as it was in v0.17.0. {pr}`1797`
+
+### Python / JavaScript type conversions
+
+- {{Fix}} Conversion of very large strings from Javascript to Python works
+  again. {pr}`1806`
+
+- {{Fix}} Fixed a use after free bug in the error handling code.
+  {pr}`1816`
+
+### Packages
+
+- {{Fix}} pillow now correctly encodes/decodes JPEG image format. {pr}`1818`
+
+### Micellaneous
+
+- {{Fix}} Patched emscripten to make the system calls to duplicate file
+  descriptors closer to posix-compliant. In particular, this fixes the use of
+  `dup` on pipes and temporary files, as needed by `pytest`.
+  {pr}`1823`
+
 ## Version 0.18.0
 
 _August 3rd, 2021_

@@ -2,6 +2,7 @@ import pytest
 from pathlib import Path
 import sys
 from textwrap import dedent
+from pyodide_build.testing import run_in_pyodide
 
 sys.path.append(str(Path(__file__).resolve().parents[2] / "src" / "py"))
 
@@ -146,6 +147,71 @@ def test_eval_code_locals():
     with pytest.raises(NameError):
         eval_code("invalidate_caches()", globals, globals)
     eval_code("invalidate_caches()", globals, locals)
+
+
+@run_in_pyodide
+def test_dup_pipe():
+    # See https://github.com/emscripten-core/emscripten/issues/14640
+    import os
+
+    [fdr1, fdw1] = os.pipe()
+    fdr2 = os.dup(fdr1)
+    fdw2 = os.dup2(fdw1, 50)
+    # Closing any of fdr, fdr2, fdw, or fdw2 will currently destroy the pipe.
+    # This bug is fixed upstream:
+    # https://github.com/emscripten-core/emscripten/pull/14685
+    s1 = b"some stuff"
+    s2 = b"other stuff to write"
+    os.write(fdw1, s1)
+    assert os.read(fdr2, 100) == s1
+    os.write(fdw2, s2)
+    assert os.read(fdr1, 100) == s2
+
+
+@run_in_pyodide
+def test_dup_temp_file():
+    # See https://github.com/emscripten-core/emscripten/issues/15012
+    import os
+    from tempfile import TemporaryFile
+
+    tf = TemporaryFile(buffering=0)
+    fd1 = os.dup(tf.fileno())
+    fd2 = os.dup2(tf.fileno(), 50)
+    s = b"hello there!"
+    tf.write(s)
+    tf2 = open(fd1, "w+")
+    assert tf2.tell() == len(s)
+    # This next assertion actually demonstrates a bug in dup: the correct value
+    # to return should be b"".
+    assert os.read(fd1, 50) == b""
+    tf2.seek(1)
+    assert tf.tell() == 1
+    assert tf.read(100) == b"ello there!"
+
+
+@run_in_pyodide
+def test_dup_stdout():
+    # Test redirecting stdout using low level os.dup operations.
+    # This sort of redirection is used in pytest.
+    import os
+    import sys
+    from tempfile import TemporaryFile
+
+    tf = TemporaryFile(buffering=0)
+    save_stdout = os.dup(sys.stdout.fileno())
+    os.dup2(tf.fileno(), sys.stdout.fileno())
+    print("hi!!")
+    print("there...")
+    assert tf.tell() == len("hi!!\nthere...\n")
+    os.dup2(save_stdout, sys.stdout.fileno())
+    print("not captured")
+    os.dup2(tf.fileno(), sys.stdout.fileno())
+    print("captured")
+    assert tf.tell() == len("hi!!\nthere...\ncaptured\n")
+    os.dup2(save_stdout, sys.stdout.fileno())
+    os.close(save_stdout)
+    tf.seek(0)
+    assert tf.read(1000).decode() == "hi!!\nthere...\ncaptured\n"
 
 
 @pytest.mark.skip_pyproxy_check
@@ -572,6 +638,32 @@ def test_reentrant_error(selenium):
         """
     )
     assert caught
+
+
+def test_restore_error(selenium):
+    # See PR #1816.
+    selenium.run_js(
+        """
+        self.f = function(){
+            pyodide.runPython(`
+                err = Exception('hi')
+                raise err
+            `);
+        }
+        pyodide.runPython(`
+            from js import f
+            import sys
+            try:
+                f()
+            except Exception as e:
+                assert err == e
+                assert e == sys.last_value
+            finally:
+                del err
+            assert sys.getrefcount(sys.last_value) == 2
+        `);
+        """
+    )
 
 
 @pytest.mark.skip_refcount_check
