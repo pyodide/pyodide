@@ -64,6 +64,10 @@ _September 15th, 2021_
   `dup` on pipes and temporary files, as needed by `pytest`.
   {pr}`1823`
 
+### List of contributors
+
+etnnth, Gyeongjae Choi, Hood Chatham, Roman Yurchak
+
 ## Version 0.18.0
 
 _August 3rd, 2021_
