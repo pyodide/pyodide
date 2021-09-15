@@ -307,7 +307,10 @@ def package_files(buildpath: Path, srcpath: Path, pkg: Dict[str, Any]) -> None:
     install_prefix = (srcpath / "install").resolve()
     test_install_prefix = (srcpath / "install-test").resolve()
 
-    n_unvendored = unvendor_tests(install_prefix, test_install_prefix)
+    if pkg["build"].get("unvendor_tests", True):
+        n_unvendored = unvendor_tests(install_prefix, test_install_prefix)
+    else:
+        n_unvendored = 0
 
     # Package the package except for tests
     subprocess.run(
