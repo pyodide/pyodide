@@ -11,7 +11,9 @@ substitutions:
 
 # Change Log
 
-## Version 0.18.1 (unreleased)
+## Version 0.18.1
+
+_September 15th, 2021_
 
 ### Console
 
