@@ -12,7 +12,7 @@ from queue import Queue, PriorityQueue
 import shutil
 import subprocess
 import sys
-from threading import Thread
+from threading import Thread, Lock
 from time import sleep, perf_counter
 from typing import Dict, Set, Optional, List, Any
 
@@ -220,18 +220,26 @@ def build_from_graph(pkg_map: Dict[str, BasePackage], outputdir: Path, args) -> 
     # Insert packages into build_queue. We *must* do this after counting
     # dependents, because the ordering ought not to change after insertion.
     build_queue: PriorityQueue = PriorityQueue()
+
+    print("Building the following packages: " + ", ".join(sorted(pkg_map.keys())))
+
     for pkg in pkg_map.values():
         if len(pkg.dependencies) == 0:
             build_queue.put(pkg)
 
     built_queue: Queue = Queue()
+    thread_lock = Lock()
+    queue_idx = 1
 
     def builder(n):
-        print(f"Starting thread {n}")
+        nonlocal queue_idx
         while True:
             pkg = build_queue.get()
+            with thread_lock:
+                pkg._queue_idx = queue_idx
+                queue_idx += 1
 
-            print(f"Thread {n} building {pkg.name}")
+            print(f"[{pkg._queue_idx}/{len(pkg_map)}] (thread {n}) building {pkg.name}")
             t0 = perf_counter()
             try:
                 pkg.build(outputdir, args)
@@ -239,7 +247,10 @@ def build_from_graph(pkg_map: Dict[str, BasePackage], outputdir: Path, args) -> 
                 built_queue.put(e)
                 return
 
-            print(f"Thread {n} built {pkg.name} in {perf_counter() - t0:.1f} s")
+            print(
+                f"[{pkg._queue_idx}/{len(pkg_map)}] (thread {n}) "
+                f"built {pkg.name} in {perf_counter() - t0:.1f} s"
+            )
             built_queue.put(pkg)
             # Release the GIL so new packages get queued
             sleep(0.01)
