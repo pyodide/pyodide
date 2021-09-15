@@ -280,35 +280,3 @@ def temp(pyodide_js, Module, jsglobals):
   return pyodide;
 }
 globalThis.loadPyodide = loadPyodide;
-
-if (globalThis.languagePluginUrl) {
-  console.warn(
-    "languagePluginUrl is deprecated and will be removed in version 0.18.0, " +
-      "instead use loadPyodide({ indexURL : <some_url>})"
-  );
-
-  /**
-   * A deprecated parameter that specifies the Pyodide ``indexURL``. If present,
-   * Pyodide will automatically invoke
-   * ``loadPyodide({indexURL : languagePluginUrl})``
-   * and will store the resulting promise in
-   * :any:`globalThis.languagePluginLoader`. Use :any:`loadPyodide`
-   * directly instead of defining this.
-   *
-   * @type String
-   * @deprecated Will be removed in version 0.18.0
-   */
-  globalThis.languagePluginUrl;
-
-  /**
-   * A deprecated promise that resolves to ``undefined`` when Pyodide is
-   * finished loading. Only created if :any:`languagePluginUrl` is
-   * defined. Instead use :any:`loadPyodide`.
-   *
-   * @type Promise
-   * @deprecated Will be removed in version 0.18.0
-   */
-  globalThis.languagePluginLoader = loadPyodide({
-    indexURL: globalThis.languagePluginUrl,
-  }).then((pyodide) => (self.pyodide = pyodide));
-}

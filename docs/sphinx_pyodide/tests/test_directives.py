@@ -67,7 +67,6 @@ def test_pyodide_analyzer():
         "unregisterJsModule",
         "loadPackage",
         "runPythonAsync",
-        "pyimport",
         "loadPackagesFromImports",
         "registerJsModule",
         "isPyProxy",
@@ -152,10 +151,6 @@ def test_summary():
         "",
         "The :ref:`js-api-pyodide` module object.",
         "globalThis.pyodide",
-    )
-    assert (
-        globals["languagePluginUrl"][3]
-        == "A deprecated parameter that specifies the Pyodide ``indexURL``."
     )
 
     assert attributes["pyodide_py"] == (
