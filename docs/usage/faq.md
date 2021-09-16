@@ -193,7 +193,7 @@ def f(*args):
 document.body.addEventListener('click', f)
 ```
 
-Now every time you click, an error will be raised (see {ref}`type-translations-proxy-arguments`).
+Now every time you click, an error will be raised (see {ref}`call-js-from-py`).
 
 To do this correctly use {func}`pyodide.create_proxy` as follows:
 

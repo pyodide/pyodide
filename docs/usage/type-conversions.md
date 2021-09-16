@@ -378,6 +378,8 @@ let result = test.callKwargs([1,2,3,4], { offset : 7});
 // result is the array [8, 12, 16, 23]
 ```
 
+(call-js-from-py)=
+
 ### Calling Javascript functions from Python
 
 What happens when calling a Javascript function from Python is a bit more
