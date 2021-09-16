@@ -307,7 +307,7 @@ def package_files(buildpath: Path, srcpath: Path, pkg: Dict[str, Any]) -> None:
     install_prefix = (srcpath / "install").resolve()
     test_install_prefix = (srcpath / "install-test").resolve()
 
-    if pkg.get("build", {}).get("unvendor_tests", True):
+    if pkg.get("build", {}).get("unvendor-tests", True):
         n_unvendored = unvendor_tests(install_prefix, test_install_prefix)
     else:
         n_unvendored = 0
