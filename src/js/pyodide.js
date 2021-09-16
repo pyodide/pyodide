@@ -10,8 +10,6 @@ import {
 import { makePublicAPI, registerJsModule } from "./api.js";
 import "./pyproxy.gen.js";
 
-import { wrapNamespace } from "./pyproxy.gen.js";
-
 /**
  * @typedef {import('./pyproxy.gen').PyProxy} PyProxy
  * @typedef {import('./pyproxy.gen').PyProxyWithLength} PyProxyWithLength
@@ -263,10 +261,6 @@ def temp(pyodide_js, Module, jsglobals):
 
   Module.init_dict.get("temp")(pyodide, Module, config.jsglobals);
   // Module.runPython works starting from here!
-
-  // Wrap "globals" in a special Proxy that allows `pyodide.globals.x` access.
-  // TODO: Should we have this?
-  Module.globals = wrapNamespace(Module.globals);
 
   pyodide.globals = Module.globals;
   pyodide.pyodide_py = Module.pyodide_py;
