@@ -10,10 +10,10 @@ which is the equivalent of the object from the source language, for example
 converting a Python string to the equivalent a Javascript string. By "proxying"
 an object we mean producing a special object in the target language that
 forwards requests to the source language. When we proxy a Javascript object into
-Python, the result is a {any}`JsProxy` object. When we proxy a Python object into
-Javascript, the result is a {any}`PyProxy` object. A proxied object can be explicitly
-converted using the explicit conversion methods {any}`JsProxy.to_py` and
-{any}`PyProxy.toJs`.
+Python, the result is a {any}`JsProxy` object. When we proxy a Python object
+into Javascript, the result is a {any}`PyProxy` object. A proxied object can be
+explicitly converted using the explicit conversion methods {any}`JsProxy.to_py`
+and {any}`PyProxy.toJs`.
 
 Python to Javascript translations occur:
 
@@ -33,9 +33,10 @@ Javascript to Python translations occur:
 ```{admonition} Memory Leaks and Python to Javascript translations
 :class: warning
 
-Any time a Python to Javascript translation occurs, it may create a {any}`PyProxy`.
-To avoid memory leaks, you must store the {any}`PyProxy` and {any}`destroy <PyProxy.destroy>` it when you are
-done with it. See {ref}`avoiding-leaks` for more info.
+Any time a Python to Javascript translation occurs, it may create a
+{any}`PyProxy`. To avoid memory leaks, you must store the {any}`PyProxy` and
+{any}`destroy <PyProxy.destroy>` it when you are done with it. See
+{ref}`avoiding-leaks` for more info.
 ```
 
 ## Round trip conversions
@@ -84,9 +85,9 @@ Python:
 | `bool`  | `Boolean`              |
 | `None`  | `undefined`            |
 
-\* An `int` is converted to a `Number` if the `int` is between -2^{53} and 2^{53}
-inclusive, otherwise it is converted to a `BigInt`. (If the browser does not
-support `BigInt` then a `Number` will be used instead. In this case,
+\* An `int` is converted to a `Number` if the `int` is between -2^{53} and
+2^{53} inclusive, otherwise it is converted to a `BigInt`. (If the browser does
+not support `BigInt` then a `Number` will be used instead. In this case,
 conversion of large integers from Python to Javascript is lossy.)
 
 (type-translations_js2py-table)=
@@ -119,8 +120,8 @@ language.
 
 ### Proxying from Javascript into Python
 
-When most Javascript objects are translated into Python a {any}`JsProxy` is returned.
-The following operations are currently supported on a {any}`JsProxy`:
+When most Javascript objects are translated into Python a {any}`JsProxy` is
+returned. The following operations are currently supported on a {any}`JsProxy`:
 
 | Python                             | Javascript                        |
 | ---------------------------------- | --------------------------------- |
@@ -188,11 +189,12 @@ Javascript uses `array[7]`. For these cases, we translate:
 
 ### Proxying from Python into Javascript
 
-When most Python objects are translated to Javascript a {any}`PyProxy` is produced.
+When most Python objects are translated to Javascript a {any}`PyProxy` is
+produced.
 
 Fewer operations can be overloaded in Javascript than in Python so some
-operations are more cumbersome on a {any}`PyProxy` than on a {any}`JsProxy`. The following
-operations are supported:
+operations are more cumbersome on a {any}`PyProxy` than on a {any}`JsProxy`. The
+following operations are supported:
 
 | Javascript                          | Python              |
 | ----------------------------------- | ------------------- |
@@ -290,10 +292,10 @@ raised instead.
 
 ### Javascript to Python
 
-Explicit conversion of a {any}`JsProxy` into a native Python object is done with the
-{any}`JsProxy.to_py` method. By default, the `to_py` method does a recursive "deep"
-conversion, to do a shallow conversion use `proxy.to_py(depth=1)` The `to_py` method
-performs the following explicit conversions:
+Explicit conversion of a {any}`JsProxy` into a native Python object is done with
+the {any}`JsProxy.to_py` method. By default, the `to_py` method does a recursive
+"deep" conversion, to do a shallow conversion use `proxy.to_py(depth=1)` The
+`to_py` method performs the following explicit conversions:
 
 | Javascript | Python |
 | ---------- | ------ |
@@ -302,8 +304,8 @@ performs the following explicit conversions:
 | `Map`      | `dict` |
 | `Set`      | `set`  |
 
-\* `to_py` will only convert an object into a dictionary if its constructor
-is `Object`, otherwise the object will be left alone. Example:
+\* `to_py` will only convert an object into a dictionary if its constructor is
+`Object`, otherwise the object will be left alone. Example:
 
 ```pyodide
 class Test {};
@@ -413,8 +415,8 @@ value is used to resolve the `Future`. Then the result is destroyed if it is a
 
 As a result of this, if a `PyProxy` is persisted to be used later, then it must
 either be copied using {any}`PyProxy.copy` in Javascript or it must be created
-with {any}`pyodide.create_proxy` or `pyodide.create_once_callable`.
-If it's only going to be called once use `pyodide.create_once_callable`:
+with {any}`pyodide.create_proxy` or `pyodide.create_once_callable`. If it's only
+going to be called once use `pyodide.create_once_callable`:
 
 ```py
 from pyodide import create_once_callable
@@ -447,9 +449,8 @@ Javascript ArrayBuffers and ArrayBuffer views (`Int8Array` and friends) are
 proxied into Python. Python can't directly access arrays if they are outside of
 the wasm heap so it's impossible to directly use these proxied buffers as Python
 buffers. You can convert such a proxy to a Python `memoryview` using the `to_py`
-api.
-This makes it easy to correctly convert the array to a Numpy array
-using `numpy.asarray`:
+api. This makes it easy to correctly convert the array to a Numpy array using
+`numpy.asarray`:
 
 ```pyodide
 self.jsarray = new Float32Array([1,2,3, 4, 5, 6]);
@@ -488,19 +489,21 @@ future.
 
 Python objects supporting the [Python Buffer
 protocol](https://docs.python.org/3/c-api/buffer.html) are proxied into
-Javascript. The data inside the buffer can be accessed via the {any}`PyProxy.toJs` method or
-the {any}`PyProxy.getBuffer` method. The `toJs` API copies the buffer into Javascript,
-whereas the `getBuffer` method allows low level access to the WASM memory
-backing the buffer. The `getBuffer` API is more powerful but requires care to
-use correctly. For simple use cases the `toJs` API should be prefered.
+Javascript. The data inside the buffer can be accessed via the
+{any}`PyProxy.toJs` method or the {any}`PyProxy.getBuffer` method. The `toJs`
+API copies the buffer into Javascript, whereas the `getBuffer` method allows low
+level access to the WASM memory backing the buffer. The `getBuffer` API is more
+powerful but requires care to use correctly. For simple use cases the `toJs` API
+should be prefered.
 
 If the buffer is zero or one-dimensional, then `toJs` will in most cases convert
 it to a single `TypedArray`. However, in the case that the format of the buffer
-is `'s'`, we will convert the buffer to a string and if the format is `'?'` we will
-convert it to an Array of booleans.
+is `'s'`, we will convert the buffer to a string and if the format is `'?'` we
+will convert it to an Array of booleans.
 
 If the dimension is greater than one, we will convert it to a nested Javascript
-array, with the innermost dimension handled in the same way we would handle a 1d array.
+array, with the innermost dimension handled in the same way we would handle a 1d
+array.
 
 An example of a case where you would not want to use the `toJs` method is when
 the buffer is bitmapped image data. If for instance you have a 3d buffer shaped
