@@ -40,12 +40,15 @@ done with it. See {ref}`avoiding-leaks` for more info.
 
 ## Round trip conversions
 
-Translating an object from Python to Javascript and then back to
-Python is guaranteed to give an object that is equal to the original object
-(with the exception of `nan` because `nan != nan`). Furthermore, if the object
-is proxied into Javascript, then translation back unwraps the proxy, and the
-result of the round trip conversion `is` the original object (in the sense that
-they live at the same memory address).
+Translating an object from Python to Javascript and then back to Python is
+guaranteed to give an object that is equal to the original object. Furthermore,
+if the object is proxied into Javascript, then translation back unwraps the
+proxy, and the result of the round trip conversion `is` the original object (in
+the sense that they live at the same memory address). There are a few
+exceptions:
+
+1. `nan` is converted to `nan` after a round trip but `nan != nan`
+2. proxies created using {any}`pyodide.create_proxy` will be unwrapped
 
 Translating an object from Javascript to Python and then back to Javascript
 gives an object that is `===` to the original object. Furthermore, if the object
