@@ -43,8 +43,10 @@ any compilation commands.
 ### 2. Creating the meta.yaml
 
 Once you determined that you need to create a new package for Pyodide, the
-easiest place to start is with the {ref}`mkpkg tool <pyodide-mkpkg>`. If your
-package is on PyPI, run:
+easiest place to start is with the {ref}`mkpkg tool <pyodide-mkpkg>`.
+From a clone of pyodide, install the tool with `pip install -e pyodide-build`
+
+If your package is on PyPI, run:
 
 `pyodide-build mkpkg <package-name>`
 
