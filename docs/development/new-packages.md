@@ -40,11 +40,12 @@ To determine if a package has C extensions, check if its `setup.py` contains
 any compilation commands.
 ```
 
-### 2. Creating the meta.yaml
+### 2. Creating the `meta.yaml` file
 
-Once you determined that you need to create a new package for Pyodide, the
-easiest place to start is with the {ref}`mkpkg tool <pyodide-mkpkg>`. If your
-package is on PyPI, run:
+If your package is on PyPI, the
+easiest place to start is with the {ref}`mkpkg tool <pyodide-mkpkg>`.
+From the Pyodide root directory, install the tool with `pip install -e pyodide-build`, then run:
+
 
 `pyodide-build mkpkg <package-name>`
 
