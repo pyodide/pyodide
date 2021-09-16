@@ -255,13 +255,29 @@ resp = await js.fetch('example.com/some_api', to_js({
 
 ## How can I control the behavior of stdin / stdout / stderr?
 
-This works much the same as it does in native Python: you can overwrite
-`sys.stdin`, `sys.stdout`, and `sys.stderr` respectively. If you want to do it
-temporarily, it's recommended to use
+If you wish to override `stdin`, `stdout` or `stderr` for the entire Pyodide
+runtime, you can pass options to {any}`loadPyodide <globalThis.loadPyodide>`: If
+you say
+
+```
+loadPyodide({
+  ..., stdin: stdin_func, stdout: stdout_func, stderr: stderr_func
+});
+```
+
+then every time a line is written to `stdout` (resp. `stderr`), `stdout_func`
+(resp `stderr_func`) will be called on the line. Everytime `stdin` is read,
+`stdin_func` will be called with zero arguments. It is expected to return a
+string which is interpreted as a line of text.
+
+Temporary redirection works much the same as it does in native Python: you can
+overwrite `sys.stdin`, `sys.stdout`, and `sys.stderr` respectively. If you want
+to do it temporarily, it's recommended to use
 [`contextlib.redirect_stdout`](https://docs.python.org/3/library/contextlib.html#contextlib.redirect_stdout)
 and
 [`contextlib.redirect_stderr`](https://docs.python.org/3/library/contextlib.html#contextlib.redirect_stderr).
-There is no `contextlib.redirect_stdin` but it is easy to make your own as follows:
+There is no `contextlib.redirect_stdin` but it is easy to make your own as
+follows:
 
 ```py
 from contextlib import _RedirectStream
