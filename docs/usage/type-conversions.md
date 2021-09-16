@@ -407,6 +407,34 @@ the promise is finished, the result is converted to Python and the converted
 value is used to resolve the `Future`. Then the result is destroyed if it is a
 `PyProxy`. Any PyProxies created in converting the arguments are also destroyed.
 
+As a result of this, if a `PyProxy` is persisted to be used later, then it must
+either be copied using {any}`PyProxy.copy` in Javascript or it must be created
+with {any}`pyodide.create_proxy` or `pyodide.create_once_callable`.
+If it's only going to be called once use `pyodide.create_once_callable`:
+
+```py
+from pyodide import create_once_callable
+from js import setTimeout
+def my_callback():
+    print("hi")
+setTimeout(create_once_callable(my_callback), 1000)
+```
+
+If it's going to be called many times use `create_proxy`:
+
+```py
+from pyodide import create_proxy
+from js import document
+def my_callback():
+    print("hi")
+proxy = document.create_proxy(my_callback)
+document.body.addEventListener("click", proxy)
+# ...
+# make sure to hold on to proxy
+document.body.removeEventListener("click", proxy)
+proxy.destroy()
+```
+
 ## Buffers
 
 ### Using Javascript Typed Arrays from Python
