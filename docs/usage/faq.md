@@ -2,7 +2,7 @@
 
 ## How can I load external files in Pyodide?
 
-The three possible solutions are,
+Two possible solutions are,
 
 - include the files in a Python package, build a pure Python wheel with
   `python setup.py bdist_wheel` and
@@ -11,11 +11,6 @@ The three possible solutions are,
   ```js
   pyodide.runPython(await (await fetch("https://some_url/...")).text());
   ```
-- Use `pyodide.FS.writeFile(path, data)` to directly create a file inside the
-  file system. Note that the directory must already exist, if not use
-  `pyodide.FS.mkdir` first. The file system API is documented
-  [here](https://emscripten.org/docs/api_reference/Filesystem-API.html) though
-  the docs are not very complete.
 
 In any case, files need to be served with a web server and cannot be loaded from
 local file system.

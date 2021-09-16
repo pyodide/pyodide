@@ -48,7 +48,7 @@ the sense that they live at the same memory address). There are a few
 exceptions:
 
 1. `nan` is converted to `nan` after a round trip but `nan != nan`
-2. proxies created using {any}`pyodide.create_proxy` will be unwrapped
+2. proxies created using {any}`pyodide.create_proxy` will be unwrapped.
 
 Translating an object from Javascript to Python and then back to Javascript
 gives an object that is `===` to the original object. Furthermore, if the object
