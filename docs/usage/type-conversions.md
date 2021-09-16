@@ -353,8 +353,9 @@ let result_js = result_py.toJs();
 result_py.destroy();
 ```
 
-If a function is indended to be used from Javascript, you can use {any}`to_js <pyodide.to_js>` on the return value. This is particularly important for
-callbacks.
+If a function is indended to be used from Javascript, you can use {any}`to_js <pyodide.to_js>` on the return value. This prevents the return value from
+leaking without requiring the Javascript code to explicitly destroy it. This is
+particularly important for callbacks.
 
 ```pyodide
 let test = pyodide.runPython(`
