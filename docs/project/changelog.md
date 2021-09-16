@@ -11,7 +11,9 @@ substitutions:
 
 # Change Log
 
-## Version 0.18.1 (unreleased)
+## Version 0.18.1
+
+_September 15th, 2021_
 
 ### Console
 
@@ -61,6 +63,10 @@ substitutions:
   descriptors closer to posix-compliant. In particular, this fixes the use of
   `dup` on pipes and temporary files, as needed by `pytest`.
   {pr}`1823`
+
+### List of contributors
+
+etnnth, Gyeongjae Choi, Hood Chatham, Roman Yurchak
 
 ## Version 0.18.0
 

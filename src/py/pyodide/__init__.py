@@ -34,7 +34,7 @@ if IN_BROWSER:
     asyncio.set_event_loop_policy(WebLoopPolicy())
 
 
-__version__ = "0.18.0"
+__version__ = "0.18.1"
 
 __all__ = [
     "open_url",
