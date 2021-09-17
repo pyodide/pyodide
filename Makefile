@@ -154,12 +154,14 @@ lint: node_modules/.installed
 	npx prettier --check src --ignore-path '*.gen.*'
 	black --check .
 	mypy --ignore-missing-imports    \
-		pyodide-build/pyodide_build/ \
 		src/ 					     \
 		packages/micropip/src/ 		 \
-		packages/*/test* 			 \
-		conftest.py 				 \
+		packages/*/test*
+	mypy \
+		pyodide-build/pyodide_build/ \
+		conftest.py					 \
 		docs
+
 
 
 
