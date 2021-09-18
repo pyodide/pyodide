@@ -2,7 +2,7 @@ import __main__
 import sys
 import gc
 
-from ._core import JsProxy
+from _pyodide_core import JsProxy
 from _pyodide._importhook import jsfinder
 
 

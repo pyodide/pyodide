@@ -1884,7 +1884,7 @@ JsProxy_init(PyObject* core_module)
   FAIL_IF_NULL(jsproxy_mock);
 
   // Load the docstrings for JsProxy methods from the corresponding stubs in
-  // _pyodide._core. set_method_docstring uses
+  // _pyodide._core_docs.set_method_docstring uses
   // _pyodide.docstring.get_cmeth_docstring to generate the appropriate C-style
   // docstring from the Python-style docstring.
 #define SET_DOCSTRING(x)                                                       \

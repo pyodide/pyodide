@@ -6,7 +6,7 @@ import traceback
 from typing import Callable
 
 
-from ._core import create_once_callable, IN_BROWSER
+from _pyodide_core import create_once_callable, IN_BROWSER
 
 if IN_BROWSER:
     from js import setTimeout
