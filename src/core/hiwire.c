@@ -106,6 +106,7 @@ EM_JS_NUM(int, hiwire_init, (), {
   Module.hiwire.get_value = function(idval)
   {
     if (!idval) {
+      Module.fail_test = true;
       // clang-format off
       // This might have happened because the error indicator is set. Let's
       // check.
