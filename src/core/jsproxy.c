@@ -1221,7 +1221,7 @@ finally:
     // If we succeeded and the result was a promise then we destroy the
     // arguments in async_done_callback instead of here. Otherwise, destroy the
     // arguments and return value now.
-    if (hiwire_is_pyproxy(idresult)) {
+    if (idresult != NULL && hiwire_is_pyproxy(idresult)) {
       JsArray_Push(proxies, idresult);
     }
     destroy_proxies(proxies,
