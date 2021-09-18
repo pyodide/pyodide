@@ -1,5 +1,6 @@
 import asyncio
 import pytest
+import sys
 import time
 
 from pyodide_build.testing import run_in_pyodide
