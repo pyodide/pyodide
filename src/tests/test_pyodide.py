@@ -1,11 +1,6 @@
 import pytest
-from pathlib import Path
-import sys
 from textwrap import dedent
 from pyodide_build.testing import run_in_pyodide
-
-sys.path.append(str(Path(__file__).resolve().parents[2] / "src" / "py"))
-
 from pyodide import find_imports, eval_code, CodeRunner, should_quiet  # noqa: E402
 
 

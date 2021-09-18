@@ -1,8 +1,3 @@
-import sys
-from pathlib import Path
-
-sys.path.append(str(Path(__file__).resolve().parents[2] / "src" / "py"))
-
 import pytest  # type: ignore
 import time
 from pyodide import eval_code_async
