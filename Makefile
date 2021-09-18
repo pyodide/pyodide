@@ -153,9 +153,9 @@ lint: node_modules/.installed
 		| (! grep '<replacement ')
 	npx prettier --check src docs
 	black --check .
-	mypy --ignore-missing-imports    \
-		src/ 					     \
-		packages/micropip/src/ 		 \
+	mypy --ignore-missing-imports src/
+	mypy --ignore-missing-imports \
+		packages/micropip/src/    \
 		packages/*/test*
 	mypy \
 		pyodide-build/pyodide_build/ \
