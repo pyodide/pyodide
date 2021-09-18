@@ -139,16 +139,6 @@ def test_eval_code():
     assert eval_code("2**1;\n\n", ns, quiet_trailing_semicolon=False) == 2
 
 
-def test_fail_test(selenium):
-    selenium.run_js(
-        """
-        try {
-            pyodide._module.hiwire.get_value(0);
-        } catch(e){}
-        """
-    )
-
-
 def test_eval_code_locals():
     globals = {}
     eval_code("x=2", globals, {})
