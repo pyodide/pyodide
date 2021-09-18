@@ -159,8 +159,8 @@ lint: node_modules/.installed
 		packages/*/test* 			 \
 		conftest.py 				 \
 		docs
-	mypy --ignore-missing-imports
-		packages/micropip/src/ 		 \
+	mypy --ignore-missing-imports    \
+		packages/micropip/src/
 
 
 
