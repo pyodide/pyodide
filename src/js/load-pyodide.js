@@ -1,7 +1,9 @@
 import { Module } from "./module.js";
 
 const IN_NODE =
-  typeof process !== "undefined" && process.release && process.release.name === "node";
+  typeof process !== "undefined" &&
+  process.release &&
+  process.release.name === "node";
 
 /** @typedef {import('./pyproxy.js').PyProxy} PyProxy */
 /** @private */
