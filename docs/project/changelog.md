@@ -19,6 +19,12 @@ substitutions:
   error, it will return an empty list instead of raising a `SyntaxError`.
   {pr}`1819`
 
+### Javascript package
+
+- {{Fix}} {any}`loadPyodide <globalThis.loadPyodide>` no longer fails in the
+  presence of a user-defined global named `process`.
+  {pr}`1849`
+
 ### Python / JavaScript type conversions
 
 - {{Enhancement}} Updated the calling convention when a Javascript function is
