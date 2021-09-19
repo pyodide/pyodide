@@ -70,7 +70,7 @@ if (globalThis.document) {
     // This is async only for consistency
     globalThis.importScripts(url);
   };
-} else if (typeof process !== "undefined" && process.release.name === "node") {
+} else if (IN_NODE) {
   const pathPromise = import("path").then((M) => M.default);
   const fetchPromise = import("node-fetch").then((M) => M.default);
   const vmPromise = import("vm").then((M) => M.default);
