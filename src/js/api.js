@@ -331,7 +331,6 @@ export function makePublicAPI() {
     loadPackagesFromImports,
     loadedPackages,
     isPyProxy,
-    pyimport,
     runPython,
     runPythonAsync,
     registerJsModule,

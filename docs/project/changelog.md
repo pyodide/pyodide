@@ -38,10 +38,9 @@ substitutions:
 
 - {{Fix}} Fix usability issues with `pyodide-build mkpkg` CLI.
   {pr}`1828`
-  
+
 - {{ Enhancement }} Better support for ccache when building Pyodide
   {pr}`1805`
-
 
 ### Uncategorized
 
@@ -297,7 +296,7 @@ See the {ref}`0-17-0-release-notes` for more information.
   access, then the wrapper has `get`, `set`, `has`, and `delete` methods which do
   `obj[key]`, `obj[key] = val`, `key in obj` and `del obj[key]` respectively.
   {pr}`1175`
-- {{ API }} The {any}`pyodide.pyimport` function is deprecated in favor of using
+- {{ API }} The `pyodide.pyimport` function is deprecated in favor of using
   `pyodide.globals.get('key')`. {pr}`1367`
 - {{ API }} Added {any}`PyProxy.getBuffer` API to allow direct access to Python
   buffers as Javascript TypedArrays.
