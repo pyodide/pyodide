@@ -5,7 +5,7 @@ from typing import Any, Callable, Iterable
 # appropriately.
 
 # Sphinx uses __name__ to determine the paths and such. It looks better for it
-# to refer to e.g., `pyodide.JsProxy` than `_pyodide_core.JsProxy`.
+# to refer to e.g., `pyodide.JsProxy` than `_pyodide._core_docs.JsProxy`.
 _save_name = __name__
 __name__ = "pyodide"
 

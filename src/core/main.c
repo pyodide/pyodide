@@ -145,10 +145,6 @@ main(int argc, char** argv)
     FATAL_ERROR("Failed to create core module.");
   }
 
-  if (PyObject_SetAttrString(core_module, "IN_BROWSER", Py_True)) {
-    FATAL_ERROR("Failed to set IN_BROWSER");
-  }
-
   EM_ASM({
     // For some reason emscripten doesn't make UTF8ToString available on Module
     // by default...

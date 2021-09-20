@@ -1,10 +1,10 @@
 from _pyodide.console import Console, repr_shorten, ConsoleFuture
 import _pyodide.console
 
-BANNER = _pyodide.console.BANNER  # type: ignore
+BANNER = _pyodide.console.BANNER
 from _pyodide._base import CodeRunner
 
-from _pyodide_core import IN_BROWSER
+from ._core import IN_BROWSER
 
 # this import can fail when we are outside a browser (e.g. for tests)
 if IN_BROWSER:
