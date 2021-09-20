@@ -4,11 +4,11 @@
 
 Packages are defined by writing a `meta.yaml` file. The format of these files is
 based on the `meta.yaml` files used to build [Conda
-packages](https://conda.io/docs/user-guide/tasks/build-packages/define-metadata.html),
+packages](https://docs.conda.io/projects/conda-build/en/latest/resources/define-metadata.html),
 though it is much more limited. The most important limitation is that Pyodide
 assumes there will only be one version of a given library available, whereas
 Conda allows the user to specify the versions of each package that they want to
-install. Despite the limitations, it is recommended to use existing conda 
+install. Despite the limitations, it is recommended to use existing conda
 package definitions as a starting point to create Pyodide packages. In
 general, however, one should not
 expect Conda packages to "just work" with Pyodide, see {pr}`795`
@@ -95,7 +95,7 @@ Extra arguments to pass to the compiler when building for WebAssembly.
 ### `build/cxxflags`
 
 Extra arguments to pass to the compiler when building C++ files for WebAssembly.
-Note that both `cflags` and `cxxflags` will be used when compiling C++ files. 
+Note that both `cflags` and `cxxflags` will be used when compiling C++ files.
 A common example would be to use `-std=c++11` for code that makes use of C++11 features.
 
 (This key is not in the Conda spec).
