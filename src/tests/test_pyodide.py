@@ -487,6 +487,24 @@ def test_create_proxy(selenium):
     )
 
 
+def test_return_destroyed_value(selenium):
+    selenium.run_js(
+        """
+        self.f = function(x){ return x };
+        pyodide.runPython(`
+            from pyodide import create_proxy, JsException
+            from js import f
+            p = create_proxy([])
+            p.destroy()
+            try:
+                f(p)
+            except JsException as e:
+                assert str(e) == "Error: Object has already been destroyed"
+        `);
+        """
+    )
+
+
 def test_docstrings_a():
     from _pyodide.docstring import get_cmeth_docstring, dedent_docstring
     from pyodide import JsProxy

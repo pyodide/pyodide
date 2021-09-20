@@ -67,6 +67,7 @@ fetch_and_normalize_exception(PyObject** type,
     Py_CLEAR(*type);
     Py_CLEAR(*value);
     Py_CLEAR(*traceback);
+    fail_test();
     PyErr_SetString(PyExc_TypeError,
                     "Pyodide internal error: no exception type or value");
     PyErr_Fetch(type, value, traceback);
@@ -129,6 +130,8 @@ finally:
   return success;
 }
 
+EM_JS(void, fail_test, (), { Module.fail_test = true; })
+
 /**
  * Calls traceback.format_exception(type, value, traceback) and joins the
  * resulting list of strings together.
@@ -190,6 +193,7 @@ wrap_exception()
   success = true;
 finally:
   if (!success) {
+    fail_test();
     PySys_WriteStderr(
       "Pyodide: Internal error occurred while formatting traceback:\n");
     PyErr_Print();
@@ -279,6 +283,7 @@ EM_JS_NUM(errcode, error_handling_init_js, (), {
   {
     constructor()
     {
+      Module.fail_test = true;
       super("If you are seeing this message, an internal Pyodide error has " +
             "occurred. Please report it to the Pyodide maintainers.");
     }
