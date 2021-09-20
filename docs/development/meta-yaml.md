@@ -38,7 +38,7 @@ The URL of the source tarball.
 The tarball may be in any of the formats supported by Python's
 `shutil.unpack_archive`: `tar`, `gztar`, `bztar`, `xztar`, and `zip`.
 
-## `source/extract_dir`
+### `source/extract_dir`
 
 The top level directory name of the contents of the source tarball (i.e. once
 you extract the tarball, all the contents are in the directory named
