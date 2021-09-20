@@ -30,7 +30,7 @@ Additional build prerequisites are:
 - [ccache](https://ccache.samba.org) (optional) _highly_ recommended for much faster rebuilds.
 
 You can install the python dependencies from the requirement file at the root of pyodide folder:
-`pip3 install -r requirements.txt`
+`pip install -r requirements.txt`
 
 
 On Mac, you will also need:

@@ -31,7 +31,7 @@ try:
 
         For more information see the :ref:`type-translations` documentation. In
         particular, see
-        :ref:`the list of __dunder__ methods <type-translations_jsproxy-dunders>`
+        :ref:`the list of __dunder__ methods <type-translations-jsproxy>`
         that are (conditionally) implemented on :any:`JsProxy`.
         """
 
