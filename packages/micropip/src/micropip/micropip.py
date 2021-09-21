@@ -9,7 +9,6 @@ from packaging.version import Version
 from packaging.markers import default_environment
 
 from pathlib import Path
-from site import getsitepackages
 from typing import Dict, Any, Union, List, Tuple
 from zipfile import ZipFile
 
@@ -22,6 +21,11 @@ if IN_BROWSER:
     import pyodide_js
 
 if IN_BROWSER:
+    # Random note: getsitepackages is not available in a virtual environment...
+    # See https://github.com/pypa/virtualenv/issues/228 (issue is closed but
+    # problem is not fixed)
+    from site import getsitepackages
+
     WHEEL_BASE = Path(getsitepackages()[0])
 else:
     WHEEL_BASE = Path(".") / "wheels"
