@@ -1,13 +1,10 @@
 import asyncio
 import pytest
-from pathlib import Path
 import sys
 import time
 
 from pyodide_build.testing import run_in_pyodide
 from conftest import selenium_common
-
-sys.path.append(str(Path(__file__).resolve().parents[2] / "src" / "py"))
 
 from pyodide import CodeRunner  # noqa: E402
 from _pyodide.console import (

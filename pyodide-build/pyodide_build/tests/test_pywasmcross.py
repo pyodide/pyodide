@@ -1,11 +1,8 @@
-from pathlib import Path
 import sys
 import argparse
 from dataclasses import dataclass
 
 import pytest
-
-sys.path.append(str(Path(__file__).parents[2]))
 
 from pyodide_build.pywasmcross import handle_command  # noqa: E402
 from pyodide_build.pywasmcross import f2c  # noqa: E402

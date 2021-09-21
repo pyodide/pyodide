@@ -19,6 +19,12 @@ substitutions:
   error, it will return an empty list instead of raising a `SyntaxError`.
   {pr}`1819`
 
+### Javascript package
+
+- {{Fix}} {any}`loadPyodide <globalThis.loadPyodide>` no longer fails in the
+  presence of a user-defined global named `process`.
+  {pr}`1849`
+
 ### Python / JavaScript type conversions
 
 - {{Enhancement}} Updated the calling convention when a Javascript function is
@@ -38,7 +44,7 @@ substitutions:
 
 - {{Fix}} Fix usability issues with `pyodide-build mkpkg` CLI.
   {pr}`1828`
-
+  
 - {{ Enhancement }} Better support for ccache when building Pyodide
   {pr}`1805`
 
@@ -49,6 +55,7 @@ substitutions:
   20% size reduction on average for packages that vendor tests (e.g. numpy,
   pandas, scipy).
   {pr}`1832`
+
 
 ### Uncategorized
 
