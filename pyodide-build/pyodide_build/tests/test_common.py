@@ -43,6 +43,7 @@ def test_parse_package_subset():
         "pytz",
         "Jinja2",
         "micropip",
+        "regex",
     }
     # by default core packages are built
     assert _parse_package_subset(None) == _parse_package_subset("core")
@@ -53,6 +54,7 @@ def test_parse_package_subset():
         "pytz",
         "Jinja2",
         "micropip",
+        "regex",
         "numpy",
         "scipy",
         "pandas",
