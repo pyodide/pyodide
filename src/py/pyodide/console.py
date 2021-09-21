@@ -4,17 +4,6 @@ import _pyodide.console
 BANNER = _pyodide.console.BANNER
 from _pyodide._base import CodeRunner
 
-from ._core import IN_BROWSER
-
-# this import can fail when we are outside a browser (e.g. for tests)
-if IN_BROWSER:
-    from pyodide_js import loadPackagesFromImports as _load_packages_from_imports
-else:
-
-    async def _load_packages_from_imports(*args):
-        pass
-
-
 __all__ = ["Console", "PyodideConsole", "Banner", "repr_shorten", "ConsoleFuture"]
 
 
