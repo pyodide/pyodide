@@ -33,7 +33,7 @@ jobs:
 
       - name: Install dependencies
         run: |
-          sudo apt install -y build-essentials git
+          sudo apt install -y build-essential git
           conda install -y nodejs ccache f2c pkg-config swig make patch pkg-config texinfo autoconf automake libtool
 
       - name: Build emsdk
