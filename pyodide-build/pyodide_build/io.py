@@ -28,6 +28,7 @@ PACKAGE_CONFIG_SPEC: Dict[str, Dict[str, Any]] = {
         "script": str,
         "post": str,
         "replace-libs": list,
+        "unvendor-tests": bool,
     },
     "requirements": {
         "run": list,  # List[str],

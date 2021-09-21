@@ -19,6 +19,12 @@ substitutions:
   error, it will return an empty list instead of raising a `SyntaxError`.
   {pr}`1819`
 
+### Javascript package
+
+- {{Fix}} {any}`loadPyodide <globalThis.loadPyodide>` no longer fails in the
+  presence of a user-defined global named `process`.
+  {pr}`1849`
+
 ### Python / JavaScript type conversions
 
 - {{Enhancement}} Updated the calling convention when a Javascript function is
@@ -41,6 +47,15 @@ substitutions:
 
 - {{ Enhancement }} Better support for ccache when building Pyodide
   {pr}`1805`
+
+### packages
+
+- {{ Enhancement }} Unit tests are now unvendored from Python packages and
+  included in a separate package `<package name>-tests`. This results in a
+  20% size reduction on average for packages that vendor tests (e.g. numpy,
+  pandas, scipy).
+  {pr}`1832`
+
 
 ### Uncategorized
 

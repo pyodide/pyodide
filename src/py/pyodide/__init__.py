@@ -11,7 +11,16 @@
 # pytest mocks for js or pyodide_js, so make sure to test "if IN_BROWSER" before
 # importing from these.
 
-from ._core import JsProxy, JsException, create_once_callable, create_proxy, to_js, IN_BROWSER, ConversionError, destroy_proxies  # type: ignore
+from ._core import (
+    JsProxy,
+    JsException,
+    create_once_callable,
+    create_proxy,
+    to_js,
+    IN_BROWSER,
+    ConversionError,
+    destroy_proxies,
+)
 from _pyodide._base import (
     eval_code,
     eval_code_async,
@@ -22,10 +31,7 @@ from _pyodide._base import (
 from ._util import open_url
 from . import _state  # noqa
 
-from _pyodide._importhook import jsfinder
-
-register_js_module = jsfinder.register_js_module
-unregister_js_module = jsfinder.unregister_js_module
+from _pyodide._importhook import register_js_module, unregister_js_module
 
 if IN_BROWSER:
     import asyncio

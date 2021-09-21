@@ -8,7 +8,7 @@ packages](https://conda.io/docs/user-guide/tasks/build-packages/define-metadata.
 though it is much more limited. The most important limitation is that Pyodide
 assumes there will only be one version of a given library available, whereas
 Conda allows the user to specify the versions of each package that they want to
-install. Despite the limitations, it is recommended to use existing conda 
+install. Despite the limitations, it is recommended to use existing conda
 package definitions as a starting point to create Pyodide packages. In
 general, however, one should not
 expect Conda packages to "just work" with Pyodide, see {pr}`795`
@@ -95,7 +95,7 @@ Extra arguments to pass to the compiler when building for WebAssembly.
 ### `build/cxxflags`
 
 Extra arguments to pass to the compiler when building C++ files for WebAssembly.
-Note that both `cflags` and `cxxflags` will be used when compiling C++ files. 
+Note that both `cflags` and `cxxflags` will be used when compiling C++ files.
 A common example would be to use `-std=c++11` for code that makes use of C++11 features.
 
 (This key is not in the Conda spec).
@@ -133,6 +133,12 @@ Shell commands to run after building the library. These are run inside of
 A list of strings of the form `<old_name>=<new_name>`, to rename libraries when linking. This in particular
 might be necessary when using emscripten ports.
 For instance, `png16=png` is currently used in matplotlib.
+
+### `build/unvendor-tests`
+
+Whether to unvendor tests found in the installation folder to a separate
+package `<package-name>-tests`. If this option is true and no tests are found,
+the test package will not be created. Default: true.
 
 ## `requirements`
 

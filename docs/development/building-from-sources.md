@@ -29,6 +29,9 @@ Additional build prerequisites are:
 - [f2c](http://www.netlib.org/f2c/)
 - [ccache](https://ccache.samba.org) (optional) _highly_ recommended for much faster rebuilds.
 
+You can install the python dependencies from the requirement file at the root of pyodide folder:
+`pip install -r requirements.txt`
+
 On Mac, you will also need:
 
 - [Homebrew](https://brew.sh/) for installing dependencies
@@ -96,7 +99,8 @@ they are case sensitive.
 
 If `PYODIDE_PACKAGES` is not set, a minimal set of packages necessairy to run
 the core test suite is installed, including "micropip", "pyparsing", "pytz",
-"packaging", "Jinja2". This is equivalent to setting `PYODIDE_PACKAGES='core'`
+"packaging", "Jinja2", "regex". This is equivalent to setting
+`PYODIDE_PACKAGES='core'`
 meta-package. Other supported meta-packages are,
 
 - "min-scipy-stack": includes the "core" meta-package as well as some of the

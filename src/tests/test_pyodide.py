@@ -1,11 +1,6 @@
 import pytest
-from pathlib import Path
-import sys
 from textwrap import dedent
 from pyodide_build.testing import run_in_pyodide
-
-sys.path.append(str(Path(__file__).resolve().parents[2] / "src" / "py"))
-
 from pyodide import find_imports, eval_code, CodeRunner, should_quiet  # noqa: E402
 
 
@@ -482,6 +477,24 @@ def test_create_proxy(selenium):
             destroyed = False
             del f
             assert destroyed == True
+        `);
+        """
+    )
+
+
+def test_return_destroyed_value(selenium):
+    selenium.run_js(
+        """
+        self.f = function(x){ return x };
+        pyodide.runPython(`
+            from pyodide import create_proxy, JsException
+            from js import f
+            p = create_proxy([])
+            p.destroy()
+            try:
+                f(p)
+            except JsException as e:
+                assert str(e) == "Error: Object has already been destroyed"
         `);
         """
     )

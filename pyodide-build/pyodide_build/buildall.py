@@ -31,6 +31,7 @@ class BasePackage:
     dependencies: List[str]
     unbuilt_dependencies: Set[str]
     dependents: Set[str]
+    unvendored_tests: Optional[bool] = None
 
     # We use this in the priority queue, which pops off the smallest element.
     # So we want the smallest element to have the largest number of dependents
@@ -145,6 +146,15 @@ class Package(BasePackage):
                 self.pkgdir / "build" / (self.name + ".js"),
                 outputdir / (self.name + ".js"),
             )
+            if (self.pkgdir / "build" / (self.name + "-tests.data")).exists():
+                shutil.copyfile(
+                    self.pkgdir / "build" / (self.name + "-tests.data"),
+                    outputdir / (self.name + "-tests.data"),
+                )
+                shutil.copyfile(
+                    self.pkgdir / "build" / (self.name + "-tests.js"),
+                    outputdir / (self.name + "-tests.js"),
+                )
 
 
 def generate_dependency_graph(
@@ -272,6 +282,10 @@ def build_from_graph(pkg_map: Dict[str, BasePackage], outputdir: Path, args) -> 
             if len(dependent.unbuilt_dependencies) == 0:
                 build_queue.put(dependent)
 
+    for name in list(pkg_map):
+        if (outputdir / (name + "-tests.js")).exists():
+            pkg_map[name].unvendored_tests = True
+
 
 def generate_packages_json(pkg_map: Dict[str, BasePackage]) -> Dict:
     """Generate the package.json file"""
@@ -305,6 +319,18 @@ def generate_packages_json(pkg_map: Dict[str, BasePackage]) -> Dict:
         pkg_entry["imports"] = pkg.meta.get("test", {}).get("imports", [name])
 
         package_data["packages"][name.lower()] = pkg_entry
+
+        if pkg.unvendored_tests:
+            package_data["packages"][name.lower()]["unvendored_tests"] = True
+
+            # Create the test package if necessary
+            pkg_entry = {
+                "name": name + "-tests",
+                "version": pkg.version,
+                "depends": [name.lower()],
+                "imports": [],
+            }
+            package_data["packages"][name.lower() + "-tests"] = pkg_entry
 
     # Workaround for circular dependency between soupsieve and beautifulsoup4
     # TODO: FIXME!!
