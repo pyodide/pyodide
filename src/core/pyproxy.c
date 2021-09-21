@@ -235,14 +235,14 @@ finally:
 int
 _PyObject_GetMethod(PyObject* obj, PyObject* name, PyObject** method);
 
-EM_JS(int, pyproxy_mark_borrowed, (JsRef id), {
-  let proxy = Module.hiwire.get_value(id);
-  Module.pyproxy_mark_borrowed(proxy);
-});
-
 EM_JS(JsRef, proxy_cache_get, (JsRef proxyCacheId, PyObject* descr), {
   let proxyCache = Module.hiwire.get_value(proxyCacheId);
-  return proxyCache.get(descr);
+  let proxy = proxyCache.get(descr);
+  if (proxy && proxy.$$.ptr) {
+    return proxy;
+  } else if (proxy) {
+    proxyCache.delete(descr);
+  }
 })
 
 // clang-format off
@@ -297,7 +297,6 @@ _pyproxy_getattr(PyObject* pyobj, JsRef idkey, JsRef proxyCache)
     // fill up the cache with a lot of junk. However, there is no other option
     // that makes sense from the point of the user.
     proxy_cache_set(proxyCache, pydescr, hiwire_incref(idresult));
-    pyproxy_mark_borrowed(idresult);
   }
 
 success:
