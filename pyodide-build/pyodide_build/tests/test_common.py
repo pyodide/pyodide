@@ -1,8 +1,3 @@
-import sys
-from pathlib import Path
-
-sys.path.append(str(Path(__file__).parents[2]))
-
 from pyodide_build.common import (
     _parse_package_subset,
     get_make_flag,

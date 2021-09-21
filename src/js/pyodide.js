@@ -242,10 +242,10 @@ export async function loadPyodide(config) {
   //   4. Add the pyodide_py and Python __main__.__dict__ objects to pyodide_js
   Module.runPythonSimple(`
 def temp(pyodide_js, Module, jsglobals):
-  from _pyodide._importhook import register_js_finder
-  jsfinder = register_js_finder()
-  jsfinder.register_js_module("js", jsglobals)
-  jsfinder.register_js_module("pyodide_js", pyodide_js)
+  from _pyodide._importhook import register_js_finder, register_js_module
+  register_js_finder()
+  register_js_module("js", jsglobals)
+  register_js_module("pyodide_js", pyodide_js)
 
   import pyodide
   import __main__

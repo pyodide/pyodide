@@ -46,7 +46,6 @@ If your package is on PyPI, the
 easiest place to start is with the {ref}`mkpkg tool <pyodide-mkpkg>`.
 From the Pyodide root directory, install the tool with `pip install -e pyodide-build`, then run:
 
-
 `pyodide-build mkpkg <package-name>`
 
 This will generate a `meta.yaml` under `package/<package-name>/` (see

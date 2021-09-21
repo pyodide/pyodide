@@ -32,7 +32,6 @@ Additional build prerequisites are:
 You can install the python dependencies from the requirement file at the root of pyodide folder:
 `pip install -r requirements.txt`
 
-
 On Mac, you will also need:
 
 - [Homebrew](https://brew.sh/) for installing dependencies

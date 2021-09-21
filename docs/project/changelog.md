@@ -44,10 +44,8 @@ substitutions:
 
 - {{Fix}} Fix usability issues with `pyodide-build mkpkg` CLI.
   {pr}`1828`
-  
 - {{ Enhancement }} Better support for ccache when building Pyodide
   {pr}`1805`
-
 
 ### Uncategorized
 
