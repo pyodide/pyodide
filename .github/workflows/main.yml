@@ -31,21 +31,26 @@ jobs:
           python-version: 3.9.5
           channels: conda-forge
 
+      - name: Check Python versions
+        shell: bash -l {0}
+        run: |
+          python --version
+          which python
+
       - name: Install dependencies
+        shell: bash -l {0}
         run: |
           sudo apt install -y build-essential git
           conda install -y nodejs ccache f2c pkg-config swig make patch pkg-config texinfo autoconf automake libtool
-
-      - name: Check Python versions
-        run: |
-          python -v
-          which python
+          pip install -r requirements.txt
 
       - name: Build emsdk
+        shell: bash -l {0}
         run: |
           make -C emsdk
 
       - name: Build Cpython
+        shell: bash -l {0}
         run: |
           # This is necessary to use the ccache from emsdk
           source pyodide_env.sh
@@ -54,7 +59,8 @@ jobs:
           make -C cpython
           ccache -s
 
-      - name: build Pyodide core
+      - name: build Pyodide core + numpy
+        shell: bash -l {0}
         run: |
           # This is necessary to use the ccache from emsdk
           source pyodide_env.sh
