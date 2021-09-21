@@ -1,8 +1,3 @@
-import sys
-from pathlib import Path
-
-sys.path.append(str(Path(__file__).parents[2]))
-
 from pyodide_build.common import (
     _parse_package_subset,
     get_make_flag,
@@ -11,7 +6,6 @@ from pyodide_build.common import (
 
 
 def test_parse_package_subset():
-    assert _parse_package_subset(None) is None
     # micropip is always included
     assert _parse_package_subset("numpy,pandas") == {
         "pyparsing",
@@ -39,6 +33,39 @@ def test_parse_package_subset():
         "b",
         "c",
         "d",
+    }
+    # "*" means select all packages
+    assert _parse_package_subset("*") == None
+
+    assert _parse_package_subset("core") == {
+        "pyparsing",
+        "packaging",
+        "pytz",
+        "Jinja2",
+        "micropip",
+        "regex",
+    }
+    # by default core packages are built
+    assert _parse_package_subset(None) == _parse_package_subset("core")
+
+    assert _parse_package_subset("min-scipy-stack") == {
+        "pyparsing",
+        "packaging",
+        "pytz",
+        "Jinja2",
+        "micropip",
+        "regex",
+        "numpy",
+        "scipy",
+        "pandas",
+        "matplotlib",
+        "scikit-learn",
+        "joblib",
+        "pytest",
+    }
+    # reserved key words can be combined with other packages
+    assert _parse_package_subset("core, unknown") == _parse_package_subset("core") | {
+        "unknown"
     }
 
 

@@ -13,7 +13,7 @@ import warnings
 
 from .io import parse_package_config
 
-PACKAGES_ROOT = Path(__file__).parent.parent / "packages"
+PACKAGES_ROOT = Path(__file__).parents[2] / "packages"
 
 
 class MkpkgFailedException(Exception):
@@ -52,10 +52,23 @@ def _get_metadata(package: str, version: Optional[str] = None) -> Dict:
             pypi_metadata = json.load(fd)
     except urllib.error.HTTPError as e:
         raise MkpkgFailedException(
-            f"Failed to load metadata for {package}{version} from https://pypi.org/pypi/{package}{version}/json: {e}"
+            f"Failed to load metadata for {package}{version} from "
+            f"https://pypi.org/pypi/{package}{version}/json: {e}"
         )
 
     return pypi_metadata
+
+
+def _import_ruamel_yaml():
+    """Import ruamel.yaml with a better error message is not installed."""
+    try:
+        from ruamel.yaml import YAML
+    except ImportError as err:
+        raise ImportError(
+            "No module named 'ruamel'. "
+            "It can be installed with pip install ruamel.yaml"
+        ) from err
+    return YAML
 
 
 def make_package(package: str, version: Optional[str] = None):
@@ -63,7 +76,10 @@ def make_package(package: str, version: Optional[str] = None):
     Creates a template that will work for most pure Python packages,
     but will have to be edited for more complex things.
     """
-    import yaml
+    print(f"Creating meta.yaml package for {package}")
+    YAML = _import_ruamel_yaml()
+
+    yaml = YAML()
 
     pypi_metadata = _get_metadata(package, version)
     sdist_metadata = _extract_sdist(pypi_metadata)
@@ -72,16 +88,29 @@ def make_package(package: str, version: Optional[str] = None):
     sha256 = sdist_metadata["digests"]["sha256"]
     version = pypi_metadata["info"]["version"]
 
+    homepage = pypi_metadata["info"]["home_page"]
+    summary = pypi_metadata["info"]["summary"]
+    license = pypi_metadata["info"]["license"]
+    pypi = "https://pypi.org/project/" + package
+
     yaml_content = {
         "package": {"name": package, "version": version},
         "source": {"url": url, "sha256": sha256},
         "test": {"imports": [package]},
+        "about": {
+            "home": homepage,
+            "PyPi": pypi,
+            "summary": summary,
+            "license": license,
+        },
     }
 
     if not (PACKAGES_ROOT / package).is_dir():
         os.makedirs(PACKAGES_ROOT / package)
-    with open(PACKAGES_ROOT / package / "meta.yaml", "w") as fd:
-        yaml.dump(yaml_content, fd, default_flow_style=False)
+    out_path = PACKAGES_ROOT / package / "meta.yaml"
+    with open(out_path, "w") as fd:
+        yaml.dump(yaml_content, fd)
+    success(f"Output written to {out_path}")
 
 
 class bcolors:
@@ -110,7 +139,8 @@ def success(msg):
 
 
 def update_package(package: str, update_patched: bool = True):
-    from ruamel.yaml import YAML
+
+    YAML = _import_ruamel_yaml()
 
     yaml = YAML()
 

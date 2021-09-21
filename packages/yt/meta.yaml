@@ -16,6 +16,11 @@ requirements:
     - sympy
     - setuptools
 
+build:
+  # The test module is imported from the top level `__init__.py`
+  # so it cannot be unvendored
+  unvendor-tests: false
+
 test:
   imports:
     - yt

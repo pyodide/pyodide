@@ -3,48 +3,64 @@ import hashlib
 import importlib
 import io
 import json
-from pathlib import Path
-import zipfile
-from typing import Dict, Any, Union, List, Tuple
 
 from packaging.requirements import Requirement
 from packaging.version import Version
 from packaging.markers import default_environment
 
-# Provide stubs for testing in native python
-try:
-    import pyodide_js
-    from pyodide import to_js
+from pathlib import Path
+from typing import Dict, Any, Union, List, Tuple
+from zipfile import ZipFile
 
-    IN_BROWSER = True
-except ImportError:
-    IN_BROWSER = False
+from .externals.pip._internal.utils.wheel import pkg_resources_distribution_for_wheel
+
+from pyodide import IN_BROWSER, to_js
+
+# Provide stubs for testing in native python
+if IN_BROWSER:
+    import pyodide_js
 
 if IN_BROWSER:
-    # In practice, this is the `site-packages` directory.
-    WHEEL_BASE = Path(__file__).parent
+    # Random note: getsitepackages is not available in a virtual environment...
+    # See https://github.com/pypa/virtualenv/issues/228 (issue is closed but
+    # problem is not fixed)
+    from site import getsitepackages
+
+    WHEEL_BASE = Path(getsitepackages()[0])
 else:
     WHEEL_BASE = Path(".") / "wheels"
 
 if IN_BROWSER:
-    from js import fetch
-
-    async def _get_url(url):
-        resp = await fetch(url)
-        if not resp.ok:
-            raise OSError(
-                f"Request for {url} failed with status {resp.status}: {resp.statusText}"
-            )
-        return io.BytesIO((await resp.arrayBuffer()).to_py())
-
-
+    BUILTIN_PACKAGES = pyodide_js._module.packages.to_py()
 else:
-    from urllib.request import urlopen
+    BUILTIN_PACKAGES = {}
 
-    async def _get_url(url):
-        with urlopen(url) as fd:
-            content = fd.read()
-        return io.BytesIO(content)
+if IN_BROWSER:
+    from pyodide_js import loadedPackages
+else:
+
+    class loadedPackages:  # type: ignore
+        pass
+
+
+if IN_BROWSER:
+    from js import fetch
+else:
+    from urllib.request import urlopen, Request
+
+    async def fetch(url, headers={}):
+        fd = urlopen(Request(url, headers=headers))
+        fd.statusText = fd.reason
+
+        async def arrayBuffer():
+            class Temp:
+                def to_py():
+                    return fd.read()
+
+            return Temp
+
+        fd.arrayBuffer = arrayBuffer
+        return fd
 
 
 if IN_BROWSER:
@@ -53,6 +69,7 @@ else:
     # asyncio.gather will schedule any coroutines to run on the event loop but
     # we want to avoid using the event loop at all. Instead just run the
     # coroutines in sequence.
+    # TODO: Use an asyncio testing framework to avoid this
     async def gather(*coroutines):  # type: ignore
         result = []
         for coroutine in coroutines:
@@ -60,12 +77,13 @@ else:
         return result
 
 
-if IN_BROWSER:
-    from pyodide_js import loadedPackages
-else:
-
-    class loadedPackages:  # type: ignore
-        pass
+async def _get_url(url):
+    resp = await fetch(url)
+    if resp.status >= 400:
+        raise OSError(
+            f"Request for {url} failed with status {resp.status}: {resp.statusText}"
+        )
+    return io.BytesIO((await resp.arrayBuffer()).to_py())
 
 
 async def _get_pypi_json(pkgname):
@@ -102,7 +120,7 @@ def _parse_wheel_url(url: str) -> Tuple[str, Dict[str, Any], str]:
 
 
 def _extract_wheel(fd):
-    with zipfile.ZipFile(fd) as zf:
+    with ZipFile(fd) as zf:
         zf.extractall(WHEEL_BASE)
 
 
@@ -120,7 +138,7 @@ def _validate_wheel(data, fileinfo):
 
 async def _install_wheel(name, fileinfo):
     url = fileinfo["url"]
-    wheel = await _get_url(url)
+    wheel = io.BytesIO(fileinfo["wheel_bytes"])
     _validate_wheel(wheel, fileinfo)
     _extract_wheel(wheel)
     setattr(loadedPackages, name, url)
@@ -128,10 +146,6 @@ async def _install_wheel(name, fileinfo):
 
 class _PackageManager:
     def __init__(self):
-        if IN_BROWSER:
-            self.builtin_packages = pyodide_js._module.packages.versions.to_py()
-        else:
-            self.builtin_packages = {}
         self.installed_packages = {}
 
     async def gather_requirements(self, requirements: Union[str, List[str]], ctx=None):
@@ -161,7 +175,7 @@ class _PackageManager:
         pyodide_packages = transaction["pyodide_packages"]
         if len(pyodide_packages):
             # Note: branch never happens in out-of-browser testing because in
-            # that case builtin_packages is empty.
+            # that case BUILTIN_PACKAGES is empty.
             self.installed_packages.update(pyodide_packages)
             wheel_promises.append(
                 asyncio.ensure_future(
@@ -177,29 +191,33 @@ class _PackageManager:
             self.installed_packages[name] = ver
         await gather(*wheel_promises)
 
-    async def add_requirement(self, requirement: str, ctx, transaction):
+    async def add_requirement(
+        self, requirement: Union[str, Requirement], ctx, transaction
+    ):
         """Add a requirement to the transaction.
 
         See PEP 508 for a description of the requirements.
         https://www.python.org/dev/peps/pep-0508
         """
-        if requirement.endswith(".whl"):
+        if isinstance(requirement, Requirement):
+            req = requirement
+        elif requirement.endswith(".whl"):
             # custom download location
             name, wheel, version = _parse_wheel_url(requirement)
             name = name.lower()
-            transaction["wheels"].append((name, wheel, version))
+            await self.add_wheel(name, wheel, version, (), ctx, transaction)
             return
-
-        req = Requirement(requirement)
+        else:
+            req = Requirement(requirement)
         req.name = req.name.lower()
 
         # If there's a Pyodide package that matches the version constraint, use
         # the Pyodide package instead of the one on PyPI
         if (
-            req.name in self.builtin_packages
-            and self.builtin_packages[req.name] in req.specifier
+            req.name in BUILTIN_PACKAGES
+            and BUILTIN_PACKAGES[req.name]["version"] in req.specifier
         ):
-            version = self.builtin_packages[req.name]
+            version = BUILTIN_PACKAGES[req.name]["version"]
             transaction["pyodide_packages"].append((req.name, version))
             return
 
@@ -222,13 +240,20 @@ class _PackageManager:
                 )
         metadata = await _get_pypi_json(req.name)
         wheel, ver = self.find_wheel(metadata, req)
-        transaction["locked"][req.name] = ver
+        await self.add_wheel(req.name, wheel, ver, req.extras, ctx, transaction)
 
-        recurs_reqs = metadata.get("info", {}).get("requires_dist") or []
-        for recurs_req in recurs_reqs:
+    async def add_wheel(self, name, wheel, version, extras, ctx, transaction):
+        transaction["locked"][name] = version
+        response = await fetch(wheel["url"])
+        wheel_bytes = (await response.arrayBuffer()).to_py()
+        wheel["wheel_bytes"] = wheel_bytes
+
+        with ZipFile(io.BytesIO(wheel_bytes)) as zip_file:  # type: ignore
+            dist = pkg_resources_distribution_for_wheel(zip_file, name, "???")
+        for recurs_req in dist.requires(extras):
             await self.add_requirement(recurs_req, ctx, transaction)
 
-        transaction["wheels"].append((req.name, wheel, ver))
+        transaction["wheels"].append((name, wheel, version))
 
     def find_wheel(self, metadata, req: Requirement):
         releases = metadata.get("releases", {})
@@ -258,6 +283,10 @@ def install(requirements: Union[str, List[str]]):
     This only works for packages that are either pure Python or for packages
     with C extensions that are built in Pyodide. If a pure Python package is not
     found in the Pyodide repository it will be loaded from PyPi.
+
+    When used in web browsers, downloads from PyPi will be cached. When run in
+    Node.js, packages are currently not cached, and will be re-downloaded each
+    time ``micropip.install`` is run.
 
     Parameters
     ----------

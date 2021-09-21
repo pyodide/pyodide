@@ -102,8 +102,8 @@ Module.runPython = runPython;
  */
 
 /**
- * Inspect a Python code chunk and use :js:func:`pyodide.loadPackage` to
- * install any known packages that the code chunk imports. Uses the Python API
+ * Inspect a Python code chunk and use :js:func:`pyodide.loadPackage` to install
+ * any known packages that the code chunk imports. Uses the Python API
  * :func:`pyodide.find\_imports` to inspect the code.
  *
  * For example, given the following code as input
@@ -113,7 +113,7 @@ Module.runPython = runPython;
  *    import numpy as np x = np.array([1, 2, 3])
  *
  * :js:func:`loadPackagesFromImports` will call
- * ``pyodide.loadPackage(['numpy'])``. See also :js:func:`runPythonAsync`.
+ * ``pyodide.loadPackage(['numpy'])``.
  *
  * @param {string} code The code to inspect.
  * @param {LogFn=} messageCallback The ``messageCallback`` argument of
@@ -137,19 +137,16 @@ export async function loadPackagesFromImports(
   if (imports.length === 0) {
     return;
   }
-  let packageNames = Module.packages.import_name_to_package_name;
+
+  let packageNames = Module._import_name_to_package_name;
   let packages = new Set();
   for (let name of imports) {
-    if (name in packageNames) {
-      packages.add(packageNames[name]);
+    if (packageNames.has(name)) {
+      packages.add(packageNames.get(name));
     }
   }
   if (packages.size) {
-    await loadPackage(
-      Array.from(packages.keys()),
-      messageCallback,
-      errorCallback
-    );
+    await loadPackage(Array.from(packages), messageCallback, errorCallback);
   }
 }
 
@@ -173,6 +170,13 @@ export function pyimport(name) {
  * Runs Python code using `PyCF_ALLOW_TOP_LEVEL_AWAIT
  * <https://docs.python.org/3/library/ast.html?highlight=pycf_allow_top_level_await#ast.PyCF_ALLOW_TOP_LEVEL_AWAIT>`_.
  *
+ * .. admonition:: Python imports
+ *    :class: warning
+ *
+ *    Since pyodide 0.18.0, you must call :js:func:`loadPackagesFromImports` to
+ *    import any python packages referenced via `import` statements in your code.
+ *    This function will no longer do it for you.
+ *
  * For example:
  *
  * .. code-block:: pyodide
@@ -181,10 +185,10 @@ export function pyimport(name) {
  *        from js import fetch
  *        response = await fetch("./packages.json")
  *        packages = await response.json()
- *        # If final statement is an expression, its value is returned to
- * Javascript len(packages.dependencies.object_keys())
+ *        # If final statement is an expression, its value is returned to Javascript
+ *        len(packages.packages.object_keys())
  *    `);
- *    console.log(result); // 72
+ *    console.log(result); // 79
  *
  * @param {string} code Python code to evaluate
  * @returns {Py2JsResult} The result of the Python code translated to Javascript.
@@ -193,8 +197,7 @@ export function pyimport(name) {
 export async function runPythonAsync(code) {
   let coroutine = Module.pyodide_py.eval_code_async(code, Module.globals);
   try {
-    let result = await coroutine;
-    return result;
+    return await coroutine;
   } finally {
     coroutine.destroy();
   }
@@ -249,11 +252,12 @@ export function unregisterJsModule(name) {
  * See :ref:`type-translations-jsproxy-to-py` for more information.
  *
  * @param {*} obj
- * @param {number} depth Optional argument to limit the depth of the
+ * @param {object} options
+ * @param {number} options.depth Optional argument to limit the depth of the
  * conversion.
  * @returns {PyProxy} The object converted to Python.
  */
-export function toPy(obj, depth = -1) {
+export function toPy(obj, { depth = -1 } = {}) {
   // No point in converting these, it'd be dumb to proxy them so they'd just
   // get converted back by `js2python` at the end
   switch (typeof obj) {
@@ -272,9 +276,13 @@ export function toPy(obj, depth = -1) {
   let result = 0;
   try {
     obj_id = Module.hiwire.new_value(obj);
-    py_result = Module.__js2python_convert(obj_id, new Map(), depth);
-    if (py_result === 0) {
-      Module._pythonexc2js();
+    try {
+      py_result = Module.js2python_convert(obj_id, new Map(), depth);
+    } catch (e) {
+      if (e instanceof Module._PropagatePythonError) {
+        Module._pythonexc2js();
+      }
+      throw e;
     }
     if (Module._JsProxy_Check(py_result)) {
       // Oops, just created a JsProxy. Return the original object.
@@ -305,9 +313,10 @@ Module.restoreState = (state) => Module.pyodide_py._state.restore_state(state);
 /**
  * @param {TypedArray} interrupt_buffer
  */
-function setInterruptBuffer(interrupt_buffer) {}
-setInterruptBuffer = Module.setInterruptBuffer;
-export { setInterruptBuffer };
+export function setInterruptBuffer(interrupt_buffer) {
+  Module.interrupt_buffer = interrupt_buffer;
+  Module._set_pyodide_callback(!!interrupt_buffer);
+}
 
 export function makePublicAPI() {
   /**
@@ -328,7 +337,6 @@ export function makePublicAPI() {
    * @type {FS} The Emscripten File System API.
    */
   const FS = Module.FS;
-
   let namespace = {
     globals,
     FS,

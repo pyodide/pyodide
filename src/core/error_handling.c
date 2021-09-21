@@ -67,6 +67,7 @@ fetch_and_normalize_exception(PyObject** type,
     Py_CLEAR(*type);
     Py_CLEAR(*value);
     Py_CLEAR(*traceback);
+    fail_test();
     PyErr_SetString(PyExc_TypeError,
                     "Pyodide internal error: no exception type or value");
     PyErr_Fetch(type, value, traceback);
@@ -118,11 +119,18 @@ restore_sys_last_exception(void* value)
   if (value != last_value) {
     return 0;
   }
+  // PyErr_Restore steals a reference to each of its arguments so need to incref
+  // them first.
+  Py_INCREF(last_type);
+  Py_INCREF(last_value);
+  Py_INCREF(last_traceback);
   PyErr_Restore(last_type, last_value, last_traceback);
   success = true;
 finally:
   return success;
 }
+
+EM_JS(void, fail_test, (), { Module.fail_test = true; })
 
 /**
  * Calls traceback.format_exception(type, value, traceback) and joins the
@@ -185,6 +193,7 @@ wrap_exception()
   success = true;
 finally:
   if (!success) {
+    fail_test();
     PySys_WriteStderr(
       "Pyodide: Internal error occurred while formatting traceback:\n");
     PyErr_Print();
@@ -225,6 +234,12 @@ char* error__js_filename_string = "???.js";
 EM_JS_NUM(errcode, error_handling_init_js, (), {
   Module.handle_js_error = function(e)
   {
+    if (e instanceof Module._PropagatePythonError) {
+      // Python error indicator is already set in this case. If this branch is
+      // not taken, Python error indicator should be unset, and we have to set
+      // it. In this case we don't want to tamper with the traceback.
+      return;
+    }
     let restored_error = false;
     if (e instanceof Module.PythonError) {
       // Try to restore the original Python exception.
@@ -259,6 +274,20 @@ EM_JS_NUM(errcode, error_handling_init_js, (), {
     }
   };
   Module.PythonError = PythonError;
+  // A special marker. If we call a CPython API from an EM_JS function and the
+  // CPython API sets an error, we might want to return an error status back to
+  // C keeping the current Python error flag. This signals to the EM_JS wrappers
+  // that the Python error flag is set and to leave it alone and return the
+  // appropriate error value (either NULL or -1).
+  class _PropagatePythonError extends Error
+  {
+    constructor()
+    {
+      Module.fail_test = true;
+      super("If you are seeing this message, an internal Pyodide error has " +
+            "occurred. Please report it to the Pyodide maintainers.");
+    }
+  } Module._PropagatePythonError = _PropagatePythonError;
   return 0;
 })
 

@@ -94,6 +94,13 @@ run_python_simple_inner(char* code)
 int
 numpy_patch_init();
 
+int
+get_python_stack_depth()
+{
+  PyThreadState* tstate = PyThreadState_GET();
+  return tstate->recursion_depth;
+}
+
 /**
  * Bootstrap steps here:
  *  1. Initialize init_dict so that runPythonSimple will work.
@@ -154,7 +161,6 @@ main(int argc, char** argv)
   TRY_INIT(python2js_buffer);
   TRY_INIT_WITH_CORE_MODULE(JsProxy);
   TRY_INIT_WITH_CORE_MODULE(pyproxy);
-  TRY_INIT(keyboard_interrupt);
 
   PyObject* module_dict = PyImport_GetModuleDict(); /* borrowed */
   if (PyDict_SetItemString(module_dict, "_pyodide_core", core_module)) {

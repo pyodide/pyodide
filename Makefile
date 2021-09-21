@@ -151,16 +151,20 @@ lint: node_modules/.installed
 	find src -type f -regex '.*\.\(c\|h\)' \
 		| xargs clang-format-6.0 -output-replacements-xml \
 		| (! grep '<replacement ')
-	npx prettier --check `find src -type f -name '*.js' -not -name '*.gen.js'`
-	npx prettier --check `find src -type f -name '*.html'`
+	npx prettier --check src --ignore-path '*.gen.*'
 	black --check .
 	mypy --ignore-missing-imports    \
 		pyodide-build/pyodide_build/ \
 		src/ 					     \
-		packages/micropip/micropip/  \
 		packages/*/test* 			 \
 		conftest.py 				 \
 		docs
+	# mypy gets upset about there being both: src/py/setup.py and
+	# packages/micropip/src/setup.py. There is no easy way to fix this right now
+	# see python/mypy#10428. This will also cause trouble with pre-commit if you
+	# modify both setup.py files in the same commit.
+	mypy --ignore-missing-imports    \
+		packages/micropip/src/
 
 
 
@@ -227,11 +231,6 @@ check:
 	./tools/dependency-check.sh
 
 
-minimal :
-	PYODIDE_PACKAGES+=",micropip" make
-
-
 debug :
 	EXTRA_CFLAGS+=" -D DEBUG_F" \
-	PYODIDE_PACKAGES+=", micropip, pyparsing, pytz, packaging, " \
 	make

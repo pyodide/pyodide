@@ -10,7 +10,7 @@ def test_cpython_core(python_test, selenium, request):
     name, error_flags = python_test
 
     # keep only flags related to the current browser
-    flags_to_remove = ["firefox", "chrome"]
+    flags_to_remove = ["firefox", "chrome", "node"]
     flags_to_remove.remove(selenium.browser)
     for flag in flags_to_remove:
         if "crash-" + flag in error_flags:

@@ -1,25 +1,31 @@
 import pytest
-from pathlib import Path
-import sys
 from textwrap import dedent
-
-sys.path.append(str(Path(__file__).resolve().parents[2] / "src" / "py"))
-
+from pyodide_build.testing import run_in_pyodide
 from pyodide import find_imports, eval_code, CodeRunner, should_quiet  # noqa: E402
 
 
 def test_find_imports():
 
     res = find_imports(
-        dedent(
-            """
-           import numpy as np
-           from scipy import sparse
-           import matplotlib.pyplot as plt
-           """
-        )
+        """
+        import numpy as np
+        from scipy import sparse
+        import matplotlib.pyplot as plt
+        """
     )
     assert set(res) == {"numpy", "scipy", "matplotlib"}
+
+    # If there is a syntax error in the code, find_imports should return empty
+    # list.
+    res = find_imports(
+        """
+        import numpy as np
+        from scipy import sparse
+        import matplotlib.pyplot as plt
+        for x in [1,2,3]
+        """
+    )
+    assert res == []
 
 
 def test_code_runner():
@@ -148,6 +154,71 @@ def test_eval_code_locals():
     eval_code("invalidate_caches()", globals, locals)
 
 
+@run_in_pyodide
+def test_dup_pipe():
+    # See https://github.com/emscripten-core/emscripten/issues/14640
+    import os
+
+    [fdr1, fdw1] = os.pipe()
+    fdr2 = os.dup(fdr1)
+    fdw2 = os.dup2(fdw1, 50)
+    # Closing any of fdr, fdr2, fdw, or fdw2 will currently destroy the pipe.
+    # This bug is fixed upstream:
+    # https://github.com/emscripten-core/emscripten/pull/14685
+    s1 = b"some stuff"
+    s2 = b"other stuff to write"
+    os.write(fdw1, s1)
+    assert os.read(fdr2, 100) == s1
+    os.write(fdw2, s2)
+    assert os.read(fdr1, 100) == s2
+
+
+@run_in_pyodide
+def test_dup_temp_file():
+    # See https://github.com/emscripten-core/emscripten/issues/15012
+    import os
+    from tempfile import TemporaryFile
+
+    tf = TemporaryFile(buffering=0)
+    fd1 = os.dup(tf.fileno())
+    fd2 = os.dup2(tf.fileno(), 50)
+    s = b"hello there!"
+    tf.write(s)
+    tf2 = open(fd1, "w+")
+    assert tf2.tell() == len(s)
+    # This next assertion actually demonstrates a bug in dup: the correct value
+    # to return should be b"".
+    assert os.read(fd1, 50) == b""
+    tf2.seek(1)
+    assert tf.tell() == 1
+    assert tf.read(100) == b"ello there!"
+
+
+@run_in_pyodide
+def test_dup_stdout():
+    # Test redirecting stdout using low level os.dup operations.
+    # This sort of redirection is used in pytest.
+    import os
+    import sys
+    from tempfile import TemporaryFile
+
+    tf = TemporaryFile(buffering=0)
+    save_stdout = os.dup(sys.stdout.fileno())
+    os.dup2(tf.fileno(), sys.stdout.fileno())
+    print("hi!!")
+    print("there...")
+    assert tf.tell() == len("hi!!\nthere...\n")
+    os.dup2(save_stdout, sys.stdout.fileno())
+    print("not captured")
+    os.dup2(tf.fileno(), sys.stdout.fileno())
+    print("captured")
+    assert tf.tell() == len("hi!!\nthere...\ncaptured\n")
+    os.dup2(save_stdout, sys.stdout.fileno())
+    os.close(save_stdout)
+    tf.seek(0)
+    assert tf.read(1000).decode() == "hi!!\nthere...\ncaptured\n"
+
+
 @pytest.mark.skip_pyproxy_check
 def test_monkeypatch_eval_code(selenium):
     try:
@@ -177,7 +248,6 @@ def test_hiwire_is_promise(selenium):
         "1",
         "'x'",
         "''",
-        "document.all",
         "false",
         "undefined",
         "null",
@@ -200,6 +270,11 @@ def test_hiwire_is_promise(selenium):
     ]:
         assert selenium.run_js(
             f"return pyodide._module.hiwire.isPromise({s}) === false;"
+        )
+
+    if not selenium.browser == "node":
+        assert selenium.run_js(
+            f"return pyodide._module.hiwire.isPromise(document.all) === false;"
         )
 
     assert selenium.run_js(
@@ -227,22 +302,21 @@ def test_hiwire_is_promise(selenium):
 def test_keyboard_interrupt(selenium):
     x = selenium.run_js(
         """
-        x = new Int8Array(1)
-        pyodide._module.setInterruptBuffer(x)
-        window.triggerKeyboardInterrupt = function(){
+        let x = new Int8Array(1);
+        pyodide.setInterruptBuffer(x);
+        self.triggerKeyboardInterrupt = function(){
             x[0] = 2;
         }
         try {
             pyodide.runPython(`
                 from js import triggerKeyboardInterrupt
-                x = 0
-                while True:
-                    x += 1
+                for x in range(100000):
                     if x == 2000:
                         triggerKeyboardInterrupt()
-            `)
+            `);
         } catch(e){}
-        return pyodide.runPython('x')
+        pyodide.setInterruptBuffer(undefined);
+        return pyodide.globals.get('x');
         """
     )
     assert 2000 < x < 2500
@@ -254,8 +328,8 @@ def test_run_python_async_toplevel_await(selenium):
         await pyodide.runPythonAsync(`
             from js import fetch
             resp = await fetch("packages.json")
-            json = await resp.json()
-            assert hasattr(json, "dependencies")
+            json = (await resp.json()).to_py()["packages"]
+            assert "micropip" in json
         `);
         """
     )
@@ -311,7 +385,7 @@ def test_run_python_js_error(selenium):
         function throwError(){
             throw new Error("blah!");
         }
-        window.throwError = throwError;
+        self.throwError = throwError;
         pyodide.runPython(`
             from js import throwError
             from unittest import TestCase
@@ -327,7 +401,7 @@ def test_run_python_js_error(selenium):
 def test_create_once_callable(selenium):
     selenium.run_js(
         """
-        window.call7 = function call7(f){
+        self.call7 = function call7(f){
             return f(7);
         }
         pyodide.runPython(`
@@ -364,14 +438,14 @@ def test_create_once_callable(selenium):
 def test_create_proxy(selenium):
     selenium.run_js(
         """
-        window.testAddListener = function(f){
-            window.listener = f;
+        self.testAddListener = function(f){
+            self.listener = f;
         }
-        window.testCallListener = function(f){
-            return window.listener();
+        self.testCallListener = function(f){
+            return self.listener();
         }
-        window.testRemoveListener = function(f){
-            return window.listener === f;
+        self.testRemoveListener = function(f){
+            return self.listener === f;
         }
         pyodide.runPython(`
             from pyodide import create_proxy
@@ -408,6 +482,24 @@ def test_create_proxy(selenium):
     )
 
 
+def test_return_destroyed_value(selenium):
+    selenium.run_js(
+        """
+        self.f = function(x){ return x };
+        pyodide.runPython(`
+            from pyodide import create_proxy, JsException
+            from js import f
+            p = create_proxy([])
+            p.destroy()
+            try:
+                f(p)
+            except JsException as e:
+                assert str(e) == "Error: Object has already been destroyed"
+        `);
+        """
+    )
+
+
 def test_docstrings_a():
     from _pyodide.docstring import get_cmeth_docstring, dedent_docstring
     from pyodide import JsProxy
@@ -428,7 +520,7 @@ def test_docstrings_b(selenium):
     sig_then_should_equal = "(onfulfilled, onrejected)"
     ds_once_should_equal = dedent_docstring(create_once_callable.__doc__)
     sig_once_should_equal = "(obj)"
-    selenium.run_js("window.a = Promise.resolve();")
+    selenium.run_js("self.a = Promise.resolve();")
     [ds_then, sig_then, ds_once, sig_once] = selenium.run(
         """
         from js import a
@@ -508,6 +600,12 @@ def test_fatal_error(selenium_standalone):
     def strip_stack_trace(x):
         x = re.sub("\n.*site-packages.*", "", x)
         x = re.sub("/lib/python.*/", "", x)
+        x = re.sub("/lib/python.*/", "", x)
+        x = re.sub("warning: no [bB]lob.*\n", "", x)
+        x = re.sub("Error: intentionally triggered fatal error!\n", "", x)
+        x = re.sub(" +at .*\n", "", x)
+        x = re.sub(".*@https?://[0-9.:]*/.*\n", "", x)
+        x = x.replace("\n\n", "\n")
         return x
 
     assert (
@@ -515,18 +613,17 @@ def test_fatal_error(selenium_standalone):
         == dedent(
             strip_stack_trace(
                 """
-            Python initialization complete
-            Pyodide has suffered a fatal error. Please report this to the Pyodide maintainers.
-            The cause of the fatal error was:
-            {}
-            Stack (most recent call first):
-              File "<exec>", line 8 in h
-              File "<exec>", line 6 in g
-              File "<exec>", line 4 in f
-              File "<exec>", line 9 in <module>
-              File "/lib/pythonxxx/site-packages/pyodide/_base.py", line 242 in run
-              File "/lib/pythonxxx/site-packages/pyodide/_base.py", line 344 in eval_code
-            """
+                Python initialization complete
+                Pyodide has suffered a fatal error. Please report this to the Pyodide maintainers.
+                The cause of the fatal error was:
+                Stack (most recent call first):
+                  File "<exec>", line 8 in h
+                  File "<exec>", line 6 in g
+                  File "<exec>", line 4 in f
+                  File "<exec>", line 9 in <module>
+                  File "/lib/pythonxxx/site-packages/pyodide/_base.py", line 242 in run
+                  File "/lib/pythonxxx/site-packages/pyodide/_base.py", line 344 in eval_code
+                """
             )
         ).strip()
     )
@@ -563,3 +660,108 @@ def test_reentrant_error(selenium):
         """
     )
     assert caught
+
+
+def test_restore_error(selenium):
+    # See PR #1816.
+    selenium.run_js(
+        """
+        self.f = function(){
+            pyodide.runPython(`
+                err = Exception('hi')
+                raise err
+            `);
+        }
+        pyodide.runPython(`
+            from js import f
+            import sys
+            try:
+                f()
+            except Exception as e:
+                assert err == e
+                assert e == sys.last_value
+            finally:
+                del err
+            assert sys.getrefcount(sys.last_value) == 2
+        `);
+        """
+    )
+
+
+@pytest.mark.skip_refcount_check
+@pytest.mark.skip_pyproxy_check
+def test_custom_stdin_stdout(selenium_standalone_noload):
+    selenium = selenium_standalone_noload
+    strings = [
+        "hello world",
+        "hello world\n",
+        "This has a \x00 null byte in the middle...",
+        "several\nlines\noftext",
+        "pyodidé",
+        "碘化物",
+        "🐍",
+    ]
+    selenium.run_js(
+        """
+        function* stdinStrings(){
+            for(let x of %s){
+                yield x;
+            }
+        }
+        let stdinStringsGen = stdinStrings();
+        function stdin(){
+            return stdinStringsGen.next().value;
+        }
+        self.stdin = stdin;
+        """
+        % strings
+    )
+    selenium.run_js(
+        """
+        self.stdoutStrings = [];
+        self.stderrStrings = [];
+        function stdout(s){
+            stdoutStrings.push(s);
+        }
+        function stderr(s){
+            stderrStrings.push(s);
+        }
+        let pyodide = await loadPyodide({
+            indexURL : './',
+            fullStdLib: false,
+            jsglobals : self,
+            stdin,
+            stdout,
+            stderr,
+        });
+        self.pyodide = pyodide;
+        globalThis.pyodide = pyodide;
+        """
+    )
+    outstrings = sum([s.removesuffix("\n").split("\n") for s in strings], [])
+    print(outstrings)
+    assert (
+        selenium.run_js(
+            """
+        return pyodide.runPython(`
+            [input() for x in range(%s)]
+            # ... test more stuff
+        `).toJs();
+        """
+            % len(outstrings)
+        )
+        == outstrings
+    )
+
+    [stdoutstrings, stderrstrings] = selenium.run_js(
+        """
+        pyodide.runPython(`
+            import sys
+            print("something to stdout")
+            print("something to stderr",file=sys.stderr)
+        `);
+        return [self.stdoutStrings, self.stderrStrings];
+        """
+    )
+    assert stdoutstrings == ["Python initialization complete", "something to stdout"]
+    assert stderrstrings == ["something to stderr"]
