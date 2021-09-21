@@ -38,9 +38,7 @@ jobs:
 
       - name: Build emsdk
         run: |
-          ccache -z
           make -C emsdk
-          ccache -s
 
       - name: Build Cpython
         run: |
