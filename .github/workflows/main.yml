@@ -13,7 +13,7 @@ jobs:
       EMSDK_NUM_CORES: 3
       EMCC_CORES: 3
       PYODIDE_JOBS: 3
-      CCACHE_DIR: /__w/ccache/
+      CCACHE_DIR: ~/.ccache
 
     steps:
       - uses: actions/checkout@v2
@@ -22,7 +22,7 @@ jobs:
         uses: actions/cache@v2
         with:
           path: |
-            /__w/ccache/
+            ~/.ccache
           key: ${{ hashFiles('Makefile.envs') }}-v20201205-
 
       - uses: conda-incubator/setup-miniconda@v2
@@ -35,8 +35,11 @@ jobs:
         run: |
           sudo apt install -y build-essential git
           conda install -y nodejs ccache f2c pkg-config swig make patch pkg-config texinfo autoconf automake libtool
-          # Fix permissions for the ccache folder
-          sudo chmod -R a+r /__w/ccache/
+
+      - name: Check Python versions
+        run: |
+          python -v
+          which python
 
       - name: Build emsdk
         run: |
@@ -75,13 +78,13 @@ jobs:
           # We create an archive of all packages, as otherwise upload
           # is very slow
           rm -rf ./src/js/node_modules/
-          tar czf /__w/build-core-all.tgz --exclude='*__pycache__*' .
+          tar czf ~/build-core-all.tgz --exclude='*__pycache__*' .
 
       - name: Store artifacts all
         uses: actions/upload-artifact@v2
         with:
           name: core-build-all
-          path: /__w/build-core-all.tgz
+          path: ~/build-core-all.tgz
           retention-days: 5
 
   test-core:
