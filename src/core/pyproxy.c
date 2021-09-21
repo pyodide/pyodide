@@ -294,8 +294,8 @@ _pyproxy_getattr(PyObject* pyobj, JsRef idkey, JsRef proxyCache)
   FAIL_IF_NULL(idresult);
   if (pyproxy_Check(idresult)) {
     // If a getter returns a different object every time, this could potentially
-    // fill up the cache with a lot of junk. However, there is no other option
-    // that makes sense from the point of the user.
+    // fill up the cache with a lot of junk. If this is a problem, the user will
+    // have to manually destroy the attributes.
     proxy_cache_set(proxyCache, pydescr, hiwire_incref(idresult));
   }
 
