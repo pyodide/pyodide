@@ -2,25 +2,18 @@ name: main
 
 on:
   push:
-    branches: [ main ]
+    branches: [main]
   pull_request:
-    branches: [ main ]
-
-  # Allows you to run this workflow manually from the Actions tab
-  workflow_dispatch:
+    branches: [main]
 
 jobs:
   build-core:
     runs-on: ubuntu-latest
-    container:
-      image: pyodide/pyodide-env:18
-      options: --user 1001
     env:
       EMSDK_NUM_CORES: 3
       EMCC_CORES: 3
       PYODIDE_JOBS: 3
       CCACHE_DIR: /__w/ccache/
-
 
     steps:
       - uses: actions/checkout@v2
@@ -32,26 +25,40 @@ jobs:
             /__w/ccache/
           key: ${{ hashFiles('Makefile.envs') }}-v20201205-
 
+      - uses: conda-incubator/setup-miniconda@v2
+        with:
+          activate-environment: pyodide-env
+          python-version: 3.9.5
+          channels: conda-forge
+
+      - name: Install dependencies
+        run: |
+          sudo apt install -y build-essentials git
+          conda install -y nodejs ccache f2c pkg-config swig make patch pkg-config texinfo autoconf automake libtool
+
       - name: Build emsdk
         run: |
-            # make sure the folder is writable
-            touch /__w/test
-            ccache -z
-            make -C emsdk
-            ccache -s
+          ccache -z
+          make -C emsdk
+          ccache -s
 
       - name: Build Cpython
         run: |
-            ccache -z
-            make -C cpython
-            ccache -s
+          # This is necessary to use the ccache from emsdk
+          source pyodide_env.sh
+
+          ccache -z
+          make -C cpython
+          ccache -s
 
       - name: build Pyodide core
         run: |
-            ccache -z
-            # The following packages are currently used in the main pyodide test suite
-            PYODIDE_PACKAGES="micropip,pyparsing,pytz,packaging,Jinja2" make
-            ccache -s
+          # This is necessary to use the ccache from emsdk
+          source pyodide_env.sh
+          ccache -z
+          # The following packages are currently used in the main pyodide test suite
+          PYODIDE_PACKAGES="core,numpy" make
+          ccache -s
 
       - name: check-size
         run: ls -lh build/
@@ -77,19 +84,15 @@ jobs:
           path: /__w/build-core-all.tgz
           retention-days: 5
 
-
   test-core:
     runs-on: ubuntu-latest
-    container:
-      image: pyodide/pyodide-env:18
-      options: --user 1001
     env:
       DISPLAY: :99
 
     needs: build-core
     strategy:
       matrix:
-        selenium_runner: [firefox, chrome]
+        selenium_runner: [firefox]
 
     steps:
       - uses: actions/checkout@v2
@@ -100,175 +103,18 @@ jobs:
           name: core-build
           path: ./build/
 
-      - name: run tests
+      - name: run core tests
         env:
-           SELENIUM_RUNNER: ${{ matrix.selenium_runner }}
+          SELENIUM_RUNNER: ${{ matrix.selenium_runner }}
         run: |
-           ls -lh
-           ls -lh build/
-           tools/pytest_wrapper.py src packages/micropip/ -v -k "${SELENIUM_RUNNER}"
+          ls -lh
+          ls -lh build/
+          tools/pytest_wrapper.py src packages/micropip/ -v -k "${SELENIUM_RUNNER}"
 
-  test-js:
-    runs-on: ubuntu-latest
-    container:
-      image: pyodide/pyodide-env:18
-      options: --user 1001
-
-    needs: build-core
-
-    steps:
-      - name: Download build artifact
-        uses: actions/download-artifact@v2
-        with:
-          name: core-build-all
-
-      - name: Unzip build artifacts
-        run: |
-          tar xzf build-core-all.tgz
-          ls
-
-      - name: test JS
-        run: |
-            cd src/js
-            npm install
-            npx tsd
-            npm test
-
-
-
-  test-python:
-    runs-on: ubuntu-latest
-    container:
-      image: pyodide/pyodide-env:18
-      options: --user 1001
-
-    steps:
-      - uses: actions/checkout@v2
-
-      - name: test Python
-        run: |
-            mkdir test-results
-            pip install ruamel.yaml
-            pytest \
-              --junitxml=test-results/junit.xml \
-              --verbose \
-              -k 'not (chrome or firefox)' \
-              --cov=pyodide_build --cov=pyodide \
-              src pyodide-build packages/micropip/
-
-  lint:
-    runs-on: ubuntu-latest
-    container:
-      image: pyodide/pyodide-env:18
-      options: --user 1001
-
-    steps:
-      - uses: actions/checkout@v2
-
-      - name: lint
-        run:  make lint
-
-
-  test-docs:
-    runs-on: ubuntu-latest
-    container:
-      image: pyodide/pyodide-env:18
-      options: --user 1001
-
-    steps:
-      - uses: actions/checkout@v2
-
-      - name: install requirements
-        run: |
-          pip install -r docs/requirements-doc.txt
-
-      - name: test docs
-        run: |
-          mkdir test-results
-          pytest docs/sphinx_pyodide/tests --junitxml=test-results/junit.xml
-
-
-  build-packages:
-    runs-on: ubuntu-latest
-    container:
-      image: pyodide/pyodide-env:18
-      options: --user 1001
-    env:
-      EMSDK_NUM_CORES: 3
-      EMCC_CORES: 3
-      PYODIDE_JOBS: 3
-      CCACHE_DIR: /__w/ccache/
-
-    needs: build-core
-
-    steps:
-      - name: Download build artifact
-        uses: actions/download-artifact@v2
-        with:
-          name: core-build-all
-
-      - name: Unzip build artifacts
-        run: |
-          tar xzf build-core-all.tgz
-          ls
-
-      - name: Build packages
-        run: |
-          ccache -z
-          make -C packages
-          ccache -s
-
-      - name: Store artifacts build
-        uses: actions/upload-artifact@v2
-        with:
-          name: build-packages
-          path: ./build/
-          retention-days: 10
-
-  test-packages:
-    runs-on: ubuntu-latest
-    container:
-      image: pyodide/pyodide-env:18
-      options: --user 1001
-    env:
-      DISPLAY: :99
-
-    needs: build-packages
-    strategy:
-      matrix:
-        selenium_runner: [firefox, chrome]
-
-    steps:
-      - uses: actions/checkout@v2
-
-      - name: Download build artifact
-        uses: actions/download-artifact@v2
-        with:
-          name: build-packages
-
-      - name: run tests
+      - name: run package tests
         env:
-           SELENIUM_RUNNER: ${{ matrix.selenium_runner }}
+          SELENIUM_RUNNER: ${{ matrix.selenium_runner }}
         run: |
-           tools/pytest_wrapper.py packages/test* packages/*/test* -v -k "${SELENIUM_RUNNER}"
-
-  benchmark:
-    runs-on: ubuntu-latest
-    container:
-      image: pyodide/pyodide-env:18
-      options: --user 1001
-
-    needs: build-packages
-
-    steps:
-      - uses: actions/checkout@v2
-
-      - name: Download packages artifact
-        uses: actions/download-artifact@v2
-        with:
-          name: build-packages
-
-      - name: benchmark
-        run: |
-          pip install numpy
-          python benchmark/benchmark.py /usr/local/bin/python3 build/benchmarks.json
+          ls -lh
+          ls -lh build/
+          tools/pytest_wrapper.py packages/test* packages/*/test* -v -k "numpy and ${SELENIUM_RUNNER}"
