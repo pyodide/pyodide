@@ -1,7 +1,6 @@
 from importlib.abc import MetaPathFinder, Loader
 from importlib.util import spec_from_loader
 import sys
-from ._core import JsProxy
 
 
 class JsFinder(MetaPathFinder):
@@ -98,9 +97,14 @@ class JsLoader(Loader):
         return True
 
 
+JsProxy: type = None  # type: ignore
 jsfinder: JsFinder = JsFinder()
 
 
 def register_js_finder():
-    sys.meta_path.append(jsfinder)
+    import _pyodide_core  # type: ignore
+
+    global JsProxy
+    JsProxy = _pyodide_core.JsProxy
+    sys.meta_path.append(jsfinder)  # type: ignore
     return jsfinder
