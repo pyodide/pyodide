@@ -86,7 +86,7 @@ def run_in_pyodide(
                                 globals : pyodide._module.globals,
                                 filename : {filename!r}
                             }}
-                        )
+                        );
                         """
                     )
                     # When invoking the function, use the default filename <eval>
