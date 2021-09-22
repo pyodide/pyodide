@@ -237,11 +237,18 @@ _PyObject_GetMethod(PyObject* obj, PyObject* name, PyObject** method);
 
 EM_JS(JsRef, proxy_cache_get, (JsRef proxyCacheId, PyObject* descr), {
   let proxyCache = Module.hiwire.get_value(proxyCacheId);
-  let proxy = proxyCache.get(descr);
-  if (proxy && proxy.$$.ptr) {
-    return proxy;
-  } else if (proxy) {
+  let proxyId = proxyCache.get(descr);
+  if (!proxyId) {
+    return undefined;
+  }
+  // Okay found a proxy. Is it alive?
+  if (Module.hiwire.get_value(proxyId).$$.ptr) {
+    return proxyId;
+  } else {
+    // It's dead, tidy up
     proxyCache.delete(descr);
+    Module.hiwire.decref(proxyId);
+    return undefined;
   }
 })
 
