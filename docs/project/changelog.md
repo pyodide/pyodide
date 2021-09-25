@@ -48,6 +48,11 @@ substitutions:
 - {{ Enhancement }} Better support for ccache when building Pyodide
   {pr}`1805`
 
+### micropip
+
+- {{Fix}} micropip now raises error when installing non-pure python wheel directly from url.
+  {pr}`1859`
+
 ### packages
 
 - {{ Enhancement }} Unit tests are now unvendored from Python packages and
