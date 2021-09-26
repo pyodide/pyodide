@@ -44,7 +44,7 @@ substitutions:
 
 - {{Fix}} Fix usability issues with `pyodide-build mkpkg` CLI.
   {pr}`1828`
-  
+
 - {{ Enhancement }} Better support for ccache when building Pyodide
   {pr}`1805`
 
@@ -56,10 +56,15 @@ substitutions:
   pandas, scipy).
   {pr}`1832`
 
-
 ### Uncategorized
 
-## Version 0.18.1 (unreleased)
+- {{ Enhancement }} `PyErr_CheckSignals` now works with the keyboard interrupt
+  system so that cooperative C extensions can be interrupted. Also, added the
+  `pyodide.checkInterrupt` function so Javascript code can opt to be
+  interrupted.
+  {pr}`1294`
+
+## Version 0.18.1
 
 ### Console
 
@@ -105,12 +110,6 @@ substitutions:
   descriptors closer to posix-compliant. In particular, this fixes the use of
   `dup` on pipes and temporary files, as needed by `pytest`.
   {pr}`1823`
-
-- {{ Enhancement }} `PyErr_CheckSignals` now works with the keyboard interrupt
-  system so that cooperative C extensions can be interrupted. Also, added the
-  `pyodide.checkInterrupt` function so Javascript code can opt to be
-  interrupted.
-  {pr}`1294`
 
 ## Version 0.18.0
 
