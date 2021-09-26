@@ -13,6 +13,54 @@ substitutions:
 
 ## Unreleased
 
+### Python package
+
+- {{Enhancement}} If `find_imports` is used on code that contains a syntax
+  error, it will return an empty list instead of raising a `SyntaxError`.
+  {pr}`1819`
+
+### Javascript package
+
+- {{Fix}} {any}`loadPyodide <globalThis.loadPyodide>` no longer fails in the
+  presence of a user-defined global named `process`.
+  {pr}`1849`
+
+### Python / JavaScript type conversions
+
+- {{Enhancement}} Updated the calling convention when a Javascript function is
+  called from Python to improve memory management of PyProxies. PyProxy
+  arguments and return values are automatically destroyed when the function is
+  finished. {pr}`1573`
+
+### pyodide-build
+
+- {{API}} By default only a minimal set of packages is built. To build all
+  packages set `PYODIDE_PACKAGES='*'` In addition, `make minimal` was removed,
+  since it is now equivalent to `make` without extra arguments. {pr}`1801`
+
+- {{Enhancement}} Changes to environment variables in the build script are now
+  seen in the compile and post build scripts.
+  {pr}`1706`
+
+- {{Fix}} Fix usability issues with `pyodide-build mkpkg` CLI.
+  {pr}`1828`
+  
+- {{ Enhancement }} Better support for ccache when building Pyodide
+  {pr}`1805`
+
+### packages
+
+- {{ Enhancement }} Unit tests are now unvendored from Python packages and
+  included in a separate package `<package name>-tests`. This results in a
+  20% size reduction on average for packages that vendor tests (e.g. numpy,
+  pandas, scipy).
+  {pr}`1832`
+
+
+### Uncategorized
+
+## Version 0.18.1 (unreleased)
+
 ### Console
 
 - {{Fix}} Ctrl+C handling in console now works correctly with multiline input.
@@ -20,28 +68,43 @@ substitutions:
   console.
   {pr}`1790`
 
+- {{Fix}} Fix the repr of Python objects (including lists and dicts) in console {pr}`1780`
+
 - {{Fix}} The "long output truncated" message now appears on a separate line as intended.
   {pr}`1814`
+
+- {{Fix}} The streams that are used to redirect stdin and stdout in the console now define
+  `isatty` to return `True`. This fixes pytest.
+  {pr}`1822`
+
+### Python package
+
+- {{Fix}} Avoid circular references when runsource raises SyntaxError
+  {pr}`1758`
+
+### Javascript package
+
+- {{Fix}} The {any}`pyodide.setInterruptBuffer` command is now publicly exposed
+  again, as it was in v0.17.0. {pr}`1797`
 
 ### Python / JavaScript type conversions
 
 - {{Fix}} Conversion of very large strings from Javascript to Python works
   again. {pr}`1806`
 
-### pyodide-build
-
-- By default only a minimal set of packages is built. To build all packages set
-  `PYODIDE_PACKAGES='*'` In addition, `make minimal` was removed, since it is
-  now equivalent to `make` without extra arguments. {pr}`1801`
-
-### Uncategorized
-
-- {{Fix}} The `setInterruptBuffer` command is now publicly exposed again, as
-  it was before.
-  {pr}`1797`
-
 - {{Fix}} Fixed a use after free bug in the error handling code.
   {pr}`1816`
+
+### Packages
+
+- {{Fix}} pillow now correctly encodes/decodes JPEG image format. {pr}`1818`
+
+### Micellaneous
+
+- {{Fix}} Patched emscripten to make the system calls to duplicate file
+  descriptors closer to posix-compliant. In particular, this fixes the use of
+  `dup` on pipes and temporary files, as needed by `pytest`.
+  {pr}`1823`
 
 - {{ Enhancement }} `PyErr_CheckSignals` now works with the keyboard interrupt
   system so that cooperative C extensions can be interrupted. Also, added the

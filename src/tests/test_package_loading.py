@@ -179,10 +179,18 @@ def test_load_twice_same_source(selenium_standalone):
 
 def test_js_load_package_from_python(selenium_standalone):
     selenium = selenium_standalone
-    to_load = "pyparsing"
-    selenium.run(f"import js ; js.pyodide.loadPackage(['{to_load}'])")
-    assert f"Loading {to_load}" in selenium.logs
-    assert selenium.run_js("return Object.keys(pyodide.loadedPackages)") == [to_load]
+    to_load = ["pyparsing"]
+    selenium.run_js(
+        f"""
+        await pyodide.runPythonAsync(`
+            from pyodide_js import loadPackage
+            await loadPackage({to_load!r})
+            del loadPackage
+        `);
+        """
+    )
+    assert f"Loading {to_load[0]}" in selenium.logs
+    assert selenium.run_js("return Object.keys(pyodide.loadedPackages)") == to_load
 
 
 @pytest.mark.parametrize("jinja2", ["jinja2", "Jinja2"])
@@ -194,5 +202,35 @@ def test_load_package_mixed_case(selenium_standalone, jinja2):
         pyodide.runPython(`
             import jinja2
         `)
+        """
+    )
+
+
+def test_test_unvendoring(selenium_standalone):
+    selenium = selenium_standalone
+    selenium.run_js(
+        """
+        await pyodide.loadPackage("regex");
+        pyodide.runPython(`
+            import regex
+            from pathlib import Path
+            test_path =  Path(regex.__file__).parent / "test_regex.py"
+            assert not test_path.exists()
+        `)
+        """
+    )
+
+    selenium.run_js(
+        """
+        await pyodide.loadPackage("regex-tests");
+        pyodide.runPython(`
+            assert test_path.exists()
+        `)
+        """
+    )
+
+    assert selenium.run_js(
+        """
+        return pyodide._module.packages['regex'].unvendored_tests
         """
     )

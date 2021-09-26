@@ -12,7 +12,7 @@ from queue import Queue, PriorityQueue
 import shutil
 import subprocess
 import sys
-from threading import Thread
+from threading import Thread, Lock
 from time import sleep, perf_counter
 from typing import Dict, Set, Optional, List, Any
 
@@ -31,6 +31,7 @@ class BasePackage:
     dependencies: List[str]
     unbuilt_dependencies: Set[str]
     dependents: Set[str]
+    unvendored_tests: Optional[bool] = None
 
     # We use this in the priority queue, which pops off the smallest element.
     # So we want the smallest element to have the largest number of dependents
@@ -145,6 +146,15 @@ class Package(BasePackage):
                 self.pkgdir / "build" / (self.name + ".js"),
                 outputdir / (self.name + ".js"),
             )
+            if (self.pkgdir / "build" / (self.name + "-tests.data")).exists():
+                shutil.copyfile(
+                    self.pkgdir / "build" / (self.name + "-tests.data"),
+                    outputdir / (self.name + "-tests.data"),
+                )
+                shutil.copyfile(
+                    self.pkgdir / "build" / (self.name + "-tests.js"),
+                    outputdir / (self.name + "-tests.js"),
+                )
 
 
 def generate_dependency_graph(
@@ -220,18 +230,26 @@ def build_from_graph(pkg_map: Dict[str, BasePackage], outputdir: Path, args) -> 
     # Insert packages into build_queue. We *must* do this after counting
     # dependents, because the ordering ought not to change after insertion.
     build_queue: PriorityQueue = PriorityQueue()
+
+    print("Building the following packages: " + ", ".join(sorted(pkg_map.keys())))
+
     for pkg in pkg_map.values():
         if len(pkg.dependencies) == 0:
             build_queue.put(pkg)
 
     built_queue: Queue = Queue()
+    thread_lock = Lock()
+    queue_idx = 1
 
     def builder(n):
-        print(f"Starting thread {n}")
+        nonlocal queue_idx
         while True:
             pkg = build_queue.get()
+            with thread_lock:
+                pkg._queue_idx = queue_idx
+                queue_idx += 1
 
-            print(f"Thread {n} building {pkg.name}")
+            print(f"[{pkg._queue_idx}/{len(pkg_map)}] (thread {n}) building {pkg.name}")
             t0 = perf_counter()
             try:
                 pkg.build(outputdir, args)
@@ -239,7 +257,10 @@ def build_from_graph(pkg_map: Dict[str, BasePackage], outputdir: Path, args) -> 
                 built_queue.put(e)
                 return
 
-            print(f"Thread {n} built {pkg.name} in {perf_counter() - t0:.1f} s")
+            print(
+                f"[{pkg._queue_idx}/{len(pkg_map)}] (thread {n}) "
+                f"built {pkg.name} in {perf_counter() - t0:.1f} s"
+            )
             built_queue.put(pkg)
             # Release the GIL so new packages get queued
             sleep(0.01)
@@ -260,6 +281,10 @@ def build_from_graph(pkg_map: Dict[str, BasePackage], outputdir: Path, args) -> 
             dependent.unbuilt_dependencies.remove(pkg.name)
             if len(dependent.unbuilt_dependencies) == 0:
                 build_queue.put(dependent)
+
+    for name in list(pkg_map):
+        if (outputdir / (name + "-tests.js")).exists():
+            pkg_map[name].unvendored_tests = True
 
 
 def generate_packages_json(pkg_map: Dict[str, BasePackage]) -> Dict:
@@ -294,6 +319,18 @@ def generate_packages_json(pkg_map: Dict[str, BasePackage]) -> Dict:
         pkg_entry["imports"] = pkg.meta.get("test", {}).get("imports", [name])
 
         package_data["packages"][name.lower()] = pkg_entry
+
+        if pkg.unvendored_tests:
+            package_data["packages"][name.lower()]["unvendored_tests"] = True
+
+            # Create the test package if necessary
+            pkg_entry = {
+                "name": name + "-tests",
+                "version": pkg.version,
+                "depends": [name.lower()],
+                "imports": [],
+            }
+            package_data["packages"][name.lower() + "-tests"] = pkg_entry
 
     # Workaround for circular dependency between soupsieve and beautifulsoup4
     # TODO: FIXME!!
@@ -342,29 +379,29 @@ def make_parser(parser):
         "--cflags",
         type=str,
         nargs="?",
-        default=common.get_make_flag("SIDE_MODULE_CFLAGS"),
-        help="Extra compiling flags",
+        default=None,
+        help="Extra compiling flags. Default: SIDE_MODULE_CFLAGS",
     )
     parser.add_argument(
         "--cxxflags",
         type=str,
         nargs="?",
-        default=common.get_make_flag("SIDE_MODULE_CXXFLAGS"),
-        help="Extra C++ specific compiling flags",
+        default=None,
+        help=("Extra C++ specific compiling flags. " "Default: SIDE_MODULE_CXXFLAGS"),
     )
     parser.add_argument(
         "--ldflags",
         type=str,
         nargs="?",
-        default=common.get_make_flag("SIDE_MODULE_LDFLAGS"),
-        help="Extra linking flags",
+        default=None,
+        help="Extra linking flags. Default: SIDE_MODULE_LDFLAGS",
     )
     parser.add_argument(
         "--target",
         type=str,
         nargs="?",
-        default=common.get_make_flag("TARGETPYTHONROOT"),
-        help="The path to the target Python installation",
+        default=None,
+        help="The path to the target Python installation. Default: TARGETPYTHONROOT",
     )
     parser.add_argument(
         "--install-dir",
@@ -405,6 +442,15 @@ def make_parser(parser):
 def main(args):
     packages_dir = Path(args.dir[0]).resolve()
     outputdir = Path(args.output[0]).resolve()
+    if args.cflags is None:
+        args.cflags = common.get_make_flag("SIDE_MODULE_CFLAGS")
+    if args.cxxflags is None:
+        args.cxxflags = common.get_make_flag("SIDE_MODULE_CXXFLAGS")
+    if args.ldflags is None:
+        args.ldflags = common.get_make_flag("SIDE_MODULE_LDFLAGS")
+    if args.target is None:
+        args.target = common.get_make_flag("TARGETPYTHONROOT")
+
     build_packages(packages_dir, outputdir, args)
 
 

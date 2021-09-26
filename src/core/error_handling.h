@@ -16,6 +16,10 @@ error_handling_init();
 
 extern PyObject* internal_error;
 
+// If we are in the test suite, ensure that the current test fails.
+void
+fail_test();
+
 /**
  * Raised when conversion between Javascript and Python fails.
  */

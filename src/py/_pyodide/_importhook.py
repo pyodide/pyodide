@@ -99,12 +99,24 @@ class JsLoader(Loader):
 
 JsProxy: type = None  # type: ignore
 jsfinder: JsFinder = JsFinder()
+register_js_module = jsfinder.register_js_module
+unregister_js_module = jsfinder.unregister_js_module
 
 
 def register_js_finder():
+    """A bootstrap function, called near the end of Pyodide initialization.
+
+    It is called from runPythonSimple in pyodide.js once `_pyodide_core` is ready
+    to set up the js import mechanism.
+
+        1. Put the right value into the global variable `JsProxy` so that
+           `JsFinder.find_spec` can decide whether parent module is a Js module.
+        2. Add `jsfinder` to metapath to allow js imports.
+
+    This needs to be a function to allow the late import from `_pyodide_core`.
+    """
     import _pyodide_core  # type: ignore
 
     global JsProxy
     JsProxy = _pyodide_core.JsProxy
     sys.meta_path.append(jsfinder)  # type: ignore
-    return jsfinder

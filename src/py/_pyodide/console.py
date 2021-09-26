@@ -60,6 +60,9 @@ class _WriteStream:
     def flush(self):
         pass
 
+    def isatty(self) -> bool:
+        return True
+
 
 class _ReadStream:
     """A utility class so we can specify our own handler for reading from stdin"""
@@ -73,6 +76,9 @@ class _ReadStream:
 
     def flush(self):
         pass
+
+    def isatty(self) -> bool:
+        return True
 
 
 class _Compile(Compile):
@@ -200,14 +206,14 @@ class Console:
     globals : ``dict``
         The global namespace in which to evaluate the code. Defaults to a new empty dictionary.
 
+    stdin_callback : ``Callable[[str], None]``
+        Function to call at each read from ``sys.stdin``. Defaults to ``None``.
+
     stdout_callback : ``Callable[[str], None]``
         Function to call at each write to ``sys.stdout``. Defaults to ``None``.
 
     stderr_callback : ``Callable[[str], None]``
         Function to call at each write to ``sys.stderr``. Defaults to ``None``.
-
-    stdin_callback : ``Callable[[str], None]``
-        Function to call at each read from ``sys.stdin``. Defaults to ``None``.
 
     persistent_stream_redirection : ``bool``
         Should redirection of standard streams be kept between calls to :any:`runcode <Console.runcode>`?
@@ -221,14 +227,14 @@ class Console:
         globals : ``Dict[str, Any]``
             The namespace used as the global
 
+        stdin_callback : ``Callback[[str], None]``
+            Function to call at each read from ``sys.stdin``.
+
         stdout_callback : ``Callback[[str], None]``
             Function to call at each write to ``sys.stdout``.
 
         stderr_callback : ``Callback[[str], None]``
             Function to call at each write to ``sys.stderr``.
-
-        stdin_callback : ``Callback[[str], None]``
-            Function to call at each read from ``sys.stdin``.
 
         buffer : ``List[str]``
             The list of strings that have been :any:`pushed <Console.push>` to the console.
@@ -241,9 +247,9 @@ class Console:
         self,
         globals: Optional[dict] = None,
         *,
+        stdin_callback: Optional[Callable[[str], None]] = None,
         stdout_callback: Optional[Callable[[str], None]] = None,
         stderr_callback: Optional[Callable[[str], None]] = None,
-        stdin_callback: Optional[Callable[[str], None]] = None,
         persistent_stream_redirection: bool = False,
         filename: str = "<console>",
     ):
@@ -252,9 +258,9 @@ class Console:
         self.globals = globals
         self._stdout = None
         self._stderr = None
+        self.stdin_callback = stdin_callback
         self.stdout_callback = stdout_callback
         self.stderr_callback = stderr_callback
-        self.stdin_callback = stdin_callback
         self.filename = filename
         self.buffer: List[str] = []
         self._lock = asyncio.Lock()
@@ -297,22 +303,18 @@ class Console:
             yield
             return
         redirects = []
-        if self.stdout_callback:
-            redirects.append(
-                redirect_stdout(
-                    _WriteStream(self.stdout_callback, name=sys.stdout.name)
-                )
-            )
-        if self.stderr_callback:
-            redirects.append(
-                redirect_stderr(
-                    _WriteStream(self.stderr_callback, name=sys.stderr.name)
-                )
-            )
         if self.stdin_callback:
-            redirects.append(
-                redirect_stdin(_ReadStream(self.stdin_callback, name=sys.stdin.name))
-            )
+            stdin_name = getattr(sys.stdin, "name", "<stdin>")
+            stdin_stream = _ReadStream(self.stdin_callback, name=stdin_name)
+            redirects.append(redirect_stdin(stdin_stream))
+        if self.stdout_callback:
+            stdout_name = getattr(sys.stdout, "name", "<stdout>")
+            stdout_stream = _WriteStream(self.stdout_callback, name=stdout_name)
+            redirects.append(redirect_stdout(stdout_stream))
+        if self.stderr_callback:
+            stderr_name = getattr(sys.stderr, "name", "<stderr>")
+            stderr_stream = _WriteStream(self.stderr_callback, name=stderr_name)
+            redirects.append(redirect_stderr(stderr_stream))
         try:
             self._streams_redirected = True
             with ExitStack() as stack:

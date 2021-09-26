@@ -197,8 +197,7 @@ export function pyimport(name) {
 export async function runPythonAsync(code) {
   let coroutine = Module.pyodide_py.eval_code_async(code, Module.globals);
   try {
-    let result = await coroutine;
-    return result;
+    return await coroutine;
   } finally {
     coroutine.destroy();
   }

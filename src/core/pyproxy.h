@@ -17,6 +17,20 @@ int
 pyproxy_Check(JsRef x);
 
 /**
+ * Check if x is a PyProxy.
+ *
+ * Will fatally fail if x is not NULL or a valid JsRef.
+ */
+int
+pyproxy_Check(JsRef x);
+
+/**
+ * Destroy a list of PyProxies. Steals the reference to the list.
+ */
+errcode
+destroy_proxies(JsRef proxies_id, char* msg);
+
+/**
  * Wrap a Python callable in a Javascript function that can be called once.
  * After being called, the reference count of the python object is automatically
  * decremented. The Proxy also has a "destroy" API that can decrement the
@@ -33,7 +47,9 @@ create_once_callable(PyObject* obj);
  * function. Intended for use with `promise.then`.
  */
 JsRef
-create_promise_handles(PyObject* onfulfilled, PyObject* onrejected);
+create_promise_handles(PyObject* onfulfilled,
+                       PyObject* onrejected,
+                       JsRef done_callback_id);
 
 int
 pyproxy_init();
