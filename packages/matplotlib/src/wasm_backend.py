@@ -3,7 +3,7 @@ A matplotlib backend that renders to an HTML5 canvas in the same thread.
 
 The Agg backend is used for the actual rendering underneath, and renders the
 buffer to the HTML5 canvas. This happens with only a single copy of the data
-into the Canvas -- passing the data from Python to Javascript requires no
+into the Canvas -- passing the data from Python to JavaScript requires no
 copies.
 
 See matplotlib.backend_bases for documentation for most of the methods, since

@@ -1,9 +1,9 @@
-// The point is to make a file that works with Javascript analysis tools like
-// JsDoc and LGTM. They want to parse the file as Javascript. Thus, it's key
-// that included js files should parse as valid Javascript. `JS_FILE` is a
+// The point is to make a file that works with JavaScript analysis tools like
+// JsDoc and LGTM. They want to parse the file as JavaScript. Thus, it's key
+// that included js files should parse as valid JavaScript. `JS_FILE` is a
 // specially designed macro to allow us to do this. We need to look like a
-// function call to Javascript parsers. The easiest way to get it to parse is to
-// make the macro argument look like a Javascript anonymous function, which we
+// function call to JavaScript parsers. The easiest way to get it to parse is to
+// make the macro argument look like a JavaScript anonymous function, which we
 // do with `()=>{`. However, `()=>{` is an invalid C string so the macro needs
 // to remove it. We put `()=>{0,0;`, JS_FILE removes everything up to
 // the comma and replace it with a single open brace.

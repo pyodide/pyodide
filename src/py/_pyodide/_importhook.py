@@ -34,11 +34,11 @@ class JsFinder(MetaPathFinder):
 
     def register_js_module(self, name: str, jsproxy):
         """
-        Registers ``jsproxy`` as a Javascript module named ``name``. The module
+        Registers ``jsproxy`` as a JavaScript module named ``name``. The module
         can then be imported from Python using the standard Python import
         system. If another module by the same name has already been imported,
         this won't have much effect unless you also delete the imported module
-        from ``sys.modules``. This is called by the javascript API
+        from ``sys.modules``. This is called by the JavaScript API
         :any:`pyodide.registerJsModule`.
 
         Parameters
@@ -47,7 +47,7 @@ class JsFinder(MetaPathFinder):
             Name of js module
 
         jsproxy : JsProxy
-            Javascript object backing the module
+            JavaScript object backing the module
         """
         if not isinstance(name, str):
             raise TypeError(
@@ -61,12 +61,12 @@ class JsFinder(MetaPathFinder):
 
     def unregister_js_module(self, name: str):
         """
-        Unregisters a Javascript module with given name that has been previously
+        Unregisters a JavaScript module with given name that has been previously
         registered with :any:`pyodide.registerJsModule` or
-        :any:`pyodide.register_js_module`. If a Javascript module with that name
+        :any:`pyodide.register_js_module`. If a JavaScript module with that name
         does not already exist, will raise an error. If the module has already
         been imported, this won't have much effect unless you also delete the
-        imported module from ``sys.modules``. This is called by the Javascript
+        imported module from ``sys.modules``. This is called by the JavaScript
         API :any:`pyodide.unregisterJsModule`.
 
         Parameters
