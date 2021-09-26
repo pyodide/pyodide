@@ -360,6 +360,114 @@ def test_run_python_last_exc(selenium):
     )
 
 
+def test_check_interrupt(selenium):
+    assert selenium.run_js(
+        """
+        let buffer = new Uint8Array(1);
+        let x = 0;
+        pyodide.setInterruptBuffer(buffer);
+        function test(){
+            buffer[0] = 2;
+            pyodide.checkInterrupt();
+            x = 1;
+        }
+        self.test = test;
+        let err;
+        try {
+            pyodide.runPython(`
+                from js import test;
+                test();
+            `);
+        } catch(e){
+            err = e;
+        }
+        return x === 0 && err.message.includes("KeyboardInterrupt");
+        """
+    )
+
+    assert selenium.run_js(
+        """
+        let buffer = new Uint8Array(1);
+        pyodide.setInterruptBuffer(buffer);
+        buffer[0] = 2;
+        let err_code = 0;
+        for(let i = 0; i < 1000; i++){
+            err_code = err_code || pyodide._module._PyErr_CheckSignals();
+        }
+        let err_occurred = pyodide._module._PyErr_Occurred();
+        console.log({err_code, err_occurred});
+        pyodide._module._PyErr_Clear();
+        return buffer[0] === 0 && err_code === -1 && err_occurred !== 0;
+        """
+    )
+
+
+def test_check_interrupt_custom_signal_handler(selenium):
+    try:
+        selenium.run_js(
+            """
+            pyodide.runPython(`
+                import signal
+                interrupt_occurred = False
+                def signal_handler(*args):
+                    global interrupt_occurred
+                    interrupt_occurred = True
+                signal.signal(signal.SIGINT, signal_handler)
+                None
+            `);
+            """
+        )
+        selenium.run_js(
+            """
+            let buffer = new Uint8Array(1);
+            let x = 0;
+            pyodide.setInterruptBuffer(buffer);
+            function test(){
+                buffer[0] = 2;
+                pyodide.checkInterrupt();
+                x = 1;
+            }
+            self.test = test;
+            let err;
+            pyodide.runPython(`
+                interrupt_occurred = False
+                from js import test
+                test()
+                assert interrupt_occurred == True
+                del test
+            `);
+            """
+        )
+        assert selenium.run_js(
+            """
+            pyodide.runPython(`
+                interrupt_occurred = False
+            `);
+            let buffer = new Uint8Array(1);
+            pyodide.setInterruptBuffer(buffer);
+            buffer[0] = 2;
+            let err_code = 0;
+            for(let i = 0; i < 1000; i++){
+                err_code = err_code || pyodide._module._PyErr_CheckSignals();
+            }
+            let interrupt_occurred = pyodide.globals.get("interrupt_occurred");
+
+            return buffer[0] === 0 && err_code === 0 && interrupt_occurred;
+            """
+        )
+    finally:
+        # Restore signal handler
+        selenium.run_js(
+            """
+            pyodide.runPython(`
+                import signal
+                signal.signal(signal.SIGINT, signal.default_int_handler)
+                None
+            `);
+            """
+        )
+
+
 def test_async_leak(selenium):
     assert 0 == selenium.run_js(
         """

@@ -36,7 +36,14 @@ def run_native(hostpython, code):
     return float(output.strip().split()[-1])
 
 
-def run_wasm(code, selenium):
+def run_wasm(code, selenium, interrupt_buffer):
+    if interrupt_buffer:
+        selenium.run_js(
+            """
+            let interrupt_buffer = new Int32Array(1);
+            pyodide.setInterruptBuffer(interrupt_buffer)
+            """
+        )
     selenium.run(code)
     try:
         runtime = float(selenium.logs.split("\n")[-1])
@@ -50,8 +57,11 @@ def run_all(hostpython, selenium_backends, code):
     a = run_native(hostpython, code)
     result = {"native": a}
     for browser_name, selenium in selenium_backends.items():
-        dt = run_wasm(code, selenium)
-        result[browser_name] = dt
+        for interrupt_buffer in [False, True]:
+            dt = run_wasm(code, selenium, interrupt_buffer)
+            if interrupt_buffer:
+                browser_name += "(w/ ib)"
+            result[browser_name] = dt
     return result
 
 

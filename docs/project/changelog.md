@@ -44,9 +44,14 @@ substitutions:
 
 - {{Fix}} Fix usability issues with `pyodide-build mkpkg` CLI.
   {pr}`1828`
-  
+
 - {{ Enhancement }} Better support for ccache when building Pyodide
   {pr}`1805`
+
+### micropip
+
+- {{Fix}} micropip now raises error when installing non-pure python wheel directly from url.
+  {pr}`1859`
 
 ### packages
 
@@ -56,10 +61,15 @@ substitutions:
   pandas, scipy).
   {pr}`1832`
 
-
 ### Uncategorized
 
-## Version 0.18.1 (unreleased)
+- {{ Enhancement }} `PyErr_CheckSignals` now works with the keyboard interrupt
+  system so that cooperative C extensions can be interrupted. Also, added the
+  `pyodide.checkInterrupt` function so Javascript code can opt to be
+  interrupted.
+  {pr}`1294`
+
+## Version 0.18.1
 
 ### Console
 
@@ -159,7 +169,7 @@ _August 3rd, 2021_
   stores the API into a global variable called `pyodide`. To get old behavior,
   say `globalThis.pyodide = await loadPyodide({...})`.
   {pr}`1597`
-- {{ Enhancement }} {any}`loadPyodide` now accepts callback functions for
+- {{ Enhancement }} {any}`loadPyodide <globalThis.loadPyodide>` now accepts callback functions for
   `stdin`, `stdout` and `stderr`
   {pr}`1728`
 - {{ Enhancement }} Pyodide now ships with first party typescript types for the entire

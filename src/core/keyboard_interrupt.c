@@ -4,14 +4,14 @@
 #include "keyboard_interrupt.h"
 #include <emscripten.h>
 
-static int callback_clock = 1000;
+static int callback_clock = 50;
 
 int
 pyodide_callback(void)
 {
   callback_clock--;
   if (callback_clock == 0) {
-    callback_clock = 1000;
+    callback_clock = 50;
     int interrupt_buffer = EM_ASM_INT({
       let result = Module.interrupt_buffer[0];
       Module.interrupt_buffer[0] = 0;
