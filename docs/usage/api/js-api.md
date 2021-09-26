@@ -1,4 +1,4 @@
-# Javascript API
+# JavaScript API
 
 Backward compatibility of the API is not guaranteed at this point.
 
@@ -22,7 +22,7 @@ Backward compatibility of the API is not guaranteed at this point.
 
 ## PyProxy
 
-A PyProxy is an object that allows idiomatic use of a Python object from Javascript. See {ref}`type-translations-pyproxy`.
+A PyProxy is an object that allows idiomatic use of a Python object from JavaScript. See {ref}`type-translations-pyproxy`.
 
 ```{eval-rst}
 .. js-doc-summary:: PyProxy

@@ -79,7 +79,7 @@
               default:
                 throw new Error(`Unexpected type ${ty}`);
             }
-            // In Javascript, await automatically also awaits any results of
+            // In JavaScript, await automatically also awaits any results of
             // awaits, so if an async function returns a future, it will await
             // the inner future too. This is not what we want so we
             // temporarily put it into a list to protect it.
