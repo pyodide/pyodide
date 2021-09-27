@@ -1,4 +1,18 @@
-# py/pyodide and py/\_pyodide
+# Pyodide Python package
+
+A Python package providing core interpreter functionality for Pyodide.
+
+This package is an integral part of the Pyodide runtime which cannot start
+without it. Install in a native Python for type checking or testing purposes.
+Some of the functionality is missing when imported in a native Python, but for
+the APIs we either provide reimplementations or nonfunctional type stubs.
+
+## License
+
+Pyodide uses the [Mozilla Public License Version
+2.0](https://choosealicense.com/licenses/mpl-2.0/).
+
+## Design information for Pyodide contributors
 
 This directory consists of two Python packages py/\_pyodide and py/pyodide. The
 difference between these packages is when they are imported. They are both

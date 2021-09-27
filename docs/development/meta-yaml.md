@@ -134,6 +134,12 @@ A list of strings of the form `<old_name>=<new_name>`, to rename libraries when 
 might be necessary when using emscripten ports.
 For instance, `png16=png` is currently used in matplotlib.
 
+### `build/unvendor-tests`
+
+Whether to unvendor tests found in the installation folder to a separate
+package `<package-name>-tests`. If this option is true and no tests are found,
+the test package will not be created. Default: true.
+
 ## `requirements`
 
 ### `requirements/run`

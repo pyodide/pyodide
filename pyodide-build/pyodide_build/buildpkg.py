@@ -16,6 +16,7 @@ import subprocess
 import sys
 from typing import Any, Dict
 from urllib import request
+import fnmatch
 
 
 from . import common
@@ -231,19 +232,94 @@ def compile(path: Path, srcpath: Path, pkg: Dict[str, Any], args, bash_runner):
         fd.write(b"\n")
 
 
-def package_files(buildpath: Path, srcpath: Path, pkg: Dict[str, Any], args):
+def unvendor_tests(install_prefix: Path, test_install_prefix: Path) -> int:
+    """Unvendor test files and folders
+
+    This function recursively walks though install_prefix and moves anything
+    that looks like a test folder under test_install_prefix.
+
+
+    Parameters
+    ----------
+    install_prefix
+        the folder where the package was installed
+    test_install_prefix
+        the folder where to move the tests. If it doesn't exits, it will be
+        created.
+
+    Returns
+    -------
+    n_moved
+        number of files or folders moved
+    """
+    n_moved = 0
+    out_files = []
+    for root, dirs, files in os.walk(install_prefix):
+        root_rel = Path(root).relative_to(install_prefix)
+        if root_rel.name == "__pycache__" or root_rel.name.endswith(".egg_info"):
+            continue
+        if root_rel.name in ["test", "tests"]:
+            # This is a test folder
+            (test_install_prefix / root_rel).parent.mkdir(exist_ok=True, parents=True)
+            shutil.move(install_prefix / root_rel, test_install_prefix / root_rel)
+            n_moved += 1
+            continue
+        out_files.append(root)
+        for fpath in files:
+            if (
+                fnmatch.fnmatchcase(fpath, "test_*.py")
+                or fnmatch.fnmatchcase(fpath, "*_test.py")
+                or fpath == "conftest.py"
+            ):
+                (test_install_prefix / root_rel).mkdir(exist_ok=True, parents=True)
+                shutil.move(
+                    install_prefix / root_rel / fpath,
+                    test_install_prefix / root_rel / fpath,
+                )
+                n_moved += 1
+
+    return n_moved
+
+
+def package_files(buildpath: Path, srcpath: Path, pkg: Dict[str, Any]) -> None:
+    """Package the installation folder into .data and .js files
+
+    Parameters
+    ----------
+    buildpath
+        the package build path. Usually `packages/<name>/build`
+    srcpath
+        the package source path. Usually
+        `packages/<name>/build/<name>-<version>`.
+    pkg
+        package JSON definition
+
+    Notes
+    -----
+    The files to packages are located under the `install_prefix` corresponding
+    to `srcpath / 'install'`.
+
+    """
     if (buildpath / ".packaged").is_file():
         return
 
     name = pkg["package"]["name"]
     install_prefix = (srcpath / "install").resolve()
+    test_install_prefix = (srcpath / "install-test").resolve()
+
+    if pkg.get("build", {}).get("unvendor-tests", True):
+        n_unvendored = unvendor_tests(install_prefix, test_install_prefix)
+    else:
+        n_unvendored = 0
+
+    # Package the package except for tests
     subprocess.run(
         [
             str(common.file_packager_path()),
-            name + ".data",
-            "--js-output={}".format(name + ".js"),
+            f"{name}.data",
+            f"--js-output={name}.js",
             "--preload",
-            "{}@/".format(install_prefix),
+            f"{install_prefix}@/",
         ],
         cwd=buildpath,
         check=True,
@@ -252,6 +328,29 @@ def package_files(buildpath: Path, srcpath: Path, pkg: Dict[str, Any], args):
         ["uglifyjs", buildpath / (name + ".js"), "-o", buildpath / (name + ".js")],
         check=True,
     )
+
+    # Package tests
+    if n_unvendored > 0:
+        subprocess.run(
+            [
+                str(common.file_packager_path()),
+                f"{name}-tests.data",
+                f"--js-output={name}-tests.js",
+                "--preload",
+                f"{test_install_prefix}@/",
+            ],
+            cwd=buildpath,
+            check=True,
+        )
+        subprocess.run(
+            [
+                "uglifyjs",
+                buildpath / (name + "-tests.js"),
+                "-o",
+                buildpath / (name + "-tests.js"),
+            ],
+            check=True,
+        )
 
     with open(buildpath / ".packaged", "wb") as fd:
         fd.write(b"\n")
@@ -329,7 +428,7 @@ def build_package(path: Path, args):
             # i.e. they need package running, but not compile
             if not pkg.get("build", {}).get("sharedlibrary"):
                 compile(path, srcpath, pkg, args, bash_runner)
-            package_files(buildpath, srcpath, pkg, args)
+            package_files(buildpath, srcpath, pkg)
     finally:
         bash_runner.close()
         os.chdir(orig_path)

@@ -3,36 +3,48 @@ import hashlib
 import importlib
 import io
 import json
-from pathlib import Path
-import zipfile
-from typing import Dict, Any, Union, List, Tuple
-from .externals.pip._internal.utils.wheel import pkg_resources_distribution_for_wheel
-
-from zipfile import ZipFile
 
 from packaging.requirements import Requirement
 from packaging.version import Version
 from packaging.markers import default_environment
 
-# Provide stubs for testing in native python
-try:
-    import pyodide_js
-    from pyodide import to_js
+from pathlib import Path
+from typing import Dict, Any, Union, List, Tuple
+from zipfile import ZipFile
 
-    IN_BROWSER = True
-except ImportError:
-    IN_BROWSER = False
+from .externals.pip._internal.utils.wheel import pkg_resources_distribution_for_wheel
+
+from pyodide import IN_BROWSER, to_js
+
+# Provide stubs for testing in native python
+if IN_BROWSER:
+    import pyodide_js
 
 if IN_BROWSER:
-    import site
+    # Random note: getsitepackages is not available in a virtual environment...
+    # See https://github.com/pypa/virtualenv/issues/228 (issue is closed but
+    # problem is not fixed)
+    from site import getsitepackages
 
-    WHEEL_BASE = Path(site.getsitepackages()[0])
+    WHEEL_BASE = Path(getsitepackages()[0])
 else:
     WHEEL_BASE = Path(".") / "wheels"
 
 if IN_BROWSER:
-    from js import fetch
+    BUILTIN_PACKAGES = pyodide_js._module.packages.to_py()
+else:
+    BUILTIN_PACKAGES = {}
 
+if IN_BROWSER:
+    from pyodide_js import loadedPackages
+else:
+
+    class loadedPackages:  # type: ignore
+        pass
+
+
+if IN_BROWSER:
+    from js import fetch
 else:
     from urllib.request import urlopen, Request
 
@@ -51,6 +63,20 @@ else:
         return fd
 
 
+if IN_BROWSER:
+    from asyncio import gather
+else:
+    # asyncio.gather will schedule any coroutines to run on the event loop but
+    # we want to avoid using the event loop at all. Instead just run the
+    # coroutines in sequence.
+    # TODO: Use an asyncio testing framework to avoid this
+    async def gather(*coroutines):  # type: ignore
+        result = []
+        for coroutine in coroutines:
+            result.append(await coroutine)
+        return result
+
+
 async def _get_url(url):
     resp = await fetch(url)
     if resp.status >= 400:
@@ -60,31 +86,14 @@ async def _get_url(url):
     return io.BytesIO((await resp.arrayBuffer()).to_py())
 
 
-if IN_BROWSER:
-    from asyncio import gather
-else:
-    # asyncio.gather will schedule any coroutines to run on the event loop but
-    # we want to avoid using the event loop at all. Instead just run the
-    # coroutines in sequence.
-    async def gather(*coroutines):  # type: ignore
-        result = []
-        for coroutine in coroutines:
-            result.append(await coroutine)
-        return result
-
-
-if IN_BROWSER:
-    from pyodide_js import loadedPackages
-else:
-
-    class loadedPackages:  # type: ignore
-        pass
-
-
 async def _get_pypi_json(pkgname):
     url = f"https://pypi.org/pypi/{pkgname}/json"
     fd = await _get_url(url)
     return json.load(fd)
+
+
+def _is_pure_python_wheel(filename: str):
+    return filename.endswith("py3-none-any.whl")
 
 
 def _parse_wheel_url(url: str) -> Tuple[str, Dict[str, Any], str]:
@@ -115,7 +124,7 @@ def _parse_wheel_url(url: str) -> Tuple[str, Dict[str, Any], str]:
 
 
 def _extract_wheel(fd):
-    with zipfile.ZipFile(fd) as zf:
+    with ZipFile(fd) as zf:
         zf.extractall(WHEEL_BASE)
 
 
@@ -141,10 +150,6 @@ async def _install_wheel(name, fileinfo):
 
 class _PackageManager:
     def __init__(self):
-        if IN_BROWSER:
-            self.builtin_packages = pyodide_js._module.packages.to_py()
-        else:
-            self.builtin_packages = {}
         self.installed_packages = {}
 
     async def gather_requirements(self, requirements: Union[str, List[str]], ctx=None):
@@ -174,7 +179,7 @@ class _PackageManager:
         pyodide_packages = transaction["pyodide_packages"]
         if len(pyodide_packages):
             # Note: branch never happens in out-of-browser testing because in
-            # that case builtin_packages is empty.
+            # that case BUILTIN_PACKAGES is empty.
             self.installed_packages.update(pyodide_packages)
             wheel_promises.append(
                 asyncio.ensure_future(
@@ -204,6 +209,9 @@ class _PackageManager:
             # custom download location
             name, wheel, version = _parse_wheel_url(requirement)
             name = name.lower()
+            if not _is_pure_python_wheel(wheel["filename"]):
+                raise ValueError(f"'{wheel['filename']}' is not a pure Python 3 wheel")
+
             await self.add_wheel(name, wheel, version, (), ctx, transaction)
             return
         else:
@@ -213,10 +221,10 @@ class _PackageManager:
         # If there's a Pyodide package that matches the version constraint, use
         # the Pyodide package instead of the one on PyPI
         if (
-            req.name in self.builtin_packages
-            and self.builtin_packages[req.name]["version"] in req.specifier
+            req.name in BUILTIN_PACKAGES
+            and BUILTIN_PACKAGES[req.name]["version"] in req.specifier
         ):
-            version = self.builtin_packages[req.name]["version"]
+            version = BUILTIN_PACKAGES[req.name]["version"]
             transaction["pyodide_packages"].append((req.name, version))
             return
 
@@ -263,7 +271,7 @@ class _PackageManager:
         for ver in candidate_versions:
             release = releases[str(ver)]
             for fileinfo in release:
-                if fileinfo["filename"].endswith("py3-none-any.whl"):
+                if _is_pure_python_wheel(fileinfo["filename"]):
                     return fileinfo, ver
 
         raise ValueError(f"Couldn't find a pure Python 3 wheel for '{req}'")

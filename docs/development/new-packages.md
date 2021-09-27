@@ -46,7 +46,6 @@ If your package is on PyPI, the
 easiest place to start is with the {ref}`mkpkg tool <pyodide-mkpkg>`.
 From the Pyodide root directory, install the tool with `pip install -e pyodide-build`, then run:
 
-
 `pyodide-build mkpkg <package-name>`
 
 This will generate a `meta.yaml` under `package/<package-name>/` (see
@@ -80,7 +79,7 @@ PYODIDE_PACKAGES="<package-name>" make
 ```
 
 and see if there are any errors. The detailed build log can be found under
-`packages/<package-name>/<package-name>.log`.
+`packages/<package-name>/build.log`.
 
 If there are errors you might need to,
 
@@ -111,6 +110,8 @@ libraries to the build. We automate the following steps:
   - Rebuild the package using emscripten to target WebAssembly
 - If the package is pure Python:
   - Run the `setup.py` script to get the built package
+- Unvendor unit tests included in the installation folder to a separate package
+  `<package name>-tests`
 - Package the results into an emscripten virtual filesystem package, which
   comprises:
   - A `.data` file containing the file contents of the whole package,

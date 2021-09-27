@@ -311,11 +311,33 @@ Module.saveState = () => Module.pyodide_py._state.save_state();
 Module.restoreState = (state) => Module.pyodide_py._state.restore_state(state);
 
 /**
+ * Sets the interrupt buffer to be `interrupt_buffer`. This is only useful when
+ * Pyodide is used in a webworker. The buffer should be a `SharedArrayBuffer`
+ * shared with the main browser thread (or another worker). To request an
+ * interrupt, a `2` should be written into `interrupt_buffer` (2 is the posix
+ * constant for SIGINT).
+ *
  * @param {TypedArray} interrupt_buffer
  */
 export function setInterruptBuffer(interrupt_buffer) {
   Module.interrupt_buffer = interrupt_buffer;
   Module._set_pyodide_callback(!!interrupt_buffer);
+}
+
+/**
+ * Throws a KeyboardInterrupt error if a KeyboardInterrupt has been requested
+ * via the interrupt buffer.
+ *
+ * This can be used to enable keyboard interrupts during execution of Javascript
+ * code, just as `PyErr_CheckSignals` is used to enable keyboard interrupts
+ * during execution of C code.
+ */
+export function checkInterrupt() {
+  if (Module.interrupt_buffer[0] === 2) {
+    Module.interrupt_buffer[0] = 0;
+    Module._PyErr_SetInterrupt();
+    Module.runPython("");
+  }
 }
 
 export function makePublicAPI() {
@@ -352,6 +374,7 @@ export function makePublicAPI() {
     registerJsModule,
     unregisterJsModule,
     setInterruptBuffer,
+    checkInterrupt,
     toPy,
     registerComlink,
     PythonError,

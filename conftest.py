@@ -22,7 +22,7 @@ TEST_PATH = ROOT_PATH / "src" / "tests"
 BUILD_PATH = ROOT_PATH / "build"
 
 sys.path.append(str(ROOT_PATH / "pyodide-build"))
-sys.path.append(str(ROOT_PATH / "src/py"))
+sys.path.append(str(ROOT_PATH / "src" / "py"))
 
 from pyodide_build.testing import set_webdriver_script_timeout, parse_driver_timeout
 
@@ -226,6 +226,13 @@ class SeleniumWrapper:
     def get_num_hiwire_keys(self):
         return self.run_js("return pyodide._module.hiwire.num_keys();")
 
+    @property
+    def force_test_fail(self) -> bool:
+        return self.run_js("return !!pyodide._module.fail_test;")
+
+    def clear_force_test_fail(self):
+        self.run_js("pyodide._module.fail_test = false;")
+
     def save_state(self):
         self.run_js("self.__savedState = pyodide._module.saveState();")
 
@@ -415,14 +422,20 @@ def pytest_runtest_call(item):
             trace_pyproxies
             and pytest.mark.skip_refcount_check.mark not in item.own_markers
         )
-        yield from test_wrapper_check_for_memory_leaks(
+        yield from extra_checks_test_wrapper(
             selenium, trace_hiwire_refs, trace_pyproxies
         )
     else:
         yield
 
 
-def test_wrapper_check_for_memory_leaks(selenium, trace_hiwire_refs, trace_pyproxies):
+def extra_checks_test_wrapper(selenium, trace_hiwire_refs, trace_pyproxies):
+    """Extra conditions for test to pass:
+    1. No explicit request for test to fail
+    2. No leaked JsRefs
+    3. No leaked PyProxys
+    """
+    selenium.clear_force_test_fail()
     init_num_keys = selenium.get_num_hiwire_keys()
     if trace_pyproxies:
         selenium.enable_pyproxy_tracing()
@@ -439,6 +452,8 @@ def test_wrapper_check_for_memory_leaks(selenium, trace_hiwire_refs, trace_pypro
         # get_result (we don't want to override the error message by raising a
         # different error here.)
         a.get_result()
+    if selenium.force_test_fail:
+        raise Exception("Test failure explicitly requested but no error was raised.")
     if trace_pyproxies and trace_hiwire_refs:
         delta_proxies = selenium.get_num_proxies() - init_num_proxies
         delta_keys = selenium.get_num_hiwire_keys() - init_num_keys
