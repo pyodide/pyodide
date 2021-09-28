@@ -108,6 +108,29 @@ class JsProxy:
         an ArrayBuffer view.
         """
 
+    def tobytes(self):
+        """Convert the buffer to a bytes object.
+
+        Copies the data once.
+        """
+
+    def tobytearray(self):
+        """Convert the buffer to a bytearray object.
+
+        Copies the data once.
+        """
+
+    def tostring(self, encoding=None):
+        """Convert the buffer to a string object.
+
+        Copies the data twice.
+
+        The encoding argument will be passed to the Javascript ``TextDecoder``
+        constructor. It should be one of the encodings listed in the table here:
+        `https://encoding.spec.whatwg.org/#names-and-labels`. The default
+        encoding is utf8.
+        """
+
 
 # from pyproxy.c
 

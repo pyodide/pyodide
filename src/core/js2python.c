@@ -346,7 +346,7 @@ EM_JS_NUM(errcode, js2python_init, (), {
     }
     if (toStringTag === "[object ArrayBuffer]" || ArrayBuffer.isView(value)){
       let [format_utf8, itemsize] = Module.get_buffer_datatype(value);
-      return _JsBuffer_CloneIntoPython(id, value.byteLength, format_utf8, itemsize);
+      return _JsBuffer_CopyIntoMemoryView(id, value.byteLength, format_utf8, itemsize);
     }
     // clang-format on
     return _JsProxy_create(id);

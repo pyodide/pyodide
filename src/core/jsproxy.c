@@ -1386,8 +1386,8 @@ static PyTypeObject BufferType = {
 };
 
 /**
- * This is a helper function to do error checking for JsBuffer_AssignToPyBuffer
- * and JsBuffer_AssignPyBuffer.
+ * This is a helper function to do error checking for JsBuffer_assign_to
+ * and JsBuffer_assign.
  *
  * self -- The Javascript buffer involved
  * view -- The Py_buffer view involved
@@ -1438,7 +1438,7 @@ check_buffer_compatibility(JsProxy* self, Py_buffer view, bool safe, bool dir)
  * buffer -- A PyObject whcih supports the buffer protocol and is writable.
  */
 static PyObject*
-JsBuffer_AssignToPyBuffer(PyObject* obj, PyObject* target)
+JsBuffer_assign_to(PyObject* obj, PyObject* target)
 {
   JsProxy* self = (JsProxy*)obj;
   bool success = false;
@@ -1460,13 +1460,19 @@ finally:
   return NULL;
 }
 
+PyMethodDef JsBuffer_assign_to_MethodDef = {
+  "assign_to",
+  (PyCFunction)JsBuffer_assign_to,
+  METH_O,
+};
+
 /**
  * Assign from a py buffer to a js buffer
  * obj -- A JsBuffer (meaning a PyProxy of an ArrayBuffer or an ArrayBufferView)
  * buffer -- A PyObject which supports the buffer protocol (can be read only)
  */
 static PyObject*
-JsBuffer_AssignPyBuffer(PyObject* obj, PyObject* source)
+JsBuffer_assign(PyObject* obj, PyObject* source)
 {
   JsProxy* self = (JsProxy*)obj;
   bool success = false;
@@ -1487,6 +1493,12 @@ finally:
   return NULL;
 }
 
+PyMethodDef JsBuffer_assign_MethodDef = {
+  "assign",
+  (PyCFunction)JsBuffer_assign,
+  METH_O,
+};
+
 /**
  * Used from js2python for to_py. Make a new Python buffer with the same data as
  * jsbuffer.
@@ -1501,10 +1513,10 @@ finally:
  * itemsize - the appropriate itemsize for jsbuffer, from get_buffer_datatype
  */
 PyObject*
-JsBuffer_CloneIntoPython(JsRef jsbuffer,
-                         Py_ssize_t byteLength,
-                         char* format,
-                         Py_ssize_t itemsize)
+JsBuffer_CopyIntoMemoryView(JsRef jsbuffer,
+                            Py_ssize_t byteLength,
+                            char* format,
+                            Py_ssize_t itemsize)
 {
   bool success = false;
   Buffer* buffer = NULL;
@@ -1525,6 +1537,121 @@ finally:
   }
   return result;
 }
+
+PyObject*
+JsBuffer_CopyIntoBytes(JsRef jsbuffer, Py_ssize_t byteLength)
+{
+  bool success = false;
+
+  PyObject* result = PyBytes_FromStringAndSize(NULL, byteLength);
+  FAIL_IF_NULL(result);
+  char* data = PyBytes_AS_STRING(result);
+  FAIL_IF_MINUS_ONE(hiwire_assign_to_ptr(jsbuffer, data));
+  success = true;
+finally:
+  if (!success) {
+    Py_CLEAR(result);
+  }
+  return result;
+}
+
+PyObject*
+JsBuffer_CopyIntoByteArray(JsRef jsbuffer, Py_ssize_t byteLength)
+{
+  bool success = false;
+
+  PyObject* result = PyByteArray_FromStringAndSize(NULL, byteLength);
+  FAIL_IF_NULL(result);
+  char* data = PyByteArray_AsString(result);
+  FAIL_IF_MINUS_ONE(hiwire_assign_to_ptr(jsbuffer, data));
+  success = true;
+finally:
+  if (!success) {
+    Py_CLEAR(result);
+  }
+  return result;
+}
+
+EM_JS(JsRef, JsBuffer_DecodeString_js, (JsRef jsbuffer_id, char* encoding), {
+  let buffer = Module.hiwire.get_value(jsbuffer_id);
+  let encoding_js;
+  if (encoding) {
+    encoding_js = UTF8ToString(encoding);
+  }
+  let res = new TextDecoder(encoding_js).decode(buffer);
+  return Module.hiwire.new_value(res);
+})
+
+PyObject*
+JsBuffer_ToString(JsRef jsbuffer, char* encoding)
+{
+  JsRef jsresult = NULL;
+  PyObject* result = NULL;
+  bool success = false;
+
+  jsresult =
+    JsBuffer_DecodeString_js(jsbuffer, encoding) FAIL_IF_NULL(jsresult);
+  result = js2python(jsresult);
+  FAIL_IF_NULL(result);
+
+  success = true;
+finally:
+  hiwire_CLEAR(jsresult);
+  return result;
+}
+
+PyObject*
+JsBuffer_tobytes(PyObject* buffer)
+{
+  int byteLength = hiwire_get_byteLength(JsProxy_REF(buffer));
+  if (byteLength == -1) {
+    return NULL;
+  }
+  return JsBuffer_CopyIntoBytes(JsProxy_REF(buffer), byteLength);
+}
+
+PyMethodDef JsBuffer_tobytes_MethodDef = {
+  "tobytes",
+  (PyCFunction)JsBuffer_tobytes,
+  METH_NOARGS,
+};
+
+PyObject*
+JsBuffer_tobytearray(PyObject* buffer)
+{
+  int byteLength = hiwire_get_byteLength(JsProxy_REF(buffer));
+  if (byteLength == -1) {
+    return NULL;
+  }
+  return JsBuffer_CopyIntoByteArray(JsProxy_REF(buffer), byteLength);
+}
+
+PyMethodDef JsBuffer_tobytearray_MethodDef = {
+  "tobytearray",
+  (PyCFunction)JsBuffer_tobytearray,
+  METH_NOARGS,
+};
+
+PyObject*
+JsBuffer_tostring(PyObject* self,
+                  PyObject* const* args,
+                  Py_ssize_t nargs,
+                  PyObject* kwnames)
+{
+  static const char* const _keywords[] = { "encoding", 0 };
+  static struct _PyArg_Parser _parser = { "|s:tostring", _keywords, 0 };
+  char* encoding = NULL;
+  if (!_PyArg_ParseStackAndKeywords(args, nargs, kwnames, &_parser, &depth)) {
+    return NULL;
+  }
+  return JsBuffer_ToString(JsProxy_REF(buffer), encoding);
+}
+
+PyMethodDef JsBuffer_tostring_MethodDef = {
+  "tostring",
+  (PyCFunction)JsBuffer_tostring,
+  METH_FASTCALL | METH_KEYWORDS,
+};
 
 int
 JsBuffer_cinit(PyObject* obj)
@@ -1571,7 +1698,7 @@ JsProxy_create_subtype(int flags)
   // Make sure these stack allocations are large enough to fit!
   PyType_Slot slots[20];
   int cur_slot = 0;
-  PyMethodDef methods[10];
+  PyMethodDef methods[50];
   int cur_method = 0;
   PyMemberDef members[5];
   int cur_member = 0;
@@ -1654,18 +1781,11 @@ JsProxy_create_subtype(int flags)
                      .pfunc = (void*)JsProxy_ass_subscript_array };
   }
   if (flags & IS_BUFFER) {
-    methods[cur_method++] = (PyMethodDef){
-      "assign",
-      (PyCFunction)JsBuffer_AssignPyBuffer,
-      METH_O,
-      PyDoc_STR("Copies a buffer into the TypedArray "),
-    };
-    methods[cur_method++] = (PyMethodDef){
-      "assign_to",
-      (PyCFunction)JsBuffer_AssignToPyBuffer,
-      METH_O,
-      PyDoc_STR("Copies the TypedArray into a buffer"),
-    };
+    methods[cur_method++] = JsBuffer_assign_MethodDef;
+    methods[cur_method++] = JsBuffer_assign_to_MethodDef;
+    methods[cur_method++] = JsBuffer_tobytes_MethodDef;
+    methods[cur_method++] = JsBuffer_tobytearray_MethodDef;
+    methods[cur_method++] = JsBuffer_tostring_MethodDef;
   }
   methods[cur_method++] = (PyMethodDef){ 0 };
   members[cur_member++] = (PyMemberDef){ 0 };
@@ -1898,6 +2018,11 @@ JsProxy_init(PyObject* core_module)
   SET_DOCSTRING(JsProxy_catch_MethodDef);
   SET_DOCSTRING(JsProxy_finally_MethodDef);
   SET_DOCSTRING(JsMethod_Construct_MethodDef);
+  SET_DOCSTRING(JsBuffer_assign_MethodDef);
+  SET_DOCSTRING(JsBuffer_assign_to_MethodDef);
+  SET_DOCSTRING(JsBuffer_tobytes_MethodDef);
+  SET_DOCSTRING(JsBuffer_tobytearray_MethodDef);
+  SET_DOCSTRING(JsBuffer_tostring_MethodDef);
 #undef SET_DOCSTRING
 
   asyncio_module = PyImport_ImportModule("asyncio");
