@@ -35,7 +35,7 @@ async def js_fetch(url, path):
 ## Why can't I load files from the local file system?
 
 For security reasons Javascript in the browser is not allowed to load local data files
-(`file:///path/to/local/file.data`).
+(for example, `file:///path/to/local/file.data`).
 You will run into Network Errors, due to the [Same Origin Policy](https://en.wikipedia.org/wiki/Same-origin_policy).
 
 For development purposes, you can serve your files in a [web-server](https://developer.mozilla.org/en-US/docs/Learn/Common_questions/set_up_a_local_testing_server).
