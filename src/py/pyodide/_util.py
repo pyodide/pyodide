@@ -54,7 +54,7 @@ async def fetch_string(url: str, **kwargs) -> str:
 
     The data is copied once.
     """
-    resp = fetch(url, **kwargs)
+    resp = await fetch(url, **kwargs)
     _raise_if_failed(url, resp)
     return await resp.text()
 
@@ -69,7 +69,7 @@ async def fetch_buffer(url: str, **kwargs) -> JsProxy:
 
     The data is not copied.
     """
-    resp = fetch(url, **kwargs)
+    resp = await fetch(url, **kwargs)
     _raise_if_failed(url, resp)
     return await resp.arrayBuffer()
 

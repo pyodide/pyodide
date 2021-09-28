@@ -14,7 +14,7 @@ from zipfile import ZipFile
 
 from .externals.pip._internal.utils.wheel import pkg_resources_distribution_for_wheel
 
-from pyodide import IN_BROWSER, to_js, fetch_string
+from pyodide import IN_BROWSER, to_js
 
 # Provide stubs for testing in native python
 if IN_BROWSER:
@@ -44,23 +44,13 @@ else:
 
 
 if IN_BROWSER:
-    from js import fetch
+    from pyodide import fetch_string
 else:
     from urllib.request import urlopen, Request
 
-    async def fetch(url, headers={}):
-        fd = urlopen(Request(url, headers=headers))
-        fd.statusText = fd.reason
-
-        async def arrayBuffer():
-            class Temp:
-                def to_py():
-                    return fd.read()
-
-            return Temp
-
-        fd.arrayBuffer = arrayBuffer
-        return fd
+    async def fetch_string(url: str, **kwargs) -> str:
+        fd = urlopen(Request(url, headers=kwargs))
+        return fd.read()
 
 
 if IN_BROWSER:
