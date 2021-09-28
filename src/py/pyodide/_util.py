@@ -28,13 +28,20 @@ def open_url(url: str) -> StringIO:
     return StringIO(req.response)
 
 
-async def _fetch(url, **kwargs):
-    resp = await _jsfetch(url, to_js(kwargs, dict_converter=Object.fromEntries))
+async def fetch(url, **kwargs):
+    """Fetch the url and return the Javascript response.
+
+    Any keyword arguments are passed along as [optional paremeters to the fetch
+    API](https://developer.mozilla.org/en-US/docs/Web/API/fetch#parameters).
+    """
+    return await _jsfetch(url, to_js(kwargs, dict_converter=Object.fromEntries))
+
+
+async def _raise_if_failed(url, resp):
     if resp.status >= 400:
         raise OSError(
             f"Request for {url} failed with status {resp.status}: {resp.statusText}"
         )
-    return resp
 
 
 async def fetch_string(url: str, **kwargs) -> str:
@@ -45,12 +52,10 @@ async def fetch_string(url: str, **kwargs) -> str:
     a failure status code (>= 400) is returned by the ``fetch`` request, raises
     an `OsError`.
 
-    If getting the result as a bytes, bytesarray, or memoryview is acceptable,
-    it is more efficient to use :any:`pyodide.fetch_buffer` and then use
-    :any:`JsProxy.tobytes`, :any:`JsProxy.tobytearray`, or
-    :any:`JsProxy.tomemoryview`.
+    The data is copied once.
     """
-    resp = _fetch(url, **kwargs)
+    resp = fetch(url, **kwargs)
+    _raise_if_failed(url, resp)
     return await resp.text()
 
 
@@ -62,8 +67,47 @@ async def fetch_buffer(url: str, **kwargs) -> JsProxy:
     a failure status code (>= 400) is returned by the ``fetch`` request, raises
     an `OsError`.
 
-    If you need the result as a string, you can avoid an extra copy by using
-    :any:`pyodide.fetch_string` instead.
+    The data is not copied.
     """
-    resp = _fetch(url, **kwargs)
+    resp = fetch(url, **kwargs)
+    _raise_if_failed(url, resp)
     return await resp.arrayBuffer()
+
+
+def fetch_bytes(url):
+    """Fetch a url and return the result as a ``bytes`` object.
+
+    Any keyword arguments are passed along as [optional paremeters to the fetch
+    API](https://developer.mozilla.org/en-US/docs/Web/API/fetch#parameters). If
+    a failure status code (>= 400) is returned by the ``fetch`` request, raises
+    an `OsError`.
+
+    The data is copied once.
+    """
+    return fetch_buffer(url).tobytes()
+
+
+def fetch_bytesarray(url):
+    """Fetch a url and return the result as a ``bytesarray`` object.
+
+    Any keyword arguments are passed along as [optional paremeters to the fetch
+    API](https://developer.mozilla.org/en-US/docs/Web/API/fetch#parameters). If
+    a failure status code (>= 400) is returned by the ``fetch`` request, raises
+    an `OsError`.
+
+    The data is copied once.
+    """
+    return fetch_buffer(url).tobytesarray()
+
+
+def fetch_memoryview(url):
+    """Fetch a url and return the result as a ``memoryview`` object.
+
+    Any keyword arguments are passed along as [optional paremeters to the fetch
+    API](https://developer.mozilla.org/en-US/docs/Web/API/fetch#parameters). If
+    a failure status code (>= 400) is returned by the ``fetch`` request, raises
+    an `OsError`.
+
+    The data is copied once.
+    """
+    return fetch_buffer(url).tomemoryview()
