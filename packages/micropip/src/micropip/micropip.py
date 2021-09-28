@@ -44,13 +44,15 @@ else:
 
 
 if IN_BROWSER:
-    from pyodide import fetch_string
+    from pyodide import fetch_string, fetch_bytes
 else:
     from urllib.request import urlopen, Request
 
     async def fetch_string(url: str, **kwargs) -> str:
-        fd = urlopen(Request(url, headers=kwargs))
-        return fd.read()
+        return urlopen(Request(url, headers=kwargs)).read()
+
+    async def fetch_bytes(url: str, **kwargs) -> bytes:
+        return bytes(await fetch_string(url, **kwargs))
 
 
 if IN_BROWSER:
@@ -231,8 +233,7 @@ class _PackageManager:
 
     async def add_wheel(self, name, wheel, version, extras, ctx, transaction):
         transaction["locked"][name] = version
-        response = await fetch(wheel["url"])
-        wheel_bytes = (await response.arrayBuffer()).to_py()
+        wheel_bytes = await fetch_bytes(wheel["url"])
         wheel["wheel_bytes"] = wheel_bytes
 
         with ZipFile(io.BytesIO(wheel_bytes)) as zip_file:  # type: ignore
