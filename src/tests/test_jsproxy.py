@@ -518,6 +518,44 @@ def test_nested_attribute_access():
     assert self.Float64Array.BYTES_PER_ELEMENT == 8
 
 
+def test_destroy_attribute(selenium):
+    selenium.run_js(
+        """
+        let test = pyodide.runPython(`
+            class Test:
+                a = {}
+            test = Test()
+            test
+        `);
+        pyodide.runPython(`
+            import sys
+            assert sys.getrefcount(test) == 3
+            assert sys.getrefcount(test.a) == 2
+        `);
+        test.a;
+        pyodide.runPython(`
+            assert sys.getrefcount(test) == 3
+            assert sys.getrefcount(test.a) == 3
+        `);
+        test.a.destroy();
+        pyodide.runPython(`
+            assert sys.getrefcount(test) == 3
+            assert sys.getrefcount(test.a) == 2
+        `);
+        test.a;
+        pyodide.runPython(`
+            assert sys.getrefcount(test) == 3
+            assert sys.getrefcount(test.a) == 3
+        `);
+        test.destroy();
+        pyodide.runPython(`
+            assert sys.getrefcount(test) == 2
+            assert sys.getrefcount(test.a) == 2
+        `);
+        """
+    )
+
+
 @run_in_pyodide
 def test_window_isnt_super_weird_anymore():
     import js

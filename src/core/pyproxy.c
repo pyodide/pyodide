@@ -235,14 +235,21 @@ finally:
 int
 _PyObject_GetMethod(PyObject* obj, PyObject* name, PyObject** method);
 
-EM_JS(int, pyproxy_mark_borrowed, (JsRef id), {
-  let proxy = Module.hiwire.get_value(id);
-  Module.pyproxy_mark_borrowed(proxy);
-});
-
 EM_JS(JsRef, proxy_cache_get, (JsRef proxyCacheId, PyObject* descr), {
   let proxyCache = Module.hiwire.get_value(proxyCacheId);
-  return proxyCache.get(descr);
+  let proxyId = proxyCache.get(descr);
+  if (!proxyId) {
+    return undefined;
+  }
+  // Okay found a proxy. Is it alive?
+  if (Module.hiwire.get_value(proxyId).$$.ptr) {
+    return proxyId;
+  } else {
+    // It's dead, tidy up
+    proxyCache.delete(descr);
+    Module.hiwire.decref(proxyId);
+    return undefined;
+  }
 })
 
 // clang-format off
@@ -294,10 +301,9 @@ _pyproxy_getattr(PyObject* pyobj, JsRef idkey, JsRef proxyCache)
   FAIL_IF_NULL(idresult);
   if (pyproxy_Check(idresult)) {
     // If a getter returns a different object every time, this could potentially
-    // fill up the cache with a lot of junk. However, there is no other option
-    // that makes sense from the point of the user.
+    // fill up the cache with a lot of junk. If this is a problem, the user will
+    // have to manually destroy the attributes.
     proxy_cache_set(proxyCache, pydescr, hiwire_incref(idresult));
-    pyproxy_mark_borrowed(idresult);
   }
 
 success:

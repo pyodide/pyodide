@@ -119,7 +119,7 @@ Module.pyproxy_new = function (ptrobj, cache) {
   }
   cache.refcnt++;
   Object.defineProperty(target, "$$", {
-    value: { ptr: ptrobj, type: "PyProxy", borrowed: false, cache },
+    value: { ptr: ptrobj, type: "PyProxy", cache },
   });
   Module._Py_IncRef(ptrobj);
   let proxy = new Proxy(target, PyProxyHandlers);
@@ -189,9 +189,6 @@ Module.getPyProxyClass = function (flags) {
 
 // Static methods
 Module.PyProxy_getPtr = _getPtr;
-Module.pyproxy_mark_borrowed = function (proxy) {
-  proxy.$$.borrowed = true;
-};
 
 const pyproxy_cache_destroyed_msg =
   "This borrowed attribute proxy was automatically destroyed in the " +
@@ -336,9 +333,7 @@ class PyProxyClass {
    *        destroyed".
    */
   destroy(destroyed_msg) {
-    if (!this.$$.borrowed) {
-      Module.pyproxy_destroy(this, destroyed_msg);
-    }
+    Module.pyproxy_destroy(this, destroyed_msg);
   }
   /**
    * Make a new PyProxy pointing to the same Python object.

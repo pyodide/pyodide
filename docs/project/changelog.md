@@ -37,6 +37,10 @@ substitutions:
   conversion of `TypedArray` to standard Python types without unneeded copies.
   {pr}`1864`
 
+- {{Fix}} It is now possible to destroy borrowed attribute `PyProxy` of a
+  `PyProxy` (as introduced by {pr}`1636`) before destroying the root `PyProxy`.
+  {pr}`1854`
+
 ### pyodide-build
 
 - {{API}} By default only a minimal set of packages is built. To build all
