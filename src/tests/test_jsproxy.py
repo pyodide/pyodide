@@ -993,6 +993,38 @@ def test_buffer_assign_back(selenium):
     assert result == [1, 20, 3, 77, 5, 9]
 
 
+def test_buffer_conversions(selenium):
+    s = "abcဴ"
+    result = selenium.run_js(
+        f"""
+        self.s = {s!r};
+        self.jsbytes = new TextEncoder().encode(s);
+        pyodide.runPython(`
+            from js import s, jsbytes
+            memoryview_conversion = d.tomemoryview()
+            bytearray_conversion = d.tobytearray()
+            bytes_conversion = d.tobytes()
+
+            assert bytes_conversion.decode() == s
+            assert bytes(bytearray_conversion) == bytes_conversion
+            assert bytes(memoryview_conversion) == bytes_conversion
+            bytearray_conversion[0] += 1
+            assert bytearray_conversion.decode() == s.replace("a", "b")
+
+            jsbytes.assign(bytearray_conversion)
+
+            del jsbytes
+        `);
+        return new TextEncoder().encode(jsbytes);
+        """
+    )
+    assert result == s.replace("a", "b")
+
+
+def test_tostring_encoding(selenium):
+    pass
+
+
 def test_memory_leaks(selenium):
     # refcounts are tested automatically in conftest by default
     selenium.run_js(

@@ -773,7 +773,7 @@ EM_JS_NUM(errcode, hiwire_assign_from_ptr, (JsRef idobj, void* ptr), {
 EM_JS_NUM(
 errcode,
 hiwire_get_buffer_info,
-(JsRef idobj, Py_ssize_t* byteLength, char** format_ptr, Py_ssize_t* size_ptr, bool* checked_ptr),
+(JsRef idobj, Py_ssize_t* byteLength_ptr, char** format_ptr, Py_ssize_t* size_ptr, bool* checked_ptr),
 {
   let jsobj = Module.hiwire.get_value(idobj);
   let byteLength = jsobj.byteLength;
