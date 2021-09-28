@@ -32,6 +32,11 @@ substitutions:
   arguments and return values are automatically destroyed when the function is
   finished. {pr}`1573`
 
+- {{Enhancement}} Added {any}`JsProxy.tostring`, {any}`JsProxy.tobytes`,
+  {any}`JsProxy.tobytesarray`, and {any}`JsProxy.tomemoryview` to allow for
+  conversion of `TypedArray` to standard Python types without unneeded copies.
+  {pr}`1864`
+
 ### pyodide-build
 
 - {{API}} By default only a minimal set of packages is built. To build all
