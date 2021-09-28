@@ -527,6 +527,7 @@ def test_destroy_attribute(selenium):
             test
         `);
         pyodide.runPython(`
+            import sys
             assert sys.getrefcount(test) == 3
             assert sys.getrefcount(test.a) == 2
         `);
