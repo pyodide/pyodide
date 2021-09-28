@@ -1039,9 +1039,9 @@ def test_buffer_conversions(selenium):
         self.jsbytes = new TextEncoder().encode(s);
         pyodide.runPython(`
             from js import s, jsbytes
-            memoryview_conversion = d.tomemoryview()
-            bytearray_conversion = d.tobytearray()
-            bytes_conversion = d.tobytes()
+            memoryview_conversion = jsbytes.tomemoryview()
+            bytearray_conversion = jsbytes.tobytearray()
+            bytes_conversion = jsbytes.tobytes()
 
             assert bytes_conversion.decode() == s
             assert bytes(bytearray_conversion) == bytes_conversion
