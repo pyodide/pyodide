@@ -14,7 +14,7 @@ from zipfile import ZipFile
 
 from .externals.pip._internal.utils.wheel import pkg_resources_distribution_for_wheel
 
-from pyodide import IN_BROWSER, to_js
+from pyodide import IN_BROWSER, to_js, fetch_string
 
 # Provide stubs for testing in native python
 if IN_BROWSER:
@@ -77,19 +77,9 @@ else:
         return result
 
 
-async def _get_url(url):
-    resp = await fetch(url)
-    if resp.status >= 400:
-        raise OSError(
-            f"Request for {url} failed with status {resp.status}: {resp.statusText}"
-        )
-    return io.BytesIO((await resp.arrayBuffer()).to_py())
-
-
 async def _get_pypi_json(pkgname):
     url = f"https://pypi.org/pypi/{pkgname}/json"
-    fd = await _get_url(url)
-    return json.load(fd)
+    return json.loads(await fetch_string(url))
 
 
 def _is_pure_python_wheel(filename: str):
