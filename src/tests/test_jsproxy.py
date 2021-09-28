@@ -522,8 +522,9 @@ def test_destroy_attribute(selenium):
     selenium.run_js(
         """
         let test = pyodide.runPython(`
-            class test:
+            class Test:
                 a = {}
+            test = Test()
             test
         `);
         pyodide.runPython(`
