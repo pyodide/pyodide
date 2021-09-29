@@ -1053,7 +1053,7 @@ def test_buffer_conversions(selenium):
 
             del jsbytes
         `);
-        return new TextEncoder().encode(jsbytes);
+        return new TextDecoder().encode(jsbytes);
         """
     )
     assert result == s.replace("a", "b")
