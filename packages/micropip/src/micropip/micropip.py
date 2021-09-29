@@ -44,7 +44,7 @@ else:
 
 
 if IN_BROWSER:
-    from pyodide import fetch_string, fetch_bytes
+    from pyodide.utils import fetch_string, fetch_bytes
 else:
     from urllib.request import urlopen, Request
 
@@ -52,7 +52,7 @@ else:
         return urlopen(Request(url, headers=kwargs)).read()
 
     async def fetch_bytes(url: str, **kwargs) -> bytes:
-        return bytes(await fetch_string(url, **kwargs))
+        return (await fetch_string(url, **kwargs)).encode()
 
 
 if IN_BROWSER:

@@ -74,7 +74,7 @@ async def fetch_buffer(url: str, **kwargs) -> JsProxy:
     return await resp.arrayBuffer()
 
 
-def fetch_bytes(url):
+async def fetch_bytes(url: str, **kwargs) -> bytes:
     """Fetch a url and return the result as a ``bytes`` object.
 
     Any keyword arguments are passed along as [optional paremeters to the fetch
@@ -84,10 +84,10 @@ def fetch_bytes(url):
 
     The data is copied once.
     """
-    return fetch_buffer(url).tobytes()
+    return (await fetch_buffer(url, **kwargs)).tobytes()
 
 
-def fetch_bytesarray(url):
+async def fetch_bytesarray(url, **kwargs) -> bytearray:
     """Fetch a url and return the result as a ``bytesarray`` object.
 
     Any keyword arguments are passed along as [optional paremeters to the fetch
@@ -97,10 +97,10 @@ def fetch_bytesarray(url):
 
     The data is copied once.
     """
-    return fetch_buffer(url).tobytesarray()
+    return (await fetch_buffer(url, **kwargs)).tobytesarray()
 
 
-def fetch_memoryview(url):
+async def fetch_memoryview(url, **kwargs) -> memoryview:
     """Fetch a url and return the result as a ``memoryview`` object.
 
     Any keyword arguments are passed along as [optional paremeters to the fetch
@@ -110,4 +110,4 @@ def fetch_memoryview(url):
 
     The data is copied once.
     """
-    return fetch_buffer(url).tomemoryview()
+    return (await fetch_buffer(url, **kwargs)).tomemoryview()

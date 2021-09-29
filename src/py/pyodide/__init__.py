@@ -28,7 +28,7 @@ from _pyodide._base import (
     CodeRunner,
     should_quiet,
 )
-from ._util import open_url, fetch_buffer, fetch_string
+from .utils import open_url
 from . import _state  # noqa
 
 from _pyodide._importhook import register_js_module, unregister_js_module
@@ -59,6 +59,4 @@ __all__ = [
     "should_quiet",
     "ConversionError",
     "destroy_proxies",
-    "fetch_buffer",
-    "fetch_string",
 ]
