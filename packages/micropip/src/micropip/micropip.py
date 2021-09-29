@@ -48,11 +48,11 @@ if IN_BROWSER:
 else:
     from urllib.request import urlopen, Request
 
-    async def fetch_string(url: str, **kwargs) -> str:
+    async def fetch_bytes(url: str, **kwargs) -> bytes:
         return urlopen(Request(url, headers=kwargs)).read()
 
-    async def fetch_bytes(url: str, **kwargs) -> bytes:
-        return (await fetch_string(url, **kwargs)).encode()
+    async def fetch_string(url: str, **kwargs) -> str:
+        return (await fetch_bytes(url, **kwargs)).decode()
 
 
 if IN_BROWSER:
