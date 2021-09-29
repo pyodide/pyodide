@@ -40,7 +40,7 @@ For security reasons Javascript in the browser is not allowed to load local data
 You will run into Network Errors, due to the [Same Origin Policy](https://en.wikipedia.org/wiki/Same-origin_policy).
 
 For development purposes, you can serve your files in a [web-server](https://developer.mozilla.org/en-US/docs/Learn/Common_questions/set_up_a_local_testing_server).
-Run `python3 -m http.server` from your development directory and access the local web-server: `http://localhost:8000/`.
+Run `python3 -m http.server 8000` from your development directory and access the local web-server: `http://localhost:8000/`. You can choose a port number different from 8000.
 
 There is a
 [File System API](https://wicg.github.io/file-system-access/) supported in Chrome
