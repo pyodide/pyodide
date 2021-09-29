@@ -17,7 +17,7 @@ local file system.
 
 ## How can I download external files from within Pyodide?
 
-Import `js` library to download a file, and convert it to python format before saving it. You can explore the virtual file system with `import os; os.listdir()`.
+To download a file from the internet to the [emscripten virtual file system](https://emscripten.org/docs/api_reference/Filesystem-API.html), we currently recommend using `from js import fetch`. A complete file downloader and converter is described below:
 ```python
 from js import fetch
 
@@ -30,6 +30,7 @@ async def js_fetch(url, path):
     with open(path, "wb") as fh:
         fh.write(stream)
 ```
+You can explore the virtual file system and check your downlowds with `from pathlib import Path; Path.cwd().iterdir()`.
 
 
 ## Why can't I load files from the local file system?
