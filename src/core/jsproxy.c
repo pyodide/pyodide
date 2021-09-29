@@ -1790,6 +1790,7 @@ JsProxy_create_subtype(int flags)
   if (flags & IS_BUFFER) {
     methods[cur_method++] = JsBuffer_assign_MethodDef;
     methods[cur_method++] = JsBuffer_assign_to_MethodDef;
+    methods[cur_method++] = JsBuffer_tomemoryview_MethodDef;
     methods[cur_method++] = JsBuffer_tobytes_MethodDef;
     methods[cur_method++] = JsBuffer_tobytearray_MethodDef;
     methods[cur_method++] = JsBuffer_tostring_MethodDef;
