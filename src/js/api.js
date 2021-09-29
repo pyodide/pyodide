@@ -162,7 +162,7 @@ export async function loadPackagesFromImports(
 export function pyimport(name) {
   console.warn(
     "Access to the Python global namespace via pyodide.pyimport is deprecated and " +
-    "will be removed in version 0.18.0. Use pyodide.globals.get('key') instead."
+      "will be removed in version 0.18.0. Use pyodide.globals.get('key') instead."
   );
   return Module.globals.get(name);
 }
