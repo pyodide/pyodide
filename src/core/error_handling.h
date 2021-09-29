@@ -21,12 +21,12 @@ void
 fail_test();
 
 /**
- * Raised when conversion between Javascript and Python fails.
+ * Raised when conversion between JavaScript and Python fails.
  */
 extern PyObject* conversion_error;
 
 /**
- * Wrap the current Python exception in a Javascript Error and return the
+ * Wrap the current Python exception in a JavaScript Error and return the
  * result. Usually we use pythonexc2js instead, but for futures and for some
  * internal error messages it's useful to have this separate.
  */
@@ -39,7 +39,7 @@ wrap_exception();
 errcode log_python_error(JsRef);
 
 /**
- * Convert the active Python exception into a Javascript Error object, print
+ * Convert the active Python exception into a JavaScript Error object, print
  * an appropriate message to the console and throw the error.
  */
 void _Py_NO_RETURN

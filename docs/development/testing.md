@@ -81,7 +81,7 @@ make benchmark
 
 ## Linting
 
-Python is linted with `flake8`. C and Javascript are linted with
+Python is linted with `flake8`. C and JavaScript are linted with
 `clang-format`.
 
 To lint the code, run:

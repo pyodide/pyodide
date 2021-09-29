@@ -14,7 +14,7 @@ export { loadPackage, loadedPackages, isPyProxy };
  * An alias to the Python :py:mod:`pyodide` package.
  *
  * You can use this to call functions defined in the Pyodide Python package
- * from Javascript.
+ * from JavaScript.
  *
  * @type {PyProxy}
  */
@@ -32,7 +32,7 @@ let pyodide_py = {}; // actually defined in runPythonSimple in loadPyodide (see 
 let globals = {}; // actually defined in runPythonSimple in loadPyodide (see pyodide.js)
 
 /**
- * A Javascript error caused by a Python exception.
+ * A JavaScript error caused by a Python exception.
  *
  * In order to reduce the risk of large memory leaks, the ``PythonError``
  * contains no reference to the Python exception that caused it. You can find
@@ -77,7 +77,7 @@ export class PythonError {
 export let version = ""; // actually defined in runPythonSimple in loadPyodide (see pyodide.js)
 
 /**
- * Runs a string of Python code from Javascript.
+ * Runs a string of Python code from JavaScript.
  *
  * The last part of the string may be an expression, in which case, its value
  * is returned.
@@ -86,7 +86,7 @@ export let version = ""; // actually defined in runPythonSimple in loadPyodide (
  * @param {PyProxy} globals An optional Python dictionary to use as the globals.
  *        Defaults to :any:`pyodide.globals`. Uses the Python API
  *        :any:`pyodide.eval_code` to evaluate the code.
- * @returns {Py2JsResult} The result of the Python code translated to Javascript. See the
+ * @returns {Py2JsResult} The result of the Python code translated to JavaScript. See the
  *          documentation for :any:`pyodide.eval_code` for more info.
  */
 export function runPython(code, globals = Module.globals) {
@@ -151,18 +151,18 @@ export async function loadPackagesFromImports(
 }
 
 /**
- * Access a Python object in the global namespace from Javascript.
+ * Access a Python object in the global namespace from JavaScript.
  *
  * @deprecated This function will be removed in version 0.18.0. Use
  *    :any:`pyodide.globals.get('key') <pyodide.globals>` instead.
  *
  * @param {string} name Python variable name
- * @returns {Py2JsResult} The Python object translated to Javascript.
+ * @returns {Py2JsResult} The Python object translated to JavaScript.
  */
 export function pyimport(name) {
   console.warn(
     "Access to the Python global namespace via pyodide.pyimport is deprecated and " +
-      "will be removed in version 0.18.0. Use pyodide.globals.get('key') instead."
+    "will be removed in version 0.18.0. Use pyodide.globals.get('key') instead."
   );
   return Module.globals.get(name);
 }
@@ -185,13 +185,13 @@ export function pyimport(name) {
  *        from js import fetch
  *        response = await fetch("./packages.json")
  *        packages = await response.json()
- *        # If final statement is an expression, its value is returned to Javascript
+ *        # If final statement is an expression, its value is returned to JavaScript
  *        len(packages.packages.object_keys())
  *    `);
  *    console.log(result); // 79
  *
  * @param {string} code Python code to evaluate
- * @returns {Py2JsResult} The result of the Python code translated to Javascript.
+ * @returns {Py2JsResult} The result of the Python code translated to JavaScript.
  * @async
  */
 export async function runPythonAsync(code) {
@@ -205,15 +205,15 @@ export async function runPythonAsync(code) {
 Module.runPythonAsync = runPythonAsync;
 
 /**
- * Registers the Javascript object ``module`` as a Javascript module named
+ * Registers the JavaScript object ``module`` as a JavaScript module named
  * ``name``. This module can then be imported from Python using the standard
  * Python import system. If another module by the same name has already been
  * imported, this won't have much effect unless you also delete the imported
  * module from ``sys.modules``. This calls the ``pyodide_py`` API
  * :func:`pyodide.register_js_module`.
  *
- * @param {string} name Name of the Javascript module to add
- * @param {object} module Javascript object backing the module
+ * @param {string} name Name of the JavaScript module to add
+ * @param {object} module JavaScript object backing the module
  */
 export function registerJsModule(name, module) {
   Module.pyodide_py.register_js_module(name, module);
@@ -228,24 +228,24 @@ export function registerComlink(Comlink) {
 }
 
 /**
- * Unregisters a Javascript module with given name that has been previously
+ * Unregisters a JavaScript module with given name that has been previously
  * registered with :js:func:`pyodide.registerJsModule` or
- * :func:`pyodide.register_js_module`. If a Javascript module with that name
+ * :func:`pyodide.register_js_module`. If a JavaScript module with that name
  * does not already exist, will throw an error. Note that if the module has
  * already been imported, this won't have much effect unless you also delete
  * the imported module from ``sys.modules``. This calls the ``pyodide_py`` API
  * :func:`pyodide.unregister_js_module`.
  *
- * @param {string} name Name of the Javascript module to remove
+ * @param {string} name Name of the JavaScript module to remove
  */
 export function unregisterJsModule(name) {
   Module.pyodide_py.unregister_js_module(name);
 }
 
 /**
- * Convert the Javascript object to a Python object as best as possible.
+ * Convert the JavaScript object to a Python object as best as possible.
  *
- * This is similar to :any:`JsProxy.to_py` but for use from Javascript. If the
+ * This is similar to :any:`JsProxy.to_py` but for use from JavaScript. If the
  * object is immutable or a :any:`PyProxy`, it will be returned unchanged. If
  * the object cannot be converted into Python, it will be returned unchanged.
  *
@@ -328,7 +328,7 @@ export function setInterruptBuffer(interrupt_buffer) {
  * Throws a KeyboardInterrupt error if a KeyboardInterrupt has been requested
  * via the interrupt buffer.
  *
- * This can be used to enable keyboard interrupts during execution of Javascript
+ * This can be used to enable keyboard interrupts during execution of JavaScript
  * code, just as `PyErr_CheckSignals` is used to enable keyboard interrupts
  * during execution of C code.
  */

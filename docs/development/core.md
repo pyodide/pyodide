@@ -6,26 +6,26 @@ This file is intended as guidelines to help contributors trying to modify the C 
 
 ## What the files do
 
-The primary purpose of `core` is to implement {ref}`type translations <type-translations>` between Python and Javascript. Here is a breakdown of the purposes of the files.
+The primary purpose of `core` is to implement {ref}`type translations <type-translations>` between Python and JavaScript. Here is a breakdown of the purposes of the files.
 
 - `main` -- responsible for configuring and initializing the Python interpreter, initializing the other source files, and creating the `_pyodide_core` module which is used to expose Python objects to `pyodide_py`. `main.c` also tries to generate fatal initialization error messages to help with debugging when there is a mistake in the initialization code.
 - `keyboard_interrupt` -- This sets up the keyboard interrupts system for using Pyodide with a webworker.
 
 ### Backend utilities
 
-- `hiwire` -- A helper framework. It is impossible for wasm to directly hold owning references to Javascript objects. The primary purpose of hiwire is to act as a surrogate owner for Javascript references by holding the references in a Javascript `Map`. `hiwire` also defines a wide variety of `EM_JS` helper functions to do Javascript operations on the held objects. The primary type that hiwire exports is `JsRef`. References are created with `Module.hiwire.new_value` (only can be done from Javascript) and must be destroyed from C with `hiwire_decref` or `hiwire_CLEAR`, or from Javascript with `Module.hiwire.decref`.
-- `error_handling` -- defines macros useful for error propagation and for adapting Javascript functions to the CPython calling convention. See more in the {ref}`error_handling_macros` section.
+- `hiwire` -- A helper framework. It is impossible for wasm to directly hold owning references to JavaScript objects. The primary purpose of hiwire is to act as a surrogate owner for JavaScript references by holding the references in a JavaScript `Map`. `hiwire` also defines a wide variety of `EM_JS` helper functions to do JavaScript operations on the held objects. The primary type that hiwire exports is `JsRef`. References are created with `Module.hiwire.new_value` (only can be done from JavaScript) and must be destroyed from C with `hiwire_decref` or `hiwire_CLEAR`, or from JavaScript with `Module.hiwire.decref`.
+- `error_handling` -- defines macros useful for error propagation and for adapting JavaScript functions to the CPython calling convention. See more in the {ref}`error_handling_macros` section.
 
-### Type conversion from Javascript to Python
+### Type conversion from JavaScript to Python
 
-- `js2python` -- Translates basic types from Javascript to Python, leaves more complicated stuff to jsproxy.
-- `jsproxy` -- Defines Python classes to proxy complex Javascript types into Python. A complex file responsible for many of the core behaviors of Pyodide.
+- `js2python` -- Translates basic types from JavaScript to Python, leaves more complicated stuff to jsproxy.
+- `jsproxy` -- Defines Python classes to proxy complex JavaScript types into Python. A complex file responsible for many of the core behaviors of Pyodide.
 
-### Type conversion from Python to Javascript
+### Type conversion from Python to JavaScript
 
-- `python2js` -- Translates types from types from Python to Javascript, implicitly converting basic types and creating pyproxies for others. It also implements explicity conversion from Python to Javascript (the `toJs` method).
-- `python2js_buffer` -- Attempts to convert Python objects that implement the Python [Buffer Protocol](https://docs.python.org/3/c-api/buffer.html). This includes `bytes` objects, `memoryview`s, `array.array` and a wide variety of types exposed by extension modules like `numpy`. If the data is a 1d array in a contiguous block it can be sliced directly out of the wasm heap to produce a Javascript `TypedArray`, but Javascript does not have native support for pointers so higher dimensional arrays are more complicated.
-- `pyproxy` -- Defines a Javascript `Proxy` object that passes calls through to a Python object. Another important core file, `PyProxy.apply` is the primary entrypoint into Python code. `pyproxy.c` is much simpler than `jsproxy.c` though.
+- `python2js` -- Translates types from types from Python to JavaScript, implicitly converting basic types and creating pyproxies for others. It also implements explicity conversion from Python to JavaScript (the `toJs` method).
+- `python2js_buffer` -- Attempts to convert Python objects that implement the Python [Buffer Protocol](https://docs.python.org/3/c-api/buffer.html). This includes `bytes` objects, `memoryview`s, `array.array` and a wide variety of types exposed by extension modules like `numpy`. If the data is a 1d array in a contiguous block it can be sliced directly out of the wasm heap to produce a JavaScript `TypedArray`, but JavaScript does not have native support for pointers so higher dimensional arrays are more complicated.
+- `pyproxy` -- Defines a JavaScript `Proxy` object that passes calls through to a Python object. Another important core file, `PyProxy.apply` is the primary entrypoint into Python code. `pyproxy.c` is much simpler than `jsproxy.c` though.
 
 ## CPython APIs
 
@@ -71,9 +71,9 @@ They can only be used in a function with a `finally:` label which should handle 
 - `FAIL_IF_ERR_OCCURRED()` -- `goto finally;` if the Python error indicator is set (in other words if `PyErr_Occurred()`).
 - `FAIL_IF_ERR_MATCHES(python_err_type)` -- `goto finally;` if `PyErr_ExceptionMatches(python_err_type)`, for example `FAIL_IF_ERR_MATCHES(PyExc_AttributeError);`
 
-### Javascript to CPython calling convention adapators
+### JavaScript to CPython calling convention adapators
 
-If we call a Javascript function from C and that Javascript function throws an error, it is impossible to catch it in C. We define two `EM_JS` adaptors to convert from the Javascript calling convention to the CPython calling convention. The point of this is to ensure that errors that occur in `EM_JS` functions can be handled in C code using the ` FAIL_*`` macros. When compiled with  `DEBUG_F`, when a Javascript error is thrown a message will also be written to `console.error`. The wrappers do roughly the following:
+If we call a JavaScript function from C and that JavaScript function throws an error, it is impossible to catch it in C. We define two `EM_JS` adaptors to convert from the JavaScript calling convention to the CPython calling convention. The point of this is to ensure that errors that occur in `EM_JS` functions can be handled in C code using the ` FAIL_*`` macros. When compiled with  `DEBUG_F`, when a JavaScript error is thrown a message will also be written to `console.error`. The wrappers do roughly the following:
 
 ```javascript
 try {
@@ -125,7 +125,7 @@ These wrappers enable the following sort of code:
 try:
   jsfunc()
 except JsException:
-  print("Caught an exception thrown in Javascript!")
+  print("Caught an exception thrown in JavaScript!")
 ```
 
 ## Structure of functions

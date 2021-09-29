@@ -158,7 +158,7 @@ int numpy_patch_init(){
 // clang-format on
 
 /**
- * It's annoying to set errors from Javascript.
+ * It's annoying to set errors from JavaScript.
  */
 void
 set_shape_mismatch_err()
@@ -173,7 +173,7 @@ set_shape_mismatch_err()
  * I rearranged the code a small amount to save effort.
  * Pretty much all that happened is that we destroyed type information, replaced
  * declarations with "let", and had to make special macros to do most memory
- * access which is much more annoying than in Javascript.
+ * access which is much more annoying than in JavaScript.
  *
  * See below for the C equivalent.
  */
