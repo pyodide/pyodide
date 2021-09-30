@@ -2,9 +2,11 @@ from io import StringIO
 from ._core import JsProxy, to_js
 
 try:
-    from js import XMLHttpRequest, fetch as _jsfetch, Object
+    from js import XMLHttpRequest
 except ImportError:
     pass
+
+from js import fetch as _jsfetch, Object
 
 
 def open_url(url: str) -> StringIO:
