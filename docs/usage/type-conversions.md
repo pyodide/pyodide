@@ -74,8 +74,8 @@ the same type as the original object, we proxy `tuple` and `bytes` objects.
 
 ### Python to JavaScript
 
-The following immutable types are implicitly converted from JavaScript to
-Python:
+The following immutable types are implicitly converted from Python to
+JavaScript:
 
 | Python  | JavaScript             |
 | ------- | ---------------------- |
@@ -94,8 +94,8 @@ conversion of large integers from Python to JavaScript is lossy.)
 
 ### JavaScript to Python
 
-The following immutable types are implicitly converted from Python to
-JavaScript:
+The following immutable types are implicitly converted from JavaScript to
+Python:
 
 | JavaScript  | Python                            |
 | ----------- | --------------------------------- |
