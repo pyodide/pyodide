@@ -6,7 +6,10 @@ try:
 except ImportError:
     pass
 
-from js import fetch as _jsfetch, Object
+from ._core import IN_BROWSER
+
+if IN_BROWSER:
+    from js import fetch as _jsfetch, Object
 
 
 def open_url(url: str) -> StringIO:
