@@ -637,8 +637,6 @@ class PyProxyContainsMethods {
   }
 }
 
-class TempError extends Error {}
-
 /**
  * A helper for [Symbol.iterator].
  *
@@ -657,25 +655,18 @@ class TempError extends Error {}
  */
 function* iter_helper(iterptr, token) {
   try {
-    if (iterptr === 0) {
-      throw new TempError();
-    }
     let item;
     while ((item = Module.__pyproxy_iter_next(iterptr))) {
       yield Module.hiwire.pop_value(item);
     }
-    if (Module._PyErr_Occurred()) {
-      throw new TempError();
-    }
   } catch (e) {
-    if (e instanceof TempError) {
-      Module._pythonexc2js();
-    } else {
-      Module.fatal_error(e);
-    }
+    Module.fatal_error(e);
   } finally {
     Module.finalizationRegistry.unregister(token);
     Module._Py_DecRef(iterptr);
+  }
+  if (Module._PyErr_Occurred()) {
+    Module._pythonexc2js();
   }
 }
 
@@ -708,6 +699,9 @@ class PyProxyIterableMethods {
       iterptr = Module._PyObject_GetIter(ptrobj);
     } catch (e) {
       Module.fatal_error(e);
+    }
+    if (iterptr === 0) {
+      Module._pythonexc2js();
     }
 
     let result = iter_helper(iterptr, token);
