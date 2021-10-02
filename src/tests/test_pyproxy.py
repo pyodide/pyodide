@@ -221,6 +221,7 @@ def test_pyproxy_iter_error(selenium):
             T()
         `);
         assertThrows(() => t[Symbol.iterator](), "PythonError", "hi");
+        t.destroy();
         """
     )
 
@@ -239,6 +240,7 @@ def test_pyproxy_iter_error2(selenium):
         assert(() => gen.next().value === 1);
         assert(() => gen.next().value === 2);
         assertThrows(() => gen.next(), "PythonError", "hi");
+        gen.destroy();
         """
     )
 
