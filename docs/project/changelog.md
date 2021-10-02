@@ -36,6 +36,10 @@ substitutions:
   `PyProxy` (as introduced by {pr}`1636`) before destroying the root `PyProxy`.
   {pr}`1854`
 
+- {{Fix}} If `__iter__()` raises an error, it is now handled correctly by the
+  `PyProxy[Symbol.iterator()]` method.
+  {pr}`1871`
+
 ### pyodide-build
 
 - {{API}} By default only a minimal set of packages is built. To build all
