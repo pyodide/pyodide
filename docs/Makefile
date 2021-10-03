@@ -13,7 +13,10 @@ help:
 
 .PHONY: help Makefile
 
+packages-in-pyodide.md:
+	./build_pyodide_packages_list.py
+
 # Catch-all target: route all unknown targets to Sphinx using the new
 # "make mode" option.  $(O) is meant as a shortcut for $(SPHINXOPTS).
-%: Makefile
+%: Makefile packages-in-pyodide.md
 	@$(SPHINXBUILD) -M $@ "$(SOURCEDIR)" "$(BUILDDIR)" $(SPHINXOPTS) $(O) -T
