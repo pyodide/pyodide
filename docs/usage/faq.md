@@ -15,7 +15,7 @@ Two possible solutions are,
 In any case, files need to be served with a web server and cannot be loaded from
 local file system.
 
-## How can I download external files from within Pyodide?
+## How can I download files from within Pyodide?
 
 To download a file from the internet to the [emscripten virtual file system](https://emscripten.org/docs/api_reference/Filesystem-API.html), we currently recommend using `from js import fetch`. A complete file downloader and converter is described below:
 ```python
