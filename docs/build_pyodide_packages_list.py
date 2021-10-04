@@ -1,12 +1,16 @@
 #!/usr/bin/env python
 
+import sys
 import pathlib
-import conf
+
+base_dir = pathlib.Path(__file__).resolve().parent.parent
+sys.path.append(str(base_dir / "pyodide-build"))
+
 from pyodide_build.io import parse_package_config
 
-PACKAGES_DIR = conf.base_dir / "packages"
+PACKAGES_DIR = base_dir / "packages"
 OUTPUT_FILE = "packages-in-pyodide.md"
-OUTPUT_PATH = conf.base_dir / "docs" / "usage" / OUTPUT_FILE
+OUTPUT_PATH = base_dir / "docs" / "usage" / OUTPUT_FILE
 
 TEMPLATE = """
 (packages-in-pyodide)=
