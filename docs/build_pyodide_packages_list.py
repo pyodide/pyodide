@@ -1,6 +1,5 @@
 #!/usr/bin/env python
 
-import sys
 import pathlib
 import conf
 from pyodide_build.io import parse_package_config
