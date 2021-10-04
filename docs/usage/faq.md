@@ -30,7 +30,7 @@ async def js_fetch(url, path):
     with open(path, "wb") as fh:
         fh.write(stream)
 ```
-You can explore the virtual file system and check your downlowds with `from pathlib import Path; Path.cwd().iterdir()`.
+You can explore the virtual file system with `from pathlib import Path; Path.cwd().iterdir()`. The [pathlib](https://docs.python.org/3/library/pathlib.html) module works the same as in the native Python runtime.
 
 
 ## Why can't I load files from the local file system?
