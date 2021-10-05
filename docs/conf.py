@@ -135,10 +135,6 @@ if "READTHEDOCS" in os.environ:
     )
     print(res)
 
-    import build_pyodide_packages_list
-
-    build_pyodide_packages_list.main()
-
 
 # Prevent API docs for webloop methods: they are the same as for base event loop
 # and it clutters api docs too much
