@@ -2,6 +2,7 @@
 
 import sys
 import pathlib
+from typing import Dict, Any
 
 base_dir = pathlib.Path(__file__).resolve().parent.parent
 sys.path.append(str(base_dir / "pyodide-build"))
@@ -29,7 +30,7 @@ directly from PyPI with {{any}}`micropip.install`.
 """
 
 
-def parse_package_info(config):
+def parse_package_info(config: pathlib.Path):
     yaml_data = parse_package_config(config)
 
     name = yaml_data["package"]["name"]
@@ -43,7 +44,7 @@ def get_package_metadata_list(directory: pathlib.Path):
     return directory.glob("**/meta.yaml")
 
 
-def to_markdown(template, packages):
+def to_markdown(template: str, packages: Dict[str, Any]):
     packages_table = []
     for name, pkg_info in packages.items():
         version = pkg_info["version"]
