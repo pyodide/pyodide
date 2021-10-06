@@ -1088,6 +1088,21 @@ def test_tostring_error(selenium):
     )
 
 
+def test_duck_buffer_method_presence(selenium):
+    selenium.run_js(
+        """
+        self.bytes = new Uint8Array([207, 240, 232, 226, 229, 242, 44, 32, 236, 232, 240, 33]);
+        self.other = {};
+        pyodide.runPython(`
+            from js import bytes, other
+            buffer_methods = {"assign", "assign_to", "to_string", "to_memoryview", "to_bytes"}
+            assert buffer_methods < set(dir(bytes))
+            assert not set(dir(other)).intersect(buffer_methods)
+        `);
+        """
+    )
+
+
 def test_memory_leaks(selenium):
     # refcounts are tested automatically in conftest by default
     selenium.run_js(
