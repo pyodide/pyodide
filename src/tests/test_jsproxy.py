@@ -1059,6 +1059,35 @@ def test_buffer_conversions(selenium):
     assert result == s.replace("a", "b")
 
 
+def test_tostring_encoding(selenium):
+    selenium.run_js(
+        """
+        // windows-1251 encoded "Привет, мир!" which is Russian for "Hello, world!"
+        self.bytes = new Uint8Array([207, 240, 232, 226, 229, 242, 44, 32, 236, 232, 240, 33]);
+        pyodide.runPython(`
+            from js import bytes
+            bytes.to_string('windows-1251')
+        `);
+        """
+    )
+
+
+def test_tostring_error(selenium):
+    selenium.run_js(
+        """
+        // windows-1251 encoded "Привет, мир!" which is Russian for "Hello, world!"
+        self.bytes = new Uint8Array([207, 240, 232, 226, 229, 242, 44, 32, 236, 232, 240, 33]);
+        pyodide.runPython(`
+            from js import bytes
+            from unittest import TestCase
+            raises = TestCase().assertRaises
+            with raises(ValueError):
+                bytes.to_string()
+        `);
+        """
+    )
+
+
 def test_memory_leaks(selenium):
     # refcounts are tested automatically in conftest by default
     selenium.run_js(

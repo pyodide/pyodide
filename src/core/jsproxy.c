@@ -1563,19 +1563,34 @@ finally:
  * Used by JsBuffer_ToString. Decode the ArrayBuffer into a Javascript string
  * using a TextDecoder with the given encoding. I have found no evidence that
  * the encoding argument ever matters...
+ *
+ * If a decoding error occurs, return 0 without setting error flag so we can
+ * replace with a UnicodeDecodeError
  */
+// clang-format off
 EM_JS_REF(JsRef,
-          JsBuffer_DecodeString_js,
-          (JsRef jsbuffer_id, char* encoding),
-          {
-            let buffer = Module.hiwire.get_value(jsbuffer_id);
-            let encoding_js;
-            if (encoding) {
-              encoding_js = UTF8ToString(encoding);
-            }
-            let res = new TextDecoder(encoding_js).decode(buffer);
-            return Module.hiwire.new_value(res);
-          })
+JsBuffer_DecodeString_js,
+(JsRef jsbuffer_id, char* encoding),
+{
+  let buffer = Module.hiwire.get_value(jsbuffer_id);
+  let encoding_js;
+  if (encoding) {
+    encoding_js = UTF8ToString(encoding);
+  }
+  let decoder = new TextDecoder(encoding_js);
+  let res;
+  try {
+    res = decoder.decode(buffer);
+  } catch(e){
+    if(e instanceof TypeError) {
+      // Decoding error
+      return 0;
+    }
+    throw e;
+  }
+  return Module.hiwire.new_value(res);
+})
+// clang-format on
 
 /**
  * Decode the ArrayBuffer into a PyUnicode object.
@@ -1587,6 +1602,11 @@ JsBuffer_ToString(JsRef jsbuffer, char* encoding)
   PyObject* result = NULL;
 
   jsresult = JsBuffer_DecodeString_js(jsbuffer, encoding);
+  if (jsresult == NULL && !PyErr_Occurred()) {
+    PyErr_Format(PyExc_ValueError,
+                 "Failed to decode Javascript TypedArray as %s",
+                 encoding ? encoding : "utf8");
+  }
   FAIL_IF_NULL(jsresult);
   result = js2python(jsresult);
   FAIL_IF_NULL(result);
