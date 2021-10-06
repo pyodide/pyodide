@@ -1500,8 +1500,8 @@ static PyMethodDef JsBuffer_assign_MethodDef = {
 };
 
 /**
- * Used from js2python for to_py. Make a new Python buffer with the same data as
- * jsbuffer.
+ * Used from js2python for to_py and by to_memoryview. Make a new Python buffer
+ * with the same data as jsbuffer.
  *
  * All other arguments are calculated from jsbuffer, but it's more convenient to
  * calculate them in Javascript and pass them as arguments than to acquire them
@@ -1538,6 +1538,10 @@ finally:
   return result;
 }
 
+/**
+ * Used by to_bytes. Make a new bytes object and copy the data from the
+ * ArrayBuffer into it.
+ */
 PyObject*
 JsBuffer_CopyIntoBytes(JsRef jsbuffer, Py_ssize_t byteLength)
 {
@@ -1555,33 +1559,27 @@ finally:
   return result;
 }
 
-PyObject*
-JsBuffer_CopyIntoByteArray(JsRef jsbuffer, Py_ssize_t byteLength)
-{
-  bool success = false;
+/**
+ * Used by JsBuffer_ToString. Decode the ArrayBuffer into a Javascript string
+ * using a TextDecoder with the given encoding. I have found no evidence that
+ * the encoding argument ever matters...
+ */
+EM_JS_REF(JsRef,
+          JsBuffer_DecodeString_js,
+          (JsRef jsbuffer_id, char* encoding),
+          {
+            let buffer = Module.hiwire.get_value(jsbuffer_id);
+            let encoding_js;
+            if (encoding) {
+              encoding_js = UTF8ToString(encoding);
+            }
+            let res = new TextDecoder(encoding_js).decode(buffer);
+            return Module.hiwire.new_value(res);
+          })
 
-  PyObject* result = PyByteArray_FromStringAndSize(NULL, byteLength);
-  FAIL_IF_NULL(result);
-  char* data = PyByteArray_AsString(result);
-  FAIL_IF_MINUS_ONE(hiwire_assign_to_ptr(jsbuffer, data));
-  success = true;
-finally:
-  if (!success) {
-    Py_CLEAR(result);
-  }
-  return result;
-}
-
-EM_JS(JsRef, JsBuffer_DecodeString_js, (JsRef jsbuffer_id, char* encoding), {
-  let buffer = Module.hiwire.get_value(jsbuffer_id);
-  let encoding_js;
-  if (encoding) {
-    encoding_js = UTF8ToString(encoding);
-  }
-  let res = new TextDecoder(encoding_js).decode(buffer);
-  return Module.hiwire.new_value(res);
-})
-
+/**
+ * Decode the ArrayBuffer into a PyUnicode object.
+ */
 PyObject*
 JsBuffer_ToString(JsRef jsbuffer, char* encoding)
 {
