@@ -65,6 +65,7 @@ def get_packages_summary_directive(app):
             self, packages: Dict[str, Any], columns: Tuple[str]
         ) -> List[Any]:
             table_spec = addnodes.tabular_col_spec()
+            table_spec["spec"] = r"\X{1}{2}\X{1}{2}"
 
             table = nodes.table("", classes=["longtable"])
 
