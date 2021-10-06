@@ -1626,19 +1626,6 @@ static PyMethodDef JsBuffer_tobytes_MethodDef = {
 };
 
 static PyObject*
-JsBuffer_tobytearray(PyObject* buffer)
-{
-  JsProxy* self = (JsProxy*)buffer;
-  return JsBuffer_CopyIntoByteArray(self->js, self->byteLength);
-}
-
-static PyMethodDef JsBuffer_tobytearray_MethodDef = {
-  "tobytearray",
-  (PyCFunction)JsBuffer_tobytearray,
-  METH_NOARGS,
-};
-
-static PyObject*
 JsBuffer_tostring(PyObject* self,
                   PyObject* const* args,
                   Py_ssize_t nargs,
@@ -1792,7 +1779,6 @@ JsProxy_create_subtype(int flags)
     methods[cur_method++] = JsBuffer_assign_to_MethodDef;
     methods[cur_method++] = JsBuffer_tomemoryview_MethodDef;
     methods[cur_method++] = JsBuffer_tobytes_MethodDef;
-    methods[cur_method++] = JsBuffer_tobytearray_MethodDef;
     methods[cur_method++] = JsBuffer_tostring_MethodDef;
   }
   methods[cur_method++] = (PyMethodDef){ 0 };
@@ -2030,7 +2016,6 @@ JsProxy_init(PyObject* core_module)
   SET_DOCSTRING(JsBuffer_assign_to_MethodDef);
   SET_DOCSTRING(JsBuffer_tomemoryview_MethodDef);
   SET_DOCSTRING(JsBuffer_tobytes_MethodDef);
-  SET_DOCSTRING(JsBuffer_tobytearray_MethodDef);
   SET_DOCSTRING(JsBuffer_tostring_MethodDef);
 #undef SET_DOCSTRING
 
