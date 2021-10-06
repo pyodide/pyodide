@@ -1059,10 +1059,6 @@ def test_buffer_conversions(selenium):
     assert result == s.replace("a", "b")
 
 
-def test_tostring_encoding(selenium):
-    pass
-
-
 def test_memory_leaks(selenium):
     # refcounts are tested automatically in conftest by default
     selenium.run_js(

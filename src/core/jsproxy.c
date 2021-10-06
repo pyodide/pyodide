@@ -1620,7 +1620,7 @@ JsBuffer_tobytes(PyObject* buffer)
 }
 
 static PyMethodDef JsBuffer_tobytes_MethodDef = {
-  "tobytes",
+  "to_bytes",
   (PyCFunction)JsBuffer_tobytes,
   METH_NOARGS,
 };
@@ -1645,7 +1645,7 @@ JsBuffer_tostring(PyObject* self,
                   PyObject* kwnames)
 {
   static const char* const _keywords[] = { "encoding", 0 };
-  static struct _PyArg_Parser _parser = { "|s:tostring", _keywords, 0 };
+  static struct _PyArg_Parser _parser = { "|s:to_string", _keywords, 0 };
   char* encoding = NULL;
   if (!_PyArg_ParseStackAndKeywords(
         args, nargs, kwnames, &_parser, &encoding)) {
@@ -1655,7 +1655,7 @@ JsBuffer_tostring(PyObject* self,
 }
 
 static PyMethodDef JsBuffer_tostring_MethodDef = {
-  "tostring",
+  "to_string",
   (PyCFunction)JsBuffer_tostring,
   METH_FASTCALL | METH_KEYWORDS,
 };
