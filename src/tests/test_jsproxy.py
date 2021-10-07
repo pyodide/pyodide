@@ -1087,7 +1087,7 @@ def test_duck_buffer_method_presence(selenium):
             from js import bytes, other
             buffer_methods = {"assign", "assign_to", "to_string", "to_memoryview", "to_bytes"}
             assert buffer_methods < set(dir(bytes))
-            assert not set(dir(other)).intersect(buffer_methods)
+            assert not set(dir(other)).intersection(buffer_methods)
         `);
         """
     )
