@@ -32,10 +32,9 @@ substitutions:
   arguments and return values are automatically destroyed when the function is
   finished. {pr}`1573`
 
-- {{Enhancement}} Added {any}`JsProxy.tostring`, {any}`JsProxy.tobytes`,
-  {any}`JsProxy.tobytesarray`, and {any}`JsProxy.tomemoryview` to allow for
-  conversion of `TypedArray` to standard Python types without unneeded copies.
-  {pr}`1864`
+- {{Enhancement}} Added {any}`JsProxy.to_string`, {any}`JsProxy.to_bytes`, and
+  {any}`JsProxy.to_memoryview` to allow for conversion of `TypedArray` to
+  standard Python types without unneeded copies. {pr}`1864`
 
 - {{Fix}} It is now possible to destroy borrowed attribute `PyProxy` of a
   `PyProxy` (as introduced by {pr}`1636`) before destroying the root `PyProxy`.
