@@ -36,6 +36,10 @@ substitutions:
   `PyProxy` (as introduced by {pr}`1636`) before destroying the root `PyProxy`.
   {pr}`1854`
 
+- {{Fix}} If `__iter__()` raises an error, it is now handled correctly by the
+  `PyProxy[Symbol.iterator()]` method.
+  {pr}`1871`
+
 - {{Fix}} Borrowed attribute `PyProxy`s are no longer destroyed when the root
   `PyProxy` is garbage collected (because it was leaked). Doing so has no
   benefit to nonleaky code and turns some leaky code into broken code (see
