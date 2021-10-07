@@ -1625,7 +1625,7 @@ JsBuffer_tomemoryview(PyObject* buffer)
 }
 
 static PyMethodDef JsBuffer_tomemoryview_MethodDef = {
-  "tomemoryview",
+  "to_memoryview",
   (PyCFunction)JsBuffer_tomemoryview,
   METH_NOARGS,
 };

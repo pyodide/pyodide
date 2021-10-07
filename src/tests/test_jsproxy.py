@@ -1032,31 +1032,21 @@ def test_buffer_assign_back(selenium):
 
 
 def test_buffer_conversions(selenium):
-    s = "abcဴ"
-    result = selenium.run_js(
+    selenium.run_js(
         f"""
-        self.s = {s!r};
+        self.s = "abcဴ";
         self.jsbytes = new TextEncoder().encode(s);
         pyodide.runPython(`
             from js import s, jsbytes
-            memoryview_conversion = jsbytes.tomemoryview()
-            bytearray_conversion = jsbytes.tobytearray()
-            bytes_conversion = jsbytes.tobytes()
+            memoryview_conversion = jsbytes.to_memoryview()
+            bytes_conversion = jsbytes.to_bytes()
 
             assert bytes_conversion.decode() == s
-            assert bytes(bytearray_conversion) == bytes_conversion
             assert bytes(memoryview_conversion) == bytes_conversion
-            bytearray_conversion[0] += 1
-            assert bytearray_conversion.decode() == s.replace("a", "b")
-
-            jsbytes.assign(bytearray_conversion)
-
             del jsbytes
         `);
-        return new TextDecoder().decode(jsbytes);
         """
     )
-    assert result == s.replace("a", "b")
 
 
 def test_tostring_encoding(selenium):
