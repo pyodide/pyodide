@@ -36,6 +36,11 @@ substitutions:
   `PyProxy` (as introduced by {pr}`1636`) before destroying the root `PyProxy`.
   {pr}`1854`
 
+- {{Fix}} Borrowed attribute `PyProxy`s are no longer destroyed when the root
+  `PyProxy` is garbage collected (because it was leaked). Doing so has no
+  benefit to nonleaky code and turns some leaky code into broken code (see
+  {issue}`1855` for an example). {pr}`1870`
+
 ### pyodide-build
 
 - {{API}} By default only a minimal set of packages is built. To build all
