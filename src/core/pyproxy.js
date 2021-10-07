@@ -31,7 +31,6 @@ Module.isPyProxy = isPyProxy;
 
 if (globalThis.FinalizationRegistry) {
   Module.finalizationRegistry = new FinalizationRegistry(([ptr, cache]) => {
-    pyproxy_decref_cache(cache);
     try {
       Module._Py_DecRef(ptr);
     } catch (e) {
