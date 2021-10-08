@@ -7,7 +7,7 @@ debugging](https://emscripten.org/docs/porting/Debugging.html) which has
 extensive info about the various debugging options available.
 
 [Chromium has support for DWARF
-info](https://developer.chrome.com/blog/webassembly/) which can be very helpful
+info](https://developer.chrome.com/blog/wasm-debugging-2020/) which can be very helpful
 for debugging in certain circumstances. To build Pyodide with DWARF, you should
 set `EXTRA_CFLAGS="-g4"` and `EXTRA_LD_FLAGS="-g4 --source-map-base "http://localhost:<port>/"` (substitute in your favorite port). Make sure to
 rebuild CPython with these flags set (it isn't necessary to rebuild emsdk).

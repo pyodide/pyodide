@@ -211,6 +211,40 @@ def test_pyproxy_iter(selenium):
     assert result == result2
 
 
+def test_pyproxy_iter_error(selenium):
+    selenium.run_js(
+        """
+        let t = pyodide.runPython(`
+            class T:
+                def __iter__(self):
+                    raise Exception('hi')
+            T()
+        `);
+        assertThrows(() => t[Symbol.iterator](), "PythonError", "hi");
+        t.destroy();
+        """
+    )
+
+
+def test_pyproxy_iter_error2(selenium):
+    selenium.run_js(
+        """
+        let gen = pyodide.runPython(`
+            def g():
+                yield 1
+                yield 2
+                raise Exception('hi')
+                yield 3
+            g()
+        `);
+        assert(() => gen.next().value === 1);
+        assert(() => gen.next().value === 2);
+        assertThrows(() => gen.next(), "PythonError", "hi");
+        gen.destroy();
+        """
+    )
+
+
 def test_pyproxy_get_buffer(selenium):
     selenium.run_js(
         """

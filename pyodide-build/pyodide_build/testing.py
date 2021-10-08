@@ -80,17 +80,13 @@ def run_in_pyodide(
                     selenium.run_js(
                         f"""
                         let eval_code = pyodide.pyodide_py.eval_code;
-                        try {{
-                            eval_code.callKwargs(
-                                {{
-                                    source : atob({encoded}.join("")),
-                                    globals : pyodide._module.globals,
-                                    filename : {filename!r}
-                                }}
-                            )
-                        }} finally {{
-                            eval_code.destroy();
-                        }}
+                        eval_code.callKwargs(
+                            {{
+                                source : atob({encoded}.join("")),
+                                globals : pyodide._module.globals,
+                                filename : {filename!r}
+                            }}
+                        );
                         """
                     )
                     # When invoking the function, use the default filename <eval>

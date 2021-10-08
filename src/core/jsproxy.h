@@ -6,13 +6,13 @@
 // clang-format on
 #include "hiwire.h"
 
-/** A Python object that a Javascript object inside. Used for any non-standard
- *  data types that are passed from Javascript to Python.
+/** A Python object that a JavaScript object inside. Used for any non-standard
+ *  data types that are passed from JavaScript to Python.
  */
 
 /** Make a new JsProxy.
- *  \param v The Javascript object.
- *  \return The Python object wrapping the Javascript object.
+ *  \param v The JavaScript object.
+ *  \return The Python object wrapping the JavaScript object.
  */
 PyObject*
 JsProxy_create(JsRef v);
@@ -27,9 +27,9 @@ JsProxy_create_with_this(JsRef object, JsRef this);
 bool
 JsProxy_Check(PyObject* x);
 
-/** Grab the underlying Javascript object from the JsProxy object.
+/** Grab the underlying JavaScript object from the JsProxy object.
  *  \param x The JsProxy object.  Must confirm that it is a JsProxy object using
- *    JsProxy_Check. \return The Javascript object.
+ *    JsProxy_Check. \return The JavaScript object.
  */
 JsRef
 JsProxy_AsJs(PyObject* x);
@@ -52,9 +52,9 @@ JsBuffer_CloneIntoPython(JsRef jsbuffer,
 bool
 JsException_Check(PyObject* x);
 
-/** Grab the underlying Javascript error from the JsException object.
+/** Grab the underlying JavaScript error from the JsException object.
  *  \param x The JsProxy object.  Must confirm that it is a JsException object
- * using JsProxy_Check. \return The Javascript object.
+ * using JsProxy_Check. \return The JavaScript object.
  */
 JsRef
 JsException_AsJs(PyObject* x);

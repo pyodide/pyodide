@@ -12,7 +12,7 @@ directory](https://github.com/pyodide/pyodide/tree/main/packages) lists over
 75 packages which are currently available. In addition it's possible to install
 pure Python wheels from PyPi.
 
-Pyodide provides transparent conversion of objects between Javascript and
+Pyodide provides transparent conversion of objects between JavaScript and
 Python. When used inside a browser, Python has full access to the Web APIs.
 
 ## History

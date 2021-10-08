@@ -1,7 +1,7 @@
 #ifndef PYTHON2JS_H
 #define PYTHON2JS_H
 
-/** Translate Python objects to Javascript.
+/** Translate Python objects to JavaScript.
  */
 // clang-format off
 #define PY_SSIZE_T_CLEAN
@@ -10,8 +10,8 @@
 #include "hiwire.h"
 
 /**
- * Do a shallow conversion from python to Javascript. Convert immutable types
- * with equivalent Javascript immutable types, but all other types are proxied.
+ * Do a shallow conversion from python to JavaScript. Convert immutable types
+ * with equivalent JavaScript immutable types, but all other types are proxied.
  */
 JsRef
 python2js(PyObject* x);
@@ -27,14 +27,14 @@ JsRef
 python2js_track_proxies(PyObject* x, JsRef proxies);
 
 /**
- * Convert a Python object to a Javascript object, copying standard collections
+ * Convert a Python object to a JavaScript object, copying standard collections
  * into javascript down to specified depth
  * \param x The Python object
  * \param depth The maximum depth to copy
- * \param proxies If this is Null, will raise an error if we have no Javascript
- *        conversion for a Python object. If not NULL, should be a Javascript
+ * \param proxies If this is Null, will raise an error if we have no JavaScript
+ *        conversion for a Python object. If not NULL, should be a JavaScript
  *        list. We will add all PyProxies created to the list.
- * \return The Javascript object -- might be an Error object in the case of an
+ * \return The JavaScript object -- might be an Error object in the case of an
  *         exception.
  */
 JsRef

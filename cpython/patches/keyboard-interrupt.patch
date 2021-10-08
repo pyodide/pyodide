@@ -1,14 +1,15 @@
-From 55a3beea61b6e1d8c05fdfbb33d623dd03ffc8d6 Mon Sep 17 00:00:00 2001
+From 320cc07c0a30436759cde8f4c926e76ed8dc918a Mon Sep 17 00:00:00 2001
 From: Hood <hood@mit.edu>
-Date: Sun, 13 Jun 2021 16:13:30 -0700
-Subject: [PATCH] Add pyodide callback
+Date: Fri, 3 Sep 2021 18:08:26 -0700
+Subject: [PATCH] Patch in keyboard interrupt handling
 
 ---
  Include/cpython/ceval.h   |  1 +
  Include/cpython/pystate.h |  3 +++
+ Modules/signalmodule.c    |  3 +++
  Python/ceval.c            | 13 ++++++++++++-
  Python/pystate.c          |  2 ++
- 4 files changed, 18 insertions(+), 1 deletion(-)
+ 5 files changed, 21 insertions(+), 1 deletion(-)
 
 This patch adds a callback called pyodide_callback with signature 
 `int callback(void)` to the main loop in `ceval.c`. This function gets called once 
@@ -33,9 +34,11 @@ out of the `eval_breaker` conditional.
 
 We also patched the `threadstate` struct to include a `pyodide_callback` field, patch
 `new_threadstate` to initialize the `pyodide_callback` field to `NULL`, and add a new
-API `PyPyodide_SetPyodideCallback` to set `pyodide_callback`. This makes 
-`PyPyodide_SetPyodideCallback` behave much like `PyEval_SetTrace`, except lighter 
-weight.
+API `PyPyodide_SetPyodideCallback` to set `pyodide_callback`.
+
+Lastly, we patched PyErr_CheckSignals to check our custom source of keyboard interrupts
+so that C extensions that use PyErr_CheckSignals to allow keyboard interrupts will be 
+interruptable in pyodide too.
 
 diff --git a/Include/cpython/ceval.h b/Include/cpython/ceval.h
 index e1922a6..a4acd9b 100644
@@ -70,6 +73,20 @@ index f292da1..3577ac8 100644
      /* The exception currently being raised */
      PyObject *curexc_type;
      PyObject *curexc_value;
+diff --git a/Modules/signalmodule.c b/Modules/signalmodule.c
+index de564c2..bfe2fd1 100644
+--- a/Modules/signalmodule.c
++++ b/Modules/signalmodule.c
+@@ -1683,6 +1683,9 @@ PyErr_CheckSignals(void)
+ int
+ _PyErr_CheckSignalsTstate(PyThreadState *tstate)
+ {
++    if (tstate->pyodide_callback != NULL && tstate->pyodide_callback() == -1)
++        return -1;
++
+     if (!_Py_atomic_load(&is_tripped)) {
+         return 0;
+     }
 diff --git a/Python/ceval.c b/Python/ceval.c
 index 91e879e..f8d424d 100644
 --- a/Python/ceval.c

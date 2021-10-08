@@ -10,7 +10,7 @@
 #include "jsproxy.h"
 #include "pyproxy.h"
 
-// PyUnicodeDATA is a macro, we need to access it from Javascript
+// PyUnicodeDATA is a macro, we need to access it from JavaScript
 void*
 PyUnicode_Data(PyObject* obj)
 {
@@ -54,7 +54,7 @@ EM_JS_REF(PyObject*, js2python, (JsRef id), {
 })
 
 /**
- * Convert a Javascript object to Python to a given depth. This is the
+ * Convert a JavaScript object to Python to a given depth. This is the
  * implementation of `toJs`.
  */
 EM_JS_REF(PyObject*, js2python_convert, (JsRef id, int depth), {
@@ -66,7 +66,7 @@ EM_JS_NUM(errcode, js2python_init, (), {
   function __js2python_string(value)
   {
     // The general idea here is to allocate a Python string and then
-    // have Javascript write directly into its buffer.  We first need
+    // have JavaScript write directly into its buffer.  We first need
     // to determine if is needs to be a 1-, 2- or 4-byte string, since
     // Python handles all 3.
     let max_code_point = 0;
@@ -353,7 +353,7 @@ EM_JS_NUM(errcode, js2python_init, (), {
   };
 
   /**
-   * Convert a Javascript object to Python to a given depth. The `cache`
+   * Convert a JavaScript object to Python to a given depth. The `cache`
    * argument should be a new empty map (it is needed for recursive calls).
    */
   Module.js2python_convert = function(id, cache, depth)

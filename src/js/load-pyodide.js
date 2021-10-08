@@ -305,7 +305,7 @@ export let loadedPackages = {};
  * ``<package-name>.js`` and there must be a file called
  * ``<package-name>.data`` in the same directory. The argument can be a
  * ``PyProxy`` of a list, in which case the list will be converted to
- * Javascript and the ``PyProxy`` will be destroyed.
+ * JavaScript and the ``PyProxy`` will be destroyed.
  * @param {LogFn=} messageCallback A callback, called with progress messages
  *    (optional)
  * @param {LogFn=} errorCallback A callback, called with error/warning

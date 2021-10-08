@@ -7,12 +7,12 @@
 
 /**
  * hiwire: A super-simple framework for converting values between C and
- * Javascript.
+ * JavaScript.
  *
- * Arbitrary Javascript objects are referenced from C using an opaque int value.
+ * Arbitrary JavaScript objects are referenced from C using an opaque int value.
  * By convention, these ids are stored in variable names beginning with `id`.
  *
- * Javascript objects passed to the C side must be manually reference-counted.
+ * JavaScript objects passed to the C side must be manually reference-counted.
  * Use `hiwire_incref` if you plan to store the object on the C side. Use
  * `hiwire_decref` when done. Internally, the objects are stored in a global
  * object. There may be one or more keys pointing to the same object.
@@ -47,7 +47,7 @@ extern const JsRef Js_null;
 // For when the return value would be Option<JsRef>
 extern const JsRef Js_novalue;
 
-// A mechanism for handling static Javascript strings from C
+// A mechanism for handling static JavaScript strings from C
 // This is copied from the Python mechanism for handling static Python strings
 // from C See the Python definition here:
 // https://github.com/python/cpython/blob/24da544014f78e6f1440d5ce5c2d14794a020340/Include/cpython/object.h#L37
@@ -101,7 +101,7 @@ errcode
 hiwire_decref(JsRef idval);
 
 /**
- * Create a new Javascript integer with the given value.
+ * Create a new JavaScript integer with the given value.
  *
  * Returns: New reference
  */
@@ -109,7 +109,7 @@ JsRef
 hiwire_int(int val);
 
 /**
- * Create a new Javascript float with the given value.
+ * Create a new JavaScript float with the given value.
  *
  * Returns: New reference
  */
@@ -117,7 +117,7 @@ JsRef
 hiwire_double(double val);
 
 /**
- * Create a new Javascript string, given a pointer to a buffer
+ * Create a new JavaScript string, given a pointer to a buffer
  * containing UCS4 and a length. The string data itself is copied.
  *
  * Returns: New reference
@@ -126,7 +126,7 @@ JsRef
 hiwire_string_ucs4(const char* ptr, int len);
 
 /**
- * Create a new Javascript string, given a pointer to a buffer
+ * Create a new JavaScript string, given a pointer to a buffer
  * containing UCS2 and a length. The string data itself is copied.
  *
  * Returns: New reference
@@ -135,7 +135,7 @@ JsRef
 hiwire_string_ucs2(const char* ptr, int len);
 
 /**
- * Create a new Javascript string, given a pointer to a buffer
+ * Create a new JavaScript string, given a pointer to a buffer
  * containing UCS1 and a length. The string data itself is copied.
  *
  * Returns: New reference
@@ -144,7 +144,7 @@ JsRef
 hiwire_string_ucs1(const char* ptr, int len);
 
 /**
- * Create a new Javascript string, given a pointer to a null-terminated buffer
+ * Create a new JavaScript string, given a pointer to a null-terminated buffer
  * containing UTF8. The string data itself is copied.
  *
  * Returns: New reference
@@ -153,7 +153,7 @@ JsRef
 hiwire_string_utf8(const char* ptr);
 
 /**
- * Create a new Javascript string, given a pointer to a null-terminated buffer
+ * Create a new JavaScript string, given a pointer to a null-terminated buffer
  * containing ascii (well, technically latin-1). The string data itself is
  * copied.
  *
@@ -163,7 +163,7 @@ JsRef
 hiwire_string_ascii(const char* ptr);
 
 /**
- * Create a new Javascript boolean value.
+ * Create a new JavaScript boolean value.
  * Return value is true if boolean != 0, false if boolean == 0.
  *
  * Returns: "New" reference
@@ -181,7 +181,7 @@ bool
 JsArray_Check(JsRef idobj);
 
 /**
- * Create a new Javascript Array.
+ * Create a new JavaScript Array.
  *
  * Returns: New reference
  */
@@ -189,13 +189,13 @@ JsRef
 JsArray_New();
 
 /**
- * Push a value to the end of a Javascript array.
+ * Push a value to the end of a JavaScript array.
  */
 errcode
 JsArray_Push(JsRef idobj, JsRef idval);
 
 /**
- * Create a new Javascript object.
+ * Create a new JavaScript object.
  *
  * Returns: New reference
  */
@@ -356,7 +356,7 @@ bool
 hiwire_has_length(JsRef idobj);
 
 /**
- * Returns the value of the `size` or `length` member on a Javascript object.
+ * Returns the value of the `size` or `length` member on a JavaScript object.
  * Prefers the `size` member if present and a number to the `length` field. If
  * both `size` and `length` are missing or not a number, returns `-1` to
  * indicate error.
@@ -365,7 +365,7 @@ int
 hiwire_get_length(JsRef idobj);
 
 /**
- * Returns the boolean value of a Javascript object.
+ * Returns the boolean value of a JavaScript object.
  */
 bool
 hiwire_get_bool(JsRef idobj);
@@ -403,7 +403,7 @@ hiwire_is_promise(JsRef idobj);
 /**
  * Returns Promise.resolve(obj)
  *
- * Returns: New reference to Javascript promise
+ * Returns: New reference to JavaScript promise
  */
 JsRef
 hiwire_resolve_promise(JsRef idobj);
@@ -411,7 +411,7 @@ hiwire_resolve_promise(JsRef idobj);
 /**
  * Gets the string representation of an object by calling `toString`.
  *
- * Returns: New reference to Javascript string
+ * Returns: New reference to JavaScript string
  */
 JsRef
 hiwire_to_string(JsRef idobj);
@@ -419,7 +419,7 @@ hiwire_to_string(JsRef idobj);
 /**
  * Gets the `typeof` string for a value.
  *
- * Returns: New reference to Javascript string
+ * Returns: New reference to JavaScript string
  */
 JsRef
 hiwire_typeof(JsRef idobj);
@@ -427,7 +427,7 @@ hiwire_typeof(JsRef idobj);
 /**
  * Gets `value.constructor.name`.
  *
- * Returns: New reference to Javascript string
+ * Returns: New reference to JavaScript string
  */
 char*
 hiwire_constructor_name(JsRef idobj);

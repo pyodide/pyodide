@@ -166,6 +166,19 @@ def test_last_version_from_pypi():
     assert str(ver) == "0.15.5"
 
 
+def test_install_non_pure_python_wheel():
+    pytest.importorskip("packaging")
+    from micropip import micropip
+
+    msg = "not a pure Python 3 wheel"
+    with pytest.raises(ValueError, match=msg):
+        url = "http://scikit_learn-0.22.2.post1-cp35-cp35m-macosx_10_9_intel.whl"
+        transaction = {"wheels": [], "locked": {}}
+        asyncio.get_event_loop().run_until_complete(
+            micropip.PACKAGE_MANAGER.add_requirement(url, {}, transaction)
+        )
+
+
 def test_install_different_version(selenium_standalone_micropip):
     selenium = selenium_standalone_micropip
     selenium.run_js(

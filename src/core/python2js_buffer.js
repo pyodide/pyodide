@@ -3,14 +3,14 @@ JS_FILE(python2js_buffer_init, () => {
 
   /**
    * Determine type and endianness of data from format. This is a helper
-   * function for converting buffers from Python to Javascript, used in
+   * function for converting buffers from Python to JavaScript, used in
    * PyProxyBufferMethods and in `toJs` on a buffer.
    *
    * To understand this function it will be helpful to look at the tables here:
    * https://docs.python.org/3/library/struct.html#format-strings
    *
    * @arg format {String} A Python format string (caller must convert it to a
-   *      Javascript string).
+   *      JavaScript string).
    * @arg errorMessage {String} Extra stuff to append to an error message if
    *      thrown. Should be a complete sentence.
    * @returns A pair, an appropriate TypedArray constructor and a boolean which
@@ -106,7 +106,7 @@ JS_FILE(python2js_buffer_init, () => {
   };
 
   /**
-   * Convert a 1-dimensional contiguous buffer to Javascript.
+   * Convert a 1-dimensional contiguous buffer to JavaScript.
    *
    * In this case we can just slice the memory out of the wasm HEAP.
    * @param {number} ptr A pointer to the start of the buffer in wasm memory
@@ -124,7 +124,7 @@ JS_FILE(python2js_buffer_init, () => {
   };
 
   /**
-   * Convert a 1d noncontiguous buffer to Javascript.
+   * Convert a 1d noncontiguous buffer to JavaScript.
    *
    * Since the buffer is not contiguous we have to copy it in chunks.
    * @param {number} ptr The WAM memory pointer to the start of the buffer.
@@ -160,7 +160,7 @@ JS_FILE(python2js_buffer_init, () => {
   };
 
   /**
-   * Convert an ndarray to a nested Javascript array, the main function.
+   * Convert an ndarray to a nested JavaScript array, the main function.
    *
    * This is called by _python2js_buffer_inner (defined in python2js_buffer.c).
    * There are two layers of setup that need to be done to get the base case of
@@ -176,7 +176,7 @@ JS_FILE(python2js_buffer_init, () => {
    * @param {number} bufferData All of the data out of the Py_buffer, plus the
    * converter function: ndim, format, itemsize, shape (a ptr), strides (a ptr),
    * suboffsets (a ptr), converter,
-   * @returns A nested Javascript array, the result of the conversion.
+   * @returns A nested JavaScript array, the result of the conversion.
    * @private
    */
   Module._python2js_buffer_recursive = function (ptr, curdim, bufferData) {

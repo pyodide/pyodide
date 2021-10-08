@@ -57,7 +57,7 @@ the latest release branch named `stable` (due to ReadTheDocs constraints).
    twine check dist/*X.Y.Z*
    twine upload dist/*X.Y.Z*
    ```
-7. Release the Pyodide Javascript package,
+7. Release the Pyodide JavaScript package,
 
    ```bash
    cd src/js
