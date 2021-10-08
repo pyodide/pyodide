@@ -19,7 +19,7 @@ download all packages that the code snippet imports. This is particularly useful
 for making a repl since users might import unexpected packages. At present,
 {any}`loadPackagesFromImports <pyodide.loadPackagesFromImports>` will not
 download packages from PyPi, it will only download packages included in the
-Pyodide distribution.
+Pyodide distribution. See {ref}`packages-in-pyodide` to check the full list of packages included in Pyodide.
 
 ## Loading packages with {any}`pyodide.loadPackage`
 
@@ -149,4 +149,11 @@ installs from PyPi.
     </script>
   </body>
 </html>
+```
+
+```{eval-rst}
+.. toctree::
+   :hidden:
+
+   packages-in-pyodide.md
 ```

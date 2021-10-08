@@ -74,7 +74,7 @@ static PyTypeObject* PyExc_BaseException_Type;
 ////////////////////////////////////////////////////////////
 // JsProxy
 //
-// This is a Python object that provides idiomatic access to a Javascript
+// This is a Python object that provides idiomatic access to a JavaScript
 // object.
 
 // clang-format off
@@ -199,7 +199,7 @@ JsProxy_SetAttr(PyObject* self, PyObject* attr, PyObject* pyvalue)
   FAIL_IF_NULL(key);
 
   if (strncmp(key, "__", 2) == 0) {
-    // Avoid creating reference loops between Python and Javascript with js
+    // Avoid creating reference loops between Python and JavaScript with js
     // modules. Such reference loops make it hard to avoid leaking memory.
     if (strcmp(key, "__loader__") == 0 || strcmp(key, "__name__") == 0 ||
         strcmp(key, "__package__") == 0 || strcmp(key, "__path__") == 0 ||
@@ -713,10 +713,10 @@ PyMethodDef JsProxy_toPy_MethodDef = {
 
 /**
  * Overload for bool(proxy), implemented for every JsProxy. Return `False` if
- * the object is falsey in Javascript, or if it has a `size` field equal to 0,
+ * the object is falsey in JavaScript, or if it has a `size` field equal to 0,
  * or if it has a `length` field equal to zero and is an array. Otherwise return
  * `True`. This last convention could be replaced with "has a length equal to
- * zero and is not a function". In Javascript, `func.length` returns the number
+ * zero and is not a function". In JavaScript, `func.length` returns the number
  * of arguments `func` expects. We definitely don't want 0-argument functions to
  * be falsey.
  */
@@ -1089,7 +1089,7 @@ finally:
 
 /**
  * Prepare arguments from a `METH_FASTCALL | METH_KEYWORDS` Python function to a
- * Javascript call. We call `python2js` on each argument. Any PyProxy *created*
+ * JavaScript call. We call `python2js` on each argument. Any PyProxy *created*
  * by `python2js` is stored into the `proxies` list to be destroyed later (if
  * the argument is a PyProxy created with `create_proxy` it won't be recorded
  * for destruction).
@@ -1243,7 +1243,7 @@ finally:
  * jsproxy.new implementation. Controlled by IS_CALLABLE.
  *
  * This does Reflect.construct(this, args). In other words, this treats the
- * JsMethod as a Javascript class, constructs a new Javascript object of that
+ * JsMethod as a JavaScript class, constructs a new JavaScript object of that
  * class and returns a new JsProxy wrapping it. Similar to `new this(args)`.
  */
 static PyObject*
@@ -1389,7 +1389,7 @@ static PyTypeObject BufferType = {
  * This is a helper function to do error checking for JsBuffer_AssignToPyBuffer
  * and JsBuffer_AssignPyBuffer.
  *
- * self -- The Javascript buffer involved
+ * self -- The JavaScript buffer involved
  * view -- The Py_buffer view involved
  * safe -- If true, check data type compatibility, if false only check size
  *         compatibility.
@@ -1492,7 +1492,7 @@ finally:
  * jsbuffer.
  *
  * All other arguments are calculated from jsbuffer, but it's more convenient to
- * calculate them in Javascript and pass them as arguments than to acquire them
+ * calculate them in JavaScript and pass them as arguments than to acquire them
  * from C.
  *
  * jsbuffer - An ArrayBuffer view or an ArrayBuffer

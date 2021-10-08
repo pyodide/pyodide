@@ -92,6 +92,10 @@ async def _get_pypi_json(pkgname):
     return json.load(fd)
 
 
+def _is_pure_python_wheel(filename: str):
+    return filename.endswith("py3-none-any.whl")
+
+
 def _parse_wheel_url(url: str) -> Tuple[str, Dict[str, Any], str]:
     """Parse wheels URL and extract available metadata
 
@@ -205,6 +209,9 @@ class _PackageManager:
             # custom download location
             name, wheel, version = _parse_wheel_url(requirement)
             name = name.lower()
+            if not _is_pure_python_wheel(wheel["filename"]):
+                raise ValueError(f"'{wheel['filename']}' is not a pure Python 3 wheel")
+
             await self.add_wheel(name, wheel, version, (), ctx, transaction)
             return
         else:
@@ -264,7 +271,7 @@ class _PackageManager:
         for ver in candidate_versions:
             release = releases[str(ver)]
             for fileinfo in release:
-                if fileinfo["filename"].endswith("py3-none-any.whl"):
+                if _is_pure_python_wheel(fileinfo["filename"]):
                     return fileinfo, ver
 
         raise ValueError(f"Couldn't find a pure Python 3 wheel for '{req}'")

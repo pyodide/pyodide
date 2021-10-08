@@ -174,7 +174,7 @@ class ConsoleFuture(Future):
     formatted_error : str
         If the ``Future`` is rejected, this will be filled with a formatted version of
         the code. This is a convenience that simplifies code and helps to avoid large
-        memory leaks when using from Javascript.
+        memory leaks when using from JavaScript.
 
     """
 

@@ -106,7 +106,7 @@ get_python_stack_depth()
  *  1. Initialize init_dict so that runPythonSimple will work.
  *  2. Initialize the different ffi components and create the _pyodide_core
  *     module
- *  3. Create a PyProxy wrapper around init_dict so that Javascript can retreive
+ *  3. Create a PyProxy wrapper around init_dict so that JavaScript can retreive
  *     PyProxies from the runPythonSimple namespace.
  */
 int
@@ -167,7 +167,7 @@ main(int argc, char** argv)
     FATAL_ERROR("Failed to add '_pyodide_core' module to modules dict.");
   }
 
-  // Enable Javascript access to the globals from runPythonSimple.
+  // Enable JavaScript access to the globals from runPythonSimple.
   init_dict_proxy = python2js(init_dict);
   if (init_dict_proxy == NULL) {
     FATAL_ERROR("Failed to create init_dict proxy.");

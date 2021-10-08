@@ -1,4 +1,4 @@
-# Pyodide Javascript package
+# Pyodide JavaScript package
 
 <a href="https://www.npmjs.com/package/pyodide"><img src="https://img.shields.io/npm/v/pyodide" alt="npm"></a>
 
@@ -26,15 +26,15 @@ See the [documentation](https://pyodide.org/en/stable/) fore more details.
 
 ## Details
 
-The Javascript code in this package is responsible for the following tasks:
+The JavaScript code in this package is responsible for the following tasks:
 
-1. Defines the public [Javascript API](https://pyodide.org/en/stable/usage/api/js-api.html)
+1. Defines the public [JavaScript API](https://pyodide.org/en/stable/usage/api/js-api.html)
    - Package loading code to allow loading of other Python packages.
    - Can load
      [micropip](https://pyodide.org/en/stable/usage/api/micropip-api.html) to
      bootstrap loading of pure Python wheels
 2. Loads the CPython interpreter and the core/pyodide emscripten application
    which embeds the interpreter.
-3. Injects the `js/pyodide` Javascript API into `sys.modules`. This is the
+3. Injects the `js/pyodide` JavaScript API into `sys.modules`. This is the
    final runtime dependency for `core/pyodide` & `py/pyodide`, so after this step
    the interpreter is fully up and running.

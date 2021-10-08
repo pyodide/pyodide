@@ -17,14 +17,14 @@ local file system.
 
 ## Why can't I load files from the local file system?
 
-For security reasons Javascript in the browser is not allowed to load local data
+For security reasons JavaScript in the browser is not allowed to load local data
 files. You need to serve them with a web-browser. There is a
 [File System API](https://wicg.github.io/file-system-access/) supported in Chrome
 but not in Firefox or Safari.
 
 ## How can I change the behavior of {any}`runPython <pyodide.runPython>` and {any}`runPythonAsync <pyodide.runPythonAsync>`?
 
-You can directly call Python functions from Javascript. For most purposes it
+You can directly call Python functions from JavaScript. For most purposes it
 makes sense to make your own Python function as an entrypoint and call that
 instead of redefining `runPython`. The definitions of {any}`runPython <pyodide.runPython>` and {any}`runPythonAsync <pyodide.runPythonAsync>` are very
 simple:
@@ -118,10 +118,10 @@ if "PYODIDE" in os.environ:
 We used to use the environment variable `PYODIDE_BASE_URL` for this purpose,
 but this usage is deprecated.
 
-## How do I create custom Python packages from Javascript?
+## How do I create custom Python packages from JavaScript?
 
-Put a collection of functions into a Javascript object and use {any}`pyodide.registerJsModule`:
-Javascript:
+Put a collection of functions into a JavaScript object and use {any}`pyodide.registerJsModule`:
+JavaScript:
 
 ```javascript
 let my_module = {
@@ -207,7 +207,7 @@ proxy_f.destroy()
 
 ## How can I use fetch with optional arguments from Python?
 
-The most obvious translation of the Javascript code won't work:
+The most obvious translation of the JavaScript code won't work:
 
 ```py
 import json

@@ -6,7 +6,7 @@ browser or a backend JavaScript environment.
 ## Web browsers
 
 To use Pyodide on a web page you need to load `pyodide.js` and initialize
-Pyodide with {any}`loadPyodide` specifying a index URL for packages:
+Pyodide with {any}`loadPyodide <globalThis.loadPyodide>` specifying a index URL for packages:
 
 ```html-pyodide
 <!DOCTYPE html>
