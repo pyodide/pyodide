@@ -44,7 +44,7 @@ let fatal_error_occurred = false;
 /**
  * Signal a fatal error.
  *
- * Dumps the Python traceback, shows a Javascript traceback, and prints a clear
+ * Dumps the Python traceback, shows a JavaScript traceback, and prints a clear
  * message indicating a fatal error. It then dummies out the public API so that
  * further attempts to use Pyodide will clearly indicate that Pyodide has failed
  * and can no longer be used. pyodide._module is left accessible and it is
@@ -109,7 +109,7 @@ Module.fatal_error = function (e) {
  *    1. `runPythonSimple` doesn't return anything (and so won't leak
  *        PyProxies)
  *    2. `runPythonSimple` doesn't require access to any state on the
- *       Javascript `pyodide` module.
+ *       JavaScript `pyodide` module.
  *    3. `runPython` uses `pyodide.eval_code`, whereas `runPythonSimple` uses
  *       `PyRun_String` which is the C API for `eval` / `exec`.
  *    4. `runPythonSimple` runs with `globals` a separate dict which is called
@@ -137,8 +137,8 @@ Module.runPythonSimple = function (code) {
 };
 
 /**
- * The Javascript/Wasm call stack is too small to handle the default Python call
- * stack limit of 1000 frames. Here, we determine the Javascript call stack
+ * The JavaScript/Wasm call stack is too small to handle the default Python call
+ * stack limit of 1000 frames. Here, we determine the JavaScript call stack
  * depth available, and then divide by 50 (determined heuristically) to set the
  * maximum Python call stack depth.
  *
@@ -162,7 +162,7 @@ function fixRecursionLimit() {
 /**
  * Load the main Pyodide wasm module and initialize it.
  *
- * Only one copy of Pyodide can be loaded in a given Javascript global scope
+ * Only one copy of Pyodide can be loaded in a given JavaScript global scope
  * because Pyodide uses global variables to load packages. If an attempt is made
  * to load a second copy of Pyodide, :any:`loadPyodide` will throw an error.
  * (This can be fixed once `Firefox adopts support for ES6 modules in webworkers

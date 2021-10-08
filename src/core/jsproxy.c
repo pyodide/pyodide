@@ -74,7 +74,7 @@ static PyTypeObject* PyExc_BaseException_Type;
 ////////////////////////////////////////////////////////////
 // JsProxy
 //
-// This is a Python object that provides idiomatic access to a Javascript
+// This is a Python object that provides idiomatic access to a JavaScript
 // object.
 
 // clang-format off
@@ -199,7 +199,7 @@ JsProxy_SetAttr(PyObject* self, PyObject* attr, PyObject* pyvalue)
   FAIL_IF_NULL(key);
 
   if (strncmp(key, "__", 2) == 0) {
-    // Avoid creating reference loops between Python and Javascript with js
+    // Avoid creating reference loops between Python and JavaScript with js
     // modules. Such reference loops make it hard to avoid leaking memory.
     if (strcmp(key, "__loader__") == 0 || strcmp(key, "__name__") == 0 ||
         strcmp(key, "__package__") == 0 || strcmp(key, "__path__") == 0 ||
@@ -713,10 +713,10 @@ static PyMethodDef JsProxy_toPy_MethodDef = {
 
 /**
  * Overload for bool(proxy), implemented for every JsProxy. Return `False` if
- * the object is falsey in Javascript, or if it has a `size` field equal to 0,
+ * the object is falsey in JavaScript, or if it has a `size` field equal to 0,
  * or if it has a `length` field equal to zero and is an array. Otherwise return
  * `True`. This last convention could be replaced with "has a length equal to
- * zero and is not a function". In Javascript, `func.length` returns the number
+ * zero and is not a function". In JavaScript, `func.length` returns the number
  * of arguments `func` expects. We definitely don't want 0-argument functions to
  * be falsey.
  */
@@ -1089,7 +1089,7 @@ finally:
 
 /**
  * Prepare arguments from a `METH_FASTCALL | METH_KEYWORDS` Python function to a
- * Javascript call. We call `python2js` on each argument. Any PyProxy *created*
+ * JavaScript call. We call `python2js` on each argument. Any PyProxy *created*
  * by `python2js` is stored into the `proxies` list to be destroyed later (if
  * the argument is a PyProxy created with `create_proxy` it won't be recorded
  * for destruction).
@@ -1243,7 +1243,7 @@ finally:
  * jsproxy.new implementation. Controlled by IS_CALLABLE.
  *
  * This does Reflect.construct(this, args). In other words, this treats the
- * JsMethod as a Javascript class, constructs a new Javascript object of that
+ * JsMethod as a JavaScript class, constructs a new JavaScript object of that
  * class and returns a new JsProxy wrapping it. Similar to `new this(args)`.
  */
 static PyObject*
@@ -1389,7 +1389,7 @@ static PyTypeObject BufferType = {
  * This is a helper function to do error checking for JsBuffer_assign_to
  * and JsBuffer_assign.
  *
- * self -- The Javascript buffer involved
+ * self -- The JavaScript buffer involved
  * view -- The Py_buffer view involved
  * safe -- If true, check data type compatibility, if false only check size
  *         compatibility.
@@ -1500,11 +1500,11 @@ static PyMethodDef JsBuffer_assign_MethodDef = {
 };
 
 /**
- * Used from js2python for to_py. Make a new Python buffer with the same data as
- * jsbuffer.
+ * Used from js2python for to_py and by to_memoryview. Make a new Python buffer
+ * with the same data as jsbuffer.
  *
  * All other arguments are calculated from jsbuffer, but it's more convenient to
- * calculate them in Javascript and pass them as arguments than to acquire them
+ * calculate them in JavaScript and pass them as arguments than to acquire them
  * from C.
  *
  * jsbuffer - An ArrayBuffer view or an ArrayBuffer
@@ -1538,6 +1538,10 @@ finally:
   return result;
 }
 
+/**
+ * Used by to_bytes. Make a new bytes object and copy the data from the
+ * ArrayBuffer into it.
+ */
 PyObject*
 JsBuffer_CopyIntoBytes(JsRef jsbuffer, Py_ssize_t byteLength)
 {
@@ -1555,33 +1559,42 @@ finally:
   return result;
 }
 
-PyObject*
-JsBuffer_CopyIntoByteArray(JsRef jsbuffer, Py_ssize_t byteLength)
+/**
+ * Used by JsBuffer_ToString. Decode the ArrayBuffer into a Javascript string
+ * using a TextDecoder with the given encoding. I have found no evidence that
+ * the encoding argument ever matters...
+ *
+ * If a decoding error occurs, return 0 without setting error flag so we can
+ * replace with a UnicodeDecodeError
+ */
+// clang-format off
+EM_JS_REF(JsRef,
+JsBuffer_DecodeString_js,
+(JsRef jsbuffer_id, char* encoding),
 {
-  bool success = false;
-
-  PyObject* result = PyByteArray_FromStringAndSize(NULL, byteLength);
-  FAIL_IF_NULL(result);
-  char* data = PyByteArray_AsString(result);
-  FAIL_IF_MINUS_ONE(hiwire_assign_to_ptr(jsbuffer, data));
-  success = true;
-finally:
-  if (!success) {
-    Py_CLEAR(result);
-  }
-  return result;
-}
-
-EM_JS(JsRef, JsBuffer_DecodeString_js, (JsRef jsbuffer_id, char* encoding), {
   let buffer = Module.hiwire.get_value(jsbuffer_id);
   let encoding_js;
   if (encoding) {
     encoding_js = UTF8ToString(encoding);
   }
-  let res = new TextDecoder(encoding_js).decode(buffer);
+  let decoder = new TextDecoder(encoding_js, {fatal : true});
+  let res;
+  try {
+    res = decoder.decode(buffer);
+  } catch(e){
+    if(e instanceof TypeError) {
+      // Decoding error
+      return 0;
+    }
+    throw e;
+  }
   return Module.hiwire.new_value(res);
 })
+// clang-format on
 
+/**
+ * Decode the ArrayBuffer into a PyUnicode object.
+ */
 PyObject*
 JsBuffer_ToString(JsRef jsbuffer, char* encoding)
 {
@@ -1589,6 +1602,11 @@ JsBuffer_ToString(JsRef jsbuffer, char* encoding)
   PyObject* result = NULL;
 
   jsresult = JsBuffer_DecodeString_js(jsbuffer, encoding);
+  if (jsresult == NULL && !PyErr_Occurred()) {
+    PyErr_Format(PyExc_ValueError,
+                 "Failed to decode Javascript TypedArray as %s",
+                 encoding ? encoding : "utf8");
+  }
   FAIL_IF_NULL(jsresult);
   result = js2python(jsresult);
   FAIL_IF_NULL(result);
@@ -1607,7 +1625,7 @@ JsBuffer_tomemoryview(PyObject* buffer)
 }
 
 static PyMethodDef JsBuffer_tomemoryview_MethodDef = {
-  "tomemoryview",
+  "to_memoryview",
   (PyCFunction)JsBuffer_tomemoryview,
   METH_NOARGS,
 };
@@ -1620,21 +1638,8 @@ JsBuffer_tobytes(PyObject* buffer)
 }
 
 static PyMethodDef JsBuffer_tobytes_MethodDef = {
-  "tobytes",
+  "to_bytes",
   (PyCFunction)JsBuffer_tobytes,
-  METH_NOARGS,
-};
-
-static PyObject*
-JsBuffer_tobytearray(PyObject* buffer)
-{
-  JsProxy* self = (JsProxy*)buffer;
-  return JsBuffer_CopyIntoByteArray(self->js, self->byteLength);
-}
-
-static PyMethodDef JsBuffer_tobytearray_MethodDef = {
-  "tobytearray",
-  (PyCFunction)JsBuffer_tobytearray,
   METH_NOARGS,
 };
 
@@ -1645,7 +1650,7 @@ JsBuffer_tostring(PyObject* self,
                   PyObject* kwnames)
 {
   static const char* const _keywords[] = { "encoding", 0 };
-  static struct _PyArg_Parser _parser = { "|s:tostring", _keywords, 0 };
+  static struct _PyArg_Parser _parser = { "|s:to_string", _keywords, 0 };
   char* encoding = NULL;
   if (!_PyArg_ParseStackAndKeywords(
         args, nargs, kwnames, &_parser, &encoding)) {
@@ -1655,7 +1660,7 @@ JsBuffer_tostring(PyObject* self,
 }
 
 static PyMethodDef JsBuffer_tostring_MethodDef = {
-  "tostring",
+  "to_string",
   (PyCFunction)JsBuffer_tostring,
   METH_FASTCALL | METH_KEYWORDS,
 };
@@ -1792,7 +1797,6 @@ JsProxy_create_subtype(int flags)
     methods[cur_method++] = JsBuffer_assign_to_MethodDef;
     methods[cur_method++] = JsBuffer_tomemoryview_MethodDef;
     methods[cur_method++] = JsBuffer_tobytes_MethodDef;
-    methods[cur_method++] = JsBuffer_tobytearray_MethodDef;
     methods[cur_method++] = JsBuffer_tostring_MethodDef;
   }
   methods[cur_method++] = (PyMethodDef){ 0 };
@@ -2030,7 +2034,6 @@ JsProxy_init(PyObject* core_module)
   SET_DOCSTRING(JsBuffer_assign_to_MethodDef);
   SET_DOCSTRING(JsBuffer_tomemoryview_MethodDef);
   SET_DOCSTRING(JsBuffer_tobytes_MethodDef);
-  SET_DOCSTRING(JsBuffer_tobytearray_MethodDef);
   SET_DOCSTRING(JsBuffer_tostring_MethodDef);
 #undef SET_DOCSTRING
 

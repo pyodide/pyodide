@@ -222,7 +222,7 @@ EM_JS_NUM(int, hiwire_init, (), {
      * the flag checked to false in that case so we allow assignment to/from
      * anything.
      *
-     * This is the API for use from Javascript, there's also an EM_JS
+     * This is the API for use from JavaScript, there's also an EM_JS
      * hiwire_get_buffer_datatype wrapper for use from C. Used in js2python and
      * in jsproxy.c for buffers.
      */

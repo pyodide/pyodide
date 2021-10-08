@@ -12,22 +12,22 @@ __name__ = "pyodide"
 # From jsproxy.c
 class JsException(Exception):
     """
-    A wrapper around a Javascript Error to allow it to be thrown in Python.
+    A wrapper around a JavaScript Error to allow it to be thrown in Python.
     See :ref:`type-translations-errors`.
     """
 
     @property
     def js_error(self) -> "JsProxy":
-        """The original Javascript error"""
+        """The original JavaScript error"""
         return JsProxy()
 
 
 class ConversionError(Exception):
-    """An error thrown when conversion between Javascript and Python fails."""
+    """An error thrown when conversion between JavaScript and Python fails."""
 
 
 class JsProxy:
-    """A proxy to make a Javascript object behave like a Python object
+    """A proxy to make a JavaScript object behave like a Python object
 
     For more information see the :ref:`type-translations` documentation. In
     particular, see
@@ -36,16 +36,16 @@ class JsProxy:
     """
 
     def object_entries(self) -> "JsProxy":
-        "The Javascript API ``Object.entries(object)``"
+        "The JavaScript API ``Object.entries(object)``"
 
     def object_keys(self) -> "JsProxy":
-        "The Javascript API ``Object.keys(object)``"
+        "The JavaScript API ``Object.keys(object)``"
 
     def object_values(self) -> "JsProxy":
-        "The Javascript API ``Object.values(object)``"
+        "The JavaScript API ``Object.values(object)``"
 
     def new(self, *args, **kwargs) -> "JsProxy":
-        """Construct a new instance of the Javascript object"""
+        """Construct a new instance of the JavaScript object"""
 
     def to_py(self, *, depth: int = -1) -> Any:
         """Convert the :class:`JsProxy` to a native Python object as best as
@@ -61,7 +61,7 @@ class JsProxy:
         """The ``Promise.then`` API, wrapped to manage the lifetimes of the
         handlers.
 
-        Present only if the wrapped Javascript object has a "then" method.
+        Present only if the wrapped JavaScript object has a "then" method.
         Pyodide will automatically release the references to the handlers
         when the promise resolves.
         """
@@ -70,7 +70,7 @@ class JsProxy:
         """The ``Promise.catch`` API, wrapped to manage the lifetimes of the
         handler.
 
-        Present only if the wrapped Javascript object has a "then" method.
+        Present only if the wrapped JavaScript object has a "then" method.
         Pyodide will automatically release the references to the handler
         when the promise resolves.
         """
@@ -79,7 +79,7 @@ class JsProxy:
         """The ``Promise.finally`` API, wrapped to manage the lifetimes of
         the handler.
 
-        Present only if the wrapped Javascript object has a "then" method.
+        Present only if the wrapped JavaScript object has a "then" method.
         Pyodide will automatically release the references to the handler
         when the promise resolves. Note the trailing underscore in the name;
         this is needed because ``finally`` is a reserved keyword in Python.
@@ -93,16 +93,47 @@ class JsProxy:
     # Argument should be a buffer.
     # See https://github.com/python/typing/issues/593
     def assign(self, rhs: Any):
-        """Assign from a Python buffer into the Javascript buffer.
+        """Assign from a Python buffer into the JavaScript buffer.
 
-        Present only if the wrapped Javascript object is an ArrayBuffer or
+        Present only if the wrapped JavaScript object is an ArrayBuffer or
         an ArrayBuffer view.
         """
 
     # Argument should be a buffer.
     # See https://github.com/python/typing/issues/593
     def assign_to(self, to: Any):
-        """Assign to a Python buffer from the Javascript buffer.
+        """Assign to a Python buffer from the JavaScript buffer.
+
+        Present only if the wrapped JavaScript object is an ArrayBuffer or
+        an ArrayBuffer view.
+        """
+
+    def to_memoryview(self) -> memoryview:
+        """Convert the buffer to a memoryview.
+
+        Copies the data once. This currently has the same effect as :any:`to_py`.
+        Present only if the wrapped Javascript object is an ArrayBuffer or
+        an ArrayBuffer view.
+        """
+
+    def to_bytes(self) -> bytes:
+        """Convert the buffer to a bytes object.
+
+        Copies the data once.
+        Present only if the wrapped Javascript object is an ArrayBuffer or
+        an ArrayBuffer view.
+        """
+
+    def to_string(self, encoding=None) -> str:
+        """Convert the buffer to a string object.
+
+        Copies the data twice.
+
+        The encoding argument will be passed to the Javascript
+        [``TextDecoder``](https://developer.mozilla.org/en-US/docs/Web/API/TextDecoder)
+        constructor. It should be one of the encodings listed in the table here:
+        `https://encoding.spec.whatwg.org/#names-and-labels`. The default
+        encoding is utf8.
 
         Present only if the wrapped Javascript object is an ArrayBuffer or
         an ArrayBuffer view.
@@ -143,10 +174,10 @@ class JsProxy:
 
 
 def create_once_callable(obj: Callable) -> JsProxy:
-    """Wrap a Python callable in a Javascript function that can be called once.
+    """Wrap a Python callable in a JavaScript function that can be called once.
 
     After being called the proxy will decrement the reference count
-    of the Callable. The Javascript function also has a ``destroy`` API that
+    of the Callable. The JavaScript function also has a ``destroy`` API that
     can be used to release the proxy without calling it.
     """
     return obj  # type: ignore
@@ -172,11 +203,11 @@ def to_js(
     create_pyproxies: bool = True,
     dict_converter: Callable[[Iterable[JsProxy]], JsProxy] = None,
 ) -> JsProxy:
-    """Convert the object to Javascript.
+    """Convert the object to JavaScript.
 
     This is similar to :any:`PyProxy.toJs`, but for use from Python. If the
-    object would be implicitly translated to Javascript, it will be returned
-    unchanged. If the object cannot be converted into Javascript, this
+    object would be implicitly translated to JavaScript, it will be returned
+    unchanged. If the object cannot be converted into JavaScript, this
     method will return a :any:`JsProxy` of a :any:`PyProxy`, as if you had
     used :any:`pyodide.create_proxy`.
 
@@ -192,23 +223,23 @@ def to_js(
         as infinite. Set this to 1 to do a shallow conversion.
 
     pyproxies: JsProxy, default = None
-        Should be a Javascript ``Array``. If provided, any ``PyProxies`` generated
+        Should be a JavaScript ``Array``. If provided, any ``PyProxies`` generated
         will be stored here. You can later use :any:`destroy_proxies` if you want
-        to destroy the proxies from Python (or from Javascript you can just iterate
+        to destroy the proxies from Python (or from JavaScript you can just iterate
         over the ``Array`` and destroy the proxies).
 
     create_pyproxies: bool, default=True
         If you set this to False, :any:`to_js` will raise an error
 
     dict_converter: Callable[[Iterable[JsProxy]], JsProxy], defauilt = None
-        This converter if provided recieves a (Javascript) iterable of
-        (Javascript) pairs [key, value]. It is expected to return the
+        This converter if provided recieves a (JavaScript) iterable of
+        (JavaScript) pairs [key, value]. It is expected to return the
         desired result of the dict conversion. Some suggested values for
         this argument:
 
             js.Map.new -- similar to the default behavior
             js.Array.from -- convert to an array of entries
-            js.Object.fromEntries -- convert to a Javascript object
+            js.Object.fromEntries -- convert to a JavaScript object
     """
     return obj
 
@@ -218,7 +249,7 @@ class Promise(JsProxy):
 
 
 def destroy_proxies(pyproxies: JsProxy):
-    """Destroy all PyProxies in a Javascript array.
+    """Destroy all PyProxies in a JavaScript array.
 
     pyproxies must be a JsProxy of type PyProxy[]. Intended for use with the
     arrays created from the "pyproxies" argument of :any:`PyProxy.toJs` and

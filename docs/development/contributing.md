@@ -97,7 +97,7 @@ and try to make your tests match. If you are having trouble, we can help you get
 started on our test-writing journey.
 
 All code submissions should pass `make lint`. Python is checked with the
-default settings of `flake8`. C and Javascript are checked against the Mozilla
+default settings of `flake8`. C and JavaScript are checked against the Mozilla
 style in `clang-format`.
 
 ### Contributing to the “core” C Code

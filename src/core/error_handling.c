@@ -26,9 +26,9 @@ EM_JS_NUM(errcode, console_error_obj, (JsRef obj), {
 });
 
 /**
- * Set Python error indicator from Javascript.
+ * Set Python error indicator from JavaScript.
  *
- * In Javascript, we can't access the type without relying on the ABI of
+ * In JavaScript, we can't access the type without relying on the ABI of
  * PyObject. Py_TYPE is part of the Python restricted API which means that there
  * are fairly strong guarantees about the ABI stability, but even so writing
  * HEAP32[err/4 + 1] is a bit opaque.
@@ -94,15 +94,15 @@ store_sys_last_exception(PyObject* type, PyObject* value, PyObject* traceback)
  * the argument value. Used for reentrant errors.
  * Returns true if it restored the error indicator, false otherwise.
  *
- * If we throw a Javascript PythonError and it bubbles out to the enclosing
- * Python scope (i.e., doesn't get caught in Javascript) then we want to restore
+ * If we throw a JavaScript PythonError and it bubbles out to the enclosing
+ * Python scope (i.e., doesn't get caught in JavaScript) then we want to restore
  * the original Python exception. This produces much better stack traces in case
  * of reentrant calls and prevents issues like a KeyboardInterrupt being wrapped
  * into a PythonError being wrapped into a JsException and being caught.
  *
- * We don't do the same thing for Javascript messages that pass through Python
- * because the Python exceptions have good Javascript stack traces but
- * Javascript errors have no Python stack info. Also, Javascript has much weaker
+ * We don't do the same thing for JavaScript messages that pass through Python
+ * because the Python exceptions have good JavaScript stack traces but
+ * JavaScript errors have no Python stack info. Also, JavaScript has much weaker
  * support for catching errors by type.
  */
 bool
@@ -158,7 +158,7 @@ finally:
 }
 
 /**
- * Wrap the exception in a Javascript PythonError object.
+ * Wrap the exception in a JavaScript PythonError object.
  *
  * The return value of this function is always a valid hiwire ID to an error
  * object. It never returns NULL.
@@ -246,7 +246,7 @@ EM_JS_NUM(errcode, error_handling_init_js, (), {
       restored_error = _restore_sys_last_exception(e.__error_address);
     }
     if (!restored_error) {
-      // Wrap the Javascript error
+      // Wrap the JavaScript error
       let eidx = Module.hiwire.new_value(e);
       let err = _JsProxy_create(eidx);
       _set_error(err);

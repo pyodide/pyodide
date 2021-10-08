@@ -12,13 +12,13 @@
 #include "jsmemops.h"
 
 // This file handles the conversion of Python buffer objects (which loosely
-// represent Numpy arrays) to Javascript.
-// Converts everything to nested Javascript arrays, where the scalars are
-// standard Javascript numbers (python2js_buffer_recursive)
+// represent Numpy arrays) to JavaScript.
+// Converts everything to nested JavaScript arrays, where the scalars are
+// standard JavaScript numbers (python2js_buffer_recursive)
 
 // clang-format off
 /**
- * A simple helper function that puts the arguments into a Javascript object
+ * A simple helper function that puts the arguments into a JavaScript object
  * (for readability) and looks up the conversion function, then calls into
  * python2js_buffer_recursive.
  */

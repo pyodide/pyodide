@@ -38,9 +38,9 @@ main();
 
 Python code is run using the {any}`pyodide.runPython` function. It takes as
 input a string of Python code. If the code ends in an expression, it returns the
-result of the expression, translated to Javascript objects (see
+result of the expression, translated to JavaScript objects (see
 {ref}`type-translations`). For example the following code will return the
-version string as a Javascript string:
+version string as a JavaScript string:
 
 ```pyodide
 pyodide.runPython(`
@@ -136,13 +136,13 @@ Create and save a test `index.html` page with the following contents:
 </html>
 ```
 
-## Accessing Python scope from Javascript
+## Accessing Python scope from JavaScript
 
-You can also access from Javascript all functions and variables defined in
+You can also access from JavaScript all functions and variables defined in
 Python by using the {any}`pyodide.globals` object.
 
 For example, if you run the code `x = numpy.ones([3,3])` in Python, you can
-access the variable `x` from Javascript in your browser's developer console
+access the variable `x` from JavaScript in your browser's developer console
 as `pyodide.globals.get("x")`. The same goes
 for functions and imports. See {ref}`type-translations` for more details.
 
@@ -162,8 +162,8 @@ x = pyodide.globals.get('numpy').ones(new Int32Array([3, 4])).toJs();
 ```
 
 Since you have full access to Python global scope, you can also re-assign new
-values or even Javascript functions to variables, and create new ones from
-Javascript:
+values or even JavaScript functions to variables, and create new ones from
+JavaScript:
 
 ```pyodide
 // re-assign a new value to an existing variable
@@ -182,9 +182,9 @@ pyodide.runPython("square(3)");
 
 Feel free to play around with the code using the browser console and the above example.
 
-## Accessing Javascript scope from Python
+## Accessing JavaScript scope from Python
 
-The Javascript scope can be accessed from Python using the `js` module (see
+The JavaScript scope can be accessed from Python using the `js` module (see
 {ref}`type-translations_using-js-obj-from-py`). This module represents the
 global object `window` that allows us to directly manipulate the DOM and access
 global variables and functions from Python.

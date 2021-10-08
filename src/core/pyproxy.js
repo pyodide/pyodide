@@ -7,7 +7,7 @@
  * runPythonSimple which is defined in main.c
  *
  * Any time we call into wasm, the call should be wrapped in a try catch block.
- * This way if a Javascript error emerges from the wasm, we can escalate it to a
+ * This way if a JavaScript error emerges from the wasm, we can escalate it to a
  * fatal error.
  *
  * This is file is preprocessed with -imacros "pyproxy.c". As a result of this,
@@ -31,7 +31,6 @@ Module.isPyProxy = isPyProxy;
 
 if (globalThis.FinalizationRegistry) {
   Module.finalizationRegistry = new FinalizationRegistry(([ptr, cache]) => {
-    pyproxy_decref_cache(cache);
     try {
       Module._Py_DecRef(ptr);
     } catch (e) {
@@ -216,7 +215,7 @@ Module.pyproxy_destroy = function (proxy, destroyed_msg) {
   }
   let ptrobj = _getPtr(proxy);
   Module.finalizationRegistry.unregister(proxy);
-  // Maybe the destructor will call Javascript code that will somehow try
+  // Maybe the destructor will call JavaScript code that will somehow try
   // to use this proxy. Mark it deleted before decrementing reference count
   // just in case!
   proxy.$$.ptr = null;
@@ -231,7 +230,7 @@ Module.pyproxy_destroy = function (proxy, destroyed_msg) {
 };
 
 // Now a lot of boilerplate to wrap the abstract Object protocol wrappers
-// defined in pyproxy.c in Javascript functions.
+// defined in pyproxy.c in JavaScript functions.
 
 Module.callPyObjectKwargs = function (ptrobj, ...jsargs) {
   // We don't do any checking for kwargs, checks are in PyProxy.callKwargs
@@ -345,7 +344,7 @@ class PyProxyClass {
     return Module.pyproxy_new(ptrobj, this.$$.cache);
   }
   /**
-   * Converts the ``PyProxy`` into a Javascript object as best as possible. By
+   * Converts the ``PyProxy`` into a JavaScript object as best as possible. By
    * default does a deep conversion, if a shallow conversion is desired, you can
    * use ``proxy.toJs({depth : 1})``. See :ref:`Explicit Conversion of PyProxy
    * <type-translations-pyproxy-to-js>` for more info.
@@ -366,7 +365,7 @@ class PyProxyClass {
    * desired output. For instance, ``Object.fromEntries`` would convert the dict
    * to an object, ``Array.from`` converts it to an array of entries, and ``(it) =>
    * new Map(it)`` converts it to a ``Map`` (which is the default behavior).
-   * @return {any} The Javascript object resulting from the conversion.
+   * @return {any} The JavaScript object resulting from the conversion.
    */
   toJs({
     depth = -1,
@@ -637,8 +636,6 @@ class PyProxyContainsMethods {
   }
 }
 
-class TempError extends Error {}
-
 /**
  * A helper for [Symbol.iterator].
  *
@@ -657,25 +654,18 @@ class TempError extends Error {}
  */
 function* iter_helper(iterptr, token) {
   try {
-    if (iterptr === 0) {
-      throw new TempError();
-    }
     let item;
     while ((item = Module.__pyproxy_iter_next(iterptr))) {
       yield Module.hiwire.pop_value(item);
     }
-    if (Module._PyErr_Occurred()) {
-      throw new TempError();
-    }
   } catch (e) {
-    if (e instanceof TempError) {
-      Module._pythonexc2js();
-    } else {
-      Module.fatal_error(e);
-    }
+    Module.fatal_error(e);
   } finally {
     Module.finalizationRegistry.unregister(token);
     Module._Py_DecRef(iterptr);
+  }
+  if (Module._PyErr_Occurred()) {
+    Module._pythonexc2js();
   }
 }
 
@@ -708,6 +698,9 @@ class PyProxyIterableMethods {
       iterptr = Module._PyObject_GetIter(ptrobj);
     } catch (e) {
       Module.fatal_error(e);
+    }
+    if (iterptr === 0) {
+      Module._pythonexc2js();
     }
 
     let result = iter_helper(iterptr, token);
@@ -873,7 +866,7 @@ let PyProxyHandlers = {
   },
   get(jsobj, jskey) {
     // Preference order:
-    // 1. stuff from Javascript
+    // 1. stuff from JavaScript
     // 2. the result of Python getattr
 
     // python_getattr will crash if given a Symbol.
@@ -919,7 +912,7 @@ let PyProxyHandlers = {
     }
     python_delattr(jsobj, jskey);
     // Must return "false" if "jskey" is a nonconfigurable own property.
-    // Otherwise Javascript will throw a TypeError.
+    // Otherwise JavaScript will throw a TypeError.
     return !descr || descr.configurable;
   },
   ownKeys(jsobj) {
@@ -947,7 +940,7 @@ let PyProxyHandlers = {
  */
 
 /**
- * The Promise / javascript awaitable API.
+ * The Promise / JavaScript awaitable API.
  * @private
  */
 class PyProxyAwaitableMethods {
@@ -1107,14 +1100,14 @@ let type_to_array_map = new Map([
  */
 class PyProxyBufferMethods {
   /**
-   * Get a view of the buffer data which is usable from Javascript. No copy is
+   * Get a view of the buffer data which is usable from JavaScript. No copy is
    * ever performed.
    *
    * Present only if the proxied Python object supports the `Python Buffer
    * Protocol <https://docs.python.org/3/c-api/buffer.html>`_.
    *
    * We do not support suboffsets, if the buffer requires suboffsets we will
-   * throw an error. Javascript nd array libraries can't handle suboffsets
+   * throw an error. JavaScript nd array libraries can't handle suboffsets
    * anyways. In this case, you should use the :any:`toJs` api or copy the
    * buffer to one that doesn't use suboffets (using e.g.,
    * `numpy.ascontiguousarray
@@ -1260,7 +1253,7 @@ class PyProxyBufferMethods {
  */
 
 /**
- * A class to allow access to a Python data buffers from Javascript. These are
+ * A class to allow access to a Python data buffers from JavaScript. These are
  * produced by :any:`PyProxy.getBuffer` and cannot be constructed directly.
  * When you are done, release it with the :any:`release <PyBuffer.release>`
  * method.  See
