@@ -139,36 +139,6 @@ class JsProxy:
         an ArrayBuffer view.
         """
 
-    def tomemoryview(self) -> memoryview:
-        """Convert the buffer to a memoryview.
-
-        Copies the data once. This currently has the same effect as :any:`to_py`.
-        """
-
-    def tobytes(self) -> bytes:
-        """Convert the buffer to a bytes object.
-
-        Copies the data once.
-        """
-
-    def tobytearray(self) -> bytearray:
-        """Convert the buffer to a bytearray object.
-
-        Copies the data once.
-        """
-
-    def tostring(self, encoding=None) -> str:
-        """Convert the buffer to a string object.
-
-        Copies the data twice.
-
-        The encoding argument will be passed to the Javascript
-        [``TextDecoder``](https://developer.mozilla.org/en-US/docs/Web/API/TextDecoder)
-        constructor. It should be one of the encodings listed in the table here:
-        `https://encoding.spec.whatwg.org/#names-and-labels`. The default
-        encoding is utf8.
-        """
-
 
 # from pyproxy.c
 
