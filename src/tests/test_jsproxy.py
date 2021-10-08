@@ -1056,7 +1056,7 @@ def test_tostring_encoding(selenium):
         self.bytes = new Uint8Array([207, 240, 232, 226, 229, 242, 44, 32, 236, 232, 240, 33]);
         pyodide.runPython(`
             from js import bytes
-            bytes.to_string('windows-1251')
+            assert bytes.to_string('windows-1251') == "Привет, мир!"
         `);
         """
     )
