@@ -1031,6 +1031,68 @@ def test_buffer_assign_back(selenium):
     assert result == [1, 20, 3, 77, 5, 9]
 
 
+def test_buffer_conversions(selenium):
+    selenium.run_js(
+        f"""
+        self.s = "abcဴ";
+        self.jsbytes = new TextEncoder().encode(s);
+        pyodide.runPython(`
+            from js import s, jsbytes
+            memoryview_conversion = jsbytes.to_memoryview()
+            bytes_conversion = jsbytes.to_bytes()
+
+            assert bytes_conversion.decode() == s
+            assert bytes(memoryview_conversion) == bytes_conversion
+            del jsbytes
+        `);
+        """
+    )
+
+
+def test_tostring_encoding(selenium):
+    selenium.run_js(
+        """
+        // windows-1251 encoded "Привет, мир!" which is Russian for "Hello, world!"
+        self.bytes = new Uint8Array([207, 240, 232, 226, 229, 242, 44, 32, 236, 232, 240, 33]);
+        pyodide.runPython(`
+            from js import bytes
+            assert bytes.to_string('windows-1251') == "Привет, мир!"
+        `);
+        """
+    )
+
+
+def test_tostring_error(selenium):
+    selenium.run_js(
+        """
+        // windows-1251 encoded "Привет, мир!" which is Russian for "Hello, world!"
+        self.bytes = new Uint8Array([207, 240, 232, 226, 229, 242, 44, 32, 236, 232, 240, 33]);
+        pyodide.runPython(`
+            from js import bytes
+            from unittest import TestCase
+            raises = TestCase().assertRaises
+            with raises(ValueError):
+                bytes.to_string()
+        `);
+        """
+    )
+
+
+def test_duck_buffer_method_presence(selenium):
+    selenium.run_js(
+        """
+        self.bytes = new Uint8Array([207, 240, 232, 226, 229, 242, 44, 32, 236, 232, 240, 33]);
+        self.other = {};
+        pyodide.runPython(`
+            from js import bytes, other
+            buffer_methods = {"assign", "assign_to", "to_string", "to_memoryview", "to_bytes"}
+            assert buffer_methods < set(dir(bytes))
+            assert not set(dir(other)).intersection(buffer_methods)
+        `);
+        """
+    )
+
+
 def test_memory_leaks(selenium):
     # refcounts are tested automatically in conftest by default
     selenium.run_js(

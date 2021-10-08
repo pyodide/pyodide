@@ -772,12 +772,14 @@ EM_JS_NUM(errcode, hiwire_assign_from_ptr, (JsRef idobj, void* ptr), {
 // clang-format off
 EM_JS_NUM(
 errcode,
-hiwire_get_buffer_datatype,
-(JsRef idobj, char** format_ptr, Py_ssize_t* size_ptr, bool* checked_ptr),
+hiwire_get_buffer_info,
+(JsRef idobj, Py_ssize_t* byteLength_ptr, char** format_ptr, Py_ssize_t* size_ptr, bool* checked_ptr),
 {
   let jsobj = Module.hiwire.get_value(idobj);
+  let byteLength = jsobj.byteLength;
   let [format_utf8, size, checked] = Module.get_buffer_datatype(jsobj);
   // Store results into arguments
+  DEREF_U32(byteLength_ptr, 0) = byteLength;
   DEREF_U32(format_ptr, 0) = format_utf8;
   DEREF_U32(size_ptr, 0) = size;
   DEREF_U8(checked_ptr, 0) = checked;
