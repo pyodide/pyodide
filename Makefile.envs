@@ -29,10 +29,9 @@ export PYODIDE=1
 # This is the legacy environment variable used for the aforementioned purpose
 export PYODIDE_PACKAGE_ABI=1
 
-export OPTFLAGS=-Os
+export OPTFLAGS=-Os -g0
 export CFLAGS_BASE=\
 	$(OPTFLAGS) \
-	-g \
 	-fPIC \
 	$(EXTRA_CFLAGS)
 
@@ -49,7 +48,7 @@ export LDFLAGS_BASE=\
 	-L $(CPYTHONROOT)/installs/python-$(PYVERSION)/lib/ \
 	$(EXTRA_LDFLAGS)
 
-export CXXFLAGS_BASE=
+export CXXFLAGS_BASE= $(OPTFLAGS)
 
 export SIDE_MODULE_LDFLAGS=	$(LDFLAGS_BASE) -s SIDE_MODULE=1
 export MAIN_MODULE_LDFLAGS= $(LDFLAGS_BASE) -s MAIN_MODULE=1 \
