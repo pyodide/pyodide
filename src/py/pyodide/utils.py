@@ -1,5 +1,7 @@
 from io import StringIO
 from ._core import JsProxy, to_js
+from typing import Any
+import json
 
 try:
     from js import XMLHttpRequest
@@ -14,7 +16,7 @@ if IN_BROWSER:
 
 def open_url(url: str) -> StringIO:
     """Fetches a given URL synchronously.
-    
+
     The download of binary files is not supported. To download binary
      files use :func:`pyodide.utils.fetch` which is asynchronous.
 
@@ -56,7 +58,7 @@ class FetchResponse:
     @property
     def body_used(self) -> bool:
         """Has the response been used yet?
-        
+
         (If so, attempting to retreive the body again will raise an OSError.)
         """
         return self.js_response.bodyUsed
@@ -122,10 +124,14 @@ class FetchResponse:
         self._raise_if_failed()
         return await self.js_response.text()
 
-    async def json(self) -> JsProxy:
-        """Return the response body as a Javascript JSON object"""
+    async def json(self, **kwargs) -> Any:
+        """Return the response body as a Javascript JSON object.
+
+        Any keyword arguments are passed to `json.loads
+        <https://docs.python.org/3.8/library/json.html#json.loads>`_.
+        """
         self._raise_if_failed()
-        return await self.js_response.json()
+        return json.loads(await self.string(), **kwargs)
 
     async def memoryview(self) -> memoryview:
         """Return the response body as a memoryview object"""
@@ -140,20 +146,17 @@ class FetchResponse:
 
 async def fetch(url, **kwargs) -> FetchResponse:
     """Fetch the url and return the response.
-    
-    This functions provides a similar API to the JavaScript `fetch
-    function <https://developer.mozilla.org/en-US/docs/Web/API/fetch>`_ 
-    however it is designed to be convenient to use from Python. The
+
+    This functions provides a similar API to the JavaScript `fetch function
+    <https://developer.mozilla.org/en-US/docs/Web/API/fetch>`_ however it is
+    designed to be convenient to use from Python. The
     :class:`pyodide.utils.FetchResponse` has methods with the output types
-    already converted to Python objects. 
-    
+    already converted to Python objects.
+
     Parameters
     ----------
-    url
-        URL to fetch.
-    **kwargs
-        Any keyword arguments are passed along as `optional parameters to
-        the fetch API
+    url URL to fetch. **kwargs Any keyword arguments are passed along as
+        `optional parameters to the fetch API
         <https://developer.mozilla.org/en-US/docs/Web/API/fetch#parameters>`_.
     """
     return FetchResponse(
