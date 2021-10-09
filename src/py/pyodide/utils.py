@@ -127,12 +127,12 @@ class FetchResponse:
         return (await self.buffer()).to_bytes()
 
 
-def fetch(url, **kwargs) -> FetchResponse:
+async def fetch(url, **kwargs) -> FetchResponse:
     """Fetch the url and return the Javascript response.
 
     Any keyword arguments are passed along as [optional paremeters to the fetch
     API](https://developer.mozilla.org/en-US/docs/Web/API/fetch#parameters).
     """
     return FetchResponse(
-        url, _jsfetch(url, to_js(kwargs, dict_converter=Object.fromEntries))
+        url, await _jsfetch(url, to_js(kwargs, dict_converter=Object.fromEntries))
     )
