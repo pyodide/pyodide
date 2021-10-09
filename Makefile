@@ -176,6 +176,7 @@ benchmark: all
 clean:
 	rm -fr build/*
 	rm -fr src/*/*.o
+	rm -fr src/js/*.gen.js
 	rm -fr node_modules
 	make -C packages clean
 	echo "The Emsdk, CPython are not cleaned. cd into those directories to do so."
