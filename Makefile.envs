@@ -29,9 +29,10 @@ export PYODIDE=1
 # This is the legacy environment variable used for the aforementioned purpose
 export PYODIDE_PACKAGE_ABI=1
 
-export OPTFLAGS=-Os -g0
+export OPTFLAGS=-Oz
 export CFLAGS_BASE=\
 	$(OPTFLAGS) \
+	-g \
 	-fPIC \
 	$(EXTRA_CFLAGS)
 
