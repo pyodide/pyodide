@@ -30,7 +30,7 @@ import micropip  # noqa
 # We hacked it so that autodoc will look for submodules, but only if we import
 # them here. TODO: look these up in the source directory?
 import pyodide.console
-import pyodide.utils
+import pyodide.http
 import pyodide.webloop
 
 # The full version, including alpha/beta/rc tags.
