@@ -13,8 +13,10 @@ if IN_BROWSER:
 
 
 def open_url(url: str) -> StringIO:
-    """
-    Fetches a given URL
+    """Fetches a given URL synchronously.
+    
+    The download of binary files is not supported. To download binary
+     files use :func:`pyodide.utils.fetch` which is asynchronous.
 
     Parameters
     ----------
@@ -39,6 +41,12 @@ class FetchResponse:
     See also the Javascript fetch
     [Response](https://developer.mozilla.org/en-US/docs/Web/API/Response) api
     docs.
+    Parameters
+    ----------
+    url
+        URL to fetch
+    js_response
+        A JsProxy of the fetch response
     """
 
     def __init__(self, url: str, js_response: JsProxy):
@@ -47,7 +55,10 @@ class FetchResponse:
 
     @property
     def body_used(self) -> bool:
-        """Has the response been used yet? (If so, attempting to retreive the body again will raise an OSError.)"""
+        """Has the response been used yet?
+        
+        (If so, attempting to retreive the body again will raise an OSError.)
+        """
         return self.js_response.bodyUsed
 
     @property
@@ -116,22 +127,34 @@ class FetchResponse:
         self._raise_if_failed()
         return await self.js_response.json()
 
-    async def memoryview(self):
+    async def memoryview(self) -> memoryview:
         """Return the response body as a memoryview object"""
         self._raise_if_failed()
         return (await self.buffer()).to_memoryview()
 
-    async def bytes(self):
+    async def bytes(self) -> bytes:
         """Return the response body as a bytes object"""
         self._raise_if_failed()
         return (await self.buffer()).to_bytes()
 
 
 async def fetch(url, **kwargs) -> FetchResponse:
-    """Fetch the url and return the Javascript response.
-
-    Any keyword arguments are passed along as [optional paremeters to the fetch
-    API](https://developer.mozilla.org/en-US/docs/Web/API/fetch#parameters).
+    """Fetch the url and return the response.
+    
+    This functions provides a similar API to the JavaScript `fetch
+    function <https://developer.mozilla.org/en-US/docs/Web/API/fetch>`_ 
+    however it is designed to be convenient to use from Python. The
+    :class:`pyodide.utils.FetchResponse` has methods with the output types
+    already converted to Python objects. 
+    
+    Parameters
+    ----------
+    url
+        URL to fetch.
+    **kwargs
+        Any keyword arguments are passed along as `optional parameters to
+        the fetch API
+        <https://developer.mozilla.org/en-US/docs/Web/API/fetch#parameters>`_.
     """
     return FetchResponse(
         url, await _jsfetch(url, to_js(kwargs, dict_converter=Object.fromEntries))
