@@ -144,7 +144,7 @@ class FetchResponse:
         return (await self.buffer()).to_bytes()
 
 
-async def fetch(url, **kwargs) -> FetchResponse:
+async def pyfetch(url, **kwargs) -> FetchResponse:
     """Fetch the url and return the response.
 
     This functions provides a similar API to the JavaScript `fetch function

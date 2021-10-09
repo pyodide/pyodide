@@ -44,13 +44,13 @@ else:
 
 
 if IN_BROWSER:
-    from pyodide.utils import fetch
+    from pyodide.http import pyfetch
 
     async def fetch_bytes(url: str, **kwargs) -> bytes:
-        return (await fetch(url, **kwargs)).bytes()
+        return await (await pyfetch(url, **kwargs)).bytes()
 
     async def fetch_string(url: str, **kwargs) -> str:
-        return (await fetch(url, **kwargs)).string()
+        return await (await pyfetch(url, **kwargs)).string()
 
 
 else:
