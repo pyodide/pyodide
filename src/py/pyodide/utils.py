@@ -41,7 +41,7 @@ class FetchResponse:
     """A wrapper for a Javascript fetch response.
 
     See also the Javascript fetch
-    [Response](https://developer.mozilla.org/en-US/docs/Web/API/Response) api
+    `Response <https://developer.mozilla.org/en-US/docs/Web/API/Response>`_ api
     docs.
     Parameters
     ----------
@@ -85,12 +85,12 @@ class FetchResponse:
 
     @property
     def type(self) -> str:
-        """The [type](https://developer.mozilla.org/en-US/docs/Web/API/Response/type) of the response."""
+        """The `type <https://developer.mozilla.org/en-US/docs/Web/API/Response/type>` of the response."""
         return self.js_response.type
 
     @property
     def url(self) -> str:
-        """The [url](https://developer.mozilla.org/en-US/docs/Web/API/Response/url) of the response.
+        """The `url <https://developer.mozilla.org/en-US/docs/Web/API/Response/url>` of the response.
 
         It may be different than the url passed to fetch.
         """
@@ -108,7 +108,7 @@ class FetchResponse:
         """Return an identical copy of the FetchResponse.
 
         This method exists to allow multiple uses of response objects. See
-        [Response.clone](https://developer.mozilla.org/en-US/docs/Web/API/Response/clone).
+        `Response.clone <https://developer.mozilla.org/en-US/docs/Web/API/Response/clone>`_
         """
         if self.js_response.bodyUsed:
             raise OSError("Response body is already used")
