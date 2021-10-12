@@ -43,6 +43,7 @@ class FetchResponse:
     See also the Javascript fetch
     `Response <https://developer.mozilla.org/en-US/docs/Web/API/Response>`_ api
     docs.
+    
     Parameters
     ----------
     url
@@ -85,12 +86,12 @@ class FetchResponse:
 
     @property
     def type(self) -> str:
-        """The `type <https://developer.mozilla.org/en-US/docs/Web/API/Response/type>` of the response."""
+        """The `type <https://developer.mozilla.org/en-US/docs/Web/API/Response/type>`_ of the response."""
         return self.js_response.type
 
     @property
     def url(self) -> str:
-        """The `url <https://developer.mozilla.org/en-US/docs/Web/API/Response/url>` of the response.
+        """The `url <https://developer.mozilla.org/en-US/docs/Web/API/Response/url>`_ of the response.
 
         It may be different than the url passed to fetch.
         """
