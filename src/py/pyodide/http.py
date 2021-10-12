@@ -43,7 +43,7 @@ class FetchResponse:
     See also the Javascript fetch
     `Response <https://developer.mozilla.org/en-US/docs/Web/API/Response>`_ api
     docs.
-    
+
     Parameters
     ----------
     url
