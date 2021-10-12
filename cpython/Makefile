@@ -135,7 +135,7 @@ $(BUILD)/Makefile: $(BUILD)/.patched $(ZLIBBUILD)/.configured $(INSTALL)/lib/lib
 		cd $(BUILD); \
 		CONFIG_SITE=./config.site READELF=true emconfigure \
 		  ./configure \
-			  CFLAGS="$(PYTHON_CFLAGS)" \
+			  CFLAGS="${PYTHON_CFLAGS}" \
 			  CPPFLAGS="-I$(SQLITEBUILD) -I$(BZIP2BUILD) -I$(ZLIBBUILD)" \
 			  --without-pymalloc \
 			  --disable-shared \
