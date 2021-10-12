@@ -84,6 +84,10 @@ substitutions:
   pandas, scipy).
   {pr}`1832`
 
+- {{ Fix }} The built-in pwd module of Python, which provides Unix specific
+  feature, is now unvendored.
+  {pr}`1883`
+
 ### Uncategorized
 
 - {{ Enhancement }} `PyErr_CheckSignals` now works with the keyboard interrupt
