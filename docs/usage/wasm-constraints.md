@@ -32,6 +32,7 @@ since they currently wouldn't work in the WebAssembly VM,
 - turtle.py
 - turtledemo
 - venv
+- pwd
 
 ### Included but not working modules
 
