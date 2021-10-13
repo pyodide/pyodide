@@ -129,21 +129,35 @@ Some Python packages depend on certain C libraries, e.g. `lxml` depends on
 `libxml`.
 
 To package a C library, create a directory in `packages/` for the C library.
-In the directory, you should write `meta.yaml` manually
+In the directory, you should write `meta.yaml`
 that specifies metadata about the library.
+See {ref}`meta-yaml-spec` for more details.
 
-The `meta.yaml` should contain:
+The minimal example of `meta.yaml` for a C library is:
 
-- `package/name`: The name of the library, which must equal the directory name.
-- `package/version`: The version of the library.
-- `source/url`: The URL to download the library source code archive.
-- `source/sha256`: The SHA256 checksum of the source code archive.
-- `requirements/run`: The dependencies of the library, which can include both
-  C libraries and Python packages.
-- `build/library`: This must be set to `true` to indicate that this is a
-  library and not an ordinary package.
-- `build/script`: Commands to build the library
-  (See `libxml` for an example).
+```yaml
+package:
+  name: <name>
+  version: <version>
+
+source:
+  url: <url>
+  sha265: <sha256>
+
+requirements:
+  run:
+   - <requirement>
+  
+build:
+  library: true
+  script: |
+      emconfigure ./configure
+      emmake make -j ${PYODIDE_JOBS:-3}
+```
+
+You can use the `meta.yaml` of other C libraries such as
+[libxml](https://github.com/pyodide/pyodide/blob/main/packages/libxml/meta.yaml)
+as a starting point.
 
 After packaging a C library, it can be added as a dependency of a Python
 package like a normal dependency. See `lxml` and `libxml` for an example (and
