@@ -31,6 +31,8 @@ Module.isPyProxy = isPyProxy;
 
 if (globalThis.FinalizationRegistry) {
   Module.finalizationRegistry = new FinalizationRegistry(([ptr, cache]) => {
+    cache.leaked = true;
+    pyproxy_decref_cache(cache);
     try {
       Module._Py_DecRef(ptr);
     } catch (e) {
@@ -201,10 +203,10 @@ function pyproxy_decref_cache(cache) {
   if (cache.refcnt === 0) {
     let cache_map = Module.hiwire.pop_value(cache.cacheId);
     for (let proxy_id of cache_map.values()) {
-      Module.pyproxy_destroy(
-        Module.hiwire.pop_value(proxy_id),
-        pyproxy_cache_destroyed_msg
-      );
+      const cache_entry = Module.hiwire.pop_value(proxy_id);
+      if (!cache.leaked) {
+        Module.pyproxy_destroy(cache_entry, pyproxy_cache_destroyed_msg);
+      }
     }
   }
 }

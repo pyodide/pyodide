@@ -657,6 +657,7 @@ def test_pyproxy_gc_destroy(selenium):
         """
     )
     selenium.collect_garbage()
+    selenium.collect_garbage()
     selenium.run(
         """
         get_ref_count(4)
