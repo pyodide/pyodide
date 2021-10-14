@@ -142,9 +142,6 @@ def test_extract_summary():
 
 
 def test_summary():
-    from pprint import pprint
-
-    pprint(dummy_app._sphinxjs_analyzer.js_docs["globalThis"])
     globals = jsdoc_summary.get_summary_table(
         "globalThis", dummy_app._sphinxjs_analyzer.js_docs["globalThis"]["function"]
     )
@@ -155,7 +152,6 @@ def test_summary():
         "pyodide", dummy_app._sphinxjs_analyzer.js_docs["pyodide"]["function"]
     )
     globals = {t[1]: t for t in globals}
-    print(globals)
     attributes = {t[1]: t for t in attributes}
     functions = {t[1]: t for t in functions}
     assert globals["loadPyodide"] == (
