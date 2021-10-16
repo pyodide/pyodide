@@ -11,9 +11,9 @@ Module.preloadedWasm = {};
 
 /**
  *
- * @param {undefined|(() => string)} stdin
- * @param {undefined|((text: string) => void)} stdout
- * @param {undefined|((text: string) => void)} stderr
+ * @param {undefined | function(): string} stdin
+ * @param {undefined | function(string)} stdout
+ * @param {undefined | function(string)} stderr
  */
 export function setStandardStreams(stdin, stdout, stderr) {
   // For stdout and stderr, emscripten provides convenient wrappers that save us the trouble of converting the bytes into a string

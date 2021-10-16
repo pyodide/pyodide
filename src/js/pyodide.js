@@ -166,17 +166,16 @@ function fixRecursionLimit() {
  * (This can be fixed once `Firefox adopts support for ES6 modules in webworkers
  * <https://bugzilla.mozilla.org/show_bug.cgi?id=1247687>`_.)
  *
- * @param {{ indexURL : string, fullStdLib? : boolean = true, stdin?: () => string, stdout?: (text: string) => void, stderr?: (text: string) => void }} config
  * @param {string} config.indexURL - The URL from which Pyodide will load
  * packages
  * @param {boolean} config.fullStdLib - Load the full Python standard library.
  * Setting this to false excludes following modules: distutils.
  * Default: true
- * @param {undefined | (() => string)} config.stdin - Override the standard input callback. Should ask the user for one line of input.
+ * @param {undefined | function(): string} config.stdin - Override the standard input callback. Should ask the user for one line of input.
  * Default: undefined
- * @param {undefined | ((text: string) => void)} config.stdout - Override the standard output callback.
+ * @param {undefined | function(string)} config.stdout - Override the standard output callback.
  * Default: undefined
- * @param {undefined | ((text: string) => void)} config.stderr - Override the standard error output callback.
+ * @param {undefined | function(string)} config.stderr - Override the standard error output callback.
  * Default: undefined
  * @returns The :ref:`js-api-pyodide` module.
  * @memberof globalThis
