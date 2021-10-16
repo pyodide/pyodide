@@ -1,7 +1,12 @@
 /**
+ * @typedef {import('emscripten').Module} Module
+ */
+
+/**
  * The Emscripten Module.
  *
- * @private @type {import('emscripten').Module}
+ * @private
+ * @type {Module}
  */
 export let Module = {};
 Module.noImageDecoding = true;

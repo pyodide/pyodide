@@ -156,7 +156,7 @@ async def pyfetch(url, **kwargs) -> FetchResponse:
 
     Parameters
     ----------
-    url URL to fetch. **kwargs Any keyword arguments are passed along as
+    url URL to fetch. \*\*kwargs Any keyword arguments are passed along as
         `optional parameters to the fetch API
         <https://developer.mozilla.org/en-US/docs/Web/API/fetch#parameters>`_.
     """
