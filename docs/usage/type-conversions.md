@@ -219,7 +219,7 @@ following operations are supported:
 :class: warning
 
 Make sure to destroy PyProxies when you are done with them to avoid memory leaks.
-See {ref}`call-py-from-js`.
+
 ```javascript
 let foo = pyodide.globals.get('foo');
 foo();

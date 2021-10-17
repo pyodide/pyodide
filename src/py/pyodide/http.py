@@ -13,6 +13,12 @@ from ._core import IN_BROWSER
 if IN_BROWSER:
     from js import fetch as _jsfetch, Object
 
+__all__ = [
+    "open_url",
+    "pyfetch",
+    "FetchResponse",
+]
+
 
 def open_url(url: str) -> StringIO:
     """Fetches a given URL synchronously.
