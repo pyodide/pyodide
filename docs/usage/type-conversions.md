@@ -36,7 +36,7 @@ JavaScript to Python translations occur:
 Any time a Python to JavaScript translation occurs, it may create a
 {any}`PyProxy`. To avoid memory leaks, you must store the {any}`PyProxy` and
 {any}`destroy <PyProxy.destroy>` it when you are done with it. See
-{ref}`avoiding-leaks` for more info.
+{ref}`call-py-from-js` for more info.
 ```
 
 ## Round trip conversions
@@ -219,7 +219,7 @@ following operations are supported:
 :class: warning
 
 Make sure to destroy PyProxies when you are done with them to avoid memory leaks.
-See {ref}`avoiding-leaks`.
+
 ```javascript
 let foo = pyodide.globals.get('foo');
 foo();
@@ -332,6 +332,8 @@ cannot. If the JavaScript map contains both `true` and `1` a `ConversionError`
 will be thrown.
 
 ## Functions
+
+(call-py-from-js)=
 
 ### Calling Python objects from JavaScript
 

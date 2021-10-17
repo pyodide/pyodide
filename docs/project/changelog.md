@@ -19,7 +19,7 @@ substitutions:
   error, it will return an empty list instead of raising a `SyntaxError`.
   {pr}`1819`
 
-- {{Enhancement}} Added a {ref}`pyodide.http.pyfetch` API which provides a
+- {{Enhancement}} Added a {any}`pyodide.http.pyfetch` API which provides a
   convenience wrapper for the Javascript `fetch` API. The API returns a response
   object with various methods that convert the data into various types while
   minimizing the number of times the data is copied.

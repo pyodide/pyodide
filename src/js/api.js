@@ -8,6 +8,7 @@ export { loadPackage, loadedPackages, isPyProxy };
  * @typedef {import('./pyproxy.gen').PyProxy} PyProxy
  * @typedef {import('./pyproxy.gen').TypedArray} TypedArray
  * @typedef {import('emscripten')} Emscripten
+ * @typedef {import('emscripten').Module.FS} FS
  */
 
 /**
@@ -340,7 +341,7 @@ export function makePublicAPI() {
    * are available as members of ``FS.filesystems``:
    * ``IDBFS``, ``NODEFS``, ``PROXYFS``, ``WORKERFS``.
    *
-   * @type {FS} The Emscripten File System API.
+   * @type {FS}
    */
   const FS = Module.FS;
   let namespace = {
