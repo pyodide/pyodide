@@ -1,0 +1,19 @@
+package:
+  name: geos
+  version: 3.9.1
+
+source:
+  url: http://download.osgeo.org/geos/geos-3.9.1.tar.bz2
+  sha256: 7e630507dcac9dc07565d249a26f06a15c9f5b0c52dd29129a0e3d381d7e382a
+
+build:
+  library: true
+  script: |
+    sed -i '1iset_property(GLOBAL PROPERTY TARGET_SUPPORTS_SHARED_LIBS TRUE)' CMakeLists.txt
+    CFLAGS="-fPIC" emcmake cmake -DCMAKE_INSTALL_PREFIX=.. -DDISABLE_GEOS_INLINE=ON -DBUILD_TESTING=OFF -DTARGET_SUPPORTS_SHARED_LIBS=TRUE .
+    emmake make -j ${PYODIDE_JOBS:-3}
+    ln -s geos-3.9.1/include/ ..
+    ln -s geos-3.9.1/lib/ ..
+    mkdir install
+    ln -s ../lib/ install
+    chmod 755 tools/geos-config
