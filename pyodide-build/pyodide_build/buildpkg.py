@@ -16,7 +16,6 @@ import subprocess
 import sys
 from typing import Any, Dict
 from urllib import request
-import warnings
 import fnmatch
 
 
@@ -534,10 +533,9 @@ def make_parser(parser: argparse.ArgumentParser):
 def main(args):
     path = Path(args.package[0]).resolve()
     if args.compress_package and not _have_terser():
-        warnings.warn(
-            "Terser is not installed, the built package will not be compressed"
+        raise RuntimeError(
+            "Terser is required to compress packages. Try `npm install -g terser` to install terser."
         )
-        args.compress_package = False
 
     build_package(path, args)
 
