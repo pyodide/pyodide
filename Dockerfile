@@ -35,7 +35,6 @@ RUN ln -s ../lib/node_modules/npm/bin/npm-cli.js /usr/local/bin/npm \
 
 RUN npm install -g \
   jsdoc \
-  uglify-js \
   prettier \
   rollup \
   rollup-plugin-terser
