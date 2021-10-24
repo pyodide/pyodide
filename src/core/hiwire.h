@@ -562,10 +562,11 @@ hiwire_assign_from_ptr(JsRef idobj, void* ptr);
  * Get a data type identifier for a given typedarray.
  */
 errcode
-hiwire_get_buffer_datatype(JsRef idobj,
-                           char** format_ptr,
-                           Py_ssize_t* size_ptr,
-                           bool* check_assignments);
+hiwire_get_buffer_info(JsRef idobj,
+                       Py_ssize_t* byteLength_ptr,
+                       char** format_ptr,
+                       Py_ssize_t* size_ptr,
+                       bool* check_assignments);
 
 /**
  * Get a subarray from a TypedArray

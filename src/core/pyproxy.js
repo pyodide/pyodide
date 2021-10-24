@@ -31,6 +31,8 @@ Module.isPyProxy = isPyProxy;
 
 if (globalThis.FinalizationRegistry) {
   Module.finalizationRegistry = new FinalizationRegistry(([ptr, cache]) => {
+    cache.leaked = true;
+    pyproxy_decref_cache(cache);
     try {
       Module._Py_DecRef(ptr);
     } catch (e) {
@@ -201,10 +203,10 @@ function pyproxy_decref_cache(cache) {
   if (cache.refcnt === 0) {
     let cache_map = Module.hiwire.pop_value(cache.cacheId);
     for (let proxy_id of cache_map.values()) {
-      Module.pyproxy_destroy(
-        Module.hiwire.pop_value(proxy_id),
-        pyproxy_cache_destroyed_msg
-      );
+      const cache_entry = Module.hiwire.pop_value(proxy_id);
+      if (!cache.leaked) {
+        Module.pyproxy_destroy(cache_entry, pyproxy_cache_destroyed_msg);
+      }
     }
   }
 }
@@ -1423,51 +1425,4 @@ export class PyBuffer {
     this._released = true;
     this.data = null;
   }
-}
-
-// A special proxy that we use to wrap pyodide.globals to allow property
-// access like `pyodide.globals.x`.
-let globalsPropertyAccessWarned = false;
-let globalsPropertyAccessWarningMsg =
-  "Access to pyodide.globals via pyodide.globals.key is deprecated and " +
-  "will be removed in version 0.18.0. Use pyodide.globals.get('key'), " +
-  "pyodide.globals.set('key', value), pyodide.globals.delete('key') instead.";
-let NamespaceProxyHandlers = {
-  has(obj, key) {
-    return Reflect.has(obj, key) || obj.has(key);
-  },
-  get(obj, key) {
-    if (Reflect.has(obj, key)) {
-      return Reflect.get(obj, key);
-    }
-    let result = obj.get(key);
-    if (!globalsPropertyAccessWarned && result !== undefined) {
-      console.warn(globalsPropertyAccessWarningMsg);
-      globalsPropertyAccessWarned = true;
-    }
-    return result;
-  },
-  set(obj, key, value) {
-    if (Reflect.has(obj, key)) {
-      throw new Error(`Cannot set read only field ${key}`);
-    }
-    if (!globalsPropertyAccessWarned) {
-      globalsPropertyAccessWarned = true;
-      console.warn(globalsPropertyAccessWarningMsg);
-    }
-    obj.set(key, value);
-  },
-  ownKeys(obj) {
-    let result = new Set(Reflect.ownKeys(obj));
-    let iter = obj.keys();
-    for (let key of iter) {
-      result.add(key);
-    }
-    iter.destroy();
-    return Array.from(result);
-  },
-};
-
-export function wrapNamespace(ns) {
-  return new Proxy(ns, NamespaceProxyHandlers);
 }

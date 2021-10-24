@@ -8,6 +8,7 @@ export { loadPackage, loadedPackages, isPyProxy };
  * @typedef {import('./pyproxy.gen').PyProxy} PyProxy
  * @typedef {import('./pyproxy.gen').TypedArray} TypedArray
  * @typedef {import('emscripten')} Emscripten
+ * @typedef {import('emscripten').Module.FS} FS
  */
 
 /**
@@ -150,22 +151,6 @@ export async function loadPackagesFromImports(
   }
 }
 
-/**
- * Access a Python object in the global namespace from JavaScript.
- *
- * @deprecated This function will be removed in version 0.18.0. Use
- *    :any:`pyodide.globals.get('key') <pyodide.globals>` instead.
- *
- * @param {string} name Python variable name
- * @returns {Py2JsResult} The Python object translated to JavaScript.
- */
-export function pyimport(name) {
-  console.warn(
-    "Access to the Python global namespace via pyodide.pyimport is deprecated and " +
-      "will be removed in version 0.18.0. Use pyodide.globals.get('key') instead."
-  );
-  return Module.globals.get(name);
-}
 /**
  * Runs Python code using `PyCF_ALLOW_TOP_LEVEL_AWAIT
  * <https://docs.python.org/3/library/ast.html?highlight=pycf_allow_top_level_await#ast.PyCF_ALLOW_TOP_LEVEL_AWAIT>`_.
@@ -356,7 +341,7 @@ export function makePublicAPI() {
    * are available as members of ``FS.filesystems``:
    * ``IDBFS``, ``NODEFS``, ``PROXYFS``, ``WORKERFS``.
    *
-   * @type {FS} The Emscripten File System API.
+   * @type {FS}
    */
   const FS = Module.FS;
   let namespace = {
@@ -368,7 +353,6 @@ export function makePublicAPI() {
     loadPackagesFromImports,
     loadedPackages,
     isPyProxy,
-    pyimport,
     runPython,
     runPythonAsync,
     registerJsModule,

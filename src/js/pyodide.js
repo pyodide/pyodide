@@ -10,8 +10,6 @@ import {
 import { makePublicAPI, registerJsModule } from "./api.js";
 import "./pyproxy.gen.js";
 
-import { wrapNamespace } from "./pyproxy.gen.js";
-
 /**
  * @typedef {import('./pyproxy.gen').PyProxy} PyProxy
  * @typedef {import('./pyproxy.gen').PyProxyWithLength} PyProxyWithLength
@@ -168,17 +166,16 @@ function fixRecursionLimit() {
  * (This can be fixed once `Firefox adopts support for ES6 modules in webworkers
  * <https://bugzilla.mozilla.org/show_bug.cgi?id=1247687>`_.)
  *
- * @param {{ indexURL : string, fullStdLib? : boolean = true, stdin?: () => string, stdout?: (text: string) => void, stderr?: (text: string) => void }} config
  * @param {string} config.indexURL - The URL from which Pyodide will load
  * packages
  * @param {boolean} config.fullStdLib - Load the full Python standard library.
  * Setting this to false excludes following modules: distutils.
  * Default: true
- * @param {undefined | (() => string)} config.stdin - Override the standard input callback. Should ask the user for one line of input.
+ * @param {undefined | function(): string} config.stdin - Override the standard input callback. Should ask the user for one line of input.
  * Default: undefined
- * @param {undefined | ((text: string) => void)} config.stdout - Override the standard output callback.
+ * @param {undefined | function(string)} config.stdout - Override the standard output callback.
  * Default: undefined
- * @param {undefined | ((text: string) => void)} config.stderr - Override the standard error output callback.
+ * @param {undefined | function(string)} config.stderr - Override the standard error output callback.
  * Default: undefined
  * @returns The :ref:`js-api-pyodide` module.
  * @memberof globalThis
@@ -264,10 +261,6 @@ def temp(pyodide_js, Module, jsglobals):
   Module.init_dict.get("temp")(pyodide, Module, config.jsglobals);
   // Module.runPython works starting from here!
 
-  // Wrap "globals" in a special Proxy that allows `pyodide.globals.x` access.
-  // TODO: Should we have this?
-  Module.globals = wrapNamespace(Module.globals);
-
   pyodide.globals = Module.globals;
   pyodide.pyodide_py = Module.pyodide_py;
   pyodide.version = Module.version;
@@ -280,35 +273,3 @@ def temp(pyodide_js, Module, jsglobals):
   return pyodide;
 }
 globalThis.loadPyodide = loadPyodide;
-
-if (globalThis.languagePluginUrl) {
-  console.warn(
-    "languagePluginUrl is deprecated and will be removed in version 0.18.0, " +
-      "instead use loadPyodide({ indexURL : <some_url>})"
-  );
-
-  /**
-   * A deprecated parameter that specifies the Pyodide ``indexURL``. If present,
-   * Pyodide will automatically invoke
-   * ``loadPyodide({indexURL : languagePluginUrl})``
-   * and will store the resulting promise in
-   * :any:`globalThis.languagePluginLoader`. Use :any:`loadPyodide`
-   * directly instead of defining this.
-   *
-   * @type String
-   * @deprecated Will be removed in version 0.18.0
-   */
-  globalThis.languagePluginUrl;
-
-  /**
-   * A deprecated promise that resolves to ``undefined`` when Pyodide is
-   * finished loading. Only created if :any:`languagePluginUrl` is
-   * defined. Instead use :any:`loadPyodide`.
-   *
-   * @type Promise
-   * @deprecated Will be removed in version 0.18.0
-   */
-  globalThis.languagePluginLoader = loadPyodide({
-    indexURL: globalThis.languagePluginUrl,
-  }).then((pyodide) => (self.pyodide = pyodide));
-}

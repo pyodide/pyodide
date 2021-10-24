@@ -1,4 +1,4 @@
-=(meta-yaml-spec)
+(meta-yaml-spec)=
 
 # The meta.yaml specification
 
