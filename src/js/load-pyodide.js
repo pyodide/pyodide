@@ -64,7 +64,7 @@ function _uri_to_package_name(package_uri) {
 export let loadScript;
 if (globalThis.document) {
   // browser
-  loadScript = (url) => import(url);
+  loadScript = (url) => import(/* webpackIgnore: true */ url);
 } else if (globalThis.importScripts) {
   // webworker
   loadScript = async (url) => {
