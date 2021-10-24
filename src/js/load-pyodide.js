@@ -16,7 +16,8 @@ export async function initializePackageIndex(indexURL) {
   baseURL = indexURL;
   let package_json;
   if (IN_NODE) {
-    const fsPromises = await import("fs/promises");
+    const fs = await import("fs");
+    const fsPromises = fs.promises;
     const package_string = await fsPromises.readFile(
       `${indexURL}packages.json`
     );
