@@ -1,0 +1,349 @@
+version: 2
+
+defaults: &defaults
+  working_directory: ~/repo
+  docker:
+    - image: pyodide/pyodide-env:13
+  environment:
+    - EMSDK_NUM_CORES: 4
+      EMCC_CORES: 4
+      PYODIDE_BASE_URL: https://cdn.jsdelivr.net/pyodide/dev/full/
+
+jobs:
+  lint:
+    <<: *defaults
+    resource_class: small
+    steps:
+      - checkout
+
+      - run:
+          name: lint
+          command: make lint
+
+  test-docs:
+    working_directory: ~/repo
+    resource_class: small
+
+    docker:
+      - image: cimg/python:3.8.2-node
+
+    steps:
+      - checkout
+
+      - run:
+          name: Install prerequisites
+          command: |
+            pip install -r docs/requirements-doc.txt
+            pip install pytest
+            sudo npm install -g jsdoc
+
+      - run:
+          name: Test docs
+          command: pytest docs/sphinx_pyodide/tests
+
+  build-core:
+    <<: *defaults
+    steps:
+      - checkout
+
+      - restore_cache:
+          keys:
+            - -{{ checksum "Makefile.envs" }}-v20201205-
+
+      - run:
+          name: build emsdk
+          no_output_timeout: 1200
+          command: |
+            ccache -z
+            make -C emsdk
+            ccache -s
+
+      - run:
+          name: build cpython
+          no_output_timeout: 1200
+          command: |
+            ccache -z
+            make -C cpython
+            ccache -s
+
+      - run:
+          name: build pyodide core
+          no_output_timeout: 1200
+          command: |
+            ccache -z
+            # The following packages are currently used in the main pyodide test suite
+            PYODIDE_PACKAGES="micropip,pyparsing,pytz,packaging,kiwisolver" make
+            ccache -s
+
+      - run:
+          name: check-size
+          command: ls -lh build/
+
+      - save_cache:
+          paths:
+            - ~/.ccache
+          key: -{{ checksum "Makefile.envs" }}-v20201205-{{ .BuildNum }}
+
+      - run:
+          name: Clean up workspace
+          command: |
+            rm -rf cpython/{build,downloads}
+            rm -rf emsdk/emsdk/binaryen
+
+      - persist_to_workspace:
+          root: .
+          paths:
+            - .
+
+      - run:
+          name: Prepare CircleCI artifacts
+          command: PYODIDE_BASE_URL="./" make build/console.html
+
+      - store_artifacts:
+          path: /root/repo/build/
+
+  build-packages:
+    <<: *defaults
+    steps:
+      - checkout
+
+      - attach_workspace:
+          at: .
+
+      - restore_cache:
+          keys:
+            - -{{ checksum "Makefile.envs" }}-v20201205-
+
+      - run:
+          name: build packages
+          no_output_timeout: 1800
+          command: |
+            ccache -z
+            make
+            ccache -s
+
+      - run:
+          name: check-size
+          command: ls -lh build/
+
+      - save_cache:
+          paths:
+            - ~/.ccache
+          key: -{{ checksum "Makefile.envs" }}-v20201205-{{ .BuildNum }}
+
+      - persist_to_workspace:
+          root: .
+          paths:
+            - ./packages/.artifacts
+            - ./build
+      - run:
+          name: Prepare CircleCI artifacts
+          command: PYODIDE_BASE_URL="./" make build/console.html
+
+      - store_artifacts:
+          path: /root/repo/build/
+
+  test-core-firefox:
+    <<: *defaults
+    steps:
+      - attach_workspace:
+          at: .
+      - run:
+          name: test
+          command: |
+            tools/pytest_wrapper.py src packages/micropip/ -v -k firefox -n 3
+
+  test-core-chrome:
+    <<: *defaults
+    steps:
+      - attach_workspace:
+          at: .
+      - run:
+          name: test
+          command: |
+            tools/pytest_wrapper.py src packages/micropip/ -v -k chrome
+
+  test-packages-firefox:
+    <<: *defaults
+    steps:
+      - attach_workspace:
+          at: .
+      - run:
+          name: test
+          command: |
+            tools/pytest_wrapper.py packages/test* packages/*/test* -v -k firefox -n 2
+
+  test-packages-chrome:
+    <<: *defaults
+    steps:
+      - attach_workspace:
+          at: .
+      - run:
+          name: test
+          command: |
+            tools/pytest_wrapper.py packages/test* packages/*/test* -v -k chrome -n 2
+
+  test-emsdk:
+    <<: *defaults
+    resource_class: small
+    steps:
+      - attach_workspace:
+          at: .
+      - run:
+          name: test
+          command: make -C emsdk test
+
+  test-python:
+    <<: *defaults
+    resource_class: small
+    steps:
+      - checkout
+      - run:
+          name: test
+          command: |
+            pytest src pyodide_build packages/micropip/ -v -k 'not (chrome or firefox)' --cov=pyodide_build --cov=pyodide
+
+  benchmark:
+    <<: *defaults
+    steps:
+      - checkout
+      - attach_workspace:
+          at: .
+      - run:
+          name: benchmark
+          command: |
+            python benchmark/benchmark.py /usr/local/bin/python3 build/benchmarks.json
+      - store_artifacts:
+          path: /root/repo/build/benchmarks.json
+
+  deploy-release:
+    resource_class: small
+
+    docker:
+      - image: cibuilds/github:0.13
+
+    steps:
+      - checkout
+      - attach_workspace:
+          at: .
+      - run:
+          name: Install requirements
+          command: |
+            apk add --no-cache --update python3
+            python3 -m pip install awscli
+      - run:
+          name: Deploy Github Releases
+          command: |
+            cp -r build /tmp/pyodide
+            cd /tmp/
+            tar cjf pyodide-build-${CIRCLE_TAG}.tar.bz2  pyodide/
+            ghr -t "${GITHUB_TOKEN}" -u "${CIRCLE_PROJECT_USERNAME}" -r "${CIRCLE_PROJECT_REPONAME}" -c "${CIRCLE_SHA1}" -delete  "${CIRCLE_TAG}" ./pyodide-build-${CIRCLE_TAG}.tar.bz2
+
+      - run:
+          name: Deploy to pyodide-cdn2.iodide.io
+          command: |
+            find build/ -type f -exec sh -c "echo \"Compressing {}\"; gzip {}; mv {}.gz {};" \;
+            aws s3 sync build/ "s3://pyodide-cdn2.iodide.io/v${CIRCLE_TAG}/full/" --exclude '*.data' --cache-control 'max-age=30758400, immutable, public' --content-encoding 'gzip'    # 1 year cache
+            aws s3 sync build/ "s3://pyodide-cdn2.iodide.io/v${CIRCLE_TAG}/full/" --exclude '*' --include '*.data' --cache-control 'max-age=30758400, immutable, public'  --content-type 'application/wasm' --content-encoding 'gzip'  # 1 year
+            # update 301 redirect for the /latest/* route.
+            aws s3api put-bucket-website --cli-input-json file://.circleci/s3-website-config.json
+
+  deploy-s3:
+    resource_class: small
+
+    docker:
+      - image: circleci/python:3.7.7
+
+    steps:
+      - checkout
+      - attach_workspace:
+          at: .
+      - run:
+          name: Install requirements
+          command: |
+            sudo apt-get update
+            sudo apt-get install -y groff
+            python3 -m pip install awscli
+      - run:
+          name: Deploy to pyodide-cdn2.iodide.io
+          command: |
+            find build/ -type f -exec sh -c "echo \"Compressing {}\"; gzip {}; mv {}.gz {};" \;
+            aws s3 rm --recursive "s3://pyodide-cdn2.iodide.io/dev/full/"
+            aws s3 sync build/ "s3://pyodide-cdn2.iodide.io/dev/full/" --exclude '*.data' --cache-control 'max-age=3600, public' --content-encoding 'gzip'  # 1 hour cache
+            aws s3 sync build/ "s3://pyodide-cdn2.iodide.io/dev/full/" --exclude '*' --include '*.data' --cache-control 'max-age=3600, public'  --content-type 'application/wasm' --content-encoding 'gzip'  # 1 hour cache
+
+workflows:
+  version: 2
+  build-and-deploy:
+    jobs:
+      - lint
+      - test-docs
+      - build-core:
+          filters:
+            tags:
+              only: /.*/
+      - build-packages:
+          requires:
+            - build-core
+          filters:
+            tags:
+              only: /.*/
+      - test-core-chrome:
+          requires:
+            - build-core
+          filters:
+            tags:
+              only: /.*/
+      - test-core-firefox:
+          requires:
+            - build-core
+          filters:
+            tags:
+              only: /.*/
+      - test-packages-chrome:
+          requires:
+            - build-packages
+          filters:
+            tags:
+              only: /.*/
+      - test-packages-firefox:
+          requires:
+            - build-packages
+          filters:
+            tags:
+              only: /.*/
+      - test-emsdk:
+          requires:
+            - build-core
+          filters:
+            tags:
+              only: /.*/
+      - test-python:
+          filters:
+            tags:
+              only: /.*/
+      - benchmark:
+          requires:
+            - build-packages
+      - deploy-release:
+          requires:
+            - lint
+            - test-python
+            - test-core-firefox
+            - test-packages-firefox
+            - test-emsdk
+          filters:
+            branches:
+              ignore: /.*/
+            tags:
+              only: /^\d+\.\d+\.\w+$/
+      - deploy-s3:
+          requires:
+            - lint
+            - test-python
+            - test-core-firefox
+            - test-packages-firefox
+            - test-emsdk
+          filters:
+            branches:
+              only: master
