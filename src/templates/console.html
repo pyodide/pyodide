@@ -30,61 +30,29 @@
         let namespace = pyodide.globals.get("dict")();
         pyodide.runPython(
           `
-          import sys
-          from pyodide import to_js
-          from pyodide.console import PyodideConsole, repr_shorten, BANNER
-          from _pyodide.console import _WriteStream
-          import __main__
-          from contextlib import redirect_stdout, redirect_stderr
-          BANNER = "Welcome to the Pyodide terminal emulator 🐍\\n" + BANNER
-          pyconsole = PyodideConsole(__main__.__dict__)
-          import builtins
-
-          repr_shorten_separator = "\\n[[;orange;]<long output truncated>]\\n"
-          def displayhook(value):
-            if value is None:
-                return
-            # Set '_' to None to avoid recursion
-            builtins._ = None
-            text = repr_shorten(value, separator=repr_shorten_separator)
-            try:
-              sys.stdout.write(text)
-            except UnicodeEncodeError:
-              bytes = text.encode(sys.stdout.encoding, 'backslashreplace')
-              if hasattr(sys.stdout, 'buffer'):
-                sys.stdout.buffer.write(bytes)
-              else:
-                text = bytes.decode(sys.stdout.encoding, 'strict')
-                sys.stdout.write(text)
-            sys.stdout.write("\\n")
-            builtins._ = value
-
-          def write_stdout(str):
-            term.echo(str, newline=False)
-
-          def write_stderr(str):
-            term.error(str, newline=False)
-
-          async def print_result(fut):
-            try:
-              value = await fut
-            except BaseException as e:
-              with redirect_stderr(_WriteStream(write_stderr)):
-                sys.excepthook(type(e), e, e.__traceback__)
-                term.echo("");
-                return
-            if value is not None:
-              with redirect_stdout(_WriteStream(write_stdout)):
-                sys.displayhook(value)
-          def clear_console():
-            pyconsole.buffer = []
+            import sys
+            from pyodide import to_js
+            from pyodide.console import PyodideConsole, repr_shorten, BANNER
+            import __main__
+            BANNER = "Welcome to the Pyodide terminal emulator 🐍\\n" + BANNER
+            pyconsole = PyodideConsole(__main__.__dict__)
+            import builtins
+            async def await_fut(fut):
+              res = await fut
+              if res is not None:
+                builtins._ = res
+              return to_js([res], depth=1)
+            def clear_console():
+              pyconsole.buffer = []
         `,
           namespace
         );
+        let repr_shorten = namespace.get("repr_shorten");
         let banner = namespace.get("BANNER");
-        let print_result = namespace.get("print_result");
+        let await_fut = namespace.get("await_fut");
         let pyconsole = namespace.get("pyconsole");
         let clear_console = namespace.get("clear_console");
+        namespace.destroy();
 
         let ps1 = ">>> ",
           ps2 = "... ";
@@ -115,8 +83,34 @@
               default:
                 throw new Error(`Unexpected type ${ty}`);
             }
-            await print_result(fut);
-            fut.destroy();
+            // In JavaScript, await automatically also awaits any results of
+            // awaits, so if an async function returns a future, it will await
+            // the inner future too. This is not what we want so we
+            // temporarily put it into a list to protect it.
+            let wrapped = await_fut(fut);
+            // complete case, get result / error and print it.
+            try {
+              let [value] = await wrapped;
+              if (value !== undefined) {
+                term.echo(
+                  repr_shorten.callKwargs(value, {
+                    separator: "\n[[;orange;]<long output truncated>]\n",
+                  })
+                );
+              }
+              if (pyodide.isPyProxy(value)) {
+                value.destroy();
+              }
+            } catch (e) {
+              if (e.constructor.name === "PythonError") {
+                term.error(fut.formatted_error.trimEnd());
+              } else {
+                throw e;
+              }
+            } finally {
+              fut.destroy();
+              wrapped.destroy();
+            }
           }
           term.resume();
           await sleep(10);
@@ -141,8 +135,6 @@
           },
         });
         window.term = term;
-        namespace.set("term", term);
-        namespace.destroy();
         pyconsole.stdout_callback = (s) => term.echo(s, { newline: false });
         pyconsole.stderr_callback = (s) => {
           term.error(s.trimEnd());
