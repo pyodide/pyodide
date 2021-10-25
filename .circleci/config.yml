@@ -1,13 +1,16 @@
-version: 2
+version: 2.1
 
 defaults: &defaults
   working_directory: ~/repo
   docker:
-    - image: pyodide/pyodide-env:13
+    - image: pyodide/pyodide-env:19
   environment:
-    - EMSDK_NUM_CORES: 4
-      EMCC_CORES: 4
-      PYODIDE_BASE_URL: https://cdn.jsdelivr.net/pyodide/dev/full/
+    - EMSDK_NUM_CORES: 3
+      EMCC_CORES: 3
+      PYODIDE_JOBS: 3
+      # Make sure the ccache dir is consistent between core and package builds
+      # (it's not the case otherwise)
+      CCACHE_DIR: /root/.ccache/
 
 jobs:
   lint:
@@ -21,25 +24,18 @@ jobs:
           command: make lint
 
   test-docs:
-    working_directory: ~/repo
+    <<: *defaults
     resource_class: small
-
-    docker:
-      - image: cimg/python:3.8.2-node
-
     steps:
       - checkout
 
       - run:
-          name: Install prerequisites
-          command: |
-            pip install -r docs/requirements-doc.txt
-            pip install pytest
-            sudo npm install -g jsdoc
-
-      - run:
           name: Test docs
-          command: pytest docs/sphinx_pyodide/tests
+          command: |
+            mkdir test-results
+            pytest docs/sphinx_pyodide/tests --junitxml=test-results/junit.xml
+      - store_test_results:
+          path: test-results
 
   build-core:
     <<: *defaults
@@ -48,20 +44,29 @@ jobs:
 
       - restore_cache:
           keys:
-            - -{{ checksum "Makefile.envs" }}-v20201205-
+            - -core-{{ checksum "Makefile.envs" }}-{{ checksum "cpython/Makefile" }}-v20210910-
 
       - run:
           name: build emsdk
           no_output_timeout: 1200
           command: |
+            # This is necessary to use the ccache from emsdk
+            source pyodide_env.sh
+
             ccache -z
             make -C emsdk
             ccache -s
+
+            # Set mtime for EM_CONFIG to avoid ccache cache misses
+            touch -m -d '1 Jan 2021 12:00' emsdk/emsdk/.emscripten
 
       - run:
           name: build cpython
           no_output_timeout: 1200
           command: |
+            # This is necessary to use the ccache from emsdk
+            source pyodide_env.sh
+
             ccache -z
             make -C cpython
             ccache -s
@@ -70,9 +75,11 @@ jobs:
           name: build pyodide core
           no_output_timeout: 1200
           command: |
+            # This is necessary to use the ccache from emsdk
+            source pyodide_env.sh
+
             ccache -z
-            # The following packages are currently used in the main pyodide test suite
-            PYODIDE_PACKAGES="micropip,pyparsing,pytz,packaging,kiwisolver" make
+            PYODIDE_PACKAGES="core" make
             ccache -s
 
       - run:
@@ -81,8 +88,8 @@ jobs:
 
       - save_cache:
           paths:
-            - ~/.ccache
-          key: -{{ checksum "Makefile.envs" }}-v20201205-{{ .BuildNum }}
+            - /root/.ccache
+          key: -core-{{ checksum "Makefile.envs" }}-{{ checksum "cpython/Makefile" }}-v20210910-
 
       - run:
           name: Clean up workspace
@@ -94,10 +101,6 @@ jobs:
           root: .
           paths:
             - .
-
-      - run:
-          name: Prepare CircleCI artifacts
-          command: PYODIDE_BASE_URL="./" make build/console.html
 
       - store_artifacts:
           path: /root/repo/build/
@@ -112,14 +115,19 @@ jobs:
 
       - restore_cache:
           keys:
-            - -{{ checksum "Makefile.envs" }}-v20201205-
+            - -pkg-{{ checksum "Makefile.envs" }}-v20210911-
 
       - run:
           name: build packages
           no_output_timeout: 1800
           command: |
+            source pyodide_env.sh
+
+            # Set mtime for EM_CONFIG to avoid ccache cache misses
+            touch -m -d '1 Jan 2021 12:00' emsdk/emsdk/.emscripten
+
             ccache -z
-            make
+            PYODIDE_PACKAGES='*' make -C packages
             ccache -s
 
       - run:
@@ -128,32 +136,26 @@ jobs:
 
       - save_cache:
           paths:
-            - ~/.ccache
-          key: -{{ checksum "Makefile.envs" }}-v20201205-{{ .BuildNum }}
+            - /root/.ccache
+          key: -pkg-{{ checksum "Makefile.envs" }}-v20210911-
 
       - persist_to_workspace:
           root: .
           paths:
             - ./packages/.artifacts
             - ./build
-      - run:
-          name: Prepare CircleCI artifacts
-          command: PYODIDE_BASE_URL="./" make build/console.html
 
       - store_artifacts:
           path: /root/repo/build/
 
-  test-core-firefox:
-    <<: *defaults
-    steps:
-      - attach_workspace:
-          at: .
-      - run:
-          name: test
-          command: |
-            tools/pytest_wrapper.py src packages/micropip/ -v -k firefox -n 3
+      - store_artifacts:
+          path: /root/repo/packages/build-logs
 
-  test-core-chrome:
+  test-main:
+    parameters:
+      test-params:
+        description: The tests to run.
+        type: string
     <<: *defaults
     steps:
       - attach_workspace:
@@ -161,27 +163,23 @@ jobs:
       - run:
           name: test
           command: |
-            tools/pytest_wrapper.py src packages/micropip/ -v -k chrome
+            mkdir test-results
+            tools/pytest_wrapper.py \
+              --junitxml=test-results/junit.xml \
+              --verbose \
+              << parameters.test-params >>
+      - store_test_results:
+          path: test-results
 
-  test-packages-firefox:
+  benchmark-stack-size:
     <<: *defaults
     steps:
       - attach_workspace:
           at: .
       - run:
-          name: test
+          name: stack-size
           command: |
-            tools/pytest_wrapper.py packages/test* packages/*/test* -v -k firefox -n 2
-
-  test-packages-chrome:
-    <<: *defaults
-    steps:
-      - attach_workspace:
-          at: .
-      - run:
-          name: test
-          command: |
-            tools/pytest_wrapper.py packages/test* packages/*/test* -v -k chrome -n 2
+            pytest -s benchmark/stack_usage.py  | sed -n 's/## //pg'
 
   test-emsdk:
     <<: *defaults
@@ -194,6 +192,7 @@ jobs:
           command: make -C emsdk test
 
   test-python:
+    # Unlike test-main this uses "resource_class small" and doesn't use "pytest_wrapper."
     <<: *defaults
     resource_class: small
     steps:
@@ -201,7 +200,30 @@ jobs:
       - run:
           name: test
           command: |
-            pytest src pyodide_build packages/micropip/ -v -k 'not (chrome or firefox)' --cov=pyodide_build --cov=pyodide
+            mkdir test-results
+            pytest \
+              --junitxml=test-results/junit.xml \
+              --verbose \
+              -k 'not (chrome or firefox or node)' \
+              --cov=pyodide_build --cov=pyodide \
+              src pyodide-build packages/micropip/
+
+      - store_test_results:
+          path: test-results
+
+  test-js:
+    <<: *defaults
+    resource_class: small
+    steps:
+      - attach_workspace:
+          at: .
+      - run:
+          name: test
+          command: |
+            cd src/js
+            npx tsd
+            npm install
+            npm test
 
   benchmark:
     <<: *defaults
@@ -217,6 +239,8 @@ jobs:
           path: /root/repo/build/benchmarks.json
 
   deploy-release:
+    # To reduce chance of deployment issues, try to keep the steps here as
+    # similar as possible to the steps in deploy-dev!
     resource_class: small
 
     docker:
@@ -229,7 +253,7 @@ jobs:
       - run:
           name: Install requirements
           command: |
-            apk add --no-cache --update python3
+            apk add --no-cache --update python3 make
             python3 -m pip install awscli
       - run:
           name: Deploy Github Releases
@@ -240,19 +264,24 @@ jobs:
             ghr -t "${GITHUB_TOKEN}" -u "${CIRCLE_PROJECT_USERNAME}" -r "${CIRCLE_PROJECT_REPONAME}" -c "${CIRCLE_SHA1}" -delete  "${CIRCLE_TAG}" ./pyodide-build-${CIRCLE_TAG}.tar.bz2
 
       - run:
+          name: Set PYODIDE_BASE_URL
+          command: PYODIDE_BASE_URL="https://cdn.jsdelivr.net/pyodide/v${CIRCLE_TAG}/full/" make update_base_url
+      - run:
           name: Deploy to pyodide-cdn2.iodide.io
           command: |
-            find build/ -type f -exec sh -c "echo \"Compressing {}\"; gzip {}; mv {}.gz {};" \;
+            find build/ -type f -print0 | xargs -0 -n1 -I@ bash -c "echo \"Compressing @\"; gzip @; mv @.gz @;"
             aws s3 sync build/ "s3://pyodide-cdn2.iodide.io/v${CIRCLE_TAG}/full/" --exclude '*.data' --cache-control 'max-age=30758400, immutable, public' --content-encoding 'gzip'    # 1 year cache
             aws s3 sync build/ "s3://pyodide-cdn2.iodide.io/v${CIRCLE_TAG}/full/" --exclude '*' --include '*.data' --cache-control 'max-age=30758400, immutable, public'  --content-type 'application/wasm' --content-encoding 'gzip'  # 1 year
             # update 301 redirect for the /latest/* route.
             aws s3api put-bucket-website --cli-input-json file://.circleci/s3-website-config.json
 
-  deploy-s3:
+  deploy-dev:
+    # To reduce chance of deployment issues, try to keep the steps here as
+    # similar as possible to the steps in deploy-release!
     resource_class: small
 
     docker:
-      - image: circleci/python:3.7.7
+      - image: cibuilds/github:0.13
 
     steps:
       - checkout
@@ -261,13 +290,15 @@ jobs:
       - run:
           name: Install requirements
           command: |
-            sudo apt-get update
-            sudo apt-get install -y groff
+            apk add --no-cache --update python3 make
             python3 -m pip install awscli
+      - run:
+          name: Set PYODIDE_BASE_URL
+          command: PYODIDE_BASE_URL="https://cdn.jsdelivr.net/pyodide/dev/full/" make update_base_url
       - run:
           name: Deploy to pyodide-cdn2.iodide.io
           command: |
-            find build/ -type f -exec sh -c "echo \"Compressing {}\"; gzip {}; mv {}.gz {};" \;
+            find build/ -type f -print0 | xargs -0 -n1 -I@ bash -c "echo \"Compressing @\"; gzip @; mv @.gz @;"
             aws s3 rm --recursive "s3://pyodide-cdn2.iodide.io/dev/full/"
             aws s3 sync build/ "s3://pyodide-cdn2.iodide.io/dev/full/" --exclude '*.data' --cache-control 'max-age=3600, public' --content-encoding 'gzip'  # 1 hour cache
             aws s3 sync build/ "s3://pyodide-cdn2.iodide.io/dev/full/" --exclude '*' --include '*.data' --cache-control 'max-age=3600, public'  --content-type 'application/wasm' --content-encoding 'gzip'  # 1 hour cache
@@ -276,55 +307,133 @@ workflows:
   version: 2
   build-and-deploy:
     jobs:
-      - lint
-      - test-docs
+      - lint:
+          filters:
+            tags:
+              only: /.*/
+
+      - test-docs:
+          filters:
+            tags:
+              only: /.*/
+
+      - test-python:
+          filters:
+            tags:
+              only: /.*/
+
       - build-core:
           filters:
             tags:
               only: /.*/
+
       - build-packages:
           requires:
             - build-core
           filters:
             tags:
               only: /.*/
-      - test-core-chrome:
+
+      - test-main:
+          name: test-core-chrome
+          test-params: -k "chrome and not webworker" src packages/micropip
           requires:
             - build-core
           filters:
             tags:
               only: /.*/
-      - test-core-firefox:
+
+      - test-main:
+          name: test-core-firefox
+          test-params: -k "firefox and not webworker" src packages/micropip
           requires:
             - build-core
           filters:
             tags:
               only: /.*/
-      - test-packages-chrome:
+
+      - test-main:
+          name: test-core-node
+          test-params: -k node src packages/micropip
+          requires:
+            - build-core
+          filters:
+            tags:
+              only: /.*/
+
+      - test-main:
+          name: test-core-chrome-webworker
+          test-params: -k chrome src/tests/test_webworker.py
+          requires:
+            - test-core-chrome
+          filters:
+            tags:
+              only: /.*/
+
+      - test-main:
+          name: test-core-firefox-webworker
+          test-params: -k firefox src/tests/test_webworker.py
+          requires:
+            - test-core-firefox
+          filters:
+            tags:
+              only: /.*/
+
+      - test-main:
+          name: test-packages-chrome
+          test-params: -k chrome packages/test* packages/*/test*
           requires:
             - build-packages
           filters:
             tags:
               only: /.*/
-      - test-packages-firefox:
+
+      - test-main:
+          name: test-packages-firefox
+          test-params: -k firefox packages/test* packages/*/test*
           requires:
             - build-packages
           filters:
             tags:
               only: /.*/
+
+      - test-main:
+          name: test-packages-node
+          test-params: -k "node and not numpy" packages/test* packages/*/test*
+          requires:
+            - build-packages
+          filters:
+            tags:
+              only: /.*/
+
       - test-emsdk:
           requires:
             - build-core
           filters:
             tags:
               only: /.*/
-      - test-python:
+
+      - test-js:
+          requires:
+            - build-core
           filters:
             tags:
               only: /.*/
+
+      - benchmark-stack-size:
+          requires:
+            - build-core
+          filters:
+            tags:
+              only: /.*/
+
       - benchmark:
           requires:
             - build-packages
+          filters:
+            tags:
+              only: /.*/
+
       - deploy-release:
           requires:
             - lint
@@ -337,7 +446,7 @@ workflows:
               ignore: /.*/
             tags:
               only: /^\d+\.\d+\.\w+$/
-      - deploy-s3:
+      - deploy-dev:
           requires:
             - lint
             - test-python
@@ -346,4 +455,4 @@ workflows:
             - test-emsdk
           filters:
             branches:
-              only: master
+              only: main
