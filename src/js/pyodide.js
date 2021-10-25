@@ -264,8 +264,9 @@ def temp(pyodide_js, Module, jsglobals):
         return (key) => {
           let result = target.get(key);
           if (result === undefined) {
-            return Module.builtins.get(key);
+            result = Module.builtins.get(key);
           }
+          return result;
         };
       }
       return Reflect.get(target, symbol);
