@@ -248,10 +248,8 @@ def temp(pyodide_js, Module, jsglobals):
   import __main__
   import builtins
 
-  globals = __main__.__dict__
-
   Module.version = pyodide.__version__
-  Module.globals = globals
+  Module.globals = __main__.__dict__
   Module.builtins = builtins.__dict__
   Module.pyodide_py = pyodide
   print("Python initialization complete")
