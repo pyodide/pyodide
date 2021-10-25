@@ -1,0 +1,50 @@
+commit 945a1458fd8c6ca9acf07da703fc3cddfbb1ff48
+Author: Marc Pabst <github@marcpabst.com>
+Date:   Mon Oct 25 12:28:34 2021 +0200
+
+    Enforce compatibility mode.
+
+diff --git a/statsmodels/tsa/statespace/tools.py b/statsmodels/tsa/statespace/tools.py
+index 7ddab4e8c..5e9a37bff 100644
+--- a/statsmodels/tsa/statespace/tools.py
++++ b/statsmodels/tsa/statespace/tools.py
+@@ -37,21 +37,24 @@ def set_mode(compatibility=None):
+     global compatibility_mode, has_trmm
+ 
+     # Determine mode automatically if none given
+-    if compatibility is None:
+-        try:
+-            from scipy.linalg import cython_blas
+-            compatibility = False
+-        except ImportError:
+-            compatibility = True
+-
+-    # If compatibility was False, make sure that is possible
+-    if not compatibility:
+-        try:
+-            from scipy.linalg import cython_blas
+-        except ImportError:
+-            warnings.warn('Minimum dependencies not met. Compatibility mode'
+-                          ' enabled.')
+-            compatibility = True
++    # if compatibility is None:
++    #     try:
++    #         from scipy.linalg import cython_blas
++    #         compatibility = False
++    #     except ImportError:
++    #         compatibility = True
++
++    # # If compatibility was False, make sure that is possible
++    # if not compatibility:
++    #     try:
++    #         from scipy.linalg import cython_blas
++    #     except ImportError:
++    #         warnings.warn('Minimum dependencies not met. Compatibility mode'
++    #                       ' enabled.')
++    #         compatibility = True
++
++    # set compatibility mode
++    compatibility = True
+ 
+     # Initialize the appropriate mode
+     if not compatibility:
