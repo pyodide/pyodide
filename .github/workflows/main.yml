@@ -13,7 +13,7 @@ jobs:
       EMSDK_NUM_CORES: 3
       EMCC_CORES: 3
       PYODIDE_JOBS: 3
-      CCACHE_DIR: /tmp/.ccache
+      CCACHE_DIR: /tmp/ccache
 
     steps:
       - uses: actions/checkout@v2
@@ -22,7 +22,7 @@ jobs:
         uses: actions/cache@v2
         with:
           path: |
-            ~/.ccache
+            /tmp/ccache
           key: ${{ hashFiles('Makefile.envs') }}-v20201205-
 
       - uses: conda-incubator/setup-miniconda@v2
@@ -49,7 +49,9 @@ jobs:
         run: |
           which ccache
 
+          ccache -z
           make -C emsdk
+          ccache -s
 
       - name: Build Cpython
         shell: bash -l {0}
@@ -69,8 +71,8 @@ jobs:
           # This is necessary to use the ccache from emsdk
           source pyodide_env.sh
           ccache -z
-          # The following packages are currently used in the main pyodide test suite
-          PYODIDE_PACKAGES="core,numpy" make
+          # Build core + numpy. Joblib is required in one of our numpy tests.
+          PYODIDE_PACKAGES="core,numpy,joblib" make
           ccache -s
 
       - name: check-size
