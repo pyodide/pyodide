@@ -13,7 +13,7 @@ jobs:
       EMSDK_NUM_CORES: 3
       EMCC_CORES: 3
       PYODIDE_JOBS: 3
-      CCACHE_DIR: ~/.ccache
+      CCACHE_DIR: /tmp/.ccache
 
     steps:
       - uses: actions/checkout@v2
@@ -123,12 +123,14 @@ jobs:
           channels: conda-forge
 
       - name: install test requirements
+        shell: bash -l {0}
         run: |
           pip install -r requirements.txt
 
       - name: run core tests
         env:
           SELENIUM_RUNNER: ${{ matrix.selenium_runner }}
+        shell: bash -l {0}
         run: |
           ls -lh
           ls -lh build/
@@ -137,6 +139,7 @@ jobs:
       - name: run package tests
         env:
           SELENIUM_RUNNER: ${{ matrix.selenium_runner }}
+        shell: bash -l {0}
         run: |
           ls -lh
           ls -lh build/
