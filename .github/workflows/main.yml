@@ -47,6 +47,8 @@ jobs:
       - name: Build emsdk
         shell: bash -l {0}
         run: |
+          which ccache
+
           make -C emsdk
 
       - name: Build Cpython
@@ -54,6 +56,8 @@ jobs:
         run: |
           # This is necessary to use the ccache from emsdk
           source pyodide_env.sh
+
+          which ccache
 
           ccache -z
           make -C cpython
@@ -111,6 +115,16 @@ jobs:
         with:
           name: core-build
           path: ./build/
+
+      - uses: conda-incubator/setup-miniconda@v2
+        with:
+          activate-environment: pyodide-env
+          python-version: 3.9.5
+          channels: conda-forge
+
+      - name: install test requirements
+        run: |
+          pip install -r requirements.txt
 
       - name: run core tests
         env:
