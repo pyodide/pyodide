@@ -23,7 +23,7 @@ jobs:
         with:
           path: |
             /tmp/ccache
-          key: ${{ hashFiles('Makefile.envs') }}-v20201205-
+          key: ${{ hashFiles('Makefile.envs') }}-v20211025-
 
       - uses: conda-incubator/setup-miniconda@v2
         with:
