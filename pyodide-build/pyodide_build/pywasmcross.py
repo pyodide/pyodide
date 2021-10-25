@@ -349,7 +349,7 @@ def handle_command(line, args, dryrun=False):
             continue
 
         # ignore unsupported --sysroot compile argument used in conda
-        if arg.startswith("--sysroot"):
+        if arg.startswith("-Wl,--sysroot"):
             continue
 
         # See https://github.com/emscripten-core/emscripten/issues/8650

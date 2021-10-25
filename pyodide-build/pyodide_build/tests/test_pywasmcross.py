@@ -123,7 +123,7 @@ def test_conda_unsupported_args():
     ) == ("emcc -c test.o -o test.so")
 
     assert handle_command_wrap(
-        "gcc -shared -c test.o --sysroot=/ -o test.so", args
+        "gcc -shared -c test.o -Wl,--sysroot=/ -o test.so", args
     ) == ("emcc -c test.o -o test.so")
 
 
