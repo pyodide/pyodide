@@ -27,8 +27,8 @@ async function main() {
       indexURL: "blah",
       fullStdLib: true,
       stdin: () => "a string",
-      stdout: (x: "a string") => {},
-      stderr: (err: "a string") => {},
+      stdout: (x: string) => {},
+      stderr: (err: string) => {},
     })
   );
 
