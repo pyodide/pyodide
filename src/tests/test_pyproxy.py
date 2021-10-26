@@ -74,7 +74,14 @@ def test_del_builtin(selenium):
         # can't del a builtin
         selenium.run("del open")
     # Can still pyimport it even though we tried to del it.
-    assert selenium.run_js("""return !!pyodide.globals.get("open");""")
+    assert selenium.run_js(
+        """
+        let open = pyodide.globals.get("open");
+        let result = !!open;
+        open.destroy();
+        return result;
+        """
+    )
 
 
 def test_in_globals(selenium):
