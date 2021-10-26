@@ -68,6 +68,32 @@ def test_pyproxy_class(selenium):
     )
 
 
+def test_del_builtin(selenium):
+    msg = "NameError"
+    with pytest.raises(selenium.JavascriptException, match=msg):
+        # can't del a builtin
+        selenium.run("del open")
+    # Can still pyimport it even though we tried to del it.
+    assert selenium.run_js("""return !!pyodide.globals.get("open");""")
+
+
+def test_in_globals(selenium):
+    selenium.run("yyyyy = 7")
+    assert (
+        selenium.run_js(
+            """
+            let result = [];
+            result.push(pyodide.globals.has("xxxxx"));
+            result.push(pyodide.globals.has("yyyyy"));
+            result.push(pyodide.globals.has("globals"));
+            result.push(pyodide.globals.has("open"));
+            return result;
+            """
+        )
+        == [False, True, True, True]
+    )
+
+
 def test_pyproxy_copy(selenium):
     selenium.run_js(
         """
