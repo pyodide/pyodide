@@ -122,7 +122,7 @@ class Package(BasePackage):
         else:
             (self.pkgdir / "build.log.tmp").unlink()
 
-        if args.log_dir:
+        if args.log_dir and (self.pkgdir / "build.log").exists():
             shutil.copy(
                 self.pkgdir / "build.log", Path(args.log_dir) / f"{self.name}.log"
             )
