@@ -26,7 +26,7 @@ def test_pyproxy_class(selenium):
         self.f_props = Object.getOwnPropertyNames(f);
         delete f.baz
         pyodide.runPython(`assert not hasattr(f, 'baz')`)
-        assert(() => f.toString().startsWith("<Foo"));
+        assert(() => f.toString().startsWith("<__main__.Foo"));
         f.destroy();
         """
     )
