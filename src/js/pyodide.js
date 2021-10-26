@@ -269,6 +269,9 @@ def temp(pyodide_js, Module, jsglobals):
           return result;
         };
       }
+      if (symbol === "has") {
+        return (key) => target.has(key) || Module.builtins.has(key);
+      }
       return Reflect.get(target, symbol);
     },
   });
