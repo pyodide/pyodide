@@ -71,8 +71,7 @@ jobs:
           # This is necessary to use the ccache from emsdk
           source pyodide_env.sh
           ccache -z
-          # Build core + numpy. Joblib is required in one of our numpy tests.
-          PYODIDE_PACKAGES="core,numpy,joblib" make
+          PYODIDE_PACKAGES="core,numpy" make
           ccache -s
 
       - name: check-size
@@ -83,21 +82,7 @@ jobs:
         with:
           name: core-build
           path: ./build/
-          retention-days: 10
-
-      - name: Archive all build output
-        run: |
-          # We create an archive of all packages, as otherwise upload
-          # is very slow
-          rm -rf ./src/js/node_modules/
-          tar czf ~/build-core-all.tgz --exclude='*__pycache__*' .
-
-      - name: Store artifacts all
-        uses: actions/upload-artifact@v2
-        with:
-          name: core-build-all
-          path: ~/build-core-all.tgz
-          retention-days: 5
+          retention-days: 60
 
   test-core:
     runs-on: ubuntu-latest
@@ -145,4 +130,4 @@ jobs:
         run: |
           ls -lh
           ls -lh build/
-          tools/pytest_wrapper.py packages/test* packages/*/test* -v -k "numpy and ${SELENIUM_RUNNER}"
+          tools/pytest_wrapper.py packages/test* packages/*/test* -v -k "numpy and not joblib and ${SELENIUM_RUNNER}"
