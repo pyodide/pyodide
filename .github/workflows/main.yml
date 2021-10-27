@@ -8,7 +8,10 @@ on:
 
 jobs:
   build-core:
-    runs-on: ubuntu-latest
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest, macos-latest]
     env:
       EMSDK_NUM_CORES: 3
       EMCC_CORES: 3
@@ -85,7 +88,7 @@ jobs:
           retention-days: 60
 
   test-core:
-    runs-on: ubuntu-latest
+    runs-on: ${{ matrix.os }}
     env:
       DISPLAY: :99
 
@@ -93,6 +96,7 @@ jobs:
     strategy:
       matrix:
         selenium_runner: [firefox]
+        os: [ubuntu-latest, macos-latest]
 
     steps:
       - uses: actions/checkout@v2
