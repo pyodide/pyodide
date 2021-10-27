@@ -63,6 +63,23 @@ class BashRunnerWithSharedEnvironment:
             self._fd_write = None
 
 
+def _have_terser():
+    try:
+        # Check npm exists and terser is installed locally
+        subprocess.run(
+            [
+                "npm",
+                "list",
+                "terser",
+            ],
+            stdout=subprocess.DEVNULL,
+        )
+    except subprocess.CalledProcessError:
+        return False
+
+    return True
+
+
 def check_checksum(path: Path, pkg: Dict[str, Any]):
     """
     Checks that a tarball matches the checksum in the package metadata.
@@ -281,7 +298,9 @@ def unvendor_tests(install_prefix: Path, test_install_prefix: Path) -> int:
     return n_moved
 
 
-def package_files(buildpath: Path, srcpath: Path, pkg: Dict[str, Any]) -> None:
+def package_files(
+    buildpath: Path, srcpath: Path, pkg: Dict[str, Any], compress: bool = False
+) -> None:
     """Package the installation folder into .data and .js files
 
     Parameters
@@ -324,10 +343,19 @@ def package_files(buildpath: Path, srcpath: Path, pkg: Dict[str, Any]) -> None:
         cwd=buildpath,
         check=True,
     )
-    subprocess.run(
-        ["uglifyjs", buildpath / (name + ".js"), "-o", buildpath / (name + ".js")],
-        check=True,
-    )
+
+    if compress:
+        subprocess.run(
+            [
+                "npx",
+                "--no-install",
+                "terser",
+                buildpath / (name + ".js"),
+                "-o",
+                buildpath / (name + ".js"),
+            ],
+            check=True,
+        )
 
     # Package tests
     if n_unvendored > 0:
@@ -342,15 +370,19 @@ def package_files(buildpath: Path, srcpath: Path, pkg: Dict[str, Any]) -> None:
             cwd=buildpath,
             check=True,
         )
-        subprocess.run(
-            [
-                "uglifyjs",
-                buildpath / (name + "-tests.js"),
-                "-o",
-                buildpath / (name + "-tests.js"),
-            ],
-            check=True,
-        )
+
+        if compress:
+            subprocess.run(
+                [
+                    "npx",
+                    "--no-install",
+                    "terser",
+                    buildpath / (name + "-tests.js"),
+                    "-o",
+                    buildpath / (name + "-tests.js"),
+                ],
+                check=True,
+            )
 
     with open(buildpath / ".packaged", "wb") as fd:
         fd.write(b"\n")
@@ -428,7 +460,7 @@ def build_package(path: Path, args):
             # i.e. they need package running, but not compile
             if not pkg.get("build", {}).get("sharedlibrary"):
                 compile(path, srcpath, pkg, args, bash_runner)
-            package_files(buildpath, srcpath, pkg)
+            package_files(buildpath, srcpath, pkg, compress=args.compress_package)
     finally:
         bash_runner.close()
         os.chdir(orig_path)
@@ -488,11 +520,23 @@ def make_parser(parser: argparse.ArgumentParser):
             "needed if you want to build other packages that depend on this one."
         ),
     )
+    parser.add_argument(
+        "--no-compress-package",
+        action="store_false",
+        default=True,
+        dest="compress_package",
+        help="Do not compress built packages.",
+    )
     return parser
 
 
 def main(args):
     path = Path(args.package[0]).resolve()
+    if args.compress_package and not _have_terser():
+        raise RuntimeError(
+            "Terser is required to compress packages. Try `npm install -g terser` to install terser."
+        )
+
     build_package(path, args)
 
 

@@ -103,6 +103,10 @@ substitutions:
   interrupted.
   {pr}`1294`
 
+- {{Fix}} The `_` variable is now set by the Pyodide repl just like it is set in
+  the native Python repl.
+  {pr}`1904`
+
 ## Version 0.18.1
 
 ### Console
