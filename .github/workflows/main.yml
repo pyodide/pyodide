@@ -47,7 +47,7 @@ jobs:
             sudo apt install -y build-essential git
           else
             # on MacOS, install coreutils for md5sum etc
-            conda install -y coreutils
+            conda install -y coreutils gfortran
           fi
           conda install -y nodejs ccache f2c pkg-config swig make patch pkg-config texinfo autoconf automake libtool
           pip install -r requirements.txt
