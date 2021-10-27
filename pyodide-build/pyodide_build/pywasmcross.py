@@ -348,6 +348,10 @@ def handle_command(line, args, dryrun=False):
             del new_args[-1]
             continue
 
+        # ignore unsupported --sysroot compile argument used in conda
+        if arg.startswith("-Wl,--sysroot"):
+            continue
+
         # See https://github.com/emscripten-core/emscripten/issues/8650
         if arg in ["-lfreetype", "-lz", "-lpng", "-lgfortran"]:
             continue
