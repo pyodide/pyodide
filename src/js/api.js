@@ -182,7 +182,7 @@ export async function loadPackagesFromImports(
  * @returns {Py2JsResult} The result of the Python code translated to JavaScript.
  * @async
  */
-export async function runPythonAsync(code, globals = Module.globals)) {
+export async function runPythonAsync(code, globals = Module.globals) {
   let coroutine = Module.pyodide_py.eval_code_async(code, globals);
   try {
     return await coroutine;
