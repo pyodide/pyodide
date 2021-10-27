@@ -71,9 +71,9 @@ if (globalThis.document) {
     globalThis.importScripts(url);
   };
 } else if (IN_NODE) {
-  const pathPromise = import("path").then((M) => M.default);
+  const pathPromise = import(/* webpackIgnore: true */ "path").then((M) => M.default);
   const fetchPromise = import("node-fetch").then((M) => M.default);
-  const vmPromise = import("vm").then((M) => M.default);
+  const vmPromise = import(/* webpackIgnore: true */ "vm").then((M) => M.default);
   loadScript = async (url) => {
     if (url.includes("://")) {
       // If it's a url, have to load it with fetch and then eval it.
