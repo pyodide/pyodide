@@ -90,7 +90,7 @@ jobs:
       - name: Store artifacts build
         uses: actions/upload-artifact@v2
         with:
-          name: core-build
+          name: core-build-${{ matrix.os }}
           path: ./build/
           retention-days: 60
 
@@ -111,7 +111,7 @@ jobs:
       - name: Download build artifact
         uses: actions/download-artifact@v2
         with:
-          name: core-build
+          name: core-build-${{ matrix.os }}
           path: ./build/
 
       - uses: conda-incubator/setup-miniconda@v2
