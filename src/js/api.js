@@ -178,7 +178,7 @@ export async function loadPackagesFromImports(
  * @param {string} code Python code to evaluate
  * @param {PyProxy} globals An optional Python dictionary to use as the globals.
  *        Defaults to :any:`pyodide.globals`. Uses the Python API
- *        :any:`pyodide.eval_code` to evaluate the code.
+ *        :any:`pyodide.eval_code_async` to evaluate the code.
  * @returns {Py2JsResult} The result of the Python code translated to JavaScript.
  * @async
  */
