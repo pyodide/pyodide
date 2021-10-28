@@ -248,11 +248,8 @@ def temp(pyodide_js, Module, jsglobals):
   import __main__
   import builtins
 
-  globals = __main__.__dict__
-  globals.update(builtins.__dict__)
-
   Module.version = pyodide.__version__
-  Module.globals = globals
+  Module.globals = __main__.__dict__
   Module.builtins = builtins.__dict__
   Module.pyodide_py = pyodide
   print("Python initialization complete")
@@ -261,7 +258,23 @@ def temp(pyodide_js, Module, jsglobals):
   Module.init_dict.get("temp")(pyodide, Module, config.jsglobals);
   // Module.runPython works starting from here!
 
-  pyodide.globals = Module.globals;
+  pyodide.globals = new Proxy(Module.globals, {
+    get(target, symbol) {
+      if (symbol === "get") {
+        return (key) => {
+          let result = target.get(key);
+          if (result === undefined) {
+            result = Module.builtins.get(key);
+          }
+          return result;
+        };
+      }
+      if (symbol === "has") {
+        return (key) => target.has(key) || Module.builtins.has(key);
+      }
+      return Reflect.get(target, symbol);
+    },
+  });
   pyodide.pyodide_py = Module.pyodide_py;
   pyodide.version = Module.version;
 
