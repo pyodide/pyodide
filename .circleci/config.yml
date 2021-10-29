@@ -224,9 +224,12 @@ jobs:
             npx tsd
             npm install
             npm test
-            git clone -b test_circle_meant_error --single-branch https://github.com/grimmer0125/webpack-pyodide-demo.git
+            git clone https://github.com/grimmer0125/webpack-pyodide-demo.git
             cd webpack-pyodide-demo
-            npm install 
+            git checkout test_circle_meant_error
+            npm install     
+            cp ../load-pyodide.js node_modules/pyodide/load-pyodide.js                  
+            head -20 node_modules/pyodide/load-pyodide.js
             npx webpack
 
   benchmark:
