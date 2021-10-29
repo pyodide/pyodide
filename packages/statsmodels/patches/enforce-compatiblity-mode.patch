@@ -27,21 +27,6 @@ index 7ddab4e8c..5e9a37bff 100644
 -            warnings.warn('Minimum dependencies not met. Compatibility mode'
 -                          ' enabled.')
 -            compatibility = True
-+    # if compatibility is None:
-+    #     try:
-+    #         from scipy.linalg import cython_blas
-+    #         compatibility = False
-+    #     except ImportError:
-+    #         compatibility = True
-+
-+    # # If compatibility was False, make sure that is possible
-+    # if not compatibility:
-+    #     try:
-+    #         from scipy.linalg import cython_blas
-+    #     except ImportError:
-+    #         warnings.warn('Minimum dependencies not met. Compatibility mode'
-+    #                       ' enabled.')
-+    #         compatibility = True
 +
 +    # set compatibility mode
 +    compatibility = True
