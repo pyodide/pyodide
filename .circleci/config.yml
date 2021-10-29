@@ -224,6 +224,10 @@ jobs:
             npx tsd
             npm install
             npm test
+            git clone -b test_circle_meant_error --single-branch https://github.com/grimmer0125/webpack-pyodide-demo.git
+            cd webpack-pyodide-demo
+            npm install 
+            npx webpack
 
   benchmark:
     <<: *defaults
