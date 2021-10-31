@@ -6,7 +6,7 @@ labels: new package request
 assignees: ''
 ---
 
-<!-- Important Note: You can install pure python packages wheels through micropip.install(...) -->
+<!-- Important Note: You can install pure python package wheels through micropip.install(...) -->
 
 ## 🐍 Package Request
 
