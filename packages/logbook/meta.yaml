@@ -6,8 +6,12 @@ source:
   url: https://github.com/getlogbook/logbook/archive/refs/tags/1.5.2.tar.gz
   sha256: 3eebcb13a41636004a2d03d875bc1c2ccc4afb02dc13f45320b147fee79c9739
 
+requirements:
+  run:
+    - distutils
+    - setuptools
+
 build:
-  library: true
   script: |
     python -c 'from Cython.Build.Cythonize import main; main(["./logbook/_speedups.pyx"])'
 
