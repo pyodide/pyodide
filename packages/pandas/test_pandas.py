@@ -44,7 +44,7 @@ def test_pandas(selenium, request):
 def test_extra_import(selenium, request):
 
     selenium.load_package("pandas")
-    selenium.run("from pandas import Series, DataFrame, Panel")
+    selenium.run("from pandas import Series, DataFrame")
 
 
 @pytest.mark.driver_timeout(40)
