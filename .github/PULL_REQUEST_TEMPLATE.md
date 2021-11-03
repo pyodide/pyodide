@@ -12,7 +12,7 @@
 
 ### Checklists
 
-- [ ] Add a [CHANGELOG](https://github.com/pyodide/pyodide/docs/project/changelog.md) entry if necessary?
+- [ ] Add a [CHANGELOG](https://github.com/pyodide/pyodide/blob/main/docs/project/changelog.md) entry if necessary?
 - [ ] Add / update tests if necessary?
 - [ ] Add new / update outdated documentation?
 
