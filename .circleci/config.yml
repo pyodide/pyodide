@@ -232,6 +232,7 @@ jobs:
 
   benchmark:
     <<: *defaults
+    resource_class: medium+
     steps:
       - checkout
       - attach_workspace:
