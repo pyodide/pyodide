@@ -39,7 +39,6 @@ jobs:
 
   build-core:
     <<: *defaults
-    resource_class: medium+
     steps:
       - checkout
 
@@ -341,6 +340,7 @@ workflows:
 
       - test-main:
           name: test-core-chrome
+          resource_class: medium+
           test-params: -k "chrome and not webworker" src packages/micropip
           requires:
             - build-core
@@ -386,6 +386,7 @@ workflows:
 
       - test-main:
           name: test-packages-chrome
+          resource_class: medium+
           test-params: -k chrome packages/test* packages/*/test*
           requires:
             - build-packages
