@@ -107,6 +107,8 @@ jobs:
 
   build-packages:
     <<: *defaults
+    resource_class: large
+
     steps:
       - checkout
 
@@ -129,6 +131,8 @@ jobs:
             ccache -z
             PYODIDE_PACKAGES='*' make -C packages
             ccache -s
+          environment:
+            PYODIDE_JOBS: 5
 
       - run:
           name: check-size
@@ -157,6 +161,7 @@ jobs:
         description: The tests to run.
         type: string
     <<: *defaults
+    resource_class: medium+
     steps:
       - attach_workspace:
           at: .
@@ -227,6 +232,7 @@ jobs:
 
   benchmark:
     <<: *defaults
+    resource_class: medium+
     steps:
       - checkout
       - attach_workspace:
