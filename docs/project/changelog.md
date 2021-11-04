@@ -31,6 +31,10 @@ substitutions:
   presence of a user-defined global named `process`.
   {pr}`1849`
 
+- {{Fix}} Webpack building compatibility issues and a {any}`loadPyodide <globalThis.loadPyodide>`
+  runtime issue due to webpack are solved. 
+  {pr}`1900`  
+
 ### Python / JavaScript type conversions
 
 - {{Enhancement}} Updated the calling convention when a JavaScript function is
