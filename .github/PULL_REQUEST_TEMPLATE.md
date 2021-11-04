@@ -1,6 +1,5 @@
-<!-- Thanks for contributing to Pyodide! Any improvements are welcome,
-     so don't be afraid of making a PR. To help make things go a bit more
-     smoothly we would appreciate that you go through this template. -->
+<!-- Thank you for contributing to Pyodide! All improvements are welcome,
+     so don't be afraid to make a PR. -->
 
 ### Description
 
@@ -8,15 +7,16 @@
      - reasoning for the change
      - some details of updated code
      - any noteworthy choices to be aware of
-     If there is a relavant issues, please refer those by #<issue_id> -->
+	Please refer to any related issues by #<issue_id> -->
 
 ### Checklists
 
-- [ ] Add a [CHANGELOG](https://github.com/pyodide/pyodide/blob/main/docs/project/changelog.md) entry if necessary?
-- [ ] Add / update tests if necessary?
-- [ ] Add new / update outdated documentation?
+Not all of these steps are necessary for every PR.
 
-<!-- [IMPORTANT] Notes on CI failure: 
-     Currently, we are having some issues with selenium based tests.
-     Don't panic if your PR fails on CI because of timeouts.
-     It's mostly not your fault. We will investigate :) -->
+- [ ] Add a [CHANGELOG](https://github.com/pyodide/pyodide/blob/main/docs/project/changelog.md) entry or explain why an entry is not needed
+- [ ] Add / update tests
+- [ ] Add new / update outdated documentation
+<!-- [IMPORTANT] Note on CI failures: 
+     Currently, we are having issues with selenium-based tests.
+     Don't panic if the CI fails on your PR because of timeouts.
+     It's probably not your fault. We will investigate :) -->
