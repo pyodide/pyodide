@@ -450,6 +450,8 @@ See the {ref}`0-17-0-release-notes` for more information.
   Pyodide to use instead of `languagePluginURL` and `languagePluginLoader`. The
   change is currently backwards compatible, but the old approach is deprecated.
   {pr}`1363`
+- `runPythonAsync` now accepts `globals` parameter.
+  {pr}`1914`
 
 ### micropip
 
