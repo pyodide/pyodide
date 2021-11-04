@@ -233,8 +233,7 @@ jobs:
             cp ../src/js/load-pyodide.js node_modules/pyodide/load-pyodide.js                  
             head -20 node_modules/pyodide/load-pyodide.js
             npx webpack
-            cd ..
-            rm -rf pyodide-webpack-example          
+   
 
   benchmark:
     <<: *defaults
