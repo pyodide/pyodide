@@ -10,6 +10,6 @@ assignees: ''
 
 ## 🐍 Package Request
 
-- Package Name / Version (e.g. pandas / latest):
-- Package URL (e.g. github link, PyPI link):
+- Package Name and Version <!-- (e.g. pandas / latest) -->:
+- Package URL <!--  (e.g. github link, PyPI link) -->:
 - Package Dependencies that needs to be resolved first:

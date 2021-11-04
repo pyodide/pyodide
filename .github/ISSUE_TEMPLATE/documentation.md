@@ -1,6 +1,6 @@
 ---
-name: Typos and doc fixes
-about: Typos and doc fixes
+name: Documentation improvement
+about: Improve or fix the documentation
 title: ''
 labels: documentation
 assignees: ''
