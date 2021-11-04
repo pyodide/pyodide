@@ -227,15 +227,14 @@ jobs:
       - run:     
           name: check if webpack cli works well with load-pyodide.js
           command: | 
-            git clone https://github.com/grimmer0125/webpack-pyodide-demo.git
-            cd webpack-pyodide-demo
-            git checkout test_circle_meant_error
+            git clone https://github.com/pyodide/pyodide-webpack-example.git
+            cd pyodide-webpack-example
             npm install     
             cp ../src/js/load-pyodide.js node_modules/pyodide/load-pyodide.js                  
             head -20 node_modules/pyodide/load-pyodide.js
             npx webpack
             cd ..
-            rm -rf webpack-pyodide-demo          
+            rm -rf pyodide-webpack-example          
 
   benchmark:
     <<: *defaults
