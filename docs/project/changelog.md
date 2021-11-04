@@ -94,6 +94,8 @@ substitutions:
 - {{ Fix }} The built-in pwd module of Python, which provides Unix specific
   feature, is now unvendored.
   {pr}`1883`
+  
+- New packages: `logbook`
 
 ### Uncategorized
 
