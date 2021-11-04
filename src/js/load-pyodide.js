@@ -16,7 +16,7 @@ export async function initializePackageIndex(indexURL) {
   baseURL = indexURL;
   let package_json;
   if (IN_NODE) {
-    const fsPromises = await import("fs/promises");
+    const fsPromises = await import(/* webpackIgnore: true */ "fs/promises");
     const package_string = await fsPromises.readFile(
       `${indexURL}packages.json`
     );
@@ -63,7 +63,7 @@ function _uri_to_package_name(package_uri) {
 export let loadScript;
 if (globalThis.document) {
   // browser
-  loadScript = (url) => import(url);
+  loadScript = async (url) => await import(/* webpackIgnore: true */ url);
 } else if (globalThis.importScripts) {
   // webworker
   loadScript = async (url) => {
@@ -71,9 +71,13 @@ if (globalThis.document) {
     globalThis.importScripts(url);
   };
 } else if (IN_NODE) {
-  const pathPromise = import("path").then((M) => M.default);
+  const pathPromise = import(/* webpackIgnore: true */ "path").then(
+    (M) => M.default
+  );
   const fetchPromise = import("node-fetch").then((M) => M.default);
-  const vmPromise = import("vm").then((M) => M.default);
+  const vmPromise = import(/* webpackIgnore: true */ "vm").then(
+    (M) => M.default
+  );
   loadScript = async (url) => {
     if (url.includes("://")) {
       // If it's a url, have to load it with fetch and then eval it.
