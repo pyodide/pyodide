@@ -55,6 +55,13 @@ substitutions:
   benefit to nonleaky code and turns some leaky code into broken code (see
   {issue}`1855` for an example). {pr}`1870`
 
+- {{Fix}} Improved the way that `pyodide.globals.get("builtin_name")` works.
+  Before we used `__main__.__dict__.update(builtins.__dict__)` which led to
+  several undesirable effects such as `__name__` being equal to `"builtins"`.
+  Now we use a proxy wrapper to replace `pyodide.globals.get` with a function
+  that looks up the name on `builtins` if lookup on `globals` fails.
+  {pr}`1905`
+
 ### pyodide-build
 
 - {{API}} By default only a minimal set of packages is built. To build all
@@ -87,6 +94,8 @@ substitutions:
 - {{ Fix }} The built-in pwd module of Python, which provides Unix specific
   feature, is now unvendored.
   {pr}`1883`
+  
+- New packages: `logbook`
 
 ### Uncategorized
 

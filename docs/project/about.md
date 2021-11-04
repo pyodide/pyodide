@@ -57,6 +57,16 @@ list from there with "The Pyodide development team" like in the example below:
 - Twitter: [twitter.com/pyodide](https://twitter.com/pyodide)
 - Stack Overflow: [stackoverflow.com/questions/tagged/pyodide](https://stackoverflow.com/questions/tagged/pyodide)
 
+## Donations
+
+We accept donations to the Pyodide project at
+[opencollective.com/pyodide](https://opencollective.com/pyodide). All donations
+are processed by the [Open Source Collective](https://www.oscollective.org/) -- a 
+nonprofit organization that acts as our fiscal host.
+
+Funds will be mostly spent to organize in-person code sprints and to cover
+infrastructure costs for distributing packages built with Pyodide.
+
 ## License
 
 Pyodide uses the [Mozilla Public License Version
