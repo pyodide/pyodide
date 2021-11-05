@@ -19,7 +19,7 @@ all: .artifacts/bin/pyodide-build
 
 .artifacts/bin/pyodide-build: ../pyodide-build/pyodide_build/**
 	mkdir -p $(PYODIDE_LIBRARIES)
-	python3 -m pip install -e ../pyodide-build --no-deps --prefix $(PYODIDE_LIBRARIES)
+	$(HOSTPYTHON) -m pip install -e ../pyodide-build --no-deps --prefix $(PYODIDE_LIBRARIES)
 
 update-all:
 	for pkg in $$(find . -maxdepth 1 ! -name ".*" -type d -exec basename {} \; | tail -n +2); do \
