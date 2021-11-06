@@ -329,6 +329,8 @@ def handle_command(line, args, dryrun=False):
             continue
         if arg == "-lffi":
             continue
+        if arg == "-mpopcnt":
+            continue
         # The native build is possibly multithreaded, but the emscripten one
         # definitely isn't
         arg = re.sub(r"/python([0-9]\.[0-9]+)m", r"/python\1", arg)
