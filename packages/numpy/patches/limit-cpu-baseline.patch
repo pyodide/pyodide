@@ -1,3 +1,5 @@
+This is to limit the SIMD optimization level when compiling numpy due to emscripten's restriction on porting SIMD instructions: https://emscripten.org/docs/porting/simd.html#compiling-simd-code-targeting-x86-sse-instruction-set. Without this patch, we will get an error saying some intrinsic types can't be found.
+
 diff --git a/numpy/distutils/command/build.py b/numpy/distutils/command/build.py
 index a4fda537d..a1c4bfdb1 100644
 --- a/numpy/distutils/command/build.py
@@ -8,8 +10,8 @@ index a4fda537d..a1c4bfdb1 100644
          self.warn_error = False
 -        self.cpu_baseline = "min"
 -        self.cpu_dispatch = "max -xop -fma4" # drop AMD legacy features by default
-+        self.cpu_baseline = "avx"
-+        self.cpu_dispatch = "avx" # drop AMD legacy features by default
++        self.cpu_baseline = "min"
++        self.cpu_dispatch = "min" # drop AMD legacy features by default
          self.disable_optimization = False
          """
          the '_simd' module is a very large. Adding more dispatched features
