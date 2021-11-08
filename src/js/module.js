@@ -90,7 +90,7 @@ function createStdinWrapper(stdin) {
  */
 export function setHomeDirectory(path) {
   Module.preRun.push(function () {
-    fallbackPath = "/";
+    const fallbackPath = "/";
     try {
       Module.FS.mkdirTree(path);
     } catch (e) {
