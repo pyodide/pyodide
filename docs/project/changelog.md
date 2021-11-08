@@ -27,7 +27,7 @@ substitutions:
 
 - {{Enhancement}} Added a {any}`install_archive` API which downloads a zip file from a url
   and then uses `shutil` to unpack it.
-  {pr}`1865`
+  {pr}`1935`
 
 ### JavaScript package
 
