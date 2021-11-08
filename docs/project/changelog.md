@@ -33,7 +33,11 @@ substitutions:
 
 - {{Fix}} Webpack building compatibility issues and a {any}`loadPyodide <globalThis.loadPyodide>`
   runtime issue due to webpack are solved. 
-  {pr}`1900`  
+  {pr}`1900`
+
+- {{API}} {any}`loadPyodide <globalThis.loadPyodide>` now accepts `homeDirectory`
+  parameter which sets home directory of Pyodide virtual file system.
+  {pr}`1936`  
 
 ### Python / JavaScript type conversions
 
