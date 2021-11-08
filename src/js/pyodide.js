@@ -1,7 +1,7 @@
 /**
  * The main bootstrap code for loading pyodide.
  */
-import { Module, setStandardStreams } from "./module.js";
+import { Module, setStandardStreams, setHomeDirectory } from "./module.js";
 import {
   loadScript,
   initializePackageIndex,
@@ -168,6 +168,8 @@ function fixRecursionLimit() {
  *
  * @param {string} config.indexURL - The URL from which Pyodide will load
  * packages
+ * @param {string} config.homeDirectory - The home directory which Pyodide will use inside virtual file system
+ * Default: /home/pyodide
  * @param {boolean} config.fullStdLib - Load the full Python standard library.
  * Setting this to false excludes following modules: distutils.
  * Default: true
@@ -186,6 +188,7 @@ export async function loadPyodide(config) {
     fullStdLib: true,
     jsglobals: globalThis,
     stdin: globalThis.prompt ? globalThis.prompt : undefined,
+    homeDirectory: "/home/pyodide",
   };
   config = Object.assign(default_config, config);
   if (globalThis.__pyodide_module) {
@@ -212,6 +215,7 @@ export async function loadPyodide(config) {
   let packageIndexReady = initializePackageIndex(baseURL);
 
   setStandardStreams(config.stdin, config.stdout, config.stderr);
+  setHomeDirectory(config.homeDirectory);
 
   Module.locateFile = (path) => baseURL + path;
   let moduleLoaded = new Promise((r) => (Module.postRun = r));

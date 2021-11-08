@@ -13,6 +13,7 @@ Module.noImageDecoding = true;
 Module.noAudioDecoding = true;
 Module.noWasmDecoding = false; // we preload wasm using the built in plugin now
 Module.preloadedWasm = {};
+Module.preRun = [];
 
 /**
  *
@@ -32,11 +33,9 @@ export function setStandardStreams(stdin, stdout, stderr) {
 
   // For stdin, we have to deal with the low level API ourselves
   if (stdin) {
-    Module.preRun = [
-      function () {
-        Module.FS.init(createStdinWrapper(stdin), null, null);
-      },
-    ];
+    Module.preRun.push(function () {
+      Module.FS.init(createStdinWrapper(stdin), null, null);
+    });
   }
 }
 
@@ -83,4 +82,24 @@ function createStdinWrapper(stdin) {
     }
   }
   return stdinWrapper;
+}
+
+/**
+ *
+ * @param {string} path
+ */
+export function setHomeDirectory(path) {
+  Module.preRun.push(function () {
+    fallbackPath = "/";
+    try {
+      Module.FS.mkdirTree(path);
+    } catch (e) {
+      console.error(`Error occurred while making a home directory '${path}':`);
+      console.error(e);
+      console.error(`Using '${fallbackPath}' for a home directory instead`);
+      path = fallbackPath;
+    }
+
+    Module.FS.chdir(path);
+  });
 }
