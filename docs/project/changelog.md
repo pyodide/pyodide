@@ -25,6 +25,10 @@ substitutions:
   minimizing the number of times the data is copied.
   {pr}`1865`
 
+- {{Enhancement}} Added a {any}`install_archive` API which downloads a zip file from a url
+  and then uses `shutil` to unpack it.
+  {pr}`1865`
+
 ### JavaScript package
 
 - {{Fix}} {any}`loadPyodide <globalThis.loadPyodide>` no longer fails in the
@@ -32,8 +36,8 @@ substitutions:
   {pr}`1849`
 
 - {{Fix}} Webpack building compatibility issues and a {any}`loadPyodide <globalThis.loadPyodide>`
-  runtime issue due to webpack are solved. 
-  {pr}`1900`  
+  runtime issue due to webpack are solved.
+  {pr}`1900`
 
 ### Python / JavaScript type conversions
 
@@ -98,7 +102,7 @@ substitutions:
 - {{ Fix }} The built-in pwd module of Python, which provides Unix specific
   feature, is now unvendored.
   {pr}`1883`
-  
+
 - New packages: `logbook`
 
 ### Uncategorized

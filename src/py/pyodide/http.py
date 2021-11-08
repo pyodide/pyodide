@@ -2,6 +2,8 @@ from io import StringIO
 from ._core import JsProxy, to_js
 from typing import Any
 import json
+from tempfile import NamedTemporaryFile
+import shutil
 
 try:
     from js import XMLHttpRequest
@@ -148,8 +150,34 @@ class FetchResponse:
         self._raise_if_failed()
         return (await self.buffer()).to_bytes()
 
+    async def unpack_archive(self, extract_dir=None, format=None):
+        """Treat the data as an archive and unpack it into target directory.
 
-async def pyfetch(url, **kwargs) -> FetchResponse:
+        Assumes that the file is an archive in a format that shutil has an
+        unpacker for. The arguments extract_dir and format are passed directly
+        on to ``shutil.unpack_archive``.
+
+        Parameters
+        ----------
+        extract_dir : str
+            Directory to extract the archive into. If not
+            provided, the current working directory is used.
+
+        format : str
+            The archive format: one of “zip”, “tar”, “gztar”, “bztar”.
+            Or any other format registered with ``shutil.register_unpack_format()``. If not
+            provided, ``unpack_archive()`` will use the archive file name extension
+            and see if an unpacker was registered for that extension. In case
+            none is found, a ``ValueError`` is raised.
+        """
+        filename = self._url.rsplit("/", -1)[-1]
+        f = NamedTemporaryFile(suffix=filename)
+        f.write(await self.bytes())
+        shutil.unpack_archive(f.name, extract_dir, format)
+        f.close()
+
+
+async def pyfetch(url: str, **kwargs) -> FetchResponse:
     """Fetch the url and return the response.
 
     This functions provides a similar API to the JavaScript `fetch function
@@ -160,8 +188,11 @@ async def pyfetch(url, **kwargs) -> FetchResponse:
 
     Parameters
     ----------
-    url URL to fetch. \*\*kwargs Any keyword arguments are passed along as
-        `optional parameters to the fetch API
+    url : str
+        URL to fetch.
+
+    \*\*kwargs : Any
+        keyword arguments are passed along as `optional parameters to the fetch API
         <https://developer.mozilla.org/en-US/docs/Web/API/fetch#parameters>`_.
     """
     if IN_BROWSER:
