@@ -96,42 +96,8 @@ Module.fatal_error = function (e) {
   throw e;
 };
 
-/**
- * Run Python code in the simplest way possible. The primary purpose of this
- * method is for bootstrapping. It is also useful for debugging: If the Python
- * interpreter is initialized successfully then it should be possible to use
- * this method to run Python code even if everything else in the Pyodide
- * `core` module fails.
- *
- * The differences are:
- *    1. `runPythonSimple` doesn't return anything (and so won't leak
- *        PyProxies)
- *    2. `runPythonSimple` doesn't require access to any state on the
- *       JavaScript `pyodide` module.
- *    3. `runPython` uses `pyodide.eval_code`, whereas `runPythonSimple` uses
- *       `PyRun_String` which is the C API for `eval` / `exec`.
- *    4. `runPythonSimple` runs with `globals` a separate dict which is called
- *       `init_dict` (keeps global state private)
- *    5. `runPythonSimple` doesn't dedent the argument
- *
- * When `core` initialization is completed, the globals for `runPythonSimple`
- * is made available as `Module.init_dict`.
- *
- * @private
- */
-Module.runPythonSimple = function (code) {
-  let code_c_string = Module.stringToNewUTF8(code);
-  let errcode;
-  try {
-    errcode = Module._run_python_simple_inner(code_c_string);
-  } catch (e) {
-    Module.fatal_error(e);
-  } finally {
-    Module._free(code_c_string);
-  }
-  if (errcode === -1) {
-    Module._pythonexc2js();
-  }
+Module.runPythonInternal = function (code) {
+  return Module._pyodide._base.eval_code(code, Module.runPythonInternal_dict);
 };
 
 /**
@@ -153,7 +119,7 @@ function fixRecursionLimit() {
   } catch (err) {}
 
   let recursionLimit = Math.min(depth / 25, 500);
-  Module.runPythonSimple(
+  Module.runPythonInternal(
     `import sys; sys.setrecursionlimit(int(${recursionLimit}))`
   );
 }
@@ -227,35 +193,34 @@ export async function loadPyodide(config) {
   // being called.
   await moduleLoaded;
 
-  fixRecursionLimit();
-  let pyodide = makePublicAPI();
-
   // Bootstrap steps:
   //
-  //   1. _pyodide_core is ready now so we can call _pyodide.register_js_finder
-  //   2. Use the jsfinder to register the js and pyodide_js packages
-  //   3. Import pyodide, this requires _pyodide_core, js and pyodide_js to be
+  //   1. We want to use runPythonInternal_dict to keep
+  //   2. _pyodide_core is ready now so we can call _pyodide._importhook.register_js_finder
+  //   3. Use the jsfinder to register the js and pyodide_js packages
+  //   4. Import pyodide, this requires _pyodide_core, js and pyodide_js to be
   //      ready.
-  //   4. Add the pyodide_py and Python __main__.__dict__ objects to pyodide_js
-  Module.runPythonSimple(`
-def temp(pyodide_js, Module, jsglobals):
-  from _pyodide._importhook import register_js_finder, register_js_module
-  register_js_finder()
-  register_js_module("js", jsglobals)
-  register_js_module("pyodide_js", pyodide_js)
+  //   5. Add the pyodide_py and Python __main__.__dict__ objects to pyodide_js
 
-  import pyodide
-  import __main__
-  import builtins
+  Module.runPythonInternal_dict = Module._pyodide._base.eval_code("{}");
 
-  Module.version = pyodide.__version__
-  Module.globals = __main__.__dict__
-  Module.builtins = builtins.__dict__
-  Module.pyodide_py = pyodide
-  print("Python initialization complete")
-`);
+  fixRecursionLimit();
 
-  Module.init_dict.get("temp")(pyodide, Module, config.jsglobals);
+  Module._pyodide._importhook.register_js_finder();
+  Module._pyodide._importhook.register_js_module("js", config.jsglobals);
+
+  let pyodide = makePublicAPI();
+  Module._pyodide._importhook.register_js_module("pyodide_js", pyodide);
+
+  Module.pyodide_py = Module.runPythonInternal("import pyodide; pyodide");
+  Module.version = Module.pyodide_py.__version__;
+  Module.globals = Module.runPythonInternal(
+    "import __main__; __main__.__dict__"
+  );
+  Module.builtins = Module.runPythonInternal(
+    "import builtins; builtins.__dict__"
+  );
+
   // Module.runPython works starting from here!
 
   pyodide.globals = new Proxy(Module.globals, {
