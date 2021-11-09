@@ -119,13 +119,13 @@ docs/_build/html/console.html: src/templates/console.html
 
 
 .PHONY: build/webworker.js
-build/webworker.js: src/webworker.js
+build/webworker.js: src/templates/webworker.js
 	cp $< $@
 	sed -i -e 's#{{ PYODIDE_BASE_URL }}#$(PYODIDE_BASE_URL)#g' $@
 
 
 .PHONY: build/webworker_dev.js
-build/webworker_dev.js: src/webworker.js
+build/webworker_dev.js: src/templates/webworker.js
 	cp $< $@
 	sed -i -e 's#{{ PYODIDE_BASE_URL }}#./#g' $@
 
