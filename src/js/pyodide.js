@@ -34,7 +34,7 @@ import "./pyproxy.gen.js";
  * @private
  */
 Module.dump_traceback = function () {
-  let fd_stdout = 1;
+  const fd_stdout = 1;
   Module.__Py_DumpTraceback(fd_stdout, Module._PyGILState_GetThisThreadState());
 };
 
@@ -96,8 +96,9 @@ Module.fatal_error = function (e) {
   throw e;
 };
 
+let runPythonInternal_dict; // Initialized in finalizeBootstrap
 Module.runPythonInternal = function (code) {
-  return Module._pyodide._base.eval_code(code, Module.runPythonInternal_dict);
+  return Module._pyodide._base.eval_code(code, runPythonInternal_dict);
 };
 
 /**
@@ -123,6 +124,70 @@ function fixRecursionLimit() {
     `import sys; sys.setrecursionlimit(int(${recursionLimit}))`
   );
 }
+
+function wrapPythonGlobals(globals_dict, builtins_dict) {
+  return new Proxy(globals_dict, {
+    get(target, symbol) {
+      if (symbol === "get") {
+        return (key) => {
+          let result = target.get(key);
+          if (result === undefined) {
+            result = Module.builtins.get(key);
+          }
+          return result;
+        };
+      }
+      if (symbol === "has") {
+        return (key) => target.has(key) || Module.builtins.has(key);
+      }
+      return Reflect.get(target, symbol);
+    },
+  });
+}
+
+/**
+ * @private
+ * This function is called after the emscripten module is finished initializing,
+ * so eval_code is newly available.
+ * It finishes the bootstrap so that once it is complete, it is possible to use
+ * the core `pyodide` apis. (But package loading is not ready quite yet.)
+ */
+function finalizeBootstrap() {
+  // First make internal dict so that we can use runPythonInternal.
+  // runPythonInternal uses a separate namespace so we don't pollute the main
+  // environment with variables from our setup.
+  runPythonInternal_dict = Module._pyodide._base.eval_code("{}");
+
+  // needs runPythonInternal
+  fixRecursionLimit();
+
+  // Set up globals
+  let globals = Module.runPythonInternal("import __main__; __main__.__dict__");
+  let builtins = Module.runPythonInternal("import builtins; builtins.__dict__");
+  Module.globals = wrapPythonGlobals(globals, builtins);
+
+  // Set up key Javascript modules.
+  let importhook = Module._pyodide._importhook;
+  importhook.register_js_finder();
+  importhook.register_js_module("js", config.jsglobals);
+
+  let pyodide = makePublicAPI();
+  importhook.register_js_module("pyodide_js", pyodide);
+
+  // import pyodide_py. We want to ensure that as much stuff as possible is
+  // already set up before importing pyodide_py to simplify development of
+  // pyodide_py code (Otherwise it's very hard to keep track of which things
+  // aren't set up yet.)
+  Module.pyodide_py = Module.runPythonInternal("import pyodide; pyodide");
+  Module.version = Module.pyodide_py.__version__;
+
+  // copy some last constants onto public API.
+  pyodide.pyodide_py = Module.pyodide_py;
+  pyodide.version = Module.version;
+  pyodide.globals = Module.globals;
+  return pyodide;
+}
+
 /**
  * Load the main Pyodide wasm module and initialize it.
  *
@@ -193,55 +258,8 @@ export async function loadPyodide(config) {
   // being called.
   await moduleLoaded;
 
-  // Bootstrap steps:
-  //
-  //   1. We want to use runPythonInternal_dict to keep
-  //   2. _pyodide_core is ready now so we can call _pyodide._importhook.register_js_finder
-  //   3. Use the jsfinder to register the js and pyodide_js packages
-  //   4. Import pyodide, this requires _pyodide_core, js and pyodide_js to be
-  //      ready.
-  //   5. Add the pyodide_py and Python __main__.__dict__ objects to pyodide_js
-
-  Module.runPythonInternal_dict = Module._pyodide._base.eval_code("{}");
-
-  fixRecursionLimit();
-
-  Module._pyodide._importhook.register_js_finder();
-  Module._pyodide._importhook.register_js_module("js", config.jsglobals);
-
-  let pyodide = makePublicAPI();
-  Module._pyodide._importhook.register_js_module("pyodide_js", pyodide);
-
-  Module.pyodide_py = Module.runPythonInternal("import pyodide; pyodide");
-  Module.version = Module.pyodide_py.__version__;
-  Module.globals = Module.runPythonInternal(
-    "import __main__; __main__.__dict__"
-  );
-  Module.builtins = Module.runPythonInternal(
-    "import builtins; builtins.__dict__"
-  );
-
-  // Module.runPython works starting from here!
-
-  pyodide.globals = new Proxy(Module.globals, {
-    get(target, symbol) {
-      if (symbol === "get") {
-        return (key) => {
-          let result = target.get(key);
-          if (result === undefined) {
-            result = Module.builtins.get(key);
-          }
-          return result;
-        };
-      }
-      if (symbol === "has") {
-        return (key) => target.has(key) || Module.builtins.has(key);
-      }
-      return Reflect.get(target, symbol);
-    },
-  });
-  pyodide.pyodide_py = Module.pyodide_py;
-  pyodide.version = Module.version;
+  let pyodide = finalizeBootstrap();
+  // Module.runPython works starting here.
 
   await packageIndexReady;
   if (config.fullStdLib) {
