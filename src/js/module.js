@@ -20,6 +20,7 @@ Module.preRun = [];
  * @param {undefined | function(): string} stdin
  * @param {undefined | function(string)} stdout
  * @param {undefined | function(string)} stderr
+ * @private
  */
 export function setStandardStreams(stdin, stdout, stderr) {
   // For stdout and stderr, emscripten provides convenient wrappers that save us the trouble of converting the bytes into a string
@@ -87,6 +88,7 @@ function createStdinWrapper(stdin) {
 /**
  *
  * @param {string} path
+ * @private
  */
 export function setHomeDirectory(path) {
   Module.preRun.push(function () {
