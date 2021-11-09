@@ -39,7 +39,7 @@ build/pyodide.asm.js: \
 	src/core/pyproxy.o \
 	src/core/python2js_buffer.o \
 	src/core/python2js.o \
-	$(wildcard src/lib/**/*) \
+	$(wildcard src/lib/*.py) \
 	$(CPYTHONLIB)/tzdata \
 	$(wildcard src/py/pyodide/*.py) \
 	$(wildcard src/py/_pyodide/*.py) \
