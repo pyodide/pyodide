@@ -97,6 +97,11 @@ Module.fatal_error = function (e) {
 };
 
 let runPythonInternal_dict; // Initialized in finalizeBootstrap
+/**
+ * @private
+ * Just like `runPython` except uses a different globals dict and gets
+ * `eval_code` from `_pyodide` so that it can work before `pyodide` is imported.
+ */
 Module.runPythonInternal = function (code) {
   return Module._pyodide._base.eval_code(code, runPythonInternal_dict);
 };
@@ -125,6 +130,13 @@ function fixRecursionLimit() {
   );
 }
 
+/**
+ * @private
+ * A proxy around globals that falls back to checking for a builtin if has or
+ * get fails to find a global with the given key. Note that this proxy is
+ * transparent to js2python: it won't notice that this wrapper exists at all and
+ * will translate this proxy to the globals dictionary.
+ */
 function wrapPythonGlobals(globals_dict, builtins_dict) {
   return new Proxy(globals_dict, {
     get(target, symbol) {
@@ -132,13 +144,13 @@ function wrapPythonGlobals(globals_dict, builtins_dict) {
         return (key) => {
           let result = target.get(key);
           if (result === undefined) {
-            result = Module.builtins.get(key);
+            result = builtins_dict.get(key);
           }
           return result;
         };
       }
       if (symbol === "has") {
-        return (key) => target.has(key) || Module.builtins.has(key);
+        return (key) => target.has(key) || builtins_dict.has(key);
       }
       return Reflect.get(target, symbol);
     },
