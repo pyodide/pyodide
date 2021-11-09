@@ -108,13 +108,13 @@ Module.runPythonInternal = function (code) {
 
 /**
  * The JavaScript/Wasm call stack is too small to handle the default Python call
- * stack limit of 1000 frames. Here, we determine the JavaScript call stack
- * depth available, and then divide by 50 (determined heuristically) to set the
- * maximum Python call stack depth.
+ * stack limit of 1000 frames. We determine the JavaScript call stack depth
+ * available, and then guess a value for the Python recursion depth based on the
+ * depth of the JavaScript call stack.
  *
  * @private
  */
-function fixRecursionLimit() {
+function calculateRecursionLimit() {
   let depth = 0;
   function recurse() {
     depth += 1;
@@ -124,10 +124,8 @@ function fixRecursionLimit() {
     recurse();
   } catch (err) {}
 
-  let recursionLimit = Math.min(depth / 25, 500);
-  Module.runPythonInternal(
-    `import sys; sys.setrecursionlimit(int(${recursionLimit}))`
-  );
+  const recursionLimit = Math.min(depth / 25, 500);
+  return recursionLimit;
 }
 
 /**
@@ -170,8 +168,8 @@ function finalizeBootstrap() {
   // environment with variables from our setup.
   runPythonInternal_dict = Module._pyodide._base.eval_code("{}");
 
-  // needs runPythonInternal
-  fixRecursionLimit();
+  Module.sys = Module.runPythonInternal("import sys; sys");
+  Module.sys.setrecursionlimit(calculateRecursionLimit());
 
   // Set up globals
   let globals = Module.runPythonInternal("import __main__; __main__.__dict__");
