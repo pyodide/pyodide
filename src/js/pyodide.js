@@ -162,7 +162,7 @@ function wrapPythonGlobals(globals_dict, builtins_dict) {
  * It finishes the bootstrap so that once it is complete, it is possible to use
  * the core `pyodide` apis. (But package loading is not ready quite yet.)
  */
-function finalizeBootstrap(jsglobals) {
+function finalizeBootstrap(config) {
   // First make internal dict so that we can use runPythonInternal.
   // runPythonInternal uses a separate namespace so we don't pollute the main
   // environment with variables from our setup.
@@ -179,7 +179,7 @@ function finalizeBootstrap(jsglobals) {
   // Set up key Javascript modules.
   let importhook = Module._pyodide._importhook;
   importhook.register_js_finder();
-  importhook.register_js_module("js", jsglobals);
+  importhook.register_js_module("js", config.jsglobals);
 
   let pyodide = makePublicAPI();
   importhook.register_js_module("pyodide_js", pyodide);
@@ -268,7 +268,7 @@ export async function loadPyodide(config) {
   // being called.
   await moduleLoaded;
 
-  let pyodide = finalizeBootstrap(config.jsglobals);
+  let pyodide = finalizeBootstrap(config);
   // Module.runPython works starting here.
 
   await packageIndexReady;
