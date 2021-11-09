@@ -275,7 +275,7 @@ export async function loadPyodide(config) {
   if (config.fullStdLib) {
     await loadPackage(["distutils"]);
   }
-
+  pyodide.runPython("print('Python initialization complete')");
   return pyodide;
 }
 globalThis.loadPyodide = loadPyodide;
