@@ -25,7 +25,7 @@ substitutions:
   minimizing the number of times the data is copied.
   {pr}`1865`
 
-- {{Enhancement}} Added a {any}`install_archive` API which downloads a zip file from a url
+- {{Enhancement}} Added a {any}`unpack_archive` API which downloads a zip file from a url
   and then uses `shutil` to unpack it.
   {pr}`1935`
 
