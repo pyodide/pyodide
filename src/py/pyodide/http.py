@@ -172,8 +172,8 @@ class FetchResponse:
         """
         filename = self._url.rsplit("/", -1)[-1]
         with NamedTemporaryFile(suffix=filename) as f:
-        	f.write(await self.bytes())
-        	shutil.unpack_archive(f.name, extract_dir, format)
+            f.write(await self.bytes())
+            shutil.unpack_archive(f.name, extract_dir, format)
 
 
 async def pyfetch(url: str, **kwargs) -> FetchResponse:
