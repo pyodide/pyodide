@@ -39,10 +39,10 @@ build/pyodide.asm.js: \
 	src/core/pyproxy.o \
 	src/core/python2js_buffer.o \
 	src/core/python2js.o \
-	$(wildcard src/lib/*.py) \
-	$(CPYTHONLIB)/tzdata \
+	$(wildcard src/py/lib/*.py) \
 	$(wildcard src/py/pyodide/*.py) \
 	$(wildcard src/py/_pyodide/*.py) \
+	$(CPYTHONLIB)/tzdata \
 	$(CPYTHONLIB)
 	date +"[%F %T] Building pyodide.asm.js..."
 	[ -d build ] || mkdir build
