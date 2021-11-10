@@ -32,8 +32,12 @@ substitutions:
   {pr}`1849`
 
 - {{Fix}} Webpack building compatibility issues and a {any}`loadPyodide <globalThis.loadPyodide>`
-  runtime issue due to webpack are solved. 
-  {pr}`1900`  
+  runtime issue due to webpack are solved.
+  {pr}`1900`
+
+- {{Enhancement}} Added a {any}`pyodide.importPythonModule` api to import a
+  Python module and return it as a `PyProxy`.
+  {pr}`1944`
 
 ### Python / JavaScript type conversions
 
@@ -98,7 +102,7 @@ substitutions:
 - {{ Fix }} The built-in pwd module of Python, which provides Unix specific
   feature, is now unvendored.
   {pr}`1883`
-  
+
 - New packages: `logbook`
 
 ### Uncategorized
