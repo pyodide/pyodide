@@ -124,6 +124,26 @@ class JsProxy:
         an ArrayBuffer view.
         """
 
+    def write_to_file(self, fd: int):
+        """Writes the entire buffer to a file descriptor.
+
+        Will write the entire contents of the buffer to the current position of
+        the file descriptor.
+
+        Present only if the wrapped Javascript object is an ArrayBuffer or an
+        ArrayBuffer view.
+        """
+
+    def read_from_file(self, fd: int):
+        """Reads from a file descriptor into the buffer.
+
+        Will try to read a chunk of data of size the length of the buffer from
+        the current position of the file descriptor.
+
+        Present only if the wrapped Javascript object is an ArrayBuffer or an
+        ArrayBuffer view.
+        """
+
     def to_string(self, encoding=None) -> str:
         """Convert the buffer to a string object.
 

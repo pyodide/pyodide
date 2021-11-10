@@ -1015,6 +1015,25 @@ def test_buffer(selenium):
     )
 
 
+@run_in_pyodide
+def test_buffer_to_file():
+    from js import Uint8Array
+
+    a = Uint8Array.new(range(10))
+    from tempfile import TemporaryFile
+
+    with TemporaryFile() as f:
+        a.write_to_file(f.fileno())
+        f.seek(0)
+        assert f.read() == a.to_bytes()
+
+        b = b"abcdef"
+        f.write(b)
+        f.seek(-len(b), 1)
+        a.read_from_file(f.fileno())
+        assert list(a.subarray(0, len(b)).to_bytes()) == list(b)
+
+
 def test_buffer_assign_back(selenium):
     result = selenium.run_js(
         """

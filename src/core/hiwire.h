@@ -558,6 +558,12 @@ hiwire_assign_to_ptr(JsRef idobj, void* ptr);
 errcode
 hiwire_assign_from_ptr(JsRef idobj, void* ptr);
 
+errcode
+hiwire_write_to_file(JsRef idobj, int fd);
+
+errcode
+hiwire_read_from_file(JsRef idobj, int fd);
+
 /**
  * Get a data type identifier for a given typedarray.
  */
