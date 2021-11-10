@@ -124,7 +124,7 @@ class JsProxy:
         an ArrayBuffer view.
         """
 
-    def write_to_file(self, fd: int):
+    def to_file(self, fd: int):
         """Writes the entire buffer to a file descriptor.
 
         Will write the entire contents of the buffer to the current position of
@@ -134,7 +134,7 @@ class JsProxy:
         ArrayBuffer view.
         """
 
-    def read_from_file(self, fd: int):
+    def from_file(self, fd: int):
         """Reads from a file descriptor into the buffer.
 
         Will try to read a chunk of data of size the length of the buffer from

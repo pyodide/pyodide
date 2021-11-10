@@ -1023,14 +1023,14 @@ def test_buffer_to_file():
     from tempfile import TemporaryFile
 
     with TemporaryFile() as f:
-        a.write_to_file(f.fileno())
+        a.to_file(f.fileno())
         f.seek(0)
         assert f.read() == a.to_bytes()
 
         b = b"abcdef"
         f.write(b)
         f.seek(-len(b), 1)
-        a.read_from_file(f.fileno())
+        a.from_file(f.fileno())
         assert list(a.subarray(0, len(b)).to_bytes()) == list(b)
 
 

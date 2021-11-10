@@ -32,8 +32,8 @@ substitutions:
   {pr}`1849`
 
 - {{Fix}} Webpack building compatibility issues and a {any}`loadPyodide <globalThis.loadPyodide>`
-  runtime issue due to webpack are solved. 
-  {pr}`1900`  
+  runtime issue due to webpack are solved.
+  {pr}`1900`
 
 ### Python / JavaScript type conversions
 
@@ -46,9 +46,9 @@ substitutions:
   {any}`JsProxy.to_memoryview` to allow for conversion of `TypedArray` to
   standard Python types without unneeded copies. {pr}`1864`
 
-- {{Enhancement}} Added {any}`JsProxy.write_to_file` and
-  {any}`JsProxy.read_from_file` to allow reading and writing Javascript buffers
-  to files without unneeded copies. {pr}`1864`
+- {{Enhancement}} Added {any}`JsProxy.to_file` and {any}`JsProxy.from_file` to
+  allow reading and writing Javascript buffers to files without unneeded copies.
+  {pr}`1864`
 
 - {{Fix}} It is now possible to destroy borrowed attribute `PyProxy` of a
   `PyProxy` (as introduced by {pr}`1636`) before destroying the root `PyProxy`.
@@ -102,7 +102,7 @@ substitutions:
 - {{ Fix }} The built-in pwd module of Python, which provides Unix specific
   feature, is now unvendored.
   {pr}`1883`
-  
+
 - New packages: `logbook`
 
 ### Uncategorized

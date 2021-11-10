@@ -1657,7 +1657,7 @@ JsBuffer_write_to_file(PyObject* jsbuffer, PyObject* fd_arg)
 }
 
 static PyMethodDef JsBuffer_write_to_file_MethodDef = {
-  "write_to_file",
+  "to_file",
   (PyCFunction)JsBuffer_write_to_file,
   METH_O,
 };
@@ -1676,7 +1676,7 @@ JsBuffer_read_from_file(PyObject* jsbuffer, PyObject* fd_arg)
 }
 
 static PyMethodDef JsBuffer_read_from_file_MethodDef = {
-  "read_from_file",
+  "from_file",
   (PyCFunction)JsBuffer_read_from_file,
   METH_O,
 };
