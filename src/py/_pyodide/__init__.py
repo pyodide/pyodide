@@ -9,3 +9,7 @@
 # All pure Python code that doesn't require imports from js, pyodide_js, or
 # _pyodide_core belongs in _pyodide. Code that requires such imports belongs in
 # pyodide.
+from . import _base
+from . import _importhook
+
+__all__ = ["_base", "_importhook"]
