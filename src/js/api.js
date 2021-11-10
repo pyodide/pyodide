@@ -293,7 +293,7 @@ export function toPy(obj, { depth = -1 } = {}) {
  * @param {string} mod_name The name of the module to import
  * @returns A PyProxy for the imported module
  */
-export function importPythonModule(mod_name) {
+export function pyimport(mod_name) {
   return Module.importlib.import_module(mod_name);
 }
 
@@ -372,7 +372,7 @@ export function makePublicAPI() {
     setInterruptBuffer,
     checkInterrupt,
     toPy,
-    importPythonModule,
+    pyimport,
     registerComlink,
     PythonError,
     PyBuffer,
