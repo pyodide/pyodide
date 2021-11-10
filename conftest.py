@@ -106,6 +106,7 @@ class SeleniumWrapper:
                 pyodide.pyodide_py.register_js_module;
                 pyodide.pyodide_py.unregister_js_module;
                 pyodide.pyodide_py.find_imports;
+                pyodide._module.importlib.invalidate_caches;
                 pyodide.runPython("");
                 """,
             )
