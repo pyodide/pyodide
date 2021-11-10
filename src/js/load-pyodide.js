@@ -259,10 +259,7 @@ async function _loadPackage(names, messageCallback, errorCallback) {
 
   // We have to invalidate Python's import caches, or it won't
   // see the new files.
-  Module.runPythonInternal(`
-    import importlib
-    importlib.invalidate_caches();
-  `);
+  Module.importlib.invalidate_caches();
 }
 
 // This is a promise that is resolved iff there are no pending package loads.
