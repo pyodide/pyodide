@@ -136,7 +136,7 @@ class JsProxy:
 
         Example
         ------------
-        >>> pytest.skip()
+        >>> import pytest; pytest.skip()
         >>> from js import Uint8Array
         >>> x = Uint8Array.new(range(10))
         >>> with open('file.bin', 'wb') as fh:
@@ -160,7 +160,7 @@ class JsProxy:
 
         Example
         ------------
-        >>> pytest.skip()
+        >>> import pytest; pytest.skip()
         >>> from js import Uint8Array
         >>> # the JsProxy need to be pre-allocated
         >>> x = Uint8Array.new(range(10))
@@ -187,7 +187,7 @@ class JsProxy:
 
         Example
         ------------
-        >>> pytest.skip()
+        >>> import pytest; pytest.skip()
         >>> from js import Uint8Array
         >>> x = Uint8Array.new(range(10))
         >>> with open('file.bin', 'wb') as fh:
