@@ -170,6 +170,7 @@ function finalizeBootstrap(config) {
 
   Module.sys = Module.runPythonInternal("import sys; sys");
   Module.sys.setrecursionlimit(calculateRecursionLimit());
+  Module.sys.path.insert(0, config.homeDirectory);
 
   // Set up globals
   let globals = Module.runPythonInternal("import __main__; __main__.__dict__");
