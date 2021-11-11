@@ -19,7 +19,7 @@ substitutions:
 - {{Breaking}} Default working directory(home directory) inside Pyodide virtual
   file system has been changed from `/` to `/home/pyodide`. To get previous behavior, you can
   - call `os.chdir("/")`  to change working directory
-  - or call {any}`loadPyodide <globalThis.loadPyodide>` with the `homeDirectory="./"` argument
+  - or call {any}`loadPyodide <globalThis.loadPyodide>` with the `homedir="/"` argument
   {pr}`1936`
 
 ### Python package
@@ -44,7 +44,7 @@ substitutions:
   runtime issue due to webpack are solved. 
   {pr}`1900`
 
-- {{API}} {any}`loadPyodide <globalThis.loadPyodide>` now accepts `homeDirectory`
+- {{API}} {any}`loadPyodide <globalThis.loadPyodide>` now accepts `homedir`
   parameter which sets home directory of Pyodide virtual file system.
   {pr}`1936`
 
