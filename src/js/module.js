@@ -86,6 +86,8 @@ function createStdinWrapper(stdin) {
 }
 
 /**
+ * Make the home directory inside the virtual file system,
+ * then change the working directory to it.
  *
  * @param {string} path
  * @private
