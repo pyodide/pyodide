@@ -67,6 +67,7 @@ Js_IDENTIFIER(get);
 Js_IDENTIFIER(set);
 Js_IDENTIFIER(delete);
 Js_IDENTIFIER(includes);
+_Py_IDENTIFIER(fileno);
 
 static PyObject* asyncio_get_event_loop;
 static PyTypeObject* PyExc_BaseException_Type;
@@ -1643,10 +1644,20 @@ static PyMethodDef JsBuffer_tobytes_MethodDef = {
   METH_NOARGS,
 };
 
-static PyObject*
-JsBuffer_write_to_file(PyObject* jsbuffer, PyObject* fd_arg)
+static long
+get_fileno(PyObject* file)
 {
-  int fd = PyLong_AsLong(fd_arg);
+  PyObject* pyfileno = _PyObject_CallMethodIdNoArgs(file, &PyId_fileno);
+  if (pyfileno == NULL) {
+    return -1;
+  }
+  return PyLong_AsLong(pyfileno);
+}
+
+static PyObject*
+JsBuffer_write_to_file(PyObject* jsbuffer, PyObject* file)
+{
+  int fd = get_fileno(file);
   if (fd == -1) {
     return NULL;
   }
@@ -1663,9 +1674,9 @@ static PyMethodDef JsBuffer_write_to_file_MethodDef = {
 };
 
 static PyObject*
-JsBuffer_read_from_file(PyObject* jsbuffer, PyObject* fd_arg)
+JsBuffer_read_from_file(PyObject* jsbuffer, PyObject* file)
 {
-  int fd = PyLong_AsLong(fd_arg);
+  int fd = get_fileno(file);
   if (fd == -1) {
     return NULL;
   }
@@ -1682,9 +1693,9 @@ static PyMethodDef JsBuffer_read_from_file_MethodDef = {
 };
 
 static PyObject*
-JsBuffer_into_file(PyObject* jsbuffer, PyObject* fd_arg)
+JsBuffer_into_file(PyObject* jsbuffer, PyObject* file)
 {
-  int fd = PyLong_AsLong(fd_arg);
+  int fd = get_fileno(file);
   if (fd == -1) {
     return NULL;
   }

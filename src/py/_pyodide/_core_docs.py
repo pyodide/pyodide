@@ -1,4 +1,5 @@
 from typing import Any, Callable, Iterable
+from io import IOBase
 
 # All docstrings for public `core` APIs should be extracted from here. We use
 # the utilities in `docstring.py` and `docstring.c` to format them
@@ -124,29 +125,29 @@ class JsProxy:
         an ArrayBuffer view.
         """
 
-    def to_file(self, fd: int):
-        """Writes the entire buffer to a file descriptor.
+    def to_file(self, file: IOBase):
+        """Writes the entire buffer to a file.
 
         Will write the entire contents of the buffer to the current position of
-        the file descriptor.
+        the file.
 
         Present only if the wrapped Javascript object is an ArrayBuffer or an
         ArrayBuffer view.
         """
 
-    def from_file(self, fd: int):
-        """Reads from a file descriptor into the buffer.
+    def from_file(self, file: IOBase):
+        """Reads from a file into the buffer.
 
         Will try to read a chunk of data of size the length of the buffer from
-        the current position of the file descriptor.
+        the current position of the file.
 
         Present only if the wrapped Javascript object is an ArrayBuffer or an
         ArrayBuffer view.
         """
 
-    def _into_file(self, fd: int):
+    def _into_file(self, file: IOBase):
         """Will write the entire contents of the buffer to the current position
-        of the file descriptor using ``canOwn : true``. If the file is in the
+        of the file using ``canOwn : true``. If the file is in the
         memfs, the data does not need to be copied. After this, the buffer
         cannot be used again.
 
