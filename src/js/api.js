@@ -19,7 +19,7 @@ export { loadPackage, loadedPackages, isPyProxy };
  *
  * @type {PyProxy}
  */
-let pyodide_py = {}; // actually defined in runPythonSimple in loadPyodide (see pyodide.js)
+let pyodide_py = {}; // actually defined in loadPyodide (see pyodide.js)
 
 /**
  *
@@ -30,7 +30,7 @@ let pyodide_py = {}; // actually defined in runPythonSimple in loadPyodide (see 
  *
  * @type {PyProxy}
  */
-let globals = {}; // actually defined in runPythonSimple in loadPyodide (see pyodide.js)
+let globals = {}; // actually defined in loadPyodide (see pyodide.js)
 
 /**
  * A JavaScript error caused by a Python exception.
@@ -75,7 +75,7 @@ export class PythonError {
  *
  * @type {string}
  */
-export let version = ""; // actually defined in runPythonSimple in loadPyodide (see pyodide.js)
+export let version = ""; // actually defined in loadPyodide (see pyodide.js)
 
 /**
  * Runs a string of Python code from JavaScript.

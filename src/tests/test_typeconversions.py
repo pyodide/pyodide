@@ -515,12 +515,6 @@ def test_pythonexc2js(selenium):
         selenium.run_js('return pyodide.runPython("5 / 0")')
 
 
-def test_run_python_simple_error(selenium):
-    msg = "ZeroDivisionError"
-    with pytest.raises(selenium.JavascriptException, match=msg):
-        selenium.run_js("return pyodide._module.runPythonSimple('5 / 0');")
-
-
 def test_js2python(selenium):
     selenium.run_js(
         """
