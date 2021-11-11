@@ -17,8 +17,9 @@ substitutions:
 ### Backward incompatible changes
 
 - {{Breaking}} Default working directory(home directory) inside Pyodide virtual
-  file system has been changed from `/` to `/home/pyodide`. You can `os.chdir("/")`
-  to change working directory if needed.
+  file system has been changed from `/` to `/home/pyodide`. To get previous behavior, you can
+  - call `os.chdir("/")`  to change working directory
+  - or call {any}`loadPyodide <globalThis.loadPyodide>` with the `homeDirectory="./"` argument
   {pr}`1936`
 
 ### Python package
