@@ -1034,6 +1034,20 @@ def test_buffer_to_file():
         assert list(a.subarray(0, len(b)).to_bytes()) == list(b)
 
 
+@run_in_pyodide
+def test_buffer_into_file():
+    from js import Uint8Array
+
+    a = Uint8Array.new(range(10))
+    from tempfile import TemporaryFile
+
+    with TemporaryFile() as f:
+        b = a.to_bytes()
+        a._into_file(f.fileno())
+        f.seek(0)
+        assert f.read() == b
+
+
 def test_buffer_assign_back(selenium):
     result = selenium.run_js(
         """

@@ -1682,6 +1682,25 @@ static PyMethodDef JsBuffer_read_from_file_MethodDef = {
 };
 
 static PyObject*
+JsBuffer_into_file(PyObject* jsbuffer, PyObject* fd_arg)
+{
+  int fd = PyLong_AsLong(fd_arg);
+  if (fd == -1) {
+    return NULL;
+  }
+  if (hiwire_into_file(JsProxy_REF(jsbuffer), fd)) {
+    return NULL;
+  }
+  Py_RETURN_NONE;
+}
+
+static PyMethodDef JsBuffer_into_file_MethodDef = {
+  "_into_file",
+  (PyCFunction)JsBuffer_into_file,
+  METH_O,
+};
+
+static PyObject*
 JsBuffer_tostring(PyObject* self,
                   PyObject* const* args,
                   Py_ssize_t nargs,
@@ -1838,6 +1857,7 @@ JsProxy_create_subtype(int flags)
     methods[cur_method++] = JsBuffer_tostring_MethodDef;
     methods[cur_method++] = JsBuffer_write_to_file_MethodDef;
     methods[cur_method++] = JsBuffer_read_from_file_MethodDef;
+    methods[cur_method++] = JsBuffer_into_file_MethodDef;
   }
   methods[cur_method++] = (PyMethodDef){ 0 };
   members[cur_member++] = (PyMemberDef){ 0 };
@@ -2077,6 +2097,7 @@ JsProxy_init(PyObject* core_module)
   SET_DOCSTRING(JsBuffer_tostring_MethodDef);
   SET_DOCSTRING(JsBuffer_write_to_file_MethodDef);
   SET_DOCSTRING(JsBuffer_read_from_file_MethodDef);
+  SET_DOCSTRING(JsBuffer_into_file_MethodDef);
 #undef SET_DOCSTRING
 
   asyncio_module = PyImport_ImportModule("asyncio");

@@ -144,6 +144,16 @@ class JsProxy:
         ArrayBuffer view.
         """
 
+    def _into_file(self, fd: int):
+        """Will write the entire contents of the buffer to the current position
+        of the file descriptor using ``canOwn : true``. If the file is in the
+        memfs, the data does not need to be copied. After this, the buffer
+        cannot be used again.
+
+        Present only if the wrapped Javascript object is an ArrayBuffer or an
+        ArrayBuffer view.
+        """
+
     def to_string(self, encoding=None) -> str:
         """Convert the buffer to a string object.
 
