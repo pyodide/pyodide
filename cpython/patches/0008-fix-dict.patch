@@ -1,3 +1,6 @@
+Fix incorrect dictkeys_reversed and dictitems_reversed function signatures in C
+https://bugs.python.org/issue44114. This patch is no longer necessary for Python 3.9.6
+
 diff --git a/Objects/dictobject.c b/Objects/dictobject.c
 index 3c56f4a..59e48a6 100644
 --- a/Objects/dictobject.c
