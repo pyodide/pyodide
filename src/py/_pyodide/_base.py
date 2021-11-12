@@ -195,8 +195,8 @@ class CodeRunner:
 
     mode : ``str``
 
-        The "mode" to compile in. One of `"exec"`, `"single"`, or `"eval"`. Defaults
-        to `"exec"`. For most purposes it's unnecessary to use this argument.
+        The "mode" to compile in. One of ``"exec"``, ``"single"``, or ``"eval"``. Defaults
+        to ``"exec"``. For most purposes it's unnecessary to use this argument.
         See the documentation for the built in
         `compile <https://docs.python.org/3/library/functions.html#compile>` function.
 
@@ -515,7 +515,8 @@ def find_imports(source: str) -> List[str]:
     Returns
     -------
     ``List[str]``
-        A list of module names that are imported in ``source``.
+        A list of module names that are imported in ``source``. If ``source`` is not
+        syntactically correct Python code (after dedenting), returns an empty list.
 
     Examples
     --------
@@ -527,7 +528,10 @@ def find_imports(source: str) -> List[str]:
     # handle mis-indented input from multi-line strings
     source = dedent(source)
 
-    mod = ast.parse(source)
+    try:
+        mod = ast.parse(source)
+    except SyntaxError:
+        return []
     imports = set()
     for node in ast.walk(mod):
         if isinstance(node, ast.Import):

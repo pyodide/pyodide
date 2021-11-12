@@ -8,6 +8,11 @@ source:
   patches:
     - patches/fix_link_opts.patch
 
+build:
+  # The test module is imported from the top level `__init__.py`
+  # so it cannot be unvendored
+  unvendor-tests: false
+
 requirements:
   run:
     - distutils

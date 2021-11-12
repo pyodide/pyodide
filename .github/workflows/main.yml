@@ -1,0 +1,133 @@
+name: main
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  build-core:
+    runs-on: ubuntu-latest
+    env:
+      EMSDK_NUM_CORES: 3
+      EMCC_CORES: 3
+      PYODIDE_JOBS: 3
+      CCACHE_DIR: /tmp/ccache
+
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: Cache ccache output
+        uses: actions/cache@v2
+        with:
+          path: |
+            /tmp/ccache
+          key: ${{ hashFiles('Makefile.envs') }}-v20211025-
+
+      - uses: conda-incubator/setup-miniconda@v2
+        with:
+          activate-environment: pyodide-env
+          python-version: 3.9.5
+          channels: conda-forge
+
+      - name: Check Python versions
+        shell: bash -l {0}
+        run: |
+          python --version
+          which python
+
+      - name: Install dependencies
+        shell: bash -l {0}
+        run: |
+          sudo apt install -y build-essential git
+          conda install -y nodejs ccache f2c pkg-config swig make patch pkg-config texinfo autoconf automake libtool
+          pip install -r requirements.txt
+
+      - name: Build emsdk
+        shell: bash -l {0}
+        run: |
+          which ccache
+
+          ccache -z
+          make -C emsdk
+          ccache -s
+
+      - name: Build Cpython
+        shell: bash -l {0}
+        run: |
+          # This is necessary to use the ccache from emsdk
+          source pyodide_env.sh
+
+          which ccache
+
+          ccache -z
+          make -C cpython
+          ccache -s
+
+      - name: build Pyodide core + numpy
+        shell: bash -l {0}
+        run: |
+          # This is necessary to use the ccache from emsdk
+          source pyodide_env.sh
+          ccache -z
+          PYODIDE_PACKAGES="core,numpy" make
+          ccache -s
+
+      - name: check-size
+        run: ls -lh build/
+
+      - name: Store artifacts build
+        uses: actions/upload-artifact@v2
+        with:
+          name: core-build
+          path: ./build/
+          retention-days: 60
+
+  test-core:
+    runs-on: ubuntu-latest
+    env:
+      DISPLAY: :99
+
+    needs: build-core
+    strategy:
+      matrix:
+        selenium_runner: [firefox]
+
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: Download build artifact
+        uses: actions/download-artifact@v2
+        with:
+          name: core-build
+          path: ./build/
+
+      - uses: conda-incubator/setup-miniconda@v2
+        with:
+          activate-environment: pyodide-env
+          python-version: 3.9.5
+          channels: conda-forge
+
+      - name: install test requirements
+        shell: bash -l {0}
+        run: |
+          pip install -r requirements.txt
+
+      - name: run core tests
+        env:
+          SELENIUM_RUNNER: ${{ matrix.selenium_runner }}
+        shell: bash -l {0}
+        run: |
+          ls -lh
+          ls -lh build/
+          tools/pytest_wrapper.py src packages/micropip/ -v -k "${SELENIUM_RUNNER}"
+
+      - name: run package tests
+        env:
+          SELENIUM_RUNNER: ${{ matrix.selenium_runner }}
+        shell: bash -l {0}
+        run: |
+          ls -lh
+          ls -lh build/
+          tools/pytest_wrapper.py packages/test* packages/*/test* -v -k "numpy and not joblib and ${SELENIUM_RUNNER}"

@@ -14,6 +14,28 @@ _Py_IDENTIFIER(result);
 _Py_IDENTIFIER(ensure_future);
 _Py_IDENTIFIER(add_done_callback);
 
+// Use raw EM_JS for the next five commands. We intend to signal a fatal error
+// if a JavaScript error is thrown.
+
+EM_JS(int, pyproxy_Check, (JsRef x), {
+  if (x == 0) {
+    return false;
+  }
+  let val = Module.hiwire.get_value(x);
+  return Module.isPyProxy(val);
+});
+
+EM_JS(errcode, destroy_proxies, (JsRef proxies_id, char* msg_ptr), {
+  let msg = undefined;
+  if (msg_ptr) {
+    msg = UTF8ToString(msg_ptr);
+  }
+  let proxies = Module.hiwire.get_value(proxies_id);
+  for (let px of proxies) {
+    Module.pyproxy_destroy(px, msg);
+  }
+});
+
 static PyObject* asyncio;
 
 // Flags controlling presence or absence of many small mixins depending on which
@@ -128,13 +150,13 @@ pyproxy_getflags(PyObject* pyobj)
 //
 // This section defines wrappers for Python Object protocol API calls that we
 // are planning to offer on the PyProxy. Much of this could be written in
-// Javascript instead. Some reasons to do it in C:
+// JavaScript instead. Some reasons to do it in C:
 //  1. Some CPython APIs are actually secretly macros which cannot be used from
-//     Javascript.
+//     JavaScript.
 //  2. The code is a bit more concise in C.
 //  3. It may be preferable to minimize the number of times we cross between
 //     wasm and javascript for performance reasons
-//  4. Better separation of functionality: Most of the Javascript code is
+//  4. Better separation of functionality: Most of the JavaScript code is
 //     boilerpalte. Most of this code here is boilerplate. However, the
 //     boilerplate in these C API wwrappers is a bit different than the
 //     boilerplate in the javascript wrappers, so we've factored it into two
@@ -200,24 +222,95 @@ finally:
   return result;
 }
 
+/* Specialized version of _PyObject_GenericGetAttrWithDict
+   specifically for the LOAD_METHOD opcode.
+
+   Return 1 if a method is found, 0 if it's a regular attribute
+   from __dict__ or something returned by using a descriptor
+   protocol.
+
+   `method` will point to the resolved attribute or NULL.  In the
+   latter case, an error will be set.
+*/
+int
+_PyObject_GetMethod(PyObject* obj, PyObject* name, PyObject** method);
+
+EM_JS(JsRef, proxy_cache_get, (JsRef proxyCacheId, PyObject* descr), {
+  let proxyCache = Module.hiwire.get_value(proxyCacheId);
+  let proxyId = proxyCache.get(descr);
+  if (!proxyId) {
+    return undefined;
+  }
+  // Okay found a proxy. Is it alive?
+  if (Module.hiwire.get_value(proxyId).$$.ptr) {
+    return proxyId;
+  } else {
+    // It's dead, tidy up
+    proxyCache.delete(descr);
+    Module.hiwire.decref(proxyId);
+    return undefined;
+  }
+})
+
+// clang-format off
+EM_JS(void,
+proxy_cache_set,
+(JsRef proxyCacheId, PyObject* descr, JsRef proxy), {
+  let proxyCache = Module.hiwire.get_value(proxyCacheId);
+  proxyCache.set(descr, proxy);
+})
+// clang-format on
+
 JsRef
-_pyproxy_getattr(PyObject* pyobj, JsRef idkey)
+_pyproxy_getattr(PyObject* pyobj, JsRef idkey, JsRef proxyCache)
 {
   bool success = false;
   PyObject* pykey = NULL;
+  PyObject* pydescr = NULL;
   PyObject* pyresult = NULL;
   JsRef idresult = NULL;
 
   pykey = js2python(idkey);
   FAIL_IF_NULL(pykey);
-  pyresult = PyObject_GetAttr(pyobj, pykey);
-  FAIL_IF_NULL(pyresult);
+  // If it's a method, we use the descriptor pointer as the cache key rather
+  // than the actual bound method. This allows us to reuse bound methods from
+  // the cache.
+  // _PyObject_GetMethod will return true and store a descriptor into pydescr if
+  // the attribute we are looking up is a method, otherwise it will return false
+  // and set pydescr to the actual attribute (in particular, I believe that it
+  // will resolve other types of getter descriptors automatically).
+  int is_method = _PyObject_GetMethod(pyobj, pykey, &pydescr);
+  FAIL_IF_NULL(pydescr);
+  JsRef cached_proxy = proxy_cache_get(proxyCache, pydescr); /* borrowed */
+  if (cached_proxy) {
+    idresult = hiwire_incref(cached_proxy);
+    goto success;
+  }
+  if (PyErr_Occurred()) {
+    FAIL();
+  }
+  if (is_method) {
+    pyresult =
+      Py_TYPE(pydescr)->tp_descr_get(pydescr, pyobj, (PyObject*)pyobj->ob_type);
+    FAIL_IF_NULL(pyresult);
+  } else {
+    pyresult = pydescr;
+    Py_INCREF(pydescr);
+  }
   idresult = python2js(pyresult);
   FAIL_IF_NULL(idresult);
+  if (pyproxy_Check(idresult)) {
+    // If a getter returns a different object every time, this could potentially
+    // fill up the cache with a lot of junk. If this is a problem, the user will
+    // have to manually destroy the attributes.
+    proxy_cache_set(proxyCache, pydescr, hiwire_incref(idresult));
+  }
 
+success:
   success = true;
 finally:
   Py_CLEAR(pykey);
+  Py_CLEAR(pydescr);
   Py_CLEAR(pyresult);
   if (!success) {
     if (PyErr_ExceptionMatches(PyExc_AttributeError)) {
@@ -379,7 +472,7 @@ finally:
 
 /**
  * This sets up a call to _PyObject_Vectorcall. It's a helper fucntion for
- * callPyObjectKwargs. This is the primary entrypoint from Javascript into
+ * callPyObjectKwargs. This is the primary entrypoint from JavaScript into
  * Python code.
  *
  * Vectorcall expects the arguments to be communicated as:
@@ -398,12 +491,12 @@ finally:
  * Our arguments are:
  *
  *   callable : The object to call.
- *   args : The list of Javascript arguments, both positional and kwargs.
+ *   args : The list of JavaScript arguments, both positional and kwargs.
  *   numposargs : The number of positional arguments.
  *   kwnames : List of names of the keyword arguments
  *   numkwargs : The length of kwargs
  *
- *   Returns: The return value translated to Javascript.
+ *   Returns: The return value translated to JavaScript.
  */
 JsRef
 _pyproxy_apply(PyObject* callable,
@@ -548,7 +641,7 @@ _pyproxyGen_FetchStopIterationValue()
 // future with future.add_done_callback but we need to make a little python
 // closure "FutureDoneCallback" that remembers how to resolve the promise.
 //
-// From Javascript we will use the single function _pyproxy_ensure_future, the
+// From JavaScript we will use the single function _pyproxy_ensure_future, the
 // rest of this segment is helper functions for _pyproxy_ensure_future. The
 // FutureDoneCallback object is never exposed to the user.
 
@@ -584,7 +677,7 @@ FutureDoneCallback_call_resolve(FutureDoneCallback* self, PyObject* result)
   JsRef result_js = NULL;
   JsRef output = NULL;
   result_js = python2js(result);
-  output = hiwire_call_va(self->resolve_handle, result_js, NULL);
+  output = hiwire_call_OneArg(self->resolve_handle, result_js);
 
   hiwire_CLEAR(result_js);
   hiwire_CLEAR(output);
@@ -604,7 +697,7 @@ FutureDoneCallback_call_reject(FutureDoneCallback* self)
   // wrap_exception looks up the current exception and wraps it in a Js error.
   excval = wrap_exception();
   FAIL_IF_NULL(excval);
-  result = hiwire_call_va(self->reject_handle, excval, NULL);
+  result = hiwire_call_OneArg(self->reject_handle, excval);
 
   success = true;
 finally:
@@ -709,7 +802,7 @@ size_t py_buffer_len_offset = offsetof(Py_buffer, len);
 size_t py_buffer_shape_offset = offsetof(Py_buffer, shape);
 
 /**
- * Convert a C array of Py_ssize_t to Javascript.
+ * Convert a C array of Py_ssize_t to JavaScript.
  */
 EM_JS_REF(JsRef, array_to_js, (Py_ssize_t * array, int len), {
   return Module.hiwire.new_value(
@@ -847,6 +940,12 @@ EM_JS_REF(JsRef, pyproxy_new, (PyObject * ptrobj), {
   return Module.hiwire.new_value(Module.pyproxy_new(ptrobj));
 });
 
+/**
+ * Create a JsRef which can be called once, wrapping a Python callable. The
+ * JsRef owns a reference to the Python callable until it is called, then
+ * releases it. Useful for the "finally" wrapper on a JsProxy of a promise, and
+ * also exposed in the pyodide Python module.
+ */
 EM_JS_REF(JsRef, create_once_callable, (PyObject * obj), {
   _Py_IncRef(obj);
   let alreadyCalled = false;
@@ -870,7 +969,7 @@ EM_JS_REF(JsRef, create_once_callable, (PyObject * obj), {
     Module.finalizationRegistry.unregister(wrapper);
     _Py_DecRef(obj);
   };
-  Module.finalizationRegistry.register(wrapper, obj, wrapper);
+  Module.finalizationRegistry.register(wrapper, [ obj, undefined ], wrapper);
   return Module.hiwire.new_value(wrapper);
 });
 
@@ -885,16 +984,44 @@ create_once_callable_py(PyObject* _mod, PyObject* obj)
 
 // clang-format off
 
-// At some point it would be nice to use FinalizationRegistry with these, but
-// it's a bit tricky.
+/**
+ * Arguments:
+ *  handle_result -- Python callable expecting one argument, called with the
+ *  result if the promise is resolved. Can be NULL.
+ *
+ *  handle_exception -- Python callable expecting one argument, called with the
+ *  exception if the promise is rejected. Can be NULL.
+ *
+ *  done_callback_id -- A JsRef to a JavaScript callback to be called when the
+ *  promise is either resolved or rejected. Can be NULL.
+ *
+ * Returns: a JsRef to a pair [onResolved, onRejected].
+ *
+ * The purpose of this function is to handle memory management when attaching
+ * Python functions to Promises. This function stores a reference to both
+ * handle_result and handle_exception, and frees both when either onResolved or
+ * onRejected is called. Of course if the Promise never resolves then the
+ * handles will be leaked. We can't use create_once_callable because either
+ * onResolved or onRejected is called but not both. In either case, we release
+ * both functions.
+ *
+ * The return values are intended to be attached to a promise e.g.,
+ * some_promise.then(onResolved, onRejected).
+ */
 EM_JS_REF(JsRef, create_promise_handles, (
-  PyObject* handle_result, PyObject* handle_exception
+  PyObject* handle_result, PyObject* handle_exception, JsRef done_callback_id
 ), {
+  // At some point it would be nice to use FinalizationRegistry with these, but
+  // it's a bit tricky.
   if (handle_result) {
     _Py_IncRef(handle_result);
   }
   if (handle_exception) {
     _Py_IncRef(handle_exception);
+  }
+  let done_callback = (x) => {};
+  if(done_callback_id){
+    done_callback = Module.hiwire.get_value(done_callback_id);
   }
   let used = false;
   function checkUsed(){
@@ -919,6 +1046,7 @@ EM_JS_REF(JsRef, create_promise_handles, (
         return Module.callPyObject(handle_result, res);
       }
     } finally {
+      done_callback(res);
       destroy();
     }
   }
@@ -929,6 +1057,7 @@ EM_JS_REF(JsRef, create_promise_handles, (
         return Module.callPyObject(handle_exception, err);
       }
     } finally {
+      done_callback(undefined);
       destroy();
     }
   }

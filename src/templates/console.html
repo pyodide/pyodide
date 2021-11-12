@@ -12,14 +12,17 @@
     <style>
       .terminal {
         --size: 1.5;
+        --color: rgba(255, 255, 255, 0.8);
       }
     </style>
   </head>
   <body>
     <script>
+      "use strict";
       function sleep(s) {
         return new Promise((resolve) => setTimeout(resolve, s));
       }
+
       async function main() {
         globalThis.pyodide = await loadPyodide({
           indexURL: "{{ PYODIDE_BASE_URL }}",
@@ -28,23 +31,27 @@
         pyodide.runPython(
           `
             import sys
-            import js
-            from pyodide.console import _InteractiveConsole, BANNER
+            from pyodide import to_js
+            from pyodide.console import PyodideConsole, repr_shorten, BANNER
             import __main__
-
-            class PyConsole(_InteractiveConsole):
-                def __init__(self):
-                    super().__init__(
-                        __main__.__dict__,
-                        persistent_stream_redirection=False,
-                    )
-
             BANNER = "Welcome to the Pyodide terminal emulator 🐍\\n" + BANNER
-            js.pyconsole = PyConsole()
+            pyconsole = PyodideConsole(__main__.__dict__)
+            import builtins
+            async def await_fut(fut):
+              res = await fut
+              if res is not None:
+                builtins._ = res
+              return to_js([res], depth=1)
+            def clear_console():
+              pyconsole.buffer = []
         `,
           namespace
         );
+        let repr_shorten = namespace.get("repr_shorten");
         let banner = namespace.get("BANNER");
+        let await_fut = namespace.get("await_fut");
+        let pyconsole = namespace.get("pyconsole");
+        let clear_console = namespace.get("clear_console");
         namespace.destroy();
 
         let ps1 = ">>> ",
@@ -60,31 +67,54 @@
 
         async function interpreter(command) {
           let unlock = await lock();
-          try {
-            term.pause();
-            // multiline should be splitted (useful when pasting)
-            for (const c of command.split("\n")) {
-              let run_complete = pyconsole.run_complete;
-              try {
-                const incomplete = pyconsole.push(c);
-                term.set_prompt(incomplete ? ps2 : ps1);
-                let r = await run_complete;
-                if (pyodide.isPyProxy(r)) {
-                  r.destroy();
-                }
-              } catch (e) {
-                if (e.name !== "PythonError") {
-                  term.error(e);
-                  throw e;
-                }
-              }
-              run_complete.destroy();
+          term.pause();
+          // multiline should be splitted (useful when pasting)
+          for (const c of command.split("\n")) {
+            let fut = pyconsole.push(c);
+            term.set_prompt(fut.syntax_check === "incomplete" ? ps2 : ps1);
+            switch (fut.syntax_check) {
+              case "syntax-error":
+                term.error(fut.formatted_error.trimEnd());
+                continue;
+              case "incomplete":
+                continue;
+              case "complete":
+                break;
+              default:
+                throw new Error(`Unexpected type ${ty}`);
             }
-          } finally {
-            term.resume();
-            await sleep(10);
-            unlock();
+            // In JavaScript, await automatically also awaits any results of
+            // awaits, so if an async function returns a future, it will await
+            // the inner future too. This is not what we want so we
+            // temporarily put it into a list to protect it.
+            let wrapped = await_fut(fut);
+            // complete case, get result / error and print it.
+            try {
+              let [value] = await wrapped;
+              if (value !== undefined) {
+                term.echo(
+                  repr_shorten.callKwargs(value, {
+                    separator: "\n[[;orange;]<long output truncated>]\n",
+                  })
+                );
+              }
+              if (pyodide.isPyProxy(value)) {
+                value.destroy();
+              }
+            } catch (e) {
+              if (e.constructor.name === "PythonError") {
+                term.error(fut.formatted_error.trimEnd());
+              } else {
+                throw e;
+              }
+            } finally {
+              fut.destroy();
+              wrapped.destroy();
+            }
           }
+          term.resume();
+          await sleep(10);
+          unlock();
         }
 
         let term = $("body").terminal(interpreter, {
@@ -94,25 +124,20 @@
           completion: function (command, callback) {
             callback(pyconsole.complete(command).toJs()[0]);
           },
+          keymap: {
+            "CTRL+C": async function (event, original) {
+              clear_console();
+              term.echo_command();
+              term.echo("KeyboardInterrupt");
+              term.set_command("");
+              term.set_prompt(ps1);
+            },
+          },
         });
         window.term = term;
         pyconsole.stdout_callback = (s) => term.echo(s, { newline: false });
-        let url_re =
-          /(\bhttps?:\/\/(?:(?:(?!&[^;]+;)|(?=&amp;))[^\s"'<>\][)])+)/gi;
-        pyconsole.stderr_callback = function (s) {
-          if (s.endsWith("\n")) {
-            term.error(s.slice(0, -1));
-            return;
-          }
-          if (s === "") {
-            return;
-          }
-          s = $.terminal
-            .escape_brackets(s)
-            .replace(/\\$/, "&#92;")
-            .replace(url_re, "]$1[[;;;terminal-error]");
-          s = `[[;;;terminal-error]${s}]`.replace(/(\n\s*)]/, "]$1");
-          term.echo(s, { newline: false });
+        pyconsole.stderr_callback = (s) => {
+          term.error(s.trimEnd());
         };
         term.ready = Promise.resolve();
         pyodide._module.on_fatal = async (e) => {

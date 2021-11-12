@@ -7,12 +7,12 @@
 
 /**
  * hiwire: A super-simple framework for converting values between C and
- * Javascript.
+ * JavaScript.
  *
- * Arbitrary Javascript objects are referenced from C using an opaque int value.
+ * Arbitrary JavaScript objects are referenced from C using an opaque int value.
  * By convention, these ids are stored in variable names beginning with `id`.
  *
- * Javascript objects passed to the C side must be manually reference-counted.
+ * JavaScript objects passed to the C side must be manually reference-counted.
  * Use `hiwire_incref` if you plan to store the object on the C side. Use
  * `hiwire_decref` when done. Internally, the objects are stored in a global
  * object. There may be one or more keys pointing to the same object.
@@ -46,6 +46,25 @@ extern const JsRef Js_null;
 
 // For when the return value would be Option<JsRef>
 extern const JsRef Js_novalue;
+
+// A mechanism for handling static JavaScript strings from C
+// This is copied from the Python mechanism for handling static Python strings
+// from C See the Python definition here:
+// https://github.com/python/cpython/blob/24da544014f78e6f1440d5ce5c2d14794a020340/Include/cpython/object.h#L37
+
+typedef struct Js_Identifier
+{
+  const char* string;
+  JsRef object;
+} Js_Identifier;
+
+#define Js_static_string_init(value)                                           \
+  {                                                                            \
+    .string = value, .object = NULL                                            \
+  }
+#define Js_static_string(varname, value)                                       \
+  static Js_Identifier varname = Js_static_string_init(value)
+#define Js_IDENTIFIER(varname) Js_static_string(JsId_##varname, #varname)
 
 #define hiwire_CLEAR(x)                                                        \
   do {                                                                         \
@@ -82,7 +101,7 @@ errcode
 hiwire_decref(JsRef idval);
 
 /**
- * Create a new Javascript integer with the given value.
+ * Create a new JavaScript integer with the given value.
  *
  * Returns: New reference
  */
@@ -90,7 +109,7 @@ JsRef
 hiwire_int(int val);
 
 /**
- * Create a new Javascript float with the given value.
+ * Create a new JavaScript float with the given value.
  *
  * Returns: New reference
  */
@@ -98,7 +117,7 @@ JsRef
 hiwire_double(double val);
 
 /**
- * Create a new Javascript string, given a pointer to a buffer
+ * Create a new JavaScript string, given a pointer to a buffer
  * containing UCS4 and a length. The string data itself is copied.
  *
  * Returns: New reference
@@ -107,7 +126,7 @@ JsRef
 hiwire_string_ucs4(const char* ptr, int len);
 
 /**
- * Create a new Javascript string, given a pointer to a buffer
+ * Create a new JavaScript string, given a pointer to a buffer
  * containing UCS2 and a length. The string data itself is copied.
  *
  * Returns: New reference
@@ -116,7 +135,7 @@ JsRef
 hiwire_string_ucs2(const char* ptr, int len);
 
 /**
- * Create a new Javascript string, given a pointer to a buffer
+ * Create a new JavaScript string, given a pointer to a buffer
  * containing UCS1 and a length. The string data itself is copied.
  *
  * Returns: New reference
@@ -125,7 +144,7 @@ JsRef
 hiwire_string_ucs1(const char* ptr, int len);
 
 /**
- * Create a new Javascript string, given a pointer to a null-terminated buffer
+ * Create a new JavaScript string, given a pointer to a null-terminated buffer
  * containing UTF8. The string data itself is copied.
  *
  * Returns: New reference
@@ -134,7 +153,7 @@ JsRef
 hiwire_string_utf8(const char* ptr);
 
 /**
- * Create a new Javascript string, given a pointer to a null-terminated buffer
+ * Create a new JavaScript string, given a pointer to a null-terminated buffer
  * containing ascii (well, technically latin-1). The string data itself is
  * copied.
  *
@@ -144,19 +163,25 @@ JsRef
 hiwire_string_ascii(const char* ptr);
 
 /**
- * Create a new Javascript boolean value.
+ * Create a new JavaScript boolean value.
  * Return value is true if boolean != 0, false if boolean == 0.
  *
  * Returns: "New" reference
  */
 JsRef
-hiwire_bool(bool boolean);
+hiwire_from_bool(bool boolean);
+
+/**
+ * Convert value to C boolean
+ */
+bool
+hiwire_to_bool(JsRef value);
 
 bool
 JsArray_Check(JsRef idobj);
 
 /**
- * Create a new Javascript Array.
+ * Create a new JavaScript Array.
  *
  * Returns: New reference
  */
@@ -164,13 +189,13 @@ JsRef
 JsArray_New();
 
 /**
- * Push a value to the end of a Javascript array.
+ * Push a value to the end of a JavaScript array.
  */
 errcode
 JsArray_Push(JsRef idobj, JsRef idval);
 
 /**
- * Create a new Javascript object.
+ * Create a new JavaScript object.
  *
  * Returns: New reference
  */
@@ -230,13 +255,19 @@ JsRef
 JsObject_Dir(JsRef idobj);
 
 /**
- * Call a function
+ * Call a js function
  *
  * idargs is a hiwire Array containing the arguments.
  *
  */
 JsRef
 hiwire_call(JsRef idobj, JsRef idargs);
+
+/**
+ * Call a js function with one argument
+ */
+JsRef
+hiwire_call_OneArg(JsRef idobj, JsRef idarg);
 
 /**
  * Call a function
@@ -251,28 +282,61 @@ hiwire_call_va(JsRef idobj, ...);
 JsRef
 hiwire_call_bound(JsRef idfunc, JsRef idthis, JsRef idargs);
 
-/**
- * Call a member function.
- *
- * ptrname is the member name, as a null-terminated UTF8.
- *
- * idargs is a hiwire Array containing the arguments.
- *
- */
-JsRef
-hiwire_call_member(JsRef idobj, const char* ptrname, JsRef idargs);
+int
+hiwire_HasMethod(JsRef obj, JsRef name);
+
+int
+hiwire_HasMethodId(JsRef obj, Js_Identifier* name);
 
 /**
- * Call a member function.
- *
- * ptrname is the member name, as a null-terminated UTF8.
- *
- * Arguments are specified as a NULL-terminated variable arguments list of
- * JsRefs.
+ * name is the method name, as null-terminated UTF8.
+ * args is an Array containing the arguments.
  *
  */
 JsRef
-hiwire_call_member_va(JsRef idobj, const char* ptrname, ...);
+hiwire_CallMethodString(JsRef obj, const char* name, JsRef args);
+
+/**
+ * name is the method name, as null-terminated UTF8.
+ * arg is the argument
+ */
+JsRef
+hiwire_CallMethodString_OneArg(JsRef obj, const char* name, JsRef arg);
+
+/**
+ * name is the method name, as null-terminated UTF8.
+ * Arguments are specified as a NULL-terminated variable arguments list of
+ * JsRefs.
+ */
+JsRef
+hiwire_CallMethodString_va(JsRef obj, const char* name, ...);
+
+JsRef
+hiwire_CallMethod(JsRef obj, JsRef name, JsRef args);
+
+JsRef
+hiwire_CallMethod_OneArg(JsRef obj, JsRef name, JsRef arg);
+
+JsRef
+hiwire_CallMethod_va(JsRef obj, JsRef name, ...);
+
+/**
+ * name is the method name, as a Js_Identifier
+ * args is a hiwire Array containing the arguments.
+ */
+JsRef
+hiwire_CallMethodId(JsRef obj, Js_Identifier* name, JsRef args);
+
+/**
+ * name is the method name, as a Js_Identifier
+ * Arguments are specified as a NULL-terminated variable arguments list of
+ * JsRefs.
+ */
+JsRef
+hiwire_CallMethodId_va(JsRef obj, Js_Identifier* name, ...);
+
+JsRef
+hiwire_CallMethodId_OneArg(JsRef obj, Js_Identifier* name, JsRef arg);
 
 /**
  * Calls the constructor of a class object.
@@ -292,7 +356,7 @@ bool
 hiwire_has_length(JsRef idobj);
 
 /**
- * Returns the value of the `size` or `length` member on a Javascript object.
+ * Returns the value of the `size` or `length` member on a JavaScript object.
  * Prefers the `size` member if present and a number to the `length` field. If
  * both `size` and `length` are missing or not a number, returns `-1` to
  * indicate error.
@@ -301,72 +365,10 @@ int
 hiwire_get_length(JsRef idobj);
 
 /**
- * Returns the boolean value of a Javascript object.
+ * Returns the boolean value of a JavaScript object.
  */
 bool
 hiwire_get_bool(JsRef idobj);
-
-/**
- * Check whether `typeof obj.has === "function"`
- */
-bool
-hiwire_has_has_method(JsRef idobj);
-
-/**
- * Does `obj.has(val)`. Doesn't check type of return value, if it isn't a
- * boolean or an integer it will get coerced to false.
- */
-bool
-hiwire_call_has_method(JsRef idobj, JsRef idval);
-
-/**
- * Check whether `typeof obj.includes === "function"`.
- */
-bool
-hiwire_has_includes_method(JsRef idobj);
-
-/**
- * Does `obj.includes(val)`. Doesn't check type of return value, if it isn't a
- * boolean or an integer it will get coerced to `false`.
- */
-bool
-hiwire_call_includes_method(JsRef idobj, JsRef idval);
-
-/**
- * Check whether `typeof obj.get === "function"`.
- */
-bool
-hiwire_has_get_method(JsRef idobj);
-
-/**
- * Call `obj.get(key)`. If the result is `undefined`, we check for a `has`
- * method and if one is present call `obj.has(key)`. If this returns false we
- * return `NULL` to signal a `KeyError` otherwise we return `Js_Undefined`. If
- * no `has` method is present, we return `Js_Undefined`.
- */
-JsRef
-hiwire_call_get_method(JsRef idobj, JsRef idkey);
-
-/**
- * Check whether `typeof obj.set === "function"`.
- */
-bool
-hiwire_has_set_method(JsRef idobj);
-
-/**
- * Call `obj.set(key, value)`. Javascript standard is that `set` returns `false`
- * to indicate an error condition, but we ignore the return value.
- */
-errcode
-hiwire_call_set_method(JsRef idobj, JsRef idkey, JsRef idval);
-
-/**
- * Call `obj.delete(key)`. Javascript standard is that `delete` returns `false`
- * to indicate an error condition, if `false` is returned we return `-1` to
- * indicate the error.
- */
-errcode
-hiwire_call_delete_method(JsRef idobj, JsRef idkey);
 
 /**
  * Check whether the object is a PyProxy.
@@ -401,7 +403,7 @@ hiwire_is_promise(JsRef idobj);
 /**
  * Returns Promise.resolve(obj)
  *
- * Returns: New reference to Javascript promise
+ * Returns: New reference to JavaScript promise
  */
 JsRef
 hiwire_resolve_promise(JsRef idobj);
@@ -409,7 +411,7 @@ hiwire_resolve_promise(JsRef idobj);
 /**
  * Gets the string representation of an object by calling `toString`.
  *
- * Returns: New reference to Javascript string
+ * Returns: New reference to JavaScript string
  */
 JsRef
 hiwire_to_string(JsRef idobj);
@@ -417,7 +419,7 @@ hiwire_to_string(JsRef idobj);
 /**
  * Gets the `typeof` string for a value.
  *
- * Returns: New reference to Javascript string
+ * Returns: New reference to JavaScript string
  */
 JsRef
 hiwire_typeof(JsRef idobj);
@@ -425,7 +427,7 @@ hiwire_typeof(JsRef idobj);
 /**
  * Gets `value.constructor.name`.
  *
- * Returns: New reference to Javascript string
+ * Returns: New reference to JavaScript string
  */
 char*
 hiwire_constructor_name(JsRef idobj);
@@ -560,10 +562,11 @@ hiwire_assign_from_ptr(JsRef idobj, void* ptr);
  * Get a data type identifier for a given typedarray.
  */
 errcode
-hiwire_get_buffer_datatype(JsRef idobj,
-                           char** format_ptr,
-                           Py_ssize_t* size_ptr,
-                           bool* check_assignments);
+hiwire_get_buffer_info(JsRef idobj,
+                       Py_ssize_t* byteLength_ptr,
+                       char** format_ptr,
+                       Py_ssize_t* size_ptr,
+                       bool* check_assignments);
 
 /**
  * Get a subarray from a TypedArray

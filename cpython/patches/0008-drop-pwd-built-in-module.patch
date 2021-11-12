@@ -1,0 +1,29 @@
+From 5c949af8b513e87fec513f88aa47b61199a53b99 Mon Sep 17 00:00:00 2001
+From: ryanking13 <def6488@gmail.com>
+Date: Wed, 6 Oct 2021 22:16:32 +0900
+Subject: [PATCH] Drop pwd bulit-in module
+
+This patch drops pwd module support from Cpython.
+pwd module provides access to the Unix user account and password database,
+which is not available in browser environment.
+
+---
+ Modules/Setup | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/Modules/Setup b/Modules/Setup
+index 5e26472446..3c3421fb8e 100644
+--- a/Modules/Setup
++++ b/Modules/Setup
+@@ -103,7 +103,7 @@ PYTHONPATH=$(COREPYTHONPATH)
+ 
+ posix -DPy_BUILD_CORE_BUILTIN -I$(srcdir)/Include/internal posixmodule.c # posix (UNIX) system calls
+ errno errnomodule.c			# posix (UNIX) errno values
+-pwd pwdmodule.c				# this is needed to find out the user's home dir
++# pwd pwdmodule.c				# this is needed to find out the user's home dir
+ 					# if $HOME is not set
+ _sre -DPy_BUILD_CORE_BUILTIN _sre.c	# Fredrik Lundh's new regular expressions
+ _codecs _codecsmodule.c			# access to the builtin codecs and codec registry
+-- 
+2.29.2
+

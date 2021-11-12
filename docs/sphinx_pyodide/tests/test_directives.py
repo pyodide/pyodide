@@ -67,14 +67,22 @@ def test_pyodide_analyzer():
         "unregisterJsModule",
         "loadPackage",
         "runPythonAsync",
-        "pyimport",
         "loadPackagesFromImports",
         "registerJsModule",
         "isPyProxy",
         "toPy",
         "setInterruptBuffer",
+        "setStandardStreams",
+        "checkInterrupt",
+        "registerComlink",
     }
-    assert attribute_names == {"loadedPackages", "globals", "version", "pyodide_py"}
+    assert attribute_names == {
+        "FS",
+        "loadedPackages",
+        "globals",
+        "version",
+        "pyodide_py",
+    }
 
 
 def test_content():
@@ -115,7 +123,7 @@ def test_content():
     rp = results["runPython"]
     assert rp["directive"] == "function"
     assert rp["sig"] == "code, globals)"
-    assert "Runs a string of Python code from Javascript." in rp["body"]
+    assert "Runs a string of Python code from JavaScript." in rp["body"]
 
 
 JsDocSummary = get_jsdoc_summary_directive(dummy_app)
@@ -135,7 +143,7 @@ def test_extract_summary():
 
 def test_summary():
     globals = jsdoc_summary.get_summary_table(
-        "globalThis", dummy_app._sphinxjs_analyzer.js_docs["globalThis"]["attribute"]
+        "globalThis", dummy_app._sphinxjs_analyzer.js_docs["globalThis"]["function"]
     )
     attributes = jsdoc_summary.get_summary_table(
         "pyodide", dummy_app._sphinxjs_analyzer.js_docs["pyodide"]["attribute"]
@@ -146,16 +154,12 @@ def test_summary():
     globals = {t[1]: t for t in globals}
     attributes = {t[1]: t for t in attributes}
     functions = {t[1]: t for t in functions}
-    assert globals["pyodide"] == (
-        "",
-        "pyodide",
-        "",
-        "The :ref:`js-api-pyodide` module object.",
-        "globalThis.pyodide",
-    )
-    assert (
-        globals["languagePluginUrl"][3]
-        == "A deprecated parameter that specifies the Pyodide ``indexURL``."
+    assert globals["loadPyodide"] == (
+        "*async* ",
+        "loadPyodide",
+        "(config, )",
+        "Load the main Pyodide wasm module and initialize it.",
+        "globalThis.loadPyodide",
     )
 
     assert attributes["pyodide_py"] == (

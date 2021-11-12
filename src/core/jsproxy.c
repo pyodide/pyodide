@@ -60,6 +60,13 @@ _Py_IDENTIFIER(set_exception);
 _Py_IDENTIFIER(set_result);
 _Py_IDENTIFIER(__await__);
 _Py_IDENTIFIER(__dir__);
+Js_IDENTIFIER(then);
+Js_IDENTIFIER(finally);
+Js_IDENTIFIER(has);
+Js_IDENTIFIER(get);
+Js_IDENTIFIER(set);
+Js_IDENTIFIER(delete);
+Js_IDENTIFIER(includes);
 
 static PyObject* asyncio_get_event_loop;
 static PyTypeObject* PyExc_BaseException_Type;
@@ -67,7 +74,7 @@ static PyTypeObject* PyExc_BaseException_Type;
 ////////////////////////////////////////////////////////////
 // JsProxy
 //
-// This is a Python object that provides idiomatic access to a Javascript
+// This is a Python object that provides idiomatic access to a JavaScript
 // object.
 
 // clang-format off
@@ -192,7 +199,7 @@ JsProxy_SetAttr(PyObject* self, PyObject* attr, PyObject* pyvalue)
   FAIL_IF_NULL(key);
 
   if (strncmp(key, "__", 2) == 0) {
-    // Avoid creating reference loops between Python and Javascript with js
+    // Avoid creating reference loops between Python and JavaScript with js
     // modules. Such reference loops make it hard to avoid leaking memory.
     if (strcmp(key, "__loader__") == 0 || strcmp(key, "__name__") == 0 ||
         strcmp(key, "__package__") == 0 || strcmp(key, "__path__") == 0 ||
@@ -331,7 +338,7 @@ JsProxy_object_entries(PyObject* o, PyObject* _args)
   return result;
 }
 
-PyMethodDef JsProxy_object_entries_MethodDef = {
+static PyMethodDef JsProxy_object_entries_MethodDef = {
   "object_entries",
   (PyCFunction)JsProxy_object_entries,
   METH_NOARGS,
@@ -354,7 +361,7 @@ JsProxy_object_keys(PyObject* o, PyObject* _args)
   return result;
 }
 
-PyMethodDef JsProxy_object_keys_MethodDef = {
+static PyMethodDef JsProxy_object_keys_MethodDef = {
   "object_keys",
   (PyCFunction)JsProxy_object_keys,
   METH_NOARGS,
@@ -377,7 +384,7 @@ JsProxy_object_values(PyObject* o, PyObject* _args)
   return result;
 }
 
-PyMethodDef JsProxy_object_values_MethodDef = {
+static PyMethodDef JsProxy_object_values_MethodDef = {
   "object_values",
   (PyCFunction)JsProxy_object_values,
   METH_NOARGS,
@@ -479,6 +486,25 @@ finally:
   return success ? 0 : -1;
 }
 
+// A helper method for jsproxy_subscript.
+EM_JS_REF(JsRef, JsProxy_subscript_js, (JsRef idobj, JsRef idkey), {
+  let obj = Module.hiwire.get_value(idobj);
+  let key = Module.hiwire.get_value(idkey);
+  let result = obj.get(key);
+  // clang-format off
+  if (result === undefined) {
+    // Try to distinguish between undefined and missing:
+    // If the object has a "has" method and it returns false for this key, the
+    // key is missing. Otherwise, assume key present and value was undefined.
+    // TODO: in absence of a "has" method, should we return None or KeyError?
+    if (obj.has && typeof obj.has === "function" && !obj.has(key)) {
+      return 0;
+    }
+  }
+  // clang-format on
+  return Module.hiwire.new_value(result);
+});
+
 /**
  * __getitem__ for JsProxies that have a "get" method. Translates proxy[key] to
  * obj.get(key). Controlled by HAS_GET
@@ -493,7 +519,7 @@ JsProxy_subscript(PyObject* o, PyObject* pyidx)
 
   ididx = python2js(pyidx);
   FAIL_IF_NULL(ididx);
-  idresult = hiwire_call_get_method(self->js, ididx);
+  idresult = JsProxy_subscript_js(self->js, ididx);
   if (idresult == NULL) {
     if (!PyErr_Occurred()) {
       PyErr_SetObject(PyExc_KeyError, pyidx);
@@ -522,9 +548,12 @@ JsProxy_ass_subscript(PyObject* o, PyObject* pyidx, PyObject* pyvalue)
   bool success = false;
   JsRef ididx = NULL;
   JsRef idvalue = NULL;
+  JsRef jsresult = NULL;
   ididx = python2js(pyidx);
   if (pyvalue == NULL) {
-    if (hiwire_call_delete_method(self->js, ididx)) {
+    jsresult = hiwire_CallMethodId_OneArg(self->js, &JsId_delete, ididx);
+    FAIL_IF_NULL(jsresult);
+    if (!hiwire_to_bool(jsresult)) {
       if (!PyErr_Occurred()) {
         PyErr_SetObject(PyExc_KeyError, pyidx);
       }
@@ -533,12 +562,15 @@ JsProxy_ass_subscript(PyObject* o, PyObject* pyidx, PyObject* pyvalue)
   } else {
     idvalue = python2js(pyvalue);
     FAIL_IF_NULL(idvalue);
-    FAIL_IF_MINUS_ONE(hiwire_call_set_method(self->js, ididx, idvalue));
+    jsresult =
+      hiwire_CallMethodId_va(self->js, &JsId_set, ididx, idvalue, NULL);
+    FAIL_IF_NULL(jsresult);
   }
   success = true;
 finally:
   hiwire_CLEAR(ididx);
   hiwire_CLEAR(idvalue);
+  hiwire_CLEAR(jsresult);
   return success ? 0 : -1;
 }
 
@@ -551,13 +583,17 @@ finally:
 static int
 JsProxy_includes(JsProxy* self, PyObject* obj)
 {
+  JsRef jsresult = NULL;
   int result = -1;
   JsRef jsobj = python2js(obj);
   FAIL_IF_NULL(jsobj);
-  result = hiwire_call_includes_method(self->js, jsobj);
+  jsresult = hiwire_CallMethodId_OneArg(self->js, &JsId_includes, jsobj);
+  FAIL_IF_NULL(jsresult);
+  result = hiwire_to_bool(jsresult);
 
 finally:
   hiwire_CLEAR(jsobj);
+  hiwire_CLEAR(jsresult);
   return result;
 }
 
@@ -569,13 +605,17 @@ finally:
 static int
 JsProxy_has(JsProxy* self, PyObject* obj)
 {
+  JsRef jsresult = NULL;
   int result = -1;
   JsRef jsobj = python2js(obj);
   FAIL_IF_NULL(jsobj);
-  result = hiwire_call_has_method(self->js, jsobj);
+  jsresult = hiwire_CallMethodId_OneArg(self->js, &JsId_has, jsobj);
+  FAIL_IF_NULL(jsresult);
+  result = hiwire_to_bool(jsresult);
 
 finally:
   hiwire_CLEAR(jsobj);
+  hiwire_CLEAR(jsresult);
   return result;
 }
 
@@ -642,47 +682,41 @@ finally:
   return result;
 }
 
-PyMethodDef JsProxy_Dir_MethodDef = {
+static PyMethodDef JsProxy_Dir_MethodDef = {
   "__dir__",
   (PyCFunction)JsProxy_Dir,
   METH_NOARGS,
   PyDoc_STR("Returns a list of the members and methods on the object."),
 };
 
-/**
- * The to_py method, uses METH_FASTCALL calling convention.
- */
 static PyObject*
-JsProxy_toPy(PyObject* self, PyObject* const* args, Py_ssize_t nargs)
+JsProxy_toPy(PyObject* self,
+             PyObject* const* args,
+             Py_ssize_t nargs,
+             PyObject* kwnames)
 {
-  if (nargs > 1) {
-    PyErr_Format(
-      PyExc_TypeError, "to_py expected at most 1 argument, got %zd", nargs);
-    return NULL;
-  }
+  static const char* const _keywords[] = { "depth", 0 };
+  static struct _PyArg_Parser _parser = { "|$i:toPy", _keywords, 0 };
   int depth = -1;
-  if (nargs == 1) {
-    int overflow;
-    depth = PyLong_AsLongAndOverflow(args[0], &overflow);
-    if (overflow == 0 && depth == -1 && PyErr_Occurred()) {
-      return NULL;
-    }
+  if (kwnames != NULL &&
+      !_PyArg_ParseStackAndKeywords(args, nargs, kwnames, &_parser, &depth)) {
+    return NULL;
   }
   return js2python_convert(GET_JSREF(self), depth);
 }
 
-PyMethodDef JsProxy_toPy_MethodDef = {
+static PyMethodDef JsProxy_toPy_MethodDef = {
   "to_py",
   (PyCFunction)JsProxy_toPy,
-  METH_FASTCALL,
+  METH_FASTCALL | METH_KEYWORDS,
 };
 
 /**
  * Overload for bool(proxy), implemented for every JsProxy. Return `False` if
- * the object is falsey in Javascript, or if it has a `size` field equal to 0,
+ * the object is falsey in JavaScript, or if it has a `size` field equal to 0,
  * or if it has a `length` field equal to zero and is an array. Otherwise return
  * `True`. This last convention could be replaced with "has a length equal to
- * zero and is not a function". In Javascript, `func.length` returns the number
+ * zero and is not a function". In JavaScript, `func.length` returns the number
  * of arguments `func` expects. We definitely don't want 0-argument functions to
  * be falsey.
  */
@@ -694,6 +728,57 @@ JsProxy_Bool(PyObject* o)
 }
 
 /**
+ * Create a Future attached to the given Promise. When the promise is
+ * resolved/rejected, the status of the future is set accordingly and
+ * done_callback is called.
+ */
+static PyObject*
+wrap_promise(JsRef promise, JsRef done_callback)
+{
+  bool success = false;
+  PyObject* loop = NULL;
+  PyObject* set_result = NULL;
+  PyObject* set_exception = NULL;
+  JsRef promise_id = NULL;
+  JsRef promise_handles = NULL;
+  JsRef promise_result = NULL;
+
+  PyObject* result = NULL;
+
+  loop = PyObject_CallNoArgs(asyncio_get_event_loop);
+  FAIL_IF_NULL(loop);
+
+  result = _PyObject_CallMethodId(loop, &PyId_create_future, NULL);
+  FAIL_IF_NULL(result);
+
+  set_result = _PyObject_GetAttrId(result, &PyId_set_result);
+  FAIL_IF_NULL(set_result);
+  set_exception = _PyObject_GetAttrId(result, &PyId_set_exception);
+  FAIL_IF_NULL(set_exception);
+
+  promise_id = hiwire_resolve_promise(promise);
+  FAIL_IF_NULL(promise_id);
+  promise_handles =
+    create_promise_handles(set_result, set_exception, done_callback);
+  FAIL_IF_NULL(promise_handles);
+  promise_result = hiwire_CallMethodId(promise_id, &JsId_then, promise_handles);
+  FAIL_IF_NULL(promise_result);
+
+  success = true;
+finally:
+  Py_CLEAR(loop);
+  Py_CLEAR(set_result);
+  Py_CLEAR(set_exception);
+  hiwire_CLEAR(promise_id);
+  hiwire_CLEAR(promise_handles);
+  hiwire_CLEAR(promise_result);
+  if (!success) {
+    Py_CLEAR(result);
+  }
+  return result;
+}
+
+/**
  * Overload for `await proxy` for js objects that have a `then` method.
  * Controlled by IS_AWAITABLE.
  */
@@ -701,6 +786,8 @@ static PyObject*
 JsProxy_Await(JsProxy* self)
 {
   if (!hiwire_is_promise(self->js)) {
+    // This error is unlikely to be hit except in cases of intentional mischief.
+    // Such mischief is conducted in test_jsproxy:test_mixins_errors_2
     PyObject* str = JsProxy_Repr((PyObject*)self);
     const char* str_utf8 = PyUnicode_AsUTF8(str);
     PyErr_Format(PyExc_TypeError,
@@ -708,43 +795,15 @@ JsProxy_Await(JsProxy* self)
                  str_utf8);
     return NULL;
   }
-
-  PyObject* loop = NULL;
   PyObject* fut = NULL;
-  PyObject* set_result = NULL;
-  PyObject* set_exception = NULL;
-  JsRef promise_id = NULL;
-  JsRef promise_handles = NULL;
-  JsRef promise_result = NULL;
   PyObject* result = NULL;
 
-  loop = PyObject_CallNoArgs(asyncio_get_event_loop);
-  FAIL_IF_NULL(loop);
-
-  fut = _PyObject_CallMethodId(loop, &PyId_create_future, NULL);
+  fut = wrap_promise(self->js, NULL);
   FAIL_IF_NULL(fut);
-
-  set_result = _PyObject_GetAttrId(fut, &PyId_set_result);
-  FAIL_IF_NULL(set_result);
-  set_exception = _PyObject_GetAttrId(fut, &PyId_set_exception);
-  FAIL_IF_NULL(set_exception);
-
-  promise_id = hiwire_resolve_promise(self->js);
-  FAIL_IF_NULL(promise_id);
-  promise_handles = create_promise_handles(set_result, set_exception);
-  FAIL_IF_NULL(promise_handles);
-  promise_result = hiwire_call_member(promise_id, "then", promise_handles);
-  FAIL_IF_NULL(promise_result);
   result = _PyObject_CallMethodId(fut, &PyId___await__, NULL);
 
 finally:
-  Py_CLEAR(loop);
   Py_CLEAR(fut);
-  Py_CLEAR(set_result);
-  Py_CLEAR(set_exception);
-  hiwire_CLEAR(promise_id);
-  hiwire_CLEAR(promise_handles);
-  hiwire_CLEAR(promise_result);
   return result;
 }
 
@@ -780,9 +839,9 @@ JsProxy_then(JsProxy* self, PyObject* args, PyObject* kwds)
   }
   promise_id = hiwire_resolve_promise(self->js);
   FAIL_IF_NULL(promise_id);
-  promise_handles = create_promise_handles(onfulfilled, onrejected);
+  promise_handles = create_promise_handles(onfulfilled, onrejected, NULL);
   FAIL_IF_NULL(promise_handles);
-  result_promise = hiwire_call_member(promise_id, "then", promise_handles);
+  result_promise = hiwire_CallMethodId(promise_id, &JsId_then, promise_handles);
   if (result_promise == NULL) {
     Py_CLEAR(onfulfilled);
     Py_CLEAR(onrejected);
@@ -798,7 +857,7 @@ finally:
   return result;
 }
 
-PyMethodDef JsProxy_then_MethodDef = {
+static PyMethodDef JsProxy_then_MethodDef = {
   "then",
   (PyCFunction)JsProxy_then,
   METH_VARARGS | METH_KEYWORDS,
@@ -819,9 +878,9 @@ JsProxy_catch(JsProxy* self, PyObject* onrejected)
   FAIL_IF_NULL(promise_id);
   // We have to use create_promise_handles so that the handler gets released
   // even if the promise resolves successfully.
-  promise_handles = create_promise_handles(NULL, onrejected);
+  promise_handles = create_promise_handles(NULL, onrejected, NULL);
   FAIL_IF_NULL(promise_handles);
-  result_promise = hiwire_call_member(promise_id, "then", promise_handles);
+  result_promise = hiwire_CallMethodId(promise_id, &JsId_then, promise_handles);
   if (result_promise == NULL) {
     Py_DECREF(onrejected);
     FAIL();
@@ -835,7 +894,7 @@ finally:
   return result;
 }
 
-PyMethodDef JsProxy_catch_MethodDef = {
+static PyMethodDef JsProxy_catch_MethodDef = {
   "catch",
   (PyCFunction)JsProxy_catch,
   METH_O,
@@ -862,7 +921,8 @@ JsProxy_finally(JsProxy* self, PyObject* onfinally)
   // `create_once_callable`.
   proxy = create_once_callable(onfinally);
   FAIL_IF_NULL(proxy);
-  result_promise = hiwire_call_member_va(promise_id, "finally", proxy, NULL);
+  result_promise =
+    hiwire_CallMethodId_va(promise_id, &JsId_finally, proxy, NULL);
   if (result_promise == NULL) {
     Py_DECREF(onfinally);
     FAIL();
@@ -876,7 +936,7 @@ finally:
   return result;
 }
 
-PyMethodDef JsProxy_finally_MethodDef = {
+static PyMethodDef JsProxy_finally_MethodDef = {
   "finally_",
   (PyCFunction)JsProxy_finally,
   METH_O,
@@ -1027,8 +1087,18 @@ finally:
 
 #define JsMethod_THIS(x) (((JsProxy*)x)->this_)
 
+/**
+ * Prepare arguments from a `METH_FASTCALL | METH_KEYWORDS` Python function to a
+ * JavaScript call. We call `python2js` on each argument. Any PyProxy *created*
+ * by `python2js` is stored into the `proxies` list to be destroyed later (if
+ * the argument is a PyProxy created with `create_proxy` it won't be recorded
+ * for destruction).
+ */
 JsRef
-JsMethod_ConvertArgs(PyObject* const* args, Py_ssize_t nargs, PyObject* kwnames)
+JsMethod_ConvertArgs(PyObject* const* args,
+                     Py_ssize_t nargs,
+                     PyObject* kwnames,
+                     JsRef proxies)
 {
   bool success = false;
   JsRef idargs = NULL;
@@ -1038,7 +1108,7 @@ JsMethod_ConvertArgs(PyObject* const* args, Py_ssize_t nargs, PyObject* kwnames)
   idargs = JsArray_New();
   FAIL_IF_NULL(idargs);
   for (Py_ssize_t i = 0; i < nargs; ++i) {
-    idarg = python2js(args[i]);
+    idarg = python2js_track_proxies(args[i], proxies);
     FAIL_IF_NULL(idarg);
     FAIL_IF_MINUS_ONE(JsArray_Push(idargs, idarg));
     hiwire_CLEAR(idarg);
@@ -1065,7 +1135,7 @@ JsMethod_ConvertArgs(PyObject* const* args, Py_ssize_t nargs, PyObject* kwnames)
   for (Py_ssize_t i = 0, k = nargs; i < nkwargs; ++i, ++k) {
     PyObject* name = PyTuple_GET_ITEM(kwnames, i); /* borrowed! */
     const char* name_utf8 = PyUnicode_AsUTF8(name);
-    idarg = python2js(args[k]);
+    idarg = python2js_track_proxies(args[k], proxies);
     FAIL_IF_NULL(idarg);
     FAIL_IF_MINUS_ONE(JsObject_SetString(idkwargs, name_utf8, idarg));
     hiwire_CLEAR(idarg);
@@ -1084,6 +1154,26 @@ finally:
 }
 
 /**
+ * This is a helper function for calling asynchronous js functions. proxies_id
+ * is an Array of proxies to destroy, it returns a JsRef to a function that
+ * destroys them and the result of the Promise.
+ */
+EM_JS_REF(JsRef, get_async_js_call_done_callback, (JsRef proxies_id), {
+  let proxies = Module.hiwire.get_value(proxies_id);
+  return Module.hiwire.new_value(function(result) {
+    let msg = "This borrowed proxy was automatically destroyed " +
+              "at the end of an asynchronous function call. Try " +
+              "using create_proxy or create_once_callable.";
+    for (let px of proxies) {
+      Module.pyproxy_destroy(px, msg);
+    }
+    if (Module.isPyProxy(result)) {
+      Module.pyproxy_destroy(result, msg);
+    }
+  });
+});
+
+/**
  * __call__ overload for methods. Controlled by IS_CALLABLE.
  */
 static PyObject*
@@ -1093,25 +1183,56 @@ JsMethod_Vectorcall(PyObject* self,
                     PyObject* kwnames)
 {
   bool success = false;
+  JsRef proxies = NULL;
   JsRef idargs = NULL;
   JsRef idresult = NULL;
+  bool result_is_promise = false;
+  JsRef async_done_callback = NULL;
   PyObject* pyresult = NULL;
 
   // Recursion error?
   FAIL_IF_NONZERO(Py_EnterRecursiveCall(" in JsMethod_Vectorcall"));
-
-  idargs = JsMethod_ConvertArgs(args, PyVectorcall_NARGS(nargsf), kwnames);
+  proxies = JsArray_New();
+  idargs =
+    JsMethod_ConvertArgs(args, PyVectorcall_NARGS(nargsf), kwnames, proxies);
   FAIL_IF_NULL(idargs);
   idresult = hiwire_call_bound(JsProxy_REF(self), JsMethod_THIS(self), idargs);
   FAIL_IF_NULL(idresult);
-  pyresult = js2python(idresult);
+  result_is_promise = hiwire_is_promise(idresult);
+  if (!result_is_promise) {
+    pyresult = js2python(idresult);
+  } else {
+    // Result was a promise. In this case we don't want to destroy the arguments
+    // until the promise is ready. Furthermore, since we destroy the result of
+    // the Promise, we deny the user access to the Promise (would cause
+    // exceptions). Instead we return a Future. When the promise is ready, we
+    // resolve the Future with the result from the Promise and destroy the
+    // arguments and result.
+    async_done_callback = get_async_js_call_done_callback(proxies);
+    FAIL_IF_NULL(async_done_callback);
+    pyresult = wrap_promise(idresult, async_done_callback);
+  }
   FAIL_IF_NULL(pyresult);
 
   success = true;
 finally:
   Py_LeaveRecursiveCall(/* " in JsMethod_Vectorcall" */);
+  if (!(success && result_is_promise)) {
+    // If we succeeded and the result was a promise then we destroy the
+    // arguments in async_done_callback instead of here. Otherwise, destroy the
+    // arguments and return value now.
+    if (idresult != NULL && hiwire_is_pyproxy(idresult)) {
+      JsArray_Push(proxies, idresult);
+    }
+    destroy_proxies(proxies,
+                    "This borrowed proxy was automatically destroyed at the "
+                    "end of a function call. Try using "
+                    "create_proxy or create_once_callable.");
+  }
+  hiwire_CLEAR(proxies);
   hiwire_CLEAR(idargs);
   hiwire_CLEAR(idresult);
+  hiwire_CLEAR(async_done_callback);
   if (!success) {
     Py_CLEAR(pyresult);
   }
@@ -1122,7 +1243,7 @@ finally:
  * jsproxy.new implementation. Controlled by IS_CALLABLE.
  *
  * This does Reflect.construct(this, args). In other words, this treats the
- * JsMethod as a Javascript class, constructs a new Javascript object of that
+ * JsMethod as a JavaScript class, constructs a new JavaScript object of that
  * class and returns a new JsProxy wrapping it. Similar to `new this(args)`.
  */
 static PyObject*
@@ -1132,6 +1253,7 @@ JsMethod_Construct(PyObject* self,
                    PyObject* kwnames)
 {
   bool success = false;
+  JsRef proxies = NULL;
   JsRef idargs = NULL;
   JsRef idresult = NULL;
   PyObject* pyresult = NULL;
@@ -1139,7 +1261,8 @@ JsMethod_Construct(PyObject* self,
   // Recursion error?
   FAIL_IF_NONZERO(Py_EnterRecursiveCall(" in JsMethod_Construct"));
 
-  idargs = JsMethod_ConvertArgs(args, nargs, kwnames);
+  proxies = JsArray_New();
+  idargs = JsMethod_ConvertArgs(args, nargs, kwnames, proxies);
   FAIL_IF_NULL(idargs);
   idresult = hiwire_construct(JsProxy_REF(self), idargs);
   FAIL_IF_NULL(idresult);
@@ -1149,6 +1272,10 @@ JsMethod_Construct(PyObject* self,
   success = true;
 finally:
   Py_LeaveRecursiveCall(/* " in JsMethod_Construct" */);
+  destroy_proxies(proxies,
+                  "This borrowed proxy was automatically destroyed. Try using "
+                  "create_proxy or create_once_callable.");
+  hiwire_CLEAR(proxies);
   hiwire_CLEAR(idargs);
   hiwire_CLEAR(idresult);
   if (!success) {
@@ -1158,7 +1285,7 @@ finally:
 }
 
 // clang-format off
-PyMethodDef JsMethod_Construct_MethodDef = {
+static PyMethodDef JsMethod_Construct_MethodDef = {
   "new",
   (PyCFunction)JsMethod_Construct,
   METH_FASTCALL | METH_KEYWORDS
@@ -1259,10 +1386,10 @@ static PyTypeObject BufferType = {
 };
 
 /**
- * This is a helper function to do error checking for JsBuffer_AssignToPyBuffer
- * and JsBuffer_AssignPyBuffer.
+ * This is a helper function to do error checking for JsBuffer_assign_to
+ * and JsBuffer_assign.
  *
- * self -- The Javascript buffer involved
+ * self -- The JavaScript buffer involved
  * view -- The Py_buffer view involved
  * safe -- If true, check data type compatibility, if false only check size
  *         compatibility.
@@ -1311,7 +1438,7 @@ check_buffer_compatibility(JsProxy* self, Py_buffer view, bool safe, bool dir)
  * buffer -- A PyObject whcih supports the buffer protocol and is writable.
  */
 static PyObject*
-JsBuffer_AssignToPyBuffer(PyObject* obj, PyObject* target)
+JsBuffer_assign_to(PyObject* obj, PyObject* target)
 {
   JsProxy* self = (JsProxy*)obj;
   bool success = false;
@@ -1333,13 +1460,19 @@ finally:
   return NULL;
 }
 
+static PyMethodDef JsBuffer_assign_to_MethodDef = {
+  "assign_to",
+  (PyCFunction)JsBuffer_assign_to,
+  METH_O,
+};
+
 /**
  * Assign from a py buffer to a js buffer
  * obj -- A JsBuffer (meaning a PyProxy of an ArrayBuffer or an ArrayBufferView)
  * buffer -- A PyObject which supports the buffer protocol (can be read only)
  */
 static PyObject*
-JsBuffer_AssignPyBuffer(PyObject* obj, PyObject* source)
+JsBuffer_assign(PyObject* obj, PyObject* source)
 {
   JsProxy* self = (JsProxy*)obj;
   bool success = false;
@@ -1360,12 +1493,18 @@ finally:
   return NULL;
 }
 
+static PyMethodDef JsBuffer_assign_MethodDef = {
+  "assign",
+  (PyCFunction)JsBuffer_assign,
+  METH_O,
+};
+
 /**
- * Used from js2python for to_py. Make a new Python buffer with the same data as
- * jsbuffer.
+ * Used from js2python for to_py and by to_memoryview. Make a new Python buffer
+ * with the same data as jsbuffer.
  *
  * All other arguments are calculated from jsbuffer, but it's more convenient to
- * calculate them in Javascript and pass them as arguments than to acquire them
+ * calculate them in JavaScript and pass them as arguments than to acquire them
  * from C.
  *
  * jsbuffer - An ArrayBuffer view or an ArrayBuffer
@@ -1374,10 +1513,10 @@ finally:
  * itemsize - the appropriate itemsize for jsbuffer, from get_buffer_datatype
  */
 PyObject*
-JsBuffer_CloneIntoPython(JsRef jsbuffer,
-                         Py_ssize_t byteLength,
-                         char* format,
-                         Py_ssize_t itemsize)
+JsBuffer_CopyIntoMemoryView(JsRef jsbuffer,
+                            Py_ssize_t byteLength,
+                            char* format,
+                            Py_ssize_t itemsize)
 {
   bool success = false;
   Buffer* buffer = NULL;
@@ -1399,19 +1538,146 @@ finally:
   return result;
 }
 
+/**
+ * Used by to_bytes. Make a new bytes object and copy the data from the
+ * ArrayBuffer into it.
+ */
+PyObject*
+JsBuffer_CopyIntoBytes(JsRef jsbuffer, Py_ssize_t byteLength)
+{
+  bool success = false;
+
+  PyObject* result = PyBytes_FromStringAndSize(NULL, byteLength);
+  FAIL_IF_NULL(result);
+  char* data = PyBytes_AS_STRING(result);
+  FAIL_IF_MINUS_ONE(hiwire_assign_to_ptr(jsbuffer, data));
+  success = true;
+finally:
+  if (!success) {
+    Py_CLEAR(result);
+  }
+  return result;
+}
+
+/**
+ * Used by JsBuffer_ToString. Decode the ArrayBuffer into a Javascript string
+ * using a TextDecoder with the given encoding. I have found no evidence that
+ * the encoding argument ever matters...
+ *
+ * If a decoding error occurs, return 0 without setting error flag so we can
+ * replace with a UnicodeDecodeError
+ */
+// clang-format off
+EM_JS_REF(JsRef,
+JsBuffer_DecodeString_js,
+(JsRef jsbuffer_id, char* encoding),
+{
+  let buffer = Module.hiwire.get_value(jsbuffer_id);
+  let encoding_js;
+  if (encoding) {
+    encoding_js = UTF8ToString(encoding);
+  }
+  let decoder = new TextDecoder(encoding_js, {fatal : true});
+  let res;
+  try {
+    res = decoder.decode(buffer);
+  } catch(e){
+    if(e instanceof TypeError) {
+      // Decoding error
+      return 0;
+    }
+    throw e;
+  }
+  return Module.hiwire.new_value(res);
+})
+// clang-format on
+
+/**
+ * Decode the ArrayBuffer into a PyUnicode object.
+ */
+PyObject*
+JsBuffer_ToString(JsRef jsbuffer, char* encoding)
+{
+  JsRef jsresult = NULL;
+  PyObject* result = NULL;
+
+  jsresult = JsBuffer_DecodeString_js(jsbuffer, encoding);
+  if (jsresult == NULL && !PyErr_Occurred()) {
+    PyErr_Format(PyExc_ValueError,
+                 "Failed to decode Javascript TypedArray as %s",
+                 encoding ? encoding : "utf8");
+  }
+  FAIL_IF_NULL(jsresult);
+  result = js2python(jsresult);
+  FAIL_IF_NULL(result);
+
+finally:
+  hiwire_CLEAR(jsresult);
+  return result;
+}
+
+static PyObject*
+JsBuffer_tomemoryview(PyObject* buffer)
+{
+  JsProxy* self = (JsProxy*)buffer;
+  return JsBuffer_CopyIntoMemoryView(
+    self->js, self->byteLength, self->format, self->itemsize);
+}
+
+static PyMethodDef JsBuffer_tomemoryview_MethodDef = {
+  "to_memoryview",
+  (PyCFunction)JsBuffer_tomemoryview,
+  METH_NOARGS,
+};
+
+static PyObject*
+JsBuffer_tobytes(PyObject* buffer)
+{
+  JsProxy* self = (JsProxy*)buffer;
+  return JsBuffer_CopyIntoBytes(self->js, self->byteLength);
+}
+
+static PyMethodDef JsBuffer_tobytes_MethodDef = {
+  "to_bytes",
+  (PyCFunction)JsBuffer_tobytes,
+  METH_NOARGS,
+};
+
+static PyObject*
+JsBuffer_tostring(PyObject* self,
+                  PyObject* const* args,
+                  Py_ssize_t nargs,
+                  PyObject* kwnames)
+{
+  static const char* const _keywords[] = { "encoding", 0 };
+  static struct _PyArg_Parser _parser = { "|s:to_string", _keywords, 0 };
+  char* encoding = NULL;
+  if (!_PyArg_ParseStackAndKeywords(
+        args, nargs, kwnames, &_parser, &encoding)) {
+    return NULL;
+  }
+  return JsBuffer_ToString(JsProxy_REF(self), encoding);
+}
+
+static PyMethodDef JsBuffer_tostring_MethodDef = {
+  "to_string",
+  (PyCFunction)JsBuffer_tostring,
+  METH_FASTCALL | METH_KEYWORDS,
+};
+
 int
 JsBuffer_cinit(PyObject* obj)
 {
   bool success = false;
   JsProxy* self = (JsProxy*)obj;
   // TODO: should logic here be any different if we're on wasm heap?
-  self->byteLength = hiwire_get_byteLength(JsProxy_REF(self));
   // format string is borrowed from hiwire_get_buffer_datatype, DO NOT
   // DEALLOCATE!
-  hiwire_get_buffer_datatype(JsProxy_REF(self),
-                             &self->format,
-                             &self->itemsize,
-                             &self->check_assignments);
+  hiwire_get_buffer_info(JsProxy_REF(self),
+                         &self->byteLength,
+                         &self->format,
+                         &self->itemsize,
+                         &self->check_assignments);
   if (self->format == NULL) {
     char* typename = hiwire_constructor_name(JsProxy_REF(self));
     PyErr_Format(
@@ -1444,7 +1710,7 @@ JsProxy_create_subtype(int flags)
   // Make sure these stack allocations are large enough to fit!
   PyType_Slot slots[20];
   int cur_slot = 0;
-  PyMethodDef methods[10];
+  PyMethodDef methods[50];
   int cur_method = 0;
   PyMemberDef members[5];
   int cur_member = 0;
@@ -1527,18 +1793,11 @@ JsProxy_create_subtype(int flags)
                      .pfunc = (void*)JsProxy_ass_subscript_array };
   }
   if (flags & IS_BUFFER) {
-    methods[cur_method++] = (PyMethodDef){
-      "assign",
-      (PyCFunction)JsBuffer_AssignPyBuffer,
-      METH_O,
-      PyDoc_STR("Copies a buffer into the TypedArray "),
-    };
-    methods[cur_method++] = (PyMethodDef){
-      "assign_to",
-      (PyCFunction)JsBuffer_AssignToPyBuffer,
-      METH_O,
-      PyDoc_STR("Copies the TypedArray into a buffer"),
-    };
+    methods[cur_method++] = JsBuffer_assign_MethodDef;
+    methods[cur_method++] = JsBuffer_assign_to_MethodDef;
+    methods[cur_method++] = JsBuffer_tomemoryview_MethodDef;
+    methods[cur_method++] = JsBuffer_tobytes_MethodDef;
+    methods[cur_method++] = JsBuffer_tostring_MethodDef;
   }
   methods[cur_method++] = (PyMethodDef){ 0 };
   members[cur_member++] = (PyMemberDef){ 0 };
@@ -1663,16 +1922,16 @@ JsProxy_create_with_this(JsRef object, JsRef this)
   if (hiwire_has_length(object)) {
     type_flags |= HAS_LENGTH;
   }
-  if (hiwire_has_get_method(object)) {
+  if (hiwire_HasMethodId(object, &JsId_get)) {
     type_flags |= HAS_GET;
   }
-  if (hiwire_has_set_method(object)) {
+  if (hiwire_HasMethodId(object, &JsId_set)) {
     type_flags |= HAS_SET;
   }
-  if (hiwire_has_has_method(object)) {
+  if (hiwire_HasMethodId(object, &JsId_has)) {
     type_flags |= HAS_HAS;
   }
-  if (hiwire_has_includes_method(object)) {
+  if (hiwire_HasMethodId(object, &JsId_includes)) {
     type_flags |= HAS_INCLUDES;
   }
   if (hiwire_is_typedarray(object)) {
@@ -1757,7 +2016,7 @@ JsProxy_init(PyObject* core_module)
   FAIL_IF_NULL(jsproxy_mock);
 
   // Load the docstrings for JsProxy methods from the corresponding stubs in
-  // _pyodide._core. set_method_docstring uses
+  // _pyodide._core_docs.set_method_docstring uses
   // _pyodide.docstring.get_cmeth_docstring to generate the appropriate C-style
   // docstring from the Python-style docstring.
 #define SET_DOCSTRING(x)                                                       \
@@ -1771,6 +2030,11 @@ JsProxy_init(PyObject* core_module)
   SET_DOCSTRING(JsProxy_catch_MethodDef);
   SET_DOCSTRING(JsProxy_finally_MethodDef);
   SET_DOCSTRING(JsMethod_Construct_MethodDef);
+  SET_DOCSTRING(JsBuffer_assign_MethodDef);
+  SET_DOCSTRING(JsBuffer_assign_to_MethodDef);
+  SET_DOCSTRING(JsBuffer_tomemoryview_MethodDef);
+  SET_DOCSTRING(JsBuffer_tobytes_MethodDef);
+  SET_DOCSTRING(JsBuffer_tostring_MethodDef);
 #undef SET_DOCSTRING
 
   asyncio_module = PyImport_ImportModule("asyncio");

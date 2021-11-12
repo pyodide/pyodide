@@ -7,17 +7,19 @@ export { loadPackage, loadedPackages, isPyProxy };
  * @typedef {import('./pyproxy.gen').Py2JsResult} Py2JsResult
  * @typedef {import('./pyproxy.gen').PyProxy} PyProxy
  * @typedef {import('./pyproxy.gen').TypedArray} TypedArray
+ * @typedef {import('emscripten')} Emscripten
+ * @typedef {import('emscripten').Module.FS} FS
  */
 
 /**
  * An alias to the Python :py:mod:`pyodide` package.
  *
  * You can use this to call functions defined in the Pyodide Python package
- * from Javascript.
+ * from JavaScript.
  *
  * @type {PyProxy}
  */
-let pyodide_py = {}; // actually defined in runPythonSimple in loadPyodide (see pyodide.js)
+let pyodide_py = {}; // actually defined in loadPyodide (see pyodide.js)
 
 /**
  *
@@ -28,10 +30,10 @@ let pyodide_py = {}; // actually defined in runPythonSimple in loadPyodide (see 
  *
  * @type {PyProxy}
  */
-let globals = {}; // actually defined in runPythonSimple in loadPyodide (see pyodide.js)
+let globals = {}; // actually defined in loadPyodide (see pyodide.js)
 
 /**
- * A Javascript error caused by a Python exception.
+ * A JavaScript error caused by a Python exception.
  *
  * In order to reduce the risk of large memory leaks, the ``PythonError``
  * contains no reference to the Python exception that caused it. You can find
@@ -73,10 +75,10 @@ export class PythonError {
  *
  * @type {string}
  */
-export let version = ""; // actually defined in runPythonSimple in loadPyodide (see pyodide.js)
+export let version = ""; // actually defined in loadPyodide (see pyodide.js)
 
 /**
- * Runs a string of Python code from Javascript.
+ * Runs a string of Python code from JavaScript.
  *
  * The last part of the string may be an expression, in which case, its value
  * is returned.
@@ -85,16 +87,11 @@ export let version = ""; // actually defined in runPythonSimple in loadPyodide (
  * @param {PyProxy} globals An optional Python dictionary to use as the globals.
  *        Defaults to :any:`pyodide.globals`. Uses the Python API
  *        :any:`pyodide.eval_code` to evaluate the code.
- * @returns {Py2JsResult} The result of the Python code translated to Javascript. See the
+ * @returns {Py2JsResult} The result of the Python code translated to JavaScript. See the
  *          documentation for :any:`pyodide.eval_code` for more info.
  */
 export function runPython(code, globals = Module.globals) {
-  let eval_code = Module.pyodide_py.eval_code;
-  try {
-    return eval_code(code, globals);
-  } finally {
-    eval_code.destroy();
-  }
+  return Module.pyodide_py.eval_code(code, globals);
 }
 Module.runPython = runPython;
 
@@ -106,8 +103,8 @@ Module.runPython = runPython;
  */
 
 /**
- * Inspect a Python code chunk and use :js:func:`pyodide.loadPackage` to
- * install any known packages that the code chunk imports. Uses the Python API
+ * Inspect a Python code chunk and use :js:func:`pyodide.loadPackage` to install
+ * any known packages that the code chunk imports. Uses the Python API
  * :func:`pyodide.find\_imports` to inspect the code.
  *
  * For example, given the following code as input
@@ -117,7 +114,7 @@ Module.runPython = runPython;
  *    import numpy as np x = np.array([1, 2, 3])
  *
  * :js:func:`loadPackagesFromImports` will call
- * ``pyodide.loadPackage(['numpy'])``. See also :js:func:`runPythonAsync`.
+ * ``pyodide.loadPackage(['numpy'])``.
  *
  * @param {string} code The code to inspect.
  * @param {LogFn=} messageCallback The ``messageCallback`` argument of
@@ -131,54 +128,39 @@ export async function loadPackagesFromImports(
   messageCallback,
   errorCallback
 ) {
-  let find_imports = Module.pyodide_py.find_imports;
+  let pyimports = Module.pyodide_py.find_imports(code);
   let imports;
-  let pyimports;
   try {
-    pyimports = find_imports(code);
     imports = pyimports.toJs();
   } finally {
-    find_imports.destroy();
-    pyimports && pyimports.destroy();
+    pyimports.destroy();
   }
   if (imports.length === 0) {
     return;
   }
-  let packageNames = Module.packages.import_name_to_package_name;
+
+  let packageNames = Module._import_name_to_package_name;
   let packages = new Set();
   for (let name of imports) {
-    if (name in packageNames) {
-      packages.add(packageNames[name]);
+    if (packageNames.has(name)) {
+      packages.add(packageNames.get(name));
     }
   }
   if (packages.size) {
-    await loadPackage(
-      Array.from(packages.keys()),
-      messageCallback,
-      errorCallback
-    );
+    await loadPackage(Array.from(packages), messageCallback, errorCallback);
   }
 }
 
 /**
- * Access a Python object in the global namespace from Javascript.
- *
- * @deprecated This function will be removed in version 0.18.0. Use
- *    :any:`pyodide.globals.get('key') <pyodide.globals>` instead.
- *
- * @param {string} name Python variable name
- * @returns {Py2JsResult} The Python object translated to Javascript.
- */
-export function pyimport(name) {
-  console.warn(
-    "Access to the Python global namespace via pyodide.pyimport is deprecated and " +
-      "will be removed in version 0.18.0. Use pyodide.globals.get('key') instead."
-  );
-  return Module.globals.get(name);
-}
-/**
  * Runs Python code using `PyCF_ALLOW_TOP_LEVEL_AWAIT
  * <https://docs.python.org/3/library/ast.html?highlight=pycf_allow_top_level_await#ast.PyCF_ALLOW_TOP_LEVEL_AWAIT>`_.
+ *
+ * .. admonition:: Python imports
+ *    :class: warning
+ *
+ *    Since pyodide 0.18.0, you must call :js:func:`loadPackagesFromImports` to
+ *    import any python packages referenced via `import` statements in your code.
+ *    This function will no longer do it for you.
  *
  * For example:
  *
@@ -188,46 +170,41 @@ export function pyimport(name) {
  *        from js import fetch
  *        response = await fetch("./packages.json")
  *        packages = await response.json()
- *        # If final statement is an expression, its value is returned to
- * Javascript len(packages.dependencies.object_keys())
+ *        # If final statement is an expression, its value is returned to JavaScript
+ *        len(packages.packages.object_keys())
  *    `);
- *    console.log(result); // 72
+ *    console.log(result); // 79
  *
  * @param {string} code Python code to evaluate
- * @returns {Py2JsResult} The result of the Python code translated to Javascript.
+ * @param {PyProxy} globals An optional Python dictionary to use as the globals.
+ *        Defaults to :any:`pyodide.globals`. Uses the Python API
+ *        :any:`pyodide.eval_code_async` to evaluate the code.
+ * @returns {Py2JsResult} The result of the Python code translated to JavaScript.
  * @async
  */
-export async function runPythonAsync(code) {
-  let eval_code_async = Module.pyodide_py.eval_code_async;
-  let coroutine = eval_code_async(code, Module.globals);
+export async function runPythonAsync(code, globals = Module.globals) {
+  let coroutine = Module.pyodide_py.eval_code_async(code, globals);
   try {
-    let result = await coroutine;
-    return result;
+    return await coroutine;
   } finally {
-    eval_code_async.destroy();
     coroutine.destroy();
   }
 }
 Module.runPythonAsync = runPythonAsync;
 
 /**
- * Registers the Javascript object ``module`` as a Javascript module named
+ * Registers the JavaScript object ``module`` as a JavaScript module named
  * ``name``. This module can then be imported from Python using the standard
  * Python import system. If another module by the same name has already been
  * imported, this won't have much effect unless you also delete the imported
  * module from ``sys.modules``. This calls the ``pyodide_py`` API
  * :func:`pyodide.register_js_module`.
  *
- * @param {string} name Name of the Javascript module to add
- * @param {object} module Javascript object backing the module
+ * @param {string} name Name of the JavaScript module to add
+ * @param {object} module JavaScript object backing the module
  */
 export function registerJsModule(name, module) {
-  let register_js_module = Module.pyodide_py.register_js_module;
-  try {
-    register_js_module(name, module);
-  } finally {
-    register_js_module.destroy();
-  }
+  Module.pyodide_py.register_js_module(name, module);
 }
 
 /**
@@ -239,40 +216,36 @@ export function registerComlink(Comlink) {
 }
 
 /**
- * Unregisters a Javascript module with given name that has been previously
+ * Unregisters a JavaScript module with given name that has been previously
  * registered with :js:func:`pyodide.registerJsModule` or
- * :func:`pyodide.register_js_module`. If a Javascript module with that name
+ * :func:`pyodide.register_js_module`. If a JavaScript module with that name
  * does not already exist, will throw an error. Note that if the module has
  * already been imported, this won't have much effect unless you also delete
  * the imported module from ``sys.modules``. This calls the ``pyodide_py`` API
  * :func:`pyodide.unregister_js_module`.
  *
- * @param {string} name Name of the Javascript module to remove
+ * @param {string} name Name of the JavaScript module to remove
  */
 export function unregisterJsModule(name) {
-  let unregister_js_module = Module.pyodide_py.unregister_js_module;
-  try {
-    unregister_js_module(name);
-  } finally {
-    unregister_js_module.destroy();
-  }
+  Module.pyodide_py.unregister_js_module(name);
 }
 
 /**
- * Convert the Javascript object to a Python object as best as possible.
+ * Convert the JavaScript object to a Python object as best as possible.
  *
- * This is similar to :any:`JsProxy.to_py` but for use from Javascript. If the
+ * This is similar to :any:`JsProxy.to_py` but for use from JavaScript. If the
  * object is immutable or a :any:`PyProxy`, it will be returned unchanged. If
  * the object cannot be converted into Python, it will be returned unchanged.
  *
  * See :ref:`type-translations-jsproxy-to-py` for more information.
  *
  * @param {*} obj
- * @param {number} depth Optional argument to limit the depth of the
+ * @param {object} options
+ * @param {number} options.depth Optional argument to limit the depth of the
  * conversion.
  * @returns {PyProxy} The object converted to Python.
  */
-export function toPy(obj, depth = -1) {
+export function toPy(obj, { depth = -1 } = {}) {
   // No point in converting these, it'd be dumb to proxy them so they'd just
   // get converted back by `js2python` at the end
   switch (typeof obj) {
@@ -291,9 +264,13 @@ export function toPy(obj, depth = -1) {
   let result = 0;
   try {
     obj_id = Module.hiwire.new_value(obj);
-    py_result = Module.__js2python_convert(obj_id, new Map(), depth);
-    if (py_result === 0) {
-      Module._pythonexc2js();
+    try {
+      py_result = Module.js2python_convert(obj_id, new Map(), depth);
+    } catch (e) {
+      if (e instanceof Module._PropagatePythonError) {
+        Module._pythonexc2js();
+      }
+      throw e;
     }
     if (Module._JsProxy_Check(py_result)) {
       // Oops, just created a JsProxy. Return the original object.
@@ -322,32 +299,75 @@ Module.saveState = () => Module.pyodide_py._state.save_state();
 Module.restoreState = (state) => Module.pyodide_py._state.restore_state(state);
 
 /**
+ * Sets the interrupt buffer to be `interrupt_buffer`. This is only useful when
+ * Pyodide is used in a webworker. The buffer should be a `SharedArrayBuffer`
+ * shared with the main browser thread (or another worker). To request an
+ * interrupt, a `2` should be written into `interrupt_buffer` (2 is the posix
+ * constant for SIGINT).
+ *
  * @param {TypedArray} interrupt_buffer
  */
-function setInterruptBuffer(interrupt_buffer) {}
-setInterruptBuffer = Module.setInterruptBuffer;
-export { setInterruptBuffer };
+export function setInterruptBuffer(interrupt_buffer) {
+  Module.interrupt_buffer = interrupt_buffer;
+  Module._set_pyodide_callback(!!interrupt_buffer);
+}
+
+/**
+ * Throws a KeyboardInterrupt error if a KeyboardInterrupt has been requested
+ * via the interrupt buffer.
+ *
+ * This can be used to enable keyboard interrupts during execution of JavaScript
+ * code, just as `PyErr_CheckSignals` is used to enable keyboard interrupts
+ * during execution of C code.
+ */
+export function checkInterrupt() {
+  if (Module.interrupt_buffer[0] === 2) {
+    Module.interrupt_buffer[0] = 0;
+    Module._PyErr_SetInterrupt();
+    Module.runPython("");
+  }
+}
 
 export function makePublicAPI() {
+  /**
+   * An alias to the `Emscripten File System API
+   * <https://emscripten.org/docs/api_reference/Filesystem-API.html>`_.
+   *
+   * This provides a wide range of POSIX-`like` file/device operations, including
+   * `mount
+   * <https://emscripten.org/docs/api_reference/Filesystem-API.html#FS.mount>`_
+   * which can be used to extend the in-memory filesystem with features like `persistence
+   * <https://emscripten.org/docs/api_reference/Filesystem-API.html#persistent-data>`_.
+   *
+   * While all of the file systems implementations are enabled, only the default
+   * ``MEMFS`` is guaranteed to work in all runtime settings. The implementations
+   * are available as members of ``FS.filesystems``:
+   * ``IDBFS``, ``NODEFS``, ``PROXYFS``, ``WORKERFS``.
+   *
+   * @type {FS}
+   */
+  const FS = Module.FS;
   let namespace = {
     globals,
+    FS,
     pyodide_py,
     version,
     loadPackage,
     loadPackagesFromImports,
     loadedPackages,
     isPyProxy,
-    pyimport,
     runPython,
     runPythonAsync,
     registerJsModule,
     unregisterJsModule,
     setInterruptBuffer,
+    checkInterrupt,
     toPy,
     registerComlink,
     PythonError,
     PyBuffer,
   };
+
   namespace._module = Module; // @private
   Module.public_api = namespace;
   return namespace;
