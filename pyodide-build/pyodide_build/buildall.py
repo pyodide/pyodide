@@ -12,9 +12,9 @@ from queue import Queue, PriorityQueue
 import shutil
 import subprocess
 import sys
-from threading import Thread
+from threading import Thread, Lock
 from time import sleep, perf_counter
-from typing import Dict, Set, Optional, List
+from typing import Dict, Set, Optional, List, Any
 
 from . import common
 from .io import parse_package_config
@@ -31,6 +31,7 @@ class BasePackage:
     dependencies: List[str]
     unbuilt_dependencies: Set[str]
     dependents: Set[str]
+    unvendored_tests: Optional[bool] = None
 
     # We use this in the priority queue, which pops off the smallest element.
     # So we want the smallest element to have the largest number of dependents
@@ -121,7 +122,7 @@ class Package(BasePackage):
         else:
             (self.pkgdir / "build.log.tmp").unlink()
 
-        if args.log_dir:
+        if args.log_dir and (self.pkgdir / "build.log").exists():
             shutil.copy(
                 self.pkgdir / "build.log", Path(args.log_dir) / f"{self.name}.log"
             )
@@ -145,13 +146,22 @@ class Package(BasePackage):
                 self.pkgdir / "build" / (self.name + ".js"),
                 outputdir / (self.name + ".js"),
             )
+            if (self.pkgdir / "build" / (self.name + "-tests.data")).exists():
+                shutil.copyfile(
+                    self.pkgdir / "build" / (self.name + "-tests.data"),
+                    outputdir / (self.name + "-tests.data"),
+                )
+                shutil.copyfile(
+                    self.pkgdir / "build" / (self.name + "-tests.js"),
+                    outputdir / (self.name + "-tests.js"),
+                )
 
 
 def generate_dependency_graph(
-    packages_dir: Path, package_list: Optional[str]
+    packages_dir: Path, packages: Optional[Set[str]]
 ) -> Dict[str, BasePackage]:
-    """
-    This generates a dependency graph for the packages listed in package_list.
+    """This generates a dependency graph for listed packages.
+
     A node in the graph is a BasePackage object defined above, which maintains
     a list of dependencies and also dependents. That is, each node stores both
     incoming and outgoing edges.
@@ -163,7 +173,7 @@ def generate_dependency_graph(
 
     Parameters:
      - packages_dir: directory that contains packages
-     - package_list: set of packages to build. If None, then all packages in
+     - packages: set of packages to build. If None, then all packages in
        packages_dir are compiled.
 
     Returns:
@@ -172,7 +182,6 @@ def generate_dependency_graph(
 
     pkg_map: Dict[str, BasePackage] = {}
 
-    packages: Optional[Set[str]] = common._parse_package_subset(package_list)
     if packages is None:
         packages = set(
             str(x) for x in packages_dir.iterdir() if (x / "meta.yaml").is_file()
@@ -221,18 +230,26 @@ def build_from_graph(pkg_map: Dict[str, BasePackage], outputdir: Path, args) -> 
     # Insert packages into build_queue. We *must* do this after counting
     # dependents, because the ordering ought not to change after insertion.
     build_queue: PriorityQueue = PriorityQueue()
+
+    print("Building the following packages: " + ", ".join(sorted(pkg_map.keys())))
+
     for pkg in pkg_map.values():
         if len(pkg.dependencies) == 0:
             build_queue.put(pkg)
 
     built_queue: Queue = Queue()
+    thread_lock = Lock()
+    queue_idx = 1
 
     def builder(n):
-        print(f"Starting thread {n}")
+        nonlocal queue_idx
         while True:
             pkg = build_queue.get()
+            with thread_lock:
+                pkg._queue_idx = queue_idx
+                queue_idx += 1
 
-            print(f"Thread {n} building {pkg.name}")
+            print(f"[{pkg._queue_idx}/{len(pkg_map)}] (thread {n}) building {pkg.name}")
             t0 = perf_counter()
             try:
                 pkg.build(outputdir, args)
@@ -240,7 +257,10 @@ def build_from_graph(pkg_map: Dict[str, BasePackage], outputdir: Path, args) -> 
                 built_queue.put(e)
                 return
 
-            print(f"Thread {n} built {pkg.name} in {perf_counter() - t0:.1f} s")
+            print(
+                f"[{pkg._queue_idx}/{len(pkg_map)}] (thread {n}) "
+                f"built {pkg.name} in {perf_counter() - t0:.1f} s"
+            )
             built_queue.put(pkg)
             # Release the GIL so new packages get queued
             sleep(0.01)
@@ -262,40 +282,76 @@ def build_from_graph(pkg_map: Dict[str, BasePackage], outputdir: Path, args) -> 
             if len(dependent.unbuilt_dependencies) == 0:
                 build_queue.put(dependent)
 
+    for name in list(pkg_map):
+        if (outputdir / (name + "-tests.js")).exists():
+            pkg_map[name].unvendored_tests = True
 
-def build_packages(packages_dir: Path, outputdir: Path, args) -> None:
-    pkg_map = generate_dependency_graph(packages_dir, args.only)
 
-    build_from_graph(pkg_map, outputdir, args)
-
+def generate_packages_json(pkg_map: Dict[str, BasePackage]) -> Dict:
+    """Generate the package.json file"""
     # Build package.json data.
-    package_data: dict = {
-        "dependencies": {key: [] for key in UNVENDORED_STDLIB_MODULES},
-        "import_name_to_package_name": {},
-        "shared_library": {},
-        "versions": {},
-        "orig_case": {},
+    package_data: Dict[str, Dict[str, Any]] = {
+        "info": {"arch": "wasm32", "platform": "Emscripten-1.0"},
+        "packages": {},
     }
 
     libraries = [pkg.name for pkg in pkg_map.values() if pkg.library]
 
+    # unvendored stdlib modules
+    for name in UNVENDORED_STDLIB_MODULES:
+        pkg_entry: Dict[str, Any] = {
+            "name": name,
+            "version": "1.0",
+            "depends": [],
+            "imports": [name],
+        }
+        package_data["packages"][name.lower()] = pkg_entry
+
     for name, pkg in pkg_map.items():
         if pkg.library:
             continue
+        pkg_entry = {"name": name, "version": pkg.version}
         if pkg.shared_library:
-            package_data["shared_library"][name.lower()] = True
-        package_data["dependencies"][name.lower()] = [
+            pkg_entry["shared_library"] = True
+        pkg_entry["depends"] = [
             x.lower() for x in pkg.dependencies if x not in libraries
         ]
-        package_data["versions"][name.lower()] = pkg.version
-        for imp in pkg.meta.get("test", {}).get("imports", [name]):
-            package_data["import_name_to_package_name"][imp] = name.lower()
-        package_data["orig_case"][name.lower()] = name
+        pkg_entry["imports"] = pkg.meta.get("test", {}).get("imports", [name])
 
-    # Hack for 0.17.0 release
+        package_data["packages"][name.lower()] = pkg_entry
+
+        if pkg.unvendored_tests:
+            package_data["packages"][name.lower()]["unvendored_tests"] = True
+
+            # Create the test package if necessary
+            pkg_entry = {
+                "name": name + "-tests",
+                "version": pkg.version,
+                "depends": [name.lower()],
+                "imports": [],
+            }
+            package_data["packages"][name.lower() + "-tests"] = pkg_entry
+
+    # Workaround for circular dependency between soupsieve and beautifulsoup4
     # TODO: FIXME!!
-    if "soupsieve" in pkg_map:
-        package_data["dependencies"]["soupsieve"].append("beautifulsoup4")
+    if "soupsieve" in package_data["packages"]:
+        package_data["packages"]["soupsieve"]["depends"].append("beautifulsoup4")
+
+    # re-order packages by name
+    package_data["packages"] = dict(sorted(package_data["packages"].items()))
+
+    return package_data
+
+
+def build_packages(packages_dir: Path, outputdir: Path, args) -> None:
+    packages = common._parse_package_subset(args.only)
+
+    pkg_map = generate_dependency_graph(packages_dir, packages)
+
+    build_from_graph(pkg_map, outputdir, args)
+
+    package_data = generate_packages_json(pkg_map)
+
     with open(outputdir / "packages.json", "w") as fd:
         json.dump(package_data, fd)
 
@@ -323,29 +379,29 @@ def make_parser(parser):
         "--cflags",
         type=str,
         nargs="?",
-        default=common.get_make_flag("SIDE_MODULE_CFLAGS"),
-        help="Extra compiling flags",
+        default=None,
+        help="Extra compiling flags. Default: SIDE_MODULE_CFLAGS",
     )
     parser.add_argument(
         "--cxxflags",
         type=str,
         nargs="?",
-        default=common.get_make_flag("SIDE_MODULE_CXXFLAGS"),
-        help="Extra C++ specific compiling flags",
+        default=None,
+        help=("Extra C++ specific compiling flags. " "Default: SIDE_MODULE_CXXFLAGS"),
     )
     parser.add_argument(
         "--ldflags",
         type=str,
         nargs="?",
-        default=common.get_make_flag("SIDE_MODULE_LDFLAGS"),
-        help="Extra linking flags",
+        default=None,
+        help="Extra linking flags. Default: SIDE_MODULE_LDFLAGS",
     )
     parser.add_argument(
         "--target",
         type=str,
         nargs="?",
-        default=common.get_make_flag("TARGETPYTHONROOT"),
-        help="The path to the target Python installation",
+        default=None,
+        help="The path to the target Python installation. Default: TARGETPYTHONROOT",
     )
     parser.add_argument(
         "--install-dir",
@@ -386,6 +442,15 @@ def make_parser(parser):
 def main(args):
     packages_dir = Path(args.dir[0]).resolve()
     outputdir = Path(args.output[0]).resolve()
+    if args.cflags is None:
+        args.cflags = common.get_make_flag("SIDE_MODULE_CFLAGS")
+    if args.cxxflags is None:
+        args.cxxflags = common.get_make_flag("SIDE_MODULE_CXXFLAGS")
+    if args.ldflags is None:
+        args.ldflags = common.get_make_flag("SIDE_MODULE_LDFLAGS")
+    if args.target is None:
+        args.target = common.get_make_flag("TARGETPYTHONROOT")
+
     build_packages(packages_dir, outputdir, args)
 
 

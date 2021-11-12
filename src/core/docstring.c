@@ -14,7 +14,14 @@ set_method_docstring(PyMethodDef* method, PyObject* parent)
   PyObject* py_result = NULL;
 
   py_method = PyObject_GetAttrString(parent, method->ml_name);
-  FAIL_IF_NULL(py_method);
+  if (py_method == NULL) {
+    PyErr_Format(PyExc_AttributeError,
+                 "set_method_docstring failed for method %s, documentation "
+                 "stub '%.50s' has no such attribute.",
+                 method->ml_name,
+                 Py_TYPE(parent)->tp_name);
+    FAIL();
+  }
 
   py_result = _PyObject_CallMethodIdOneArg(
     py_docstring_mod, &PyId_get_cmeth_docstring, py_method);

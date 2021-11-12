@@ -2,7 +2,7 @@ from pyodide_build.testing import run_in_pyodide
 
 
 @run_in_pyodide(
-    packages=["pillow"], xfail_browsers={"firefox": "timeout", "chrome": ""}
+    packages=["pillow"],
 )
 def test_pillow():
     from PIL import Image, ImageDraw, ImageOps

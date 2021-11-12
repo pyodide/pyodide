@@ -1,11 +1,8 @@
-from pathlib import Path
 import sys
 import argparse
 from dataclasses import dataclass
 
 import pytest
-
-sys.path.append(str(Path(__file__).parents[2]))
 
 from pyodide_build.pywasmcross import handle_command  # noqa: E402
 from pyodide_build.pywasmcross import f2c  # noqa: E402
@@ -117,10 +114,16 @@ def test_f2c():
     )
 
 
-def test_conda_compiler_compat():
+def test_conda_unsupported_args():
+    # Check that compile arguments that are not suported by emcc and are sometimes
+    # used in conda are removed.
     args = BuildArgs()
     assert handle_command_wrap(
         "gcc -shared -c test.o -B /compiler_compat -o test.so", args
+    ) == ("emcc -c test.o -o test.so")
+
+    assert handle_command_wrap(
+        "gcc -shared -c test.o -Wl,--sysroot=/ -o test.so", args
     ) == ("emcc -c test.o -o test.so")
 
 

@@ -327,6 +327,8 @@ def handle_command(line, args, dryrun=False):
         # On Mac, we need to omit some darwin-specific arguments
         if arg in ["-bundle", "-undefined", "dynamic_lookup"]:
             continue
+        if arg == "-lffi":
+            continue
         # The native build is possibly multithreaded, but the emscripten one
         # definitely isn't
         arg = re.sub(r"/python([0-9]\.[0-9]+)m", r"/python\1", arg)
@@ -344,6 +346,10 @@ def handle_command(line, args, dryrun=False):
             # conda uses custom compiler search paths with the compiler_compat folder.
             # Ignore it.
             del new_args[-1]
+            continue
+
+        # ignore unsupported --sysroot compile argument used in conda
+        if arg.startswith("-Wl,--sysroot"):
             continue
 
         # See https://github.com/emscripten-core/emscripten/issues/8650
