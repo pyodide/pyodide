@@ -4,6 +4,7 @@
 #include "Python.h"
 #include "stdalign.h"
 #include "types.h"
+#define WARN_UNUSED __attribute__((warn_unused_result))
 
 /**
  * hiwire: A super-simple framework for converting values between C and
@@ -97,7 +98,7 @@ hiwire_incref(JsRef idval);
 /**
  * Decrease the reference count on an object.
  */
-errcode
+void
 hiwire_decref(JsRef idval);
 
 /**
@@ -191,8 +192,14 @@ JsArray_New();
 /**
  * Push a value to the end of a JavaScript array.
  */
-errcode
+errcode WARN_UNUSED
 JsArray_Push(JsRef idobj, JsRef idval);
+
+/**
+ * Same as JsArray_Push but panics on failure
+ */
+void
+JsArray_Push_unchecked(JsRef idobj, JsRef idval);
 
 /**
  * Create a new JavaScript object.
@@ -221,13 +228,13 @@ JsObject_GetString(JsRef idobj, const char* ptrname);
 /**
  * Set an object member by string.
  */
-errcode
+errcode WARN_UNUSED
 JsObject_SetString(JsRef idobj, const char* ptrname, JsRef idval);
 
 /**
  * Delete an object member by string.
  */
-errcode
+errcode WARN_UNUSED
 JsObject_DeleteString(JsRef idobj, const char* ptrname);
 
 /**
@@ -241,10 +248,10 @@ JsArray_Get(JsRef idobj, int idx);
 /**
  * Set an object member by integer.
  */
-errcode
+errcode WARN_UNUSED
 JsArray_Set(JsRef idobj, int idx, JsRef idval);
 
-errcode
+errcode WARN_UNUSED
 JsArray_Delete(JsRef idobj, int idx);
 
 /**
@@ -549,19 +556,19 @@ hiwire_get_byteOffset(JsRef idobj);
  * Copies the buffer contents of a given ArrayBuffer view or ArrayBuffer into
  * the memory at ptr.
  */
-errcode
+errcode WARN_UNUSED
 hiwire_assign_to_ptr(JsRef idobj, void* ptr);
 
 /**
  * Copies the memory at ptr into a given ArrayBuffer view or ArrayBuffer.
  */
-errcode
+errcode WARN_UNUSED
 hiwire_assign_from_ptr(JsRef idobj, void* ptr);
 
 /**
  * Get a data type identifier for a given typedarray.
  */
-errcode
+void
 hiwire_get_buffer_info(JsRef idobj,
                        Py_ssize_t* byteLength_ptr,
                        char** format_ptr,
@@ -583,7 +590,7 @@ JsMap_New();
 /**
  * Does map.set(key, value).
  */
-errcode
+errcode WARN_UNUSED
 JsMap_Set(JsRef mapid, JsRef keyid, JsRef valueid);
 
 /**
@@ -595,7 +602,7 @@ JsSet_New();
 /**
  * Does set.add(key).
  */
-errcode
+errcode WARN_UNUSED
 JsSet_Add(JsRef mapid, JsRef keyid);
 
 #endif /* HIWIRE_H */

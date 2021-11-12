@@ -1222,7 +1222,7 @@ finally:
     // arguments in async_done_callback instead of here. Otherwise, destroy the
     // arguments and return value now.
     if (idresult != NULL && hiwire_is_pyproxy(idresult)) {
-      JsArray_Push(proxies, idresult);
+      JsArray_Push_unchecked(proxies, idresult);
     }
     destroy_proxies(proxies,
                     "This borrowed proxy was automatically destroyed at the "

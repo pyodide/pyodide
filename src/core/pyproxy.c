@@ -25,7 +25,7 @@ EM_JS(int, pyproxy_Check, (JsRef x), {
   return Module.isPyProxy(val);
 });
 
-EM_JS(errcode, destroy_proxies, (JsRef proxies_id, char* msg_ptr), {
+EM_JS(void, destroy_proxies, (JsRef proxies_id, char* msg_ptr), {
   let msg = undefined;
   if (msg_ptr) {
     msg = UTF8ToString(msg_ptr);

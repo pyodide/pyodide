@@ -265,9 +265,7 @@ EM_JS_REF(JsRef, hiwire_incref, (JsRef idval), {
   return Module.hiwire.new_value(Module.hiwire.get_value(idval));
 });
 
-EM_JS_NUM(errcode, hiwire_decref, (JsRef idval), {
-  Module.hiwire.decref(idval);
-});
+EM_JS(void, hiwire_decref, (JsRef idval), { Module.hiwire.decref(idval); });
 
 EM_JS_REF(JsRef, hiwire_int, (int val), {
   return Module.hiwire.new_value(val);
@@ -353,6 +351,10 @@ EM_JS(bool, JsArray_Check, (JsRef idobj), {
 EM_JS_REF(JsRef, JsArray_New, (), { return Module.hiwire.new_value([]); });
 
 EM_JS_NUM(errcode, JsArray_Push, (JsRef idarr, JsRef idval), {
+  Module.hiwire.get_value(idarr).push(Module.hiwire.get_value(idval));
+});
+
+EM_JS(void, JsArray_Push_unchecked, (JsRef idarr, JsRef idval), {
   Module.hiwire.get_value(idarr).push(Module.hiwire.get_value(idval));
 });
 
@@ -443,7 +445,7 @@ convert_va_args(va_list args)
     if (idarg == NULL) {
       break;
     }
-    JsArray_Push(idargs, idarg);
+    JsArray_Push_unchecked(idargs, idarg);
   }
   va_end(args);
   return idargs;
@@ -770,8 +772,8 @@ EM_JS_NUM(errcode, hiwire_assign_from_ptr, (JsRef idobj, void* ptr), {
 });
 
 // clang-format off
-EM_JS_NUM(
-errcode,
+EM_JS(
+void,
 hiwire_get_buffer_info,
 (JsRef idobj, Py_ssize_t* byteLength_ptr, char** format_ptr, Py_ssize_t* size_ptr, bool* checked_ptr),
 {
