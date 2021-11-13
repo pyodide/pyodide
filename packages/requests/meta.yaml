@@ -1,0 +1,25 @@
+package:
+  name: requests
+  version: 2.26.0
+
+source:
+  url: https://github.com/psf/requests/archive/590350f8d094c216051510ed1dd18fe871b53b72.tar.gz
+  sha256: ffc977d3a7abfe19a3ea81f70b912ff656425825bc10c04b39750c3d2dd27577
+
+  patches:
+    # This patch is a dump of changes made in a fork of requests:
+    # https://github.com/bartbroere/requests/pull/1
+    # and to get the patch file:
+    # https://patch-diff.githubusercontent.com/raw/bartbroere/requests/pull/1.patch
+    - patches/pyodide-requests-shim.patch
+
+requirements:
+ run:
+   - urllib3
+   - idna
+   - charset-normalizer
+   - certifi
+
+test:
+  imports:
+    - requests
