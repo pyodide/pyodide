@@ -1617,7 +1617,7 @@ finally:
 }
 
 static PyObject*
-JsBuffer_tomemoryview(PyObject* buffer)
+JsBuffer_tomemoryview(PyObject* buffer, PyObject* _unused)
 {
   JsProxy* self = (JsProxy*)buffer;
   return JsBuffer_CopyIntoMemoryView(
@@ -1631,7 +1631,7 @@ static PyMethodDef JsBuffer_tomemoryview_MethodDef = {
 };
 
 static PyObject*
-JsBuffer_tobytes(PyObject* buffer)
+JsBuffer_tobytes(PyObject* buffer, PyObject* _unused)
 {
   JsProxy* self = (JsProxy*)buffer;
   return JsBuffer_CopyIntoBytes(self->js, self->byteLength);
