@@ -419,7 +419,9 @@ JsProxy_subscript_array(PyObject* o, PyObject* item)
       return NULL;
     if (i < 0) {
       int length = hiwire_get_length(self->js);
-      FAIL_IF_MINUS_ONE(length);
+      if (length == -1) {
+        return NULL;
+      }
       i += length;
     }
     JsRef result = JsArray_Get(self->js, i);
