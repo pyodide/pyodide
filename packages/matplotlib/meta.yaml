@@ -11,19 +11,16 @@ source:
     - patches/fix-freetype.patch
     - patches/hardcoded-font-cache.patch
     - patches/fix-threading.patch
+    - patches/Fix-METH_VARARGS-method-signatures.patch
 
   extras:
-    -
-      - src/browser_backend.py
+    - - src/browser_backend.py
       - lib/matplotlib/backends/browser_backend.py
-    -
-      - src/wasm_backend.py
+    - - src/wasm_backend.py
       - lib/matplotlib/backends/wasm_backend.py
-    -
-      - src/html5_canvas_backend.py
+    - - src/html5_canvas_backend.py
       - lib/matplotlib/backends/html5_canvas_backend.py
-    -
-      - src/setup.cfg
+    - - src/setup.cfg
       - ./setup.cfg
 
 build:
