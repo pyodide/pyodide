@@ -772,7 +772,7 @@ EM_JS_NUM(errcode, hiwire_assign_from_ptr, (JsRef idobj, void* ptr), {
 });
 
 // clang-format off
-EM_JS(
+EM_JS_UNCHECKED(
 void,
 hiwire_get_buffer_info,
 (JsRef idobj, Py_ssize_t* byteLength_ptr, char** format_ptr, Py_ssize_t* size_ptr, bool* checked_ptr),

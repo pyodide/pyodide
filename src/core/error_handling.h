@@ -89,6 +89,9 @@ console_error_obj(JsRef obj);
 #define EM_JS_DEFER(ret, func_name, args, body...)                             \
   EM_JS(ret, func_name, args, body)
 
+#define EM_JS_UNCHECKED(ret, func_name, args, body...)                         \
+  EM_JS(ret, func_name, args, body)
+
 #define WARN_UNUSED __attribute__((warn_unused_result))
 
 #define EM_JS_REF(ret, func_name, args, body...)                               \
