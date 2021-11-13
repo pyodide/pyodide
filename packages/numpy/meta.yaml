@@ -22,6 +22,7 @@ source:
     - patches/disable-optimization.patch
     - patches/not-build-lapack-lite-as-64-bit.patch
     - patches/fix-invalid-asm-instruction.patch
+    - patches/add-back-decorators-module.patch
 
 build:
   skip_host: False
