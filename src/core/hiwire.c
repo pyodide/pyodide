@@ -491,21 +491,17 @@ hiwire_call_bound,
 });
 // clang-format on
 
-EM_JS_NUM(int, hiwire_HasMethod, (JsRef obj_id, JsRef name), {
+EM_JS(bool, hiwire_HasMethod, (JsRef obj_id, JsRef name), {
   // clang-format off
   let obj = Module.hiwire.get_value(obj_id);
   return obj && typeof obj[Module.hiwire.get_value(name)] === "function";
   // clang-format on
 })
 
-int
+bool
 hiwire_HasMethodId(JsRef obj, Js_Identifier* name)
 {
-  JsRef name_ref = JsString_FromId(name);
-  if (name_ref == NULL) {
-    return -1;
-  }
-  return hiwire_HasMethod(obj, name_ref);
+  return hiwire_HasMethod(obj, JsString_FromId(name));
 }
 
 // clang-format off
@@ -692,7 +688,7 @@ MAKE_OPERATOR(not_equal, !==);
 MAKE_OPERATOR(greater_than, >);
 MAKE_OPERATOR(greater_than_equal, >=);
 
-EM_JS_REF(JsRef, hiwire_is_iterator, (JsRef idobj), {
+EM_JS(bool, hiwire_is_iterator, (JsRef idobj), {
   let jsobj = Module.hiwire.get_value(idobj);
   // clang-format off
   return typeof jsobj.next === 'function';
@@ -709,7 +705,7 @@ EM_JS_NUM(int, hiwire_next, (JsRef idobj, JsRef* result_ptr), {
   return done;
 });
 
-EM_JS_REF(JsRef, hiwire_is_iterable, (JsRef idobj), {
+EM_JS(bool, hiwire_is_iterable, (JsRef idobj), {
   let jsobj = Module.hiwire.get_value(idobj);
   // clang-format off
   return typeof jsobj[Symbol.iterator] === 'function';
@@ -741,23 +737,6 @@ EM_JS(bool, hiwire_is_typedarray, (JsRef idobj), {
   // clang-format off
   return ArrayBuffer.isView(jsobj) || jsobj.constructor.name === "ArrayBuffer";
   // clang-format on
-});
-
-EM_JS(bool, hiwire_is_on_wasm_heap, (JsRef idobj), {
-  let jsobj = Module.hiwire.get_value(idobj);
-  // clang-format off
-  return jsobj.buffer === Module.HEAPU8.buffer;
-  // clang-format on
-});
-
-EM_JS_NUM(int, hiwire_get_byteOffset, (JsRef idobj), {
-  let jsobj = Module.hiwire.get_value(idobj);
-  return jsobj['byteOffset'];
-});
-
-EM_JS_NUM(int, hiwire_get_byteLength, (JsRef idobj), {
-  let jsobj = Module.hiwire.get_value(idobj);
-  return jsobj['byteLength'];
 });
 
 EM_JS_NUM(errcode, hiwire_assign_to_ptr, (JsRef idobj, void* ptr), {

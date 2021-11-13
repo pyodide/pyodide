@@ -289,10 +289,10 @@ hiwire_call_va(JsRef idobj, ...);
 JsRef
 hiwire_call_bound(JsRef idfunc, JsRef idthis, JsRef idargs);
 
-int
+bool
 hiwire_HasMethod(JsRef obj, JsRef name);
 
-int
+bool
 hiwire_HasMethodId(JsRef obj, Js_Identifier* name);
 
 /**
@@ -478,7 +478,7 @@ hiwire_greater_than_equal(JsRef ida, JsRef idb);
 /**
  * Check if `typeof obj.next === "function"`
  */
-JsRef
+bool
 hiwire_is_iterator(JsRef idobj);
 
 /**
@@ -494,7 +494,7 @@ hiwire_next(JsRef idobj, JsRef* result);
 /**
  * Check if `typeof obj[Symbol.iterator] === "function"`
  */
-JsRef
+bool
 hiwire_is_iterable(JsRef idobj);
 
 /**
@@ -526,31 +526,6 @@ JsObject_Values(JsRef idobj);
  */
 bool
 hiwire_is_typedarray(JsRef idobj);
-
-/**
- * Returns 1 if the value is a typedarray whose buffer is part of the WASM heap.
- */
-bool
-hiwire_is_on_wasm_heap(JsRef idobj);
-
-/**
- * Returns the value of `obj.byteLength`.
- *
- * There is no error checking. Caller must ensure that hiwire_is_typedarray is
- * true. If these conditions are not met, returns `0`.
- */
-int
-hiwire_get_byteLength(JsRef idobj);
-
-/**
- * Returns the value of obj.byteOffset.
- *
- * There is no error checking. Caller must ensure that hiwire_is_typedarray is
- * true and hiwire_is_on_wasm_heap is true. If these conditions are not met,
- * returns `0`.
- */
-int
-hiwire_get_byteOffset(JsRef idobj);
 
 /**
  * Copies the buffer contents of a given ArrayBuffer view or ArrayBuffer into
