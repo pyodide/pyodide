@@ -37,7 +37,7 @@ substitutions:
 
 - {{Enhancement}} Added a {any}`pyodide.pyimport` api to import a Python module
   and return it as a `PyProxy`. Note that this does a different thing than the
-  original `pyimport` api: it imports a package and returns it without adding
+  original `pyimport` API: it imports a package and returns it without adding
   the package to the global scope.
   {pr}`1944`
 
