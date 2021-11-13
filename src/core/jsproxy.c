@@ -417,8 +417,11 @@ JsProxy_subscript_array(PyObject* o, PyObject* item)
     i = PyNumber_AsSsize_t(item, PyExc_IndexError);
     if (i == -1 && PyErr_Occurred())
       return NULL;
-    if (i < 0)
-      i += hiwire_get_length(self->js);
+    if (i < 0) {
+      int length = hiwire_get_length(self->js);
+      FAIL_IF_MINUS_ONE(length);
+      i += length;
+    }
     JsRef result = JsArray_Get(self->js, i);
     if (result == NULL) {
       if (!PyErr_Occurred()) {
@@ -457,8 +460,11 @@ JsProxy_ass_subscript_array(PyObject* o, PyObject* item, PyObject* pyvalue)
     i = PyNumber_AsSsize_t(item, PyExc_IndexError);
     if (i == -1 && PyErr_Occurred())
       return -1;
-    if (i < 0)
-      i += hiwire_get_length(self->js);
+    if (i < 0) {
+      int length = hiwire_get_length(self->js);
+      FAIL_IF_MINUS_ONE(length);
+      i += length;
+    }
   } else {
     PyErr_Format(PyExc_TypeError,
                  "list indices must be integers or slices, not %.200s",
