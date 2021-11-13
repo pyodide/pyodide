@@ -52,6 +52,9 @@ let fatal_error_occurred = false;
  * @private
  */
 Module.fatal_error = function (e) {
+  if (e.pyodide_fatal_error) {
+    return;
+  }
   if (fatal_error_occurred) {
     console.error("Recursive call to fatal_error. Inner error was:");
     console.error(e);
