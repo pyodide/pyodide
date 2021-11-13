@@ -771,6 +771,7 @@ def test_reentrant_error(selenium):
 
 
 def test_reentrant_fatal(selenium_standalone):
+    selenium = selenium_standalone
     assert selenium.run_js(
         """
         function f(){
