@@ -329,6 +329,7 @@ def handle_command(line, args, dryrun=False):
             continue
         if arg == "-lffi":
             continue
+        # This flag is needed to build numpy with SIMD optimization
         if arg == "-mpopcnt":
             continue
         # The native build is possibly multithreaded, but the emscripten one
