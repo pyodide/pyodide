@@ -1,4 +1,6 @@
-Fix random_double_fill function signature
+Fix random_double_fill function signature. https://github.com/numpy/numpy/issues/19312
+This patch is no longer required for numpy 1.21.1
+
 diff --git a/numpy/random/bit_generator.c b/numpy/random/bit_generator.c
 index f53b246..7878b34 100644
 --- a/numpy/random/bit_generator.c

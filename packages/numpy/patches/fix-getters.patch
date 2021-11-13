@@ -1,5 +1,7 @@
 Python attribute getters have a void* argument which is used to pass context data in. This isn't used in numpy
-but needs to be there even if it is ignored.
+but needs to be there even if it is ignored. https://github.com/numpy/numpy/pull/19058
+This patch can be removed for numpy 1.22.0
+
 diff --git a/numpy/core/src/multiarray/getset.c b/numpy/core/src/multiarray/getset.c
 index 2c4969d..da9b7f3 100644
 --- a/numpy/core/src/multiarray/getset.c
