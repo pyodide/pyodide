@@ -770,6 +770,31 @@ def test_reentrant_error(selenium):
     assert caught
 
 
+def test_reentrant_fatal(selenium_standalone):
+    selenium = selenium_standalone
+    assert selenium.run_js(
+        """
+        function f(){
+            pyodide.globals.get("trigger_fatal_error")();
+        }
+        self.success = true;
+        try {
+            pyodide.runPython(`
+                from _pyodide_core import trigger_fatal_error
+                from js import f
+                try:
+                    f()
+                except Exception as e:
+                    # This code shouldn't be executed
+                    import js
+                    js.success = False
+            `);
+        } catch(e){}
+        return success;
+        """
+    )
+
+
 def test_restore_error(selenium):
     # See PR #1816.
     selenium.run_js(
