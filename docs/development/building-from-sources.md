@@ -61,7 +61,7 @@ You would need Python 3.9.5 to run the build scripts. To make sure that the
 correct Python is used during build it is recommended to use a [Python virtual
 environment](https://packaging.python.org/guides/installing-using-pip-and-virtual-environments/#creating-a-virtual-environment),
 
-:::{tabbed} Linux
+```{tabbed} Linux
 
 Additional build prerequisites are:
 
@@ -74,11 +74,11 @@ Additional build prerequisites are:
 - [ccache](https://ccache.samba.org) (optional) _highly_ recommended for much faster rebuilds.
 - (optional) SWIG to compile NLopt
 
-:::
+```
 
-:::{tabbed} MacOS (Homebrew)
+```{tabbed} MacOS
 
-On Mac you would need,
+On MacOS, you would need:
 
 - [Homebrew](https://brew.sh/) for installing dependencies
 - System libraries in the root directory (
@@ -96,7 +96,7 @@ On Mac you would need,
   sed.
 - (optional) SWIG to compile NLopt (`brew install swig`)
 
-:::
+```
 
 You can install the python dependencies from the requirement file at the root of Pyodide folder:
 `pip install -r requirements.txt`
