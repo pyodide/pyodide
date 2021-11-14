@@ -1,0 +1,39 @@
+From a31cddfad0b1f191d24825963f5736af836ed6de Mon Sep 17 00:00:00 2001
+From: Hood <hood@mit.edu>
+Date: Sat, 13 Nov 2021 14:10:54 -0800
+Subject: [PATCH] Fix _get_pushes_fd and _get_pulls_fd method signatures
+
+---
+ src/decode.c | 2 +-
+ src/encode.c | 2 +-
+ 2 files changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/src/decode.c b/src/decode.c
+index 91bfabf34..cb018a4e7 100644
+--- a/src/decode.c
++++ b/src/decode.c
+@@ -235,7 +235,7 @@ _setfd(ImagingDecoderObject *decoder, PyObject *args) {
+ }
+ 
+ static PyObject *
+-_get_pulls_fd(ImagingDecoderObject *decoder) {
++_get_pulls_fd(ImagingDecoderObject *decoder, void *closure) {
+     return PyBool_FromLong(decoder->pulls_fd);
+ }
+ 
+diff --git a/src/encode.c b/src/encode.c
+index daa806ff4..ad4ed3059 100644
+--- a/src/encode.c
++++ b/src/encode.c
+@@ -299,7 +299,7 @@ _setfd(ImagingEncoderObject *encoder, PyObject *args) {
+ }
+ 
+ static PyObject *
+-_get_pushes_fd(ImagingEncoderObject *encoder) {
++_get_pushes_fd(ImagingEncoderObject *encoder, void* closure) {
+     return PyBool_FromLong(encoder->pushes_fd);
+ }
+ 
+-- 
+2.17.1
+
