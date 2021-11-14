@@ -20,6 +20,7 @@ source:
     - patches/fix-ieee754.patch
     - patches/fix-getters.patch
     - patches/fix-METH_NOARGS-signatures.patch
+    - patches/0001-Fix-more-getter-signatures.patch
     - patches/disable-optimization.patch
     - patches/not-build-lapack-lite-as-64-bit.patch
     - patches/fix-invalid-asm-instruction.patch
