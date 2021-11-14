@@ -21,7 +21,7 @@ Try Pyodide (no installation needed)
 ------------------------------------
 
 Try Pyodide in a
-`REPL <https://pyodide.org/en/stable/console.html>` directly in
+`REPL <https://pyodide.org/en/stable/console.html>`_ directly in
 your browser.
 
 
