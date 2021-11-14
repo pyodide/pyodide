@@ -61,43 +61,44 @@ You would need Python 3.9.5 to run the build scripts. To make sure that the
 correct Python is used during build it is recommended to use a [Python virtual
 environment](https://packaging.python.org/guides/installing-using-pip-and-virtual-environments/#creating-a-virtual-environment),
 
-```{tabbed} Linux
+:::{tabbed} Linux
 
 Additional build prerequisites are:
 
 - A working native compiler toolchain, enough to build
   [CPython](https://devguide.python.org/setup/#linux).
 - CMake
-- PyYAML
 - FreeType 2 development libraries to compile Matplotlib.
-- Cython to compile SciPy
 - gfortran (GNU Fortran 95 compiler)
 - [f2c](http://www.netlib.org/f2c/)
 - [ccache](https://ccache.samba.org) (optional) _highly_ recommended for much faster rebuilds.
 - (optional) SWIG to compile NLopt
 
-```
+:::
 
-```{tabbed} MacOS
+:::{tabbed} MacOS (Homebrew)
 
-On Mac you would additionally need,
+On Mac you would need,
 
 - [Homebrew](https://brew.sh/) for installing dependencies
 - System libraries in the root directory (
   `sudo installer -pkg /Library/Developer/CommandLineTools/Packages/macOS_SDK_headers_for_macOS_10.14.pkg -target /`
   should do it, see https://github.com/pyenv/pyenv/issues/1219#issuecomment-428305417)
-- coreutils for md5sum and other essential Unix utilities (`brew install coreutils`)
+- coreutils for md5sum and other essential Unix utilities (`brew install coreutils`).
 - cmake (`brew install cmake`)
 - pkg-config (`brew install pkg-config`)
 - openssl (`brew install openssl`)
 - gfortran (`brew cask install gfortran`)
 - f2c: Install wget (`brew install wget`), and then run the buildf2c script from
   the root directory (`sudo ./tools/buildf2c`)
+- It is also recommended to install the GNU patch (`brew install gpatch`), and
+  GNU sed (`brew install gnu-sed`) and re-define them temporarily as patch and
+  sed.
 - (optional) SWIG to compile NLopt (`brew install swig`)
 
-```
+:::
 
-You can install the python dependencies from the requirement file at the root of pyodide folder:
+You can install the python dependencies from the requirement file at the root of Pyodide folder:
 `pip install -r requirements.txt`
 
 ```{note}
