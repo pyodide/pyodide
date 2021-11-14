@@ -452,6 +452,7 @@ JsProxy_subscript_array(PyObject* o, PyObject* item)
 static int
 JsProxy_ass_subscript_array(PyObject* o, PyObject* item, PyObject* pyvalue)
 {
+  bool success = false;
   JsProxy* self = (JsProxy*)o;
   Py_ssize_t i;
   if (PySlice_Check(item)) {
@@ -474,7 +475,6 @@ JsProxy_ass_subscript_array(PyObject* o, PyObject* item, PyObject* pyvalue)
     return -1;
   }
 
-  bool success = false;
   JsRef idvalue = NULL;
   if (pyvalue == NULL) {
     if (JsArray_Delete(self->js, i)) {
