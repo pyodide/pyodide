@@ -10,9 +10,9 @@ version of the documentation at
 ```
 
 Building on any operating system is easiest using the Pyodide Docker image. This approach works
-used with any native operating system as long as Docker is installed. You can also build on your 
-native Linux OS if the  correct build prerequisites are installed. Building on MacOS is 
-possible, but there are  known issues as of version 0.18 that you will need to work around.
+used with any native operating system as long as Docker is installed. You can also build on your
+native Linux OS if the correct build prerequisites are installed. Building on MacOS is
+possible, but there are known issues as of version 0.18 that you will need to work around.
 It is not possible to build on Windows, but you can use
 [WSL2](https://docs.microsoft.com/en-us/windows/wsl/install-win10) to create a
 Linux build environment.
@@ -51,8 +51,9 @@ at least 3 GB of RAM should be available to the docker container to build
 Pyodide smoothly. These settings can be changed via Docker preferences (see
 [here](https://stackoverflow.com/questions/44533319/how-to-assign-more-memory-to-docker-container)).
 
-You can edit the files in your source checkout on your host machine, and then
-repeatedly run `make` inside the Docker environment to test your changes.
+You can edit the files in the shared `pyodide` source folder on your host
+machine (outside of Docker), and then repeatedly run `make` inside the Docker
+environment to test your changes.
 
 ## Using `make`
 
@@ -95,9 +96,9 @@ To build on MacOS, you need:
 - gfortran (`brew cask install gfortran`)
 - f2c: Install wget (`brew install wget`), and then run the buildf2c script from
   the root directory (`sudo ./tools/buildf2c`)
-- It is also recommended to install the GNU patch (`brew install gpatch`), and
-  GNU sed (`brew install gnu-sed`) and re-define them temporarily as patch and
-  sed.
+- It is also recommended installing the GNU patch (`brew install gpatch`), and
+  GNU sed (`brew install gnu-sed`) and [re-defining them temporarily as `patch` and
+  `sed`](https://formulae.brew.sh/formula/gnu-sed).
 - (optional) SWIG to compile NLopt (`brew install swig`)
 
 ```
