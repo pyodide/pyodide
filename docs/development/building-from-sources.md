@@ -6,7 +6,7 @@
 If you are building the latest development version of Pyodide from the `main`
 branch, please make sure you are also following build instructions from the dev
 version of the documentation at
-[https://pyodide.org/en/latest/](https://pyodide.org/en/latest/development/building-from-sources.html)
+[pyodide.org/en/latest/](https://pyodide.org/en/latest/development/building-from-sources.html)
 ```
 
 Building is easiest with Docker. You can also build on Linux with `make`, while
@@ -24,9 +24,11 @@ We provide a Debian-based Docker image
 ([`pyodide/pyodide-env`](https://hub.docker.com/r/pyodide/pyodide-env)) on
 Docker Hub with the dependencies already installed to make it easier to build
 Pyodide. On top of that we provide
-a pre-built image which can be used for fast custom and partial builds. Note
-that building from the non pre-built the Docker image is _very_ slow on Mac,
-building on the host machine is preferred if at all possible.
+a pre-built image
+([`pyodide/pyodide`](https://hub.docker.com/r/pyodide/pyodide)) which can be
+used for fast custom and partial builds. Note that building from the non
+pre-built the Docker image is _very_ slow on Mac, building on the host machine
+is preferred if at all possible.
 
 1. Install Docker
 
@@ -98,15 +100,15 @@ On MacOS, you would need:
 
 ```
 
-You can install the python dependencies from the requirement file at the root of Pyodide folder:
-`pip install -r requirements.txt`
-
 ```{note}
 If you encounter issues with the requirements, it is useful to check the exact
 list in the
 [Dockerfile](https://github.com/pyodide/pyodide/blob/main/Dockerfile) which is
 tested in the CI.
 ```
+
+You can install the python dependencies from the requirement file at the root of Pyodide folder:
+`pip install -r requirements.txt`
 
 After installing the build prerequisites, run from the command line:
 
