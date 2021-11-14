@@ -18,7 +18,7 @@ browser.
 
 Pyodide brings the Python 3.9 runtime to the browser via WebAssembly thanks to
 [Emscripten](https://emscripten.org/).
-It build the Python scientific stack including NumPy, Pandas, Matplotlib, SciPy, and
+It builds the Python scientific stack including NumPy, Pandas, Matplotlib, SciPy, and
 scikit-learn. The [packages directory](packages) lists over 75 packages which
 are currently available. In addition it's possible to install pure Python wheels
 from PyPi.
@@ -73,6 +73,7 @@ governance](https://pyodide.org/en/stable/project/governance.html).
 
 ## Communication
 
+- Blog : [blog.pyodide.org](https://blog.pyodide.org/)
 - Mailing list: [mail.python.org/mailman3/lists/pyodide.python.org/](https://mail.python.org/mailman3/lists/pyodide.python.org/)
 - Gitter: [gitter.im/pyodide/community](https://gitter.im/pyodide/community)
 - Twitter: [twitter.com/pyodide](https://twitter.com/pyodide)
