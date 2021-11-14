@@ -1,7 +1,7 @@
 /**
  * The main bootstrap code for loading pyodide.
  */
-import { Module, setStandardStreams } from "./module.js";
+import { Module, setStandardStreams, setHomeDirectory } from "./module.js";
 import {
   loadScript,
   initializePackageIndex,
@@ -52,11 +52,16 @@ let fatal_error_occurred = false;
  * @private
  */
 Module.fatal_error = function (e) {
+  if (e.pyodide_fatal_error) {
+    return;
+  }
   if (fatal_error_occurred) {
     console.error("Recursive call to fatal_error. Inner error was:");
     console.error(e);
     return;
   }
+  // Mark e so we know not to handle it later in EM_JS wrappers
+  e.pyodide_fatal_error = true;
   fatal_error_occurred = true;
   console.error(
     "Pyodide has suffered a fatal error. Please report this to the Pyodide maintainers."
@@ -170,6 +175,7 @@ function finalizeBootstrap(config) {
 
   Module.sys = Module.runPythonInternal("import sys; sys");
   Module.sys.setrecursionlimit(calculateRecursionLimit());
+  Module.sys.path.insert(0, config.homedir);
 
   // Set up globals
   let globals = Module.runPythonInternal("import __main__; __main__.__dict__");
@@ -209,6 +215,8 @@ function finalizeBootstrap(config) {
  *
  * @param {string} config.indexURL - The URL from which Pyodide will load
  * packages
+ * @param {string} config.homedir - The home directory which Pyodide will use inside virtual file system
+ * Default: /home/pyodide
  * @param {boolean} config.fullStdLib - Load the full Python standard library.
  * Setting this to false excludes following modules: distutils.
  * Default: true
@@ -227,6 +235,7 @@ export async function loadPyodide(config) {
     fullStdLib: true,
     jsglobals: globalThis,
     stdin: globalThis.prompt ? globalThis.prompt : undefined,
+    homedir: "/home/pyodide",
   };
   config = Object.assign(default_config, config);
   if (globalThis.__pyodide_module) {
@@ -253,6 +262,7 @@ export async function loadPyodide(config) {
   let packageIndexReady = initializePackageIndex(baseURL);
 
   setStandardStreams(config.stdin, config.stdout, config.stderr);
+  setHomeDirectory(config.homedir);
 
   Module.locateFile = (path) => baseURL + path;
   let moduleLoaded = new Promise((r) => (Module.postRun = r));

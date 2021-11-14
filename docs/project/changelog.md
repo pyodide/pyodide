@@ -5,6 +5,7 @@ substitutions:
   Feature: "<span class='badge badge-success'>Feature</span>"
   Fix: "<span class='badge badge-danger'>Fix</span>"
   Update: "<span class='badge badge-success'>Update</span>"
+  Breaking: "<span class='badge badge-danger'>BREAKING CHANGE</span>"
 ---
 
 (changelog)=
@@ -12,6 +13,14 @@ substitutions:
 # Change Log
 
 ## Unreleased
+
+### Backward incompatible changes
+
+- {{Breaking}} Default working directory(home directory) inside Pyodide virtual
+  file system has been changed from `/` to `/home/pyodide`. To get previous behavior, you can
+  - call `os.chdir("/")`  to change working directory
+  - or call {any}`loadPyodide <globalThis.loadPyodide>` with the `homedir="/"` argument
+  {pr}`1936`
 
 ### Python package
 
@@ -33,7 +42,11 @@ substitutions:
 
 - {{Fix}} Webpack building compatibility issues and a {any}`loadPyodide <globalThis.loadPyodide>`
   runtime issue due to webpack are solved. 
-  {pr}`1900`  
+  {pr}`1900`
+
+- {{API}} {any}`loadPyodide <globalThis.loadPyodide>` now accepts `homedir`
+  parameter which sets home directory of Pyodide virtual file system.
+  {pr}`1936`
 
 ### Python / JavaScript type conversions
 

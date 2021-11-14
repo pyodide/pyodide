@@ -1,0 +1,19 @@
+This asm instruction is invalid during compilation. Proabably due to no support from emscripten yet. Comment out for now.
+
+diff --git a/numpy/core/src/common/simd/intdiv.h b/numpy/core/src/common/simd/intdiv.h
+index a7a461721..61fb4fb52 100644
+--- a/numpy/core/src/common/simd/intdiv.h
++++ b/numpy/core/src/common/simd/intdiv.h
+@@ -92,8 +92,10 @@ NPY_FINLINE unsigned npyv__bitscan_revnz_u32(npy_uint32 a)
+     unsigned long rl;
+     (void)_BitScanReverse(&rl, (unsigned long)a);
+     r = (unsigned)rl;
+-#elif defined(NPY_HAVE_SSE2) && (defined(__GNUC__) || defined(__clang__) || defined(__INTEL_COMPILER))
+-    __asm__("bsr %1, %0" : "=r" (r) : "r"(a));
++/**
++ *#elif defined(NPY_HAVE_SSE2) && (defined(__GNUC__) || defined(__clang__) || defined(__INTEL_COMPILER))
++ *    __asm__("bsr %1, %0" : "=r" (r) : "r"(a));
++ */
+ #elif defined(__GNUC__) || defined(__clang__)
+     r = 31 - __builtin_clz(a); // performs on arm -> clz, ppc -> cntlzw
+ #else
