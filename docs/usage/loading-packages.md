@@ -53,7 +53,7 @@ Multiple packages can also be loaded at the same time by passing a list to `load
 pyodide.loadPackage(["cycler", "pytz"]);
 ```
 
-{any}`pyodide.loadPackage` returns a `Promise` which resolves when all of the
+{any}`pyodide.loadPackage` returns a `Promise` which resolves when all the
 packages are finished loading:
 
 ```javascript

@@ -35,7 +35,7 @@ See issue {issue}`1120`.
 
 ## Simplification of the package loading system
 
-Currently Pyodide has two way of loading packages:
+Currently, Pyodide has two ways of loading packages:
 
 - `loadPackage` for packages built with Pyodide and
 - `micropip.install` for pure Python packages from PyPi.
@@ -50,7 +50,7 @@ See issues {issue}`1470` and {issue}`1100`.
 
 SciPy is a cornerstone of scientific computing in Python. It's a challenging
 package to build for WebAssembly because it is large, includes Fortran code, and
-requires BLAS and LAPACK libraries. Currently Pyodide includes scipy 0.17.1 from 2016.
+requires BLAS and LAPACK libraries. Currently, Pyodide includes scipy 0.17.1 from 2016.
 Updating it is a blocker for using more recent versions of packages such
 as scikit-learn, scikit-image, statsmodels, and MNE.
 
@@ -69,7 +69,7 @@ See issue {issue}`795`.
 ## Improve support for WebWorkers
 
 WebWorkers are necessary in order to run computational tasks in the browser
-without hanging the user interface. Currently Pyodide can run in a WebWorker,
+without hanging the user interface. Currently, Pyodide can run in a WebWorker,
 however the user experience and reliability can be improved.
 
 See issue {issue}`1504`.
@@ -89,7 +89,7 @@ See issue {issue}`1503`.
 
 Python packages make an extensive use of packages such as `requests` to
 synchronously fetch data. We currently can't use such packages since sockets
-are not available in Pyodide. We could however try to re-implement some of the
+are not available in Pyodide. We could however try to re-implement some
 stdlib libraries with Web APIs, potentially making this possible.
 
 Because http.client is a synchronous API, we first need support for synchronous

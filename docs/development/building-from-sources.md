@@ -95,7 +95,7 @@ PYODIDE_PACKAGES="toolz,attrs" make
 
 Dependencies of the listed packages will be built automatically as well. The
 package names must match the folder names in `packages/` exactly; in particular
-they are case sensitive.
+they are case-sensitive.
 
 If `PYODIDE_PACKAGES` is not set, a minimal set of packages necessairy to run
 the core test suite is installed, including "micropip", "pyparsing", "pytz",
@@ -103,7 +103,7 @@ the core test suite is installed, including "micropip", "pyparsing", "pytz",
 `PYODIDE_PACKAGES='core'`
 meta-package. Other supported meta-packages are,
 
-- "min-scipy-stack": includes the "core" meta-package as well as some of the
+- "min-scipy-stack": includes the "core" meta-package as well as some
   core packages from the scientific python stack and their dependencies:
   "numpy", "scipy", "pandas", "matplotlib", "scikit-learn", "joblib",
   "pytest". This option is non exaustive and is mainly intended to make build
@@ -126,7 +126,7 @@ The following environment variables additionally impact the build:
 - `EXTRA_LDFLAGS` : Add extra linker flags.
 
 Setting `EXTRA_CFLAGS="-D DEBUG_F"` provides detailed diagnostic information
-whenever error branches are taken inside of the Pyodide core code. These error
+whenever error branches are taken inside the Pyodide core code. These error
 messages are frequently helpful even when the problem is a fatal configuration
 problem and Pyodide cannot even be initialized. These error branches occur also
 in correctly working code, but they are relatively uncommon so in practice the

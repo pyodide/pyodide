@@ -10,7 +10,7 @@ The gist is:
   wrappers that store the arguments in a log, and then delegate along to the
   real native compiler and linker.
 
-- Remove all of the native build products.
+- Remove all the native build products.
 
 - Play back the log, replacing the native compiler with emscripten and
   adjusting include paths and flags as necessary for cross-compiling to
@@ -109,7 +109,7 @@ def collect_args(basename):
 
 def make_symlinks(env):
     """
-    Makes sure all of the symlinks that make this script look like a compiler
+    Makes sure all the symlinks that make this script look like a compiler
     exist.
     """
     TOOLSDIR = Path(common.get_make_flag("TOOLSDIR"))
