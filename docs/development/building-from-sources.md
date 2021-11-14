@@ -4,15 +4,16 @@
 
 ```{warning}
 If you are building the latest development version of Pyodide from the `main`
-branch, please make sure you are also following build instructions from the dev
+branch, please make sure to follow the build instructions from the dev
 version of the documentation at
 [pyodide.org/en/latest/](https://pyodide.org/en/latest/development/building-from-sources.html)
 ```
 
-Building is easiest with Docker. You can also build on Linux with `make`, while
-builing on Mac is possible, but there are known issues as of 0.18. For
-Windows, we currently recommend using Docker to build Pyodide. Another option
-for building on Windows is to use
+Building on any operating system is easiest using the Pyodide Docker image. This approach works
+used with any native operating system as long as Docker is installed. You can also build on your 
+native Linux OS if the  correct build prerequisites are installed. Building on MacOS is 
+possible, but there are  known issues as of version 0.18 that you will need to work around.
+It is not possible to build on Windows, but you can use
 [WSL2](https://docs.microsoft.com/en-us/windows/wsl/install-win10) to create a
 Linux build environment.
 
@@ -27,7 +28,7 @@ Pyodide. On top of that we provide
 a pre-built image
 ([`pyodide/pyodide`](https://hub.docker.com/r/pyodide/pyodide)) which can be
 used for fast custom and partial builds. Note that building from the non
-pre-built the Docker image is _very_ slow on Mac, building on the host machine
+pre-built Docker image is _very_ slow on Mac, building on the host machine
 is preferred if at all possible.
 
 1. Install Docker
@@ -42,11 +43,12 @@ vars `EMSDK_NUM_CORE`, `EMCC_CORES` and `PYODIDE_JOBS` (the default for each is
 4).
 ```
 
-If running `make` deterministically stops at one point,
-increasing the maximum RAM usage available to the docker container might help
-[This is different from the physical RAM capacity inside the system]. Ideally,
+If running `make` deterministically stops at some point,
+increasing the maximum RAM usage available to the docker container might help.
+(The RAM available to the container is different from the physical RAM capacity of the machine.)
+Ideally,
 at least 3 GB of RAM should be available to the docker container to build
-Pyodide smoothly. These settings can be changed via Docker Preferences (See
+Pyodide smoothly. These settings can be changed via Docker preferences (see
 [here](https://stackoverflow.com/questions/44533319/how-to-assign-more-memory-to-docker-container)).
 
 You can edit the files in your source checkout on your host machine, and then
@@ -80,7 +82,7 @@ Additional build prerequisites are:
 
 ```{tabbed} MacOS
 
-On MacOS, you would need:
+To build on MacOS, you need:
 
 - [Homebrew](https://brew.sh/) for installing dependencies
 - System libraries in the root directory (
@@ -107,7 +109,7 @@ list in the
 tested in the CI.
 ```
 
-You can install the python dependencies from the requirement file at the root of Pyodide folder:
+You can install the Python dependencies from the requirement file at the root of Pyodide folder:
 `pip install -r requirements.txt`
 
 After installing the build prerequisites, run from the command line:
