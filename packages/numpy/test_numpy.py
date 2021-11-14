@@ -1,4 +1,5 @@
 import pytest
+from pyodide_build.testing import run_in_pyodide
 
 
 def test_numpy(selenium):
@@ -343,3 +344,11 @@ def test_get_buffer_error_messages(selenium):
             }
             """
         )
+
+
+@run_in_pyodide(packages=["numpy"])
+def test_numpy_nditer(selenium):
+    """Check that numpy.nditer doesn't segfault"""
+    import numpy as np
+
+    next(np.nditer(np.ones(10)))
