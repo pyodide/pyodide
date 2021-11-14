@@ -1,0 +1,154 @@
+From 9e57e308a80b081297b2d3ad910b4e48fccf442c Mon Sep 17 00:00:00 2001
+From: Hood <hood@mit.edu>
+Date: Sat, 13 Nov 2021 20:53:19 -0800
+Subject: [PATCH] BUG: Fix METH_NOARGS signatures in nditer_pywrap
+
+The METH_NOARGS calling convention is required to take a second PyObject* which will always be NULL.
+This is a continuation of #19058
+---
+ numpy/core/src/multiarray/methods.c         |  2 +-
+ numpy/core/src/multiarray/nditer_pywrap.c   | 20 ++++++++++----------
+ numpy/core/src/multiarray/scalartypes.c.src |  6 +++---
+ 3 files changed, 14 insertions(+), 14 deletions(-)
+
+diff --git a/numpy/core/src/multiarray/methods.c b/numpy/core/src/multiarray/methods.c
+index d458638ae..c02707877 100644
+--- a/numpy/core/src/multiarray/methods.c
++++ b/numpy/core/src/multiarray/methods.c
+@@ -2160,7 +2160,7 @@ array_dumps(PyArrayObject *self, PyObject *args, PyObject *kwds)
+ 
+ 
+ static PyObject *
+-array_sizeof(PyArrayObject *self)
++array_sizeof(PyArrayObject *self, PyObject *NPY_UNUSED(args))
+ {
+     /* object + dimension and strides */
+     Py_ssize_t nbytes = NPY_SIZEOF_PYARRAYOBJECT +
+diff --git a/numpy/core/src/multiarray/nditer_pywrap.c b/numpy/core/src/multiarray/nditer_pywrap.c
+index 25d21025e..08ac3f540 100644
+--- a/numpy/core/src/multiarray/nditer_pywrap.c
++++ b/numpy/core/src/multiarray/nditer_pywrap.c
+@@ -1228,7 +1228,7 @@ npyiter_resetbasepointers(NewNpyArrayIterObject *self)
+ }
+ 
+ static PyObject *
+-npyiter_reset(NewNpyArrayIterObject *self)
++npyiter_reset(NewNpyArrayIterObject *self, PyObject *NPY_UNUSED(unused))
+ {
+     if (self->iter == NULL) {
+         PyErr_SetString(PyExc_ValueError,
+@@ -1265,7 +1265,7 @@ npyiter_reset(NewNpyArrayIterObject *self)
+  * copied.
+  */
+ static PyObject *
+-npyiter_copy(NewNpyArrayIterObject *self)
++npyiter_copy(NewNpyArrayIterObject *self, PyObject *NPY_UNUSED(unused))
+ {
+     NewNpyArrayIterObject *iter;
+ 
+@@ -1301,7 +1301,7 @@ npyiter_copy(NewNpyArrayIterObject *self)
+ }
+ 
+ static PyObject *
+-npyiter_iternext(NewNpyArrayIterObject *self)
++npyiter_iternext(NewNpyArrayIterObject *self, PyObject *NPY_UNUSED(unused))
+ {
+     if (self->iter != NULL && self->iternext != NULL &&
+                         !self->finished && self->iternext(self->iter)) {
+@@ -1354,7 +1354,7 @@ npyiter_remove_axis(NewNpyArrayIterObject *self, PyObject *args)
+ }
+ 
+ static PyObject *
+-npyiter_remove_multi_index(NewNpyArrayIterObject *self)
++npyiter_remove_multi_index(NewNpyArrayIterObject *self, PyObject *NPY_UNUSED(unused))
+ {
+     if (self->iter == NULL) {
+         PyErr_SetString(PyExc_ValueError,
+@@ -1379,7 +1379,7 @@ npyiter_remove_multi_index(NewNpyArrayIterObject *self)
+ }
+ 
+ static PyObject *
+-npyiter_enable_external_loop(NewNpyArrayIterObject *self)
++npyiter_enable_external_loop(NewNpyArrayIterObject *self, PyObject *NPY_UNUSED(unused))
+ {
+     if (self->iter == NULL) {
+         PyErr_SetString(PyExc_ValueError,
+@@ -1404,7 +1404,7 @@ npyiter_enable_external_loop(NewNpyArrayIterObject *self)
+ }
+ 
+ static PyObject *
+-npyiter_debug_print(NewNpyArrayIterObject *self)
++npyiter_debug_print(NewNpyArrayIterObject *self, PyObject *NPY_UNUSED(unused))
+ {
+     if (self->iter != NULL) {
+         NpyIter_DebugPrint(self->iter);
+@@ -1515,7 +1515,7 @@ static PyObject *npyiter_itviews_get(NewNpyArrayIterObject *self)
+ }
+ 
+ static PyObject *
+-npyiter_next(NewNpyArrayIterObject *self)
++npyiter_next(NewNpyArrayIterObject *self, PyObject *NPY_UNUSED(unused))
+ {
+     if (self->iter == NULL || self->iternext == NULL ||
+                 self->finished) {
+@@ -2335,7 +2335,7 @@ npyiter_ass_subscript(NewNpyArrayIterObject *self, PyObject *op,
+ }
+ 
+ static PyObject *
+-npyiter_enter(NewNpyArrayIterObject *self)
++npyiter_enter(NewNpyArrayIterObject *self, PyObject *NPY_UNUSED(unused))
+ {
+     if (self->iter == NULL) {
+         PyErr_SetString(PyExc_RuntimeError, "operation on non-initialized iterator");
+@@ -2346,7 +2346,7 @@ npyiter_enter(NewNpyArrayIterObject *self)
+ }
+ 
+ static PyObject *
+-npyiter_close(NewNpyArrayIterObject *self)
++npyiter_close(NewNpyArrayIterObject *self, PyObject *NPY_UNUSED(unused))
+ {
+     NpyIter *iter = self->iter;
+     int ret;
+@@ -2367,7 +2367,7 @@ static PyObject *
+ npyiter_exit(NewNpyArrayIterObject *self, PyObject *args)
+ {
+     /* even if called via exception handling, writeback any data */
+-    return npyiter_close(self);
++    return npyiter_close(self, NULL);
+ }
+ 
+ static PyMethodDef npyiter_methods[] = {
+diff --git a/numpy/core/src/multiarray/scalartypes.c.src b/numpy/core/src/multiarray/scalartypes.c.src
+index cfb21f50e..84e1ff29f 100644
+--- a/numpy/core/src/multiarray/scalartypes.c.src
++++ b/numpy/core/src/multiarray/scalartypes.c.src
+@@ -279,7 +279,7 @@ gentype_multiply(PyObject *m1, PyObject *m2)
+  * #name = positive, negative, absolute, invert, int, float#
+  */
+ static PyObject *
+-gentype_@name@(PyObject *m1)
++gentype_@name@(PyObject *m1, PyObject *NPY_UNUSED(ignored))
+ {
+     PyObject *arr, *ret;
+ 
+@@ -1280,7 +1280,7 @@ gentype_size_get(PyObject *NPY_UNUSED(self))
+ }
+ 
+ static PyObject *
+-gentype_sizeof(PyObject *self)
++gentype_sizeof(PyObject *self, PyObject *NPY_UNUSED(ignored))
+ {
+     Py_ssize_t nbytes;
+     PyObject * isz = gentype_itemsize_get(self);
+@@ -2004,7 +2004,7 @@ static PyObject *
+  */
+ /* Heavily copied from the builtin float.as_integer_ratio */
+ static PyObject *
+-@name@_as_integer_ratio(PyObject *self)
++@name@_as_integer_ratio(PyObject *self, PyObject *NPY_UNUSED(ignored))
+ {
+ #if @is_half@
+     npy_double val = npy_half_to_double(PyArrayScalar_VAL(self, @Name@));
+-- 
+2.17.1
+

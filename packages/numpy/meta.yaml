@@ -22,7 +22,7 @@ source:
     - patches/rm-duplicate-symbols-link.patch
     - patches/fix-getters.patch
     - patches/fix-random-double-fill.patch
-    - patches/fix-getters-setters-and-some-METH_NOARGS-signatures.patch
+    - patches/fix-METH_NOARGS-signatures.patch
 
 build:
   skip_host: False
