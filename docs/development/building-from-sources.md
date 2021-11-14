@@ -10,7 +10,7 @@ version of the documentation at
 ```
 
 Building is easiest with Docker. You can also build on Linux with `make`, while
-builing on Mac is possible but there are known issues as of 0.18. For
+builing on Mac is possible, but there are known issues as of 0.18. For
 Windows, we currently recommend using Docker to build Pyodide. Another option
 for building on Windows is to use
 [WSL2](https://docs.microsoft.com/en-us/windows/wsl/install-win10) to create a
@@ -61,7 +61,7 @@ You would need Python 3.9.5 to run the build scripts. To make sure that the
 correct Python is used during build it is recommended to use a [Python virtual
 environment](https://packaging.python.org/guides/installing-using-pip-and-virtual-environments/#creating-a-virtual-environment),
 
-::: {tabbed} Linux
+```{tabbed} Linux
 
 Additional build prerequisites are:
 
@@ -76,9 +76,9 @@ Additional build prerequisites are:
 - [ccache](https://ccache.samba.org) (optional) _highly_ recommended for much faster rebuilds.
 - (optional) SWIG to compile NLopt
 
-:::
+```
 
-::: {tabbed} MacOS
+```{tabbed} MacOS
 
 On Mac you would additionally need,
 
@@ -95,7 +95,7 @@ On Mac you would additionally need,
   the root directory (`sudo ./tools/buildf2c`)
 - (optional) SWIG to compile NLopt (`brew install swig`)
 
-:::
+```
 
 You can install the python dependencies from the requirement file at the root of pyodide folder:
 `pip install -r requirements.txt`
