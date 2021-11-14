@@ -452,8 +452,9 @@ JsProxy_subscript_array(PyObject* o, PyObject* item)
 static int
 JsProxy_ass_subscript_array(PyObject* o, PyObject* item, PyObject* pyvalue)
 {
-  bool success = false;
   JsProxy* self = (JsProxy*)o;
+  bool success = false;
+  JsRef idvalue = NULL;
   Py_ssize_t i;
   if (PySlice_Check(item)) {
     PyErr_SetString(PyExc_NotImplementedError,
@@ -475,7 +476,6 @@ JsProxy_ass_subscript_array(PyObject* o, PyObject* item, PyObject* pyvalue)
     return -1;
   }
 
-  JsRef idvalue = NULL;
   if (pyvalue == NULL) {
     if (JsArray_Delete(self->js, i)) {
       if (!PyErr_Occurred()) {
