@@ -1,4 +1,4 @@
-From 5a4f666cb9c802966c8d4423df99645924544069 Mon Sep 17 00:00:00 2001
+From a3f3901bffda03cbda5f2fc20f5bca6eae5cc1da Mon Sep 17 00:00:00 2001
 From: Hood <hood@mit.edu>
 Date: Sat, 13 Nov 2021 13:32:38 -0800
 Subject: [PATCH] Fix METH_VARARGS method signatures
@@ -310,7 +310,7 @@ index 708d7d3..f4484ac 100644
      py::PathIterator path;
      agg::trans_affine trans;
 diff --git a/src/ft2font_wrapper.cpp b/src/ft2font_wrapper.cpp
-index ba361ac..b66b79f 100644
+index ba361ac..ff7e29f 100644
 --- a/src/ft2font_wrapper.cpp
 +++ b/src/ft2font_wrapper.cpp
 @@ -67,7 +67,7 @@ const char *PyFT2Image_draw_rect__doc__ =
@@ -318,7 +318,7 @@ index ba361ac..b66b79f 100644
      "\n";
  
 -static PyObject *PyFT2Image_draw_rect(PyFT2Image *self, PyObject *args, PyObject *kwds)
-+static PyObject *PyFT2Image_draw_rect(PyFT2Image *self, PyObject *args
++static PyObject *PyFT2Image_draw_rect(PyFT2Image *self, PyObject *args)
  {
      double x0, y0, x1, y1;
  
