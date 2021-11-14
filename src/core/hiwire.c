@@ -157,6 +157,8 @@ EM_JS_NUM(int, hiwire_init, (), {
     // clang-format on
   };
 
+  Module.hiwire.incref = function(idval) { _hiwire.objects.get(idval)[1]++; };
+
   Module.hiwire.pop_value = function(idval)
   {
     let result = Module.hiwire.get_value(idval);
@@ -261,7 +263,7 @@ EM_JS(JsRef, hiwire_incref, (JsRef idval), {
   if (idval & 1) {
     // least significant bit unset ==> idval is a singleton.
     // We don't reference count singletons.
-    Module.hiwire.get_value(idval)[1]++;
+    Module.hiwire.incref(idval);
   }
   return idval;
 });
