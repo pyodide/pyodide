@@ -45,7 +45,7 @@ let fatal_error_occurred = false;
  * Dumps the Python traceback, shows a JavaScript traceback, and prints a clear
  * message indicating a fatal error. It then dummies out the public API so that
  * further attempts to use Pyodide will clearly indicate that Pyodide has failed
- * and can no longer be used. pyodide._module is left accessible and it is
+ * and can no longer be used. pyodide._module is left accessible, and it is
  * possible to continue using Pyodide for debugging purposes if desired.
  *
  * @argument e {Error} The cause of the fatal error.
@@ -169,7 +169,7 @@ function wrapPythonGlobals(globals_dict, builtins_dict) {
  */
 function finalizeBootstrap(config) {
   // First make internal dict so that we can use runPythonInternal.
-  // runPythonInternal uses a separate namespace so we don't pollute the main
+  // runPythonInternal uses a separate namespace, so we don't pollute the main
   // environment with variables from our setup.
   runPythonInternal_dict = Module._pyodide._base.eval_code("{}");
 

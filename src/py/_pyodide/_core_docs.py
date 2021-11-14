@@ -51,7 +51,7 @@ class JsProxy:
         """Convert the :class:`JsProxy` to a native Python object as best as
         possible.
 
-        By default does a deep conversion, if a shallow conversion is
+        By default, does a deep conversion, if a shallow conversion is
         desired, you can use ``proxy.to_py(depth=1)``. See
         :ref:`type-translations-jsproxy-to-py` for more information.
         """
@@ -176,7 +176,7 @@ def to_js(
     """Convert the object to JavaScript.
 
     This is similar to :any:`PyProxy.toJs`, but for use from Python. If the
-    object would be implicitly translated to JavaScript, it will be returned
+    object can be implicitly translated to JavaScript, it will be returned
     unchanged. If the object cannot be converted into JavaScript, this
     method will return a :any:`JsProxy` of a :any:`PyProxy`, as if you had
     used :any:`pyodide.create_proxy`.

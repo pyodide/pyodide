@@ -4,7 +4,7 @@
 
 ## Making a release
 
-For branch organization we use a variation of the [Github
+For branch organization we use a variation of the [GitHub
 Flow](https://guides.github.com/introduction/flow/) with
 the latest release branch named `stable` (due to ReadTheDocs constraints).
 
@@ -17,7 +17,7 @@ the latest release branch named `stable` (due to ReadTheDocs constraints).
    the release version `vX.Y.Z` (note the presence of the leading `v`). This
    also applies to `docs/conf.py`
 2. Set version in `src/py/pyodide/__init__.py`
-3. Make sure the change log is up to date.
+3. Make sure the change log is up-to-date.
    - Indicate the release date in the change log.
    - Generate the list of contributors for the release at the end of the
      changelog entry with,
