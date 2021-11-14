@@ -73,7 +73,7 @@ governance](https://pyodide.org/en/stable/project/governance.html).
 
 ## Communication
 
-- Blog : [blog.pyodide.org](https://blog.pyodide.org/)
+- Blog: [blog.pyodide.org](https://blog.pyodide.org/)
 - Mailing list: [mail.python.org/mailman3/lists/pyodide.python.org/](https://mail.python.org/mailman3/lists/pyodide.python.org/)
 - Gitter: [gitter.im/pyodide/community](https://gitter.im/pyodide/community)
 - Twitter: [twitter.com/pyodide](https://twitter.com/pyodide)
