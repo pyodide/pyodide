@@ -2,77 +2,45 @@
 
 # Building from sources
 
-Building is easiest on Linux and relatively straightforward on Mac. For Windows,
-we currently recommend using the Docker image (described below) to build
-Pyodide. Another option for building on Windows is to use
+```{warning}
+If you are building the latest development version of Pyodide from the `main`
+branch, please make sure you are also following build instructions from the dev
+version of the documentation at
+[https://pyodide.org/en/latest/](https://pyodide.org/en/latest/development/building-from-sources.html)
+```
+
+Building is easiest with Docker. You can also build on Linux with `make`, while
+builing on Mac is possible but there are known issues as of 0.18. For
+Windows, we currently recommend using Docker to build Pyodide. Another option
+for building on Windows is to use
 [WSL2](https://docs.microsoft.com/en-us/windows/wsl/install-win10) to create a
 Linux build environment.
 
-## Build using `make`
+## Build instructions
 
-Make sure the prerequisites for
-[emsdk](https://github.com/emscripten-core/emsdk) are installed. Pyodide will
-build a custom, patched version of emsdk, so there is no need to build it
-yourself prior.
+### Using Docker
 
-Additional build prerequisites are:
-
-- A working native compiler toolchain, enough to build
-  [CPython](https://devguide.python.org/setup/#linux).
-- A native Python 3.9 to run the build scripts.
-- CMake
-- PyYAML
-- FreeType 2 development libraries to compile Matplotlib.
-- Cython to compile SciPy
-- SWIG to compile NLopt
-- gfortran (GNU Fortran 95 compiler)
-- [f2c](http://www.netlib.org/f2c/)
-- [ccache](https://ccache.samba.org) (optional) _highly_ recommended for much faster rebuilds.
-
-You can install the python dependencies from the requirement file at the root of pyodide folder:
-`pip install -r requirements.txt`
-
-On Mac, you will also need:
-
-- [Homebrew](https://brew.sh/) for installing dependencies
-- System libraries in the root directory (
-  `sudo installer -pkg /Library/Developer/CommandLineTools/Packages/macOS_SDK_headers_for_macOS_10.14.pkg -target /`
-  should do it, see https://github.com/pyenv/pyenv/issues/1219#issuecomment-428305417)
-- coreutils for md5sum and other essential Unix utilities (`brew install coreutils`)
-- cmake (`brew install cmake`)
-- Cython to compile SciPy (`brew install cython`)
-- SWIG to compile NLopt (`brew install swig`)
-- pkg-config (`brew install pkg-config`)
-- openssl (`brew install openssl`)
-- gfortran (`brew cask install gfortran`)
-- f2c: Install wget (`brew install wget`), and then run the buildf2c script from
-  the root directory (`sudo ./tools/buildf2c`)
-
-After installing the build prerequisites, run from the command line:
-
-```bash
-make
-```
-
-## Using Docker
-
-We provide a Debian-based Docker image on Docker Hub with the dependencies
-already installed to make it easier to build Pyodide. On top of that we provide
-a pre-built image which can be used for fast custom and partial builds of
-Pyodide. Note that building from the non pre-built the Docker image is _very_
-slow on Mac, building on the host machine is preferred if at all possible.
+We provide a Debian-based Docker image
+([`pyodide/pyodide-env`](https://hub.docker.com/r/pyodide/pyodide-env)) on
+Docker Hub with the dependencies already installed to make it easier to build
+Pyodide. On top of that we provide
+a pre-built image which can be used for fast custom and partial builds. Note
+that building from the non pre-built the Docker image is _very_ slow on Mac,
+building on the host machine is preferred if at all possible.
 
 1. Install Docker
 
-2. From a git checkout of Pyodide, run `./run_docker` or `./run_docker --pre-built`
+1. From a git checkout of Pyodide, run `./run_docker` or `./run_docker --pre-built`
 
-3. Run `make` to build.
+1. Run `make` to build.
 
-Note: You can control the resources allocated to the build by setting the env
+```{note}
+You can control the resources allocated to the build by setting the env
 vars `EMSDK_NUM_CORE`, `EMCC_CORES` and `PYODIDE_JOBS` (the default for each is
 4).
+```
 
-If running `make` deterministically stops at one point in each subsequent try,
+If running `make` deterministically stops at one point,
 increasing the maximum RAM usage available to the docker container might help
 [This is different from the physical RAM capacity inside the system]. Ideally,
 at least 3 GB of RAM should be available to the docker container to build
@@ -81,6 +49,69 @@ Pyodide smoothly. These settings can be changed via Docker Preferences (See
 
 You can edit the files in your source checkout on your host machine, and then
 repeatedly run `make` inside the Docker environment to test your changes.
+
+## Using `make`
+
+Make sure the prerequisites for
+[emsdk](https://github.com/emscripten-core/emsdk) are installed. Pyodide will
+build a custom, patched version of emsdk, so there is no need to build it
+yourself prior.
+
+You would need Python 3.9.5 to run the build scripts. To make sure that the
+correct Python is used during build it is recommended to use a [Python virtual
+environment](https://packaging.python.org/guides/installing-using-pip-and-virtual-environments/#creating-a-virtual-environment),
+
+::: {tabbed} Linux
+
+Additional build prerequisites are:
+
+- A working native compiler toolchain, enough to build
+  [CPython](https://devguide.python.org/setup/#linux).
+- CMake
+- PyYAML
+- FreeType 2 development libraries to compile Matplotlib.
+- Cython to compile SciPy
+- gfortran (GNU Fortran 95 compiler)
+- [f2c](http://www.netlib.org/f2c/)
+- [ccache](https://ccache.samba.org) (optional) _highly_ recommended for much faster rebuilds.
+- (optional) SWIG to compile NLopt
+
+:::
+
+::: {tabbed} MacOS
+
+On Mac you would additionally need,
+
+- [Homebrew](https://brew.sh/) for installing dependencies
+- System libraries in the root directory (
+  `sudo installer -pkg /Library/Developer/CommandLineTools/Packages/macOS_SDK_headers_for_macOS_10.14.pkg -target /`
+  should do it, see https://github.com/pyenv/pyenv/issues/1219#issuecomment-428305417)
+- coreutils for md5sum and other essential Unix utilities (`brew install coreutils`)
+- cmake (`brew install cmake`)
+- pkg-config (`brew install pkg-config`)
+- openssl (`brew install openssl`)
+- gfortran (`brew cask install gfortran`)
+- f2c: Install wget (`brew install wget`), and then run the buildf2c script from
+  the root directory (`sudo ./tools/buildf2c`)
+- (optional) SWIG to compile NLopt (`brew install swig`)
+
+:::
+
+You can install the python dependencies from the requirement file at the root of pyodide folder:
+`pip install -r requirements.txt`
+
+```{note}
+If you encounter issues with the requirements, it is useful to check the exact
+list in the
+[Dockerfile](https://github.com/pyodide/pyodide/blob/main/Dockerfile) which is
+tested in the CI.
+```
+
+After installing the build prerequisites, run from the command line:
+
+```bash
+make
+```
 
 (partial-builds)=
 
