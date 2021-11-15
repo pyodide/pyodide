@@ -21,7 +21,7 @@ Pyodide brings the Python 3.9 runtime to the browser via WebAssembly thanks to
 It builds the Python scientific stack including NumPy, Pandas, Matplotlib, SciPy, and
 scikit-learn. The [packages directory](packages) lists over 75 packages which
 are currently available. In addition, it's possible to install pure Python wheels
-from PyPi.
+from PyPI.
 
 Pyodide provides transparent conversion of objects between JavaScript and
 Python. When used inside a browser, Python has full access to the Web APIs.

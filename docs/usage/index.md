@@ -108,7 +108,7 @@ To start Node.js REPL with support for top level await, use `node --experimental
 ```
 
 ```{warning}
-Download of packages from PyPi is currently not cached when run in
+Download of packages from PyPI is currently not cached when run in
 Node.js. Packages will be re-downloaded each time `micropip.install` is run.
 
 For this same reason, installing Pyodide packages from the CDN is explicitly not supported for now.

@@ -10,12 +10,12 @@ should start this process with package dependencies.
 
 ### 1. Determining if creating a Pyodide package is necessary
 
-Most pure Python packages can be installed directly from PyPi with
+Most pure Python packages can be installed directly from PyPI with
 {func}`micropip.install` if they have a pure Python wheel. Check if this is the
 case by going to the `pypi.org/project/<package-name>` URL and checking if the
 "Download files" tab contains a file that ends with `*py3-none-any.whl`.
 
-If the wheel is not on PyPi, but nevertheless you believe there is nothing
+If the wheel is not on PyPI, but nevertheless you believe there is nothing
 preventing it (it is a Python package without C extensions):
 
 - you can create the wheel yourself by running,
@@ -27,7 +27,7 @@ preventing it (it is a Python package without C extensions):
   are located. See the [Python packaging
   guide](https://packaging.python.org/tutorials/packaging-projects/#generating-distribution-archives)
   for more details.
-  Then upload the wheel file somewhere (not to PyPi) and install it with
+  Then upload the wheel file somewhere (not to PyPI) and install it with
   micropip via its URL.
 - you can also open an issue in the package repository asking the
   authors to upload the wheel.
