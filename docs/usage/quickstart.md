@@ -14,7 +14,7 @@ To include Pyodide in your project you can use the following CDN URL:
 https://cdn.jsdelivr.net/pyodide/dev/full/pyodide.js
 ```
 
-You can also download a release from [Github
+You can also download a release from [GitHub
 releases](https://github.com/pyodide/pyodide/releases) or build Pyodide
 yourself. See {ref}`downloading_deploying` for more details.
 

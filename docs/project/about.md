@@ -10,8 +10,8 @@ Pyodide brings the Python 3.9 runtime to the browser via WebAssembly thanks to
 It builds the Python scientific stack including NumPy, Pandas, Matplotlib, SciPy, and
 scikit-learn. The [packages
 directory](https://github.com/pyodide/pyodide/tree/main/packages) lists over
-75 packages which are currently available. In addition it's possible to install
-pure Python wheels from PyPi.
+75 packages which are currently available. In addition, it's possible to install
+pure Python wheels from PyPI.
 
 Pyodide provides transparent conversion of objects between JavaScript and
 Python. When used inside a browser, Python has full access to the Web APIs.
@@ -28,7 +28,7 @@ communication.
 
 See the {ref}`contributing guide <how_to_contribute>` for tips on filing issues,
 making changes, and submitting pull requests. Pyodide is an independent and
-community-driven open-source project. The decision making process is outlined in
+community-driven open-source project. The decision-making process is outlined in
 {ref}`project-governance`.
 
 ## Citing

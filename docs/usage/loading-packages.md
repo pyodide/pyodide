@@ -6,7 +6,7 @@ Only the Python standard library is available after importing Pyodide.
 To use other packages, you’ll need to load them using either:
 
 - {any}`pyodide.loadPackage` for packages built with Pyodide, or
-- {any}`micropip.install` for pure Python packages with wheels available on PyPi or
+- {any}`micropip.install` for pure Python packages with wheels available on PyPI or
   from other URLs.
 
 ```{note}
@@ -18,7 +18,7 @@ If you use {any}`pyodide.loadPackagesFromImports` Pyodide will automatically
 download all packages that the code snippet imports. This is particularly useful
 for making a repl since users might import unexpected packages. At present,
 {any}`loadPackagesFromImports <pyodide.loadPackagesFromImports>` will not
-download packages from PyPi, it will only download packages included in the
+download packages from PyPI, it will only download packages included in the
 Pyodide distribution. See {ref}`packages-in-pyodide` to check the full list of packages included in Pyodide.
 
 ## Loading packages with {any}`pyodide.loadPackage`
@@ -53,7 +53,7 @@ Multiple packages can also be loaded at the same time by passing a list to `load
 pyodide.loadPackage(["cycler", "pytz"]);
 ```
 
-{any}`pyodide.loadPackage` returns a `Promise` which resolves when all of the
+{any}`pyodide.loadPackage` returns a `Promise` which resolves when all the
 packages are finished loading:
 
 ```javascript
@@ -89,7 +89,7 @@ pyodide.runPythonAsync(`
 ```
 
 Micropip implements file integrity validation by checking the hash of the
-downloaded wheel against pre-recorded hash digests from the PyPi JSON API.
+downloaded wheel against pre-recorded hash digests from the PyPI JSON API.
 
 (micropip-installing-from-arbitrary-urls)=
 
@@ -117,7 +117,7 @@ If the file is on a remote server, the server must set Cross-Origin Resource Sha
 (CORS) headers to allow access. Otherwise, you can prepend a CORS proxy to the
 URL. Note however that using third-party CORS proxies has security implications,
 particularly since we are not able to check the file integrity, unlike with
-installs from PyPi.
+installs from PyPI.
 
 ## Example
 
