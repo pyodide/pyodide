@@ -10,7 +10,7 @@ version of the documentation at
 ```
 
 Building on any operating system is easiest using the Pyodide Docker image. This approach works
-used with any native operating system as long as Docker is installed. You can also build on your
+with any native operating system as long as Docker is installed. You can also build on your
 native Linux OS if the correct build prerequisites are installed. Building on MacOS is
 possible, but there are known issues as of version 0.18 that you will need to work around.
 It is not possible to build on Windows, but you can use
