@@ -1,4 +1,4 @@
-From a3f3901bffda03cbda5f2fc20f5bca6eae5cc1da Mon Sep 17 00:00:00 2001
+From 5336892d6d743439a7a9ea735cff3e15c834ea96 Mon Sep 17 00:00:00 2001
 From: Hood <hood@mit.edu>
 Date: Sat, 13 Nov 2021 13:32:38 -0800
 Subject: [PATCH] Fix METH_VARARGS method signatures
@@ -8,8 +8,8 @@ Subject: [PATCH] Fix METH_VARARGS method signatures
  src/_contour_wrapper.cpp     |  4 ++--
  src/_path_wrapper.cpp        | 28 ++++++++++++-------------
  src/ft2font_wrapper.cpp      | 40 ++++++++++++++++++------------------
- src/tri/_tri_wrapper.cpp     | 10 ++++-----
- 5 files changed, 57 insertions(+), 57 deletions(-)
+ src/tri/_tri_wrapper.cpp     | 20 +++++++++---------
+ 5 files changed, 62 insertions(+), 62 deletions(-)
 
 diff --git a/src/_backend_agg_wrapper.cpp b/src/_backend_agg_wrapper.cpp
 index 1377231..7965ed2 100644
@@ -494,7 +494,7 @@ index ba361ac..ff7e29f 100644
      FT2Image &im = self->x->get_image();
      npy_intp dims[] = {(npy_intp)im.get_height(), (npy_intp)im.get_width() };
 diff --git a/src/tri/_tri_wrapper.cpp b/src/tri/_tri_wrapper.cpp
-index fcf1557..6b2397d 100644
+index fcf1557..4025077 100644
 --- a/src/tri/_tri_wrapper.cpp
 +++ b/src/tri/_tri_wrapper.cpp
 @@ -103,7 +103,7 @@ const char* PyTriangulation_calculate_plane_coefficients__doc__ =
@@ -506,6 +506,24 @@ index fcf1557..6b2397d 100644
  {
      Triangulation::CoordinateArray z;
      if (!PyArg_ParseTuple(args, "O&:calculate_plane_coefficients",
+@@ -128,7 +128,7 @@ const char* PyTriangulation_get_edges__doc__ =
+     "--\n\n"
+     "Return edges array";
+ 
+-static PyObject* PyTriangulation_get_edges(PyTriangulation* self, PyObject* args, PyObject* kwds)
++static PyObject* PyTriangulation_get_edges(PyTriangulation* self, PyObject* args)
+ {
+     Triangulation::EdgeArray* result;
+     CALL_CPP("get_edges", (result = &self->ptr->get_edges()));
+@@ -145,7 +145,7 @@ const char* PyTriangulation_get_neighbors__doc__ =
+     "--\n\n"
+     "Return neighbors array";
+ 
+-static PyObject* PyTriangulation_get_neighbors(PyTriangulation* self, PyObject* args, PyObject* kwds)
++static PyObject* PyTriangulation_get_neighbors(PyTriangulation* self, PyObject* args)
+ {
+     Triangulation::NeighborArray* result;
+     CALL_CPP("get_neighbors", (result = &self->ptr->get_neighbors()));
 @@ -162,7 +162,7 @@ const char* PyTriangulation_set_mask__doc__ =
      "--\n\n"
      "Set or clear the mask array.";
@@ -542,6 +560,33 @@ index fcf1557..6b2397d 100644
  {
      TrapezoidMapTriFinder::CoordinateArray x, y;
      if (!PyArg_ParseTuple(args, "O&O&:find_many",
+@@ -429,7 +429,7 @@ const char* PyTrapezoidMapTriFinder_get_tree_stats__doc__ =
+     "\n"
+     "Return statistics about the tree used by the trapezoid map";
+ 
+-static PyObject* PyTrapezoidMapTriFinder_get_tree_stats(PyTrapezoidMapTriFinder* self, PyObject* args, PyObject* kwds)
++static PyObject* PyTrapezoidMapTriFinder_get_tree_stats(PyTrapezoidMapTriFinder* self, PyObject* args)
+ {
+     PyObject* result;
+     CALL_CPP("get_tree_stats", (result = self->ptr->get_tree_stats()));
+@@ -441,7 +441,7 @@ const char* PyTrapezoidMapTriFinder_initialize__doc__ =
+     "\n"
+     "Initialize this object, creating the trapezoid map from the triangulation";
+ 
+-static PyObject* PyTrapezoidMapTriFinder_initialize(PyTrapezoidMapTriFinder* self, PyObject* args, PyObject* kwds)
++static PyObject* PyTrapezoidMapTriFinder_initialize(PyTrapezoidMapTriFinder* self, PyObject* args)
+ {
+     CALL_CPP("initialize", (self->ptr->initialize()));
+     Py_RETURN_NONE;
+@@ -452,7 +452,7 @@ const char* PyTrapezoidMapTriFinder_print_tree__doc__ =
+     "\n"
+     "Print the search tree as text to stdout; useful for debug purposes";
+ 
+-static PyObject* PyTrapezoidMapTriFinder_print_tree(PyTrapezoidMapTriFinder* self, PyObject* args, PyObject* kwds)
++static PyObject* PyTrapezoidMapTriFinder_print_tree(PyTrapezoidMapTriFinder* self, PyObject* args)
+ {
+     CALL_CPP("print_tree", (self->ptr->print_tree()));
+     Py_RETURN_NONE;
 -- 
 2.17.1
 
