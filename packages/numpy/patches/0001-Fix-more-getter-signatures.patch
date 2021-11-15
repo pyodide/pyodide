@@ -1,0 +1,86 @@
+From f67863344dd31334b79ed55227ac22ebcfe0f27e Mon Sep 17 00:00:00 2001
+From: Hood <hood@mit.edu>
+Date: Sun, 14 Nov 2021 12:58:07 -0800
+Subject: [PATCH] Fix more getter signatures
+
+---
+ numpy/core/src/umath/ufunc_object.c | 18 +++++++++---------
+ 1 file changed, 9 insertions(+), 9 deletions(-)
+
+diff --git a/numpy/core/src/umath/ufunc_object.c b/numpy/core/src/umath/ufunc_object.c
+index 068ff2d7e..da8ab58b3 100644
+--- a/numpy/core/src/umath/ufunc_object.c
++++ b/numpy/core/src/umath/ufunc_object.c
+@@ -6164,7 +6164,7 @@ _typecharfromnum(int num) {
+ 
+ 
+ static PyObject *
+-ufunc_get_doc(PyUFuncObject *ufunc)
++ufunc_get_doc(PyUFuncObject *ufunc, PyObject* NPY_UNUSED(ignored))
+ {
+     static PyObject *_sig_formatter;
+     PyObject *doc;
+@@ -6196,31 +6196,31 @@ ufunc_get_doc(PyUFuncObject *ufunc)
+ 
+ 
+ static PyObject *
+-ufunc_get_nin(PyUFuncObject *ufunc)
++ufunc_get_nin(PyUFuncObject *ufunc, PyObject* NPY_UNUSED(ignored))
+ {
+     return PyLong_FromLong(ufunc->nin);
+ }
+ 
+ static PyObject *
+-ufunc_get_nout(PyUFuncObject *ufunc)
++ufunc_get_nout(PyUFuncObject *ufunc, PyObject* NPY_UNUSED(ignored))
+ {
+     return PyLong_FromLong(ufunc->nout);
+ }
+ 
+ static PyObject *
+-ufunc_get_nargs(PyUFuncObject *ufunc)
++ufunc_get_nargs(PyUFuncObject *ufunc, PyObject* NPY_UNUSED(ignored))
+ {
+     return PyLong_FromLong(ufunc->nargs);
+ }
+ 
+ static PyObject *
+-ufunc_get_ntypes(PyUFuncObject *ufunc)
++ufunc_get_ntypes(PyUFuncObject *ufunc, PyObject* NPY_UNUSED(ignored))
+ {
+     return PyLong_FromLong(ufunc->ntypes);
+ }
+ 
+ static PyObject *
+-ufunc_get_types(PyUFuncObject *ufunc)
++ufunc_get_types(PyUFuncObject *ufunc, PyObject* NPY_UNUSED(ignored))
+ {
+     /* return a list with types grouped input->output */
+     PyObject *list;
+@@ -6254,20 +6254,20 @@ ufunc_get_types(PyUFuncObject *ufunc)
+ }
+ 
+ static PyObject *
+-ufunc_get_name(PyUFuncObject *ufunc)
++ufunc_get_name(PyUFuncObject *ufunc, PyObject* NPY_UNUSED(ignored))
+ {
+     return PyUnicode_FromString(ufunc->name);
+ }
+ 
+ static PyObject *
+-ufunc_get_identity(PyUFuncObject *ufunc)
++ufunc_get_identity(PyUFuncObject *ufunc, PyObject* NPY_UNUSED(ignored))
+ {
+     npy_bool reorderable;
+     return _get_identity(ufunc, &reorderable);
+ }
+ 
+ static PyObject *
+-ufunc_get_signature(PyUFuncObject *ufunc)
++ufunc_get_signature(PyUFuncObject *ufunc, PyObject* NPY_UNUSED(ignored))
+ {
+     if (!ufunc->core_enabled) {
+         Py_RETURN_NONE;
+-- 
+2.17.1
+
