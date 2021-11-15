@@ -53,6 +53,7 @@ list from there with "The Pyodide development team" like in the example below:
 
 ## Communication
 
+- Blog: [blog.pyodide.org](https://blog.pyodide.org/)
 - Mailing list: [mail.python.org/mailman3/lists/pyodide.python.org/](https://mail.python.org/mailman3/lists/pyodide.python.org/)
 - Gitter: [gitter.im/pyodide/community](https://gitter.im/pyodide/community)
 - Twitter: [twitter.com/pyodide](https://twitter.com/pyodide)
