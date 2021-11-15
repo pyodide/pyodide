@@ -8,7 +8,7 @@ from pkg_resources import parse_version
 import pyodide_build.mkpkg
 from pyodide_build.io import parse_package_config
 
-# Following tests make real network calls to the PyPi JSON API.
+# Following tests make real network calls to the PyPI JSON API.
 # Since the response is fully cached, and small, it is very fast and is
 # unlikely to fail.
 

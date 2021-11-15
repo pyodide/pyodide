@@ -580,7 +580,7 @@ by 0.16.1 with identical contents.
 - The `pyodide.py` file was transformed to a pyodide-py package. The imports
   remain the same so this change is transparent to the users
   {pr}`909`.
-- FIX Get last version from PyPi when installing a module via micropip
+- FIX Get last version from PyPI when installing a module via micropip
   {pr}`846`.
 - Suppress REPL results returned by `pyodide.eval_code` by adding a semicolon
   {pr}`876`.
@@ -661,7 +661,7 @@ _May 19, 2020_
 
 - Upgrades Pyodide to CPython 3.7.4.
 - micropip no longer uses a CORS proxy to install pure Python packages from
-  PyPi. Packages are now installed from PyPi directly.
+  PyPI. Packages are now installed from PyPI directly.
 - micropip can now be used from web workers.
 - Adds support for installing pure Python wheels from arbitrary URLs with
   micropip.

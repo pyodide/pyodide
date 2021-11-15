@@ -121,7 +121,7 @@ def _extract_wheel(fd):
 def _validate_wheel(data, fileinfo):
     if fileinfo.get("digests") is None:
         # No checksums available, e.g. because installing
-        # from a different location than PyPi.
+        # from a different location than PyPI.
         return
     sha256 = fileinfo["digests"]["sha256"]
     m = hashlib.sha256()
@@ -278,9 +278,9 @@ def install(requirements: Union[str, List[str]]):
 
     This only works for packages that are either pure Python or for packages
     with C extensions that are built in Pyodide. If a pure Python package is not
-    found in the Pyodide repository it will be loaded from PyPi.
+    found in the Pyodide repository it will be loaded from PyPI.
 
-    When used in web browsers, downloads from PyPi will be cached. When run in
+    When used in web browsers, downloads from PyPI will be cached. When run in
     Node.js, packages are currently not cached, and will be re-downloaded each
     time ``micropip.install`` is run.
 
@@ -297,7 +297,7 @@ def install(requirements: Union[str, List[str]]):
 
         - If the requirement does not end in ``.whl``, it will interpreted as the
           name of a package. A package by this name must either be present in the
-          Pyodide repository at `indexURL <globalThis.loadPyodide>` or on PyPi
+          Pyodide repository at `indexURL <globalThis.loadPyodide>` or on PyPI
 
     Returns
     -------
