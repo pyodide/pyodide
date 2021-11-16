@@ -4,6 +4,7 @@ from typing import Any
 import json
 from tempfile import NamedTemporaryFile
 import shutil
+from io import IOBase
 
 try:
     from js import XMLHttpRequest
@@ -150,6 +151,27 @@ class FetchResponse:
         self._raise_if_failed()
         return (await self.buffer()).to_bytes()
 
+    async def _into_file(self, f: IOBase):
+        """Write the data into an empty file with no copy. 
+
+        Warning: should only be used when f is an empty file, otherwise it may
+        overwrite the data of f.
+        """
+        buf = await self.buffer()
+        buf._into_file(f)
+
+    async def to_file(self, path : str):
+        """Writes the data into a new file.
+
+        Parameters
+        ----------
+        path : str
+            The path to the file to create. The file should not exist but it should
+            be in a directory that does exist. Otherwise, will raise an ``OSError``
+        """
+        with open(path, "x") as f:
+            await self._into_file(f)
+
     async def unpack_archive(self, extract_dir=None, format=None):
         """Treat the data as an archive and unpack it into target directory.
 
@@ -172,7 +194,7 @@ class FetchResponse:
         """
         filename = self._url.rsplit("/", -1)[-1]
         with NamedTemporaryFile(suffix=filename) as f:
-            f.write(await self.bytes())
+            await self._into_file(f)
             shutil.unpack_archive(f.name, extract_dir, format)
 
 
