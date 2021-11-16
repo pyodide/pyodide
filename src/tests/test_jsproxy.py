@@ -1049,7 +1049,7 @@ def test_buffer_into_file():
 
 
 @run_in_pyodide
-def test_buffer_into_file2(selenium):
+def test_buffer_into_file2():
     """Check that no copy occurred."""
     from js import Uint8Array
     import pyodide_js
