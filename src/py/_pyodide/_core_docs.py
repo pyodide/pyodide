@@ -176,28 +176,25 @@ class JsProxy:
         """
 
     def _into_file(self, file: IOBase):
-        """Will write the entire contents of the buffer to the current position
-        of the file using ``canOwn : true``. If the file is in the
-        memfs, the data does not need to be copied --  instead of copying the data,
-        the buffer will just be added to the backing for the file. After this, the
-        buffer cannot be used again.
+        """Will write the entire contents of the buffer into a file using
+        ``canOwn : true`` without any copy. After this, the buffer cannot be
+        used again.
+
+        If ``file`` is not empty, its contents will be overwritten! 
+
+        Only ``MEMFS`` cares about the ``canOwn`` flag, other file systems will
+        just ignore it.
 
         Present only if the wrapped Javascript object is an ArrayBuffer or an
         ArrayBuffer view.
 
         Example
         ------------
-        >>> import pytest; pytest.skip()
-        >>> from js import Uint8Array
-        >>> x = Uint8Array.new(range(10))
-        >>> with open('file.bin', 'wb') as fh:
-        ...    x._into_file(fh)
-        which is similar to
-        >>> with open('file.bin', 'wb') as fh:
-        ...    data = x.to_bytes()
-        ...    fh.write(data)
-        but the latter copies the data once whereas the former doesn't copy the
-        data.
+        >>> import pytest; pytest.skip() from js import Uint8Array x =
+        >>> Uint8Array.new(range(10)) with open('file.bin', 'wb') as fh: ...
+        >>> x._into_file(fh) which is similar to with open('file.bin', 'wb') as
+        >>> fh: ...    data = x.to_bytes() ...    fh.write(data) but the latter
+        >>> copies the data once whereas the former doesn't copy the data.
         """
 
     def to_string(self, encoding=None) -> str:
