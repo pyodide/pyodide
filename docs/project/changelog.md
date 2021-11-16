@@ -59,6 +59,10 @@ substitutions:
   {any}`JsProxy.to_memoryview` to allow for conversion of `TypedArray` to
   standard Python types without unneeded copies. {pr}`1864`
 
+- {{Enhancement}} Added {any}`JsProxy.to_file` and {any}`JsProxy.from_file` to
+  allow reading and writing Javascript buffers to files as a byte stream without unneeded copies.
+  {pr}`1864`
+
 - {{Fix}} It is now possible to destroy borrowed attribute `PyProxy` of a
   `PyProxy` (as introduced by {pr}`1636`) before destroying the root `PyProxy`.
   {pr}`1854`
@@ -111,7 +115,7 @@ substitutions:
 - {{ Fix }} The built-in pwd module of Python, which provides Unix specific
   feature, is now unvendored.
   {pr}`1883`
-  
+
 - New packages: `logbook`
 
 ### Uncategorized

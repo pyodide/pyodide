@@ -558,6 +558,19 @@ hiwire_assign_to_ptr(JsRef idobj, void* ptr);
 errcode
 hiwire_assign_from_ptr(JsRef idobj, void* ptr);
 
+errcode
+hiwire_write_to_file(JsRef idobj, int fd);
+
+errcode
+hiwire_read_from_file(JsRef idobj, int fd);
+
+/**
+ * Convert a buffer into a file in a copy-free manner using "canOwn" parameter.
+ * Cannot directly use the buffer anymore after using this.
+ */
+errcode
+hiwire_into_file(JsRef idobj, int fd);
+
 /**
  * Get a data type identifier for a given typedarray.
  */

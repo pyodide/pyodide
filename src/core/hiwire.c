@@ -770,6 +770,25 @@ EM_JS_NUM(errcode, hiwire_assign_from_ptr, (JsRef idobj, void* ptr), {
     Module.HEAPU8.subarray(ptr, ptr + jsobj.byteLength));
 });
 
+EM_JS_NUM(errcode, hiwire_read_from_file, (JsRef idobj, int fd), {
+  let jsobj = Module.hiwire.get_value(idobj);
+  let stream = Module.FS.streams[fd];
+  Module.FS.read(stream, jsobj, 0, jsobj.length);
+});
+
+EM_JS_NUM(errcode, hiwire_write_to_file, (JsRef idobj, int fd), {
+  let jsobj = Module.hiwire.get_value(idobj);
+  let stream = Module.FS.streams[fd];
+  Module.FS.write(stream, jsobj, 0, jsobj.length);
+});
+
+EM_JS_NUM(errcode, hiwire_into_file, (JsRef idobj, int fd), {
+  let jsobj = Module.hiwire.get_value(idobj);
+  let stream = Module.FS.streams[fd];
+  // set canOwn param to true, leave position undefined.
+  Module.FS.write(stream, jsobj, 0, jsobj.length, undefined, true);
+});
+
 // clang-format off
 EM_JS_NUM(
 errcode,
