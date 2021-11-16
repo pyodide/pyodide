@@ -90,7 +90,10 @@ def test_handle_command_ldflags():
 
     args = BuildArgs()
     assert (
-        handle_command_wrap("gcc -Wl,--strip-all,--as-needed -Wl,--sort-common,-z,now,-Bsymbolic-functions -shared -c test.o -o test.so", args)
+        handle_command_wrap(
+            "gcc -Wl,--strip-all,--as-needed -Wl,--sort-common,-z,now,-Bsymbolic-functions -shared -c test.o -o test.so",
+            args,
+        )
         == "emcc -Wl,-z,now -c test.o -o test.so"
     )
 
