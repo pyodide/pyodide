@@ -190,11 +190,17 @@ class JsProxy:
 
         Example
         ------------
-        >>> import pytest; pytest.skip() from js import Uint8Array x =
-        >>> Uint8Array.new(range(10)) with open('file.bin', 'wb') as fh: ...
-        >>> x._into_file(fh) which is similar to with open('file.bin', 'wb') as
-        >>> fh: ...    data = x.to_bytes() ...    fh.write(data) but the latter
-        >>> copies the data once whereas the former doesn't copy the data.
+        >>> import pytest; pytest.skip()
+        >>> from js import Uint8Array
+        >>> x = Uint8Array.new(range(10))
+        >>> with open('file.bin', 'wb') as fh:
+        ...    x._into_file(fh)
+        which is similar to
+        >>> with open('file.bin', 'wb') as fh:
+        ...    data = x.to_bytes()
+        ...    fh.write(data)
+        but the latter copies the data once whereas the former doesn't copy the
+        data.
         """
 
     def to_string(self, encoding=None) -> str:
