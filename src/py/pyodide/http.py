@@ -180,7 +180,7 @@ class FetchResponse:
             an ``OSError``
         """
         with open(path, "x") as f:
-            await self._into_file(f) # type: ignore
+            await self._into_file(f)  # type: ignore
 
     async def unpack_archive(self, extract_dir=None, format=None):
         """Treat the data as an archive and unpack it into target directory.
