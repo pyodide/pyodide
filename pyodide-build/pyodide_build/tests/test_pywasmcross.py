@@ -85,6 +85,16 @@ def test_handle_command():
     assert handle_command_wrap("gcc /usr/file.c", args) is None
 
 
+def test_handle_command_ldflags():
+    # Make sure to remove unsupported link flags for wasm-ld
+
+    args = BuildArgs()
+    assert (
+        handle_command_wrap("gcc -Wl,--strip-all,--as-needed -Wl,--sort-common,-z,now,-Bsymbolic-functions -shared -c test.o -o test.so", args)
+        == "emcc -Wl,-z,now -c test.o -o test.so"
+    )
+
+
 @pytest.mark.parametrize(
     "in_ext, out_ext, executable, flag_name",
     [
