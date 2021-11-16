@@ -14,14 +14,14 @@ _Py_IDENTIFIER(last_type);
 _Py_IDENTIFIER(last_value);
 _Py_IDENTIFIER(last_traceback);
 
-EM_JS_NUM(errcode, console_error, (char* msg), {
+EM_JS(void, console_error, (char* msg), {
   let jsmsg = UTF8ToString(msg);
   console.error(jsmsg);
 });
 
 // Right now this is dead code (probably), please don't remove it.
 // Intended for debugging purposes.
-EM_JS_NUM(errcode, console_error_obj, (JsRef obj), {
+EM_JS(void, console_error_obj, (JsRef obj), {
   console.error(Module.hiwire.get_value(obj));
 });
 
@@ -210,10 +210,15 @@ finally:
   return jserror;
 }
 
-EM_JS_NUM(errcode, log_python_error, (JsRef jserror), {
-  let msg = Module.hiwire.get_value(jserror).message;
-  console.warn("Python exception:\n" + msg + "\n");
-  return 0;
+EM_JS(void, log_python_error, (JsRef jserror), {
+  // If a js error occurs in here, it's a weird edge case. This will probably
+  // never happen, but for maximum paranoia let's double check.
+  try {
+    let msg = Module.hiwire.get_value(jserror).message;
+    console.warn("Python exception:\n" + msg + "\n");
+  } catch (e) {
+    Module.fatal_error(e);
+  }
 });
 
 /**
