@@ -99,6 +99,10 @@ substitutions:
 - {{ Enhancement }} Better support for ccache when building Pyodide
   {pr}`1805`
 
+- {{Fix}} Fix compile error `wasm-ld: error: unknown argument: --sort-common`
+  and `wasm-ld: error: unknown argument: --as-needed` in ArchLinux.
+  {pr}`1965`
+
 ### micropip
 
 - {{Fix}} micropip now raises error when installing non-pure python wheel directly from url.

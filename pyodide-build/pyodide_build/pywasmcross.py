@@ -313,11 +313,19 @@ def handle_command(line, args, dryrun=False):
         # some gcc flags that clang does not support actually
         if arg == "-Bsymbolic-functions":
             continue
-        if arg == "-Wl,-Bsymbolic-functions":
-            continue
-        # breaks emscripten see https://github.com/emscripten-core/emscripten/issues/14460
-        if arg == "-Wl,--strip-all":
-            continue
+        # ignore some link flags
+        # it should not check if `arg == "-Wl,-xxx"` and ignore directly here,
+        # because arg may be something like "-Wl,-xxx,-yyy" where we only want
+        # to ignore "-xxx" but not "-yyy".
+        if arg.startswith("-Wl"):
+            arg = arg.replace(",-Bsymbolic-functions", "")
+            # breaks emscripten see https://github.com/emscripten-core/emscripten/issues/14460
+            arg = arg.replace(",--strip-all", "")
+            # wasm-ld does not regconize some link flags
+            arg = arg.replace(",--sort-common", "")
+            arg = arg.replace(",--as-needed", "")
+            if arg == "-Wl":
+                continue
         # threading is disabled for now
         if arg == "-pthread":
             continue
