@@ -353,7 +353,7 @@ export async function loadPackage(names, messageCallback, errorCallback) {
   // it needs to have access to it.
   // not needed for so in standard module because those are linked together
   // correctly, it is only where linking goes across modules that it needs to
-  // be done. Hence we only put this extra preload plugin in during the shared
+  // be done. Hence, we only put this extra preload plugin in during the shared
   // library load
   let oldPlugin;
   for (let p in Module.preloadPlugins) {

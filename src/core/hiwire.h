@@ -97,7 +97,7 @@ hiwire_incref(JsRef idval);
 /**
  * Decrease the reference count on an object.
  */
-errcode
+void
 hiwire_decref(JsRef idval);
 
 /**

@@ -13,12 +13,14 @@ Module.noImageDecoding = true;
 Module.noAudioDecoding = true;
 Module.noWasmDecoding = false; // we preload wasm using the built in plugin now
 Module.preloadedWasm = {};
+Module.preRun = [];
 
 /**
  *
  * @param {undefined | function(): string} stdin
  * @param {undefined | function(string)} stdout
  * @param {undefined | function(string)} stderr
+ * @private
  */
 export function setStandardStreams(stdin, stdout, stderr) {
   // For stdout and stderr, emscripten provides convenient wrappers that save us the trouble of converting the bytes into a string
@@ -32,11 +34,9 @@ export function setStandardStreams(stdin, stdout, stderr) {
 
   // For stdin, we have to deal with the low level API ourselves
   if (stdin) {
-    Module.preRun = [
-      function () {
-        Module.FS.init(createStdinWrapper(stdin), null, null);
-      },
-    ];
+    Module.preRun.push(function () {
+      Module.FS.init(createStdinWrapper(stdin), null, null);
+    });
   }
 }
 
@@ -83,4 +83,27 @@ function createStdinWrapper(stdin) {
     }
   }
   return stdinWrapper;
+}
+
+/**
+ * Make the home directory inside the virtual file system,
+ * then change the working directory to it.
+ *
+ * @param {string} path
+ * @private
+ */
+export function setHomeDirectory(path) {
+  Module.preRun.push(function () {
+    const fallbackPath = "/";
+    try {
+      Module.FS.mkdirTree(path);
+    } catch (e) {
+      console.error(`Error occurred while making a home directory '${path}':`);
+      console.error(e);
+      console.error(`Using '${fallbackPath}' for a home directory instead`);
+      path = fallbackPath;
+    }
+
+    Module.FS.chdir(path);
+  });
 }
