@@ -3,6 +3,7 @@
   packaging
   pyyaml
   ruamel.yaml
+  pybind11<3.0
   # lint
   black
   flake8
