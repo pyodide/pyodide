@@ -132,11 +132,8 @@ class Package(BasePackage):
         except subprocess.CalledProcessError:
             print(f"Error building {self.name}. Printing build logs.")
 
-            if (self.pkgdir / "build.log").exists():
-                with open(self.pkgdir / "build.log", "r") as f:
-                    shutil.copyfileobj(f, sys.stdout)
-            else:
-                print(f"{self.pkgdir / 'build.log'} does not exist")
+            with open(self.pkgdir / "build.log", "r") as f:
+                shutil.copyfileobj(f, sys.stdout)
 
             raise
 
