@@ -789,7 +789,8 @@ EM_JS_NUM(errcode, hiwire_into_file, (JsRef idobj, int fd), {
   let uint8_buffer = Module.typedArrayAsUint8Array(jsobj);
   let stream = Module.FS.streams[fd];
   // set canOwn param to true, leave position undefined.
-  Module.FS.write(stream, uint8_buffer, 0, uint8_buffer.byteLength, undefined, true);
+  Module.FS.write(
+    stream, uint8_buffer, 0, uint8_buffer.byteLength, undefined, true);
 });
 
 // clang-format off
