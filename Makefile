@@ -16,9 +16,9 @@ all: check \
 	build/pyodide.asm.js \
 	build/pyodide.js \
 	build/console.html \
-	build/test.data \
 	build/distutils.data \
 	build/packages.json \
+	build/test.data \
 	build/test.html \
 	build/webworker.js \
 	build/webworker_dev.js
@@ -173,11 +173,13 @@ clean:
 	make -C packages clean
 	echo "The Emsdk, CPython are not cleaned. cd into those directories to do so."
 
-
-clean-all: clean
-	make -C emsdk clean
+clean-python: clean
 	make -C cpython clean
-	rm -fr cpython/build
+
+clean-all:
+	make -C emsdk clean
+	make -C cpython clean-all
+
 
 %.o: %.c $(CPYTHONLIB) $(wildcard src/core/*.h src/core/python2js_buffer.js)
 	$(CC) -o $@ -c $< $(MAIN_MODULE_CFLAGS) -Isrc/core/
