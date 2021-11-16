@@ -19,7 +19,7 @@ export { loadPackage, loadedPackages, isPyProxy };
  *
  * @type {PyProxy}
  */
-let pyodide_py = {}; // actually defined in runPythonSimple in loadPyodide (see pyodide.js)
+let pyodide_py = {}; // actually defined in loadPyodide (see pyodide.js)
 
 /**
  *
@@ -30,7 +30,7 @@ let pyodide_py = {}; // actually defined in runPythonSimple in loadPyodide (see 
  *
  * @type {PyProxy}
  */
-let globals = {}; // actually defined in runPythonSimple in loadPyodide (see pyodide.js)
+let globals = {}; // actually defined in loadPyodide (see pyodide.js)
 
 /**
  * A JavaScript error caused by a Python exception.
@@ -75,7 +75,7 @@ export class PythonError {
  *
  * @type {string}
  */
-export let version = ""; // actually defined in runPythonSimple in loadPyodide (see pyodide.js)
+export let version = ""; // actually defined in loadPyodide (see pyodide.js)
 
 /**
  * Runs a string of Python code from JavaScript.
@@ -339,7 +339,7 @@ export function makePublicAPI() {
    * which can be used to extend the in-memory filesystem with features like `persistence
    * <https://emscripten.org/docs/api_reference/Filesystem-API.html#persistent-data>`_.
    *
-   * While all of the file systems implementations are enabled, only the default
+   * While all the file systems implementations are enabled, only the default
    * ``MEMFS`` is guaranteed to work in all runtime settings. The implementations
    * are available as members of ``FS.filesystems``:
    * ``IDBFS``, ``NODEFS``, ``PROXYFS``, ``WORKERFS``.

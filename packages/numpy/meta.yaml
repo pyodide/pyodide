@@ -1,15 +1,14 @@
 package:
   name: numpy
-  version: 1.17.5
+  version: 1.21.4
 
 source:
-  url: https://files.pythonhosted.org/packages/d9/09/8e89c05abc450ea347f40b4fa917ec5c69b5228da344487f178586a3187c/numpy-1.17.5.zip
-  sha256: 16507ba6617f62ae3c6ab1725ae6f550331025d4d9a369b83f6d5a470446c342
+  url: https://files.pythonhosted.org/packages/fb/48/b0708ebd7718a8933f0d3937513ef8ef2f4f04529f1f66ca86d873043921/numpy-1.21.4.zip
+  sha256: e6c76a87633aa3fa16614b61ccedfae45b91df2767cf097aa9c933932a7ed1e0
 
   patches:
     - patches/segfault-PyArray_Broadcast.patch
     - patches/segfault-PyArray_PyIntAsIntp.patch
-    - patches/add-emscripten-cpu.patch
     - patches/disable-maybe-uninitialized.patch
     - patches/dont-include-execinfo.patch
     - patches/fix-longdouble.patch
@@ -19,7 +18,11 @@ source:
     - patches/fix-install-with-skip-build.patch
     - patches/make-int-return-values.patch
     - patches/fix-ieee754.patch
-    - patches/rm-duplicate-symbols-link.patch
+    - patches/fix-getters.patch
+    - patches/disable-optimization.patch
+    - patches/not-build-lapack-lite-as-64-bit.patch
+    - patches/fix-invalid-asm-instruction.patch
+    - patches/fix-removed-decorators-module.patch
 
 build:
   skip_host: False
@@ -37,8 +40,8 @@ build:
   post: |
     # copy the correct numpy config into the build artifacts. Otherwise scipy will try to build with the config
     # from the build computer and bad things will happen
-    cp config/* $PKGDIR/../.artifacts/lib/python/numpy-1.17.5-py3.9-linux-x86_64.egg/numpy/core/include/numpy
-    cp -r $PKGDIR/../.artifacts/lib/python/numpy-1.17.5-py3.9-linux-x86_64.egg/numpy $PKGDIR/../.artifacts/lib/python
+    cp config/* $PKGDIR/../.artifacts/lib/python/numpy-1.21.4-py3.9-linux-x86_64.egg/numpy/core/include/numpy
+    cp -r $PKGDIR/../.artifacts/lib/python/numpy-1.21.4-py3.9-linux-x86_64.egg/numpy $PKGDIR/../.artifacts/lib/python
 
 test:
   imports:

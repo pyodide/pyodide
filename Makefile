@@ -39,13 +39,10 @@ build/pyodide.asm.js: \
 	src/core/pyproxy.o \
 	src/core/python2js_buffer.o \
 	src/core/python2js.o \
-	src/pystone.py \
-	src/_testcapi.py \
-	src/_testinternalcapi.py \
-	src/webbrowser.py \
-	$(CPYTHONLIB)/tzdata \
+	$(wildcard src/py/lib/*.py) \
 	$(wildcard src/py/pyodide/*.py) \
 	$(wildcard src/py/_pyodide/*.py) \
+	$(CPYTHONLIB)/tzdata \
 	$(CPYTHONLIB)
 	date +"[%F %T] Building pyodide.asm.js..."
 	[ -d build ] || mkdir build
@@ -56,12 +53,8 @@ build/pyodide.asm.js: \
 		-lproxyfs.js \
 		-lworkerfs.js \
 		--preload-file $(CPYTHONLIB)@/lib/python$(PYMAJOR).$(PYMINOR) \
-		--preload-file src/webbrowser.py@/lib/python$(PYMAJOR).$(PYMINOR)/webbrowser.py \
-		--preload-file src/_testcapi.py@/lib/python$(PYMAJOR).$(PYMINOR)/_testcapi.py \
-		--preload-file src/_testinternalcapi.py@/lib/python$(PYMAJOR).$(PYMINOR)/_testinternalcapi.py \
-		--preload-file src/pystone.py@/lib/python$(PYMAJOR).$(PYMINOR)/pystone.py \
-		--preload-file src/py/pyodide@/lib/python$(PYMAJOR).$(PYMINOR)/site-packages/pyodide \
-		--preload-file src/py/_pyodide@/lib/python$(PYMAJOR).$(PYMINOR)/site-packages/_pyodide \
+		--preload-file src/py/lib@/lib/python$(PYMAJOR).$(PYMINOR)/\
+		--preload-file src/py/@/lib/python$(PYMAJOR).$(PYMINOR)/site-packages/ \
 		--exclude-file "*__pycache__*" \
 		--exclude-file "*/test/*" \
 		--exclude-file "*/tests/*" \
@@ -126,13 +119,13 @@ docs/_build/html/console.html: src/templates/console.html
 
 
 .PHONY: build/webworker.js
-build/webworker.js: src/webworker.js
+build/webworker.js: src/templates/webworker.js
 	cp $< $@
 	sed -i -e 's#{{ PYODIDE_BASE_URL }}#$(PYODIDE_BASE_URL)#g' $@
 
 
 .PHONY: build/webworker_dev.js
-build/webworker_dev.js: src/webworker.js
+build/webworker_dev.js: src/templates/webworker.js
 	cp $< $@
 	sed -i -e 's#{{ PYODIDE_BASE_URL }}#./#g' $@
 

@@ -106,14 +106,14 @@ unregister_js_module = jsfinder.unregister_js_module
 def register_js_finder():
     """A bootstrap function, called near the end of Pyodide initialization.
 
-    It is called from runPythonSimple in pyodide.js once `_pyodide_core` is ready
+    It is called in ``loadPyodide`` in ``pyodide.js`` once ``_pyodide_core`` is ready
     to set up the js import mechanism.
 
-        1. Put the right value into the global variable `JsProxy` so that
-           `JsFinder.find_spec` can decide whether parent module is a Js module.
-        2. Add `jsfinder` to metapath to allow js imports.
+        1. Put the right value into the global variable ``JsProxy`` so that
+           ``JsFinder.find_spec`` can decide whether parent module is a Js module.
+        2. Add ``jsfinder`` to metapath to allow js imports.
 
-    This needs to be a function to allow the late import from `_pyodide_core`.
+    This needs to be a function to allow the late import from ``_pyodide_core``.
     """
     import _pyodide_core  # type: ignore
 

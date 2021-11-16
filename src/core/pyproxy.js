@@ -3,9 +3,6 @@
  * the callPyObject method, but of course one can also execute arbitrary code
  * via the various __dundermethods__ associated to classes.
  *
- * The only entrypoint into Python that avoids this file is our bootstrap method
- * runPythonSimple which is defined in main.c
- *
  * Any time we call into wasm, the call should be wrapped in a try catch block.
  * This way if a JavaScript error emerges from the wasm, we can escalate it to a
  * fatal error.

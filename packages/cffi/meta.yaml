@@ -14,6 +14,6 @@ test:
     - cffi
 about:
   home: http://cffi.readthedocs.org
-  PyPi: https://pypi.org/project/cffi
+  PyPI: https://pypi.org/project/cffi
   summary: Foreign Function Interface for Python calling C code.
   license: MIT

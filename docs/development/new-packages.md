@@ -10,12 +10,12 @@ should start this process with package dependencies.
 
 ### 1. Determining if creating a Pyodide package is necessary
 
-Most pure Python packages can be installed directly from PyPi with
+Most pure Python packages can be installed directly from PyPI with
 {func}`micropip.install` if they have a pure Python wheel. Check if this is the
 case by going to the `pypi.org/project/<package-name>` URL and checking if the
 "Download files" tab contains a file that ends with `*py3-none-any.whl`.
 
-If the wheel is not on PyPi, but nevertheless you believe there is nothing
+If the wheel is not on PyPI, but nevertheless you believe there is nothing
 preventing it (it is a Python package without C extensions):
 
 - you can create the wheel yourself by running,
@@ -27,7 +27,7 @@ preventing it (it is a Python package without C extensions):
   are located. See the [Python packaging
   guide](https://packaging.python.org/tutorials/packaging-projects/#generating-distribution-archives)
   for more details.
-  Then upload the wheel file somewhere (not to PyPi) and install it with
+  Then upload the wheel file somewhere (not to PyPI) and install it with
   micropip via its URL.
 - you can also open an issue in the package repository asking the
   authors to upload the wheel.
@@ -63,7 +63,7 @@ libraries, it is often useful to verify if the package was already built on
 [conda-forge](https://conda-forge.org/) and open the corresponding `meta.yaml`
 file. This can be done either by checking if the URL
 `https://github.com/conda-forge/<package-name>-feedstock/blob/master/recipe/meta.yaml`
-exists, or by searching the [conda-forge Github
+exists, or by searching the [conda-forge GitHub
 org](https://github.com/conda-forge/) for the package name.
 
 The `meta.yaml` in Pyodide was inspired by the one in conda, however it is
@@ -146,13 +146,13 @@ source:
 
 requirements:
   run:
-   - <requirement>
-  
+    - <requirement>
+
 build:
   library: true
   script: |
-      emconfigure ./configure
-      emmake make -j ${PYODIDE_JOBS:-3}
+    emconfigure ./configure
+    emmake make -j ${PYODIDE_JOBS:-3}
 ```
 
 You can use the `meta.yaml` of other C libraries such as

@@ -259,9 +259,10 @@ async function _loadPackage(names, messageCallback, errorCallback) {
 
   // We have to invalidate Python's import caches, or it won't
   // see the new files.
-  Module.runPythonSimple(
-    "import importlib\n" + "importlib.invalidate_caches()\n"
-  );
+  Module.runPythonInternal(`
+    import importlib
+    importlib.invalidate_caches();
+  `);
 }
 
 // This is a promise that is resolved iff there are no pending package loads.
@@ -352,7 +353,7 @@ export async function loadPackage(names, messageCallback, errorCallback) {
   // it needs to have access to it.
   // not needed for so in standard module because those are linked together
   // correctly, it is only where linking goes across modules that it needs to
-  // be done. Hence we only put this extra preload plugin in during the shared
+  // be done. Hence, we only put this extra preload plugin in during the shared
   // library load
   let oldPlugin;
   for (let p in Module.preloadPlugins) {

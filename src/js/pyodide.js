@@ -1,7 +1,7 @@
 /**
  * The main bootstrap code for loading pyodide.
  */
-import { Module, setStandardStreams } from "./module.js";
+import { Module, setStandardStreams, setHomeDirectory } from "./module.js";
 import {
   loadScript,
   initializePackageIndex,
@@ -34,7 +34,7 @@ import "./pyproxy.gen.js";
  * @private
  */
 Module.dump_traceback = function () {
-  let fd_stdout = 1;
+  const fd_stdout = 1;
   Module.__Py_DumpTraceback(fd_stdout, Module._PyGILState_GetThisThreadState());
 };
 
@@ -45,18 +45,23 @@ let fatal_error_occurred = false;
  * Dumps the Python traceback, shows a JavaScript traceback, and prints a clear
  * message indicating a fatal error. It then dummies out the public API so that
  * further attempts to use Pyodide will clearly indicate that Pyodide has failed
- * and can no longer be used. pyodide._module is left accessible and it is
+ * and can no longer be used. pyodide._module is left accessible, and it is
  * possible to continue using Pyodide for debugging purposes if desired.
  *
  * @argument e {Error} The cause of the fatal error.
  * @private
  */
 Module.fatal_error = function (e) {
+  if (e.pyodide_fatal_error) {
+    return;
+  }
   if (fatal_error_occurred) {
     console.error("Recursive call to fatal_error. Inner error was:");
     console.error(e);
     return;
   }
+  // Mark e so we know not to handle it later in EM_JS wrappers
+  e.pyodide_fatal_error = true;
   fatal_error_occurred = true;
   console.error(
     "Pyodide has suffered a fatal error. Please report this to the Pyodide maintainers."
@@ -96,53 +101,25 @@ Module.fatal_error = function (e) {
   throw e;
 };
 
+let runPythonInternal_dict; // Initialized in finalizeBootstrap
 /**
- * Run Python code in the simplest way possible. The primary purpose of this
- * method is for bootstrapping. It is also useful for debugging: If the Python
- * interpreter is initialized successfully then it should be possible to use
- * this method to run Python code even if everything else in the Pyodide
- * `core` module fails.
- *
- * The differences are:
- *    1. `runPythonSimple` doesn't return anything (and so won't leak
- *        PyProxies)
- *    2. `runPythonSimple` doesn't require access to any state on the
- *       JavaScript `pyodide` module.
- *    3. `runPython` uses `pyodide.eval_code`, whereas `runPythonSimple` uses
- *       `PyRun_String` which is the C API for `eval` / `exec`.
- *    4. `runPythonSimple` runs with `globals` a separate dict which is called
- *       `init_dict` (keeps global state private)
- *    5. `runPythonSimple` doesn't dedent the argument
- *
- * When `core` initialization is completed, the globals for `runPythonSimple`
- * is made available as `Module.init_dict`.
- *
  * @private
+ * Just like `runPython` except uses a different globals dict and gets
+ * `eval_code` from `_pyodide` so that it can work before `pyodide` is imported.
  */
-Module.runPythonSimple = function (code) {
-  let code_c_string = Module.stringToNewUTF8(code);
-  let errcode;
-  try {
-    errcode = Module._run_python_simple_inner(code_c_string);
-  } catch (e) {
-    Module.fatal_error(e);
-  } finally {
-    Module._free(code_c_string);
-  }
-  if (errcode === -1) {
-    Module._pythonexc2js();
-  }
+Module.runPythonInternal = function (code) {
+  return Module._pyodide._base.eval_code(code, runPythonInternal_dict);
 };
 
 /**
  * The JavaScript/Wasm call stack is too small to handle the default Python call
- * stack limit of 1000 frames. Here, we determine the JavaScript call stack
- * depth available, and then divide by 50 (determined heuristically) to set the
- * maximum Python call stack depth.
+ * stack limit of 1000 frames. We determine the JavaScript call stack depth
+ * available, and then guess a value for the Python recursion depth based on the
+ * depth of the JavaScript call stack.
  *
  * @private
  */
-function fixRecursionLimit() {
+function calculateRecursionLimit() {
   let depth = 0;
   function recurse() {
     depth += 1;
@@ -152,11 +129,81 @@ function fixRecursionLimit() {
     recurse();
   } catch (err) {}
 
-  let recursionLimit = Math.min(depth / 25, 500);
-  Module.runPythonSimple(
-    `import sys; sys.setrecursionlimit(int(${recursionLimit}))`
-  );
+  const recursionLimit = Math.floor(Math.min(depth / 25, 500));
+  return recursionLimit;
 }
+
+/**
+ * @private
+ * A proxy around globals that falls back to checking for a builtin if has or
+ * get fails to find a global with the given key. Note that this proxy is
+ * transparent to js2python: it won't notice that this wrapper exists at all and
+ * will translate this proxy to the globals dictionary.
+ */
+function wrapPythonGlobals(globals_dict, builtins_dict) {
+  return new Proxy(globals_dict, {
+    get(target, symbol) {
+      if (symbol === "get") {
+        return (key) => {
+          let result = target.get(key);
+          if (result === undefined) {
+            result = builtins_dict.get(key);
+          }
+          return result;
+        };
+      }
+      if (symbol === "has") {
+        return (key) => target.has(key) || builtins_dict.has(key);
+      }
+      return Reflect.get(target, symbol);
+    },
+  });
+}
+
+/**
+ * @private
+ * This function is called after the emscripten module is finished initializing,
+ * so eval_code is newly available.
+ * It finishes the bootstrap so that once it is complete, it is possible to use
+ * the core `pyodide` apis. (But package loading is not ready quite yet.)
+ */
+function finalizeBootstrap(config) {
+  // First make internal dict so that we can use runPythonInternal.
+  // runPythonInternal uses a separate namespace, so we don't pollute the main
+  // environment with variables from our setup.
+  runPythonInternal_dict = Module._pyodide._base.eval_code("{}");
+
+  Module.sys = Module.runPythonInternal("import sys; sys");
+  Module.sys.setrecursionlimit(calculateRecursionLimit());
+  Module.sys.path.insert(0, config.homedir);
+
+  // Set up globals
+  let globals = Module.runPythonInternal("import __main__; __main__.__dict__");
+  let builtins = Module.runPythonInternal("import builtins; builtins.__dict__");
+  Module.globals = wrapPythonGlobals(globals, builtins);
+
+  // Set up key Javascript modules.
+  let importhook = Module._pyodide._importhook;
+  importhook.register_js_finder();
+  importhook.register_js_module("js", config.jsglobals);
+
+  let pyodide = makePublicAPI();
+  importhook.register_js_module("pyodide_js", pyodide);
+
+  // import pyodide_py. We want to ensure that as much stuff as possible is
+  // already set up before importing pyodide_py to simplify development of
+  // pyodide_py code (Otherwise it's very hard to keep track of which things
+  // aren't set up yet.)
+  Module.pyodide_py = Module.runPythonInternal("import pyodide; pyodide");
+  Module.version = Module.pyodide_py.__version__;
+
+  // copy some last constants onto public API.
+  pyodide.pyodide_py = Module.pyodide_py;
+  pyodide.version = Module.version;
+  pyodide.globals = Module.globals;
+  return pyodide;
+}
+
 /**
  * Load the main Pyodide wasm module and initialize it.
  *
@@ -168,6 +215,8 @@ function fixRecursionLimit() {
  *
  * @param {string} config.indexURL - The URL from which Pyodide will load
  * packages
+ * @param {string} config.homedir - The home directory which Pyodide will use inside virtual file system
+ * Default: /home/pyodide
  * @param {boolean} config.fullStdLib - Load the full Python standard library.
  * Setting this to false excludes following modules: distutils.
  * Default: true
@@ -186,6 +235,7 @@ export async function loadPyodide(config) {
     fullStdLib: true,
     jsglobals: globalThis,
     stdin: globalThis.prompt ? globalThis.prompt : undefined,
+    homedir: "/home/pyodide",
   };
   config = Object.assign(default_config, config);
   if (globalThis.__pyodide_module) {
@@ -212,6 +262,7 @@ export async function loadPyodide(config) {
   let packageIndexReady = initializePackageIndex(baseURL);
 
   setStandardStreams(config.stdin, config.stdout, config.stderr);
+  setHomeDirectory(config.homedir);
 
   Module.locateFile = (path) => baseURL + path;
   let moduleLoaded = new Promise((r) => (Module.postRun = r));
@@ -227,62 +278,14 @@ export async function loadPyodide(config) {
   // being called.
   await moduleLoaded;
 
-  fixRecursionLimit();
-  let pyodide = makePublicAPI();
-
-  // Bootstrap steps:
-  //
-  //   1. _pyodide_core is ready now so we can call _pyodide.register_js_finder
-  //   2. Use the jsfinder to register the js and pyodide_js packages
-  //   3. Import pyodide, this requires _pyodide_core, js and pyodide_js to be
-  //      ready.
-  //   4. Add the pyodide_py and Python __main__.__dict__ objects to pyodide_js
-  Module.runPythonSimple(`
-def temp(pyodide_js, Module, jsglobals):
-  from _pyodide._importhook import register_js_finder, register_js_module
-  register_js_finder()
-  register_js_module("js", jsglobals)
-  register_js_module("pyodide_js", pyodide_js)
-
-  import pyodide
-  import __main__
-  import builtins
-
-  Module.version = pyodide.__version__
-  Module.globals = __main__.__dict__
-  Module.builtins = builtins.__dict__
-  Module.pyodide_py = pyodide
-  print("Python initialization complete")
-`);
-
-  Module.init_dict.get("temp")(pyodide, Module, config.jsglobals);
-  // Module.runPython works starting from here!
-
-  pyodide.globals = new Proxy(Module.globals, {
-    get(target, symbol) {
-      if (symbol === "get") {
-        return (key) => {
-          let result = target.get(key);
-          if (result === undefined) {
-            result = Module.builtins.get(key);
-          }
-          return result;
-        };
-      }
-      if (symbol === "has") {
-        return (key) => target.has(key) || Module.builtins.has(key);
-      }
-      return Reflect.get(target, symbol);
-    },
-  });
-  pyodide.pyodide_py = Module.pyodide_py;
-  pyodide.version = Module.version;
+  let pyodide = finalizeBootstrap(config);
+  // Module.runPython works starting here.
 
   await packageIndexReady;
   if (config.fullStdLib) {
     await loadPackage(["distutils"]);
   }
-
+  pyodide.runPython("print('Python initialization complete')");
   return pyodide;
 }
 globalThis.loadPyodide = loadPyodide;

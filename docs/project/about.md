@@ -5,12 +5,13 @@ Python with the scientific stack, compiled to WebAssembly.
 Pyodide may be used in any context where you want to run Python inside a web
 browser.
 
-Pyodide brings the Python 3.9 runtime to the browser via WebAssembly, along with
-the Python scientific stack including NumPy, Pandas, Matplotlib, SciPy, and
+Pyodide brings the Python 3.9 runtime to the browser via WebAssembly thanks to
+[Emscripten](https://emscripten.org/).
+It builds the Python scientific stack including NumPy, Pandas, Matplotlib, SciPy, and
 scikit-learn. The [packages
 directory](https://github.com/pyodide/pyodide/tree/main/packages) lists over
-75 packages which are currently available. In addition it's possible to install
-pure Python wheels from PyPi.
+75 packages which are currently available. In addition, it's possible to install
+pure Python wheels from PyPI.
 
 Pyodide provides transparent conversion of objects between JavaScript and
 Python. When used inside a browser, Python has full access to the Web APIs.
@@ -27,7 +28,7 @@ communication.
 
 See the {ref}`contributing guide <how_to_contribute>` for tips on filing issues,
 making changes, and submitting pull requests. Pyodide is an independent and
-community-driven open-source project. The decision making process is outlined in
+community-driven open-source project. The decision-making process is outlined in
 {ref}`project-governance`.
 
 ## Citing
@@ -52,6 +53,7 @@ list from there with "The Pyodide development team" like in the example below:
 
 ## Communication
 
+- Blog: [blog.pyodide.org](https://blog.pyodide.org/)
 - Mailing list: [mail.python.org/mailman3/lists/pyodide.python.org/](https://mail.python.org/mailman3/lists/pyodide.python.org/)
 - Gitter: [gitter.im/pyodide/community](https://gitter.im/pyodide/community)
 - Twitter: [twitter.com/pyodide](https://twitter.com/pyodide)
@@ -61,7 +63,7 @@ list from there with "The Pyodide development team" like in the example below:
 
 We accept donations to the Pyodide project at
 [opencollective.com/pyodide](https://opencollective.com/pyodide). All donations
-are processed by the [Open Source Collective](https://www.oscollective.org/) -- a 
+are processed by the [Open Source Collective](https://www.oscollective.org/) -- a
 nonprofit organization that acts as our fiscal host.
 
 Funds will be mostly spent to organize in-person code sprints and to cover

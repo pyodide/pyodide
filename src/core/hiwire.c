@@ -49,10 +49,10 @@ EM_JS_NUM(int, hiwire_init, (), {
   Module.hiwire.TRUE = DEREF_U8(_Js_true, 0);
   Module.hiwire.FALSE = DEREF_U8(_Js_false, 0);
 
-  _hiwire.objects.set(Module.hiwire.UNDEFINED, undefined);
-  _hiwire.objects.set(Module.hiwire.JSNULL, null);
-  _hiwire.objects.set(Module.hiwire.TRUE, true);
-  _hiwire.objects.set(Module.hiwire.FALSE, false);
+  _hiwire.objects.set(Module.hiwire.UNDEFINED, [ undefined, -1 ]);
+  _hiwire.objects.set(Module.hiwire.JSNULL, [ null, -1 ]);
+  _hiwire.objects.set(Module.hiwire.TRUE, [ true, -1 ]);
+  _hiwire.objects.set(Module.hiwire.FALSE, [ false, -1 ]);
   let hiwire_next_permanent = Module.hiwire.FALSE + 2;
 
 #ifdef DEBUG_F
@@ -72,7 +72,7 @@ EM_JS_NUM(int, hiwire_init, (), {
       _hiwire.counter[0] += 2;
     }
     let idval = _hiwire.counter[0];
-    _hiwire.objects.set(idval, jsval);
+    _hiwire.objects.set(idval, [ jsval, 1 ]);
     _hiwire.counter[0] += 2;
 #ifdef DEBUG_F
     if (_hiwire.objects.size > many_objects_warning_threshold) {
@@ -92,7 +92,7 @@ EM_JS_NUM(int, hiwire_init, (), {
   {
     let id = hiwire_next_permanent;
     hiwire_next_permanent += 2;
-    _hiwire.objects.set(id, obj);
+    _hiwire.objects.set(id, [ obj, -1 ]);
     return id;
   };
 
@@ -139,20 +139,25 @@ EM_JS_NUM(int, hiwire_init, (), {
       throw new Error(`Undefined id ${ idval }`);
       // clang-format on
     }
-    return _hiwire.objects.get(idval);
+    return _hiwire.objects.get(idval)[0];
   };
 
   Module.hiwire.decref = function(idval)
   {
     // clang-format off
     if ((idval & 1) === 0) {
-      // clang-format on
-      // least significant bit unset ==> idval is a singleton.
-      // We don't reference count singletons.
+      // least significant bit unset ==> idval is a singleton / interned value.
+      // We don't reference count interned values.
       return;
     }
-    _hiwire.objects.delete(idval);
+    let new_refcnt = --_hiwire.objects.get(idval)[1];
+    if (new_refcnt === 0) {
+      _hiwire.objects.delete(idval);
+    }
+    // clang-format on
   };
+
+  Module.hiwire.incref = function(idval) { _hiwire.objects.get(idval)[1]++; };
 
   Module.hiwire.pop_value = function(idval)
   {
@@ -254,20 +259,16 @@ JsString_FromId(Js_Identifier* id)
   return id->object;
 }
 
-EM_JS_REF(JsRef, hiwire_incref, (JsRef idval), {
-  // clang-format off
-  if ((idval & 1) === 0) {
+EM_JS(JsRef, hiwire_incref, (JsRef idval), {
+  if (idval & 1) {
     // least significant bit unset ==> idval is a singleton.
     // We don't reference count singletons.
-    // clang-format on
-    return;
+    Module.hiwire.incref(idval);
   }
-  return Module.hiwire.new_value(Module.hiwire.get_value(idval));
+  return idval;
 });
 
-EM_JS_NUM(errcode, hiwire_decref, (JsRef idval), {
-  Module.hiwire.decref(idval);
-});
+EM_JS(void, hiwire_decref, (JsRef idval), { Module.hiwire.decref(idval); });
 
 EM_JS_REF(JsRef, hiwire_int, (int val), {
   return Module.hiwire.new_value(val);
@@ -767,6 +768,25 @@ EM_JS_NUM(errcode, hiwire_assign_from_ptr, (JsRef idobj, void* ptr), {
   let jsobj = Module.hiwire.get_value(idobj);
   Module.typedArrayAsUint8Array(jsobj).set(
     Module.HEAPU8.subarray(ptr, ptr + jsobj.byteLength));
+});
+
+EM_JS_NUM(errcode, hiwire_read_from_file, (JsRef idobj, int fd), {
+  let jsobj = Module.hiwire.get_value(idobj);
+  let stream = Module.FS.streams[fd];
+  Module.FS.read(stream, jsobj, 0, jsobj.length);
+});
+
+EM_JS_NUM(errcode, hiwire_write_to_file, (JsRef idobj, int fd), {
+  let jsobj = Module.hiwire.get_value(idobj);
+  let stream = Module.FS.streams[fd];
+  Module.FS.write(stream, jsobj, 0, jsobj.length);
+});
+
+EM_JS_NUM(errcode, hiwire_into_file, (JsRef idobj, int fd), {
+  let jsobj = Module.hiwire.get_value(idobj);
+  let stream = Module.FS.streams[fd];
+  // set canOwn param to true, leave position undefined.
+  Module.FS.write(stream, jsobj, 0, jsobj.length, undefined, true);
 });
 
 // clang-format off
