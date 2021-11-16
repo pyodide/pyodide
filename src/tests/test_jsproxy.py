@@ -1048,6 +1048,19 @@ def test_buffer_into_file():
         assert f.read() == b
 
 
+def test_buffer_into_file2(selenium):
+    """Check that no copy occurred."""
+    from js import Uint8Array
+    import pyodide_js
+
+    a = Uint8Array.new(range(10))
+    from tempfile import TemporaryFile
+
+    with TemporaryFile() as f:
+        a._into_file(f)
+        assert pyodide_js.FS.streams[f.fileno()].node.contents.buffer == a.buffer
+
+
 def test_buffer_assign_back(selenium):
     result = selenium.run_js(
         """
