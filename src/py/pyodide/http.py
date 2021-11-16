@@ -152,7 +152,7 @@ class FetchResponse:
         return (await self.buffer()).to_bytes()
 
     async def _into_file(self, f: IOBase):
-        """Write the data into an empty file with no copy. 
+        """Write the data into an empty file with no copy.
 
         Warning: should only be used when f is an empty file, otherwise it may
         overwrite the data of f.
@@ -160,11 +160,11 @@ class FetchResponse:
         buf = await self.buffer()
         buf._into_file(f)
 
-    async def create_file(self, path : str):
+    async def create_file(self, path: str):
         """Uses the data to back a new file without copying it.
 
         This method avoids copying the data when creating a new file. If you
-        want to write the data into an existing file, use 
+        want to write the data into an existing file, use
 
         .. code-block:: python
 
@@ -173,7 +173,7 @@ class FetchResponse:
 
         Parameters
         ----------
-        path : str 
+        path : str
 
             The path to the file to create. The file should not exist but
             it should be in a directory that exists. Otherwise, will raise

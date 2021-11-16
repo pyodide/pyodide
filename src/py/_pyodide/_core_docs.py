@@ -180,7 +180,7 @@ class JsProxy:
         ``canOwn : true`` without any copy. After this, the buffer cannot be
         used again.
 
-        If ``file`` is not empty, its contents will be overwritten! 
+        If ``file`` is not empty, its contents will be overwritten!
 
         Only ``MEMFS`` cares about the ``canOwn`` flag, other file systems will
         just ignore it.
