@@ -234,6 +234,9 @@ char* error__js_filename_string = "???.js";
 EM_JS_NUM(errcode, error_handling_init_js, (), {
   Module.handle_js_error = function(e)
   {
+    if (e.pyodide_fatal_error) {
+      throw e;
+    }
     if (e instanceof Module._PropagatePythonError) {
       // Python error indicator is already set in this case. If this branch is
       // not taken, Python error indicator should be unset, and we have to set
@@ -287,7 +290,8 @@ EM_JS_NUM(errcode, error_handling_init_js, (), {
       super("If you are seeing this message, an internal Pyodide error has " +
             "occurred. Please report it to the Pyodide maintainers.");
     }
-  } Module._PropagatePythonError = _PropagatePythonError;
+  };
+  Module._PropagatePythonError = _PropagatePythonError;
   return 0;
 })
 

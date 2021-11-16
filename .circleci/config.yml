@@ -107,6 +107,8 @@ jobs:
 
   build-packages:
     <<: *defaults
+    resource_class: large
+
     steps:
       - checkout
 
@@ -129,6 +131,8 @@ jobs:
             ccache -z
             PYODIDE_PACKAGES='*' make -C packages
             ccache -s
+          environment:
+            PYODIDE_JOBS: 5
 
       - run:
           name: check-size
@@ -157,6 +161,7 @@ jobs:
         description: The tests to run.
         type: string
     <<: *defaults
+    resource_class: medium+
     steps:
       - attach_workspace:
           at: .
@@ -224,9 +229,20 @@ jobs:
             npx tsd
             npm install
             npm test
+      - run:     
+          name: check if webpack cli works well with load-pyodide.js
+          command: | 
+            git clone https://github.com/pyodide/pyodide-webpack-example.git
+            cd pyodide-webpack-example
+            npm install     
+            cp ../src/js/load-pyodide.js node_modules/pyodide/load-pyodide.js                  
+            head -20 node_modules/pyodide/load-pyodide.js
+            npx webpack
+   
 
   benchmark:
     <<: *defaults
+    resource_class: medium+
     steps:
       - checkout
       - attach_workspace:

@@ -8,6 +8,7 @@ export { loadPackage, loadedPackages, isPyProxy };
  * @typedef {import('./pyproxy.gen').PyProxy} PyProxy
  * @typedef {import('./pyproxy.gen').TypedArray} TypedArray
  * @typedef {import('emscripten')} Emscripten
+ * @typedef {import('emscripten').Module.FS} FS
  */
 
 /**
@@ -18,7 +19,7 @@ export { loadPackage, loadedPackages, isPyProxy };
  *
  * @type {PyProxy}
  */
-let pyodide_py = {}; // actually defined in runPythonSimple in loadPyodide (see pyodide.js)
+let pyodide_py = {}; // actually defined in loadPyodide (see pyodide.js)
 
 /**
  *
@@ -29,7 +30,7 @@ let pyodide_py = {}; // actually defined in runPythonSimple in loadPyodide (see 
  *
  * @type {PyProxy}
  */
-let globals = {}; // actually defined in runPythonSimple in loadPyodide (see pyodide.js)
+let globals = {}; // actually defined in loadPyodide (see pyodide.js)
 
 /**
  * A JavaScript error caused by a Python exception.
@@ -74,7 +75,7 @@ export class PythonError {
  *
  * @type {string}
  */
-export let version = ""; // actually defined in runPythonSimple in loadPyodide (see pyodide.js)
+export let version = ""; // actually defined in loadPyodide (see pyodide.js)
 
 /**
  * Runs a string of Python code from JavaScript.
@@ -151,22 +152,6 @@ export async function loadPackagesFromImports(
 }
 
 /**
- * Access a Python object in the global namespace from JavaScript.
- *
- * @deprecated This function will be removed in version 0.18.0. Use
- *    :any:`pyodide.globals.get('key') <pyodide.globals>` instead.
- *
- * @param {string} name Python variable name
- * @returns {Py2JsResult} The Python object translated to JavaScript.
- */
-export function pyimport(name) {
-  console.warn(
-    "Access to the Python global namespace via pyodide.pyimport is deprecated and " +
-      "will be removed in version 0.18.0. Use pyodide.globals.get('key') instead."
-  );
-  return Module.globals.get(name);
-}
-/**
  * Runs Python code using `PyCF_ALLOW_TOP_LEVEL_AWAIT
  * <https://docs.python.org/3/library/ast.html?highlight=pycf_allow_top_level_await#ast.PyCF_ALLOW_TOP_LEVEL_AWAIT>`_.
  *
@@ -191,11 +176,14 @@ export function pyimport(name) {
  *    console.log(result); // 79
  *
  * @param {string} code Python code to evaluate
+ * @param {PyProxy} globals An optional Python dictionary to use as the globals.
+ *        Defaults to :any:`pyodide.globals`. Uses the Python API
+ *        :any:`pyodide.eval_code_async` to evaluate the code.
  * @returns {Py2JsResult} The result of the Python code translated to JavaScript.
  * @async
  */
-export async function runPythonAsync(code) {
-  let coroutine = Module.pyodide_py.eval_code_async(code, Module.globals);
+export async function runPythonAsync(code, globals = Module.globals) {
+  let coroutine = Module.pyodide_py.eval_code_async(code, globals);
   try {
     return await coroutine;
   } finally {
@@ -351,12 +339,12 @@ export function makePublicAPI() {
    * which can be used to extend the in-memory filesystem with features like `persistence
    * <https://emscripten.org/docs/api_reference/Filesystem-API.html#persistent-data>`_.
    *
-   * While all of the file systems implementations are enabled, only the default
+   * While all the file systems implementations are enabled, only the default
    * ``MEMFS`` is guaranteed to work in all runtime settings. The implementations
    * are available as members of ``FS.filesystems``:
    * ``IDBFS``, ``NODEFS``, ``PROXYFS``, ``WORKERFS``.
    *
-   * @type {FS} The Emscripten File System API.
+   * @type {FS}
    */
   const FS = Module.FS;
   let namespace = {
@@ -368,7 +356,6 @@ export function makePublicAPI() {
     loadPackagesFromImports,
     loadedPackages,
     isPyProxy,
-    pyimport,
     runPython,
     runPythonAsync,
     registerJsModule,

@@ -1,4 +1,4 @@
-=(meta-yaml-spec)
+(meta-yaml-spec)=
 
 # The meta.yaml specification
 
@@ -23,7 +23,7 @@ The name of the package. It must match the name of the package used when
 expanding the tarball, which is sometimes different from the name of the package
 in the Python namespace when installed. It must also match the name of the
 directory in which the `meta.yaml` file is placed. It can only contain
-alpha-numeric characters, `-`, and `_`.
+alphanumeric characters, `-`, and `_`.
 
 ### `package/version`
 
@@ -112,7 +112,7 @@ Should be set to true for library packages. Library packages are packages that a
 
 ### `build/sharedlibrary`
 
-Should be set to true for shared library packages. Shared library packages are packages that are needed for other packages, but are loaded dynamically when Pyodide is run. For shared library packages, the script specified in the `build/script` section is run to compile the library. The script should build the shared library and copy into into a subfolder of the source folder called `install`. Files or folders in this install folder will be packaged to make the Pyodide package. See the [CLAPACK meta.yaml](https://github.com/pyodide/pyodide/blob/main/packages/CLAPACK/meta.yaml) for an example of a shared library specification.
+Should be set to true for shared library packages. Shared library packages are packages that are needed for other packages, but are loaded dynamically when Pyodide is run. For shared library packages, the script specified in the `build/script` section is run to compile the library. The script should build the shared library and copy it into a subfolder of the source folder called `install`. Files or folders in this install folder will be packaged to make the Pyodide package. See the [CLAPACK meta.yaml](https://github.com/pyodide/pyodide/blob/main/packages/CLAPACK/meta.yaml) for an example of a shared library specification.
 
 ### `build/script`
 
@@ -120,7 +120,7 @@ The script section is required for a library package (`build/library` set to tru
 
 ### `build/post`
 
-Shell commands to run after building the library. These are run inside of
+Shell commands to run after building the library. These are run with
 `bash`, and there are two special environment variables defined:
 
 - `$SITEPACKAGES`: The `site-packages` directory into which the package has been installed.

@@ -28,7 +28,7 @@ def run_native(hostpython, code):
         [hostpython.resolve(), "-c", code],
         cwd=Path(__file__).resolve().parent,
         env={
-            "PYTHONPATH": str(root / "src")
+            "PYTHONPATH": str(root / "src/py/lib")
             + ":"
             + str(root / "packages" / ".artifacts" / "lib" / "python")
         },

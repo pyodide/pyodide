@@ -17,7 +17,7 @@ pip install pre-commit
 pre-commit install
 ```
 
-This will run a set of linters at each commit. Currently it runs yaml syntax
+This will run a set of linters at each commit. Currently, it runs yaml syntax
 validation and is removing trailing whitespaces.
 
 ## Code of Conduct
@@ -27,7 +27,7 @@ core members to adhere to.
 
 ## Development
 
-Work on Pyodide happens on Github. Core members and contributors can make Pull
+Work on Pyodide happens on GitHub. Core members and contributors can make Pull
 Requests to fix issues and add features, which all go through the same review
 process. We’ll detail how you can start making PRs below.
 
@@ -87,7 +87,7 @@ comment asking if you can take over, and we’ll figure it out from there.
 We use [pytest](https://pytest.org), driving
 [Selenium](https://www.seleniumhq.org) as our testing framework. Every PR will
 automatically run through our tests, and our test framework will alert you on
-Github if your PR doesn’t pass all of them. If your PR fails a test, try to
+GitHub if your PR doesn’t pass all of them. If your PR fails a test, try to
 figure out whether or not you can update your code to make the test pass again,
 or ask for help. As a policy we will not accept a PR that fails any of our
 tests, and will likely ask you to add tests if your PR adds new functionality.
@@ -106,7 +106,7 @@ See {ref}`contributing-core`.
 
 ## Documentation
 
-Documentation is a critical part of any open source project and we are very
+Documentation is a critical part of any open source project, and we are very
 welcome to any documentation improvements. Pyodide has a documentation written
 in Markdown in the `docs/` folder. We use the
 [MyST](https://myst-parser.readthedocs.io/en/latest/using/syntax.html#targets-and-cross-referencing)

@@ -16,11 +16,12 @@ Python with the scientific stack, compiled to WebAssembly.
 Pyodide may be used in any context where you want to run Python inside a web
 browser.
 
-Pyodide brings the Python 3.9 runtime to the browser via WebAssembly, along with
-the Python scientific stack including NumPy, Pandas, Matplotlib, SciPy, and
+Pyodide brings the Python 3.9 runtime to the browser via WebAssembly thanks to
+[Emscripten](https://emscripten.org/).
+It builds the Python scientific stack including NumPy, Pandas, Matplotlib, SciPy, and
 scikit-learn. The [packages directory](packages) lists over 75 packages which
-are currently available. In addition it's possible to install pure Python wheels
-from PyPi.
+are currently available. In addition, it's possible to install pure Python wheels
+from PyPI.
 
 Pyodide provides transparent conversion of objects between JavaScript and
 Python. When used inside a browser, Python has full access to the Web APIs.
@@ -66,12 +67,13 @@ environments](https://pyodide.org/en/stable/project/related-projects.html#notebo
 Please view the [contributing
 guide](https://pyodide.org/en/stable/development/contributing.html) for tips
 on filing issues, making changes, and submitting pull requests. Pyodide is an
-independent and community-driven open-source project. The decision making
+independent and community-driven open-source project. The decision-making
 process is outlined in the [Project
 governance](https://pyodide.org/en/stable/project/governance.html).
 
 ## Communication
 
+- Blog: [blog.pyodide.org](https://blog.pyodide.org/)
 - Mailing list: [mail.python.org/mailman3/lists/pyodide.python.org/](https://mail.python.org/mailman3/lists/pyodide.python.org/)
 - Gitter: [gitter.im/pyodide/community](https://gitter.im/pyodide/community)
 - Twitter: [twitter.com/pyodide](https://twitter.com/pyodide)

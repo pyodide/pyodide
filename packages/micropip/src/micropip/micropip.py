@@ -44,23 +44,23 @@ else:
 
 
 if IN_BROWSER:
-    from js import fetch
+    from pyodide.http import pyfetch
+
+    async def fetch_bytes(url: str, **kwargs) -> bytes:
+        return await (await pyfetch(url, **kwargs)).bytes()
+
+    async def fetch_string(url: str, **kwargs) -> str:
+        return await (await pyfetch(url, **kwargs)).string()
+
+
 else:
     from urllib.request import urlopen, Request
 
-    async def fetch(url, headers={}):
-        fd = urlopen(Request(url, headers=headers))
-        fd.statusText = fd.reason
+    async def fetch_bytes(url: str, **kwargs) -> bytes:
+        return urlopen(Request(url, headers=kwargs)).read()
 
-        async def arrayBuffer():
-            class Temp:
-                def to_py():
-                    return fd.read()
-
-            return Temp
-
-        fd.arrayBuffer = arrayBuffer
-        return fd
+    async def fetch_string(url: str, **kwargs) -> str:
+        return (await fetch_bytes(url, **kwargs)).decode()
 
 
 if IN_BROWSER:
@@ -77,19 +77,9 @@ else:
         return result
 
 
-async def _get_url(url):
-    resp = await fetch(url)
-    if resp.status >= 400:
-        raise OSError(
-            f"Request for {url} failed with status {resp.status}: {resp.statusText}"
-        )
-    return io.BytesIO((await resp.arrayBuffer()).to_py())
-
-
 async def _get_pypi_json(pkgname):
     url = f"https://pypi.org/pypi/{pkgname}/json"
-    fd = await _get_url(url)
-    return json.load(fd)
+    return json.loads(await fetch_string(url))
 
 
 def _is_pure_python_wheel(filename: str):
@@ -131,7 +121,7 @@ def _extract_wheel(fd):
 def _validate_wheel(data, fileinfo):
     if fileinfo.get("digests") is None:
         # No checksums available, e.g. because installing
-        # from a different location than PyPi.
+        # from a different location than PyPI.
         return
     sha256 = fileinfo["digests"]["sha256"]
     m = hashlib.sha256()
@@ -251,8 +241,7 @@ class _PackageManager:
 
     async def add_wheel(self, name, wheel, version, extras, ctx, transaction):
         transaction["locked"][name] = version
-        response = await fetch(wheel["url"])
-        wheel_bytes = (await response.arrayBuffer()).to_py()
+        wheel_bytes = await fetch_bytes(wheel["url"])
         wheel["wheel_bytes"] = wheel_bytes
 
         with ZipFile(io.BytesIO(wheel_bytes)) as zip_file:  # type: ignore
@@ -289,9 +278,9 @@ def install(requirements: Union[str, List[str]]):
 
     This only works for packages that are either pure Python or for packages
     with C extensions that are built in Pyodide. If a pure Python package is not
-    found in the Pyodide repository it will be loaded from PyPi.
+    found in the Pyodide repository it will be loaded from PyPI.
 
-    When used in web browsers, downloads from PyPi will be cached. When run in
+    When used in web browsers, downloads from PyPI will be cached. When run in
     Node.js, packages are currently not cached, and will be re-downloaded each
     time ``micropip.install`` is run.
 
@@ -308,7 +297,7 @@ def install(requirements: Union[str, List[str]]):
 
         - If the requirement does not end in ``.whl``, it will interpreted as the
           name of a package. A package by this name must either be present in the
-          Pyodide repository at `indexURL <globalThis.loadPyodide>` or on PyPi
+          Pyodide repository at `indexURL <globalThis.loadPyodide>` or on PyPI
 
     Returns
     -------

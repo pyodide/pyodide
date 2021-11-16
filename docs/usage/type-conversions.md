@@ -36,7 +36,7 @@ JavaScript to Python translations occur:
 Any time a Python to JavaScript translation occurs, it may create a
 {any}`PyProxy`. To avoid memory leaks, you must store the {any}`PyProxy` and
 {any}`destroy <PyProxy.destroy>` it when you are done with it. See
-{ref}`avoiding-leaks` for more info.
+{ref}`call-py-from-js` for more info.
 ```
 
 ## Round trip conversions
@@ -107,7 +107,7 @@ Python:
 | `null`      | `None`                            |
 
 \* A number is converted to an `int` if it is between -2^{53} and 2^{53}
-inclusive and its fractional part is zero. Otherwise it is converted to a
+inclusive and its fractional part is zero. Otherwise, it is converted to a
 float.
 
 ## Proxying
@@ -192,7 +192,7 @@ JavaScript uses `array[7]`. For these cases, we translate:
 When most Python objects are translated to JavaScript a {any}`PyProxy` is
 produced.
 
-Fewer operations can be overloaded in JavaScript than in Python so some
+Fewer operations can be overloaded in JavaScript than in Python, so some
 operations are more cumbersome on a {any}`PyProxy` than on a {any}`JsProxy`. The
 following operations are supported:
 
@@ -219,7 +219,7 @@ following operations are supported:
 :class: warning
 
 Make sure to destroy PyProxies when you are done with them to avoid memory leaks.
-See {ref}`avoiding-leaks`.
+
 ```javascript
 let foo = pyodide.globals.get('foo');
 foo();
@@ -333,6 +333,8 @@ will be thrown.
 
 ## Functions
 
+(call-py-from-js)=
+
 ### Calling Python objects from JavaScript
 
 If a Python object is callable, the proxy will be callable too. The arguments
@@ -400,7 +402,7 @@ f(a=2, b=3)
 then the JavaScript function receives one argument which is a JavaScript object
 `{a : 2, b : 3}`.
 
-When a JavaScript function is called and it returns anything but a promise, if
+When a JavaScript function is called, and it returns anything but a promise, if
 the result is a `PyProxy` it is destroyed. Also, any arguments that are
 PyProxies that were created in the process of argument conversion are also
 destroyed. If the `PyProxy` was created in Python using
@@ -416,7 +418,7 @@ result is converted to Python and the converted value is used to resolve the
 created in converting the arguments are also destroyed at this point.
 
 As a result of this, if a `PyProxy` is persisted to be used later, then it must
-either be copied using {any}`PyProxy.copy` in JavaScript or it must be created
+either be copied using {any}`PyProxy.copy` in JavaScript, or it must be created
 with {any}`pyodide.create_proxy` or `pyodide.create_once_callable`. If it's only
 going to be called once use `pyodide.create_once_callable`:
 
@@ -448,8 +450,8 @@ proxy.destroy()
 ### Using JavaScript Typed Arrays from Python
 
 JavaScript ArrayBuffers and ArrayBuffer views (`Int8Array` and friends) are
-proxied into Python. Python can't directly access arrays if they are outside of
-the wasm heap so it's impossible to directly use these proxied buffers as Python
+proxied into Python. Python can't directly access arrays if they are outside
+the WASM heap, so it's impossible to directly use these proxied buffers as Python
 buffers. You can convert such a proxy to a Python `memoryview` using the `to_py`
 api. This makes it easy to correctly convert the array to a Numpy array using
 `numpy.asarray`:
@@ -512,7 +514,7 @@ the buffer is bitmapped image data. If for instance you have a 3d buffer shaped
 1920 x 1080 x 4, then `toJs` will be extremely slow. In this case you could use
 {any}`PyProxy.getBuffer`. On the other hand, if you have a 3d buffer shaped 1920
 x 4 x 1080, the performance of `toJs` will most likely be satisfactory.
-Typically the innermost dimension won't matter for performance.
+Typically, the innermost dimension won't matter for performance.
 
 The {any}`PyProxy.getBuffer` method can be used to retrieve a reference to a
 JavaScript typed array that points to the data backing the Python object,
@@ -568,7 +570,7 @@ functions filtered out), use that.
 ```{admonition} Be careful Proxying Stack Frames
 :class: warning
 If you make a {any}`PyProxy` of ``sys.last_value``, you should be especially
-careful to {any}`destroy() <PyProxy.destroy>` it when you are done with it or
+careful to {any}`destroy() <PyProxy.destroy>` it when you are done with it, or
 you may leak a large amount of memory if you don't.
 ```
 
@@ -604,7 +606,7 @@ objects on the custom namespaces.
 
 ### Importing Python objects into JavaScript
 
-A Python object in the `__main__` global scope can imported into JavaScript
+A Python object in the `__main__` global scope can be imported into JavaScript
 using the {any}`pyodide.globals.get <PyProxy.get>` method. Given the name of the
 Python object to import, it returns the object translated to JavaScript.
 

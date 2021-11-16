@@ -5,6 +5,7 @@ substitutions:
   Feature: "<span class='badge badge-success'>Feature</span>"
   Fix: "<span class='badge badge-danger'>Fix</span>"
   Update: "<span class='badge badge-success'>Update</span>"
+  Breaking: "<span class='badge badge-danger'>BREAKING CHANGE</span>"
 ---
 
 (changelog)=
@@ -13,17 +14,39 @@ substitutions:
 
 ## Unreleased
 
+### Backward incompatible changes
+
+- {{Breaking}} Default working directory(home directory) inside Pyodide virtual
+  file system has been changed from `/` to `/home/pyodide`. To get previous behavior, you can
+  - call `os.chdir("/")`  to change working directory
+  - or call {any}`loadPyodide <globalThis.loadPyodide>` with the `homedir="/"` argument
+  {pr}`1936`
+
 ### Python package
 
 - {{Enhancement}} If `find_imports` is used on code that contains a syntax
   error, it will return an empty list instead of raising a `SyntaxError`.
   {pr}`1819`
 
+- {{Enhancement}} Added a {any}`pyodide.http.pyfetch` API which provides a
+  convenience wrapper for the Javascript `fetch` API. The API returns a response
+  object with various methods that convert the data into various types while
+  minimizing the number of times the data is copied.
+  {pr}`1865`
+
 ### JavaScript package
 
 - {{Fix}} {any}`loadPyodide <globalThis.loadPyodide>` no longer fails in the
   presence of a user-defined global named `process`.
   {pr}`1849`
+
+- {{Fix}} Webpack building compatibility issues and a {any}`loadPyodide <globalThis.loadPyodide>`
+  runtime issue due to webpack are solved. 
+  {pr}`1900`
+
+- {{API}} {any}`loadPyodide <globalThis.loadPyodide>` now accepts `homedir`
+  parameter which sets home directory of Pyodide virtual file system.
+  {pr}`1936`
 
 ### Python / JavaScript type conversions
 
@@ -35,6 +58,10 @@ substitutions:
 - {{Enhancement}} Added {any}`JsProxy.to_string`, {any}`JsProxy.to_bytes`, and
   {any}`JsProxy.to_memoryview` to allow for conversion of `TypedArray` to
   standard Python types without unneeded copies. {pr}`1864`
+
+- {{Enhancement}} Added {any}`JsProxy.to_file` and {any}`JsProxy.from_file` to
+  allow reading and writing Javascript buffers to files as a byte stream without unneeded copies.
+  {pr}`1864`
 
 - {{Fix}} It is now possible to destroy borrowed attribute `PyProxy` of a
   `PyProxy` (as introduced by {pr}`1636`) before destroying the root `PyProxy`.
@@ -48,6 +75,13 @@ substitutions:
   `PyProxy` is garbage collected (because it was leaked). Doing so has no
   benefit to nonleaky code and turns some leaky code into broken code (see
   {issue}`1855` for an example). {pr}`1870`
+
+- {{Fix}} Improved the way that `pyodide.globals.get("builtin_name")` works.
+  Before we used `__main__.__dict__.update(builtins.__dict__)` which led to
+  several undesirable effects such as `__name__` being equal to `"builtins"`.
+  Now we use a proxy wrapper to replace `pyodide.globals.get` with a function
+  that looks up the name on `builtins` if lookup on `globals` fails.
+  {pr}`1905`
 
 ### pyodide-build
 
@@ -78,6 +112,12 @@ substitutions:
   pandas, scipy).
   {pr}`1832`
 
+- {{ Fix }} The built-in pwd module of Python, which provides Unix specific
+  feature, is now unvendored.
+  {pr}`1883`
+
+- New packages: `logbook`
+
 ### Uncategorized
 
 - {{ Enhancement }} `PyErr_CheckSignals` now works with the keyboard interrupt
@@ -85,6 +125,10 @@ substitutions:
   `pyodide.checkInterrupt` function so Javascript code can opt to be
   interrupted.
   {pr}`1294`
+
+- {{Fix}} The `_` variable is now set by the Pyodide repl just like it is set in
+  the native Python repl.
+  {pr}`1904`
 
 ## Version 0.18.1
 
@@ -338,7 +382,7 @@ See the {ref}`0-17-0-release-notes` for more information.
   access, then the wrapper has `get`, `set`, `has`, and `delete` methods which do
   `obj[key]`, `obj[key] = val`, `key in obj` and `del obj[key]` respectively.
   {pr}`1175`
-- {{ API }} The {any}`pyodide.pyimport` function is deprecated in favor of using
+- {{ API }} The `pyodide.pyimport` function is deprecated in favor of using
   `pyodide.globals.get('key')`. {pr}`1367`
 - {{ API }} Added {any}`PyProxy.getBuffer` API to allow direct access to Python
   buffers as JavaScript TypedArrays.
@@ -427,6 +471,8 @@ See the {ref}`0-17-0-release-notes` for more information.
   Pyodide to use instead of `languagePluginURL` and `languagePluginLoader`. The
   change is currently backwards compatible, but the old approach is deprecated.
   {pr}`1363`
+- `runPythonAsync` now accepts `globals` parameter.
+  {pr}`1914`
 
 ### micropip
 
@@ -538,7 +584,7 @@ by 0.16.1 with identical contents.
 - The `pyodide.py` file was transformed to a pyodide-py package. The imports
   remain the same so this change is transparent to the users
   {pr}`909`.
-- FIX Get last version from PyPi when installing a module via micropip
+- FIX Get last version from PyPI when installing a module via micropip
   {pr}`846`.
 - Suppress REPL results returned by `pyodide.eval_code` by adding a semicolon
   {pr}`876`.
@@ -619,7 +665,7 @@ _May 19, 2020_
 
 - Upgrades Pyodide to CPython 3.7.4.
 - micropip no longer uses a CORS proxy to install pure Python packages from
-  PyPi. Packages are now installed from PyPi directly.
+  PyPI. Packages are now installed from PyPI directly.
 - micropip can now be used from web workers.
 - Adds support for installing pure Python wheels from arbitrary URLs with
   micropip.

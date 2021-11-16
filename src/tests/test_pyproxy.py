@@ -26,7 +26,7 @@ def test_pyproxy_class(selenium):
         self.f_props = Object.getOwnPropertyNames(f);
         delete f.baz
         pyodide.runPython(`assert not hasattr(f, 'baz')`)
-        assert(() => f.toString().startsWith("<Foo"));
+        assert(() => f.toString().startsWith("<__main__.Foo"));
         f.destroy();
         """
     )
@@ -65,6 +65,40 @@ def test_pyproxy_class(selenium):
             ]
         ).difference(selenium.run_js("return f_props"))
         == set()
+    )
+
+
+def test_del_builtin(selenium):
+    msg = "NameError"
+    with pytest.raises(selenium.JavascriptException, match=msg):
+        # can't del a builtin
+        selenium.run("del open")
+    # Can still get it even though we tried to del it.
+    assert selenium.run_js(
+        """
+        let open = pyodide.globals.get("open");
+        let result = !!open;
+        open.destroy();
+        return result;
+        """
+    )
+    assert selenium.run_js("return pyodide.globals.get('__name__');") == "__main__"
+
+
+def test_in_globals(selenium):
+    selenium.run("yyyyy = 7")
+    assert (
+        selenium.run_js(
+            """
+            let result = [];
+            result.push(pyodide.globals.has("xxxxx"));
+            result.push(pyodide.globals.has("yyyyy"));
+            result.push(pyodide.globals.has("globals"));
+            result.push(pyodide.globals.has("open"));
+            return result;
+            """
+        )
+        == [False, True, True, True]
     )
 
 
@@ -656,6 +690,7 @@ def test_pyproxy_gc_destroy(selenium):
         get_ref_count.destroy();
         """
     )
+    selenium.collect_garbage()
     selenium.collect_garbage()
     selenium.run(
         """

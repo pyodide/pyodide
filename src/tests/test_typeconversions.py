@@ -515,12 +515,6 @@ def test_pythonexc2js(selenium):
         selenium.run_js('return pyodide.runPython("5 / 0")')
 
 
-def test_run_python_simple_error(selenium):
-    msg = "ZeroDivisionError"
-    with pytest.raises(selenium.JavascriptException, match=msg):
-        selenium.run_js("return pyodide._module.runPythonSimple('5 / 0');")
-
-
 def test_js2python(selenium):
     selenium.run_js(
         """
@@ -1140,12 +1134,6 @@ def test_to_py(selenium):
             `);
             """
         )
-
-
-def test_pyimport_deprecation(selenium):
-    selenium.run_js("pyodide.runPython('x = 1')")
-    assert selenium.run_js("return pyodide.pyimport('x') === 1")
-    assert "pyodide.pyimport is deprecated and will be removed" in selenium.logs
 
 
 def test_buffer_format_string(selenium):

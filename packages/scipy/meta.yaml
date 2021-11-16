@@ -3,7 +3,7 @@ package:
   version: 0.17.1
 
 source:
-  # We can't use the version from PyPi as it includes Cythonized files
+  # We can't use the version from PyPI as it includes Cythonized files
   # generated with an older Cython that does not support Python 3.7
   # This requires,
   #    pip install Cython Tempita
@@ -27,7 +27,7 @@ source:
 
 build:
   # set linker and C flags to error on anything to do with function declarations being wrong.
-  # In webassembbly, any conflicts mean that a randomly selected 50% of calls to the function
+  # In webassembly, any conflicts mean that a randomly selected 50% of calls to the function
   # will fail. Better to fail at compile or link time.
   cflags: |
     -I $(PYODIDE_ROOT)/packages/numpy/config

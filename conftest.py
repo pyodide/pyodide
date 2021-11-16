@@ -300,7 +300,7 @@ class FirefoxWrapper(SeleniumWrapper):
         from selenium.webdriver.firefox.options import Options
 
         options = Options()
-        options.add_argument("-headless")
+        options.add_argument("--headless")
 
         return Firefox(executable_path="geckodriver", options=options)
 

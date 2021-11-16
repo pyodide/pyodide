@@ -27,8 +27,8 @@ async function main() {
       indexURL: "blah",
       fullStdLib: true,
       stdin: () => "a string",
-      stdout: (x) => {},
-      stderr: (err) => {},
+      stdout: (x: string) => {},
+      stderr: (err: string) => {},
     })
   );
 
@@ -71,7 +71,6 @@ async function main() {
   );
   expectType<Promise<void>>(pyodide.loadPackage(px));
 
-  expectType<Py2JsResult>(pyodide.pyimport("blah"));
   expectType<PyProxy>(pyodide.pyodide_py);
   expectType<void>(pyodide.registerJsModule("blah", { a: 7 }));
   expectType<void>(pyodide.unregisterJsModule("blah"));

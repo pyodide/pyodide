@@ -10,7 +10,7 @@ The gist is:
   wrappers that store the arguments in a log, and then delegate along to the
   real native compiler and linker.
 
-- Remove all of the native build products.
+- Remove all the native build products.
 
 - Play back the log, replacing the native compiler with emscripten and
   adjusting include paths and flags as necessary for cross-compiling to
@@ -109,7 +109,7 @@ def collect_args(basename):
 
 def make_symlinks(env):
     """
-    Makes sure all of the symlinks that make this script look like a compiler
+    Makes sure all the symlinks that make this script look like a compiler
     exist.
     """
     TOOLSDIR = Path(common.get_make_flag("TOOLSDIR"))
@@ -329,6 +329,9 @@ def handle_command(line, args, dryrun=False):
             continue
         if arg == "-lffi":
             continue
+        # This flag is needed to build numpy with SIMD optimization
+        if arg == "-mpopcnt":
+            continue
         # The native build is possibly multithreaded, but the emscripten one
         # definitely isn't
         arg = re.sub(r"/python([0-9]\.[0-9]+)m", r"/python\1", arg)
@@ -346,6 +349,10 @@ def handle_command(line, args, dryrun=False):
             # conda uses custom compiler search paths with the compiler_compat folder.
             # Ignore it.
             del new_args[-1]
+            continue
+
+        # ignore unsupported --sysroot compile argument used in conda
+        if arg.startswith("-Wl,--sysroot"):
             continue
 
         # See https://github.com/emscripten-core/emscripten/issues/8650

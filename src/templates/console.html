@@ -36,8 +36,12 @@
             import __main__
             BANNER = "Welcome to the Pyodide terminal emulator 🐍\\n" + BANNER
             pyconsole = PyodideConsole(__main__.__dict__)
+            import builtins
             async def await_fut(fut):
-              return to_js([await fut], depth=1)
+              res = await fut
+              if res is not None:
+                builtins._ = res
+              return to_js([res], depth=1)
             def clear_console():
               pyconsole.buffer = []
         `,
