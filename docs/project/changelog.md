@@ -60,7 +60,7 @@ substitutions:
   standard Python types without unneeded copies. {pr}`1864`
 
 - {{Enhancement}} Added {any}`JsProxy.to_file` and {any}`JsProxy.from_file` to
-  allow reading and writing Javascript buffers to files without unneeded copies.
+  allow reading and writing Javascript buffers to files as a byte stream without unneeded copies.
   {pr}`1864`
 
 - {{Fix}} It is now possible to destroy borrowed attribute `PyProxy` of a

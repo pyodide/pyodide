@@ -152,7 +152,7 @@ class JsProxy:
     def from_file(self, file: IOBase):
         """Reads from a file into the buffer.
 
-        Will try to read a chunk of data of size the length of the buffer from
+        Will try to read a chunk of data the same size as the buffer from
         the current position of the file.
 
         Present only if the wrapped Javascript object is an ArrayBuffer or an
