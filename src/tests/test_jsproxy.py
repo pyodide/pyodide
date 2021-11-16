@@ -1048,6 +1048,7 @@ def test_buffer_into_file():
         assert f.read() == b
 
 
+@run_in_pyodide
 def test_buffer_into_file2(selenium):
     """Check that no copy occurred."""
     from js import Uint8Array

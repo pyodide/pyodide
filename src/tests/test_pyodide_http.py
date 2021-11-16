@@ -22,6 +22,9 @@ def test_open_url(selenium, httpserver):
 
 @run_in_pyodide
 async def test_pyfetch_create_file():
+    from pyodide.http import pyfetch
+    import pathlib
+
     resp = await pyfetch("console.html")
     await resp.create_file("console.html")
     assert (
