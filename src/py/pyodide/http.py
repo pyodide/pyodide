@@ -160,14 +160,24 @@ class FetchResponse:
         buf = await self.buffer()
         buf._into_file(f)
 
-    async def to_file(self, path : str):
-        """Writes the data into a new file.
+    async def create_file(self, path : str):
+        """Uses the data to back a new file without copying it.
+
+        This method avoids copying the data when creating a new file. If you
+        want to write the data into an existing file, use 
+
+        .. code-block:: python
+
+            buf = await resp.buffer()
+            buf.to_file(file)
 
         Parameters
         ----------
-        path : str
-            The path to the file to create. The file should not exist but it should
-            be in a directory that does exist. Otherwise, will raise an ``OSError``
+        path : str 
+
+            The path to the file to create. The file should not exist but
+            it should be in a directory that exists. Otherwise, will raise
+            an ``OSError``
         """
         with open(path, "x") as f:
             await self._into_file(f)
