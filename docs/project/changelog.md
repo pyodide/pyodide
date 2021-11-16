@@ -18,9 +18,9 @@ substitutions:
 
 - {{Breaking}} Default working directory(home directory) inside Pyodide virtual
   file system has been changed from `/` to `/home/pyodide`. To get previous behavior, you can
-  - call `os.chdir("/")`  to change working directory
+  - call `os.chdir("/")` to change working directory
   - or call {any}`loadPyodide <globalThis.loadPyodide>` with the `homedir="/"` argument
-  {pr}`1936`
+    {pr}`1936`
 
 ### Python package
 
@@ -34,8 +34,9 @@ substitutions:
   minimizing the number of times the data is copied.
   {pr}`1865`
 
-- {{Enhancement}} Added a {any}`unpack_archive` API which downloads a zip file from a url
-  and then uses `shutil` to unpack it.
+- {{Enhancement}} Added to the {any}`FetchResponse` object a {any}`create_file`
+  api which creates a file out of the response body and an {any}`unpack_archive`
+  API treats the response body as an archive and uses `shutil` to unpack it.
   {pr}`1935`
 
 ### JavaScript package
@@ -45,7 +46,7 @@ substitutions:
   {pr}`1849`
 
 - {{Fix}} Webpack building compatibility issues and a {any}`loadPyodide <globalThis.loadPyodide>`
-  runtime issue due to webpack are solved. 
+  runtime issue due to webpack are solved.
   {pr}`1900`
 
 - {{API}} {any}`loadPyodide <globalThis.loadPyodide>` now accepts `homedir`
