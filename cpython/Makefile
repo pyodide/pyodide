@@ -47,6 +47,14 @@ $(INSTALL)/lib/$(LIB): $(BUILD)/$(LIB) remove_modules.txt
 	rmdir `cat pybuilddir.txt`
 	rm pybuilddir.txt
 	cd $(INSTALL)/lib/python$(PYMAJOR).$(PYMINOR)/ && rm -rf `cat $(ROOT)/remove_modules.txt`
+	\
+	# Minify the Python standard library using pyminify
+	if [ "$(PYODIDE_MINIFY)" == "1" ]; then \
+		for py in `find $(INSTALL)/lib/python$(PYMAJOR).$(PYMINOR) -name "*.py"`; \
+			do echo "Minifying $${py}..."; \
+			pyminify --remove-literal-statements $${py} > $${py}.min; mv $${py}.min $${py}; \
+		done \
+	fi
 
 
 clean:
@@ -140,6 +148,7 @@ $(BUILD)/Makefile: $(BUILD)/.patched $(ZLIBBUILD)/.configured $(INSTALL)/lib/lib
 		  ./configure \
 			  CFLAGS="${PYTHON_CFLAGS}" \
 			  CPPFLAGS="-I$(SQLITEBUILD) -I$(BZIP2BUILD) -I$(ZLIBBUILD)" \
+			  $(if $(PYODIDE_MINIFY) == "1", --without-doc-strings, ) \
 			  --without-pymalloc \
 			  --disable-shared \
 			  --disable-ipv6 \
