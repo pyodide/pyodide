@@ -18,8 +18,8 @@
 
 <!-- Note on checklists:
      If you think some of these steps are not necessary for your PR,
-     just remove those checkboxs, or mark it as checked. Otherwise
-     if some checkboxs are left unmarked, we might assume that your PR
+     just remove those checkboxes, or mark them as checked. Otherwise,
+     if some checkboxes are left unmarked, we might assume that your PR
      is not ready to be merged and we might keep you waiting -->
 
 - [ ] Add a [CHANGELOG](https://github.com/pyodide/pyodide/blob/main/docs/project/changelog.md) entry
