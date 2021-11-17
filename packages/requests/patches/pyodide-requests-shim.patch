@@ -1,14 +1,3 @@
-From 37b52f21658bf3c6d0b94c97082ab42e0dfab1fb Mon Sep 17 00:00:00 2001
-From: Bart Broere <b.broere@nfi.nl>
-Date: Thu, 11 Nov 2021 10:54:12 +0100
-Subject: [PATCH] Add Pyodide fork
-
----
- requests/models.py   | 179 ++++++-------------------------------
- requests/sessions.py | 204 ++++++++++++-------------------------------
- requests/utils.py    |   7 ++
- 3 files changed, 86 insertions(+), 304 deletions(-)
-
 diff --git a/requests/models.py b/requests/models.py
 index e7d292d580..b9530887b4 100644
 --- a/requests/models.py
@@ -246,10 +235,10 @@ index e7d292d580..b9530887b4 100644
      @property
      def links(self):
 diff --git a/requests/sessions.py b/requests/sessions.py
-index ae4bcc8e79..0dd4ec1d73 100644
+index ae4bcc8e79..6107f8d658 100644
 --- a/requests/sessions.py
 +++ b/requests/sessions.py
-@@ -7,35 +7,34 @@
+@@ -7,35 +7,35 @@
  This module provides a Session object to manage and persist settings across
  requests (cookies, auth, proxies).
  """
@@ -258,6 +247,7 @@ index ae4bcc8e79..0dd4ec1d73 100644
  import sys
  import time
 -from datetime import timedelta
++import warnings
  from collections import OrderedDict
 +from datetime import timedelta
 +from urllib.parse import urlencode
@@ -297,7 +287,7 @@ index ae4bcc8e79..0dd4ec1d73 100644
  
  # Preferred clock, based on which one is more accurate on a given system.
  if sys.platform == 'win32':
-@@ -334,138 +333,40 @@ def rebuild_method(self, prepared_request, response):
+@@ -334,138 +334,48 @@ def rebuild_method(self, prepared_request, response):
          prepared_request.method = method
  
  
@@ -408,7 +398,8 @@ index ae4bcc8e79..0dd4ec1d73 100644
 -        transmission and returns it. The :class:`PreparedRequest` has settings
 -        merged from the :class:`Request <Request>` instance and those of the
 -        :class:`Session`.
--
++        ...
+ 
 -        :param request: :class:`Request` instance to prepare with this
 -            session's settings.
 -        :rtype: requests.PreparedRequest
@@ -442,14 +433,21 @@ index ae4bcc8e79..0dd4ec1d73 100644
 -            hooks=merge_hooks(request.hooks, self.hooks),
 -        )
 -        return p
-+        ...
++    def set_headers(self, request, headers):
++        assert isinstance(headers, Mapping)
++        for header, value in self.headers.items():
++            request.setRequestHeader(header, value)
++        for header, value in headers.items():
++            request.setRequestHeader(header, value)
++        return request
  
      def request(self, method, url,
              params=None, data=None, headers=None, cookies=None, files=None,
-@@ -513,35 +414,38 @@ def request(self, method, url,
+@@ -512,36 +422,39 @@ def request(self, method, url,
+             If Tuple, ('cert', 'key') pair.
          :rtype: requests.Response
          """
-         # Create the Request.
+-        # Create the Request.
 -        req = Request(
 -            method=method.upper(),
 -            url=url,
@@ -485,9 +483,7 @@ index ae4bcc8e79..0dd4ec1d73 100644
 +            if isinstance(params, Mapping):
 +                url = url + '?' + urlencode(params)
 +        if headers:
-+            set_headers(request, headers)
-+        if cookies:
-+            ...  # TODO set the cookie in the browser, otherwise we rely on the cookies the browser decides to send
++            self.set_headers(request, headers)
 +        if stream:
 +            request.responseType = "blob"
 +        if data:
@@ -498,7 +494,7 @@ index ae4bcc8e79..0dd4ec1d73 100644
 +                request.setRequestHeader('Content-Type', 'application/json')
 +                request.send(data)
 +            else:
-+                ...
++                warnings.warn('This type of input to the json parameter of Pyodide requests is not supported')
 +        if json:
 +            if isinstance(json, Mapping):
 +                data = Blob.new([json_module.dumps(json)], {
@@ -507,25 +503,13 @@ index ae4bcc8e79..0dd4ec1d73 100644
 +                request.setRequestHeader('Content-Type', 'application/json')
 +                request.send(data)
 +            else:
-+                ...
++                warnings.warn('This type of input to the json parameter of Pyodide requests is not supported')
++        if verify is not None or cert or not allow_redirects or proxies or auth or hooks or files or cookies:
++            warnings.warn('The Pyodide version of requests does not support the following parameters (yet): '
++                          'verify, cert, allow_redirects, proxies, auth, hooks, files and cookies')
 +        else:
 +            request.send()
 +        return Response(request)
  
      def get(self, url, **kwargs):
          r"""Sends a GET request. Returns :class:`Response` object.
-diff --git a/requests/utils.py b/requests/utils.py
-index 97f895ebb3..b55ed1e9fe 100644
---- a/requests/utils.py
-+++ b/requests/utils.py
-@@ -1015,3 +1015,10 @@ def rewind_body(prepared_request):
-                                         "body for redirect.")
-     else:
-         raise UnrewindableBodyError("Unable to rewind request body for redirect.")
-+
-+
-+def set_headers(request, headers):
-+    assert isinstance(headers, Mapping)
-+    for header, value in headers.items():
-+        request.setRequestHeader(header, value)
-+    return request
