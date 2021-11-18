@@ -294,22 +294,22 @@ async function acquirePackageLock() {
 export let loadedPackages = {};
 
 let sharedLibraryWasmPlugin;
-let originalWasmPlugin;
+let origWasmPlugin;
 let wasmPluginIndex;
 function initSharedLibraryWasmPlugin() {
   for (let p in Module.preloadPlugins) {
     if (Module.preloadPlugins[p].canHandle("test.so")) {
-      originalWasmPlugin = Module.preloadPlugins[p];
+      origWasmPlugin = Module.preloadPlugins[p];
       wasmPluginIndex = p;
       break;
     }
   }
   sharedLibraryWasmPlugin = {
-    canHandle: originalWasmPlugin.canHandle,
+    canHandle: origWasmPlugin.canHandle,
     handle(byteArray, name, onload, onerror) {
-      originalWasmPlugin.handle(byteArray, name, onload, onerror);
-      originalWasmPlugin.asyncWasmLoadPromise = (async () => {
-        await originalWasmPlugin.asyncWasmLoadPromise;
+      origWasmPlugin.handle(byteArray, name, onload, onerror);
+      origWasmPlugin.asyncWasmLoadPromise = (async () => {
+        await origWasmPlugin.asyncWasmLoadPromise;
         Module.loadDynamicLibrary(name, {
           global: true,
           nodelete: true,
