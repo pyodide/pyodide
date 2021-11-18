@@ -46,19 +46,8 @@ build/pyodide.asm.js: \
 	$(CPYTHONLIB)
 	date +"[%F %T] Building pyodide.asm.js..."
 	[ -d build ] || mkdir build
-	$(CXX) -s EXPORT_NAME="'_createPyodideModule'" -o build/pyodide.asm.js $(filter %.o,$^) \
-		$(MAIN_MODULE_LDFLAGS) -s FORCE_FILESYSTEM=1 \
-		-lidbfs.js \
-		-lnodefs.js \
-		-lproxyfs.js \
-		-lworkerfs.js \
-		--preload-file $(CPYTHONLIB)@/lib/python$(PYMAJOR).$(PYMINOR) \
-		--preload-file src/py/lib@/lib/python$(PYMAJOR).$(PYMINOR)/\
-		--preload-file src/py/@/lib/python$(PYMAJOR).$(PYMINOR)/site-packages/ \
-		--exclude-file "*__pycache__*" \
-		--exclude-file "*/test/*" \
-		--exclude-file "*/tests/*" \
-		--exclude-file "*/distutils/*"
+	$(CXX) -o build/pyodide.asm.js $(filter %.o,$^) \
+		$(MAIN_MODULE_LDFLAGS)
    # Strip out C++ symbols which all start __Z.
    # There are 4821 of these and they have VERY VERY long names.
    # To show some stats on the symbols you can use the following:
