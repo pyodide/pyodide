@@ -26,7 +26,7 @@ async def test_pyfetch_create_file():
     import pathlib
 
     resp = await pyfetch("console.html")
-    await resp.create_file("console.html")
+    await resp._create_file("console.html")
     assert (
         pathlib.Path("/home/pyodide/console.html").read_text().find("fatal error.")
         > 3000

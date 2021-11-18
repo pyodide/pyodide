@@ -160,7 +160,7 @@ class FetchResponse:
         buf = await self.buffer()
         buf._into_file(f)
 
-    async def create_file(self, path: str):
+    async def _create_file(self, path: str):
         """Uses the data to back a new file without copying it.
 
         This method avoids copying the data when creating a new file. If you

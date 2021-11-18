@@ -34,10 +34,9 @@ substitutions:
   minimizing the number of times the data is copied.
   {pr}`1865`
 
-- {{Enhancement}} Added to the {any}`FetchResponse` object a {any}`create_file`
-  api which creates a file out of the response body and an {any}`unpack_archive`
-  API treats the response body as an archive and uses `shutil` to unpack it.
-  {pr}`1935`
+- {{Enhancement}} Added an {any}`unpack_archive` API to the {any}`FetchResponse`
+  object which treats the response body as an archive and uses `shutil` to
+  unpack it. {pr}`1935`
 
 ### JavaScript package
 
