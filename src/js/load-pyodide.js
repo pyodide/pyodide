@@ -153,24 +153,46 @@ function recursiveDependencies(
   return toLoad;
 }
 
+// locateFile is the function used by the .js file to locate the .data file
+// given the filename
+Module.locateFile = function (path) {
+  // handle packages loaded from custom URLs
+  let pkg = path.replace(/\.data$/, "");
+  const toLoad = Module.locateFile_packagesToLoad;
+  if (toLoad && toLoad.has(pkg)) {
+    let package_uri = toLoad.get(pkg);
+    if (package_uri != DEFAULT_CHANNEL) {
+      return package_uri.replace(/\.js$/, ".data");
+    }
+  }
+  return baseURL + path;
+};
+
+// When the JS loads, it synchronously adds a runDependency to emscripten. It
+// then loads the data file, and removes the runDependency from emscripten.
+// This function returns a promise that resolves when there are no pending
+// runDependencies.
+function waitRunDependency() {
+  const promise = new Promise((r) => {
+    Module.monitorRunDependencies = (n) => {
+      if (n === 0) {
+        r();
+      }
+    };
+  });
+  // If there are no pending dependencies left, monitorRunDependencies will
+  // never be called. Since we can't check the number of dependencies,
+  // manually trigger a call.
+  Module.addRunDependency("dummy");
+  Module.removeRunDependency("dummy");
+  return promise;
+}
+
 async function _loadPackage(names, messageCallback, errorCallback) {
   // toLoad is a map pkg_name => pkg_uri
   let toLoad = recursiveDependencies(names, messageCallback, errorCallback);
-
-  // locateFile is the function used by the .js file to locate the .data file
-  // given the filename
-  Module.locateFile = (path) => {
-    // handle packages loaded from custom URLs
-    let pkg = path.replace(/\.data$/, "");
-    if (toLoad.has(pkg)) {
-      let package_uri = toLoad.get(pkg);
-      if (package_uri != DEFAULT_CHANNEL) {
-        return package_uri.replace(/\.js$/, ".data");
-      }
-    }
-    return baseURL + path;
-  };
-
+  // Tell Module.locateFile about the packages we're loading
+  Module.locateFile_packagesToLoad = toLoad;
   if (toLoad.size === 0) {
     return Promise.resolve("No new packages to load");
   } else {
@@ -208,26 +230,6 @@ async function _loadPackage(names, messageCallback, errorCallback) {
         toLoad.delete(pkg);
       })
     );
-  }
-
-  // When the JS loads, it synchronously adds a runDependency to emscripten. It
-  // then loads the data file, and removes the runDependency from emscripten.
-  // This function returns a promise that resolves when there are no pending
-  // runDependencies.
-  function waitRunDependency() {
-    const promise = new Promise((r) => {
-      Module.monitorRunDependencies = (n) => {
-        if (n === 0) {
-          r();
-        }
-      };
-    });
-    // If there are no pending dependencies left, monitorRunDependencies will
-    // never be called. Since we can't check the number of dependencies,
-    // manually trigger a call.
-    Module.addRunDependency("dummy");
-    Module.removeRunDependency("dummy");
-    return promise;
   }
 
   // We must start waiting for runDependencies *after* all the JS files are
