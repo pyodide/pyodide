@@ -95,6 +95,23 @@ if (globalThis.document) {
   throw new Error("Cannot determine runtime environment");
 }
 
+function addPackageToLoad(name, toLoad) {
+  name = name.toLowerCase();
+  if (toLoad.has(name)) {
+    return;
+  }
+  toLoad.set(name, DEFAULT_CHANNEL);
+  // If the package is already loaded, we don't add dependencies, but warn
+  // the user later. This is especially important if the loaded package is
+  // from a custom url, in which case adding dependencies is wrong.
+  if (loadedPackages[name] !== undefined) {
+    return;
+  }
+  for (let dep_name of Module.packages[name].depends) {
+    addPackageToLoad(dep_name, toLoad);
+  }
+}
+
 function recursiveDependencies(
   names,
   _messageCallback,
@@ -102,23 +119,6 @@ function recursiveDependencies(
   sharedLibsOnly
 ) {
   const toLoad = new Map();
-
-  const addPackage = (name) => {
-    name = name.toLowerCase();
-    if (toLoad.has(name)) {
-      return;
-    }
-    toLoad.set(name, DEFAULT_CHANNEL);
-    // If the package is already loaded, we don't add dependencies, but warn
-    // the user later. This is especially important if the loaded package is
-    // from a custom url, in which case adding dependencies is wrong.
-    if (loadedPackages[name] !== undefined) {
-      return;
-    }
-    for (let dep_name of Module.packages[name].depends) {
-      addPackage(dep_name);
-    }
-  };
   for (let name of names) {
     const pkgname = _uri_to_package_name(name);
     if (toLoad.has(pkgname) && toLoad.get(pkgname) !== name) {
@@ -135,7 +135,7 @@ function recursiveDependencies(
     }
     name = name.toLowerCase();
     if (name in Module.packages) {
-      addPackage(name);
+      addPackageToLoad(name, toLoad);
       continue;
     }
     errorCallback(`Skipping unknown package '${name}'`);
@@ -157,8 +157,8 @@ async function _loadPackage(names, messageCallback, errorCallback) {
   // toLoad is a map pkg_name => pkg_uri
   let toLoad = recursiveDependencies(names, messageCallback, errorCallback);
 
-  // locateFile is the function used by the .js file to locate the .data
-  // file given the filename
+  // locateFile is the function used by the .js file to locate the .data file
+  // given the filename
   Module.locateFile = (path) => {
     // handle packages loaded from custom URLs
     let pkg = path.replace(/\.data$/, "");
@@ -178,8 +178,8 @@ async function _loadPackage(names, messageCallback, errorCallback) {
     messageCallback(`Loading ${packageNames}`);
   }
 
-  // This is a collection of promises that resolve when the package's JS file
-  // is loaded. The promises already handle error and never fail.
+  // This is a collection of promises that resolve when the package's JS file is
+  // loaded. The promises already handle error and never fail.
   let scriptPromises = [];
 
   for (let [pkg, uri] of toLoad) {
@@ -210,10 +210,10 @@ async function _loadPackage(names, messageCallback, errorCallback) {
     );
   }
 
-  // When the JS loads, it synchronously adds a runDependency to emscripten.
-  // It then loads the data file, and removes the runDependency from
-  // emscripten. This function returns a promise that resolves when there are
-  // no pending runDependencies.
+  // When the JS loads, it synchronously adds a runDependency to emscripten. It
+  // then loads the data file, and removes the runDependency from emscripten.
+  // This function returns a promise that resolves when there are no pending
+  // runDependencies.
   function waitRunDependency() {
     const promise = new Promise((r) => {
       Module.monitorRunDependencies = (n) => {
@@ -257,16 +257,16 @@ async function _loadPackage(names, messageCallback, errorCallback) {
 
   messageCallback(resolveMsg);
 
-  // We have to invalidate Python's import caches, or it won't
-  // see the new files.
+  // We have to invalidate Python's import caches, or it won't see the new
+  // files.
   Module.runPythonInternal(`
     import importlib
     importlib.invalidate_caches();
   `);
 }
 
-// This is a promise that is resolved iff there are no pending package loads.
-// It never fails.
+// This is a promise that is resolved iff there are no pending package loads. It
+// never fails.
 let _package_lock = Promise.resolve();
 
 /**
@@ -293,28 +293,66 @@ async function acquirePackageLock() {
  */
 export let loadedPackages = {};
 
-/**
- * @callback LogFn
- * @param {string} msg
- * @returns {void}
- * @private
- */
+let sharedLibraryWasmPlugin;
+let originalWasmPlugin;
+let wasmPluginIndex;
+function initSharedLibraryWasmPlugin() {
+  for (let p in Module.preloadPlugins) {
+    if (Module.preloadPlugins[p].canHandle("test.so")) {
+      originalWasmPlugin = Module.preloadPlugins[p];
+      wasmPluginIndex = p;
+      break;
+    }
+  }
+  sharedLibraryWasmPlugin = {
+    canHandle: originalWasmPlugin.canHandle,
+    handle(byteArray, name, onload, onerror) {
+      originalWasmPlugin.handle(byteArray, name, onload, onerror);
+      originalWasmPlugin.asyncWasmLoadPromise = (async () => {
+        await originalWasmPlugin.asyncWasmLoadPromise;
+        Module.loadDynamicLibrary(name, {
+          global: true,
+          nodelete: true,
+        });
+      })();
+    },
+  };
+}
+
+// override the load plugin so that it calls "Module.loadDynamicLibrary" on any
+// .so files.
+// this only needs to be done for shared library packages because we assume that
+// if a package depends on a shared library it needs to have access to it. not
+// needed for .so in standard module because those are linked together
+// correctly, it is only where linking goes across modules that it needs to be
+// done. Hence, we only put this extra preload plugin in during the shared
+// library load
+function useSharedLibraryWasmPlugin() {
+  if (!dynamicLoadHandler) {
+    initSharedLibraryWasmPlugin();
+  }
+  Module.preloadPlugins[wasmPluginIndex] = sharedLibraryWasmPlugin;
+}
+
+function restoreOrigWasmPlugin() {
+  Module.preloadPlugins[wasmPluginIndex] = origWasmPlugin;
+}
 
 /**
  * Load a package or a list of packages over the network. This installs the
  * package in the virtual filesystem. The package needs to be imported from
  * Python before it can be used.
- * @param {string | string[] | PyProxy} names Either a single package name or URL
- * or a list of them. URLs can be absolute or relative. The URLs must have
- * file name
- * ``<package-name>.js`` and there must be a file called
+ *
+ * @param {string | string[] | PyProxy} names Either a single package name or
+ * URL or a list of them. URLs can be absolute or relative. The URLs must have
+ * file name ``<package-name>.js`` and there must be a file called
  * ``<package-name>.data`` in the same directory. The argument can be a
- * ``PyProxy`` of a list, in which case the list will be converted to
- * JavaScript and the ``PyProxy`` will be destroyed.
+ * ``PyProxy`` of a list, in which case the list will be converted to JavaScript
+ * and the ``PyProxy`` will be destroyed.
  * @param {LogFn=} messageCallback A callback, called with progress messages
  *    (optional)
- * @param {LogFn=} errorCallback A callback, called with error/warning
- *    messages (optional)
+ * @param {LogFn=} errorCallback A callback, called with error/warning messages
+ *    (optional)
  * @async
  */
 export async function loadPackage(names, messageCallback, errorCallback) {
@@ -347,58 +385,23 @@ export async function loadPackage(names, messageCallback, errorCallback) {
   } catch (e) {
     // do nothing - let the main load throw any errors
   }
-  // override the load plugin so that it imports any dlls also
-  // this only needs to be done for shared library packages because
-  // we assume that if a package depends on a shared library
-  // it needs to have access to it.
-  // not needed for so in standard module because those are linked together
-  // correctly, it is only where linking goes across modules that it needs to
-  // be done. Hence, we only put this extra preload plugin in during the shared
-  // library load
-  let oldPlugin;
-  for (let p in Module.preloadPlugins) {
-    if (Module.preloadPlugins[p].canHandle("test.so")) {
-      oldPlugin = Module.preloadPlugins[p];
-      break;
-    }
-  }
-  let dynamicLoadHandler = {
-    get: function (obj, prop) {
-      if (prop === "handle") {
-        return function (bytes, name) {
-          obj[prop].apply(obj, arguments);
-          this["asyncWasmLoadPromise"] = this["asyncWasmLoadPromise"].then(
-            function () {
-              Module.loadDynamicLibrary(name, {
-                global: true,
-                nodelete: true,
-              });
-            }
-          );
-        };
-      } else {
-        return obj[prop];
-      }
-    },
-  };
-  var loadPluginOverride = new Proxy(oldPlugin, dynamicLoadHandler);
-  // restore the preload plugin
-  Module.preloadPlugins.unshift(loadPluginOverride);
 
   let releaseLock = await acquirePackageLock();
   try {
+    useSharedLibraryWasmPlugin();
     await _loadPackage(
       sharedLibraryNames,
       messageCallback || console.log,
       errorCallback || console.error
     );
-    Module.preloadPlugins.shift(loadPluginOverride);
+    restoreOrigWasmPlugin();
     await _loadPackage(
       names,
       messageCallback || console.log,
       errorCallback || console.error
     );
   } finally {
+    restoreOrigWasmPlugin();
     releaseLock();
   }
 }
