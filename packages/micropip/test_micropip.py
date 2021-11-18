@@ -236,3 +236,22 @@ def test_install_mixed_case2(selenium_standalone_micropip, jinja2):
         `);
         """
     )
+
+
+def test_report_all_failed_dependencies():
+    pytest.importorskip("packaging")
+    from micropip import micropip
+
+    pkg = "nonpure-dummy"  # dummy package which requires both tensorflow and torch
+
+    msg = "tensorflow"
+    with pytest.raises(ValueError, match=msg):
+        asyncio.get_event_loop().run_until_complete(
+            micropip.PACKAGE_MANAGER.install(pkg)
+        )
+
+    msg = "torch"
+    with pytest.raises(ValueError, match=msg):
+        asyncio.get_event_loop().run_until_complete(
+            micropip.PACKAGE_MANAGER.install(pkg)
+        )
