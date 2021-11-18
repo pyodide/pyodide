@@ -328,7 +328,7 @@ function initSharedLibraryWasmPlugin() {
 // done. Hence, we only put this extra preload plugin in during the shared
 // library load
 function useSharedLibraryWasmPlugin() {
-  if (!dynamicLoadHandler) {
+  if (!sharedLibraryWasmPlugin) {
     initSharedLibraryWasmPlugin();
   }
   Module.preloadPlugins[wasmPluginIndex] = sharedLibraryWasmPlugin;
