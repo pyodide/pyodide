@@ -152,6 +152,7 @@ class _PackageManager:
             "wheels": [],
             "pyodide_packages": [],
             "locked": dict(self.installed_packages),
+            "failed": [],
         }
         requirement_promises = []
         for requirement in requirements:
@@ -164,6 +165,15 @@ class _PackageManager:
 
     async def install(self, requirements: Union[str, List[str]], ctx=None):
         transaction = await self.gather_requirements(requirements, ctx)
+
+        if transaction["failed"]:
+            failed_requirements = ", ".join(
+                [f"'{req}'" for req in transaction["failed"]]
+            )
+            raise ValueError(
+                f"Couldn't find a pure Python 3 wheel for: {failed_requirements}"
+            )
+
         wheel_promises = []
         # Install built-in packages
         pyodide_packages = transaction["pyodide_packages"]
@@ -237,7 +247,10 @@ class _PackageManager:
                 )
         metadata = await _get_pypi_json(req.name)
         wheel, ver = self.find_wheel(metadata, req)
-        await self.add_wheel(req.name, wheel, ver, req.extras, ctx, transaction)
+        if wheel is None and ver is None:
+            transaction["failed"].append(req)
+        else:
+            await self.add_wheel(req.name, wheel, ver, req.extras, ctx, transaction)
 
     async def add_wheel(self, name, wheel, version, extras, ctx, transaction):
         transaction["locked"][name] = version
@@ -263,7 +276,7 @@ class _PackageManager:
                 if _is_pure_python_wheel(fileinfo["filename"]):
                     return fileinfo, ver
 
-        raise ValueError(f"Couldn't find a pure Python 3 wheel for '{req}'")
+        return None, None
 
 
 # Make PACKAGE_MANAGER singleton
