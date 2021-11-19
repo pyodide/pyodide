@@ -9,7 +9,7 @@ from packaging.version import Version
 from packaging.markers import default_environment
 
 from pathlib import Path
-from typing import Dict, Any, Union, List, Tuple
+from typing import Dict, Any, Union, List, Tuple, Optional
 from zipfile import ZipFile
 
 from .externals.pip._internal.utils.wheel import pkg_resources_distribution_for_wheel
@@ -266,7 +266,7 @@ class _PackageManager:
 
     def find_wheel(
         self, metadata: Dict[str, Any], req: Requirement
-    ) -> Tuple[Union[str, None], Union[str, None]]:
+    ) -> Tuple[Any, Optional[Version]]:
         """Parse metadata to find the latest version of pure python wheel.
 
         Parameters
@@ -278,9 +278,9 @@ class _PackageManager:
 
         Returns
         -------
-        fileinfo : str or None
-            The filename of the Python wheel, or None if there is no pure Python wheel.
-        ver : str or None
+        fileinfo : Dict[str, Any] or None
+            The metadata of the Python wheel, or None if there is no pure Python wheel.
+        ver : Version or None
             The version of the Python wheel, or None if there is no pure Python wheel.
         """
         releases = metadata.get("releases", {})
