@@ -108,6 +108,10 @@ substitutions:
 - {{Fix}} micropip now raises error when installing non-pure python wheel directly from url.
   {pr}`1859`
 
+- {{Enhancement}} When installation failed, micropip now shows all identifiable
+  dependents that don't have pure python wheels.
+  {pr}`1976`
+
 ### packages
 
 - {{ Enhancement }} Unit tests are now unvendored from Python packages and
