@@ -8,6 +8,7 @@ source:
 
 
 build:
+  build/script: python -m pip install pybind11
   cflags: -Wno-implicit-function-declaration
 
 requirements:
