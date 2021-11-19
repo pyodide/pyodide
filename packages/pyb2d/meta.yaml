@@ -3,8 +3,8 @@ package:
   version: 0.1.1
 
 source:
-  url: https://github.com/pyb2d/pyb2d/archive/refs/tags/0.1.3.tar.gz
-  sha256: e6b7442206124d83d2f2262f9df80a57a9bae9aa1cc0741d402d9545ecd0e9a1
+  url: https://github.com/pyb2d/pyb2d/archive/refs/tags/0.1.4.tar.gz
+  sha256: b1fa289bfa04daab0e90d9c819d54abe034d0bb500294169092a2d7c545f60ac
 
 
 build:
