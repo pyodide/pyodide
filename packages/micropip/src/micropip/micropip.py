@@ -264,7 +264,25 @@ class _PackageManager:
 
         transaction["wheels"].append((name, wheel, version))
 
-    def find_wheel(self, metadata, req: Requirement):
+    def find_wheel(
+        self, metadata: Dict[str, Any], req: Requirement
+    ) -> Tuple[Union[str, None], Union[str, None]]:
+        """Parse metadata to find the latest version of pure python wheel.
+
+        Parameters
+        ----------
+        metadata : ``Dict[str, Any]``
+
+            Package search result from PyPI,
+            See: https://warehouse.pypa.io/api-reference/json.html
+
+        Returns
+        -------
+        fileinfo : str or None
+            The filename of the Python wheel, or None if there is no pure Python wheel.
+        ver : str or None
+            The version of the Python wheel, or None if there is no pure Python wheel.
+        """
         releases = metadata.get("releases", {})
         candidate_versions = sorted(
             (Version(v) for v in req.specifier.filter(releases)),  # type: ignore
