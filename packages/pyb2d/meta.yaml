@@ -1,0 +1,20 @@
+package:
+  name: pyb2d
+  version: 0.1.1
+
+source:
+  url: https://github.com/pyb2d/pyb2d/archive/refs/tags/0.1.2.tar.gz
+  sha256: 77424139548a40af810e0049878ec47014ca3d1d2c0a25ee54506d2f75841e8c
+
+
+build:
+  cflags: -Wno-implicit-function-declaration
+
+requirements:
+  run:
+    - numpy
+
+test:
+  imports:
+    - b2d
+    - b2d.framework
