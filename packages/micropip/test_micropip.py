@@ -242,10 +242,23 @@ def test_report_all_failed_dependencies(monkeypatch):
     pytest.importorskip("packaging")
     from micropip import micropip
 
-    pkg = "nonpure-dummy"  # dummy package which requires both tensorflow and torch
+    async def _mock_get_pypi_json(pkgname, **kwargs):
+        return {
+            "releases": {
+                "1.0.0": [
+                    {
+                        "filename": f"{pkgname}-1.0.0.tar.gz",
+                    }
+                ]
+            }
+        }
 
-    msg = "torch.*tensorflow"
+    monkeypatch.setattr(micropip, "_get_pypi_json", _mock_get_pypi_json)
+
+    # dummy package which requires both tensorflow and torch
+    pkg = "https://files.pythonhosted.org/packages/e7/a2/dcc325ea62aea0973dcd4474f3fc0946ac4074c4f9789c9757317b4f786b/nonpure_dummy-0.0.1-py3-none-any.whl"
+
+    # report order is non-deterministic
+    msg = "[torch|tensorflow].*[torch|tensorflow]"
     with pytest.raises(ValueError, match=msg):
-        asyncio.get_event_loop().run_until_complete(
-            micropip.install(pkg)
-        )
+        asyncio.get_event_loop().run_until_complete(micropip.install(pkg))
