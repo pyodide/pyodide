@@ -61,6 +61,17 @@ def pytest_configure(config):
     config.cwd_relative_nodeid = cwd_relative_nodeid
 
 
+def pytest_collection_modifyitems(config, items):
+    """Called after collect is completed.
+    Parameters
+    ----------
+    config : pytest config
+    items : list of collected items
+    """
+    for item in items:
+        _maybe_skip_test(item, delayed=True)
+
+
 def _package_is_built(package_name: str) -> bool:
     return (BUILD_PATH / f"{package_name}.data").exists()
 
@@ -467,11 +478,12 @@ def extra_checks_test_wrapper(selenium, trace_hiwire_refs, trace_pyproxies):
         assert delta_keys <= 0
 
 
-def _maybe_skip_test(item):
+def _maybe_skip_test(item, delayed=False):
     """If necessary skip test at the fixture level, to avoid
 
     loading the selenium_standalone fixture which takes a long time.
     """
+    skip_msg = None
     # Testing a package. Skip the test if the package is not built.
     match = re.match(
         r".*/packages/(?P<name>[\w\-]+)/test_[\w\-]+\.py", str(item.parent.fspath)
@@ -479,7 +491,7 @@ def _maybe_skip_test(item):
     if match:
         package_name = match.group("name")
         if not _package_is_built(package_name):
-            pytest.skip(f"package '{package_name}' is not built.")
+            skip_msg = f"package '{package_name}' is not built."
 
     # Common package import test. Skip it if the package is not built.
     if str(item.fspath).endswith("test_packages_common.py") and item.name.startswith(
@@ -491,13 +503,22 @@ def _maybe_skip_test(item):
         if match:
             package_name = match.group("name")
             if not _package_is_built(package_name):
-                # If the test is going to be skipped remove the selenium_standalone as it takes
-                # a long time to initialize
-                pytest.skip(f"package '{package_name}' is not built.")
+                # If the test is going to be skipped remove the
+                # selenium_standalone as it takes a long time to initialize
+                skip_msg = f"package '{package_name}' is not built."
         else:
             raise AssertionError(
                 f"Couldn't parse package name from {item.name}. This should not happen!"
             )
+
+    # TODO: also use this hook to skip doctests we cannot run (or run them
+    # inside the selenium wrapper)
+
+    if skip_msg is not None:
+        if delayed:
+            item.add_marker(pytest.mark.skip(reason=skip_msg))
+        else:
+            pytest.skip(skip_msg)
 
 
 @contextlib.contextmanager
@@ -561,6 +582,8 @@ def selenium_standalone_noload_common(request, web_server_main):
 
 @pytest.fixture(params=["firefox", "chrome"], scope="function")
 def selenium_webworker_standalone(request, web_server_main):
+    # Avoid loading the fixture if the test is going to be skipped
+    _maybe_skip_test(request.node)
     with selenium_standalone_noload_common(request, web_server_main) as selenium:
         yield selenium
 
@@ -569,6 +592,8 @@ def selenium_webworker_standalone(request, web_server_main):
 def selenium_standalone_noload(request, web_server_main):
     """Only difference between this and selenium_webworker_standalone is that
     this also tests on node."""
+    # Avoid loading the fixture if the test is going to be skipped
+    _maybe_skip_test(request.node)
     with selenium_standalone_noload_common(request, web_server_main) as selenium:
         yield selenium
 
