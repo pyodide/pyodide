@@ -494,8 +494,10 @@ def _maybe_skip_test(item, delayed=False):
             skip_msg = f"package '{package_name}' is not built."
 
     # Common package import test. Skip it if the package is not built.
-    if str(item.fspath).endswith("test_packages_common.py") and item.name.startswith(
-        "test_import"
+    if (
+        skip_msg is None
+        and str(item.fspath).endswith("test_packages_common.py")
+        and item.name.startswith("test_import")
     ):
         match = re.match(
             r"test_import\[(firefox|chrome|node)-(?P<name>[\w-]+)\]", item.name
