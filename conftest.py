@@ -3,7 +3,6 @@ Various common utilities for testing.
 """
 import re
 import contextlib
-import functools
 import json
 import multiprocessing
 import textwrap
@@ -62,7 +61,6 @@ def pytest_configure(config):
     config.cwd_relative_nodeid = cwd_relative_nodeid
 
 
-@functools.cache
 def _package_is_built(package_name: str) -> bool:
     return (BUILD_PATH / f"{package_name}.data").exists()
 
@@ -498,7 +496,7 @@ def _maybe_skip_test(item):
                 pytest.skip(f"package '{package_name}' is not built.")
         else:
             raise AssertionError(
-                f"Could't parse package name from {item.name}. This should not happen!"
+                f"Couldn't parse package name from {item.name}. This should not happen!"
             )
 
 
@@ -563,8 +561,6 @@ def selenium_standalone_noload_common(request, web_server_main):
 
 @pytest.fixture(params=["firefox", "chrome"], scope="function")
 def selenium_webworker_standalone(request, web_server_main):
-    # Avoid loading the fixture if the test is going to be skipped
-
     with selenium_standalone_noload_common(request, web_server_main) as selenium:
         yield selenium
 
@@ -573,7 +569,6 @@ def selenium_webworker_standalone(request, web_server_main):
 def selenium_standalone_noload(request, web_server_main):
     """Only difference between this and selenium_webworker_standalone is that
     this also tests on node."""
-    # Avoid loading the fixture if the test is going to be skipped
     with selenium_standalone_noload_common(request, web_server_main) as selenium:
         yield selenium
 

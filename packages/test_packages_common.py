@@ -75,7 +75,7 @@ def test_import(name, selenium_standalone):
     if name not in built_packages():
         raise AssertionError(
             "Implementation error. Test for an unbuilt package "
-            "should have been skipped in conftest.py:pytest_collection_modifyitems"
+            "should have been skipped in selenium_standalone fixture"
         )
 
     meta = parse_package_config(PKG_DIR / name / "meta.yaml")

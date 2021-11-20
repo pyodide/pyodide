@@ -131,16 +131,11 @@ def set_webdriver_script_timeout(selenium, script_timeout: Optional[Union[int, f
 
     Parameters
     ----------
-    selenum : {SeleniumWrapper, None}
+    selenum : SeleniumWrapper
        a SeleniumWrapper wrapper instance, or None
     script_timeout : int | float
        value of the timeout in seconds
     """
-    if selenium is None:
-        # selenium was not initialized, passtrhough without doing anything
-        yield
-        return
-
     if script_timeout is not None:
         selenium.set_script_timeout(script_timeout)
     yield
