@@ -49,24 +49,28 @@ async function main() {
 
   expectType<Promise<void>>(pyodide.loadPackagesFromImports("import some_pkg"));
   expectType<Promise<void>>(
-    pyodide.loadPackagesFromImports("import some_pkg", (x) => console.log(x))
+    pyodide.loadPackagesFromImports("import some_pkg", (x: any) =>
+      console.log(x)
+    )
   );
   expectType<Promise<void>>(
     pyodide.loadPackagesFromImports(
       "import some_pkg",
-      (x) => console.log(x),
-      (x) => console.warn(x)
+      (x: any) => console.log(x),
+      (x: any) => console.warn(x)
     )
   );
 
   expectType<Promise<void>>(pyodide.loadPackage("blah"));
   expectType<Promise<void>>(pyodide.loadPackage(["blah", "blah2"]));
-  expectType<Promise<void>>(pyodide.loadPackage("blah", (x) => console.log(x)));
+  expectType<Promise<void>>(
+    pyodide.loadPackage("blah", (x: any) => console.log(x))
+  );
   expectType<Promise<void>>(
     pyodide.loadPackage(
       ["blah", "blah2"],
-      (x) => console.log(x),
-      (x) => console.warn(x)
+      (x: any) => console.log(x),
+      (x: any) => console.warn(x)
     )
   );
   expectType<Promise<void>>(pyodide.loadPackage(px));
