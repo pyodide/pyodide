@@ -132,7 +132,7 @@ def set_webdriver_script_timeout(selenium, script_timeout: Optional[Union[int, f
     Parameters
     ----------
     selenum : SeleniumWrapper
-       a SeleniumWrapper wrapper instance, or None
+       a SeleniumWrapper wrapper instance
     script_timeout : int | float
        value of the timeout in seconds
     """
