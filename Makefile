@@ -124,8 +124,6 @@ update_base_url: \
 	build/webworker.js
 
 
-test: all
-	pytest src emsdk/tests packages/*/test* pyodide-build -v
 
 lint: node_modules/.installed
 	# check for unused imports, the rest is done by black
