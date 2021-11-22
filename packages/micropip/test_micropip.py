@@ -242,23 +242,48 @@ def test_report_all_failed_dependencies(monkeypatch):
     pytest.importorskip("packaging")
     from micropip import micropip
 
+    dummy_pkg_name = "dummy"
+
     async def _mock_get_pypi_json(pkgname, **kwargs):
+        if pkgname == dummy_pkg_name:
+            pkg_file = f"{pkgname}-1.0.0-py3-none-any.whl"
+        else:
+            pkg_file = f"{pkgname}-1.0.0.tar.gz"
+
         return {
             "releases": {
                 "1.0.0": [
                     {
-                        "filename": f"{pkgname}-1.0.0.tar.gz",
+                        "filename": pkg_file,
+                        "url": "",
                     }
                 ]
             }
         }
 
-    monkeypatch.setattr(micropip, "_get_pypi_json", _mock_get_pypi_json)
+    # monkeypatch `fetch_bytes` so that it returns dummy Wheel bytes containing multiple requirements
+    async def _mock_fetch_bytes(url, **kwargs):
+        import zipfile
+        import tempfile
 
-    # dummy package which requires both tensorflow and torch
-    pkg = "https://files.pythonhosted.org/packages/e7/a2/dcc325ea62aea0973dcd4474f3fc0946ac4074c4f9789c9757317b4f786b/nonpure_dummy-0.0.1-py3-none-any.whl"
+        mock_metadata = "Requires-Dist: dep1\nRequires-Dist: dep2\n\nUNKNOWN"
+        mock_wheel = "Wheel-Version: 1.0"
+
+        with tempfile.SpooledTemporaryFile() as tmp:
+            with zipfile.ZipFile(tmp, "w", zipfile.ZIP_DEFLATED) as archive:
+                archive.writestr(
+                    f"{dummy_pkg_name}-1.0.0.dist-info/METADATA", mock_metadata
+                )
+                archive.writestr(f"{dummy_pkg_name}-1.0.0.dist-info/WHEEL", mock_wheel)
+
+            tmp.seek(0)
+
+            return tmp.read()
+
+    monkeypatch.setattr(micropip, "_get_pypi_json", _mock_get_pypi_json)
+    monkeypatch.setattr(micropip, "fetch_bytes", _mock_fetch_bytes)
 
     # report order is non-deterministic
-    msg = "[torch|tensorflow].*[torch|tensorflow]"
+    msg = "(dep1|dep2).*(dep2|dep1)"
     with pytest.raises(ValueError, match=msg):
-        asyncio.get_event_loop().run_until_complete(micropip.install(pkg))
+        asyncio.get_event_loop().run_until_complete(micropip.install(dummy_pkg_name))
