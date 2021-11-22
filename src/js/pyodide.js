@@ -264,7 +264,6 @@ export async function loadPyodide(config) {
   setStandardStreams(config.stdin, config.stdout, config.stderr);
   setHomeDirectory(config.homedir);
 
-  Module.locateFile = (path) => baseURL + path;
   let moduleLoaded = new Promise((r) => (Module.postRun = r));
 
   const scriptSrc = `${baseURL}pyodide.asm.js`;

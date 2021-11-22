@@ -418,8 +418,13 @@ JsProxy_subscript_array(PyObject* o, PyObject* item)
     i = PyNumber_AsSsize_t(item, PyExc_IndexError);
     if (i == -1 && PyErr_Occurred())
       return NULL;
-    if (i < 0)
-      i += hiwire_get_length(self->js);
+    if (i < 0) {
+      int length = hiwire_get_length(self->js);
+      if (length == -1) {
+        return NULL;
+      }
+      i += length;
+    }
     JsRef result = JsArray_Get(self->js, i);
     if (result == NULL) {
       if (!PyErr_Occurred()) {
@@ -449,6 +454,8 @@ static int
 JsProxy_ass_subscript_array(PyObject* o, PyObject* item, PyObject* pyvalue)
 {
   JsProxy* self = (JsProxy*)o;
+  bool success = false;
+  JsRef idvalue = NULL;
   Py_ssize_t i;
   if (PySlice_Check(item)) {
     PyErr_SetString(PyExc_NotImplementedError,
@@ -458,8 +465,11 @@ JsProxy_ass_subscript_array(PyObject* o, PyObject* item, PyObject* pyvalue)
     i = PyNumber_AsSsize_t(item, PyExc_IndexError);
     if (i == -1 && PyErr_Occurred())
       return -1;
-    if (i < 0)
-      i += hiwire_get_length(self->js);
+    if (i < 0) {
+      int length = hiwire_get_length(self->js);
+      FAIL_IF_MINUS_ONE(length);
+      i += length;
+    }
   } else {
     PyErr_Format(PyExc_TypeError,
                  "list indices must be integers or slices, not %.200s",
@@ -467,8 +477,6 @@ JsProxy_ass_subscript_array(PyObject* o, PyObject* item, PyObject* pyvalue)
     return -1;
   }
 
-  bool success = false;
-  JsRef idvalue = NULL;
   if (pyvalue == NULL) {
     if (JsArray_Delete(self->js, i)) {
       if (!PyErr_Occurred()) {
@@ -1223,7 +1231,7 @@ finally:
     // arguments in async_done_callback instead of here. Otherwise, destroy the
     // arguments and return value now.
     if (idresult != NULL && hiwire_is_pyproxy(idresult)) {
-      JsArray_Push(proxies, idresult);
+      JsArray_Push_unchecked(proxies, idresult);
     }
     destroy_proxies(proxies,
                     "This borrowed proxy was automatically destroyed at the "

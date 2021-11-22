@@ -21,7 +21,7 @@ and check that they are in your `PATH`.
 To run the pytest suite of tests, type on the command line:
 
 ```bash
-pytest src/ pyodide-build/ packages/*/test_*
+pytest
 ```
 
 There are 3 test locations that are collected by pytest,
@@ -30,6 +30,12 @@ There are 3 test locations that are collected by pytest,
 - `pyodide-build/pyodide_build/tests/`: tests related to Pyodide build system
   (do not require selenium to run)
 - `packages/*/test_*`: package specific tests.
+
+Additionally you can run emsdk specific tests with,
+
+```
+make -C emsdk test
+```
 
 ### Running the JavaScript test suite
 

@@ -52,20 +52,33 @@ export LDFLAGS_BASE=\
 export CXXFLAGS_BASE=
 
 export SIDE_MODULE_LDFLAGS=	$(LDFLAGS_BASE) -s SIDE_MODULE=1
-export MAIN_MODULE_LDFLAGS= $(LDFLAGS_BASE) -s MAIN_MODULE=1 \
+export MAIN_MODULE_LDFLAGS= $(LDFLAGS_BASE) \
+	-s MAIN_MODULE=1 \
+	-s EXPORT_NAME="'_createPyodideModule'" \
 	-s EXPORTED_FUNCTIONS='["___cxa_guard_acquire", "__ZNSt3__28ios_base4initEPv", "_main"]' \
 	-lpython$(PYMAJOR).$(PYMINOR) \
 	-lffi \
 	-lsqlite3 \
 	-lbz2 \
 	-lstdc++ \
-	-s TOTAL_MEMORY=20971520 \
-	-s ALLOW_MEMORY_GROWTH=1 \
-    --use-preload-plugins \
+	-lidbfs.js \
+	-lnodefs.js \
+	-lproxyfs.js \
+	-lworkerfs.js \
 	-s USE_FREETYPE=1 \
 	-s USE_LIBPNG=1 \
 	-s USE_LIBJPEG=1 \
-	--memory-init-file 0 \
+	-s FORCE_FILESYSTEM=1 \
+	-s TOTAL_MEMORY=20971520 \
+	-s ALLOW_MEMORY_GROWTH=1 \
+    --use-preload-plugins \
+	--preload-file $(CPYTHONLIB)@/lib/python$(PYMAJOR).$(PYMINOR) \
+	--preload-file src/py/lib@/lib/python$(PYMAJOR).$(PYMINOR)/\
+	--preload-file src/py/@/lib/python$(PYMAJOR).$(PYMINOR)/site-packages/ \
+	--exclude-file "*__pycache__*" \
+	--exclude-file "*/test/*" \
+	--exclude-file "*/tests/*" \
+	--exclude-file "*/distutils/*"
 
 export SIDE_MODULE_CXXFLAGS = $(CXXFLAGS_BASE)
 
@@ -77,6 +90,7 @@ export MAIN_MODULE_CFLAGS= $(CFLAGS_BASE) \
     	-Werror=sometimes-uninitialized \
     	-Werror=int-conversion \
     	-Werror=incompatible-pointer-types \
+		-Werror=unused-result \
 		-I$(PYTHONINCLUDE)
 
 
