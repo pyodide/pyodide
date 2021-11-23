@@ -108,8 +108,9 @@ substitutions:
 - {{Fix}} micropip now raises error when installing non-pure python wheel directly from url.
   {pr}`1859`
 
-- {{Enhancement}} When installation failed, micropip now shows all identifiable
-  dependents that don't have pure python wheels.
+- {{Enhancement}} micropip.install() now accepts `keep_going` parameter that, if set to True,
+  make micropip report all identifiable dependencies that don't have pure Python wheels when
+  installation has failed.
   {pr}`1976`
 
 ### packages
