@@ -142,7 +142,9 @@ class _PackageManager:
     def __init__(self):
         self.installed_packages = {}
 
-    async def gather_requirements(self, requirements: Union[str, List[str]], ctx=None):
+    async def gather_requirements(
+        self, requirements: Union[str, List[str]], ctx=None, keep_going=False
+    ):
         ctx = ctx or default_environment()
         ctx.setdefault("extra", None)
         if isinstance(requirements, str):
@@ -153,6 +155,7 @@ class _PackageManager:
             "pyodide_packages": [],
             "locked": dict(self.installed_packages),
             "failed": [],
+            "keep_going": keep_going,
         }
         requirement_promises = []
         for requirement in requirements:
@@ -163,8 +166,10 @@ class _PackageManager:
         await gather(*requirement_promises)
         return transaction
 
-    async def install(self, requirements: Union[str, List[str]], ctx=None):
-        transaction = await self.gather_requirements(requirements, ctx)
+    async def install(
+        self, requirements: Union[str, List[str]], ctx=None, keep_going=False
+    ):
+        transaction = await self.gather_requirements(requirements, ctx, keep_going)
 
         if transaction["failed"]:
             failed_requirements = ", ".join(
@@ -248,7 +253,10 @@ class _PackageManager:
         metadata = await _get_pypi_json(req.name)
         wheel, ver = self.find_wheel(metadata, req)
         if wheel is None and ver is None:
-            transaction["failed"].append(req)
+            if transaction["keep_going"]:
+                transaction["failed"].append(req)
+            else:
+                raise ValueError(f"Couldn't find a pure Python 3 wheel for '{req}'")
         else:
             await self.add_wheel(req.name, wheel, ver, req.extras, ctx, transaction)
 
@@ -302,7 +310,7 @@ PACKAGE_MANAGER = _PackageManager()
 del _PackageManager
 
 
-def install(requirements: Union[str, List[str]]):
+def install(requirements: Union[str, List[str]], keep_going: bool = False):
     """Install the given package and all of its dependencies.
 
     See :ref:`loading packages <loading_packages>` for more information.
@@ -330,6 +338,18 @@ def install(requirements: Union[str, List[str]]):
           name of a package. A package by this name must either be present in the
           Pyodide repository at `indexURL <globalThis.loadPyodide>` or on PyPI
 
+    keep_going : ``bool``, default: False
+
+        This parameter decides the behavior of the micropip when it encounters a
+        non-pure Python package while doing dependency resolution:
+
+        - If ``False``, an error will be raised when the micropip finds the first
+          non-pure Python package.
+
+        - If ``True``, the micropip will continue searching other dependencies
+          even after it finds non-pure Python packages, and report all non-pure
+          Python packages it could found with an error.
+
     Returns
     -------
     ``Future``
@@ -338,7 +358,9 @@ def install(requirements: Union[str, List[str]]):
         downloaded and installed.
     """
     importlib.invalidate_caches()
-    return asyncio.ensure_future(PACKAGE_MANAGER.install(requirements))
+    return asyncio.ensure_future(
+        PACKAGE_MANAGER.install(requirements, keep_going=keep_going)
+    )
 
 
 __all__ = ["install"]

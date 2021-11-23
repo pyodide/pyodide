@@ -238,7 +238,7 @@ def test_install_mixed_case2(selenium_standalone_micropip, jinja2):
     )
 
 
-def test_report_all_failed_dependencies(monkeypatch):
+def test_install_keep_going(monkeypatch):
     pytest.importorskip("packaging")
     from micropip import micropip
 
@@ -286,4 +286,6 @@ def test_report_all_failed_dependencies(monkeypatch):
     # report order is non-deterministic
     msg = "(dep1|dep2).*(dep2|dep1)"
     with pytest.raises(ValueError, match=msg):
-        asyncio.get_event_loop().run_until_complete(micropip.install(dummy_pkg_name))
+        asyncio.get_event_loop().run_until_complete(
+            micropip.install(dummy_pkg_name, keep_going=True)
+        )
