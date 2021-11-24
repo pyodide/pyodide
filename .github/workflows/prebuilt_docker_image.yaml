@@ -1,6 +1,7 @@
 on:
   push:
-    tags: "*.*.*"
+    tags:
+    - "*.*.*"
 env:
   GHCR_REGISTRY: ghcr.io
   IMAGE_NAME: pyodide/pyodide
