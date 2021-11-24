@@ -23,8 +23,8 @@ The primary purpose of `core` is to implement {ref}`type translations <type-tran
 
 ### Type conversion from Python to JavaScript
 
-- `python2js` -- Translates types from types from Python to JavaScript, implicitly converting basic types and creating pyproxies for others. It also implements explicity conversion from Python to JavaScript (the `toJs` method).
-- `python2js_buffer` -- Attempts to convert Python objects that implement the Python [Buffer Protocol](https://docs.python.org/3/c-api/buffer.html). This includes `bytes` objects, `memoryview`s, `array.array` and a wide variety of types exposed by extension modules like `numpy`. If the data is a 1d array in a contiguous block it can be sliced directly out of the wasm heap to produce a JavaScript `TypedArray`, but JavaScript does not have native support for pointers so higher dimensional arrays are more complicated.
+- `python2js` -- Translates types from Python to JavaScript, implicitly converting basic types and creating pyproxies for others. It also implements explicity conversion from Python to JavaScript (the `toJs` method).
+- `python2js_buffer` -- Attempts to convert Python objects that implement the Python [Buffer Protocol](https://docs.python.org/3/c-api/buffer.html). This includes `bytes` objects, `memoryview`s, `array.array` and a wide variety of types exposed by extension modules like `numpy`. If the data is a 1d array in a contiguous block it can be sliced directly out of the wasm heap to produce a JavaScript `TypedArray`, but JavaScript does not have native support for pointers, so higher dimensional arrays are more complicated.
 - `pyproxy` -- Defines a JavaScript `Proxy` object that passes calls through to a Python object. Another important core file, `PyProxy.apply` is the primary entrypoint into Python code. `pyproxy.c` is much simpler than `jsproxy.c` though.
 
 ## CPython APIs
@@ -43,13 +43,13 @@ Lastly, the argument parsing functions `PyArg_ParseTuple`, `PyArg_Parse`, etc ar
 ### Python APIs to avoid:
 
 - `PyDict_GetItem`, `PyDict_GetItemString`, and `_PyDict_GetItemId`
-  These APIs do not do correct error reporting and there is talk in the Python community of deprecating them going forward. Instead use `PyDict_GetItemWithError` and `_PyDict_GetItemIdWithError` (there is no `PyDict_GetItemStringWithError` API because use of `GetXString` APIs is also discouraged).
+  These APIs do not do correct error reporting and there is talk in the Python community of deprecating them going forward. Instead, use `PyDict_GetItemWithError` and `_PyDict_GetItemIdWithError` (there is no `PyDict_GetItemStringWithError` API because use of `GetXString` APIs is also discouraged).
 
 - `PyObject_HasAttrString`, `PyObject_GetAttrString`, `PyDict_GetItemString`, `PyDict_SetItemString`, `PyMapping_HasKeyString` etc, etc.
   These APIs cause wasteful repeated string conversion.
   If the string you are using is a constant, e.g., `PyDict_GetItemString(dict, "identifier")`, then make an id with `Py_Identifier(identifier)` and then use `_PyDict_GetItemId(&PyId_identifier)`. If the string is not constant, convert it to a Python object with `PyUnicode_FromString()` and then use e.g., `PyDict_GetItem`.
 
-- `PyModule_AddObject`. This steals a reference on success but not on failure and requires unique cleanup code. Instead use `PyObject_SetAttr`.
+- `PyModule_AddObject`. This steals a reference on success but not on failure and requires unique cleanup code. Instead, use `PyObject_SetAttr`.
 
 (error_handling_macros)=
 
@@ -103,7 +103,7 @@ EM_JS_REF(PyObject*, __js2python, (JsRef id), {
 });
 ```
 
-If the function would return `void`, use `EM_JS_NUM` with return type `errcode`. `errcode` is a typedef for `int`. `EM_JS_NUM` will automatically return `-1` if an error occurs and `0` if not:
+If the function returns `void`, use `EM_JS_NUM` with return type `errcode`. `errcode` is a typedef for `int`. `EM_JS_NUM` will automatically return `-1` if an error occurs and `0` if not:
 
 ```javascript
 EM_JS_NUM(errcode, hiwire_set_member_int, (JsRef idobj, int idx, JsRef idval), {
@@ -150,7 +150,7 @@ Freeing all references at the end of the function allows us to separate referenc
 
 To do this, we divide any function that produces more than a couple of owned `PyObject*`s or `JsRef`s into several "segments".
 The more owned references there are in a function and the longer it is, the more important it becomes to follow this style carefully.
-By being as consistent as possible, we reduce the burden on people reading the code to double check that you are not leaking memory or errors. In short functions it is fine to do something ad hoc.
+By being as consistent as possible, we reduce the burden on people reading the code to double-check that you are not leaking memory or errors. In short functions it is fine to do something ad hoc.
 
 1. The guard block. The first block of a function does sanity checks on the inputs and argument parsing, but only to the extent possible without creating any owned references. If you check more complicated invariants on the inputs in a way that requires creating owned references, this logic belongs in the body block.
 
@@ -175,11 +175,11 @@ JsImport_CreateModule(PyObject* self, PyObject* args)
 ```
 
 2. Forward declaration of owned references. This starts by declaring a success flag `bool success = false`. This will be used in the finally block to decide whether the finally block was entered after a successful execution or after an error. Then declare every reference counted variable that we will create during execution of the function. Finally, declare the variable that we are planning to return.
-   Typically this will be called `result`, but in this case the function is named `CreateModule` so we name the return variable `module`.
+   Typically, this will be called `result`, but in this case the function is named `CreateModule` so we name the return variable `module`.
 
 ```C
   bool success = false;
-  // Note: these are all of the objects that we will own. If a function returns
+  // Note: these are all the objects that we will own. If a function returns
   // a borrow, we XINCREF the result so that we can CLEAR it in the finally block.
   // Reference counting is hard, so it's good to be as explicit and consistent
   // as possible!
@@ -214,7 +214,7 @@ JsImport_CreateModule(PyObject* self, PyObject* args)
 // ... [SNIP]
 ```
 
-4. The finally block. Here we will clear all the variables we declared at the top in exactly the same order. Do not clear the arguments! They are borrowed. According to the standard Python function calling convention, they are the responsibility of the calling code.
+4. The `finally` block. Here we will clear all the variables we declared at the top in exactly the same order. Do not clear the arguments! They are borrowed. According to the standard Python function calling convention, they are the responsibility of the calling code.
 
 ```C
   success = true;

@@ -5,6 +5,7 @@ substitutions:
   Feature: "<span class='badge badge-success'>Feature</span>"
   Fix: "<span class='badge badge-danger'>Fix</span>"
   Update: "<span class='badge badge-success'>Update</span>"
+  Breaking: "<span class='badge badge-danger'>BREAKING CHANGE</span>"
 ---
 
 (changelog)=
@@ -12,6 +13,14 @@ substitutions:
 # Change Log
 
 ## Unreleased
+
+### Backward incompatible changes
+
+- {{Breaking}} Default working directory(home directory) inside Pyodide virtual
+  file system has been changed from `/` to `/home/pyodide`. To get previous behavior, you can
+  - call `os.chdir("/")` to change working directory
+  - or call {any}`loadPyodide <globalThis.loadPyodide>` with the `homedir="/"` argument
+    {pr}`1936`
 
 ### Python package
 
@@ -24,6 +33,10 @@ substitutions:
   object with various methods that convert the data into various types while
   minimizing the number of times the data is copied.
   {pr}`1865`
+
+- {{Enhancement}} Added an {any}`unpack_archive` API to the {any}`FetchResponse`
+  object which treats the response body as an archive and uses `shutil` to
+  unpack it. {pr}`1935`
 
 ### JavaScript package
 
@@ -41,6 +54,10 @@ substitutions:
   the package to the global scope.
   {pr}`1944`
 
+- {{API}} {any}`loadPyodide <globalThis.loadPyodide>` now accepts `homedir`
+  parameter which sets home directory of Pyodide virtual file system.
+  {pr}`1936`
+
 ### Python / JavaScript type conversions
 
 - {{Enhancement}} Updated the calling convention when a JavaScript function is
@@ -51,6 +68,10 @@ substitutions:
 - {{Enhancement}} Added {any}`JsProxy.to_string`, {any}`JsProxy.to_bytes`, and
   {any}`JsProxy.to_memoryview` to allow for conversion of `TypedArray` to
   standard Python types without unneeded copies. {pr}`1864`
+
+- {{Enhancement}} Added {any}`JsProxy.to_file` and {any}`JsProxy.from_file` to
+  allow reading and writing Javascript buffers to files as a byte stream without unneeded copies.
+  {pr}`1864`
 
 - {{Fix}} It is now possible to destroy borrowed attribute `PyProxy` of a
   `PyProxy` (as introduced by {pr}`1636`) before destroying the root `PyProxy`.
@@ -87,6 +108,10 @@ substitutions:
 
 - {{ Enhancement }} Better support for ccache when building Pyodide
   {pr}`1805`
+
+- {{Fix}} Fix compile error `wasm-ld: error: unknown argument: --sort-common`
+  and `wasm-ld: error: unknown argument: --as-needed` in ArchLinux.
+  {pr}`1965`
 
 ### micropip
 
@@ -573,7 +598,7 @@ by 0.16.1 with identical contents.
 - The `pyodide.py` file was transformed to a pyodide-py package. The imports
   remain the same so this change is transparent to the users
   {pr}`909`.
-- FIX Get last version from PyPi when installing a module via micropip
+- FIX Get last version from PyPI when installing a module via micropip
   {pr}`846`.
 - Suppress REPL results returned by `pyodide.eval_code` by adding a semicolon
   {pr}`876`.
@@ -654,7 +679,7 @@ _May 19, 2020_
 
 - Upgrades Pyodide to CPython 3.7.4.
 - micropip no longer uses a CORS proxy to install pure Python packages from
-  PyPi. Packages are now installed from PyPi directly.
+  PyPI. Packages are now installed from PyPI directly.
 - micropip can now be used from web workers.
 - Adds support for installing pure Python wheels from arbitrary URLs with
   micropip.

@@ -2,6 +2,9 @@ from io import StringIO
 from ._core import JsProxy, to_js
 from typing import Any
 import json
+from tempfile import NamedTemporaryFile
+import shutil
+from io import IOBase
 
 try:
     from js import XMLHttpRequest
@@ -148,8 +151,64 @@ class FetchResponse:
         self._raise_if_failed()
         return (await self.buffer()).to_bytes()
 
+    async def _into_file(self, f: IOBase):
+        """Write the data into an empty file with no copy.
 
-async def pyfetch(url, **kwargs) -> FetchResponse:
+        Warning: should only be used when f is an empty file, otherwise it may
+        overwrite the data of f.
+        """
+        buf = await self.buffer()
+        buf._into_file(f)
+
+    async def _create_file(self, path: str):
+        """Uses the data to back a new file without copying it.
+
+        This method avoids copying the data when creating a new file. If you
+        want to write the data into an existing file, use
+
+        .. code-block:: python
+
+            buf = await resp.buffer()
+            buf.to_file(file)
+
+        Parameters
+        ----------
+        path : str
+
+            The path to the file to create. The file should not exist but
+            it should be in a directory that exists. Otherwise, will raise
+            an ``OSError``
+        """
+        with open(path, "x") as f:
+            await self._into_file(f)  # type: ignore
+
+    async def unpack_archive(self, extract_dir=None, format=None):
+        """Treat the data as an archive and unpack it into target directory.
+
+        Assumes that the file is an archive in a format that shutil has an
+        unpacker for. The arguments extract_dir and format are passed directly
+        on to ``shutil.unpack_archive``.
+
+        Parameters
+        ----------
+        extract_dir : str
+            Directory to extract the archive into. If not
+            provided, the current working directory is used.
+
+        format : str
+            The archive format: one of “zip”, “tar”, “gztar”, “bztar”.
+            Or any other format registered with ``shutil.register_unpack_format()``. If not
+            provided, ``unpack_archive()`` will use the archive file name extension
+            and see if an unpacker was registered for that extension. In case
+            none is found, a ``ValueError`` is raised.
+        """
+        filename = self._url.rsplit("/", -1)[-1]
+        with NamedTemporaryFile(suffix=filename) as f:
+            await self._into_file(f)
+            shutil.unpack_archive(f.name, extract_dir, format)
+
+
+async def pyfetch(url: str, **kwargs) -> FetchResponse:
     """Fetch the url and return the response.
 
     This functions provides a similar API to the JavaScript `fetch function
@@ -160,8 +219,11 @@ async def pyfetch(url, **kwargs) -> FetchResponse:
 
     Parameters
     ----------
-    url URL to fetch. \*\*kwargs Any keyword arguments are passed along as
-        `optional parameters to the fetch API
+    url : str
+        URL to fetch.
+
+    \*\*kwargs : Any
+        keyword arguments are passed along as `optional parameters to the fetch API
         <https://developer.mozilla.org/en-US/docs/Web/API/fetch#parameters>`_.
     """
     if IN_BROWSER:

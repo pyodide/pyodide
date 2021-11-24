@@ -9,6 +9,6 @@ test:
     - pycparser
 about:
   home: https://github.com/eliben/pycparser
-  PyPi: https://pypi.org/project/pycparser
+  PyPI: https://pypi.org/project/pycparser
   summary: C parser in Python
   license: BSD

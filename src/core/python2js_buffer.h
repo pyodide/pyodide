@@ -18,7 +18,7 @@
 JsRef
 _python2js_buffer(PyObject* x);
 
-errcode
+errcode WARN_UNUSED
 python2js_buffer_init();
 
 #endif /* PYTHON2JS_BUFFER_H */

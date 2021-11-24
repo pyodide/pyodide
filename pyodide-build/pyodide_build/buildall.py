@@ -223,7 +223,7 @@ def build_from_graph(pkg_map: Dict[str, BasePackage], outputdir: Path, args) -> 
     threads listening to build_queue. When the thread is free, it takes an
     item off build_queue and builds it. Once the package is built, it sends the
     package to the built_queue. The main thread listens to the built_queue and
-    checks if any of the dependents are ready to be built. If so, it add the
+    checks if any of the dependents are ready to be built. If so, it adds the
     package to the build queue.
     """
 
@@ -358,7 +358,7 @@ def build_packages(packages_dir: Path, outputdir: Path, args) -> None:
 
 def make_parser(parser):
     parser.description = (
-        "Build all of the packages in a given directory\n\n"
+        "Build all the packages in a given directory\n\n"
         "Unless the --only option is provided\n\n"
         "Note: this is a private endpoint that should not be used "
         "outside of the pyodide Makefile."

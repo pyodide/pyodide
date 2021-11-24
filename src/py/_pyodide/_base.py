@@ -54,7 +54,7 @@ def should_quiet(source: str) -> bool:
 def _last_assign_to_expr(mod: ast.Module):
     """
     Implementation of 'last_expr_or_assign' return_mode.
-    It modify the supplyied AST module so that the last
+    It modifies the supplyied AST module so that the last
     statement's value can be returned in 'last_expr' return_mode.
     """
     # Largely inspired from IPython:
@@ -197,12 +197,12 @@ class CodeRunner:
 
         The "mode" to compile in. One of ``"exec"``, ``"single"``, or ``"eval"``. Defaults
         to ``"exec"``. For most purposes it's unnecessary to use this argument.
-        See the documentation for the built in
+        See the documentation for the built-in
         `compile <https://docs.python.org/3/library/functions.html#compile>` function.
 
     flags : ``int``
 
-        The flags to compile with. See the documentation for the built in
+        The flags to compile with. See the documentation for the built-in
         `compile <https://docs.python.org/3/library/functions.html#compile>` function.
 
     Attributes:

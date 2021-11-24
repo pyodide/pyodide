@@ -38,7 +38,7 @@ PACKAGE_CONFIG_SPEC: Dict[str, Dict[str, Any]] = {
     },
     "about": {
         "home": str,
-        "PyPi": str,
+        "PyPI": str,
         "summary": str,
         "license": str,
     },
