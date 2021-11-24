@@ -1,10 +1,6 @@
 on:
-  workflow_dispatch:
-    inputs:
-      version:
-        description: 'Version of the docker image to build.
-          The same version of the pyodide-env image must already exist'
-        required: true
+  push:
+    tags: "*.*.*"
 env:
   GHCR_REGISTRY: ghcr.io
   IMAGE_NAME: pyodide/pyodide
