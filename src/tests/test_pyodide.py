@@ -29,7 +29,7 @@ def test_find_imports():
 
 
 def test_pyimport(selenium):
-    selenium.run_in_js(
+    selenium.run_js(
         """
         let platform = pyodide.pyimport("platform");
         assert(() => platform.machine() === "wasm32");
