@@ -1,10 +1,10 @@
 package:
   name: pyb2d
-  version: 0.1.1
+  version: 0.2.1
 
 source:
-  url: https://github.com/pyb2d/pyb2d/archive/refs/tags/0.1.5.tar.gz
-  sha256: 6a5db90dca781a972bfc436aa4ad7948ca50e0b1d9a2292c632ac1123b2ec9dc
+  url: https://github.com/pyb2d/pyb2d/archive/refs/tags/0.2.1.tar.gz
+  sha256: c89e42984c65e8815d8f0481819f2016720235fd126b79eccbadd68952181c80
 
 
 build:
