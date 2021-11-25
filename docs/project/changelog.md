@@ -18,9 +18,9 @@ substitutions:
 
 - {{Breaking}} Default working directory(home directory) inside Pyodide virtual
   file system has been changed from `/` to `/home/pyodide`. To get previous behavior, you can
-  - call `os.chdir("/")`  to change working directory
+  - call `os.chdir("/")` to change working directory
   - or call {any}`loadPyodide <globalThis.loadPyodide>` with the `homedir="/"` argument
-  {pr}`1936`
+    {pr}`1936`
 
 ### Python package
 
@@ -34,6 +34,10 @@ substitutions:
   minimizing the number of times the data is copied.
   {pr}`1865`
 
+- {{Enhancement}} Added an {any}`unpack_archive` API to the {any}`FetchResponse`
+  object which treats the response body as an archive and uses `shutil` to
+  unpack it. {pr}`1935`
+
 ### JavaScript package
 
 - {{Fix}} {any}`loadPyodide <globalThis.loadPyodide>` no longer fails in the
@@ -41,7 +45,7 @@ substitutions:
   {pr}`1849`
 
 - {{Fix}} Webpack building compatibility issues and a {any}`loadPyodide <globalThis.loadPyodide>`
-  runtime issue due to webpack are solved. 
+  runtime issue due to webpack are solved.
   {pr}`1900`
 
 - {{API}} {any}`loadPyodide <globalThis.loadPyodide>` now accepts `homedir`
@@ -98,6 +102,10 @@ substitutions:
 
 - {{ Enhancement }} Better support for ccache when building Pyodide
   {pr}`1805`
+
+- {{Fix}} Fix compile error `wasm-ld: error: unknown argument: --sort-common`
+  and `wasm-ld: error: unknown argument: --as-needed` in ArchLinux.
+  {pr}`1965`
 
 ### micropip
 

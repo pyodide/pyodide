@@ -50,8 +50,11 @@ $(INSTALL)/lib/$(LIB): $(BUILD)/$(LIB) remove_modules.txt
 
 
 clean:
-	-rm -fr $(BUILD)
-	-rm -fr $(INSTALL)
+	-rm -fr $(ROOT)/build
+	-rm -fr $(ROOT)/installs
+
+clean-all: clean
+	-rm -fr $(ROOT)/downloads
 
 
 $(TARBALL):

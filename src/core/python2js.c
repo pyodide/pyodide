@@ -138,7 +138,7 @@ _python2js_sequence(ConversionContext context, PyObject* x)
     FAIL_IF_NULL(pyitem);
     jsitem = _python2js(context, pyitem);
     FAIL_IF_NULL(jsitem);
-    JsArray_Push(jsarray, jsitem);
+    JsArray_Push_unchecked(jsarray, jsitem);
     Py_CLEAR(pyitem);
     hiwire_CLEAR(jsitem);
   }
@@ -328,7 +328,7 @@ _python2js_deep(ConversionContext context, PyObject* x)
   }
   if (context.proxies) {
     JsRef proxy = pyproxy_new(x);
-    JsArray_Push(context.proxies, proxy);
+    JsArray_Push_unchecked(context.proxies, proxy);
     return proxy;
   }
   PyErr_SetString(conversion_error, "No conversion known for x.");
@@ -422,7 +422,7 @@ python2js_inner(PyObject* x, JsRef proxies, bool track_proxies)
   JsRef proxy = pyproxy_new(x);
   FAIL_IF_NULL(proxy);
   if (track_proxies) {
-    JsArray_Push(proxies, proxy);
+    JsArray_Push_unchecked(proxies, proxy);
   }
   return proxy;
 finally:
