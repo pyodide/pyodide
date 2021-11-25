@@ -48,7 +48,6 @@ def mock_get_pypi_json(pkg_map):
     return _mock_get_pypi_json
 
 
-# monkeypatch `fetch_bytes` so that it returns dummy Wheel bytes containing multiple requirements
 def mock_fetch_bytes(pkg_name, metadata, version="1.0.0"):
     """Returns mock function of `fetch_bytes` which returns dummy wheel bytes.
 
