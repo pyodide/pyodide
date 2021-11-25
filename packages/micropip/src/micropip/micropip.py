@@ -9,7 +9,7 @@ from packaging.version import Version
 from packaging.markers import default_environment
 
 from pathlib import Path
-from typing import Dict, Any, Union, List, Tuple
+from typing import Dict, Any, Union, List, Tuple, Optional
 from zipfile import ZipFile
 
 from .externals.pip._internal.utils.wheel import pkg_resources_distribution_for_wheel
@@ -142,7 +142,9 @@ class _PackageManager:
     def __init__(self):
         self.installed_packages = {}
 
-    async def gather_requirements(self, requirements: Union[str, List[str]], ctx=None):
+    async def gather_requirements(
+        self, requirements: Union[str, List[str]], ctx=None, keep_going: bool = False
+    ):
         ctx = ctx or default_environment()
         ctx.setdefault("extra", None)
         if isinstance(requirements, str):
@@ -152,6 +154,8 @@ class _PackageManager:
             "wheels": [],
             "pyodide_packages": [],
             "locked": dict(self.installed_packages),
+            "failed": [],
+            "keep_going": keep_going,
         }
         requirement_promises = []
         for requirement in requirements:
@@ -162,8 +166,19 @@ class _PackageManager:
         await gather(*requirement_promises)
         return transaction
 
-    async def install(self, requirements: Union[str, List[str]], ctx=None):
-        transaction = await self.gather_requirements(requirements, ctx)
+    async def install(
+        self, requirements: Union[str, List[str]], ctx=None, keep_going: bool = False
+    ):
+        transaction = await self.gather_requirements(requirements, ctx, keep_going)
+
+        if transaction["failed"]:
+            failed_requirements = ", ".join(
+                [f"'{req}'" for req in transaction["failed"]]
+            )
+            raise ValueError(
+                f"Couldn't find a pure Python 3 wheel for: {failed_requirements}"
+            )
+
         wheel_promises = []
         # Install built-in packages
         pyodide_packages = transaction["pyodide_packages"]
@@ -237,7 +252,16 @@ class _PackageManager:
                 )
         metadata = await _get_pypi_json(req.name)
         wheel, ver = self.find_wheel(metadata, req)
-        await self.add_wheel(req.name, wheel, ver, req.extras, ctx, transaction)
+        if wheel is None and ver is None:
+            if transaction["keep_going"]:
+                transaction["failed"].append(req)
+            else:
+                raise ValueError(
+                    f"Couldn't find a pure Python 3 wheel for '{req}'. "
+                    "You can use `micropip.intall(..., keep_going=True)` to get a list of all packages with missing wheels."
+                )
+        else:
+            await self.add_wheel(req.name, wheel, ver, req.extras, ctx, transaction)
 
     async def add_wheel(self, name, wheel, version, extras, ctx, transaction):
         transaction["locked"][name] = version
@@ -251,7 +275,25 @@ class _PackageManager:
 
         transaction["wheels"].append((name, wheel, version))
 
-    def find_wheel(self, metadata, req: Requirement):
+    def find_wheel(
+        self, metadata: Dict[str, Any], req: Requirement
+    ) -> Tuple[Any, Optional[Version]]:
+        """Parse metadata to find the latest version of pure python wheel.
+
+        Parameters
+        ----------
+        metadata : ``Dict[str, Any]``
+
+            Package search result from PyPI,
+            See: https://warehouse.pypa.io/api-reference/json.html
+
+        Returns
+        -------
+        fileinfo : Dict[str, Any] or None
+            The metadata of the Python wheel, or None if there is no pure Python wheel.
+        ver : Version or None
+            The version of the Python wheel, or None if there is no pure Python wheel.
+        """
         releases = metadata.get("releases", {})
         candidate_versions = sorted(
             (Version(v) for v in req.specifier.filter(releases)),  # type: ignore
@@ -263,7 +305,7 @@ class _PackageManager:
                 if _is_pure_python_wheel(fileinfo["filename"]):
                     return fileinfo, ver
 
-        raise ValueError(f"Couldn't find a pure Python 3 wheel for '{req}'")
+        return None, None
 
 
 # Make PACKAGE_MANAGER singleton
@@ -271,7 +313,7 @@ PACKAGE_MANAGER = _PackageManager()
 del _PackageManager
 
 
-def install(requirements: Union[str, List[str]]):
+def install(requirements: Union[str, List[str]], keep_going: bool = False):
     """Install the given package and all of its dependencies.
 
     See :ref:`loading packages <loading_packages>` for more information.
@@ -299,6 +341,17 @@ def install(requirements: Union[str, List[str]]):
           name of a package. A package by this name must either be present in the
           Pyodide repository at `indexURL <globalThis.loadPyodide>` or on PyPI
 
+    keep_going : ``bool``, default: False
+
+        This parameter decides the behavior of the micropip when it encounters a
+        Python package without a pure Python wheel while doing dependency
+        resolution:
+
+        - If ``False``, an error will be raised on first package with a missing wheel.
+
+        - If ``True``, the micropip will keep going after the first error, and report a list
+          of errors at the end.
+
     Returns
     -------
     ``Future``
@@ -307,7 +360,9 @@ def install(requirements: Union[str, List[str]]):
         downloaded and installed.
     """
     importlib.invalidate_caches()
-    return asyncio.ensure_future(PACKAGE_MANAGER.install(requirements))
+    return asyncio.ensure_future(
+        PACKAGE_MANAGER.install(requirements, keep_going=keep_going)
+    )
 
 
 __all__ = ["install"]

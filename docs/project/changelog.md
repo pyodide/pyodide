@@ -112,6 +112,11 @@ substitutions:
 - {{Fix}} micropip now raises error when installing non-pure python wheel directly from url.
   {pr}`1859`
 
+- {{Enhancement}} {func}`micropip.install` now accepts a `keep_going` parameter. If set to True,
+  micropip reports all identifiable dependencies that don't have pure Python wheels, instead of
+  failing after processing the first one.
+  {pr}`1976`
+
 ### packages
 
 - {{ Enhancement }} Unit tests are now unvendored from Python packages and
