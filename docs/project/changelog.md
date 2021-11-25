@@ -110,7 +110,7 @@ substitutions:
 
 - {{Enhancement}} {func}`micropip.install` now accepts a `keep_going` parameter. If set to True,
   micropip reports all identifiable dependencies that don't have pure Python wheels, instead of
-  failing after processing the fist one.
+  failing after processing the first one.
   {pr}`1976`
 
 ### packages
