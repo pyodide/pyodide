@@ -23,9 +23,7 @@ def mock_get_pypi_json(pkg_map):
     Returns
     -------
     ``Function``
-
         A mock function of ``_get_pypi_json`` which returns dummy JSON data of PyPI API.
-
     """
 
     async def _mock_get_pypi_json(pkgname, **kwargs):
@@ -54,23 +52,18 @@ def mock_fetch_bytes(pkg_name, metadata, version="1.0.0"):
     Parameters
     ----------
     pkg_name : ``str``
-
         Name of the Python package
 
     metadata : ``str``
-
         Metadata of the dummy wheel file
 
     version : ``str``
-
         Version of the dummy wheel file
 
     Returns
     -------
     ``Function``
-
         A mock function of ``fetch_bytes`` which return dummy wheel bytes
-
     """
 
     async def _mock_fetch_bytes(url, **kwargs):
