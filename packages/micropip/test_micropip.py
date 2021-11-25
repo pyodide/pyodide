@@ -1,10 +1,95 @@
 import asyncio
+import io
 import sys
 from pathlib import Path
+import zipfile
 
 import pytest
 
 sys.path.append(str(Path(__file__).resolve().parent / "src"))
+
+
+def mock_get_pypi_json(pkg_map):
+    """Returns mock function of `_get_pypi_json` which returns dummy JSON data of PyPI API.
+
+    Parameters
+    ----------
+    pkg_map : ``None | Dict[str, str]``
+
+        Dictionary that maps package name to dummy release file.
+        Packages that are not in this dictionary will return
+        `{pkgname}-1.0.0.tar.gz` as a release file.
+
+    Returns
+    -------
+    ``Function``
+
+        A mock function of ``_get_pypi_json`` which returns dummy JSON data of PyPI API.
+
+    """
+
+    async def _mock_get_pypi_json(pkgname, **kwargs):
+        if pkgname in pkg_map:
+            pkg_file = pkg_map[pkgname]
+        else:
+            pkg_file = f"{pkgname}-1.0.0.tar.gz"
+
+        return {
+            "releases": {
+                "1.0.0": [
+                    {
+                        "filename": pkg_file,
+                        "url": "",
+                    }
+                ]
+            }
+        }
+
+    return _mock_get_pypi_json
+
+
+# monkeypatch `fetch_bytes` so that it returns dummy Wheel bytes containing multiple requirements
+def mock_fetch_bytes(pkg_name, metadata, version="1.0.0"):
+    """Returns mock function of `fetch_bytes` which returns dummy wheel bytes.
+
+    Parameters
+    ----------
+    pkg_name : ``str``
+
+        Name of the Python package
+
+    metadata : ``str``
+
+        Metadata of the dummy wheel file
+
+    version : ``str``
+
+        Version of the dummy wheel file
+
+    Returns
+    -------
+    ``Function``
+
+        A mock function of ``fetch_bytes`` which return dummy wheel bytes
+
+    """
+
+    async def _mock_fetch_bytes(url, **kwargs):
+        mock_metadata = metadata
+        mock_wheel = "Wheel-Version: 1.0"
+
+        with io.BytesIO() as tmp:
+            with zipfile.ZipFile(tmp, "w", zipfile.ZIP_DEFLATED) as archive:
+                archive.writestr(
+                    f"{pkg_name}-{version}.dist-info/METADATA", mock_metadata
+                )
+                archive.writestr(f"{pkg_name}-{version}.dist-info/WHEEL", mock_wheel)
+
+            tmp.seek(0)
+
+            return tmp.read()
+
+    return _mock_fetch_bytes
 
 
 @pytest.fixture
@@ -243,42 +328,12 @@ def test_install_keep_going(monkeypatch):
     from micropip import micropip
 
     dummy_pkg_name = "dummy"
-
-    async def _mock_get_pypi_json(pkgname, **kwargs):
-        if pkgname == dummy_pkg_name:
-            pkg_file = f"{pkgname}-1.0.0-py3-none-any.whl"
-        else:
-            pkg_file = f"{pkgname}-1.0.0.tar.gz"
-
-        return {
-            "releases": {
-                "1.0.0": [
-                    {
-                        "filename": pkg_file,
-                        "url": "",
-                    }
-                ]
-            }
-        }
-
-    # monkeypatch `fetch_bytes` so that it returns dummy Wheel bytes containing multiple requirements
-    async def _mock_fetch_bytes(url, **kwargs):
-        import zipfile
-        import tempfile
-
-        mock_metadata = "Requires-Dist: dep1\nRequires-Dist: dep2\n\nUNKNOWN"
-        mock_wheel = "Wheel-Version: 1.0"
-
-        with tempfile.SpooledTemporaryFile() as tmp:
-            with zipfile.ZipFile(tmp, "w", zipfile.ZIP_DEFLATED) as archive:
-                archive.writestr(
-                    f"{dummy_pkg_name}-1.0.0.dist-info/METADATA", mock_metadata
-                )
-                archive.writestr(f"{dummy_pkg_name}-1.0.0.dist-info/WHEEL", mock_wheel)
-
-            tmp.seek(0)
-
-            return tmp.read()
+    _mock_get_pypi_json = mock_get_pypi_json(
+        {dummy_pkg_name: f"{dummy_pkg_name}-1.0.0-py3-none-any.whl"}
+    )
+    _mock_fetch_bytes = mock_fetch_bytes(
+        dummy_pkg_name, "Requires-Dist: dep1\nRequires-Dist: dep2\n\nUNKNOWN"
+    )
 
     monkeypatch.setattr(micropip, "_get_pypi_json", _mock_get_pypi_json)
     monkeypatch.setattr(micropip, "fetch_bytes", _mock_fetch_bytes)
