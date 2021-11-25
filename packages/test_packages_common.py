@@ -72,7 +72,12 @@ def test_parse_package(name):
 @pytest.mark.driver_timeout(40)
 @pytest.mark.parametrize("name", registered_packages())
 def test_import(name, selenium_standalone):
-    # check that we can parse the meta.yaml
+    if name not in built_packages():
+        raise AssertionError(
+            "Implementation error. Test for an unbuilt package "
+            "should have been skipped in selenium_standalone fixture"
+        )
+
     meta = parse_package_config(PKG_DIR / name / "meta.yaml")
 
     if name in UNSUPPORTED_PACKAGES[selenium_standalone.browser]:
@@ -81,9 +86,6 @@ def test_import(name, selenium_standalone):
                 name, selenium_standalone.browser
             )
         )
-
-    if name not in built_packages():
-        pytest.skip(f"{name} was skipped due to PYODIDE_PACKAGES")
 
     selenium_standalone.run("import glob, os")
 
