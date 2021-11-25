@@ -167,7 +167,7 @@ class _PackageManager:
         return transaction
 
     async def install(
-        self, requirements: Union[str, List[str]], ctx=None, keep_going: bool =False
+        self, requirements: Union[str, List[str]], ctx=None, keep_going: bool = False
     ):
         transaction = await self.gather_requirements(requirements, ctx, keep_going)
 
@@ -256,8 +256,10 @@ class _PackageManager:
             if transaction["keep_going"]:
                 transaction["failed"].append(req)
             else:
-                raise ValueError(f"Couldn't find a pure Python 3 wheel for '{req}'. "
-                                           "You can use `micropip.intall(..., keep_going=True)` to get a list of all packages with missing wheels.")
+                raise ValueError(
+                    f"Couldn't find a pure Python 3 wheel for '{req}'. "
+                    "You can use `micropip.intall(..., keep_going=True)` to get a list of all packages with missing wheels."
+                )
         else:
             await self.add_wheel(req.name, wheel, ver, req.extras, ctx, transaction)
 
