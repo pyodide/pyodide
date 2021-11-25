@@ -143,7 +143,7 @@ class _PackageManager:
         self.installed_packages = {}
 
     async def gather_requirements(
-        self, requirements: Union[str, List[str]], ctx=None, keep_going=False
+        self, requirements: Union[str, List[str]], ctx=None, keep_going: bool = False
     ):
         ctx = ctx or default_environment()
         ctx.setdefault("extra", None)
@@ -167,7 +167,7 @@ class _PackageManager:
         return transaction
 
     async def install(
-        self, requirements: Union[str, List[str]], ctx=None, keep_going=False
+        self, requirements: Union[str, List[str]], ctx=None, keep_going: bool =False
     ):
         transaction = await self.gather_requirements(requirements, ctx, keep_going)
 
@@ -256,7 +256,8 @@ class _PackageManager:
             if transaction["keep_going"]:
                 transaction["failed"].append(req)
             else:
-                raise ValueError(f"Couldn't find a pure Python 3 wheel for '{req}'")
+                raise ValueError(f"Couldn't find a pure Python 3 wheel for '{req}'. "
+                                           "You can use `micropip.intall(..., keep_going=True)` to get a list of all packages with missing wheels.")
         else:
             await self.add_wheel(req.name, wheel, ver, req.extras, ctx, transaction)
 
@@ -341,14 +342,13 @@ def install(requirements: Union[str, List[str]], keep_going: bool = False):
     keep_going : ``bool``, default: False
 
         This parameter decides the behavior of the micropip when it encounters a
-        non-pure Python package while doing dependency resolution:
+        Python package without a pure Python wheel while doing dependency
+        resolution:
 
-        - If ``False``, an error will be raised when the micropip finds the first
-          non-pure Python package.
+        - If ``False``, an error will be raised on first package with a missing wheel.
 
-        - If ``True``, the micropip will continue searching other dependencies
-          even after it finds non-pure Python packages, and report all non-pure
-          Python packages it could found with an error.
+        - If ``True``, the micropip will keep going after the first error, and report a list
+          of errors at the end.
 
     Returns
     -------
