@@ -1,12 +1,12 @@
-From 9becc63602dcd7714fa9f46bfbb84d0a958a200d Mon Sep 17 00:00:00 2001
+From 3d9bc6e5ee92a44a4163b98da881fbe879c77542 Mon Sep 17 00:00:00 2001
 From: Hood Chatham <roberthoodchatham@gmail.com>
 Date: Fri, 26 Nov 2021 14:39:08 -0800
-Subject: [PATCH] Add to emcc to fix up common Python fpcasts
+Subject: [PATCH] Patch emcc so it will fix up common Python fpcast problems
 
 ---
  emcc.py                    |  21 +++
- tools/patch_out_fpcasts.py | 294 +++++++++++++++++++++++++++++++++++++
- 2 files changed, 315 insertions(+)
+ tools/patch_out_fpcasts.py | 295 +++++++++++++++++++++++++++++++++++++
+ 2 files changed, 316 insertions(+)
  create mode 100644 tools/patch_out_fpcasts.py
 
 diff --git a/emsdk/upstream/emscripten/emcc.py b/emsdk/upstream/emscripten/emcc.py
@@ -57,10 +57,10 @@ index 5653470dd..cd42c1a45 100755
          assert os.path.exists(output_file)
 diff --git a/emsdk/upstream/emscripten/tools/patch_out_fpcasts.py b/emsdk/upstream/emscripten/tools/patch_out_fpcasts.py
 new file mode 100644
-index 000000000..b57561278
+index 000000000..f8a42d8eb
 --- /dev/null
 +++ b/emsdk/upstream/emscripten/tools/patch_out_fpcasts.py
-@@ -0,0 +1,294 @@
+@@ -0,0 +1,295 @@
 +import re
 +from typing import List, Optional
 +
@@ -68,6 +68,7 @@ index 000000000..b57561278
 +normalize_self_type_re = re.compile("\([A-Za-z]* \*")
 +func_decl_name_re = re.compile("([A-Za-z0-9_]*) '")
 +parm_column_re = re.compile("col:([0-9]*)")
++
 +
 +
 +class Tree:
@@ -282,7 +283,7 @@ index 000000000..b57561278
 +    if setter_node.type != "ImplicitValueInitExpr":
 +        declref = setter_node.descend_to_declref()
 +        sig = declref.get_declref_sig()
-+        expected_sig = "PyObject *(PyObject *, PyObject *, void *)"
++        expected_sig = "int (PyObject *, PyObject *, void *)"
 +        if sig != expected_sig:
 +            yield declref.get_declref_name()
 +
