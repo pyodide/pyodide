@@ -1,6 +1,8 @@
 *.a
 *.o
 *.pyc
+*.c.ast
+*.c.bak
 src/js/pyproxy.gen.js
 
 *.egg-info/
