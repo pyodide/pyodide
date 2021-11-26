@@ -341,6 +341,13 @@ function restoreOrigWasmPlugin() {
 }
 
 /**
+ * @callback LogFn
+ * @param {string} msg
+ * @returns {void}
+ * @private
+ */
+
+/**
  * Load a package or a list of packages over the network. This installs the
  * package in the virtual filesystem. The package needs to be imported from
  * Python before it can be used.
