@@ -424,6 +424,9 @@ def needs_rebuild(pkg: Dict[str, Any], path: Path, buildpath: Path) -> bool:
         yield path
         yield from pkg.get("source", {}).get("patches", [])
         yield from (x[0] for x in pkg.get("source", {}).get("extras", []))
+        src_path = pkg.get("source", {}).get("path")
+        if src_path:
+            yield from Path(src_path).glob("**/*")
 
     for source_file in source_files():
         source_file = Path(source_file)
