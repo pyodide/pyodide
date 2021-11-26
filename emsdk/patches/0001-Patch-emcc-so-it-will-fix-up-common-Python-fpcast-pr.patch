@@ -1,12 +1,12 @@
-From e2255a5b8d79fb076fd45b19402a83c835486048 Mon Sep 17 00:00:00 2001
+From 591d2ce854477888a0e0f83d22f15eb5449e3fa3 Mon Sep 17 00:00:00 2001
 From: Hood Chatham <roberthoodchatham@gmail.com>
 Date: Fri, 26 Nov 2021 14:39:08 -0800
 Subject: [PATCH] Patch emcc so it will fix up common Python fpcast problems
 
 ---
  emcc.py                    |  21 +++
- tools/patch_out_fpcasts.py | 299 +++++++++++++++++++++++++++++++++++++
- 2 files changed, 320 insertions(+)
+ tools/patch_out_fpcasts.py | 303 +++++++++++++++++++++++++++++++++++++
+ 2 files changed, 324 insertions(+)
  create mode 100644 tools/patch_out_fpcasts.py
 
 diff --git a/emsdk/upstream/emscripten/emcc.py b/emsdk/upstream/emscripten/emcc.py
@@ -57,10 +57,10 @@ index 5653470dd..cd42c1a45 100755
          assert os.path.exists(output_file)
 diff --git a/emsdk/upstream/emscripten/tools/patch_out_fpcasts.py b/emsdk/upstream/emscripten/tools/patch_out_fpcasts.py
 new file mode 100644
-index 000000000..7f93ea4ee
+index 000000000..e1138a923
 --- /dev/null
 +++ b/emsdk/upstream/emscripten/tools/patch_out_fpcasts.py
-@@ -0,0 +1,299 @@
+@@ -0,0 +1,303 @@
 +import re
 +from typing import List, Optional
 +
@@ -149,7 +149,11 @@ index 000000000..7f93ea4ee
 +    def get_func_decl_end_of_args(self):
 +        if not self.is_func_decl:
 +            raise TypeError("Only makes sense on FunctionDecl nodes.")
-+        line = int(self.info.rpartition("line:")[2].partition(":")[0])
++        if "line:" in self.info:
++            linestr = self.info.rpartition("line:")[2].partition(":")[0]
++        else:
++            linestr = self.info.rpartition(", col")[0].split(":")[1]
++        line = int(linestr)
 +        for n in reversed(self.children):
 +            if n.is_param_decl:
 +                break
