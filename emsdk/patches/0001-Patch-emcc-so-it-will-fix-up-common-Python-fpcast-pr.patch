@@ -1,16 +1,16 @@
-From d022225cbb33f9b0301e91a4c83bc2c85dd74947 Mon Sep 17 00:00:00 2001
+From 6d068b7b849cdc287e8f64d7059ec232bbf2f9bb Mon Sep 17 00:00:00 2001
 From: Hood Chatham <roberthoodchatham@gmail.com>
 Date: Fri, 26 Nov 2021 14:39:08 -0800
 Subject: [PATCH] Patch emcc so it will fix up common Python fpcast problems
 
 ---
- emcc.py                    |  26 ++++
- tools/patch_out_fpcasts.py | 301 +++++++++++++++++++++++++++++++++++++
- 2 files changed, 327 insertions(+)
+ emcc.py                    |  29 ++++
+ tools/patch_out_fpcasts.py | 305 +++++++++++++++++++++++++++++++++++++
+ 2 files changed, 334 insertions(+)
  create mode 100644 tools/patch_out_fpcasts.py
 
 diff --git a/emsdk/upstream/emscripten/emcc.py b/emsdk/upstream/emscripten/emcc.py
-index 5653470dd..307593a78 100755
+index 5653470dd..f72305bc1 100755
 --- a/emsdk/upstream/emscripten/emcc.py
 +++ b/emsdk/upstream/emscripten/emcc.py
 @@ -32,6 +32,7 @@ import re
@@ -21,14 +21,17 @@ index 5653470dd..307593a78 100755
  import sys
  import time
  from enum import Enum
-@@ -2162,6 +2163,30 @@ There is NO warranty; not even for MERCHANTABILITY or FITNESS FOR A PARTICULAR P
+@@ -2162,6 +2163,33 @@ There is NO warranty; not even for MERCHANTABILITY or FITNESS FOR A PARTICULAR P
        else:
          return in_temp(unsuffixed(uniquename(input_file)) + options.default_object_extension)
  
 +    def patch_source_file(cmd, input_file):
 +      from tools import patch_out_fpcasts
++      import os
++      PYODIDE_ROOT = os.environ.get("PYODIDE_ROOT")
++      if not PYODIDE_ROOT:
++        return
 +      res = subprocess.run(["egrep", "-q", "(PyGetSetDef)|(PyMethodDef)", input_file])
-+      print("checking for patches to file", input_file, "?", res.returncode == 0)
 +      if res.returncode != 0:
 +        return
 +      cmd2 = cmd[:1] + ["-cc1"] \
@@ -38,8 +41,8 @@ index 5653470dd..307593a78 100755
 +            arg.startswith("-D")
 +          ] \
 +        + [
-+            "-I/src/emsdk/emsdk/upstream/emscripten/cache/sysroot/include",
-+            "-I/src/emsdk/emsdk/upstream/lib/clang/13.0.0/include",
++            f"-I{PYODIDE_ROOT}/emsdk/emsdk/upstream/emscripten/cache/sysroot/include",
++            f"-I{PYODIDE_ROOT}/emsdk/emsdk/upstream/lib/clang/13.0.0/include",
 +            "-Wno-unknown-attributes",
 +            "-Wno-incompatible-library-redeclaration"
 +          ] \
@@ -52,7 +55,7 @@ index 5653470dd..307593a78 100755
      def compile_source_file(i, input_file):
        logger.debug('compiling source file: ' + input_file)
        output_file = get_object_filename(input_file)
-@@ -2173,6 +2198,7 @@ There is NO warranty; not even for MERCHANTABILITY or FITNESS FOR A PARTICULAR P
+@@ -2173,6 +2201,7 @@ There is NO warranty; not even for MERCHANTABILITY or FITNESS FOR A PARTICULAR P
        if not has_dash_c:
          cmd += ['-c']
        cmd += ['-o', output_file]
@@ -62,10 +65,10 @@ index 5653470dd..307593a78 100755
          assert os.path.exists(output_file)
 diff --git a/emsdk/upstream/emscripten/tools/patch_out_fpcasts.py b/emsdk/upstream/emscripten/tools/patch_out_fpcasts.py
 new file mode 100644
-index 000000000..8231067c4
+index 000000000..5b6c23453
 --- /dev/null
 +++ b/emsdk/upstream/emscripten/tools/patch_out_fpcasts.py
-@@ -0,0 +1,301 @@
+@@ -0,0 +1,305 @@
 +import re
 +from typing import List, Optional
 +
@@ -191,6 +194,8 @@ index 000000000..8231067c4
 +    def eval_int(self):
 +        if self.type == "IntegerLiteral":
 +            return int(self.info.rpartition(" ")[-1])
++        if self.type == "ParenExpr":
++            return self.first_child.eval_int()
 +        if self.type == "BinaryOperator":
 +            binop = self.info.rpartition(" ")[-1]
 +            if binop == "'|'":
@@ -321,6 +326,8 @@ index 000000000..8231067c4
 +        lineno -= 1
 +        colno -= 1
 +        line = src_lines[lineno]
++        if fname not in line:
++            continue
 +        newline = line[:colno] + ", PyObject *ignored" + line[colno:]
 +        src_lines[lineno] = newline
 +
@@ -333,10 +340,10 @@ index 000000000..8231067c4
 +    funcs_to_fix.extend(get_method_defs_to_fix(tree))
 +    funcs_to_fix.extend(get_getset_defs_to_fix(tree))
 +
-+    print("patched", src_filename, "?", not not funcs_to_fix)
 +    
 +    if not funcs_to_fix:
 +        return
++    print("Patched fpcasts in", src_filename, "!")
 +
 +    with open(src_filename, "r") as src:
 +        src_lines = list(src)
