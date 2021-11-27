@@ -1,4 +1,4 @@
-From 6e9df864078e94fb3b7139128b29e450642281fb Mon Sep 17 00:00:00 2001
+From b25904d1df98726e63f0036f77181937efd60f83 Mon Sep 17 00:00:00 2001
 From: Hood Chatham <roberthoodchatham@gmail.com>
 Date: Fri, 26 Nov 2021 14:39:08 -0800
 Subject: [PATCH] Patch emcc so it will fix up common Python fpcast problems
@@ -65,7 +65,7 @@ index 5653470dd..f72305bc1 100755
          assert os.path.exists(output_file)
 diff --git a/emsdk/upstream/emscripten/tools/patch_out_fpcasts.py b/emsdk/upstream/emscripten/tools/patch_out_fpcasts.py
 new file mode 100644
-index 000000000..edbf4b50c
+index 000000000..bad50bb8c
 --- /dev/null
 +++ b/emsdk/upstream/emscripten/tools/patch_out_fpcasts.py
 @@ -0,0 +1,400 @@
@@ -390,7 +390,7 @@ index 000000000..edbf4b50c
 +        # llvm one-indexes line and column
 +        lineno -= 1
 +        line: str = src_lines[lineno]
-+        colno = line.rfind(")") - 1
++        colno = line.rfind(")")
 +        if fname not in line:
 +            continue
 +        newline = line[:colno] + ", PyObject *ignored" + line[colno:]
