@@ -1,12 +1,12 @@
-From 1b856bfb929371ab0fa62573393a6edfdbbf4d84 Mon Sep 17 00:00:00 2001
+From 04943a8b6c7a95722f7d83fb4e8193c2b15ba864 Mon Sep 17 00:00:00 2001
 From: Hood Chatham <roberthoodchatham@gmail.com>
 Date: Fri, 26 Nov 2021 14:39:08 -0800
 Subject: [PATCH] Patch emcc so it will fix up common Python fpcast problems
 
 ---
- emcc.py                    |  29 ++++
- tools/patch_out_fpcasts.py | 307 +++++++++++++++++++++++++++++++++++++
- 2 files changed, 336 insertions(+)
+ emcc.py                    |  29 +++
+ tools/patch_out_fpcasts.py | 404 +++++++++++++++++++++++++++++++++++++
+ 2 files changed, 433 insertions(+)
  create mode 100644 tools/patch_out_fpcasts.py
 
 diff --git a/emsdk/upstream/emscripten/emcc.py b/emsdk/upstream/emscripten/emcc.py
@@ -65,17 +65,20 @@ index 5653470dd..f72305bc1 100755
          assert os.path.exists(output_file)
 diff --git a/emsdk/upstream/emscripten/tools/patch_out_fpcasts.py b/emsdk/upstream/emscripten/tools/patch_out_fpcasts.py
 new file mode 100644
-index 000000000..f5cc83cbf
+index 000000000..63d1d7a8e
 --- /dev/null
 +++ b/emsdk/upstream/emscripten/tools/patch_out_fpcasts.py
-@@ -0,0 +1,307 @@
+@@ -0,0 +1,404 @@
 +import re
++from subprocess import call
 +from typing import List, Optional
 +
 +first_interesting_char_re = re.compile(".*?(?=[a-zA-Z<])")
 +func_decl_name_re = re.compile("([A-Za-z0-9_]*) '")
 +parm_column_re = re.compile("col:([0-9]*)")
-+
++location_info_re = re.compile(
++    "<([a-zA-Z._/]*):([0-9]*)(:[0-9]*)?(, ([a-z]*):([0-9]*)(:[0-9]*)?)?>( ([a-z]*):([0-9]*)(:[0-9]*)?)?"
++)
 +
 +
 +class Tree:
@@ -84,6 +87,10 @@ index 000000000..f5cc83cbf
 +        self.parent: Optional[Tree] = None
 +        self.type: str = ty
 +        self.info: str = info
++        self.start_loc = (0, 0)
++        self.end_loc = (0, 0)
++        self.next_loc = (0, 0)
++        self.file = None
 +
 +    @property
 +    def first_child(self):
@@ -97,6 +104,14 @@ index 000000000..f5cc83cbf
 +        yield self
 +        for t in self.children:
 +            yield from t.walk()
++
++    def iter_call_exprs(self):
++        next = self.children
++        if self.is_call_expr:
++            yield self
++            next = next[1:]
++        for t in next:
++            yield from t.iter_call_exprs()
 +
 +    def descend_to_declref(self):
 +        while not self.is_decl_ref:
@@ -128,6 +143,10 @@ index 000000000..f5cc83cbf
 +                yield t
 +            else:
 +                yield from t.find_decls(name)
++
++    @property
++    def is_call_expr(self):
++        return self.type == "CallExpr"
 +
 +    @property
 +    def is_func_decl(self):
@@ -204,6 +223,7 @@ index 000000000..f5cc83cbf
 +        self.tree: Optional[Tree] = None
 +
 +    def add_node(self, depth: int, ty: str, info: str):
++        info = info.partition(" ")[2]
 +        tree = Tree(ty, info)
 +        parent = self.last_tree
 +        last_depth = self.last_depth
@@ -215,6 +235,56 @@ index 000000000..f5cc83cbf
 +        levels_up = last_depth + 1 - depth
 +        for _ in range(levels_up):
 +            parent = parent.parent
++        if parent.children:
++            last_sibling = parent.children[-1]
++            last_loc = last_sibling.end_loc
++        else:
++            last_loc = parent.next_loc
++        m = location_info_re.search(info)
++        start_line = 0
++        start_col = 0
++        end_line = 0
++        end_col = 0
++        next_line = 0
++        next_col = 0
++        file = None
++        if m:
++            gps = m.groups()
++            if gps[0] == "col":
++                start_line = last_loc[0]
++                start_col = int(gps[1])
++            else:
++                start_line = int(gps[1])
++                start_col = int(gps[2][1:])
++                if gps[0] != "line":
++                    file = gps[0]
++
++            if gps[4] == "col":
++                end_line = start_line
++                end_col = int(gps[5])
++            elif gps[4]:
++                end_line = int(gps[5])
++                end_col = int(gps[6][1:])
++            else:
++                end_line = start_line
++                end_col = start_col
++
++            if gps[8] == "col":
++                next_line = start_line
++                next_col = int(gps[9])
++            elif gps[8]:
++                next_line = int(gps[9])
++                next_col = int(gps[10][1:])
++            else:
++                next_line = start_line
++                next_col = start_col
++        if not file:
++            file = parent.file
++
++        tree.start_loc = (start_line, start_col)
++        tree.end_loc = (end_line, end_col)
++        tree.next_loc = (next_line, next_col)
++        tree.file = file
 +        parent.add_child(tree)
 +
 +    def build_from_iter(self, iter):
@@ -251,7 +321,7 @@ index 000000000..f5cc83cbf
 +def is_bad_method_def(c):
 +    declref = c.children[1].descend_to_declref()
 +    sig = declref.get_declref_sig()
-+    
++
 +    flags = c.children[2].eval_int()
 +    meth_flags = []
 +    for [mty, mflag] in METHOD_FLAGS.items():
@@ -271,8 +341,10 @@ index 000000000..f5cc83cbf
 +            func_name = declref.get_declref_name()
 +            yield func_name
 +
++
 +def count_sig_args(sig):
-+    return sig.count(',') + 1
++    return sig.count(",") + 1
++
 +
 +def get_bad_getset_names(c):
 +    if len(c.children) <= 1:
@@ -282,7 +354,7 @@ index 000000000..f5cc83cbf
 +        declref = getter_node.descend_to_declref()
 +        if declref:
 +            sig = declref.get_declref_sig()
-+            
++
 +            if count_sig_args(sig) != 2:
 +                yield declref.get_declref_name()
 +
@@ -311,17 +383,20 @@ index 000000000..f5cc83cbf
 +    for t in tree.children:
 +        if not t.is_func_decl:
 +            continue
-+        # t.pretty_print()
 +        fname = t.get_func_decl_name()
 +        if not fname in target_names:
 +            continue
-+        lineno = t.get_func_decl_line()
++        for c in t.children:
++            if c.type != "ParmVarDecl":
++                break
++        lineno = c.start_loc[0]
++        colno = c.start_loc[1] - 1
 +        # llvm one-indexes line and column
 +        lineno -= 1
-+        line : str = src_lines[lineno]
++        colno -= 1
++        line: str = src_lines[lineno]
 +        if fname not in line:
 +            continue
-+        colno = line.rfind(")")
 +        newline = line[:colno] + ", PyObject *ignored" + line[colno:]
 +        src_lines[lineno] = newline
 +
@@ -334,7 +409,6 @@ index 000000000..f5cc83cbf
 +    funcs_to_fix.extend(get_method_defs_to_fix(tree))
 +    funcs_to_fix.extend(get_getset_defs_to_fix(tree))
 +
-+    
 +    if not funcs_to_fix:
 +        return
 +    print("Patched fpcasts in", src_filename, "!")
@@ -342,10 +416,20 @@ index 000000000..f5cc83cbf
 +    with open(src_filename, "r") as src:
 +        src_lines = list(src)
 +    fix_func_decls(src_lines, tree, funcs_to_fix)
++    for call_expr in tree.iter_call_exprs():
++        decl_ref = call_expr.first_child.descend_to_declref()
++        name = decl_ref.get_declref_name()
++        if name in funcs_to_fix:
++            lineno, colno = call_expr.end_loc
++            lineno -= 1
++            colno -= 1
++            line = src_lines[lineno]
++            src_lines[lineno] = line[:colno] + ", NULL" + line[colno:]
 +
 +    if in_place:
 +        dst_filename = src_filename
 +        import shutil
++
 +        shutil.copy(src_filename, src_filename + ".bak")
 +    else:
 +        dst_filename = src_filename + ".patched"
@@ -353,6 +437,7 @@ index 000000000..f5cc83cbf
 +    with open(dst_filename, "w") as dst:
 +        dst.writelines(src_lines)
 +    return 0
++
 +
 +def patch_source_file(ast_filename, src_filename, in_place=False):
 +    try:
@@ -362,19 +447,31 @@ index 000000000..f5cc83cbf
 +        print("Error processing file", src_filename)
 +        raise e
 +
++
 +def main(args):
 +    import argparse
-+    parser = argparse.ArgumentParser(description='Patch Python C source files to prevent function pointers from being called with the wrong number of arguments.')
-+    parser.add_argument('ast_file', type=str, help="The ast for the C source (produced by 'clang -cc1 -ast-dump')")
-+    parser.add_argument('source_file', type=str, help="The C source to patch")
-+    parser.add_argument('--in-place', action='store_true', help='Write patched source over the original source file')
++
++    parser = argparse.ArgumentParser(
++        description="Patch Python C source files to prevent function pointers from being called with the wrong number of arguments."
++    )
++    parser.add_argument(
++        "ast_file",
++        type=str,
++        help="The ast for the C source (produced by 'clang -cc1 -ast-dump')",
++    )
++    parser.add_argument("source_file", type=str, help="The C source to patch")
++    parser.add_argument(
++        "--in-place",
++        action="store_true",
++        help="Write patched source over the original source file",
++    )
 +    args = parser.parse_args(args)
 +    patch_source_file(args.ast_file, args.source_file, args.in_place)
 +
 +
-+
 +if __name__ == "__main__":
 +    import sys
++
 +    sys.exit(main(sys.argv[1:]))
 -- 
 2.25.1
