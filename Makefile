@@ -67,7 +67,7 @@ env:
 	env
 
 
-node_modules/.installed : src/js/package.json
+node_modules/.installed : src/js/package.json package-lock.json
 	cd src/js && npm ci
 	ln -sfn src/js/node_modules/ node_modules
 	touch node_modules/.installed
