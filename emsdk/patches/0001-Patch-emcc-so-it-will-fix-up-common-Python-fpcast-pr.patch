@@ -1,16 +1,16 @@
-From 1c7bb5b2b38ff94b1a1611f8c51dc19624f174b2 Mon Sep 17 00:00:00 2001
+From d022225cbb33f9b0301e91a4c83bc2c85dd74947 Mon Sep 17 00:00:00 2001
 From: Hood Chatham <roberthoodchatham@gmail.com>
 Date: Fri, 26 Nov 2021 14:39:08 -0800
 Subject: [PATCH] Patch emcc so it will fix up common Python fpcast problems
 
 ---
- emcc.py                    |  21 +++
- tools/patch_out_fpcasts.py | 302 +++++++++++++++++++++++++++++++++++++
- 2 files changed, 323 insertions(+)
+ emcc.py                    |  26 ++++
+ tools/patch_out_fpcasts.py | 301 +++++++++++++++++++++++++++++++++++++
+ 2 files changed, 327 insertions(+)
  create mode 100644 tools/patch_out_fpcasts.py
 
 diff --git a/emsdk/upstream/emscripten/emcc.py b/emsdk/upstream/emscripten/emcc.py
-index 5653470dd..cd42c1a45 100755
+index 5653470dd..307593a78 100755
 --- a/emsdk/upstream/emscripten/emcc.py
 +++ b/emsdk/upstream/emscripten/emcc.py
 @@ -32,6 +32,7 @@ import re
@@ -21,7 +21,7 @@ index 5653470dd..cd42c1a45 100755
  import sys
  import time
  from enum import Enum
-@@ -2162,6 +2163,25 @@ There is NO warranty; not even for MERCHANTABILITY or FITNESS FOR A PARTICULAR P
+@@ -2162,6 +2163,30 @@ There is NO warranty; not even for MERCHANTABILITY or FITNESS FOR A PARTICULAR P
        else:
          return in_temp(unsuffixed(uniquename(input_file)) + options.default_object_extension)
  
@@ -32,9 +32,14 @@ index 5653470dd..cd42c1a45 100755
 +      if res.returncode != 0:
 +        return
 +      cmd2 = cmd[:1] + ["-cc1"] \
-+        + [arg for arg in cmd if arg.startswith("-I") or arg.startswith("-i")] \
++        + [arg for arg in cmd if 
++            arg.startswith("-I") or 
++            arg.startswith("-i") or
++            arg.startswith("-D")
++          ] \
 +        + [
 +            "-I/src/emsdk/emsdk/upstream/emscripten/cache/sysroot/include",
++            "-I/src/emsdk/emsdk/upstream/lib/clang/13.0.0/include",
 +            "-Wno-unknown-attributes",
 +            "-Wno-incompatible-library-redeclaration"
 +          ] \
@@ -47,7 +52,7 @@ index 5653470dd..cd42c1a45 100755
      def compile_source_file(i, input_file):
        logger.debug('compiling source file: ' + input_file)
        output_file = get_object_filename(input_file)
-@@ -2173,6 +2193,7 @@ There is NO warranty; not even for MERCHANTABILITY or FITNESS FOR A PARTICULAR P
+@@ -2173,6 +2198,7 @@ There is NO warranty; not even for MERCHANTABILITY or FITNESS FOR A PARTICULAR P
        if not has_dash_c:
          cmd += ['-c']
        cmd += ['-o', output_file]
@@ -57,15 +62,14 @@ index 5653470dd..cd42c1a45 100755
          assert os.path.exists(output_file)
 diff --git a/emsdk/upstream/emscripten/tools/patch_out_fpcasts.py b/emsdk/upstream/emscripten/tools/patch_out_fpcasts.py
 new file mode 100644
-index 000000000..420637e49
+index 000000000..8231067c4
 --- /dev/null
 +++ b/emsdk/upstream/emscripten/tools/patch_out_fpcasts.py
-@@ -0,0 +1,302 @@
+@@ -0,0 +1,301 @@
 +import re
 +from typing import List, Optional
 +
 +first_interesting_char_re = re.compile(".*?(?=[a-zA-Z<])")
-+normalize_self_type_re = re.compile("\([A-Za-z_]* \*")
 +func_decl_name_re = re.compile("([A-Za-z0-9_]*) '")
 +parm_column_re = re.compile("col:([0-9]*)")
 +
@@ -107,7 +111,6 @@ index 000000000..420637e49
 +    def get_declref_sig(self):
 +        lidx = self.info.rfind("'", 0, -1)
 +        sig = self.info[lidx + 1 : -1]
-+        sig = normalize_self_type_re.sub("(PyObject *", sig)
 +        return sig
 +
 +    def find_decls(self, name):
@@ -234,16 +237,16 @@ index 000000000..420637e49
 +    "METH_FASTCALL": 128,
 +}
 +
-+EXPECTED_SIGNATURES = {
-+    ("METH_NOARGS",): "PyObject *(PyObject *, PyObject *)",
-+    ("METH_O",): "PyObject *(PyObject *, PyObject *)",
-+    ("METH_VARARGS",): "PyObject *(PyObject *, PyObject *)",
-+    ("METH_KEYWORDS", "METH_VARARGS"): "PyObject *(PyObject *, PyObject *, PyObject *)",
++EXPECTED_ARGS = {
++    ("METH_NOARGS",): 2,
++    ("METH_O",): 2,
++    ("METH_VARARGS",): 2,
++    ("METH_KEYWORDS", "METH_VARARGS"): 3,
 +    (
 +        "METH_FASTCALL",
 +        "METH_KEYWORDS",
-+    ): "PyObject *(PyObject *, PyObject *const *, Py_ssize_t, PyObject *)",
-+    ("METH_FASTCALL",): "PyObject *(PyObject *, PyObject *const *, Py_ssize_t)",
++    ): 4,
++    ("METH_FASTCALL",): 3,
 +}
 +
 +
@@ -257,8 +260,8 @@ index 000000000..420637e49
 +        if flags & mflag:
 +            meth_flags.append(mty)
 +    meth_flags = tuple(sorted(meth_flags))
-+    expected_sig = EXPECTED_SIGNATURES[meth_flags]
-+    return sig != expected_sig
++    expected_args = EXPECTED_ARGS[meth_flags]
++    return count_sig_args(sig) != expected_args
 +
 +
 +def get_method_defs_to_fix(tree):
@@ -270,28 +273,29 @@ index 000000000..420637e49
 +            func_name = declref.get_declref_name()
 +            yield func_name
 +
++def count_sig_args(sig):
++    return sig.count(',') + 1
 +
 +def get_bad_getset_names(c):
 +    if len(c.children) <= 1:
 +        return
 +    getter_node = c.children[1]
 +    if getter_node.type != "ImplicitValueInitExpr":
-+        expected_sig = "PyObject *(PyObject *, void *)"
 +        declref = getter_node.descend_to_declref()
 +        if declref:
 +            sig = declref.get_declref_sig()
-+            if sig != expected_sig:
++            
++            if count_sig_args(sig) != 2:
 +                yield declref.get_declref_name()
 +
 +    if len(c.children) <= 2:
 +        return
 +    setter_node = c.children[2]
 +    if setter_node.type != "ImplicitValueInitExpr":
-+        expected_sig = "int (PyObject *, PyObject *, void *)"
 +        declref = setter_node.descend_to_declref()
 +        if declref:
 +            sig = declref.get_declref_sig()
-+            if sig != expected_sig:
++            if count_sig_args(sig) != 3:
 +                yield declref.get_declref_name()
 +
 +
