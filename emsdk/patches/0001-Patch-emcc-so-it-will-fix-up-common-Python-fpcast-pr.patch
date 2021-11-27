@@ -1,12 +1,12 @@
-From 04943a8b6c7a95722f7d83fb4e8193c2b15ba864 Mon Sep 17 00:00:00 2001
+From 6e9df864078e94fb3b7139128b29e450642281fb Mon Sep 17 00:00:00 2001
 From: Hood Chatham <roberthoodchatham@gmail.com>
 Date: Fri, 26 Nov 2021 14:39:08 -0800
 Subject: [PATCH] Patch emcc so it will fix up common Python fpcast problems
 
 ---
  emcc.py                    |  29 +++
- tools/patch_out_fpcasts.py | 404 +++++++++++++++++++++++++++++++++++++
- 2 files changed, 433 insertions(+)
+ tools/patch_out_fpcasts.py | 400 +++++++++++++++++++++++++++++++++++++
+ 2 files changed, 429 insertions(+)
  create mode 100644 tools/patch_out_fpcasts.py
 
 diff --git a/emsdk/upstream/emscripten/emcc.py b/emsdk/upstream/emscripten/emcc.py
@@ -65,10 +65,10 @@ index 5653470dd..f72305bc1 100755
          assert os.path.exists(output_file)
 diff --git a/emsdk/upstream/emscripten/tools/patch_out_fpcasts.py b/emsdk/upstream/emscripten/tools/patch_out_fpcasts.py
 new file mode 100644
-index 000000000..63d1d7a8e
+index 000000000..edbf4b50c
 --- /dev/null
 +++ b/emsdk/upstream/emscripten/tools/patch_out_fpcasts.py
-@@ -0,0 +1,404 @@
+@@ -0,0 +1,400 @@
 +import re
 +from subprocess import call
 +from typing import List, Optional
@@ -386,15 +386,11 @@ index 000000000..63d1d7a8e
 +        fname = t.get_func_decl_name()
 +        if not fname in target_names:
 +            continue
-+        for c in t.children:
-+            if c.type != "ParmVarDecl":
-+                break
-+        lineno = c.start_loc[0]
-+        colno = c.start_loc[1] - 1
++        lineno = t.next_loc[0]
 +        # llvm one-indexes line and column
 +        lineno -= 1
-+        colno -= 1
 +        line: str = src_lines[lineno]
++        colno = line.rfind(")") - 1
 +        if fname not in line:
 +            continue
 +        newline = line[:colno] + ", PyObject *ignored" + line[colno:]
