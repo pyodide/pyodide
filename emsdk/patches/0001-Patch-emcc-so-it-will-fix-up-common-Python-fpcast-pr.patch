@@ -1,12 +1,12 @@
-From 6d068b7b849cdc287e8f64d7059ec232bbf2f9bb Mon Sep 17 00:00:00 2001
+From 1b856bfb929371ab0fa62573393a6edfdbbf4d84 Mon Sep 17 00:00:00 2001
 From: Hood Chatham <roberthoodchatham@gmail.com>
 Date: Fri, 26 Nov 2021 14:39:08 -0800
 Subject: [PATCH] Patch emcc so it will fix up common Python fpcast problems
 
 ---
  emcc.py                    |  29 ++++
- tools/patch_out_fpcasts.py | 305 +++++++++++++++++++++++++++++++++++++
- 2 files changed, 334 insertions(+)
+ tools/patch_out_fpcasts.py | 307 +++++++++++++++++++++++++++++++++++++
+ 2 files changed, 336 insertions(+)
  create mode 100644 tools/patch_out_fpcasts.py
 
 diff --git a/emsdk/upstream/emscripten/emcc.py b/emsdk/upstream/emscripten/emcc.py
@@ -65,10 +65,10 @@ index 5653470dd..f72305bc1 100755
          assert os.path.exists(output_file)
 diff --git a/emsdk/upstream/emscripten/tools/patch_out_fpcasts.py b/emsdk/upstream/emscripten/tools/patch_out_fpcasts.py
 new file mode 100644
-index 000000000..5b6c23453
+index 000000000..f5cc83cbf
 --- /dev/null
 +++ b/emsdk/upstream/emscripten/tools/patch_out_fpcasts.py
-@@ -0,0 +1,305 @@
+@@ -0,0 +1,307 @@
 +import re
 +from typing import List, Optional
 +
@@ -152,7 +152,7 @@ index 000000000..5b6c23453
 +    def get_func_decl_name(self):
 +        return func_decl_name_re.search(self.info).groups()[0]
 +
-+    def get_func_decl_end_of_args(self):
++    def get_func_decl_line(self):
 +        if not self.is_func_decl:
 +            raise TypeError("Only makes sense on FunctionDecl nodes.")
 +        if "line:" in self.info:
@@ -160,14 +160,7 @@ index 000000000..5b6c23453
 +        else:
 +            linestr = self.info.rpartition(", col")[0].split(":")[1]
 +        line = int(linestr)
-+        for n in reversed(self.children):
-+            if n.is_param_decl:
-+                break
-+        rest = n.info.rpartition("col:")[2]
-+        var = n.info.split("'")[-3].split(" ")[-2]
-+        column = int(rest.partition(" ")[0])
-+        column += len(var)
-+        return [line, column]
++        return line
 +
 +    def pretty_lines(self, prefix="", last_child=False, root=True):
 +        output = prefix
@@ -318,21 +311,22 @@ index 000000000..5b6c23453
 +    for t in tree.children:
 +        if not t.is_func_decl:
 +            continue
++        # t.pretty_print()
 +        fname = t.get_func_decl_name()
 +        if not fname in target_names:
 +            continue
-+        lineno, colno = t.get_func_decl_end_of_args()
++        lineno = t.get_func_decl_line()
 +        # llvm one-indexes line and column
 +        lineno -= 1
-+        colno -= 1
-+        line = src_lines[lineno]
++        line : str = src_lines[lineno]
 +        if fname not in line:
 +            continue
++        colno = line.rfind(")")
 +        newline = line[:colno] + ", PyObject *ignored" + line[colno:]
 +        src_lines[lineno] = newline
 +
 +
-+def patch_source_file(ast_filename, src_filename, in_place=False):
++def patch_source_file_inner(ast_filename, src_filename, in_place=False):
 +    with open(ast_filename, "r") as ast:
 +        tree = TreeBuilder().build_from_iter(ast).tree
 +    # sys.exit(0)
@@ -359,6 +353,14 @@ index 000000000..5b6c23453
 +    with open(dst_filename, "w") as dst:
 +        dst.writelines(src_lines)
 +    return 0
++
++def patch_source_file(ast_filename, src_filename, in_place=False):
++    try:
++        return patch_source_file_inner(ast_filename, src_filename, in_place)
++    except Exception as e:
++        print("\n\n=======================================")
++        print("Error processing file", src_filename)
++        raise e
 +
 +def main(args):
 +    import argparse
