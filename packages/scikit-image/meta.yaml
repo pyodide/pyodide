@@ -1,13 +1,13 @@
 package:
   name: scikit-image
-  version: 0.15.0
+  version: 0.18.3
 source:
   patches:
   - patches/no-openmp.patch
   - patches/unwrap.patch
   - patches/preferred_plugins.patch
-  sha256: 312dc7c49e3abdb90a42967fcf6129f0c9a45bd65f74b0cd3591390929b31a70
-  url: https://github.com/scikit-image/scikit-image/archive/refs/tags/v0.15.0.tar.gz
+  sha256: ecae99f93f4c5e9b1bf34959f4dc596c41f2f6b2fc407d9d9ddf85aebd3137ca
+  url: https://pypi.io/packages/source/s/scikit-image/scikit-image-0.18.3.tar.gz
 requirements:
   run:
     - distutils
