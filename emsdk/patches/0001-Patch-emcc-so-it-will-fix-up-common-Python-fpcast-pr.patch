@@ -1,12 +1,12 @@
-From 591d2ce854477888a0e0f83d22f15eb5449e3fa3 Mon Sep 17 00:00:00 2001
+From 1c7bb5b2b38ff94b1a1611f8c51dc19624f174b2 Mon Sep 17 00:00:00 2001
 From: Hood Chatham <roberthoodchatham@gmail.com>
 Date: Fri, 26 Nov 2021 14:39:08 -0800
 Subject: [PATCH] Patch emcc so it will fix up common Python fpcast problems
 
 ---
  emcc.py                    |  21 +++
- tools/patch_out_fpcasts.py | 303 +++++++++++++++++++++++++++++++++++++
- 2 files changed, 324 insertions(+)
+ tools/patch_out_fpcasts.py | 302 +++++++++++++++++++++++++++++++++++++
+ 2 files changed, 323 insertions(+)
  create mode 100644 tools/patch_out_fpcasts.py
 
 diff --git a/emsdk/upstream/emscripten/emcc.py b/emsdk/upstream/emscripten/emcc.py
@@ -57,15 +57,15 @@ index 5653470dd..cd42c1a45 100755
          assert os.path.exists(output_file)
 diff --git a/emsdk/upstream/emscripten/tools/patch_out_fpcasts.py b/emsdk/upstream/emscripten/tools/patch_out_fpcasts.py
 new file mode 100644
-index 000000000..e1138a923
+index 000000000..420637e49
 --- /dev/null
 +++ b/emsdk/upstream/emscripten/tools/patch_out_fpcasts.py
-@@ -0,0 +1,303 @@
+@@ -0,0 +1,302 @@
 +import re
 +from typing import List, Optional
 +
 +first_interesting_char_re = re.compile(".*?(?=[a-zA-Z<])")
-+normalize_self_type_re = re.compile("\([A-Za-z]* \*")
++normalize_self_type_re = re.compile("\([A-Za-z_]* \*")
 +func_decl_name_re = re.compile("([A-Za-z0-9_]*) '")
 +parm_column_re = re.compile("col:([0-9]*)")
 +
@@ -258,7 +258,6 @@ index 000000000..e1138a923
 +            meth_flags.append(mty)
 +    meth_flags = tuple(sorted(meth_flags))
 +    expected_sig = EXPECTED_SIGNATURES[meth_flags]
-+
 +    return sig != expected_sig
 +
 +
