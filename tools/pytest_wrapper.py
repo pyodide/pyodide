@@ -30,7 +30,7 @@ if __name__ == "__main__":
         print("More than 9 tests failed. Not rerunning")
         sys.exit(1)
 
-    print("Rerunnning failed tests sequentially")
+    print("Rerunning failed tests sequentially")
     remove_num_threads_option(args)
     try:
         subprocess.run(["pytest", "--lf"] + args, check=True)

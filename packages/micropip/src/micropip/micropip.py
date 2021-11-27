@@ -258,7 +258,7 @@ class _PackageManager:
             else:
                 raise ValueError(
                     f"Couldn't find a pure Python 3 wheel for '{req}'. "
-                    "You can use `micropip.intall(..., keep_going=True)` to get a list of all packages with missing wheels."
+                    "You can use `micropip.install(..., keep_going=True)` to get a list of all packages with missing wheels."
                 )
         else:
             await self.add_wheel(req.name, wheel, ver, req.extras, ctx, transaction)
