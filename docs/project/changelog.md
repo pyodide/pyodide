@@ -118,6 +118,8 @@ substitutions:
   {pr}`1976`
 
 ### packages
+- {{ Update }} Upgrade `scikit-image` to v0.18.3
+  {pr}`2005`
 
 - {{ Enhancement }} Unit tests are now unvendored from Python packages and
   included in a separate package `<package name>-tests`. This results in a
