@@ -336,7 +336,7 @@ def patch_source_file_inner(ast_filename, src_filename, in_place=False):
 
     if not funcs_to_fix:
         return
-    print("Patched fpcasts in", src_filename, "!")
+    print(f"Patched fpcasts in {src_filename}!")
 
     with open(src_filename, "r") as src:
         src_lines = list(src)
@@ -374,7 +374,6 @@ def patch_source_file(ast_filename, src_filename, in_place=False):
 
 
 def process_compilation_command(cmd, input_file):
-    from tools import patch_out_fpcasts
     import subprocess
     import os
 
@@ -403,7 +402,7 @@ def process_compilation_command(cmd, input_file):
     ast_file = input_file + ".ast"
     with open(ast_file, "w") as f:
         res = subprocess.run(cmd2 + ["-ast-dump"], stdout=f)
-    patch_out_fpcasts.patch_source_file(ast_file, input_file, in_place=True)
+    patch_source_file(ast_file, input_file, in_place=True)
 
 
 def main(args):
