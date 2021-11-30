@@ -73,8 +73,8 @@ node_modules/.installed : src/js/package.json
 	touch node_modules/.installed
 
 build/pyodide.js: src/js/*.js src/js/pyproxy.gen.js node_modules/.installed
-	npx tsc --project src/js
-	npx rollup -c src/js/rollup.config.js
+	cd src/js && npm run build
+	cd ../../ && npx rollup -c ./src/js/rollup.config.js
 
 src/js/pyproxy.gen.js : src/core/pyproxy.* src/core/*.h
 	# We can't input pyproxy.js directly because CC will be unhappy about the file

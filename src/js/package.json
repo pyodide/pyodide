@@ -27,7 +27,8 @@
   },
   "type": "module",
   "scripts": {
-    "test": "mocha"
+    "test": "mocha",
+    "build": "tsc"
   },
   "mocha": {
     "timeout": 30000,
