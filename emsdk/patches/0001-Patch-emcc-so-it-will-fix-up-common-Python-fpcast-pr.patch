@@ -1,25 +1,17 @@
-From 7f628502ff28ab67ce68c171f01803bc57d3310c Mon Sep 17 00:00:00 2001
+From 7eb2a4a781f4d8731a062605f81f705870b5059e Mon Sep 17 00:00:00 2001
 From: Hood Chatham <roberthoodchatham@gmail.com>
 Date: Mon, 29 Nov 2021 20:12:37 -0800
 Subject: [PATCH] Patch emcc so it will fix up common Python fpcast problems
 
 ---
- emcc.py | 3 +++
- 1 file changed, 3 insertions(+)
+ emcc.py | 2 ++
+ 1 file changed, 2 insertions(+)
 
 diff --git a/emsdk/upstream/emscripten/emcc.py b/emsdk/upstream/emscripten/emcc.py
-index 5653470dd..f80ecfb57 100755
+index 5653470dd..bfe1393fa 100755
 --- a/emsdk/upstream/emscripten/emcc.py
 +++ b/emsdk/upstream/emscripten/emcc.py
-@@ -32,6 +32,7 @@ import re
- import shlex
- import shutil
- import stat
-+import subprocess
- import sys
- import time
- from enum import Enum
-@@ -2173,6 +2174,8 @@ There is NO warranty; not even for MERCHANTABILITY or FITNESS FOR A PARTICULAR P
+@@ -2173,6 +2173,8 @@ There is NO warranty; not even for MERCHANTABILITY or FITNESS FOR A PARTICULAR P
        if not has_dash_c:
          cmd += ['-c']
        cmd += ['-o', output_file]
