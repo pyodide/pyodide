@@ -3,8 +3,8 @@ import { Module } from "./module.js";
 const IN_NODE =
   typeof process !== "undefined" &&
   process.release &&
-  process.release.name === "node" && 
-  process.browser !== true;
+  process.release.name === "node" &&
+  typeof process.browser === "undefined";
 
 /** @typedef {import('./pyproxy.js').PyProxy} PyProxy */
 /** @private */
