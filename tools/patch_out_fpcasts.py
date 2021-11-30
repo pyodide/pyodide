@@ -373,6 +373,39 @@ def patch_source_file(ast_filename, src_filename, in_place=False):
         raise e
 
 
+def process_compilation_command(cmd, input_file):
+    from tools import patch_out_fpcasts
+    import subprocess
+    import os
+
+    PYODIDE_ROOT = os.environ.get("PYODIDE_ROOT")
+    if not PYODIDE_ROOT:
+        return
+    res = subprocess.run(["egrep", "-q", "(PyGetSetDef)|(PyMethodDef)", input_file])
+    if res.returncode != 0:
+        return
+    cmd2 = (
+        cmd[:1]
+        + ["-cc1"]
+        + [
+            arg
+            for arg in cmd
+            if arg.startswith("-I") or arg.startswith("-i") or arg.startswith("-D")
+        ]
+        + [
+            f"-I{PYODIDE_ROOT}/emsdk/emsdk/upstream/emscripten/cache/sysroot/include",
+            f"-I{PYODIDE_ROOT}/emsdk/emsdk/upstream/lib/clang/13.0.0/include",
+            "-Wno-unknown-attributes",
+            "-Wno-incompatible-library-redeclaration",
+        ]
+        + [input_file]
+    )
+    ast_file = input_file + ".ast"
+    with open(ast_file, "w") as f:
+        res = subprocess.run(cmd2 + ["-ast-dump"], stdout=f)
+    patch_out_fpcasts.patch_source_file(ast_file, input_file, in_place=True)
+
+
 def main(args):
     import argparse
 
