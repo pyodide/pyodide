@@ -172,7 +172,7 @@ def patch(path: Path, srcpath: Path, pkg: Dict[str, Any], args):
     if (srcpath / ".patched").is_file():
         return
 
-    # Apply all of the patches
+    # Apply all the patches
     orig_dir = Path.cwd()
     pkgdir = path.parent.resolve()
     os.chdir(srcpath)
@@ -252,7 +252,7 @@ def compile(path: Path, srcpath: Path, pkg: Dict[str, Any], args, bash_runner):
 def unvendor_tests(install_prefix: Path, test_install_prefix: Path) -> int:
     """Unvendor test files and folders
 
-    This function recursively walks though install_prefix and moves anything
+    This function recursively walks through install_prefix and moves anything
     that looks like a test folder under test_install_prefix.
 
 
@@ -261,7 +261,7 @@ def unvendor_tests(install_prefix: Path, test_install_prefix: Path) -> int:
     install_prefix
         the folder where the package was installed
     test_install_prefix
-        the folder where to move the tests. If it doesn't exits, it will be
+        the folder where to move the tests. If it doesn't exist, it will be
         created.
 
     Returns

@@ -20,9 +20,9 @@ To access a particular file, append the file name to `indexURL`. For instance,
 The previous CDN `pyodide-cdn2.iodide.io` is deprecated and should not be used.
 ```
 
-### Github releases
+### GitHub releases
 
-You can also download Pyodide packages from [Github
+You can also download Pyodide packages from [GitHub
 releases](https://github.com/pyodide/pyodide/releases)
 (`pyodide-build-*.tar.bz2` file) serve them yourself, as explained in the
 following section.
@@ -51,7 +51,7 @@ your browser console to see the output from Python via Pyodide!
 ### Remote deployments
 
 Any solution that is able to host static files and correctly sets WASM
-MIME type, and CORS headers would work. For instance, you can use Github Pages
+MIME type, and CORS headers would work. For instance, you can use GitHub Pages
 or similar services.
 
 For additional suggestions for optimizing size and load times, see the [Emscripten

@@ -1,4 +1,5 @@
 from typing import Any, Callable, Iterable
+from io import IOBase
 
 # All docstrings for public `core` APIs should be extracted from here. We use
 # the utilities in `docstring.py` and `docstring.c` to format them
@@ -51,7 +52,7 @@ class JsProxy:
         """Convert the :class:`JsProxy` to a native Python object as best as
         possible.
 
-        By default does a deep conversion, if a shallow conversion is
+        By default, does a deep conversion, if a shallow conversion is
         desired, you can use ``proxy.to_py(depth=1)``. See
         :ref:`type-translations-jsproxy-to-py` for more information.
         """
@@ -124,6 +125,84 @@ class JsProxy:
         an ArrayBuffer view.
         """
 
+    def to_file(self, file: IOBase):
+        """Writes the entire buffer to a file.
+
+        Will write the entire contents of the buffer to the current position of
+        the file.
+
+        Present only if the wrapped Javascript object is an ArrayBuffer or an
+        ArrayBuffer view.
+
+        Example
+        ------------
+        >>> import pytest; pytest.skip()
+        >>> from js import Uint8Array
+        >>> x = Uint8Array.new(range(10))
+        >>> with open('file.bin', 'wb') as fh:
+        ...    x.to_file(fh)
+        which is equivalent to,
+        >>> with open('file.bin', 'wb') as fh:
+        ...    data = x.to_bytes()
+        ...    fh.write(data)
+        but the latter copies the data twice whereas the former only copies the
+        data once.
+        """
+
+    def from_file(self, file: IOBase):
+        """Reads from a file into the buffer.
+
+        Will try to read a chunk of data the same size as the buffer from
+        the current position of the file.
+
+        Present only if the wrapped Javascript object is an ArrayBuffer or an
+        ArrayBuffer view.
+
+        Example
+        ------------
+        >>> import pytest; pytest.skip()
+        >>> from js import Uint8Array
+        >>> # the JsProxy need to be pre-allocated
+        >>> x = Uint8Array.new(range(10))
+        >>> with open('file.bin', 'rb') as fh:
+        ...    x.read_file(fh)
+        which is equivalent to
+        >>> x = Uint8Array.new(range(10))
+        >>> with open('file.bin', 'rb') as fh:
+        ...    chunk = fh.read(size=x.byteLength)
+        ...    x.assign(chunk)
+        but the latter copies the data twice whereas the former only copies the
+        data once.
+        """
+
+    def _into_file(self, file: IOBase):
+        """Will write the entire contents of the buffer into a file using
+        ``canOwn : true`` without any copy. After this, the buffer cannot be
+        used again.
+
+        If ``file`` is not empty, its contents will be overwritten!
+
+        Only ``MEMFS`` cares about the ``canOwn`` flag, other file systems will
+        just ignore it.
+
+        Present only if the wrapped Javascript object is an ArrayBuffer or an
+        ArrayBuffer view.
+
+        Example
+        ------------
+        >>> import pytest; pytest.skip()
+        >>> from js import Uint8Array
+        >>> x = Uint8Array.new(range(10))
+        >>> with open('file.bin', 'wb') as fh:
+        ...    x._into_file(fh)
+        which is similar to
+        >>> with open('file.bin', 'wb') as fh:
+        ...    data = x.to_bytes()
+        ...    fh.write(data)
+        but the latter copies the data once whereas the former doesn't copy the
+        data.
+        """
+
     def to_string(self, encoding=None) -> str:
         """Convert the buffer to a string object.
 
@@ -176,7 +255,7 @@ def to_js(
     """Convert the object to JavaScript.
 
     This is similar to :any:`PyProxy.toJs`, but for use from Python. If the
-    object would be implicitly translated to JavaScript, it will be returned
+    object can be implicitly translated to JavaScript, it will be returned
     unchanged. If the object cannot be converted into JavaScript, this
     method will return a :any:`JsProxy` of a :any:`PyProxy`, as if you had
     used :any:`pyodide.create_proxy`.
