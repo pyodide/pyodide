@@ -11,7 +11,6 @@ source:
     - patches/fix-freetype.patch
     - patches/hardcoded-font-cache.patch
     - patches/fix-threading.patch
-    - patches/Fix-METH_VARARGS-method-signatures.patch
 
   extras:
     - - src/browser_backend.py

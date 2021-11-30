@@ -7,7 +7,6 @@ source:
 
   patches:
     - patches/setitup.patch
-    - patches/fix-_get_pushes_fd-and-_get_pulls_fd-method-signatures.patch
   extras:
     - - src/setup.cfg
       - ./setup.cfg
