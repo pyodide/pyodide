@@ -11,6 +11,7 @@ emsdk/.complete: ../Makefile.envs $(wildcard patches/*.patch)
 	cat patches/*.patch | patch -p1
 	cd emsdk && ./emsdk install --build=Release $(PYODIDE_EMSCRIPTEN_VERSION) ccache-git-emscripten-64bit
 	cd emsdk && ./emsdk activate --embedded --build=Release $(PYODIDE_EMSCRIPTEN_VERSION)
+	cp tools/patch_out_fpcasts.py emsdk/upstream/emscripten/tools/
 	touch emsdk/.complete
 
 .PHONY: test
