@@ -67,7 +67,7 @@ class Tree:
                 continue
             if t.is_var_decl:
                 t = t.first_child
-            if t.info.find(f"'{name}'") != -1:
+            if t.info.find(f"'{name}'") != -1 or t.info.find(f"'struct {name}'") != -1:
                 yield t
             else:
                 yield from t.find_decls(name)
