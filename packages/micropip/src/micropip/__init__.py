@@ -1,3 +1,3 @@
-from .micropip import install
+from .micropip import install, list
 
-__all__ = ["install"]
+__all__ = ["install", "list"]

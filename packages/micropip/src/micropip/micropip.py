@@ -1,4 +1,5 @@
 import asyncio
+import copy
 import hashlib
 import importlib
 import io
@@ -13,6 +14,7 @@ from typing import Dict, Any, Union, List, Tuple, Optional
 from zipfile import ZipFile
 
 from .externals.pip._internal.utils.wheel import pkg_resources_distribution_for_wheel
+from .package import PackageList, PackageMetadata
 
 from pyodide import IN_BROWSER, to_js
 
@@ -140,10 +142,13 @@ async def _install_wheel(name, fileinfo):
 
 class _PackageManager:
     def __init__(self):
-        self.installed_packages = {}
+        self.installed_packages = PackageList()
 
     async def gather_requirements(
-        self, requirements: Union[str, List[str]], ctx=None, keep_going: bool = False
+        self,
+        requirements: Union[str, List[str]],
+        ctx=None,
+        keep_going: bool = False,
     ):
         ctx = ctx or default_environment()
         ctx.setdefault("extra", None)
@@ -153,7 +158,7 @@ class _PackageManager:
         transaction: Dict[str, Any] = {
             "wheels": [],
             "pyodide_packages": [],
-            "locked": dict(self.installed_packages),
+            "locked": copy.deepcopy(self.installed_packages),
             "failed": [],
             "keep_going": keep_going,
         }
@@ -185,11 +190,11 @@ class _PackageManager:
         if len(pyodide_packages):
             # Note: branch never happens in out-of-browser testing because in
             # that case BUILTIN_PACKAGES is empty.
-            self.installed_packages.update(pyodide_packages)
+            self.installed_packages.update({pkg.name: pkg for pkg in pyodide_packages})
             wheel_promises.append(
                 asyncio.ensure_future(
                     pyodide_js.loadPackage(
-                        to_js([name for [name, _] in pyodide_packages])
+                        to_js([name for [name, _, _] in pyodide_packages])
                     )
                 )
             )
@@ -197,7 +202,13 @@ class _PackageManager:
         # Now install PyPI packages
         for name, wheel, ver in transaction["wheels"]:
             wheel_promises.append(_install_wheel(name, wheel))
-            self.installed_packages[name] = ver
+
+            # detect whether the wheel metadata is from PyPI or from custom location
+            # wheel metadata from PyPI has SHA256 checksum digest.
+            wheel_source = "pypi" if wheel["digests"] is not None else wheel["url"]
+            self.installed_packages[name] = PackageMetadata(
+                name=name, version=str(ver), source=wheel_source
+            )
         await gather(*wheel_promises)
 
     async def add_requirement(
@@ -230,7 +241,9 @@ class _PackageManager:
             and BUILTIN_PACKAGES[req.name]["version"] in req.specifier
         ):
             version = BUILTIN_PACKAGES[req.name]["version"]
-            transaction["pyodide_packages"].append((req.name, version))
+            transaction["pyodide_packages"].append(
+                PackageMetadata(name=req.name, version=version, source="pyodide")
+            )
             return
 
         if req.marker:
@@ -241,7 +254,7 @@ class _PackageManager:
 
         # Is some version of this package is already installed?
         if req.name in transaction["locked"]:
-            ver = transaction["locked"][req.name]
+            ver = transaction["locked"][req.name].version
             if ver in req.specifier:
                 # installed version matches, nothing to do
                 return
@@ -264,7 +277,7 @@ class _PackageManager:
             await self.add_wheel(req.name, wheel, ver, req.extras, ctx, transaction)
 
     async def add_wheel(self, name, wheel, version, extras, ctx, transaction):
-        transaction["locked"][name] = version
+        transaction["locked"][name] = PackageMetadata(name=name, version=version)
         wheel_bytes = await fetch_bytes(wheel["url"])
         wheel["wheel_bytes"] = wheel_bytes
 
@@ -306,6 +319,9 @@ class _PackageManager:
                     return fileinfo, ver
 
         return None, None
+
+    def list(self) -> PackageList:
+        return copy.deepcopy(self.installed_packages)
 
 
 # Make PACKAGE_MANAGER singleton
@@ -365,7 +381,30 @@ def install(requirements: Union[str, List[str]], keep_going: bool = False):
     )
 
 
-__all__ = ["install"]
+def list():
+    """Get the list of installed packages through micropip.
+
+    Returns
+    -------
+    ``PackageMetadataList``
+        A list of installed packages.
+
+        >>> package_list = micropip.list()
+        >>> print(package_list)
+        | Name              | Version  | Source  |
+        | ----------------- | -------- | ------- |
+        | regex             | 2021.7.6 | pyodide |
+        | tomli             | 1.2.2    | pypi    |
+        | mypy-extensions   | 0.4.3    | pypi    |
+        ...
+        >>> "regex" in package_list
+        True
+    """
+    return PACKAGE_MANAGER.list()
+
+
+# prevent sphinx autodoc from generating duplicated docs
+__all__: List[str] = []
 
 
 if __name__ == "__main__":
