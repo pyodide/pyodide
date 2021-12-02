@@ -7,6 +7,16 @@ __all__ = ["PackageDict"]
 
 
 def _format_table(headers: List[str], table: List[Iterable]) -> str:
+    """
+    Returns a minimal formatted table
+
+    >>> print(_format_table(["Header1", "Header2"], [["val1", "val2"], ["val3", "val4"]]))
+    Header1 | Header2
+    ------- | -------
+    val1    | val2
+    val3    | val4
+    """
+
     def format_row(values, widths, filler=""):
         row = " | ".join(f"{x:{filler}<{w}}" for x, w in zip(values, widths))
         return row
@@ -37,6 +47,11 @@ class PackageMetadata:
 
 
 class PackageDict(UserDict):
+    """
+    A dictionary that holds list of metadata on packages.
+    This class is used in micropip to keep the list of installed packages.
+    """
+
     def __repr__(self):
         return self._tabularize()
 
