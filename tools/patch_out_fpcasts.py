@@ -1,4 +1,6 @@
 import json
+import os
+import subprocess
 
 
 def create_node(obj):
@@ -393,6 +395,13 @@ def patch_source_file_inner(ast_filename, src_filename, in_place=False):
     filename.c.bak).
     If in_place is False, write patched version to filename.c.patched.
     """
+    ast_size = os.stat(ast_filename).st_size
+    if ast_size > 200_000_000:
+        # If more than 200MB, skip handling file.
+        # Causes out of ram errors on CI.
+        print(
+            f"Skipping fpcast patching in file {src_filename} because the AST is too large!\nAst size: {ast_size}"
+        )
     tree = json.load(open(ast_filename, "r"), object_hook=create_node)
     # funcs_to_fix will be of the form:
     # name_of_func ==> expected_args - actual_args
@@ -441,8 +450,6 @@ def process_compilation_command(cmd, input_file):
     cmd -- the shell call that emcc is about invoke clang with (after calling this function)
     input_file -- the input file.
     """
-    import subprocess
-    import os
 
     PYODIDE_ROOT = os.environ.get("PYODIDE_ROOT")
     if not PYODIDE_ROOT:
