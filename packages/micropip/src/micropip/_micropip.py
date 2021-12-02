@@ -381,7 +381,7 @@ def install(requirements: Union[str, List[str]], keep_going: bool = False):
     )
 
 
-def list():
+def _list():
     """Get the list of installed packages through micropip.
 
     Returns
