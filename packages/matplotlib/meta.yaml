@@ -11,6 +11,7 @@ source:
     - patches/fix-freetype.patch
     - patches/hardcoded-font-cache.patch
     - patches/fix-threading.patch
+    - patches/0001-Fix-version-arguments.patch
 
   extras:
     - - src/browser_backend.py
