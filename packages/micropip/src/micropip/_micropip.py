@@ -1,5 +1,6 @@
 import asyncio
 import copy
+import functools
 import hashlib
 import importlib
 import io
@@ -14,7 +15,7 @@ from typing import Dict, Any, Union, List, Tuple, Optional
 from zipfile import ZipFile
 
 from .externals.pip._internal.utils.wheel import pkg_resources_distribution_for_wheel
-from .package import PackageList, PackageMetadata
+from .package import PackageDict, PackageMetadata
 
 from pyodide import IN_BROWSER, to_js
 
@@ -142,7 +143,7 @@ async def _install_wheel(name, fileinfo):
 
 class _PackageManager:
     def __init__(self):
-        self.installed_packages = PackageList()
+        self.installed_packages = PackageDict()
 
     async def gather_requirements(
         self,
@@ -174,6 +175,10 @@ class _PackageManager:
     async def install(
         self, requirements: Union[str, List[str]], ctx=None, keep_going: bool = False
     ):
+        async def _install(install_func, done_callback):
+            await install_func
+            done_callback()
+
         transaction = await self.gather_requirements(requirements, ctx, keep_going)
 
         if transaction["failed"]:
@@ -190,25 +195,35 @@ class _PackageManager:
         if len(pyodide_packages):
             # Note: branch never happens in out-of-browser testing because in
             # that case BUILTIN_PACKAGES is empty.
-            self.installed_packages.update({pkg.name: pkg for pkg in pyodide_packages})
             wheel_promises.append(
-                asyncio.ensure_future(
-                    pyodide_js.loadPackage(
-                        to_js([name for [name, _, _] in pyodide_packages])
-                    )
+                _install(
+                    asyncio.ensure_future(
+                        pyodide_js.loadPackage(
+                            to_js([name for [name, _, _] in pyodide_packages])
+                        )
+                    ),
+                    functools.partial(
+                        self.installed_packages.update,
+                        {pkg.name: pkg for pkg in pyodide_packages},
+                    ),
                 )
             )
 
         # Now install PyPI packages
         for name, wheel, ver in transaction["wheels"]:
-            wheel_promises.append(_install_wheel(name, wheel))
-
             # detect whether the wheel metadata is from PyPI or from custom location
             # wheel metadata from PyPI has SHA256 checksum digest.
             wheel_source = "pypi" if wheel["digests"] is not None else wheel["url"]
-            self.installed_packages[name] = PackageMetadata(
-                name=name, version=str(ver), source=wheel_source
+            wheel_promises.append(
+                _install(
+                    _install_wheel(name, wheel),
+                    functools.partial(
+                        self.installed_packages.update,
+                        {name: PackageMetadata(name, str(ver), wheel_source)},
+                    ),
+                )
             )
+
         await gather(*wheel_promises)
 
     async def add_requirement(
@@ -320,7 +335,7 @@ class _PackageManager:
 
         return None, None
 
-    def list(self) -> PackageList:
+    def list(self) -> PackageDict:
         return copy.deepcopy(self.installed_packages)
 
 
@@ -386,8 +401,8 @@ def _list():
 
     Returns
     -------
-    ``PackageMetadataList``
-        A list of installed packages.
+    ``PackageDict``
+        A dictionary of installed packages.
 
         >>> package_list = micropip.list()
         >>> print(package_list)

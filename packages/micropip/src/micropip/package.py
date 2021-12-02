@@ -37,7 +37,6 @@ class PackageMetadata:
 
 
 class PackageDict(UserDict):
-    
     def __repr__(self):
         return self._tabularize()
 
