@@ -3,7 +3,9 @@ import { Module } from "./module.js";
 const IN_NODE =
   typeof process !== "undefined" &&
   process.release &&
-  process.release.name === "node";
+  process.release.name === "node" &&
+  typeof process.browser ===
+    "undefined"; /* This last condition checks if we run the browser shim of process */
 
 /** @typedef {import('./pyproxy.js').PyProxy} PyProxy */
 /** @private */
