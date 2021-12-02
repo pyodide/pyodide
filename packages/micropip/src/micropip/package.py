@@ -8,8 +8,8 @@ __all__: List[str] = []
 
 def _format_table(headers: List[str], table: List[Iterable]) -> str:
     def format_row(values, widths, filler=""):
-        columns = " | ".join(f"{x:{filler}<{w}}" for x, w in zip(values, widths))
-        return f"| {columns} |"
+        row = " | ".join(f"{x:{filler}<{w}}" for x, w in zip(values, widths))
+        return row
 
     col_width = [max(len(x) for x in col) for col in zip(headers, *table)]
     rows = []
