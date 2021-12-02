@@ -30,7 +30,7 @@ class Tree:
         return self.children[0]
 
     def iter_call_exprs(self):
-        """Genertor for all CallExpr nodes"""
+        """Generator for all CallExpr nodes"""
         next = self.children
         if self.is_call_expr:
             yield self
@@ -81,6 +81,7 @@ class Tree:
         return self
 
     def find_decls(self, name):
+        """Find all variable declarations that declare a variable of type name."""
         for t in self.children:
             if not t.is_var_decl and not t.is_init_list_expr:
                 yield from t.find_decls(name)
@@ -103,6 +104,21 @@ class Tree:
                 yield t
                 continue
             yield from t.find_decls(name)
+
+    def eval_int(self):
+        """This is needed to work out which METH_XXX flags are present.
+
+        Evaluate an int expression. We only handle integer literals and bitwise or, which is good enough so far.
+        """
+        if self.kind == "IntegerLiteral":
+            return int(self.value)
+        if self.kind == "ParenExpr":
+            return self.first_child.eval_int()
+        if self.kind == "BinaryOperator":
+            if self.opcode == "|":
+                return self.children[0].eval_int() | self.children[1].eval_int()
+            raise ValueError("Unexpected binop " + self.opcode)
+        raise ValueError("Unexpected type " + self.kind)
 
     def __repr__(self) -> str:
         result = [self.kind]
@@ -164,10 +180,6 @@ class Tree:
         yield output
         global x
         for child in self.children[:-1]:
-            import pdb
-
-            if not child:
-                pdb.set_trace()
             yield from child.pretty_lines(prefix + "|", root=False)
         if self.children:
             yield from self.children[-1].pretty_lines(
@@ -177,17 +189,6 @@ class Tree:
     def pretty_print(self):
         for line in self.pretty_lines():
             print(line)
-
-    def eval_int(self):
-        if self.kind == "IntegerLiteral":
-            return int(self.value)
-        if self.kind == "ParenExpr":
-            return self.first_child.eval_int()
-        if self.kind == "BinaryOperator":
-            if self.opcode == "|":
-                return self.children[0].eval_int() | self.children[1].eval_int()
-            raise ValueError("Unexpected binop " + self.opcode)
-        raise ValueError("Unexpected type " + self.kind)
 
 
 METHOD_FLAGS = {
@@ -212,6 +213,11 @@ EXPECTED_ARGS = {
 
 
 def method_def_arg_discrepancy(c):
+    """Find difference of expected_args - actual_args for function.
+
+    Argument should be a InitList for a PyMethodDef. We can look at the ml_flags field to figure out what the number of args should be,
+    and at the ml_meth field to figure out how many args there actually are.
+    """
     declref = c.children[1].descend_to_declref()
     flags = c.children[2].eval_int()
     meth_flags = []
@@ -224,7 +230,8 @@ def method_def_arg_discrepancy(c):
     return expected_args - actual_args
 
 
-def get_method_defs_to_fix(tree):
+def get_methods_to_fix(tree):
+    """Locate method declarations with argument discrepancies and yield the pairs [name, expected_args - actual_args]."""
     for pymeth_decl in tree.find_decls("PyMethodDef"):
         if pymeth_decl.first_child.is_null_cast:
             continue
@@ -236,47 +243,76 @@ def get_method_defs_to_fix(tree):
 
 
 def count_sig_args(sig):
+    """Count the args in the signature -- one more than number of commas."""
     return sig.count(",") + 1
 
 
-def get_bad_getset_names(c):
-    if len(c.children) <= 1:
-        return
-    getter_node = c.children[1]
-    if getter_node.kind != "ImplicitValueInitExpr":
-        declref = getter_node.descend_to_declref()
-        if declref:
-            sig = declref.type["qualType"]
-            sig_args = count_sig_args(sig)
-            if count_sig_args(sig) != 2:
-                yield [declref.referencedDecl.name, sig_args - 2]
+def get_bad_getter_name(pygetset_decl):
+    """Helper method for get_getsets_to_fix.
 
+    Argument should be a PyGetSetDef initializer node.
+    Check if node has a getter with the wrong number of arguments.
+    If so yield [name of getter, expected_args - actual_args]
+    """
+    if len(pygetset_decl.children) <= 1:
+        # There is no getter.
+        return
+    getter_node = pygetset_decl.children[1]
+    if getter_node.kind == "ImplicitValueInitExpr":
+        # There is no getter.
+        return
+    declref = getter_node.descend_to_declref()
+    if not declref:
+        # The getter is explicitly specified to be NULL (so still no getter).
+        return
+    sig = declref.type["qualType"]
+    sig_args = count_sig_args(sig)
+    if count_sig_args(sig) != 2:
+        yield [declref.referencedDecl.name, 2 - sig_args]
+
+
+def get_bad_setter_name(c):
+    """Helper method for get_getsets_to_fix.
+
+    Argument should be a PyGetSetDef initializer node.
+    Check if node has a setter with the wrong number of arguments.
+    If so yield [name of setter, expected_args - actual_args]
+    """
     if len(c.children) <= 2:
+        # There is no setter.
         return
     setter_node = c.children[2]
-    if setter_node.kind != "ImplicitValueInitExpr":
-        declref = setter_node.descend_to_declref()
-        if declref:
-            sig = declref.type["qualType"]
-            sig_args = count_sig_args(sig)
-            if sig_args != 3:
-                yield [declref.referencedDecl.name, sig_args - 3]
+    if setter_node.kind == "ImplicitValueInitExpr":
+        # There is no setter.
+        return
+    declref = setter_node.descend_to_declref()
+    if not declref:
+        # The setter is explicitly specified to be NULL (so still no setter).
+        return
+    sig = declref.type["qualType"]
+    sig_args = count_sig_args(sig)
+    if sig_args != 3:
+        yield [declref.referencedDecl.name, 3 - sig_args]
 
 
-def get_getset_defs_to_fix(tree):
+def get_getsets_to_fix(tree):
+    """Locate getters and setters with argument discrepancies and yield the pairs [name, expected_args - actual_args].
+    expected_args - actual_args should be 1 but we keep track of it so if something weird happens we can throw an error.
+    """
     for pygetset_decl in tree.find_decls("PyGetSetDef"):
         if pygetset_decl.first_child.is_null_cast:
+            # In this case, we're the sentinel in a list.
             continue
-        yield from get_bad_getset_names(pygetset_decl)
-        if False:
-            yield
+        yield from get_bad_getter_name(pygetset_decl)
+        yield from get_bad_setter_name(pygetset_decl)
 
 
-def fix_func_decls(src_lines, tree, target_names):
+def fix_func_decls(src_lines, tree, funcs_to_fix):
+    """Fix the"""
     for t in tree.children:
         if not t.is_func_decl:
             continue
-        if not t.name in target_names:
+        if not t.name in funcs_to_fix:
             continue
         loc = t.loc
         if "expansionLoc" in loc:
@@ -286,8 +322,7 @@ def fix_func_decls(src_lines, tree, target_names):
         lineno -= 1
         line: str = src_lines[lineno]
         colno = line.rfind(")")
-        arg_discrepancy = target_names[t.name]
-        line: str = src_lines[lineno]
+        arg_discrepancy = funcs_to_fix[t.name]
         if arg_discrepancy == 1:
             newline = line[:colno] + f", PyObject *ignored" + line[colno:]
         elif arg_discrepancy == -1:
@@ -302,20 +337,7 @@ def fix_func_decls(src_lines, tree, target_names):
         src_lines[lineno] = newline
 
 
-def patch_source_file_inner(ast_filename, src_filename, in_place=False):
-    tree = json.load(open(ast_filename, "r"), object_hook=create_node)
-    # sys.exit(0)
-    funcs_to_fix = {}
-    funcs_to_fix.update(get_method_defs_to_fix(tree))
-    funcs_to_fix.update(get_getset_defs_to_fix(tree))
-
-    if not funcs_to_fix:
-        return
-    print(f"Patched fpcasts in {src_filename}!")
-
-    with open(src_filename, "r") as src:
-        src_lines = list(src)
-    fix_func_decls(src_lines, tree, funcs_to_fix)
+def fix_call_exprs(src_lines, tree, funcs_to_fix):
     for call_expr in tree.iter_call_exprs():
         decl_ref = call_expr.first_child.descend_to_declref()
         if not decl_ref:
@@ -338,6 +360,25 @@ def patch_source_file_inner(ast_filename, src_filename, in_place=False):
             )
 
         src_lines[lineno] = newline
+
+
+def patch_source_file_inner(ast_filename, src_filename, in_place=False):
+    tree = json.load(open(ast_filename, "r"), object_hook=create_node)
+    # funcs_to_fix will be of the form:
+    # name_of_func ==> expected_args - actual_args
+    funcs_to_fix = {}
+    funcs_to_fix.update(get_methods_to_fix(tree))
+    funcs_to_fix.update(get_getsets_to_fix(tree))
+    print(funcs_to_fix)
+
+    if not funcs_to_fix:
+        return
+    print(f"Patched fpcasts in {src_filename}!")
+
+    with open(src_filename, "r") as src:
+        src_lines = list(src)
+    fix_func_decls(src_lines, tree, funcs_to_fix)
+    fix_call_exprs(src_lines, tree, funcs_to_fix)
 
     if in_place:
         dst_filename = src_filename
