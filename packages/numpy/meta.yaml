@@ -22,6 +22,8 @@ source:
     - patches/not-build-lapack-lite-as-64-bit.patch
     - patches/fix-invalid-asm-instruction.patch
     - patches/fix-removed-decorators-module.patch
+    - patches/0001-patch-flags-getters.patch
+    - patches/0001-patch-arraydescr_protocol-public-getters.patch
 
 build:
   skip_host: False

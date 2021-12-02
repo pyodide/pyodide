@@ -1,0 +1,131 @@
+From f931970d3137c5addcac7d769db5b9850129b0f5 Mon Sep 17 00:00:00 2001
+From: Hood Chatham <roberthoodchatham@gmail.com>
+Date: Wed, 1 Dec 2021 21:04:38 -0800
+Subject: [PATCH] patch flags getters
+
+---
+ numpy/core/src/multiarray/flagsobject.c | 40 ++++++++++++-------------
+ 1 file changed, 20 insertions(+), 20 deletions(-)
+
+diff --git a/numpy/core/src/multiarray/flagsobject.c b/numpy/core/src/multiarray/flagsobject.c
+index 9b7d8deae..ffd8a95eb 100644
+--- a/numpy/core/src/multiarray/flagsobject.c
++++ b/numpy/core/src/multiarray/flagsobject.c
+@@ -200,7 +200,7 @@ arrayflags_dealloc(PyArrayFlagsObject *self)
+ 
+ #define _define_get(UPPER, lower) \
+     static PyObject * \
+-    arrayflags_ ## lower ## _get(PyArrayFlagsObject *self) \
++    arrayflags_ ## lower ## _get(PyArrayFlagsObject *self, void *ignored) \
+     { \
+         return PyBool_FromLong((self->flags & (UPPER)) == (UPPER)); \
+     }
+@@ -211,7 +211,7 @@ static char *msg = "future versions will not create a writeable "
+ 
+ #define _define_get_warn(UPPER, lower) \
+     static PyObject * \
+-    arrayflags_ ## lower ## _get(PyArrayFlagsObject *self) \
++    arrayflags_ ## lower ## _get(PyArrayFlagsObject *self, void *ignored) \
+     { \
+         if (self->flags & NPY_ARRAY_WARN_ON_WRITE) { \
+             if (PyErr_Warn(PyExc_FutureWarning, msg) < 0) {\
+@@ -554,19 +554,19 @@ arrayflags_getitem(PyArrayFlagsObject *self, PyObject *ind)
+     case 1:
+         switch(key[0]) {
+         case 'C':
+-            return arrayflags_contiguous_get(self);
++            return arrayflags_contiguous_get(self, NULL);
+         case 'F':
+-            return arrayflags_fortran_get(self);
++            return arrayflags_fortran_get(self, NULL);
+         case 'W':
+-            return arrayflags_writeable_get(self);
++            return arrayflags_writeable_get(self, NULL);
+         case 'B':
+-            return arrayflags_behaved_get(self);
++            return arrayflags_behaved_get(self, NULL);
+         case 'O':
+-            return arrayflags_owndata_get(self);
++            return arrayflags_owndata_get(self, NULL);
+         case 'A':
+-            return arrayflags_aligned_get(self);
++            return arrayflags_aligned_get(self, NULL);
+         case 'X':
+-            return arrayflags_writebackifcopy_get(self);
++            return arrayflags_writebackifcopy_get(self, NULL);
+         case 'U':
+             return arrayflags_updateifcopy_get(self);
+         default:
+@@ -575,7 +575,7 @@ arrayflags_getitem(PyArrayFlagsObject *self, PyObject *ind)
+         break;
+     case 2:
+         if (strncmp(key, "CA", n) == 0) {
+-            return arrayflags_carray_get(self);
++            return arrayflags_carray_get(self, NULL);
+         }
+         if (strncmp(key, "FA", n) == 0) {
+             return arrayflags_farray_get(self);
+@@ -593,7 +593,7 @@ arrayflags_getitem(PyArrayFlagsObject *self, PyObject *ind)
+         break;
+     case 6:
+         if (strncmp(key, "CARRAY", n) == 0) {
+-            return arrayflags_carray_get(self);
++            return arrayflags_carray_get(self, NULL);
+         }
+         if (strncmp(key, "FARRAY", n) == 0) {
+             return arrayflags_farray_get(self);
+@@ -601,26 +601,26 @@ arrayflags_getitem(PyArrayFlagsObject *self, PyObject *ind)
+         break;
+     case 7:
+         if (strncmp(key,"FORTRAN",n) == 0) {
+-            return arrayflags_fortran_get(self);
++            return arrayflags_fortran_get(self, NULL);
+         }
+         if (strncmp(key,"BEHAVED",n) == 0) {
+-            return arrayflags_behaved_get(self);
++            return arrayflags_behaved_get(self, NULL);
+         }
+         if (strncmp(key,"OWNDATA",n) == 0) {
+-            return arrayflags_owndata_get(self);
++            return arrayflags_owndata_get(self, NULL);
+         }
+         if (strncmp(key,"ALIGNED",n) == 0) {
+-            return arrayflags_aligned_get(self);
++            return arrayflags_aligned_get(self, NULL);
+         }
+         break;
+     case 9:
+         if (strncmp(key,"WRITEABLE",n) == 0) {
+-            return arrayflags_writeable_get(self);
++            return arrayflags_writeable_get(self, NULL);
+         }
+         break;
+     case 10:
+         if (strncmp(key,"CONTIGUOUS",n) == 0) {
+-            return arrayflags_contiguous_get(self);
++            return arrayflags_contiguous_get(self, NULL);
+         }
+         break;
+     case 12:
+@@ -628,15 +628,15 @@ arrayflags_getitem(PyArrayFlagsObject *self, PyObject *ind)
+             return arrayflags_updateifcopy_get(self);
+         }
+         if (strncmp(key, "C_CONTIGUOUS", n) == 0) {
+-            return arrayflags_contiguous_get(self);
++            return arrayflags_contiguous_get(self, NULL);
+         }
+         if (strncmp(key, "F_CONTIGUOUS", n) == 0) {
+-            return arrayflags_fortran_get(self);
++            return arrayflags_fortran_get(self, NULL);
+         }
+         break;
+     case 15:
+         if (strncmp(key, "WRITEBACKIFCOPY", n) == 0) {
+-            return arrayflags_writebackifcopy_get(self);
++            return arrayflags_writebackifcopy_get(self, NULL);
+         }
+         break;
+     }
+-- 
+2.25.1
+

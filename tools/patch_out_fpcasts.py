@@ -17,7 +17,11 @@ class Tree:
         self.type = None
         self.value = None
         self.__dict__.update(obj)
-        self.children = [x for x in self.inner if x] if hasattr(self, "inner") else []
+        self.children = (
+            [x for x in self.inner if isinstance(x, Tree)]
+            if hasattr(self, "inner")
+            else []
+        )
         for c in self.children:
             c.parent = self
 
@@ -66,9 +70,12 @@ class Tree:
         return hasattr(self, "castKind") and self.castKind == "NullToPointer"
 
     def descend_to_declref(self):
-        """A"""
+        """Function pointers are often wrapped in many nested cast nodes.
+        Descend through the cast nodes until we find a function.
+        But if we realize it's a null pointer, we bail out and return None.
+        """
         while not self.is_decl_ref:
-            if self.is_null_cast:
+            if not self.children:
                 return
             self = self.first_child
         return self
@@ -76,24 +83,30 @@ class Tree:
     def find_decls(self, name):
         for t in self.children:
             if not t.is_var_decl and not t.is_init_list_expr:
-                continue
-            if not t.children:
+                yield from t.find_decls(name)
                 continue
             if t.is_var_decl:
+                # Usually we have only one child and it's an InitListExpr
+                # But sometimes there are also AccessModifier nodes.
                 for c in t.children:
                     if c.is_init_list_expr:
                         t = c
                         break
                 else:
+                    # In this case it's a declaration with no initializer
+                    # e.g., "PyMethodDef blah[4];"
+                    # ignore it.
                     continue
+            # If we made it here, t is definitely an InitListExpr.
+            # Check if it has the target type.
             if t.type["qualType"] == name or t.type["qualType"] == f"struct {name}":
                 yield t
-            else:
-                yield from t.find_decls(name)
+                continue
+            yield from t.find_decls(name)
 
     def __repr__(self) -> str:
         result = [self.kind]
-        if hasattr(self, "name"):
+        if self.name:
             result.append(self.name)
         if self.is_operator:
             result.append(self.opcode)
@@ -138,6 +151,7 @@ class Tree:
         return self.kind == "InitListExpr"
 
     def pretty_lines(self, prefix="", last_child=False, root=True):
+        """Mimic clang's ast-dump text format"""
         output = prefix
         if last_child:
             output += "`-"
@@ -197,7 +211,7 @@ EXPECTED_ARGS = {
 }
 
 
-def is_bad_method_def(c):
+def method_def_arg_discrepancy(c):
     declref = c.children[1].descend_to_declref()
     flags = c.children[2].eval_int()
     meth_flags = []
@@ -206,17 +220,19 @@ def is_bad_method_def(c):
             meth_flags.append(mty)
     meth_flags = tuple(sorted(meth_flags))
     expected_args = EXPECTED_ARGS[meth_flags]
-    return count_sig_args(declref.type["qualType"]) != expected_args
+    actual_args = count_sig_args(declref.type["qualType"])
+    return expected_args - actual_args
 
 
 def get_method_defs_to_fix(tree):
     for pymeth_decl in tree.find_decls("PyMethodDef"):
         if pymeth_decl.first_child.is_null_cast:
             continue
-        if is_bad_method_def(pymeth_decl):
+        arg_discrepancy = method_def_arg_discrepancy(pymeth_decl)
+        if arg_discrepancy:
             declref = pymeth_decl.children[1].descend_to_declref()
             func_name = declref.referencedDecl.name
-            yield func_name
+            yield [func_name, arg_discrepancy]
 
 
 def count_sig_args(sig):
@@ -231,9 +247,9 @@ def get_bad_getset_names(c):
         declref = getter_node.descend_to_declref()
         if declref:
             sig = declref.type["qualType"]
-
+            sig_args = count_sig_args(sig)
             if count_sig_args(sig) != 2:
-                yield declref.referencedDecl.name
+                yield [declref.referencedDecl.name, sig_args - 2]
 
     if len(c.children) <= 2:
         return
@@ -242,8 +258,9 @@ def get_bad_getset_names(c):
         declref = setter_node.descend_to_declref()
         if declref:
             sig = declref.type["qualType"]
-            if count_sig_args(sig) != 3:
-                yield declref.referencedDecl.name
+            sig_args = count_sig_args(sig)
+            if sig_args != 3:
+                yield [declref.referencedDecl.name, sig_args - 3]
 
 
 def get_getset_defs_to_fix(tree):
@@ -256,7 +273,6 @@ def get_getset_defs_to_fix(tree):
 
 
 def fix_func_decls(src_lines, tree, target_names):
-    target_names = set(target_names)
     for t in tree.children:
         if not t.is_func_decl:
             continue
@@ -270,18 +286,28 @@ def fix_func_decls(src_lines, tree, target_names):
         lineno -= 1
         line: str = src_lines[lineno]
         colno = line.rfind(")")
-        if t.name not in line:
-            continue
-        newline = line[:colno] + ", PyObject *ignored" + line[colno:]
+        arg_discrepancy = target_names[t.name]
+        line: str = src_lines[lineno]
+        if arg_discrepancy == 1:
+            newline = line[:colno] + f", PyObject *ignored" + line[colno:]
+        elif arg_discrepancy == -1:
+            last_comma = line.rfind(",")
+            newline = line[:last_comma] + ")\n"
+        else:
+            raise Exception(
+                f"Can't change number of args in method declaration by {arg_discrepancy}."
+                "Either patch the source file or update this script."
+            )
+
         src_lines[lineno] = newline
 
 
 def patch_source_file_inner(ast_filename, src_filename, in_place=False):
     tree = json.load(open(ast_filename, "r"), object_hook=create_node)
     # sys.exit(0)
-    funcs_to_fix = []
-    funcs_to_fix.extend(get_method_defs_to_fix(tree))
-    funcs_to_fix.extend(get_getset_defs_to_fix(tree))
+    funcs_to_fix = {}
+    funcs_to_fix.update(get_method_defs_to_fix(tree))
+    funcs_to_fix.update(get_getset_defs_to_fix(tree))
 
     if not funcs_to_fix:
         return
@@ -292,14 +318,26 @@ def patch_source_file_inner(ast_filename, src_filename, in_place=False):
     fix_func_decls(src_lines, tree, funcs_to_fix)
     for call_expr in tree.iter_call_exprs():
         decl_ref = call_expr.first_child.descend_to_declref()
+        if not decl_ref:
+            continue
         name = decl_ref.referencedDecl.name
-        if name in funcs_to_fix:
-            lineno = call_expr.find_line()
-            colno = call_expr.get_end_col()
-            lineno -= 1
-            colno -= 1
-            line = src_lines[lineno]
-            src_lines[lineno] = line[:colno] + ", NULL" + line[colno:]
+        if name not in funcs_to_fix:
+            continue
+        lineno = call_expr.find_line()
+        colno = call_expr.get_end_col()
+        lineno -= 1
+        colno -= 1
+        line: str = src_lines[lineno]
+        arg_discrepancy = funcs_to_fix[name]
+        if arg_discrepancy == 1:
+            newline = line[:colno] + f", PyObject *ignored" + line[colno:]
+        else:
+            raise Exception(
+                f"Can't change number of args in method call by {arg_discrepancy}."
+                "Either patch the source file or update this script."
+            )
+
+        src_lines[lineno] = newline
 
     if in_place:
         dst_filename = src_filename
