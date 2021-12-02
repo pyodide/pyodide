@@ -308,12 +308,22 @@ def get_getsets_to_fix(tree):
 
 
 def fix_func_decls(src_lines, tree, funcs_to_fix):
-    """Fix the"""
+    """Fix the problematic function declarations by updating src_lines in place,
+
+    We are okay with either adding a single argument or removing a single argument.
+    Technically, we should be sometimes adding a `void *ignored` parameter and other times a `PyObject *ignored` parameter.
+    But as long as the number of arguments is right we should be okay -- doesn't matter if we swap one pointer type for another.
+
+    If discrepancy is not +/- 1, throw an error.
+
+    Updates src_lines in place, always returns None.
+    """
     for t in tree.children:
         if not t.is_func_decl:
             continue
         if not t.name in funcs_to_fix:
             continue
+        # find location
         loc = t.loc
         if "expansionLoc" in loc:
             loc = loc["expansionLoc"]
@@ -323,6 +333,7 @@ def fix_func_decls(src_lines, tree, funcs_to_fix):
         line: str = src_lines[lineno]
         colno = line.rfind(")")
         arg_discrepancy = funcs_to_fix[t.name]
+        # splice in fix
         if arg_discrepancy == 1:
             newline = line[:colno] + f", PyObject *ignored" + line[colno:]
         elif arg_discrepancy == -1:
@@ -334,10 +345,17 @@ def fix_func_decls(src_lines, tree, funcs_to_fix):
                 "Either patch the source file or update this script."
             )
 
+        # write fix back to src_lines
         src_lines[lineno] = newline
 
 
 def fix_call_exprs(src_lines, tree, funcs_to_fix):
+    """If we updated a function to add an argument to it, also update any call sites.
+
+    Currently we are only okay with adding an argument to the call site, we can fix this when needed.
+    The vast majority of fixups are never called and require an argument to be added,
+    so the case where the fixed function is called somewhere and it had an argument removed is doubly rare.
+    """
     for call_expr in tree.iter_call_exprs():
         decl_ref = call_expr.first_child.descend_to_declref()
         if not decl_ref:
@@ -352,7 +370,7 @@ def fix_call_exprs(src_lines, tree, funcs_to_fix):
         line: str = src_lines[lineno]
         arg_discrepancy = funcs_to_fix[name]
         if arg_discrepancy == 1:
-            newline = line[:colno] + f", PyObject *ignored" + line[colno:]
+            newline = line[:colno] + f", NULL" + line[colno:]
         else:
             raise Exception(
                 f"Can't change number of args in method call by {arg_discrepancy}."
