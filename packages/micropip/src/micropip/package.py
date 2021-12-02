@@ -1,9 +1,9 @@
-from collections.abc import Collection
+from collections import UserDict
 from dataclasses import dataclass, field, astuple
 from pathlib import Path
 from typing import List, Dict, Iterable
 
-__all__: List[str] = []
+__all__ = ["PackageDict"]
 
 
 def _format_table(headers: List[str], table: List[Iterable]) -> str:
@@ -36,36 +36,12 @@ class PackageMetadata:
         return PackageMetadata.__dataclass_fields__.keys()
 
 
-class PackageList(Collection):
-    def __init__(self):
-        self.packages: Dict[str, PackageMetadata] = {}
-
+class PackageDict(UserDict):
+    
     def __repr__(self):
         return self._tabularize()
 
-    def __len__(self):
-        return len(self.packages)
-
-    def __iter__(self):
-        return iter(self.packages.values())
-
-    def __contains__(self, pkg_name: str):  # type: ignore
-        return pkg_name in self.package_names
-
-    def __setitem__(self, key: str, item: PackageMetadata):
-        self.packages[key] = item
-
-    def __getitem__(self, key: str):
-        return self.packages[key]
-
-    @property
-    def package_names(self):
-        return [pkg.name for pkg in self]
-
-    def update(self, pkg: Dict[str, PackageMetadata]):
-        self.packages.update(pkg)
-
     def _tabularize(self):
-        headers = PackageMetadata.keys()
-        table = list(self.packages.values())
+        headers = [key.capitalize() for key in PackageMetadata.keys()]
+        table = list(self.values())
         return _format_table(headers, table)
