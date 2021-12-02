@@ -191,24 +191,38 @@ class Tree:
 
 
 METHOD_FLAGS = {
-    "METH_VARARGS": 1,
-    "METH_KEYWORDS": 2,
-    "METH_NOARGS": 4,
-    "METH_O": 8,
-    "METH_FASTCALL": 128,
+    0x0001: "METH_VARARGS",
+    0x0002: "METH_KEYWORDS",
+    0x0004: "METH_NOARGS",
+    0x0008: "METH_O",
+    0x0010: "METH_CLASS",
+    0x0020: "METH_STATIC",
+    0x0040: "METH_COEXIST",
+    0x0080: "METH_FASTCALL",
+    0x0200: "METH_METHOD",
 }
 
 EXPECTED_ARGS = {
     ("METH_NOARGS",): 2,
     ("METH_O",): 2,
+    ("METH_O",): 2,
     ("METH_VARARGS",): 2,
     ("METH_KEYWORDS", "METH_VARARGS"): 3,
+    ("METH_FASTCALL",): 3,
     (
         "METH_FASTCALL",
         "METH_KEYWORDS",
     ): 4,
-    ("METH_FASTCALL",): 3,
+    ("METH_FASTCALL", "METH_KEYWORDS", "METH_METHOD"): 5,
 }
+
+
+def bits(number):
+    bit = 1
+    while number >= bit:
+        if number & bit:
+            yield bit
+        bit <<= 1
 
 
 def method_def_arg_discrepancy(c):
@@ -219,10 +233,14 @@ def method_def_arg_discrepancy(c):
     """
     declref = c.children[1].descend_to_declref()
     flags = c.children[2].eval_int()
-    meth_flags = []
-    for [mty, mflag] in METHOD_FLAGS.items():
-        if flags & mflag:
-            meth_flags.append(mty)
+    meth_flags = set()
+    for flag in bits(flags):
+        meth_flags.add(METHOD_FLAGS[flag])
+    # These flags make no difference to number of args
+    meth_flags.discard("METH_COEXIST")
+    meth_flags.discard("METH_CLASS")
+    meth_flags.discard("METH_STATIC")
+
     meth_flags = tuple(sorted(meth_flags))
     expected_args = EXPECTED_ARGS[meth_flags]
     actual_args = count_sig_args(declref.type["qualType"])
