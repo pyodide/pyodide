@@ -178,7 +178,6 @@ class Tree:
             prefix += " "
         output += repr(self)
         yield output
-        global x
         for child in self.children[:-1]:
             yield from child.pretty_lines(prefix + "|", root=False)
         if self.children:
@@ -381,13 +380,17 @@ def fix_call_exprs(src_lines, tree, funcs_to_fix):
 
 
 def patch_source_file_inner(ast_filename, src_filename, in_place=False):
+    """Load in ast tree from json ast dump, then work out methods, getters, and setters to fix, then fix them.
+    When we are done, write the result back over the original file if in_place is True (in this case back up original file to
+    filename.c.bak).
+    If in_place is False, write patched version to filename.c.patched.
+    """
     tree = json.load(open(ast_filename, "r"), object_hook=create_node)
     # funcs_to_fix will be of the form:
     # name_of_func ==> expected_args - actual_args
     funcs_to_fix = {}
     funcs_to_fix.update(get_methods_to_fix(tree))
     funcs_to_fix.update(get_getsets_to_fix(tree))
-    print(funcs_to_fix)
 
     if not funcs_to_fix:
         return
@@ -412,6 +415,10 @@ def patch_source_file_inner(ast_filename, src_filename, in_place=False):
 
 
 def patch_source_file(ast_filename, src_filename, in_place=False):
+    """
+    Wrapper around patch_source_file_inner that makes errors easier to find
+    in noisy log files.
+    """
     try:
         return patch_source_file_inner(ast_filename, src_filename, in_place)
     except Exception as e:
@@ -421,27 +428,50 @@ def patch_source_file(ast_filename, src_filename, in_place=False):
 
 
 def process_compilation_command(cmd, input_file):
+    """This is the entry point that our patched copy of emcc calls.
+
+    cmd -- the shell call that emcc is about invoke clang with (after calling this function)
+    input_file -- the input file.
+    """
     import subprocess
     import os
 
     PYODIDE_ROOT = os.environ.get("PYODIDE_ROOT")
     if not PYODIDE_ROOT:
+        # This happens when debugging and emcc isn't invoked through our Makefile.
+        # We only need PYODIDE_ROOT to locate emsdk system includes, so maybe there is a better way?
         print("no PYODIDE_ROOT, not patching fpcasts")
         return
+    # Guard: don't waste effort processing a file if it doesn't have any PyGetSetDef's or PyMethodDef's
+    # In principle this could yield false negatives because of macro stupidity but whatever.
     res = subprocess.run(["egrep", "-q", "(PyGetSetDef)|(PyMethodDef)", input_file])
     if res.returncode != 0:
         return
+    # Set up call to create ast dump.
     cmd2 = (
-        cmd[:1]
-        + ["-cc1"]
+        cmd[:1]  # This first argument is the path to clang.
         + [
+            "-cc1",  # -cc1 makes clang only invoke the parser.
+            "-ast-dump=json",  # we need -cc1 b/c -ast-dump only makes sense to parser, not to main clang.
+        ]
+        + [
+            # filter flags that are includes or macro defs since these affect parsing.
+            # Some of the other flags cause errors because they aren't for the parser.
             arg
             for arg in cmd
             if arg.startswith("-I") or arg.startswith("-i") or arg.startswith("-D")
         ]
         + [
+            # Unfortunately, the parser doesn't understand -sysroot and related flags.
+            # By trial and error, I figured that replacing -sysroot with the following -I flags,
+            # it still works alright.
             f"-I{PYODIDE_ROOT}/emsdk/emsdk/upstream/emscripten/cache/sysroot/include",
             f"-I{PYODIDE_ROOT}/emsdk/emsdk/upstream/lib/clang/13.0.0/include",
+        ]
+        + [
+            # Turn off some warnings that come up because of differences in the parser invocation
+            # and the main invocation. If these are real warnings, they will show up again in the
+            # main clang invocation.
             "-Wno-unknown-attributes",
             "-Wno-incompatible-library-redeclaration",
         ]
@@ -449,7 +479,8 @@ def process_compilation_command(cmd, input_file):
     )
     ast_file = input_file + ".ast"
     with open(ast_file, "w") as f:
-        res = subprocess.run(cmd2 + ["-ast-dump=json"], stdout=f)
+        res = subprocess.run(cmd2, stdout=f)
+    # Now analyze the ast and use it to patch the source file.
     patch_source_file(ast_file, input_file, in_place=True)
 
 
