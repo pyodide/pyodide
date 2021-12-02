@@ -10,6 +10,6 @@ export PATH="$ROOT/node_modules/.bin/:$ROOT/emsdk/emsdk/ccache/git-emscripten_64
 export EM_DIR=$(dirname $(which emcc.py || echo "."))
 
 # Following two variables are set by emsdk activated otherwise
-# export _EMCC_CCACHE=1
+export _EMCC_CCACHE=1
 # mtime of this file is checked by ccache, we set it to avoid cache misses.
 export EM_CONFIG="$ROOT/emsdk/emsdk/.emscripten"
