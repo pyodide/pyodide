@@ -1,0 +1,100 @@
+From 1caf2243467315a837a296e43a43f49c027c8b4f Mon Sep 17 00:00:00 2001
+From: Hood Chatham <roberthoodchatham@gmail.com>
+Date: Wed, 1 Dec 2021 21:14:47 -0800
+Subject: [PATCH] patch arraydescr_protocol public getters"
+
+---
+ numpy/core/src/multiarray/descriptor.c | 6 +++---
+ numpy/core/src/multiarray/descriptor.h | 4 ++--
+ numpy/core/src/multiarray/getset.c     | 8 ++++----
+ 3 files changed, 9 insertions(+), 9 deletions(-)
+
+diff --git a/numpy/core/src/multiarray/descriptor.c b/numpy/core/src/multiarray/descriptor.c
+index b8b477e5d..918da215b 100644
+--- a/numpy/core/src/multiarray/descriptor.c
++++ b/numpy/core/src/multiarray/descriptor.c
+@@ -1905,7 +1905,7 @@ arraydescr_subdescr_get(PyArray_Descr *self)
+ }
+ 
+ NPY_NO_EXPORT PyObject *
+-arraydescr_protocol_typestr_get(PyArray_Descr *self)
++arraydescr_protocol_typestr_get(PyArray_Descr *self, void *ignored)
+ {
+     char basic_ = self->kind;
+     char endian = self->byteorder;
+@@ -2006,7 +2006,7 @@ arraydescr_ndim_get(PyArray_Descr *self)
+ 
+ 
+ NPY_NO_EXPORT PyObject *
+-arraydescr_protocol_descr_get(PyArray_Descr *self)
++arraydescr_protocol_descr_get(PyArray_Descr *self, void *ignored)
+ {
+     PyObject *dobj, *res;
+     PyObject *_numpy_internal;
+@@ -2018,7 +2018,7 @@ arraydescr_protocol_descr_get(PyArray_Descr *self)
+             return NULL;
+         }
+         PyTuple_SET_ITEM(dobj, 0, PyUnicode_FromString(""));
+-        PyTuple_SET_ITEM(dobj, 1, arraydescr_protocol_typestr_get(self));
++        PyTuple_SET_ITEM(dobj, 1, arraydescr_protocol_typestr_get(self, NULL));
+         res = PyList_New(1);
+         if (res == NULL) {
+             Py_DECREF(dobj);
+diff --git a/numpy/core/src/multiarray/descriptor.h b/numpy/core/src/multiarray/descriptor.h
+index fc9e0895b..42bbf57de 100644
+--- a/numpy/core/src/multiarray/descriptor.h
++++ b/numpy/core/src/multiarray/descriptor.h
+@@ -1,8 +1,8 @@
+ #ifndef _NPY_ARRAYDESCR_H_
+ #define _NPY_ARRAYDESCR_H_
+ 
+-NPY_NO_EXPORT PyObject *arraydescr_protocol_typestr_get(PyArray_Descr *);
+-NPY_NO_EXPORT PyObject *arraydescr_protocol_descr_get(PyArray_Descr *self);
++NPY_NO_EXPORT PyObject *arraydescr_protocol_typestr_get(PyArray_Descr *, void *ctx);
++NPY_NO_EXPORT PyObject *arraydescr_protocol_descr_get(PyArray_Descr *self, void *ctx);
+ 
+ NPY_NO_EXPORT PyObject *
+ array_set_typeDict(PyObject *NPY_UNUSED(ignored), PyObject *args);
+diff --git a/numpy/core/src/multiarray/getset.c b/numpy/core/src/multiarray/getset.c
+index bccbb7b0c..d79c41e0b 100644
+--- a/numpy/core/src/multiarray/getset.c
++++ b/numpy/core/src/multiarray/getset.c
+@@ -190,7 +190,7 @@ array_priority_get(PyArrayObject *NPY_UNUSED(self))
+ static PyObject *
+ array_typestr_get(PyArrayObject *self)
+ {
+-    return arraydescr_protocol_typestr_get(PyArray_DESCR(self));
++    return arraydescr_protocol_typestr_get(PyArray_DESCR(self), NULL);
+ }
+ 
+ static PyObject *
+@@ -206,7 +206,7 @@ array_protocol_descr_get(PyArrayObject *self)
+     PyObject *res;
+     PyObject *dobj;
+ 
+-    res = arraydescr_protocol_descr_get(PyArray_DESCR(self));
++    res = arraydescr_protocol_descr_get(PyArray_DESCR(self), NULL);
+     if (res) {
+         return res;
+     }
+@@ -302,7 +302,7 @@ array_interface_get(PyArrayObject *self)
+         return NULL;
+     }
+ 
+-    obj = arraydescr_protocol_typestr_get(PyArray_DESCR(self));
++    obj = arraydescr_protocol_typestr_get(PyArray_DESCR(self), NULL);
+     ret = PyDict_SetItemString(dict, "typestr", obj);
+     Py_DECREF(obj);
+     if (ret < 0) {
+@@ -641,7 +641,7 @@ array_struct_get(PyArrayObject *self)
+     }
+     inter->data = PyArray_DATA(self);
+     if (PyDataType_HASFIELDS(PyArray_DESCR(self))) {
+-        inter->descr = arraydescr_protocol_descr_get(PyArray_DESCR(self));
++        inter->descr = arraydescr_protocol_descr_get(PyArray_DESCR(self), NULL);
+         if (inter->descr == NULL) {
+             PyErr_Clear();
+         }
+-- 
+2.25.1
+

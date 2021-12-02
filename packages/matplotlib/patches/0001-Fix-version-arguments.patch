@@ -1,0 +1,25 @@
+From 6ff1b76990e0a28ed7aef936237ec4d51cbfb641 Mon Sep 17 00:00:00 2001
+From: Hood Chatham <roberthoodchatham@gmail.com>
+Date: Wed, 1 Dec 2021 22:18:24 -0800
+Subject: [PATCH] Fix version arguments
+
+---
+ src/qhull_wrap.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/src/qhull_wrap.c b/src/qhull_wrap.c
+index 8545cc3..0c29416 100644
+--- a/src/qhull_wrap.c
++++ b/src/qhull_wrap.c
+@@ -317,7 +317,7 @@ delaunay(PyObject *self, PyObject *args)
+ 
+ /* Return qhull version string for assistance in debugging. */
+ static PyObject*
+-version(void)
++version(PyObject *self, PyObject *ignored)
+ {
+     return PyBytes_FromString(qh_version);
+ }
+-- 
+2.25.1
+
