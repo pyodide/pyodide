@@ -33,7 +33,7 @@ class PackageMetadata:
 
     @staticmethod
     def keys():
-        return [key.capitalize() for key in PackageMetadata.__dataclass_fields__.keys()]
+        return PackageMetadata.__dataclass_fields__.keys()
 
 
 class PackageList(Collection):
@@ -41,7 +41,7 @@ class PackageList(Collection):
         self.packages: Dict[str, PackageMetadata] = {}
 
     def __repr__(self):
-        return self.tabularize()
+        return self._tabularize()
 
     def __len__(self):
         return len(self.packages)
@@ -65,7 +65,7 @@ class PackageList(Collection):
     def update(self, pkg: Dict[str, PackageMetadata]):
         self.packages.update(pkg)
 
-    def tabularize(self):
+    def _tabularize(self):
         headers = PackageMetadata.keys()
         table = list(self.packages.values())
         return _format_table(headers, table)
