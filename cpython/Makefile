@@ -1,4 +1,4 @@
-PYODIDE_ROOT=$(abspath ..)
+export PYODIDE_ROOT=$(abspath ..)
 include ../Makefile.envs
 
 ROOT=$(abspath .)
