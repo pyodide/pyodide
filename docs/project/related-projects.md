@@ -17,6 +17,11 @@
   notebook with a Pyodide kernel (currently in French).
 - [JupyterLite](https://github.com/jupyterlite/jupyterlite) is a JupyterLab
   distribution that runs entirely in the browser, based on Pyodide.
+- [futurecoder](https://futurecoder.io/) is an interactive Python
+  course running on Pyodide. It includes an
+  [IDE](https://futurecoder.io/course/#ide) with a REPL,
+  debuggers, and automatic installation of
+  any imported packages supported by Pyodide's `micropip`.
 
 ## Dashboards and visualization
 
