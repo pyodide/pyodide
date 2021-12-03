@@ -374,6 +374,7 @@ def fix_func_decls(src_lines, tree, funcs_to_fix):
             last_comma = line.rfind(",")
             close_paren = line.rfind(")")
             if last_comma == -1:
+                last_comma = 0
                 comma = src_lines[lineno - 1].rfind(",")
                 if comma == -1:
                     raise Exception("Couldn't find a comma to remove")
