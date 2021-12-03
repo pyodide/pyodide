@@ -326,10 +326,9 @@ def get_line_from_loc(loc):
 def get_last_arg_line(func_decl):
     # find location
     last_arg = func_decl.children[-1]
-    if last_arg.kind == "CompoundStmt":
-        last_arg = func_decl.children[-2]
-    print(last_arg.range)
-    print(last_arg.kind)
+    for last_arg in reversed(func_decl.children):
+        if last_arg.kind == "ParmVarDecl":
+            break
     loc = (
         get_line_from_loc(last_arg.range["end"])
         or get_line_from_loc(last_arg.loc)
