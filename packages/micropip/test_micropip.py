@@ -26,6 +26,10 @@ def mock_get_pypi_json(pkg_map):
         A mock function of ``_get_pypi_json`` which returns dummy JSON data of PyPI API.
     """
 
+    class Wildcard(object):
+        def __eq__(self, other):
+            return True
+
     async def _mock_get_pypi_json(pkgname, **kwargs):
         if pkgname in pkg_map:
             pkg_file = pkg_map[pkgname]
@@ -38,6 +42,9 @@ def mock_get_pypi_json(pkg_map):
                     {
                         "filename": pkg_file,
                         "url": "",
+                        "digests": {
+                            "sha256": Wildcard(),
+                        },
                     }
                 ]
             }
@@ -336,3 +343,61 @@ def test_install_keep_going(monkeypatch):
         asyncio.get_event_loop().run_until_complete(
             _micropip.install(dummy_pkg_name, keep_going=True)
         )
+
+
+def test_list_pypi_package(monkeypatch):
+    pytest.importorskip("packaging")
+    from micropip import _micropip
+
+    dummy_pkg_name = "dummy"
+    _mock_get_pypi_json = mock_get_pypi_json(
+        {dummy_pkg_name: f"{dummy_pkg_name}-1.0.0-py3-none-any.whl"}
+    )
+    _mock_fetch_bytes = mock_fetch_bytes(dummy_pkg_name, "UNKNOWN")
+
+    monkeypatch.setattr(_micropip, "_get_pypi_json", _mock_get_pypi_json)
+    monkeypatch.setattr(_micropip, "fetch_bytes", _mock_fetch_bytes)
+
+    asyncio.get_event_loop().run_until_complete(_micropip.install(dummy_pkg_name))
+
+    pkg_list = _micropip._list()
+    assert "dummy" in pkg_list and pkg_list["dummy"].source.lower() == "pypi"
+
+
+def test_list_wheel_package(monkeypatch):
+    pytest.importorskip("packaging")
+    from micropip import _micropip
+
+    dummy_pkg_name = "dummy"
+    dummy_url = f"https://dummy.com/{dummy_pkg_name}-1.0.0-py3-none-any.whl"
+    _mock_fetch_bytes = mock_fetch_bytes(dummy_pkg_name, "UNKNOWN")
+
+    monkeypatch.setattr(_micropip, "fetch_bytes", _mock_fetch_bytes)
+
+    asyncio.get_event_loop().run_until_complete(_micropip.install(dummy_url))
+
+    pkg_list = _micropip._list()
+    assert "dummy" in pkg_list and pkg_list["dummy"].source.lower() == dummy_url
+
+
+def test_list_pyodide_package(selenium_standalone_micropip):
+    selenium = selenium_standalone_micropip
+    selenium.run_js(
+        """
+        await pyodide.runPythonAsync(`
+            import micropip
+            await micropip.install(
+                "regex"
+            );
+        `);
+        """
+    )
+    selenium.run_js(
+        """
+        await pyodide.runPythonAsync(`
+            import micropip
+            pkgs = micropip.list()
+            assert "regex" in pkgs and pkgs["regex"].source.lower() == "pyodide"
+        `);
+        """
+    )

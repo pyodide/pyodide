@@ -5,6 +5,7 @@ import hashlib
 import importlib
 import io
 import json
+import tempfile
 
 from packaging.requirements import Requirement
 from packaging.version import Version
@@ -31,7 +32,7 @@ if IN_BROWSER:
 
     WHEEL_BASE = Path(getsitepackages()[0])
 else:
-    WHEEL_BASE = Path(".") / "wheels"
+    WHEEL_BASE = Path(tempfile.mkdtemp())
 
 if IN_BROWSER:
     BUILTIN_PACKAGES = pyodide_js._module.packages.to_py()
@@ -404,15 +405,14 @@ def _list():
     ``PackageDict``
         A dictionary of installed packages.
 
+        >>> import micropip
+        >>> await micropip.install('regex') # doctest: +SKIP
         >>> package_list = micropip.list()
-        >>> print(package_list)
-        | Name              | Version  | Source  |
-        | ----------------- | -------- | ------- |
-        | regex             | 2021.7.6 | pyodide |
-        | tomli             | 1.2.2    | pypi    |
-        | mypy-extensions   | 0.4.3    | pypi    |
-        ...
-        >>> "regex" in package_list
+        >>> print(package_list) # doctest: +SKIP
+        Name              | Version  | Source
+        ----------------- | -------- | -------
+        regex             | 2021.7.6 | pyodide
+        >>> "regex" in package_list # doctest: +SKIP
         True
     """
     return PACKAGE_MANAGER.list()
