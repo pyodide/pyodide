@@ -7,6 +7,7 @@ __all__ = ["PackageDict"]
 
 
 def _format_table(headers: List[str], table: List[Iterable]) -> str:
+    # fmt: off
     """
     Returns a minimal formatted table
 
@@ -16,6 +17,7 @@ def _format_table(headers: List[str], table: List[Iterable]) -> str:
     val1    | val2   
     val3    | val4   
     """
+    # fmt: on
 
     def format_row(values, widths, filler=""):
         row = " | ".join(f"{x:{filler}<{w}}" for x, w in zip(values, widths))
