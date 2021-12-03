@@ -430,6 +430,7 @@ def patch_source_file_inner(ast_filename, src_filename, in_place=False):
         print(
             f"Skipping fpcast patching in file {src_filename} because the AST is too large!\nAst size: {ast_size}"
         )
+        return
     tree = json.load(open(ast_filename, "r"), object_hook=create_node)
     # funcs_to_fix will be of the form:
     # name_of_func ==> expected_args - actual_args
