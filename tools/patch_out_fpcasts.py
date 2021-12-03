@@ -316,6 +316,33 @@ def get_getsets_to_fix(tree):
         yield from get_bad_setter_name(pygetset_decl)
 
 
+def get_line_from_loc(loc):
+    if "expansionLoc" in loc:
+        loc = loc["expansionLoc"]
+    if "line" in loc:
+        return loc["line"]
+
+
+def get_last_arg_line(func_decl):
+    # find location
+    last_arg = func_decl.children[-1]
+    if last_arg.kind == "CompoundStmt":
+        last_arg = func_decl.children[-2]
+    print(last_arg.range)
+    print(last_arg.kind)
+    loc = (
+        get_line_from_loc(last_arg.range["end"])
+        or get_line_from_loc(last_arg.loc)
+        or get_line_from_loc(last_arg.range["begin"])
+        or get_line_from_loc(func_decl.loc)
+    )
+    if not loc:
+        raise Exception(
+            f"Couldn't find line number for function declaration {func_decl}"
+        )
+    return loc
+
+
 def fix_func_decls(src_lines, tree, funcs_to_fix):
     """Fix the problematic function declarations by updating src_lines in place,
 
@@ -332,11 +359,9 @@ def fix_func_decls(src_lines, tree, funcs_to_fix):
             continue
         if not t.name in funcs_to_fix:
             continue
-        # find location
-        loc = t.loc
-        if "expansionLoc" in loc:
-            loc = loc["expansionLoc"]
-        lineno = loc["line"]
+
+        lineno = get_last_arg_line(t)
+
         # llvm one-indexes line and column
         lineno -= 1
         line: str = src_lines[lineno]
@@ -347,7 +372,10 @@ def fix_func_decls(src_lines, tree, funcs_to_fix):
             newline = line[:colno] + f", PyObject *ignored" + line[colno:]
         elif arg_discrepancy == -1:
             last_comma = line.rfind(",")
-            newline = line[:last_comma] + ")\n"
+            close_paren = line.rfind(")")
+            if last_comma == -1:
+                last_comma = 0
+            newline = line[:last_comma] + line[close_paren:]
         else:
             raise Exception(
                 f"Can't change number of args in method declaration by {arg_discrepancy}."
@@ -382,7 +410,7 @@ def fix_call_exprs(src_lines, tree, funcs_to_fix):
             newline = line[:colno] + f", NULL" + line[colno:]
         else:
             raise Exception(
-                f"Can't change number of args in method call by {arg_discrepancy}."
+                f"Can't change number of args in method call by {arg_discrepancy}. "
                 "Either patch the source file or update this script."
             )
 
