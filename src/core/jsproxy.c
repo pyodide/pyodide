@@ -67,6 +67,7 @@ Js_IDENTIFIER(get);
 Js_IDENTIFIER(set);
 Js_IDENTIFIER(delete);
 Js_IDENTIFIER(includes);
+_Py_IDENTIFIER(fileno);
 
 static PyObject* asyncio_get_event_loop;
 static PyTypeObject* PyExc_BaseException_Type;
@@ -417,8 +418,13 @@ JsProxy_subscript_array(PyObject* o, PyObject* item)
     i = PyNumber_AsSsize_t(item, PyExc_IndexError);
     if (i == -1 && PyErr_Occurred())
       return NULL;
-    if (i < 0)
-      i += hiwire_get_length(self->js);
+    if (i < 0) {
+      int length = hiwire_get_length(self->js);
+      if (length == -1) {
+        return NULL;
+      }
+      i += length;
+    }
     JsRef result = JsArray_Get(self->js, i);
     if (result == NULL) {
       if (!PyErr_Occurred()) {
@@ -448,6 +454,8 @@ static int
 JsProxy_ass_subscript_array(PyObject* o, PyObject* item, PyObject* pyvalue)
 {
   JsProxy* self = (JsProxy*)o;
+  bool success = false;
+  JsRef idvalue = NULL;
   Py_ssize_t i;
   if (PySlice_Check(item)) {
     PyErr_SetString(PyExc_NotImplementedError,
@@ -457,8 +465,11 @@ JsProxy_ass_subscript_array(PyObject* o, PyObject* item, PyObject* pyvalue)
     i = PyNumber_AsSsize_t(item, PyExc_IndexError);
     if (i == -1 && PyErr_Occurred())
       return -1;
-    if (i < 0)
-      i += hiwire_get_length(self->js);
+    if (i < 0) {
+      int length = hiwire_get_length(self->js);
+      FAIL_IF_MINUS_ONE(length);
+      i += length;
+    }
   } else {
     PyErr_Format(PyExc_TypeError,
                  "list indices must be integers or slices, not %.200s",
@@ -466,8 +477,6 @@ JsProxy_ass_subscript_array(PyObject* o, PyObject* item, PyObject* pyvalue)
     return -1;
   }
 
-  bool success = false;
-  JsRef idvalue = NULL;
   if (pyvalue == NULL) {
     if (JsArray_Delete(self->js, i)) {
       if (!PyErr_Occurred()) {
@@ -1222,7 +1231,7 @@ finally:
     // arguments in async_done_callback instead of here. Otherwise, destroy the
     // arguments and return value now.
     if (idresult != NULL && hiwire_is_pyproxy(idresult)) {
-      JsArray_Push(proxies, idresult);
+      JsArray_Push_unchecked(proxies, idresult);
     }
     destroy_proxies(proxies,
                     "This borrowed proxy was automatically destroyed at the "
@@ -1435,7 +1444,7 @@ check_buffer_compatibility(JsProxy* self, Py_buffer view, bool safe, bool dir)
 /**
  * Assign from a js buffer to a py buffer
  * obj -- A JsBuffer (meaning a PyProxy of an ArrayBuffer or an ArrayBufferView)
- * buffer -- A PyObject whcih supports the buffer protocol and is writable.
+ * buffer -- A PyObject which supports the buffer protocol and is writable.
  */
 static PyObject*
 JsBuffer_assign_to(PyObject* obj, PyObject* target)
@@ -1643,6 +1652,73 @@ static PyMethodDef JsBuffer_tobytes_MethodDef = {
   METH_NOARGS,
 };
 
+static long
+get_fileno(PyObject* file)
+{
+  PyObject* pyfileno = _PyObject_CallMethodIdNoArgs(file, &PyId_fileno);
+  if (pyfileno == NULL) {
+    return -1;
+  }
+  return PyLong_AsLong(pyfileno);
+}
+
+static PyObject*
+JsBuffer_write_to_file(PyObject* jsbuffer, PyObject* file)
+{
+  int fd = get_fileno(file);
+  if (fd == -1) {
+    return NULL;
+  }
+  if (hiwire_write_to_file(JsProxy_REF(jsbuffer), fd)) {
+    return NULL;
+  }
+  Py_RETURN_NONE;
+}
+
+static PyMethodDef JsBuffer_write_to_file_MethodDef = {
+  "to_file",
+  (PyCFunction)JsBuffer_write_to_file,
+  METH_O,
+};
+
+static PyObject*
+JsBuffer_read_from_file(PyObject* jsbuffer, PyObject* file)
+{
+  int fd = get_fileno(file);
+  if (fd == -1) {
+    return NULL;
+  }
+  if (hiwire_read_from_file(JsProxy_REF(jsbuffer), fd)) {
+    return NULL;
+  }
+  Py_RETURN_NONE;
+}
+
+static PyMethodDef JsBuffer_read_from_file_MethodDef = {
+  "from_file",
+  (PyCFunction)JsBuffer_read_from_file,
+  METH_O,
+};
+
+static PyObject*
+JsBuffer_into_file(PyObject* jsbuffer, PyObject* file)
+{
+  int fd = get_fileno(file);
+  if (fd == -1) {
+    return NULL;
+  }
+  if (hiwire_into_file(JsProxy_REF(jsbuffer), fd)) {
+    return NULL;
+  }
+  Py_RETURN_NONE;
+}
+
+static PyMethodDef JsBuffer_into_file_MethodDef = {
+  "_into_file",
+  (PyCFunction)JsBuffer_into_file,
+  METH_O,
+};
+
 static PyObject*
 JsBuffer_tostring(PyObject* self,
                   PyObject* const* args,
@@ -1798,6 +1874,9 @@ JsProxy_create_subtype(int flags)
     methods[cur_method++] = JsBuffer_tomemoryview_MethodDef;
     methods[cur_method++] = JsBuffer_tobytes_MethodDef;
     methods[cur_method++] = JsBuffer_tostring_MethodDef;
+    methods[cur_method++] = JsBuffer_write_to_file_MethodDef;
+    methods[cur_method++] = JsBuffer_read_from_file_MethodDef;
+    methods[cur_method++] = JsBuffer_into_file_MethodDef;
   }
   methods[cur_method++] = (PyMethodDef){ 0 };
   members[cur_member++] = (PyMemberDef){ 0 };
@@ -2035,6 +2114,9 @@ JsProxy_init(PyObject* core_module)
   SET_DOCSTRING(JsBuffer_tomemoryview_MethodDef);
   SET_DOCSTRING(JsBuffer_tobytes_MethodDef);
   SET_DOCSTRING(JsBuffer_tostring_MethodDef);
+  SET_DOCSTRING(JsBuffer_write_to_file_MethodDef);
+  SET_DOCSTRING(JsBuffer_read_from_file_MethodDef);
+  SET_DOCSTRING(JsBuffer_into_file_MethodDef);
 #undef SET_DOCSTRING
 
   asyncio_module = PyImport_ImportModule("asyncio");

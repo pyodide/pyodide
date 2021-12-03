@@ -34,11 +34,6 @@ JsRef
 wrap_exception();
 
 /**
- * Log an error to the console. Argument should be output of wrap_exception.
- */
-errcode log_python_error(JsRef);
-
-/**
  * Convert the active Python exception into a JavaScript Error object, print
  * an appropriate message to the console and throw the error.
  */
@@ -46,12 +41,12 @@ void _Py_NO_RETURN
 pythonexc2js();
 
 // Used by LOG_EM_JS_ERROR (behind DEBUG_F flag)
-errcode
+void
 console_error(char* msg);
 
 // Right now this is dead code (probably), please don't remove it.
 // Intended for debugging purposes.
-errcode
+void
 console_error_obj(JsRef obj);
 
 /**
@@ -94,8 +89,13 @@ console_error_obj(JsRef obj);
 #define EM_JS_DEFER(ret, func_name, args, body...)                             \
   EM_JS(ret, func_name, args, body)
 
+#define EM_JS_UNCHECKED(ret, func_name, args, body...)                         \
+  EM_JS(ret, func_name, args, body)
+
+#define WARN_UNUSED __attribute__((warn_unused_result))
+
 #define EM_JS_REF(ret, func_name, args, body...)                               \
-  EM_JS_DEFER(ret, func_name, args, {                                          \
+  EM_JS_DEFER(ret WARN_UNUSED, func_name, args, {                              \
     "use strict";                                                              \
     try    /* intentionally no braces, body already has them */                \
       body /* <== body of func */                                              \
@@ -110,7 +110,7 @@ console_error_obj(JsRef obj);
   })
 
 #define EM_JS_NUM(ret, func_name, args, body...)                               \
-  EM_JS_DEFER(ret, func_name, args, {                                          \
+  EM_JS_DEFER(ret WARN_UNUSED, func_name, args, {                              \
     "use strict";                                                              \
     try    /* intentionally no braces, body already has them */                \
       body /* <== body of func */                                              \

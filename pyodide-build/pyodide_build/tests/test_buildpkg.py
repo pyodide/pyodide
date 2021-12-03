@@ -1,5 +1,6 @@
 import shutil
 import subprocess
+import time
 
 from pathlib import Path
 
@@ -127,3 +128,68 @@ def test_unvendor_tests(tmpdir):
 
     # One test folder and two test file
     assert n_moved == 3
+
+
+def test_needs_rebuild(tmpdir):
+    tmpdir = Path(tmpdir)
+    builddir = tmpdir / "build"
+    meta_yaml = tmpdir / "meta.yaml"
+    packaged = builddir / ".packaged"
+
+    patch_file = tmpdir / "patch"
+    extra_file = tmpdir / "extra"
+    src_path = tmpdir / "src"
+    src_path_file = src_path / "file"
+    pkg_dict = {
+        "source": {
+            "patches": [
+                str(patch_file),
+            ],
+            "extras": [
+                (str(extra_file), ""),
+            ],
+            "path": str(src_path),
+        }
+    }
+
+    builddir.mkdir()
+    meta_yaml.touch()
+    patch_file.touch()
+    extra_file.touch()
+    src_path.mkdir()
+    src_path_file.touch()
+
+    # No .packaged file, rebuild
+    assert buildpkg.needs_rebuild(pkg_dict, meta_yaml, builddir) is True
+
+    # .packaged file exists, no rebuild
+    packaged.touch()
+    assert buildpkg.needs_rebuild(pkg_dict, meta_yaml, builddir) is False
+
+    # newer meta.yaml file, rebuild
+    packaged.touch()
+    time.sleep(0.01)
+    meta_yaml.touch()
+    assert buildpkg.needs_rebuild(pkg_dict, meta_yaml, builddir) is True
+
+    # newer patch file, rebuild
+    packaged.touch()
+    time.sleep(0.01)
+    patch_file.touch()
+    assert buildpkg.needs_rebuild(pkg_dict, meta_yaml, builddir) is True
+
+    # newer extra file, rebuild
+    packaged.touch()
+    time.sleep(0.01)
+    extra_file.touch()
+    assert buildpkg.needs_rebuild(pkg_dict, meta_yaml, builddir) is True
+
+    # newer source path, rebuild
+    packaged.touch()
+    time.sleep(0.01)
+    src_path_file.touch()
+    assert buildpkg.needs_rebuild(pkg_dict, meta_yaml, builddir) is True
+
+    # newer .packaged file, no rebuild
+    packaged.touch()
+    assert buildpkg.needs_rebuild(pkg_dict, meta_yaml, builddir) is False

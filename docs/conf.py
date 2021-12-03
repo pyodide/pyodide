@@ -50,6 +50,7 @@ extensions = [
     "myst_parser",
     "sphinx_js",
     "autodocsumm",
+    "sphinx_panels",
     "sphinx_pyodide",
     "sphinx_argparse_cli",
     #    "versionwarning.extension",

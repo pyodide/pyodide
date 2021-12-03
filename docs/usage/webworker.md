@@ -34,13 +34,13 @@ In this example process we will have three parties involved:
 
 - The **web worker** is responsible for running scripts in its own separate thread.
 - The **worker API** exposes a consumer-to-provider communication interface.
-- The **consumer**s want to run some scripts outside the main thread so they don't block the main thread.
+- The **consumer**s want to run some scripts outside the main thread, so they don't block the main thread.
 
 ### Consumers
 
 Our goal is to run some Python code in another thread, this other thread will
-not have access to the main thread objects. Therefore we will need an API that takes
-as input not only the Python `script` we wan to run, but also the `context` on which
+not have access to the main thread objects. Therefore, we will need an API that takes
+as input not only the Python `script` we want to run, but also the `context` on which
 it relies (some JavaScript variables that we would normally get access to if we
 were running the Python script in the main thread). Let's first describe what API
 we would like to have.
@@ -78,7 +78,7 @@ async function main() {
 main();
 ```
 
-Before writing the API, lets first have a look at how the worker operates.
+Before writing the API, let's first have a look at how the worker operates.
 How does our web worker run the `script` using a given `context`.
 
 ### Web worker
@@ -119,7 +119,7 @@ self.onmessage = async (event) => {
   // make sure loading is done
   await pyodideReadyPromise;
   // Don't bother yet with this line, suppose our API is built in such a way:
-  const { python, ...context } = event.data;
+  const { id, python, ...context } = event.data;
   // The worker copies the context in its own "memory" (an object mapping name to values)
   for (const key of Object.keys(context)) {
     self[key] = context[key];
@@ -128,9 +128,9 @@ self.onmessage = async (event) => {
   try {
     await self.pyodide.loadPackagesFromImports(python);
     let results = await self.pyodide.runPythonAsync(python);
-    self.postMessage({ results });
+    self.postMessage({ results, id });
   } catch (error) {
-    self.postMessage({ error: error.message });
+    self.postMessage({ error: error.message, id });
   }
 };
 ```
@@ -138,7 +138,7 @@ self.onmessage = async (event) => {
 ### The worker API
 
 Now that we established what the two sides need and how they operate,
-lets connect them using this simple API (`py-worker.js`). This part is
+let's connect them using this simple API (`py-worker.js`). This part is
 optional and only a design choice, you could achieve similar results
 by exchanging message directly between your main thread and the webworker.
 You would just need to call `.postMessages()` with the right arguments as
@@ -147,25 +147,32 @@ this API does.
 ```js
 const pyodideWorker = new Worker("./build/webworker.js");
 
-export function run(script, context, onSuccess, onError) {
-  pyodideWorker.onerror = onError;
-  pyodideWorker.onmessage = (e) => onSuccess(e.data);
-  pyodideWorker.postMessage({
-    ...context,
-    python: script,
-  });
-}
+const callbacks = {};
 
-// Transform the run (callback) form to a more modern async form.
-// This is what allows to write:
-//    const {results, error} = await asyncRun(script, context);
-// Instead of:
-//    run(script, context, successCallback, errorCallback);
-export function asyncRun(script, context) {
-  return new Promise(function (onSuccess, onError) {
-    run(script, context, onSuccess, onError);
-  });
-}
+pyodideWorker.onmessage = (event) => {
+  const { id, ...data } = event.data;
+  const onSuccess = callbacks[id];
+  delete callbacks[id];
+  onSuccess(data);
+};
+
+const asyncRun = (() => {
+  let id = 0;  // identify a Promise
+  return (script, context) => {
+    // the id could be generated more carefully
+    id = (id + 1) % Number.MAX_SAFE_INTEGER;
+    return new Promise((onSuccess) => {
+      callbacks[id] = onSuccess;
+      pyodideWorker.postMessage({
+        ...context,
+        python: script,
+        id
+      });
+    })
+  }
+})();
+
+export { asyncRun }
 ```
 
 [worker api]: https://developer.mozilla.org/en-US/docs/Web/API/Web_Workers_API
