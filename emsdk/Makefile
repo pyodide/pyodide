@@ -13,9 +13,5 @@ emsdk/.complete: ../Makefile.envs $(wildcard patches/*.patch)
 	cd emsdk && ./emsdk activate --embedded --build=Release $(PYODIDE_EMSCRIPTEN_VERSION)
 	touch emsdk/.complete
 
-.PHONY: test
-test:
-	pytest tests/ -v
-
 clean:
 	rm -rf emsdk

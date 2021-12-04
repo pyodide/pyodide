@@ -186,16 +186,6 @@ jobs:
           command: |
             pytest -s benchmark/stack_usage.py  | sed -n 's/## //pg'
 
-  test-emsdk:
-    <<: *defaults
-    resource_class: small
-    steps:
-      - attach_workspace:
-          at: .
-      - run:
-          name: test
-          command: make -C emsdk test
-
   test-python:
     # Unlike test-main this uses "resource_class small" and doesn't use "pytest_wrapper."
     <<: *defaults
@@ -229,16 +219,15 @@ jobs:
             npx tsd
             npm ci
             npm test
-      - run:     
+      - run:
           name: check if webpack cli works well with load-pyodide.js
-          command: | 
+          command: |
             git clone https://github.com/pyodide/pyodide-webpack-example.git
             cd pyodide-webpack-example
-            npm ci     
-            cp ../src/js/load-pyodide.js node_modules/pyodide/load-pyodide.js                  
+            npm ci
+            cp ../src/js/load-pyodide.js node_modules/pyodide/load-pyodide.js
             head -20 node_modules/pyodide/load-pyodide.js
             npx webpack
-   
 
   benchmark:
     <<: *defaults
