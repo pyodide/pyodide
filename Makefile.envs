@@ -42,7 +42,7 @@ export CFLAGS_BASE=\
 
 export LDFLAGS_BASE=\
 	$(OPTFLAGS) \
-    $(DBGFLAGS) \
+	$(DBGFLAGS) \
 	-s MODULARIZE=1 \
 	-s LINKABLE=1 \
 	-s EXPORT_ALL=1 \
