@@ -438,7 +438,6 @@ workflows:
             - test-python
             - test-core-firefox
             - test-packages-firefox
-            - test-emsdk
           filters:
             branches:
               ignore: /.*/
@@ -450,7 +449,6 @@ workflows:
             - test-python
             - test-core-firefox
             - test-packages-firefox
-            - test-emsdk
           filters:
             branches:
               only: main
