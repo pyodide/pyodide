@@ -411,13 +411,6 @@ workflows:
             tags:
               only: /.*/
 
-      - test-emsdk:
-          requires:
-            - build-core
-          filters:
-            tags:
-              only: /.*/
-
       - test-js:
           requires:
             - build-core
