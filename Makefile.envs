@@ -74,7 +74,7 @@ export MAIN_MODULE_LDFLAGS= $(LDFLAGS_BASE) \
 	-s FORCE_FILESYSTEM=1 \
 	-s TOTAL_MEMORY=41943040 \
 	-s ALLOW_MEMORY_GROWTH=1 \
-    --use-preload-plugins \
+	--use-preload-plugins \
 	--preload-file $(CPYTHONLIB)@/lib/python$(PYMAJOR).$(PYMINOR) \
 	--preload-file src/py/lib@/lib/python$(PYMAJOR).$(PYMINOR)/\
 	--preload-file src/py/@/lib/python$(PYMAJOR).$(PYMINOR)/site-packages/ \
@@ -87,14 +87,14 @@ export SIDE_MODULE_CXXFLAGS = $(CXXFLAGS_BASE)
 
 export SIDE_MODULE_CFLAGS= $(CFLAGS_BASE)
 export MAIN_MODULE_CFLAGS= $(CFLAGS_BASE) \
-    	-Wall \
-    	-Wno-warn-absolute-paths \
-    	-Werror=unused-variable \
-    	-Werror=sometimes-uninitialized \
-    	-Werror=int-conversion \
-    	-Werror=incompatible-pointer-types \
-		-Werror=unused-result \
-		-I$(PYTHONINCLUDE)
+	-Wall \
+	-Wno-warn-absolute-paths \
+	-Werror=unused-variable \
+	-Werror=sometimes-uninitialized \
+	-Werror=int-conversion \
+	-Werror=incompatible-pointer-types \
+	-Werror=unused-result \
+	-I$(PYTHONINCLUDE)
 
 
 .output_vars:
