@@ -172,8 +172,10 @@ function finalizeBootstrap(config) {
   // runPythonInternal uses a separate namespace, so we don't pollute the main
   // environment with variables from our setup.
   runPythonInternal_dict = Module._pyodide._base.eval_code("{}");
+  Module.importlib = Module.runPythonInternal("import importlib; importlib");
+  let import_module = Module.importlib.import_module;
 
-  Module.sys = Module.runPythonInternal("import sys; sys");
+  Module.sys = import_module("sys");
   Module.sys.setrecursionlimit(calculateRecursionLimit());
   Module.sys.path.insert(0, config.homedir);
 
@@ -194,7 +196,7 @@ function finalizeBootstrap(config) {
   // already set up before importing pyodide_py to simplify development of
   // pyodide_py code (Otherwise it's very hard to keep track of which things
   // aren't set up yet.)
-  Module.pyodide_py = Module.runPythonInternal("import pyodide; pyodide");
+  Module.pyodide_py = import_module("pyodide");
   Module.version = Module.pyodide_py.__version__;
 
   // copy some last constants onto public API.
