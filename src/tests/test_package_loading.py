@@ -234,3 +234,30 @@ def test_test_unvendoring(selenium_standalone):
         return pyodide._module.packages['regex'].unvendored_tests
         """
     )
+
+
+def test_install_archive(selenium):
+    shutil.make_archive("test_pkg", "tar", root_dir="test_pkg")
+    build_dir = Path(__file__).parents[2] / "build"
+    (build_dir / "test_pkg.tar").symlink_to("test_pkg.tar")
+    try:
+        selenium.run_js(
+            """
+            let resp = await fetch("test_pkg.tar");
+            let buf = await resp.arrayBuffer();
+            pyodide.unpackArchive(buf, "tar");
+            let test_pkg = pyodide.pyimport("test_pkg");
+            let some_module = pyodide.pyimport("test_pkg.some_module");
+            try {
+                assert(() => test_pkg.test1(5) === 26);
+                assert(() => some_module.test1(5) === 26);
+                assert(() => some_module.test2(5) === 24);
+            } finally {
+                test_pkg.destroy();
+                some_module.destroy();
+            }
+            """
+        )
+    finally:
+        (build_dir / "test_pkg.tar").unlink()
+        Path("test_pkg.tar").unlink()
