@@ -35,7 +35,7 @@ def test_parse_package_subset():
         "d",
     }
     # "*" means select all packages
-    assert _parse_package_subset("*") == None
+    assert _parse_package_subset("*") == {"*"}
 
     assert _parse_package_subset("core") == {
         "pyparsing",

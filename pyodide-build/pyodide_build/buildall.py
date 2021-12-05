@@ -158,7 +158,7 @@ class Package(BasePackage):
 
 
 def generate_dependency_graph(
-    packages_dir: Path, packages: Optional[Set[str]]
+    packages_dir: Path, packages: Set[str]
 ) -> Dict[str, BasePackage]:
     """This generates a dependency graph for listed packages.
 
@@ -182,10 +182,15 @@ def generate_dependency_graph(
 
     pkg_map: Dict[str, BasePackage] = {}
 
-    if packages is None:
-        packages = set(
+    if "*" in packages:
+        packages.discard("*")
+        packages.update(
             str(x) for x in packages_dir.iterdir() if (x / "meta.yaml").is_file()
         )
+
+    no_numpy_dependents = "no-numpy-dependents" in packages
+    if no_numpy_dependents:
+        packages.discard("no-numpy-dependents")
 
     while packages:
         pkgname = packages.pop()
@@ -195,6 +200,8 @@ def generate_dependency_graph(
             pkg = StdLibPackage(packages_dir / pkgname)
         else:
             pkg = Package(packages_dir / pkgname)
+        if no_numpy_dependents and "numpy" in pkg.dependencies:
+            continue
         pkg_map[pkg.name] = pkg
 
         for dep in pkg.dependencies:
