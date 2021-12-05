@@ -216,6 +216,13 @@ def generate_dependency_graph(
     return pkg_map
 
 
+def job_priority(pkg: BasePackage):
+    if pkg.name == "numpy":
+        return 0
+    else:
+        return 1
+
+
 def build_from_graph(pkg_map: Dict[str, BasePackage], outputdir: Path, args) -> None:
     """
     This builds packages in pkg_map in parallel, building at most args.n_jobs
@@ -239,10 +246,10 @@ def build_from_graph(pkg_map: Dict[str, BasePackage], outputdir: Path, args) -> 
     build_queue: PriorityQueue = PriorityQueue()
 
     print("Building the following packages: " + ", ".join(sorted(pkg_map.keys())))
-
+    t0 = perf_counter()
     for pkg in pkg_map.values():
         if len(pkg.dependencies) == 0:
-            build_queue.put(pkg)
+            build_queue.put((job_priority(pkg), pkg))
 
     built_queue: Queue = Queue()
     thread_lock = Lock()
@@ -251,7 +258,7 @@ def build_from_graph(pkg_map: Dict[str, BasePackage], outputdir: Path, args) -> 
     def builder(n):
         nonlocal queue_idx
         while True:
-            pkg = build_queue.get()
+            pkg = build_queue.get()[1]
             with thread_lock:
                 pkg._queue_idx = queue_idx
                 queue_idx += 1
@@ -266,7 +273,7 @@ def build_from_graph(pkg_map: Dict[str, BasePackage], outputdir: Path, args) -> 
 
             print(
                 f"[{pkg._queue_idx}/{len(pkg_map)}] (thread {n}) "
-                f"built {pkg.name} in {perf_counter() - t0:.1f} s"
+                f"built {pkg.name} in {perf_counter() - t0:.2f} s"
             )
             built_queue.put(pkg)
             # Release the GIL so new packages get queued
@@ -287,11 +294,19 @@ def build_from_graph(pkg_map: Dict[str, BasePackage], outputdir: Path, args) -> 
             dependent = pkg_map[_dependent]
             dependent.unbuilt_dependencies.remove(pkg.name)
             if len(dependent.unbuilt_dependencies) == 0:
-                build_queue.put(dependent)
+                build_queue.put((job_priority(dependent), dependent))
 
     for name in list(pkg_map):
         if (outputdir / (name + "-tests.js")).exists():
             pkg_map[name].unvendored_tests = True
+
+    print(
+        f"""
+    =====
+
+    built all packages in {perf_counter() - t0:.2f} s
+    """
+    )
 
 
 def generate_packages_json(pkg_map: Dict[str, BasePackage]) -> Dict:
