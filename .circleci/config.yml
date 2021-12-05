@@ -105,6 +105,56 @@ jobs:
       - store_artifacts:
           path: /root/repo/build/
 
+  build-packages-no-numpy-dependents:
+    <<: *defaults
+    resource_class: large
+
+    steps:
+      - checkout
+
+      - attach_workspace:
+          at: .
+
+      - restore_cache:
+          keys:
+            - -pkg-{{ checksum "Makefile.envs" }}-v20210911-
+
+      - run:
+          name: build packages
+          no_output_timeout: 1800
+          command: |
+            source pyodide_env.sh
+
+            # Set mtime for EM_CONFIG to avoid ccache cache misses
+            touch -m -d '1 Jan 2021 12:00' emsdk/emsdk/.emscripten
+
+            ccache -z
+            PYODIDE_PACKAGES='*, no-numpy-dependents' make -C packages
+            ccache -s
+          environment:
+            PYODIDE_JOBS: 5
+
+      - run:
+          name: check-size
+          command: ls -lh build/
+
+      - save_cache:
+          paths:
+            - /root/.ccache
+          key: -pkg-{{ checksum "Makefile.envs" }}-v20210911-
+
+      - persist_to_workspace:
+          root: .
+          paths:
+            - ./packages
+            - ./build
+
+      - store_artifacts:
+          path: /root/repo/build/
+
+      - store_artifacts:
+          path: /root/repo/packages/build-logs
+
   build-packages:
     <<: *defaults
     resource_class: large
@@ -229,16 +279,15 @@ jobs:
             npx tsd
             npm ci
             npm test
-      - run:     
+      - run:
           name: check if webpack cli works well with load-pyodide.js
-          command: | 
+          command: |
             git clone https://github.com/pyodide/pyodide-webpack-example.git
             cd pyodide-webpack-example
-            npm ci     
-            cp ../src/js/load-pyodide.js node_modules/pyodide/load-pyodide.js                  
+            npm ci
+            cp ../src/js/load-pyodide.js node_modules/pyodide/load-pyodide.js
             head -20 node_modules/pyodide/load-pyodide.js
             npx webpack
-   
 
   benchmark:
     <<: *defaults
@@ -343,9 +392,16 @@ workflows:
             tags:
               only: /.*/
 
-      - build-packages:
+      - build-packages-no-numpy-dependents:
           requires:
             - build-core
+          filters:
+            tags:
+              only: /.*/
+
+      - build-packages:
+          requires:
+            - build-packages-no-numpy-dependents
           filters:
             tags:
               only: /.*/

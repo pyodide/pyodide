@@ -98,7 +98,7 @@ def test_build_all_dependencies(n_jobs, monkeypatch):
 
     monkeypatch.setattr(buildall, "Package", MockPackage)
 
-    pkg_map = buildall.generate_dependency_graph(PACKAGES_DIR, packages=None)
+    pkg_map = buildall.generate_dependency_graph(PACKAGES_DIR, packages={"*"})
 
     Args = namedtuple("args", ["n_jobs"])
     buildall.build_from_graph(pkg_map, Path("."), Args(n_jobs=n_jobs))
