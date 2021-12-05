@@ -103,7 +103,7 @@ export function setHomeDirectory(path) {
       console.error(`Using '${fallbackPath}' for a home directory instead`);
       path = fallbackPath;
     }
-
+    Module.ENV.HOME = path;
     Module.FS.chdir(path);
   });
 }

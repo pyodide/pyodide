@@ -84,7 +84,7 @@ export let version = ""; // actually defined in loadPyodide (see pyodide.js)
  * is returned.
  *
  * @param {string} code Python code to evaluate
- * @param {PyProxy} globals An optional Python dictionary to use as the globals.
+ * @param {PyProxy=} globals An optional Python dictionary to use as the globals.
  *        Defaults to :any:`pyodide.globals`. Uses the Python API
  *        :any:`pyodide.eval_code` to evaluate the code.
  * @returns {Py2JsResult} The result of the Python code translated to JavaScript. See the
@@ -176,7 +176,7 @@ export async function loadPackagesFromImports(
  *    console.log(result); // 79
  *
  * @param {string} code Python code to evaluate
- * @param {PyProxy} globals An optional Python dictionary to use as the globals.
+ * @param {PyProxy=} globals An optional Python dictionary to use as the globals.
  *        Defaults to :any:`pyodide.globals`. Uses the Python API
  *        :any:`pyodide.eval_code_async` to evaluate the code.
  * @returns {Py2JsResult} The result of the Python code translated to JavaScript.
@@ -241,7 +241,7 @@ export function unregisterJsModule(name) {
  *
  * @param {*} obj
  * @param {object} options
- * @param {number} options.depth Optional argument to limit the depth of the
+ * @param {number=} options.depth Optional argument to limit the depth of the
  * conversion.
  * @returns {PyProxy} The object converted to Python.
  */
@@ -316,6 +316,22 @@ export function toPy(obj, { depth = -1 } = {}) {
  */
 export function pyimport(mod_name) {
   return Module.importlib.import_module(mod_name);
+}
+
+let _util_module;
+/**
+ * Unpack an archive into a target directory.
+ *
+ * @param {ArrayBuffer} buffer The archive as an ArrayBuffer (it's also fine to pass a TypedArray).
+ * @param {string} format The format of the archive. Should be one of the formats recognized by `shutil.unpack_archive`.
+ *   By default the options are 'bztar', 'gztar', 'tar', and 'zip'.
+ * @param {string=} extract_dir The directory to unpack the archive into. Defaults to the working directory.
+ */
+export function unpackArchive(buffer, format, extract_dir) {
+  if (!_util_module) {
+    _util_module = Module.pyimport("pyodide._util");
+  }
+  _util_module.unpack_buffer_archive(buffer, format, extract_dir);
 }
 
 /**
@@ -394,6 +410,7 @@ export function makePublicAPI() {
     checkInterrupt,
     toPy,
     pyimport,
+    unpackArchive,
     registerComlink,
     PythonError,
     PyBuffer,
