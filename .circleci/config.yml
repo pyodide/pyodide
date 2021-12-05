@@ -146,7 +146,7 @@ jobs:
       - persist_to_workspace:
           root: .
           paths:
-            - ./packages/.artifacts
+            - ./packages
             - ./build
 
       - store_artifacts:
