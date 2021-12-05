@@ -240,7 +240,7 @@ def test_install_archive(selenium):
     build_dir = Path(__file__).parents[2] / "build"
     test_dir = Path(__file__).parent
     shutil.make_archive(
-        test_dir / "test_pkg", "tar.gz", root_dir=test_dir, base_dir="test_pkg"
+        test_dir / "test_pkg", "gztar", root_dir=test_dir, base_dir="test_pkg"
     )
     (build_dir / "test_pkg.tar.gz").symlink_to(
         (test_dir / "test_pkg.tar.gz").absolute()
