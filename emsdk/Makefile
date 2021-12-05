@@ -11,9 +11,6 @@ emsdk/.complete: ../Makefile.envs $(wildcard patches/*.patch)
 	cat patches/*.patch | patch -p1
 	cd emsdk && ./emsdk install --build=Release $(PYODIDE_EMSCRIPTEN_VERSION) ccache-git-emscripten-64bit
 	cd emsdk && ./emsdk activate --embedded --build=Release $(PYODIDE_EMSCRIPTEN_VERSION)
-	cd emsdk/binaryen && cmake -DBUILD_STATIC_LIB=ON -DCMAKE_CXX_COMPILER_LAUNCHER=ccache
-	make -C emsdk/binaryen -j5 wasm-opt
-	cp emsdk/binaryen/bin/wasm-opt emsdk/upstream/bin/
 	touch emsdk/.complete
 
 .PHONY: test
