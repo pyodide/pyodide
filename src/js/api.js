@@ -323,7 +323,9 @@ export function pyimport(mod_name) {
  *
  * @param {ArrayBuffer} buffer The archive as an ArrayBuffer (it's also fine to pass a TypedArray).
  * @param {string} format The format of the archive. Should be one of the formats recognized by `shutil.unpack_archive`.
- *   By default the options are 'bztar', 'gztar', 'tar', and 'zip'.
+ * By default the options are 'bztar', 'gztar', 'tar', 'zip', and 'wheel'. Several synonyms are accepted for each format, e.g.,
+ * for 'gztar' any of '.gztar', '.tar.gz', '.tgz', 'tar.gz' or 'tgz' are considered to be synonyms.
+ *
  * @param {string=} extract_dir The directory to unpack the archive into. Defaults to the working directory.
  */
 export function unpackArchive(buffer, format, extract_dir) {
