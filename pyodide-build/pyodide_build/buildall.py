@@ -301,11 +301,8 @@ def build_from_graph(pkg_map: Dict[str, BasePackage], outputdir: Path, args) -> 
             pkg_map[name].unvendored_tests = True
 
     print(
-        f"""
-    =====
-
-    built all packages in {perf_counter() - t0:.2f} s
-    """
+        "\n===================================================\n"
+        f"built all packages in {perf_counter() - t0:.2f} s"
     )
 
 
