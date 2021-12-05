@@ -28,6 +28,7 @@ export PYODIDE_BASE_URL?=./
 export PYODIDE=1
 # This is the legacy environment variable used for the aforementioned purpose
 export PYODIDE_PACKAGE_ABI=1
+#
 
 export OPTFLAGS=-O2
 export CFLAGS_BASE=\
@@ -70,7 +71,7 @@ export MAIN_MODULE_LDFLAGS= $(LDFLAGS_BASE) \
 	-s FORCE_FILESYSTEM=1 \
 	-s TOTAL_MEMORY=20971520 \
 	-s ALLOW_MEMORY_GROWTH=1 \
-    --use-preload-plugins \
+	--use-preload-plugins \
 	--preload-file $(CPYTHONLIB)@/lib/python$(PYMAJOR).$(PYMINOR) \
 	--preload-file src/py/lib@/lib/python$(PYMAJOR).$(PYMINOR)/\
 	--preload-file src/py/@/lib/python$(PYMAJOR).$(PYMINOR)/site-packages/ \
@@ -83,14 +84,14 @@ export SIDE_MODULE_CXXFLAGS = $(CXXFLAGS_BASE)
 
 export SIDE_MODULE_CFLAGS= $(CFLAGS_BASE)
 export MAIN_MODULE_CFLAGS= $(CFLAGS_BASE) \
-    	-Wall \
-    	-Wno-warn-absolute-paths \
-    	-Werror=unused-variable \
-    	-Werror=sometimes-uninitialized \
-    	-Werror=int-conversion \
-    	-Werror=incompatible-pointer-types \
-		-Werror=unused-result \
-		-I$(PYTHONINCLUDE)
+	-Wall \
+	-Wno-warn-absolute-paths \
+	-Werror=unused-variable \
+	-Werror=sometimes-uninitialized \
+	-Werror=int-conversion \
+	-Werror=incompatible-pointer-types \
+	-Werror=unused-result \
+	-I$(PYTHONINCLUDE)
 
 
 .output_vars:
