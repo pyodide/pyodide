@@ -237,9 +237,12 @@ def test_test_unvendoring(selenium_standalone):
 
 
 def test_install_archive(selenium):
-    shutil.make_archive("test_pkg", "tar", root_dir="test_pkg")
     build_dir = Path(__file__).parents[2] / "build"
-    (build_dir / "test_pkg.tar").symlink_to("test_pkg.tar")
+    test_dir = Path(__file__).parent
+    shutil.make_archive(
+        test_dir / "test_pkg", "tar", root_dir=test_dir, base_dir="test_pkg"
+    )
+    (build_dir / "test_pkg.tar").symlink_to((test_dir / "test_pkg.tar").absolute())
     try:
         selenium.run_js(
             """
@@ -260,4 +263,4 @@ def test_install_archive(selenium):
         )
     finally:
         (build_dir / "test_pkg.tar").unlink()
-        Path("test_pkg.tar").unlink()
+        (test_dir / "test_pkg.tar").unlink()

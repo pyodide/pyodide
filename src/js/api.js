@@ -318,7 +318,6 @@ export function pyimport(mod_name) {
   return Module.importlib.import_module(mod_name);
 }
 
-let _util_module;
 /**
  * Unpack an archive into a target directory.
  *
@@ -328,10 +327,10 @@ let _util_module;
  * @param {string=} extract_dir The directory to unpack the archive into. Defaults to the working directory.
  */
 export function unpackArchive(buffer, format, extract_dir) {
-  if (!_util_module) {
-    _util_module = Module.pyimport("pyodide._util");
+  if (!Module._util_module) {
+    Module._util_module = pyimport("pyodide._util");
   }
-  _util_module.unpack_buffer_archive(buffer, format, extract_dir);
+  Module._util_module.unpack_buffer_archive(buffer, format, extract_dir);
 }
 
 /**
