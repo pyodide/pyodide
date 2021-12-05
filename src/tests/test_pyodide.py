@@ -33,7 +33,7 @@ def test_pyimport(selenium):
         """
         let platform = pyodide.pyimport("platform");
         assert(() => platform.machine() === "wasm32");
-        assert(() => !globals.has("platform"))
+        assert(() => !pyodide.globals.has("platform"))
         assertThrows(() => pyodide.pyimport("platform;"), "PythonError", "ModuleNotFoundError: No module named 'platform;'");
         platform.destroy();
         """
