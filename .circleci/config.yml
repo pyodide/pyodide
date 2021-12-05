@@ -236,16 +236,6 @@ jobs:
           command: |
             pytest -s benchmark/stack_usage.py  | sed -n 's/## //pg'
 
-  test-emsdk:
-    <<: *defaults
-    resource_class: small
-    steps:
-      - attach_workspace:
-          at: .
-      - run:
-          name: test
-          command: make -C emsdk test
-
   test-python:
     # Unlike test-main this uses "resource_class small" and doesn't use "pytest_wrapper."
     <<: *defaults
@@ -478,13 +468,6 @@ workflows:
             tags:
               only: /.*/
 
-      - test-emsdk:
-          requires:
-            - build-core
-          filters:
-            tags:
-              only: /.*/
-
       - test-js:
           requires:
             - build-core
@@ -512,7 +495,6 @@ workflows:
             - test-python
             - test-core-firefox
             - test-packages-firefox
-            - test-emsdk
           filters:
             branches:
               ignore: /.*/
@@ -524,7 +506,6 @@ workflows:
             - test-python
             - test-core-firefox
             - test-packages-firefox
-            - test-emsdk
           filters:
             branches:
               only: main
