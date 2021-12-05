@@ -240,27 +240,36 @@ def test_install_archive(selenium):
     build_dir = Path(__file__).parents[2] / "build"
     test_dir = Path(__file__).parent
     shutil.make_archive(
-        test_dir / "test_pkg", "tar", root_dir=test_dir, base_dir="test_pkg"
+        test_dir / "test_pkg", "tar.gz", root_dir=test_dir, base_dir="test_pkg"
     )
-    (build_dir / "test_pkg.tar").symlink_to((test_dir / "test_pkg.tar").absolute())
+    (build_dir / "test_pkg.tar.gz").symlink_to(
+        (test_dir / "test_pkg.tar.gz").absolute()
+    )
     try:
-        selenium.run_js(
-            """
-            let resp = await fetch("test_pkg.tar");
-            let buf = await resp.arrayBuffer();
-            pyodide.unpackArchive(buf, "tar");
-            let test_pkg = pyodide.pyimport("test_pkg");
-            let some_module = pyodide.pyimport("test_pkg.some_module");
-            try {
-                assert(() => test_pkg.test1(5) === 26);
-                assert(() => some_module.test1(5) === 26);
-                assert(() => some_module.test2(5) === 24);
-            } finally {
-                test_pkg.destroy();
-                some_module.destroy();
-            }
-            """
-        )
+        for fmt_name in ["gztar", "tar.gz", "tgz", ".tar.gz", ".tgz"]:
+            selenium.run_js(
+                f"""
+                import shutil
+                let resp = await fetch("test_pkg.tar.gz");
+                let buf = await resp.arrayBuffer();
+                pyodide.unpackArchive(buf, {fmt_name!r});
+                let test_pkg = pyodide.pyimport("test_pkg");
+                let some_module = pyodide.pyimport("test_pkg.some_module");
+                """
+            )
+            selenium.run_js(
+                """
+                try {
+                    assert(() => test_pkg.test1(5) === 26);
+                    assert(() => some_module.test1(5) === 26);
+                    assert(() => some_module.test2(5) === 24);
+                } finally {
+                    test_pkg.destroy();
+                    some_module.destroy();
+                    shutil.rmtree("test_pkg")
+                }
+                """
+            )
     finally:
         (build_dir / "test_pkg.tar").unlink()
         (test_dir / "test_pkg.tar").unlink()
