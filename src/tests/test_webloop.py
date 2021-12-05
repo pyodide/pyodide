@@ -33,6 +33,23 @@ def test_asyncio_sleep(selenium):
     )
 
 
+def test_cancel_handle(selenium):
+    selenium.run_python(
+        """
+        await pyodide.runPythonAsync(`
+        import asyncio
+        loop = asyncio.get_event_loop()
+        exc = []
+        def exception_handler(loop, context):
+            exc.append(context)
+        loop.set_exception_handler(exception_handler)
+        await asyncio.wait_for(asyncio.sleep(1), 2)
+        `);
+        assert not exc
+        """
+    )
+
+
 def test_return_result(selenium):
     # test return result
     run_with_resolve(

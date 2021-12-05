@@ -38,6 +38,9 @@ substitutions:
   object which treats the response body as an archive and uses `shutil` to
   unpack it. {pr}`1935`
 
+- {{Fix}} The Pyodide event loop now works correctly with cancelled handles. In particular, `asyncio.wait_for` now functions as expected.
+  {pr}`2022`
+
 ### JavaScript package
 
 - {{Fix}} {any}`loadPyodide <globalThis.loadPyodide>` no longer fails in the
