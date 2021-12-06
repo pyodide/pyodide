@@ -401,3 +401,17 @@ def test_list_pyodide_package(selenium_standalone_micropip):
         `);
         """
     )
+
+
+def test_list_loaded_from_js(selenium_standalone_micropip):
+    selenium = selenium_standalone_micropip
+    selenium.run_js(
+        """
+        await pyodide.loadPackage("regex");
+        await pyodide.runPythonAsync(`
+            import micropip
+            pkgs = micropip.list()
+            assert "regex" in pkgs and pkgs["regex"].source.lower() == "pyodide"
+        `);
+        """
+    )

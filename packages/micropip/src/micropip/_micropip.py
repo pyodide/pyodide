@@ -6,6 +6,7 @@ import importlib
 import io
 import json
 import tempfile
+from importlib.metadata import version as get_version
 
 from packaging.requirements import Requirement
 from packaging.version import Version
@@ -336,9 +337,6 @@ class _PackageManager:
 
         return None, None
 
-    def list(self) -> PackageDict:
-        return copy.deepcopy(self.installed_packages)
-
 
 # Make PACKAGE_MANAGER singleton
 PACKAGE_MANAGER = _PackageManager()
@@ -415,7 +413,20 @@ def _list():
         >>> "regex" in package_list # doctest: +SKIP
         True
     """
-    return PACKAGE_MANAGER.list()
+    packages = copy.deepcopy(PACKAGE_MANAGER.installed_packages)
+
+    # Add packages that are loaded through pyodide.loadPackage
+    for name, pkg_source in loadedPackages.to_py().items():
+        if name in packages:
+            continue
+
+        version = BUILTIN_PACKAGES[name]["version"]
+        source = "pyodide"
+        if pkg_source != "default channel":
+            # Pyodide package loaded from a custom URL
+            source = pkg_source
+        packages[name] = PackageMetadata(name=name, version=version, source=source)
+    return packages
 
 
 if __name__ == "__main__":
