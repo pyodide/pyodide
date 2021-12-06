@@ -48,6 +48,12 @@ substitutions:
   runtime issue due to webpack are solved.
   {pr}`1900`
 
+- {{Enhancement}} Added a {any}`pyodide.pyimport` API to import a Python module
+  and return it as a `PyProxy`. Note that this does a different thing than the
+  original `pyimport` API: it imports a package and returns it without adding
+  the package to the global scope.
+  {pr}`1944`
+
 - {{API}} {any}`loadPyodide <globalThis.loadPyodide>` now accepts `homedir`
   parameter which sets home directory of Pyodide virtual file system.
   {pr}`1936`
