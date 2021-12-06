@@ -34,7 +34,7 @@ def test_asyncio_sleep(selenium):
 
 
 def test_cancel_handle(selenium):
-    selenium.run_python(
+    selenium.run(
         """
         await pyodide.runPythonAsync(`
         import asyncio
