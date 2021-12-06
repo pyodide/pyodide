@@ -27,6 +27,8 @@ def test_fnmatch(selenium_module_scope, pattern, name, flags, expected):
 
 @run_in_pyodide(packages=["cffi_example"], module_scope=True)
 def test_person():
+    if selenium.browser == "chrome":
+        pytest.xfail("Doesn't work on chrome v90")
     from cffi_example.person import Person
 
     p = Person("Alex", "Smith", 72)
