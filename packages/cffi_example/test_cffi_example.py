@@ -13,6 +13,8 @@ from pyodide_build.testing import run_in_pyodide
 )
 def test_fnmatch(selenium_module_scope, pattern, name, flags, expected):
     selenium = selenium_module_scope
+    if selenium.browser == "chrome":
+        pytest.xfail("Doesn't work on chrome v90")
     selenium.load_package("cffi_example")
     result = selenium.run(
         f"""
