@@ -43,9 +43,12 @@ def test_cancel_handle(selenium):
         def exception_handler(loop, context):
             exc.append(context)
         loop.set_exception_handler(exception_handler)
-        await asyncio.wait_for(asyncio.sleep(1), 2)
-        `);
+        try:
+            await asyncio.wait_for(asyncio.sleep(1), 2)
+        finally:
+            loop.set_exception_handler(None)
         assert not exc
+        `);
         """
     )
 
