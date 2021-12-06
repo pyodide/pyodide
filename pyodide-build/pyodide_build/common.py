@@ -6,7 +6,7 @@ import functools
 UNVENDORED_STDLIB_MODULES = ["test", "distutils"]
 
 
-def _parse_package_subset(query: Optional[str]) -> Optional[Set[str]]:
+def _parse_package_subset(query: Optional[str]) -> Set[str]:
     """Parse the list of packages specified with PYODIDE_PACKAGES env var.
 
     Also add the list of mandatory packages: ["pyparsing", "packaging",
@@ -45,13 +45,10 @@ def _parse_package_subset(query: Optional[str]) -> Optional[Set[str]]:
     packages = {el.strip() for el in query.split(",")}
     packages.update(["pyparsing", "packaging", "micropip"])
     # handle meta-packages
-    if "*" in packages:
-        # build all packages
-        return None
-    elif "core" in packages:
+    if "core" in packages:
         packages |= core_packages
         packages.discard("core")
-    elif "min-scipy-stack" in packages:
+    if "min-scipy-stack" in packages:
         packages |= core_packages | core_scipy_packages
         packages.discard("min-scipy-stack")
 

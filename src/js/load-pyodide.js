@@ -3,7 +3,9 @@ import { Module } from "./module.js";
 const IN_NODE =
   typeof process !== "undefined" &&
   process.release &&
-  process.release.name === "node";
+  process.release.name === "node" &&
+  typeof process.browser ===
+    "undefined"; /* This last condition checks if we run the browser shim of process */
 
 /** @typedef {import('./pyproxy.js').PyProxy} PyProxy */
 /** @private */
@@ -259,12 +261,9 @@ async function _loadPackage(names, messageCallback, errorCallback) {
 
   messageCallback(resolveMsg);
 
-  // We have to invalidate Python's import caches, or it won't see the new
-  // files.
-  Module.runPythonInternal(`
-    import importlib
-    importlib.invalidate_caches();
-  `);
+  // We have to invalidate Python's import caches, or it won't
+  // see the new files.
+  Module.importlib.invalidate_caches();
 }
 
 // This is a promise that is resolved iff there are no pending package loads. It

@@ -113,6 +113,72 @@ jobs:
       - store_artifacts:
           path: /root/repo/pyodide-build.tar.gz
 
+      - store_artifacts:
+          path: /root/repo/packages/build-logs
+
+  build-packages-no-numpy-dependents:
+    <<: *defaults
+    resource_class: large
+
+    steps:
+      - checkout
+
+      - attach_workspace:
+          at: .
+
+      - restore_cache:
+          keys:
+            - -pkg-{{ checksum "Makefile.envs" }}-v20210911-
+
+      - run:
+          name: build packages
+          no_output_timeout: 1800
+          command: |
+            source pyodide_env.sh
+
+            # Set mtime for EM_CONFIG to avoid ccache cache misses
+            touch -m -d '1 Jan 2021 12:00' emsdk/emsdk/.emscripten
+
+            ccache -z
+            PYODIDE_PACKAGES='*, no-numpy-dependents' make -C packages
+            ccache -s
+          environment:
+            PYODIDE_JOBS: 5
+
+      - run:
+          name: check-size
+          command: ls -lh build/
+
+      - save_cache:
+          paths:
+            - /root/.ccache
+          key: -pkg-{{ checksum "Makefile.envs" }}-v20210911-
+
+      - persist_to_workspace:
+          root: .
+          paths:
+            - ./packages
+            - ./build
+
+      - run:
+          name: Zip build directory
+          command: |
+            tar cjf pyodide-build.tar.gz  build
+
+      - persist_to_workspace:
+          root: .
+          paths:
+            - .
+
+      - store_artifacts:
+          path: /root/repo/build/
+
+      - store_artifacts:
+          path: /root/repo/pyodide-build.tar.gz
+
+      - store_artifacts:
+          path: /root/repo/packages/build-logs
+
   build-packages:
     <<: *defaults
     resource_class: large
@@ -358,9 +424,16 @@ workflows:
             tags:
               only: /.*/
 
-      - build-packages:
+      - build-packages-no-numpy-dependents:
           requires:
             - build-core
+          filters:
+            tags:
+              only: /.*/
+
+      - build-packages:
+          requires:
+            - build-packages-no-numpy-dependents
           filters:
             tags:
               only: /.*/
