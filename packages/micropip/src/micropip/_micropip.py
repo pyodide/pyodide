@@ -45,7 +45,8 @@ if IN_BROWSER:
 else:
 
     class loadedPackages:  # type: ignore
-        def to_py(self):
+        @staticmethod
+        def to_py():
             return {}
 
 
