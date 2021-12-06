@@ -45,7 +45,8 @@ if IN_BROWSER:
 else:
 
     class loadedPackages:  # type: ignore
-        pass
+        def to_py(self):
+            return {}
 
 
 if IN_BROWSER:
