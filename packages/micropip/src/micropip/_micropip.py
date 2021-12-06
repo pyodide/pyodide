@@ -398,11 +398,11 @@ def install(requirements: Union[str, List[str]], keep_going: bool = False):
 
 
 def _list():
-    """Get the dictionary of installed packages through micropip.
+    """Get the dictionary of installed packages.
 
     Returns
     -------
-    ``PackageDict``
+    packages : {class}`~micropip.package.PackageDict``
         A dictionary of installed packages.
 
         >>> import micropip
