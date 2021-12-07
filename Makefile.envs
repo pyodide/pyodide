@@ -37,7 +37,6 @@ export CFLAGS_BASE=\
 	$(EXTRA_CFLAGS)
 
 export LDFLAGS_BASE=\
-	-s BINARYEN_EXTRA_PASSES="--pass-arg=max-func-params@61" \
 	$(OPTFLAGS) \
 	-s MODULARIZE=1 \
 	-s LINKABLE=1 \
