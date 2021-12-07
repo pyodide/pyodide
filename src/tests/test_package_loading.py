@@ -247,9 +247,8 @@ def test_install_archive(selenium):
         build_test_pkg.symlink_to((test_dir / "test_pkg.tar.gz").absolute())
     try:
         for fmt_name in ["gztar", "tar.gz", "tgz", ".tar.gz", ".tgz"]:
-            selenium.run(
+            selenium.run_js(
                 f"""
-                import shutil
                 let resp = await fetch("test_pkg.tar.gz");
                 let buf = await resp.arrayBuffer();
                 pyodide.unpackArchive(buf, {fmt_name!r});
@@ -266,7 +265,10 @@ def test_install_archive(selenium):
                 } finally {
                     test_pkg.destroy();
                     some_module.destroy();
-                    shutil.rmtree("test_pkg")
+                    pyodide.runPython(`
+                        import shutil
+                        shutil.rmtree("test_pkg")
+                    `)
                 }
                 """
             )
