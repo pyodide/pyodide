@@ -247,7 +247,7 @@ def test_install_archive(selenium):
         build_test_pkg.symlink_to((test_dir / "test_pkg.tar.gz").absolute())
     try:
         for fmt_name in ["gztar", "tar.gz", "tgz", ".tar.gz", ".tgz"]:
-            selenium.run_js(
+            selenium.run(
                 f"""
                 import shutil
                 let resp = await fetch("test_pkg.tar.gz");
@@ -271,5 +271,5 @@ def test_install_archive(selenium):
                 """
             )
     finally:
-        (build_dir / "test_pkg.tar").unlink()
-        (test_dir / "test_pkg.tar").unlink()
+        (build_dir / "test_pkg.tar").unlink(missing_ok=True)
+        (test_dir / "test_pkg.tar").unlink(missing_ok=True)
