@@ -97,6 +97,11 @@ jobs:
             rm -rf cpython/{build,downloads}
             rm -rf emsdk/emsdk/binaryen
 
+      - run:
+          name: Zip build directory
+          command: |
+            tar cjf pyodide-build.tar.gz  build
+
       - persist_to_workspace:
           root: .
           paths:
@@ -104,6 +109,12 @@ jobs:
 
       - store_artifacts:
           path: /root/repo/build/
+
+      - store_artifacts:
+          path: /root/repo/pyodide-build.tar.gz
+
+      - store_artifacts:
+          path: /root/repo/packages/build-logs
 
   build-packages-no-numpy-dependents:
     <<: *defaults
@@ -149,8 +160,21 @@ jobs:
             - ./packages
             - ./build
 
+      - run:
+          name: Zip build directory
+          command: |
+            tar cjf pyodide-build.tar.gz  build
+
+      - persist_to_workspace:
+          root: .
+          paths:
+            - .
+
       - store_artifacts:
           path: /root/repo/build/
+
+      - store_artifacts:
+          path: /root/repo/pyodide-build.tar.gz
 
       - store_artifacts:
           path: /root/repo/packages/build-logs
@@ -193,6 +217,11 @@ jobs:
             - /root/.ccache
           key: -pkg-{{ checksum "Makefile.envs" }}-v20210911-
 
+      - run:
+          name: Zip build directory
+          command: |
+            tar cjf pyodide-build.tar.gz  build
+
       - persist_to_workspace:
           root: .
           paths:
@@ -201,6 +230,9 @@ jobs:
 
       - store_artifacts:
           path: /root/repo/build/
+
+      - store_artifacts:
+          path: /root/repo/pyodide-build.tar.gz
 
       - store_artifacts:
           path: /root/repo/packages/build-logs
