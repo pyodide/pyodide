@@ -252,13 +252,13 @@ def test_install_archive(selenium):
                 let resp = await fetch("test_pkg.tar.gz");
                 let buf = await resp.arrayBuffer();
                 pyodide.unpackArchive(buf, {fmt_name!r});
-                let test_pkg = pyodide.pyimport("test_pkg");
-                let some_module = pyodide.pyimport("test_pkg.some_module");
                 """
             )
             selenium.run_js(
                 """
                 try {
+                    let test_pkg = pyodide.pyimport("test_pkg");
+                    let some_module = pyodide.pyimport("test_pkg.some_module");
                     assert(() => test_pkg.test1(5) === 26);
                     assert(() => some_module.test1(5) === 26);
                     assert(() => some_module.test2(5) === 24);
