@@ -256,9 +256,9 @@ def test_install_archive(selenium):
             )
             selenium.run_js(
                 """
+                let test_pkg = pyodide.pyimport("test_pkg");
+                let some_module = pyodide.pyimport("test_pkg.some_module");
                 try {
-                    let test_pkg = pyodide.pyimport("test_pkg");
-                    let some_module = pyodide.pyimport("test_pkg.some_module");
                     assert(() => test_pkg.test1(5) === 26);
                     assert(() => some_module.test1(5) === 26);
                     assert(() => some_module.test2(5) === 24);
