@@ -14,7 +14,7 @@ from pyodide_build.testing import run_in_pyodide
 def test_fnmatch(selenium_module_scope, pattern, name, flags, expected):
     selenium = selenium_module_scope
     if selenium.browser == "chrome":
-        pytest.xfail("Doesn't work on chrome v90")
+        pytest.xfail("Doesn't work in chrome v90")
     selenium.load_package("cffi_example")
     result = selenium.run(
         f"""
@@ -25,7 +25,11 @@ def test_fnmatch(selenium_module_scope, pattern, name, flags, expected):
     assert result == expected
 
 
-@run_in_pyodide(packages=["cffi_example"], module_scope=True)
+@run_in_pyodide(
+    packages=["cffi_example"],
+    module_scope=True,
+    xfail_browsers={"chrome": "Doesn't work in chrome v90"},
+)
 def test_person():
     from cffi_example.person import Person
 
