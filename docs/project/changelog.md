@@ -153,6 +153,9 @@ substitutions:
   the native Python repl.
   {pr}`1904`
 
+- {{Fix}} The console now correcly handles it when an object's `__repr__` function raises an exception.
+  {pr}`2021`
+
 ## Version 0.18.1
 
 ### Console
