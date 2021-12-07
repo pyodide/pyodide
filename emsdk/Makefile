@@ -6,7 +6,6 @@ all: emsdk/.complete
 emsdk/.complete: ../Makefile.envs $(wildcard patches/*.patch)
 	if [ -d emsdk ]; then rm -rf emsdk; fi
 	git clone --depth 1 https://github.com/emscripten-core/emsdk.git
-	git clone -b $(PYODIDE_BINARYEN_VERSION) --depth 1 https://github.com/WebAssembly/binaryen.git emsdk/binaryen
 	cd emsdk && ./emsdk install --build=Release $(PYODIDE_EMSCRIPTEN_VERSION)
 	cat patches/*.patch | patch -p1
 	cd emsdk && ./emsdk install --build=Release $(PYODIDE_EMSCRIPTEN_VERSION) ccache-git-emscripten-64bit
