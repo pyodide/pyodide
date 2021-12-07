@@ -123,6 +123,10 @@ substitutions:
   failing after processing the first one.
   {pr}`1976`
 
+- {{Enhancement}} Added a new API {func}`micropip.list` which returns the list of installed
+  packages by micropip.
+  {pr}`2012`
+
 ### packages
 
 - {{ Enhancement }} Unit tests are now unvendored from Python packages and
