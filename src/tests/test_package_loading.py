@@ -242,9 +242,9 @@ def test_install_archive(selenium):
     shutil.make_archive(
         test_dir / "test_pkg", "gztar", root_dir=test_dir, base_dir="test_pkg"
     )
-    (build_dir / "test_pkg.tar.gz").symlink_to(
-        (test_dir / "test_pkg.tar.gz").absolute()
-    )
+    build_test_pkg = build_dir / "test_pkg.tar.gz"
+    if not build_test_pkg.exists():
+        build_test_pkg.symlink_to((test_dir / "test_pkg.tar.gz").absolute())
     try:
         for fmt_name in ["gztar", "tar.gz", "tgz", ".tar.gz", ".tgz"]:
             selenium.run_js(
