@@ -1,15 +1,17 @@
 from tempfile import NamedTemporaryFile
 import shutil
+from ._core import IN_BROWSER
 
 
 def make_whlfile(*args, owner=None, group=None, **kwargs):
     return shutil._make_zipfile(*args, **kwargs)  # type: ignore
 
 
-shutil.register_archive_format("whl", make_whlfile, description="Wheel file")
-shutil.register_unpack_format(
-    "whl", [".whl", ".wheel"], shutil._unpack_zipfile, description="Wheel file"  # type: ignore
-)
+if IN_BROWSER:
+    shutil.register_archive_format("whl", make_whlfile, description="Wheel file")
+    shutil.register_unpack_format(
+        "whl", [".whl", ".wheel"], shutil._unpack_zipfile, description="Wheel file"  # type: ignore
+    )
 
 
 def get_format(format):
