@@ -145,7 +145,7 @@ class WebLoop(asyncio.AbstractEventLoop):
         h = asyncio.Handle(callback, args, self, context=context)
 
         def run_handle():
-            if h._cancelled:
+            if h.cancelled():
                 return
             h._run()
 
