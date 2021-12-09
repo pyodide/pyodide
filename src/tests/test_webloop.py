@@ -193,6 +193,7 @@ def test_run_in_executor(selenium):
 
 
 def test_webloop_exception_handler(selenium_standalone):
+    selenium = selenium_standalone
     selenium.run_async(
         """
         import asyncio
