@@ -43,6 +43,17 @@ export async function initializePackageIndex(indexURL) {
   }
 }
 
+export async function fetchTarFile(indexURL, path) {
+  if (IN_NODE) {
+    const fsPromises = await import(/* webpackIgnore: true */ "fs/promises");
+    const tar_buffer = await fsPromises.readFile(`${indexURL}${path}`);
+    return tar_buffer.buffer;
+  } else {
+    let response = await fetch(`${indexURL}${path}`);
+    return await response.arrayBuffer();
+  }
+}
+
 ////////////////////////////////////////////////////////////
 // Package loading
 const DEFAULT_CHANNEL = "default channel";

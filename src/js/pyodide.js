@@ -5,6 +5,7 @@ import { Module, setStandardStreams, setHomeDirectory } from "./module.js";
 import {
   loadScript,
   initializePackageIndex,
+  fetchTarFile,
   loadPackage,
 } from "./load-pyodide.js";
 import { makePublicAPI, registerJsModule } from "./api.js";
@@ -261,6 +262,9 @@ function finalizeBootstrap(config) {
  * @async
  */
 export async function loadPyodide(config) {
+  if (!config.indexURL) {
+    throw new Error("Please provide indexURL parameter to loadPyodide");
+  }
   const default_config = {
     fullStdLib: true,
     jsglobals: globalThis,
@@ -277,27 +281,24 @@ export async function loadPyodide(config) {
       throw new Error("Pyodide is already loading.");
     }
   }
+  loadPyodide.inProgress = true;
   // A global "mount point" for the package loaders to talk to pyodide
   // See "--export-name=__pyodide_module" in buildpkg.py
   globalThis.__pyodide_module = Module;
-  loadPyodide.inProgress = true;
-  if (!config.indexURL) {
-    throw new Error("Please provide indexURL parameter to loadPyodide");
+
+  if (!config.indexURL.endsWith("/")) {
+    config.indexURL += "/";
   }
-  let baseURL = config.indexURL;
-  if (!baseURL.endsWith("/")) {
-    baseURL += "/";
-  }
-  Module.indexURL = baseURL;
-  let packageIndexReady = initializePackageIndex(baseURL);
-  let pyodide_py_tar_promise = fetch(baseURL + "pyodide_py.tar");
+  Module.indexURL = config.indexURL;
+  let packageIndexReady = initializePackageIndex(config.indexURL);
+  let pyodide_py_tar_promise = fetchTarFile(config.indexURL, "pyodide_py.tar");
 
   setStandardStreams(config.stdin, config.stdout, config.stderr);
   setHomeDirectory(config.homedir);
 
   let moduleLoaded = new Promise((r) => (Module.postRun = r));
 
-  const scriptSrc = `${baseURL}pyodide.asm.js`;
+  const scriptSrc = `${config.indexURL}pyodide.asm.js`;
   await loadScript(scriptSrc);
 
   // _createPyodideModule is specified in the Makefile by the linker flag:
@@ -308,8 +309,7 @@ export async function loadPyodide(config) {
   // being called.
   await moduleLoaded;
 
-  const pyodide_py_tar_resp = await pyodide_py_tar_promise;
-  const pyodide_py_tar = await pyodide_py_tar_resp.arrayBuffer();
+  const pyodide_py_tar = await pyodide_py_tar_promise;
   unpackPyodidePy(pyodide_py_tar);
   Module._pyodide_init();
 
