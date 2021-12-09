@@ -22,6 +22,26 @@ static int set_two(PyObject* self, PyObject* value){
     return 0;
 }
 
+// These two structs are the same but it's important that they have to be
+// duplicated here or else we miss test coverage.
+static PyMethodDef Test_Functions[] = {
+    {"noargs0",(PyCFunction)zero, METH_NOARGS},
+    {"noargs1", (PyCFunction)one, METH_NOARGS},
+    {"noargs2", (PyCFunction)two, METH_NOARGS},
+    {"noargs3", (PyCFunction)three, METH_NOARGS},
+
+    {"varargs0",(PyCFunction)zero, METH_VARARGS},
+    {"varargs1", (PyCFunction)one, METH_VARARGS},
+    {"varargs2", (PyCFunction)two, METH_VARARGS},
+    {"varargs3", (PyCFunction)three, METH_VARARGS},
+
+    {"kwargs0", (PyCFunction)zero, METH_VARARGS | METH_KEYWORDS},
+    {"kwargs1", (PyCFunction)one, METH_VARARGS | METH_KEYWORDS},
+    {"kwargs2", (PyCFunction)two, METH_VARARGS | METH_KEYWORDS},
+    {"kwargs3", (PyCFunction)three, METH_VARARGS | METH_KEYWORDS},
+    {NULL, NULL, 0, NULL}
+};
+
 static PyMethodDef Test_Methods[] = {
     {"noargs0",(PyCFunction)zero, METH_NOARGS},
     {"noargs1", (PyCFunction)one, METH_NOARGS},
@@ -51,7 +71,7 @@ static PyTypeObject TestType = {
   .tp_basicsize = sizeof(PyObject),
   .tp_flags = Py_TPFLAGS_DEFAULT,
   .tp_doc = PyDoc_STR("A test type"),
-  .tp_methods = Test_Methods,
+  .tp_methods = Test_Functions,
   .tp_getset = Test_GetSet,
   .tp_new = PyType_GenericNew,
 };
