@@ -1,4 +1,4 @@
-From 9a87afec784169a74369a2faa59e389b05fe9f71 Mon Sep 17 00:00:00 2001
+From 9737daa75b9058dbb73ff06947732ee9d750efee Mon Sep 17 00:00:00 2001
 From: Hood Chatham <roberthoodchatham@gmail.com>
 Date: Fri, 3 Dec 2021 20:55:40 -0800
 Subject: [PATCH] count function pointer args
@@ -71,7 +71,7 @@ index ead269d1d2..7535b6c8ae 100644
  #ifndef Py_LIMITED_API
 diff --git a/Include/fpcast.h b/Include/fpcast.h
 new file mode 100644
-index 0000000000..0d38e58611
+index 0000000000..d2ebb4ac81
 --- /dev/null
 +++ b/Include/fpcast.h
 @@ -0,0 +1,38 @@
@@ -108,7 +108,7 @@ index 0000000000..0d38e58611
 +}
 +
 +static inline
-+fill_in_methoddef_nargs(PyMethodDef ml){
++fill_in_methoddef_nargs(PyMethodDef* ml){
 +    int nargs = get_fp_nargs(ml->ml_meth);
 +    ml->ml_flags |= (get_fp_nargs(ml->ml_meth) + 1) << 16;
 +}
