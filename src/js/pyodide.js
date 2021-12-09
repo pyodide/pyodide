@@ -160,6 +160,34 @@ function wrapPythonGlobals(globals_dict, builtins_dict) {
   });
 }
 
+function unpackPyodidePy(pyodide_py_tar) {
+  const fileName = "/pyodide_py.tar";
+  let stream = Module.FS.open(fileName, "w");
+  Module.FS.write(
+    stream,
+    new Uint8Array(pyodide_py_tar),
+    0,
+    pyodide_py_tar.byteLength,
+    undefined,
+    true
+  );
+  Module.FS.close(stream);
+  const code_ptr = Module.stringToNewUTF8(`
+import shutil
+shutil.unpack_archive("/pyodide_py.tar", "/lib/python3.9/site-packages/")
+del shutil
+import importlib
+importlib.invalidate_caches()
+del importlib
+    `);
+  let errcode = Module._PyRun_SimpleString(code_ptr);
+  if (errcode) {
+    throw new Error("OOPS!");
+  }
+  Module._free(code_ptr);
+  Module.FS.unlink(fileName);
+}
+
 /**
  * @private
  * This function is called after the emscripten module is finished initializing,
@@ -262,6 +290,7 @@ export async function loadPyodide(config) {
   }
   Module.indexURL = baseURL;
   let packageIndexReady = initializePackageIndex(baseURL);
+  let pyodide_py_tar_promise = fetch(baseURL + "pyodide_py.tar");
 
   setStandardStreams(config.stdin, config.stdout, config.stderr);
   setHomeDirectory(config.homedir);
@@ -278,6 +307,11 @@ export async function loadPyodide(config) {
   // There is some work to be done between the module being "ready" and postRun
   // being called.
   await moduleLoaded;
+
+  const pyodide_py_tar_resp = await pyodide_py_tar_promise;
+  const pyodide_py_tar = await pyodide_py_tar_resp.arrayBuffer();
+  unpackPyodidePy(pyodide_py_tar);
+  Module._pyodide_init();
 
   let pyodide = finalizeBootstrap(config);
   // Module.runPython works starting here.

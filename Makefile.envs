@@ -75,7 +75,6 @@ export MAIN_MODULE_LDFLAGS= $(LDFLAGS_BASE) \
 	--use-preload-plugins \
 	--preload-file $(CPYTHONLIB)@/lib/python$(PYMAJOR).$(PYMINOR) \
 	--preload-file src/py/lib@/lib/python$(PYMAJOR).$(PYMINOR)/\
-	--preload-file src/py/@/lib/python$(PYMAJOR).$(PYMINOR)/site-packages/ \
 	--exclude-file "*__pycache__*" \
 	--exclude-file "*/test/*" \
 	--exclude-file "*/tests/*" \
