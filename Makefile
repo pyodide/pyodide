@@ -18,7 +18,7 @@ all: check \
 	build/console.html \
 	build/distutils.data \
 	build/packages.json \
-	build/pyodide_py.tar
+	build/pyodide_py.tar \
 	build/test.data \
 	build/test.html \
 	build/webworker.js \
