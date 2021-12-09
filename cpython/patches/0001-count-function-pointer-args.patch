@@ -1,4 +1,4 @@
-From 062bd91b34eb5337d6f7cd5323e8f31c31b7c6f6 Mon Sep 17 00:00:00 2001
+From 1595fc99293738d3ffb8a7314509fffde3f0b461 Mon Sep 17 00:00:00 2001
 From: Hood Chatham <roberthoodchatham@gmail.com>
 Date: Fri, 3 Dec 2021 20:55:40 -0800
 Subject: [PATCH] count function pointer args
@@ -277,7 +277,7 @@ index fce9cdd309..95adc48e48 100644
          descr->d_getset = getset;
      return (PyObject *)descr;
 diff --git a/Objects/methodobject.c b/Objects/methodobject.c
-index 7b430416c5..3cabb45e7e 100644
+index 7b430416c5..c45bb0a2ed 100644
 --- a/Objects/methodobject.c
 +++ b/Objects/methodobject.c
 @@ -40,6 +40,16 @@ PyCFunction_NewEx(PyMethodDef *ml, PyObject *self, PyObject *module)
@@ -301,7 +301,7 @@ index 7b430416c5..3cabb45e7e 100644
  
      PyCFunctionObject *op = NULL;
  
-+    *(int*)ml->ml_flags |= (get_fp_nargs(ml->ml_meth) + 1) << 16;
++    ml->ml_flags |= (get_fp_nargs(ml->ml_meth) + 1) << 16;
 +
      if (ml->ml_flags & METH_METHOD) {
          if (!cls) {
