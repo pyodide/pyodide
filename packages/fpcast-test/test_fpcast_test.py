@@ -1,7 +1,7 @@
 from pyodide_build.testing import run_in_pyodide
 
 
-@run_in_pyodide
+@run_in_pyodide(packages=["fpcast_test"])
 def test_fpcasts():
     import fpcast_test
 
