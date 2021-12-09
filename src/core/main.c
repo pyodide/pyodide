@@ -122,7 +122,8 @@ main(int argc, char** argv)
 }
 
 int
-pyodide_init(void){
+pyodide_init(void)
+{
   PyObject* _pyodide = NULL;
   PyObject* core_module = NULL;
   JsRef _pyodide_proxy = NULL;
