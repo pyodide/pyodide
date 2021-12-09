@@ -298,96 +298,6 @@ def unvendor_tests(install_prefix: Path, test_install_prefix: Path) -> int:
     return n_moved
 
 
-def package_files(
-    buildpath: Path, srcpath: Path, pkg: Dict[str, Any], compress: bool = False
-) -> None:
-    """Package the installation folder into .data and .js files
-
-    Parameters
-    ----------
-    buildpath
-        the package build path. Usually `packages/<name>/build`
-    srcpath
-        the package source path. Usually
-        `packages/<name>/build/<name>-<version>`.
-    pkg
-        package JSON definition
-
-    Notes
-    -----
-    The files to packages are located under the `install_prefix` corresponding
-    to `srcpath / 'install'`.
-
-    """
-    if (buildpath / ".packaged").is_file():
-        return
-
-    name = pkg["package"]["name"]
-    install_prefix = (srcpath / "install").resolve()
-    test_install_prefix = (srcpath / "install-test").resolve()
-
-    if pkg.get("build", {}).get("unvendor-tests", True):
-        n_unvendored = unvendor_tests(install_prefix, test_install_prefix)
-    else:
-        n_unvendored = 0
-
-    # Package the package except for tests
-    subprocess.run(
-        [
-            str(common.file_packager_path()),
-            f"{name}.data",
-            f"--js-output={name}.js",
-            "--preload",
-            f"{install_prefix}@/",
-        ],
-        cwd=buildpath,
-        check=True,
-    )
-
-    if compress:
-        subprocess.run(
-            [
-                "npx",
-                "--no-install",
-                "terser",
-                buildpath / (name + ".js"),
-                "-o",
-                buildpath / (name + ".js"),
-            ],
-            check=True,
-        )
-
-    # Package tests
-    if n_unvendored > 0:
-        subprocess.run(
-            [
-                str(common.file_packager_path()),
-                f"{name}-tests.data",
-                f"--js-output={name}-tests.js",
-                "--preload",
-                f"{test_install_prefix}@/",
-            ],
-            cwd=buildpath,
-            check=True,
-        )
-
-        if compress:
-            subprocess.run(
-                [
-                    "npx",
-                    "--no-install",
-                    "terser",
-                    buildpath / (name + "-tests.js"),
-                    "-o",
-                    buildpath / (name + "-tests.js"),
-                ],
-                check=True,
-            )
-
-    with open(buildpath / ".packaged", "wb") as fd:
-        fd.write(b"\n")
-
-
 def run_script(buildpath: Path, srcpath: Path, pkg: Dict[str, Any], bash_runner):
     if pkg.get("build", {}).get("library"):
         # in libraries this  writes the packaged flag
@@ -463,7 +373,6 @@ def build_package(path: Path, args):
             # i.e. they need package running, but not compile
             if not pkg.get("build", {}).get("sharedlibrary"):
                 compile(path, srcpath, pkg, args, bash_runner)
-            package_files(buildpath, srcpath, pkg, compress=args.compress_package)
     finally:
         bash_runner.close()
         os.chdir(orig_path)

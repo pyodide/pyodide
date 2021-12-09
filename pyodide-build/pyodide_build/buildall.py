@@ -32,6 +32,7 @@ class BasePackage:
     unbuilt_dependencies: Set[str]
     dependents: Set[str]
     unvendored_tests: Optional[bool] = None
+    file_name: Optional[str] = None
 
     # We use this in the priority queue, which pops off the smallest element.
     # So we want the smallest element to have the largest number of dependents
@@ -54,6 +55,7 @@ class StdLibPackage(BasePackage):
         self.dependencies = []
         self.unbuilt_dependencies = set()
         self.dependents = set()
+        self.file_name = self.name + ".js"
 
     def build(self, outputdir: Path, args) -> None:
         # All build / packaging steps are already done in the main Makefile
@@ -137,24 +139,12 @@ class Package(BasePackage):
 
             raise
 
-        if not self.library:
-            shutil.copyfile(
-                self.pkgdir / "build" / (self.name + ".data"),
-                outputdir / (self.name + ".data"),
-            )
-            shutil.copyfile(
-                self.pkgdir / "build" / (self.name + ".js"),
-                outputdir / (self.name + ".js"),
-            )
-            if (self.pkgdir / "build" / (self.name + "-tests.data")).exists():
-                shutil.copyfile(
-                    self.pkgdir / "build" / (self.name + "-tests.data"),
-                    outputdir / (self.name + "-tests.data"),
-                )
-                shutil.copyfile(
-                    self.pkgdir / "build" / (self.name + "-tests.js"),
-                    outputdir / (self.name + "-tests.js"),
-                )
+        if self.shared_library:
+            pass
+        elif not self.library:
+            for file in (self.pkgdir / "dist").glob("*.whl"):
+                shutil.copy(file, outputdir)
+                self.file_name = file.name
 
 
 def generate_dependency_graph(
@@ -327,9 +317,9 @@ def generate_packages_json(pkg_map: Dict[str, BasePackage]) -> Dict:
         package_data["packages"][name.lower()] = pkg_entry
 
     for name, pkg in pkg_map.items():
-        if pkg.library:
+        if not pkg.file_name:
             continue
-        pkg_entry = {"name": name, "version": pkg.version}
+        pkg_entry = {"name": name, "version": pkg.version, "file_name": pkg.file_name}
         if pkg.shared_library:
             pkg_entry["shared_library"] = True
         pkg_entry["depends"] = [

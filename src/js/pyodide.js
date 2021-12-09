@@ -176,7 +176,6 @@ function finalizeBootstrap(config) {
   let import_module = Module.importlib.import_module;
 
   Module.sys = import_module("sys");
-  Module.sys.setrecursionlimit(calculateRecursionLimit());
   Module.sys.path.insert(0, config.homedir);
 
   // Set up globals
@@ -197,6 +196,7 @@ function finalizeBootstrap(config) {
   // pyodide_py code (Otherwise it's very hard to keep track of which things
   // aren't set up yet.)
   Module.pyodide_py = import_module("pyodide");
+  Module.package_loader = import_module("pyodide.package_loader");
   Module.version = Module.pyodide_py.__version__;
 
   // copy some last constants onto public API.
@@ -284,7 +284,7 @@ export async function loadPyodide(config) {
 
   await packageIndexReady;
   if (config.fullStdLib) {
-    await loadPackage(["distutils"]);
+    // await loadPackage(["distutils"]);
   }
   pyodide.runPython("print('Python initialization complete')");
   return pyodide;

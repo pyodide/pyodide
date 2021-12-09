@@ -135,6 +135,7 @@ def capture_compile(args):
     env = dict(os.environ)
     make_symlinks(env)
     env["PATH"] = str(TOOLSDIR) + ":" + os.environ["PATH"]
+    env["_PYTHON_HOST_PLATFORM"] = "emscripten_wasm32"
 
     cmd = [sys.executable, "setup.py", "install"]
     if args.install_dir == "skip":
@@ -423,21 +424,14 @@ def install_for_distribution(args):
     commands = [
         sys.executable,
         "setup.py",
-        "install",
+        "bdist_wheel",
         "--skip-build",
-        "--prefix=install",
-        "--old-and-unmanageable",
     ]
-    try:
-        subprocess.check_call(commands)
-    except Exception:
-        print(
-            f'Warning: {" ".join(str(arg) for arg in commands)} failed '
-            f"with distutils, possibly due to the use of distutils "
-            f"that does not support the --old-and-unmanageable "
-            "argument. Re-trying the install without this argument."
-        )
-        subprocess.check_call(commands[:-1])
+    env = dict(os.environ)
+    env["_PYTHON_HOST_PLATFORM"] = "emscripten_wasm32"
+    subprocess.check_call(commands, env=env)
+    shutil.rmtree("../../dist", ignore_errors=True)
+    shutil.copytree("dist", "../../dist")
 
 
 def build_wrap(args):
