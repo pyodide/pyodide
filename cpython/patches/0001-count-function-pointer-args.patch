@@ -1,17 +1,47 @@
-From 1595fc99293738d3ffb8a7314509fffde3f0b461 Mon Sep 17 00:00:00 2001
+From e0d5c209adeffb8710ef413cb1777a83421f04ba Mon Sep 17 00:00:00 2001
 From: Hood Chatham <roberthoodchatham@gmail.com>
 Date: Fri, 3 Dec 2021 20:55:40 -0800
 Subject: [PATCH] count function pointer args
 
+The goal of this patch is to fix up function pointer casts in `PyGetSetDef`,
+`PyMethodDef`, and `.tp_call`, with a minimal cost in stack space, code size,
+and speed. We can figure out how many arguments the function pointers actually
+need at runtime by going out to Javascript and doing:
+```
+wasmTable.get(func).length
+```
+we define the `EM_JS` function `get_fp_nargs` for this. Note that we don't know
+the full method signature, so there could still be a problem, but in practice we
+can guess what signature the function will have. If, for example, the return
+type changes, then we will be in trouble.
+
+For each `PyGetSetDef` and `PyMethodDef`, and type object, at interpreter
+startup (or when the package is first loaded) we look up how many arguments it
+takes and stow that in some convenient location. In the case of type objects,
+there is enough space in `.tp_flags` to put this info, but I elected to add a
+new field to the struct. For `PyMethodDef` I stow the information in the upper
+16 bits of `ml_flags` (which are currently unused). For `PyGetSetDef` I also add
+extra fields to store the number of arguments.
+
+When we store the number of arguments, we add 1 to it. This is intended to help
+distinguish the case where somehow the information wasn't filled at all. If the
+information wasn't filled at all, we just make the call as normal. Otherwise, we
+use the information about the number of arguments to help us modify the call
+appropriately.
+
+I am not sure whether this works with heap types, but heap types are extremely
+rare in the wild, so I think it's fine to wait and see if we run into trouble
+before adding test coverage for heap types.
+
 ---
  Include/cpython/object.h |  1 +
  Include/descrobject.h    |  2 +
- Include/fpcast.h         | 36 +++++++++++++++++
+ Include/fpcast.h         | 32 +++++++++++++++
  Objects/call.c           |  9 ++++-
  Objects/descrobject.c    | 84 ++++++++++++++++++++++++++++++++++------
  Objects/methodobject.c   | 42 +++++++++++++++-----
  Objects/typeobject.c     |  7 +++-
- 7 files changed, 158 insertions(+), 23 deletions(-)
+ 7 files changed, 154 insertions(+), 23 deletions(-)
  create mode 100644 Include/fpcast.h
 
 diff --git a/Include/cpython/object.h b/Include/cpython/object.h
@@ -41,14 +71,10 @@ index ead269d1d2..7535b6c8ae 100644
  #ifndef Py_LIMITED_API
 diff --git a/Include/fpcast.h b/Include/fpcast.h
 new file mode 100644
-index 0000000000..3b8dffcafc
+index 0000000000..183b5c6150
 --- /dev/null
 +++ b/Include/fpcast.h
-@@ -0,0 +1,36 @@
-+#define FP_NARGS_OFFSET 24
-+#define FP_NARGS(func) (((int)func >> FP_NARGS_OFFSET) - 1)
-+#define FP_ACTUAL_PTR(func) ((PyCFunction)((int)func & ((1<<FP_NARGS_OFFSET) - 1)))
-+
+@@ -0,0 +1,32 @@
 +#define CFUNCTION_NARGS(func) ((PyCFunction_GET_FLAGS(func) >> 16) - 1)
 +#define METHOD_NARGS(func) (((((PyMethodDescrObject *)func)->d_method->ml_flags) >> 16) - 1)
 +
@@ -57,7 +83,7 @@ index 0000000000..3b8dffcafc
 +
 +int get_fp_nargs(PyCFunction func);
 +
-+typedef PyObject* (*zeroarg)(void) ;
++typedef PyObject* (*zeroarg)(void);
 +typedef PyObject* (*onearg)(PyObject*);
 +typedef PyObject* (*twoarg)(PyObject*, PyObject*);
 +typedef PyObject* (*threearg)(PyObject*, PyObject*, PyObject*);
