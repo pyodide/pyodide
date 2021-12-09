@@ -1,6 +1,5 @@
 export PYVERSION ?= 3.9.5
 export PYODIDE_EMSCRIPTEN_VERSION ?= 2.0.16
-export PYODIDE_BINARYEN_VERSION ?= version_100
 
 # BASH_ENV tells bash to run pyodide_env.sh on startup, whcih sets various
 # environment variables. The next line instructs make to use bash to run each
@@ -30,18 +29,19 @@ export PYODIDE=1
 export PYODIDE_PACKAGE_ABI=1
 #
 
+export DBGFLAGS=-g3 -gseparate-dwarf -sSEPARATE_DWARF_URL=http://localhost:8001/
+
 export OPTFLAGS=-O2
 export CFLAGS_BASE=\
 	$(OPTFLAGS) \
-	-g \
+	$(DBGFLAGS) \
 	-fPIC \
 	$(EXTRA_CFLAGS)
 
 export LDFLAGS_BASE=\
-	-s BINARYEN_EXTRA_PASSES="--pass-arg=max-func-params@61" \
 	$(OPTFLAGS) \
+	$(DBGFLAGS) \
 	-s MODULARIZE=1 \
-	-s EMULATE_FUNCTION_POINTER_CASTS=1 \
 	-s LINKABLE=1 \
 	-s EXPORT_ALL=1 \
 	-s WASM=1 \

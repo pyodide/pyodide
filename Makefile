@@ -139,10 +139,10 @@ lint: node_modules/.installed
 		packages/*/test* 			 \
 		conftest.py 				 \
 		docs
-	# mypy gets upset about there being both: src/py/setup.py and
-	# packages/micropip/src/setup.py. There is no easy way to fix this right now
-	# see python/mypy#10428. This will also cause trouble with pre-commit if you
-	# modify both setup.py files in the same commit.
+#mypy gets upset about there being both : src / py / setup.py and
+#packages / micropip / src / setup.py.There is no easy way to fix this right now
+#see python / mypy #10428. This will also cause trouble with pre - commit if you
+#modify both setup.py files in the same commit.
 	mypy --ignore-missing-imports    \
 		packages/micropip/src/
 
