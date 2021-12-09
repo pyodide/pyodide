@@ -398,7 +398,7 @@ workflows:
 
       - test-main:
           name: test-core-chrome
-          test-params: -k "chrome and not webworker" src packages/micropip
+          test-params: -k "chrome and not webworker" src packages/micropip  packages/fpcast-test
           requires:
             - build-core
           filters:
@@ -407,7 +407,7 @@ workflows:
 
       - test-main:
           name: test-core-firefox
-          test-params: -k "firefox and not webworker" src packages/micropip
+          test-params: -k "firefox and not webworker" src packages/micropip packages/fpcast-test
           requires:
             - build-core
           filters:
@@ -416,7 +416,7 @@ workflows:
 
       - test-main:
           name: test-core-node
-          test-params: -k node src packages/micropip
+          test-params: -k node src packages/micropip packages/fpcast-test
           requires:
             - build-core
           filters:
