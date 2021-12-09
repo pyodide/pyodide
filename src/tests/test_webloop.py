@@ -193,16 +193,24 @@ def test_run_in_executor(selenium):
 
 
 def test_webloop_exception_handler(selenium):
-    selenium.run_async(
-        """
-        import asyncio
-        async def test():
-            raise Exception("test")
-        asyncio.ensure_future(test())
-        await asyncio.sleep(0.2)
-        """
-    )
-    assert "Task exception was never retrieved" in selenium.logs
+    try:
+        selenium.run_async(
+            """
+            import asyncio
+            loop = asyncio.get_event_loop()
+            exc = []
+            def exception_handler(loop, context):
+                exc.append(context)
+            loop.set_exception_handler(exception_handler)
+            async def test():
+                raise Exception("test")
+            asyncio.ensure_future(test())
+            await asyncio.sleep(0.2)
+            assert exc == ["Task exception was never retrieved"]
+            """
+        )
+    finally:
+        selenium.run("loop.set_exception_handler(None)")
     try:
         selenium.run_js(
             """
