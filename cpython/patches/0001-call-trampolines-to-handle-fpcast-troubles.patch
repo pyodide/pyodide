@@ -3,6 +3,46 @@ From: Hood Chatham <roberthoodchatham@gmail.com>
 Date: Fri, 3 Dec 2021 20:55:40 -0800
 Subject: [PATCH] call trampolines to handle fpcast troubles
 
+The wasm call_indirect instruction takes a function signature as an immediate
+argument (an immediate argument is one which is determined statically at compile
+time). The web assembly runtime checks at runtime that the function pointer we
+are attempting to call has a signature which matches the asserted function
+signature, if they don't match, the runtime traps with "indirect call signature
+mismatch". The codegen provided by default by the emscripten toolchain produces
+an ABI that also has this constraint.
+
+By contrast, typical native ABIs handle function pointer casts very gracefully:
+extra arguments are ignored, missing arguments are filled in as 0, even wrong
+return values are completely fine.
+
+The Python ecosystem is full of code which contain function pointer casts.
+Emscripten offers a second "EMULATE_FPCASTS" ABI that fixes many of these
+issues, but it shims in the function pointer cast support in a binaryen pass
+that happens on the fully linked wasm module. At this point, lots of information
+has been destroyed and as a result the only possible solutions are extremely
+costly in run time, stack space, and code size.
+
+We wish to avoid these costs. Patching the packages is prohibitively time
+consuming and boring, especially given our limited developer effort. I have
+explored making automated detection tools, and these work. However, getting
+these tools included into the CI of Python ecosystem packages would be
+prohibitively time consuming.
+
+There is a best of both worlds solution. It is possible to define an ABI which
+allows for specific types of function pointer casts with neglible costs. I hope
+to do this in future work. However, this will require custom llvm passes.
+Because llvm is implemented in C++ which has very poor ABI compatibility, this
+means our whole toolchain needs to be built against the same version of llvm,
+from llvm all the way down to binaryen and the wasm binary toolkit.
+
+In the meantime, most bad function pointer calls happen in a small number of
+locations. Calling a function pointer from Javascript has no restrictions on
+arguments. Extra arguments can be provided, arguments can be left off, etc with
+no issue (this mimics Javascript's typical function call semantics). So at the
+locations where the bad calls occur, we patch in a trampoline which calls out to
+Javascript to make the call for us. Like magic, the problem is gone. Research
+shows that the performance cost of this is surprisingly low too.
+
 ---
  Objects/call.c         |  5 ++++-
  Objects/descrobject.c  | 28 +++++++++++++++++++---------
