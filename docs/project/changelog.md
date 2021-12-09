@@ -153,8 +153,12 @@ substitutions:
   the native Python repl.
   {pr}`1904`
 
-- {{Fix}} The console now correcly handles it when an object's `__repr__` function raises an exception.
+- {{Fix}} The console now correctly handles it when an object's `__repr__` function raises an exception.
   {pr}`2021`
+
+- {{ Enhancement }} Removed the `-s EMULATE_FUNCTION_POINTER_CASTS` flag,
+  yielding large benefits in speed, stack usage, and code size.
+  {pr}`2019`
 
 ## Version 0.18.1
 
