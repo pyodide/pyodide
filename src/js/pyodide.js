@@ -129,7 +129,7 @@ function calculateRecursionLimit() {
     recurse();
   } catch (err) {}
 
-  const recursionLimit = Math.floor(Math.min(depth / 25, 500));
+  const recursionLimit = Math.floor(Math.min(depth / 12, 1000));
   return recursionLimit;
 }
 
