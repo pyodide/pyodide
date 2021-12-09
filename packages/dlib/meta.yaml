@@ -1,0 +1,16 @@
+package:
+  name: dlib
+  version: 19.22.1
+source:
+  url: https://files.pythonhosted.org/packages/f0/a2/ba6163c09fb427990180afd8d625bcecc5555af699c253193c35ffd48c4f/dlib-19.22.1.tar.gz
+  sha256: 77e943b40cc53e377d7fc683552d2337937f1111c46d7753105f594c3958163c
+test:
+  imports:
+  - dlib
+ build:
+  cxxflags: -std=c++11
+about:
+  home: https://github.com/davisking/dlib
+  PyPI: https://pypi.org/project/dlib
+  summary: A toolkit for making real world machine learning and data analysis applications
+  license: Boost Software License
