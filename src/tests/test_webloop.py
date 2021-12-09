@@ -33,8 +33,8 @@ def test_asyncio_sleep(selenium):
     )
 
 
-def test_cancel_handle(selenium):
-    selenium.run_js(
+def test_cancel_handle(selenium_standalone):
+    selenium_standalone.run_js(
         """
         await pyodide.runPythonAsync(`
             import asyncio
