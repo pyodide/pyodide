@@ -1,4 +1,4 @@
-From e0d5c209adeffb8710ef413cb1777a83421f04ba Mon Sep 17 00:00:00 2001
+From 1efb87eb6a637c390b3f885adea7fd81191ee90b Mon Sep 17 00:00:00 2001
 From: Hood Chatham <roberthoodchatham@gmail.com>
 Date: Fri, 3 Dec 2021 20:55:40 -0800
 Subject: [PATCH] count function pointer args
@@ -36,12 +36,12 @@ before adding test coverage for heap types.
 ---
  Include/cpython/object.h |  1 +
  Include/descrobject.h    |  2 +
- Include/fpcast.h         | 32 +++++++++++++++
+ Include/fpcast.h         | 32 ++++++++++++++++
  Objects/call.c           |  9 ++++-
- Objects/descrobject.c    | 84 ++++++++++++++++++++++++++++++++++------
+ Objects/descrobject.c    | 83 ++++++++++++++++++++++++++++++++++------
  Objects/methodobject.c   | 42 +++++++++++++++-----
  Objects/typeobject.c     |  7 +++-
- 7 files changed, 154 insertions(+), 23 deletions(-)
+ 7 files changed, 153 insertions(+), 23 deletions(-)
  create mode 100644 Include/fpcast.h
 
 diff --git a/Include/cpython/object.h b/Include/cpython/object.h
@@ -135,7 +135,7 @@ index 87dc0dbbdb..9e952e6659 100644
      }
  
 diff --git a/Objects/descrobject.c b/Objects/descrobject.c
-index fce9cdd309..95adc48e48 100644
+index fce9cdd309..c449038fe9 100644
 --- a/Objects/descrobject.c
 +++ b/Objects/descrobject.c
 @@ -174,6 +174,10 @@ member_get(PyMemberDescrObject *descr, PyObject *obj, PyObject *type)
@@ -221,7 +221,7 @@ index fce9cdd309..95adc48e48 100644
      Py_DECREF(argstuple);
      _Py_LeaveRecursiveCall(tstate);
      return result;
-@@ -338,12 +374,17 @@ method_vectorcall_VARARGS_KEYWORDS(
+@@ -338,12 +374,16 @@ method_vectorcall_VARARGS_KEYWORDS(
              goto exit;
          }
      }
@@ -233,7 +233,6 @@ index fce9cdd309..95adc48e48 100644
      }
 -    result = meth(args[0], argstuple, kwdict);
 +    int meth_nargs = METHOD_NARGS(func);
-+    meth = FP_ACTUAL_PTR(meth);
 +    if(meth_nargs == -1){
 +        result = ((PyCFunctionWithKeywords)meth)(args[0], argstuple, kwdict);
 +    } else {
@@ -242,7 +241,7 @@ index fce9cdd309..95adc48e48 100644
      _Py_LeaveRecursiveCall(tstate);
  exit:
      Py_DECREF(argstuple);
-@@ -364,6 +405,7 @@ method_vectorcall_FASTCALL_KEYWORDS_METHOD(
+@@ -364,6 +404,7 @@ method_vectorcall_FASTCALL_KEYWORDS_METHOD(
      if (meth == NULL) {
          return NULL;
      }
@@ -250,7 +249,7 @@ index fce9cdd309..95adc48e48 100644
      PyObject *result = meth(args[0],
                              ((PyMethodDescrObject *)func)->d_common.d_type,
                              args+1, nargs-1, kwnames);
-@@ -385,6 +427,7 @@ method_vectorcall_FASTCALL(
+@@ -385,6 +426,7 @@ method_vectorcall_FASTCALL(
      if (meth == NULL) {
          return NULL;
      }
@@ -258,7 +257,7 @@ index fce9cdd309..95adc48e48 100644
      PyObject *result = meth(args[0], args+1, nargs-1);
      _Py_LeaveRecursiveCall(tstate);
      return result;
-@@ -431,7 +474,13 @@ method_vectorcall_NOARGS(
+@@ -431,7 +473,13 @@ method_vectorcall_NOARGS(
      if (meth == NULL) {
          return NULL;
      }
@@ -273,7 +272,7 @@ index fce9cdd309..95adc48e48 100644
      _Py_LeaveRecursiveCall(tstate);
      return result;
  }
-@@ -459,7 +508,13 @@ method_vectorcall_O(
+@@ -459,7 +507,13 @@ method_vectorcall_O(
      if (meth == NULL) {
          return NULL;
      }
@@ -288,7 +287,7 @@ index fce9cdd309..95adc48e48 100644
      _Py_LeaveRecursiveCall(tstate);
      return result;
  }
-@@ -976,6 +1031,13 @@ PyDescr_NewGetSet(PyTypeObject *type, PyGetSetDef *getset)
+@@ -976,6 +1030,13 @@ PyDescr_NewGetSet(PyTypeObject *type, PyGetSetDef *getset)
  
      descr = (PyGetSetDescrObject *)descr_new(&PyGetSetDescr_Type,
                                               type, getset->name);
