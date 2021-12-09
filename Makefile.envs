@@ -29,15 +29,18 @@ export PYODIDE=1
 export PYODIDE_PACKAGE_ABI=1
 #
 
+export DBGFLAGS=-g3 -gseparate-dwarf -sSEPARATE_DWARF_URL=http://localhost:8001/
+
 export OPTFLAGS=-O2
 export CFLAGS_BASE=\
 	$(OPTFLAGS) \
-	-g \
+	$(DBGFLAGS) \
 	-fPIC \
 	$(EXTRA_CFLAGS)
 
 export LDFLAGS_BASE=\
 	$(OPTFLAGS) \
+	$(DBGFLAGS) \
 	-s MODULARIZE=1 \
 	-s LINKABLE=1 \
 	-s EXPORT_ALL=1 \
