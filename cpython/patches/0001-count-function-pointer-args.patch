@@ -1,0 +1,438 @@
+From 9737daa75b9058dbb73ff06947732ee9d750efee Mon Sep 17 00:00:00 2001
+From: Hood Chatham <roberthoodchatham@gmail.com>
+Date: Fri, 3 Dec 2021 20:55:40 -0800
+Subject: [PATCH] count function pointer args
+
+The goal of this patch is to fix up function pointer casts in `PyGetSetDef`,
+`PyMethodDef`, and `.tp_call`, with a minimal cost in stack space, code size,
+and speed. We can figure out how many arguments the function pointers actually
+need at runtime by going out to Javascript and doing:
+```
+wasmTable.get(func).length
+```
+we define the `EM_JS` function `get_fp_nargs` for this. Note that we don't know
+the full method signature, so there could still be a problem, but in practice we
+can guess what signature the function will have. If, for example, the return
+type changes, then we will be in trouble.
+
+For each `PyGetSetDef` and `PyMethodDef`, and type object, at interpreter
+startup (or when the package is first loaded) we look up how many arguments it
+takes and stow that in some convenient location. In the case of type objects,
+there is enough space in `.tp_flags` to put this info, but I elected to add a
+new field to the struct. For `PyMethodDef` I stow the information in the upper
+16 bits of `ml_flags` (which are currently unused). For `PyGetSetDef` I also add
+extra fields to store the number of arguments.
+
+When we store the number of arguments, we add 1 to it. This is intended to help
+distinguish the case where somehow the information wasn't filled at all. If the
+information wasn't filled at all, we just make the call as normal. Otherwise, we
+use the information about the number of arguments to help us modify the call
+appropriately.
+
+I am not sure whether this works with heap types, but heap types are extremely
+rare in the wild, so I think it's fine to wait and see if we run into trouble
+before adding test coverage for heap types.
+
+---
+ Include/cpython/object.h |  1 +
+ Include/descrobject.h    |  2 +
+ Include/fpcast.h         | 38 +++++++++++++++++
+ Objects/call.c           |  9 +++-
+ Objects/descrobject.c    | 88 ++++++++++++++++++++++++++++++++++------
+ Objects/methodobject.c   | 41 ++++++++++++++-----
+ Objects/typeobject.c     |  7 +++-
+ 7 files changed, 162 insertions(+), 24 deletions(-)
+ create mode 100644 Include/fpcast.h
+
+diff --git a/Include/cpython/object.h b/Include/cpython/object.h
+index 444f832f5b..8f89a7d21b 100644
+--- a/Include/cpython/object.h
++++ b/Include/cpython/object.h
+@@ -271,6 +271,7 @@ struct _typeobject {
+ 
+     destructor tp_finalize;
+     vectorcallfunc tp_vectorcall;
++    int tp_call_nargs;
+ };
+ 
+ /* The *real* layout of a type object when allocated on the heap */
+diff --git a/Include/descrobject.h b/Include/descrobject.h
+index ead269d1d2..7535b6c8ae 100644
+--- a/Include/descrobject.h
++++ b/Include/descrobject.h
+@@ -14,6 +14,8 @@ typedef struct PyGetSetDef {
+     setter set;
+     const char *doc;
+     void *closure;
++    int get_nargs;
++    int set_nargs;
+ } PyGetSetDef;
+ 
+ #ifndef Py_LIMITED_API
+diff --git a/Include/fpcast.h b/Include/fpcast.h
+new file mode 100644
+index 0000000000..d2ebb4ac81
+--- /dev/null
++++ b/Include/fpcast.h
+@@ -0,0 +1,38 @@
++#define CFUNCTION_NARGS(func) ((PyCFunction_GET_FLAGS(func) >> 16) - 1)
++#define METHOD_NARGS(func) (((((PyMethodDescrObject *)func)->d_method->ml_flags) >> 16) - 1)
++
++void
++argument_mismatch_error(void);
++
++int get_fp_nargs(PyCFunction func);
++
++typedef PyObject* (*zeroarg)(void);
++typedef PyObject* (*onearg)(PyObject*);
++typedef PyObject* (*twoarg)(PyObject*, PyObject*);
++typedef PyObject* (*threearg)(PyObject*, PyObject*, PyObject*);
++
++
++
++static inline PyObject *
++call_func(PyCFunction func, int nargs, PyObject *self, PyObject *arg1, PyObject *arg2){
++    switch(nargs){
++        case 0:
++            return ((zeroarg)func)();
++        case 1:
++            return ((onearg)func)(self);
++        case 2:
++            return ((twoarg)func)(self, arg1);
++        case 3:
++            return ((threearg)func)(self, arg1, arg2);
++        default:
++            // TODO: be more helpful?
++            argument_mismatch_error();
++    }
++}
++
++static inline
++fill_in_methoddef_nargs(PyMethodDef* ml){
++    int nargs = get_fp_nargs(ml->ml_meth);
++    ml->ml_flags |= (get_fp_nargs(ml->ml_meth) + 1) << 16;
++}
++
+diff --git a/Objects/call.c b/Objects/call.c
+index 87dc0dbbdb..9e952e6659 100644
+--- a/Objects/call.c
++++ b/Objects/call.c
+@@ -143,6 +143,8 @@ PyObject_VectorcallDict(PyObject *callable, PyObject *const *args,
+ }
+ 
+ 
++#include <fpcast.h>
++
+ PyObject *
+ _PyObject_MakeTpCall(PyThreadState *tstate, PyObject *callable,
+                      PyObject *const *args, Py_ssize_t nargs,
+@@ -188,7 +190,12 @@ _PyObject_MakeTpCall(PyThreadState *tstate, PyObject *callable,
+     PyObject *result = NULL;
+     if (_Py_EnterRecursiveCall(tstate, " while calling a Python object") == 0)
+     {
+-        result = call(callable, argstuple, kwdict);
++        int nargs = Py_TYPE(callable)->tp_call_nargs - 1;
++        if(nargs == -1){
++            result = call(callable, argstuple, kwdict);
++        } else {
++            result = call_func((PyCFunction)call, nargs, callable, argstuple, kwdict);
++        }
+         _Py_LeaveRecursiveCall(tstate);
+     }
+ 
+diff --git a/Objects/descrobject.c b/Objects/descrobject.c
+index fce9cdd309..63ef1ffa46 100644
+--- a/Objects/descrobject.c
++++ b/Objects/descrobject.c
+@@ -174,6 +174,10 @@ member_get(PyMemberDescrObject *descr, PyObject *obj, PyObject *type)
+     return PyMember_GetOne((char *)obj, descr->d_member);
+ }
+ 
++#include <fpcast.h>
++
++
++
+ static PyObject *
+ getset_get(PyGetSetDescrObject *descr, PyObject *obj, PyObject *type)
+ {
+@@ -181,8 +185,22 @@ getset_get(PyGetSetDescrObject *descr, PyObject *obj, PyObject *type)
+ 
+     if (descr_check((PyDescrObject *)descr, obj, &res))
+         return res;
+-    if (descr->d_getset->get != NULL)
+-        return descr->d_getset->get(obj, descr->d_getset->closure);
++    if (descr->d_getset->get != NULL){
++        int nargs = descr->d_getset->get_nargs - 1;
++        getter get = descr->d_getset->get;
++        switch(nargs){
++            case 0:
++                return ((zeroarg)get)();
++            case 1:
++                return ((onearg)get)(obj);
++            case 2:
++            case -1:
++                return get(obj, descr->d_getset->closure);
++            default:
++                printf("Getter defined with surprising number of arguments %d. Surprise!", nargs);
++                argument_mismatch_error();
++        }
++    }
+     PyErr_Format(PyExc_AttributeError,
+                  "attribute '%V' of '%.100s' objects is not readable",
+                  descr_name((PyDescrObject *)descr), "?",
+@@ -235,9 +253,20 @@ getset_set(PyGetSetDescrObject *descr, PyObject *obj, PyObject *value)
+ 
+     if (descr_setcheck((PyDescrObject *)descr, obj, value, &res))
+         return res;
+-    if (descr->d_getset->set != NULL)
+-        return descr->d_getset->set(obj, value,
+-                                    descr->d_getset->closure);
++    if (descr->d_getset->set != NULL){
++        int nargs = descr->d_getset->set_nargs - 1;
++        setter set = descr->d_getset->set;
++        switch(nargs){
++            case 2:
++                return (int)((twoarg)set)(obj, value);
++            case 3:
++            case -1:
++                return set(obj, value, descr->d_getset->closure);
++            default:
++                printf("Setter defined with surprising number of arguments %d. Surprise!", nargs);
++                argument_mismatch_error();    
++        }
++    }
+     PyErr_Format(PyExc_AttributeError,
+                  "attribute '%V' of '%.100s' objects is not writable",
+                  descr_name((PyDescrObject *)descr), "?",
+@@ -291,6 +320,7 @@ method_enter_call(PyThreadState *tstate, PyObject *func)
+     return (funcptr)((PyMethodDescrObject *)func)->d_method->ml_meth;
+ }
+ 
++
+ /* Now the actual vectorcall functions */
+ static PyObject *
+ method_vectorcall_VARARGS(
+@@ -310,7 +340,13 @@ method_vectorcall_VARARGS(
+         Py_DECREF(argstuple);
+         return NULL;
+     }
+-    PyObject *result = meth(args[0], argstuple);
++    int meth_nargs = METHOD_NARGS(func);
++    PyObject *result;
++    if(meth_nargs == -1){
++        result = meth(args[0], argstuple);
++    } else {
++        result = call_func(meth, meth_nargs, args[0], argstuple, NULL);
++    }
+     Py_DECREF(argstuple);
+     _Py_LeaveRecursiveCall(tstate);
+     return result;
+@@ -338,12 +374,16 @@ method_vectorcall_VARARGS_KEYWORDS(
+             goto exit;
+         }
+     }
+-    PyCFunctionWithKeywords meth = (PyCFunctionWithKeywords)
+-                                   method_enter_call(tstate, func);
++    PyCFunction meth = (PyCFunction)method_enter_call(tstate, func);
+     if (meth == NULL) {
+         goto exit;
+     }
+-    result = meth(args[0], argstuple, kwdict);
++    int meth_nargs = METHOD_NARGS(func);
++    if(meth_nargs == -1){
++        result = ((PyCFunctionWithKeywords)meth)(args[0], argstuple, kwdict);
++    } else {
++        result = call_func(meth, meth_nargs, args[0], argstuple, kwdict);
++    }
+     _Py_LeaveRecursiveCall(tstate);
+ exit:
+     Py_DECREF(argstuple);
+@@ -364,6 +404,7 @@ method_vectorcall_FASTCALL_KEYWORDS_METHOD(
+     if (meth == NULL) {
+         return NULL;
+     }
++    int meth_nargs = METHOD_NARGS(func);
+     PyObject *result = meth(args[0],
+                             ((PyMethodDescrObject *)func)->d_common.d_type,
+                             args+1, nargs-1, kwnames);
+@@ -385,6 +426,7 @@ method_vectorcall_FASTCALL(
+     if (meth == NULL) {
+         return NULL;
+     }
++    int meth_nargs = METHOD_NARGS(func);
+     PyObject *result = meth(args[0], args+1, nargs-1);
+     _Py_LeaveRecursiveCall(tstate);
+     return result;
+@@ -431,7 +473,13 @@ method_vectorcall_NOARGS(
+     if (meth == NULL) {
+         return NULL;
+     }
+-    PyObject *result = meth(args[0], NULL);
++    int meth_nargs = METHOD_NARGS(func);
++    PyObject *result;
++    if(meth_nargs == -1){
++        result = meth(args[0], NULL);
++    } else {
++        result = call_func(meth, meth_nargs, args[0], NULL, NULL);
++    }
+     _Py_LeaveRecursiveCall(tstate);
+     return result;
+ }
+@@ -459,7 +507,13 @@ method_vectorcall_O(
+     if (meth == NULL) {
+         return NULL;
+     }
+-    PyObject *result = meth(args[0], args[1]);
++    int meth_nargs = METHOD_NARGS(func);
++    PyObject *result;
++    if(meth_nargs == -1){
++        result = meth(args[0], args[1]);
++    } else {
++        result = call_func(meth, meth_nargs, args[0], args[1], NULL);
++    }
+     _Py_LeaveRecursiveCall(tstate);
+     return result;
+ }
+@@ -941,6 +995,7 @@ PyDescr_NewMethod(PyTypeObject *type, PyMethodDef *method)
+     if (descr != NULL) {
+         descr->d_method = method;
+         descr->vectorcall = vectorcall;
++        fill_in_methoddef_nargs(method);
+     }
+     return (PyObject *)descr;
+ }
+@@ -952,8 +1007,10 @@ PyDescr_NewClassMethod(PyTypeObject *type, PyMethodDef *method)
+ 
+     descr = (PyMethodDescrObject *)descr_new(&PyClassMethodDescr_Type,
+                                              type, method->ml_name);
+-    if (descr != NULL)
++    if (descr != NULL){
+         descr->d_method = method;
++        fill_in_methoddef_nargs(method);
++    }
+     return (PyObject *)descr;
+ }
+ 
+@@ -976,6 +1033,13 @@ PyDescr_NewGetSet(PyTypeObject *type, PyGetSetDef *getset)
+ 
+     descr = (PyGetSetDescrObject *)descr_new(&PyGetSetDescr_Type,
+                                              type, getset->name);
++    if(getset->get){
++        getset->get_nargs = get_fp_nargs((PyCFunction)getset->get) + 1;
++    }
++    if(getset->set){
++        getset->set_nargs = get_fp_nargs((PyCFunction)getset->set) + 1;
++    }
++
+     if (descr != NULL)
+         descr->d_getset = getset;
+     return (PyObject *)descr;
+diff --git a/Objects/methodobject.c b/Objects/methodobject.c
+index 7b430416c5..6f760e9a58 100644
+--- a/Objects/methodobject.c
++++ b/Objects/methodobject.c
+@@ -40,6 +40,16 @@ PyCFunction_NewEx(PyMethodDef *ml, PyObject *self, PyObject *module)
+     return PyCMethod_New(ml, self, module, NULL);
+ }
+ 
++#include <emscripten.h>
++#include <fpcast.h>
++EM_JS(int, get_fp_nargs, (PyCFunction func), {
++    return wasmTable.get(func).length;
++})
++
++EM_JS(void, argument_mismatch_error, (void), {
++    throw new Error("Argument mismatch error!");
++});
++
+ PyObject *
+ PyCMethod_New(PyMethodDef *ml, PyObject *self, PyObject *module, PyTypeObject *cls)
+ {
+@@ -76,6 +86,7 @@ PyCMethod_New(PyMethodDef *ml, PyObject *self, PyObject *module, PyTypeObject *c
+     }
+ 
+     PyCFunctionObject *op = NULL;
++    fill_in_methoddef_nargs(ml);
+ 
+     if (ml->ml_flags & METH_METHOD) {
+         if (!cls) {
+@@ -439,6 +450,7 @@ cfunction_vectorcall_FASTCALL_KEYWORDS(
+     if (meth == NULL) {
+         return NULL;
+     }
++
+     PyObject *result = meth(PyCFunction_GET_SELF(func), args, nargs, kwnames);
+     _Py_LeaveRecursiveCall(tstate);
+     return result;
+@@ -482,7 +494,13 @@ cfunction_vectorcall_NOARGS(
+     if (meth == NULL) {
+         return NULL;
+     }
+-    PyObject *result = meth(PyCFunction_GET_SELF(func), NULL);
++    int meth_nargs = CFUNCTION_NARGS(func);
++    PyObject *result;
++    if(meth_nargs == -1){
++        result = meth(PyCFunction_GET_SELF(func), NULL);
++    } else {
++        result = call_func(meth, meth_nargs, PyCFunction_GET_SELF(func), NULL, NULL);
++    }
+     _Py_LeaveRecursiveCall(tstate);
+     return result;
+ }
+@@ -535,16 +553,19 @@ cfunction_call(PyObject *func, PyObject *args, PyObject *kwargs)
+     PyObject *self = PyCFunction_GET_SELF(func);
+ 
+     PyObject *result;
+-    if (flags & METH_KEYWORDS) {
+-        result = (*(PyCFunctionWithKeywords)(void(*)(void))meth)(self, args, kwargs);
++    if (!(flags & METH_KEYWORDS) && kwargs != NULL && PyDict_GET_SIZE(kwargs) != 0) {
++        _PyErr_Format(tstate, PyExc_TypeError,
++                        "%.200s() takes no keyword arguments",
++                        ((PyCFunctionObject*)func)->m_ml->ml_name);
++        return NULL;
+     }
+-    else {
+-        if (kwargs != NULL && PyDict_GET_SIZE(kwargs) != 0) {
+-            _PyErr_Format(tstate, PyExc_TypeError,
+-                          "%.200s() takes no keyword arguments",
+-                          ((PyCFunctionObject*)func)->m_ml->ml_name);
+-            return NULL;
+-        }
++
++    int meth_nargs = CFUNCTION_NARGS(func);
++    if(meth_nargs != -1){
++        result = call_func(meth, meth_nargs, self, args, kwargs);
++    } else if(flags & METH_KEYWORDS){
++        result = (*(PyCFunctionWithKeywords)(void(*)(void))meth)(self, args, kwargs);
++    } else {
+         result = meth(self, args);
+     }
+     return _Py_CheckFunctionResult(tstate, func, result, NULL);
+diff --git a/Objects/typeobject.c b/Objects/typeobject.c
+index acbe3fa3b5..a808290bba 100644
+--- a/Objects/typeobject.c
++++ b/Objects/typeobject.c
+@@ -5364,6 +5364,8 @@ inherit_slots(PyTypeObject *type, PyTypeObject *base)
+ 
+ static int add_operators(PyTypeObject *);
+ 
++#include <fpcast.h>
++
+ int
+ PyType_Ready(PyTypeObject *type)
+ {
+@@ -5391,7 +5393,10 @@ PyType_Ready(PyTypeObject *type)
+         _PyObject_ASSERT((PyObject *)type, type->tp_vectorcall_offset > 0);
+         _PyObject_ASSERT((PyObject *)type, type->tp_call != NULL);
+     }
+-
++    type->tp_call_nargs = 0;
++    if(type->tp_call != NULL){
++        type->tp_call_nargs = get_fp_nargs((PyCFunction)type->tp_call) + 1;
++    }
+     type->tp_flags |= Py_TPFLAGS_READYING;
+ 
+ #ifdef Py_TRACE_REFS
+-- 
+2.25.1
+
