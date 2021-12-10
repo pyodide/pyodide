@@ -117,7 +117,7 @@ function recursiveDependencies(names) {
 async function loadDynlib(lib, shared) {
   let releaseDynlibLock = await acquireDynlibLock();
   try {
-    const module = await loadWebAssemblyModule(byteArray, {
+    const module = await Module.loadWebAssemblyModule(byteArray, {
       loadAsync: true,
       nodelete: true,
     });
