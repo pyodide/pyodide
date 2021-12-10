@@ -13,17 +13,13 @@ source:
     - patches/fix-threading.patch
 
   extras:
-    -
-      - src/browser_backend.py
+    - - src/browser_backend.py
       - lib/matplotlib/backends/browser_backend.py
-    -
-      - src/wasm_backend.py
+    - - src/wasm_backend.py
       - lib/matplotlib/backends/wasm_backend.py
-    -
-      - src/html5_canvas_backend.py
+    - - src/html5_canvas_backend.py
       - lib/matplotlib/backends/html5_canvas_backend.py
-    -
-      - src/setup.cfg
+    - - src/setup.cfg
       - ./setup.cfg
 
 build:
@@ -31,14 +27,14 @@ build:
   ldflags: -s USE_FREETYPE=1 -s USE_LIBPNG=1 -s USE_ZLIB=1
   replace-libs:
     - png16=png
-  post: |
-    wget -O $SITEPACKAGES/matplotlib/mpl-data/fonts/ttf/Humor-Sans.ttf http://antiyawn.com/uploads/Humor-Sans-1.0.ttf
-    rm -rf $SITEPACKAGES/matplotlib/backends/qt_editor
-    rm -rf $SITEPACKAGES/matplotlib/backends/web_backend
-    rm -rf $SITEPACKAGES/sphinxext
-    cp $PKGDIR/src/fontlist.json $SITEPACKAGES/matplotlib
-    mkdir -p $PKGDIR/../../build/fonts
-    cp $SITEPACKAGES/matplotlib/mpl-data/fonts/ttf/* $PKGDIR/../../build/fonts/
+  # post: |
+  #   wget -O $SITEPACKAGES/matplotlib/mpl-data/fonts/ttf/Humor-Sans.ttf http://antiyawn.com/uploads/Humor-Sans-1.0.ttf
+  #   rm -rf $SITEPACKAGES/matplotlib/backends/qt_editor
+  #   rm -rf $SITEPACKAGES/matplotlib/backends/web_backend
+  #   rm -rf $SITEPACKAGES/sphinxext
+  #   cp $PKGDIR/src/fontlist.json $SITEPACKAGES/matplotlib
+  #   mkdir -p $PKGDIR/../../build/fonts
+  #   cp $SITEPACKAGES/matplotlib/mpl-data/fonts/ttf/* $PKGDIR/../../build/fonts/
 
 requirements:
   run:
