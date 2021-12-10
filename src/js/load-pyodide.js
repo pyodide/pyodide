@@ -7,6 +7,46 @@ const IN_NODE =
   typeof process.browser ===
     "undefined"; /* This last condition checks if we run the browser shim of process */
 
+/**
+ * @param {string) url
+ * @async
+ * @private
+ */
+export let loadScript;
+if (globalThis.document) {
+  // browser
+  loadScript = async (url) => await import(/* webpackIgnore: true */ url);
+} else if (globalThis.importScripts) {
+  // webworker
+  loadScript = async (url) => {
+    // This is async only for consistency
+    globalThis.importScripts(url);
+  };
+} else if (IN_NODE) {
+  const pathPromise = import(/* webpackIgnore: true */ "path").then(
+    (M) => M.default
+  );
+  const fetchPromise = import("node-fetch").then((M) => M.default);
+  const vmPromise = import(/* webpackIgnore: true */ "vm").then(
+    (M) => M.default
+  );
+  loadScript = async (url) => {
+    if (url.includes("://")) {
+      // If it's a url, have to load it with fetch and then eval it.
+      const fetch = await fetchPromise;
+      const vm = await vmPromise;
+      vm.runInThisContext(await (await fetch(url)).text());
+    } else {
+      // Otherwise, hopefully it is a relative path we can load from the file
+      // system.
+      const path = await pathPromise;
+      await import(path.resolve(url));
+    }
+  };
+} else {
+  throw new Error("Cannot determine runtime environment");
+}
+
 /** @typedef {import('./pyproxy.js').PyProxy} PyProxy */
 /** @private */
 let baseURL;
@@ -52,7 +92,7 @@ function addPackageToLoad(name, toLoad, toLoadShared) {
   if (!pkg_info) {
     throw new Error("Oops?");
   }
-  if (pkg.shared_library) {
+  if (pkg_info.shared_library) {
     toLoadShared.add(name);
   } else {
     toLoad.add(name);
@@ -71,14 +111,53 @@ function recursiveDependencies(names) {
   return [toLoad, toLoadShared];
 }
 
+async function loadDynlib(lib, shared) {
+  let releaseDynlibLock = await acquireDynlibLock();
+  try {
+    const module = await loadWebAssemblyModule(byteArray, {
+      loadAsync: true,
+      nodelete: true,
+    });
+    Module.preloadedWasm[lib] = module;
+    if (shared) {
+      Module.loadDynamicLibrary(lib, {
+        global: true,
+        nodelete: true,
+      });
+    }
+  } finally {
+    releaseDynlibLock();
+  }
+}
+
+// This is a promise that is resolved iff there are no pending package loads. It
+// never fails.
+let _dynlibLock = Promise.resolve();
+
+/**
+ * An async lock for package loading. Prevents race conditions in loadPackage.
+ * @returns A zero argument function that releases the lock.
+ * @private
+ */
+async function acquireDynlibLock() {
+  let old_lock = _dynlibLock;
+  let releaseLock;
+  _dynlibLock = new Promise((resolve) => (releaseLock = resolve));
+  await old_lock;
+  return releaseLock;
+}
+
 async function _loadPackage(pkg) {
   const coroutine = Module.package_loader.load_package(
     `${baseURL}${pkg.file_name}`,
-    pkg.name,
-    pkg.shared_library
+    pkg.name
   );
   try {
-    await coroutine;
+    let dynlibs = await coroutine;
+    for (let dynlib of dynlibs) {
+      await loadDynlib(dynlib, pkg.shared_library);
+    }
+    loadedPackages[pkg.name] = pkg;
   } finally {
     coroutine.destroy();
   }
@@ -102,6 +181,8 @@ async function _loadPackage(pkg) {
  * @async
  */
 export async function loadPackage(names, messageCallback, errorCallback) {
+  messageCallback = messageCallback || console.log;
+  errorCallback = errorCallback || console.error;
   if (Module.isPyProxy(names)) {
     names = names.toJs();
   }
@@ -143,42 +224,8 @@ export async function loadPackage(names, messageCallback, errorCallback) {
     // see the new files.
     Module.importlib.invalidate_caches();
   } finally {
-    restoreOrigWasmPlugin();
     releaseLock();
   }
-}
-
-Module.loadDynlib = async function (lib, shared) {
-  let releaseDynlibLock = await acquireDynlibLock();
-  try {
-    const module = await loadWebAssemblyModule(byteArray, {
-      loadAsync: true,
-      nodelete: true,
-    });
-    if (shared) {
-      // await
-    }
-    Module.preloadedWasm[lib] = module;
-  } finally {
-    releaseDynlibLock();
-  }
-};
-
-// This is a promise that is resolved iff there are no pending package loads. It
-// never fails.
-let _dynlibLock = Promise.resolve();
-
-/**
- * An async lock for package loading. Prevents race conditions in loadPackage.
- * @returns A zero argument function that releases the lock.
- * @private
- */
-async function acquireDynlibLock() {
-  let old_lock = _dynlibLock;
-  let releaseLock;
-  _dynlibLock = new Promise((resolve) => (releaseLock = resolve));
-  await old_lock;
-  return releaseLock;
 }
 
 // This is a promise that is resolved iff there are no pending package loads. It

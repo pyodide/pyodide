@@ -55,7 +55,7 @@ class StdLibPackage(BasePackage):
         self.dependencies = []
         self.unbuilt_dependencies = set()
         self.dependents = set()
-        self.file_name = self.name + ".js"
+        self.file_name = self.name + ".tar"
 
     def build(self, outputdir: Path, args) -> None:
         # All build / packaging steps are already done in the main Makefile
