@@ -271,7 +271,7 @@ export async function loadPyodide(config) {
 
   await packageIndexReady;
   if (config.fullStdLib) {
-    // await loadPackage(["distutils"]);
+    await loadPackage(["distutils"]);
   }
   pyodide.runPython("print('Python initialization complete')");
   return pyodide;
