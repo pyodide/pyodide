@@ -25,7 +25,9 @@ def get_format(format):
     raise ValueError(f"Unrecognized format {format}")
 
 
-def unpack_buffer_archive(buf, format, extract_dir="."):
-    with NamedTemporaryFile() as f:
+def unpack_buffer_archive(buf, *, filename="", format=None, extract_dir="."):
+    if format:
+        format = get_format(format)
+    with NamedTemporaryFile(suffix=filename) as f:
         buf._into_file(f)
-        shutil.unpack_archive(f.name, extract_dir, get_format(format))
+        shutil.unpack_archive(f.name, extract_dir, format)

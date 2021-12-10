@@ -332,7 +332,10 @@ export function unpackArchive(buffer, format, extract_dir) {
   if (!Module._util_module) {
     Module._util_module = pyimport("pyodide._util");
   }
-  Module._util_module.unpack_buffer_archive(buffer, format, extract_dir);
+  Module._util_module.unpack_buffer_archive.callKwargs(buffer, {
+    format,
+    extract_dir,
+  });
 }
 
 /**
