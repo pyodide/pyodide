@@ -10,6 +10,8 @@ source:
 
 build:
   ldflags: -L$(PYODIDE_ROOT)/packages/glpk/build/glpk-4.65/src/.libs/
+  patches:
+    - patches/0001-Respect-skip-build-flag.patch
 
 requirements:
   run:
