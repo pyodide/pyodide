@@ -1,7 +1,6 @@
 from pathlib import Path
 from typing import Dict, Any, List, Optional
 
-
 # TODO: support more complex types for validation
 
 PACKAGE_CONFIG_SPEC: Dict[str, Dict[str, Any]] = {
@@ -29,6 +28,7 @@ PACKAGE_CONFIG_SPEC: Dict[str, Dict[str, Any]] = {
         "post": str,
         "replace-libs": list,
         "unvendor-tests": bool,
+        "skip_build": bool,
     },
     "requirements": {
         "run": list,  # List[str],

@@ -30,7 +30,7 @@ build:
   post: |
     cd dist
     python -m wheel unpack matplotlib-3.3.3-cp39-cp39-emscripten_wasm32.whl
-    cd matplotlib3.3
+    cd matplotlib-3.3.3
     wget -O matplotlib/mpl-data/fonts/ttf/Humor-Sans.ttf http://antiyawn.com/uploads/Humor-Sans-1.0.ttf
     rm -rf matplotlib/backends/qt_editor
     rm -rf matplotlib/backends/web_backend

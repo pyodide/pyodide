@@ -23,6 +23,16 @@ from . import common
 from .io import parse_package_config
 
 
+def make_whlfile(*args, owner=None, group=None, **kwargs):
+    return shutil._make_zipfile(*args, **kwargs)  # type: ignore
+
+
+shutil.register_archive_format("whl", make_whlfile, description="Wheel file")
+shutil.register_unpack_format(
+    "whl", [".whl", ".wheel"], shutil._unpack_zipfile, description="Wheel file"  # type: ignore
+)
+
+
 class BashRunnerWithSharedEnvironment:
     """Run multiple bash scripts with persisent environment.
 
@@ -147,11 +157,11 @@ def download_and_extract(
             ".tar.xz",
             ".txz",
             ".zip",
+            ".whl",
         ]:
             if tarballname.endswith(extension):
                 tarballname = tarballname[: -len(extension)]
                 break
-
         return buildpath / pkg["source"].get("extract_dir", tarballname)
 
     elif "path" in pkg["source"]:
@@ -314,7 +324,7 @@ def run_script(buildpath: Path, srcpath: Path, pkg: Dict[str, Any], bash_runner)
         os.chdir(orig_path)
 
     # If library, we're done so create .packaged file
-    if pkg["build"].get("library"):
+    if pkg["build"].get("library") or pkg["build"].get("skip_build"):
         with open(buildpath / ".packaged", "wb") as fd:
             fd.write(b"\n")
 
@@ -367,6 +377,8 @@ def build_package(path: Path, args):
         patch(path, srcpath, pkg, args)
         if pkg.get("build", {}).get("script"):
             run_script(buildpath, srcpath, pkg, bash_runner)
+        if pkg.get("build", {}).get("skip_build"):
+            return
         if not pkg.get("build", {}).get("library", False):
             # shared libraries get built by the script and put into install
             # subfolder, then packaged into a pyodide module
