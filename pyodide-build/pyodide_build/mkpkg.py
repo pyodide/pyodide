@@ -30,7 +30,9 @@ def _extract_sdist(pypi_metadata: Dict[str, Any]) -> Dict:
 
     # The first one we can use. Usually a .tar.gz
     for entry in pypi_metadata["urls"]:
-        if entry["filename"].endswith(sdist_extensions):
+        if entry["packagetype"] == "sdist" and entry["filename"].endswith(
+            sdist_extensions
+        ):
             return entry
 
     raise MkpkgFailedException(
