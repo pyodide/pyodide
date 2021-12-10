@@ -112,28 +112,6 @@ Module.runPythonInternal = function (code) {
 };
 
 /**
- * The JavaScript/Wasm call stack is too small to handle the default Python call
- * stack limit of 1000 frames. We determine the JavaScript call stack depth
- * available, and then guess a value for the Python recursion depth based on the
- * depth of the JavaScript call stack.
- *
- * @private
- */
-function calculateRecursionLimit() {
-  let depth = 0;
-  function recurse() {
-    depth += 1;
-    recurse();
-  }
-  try {
-    recurse();
-  } catch (err) {}
-
-  const recursionLimit = Math.floor(Math.min(depth / 25, 500));
-  return recursionLimit;
-}
-
-/**
  * @private
  * A proxy around globals that falls back to checking for a builtin if has or
  * get fails to find a global with the given key. Note that this proxy is
