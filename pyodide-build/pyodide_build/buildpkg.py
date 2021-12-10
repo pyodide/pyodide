@@ -385,6 +385,8 @@ def build_package(path: Path, args):
             # i.e. they need package running, but not compile
             if not pkg.get("build", {}).get("sharedlibrary"):
                 compile(path, srcpath, pkg, args, bash_runner)
+                with open(buildpath / ".packaged", "wb") as fd:
+                    fd.write(b"\n")
     finally:
         bash_runner.close()
         os.chdir(orig_path)
