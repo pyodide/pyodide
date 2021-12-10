@@ -10,4 +10,4 @@ SITE_PACKAGES = pathlib.Path(getsitepackages()[0])
 async def load_package(url, name):
     resp = await pyfetch(url)
     await resp.unpack_archive(extract_dir=SITE_PACKAGES)
-    return to_js(list((SITE_PACKAGES / name).glob("**/*.so")))
+    return to_js([str(x) for x in (SITE_PACKAGES / name).glob("**/*.so")])
