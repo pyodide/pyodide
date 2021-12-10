@@ -85,6 +85,9 @@ export async function initializePackageIndex(indexURL) {
 
 function addPackageToLoad(name, toLoad, toLoadShared) {
   name = name.toLowerCase();
+  if (name in loadedPackages) {
+    return;
+  }
   if (toLoad.has(name)) {
     return;
   }
@@ -223,6 +226,9 @@ export async function loadPackage(names, messageCallback, errorCallback) {
     // We have to invalidate Python's import caches, or it won't
     // see the new files.
     Module.importlib.invalidate_caches();
+    for (let pkg of toLoad) {
+      loadedPackages[pkg] = "pyodide";
+    }
   } finally {
     releaseLock();
   }
