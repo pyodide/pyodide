@@ -42,6 +42,9 @@ class BasePackage:
     def __eq__(self, other) -> bool:
         return len(self.dependents) == len(other.dependents)
 
+    def __repr__(self) -> str:
+        return f"{type(self).__name__}({self.name})"
+
 
 @total_ordering
 class StdLibPackage(BasePackage):
