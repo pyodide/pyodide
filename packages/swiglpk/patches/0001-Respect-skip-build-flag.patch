@@ -16,7 +16,7 @@ index fbf76a1..fa9e7a6 100644
      class CustomBdistWheel(bdist_wheel):
          def run(self):
 -            self.run_command('build_ext')
-+            if self.skip_build:
++            if not self.skip_build:
 +                self.run_command('build_ext')
              bdist_wheel.run(self)
  
