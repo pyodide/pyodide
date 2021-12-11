@@ -13,6 +13,8 @@ def test_parse_package_subset():
         "micropip",
         "numpy",
         "pandas",
+        "test",
+        "distutils",
     }
 
     # duplicates are removed
@@ -21,6 +23,8 @@ def test_parse_package_subset():
         "packaging",
         "micropip",
         "numpy",
+        "test",
+        "distutils",
     }
 
     # no empty package name included, spaces are handled
@@ -28,6 +32,8 @@ def test_parse_package_subset():
         "pyparsing",
         "packaging",
         "micropip",
+        "test",
+        "distutils",
         "x",
         "a",
         "b",
@@ -43,6 +49,8 @@ def test_parse_package_subset():
         "micropip",
         "regex",
         "fpcast-test",
+        "test",
+        "distutils",
     }
     # by default core packages are built
     assert _parse_package_subset(None) == _parse_package_subset("core")
@@ -62,6 +70,8 @@ def test_parse_package_subset():
         "scikit-learn",
         "joblib",
         "pytest",
+        "test",
+        "distutils",
     }
     # reserved key words can be combined with other packages
     assert _parse_package_subset("core, unknown") == _parse_package_subset("core") | {

@@ -33,7 +33,6 @@ def test_generate_packages_json():
     assert set(package_data.keys()) == {"info", "packages"}
     assert package_data["info"] == {"arch": "wasm32", "platform": "Emscripten-1.0"}
     assert set(package_data["packages"]) == {
-        "test",
         "distutils",
         "pyparsing",
         "packaging",
