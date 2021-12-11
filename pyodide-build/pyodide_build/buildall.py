@@ -180,6 +180,7 @@ def generate_dependency_graph(
         packages.update(
             str(x) for x in packages_dir.iterdir() if (x / "meta.yaml").is_file()
         )
+        packages.update(UNVENDORED_STDLIB_MODULES)
 
     no_numpy_dependents = "no-numpy-dependents" in packages
     if no_numpy_dependents:
@@ -309,20 +310,14 @@ def generate_packages_json(pkg_map: Dict[str, BasePackage]) -> Dict:
 
     libraries = [pkg.name for pkg in pkg_map.values() if pkg.library]
 
-    # unvendored stdlib modules
-    for name in UNVENDORED_STDLIB_MODULES:
-        pkg_entry: Dict[str, Any] = {
-            "name": name,
-            "version": "1.0",
-            "depends": [],
-            "imports": [name],
-        }
-        package_data["packages"][name.lower()] = pkg_entry
-
     for name, pkg in pkg_map.items():
         if not pkg.file_name:
             continue
-        pkg_entry = {"name": name, "version": pkg.version, "file_name": pkg.file_name}
+        pkg_entry: Any = {
+            "name": name,
+            "version": pkg.version,
+            "file_name": pkg.file_name,
+        }
         if pkg.shared_library:
             pkg_entry["shared_library"] = True
         pkg_entry["depends"] = [
@@ -361,6 +356,11 @@ def build_packages(packages_dir: Path, outputdir: Path, args) -> None:
     pkg_map = generate_dependency_graph(packages_dir, packages)
 
     build_from_graph(pkg_map, outputdir, args)
+    for name, pkg in pkg_map.items():
+        if not pkg.file_name:
+            d = list(outputdir.glob(f"{name}*"))
+            if d:
+                pkg.file_name = d[0].name
 
     package_data = generate_packages_json(pkg_map)
 
