@@ -369,6 +369,7 @@ def build_packages(packages_dir: Path, outputdir: Path, args) -> None:
 
     with open(outputdir / "packages.json", "w") as fd:
         json.dump(package_data, fd)
+        fd.write("\n")
 
 
 def make_parser(parser):
