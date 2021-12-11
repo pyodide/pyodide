@@ -1,0 +1,24 @@
+From 3829db219e35de68668bb631d725ce4f753f3b33 Mon Sep 17 00:00:00 2001
+From: Hood Chatham <roberthoodchatham@gmail.com>
+Date: Fri, 10 Dec 2021 11:27:59 -0800
+Subject: [PATCH] Force mne to accept old scipy
+
+---
+ requirements.txt | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/requirements.txt b/requirements.txt
+index af5d063e2..adcec3348 100644
+--- a/requirements.txt
++++ b/requirements.txt
+@@ -1,6 +1,6 @@
+ # requirements for full MNE-Python functionality (other than raw/epochs export)
+ numpy>=1.15.4
+-scipy>=1.1.0
++scipy>=0.17.1
+ matplotlib
+ pyqt5>=5.10,<5.14; platform_system == "Darwin"
+ pyqt5>=5.10,!=5.15.2,!=5.15.3; platform_system == "Linux"
+-- 
+2.25.1
+
