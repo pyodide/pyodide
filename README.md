@@ -14,17 +14,16 @@ to the browser.
 
 ## What is Pyodide?
 
-Pyodide is a port of Python to WebAssembly/[Emscripten](https://emscripten.org/)
-for use in the browser or in node.
+Pyodide is a port of CPython to WebAssembly/[Emscripten](https://emscripten.org/)
+for use in the browser or in Node.js.
 
-We also port over 80 common Python extensions written in C, C++, and fortran.
-Supported packages range from pyyaml and lxml, which use C extension to do fast
-yaml and xml processing, to standard scientific computing packages like numpy,
-pandas, scipy, and matplotlib. It is also possible to use pure Python wheels
-from PyPI.
+Pyodide allows to install Python packages in the browser with [micropip](https://pyodide.org/en/stable/usage/api/micropip-api.html),
+ - pure Python packages can be installed as wheels from PyPi
+ - many [common packages](https://github.com/pyodide/pyodide/tree/main/packages) with C extensions are built as part of Pyodide. These range from general-purpose packages such as regex, pyyaml, lxml to 
+ scientific Python packages including numpy, pandas, scipy, matplotlib, and scikit-learn.
 
-Pyodide comes with a robust Javascript <==> Python foreign function interface so
-that you can freely mix these two languages in your code with absolutely minimal
+Pyodide comes with a robust Javascript 🡘 Python foreign function interface so
+that you can freely mix these two languages in your code with minimal
 friction. This includes full support for error handling (throw an error in one
 language, catch it in the other), async/await, and much more.
 
