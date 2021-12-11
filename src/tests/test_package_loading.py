@@ -1,5 +1,7 @@
 import pytest
 
+from conftest import JavascriptException
+
 
 @pytest.mark.parametrize(
     "packages", [["pyparsing", "pytz"], ["pyparsing", "packaging"]], ids="-".join
@@ -12,8 +14,7 @@ def test_load_packages_multiple(selenium_standalone, packages):
     # The log must show that each package is loaded exactly once,
     # including when one package is a dependency of the other
     # ('pyparsing' and 'packaging')
-    assert selenium.logs.count(f"Loading {packages[0]} from") == 1
-    assert selenium.logs.count(f"Loading {packages[1]} from") == 1
+    assert selenium.logs.count(f"Loaded {packages[0]}, {packages[1]}") == 1
 
 
 @pytest.mark.parametrize(
@@ -28,21 +29,22 @@ def test_load_packages_sequential(selenium_standalone, packages):
     # The log must show that each package is loaded exactly once,
     # including when one package is a dependency of the other
     # ('pyparsing' and 'matplotlib')
-    assert selenium.logs.count(f"Loading {packages[0]} from") == 1
-    assert selenium.logs.count(f"Loading {packages[1]} from") == 1
+    assert selenium.logs.count(f"Loaded {packages[0]}") == 1
+    assert selenium.logs.count(f"Loaded {packages[1]}") == 1
 
 
 def test_load_handle_failure(selenium_standalone):
     selenium = selenium_standalone
     selenium.load_package("pytz")
     selenium.run("import pytz")
-    selenium.load_package("pytz2")
+    with pytest.raises(JavascriptException, match="No known package with name pytz2"):
+        selenium.load_package("pytz2")
     selenium.load_package("pyparsing")
-    assert "Loading pytz" in selenium.logs
-    assert "Skipping unknown package 'pytz2'" in selenium.logs
-    assert "Loading pyparsing" in selenium.logs
+    assert "Loaded pytz" in selenium.logs
+    assert "Loaded pyparsing" in selenium.logs
 
 
+@pytest.mark.skip_refcount_check
 def test_load_failure_retry(selenium_standalone):
     """Check that a package can be loaded after failing to load previously"""
     selenium = selenium_standalone
@@ -58,13 +60,11 @@ def test_load_failure_retry(selenium_standalone):
         package_loader.load_package = bad_load_package
         """
     )
-    selenium.load_package("pytz")
-    assert (
-        selenium.logs.count(
-            "OSError: Request for ./pytz-2021.1-py3-none-any.whlgarbage failed with status 404: File not found"
-        )
-        == 1
-    )
+    with pytest.raises(
+        JavascriptException,
+        match="OSError: Request for ./pytz-2021.1-py3-none-any.whlgarbage failed with status 404: File not found",
+    ):
+        selenium.load_package("pytz")
     assert selenium.run_js("return Object.keys(pyodide.loadedPackages)") == []
     selenium.run("package_loader.load_package = orig_load_package")
 
@@ -91,7 +91,7 @@ def test_js_load_package_from_python(selenium_standalone):
         `);
         """
     )
-    assert f"Loading {to_load[0]}" in selenium.logs
+    assert f"Loaded {to_load[0]}" in selenium.logs
     assert selenium.run_js("return Object.keys(pyodide.loadedPackages)") == to_load
 
 
