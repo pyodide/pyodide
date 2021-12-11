@@ -17,10 +17,10 @@ to the browser.
 Pyodide is a port of Python to WebAssembly/[Emscripten](https://emscripten.org/)
 for use in the browser or in node.
 
-We also port many common Python extensions written in C, C++, and fortran.
+We also port over 80 common Python extensions written in C, C++, and fortran.
 Supported packages range from pyyaml and lxml, which use C extension to do fast
 yaml and xml processing, to standard scientific computing packages like numpy,
-pandas, scipy, and matplotlib. It is also possible to install pure Python wheels
+pandas, scipy, and matplotlib. It is also possible to use pure Python wheels
 from PyPI.
 
 Pyodide comes with a robust Javascript <==> Python foreign function interface so
