@@ -46,6 +46,8 @@ be improved.
 
 See issues {issue}`1470` and {issue}`1100`.
 
+## Streamline workflow for bundling a project with Pyodide
+
 ## Update SciPy to a more recent version
 
 SciPy is a cornerstone of scientific computing in Python. It's a challenging

@@ -114,23 +114,27 @@ function recursiveDependencies(names) {
   return [toLoad, toLoadShared];
 }
 
-async function loadDynlib(lib, shared) {
-  const byteArray = Module.FS.lookupPath(lib).node.contents;
-  const releaseDynlibLock = await acquireDynlibLock();
+async function downloadPkgBuffer(name) {
+  const pkg = Module.packages[name];
+  const file_name = pkg.file_name;
+  const resp = await fetch(`${baseURL}${file_name}`);
+  const buffer = await resp.arrayBuffer();
+  return buffer;
+}
+
+async function unpackBuffer(name, buffer) {
+  const pkg = Module.packages[name];
+  const file_name = pkg.file_name;
+  Module.package_loader.unpack_buffer(buffer, file_name);
+  const coroutine = Module.package_loader.get_dynlibs(name);
   try {
-    const module = await Module.loadWebAssemblyModule(byteArray, {
-      loadAsync: true,
-      nodelete: true,
-    });
-    Module.preloadedWasm[lib] = module;
-    if (shared) {
-      Module.loadDynamicLibrary(lib, {
-        global: true,
-        nodelete: true,
-      });
+    let dynlibs = await coroutine;
+    for (let dynlib of dynlibs) {
+      await loadDynlib(dynlib, pkg.shared_library);
     }
+    loadedPackages[name] = pkg;
   } finally {
-    releaseDynlibLock();
+    coroutine.destroy();
   }
 }
 
@@ -151,19 +155,23 @@ async function acquireDynlibLock() {
   return releaseLock;
 }
 
-async function _loadPackage(pkg) {
-  const coroutine = Module.package_loader.load_package(
-    `${baseURL}${pkg.file_name}`,
-    pkg.name
-  );
+async function loadDynlib(lib, shared) {
+  const byteArray = Module.FS.lookupPath(lib).node.contents;
+  const releaseDynlibLock = await acquireDynlibLock();
   try {
-    let dynlibs = await coroutine;
-    for (let dynlib of dynlibs) {
-      await loadDynlib(dynlib, pkg.shared_library);
+    const module = await Module.loadWebAssemblyModule(byteArray, {
+      loadAsync: true,
+      nodelete: true,
+    });
+    Module.preloadedWasm[lib] = module;
+    if (shared) {
+      Module.loadDynamicLibrary(lib, {
+        global: true,
+        nodelete: true,
+      });
     }
-    loadedPackages[pkg.name] = pkg;
   } finally {
-    coroutine.destroy();
+    releaseDynlibLock();
   }
 }
 
@@ -194,7 +202,7 @@ export async function loadPackage(names, messageCallback, errorCallback) {
     names = [names];
   }
 
-  let [toLoad, toLoadShared] = recursiveDependencies(
+  const [toLoad, toLoadShared] = recursiveDependencies(
     names,
     messageCallback,
     errorCallback
@@ -204,22 +212,37 @@ export async function loadPackage(names, messageCallback, errorCallback) {
     return;
   }
 
-  let packageNames = [...toLoad.keys(), ...toLoadShared.keys()].join(", ");
-  let releaseLock = await acquirePackageLock();
+  const packageNames = [...toLoad.keys(), ...toLoadShared.keys()].join(", ");
+  const releaseLock = await acquirePackageLock();
   try {
     messageCallback(`Loading ${packageNames}`);
-    let sharedLibraryPromises = [];
-    for (let name of toLoadShared) {
-      sharedLibraryPromises.push(_loadPackage(Module.packages[name]));
+    `${baseURL}${pkg.file_name}`;
+    const sharedLibraryPromises = {};
+    const packagePromises = {};
+    for (const name of toLoadShared) {
+      sharedLibraryPromises[name] = downloadPkgBuffer(name);
+    }
+    for (const name of toLoad) {
+      packagePromises[name] = downloadPkgBuffer(name);
     }
 
-    await Promise.all(sharedLibraryPromises);
+    // TODO: At some point add support for prefetching modules by awaiting on a
+    // promise right here which resolves in loadPyodide when the bootstrap is done.
 
-    let packagePromises = [];
-    for (let name of toLoad) {
-      packagePromises.push(_loadPackage(Module.packages[name]));
+    for (const name of toLoadShared) {
+      sharedLibraryPromises[name] = sharedLibraryPromises[name].then((buffer) =>
+        unpackBuffer(name, buffer)
+      );
     }
-    await Promise.all(packagePromises);
+
+    await Promise.all(Object.values(sharedLibraryPromises));
+
+    for (const name of toLoadShared) {
+      packagePromises[name] = packagePromises[name].then((buffer) =>
+        unpackBuffer(name, buffer)
+      );
+    }
+    await Promise.all(Object.values(packagePromises));
 
     Module.reportUndefinedSymbols();
     messageCallback(`Loaded ${packageNames}`);
