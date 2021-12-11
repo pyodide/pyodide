@@ -115,7 +115,7 @@ function recursiveDependencies(names) {
 }
 
 async function loadDynlib(lib, shared) {
-  const byteArray = pyodide.FS.lookupPath(lib).node.contents;
+  const byteArray = Module.FS.lookupPath(lib).node.contents;
   const releaseDynlibLock = await acquireDynlibLock();
   try {
     const module = await Module.loadWebAssemblyModule(byteArray, {
