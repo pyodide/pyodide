@@ -182,7 +182,6 @@ def generate_dependency_graph(
         packages.update(
             str(x) for x in packages_dir.iterdir() if (x / "meta.yaml").is_file()
         )
-        packages.update(UNVENDORED_STDLIB_MODULES)
 
     no_numpy_dependents = "no-numpy-dependents" in packages
     if no_numpy_dependents:
