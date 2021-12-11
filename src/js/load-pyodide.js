@@ -93,7 +93,7 @@ function addPackageToLoad(name, toLoad, toLoadShared) {
   }
   let pkg_info = Module.packages[name];
   if (!pkg_info) {
-    throw new Error("Oops?");
+    throw new Error(`No known package with name ${name}`);
   }
   if (pkg_info.shared_library) {
     toLoadShared.add(name);

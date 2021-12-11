@@ -202,6 +202,20 @@ def patch(path: Path, srcpath: Path, pkg: Dict[str, Any], args):
         fd.write(b"\n")
 
 
+def unpack_wheel(path):
+    cwd = Path.cwd()
+    os.chdir(path.parent)
+    subprocess.run([sys.executable, "-m", "wheel", "unpack", path.name], check=True)
+    os.chdir(cwd)
+
+
+def pack_wheel(path):
+    cwd = Path.cwd()
+    os.chdir(path.parent)
+    subprocess.run([sys.executable, "-m", "wheel", "pack", path.name], check=True)
+    os.chdir(cwd)
+
+
 def compile(path: Path, srcpath: Path, pkg: Dict[str, Any], args, bash_runner):
     if (srcpath / ".built").is_file():
         return
@@ -236,6 +250,12 @@ def compile(path: Path, srcpath: Path, pkg: Dict[str, Any], args, bash_runner):
         )
     finally:
         os.chdir(orig_dir)
+    pkgdir = path.parent.resolve()
+    distdir = pkgdir / "dist"
+    wheel_path = next(distdir.glob("*.whl"))
+    print(wheel_path)
+    unpack_wheel(wheel_path)
+    wheel_dir = next(p for p in distdir.glob("*") if p.is_dir())
 
     post = pkg.get("build", {}).get("post")
     if post is not None:
@@ -248,12 +268,18 @@ def compile(path: Path, srcpath: Path, pkg: Dict[str, Any], args, bash_runner):
                 os.environ.get("PYMINOR", "9"),
             ]
         )
-        site_packages_dir = srcpath / "install" / "lib" / pyfolder / "site-packages"
-        pkgdir = path.parent.resolve()
-        bash_runner.env.update(
-            {"SITEPACKAGES": str(site_packages_dir), "PKGDIR": str(pkgdir)}
-        )
+
+        bash_runner.env.update({"PKGDIR": str(pkgdir)})
         bash_runner.run(post, check=True)
+
+    test_dir = distdir / "tests"
+    nmoved = unvendor_tests(wheel_dir, test_dir)
+    name = pkg["package"]["name"]
+    if nmoved:
+        os.chdir(distdir)
+        shutil.make_archive(f"{name}-tests", "tar", test_dir)
+        os.chdir(orig_dir)
+    pack_wheel(wheel_dir)
 
     with open(srcpath / ".built", "wb") as fd:
         fd.write(b"\n")
@@ -304,7 +330,6 @@ def unvendor_tests(install_prefix: Path, test_install_prefix: Path) -> int:
                     test_install_prefix / root_rel / fpath,
                 )
                 n_moved += 1
-
     return n_moved
 
 

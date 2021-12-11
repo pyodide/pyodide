@@ -31,7 +31,7 @@ class BasePackage:
     dependencies: List[str]
     unbuilt_dependencies: Set[str]
     dependents: Set[str]
-    unvendored_tests: Optional[bool] = None
+    unvendored_tests: Optional[Path] = None
     file_name: Optional[str] = None
 
     # We use this in the priority queue, which pops off the smallest element.
@@ -148,6 +148,8 @@ class Package(BasePackage):
             for file in (self.pkgdir / "dist").glob("*.whl"):
                 shutil.copy(file, outputdir)
                 self.file_name = file.name
+            for file in (self.pkgdir / "dist").glob("*-tests.tar"):
+                shutil.copy(file, outputdir)
 
 
 def generate_dependency_graph(
@@ -290,9 +292,10 @@ def build_from_graph(pkg_map: Dict[str, BasePackage], outputdir: Path, args) -> 
             if len(dependent.unbuilt_dependencies) == 0:
                 build_queue.put((job_priority(dependent), dependent))
 
-    for name in list(pkg_map):
-        if (outputdir / (name + "-tests.js")).exists():
-            pkg_map[name].unvendored_tests = True
+    for name, pkg in pkg_map.items():
+        tests_path = pkg.pkgdir / f"dist/{name}-tests.tar"
+        if tests_path.exists():
+            pkg.unvendored_tests = tests_path
 
     print(
         "\n===================================================\n"
@@ -336,6 +339,7 @@ def generate_packages_json(pkg_map: Dict[str, BasePackage]) -> Dict:
                 "version": pkg.version,
                 "depends": [name.lower()],
                 "imports": [],
+                "file_name": pkg.unvendored_tests.name,
             }
             package_data["packages"][name.lower() + "-tests"] = pkg_entry
 
