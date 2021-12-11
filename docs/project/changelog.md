@@ -139,6 +139,13 @@ substitutions:
   feature, is now unvendored.
   {pr}`1883`
 
+- {{Fix}} pillow and imageio now correctly encodes/decodes grayscale and
+  black-and-white JPEG image format.
+  {pr}`2028`
+
+- {{Fix}} numpy fft module now works correctly.
+  {pr}`2028`
+
 - New packages: `logbook`
 
 ### Uncategorized
@@ -198,7 +205,7 @@ substitutions:
 
 ### Packages
 
-- {{Fix}} pillow now correctly encodes/decodes JPEG image format. {pr}`1818`
+- {{Fix}} pillow now correctly encodes/decodes RGB JPEG image format. {pr}`1818`
 
 ### Micellaneous
 
