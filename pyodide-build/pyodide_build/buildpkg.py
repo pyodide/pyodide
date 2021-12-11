@@ -284,7 +284,7 @@ def compile(path: Path, srcpath: Path, pkg: Dict[str, Any], args, bash_runner):
     # Important to get rid of it!
     # Question: Could we make pytest not look in build and dist directories?
     shutil.rmtree(wheel_dir)
-    shutil.rmtree(test_dir)
+    shutil.rmtree(test_dir, True)
 
     with open(srcpath / ".built", "wb") as fd:
         fd.write(b"\n")
