@@ -61,7 +61,7 @@ def test_multiprocessing(selenium):
     assert isinstance(res, int)
     assert res > 0
 
-    msg = "Resource temporarily unavailable"
+    msg = "Function not implemented"
     with pytest.raises(selenium.JavascriptException, match=msg):
         selenium.run(
             """
