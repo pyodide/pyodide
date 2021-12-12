@@ -73,7 +73,7 @@ def pytest_collection_modifyitems(config, items):
 
 
 def _package_is_built(package_name: str) -> bool:
-    return (BUILD_PATH / f"{package_name}.data").exists()
+    return not not list(BUILD_PATH.glob(f"{package_name}*"))
 
 
 class JavascriptException(Exception):
