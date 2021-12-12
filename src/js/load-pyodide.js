@@ -125,7 +125,7 @@ async function downloadPkgBuffer(name) {
 async function unpackBuffer(name, buffer) {
   const pkg = Module.packages[name];
   const file_name = pkg.file_name;
-  Module.package_loader.unpack_buffer(buffer, file_name);
+  Module.package_loader.unpack_buffer(file_name, buffer);
   const coroutine = Module.package_loader.get_dynlibs(name);
   try {
     let dynlibs = await coroutine;
@@ -236,7 +236,7 @@ export async function loadPackage(names, messageCallback, errorCallback) {
 
     await Promise.all(Object.values(sharedLibraryPromises));
 
-    for (const name of toLoadShared) {
+    for (const name of toLoad) {
       packagePromises[name] = packagePromises[name].then((buffer) =>
         unpackBuffer(name, buffer)
       );
