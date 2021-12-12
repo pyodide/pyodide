@@ -216,7 +216,6 @@ export async function loadPackage(names, messageCallback, errorCallback) {
   const releaseLock = await acquirePackageLock();
   try {
     messageCallback(`Loading ${packageNames}`);
-    `${baseURL}${pkg.file_name}`;
     const sharedLibraryPromises = {};
     const packagePromises = {};
     for (const name of toLoadShared) {
