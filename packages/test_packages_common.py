@@ -31,9 +31,9 @@ def built_packages() -> List[str]:
     registered_packages_ = registered_packages()
     packages = []
     for fpath in os.listdir(BUILD_DIR):
-        if not fpath.endswith(".data"):
+        if not fpath.endswith(".whl"):
             continue
-        name = fpath.split(".")[0]
+        name = fpath.partition("-")[0]
         if name in registered_packages_:
             packages.append(name)
     return packages
