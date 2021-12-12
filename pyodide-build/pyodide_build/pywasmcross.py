@@ -430,8 +430,6 @@ def install_for_distribution(args):
     env = dict(os.environ)
     env["_PYTHON_HOST_PLATFORM"] = "emscripten_wasm32"
     subprocess.check_call(commands, env=env)
-    shutil.rmtree("../../dist", ignore_errors=True)
-    shutil.copytree("dist", "../../dist")
 
 
 def build_wrap(args):

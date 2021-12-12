@@ -90,9 +90,13 @@ def _have_terser():
     return True
 
 
-def check_checksum(path: Path, pkg: Dict[str, Any]):
+def check_checksum(archive: Path, pkg: Dict[str, Any]):
     """
-    Checks that a tarball matches the checksum in the package metadata.
+    Checks that an archive matches the checksum in the package metadata.
+
+    archive -- the path to the archive we wish to checksum
+
+    pkg -- The package metadata parsed from meta.yaml.
     """
     checksum_keys = {"md5", "sha256"}.intersection(pkg["source"])
     if not checksum_keys:
@@ -106,7 +110,7 @@ def check_checksum(path: Path, pkg: Dict[str, Any]):
     checksum = pkg["source"][checksum_algorithm]
     CHUNK_SIZE = 1 << 16
     h = getattr(hashlib, checksum_algorithm)()
-    with open(path, "rb") as fd:
+    with open(archive, "rb") as fd:
         while True:
             chunk = fd.read(CHUNK_SIZE)
             h.update(chunk)
@@ -119,6 +123,19 @@ def check_checksum(path: Path, pkg: Dict[str, Any]):
 def download_and_extract(
     buildpath: Path, packagedir: Path, pkg: Dict[str, Any], args
 ) -> Path:
+    """
+    Download the source from specified in the meta data, then checksum it, then
+    extract the archive into buildpath.
+
+    buildpath -- The path to the build directory. Generally will be
+    $(PYOIDE_ROOT)/packages/<PACKAGE>/build/.
+
+    packagedir -- The name that we want to get the source into. Will be
+    <PACKAGE_NAME>-<PACKAGE_VERSION>. After unpacking the source, we move it into
+    the folder $(PYOIDE_ROOT)/packages/<PACKAGE>/build/<packagedir>.
+
+    pkg -- The dictionary from parsing meta.yaml.
+    """
     srcpath = buildpath / packagedir
 
     if "source" not in pkg:
@@ -178,13 +195,25 @@ def download_and_extract(
         raise ValueError("Incorrect source provided")
 
 
-def patch(path: Path, srcpath: Path, pkg: Dict[str, Any], args):
+def patch(meta_file: Path, srcpath: Path, pkg: Dict[str, Any], args):
+    """
+    Apply patches to the source.
+
+    meta_file -- the Path to the meta.yaml file
+
+    srcpath -- The path to the source. We extract the source into the build
+    directory, so it will be something like $(PYOIDE_ROOT)/packages/<PACKAGE>/build/<PACKAGE>-<VERSION>.
+
+    pkg -- The dictionary from parsing meta.yaml.
+
+    args -- the command line args, currently ignored.
+    """
     if (srcpath / ".patched").is_file():
         return
 
     # Apply all the patches
     orig_dir = Path.cwd()
-    pkgdir = path.parent.resolve()
+    pkgdir = meta_file.parent.resolve()
     os.chdir(srcpath)
     try:
         for patch in pkg.get("source", {}).get("patches", []):
@@ -216,7 +245,25 @@ def pack_wheel(path):
     os.chdir(cwd)
 
 
-def compile(path: Path, srcpath: Path, pkg: Dict[str, Any], args, bash_runner):
+def compile(meta_file: Path, srcpath: Path, pkg: Dict[str, Any], args, bash_runner):
+    """
+    Runs pywasmcross for the package. The effect of this is to first run setup.py
+    with compiler wrappers subbed in, which don't actually build the package but
+    write the compile commands to build.log. Then we walk over build log and invoke
+    the same set of commands but with some flags munged around or removed to make it
+    work with emcc.
+
+    In any case, only works for Python packages, not libraries or shared libraries
+    which don't have a setup.py.
+
+    meta_file -- the Path to the meta.yaml file
+
+    srcpath -- The path to the source. We extract the source into the build
+    directory, so it will be something like $(PYOIDE_ROOT)/packages/<PACKAGE>/build/<PACKAGE>-<VERSION>.
+
+    args -- the command line args that buildpkg was invoked with. Specifies compile
+    flags and install directory.
+    """
     if (srcpath / ".built").is_file():
         return
 
@@ -250,7 +297,7 @@ def compile(path: Path, srcpath: Path, pkg: Dict[str, Any], args, bash_runner):
         )
     finally:
         os.chdir(orig_dir)
-    pkgdir = path.parent.resolve()
+    pkgdir = meta_file.parent.resolve()
     distdir = pkgdir / "dist"
     wheel_path = next(distdir.glob("*.whl"))
     print(wheel_path)
@@ -359,7 +406,7 @@ def run_script(buildpath: Path, srcpath: Path, pkg: Dict[str, Any], bash_runner)
             fd.write(b"\n")
 
 
-def needs_rebuild(pkg: Dict[str, Any], path: Path, buildpath: Path) -> bool:
+def needs_rebuild(pkg: Dict[str, Any], meta_file: Path, buildpath: Path) -> bool:
     """
     Determines if a package needs a rebuild because its meta.yaml, patches, or
     sources are newer than the `.packaged` thunk.
@@ -371,7 +418,7 @@ def needs_rebuild(pkg: Dict[str, Any], path: Path, buildpath: Path) -> bool:
     package_time = packaged_token.stat().st_mtime
 
     def source_files():
-        yield path
+        yield meta_file
         yield from pkg.get("source", {}).get("patches", [])
         yield from (x[0] for x in pkg.get("source", {}).get("extras", []))
         src_path = pkg.get("source", {}).get("path")
@@ -385,38 +432,35 @@ def needs_rebuild(pkg: Dict[str, Any], path: Path, buildpath: Path) -> bool:
     return False
 
 
-def build_package(path: Path, args):
-    pkg = parse_package_config(path)
+def build_package(meta_file: Path, args):
+    pkg = parse_package_config(meta_file)
     name = pkg["package"]["name"]
     t0 = datetime.now()
     print("[{}] Building package {}...".format(t0.strftime("%Y-%m-%d %H:%M:%S"), name))
     packagedir = name + "-" + pkg["package"]["version"]
-    dirpath = path.parent
+    dirpath = meta_file.parent
     orig_path = Path.cwd()
     os.chdir(dirpath)
     buildpath = dirpath / "build"
     bash_runner = BashRunnerWithSharedEnvironment()
     try:
-        if not needs_rebuild(pkg, path, buildpath):
+        if not needs_rebuild(pkg, meta_file, buildpath):
             return
         if "source" in pkg:
             if buildpath.resolve().is_dir():
                 shutil.rmtree(buildpath)
             os.makedirs(buildpath)
         srcpath = download_and_extract(buildpath, packagedir, pkg, args)
-        patch(path, srcpath, pkg, args)
+        patch(meta_file, srcpath, pkg, args)
         if pkg.get("build", {}).get("script"):
             run_script(buildpath, srcpath, pkg, bash_runner)
-        if pkg.get("build", {}).get("skip_build"):
+        if pkg.get("build", {}).get("library", False):
             return
-        if not pkg.get("build", {}).get("library", False):
-            # shared libraries get built by the script and put into install
-            # subfolder, then packaged into a pyodide module
-            # i.e. they need package running, but not compile
-            if not pkg.get("build", {}).get("sharedlibrary"):
-                compile(path, srcpath, pkg, args, bash_runner)
-                with open(buildpath / ".packaged", "wb") as fd:
-                    fd.write(b"\n")
+        # shared libraries get built by the script and put into install
+        # subfolder, then packaged into a pyodide module
+        # i.e. they need package running, but not compile
+        if not pkg.get("build", {}).get("sharedlibrary"):
+            compile(meta_file, srcpath, pkg, args, bash_runner)
     finally:
         bash_runner.close()
         os.chdir(orig_path)
@@ -487,13 +531,13 @@ def make_parser(parser: argparse.ArgumentParser):
 
 
 def main(args):
-    path = Path(args.package[0]).resolve()
+    meta_file = Path(args.package[0]).resolve()
     if args.compress_package and not _have_terser():
         raise RuntimeError(
             "Terser is required to compress packages. Try `npm install -g terser` to install terser."
         )
 
-    build_package(path, args)
+    build_package(meta_file, args)
 
 
 if __name__ == "__main__":
