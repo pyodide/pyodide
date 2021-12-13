@@ -9,8 +9,10 @@ source:
 build:
   cxxflags: -std=c++11
   cflags: -std=c++11
+  setupflags: |
+    --set CMAKE_CXX_COMPILE_FEATURES=cxx_constexpr
+    --set CMAKE_CXX_FLAGS=-std=gnu++11
 
 test:
   imports:
     - dlib
-

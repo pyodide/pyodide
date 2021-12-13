@@ -214,6 +214,8 @@ def compile(path: Path, srcpath: Path, pkg: Dict[str, Any], args, bash_runner):
                 args.cxxflags + " " + pkg.get("build", {}).get("cxxflags", ""),
                 "--ldflags",
                 args.ldflags + " " + pkg.get("build", {}).get("ldflags", ""),
+                "--setupflags",
+                args.ldflags + " " + pkg.get("build", {}).get("setupflags", ""),
                 "--target",
                 args.target,
                 "--install-dir",

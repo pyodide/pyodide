@@ -141,6 +141,7 @@ def capture_compile(args):
         cmd[-1] = "build"
     elif args.install_dir != "":
         cmd.extend(["--home", args.install_dir])
+    cmd.extend(args.setupflags.split())
 
     result = subprocess.run(cmd, env=env)
     if result.returncode != 0:
@@ -460,6 +461,14 @@ def make_parser(parser):
             "Run from the root directory of the package's source.\n\n"
             "Note: this is a private endpoint that should not be used "
             "outside of the Pyodide Makefile."
+        )
+        parser.add_argument(
+            "--setupflags",
+            type=str,
+            nargs="?",
+            default="",
+            help="Extra flags to pass to setup.py",
+            action=EnvironmentRewritingArgument,
         )
         parser.add_argument(
             "--cflags",
