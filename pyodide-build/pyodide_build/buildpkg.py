@@ -468,6 +468,8 @@ def package_files(
                 check=True,
             )
 
+
+def create_packaged_token(buildpath: Path):
     with open(buildpath / ".packaged", "wb") as fd:
         fd.write(b"\n")
 
@@ -482,11 +484,6 @@ def run_script(buildpath: Path, srcpath: Path, pkg: Dict[str, Any], bash_runner)
 
     with chdir(srcpath):
         bash_runner.run(pkg["build"]["script"], check=True)
-
-    # If library, we're done so create .packaged file
-    if pkg["build"].get("library"):
-        with open(buildpath / ".packaged", "wb") as fd:
-            fd.write(b"\n")
 
 
 def needs_rebuild(pkg: Dict[str, Any], pkg_root: Path, buildpath: Path) -> bool:
@@ -532,6 +529,7 @@ def build_package(pkg_root: Path, pkg: Dict, args):
         srcpath = prepare_source(pkg_root, build_dir, src_path, source_metadata, args)
         if pkg.get("build", {}).get("script"):
             run_script(build_dir, srcpath, pkg, bash_runner)
+            create_packaged_token(build_dir)
         if pkg.get("build", {}).get("library", False):
             return
         # shared libraries get built by the script and put into install
@@ -540,6 +538,7 @@ def build_package(pkg_root: Path, pkg: Dict, args):
         if not pkg.get("build", {}).get("sharedlibrary"):
             compile(pkg_root, srcpath, pkg, args, bash_runner)
         package_files(build_dir, srcpath, pkg, compress=args.compress_package)
+        create_packaged_token(build_dir)
 
 
 def make_parser(parser: argparse.ArgumentParser):

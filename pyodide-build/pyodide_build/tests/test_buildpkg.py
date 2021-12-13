@@ -81,10 +81,6 @@ def test_run_script(is_library, tmpdir):
     shared_env = buildpkg.BashRunnerWithSharedEnvironment()
     buildpkg.run_script(build_dir, src_dir, pkg, shared_env)
     assert (src_dir / "out.txt").exists()
-    if is_library:
-        assert (build_dir / ".packaged").exists()
-    else:
-        assert not (build_dir / ".packaged").exists()
 
 
 def test_run_script_environment(tmpdir):
