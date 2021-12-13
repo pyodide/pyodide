@@ -505,7 +505,6 @@ def _maybe_skip_test(item, delayed=False):
     """
     skip_msg = None
     # Testing a package. Skip the test if the package is not built.
-    print(item.parent.fspath)
     match = re.match(
         r".*/packages/(?P<name>[\w\-]+)/test_[\w\-]+\.py", str(item.parent.fspath)
     )
