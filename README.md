@@ -22,7 +22,7 @@ extensions have also been ported for use with Pyodide. These include many
 general-purpose packages such as regex, pyyaml, lxml and scientific Python
 packages including numpy, pandas, scipy, matplotlib, and scikit-learn.
 
-Pyodide comes with a robust Javascript 🡘 Python foreign function interface so
+Pyodide comes with a robust Javascript ⟺ Python foreign function interface so
 that you can freely mix these two languages in your code with minimal
 friction. This includes full support for error handling (throw an error in one
 language, catch it in the other), async/await, and much more.
