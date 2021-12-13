@@ -287,7 +287,7 @@ def pack_wheel(path):
     os.chdir(cwd)
 
 
-def compile(meta_file: Path, srcpath: Path, pkg: Dict[str, Any], args, bash_runner):
+def compile(pkg_root: Path, srcpath: Path, pkg: Dict[str, Any], args, bash_runner):
     """
     Runs pywasmcross for the package. The effect of this is to first run setup.py
     with compiler wrappers subbed in, which don't actually build the package but
@@ -298,7 +298,7 @@ def compile(meta_file: Path, srcpath: Path, pkg: Dict[str, Any], args, bash_runn
     In any case, only works for Python packages, not libraries or shared libraries
     which don't have a setup.py.
 
-    meta_file -- the Path to the meta.yaml file
+    pkg_root -- the root directory of the package
 
     srcpath -- The path to the source. We extract the source into the build
     directory, so it will be something like $(PYOIDE_ROOT)/packages/<PACKAGE>/build/<PACKAGE>-<VERSION>.
@@ -336,7 +336,6 @@ def compile(meta_file: Path, srcpath: Path, pkg: Dict[str, Any], args, bash_runn
             env=bash_runner.env,
         )
 
-    pkgdir = meta_file.parent.resolve()
     distdir = srcpath / "dist"
     wheel_path = next(distdir.glob("*.whl"))
     unpack_wheel(wheel_path)
@@ -344,7 +343,7 @@ def compile(meta_file: Path, srcpath: Path, pkg: Dict[str, Any], args, bash_runn
 
     post = pkg.get("build", {}).get("post")
     if post is not None:
-        bash_runner.env.update({"PKGDIR": str(pkgdir)})
+        bash_runner.env.update({"PKGDIR": str(pkg_root)})
         bash_runner.run(post, check=True)
 
     test_dir = distdir / "tests"
