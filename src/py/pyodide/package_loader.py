@@ -15,4 +15,10 @@ def unpack_buffer(filename, buffer):
 
 
 async def get_dynlibs(name):
-    return to_js([str(x) for x in (SITE_PACKAGES / name).glob("**/*.so")])
+    result = []
+    for f in SITE_PACKAGES.glob(f"{name}*"):
+        if f.is_dir():
+            result.extend((str(x) for x in f.glob("**/*.so")))
+        elif f.suffix == ".so":
+            result.append(str(f))
+    return to_js(result)
