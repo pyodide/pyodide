@@ -340,10 +340,6 @@ def compile(pkg_root: Path, srcpath: Path, pkg: Dict[str, Any], args, bash_runne
     wheel_path = next(distdir.glob("*.whl"))
     unpack_wheel(wheel_path)
     wheel_dir = Path(next(p for p in distdir.glob("*") if p.is_dir()))
-    # Delete pyc files
-    for p in wheel_dir.glob("**/*.pyc"):
-        p.unlink()
-
     post = pkg.get("build", {}).get("post")
     if post is not None:
         bash_runner.env.update({"PKGDIR": str(pkg_root)})

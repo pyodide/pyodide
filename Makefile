@@ -179,7 +179,7 @@ build/test.tar: $(CPYTHONLIB) node_modules/.installed
 	cd $(CPYTHONLIB) && tar -cvf $(PYODIDE_ROOT)/build/test.tar test
 
 build/distutils.tar: $(CPYTHONLIB) node_modules/.installed
-	cd $(CPYTHONLIB) && tar -cvf $(PYODIDE_ROOT)/build/distutils.tar distutils
+	cd $(CPYTHONLIB) && tar --exclude=__pycache__ -cvf $(PYODIDE_ROOT)/build/distutils.tar distutils
 
 
 $(CPYTHONLIB): emsdk/emsdk/.complete $(PYODIDE_EMCC) $(PYODIDE_CXX)
