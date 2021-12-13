@@ -22,6 +22,12 @@ def registered_packages() -> List[str]:
 
 
 @functools.cache
+def registered_packages_lowercase() -> List[str]:
+    """Returns a list of lowercased registered package names"""
+    return [name.lower() for name in registered_packages()]
+
+
+@functools.cache
 def built_packages() -> List[str]:
     """Returns a list of built package names.
 
@@ -29,17 +35,24 @@ def built_packages() -> List[str]:
     """
     if not BUILD_DIR.exists():
         return []
-    registered_packages_ = registered_packages()
+    registered_packages_list = registered_packages_lowercase()
+    registered_packages_ = set(registered_packages_list)
+    for x in registered_packages_list:
+        registered_packages_.add(x.replace("_", "-"))
+
     packages = []
     for fpath in os.listdir(BUILD_DIR):
         if not fpath.endswith(".whl") and not fpath.endswith(".tar"):
             continue
         if fpath.endswith(".whl"):
             name = str(packaging.utils.parse_wheel_filename(fpath)[0])
+            # print(fpath, name)
         else:
             name = fpath.partition("-")[0]
         if name in registered_packages_:
             packages.append(name)
+        else:
+            print(name, fpath, "???")
     return packages
 
 
@@ -76,7 +89,7 @@ def test_parse_package(name):
 @pytest.mark.driver_timeout(40)
 @pytest.mark.parametrize("name", registered_packages())
 def test_import(name, selenium_standalone):
-    if name not in built_packages():
+    if name.lower().replace("_", "-") not in built_packages():
         print(name, sorted(built_packages()))
         raise AssertionError(
             "Implementation error. Test for an unbuilt package "
