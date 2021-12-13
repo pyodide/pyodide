@@ -268,16 +268,6 @@ jobs:
           command: |
             pytest -s benchmark/stack_usage.py  | sed -n 's/## //pg'
 
-  test-emsdk:
-    <<: *defaults
-    resource_class: small
-    steps:
-      - attach_workspace:
-          at: .
-      - run:
-          name: test
-          command: make -C emsdk test
-
   test-python:
     # Unlike test-main this uses "resource_class small" and doesn't use "pytest_wrapper."
     <<: *defaults
@@ -440,7 +430,7 @@ workflows:
 
       - test-main:
           name: test-core-chrome
-          test-params: -k "chrome and not webworker" src packages/micropip
+          test-params: -k "chrome and not webworker" src packages/micropip  packages/fpcast-test
           requires:
             - build-core
           filters:
@@ -449,7 +439,7 @@ workflows:
 
       - test-main:
           name: test-core-firefox
-          test-params: -k "firefox and not webworker" src packages/micropip
+          test-params: -k "firefox and not webworker" src packages/micropip packages/fpcast-test
           requires:
             - build-core
           filters:
@@ -458,7 +448,7 @@ workflows:
 
       - test-main:
           name: test-core-node
-          test-params: -k node src packages/micropip
+          test-params: -k node src packages/micropip packages/fpcast-test
           requires:
             - build-core
           filters:
@@ -510,13 +500,6 @@ workflows:
             tags:
               only: /.*/
 
-      - test-emsdk:
-          requires:
-            - build-core
-          filters:
-            tags:
-              only: /.*/
-
       - test-js:
           requires:
             - build-core
@@ -544,7 +527,6 @@ workflows:
             - test-python
             - test-core-firefox
             - test-packages-firefox
-            - test-emsdk
           filters:
             branches:
               ignore: /.*/
@@ -556,7 +538,6 @@ workflows:
             - test-python
             - test-core-firefox
             - test-packages-firefox
-            - test-emsdk
           filters:
             branches:
               only: main

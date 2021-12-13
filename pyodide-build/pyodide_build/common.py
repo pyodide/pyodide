@@ -14,7 +14,7 @@ def _parse_package_subset(query: Optional[str]) -> Set[str]:
 
     Supports folowing meta-packages,
      - 'core': corresponds to packages needed to run the core test suite
-       {"micropip", "pyparsing", "pytz", "packaging", "Jinja2"}. This is the default option
+       {"micropip", "pyparsing", "pytz", "packaging", "Jinja2", "fpcast-test"}. This is the default option
        if query is None.
      - 'min-scipy-stack': includes the "core" meta-package as well as some of the
        core packages from the scientific python stack and their dependencies:
@@ -32,7 +32,15 @@ def _parse_package_subset(query: Optional[str]) -> Set[str]:
     if query is None:
         query = "core"
 
-    core_packages = {"micropip", "pyparsing", "pytz", "packaging", "Jinja2", "regex"}
+    core_packages = {
+        "micropip",
+        "pyparsing",
+        "pytz",
+        "packaging",
+        "Jinja2",
+        "regex",
+        "fpcast-test",
+    }
     core_scipy_packages = {
         "numpy",
         "scipy",
