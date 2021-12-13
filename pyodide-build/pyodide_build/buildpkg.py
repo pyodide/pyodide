@@ -262,7 +262,7 @@ def patch(pkg_root: Path, srcpath: Path, src_metadata: Dict[str, Any], args):
         fd.write(b"\n")
 
 
-def compile(meta_file: Path, srcpath: Path, pkg: Dict[str, Any], args, bash_runner):
+def compile(pkg_root: Path, srcpath: Path, pkg: Dict[str, Any], args, bash_runner):
     """
     Runs pywasmcross for the package. The effect of this is to first run setup.py
     with compiler wrappers subbed in, which don't actually build the package but
@@ -323,9 +323,8 @@ def compile(meta_file: Path, srcpath: Path, pkg: Dict[str, Any], args, bash_runn
             ]
         )
         site_packages_dir = srcpath / "install" / "lib" / pyfolder / "site-packages"
-        pkgdir = meta_file.parent.resolve()
         bash_runner.env.update(
-            {"SITEPACKAGES": str(site_packages_dir), "PKGDIR": str(pkgdir)}
+            {"SITEPACKAGES": str(site_packages_dir), "PKGDIR": str(pkg_root)}
         )
         bash_runner.run(post, check=True)
 
@@ -415,6 +414,8 @@ def package_files(
     else:
         n_unvendored = 0
 
+    print("===============================\ncwd:", Path.cwd())
+
     # Package the package except for tests
     subprocess.run(
         [
@@ -489,7 +490,7 @@ def run_script(buildpath: Path, srcpath: Path, pkg: Dict[str, Any], bash_runner)
             fd.write(b"\n")
 
 
-def needs_rebuild(pkg: Dict[str, Any], meta_file: Path, buildpath: Path) -> bool:
+def needs_rebuild(pkg: Dict[str, Any], pkg_root: Path, buildpath: Path) -> bool:
     """
     Determines if a package needs a rebuild because its meta.yaml, patches, or
     sources are newer than the `.packaged` thunk.
@@ -501,7 +502,7 @@ def needs_rebuild(pkg: Dict[str, Any], meta_file: Path, buildpath: Path) -> bool
     package_time = packaged_token.stat().st_mtime
 
     def source_files():
-        yield meta_file
+        yield pkg_root / "meta.yaml"
         yield from pkg.get("source", {}).get("patches", [])
         yield from (x[0] for x in pkg.get("source", {}).get("extras", []))
         src_path = pkg.get("source", {}).get("path")
@@ -515,16 +516,14 @@ def needs_rebuild(pkg: Dict[str, Any], meta_file: Path, buildpath: Path) -> bool
     return False
 
 
-def build_package(meta_file: Path, args):
-    pkg = parse_package_config(meta_file)
+def build_package(pkg_root: Path, pkg: Dict, args):
     name = pkg["package"]["name"]
-    pkg_root = meta_file.parent
     build_dir = pkg_root / "build"
     src_dir_name: str = name + "-" + pkg["package"]["version"]
     src_path = build_dir / src_dir_name
     source_metadata = pkg.get("source", {})
     with chdir(pkg_root), get_bash_runner() as bash_runner:
-        if not needs_rebuild(pkg, meta_file, build_dir):
+        if not needs_rebuild(pkg, pkg_root, build_dir):
             return
         if source_metadata:
             if build_dir.resolve().is_dir():
@@ -540,7 +539,7 @@ def build_package(meta_file: Path, args):
         # subfolder, then packaged into a pyodide module
         # i.e. they need package running, but not compile
         if not pkg.get("build", {}).get("sharedlibrary"):
-            compile(meta_file, srcpath, pkg, args, bash_runner)
+            compile(pkg_root, srcpath, pkg, args, bash_runner)
         package_files(build_dir, srcpath, pkg, compress=args.compress_package)
 
 
@@ -609,13 +608,14 @@ def main(args):
             "Terser is required to compress packages. Try `npm install -g terser` to install terser."
         )
 
+    pkg_root = meta_file.parent
     pkg = parse_package_config(meta_file)
     name = pkg["package"]["name"]
     t0 = datetime.now()
     print("[{}] Building package {}...".format(t0.strftime("%Y-%m-%d %H:%M:%S"), name))
     success = True
     try:
-        build_package(pkg, args)
+        build_package(pkg_root, pkg, args)
     except:
         success = False
         raise
