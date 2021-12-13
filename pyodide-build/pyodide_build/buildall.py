@@ -142,14 +142,20 @@ class Package(BasePackage):
 
             raise
 
+        if self.library:
+            return
         if self.shared_library:
-            pass
-        elif not self.library:
-            for file in (self.pkgdir / "dist").glob("*.whl"):
-                shutil.copy(file, outputdir)
-                self.file_name = file.name
-            for file in (self.pkgdir / "dist").glob("*-tests.tar"):
-                shutil.copy(file, outputdir)
+            file_name = shutil.make_archive(
+                f"{self.name}-{self.version}", "tar", self.pkgdir / "dist"
+            )
+            shutil.copy(file_name, outputdir)
+            self.file_name = file_name
+            return
+        for file in (self.pkgdir / "dist").glob("*.whl"):
+            shutil.copy(file, outputdir)
+            self.file_name = file.name
+        for file in (self.pkgdir / "dist").glob("*-tests.tar"):
+            shutil.copy(file, outputdir)
 
 
 def generate_dependency_graph(

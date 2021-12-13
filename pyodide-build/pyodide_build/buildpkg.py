@@ -411,6 +411,10 @@ def unvendor_tests(install_prefix: Path, test_install_prefix: Path) -> int:
     return n_moved
 
 
+def create_packaged_token(buildpath: Path):
+    (buildpath / ".packaged").write_text("\n")
+
+
 def run_script(buildpath: Path, srcpath: Path, pkg: Dict[str, Any], bash_runner):
     if pkg.get("build", {}).get("library"):
         # in libraries this  writes the packaged flag
@@ -421,11 +425,6 @@ def run_script(buildpath: Path, srcpath: Path, pkg: Dict[str, Any], bash_runner)
 
     with chdir(srcpath):
         bash_runner.run(pkg["build"]["script"], check=True)
-
-    # If library, we're done so create .packaged file
-    if pkg["build"].get("library") or pkg["build"].get("skip_build"):
-        with open(buildpath / ".packaged", "wb") as fd:
-            fd.write(b"\n")
 
 
 def needs_rebuild(pkg: Dict[str, Any], pkg_root: Path, buildpath: Path) -> bool:
@@ -472,12 +471,16 @@ def build_package(pkg_root: Path, pkg: Dict, args):
         if pkg.get("build", {}).get("script"):
             run_script(build_dir, srcpath, pkg, bash_runner)
         if pkg.get("build", {}).get("library", False):
+            create_packaged_token(build_dir)
             return
         # shared libraries get built by the script and put into install
         # subfolder, then packaged into a pyodide module
         # i.e. they need package running, but not compile
         if not pkg.get("build", {}).get("sharedlibrary"):
             compile(pkg_root, srcpath, pkg, args, bash_runner)
+        shutil.rmtree(pkg_root / "dist", ignore_errors=True)
+        shutil.copytree(srcpath / "dist", pkg_root / "dist")
+        create_packaged_token(build_dir)
 
 
 def make_parser(parser: argparse.ArgumentParser):
