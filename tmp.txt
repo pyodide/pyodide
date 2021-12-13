@@ -1,0 +1,184 @@
+./tools/dependency-check.sh
+cp src/templates/console.html build/console.html
+sed -i -e 's#{{ PYODIDE_BASE_URL }}#./#g' build/console.html
+date +"[%F %T] Building packages..."
+[2021-12-10 09:52:21] Building packages...
+make -C packages
+make[1]: Entering directory '/src/packages'
+mkdir -p build-logs
+PYTHONPATH="/src/packages/.artifacts/lib/python:/src/pyodide-build/" pyodide-build buildall . ../build \
+	--target=/src/cpython/installs/python-3.9.5 --only "dlib" --install-dir /src/packages/.artifacts --n-jobs ${PYODIDE_JOBS:-4} \
+	--log-dir=build-logs
+Building the following packages: distutils, dlib, micropip, packaging, pyparsing
+[1/5] (thread 1) building pyparsing
+[2/5] (thread 2) building distutils
+[2/5] (thread 2) built distutils in 0.00 s
+[3/5] (thread 3) building dlib
+[1/5] (thread 1) built pyparsing in 1.40 s
+[4/5] (thread 4) building packaging
+[4/5] (thread 4) built packaging in 1.37 s
+[5/5] (thread 2) building micropip
+[5/5] (thread 2) built micropip in 1.36 s
+Error building dlib. Printing build logs.
+running install
+running bdist_egg
+running egg_info
+writing tools/python/dlib.egg-info/PKG-INFO
+writing dependency_links to tools/python/dlib.egg-info/dependency_links.txt
+writing top-level names to tools/python/dlib.egg-info/top_level.txt
+package init file 'tools/python/dlib/__init__.py' not found (or not a regular file)
+reading manifest file 'tools/python/dlib.egg-info/SOURCES.txt'
+reading manifest template 'MANIFEST.in'
+no previously-included directories found matching 'tools/python/build*'
+no previously-included directories found matching 'dlib/cmake_utils/*/build*'
+no previously-included directories found matching 'dlib/test'
+warning: no previously-included files matching '*.pyc' found anywhere in distribution
+writing manifest file 'tools/python/dlib.egg-info/SOURCES.txt'
+installing library code to build/bdist.linux-x86_64/egg
+running install_lib
+running build_py
+running build_ext
+Building extension for Python 3.9.5 (default, Jun 23 2021, 15:10:59) 
+Invoking CMake setup: 'cmake /src/packages/dlib/build/dlib-19.22.1/tools/python -DCMAKE_LIBRARY_OUTPUT_DIRECTORY=/src/packages/dlib/build/dlib-19.22.1/build/lib.linux-x86_64-3.9 -DPYTHON_EXECUTABLE=/usr/local/bin/python3.9 -DCMAKE_BUILD_TYPE=Release'
+-- The C compiler identification is GNU 8.3.0
+-- The CXX compiler identification is GNU 8.3.0
+-- Check for working C compiler: /src/tools/cc
+-- Check for working C compiler: /src/tools/cc -- works
+-- Detecting C compiler ABI info
+-- Detecting C compiler ABI info - done
+-- Detecting C compile features
+-- Detecting C compile features - done
+-- Check for working CXX compiler: /src/tools/c++
+-- Check for working CXX compiler: /src/tools/c++ -- works
+-- Detecting CXX compiler ABI info
+-- Detecting CXX compiler ABI info - done
+-- Detecting CXX compile features
+-- Detecting CXX compile features - done
+-- Found PythonInterp: /usr/local/bin/python3.9 (found version "3.9.5") 
+-- Found PythonLibs: /usr/local/lib/libpython3.9.so
+-- Performing Test HAS_CPP14_FLAG
+-- Performing Test HAS_CPP14_FLAG - Success
+-- pybind11 v2.2.4
+-- Using CMake version: 3.13.4
+-- Compiling dlib version: 19.22.1
+-- SSE4 instructions can be executed by the host processor.
+-- AVX instructions can be executed by the host processor.
+-- __ARM_NEON__ defined.
+-- Enabling AVX instructions
+-- Looking for pthread.h
+-- Looking for pthread.h - found
+-- Looking for pthread_create
+-- Looking for pthread_create - found
+-- Found Threads: TRUE  
+ *****************************************************************************
+ *** DLIB GUI SUPPORT DISABLED BECAUSE X11 DEVELOPMENT LIBRARIES NOT FOUND ***
+ *** Make sure libx11-dev is installed if you want GUI support.            ***
+ *** On Ubuntu run: sudo apt-get install libx11-dev                        ***
+ *****************************************************************************
+-- NEON instructions will be used for libpng.
+-- The ASM compiler identification is GNU
+-- Found assembler: /src/tools/cc
+-- Searching for BLAS and LAPACK
+-- Searching for BLAS and LAPACK
+-- Found PkgConfig: /usr/bin/pkg-config (found version "0.29") 
+-- Checking for module 'cblas'
+--   No package 'cblas' found
+-- Checking for module 'lapack'
+--   No package 'lapack' found
+-- Looking for cblas_ddot
+-- Looking for cblas_ddot - found
+-- Looking for sys/types.h
+-- Looking for sys/types.h - found
+-- Looking for stdint.h
+-- Looking for stdint.h - found
+-- Looking for stddef.h
+-- Looking for stddef.h - found
+-- Check size of void*
+-- Check size of void* - done
+-- Found BLAS: BLAS_LIBRARIES-PLACEHOLDER-FOR-EMPTY-LIBRARIES  
+-- Looking for sgesv
+-- Looking for sgesv - found
+-- Looking for sgesv_
+-- Looking for sgesv_ - found
+CUDA_TOOLKIT_ROOT_DIR not found or specified
+-- Could NOT find CUDA (missing: CUDA_TOOLKIT_ROOT_DIR CUDA_NVCC_EXECUTABLE CUDA_INCLUDE_DIRS CUDA_CUDART_LIBRARY) (Required is at least version "7.5")
+-- Found CUDA, but CMake was unable to find the cuBLAS libraries that should be part of every basic CUDA install. Your CUDA install is somehow broken or incomplete. Since cuBLAS is required for dlib to use CUDA we won't use CUDA.
+-- DID NOT FIND CUDA
+-- Disabling CUDA support for dlib.  DLIB WILL NOT USE CUDA
+CMake Error at /src/packages/dlib/build/dlib-19.22.1/dlib/cmake_utils/use_cpp_11.cmake:74 (target_compile_features):
+  target_compile_features The compiler feature "cxx_rvalue_references" is not
+  known to CXX compiler
+
+  "GNU"
+
+  version 8.3.0.
+Call Stack (most recent call first):
+  /src/packages/dlib/build/dlib-19.22.1/dlib/CMakeLists.txt:870 (enable_cpp11_for_target)
+
+
+-- C++11 activated.
+-- Configuring incomplete, errors occurred!
+See also "/src/packages/dlib/build/dlib-19.22.1/build/temp.linux-x86_64-3.9/CMakeFiles/CMakeOutput.log".
+Traceback (most recent call last):
+  File "/src/packages/dlib/build/dlib-19.22.1/setup.py", line 222, in <module>
+    setup(
+  File "/usr/local/lib/python3.9/site-packages/setuptools/__init__.py", line 153, in setup
+    return distutils.core.setup(**attrs)
+  File "/usr/local/lib/python3.9/distutils/core.py", line 148, in setup
+    dist.run_commands()
+  File "/usr/local/lib/python3.9/distutils/dist.py", line 966, in run_commands
+    self.run_command(cmd)
+  File "/usr/local/lib/python3.9/distutils/dist.py", line 985, in run_command
+    cmd_obj.run()
+  File "/usr/local/lib/python3.9/site-packages/setuptools/command/install.py", line 67, in run
+    self.do_egg_install()
+  File "/usr/local/lib/python3.9/site-packages/setuptools/command/install.py", line 109, in do_egg_install
+    self.run_command('bdist_egg')
+  File "/usr/local/lib/python3.9/distutils/cmd.py", line 313, in run_command
+    self.distribution.run_command(command)
+  File "/usr/local/lib/python3.9/distutils/dist.py", line 985, in run_command
+    cmd_obj.run()
+  File "/usr/local/lib/python3.9/site-packages/setuptools/command/bdist_egg.py", line 164, in run
+    cmd = self.call_command('install_lib', warn_dir=0)
+  File "/usr/local/lib/python3.9/site-packages/setuptools/command/bdist_egg.py", line 150, in call_command
+    self.run_command(cmdname)
+  File "/usr/local/lib/python3.9/distutils/cmd.py", line 313, in run_command
+    self.distribution.run_command(command)
+  File "/usr/local/lib/python3.9/distutils/dist.py", line 985, in run_command
+    cmd_obj.run()
+  File "/usr/local/lib/python3.9/site-packages/setuptools/command/install_lib.py", line 11, in run
+    self.build()
+  File "/usr/local/lib/python3.9/distutils/command/install_lib.py", line 107, in build
+    self.run_command('build_ext')
+  File "/usr/local/lib/python3.9/distutils/cmd.py", line 313, in run_command
+    self.distribution.run_command(command)
+  File "/usr/local/lib/python3.9/distutils/dist.py", line 985, in run_command
+    cmd_obj.run()
+  File "/src/packages/dlib/build/dlib-19.22.1/setup.py", line 134, in run
+    self.build_extension(ext)
+  File "/src/packages/dlib/build/dlib-19.22.1/setup.py", line 171, in build_extension
+    subprocess.check_call(cmake_setup, cwd=build_folder)
+  File "/usr/local/lib/python3.9/subprocess.py", line 373, in check_call
+    raise CalledProcessError(retcode, cmd)
+subprocess.CalledProcessError: Command '['cmake', '/src/packages/dlib/build/dlib-19.22.1/tools/python', '-DCMAKE_LIBRARY_OUTPUT_DIRECTORY=/src/packages/dlib/build/dlib-19.22.1/build/lib.linux-x86_64-3.9', '-DPYTHON_EXECUTABLE=/usr/local/bin/python3.9', '-DCMAKE_BUILD_TYPE=Release']' returned non-zero exit status 1.
+Traceback (most recent call last):
+  File "/usr/local/lib/python3.9/runpy.py", line 197, in _run_module_as_main
+    return _run_code(code, main_globals, None,
+  File "/usr/local/lib/python3.9/runpy.py", line 87, in _run_code
+    exec(code, run_globals)
+  File "/src/pyodide-build/pyodide_build/__main__.py", line 50, in <module>
+    main()
+  File "/src/pyodide-build/pyodide_build/__main__.py", line 44, in main
+    args.func(args)
+  File "/src/pyodide-build/pyodide_build/buildpkg.py", line 543, in main
+    build_package(path, args)
+  File "/src/pyodide-build/pyodide_build/buildpkg.py", line 465, in build_package
+    compile(path, srcpath, pkg, args, bash_runner)
+  File "/src/pyodide-build/pyodide_build/buildpkg.py", line 205, in compile
+    subprocess.run(
+  File "/usr/local/lib/python3.9/subprocess.py", line 528, in run
+    raise CalledProcessError(retcode, process.args,
+subprocess.CalledProcessError: Command '['/usr/local/bin/python3.9', '-m', 'pyodide_build', 'pywasmcross', '--cflags', '-O2 -g -fPIC ', '--cxxflags', ' -std=c++11', '--ldflags', '-s BINARYEN_EXTRA_PASSES="--pass-arg=max-func-params@61" -O2 -s MODULARIZE=1 -s EMULATE_FUNCTION_POINTER_CASTS=1 -s LINKABLE=1 -s EXPORT_ALL=1 -s WASM=1 -std=c++14 -s LZ4=1 -L /installs/python-3.9.5/lib/  -s SIDE_MODULE=1 ', '--target', '/src/cpython/installs/python-3.9.5', '--install-dir', '/src/packages/.artifacts', '--replace-libs', '']' returned non-zero exit status 1.
+[2021-12-10 09:52:24] Building package dlib...
+[2021-12-10 09:53:09] done building package dlib in 44.9 s.
+make[1]: Leaving directory '/src/packages'

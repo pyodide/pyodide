@@ -1,7 +1,7 @@
 FROM node:14.16.1-buster-slim AS node-image
 FROM python:3.9.5-slim-buster
 
-RUN apt-get update \
+RUN apt-get update && apt-get upgrade\
   && apt-get install -y --no-install-recommends \
         # building packages
         bzip2 ccache clang-format-6.0 cmake f2c g++ gfortran git make \
@@ -9,7 +9,7 @@ RUN apt-get update \
         autoconf autotools-dev automake texinfo dejagnu \
         build-essential prelink autoconf libtool libltdl-dev \
         # testing packages: libgconf-2-4 is necessary for running chromium
-        libgconf-2-4 "chromium=90.*" \
+        libgconf-2-4 "chromium=90.*" vim zip unzip\
   && rm -rf /var/lib/apt/lists/*
 
 ADD docs/requirements-doc.txt requirements.txt /
