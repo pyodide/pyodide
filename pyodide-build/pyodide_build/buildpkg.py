@@ -529,8 +529,8 @@ def build_package(pkg_root: Path, pkg: Dict, args):
         srcpath = prepare_source(pkg_root, build_dir, src_path, source_metadata, args)
         if pkg.get("build", {}).get("script"):
             run_script(build_dir, srcpath, pkg, bash_runner)
-            create_packaged_token(build_dir)
         if pkg.get("build", {}).get("library", False):
+            create_packaged_token(build_dir)
             return
         # shared libraries get built by the script and put into install
         # subfolder, then packaged into a pyodide module
