@@ -9,18 +9,18 @@
 [![Build Status](https://circleci.com/gh/pyodide/pyodide.png)](https://circleci.com/gh/pyodide/pyodide)
 [![Documentation Status](https://readthedocs.org/projects/pyodide/badge/?version=stable)](https://pyodide.readthedocs.io/?badge=stable)
 
-Pyodide is a port of the Python 3.9 interpreter and many common Python packages
-to the browser.
+Pyodide is a Python distribution for the browser and Node.js based on WebAssembly.
 
 ## What is Pyodide?
 
-Pyodide is a port of CPython to WebAssembly/[Emscripten](https://emscripten.org/)
-for use in the browser or in Node.js.
+Pyodide is a port of CPython to WebAssembly/[Emscripten](https://emscripten.org/).
 
-Pyodide allows to install Python packages in the browser with [micropip](https://pyodide.org/en/stable/usage/api/micropip-api.html),
- - pure Python packages can be installed as wheels from PyPi
- - many [common packages](https://github.com/pyodide/pyodide/tree/main/packages) with C extensions are built as part of Pyodide. These range from general-purpose packages such as regex, pyyaml, lxml to 
- scientific Python packages including numpy, pandas, scipy, matplotlib, and scikit-learn.
+Pyodide makes it possible to install and run Python packages in the browser with
+[micropip](https://pyodide.org/en/stable/usage/api/micropip-api.html). Any pure
+Python package with a wheel available on PyPi is supported. Many packages with C
+extensions have also been ported for use with Pyodide. These include many
+general-purpose packages such as regex, pyyaml, lxml and scientific Python
+packages including numpy, pandas, scipy, matplotlib, and scikit-learn.
 
 Pyodide comes with a robust Javascript 🡘 Python foreign function interface so
 that you can freely mix these two languages in your code with minimal
