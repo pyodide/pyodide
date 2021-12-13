@@ -145,11 +145,11 @@ class Package(BasePackage):
         if self.library:
             return
         if self.shared_library:
-            file_name = shutil.make_archive(
+            file_path = shutil.make_archive(
                 f"{self.name}-{self.version}", "tar", self.pkgdir / "dist"
             )
-            shutil.copy(file_name, outputdir)
-            self.file_name = file_name
+            shutil.copy(file_path, outputdir)
+            self.file_name = Path(file_path).name
             return
         for file in (self.pkgdir / "dist").glob("*.whl"):
             shutil.copy(file, outputdir)
