@@ -3,6 +3,7 @@ import os
 from pathlib import Path
 from typing import List
 import functools
+import packaging.utils
 
 from pyodide_build.io import parse_package_config
 
@@ -33,7 +34,10 @@ def built_packages() -> List[str]:
     for fpath in os.listdir(BUILD_DIR):
         if not fpath.endswith(".whl") and not fpath.endswith(".tar"):
             continue
-        name = fpath.partition("-")[0]
+        if fpath.endswith(".whl"):
+            name = str(packaging.utils.parse_wheel_filename(fpath)[0])
+        else:
+            name = fpath.partition("-")[0]
         if name in registered_packages_:
             packages.append(name)
     return packages
