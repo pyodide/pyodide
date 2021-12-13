@@ -209,9 +209,9 @@ def prepare_source(
         raise ValueError("Incorrect source provided")
 
     if "url" in src_metadata:
-        result = download_and_extract(buildpath, srcpath, src_metadata, args)
+        srcpath = download_and_extract(buildpath, srcpath, src_metadata, args)
         patch(pkg_root, srcpath, src_metadata, args)
-        return result
+        return srcpath
 
     if "path" in src_metadata:
         srcdir = Path(src_metadata["path"])
