@@ -28,7 +28,7 @@ build:
   replace-libs:
     - png16=png
   post: |
-    cd dist/matplotlib-3.3.3
+    cd build/matplotlib-3.3.3/dist/matplotlib-3.3.3/
     wget -O matplotlib/mpl-data/fonts/ttf/Humor-Sans.ttf http://antiyawn.com/uploads/Humor-Sans-1.0.ttf
     rm -rf matplotlib/backends/qt_editor
     rm -rf matplotlib/backends/web_backend
