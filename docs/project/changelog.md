@@ -54,6 +54,10 @@ substitutions:
   the package to the global scope.
   {pr}`1944`
 
+- {{Enhancement}} Added a {any}`pyodide.unpackArchive` API which unpacks an archive represented as an ArrayBuffer into the working directory.
+  This is intended as a way to install packages from a local application.
+  {pr}`1944`
+
 - {{API}} {any}`loadPyodide <globalThis.loadPyodide>` now accepts `homedir`
   parameter which sets home directory of Pyodide virtual file system.
   {pr}`1936`
@@ -139,6 +143,13 @@ substitutions:
   feature, is now unvendored.
   {pr}`1883`
 
+- {{Fix}} pillow and imageio now correctly encodes/decodes grayscale and
+  black-and-white JPEG image format.
+  {pr}`2028`
+
+- {{Fix}} numpy fft module now works correctly.
+  {pr}`2028`
+
 - New packages: `logbook`
 
 ### Uncategorized
@@ -198,7 +209,7 @@ substitutions:
 
 ### Packages
 
-- {{Fix}} pillow now correctly encodes/decodes JPEG image format. {pr}`1818`
+- {{Fix}} pillow now correctly encodes/decodes RGB JPEG image format. {pr}`1818`
 
 ### Micellaneous
 

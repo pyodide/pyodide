@@ -162,6 +162,8 @@ class SeleniumWrapper:
             pyodide._module.importlib.invalidate_caches;
             pyodide._module.package_loader.unpack_buffer;
             pyodide._module.package_loader.get_dynlibs;
+            pyodide._module._util_module = pyodide.pyimport("pyodide._util");
+            pyodide._module._util_module.unpack_buffer_archive;
             pyodide.runPython("");
             """
         )

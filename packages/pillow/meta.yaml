@@ -11,7 +11,8 @@ source:
     - - src/setup.cfg
       - ./setup.cfg
 build:
-  cflags: -s USE_ZLIB=1 -s USE_LIBJPEG=1 -s USE_FREETYPE=1
+  cflags: -s USE_ZLIB=1 -s USE_LIBJPEG=1 -s USE_FREETYPE=1 -s SIDE_MODULE=1
+  ldflags: -ljpeg
 test:
   imports:
     - PIL
