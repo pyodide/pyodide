@@ -414,8 +414,6 @@ def package_files(
     else:
         n_unvendored = 0
 
-    print("===============================\ncwd:", Path.cwd())
-
     # Package the package except for tests
     subprocess.run(
         [
