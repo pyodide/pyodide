@@ -460,6 +460,7 @@ def build_package(pkg_root: Path, pkg: Dict, args):
     src_dir_name: str = name + "-" + pkg["package"]["version"]
     src_path = build_dir / src_dir_name
     source_metadata = pkg.get("source", {})
+    build_metadata = pkg.get("build", {})
     with chdir(pkg_root), get_bash_runner() as bash_runner:
         if not needs_rebuild(pkg, pkg_root, build_dir):
             return
@@ -469,15 +470,15 @@ def build_package(pkg_root: Path, pkg: Dict, args):
             os.makedirs(build_dir)
 
         srcpath = prepare_source(pkg_root, build_dir, src_path, source_metadata, args)
-        if pkg.get("build", {}).get("script"):
+        if build_metadata.get("script"):
             run_script(build_dir, srcpath, pkg, bash_runner)
-        if pkg.get("build", {}).get("library", False):
+        if build_metadata.get("library") or build_metadata.get("skip_build"):
             create_packaged_token(build_dir)
             return
         # shared libraries get built by the script and put into install
         # subfolder, then packaged into a pyodide module
         # i.e. they need package running, but not compile
-        if not pkg.get("build", {}).get("sharedlibrary"):
+        if not build_metadata.get("sharedlibrary"):
             compile(pkg_root, srcpath, pkg, args, bash_runner)
         shutil.rmtree(pkg_root / "dist", ignore_errors=True)
         shutil.copytree(srcpath / "dist", pkg_root / "dist")
