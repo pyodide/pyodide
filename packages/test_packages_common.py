@@ -46,13 +46,10 @@ def built_packages() -> List[str]:
             continue
         if fpath.endswith(".whl"):
             name = str(packaging.utils.parse_wheel_filename(fpath)[0])
-            # print(fpath, name)
         else:
             name = fpath.partition("-")[0]
         if name in registered_packages_:
             packages.append(name)
-        else:
-            print(name, fpath, "???")
     return packages
 
 
