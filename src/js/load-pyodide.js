@@ -101,7 +101,7 @@ function addPackageToLoad(name, toLoad, toLoadShared) {
     toLoad.add(name);
   }
   for (let dep_name of pkg_info.depends) {
-    addPackageToLoad(dep_name, toLoad);
+    addPackageToLoad(dep_name, toLoad, toLoadShared);
   }
 }
 
