@@ -31,7 +31,7 @@ def built_packages() -> List[str]:
     registered_packages_ = registered_packages()
     packages = []
     for fpath in os.listdir(BUILD_DIR):
-        if not fpath.endswith(".whl"):
+        if not fpath.endswith(".whl") and not fpath.endswith(".tar"):
             continue
         name = fpath.partition("-")[0]
         if name in registered_packages_:
@@ -73,6 +73,7 @@ def test_parse_package(name):
 @pytest.mark.parametrize("name", registered_packages())
 def test_import(name, selenium_standalone):
     if name not in built_packages():
+        print(name, sorted(built_packages()))
         raise AssertionError(
             "Implementation error. Test for an unbuilt package "
             "should have been skipped in selenium_standalone fixture"
