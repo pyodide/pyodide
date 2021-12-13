@@ -125,17 +125,11 @@ async function downloadPkgBuffer(name) {
 async function unpackBuffer(name, buffer) {
   const pkg = Module.packages[name];
   const file_name = pkg.file_name;
-  Module.package_loader.unpack_buffer(file_name, buffer);
-  const coroutine = Module.package_loader.get_dynlibs(name);
-  try {
-    let dynlibs = await coroutine;
-    for (let dynlib of dynlibs) {
-      await loadDynlib(dynlib, pkg.shared_library);
-    }
-    loadedPackages[name] = pkg;
-  } finally {
-    coroutine.destroy();
+  const dynlibs = Module.package_loader.unpack_buffer(file_name, buffer);
+  for (let dynlib of dynlibs) {
+    await loadDynlib(dynlib, pkg.shared_library);
   }
+  loadedPackages[name] = pkg;
 }
 
 // This is a promise that is resolved iff there are no pending package loads. It
