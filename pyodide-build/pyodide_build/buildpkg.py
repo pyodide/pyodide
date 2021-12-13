@@ -254,7 +254,8 @@ def patch(pkg_root: Path, srcpath: Path, src_metadata: Dict[str, Any], args):
         return
 
     patches = src_metadata.get("patches", [])
-    if not patches:
+    extras = src_metadata.get("extras", [])
+    if not patches and not extras:
         return
 
     # Apply all the patches
@@ -265,7 +266,7 @@ def patch(pkg_root: Path, srcpath: Path, src_metadata: Dict[str, Any], args):
             )
 
     # Add any extra files
-    for src, dst in src_metadata.get("extras", []):
+    for src, dst in extras:
         shutil.copyfile(pkg_root / src, srcpath / dst)
 
     with open(srcpath / ".patched", "wb") as fd:
