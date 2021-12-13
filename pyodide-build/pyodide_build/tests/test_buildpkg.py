@@ -169,36 +169,36 @@ def test_needs_rebuild(tmpdir):
     src_path_file.touch()
 
     # No .packaged file, rebuild
-    assert buildpkg.needs_rebuild(pkg_dict, meta_yaml, builddir) is True
+    assert buildpkg.needs_rebuild(pkg_dict, tmpdir, builddir) is True
 
     # .packaged file exists, no rebuild
     packaged.touch()
-    assert buildpkg.needs_rebuild(pkg_dict, meta_yaml, builddir) is False
+    assert buildpkg.needs_rebuild(pkg_dict, tmpdir, builddir) is False
 
     # newer meta.yaml file, rebuild
     packaged.touch()
     time.sleep(0.01)
     meta_yaml.touch()
-    assert buildpkg.needs_rebuild(pkg_dict, meta_yaml, builddir) is True
+    assert buildpkg.needs_rebuild(pkg_dict, tmpdir, builddir) is True
 
     # newer patch file, rebuild
     packaged.touch()
     time.sleep(0.01)
     patch_file.touch()
-    assert buildpkg.needs_rebuild(pkg_dict, meta_yaml, builddir) is True
+    assert buildpkg.needs_rebuild(pkg_dict, tmpdir, builddir) is True
 
     # newer extra file, rebuild
     packaged.touch()
     time.sleep(0.01)
     extra_file.touch()
-    assert buildpkg.needs_rebuild(pkg_dict, meta_yaml, builddir) is True
+    assert buildpkg.needs_rebuild(pkg_dict, tmpdir, builddir) is True
 
     # newer source path, rebuild
     packaged.touch()
     time.sleep(0.01)
     src_path_file.touch()
-    assert buildpkg.needs_rebuild(pkg_dict, meta_yaml, builddir) is True
+    assert buildpkg.needs_rebuild(pkg_dict, tmpdir, builddir) is True
 
     # newer .packaged file, no rebuild
     packaged.touch()
-    assert buildpkg.needs_rebuild(pkg_dict, meta_yaml, builddir) is False
+    assert buildpkg.needs_rebuild(pkg_dict, tmpdir, builddir) is False
